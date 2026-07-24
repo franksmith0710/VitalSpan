@@ -1,5 +1,4 @@
 import type { ChartDrillFrame } from "@/lib/chartDrill";
-import { getDrillChain } from "@/lib/chartDrill";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { registerOfflineGeoMap } from "@/components/charts/engine/geo/OfflineGeoPort";
 import chinaProvincesGeo from "@/assets/geo/china-provinces.json";
@@ -200,11 +199,10 @@ export async function resolveGeoMapLevelContext(
   input: ResolveGeoMapLevelInput,
 ): Promise<GeoMapLevelContext> {
   ensureVsRegionsMapRegistered();
-  const chain = getDrillChain(input.config);
   const depth = input.drillStack.length;
   const provinceIndex = getProvinceGeoIndex();
 
-  if (depth === 0 || !chain.length) {
+  if (depth === 0) {
     return {
       mapId: VS_REGIONS_MAP_ID,
       knownRegionNames: provinceIndex.fullNames,

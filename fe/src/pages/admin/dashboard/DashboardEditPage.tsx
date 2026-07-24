@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type SetStateAction } from "react";
+import { setChartAnimationSuppressed } from "@/components/charts/engine/d3/core/animate";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { ChevronLeft, Redo2, Trash2, Undo2 } from "lucide-react";
@@ -54,8 +55,10 @@ import { preservePixelCanvasHostScroll } from "@/components/dashboard/pixelCanva
 import { clampPixelLayoutToCanvasBounds } from "@/components/dashboard/pixelCanvas/layoutSanitize";
 import { unparkPixelWidgetFromTab } from "@/components/dashboard/pixelCanvas/tabParking";
 import {
+  editorDirtySnapshot,
+  editorResetBaselineSnapshot,
   hydrateDashboardStyle,
-  persistDashboardFingerprint,
+  layoutForEditorAfterPersist,
   persistDashboardLayout,
   preparePixelLayoutForDisplay,
   syncPixelLayoutChartStyles,
@@ -108,8 +111,6 @@ import { DashboardInlineTitle } from "@/components/dashboard/DashboardInlineTitl
 import { useDashboardCanvasState } from "@/hooks/useDashboardCanvasState";
 import { useWidgetSelection } from "@/hooks/useWidgetSelection";
 import { useUnsavedLeaveGuard } from "@/hooks/use-unsaved-leave-guard";
-import { queryKeys } from "@/lib/queryKeys";
-import { uploadDashboardThumbnail } from "@/lib/uploadDashboardThumbnail";
 import { Button, IconButton } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -143,6 +144,13 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const location = useLocation();
   const queryClient = useQueryClient();
   const routeIsDataScreen = isDataScreenAdminPath(location.pathname);
+
+  useEffect(() => {
+    if (mode !== "edit") return undefined;
+    setChartAnimationSuppressed(true);
+    return () => setChartAnimationSuppressed(false);
+  }, [mode]);
+
   const [name, setName] = useState("");
   const pixelEnabled = isPixelCanvasEnabled(import.meta.env.VITE_DASHBOARD_PIXEL_CANVAS);
   const {
@@ -321,18 +329,13 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       resetLayout(layoutForEditor);
       setStyleConfig(hydratedStyle);
       styleConfigRef.current = hydratedStyle;
-      const baseWidgets =
-        layoutForEditor.version === 1
-          ? layoutForEditor.widgets
-          : layoutForEditor.widgets.map(pixelWidgetToLayoutWidget);
-      setSavedFingerprint(
-        persistDashboardFingerprint(
-          layoutForEditor,
-          hydratedStyle,
-          mode === "edit" ? pixelEnabled : false,
-        ),
+      const loadSnapshot = editorResetBaselineSnapshot(
+        layoutForEditor,
+        hydratedStyle,
+        mode === "edit" ? pixelEnabled : false,
       );
-      setSavedLinkageSnapshot(linkageSnapshot(baseWidgets, loadedLinkage));
+      setSavedFingerprint(loadSnapshot.fingerprint);
+      setSavedLinkageSnapshot(linkageSnapshot(loadSnapshot.widgets, loadedLinkage));
       setLinkage(loadedLinkage);
       linkageRef.current = loadedLinkage;
       pixelViewportRef.current = undefined;
@@ -380,11 +383,13 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
 
   const isDirty = useMemo(() => {
     if (missing || savedFingerprint === null) return false;
+    const effectiveStyle = ensureDataScreenStyleConfig(styleConfig, isDataScreenSurface);
+    const snapshot = editorDirtySnapshot(layout, effectiveStyle, pixelEnabled);
     return (
-      persistDashboardFingerprint(layout, styleConfig, pixelEnabled) !== savedFingerprint ||
+      snapshot.fingerprint !== savedFingerprint ||
       name.trim() !== savedName ||
       (savedLinkageSnapshot !== null &&
-        linkageSnapshot(widgets, linkage) !== savedLinkageSnapshot)
+        linkageSnapshot(snapshot.widgets, linkage) !== savedLinkageSnapshot)
     );
   }, [
     missing,
@@ -395,8 +400,8 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     pixelEnabled,
     name,
     savedName,
-    widgets,
     linkage,
+    isDataScreenSurface,
   ]);
 
   isDirtyRef.current = isDirty;
@@ -829,20 +834,12 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     }
   };
 
-  const persistThumbnail = useCallback(async () => {
-    if (!id) return;
-    clearSelection();
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    try {
-      await uploadDashboardThumbnail(id);
-      await queryClient.invalidateQueries({ queryKey: queryKeys.dashboards.all });
-    } catch (err) {
-      toast.error(`布局已保存，但缩略图生成失败：${mapApiError(err)}`);
-    }
-  }, [clearSelection, id, queryClient]);
-
   const handleSave = async (): Promise<boolean> => {
-    if (!id || missing || !canSave || saving) return false;
+    if (!id || missing || !canSave) return false;
+    if (saving) {
+      toast.message("正在保存中，请稍候…");
+      return false;
+    }
     const active = document.activeElement;
     if (active instanceof HTMLElement && active !== document.body) {
       active.blur();
@@ -883,12 +880,16 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       });
 
       const savedStyle = hydrateDashboardStyle(normalizedLayout.styleConfig);
-      resetLayout(normalizedLayout);
+      const layoutForEditor = layoutForEditorAfterPersist(normalizedLayout, savedStyle);
+      resetLayout(layoutForEditor);
       setStyleConfig(savedStyle);
       styleConfigRef.current = savedStyle;
-      setSavedFingerprint(
-        persistDashboardFingerprint(normalizedLayout, savedStyle, pixelEnabled),
+      const saveSnapshot = editorResetBaselineSnapshot(
+        layoutForEditor,
+        savedStyle,
+        pixelEnabled,
       );
+      setSavedFingerprint(saveSnapshot.fingerprint);
 
       const mergedLinkage = sanitizeLinkageForSave(
         normalized,
@@ -912,16 +913,13 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           applyLinkage(nextLinkage);
         } catch (filterErr) {
           toast.error(`布局已保存，但筛选联动保存失败：${mapApiError(filterErr)}`);
-          setSavedLinkageSnapshot(linkageSnapshot(normalized, currentLinkage));
-          setSaving(false);
-          await persistThumbnail();
+          setSavedLinkageSnapshot(linkageSnapshot(saveSnapshot.widgets, currentLinkage));
+          toast.success("看板布局已保存");
           return true;
         }
       }
 
-      setSavedLinkageSnapshot(linkageSnapshot(normalized, nextLinkage));
-      setSaving(false);
-      await persistThumbnail();
+      setSavedLinkageSnapshot(linkageSnapshot(saveSnapshot.widgets, nextLinkage));
       toast.success("看板已保存");
       return true;
     } catch (err) {

@@ -35,6 +35,13 @@ describe("resolveTerrainPackKey", () => {
     });
   });
 
+  it("resolves province L1 for vs-geo-330000 when pack exists", () => {
+    expect(resolveTerrainPackKey("vs-geo-330000", 1)).toEqual({
+      level: "province",
+      adcode: 330000,
+    });
+  });
+
   it("falls back to national for province without L1 pack", () => {
     expect(resolveTerrainPackKey("vs-geo-999000", 1)).toEqual({
       level: "national",

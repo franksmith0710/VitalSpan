@@ -40,7 +40,7 @@ export function ChartMapSalesGeoSetup() {
         </p>
       )}
       <p className="text-[10px] leading-snug text-gray-400 dark:text-gray-500">
-        配置后点「更新图表数据」；预览态点击省份可下钻到市/区县（与 2D 地图相同，滚轮仅缩放/旋转当前层）。
+        配置后点「更新图表数据」；预览态双击省份可下钻到市/区县（与 2D 地图相同，滚轮仅缩放/旋转当前层）。
       </p>
     </div>
   );

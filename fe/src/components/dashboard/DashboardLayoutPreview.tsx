@@ -23,6 +23,10 @@ import { DashboardStyleSurface } from "./DashboardStyleSurface";
 import { DashboardWidgetsProvider } from "./DashboardWidgetsContext";
 import { widgetFilterExecuteRevision } from "./dashboardWidgetExecuteKey";
 import { ChartDrillProvider } from "@/components/charts/ChartDrillContext";
+import {
+  ChartMountProvider,
+  CHART_MOUNT_MAX_VIEW,
+} from "@/components/charts/ChartMountContext";
 import { WidgetErrorBoundary } from "./WidgetErrorBoundary";
 import type {
   DashboardLayout,
@@ -43,6 +47,8 @@ type DashboardLayoutPreviewProps = {
   /** 大屏预览整页图表刷新计数 */
   globalChartRefreshKey?: number;
   className?: string;
+  /** 列表卡片等密集场景：降低单卡图表并发挂载 */
+  mountMaxConcurrent?: number;
 };
 
 export function DashboardLayoutPreview({
@@ -55,6 +61,7 @@ export function DashboardLayoutPreview({
   fixedDesignViewport = false,
   globalChartRefreshKey = 0,
   className,
+  mountMaxConcurrent = CHART_MOUNT_MAX_VIEW,
 }: DashboardLayoutPreviewProps) {
   const styleConfig = useMemo(
     () => resolveEffectiveDashboardStyle(layout, styleConfigOverride),
@@ -133,6 +140,7 @@ export function DashboardLayoutPreview({
       );
 
     return (
+      <ChartMountProvider maxConcurrent={mountMaxConcurrent}>
       <DashboardWidgetsProvider widgets={widgets}>
       <ChartDrillProvider>
       <DashboardStyleSurface
@@ -155,10 +163,12 @@ export function DashboardLayoutPreview({
       </DashboardStyleSurface>
       </ChartDrillProvider>
       </DashboardWidgetsProvider>
+      </ChartMountProvider>
     );
   }
 
   return (
+    <ChartMountProvider maxConcurrent={mountMaxConcurrent}>
     <DashboardWidgetsProvider widgets={widgets}>
     <ChartDrillProvider>
     <DashboardStyleSurface
@@ -184,5 +194,6 @@ export function DashboardLayoutPreview({
     </DashboardStyleSurface>
     </ChartDrillProvider>
     </DashboardWidgetsProvider>
+    </ChartMountProvider>
   );
 }

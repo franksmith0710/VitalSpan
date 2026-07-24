@@ -14,6 +14,13 @@ export type ChartDrillFrame = {
 
 export const MAX_DRILL_DEPTH = 3;
 
+const DEFAULT_GEO_DRILL_CHAIN = ["province", "city", "district"] as const;
+
+export function resolveGeoDrillChain(config: ChartViewConfig): string[] {
+  const chain = getDrillChain(config);
+  return chain.length ? chain : [...DEFAULT_GEO_DRILL_CHAIN];
+}
+
 export function getDrillChain(config: ChartViewConfig): string[] {
   const dims = activeFieldRefs(config.dimensions);
   const chain: string[] = [];
@@ -25,13 +32,13 @@ export function getDrillChain(config: ChartViewConfig): string[] {
 
 export function isDrillEnabled(config: ChartViewConfig): boolean {
   if (isGeoMapChartType(config.chartType)) {
-    return getDrillChain(config).length >= 1;
+    return resolveGeoDrillChain(config).length >= 1;
   }
   return getDrillChain(config).length >= 2;
 }
 
 function geoMapMaxDrillDepth(config: ChartViewConfig): number {
-  const chain = getDrillChain(config);
+  const chain = resolveGeoDrillChain(config);
   if (!chain.length) return 0;
   return Math.max(1, Math.min(chain.length - 1, 2));
 }
@@ -184,7 +191,7 @@ const DRILLABLE_PALETTE_CATEGORIES = new Set(["compare", "trend", "distribute", 
 /** 是否支持点击下钻（须已配置 ≥2 级维度） */
 export function supportsChartDrillInteraction(config: ChartViewConfig): boolean {
   if (isGeoMapChartType(config.chartType)) {
-    return getDrillChain(config).length >= 1;
+    return resolveGeoDrillChain(config).length >= 1;
   }
   if (!isDrillEnabled(config)) return false;
   if (tableInspectorProfile(config.chartType)) return true;

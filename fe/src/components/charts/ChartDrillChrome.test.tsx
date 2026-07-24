@@ -42,4 +42,21 @@ describe("ChartDrillChrome", () => {
     );
     expect(container).toBeEmptyDOMElement();
   });
+
+  it("renders inline notice without extra banner row", () => {
+    render(
+      <div className="dashboard-theme-scope">
+        <ChartDrillChrome
+          stack={[{ field: "province", value: "北京" }]}
+          notice="已是最后一层"
+          onBack={vi.fn()}
+          onReset={vi.fn()}
+          onNavigate={vi.fn()}
+        />
+      </div>,
+    );
+
+    expect(screen.getByText("已是最后一层")).toBeInTheDocument();
+    expect(screen.getByText("已是最后一层").className).toMatch(/chart-drill-chrome__notice/);
+  });
 });

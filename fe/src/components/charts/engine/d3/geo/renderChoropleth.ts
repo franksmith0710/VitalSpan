@@ -217,7 +217,7 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
       clearRegionHover();
       hideTooltip(tooltip);
     })
-    .on("click", (event, d) => {
+    .on("dblclick", (event, d) => {
       event.stopPropagation();
       onPointClick?.({ name: d.name, value: d.value, adcode: d.adcode });
     });

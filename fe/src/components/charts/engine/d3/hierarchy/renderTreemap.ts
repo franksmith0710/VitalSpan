@@ -1,9 +1,16 @@
 import * as d3 from "d3";
 import { applyCellBevel, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
+import { motionDuration } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
+import {
+  TREEMAP_CELL_HOVER_STROKE_WIDTH,
+  TREEMAP_CELL_STROKE_WIDTH,
+  treemapCellBaseTransform,
+  treemapCellHoverTransform,
+} from "./treemapCellTransform";
 
 type TreemapDatum = { name: string; value: number };
 type TreeNode = { name: string; value?: number; children?: TreeNode[] };
@@ -65,7 +72,8 @@ export function renderD3TreemapChart(container: HTMLElement, config: D3RenderCon
     .data(leaves)
     .join("g")
     .attr("class", "cell")
-    .attr("transform", (d) => `translate(${d.x0},${d.y0})`);
+    .attr("transform", (d) => treemapCellBaseTransform(d.x0, d.y0))
+    .style("cursor", onPointClick ? "pointer" : "default");
 
   cells
     .append("rect")
@@ -80,16 +88,34 @@ export function renderD3TreemapChart(container: HTMLElement, config: D3RenderCon
     })
     .attr("opacity", 0.92)
     .attr("stroke", theme.background === "transparent" ? "#fff" : theme.background)
-    .attr("stroke-width", 1.5)
-    .style("cursor", onPointClick ? "pointer" : "default")
+    .attr("stroke-width", TREEMAP_CELL_STROKE_WIDTH)
     .each(function () {
       applyCellBevel(d3.select(this), depthLevel);
-    })
-    .on("mouseenter", function () {
-      d3.select(this).attr("opacity", 1);
-    })
-    .on("mouseleave", function () {
-      d3.select(this).attr("opacity", 0.92);
+    });
+
+  cells
+    .on("mouseenter", function (_event, d) {
+      const cell = d3.select(this);
+      const width = Math.max(0, d.x1 - d.x0);
+      const height = Math.max(0, d.y1 - d.y0);
+      cell.raise();
+      cell
+        .transition()
+        .duration(motionDuration("hover"))
+        .attr("transform", treemapCellHoverTransform(d.x0, d.y0, width, height));
+      cell
+        .select("rect")
+        .transition()
+        .duration(motionDuration("hover"))
+        .attr("opacity", 1)
+        .attr("stroke-width", TREEMAP_CELL_HOVER_STROKE_WIDTH);
+      if (!tooltip) return;
+      tooltip
+        .style("opacity", "1")
+        .html(
+          `<div style="font-weight:600;margin-bottom:2px">${d.data.name}</div>` +
+            `<div><strong>${formatChartValue(d.value ?? 0, valueFormat)}</strong></div>`,
+        );
     })
     .on("mousemove", (event, d) => {
       if (!tooltip) return;
@@ -101,7 +127,20 @@ export function renderD3TreemapChart(container: HTMLElement, config: D3RenderCon
         );
       positionTooltip(tooltip, event, container, width);
     })
-    .on("mouseout", () => tooltip?.style("opacity", "0"))
+    .on("mouseleave", function (_event, d) {
+      const cell = d3.select(this);
+      cell
+        .transition()
+        .duration(motionDuration("hover"))
+        .attr("transform", treemapCellBaseTransform(d.x0, d.y0));
+      cell
+        .select("rect")
+        .transition()
+        .duration(motionDuration("hover"))
+        .attr("opacity", 0.92)
+        .attr("stroke-width", TREEMAP_CELL_STROKE_WIDTH);
+      tooltip?.style("opacity", "0");
+    })
     .on("click", (_event, d) => onPointClick?.({ name: d.data.name, value: d.value ?? 0 } as D3Datum));
 
   if (showLabel) {

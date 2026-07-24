@@ -16,7 +16,7 @@ describe("CanvasScaleArea", () => {
       />,
     );
 
-    expect(screen.getByText("空格拖动画布")).toBeInTheDocument();
+    expect(screen.getByText("空格/中键/空白拖动画布")).toBeInTheDocument();
     expect(screen.getByText("Ctrl+滚轮缩放")).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "画布缩放比例" })).toHaveTextContent("60%");
   });

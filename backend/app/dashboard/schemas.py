@@ -443,6 +443,7 @@ class DashboardListItemOut(BaseModel):
     description: str | None = None
     surface_kind: Literal["dashboard", "data-screen"] = Field(alias="surfaceKind")
     widget_count: int = Field(alias="widgetCount")
+    layout_json: DashboardLayout = Field(alias="layoutJson")
     preview_summary: DashboardPreviewSummary = Field(alias="previewSummary")
     thumbnail_url: str | None = Field(default=None, alias="thumbnailUrl")
     created_by: uuid.UUID | None = Field(default=None, alias="createdBy")

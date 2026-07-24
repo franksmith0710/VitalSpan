@@ -2,7 +2,7 @@ import { VCDS, motionDuration } from "@/components/charts/engine/d3/core/chartVi
 import { ensureDepthShadowFilter, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
 import * as d3 from "d3";
 import { renderScatterCanvasLayer } from "@/components/charts/engine/d3/core/canvasScatterLayer";
-import { drawLinearCartesianAxes } from "@/components/charts/engine/d3/core/sceneGraph";
+import { drawLinearCartesianAxes, appendChartSvg } from "@/components/charts/engine/d3/core/sceneGraph";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { drawScatterMarkLines } from "@/components/charts/engine/d3/core/markLines";
 import { resolveRenderMode, sampleIndices } from "@/components/charts/engine/d3/core/perfRouter";
@@ -67,14 +67,10 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
     : ["value"];
   const colorScale = d3.scaleOrdinal<string>().domain(seriesNames).range(colors);
 
-  const svg = d3
-    .select(container)
-    .append("svg")
-    .attr("width", width)
-    .attr("height", height)
-    .attr("role", "img")
-    .style("position", useCanvas ? "relative" : undefined)
-    .style("z-index", useCanvas ? "1" : undefined);
+  const svg = appendChartSvg(container, width, height);
+  if (useCanvas) {
+    svg.style("position", "relative").style("z-index", "1");
+  }
 
   const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
   const plot = g.append("g");

@@ -7,6 +7,9 @@
 
 const TILE = 256;
 
+/** 邻接瓦片缝羽化宽度（px）；减轻 ESRI 256px 瓦片色差网格 */
+export const TILE_FEATHER = 4;
+
 const SOURCES = {
   diffuse: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
   normal: "https://services.arcgisonline.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}",
@@ -24,7 +27,7 @@ function lngLatToTileFloat(lng, lat, zoom) {
   return { x, y };
 }
 
-function tileRangeForBounds(bounds, zoom) {
+export function tileRangeForBounds(bounds, zoom) {
   const sw = lngLatToTileFloat(bounds.west, bounds.south, zoom);
   const ne = lngLatToTileFloat(bounds.east, bounds.north, zoom);
   const n = 2 ** zoom;
@@ -33,6 +36,75 @@ function tileRangeForBounds(bounds, zoom) {
   const yMin = clamp(Math.floor(Math.min(sw.y, ne.y)), 0, n - 1);
   const yMax = clamp(Math.floor(Math.max(sw.y, ne.y)), 0, n - 1);
   return { xMin, xMax, yMin, yMax, count: (xMax - xMin + 1) * (yMax - yMin + 1) };
+}
+
+/** @param {number} dist 距瓦片内缘像素距离，0 = 完全沿用已有像素 */
+export function featherWeight(dist) {
+  if (TILE_FEATHER <= 0) return 1;
+  if (dist >= TILE_FEATHER) return 1;
+  if (dist <= 0) return 0;
+  const t = dist / TILE_FEATHER;
+  return 0.5 - 0.5 * Math.cos(Math.PI * t);
+}
+
+function blendPixelOnto(dst, srcR, srcG, srcB, srcA, weight) {
+  const srcAlpha = (srcA / 255) * weight;
+  const dstAlpha = dst[3] / 255;
+  const outA = srcAlpha + dstAlpha * (1 - srcAlpha);
+  if (outA < 1e-6) {
+    dst[0] = 0;
+    dst[1] = 0;
+    dst[2] = 0;
+    dst[3] = 0;
+    return;
+  }
+  dst[0] = Math.round((srcR * srcAlpha + dst[0] * dstAlpha * (1 - srcAlpha)) / outA);
+  dst[1] = Math.round((srcG * srcAlpha + dst[1] * dstAlpha * (1 - srcAlpha)) / outA);
+  dst[2] = Math.round((srcB * srcAlpha + dst[2] * dstAlpha * (1 - srcAlpha)) / outA);
+  dst[3] = Math.round(outA * 255);
+}
+
+/**
+ * @param {Uint8Array} canvas
+ * @param {Uint8Array} tileData
+ */
+export function placeTileOnCanvas(canvas, canvasW, canvasH, tileData, destX, destY, opts) {
+  const { featherLeft, featherTop } = opts;
+  for (let y = 0; y < TILE; y += 1) {
+    for (let x = 0; x < TILE; x += 1) {
+      const cx = destX + x;
+      const cy = destY + y;
+      if (cx < 0 || cy < 0 || cx >= canvasW || cy >= canvasH) continue;
+
+      const ti = (y * TILE + x) * 4;
+      const ci = (cy * canvasW + cx) * 4;
+      const srcR = tileData[ti];
+      const srcG = tileData[ti + 1];
+      const srcB = tileData[ti + 2];
+      const srcA = tileData[ti + 3];
+
+      let weight = 1;
+      if (featherLeft) weight = featherWeight(x);
+      if (featherTop) weight = Math.min(weight, featherWeight(y));
+
+      if (canvas[ci + 3] === 0 && weight >= 1) {
+        canvas[ci] = srcR;
+        canvas[ci + 1] = srcG;
+        canvas[ci + 2] = srcB;
+        canvas[ci + 3] = srcA;
+        continue;
+      }
+
+      blendPixelOnto(
+        canvas.subarray(ci, ci + 4),
+        srcR,
+        srcG,
+        srcB,
+        srcA,
+        weight,
+      );
+    }
+  }
 }
 
 async function fetchTile(url, retries = 3) {
@@ -57,6 +129,32 @@ function tileUrl(template, z, x, y) {
   return template.replace("{z}", String(z)).replace("{x}", String(x)).replace("{y}", String(y));
 }
 
+async function decodeTileRgba(sharp, buf) {
+  const { data } = await sharp(buf).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  return new Uint8Array(data);
+}
+
+async function buildFeatheredCanvas(sharp, template, zoom, range) {
+  const canvasW = (range.xMax - range.xMin + 1) * TILE;
+  const canvasH = (range.yMax - range.yMin + 1) * TILE;
+  const canvas = new Uint8Array(canvasW * canvasH * 4);
+
+  for (let ty = range.yMin; ty <= range.yMax; ty += 1) {
+    for (let tx = range.xMin; tx <= range.xMax; tx += 1) {
+      const buf = await fetchTile(tileUrl(template, zoom, tx, ty));
+      const tileData = await decodeTileRgba(sharp, buf);
+      const col = tx - range.xMin;
+      const row = ty - range.yMin;
+      placeTileOnCanvas(canvas, canvasW, canvasH, tileData, col * TILE, row * TILE, {
+        featherLeft: col > 0,
+        featherTop: row > 0,
+      });
+    }
+  }
+
+  return { canvas, canvasW, canvasH };
+}
+
 /**
  * @param {import('sharp')} sharp
  * @param {{ west: number; south: number; east: number; north: number }} bounds
@@ -73,20 +171,7 @@ export async function stitchSatellitePng(sharp, bounds, outputSize, zoom, kind) 
   }
 
   const template = SOURCES[kind];
-  const canvasW = (range.xMax - range.xMin + 1) * TILE;
-  const canvasH = (range.yMax - range.yMin + 1) * TILE;
-  const composites = [];
-
-  for (let ty = range.yMin; ty <= range.yMax; ty += 1) {
-    for (let tx = range.xMin; tx <= range.xMax; tx += 1) {
-      const buf = await fetchTile(tileUrl(template, zoom, tx, ty));
-      composites.push({
-        input: buf,
-        left: (tx - range.xMin) * TILE,
-        top: (ty - range.yMin) * TILE,
-      });
-    }
-  }
+  const { canvas, canvasW, canvasH } = await buildFeatheredCanvas(sharp, template, zoom, range);
 
   const nw = lngLatToTileFloat(bounds.west, bounds.north, zoom);
   const se = lngLatToTileFloat(bounds.east, bounds.south, zoom);
@@ -98,10 +183,9 @@ export async function stitchSatellitePng(sharp, bounds, outputSize, zoom, kind) 
   const cropH = Math.max(1, cropBottom - cropTop);
 
   // 须先物化 composite 再 extract：sharp 链式 composite→extract 会错位（BUG-13）
-  const composed = await sharp({
-    create: { width: canvasW, height: canvasH, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
+  const composed = await sharp(Buffer.from(canvas), {
+    raw: { width: canvasW, height: canvasH, channels: 4 },
   })
-    .composite(composites)
     .png()
     .toBuffer();
 

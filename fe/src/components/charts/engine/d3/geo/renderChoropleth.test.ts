@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { renderD3ChoroplethChart } from "@/components/charts/engine/d3/geo/renderChoropleth";
 import { resolveD3Theme } from "@/components/charts/engine/d3/core/themeEngine";
 
@@ -82,6 +82,35 @@ describe("renderD3ChoroplethChart", () => {
     const paths = container.querySelectorAll("path.region");
     expect(paths.length).toBe(34);
     expect(container.querySelector("svg")?.getAttribute("data-region-count")).toBe("34");
+
+    dispose();
+    document.body.removeChild(container);
+  });
+
+  it("drills on double-click instead of single click", () => {
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const onPointClick = vi.fn();
+
+    const dispose = renderD3ChoroplethChart(container, {
+      width: 400,
+      height: 320,
+      rows: [["广东省", 320]],
+      columns: ["province", "value"],
+      regionField: "province",
+      metricField: "value",
+      theme: resolveD3Theme("light"),
+      showTooltip: false,
+      colors: ["#1653a9"],
+      onPointClick,
+    });
+
+    const region = container.querySelector("path.region");
+    expect(region).toBeTruthy();
+    region?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(onPointClick).not.toHaveBeenCalled();
+    region?.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+    expect(onPointClick).toHaveBeenCalledTimes(1);
 
     dispose();
     document.body.removeChild(container);

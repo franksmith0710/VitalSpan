@@ -17,6 +17,10 @@ import {
 } from "./dataScreenViewportPan";
 import { isPixelCanvasWidgetTarget } from "../pixelCanvas/pixelCanvasHitTest";
 import {
+  applyViewportPanLayerTransform,
+  hasExceededPanClickThreshold,
+} from "./viewportPanLayer";
+import {
   computePresentationTransform,
   DATA_SCREEN_EDIT_PRESENTATION_DEFAULT,
   resolveDataScreenEditViewportOffsets,
@@ -76,8 +80,14 @@ export function DataScreenEditViewport({
 }: DataScreenEditViewportProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const wheelHostRef = useRef<HTMLDivElement>(null);
+  const panLayerRef = useRef<HTMLDivElement>(null);
   const spacePanRef = useRef(false);
   const panSessionRef = useRef<ViewportPanSession | null>(null);
+  const panMovedRef = useRef(false);
+  const blankClickPendingRef = useRef(false);
+  const wheelPanFrameRef = useRef<number | null>(null);
+  const onBlankPointerDownRef = useRef(onBlankPointerDown);
+  onBlankPointerDownRef.current = onBlankPointerDown;
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [viewPan, setViewPan] = useState({ x: 0, y: 0 });
   const viewPanRef = useRef(viewPan);
@@ -113,6 +123,36 @@ export function DataScreenEditViewport({
   const scaledWidth = canvasWidth * scale;
   const scaledHeight = canvasHeight * scale;
   const { offsetX, offsetY } = resolveDataScreenEditViewportOffsets();
+  const offsetXRef = useRef(offsetX);
+  const offsetYRef = useRef(offsetY);
+  offsetXRef.current = offsetX;
+  offsetYRef.current = offsetY;
+
+  const syncPanLayer = useCallback((pan: { x: number; y: number }) => {
+    applyViewportPanLayerTransform(
+      panLayerRef.current,
+      offsetXRef.current,
+      offsetYRef.current,
+      pan,
+    );
+  }, []);
+
+  const commitPanState = useCallback((pan: { x: number; y: number }) => {
+    viewPanRef.current = pan;
+    setViewPan(pan);
+  }, []);
+
+  const scheduleWheelPanCommit = useCallback(() => {
+    if (wheelPanFrameRef.current != null) return;
+    wheelPanFrameRef.current = window.requestAnimationFrame(() => {
+      wheelPanFrameRef.current = null;
+      setViewPan({ ...viewPanRef.current });
+    });
+  }, []);
+
+  useEffect(() => {
+    syncPanLayer(viewPan);
+  }, [viewPan.x, viewPan.y, offsetX, offsetY, syncPanLayer]);
 
   const contentLayout = useMemo(
     () => ({
@@ -135,14 +175,14 @@ export function DataScreenEditViewport({
     (next: { x: number; y: number } | ((prev: { x: number; y: number }) => { x: number; y: number })) => {
       setViewPan((previous) => {
         const resolved = typeof next === "function" ? next(previous) : next;
-        return clampViewportPan(resolved, boundsRef.current);
+        const clamped = clampViewportPan(resolved, boundsRef.current);
+        viewPanRef.current = clamped;
+        syncPanLayer(clamped);
+        return clamped;
       });
     },
-    [],
+    [syncPanLayer],
   );
-
-  const applyPanRef = useRef(applyPan);
-  applyPanRef.current = applyPan;
 
   const applyPanPatch = useCallback(
     (patch: { x?: number; y?: number }) => {
@@ -167,8 +207,33 @@ export function DataScreenEditViewport({
   ]);
 
   const endPanSession = useCallback(() => {
+    const session = panSessionRef.current;
     panSessionRef.current = null;
     setPanDragging(false);
+    if (session) {
+      commitPanState(viewPanRef.current);
+    }
+    if (blankClickPendingRef.current && !panMovedRef.current) {
+      onBlankPointerDownRef.current?.();
+    }
+    blankClickPendingRef.current = false;
+    panMovedRef.current = false;
+  }, [commitPanState]);
+
+  const isPanEligibleTarget = useCallback((target: EventTarget | null) => {
+    if (!(target instanceof Node)) return false;
+    const viewportEl = viewportRef.current;
+    if (!viewportEl?.contains(target)) return false;
+    if (isEditableTarget(target)) return false;
+    if (isPixelCanvasWidgetTarget(target)) return false;
+    if (
+      target instanceof Element &&
+      (target.closest("[data-canvas-scale-area]") ||
+        target.closest("[data-testid^='canvas-scrollbar-']"))
+    ) {
+      return false;
+    }
+    return true;
   }, []);
 
   useEffect(() => {
@@ -192,8 +257,16 @@ export function DataScreenEditViewport({
       const session = panSessionRef.current;
       if (!session || session.pointerId !== event.pointerId) return;
       event.preventDefault();
+      if (
+        !panMovedRef.current &&
+        hasExceededPanClickThreshold(session.startX, session.startY, event.clientX, event.clientY)
+      ) {
+        panMovedRef.current = true;
+      }
       const next = applyViewportPanTranslate(session, event.clientX, event.clientY);
-      applyPanRef.current({ x: next.panX, y: next.panY });
+      const clamped = clampViewportPan({ x: next.panX, y: next.panY }, boundsRef.current);
+      viewPanRef.current = clamped;
+      syncPanLayer(clamped);
     };
 
     const releasePointerCapture = (event: PointerEvent) => {
@@ -211,9 +284,14 @@ export function DataScreenEditViewport({
     };
 
     const onPointerDown = (event: PointerEvent) => {
-      if (!spacePanRef.current || event.button !== 0) return;
+      const middleMouse = event.button === 1;
+      const spaceLeft = event.button === 0 && spacePanRef.current;
+      const blankLeft =
+        event.button === 0 && !spacePanRef.current && isPanEligibleTarget(event.target);
+      if (!middleMouse && !spaceLeft && !blankLeft) return;
+
       const viewportEl = viewportRef.current;
-      if (!viewportEl || !viewportEl.contains(event.target as Node)) return;
+      if (!viewportEl) return;
       event.preventDefault();
       event.stopPropagation();
       try {
@@ -221,6 +299,8 @@ export function DataScreenEditViewport({
       } catch {
         // jsdom / legacy browsers
       }
+      panMovedRef.current = false;
+      blankClickPendingRef.current = blankLeft;
       panSessionRef.current = {
         pointerId: event.pointerId,
         startX: event.clientX,
@@ -250,7 +330,7 @@ export function DataScreenEditViewport({
       document.removeEventListener("pointercancel", onPointerEnd, { capture: true });
       document.removeEventListener("lostpointercapture", onPointerEnd, { capture: true });
     };
-  }, [endPanSession]);
+  }, [endPanSession, isPanEligibleTarget, syncPanLayer]);
 
   useEffect(() => {
     const wheelHost = wheelHostRef.current;
@@ -274,15 +354,27 @@ export function DataScreenEditViewport({
       if (!onCanvasViewport) return;
       if (event.deltaX === 0 && event.deltaY === 0) return;
       if (event.cancelable) event.preventDefault();
-      applyPanRef.current((previous) => ({
-        x: previous.x - event.deltaX,
-        y: previous.y - event.deltaY,
-      }));
+      const clamped = clampViewportPan(
+        {
+          x: viewPanRef.current.x - event.deltaX,
+          y: viewPanRef.current.y - event.deltaY,
+        },
+        boundsRef.current,
+      );
+      viewPanRef.current = clamped;
+      syncPanLayer(clamped);
+      scheduleWheelPanCommit();
     };
 
     wheelHost.addEventListener("wheel", onWheel, { passive: false, capture: true });
-    return () => wheelHost.removeEventListener("wheel", onWheel, { capture: true });
-  }, []);
+    return () => {
+      wheelHost.removeEventListener("wheel", onWheel, { capture: true });
+      if (wheelPanFrameRef.current != null) {
+        window.cancelAnimationFrame(wheelPanFrameRef.current);
+        wheelPanFrameRef.current = null;
+      }
+    };
+  }, [scheduleWheelPanCommit, syncPanLayer]);
 
   const handleZoomChange = useCallback((zoom: number) => {
     setUserZoom(clampZoom(zoom));
@@ -298,25 +390,11 @@ export function DataScreenEditViewport({
 
   const handleResetViewport = useCallback(() => {
     setUserZoom(1);
-    setViewPan({ x: 0, y: 0 });
-  }, []);
-
-  const handleViewportPointerDownCapture = useCallback(
-    (event: React.PointerEvent<HTMLDivElement>) => {
-      if (event.button !== 0 || spacePanRef.current) return;
-      if (isEditableTarget(event.target)) return;
-      if (isPixelCanvasWidgetTarget(event.target)) return;
-      if (
-        event.target instanceof Element &&
-        (event.target.closest("[data-canvas-scale-area]") ||
-          event.target.closest("[data-testid^='canvas-scrollbar-']"))
-      ) {
-        return;
-      }
-      onBlankPointerDown?.();
-    },
-    [onBlankPointerDown],
-  );
+    const resetPan = { x: 0, y: 0 };
+    viewPanRef.current = resetPan;
+    syncPanLayer(resetPan);
+    setViewPan(resetPan);
+  }, [syncPanLayer]);
 
   const panTranslateX = offsetX + viewPan.x;
   const panTranslateY = offsetY + viewPan.y;
@@ -384,10 +462,10 @@ export function DataScreenEditViewport({
           )}
           style={{ backgroundColor: DATA_SCREEN_VIEWPORT_BG }}
           data-canvas-scale-viewport
-          onPointerDownCapture={handleViewportPointerDownCapture}
         >
           <div
-            className="absolute top-0 left-0"
+            ref={panLayerRef}
+            className="absolute top-0 left-0 will-change-transform"
             style={{
               transform: `translate(${panTranslateX}px, ${panTranslateY}px)`,
             }}

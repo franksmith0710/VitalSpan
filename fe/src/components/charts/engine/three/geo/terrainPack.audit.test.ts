@@ -44,8 +44,8 @@ function assertPack(level: "national" | "province", adcode?: number) {
   expect(fs.existsSync(diffuse), diffuse).toBe(true);
   expect(fs.statSync(diffuse).size).toBeGreaterThan(1024);
   if (level === "province") {
-    expect(w).toBeGreaterThanOrEqual(3500);
-    expect(h).toBeGreaterThanOrEqual(2000);
+    expect(Math.max(w, h)).toBeGreaterThanOrEqual(4096);
+    expect(Math.min(w, h)).toBeGreaterThanOrEqual(2000);
   }
 }
 

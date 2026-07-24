@@ -1,5 +1,8 @@
 import { apiFetch } from "@/lib/api";
+import { createConcurrencyLimiter } from "@/lib/asyncConcurrencyLimiter";
 import type { ChartFilterRef, ChartTimeRangeRef, ChartViewConfig } from "@/lib/chartViewConfig";
+
+export const CHART_EXECUTE_MAX_CONCURRENCY = 3;
 import type { ChartType } from "@/lib/chartViewConfig";
 import { injectSqlParameters } from "@/components/dashboard/dashboardFilterUtils";
 
@@ -161,6 +164,7 @@ export function chartExecuteRequestKey(
 
 const inflightExecute = new Map<string, Promise<ChartExecuteResult>>();
 const executeResultCache = new Map<string, ChartExecuteResult>();
+const executeConcurrencyLimiter = createConcurrencyLimiter(CHART_EXECUTE_MAX_CONCURRENCY);
 
 /** 读取最近一次成功的 execute 结果（用于 remount 时避免 loading 闪屏） */
 export function peekChartExecuteCachedResult(
@@ -182,7 +186,7 @@ export async function fetchChartExecuteResultShared(
   const pending = inflightExecute.get(key);
   if (pending) return pending;
 
-  const promise = fetchChartExecuteResult(config, options)
+  const promise = executeConcurrencyLimiter(() => fetchChartExecuteResult(config, options))
     .then((data) => {
       executeResultCache.set(key, data);
       return data;

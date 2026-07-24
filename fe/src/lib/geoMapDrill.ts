@@ -4,6 +4,7 @@ import {
   canDrillDeeper,
   filterRowsByDrillStack,
   getDrillChain,
+  resolveGeoDrillChain,
   type ChartDrillPipelineResult,
 } from "@/lib/chartDrill";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
@@ -18,7 +19,7 @@ import {
 const GEO_DRILL_LEVEL_FIELDS = ["province", "city", "district"] as const;
 
 function mapDisplayChainIndex(config: ChartViewConfig, stack: ChartDrillFrame[]): number {
-  const chain = getDrillChain(config);
+  const chain = resolveGeoDrillChain(config);
   if (!chain.length) return 0;
   let index = Math.min(stack.length, GEO_DRILL_LEVEL_FIELDS.length - 1);
   if (stack.length >= 1) {
@@ -31,7 +32,7 @@ function mapDisplayChainIndex(config: ChartViewConfig, stack: ChartDrillFrame[])
 }
 
 function mapClickChainIndex(config: ChartViewConfig, stack: ChartDrillFrame[]): number {
-  const chain = getDrillChain(config);
+  const chain = resolveGeoDrillChain(config);
   if (!canDrillDeeper(stack, config)) return -1;
   let nextIndex = stack.length;
   if (stack.length === 1) {
@@ -47,7 +48,7 @@ export function getMapDrillDisplayField(
   config: ChartViewConfig,
   stack: ChartDrillFrame[],
 ): string | undefined {
-  const chain = getDrillChain(config);
+  const chain = resolveGeoDrillChain(config);
   if (!chain.length) return undefined;
   const index = mapDisplayChainIndex(config, stack);
   return chain[index] ?? GEO_DRILL_LEVEL_FIELDS[index];
@@ -57,7 +58,7 @@ export function getMapDrillClickField(
   config: ChartViewConfig,
   stack: ChartDrillFrame[],
 ): string | undefined {
-  const chain = getDrillChain(config);
+  const chain = resolveGeoDrillChain(config);
   const index = mapClickChainIndex(config, stack);
   if (index < 0 || index >= chain.length) {
     if (index < 0) return undefined;
@@ -93,11 +94,29 @@ export async function preflightMapDrillClick(
 ): Promise<MapDrillPreflightResult> {
   const nextStack = [...stack, frame];
   const context = await resolveGeoMapLevelContext({ config, drillStack: nextStack });
+
+  if (context.drillDepth === 0) {
+    return {
+      ok: false,
+      message: context.missingAsset ?? "无法下钻到该层级，请检查地理字段与数据是否匹配",
+    };
+  }
+
+  if (context.missingAsset?.includes("未识别城市")) {
+    return { ok: false, message: context.missingAsset };
+  }
+
+  if (context.missingAsset?.includes("区县离线边界") && nextStack.length > context.drillDepth) {
+    return { ok: true, context };
+  }
+
   if (context.missingAsset) {
     return { ok: false, message: context.missingAsset };
   }
+
   if (context.drillDepth !== nextStack.length) {
     return { ok: false, message: "无法下钻到该层级，请检查地理字段与数据是否匹配" };
   }
+
   return { ok: true, context };
 }

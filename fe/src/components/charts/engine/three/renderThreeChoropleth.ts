@@ -29,6 +29,11 @@ import {
 import { resolveEmbeddedGeoRoam } from "@/components/charts/engine/geo/geoConstants";
 import { DEFAULT_GEO3D_EXTRUDE_INTENSITY } from "@/lib/chartDeStyle";
 import { resolveGeo3dQuality, shouldRenderGeo3d } from "@/components/charts/engine/three/geo3dQuality";
+import {
+  advanceGeoMapDoubleTap,
+  isPointerTapMove,
+  type GeoMapTapState,
+} from "@/components/charts/engine/three/geoMapDoubleTap";
 
 const PLATE_DEPTH_RATIO = 0.0028;
 
@@ -332,11 +337,77 @@ export async function renderThreeChoroplethChart(
     const detachOrbitPan = configureThreeGeoOrbitControls(camera, controls, orbitLayout, roam);
     const detachGrabCursor = attachOrbitGrabCursor(renderer.domElement, controls, roam);
 
-    const onDblClick = () => {
-      if (!roam) return;
-      resetThreeGeoOrbitView(camera, controls, orbitLayout);
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    let hovered: THREE.Object3D | null = null;
+    let frameId = 0;
+    let lastTap: GeoMapTapState = null;
+    let pointerDown: { x: number; y: number } | null = null;
+
+    const raycastProvinceGroup = (event: PointerEvent | MouseEvent): THREE.Object3D | null => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+      const hit = raycaster.intersectObjects(meshes, true)[0]?.object;
+      return hit ? provinceGroupOf(hit) : null;
     };
-    renderer.domElement.addEventListener("dblclick", onDblClick);
+
+    const handleMapDoubleActivate = (event: PointerEvent | MouseEvent, group: THREE.Object3D) => {
+      if (!group.userData?.name || !onPointClick) return false;
+      onPointClick({
+        name: String(group.userData.name),
+        value: Number(group.userData.value ?? 0),
+        adcode: group.userData.adcode as number | undefined,
+      });
+      event.preventDefault();
+      event.stopPropagation();
+      return true;
+    };
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.button !== 0) return;
+      pointerDown = { x: event.clientX, y: event.clientY };
+    };
+
+    const onPointerUp = (event: PointerEvent) => {
+      if (event.button !== 0) return;
+      const down = pointerDown;
+      pointerDown = null;
+      if (!down || !isPointerTapMove(down.x, down.y, event.clientX, event.clientY)) {
+        lastTap = null;
+        return;
+      }
+
+      const group = raycastProvinceGroup(event);
+      const tapKey = group?.userData?.name ? String(group.userData.name) : "__empty__";
+      const { isDouble, next } = advanceGeoMapDoubleTap(lastTap, event.timeStamp, tapKey);
+      lastTap = next;
+      if (!isDouble) return;
+
+      if (tapKey !== "__empty__" && group) {
+        handleMapDoubleActivate(event, group);
+        return;
+      }
+
+      if (tapKey === "__empty__" && roam) {
+        resetThreeGeoOrbitView(camera, controls, orbitLayout);
+      }
+    };
+
+    const onClick = (event: MouseEvent) => {
+      if (event.detail !== 2) return;
+      const group = raycastProvinceGroup(event);
+      if (group?.userData?.name) {
+        handleMapDoubleActivate(event, group);
+        return;
+      }
+      if (roam) resetThreeGeoOrbitView(camera, controls, orbitLayout);
+    };
+
+    renderer.domElement.addEventListener("pointerdown", onPointerDown);
+    renderer.domElement.addEventListener("pointerup", onPointerUp);
+    renderer.domElement.addEventListener("click", onClick);
 
     const tooltip = showTooltip
       ? createTooltipLayer(container, theme as D3Theme, tooltipPresentation)
@@ -344,11 +415,6 @@ export async function renderThreeChoroplethChart(
     const detachVisualMap = showVisualMap
       ? mountThreeGeoVisualMap(container, { min: minVal, max: maxVal, surface, valueFormat, isDark })
       : () => undefined;
-
-    const raycaster = new THREE.Raycaster();
-    const pointer = new THREE.Vector2();
-    let hovered: THREE.Object3D | null = null;
-    let frameId = 0;
 
     const restoreCap = (group: THREE.Object3D) => {
       const cap = capMaterialOf(group);
@@ -377,12 +443,7 @@ export async function renderThreeChoroplethChart(
     };
 
     const onMove = (event: PointerEvent) => {
-      const rect = renderer.domElement.getBoundingClientRect();
-      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-      raycaster.setFromCamera(pointer, camera);
-      const hit = raycaster.intersectObjects(meshes, true)[0]?.object;
-      const group = hit ? provinceGroupOf(hit) : null;
+      const group = raycastProvinceGroup(event);
       if (!group?.userData?.name) {
         setHover(null);
         hideTooltip(tooltip);
@@ -397,17 +458,8 @@ export async function renderThreeChoroplethChart(
         String(group.userData.name),
         [{ name: metricField || "值", color: surface.rangeHighCss, value: Number(group.userData.value ?? 0) }],
         valueFormat,
-        width,
+        chartWidth,
       );
-    };
-
-    const onClick = () => {
-      if (!hovered?.userData?.name || !onPointClick) return;
-      onPointClick({
-        name: String(hovered.userData.name),
-        value: Number(hovered.userData.value ?? 0),
-        adcode: hovered.userData.adcode as number | undefined,
-      });
     };
 
     renderer.domElement.addEventListener("pointermove", onMove);
@@ -415,7 +467,6 @@ export async function renderThreeChoroplethChart(
       setHover(null);
       hideTooltip(tooltip);
     });
-    renderer.domElement.addEventListener("click", onClick);
 
     const animate = () => {
       frameId = requestAnimationFrame(animate);
@@ -424,14 +475,30 @@ export async function renderThreeChoroplethChart(
     };
     animate();
 
+    let chartWidth = width;
+    let chartHeight = height;
+
+    const resize = (nextWidth: number, nextHeight: number) => {
+      if (nextWidth <= 0 || nextHeight <= 0) return false;
+      chartWidth = nextWidth;
+      chartHeight = nextHeight;
+      camera.aspect = nextWidth / nextHeight;
+      camera.updateProjectionMatrix();
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(nextWidth, nextHeight);
+      return true;
+    };
+
     return {
       engine: "three",
       webglApi: webglProbe.api ?? "none",
+      resize,
       dispose: () => {
         cancelAnimationFrame(frameId);
-        renderer.domElement.removeEventListener("dblclick", onDblClick);
-        renderer.domElement.removeEventListener("pointermove", onMove);
+        renderer.domElement.removeEventListener("pointerdown", onPointerDown);
+        renderer.domElement.removeEventListener("pointerup", onPointerUp);
         renderer.domElement.removeEventListener("click", onClick);
+        renderer.domElement.removeEventListener("pointermove", onMove);
         controls.dispose();
         detachOrbitPan();
         detachGrabCursor();

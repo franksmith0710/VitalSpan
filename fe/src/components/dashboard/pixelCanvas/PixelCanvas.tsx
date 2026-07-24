@@ -907,6 +907,8 @@ export function PixelCanvas({
           id="editor-canvas-main"
           data-testid="pixel-canvas-stage"
           data-dashboard-thumbnail-capture=""
+          data-canvas-design-width={viewCanvas.width}
+          data-canvas-design-height={viewCanvas.height}
           className={cn(
             "editor-canvas-main pixel-canvas-stage absolute top-0 origin-top-left",
             hostOverflowLocked ? "overflow-hidden" : "overflow-visible",

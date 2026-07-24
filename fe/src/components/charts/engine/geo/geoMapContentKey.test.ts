@@ -1,0 +1,41 @@
+import { describe, expect, it } from "vitest";
+import { buildGeoMapContentKey } from "./geoMapContentKey";
+
+describe("buildGeoMapContentKey", () => {
+  it("同一下钻与数据生成稳定 key", () => {
+    const input = {
+      chartType: "map-3d",
+      mapId: "340000",
+      drillDepth: 1,
+      drillStack: [{ dimension: "province", value: "安徽省" }],
+      rowCount: 16,
+      regionField: "city",
+      rowsSample: [{ city: "合肥市" }, { city: "芜湖市" }],
+      depthVisual: "off",
+      isDark: false,
+    };
+    expect(buildGeoMapContentKey(input)).toBe(buildGeoMapContentKey(input));
+  });
+
+  it("下钻或 mapId 变化时 key 不同", () => {
+    const base = {
+      chartType: "map-3d",
+      mapId: "100000",
+      drillDepth: 0,
+      drillStack: [] as { dimension: string; value: string }[],
+      rowCount: 34,
+      regionField: "province",
+      rowsSample: [{ province: "安徽省" }],
+      depthVisual: "off",
+      isDark: false,
+    };
+    const national = buildGeoMapContentKey(base);
+    const drilled = buildGeoMapContentKey({
+      ...base,
+      mapId: "340000",
+      drillDepth: 1,
+      drillStack: [{ dimension: "province", value: "安徽省" }],
+    });
+    expect(national).not.toBe(drilled);
+  });
+});

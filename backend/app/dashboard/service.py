@@ -83,6 +83,7 @@ def _to_list_item(row: Dashboard) -> DashboardListItemOut:
         description=row.description,
         surface_kind=kind if kind == "data-screen" else "dashboard",
         widget_count=len(widgets) if isinstance(widgets, list) else 0,
+        layout_json=DashboardLayout.model_validate(layout),
         preview_summary=DashboardPreviewSummary.model_validate(summary),
         thumbnail_url=_thumbnail_url(row),
         created_by=row.created_by,

@@ -17,9 +17,11 @@ describe("DataScreenEditViewport blank selection", () => {
       </DataScreenEditViewport>,
     );
 
-    fireEvent.pointerDown(
-      screen.getByTestId("data-screen-edit-viewport").querySelector("[data-canvas-scale-viewport]")!,
-    );
+    const viewport = screen
+      .getByTestId("data-screen-edit-viewport")
+      .querySelector("[data-canvas-scale-viewport]") as HTMLElement;
+    fireEvent.pointerDown(viewport);
+    fireEvent.pointerUp(viewport);
     expect(onBlankPointerDown).toHaveBeenCalledTimes(1);
   });
 
@@ -54,6 +56,7 @@ describe("DataScreenEditViewport blank selection", () => {
     );
 
     fireEvent.pointerDown(screen.getByTestId("canvas-stage"));
+    fireEvent.pointerUp(screen.getByTestId("canvas-stage"));
     expect(onBlankPointerDown).toHaveBeenCalledTimes(1);
   });
 

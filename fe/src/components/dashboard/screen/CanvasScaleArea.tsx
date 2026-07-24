@@ -61,7 +61,7 @@ export function CanvasScaleArea({
         <div className="hidden h-4 w-px shrink-0 bg-white/15 sm:block" aria-hidden />
       ) : null}
       <p className="hidden min-w-0 truncate sm:block">
-        <span className={spacePanActive ? "text-cyan-200" : undefined}>空格拖动画布</span>
+        <span className={spacePanActive ? "text-cyan-200" : undefined}>空格/中键/空白拖动画布</span>
         <span className="mx-1.5 text-white/30">·</span>
         <span>Ctrl+滚轮缩放</span>
       </p>

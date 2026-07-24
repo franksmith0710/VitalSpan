@@ -24,7 +24,7 @@
 |----|------|
 | **彩色卫星** | [ESRI World Imagery](https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer)（与 sat-hunter 可选源一致） |
 | **阴影法线** | [ESRI World Hillshade](https://services.arcgisonline.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer)（可选，构建期拉取） |
-| **下载入口** | `pnpm run fetch:terrain-sat` → [`satelliteTileStitch.mjs`](../../fe/scripts/lib/satelliteTileStitch.mjs) |
+| **下载入口** | `pnpm run fetch:terrain-sat` → [`satelliteTileStitch.mjs`](../../fe/scripts/lib/satelliteTileStitch.mjs)（邻接瓦片 **4px 余弦羽化** 减轻网格缝） |
 | **运行时** | 仅读仓库内 `diffuse.webp`，**零外链**（GEO-IRON-01） |
 
 ### 两级下钻纹理范围
@@ -56,7 +56,7 @@ pnpm run build:geo-terrain
 
 | 层 | 约定 |
 |----|------|
-| **构建期** | Mercator 瓦片拼接 → 逐像素反投影采样 → **projBounds 空间 diffuse** + 轮廓 alpha |
+| **构建期** | Mercator 瓦片拼接（邻接边羽化）→ 逐像素反投影采样 → **projBounds 空间 diffuse** + 轮廓 alpha |
 | **运行时 UV** | `applyGeoCapBboxUv(projBounds)`（与 sc-datav `shape.tsx` 同构） |
 | **禁止** | 矩形 Mercator 图直接配 bbox UV；运行时 Mercator 经纬度 UV |
 

@@ -1,7 +1,23 @@
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DashboardLayoutV2 } from "@/components/dashboard/layoutUtils";
 import { DashboardListCardPreview } from "./DashboardListCardPreview";
+
+vi.mock("./DashboardLayoutPreview", () => ({
+  DashboardLayoutPreview: () => <div data-testid="dashboard-layout-preview-mock" />,
+}));
+
+vi.mock("./screen/DataScreenPresenter", () => ({
+  DataScreenPresenter: () => <div data-testid="data-screen-presenter-mock" />,
+}));
+
+vi.mock("@/hooks/useDashboardListCardLayout", () => ({
+  useDashboardListCardLayout: () => ({
+    data: undefined,
+    isLoading: false,
+    isFetching: false,
+  }),
+}));
 
 const sampleLayout: DashboardLayoutV2 = {
   version: 2,
@@ -17,6 +33,10 @@ const sampleLayout: DashboardLayoutV2 = {
       y: 80,
       width: 600,
       height: 360,
+      chartConfig: {
+        chartType: "line",
+        dataSourceId: "ds-1",
+      },
     },
   ],
   globalFilters: [],
@@ -37,10 +57,9 @@ describe("DashboardListCardPreview", () => {
     expect(screen.getByTestId("dashboard-list-card-preview")).toBeInTheDocument();
   });
 
-  it("renders static wireframe thumb without chart engine", () => {
-    render(<DashboardListCardPreview layoutJson={sampleLayout} />);
-    expect(screen.getByTestId("dashboard-list-card-preview")).toBeInTheDocument();
-    expect(screen.getByTestId("dashboard-preview-thumb")).toBeInTheDocument();
-    expect(screen.getByTestId("dashboard-preview-widget-w1")).toBeInTheDocument();
+  it("renders data screen presenter when eager with full layout", () => {
+    render(<DashboardListCardPreview layoutJson={sampleLayout} eager />);
+    expect(screen.getByTestId("dashboard-list-card-live-preview")).toBeInTheDocument();
+    expect(screen.getByTestId("data-screen-presenter-mock")).toBeInTheDocument();
   });
 });

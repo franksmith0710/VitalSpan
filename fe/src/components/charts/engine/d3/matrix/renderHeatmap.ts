@@ -1,5 +1,6 @@
 import * as d3 from "d3";
-import { applyRotatedCategoryLabels, formatAxisCategoryLabel, formatHorizontalBandAxisLabel, planCategoryAxisLayout, resolveBandAxisFontSize, resolveHorizontalCategoryAxisLayout, styleAxis } from "@/components/charts/engine/d3/core/axes";
+import { appendChartSvg } from "@/components/charts/engine/d3/core/sceneGraph";
+import { planCategoryAxisLayout, resolveHorizontalCategoryAxisLayout, applyRotatedCategoryLabels, formatAxisCategoryLabel, formatHorizontalBandAxisLabel, resolveBandAxisFontSize, styleAxis } from "@/components/charts/engine/d3/core/axes";
 import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { applyCellBevel, applyDepthHoverLift, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
@@ -57,7 +58,7 @@ export function renderD3HeatmapChart(container: HTMLElement, config: D3MatrixRen
   const x = d3.scaleBand<string>().domain(xCategories).range([0, innerW]).padding(0.06);
   const y = d3.scaleBand<string>().domain(yCategories).range([0, plotInnerH]).padding(0.06);
 
-  const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
+  const root = appendChartSvg(container, width, height);
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
   const tooltip = showTooltip ? createTooltipLayer(container, theme, tooltipPresentation) : null;
 

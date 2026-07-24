@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { validateManualGeoMapDrillStack } from "@/lib/geoMapRegionPicker";
 import {
   findMapDrillFilterValue,
   lookupProvinceAdcode,
@@ -106,6 +107,32 @@ describe("resolveGeoMapLevelContext", () => {
     expect(ctx.drillDepth).toBe(1);
     expect(ctx.missingAsset).toContain("东莞市");
     expect(ctx.missingAsset).toContain("区县离线边界");
+  });
+
+  it("drills to city map even when dimension slots are not configured", async () => {
+    const ctx = await resolveGeoMapLevelContext({
+      config: {
+        chartType: "map-3d",
+        dimensions: [],
+        metrics: [{ field: "total" }],
+      } as never,
+      drillStack: [{ field: "province", value: "广东省", label: "广东省" }],
+    });
+    expect(ctx.mapId).toBe("vs-geo-440000");
+    expect(ctx.drillDepth).toBe(1);
+    expect(ctx.knownRegionNames).toContain("广州市");
+  });
+
+  it("allows manual drill validation without dimension slots", async () => {
+    const result = await validateManualGeoMapDrillStack(
+      {
+        chartType: "map-3d",
+        dimensions: [],
+        metrics: [{ field: "total" }],
+      } as never,
+      [{ field: "province", value: "广东省", label: "广东省" }],
+    );
+    expect(result.ok).toBe(true);
   });
 });
 

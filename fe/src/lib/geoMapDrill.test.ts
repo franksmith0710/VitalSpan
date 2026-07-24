@@ -93,16 +93,17 @@ describe("preflightMapDrillClick", () => {
     }
   });
 
-  it("rejects drill into dongguan district map when asset is missing", async () => {
+  it("accepts drill into dongguan city view when district asset is missing", async () => {
     const result = await preflightMapDrillClick(
       mapConfig,
       [{ field: "province", value: "广东省", label: "广东省" }],
       { field: "city", value: "东莞市", label: "东莞市" },
     );
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.message).toContain("东莞市");
-      expect(result.message).toContain("区县离线边界");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.context.drillDepth).toBe(1);
+      expect(result.context.missingAsset).toContain("东莞市");
+      expect(result.context.missingAsset).toContain("区县离线边界");
     }
   });
 });

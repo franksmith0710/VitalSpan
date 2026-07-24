@@ -1,12 +1,10 @@
 import * as d3 from "d3";
-import { resolveHorizontalCategoryAxisLayout } from "@/components/charts/engine/d3/core/axes";
-import { drawCartesianHorizontalBandAxes } from "@/components/charts/engine/d3/core/sceneGraph";
+import { appendChartSvg, drawCartesianHorizontalBandAxes, resolveHorizontalCategoryCartesianLayout } from "@/components/charts/engine/d3/core/sceneGraph";
 import { paintHorizontalBar, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
 import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
 import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
 import { drawVerticalMarkLines } from "@/components/charts/engine/d3/core/markLines";
 import { resolveSeriesGradientFill } from "@/components/charts/engine/d3/core/gradient";
-import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { groupSeries, normalizeCartesianData, resolveDatumColor, resolveSeriesKeys, seriesDataKey } from "@/components/charts/engine/d3/core/series";
 import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
@@ -93,17 +91,10 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
   const seriesNames = seriesGroups.map((s) => s.name);
   const hasMultiSeries = seriesNames.length > 1 && Boolean(seriesField);
   const useGrouped = hasMultiSeries && (isGroup || !isStack);
-  const baseMargin = cartesianMargin(showLegend && hasMultiSeries);
-  const provisionalInnerH = Math.max(0, height - baseMargin.top - baseMargin.bottom);
-  const yLayout = resolveHorizontalCategoryAxisLayout(categories, provisionalInnerH);
-  const margin = {
-    ...baseMargin,
-    left: Math.max(baseMargin.left, yLayout.leftMargin),
-  };
-  const innerW = Math.max(0, width - margin.left - margin.right);
-  const innerH = Math.max(0, height - margin.top - margin.bottom);
-
-  const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
+  const { margin, innerW, innerH } = resolveHorizontalCategoryCartesianLayout(width, height, categories, {
+    showLegend: showLegend && hasMultiSeries,
+  });
+  const root = appendChartSvg(container, width, height);
   const defs = root.append("defs");
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
   const colorScale = d3.scaleOrdinal<string>().domain(seriesNames).range(colors);

@@ -1,7 +1,11 @@
 import { useCallback, useMemo } from "react";
 import { DashboardGrid, type GridInsertAt } from "../DashboardGrid";
 import { DashboardLayoutPreview } from "../DashboardLayoutPreview";
-import { ChartDrillProvider } from "@/components/charts/ChartDrillContext";
+import {
+  ChartMountProvider,
+  CHART_MOUNT_MAX_EDIT,
+} from "@/components/charts/ChartMountContext";
+import { drillStackRevision } from "@/components/charts/ChartDrillContext";
 import type { Linkage } from "../dashboardFilterUtils";
 import type { DashboardCanvasEditor } from "../dashboardCanvasMode";
 import { pixelWidgetToLayoutWidget } from "../dashboardCanvasMode";
@@ -33,6 +37,8 @@ import type { PresentationMode } from "../screen/presentationScale";
 import { DATA_SCREEN_EDIT_PRESENTATION_DEFAULT } from "../screen/presentationScale";
 import { DashboardWidgetsProvider } from "../DashboardWidgetsContext";
 import { widgetFilterExecuteRevision } from "../dashboardWidgetExecuteKey";
+import { isGeoMapChartType } from "@/lib/chartViewConfig";
+import { readChartDeStyle, readChartGeoStyle } from "@/lib/chartDeStyle";
 import type { PaletteInsertType } from "../createLayoutWidget";
 import type { PaletteDragPayload } from "@/lib/dashboardDnd";
 import type { TabInsertIntent } from "../pixelCanvas/tabInsertResolver";
@@ -176,6 +182,12 @@ export function DashboardEditCanvas({
   const widgetContentRevision = useCallback(
     (widget: PixelLayoutWidget) => {
       const base = widgetFilterExecuteRevision(widget.id, linkage, filterValues, chartRefreshKeys);
+      if (widget.type === "chart" && widget.chartConfig && isGeoMapChartType(widget.chartConfig.chartType)) {
+        const manualStack =
+          readChartGeoStyle(readChartDeStyle(widget.chartConfig)).manualDrillStack ?? [];
+        const drillRev = drillStackRevision(manualStack);
+        if (drillRev) return `${base}:geo-drill:${drillRev}`;
+      }
       if (widget.type === "tabs" && widget.tabsConfig) {
         const childCount = widget.tabsConfig.panes.reduce(
           (sum, pane) => sum + pane.childWidgetIds.length,
@@ -228,7 +240,7 @@ export function DashboardEditCanvas({
   );
 
   return (
-    <ChartDrillProvider>
+    <ChartMountProvider maxConcurrent={CHART_MOUNT_MAX_EDIT}>
     <DashboardWidgetsProvider widgets={widgets}>
       <PaletteDragProvider
         active={paletteDragActive}
@@ -280,6 +292,6 @@ export function DashboardEditCanvas({
       </DashboardStyleSurface>
       </PaletteDragProvider>
     </DashboardWidgetsProvider>
-    </ChartDrillProvider>
+    </ChartMountProvider>
   );
 }

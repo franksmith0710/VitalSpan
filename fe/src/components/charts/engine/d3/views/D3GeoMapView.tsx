@@ -16,6 +16,8 @@ import {
   resolveGeoMapFallbackBanner,
   type GeoMapRenderEngine,
 } from "@/components/charts/engine/geo/geoMapRenderResult";
+import { buildGeoMapContentKey } from "@/components/charts/engine/geo/geoMapContentKey";
+import { GeoMapOverlayHint } from "@/components/charts/engine/geo/GeoMapOverlayHint";
 import { activeGeoEngine } from "@/components/charts/engine/geoEnginePort";
 import type { ChartEngineViewProps } from "@/components/charts/engine/types";
 import { usePixelShapePlayer } from "@/components/dashboard/pixelCanvas/pixelShapePlayerContext";
@@ -100,7 +102,8 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     geoMatchStats && geoMatchStats.total > 0 && geoMatchStats.matched < geoMatchStats.total
       ? `有 ${geoMatchStats.total - geoMatchStats.matched} 条无法匹配地图区域`
       : null;
-  const geoAssetWarning = geoMapLevel.missingAsset ?? mapDrillError ?? null;
+  const geoAssetWarning =
+    geoMapLevel.missingAsset ?? (drillStack.length > 0 ? null : mapDrillError) ?? null;
   const showPlaceholderHint = capped.length === 0 && Boolean(mapPlaceholderHint);
 
   const playing = usePixelShapePlayer();
@@ -109,6 +112,10 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   const lastMeasureRef = useRef({ width: 0, height: 0 });
   const liveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const renderGenRef = useRef(0);
+  const threeApiRef = useRef<{
+    contentKey: string;
+    resize: (width: number, height: number) => boolean;
+  } | null>(null);
   const [renderError, setRenderError] = useState<string | null>(null);
   const [renderEngine, setRenderEngine] = useState<GeoMapRenderEngine | null>(null);
   const [fallbackReason, setFallbackReason] = useState<string | null>(null);
@@ -128,6 +135,32 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     [sizeRef],
   );
 
+  const regionField = spec.encoding.dimensions[0]?.field;
+  const contentKey = useMemo(
+    () =>
+      buildGeoMapContentKey({
+        chartType: viewModel.chartType,
+        mapId: geoMapLevel.mapId,
+        drillDepth: geoMapLevel.drillDepth,
+        drillStack,
+        rowCount: capped.length,
+        regionField,
+        rowsSample: capped as Record<string, unknown>[],
+        depthVisual: style.depthVisual,
+        isDark: style.isDark,
+      }),
+    [
+      viewModel.chartType,
+      geoMapLevel.mapId,
+      geoMapLevel.drillDepth,
+      drillStack,
+      capped,
+      regionField,
+      style.depthVisual,
+      style.isDark,
+    ],
+  );
+
   const applyRenderMeta = useCallback(
     (engine: GeoMapRenderEngine | null, reason?: string | null) => {
       setRenderEngine(engine);
@@ -136,24 +169,64 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     [],
   );
 
+  const readPaintSize = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return null;
+    return readChartPaintSize(el, {
+      fill,
+      visualScale,
+      layoutFootprint: props.layoutFootprint,
+      width,
+      height,
+      observedWidth: size.width,
+    });
+  }, [
+    fill,
+    visualScale,
+    props.layoutFootprint,
+    width,
+    height,
+    size.width,
+  ]);
+
+  const tryThreeResize = useCallback(
+    (mode: PaintMode): boolean => {
+      if (!isThreeMap || threeLoading) return false;
+      const api = threeApiRef.current;
+      if (!api || api.contentKey !== contentKey) return false;
+      const paint = readPaintSize();
+      if (!paint) return false;
+      const next = { width: paint.width, height: paint.height };
+      if (next.width <= 0 || next.height <= 0) return false;
+      if (!api.resize(next.width, next.height)) return false;
+      lastMeasureRef.current = next;
+      if (mode !== "live") setChartAnimationSuppressed(false);
+      return true;
+    },
+    [isThreeMap, threeLoading, contentKey, readPaintSize],
+  );
+
   const measureAndRender = useCallback(
     (mode: PaintMode, force = false) => {
       if (geoMapLoading) return;
       const el = containerRef.current;
       if (!el || planWithGeo.kind !== "d3" || planWithGeo.empty) return;
 
-      const paint = readChartPaintSize(el, {
-        fill,
-        visualScale,
-        layoutFootprint: props.layoutFootprint,
-        width,
-        height,
-        observedWidth: size.width,
-      });
+      const paint = readPaintSize();
       if (!paint) return;
       const { width: chartWidth, height: chartHeight } = paint;
       const next = { width: chartWidth, height: chartHeight };
       if (next.width <= 0 || next.height <= 0) return;
+
+      if (
+        isThreeMap &&
+        threeApiRef.current?.contentKey === contentKey &&
+        (mode === "live" || mode === "commit" || (!force && embeddedSizeChanged(next, lastMeasureRef.current)))
+      ) {
+        if (tryThreeResize(mode)) return;
+        if (threeLoading && mode !== "data") return;
+      }
+
       if (!force && !embeddedSizeChanged(next, lastMeasureRef.current)) return;
       lastMeasureRef.current = next;
       setDepthVisual(style.depthVisual ?? "off");
@@ -168,6 +241,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       }
 
       const gen = ++renderGenRef.current;
+      threeApiRef.current = null;
 
       const runD3 = () => {
         runD3Renderer(el, () => renderD3Chart(el, planWithGeo, payload));
@@ -188,6 +262,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       }
 
       setThreeLoading(true);
+      const renderContentKey = contentKey;
       void import("@/components/charts/engine/three/renderThreeChoropleth")
         .then(async ({ renderThreeChoroplethChart }) => {
           if (gen !== renderGenRef.current) return;
@@ -206,6 +281,12 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
                     return;
                   }
                   disposeFn = result.dispose;
+                  if (result.engine === "three" && result.resize) {
+                    threeApiRef.current = {
+                      contentKey: renderContentKey,
+                      resize: result.resize,
+                    };
+                  }
                   applyRenderMeta(result.engine, result.fallbackReason ?? null);
                   setRenderError(null);
                 })
@@ -243,28 +324,24 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       isThreeMap,
       geoMapLoading,
       planWithGeo,
-      fill,
-      width,
-      height,
-      size.width,
-      size.height,
+      contentKey,
+      readPaintSize,
+      tryThreeResize,
       props,
       style.depthVisual,
-      visualScale,
-      props.layoutFootprint?.width,
-      props.layoutFootprint?.height,
       applyRenderMeta,
     ],
   );
 
   const onLiveResize = useCallback(() => {
     setChartAnimationSuppressed(true);
+    if (isThreeMap && tryThreeResize("live")) return;
     if (liveTimerRef.current !== null) return;
     liveTimerRef.current = setTimeout(() => {
       liveTimerRef.current = null;
       measureAndRender("live");
     }, LIVE_RESIZE_THROTTLE_MS);
-  }, [measureAndRender]);
+  }, [isThreeMap, tryThreeResize, measureAndRender]);
 
   const onCommitResize = useCallback(() => {
     if (liveTimerRef.current !== null) {
@@ -272,37 +349,43 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       liveTimerRef.current = null;
     }
     setChartAnimationSuppressed(false);
+    if (isThreeMap && tryThreeResize("commit")) return;
     measureAndRender("commit", true);
-  }, [measureAndRender]);
+  }, [isThreeMap, tryThreeResize, measureAndRender]);
 
   useEmbeddedChartLiveResize(fill && !plan.empty, containerRef, onLiveResize, onCommitResize);
 
   useEffect(() => {
+    threeApiRef.current = null;
     lastMeasureRef.current = { width: 0, height: 0 };
     measureAndRender("data", true);
-  }, [geoMapLevel.mapId, measureAndRender]);
+  }, [contentKey, measureAndRender]);
 
   useEffect(() => {
-    measureAndRender("data", true);
-  }, [measureAndRender]);
+    if (!geoMapLoading) {
+      lastMeasureRef.current = { width: 0, height: 0 };
+      measureAndRender("data", true);
+    }
+  }, [geoMapLoading, measureAndRender]);
 
   useEffect(() => {
     if (!fill || plan.empty) return;
-    if (!playing) measureAndRender("commit", false);
-  }, [fill, plan.empty, playing, measureAndRender]);
+    if (!playing) onCommitResize();
+  }, [fill, plan.empty, playing, onCommitResize]);
 
   useEffect(() => {
     if (!props.layoutFootprint) return;
-    measureAndRender("commit", true);
-  }, [props.layoutFootprint?.width, props.layoutFootprint?.height, measureAndRender]);
+    onCommitResize();
+  }, [props.layoutFootprint?.width, props.layoutFootprint?.height, onCommitResize]);
 
   useEffect(() => {
     if (!fill || plan.empty || playing) return;
-    measureAndRender("commit", true);
-  }, [visualScale, fill, plan.empty, playing, measureAndRender]);
+    onCommitResize();
+  }, [visualScale, fill, plan.empty, playing, onCommitResize]);
 
   useEffect(() => {
     renderGenRef.current += 1;
+    threeApiRef.current = null;
     setThreeLoading(false);
     applyRenderMeta(null, null);
     disposeD3Renderer(containerRef.current);
@@ -312,12 +395,41 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     return () => {
       if (liveTimerRef.current !== null) clearTimeout(liveTimerRef.current);
       renderGenRef.current += 1;
+      threeApiRef.current = null;
       disposeD3Renderer(containerRef.current);
       setChartAnimationSuppressed(false);
     };
   }, []);
 
   const showFallbackBanner = isThreeMap && renderEngine === "d3-fallback";
+
+  const overlayHint = useMemo(() => {
+    if (showPlaceholderHint) return null;
+    if (renderError) return { message: renderError, tone: "error" as const };
+    if (geoAssetWarning) return { message: geoAssetWarning, tone: "warning" as const };
+    if (geoMatchWarning) return { message: geoMatchWarning, tone: "warning" as const };
+    if (showFallbackBanner) {
+      const message =
+        resolveGeoMapFallbackBanner(fallbackReason ?? undefined) +
+        (import.meta.env.DEV && fallbackReason ? ` (${fallbackReason})` : "");
+      return { message, tone: "warning" as const };
+    }
+    if (truncated) {
+      return {
+        message: `数据量较大，已采样显示前 ${ADVANCED_CHART_ROW_CAP} 条`,
+        tone: "info" as const,
+      };
+    }
+    return null;
+  }, [
+    showPlaceholderHint,
+    renderError,
+    geoAssetWarning,
+    geoMatchWarning,
+    showFallbackBanner,
+    fallbackReason,
+    truncated,
+  ]);
 
   if (plan.error) {
     return (
@@ -349,60 +461,33 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   }
 
   return (
-    <div className={cn("w-full", fill ? "absolute inset-0 flex min-h-0 flex-col" : "min-h-[120px]")} aria-label={ariaLabel}>
-      {truncated ? (
-        <p role="status" className="mb-2 shrink-0 text-theme-sm text-warning-600 dark:text-warning-400">
-          数据量较大，已采样显示前 {ADVANCED_CHART_ROW_CAP} 条
-        </p>
-      ) : null}
-      {renderError ? (
-        <p role="alert" className="mb-2 shrink-0 text-theme-sm text-error-600 dark:text-error-400">
-          {renderError}
-        </p>
-      ) : null}
-      {showFallbackBanner ? (
-        <p
-          role="status"
-          className={cn(
-            "shrink-0 rounded-md bg-warning-500/10 px-2 py-1 text-theme-xs text-warning-700 dark:text-warning-400",
-            fill ? "pointer-events-none absolute inset-x-2 top-2 z-[2]" : "mb-2",
-          )}
-          data-fallback-reason={fallbackReason ?? undefined}
-        >
-          {resolveGeoMapFallbackBanner(fallbackReason ?? undefined)}
-          {import.meta.env.DEV && fallbackReason ? (
-            <span className="ml-1 opacity-70">({fallbackReason})</span>
-          ) : null}
-        </p>
-      ) : null}
-      {geoMatchWarning || geoAssetWarning ? (
-        <p
-          role="status"
-          className={cn(
-            "shrink-0 text-theme-xs text-warning-600 dark:text-warning-400",
-            fill ? "pointer-events-none absolute inset-x-2 top-2 z-[2] rounded-md bg-warning-500/10 px-2 py-1" : "mb-2",
-          )}
-        >
-          {[geoAssetWarning, geoMatchWarning].filter(Boolean).join("；")}
-        </p>
-      ) : null}
-      <div className={cn("relative", fill ? "min-h-0 flex-1" : "w-full")}>
+    <div className={cn("w-full", fill ? "absolute inset-0" : "min-h-[120px]")} aria-label={ariaLabel}>
+      <div
+        className={cn("relative", fill ? "h-full min-h-0" : "w-full")}
+        style={fill ? undefined : { height, width: width ?? "100%" }}
+      >
         {geoMapLoading || threeLoading ? (
           <p
             role="status"
-            className="pointer-events-none absolute inset-x-2 top-2 z-[2] text-theme-xs text-gray-500 dark:text-gray-400"
+            className="pointer-events-none absolute right-2 top-2 z-[1] text-theme-xs text-gray-500/80 dark:text-gray-400/80"
           >
             {threeLoading ? "正在加载 3D 地图…" : `正在加载${geoMapLevel.levelLabel}地图…`}
           </p>
         ) : null}
         <div
           ref={setContainerRef}
-          className={cn("relative h-full w-full")}
+          className="relative h-full w-full"
           data-testid={isThreeMap ? "three-map-chart" : "d3-map-chart"}
           data-render-engine={isThreeMap ? (renderEngine ?? "pending") : undefined}
           {...(geoRoamEnabled ? { [VIZ_WHEEL_ZOOM_SURFACE_ATTR]: "true" } : {})}
-          style={fill ? undefined : { height, width: width ?? "100%" }}
         />
+        {overlayHint ? (
+          <GeoMapOverlayHint
+            data-testid="geo-map-overlay-hint"
+            message={overlayHint.message}
+            tone={overlayHint.tone}
+          />
+        ) : null}
         {showPlaceholderHint ? (
           <p className="dw-hint pointer-events-none absolute inset-x-0 bottom-[10%] text-center" role="status">
             {mapPlaceholderHint}

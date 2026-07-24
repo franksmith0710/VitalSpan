@@ -1,0 +1,60 @@
+import { describe, expect, it } from "vitest";
+import { ChartMountScheduler } from "./chartMountScheduler";
+
+describe("ChartMountScheduler", () => {
+  it("limits concurrent mounting slots", () => {
+    const scheduler = new ChartMountScheduler(2);
+    scheduler.register("a", 1, true);
+    scheduler.register("b", 1, true);
+    scheduler.register("c", 1, true);
+
+    expect(scheduler.getGate("a")).toEqual({ canQuery: true, canRender: true });
+    expect(scheduler.getGate("b")).toEqual({ canQuery: true, canRender: true });
+    expect(scheduler.getGate("c")).toEqual({ canQuery: false, canRender: false });
+
+    scheduler.markReady("a");
+    expect(scheduler.getGate("c")).toEqual({ canQuery: true, canRender: true });
+  });
+
+  it("prioritizes selected widget", () => {
+    const scheduler = new ChartMountScheduler(1);
+    scheduler.register("slow", 1, true);
+    scheduler.register("fast", 0, true);
+
+    expect(scheduler.getGate("fast")).toEqual({ canQuery: true, canRender: true });
+    expect(scheduler.getGate("slow")).toEqual({ canQuery: false, canRender: false });
+  });
+
+  it("pauses out-of-view widgets", () => {
+    const scheduler = new ChartMountScheduler(2);
+    scheduler.register("offscreen", 1, false);
+    expect(scheduler.getGate("offscreen")).toEqual({ canQuery: false, canRender: false });
+  });
+
+  it("releases slot after markReady for empty-result widget", () => {
+    const scheduler = new ChartMountScheduler(2);
+    scheduler.register("empty", 1, true);
+    scheduler.register("next", 1, true);
+    scheduler.register("queued", 1, true);
+    expect(scheduler.getGate("queued")).toEqual({ canQuery: false, canRender: false });
+    scheduler.markReady("empty");
+    expect(scheduler.getGate("queued")).toEqual({ canQuery: true, canRender: true });
+  });
+
+  it("waitForInViewSettled resolves when all in-view widgets are ready", async () => {
+    const scheduler = new ChartMountScheduler(2);
+    scheduler.register("a", 1, true);
+    scheduler.register("b", 1, true);
+    const pending = scheduler.waitForInViewSettled(1000);
+    scheduler.markReady("a");
+    scheduler.markReady("b");
+    await expect(pending).resolves.toBeUndefined();
+    expect(scheduler.isInViewSettled()).toBe(true);
+  });
+
+  it("waitForInViewSettled rejects after timeout", async () => {
+    const scheduler = new ChartMountScheduler(1);
+    scheduler.register("stuck", 1, true);
+    await expect(scheduler.waitForInViewSettled(80)).rejects.toThrow(/timeout/);
+  });
+});

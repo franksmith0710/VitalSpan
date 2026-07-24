@@ -19,8 +19,8 @@ export function mapChartFieldHint(columns: string[]): MapChartFieldHint | null {
   if (hasProvince && hasCity) {
     return {
       message: hasDistrict
-        ? "已具备省/市/区县字段：拖入对应槽位，预览态点击地图下钻。"
-        : "已具备省/市字段：预览态点击省可下钻到市级地图。",
+        ? "已具备省/市/区县字段：拖入对应槽位，预览态双击地图下钻。"
+        : "已具备省/市字段：预览态双击省可下钻到市级地图。",
       sampleSql: null,
     };
   }

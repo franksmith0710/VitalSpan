@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { buildDefaultLayoutForSurface } from "@/lib/surfacePreset";
 import { insertPixelPaletteWidget } from "./pixelCanvas/createPixelWidget";
-import { persistDashboardLayout, hydrateDashboardStyle } from "./stylePipeline";
+import {
+  persistDashboardLayout,
+  hydrateDashboardStyle,
+  editorDirtySnapshot,
+  editorResetBaselineSnapshot,
+  layoutAfterEditorReset,
+  layoutForEditorAfterPersist,
+} from "./stylePipeline";
 
 describe("data-screen persist bounds", () => {
   it("keeps fixed canvas height when widgets extend below 1080", () => {
@@ -49,5 +56,39 @@ describe("data-screen persist bounds", () => {
     for (const w of saved.widgets) {
       expect(w.y + w.height).toBeLessThanOrEqual(saved.canvas.height);
     }
+  });
+
+  it("editorDirtySnapshot is stable after persist roundtrip", () => {
+    let layout = buildDefaultLayoutForSurface("data-screen");
+    layout = insertPixelPaletteWidget("gauge", layout);
+    const style = hydrateDashboardStyle(layout.styleConfig);
+    const before = editorDirtySnapshot(layout, style, true);
+    const after = editorDirtySnapshot(
+      persistDashboardLayout(layout, style),
+      style,
+      true,
+    );
+    expect(after.fingerprint).toBe(before.fingerprint);
+  });
+
+  it("editorResetBaselineSnapshot matches post-reset dirty state after save", () => {
+    let layout = buildDefaultLayoutForSurface("data-screen");
+    layout = insertPixelPaletteWidget("gauge", layout);
+    layout = insertPixelPaletteWidget("line", layout);
+    const style = hydrateDashboardStyle(layout.styleConfig);
+    const normalized = persistDashboardLayout(layout, style);
+    const savedStyle = hydrateDashboardStyle(normalized.styleConfig);
+    const layoutForEditor = layoutForEditorAfterPersist(normalized, savedStyle);
+    const baseline = editorResetBaselineSnapshot(layoutForEditor, savedStyle, true);
+    const afterReset = layoutAfterEditorReset(
+      { ...layoutForEditor, styleConfig: savedStyle },
+      true,
+    );
+    const dirtyAfter = editorDirtySnapshot(
+      { ...afterReset, styleConfig: savedStyle },
+      savedStyle,
+      true,
+    );
+    expect(dirtyAfter.fingerprint).toBe(baseline.fingerprint);
   });
 });

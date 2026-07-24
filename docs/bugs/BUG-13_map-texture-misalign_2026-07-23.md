@@ -7,7 +7,7 @@
 | 状态 | ✅ 对齐已验收；R6 提清已落地（4096px / zoom 7） |
 | 优先级 | P0 |
 | 发现日期 | 2026-07-23 |
-| 影响范围 | 全部 `map-3d` 全国/试点省卫星纹理（必现） |
+| 影响范围 | 全部 `map-3d` 全国 + 34 省级卫星纹理 |
 | 数据来源 | 用户反馈 + 源码 L1 取证 |
 
 ## 问题总览
@@ -22,6 +22,18 @@
 | 5 | 矩形 bbox 纹理 + `terrainProjBounds` UV，非 sat-hunter 轮廓语义 | ✅ 已修复 | R4 轮廓 mask |
 | 6 | Mercator 纹理 + `applyGeoCapGeoUv` 与 mesh `projBounds` 坐标系不一致 | ✅ 已修复 | R5 projBounds 空间烘焙 + `applyGeoCapBboxUv` |
 | 7 | 全国纹理 zoom 6 + 1024px 输出，目视不够清晰 | ✅ 已修复 | R6 自适应 zoom 7 + 4096px + webp q92 |
+| 8 | 仅 4 试点省有 L1 纹理包，其余省 fallback 全国 | ✅ 已修复 | R7 34 省 4096px 全覆盖 + 父省 L2 回退 |
+
+---
+
+## R7：34 省 L1 纹理全覆盖（2026-07-23）
+
+**范围**：两级下钻纹理——L0 全国 + L1 省级；L2 市/区县无独立包，回退父省级纹理。
+
+**改动**：
+- `ALL_PROVINCE_ADCODES`（34 省）替换试点列表
+- 省级 `4096px` / webp q92 / `fetch --provinces-only` / `--adcode=` 分片
+- `resolveProvinceAdcodeFromMapId`：市 adcode → 父省 `XX0000`
 
 ---
 

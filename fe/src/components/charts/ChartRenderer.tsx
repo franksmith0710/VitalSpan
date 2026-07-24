@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { buildChartRenderModel } from "@/lib/buildChartRenderModel";
 import { resolveChartConfigPhase } from "@/lib/chartConfigState";
 import { isChartExecuteReady } from "@/lib/chartExecuteProbe";
@@ -116,6 +116,11 @@ type ChartRendererProps = {
   drillEnabled?: boolean;
   /** 看板编辑态内嵌（关闭地图滚轮缩放等） */
   dashboardEditMode?: boolean;
+  queryEnabled?: boolean;
+  renderEnabled?: boolean;
+  /** 挂载门控原因：排队 vs 屏外暂停 */
+  mountGateStatus?: "queue" | "offscreen";
+  onMountReady?: () => void;
   onChartConfigChange?: (config: ChartViewConfig) => void;
 };
 
@@ -173,7 +178,10 @@ function chartRendererPropsAreEqual(
     prev.suspendLiveResize === next.suspendLiveResize &&
     prev.widgetId === next.widgetId &&
     prev.drillEnabled === next.drillEnabled &&
-    prev.dashboardEditMode === next.dashboardEditMode
+    prev.dashboardEditMode === next.dashboardEditMode &&
+    prev.queryEnabled === next.queryEnabled &&
+    prev.renderEnabled === next.renderEnabled &&
+    prev.mountGateStatus === next.mountGateStatus
   );
 }
 
@@ -199,6 +207,10 @@ export const ChartRenderer = memo(function ChartRenderer({
   widgetId,
   drillEnabled = false,
   dashboardEditMode = false,
+  queryEnabled = true,
+  renderEnabled = true,
+  mountGateStatus,
+  onMountReady,
   onChartConfigChange,
 }: ChartRendererProps) {
   const drill = useChartDrill(drillEnabled ? widgetId : undefined);
@@ -208,14 +220,51 @@ export const ChartRenderer = memo(function ChartRenderer({
     [effectiveConfig],
   );
 
+  const isGeoMapChart = isGeoMapChartType(effectiveConfig.chartType);
+
+  const persistedRevisionRef = useRef(drillStackRevision(persistedDrillStack));
+
   useEffect(() => {
     if (!drillEnabled || !widgetId || !drill.active) return;
+
+    const revision = drillStackRevision(persistedDrillStack);
+    const configChanged = revision !== persistedRevisionRef.current;
+    persistedRevisionRef.current = revision;
+
+    if (!isGeoMapChart) {
+      if (drill.stack.length > 0) return;
+      if (!persistedDrillStack.length) return;
+      drill.setStack(persistedDrillStack);
+      return;
+    }
+
+    if (configChanged) {
+      if (persistedDrillStack.length) drill.setStack(persistedDrillStack);
+      else drill.reset();
+      return;
+    }
+
     if (drill.stack.length > 0) return;
     if (!persistedDrillStack.length) return;
     drill.setStack(persistedDrillStack);
-  }, [drillEnabled, widgetId, drill.active, drill.setStack, drill.stack.length, persistedDrillStack]);
+  }, [
+    drillEnabled,
+    drill.active,
+    drill.reset,
+    drill.setStack,
+    drill.stack.length,
+    isGeoMapChart,
+    persistedDrillStack,
+    widgetId,
+  ]);
 
-  const effectiveDrillStack = drill.stack.length > 0 ? drill.stack : persistedDrillStack;
+  const effectiveDrillStack = useMemo(() => {
+    if (isGeoMapChart) {
+      if (persistedDrillStack.length > 0) return persistedDrillStack;
+      return drill.stack;
+    }
+    return drill.stack.length > 0 ? drill.stack : persistedDrillStack;
+  }, [isGeoMapChart, drill.stack, persistedDrillStack]);
 
   const mergedFilterParameters = useMemo(
     () => ({
@@ -271,7 +320,9 @@ export const ChartRenderer = memo(function ChartRenderer({
     filterParameters: mergedFilterParameters,
     executeKey: resolvedExecuteKey,
     limit: queryLimit,
+    enabled: queryEnabled,
   });
+  const mountReadySentRef = useRef(false);
   const [page, setPage] = useState(1);
   const [localConfig, setLocalConfig] = useState(() => effectiveConfig);
   const drillInteraction =
@@ -282,6 +333,18 @@ export const ChartRenderer = memo(function ChartRenderer({
   const empty = !loading && !error && (rows?.length ?? 0) === 0 && !isGeoChart;
 
   useEffect(() => {
+    mountReadySentRef.current = false;
+  }, [config, drillRevision, renderEnabled, queryEnabled]);
+
+  useEffect(() => {
+    if (!renderEnabled || mountReadySentRef.current || !onMountReady) return;
+    if (!queryEnabled) return;
+    if (loading) return;
+    mountReadySentRef.current = true;
+    onMountReady();
+  }, [renderEnabled, queryEnabled, loading, error, empty, isGeoChart, onMountReady]);
+
+  useLayoutEffect(() => {
     setLocalConfig(effectiveConfig);
   }, [effectiveConfig]);
 
@@ -327,12 +390,12 @@ export const ChartRenderer = memo(function ChartRenderer({
 
   const persistManualDrillStack = useCallback(
     (stack: typeof effectiveDrillStack) => {
-      if (!onChartConfigChange || !isGeoMapChartType(localConfig.chartType)) return;
-      onChartConfigChange(
-        patchChartDeStyleNested(localConfig, "geo", {
-          manualDrillStack: stack.length ? stack : undefined,
-        }),
-      );
+      if (!isGeoMapChartType(localConfig.chartType)) return;
+      const next = patchChartDeStyleNested(localConfig, "geo", {
+        manualDrillStack: stack.length ? stack : undefined,
+      });
+      setLocalConfig(next);
+      onChartConfigChange?.(next);
     },
     [localConfig, onChartConfigChange],
   );
@@ -362,7 +425,7 @@ export const ChartRenderer = memo(function ChartRenderer({
           }
           setMapDrillError(null);
           const nextStack = [...effectiveDrillStack, frame];
-          drill.push(frame);
+          drill.setStack(nextStack);
           persistManualDrillStack(nextStack);
         });
         return;
@@ -600,6 +663,16 @@ export const ChartRenderer = memo(function ChartRenderer({
   );
 
   const renderBody = () => {
+    if (!renderEnabled) {
+      const gateLabel =
+        mountGateStatus === "offscreen" ? "图表屏外已暂停" : "图表排队加载中";
+      return embedded ? (
+        <Skeleton className="h-full w-full rounded-lg" aria-busy="true" aria-label={gateLabel} />
+      ) : (
+        <Skeleton className="h-48 w-full rounded-lg" aria-busy="true" aria-label={gateLabel} />
+      );
+    }
+
     const wrapEmbedded = (node: ReactNode) =>
       embedded ? embeddedChartSurface(node) : node;
 
@@ -697,11 +770,16 @@ export const ChartRenderer = memo(function ChartRenderer({
           onChange={setLocalConfig}
         />
       ) : null}
-      <div className={embedded ? "absolute inset-0 overflow-hidden" : undefined}>
+      <div
+        className={
+          embedded ? "absolute inset-0 flex min-h-0 flex-col overflow-hidden" : undefined
+        }
+      >
         {embedded && effectiveDrillStack.length > 0 ? (
           <ChartDrillChrome
-            className="absolute inset-x-2 top-2 z-[2]"
+            className="pointer-events-auto absolute inset-x-2 top-2 z-[3]"
             stack={effectiveDrillStack}
+            notice={mapDrillError}
             onBack={() => {
               const next = effectiveDrillStack.slice(0, -1);
               if (next.length) drill.navigateTo(next.length);
@@ -719,19 +797,40 @@ export const ChartRenderer = memo(function ChartRenderer({
             }}
           />
         ) : null}
-        {renderBody()}
+        <div className={embedded ? "relative min-h-0 flex-1 overflow-hidden" : undefined}>
+          {renderBody()}
+        </div>
       </div>
     </div>
   ) : null;
 
   if (embedded) {
+    const gateLabel =
+      mountGateStatus === "offscreen" ? "图表屏外已暂停" : "图表排队加载中";
+    if (!renderEnabled || !queryEnabled) {
+      return (
+        <div ref={bodyRef} className="relative h-full min-h-0 w-full min-w-0 overflow-hidden">
+          <Skeleton
+            className="absolute inset-0 rounded-lg"
+            aria-busy="true"
+            aria-label={gateLabel}
+          />
+        </div>
+      );
+    }
+
     const showBlockingLoading = loading && columns.length === 0 && rows.length === 0;
     return (
       <div ref={bodyRef} className="relative h-full min-h-0 w-full min-w-0 overflow-hidden">
         {showBlockingLoading ? (
-          showLoadingHint ? (
-            <Skeleton className="absolute inset-0 rounded-lg" aria-busy="true" aria-label="图表加载中" />
-          ) : null
+          <Skeleton
+            className={cn(
+              "absolute inset-0 rounded-lg",
+              !showLoadingHint && "opacity-40",
+            )}
+            aria-busy="true"
+            aria-label="图表加载中"
+          />
         ) : error ? (
           <div
             role="alert"

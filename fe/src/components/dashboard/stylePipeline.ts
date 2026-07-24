@@ -8,13 +8,16 @@ import {
   buildDashboardLayoutForSave,
   dashboardPersistFingerprint,
   pixelWidgetToLayoutWidget,
+  prepareDashboardLayout,
 } from "./dashboardCanvasMode";
 import { resolveComponentGapRuntime, type CanvasGapMode } from "./componentGapRuntime";
 import type {
   DashboardLayout,
   DashboardLayoutV2,
   DashboardStyleConfig,
+  LayoutWidget,
 } from "./layoutUtils";
+import { reconcileTabPaneChildIdsInPixelLayout } from "./layoutUtils";
 import {
   bootstrapDashboardStyleConfig,
   syncChartWidgetsForColorScheme,
@@ -76,6 +79,71 @@ export function persistDashboardFingerprint(
     hydrateDashboardStyle(liveStyle),
     pixelEnabled,
   );
+}
+
+/** 列表卡片预览：与 load 路径一致的 hydrate + 图表 deStyle 同步 */
+export function prepareLayoutForListPreview(layout: DashboardLayout): DashboardLayout {
+  const style = hydrateDashboardStyle(layout.styleConfig);
+  let prepared: DashboardLayout = { ...layout, styleConfig: style };
+  if (prepared.version === 2) {
+    prepared = syncPixelLayoutChartStyles(prepared, style.colorScheme ?? "light");
+    prepared = preparePixelLayoutForDisplay(prepared, style);
+  }
+  return prepared;
+}
+
+/** 与 useDashboardCanvasState.resetLayout 内核对齐后的 layout */
+export function layoutAfterEditorReset(
+  source: DashboardLayout,
+  pixelEnabled: boolean,
+): DashboardLayout {
+  const prepared = prepareDashboardLayout(source, pixelEnabled);
+  if (prepared.layout.version === 2) {
+    return reconcileTabPaneChildIdsInPixelLayout(prepared.layout);
+  }
+  return prepared.layout;
+}
+
+/** 持久化 layout hydrate 回编辑态（与 load / save 后 resetLayout 入参一致） */
+export function layoutForEditorAfterPersist(
+  normalizedLayout: DashboardLayout,
+  savedStyle: DashboardStyleConfig,
+): DashboardLayout {
+  let layout: DashboardLayout = { ...normalizedLayout, styleConfig: savedStyle };
+  if (layout.version === 2) {
+    layout = syncPixelLayoutChartStyles(layout, savedStyle.colorScheme ?? "light");
+    layout = preparePixelLayoutForDisplay(layout, savedStyle);
+  }
+  return layout;
+}
+
+/** resetLayout 后内存态应与该快照一致（写 savedFingerprint 用） */
+export function editorResetBaselineSnapshot(
+  layoutForEditor: DashboardLayout,
+  liveStyle: DashboardStyleConfig,
+  pixelEnabled: boolean,
+): { fingerprint: string; widgets: LayoutWidget[] } {
+  const style = hydrateDashboardStyle(liveStyle);
+  const withStyle = { ...layoutForEditor, styleConfig: style };
+  const baseline = layoutAfterEditorReset(withStyle, pixelEnabled);
+  return editorDirtySnapshot({ ...baseline, styleConfig: style }, style, pixelEnabled);
+}
+
+/** 与保存 PUT 及 dirty 判定一致的编辑态快照（避免内存 layout 与持久化形态漂移） */
+export function editorDirtySnapshot(
+  layout: DashboardLayout,
+  liveStyle: DashboardStyleConfig,
+  pixelEnabled: boolean,
+): { fingerprint: string; widgets: LayoutWidget[] } {
+  const persisted = persistDashboardLayout(layout, liveStyle);
+  const widgets =
+    persisted.version === 1
+      ? persisted.widgets
+      : persisted.widgets.map(pixelWidgetToLayoutWidget);
+  return {
+    fingerprint: persistDashboardFingerprint(persisted, liveStyle, pixelEnabled),
+    widgets,
+  };
 }
 
 /** 加载时一次性同步图表 deStyle，避免 resetLayout + setWidgets 双写几何 */

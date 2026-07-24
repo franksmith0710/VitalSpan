@@ -88,4 +88,13 @@ describe("validateManualGeoMapDrillStack", () => {
       expect(result.message).toContain("未识别");
     }
   });
+
+  it("accepts city drill when district assets are missing", async () => {
+    const stack = buildGeoMapDrillStackFromSelection(mapConfig, {
+      province: "广东省",
+      city: "东莞市",
+    });
+    const result = await validateManualGeoMapDrillStack(mapConfig, stack);
+    expect(result.ok).toBe(true);
+  });
 });

@@ -1,7 +1,6 @@
 import * as d3 from "d3";
-import { drawCartesianBandAxes } from "@/components/charts/engine/d3/core/sceneGraph";
+import { drawCartesianBandAxes, appendChartSvg, resolveCategoryCartesianLayout } from "@/components/charts/engine/d3/core/sceneGraph";
 import { paintVerticalBar } from "@/components/charts/engine/d3/core/depthEngine";
-import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
@@ -52,16 +51,17 @@ export function renderD3WaterfallChart(container: HTMLElement, config: D3Waterfa
   const categories = segments.map((d) => d.type);
   const yMin = Math.min(0, d3.min(segments, (d) => Math.min(d.start, d.end)) ?? 0);
   const yMax = d3.max(segments, (d) => Math.max(d.start, d.end)) ?? 0;
-  const margin = cartesianMargin(false);
-  const innerW = Math.max(0, width - margin.left - margin.right);
-  const innerH = Math.max(0, height - margin.top - margin.bottom);
+  const { margin, innerW, innerH } = resolveCategoryCartesianLayout(width, height, categories, {
+    showLegend,
+    axisStyle,
+  });
 
   const x = d3.scaleBand<string>().domain(categories).range([0, innerW]).padding(resolveBarBandPadding(barWidthRatio));
   const y = d3.scaleLinear().domain([yMin, yMax]).nice().range([innerH, 0]);
   const posColor = colors[0] ?? "#465fff";
   const negColor = colors[1] ?? "#f04438";
 
-  const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
+  const root = appendChartSvg(container, width, height);
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
   const plot = g.append("g");
   const tooltip = showTooltip ? createTooltip(container, theme, config.tooltipPresentation) : null;

@@ -8,6 +8,8 @@ type ChartDrillChromeProps = {
   onBack: () => void;
   onReset: () => void;
   onNavigate: (depth: number) => void;
+  /** 短提示并入面包屑行，避免额外占位 */
+  notice?: string | null;
   className?: string;
 };
 
@@ -16,6 +18,7 @@ export function ChartDrillChrome({
   onBack,
   onReset,
   onNavigate,
+  notice,
   className,
 }: ChartDrillChromeProps) {
   if (!stack.length) return null;
@@ -75,6 +78,11 @@ export function ChartDrillChrome({
           </span>
         ))}
       </nav>
+      {notice ? (
+        <p className="chart-drill-chrome__notice" role="status">
+          {notice}
+        </p>
+      ) : null}
     </div>
   );
 }

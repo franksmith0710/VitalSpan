@@ -1,4 +1,4 @@
-import { toBlob } from "html-to-image";
+import { toBlob, toPng } from "html-to-image";
 
 export const DASHBOARD_THUMBNAIL_CAPTURE_ATTR = "data-dashboard-thumbnail-capture";
 
@@ -24,7 +24,20 @@ export function findDashboardThumbnailCaptureRoot(): HTMLElement | null {
   return document.querySelector<HTMLElement>(`[${DASHBOARD_THUMBNAIL_CAPTURE_ATTR}]`);
 }
 
-async function settlePaint(ms = 600): Promise<void> {
+function resolveCaptureSize(root: HTMLElement): { width: number; height: number } {
+  const width = Math.round(
+    Number(root.dataset.canvasDesignWidth) || root.offsetWidth || root.clientWidth,
+  );
+  const height = Math.round(
+    Number(root.dataset.canvasDesignHeight) || root.offsetHeight || root.clientHeight,
+  );
+  if (width < 8 || height < 8) {
+    throw new Error(`截图区域尺寸无效（${width}×${height}）`);
+  }
+  return { width, height };
+}
+
+async function settlePaint(ms = 1_200): Promise<void> {
   await new Promise<void>((resolve) => {
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
   });
@@ -37,24 +50,46 @@ function shouldIncludeNode(node: Node): boolean {
   return true;
 }
 
+function dataUrlToBlob(dataUrl: string): Blob {
+  const [header, body] = dataUrl.split(",");
+  const mime = header.match(/:(.*?);/)?.[1] ?? "image/png";
+  const binary = atob(body);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new Blob([bytes], { type: mime });
+}
+
 /** 截取编辑画布当前真实渲染（保存瞬间），返回 png/webp Blob */
 export async function captureDashboardThumbnailBlob(root: HTMLElement): Promise<Blob> {
+  const { width, height } = resolveCaptureSize(root);
   document.documentElement.classList.add("dashboard-thumbnail-capture");
   try {
     await settlePaint();
     const base = {
+      width,
+      height,
+      canvasWidth: width,
+      canvasHeight: height,
       pixelRatio: 1,
       cacheBust: true,
+      skipFonts: true,
+      backgroundColor: "#0d1117",
       filter: shouldIncludeNode,
       onClone: (clonedDoc: Document) => {
-        const clonedRoot = clonedDoc.querySelector<HTMLElement>(
-          `[${DASHBOARD_THUMBNAIL_CAPTURE_ATTR}]`,
-        );
+        const clonedRoot =
+          clonedDoc.querySelector<HTMLElement>(`[${DASHBOARD_THUMBNAIL_CAPTURE_ATTR}]`) ??
+          clonedDoc.querySelector<HTMLElement>('[data-testid="pixel-canvas-stage"]');
         if (clonedRoot) syncCanvasPixels(root, clonedRoot);
       },
     };
 
     let blob = await toBlob(root, { ...base, type: "image/png" });
+    if (!blob) {
+      const dataUrl = await toPng(root, base);
+      if (dataUrl) blob = dataUrlToBlob(dataUrl);
+    }
     if (!blob) {
       blob = await toBlob(root, { ...base, type: "image/webp", quality: 0.86 });
     }

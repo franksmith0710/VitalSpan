@@ -116,6 +116,17 @@ describe("chartDrill", () => {
     ).toBe(true);
   });
 
+  it("supports drill on map-3d even without explicit dimension slots", () => {
+    expect(
+      supportsChartDrillInteraction(
+        chartConfig({
+          chartType: "map-3d",
+          dimensions: [],
+        }),
+      ),
+    ).toBe(true);
+  });
+
   it("uses first dimension at root level", () => {
     expect(getActiveDisplayField(chartConfig(), [])).toBe("province");
     expect(

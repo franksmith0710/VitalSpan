@@ -1,8 +1,7 @@
 import * as d3 from "d3";
-import { resolveBarLabelFontSize, resolveHorizontalCategoryAxisLayout } from "@/components/charts/engine/d3/core/axes";
-import { drawBidirectionalBandAxes } from "@/components/charts/engine/d3/core/sceneGraph";
+import { resolveBarLabelFontSize } from "@/components/charts/engine/d3/core/axes";
+import { appendChartSvg, drawBidirectionalBandAxes, resolveHorizontalCategoryCartesianLayout } from "@/components/charts/engine/d3/core/sceneGraph";
 import { paintHorizontalBar } from "@/components/charts/engine/d3/core/depthEngine";
-import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
@@ -44,12 +43,9 @@ export function renderD3BidirectionalBarChart(
   const maxLeft = d3.max(data, (d) => Math.abs(d.left)) ?? 0;
   const maxRight = d3.max(data, (d) => Math.abs(d.right)) ?? 0;
   const maxVal = Math.max(maxLeft, maxRight, 1);
-  const baseMargin = cartesianMargin(false);
-  const provisionalInnerH = Math.max(0, height - baseMargin.top - baseMargin.bottom);
-  const yLayout = resolveHorizontalCategoryAxisLayout(categories, provisionalInnerH);
-  const margin = { ...baseMargin, left: Math.max(72, yLayout.leftMargin), right: 72 };
-  const innerW = Math.max(0, width - margin.left - margin.right);
-  const innerH = Math.max(0, height - margin.top - margin.bottom);
+  const { margin, innerW, innerH } = resolveHorizontalCategoryCartesianLayout(width, height, categories, {
+    marginOverrides: { left: 72, right: 72 },
+  });
   const centerX = innerW / 2;
 
   const y = d3.scaleBand<string>().domain(categories).range([0, innerH]).padding(resolveBarBandPadding(barWidthRatio));
@@ -58,7 +54,7 @@ export function renderD3BidirectionalBarChart(
   const leftColor = colors[0] ?? "#465fff";
   const rightColor = colors[1] ?? "#12b76a";
 
-  const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
+  const root = appendChartSvg(container, width, height);
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
   const plot = g.append("g");
   const tooltip = showTooltip ? createTooltip(container, theme, config.tooltipPresentation) : null;

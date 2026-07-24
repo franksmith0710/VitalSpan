@@ -1,6 +1,5 @@
 import * as d3 from "d3";
-import { drawCartesianBandAxes } from "@/components/charts/engine/d3/core/sceneGraph";
-import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
+import { appendChartSvg, drawCartesianBandAxes, resolveCategoryCartesianLayout } from "@/components/charts/engine/d3/core/sceneGraph";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import { resolveEffectiveDepth, shadeColor } from "@/components/charts/engine/d3/core/depthEngine";
@@ -16,9 +15,9 @@ export function renderD3StockChart(container: HTMLElement, config: D3StockRender
   const categories = data.map((d) => d.type);
   const yMin = d3.min(data, (d) => d.low) ?? 0;
   const yMax = d3.max(data, (d) => d.high) ?? 0;
-  const margin = cartesianMargin(false);
-  const innerW = Math.max(0, width - margin.left - margin.right);
-  const innerH = Math.max(0, height - margin.top - margin.bottom);
+  const { margin, innerW, innerH } = resolveCategoryCartesianLayout(width, height, categories, {
+    axisStyle,
+  });
   const upColor = colors[0] ?? "#12b76a";
   const downColor = colors[1] ?? "#f04438";
 
@@ -27,7 +26,7 @@ export function renderD3StockChart(container: HTMLElement, config: D3StockRender
   const bodyW = Math.max(4, x.bandwidth() * 0.6);
   const depthOn = resolveEffectiveDepth() !== "off";
 
-  const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
+  const root = appendChartSvg(container, width, height);
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
   const plot = g.append("g");
   const tooltip = showTooltip ? createTooltip(container, theme, config.tooltipPresentation) : null;

@@ -307,7 +307,7 @@ export function ChartMapRegionPicker() {
         </Label>
         <span className="text-[10px] text-gray-400 dark:text-gray-500">手动下钻</span>
       </div>
-      <Popover open={open} onOpenChange={setOpen} modal>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button
             type="button"
@@ -337,7 +337,7 @@ export function ChartMapRegionPicker() {
         </PopoverContent>
       </Popover>
       <p className={INSPECTOR_HINT}>
-        从中国省级起选（无「世界」层）；与点击地图下钻等效，画布会同步切换层级
+        从中国省级起选（无「世界」层）；与双击地图下钻等效，画布会同步切换层级
       </p>
       {error ? <p className="text-[10px] text-error-600 dark:text-error-400">{error}</p> : null}
       <span className="sr-only" data-testid="chart-map-region-stack-revision">

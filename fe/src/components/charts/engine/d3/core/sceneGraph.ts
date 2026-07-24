@@ -8,6 +8,7 @@ import {
   resolveHorizontalCategoryAxisLayout,
   resolveNumericTickCount,
   styleAxis,
+  type CategoryAxisLayout,
 } from "@/components/charts/engine/d3/core/axes";
 import { VCDS, getDepthVisual } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { depthExtrudePx } from "@/components/charts/engine/d3/core/depthEngine";
@@ -40,15 +41,100 @@ type BuildCartesianSceneOptions = {
   axisStyle?: ChartAxisStyle;
 };
 
+export type ChartSvgLayout = {
+  margin: ReturnType<typeof cartesianMargin>;
+  innerW: number;
+  innerH: number;
+};
+
+export type CategoryCartesianLayout = ChartSvgLayout & {
+  xLayout: CategoryAxisLayout;
+};
+
+export type HorizontalCategoryCartesianLayout = ChartSvgLayout & {
+  yLayout: ReturnType<typeof resolveHorizontalCategoryAxisLayout>;
+};
+
+/** 与 buildCartesianScene 一致：标准 SVG 根节点 + 允许轴标签溢出 */
+export function appendChartSvg(
+  container: HTMLElement,
+  width: number,
+  height: number,
+): d3.Selection<SVGSVGElement, unknown, null, undefined> {
+  return d3
+    .select(container)
+    .append("svg")
+    .attr("class", "vs-chart-svg")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("role", "img")
+    .style("overflow", "visible");
+}
+
+/** 纵轴类目图：抽稀横轴刻度 + 为旋转标签预留 bottom 边距 */
+export function resolveCategoryCartesianLayout(
+  width: number,
+  height: number,
+  categories: string[],
+  options?: {
+    showLegend?: boolean;
+    axisStyle?: ChartAxisStyle;
+    marginOverrides?: Partial<ReturnType<typeof cartesianMargin>>;
+  },
+): CategoryCartesianLayout {
+  let margin = cartesianMargin(options?.showLegend ?? false, options?.marginOverrides);
+  const provisionalInnerW = Math.max(0, width - margin.left - margin.right);
+  const xLayout = planCategoryAxisLayout(
+    categories,
+    provisionalInnerW,
+    options?.axisStyle?.x?.labelRotate,
+  );
+  margin = {
+    ...margin,
+    bottom: margin.bottom + xLayout.extraBottom,
+  };
+  const innerW = Math.max(0, width - margin.left - margin.right);
+  const innerH = Math.max(0, height - margin.top - margin.bottom);
+  return { margin, innerW, innerH, xLayout };
+}
+
+/** 横轴类目图：抽稀纵轴刻度 + 按最长标签扩展 left 边距 */
+export function resolveHorizontalCategoryCartesianLayout(
+  width: number,
+  height: number,
+  categories: string[],
+  options?: {
+    showLegend?: boolean;
+    marginOverrides?: Partial<ReturnType<typeof cartesianMargin>>;
+  },
+): HorizontalCategoryCartesianLayout {
+  const baseMargin = cartesianMargin(options?.showLegend ?? false, options?.marginOverrides);
+  const provisionalInnerH = Math.max(0, height - baseMargin.top - baseMargin.bottom);
+  const yLayout = resolveHorizontalCategoryAxisLayout(categories, provisionalInnerH);
+  const margin = {
+    ...baseMargin,
+    left: Math.max(baseMargin.left, yLayout.leftMargin, options?.marginOverrides?.left ?? 0),
+  };
+  const innerW = Math.max(0, width - margin.left - margin.right);
+  const innerH = Math.max(0, height - margin.top - margin.bottom);
+  return { margin, innerW, innerH, yLayout };
+}
+
 export function buildCartesianScene(opts: BuildCartesianSceneOptions): CartesianScene {
-  let margin = cartesianMargin(opts.showLegend);
-  if (opts.categories && opts.categories.length > 0) {
-    const innerW = Math.max(0, opts.width - margin.left - margin.right);
-    const xLayout = planCategoryAxisLayout(opts.categories, innerW, opts.axisStyle?.x?.labelRotate);
-    margin = cartesianMargin(opts.showLegend, { bottom: margin.bottom + xLayout.extraBottom });
-  }
-  const innerW = Math.max(0, opts.width - margin.left - margin.right);
-  const innerH = Math.max(0, opts.height - margin.top - margin.bottom);
+  const { margin, innerW, innerH } =
+    opts.categories && opts.categories.length > 0
+      ? resolveCategoryCartesianLayout(opts.width, opts.height, opts.categories, {
+          showLegend: opts.showLegend,
+          axisStyle: opts.axisStyle,
+        })
+      : (() => {
+          const baseMargin = cartesianMargin(opts.showLegend);
+          return {
+            margin: baseMargin,
+            innerW: Math.max(0, opts.width - baseMargin.left - baseMargin.right),
+            innerH: Math.max(0, opts.height - baseMargin.top - baseMargin.bottom),
+          };
+        })();
   const clipId = opts.clipId ?? `vs-clip-${Math.random().toString(36).slice(2, 9)}`;
 
   let root = d3.select(opts.container).select<SVGSVGElement>("svg.vs-chart-svg");

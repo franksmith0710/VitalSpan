@@ -102,8 +102,8 @@ export function DashboardListCard({
           </div>
         ) : null}
         <DashboardListCardPreview
+          dashboardId={dashboard.id}
           layoutJson={layoutForPreview}
-          thumbnailUrl={dashboard.thumbnailUrl}
           className="h-full"
         />
         <div className="absolute inset-0 flex items-center justify-center gap-2 bg-gray-900/30 opacity-0 backdrop-blur-[3px] transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">

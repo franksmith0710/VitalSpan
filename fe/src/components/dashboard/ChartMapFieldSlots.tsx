@@ -43,7 +43,7 @@ function ChartMapDrillSlots({
   const hintIcon = (
     <CircleHelp
       className="size-3 text-gray-400 dark:text-gray-500"
-      aria-label="预览态点击地图下钻；依次拖入市级、区县字段"
+      aria-label="预览态双击地图下钻；依次拖入市级、区县字段"
     />
   );
 

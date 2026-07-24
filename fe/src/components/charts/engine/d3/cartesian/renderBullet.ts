@@ -1,8 +1,6 @@
 import * as d3 from "d3";
-import { resolveHorizontalCategoryAxisLayout } from "@/components/charts/engine/d3/core/axes";
-import { drawCartesianHorizontalBandAxes } from "@/components/charts/engine/d3/core/sceneGraph";
+import { appendChartSvg, drawCartesianHorizontalBandAxes, resolveHorizontalCategoryCartesianLayout } from "@/components/charts/engine/d3/core/sceneGraph";
 import { paintHorizontalBar } from "@/components/charts/engine/d3/core/depthEngine";
-import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3BulletRenderConfig } from "@/components/charts/engine/d3/types";
 import { resolveBarBandPadding } from "@/lib/applyChartDeStyleBlocks";
@@ -33,12 +31,7 @@ export function renderD3BulletChart(container: HTMLElement, config: D3BulletRend
   const barRx = barRadius ?? BAR_RX;
   const categories = data.map((d) => d.type);
   const maxRange = d3.max(data, (d) => d.rangeMax) ?? 1;
-  const baseMargin = cartesianMargin(false);
-  const provisionalInnerH = Math.max(0, height - baseMargin.top - baseMargin.bottom);
-  const yLayout = resolveHorizontalCategoryAxisLayout(categories, provisionalInnerH);
-  const margin = { ...baseMargin, left: Math.max(baseMargin.left, yLayout.leftMargin) };
-  const innerW = Math.max(0, width - margin.left - margin.right);
-  const innerH = Math.max(0, height - margin.top - margin.bottom);
+  const { margin, innerW, innerH } = resolveHorizontalCategoryCartesianLayout(width, height, categories);
   const measureColor = colors[0] ?? "#465fff";
   const zoneColors = [colors[2] ?? "#e4e7ec", colors[3] ?? "#d0d5dd", colors[4] ?? "#98a2b3"];
 
@@ -46,7 +39,7 @@ export function renderD3BulletChart(container: HTMLElement, config: D3BulletRend
   const x = d3.scaleLinear().domain([0, maxRange]).nice().range([0, innerW]);
   const barH = Math.max(8, y.bandwidth() * 0.55);
 
-  const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
+  const root = appendChartSvg(container, width, height);
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
   const plot = g.append("g");
   const tooltip = showTooltip ? createTooltip(container, theme, config.tooltipPresentation) : null;

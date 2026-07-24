@@ -21,6 +21,7 @@ type ChartExecuteOptions = {
   filterParameters?: Record<string, string>;
   executeKey?: string;
   limit?: number;
+  enabled?: boolean;
 };
 
 /** @deprecated 请直接使用 mapApiError；保留供测试与外部引用 */
@@ -33,7 +34,7 @@ export function mapChartQueryError(code: string | undefined, message: string): s
 }
 
 export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOptions = {}) {
-  const { filterParameters, executeKey, limit } = options;
+  const { filterParameters, executeKey, limit, enabled = true } = options;
   const [columns, setColumns] = useState<string[]>([]);
   const [rows, setRows] = useState<(string | number | boolean | null)[][]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,6 +97,12 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
   }, []);
 
   useEffect(() => {
+    if (!enabled) {
+      return () => {
+        requestGenRef.current += 1;
+      };
+    }
+
     const cached = peekChartExecuteCachedResult(configRef.current, {
       filterParameters: filterRef.current,
       limit: limitRef.current,
@@ -111,7 +118,11 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
       hasDisplayedDataRef.current = false;
     }
     void run();
-  }, [requestKey, executeKey, run]);
+
+    return () => {
+      requestGenRef.current += 1;
+    };
+  }, [requestKey, executeKey, run, enabled]);
 
   return { columns, rows, loading, error, slowHint, rerun: run };
 }

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from "r
 import { GripVertical, Trash2 } from "lucide-react";
 import { GeoMapPlaceholderChart } from "@/components/charts/adapters/GeoMapPlaceholderChart";
 import { ChartRenderer } from "@/components/charts/ChartRenderer";
+import { useChartMountGate } from "@/components/charts/ChartMountContext";
+import { useInViewport } from "@/hooks/useInViewport";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { isGeoMapChartType } from "@/lib/chartViewConfig";
 import {
@@ -145,6 +147,61 @@ function WidgetPendingPreview({
         在右侧配置数据源与查询
       </p>
     </div>
+  );
+}
+
+type DashboardChartMountGateProps = {
+  widgetId: string;
+  selected: boolean;
+  mode: "edit" | "view";
+  shell: DashboardWidgetShell;
+  children: (gate: {
+    queryEnabled: boolean;
+    renderEnabled: boolean;
+    mountGateStatus?: "queue" | "offscreen";
+    onMountReady: () => void;
+    viewportRef: (node: HTMLDivElement | null) => void;
+  }) => ReactNode;
+};
+
+/** 图表查数/渲染挂载调度 + 大屏平移时屏外暂停 */
+function DashboardChartMountGate({
+  widgetId,
+  selected,
+  mode,
+  shell,
+  children,
+}: DashboardChartMountGateProps) {
+  const viewportRoot =
+    shell === "grid" ? ".dashboard-grid-edit" : "[data-canvas-scale-viewport]";
+  const { ref: viewportRef, inView } = useInViewport<HTMLDivElement>({
+    rootSelector: viewportRoot,
+    enabled: mode === "edit",
+  });
+  const { canQuery, canRender, onMountReady } = useChartMountGate(widgetId, {
+    priority: selected ? 0 : 1,
+    inView: mode === "edit" ? inView : true,
+  });
+
+  const mountGateStatus: "queue" | "offscreen" | undefined =
+    mode !== "edit"
+      ? undefined
+      : !inView
+        ? "offscreen"
+        : !canRender || !canQuery
+          ? "queue"
+          : undefined;
+
+  return (
+    <>
+      {children({
+        queryEnabled: canQuery,
+        renderEnabled: canRender,
+        mountGateStatus,
+        onMountReady,
+        viewportRef,
+      })}
+    </>
   );
 }
 
@@ -297,41 +354,52 @@ export function DashboardWidget({
     ? resolveChartQueryLimit(widget.chartConfig, dashboardStyle ?? {})
     : 100;
   const chartRemark = widget.chartConfig ? readChartRemark(widget.chartConfig) : { show: false, text: "" };
+  const readyChartConfig = widget.chartConfig;
 
   const chartBody =
     mode === "edit" && !configReady ? (
       <WidgetPendingPreview widget={widget} dashboardStyle={dashboardStyle} />
-    ) : widget.chartConfig ? (
-      <ChartRenderer
-        embedded
-        gridSpan={gridSize}
-        pixelSize={pixelSize}
-        contentChromePx={inShapeShell ? shapeContentChromePx : 0}
-        config={widget.chartConfig}
-        title={widget.title}
-        widgetId={widget.id}
-        drillEnabled={
-          mode === "view" ||
-          (mode === "edit" && Boolean(widget.chartConfig && isGeoMapChartType(widget.chartConfig.chartType)))
-        }
-        filterParameters={filterParameters}
-        executeKey={widgetExecuteKey}
-        queryLimit={queryLimit}
-        paletteId={dashboardStyle?.paletteId}
-        paletteColors={dashboardStyle?.paletteColors}
-        dashboardColorDefaults={chartPaletteDefaults}
-        numberFormat={dashboardStyle?.numberFormat}
-        colorScheme={dashboardStyle?.colorScheme ?? "light"}
-        widgetShellColor={shellColor}
-        showLoadingHint={chrome.showChartLoadingHint}
-        suspendLiveResize={suspendLiveResize}
-        dashboardEditMode={mode === "edit"}
-        onChartConfigChange={
-          onChartConfigChange && widget.chartConfig
-            ? (config) => onChartConfigChange(widget.id, config)
-            : undefined
-        }
-      />
+    ) : readyChartConfig ? (
+      <DashboardChartMountGate widgetId={widget.id} selected={selected} mode={mode} shell={shell}>
+        {({ queryEnabled, renderEnabled, mountGateStatus, onMountReady, viewportRef }) => (
+          <div ref={viewportRef} className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <ChartRenderer
+              embedded
+              gridSpan={gridSize}
+              pixelSize={pixelSize}
+              contentChromePx={inShapeShell ? shapeContentChromePx : 0}
+              config={readyChartConfig}
+              title={widget.title}
+              widgetId={widget.id}
+              drillEnabled={
+                mode === "view" ||
+                (mode === "edit" && isGeoMapChartType(readyChartConfig.chartType))
+              }
+              filterParameters={filterParameters}
+              executeKey={widgetExecuteKey}
+              queryLimit={queryLimit}
+              paletteId={dashboardStyle?.paletteId}
+              paletteColors={dashboardStyle?.paletteColors}
+              dashboardColorDefaults={chartPaletteDefaults}
+              numberFormat={dashboardStyle?.numberFormat}
+              colorScheme={dashboardStyle?.colorScheme ?? "light"}
+              widgetShellColor={shellColor}
+              showLoadingHint={chrome.showChartLoadingHint}
+              suspendLiveResize={suspendLiveResize}
+              dashboardEditMode={mode === "edit"}
+              queryEnabled={queryEnabled}
+              renderEnabled={renderEnabled}
+              mountGateStatus={mountGateStatus}
+              onMountReady={onMountReady}
+              onChartConfigChange={
+                onChartConfigChange
+                  ? (config) => onChartConfigChange(widget.id, config)
+                  : undefined
+              }
+            />
+          </div>
+        )}
+      </DashboardChartMountGate>
     ) : null;
 
   if (inShapeShell) {

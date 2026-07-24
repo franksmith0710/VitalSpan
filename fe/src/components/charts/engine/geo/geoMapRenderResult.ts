@@ -5,6 +5,8 @@ export type GeoMapRenderResult = {
   engine: GeoMapRenderEngine;
   fallbackReason?: string;
   webglApi?: "webgl2" | "webgl" | "none";
+  /** 仅更新画布尺寸，避免拖拽缩放时重建 WebGL 场景 */
+  resize?: (width: number, height: number) => boolean;
 };
 
 export const GEO_MAP_WEBGL_FALLBACK_BANNER =

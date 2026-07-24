@@ -117,13 +117,34 @@ export async function validateManualGeoMapDrillStack(
   config: ChartViewConfig,
   stack: ChartDrillFrame[],
 ): Promise<ManualGeoMapDrillResult> {
+  if (!stack.length) return { ok: true };
+
   const context = await resolveGeoMapLevelContext({ config, drillStack: stack });
+
+  if (context.drillDepth === 0) {
+    return {
+      ok: false,
+      message: context.missingAsset ?? "无法下钻到该层级，请检查地理字段与离线边界资产",
+    };
+  }
+
+  if (context.missingAsset?.includes("未识别城市")) {
+    return { ok: false, message: context.missingAsset };
+  }
+
+  // 市级可选、区县资产缺失：仍允许手动下钻到市级视图
+  if (context.missingAsset?.includes("区县离线边界") && stack.length > context.drillDepth) {
+    return { ok: true };
+  }
+
   if (context.missingAsset) {
     return { ok: false, message: context.missingAsset };
   }
+
   if (context.drillDepth !== stack.length) {
     return { ok: false, message: "无法下钻到该层级，请检查地理字段与离线边界资产" };
   }
+
   return { ok: true };
 }
 
