@@ -15,81 +15,13 @@ export const SCREEN_MATERIAL_CATEGORIES: { id: ScreenMaterialCategory; label: st
   { id: "icon", label: "图标" },
 ];
 
-const BORDER_VARIANTS = Array.from({ length: 9 }, (_, index) => {
-  const id = `border-${index + 1}`;
-  return {
-    id,
-    label: `边框${index + 1}`,
-    category: "border" as const,
-    payload: { insert: "screen-border" as const, preset: id },
-  };
-});
-
-const SHAPE_ITEMS: ScreenMaterialCatalogItem[] = [
-  {
-    id: "shape-rect",
-    label: "矩形",
-    category: "shape",
-    payload: { insert: "screen-shape", preset: "rect" },
-  },
-  {
-    id: "shape-triangle",
-    label: "三角形",
-    category: "shape",
-    payload: { insert: "screen-shape", preset: "triangle" },
-  },
-  {
-    id: "shape-circle",
-    label: "圆形",
-    category: "shape",
-    payload: { insert: "screen-shape", preset: "circle" },
-  },
-];
-
-const ICON_NAMES = [
-  "home",
-  "search",
-  "plus",
-  "minus",
-  "star",
-  "heart",
-  "bell",
-  "user",
-  "settings",
-  "clock",
-  "calendar",
-  "mail",
-  "phone",
-  "map-pin",
-  "camera",
-  "image",
-  "video",
-  "music",
-  "download",
-  "upload",
-  "refresh-cw",
-  "check",
-  "x",
-  "info",
-  "alert-circle",
-  "trash-2",
-  "pencil",
-  "filter",
-  "eye",
-  "lock",
-  "unlock",
-  "link",
-  "share-2",
-  "send",
-  "message-circle",
-  "headphones",
-  "compass",
-  "pie-chart",
-  "power",
-  "sliders-horizontal",
+export const SCREEN_SHAPE_OPTIONS = [
+  { id: "rect", label: "矩形" },
+  { id: "triangle", label: "三角形" },
+  { id: "circle", label: "圆形" },
 ] as const;
 
-const ICON_CATALOG: { name: (typeof ICON_NAMES)[number]; label: string }[] = [
+export const SCREEN_ICON_CATALOG = [
   { name: "home", label: "主页" },
   { name: "search", label: "搜索" },
   { name: "plus", label: "加号" },
@@ -130,13 +62,30 @@ const ICON_CATALOG: { name: (typeof ICON_NAMES)[number]; label: string }[] = [
   { name: "pie-chart", label: "饼图" },
   { name: "power", label: "电源" },
   { name: "sliders-horizontal", label: "调节" },
-];
+] as const;
 
-const ICON_ITEMS: ScreenMaterialCatalogItem[] = ICON_CATALOG.map(({ name, label }) => ({
+const BORDER_VARIANTS: ScreenMaterialCatalogItem[] = Array.from({ length: 9 }, (_, index) => {
+  const id = `border-${index + 1}`;
+  return {
+    id,
+    label: `边框${index + 1}`,
+    category: "border",
+    payload: { insert: "screen-border", preset: id },
+  };
+});
+
+const SHAPE_ITEMS: ScreenMaterialCatalogItem[] = SCREEN_SHAPE_OPTIONS.map((shape) => ({
+  id: `shape-${shape.id}`,
+  label: shape.label,
+  category: "shape",
+  payload: { insert: "screen-shape", preset: shape.id },
+}));
+
+const ICON_ITEMS: ScreenMaterialCatalogItem[] = SCREEN_ICON_CATALOG.map(({ name, label }) => ({
   id: `icon-${name}`,
   label,
-  category: "icon" as const,
-  payload: { insert: "screen-icon" as const, preset: name },
+  category: "icon",
+  payload: { insert: "screen-icon", preset: name },
 }));
 
 /** 大屏「素材库」catalog（对标 DataEase 边框/图形/图标） */
@@ -156,4 +105,12 @@ export function getScreenMaterialCatalogItem(
   id: string,
 ): ScreenMaterialCatalogItem | undefined {
   return SCREEN_MATERIAL_CATALOG.find((item) => item.id === id);
+}
+
+export function getScreenBorderCatalogItems(): ScreenMaterialCatalogItem[] {
+  return getScreenMaterialByCategory("border");
+}
+
+export function getScreenIconCatalog(): readonly { name: string; label: string }[] {
+  return SCREEN_ICON_CATALOG;
 }

@@ -2,11 +2,17 @@ import { describe, expect, it } from "vitest";
 import {
   createScreenBorderWidget,
   createScreenClockWidget,
+  createScreenIconWidget,
+  createScreenShapeWidget,
   isScreenBorderWidget,
   isScreenClockWidget,
+  isScreenIconWidget,
+  isScreenShapeWidget,
   resolveScreenWidgetLayerLabel,
   SCREEN_BORDER_MARKER,
   SCREEN_CLOCK_MARKER,
+  SCREEN_ICON_MARKER,
+  SCREEN_SHAPE_MARKER,
 } from "./screenVisualAssets";
 
 describe("screenVisualAssets", () => {
@@ -19,8 +25,29 @@ describe("screenVisualAssets", () => {
     expect(isScreenBorderWidget(widget)).toBe(false);
   });
 
+  it("creates border widget with variant preset", () => {
+    const widget = createScreenBorderWidget([], undefined, "border-5");
+    expect(widget.textConfig?.content).toBe(SCREEN_BORDER_MARKER);
+    expect(widget.textConfig?.screenStyle?.border?.variant).toBe("border-5");
+    expect(isScreenBorderWidget(widget)).toBe(true);
+  });
+
+  it("creates shape and icon widgets with screenStyle", () => {
+    const shape = createScreenShapeWidget([], undefined, "circle");
+    expect(shape.textConfig?.content).toBe(SCREEN_SHAPE_MARKER);
+    expect(shape.textConfig?.screenStyle?.shape?.shape).toBe("circle");
+    expect(isScreenShapeWidget(shape)).toBe(true);
+
+    const icon = createScreenIconWidget([], undefined, "bell");
+    expect(icon.textConfig?.content).toBe(SCREEN_ICON_MARKER);
+    expect(icon.textConfig?.screenStyle?.icon?.icon).toBe("bell");
+    expect(isScreenIconWidget(icon)).toBe(true);
+  });
+
   it("resolves layer labels for screen assets", () => {
     const clock = createScreenClockWidget([]);
     expect(resolveScreenWidgetLayerLabel(clock)).toBe("素材 · 时钟");
+    expect(resolveScreenWidgetLayerLabel(createScreenShapeWidget([]))).toBe("素材 · 图形");
+    expect(resolveScreenWidgetLayerLabel(createScreenIconWidget([]))).toBe("素材 · 图标");
   });
 });

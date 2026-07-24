@@ -590,7 +590,8 @@ export const ChartRenderer = memo(function ChartRenderer({
   ]);
 
 
-  const useShellLegendLayout = shellLegendVisible && shellLegendItems.length > 0;
+  const suppressInlineLegend = shellLegendEligible && shellLegendVisible;
+  const useShellLegendLayout = suppressInlineLegend && shellLegendItems.length > 0;
   const shellLegendPosition = readChartLegendPosition(deStyle);
 
   const shellLegendState = useMemo(
@@ -644,7 +645,7 @@ export const ChartRenderer = memo(function ChartRenderer({
       viewModel={chartViewModel}
       style={{
         ...styleContext,
-        shellLegend: useShellLegendLayout,
+        shellLegend: suppressInlineLegend,
       }}
       ariaLabel={title}
       isDark={isDark}

@@ -1,41 +1,93 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ScreenVisualEditRail } from "./ScreenVisualEditRail";
-import { SCREEN_CLOCK_MARKER } from "@/lib/screenVisualAssets";
+import {
+  createScreenBorderWidget,
+  createScreenIconWidget,
+  createScreenShapeWidget,
+  SCREEN_CLOCK_MARKER,
+} from "@/lib/screenVisualAssets";
 import type { LayoutWidget } from "@/components/dashboard/layoutUtils";
 
-const clockWidget = {
-  id: "clock-1",
-  type: "text",
-  title: "时钟",
-  colSpan: 6,
-  rowSpan: 1,
-  order: 0,
-  textConfig: {
-    content: SCREEN_CLOCK_MARKER,
-    variant: "plain" as const,
-  },
-} satisfies LayoutWidget & { textConfig: NonNullable<LayoutWidget["textConfig"]> };
+function asTextWidget(widget: LayoutWidget) {
+  return widget as LayoutWidget & { textConfig: NonNullable<LayoutWidget["textConfig"]> };
+}
 
 describe("ScreenVisualEditRail", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it("updates clock style from style tab", async () => {
     const user = userEvent.setup();
     const onTextConfigChange = vi.fn();
+    const clockWidget = asTextWidget({
+      id: "clock-1",
+      type: "text",
+      title: "时钟",
+      colSpan: 6,
+      rowSpan: 1,
+      order: 0,
+      textConfig: { content: SCREEN_CLOCK_MARKER, variant: "plain" },
+    });
 
     render(
-      <ScreenVisualEditRail
-        widget={clockWidget}
-        onTextConfigChange={onTextConfigChange}
-      />,
+      <ScreenVisualEditRail widget={clockWidget} onTextConfigChange={onTextConfigChange} />,
     );
 
     await user.click(screen.getByRole("tab", { name: "样式" }));
-    const fontSizeInput = screen.getByDisplayValue("18");
-    fireEvent.change(fontSizeInput, { target: { value: "24" } });
+    fireEvent.change(screen.getByDisplayValue("18"), { target: { value: "24" } });
 
-    expect(onTextConfigChange).toHaveBeenCalled();
     const lastCall = onTextConfigChange.mock.calls.at(-1)?.[0];
     expect(lastCall?.screenStyle?.clock?.fontSize).toBe(24);
+  });
+
+  it("updates border variant from style tab", async () => {
+    const user = userEvent.setup();
+    const onTextConfigChange = vi.fn();
+    const borderWidget = asTextWidget(createScreenBorderWidget([], undefined, "border-1"));
+
+    render(
+      <ScreenVisualEditRail widget={borderWidget} onTextConfigChange={onTextConfigChange} />,
+    );
+
+    await user.click(screen.getByRole("tab", { name: "样式" }));
+    await user.click(screen.getByTestId("border-variant-border-3"));
+
+    const lastCall = onTextConfigChange.mock.calls.at(-1)?.[0];
+    expect(lastCall?.screenStyle?.border?.variant).toBe("border-3");
+  });
+
+  it("updates shape type from style tab", async () => {
+    const user = userEvent.setup();
+    const onTextConfigChange = vi.fn();
+    const shapeWidget = asTextWidget(createScreenShapeWidget([], undefined, "rect"));
+
+    render(
+      <ScreenVisualEditRail widget={shapeWidget} onTextConfigChange={onTextConfigChange} />,
+    );
+
+    await user.click(screen.getByRole("tab", { name: "样式" }));
+    await user.click(screen.getByTestId("shape-type-triangle"));
+
+    const lastCall = onTextConfigChange.mock.calls.at(-1)?.[0];
+    expect(lastCall?.screenStyle?.shape?.shape).toBe("triangle");
+  });
+
+  it("updates icon preset from style tab", async () => {
+    const user = userEvent.setup();
+    const onTextConfigChange = vi.fn();
+    const iconWidget = asTextWidget(createScreenIconWidget([], undefined, "star"));
+
+    render(
+      <ScreenVisualEditRail widget={iconWidget} onTextConfigChange={onTextConfigChange} />,
+    );
+
+    await user.click(screen.getByRole("tab", { name: "样式" }));
+    await user.click(screen.getByTestId("icon-preset-home"));
+
+    const lastCall = onTextConfigChange.mock.calls.at(-1)?.[0];
+    expect(lastCall?.screenStyle?.icon?.icon).toBe("home");
   });
 });

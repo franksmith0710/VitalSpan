@@ -50,7 +50,7 @@ export type TextWidgetConfig = {
   datasetId?: string;
   dimensionField?: string;
   metricField?: string;
-  /** 大屏素材组件样式（时钟/边框/标题装饰/日期时间） */
+  /** 大屏素材组件样式（时钟/边框/标题装饰/日期时间/图形/图标） */
   screenStyle?: ScreenVisualStyleConfig;
   /** 单组件外框样式（覆盖看板默认 widgetStyle） */
   widgetStyle?: WidgetStyleConfig;

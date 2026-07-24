@@ -6,10 +6,54 @@ export type ScreenShapeDisplayProps = {
   styleConfig?: ScreenShapeStyleConfig;
 };
 
+function ShapeSvg({
+  shape,
+  stroke,
+  strokeWidth,
+  fill,
+}: {
+  shape: "rect" | "triangle" | "circle";
+  stroke: string;
+  strokeWidth: number;
+  fill: string;
+}) {
+  if (shape === "rect") {
+    return (
+      <rect
+        x="15"
+        y="15"
+        width="70"
+        height="70"
+        rx="2"
+        fill={fill}
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+      />
+    );
+  }
+  if (shape === "triangle") {
+    return (
+      <polygon
+        points="50,12 88,88 12,88"
+        fill={fill}
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+        strokeLinejoin="round"
+      />
+    );
+  }
+  return (
+    <circle cx="50" cy="50" r="35" fill={fill} stroke={stroke} strokeWidth={strokeWidth} />
+  );
+}
+
 export function ScreenShapeDisplay({ className, styleConfig }: ScreenShapeDisplayProps) {
   const style = normalizeScreenShapeStyle(styleConfig);
   const stroke = style.strokeColor;
-  const fill = `${stroke}${Math.round(style.fillOpacity * 255).toString(16).padStart(2, "0")}`;
+  const fill =
+    style.fillOpacity > 0
+      ? `${stroke}${Math.round(style.fillOpacity * 255).toString(16).padStart(2, "0")}`
+      : "transparent";
 
   return (
     <div
@@ -17,26 +61,14 @@ export function ScreenShapeDisplay({ className, styleConfig }: ScreenShapeDispla
       data-screen-shape
       aria-hidden
     >
-      {style.shape === "rect" ? (
-        <div
-          className="size-[70%] rounded-sm"
-          style={{ border: `${style.strokeWidth}px solid ${stroke}`, backgroundColor: fill }}
+      <svg viewBox="0 0 100 100" className="size-[70%]" role="presentation">
+        <ShapeSvg
+          shape={style.shape}
+          stroke={stroke}
+          strokeWidth={style.strokeWidth}
+          fill={fill}
         />
-      ) : style.shape === "triangle" ? (
-        <div
-          className="size-[60%]"
-          style={{
-            clipPath: "polygon(50% 8%, 92% 92%, 8% 92%)",
-            backgroundColor: fill || "transparent",
-            border: `${style.strokeWidth}px solid ${stroke}`,
-          }}
-        />
-      ) : (
-        <div
-          className="size-[65%] rounded-full"
-          style={{ border: `${style.strokeWidth}px solid ${stroke}`, backgroundColor: fill }}
-        />
-      )}
+      </svg>
     </div>
   );
 }

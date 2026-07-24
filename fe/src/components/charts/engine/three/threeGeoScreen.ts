@@ -32,7 +32,10 @@ export function projectWorldToViewport(
 
 export function provinceWorldCenter(parts: THREE.Object3D[]): THREE.Vector3 {
   const box = new THREE.Box3();
-  for (const part of parts) box.expandByObject(part);
+  for (const part of parts) {
+    part.updateMatrixWorld(true);
+    box.expandByObject(part);
+  }
   if (box.isEmpty()) return new THREE.Vector3();
   return box.getCenter(new THREE.Vector3());
 }

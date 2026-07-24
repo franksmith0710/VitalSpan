@@ -16,8 +16,12 @@ import { ChartInspectorTabs } from "@/components/dashboard/ChartInspectorTabs";
 import { WidgetInspectorDelete } from "@/components/dashboard/widget-inspector-delete";
 import { WidgetRailPanelHeader } from "@/components/dashboard/widgetRailChrome";
 import {
+  ScreenBorderMaterialStylePanel,
+  ScreenIconStylePanel,
+  ScreenShapeStylePanel,
+} from "./ScreenMaterialStylePanels";
+import {
   patchScreenVisualStyle,
-  ScreenBorderStylePanel,
   ScreenClockStylePanel,
   ScreenDateTimeStylePanel,
   ScreenTitleBarStylePanel,
@@ -134,7 +138,7 @@ export function ScreenVisualEditRail({
           onChange={(datetime) => patchStyle("datetime", datetime)}
         />
       ) : isBorder ? (
-        <ScreenBorderStylePanel
+        <ScreenBorderMaterialStylePanel
           value={screenStyle.border}
           onChange={(border) => patchStyle("border", border)}
         />
@@ -142,6 +146,16 @@ export function ScreenVisualEditRail({
         <ScreenTitleBarStylePanel
           value={screenStyle.titleBar}
           onChange={(titleBar) => patchStyle("titleBar", titleBar)}
+        />
+      ) : isShape ? (
+        <ScreenShapeStylePanel
+          value={screenStyle.shape}
+          onChange={(shape) => patchStyle("shape", shape)}
+        />
+      ) : isIcon ? (
+        <ScreenIconStylePanel
+          value={screenStyle.icon}
+          onChange={(icon) => patchStyle("icon", icon)}
         />
       ) : null}
     </div>

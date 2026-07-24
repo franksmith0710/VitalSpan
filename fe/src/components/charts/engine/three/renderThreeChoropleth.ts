@@ -49,7 +49,9 @@ import {
   type GeoMapTapState,
 } from "@/components/charts/engine/three/geoMapDoubleTap";
 
-const PLATE_DEPTH_RATIO = 0.0028;
+/** 挤出厚度相对视口短边的比例（布局归一化前，与 geo 投影坐标一致） */
+const PLATE_DEPTH_RATIO = (0.034 * (2 / 3)) / 2;
+const PLATE_DEPTH_MIN = (1.68 * (2 / 3)) / 2;
 
 function noopDispose(): void {
   /* empty */
@@ -272,7 +274,7 @@ export async function renderThreeChoroplethChart(
     const minVal = Math.min(...values);
     const maxVal = Math.max(...values, 1);
     const plateScale = Math.max(0.35, geo3dStyle.extrudeIntensity ?? DEFAULT_GEO3D_EXTRUDE_INTENSITY);
-    const plateDepth = Math.max(0.18, Math.min(width, height) * PLATE_DEPTH_RATIO * plateScale);
+    const plateDepth = Math.max(PLATE_DEPTH_MIN, Math.min(width, height) * PLATE_DEPTH_RATIO * plateScale);
     const borderColor = isDark ? 0x7dd3fc : 0x1e40af;
     const showVisualMap = geoStyle.visualMap !== false;
     const terrainTextureOn = resolveTerrainTextureEnabled(
@@ -332,14 +334,16 @@ export async function renderThreeChoroplethChart(
     container.appendChild(renderer.domElement);
 
     scene.add(new THREE.AmbientLight(0x9eb4c8, isDark ? 0.48 : 0.38));
-    // 卫星平面贴图走 MeshBasic，无需方向光；仅侧壁/无贴图时保留弱光
-    if (!terrainOn || reliefOn) {
-      const keyLight = new THREE.DirectionalLight(0xf0f6fc, isDark ? 1.35 : 1.1);
-      keyLight.position.set(-1.2, 2.4, 1.0);
-      const fillLight = new THREE.DirectionalLight(0x5a8ab0, isDark ? 0.45 : 0.32);
-      fillLight.position.set(1.4, 1.2, -0.8);
-      scene.add(keyLight, fillLight);
-    }
+    // 顶盖卫星走 MeshBasic；侧壁实体柱仍需方向光塑形
+    const keyIntensity =
+      terrainOn && !reliefOn ? (isDark ? 0.9 : 0.72) : isDark ? 1.35 : 1.1;
+    const fillIntensity =
+      terrainOn && !reliefOn ? (isDark ? 0.32 : 0.24) : isDark ? 0.45 : 0.32;
+    const keyLight = new THREE.DirectionalLight(0xf0f6fc, keyIntensity);
+    keyLight.position.set(-1.2, 2.4, 1.0);
+    const fillLight = new THREE.DirectionalLight(0x5a8ab0, fillIntensity);
+    fillLight.position.set(1.4, 1.2, -0.8);
+    scene.add(keyLight, fillLight);
 
     const mapGroup = new THREE.Group();
     const meshes: THREE.Group[] = [];
@@ -434,7 +438,8 @@ export async function renderThreeChoroplethChart(
     let animationActive = true;
     let visibleInViewport = true;
     const enableHoverPick = renderTier !== "thumbnail";
-    const HOVER_LIFT_Z = Math.max(plateDepth * 1.15, 0.42);
+    /** 悬停抬升：约为挤出厚度的 16%，与底板厚度解耦 */
+    const HOVER_LIFT_Z = Math.max(plateDepth * 0.16, 0.2);
     const LIFT_SMOOTH_BASE = 0.2;
 
     const provinceParts = (name: string) =>
@@ -450,16 +455,25 @@ export async function renderThreeChoroplethChart(
       }
     };
 
+    const resolveHoverAnchorWorld = (): THREE.Vector3 | null => {
+      if (lastHoverEvent && !orbitDragging) {
+        const hit = raycastProvinceGroup(lastHoverEvent);
+        if (hit) return hit.point;
+      }
+      if (!hoveredProvince) return null;
+      const parts = provinceParts(hoveredProvince);
+      if (parts.length === 0) return null;
+      return provinceWorldCenter(parts);
+    };
+
     const syncHoverTooltip = () => {
       if (!tooltip || !showTooltip || !hoveredProvince) return;
       const parts = provinceParts(hoveredProvince);
       if (parts.length === 0) return;
       const sample = parts[0].userData;
-      const anchor = projectWorldToViewport(
-        provinceWorldCenter(parts),
-        camera,
-        renderer.domElement,
-      );
+      const worldAnchor = resolveHoverAnchorWorld();
+      if (!worldAnchor) return;
+      const anchor = projectWorldToViewport(worldAnchor, camera, renderer.domElement);
       showMergedTooltipAtViewport(
         tooltip,
         anchor,

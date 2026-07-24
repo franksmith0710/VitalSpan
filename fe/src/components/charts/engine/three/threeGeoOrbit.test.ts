@@ -22,7 +22,11 @@ describe("threeGeoOrbit", () => {
     const box = new THREE.Box3().setFromObject(group);
     const center = box.getCenter(new THREE.Vector3());
     expect(Math.abs(center.x)).toBeLessThan(1);
+    expect(Math.abs(center.y)).toBeLessThan(1);
     expect(Math.abs(center.z)).toBeLessThan(1);
+    expect(layout.target.x).toBe(0);
+    expect(layout.target.y).toBe(0);
+    expect(layout.target.z).toBe(0);
     expect(layout.halfX).toBeGreaterThan(0);
     expect(layout.minDistance).toBeLessThan(layout.defaultDistance);
     expect(layout.maxDistance).toBeGreaterThan(layout.defaultDistance);

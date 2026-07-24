@@ -99,7 +99,7 @@ export type ChartGeo3dStyle = {
   beamScan?: boolean;
 };
 
-export const DEFAULT_GEO3D_EXTRUDE_INTENSITY = 1;
+export const DEFAULT_GEO3D_EXTRUDE_INTENSITY = 1.15;
 
 /** 饼图/环形图样式（对标 DE attr-style · 基础样式） */
 export type ChartPieStyle = {

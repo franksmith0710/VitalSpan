@@ -94,20 +94,12 @@ export function buildGeoFlatPlateMesh(
       ? (options.displacementScale ?? 0)
       : 0;
 
-  const invisibleCap = new THREE.MeshStandardMaterial({
-    transparent: true,
-    opacity: 0,
-    depthWrite: false,
+  /** 侧壁 + 挤出顶底面同一实体材质，形成实心柱体（避免仅两侧薄片、中间镂空） */
+  const shellMaterial = new THREE.MeshStandardMaterial({
+    color: isDark ? 0x243448 : 0x4a5c6a,
+    roughness: 0.9,
+    metalness: 0.05,
     side: THREE.DoubleSide,
-  });
-
-  const sideMaterial = new THREE.MeshStandardMaterial({
-    color: isDark ? 0x14202e : 0x3d4f5f,
-    roughness: 0.92,
-    metalness: 0.04,
-    polygonOffset: true,
-    polygonOffsetFactor: 2,
-    polygonOffsetUnits: 2,
   });
 
   const capMaterial = hasTerrain
@@ -136,7 +128,7 @@ export function buildGeoFlatPlateMesh(
     bevelEnabled: false,
   });
 
-  const bodyMesh = new THREE.Mesh(extrudeGeometry, [sideMaterial, invisibleCap]);
+  const bodyMesh = new THREE.Mesh(extrudeGeometry, [shellMaterial, shellMaterial]);
   bodyMesh.renderOrder = 0;
 
   const borderLines = buildPlateTopOutline(shape, capTopZ + 0.008, borderColor, isDark);

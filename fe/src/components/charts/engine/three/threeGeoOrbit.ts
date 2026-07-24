@@ -82,16 +82,22 @@ export function layoutThreeGeoMapGroup(
   mapGroup.updateMatrixWorld(true);
 
   const scaledBox = boundsFromMapMeshes(mapGroup);
-  const scaledSize = scaledBox.getSize(new THREE.Vector3());
   const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
-  halfX = Math.max(scaledSize.x * 0.5, 0.5);
-  halfZ = Math.max(scaledSize.z * 0.5, 0.5);
-  const halfY = Math.max(scaledSize.y * 0.5, 0.08);
+  if (scaledCenter.lengthSq() > 1e-8) {
+    mapGroup.position.sub(scaledCenter);
+    mapGroup.updateMatrixWorld(true);
+  }
+
+  const fittedBox = boundsFromMapMeshes(mapGroup);
+  const fittedSize = fittedBox.getSize(new THREE.Vector3());
+  halfX = Math.max(fittedSize.x * 0.5, 0.5);
+  halfZ = Math.max(fittedSize.z * 0.5, 0.5);
+  const halfY = Math.max(fittedSize.y * 0.5, 0.08);
   const radius = Math.max(halfX, halfZ);
   const defaultDistance = Math.max(radius * 2.35, 14);
 
   return {
-    size: scaledSize,
+    size: fittedSize,
     defaultDistance,
     minDistance: defaultDistance / GEO_MAP_SCALE_LIMIT.max,
     maxDistance: defaultDistance / GEO_MAP_SCALE_LIMIT.min,
@@ -99,7 +105,7 @@ export function layoutThreeGeoMapGroup(
     halfZ,
     maxY: halfY,
     minY: -halfY,
-    target: scaledCenter,
+    target: new THREE.Vector3(0, 0, 0),
   };
 }
 

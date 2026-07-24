@@ -36,6 +36,7 @@ type LayoutOpts = {
 };
 
 const LEGEND_GAP = 6;
+const LEGEND_ITEM_GAP = 8;
 const LEGEND_FALLBACK_ROW_H = 22;
 const LEGEND_FALLBACK_COL_W = 80;
 
@@ -61,6 +62,47 @@ function itemLabelWidth(item: D3LegendItem, fontSize: number, iconSize: number):
   return item.label.length * fontSize * 0.62 + iconW + 16;
 }
 
+function legendRowHeight(fontSize: number, iconSize: number): number {
+  return Math.max(iconSize, fontSize) + 8;
+}
+
+/** 横向图例按绘图区宽度折行（与绘制逻辑一致） */
+export function packHorizontalLegendRows(
+  items: D3LegendItem[],
+  innerW: number,
+  fontSize: number,
+  iconSize: number,
+): D3LegendItem[][] {
+  if (items.length === 0) return [];
+  if (innerW <= 0) return [items];
+
+  const rows: D3LegendItem[][] = [];
+  let row: D3LegendItem[] = [];
+  let rowW = 0;
+
+  for (const item of items) {
+    const w = itemLabelWidth(item, fontSize, iconSize);
+    if (row.length > 0 && rowW + LEGEND_ITEM_GAP + w > innerW) {
+      rows.push(row);
+      row = [];
+      rowW = 0;
+    }
+    if (row.length > 0) rowW += LEGEND_ITEM_GAP;
+    row.push(item);
+    rowW += w;
+  }
+  if (row.length > 0) rows.push(row);
+  return rows;
+}
+
+function rowContentWidth(row: D3LegendItem[], fontSize: number, iconSize: number): number {
+  if (row.length === 0) return 0;
+  return row.reduce((sum, item, index) => {
+    const gap = index > 0 ? LEGEND_ITEM_GAP : 0;
+    return sum + gap + itemLabelWidth(item, fontSize, iconSize);
+  }, 0);
+}
+
 export function resolveInlineLegendOrient(layout?: D3LegendLayout): boolean {
   if (layout?.orient) return layout.orient === "horizontal";
   const position = layout?.position ?? "bottom";
@@ -78,7 +120,7 @@ export function estimateLegendBlockSize(
   const fontSize = layout?.fontSize ?? 11;
   const iconSize = layout?.iconSize ?? 10;
   const horizontal = resolveInlineLegendOrient(layout);
-  const rowH = Math.max(iconSize, fontSize) + 8;
+  const rowH = legendRowHeight(fontSize, iconSize);
 
   if (items.length === 0) {
     const position = layout?.position ?? "bottom";
@@ -96,12 +138,11 @@ export function estimateLegendBlockSize(
   }
 
   const innerW = Math.max(0, width - margin.left - margin.right);
-  const totalW = items.reduce((sum, item) => sum + itemLabelWidth(item, fontSize, iconSize), 0);
-  if (innerW > 0 && totalW > innerW) {
-    const rows = Math.ceil(totalW / innerW);
-    return { width: innerW, height: rows * rowH + 4 };
-  }
-  return { width: totalW, height: rowH };
+  const rows = packHorizontalLegendRows(items, innerW, fontSize, iconSize);
+  const rowGap = 2;
+  const blockHeight = rows.length * rowH + Math.max(0, rows.length - 1) * rowGap;
+  const widthUsed = Math.max(...rows.map((row) => rowContentWidth(row, fontSize, iconSize)), 0);
+  return { width: innerW > 0 ? Math.min(innerW, widthUsed) : widthUsed, height: blockHeight };
 }
 
 /** 按图例位置扩展绘图边距，避免内联图例压住坐标轴/序列 */
@@ -132,43 +173,61 @@ export function reserveLegendMargin(
   }
 }
 
+function resolveRowOffsetX(
+  row: D3LegendItem[],
+  innerW: number,
+  hAlign: "left" | "center" | "right",
+  fontSize: number,
+  iconSize: number,
+): number {
+  const rowW = rowContentWidth(row, fontSize, iconSize);
+  if (hAlign === "center") return Math.max(0, (innerW - rowW) / 2);
+  if (hAlign === "right") return Math.max(0, innerW - rowW);
+  return 0;
+}
+
 function legendOrigin(
   opts: LayoutOpts,
   items: D3LegendItem[],
-  horizontal: boolean,
-  iconSize: number,
   fontSize: number,
+  iconSize: number,
 ): { x: number; y: number } {
   const position = opts.layout?.position ?? "bottom";
   const hAlign = opts.layout?.hAlign ?? "left";
   const vAlign = opts.layout?.vAlign ?? "top";
   const { width, height, margin } = opts;
   const size = estimateLegendBlockSize(items, opts.layout, width, height, margin);
+  const innerW = Math.max(0, width - margin.left - margin.right);
 
   let x = margin.left;
   let y = margin.top;
 
   switch (position) {
     case "bottom":
-      y = height - margin.bottom + 4;
+      y = height - size.height - LEGEND_GAP;
       break;
     case "left":
-      x = Math.max(4, (margin.left - size.width) / 2);
+      x = Math.max(LEGEND_GAP, (margin.left - size.width) / 2);
       y = margin.top;
       break;
     case "right":
-      x = width - margin.right + 4;
+      x = width - size.width - LEGEND_GAP;
       y = margin.top;
       break;
     case "top":
     default:
-      y = Math.max(4, (margin.top - size.height) / 2);
+      y = Math.max(LEGEND_GAP, (margin.top - size.height) / 2);
       break;
   }
 
   if (position === "top" || position === "bottom") {
-    if (hAlign === "center") x = Math.max(margin.left, (width - size.width) / 2);
-    if (hAlign === "right") x = Math.max(margin.left, width - margin.right - size.width);
+    const rows = packHorizontalLegendRows(items, innerW, fontSize, iconSize);
+    const firstRow = rows[0] ?? [];
+    x = margin.left + resolveRowOffsetX(firstRow, innerW, hAlign, fontSize, iconSize);
+    if (rows.length === 0) {
+      if (hAlign === "center") x = Math.max(margin.left, (width - size.width) / 2);
+      if (hAlign === "right") x = Math.max(margin.left, width - margin.right - size.width);
+    }
   }
 
   if (position === "left" || position === "right") {
@@ -217,6 +276,28 @@ function appendLegendIcon(
   }
 }
 
+function appendLegendItem(
+  legend: Selection<SVGGElement, unknown, null, undefined>,
+  item: D3LegendItem,
+  offsetX: number,
+  offsetY: number,
+  opts: LayoutOpts,
+  fontSize: number,
+  textColor: string,
+  defaultIconSize: number,
+): number {
+  const resolved = resolveMarker(item, opts.layout);
+  const g = legend.append("g").attr("transform", `translate(${offsetX},${offsetY})`);
+  const iconW = appendLegendIcon(g, resolved.marker, resolved.width, resolved.height, item.color);
+  g.append("text")
+    .attr("x", iconW + 4)
+    .attr("y", Math.max(resolved.height, fontSize))
+    .attr("fill", textColor)
+    .style("font-size", `${fontSize}px`)
+    .text(item.label);
+  return itemLabelWidth(item, fontSize, defaultIconSize);
+}
+
 /** 在 SVG 根节点绘制内联图例（对标 DE 图例位置/方向/图标） */
 export function layoutD3InlineLegend(
   root: Selection<SVGSVGElement, unknown, null, undefined>,
@@ -230,29 +311,30 @@ export function layoutD3InlineLegend(
   const fontSize = opts.layout?.fontSize ?? opts.fontSize ?? 11;
   const textColor = opts.layout?.color ?? opts.theme.legendText;
   const defaultIconSize = opts.layout?.iconSize ?? 10;
-  const { x, y } = legendOrigin(opts, items, horizontal, defaultIconSize, fontSize);
+  const hAlign = opts.layout?.hAlign ?? "left";
+  const innerW = Math.max(0, opts.width - opts.margin.left - opts.margin.right);
+  const rowH = legendRowHeight(fontSize, defaultIconSize);
+  const { x, y } = legendOrigin(opts, items, fontSize, defaultIconSize);
   const legend = root.append("g").attr("class", "vs-legend").attr("transform", `translate(${x},${y})`);
-  let offsetX = 0;
-  let offsetY = 0;
 
-  for (const item of items) {
-    const resolved = resolveMarker(item, opts.layout);
-    const g = legend.append("g").attr("transform", `translate(${offsetX},${offsetY})`);
-    const iconW = appendLegendIcon(g, resolved.marker, resolved.width, resolved.height, item.color);
-    g.append("text")
-      .attr("x", iconW + 4)
-      .attr("y", Math.max(resolved.height, fontSize))
-      .attr("fill", textColor)
-      .style("font-size", `${fontSize}px`)
-      .text(item.label);
-
-    const rowH = Math.max(resolved.height, fontSize) + 8;
-    const rowW = itemLabelWidth(item, fontSize, defaultIconSize);
-    if (horizontal) {
-      offsetX += rowW;
-    } else {
+  if (!horizontal) {
+    let offsetY = 0;
+    for (const item of items) {
+      appendLegendItem(legend, item, 0, offsetY, opts, fontSize, textColor, defaultIconSize);
       offsetY += rowH;
     }
+    return;
+  }
+
+  const rows = packHorizontalLegendRows(items, innerW, fontSize, defaultIconSize);
+  let offsetY = 0;
+  for (const row of rows) {
+    let offsetX = resolveRowOffsetX(row, innerW, hAlign, fontSize, defaultIconSize);
+    for (const item of row) {
+      const rowW = appendLegendItem(legend, item, offsetX, offsetY, opts, fontSize, textColor, defaultIconSize);
+      offsetX += rowW + LEGEND_ITEM_GAP;
+    }
+    offsetY += rowH + 2;
   }
 }
 
