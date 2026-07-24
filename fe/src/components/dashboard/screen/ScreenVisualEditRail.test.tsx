@@ -19,8 +19,17 @@ describe("ScreenVisualEditRail", () => {
     cleanup();
   });
 
-  it("updates clock style from style tab", async () => {
-    const user = userEvent.setup();
+  it("renders style panel directly without data tab", () => {
+    const borderWidget = asTextWidget(createScreenBorderWidget([], undefined, "border-1"));
+    render(<ScreenVisualEditRail widget={borderWidget} />);
+
+    expect(screen.queryByRole("tab", { name: "数据" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "样式" })).not.toBeInTheDocument();
+    expect(screen.getByText("装饰边框叠加在画布上，请通过拖拽调整尺寸与位置。")).toBeVisible();
+    expect(screen.getByTestId("border-variant-border-1")).toBeInTheDocument();
+  });
+
+  it("updates clock style from style panel", () => {
     const onTextConfigChange = vi.fn();
     const clockWidget = asTextWidget({
       id: "clock-1",
@@ -36,14 +45,13 @@ describe("ScreenVisualEditRail", () => {
       <ScreenVisualEditRail widget={clockWidget} onTextConfigChange={onTextConfigChange} />,
     );
 
-    await user.click(screen.getByRole("tab", { name: "样式" }));
     fireEvent.change(screen.getByDisplayValue("18"), { target: { value: "24" } });
 
     const lastCall = onTextConfigChange.mock.calls.at(-1)?.[0];
     expect(lastCall?.screenStyle?.clock?.fontSize).toBe(24);
   });
 
-  it("updates border variant from style tab", async () => {
+  it("updates border variant from style panel", async () => {
     const user = userEvent.setup();
     const onTextConfigChange = vi.fn();
     const borderWidget = asTextWidget(createScreenBorderWidget([], undefined, "border-1"));
@@ -52,14 +60,13 @@ describe("ScreenVisualEditRail", () => {
       <ScreenVisualEditRail widget={borderWidget} onTextConfigChange={onTextConfigChange} />,
     );
 
-    await user.click(screen.getByRole("tab", { name: "样式" }));
     await user.click(screen.getByTestId("border-variant-border-3"));
 
     const lastCall = onTextConfigChange.mock.calls.at(-1)?.[0];
     expect(lastCall?.screenStyle?.border?.variant).toBe("border-3");
   });
 
-  it("updates shape type from style tab", async () => {
+  it("updates shape type from style panel", async () => {
     const user = userEvent.setup();
     const onTextConfigChange = vi.fn();
     const shapeWidget = asTextWidget(createScreenShapeWidget([], undefined, "rect"));
@@ -68,14 +75,13 @@ describe("ScreenVisualEditRail", () => {
       <ScreenVisualEditRail widget={shapeWidget} onTextConfigChange={onTextConfigChange} />,
     );
 
-    await user.click(screen.getByRole("tab", { name: "样式" }));
-    await user.click(screen.getByTestId("shape-type-triangle"));
+    await user.click(screen.getByRole("button", { name: "三角形" }));
 
     const lastCall = onTextConfigChange.mock.calls.at(-1)?.[0];
     expect(lastCall?.screenStyle?.shape?.shape).toBe("triangle");
   });
 
-  it("updates icon preset from style tab", async () => {
+  it("updates icon preset from style panel", async () => {
     const user = userEvent.setup();
     const onTextConfigChange = vi.fn();
     const iconWidget = asTextWidget(createScreenIconWidget([], undefined, "star"));
@@ -84,10 +90,25 @@ describe("ScreenVisualEditRail", () => {
       <ScreenVisualEditRail widget={iconWidget} onTextConfigChange={onTextConfigChange} />,
     );
 
-    await user.click(screen.getByRole("tab", { name: "样式" }));
     await user.click(screen.getByTestId("icon-preset-home"));
 
     const lastCall = onTextConfigChange.mock.calls.at(-1)?.[0];
     expect(lastCall?.screenStyle?.icon?.icon).toBe("home");
+  });
+
+  it("enables border sparkles from style panel", async () => {
+    const user = userEvent.setup();
+    const onTextConfigChange = vi.fn();
+    const borderWidget = asTextWidget(createScreenBorderWidget([], undefined, "border-1"));
+
+    render(
+      <ScreenVisualEditRail widget={borderWidget} onTextConfigChange={onTextConfigChange} />,
+    );
+
+    await user.click(screen.getByRole("switch", { name: "边框流光" }));
+
+    const lastCall = onTextConfigChange.mock.calls.at(-1)?.[0];
+    expect(lastCall?.screenStyle?.border?.sparkle?.enabled).toBe(true);
+    expect(lastCall?.screenStyle?.border?.sparkle?.sparkles?.length).toBeGreaterThanOrEqual(1);
   });
 });

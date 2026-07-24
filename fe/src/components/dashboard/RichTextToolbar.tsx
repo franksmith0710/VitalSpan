@@ -1,5 +1,5 @@
-import { forwardRef, useEffect, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
-import type { Editor } from "@tiptap/react";
+import { forwardRef, useEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
+import type { ChainedCommands, Editor } from "@tiptap/react";
 import {
   AlignCenter,
   AlignLeft,
@@ -79,6 +79,63 @@ function matchFontFamily(current: string | undefined, option: string): boolean {
   return current.replace(/['"]/g, "").includes(option.split(",")[0].replace(/['"]/g, ""));
 }
 
+type SelectionSnapshot = { from: number; to: number };
+
+function useRichTextSelectionSnapshot(editor: Editor) {
+  const selectionRef = useRef<SelectionSnapshot | null>(null);
+
+  useEffect(() => {
+    const sync = () => {
+      const { from, to } = editor.state.selection;
+      selectionRef.current = { from, to };
+    };
+    sync();
+    editor.on("selectionUpdate", sync);
+    editor.on("transaction", sync);
+    return () => {
+      editor.off("selectionUpdate", sync);
+      editor.off("transaction", sync);
+    };
+  }, [editor]);
+
+  const captureSelection = () => {
+    const { from, to } = editor.state.selection;
+    selectionRef.current = { from, to };
+  };
+
+  const runEditorCommand = (runner: (chain: ChainedCommands) => void) => {
+    const snapshot = selectionRef.current;
+    if (snapshot) {
+      editor.commands.setTextSelection(snapshot);
+    }
+    runner(editor.chain().focus());
+    if (snapshot) {
+      editor.commands.setTextSelection(snapshot);
+    }
+  };
+
+  const isMarkActive = (name: string) => {
+    if (editor.isActive(name)) return true;
+    const mark = editor.schema.marks[name];
+    if (!mark) return false;
+    const { from, to } = editor.state.selection;
+    if (from !== to) {
+      return editor.state.doc.rangeHasMark(from, to, mark);
+    }
+    const snapshot = selectionRef.current;
+    if (snapshot && snapshot.from !== snapshot.to) {
+      return editor.state.doc.rangeHasMark(snapshot.from, snapshot.to, mark);
+    }
+    if (snapshot) {
+      const $pos = editor.state.doc.resolve(Math.min(snapshot.from, editor.state.doc.content.size));
+      if ($pos.marks().some((item) => item.type.name === name)) return true;
+    }
+    return editor.state.selection.$from.marks().some((item) => item.type.name === name);
+  };
+
+  return { runEditorCommand, isMarkActive, captureSelection };
+}
+
 const RICH_TEXT_COLOR_TRIGGER_SHELL = cn(
   "[&_button]:!h-7 [&_button]:min-h-7 [&_button]:rounded-md",
   "[&_button]:border-[color:var(--dashboard-widget-border,#e4e7ec)]",
@@ -94,8 +151,13 @@ export const RichTextToolbar = forwardRef<HTMLDivElement, RichTextToolbarProps>(
   ref,
 ) {
   const theme = useRichTextTheme();
+  const { runEditorCommand, isMarkActive, captureSelection } = useRichTextSelectionSnapshot(editor);
   const overlayProps = buildRichTextOverlayProps(theme.style);
-  const colorPopoverProps = buildRichTextOverlayProps(theme.style, "rounded-xl shadow-theme-lg");
+  const colorPopoverProps = {
+    ...buildRichTextOverlayProps(theme.style, "rounded-xl shadow-theme-lg"),
+    side: floating ? ("top" as const) : ("bottom" as const),
+    collisionPadding: 16,
+  };
   const comfortable = density === "comfortable";
   const [, bump] = useState(0);
 
@@ -121,8 +183,9 @@ export const RichTextToolbar = forwardRef<HTMLDivElement, RichTextToolbarProps>(
   const btnClass = comfortable ? "size-9" : "size-7";
   const controlH = comfortable ? "h-9" : "h-7";
   const surfaceBtn =
-    "text-[color:var(--dashboard-text-primary,#344054)] hover:bg-white/10 hover:text-[color:var(--dashboard-text-primary,#344054)]";
-  const surfaceActive = "bg-white/10 text-[color:var(--dashboard-text-primary,#344054)]";
+    "text-[color:var(--dashboard-text-primary,#344054)] hover:bg-black/[0.04] hover:text-[color:var(--dashboard-text-primary,#344054)] dark:hover:bg-white/10";
+  const surfaceActive =
+    "bg-brand-500/15 text-[color:var(--dashboard-text-primary,#344054)] ring-1 ring-inset ring-brand-500/35 dark:bg-brand-500/25 dark:ring-brand-400/45";
   const selectTriggerClass = cn(
     "dashboard-no-drag shrink-0 !h-7 min-h-7 !py-0 border-0 bg-transparent shadow-none focus:ring-0 focus:ring-offset-0",
     "!text-[color:var(--dashboard-text-primary,#344054)] [&_span]:text-inherit",
@@ -154,6 +217,8 @@ export const RichTextToolbar = forwardRef<HTMLDivElement, RichTextToolbarProps>(
         active && surfaceActive,
       )}
       aria-label={label}
+      aria-pressed={active}
+      showTooltip={false}
       disabled={disabled}
       onMouseDown={(event) => event.preventDefault()}
       onClick={onClick}
@@ -178,19 +243,20 @@ export const RichTextToolbar = forwardRef<HTMLDivElement, RichTextToolbarProps>(
         className,
       )}
       onPointerDown={(event) => event.stopPropagation()}
+      onMouseDownCapture={captureSelection}
     >
       <div className="flex items-center gap-1 overflow-x-only">
         <ToolbarIcon
           label="撤销"
           disabled={!editor.can().chain().focus().undo().run()}
-          onClick={() => editor.chain().focus().undo().run()}
+          onClick={() => runEditorCommand((chain) => chain.undo().run())}
         >
           <Undo2 className={iconClass} />
         </ToolbarIcon>
         <ToolbarIcon
           label="重做"
           disabled={!editor.can().chain().focus().redo().run()}
-          onClick={() => editor.chain().focus().redo().run()}
+          onClick={() => runEditorCommand((chain) => chain.redo().run())}
         >
           <Redo2 className={iconClass} />
         </ToolbarIcon>
@@ -199,7 +265,7 @@ export const RichTextToolbar = forwardRef<HTMLDivElement, RichTextToolbarProps>(
 
         <Select
           value={currentFamily}
-          onValueChange={(value) => editor.chain().focus().setFontFamily(value).run()}
+          onValueChange={(value) => runEditorCommand((chain) => chain.setFontFamily(value).run())}
         >
           <SelectTrigger
             className={cn(
@@ -222,7 +288,7 @@ export const RichTextToolbar = forwardRef<HTMLDivElement, RichTextToolbarProps>(
 
         <Select
           value={currentSize}
-          onValueChange={(value) => editor.chain().focus().setFontSize(value).run()}
+          onValueChange={(value) => runEditorCommand((chain) => chain.setFontSize(value).run())}
         >
           <SelectTrigger
             className={cn(
@@ -249,6 +315,7 @@ export const RichTextToolbar = forwardRef<HTMLDivElement, RichTextToolbarProps>(
           <ColorField
             variant="swatch"
             showLabel={false}
+            showHintTooltip={false}
             compact
             allowClear={false}
             liveCommitMs={0}
@@ -260,7 +327,7 @@ export const RichTextToolbar = forwardRef<HTMLDivElement, RichTextToolbarProps>(
             popoverContentProps={colorPopoverProps}
             onChange={(color) => {
               if (!color) return;
-              editor.chain().focus().setColor(color).run();
+              runEditorCommand((chain) => chain.setColor(color).run());
             }}
           />
         </div>
@@ -269,6 +336,7 @@ export const RichTextToolbar = forwardRef<HTMLDivElement, RichTextToolbarProps>(
           <ColorField
             variant="swatch"
             showLabel={false}
+            showHintTooltip={false}
             compact
             allowClear
             liveCommitMs={0}
@@ -280,39 +348,39 @@ export const RichTextToolbar = forwardRef<HTMLDivElement, RichTextToolbarProps>(
             popoverContentProps={colorPopoverProps}
             onChange={(color) => {
               if (!color) {
-                editor.chain().focus().unsetHighlightColor().run();
+                runEditorCommand((chain) => chain.unsetHighlightColor().run());
                 return;
               }
-              editor.chain().focus().setHighlightColor(color).run();
+              runEditorCommand((chain) => chain.setHighlightColor(color).run());
             }}
           />
         </div>
 
         <Divider tall={comfortable} />
 
-        <ToolbarIcon label="粗体" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
+        <ToolbarIcon label="粗体" active={isMarkActive("bold")} onClick={() => runEditorCommand((chain) => chain.toggleBold().run())}>
           <Bold className={iconClass} />
         </ToolbarIcon>
-        <ToolbarIcon label="斜体" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}>
+        <ToolbarIcon label="斜体" active={isMarkActive("italic")} onClick={() => runEditorCommand((chain) => chain.toggleItalic().run())}>
           <Italic className={iconClass} />
         </ToolbarIcon>
-        <ToolbarIcon label="下划线" active={editor.isActive("underline")} onClick={() => editor.chain().focus().toggleUnderline().run()}>
+        <ToolbarIcon label="下划线" active={isMarkActive("underline")} onClick={() => runEditorCommand((chain) => chain.toggleUnderline().run())}>
           <Underline className={iconClass} />
         </ToolbarIcon>
-        <ToolbarIcon label="删除线" active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()}>
+        <ToolbarIcon label="删除线" active={isMarkActive("strike")} onClick={() => runEditorCommand((chain) => chain.toggleStrike().run())}>
           <Strikethrough className={iconClass} />
         </ToolbarIcon>
         <ToolbarIcon
           label="插入链接"
-          active={editor.isActive("link")}
+          active={isMarkActive("link")}
           onClick={() => {
             const href = window.prompt("输入链接地址", editor.getAttributes("link").href ?? "");
             if (href === null) return;
             if (!href.trim()) {
-              editor.chain().focus().unsetLink().run();
+              runEditorCommand((chain) => chain.unsetLink().run());
               return;
             }
-            editor.chain().focus().setLink({ href: href.trim(), target: "_blank" }).run();
+            runEditorCommand((chain) => chain.setLink({ href: href.trim(), target: "_blank" }).run());
           }}
         >
           <Link2 className={iconClass} />
@@ -335,11 +403,11 @@ export const RichTextToolbar = forwardRef<HTMLDivElement, RichTextToolbarProps>(
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" {...overlayProps}>
-            <DropdownMenuItem className="text-sm" onClick={() => editor.chain().focus().toggleBulletList().run()}>
+            <DropdownMenuItem className="text-sm" onClick={() => runEditorCommand((chain) => chain.toggleBulletList().run())}>
               <List className="size-4" />
               无序列表
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-sm" onClick={() => editor.chain().focus().toggleOrderedList().run()}>
+            <DropdownMenuItem className="text-sm" onClick={() => runEditorCommand((chain) => chain.toggleOrderedList().run())}>
               <ListOrdered className="size-4" />
               有序列表
             </DropdownMenuItem>
@@ -364,22 +432,22 @@ export const RichTextToolbar = forwardRef<HTMLDivElement, RichTextToolbarProps>(
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" {...overlayProps}>
-            <DropdownMenuItem className="text-sm" onClick={() => editor.chain().focus().setTextAlign("left").run()}>
+            <DropdownMenuItem className="text-sm" onClick={() => runEditorCommand((chain) => chain.setTextAlign("left").run())}>
               <AlignLeft className="size-4" />
               左对齐
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-sm" onClick={() => editor.chain().focus().setTextAlign("center").run()}>
+            <DropdownMenuItem className="text-sm" onClick={() => runEditorCommand((chain) => chain.setTextAlign("center").run())}>
               <AlignCenter className="size-4" />
               居中对齐
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-sm" onClick={() => editor.chain().focus().setTextAlign("right").run()}>
+            <DropdownMenuItem className="text-sm" onClick={() => runEditorCommand((chain) => chain.setTextAlign("right").run())}>
               <AlignRight className="size-4" />
               右对齐
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-sm"
-              onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()}
+              onClick={() => runEditorCommand((chain) => chain.unsetAllMarks().clearNodes().run())}
             >
               <Eraser className="size-4" />
               清除格式

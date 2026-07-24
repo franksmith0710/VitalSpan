@@ -16,10 +16,13 @@ import {
   geometryToShapes,
 } from "@/components/charts/engine/three/geoToThreeShapes";
 import { probeWebGL, type WebGLApi } from "@/components/charts/engine/three/webglProbe";
-import { buildThreeGeoProject, buildMapFitCollection } from "@/components/charts/engine/three/geo/threeGeoProject";
-import { loadChinaTerrainPack } from "@/components/charts/engine/three/geo/chinaTerrainLoader";
+import {
+  buildNationalTerrainProject,
+  buildTerrainAlignedGeoProject,
+} from "@/components/charts/engine/three/geo/threeGeoProject";
+import { loadChinaTerrainPack, resolveProvinceTerrainUvBounds } from "@/components/charts/engine/three/geo/chinaTerrainLoader";
 import { computeCapTintColor } from "@/components/charts/engine/three/geo/applyGeoTerrainSurface";
-import { buildGeoFlatPlateMesh } from "@/components/charts/engine/three/buildGeoFlatPlateMesh";
+import { buildGeoFlatPlateMesh, resolveGeoPlateDepth } from "@/components/charts/engine/three/buildGeoFlatPlateMesh";
 import { mountThreeGeoVisualMap } from "@/components/charts/engine/three/threeGeoVisualMap";
 import {
   configureThreeGeoOrbitControls,
@@ -32,7 +35,7 @@ import {
   writeGeo3dOrbitState,
 } from "@/components/charts/engine/three/geo3dOrbitState";
 import { projectWorldToViewport, provinceWorldCenter } from "@/components/charts/engine/three/threeGeoScreen";
-import { resolveEmbeddedGeoRoam } from "@/components/charts/engine/geo/geoConstants";
+import { resolveEmbeddedGeoRoam, VS_REGIONS_MAP_ID } from "@/components/charts/engine/geo/geoConstants";
 import { DEFAULT_GEO3D_EXTRUDE_INTENSITY } from "@/lib/chartDeStyle";
 import { resolveGeo3dQuality, shouldRenderGeo3d } from "@/components/charts/engine/three/geo3dQuality";
 import {
@@ -48,10 +51,6 @@ import {
   isPointerTapMove,
   type GeoMapTapState,
 } from "@/components/charts/engine/three/geoMapDoubleTap";
-
-/** 挤出厚度相对视口短边的比例（布局归一化前，与 geo 投影坐标一致） */
-const PLATE_DEPTH_RATIO = (0.034 * (2 / 3)) / 2;
-const PLATE_DEPTH_MIN = (1.68 * (2 / 3)) / 2;
 
 function noopDispose(): void {
   /* empty */
@@ -274,7 +273,6 @@ export async function renderThreeChoroplethChart(
     const minVal = Math.min(...values);
     const maxVal = Math.max(...values, 1);
     const plateScale = Math.max(0.35, geo3dStyle.extrudeIntensity ?? DEFAULT_GEO3D_EXTRUDE_INTENSITY);
-    const plateDepth = Math.max(PLATE_DEPTH_MIN, Math.min(width, height) * PLATE_DEPTH_RATIO * plateScale);
     const borderColor = isDark ? 0x7dd3fc : 0x1e40af;
     const showVisualMap = geoStyle.visualMap !== false;
     const terrainTextureOn = resolveTerrainTextureEnabled(
@@ -285,9 +283,14 @@ export async function renderThreeChoroplethChart(
     const terrainOn = terrainTextureOn;
     const reliefOn = terrainTextureOn && terrainReliefOn;
 
-    const fitCollection = buildMapFitCollection(geo);
-    const geoProject = buildThreeGeoProject(width, height, fitCollection.features, fitCollection);
+    const geoProject = buildTerrainAlignedGeoProject(width, height, mapId, drillDepth, geo);
     const { project, projBounds } = geoProject;
+    const drillNationalUv = terrainOn && drillDepth > 0;
+    const nationalGeoProject = drillNationalUv
+      ? buildNationalTerrainProject(getOfflineGeoMap(VS_REGIONS_MAP_ID) ?? { features: [] })
+      : null;
+    const terrainUvBounds = resolveProvinceTerrainUvBounds(mapId, drillDepth) ?? projBounds;
+    const plateDepth = resolveGeoPlateDepth(projBounds, plateScale, drillDepth);
 
     let terrainPack: Awaited<ReturnType<typeof loadChinaTerrainPack>> | null = null;
     let renderDisposed = false;
@@ -297,8 +300,8 @@ export async function renderThreeChoroplethChart(
     if (terrainOn) {
       try {
         terrainPack = await loadChinaTerrainPack({
-          mapId,
-          drillDepth,
+          mapId: drillNationalUv ? VS_REGIONS_MAP_ID : mapId,
+          drillDepth: drillNationalUv ? 0 : drillDepth,
           isDark,
           withDisplacement: reliefOn,
         });
@@ -355,7 +358,11 @@ export async function renderThreeChoroplethChart(
           terrainDisplacementMap: reliefOn ? terrainPack.displacementMap : undefined,
           displacementScale,
           reliefOn,
-          projBounds,
+          ...(drillNationalUv && nationalGeoProject
+            ? {
+                uvBridge: { local: geoProject, national: nationalGeoProject },
+              }
+            : { projBounds: terrainUvBounds }),
           terrainSource: terrainPack.source,
         }
       : {};

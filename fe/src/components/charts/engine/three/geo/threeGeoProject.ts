@@ -1,14 +1,18 @@
 import * as d3 from "d3";
+import chinaProvincesGeo from "@/assets/geo/china-provinces.json";
 import {
   chinaGeoLayoutCenterInViewport,
   fitChinaGeoProjection,
   isDecorativeGeoFeature,
 } from "@/components/charts/engine/geo/geoProjection";
+import { resolveTerrainPackKey } from "@/components/charts/engine/three/geo/chinaTerrainLoader";
 import {
   computeGeoProjBounds,
   type GeoMapLayoutMargin,
   type GeoProjBounds,
 } from "@/components/charts/engine/three/geo/applyGeoTerrainSurface";
+
+export const TERRAIN_REF_VIEWPORT = { width: 800, height: 600 } as const;
 
 export const THREE_GEO_MAP_MARGIN: GeoMapLayoutMargin = {
   top: 8,
@@ -29,6 +33,57 @@ export type ThreeGeoProjectContext = {
   viewport: { width: number; height: number };
 };
 
+/** 与 build:geo-terrain / bake-meta.json 一致：省轮廓勿 prepare，否则 fitExtent 畸变 */
+export function buildProvinceOutlineFitCollection(adcode: number): GeoJSON.FeatureCollection | null {
+  const raw = chinaProvincesGeo.features.find(
+    (f) =>
+      Number(f.properties?.adcode) === adcode &&
+      !isDecorativeGeoFeature(f.properties) &&
+      f.geometry != null,
+  );
+  if (!raw?.geometry) return null;
+  return {
+    type: "FeatureCollection",
+    features: [
+      {
+        type: "Feature",
+        properties: { name: String(raw.properties?.name ?? "") },
+        geometry: raw.geometry,
+      },
+    ],
+  };
+}
+
+/**
+ * 卫星纹理烘焙按省级轮廓 projBounds；下钻到市/区县时仍须用省轮廓做投影与 UV，
+ * 否则顶盖 UV 错位（贴图区全黑）。
+ */
+export function resolveTerrainProjectionFitCollection(
+  mapId: string | undefined,
+  drillDepth: number,
+  drillGeo: { features?: Array<{ properties?: { adcode?: number | string; adchar?: string; name?: string }; geometry?: GeoJSON.Geometry | null }> },
+): GeoJSON.FeatureCollection {
+  const drillFit = buildMapFitCollection(drillGeo);
+  const { level, adcode } = resolveTerrainPackKey(mapId, drillDepth);
+  if (level !== "province" || adcode == null) return drillFit;
+  return buildProvinceOutlineFitCollection(adcode) ?? drillFit;
+}
+
+/** 省级卫星包须与 800×600 烘焙视口一致；全国仍用实际画布尺寸 */
+export function buildTerrainAlignedGeoProject(
+  width: number,
+  height: number,
+  mapId: string | undefined,
+  drillDepth: number,
+  drillGeo: { features?: Array<{ properties?: { adcode?: number | string; adchar?: string; name?: string }; geometry?: GeoJSON.Geometry | null }> },
+): ThreeGeoProjectContext {
+  const fitCollection = resolveTerrainProjectionFitCollection(mapId, drillDepth, drillGeo);
+  const { level } = resolveTerrainPackKey(mapId, drillDepth);
+  const vw = level === "province" ? TERRAIN_REF_VIEWPORT.width : width;
+  const vh = level === "province" ? TERRAIN_REF_VIEWPORT.height : height;
+  return buildThreeGeoProject(vw, vh, fitCollection.features, fitCollection);
+}
+
 export function buildMapFitCollection(
   geo: { features?: Array<{ properties?: { adcode?: number | string; adchar?: string; name?: string }; geometry?: GeoJSON.Geometry | null }> },
 ): GeoJSON.FeatureCollection {
@@ -42,6 +97,18 @@ export function buildMapFitCollection(
         geometry: f.geometry!,
       })),
   };
+}
+
+export function buildNationalTerrainProject(
+  geo: { features?: Array<{ properties?: { adcode?: number | string; adchar?: string; name?: string }; geometry?: GeoJSON.Geometry | null }> },
+): ThreeGeoProjectContext {
+  const fitCollection = buildMapFitCollection(geo);
+  return buildThreeGeoProject(
+    TERRAIN_REF_VIEWPORT.width,
+    TERRAIN_REF_VIEWPORT.height,
+    fitCollection.features,
+    fitCollection,
+  );
 }
 
 /** 与 D3 choropleth 同投影，并将 layoutCenter 对齐 Three 原点（避免中轴偏移） */

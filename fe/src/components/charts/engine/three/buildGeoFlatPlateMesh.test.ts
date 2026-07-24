@@ -3,6 +3,7 @@ import * as THREE from "three";
 import {
   buildGeoFlatPlateMesh,
   resolveGeoCapTopZ,
+  resolveGeoPlateDepth,
 } from "@/components/charts/engine/three/buildGeoFlatPlateMesh";
 import { buildThreeGeoProject } from "@/components/charts/engine/three/geo/threeGeoProject";
 
@@ -37,8 +38,22 @@ describe("buildGeoFlatPlateMesh", () => {
       (c) => c instanceof THREE.Mesh && c.material === built.capMaterial,
     ) as THREE.Mesh;
     expect(capMesh).toBeTruthy();
-    expect(capMesh.position.z).toBeCloseTo(resolveGeoCapTopZ(depth));
+    expect(capMesh.position.z).toBeCloseTo(resolveGeoCapTopZ(depth, true));
     expect(capMesh.geometry.attributes.uv).toBeTruthy();
+  });
+
+  it("satellite cap sits flush on extrude top", () => {
+    expect(resolveGeoCapTopZ(2, true)).toBeCloseTo(2.02);
+    expect(resolveGeoCapTopZ(2, false)).toBeGreaterThan(2.02);
+  });
+
+  it("plate depth scales with proj bounds span", () => {
+    const national = { minX: -300, maxX: 300, minY: -250, maxY: 250 };
+    const province = { minX: -4.5, maxX: 4.5, minY: -3.9, maxY: 3.9 };
+    const nationalDepth = resolveGeoPlateDepth(national, 1, 0);
+    const provinceDepth = resolveGeoPlateDepth(province, 1, 1);
+    expect(nationalDepth / 600).toBeCloseTo(provinceDepth / 9, 1);
+    expect(provinceDepth).toBeLessThan(0.5);
   });
 
   it("uses top outline only (no vertical extrude edges)", () => {
@@ -52,7 +67,7 @@ describe("buildGeoFlatPlateMesh", () => {
     const border = built.borderLines;
     const pos = border.geometry.attributes.position as THREE.BufferAttribute;
     for (let i = 0; i < pos.count; i++) {
-      expect(pos.getZ(i)).toBeCloseTo(resolveGeoCapTopZ(1) + 0.008);
+      expect(pos.getZ(i)).toBeCloseTo(resolveGeoCapTopZ(1, false) + 0.008);
     }
   });
 

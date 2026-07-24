@@ -12,16 +12,15 @@ import {
 } from "@/lib/screenVisualAssets";
 import { DeAttrField, DeAttrForm } from "@/components/dashboard/dashboardInspectorUi";
 import { INSPECTOR_HINT } from "@/components/dashboard/inspectorCompact";
-import { ChartInspectorTabs } from "@/components/dashboard/ChartInspectorTabs";
 import { WidgetInspectorDelete } from "@/components/dashboard/widget-inspector-delete";
 import { WidgetRailPanelHeader } from "@/components/dashboard/widgetRailChrome";
 import {
-  ScreenBorderMaterialStylePanel,
   ScreenIconStylePanel,
   ScreenShapeStylePanel,
 } from "./ScreenMaterialStylePanels";
 import {
   patchScreenVisualStyle,
+  ScreenBorderStylePanel,
   ScreenClockStylePanel,
   ScreenDateTimeStylePanel,
   ScreenTitleBarStylePanel,
@@ -86,80 +85,17 @@ export function ScreenVisualEditRail({
     });
   };
 
-  const dataTab = (
-    <div className="p-4">
-      <DeAttrForm>
-        <DeAttrField label="图层名称" compact>
-          <Input
-            value={widget.title}
-            onChange={(e) => onTitleChange?.(e.target.value)}
-            className="h-9"
-            placeholder={kindLabel}
-          />
-        </DeAttrField>
-      </DeAttrForm>
-      <div className="mt-4 flex items-center gap-3 rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-3 dark:border-cyan-500/25 dark:bg-cyan-500/10">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-600 dark:text-cyan-300">
-          <Icon className="size-4" aria-hidden />
-        </span>
-        <div className="min-w-0">
-          <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">
-            大屏素材组件
-          </p>
-          <p className={INSPECTOR_HINT}>
-            {isClock
-              ? "预览时自动显示日期时间与星期，内容不可编辑。"
-              : isDateTime
-                ? "上下分行展示日期与时间，可在样式 Tab 调整字号与颜色。"
-                : isTitleBar
-                  ? "顶部标题装饰条，标题取自图层名称。"
-                  : isShape
-                    ? "基础几何图形装饰，可调整描边与填充。"
-                    : isIcon
-                      ? "线框图标装饰，可调整颜色与尺寸。"
-                      : "装饰边框叠加在画布上，请通过拖拽调整尺寸与位置。"}
-          </p>
-        </div>
-      </div>
-      {onDelete ? <WidgetInspectorDelete onDelete={onDelete} className="mt-6" /> : null}
-    </div>
-  );
-
-  const styleTab = (
-    <div className="p-4">
-      {isClock ? (
-        <ScreenClockStylePanel
-          value={screenStyle.clock}
-          onChange={(clock) => patchStyle("clock", clock)}
-        />
-      ) : isDateTime ? (
-        <ScreenDateTimeStylePanel
-          value={screenStyle.datetime}
-          onChange={(datetime) => patchStyle("datetime", datetime)}
-        />
-      ) : isBorder ? (
-        <ScreenBorderMaterialStylePanel
-          value={screenStyle.border}
-          onChange={(border) => patchStyle("border", border)}
-        />
-      ) : isTitleBar ? (
-        <ScreenTitleBarStylePanel
-          value={screenStyle.titleBar}
-          onChange={(titleBar) => patchStyle("titleBar", titleBar)}
-        />
-      ) : isShape ? (
-        <ScreenShapeStylePanel
-          value={screenStyle.shape}
-          onChange={(shape) => patchStyle("shape", shape)}
-        />
-      ) : isIcon ? (
-        <ScreenIconStylePanel
-          value={screenStyle.icon}
-          onChange={(icon) => patchStyle("icon", icon)}
-        />
-      ) : null}
-    </div>
-  );
+  const hintText = isClock
+    ? "预览时自动显示日期时间与星期，内容不可编辑。"
+    : isDateTime
+      ? "上下分行展示日期与时间，可在下方调整字号与颜色。"
+      : isTitleBar
+        ? "顶部标题装饰条，标题取自图层名称。"
+        : isShape
+          ? "基础几何图形装饰，可调整描边与填充。"
+          : isIcon
+            ? "线框图标装饰，可调整颜色与尺寸。"
+            : "装饰边框叠加在画布上，请通过拖拽调整尺寸与位置。";
 
   return (
     <div className={cn("flex h-full min-h-0 w-full flex-col bg-white dark:bg-gray-900", className)}>
@@ -169,13 +105,66 @@ export function ScreenVisualEditRail({
         onCollapse={onRailCollapse}
         collapseAriaLabel="收起配置"
       />
-      <ChartInspectorTabs
-        className="min-h-0 flex-1"
-        defaultTab="data"
-        tabs={["data", "style"]}
-        data={dataTab}
-        style={styleTab}
-      />
+
+      <div className="flex shrink-0 items-start gap-3 border-b border-gray-100 px-3 py-2.5 dark:border-white/[0.06]">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-600 dark:text-cyan-300">
+          <Icon className="size-4" aria-hidden />
+        </span>
+        <p className={cn(INSPECTOR_HINT, "min-w-0 pt-0.5")}>{hintText}</p>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain no-scrollbar px-2 py-1.5">
+        <div className="p-2">
+          <DeAttrForm>
+            <DeAttrField label="图层名称" compact>
+              <Input
+                value={widget.title}
+                onChange={(e) => onTitleChange?.(e.target.value)}
+                className="h-9"
+                placeholder={kindLabel}
+              />
+            </DeAttrField>
+          </DeAttrForm>
+
+          {isClock ? (
+            <ScreenClockStylePanel
+              value={screenStyle.clock}
+              onChange={(clock) => patchStyle("clock", clock)}
+            />
+          ) : isDateTime ? (
+            <ScreenDateTimeStylePanel
+              value={screenStyle.datetime}
+              onChange={(datetime) => patchStyle("datetime", datetime)}
+            />
+          ) : isBorder ? (
+            <ScreenBorderStylePanel
+              value={screenStyle.border}
+              onChange={(border) => patchStyle("border", border)}
+            />
+          ) : isTitleBar ? (
+            <ScreenTitleBarStylePanel
+              value={screenStyle.titleBar}
+              onChange={(titleBar) => patchStyle("titleBar", titleBar)}
+            />
+          ) : isShape ? (
+            <ScreenShapeStylePanel
+              value={screenStyle.shape}
+              onChange={(shape) => patchStyle("shape", shape)}
+            />
+          ) : isIcon ? (
+            <ScreenIconStylePanel
+              value={screenStyle.icon}
+              onChange={(icon) => patchStyle("icon", icon)}
+            />
+          ) : null}
+        </div>
+      </div>
+
+      {onDelete ? (
+        <div className="shrink-0 border-t border-gray-200 px-3 py-2 dark:border-gray-800">
+          <WidgetInspectorDelete widgetTitle={widget.title} onDelete={onDelete} embedded />
+        </div>
+      ) : null}
     </div>
   );
 }

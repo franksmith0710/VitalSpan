@@ -4,9 +4,9 @@ import {
   formatAxisCategoryLabel,
   formatHorizontalBandAxisLabel,
   planCategoryAxisLayout,
+  planNumericAxisTicks,
   resolveBandAxisFontSize,
   resolveHorizontalCategoryAxisLayout,
-  resolveNumericTickCount,
   styleAxis,
   type CategoryAxisLayout,
 } from "@/components/charts/engine/d3/core/axes";
@@ -22,6 +22,14 @@ import type { D3Theme } from "@/components/charts/engine/d3/core/themeEngine";
 import { formatChartValue } from "@/lib/chartValueFormat";
 import type { ChartAxisStyle } from "@/lib/chartDeStyleBlocks";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
+
+function numericTickValues(
+  scale: d3.ScaleLinear<number, number>,
+  innerSpan: number,
+  format: (value: d3.NumberValue) => string,
+): number[] {
+  return planNumericAxisTicks(scale, innerSpan, format);
+}
 
 export type CartesianScene = {
   root: d3.Selection<SVGSVGElement, unknown, null, undefined>;
@@ -301,7 +309,9 @@ export function drawCartesianBandAxes(opts: BandAxesOptions): { rotateX: number 
       .call(
         d3
           .axisLeft(opts.yScale)
-          .ticks(resolveNumericTickCount(opts.innerH))
+          .tickValues(
+            numericTickValues(opts.yScale, opts.innerH, (d) => formatChartValue(d, opts.valueFormat)),
+          )
           .tickFormat((d) => formatChartValue(d, opts.valueFormat)),
       )
       .call(styleAxis, opts.theme);
@@ -376,7 +386,9 @@ export function drawCartesianAxes(opts: AxesOptions): { rotateX: number } {
       .call(
         d3
           .axisLeft(opts.yScale)
-          .ticks(resolveNumericTickCount(opts.innerH))
+          .tickValues(
+            numericTickValues(opts.yScale, opts.innerH, (d) => formatChartValue(d, opts.valueFormat)),
+          )
           .tickFormat((d) => formatChartValue(d, opts.valueFormat)),
       )
       .call(styleAxis, opts.theme);
@@ -469,7 +481,11 @@ export function drawCartesianHorizontalBandAxes(opts: HorizontalBandAxesOptions)
       .call(
         d3
           .axisBottom(opts.xScale)
-          .ticks(resolveNumericTickCount(opts.innerW))
+          .tickValues(
+            numericTickValues(opts.xScale, opts.innerW, (d) =>
+              opts.xTickFormat ? opts.xTickFormat(d) : formatChartValue(d, opts.valueFormat),
+            ),
+          )
           .tickFormat((d) =>
             opts.xTickFormat ? opts.xTickFormat(d) : formatChartValue(d, opts.valueFormat),
           ),
@@ -527,7 +543,9 @@ export function drawLinearCartesianAxes(opts: LinearAxesOptions): void {
       .call(
         d3
           .axisLeft(opts.yScale)
-          .ticks(resolveNumericTickCount(opts.innerH))
+          .tickValues(
+            numericTickValues(opts.yScale, opts.innerH, (d) => formatChartValue(d, opts.valueFormat)),
+          )
           .tickFormat((d) => formatChartValue(d, opts.valueFormat)),
       )
       .call(styleAxis, opts.theme);
@@ -541,7 +559,9 @@ export function drawLinearCartesianAxes(opts: LinearAxesOptions): void {
       .call(
         d3
           .axisBottom(opts.xScale)
-          .ticks(resolveNumericTickCount(opts.innerW))
+          .tickValues(
+            numericTickValues(opts.xScale, opts.innerW, (d) => formatChartValue(d, opts.valueFormat)),
+          )
           .tickFormat((d) => formatChartValue(d, opts.valueFormat)),
       )
       .call(styleAxis, opts.theme);
@@ -603,7 +623,9 @@ export function drawDualAxesAxes(opts: DualAxesOptions): void {
       .call(
         d3
           .axisLeft(opts.yLeft)
-          .ticks(resolveNumericTickCount(opts.innerH))
+          .tickValues(
+            numericTickValues(opts.yLeft, opts.innerH, (d) => formatChartValue(d, opts.valueFormat)),
+          )
           .tickFormat((d) => formatChartValue(d, opts.valueFormat)),
       )
       .call(styleAxis, opts.theme);
@@ -614,7 +636,9 @@ export function drawDualAxesAxes(opts: DualAxesOptions): void {
       .call(
         d3
           .axisRight(opts.yRight)
-          .ticks(resolveNumericTickCount(opts.innerH))
+          .tickValues(
+            numericTickValues(opts.yRight, opts.innerH, (d) => formatChartValue(d, opts.valueFormat)),
+          )
           .tickFormat((d) => formatChartValue(d, opts.valueFormat)),
       )
       .call(styleAxis, opts.theme);
@@ -703,7 +727,9 @@ export function drawBidirectionalBandAxes(opts: BidirectionalAxesOptions): void 
       .call(
         d3
           .axisBottom(opts.xScale)
-          .ticks(resolveNumericTickCount(opts.innerW))
+          .tickValues(
+            numericTickValues(opts.xScale, opts.innerW, (d) => formatChartValue(d, opts.valueFormat)),
+          )
           .tickFormat((d) => formatChartValue(d, opts.valueFormat)),
       )
       .call(styleAxis, opts.theme);

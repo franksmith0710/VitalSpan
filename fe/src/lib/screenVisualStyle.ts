@@ -1,4 +1,8 @@
 import { SCREEN_ACCENT, SCREEN_TITLE_COLOR } from "@/lib/screenTokens";
+import type { ScreenBorderSparkleStyleConfig } from "@/lib/screenBorderSparkle";
+import { normalizeScreenBorderSparkleStyle } from "@/lib/screenBorderSparkle";
+
+export type { ScreenBorderSparkleConfig, ScreenBorderSparkleStyleConfig } from "@/lib/screenBorderSparkle";
 
 export type ScreenClockStyleConfig = {
   fontSize?: number;
@@ -31,6 +35,7 @@ export type ScreenBorderStyleConfig = {
   glowEnabled?: boolean;
   innerBorderOpacity?: number;
   variant?: ScreenBorderVariant;
+  sparkle?: ScreenBorderSparkleStyleConfig;
 };
 
 export type ScreenShapeKind = "rect" | "triangle" | "circle";
@@ -129,13 +134,17 @@ export function normalizeScreenDateTimeStyle(
 
 export function normalizeScreenBorderStyle(
   raw?: ScreenBorderStyleConfig,
-): Required<ScreenBorderStyleConfig> {
+): Required<Omit<ScreenBorderStyleConfig, "sparkle">> & {
+  sparkle: ReturnType<typeof normalizeScreenBorderSparkleStyle>;
+} {
+  const sparkle = normalizeScreenBorderSparkleStyle(raw?.sparkle);
   return {
     accentColor: raw?.accentColor ?? DEFAULT_SCREEN_BORDER_STYLE.accentColor,
     glowEnabled: raw?.glowEnabled ?? DEFAULT_SCREEN_BORDER_STYLE.glowEnabled,
     innerBorderOpacity:
       raw?.innerBorderOpacity ?? DEFAULT_SCREEN_BORDER_STYLE.innerBorderOpacity,
     variant: raw?.variant ?? DEFAULT_SCREEN_BORDER_STYLE.variant,
+    sparkle,
   };
 }
 

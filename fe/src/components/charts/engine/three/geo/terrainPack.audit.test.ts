@@ -37,7 +37,12 @@ function assertPack(level: "national" | "province", adcode?: number) {
   expect(h).toBeGreaterThan(0);
   expect(meta.source).toBe("satellite");
   expect(meta.uvMode).toBe("projBounds");
-  expect(meta.refViewport).toEqual([800, 600]);
+  const refVp = meta.refViewport;
+  if (Array.isArray(refVp)) {
+    expect(refVp).toEqual([800, 600]);
+  } else {
+    expect(refVp).toEqual({ width: 800, height: 600 });
+  }
   expect(meta.masked).toBe(true);
 
   const diffuse = path.join(dir, "diffuse.webp");

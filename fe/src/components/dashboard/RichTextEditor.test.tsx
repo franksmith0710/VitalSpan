@@ -2,6 +2,7 @@ import { useRef, type ComponentProps } from "react";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { RichTextEditor } from "./RichTextEditor";
 
 function RichTextEditorHarness(
@@ -9,9 +10,11 @@ function RichTextEditorHarness(
 ) {
   const anchorRef = useRef<HTMLDivElement>(null);
   return (
-    <div ref={anchorRef} className="relative h-64 w-[32rem] rounded-xl border border-gray-200">
-      <RichTextEditor {...props} anchorRef={anchorRef} />
-    </div>
+    <TooltipProvider delayDuration={0}>
+      <div ref={anchorRef} className="relative h-64 w-[32rem] rounded-xl border border-gray-200">
+        <RichTextEditor {...props} anchorRef={anchorRef} />
+      </div>
+    </TooltipProvider>
   );
 }
 
@@ -98,5 +101,40 @@ describe("RichTextEditor", () => {
     );
     await user.click(await screen.findByRole("button", { name: "撤销" }));
     expect(parentPointerDown).not.toHaveBeenCalled();
+  });
+
+  it("applies bold formatting from toolbar", async () => {
+    const user = userEvent.setup();
+    render(
+      <RichTextEditorHarness
+        initialHtml="<p>初始</p>"
+        onCommit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+    const editor = await screen.findByRole("textbox", { name: "富文本内容" });
+    await waitFor(() => expect(editor).toHaveFocus());
+    await user.keyboard("{Control>}a{/Control}");
+    await user.click(screen.getByRole("button", { name: "粗体" }));
+    expect(editor.querySelector("strong")).not.toBeNull();
+  });
+
+  it("applies highlight color without committing editor", async () => {
+    const user = userEvent.setup();
+    const onCommit = vi.fn();
+    render(
+      <RichTextEditorHarness
+        initialHtml="<p>初始</p>"
+        onCommit={onCommit}
+        onCancel={vi.fn()}
+      />,
+    );
+    const editor = await screen.findByRole("textbox", { name: "富文本内容" });
+    await waitFor(() => expect(editor).toHaveFocus());
+    await user.tripleClick(editor);
+    await user.click(screen.getByRole("button", { name: "高亮颜色" }));
+    await user.click(screen.getByRole("option", { name: "浅黄" }));
+    expect(editor.innerHTML).toContain("background-color");
+    expect(onCommit).not.toHaveBeenCalled();
   });
 });

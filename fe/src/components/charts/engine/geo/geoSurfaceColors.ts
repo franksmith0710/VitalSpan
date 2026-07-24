@@ -85,10 +85,6 @@ export function geoValueIntensity(value: number, min: number, max: number): numb
   return Math.max(0, Math.min(1, (value - min) / (max - min)));
 }
 
-export function geoPlotBackground(isDark: boolean): string {
-  return isDark ? "rgba(2, 6, 23, 0.35)" : "rgba(239, 246, 255, 0.55)";
-}
-
 export function geoStrokeWidth(chartWidth: number): number {
   return Math.max(0.75, Math.min(1.2, chartWidth / 320));
 }

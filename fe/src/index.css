@@ -1467,3 +1467,9 @@ html.dashboard-thumbnail-capture [data-testid^="pixel-resize"],
 html.dashboard-thumbnail-capture [data-testid^="pixel-align"] {
   visibility: hidden !important;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-screen-border-flow] animateMotion {
+    display: none;
+  }
+}

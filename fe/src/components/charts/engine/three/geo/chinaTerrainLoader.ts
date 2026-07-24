@@ -4,7 +4,7 @@ import nationalDiffuseUrl from "@/assets/geo/terrain/national/diffuse.webp?url";
 import nationalNormalUrl from "@/assets/geo/terrain/national/normal.webp?url";
 import nationalDisplacementUrl from "@/assets/geo/terrain/national/displacement.webp?url";
 import { CHINA_TERRAIN_NATIONAL_ID } from "@/assets/geo/terrain/manifest";
-import type { TerrainCapSource } from "@/components/charts/engine/three/geo/applyGeoTerrainSurface";
+import type { GeoProjBounds, TerrainCapSource } from "@/components/charts/engine/three/geo/applyGeoTerrainSurface";
 
 export type TerrainGeoBounds = {
   west: number;
@@ -56,6 +56,19 @@ const provinceDisplacementGlob = import.meta.glob<string>(
   { query: "?url", import: "default", eager: true },
 );
 
+const provinceBakeMetaGlob = import.meta.glob<{ default: { projBounds?: GeoProjBounds } }>(
+  "@/assets/geo/terrain/provinces/*/_source/bake-meta.json",
+  { eager: true },
+);
+
+const provinceBakeProjBoundsByAdcode = new Map<number, GeoProjBounds>();
+for (const [key, mod] of Object.entries(provinceBakeMetaGlob)) {
+  const m = /provinces\/(\d+)\/_source\/bake-meta\.json$/.exec(key);
+  if (!m) continue;
+  const data = "default" in mod ? mod.default : (mod as { projBounds?: GeoProjBounds });
+  if (data.projBounds) provinceBakeProjBoundsByAdcode.set(Number(m[1]), data.projBounds);
+}
+
 const provinceMetaByAdcode = new Map<number, { bounds: number[]; size: number }>();
 for (const [key, mod] of Object.entries(provinceMetaGlob)) {
   const m = /provinces\/(\d+)\/meta\.json$/.exec(key);
@@ -78,6 +91,15 @@ export function resolveProvinceAdcodeFromMapId(mapId: string): number | null {
   const raw = parseAdcodeFromMapId(mapId);
   if (raw == null) return null;
   return Math.floor(raw / 10000) * 10000;
+}
+
+export function resolveProvinceTerrainUvBounds(
+  mapId: string | undefined,
+  drillDepth = 0,
+): GeoProjBounds | null {
+  const { level, adcode } = resolveTerrainPackKey(mapId, drillDepth);
+  if (level !== "province" || adcode == null) return null;
+  return provinceBakeProjBoundsByAdcode.get(adcode) ?? null;
 }
 
 export function parseAdcodeFromMapId(mapId: string): number | null {

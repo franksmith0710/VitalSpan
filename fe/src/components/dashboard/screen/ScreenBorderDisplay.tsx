@@ -2,6 +2,7 @@ import type { ScreenBorderStyleConfig } from "@/lib/screenVisualStyle";
 import { normalizeScreenBorderStyle } from "@/lib/screenVisualStyle";
 import { cn } from "@/lib/utils";
 import { renderScreenBorderVariant } from "./screenBorderVariants";
+import { ScreenBorderSparkles } from "./ScreenBorderSparkles";
 
 export type ScreenBorderDisplayProps = {
   className?: string;
@@ -25,6 +26,9 @@ export function ScreenBorderDisplay({ className, styleConfig }: ScreenBorderDisp
         innerOpacity: style.innerBorderOpacity,
         glow,
       })}
+      {style.sparkle.enabled ? (
+        <ScreenBorderSparkles sparkles={style.sparkle.sparkles} variant={style.variant} />
+      ) : null}
     </div>
   );
 }

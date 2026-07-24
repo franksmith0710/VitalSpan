@@ -89,7 +89,50 @@ export function planCategoryAxisLayout(
 /** 数据显示优先：数值轴尽量多刻度 */
 export function resolveNumericTickCount(innerSpan: number, min = 4, max = 12): number {
   if (innerSpan <= 0) return min;
-  return Math.max(min, Math.min(max, Math.floor(innerSpan / 24)));
+  return Math.max(min, Math.min(max, Math.floor(innerSpan / 48)));
+}
+
+const NUMERIC_TICK_LABEL_GAP_PX = 8;
+const NUMERIC_TICK_MIN_LABEL_PX = 44;
+
+function sampleNumericDomain(scale: d3.ScaleLinear<number, number>): number[] {
+  const [a, b] = scale.domain();
+  const lo = Math.min(a, b);
+  const hi = Math.max(a, b);
+  const mid = (lo + hi) / 2;
+  const samples = [lo, hi, mid];
+  if (lo <= 0 && hi >= 0) samples.push(0);
+  return [...new Set(samples)];
+}
+
+/** 按格式化后标签宽度抽稀数值轴刻度（对标类目轴 pickCategoryTicks） */
+export function planNumericAxisTicks(
+  scale: d3.ScaleLinear<number, number>,
+  innerSpan: number,
+  formatLabel: (value: d3.NumberValue) => string,
+  options?: { minTicks?: number; maxTicks?: number; minLabelPx?: number },
+): number[] {
+  const minTicks = options?.minTicks ?? 2;
+  const maxTicks = options?.maxTicks ?? 12;
+  const minLabelPx = options?.minLabelPx ?? NUMERIC_TICK_MIN_LABEL_PX;
+  if (innerSpan <= 0) return scale.ticks(minTicks);
+
+  const maxLabelW = Math.max(
+    minLabelPx,
+    ...sampleNumericDomain(scale).map(
+      (v) => estimateAxisLabelWidth(formatLabel(v).length) + NUMERIC_TICK_LABEL_GAP_PX,
+    ),
+  );
+  const capacity = Math.max(minTicks, Math.min(maxTicks, Math.floor(innerSpan / maxLabelW)));
+  const ticks = scale.ticks(capacity);
+  if (ticks.length <= capacity) return ticks;
+
+  const step = Math.ceil(ticks.length / capacity);
+  const picked: number[] = [];
+  for (let i = 0; i < ticks.length; i += step) picked.push(ticks[i]!);
+  const last = ticks[ticks.length - 1]!;
+  if (picked[picked.length - 1] !== last) picked.push(last);
+  return picked;
 }
 
 /** 类目 band 过窄时缩小轴标签字号，但不隐藏 */

@@ -212,11 +212,18 @@ export function InspectorInlineColorRow({
       <ColorField
         variant="swatch"
         showLabel={false}
+        showHintTooltip={false}
         allowClear={allowClear}
         swatches={swatches}
         value={value}
         fallbackValue={fallbackValue}
         buttonAriaLabel={`${label}取色器`}
+        popoverContentProps={{
+          side: "left",
+          align: "end",
+          collisionPadding: 16,
+          avoidCollisions: true,
+        }}
         onChange={onChange}
       />
     </div>

@@ -54,7 +54,12 @@ export function WidgetSurfaceAppearanceFields({
         allowClear
         swatches={SURFACE_COLOR_RECOMMENDED}
         value={value.background ?? ""}
-        onChange={(background) => onChange({ background: background || undefined })}
+        onChange={(background) =>
+          onChange({
+            ...(background ? { backgroundShow: true } : {}),
+            background: background || undefined,
+          })
+        }
       />
       <Slider
         label="背景模糊"

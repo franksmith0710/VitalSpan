@@ -33,6 +33,7 @@ describe("renderD3ChoroplethChart", () => {
     expect(withGeometry.length).toBeGreaterThan(20);
     const beijing = Array.from(paths).find((p) => (p.getAttribute("d") ?? "").includes("M"));
     expect(beijing?.getAttribute("stroke")).toBeTruthy();
+    expect(container.querySelector(".map-plot-bg")?.getAttribute("fill")).toBe("transparent");
 
     dispose();
     document.body.removeChild(container);

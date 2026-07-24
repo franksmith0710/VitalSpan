@@ -94,6 +94,7 @@ export function ColorPickerPanel({ value, onChange, className }: ColorPickerPane
           className="size-7 shrink-0 rounded-lg shadow-theme-xs"
           onClick={() => void pickFromScreen()}
           disabled={!canEyeDrop}
+          showTooltip={false}
           tooltip={canEyeDrop ? "从屏幕取色" : "当前浏览器不支持屏幕取色"}
           aria-label="从屏幕取色"
         >

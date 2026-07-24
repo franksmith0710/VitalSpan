@@ -8,6 +8,7 @@ import {
   resolveCategoryLabelRotate,
   resolveHorizontalCategoryAxisLayout,
   resolveNumericTickCount,
+  planNumericAxisTicks,
 } from "@/components/charts/engine/d3/core/axes";
 import { nearestCategory } from "@/components/charts/engine/d3/core/interaction";
 import * as d3 from "d3";
@@ -57,8 +58,17 @@ describe("d3 core", () => {
   });
 
   it("resolveNumericTickCount scales with span without over-thinning", () => {
-    expect(resolveNumericTickCount(80)).toBeGreaterThanOrEqual(4);
-    expect(resolveNumericTickCount(240)).toBeGreaterThanOrEqual(6);
+    expect(resolveNumericTickCount(80)).toBeGreaterThanOrEqual(2);
+    expect(resolveNumericTickCount(240)).toBeGreaterThanOrEqual(4);
+  });
+
+  it("planNumericAxisTicks thins wide formatted labels on narrow spans", () => {
+    const scale = d3.scaleLinear().domain([0, 22_000]).nice();
+    const format = (v: d3.NumberValue) => Number(v).toLocaleString("en-US");
+    const ticks = planNumericAxisTicks(scale, 284, format);
+    expect(ticks.length).toBeLessThanOrEqual(6);
+    expect(ticks[0]).toBe(0);
+    expect(ticks[ticks.length - 1]).toBeGreaterThanOrEqual(20_000);
   });
 
   it("nearestCategory finds closest x", () => {

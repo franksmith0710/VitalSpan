@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ComponentPropsWithoutRef } from "react";
+import { Fragment, useEffect, useRef, useState, type ComponentPropsWithoutRef } from "react";
 import { ChevronDown, Highlighter, X } from "lucide-react";
 import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils";
@@ -33,6 +33,8 @@ type ColorFieldProps = {
   showLabel?: boolean;
   /** swatch 触发器形态：chip 通用色块；text 字色 A+下划线；highlight 荧光笔+色块 */
   swatchTriggerPreset?: "chip" | "text" | "highlight";
+  /** 行内配色（左侧已有标签）时关闭悬停 Tooltip，避免与 Popover 抢焦点 */
+  showHintTooltip?: boolean;
   className?: string;
   /** 取色器/输入框连续变更时防抖提交，减轻画布等大组件重渲染 */
   liveCommitMs?: number;
@@ -95,6 +97,7 @@ export function ColorField({
   swatchesDefaultOpen: _swatchesDefaultOpen = false,
   popoverContentProps,
   swatchTriggerPreset = "chip",
+  showHintTooltip = true,
 }: ColorFieldProps) {
   const {
     className: popoverClassName,
@@ -155,12 +158,15 @@ export function ColorField({
     if (!next && pendingRef.current !== undefined) flushCommit();
   };
 
-  const applyColor = (next: string) => {
+  const applyColor = (next: string, immediate = false) => {
     setLocalValue(next);
     const resolved = resolveCommitValue(next);
     if (resolved === undefined) return;
     pendingRef.current = resolved;
-    // 面板打开时用防抖异步提交：既实时预览，又避免同步 onChange 导致 Radix Popover 在 pointer 交互中被 dismiss
+    if (immediate || liveCommitMs <= 0) {
+      flushCommit();
+      return;
+    }
     scheduleCommit(next);
   };
 
@@ -204,13 +210,12 @@ export function ColorField({
           >
             {items.map((item) => {
               const selected = previewHex === normalizeHexColor(item.color);
-              return (
-                <HintTooltip key={item.color} label={item.label}>
-                  <button
-                    type="button"
-                    role="option"
-                    aria-selected={selected}
-                    aria-label={item.label}
+              const swatchOption = (
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={selected}
+                  aria-label={item.label}
                   className={cn(
                     "flex size-7 items-center justify-center rounded-md transition-colors",
                     "hover:bg-gray-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30",
@@ -218,11 +223,17 @@ export function ColorField({
                     selected &&
                       "bg-brand-50/80 ring-1 ring-inset ring-brand-500/50 dark:bg-brand-500/10",
                   )}
-                  onClick={() => applyColor(item.color)}
+                  onClick={() => applyColor(item.color, true)}
                 >
                   <ColorSwatchChip color={item.color} size="sm" selected={selected} />
                 </button>
+              );
+              return showHintTooltip ? (
+                <HintTooltip key={item.color} label={item.label}>
+                  {swatchOption}
                 </HintTooltip>
+              ) : (
+                <Fragment key={item.color}>{swatchOption}</Fragment>
               );
             })}
           </div>
@@ -248,6 +259,84 @@ export function ColorField({
     const inkColor = previewHex || "#111827";
     const highlightPreview = previewHex || "#fef08a";
 
+    const swatchButton = (
+      <button
+        type="button"
+        className={cn(
+          swatchTriggerVariants({ open }),
+          swatchTriggerPreset === "text" && "inline-flex h-7 items-center gap-0.5 px-0",
+          swatchTriggerPreset === "highlight" && "h-7",
+        )}
+        aria-label={pickerLabel}
+        aria-expanded={open}
+        title={showHintTooltip ? undefined : swatchTitle}
+        onMouseDown={(event) => event.preventDefault()}
+      >
+        {swatchTriggerPreset === "text" ? (
+          <>
+            <span className="flex flex-col items-center justify-center gap-0.5 px-1.5">
+              <span className="text-sm font-bold leading-none">A</span>
+              <span
+                className="h-0.5 w-4 rounded-full ring-1 ring-black/10 dark:ring-white/15"
+                style={{ backgroundColor: inkColor }}
+              />
+            </span>
+            <ChevronDown
+              className={cn(
+                "mr-1 size-3.5 shrink-0 opacity-60 transition-transform",
+                open && "rotate-180 text-brand-500",
+              )}
+              aria-hidden
+            />
+          </>
+        ) : swatchTriggerPreset === "highlight" ? (
+          <>
+            <span className="flex h-full items-center gap-1 border-r border-gray-100 px-1.5 dark:border-gray-800">
+              <Highlighter className="size-3.5 shrink-0 opacity-80" aria-hidden />
+              <ColorSwatchChip
+                color={highlightPreview}
+                size={chipSize}
+                className={!previewHex ? "opacity-50" : undefined}
+              />
+            </span>
+            <span className="flex shrink-0 items-center gap-1 px-1.5">
+              {!previewHex ? (
+                <span className="text-[10px] text-gray-400 dark:text-gray-500">无</span>
+              ) : null}
+              <ChevronDown
+                className={cn(
+                  "size-3.5 shrink-0 text-gray-400 transition-transform dark:text-gray-500",
+                  open && "rotate-180 text-brand-500 dark:text-brand-400",
+                )}
+                aria-hidden
+              />
+            </span>
+          </>
+        ) : (
+          <>
+            <span
+              className="flex h-full w-10 shrink-0 items-center justify-center border-r border-gray-100 bg-gray-50/90 p-1.5 dark:border-gray-800 dark:bg-white/[0.04]"
+              aria-hidden
+            >
+              <ColorSwatchChip color={previewHex || undefined} size={chipSize} />
+            </span>
+            <span className="flex shrink-0 items-center gap-1 px-2">
+              {!previewHex ? (
+                <span className="text-[10px] text-gray-400 dark:text-gray-500">未设置</span>
+              ) : null}
+              <ChevronDown
+                className={cn(
+                  "size-3.5 shrink-0 text-gray-400 transition-transform dark:text-gray-500",
+                  open && "rotate-180 text-brand-500 dark:text-brand-400",
+                )}
+                aria-hidden
+              />
+            </span>
+          </>
+        )}
+      </button>
+    );
+
     return (
       <div className={cn("min-w-0 shrink-0", className)}>
         {label && swatchLabelVisible ? (
@@ -257,81 +346,7 @@ export function ColorField({
         ) : null}
         <Popover open={open} onOpenChange={handleOpenChange}>
           <PopoverTrigger asChild>
-            <HintTooltip label={swatchTitle}>
-              <button
-                type="button"
-                className={cn(
-                  swatchTriggerVariants({ open }),
-                  swatchTriggerPreset === "text" && "inline-flex h-7 items-center gap-0.5 px-0",
-                  swatchTriggerPreset === "highlight" && "h-7",
-                )}
-                aria-label={pickerLabel}
-                aria-expanded={open}
-              >
-              {swatchTriggerPreset === "text" ? (
-                <>
-                  <span className="flex flex-col items-center justify-center gap-0.5 px-1.5">
-                    <span className="text-sm font-bold leading-none">A</span>
-                    <span
-                      className="h-0.5 w-4 rounded-full ring-1 ring-black/10 dark:ring-white/15"
-                      style={{ backgroundColor: inkColor }}
-                    />
-                  </span>
-                  <ChevronDown
-                    className={cn(
-                      "mr-1 size-3.5 shrink-0 opacity-60 transition-transform",
-                      open && "rotate-180 text-brand-500",
-                    )}
-                    aria-hidden
-                  />
-                </>
-              ) : swatchTriggerPreset === "highlight" ? (
-                <>
-                  <span className="flex h-full items-center gap-1 border-r border-gray-100 px-1.5 dark:border-gray-800">
-                    <Highlighter className="size-3.5 shrink-0 opacity-80" aria-hidden />
-                    <ColorSwatchChip
-                      color={highlightPreview}
-                      size={chipSize}
-                      className={!previewHex ? "opacity-50" : undefined}
-                    />
-                  </span>
-                  <span className="flex shrink-0 items-center gap-1 px-1.5">
-                    {!previewHex ? (
-                      <span className="text-[10px] text-gray-400 dark:text-gray-500">无</span>
-                    ) : null}
-                    <ChevronDown
-                      className={cn(
-                        "size-3.5 shrink-0 text-gray-400 transition-transform dark:text-gray-500",
-                        open && "rotate-180 text-brand-500 dark:text-brand-400",
-                      )}
-                      aria-hidden
-                    />
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span
-                    className="flex h-full w-10 shrink-0 items-center justify-center border-r border-gray-100 bg-gray-50/90 p-1.5 dark:border-gray-800 dark:bg-white/[0.04]"
-                    aria-hidden
-                  >
-                    <ColorSwatchChip color={previewHex || undefined} size={chipSize} />
-                  </span>
-                  <span className="flex shrink-0 items-center gap-1 px-2">
-                    {!previewHex ? (
-                      <span className="text-[10px] text-gray-400 dark:text-gray-500">未设置</span>
-                    ) : null}
-                    <ChevronDown
-                      className={cn(
-                        "size-3.5 shrink-0 text-gray-400 transition-transform dark:text-gray-500",
-                        open && "rotate-180 text-brand-500 dark:text-brand-400",
-                      )}
-                      aria-hidden
-                    />
-                  </span>
-                </>
-              )}
-            </button>
-            </HintTooltip>
+            {showHintTooltip ? <HintTooltip label={swatchTitle}>{swatchButton}</HintTooltip> : swatchButton}
           </PopoverTrigger>
           {popoverBody}
         </Popover>

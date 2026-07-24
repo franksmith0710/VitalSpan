@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   parseAdcodeFromMapId,
   resolveProvinceAdcodeFromMapId,
+  resolveProvinceTerrainUvBounds,
   resolveTerrainPackKey,
 } from "@/components/charts/engine/three/geo/chinaTerrainLoader";
 import { VS_REGIONS_MAP_ID } from "@/components/charts/engine/geo/geoConstants";
@@ -40,6 +41,12 @@ describe("resolveTerrainPackKey", () => {
       level: "province",
       adcode: 330000,
     });
+  });
+
+  it("loads bake projBounds for province UV", () => {
+    const bounds = resolveProvinceTerrainUvBounds("vs-geo-520000", 1);
+    expect(bounds?.minX).toBeCloseTo(-4.525, 1);
+    expect(bounds?.maxY).toBeCloseTo(3.896, 1);
   });
 
   it("falls back to national for province without L1 pack", () => {

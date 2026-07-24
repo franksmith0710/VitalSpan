@@ -10,7 +10,6 @@ import { GEO_MAP_SCALE_LIMIT, resolveEmbeddedGeoRoam, VS_REGIONS_MAP_ID } from "
 import {
   colorForGeoHover,
   colorForGeoValue,
-  geoPlotBackground,
   geoStrokeWidth,
   geoSurfaceColors,
 } from "@/components/charts/engine/geo/geoSurfaceColors";
@@ -119,7 +118,7 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
     .attr("class", "map-plot-bg")
     .attr("width", width)
     .attr("height", height)
-    .attr("fill", geoPlotBackground(isDark))
+    .attr("fill", "transparent")
     .attr("pointer-events", "none");
 
   const visualUid = `geo-2d-${Math.random().toString(36).slice(2, 9)}`;
@@ -129,6 +128,7 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
     height,
     isDark,
     surface,
+    plotBackground: false,
   });
 
   const g = root.append("g").attr("class", "map-zoom-root");
