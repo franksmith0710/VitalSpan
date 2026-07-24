@@ -99,7 +99,7 @@ describe("applyTerrainToExtrudeGeometry", () => {
       true,
     );
     expect(mat.map).toBe(tex);
-    expect(mat.type).toBe("MeshStandardMaterial");
+    expect(mat.type).toBe("MeshBasicMaterial");
   });
 
   it("keeps cap tint bright enough in dark theme for procedural source", () => {

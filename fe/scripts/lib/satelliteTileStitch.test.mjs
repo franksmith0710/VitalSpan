@@ -20,13 +20,13 @@ function solidTile(r, g, b) {
   return tile;
 }
 
-test("featherWeight ramps from 0 to 1 across TILE_FEATHER", () => {
-  assert.equal(featherWeight(0), 0);
-  assert.ok(featherWeight(TILE_FEATHER / 2) > 0.4);
-  assert.equal(featherWeight(TILE_FEATHER), 1);
+test("TILE_FEATHER defaults to hard paste (no dark grid expansion)", () => {
+  assert.equal(TILE_FEATHER, 0);
+  assert.equal(featherWeight(0), 1);
+  assert.equal(featherWeight(2), 1);
 });
 
-test("placeTileOnCanvas feathers internal vertical seam", () => {
+test("placeTileOnCanvas hard-pastes adjacent tiles without dark feather band", () => {
   const canvasW = TILE * 2;
   const canvasH = TILE;
   const canvas = new Uint8Array(canvasW * canvasH * 4);
@@ -39,13 +39,13 @@ test("placeTileOnCanvas feathers internal vertical seam", () => {
     featherTop: false,
   });
 
-  const leftIdx = (128 * canvasW + (TILE - 2)) * 4;
-  const blendIdx = (128 * canvasW + (TILE + Math.floor(TILE_FEATHER / 2))) * 4;
-  const rightIdx = (128 * canvasW + (TILE + TILE_FEATHER + 2)) * 4;
+  const leftIdx = (128 * canvasW + (TILE - 1)) * 4;
+  const rightIdx = (128 * canvasW + TILE) * 4;
 
-  assert.ok(canvas[leftIdx] > 200 && canvas[leftIdx + 2] < 50);
-  assert.ok(canvas[blendIdx + 2] > 20 && canvas[blendIdx] < 240);
-  assert.ok(canvas[rightIdx + 2] > 200 && canvas[rightIdx] < 50);
+  assert.equal(canvas[leftIdx], 255);
+  assert.equal(canvas[leftIdx + 2], 0);
+  assert.equal(canvas[rightIdx], 0);
+  assert.equal(canvas[rightIdx + 2], 255);
 });
 
 test("tileRangeForBounds counts grid tiles", () => {

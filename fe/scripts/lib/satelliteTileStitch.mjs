@@ -7,8 +7,12 @@
 
 const TILE = 256;
 
-/** 邻接瓦片缝羽化宽度（px）；减轻 ESRI 256px 瓦片色差网格 */
-export const TILE_FEATHER = 4;
+/**
+ * 邻接瓦片缝羽化宽度（px）。
+ * ESRI World Imagery 瓦片边缘本就有色差；非重叠羽化（weight→0）会把 1px 缝扩成粗黑网格，
+ * 观感劣于硬贴。重叠混合未实现前保持 0（与上午可用版本一致）。
+ */
+export const TILE_FEATHER = 0;
 
 const SOURCES = {
   diffuse: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",

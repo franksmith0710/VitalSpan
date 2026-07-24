@@ -9,9 +9,9 @@
   "height": 4096,
   "source": "satellite",
   "uvMode": "projBounds",
-  "refViewport": {
-    "width": 800,
-    "height": 600
-  },
+  "refViewport": [
+    800,
+    600
+  ],
   "masked": true
 }

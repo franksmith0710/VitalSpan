@@ -173,14 +173,26 @@ export function buildTerrainCapMaterial(
   isDark: boolean,
   displacementScale = 0,
   source: TerrainCapSource = "satellite",
-): THREE.MeshStandardMaterial {
+): THREE.MeshBasicMaterial | THREE.MeshStandardMaterial {
   terrainMap.colorSpace = THREE.SRGBColorSpace;
   const tint = computeCapTintColor(dataTint, valueT, isDark, source);
+  const useRelief =
+    Boolean(displacementMap) && displacementScale > 0 && source !== "satellite";
+
+  // 卫星平面贴图：MeshBasic 无光照，避免稀疏三角面打出伪阴影；也更省 GPU
+  if (source === "satellite" && !useRelief) {
+    return new THREE.MeshBasicMaterial({
+      map: terrainMap,
+      color: tint,
+      side: THREE.FrontSide,
+    });
+  }
+
   const emissiveIntensity =
     source === "satellite" ? (isDark ? 0.04 : 0.02) : isDark ? 0.1 : 0.05;
   return new THREE.MeshStandardMaterial({
     map: terrainMap,
-    normalMap: normalMap ?? null,
+    normalMap: source === "satellite" ? null : (normalMap ?? null),
     displacementMap: displacementMap && displacementScale > 0 ? displacementMap : null,
     displacementScale: displacementMap && displacementScale > 0 ? displacementScale : 0,
     color: tint,

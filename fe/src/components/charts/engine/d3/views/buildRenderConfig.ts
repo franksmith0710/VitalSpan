@@ -8,7 +8,11 @@ import { buildD3StyleProps } from "@/components/charts/engine/d3/views/buildStyl
 import { extractDrillValue, buildCartesianRenderConfig } from "@/components/charts/engine/d3/views/buildCartesianConfig";
 import { readCartesianStyleFromPlanOptions } from "@/lib/applyChartDeStyleBlocks";
 import { readChartDeStyle, readChartGeoStyle, readChartGeo3dStyle } from "@/lib/chartDeStyle";
-import { resolveTerrainTextureEnabled } from "@/components/charts/engine/three/geo3dRuntime";
+import {
+  defaultGeo3dRenderTier,
+  resolveTerrainReliefEnabled,
+  resolveTerrainTextureEnabled,
+} from "@/components/charts/engine/three/geo3dRuntime";
 import type {
   D3BarRangeDatum,
   D3BidirectionalBarDatum,
@@ -68,7 +72,7 @@ export function buildD3DispatchPayload(
     const geo3dStyle = {
       ...geo3dStyleRaw,
       terrainTexture: resolveTerrainTextureEnabled(renderTier, geo3dStyleRaw),
-      terrainRelief: renderTier === "full" ? geo3dStyleRaw.terrainRelief : false,
+      terrainRelief: resolveTerrainReliefEnabled(geo3dStyleRaw),
     };
     return {
       kind: "geo",

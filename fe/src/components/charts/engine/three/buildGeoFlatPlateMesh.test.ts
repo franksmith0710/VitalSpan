@@ -30,7 +30,7 @@ describe("buildGeoFlatPlateMesh", () => {
 
     expect(built.mesh).toBeInstanceOf(THREE.Group);
     expect(built.mesh.children.length).toBe(3);
-    expect(built.capMaterial).toBeInstanceOf(THREE.MeshStandardMaterial);
+    expect(built.capMaterial).toBeInstanceOf(THREE.MeshBasicMaterial);
     expect(built.capMaterial.map).toBe(terrainMap);
 
     const capMesh = built.mesh.children.find(
@@ -62,9 +62,14 @@ describe("buildGeoFlatPlateMesh", () => {
       dataTint: 0x0284c7,
       valueT: 0.5,
     });
-    expect(built.capMaterial).toBeInstanceOf(THREE.MeshStandardMaterial);
-    expect(built.capMaterial.normalMap).toBeTruthy();
-    expect(built.capMaterial.displacementMap).toBe(displacement);
-    expect(built.capMaterial.displacementScale).toBe(2);
+    expect(built.capMaterial).toBeInstanceOf(THREE.MeshBasicMaterial);
+    expect(built.capMaterial.map).toBeTruthy();
+    // 卫星模式默认不启用位移（稀疏网格会碎裂）
+    expect(
+      "displacementMap" in built.capMaterial ? built.capMaterial.displacementMap : null,
+    ).toBeFalsy();
+    expect(
+      "displacementScale" in built.capMaterial ? built.capMaterial.displacementScale : 0,
+    ).toBe(0);
   });
 });

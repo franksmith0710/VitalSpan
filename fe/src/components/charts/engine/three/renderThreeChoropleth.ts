@@ -31,6 +31,8 @@ import { DEFAULT_GEO3D_EXTRUDE_INTENSITY } from "@/lib/chartDeStyle";
 import { resolveGeo3dQuality, shouldRenderGeo3d } from "@/components/charts/engine/three/geo3dQuality";
 import {
   releaseWebGLSlot,
+  resolveTerrainReliefEnabled,
+  resolveTerrainTextureEnabled,
   setWebGLSlotDispose,
   tryAcquireWebGLSlot,
   type Geo3dRenderTier,
@@ -64,7 +66,7 @@ function showDevTerrainFailureHint(container: HTMLElement): () => void {
 function logDevTerrainDiagnostics(
   terrainOn: boolean,
   terrainPack: Awaited<ReturnType<typeof loadChinaTerrainPack>> | null,
-  firstCap: THREE.MeshStandardMaterial | undefined,
+  firstCap: THREE.MeshBasicMaterial | THREE.MeshStandardMaterial | undefined,
   mapId: string | undefined,
   drillDepth: number,
   webglApi?: WebGLApi | "none",
@@ -117,9 +119,23 @@ function provinceGroupOf(obj: THREE.Object3D): THREE.Object3D | null {
   return null;
 }
 
-function capMaterialOf(target: THREE.Object3D): THREE.MeshStandardMaterial {
+function capMaterialOf(
+  target: THREE.Object3D,
+): THREE.MeshBasicMaterial | THREE.MeshStandardMaterial {
   const group = provinceGroupOf(target) ?? target;
-  return group.userData.capMaterial as THREE.MeshStandardMaterial;
+  return group.userData.capMaterial as THREE.MeshBasicMaterial | THREE.MeshStandardMaterial;
+}
+
+function applyCapTint(
+  cap: THREE.MeshBasicMaterial | THREE.MeshStandardMaterial,
+  tint: THREE.Color,
+  emissiveIntensity?: number,
+): void {
+  cap.color.copy(tint);
+  if (cap instanceof THREE.MeshStandardMaterial) {
+    cap.emissive.copy(tint);
+    if (emissiveIntensity != null) cap.emissiveIntensity = emissiveIntensity;
+  }
 }
 
 function disposePlateGroup(group: THREE.Group): void {
@@ -249,8 +265,11 @@ export async function renderThreeChoroplethChart(
     const plateDepth = Math.max(0.18, Math.min(width, height) * PLATE_DEPTH_RATIO * plateScale);
     const borderColor = isDark ? 0x7dd3fc : 0x1e40af;
     const showVisualMap = geoStyle.visualMap !== false;
-    const terrainTextureOn = geo3dStyle.terrainTexture !== false;
-    const terrainReliefOn = geo3dStyle.terrainRelief !== false;
+    const terrainTextureOn = resolveTerrainTextureEnabled(
+      renderTier as Geo3dRenderTier,
+      geo3dStyle,
+    );
+    const terrainReliefOn = resolveTerrainReliefEnabled(geo3dStyle);
     const terrainOn = terrainTextureOn;
     const reliefOn = terrainTextureOn && terrainReliefOn;
 
@@ -261,7 +280,12 @@ export async function renderThreeChoroplethChart(
     let terrainPack: Awaited<ReturnType<typeof loadChinaTerrainPack>> | null = null;
     if (terrainOn) {
       try {
-        terrainPack = await loadChinaTerrainPack({ mapId, drillDepth, isDark });
+        terrainPack = await loadChinaTerrainPack({
+          mapId,
+          drillDepth,
+          isDark,
+          withDisplacement: reliefOn,
+        });
       } catch (err) {
         terrainPack = null;
         if (import.meta.env.DEV) {
@@ -281,25 +305,30 @@ export async function renderThreeChoroplethChart(
     }
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.setClearColor(0x000000, 0);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    // embed 降采样：看板内嵌无需 2× retina，显著减 fill-rate 卡顿
+    const maxPixelRatio = renderTier === "full" ? 2 : 1;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxPixelRatio));
     renderer.setSize(width, height);
     container.appendChild(renderer.domElement);
 
     scene.add(new THREE.AmbientLight(0x9eb4c8, isDark ? 0.48 : 0.38));
-    const keyLight = new THREE.DirectionalLight(0xf0f6fc, isDark ? 1.35 : 1.1);
-    keyLight.position.set(-1.2, 2.4, 1.0);
-    const fillLight = new THREE.DirectionalLight(0x5a8ab0, isDark ? 0.45 : 0.32);
-    fillLight.position.set(1.4, 1.2, -0.8);
-    scene.add(keyLight, fillLight);
+    // 卫星平面贴图走 MeshBasic，无需方向光；仅侧壁/无贴图时保留弱光
+    if (!terrainOn || reliefOn) {
+      const keyLight = new THREE.DirectionalLight(0xf0f6fc, isDark ? 1.35 : 1.1);
+      keyLight.position.set(-1.2, 2.4, 1.0);
+      const fillLight = new THREE.DirectionalLight(0x5a8ab0, isDark ? 0.45 : 0.32);
+      fillLight.position.set(1.4, 1.2, -0.8);
+      scene.add(keyLight, fillLight);
+    }
 
     const mapGroup = new THREE.Group();
     const meshes: THREE.Group[] = [];
-    const displacementScale = reliefOn ? plateDepth * 5.5 : 0;
+    const displacementScale = reliefOn ? plateDepth * 1.5 : 0;
     const terrainOpts = terrainPack
       ? {
           terrainColorMap: terrainPack.colorMap,
-          terrainNormalMap: terrainPack.normalMap,
-          terrainDisplacementMap: terrainPack.displacementMap,
+          terrainNormalMap: reliefOn ? terrainPack.normalMap : undefined,
+          terrainDisplacementMap: reliefOn ? terrainPack.displacementMap : undefined,
           displacementScale,
           reliefOn,
           projBounds,
@@ -307,7 +336,7 @@ export async function renderThreeChoroplethChart(
         }
       : {};
 
-    let firstCapMaterial: THREE.MeshStandardMaterial | undefined;
+    let firstCapMaterial: THREE.MeshBasicMaterial | THREE.MeshStandardMaterial | undefined;
 
     for (const feature of features) {
       if (!feature.geometry) continue;
@@ -325,6 +354,10 @@ export async function renderThreeChoroplethChart(
           valueT,
         });
         if (!firstCapMaterial) firstCapMaterial = built.capMaterial;
+        const emissiveIntensity =
+          built.capMaterial instanceof THREE.MeshStandardMaterial
+            ? built.capMaterial.emissiveIntensity
+            : 0;
         built.mesh.userData = {
           name: feature.name,
           value: feature.value,
@@ -332,7 +365,7 @@ export async function renderThreeChoroplethChart(
           terrainApplied: Boolean(terrainPack?.colorMap),
           capMaterial: built.capMaterial,
           capTint,
-          emissiveIntensity: built.capMaterial.emissiveIntensity,
+          emissiveIntensity,
         };
         mapGroup.add(built.mesh);
         meshes.push(built.mesh);
@@ -443,9 +476,7 @@ export async function renderThreeChoroplethChart(
     const restoreCap = (group: THREE.Object3D) => {
       const cap = capMaterialOf(group);
       const tint = group.userData.capTint as THREE.Color;
-      cap.color.copy(tint);
-      cap.emissive.copy(tint);
-      cap.emissiveIntensity = group.userData.emissiveIntensity as number;
+      applyCapTint(cap, tint, group.userData.emissiveIntensity as number);
     };
 
     const setHover = (group: THREE.Object3D | null) => {
@@ -461,9 +492,7 @@ export async function renderThreeChoroplethChart(
         surface.palette,
       );
       const hoverCol = new THREE.Color(hoverCss);
-      cap.color.copy(hoverCol);
-      cap.emissive.copy(hoverCol);
-      cap.emissiveIntensity = isDark ? 0.45 : 0.32;
+      applyCapTint(cap, hoverCol, isDark ? 0.45 : 0.32);
     };
 
     const onMove = (event: PointerEvent) => {

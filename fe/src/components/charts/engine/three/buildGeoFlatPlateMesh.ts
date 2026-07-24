@@ -10,7 +10,7 @@ export const GEO_CAP_Z_EPS = 0.02;
 
 export type GeoFlatPlateMesh = {
   mesh: THREE.Group;
-  capMaterial: THREE.MeshStandardMaterial;
+  capMaterial: THREE.MeshBasicMaterial | THREE.MeshStandardMaterial;
   borderLines: THREE.LineSegments;
 };
 
