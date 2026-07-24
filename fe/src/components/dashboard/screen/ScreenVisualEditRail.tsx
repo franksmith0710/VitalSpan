@@ -1,20 +1,32 @@
-import { Clock3, Frame, Minus } from "lucide-react";
+import { CalendarClock, Circle, Clock3, Frame, Minus, Shapes } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import type { LayoutWidget } from "@/components/dashboard/layoutUtils";
+import type { LayoutWidget, TextWidgetConfig } from "@/components/dashboard/layoutUtils";
 import {
   isScreenBorderWidget,
   isScreenClockWidget,
+  isScreenDateTimeWidget,
+  isScreenIconWidget,
+  isScreenShapeWidget,
   isScreenTitleBarWidget,
 } from "@/lib/screenVisualAssets";
 import { DeAttrField, DeAttrForm } from "@/components/dashboard/dashboardInspectorUi";
 import { INSPECTOR_HINT } from "@/components/dashboard/inspectorCompact";
+import { ChartInspectorTabs } from "@/components/dashboard/ChartInspectorTabs";
 import { WidgetInspectorDelete } from "@/components/dashboard/widget-inspector-delete";
 import { WidgetRailPanelHeader } from "@/components/dashboard/widgetRailChrome";
+import {
+  patchScreenVisualStyle,
+  ScreenBorderStylePanel,
+  ScreenClockStylePanel,
+  ScreenDateTimeStylePanel,
+  ScreenTitleBarStylePanel,
+} from "./ScreenVisualStylePanels";
 
 export type ScreenVisualEditRailProps = {
   widget: LayoutWidget & { textConfig: NonNullable<LayoutWidget["textConfig"]> };
   onTitleChange?: (title: string) => void;
+  onTextConfigChange?: (config: TextWidgetConfig) => void;
   onDelete?: () => void;
   onRailCollapse?: () => void;
   className?: string;
@@ -23,6 +35,7 @@ export type ScreenVisualEditRailProps = {
 export function ScreenVisualEditRail({
   widget,
   onTitleChange,
+  onTextConfigChange,
   onDelete,
   onRailCollapse,
   className,
@@ -30,8 +43,109 @@ export function ScreenVisualEditRail({
   const isClock = isScreenClockWidget(widget);
   const isBorder = isScreenBorderWidget(widget);
   const isTitleBar = isScreenTitleBarWidget(widget);
-  const kindLabel = isClock ? "时钟" : isBorder ? "边框" : isTitleBar ? "标题装饰" : "素材";
-  const Icon = isClock ? Clock3 : isBorder ? Frame : Minus;
+  const isDateTime = isScreenDateTimeWidget(widget);
+  const isShape = isScreenShapeWidget(widget);
+  const isIcon = isScreenIconWidget(widget);
+  const kindLabel = isClock
+    ? "时钟"
+    : isBorder
+      ? "边框"
+      : isTitleBar
+        ? "标题装饰"
+        : isDateTime
+          ? "日期时间"
+          : isShape
+            ? "图形"
+            : isIcon
+              ? "图标"
+              : "素材";
+  const Icon = isClock
+    ? Clock3
+    : isBorder
+      ? Frame
+      : isDateTime
+        ? CalendarClock
+        : isShape
+          ? Shapes
+          : isIcon
+            ? Circle
+            : Minus;
+  const screenStyle = widget.textConfig.screenStyle ?? {};
+
+  const patchStyle = (
+    key: "clock" | "datetime" | "border" | "titleBar" | "shape" | "icon",
+    partial: object,
+  ) => {
+    onTextConfigChange?.({
+      ...widget.textConfig,
+      screenStyle: patchScreenVisualStyle(screenStyle, key, partial),
+    });
+  };
+
+  const dataTab = (
+    <div className="p-4">
+      <DeAttrForm>
+        <DeAttrField label="图层名称" compact>
+          <Input
+            value={widget.title}
+            onChange={(e) => onTitleChange?.(e.target.value)}
+            className="h-9"
+            placeholder={kindLabel}
+          />
+        </DeAttrField>
+      </DeAttrForm>
+      <div className="mt-4 flex items-center gap-3 rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-3 dark:border-cyan-500/25 dark:bg-cyan-500/10">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-600 dark:text-cyan-300">
+          <Icon className="size-4" aria-hidden />
+        </span>
+        <div className="min-w-0">
+          <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">
+            大屏素材组件
+          </p>
+          <p className={INSPECTOR_HINT}>
+            {isClock
+              ? "预览时自动显示日期时间与星期，内容不可编辑。"
+              : isDateTime
+                ? "上下分行展示日期与时间，可在样式 Tab 调整字号与颜色。"
+                : isTitleBar
+                  ? "顶部标题装饰条，标题取自图层名称。"
+                  : isShape
+                    ? "基础几何图形装饰，可调整描边与填充。"
+                    : isIcon
+                      ? "线框图标装饰，可调整颜色与尺寸。"
+                      : "装饰边框叠加在画布上，请通过拖拽调整尺寸与位置。"}
+          </p>
+        </div>
+      </div>
+      {onDelete ? <WidgetInspectorDelete onDelete={onDelete} className="mt-6" /> : null}
+    </div>
+  );
+
+  const styleTab = (
+    <div className="p-4">
+      {isClock ? (
+        <ScreenClockStylePanel
+          value={screenStyle.clock}
+          onChange={(clock) => patchStyle("clock", clock)}
+        />
+      ) : isDateTime ? (
+        <ScreenDateTimeStylePanel
+          value={screenStyle.datetime}
+          onChange={(datetime) => patchStyle("datetime", datetime)}
+        />
+      ) : isBorder ? (
+        <ScreenBorderStylePanel
+          value={screenStyle.border}
+          onChange={(border) => patchStyle("border", border)}
+        />
+      ) : isTitleBar ? (
+        <ScreenTitleBarStylePanel
+          value={screenStyle.titleBar}
+          onChange={(titleBar) => patchStyle("titleBar", titleBar)}
+        />
+      ) : null}
+    </div>
+  );
 
   return (
     <div className={cn("flex h-full min-h-0 w-full flex-col bg-white dark:bg-gray-900", className)}>
@@ -41,38 +155,13 @@ export function ScreenVisualEditRail({
         onCollapse={onRailCollapse}
         collapseAriaLabel="收起配置"
       />
-      <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-4">
-        <DeAttrForm>
-          <DeAttrField label="图层名称" compact>
-            <Input
-              value={widget.title}
-              onChange={(e) => onTitleChange?.(e.target.value)}
-              className="h-9"
-              placeholder={kindLabel}
-            />
-          </DeAttrField>
-        </DeAttrForm>
-        <div className="mt-4 flex items-center gap-3 rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-3 dark:border-cyan-500/25 dark:bg-cyan-500/10">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-600 dark:text-cyan-300">
-            <Icon className="size-4" aria-hidden />
-          </span>
-          <div className="min-w-0">
-            <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">
-              DataEase 素材组件
-            </p>
-            <p className={INSPECTOR_HINT}>
-              {isClock
-                ? "预览时自动显示日期时间与星期，内容不可编辑。"
-                : isTitleBar
-                  ? "顶部标题装饰条，标题取自图层名称。"
-                  : "装饰边框叠加在画布上，请通过拖拽调整尺寸与位置。"}
-            </p>
-          </div>
-        </div>
-        {onDelete ? (
-          <WidgetInspectorDelete onDelete={onDelete} className="mt-6" />
-        ) : null}
-      </div>
+      <ChartInspectorTabs
+        className="min-h-0 flex-1"
+        defaultTab="data"
+        tabs={["data", "style"]}
+        data={dataTab}
+        style={styleTab}
+      />
     </div>
   );
 }

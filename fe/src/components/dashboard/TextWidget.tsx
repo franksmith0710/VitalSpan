@@ -9,12 +9,18 @@ import { WidgetInlineTitle } from "./WidgetInlineTitle";
 import { isRichTextEmpty, textConfigToHtml } from "./richTextHtml";
 import { ScreenBorderDisplay } from "./screen/ScreenBorderDisplay";
 import { ScreenClockDisplay } from "./screen/ScreenClockDisplay";
+import { ScreenDateTimeDisplay } from "./screen/ScreenDateTimeDisplay";
+import { ScreenIconDisplay } from "./screen/ScreenIconDisplay";
+import { ScreenShapeDisplay } from "./screen/ScreenShapeDisplay";
 import { ScreenTitleBarDisplay } from "./screen/ScreenTitleBarDisplay";
 import type { LayoutWidget, TextWidgetConfig, DashboardStyleConfig } from "./layoutUtils";
 import { gridWidgetShellClassName, resolveGridWidgetShell } from "./widgetRailStyleSections";
 import {
   isScreenBorderWidget,
   isScreenClockWidget,
+  isScreenDateTimeWidget,
+  isScreenIconWidget,
+  isScreenShapeWidget,
   isScreenTitleBarWidget,
   isScreenVisualWidget,
 } from "@/lib/screenVisualAssets";
@@ -51,7 +57,11 @@ export function TextWidget({
   const screenClock = isScreenClockWidget(widget);
   const screenBorder = isScreenBorderWidget(widget);
   const screenTitleBar = isScreenTitleBarWidget(widget);
+  const screenDateTime = isScreenDateTimeWidget(widget);
+  const screenShape = isScreenShapeWidget(widget);
+  const screenIcon = isScreenIconWidget(widget);
   const screenVisual = isScreenVisualWidget(widget);
+  const screenStyle = widget.textConfig.screenStyle;
 
   const beginEditing = () => {
     if (mode !== "edit" || screenVisual) return;
@@ -161,11 +171,20 @@ export function TextWidget({
             onCancel={cancel}
           />
         ) : screenClock ? (
-          <ScreenClockDisplay />
+          <ScreenClockDisplay styleConfig={screenStyle?.clock} />
         ) : screenBorder ? (
-          <ScreenBorderDisplay />
+          <ScreenBorderDisplay styleConfig={screenStyle?.border} />
         ) : screenTitleBar ? (
-          <ScreenTitleBarDisplay title={widget.title || "数据大屏标题"} />
+          <ScreenTitleBarDisplay
+            title={widget.title || "数据大屏标题"}
+            styleConfig={screenStyle?.titleBar}
+          />
+        ) : screenDateTime ? (
+          <ScreenDateTimeDisplay styleConfig={screenStyle?.datetime} />
+        ) : screenShape ? (
+          <ScreenShapeDisplay styleConfig={screenStyle?.shape} />
+        ) : screenIcon ? (
+          <ScreenIconDisplay styleConfig={screenStyle?.icon} />
         ) : isRichTextEmpty(html) ? (
           <p
             className={cn(

@@ -3,6 +3,7 @@ import { migrateChartViewConfig } from "@/lib/migrateChartTypes";
 import { resolveChartWidgetTitle } from "@/lib/chartTypeDisplayNames";
 import { chartInspectorCapabilities } from "@/lib/chartInspectorCapabilities";
 import { DEFAULT_CHART_LEGEND_STYLE, readChartDeStyle } from "@/lib/chartDeStyle";
+import type { ScreenVisualStyleConfig } from "@/lib/screenVisualStyle";
 import type { DashboardLayoutV2, LayoutWidget, PixelLayoutWidget } from "./dashboardLayoutContracts";
 import type { WidgetStyleConfig } from "./dashboardStyleConfig";
 
@@ -49,15 +50,20 @@ export type TextWidgetConfig = {
   datasetId?: string;
   dimensionField?: string;
   metricField?: string;
+  /** 大屏素材组件样式（时钟/边框/标题装饰/日期时间） */
+  screenStyle?: ScreenVisualStyleConfig;
   /** 单组件外框样式（覆盖看板默认 widgetStyle） */
   widgetStyle?: WidgetStyleConfig;
 };
+
+export type MediaWidgetKind = "image" | "webpage";
 
 export type MediaFit = "contain" | "cover" | "fill";
 
 export type MediaAlign = "center" | "top" | "bottom" | "left" | "right";
 
 export type MediaWidgetConfig = {
+  kind?: MediaWidgetKind;
   url: string;
   alt: string;
   fit: MediaFit;
@@ -87,6 +93,7 @@ export function mediaAlignToObjectPosition(align: MediaAlign = "center"): string
 
 export function defaultMediaConfig(): MediaWidgetConfig {
   return {
+    kind: "image",
     url: "",
     alt: "",
     fit: "contain",
@@ -105,6 +112,7 @@ export function normalizeMediaConfig(raw?: Partial<MediaWidgetConfig>): MediaWid
   return {
     ...defaults,
     ...raw,
+    kind: raw.kind ?? defaults.kind,
     url: raw.url ?? defaults.url,
     alt: raw.alt ?? defaults.alt,
     fit: raw.fit ?? defaults.fit,

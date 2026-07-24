@@ -3,6 +3,7 @@ import { Clock } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { TruncateHint } from "@/components/ui/hint-tooltip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PanelEmptyState } from "@/components/ui/panel-empty-state";
 import { Input } from "@/components/ui/input";
@@ -283,13 +284,16 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
                     <TableRow key={row.executionId}>
                       <TableCell className="text-theme-sm">{row.status}</TableCell>
                       <TableCell className="text-theme-sm">{row.executedAt}</TableCell>
-                      <TableCell
-                        className="max-w-[160px] truncate text-theme-sm text-gray-600 dark:text-gray-400"
-                        title={row.errorMessage ? localizeApiMessage(row.errorMessage) : undefined}
-                      >
-                        <span className="line-clamp-2">
-                          {row.errorMessage ? localizeApiMessage(row.errorMessage) : "—"}
-                        </span>
+                      <TableCell className="max-w-[160px] text-theme-sm text-gray-600 dark:text-gray-400">
+                        {row.errorMessage ? (
+                          <TruncateHint title={localizeApiMessage(row.errorMessage)}>
+                            <span className="line-clamp-2">
+                              {localizeApiMessage(row.errorMessage)}
+                            </span>
+                          </TruncateHint>
+                        ) : (
+                          "—"
+                        )}
                       </TableCell>
                       <TableCell>
                         {canRetry ? (

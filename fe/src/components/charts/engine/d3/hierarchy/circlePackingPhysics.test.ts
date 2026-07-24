@@ -16,6 +16,7 @@ import {
   relaxPackOverlaps,
   resetPackNodesToTarget,
   resolvePackEdgeInset,
+  resolvePackPlotCircle,
   settlePackOverlaps,
   stepPackMotionFrame,
 } from "./circlePackingPhysics";
@@ -86,17 +87,14 @@ describe("circlePackingPhysics", () => {
       120,
       6,
     );
-    const minX = Math.min(...fitted.map((d) => d.x - d.r));
-    const maxX = Math.max(...fitted.map((d) => d.x + d.r));
-    const minY = Math.min(...fitted.map((d) => d.y - d.r));
-    const maxY = Math.max(...fitted.map((d) => d.y + d.r));
-    expect(minX).toBeGreaterThanOrEqual(6);
-    expect(minY).toBeGreaterThanOrEqual(6);
-    expect(maxX).toBeLessThanOrEqual(194);
-    expect(maxY).toBeLessThanOrEqual(114);
+    const { cx, cy, radius } = resolvePackPlotCircle(200, 120);
+    for (const item of fitted) {
+      const dist = Math.hypot(item.x - cx, item.y - cy) + item.r;
+      expect(dist).toBeLessThanOrEqual(radius + 0.5);
+    }
   });
 
-  it("keeps enlarged nodes inside plot bounds", () => {
+  it("keeps enlarged nodes inside circular plot bounds", () => {
     const node = {
       name: "a",
       targetX: 4,
@@ -108,8 +106,9 @@ describe("circlePackingPhysics", () => {
       y: 90,
     };
     clampPackNodeToBounds(node, 120, 80, STROKE);
-    expect(node.x).toBe(packNodeVisualRadius(node, STROKE));
-    expect(node.y).toBe(80 - packNodeVisualRadius(node, STROKE));
+    const { cx, cy, radius } = resolvePackPlotCircle(120, 80);
+    const dist = Math.hypot((node.x ?? 0) - cx, (node.y ?? 0) - cy) + packNodeVisualRadius(node, STROKE);
+    expect(dist).toBeLessThanOrEqual(radius + 0.5);
   });
 
   it("pushes overlapping pack nodes apart", () => {
@@ -123,31 +122,31 @@ describe("circlePackingPhysics", () => {
 
   it("squeezes neighbors when hovered node enlarges in place", () => {
     const nodes = createPackPhysicsNodes([
-      { name: "a", x: 50, y: 40, r: 18 },
-      { name: "b", x: 82, y: 40, r: 18 },
-      { name: "c", x: 114, y: 40, r: 18 },
+      { name: "a", x: 70, y: 90, r: 18 },
+      { name: "b", x: 90, y: 90, r: 18 },
+      { name: "c", x: 110, y: 90, r: 18 },
     ]);
     focusPackNode(nodes[1]!);
     nodes[1]!.renderScale = PACK_FOCUS_SCALE;
-    settlePackOverlaps(nodes, 180, 80, STROKE);
-    expect(Math.abs((nodes[0]!.x ?? 0) - 50)).toBeGreaterThan(2);
-    expect(Math.abs((nodes[2]!.x ?? 0) - 114)).toBeGreaterThan(2);
+    settlePackOverlaps(nodes, 180, 180, STROKE);
+    expect(Math.abs((nodes[0]!.x ?? 0) - 70)).toBeGreaterThan(2);
+    expect(Math.abs((nodes[2]!.x ?? 0) - 110)).toBeGreaterThan(2);
     expect(hasPackOverlaps(nodes, STROKE)).toBe(false);
   });
 
   it("repeats squeeze on every hover cycle", () => {
     const nodes = createPackPhysicsNodes([
-      { name: "a", x: 50, y: 40, r: 18 },
-      { name: "b", x: 82, y: 40, r: 18 },
-      { name: "c", x: 114, y: 40, r: 18 },
+      { name: "a", x: 70, y: 90, r: 18 },
+      { name: "b", x: 90, y: 90, r: 18 },
+      { name: "c", x: 110, y: 90, r: 18 },
     ]);
 
     const squeeze = () => {
       resetPackNodesToTarget(nodes);
       focusPackNode(nodes[1]!);
       nodes[1]!.renderScale = PACK_FOCUS_SCALE;
-      settlePackOverlaps(nodes, 180, 80, STROKE);
-      return Math.abs((nodes[0]!.x ?? 0) - 50) + Math.abs((nodes[2]!.x ?? 0) - 114);
+      settlePackOverlaps(nodes, 180, 180, STROKE);
+      return Math.abs((nodes[0]!.x ?? 0) - 70) + Math.abs((nodes[2]!.x ?? 0) - 110);
     };
 
     const first = squeeze();
@@ -168,19 +167,17 @@ describe("circlePackingPhysics", () => {
 
   it("keeps nodes inside plot after hover squeeze", () => {
     const nodes = createPackPhysicsNodes([
-      { name: "a", x: 20, y: 40, r: 18 },
-      { name: "b", x: 60, y: 40, r: 18 },
-      { name: "c", x: 100, y: 40, r: 18 },
+      { name: "a", x: 40, y: 80, r: 18 },
+      { name: "b", x: 80, y: 80, r: 18 },
+      { name: "c", x: 120, y: 80, r: 18 },
     ]);
     focusPackNode(nodes[1]!);
     nodes[1]!.renderScale = PACK_FOCUS_SCALE;
-    settlePackOverlaps(nodes, 160, 80, STROKE);
+    settlePackOverlaps(nodes, 160, 160, STROKE);
+    const { cx, cy, radius } = resolvePackPlotCircle(160, 160);
     for (const node of nodes) {
-      const r = packNodeVisualRadius(node, STROKE);
-      expect(node.x! - r).toBeGreaterThanOrEqual(0);
-      expect(node.x! + r).toBeLessThanOrEqual(160);
-      expect(node.y! - r).toBeGreaterThanOrEqual(0);
-      expect(node.y! + r).toBeLessThanOrEqual(80);
+      const dist = Math.hypot((node.x ?? 0) - cx, (node.y ?? 0) - cy) + packNodeVisualRadius(node, STROKE);
+      expect(dist).toBeLessThanOrEqual(radius + 0.5);
     }
     expect(hasPackOverlaps(nodes, STROKE)).toBe(false);
   });

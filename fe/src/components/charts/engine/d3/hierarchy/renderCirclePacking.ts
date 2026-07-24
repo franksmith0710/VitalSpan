@@ -15,6 +15,7 @@ import {
   packNodeRadius,
   pickPackNodeAt,
   resolvePackEdgeInset,
+  resolvePackPlotCircle,
   stepPackMotionFrame,
   type PackPhysicsNode,
 } from "@/components/charts/engine/d3/hierarchy/circlePackingPhysics";
@@ -50,24 +51,27 @@ function appendPackPlotChrome(
   innerH: number,
   theme: D3RenderConfig["theme"],
 ): string {
+  const { cx, cy, radius } = resolvePackPlotCircle(innerW, innerH);
+
   root
-    .append("rect")
+    .append("circle")
     .attr("class", "pack-plot-frame")
-    .attr("width", innerW)
-    .attr("height", innerH)
+    .attr("cx", cx)
+    .attr("cy", cy)
+    .attr("r", radius)
     .attr("fill", "none")
     .attr("stroke", theme.axisLabel)
-    .attr("stroke-opacity", 0.55)
-    .attr("rx", 4);
+    .attr("stroke-opacity", 0.55);
 
   const clipId = `vs-pack-clip-${Math.random().toString(36).slice(2, 9)}`;
   root
     .append("defs")
     .append("clipPath")
     .attr("id", clipId)
-    .append("rect")
-    .attr("width", innerW)
-    .attr("height", innerH);
+    .append("circle")
+    .attr("cx", cx)
+    .attr("cy", cy)
+    .attr("r", radius);
   return clipId;
 }
 

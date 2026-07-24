@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { TruncateHint } from "@/components/ui/hint-tooltip";
 import { cn } from "@/lib/utils";
 import type { TableSortState } from "@/components/charts/engine/d3/table/tableClientSort";
 import { columnAlignClass } from "@/components/charts/engine/d3/table/tableColumnAlign";
@@ -40,7 +41,9 @@ export function SortableHeaderCell({
   const active = sort?.field === field;
   const content = (
     <>
-      <span className="min-w-0 truncate">{label}</span>
+      <TruncateHint title={label} className="min-w-0">
+        {label}
+      </TruncateHint>
       {sortable ? <SortIcon active={active} direction={active ? sort?.direction : undefined} /> : null}
     </>
   );
@@ -75,7 +78,7 @@ export function SortableHeaderCell({
 
   if (!sortable) {
     return (
-      <th scope="col" title={label} data-sticky={sticky || undefined} className={baseClass}>
+      <th scope="col" data-sticky={sticky || undefined} className={baseClass}>
         <div className="flex items-center gap-1.5">{content}</div>
         {resize}
       </th>
@@ -83,7 +86,7 @@ export function SortableHeaderCell({
   }
 
   return (
-    <th scope="col" title={label} data-sticky={sticky || undefined} className={baseClass}>
+    <th scope="col" data-sticky={sticky || undefined} className={baseClass}>
       <button
         type="button"
         className={cn(

@@ -33,6 +33,26 @@ export function createTooltipLayer(
   return layer;
 }
 
+export function showMergedTooltipAtViewport(
+  layer: TooltipLayer | null,
+  viewport: { x: number; y: number },
+  category: string,
+  rows: { name: string; color: string; value: unknown }[],
+  valueFormat?: NumberFormatConfig,
+): void {
+  if (!layer) return;
+  layer
+    .style("opacity", "1")
+    .style("position", "fixed")
+    .style("z-index", "9999")
+    .html(tooltipHtml(category, rows, valueFormat));
+  const pad = 14;
+  const maxW = VCDS.tooltip.maxWidth;
+  const left = Math.min(Math.max(viewport.x + pad, 8), window.innerWidth - maxW - 8);
+  const top = Math.min(Math.max(viewport.y - pad, 8), window.innerHeight - 56);
+  layer.style("left", `${left}px`).style("top", `${top}px`);
+}
+
 export function showMergedTooltip(
   layer: TooltipLayer | null,
   container: HTMLElement,
@@ -41,16 +61,20 @@ export function showMergedTooltip(
   rows: { name: string; color: string; value: unknown }[],
   valueFormat?: NumberFormatConfig,
   chartWidth?: number,
+  anchor?: { x: number; y: number },
 ): void {
   if (!layer) return;
   layer
     .style("opacity", "1")
     .html(tooltipHtml(category, rows, valueFormat));
   const rect = container.getBoundingClientRect();
-  const w = chartWidth ?? rect.width;
+  const w = rect.width > 0 ? rect.width : (chartWidth ?? rect.width);
+  const h = rect.height > 0 ? rect.height : w;
+  const localX = anchor?.x ?? event.clientX - rect.left;
+  const localY = anchor?.y ?? event.clientY - rect.top;
   layer
-    .style("left", `${Math.min(event.clientX - rect.left + 12, w - VCDS.tooltip.maxWidth)}px`)
-    .style("top", `${Math.max(event.clientY - rect.top - 48, 8)}px`);
+    .style("left", `${Math.min(Math.max(localX + 12, 8), w - VCDS.tooltip.maxWidth)}px`)
+    .style("top", `${Math.min(Math.max(localY - 12, 8), h - 48)}px`);
 }
 
 export function hideTooltip(layer: TooltipLayer | null): void {

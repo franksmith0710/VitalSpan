@@ -1,8 +1,14 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render as rtlRender, screen, within } from "@testing-library/react";
+import type { ReactElement } from "react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import type { PixelLayoutWidget } from "../layoutUtils";
 import { PixelShapeActionRail } from "./PixelShapeActionRail";
+
+function render(ui: ReactElement) {
+  return rtlRender(<TooltipProvider delayDuration={0}>{ui}</TooltipProvider>);
+}
 
 const chartWidget: PixelLayoutWidget = {
   id: "w-map",

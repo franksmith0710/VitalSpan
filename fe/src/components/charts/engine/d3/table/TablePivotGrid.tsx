@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, type CSSProperties } from "react";
 import { useEmbeddedChartLiveResize } from "@/hooks/useEmbeddedChartLiveResize";
+import { TruncateHint } from "@/components/ui/hint-tooltip";
 import { dwTableCell } from "@/components/dashboard/dashboardWidgetTypography";
 import { cn } from "@/lib/utils";
 import type { ChartDeTableStyle } from "@/lib/chartDeTableStyle";
@@ -305,10 +306,11 @@ export function TablePivotGrid({
                       <td
                         key={`${rk}-${ck}-${metric.field}`}
                         style={rowStyle}
-                        title={text}
                         className={cn(cellClass, "text-[var(--dashboard-table-body-fg,#344054)]")}
                       >
-                        {text}
+                        <TruncateHint title={text} className="block max-w-full">
+                          {text}
+                        </TruncateHint>
                       </td>
                     );
                   }),

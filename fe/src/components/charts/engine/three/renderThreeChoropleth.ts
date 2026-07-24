@@ -6,7 +6,7 @@ import {
   joinOfflineMapFeatures,
 } from "@/components/charts/engine/geo/OfflineGeoPort";
 import { colorForGeoHover } from "@/components/charts/engine/geo/geoSurfaceColors";
-import { createTooltipLayer, hideTooltip, showMergedTooltip } from "@/components/charts/engine/d3/core/tooltipLayer";
+import { createTooltipLayer, hideTooltip, showMergedTooltipAtViewport } from "@/components/charts/engine/d3/core/tooltipLayer";
 import type { D3Theme } from "@/components/charts/engine/d3/core/themeEngine";
 import { renderD3ChoroplethChart } from "@/components/charts/engine/d3/geo/renderChoropleth";
 import type { D3GeoRenderConfig } from "@/components/charts/engine/d3/types";
@@ -20,7 +20,6 @@ import { buildThreeGeoProject, buildMapFitCollection } from "@/components/charts
 import { loadChinaTerrainPack } from "@/components/charts/engine/three/geo/chinaTerrainLoader";
 import { computeCapTintColor } from "@/components/charts/engine/three/geo/applyGeoTerrainSurface";
 import { buildGeoFlatPlateMesh } from "@/components/charts/engine/three/buildGeoFlatPlateMesh";
-import { buildSharedSatelliteCap } from "@/components/charts/engine/three/buildSharedSatelliteCap";
 import { mountThreeGeoVisualMap } from "@/components/charts/engine/three/threeGeoVisualMap";
 import {
   configureThreeGeoOrbitControls,
@@ -32,6 +31,7 @@ import {
   readGeo3dOrbitState,
   writeGeo3dOrbitState,
 } from "@/components/charts/engine/three/geo3dOrbitState";
+import { projectWorldToViewport, provinceWorldCenter } from "@/components/charts/engine/three/threeGeoScreen";
 import { resolveEmbeddedGeoRoam } from "@/components/charts/engine/geo/geoConstants";
 import { DEFAULT_GEO3D_EXTRUDE_INTENSITY } from "@/lib/chartDeStyle";
 import { resolveGeo3dQuality, shouldRenderGeo3d } from "@/components/charts/engine/three/geo3dQuality";
@@ -221,6 +221,10 @@ export async function renderThreeChoroplethChart(
   ).filter((f) => f.geometry != null);
 
   container.replaceChildren();
+  Object.assign(container.style, {
+    position: "relative",
+    overflow: "hidden",
+  });
   if (features.length === 0) {
     const msg = document.createElement("div");
     msg.className =
@@ -284,10 +288,25 @@ export async function renderThreeChoroplethChart(
     const { project, projBounds } = geoProject;
 
     let terrainPack: Awaited<ReturnType<typeof loadChinaTerrainPack>> | null = null;
-    let sharedCapMesh: THREE.Mesh | null = null;
     let renderDisposed = false;
 
     let detachTerrainHint = () => undefined;
+
+    if (terrainOn) {
+      try {
+        terrainPack = await loadChinaTerrainPack({
+          mapId,
+          drillDepth,
+          isDark,
+          withDisplacement: reliefOn,
+        });
+      } catch (err) {
+        detachTerrainHint = showDevTerrainFailureHint(container);
+        if (import.meta.env.DEV) {
+          console.warn("[map-3d] terrain pack load failed", err);
+        }
+      }
+    }
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 5000);
@@ -324,21 +343,18 @@ export async function renderThreeChoroplethChart(
 
     const mapGroup = new THREE.Group();
     const meshes: THREE.Group[] = [];
-    const allCapShapes: THREE.Shape[] = [];
     const displacementScale = reliefOn ? plateDepth * 1.5 : 0;
-    const perShapeTerrainOpts = terrainOn
-      ? {}
-      : terrainPack
-        ? {
-            terrainColorMap: terrainPack.colorMap,
-            terrainNormalMap: reliefOn ? terrainPack.normalMap : undefined,
-            terrainDisplacementMap: reliefOn ? terrainPack.displacementMap : undefined,
-            displacementScale,
-            reliefOn,
-            projBounds,
-            terrainSource: terrainPack.source,
-          }
-        : {};
+    const perShapeTerrainOpts = terrainPack
+      ? {
+          terrainColorMap: terrainPack.colorMap,
+          terrainNormalMap: reliefOn ? terrainPack.normalMap : undefined,
+          terrainDisplacementMap: reliefOn ? terrainPack.displacementMap : undefined,
+          displacementScale,
+          reliefOn,
+          projBounds,
+          terrainSource: terrainPack.source,
+        }
+      : {};
 
     let firstCapMaterial: THREE.MeshBasicMaterial | THREE.MeshStandardMaterial | undefined;
 
@@ -352,12 +368,8 @@ export async function renderThreeChoroplethChart(
       const capTint = computeCapTintColor(new THREE.Color(color), valueT, isDark);
 
       for (const shape of shapes) {
-        if (terrainOn) allCapShapes.push(shape);
         const built = buildGeoFlatPlateMesh(shape, plateDepth, color, borderColor, isDark, {
           ...perShapeTerrainOpts,
-          ...(terrainOn
-            ? { satelliteCap: "tint-only" as const, projBounds, valueT, dataTint: color }
-            : {}),
           dataTint: color,
           valueT,
         });
@@ -374,55 +386,12 @@ export async function renderThreeChoroplethChart(
           capMaterial: built.capMaterial,
           capTint,
           emissiveIntensity,
+          borderLines: built.borderLines,
+          borderColor,
         };
         mapGroup.add(built.mesh);
         meshes.push(built.mesh);
       }
-    }
-
-    const attachSharedTerrainCap = (
-      pack: NonNullable<Awaited<ReturnType<typeof loadChinaTerrainPack>>>,
-    ) => {
-      if (renderDisposed || allCapShapes.length === 0) {
-        pack.dispose();
-        return;
-      }
-      terrainPack = pack;
-      try {
-        sharedCapMesh = buildSharedSatelliteCap(
-          allCapShapes,
-          plateDepth,
-          projBounds,
-          pack.colorMap,
-        );
-        mapGroup.add(sharedCapMesh);
-        if (!firstCapMaterial) {
-          firstCapMaterial = sharedCapMesh.material as THREE.MeshBasicMaterial;
-        }
-        renderer.render(scene, camera);
-      } catch (err) {
-        pack.dispose();
-        if (import.meta.env.DEV) {
-          console.warn("[map-3d] shared terrain cap failed", err);
-        }
-      }
-    };
-
-    if (terrainOn) {
-      void loadChinaTerrainPack({
-        mapId,
-        drillDepth,
-        isDark,
-        withDisplacement: reliefOn,
-      })
-        .then((pack) => attachSharedTerrainCap(pack))
-        .catch((err) => {
-          if (renderDisposed) return;
-          detachTerrainHint = showDevTerrainFailureHint(container);
-          if (import.meta.env.DEV) {
-            console.warn("[map-3d] terrain pack load failed", err);
-          }
-        });
     }
 
     logDevTerrainDiagnostics(terrainOn, terrainPack, firstCapMaterial, mapId, drillDepth, webglProbe.api ?? "none");
@@ -440,7 +409,7 @@ export async function renderThreeChoroplethChart(
     }
 
     scene.add(mapGroup);
-    const orbitLayout = layoutThreeGeoMapGroup(mapGroup, { preCentered: true });
+    const orbitLayout = layoutThreeGeoMapGroup(mapGroup, { preCentered: false });
 
     const roam = resolveEmbeddedGeoRoam(geoStyle.roam);
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -464,7 +433,74 @@ export async function renderThreeChoroplethChart(
     let lastHoverEvent: PointerEvent | null = null;
     let animationActive = true;
     let visibleInViewport = true;
-    const enableHoverPick = showTooltip && renderTier !== "embed";
+    const enableHoverPick = renderTier !== "thumbnail";
+    const HOVER_LIFT_Z = Math.max(plateDepth * 1.15, 0.42);
+    const LIFT_SMOOTH_BASE = 0.2;
+
+    const provinceParts = (name: string) =>
+      meshes.filter((part) => String(part.userData?.name) === name);
+
+    let liftRafId = 0;
+    let lastLiftTs = 0;
+
+    const setLiftTargets = (hoveredName: string | null) => {
+      for (const part of meshes) {
+        const name = String(part.userData?.name ?? "");
+        part.userData.liftTarget = hoveredName && name === hoveredName ? HOVER_LIFT_Z : 0;
+      }
+    };
+
+    const syncHoverTooltip = () => {
+      if (!tooltip || !showTooltip || !hoveredProvince) return;
+      const parts = provinceParts(hoveredProvince);
+      if (parts.length === 0) return;
+      const sample = parts[0].userData;
+      const anchor = projectWorldToViewport(
+        provinceWorldCenter(parts),
+        camera,
+        renderer.domElement,
+      );
+      showMergedTooltipAtViewport(
+        tooltip,
+        anchor,
+        String(sample.name),
+        [{ name: metricField || "值", color: surface.rangeHighCss, value: Number(sample.value ?? 0) }],
+        valueFormat,
+      );
+    };
+
+    const tickLiftSmooth = (ts: number) => {
+      const dt = lastLiftTs ? Math.min(48, ts - lastLiftTs) : 16;
+      lastLiftTs = ts;
+      const factor = 1 - (1 - LIFT_SMOOTH_BASE) ** (dt / 16.67);
+      let moving = false;
+
+      for (const part of meshes) {
+        const target = (part.userData.liftTarget as number | undefined) ?? 0;
+        const cur = part.position.z;
+        const delta = target - cur;
+        if (Math.abs(delta) > 0.003) {
+          part.position.z = cur + delta * factor;
+          moving = true;
+        } else if (cur !== target) {
+          part.position.z = target;
+        }
+      }
+
+      renderFrame();
+      if (hoveredProvince) syncHoverTooltip();
+
+      if (moving) {
+        liftRafId = requestAnimationFrame(tickLiftSmooth);
+      } else {
+        liftRafId = 0;
+        lastLiftTs = 0;
+      }
+    };
+
+    const requestLiftTick = () => {
+      if (!liftRafId) liftRafId = requestAnimationFrame(tickLiftSmooth);
+    };
 
     const renderFrame = () => {
       renderer.render(scene, camera);
@@ -495,22 +531,30 @@ export async function renderThreeChoroplethChart(
 
     const onControlsChange = () => {
       scheduleRender();
+      if (hoveredProvince) syncHoverTooltip();
     };
     controls.addEventListener("change", onControlsChange);
 
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
-    let hovered: THREE.Object3D | null = null;
+    let hoveredProvince: string | null = null;
     let lastTap: GeoMapTapState = null;
     let pointerDown: { x: number; y: number } | null = null;
 
-    const raycastProvinceGroup = (event: PointerEvent | MouseEvent): THREE.Object3D | null => {
+    const raycastProvinceGroup = (
+      event: PointerEvent | MouseEvent,
+    ): { group: THREE.Object3D; point: THREE.Vector3 } | null => {
       const rect = renderer.domElement.getBoundingClientRect();
       pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(pointer, camera);
-      const hit = raycaster.intersectObjects(meshes, true)[0]?.object;
-      return hit ? provinceGroupOf(hit) : null;
+      const hits = raycaster.intersectObjects(meshes, true);
+      for (const hit of hits) {
+        if (!(hit.object instanceof THREE.Mesh)) continue;
+        const group = provinceGroupOf(hit.object);
+        if (group?.userData?.name) return { group, point: hit.point.clone() };
+      }
+      return null;
     };
 
     const handleMapDoubleActivate = (event: PointerEvent | MouseEvent, group: THREE.Object3D) => {
@@ -539,62 +583,88 @@ export async function renderThreeChoroplethChart(
         return;
       }
 
-      const group = raycastProvinceGroup(event);
-      const tapKey = group?.userData?.name ? String(group.userData.name) : "__empty__";
+      const hit = raycastProvinceGroup(event);
+      const tapKey = hit?.group.userData?.name ? String(hit.group.userData.name) : "__empty__";
       const { isDouble, next } = advanceGeoMapDoubleTap(lastTap, event.timeStamp, tapKey);
       lastTap = next;
       if (!isDouble) return;
 
-      if (tapKey !== "__empty__" && group) {
-        handleMapDoubleActivate(event, group);
+      if (tapKey !== "__empty__" && hit) {
+        handleMapDoubleActivate(event, hit.group);
       }
     };
 
     const onClick = (event: MouseEvent) => {
       if (event.detail !== 2) return;
-      const group = raycastProvinceGroup(event);
-      if (group?.userData?.name) {
-        handleMapDoubleActivate(event, group);
+      const hit = raycastProvinceGroup(event);
+      if (hit?.group.userData?.name) {
+        handleMapDoubleActivate(event, hit.group);
       }
     };
 
-    renderer.domElement.addEventListener("pointerdown", onPointerDown);
-    renderer.domElement.addEventListener("pointerup", onPointerUp);
-    renderer.domElement.addEventListener("click", onClick);
-    if (enableHoverPick) {
-      renderer.domElement.addEventListener("pointermove", onMove);
-      renderer.domElement.addEventListener("pointerleave", () => {
-        setHover(null);
-        hideTooltip(tooltip);
-      });
-    }
+    const tooltip = showTooltip
       ? createTooltipLayer(container, theme as D3Theme, tooltipPresentation)
       : null;
     const detachVisualMap = showVisualMap
       ? mountThreeGeoVisualMap(container, { min: minVal, max: maxVal, surface, valueFormat, isDark })
       : () => undefined;
 
-    const restoreCap = (group: THREE.Object3D) => {
+    const restoreProvinceVisual = (group: THREE.Object3D) => {
+      const border = group.userData.borderLines as THREE.LineSegments | undefined;
+      if (terrainOn && border) {
+        const mat = border.material as THREE.LineBasicMaterial;
+        mat.color.setHex(group.userData.borderColor as number);
+        mat.opacity = isDark ? 0.82 : 0.75;
+        return;
+      }
       const cap = capMaterialOf(group);
       const tint = group.userData.capTint as THREE.Color;
       applyCapTint(cap, tint, group.userData.emissiveIntensity as number);
     };
 
     const setHover = (group: THREE.Object3D | null) => {
-      if (hovered === group) return;
-      if (hovered) restoreCap(hovered);
-      hovered = group;
-      if (!hovered) return;
-      const cap = capMaterialOf(hovered);
-      const hoverCss = colorForGeoHover(
-        Number(hovered.userData.value ?? 0),
-        minVal,
-        maxVal,
-        surface.palette,
-      );
-      const hoverCol = new THREE.Color(hoverCss);
-      applyCapTint(cap, hoverCol, isDark ? 0.45 : 0.32);
+      const nextName = group?.userData?.name ? String(group.userData.name) : null;
+      if (hoveredProvince !== nextName) {
+        if (hoveredProvince) {
+          for (const part of provinceParts(hoveredProvince)) {
+            restoreProvinceVisual(part);
+          }
+        }
+
+        hoveredProvince = nextName;
+
+        if (hoveredProvince) {
+          const hoverCss = colorForGeoHover(
+            Number(group!.userData.value ?? 0),
+            minVal,
+            maxVal,
+            surface.palette,
+          );
+          for (const part of provinceParts(hoveredProvince)) {
+            const border = part.userData.borderLines as THREE.LineSegments | undefined;
+            if (terrainOn && border) {
+              const mat = border.material as THREE.LineBasicMaterial;
+              mat.color.set(hoverCss);
+              mat.opacity = 1;
+              continue;
+            }
+            const cap = capMaterialOf(part);
+            const hoverCol = new THREE.Color(hoverCss);
+            applyCapTint(cap, hoverCol, isDark ? 0.45 : 0.32);
+          }
+        }
+
+        setLiftTargets(hoveredProvince);
+        requestLiftTick();
+      }
+
+      if (!hoveredProvince) {
+        hideTooltip(tooltip);
+      }
     };
+
+    let chartWidth = width;
+    let chartHeight = height;
 
     const onMove = (event: PointerEvent) => {
       if (!enableHoverPick || orbitDragging || event.buttons !== 0) {
@@ -608,31 +678,29 @@ export async function renderThreeChoroplethChart(
         hoverFrameId = 0;
         const moveEvent = lastHoverEvent;
         if (!moveEvent || orbitDragging) return;
-        const group = raycastProvinceGroup(moveEvent);
-        if (!group?.userData?.name) {
+        const hit = raycastProvinceGroup(moveEvent);
+        if (!hit?.group.userData?.name) {
           setHover(null);
           hideTooltip(tooltip);
+          renderer.domElement.style.cursor = roam ? "grab" : "default";
           return;
         }
-        setHover(group);
-        if (!tooltip) return;
-        showMergedTooltip(
-          tooltip,
-          container,
-          moveEvent,
-          String(group.userData.name),
-          [{ name: metricField || "值", color: surface.rangeHighCss, value: Number(group.userData.value ?? 0) }],
-          valueFormat,
-          chartWidth,
-        );
+        renderer.domElement.style.cursor = "pointer";
+        setHover(hit.group);
+        syncHoverTooltip();
       });
     };
 
-    renderer.domElement.addEventListener("pointermove", onMove);
-    renderer.domElement.addEventListener("pointerleave", () => {
-      setHover(null);
-      hideTooltip(tooltip);
-    });
+    renderer.domElement.addEventListener("pointerdown", onPointerDown);
+    renderer.domElement.addEventListener("pointerup", onPointerUp);
+    renderer.domElement.addEventListener("click", onClick);
+    if (enableHoverPick) {
+      renderer.domElement.addEventListener("pointermove", onMove);
+      renderer.domElement.addEventListener("pointerleave", () => {
+        setHover(null);
+        hideTooltip(tooltip);
+      });
+    }
 
     const stopDampingTail = () => {
       if (dampingFrameId) {
@@ -668,9 +736,6 @@ export async function renderThreeChoroplethChart(
     );
     viewportObserver.observe(container);
 
-    let chartWidth = width;
-    let chartHeight = height;
-
     const resize = (nextWidth: number, nextHeight: number) => {
       if (nextWidth <= 0 || nextHeight <= 0) return false;
       chartWidth = nextWidth;
@@ -695,12 +760,19 @@ export async function renderThreeChoroplethChart(
         cancelAnimationFrame(renderFrameId);
         renderFrameId = 0;
       }
+      if (liftRafId) {
+        cancelAnimationFrame(liftRafId);
+        liftRafId = 0;
+        lastLiftTs = 0;
+      }
       persistOrbit();
       releaseSlot();
       renderer.domElement.removeEventListener("pointerdown", onPointerDown);
       renderer.domElement.removeEventListener("pointerup", onPointerUp);
       renderer.domElement.removeEventListener("click", onClick);
-      renderer.domElement.removeEventListener("pointermove", onMove);
+      if (enableHoverPick) {
+        renderer.domElement.removeEventListener("pointermove", onMove);
+      }
       controls.removeEventListener("change", onControlsChange);
       controls.removeEventListener("start", onOrbitStart);
       controls.removeEventListener("end", onOrbitEnd);
@@ -708,11 +780,6 @@ export async function renderThreeChoroplethChart(
       detachOrbitPan();
       detachGrabCursor();
       detachTerrainHint();
-      if (sharedCapMesh) {
-        sharedCapMesh.geometry.dispose();
-        (sharedCapMesh.material as THREE.Material).dispose();
-        sharedCapMesh = null;
-      }
       terrainPack?.dispose();
       terrainPack = null;
       for (const mesh of meshes) disposePlateGroup(mesh);

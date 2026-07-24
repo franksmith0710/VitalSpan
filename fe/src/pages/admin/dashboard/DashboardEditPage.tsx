@@ -1219,6 +1219,12 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                       prev.map((w) => (w.id === primarySelectedId ? { ...w, title } : w)),
                     );
                   }}
+                  onTextConfigChange={(textConfig) => {
+                    if (!primarySelectedId) return;
+                    setWidgets((prev) =>
+                      prev.map((w) => (w.id === primarySelectedId ? { ...w, textConfig } : w)),
+                    );
+                  }}
                   onDelete={() => handleDeleteWidget(primarySelectedId!)}
                   onRailCollapse={collapseChartRail}
                 />

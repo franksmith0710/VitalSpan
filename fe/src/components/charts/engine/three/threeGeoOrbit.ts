@@ -2,6 +2,7 @@ import * as THREE from "three";
 import type { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GEO_MAP_SCALE_LIMIT } from "@/components/charts/engine/geo/geoConstants";
 import type { Geo3dOrbitSnapshot } from "@/components/charts/engine/three/geo3dOrbitState";
+import { GEO3D_ORBIT_STATE_VERSION } from "@/components/charts/engine/three/geo3dOrbitState";
 
 export type ThreeGeoOrbitLayout = {
   size: THREE.Vector3;
@@ -16,6 +17,19 @@ export type ThreeGeoOrbitLayout = {
 };
 
 const GEO_MAP_TARGET_SPAN = 18;
+const GEO_DEFAULT_AZIMUTH = -Math.PI / 12;
+const GEO_DEFAULT_POLAR = 0.58;
+
+export function computeGeoOrbitDefaultDistance(
+  camera: THREE.PerspectiveCamera,
+  layout: Pick<ThreeGeoOrbitLayout, "halfX" | "halfZ" | "defaultDistance">,
+): number {
+  const vFovRad = (camera.fov * Math.PI) / 180;
+  const hFovRad = 2 * Math.atan(Math.tan(vFovRad / 2) * camera.aspect);
+  const distForHeight = layout.halfZ / Math.tan(vFovRad / 2);
+  const distForWidth = layout.halfX / Math.tan(hFovRad / 2);
+  return Math.max(distForHeight, distForWidth, layout.defaultDistance * 0.85) * 1.12;
+}
 
 /** 仅用挤出本体几何算包围盒，忽略边线子节点 */
 function boundsFromMapMeshes(mapGroup: THREE.Group): THREE.Box3 {
@@ -69,6 +83,7 @@ export function layoutThreeGeoMapGroup(
 
   const scaledBox = boundsFromMapMeshes(mapGroup);
   const scaledSize = scaledBox.getSize(new THREE.Vector3());
+  const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
   halfX = Math.max(scaledSize.x * 0.5, 0.5);
   halfZ = Math.max(scaledSize.z * 0.5, 0.5);
   const halfY = Math.max(scaledSize.y * 0.5, 0.08);
@@ -84,7 +99,7 @@ export function layoutThreeGeoMapGroup(
     halfZ,
     maxY: halfY,
     minY: -halfY,
-    target: new THREE.Vector3(0, 0, 0),
+    target: scaledCenter,
   };
 }
 
@@ -154,9 +169,9 @@ export function configureThreeGeoOrbitControls(
   controls.enableZoom = roam;
   controls.enableRotate = roam;
 
-  const azimuth = -Math.PI / 6;
-  const polar = 0.42;
-  const d = layout.defaultDistance;
+  const azimuth = GEO_DEFAULT_AZIMUTH;
+  const polar = GEO_DEFAULT_POLAR;
+  const d = computeGeoOrbitDefaultDistance(camera, layout);
   const { target } = layout;
   camera.position.set(
     target.x + d * Math.sin(polar) * Math.sin(azimuth),
@@ -176,9 +191,9 @@ export function resetThreeGeoOrbitView(
   layout: ThreeGeoOrbitLayout,
 ): void {
   controls.target.copy(layout.target);
-  const azimuth = -Math.PI / 6;
-  const polar = 0.42;
-  const d = layout.defaultDistance;
+  const azimuth = GEO_DEFAULT_AZIMUTH;
+  const polar = GEO_DEFAULT_POLAR;
+  const d = computeGeoOrbitDefaultDistance(camera, layout);
   const { target } = layout;
   camera.position.set(
     target.x + d * Math.sin(polar) * Math.sin(azimuth),
@@ -205,6 +220,7 @@ export function captureGeo3dOrbitSnapshot(
   controls: OrbitControls,
 ): Geo3dOrbitSnapshot {
   return {
+    v: GEO3D_ORBIT_STATE_VERSION,
     target: { x: controls.target.x, y: controls.target.y, z: controls.target.z },
     position: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
   };

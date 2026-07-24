@@ -389,7 +389,7 @@ html.dark {
   line-height: 1.375rem;
 }
 
-.dashboard-grid-edit .dashboard-widget-surface :where(.dw-hint, .dw-rail-tip) {
+.dashboard-grid-edit .dashboard-widget-surface :where(.dw-hint) {
   font-size: 0.875rem;
   line-height: 1.375rem;
 }
@@ -464,7 +464,7 @@ html.dark {
   line-height: calc(1.375rem / var(--pixel-canvas-chrome-scale));
 }
 
-.pixel-canvas-host .dashboard-widget-surface :where(.dw-hint, .dw-rail-tip) {
+.pixel-canvas-host .dashboard-widget-surface :where(.dw-hint) {
   font-size: calc(var(--dw-screen-caption) / var(--pixel-canvas-chrome-scale));
   line-height: calc(1.25rem / var(--pixel-canvas-chrome-scale));
 }
@@ -473,12 +473,6 @@ html.dark {
   width: calc(var(--dw-screen-action-icon) / var(--pixel-canvas-chrome-scale));
   height: calc(var(--dw-screen-action-icon) / var(--pixel-canvas-chrome-scale));
 }
-
-.pixel-canvas-host [data-testid^="pixel-shape-actions"] .dw-rail-tip {
-  font-size: calc(var(--dw-screen-caption) / var(--pixel-canvas-chrome-scale));
-  line-height: calc(1.25rem / var(--pixel-canvas-chrome-scale));
-}
-
 /* DataEase shape-inner：标题与图表共享内边距；水平 padding 由 inner 承担 */
 .pixel-canvas-host .pixel-shape-inner .shape-title {
   display: flex;

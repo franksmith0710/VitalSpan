@@ -5,6 +5,7 @@ import { apiFetch } from "@/lib/api";
 import { localizeApiMessage, mapApiError } from "@/lib/apiError";
 import { Badge } from "@/components/ui/badge";
 import { Button, IconButton } from "@/components/ui/button";
+import { TruncateHint } from "@/components/ui/hint-tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 
@@ -118,11 +119,14 @@ export function SyncJobHistoryPage() {
                       <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
                         {run.rows_synced ?? "—"}
                       </td>
-                      <td
-                        className="max-w-xs truncate px-6 py-4 text-gray-600 dark:text-gray-300"
-                        title={run.error_message ? localizeApiMessage(run.error_message) : undefined}
-                      >
-                        {run.error_message ? localizeApiMessage(run.error_message) : "—"}
+                      <td className="max-w-xs px-6 py-4 text-gray-600 dark:text-gray-300">
+                        {run.error_message ? (
+                          <TruncateHint title={localizeApiMessage(run.error_message)}>
+                            {localizeApiMessage(run.error_message)}
+                          </TruncateHint>
+                        ) : (
+                          "—"
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">

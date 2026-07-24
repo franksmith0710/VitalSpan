@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { TruncateHint } from "@/components/ui/hint-tooltip";
 import {
   ListPageBody,
   ListPageSection,
@@ -81,8 +82,14 @@ function ScheduleHistoryPanel({
                 <tr key={row.executionId} className="border-b border-gray-50 dark:border-gray-800/60">
                   <td className="px-3 py-2">{row.status}</td>
                   <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.executedAt}</td>
-                  <td className="max-w-[200px] truncate px-3 py-2 text-gray-600 dark:text-gray-400" title={row.errorMessage ? localizeApiMessage(row.errorMessage) : undefined}>
-                    {row.errorMessage ? localizeApiMessage(row.errorMessage) : "—"}
+                  <td className="max-w-[200px] px-3 py-2 text-gray-600 dark:text-gray-400">
+                    {row.errorMessage ? (
+                      <TruncateHint title={localizeApiMessage(row.errorMessage)}>
+                        {localizeApiMessage(row.errorMessage)}
+                      </TruncateHint>
+                    ) : (
+                      "—"
+                    )}
                   </td>
                   <td className="px-3 py-2">
                     {!readOnly && canRetryExecution(row.status) ? (

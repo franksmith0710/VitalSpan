@@ -12,6 +12,7 @@ from app.schemas.chart_view import ChartViewConfigLayout
 FilterControlType = Literal["text", "select", "date", "multiselect"]
 TextVariant = Literal["markdown", "plain", "html"]
 MediaFit = Literal["contain", "cover", "fill"]
+MediaWidgetKind = Literal["image", "webpage"]
 WidgetType = Literal["chart", "filter", "text", "media", "tabs"]
 CANVAS_WIDTH = 1440
 DATA_SCREEN_CANVAS_WIDTH = 1920
@@ -53,10 +54,12 @@ class TextWidgetConfig(BaseModel):
     dataset_id: str | None = Field(default=None, alias="datasetId", max_length=64)
     dimension_field: str | None = Field(default=None, alias="dimensionField", max_length=128)
     metric_field: str | None = Field(default=None, alias="metricField", max_length=128)
+    screen_style: dict[str, Any] | None = Field(default=None, alias="screenStyle")
 
 
 class MediaWidgetConfig(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
+    kind: MediaWidgetKind = "image"
     url: str = Field(default="", max_length=2048)
     alt: str = Field(default="", max_length=256)
     fit: MediaFit = "contain"

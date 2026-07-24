@@ -1,7 +1,11 @@
 import {
   isScreenBorderWidget,
   isScreenClockWidget,
+  isScreenDateTimeWidget,
+  isScreenIconWidget,
+  isScreenShapeWidget,
   isScreenTitleBarWidget,
+  isScreenWebpageWidget,
 } from "@/lib/screenVisualAssets";
 import {
   createPaletteWidget,
@@ -23,6 +27,10 @@ export const PIXEL_DEFAULT_TABS_SIZE = { width: 720, height: 320 };
 export const PIXEL_DEFAULT_SCREEN_CLOCK_SIZE = { width: 420, height: 72 };
 export const PIXEL_DEFAULT_SCREEN_BORDER_SIZE = { width: 560, height: 360 };
 export const PIXEL_DEFAULT_SCREEN_TITLE_BAR_SIZE = { width: 720, height: 64 };
+export const PIXEL_DEFAULT_SCREEN_DATETIME_SIZE = { width: 320, height: 96 };
+export const PIXEL_DEFAULT_SCREEN_WEBPAGE_SIZE = { width: 560, height: 360 };
+export const PIXEL_DEFAULT_SCREEN_SHAPE_SIZE = { width: 200, height: 160 };
+export const PIXEL_DEFAULT_SCREEN_ICON_SIZE = { width: 96, height: 96 };
 
 export function defaultPixelSizeForWidget(
   widget: Pick<LayoutWidget, "type">,
@@ -38,8 +46,12 @@ function defaultSize(widget: LayoutWidget) {
       if (isScreenClockWidget(widget)) return PIXEL_DEFAULT_SCREEN_CLOCK_SIZE;
       if (isScreenBorderWidget(widget)) return PIXEL_DEFAULT_SCREEN_BORDER_SIZE;
       if (isScreenTitleBarWidget(widget)) return PIXEL_DEFAULT_SCREEN_TITLE_BAR_SIZE;
+      if (isScreenDateTimeWidget(widget)) return PIXEL_DEFAULT_SCREEN_DATETIME_SIZE;
+      if (isScreenShapeWidget(widget)) return PIXEL_DEFAULT_SCREEN_SHAPE_SIZE;
+      if (isScreenIconWidget(widget)) return PIXEL_DEFAULT_SCREEN_ICON_SIZE;
       return PIXEL_DEFAULT_TEXT_SIZE;
     case "media":
+      if (isScreenWebpageWidget(widget)) return PIXEL_DEFAULT_SCREEN_WEBPAGE_SIZE;
       return PIXEL_DEFAULT_MEDIA_SIZE;
     case "tabs":
       return PIXEL_DEFAULT_TABS_SIZE;

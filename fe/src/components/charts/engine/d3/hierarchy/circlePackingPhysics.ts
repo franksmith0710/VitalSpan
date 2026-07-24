@@ -38,6 +38,14 @@ export function resolvePackEdgeInset(radiusHint: number, strokeWidth: number): n
   return Math.ceil(Math.max(3, Math.min(6, radiusHint * 0.12)) + strokeWidth);
 }
 
+/** 圆形打包图绘图区：内切于 plot 矩形 */
+export function resolvePackPlotCircle(width: number, height: number, inset = 0) {
+  const cx = width / 2;
+  const cy = height / 2;
+  const radius = Math.max(0, Math.min(width, height) / 2 - inset);
+  return { cx, cy, radius };
+}
+
 export type PackPhysicsNode = d3.SimulationNodeDatum & {
   name: string;
   targetX: number;
@@ -97,9 +105,8 @@ export function fitPackLayoutToPlot(
 
   const bboxW = Math.max(maxX - minX, 1);
   const bboxH = Math.max(maxY - minY, 1);
-  const usableW = Math.max(1, plotW - margin * 2);
-  const usableH = Math.max(1, plotH - margin * 2);
-  const scale = Math.min(usableW / bboxW, usableH / bboxH);
+  const usable = Math.max(1, Math.min(plotW, plotH) - margin * 2);
+  const scale = usable / Math.max(bboxW, bboxH);
   const cx = (minX + maxX) / 2;
   const cy = (minY + maxY) / 2;
 
@@ -470,27 +477,29 @@ export function clampPackNodeToBounds(
   strokeWidth: number,
 ): void {
   const r = packNodeVisualRadius(node, strokeWidth);
+  const { cx, cy, radius: plotRadius } = resolvePackPlotCircle(width, height);
+  const maxDist = Math.max(0, plotRadius - r);
   let x = node.x ?? node.targetX;
   let y = node.y ?? node.targetY;
-
-  if (x < r) {
-    x = r;
-    node.vx = 0;
-  } else if (x > width - r) {
-    x = width - r;
-    node.vx = 0;
+  const dx = x - cx;
+  const dy = y - cy;
+  const dist = Math.hypot(dx, dy);
+  if (dist > maxDist && dist > 1e-6) {
+    const scale = maxDist / dist;
+    x = cx + dx * scale;
+    y = cy + dy * scale;
+    const nx = dx / dist;
+    const ny = dy / dist;
+    const vx = node.vx ?? 0;
+    const vy = node.vy ?? 0;
+    const outward = vx * nx + vy * ny;
+    if (outward > 0) {
+      node.vx = vx - outward * nx;
+      node.vy = vy - outward * ny;
+    }
   }
-
-  if (y < r) {
-    y = r;
-    node.vy = 0;
-  } else if (y > height - r) {
-    y = height - r;
-    node.vy = 0;
-  }
-
-  node.x = Math.max(r, Math.min(width - r, x));
-  node.y = Math.max(r, Math.min(height - r, y));
+  node.x = x;
+  node.y = y;
 }
 
 export function createPackBoundaryForce(
@@ -498,6 +507,7 @@ export function createPackBoundaryForce(
   height: number,
   strokeWidth: number,
 ): d3.Force<PackPhysicsNode, undefined> {
+  const { cx, cy, radius: plotRadius } = resolvePackPlotCircle(width, height);
   let nodes: PackPhysicsNode[] = [];
 
   function force(alpha: number) {
@@ -506,12 +516,16 @@ export function createPackBoundaryForce(
       const r = packNodeVisualRadius(node, strokeWidth);
       const x = node.x ?? node.targetX;
       const y = node.y ?? node.targetY;
-
-      if (x < r) node.vx = (node.vx ?? 0) + (r - x) * push * 8;
-      else if (x > width - r) node.vx = (node.vx ?? 0) - (x - (width - r)) * push * 8;
-
-      if (y < r) node.vy = (node.vy ?? 0) + (r - y) * push * 8;
-      else if (y > height - r) node.vy = (node.vy ?? 0) - (y - (height - r)) * push * 8;
+      const maxDist = Math.max(0, plotRadius - r);
+      const dx = x - cx;
+      const dy = y - cy;
+      const dist = Math.hypot(dx, dy);
+      if (dist <= maxDist || dist < 1e-6) continue;
+      const overflow = dist - maxDist;
+      const nx = dx / dist;
+      const ny = dy / dist;
+      node.vx = (node.vx ?? 0) - nx * overflow * push * 8;
+      node.vy = (node.vy ?? 0) - ny * overflow * push * 8;
     }
   }
 

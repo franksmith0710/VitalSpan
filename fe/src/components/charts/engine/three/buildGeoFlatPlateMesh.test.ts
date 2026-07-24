@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import {
-  GEO_CAP_Z_EPS,
   buildGeoFlatPlateMesh,
+  resolveGeoCapTopZ,
 } from "@/components/charts/engine/three/buildGeoFlatPlateMesh";
 import { buildThreeGeoProject } from "@/components/charts/engine/three/geo/threeGeoProject";
 
@@ -37,29 +37,23 @@ describe("buildGeoFlatPlateMesh", () => {
       (c) => c instanceof THREE.Mesh && c.material === built.capMaterial,
     ) as THREE.Mesh;
     expect(capMesh).toBeTruthy();
-    expect(capMesh.position.z).toBeCloseTo(depth + GEO_CAP_Z_EPS);
+    expect(capMesh.position.z).toBeCloseTo(resolveGeoCapTopZ(depth));
     expect(capMesh.geometry.attributes.uv).toBeTruthy();
   });
 
-  it("uses tint-only overlay cap when satelliteCap=tint-only", () => {
+  it("uses top outline only (no vertical extrude edges)", () => {
     const shape = new THREE.Shape();
     shape.moveTo(0, 0);
-    shape.lineTo(1, 0);
-    shape.lineTo(1, 1);
+    shape.lineTo(2, 0);
+    shape.lineTo(2, 1);
+    shape.lineTo(0, 1);
     shape.closePath();
-    const geoProject = buildThreeGeoProject(400, 300, [], {
-      type: "FeatureCollection",
-      features: [],
-    });
-    const built = buildGeoFlatPlateMesh(shape, 1, 0x0284c7, 0x7dd3fc, true, {
-      satelliteCap: "tint-only",
-      projBounds: geoProject.projBounds,
-      dataTint: 0x0284c7,
-      valueT: 0.5,
-    });
-    expect(built.capMaterial).toBeInstanceOf(THREE.MeshBasicMaterial);
-    expect(built.capMaterial.map).toBeFalsy();
-    expect(built.capMaterial.transparent).toBe(true);
+    const built = buildGeoFlatPlateMesh(shape, 1, 0x0284c7, 0x7dd3fc, true);
+    const border = built.borderLines;
+    const pos = border.geometry.attributes.position as THREE.BufferAttribute;
+    for (let i = 0; i < pos.count; i++) {
+      expect(pos.getZ(i)).toBeCloseTo(resolveGeoCapTopZ(1) + 0.008);
+    }
   });
 
   it("applies displacement on cap when relief maps provided", () => {

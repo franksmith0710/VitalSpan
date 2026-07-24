@@ -38,4 +38,42 @@ describe("MediaWidget", () => {
     expect(onParentClick).not.toHaveBeenCalled();
     expect(onParentPointerDown).not.toHaveBeenCalled();
   });
+
+  it("renders webpage placeholder when url is empty", () => {
+    render(
+      <MediaWidget
+        widget={
+          {
+            ...baseWidget,
+            title: "网页",
+            mediaConfig: { ...defaultMediaConfig(), kind: "webpage", url: "" },
+          } as LayoutWidget & { mediaConfig: ReturnType<typeof defaultMediaConfig> }
+        }
+        mode="edit"
+        shell="shape"
+      />,
+    );
+    expect(screen.getByText("在右侧配置网页地址")).toBeInTheDocument();
+  });
+
+  it("renders iframe when webpage url is valid", () => {
+    render(
+      <MediaWidget
+        widget={
+          {
+            ...baseWidget,
+            title: "网页",
+            mediaConfig: {
+              ...defaultMediaConfig(),
+              kind: "webpage",
+              url: "https://example.com",
+            },
+          } as LayoutWidget & { mediaConfig: ReturnType<typeof defaultMediaConfig> }
+        }
+        mode="view"
+        shell="shape"
+      />,
+    );
+    expect(screen.getByTitle("网页")).toHaveAttribute("src", "https://example.com");
+  });
 });

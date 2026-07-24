@@ -1,16 +1,13 @@
 import { forwardRef, useState, type ReactNode } from "react";
 import {
-  Clock3,
   Copy,
   Filter,
-  Frame,
   Grid3x3,
   Image,
   LayoutGrid,
-  Minus,
   MoreHorizontal,
-  PanelsTopLeft,
   Palette,
+  PanelsTopLeft,
   Sparkles,
   Type,
 } from "lucide-react";
@@ -26,6 +23,8 @@ import { cn } from "@/lib/utils";
 import type { PaletteInsertType } from "./createLayoutWidget";
 import { ChartPickerPopover } from "./ChartPickerPopover";
 import { QueryComponentPicker } from "./QueryComponentPicker";
+import { ScreenMaterialPicker } from "./screen/ScreenMaterialPicker";
+import { ScreenMorePicker } from "./screen/ScreenMorePicker";
 
 type CanvasEditToolbarProps = {
   onInsert: (type: PaletteInsertType) => void;
@@ -167,39 +166,23 @@ export function CanvasEditToolbar({
           <DropdownMenuTrigger asChild>
             <ToolbarNavButton
               icon={<Sparkles aria-hidden />}
-              label="素材"
+              label="素材库"
               active={materialOpen}
               testId="toolbar-insert-screen-material"
             />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="min-w-[160px]" data-testid="screen-material-menu">
-            <DropdownMenuItem
-              onClick={() => {
-                onInsert("screen-clock");
-                setMaterialOpen(false);
-              }}
-            >
-              <Clock3 className="size-4" aria-hidden />
-              时钟
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                onInsert("screen-border");
-                setMaterialOpen(false);
-              }}
-            >
-              <Frame className="size-4" aria-hidden />
-              边框
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                onInsert("screen-title-bar");
-                setMaterialOpen(false);
-              }}
-            >
-              <Minus className="size-4" aria-hidden />
-              标题装饰
-            </DropdownMenuItem>
+          <DropdownMenuContent
+            align="start"
+            side="bottom"
+            sideOffset={8}
+            className="w-[min(100vw-2rem,420px)] overflow-hidden p-0"
+            data-testid="screen-material-menu"
+            onCloseAutoFocus={(e) => e.preventDefault()}
+          >
+            <ScreenMaterialPicker
+              onInsert={onInsert}
+              onInserted={() => setMaterialOpen(false)}
+            />
           </DropdownMenuContent>
         </DropdownMenu>
       ) : null}
@@ -213,35 +196,54 @@ export function CanvasEditToolbar({
             testId="toolbar-more-toggle"
           />
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="min-w-[180px]" data-testid="toolbar-more-menu">
-          {onAuxiliaryGridChange ? (
-            <DropdownMenuItem
-              className="flex items-center justify-between gap-3"
-              onSelect={(event) => event.preventDefault()}
-              data-testid="toolbar-auxiliary-grid-item"
-            >
-              <span className="flex min-w-0 items-center gap-2">
-                <Grid3x3 className="size-4 shrink-0" aria-hidden />
-                辅助对齐网格
-              </span>
-              <Switch
-                checked={showAuxiliaryGrid}
-                onCheckedChange={onAuxiliaryGridChange}
-                aria-label="辅助对齐网格"
-                size={INSPECTOR_SWITCH_SIZE}
-                className="shrink-0"
-              />
-            </DropdownMenuItem>
-          ) : null}
-          <DropdownMenuItem
-            onClick={() => {
-              onOpenDashboardStyle?.();
-              setMoreOpen(false);
-            }}
-          >
-            <Palette className="size-4" aria-hidden />
-            仪表板样式
-          </DropdownMenuItem>
+        <DropdownMenuContent
+          align="start"
+          side="bottom"
+          sideOffset={8}
+          className={cn(
+            "overflow-hidden p-0",
+            showScreenVisualAssets ? "w-[min(100vw-2rem,280px)]" : "min-w-[180px]",
+          )}
+          data-testid="toolbar-more-menu"
+          onCloseAutoFocus={(e) => e.preventDefault()}
+        >
+          {showScreenVisualAssets ? (
+            <ScreenMorePicker
+              onInsert={onInsert}
+              onInserted={() => setMoreOpen(false)}
+            />
+          ) : (
+            <>
+              {onAuxiliaryGridChange ? (
+                <DropdownMenuItem
+                  className="flex items-center justify-between gap-3"
+                  onSelect={(event) => event.preventDefault()}
+                  data-testid="toolbar-auxiliary-grid-item"
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <Grid3x3 className="size-4 shrink-0" aria-hidden />
+                    辅助对齐网格
+                  </span>
+                  <Switch
+                    checked={showAuxiliaryGrid}
+                    onCheckedChange={onAuxiliaryGridChange}
+                    aria-label="辅助对齐网格"
+                    size={INSPECTOR_SWITCH_SIZE}
+                    className="shrink-0"
+                  />
+                </DropdownMenuItem>
+              ) : null}
+              <DropdownMenuItem
+                onClick={() => {
+                  onOpenDashboardStyle?.();
+                  setMoreOpen(false);
+                }}
+              >
+                <Palette className="size-4" aria-hidden />
+                仪表板样式
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 

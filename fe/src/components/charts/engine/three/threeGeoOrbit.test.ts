@@ -30,13 +30,12 @@ describe("threeGeoOrbit", () => {
     expect(layout.maxDistance).toBeCloseTo(layout.defaultDistance / GEO_MAP_SCALE_LIMIT.min, 4);
   });
 
-  it("clamps orbit pan inside map bounds", () => {
+  it("enables roam interactions", () => {
     const group = mockMapGroup();
     const layout = layoutThreeGeoMapGroup(group);
     const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 5000);
-    const canvas = document.createElement("canvas");
     const controls = {
-      target: new THREE.Vector3(999, 999, 999),
+      target: new THREE.Vector3(),
       screenSpacePanning: false,
       enableDamping: false,
       dampingFactor: 0,
@@ -44,18 +43,16 @@ describe("threeGeoOrbit", () => {
       maxPolarAngle: Math.PI,
       minDistance: 0,
       maxDistance: 0,
-      enablePan: true,
-      enableZoom: true,
-      enableRotate: true,
-      addEventListener: vi.fn((event: string, fn: () => void) => {
-        if (event === "end") (controls as { _clamp?: () => void })._clamp = fn;
-      }),
+      enablePan: false,
+      enableZoom: false,
+      enableRotate: false,
+      addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
       update: vi.fn(),
     };
     configureThreeGeoOrbitControls(camera, controls as never, layout, true);
-    (controls as { _clamp?: () => void })._clamp?.();
-    expect(Math.abs(controls.target.x)).toBeLessThanOrEqual(layout.halfX * 0.88 + 0.01);
-    expect(Math.abs(controls.target.z)).toBeLessThanOrEqual(layout.halfZ * 0.88 + 0.01);
+    expect(controls.enablePan).toBe(true);
+    expect(controls.enableRotate).toBe(true);
+    expect(controls.enableZoom).toBe(true);
   });
 });

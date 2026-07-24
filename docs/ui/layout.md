@@ -204,7 +204,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 
 代码锚点：`fe/src/components/dashboard/screen/DataScreenEditViewport.tsx` · `fe/src/components/dashboard/dashboard-edit/DashboardEditCanvas.tsx`（`isDataScreenEdit` 分支）。
 
-**素材组件样式（Phase 1 预期）**：时钟、边框、标题装饰等 `ScreenVisualEditRail` 组件**暂无** DataEase 级「样式」Tab，右栏仅图层名/显隐/锁定；chart 组件走 `ChartEditRail` 完整数据/样式/高级 Tab。
+**素材组件（对标 DataEase）**：数据大屏编辑工具栏 **更多** 含时钟/边框/标题装饰；**素材** 为图标网格（日期时间、网页）。选中素材组件时右栏提供 **数据 + 样式** Tab（`ScreenVisualEditRail` / 网页走 `MediaEditRail`）。代码锚点：`fe/src/components/dashboard/CanvasEditToolbar.tsx` · `screen/ScreenMaterialPicker.tsx` · `lib/screenVisualAssets.ts` · `lib/screenVisualStyle.ts`。
 
 | `/admin/reports/center` | hub 卡片 + 授权模板网格 | RPT-002/004 |
 | `/admin/reports` | `table-list` + 运行结果区 | RPT-002 |

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, type CSSProperties } from "react";
 import { Table2 } from "lucide-react";
+import { TruncateHint } from "@/components/ui/hint-tooltip";
 import { useScrollTop, useTableVirtualRows } from "@/components/charts/engine/d3/table/useTableVirtualRows";
 import { useEmbeddedChartLiveResize } from "@/hooks/useEmbeddedChartLiveResize";
 import { dwTableCell } from "@/components/dashboard/dashboardWidgetTypography";
@@ -474,7 +475,6 @@ export function VitalSpanTable({
                     <td
                       key={c}
                       data-sticky={sticky}
-                      title={text}
                       className={cn(
                         cellClass,
                         columnAlignClass(align),
@@ -494,7 +494,9 @@ export function VitalSpanTable({
                           : undefined
                       }
                     >
-                      {text}
+                      <TruncateHint title={text} className="block max-w-full">
+                        {text}
+                      </TruncateHint>
                     </td>
                   );
                 })}
@@ -526,7 +528,6 @@ export function VitalSpanTable({
                     <td
                       key={c}
                       data-sticky={sticky}
-                      title={text}
                       className={cn(
                         cellClass,
                         "font-semibold",
@@ -535,7 +536,9 @@ export function VitalSpanTable({
                         sticky === "first" && "vs-table-sticky-col vs-table-sticky-first",
                       )}
                     >
-                      {text}
+                      <TruncateHint title={text} className="block max-w-full">
+                        {text}
+                      </TruncateHint>
                     </td>
                   );
                 })}

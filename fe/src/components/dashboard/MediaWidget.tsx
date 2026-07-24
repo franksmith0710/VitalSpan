@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { ExternalLink, GripVertical, ImageIcon, Trash2 } from "lucide-react";
+import { ExternalLink, Globe, GripVertical, ImageIcon, Trash2 } from "lucide-react";
 import { IconButton } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { isScreenWebpageWidget } from "@/lib/screenVisualAssets";
+import { isWebpageMediaUrl } from "@/lib/webpageMedia";
 import { TabNestedDragRail } from "./TabNestedDragRail";
 import type { DashboardWidgetShell } from "./dashboardCanvasMode";
 import { WidgetInlineTitle } from "./WidgetInlineTitle";
@@ -34,7 +36,9 @@ export function MediaWidget({
 }: MediaWidgetProps) {
   const cfg = normalizeMediaConfig(widget.mediaConfig);
   const [broken, setBroken] = useState(false);
-  const showImage = cfg.url.trim() && !broken;
+  const isWebpage = isScreenWebpageWidget(widget) || cfg.kind === "webpage";
+  const showImage = !isWebpage && cfg.url.trim() && !broken;
+  const showWebpage = isWebpage && isWebpageMediaUrl(cfg.url);
   const showGridChrome = shell === "grid";
   const gridShell = resolveGridWidgetShell(widget, dashboardStyle);
   const inShapeShell = shell === "shape";
@@ -54,6 +58,26 @@ export function MediaWidget({
       }}
       onError={() => setBroken(true)}
     />
+  ) : isWebpage ? (
+  showWebpage ? (
+    <iframe
+      title={widget.title || "网页"}
+      src={cfg.url.trim()}
+      className="size-full border-0"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+      style={{
+        opacity: cfg.opacity ?? 1,
+        borderRadius: cfg.borderRadius ? `${cfg.borderRadius}px` : undefined,
+      }}
+    />
+  ) : (
+    <div className="flex flex-col items-center gap-2 text-center text-gray-400">
+      <Globe className="size-10 opacity-40" aria-hidden />
+      <p className="text-theme-xs">
+        {cfg.url.trim() ? "请输入有效的 http/https 网页地址" : "在右侧配置网页地址"}
+      </p>
+    </div>
+  )
   ) : (
     <div className="flex flex-col items-center gap-2 text-center text-gray-400">
       <ImageIcon className="size-10 opacity-40" aria-hidden />
@@ -130,7 +154,11 @@ export function MediaWidget({
             <GripVertical className="size-3.5 shrink-0 text-gray-300 dark:text-gray-600" aria-hidden />
           </div>
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-white text-gray-500 shadow-theme-xs dark:bg-white/5">
-            <ImageIcon className="size-3.5" aria-hidden />
+            {isWebpage ? (
+              <Globe className="size-3.5" aria-hidden />
+            ) : (
+              <ImageIcon className="size-3.5" aria-hidden />
+            )}
           </span>
           <WidgetInlineTitle
             value={widget.title}

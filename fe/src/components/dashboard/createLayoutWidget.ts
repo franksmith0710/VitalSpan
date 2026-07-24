@@ -7,8 +7,12 @@ import {
 import {
   createScreenBorderWidget,
   createScreenClockWidget,
+  createScreenDateTimeWidget,
+  createScreenIconWidget,
+  createScreenShapeWidget,
   createScreenTitleBarWidget,
-  type ScreenVisualInsertType,
+  createScreenWebpageWidget,
+  type ScreenMaterialInsertType,
 } from "@/lib/screenVisualAssets";
 import {
   defaultChartConfig,
@@ -27,6 +31,11 @@ export type FilterInsertPayload = {
   controlType: FilterControlType;
 };
 
+export type ScreenPresetInsertPayload = {
+  insert: "screen-border" | "screen-shape" | "screen-icon";
+  preset: string;
+};
+
 export type PaletteInsertType =
   | ChartType
   | "filter"
@@ -34,7 +43,8 @@ export type PaletteInsertType =
   | "text"
   | "media"
   | "tabs"
-  | ScreenVisualInsertType;
+  | ScreenMaterialInsertType
+  | ScreenPresetInsertPayload;
 
 const FILTER_WIDGET_TITLES: Record<FilterControlType, string> = {
   text: "文本筛选",
@@ -45,8 +55,14 @@ const FILTER_WIDGET_TITLES: Record<FilterControlType, string> = {
 
 function resolveFilterControlType(type: PaletteInsertType): FilterControlType | null {
   if (type === "filter") return "text";
-  if (typeof type === "object" && type.type === "filter") return type.controlType;
+  if (typeof type === "object" && "type" in type && type.type === "filter") return type.controlType;
   return null;
+}
+
+function isScreenPresetInsert(
+  type: PaletteInsertType,
+): type is ScreenPresetInsertPayload {
+  return typeof type === "object" && "insert" in type && "preset" in type;
 }
 
 export function createLayoutWidget(
@@ -158,12 +174,23 @@ export function createPaletteWidget(
 ): LayoutWidget {
   const filterControlType = resolveFilterControlType(type);
   if (filterControlType != null) return createFilterWidget(widgets, at, filterControlType);
+  if (isScreenPresetInsert(type)) {
+    if (type.insert === "screen-border") {
+      return createScreenBorderWidget(widgets, at, type.preset);
+    }
+    if (type.insert === "screen-shape") {
+      return createScreenShapeWidget(widgets, at, type.preset);
+    }
+    return createScreenIconWidget(widgets, at, type.preset);
+  }
   if (type === "text") return createTextWidget(widgets, at);
   if (type === "media") return createMediaWidget(widgets, at);
   if (type === "tabs") return createTabsWidget(widgets, at);
   if (type === "screen-clock") return createScreenClockWidget(widgets, at);
   if (type === "screen-border") return createScreenBorderWidget(widgets, at);
   if (type === "screen-title-bar") return createScreenTitleBarWidget(widgets, at);
+  if (type === "screen-datetime") return createScreenDateTimeWidget(widgets, at);
+  if (type === "screen-webpage") return createScreenWebpageWidget(widgets, at);
   return createLayoutWidget(type as ChartType, widgets, at);
 }
 

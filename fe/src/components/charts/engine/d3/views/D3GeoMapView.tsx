@@ -351,6 +351,9 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     ],
   );
 
+  const measureAndRenderRef = useRef(measureAndRender);
+  measureAndRenderRef.current = measureAndRender;
+
   const onLiveResize = useCallback(() => {
     setChartAnimationSuppressed(true);
     if (isThreeMap && threeApiRef.current) {
@@ -390,8 +393,8 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     if (geoMapLoading) return;
     threeApiRef.current = null;
     lastMeasureRef.current = { width: 0, height: 0 };
-    measureAndRender("data", true);
-  }, [contentKey, geoMapLoading, measureAndRender]);
+    measureAndRenderRef.current("data", true);
+  }, [contentKey, geoMapLoading]);
 
   useEffect(() => {
     if (!fill || plan.empty) return;

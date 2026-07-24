@@ -115,7 +115,8 @@
   - [x] DASH-007-05：Tab 容器 widget
   - [x] DASH-007-06：跨看板复用组件
   - [x] DASH-007-07：「更多」菜单 ≥2 项可用（样式/外部参数等）
-- **代码锚点**：`fe/src/components/dashboard/CanvasEditToolbar.tsx` · `ChartPickerPopover.tsx` · `createLayoutWidget.ts` · `backend/app/dashboard/schemas.py` · `docs/automate/plans/2026-07-13-dashboard-de-toolbar-full.md`
+  - [x] DASH-007-08（companion）：数据大屏素材 IA 对标 DataEase——更多=时钟/边框/标题装饰；素材网格=日期时间/网页；`ScreenVisualEditRail` 样式 Tab
+- **代码锚点**：`fe/src/components/dashboard/CanvasEditToolbar.tsx` · `ChartPickerPopover.tsx` · `screen/ScreenMaterialPicker.tsx` · `lib/screenVisualAssets.ts` · `createLayoutWidget.ts` · `backend/app/dashboard/schemas.py` · `docs/automate/plans/2026-07-13-dashboard-de-toolbar-full.md`
 - **演化建议**：Wave 1–6 已交付；Tab 子组件嵌套与媒体上传后端留 companion
 
 ### [DASH-008] 仪表板配置栏（对标 DataEase §5）

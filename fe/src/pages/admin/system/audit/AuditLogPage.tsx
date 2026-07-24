@@ -14,6 +14,7 @@ import {
 } from "@/components/layout/list-page-kit";
 import { Badge } from "@/components/ui/badge";
 import { IconButton } from "@/components/ui/button";
+import { HintTooltip } from "@/components/ui/hint-tooltip";
 import { DateField } from "@/components/ui/date-field";
 import { SearchField } from "@/components/ui/search-field";
 import {
@@ -208,13 +209,14 @@ export function AuditLogPage() {
                     {shortId(row.target_id)}
                   </p>
                 </div>,
-                <p
-                  key={`${row.id}-summary`}
-                  className="max-w-md text-theme-sm leading-relaxed text-gray-600 dark:text-gray-400"
-                  title={formatAuditSummary(row)}
-                >
-                  {formatAuditSummary(row)}
-                </p>,
+                <HintTooltip label={formatAuditSummary(row)}>
+                  <p
+                    key={`${row.id}-summary`}
+                    className="max-w-md truncate text-theme-sm leading-relaxed text-gray-600 dark:text-gray-400"
+                  >
+                    {formatAuditSummary(row)}
+                  </p>
+                </HintTooltip>,
                 <RowActions key={`${row.id}-actions`}>
                   <IconButton
                     type="button"
