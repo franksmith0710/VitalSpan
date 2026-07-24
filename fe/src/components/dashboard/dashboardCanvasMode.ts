@@ -132,6 +132,11 @@ function pixelWidgetContentEqual(
     previous.id === edited.id &&
     previous.type === edited.type &&
     previous.title === edited.title &&
+    previous.order === edited.order &&
+    previous.hidden === edited.hidden &&
+    previous.locked === edited.locked &&
+    previous.parentTabsId === edited.parentTabsId &&
+    previous.tabPaneId === edited.tabPaneId &&
     previous.chartConfig === edited.chartConfig &&
     previous.textConfig === edited.textConfig &&
     previous.tabsConfig === edited.tabsConfig &&

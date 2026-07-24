@@ -1330,7 +1330,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                     selectedId={primarySelectedId}
                     onSelect={(widgetId) => selectWidgetOnCanvas(widgetId, false)}
                     onWidgetsChange={setWidgets}
-                    className="max-h-56 shrink-0 border-b border-gray-100 pb-4 dark:border-white/[0.06]"
+                    className="min-h-0 max-h-[min(42vh,280px)] shrink-0 border-b border-gray-100 pb-4 dark:border-white/[0.06]"
                   />
                 ) : null}
                 <DashboardContextInspector

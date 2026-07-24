@@ -52,18 +52,16 @@ export function resolveDataScreenEditPanPadding(
   };
 }
 
-/** 平移上下界：pan 即画布位移；左上为 0，向左/上可浏览溢出内容，向右/下可进入工作区留白。 */
+/** 平移上下界：左上标尺为硬边界（画布不得越过）；右下保留工作区留白。 */
 export function computeViewportPanBounds(
   viewport: ViewportSize,
   content: ContentLayout,
 ): ViewportPanBounds {
   const { padX, padY } = resolveDataScreenEditPanPadding(viewport, content);
-  const overflowX = Math.max(0, content.scaledWidth - viewport.width);
-  const overflowY = Math.max(0, content.scaledHeight - viewport.height);
   return {
-    minPanX: -(overflowX + padX),
+    minPanX: content.offsetX ? -content.offsetX : 0,
     maxPanX: padX,
-    minPanY: -(overflowY + padY),
+    minPanY: content.offsetY ? -content.offsetY : 0,
     maxPanY: padY,
   };
 }

@@ -1,21 +1,25 @@
+import { useMemo, type MouseEvent } from "react";
 import {
   ArrowDown,
   ArrowUp,
-  ChevronsDown,
-  ChevronsUp,
   Eye,
   EyeOff,
+  Filter,
+  Image,
+  LayoutList,
   Lock,
+  Type,
   Unlock,
 } from "lucide-react";
 import {
   moveWidget,
-  moveWidgetToExtreme,
   sortWidgets,
   type LayoutWidget,
 } from "@/components/dashboard/layoutUtils";
 import { resolveScreenWidgetLayerLabel } from "@/lib/screenVisualAssets";
 import { IconButton } from "@/components/ui/button";
+import { WidgetInlineTitle } from "@/components/dashboard/WidgetInlineTitle";
+import { widgetChartIcon } from "@/components/dashboard/widgetIcons";
 import { cn } from "@/lib/utils";
 
 export type LayerPanelProps = {
@@ -29,23 +33,39 @@ export type LayerPanelProps = {
 type LayerRow = {
   widget: LayoutWidget;
   depth: number;
-  readOnly?: boolean;
+  sortReadOnly?: boolean;
+  zIndex: number;
 };
 
 function buildLayerRows(widgets: LayoutWidget[]): LayerRow[] {
   const topLevel = sortWidgets(widgets.filter((w) => !w.parentTabsId)).reverse();
   const rows: LayerRow[] = [];
+  let zIndex = topLevel.length;
   for (const widget of topLevel) {
-    rows.push({ widget, depth: 0 });
+    rows.push({ widget, depth: 0, zIndex: zIndex-- });
     if (widget.type === "tabs" && widget.tabsConfig) {
       const childIds = widget.tabsConfig.panes.flatMap((pane) => pane.childWidgetIds);
       for (const childId of childIds) {
         const child = widgets.find((w) => w.id === childId);
-        if (child) rows.push({ widget: child, depth: 1, readOnly: true });
+        if (child) rows.push({ widget: child, depth: 1, sortReadOnly: true, zIndex: 0 });
       }
     }
   }
   return rows;
+}
+
+function resolveLayerWidgetIcon(widget: LayoutWidget) {
+  if (widget.type === "chart" && widget.chartConfig?.chartType) {
+    return widgetChartIcon(widget.chartConfig.chartType);
+  }
+  if (widget.type === "filter") return Filter;
+  if (widget.type === "media") return Image;
+  if (widget.type === "tabs") return LayoutList;
+  return Type;
+}
+
+function stopRowSelect(event: MouseEvent) {
+  event.stopPropagation();
 }
 
 export function LayerPanel({
@@ -55,7 +75,7 @@ export function LayerPanel({
   onWidgetsChange,
   className,
 }: LayerPanelProps) {
-  const rows = buildLayerRows(widgets);
+  const rows = useMemo(() => buildLayerRows(widgets), [widgets]);
   const topLevelCount = rows.filter((row) => row.depth === 0).length;
 
   const patchWidget = (id: string, patch: Partial<LayoutWidget>) => {
@@ -64,37 +84,80 @@ export function LayerPanel({
 
   return (
     <section className={cn("flex min-h-0 flex-col", className)} data-layer-panel>
-      <header className="mb-2 flex items-center justify-between gap-2">
+      <header className="mb-2 flex shrink-0 items-center justify-between gap-2">
         <h3 className="text-theme-sm font-medium text-gray-800 dark:text-white/90">图层管理</h3>
         <span className="text-theme-xs text-gray-500">{topLevelCount} 项</span>
       </header>
+
       <ul className="custom-scrollbar min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
-        {rows.map(({ widget, depth, readOnly }) => (
-          <li key={widget.id}>
-            <div
-              className={cn(
-                "flex items-center gap-1 rounded-lg border px-2 py-1.5 transition-colors",
-                depth > 0 && "ml-4 border-dashed",
-                selectedId === widget.id
-                  ? "border-brand-300 bg-brand-50 dark:border-brand-500/40 dark:bg-brand-500/10"
-                  : "border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]",
-                widget.hidden && "opacity-60",
-              )}
-            >
-              <button
-                type="button"
-                className="min-w-0 flex-1 truncate text-left text-theme-xs text-gray-800 dark:text-gray-100"
+        {rows.map(({ widget, depth, sortReadOnly, zIndex }) => {
+          const Icon = resolveLayerWidgetIcon(widget);
+          const selected = selectedId === widget.id;
+          return (
+            <li key={widget.id}>
+              <div
+                role="button"
+                tabIndex={0}
+                className={cn(
+                  "group flex items-center gap-1 rounded-lg border px-1.5 py-1 transition-colors",
+                  depth > 0 && "ml-3 border-dashed",
+                  selected
+                    ? "border-brand-300 bg-brand-50 dark:border-brand-500/40 dark:bg-brand-500/10"
+                    : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-800 dark:bg-white/[0.02] dark:hover:border-gray-700",
+                  widget.hidden && "opacity-50",
+                )}
                 onClick={() => onSelect(widget.id)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onSelect(widget.id);
+                  }
+                }}
               >
-                {resolveScreenWidgetLayerLabel(widget)}
-              </button>
-              {readOnly ? null : (
-                <div className="flex shrink-0 items-center gap-0.5">
+                <span
+                  className={cn(
+                    "flex size-7 shrink-0 items-center justify-center rounded-md",
+                    selected
+                      ? "bg-brand-100 text-brand-600 dark:bg-brand-500/20 dark:text-brand-300"
+                      : "bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400",
+                  )}
+                  aria-hidden
+                >
+                  <Icon className="size-3.5" />
+                </span>
+
+                <div className="min-w-0 flex-1 py-0.5" onClick={stopRowSelect}>
+                  <WidgetInlineTitle
+                    value={resolveScreenWidgetLayerLabel(widget)}
+                    editable={selected}
+                    ariaLabel="图层名称"
+                    className="!px-0 !text-theme-xs !font-medium"
+                    onChange={(title) => patchWidget(widget.id, { title })}
+                  />
+                  {depth > 0 ? (
+                    <p className="truncate text-[10px] text-gray-400 dark:text-gray-500">Tab 内嵌</p>
+                  ) : zIndex > 0 ? (
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500">层级 {zIndex}</p>
+                  ) : null}
+                </div>
+
+                <div
+                  className="flex shrink-0 items-center gap-px"
+                  onClick={stopRowSelect}
+                  onKeyDown={stopRowSelect}
+                >
                   <IconButton
                     type="button"
                     variant="ghost"
                     size="xs"
+                    className={cn(
+                      "dashboard-no-drag size-7",
+                      widget.hidden
+                        ? "bg-gray-100 text-gray-400 dark:bg-white/10"
+                        : "text-gray-600 dark:text-gray-300",
+                    )}
                     aria-label={widget.hidden ? "显示图层" : "隐藏图层"}
+                    title={widget.hidden ? "显示" : "隐藏"}
                     onClick={() => patchWidget(widget.id, { hidden: !widget.hidden })}
                   >
                     {widget.hidden ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
@@ -103,52 +166,49 @@ export function LayerPanel({
                     type="button"
                     variant="ghost"
                     size="xs"
+                    className={cn(
+                      "dashboard-no-drag size-7",
+                      widget.locked
+                        ? "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400"
+                        : "text-gray-600 dark:text-gray-300",
+                    )}
                     aria-label={widget.locked ? "解锁图层" : "锁定图层"}
+                    title={widget.locked ? "解锁" : "锁定"}
                     onClick={() => patchWidget(widget.id, { locked: !widget.locked })}
                   >
                     {widget.locked ? <Lock className="size-3.5" /> : <Unlock className="size-3.5" />}
                   </IconButton>
-                  <IconButton
-                    type="button"
-                    variant="ghost"
-                    size="xs"
-                    aria-label="置顶"
-                    onClick={() => onWidgetsChange(moveWidgetToExtreme(widgets, widget.id, "top"))}
-                  >
-                    <ChevronsUp className="size-3.5" />
-                  </IconButton>
-                  <IconButton
-                    type="button"
-                    variant="ghost"
-                    size="xs"
-                    aria-label="上移一层"
-                    onClick={() => onWidgetsChange(moveWidget(widgets, widget.id, "down"))}
-                  >
-                    <ArrowUp className="size-3.5" />
-                  </IconButton>
-                  <IconButton
-                    type="button"
-                    variant="ghost"
-                    size="xs"
-                    aria-label="下移一层"
-                    onClick={() => onWidgetsChange(moveWidget(widgets, widget.id, "up"))}
-                  >
-                    <ArrowDown className="size-3.5" />
-                  </IconButton>
-                  <IconButton
-                    type="button"
-                    variant="ghost"
-                    size="xs"
-                    aria-label="置底"
-                    onClick={() => onWidgetsChange(moveWidgetToExtreme(widgets, widget.id, "bottom"))}
-                  >
-                    <ChevronsDown className="size-3.5" />
-                  </IconButton>
+                  {!sortReadOnly ? (
+                    <>
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        size="xs"
+                        className="dashboard-no-drag size-7 opacity-70 group-hover:opacity-100"
+                        aria-label="上移一层"
+                        title="上移"
+                        onClick={() => onWidgetsChange(moveWidget(widgets, widget.id, "down"))}
+                      >
+                        <ArrowUp className="size-3.5" />
+                      </IconButton>
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        size="xs"
+                        className="dashboard-no-drag size-7 opacity-70 group-hover:opacity-100"
+                        aria-label="下移一层"
+                        title="下移"
+                        onClick={() => onWidgetsChange(moveWidget(widgets, widget.id, "up"))}
+                      >
+                        <ArrowDown className="size-3.5" />
+                      </IconButton>
+                    </>
+                  ) : null}
                 </div>
-              )}
-            </div>
-          </li>
-        ))}
+              </div>
+            </li>
+          );
+        })}
         {topLevelCount === 0 ? (
           <li className="rounded-lg border border-dashed border-gray-200 px-3 py-6 text-center text-theme-xs text-gray-500 dark:border-gray-800">
             画布中暂无组件

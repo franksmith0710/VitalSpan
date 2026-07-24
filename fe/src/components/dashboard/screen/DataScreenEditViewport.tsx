@@ -402,9 +402,6 @@ export function DataScreenEditViewport({
     setViewPan(resetPan);
   }, [syncPanLayer]);
 
-  const panTranslateX = offsetX + viewPan.x;
-  const panTranslateY = offsetY + viewPan.y;
-
   const stageStyle: CSSProperties = {
     width: canvasWidth,
     height: canvasHeight,
@@ -472,9 +469,6 @@ export function DataScreenEditViewport({
           <div
             ref={panLayerRef}
             className="absolute top-0 left-0 will-change-transform"
-            style={{
-              transform: `translate(${panTranslateX}px, ${panTranslateY}px)`,
-            }}
           >
             <div
               className={cn("origin-top-left", (spacePan || panDragging) && "pointer-events-none")}

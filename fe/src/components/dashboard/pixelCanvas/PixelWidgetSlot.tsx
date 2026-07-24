@@ -15,6 +15,7 @@ function widgetBodyEqual(prev: PixelLayoutWidget, next: PixelLayoutWidget): bool
   if (prev.width !== next.width || prev.height !== next.height || prev.order !== next.order) {
     return false;
   }
+  if (prev.hidden !== next.hidden || prev.locked !== next.locked) return false;
   if (prev.chartConfig !== next.chartConfig) return false;
   if (prev.textConfig !== next.textConfig) return false;
   if (prev.tabsConfig !== next.tabsConfig) return false;

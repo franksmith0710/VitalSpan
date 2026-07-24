@@ -146,11 +146,13 @@ describe("DataScreenEditViewport blank selection", () => {
 
     const root = screen.getByTestId("data-screen-edit-viewport");
     const viewport = root.querySelector("[data-canvas-scale-viewport]") as HTMLElement;
+    const panLayer = viewport.firstElementChild as HTMLElement;
 
     fireEvent.pointerDown(viewport, { clientX: 100, clientY: 100, pointerId: 1, button: 0 });
     fireEvent.pointerMove(document, { clientX: 150, clientY: 100, pointerId: 1 });
 
     expect(root).toHaveAttribute("data-view-pan-x", "50");
+    expect(panLayer.style.transform).toBe("translate(50px, 0px)");
     fireEvent.pointerUp(document, { clientX: 150, clientY: 100, pointerId: 1 });
     raf.mockRestore();
   });

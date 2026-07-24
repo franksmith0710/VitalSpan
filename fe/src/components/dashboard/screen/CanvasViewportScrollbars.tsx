@@ -15,6 +15,7 @@ type ScrollbarAxisProps = {
   metrics: ViewportScrollAxisMetrics;
   bounds: ViewportPanBounds;
   onPanChange: (pan: { x?: number; y?: number }) => void;
+  className?: string;
 };
 
 function ScrollbarAxis({
@@ -22,6 +23,7 @@ function ScrollbarAxis({
   metrics,
   bounds,
   onPanChange,
+  className,
 }: ScrollbarAxisProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const isHorizontal = orientation === "horizontal";
@@ -121,6 +123,7 @@ function ScrollbarAxis({
       className={cn(
         "relative shrink-0 bg-[#0d1117]",
         isHorizontal ? "h-[var(--canvas-scrollbar-size)]" : "w-[var(--canvas-scrollbar-size)]",
+        className,
       )}
       onPointerDown={handleTrackPointerDown}
     >

@@ -630,7 +630,8 @@ export function PixelShape({
         className={cn(
         "shape pixel-shape-outer dashboard-shape-gap-shell absolute flex touch-none select-none flex-col border-0 bg-transparent",
         selectedInEdit && "z-[1] pixel-shape-edit",
-        widget.hidden && mode === "edit" && "opacity-40",
+        widget.hidden && mode === "edit" && "opacity-35 ring-1 ring-dashed ring-gray-400/60 dark:ring-gray-500/50",
+        widget.locked && mode === "edit" && "ring-1 ring-amber-400/50",
         paletteDragActive && "pointer-events-none",
       )}
       style={{

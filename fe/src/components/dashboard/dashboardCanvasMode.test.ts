@@ -285,4 +285,25 @@ describe("dashboard canvas mode", () => {
     const edited = pixelWidgetToLayoutWidget(previous);
     expect(mergeLayoutWidgetIntoPixel(previous, edited)).toBe(previous);
   });
+
+  it("mergeLayoutWidgetIntoPixel 同步 hidden/locked/order 图层元数据", () => {
+    const previous = v2.widgets[0]!;
+    const edited = {
+      ...pixelWidgetToLayoutWidget(previous),
+      hidden: true,
+      locked: true,
+      order: 9,
+    };
+    const merged = mergeLayoutWidgetIntoPixel(previous, edited);
+    expect(merged).not.toBe(previous);
+    expect(merged).toMatchObject({
+      hidden: true,
+      locked: true,
+      order: 9,
+      x: previous.x,
+      y: previous.y,
+      width: previous.width,
+      height: previous.height,
+    });
+  });
 });
