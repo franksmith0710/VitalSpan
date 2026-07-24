@@ -35,7 +35,7 @@ export function mapChartFieldHint(columns: string[]): MapChartFieldHint | null {
   if (normalized.includes("region_id")) {
     return {
       message:
-        "region_id 为演示库区县 ID，仅支持 5–10（对应广东/江苏/北京/上海/四川/浙江）。生产请 JOIN regions 取 province/city，或改用 v_sales_geo。",
+        "region_id 为演示库行政区划 ID（含省/市/区县），全国视图会自动上卷到省级。生产环境请 JOIN regions 取 province/city，或改用 v_sales_geo。",
       sampleSql: SALES_GEO_DRILL_SQL,
     };
   }

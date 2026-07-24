@@ -6,8 +6,21 @@ import {
   readChartGeo3dStyle,
   type ChartDeStyle,
 } from "@/lib/chartDeStyle";
-import { DashboardConfigSection } from "./DashboardConfigSection";
-import { INSPECTOR_HINT, INSPECTOR_SECTION_GAP, InspectorFieldRow, InspectorSwitchRow } from "./inspectorCompact";
+import {
+  ChartInspectorSection,
+  INSPECTOR_HINT,
+  INSPECTOR_SECTION_GAP,
+  INSPECTOR_SELECT_TRIGGER,
+  InspectorFieldRow,
+  InspectorSwitchRow,
+} from "./inspectorCompact";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type ChartGeoStylePanelProps = {
   cfg: ChartViewConfig;
@@ -35,7 +48,7 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
   const is3d = chartType === "map-3d";
 
   return (
-    <DashboardConfigSection title={isMap ? "地图样式" : "热力图样式"} compact>
+    <ChartInspectorSection title={isMap ? "地图样式" : "热力图样式"} data-testid="chart-geo-style">
       <div className={INSPECTOR_SECTION_GAP}>
         {isMap ? (
           <InspectorSwitchRow
@@ -69,21 +82,25 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
         {is3d ? (
           <>
             <InspectorFieldRow label="3D 质量">
-              <select
-                className="h-8 w-full rounded-md border border-gray-200 bg-white px-2 text-[11px] text-gray-800 dark:border-gray-700 dark:bg-white/[0.03] dark:text-white/90"
+              <Select
                 value={geo3d.quality ?? "auto"}
-                onChange={(e) =>
+                onValueChange={(quality) =>
                   patchGeo3d({
-                    quality: e.target.value as (typeof QUALITY_OPTIONS)[number]["value"],
+                    quality: quality as (typeof QUALITY_OPTIONS)[number]["value"],
                   })
                 }
               >
-                {QUALITY_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className={INSPECTOR_SELECT_TRIGGER} aria-label="3D 质量">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {QUALITY_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </InspectorFieldRow>
             <InspectorFieldRow label="底板厚度">
               <input
@@ -116,6 +133,6 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
             : "对标 DataEase 分类热力图：横轴、纵轴各一维度，指标决定色深；重复单元格自动求和。"}
         </p>
       </div>
-    </DashboardConfigSection>
+    </ChartInspectorSection>
   );
 }

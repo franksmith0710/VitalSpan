@@ -122,7 +122,7 @@ export function DatasetSelector({
               placeholder="搜索"
               aria-label="搜索数据集"
               className="mt-2"
-              inputClassName="h-8 text-theme-xs"
+              density="compact"
             />
           </div>
           <div className="max-h-56 overflow-y-auto p-1">

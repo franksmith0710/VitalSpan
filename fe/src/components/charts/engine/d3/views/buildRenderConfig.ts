@@ -8,6 +8,7 @@ import { buildD3StyleProps } from "@/components/charts/engine/d3/views/buildStyl
 import { extractDrillValue, buildCartesianRenderConfig } from "@/components/charts/engine/d3/views/buildCartesianConfig";
 import { readCartesianStyleFromPlanOptions } from "@/lib/applyChartDeStyleBlocks";
 import { readChartDeStyle, readChartGeoStyle, readChartGeo3dStyle } from "@/lib/chartDeStyle";
+import { resolveTerrainTextureEnabled } from "@/components/charts/engine/three/geo3dRuntime";
 import type {
   D3BarRangeDatum,
   D3BidirectionalBarDatum,
@@ -62,7 +63,13 @@ export function buildD3DispatchPayload(
     const rows = (options.rows as unknown[][]) ?? [];
     const columns = (options.columns as string[]) ?? [];
     const geoStyle = props.chartConfig ? readChartGeoStyle(readChartDeStyle(props.chartConfig)) : {};
-    const geo3dStyle = props.chartConfig ? readChartGeo3dStyle(readChartDeStyle(props.chartConfig)) : {};
+    const geo3dStyleRaw = props.chartConfig ? readChartGeo3dStyle(readChartDeStyle(props.chartConfig)) : {};
+    const renderTier = props.geo3dRenderTier ?? "full";
+    const geo3dStyle = {
+      ...geo3dStyleRaw,
+      terrainTexture: resolveTerrainTextureEnabled(renderTier, geo3dStyleRaw),
+      terrainRelief: renderTier === "full" ? geo3dStyleRaw.terrainRelief : false,
+    };
     return {
       kind: "geo",
       config: {
@@ -82,6 +89,8 @@ export function buildD3DispatchPayload(
           visualMap: geoStyle.visualMap,
         },
         geo3dStyle,
+        renderTier,
+        instanceKey: props.instanceKey,
         colors: styleProps.colors,
         theme: styleProps.theme,
         showTooltip: styleProps.showTooltip,

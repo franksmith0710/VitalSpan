@@ -5,6 +5,7 @@ import {
   isInsideWheelZoomSurface,
   normalizeWheelDeltaY,
   routePixelCanvasWheel,
+  shouldDelegateWheelFromCanvasHost,
   VIZ_WHEEL_ZOOM_SURFACE_ATTR,
 } from "./pixelCanvasWheelScroll";
 
@@ -62,6 +63,45 @@ function mockHost(scrollTop = 0) {
   Object.defineProperty(host, "clientHeight", { configurable: true, value: 500 });
   return { host, getScrollTop: () => hostScrollTop };
 }
+
+describe("shouldDelegateWheelFromCanvasHost", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("delegates when pointer is over a map zoom surface", () => {
+    const host = document.createElement("div");
+    const mapSurface = document.createElement("div");
+    mapSurface.setAttribute(VIZ_WHEEL_ZOOM_SURFACE_ATTR, "true");
+    host.append(mapSurface);
+    const event = new WheelEvent("wheel", { deltaY: 80, bubbles: true });
+    expect(shouldDelegateWheelFromCanvasHost(host, event, mapSurface)).toBe(true);
+  });
+
+  it("delegates when an inner scroller can still move", () => {
+    const host = document.createElement("div");
+    const { el: inner } = mockScrollable("div", {
+      scrollTop: 40,
+      scrollHeight: 400,
+      clientHeight: 200,
+    });
+    host.append(inner);
+    const event = new WheelEvent("wheel", { deltaY: 60, bubbles: true });
+    expect(shouldDelegateWheelFromCanvasHost(host, event, inner)).toBe(true);
+  });
+
+  it("does not delegate when inner scroller is at the bottom", () => {
+    const host = document.createElement("div");
+    const { el: inner } = mockScrollable("div", {
+      scrollTop: 200,
+      scrollHeight: 400,
+      clientHeight: 200,
+    });
+    host.append(inner);
+    const event = new WheelEvent("wheel", { deltaY: 60, bubbles: true });
+    expect(shouldDelegateWheelFromCanvasHost(host, event, inner)).toBe(false);
+  });
+});
 
 describe("routePixelCanvasWheel", () => {
   afterEach(() => {

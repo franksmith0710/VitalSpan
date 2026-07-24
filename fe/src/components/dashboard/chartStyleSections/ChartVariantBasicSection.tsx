@@ -9,10 +9,9 @@ import {
   readChartDeStyle,
   readChartPieStyle,
 } from "@/lib/chartDeStyle";
-import { DashboardConfigSection } from "../DashboardConfigSection";
+import { ChartInspectorSection, INSPECTOR_SELECT } from "../inspectorCompact";
 import { ChartDeSegmentField } from "../chartInspectorDeFields";
 import { ChartDeSliderField } from "../deAttrSlider";
-import { INSPECTOR_SELECT } from "../inspectorCompact";
 import { useChartInspector } from "../ChartInspectorContext";
 import {
   Select,
@@ -57,7 +56,7 @@ export function ChartVariantBasicSection() {
   };
 
   return (
-    <DashboardConfigSection title="基础样式" compact data-testid="chart-variant-basic">
+    <ChartInspectorSection title="基础样式" data-testid="chart-variant-basic">
       {options.length <= 4 ? (
         <ChartDeSegmentField
           label={cfg.chartType === "pie" ? "饼图类型" : "图表类型"}
@@ -97,6 +96,6 @@ export function ChartVariantBasicSection() {
           }
         />
       ) : null}
-    </DashboardConfigSection>
+    </ChartInspectorSection>
   );
 }

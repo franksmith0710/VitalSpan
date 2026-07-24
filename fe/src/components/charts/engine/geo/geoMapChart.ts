@@ -1,6 +1,10 @@
 import chinaProvincesGeo from "@/assets/geo/china-provinces.json";
 import { chartPalette } from "@/lib/chartPalette";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
+import {
+  isDemoMysqlRegionId,
+  resolveDemoMysqlRegionByDrillDepth,
+} from "@/lib/demoMysqlRegions";
 import { formatChartValue } from "@/lib/chartValueFormat";
 import {
   DEFAULT_GEO_HEATMAP_PLACEHOLDER_HINT,
@@ -154,11 +158,7 @@ export const DEMO_MYSQL_REGION_ID_TO_CODE: Record<number, string> = {
 };
 
 export function isDemoMysqlRegionIdValue(raw: unknown): boolean {
-  const id =
-    typeof raw === "number"
-      ? raw
-      : Number.parseInt(String(raw ?? "").trim(), 10);
-  return Number.isFinite(id) && id in DEMO_MYSQL_REGION_ID_TO_CODE;
+  return isDemoMysqlRegionId(raw);
 }
 
 function isNumericRegionIdRaw(raw: unknown): boolean {
@@ -170,7 +170,9 @@ function isNumericRegionIdRaw(raw: unknown): boolean {
   return false;
 }
 
-export function resolveDemoMysqlRegionId(raw: unknown): GeoMapRegionResolve | null {
+export function resolveDemoMysqlRegionId(raw: unknown, drillDepth = 0): GeoMapRegionResolve | null {
+  const fromHierarchy = resolveDemoMysqlRegionByDrillDepth(raw, drillDepth);
+  if (fromHierarchy) return fromHierarchy;
   const id =
     typeof raw === "number"
       ? raw
@@ -188,9 +190,10 @@ export function resolveMapDimensionValue(
   regionField: string,
   raw: unknown,
   knownNames = listVsRegionNames(),
+  drillDepth = 0,
 ): GeoMapRegionResolve {
   if (REGION_ID_FIELD_PATTERN.test(regionField)) {
-    const demo = resolveDemoMysqlRegionId(raw);
+    const demo = resolveDemoMysqlRegionId(raw, drillDepth);
     if (demo) return demo;
     if (isNumericRegionIdRaw(raw)) {
       return { name: "", matched: false };
@@ -287,14 +290,20 @@ export function analyzeGeoMapMatch(
   columns: string[],
   regionField: string,
   knownNames = listVsRegionNames(),
-  atProvinceLevel = true,
+  drillDepthOrRootLevel: number | boolean = 0,
 ): GeoMapMatchStats {
+  const drillDepth =
+    typeof drillDepthOrRootLevel === "boolean"
+      ? drillDepthOrRootLevel
+        ? 0
+        : 1
+      : drillDepthOrRootLevel;
   const ri = columns.indexOf(regionField);
   const unmatched = new Set<string>();
   let matched = 0;
 
   for (const row of rows) {
-    const resolved = resolveRegionMetricValue(regionField, row[ri], knownNames, atProvinceLevel);
+    const resolved = resolveRegionMetricValue(regionField, row[ri], knownNames, drillDepth);
     if (resolved.matched) matched += 1;
     else if (resolved.name) unmatched.add(String(row[ri] ?? ""));
     else if (REGION_ID_FIELD_PATTERN.test(regionField) && isNumericRegionIdRaw(row[ri])) {
@@ -367,18 +376,25 @@ export function isGeoHeatmapPlaceholderOption(
   return Boolean(option?.[VS_GEO_HEATMAP_PLACEHOLDER_FLAG]);
 }
 
-function resolveRegionMetricValue(
+export function resolveRegionMetricValue(
   regionField: string,
   raw: unknown,
   knownNames: string[],
-  atProvinceLevel: boolean,
+  drillDepth: number,
 ): GeoMapRegionResolve {
-  if (atProvinceLevel) {
-    return resolveMapDimensionValue(regionField, raw, knownNames);
-  }
   if (REGION_ID_FIELD_PATTERN.test(regionField)) {
-    const demo = resolveDemoMysqlRegionId(raw);
-    if (demo) return demo;
+    const demo = resolveDemoMysqlRegionId(raw, drillDepth);
+    if (demo) {
+      if (drillDepth === 0) return demo;
+      const atLevel = resolveMapRegionNameAtLevel(demo.name, knownNames);
+      return atLevel.matched ? atLevel : demo;
+    }
+    if (isNumericRegionIdRaw(raw)) {
+      return { name: "", matched: false };
+    }
+  }
+  if (drillDepth === 0) {
+    return resolveMapDimensionValue(regionField, raw, knownNames, drillDepth);
   }
   return resolveMapRegionNameAtLevel(raw, knownNames);
 }
@@ -389,16 +405,16 @@ function aggregateMapRegionData(
   regionField: string,
   metricField: string,
   knownNames = listVsRegionNames(),
-  atProvinceLevel = true,
+  drillDepth = 0,
 ): Array<{ name: string; value: number }> {
   const ri = columns.indexOf(regionField);
   const mi = columns.indexOf(metricField);
   const bucket = new Map<string, number>();
 
   for (const row of rows) {
-    const resolved = resolveRegionMetricValue(regionField, row[ri], knownNames, atProvinceLevel);
+    const resolved = resolveRegionMetricValue(regionField, row[ri], knownNames, drillDepth);
     if (!resolved.name) continue;
-    if (!atProvinceLevel && !resolved.matched) continue;
+    if (drillDepth > 0 && !resolved.matched) continue;
     const raw = Number(row[mi] ?? 0);
     const value = Number.isFinite(raw) ? raw : 0;
     bucket.set(resolved.name, (bucket.get(resolved.name) ?? 0) + value);
@@ -443,7 +459,7 @@ export function buildGeoMapEchartsOption(input: GeoMapRowsInput): Record<string,
   const isDark = input.isDark ?? false;
   const surface = geoMapSurfaceColors(isDark);
   const mapId = input.mapId ?? VS_REGIONS_MAP_ID;
-  const atProvinceLevel = mapId === VS_REGIONS_MAP_ID;
+  const drillDepth = mapId === VS_REGIONS_MAP_ID ? 0 : 1;
   const knownNames = input.knownRegionNames ?? listVsRegionNames();
 
   const data = aggregateMapRegionData(
@@ -452,7 +468,7 @@ export function buildGeoMapEchartsOption(input: GeoMapRowsInput): Record<string,
     input.regionField,
     input.metricField,
     knownNames,
-    atProvinceLevel,
+    drillDepth,
   );
   const values = data.map((item) => item.value);
   const max = values.length ? Math.max(...values) : 1;

@@ -2,6 +2,7 @@ import type { AntvThemeTokens } from "@/components/charts/engine/antv/theme";
 import type { ChartConditionalRule, ChartMarkLine } from "@/lib/chartDeFeatures";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import type { ChartGeoStyle, ChartGeo3dStyle } from "@/lib/chartDeStyle";
+import type { Geo3dRenderTier } from "@/components/charts/engine/three/geo3dRuntime";
 import type { D3LegendPresentation, D3TooltipPresentation } from "@/components/charts/engine/d3/core/presentation";
 
 export type D3Datum = Record<string, unknown>;
@@ -118,6 +119,9 @@ export type D3GeoRenderConfig = D3RenderConfigBase & {
   isDark?: boolean;
   geoStyle?: D3GeoStyleProps;
   geo3dStyle?: ChartGeo3dStyle;
+  renderTier?: Geo3dRenderTier;
+  /** WebGL 实例槽位 key（widgetId 等），用于全页实例上限 */
+  instanceKey?: string;
   onPointClick?: (datum: { name: string; value: number; adcode?: number }) => void;
 };
 

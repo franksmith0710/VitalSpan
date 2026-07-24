@@ -47,7 +47,8 @@ function AdminLayoutContent() {
   const isListFillRoute = isAdminListFillRoute(location.pathname);
   const isScreenPreviewRoute = isAdminScreenPreviewRoute(location.pathname);
   const isFillHeightRoute = isChartTypesFill || isDashboardEditFill || isListFillRoute;
-  useAdminFillScrollLock(isFillHeightRoute);
+  // 所有标准管理页锁住 html/body，仅 main 滚动，避免细/粗双滚动条并存
+  useAdminFillScrollLock(!isScreenPreviewRoute);
 
   if (isScreenPreviewRoute) {
     return (

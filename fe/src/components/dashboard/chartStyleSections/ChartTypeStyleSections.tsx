@@ -6,10 +6,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useChartInspector } from "../ChartInspectorContext";
-import { DashboardConfigSection } from "../DashboardConfigSection";
+import {
+  ChartInspectorSection,
+  INSPECTOR_SECTION_GAP,
+  INSPECTOR_SELECT,
+  INSPECTOR_SWITCH_SIZE,
+  InspectorSwitchRow,
+} from "../inspectorCompact";
 import { ChartDeSliderField } from "../deAttrSlider";
-import { InspectorSwitchRow, INSPECTOR_SECTION_GAP, INSPECTOR_SELECT } from "../inspectorCompact";
 import {
   DEFAULT_PIE_INNER_RADIUS_PERCENT,
   patchChartDeStyleNested,
@@ -34,7 +40,7 @@ export function ChartPieShapeSection() {
     mutateChartConfig((c) => patchChartDeStyleNested(c, "pie", p));
 
   return (
-    <DashboardConfigSection title="饼图样式" compact data-testid="chart-pie-shape">
+    <ChartInspectorSection title="饼图样式" data-testid="chart-pie-shape">
       <div className={INSPECTOR_SECTION_GAP}>
         <ChartDeSliderField
           label="内径 %"
@@ -66,7 +72,7 @@ export function ChartPieShapeSection() {
           onChange={(padAngle) => patch({ padAngle })}
         />
       </div>
-    </DashboardConfigSection>
+    </ChartInspectorSection>
   );
 }
 
@@ -77,14 +83,14 @@ export function ChartGaugeStyleSection() {
     mutateChartConfig((c) => patchChartDeStyleNested(c, "gauge", p));
 
   return (
-    <DashboardConfigSection title="仪表样式" compact data-testid="chart-gauge-shape">
+    <ChartInspectorSection title="仪表样式" data-testid="chart-gauge-shape">
       <div className={INSPECTOR_SECTION_GAP}>
         <ChartDeSliderField label="最小值" value={gauge.min} fallback={0} min={0} max={1000} step={1} onChange={(min) => patch({ min })} />
         <ChartDeSliderField label="最大值" value={gauge.max} fallback={100} min={1} max={10000} step={1} onChange={(max) => patch({ max })} />
         <ChartDeSliderField label="起始角 °" value={gauge.startAngleDeg} fallback={-135} min={-180} max={0} step={5} onChange={(startAngleDeg) => patch({ startAngleDeg })} />
         <ChartDeSliderField label="结束角 °" value={gauge.endAngleDeg} fallback={135} min={0} max={180} step={5} onChange={(endAngleDeg) => patch({ endAngleDeg })} />
       </div>
-    </DashboardConfigSection>
+    </ChartInspectorSection>
   );
 }
 
@@ -95,12 +101,12 @@ export function ChartLiquidStyleSection() {
     mutateChartConfig((c) => patchChartDeStyleNested(c, "liquid", p));
 
   return (
-    <DashboardConfigSection title="水波样式" compact data-testid="chart-liquid-shape">
+    <ChartInspectorSection title="水波样式" data-testid="chart-liquid-shape">
       <div className={INSPECTOR_SECTION_GAP}>
         <ChartDeSliderField label="目标线（%）" value={liquid.targetValue} fallback={100} min={0} max={100} step={1} onChange={(targetValue) => patch({ targetValue })} />
         <ChartDeSliderField label="轮廓宽度" value={liquid.outlineWidth} fallback={2} min={0} max={8} step={1} onChange={(outlineWidth) => patch({ outlineWidth })} />
       </div>
-    </DashboardConfigSection>
+    </ChartInspectorSection>
   );
 }
 
@@ -111,7 +117,7 @@ export function ChartKpiIndicatorSection() {
     mutateChartConfig((c) => patchChartDeStyleNested(c, "kpi", p));
 
   return (
-    <DashboardConfigSection title="指标样式" compact data-testid="chart-kpi-indicator">
+    <ChartInspectorSection title="指标样式" data-testid="chart-kpi-indicator">
       <div className={INSPECTOR_SECTION_GAP}>
         <ChartDeSliderField label="字号" value={kpi.fontSize} fallback={28} min={12} max={64} step={1} onChange={(fontSize) => patch({ fontSize })} />
         <div className="border-b border-gray-100 py-2 dark:border-white/[0.06]">
@@ -128,7 +134,7 @@ export function ChartKpiIndicatorSection() {
           </Select>
         </div>
       </div>
-    </DashboardConfigSection>
+    </ChartInspectorSection>
   );
 }
 
@@ -139,7 +145,7 @@ export function ChartFunnelShapeSection() {
     mutateChartConfig((c) => patchChartDeStyleNested(c, "funnel", p));
 
   return (
-    <DashboardConfigSection title="漏斗样式" compact data-testid="chart-funnel-shape">
+    <ChartInspectorSection title="漏斗样式" data-testid="chart-funnel-shape">
       <div className={INSPECTOR_SECTION_GAP}>
         <ChartDeSliderField label="层间距" value={funnel.gap} fallback={4} min={0} max={24} step={1} onChange={(gap) => patch({ gap })} />
         <InspectorSwitchRow
@@ -148,7 +154,7 @@ export function ChartFunnelShapeSection() {
           onCheckedChange={(showConversionRate) => patch({ showConversionRate })}
         />
       </div>
-    </DashboardConfigSection>
+    </ChartInspectorSection>
   );
 }
 
@@ -159,13 +165,13 @@ export function ChartSankeyShapeSection() {
     mutateChartConfig((c) => patchChartDeStyleNested(c, "sankey", p));
 
   return (
-    <DashboardConfigSection title="桑基样式" compact data-testid="chart-sankey-shape">
+    <ChartInspectorSection title="桑基样式" data-testid="chart-sankey-shape">
       <div className={INSPECTOR_SECTION_GAP}>
         <ChartDeSliderField label="节点宽度" value={sankey.nodeWidth} fallback={12} min={4} max={40} step={1} onChange={(nodeWidth) => patch({ nodeWidth })} />
         <ChartDeSliderField label="节点间距" value={sankey.nodeGap} fallback={8} min={0} max={32} step={1} onChange={(nodeGap) => patch({ nodeGap })} />
         <ChartDeSliderField label="链接透明度" value={sankey.linkOpacity} fallback={0.4} min={0.1} max={1} step={0.05} onChange={(linkOpacity) => patch({ linkOpacity })} />
       </div>
-    </DashboardConfigSection>
+    </ChartInspectorSection>
   );
 }
 
@@ -174,7 +180,7 @@ export function ChartGraphShapeSection() {
   const graph = readChartDeStyle(cfg).graph ?? {};
 
   return (
-    <DashboardConfigSection title="关系图样式" compact data-testid="chart-graph-shape">
+    <ChartInspectorSection title="关系图样式" data-testid="chart-graph-shape">
       <div className={INSPECTOR_SECTION_GAP}>
         <div className="border-b border-gray-100 py-2 dark:border-white/[0.06]">
           <p className="mb-1.5 text-[11px] font-medium text-gray-600 dark:text-gray-300">布局</p>
@@ -219,7 +225,7 @@ export function ChartGraphShapeSection() {
           }
         />
       </div>
-    </DashboardConfigSection>
+    </ChartInspectorSection>
   );
 }
 
@@ -230,7 +236,7 @@ export function ChartRadarShapeSection() {
     mutateChartConfig((c) => patchChartDeStyleNested(c, "radar", p));
 
   return (
-    <DashboardConfigSection title="雷达样式" compact data-testid="chart-radar-shape">
+    <ChartInspectorSection title="雷达样式" data-testid="chart-radar-shape">
       <div className={INSPECTOR_SECTION_GAP}>
         <div className="border-b border-gray-100 py-2 dark:border-white/[0.06]">
           <p className="mb-1.5 text-[11px] font-medium text-gray-600 dark:text-gray-300">形状</p>
@@ -254,7 +260,7 @@ export function ChartRadarShapeSection() {
         />
         <ChartDeSliderField label="区域透明度" value={radar.areaOpacity} fallback={0.25} min={0.05} max={0.8} step={0.05} onChange={(areaOpacity) => patch({ areaOpacity })} />
       </div>
-    </DashboardConfigSection>
+    </ChartInspectorSection>
   );
 }
 
@@ -265,13 +271,13 @@ export function ChartWordCloudShapeSection() {
     mutateChartConfig((c) => patchChartDeStyleNested(c, "wordCloud", p));
 
   return (
-    <DashboardConfigSection title="词云样式" compact data-testid="chart-wordcloud-shape">
+    <ChartInspectorSection title="词云样式" data-testid="chart-wordcloud-shape">
       <div className={INSPECTOR_SECTION_GAP}>
         <ChartDeSliderField label="最小字号" value={wordCloud.fontSizeMin} fallback={12} min={8} max={48} step={1} onChange={(fontSizeMin) => patch({ fontSizeMin })} />
         <ChartDeSliderField label="最大字号" value={wordCloud.fontSizeMax} fallback={48} min={16} max={96} step={1} onChange={(fontSizeMax) => patch({ fontSizeMax })} />
         <ChartDeSliderField label="间距" value={wordCloud.spacing} fallback={2} min={0} max={16} step={1} onChange={(spacing) => patch({ spacing })} />
       </div>
-    </DashboardConfigSection>
+    </ChartInspectorSection>
   );
 }
 
@@ -279,15 +285,23 @@ export function ChartTooltipStyleSection() {
   const { cfg, patchDeStyleNested, dashboardStyle } = useChartInspector();
   const deStyle = readChartDeStyle(cfg);
   const tooltip = deStyle.tooltip ?? {};
+  const tooltipShow = tooltip.show !== false;
 
   return (
-    <DashboardConfigSection title="提示" compact data-testid="chart-tooltip-style">
-      <div className={INSPECTOR_SECTION_GAP}>
-        <InspectorSwitchRow
-          label="显示提示"
-          checked={tooltip.show !== false}
+    <ChartInspectorSection
+      title="提示"
+      data-testid="chart-tooltip-style"
+      enabled={tooltipShow}
+      action={
+        <Switch
+          checked={tooltipShow}
           onCheckedChange={(show) => patchDeStyleNested("tooltip", { show })}
+          aria-label="显示提示"
+          size={INSPECTOR_SWITCH_SIZE}
         />
+      }
+    >
+      <div className={INSPECTOR_SECTION_GAP}>
         <ChartDeSliderField
           label="字号"
           value={tooltip.fontSize}
@@ -298,6 +312,6 @@ export function ChartTooltipStyleSection() {
           onChange={(fontSize) => patchDeStyleNested("tooltip", { fontSize })}
         />
       </div>
-    </DashboardConfigSection>
+    </ChartInspectorSection>
   );
 }

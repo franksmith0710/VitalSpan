@@ -105,4 +105,53 @@ describe("DataScreenEditViewport blank selection", () => {
     viewport.dispatchEvent(event);
     expect(preventDefault).toHaveBeenCalled();
   });
+
+  it("does not pan the viewport when wheel is over a map zoom surface", () => {
+    render(
+      <DataScreenEditViewport canvasWidth={1920} canvasHeight={1080}>
+        <div data-testid="canvas-stage" className="h-[1080px] w-[1920px]">
+          <div data-viz-wheel-zoom="true" data-testid="map-surface">
+            <canvas />
+          </div>
+        </div>
+      </DataScreenEditViewport>,
+    );
+
+    const root = screen.getByTestId("data-screen-edit-viewport");
+    expect(root).toHaveAttribute("data-view-pan-y", "0");
+
+    const mapSurface = screen.getByTestId("map-surface");
+    const event = new WheelEvent("wheel", {
+      deltaY: 120,
+      bubbles: true,
+      cancelable: true,
+    });
+    const preventDefault = vi.spyOn(event, "preventDefault");
+    mapSurface.dispatchEvent(event);
+
+    expect(preventDefault).not.toHaveBeenCalled();
+    expect(root).toHaveAttribute("data-view-pan-y", "0");
+  });
+
+  it("updates view pan while dragging before pointer up", async () => {
+    const raf = vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
+      cb(0);
+      return 1;
+    });
+    render(
+      <DataScreenEditViewport canvasWidth={1920} canvasHeight={1080}>
+        <div data-testid="canvas-stage" className="h-[1080px] w-[1920px]" />
+      </DataScreenEditViewport>,
+    );
+
+    const root = screen.getByTestId("data-screen-edit-viewport");
+    const viewport = root.querySelector("[data-canvas-scale-viewport]") as HTMLElement;
+
+    fireEvent.pointerDown(viewport, { clientX: 100, clientY: 100, pointerId: 1, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 150, clientY: 100, pointerId: 1 });
+
+    expect(root).toHaveAttribute("data-view-pan-x", "50");
+    fireEvent.pointerUp(document, { clientX: 150, clientY: 100, pointerId: 1 });
+    raf.mockRestore();
+  });
 });

@@ -47,7 +47,7 @@ import {
 import { patchChartDeTableStyle, readChartDeTableStyle } from "@/lib/chartDeTableStyle";
 import { isTableLikeChartType, tableStyleSectionsForType } from "@/lib/chartTableInspector";
 import { chartTypeHasTooltipSection } from "@/lib/chartStyleCartesianFields";
-import { ChartInspectorSection, INSPECTOR_SELECT, INSPECTOR_SWITCH_SIZE, InspectorInlineColorRow } from "../inspectorCompact";
+import { ChartInspectorSection, INSPECTOR_HINT, INSPECTOR_SELECT, INSPECTOR_SWITCH_SIZE, InspectorInlineColorRow } from "../inspectorCompact";
 import { DeTitleStyleToolbar } from "../deTitleStyleToolbar";
 
 export function ChartPaletteStyleSection() {
@@ -151,6 +151,7 @@ export function ChartTitleStyleSection() {
   return (
     <ChartInspectorSection
       title="标题"
+      enabled={titleVisible}
       action={
         <Switch
           checked={titleVisible}
@@ -196,6 +197,7 @@ export function ChartRemarkStyleSection() {
   return (
     <ChartInspectorSection
       title="备注"
+      enabled={deStyle.remark?.show === true}
       action={
         <Switch
           checked={deStyle.remark?.show ?? false}
@@ -231,6 +233,7 @@ export function ChartLegendStyleSection() {
   return (
     <ChartInspectorSection
       title="图例"
+      enabled={legendVisible}
       action={
         <Switch
           checked={legendVisible}
@@ -271,6 +274,7 @@ export function ChartLabelStyleSection() {
   return (
     <ChartInspectorSection
       title={isKpi ? "指标格式" : "标签"}
+      enabled={!isKpi ? showLabel : undefined}
       action={
         !isKpi ? (
           <Switch

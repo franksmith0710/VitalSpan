@@ -5,6 +5,7 @@ import {
   GEO_MAP_QUALITY_FALLBACK_BANNER,
   GEO_MAP_THREE_INIT_FALLBACK_BANNER,
   GEO_MAP_WEBGL_FALLBACK_BANNER,
+  GEO_MAP_WEBGL_CAP_FALLBACK_BANNER,
   resolveGeoMapFallbackBanner,
 } from "@/components/charts/engine/geo/geoMapRenderResult";
 import * as geo3dQuality from "@/components/charts/engine/three/geo3dQuality";
@@ -19,8 +20,8 @@ describe("renderThreeChoroplethChart", () => {
     document.body.appendChild(container);
 
     const result = await renderThreeChoroplethChart(container, {
-      width: 400,
-      height: 300,
+      width: 800,
+      height: 600,
       colors: ["#465fff"],
       theme: getAntvThemeTokens("light"),
       showTooltip: false,
@@ -92,5 +93,9 @@ describe("resolveGeoMapFallbackBanner", () => {
 
   it("returns quality degradation copy", () => {
     expect(resolveGeoMapFallbackBanner("quality-degraded")).toBe(GEO_MAP_QUALITY_FALLBACK_BANNER);
+  });
+
+  it("returns webgl cap copy", () => {
+    expect(resolveGeoMapFallbackBanner("webgl-cap-exceeded")).toBe(GEO_MAP_WEBGL_CAP_FALLBACK_BANNER);
   });
 });

@@ -57,6 +57,27 @@ describe("resolveGeo3dQuality", () => {
     ).toBe("high");
   });
 
+  it("returns low when short side is below three minimum", () => {
+    expect(
+      resolveGeo3dQuality({
+        drillDepth: 0,
+        featureCount: 34,
+        shortSide: 399,
+      }),
+    ).toBe("low");
+  });
+
+  it("returns low for thumbnail render tier", () => {
+    expect(
+      resolveGeo3dQuality({
+        drillDepth: 0,
+        featureCount: 10,
+        shortSide: 800,
+        renderTier: "thumbnail",
+      }),
+    ).toBe("low");
+  });
+
   it("respects forced low at national depth", () => {
     expect(
       resolveGeo3dQuality({

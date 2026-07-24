@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -28,6 +29,19 @@ export const INSPECTOR_SWITCH_ROW = "flex items-center justify-between gap-2 py-
 export const INSPECTOR_SWITCH_SIZE = "sm" as const;
 export const INSPECTOR_NESTED_CARD =
   "space-y-2 rounded-md border border-gray-200 bg-gray-50/70 p-2 dark:border-gray-800 dark:bg-white/[0.03]";
+
+/** 标题行 Switch 与折叠态联动：开 → 展开，关 → 收起 */
+export function useInspectorSectionOpen(defaultOpen: boolean, enabled?: boolean) {
+  const [open, setOpen] = useState(enabled ?? defaultOpen);
+
+  useEffect(() => {
+    if (enabled !== undefined) {
+      setOpen(enabled);
+    }
+  }, [enabled]);
+
+  return [open, setOpen] as const;
+}
 
 export function InspectorSubtleEmpty({
   message,
@@ -112,23 +126,32 @@ export function ChartInspectorSection({
   children,
   action,
   defaultOpen = false,
+  enabled,
   className,
+  "data-testid": testId,
 }: {
   title: string;
   children?: ReactNode;
   action?: ReactNode;
   defaultOpen?: boolean;
+  /** 与标题行 Switch 同步：开 → 展开，关 → 收起 */
+  enabled?: boolean;
   className?: string;
+  "data-testid"?: string;
 }) {
+  const [open, setOpen] = useInspectorSectionOpen(defaultOpen, enabled);
+
   return (
     <Collapsible
-      defaultOpen={defaultOpen}
+      open={open}
+      onOpenChange={setOpen}
+      data-testid={testId}
       className={cn("group border-b border-gray-100 dark:border-white/[0.06]", className)}
     >
-      <div className="flex items-center gap-1 py-1">
+      <div className="flex items-center gap-0.5 py-0.5">
         <CollapsibleTrigger
           className={cn(
-            "flex min-w-0 flex-1 items-center gap-1 rounded-md px-1 py-1 text-left",
+            "flex min-w-0 flex-1 items-center gap-0.5 rounded-md py-1 pl-0 pr-1 text-left",
             "text-[11px] font-semibold text-gray-800 dark:text-white/90",
             "transition-colors hover:bg-gray-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30",
             "dark:hover:bg-white/[0.04]",

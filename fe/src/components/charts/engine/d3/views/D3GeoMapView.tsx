@@ -94,7 +94,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       columns,
       regionField,
       geoMapLevel.knownRegionNames,
-      geoMapLevel.drillDepth === 0,
+      geoMapLevel.drillDepth,
     );
   }, [spec, capped, columns, geoMapLevel]);
 
@@ -115,6 +115,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   const threeApiRef = useRef<{
     contentKey: string;
     resize: (width: number, height: number) => boolean;
+    setAnimationActive?: (active: boolean) => void;
   } | null>(null);
   const [renderError, setRenderError] = useState<string | null>(null);
   const [renderEngine, setRenderEngine] = useState<GeoMapRenderEngine | null>(null);
@@ -130,9 +131,12 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   const setContainerRef = useCallback(
     (node: HTMLDivElement | null) => {
       containerRef.current = node;
+      if (node && props.instanceKey) {
+        node.dataset.widgetId = props.instanceKey;
+      }
       sizeRef(node);
     },
-    [sizeRef],
+    [sizeRef, props.instanceKey],
   );
 
   const regionField = spec.encoding.dimensions[0]?.field;
@@ -148,6 +152,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
         rowsSample: capped as Record<string, unknown>[],
         depthVisual: style.depthVisual,
         isDark: style.isDark,
+        renderTier: props.geo3dRenderTier ?? "full",
       }),
     [
       viewModel.chartType,
@@ -158,6 +163,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       regionField,
       style.depthVisual,
       style.isDark,
+      props.geo3dRenderTier,
     ],
   );
 
@@ -285,7 +291,9 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
                     threeApiRef.current = {
                       contentKey: renderContentKey,
                       resize: result.resize,
+                      setAnimationActive: result.setAnimationActive,
                     };
+                    result.setAnimationActive?.(props.geo3dAnimationActive !== false);
                   }
                   applyRenderMeta(result.engine, result.fallbackReason ?? null);
                   setRenderError(null);
@@ -356,17 +364,16 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   useEmbeddedChartLiveResize(fill && !plan.empty, containerRef, onLiveResize, onCommitResize);
 
   useEffect(() => {
+    if (!isThreeMap) return;
+    threeApiRef.current?.setAnimationActive?.(props.geo3dAnimationActive !== false);
+  }, [isThreeMap, props.geo3dAnimationActive]);
+
+  useEffect(() => {
+    if (geoMapLoading) return;
     threeApiRef.current = null;
     lastMeasureRef.current = { width: 0, height: 0 };
     measureAndRender("data", true);
-  }, [contentKey, measureAndRender]);
-
-  useEffect(() => {
-    if (!geoMapLoading) {
-      lastMeasureRef.current = { width: 0, height: 0 };
-      measureAndRender("data", true);
-    }
-  }, [geoMapLoading, measureAndRender]);
+  }, [contentKey, geoMapLoading, measureAndRender]);
 
   useEffect(() => {
     if (!fill || plan.empty) return;
@@ -479,7 +486,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
           className="relative h-full w-full"
           data-testid={isThreeMap ? "three-map-chart" : "d3-map-chart"}
           data-render-engine={isThreeMap ? (renderEngine ?? "pending") : undefined}
-          {...(geoRoamEnabled ? { [VIZ_WHEEL_ZOOM_SURFACE_ATTR]: "true" } : {})}
+          {...(fill || geoRoamEnabled ? { [VIZ_WHEEL_ZOOM_SURFACE_ATTR]: "true" } : {})}
         />
         {overlayHint ? (
           <GeoMapOverlayHint

@@ -2,7 +2,8 @@ import chinaProvincesGeo from "@/assets/geo/china-provinces.json";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import {
   analyzeGeoMapMatch,
-  resolveMapRegionName,
+  listVsRegionNames,
+  resolveRegionMetricValue,
 } from "@/components/charts/engine/geo/geoMapChart";
 import {
   isDecorativeGeoFeature,
@@ -64,6 +65,7 @@ function joinMapRows(
   metricField: string,
   mapId: string,
   knownRegionNames?: string[],
+  drillDepth = 0,
 ): Array<{ name: string; value: number; adcode?: number; geometry: GeoJSON.Geometry | null }> {
   ensureDefaultMapRegistered();
   const ri = columns.indexOf(regionField);
@@ -71,11 +73,14 @@ function joinMapRows(
   const geo = registeredMaps.get(mapId) ?? (chinaProvincesGeo as RegionsGeo);
   const valueByName = new Map<string, number>();
   if (ri >= 0 && mi >= 0) {
+    const knownNames = knownRegionNames ?? listVsRegionNames();
     for (const row of rows) {
-      const raw = String(row[ri] ?? "");
-      const resolved = resolveMapRegionName(raw, knownRegionNames);
-      const key = resolved.matched ? resolved.name : raw;
-      valueByName.set(key, Number(row[mi] ?? 0));
+      const resolved = resolveRegionMetricValue(regionField, row[ri], knownNames, drillDepth);
+      if (!resolved.name) continue;
+      if (drillDepth > 0 && !resolved.matched) continue;
+      const raw = Number(row[mi] ?? 0);
+      const value = Number.isFinite(raw) ? raw : 0;
+      valueByName.set(resolved.name, (valueByName.get(resolved.name) ?? 0) + value);
     }
   }
   return (geo.features ?? [])
@@ -99,8 +104,9 @@ export function joinOfflineMapFeatures(
   metricField: string,
   mapId: string,
   knownRegionNames?: string[],
+  drillDepth = 0,
 ): Array<{ name: string; value: number; adcode?: number; geometry: GeoJSON.Geometry | null }> {
-  return joinMapRows(rows, columns, regionField, metricField, mapId, knownRegionNames);
+  return joinMapRows(rows, columns, regionField, metricField, mapId, knownRegionNames, drillDepth);
 }
 
 export const offlineGeoEngine: GeoEnginePort = {
@@ -151,8 +157,8 @@ export const offlineGeoEngine: GeoEnginePort = {
   isHeatmapPlaceholder(option: Record<string, unknown>) {
     return option.__vsGeoHeatmapPlaceholder === true;
   },
-  analyzeMatch(rows, columns, regionField, knownRegionNames, rootLevel) {
-    return analyzeGeoMapMatch(rows, columns, regionField, knownRegionNames, rootLevel);
+  analyzeMatch(rows, columns, regionField, knownRegionNames, drillDepthOrRootLevel) {
+    return analyzeGeoMapMatch(rows, columns, regionField, knownRegionNames, drillDepthOrRootLevel);
   },
   resolveEmbeddedRoam: resolveEmbeddedGeoRoam,
 };

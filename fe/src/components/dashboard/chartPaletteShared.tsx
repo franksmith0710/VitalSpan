@@ -23,7 +23,7 @@ import { resolveChartColors } from "@/lib/chartPalette";
 import { CHART_FONT_SIZE_OPTIONS, resolveChartFontSizeOptions } from "@/lib/chartFontSizes";
 import { cn } from "@/lib/utils";
 import { DE_SELECT } from "./dashboardInspectorUi";
-import { INSPECTOR_LABEL, INSPECTOR_SELECT } from "./inspectorCompact";
+import { INSPECTOR_LABEL, INSPECTOR_SELECT, useInspectorSectionOpen } from "./inspectorCompact";
 
 export const PALETTE_STRIP_SWATCH_COUNT = 8;
 /** 下拉项 / 触发器色带统一宽度，避免首项「跟随看板」与预设行错位 */
@@ -168,6 +168,8 @@ type ChartPaletteNestedSectionProps = {
   defaultOpen?: boolean;
   action?: ReactNode;
   compact?: boolean;
+  /** 与标题行 Switch 同步：开 → 展开，关 → 收起 */
+  enabled?: boolean;
 };
 
 /** DataEase attr-style 内嵌折叠组（图表标签 / 提示 / 表格配色） */
@@ -177,19 +179,23 @@ export function ChartPaletteNestedSection({
   defaultOpen = false,
   action,
   compact = false,
+  enabled,
 }: ChartPaletteNestedSectionProps) {
+  const [open, setOpen] = useInspectorSectionOpen(defaultOpen, enabled);
+
   return (
     <Collapsible
-      defaultOpen={defaultOpen}
+      open={open}
+      onOpenChange={setOpen}
       className="group border-b border-gray-100 dark:border-white/[0.06]"
     >
       <div className="flex items-center gap-1 py-1.5">
         <CollapsibleTrigger
           className={cn(
-            "flex min-w-0 flex-1 items-center gap-1 rounded-md text-left",
+            "flex min-w-0 flex-1 items-center gap-0.5 rounded-md text-left",
             compact
-              ? "px-0.5 text-[11px] font-medium text-gray-700 dark:text-gray-300"
-              : "px-1 text-theme-xs font-medium text-gray-700 dark:text-gray-300",
+              ? "py-1 pl-0 pr-0.5 text-[11px] font-medium text-gray-700 dark:text-gray-300"
+              : "py-1 pl-0 pr-1 text-theme-xs font-medium text-gray-700 dark:text-gray-300",
             "hover:bg-gray-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30 dark:hover:bg-white/[0.04]",
           )}
         >

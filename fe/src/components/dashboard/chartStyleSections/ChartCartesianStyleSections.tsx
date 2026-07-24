@@ -1,9 +1,8 @@
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useChartInspector } from "../ChartInspectorContext";
-import { DashboardConfigSection } from "../DashboardConfigSection";
+import { ChartInspectorSection, InspectorSwitchRow, INSPECTOR_SECTION_GAP } from "../inspectorCompact";
 import { ChartDeSliderField } from "../deAttrSlider";
-import { InspectorSwitchRow, INSPECTOR_SECTION_GAP } from "../inspectorCompact";
 import { patchChartDeStyleNested, readChartDeStyle } from "@/lib/chartDeStyle";
 import { resolveChartTypeStyleProfile } from "@/lib/chartTypeStyleProfiles";
 import { resolveCartesianShapeFields } from "@/lib/chartStyleCartesianFields";
@@ -19,7 +18,7 @@ export function ChartAxisStyleSection() {
     );
 
   return (
-    <DashboardConfigSection title="坐标轴" compact data-testid="chart-axis-style">
+    <ChartInspectorSection title="坐标轴" data-testid="chart-axis-style">
       <div className={INSPECTOR_SECTION_GAP}>
         {(["x", "y"] as const).map((side) => (
           <div key={side} className="border-b border-gray-100 py-2 dark:border-white/[0.06]">
@@ -43,7 +42,7 @@ export function ChartAxisStyleSection() {
           </div>
         ))}
       </div>
-    </DashboardConfigSection>
+    </ChartInspectorSection>
   );
 }
 
@@ -75,7 +74,7 @@ export function ChartCartesianShapeSection() {
   if (!fields?.length) return null;
 
   return (
-    <DashboardConfigSection title="图形属性" compact data-testid="chart-cartesian-shape">
+    <ChartInspectorSection title="图形属性" data-testid="chart-cartesian-shape">
       <div className={INSPECTOR_SECTION_GAP}>
         {fields.includes("barWidthRatio") ? (
           <ChartDeSliderField
@@ -129,6 +128,6 @@ export function ChartCartesianShapeSection() {
           />
         ) : null}
       </div>
-    </DashboardConfigSection>
+    </ChartInspectorSection>
   );
 }

@@ -161,6 +161,8 @@ function createPack(
     if (displacementUrl) {
       try {
         displacementMap = await loadTextureWithRetry(displacementUrl);
+        displacementMap.minFilter = THREE.LinearFilter;
+        displacementMap.magFilter = THREE.LinearFilter;
       } catch {
         displacementMap = undefined;
       }

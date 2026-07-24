@@ -6,11 +6,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { WIDGET_BORDER_RECOMMENDED } from "./dashboardStyleConfig";
-import { DashboardConfigSection } from "./DashboardConfigSection";
 import { ChartDeAttrField, ChartDeSegmentField } from "./chartInspectorDeFields";
 import { ChartDeSliderField } from "./deAttrSlider";
 import { DeAttrToggleRow } from "./dashboardInspectorUi";
-import { INSPECTOR_SELECT, InspectorInlineColorRow } from "./inspectorCompact";
+import { ChartInspectorSection, INSPECTOR_SELECT, InspectorInlineColorRow } from "./inspectorCompact";
 import { useChartInspector } from "./ChartInspectorContext";
 import {
   patchChartDeTableStyle,
@@ -50,9 +49,8 @@ export function ChartTableStylePanel() {
   };
 
   return (
-    <DashboardConfigSection
+    <ChartInspectorSection
       title={`${profile.label} · 基础样式`}
-      compact
       data-testid="table-style-basic"
     >
       <div className="pb-1">
@@ -208,6 +206,6 @@ export function ChartTableStylePanel() {
           </p>
         ) : null}
       </div>
-    </DashboardConfigSection>
+    </ChartInspectorSection>
   );
 }

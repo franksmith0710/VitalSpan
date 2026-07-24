@@ -109,87 +109,101 @@ export function DatasetTablePicker({
   };
 
   return (
-    <div className="grid gap-3">
-      <div className="grid gap-2">
-        <Label htmlFor="dataset-datasource">数据源</Label>
-        {dsQuery.isLoading ? (
-          <Skeleton className="h-11 w-full" />
-        ) : items.length === 0 ? (
-          <p className="text-theme-xs text-gray-500">暂无可用数据源，请先在「数据源」中创建。</p>
-        ) : !dataSourceId ? (
-          <Skeleton className="h-11 w-full" />
-        ) : (
-          <Select value={dataSourceId} onValueChange={setDataSourceId}>
-            <SelectTrigger id="dataset-datasource" aria-label="选择数据源">
-              <SelectValue placeholder="选择数据源以浏览表" />
-            </SelectTrigger>
-            <SelectContent>
-              {items.map((d) => (
-                <SelectItem key={d.id} value={d.id}>
-                  {d.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
+    <div className="grid gap-4">
+      <div className="grid gap-4 sm:grid-cols-[minmax(0,280px)_1fr] sm:items-end">
+        <div className="grid gap-2">
+          <Label htmlFor="dataset-datasource">数据源</Label>
+          {dsQuery.isLoading ? (
+            <Skeleton className="h-11 w-full" />
+          ) : items.length === 0 ? (
+            <p className="text-theme-xs text-gray-500">暂无可用数据源，请先在「数据源」中创建。</p>
+          ) : !dataSourceId ? (
+            <Skeleton className="h-11 w-full" />
+          ) : (
+            <Select value={dataSourceId} onValueChange={setDataSourceId}>
+              <SelectTrigger id="dataset-datasource" className="h-11" aria-label="选择数据源">
+                <SelectValue placeholder="选择数据源以浏览表" />
+              </SelectTrigger>
+              <SelectContent>
+                {items.map((d) => (
+                  <SelectItem key={d.id} value={d.id}>
+                    {d.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+        {dataSourceId ? (
+          <div className="flex flex-wrap items-center justify-end gap-2 sm:justify-start">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="ds-hide-system"
+                checked={hideSystem}
+                onCheckedChange={(v) => setHideSystem(v === true)}
+              />
+              <Label htmlFor="ds-hide-system" className="cursor-pointer text-theme-xs text-gray-600 dark:text-gray-400">
+                隐藏系统库
+              </Label>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-9"
+              disabled={!selection}
+              onClick={addSelection}
+            >
+              <Plus className="size-4" aria-hidden />
+              添加当前表
+            </Button>
+          </div>
+        ) : null}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-gray-200 bg-gray-50/60 px-3 py-2.5 dark:border-gray-800 dark:bg-white/[0.02]">
-        <span className="text-theme-xs font-medium text-gray-600 dark:text-gray-400">已选表</span>
-        {tables.length === 0 ? (
-          <span className="text-theme-xs text-gray-400">尚未选择</span>
-        ) : (
-          tables.map((t) => (
-            <Badge key={t.name} variant="light" color="primary" size="sm" className="gap-1">
-              {t.name}
-              <button type="button" aria-label={`移除 ${t.name}`} onClick={() => removeTable(t.name)}>
-                <X className="size-3" />
-              </button>
-            </Badge>
-          ))
-        )}
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]">
+        <div className="flex items-center justify-between gap-2 border-b border-gray-100 px-3 py-2.5 dark:border-gray-800">
+          <span className="text-theme-xs font-medium text-gray-600 dark:text-gray-400">已选表</span>
+          <Badge variant="light" color={tables.length > 0 ? "primary" : "light"} size="sm">
+            {tables.length}
+          </Badge>
+        </div>
+        <div className="max-h-28 overflow-y-auto overscroll-y-contain px-3 py-2.5">
+          {tables.length === 0 ? (
+            <p className="text-theme-xs text-gray-400 dark:text-gray-500">在下方 Schema 浏览器中选择表并添加</p>
+          ) : (
+            <div className="flex flex-wrap gap-1.5">
+              {tables.map((t) => (
+                <Badge key={t.name} variant="light" color="primary" size="sm" className="max-w-full gap-1">
+                  <span className="truncate">{t.name}</span>
+                  <button type="button" aria-label={`移除 ${t.name}`} onClick={() => removeTable(t.name)}>
+                    <X className="size-3 shrink-0" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {dataSourceId ? (
         <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
-          <div className="flex flex-col gap-3 border-b border-gray-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800">
+          <div className="border-b border-gray-200 bg-gray-50/80 px-4 py-3 dark:border-gray-800 dark:bg-white/[0.02]">
             <SearchField
-              className="w-full sm:max-w-xs"
+              className="w-full sm:max-w-sm"
               inputClassName="h-10"
               value={searchQuery}
               onChange={setSearchQuery}
               placeholder="搜索 Schema 或表名…"
               aria-label="搜索元数据"
             />
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="ds-hide-system"
-                  checked={hideSystem}
-                  onCheckedChange={(v) => setHideSystem(v === true)}
-                />
-                <Label htmlFor="ds-hide-system" className="cursor-pointer text-theme-sm text-gray-600">
-                  隐藏系统库
-                </Label>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={!selection}
-                onClick={addSelection}
-              >
-                <Plus className="size-4" aria-hidden />
-                添加当前表
-              </Button>
-            </div>
           </div>
           {schemasQuery.isLoading ? (
             <div className="p-4">
-              <Skeleton className="h-[280px] w-full rounded-xl" />
+              <Skeleton className="h-[320px] w-full rounded-lg" />
             </div>
           ) : (
-            <div className="grid min-h-[280px] lg:grid-cols-[minmax(220px,280px)_1fr]">
+            <div className="grid h-[400px] min-h-0 overflow-hidden lg:grid-cols-[minmax(220px,280px)_1fr]">
               <SchemaTreePanel
                 dataSourceId={dataSourceId}
                 userSchemas={filteredUserSchemas}
@@ -212,7 +226,7 @@ export function DatasetTablePicker({
           )}
         </div>
       ) : (
-        <p className="text-theme-xs text-gray-500">请先选择数据源，或手动确认已有表名。</p>
+        <p className="text-theme-xs text-gray-500">请先选择数据源。</p>
       )}
     </div>
   );

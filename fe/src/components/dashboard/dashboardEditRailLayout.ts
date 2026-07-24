@@ -1,11 +1,11 @@
 /** DataEase chart-edit 双列总宽（与 {@link DASHBOARD_EDIT_RAIL_SHELL_CLASS} 一致） */
 export const DASHBOARD_EDIT_RAIL_WIDTH_PX = 432;
 
-/** 图表编辑左列：数据/样式/高级配置（略宽，便于字段槽与标签横排） */
-export const DASHBOARD_EDIT_RAIL_LEFT_COLUMN_CLASS = "w-[252px]";
+/** 图表编辑左列：数据/样式/高级配置（252fr，随壳层内边距收缩） */
+export const DASHBOARD_EDIT_RAIL_LEFT_COLUMN_CLASS = "min-w-0 flex-[252] basis-0";
 
-/** 图表编辑右列：数据集与字段库（略窄，总宽不变） */
-export const DASHBOARD_EDIT_RAIL_RIGHT_COLUMN_CLASS = "w-[180px]";
+/** 图表编辑右列：数据集与字段库（180fr，随壳层内边距收缩） */
+export const DASHBOARD_EDIT_RAIL_RIGHT_COLUMN_CLASS = "min-w-0 flex-[180] basis-0";
 
 /** @deprecated 使用 {@link DASHBOARD_EDIT_RAIL_LEFT_COLUMN_CLASS} / {@link DASHBOARD_EDIT_RAIL_RIGHT_COLUMN_CLASS} */
 export const DASHBOARD_EDIT_RAIL_COLUMN_CLASS = DASHBOARD_EDIT_RAIL_LEFT_COLUMN_CLASS;

@@ -42,7 +42,8 @@ import { mergeChartTitleStyle, readChartRemark, readChartTitleVisible, resolveCh
 import { WidgetShellLegendProvider } from "./pixelCanvas/widgetShellLegendContext";
 import { WidgetChartLegendShell } from "@/components/charts/WidgetChartLegendShell";
 import { isWidgetConfigReady } from "./createLayoutWidget";
-import { pixelDragRailHeightPx, pixelViewTitleHeightPx, dwCaption, dwHint } from "./dashboardWidgetTypography";
+import type { Geo3dRenderTier } from "@/components/charts/engine/three/geo3dRuntime";
+import { pixelDragRailHeightPx, pixelViewTitleHeightPx, dwCaption } from "./dashboardWidgetTypography";
 import { usePixelCanvasScale } from "./pixelCanvas/PixelCanvasScaleContext";
 import { widgetChartIcon, WIDGET_CHART_LABELS } from "./widgetIcons";
 import { WidgetInlineTitle } from "./WidgetInlineTitle";
@@ -95,6 +96,8 @@ type DashboardWidgetProps = {
   suspendLiveResize?: boolean;
   /** Tab 内嵌子组件：与顶层 shape 同壳层，左侧拖出把手回画布 */
   nested?: boolean;
+  /** 3D 地图渲染分级：列表 thumbnail / 看板 embed / 全屏预览 full */
+  geo3dRenderTier?: Geo3dRenderTier;
 };
 
 function WidgetPendingPreview({
@@ -229,6 +232,7 @@ export function DashboardWidget({
   chartPaletteDefaults: chartPaletteDefaultsProp,
   suspendLiveResize = false,
   nested = false,
+  geo3dRenderTier = "embed",
 }: DashboardWidgetProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const canvasScale = usePixelCanvasScale();
@@ -391,6 +395,8 @@ export function DashboardWidget({
               renderEnabled={renderEnabled}
               mountGateStatus={mountGateStatus}
               onMountReady={onMountReady}
+              geo3dRenderTier={geo3dRenderTier}
+              geo3dAnimationActive={mode !== "edit" || selected}
               onChartConfigChange={
                 onChartConfigChange
                   ? (config) => onChartConfigChange(widget.id, config)

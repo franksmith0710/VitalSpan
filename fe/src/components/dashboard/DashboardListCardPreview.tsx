@@ -119,12 +119,14 @@ export function DashboardListCardPreview({
             <DataScreenPresenter
               layout={resolvedLayout}
               presentationMode="fit"
+              geo3dRenderTier="thumbnail"
               className="pointer-events-none h-full min-h-0 select-none"
             />
           ) : (
             <DashboardLayoutPreview
               layout={resolvedLayout}
               scaleMode="component"
+              geo3dRenderTier="thumbnail"
               className="pointer-events-none h-full min-h-0 select-none [&_.pixel-canvas-host]:h-full [&_.pixel-canvas-host]:min-h-0 [&_.pixel-canvas-host]:overflow-hidden"
             />
           )}

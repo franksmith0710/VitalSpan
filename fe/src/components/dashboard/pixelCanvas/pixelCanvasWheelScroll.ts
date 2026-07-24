@@ -44,6 +44,26 @@ function isAtBottom(element: HTMLElement): boolean {
   return element.scrollTop + element.clientHeight >= element.scrollHeight - 1;
 }
 
+/**
+ * 画布是否应将滚轮交给内层组件（地图缩放面、可滚动表格等），而非平移/缩放画布。
+ */
+export function shouldDelegateWheelFromCanvasHost(
+  host: HTMLElement,
+  event: WheelEvent,
+  target: EventTarget | null = event.target,
+): boolean {
+  if (event.defaultPrevented) return true;
+  if (isInsideWheelZoomSurface(target, host)) return true;
+
+  const deltaY = normalizeWheelDeltaY(event, host);
+  if (deltaY === 0) return false;
+
+  const inner = findVerticalScrollable(target, host);
+  if (!inner) return false;
+
+  return (deltaY < 0 && !isAtTop(inner)) || (deltaY > 0 && !isAtBottom(inner));
+}
+
 export function normalizeWheelDeltaY(
   event: WheelEvent,
   scrollContainer: Pick<HTMLElement, "clientHeight">,
@@ -67,18 +87,10 @@ export function routePixelCanvasWheel(
   event: WheelEvent,
   target: EventTarget | null = event.target,
 ): boolean {
-  if (event.defaultPrevented) return false;
-  if (isInsideWheelZoomSurface(target, host)) return false;
+  if (shouldDelegateWheelFromCanvasHost(host, event, target)) return false;
 
   const deltaY = normalizeWheelDeltaY(event, host);
   if (deltaY === 0) return false;
-
-  const inner = findVerticalScrollable(target, host);
-  if (inner) {
-    const shouldDelegateToInner =
-      (deltaY < 0 && !isAtTop(inner)) || (deltaY > 0 && !isAtBottom(inner));
-    if (shouldDelegateToInner) return false;
-  }
 
   const maxScrollTop = Math.max(0, host.scrollHeight - host.clientHeight);
   const nextScrollTop = Math.max(0, Math.min(maxScrollTop, host.scrollTop + deltaY));

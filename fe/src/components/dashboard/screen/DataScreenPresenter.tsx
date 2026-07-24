@@ -1,4 +1,5 @@
 import type { Linkage } from "@/components/dashboard/dashboardFilterUtils";
+import type { Geo3dRenderTier } from "@/components/charts/engine/three/geo3dRuntime";
 import { DashboardLayoutPreview } from "@/components/dashboard/DashboardLayoutPreview";
 import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
 import { CanvasScaleViewport } from "./CanvasScaleViewport";
@@ -12,6 +13,7 @@ export type DataScreenPresenterProps = {
   onFilterValueChange?: (filterId: string, value: string) => void;
   globalChartRefreshKey?: number;
   className?: string;
+  geo3dRenderTier?: Geo3dRenderTier;
 };
 
 export function DataScreenPresenter({
@@ -22,6 +24,7 @@ export function DataScreenPresenter({
   onFilterValueChange,
   globalChartRefreshKey = 0,
   className,
+  geo3dRenderTier = "full",
 }: DataScreenPresenterProps) {
   if (layout.version !== 2) {
     return (
@@ -31,6 +34,7 @@ export function DataScreenPresenter({
         filterValues={filterValues}
         onFilterValueChange={onFilterValueChange}
         className={className}
+        geo3dRenderTier={geo3dRenderTier}
       />
     );
   }
@@ -53,6 +57,7 @@ export function DataScreenPresenter({
           fixedDesignViewport
           globalChartRefreshKey={globalChartRefreshKey}
           className="h-full w-full"
+          geo3dRenderTier={geo3dRenderTier}
         />
       </div>
     </CanvasScaleViewport>

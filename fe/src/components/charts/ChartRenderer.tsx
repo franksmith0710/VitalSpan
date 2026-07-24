@@ -27,6 +27,7 @@ import type { ChartLegendItem } from "@/lib/chartLegendItems";
 import { buildChartViewModel } from "@/components/charts/engine/buildChartViewModel";
 import { buildStyleContext } from "@/components/charts/engine/buildStyleContext";
 import { buildLegendSnapshot } from "@/components/charts/engine/legendSnapshot";
+import { defaultGeo3dRenderTier } from "@/components/charts/engine/three/geo3dRuntime";
 import { CanvasChartHost } from "@/components/charts/engine/CanvasChartHost";
 import type { ChartInteractionEvent } from "@/components/charts/engine/types";
 import {
@@ -122,6 +123,8 @@ type ChartRendererProps = {
   mountGateStatus?: "queue" | "offscreen";
   onMountReady?: () => void;
   onChartConfigChange?: (config: ChartViewConfig) => void;
+  geo3dRenderTier?: import("@/components/charts/engine/three/geo3dRuntime").Geo3dRenderTier;
+  geo3dAnimationActive?: boolean;
 };
 
 function sizeSpanEqual(
@@ -181,7 +184,9 @@ function chartRendererPropsAreEqual(
     prev.dashboardEditMode === next.dashboardEditMode &&
     prev.queryEnabled === next.queryEnabled &&
     prev.renderEnabled === next.renderEnabled &&
-    prev.mountGateStatus === next.mountGateStatus
+    prev.mountGateStatus === next.mountGateStatus &&
+    prev.geo3dRenderTier === next.geo3dRenderTier &&
+    prev.geo3dAnimationActive === next.geo3dAnimationActive
   );
 }
 
@@ -212,6 +217,8 @@ export const ChartRenderer = memo(function ChartRenderer({
   mountGateStatus,
   onMountReady,
   onChartConfigChange,
+  geo3dRenderTier,
+  geo3dAnimationActive = true,
 }: ChartRendererProps) {
   const drill = useChartDrill(drillEnabled ? widgetId : undefined);
   const effectiveConfig = useMemo(() => migrateChartViewConfig(config), [config]);
@@ -659,6 +666,9 @@ export const ChartRenderer = memo(function ChartRenderer({
           ? pixelSize
           : undefined
       }
+      geo3dRenderTier={geo3dRenderTier ?? defaultGeo3dRenderTier(embedded)}
+      geo3dAnimationActive={geo3dAnimationActive}
+      instanceKey={widgetId}
     />
   );
 

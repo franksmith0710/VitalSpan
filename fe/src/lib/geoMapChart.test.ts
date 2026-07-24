@@ -146,6 +146,22 @@ describe("analyzeGeoMapMatch with demo region_id", () => {
     expect(stats.matched).toBe(2);
   });
 
+  it("rolls up district region_id to province at national level", () => {
+    const stats = analyzeGeoMapMatch(
+      [
+        [811, 100],
+        [1611, 80],
+        [521, 50],
+      ],
+      ["region_id", "value"],
+      "region_id",
+      undefined,
+      0,
+    );
+    expect(stats.matched).toBe(3);
+    expect(stats.total).toBe(3);
+  });
+
   it("skips unmapped numeric region_id values", () => {
     const stats = analyzeGeoMapMatch(
       [

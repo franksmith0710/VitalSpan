@@ -27,6 +27,7 @@ import {
   ChartMountProvider,
   CHART_MOUNT_MAX_VIEW,
 } from "@/components/charts/ChartMountContext";
+import type { Geo3dRenderTier } from "@/components/charts/engine/three/geo3dRuntime";
 import { WidgetErrorBoundary } from "./WidgetErrorBoundary";
 import type {
   DashboardLayout,
@@ -49,6 +50,8 @@ type DashboardLayoutPreviewProps = {
   className?: string;
   /** 列表卡片等密集场景：降低单卡图表并发挂载 */
   mountMaxConcurrent?: number;
+  /** 3D 地图渲染分级 */
+  geo3dRenderTier?: Geo3dRenderTier;
 };
 
 export function DashboardLayoutPreview({
@@ -62,6 +65,7 @@ export function DashboardLayoutPreview({
   globalChartRefreshKey = 0,
   className,
   mountMaxConcurrent = CHART_MOUNT_MAX_VIEW,
+  geo3dRenderTier = "embed",
 }: DashboardLayoutPreviewProps) {
   const styleConfig = useMemo(
     () => resolveEffectiveDashboardStyle(layout, styleConfigOverride),
@@ -124,6 +128,7 @@ export function DashboardLayoutPreview({
           onFilterValueChange={onFilterValueChange}
           onTitleChange={() => {}}
           dashboardStyle={widgetDashboardStyle}
+          geo3dRenderTier={geo3dRenderTier}
         />
       </WidgetErrorBoundary>
     );

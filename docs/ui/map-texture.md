@@ -56,7 +56,7 @@ pnpm run build:geo-terrain
 
 | 层 | 约定 |
 |----|------|
-| **构建期** | Mercator 瓦片拼接（邻接边羽化）→ 逐像素反投影采样 → **projBounds 空间 diffuse** + 轮廓 alpha |
+| **构建期** | Mercator 瓦片拼接（邻接边羽化）→ 逐像素反投影采样 → **projBounds 空间 diffuse** + 轮廓 alpha；**displacement** 同 projBounds 网格烘焙（无损 WebP） |
 | **运行时 UV** | `applyGeoCapBboxUv(projBounds)`（与 sc-datav `shape.tsx` 同构） |
 | **禁止** | 矩形 Mercator 图直接配 bbox UV；运行时 Mercator 经纬度 UV |
 

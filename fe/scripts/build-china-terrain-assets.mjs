@@ -8,9 +8,13 @@ import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 import {
   ALL_PROVINCE_ADCODES,
-  buildHeightGridMercator,
   buildDisplacementRgbaRect,
 } from "./lib/chinaTerrainSynth.mjs";
+import { buildHeightGridProjBounds, softenHeightGrid } from "./lib/terrainDisplaceBake.mjs";
+import {
+  loadChinaTerrainFeatureCollection,
+  loadProvinceFeatureCollection,
+} from "./lib/terrainGeoJson.mjs";
 import { readNationalBounds, readProvinceBounds } from "./lib/terrainPackBounds.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -60,7 +64,7 @@ async function resizePreserveAspect(srcPath, maxEdge, webpQuality = 85) {
   return { buf, width: outW, height: outH };
 }
 
-async function writePack(dir, bounds, maxEdge, webpQuality = 85) {
+async function writePack(dir, bounds, maxEdge, webpQuality, featureCollection) {
   await fs.mkdir(dir, { recursive: true });
   const diffuseSrc = await requireSource(dir, "diffuse.png");
   const normalSrc = path.join(dir, "_source", "normal.png");
@@ -77,24 +81,34 @@ async function writePack(dir, bounds, maxEdge, webpQuality = 85) {
     console.warn(`  no normal.png in ${dir}/_source — skipping normal.webp`);
   }
 
-  const height = buildHeightGridMercator(diffuse.width, diffuse.height, bounds);
-  const displacement = buildDisplacementRgbaRect(height, diffuse.width, diffuse.height);
-  await sharp(displacement, {
-    raw: { width: diffuse.width, height: diffuse.height, channels: 4 },
-  })
-    .webp({ quality: 80 })
-    .toFile(path.join(dir, "displacement.webp"));
-
   const bakeMetaPath = path.join(dir, "_source", "bake-meta.json");
-  let refViewport = [800, 600];
+  let refViewport = { width: 800, height: 600 };
   if (await fileExists(bakeMetaPath)) {
     try {
       const bakeMeta = JSON.parse(await fs.readFile(bakeMetaPath, "utf8"));
-      if (Array.isArray(bakeMeta.refViewport)) refViewport = bakeMeta.refViewport;
+      if (Array.isArray(bakeMeta.refViewport) && bakeMeta.refViewport.length === 2) {
+        refViewport = { width: bakeMeta.refViewport[0], height: bakeMeta.refViewport[1] };
+      }
     } catch {
       /* keep default */
     }
   }
+
+  let { grid: height, width: heightW, height: heightH } = buildHeightGridProjBounds(
+    diffuse.width,
+    diffuse.height,
+    featureCollection,
+    refViewport,
+  );
+  height = softenHeightGrid(height, heightW, heightH, 1);
+  const displacementRaw = buildDisplacementRgbaRect(height, heightW, heightH);
+  const displacementPipeline = sharp(displacementRaw, {
+    raw: { width: heightW, height: heightH, channels: 4 },
+  });
+  if (heightW !== diffuse.width || heightH !== diffuse.height) {
+    displacementPipeline.resize(diffuse.width, diffuse.height, { fit: "fill" });
+  }
+  await displacementPipeline.webp({ lossless: true }).toFile(path.join(dir, "displacement.webp"));
 
   const meta = {
     bounds: [bounds.west, bounds.south, bounds.east, bounds.north],
@@ -116,8 +130,15 @@ async function writeManifest(nationalBounds) {
 
 async function main() {
   const nationalBounds = await readNationalBounds();
+  const chinaFc = await loadChinaTerrainFeatureCollection();
   console.log("Building national terrain pack…");
-  await writePack(path.join(OUT, "national"), nationalBounds, NATIONAL_MAX_EDGE, NATIONAL_WEBP_QUALITY);
+  await writePack(
+    path.join(OUT, "national"),
+    nationalBounds,
+    NATIONAL_MAX_EDGE,
+    NATIONAL_WEBP_QUALITY,
+    chinaFc,
+  );
 
   const builtProvinces = [];
   for (const adcode of ALL_PROVINCE_ADCODES) {
@@ -126,8 +147,16 @@ async function main() {
       console.warn(`Skip province ${adcode}: no geometry`);
       continue;
     }
+    const provinceFc = await loadProvinceFeatureCollection(adcode);
+    if (!provinceFc) continue;
     console.log(`Building province ${adcode}…`);
-    await writePack(path.join(OUT, "provinces", String(adcode)), bounds, PROVINCE_MAX_EDGE, PROVINCE_WEBP_QUALITY);
+    await writePack(
+      path.join(OUT, "provinces", String(adcode)),
+      bounds,
+      PROVINCE_MAX_EDGE,
+      PROVINCE_WEBP_QUALITY,
+      provinceFc,
+    );
     builtProvinces.push(adcode);
   }
 

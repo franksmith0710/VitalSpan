@@ -30,6 +30,12 @@ import { resolveEmbeddedGeoRoam } from "@/components/charts/engine/geo/geoConsta
 import { DEFAULT_GEO3D_EXTRUDE_INTENSITY } from "@/lib/chartDeStyle";
 import { resolveGeo3dQuality, shouldRenderGeo3d } from "@/components/charts/engine/three/geo3dQuality";
 import {
+  releaseWebGLSlot,
+  setWebGLSlotDispose,
+  tryAcquireWebGLSlot,
+  type Geo3dRenderTier,
+} from "@/components/charts/engine/three/geo3dRuntime";
+import {
   advanceGeoMapDoubleTap,
   isPointerTapMove,
   type GeoMapTapState,
@@ -161,6 +167,8 @@ export async function renderThreeChoroplethChart(
     geo3dStyle = {},
     drillDepth = 0,
     onPointClick,
+    renderTier = "full",
+    instanceKey,
   } = config;
 
   if (width <= 0 || height <= 0) {
@@ -187,6 +195,7 @@ export async function renderThreeChoroplethChart(
     metricField,
     mapId ?? "",
     knownRegionNames,
+    drillDepth,
   ).filter((f) => f.geometry != null);
 
   container.replaceChildren();
@@ -205,14 +214,29 @@ export async function renderThreeChoroplethChart(
     drillDepth,
     featureCount: features.length,
     shortSide: Math.min(width, height),
+    renderTier: renderTier as Geo3dRenderTier,
   });
   if (!shouldRenderGeo3d(quality)) {
     return d3Fallback(container, config, "quality-degraded");
   }
 
+  const webglSlotKey =
+    instanceKey ??
+    `geo3d-${mapId ?? "map"}-${String(container.dataset.widgetId ?? (container.id || "anon"))}`;
+  let slotReleased = false;
+  const releaseSlot = () => {
+    if (slotReleased) return;
+    slotReleased = true;
+    releaseWebGLSlot(webglSlotKey);
+  };
+  if (!tryAcquireWebGLSlot(webglSlotKey)) {
+    return d3Fallback(container, config, "webgl-cap-exceeded");
+  }
+
   const webglProbe = probeWebGL();
   container.dataset.webglApi = webglProbe.api ?? "none";
   if (!webglProbe.ok) {
+    releaseSlot();
     return d3Fallback(container, config, "webgl-unavailable");
   }
 
@@ -470,10 +494,46 @@ export async function renderThreeChoroplethChart(
 
     const animate = () => {
       frameId = requestAnimationFrame(animate);
+      if (!animationActive || !visibleInViewport) {
+        cancelAnimationFrame(frameId);
+        frameId = 0;
+        return;
+      }
       controls.update();
       renderer.render(scene, camera);
     };
-    animate();
+
+    let animationActive = true;
+    let visibleInViewport = true;
+
+    const stopLoop = () => {
+      if (frameId) {
+        cancelAnimationFrame(frameId);
+        frameId = 0;
+      }
+    };
+
+    const startLoop = () => {
+      if (frameId || !animationActive || !visibleInViewport) return;
+      animate();
+    };
+
+    const updateLoopState = () => {
+      if (animationActive && visibleInViewport) startLoop();
+      else stopLoop();
+    };
+
+    renderer.render(scene, camera);
+
+    const viewportObserver = new IntersectionObserver(
+      ([entry]) => {
+        visibleInViewport = entry?.isIntersecting ?? false;
+        updateLoopState();
+      },
+      { threshold: 0 },
+    );
+    viewportObserver.observe(container);
+    startLoop();
 
     let chartWidth = width;
     let chartHeight = height;
@@ -489,29 +549,40 @@ export async function renderThreeChoroplethChart(
       return true;
     };
 
+    const disposeImpl = () => {
+      viewportObserver.disconnect();
+      stopLoop();
+      releaseSlot();
+      renderer.domElement.removeEventListener("pointerdown", onPointerDown);
+      renderer.domElement.removeEventListener("pointerup", onPointerUp);
+      renderer.domElement.removeEventListener("click", onClick);
+      renderer.domElement.removeEventListener("pointermove", onMove);
+      controls.dispose();
+      detachOrbitPan();
+      detachGrabCursor();
+      detachTerrainHint();
+      terrainPack?.dispose();
+      for (const mesh of meshes) disposePlateGroup(mesh);
+      renderer.dispose();
+      hideTooltip(tooltip);
+      detachVisualMap();
+      container.replaceChildren();
+    };
+
+    setWebGLSlotDispose(webglSlotKey, disposeImpl);
+
     return {
       engine: "three",
       webglApi: webglProbe.api ?? "none",
       resize,
-      dispose: () => {
-        cancelAnimationFrame(frameId);
-        renderer.domElement.removeEventListener("pointerdown", onPointerDown);
-        renderer.domElement.removeEventListener("pointerup", onPointerUp);
-        renderer.domElement.removeEventListener("click", onClick);
-        renderer.domElement.removeEventListener("pointermove", onMove);
-        controls.dispose();
-        detachOrbitPan();
-        detachGrabCursor();
-        detachTerrainHint();
-        terrainPack?.dispose();
-        for (const mesh of meshes) disposePlateGroup(mesh);
-        renderer.dispose();
-        hideTooltip(tooltip);
-        detachVisualMap();
-        container.replaceChildren();
+      setAnimationActive: (active: boolean) => {
+        animationActive = active;
+        updateLoopState();
       },
+      dispose: disposeImpl,
     };
   } catch {
+    releaseSlot();
     return d3Fallback(container, config, "three-init-failed");
   }
 }

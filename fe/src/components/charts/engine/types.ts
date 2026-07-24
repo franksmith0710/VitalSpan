@@ -5,6 +5,8 @@ import type { ChartFieldRef, ChartViewConfig } from "@/lib/chartViewConfig";
 import type { ColorScheme, NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import type { ChartLegendItem } from "@/lib/chartLegendItems";
 
+import type { Geo3dRenderTier } from "@/components/charts/engine/three/geo3dRuntime";
+
 export type ChartEngineId = "d3" | "antv" | "table";
 
 export type VizDataset = {
@@ -77,6 +79,12 @@ export type ChartEngineViewProps = {
   onTableStylePatch?: (patch: Partial<import("@/lib/chartDeTableStyle").ChartDeTableStyle>) => void;
   /** 像素画布逻辑尺寸（松手 commit 后驱动引擎 remeasure） */
   layoutFootprint?: { width: number; height: number };
+  /** 3D 地图渲染档位：列表缩略图 / 内嵌 / 全屏预览 */
+  geo3dRenderTier?: Geo3dRenderTier;
+  /** 是否运行 Three rAF（编辑态未选中时 false） */
+  geo3dAnimationActive?: boolean;
+  /** WebGL 实例槽位 key */
+  instanceKey?: string;
 };
 
 /** @deprecated 使用 ChartViewModel；兼容过渡期 */

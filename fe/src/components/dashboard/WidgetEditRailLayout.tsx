@@ -44,7 +44,7 @@ function ExpandedRailPanel({
   return (
     <div
       className={cn(
-        "flex h-full min-h-0 shrink-0 flex-col",
+        "flex h-full min-h-0 min-w-0 flex-col",
         widthClass,
         bordered && "border-l border-gray-200 dark:border-gray-800",
       )}
@@ -69,7 +69,7 @@ export function WidgetEditRailLayout({
   const [rightOpen, setRightOpen] = useState(true);
 
   return (
-    <div className={cn("flex h-full min-h-0 w-full max-w-full shrink-0", className)}>
+    <div className={cn("flex h-full min-h-0 w-full max-w-full overflow-hidden", className)}>
       {leftOpen ? (
         <ExpandedRailPanel
           label={leftLabel}

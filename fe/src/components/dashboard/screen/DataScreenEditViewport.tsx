@@ -16,6 +16,7 @@ import {
   type ViewportPanSession,
 } from "./dataScreenViewportPan";
 import { isPixelCanvasWidgetTarget } from "../pixelCanvas/pixelCanvasHitTest";
+import { shouldDelegateWheelFromCanvasHost } from "../pixelCanvas/pixelCanvasWheelScroll";
 import {
   applyViewportPanLayerTransform,
   hasExceededPanClickThreshold,
@@ -85,7 +86,7 @@ export function DataScreenEditViewport({
   const panSessionRef = useRef<ViewportPanSession | null>(null);
   const panMovedRef = useRef(false);
   const blankClickPendingRef = useRef(false);
-  const wheelPanFrameRef = useRef<number | null>(null);
+  const panCommitFrameRef = useRef<number | null>(null);
   const onBlankPointerDownRef = useRef(onBlankPointerDown);
   onBlankPointerDownRef.current = onBlankPointerDown;
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
@@ -142,10 +143,10 @@ export function DataScreenEditViewport({
     setViewPan(pan);
   }, []);
 
-  const scheduleWheelPanCommit = useCallback(() => {
-    if (wheelPanFrameRef.current != null) return;
-    wheelPanFrameRef.current = window.requestAnimationFrame(() => {
-      wheelPanFrameRef.current = null;
+  const schedulePanStateCommit = useCallback(() => {
+    if (panCommitFrameRef.current != null) return;
+    panCommitFrameRef.current = window.requestAnimationFrame(() => {
+      panCommitFrameRef.current = null;
       setViewPan({ ...viewPanRef.current });
     });
   }, []);
@@ -267,6 +268,7 @@ export function DataScreenEditViewport({
       const clamped = clampViewportPan({ x: next.panX, y: next.panY }, boundsRef.current);
       viewPanRef.current = clamped;
       syncPanLayer(clamped);
+      schedulePanStateCommit();
     };
 
     const releasePointerCapture = (event: PointerEvent) => {
@@ -330,7 +332,7 @@ export function DataScreenEditViewport({
       document.removeEventListener("pointercancel", onPointerEnd, { capture: true });
       document.removeEventListener("lostpointercapture", onPointerEnd, { capture: true });
     };
-  }, [endPanSession, isPanEligibleTarget, syncPanLayer]);
+  }, [endPanSession, isPanEligibleTarget, schedulePanStateCommit, syncPanLayer]);
 
   useEffect(() => {
     const wheelHost = wheelHostRef.current;
@@ -352,6 +354,10 @@ export function DataScreenEditViewport({
       }
 
       if (!onCanvasViewport) return;
+      if (!isZoomGesture && shouldDelegateWheelFromCanvasHost(wheelHost, event, target)) {
+        return;
+      }
+
       if (event.deltaX === 0 && event.deltaY === 0) return;
       if (event.cancelable) event.preventDefault();
       const clamped = clampViewportPan(
@@ -363,18 +369,18 @@ export function DataScreenEditViewport({
       );
       viewPanRef.current = clamped;
       syncPanLayer(clamped);
-      scheduleWheelPanCommit();
+      schedulePanStateCommit();
     };
 
     wheelHost.addEventListener("wheel", onWheel, { passive: false, capture: true });
     return () => {
       wheelHost.removeEventListener("wheel", onWheel, { capture: true });
-      if (wheelPanFrameRef.current != null) {
-        window.cancelAnimationFrame(wheelPanFrameRef.current);
-        wheelPanFrameRef.current = null;
+      if (panCommitFrameRef.current != null) {
+        window.cancelAnimationFrame(panCommitFrameRef.current);
+        panCommitFrameRef.current = null;
       }
     };
-  }, [scheduleWheelPanCommit, syncPanLayer]);
+  }, [schedulePanStateCommit, syncPanLayer]);
 
   const handleZoomChange = useCallback((zoom: number) => {
     setUserZoom(clampZoom(zoom));

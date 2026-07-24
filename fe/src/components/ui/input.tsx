@@ -85,8 +85,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             inputSkin,
             fieldState: resolvedFieldState,
             size,
-            className,
           }),
+          className,
         )}
         ref={ref}
         {...props}

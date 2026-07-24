@@ -131,6 +131,21 @@ describe("AdminLayout smoke", () => {
     expect(main.className).toContain("max-w-(--breakpoint-2xl)");
   });
 
+  it("default admin route locks document scroll and scrolls in main", () => {
+    render(
+      <MemoryRouter initialEntries={["/admin/datasets/ds-demo/edit"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="datasets/:id/edit" element={<div>dataset form</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    const main = screen.getAllByRole("main")[0];
+    expect(main.className).toContain("overflow-y-auto");
+    expect(document.documentElement.classList.contains("admin-fill-lock")).toBe(true);
+  });
+
   it("dashboard edit route uses fill-height main (no page scroll flicker)", () => {
     render(
       <MemoryRouter initialEntries={["/admin/dashboards/d1/edit"]}>

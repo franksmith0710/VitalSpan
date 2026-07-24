@@ -1,16 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link2, Table2 } from "lucide-react";
+import { Table2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -102,39 +95,33 @@ export function DatasetBindPanel({
   if (tables.length === 0) return null;
 
   return (
-    <Card variant="outlined" elevation={1} className="mx-6 mb-6 lg:mx-8">
-      <CardHeader className="px-5 py-4">
-        <div className="flex items-start gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-400">
-            <Link2 className="size-5" aria-hidden />
-          </span>
-          <div className="grid flex-1 gap-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <CardTitle className="text-theme-sm">绑定查询配置</CardTitle>
-              {boundConfigId ? (
-                <Badge variant="light" color="success" size="sm">
-                  已绑定
-                </Badge>
-              ) : (
-                <Badge variant="light" color="warning" size="sm">
-                  未绑定
-                </Badge>
-              )}
-            </div>
-            <CardDescription>
-              将 Dataset 主表映射为 dataset_query 配置，仪表板选此 Dataset 即可出图（P0：单表）。
-            </CardDescription>
-          </div>
+    <section className="grid gap-4 border-b border-gray-100 pb-6 dark:border-gray-800">
+      <div>
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-theme-sm font-semibold text-gray-900 dark:text-white">绑定查询配置</h3>
+          {boundConfigId ? (
+            <Badge variant="light" color="success" size="sm">
+              已绑定
+            </Badge>
+          ) : (
+            <Badge variant="light" color="warning" size="sm">
+              未绑定
+            </Badge>
+          )}
         </div>
-      </CardHeader>
-      <CardContent className="grid gap-4 px-5 pb-5">
+        <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
+          将 Dataset 主表映射为 dataset_query 配置，仪表板选此 Dataset 即可出图（P0：单表）。
+        </p>
+      </div>
+
+      <div className="grid gap-5">
         {boundConfigId ? (
           <p className="font-mono text-theme-xs text-gray-500 dark:text-gray-400">
             配置 ID：{boundConfigId.slice(0, 8)}…
           </p>
         ) : null}
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:max-w-3xl">
           <div className="grid gap-2">
             <Label htmlFor="bind-ds">数据源</Label>
             <Select value={dataSourceId || undefined} onValueChange={setDataSourceId}>
@@ -175,12 +162,14 @@ export function DatasetBindPanel({
           {columnsQuery.isLoading ? (
             <Skeleton className="h-16 w-full rounded-lg" />
           ) : columnNames.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5 rounded-lg border border-gray-200 bg-gray-50/80 p-3 dark:border-gray-800 dark:bg-white/[0.02]">
-              {columnNames.map((col) => (
-                <Badge key={col} variant="light" color="light" size="sm">
-                  {col}
-                </Badge>
-              ))}
+            <div className="max-h-32 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50/50 p-3 dark:border-gray-800 dark:bg-white/[0.02]">
+              <div className="flex flex-wrap gap-1.5">
+                {columnNames.map((col) => (
+                  <Badge key={col} variant="light" color="light" size="sm">
+                    {col}
+                  </Badge>
+                ))}
+              </div>
             </div>
           ) : (
             <p className="text-theme-xs text-gray-500 dark:text-gray-400">
@@ -201,7 +190,7 @@ export function DatasetBindPanel({
             {boundConfigId ? "重新绑定" : "绑定并预览"}
           </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

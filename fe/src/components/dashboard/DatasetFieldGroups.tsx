@@ -124,13 +124,16 @@ export function DatasetFieldGroups({
           <RefreshCw className={cn("size-3.5", columnsLoading && "animate-spin")} aria-hidden />
         </Button>
       </div>
-      <div className="shrink-0 px-2 py-1.5" onPointerDown={(event) => event.stopPropagation()}>
+      <div
+        className="box-border min-w-0 shrink-0 px-2 py-1.5"
+        onPointerDown={(event) => event.stopPropagation()}
+      >
         <SearchField
+          density="compact"
           value={search}
           onChange={setSearch}
           placeholder="搜索字段"
           aria-label="搜索字段"
-          inputClassName="h-8 text-theme-xs"
           disabled={!datasetSelected}
         />
       </div>
