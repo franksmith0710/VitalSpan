@@ -14,6 +14,9 @@ export type GeoFlatPlateMesh = {
   borderLines: THREE.LineSegments;
 };
 
+/** per-shape=每省独立贴图顶盖；tint-only=仅半透明数据色（配合全国合并底图） */
+export type GeoPlateSatelliteCapMode = "per-shape" | "tint-only";
+
 export type GeoFlatPlateOptions = {
   terrainColorMap?: THREE.Texture;
   terrainNormalMap?: THREE.Texture;
@@ -24,6 +27,7 @@ export type GeoFlatPlateOptions = {
   dataTint?: number;
   valueT?: number;
   terrainSource?: TerrainCapSource;
+  satelliteCap?: GeoPlateSatelliteCapMode;
 };
 
 /** sc-datav Demo1：Shape 顶盖贴图 + Extrude 侧壁挤压 */
@@ -35,7 +39,9 @@ export function buildGeoFlatPlateMesh(
   isDark: boolean,
   options: GeoFlatPlateOptions = {},
 ): GeoFlatPlateMesh {
-  const hasTerrain = Boolean(options.terrainColorMap && options.projBounds);
+  const useSharedSatellite = options.satelliteCap === "tint-only";
+  const hasTerrain =
+    !useSharedSatellite && Boolean(options.terrainColorMap && options.projBounds);
   const dataTint = new THREE.Color(options.dataTint ?? capColor);
   const valueT = options.valueT ?? 1;
 
@@ -44,25 +50,33 @@ export function buildGeoFlatPlateMesh(
       ? (options.displacementScale ?? 0)
       : 0;
 
-  const capMaterial = hasTerrain
-    ? buildTerrainCapMaterial(
-        options.terrainColorMap!,
-        options.terrainNormalMap,
-        options.terrainDisplacementMap,
-        dataTint,
-        valueT,
-        isDark,
-        displacementScale,
-        options.terrainSource ?? "satellite",
-      )
-    : new THREE.MeshStandardMaterial({
+  const capMaterial = useSharedSatellite
+    ? new THREE.MeshBasicMaterial({
         color: dataTint,
-        emissive: dataTint,
-        emissiveIntensity: isDark ? 0.18 : 0.1,
-        metalness: 0.08,
-        roughness: 0.65,
-        side: THREE.DoubleSide,
-      });
+        transparent: true,
+        opacity: 0.28 + valueT * 0.22,
+        depthWrite: false,
+        side: THREE.FrontSide,
+      })
+    : hasTerrain
+      ? buildTerrainCapMaterial(
+          options.terrainColorMap!,
+          options.terrainNormalMap,
+          options.terrainDisplacementMap,
+          dataTint,
+          valueT,
+          isDark,
+          displacementScale,
+          options.terrainSource ?? "satellite",
+        )
+      : new THREE.MeshStandardMaterial({
+          color: dataTint,
+          emissive: dataTint,
+          emissiveIntensity: isDark ? 0.18 : 0.1,
+          metalness: 0.08,
+          roughness: 0.65,
+          side: THREE.DoubleSide,
+        });
 
   const invisibleCap = new THREE.MeshStandardMaterial({
     transparent: true,
@@ -83,15 +97,14 @@ export function buildGeoFlatPlateMesh(
   });
 
   const bodyMesh = new THREE.Mesh(extrudeGeometry, [sideMaterial, invisibleCap]);
-  bodyMesh.castShadow = true;
-  bodyMesh.receiveShadow = true;
 
   const capGeometry = new THREE.ShapeGeometry(shape);
   if (hasTerrain) {
     applyGeoCapBboxUv(capGeometry, options.projBounds!);
   }
   const capMesh = new THREE.Mesh(capGeometry, capMaterial);
-  capMesh.position.z = depth + GEO_CAP_Z_EPS;
+  capMesh.position.z = depth + GEO_CAP_Z_EPS + (useSharedSatellite ? 0.003 : 0);
+  capMesh.renderOrder = useSharedSatellite ? 2 : 1;
   capMesh.userData.capMaterial = capMaterial;
 
   const edges = new THREE.EdgesGeometry(extrudeGeometry, 15);

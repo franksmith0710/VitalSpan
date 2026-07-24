@@ -473,12 +473,12 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
         className={cn("relative", fill ? "h-full min-h-0" : "w-full")}
         style={fill ? undefined : { height, width: width ?? "100%" }}
       >
-        {geoMapLoading || threeLoading ? (
+        {geoMapLoading && !threeLoading ? (
           <p
             role="status"
             className="pointer-events-none absolute right-2 top-2 z-[1] text-theme-xs text-gray-500/80 dark:text-gray-400/80"
           >
-            {threeLoading ? "正在加载 3D 地图…" : `正在加载${geoMapLevel.levelLabel}地图…`}
+            {`正在加载${geoMapLevel.levelLabel}地图…`}
           </p>
         ) : null}
         <div

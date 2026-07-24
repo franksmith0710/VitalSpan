@@ -20,6 +20,7 @@ import { buildThreeGeoProject, buildMapFitCollection } from "@/components/charts
 import { loadChinaTerrainPack } from "@/components/charts/engine/three/geo/chinaTerrainLoader";
 import { computeCapTintColor } from "@/components/charts/engine/three/geo/applyGeoTerrainSurface";
 import { buildGeoFlatPlateMesh } from "@/components/charts/engine/three/buildGeoFlatPlateMesh";
+import { buildSharedSatelliteCap } from "@/components/charts/engine/three/buildSharedSatelliteCap";
 import { mountThreeGeoVisualMap } from "@/components/charts/engine/three/threeGeoVisualMap";
 import {
   configureThreeGeoOrbitControls,
@@ -278,35 +279,24 @@ export async function renderThreeChoroplethChart(
     const { project, projBounds } = geoProject;
 
     let terrainPack: Awaited<ReturnType<typeof loadChinaTerrainPack>> | null = null;
-    if (terrainOn) {
-      try {
-        terrainPack = await loadChinaTerrainPack({
-          mapId,
-          drillDepth,
-          isDark,
-          withDisplacement: reliefOn,
-        });
-      } catch (err) {
-        terrainPack = null;
-        if (import.meta.env.DEV) {
-          console.warn("[map-3d] terrain pack load failed", err);
-        }
-      }
-    }
+    let sharedCapMesh: THREE.Mesh | null = null;
+    let renderDisposed = false;
 
-    const detachTerrainHint = terrainOn && !terrainPack ? showDevTerrainFailureHint(container) : () => undefined;
+    let detachTerrainHint = () => undefined;
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 5000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    const maxPixelRatio = renderTier === "full" ? 2 : 1;
+    const renderer = new THREE.WebGLRenderer({
+      antialias: renderTier === "full",
+      alpha: true,
+    });
     if (!renderer.getContext()) {
       renderer.dispose();
       return d3Fallback(container, config, "webgl-unavailable");
     }
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.setClearColor(0x000000, 0);
-    // embed 降采样：看板内嵌无需 2× retina，显著减 fill-rate 卡顿
-    const maxPixelRatio = renderTier === "full" ? 2 : 1;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxPixelRatio));
     renderer.setSize(width, height);
     container.appendChild(renderer.domElement);
@@ -323,18 +313,21 @@ export async function renderThreeChoroplethChart(
 
     const mapGroup = new THREE.Group();
     const meshes: THREE.Group[] = [];
+    const allCapShapes: THREE.Shape[] = [];
     const displacementScale = reliefOn ? plateDepth * 1.5 : 0;
-    const terrainOpts = terrainPack
-      ? {
-          terrainColorMap: terrainPack.colorMap,
-          terrainNormalMap: reliefOn ? terrainPack.normalMap : undefined,
-          terrainDisplacementMap: reliefOn ? terrainPack.displacementMap : undefined,
-          displacementScale,
-          reliefOn,
-          projBounds,
-          terrainSource: terrainPack.source,
-        }
-      : {};
+    const perShapeTerrainOpts = terrainOn
+      ? {}
+      : terrainPack
+        ? {
+            terrainColorMap: terrainPack.colorMap,
+            terrainNormalMap: reliefOn ? terrainPack.normalMap : undefined,
+            terrainDisplacementMap: reliefOn ? terrainPack.displacementMap : undefined,
+            displacementScale,
+            reliefOn,
+            projBounds,
+            terrainSource: terrainPack.source,
+          }
+        : {};
 
     let firstCapMaterial: THREE.MeshBasicMaterial | THREE.MeshStandardMaterial | undefined;
 
@@ -348,8 +341,12 @@ export async function renderThreeChoroplethChart(
       const capTint = computeCapTintColor(new THREE.Color(color), valueT, isDark);
 
       for (const shape of shapes) {
+        if (terrainOn) allCapShapes.push(shape);
         const built = buildGeoFlatPlateMesh(shape, plateDepth, color, borderColor, isDark, {
-          ...terrainOpts,
+          ...perShapeTerrainOpts,
+          ...(terrainOn
+            ? { satelliteCap: "tint-only" as const, projBounds, valueT, dataTint: color }
+            : {}),
           dataTint: color,
           valueT,
         });
@@ -370,6 +367,51 @@ export async function renderThreeChoroplethChart(
         mapGroup.add(built.mesh);
         meshes.push(built.mesh);
       }
+    }
+
+    const attachSharedTerrainCap = (
+      pack: NonNullable<Awaited<ReturnType<typeof loadChinaTerrainPack>>>,
+    ) => {
+      if (renderDisposed || allCapShapes.length === 0) {
+        pack.dispose();
+        return;
+      }
+      terrainPack = pack;
+      try {
+        sharedCapMesh = buildSharedSatelliteCap(
+          allCapShapes,
+          plateDepth,
+          projBounds,
+          pack.colorMap,
+        );
+        mapGroup.add(sharedCapMesh);
+        if (!firstCapMaterial) {
+          firstCapMaterial = sharedCapMesh.material as THREE.MeshBasicMaterial;
+        }
+        renderer.render(scene, camera);
+      } catch (err) {
+        pack.dispose();
+        if (import.meta.env.DEV) {
+          console.warn("[map-3d] shared terrain cap failed", err);
+        }
+      }
+    };
+
+    if (terrainOn) {
+      void loadChinaTerrainPack({
+        mapId,
+        drillDepth,
+        isDark,
+        withDisplacement: reliefOn,
+      })
+        .then((pack) => attachSharedTerrainCap(pack))
+        .catch((err) => {
+          if (renderDisposed) return;
+          detachTerrainHint = showDevTerrainFailureHint(container);
+          if (import.meta.env.DEV) {
+            console.warn("[map-3d] terrain pack load failed", err);
+          }
+        });
     }
 
     logDevTerrainDiagnostics(terrainOn, terrainPack, firstCapMaterial, mapId, drillDepth, webglProbe.api ?? "none");
@@ -573,12 +615,13 @@ export async function renderThreeChoroplethChart(
       chartHeight = nextHeight;
       camera.aspect = nextWidth / nextHeight;
       camera.updateProjectionMatrix();
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxPixelRatio));
       renderer.setSize(nextWidth, nextHeight);
       return true;
     };
 
     const disposeImpl = () => {
+      renderDisposed = true;
       viewportObserver.disconnect();
       stopLoop();
       releaseSlot();
@@ -590,7 +633,13 @@ export async function renderThreeChoroplethChart(
       detachOrbitPan();
       detachGrabCursor();
       detachTerrainHint();
+      if (sharedCapMesh) {
+        sharedCapMesh.geometry.dispose();
+        (sharedCapMesh.material as THREE.Material).dispose();
+        sharedCapMesh = null;
+      }
       terrainPack?.dispose();
+      terrainPack = null;
       for (const mesh of meshes) disposePlateGroup(mesh);
       renderer.dispose();
       hideTooltip(tooltip);

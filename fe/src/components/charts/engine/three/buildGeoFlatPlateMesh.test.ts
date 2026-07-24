@@ -41,6 +41,27 @@ describe("buildGeoFlatPlateMesh", () => {
     expect(capMesh.geometry.attributes.uv).toBeTruthy();
   });
 
+  it("uses tint-only overlay cap when satelliteCap=tint-only", () => {
+    const shape = new THREE.Shape();
+    shape.moveTo(0, 0);
+    shape.lineTo(1, 0);
+    shape.lineTo(1, 1);
+    shape.closePath();
+    const geoProject = buildThreeGeoProject(400, 300, [], {
+      type: "FeatureCollection",
+      features: [],
+    });
+    const built = buildGeoFlatPlateMesh(shape, 1, 0x0284c7, 0x7dd3fc, true, {
+      satelliteCap: "tint-only",
+      projBounds: geoProject.projBounds,
+      dataTint: 0x0284c7,
+      valueT: 0.5,
+    });
+    expect(built.capMaterial).toBeInstanceOf(THREE.MeshBasicMaterial);
+    expect(built.capMaterial.map).toBeFalsy();
+    expect(built.capMaterial.transparent).toBe(true);
+  });
+
   it("applies displacement on cap when relief maps provided", () => {
     const shape = new THREE.Shape();
     shape.moveTo(0, 0);
@@ -61,15 +82,10 @@ describe("buildGeoFlatPlateMesh", () => {
       projBounds: geoProject.projBounds,
       dataTint: 0x0284c7,
       valueT: 0.5,
+      terrainSource: "procedural",
     });
-    expect(built.capMaterial).toBeInstanceOf(THREE.MeshBasicMaterial);
-    expect(built.capMaterial.map).toBeTruthy();
-    // 卫星模式默认不启用位移（稀疏网格会碎裂）
-    expect(
-      "displacementMap" in built.capMaterial ? built.capMaterial.displacementMap : null,
-    ).toBeFalsy();
-    expect(
-      "displacementScale" in built.capMaterial ? built.capMaterial.displacementScale : 0,
-    ).toBe(0);
+    expect(built.capMaterial).toBeInstanceOf(THREE.MeshStandardMaterial);
+    expect(built.capMaterial.displacementMap).toBe(displacement);
+    expect(built.capMaterial.displacementScale).toBe(2);
   });
 });
