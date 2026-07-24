@@ -50,11 +50,11 @@ describe("buildGeoMapContentKey", () => {
       rowsSample: [{ province: "安徽省" }],
       depthVisual: "off",
       isDark: false,
-      geo3dStyleSig: "satellite,1.15,auto,1,0,0,0",
+      geo3dStyleSig: "satellite,1.15,auto,1,0,0",
     };
     const other = buildGeoMapContentKey({
       ...base,
-      geo3dStyleSig: "tech,1.15,auto,1,0,1,1",
+      geo3dStyleSig: "tech,1.15,auto,1,1,1",
     });
     expect(buildGeoMapContentKey(base)).not.toBe(other);
   });

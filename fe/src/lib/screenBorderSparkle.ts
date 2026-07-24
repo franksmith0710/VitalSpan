@@ -1,13 +1,16 @@
 import { SCREEN_ACCENT } from "@/lib/screenTokens";
 
 /** 流光高亮描边宽度（mask 裁切段，贴可见线） */
-export const BORDER_FLOW_GLOW_STROKE_PX = 2;
+export const BORDER_FLOW_GLOW_STROKE_PX = 1;
 /** @deprecated 使用 BORDER_FLOW_GLOW_STROKE_PX */
 export const BORDER_FLOW_HEAD_DOT_PX = BORDER_FLOW_GLOW_STROKE_PX;
 /** 拖影长度默认值（像素） */
 export const BORDER_FLOW_TRAIL_LENGTH_DEFAULT_PX = 48;
 export const BORDER_FLOW_TRAIL_LENGTH_MIN_PX = 8;
 export const BORDER_FLOW_TRAIL_LENGTH_MAX_PX = 120;
+/** 拖影光斑半径（viewBox 0–100 坐标，随 SVG 等比缩放） */
+export const BORDER_FLOW_TRAIL_MIN_VIEWBOX_UNITS = 4;
+export const BORDER_FLOW_TRAIL_MAX_VIEWBOX_UNITS = 18;
 
 export type ScreenBorderSparkleDirection = "cw" | "ccw";
 
@@ -94,4 +97,20 @@ export function normalizeScreenBorderSparkleStyle(
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
+}
+
+/** 拖影像素配置 → mask 圆半径（viewBox 单位，避免首帧 0 尺寸换算撑满整圈） */
+export function trailLengthToMaskRadius(trailLengthPx: number): number {
+  const clamped = clamp(
+    trailLengthPx,
+    BORDER_FLOW_TRAIL_LENGTH_MIN_PX,
+    BORDER_FLOW_TRAIL_LENGTH_MAX_PX,
+  );
+  const ratio =
+    (clamped - BORDER_FLOW_TRAIL_LENGTH_MIN_PX) /
+    (BORDER_FLOW_TRAIL_LENGTH_MAX_PX - BORDER_FLOW_TRAIL_LENGTH_MIN_PX);
+  return (
+    BORDER_FLOW_TRAIL_MIN_VIEWBOX_UNITS +
+    ratio * (BORDER_FLOW_TRAIL_MAX_VIEWBOX_UNITS - BORDER_FLOW_TRAIL_MIN_VIEWBOX_UNITS)
+  );
 }

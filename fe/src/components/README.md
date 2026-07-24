@@ -92,6 +92,12 @@
 | ChartEditorColumn | `dashboard/ChartEditorColumn.tsx` | 图表配置列：数据/样式/高级 Tab（高级内容由 `chartAdvancedSections` 注入） |
 | ChartStylePanel | `dashboard/ChartStylePanel.tsx` | DE 样式 Tab（配色/标题/图例/标签/背景/边框） |
 | DashboardContextInspector | `dashboard/DashboardContextInspector.tsx` | 无选中时看板级配置轨 |
+| DashboardTemplateExtras | `dashboard/DashboardTemplateExtras.tsx` | 看板编辑页导出/发布为模板（对称大屏 `DataScreenConfigExtras`） |
+| TemplatePickerDialog | `dashboard/templates/TemplatePickerDialog.tsx` | 列表页「使用模板新建」选择器 |
+| PublishTemplateDialog | `dashboard/templates/PublishTemplateDialog.tsx` | 从看板/大屏发布为组织模板 |
+| VizTemplateCard | `dashboard/templates/VizTemplateCard.tsx` | 可视化模板 Hub 卡片（预览、徽章、操作） |
+| TemplateCardPreview | `dashboard/templates/TemplateCardPreview.tsx` | 模板卡片懒加载布局缩略图 |
+| templateLabels | `dashboard/templates/templateLabels.ts` | 模板 Hub 文案与 label 映射 |
 | chartDeStyle / chartValueFormat | `lib/chartDeStyle.ts` · `lib/chartValueFormat.ts` | 组件级 DE 样式与数值格式契约 |
 | DatasetFieldBank | `dashboard/DatasetFieldBank.tsx` | 数据集字段库（拖放/点击填入槽位） |
 | DatasetPickerPanel | `dashboard/DatasetPickerPanel.tsx` | 图表右栏 Dataset 选择与绑定 |

@@ -3,6 +3,8 @@ import type { ChartGeoStyle } from "@/lib/chartDeStyle";
 import { geoSurfaceColors } from "@/components/charts/engine/geo/geoSurfaceColors";
 import type { Geo3dStylePreset } from "@/components/charts/engine/three/geo3dVisualStyle";
 import { resolvePresetRegionBorderDefaults } from "@/components/charts/engine/three/geo3dVisualStyle";
+import { GEO_BORDER_FLOW_DEFAULTS } from "@/components/charts/engine/three/geoBorderFlowMaterial";
+import { SCREEN_ACCENT } from "@/lib/screenTokens";
 
 export type ResolvedGeoRegionBorder = {
   show: boolean;
@@ -11,6 +13,14 @@ export type ResolvedGeoRegionBorder = {
   opacity: number;
   hoverColorCss: string;
   hoverColorHex: number;
+};
+
+export type ResolvedGeoRegionBorderFlow = {
+  enabled: boolean;
+  colorCss: string;
+  colorHex: number;
+  speed: number;
+  trailLength: number;
 };
 
 const THEME_BORDER_HEX = { dark: "#7dd3fc", light: "#1e40af" } as const;
@@ -31,6 +41,30 @@ function brightenHex(hex: string, amount: number): number {
   const c = new THREE.Color(hex);
   c.lerp(new THREE.Color(0xffffff), amount);
   return c.getHex();
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+export function resolveGeoRegionBorderFlow(geo: ChartGeoStyle = {}): ResolvedGeoRegionBorderFlow {
+  const custom = geo.regionBorderFlowColor?.trim();
+  const colorCss = isValidHex(custom) ? custom.toLowerCase() : SCREEN_ACCENT;
+  return {
+    enabled: geo.regionBorderFlow === true,
+    colorCss,
+    colorHex: hexToNumber(colorCss),
+    speed: clamp(geo.regionBorderFlowSpeed ?? GEO_BORDER_FLOW_DEFAULTS.speed, 1, 20),
+    trailLength: clamp(
+      geo.regionBorderFlowTrailLength ?? GEO_BORDER_FLOW_DEFAULTS.trailLength,
+      GEO_BORDER_FLOW_DEFAULTS.trailMin,
+      GEO_BORDER_FLOW_DEFAULTS.trailMax,
+    ),
+  };
+}
+
+export function resolveGeoRegionBorderFlowColorHex(geo: ChartGeoStyle = {}): string {
+  return resolveGeoRegionBorderFlow(geo).colorCss;
 }
 
 /** 当前地图层级下的行政区边界（全国→省界，省级→市界…） */
@@ -108,8 +142,13 @@ export function resolveGeoRegionBorder(
 }
 
 export function buildGeoRegionBorderContentSig(geo: ChartGeoStyle = {}): string {
+  const flow = resolveGeoRegionBorderFlow(geo);
   return [
     resolveGeoRegionBorderShow(geo) ? 1 : 0,
     geo.regionBorderColor?.toLowerCase() ?? "",
+    flow.enabled ? 1 : 0,
+    flow.colorCss,
+    flow.speed,
+    flow.trailLength,
   ].join(",");
 }

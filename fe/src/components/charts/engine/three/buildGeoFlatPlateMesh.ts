@@ -50,10 +50,6 @@ export type GeoFlatPlateMesh = {
 
 export type GeoFlatPlateOptions = {
   terrainColorMap?: THREE.Texture;
-  terrainNormalMap?: THREE.Texture;
-  terrainDisplacementMap?: THREE.Texture;
-  displacementScale?: number;
-  reliefOn?: boolean;
   projBounds?: GeoProjBounds;
   /** 下钻：局部 mesh → 全国贴图 UV */
   uvBridge?: GeoCapNationalUvBridge;
@@ -106,6 +102,7 @@ function buildPlateTopOutline(
 
   const geom = new THREE.BufferGeometry();
   geom.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+
   const lines = new THREE.LineSegments(
     geom,
     new THREE.LineBasicMaterial({
@@ -135,11 +132,6 @@ export function buildGeoFlatPlateMesh(
   const valueT = options.valueT ?? 1;
   const capTopZ = resolveGeoCapTopZ(depth, hasTerrain);
 
-  const displacementScale =
-    hasTerrain && options.reliefOn && options.terrainDisplacementMap
-      ? (options.displacementScale ?? 0)
-      : 0;
-
   /** 侧壁 + 挤出顶底面同一实体材质，形成实心柱体（避免仅两侧薄片、中间镂空） */
   const shellMaterial = new THREE.MeshStandardMaterial({
     color: options.shellColor ?? (isDark ? 0x243448 : 0x4a5c6a),
@@ -154,13 +146,11 @@ export function buildGeoFlatPlateMesh(
   const capMaterial = hasTerrain
     ? buildTerrainCapMaterial(
         options.terrainColorMap!,
-        options.terrainNormalMap,
-        options.terrainDisplacementMap,
+        undefined,
         dataTint,
         valueT,
         isDark,
         {
-          displacementScale,
           source: options.terrainSource ?? "satellite",
           tintMixScale: options.capTintMixScale ?? 1,
           techSatelliteOverlay: options.techSatelliteOverlay ?? false,

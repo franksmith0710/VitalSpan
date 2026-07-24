@@ -87,6 +87,13 @@ export type ChartGeoStyle = {
   showRegionBorder?: boolean;
   /** 行政边界线颜色（#rrggbb）；未设置时跟随 3D 样式预设或主题 */
   regionBorderColor?: string;
+  /** 行政区边界流光（仅 map-3d） */
+  regionBorderFlow?: boolean;
+  regionBorderFlowColor?: string;
+  /** 绕边界一圈的秒数 */
+  regionBorderFlowSpeed?: number;
+  /** 拖影长度（像素，对标大屏边框流光） */
+  regionBorderFlowTrailLength?: number;
 };
 
 export type ChartGeo3dStyle = {
@@ -94,10 +101,8 @@ export type ChartGeo3dStyle = {
   stylePreset?: "satellite" | "tech" | "classic" | "minimal";
   extrudeIntensity?: number;
   quality?: "auto" | "high" | "medium" | "low";
-  /** 离线 hillshade 地形贴图（diffuse）；单独控制是否加载 */
+  /** 离线卫星地形贴图（diffuse） */
   terrainTexture?: boolean;
-  /** 法线/位移凹凸起伏；需先开启 terrainTexture */
-  terrainRelief?: boolean;
   /** 场景雾（科技预设默认开启，可手动覆盖） */
   sceneFog?: boolean;
   /** 挤出侧壁/底板颜色（#rrggbb）；未设置时跟随样式预设 */

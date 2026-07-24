@@ -2,7 +2,6 @@ import * as THREE from "three";
 import nationalMeta from "@/assets/geo/terrain/national/meta.json";
 import nationalDiffuseUrl from "@/assets/geo/terrain/national/diffuse.webp?url";
 import nationalNormalUrl from "@/assets/geo/terrain/national/normal.webp?url";
-import nationalDisplacementUrl from "@/assets/geo/terrain/national/displacement.webp?url";
 import { CHINA_TERRAIN_NATIONAL_ID } from "@/assets/geo/terrain/manifest";
 import type { GeoProjBounds, TerrainCapSource } from "@/components/charts/engine/three/geo/applyGeoTerrainSurface";
 
@@ -20,7 +19,6 @@ export type ChinaTerrainPack = {
   source: TerrainCapSource;
   colorMap: THREE.Texture;
   normalMap?: THREE.Texture;
-  displacementMap?: THREE.Texture;
   /** DEV：diffuse 源 URL，便于 Network 对照 */
   debugUrl?: string;
   dispose: () => void;
@@ -30,8 +28,6 @@ export type LoadTerrainPackOpts = {
   mapId?: string;
   drillDepth?: number;
   isDark?: boolean;
-  /** 仅在地形起伏开启时加载 displacement，减轻 GPU 与解码开销 */
-  withDisplacement?: boolean;
 };
 
 const VS_REGIONS_MAP_ID = "vs-regions";
@@ -51,10 +47,6 @@ const provinceNormalGlob = import.meta.glob<string>("@/assets/geo/terrain/provin
   import: "default",
   eager: true,
 });
-const provinceDisplacementGlob = import.meta.glob<string>(
-  "@/assets/geo/terrain/provinces/*/displacement.webp",
-  { query: "?url", import: "default", eager: true },
-);
 
 const provinceBakeMetaGlob = import.meta.glob<{ default: { projBounds?: GeoProjBounds } }>(
   "@/assets/geo/terrain/provinces/*/_source/bake-meta.json",
@@ -123,6 +115,15 @@ export function resolveTerrainPackKey(mapId: string | undefined, drillDepth = 0)
   return { level: "national", adcode: null };
 }
 
+/** 下钻到省/市时优先用省级高分辨率卫星贴图，全国桥接仅作兜底 */
+export function shouldLoadProvinceTerrainPack(
+  mapId: string | undefined,
+  drillDepth: number,
+): boolean {
+  if (drillDepth <= 0) return false;
+  return resolveTerrainPackKey(mapId, drillDepth).level === "province";
+}
+
 function boundsFromMeta(meta: { bounds: number[] }): TerrainGeoBounds {
   const [west, south, east, north] = meta.bounds;
   return { west, south, east, north };
@@ -169,28 +170,15 @@ function createPack(
   source: TerrainCapSource,
   diffuseUrl: string,
   normalUrl?: string | null,
-  displacementUrl?: string | null,
-  withDisplacement = false,
 ): Promise<ChinaTerrainPack> {
   return loadTextureWithRetry(diffuseUrl, THREE.SRGBColorSpace).then(async (colorMap) => {
     let normalMap: THREE.Texture | undefined;
-    let displacementMap: THREE.Texture | undefined;
 
-    // 卫星 diffuse 走 projBounds UV；旧 hillshade normal 坐标系不一致，会打出三角阴影
     if (normalUrl && source !== "satellite") {
       try {
         normalMap = await loadTextureWithRetry(normalUrl);
       } catch {
         normalMap = undefined;
-      }
-    }
-    if (withDisplacement && displacementUrl) {
-      try {
-        displacementMap = await loadTextureWithRetry(displacementUrl);
-        displacementMap.minFilter = THREE.LinearFilter;
-        displacementMap.magFilter = THREE.LinearFilter;
-      } catch {
-        displacementMap = undefined;
       }
     }
 
@@ -201,12 +189,10 @@ function createPack(
       source,
       colorMap,
       normalMap,
-      displacementMap,
       ...(import.meta.env.DEV ? { debugUrl: diffuseUrl } : {}),
       dispose: () => {
         colorMap.dispose();
         normalMap?.dispose();
-        displacementMap?.dispose();
       },
     };
   });
@@ -215,9 +201,9 @@ function createPack(
 const cache = new Map<string, Promise<ChinaTerrainPack>>();
 
 export function loadChinaTerrainPack(opts: LoadTerrainPackOpts): Promise<ChinaTerrainPack> {
-  const { mapId, drillDepth = 0, withDisplacement = false } = opts;
+  const { mapId, drillDepth = 0 } = opts;
   const keySpec = resolveTerrainPackKey(mapId, drillDepth);
-  const cacheKey = `${keySpec.level}:${keySpec.adcode ?? CHINA_TERRAIN_NATIONAL_ID}:${withDisplacement ? "d" : "f"}`;
+  const cacheKey = `${keySpec.level}:${keySpec.adcode ?? CHINA_TERRAIN_NATIONAL_ID}`;
 
   const cached = cache.get(cacheKey);
   if (cached) return cached;
@@ -228,12 +214,10 @@ export function loadChinaTerrainPack(opts: LoadTerrainPackOpts): Promise<ChinaTe
     const meta = provinceMetaByAdcode.get(adcode);
     const diffuse = provinceAssetUrl(provinceDiffuseGlob, adcode, "diffuse");
     const normal = provinceAssetUrl(provinceNormalGlob, adcode, "normal");
-    const displacement = provinceAssetUrl(provinceDisplacementGlob, adcode, "displacement");
     if (!meta || !diffuse) {
       promise = loadChinaTerrainPack({
         mapId: VS_REGIONS_MAP_ID,
         drillDepth: 0,
-        withDisplacement,
       });
     } else {
       promise = createPack(
@@ -243,8 +227,6 @@ export function loadChinaTerrainPack(opts: LoadTerrainPackOpts): Promise<ChinaTe
         metaSource(meta),
         diffuse,
         normal,
-        displacement,
-        withDisplacement,
       );
     }
   } else {
@@ -255,8 +237,6 @@ export function loadChinaTerrainPack(opts: LoadTerrainPackOpts): Promise<ChinaTe
       metaSource(nationalMeta),
       nationalDiffuseUrl,
       nationalNormalUrl,
-      nationalDisplacementUrl,
-      withDisplacement,
     );
   }
 

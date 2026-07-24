@@ -29,7 +29,7 @@ function resolvePresetId(presetId: string | undefined): ChartFramePresetId {
 }
 
 /** 对标 DataEase Board.vue：整幅 SVG 拉伸铺满，fill 着色 */
-function tintBoardSvg(svg: string, color: string): string {
+export function tintBoardSvg(svg: string, color: string): string {
   return svg
     .replace(/ preserveAspectRatio="none meet"/, ' preserveAspectRatio="none"')
     .replace(/\s(width|height)="[^"]*"/g, "")

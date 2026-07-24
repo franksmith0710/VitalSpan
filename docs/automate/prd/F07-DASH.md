@@ -145,4 +145,4 @@
   - [x] FE Hub `/admin/viz-templates`；列表「使用模板新建」；大屏/看板发布为模板
   - [x] 统一信封 `kind: viz-layout`；兼容旧 `kind: data-screen` 导入
 - **代码锚点**：`backend/app/dashboard/templates/` · `backend/app/api/v1/dashboard_templates.py` · `fe/src/pages/admin/viz-templates/VizTemplatesHubPage.tsx` · `fe/src/components/dashboard/templates/` · `tests/test_dash_templates_r01.py`
-- **演化建议**：模板缩略图自动生成、组织级分类管理 UI、看板编辑页对称发布入口
+- **演化建议**：模板缩略图自动生成（Hub 已支持布局示意预览）、组织级分类管理 UI；看板编辑页对称发布入口（已实现 `DashboardTemplateExtras`）

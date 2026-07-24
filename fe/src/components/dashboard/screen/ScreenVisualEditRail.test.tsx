@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ScreenVisualEditRail } from "./ScreenVisualEditRail";
@@ -28,7 +28,8 @@ describe("ScreenVisualEditRail", () => {
     expect(screen.getByTestId("border-variant-select")).toBeInTheDocument();
   });
 
-  it("updates clock style from style panel", () => {
+  it("updates clock style from style panel", async () => {
+    const user = userEvent.setup();
     const onTextConfigChange = vi.fn();
     const clockWidget = asTextWidget({
       id: "clock-1",
@@ -44,7 +45,8 @@ describe("ScreenVisualEditRail", () => {
       <ScreenVisualEditRail widget={clockWidget} onTextConfigChange={onTextConfigChange} />,
     );
 
-    fireEvent.change(screen.getByDisplayValue("18"), { target: { value: "24" } });
+    await user.click(screen.getByRole("combobox", { name: "字体大小" }));
+    await user.click(screen.getByRole("option", { name: "24" }));
 
     const lastCall = onTextConfigChange.mock.calls.at(-1)?.[0];
     expect(lastCall?.screenStyle?.clock?.fontSize).toBe(24);

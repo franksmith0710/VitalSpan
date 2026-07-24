@@ -1,8 +1,16 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { VizTemplatesHubPage } from "./VizTemplatesHubPage";
+
+vi.mock("@/lib/exportLayoutJson", () => ({
+  downloadJsonFile: vi.fn(),
+}));
+
+import { downloadJsonFile } from "@/lib/exportLayoutJson";
 
 vi.mock("@/context/auth-context", () => ({
   useAuth: () => ({
@@ -10,16 +18,24 @@ vi.mock("@/context/auth-context", () => ({
   }),
 }));
 
+const mockExportEnvelope = {
+  templateVersion: 1,
+  kind: "viz-layout",
+  surfaceKind: "dashboard",
+  name: "空白看板",
+  layout: { version: 1, widgets: [], globalFilters: [] },
+};
+
 vi.mock("@/lib/api", () => ({
-  apiFetch: vi.fn(async (url: string) => {
-    if (url.startsWith("/api/v1/dashboard-templates")) {
+  apiFetch: vi.fn(async (url: string, init?: RequestInit) => {
+    if (url.startsWith("/api/v1/dashboard-templates?")) {
       return {
         items: [
           {
             id: "tpl-1",
             templateKey: "builtin-dash-blank",
             name: "空白看板",
-            description: "测试",
+            description: "12 列栅格画布，从零搭建",
             categoryKey: "general",
             surfaceKind: "dashboard",
             status: "published",
@@ -35,6 +51,46 @@ vi.mock("@/lib/api", () => ({
         offset: 0,
       };
     }
+    if (url === "/api/v1/dashboard-templates/tpl-1") {
+      return {
+        id: "tpl-1",
+        templateKey: "builtin-dash-blank",
+        name: "空白看板",
+        description: "12 列栅格画布，从零搭建",
+        categoryKey: "general",
+        surfaceKind: "dashboard",
+        status: "published",
+        thumbnailRef: null,
+        visibility: "builtin",
+        contentRevision: 1,
+        updatedAt: new Date().toISOString(),
+        publishedAt: new Date().toISOString(),
+        layoutJson: {
+          version: 1,
+          widgets: [
+            {
+              id: "w1",
+              type: "text",
+              title: "占位",
+              order: 0,
+              colSpan: 12,
+              rowSpan: 2,
+            },
+          ],
+          globalFilters: [],
+        },
+        sourceDashboardId: null,
+        ownerUserId: null,
+        orgScope: null,
+        createdAt: new Date().toISOString(),
+      };
+    }
+    if (url === "/api/v1/dashboard-templates/tpl-1/export") {
+      return mockExportEnvelope;
+    }
+    if (url === "/api/v1/dashboards/from-template" && init?.method === "POST") {
+      return { id: "dash-new" };
+    }
     throw new Error(`unexpected ${url}`);
   }),
 }));
@@ -43,16 +99,39 @@ function renderHub() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <MemoryRouter>
-        <VizTemplatesHubPage />
-      </MemoryRouter>
+      <TooltipProvider delayDuration={0}>
+        <MemoryRouter>
+          <VizTemplatesHubPage />
+        </MemoryRouter>
+      </TooltipProvider>
     </QueryClientProvider>,
   );
 }
 
 describe("VizTemplatesHubPage smoke", () => {
-  it("renders template hub with builtin card", async () => {
+  it("renders hub title, tabs and template card", async () => {
     renderHub();
+    expect(screen.getByRole("heading", { name: "可视化模板" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /仪表板/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /数据大屏/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /导入 JSON/ })).toBeInTheDocument();
     expect(await screen.findByText("空白看板")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "使用模板" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "导出" })).toBeInTheDocument();
+  });
+
+  it("exports template json from card", async () => {
+    const user = userEvent.setup();
+    const downloadMock = vi.mocked(downloadJsonFile);
+    downloadMock.mockClear();
+    renderHub();
+    await screen.findByText("空白看板");
+    await user.click(screen.getByRole("button", { name: "导出" }));
+    await waitFor(() => {
+      expect(downloadMock).toHaveBeenCalledWith(
+        mockExportEnvelope,
+        "空白看板-template.json",
+      );
+    });
   });
 });

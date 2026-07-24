@@ -10,7 +10,6 @@ import { readCartesianStyleFromPlanOptions } from "@/lib/applyChartDeStyleBlocks
 import { readChartDeStyle, readChartGeoStyle, readChartGeo3dStyle } from "@/lib/chartDeStyle";
 import {
   defaultGeo3dRenderTier,
-  resolveTerrainReliefEnabled,
   resolveTerrainTextureEnabled,
 } from "@/components/charts/engine/three/geo3dRuntime";
 import type {
@@ -72,7 +71,6 @@ export function buildD3DispatchPayload(
     const geo3dStyle = {
       ...geo3dStyleRaw,
       terrainTexture: resolveTerrainTextureEnabled(renderTier, geo3dStyleRaw),
-      terrainRelief: resolveTerrainReliefEnabled(geo3dStyleRaw),
     };
     return {
       kind: "geo",
@@ -93,6 +91,10 @@ export function buildD3DispatchPayload(
           visualMap: geoStyle.visualMap,
           showRegionBorder: geoStyle.showRegionBorder,
           regionBorderColor: geoStyle.regionBorderColor,
+          regionBorderFlow: geoStyle.regionBorderFlow,
+          regionBorderFlowColor: geoStyle.regionBorderFlowColor,
+          regionBorderFlowSpeed: geoStyle.regionBorderFlowSpeed,
+          regionBorderFlowTrailLength: geoStyle.regionBorderFlowTrailLength,
         },
         geo3dStyle,
         renderTier,

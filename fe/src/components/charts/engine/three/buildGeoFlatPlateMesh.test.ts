@@ -75,31 +75,4 @@ describe("buildGeoFlatPlateMesh", () => {
     }
     expect(hidden.borderLines.visible).toBe(false);
   });
-
-  it("applies displacement on cap when relief maps provided", () => {
-    const shape = new THREE.Shape();
-    shape.moveTo(0, 0);
-    shape.lineTo(1, 0);
-    shape.lineTo(1, 1);
-    shape.closePath();
-    const geoProject = buildThreeGeoProject(400, 300, [], {
-      type: "FeatureCollection",
-      features: [],
-    });
-    const displacement = new THREE.Texture();
-    const built = buildGeoFlatPlateMesh(shape, 1, 0x0284c7, 0x7dd3fc, true, {
-      terrainColorMap: new THREE.Texture(),
-      terrainNormalMap: new THREE.Texture(),
-      terrainDisplacementMap: displacement,
-      displacementScale: 2,
-      reliefOn: true,
-      projBounds: geoProject.projBounds,
-      dataTint: 0x0284c7,
-      valueT: 0.5,
-      terrainSource: "procedural",
-    });
-    expect(built.capMaterial).toBeInstanceOf(THREE.MeshStandardMaterial);
-    expect(built.capMaterial.displacementMap).toBe(displacement);
-    expect(built.capMaterial.displacementScale).toBe(2);
-  });
 });

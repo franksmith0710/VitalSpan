@@ -86,6 +86,7 @@ import {
 import type { PaletteDragPayload } from "@/lib/dashboardDnd";
 import { readTabsWidgetIdFromDropEvent } from "@/lib/tabsDropTarget";
 import { DashboardContextInspector } from "@/components/dashboard/DashboardContextInspector";
+import { DashboardTemplateExtras } from "@/components/dashboard/DashboardTemplateExtras";
 import { LayerPanel } from "@/components/dashboard/LayerPanel";
 import { DashboardEditWorkspace } from "@/components/dashboard/DashboardEditWorkspace";
 import { DashboardEditCanvas } from "@/components/dashboard/dashboard-edit/DashboardEditCanvas";
@@ -1337,6 +1338,16 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                     onSelect={(widgetId) => selectWidgetOnCanvas(widgetId, false)}
                     onWidgetsChange={setWidgets}
                     className="min-h-0 max-h-[min(42vh,280px)] shrink-0 border-b border-gray-100 pb-4 dark:border-white/[0.06]"
+                  />
+                ) : null}
+                {!isDataScreenSurface ? (
+                  <DashboardTemplateExtras
+                    layout={layout}
+                    styleConfig={styleConfig}
+                    widgets={widgets}
+                    name={name}
+                    canSave={canSave}
+                    dashboardId={id}
                   />
                 ) : null}
                 <DashboardContextInspector

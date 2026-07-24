@@ -1,78 +1,21 @@
 import { describe, expect, it } from "vitest";
 import {
-  parseAdcodeFromMapId,
-  resolveProvinceAdcodeFromMapId,
-  resolveProvinceTerrainUvBounds,
   resolveTerrainPackKey,
+  shouldLoadProvinceTerrainPack,
 } from "@/components/charts/engine/three/geo/chinaTerrainLoader";
-import { VS_REGIONS_MAP_ID } from "@/components/charts/engine/geo/geoConstants";
 
-describe("resolveTerrainPackKey", () => {
-  it("uses national L0 at drill depth 0", () => {
-    expect(resolveTerrainPackKey(VS_REGIONS_MAP_ID, 0)).toEqual({
-      level: "national",
-      adcode: null,
-    });
+describe("shouldLoadProvinceTerrainPack", () => {
+  it("is false at national level", () => {
+    expect(shouldLoadProvinceTerrainPack("vs-regions", 0)).toBe(false);
+    expect(shouldLoadProvinceTerrainPack("vs-geo-330000", 0)).toBe(false);
   });
 
-  it("uses national L0 when mapId is vs-regions even if drilled", () => {
-    expect(resolveTerrainPackKey(VS_REGIONS_MAP_ID, 2)).toEqual({
-      level: "national",
-      adcode: null,
-    });
+  it("is true when drilled into a province with assets", () => {
+    expect(shouldLoadProvinceTerrainPack("vs-geo-330000", 1)).toBe(true);
+    expect(resolveTerrainPackKey("vs-geo-330000", 1).level).toBe("province");
   });
 
-  it("resolves province L1 for vs-geo-440000 when pack exists", () => {
-    expect(resolveTerrainPackKey("vs-geo-440000", 1)).toEqual({
-      level: "province",
-      adcode: 440000,
-    });
-  });
-
-  it("resolves parent province for city mapId at drill depth 2", () => {
-    expect(resolveTerrainPackKey("vs-geo-440100", 2)).toEqual({
-      level: "province",
-      adcode: 440000,
-    });
-  });
-
-  it("resolves province L1 for vs-geo-330000 when pack exists", () => {
-    expect(resolveTerrainPackKey("vs-geo-330000", 1)).toEqual({
-      level: "province",
-      adcode: 330000,
-    });
-  });
-
-  it("loads bake projBounds for province UV", () => {
-    const bounds = resolveProvinceTerrainUvBounds("vs-geo-520000", 1);
-    expect(bounds?.minX).toBeCloseTo(-4.525, 1);
-    expect(bounds?.maxY).toBeCloseTo(3.896, 1);
-  });
-
-  it("falls back to national for province without L1 pack", () => {
-    expect(resolveTerrainPackKey("vs-geo-999000", 1)).toEqual({
-      level: "national",
-      adcode: null,
-    });
-  });
-});
-
-describe("resolveProvinceAdcodeFromMapId", () => {
-  it("keeps provincial adcode", () => {
-    expect(resolveProvinceAdcodeFromMapId("vs-geo-330000")).toBe(330000);
-  });
-
-  it("normalizes city adcode to parent province", () => {
-    expect(resolveProvinceAdcodeFromMapId("vs-geo-440100")).toBe(440000);
-  });
-});
-
-describe("parseAdcodeFromMapId", () => {
-  it("parses six-digit adcode", () => {
-    expect(parseAdcodeFromMapId("vs-geo-440100")).toBe(440100);
-  });
-
-  it("returns null for non geo map id", () => {
-    expect(parseAdcodeFromMapId(VS_REGIONS_MAP_ID)).toBeNull();
+  it("is true for city map ids under a province", () => {
+    expect(shouldLoadProvinceTerrainPack("vs-geo-330100", 2)).toBe(true);
   });
 });

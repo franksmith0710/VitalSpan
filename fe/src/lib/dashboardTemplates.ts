@@ -1,3 +1,4 @@
+import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
 import { apiFetch } from "@/lib/api";
 
 export type VizSurfaceKind = "dashboard" | "data-screen";
@@ -77,6 +78,25 @@ export function fetchDashboardTemplates(params: {
   offset?: number;
 }) {
   return apiFetch<DashboardTemplateListResponse>(buildTemplatesListUrl(params));
+}
+
+export function fetchTemplateDetail(templateId: string) {
+  return apiFetch<DashboardTemplateDetail>(`/api/v1/dashboard-templates/${templateId}`);
+}
+
+export function buildVizLayoutEnvelope(
+  layout: DashboardLayout,
+  name: string,
+  surfaceKind: VizSurfaceKind,
+): VizLayoutEnvelope {
+  const trimmed = name.trim() || (surfaceKind === "data-screen" ? "未命名大屏" : "未命名看板");
+  return {
+    templateVersion: 1,
+    kind: "viz-layout",
+    surfaceKind,
+    name: trimmed,
+    layout: layout as unknown as Record<string, unknown>,
+  };
 }
 
 export function createFromTemplate(templateId: string, name?: string) {

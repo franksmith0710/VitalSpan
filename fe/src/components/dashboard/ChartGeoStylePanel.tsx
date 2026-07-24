@@ -1,12 +1,11 @@
 import {
-  GEO3D_TERRAIN_RELIEF_SHIPPED,
-  resolveTerrainReliefEnabled,
-} from "@/components/charts/engine/three/geo3dRuntime";
-import {
   hasCustomGeoRegionBorderColor,
   resolveGeoRegionBorderColorHex,
+  resolveGeoRegionBorderFlow,
+  resolveGeoRegionBorderFlowColorHex,
   resolveGeoRegionBorderShow,
 } from "@/components/charts/engine/geo/geoRegionBorderStyle";
+import { GEO_BORDER_FLOW_DEFAULTS } from "@/components/charts/engine/three/geoBorderFlowMaterial";
 import {
   GEO3D_STYLE_PRESETS,
   geo3dPresetDefaults,
@@ -25,14 +24,17 @@ import {
   readChartGeo3dStyle,
   type ChartDeStyle,
 } from "@/lib/chartDeStyle";
+import { DeAttrSliderField } from "./deAttrSlider";
 import {
   ChartInspectorSection,
   INSPECTOR_HINT,
   INSPECTOR_SECTION_GAP,
   INSPECTOR_SELECT_TRIGGER,
   InspectorFieldRow,
+  InspectorInlineColorRow,
   InspectorSwitchRow,
 } from "./inspectorCompact";
+import { WIDGET_BORDER_RECOMMENDED } from "./dashboardStyleConfig";
 import {
   Select,
   SelectContent,
@@ -48,13 +50,6 @@ type ChartGeoStylePanelProps = {
   onChange: (cfg: ChartViewConfig) => void;
 };
 
-const QUALITY_OPTIONS = [
-  { value: "auto", label: "自动" },
-  { value: "high", label: "高（全国/省级）" },
-  { value: "medium", label: "中（市级）" },
-  { value: "low", label: "低（优先 2D）" },
-] as const;
-
 /** DataEase 对标：地图/热力图专属样式 */
 export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartGeoStylePanelProps) {
   const { dashboardStyle } = useChartInspector();
@@ -68,6 +63,7 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
   const isMap = chartType === "map" || chartType === "map-3d";
   const is3d = chartType === "map-3d";
   const showRegionBorder = resolveGeoRegionBorderShow(geo);
+  const borderFlow = resolveGeoRegionBorderFlow(geo);
   const borderColorPreset = is3d ? resolveGeo3dStylePreset(geo3d) : undefined;
 
   return (
@@ -110,26 +106,64 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
               onCheckedChange={(next) => patchGeo({ showRegionBorder: next })}
             />
             {showRegionBorder ? (
-              <InspectorFieldRow label="边界颜色">
-                <div className="flex w-full items-center gap-2">
-                  <input
-                    type="color"
-                    className="h-8 min-w-0 flex-1 cursor-pointer rounded border border-gray-200 bg-white dark:border-white/10 dark:bg-gray-900"
-                    value={resolveGeoRegionBorderColorHex(geo, isDarkTheme, borderColorPreset)}
-                    onChange={(e) => patchGeo({ regionBorderColor: e.target.value })}
-                    aria-label="行政区边界颜色"
-                  />
-                  {hasCustomGeoRegionBorderColor(geo) ? (
-                    <button
-                      type="button"
-                      className="shrink-0 text-theme-xs text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
-                      onClick={() => patchGeo({ regionBorderColor: undefined })}
-                    >
-                      恢复
-                    </button>
-                  ) : null}
-                </div>
-              </InspectorFieldRow>
+              <InspectorInlineColorRow
+                label="边界颜色"
+                value={resolveGeoRegionBorderColorHex(geo, isDarkTheme, borderColorPreset)}
+                fallbackValue={resolveGeoRegionBorderColorHex(
+                  { ...geo, regionBorderColor: undefined },
+                  isDarkTheme,
+                  borderColorPreset,
+                )}
+                allowClear={hasCustomGeoRegionBorderColor(geo)}
+                swatches={WIDGET_BORDER_RECOMMENDED}
+                onChange={(next) => patchGeo({ regionBorderColor: next })}
+              />
+            ) : null}
+            {is3d && showRegionBorder ? (
+              <>
+                <InspectorSwitchRow
+                  label="边界流光"
+                  checked={borderFlow.enabled}
+                  onCheckedChange={(regionBorderFlow) => patchGeo({ regionBorderFlow })}
+                />
+                {borderFlow.enabled ? (
+                  <>
+                    <InspectorInlineColorRow
+                      label="流光颜色"
+                      value={resolveGeoRegionBorderFlowColorHex(geo)}
+                      fallbackValue={borderFlow.colorCss}
+                      allowClear={false}
+                      swatches={WIDGET_BORDER_RECOMMENDED}
+                      onChange={(next) => patchGeo({ regionBorderFlowColor: next ?? borderFlow.colorCss })}
+                    />
+                    <DeAttrSliderField
+                      label="流光速度"
+                      compact
+                      value={borderFlow.speed}
+                      fallback={GEO_BORDER_FLOW_DEFAULTS.speed}
+                      min={1}
+                      max={20}
+                      step={0.5}
+                      ariaLabel="流光速度"
+                      onChange={(regionBorderFlowSpeed) => patchGeo({ regionBorderFlowSpeed })}
+                    />
+                    <DeAttrSliderField
+                      label="拖影长度"
+                      compact
+                      value={borderFlow.trailLength}
+                      fallback={GEO_BORDER_FLOW_DEFAULTS.trailLength}
+                      min={GEO_BORDER_FLOW_DEFAULTS.trailMin}
+                      max={GEO_BORDER_FLOW_DEFAULTS.trailMax}
+                      step={1}
+                      ariaLabel="拖影长度"
+                      onChange={(regionBorderFlowTrailLength) => patchGeo({ regionBorderFlowTrailLength })}
+                    />
+                    <p className={INSPECTOR_HINT}>
+                      流光仅沿当前层级外轮廓流动（全国仅国界线，下钻后仅该省/市外缘）。
+                    </p>
+                  </>
+                ) : null}
+              </>
             ) : null}
             <p className={INSPECTOR_HINT}>
               边界随下钻层级切换：全国显示省界，省级显示市界，市级显示区县界。
@@ -160,58 +194,28 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
             <p className={INSPECTOR_HINT}>
               {GEO3D_STYLE_PRESETS.find((p) => p.value === resolveGeo3dStylePreset(geo3d))?.hint}
             </p>
-            <InspectorFieldRow label="3D 质量">
-              <Select
-                value={geo3d.quality ?? "auto"}
-                onValueChange={(quality) =>
-                  patchGeo3d({
-                    quality: quality as (typeof QUALITY_OPTIONS)[number]["value"],
-                  })
-                }
-              >
-                <SelectTrigger className={INSPECTOR_SELECT_TRIGGER} aria-label="3D 质量">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {QUALITY_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </InspectorFieldRow>
-            <InspectorFieldRow label="底板厚度">
-              <input
-                type="range"
-                min={0.2}
-                max={1.5}
-                step={0.05}
-                value={geo3d.extrudeIntensity ?? DEFAULT_GEO3D_EXTRUDE_INTENSITY}
-                onChange={(e) => patchGeo3d({ extrudeIntensity: Number(e.target.value) })}
-                className="w-full"
-              />
-            </InspectorFieldRow>
-            <InspectorFieldRow label="底板颜色">
-              <div className="flex w-full items-center gap-2">
-                <input
-                  type="color"
-                  className="h-8 min-w-0 flex-1 cursor-pointer rounded border border-gray-200 bg-white dark:border-white/10 dark:bg-gray-900"
-                  value={resolveGeo3dShellColorHex(geo3d, isDarkTheme)}
-                  onChange={(e) => patchGeo3d({ shellColor: e.target.value })}
-                  aria-label="底板颜色"
-                />
-                {hasCustomGeo3dShellColor(geo3d) ? (
-                  <button
-                    type="button"
-                    className="shrink-0 text-theme-xs text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
-                    onClick={() => patchGeo3d({ shellColor: undefined })}
-                  >
-                    恢复
-                  </button>
-                ) : null}
-              </div>
-            </InspectorFieldRow>
+            <DeAttrSliderField
+              label="底板厚度"
+              compact
+              value={geo3d.extrudeIntensity}
+              fallback={DEFAULT_GEO3D_EXTRUDE_INTENSITY}
+              min={0.2}
+              max={1.5}
+              step={0.05}
+              ariaLabel="底板厚度"
+              onChange={(extrudeIntensity) => patchGeo3d({ extrudeIntensity })}
+            />
+            <InspectorInlineColorRow
+              label="底板颜色"
+              value={resolveGeo3dShellColorHex(geo3d, isDarkTheme)}
+              fallbackValue={resolveGeo3dShellColorHex(
+                { ...geo3d, shellColor: undefined },
+                isDarkTheme,
+              )}
+              allowClear={hasCustomGeo3dShellColor(geo3d)}
+              swatches={WIDGET_BORDER_RECOMMENDED}
+              onChange={(next) => patchGeo3d({ shellColor: next })}
+            />
             <InspectorSwitchRow
               label="地形贴图（离线卫星）"
               checked={geo3d.terrainTexture !== false}
@@ -221,12 +225,6 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
               label="场景雾"
               checked={resolveGeo3dSceneFog(geo3d)}
               onCheckedChange={(sceneFog) => patchGeo3d({ sceneFog })}
-            />
-            <InspectorSwitchRow
-              label="地形凹凸（未开放）"
-              checked={resolveTerrainReliefEnabled(geo3d)}
-              disabled={!GEO3D_TERRAIN_RELIEF_SHIPPED}
-              onCheckedChange={(terrainRelief) => patchGeo3d({ terrainRelief })}
             />
           </>
         ) : null}

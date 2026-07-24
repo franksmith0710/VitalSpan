@@ -1,10 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   GEO3D_MAX_WEBGL_INSTANCES,
-  GEO3D_TERRAIN_RELIEF_SHIPPED,
   defaultGeo3dRenderTier,
   resetWebGLSlotsForTests,
-  resolveTerrainReliefEnabled,
   resolveTerrainTextureEnabled,
   tryAcquireWebGLSlot,
 } from "@/components/charts/engine/three/geo3dRuntime";
@@ -41,13 +39,6 @@ describe("resolveTerrainTextureEnabled", () => {
     expect(resolveTerrainTextureEnabled("full", { terrainTexture: true })).toBe(true);
     expect(resolveTerrainTextureEnabled("full", { terrainTexture: false })).toBe(false);
     expect(resolveTerrainTextureEnabled("embed", { terrainTexture: false })).toBe(false);
-  });
-});
-
-describe("resolveTerrainReliefEnabled", () => {
-  it("is gated until mesh relief ships", () => {
-    expect(resolveTerrainReliefEnabled({ terrainRelief: true })).toBe(GEO3D_TERRAIN_RELIEF_SHIPPED);
-    expect(resolveTerrainReliefEnabled({ terrainRelief: false })).toBe(false);
   });
 });
 

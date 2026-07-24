@@ -1,15 +1,19 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router";
-import { Archive, LayoutDashboard, LayoutTemplate, Monitor, Upload } from "lucide-react";
+import { LayoutDashboard, LayoutTemplate, Monitor, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { PanelEmptyState } from "@/components/ui/panel-empty-state";
+import { VizTemplateCard } from "@/components/dashboard/templates/VizTemplateCard";
+import {
+  SURFACE_TABS,
+  VIZ_TEMPLATES_HUB,
+} from "@/components/dashboard/templates/templateLabels";
 import {
   archiveTemplate,
   createFromTemplate,
@@ -28,55 +32,19 @@ import { dataScreenEditPath } from "@/lib/dataScreenLayout";
 import { useAuth } from "@/context/auth-context";
 import { sessionUserFromMe } from "@/lib/session";
 
-function surfaceLabel(kind: VizSurfaceKind) {
-  return kind === "data-screen" ? "????" : "???";
-}
-
-function TemplateCard({
-  item,
-  canManage,
-  onUse,
-  onPublish,
-  onArchive,
-  pending,
-}: {
-  item: DashboardTemplateListItem;
-  canManage: boolean;
-  onUse: () => void;
-  onPublish: () => void;
-  onArchive: () => void;
-  pending: boolean;
-}) {
+function TemplateCardSkeleton() {
   return (
-    <Card className="shadow-theme-xs">
-      <CardHeader className="space-y-2 pb-2">
-        <header className="flex items-start justify-between gap-2">
-          <CardTitle className="text-theme-sm font-semibold leading-snug">{item.name}</CardTitle>
-          <span className="shrink-0 rounded-md bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600 dark:bg-white/[0.06] dark:text-gray-400">
-            {surfaceLabel(item.surfaceKind)}
-          </span>
-        </header>
-        {item.description ? (
-          <p className="text-theme-xs text-gray-500 dark:text-gray-400">{item.description}</p>
-        ) : null}
-      </CardHeader>
-      <CardContent className="flex flex-wrap gap-2 pt-0">
-        <Button type="button" size="sm" variant="primary" disabled={pending} onClick={onUse}>
-          ?????
-        </Button>
-        {canManage && item.status === "draft" ? (
-          <Button type="button" size="sm" variant="outline" disabled={pending} onClick={onPublish}>
-            ??
-          </Button>
-        ) : null}
-        {canManage && item.status === "published" && item.visibility !== "builtin" ? (
-          <Button type="button" size="sm" variant="outline" disabled={pending} onClick={onArchive}>
-            <Archive className="size-3.5" />
-            ??
-          </Button>
-        ) : null}
-      </CardContent>
-    </Card>
+    <div className="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
+      <Skeleton className="aspect-[16/10] w-full rounded-none" />
+      <div className="space-y-2 p-4">
+        <Skeleton className="h-4 w-2/3" />
+        <Skeleton className="h-3 w-full" />
+        <div className="flex gap-2 pt-1">
+          <Skeleton className="h-8 w-20" />
+          <Skeleton className="h-8 w-16" />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -86,7 +54,7 @@ export function VizTemplatesHubPage() {
   const { user: authUser } = useAuth();
   const sessionUser = authUser
     ? sessionUserFromMe(authUser)
-    : sessionUserFromMe({ username: "??", roles: ["viewer"] });
+    : sessionUserFromMe({ username: "访客", roles: ["viewer"] });
   const canManage = hasCapability(sessionUser, "dashboard:template.manage");
   const canEdit = hasCapability(sessionUser, "dashboard:edit");
 
@@ -132,7 +100,7 @@ export function VizTemplatesHubPage() {
   const publishMutation = useMutation({
     mutationFn: publishTemplate,
     onSuccess: () => {
-      toast.success("?????");
+      toast.success(VIZ_TEMPLATES_HUB.toastPublished);
       invalidate();
     },
     onError: (err) => toast.error(mapApiError(err)),
@@ -141,7 +109,7 @@ export function VizTemplatesHubPage() {
   const archiveMutation = useMutation({
     mutationFn: archiveTemplate,
     onSuccess: () => {
-      toast.success("?????");
+      toast.success(VIZ_TEMPLATES_HUB.toastArchived);
       invalidate();
     },
     onError: (err) => toast.error(mapApiError(err)),
@@ -150,7 +118,7 @@ export function VizTemplatesHubPage() {
   const importMutation = useMutation({
     mutationFn: (envelope: VizLayoutEnvelope) => importTemplateEnvelope(envelope),
     onSuccess: () => {
-      toast.success("????????");
+      toast.success(VIZ_TEMPLATES_HUB.toastImported);
       invalidate();
     },
     onError: (err) => toast.error(mapApiError(err)),
@@ -161,15 +129,10 @@ export function VizTemplatesHubPage() {
 
   const items = listQuery.data?.items ?? [];
 
-  const surfaceTabs: { key: VizSurfaceKind; label: string; icon: typeof LayoutDashboard }[] = [
-    { key: "dashboard", label: "???", icon: LayoutDashboard },
-    { key: "data-screen", label: "????", icon: Monitor },
-  ];
-
   return (
     <AdminPageShell
-      title="?????"
-      description="????????????????????????????????????"
+      title={VIZ_TEMPLATES_HUB.title}
+      description={VIZ_TEMPLATES_HUB.description}
       actions={
         canEdit ? (
           <Button
@@ -180,7 +143,7 @@ export function VizTemplatesHubPage() {
             disabled={importMutation.isPending}
           >
             <Upload className="size-4" />
-            ?? JSON
+            {VIZ_TEMPLATES_HUB.importJson}
           </Button>
         ) : null
       }
@@ -200,7 +163,7 @@ export function VizTemplatesHubPage() {
               const parsed = JSON.parse(String(reader.result ?? "")) as VizLayoutEnvelope;
               importMutation.mutate(parsed);
             } catch (err) {
-              toast.error(err instanceof Error ? err.message : "?????? JSON");
+              toast.error(err instanceof Error ? err.message : VIZ_TEMPLATES_HUB.invalidJson);
             }
           };
           reader.readAsText(file);
@@ -208,8 +171,8 @@ export function VizTemplatesHubPage() {
       />
 
       <section className="mb-4 flex flex-wrap gap-2">
-        {surfaceTabs.map((tab) => {
-          const Icon = tab.icon;
+        {SURFACE_TABS.map((tab) => {
+          const Icon = tab.key === "data-screen" ? Monitor : LayoutDashboard;
           const active = surfaceKind === tab.key;
           return (
             <Button
@@ -234,9 +197,9 @@ export function VizTemplatesHubPage() {
         <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="?????"
+          placeholder={VIZ_TEMPLATES_HUB.searchPlaceholder}
           className="sm:max-w-xs"
-          aria-label="????"
+          aria-label={VIZ_TEMPLATES_HUB.searchAriaLabel}
         />
         <section className="flex flex-wrap gap-1.5">
           <Button
@@ -245,7 +208,7 @@ export function VizTemplatesHubPage() {
             variant={categoryKey === null ? "primary" : "ghost"}
             onClick={() => setCategoryKey(null)}
           >
-            ????
+            {VIZ_TEMPLATES_HUB.allCategories}
           </Button>
           {TEMPLATE_CATEGORIES.map((cat) => (
             <Button
@@ -262,9 +225,9 @@ export function VizTemplatesHubPage() {
       </section>
 
       {listQuery.isLoading ? (
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-36 rounded-xl" />
+            <TemplateCardSkeleton key={i} />
           ))}
         </section>
       ) : listQuery.isError ? (
@@ -272,13 +235,13 @@ export function VizTemplatesHubPage() {
       ) : items.length === 0 ? (
         <PanelEmptyState
           icon={<LayoutTemplate className="size-8" aria-hidden />}
-          title="????"
-          description="??????????????????? JSON ?????"
+          title={VIZ_TEMPLATES_HUB.emptyTitle}
+          description={VIZ_TEMPLATES_HUB.emptyDescription}
         />
       ) : (
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3">
           {items.map((item) => (
-            <TemplateCard
+            <VizTemplateCard
               key={item.id}
               item={item}
               canManage={canManage}

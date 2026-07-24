@@ -1,12 +1,15 @@
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { getScreenIconCatalog, SCREEN_SHAPE_OPTIONS } from "@/lib/screenMaterialCatalog";
 import type { ScreenIconStyleConfig, ScreenShapeKind, ScreenShapeStyleConfig } from "@/lib/screenVisualStyle";
-import { normalizeScreenIconStyle, normalizeScreenShapeStyle } from "@/lib/screenVisualStyle";
+import {
+  DEFAULT_SCREEN_ICON_STYLE,
+  normalizeScreenIconStyle,
+  normalizeScreenShapeStyle,
+} from "@/lib/screenVisualStyle";
+import { ChartPaletteFontSizeSelect } from "@/components/dashboard/chartPaletteShared";
 import {
   DeAttrField,
   DeSegmentGroup,
-  DE_INPUT,
 } from "@/components/dashboard/dashboardInspectorUi";
 import { DeAttrSliderField } from "@/components/dashboard/deAttrSlider";
 import { ChartInspectorSection } from "@/components/dashboard/inspectorCompact";
@@ -17,6 +20,9 @@ type ScreenStylePanelProps<T> = {
   value: T;
   onChange: (next: T) => void;
 };
+
+/** 大屏图标尺寸档位（16–128） */
+const SCREEN_ICON_SIZE_OPTIONS = [16, 20, 24, 28, 32, 40, 48, 56, 64, 72, 80, 96, 112, 128] as const;
 
 export function ScreenShapeStylePanel({
   value,
@@ -39,16 +45,16 @@ export function ScreenShapeStylePanel({
         />
       </DeAttrField>
       <ScreenColorField label="描边颜色" value={style.strokeColor} onChange={(strokeColor) => patch({ strokeColor })} />
-      <DeAttrField label="描边宽度" compact className="border-b-0 py-0">
-        <Input
-          type="number"
-          min={1}
-          max={12}
-          className={DE_INPUT}
-          value={style.strokeWidth}
-          onChange={(e) => patch({ strokeWidth: Number(e.target.value) || style.strokeWidth })}
-        />
-      </DeAttrField>
+      <DeAttrSliderField
+        label="描边宽度"
+        compact
+        value={style.strokeWidth}
+        min={1}
+        max={12}
+        step={1}
+        ariaLabel="描边宽度"
+        onChange={(strokeWidth) => patch({ strokeWidth })}
+      />
       <DeAttrSliderField
         label="填充透明度"
         compact
@@ -100,16 +106,14 @@ export function ScreenIconStylePanel({
         </div>
       </DeAttrField>
       <ScreenColorField label="图标颜色" value={style.color} onChange={(color) => patch({ color })} />
-      <DeAttrField label="图标尺寸" compact className="border-b-0 py-0">
-        <Input
-          type="number"
-          min={16}
-          max={128}
-          className={DE_INPUT}
-          value={style.size}
-          onChange={(e) => patch({ size: Number(e.target.value) || style.size })}
-        />
-      </DeAttrField>
+      <ChartPaletteFontSizeSelect
+        label="图标尺寸"
+        density="narrow"
+        value={style.size}
+        fallback={DEFAULT_SCREEN_ICON_STYLE.size}
+        options={SCREEN_ICON_SIZE_OPTIONS}
+        onChange={(size) => patch({ size })}
+      />
     </ChartInspectorSection>
   );
 }

@@ -38,9 +38,6 @@ export function resetWebGLSlotsForTests(): void {
   activeWebglSlots.clear();
 }
 
-/** 稀疏顶盖未细分前禁止位移凹凸（否则三角碎裂） */
-export const GEO3D_TERRAIN_RELIEF_SHIPPED = false;
-
 /** 列表缩略图不加载地形；看板内嵌与全屏预览均加载卫星贴图 */
 export function resolveTerrainTextureEnabled(
   tier: Geo3dRenderTier,
@@ -48,10 +45,6 @@ export function resolveTerrainTextureEnabled(
 ): boolean {
   if (tier === "thumbnail") return false;
   return geo3dStyle.terrainTexture !== false;
-}
-
-export function resolveTerrainReliefEnabled(geo3dStyle: ChartGeo3dStyle): boolean {
-  return GEO3D_TERRAIN_RELIEF_SHIPPED && geo3dStyle.terrainRelief === true;
 }
 
 export function defaultGeo3dRenderTier(embedded: boolean): Geo3dRenderTier {

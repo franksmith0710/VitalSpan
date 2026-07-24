@@ -20,9 +20,10 @@ import {
   buildNationalTerrainProject,
   buildTerrainAlignedGeoProject,
 } from "@/components/charts/engine/three/geo/threeGeoProject";
-import { loadChinaTerrainPack, resolveProvinceTerrainUvBounds } from "@/components/charts/engine/three/geo/chinaTerrainLoader";
+import { loadChinaTerrainPack, resolveProvinceTerrainUvBounds, shouldLoadProvinceTerrainPack } from "@/components/charts/engine/three/geo/chinaTerrainLoader";
 import { computeCapTintColor } from "@/components/charts/engine/three/geo/applyGeoTerrainSurface";
-import { buildGeoFlatPlateMesh, resolveGeoPlateDepth } from "@/components/charts/engine/three/buildGeoFlatPlateMesh";
+import { buildGeoFlatPlateMesh, resolveGeoPlateDepth, GEO_BORDER_ABOVE_CAP_Z, resolveGeoCapTopZ } from "@/components/charts/engine/three/buildGeoFlatPlateMesh";
+import { buildGeoOuterBorderFlowLines } from "@/components/charts/engine/three/geoOuterBorderFlow";
 import { mountThreeGeoVisualMap } from "@/components/charts/engine/three/threeGeoVisualMap";
 import {
   configureThreeGeoOrbitControls,
@@ -40,7 +41,6 @@ import { DEFAULT_GEO3D_EXTRUDE_INTENSITY } from "@/lib/chartDeStyle";
 import { resolveGeo3dQuality, shouldRenderGeo3d } from "@/components/charts/engine/three/geo3dQuality";
 import {
   releaseWebGLSlot,
-  resolveTerrainReliefEnabled,
   resolveTerrainTextureEnabled,
   setWebGLSlotDispose,
   tryAcquireWebGLSlot,
@@ -51,7 +51,11 @@ import {
   isPointerTapMove,
   type GeoMapTapState,
 } from "@/components/charts/engine/three/geoMapDoubleTap";
-import { resolveGeoRegionBorder } from "@/components/charts/engine/geo/geoRegionBorderStyle";
+import { resolveGeoRegionBorder, resolveGeoRegionBorderFlow } from "@/components/charts/engine/geo/geoRegionBorderStyle";
+import {
+  isGeoBorderFlowMaterial,
+} from "@/components/charts/engine/three/geoBorderFlowMaterial";
+import { prefersReducedMotion } from "@/components/charts/engine/d3/core/animate";
 import { resolveGeo3dVisualStyle, applyGeo3dSceneFog, hasCustomGeo3dShellColor, resolveGeo3dShellColorNumber } from "@/components/charts/engine/three/geo3dVisualStyle";
 
 function noopDispose(): void {
@@ -89,8 +93,10 @@ function logDevTerrainDiagnostics(
   const mapImage = firstCap?.map?.image;
   console.debug("[map-3d] terrain pack loaded", {
     level: terrainPack.level,
+    adcode: terrainPack.adcode,
     debugUrl: terrainPack.debugUrl,
     capHasMap: Boolean(firstCap?.map),
+    capMaterialType: firstCap?.type,
     capMapImage: mapImage instanceof HTMLImageElement ? `${mapImage.width}x${mapImage.height}` : mapImage,
     webglApi,
     renderEngine: "three",
@@ -155,6 +161,25 @@ function disposePlateGroup(group: THREE.Group): void {
       for (const m of mats) m.dispose();
     }
   });
+}
+
+function applyProvinceBorderVisual(
+  border: THREE.LineSegments,
+  regionBorder: ReturnType<typeof resolveGeoRegionBorder>,
+  groupUserData: Record<string, unknown>,
+  hover: boolean,
+): void {
+  const baseColor = hover
+    ? regionBorder.hoverColorHex
+    : (groupUserData.borderColor as number) ?? regionBorder.colorHex;
+  const opacity = hover
+    ? 1
+    : ((groupUserData.borderOpacity as number) ?? regionBorder.opacity);
+
+  const mat = border.material as THREE.LineBasicMaterial;
+  mat.color.setHex(baseColor);
+  mat.opacity = opacity;
+  border.visible = true;
 }
 
 function d3Fallback(
@@ -277,6 +302,7 @@ export async function renderThreeChoroplethChart(
     const maxVal = Math.max(...values, 1);
     const plateScale = Math.max(0.35, geo3dStyle.extrudeIntensity ?? DEFAULT_GEO3D_EXTRUDE_INTENSITY);
     const regionBorder = resolveGeoRegionBorder(geoStyle, isDark, { preset: visualStyle.preset });
+    const borderFlow = resolveGeoRegionBorderFlow(geoStyle);
     const borderColor = regionBorder.colorHex;
     const borderOpacity = regionBorder.opacity;
     const customShell = hasCustomGeo3dShellColor(geo3dStyle);
@@ -289,21 +315,21 @@ export async function renderThreeChoroplethChart(
     const shellEmissiveIntensity = customShell ? 0 : visualStyle.shellEmissiveIntensity;
     const capEmissiveIntensity = isDark ? visualStyle.capEmissiveDark : visualStyle.capEmissiveLight;
     const showVisualMap = geoStyle.visualMap !== false;
-    const terrainTextureOn = resolveTerrainTextureEnabled(
+    const terrainOn = resolveTerrainTextureEnabled(
       renderTier as Geo3dRenderTier,
       geo3dStyle,
     );
-    const terrainReliefOn = resolveTerrainReliefEnabled(geo3dStyle);
-    const terrainOn = terrainTextureOn;
-    const reliefOn = terrainTextureOn && terrainReliefOn;
 
     const geoProject = buildTerrainAlignedGeoProject(width, height, mapId, drillDepth, geo);
     const { project, projBounds } = geoProject;
-    const drillNationalUv = terrainOn && drillDepth > 0;
+    const provinceTerrain = terrainOn && shouldLoadProvinceTerrainPack(mapId, drillDepth);
+    const drillNationalUv = terrainOn && drillDepth > 0 && !provinceTerrain;
     const nationalGeoProject = drillNationalUv
       ? buildNationalTerrainProject(getOfflineGeoMap(VS_REGIONS_MAP_ID) ?? { features: [] })
       : null;
-    const terrainUvBounds = resolveProvinceTerrainUvBounds(mapId, drillDepth) ?? projBounds;
+    const terrainUvBounds = provinceTerrain
+      ? geoProject.projBounds
+      : resolveProvinceTerrainUvBounds(mapId, drillDepth) ?? projBounds;
     const plateDepth = resolveGeoPlateDepth(projBounds, plateScale, drillDepth);
 
     let terrainPack: Awaited<ReturnType<typeof loadChinaTerrainPack>> | null = null;
@@ -314,10 +340,9 @@ export async function renderThreeChoroplethChart(
     if (terrainOn) {
       try {
         terrainPack = await loadChinaTerrainPack({
-          mapId: drillNationalUv ? VS_REGIONS_MAP_ID : mapId,
-          drillDepth: drillNationalUv ? 0 : drillDepth,
+          mapId: provinceTerrain ? mapId : drillNationalUv ? VS_REGIONS_MAP_ID : mapId,
+          drillDepth: provinceTerrain ? drillDepth : drillNationalUv ? 0 : drillDepth,
           isDark,
-          withDisplacement: reliefOn,
         });
       } catch (err) {
         detachTerrainHint = showDevTerrainFailureHint(container);
@@ -355,10 +380,8 @@ export async function renderThreeChoroplethChart(
 
     const keyBase = isDark ? visualStyle.keyDark : visualStyle.keyLight;
     const fillBase = isDark ? visualStyle.fillDark : visualStyle.fillLight;
-    const keyIntensity =
-      terrainOn && !reliefOn ? keyBase * (isDark ? 0.85 : 0.9) : keyBase;
-    const fillIntensity =
-      terrainOn && !reliefOn ? fillBase * (isDark ? 0.75 : 0.8) : fillBase;
+    const keyIntensity = terrainOn ? keyBase * (isDark ? 0.85 : 0.9) : keyBase;
+    const fillIntensity = terrainOn ? fillBase * (isDark ? 0.75 : 0.8) : fillBase;
     const keyLight = new THREE.DirectionalLight(0xf0f6fc, keyIntensity);
     keyLight.position.set(-1.2, 2.4, 1.0);
     const fillLight = new THREE.DirectionalLight(0x5a8ab0, fillIntensity);
@@ -367,14 +390,11 @@ export async function renderThreeChoroplethChart(
 
     const mapGroup = new THREE.Group();
     const meshes: THREE.Group[] = [];
-    const displacementScale = reliefOn ? plateDepth * 1.5 : 0;
+    const borderFlowMaterials: THREE.ShaderMaterial[] = [];
+    const mapGeometries: GeoJSON.Geometry[] = [];
     const perShapeTerrainOpts = terrainPack
       ? {
           terrainColorMap: terrainPack.colorMap,
-          terrainNormalMap: reliefOn ? terrainPack.normalMap : undefined,
-          terrainDisplacementMap: reliefOn ? terrainPack.displacementMap : undefined,
-          displacementScale,
-          reliefOn,
           ...(drillNationalUv && nationalGeoProject
             ? {
                 uvBridge: { local: geoProject, national: nationalGeoProject },
@@ -388,6 +408,7 @@ export async function renderThreeChoroplethChart(
 
     for (const feature of features) {
       if (!feature.geometry) continue;
+      mapGeometries.push(feature.geometry);
       const shapes = geometryToShapes(feature.geometry, project);
       if (shapes.length === 0) continue;
 
@@ -435,6 +456,25 @@ export async function renderThreeChoroplethChart(
       }
     }
 
+    const borderZ =
+      resolveGeoCapTopZ(plateDepth, Boolean(terrainPack?.colorMap)) + GEO_BORDER_ABOVE_CAP_Z;
+    const outerBorderFlow = buildGeoOuterBorderFlowLines(
+      mapGeometries,
+      project,
+      borderZ,
+      borderColor,
+      isDark,
+      borderOpacity,
+      borderFlow,
+    );
+    if (outerBorderFlow) {
+      if (isGeoBorderFlowMaterial(outerBorderFlow.material)) {
+        borderFlowMaterials.push(outerBorderFlow.material);
+      }
+      if (!regionBorder.show) outerBorderFlow.visible = false;
+      mapGroup.add(outerBorderFlow);
+    }
+
     logDevTerrainDiagnostics(terrainOn, terrainPack, firstCapMaterial, mapId, drillDepth, webglProbe.api ?? "none");
 
     if (meshes.length === 0) {
@@ -472,6 +512,9 @@ export async function renderThreeChoroplethChart(
     let dampingFrameId = 0;
     let hoverFrameId = 0;
     let renderFrameId = 0;
+    let flowFrameId = 0;
+    let flowPhase = 0;
+    let flowStartMs = performance.now();
     let lastHoverEvent: PointerEvent | null = null;
     let animationActive = true;
     let visibleInViewport = true;
@@ -581,6 +624,39 @@ export async function renderThreeChoroplethChart(
       dampingFrameId = requestAnimationFrame(tick);
     };
 
+    const syncBorderFlowPhase = () => {
+      if (!borderFlow.enabled || prefersReducedMotion()) return;
+      flowPhase =
+        (performance.now() - flowStartMs) / 1000 / Math.max(borderFlow.speed, 0.1);
+      flowPhase %= 1;
+      for (const material of borderFlowMaterials) {
+        material.uniforms.uPhase!.value = flowPhase;
+      }
+    };
+
+    const stopBorderFlow = () => {
+      if (flowFrameId) {
+        cancelAnimationFrame(flowFrameId);
+        flowFrameId = 0;
+      }
+    };
+
+    const tickBorderFlow = () => {
+      flowFrameId = 0;
+      if (!visibleInViewport || !animationActive || !borderFlow.enabled || prefersReducedMotion()) {
+        return;
+      }
+      syncBorderFlowPhase();
+      renderFrame();
+      flowFrameId = requestAnimationFrame(tickBorderFlow);
+    };
+
+    const startBorderFlow = () => {
+      if (!borderFlow.enabled || prefersReducedMotion() || flowFrameId) return;
+      flowStartMs = performance.now();
+      flowFrameId = requestAnimationFrame(tickBorderFlow);
+    };
+
     const onControlsChange = () => {
       scheduleRender();
       if (hoveredProvince) syncHoverTooltip();
@@ -664,10 +740,12 @@ export async function renderThreeChoroplethChart(
     const restoreProvinceVisual = (group: THREE.Object3D) => {
       const border = group.userData.borderLines as THREE.LineSegments | undefined;
       if (border && regionBorder.show) {
-        const mat = border.material as THREE.LineBasicMaterial;
-        mat.color.setHex(group.userData.borderColor as number);
-        mat.opacity = (group.userData.borderOpacity as number) ?? borderOpacity;
-        border.visible = true;
+        applyProvinceBorderVisual(
+          border,
+          regionBorder,
+          group.userData as Record<string, unknown>,
+          false,
+        );
       } else if (border) {
         border.visible = false;
       }
@@ -691,9 +769,12 @@ export async function renderThreeChoroplethChart(
           for (const part of provinceParts(hoveredProvince)) {
             const border = part.userData.borderLines as THREE.LineSegments | undefined;
             if (border && regionBorder.show) {
-              const mat = border.material as THREE.LineBasicMaterial;
-              mat.color.setHex(regionBorder.hoverColorHex);
-              mat.opacity = 1;
+              applyProvinceBorderVisual(
+                border,
+                regionBorder,
+                part.userData as Record<string, unknown>,
+                true,
+              );
               continue;
             }
             const cap = capMaterialOf(part);
@@ -784,11 +865,17 @@ export async function renderThreeChoroplethChart(
     const viewportObserver = new IntersectionObserver(
       ([entry]) => {
         visibleInViewport = entry?.isIntersecting ?? false;
-        if (!visibleInViewport) stopDampingTail();
+        if (!visibleInViewport) {
+          stopDampingTail();
+          stopBorderFlow();
+        } else {
+          startBorderFlow();
+        }
       },
       { threshold: 0 },
     );
     viewportObserver.observe(container);
+    startBorderFlow();
 
     const resize = (nextWidth: number, nextHeight: number) => {
       if (nextWidth <= 0 || nextHeight <= 0) return false;
@@ -806,6 +893,7 @@ export async function renderThreeChoroplethChart(
       renderDisposed = true;
       viewportObserver.disconnect();
       stopDampingTail();
+      stopBorderFlow();
       if (hoverFrameId) {
         cancelAnimationFrame(hoverFrameId);
         hoverFrameId = 0;
@@ -851,6 +939,8 @@ export async function renderThreeChoroplethChart(
       resize,
       setAnimationActive: (active: boolean) => {
         animationActive = active;
+        if (active) startBorderFlow();
+        else stopBorderFlow();
       },
       dispose: disposeImpl,
     };

@@ -54,7 +54,7 @@ function MoreTile({
       <span className="line-clamp-2 w-full text-[11px] leading-tight text-gray-700 dark:text-gray-300">
         {item.label}
       </span>
-    </button>
+    </div>
   );
 }
 

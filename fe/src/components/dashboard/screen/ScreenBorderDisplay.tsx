@@ -1,3 +1,4 @@
+import { useId } from "react";
 import type { ScreenBorderStyleConfig } from "@/lib/screenVisualStyle";
 import { normalizeScreenBorderStyle } from "@/lib/screenVisualStyle";
 import { cn } from "@/lib/utils";
@@ -7,6 +8,8 @@ import { ScreenBorderSparkles } from "./ScreenBorderSparkles";
 export type ScreenBorderDisplayProps = {
   className?: string;
   styleConfig?: ScreenBorderStyleConfig;
+  /** 配置栏缩略图等场景关闭流光，避免与画布实例 SVG id 冲突 */
+  showSparkle?: boolean;
 };
 
 /** 配置栏缩略图：与画布 ScreenBorderDisplay 同一路径渲染 */
@@ -19,16 +22,23 @@ export function ScreenBorderStyleThumbnail({
 }) {
   return (
     <div className={cn("relative size-full min-h-0 overflow-hidden", className)}>
-      <ScreenBorderDisplay className="absolute inset-0" styleConfig={styleConfig} />
+      <ScreenBorderDisplay className="absolute inset-0" styleConfig={styleConfig} showSparkle={false} />
     </div>
   );
 }
 
 /** 对标 DataEase 素材边框 + screen-panel 角标发光 */
-export function ScreenBorderDisplay({ className, styleConfig }: ScreenBorderDisplayProps) {
+export function ScreenBorderDisplay({
+  className,
+  styleConfig,
+  showSparkle = true,
+}: ScreenBorderDisplayProps) {
+  const instanceScope = useId();
   const style = normalizeScreenBorderStyle(styleConfig);
   const accent = style.accentColor;
-  const glow = style.glowEnabled ? `0 0 12px ${accent}26` : undefined;
+  const glow = style.glowEnabled
+    ? `0 0 18px ${accent}22, 0 0 4px ${accent}14, inset 0 1px 0 rgba(255,255,255,0.06)`
+    : undefined;
 
   return (
     <div
@@ -41,8 +51,12 @@ export function ScreenBorderDisplay({ className, styleConfig }: ScreenBorderDisp
         innerOpacity: style.innerBorderOpacity,
         glow,
       })}
-      {style.sparkle.enabled ? (
-        <ScreenBorderSparkles sparkles={style.sparkle.sparkles} variant={style.variant} />
+      {showSparkle && style.sparkle.enabled ? (
+        <ScreenBorderSparkles
+          instanceScope={instanceScope}
+          sparkles={style.sparkle.sparkles}
+          variant={style.variant}
+        />
       ) : null}
     </div>
   );

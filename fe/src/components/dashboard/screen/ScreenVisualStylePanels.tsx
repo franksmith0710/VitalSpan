@@ -1,15 +1,18 @@
-import { Input } from "@/components/ui/input";
 import {
   DeAttrField,
-  DeAttrToggleRow,
-  DE_INPUT,
 } from "@/components/dashboard/dashboardInspectorUi";
 import { DeAttrSliderField } from "@/components/dashboard/deAttrSlider";
+import { ChartPaletteFontSizeSelect } from "@/components/dashboard/chartPaletteShared";
 import {
   TEXT_COLOR_RECOMMENDED,
   WIDGET_BORDER_RECOMMENDED,
 } from "@/components/dashboard/dashboardStyleConfig";
-import { ChartInspectorSection, InspectorInlineColorRow } from "@/components/dashboard/inspectorCompact";
+import { CHART_FONT_SIZE_OPTIONS } from "@/lib/chartFontSizes";
+import {
+  ChartInspectorSection,
+  InspectorInlineColorRow,
+  InspectorSwitchRow,
+} from "@/components/dashboard/inspectorCompact";
 import type {
   ScreenBorderStyleConfig,
   ScreenClockStyleConfig,
@@ -18,6 +21,8 @@ import type {
   ScreenVisualStyleConfig,
 } from "@/lib/screenVisualStyle";
 import {
+  DEFAULT_SCREEN_CLOCK_STYLE,
+  DEFAULT_SCREEN_DATETIME_STYLE,
   normalizeScreenBorderStyle,
   normalizeScreenClockStyle,
   normalizeScreenDateTimeStyle,
@@ -25,6 +30,9 @@ import {
 } from "@/lib/screenVisualStyle";
 import { ScreenBorderSparkleStylePanel } from "./ScreenBorderSparkleStylePanel";
 import { ScreenBorderVariantPicker } from "./ScreenBorderVariantPicker";
+
+/** 时钟/时间行：在图表标准档位上扩展大屏标题级字号 */
+const SCREEN_LARGE_FONT_SIZE_OPTIONS = [...CHART_FONT_SIZE_OPTIONS, 56, 64, 72] as const;
 
 type ScreenStylePanelProps<T> = {
   value: T;
@@ -62,23 +70,21 @@ export function ScreenClockStylePanel({
 
   return (
     <ChartInspectorSection title="时钟" defaultOpen data-testid="screen-clock-style-panel">
-      <DeAttrField label="字号" compact className="border-b-0 py-0">
-        <Input
-          type="number"
-          min={10}
-          max={72}
-          className={DE_INPUT}
-          value={style.fontSize}
-          onChange={(e) => patch({ fontSize: Number(e.target.value) || style.fontSize })}
-        />
-      </DeAttrField>
+      <ChartPaletteFontSizeSelect
+        label="字号"
+        density="narrow"
+        value={style.fontSize}
+        fallback={DEFAULT_SCREEN_CLOCK_STYLE.fontSize}
+        options={SCREEN_LARGE_FONT_SIZE_OPTIONS}
+        onChange={(fontSize) => patch({ fontSize })}
+      />
       <ScreenColorField label="文字颜色" kind="text" value={style.color} onChange={(color) => patch({ color })} />
-      <DeAttrToggleRow
+      <InspectorSwitchRow
         label="显示星期"
         checked={style.showWeekday}
         onCheckedChange={(showWeekday) => patch({ showWeekday })}
       />
-      <DeAttrToggleRow
+      <InspectorSwitchRow
         label="显示秒"
         checked={style.showSeconds}
         onCheckedChange={(showSeconds) => patch({ showSeconds })}
@@ -96,33 +102,29 @@ export function ScreenDateTimeStylePanel({
 
   return (
     <ChartInspectorSection title="日期时间" defaultOpen data-testid="screen-datetime-style-panel">
-      <DeAttrField label="日期字号" compact className="border-b-0 py-0">
-        <Input
-          type="number"
-          min={10}
-          max={48}
-          className={DE_INPUT}
-          value={style.dateFontSize}
-          onChange={(e) => patch({ dateFontSize: Number(e.target.value) || style.dateFontSize })}
-        />
-      </DeAttrField>
-      <DeAttrField label="时间字号" compact className="border-b-0 py-0">
-        <Input
-          type="number"
-          min={12}
-          max={72}
-          className={DE_INPUT}
-          value={style.timeFontSize}
-          onChange={(e) => patch({ timeFontSize: Number(e.target.value) || style.timeFontSize })}
-        />
-      </DeAttrField>
+      <ChartPaletteFontSizeSelect
+        label="日期字号"
+        density="narrow"
+        value={style.dateFontSize}
+        fallback={DEFAULT_SCREEN_DATETIME_STYLE.dateFontSize}
+        options={CHART_FONT_SIZE_OPTIONS}
+        onChange={(dateFontSize) => patch({ dateFontSize })}
+      />
+      <ChartPaletteFontSizeSelect
+        label="时间字号"
+        density="narrow"
+        value={style.timeFontSize}
+        fallback={DEFAULT_SCREEN_DATETIME_STYLE.timeFontSize}
+        options={SCREEN_LARGE_FONT_SIZE_OPTIONS}
+        onChange={(timeFontSize) => patch({ timeFontSize })}
+      />
       <ScreenColorField label="文字颜色" kind="text" value={style.color} onChange={(color) => patch({ color })} />
-      <DeAttrToggleRow
+      <InspectorSwitchRow
         label="显示星期"
         checked={style.showWeekday}
         onCheckedChange={(showWeekday) => patch({ showWeekday })}
       />
-      <DeAttrToggleRow
+      <InspectorSwitchRow
         label="显示秒"
         checked={style.showSeconds}
         onCheckedChange={(showSeconds) => patch({ showSeconds })}
@@ -145,7 +147,7 @@ export function ScreenBorderStylePanel({
         <ScreenBorderVariantPicker style={style} onChange={(variant) => patch({ variant })} />
       </DeAttrField>
       <ScreenColorField label="强调色" value={style.accentColor} onChange={(accentColor) => patch({ accentColor })} />
-      <DeAttrToggleRow
+      <InspectorSwitchRow
         label="外发光"
         checked={style.glowEnabled}
         onCheckedChange={(glowEnabled) => patch({ glowEnabled })}
@@ -180,7 +182,7 @@ export function ScreenTitleBarStylePanel({
     <ChartInspectorSection title="标题装饰" defaultOpen data-testid="screen-titlebar-style-panel">
       <ScreenColorField label="标题颜色" kind="text" value={style.titleColor} onChange={(titleColor) => patch({ titleColor })} />
       <ScreenColorField label="装饰线颜色" value={style.accentColor} onChange={(accentColor) => patch({ accentColor })} />
-      <DeAttrToggleRow
+      <InspectorSwitchRow
         label="显示两侧装饰线"
         checked={style.showSideLines}
         onCheckedChange={(showSideLines) => patch({ showSideLines })}

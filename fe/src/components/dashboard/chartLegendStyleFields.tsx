@@ -7,7 +7,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DeSegmentGroup } from "./dashboardInspectorUi";
-import { INSPECTOR_LABEL, INSPECTOR_SELECT_TRIGGER } from "./inspectorCompact";
+import { TEXT_COLOR_RECOMMENDED } from "./dashboardStyleConfig";
+import { INSPECTOR_LABEL, INSPECTOR_SELECT_TRIGGER, InspectorInlineColorRow } from "./inspectorCompact";
 import {
   LEGEND_H_ALIGN_SEGMENT_OPTIONS,
   LEGEND_V_ALIGN_SEGMENT_OPTIONS,
@@ -159,15 +160,13 @@ export function ChartLegendDeParityFields({
         </Select>
       </ChartLegendFormField>
 
-      <ChartLegendFormField label="文本颜色">
-        <input
-          type="color"
-          className="h-8 w-full cursor-pointer rounded border border-gray-200 bg-white dark:border-white/10 dark:bg-gray-900"
-          value={deStyle.legend?.color ?? "#667085"}
-          onChange={(e) => onPatch({ color: e.target.value })}
-          aria-label="图例文本颜色"
-        />
-      </ChartLegendFormField>
+      <InspectorInlineColorRow
+        label="文本颜色"
+        value={deStyle.legend?.color ?? "#667085"}
+        allowClear={false}
+        swatches={TEXT_COLOR_RECOMMENDED}
+        onChange={(color) => onPatch({ color: color ?? "#667085" })}
+      />
 
       {showLayoutControls ? (
         <ChartLegendFormField label="方向">

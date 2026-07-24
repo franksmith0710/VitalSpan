@@ -24,7 +24,7 @@ export const INSPECTOR_SELECT_TRIGGER = cn(
 export const INSPECTOR_LABEL = "text-[11px] font-medium text-gray-500 dark:text-gray-400";
 export const INSPECTOR_HINT = "text-[10px] leading-relaxed text-gray-400 dark:text-gray-500";
 export const INSPECTOR_SECTION_GAP = "space-y-2.5";
-export const INSPECTOR_SWITCH_ROW = "flex items-center justify-between gap-2 py-0.5";
+export const INSPECTOR_SWITCH_ROW = "flex items-center justify-between gap-2";
 /** 看板配置轨 / 图表样式栏统一小号开关 */
 export const INSPECTOR_SWITCH_SIZE = "sm" as const;
 export const INSPECTOR_NESTED_CARD =
@@ -97,7 +97,12 @@ export function InspectorSwitchRow({
 }) {
   return (
     <div className="space-y-0.5">
-      <div className={INSPECTOR_SWITCH_ROW}>
+      <div
+        className={cn(
+          INSPECTOR_SWITCH_ROW,
+          "border-b border-gray-100 py-2 last:border-b-0 dark:border-white/[0.06]",
+        )}
+      >
         <Label
           className={cn(
             INSPECTOR_LABEL,

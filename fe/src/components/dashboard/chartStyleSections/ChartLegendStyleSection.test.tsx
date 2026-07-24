@@ -28,7 +28,6 @@ afterEach(cleanup);
 
 describe("ChartLegendStyleSection", () => {
   it("switch is on by default in embedded chart inspector", async () => {
-    const user = userEvent.setup();
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={qc}>
@@ -38,13 +37,13 @@ describe("ChartLegendStyleSection", () => {
       </QueryClientProvider>,
     );
 
-    await user.click(screen.getByRole("button", { name: "图例" }));
     expect(screen.getByRole("switch", { name: "显示图例" })).toHaveAttribute(
       "aria-checked",
       "true",
     );
     expect(screen.getByText("图标")).toBeInTheDocument();
     expect(screen.getByText("文本")).toBeInTheDocument();
+    expect(screen.getByLabelText("文本颜色取色器")).toBeInTheDocument();
     expect(screen.getByText("方向")).toBeInTheDocument();
     expect(screen.getByText("位置")).toBeInTheDocument();
     expect(screen.getByTestId("chart-legend-de-form")).toBeInTheDocument();

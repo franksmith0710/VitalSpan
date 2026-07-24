@@ -88,11 +88,10 @@ describe("applyTerrainToExtrudeGeometry", () => {
     expect(maxV).toBeGreaterThan(0.05);
   });
 
-  it("builds standard cap material with terrain map", () => {
+  it("builds flat basic cap material for satellite source", () => {
     const tex = new THREE.Texture();
     const mat = buildTerrainCapMaterial(
       tex,
-      undefined,
       undefined,
       new THREE.Color(0xff8844),
       0.8,

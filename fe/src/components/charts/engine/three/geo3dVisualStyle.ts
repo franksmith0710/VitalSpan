@@ -1,8 +1,10 @@
 import {
   DEFAULT_GEO3D_EXTRUDE_INTENSITY,
   type ChartGeo3dStyle,
+  type ChartGeoStyle,
 } from "@/lib/chartDeStyle";
 import type { ThreeGeoOrbitLayout } from "@/components/charts/engine/three/threeGeoOrbit";
+import { resolveGeoRegionBorderFlow } from "@/components/charts/engine/geo/geoRegionBorderStyle";
 import * as THREE from "three";
 
 /** 对标 sc-datav Demo0/1/2 的 3D 地图视觉预设 */
@@ -273,17 +275,21 @@ export function geo3dPresetDefaults(preset: Geo3dStylePreset): Partial<ChartGeo3
 
 export function buildGeo3dStyleContentSig(
   style: ChartGeo3dStyle,
-  geoStyle: { showRegionBorder?: boolean; regionBorderColor?: string } = {},
+  geoStyle: ChartGeoStyle = {},
 ): string {
+  const flow = resolveGeoRegionBorderFlow(geoStyle);
   return [
     resolveGeo3dStylePreset(style),
     style.extrudeIntensity ?? DEFAULT_GEO3D_EXTRUDE_INTENSITY,
     style.quality ?? "auto",
     style.terrainTexture !== false ? 1 : 0,
-    style.terrainRelief ? 1 : 0,
     resolveGeo3dSceneFog(style) ? 1 : 0,
     style.shellColor?.toLowerCase() ?? "",
     geoStyle.showRegionBorder !== false ? 1 : 0,
     geoStyle.regionBorderColor?.toLowerCase() ?? "",
+    flow.enabled ? 1 : 0,
+    flow.colorCss,
+    flow.speed,
+    flow.trailLength,
   ].join(",");
 }

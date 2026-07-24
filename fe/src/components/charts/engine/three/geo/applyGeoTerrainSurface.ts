@@ -167,7 +167,6 @@ export function computeCapTintColor(
 }
 
 export type TerrainCapBuildOpts = {
-  displacementScale?: number;
   source?: TerrainCapSource;
   tintMixScale?: number;
   techSatelliteOverlay?: boolean;
@@ -179,14 +178,12 @@ export type TerrainCapBuildOpts = {
 export function buildTerrainCapMaterial(
   terrainMap: THREE.Texture,
   normalMap: THREE.Texture | undefined,
-  displacementMap: THREE.Texture | undefined,
   dataTint: THREE.Color,
   valueT: number,
   isDark: boolean,
   opts: TerrainCapBuildOpts = {},
 ): THREE.MeshBasicMaterial | THREE.MeshStandardMaterial {
   const {
-    displacementScale = 0,
     source = "satellite",
     tintMixScale = 1,
     techSatelliteOverlay = false,
@@ -196,11 +193,8 @@ export function buildTerrainCapMaterial(
   } = opts;
   terrainMap.colorSpace = THREE.SRGBColorSpace;
   const tint = computeCapTintColor(dataTint, valueT, isDark, source, tintMixScale);
-  const useRelief =
-    Boolean(displacementMap) && displacementScale > 0 && source !== "satellite";
 
-  // 科技预设：卫星 + 发光 Standard，顶面更有大屏质感
-  if (source === "satellite" && techSatelliteOverlay && !useRelief) {
+  if (source === "satellite" && techSatelliteOverlay) {
     const emissive = new THREE.Color(isDark ? 0x1a6aaa : 0x3b82f6);
     return new THREE.MeshStandardMaterial({
       map: terrainMap,
@@ -213,8 +207,7 @@ export function buildTerrainCapMaterial(
     });
   }
 
-  // 卫星平面贴图：MeshBasic 无光照，避免稀疏三角面打出伪阴影；也更省 GPU
-  if (source === "satellite" && !useRelief) {
+  if (source === "satellite") {
     return new THREE.MeshBasicMaterial({
       map: terrainMap,
       color: tint,
@@ -223,13 +216,10 @@ export function buildTerrainCapMaterial(
   }
 
   const emissiveIntensity =
-    capEmissiveIntensity ??
-    (source === "satellite" ? (isDark ? 0.04 : 0.02) : isDark ? 0.1 : 0.05);
+    capEmissiveIntensity ?? (isDark ? 0.1 : 0.05);
   return new THREE.MeshStandardMaterial({
     map: terrainMap,
-    normalMap: source === "satellite" ? null : (normalMap ?? null),
-    displacementMap: displacementMap && displacementScale > 0 ? displacementMap : null,
-    displacementScale: displacementMap && displacementScale > 0 ? displacementScale : 0,
+    normalMap: normalMap ?? null,
     color: tint,
     emissive: tint.clone(),
     emissiveIntensity,
@@ -237,25 +227,4 @@ export function buildTerrainCapMaterial(
     roughness: capRoughness,
     side: THREE.FrontSide,
   });
-}
-
-/** @deprecated 使用 buildTerrainCapMaterial（Standard + map/normal） */
-export function buildTerrainReliefCapMaterial(
-  terrainMap: THREE.Texture,
-  normalMap: THREE.Texture,
-  displacementMap: THREE.Texture | undefined,
-  dataTint: THREE.Color,
-  valueT: number,
-  displacementScale: number,
-  isDark: boolean,
-): THREE.MeshStandardMaterial {
-  return buildTerrainCapMaterial(
-    terrainMap,
-    normalMap,
-    displacementMap,
-    dataTint,
-    valueT,
-    isDark,
-    { displacementScale },
-  ) as THREE.MeshStandardMaterial;
 }
