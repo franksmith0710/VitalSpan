@@ -2,8 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   getOfflineGeoMap,
   resolveOfflineGeoMapId,
+  registerOfflineGeoMap,
 } from "@/components/charts/engine/geo/OfflineGeoPort";
-import { ensureOfflineGeoMap } from "@/components/charts/engine/geo/geoMapLevels";
+import {
+  ensureOfflineGeoMap,
+  loadOfflineGeoMap,
+} from "@/components/charts/engine/geo/geoMapLevels";
 import { VS_REGIONS_MAP_ID } from "@/components/charts/engine/geo/geoConstants";
 
 describe("offline geo map id resolution", () => {
@@ -38,5 +42,19 @@ describe("offline geo map id resolution", () => {
     const hunanNames = (hunan?.features ?? []).map((f) => f.properties?.name).filter(Boolean);
     expect(hunanNames.some((n) => n && !nationalNames.has(n))).toBe(true);
     expect(await ensureOfflineGeoMap(VS_REGIONS_MAP_ID)).toBe(true);
+  });
+
+  it("loads qinghai city map (vs-geo-630000)", async () => {
+    const geo = await loadOfflineGeoMap("vs-geo-630000");
+    expect(geo?.features?.length).toBeGreaterThan(0);
+    expect(geo?.features?.some((f) => f.properties?.name === "西宁市")).toBe(true);
+  });
+
+  it("recovers qinghai after empty registry overwrite", async () => {
+    expect(await ensureOfflineGeoMap("vs-geo-630000")).toBe(true);
+    registerOfflineGeoMap("vs-geo-630000", { features: [] });
+    expect(getOfflineGeoMap("vs-geo-630000")?.features?.length ?? 0).toBe(0);
+    const geo = await loadOfflineGeoMap("vs-geo-630000");
+    expect(geo?.features?.length).toBeGreaterThan(0);
   });
 });

@@ -84,6 +84,7 @@ cases/<域>-<简短主题>.md
 | CASE-2026-07-15-002 | [fe-color-field-picker-jump.md](./cases/fe-color-field-picker-jump.md) | ColorField, 取色器, react-colorful, 跳色, widgetStyle background |
 | CASE-2026-07-16-001 | [fe-dashboard-pixel-drag-collision-squeeze.md](./cases/fe-dashboard-pixel-drag-collision-squeeze.md) | pixel canvas, drag, collision, 挤叠, 重叠, vacate, skipVerticalCompact |
 | CASE-2026-07-16-002 | [fe-dashboard-pixel-canvas-scroll-chain.md](./cases/fe-dashboard-pixel-canvas-scroll-chain.md) | pixel canvas, scroll, wheel, overscroll, 表格, 滚不动 |
+| CASE-2026-07-27-001 | [fe-geo-drill-map-registry-desync.md](./cases/fe-geo-drill-map-registry-desync.md) | 下钻, vs-geo-630000, OfflineGeoPort, HMR, 资产未就绪 |
 
 ## 维护规则
 

@@ -247,10 +247,13 @@ export async function renderThreeChoroplethChart(
         ? "离线地图资产缺失，无法渲染"
         : `下钻地图资产未就绪（${resolvedMapId}），请返回上一级或稍后重试`;
     if (import.meta.env.DEV) {
+      const adcodeMatch = /^vs-geo-(\d{6})$/.exec(resolvedMapId);
+      const adcode = adcodeMatch ? Number(adcodeMatch[1]) : null;
       console.error("[map-3d] drill geo missing after loadOfflineGeoMap", {
         mapId: resolvedMapId,
         drillDepth,
-        bundled: listBundledHint(resolvedMapId),
+        bundledHasAdcode:
+          adcode != null ? listBundledCityProvinceAdcodes().includes(adcode) : undefined,
       });
     }
     container.appendChild(msg);
