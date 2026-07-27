@@ -6,6 +6,7 @@ fe/.env
 .venv/
 node_modules/
 fe/dist/
+fe/.vite/
 .pytest_cache/
 *.egg-info/
 .ruff_cache/

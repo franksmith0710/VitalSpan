@@ -1,5 +1,6 @@
 import {
   DEFAULT_GEO3D_EXTRUDE_INTENSITY,
+  DEFAULT_GEO3D_SHELL_OPACITY,
   type ChartGeo3dStyle,
   type ChartGeoStyle,
 } from "@/lib/chartDeStyle";
@@ -113,7 +114,7 @@ const PRESET_BASE: Record<Geo3dStylePreset, PresetBase> = {
     sceneFog: true,
     fogColorDark: 0x020617,
     fogColorLight: 0x0f172a,
-    preferTerrainTexture: true,
+    preferTerrainTexture: false,
     capTintMixScale: 1.55,
     techSatelliteOverlay: true,
   },
@@ -233,6 +234,12 @@ export function hasCustomGeo3dShellColor(style: ChartGeo3dStyle): boolean {
   return Boolean(custom && /^#[0-9a-fA-F]{6}$/.test(custom));
 }
 
+export function resolveGeo3dShellOpacity(style: ChartGeo3dStyle): number {
+  const raw = style.shellOpacity;
+  if (raw == null || !Number.isFinite(raw)) return DEFAULT_GEO3D_SHELL_OPACITY;
+  return Math.min(1, Math.max(0, raw));
+}
+
 export function resolveGeo3dVisualStyle(
   style: ChartGeo3dStyle,
   isDark: boolean,
@@ -285,6 +292,7 @@ export function buildGeo3dStyleContentSig(
     style.terrainTexture !== false ? 1 : 0,
     resolveGeo3dSceneFog(style) ? 1 : 0,
     style.shellColor?.toLowerCase() ?? "",
+    resolveGeo3dShellOpacity(style),
     geoStyle.showRegionBorder !== false ? 1 : 0,
     geoStyle.regionBorderColor?.toLowerCase() ?? "",
     flow.enabled ? 1 : 0,

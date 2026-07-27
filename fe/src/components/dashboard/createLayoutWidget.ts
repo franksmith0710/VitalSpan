@@ -24,7 +24,7 @@ import {
   type FilterControlType,
   type LayoutWidget,
 } from "./layoutUtils";
-import { getChartTypeDisplayName } from "@/lib/chartRegistry";
+import type { VizComponentListItem } from "@/lib/vizComponents";
 
 export type FilterInsertPayload = {
   type: "filter";
@@ -192,6 +192,37 @@ export function createPaletteWidget(
   if (type === "screen-datetime") return createScreenDateTimeWidget(widgets, at);
   if (type === "screen-webpage") return createScreenWebpageWidget(widgets, at);
   return createLayoutWidget(type as ChartType, widgets, at);
+}
+
+export function createLinkedLayoutWidget(
+  component: Pick<VizComponentListItem, "id" | "name" | "widgetType">,
+  widgets: LayoutWidget[],
+  at?: { gridX: number; gridY: number; colSpan?: number; rowSpan?: number },
+): LayoutWidget {
+  const widgetId = crypto.randomUUID();
+  const maxOrder = widgets.reduce((m, w) => Math.max(m, w.order), -1);
+  const base = {
+    id: widgetId,
+    type: component.widgetType,
+    title: component.name,
+    colSpan: at?.colSpan ?? DEFAULT_WIDGET_COLSPAN,
+    rowSpan: at?.rowSpan ?? DEFAULT_WIDGET_ROWSPAN,
+    order: maxOrder + 1,
+    gridX: at?.gridX,
+    gridY: at?.gridY,
+    componentRef: { componentId: component.id },
+  } as LayoutWidget;
+
+  if (component.widgetType === "chart") {
+    return { ...base, type: "chart", chartConfig: { ...defaultChartConfig("bar"), chartId: widgetId } };
+  }
+  if (component.widgetType === "filter") {
+    return { ...base, type: "filter", filterConfig: defaultFilterConfig(widgetId) };
+  }
+  if (component.widgetType === "text") {
+    return { ...base, type: "text", textConfig: defaultTextConfig() };
+  }
+  return { ...base, type: "media", mediaConfig: defaultMediaConfig() };
 }
 
 export { isWidgetConfigReady } from "@/lib/chartConfigState";

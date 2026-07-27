@@ -65,6 +65,7 @@ export type GeoFlatPlateOptions = {
   borderOpacity?: number;
   shellEmissive?: number;
   shellEmissiveIntensity?: number;
+  shellOpacity?: number;
   capTintMixScale?: number;
   techSatelliteOverlay?: boolean;
   showBorderLines?: boolean;
@@ -131,6 +132,7 @@ export function buildGeoFlatPlateMesh(
   const dataTint = new THREE.Color(options.dataTint ?? capColor);
   const valueT = options.valueT ?? 1;
   const capTopZ = resolveGeoCapTopZ(depth, hasTerrain);
+  const shellOpacity = Math.min(1, Math.max(0, options.shellOpacity ?? 1));
 
   /** 侧壁 + 挤出顶底面同一实体材质，形成实心柱体（避免仅两侧薄片、中间镂空） */
   const shellMaterial = new THREE.MeshStandardMaterial({
@@ -140,6 +142,8 @@ export function buildGeoFlatPlateMesh(
     roughness: options.shellRoughness ?? 0.9,
     metalness: options.shellMetalness ?? 0.05,
     side: THREE.DoubleSide,
+    transparent: shellOpacity < 1,
+    opacity: shellOpacity,
   });
 
   const capEmissive = options.capEmissiveIntensity ?? (isDark ? 0.18 : 0.1);

@@ -113,6 +113,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │   ├── /data-screens/:id/preview    # 大屏全屏预览投放（`DataScreenPreviewPage` + `DataScreenPresenter`）
 │   ├── /data-screens/:id/share      # 大屏分享/整屏嵌入（`DataScreenSharePanel`）
 │   ├── /viz-templates               # 可视化模板 Hub（看板+大屏；≠ 报表模板）
+│   ├── /viz-components              # 组织组件库（componentRef 引用；看板/大屏复用）
 │   ├── /dashboards/:id              # 查看 view · bi-dashboard-builder（只读）
 │   ├── /dashboards/:id/edit         # 构建器 edit · bi-dashboard-builder
 │   ├── /dashboards/:id/preview      # （规划）构建器 preview；当前以 `/dashboards/:id` view 模式替代

@@ -146,3 +146,16 @@
   - [x] 统一信封 `kind: viz-layout`；兼容旧 `kind: data-screen` 导入
 - **代码锚点**：`backend/app/dashboard/templates/` · `backend/app/api/v1/dashboard_templates.py` · `fe/src/pages/admin/viz-templates/VizTemplatesHubPage.tsx` · `fe/src/components/dashboard/templates/` · `tests/test_dash_templates_r01.py`
 - **演化建议**：模板缩略图自动生成（Hub 已支持布局示意预览）、组织级分类管理 UI；看板编辑页对称发布入口（已实现 `DashboardTemplateExtras`）
+
+### [DASH-010] 可视化组件库（组织内复用）
+
+- **状态**：已实现（2026-07-24）
+- **描述**：单 widget 级组织组件库，引用模式（`componentRef`）跨仪表板/数据大屏同步；工具栏「复用」→ 组织库 Tab；Inspector 发布/断链。
+- **验收标准**：
+  - [x] `viz_components` 表 + `backend/app/viz/components/` CRUD/ACL/batch-resolve
+  - [x] API：`/api/v1/viz-components/*`；能力码 `viz:component.manage`
+  - [x] `LayoutWidget.componentRef` 契约；`resolveVizComponent` 运行时合并
+  - [x] `VizReuseDialog` 组织库 + 从看板复制双 Tab
+  - [x] Hub `/admin/viz-components`；发布对话框 + 链接横幅
+  - [x] vitest + `tests/test_viz_components_r01.py`
+- **代码锚点**：`backend/app/viz/components/` · `fe/src/lib/vizComponents.ts` · `fe/src/lib/resolveVizComponent.ts` · `fe/src/components/dashboard/VizReuseDialog.tsx` · `fe/src/pages/admin/viz-components/VizComponentsHubPage.tsx`

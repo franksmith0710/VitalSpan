@@ -10,6 +10,7 @@ import {
   PanelsTopLeft,
   Sparkles,
   Type,
+  Upload,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -29,6 +30,8 @@ import { ScreenMorePicker } from "./screen/ScreenMorePicker";
 type CanvasEditToolbarProps = {
   onInsert: (type: PaletteInsertType) => void;
   onOpenReuse?: () => void;
+  onOpenPublishToLibrary?: () => void;
+  publishToLibraryDisabled?: boolean;
   onOpenDashboardStyle?: () => void;
   /** 数据大屏编辑态：展示装饰组件入口 */
   showScreenVisualAssets?: boolean;
@@ -77,6 +80,8 @@ const ToolbarNavButton = forwardRef<
 export function CanvasEditToolbar({
   onInsert,
   onOpenReuse,
+  onOpenPublishToLibrary,
+  publishToLibraryDisabled = true,
   onOpenDashboardStyle,
   showScreenVisualAssets = false,
   showAuxiliaryGrid = true,
@@ -231,6 +236,19 @@ export function CanvasEditToolbar({
                     size={INSPECTOR_SWITCH_SIZE}
                     className="shrink-0"
                   />
+                </DropdownMenuItem>
+              ) : null}
+              {onOpenPublishToLibrary ? (
+                <DropdownMenuItem
+                  disabled={publishToLibraryDisabled}
+                  onClick={() => {
+                    onOpenPublishToLibrary();
+                    setMoreOpen(false);
+                  }}
+                  data-testid="toolbar-publish-to-library"
+                >
+                  <Upload className="size-4" aria-hidden />
+                  将选中组件发布到库
                 </DropdownMenuItem>
               ) : null}
               <DropdownMenuItem

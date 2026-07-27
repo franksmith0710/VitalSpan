@@ -127,7 +127,7 @@ export function ChartEditorColumn({
   const tableProfile = tableInspectorProfile(cfg.chartType);
 
   return (
-    <div className={cn("flex h-full min-h-0 flex-col overflow-hidden bg-white dark:bg-gray-900", className)}>
+    <div className={cn("flex min-h-0 flex-1 flex-col overflow-hidden bg-white dark:bg-gray-900", className)}>
       <ChartInspectorTabs
         className="min-h-0 flex-1"
         scrollMode="panel"

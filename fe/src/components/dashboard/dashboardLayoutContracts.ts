@@ -8,6 +8,12 @@ import type {
   WidgetType,
 } from "./layoutUtils";
 
+export type VizComponentRef = {
+  componentId: string;
+  pinnedRevision?: number;
+  detached?: boolean;
+};
+
 export type DashboardWidgetBase = {
   id: string;
   type: WidgetType;
@@ -19,6 +25,7 @@ export type DashboardWidgetBase = {
   locked?: boolean;
   parentTabsId?: string;
   tabPaneId?: string;
+  componentRef?: VizComponentRef;
   chartConfig?: ChartViewConfig;
   filterConfig?: FilterWidgetConfig;
   textConfig?: TextWidgetConfig;

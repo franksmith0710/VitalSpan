@@ -89,6 +89,7 @@ import { DashboardContextInspector } from "@/components/dashboard/DashboardConte
 import { DashboardTemplateExtras } from "@/components/dashboard/DashboardTemplateExtras";
 import { LayerPanel } from "@/components/dashboard/LayerPanel";
 import { DashboardEditWorkspace } from "@/components/dashboard/DashboardEditWorkspace";
+import { DASHBOARD_EDIT_RAIL_SCROLL_CLASS } from "@/components/dashboard/dashboardEditRailLayout";
 import { DashboardEditCanvas } from "@/components/dashboard/dashboard-edit/DashboardEditCanvas";
 import { ChartDrillProvider } from "@/components/charts/ChartDrillContext";
 import { ChartEditRail, ChartEditRailEmpty } from "@/components/dashboard/ChartEditRail";
@@ -104,7 +105,13 @@ import type { PresentationMode } from "@/components/dashboard/screen/presentatio
 import { DATA_SCREEN_EDIT_PRESENTATION_DEFAULT } from "@/components/dashboard/screen/presentationScale";
 import { MediaEditRail } from "@/components/dashboard/MediaEditRail";
 import { TabsEditRail } from "@/components/dashboard/TabsEditRail";
-import { ReuseWidgetDialog } from "@/components/dashboard/ReuseWidgetDialog";
+import { VizReuseDialog } from "@/components/dashboard/VizReuseDialog";
+import { PublishVizComponentDialog } from "@/components/dashboard/PublishVizComponentDialog";
+import { VizComponentInspectorHeader } from "@/components/dashboard/VizComponentInspectorHeader";
+import { useVizComponentMap } from "@/hooks/useVizComponentMap";
+import { useVizComponentInspectorActions } from "@/hooks/useVizComponentInspectorActions";
+import { resolveLayoutWidget, resolveLayoutWidgets } from "@/lib/resolveVizComponent";
+import { isPublishableWidgetType } from "@/lib/vizComponentEdit";
 import { WidgetEnlargeDialog } from "@/components/dashboard/widget-actions/WidgetEnlargeDialog";
 import { WidgetViewDataDialog } from "@/components/dashboard/widget-actions/WidgetViewDataDialog";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
@@ -171,6 +178,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     pixelEnabled,
     editable: mode === "edit",
   });
+  const { componentMap, refetch: refetchComponents } = useVizComponentMap(widgets);
   const [loading, setLoading] = useState(true);
   const isDataScreenSurface = useMemo(() => {
     if (!loading && layout) {
@@ -203,6 +211,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [styleConfig, setStyleConfig] = useState<DashboardStyleConfig>({});
   const [reuseOpen, setReuseOpen] = useState(false);
+  const [publishComponentOpen, setPublishComponentOpen] = useState(false);
   const [chartRailOpen, setChartRailOpen] = useState(true);
   const [chartRefreshKeys, setChartRefreshKeys] = useState<Record<string, number>>({});
   const pixelViewportRef = useRef<PixelRect | undefined>(undefined);
@@ -415,7 +424,40 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     () => widgets.find((w) => w.id === primarySelectedId) ?? null,
     [widgets, primarySelectedId],
   );
+  const resolvedSelectedWidget = useMemo(
+    () => (selectedWidget ? resolveLayoutWidget(selectedWidget, componentMap) : null),
+    [selectedWidget, componentMap],
+  );
+  const resolvedWidgets = useMemo(
+    () => resolveLayoutWidgets(widgets, componentMap),
+    [widgets, componentMap],
+  );
+  const vizInspectorActions = useVizComponentInspectorActions({
+    primarySelectedId,
+    selectedWidget,
+    resolvedSelectedWidget,
+    componentMap,
+    setWidgets,
+    refetchComponents,
+  });
+  const inspectorWidget = resolvedSelectedWidget ?? selectedWidget;
   const multiSelectCount = selectedIds.size;
+  const canPublishSelected =
+    multiSelectCount < 2 &&
+    Boolean(selectedWidget && isPublishableWidgetType(selectedWidget.type));
+  const vizComponentHeader =
+    selectedWidget && isPublishableWidgetType(selectedWidget.type) ? (
+      <VizComponentInspectorHeader
+        widget={selectedWidget}
+        resolvedWidget={resolvedSelectedWidget ?? selectedWidget}
+        componentMap={componentMap}
+        onDetach={vizInspectorActions.detach}
+        onRelink={vizInspectorActions.relink}
+        onPublish={() => setPublishComponentOpen(true)}
+        onPushToLibrary={() => void vizInspectorActions.pushToLibrary()}
+        pushing={vizInspectorActions.pushing}
+      />
+    ) : null;
 
   const collapseChartRail = useCallback(() => setChartRailOpen(false), []);
 
@@ -497,8 +539,8 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   }, [clearSelection]);
 
   const effectiveLinkage = useMemo(
-    () => mergeLayoutFilterLinkage(widgets, linkage),
-    [widgets, linkage],
+    () => mergeLayoutFilterLinkage(resolvedWidgets, linkage),
+    [resolvedWidgets, linkage],
   );
 
   const widgetActionTarget = useMemo(
@@ -1141,6 +1183,10 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           }
           onPaletteInsert={handleInsert}
           onOpenReuse={() => setReuseOpen(true)}
+          onOpenPublishToLibrary={
+            canPublishSelected ? () => setPublishComponentOpen(true) : undefined
+          }
+          publishToLibraryDisabled={!canPublishSelected}
           onOpenDashboardStyle={openDashboardContext}
           onActivateDashboardContext={openDashboardContext}
           showAuxiliaryGrid={resolveDashboardChrome(styleConfig).showAuxiliaryGrid}
@@ -1194,45 +1240,52 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                   </>
                 }
               />
-            ) : selectedWidget?.type === "filter" && selectedWidget.filterConfig ? (
-              <FilterWidgetInspector
-                embedded
-                widget={
-                  selectedWidget as typeof selectedWidget & { filterConfig: FilterWidgetConfig }
-                }
-                onChange={(filterConfig) => {
-                  if (!primarySelectedId) return;
-                  setWidgets((prev) =>
-                    prev.map((w) => (w.id === primarySelectedId ? { ...w, filterConfig } : w)),
-                  );
-                }}
-                onRailCollapse={collapseChartRail}
-              />
-            ) : selectedWidget?.type === "text" && selectedWidget.textConfig ? (
-              isScreenVisualWidget(selectedWidget) ? (
-                <ScreenVisualEditRail
+            ) : selectedWidget?.type === "filter" && inspectorWidget?.filterConfig ? (
+              <div className="flex h-full min-h-0 flex-col overflow-hidden">
+                {vizComponentHeader}
+                <FilterWidgetInspector
+                  embedded
                   widget={
-                    selectedWidget as typeof selectedWidget & { textConfig: TextWidgetConfig }
+                    inspectorWidget as typeof inspectorWidget & { filterConfig: FilterWidgetConfig }
                   }
-                  onTitleChange={(title) => {
-                    if (!primarySelectedId) return;
-                    setWidgets((prev) =>
-                      prev.map((w) => (w.id === primarySelectedId ? { ...w, title } : w)),
+                  onChange={(filterConfig) => {
+                    void vizInspectorActions.applyPayloadChange(
+                      { filterConfig },
+                      { filterConfig },
                     );
                   }}
-                  onTextConfigChange={(textConfig) => {
-                    if (!primarySelectedId) return;
-                    setWidgets((prev) =>
-                      prev.map((w) => (w.id === primarySelectedId ? { ...w, textConfig } : w)),
-                    );
-                  }}
-                  onDelete={() => handleDeleteWidget(primarySelectedId!)}
                   onRailCollapse={collapseChartRail}
                 />
+              </div>
+            ) : selectedWidget?.type === "text" && inspectorWidget?.textConfig ? (
+              isScreenVisualWidget(selectedWidget) ? (
+                <div className="flex h-full min-h-0 flex-col overflow-hidden">
+                  {vizComponentHeader}
+                  <ScreenVisualEditRail
+                    className="min-h-0 flex-1"
+                    widget={
+                      inspectorWidget as typeof inspectorWidget & { textConfig: TextWidgetConfig }
+                    }
+                    onTitleChange={(title) => {
+                      if (!primarySelectedId) return;
+                      setWidgets((prev) =>
+                        prev.map((w) => (w.id === primarySelectedId ? { ...w, title } : w)),
+                      );
+                    }}
+                    onTextConfigChange={(textConfig) => {
+                      void vizInspectorActions.applyPayloadChange({ textConfig }, { textConfig });
+                    }}
+                    onDelete={() => handleDeleteWidget(primarySelectedId!)}
+                    onRailCollapse={collapseChartRail}
+                  />
+                </div>
               ) : (
+              <div className="flex h-full min-h-0 flex-col overflow-hidden">
+                {vizComponentHeader}
               <TextEditRail
+                className="min-h-0 flex-1"
                 widget={
-                  selectedWidget as typeof selectedWidget & { textConfig: TextWidgetConfig }
+                  inspectorWidget as typeof inspectorWidget & { textConfig: TextWidgetConfig }
                 }
                 onTitleChange={(title) => {
                   if (!primarySelectedId) return;
@@ -1241,25 +1294,23 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                   );
                 }}
                 onConfigChange={(textConfig) => {
-                  if (!primarySelectedId) return;
-                  setWidgets((prev) =>
-                    prev.map((w) => (w.id === primarySelectedId ? { ...w, textConfig } : w)),
-                  );
+                  void vizInspectorActions.applyPayloadChange({ textConfig }, { textConfig });
                 }}
                 onDelete={() => handleDeleteWidget(primarySelectedId!)}
                 onRailCollapse={collapseChartRail}
               />
+              </div>
               )
-            ) : selectedWidget?.type === "media" && selectedWidget.mediaConfig ? (
+            ) : selectedWidget?.type === "media" && inspectorWidget?.mediaConfig ? (
+              <div className="flex h-full min-h-0 flex-col overflow-hidden">
+                {vizComponentHeader}
               <MediaEditRail
+                className="min-h-0 flex-1"
                 widget={
-                  selectedWidget as typeof selectedWidget & { mediaConfig: MediaWidgetConfig }
+                  inspectorWidget as typeof inspectorWidget & { mediaConfig: MediaWidgetConfig }
                 }
                 onChange={(mediaConfig) => {
-                  if (!primarySelectedId) return;
-                  setWidgets((prev) =>
-                    prev.map((w) => (w.id === primarySelectedId ? { ...w, mediaConfig } : w)),
-                  );
+                  void vizInspectorActions.applyPayloadChange({ mediaConfig }, { mediaConfig });
                 }}
                 onTitleChange={(title) => {
                   if (!primarySelectedId) return;
@@ -1270,6 +1321,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 onDelete={() => handleDeleteWidget(primarySelectedId!)}
                 onRailCollapse={collapseChartRail}
               />
+              </div>
             ) : selectedWidget?.type === "tabs" && selectedWidget.tabsConfig ? (
               <TabsEditRail
                 widget={
@@ -1298,9 +1350,12 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 onRailCollapse={collapseChartRail}
               />
             ) : selectedWidget?.type === "chart" ? (
+              <div className="flex h-full min-h-0 flex-col overflow-hidden">
+                {vizComponentHeader}
               <ChartEditRail
                 key={primarySelectedId ?? selectedWidget.id}
-                widget={selectedWidget}
+                className="min-h-0 flex-1"
+                widget={inspectorWidget}
                 dashboardId={id}
                 dashboardStyle={styleConfig}
                 onTitleChange={(title) => {
@@ -1308,16 +1363,14 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                   setWidgets((prev) => resizeWidget(prev, primarySelectedId, { title }));
                 }}
                 onChange={(chartConfig) => {
-                  if (!primarySelectedId) return;
-                  setWidgets((prev) =>
-                    prev.map((w) => (w.id === primarySelectedId ? { ...w, chartConfig } : w)),
-                  );
+                  void vizInspectorActions.applyPayloadChange({ chartConfig }, { chartConfig });
                 }}
                 onDelete={() => handleDeleteWidget(primarySelectedId!)}
                 onDataRefresh={() => primarySelectedId && handleChartDataRefresh(primarySelectedId)}
               />
+              </div>
             ) : id ? (
-              <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+              <div className="flex h-full min-h-0 flex-col overflow-hidden">
                 {isDataScreenSurface && layout.version === 2 ? (
                   <DataScreenConfigExtras
                     layout={layout}
@@ -1350,31 +1403,55 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                     dashboardId={id}
                   />
                 ) : null}
-                <DashboardContextInspector
-                  embedded
-                  widgetCount={widgets.length}
-                  widgets={widgets}
-                  styleConfig={styleConfig}
-                  onStyleChange={applyStyleConfig}
-                  onWidgetsChange={setWidgets}
-                  isPixelLayout={layout.version === 2}
-                  dashboardId={id}
-                  linkage={linkage}
-                  effectiveLinkage={effectiveLinkage}
-                  onLinkageChange={applyLinkage}
-                />
+                <div className={DASHBOARD_EDIT_RAIL_SCROLL_CLASS}>
+                  <DashboardContextInspector
+                    embedded
+                    widgetCount={widgets.length}
+                    widgets={widgets}
+                    styleConfig={styleConfig}
+                    onStyleChange={applyStyleConfig}
+                    onWidgetsChange={setWidgets}
+                    isPixelLayout={layout.version === 2}
+                    dashboardId={id}
+                    linkage={linkage}
+                    effectiveLinkage={effectiveLinkage}
+                    onLinkageChange={applyLinkage}
+                  />
+                </div>
               </div>
             ) : null
           }
         />
         </div>
-        <ReuseWidgetDialog
+        <VizReuseDialog
           open={reuseOpen}
           onOpenChange={setReuseOpen}
           currentDashboardId={id}
           widgets={widgets}
+          styleConfig={styleConfig}
           targetPixelWidgets={layout.version === 2 ? layout.widgets : undefined}
           onInsertCloned={appendClonedWidget}
+        />
+        <PublishVizComponentDialog
+          open={publishComponentOpen}
+          onOpenChange={setPublishComponentOpen}
+          widget={selectedWidget}
+          styleConfig={styleConfig}
+          componentMap={componentMap}
+          onPublished={(componentId) => {
+            if (!primarySelectedId) return;
+            setWidgets((prev) =>
+              prev.map((w) =>
+                w.id === primarySelectedId
+                  ? {
+                      ...w,
+                      componentRef: { componentId },
+                    }
+                  : w,
+              ),
+            );
+            void refetchComponents();
+          }}
         />
         {widgetActionDialog?.type === "view-data" &&
           widgetActionTarget &&

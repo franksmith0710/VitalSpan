@@ -1,5 +1,6 @@
 import type React from "react";
 import {
+  Boxes,
   Database,
   FileBarChart,
   LayoutDashboard,
@@ -104,6 +105,13 @@ export const NAV_MANIFEST: NavManifestSection[] = [
         name: "可视化模板",
         icon: <LayoutTemplate className="size-5" aria-hidden />,
         path: "/admin/viz-templates",
+        milestone: "M5",
+        capability: "dashboard:read",
+      },
+      {
+        name: "组件库",
+        icon: <Boxes className="size-5" aria-hidden />,
+        path: "/admin/viz-components",
         milestone: "M5",
         capability: "dashboard:read",
       },

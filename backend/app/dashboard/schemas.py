@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_serializer, model_valid
 
 from app.dashboard.gap_policy import normalize_gap_config
 from app.schemas.chart_view import ChartViewConfigLayout
+from app.viz.components.schemas import VizComponentRef
 
 FilterControlType = Literal["text", "select", "date", "multiselect"]
 TextVariant = Literal["markdown", "plain", "html"]
@@ -234,9 +235,17 @@ class LayoutWidget(BaseModel):
     text_config: TextWidgetConfig | None = Field(default=None, alias="textConfig")
     media_config: MediaWidgetConfig | None = Field(default=None, alias="mediaConfig")
     tabs_config: TabsWidgetConfig | None = Field(default=None, alias="tabsConfig")
+    component_ref: VizComponentRef | None = Field(default=None, alias="componentRef")
+
+    def _is_linked_component(self) -> bool:
+        return self.component_ref is not None and not bool(self.component_ref.detached)
 
     @model_validator(mode="after")
     def validate_type_config(self) -> LayoutWidget:
+        if self._is_linked_component():
+            if self.type == "tabs":
+                raise ValueError("tabs widget cannot use componentRef")
+            return self
         if self.type == "chart":
             if self.chart_config is None:
                 raise ValueError("chart widget requires chartConfig")

@@ -19,6 +19,7 @@ import {
   clampCanvasHeightForPersist,
   resolvePersistedCanvasMinHeight,
 } from "@/lib/canvasPersistPolicy";
+import { isLinkedComponentRef } from "@/lib/vizComponents";
 
 const CANVAS_WIDTH = 1440 as const;
 const MIN_CANVAS_HEIGHT = 900;
@@ -187,6 +188,23 @@ function persistedStyle(styleConfig: DashboardStyleConfig): DashboardStyleConfig
   return styleConfigHasPersistedFields(hydrated) ? hydrated : undefined;
 }
 
+function stripLinkedWidgetForPersist<T extends { componentRef?: { componentId: string; detached?: boolean } }>(
+  widget: T,
+): T {
+  if (!isLinkedComponentRef(widget.componentRef)) return widget;
+  const next = { ...widget } as T & {
+    chartConfig?: unknown;
+    filterConfig?: unknown;
+    textConfig?: unknown;
+    mediaConfig?: unknown;
+  };
+  delete next.chartConfig;
+  delete next.filterConfig;
+  delete next.textConfig;
+  delete next.mediaConfig;
+  return next as T;
+}
+
 /** v1 可规范化栅格；v2 只补公共 ID，严格保留数组顺序、order 与像素几何。 */
 export function buildDashboardLayoutForSave(
   layout: DashboardLayout,
@@ -195,7 +213,9 @@ export function buildDashboardLayoutForSave(
   if (layout.version === 1) {
     return {
       ...layout,
-      widgets: normalizeWidgetIds(normalizeWidgetLayout(sortWidgets(layout.widgets))),
+      widgets: normalizeWidgetIds(
+        normalizeWidgetLayout(sortWidgets(layout.widgets)).map(stripLinkedWidgetForPersist),
+      ),
       styleConfig: persistedStyle(styleConfig),
     };
   }
@@ -204,13 +224,14 @@ export function buildDashboardLayoutForSave(
     {
       ...layout,
       widgets: layout.widgets.map((widget) => {
+        const stripped = stripLinkedWidgetForPersist(widget);
         const withChartId =
-          widget.type === "chart" && widget.chartConfig
+          stripped.type === "chart" && stripped.chartConfig
             ? {
-                ...widget,
-                chartConfig: { ...widget.chartConfig, chartId: widget.id },
+                ...stripped,
+                chartConfig: { ...stripped.chartConfig, chartId: stripped.id },
               }
-            : widget;
+            : stripped;
         return stripV1LayoutGeometry(withChartId as Record<string, unknown>) as typeof widget;
       }),
       styleConfig: persistedStyle(styleConfig),

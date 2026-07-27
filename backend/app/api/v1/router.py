@@ -6,6 +6,7 @@ from app.api.v1.datasources import router as datasources_router
 from app.api.v1.charts import router as charts_router
 from app.api.v1.dashboards import router as dashboards_router
 from app.api.v1.dashboard_templates import router as dashboard_templates_router
+from app.api.v1.viz_components import router as viz_components_router
 from app.api.v1.designer import router as designer_router
 from app.api.v1.gov import router as gov_router
 from app.api.v1.nfr import router as nfr_router
@@ -40,6 +41,7 @@ api_v1_router.include_router(query_configs_router)
 api_v1_router.include_router(charts_router)
 api_v1_router.include_router(dashboards_router)
 api_v1_router.include_router(dashboard_templates_router)
+api_v1_router.include_router(viz_components_router)
 api_v1_router.include_router(designer_router)
 api_v1_router.include_router(gov_router)
 api_v1_router.include_router(nfr_router)

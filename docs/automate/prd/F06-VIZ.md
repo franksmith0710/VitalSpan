@@ -110,3 +110,14 @@
 - **代码锚点**：`backend/app/viz/render.py` · `backend/app/api/v1/charts.py`（POST /charts/render-spec）· `fe/src/components/charts/adapters/renderFromSpec.ts` · `fe/src/components/charts/adapters/AdvancedEchartsChart.tsx` · `fe/src/lib/echarts-theme.ts`
 - **演化建议**：AntV 适配器分支；大数据量虚拟化与性能 profiling；r250 补 rows=[] 空数据防护 + `AdvancedEchartsChart` 空态覆盖层（T-VIZ-R250-008-01~02：空数据不抛错、主路径 bar type 回归）
 - **里程碑对齐**：
+
+### [VIZ-009] ChartPluginPackage SDK（单包闭环）
+
+- **状态**：已实现（Phase 2 基线 · 2026-07-24）
+- **描述**：`ChartPluginPackage` + `registerChartPluginPackage`；`plugins/bar/` 示例；`pnpm check:chart-plugin-parity` 校验 metadata 与 registry 一致。
+- **验收标准**：
+  - [x] `ChartPluginPackage` 类型与 `registerChartPluginPackage`
+  - [x] `plugins/bar/index.ts` 示例包
+  - [x] `pluginParity.test.ts` / `check:chart-plugin-parity`
+- **代码锚点**：`fe/src/components/charts/engine/plugins/types.ts` · `registry.ts` · `fe/src/components/charts/plugins/bar/`
+- **演化建议**：其余类型逐步迁入 `plugins/<type>/`；ChartExplore 挂 demo 预览

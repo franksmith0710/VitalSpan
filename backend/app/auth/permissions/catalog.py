@@ -38,6 +38,7 @@ PERMISSION_CATALOG: tuple[PermissionDefinition, ...] = (
     _p("dashboard:read", "查看仪表板", "读取、预览、执行仪表板"),
     _p("dashboard:edit", "编辑仪表板", "编辑与分享仪表板"),
     _p("dashboard:template.manage", "管理可视化模板", "发布、下架与组织内模板目录管理"),
+    _p("viz:component.manage", "管理可视化组件库", "发布、下架与组织内单组件复用库"),
     _p("report:read", "查看报表", "读取报表目录、模板、预览与导出"),
     _p("report:manage", "管理报表", "变更报表目录、模板、批处理与调度"),
     _p("dataset:read", "查看数据集", "读取数据集与查询绑定"),

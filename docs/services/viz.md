@@ -21,6 +21,13 @@
 | 类型注册与 catalog、`style_variant`/`field_rule` 校验规则源 | 具体图表库渲染（`fe/charts/engine/`）；**不含**在线地图 |
 | 引擎无关 render-spec 归一（`engine` 字段由 FE registry 填充） | 在线瓦片底图、境外地图、运行时外链 GeoJSON CDN |
 | embed origin 白名单/目标唯一性校验 | 图表出数（复用 `query` 链）、嵌入 token 签发与 CSP 响应头 |
+| `viz/components/` 组织组件库 CRUD、`componentRef` payload 解析 | 看板 layout 存储、大屏壳层装饰 |
+
+## 组件库（DASH-010）
+
+- 域：`backend/app/viz/components/`（与 `dashboard/templates/` 并列）
+- 消费：`fe/src/lib/resolveVizComponent.ts` 在 `ChartRenderer` / `DashboardWidget` 路径合并 `payloadJson`
+- 引用：`LayoutWidget.componentRef`；保存时剥离内联 payload（`stripLinkedWidgetForPersist`）
 | `sdk_portal/` SDK init validate + lifecycle manifest（只读引用 `_ORIGIN_RE`） | npm JS SDK 发布、修改 `embed.py` 校验语义 |
 
 ## 依赖

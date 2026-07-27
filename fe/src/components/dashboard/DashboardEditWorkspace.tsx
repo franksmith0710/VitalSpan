@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { CanvasEditToolbar } from "@/components/dashboard/CanvasEditToolbar";
 import type { PaletteInsertType } from "@/components/dashboard/createLayoutWidget";
 import { CollapsedRailTab, RailFoldHeader } from "@/components/dashboard/RailFoldTab";
-import { DASHBOARD_EDIT_RAIL_SCROLL_CLASS, DASHBOARD_EDIT_RAIL_SCROLL_CLIP_CLASS, DASHBOARD_EDIT_RAIL_SHELL_CLASS } from "@/components/dashboard/dashboardEditRailLayout";
+import { DASHBOARD_EDIT_RAIL_PASS_THROUGH_CLASS, DASHBOARD_EDIT_RAIL_SCROLL_CLIP_CLASS, DASHBOARD_EDIT_RAIL_SHELL_CLASS } from "@/components/dashboard/dashboardEditRailLayout";
 import type { ColorScheme } from "@/components/dashboard/dashboardStyleConfig";
 import { cn } from "@/lib/utils";
 
@@ -71,6 +71,8 @@ function CanvasShell({
 export type DashboardEditWorkspaceProps = {
   onPaletteInsert: (type: PaletteInsertType) => void;
   onOpenReuse?: () => void;
+  onOpenPublishToLibrary?: () => void;
+  publishToLibraryDisabled?: boolean;
   onOpenDashboardStyle?: () => void;
   canvas: ReactNode;
   chartRail: ReactNode;
@@ -99,6 +101,8 @@ export type DashboardEditWorkspaceProps = {
 export function DashboardEditWorkspace({
   onPaletteInsert,
   onOpenReuse,
+  onOpenPublishToLibrary,
+  publishToLibraryDisabled,
   onOpenDashboardStyle,
   canvas,
   chartRail,
@@ -130,6 +134,8 @@ export function DashboardEditWorkspace({
           <CanvasEditToolbar
             onInsert={onPaletteInsert}
             onOpenReuse={onOpenReuse}
+            onOpenPublishToLibrary={onOpenPublishToLibrary}
+            publishToLibraryDisabled={publishToLibraryDisabled}
             onOpenDashboardStyle={onOpenDashboardStyle}
             showScreenVisualAssets={showScreenVisualAssets}
             showAuxiliaryGrid={showAuxiliaryGrid}
@@ -164,11 +170,13 @@ export function DashboardEditWorkspace({
               onCollapse={() => onChartRailOpenChange(false)}
             />
           ) : null}
-          <div
-            className={cn(DASHBOARD_EDIT_RAIL_SCROLL_CLIP_CLASS)}
-            data-testid="dashboard-edit-rail-scroll"
-          >
-            <div className={cn(DASHBOARD_EDIT_RAIL_SCROLL_CLASS, "h-full min-h-0")}>{chartRail}</div>
+          <div className={cn(DASHBOARD_EDIT_RAIL_SCROLL_CLIP_CLASS)}>
+            <div
+              className={cn(DASHBOARD_EDIT_RAIL_PASS_THROUGH_CLASS)}
+              data-testid="dashboard-edit-rail-scroll"
+            >
+              {chartRail}
+            </div>
           </div>
         </div>
       ) : (

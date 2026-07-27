@@ -47,6 +47,7 @@ import {
   type DashboardWidgetsSetter,
   type RenderDashboardCanvasWidgetOptions,
 } from "./DashboardCanvasWidgetRenderer";
+import { useVizComponentMap } from "@/hooks/useVizComponentMap";
 
 type DashboardEditCanvasProps = {
   mode: "edit" | "view";
@@ -107,6 +108,7 @@ export function DashboardEditCanvas({
   widgetActions,
   dataScreenPresentationMode = DATA_SCREEN_EDIT_PRESENTATION_DEFAULT,
 }: DashboardEditCanvasProps) {
+  const { componentMap } = useVizComponentMap(widgets);
   const effectiveStyle = useMemo(
     () => resolveEffectiveDashboardStyle(layout, styleConfig),
     [layout, styleConfig],
@@ -153,6 +155,7 @@ export function DashboardEditCanvas({
           styleRevision={styleRevision}
           chartRefreshKeys={chartRefreshKeys}
           onTabPaletteDrop={onTabPaletteDrop}
+          componentMap={componentMap}
         />
       );
     },
@@ -171,6 +174,7 @@ export function DashboardEditCanvas({
       styleRevision,
       chartRefreshKeys,
       onTabPaletteDrop,
+      componentMap,
     ],
   );
 

@@ -1,3 +1,4 @@
+import type { ComponentType } from "react";
 import type { EngineCapabilities } from "@/components/charts/engine/capabilities";
 import type { ChartRenderPlan } from "@/components/charts/engine/buildChartRenderPlan";
 import type { ChartViewModel } from "@/components/charts/engine/types";
@@ -31,4 +32,13 @@ export type ChartViewPlugin = {
 
 export type ChartPluginDef = Omit<ChartViewPlugin, "buildRenderPlan"> & {
   planKind?: "column" | "line" | "pie" | "dual" | "geo" | "graph" | "table" | "kpi" | "custom";
+};
+
+export type ChartInspectorDef = {
+  styleSections?: ChartStyleSectionId[];
+};
+
+export type ChartPluginPackage = ChartViewPlugin & {
+  inspector?: ChartInspectorDef;
+  demo?: ComponentType;
 };

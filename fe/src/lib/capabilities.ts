@@ -7,6 +7,7 @@ const BUILTIN_ROLE_CAPABILITIES: Record<SessionRole, readonly string[]> = {
     "dashboard:read",
     "dashboard:edit",
     "dashboard:template.manage",
+    "viz:component.manage",
     "report:*",
     "governance:*",
     "theme:*",

@@ -30,15 +30,21 @@ describe("tryAcquireWebGLSlot", () => {
 });
 
 describe("resolveTerrainTextureEnabled", () => {
-  it("is false only for thumbnail tier", () => {
-    expect(resolveTerrainTextureEnabled("embed", { terrainTexture: true })).toBe(true);
-    expect(resolveTerrainTextureEnabled("thumbnail", { terrainTexture: true })).toBe(false);
+  it("is false for thumbnail tier", () => {
+    expect(resolveTerrainTextureEnabled("embed", { stylePreset: "satellite", terrainTexture: true })).toBe(true);
+    expect(resolveTerrainTextureEnabled("thumbnail", { stylePreset: "satellite", terrainTexture: true })).toBe(false);
   });
 
-  it("follows geo3d style on full and embed tiers", () => {
-    expect(resolveTerrainTextureEnabled("full", { terrainTexture: true })).toBe(true);
-    expect(resolveTerrainTextureEnabled("full", { terrainTexture: false })).toBe(false);
-    expect(resolveTerrainTextureEnabled("embed", { terrainTexture: false })).toBe(false);
+  it("follows geo3d style on satellite preset", () => {
+    expect(resolveTerrainTextureEnabled("full", { stylePreset: "satellite", terrainTexture: true })).toBe(true);
+    expect(resolveTerrainTextureEnabled("full", { stylePreset: "satellite", terrainTexture: false })).toBe(false);
+    expect(resolveTerrainTextureEnabled("embed", { stylePreset: "satellite", terrainTexture: false })).toBe(false);
+  });
+
+  it("is false for non-satellite presets even when terrainTexture is true", () => {
+    expect(resolveTerrainTextureEnabled("full", { stylePreset: "tech", terrainTexture: true })).toBe(false);
+    expect(resolveTerrainTextureEnabled("embed", { stylePreset: "classic", terrainTexture: true })).toBe(false);
+    expect(resolveTerrainTextureEnabled("full", { stylePreset: "minimal", terrainTexture: true })).toBe(false);
   });
 });
 

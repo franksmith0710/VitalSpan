@@ -75,4 +75,25 @@ describe("buildGeoFlatPlateMesh", () => {
     }
     expect(hidden.borderLines.visible).toBe(false);
   });
+
+  it("applies shell opacity to extrude body material", () => {
+    const shape = new THREE.Shape();
+    shape.moveTo(0, 0);
+    shape.lineTo(2, 0);
+    shape.lineTo(2, 1);
+    shape.lineTo(0, 1);
+    shape.closePath();
+    const built = buildGeoFlatPlateMesh(shape, 1, 0x0284c7, 0x7dd3fc, true, {
+      shellOpacity: 0.4,
+    });
+    const bodyMesh = built.mesh.children.find(
+      (c) => c instanceof THREE.Mesh && c.material !== built.capMaterial,
+    ) as THREE.Mesh;
+    const materials = Array.isArray(bodyMesh.material) ? bodyMesh.material : [bodyMesh.material];
+    for (const mat of materials) {
+      expect(mat).toBeInstanceOf(THREE.MeshStandardMaterial);
+      expect((mat as THREE.MeshStandardMaterial).opacity).toBe(0.4);
+      expect((mat as THREE.MeshStandardMaterial).transparent).toBe(true);
+    }
+  });
 });

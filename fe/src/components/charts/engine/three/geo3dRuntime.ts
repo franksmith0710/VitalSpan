@@ -1,4 +1,5 @@
 import type { ChartGeo3dStyle } from "@/lib/chartDeStyle";
+import { resolveGeo3dStylePreset } from "./geo3dVisualStyle";
 
 /** full=全屏预览；embed=看板/大屏内嵌；thumbnail=列表卡片等小尺寸预览 */
 export type Geo3dRenderTier = "full" | "embed" | "thumbnail";
@@ -38,12 +39,13 @@ export function resetWebGLSlotsForTests(): void {
   activeWebglSlots.clear();
 }
 
-/** 列表缩略图不加载地形；看板内嵌与全屏预览均加载卫星贴图 */
+/** 列表缩略图不加载地形；仅「卫星实景」预设可启用离线卫星贴图 */
 export function resolveTerrainTextureEnabled(
   tier: Geo3dRenderTier,
   geo3dStyle: ChartGeo3dStyle,
 ): boolean {
   if (tier === "thumbnail") return false;
+  if (resolveGeo3dStylePreset(geo3dStyle) !== "satellite") return false;
   return geo3dStyle.terrainTexture !== false;
 }
 

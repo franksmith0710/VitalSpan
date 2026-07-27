@@ -1,9 +1,15 @@
-import type { ChartViewPlugin } from "@/components/charts/engine/plugins/types";
+import type { ChartViewPlugin, ChartPluginPackage } from "@/components/charts/engine/plugins/types";
 
 const plugins = new Map<string, ChartViewPlugin>();
+const packages = new Map<string, ChartPluginPackage>();
 
 export function registerChartPlugin(plugin: ChartViewPlugin): void {
   plugins.set(plugin.type, plugin);
+}
+
+export function registerChartPluginPackage(pkg: ChartPluginPackage): void {
+  packages.set(pkg.type, pkg);
+  registerChartPlugin(pkg);
 }
 
 export function getChartPlugin(type: string): ChartViewPlugin | undefined {
@@ -20,4 +26,12 @@ export function listChartPluginTypes(): string[] {
 
 export function hasChartPlugin(type: string): boolean {
   return plugins.has(type);
+}
+
+export function getChartPluginPackage(type: string): ChartPluginPackage | undefined {
+  return packages.get(type);
+}
+
+export function listChartPluginPackages(): ChartPluginPackage[] {
+  return [...packages.values()];
 }

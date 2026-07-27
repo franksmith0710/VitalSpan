@@ -1,0 +1,186 @@
+import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import { apiFetch } from "@/lib/api";
+import type {
+  DashboardWidgetBase,
+  VizComponentRef,
+} from "@/components/dashboard/dashboardLayoutContracts";
+import type { FilterWidgetConfig, MediaWidgetConfig, TextWidgetConfig } from "@/components/dashboard/layoutUtils";
+
+export type VizSurfaceKind = "dashboard" | "data-screen";
+export type VizWidgetType = "chart" | "filter" | "text" | "media";
+
+export type VizComponentPayload = {
+  chartConfig?: ChartViewConfig;
+  filterConfig?: FilterWidgetConfig;
+  textConfig?: TextWidgetConfig;
+  mediaConfig?: MediaWidgetConfig;
+};
+
+export type VizComponentListItem = {
+  id: string;
+  componentKey: string;
+  name: string;
+  description: string | null;
+  categoryKey: string;
+  widgetType: VizWidgetType;
+  surfaceKinds: VizSurfaceKind[];
+  status: "draft" | "published" | "archived";
+  thumbnailRef: string | null;
+  tags: string[];
+  visibility: "org" | "private";
+  contentRevision: number;
+  updatedAt: string;
+  publishedAt: string | null;
+};
+
+export type VizComponentDetail = VizComponentListItem & {
+  payloadJson: VizComponentPayload;
+  ownerUserId: string | null;
+  orgScope: string | null;
+  createdAt: string;
+};
+
+export type VizComponentListResponse = {
+  items: VizComponentListItem[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export type VizComponentBatchResolveResponse = {
+  items: VizComponentDetail[];
+};
+
+export const VIZ_COMPONENT_CATEGORIES: { key: string; label: string }[] = [
+  { key: "general", label: "通用" },
+  { key: "monitoring", label: "监控" },
+  { key: "government", label: "政务" },
+  { key: "analytics", label: "分析" },
+];
+
+export function buildVizComponentsListUrl(params: {
+  surfaceKind?: VizSurfaceKind;
+  widgetType?: VizWidgetType;
+  categoryKey?: string;
+  q?: string;
+  includeDrafts?: boolean;
+  limit?: number;
+  offset?: number;
+}): string {
+  const search = new URLSearchParams();
+  if (params.surfaceKind) search.set("surfaceKind", params.surfaceKind);
+  if (params.widgetType) search.set("widgetType", params.widgetType);
+  if (params.categoryKey) search.set("categoryKey", params.categoryKey);
+  if (params.q) search.set("q", params.q);
+  if (params.includeDrafts) search.set("includeDrafts", "true");
+  if (params.limit != null) search.set("limit", String(params.limit));
+  if (params.offset != null) search.set("offset", String(params.offset));
+  const qs = search.toString();
+  return `/api/v1/viz-components${qs ? `?${qs}` : ""}`;
+}
+
+export function fetchVizComponents(params: {
+  surfaceKind?: VizSurfaceKind;
+  widgetType?: VizWidgetType;
+  categoryKey?: string;
+  q?: string;
+  includeDrafts?: boolean;
+  limit?: number;
+  offset?: number;
+}) {
+  return apiFetch<VizComponentListResponse>(buildVizComponentsListUrl(params));
+}
+
+export function fetchVizComponent(id: string) {
+  return apiFetch<VizComponentDetail>(`/api/v1/viz-components/${id}`);
+}
+
+export function batchResolveVizComponents(ids: string[]) {
+  return apiFetch<VizComponentBatchResolveResponse>("/api/v1/viz-components/batch-resolve", {
+    method: "POST",
+    body: JSON.stringify({ ids }),
+  });
+}
+
+export function createVizComponent(body: {
+  name: string;
+  description?: string;
+  categoryKey?: string;
+  widgetType: VizWidgetType;
+  surfaceKinds?: VizSurfaceKind[];
+  payloadJson?: VizComponentPayload;
+  sourceWidget?: DashboardWidgetBase;
+  visibility?: "org" | "private";
+  tags?: string[];
+}) {
+  return apiFetch<VizComponentDetail>("/api/v1/viz-components", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function updateVizComponent(
+  id: string,
+  body: {
+    name?: string;
+    description?: string;
+    categoryKey?: string;
+    surfaceKinds?: VizSurfaceKind[];
+    payloadJson?: VizComponentPayload;
+    visibility?: "org" | "private";
+    tags?: string[];
+    contentRevision?: number;
+  },
+) {
+  return apiFetch<VizComponentDetail>(`/api/v1/viz-components/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
+export function publishVizComponent(id: string) {
+  return apiFetch<VizComponentDetail>(`/api/v1/viz-components/${id}/publish`, {
+    method: "POST",
+  });
+}
+
+export function archiveVizComponent(id: string) {
+  return apiFetch<VizComponentDetail>(`/api/v1/viz-components/${id}/archive`, {
+    method: "POST",
+  });
+}
+
+export function deleteVizComponent(id: string) {
+  return apiFetch<void>(`/api/v1/viz-components/${id}`, { method: "DELETE" });
+}
+
+export function extractWidgetPayload(widget: DashboardWidgetBase): VizComponentPayload {
+  switch (widget.type) {
+    case "chart":
+      if (!widget.chartConfig) throw new Error("chart widget missing chartConfig");
+      return { chartConfig: widget.chartConfig };
+    case "filter":
+      if (!widget.filterConfig) throw new Error("filter widget missing filterConfig");
+      return { filterConfig: widget.filterConfig };
+    case "text":
+      if (!widget.textConfig) throw new Error("text widget missing textConfig");
+      return { textConfig: widget.textConfig };
+    case "media":
+      if (!widget.mediaConfig) throw new Error("media widget missing mediaConfig");
+      return { mediaConfig: widget.mediaConfig };
+    default:
+      throw new Error(`Widget type ${widget.type} cannot be published`);
+  }
+}
+
+export function isLinkedComponentRef(ref?: VizComponentRef): ref is VizComponentRef {
+  return Boolean(ref?.componentId && !ref.detached);
+}
+
+export function collectComponentIds(widgets: DashboardWidgetBase[]): string[] {
+  const ids = new Set<string>();
+  for (const w of widgets) {
+    if (isLinkedComponentRef(w.componentRef)) ids.add(w.componentRef.componentId);
+  }
+  return [...ids];
+}

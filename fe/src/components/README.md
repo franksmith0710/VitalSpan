@@ -73,7 +73,7 @@
 | TextWidget / MediaWidget / TabsWidget | `dashboard/TextWidget.tsx` 等 | 扩展 layout widget 渲染 |
 | RichTextEditor / RichTextFloatingToolbar / RichTextToolbar | `dashboard/RichTextEditor.tsx` · `RichTextFloatingToolbar.tsx` | Tiptap 3 富文本画布内联编辑（独立浮动工具栏） |
 | richTextHtml | `dashboard/richTextHtml.ts` | 旧格式转 HTML、白名单净化与空值判断 |
-| ReuseWidgetDialog | `dashboard/ReuseWidgetDialog.tsx` | 跨看板复用组件（克隆 ID） |
+| ReuseWidgetDialog | `dashboard/VizReuseDialog.tsx` | 跨看板/组织组件库复用（`VizReuseDialog`） |
 | LinkageRulesPanel | `dashboard/LinkageRulesPanel.tsx` | 筛选器联动规则（编辑页仪表板配置轨 draft 模式） |
 | DashboardOverallConfigPanel | `dashboard/dashboardOverallConfigPanel.tsx` | 仪表板整体配置（间距/背景/刷新等） |
 | DashboardWidget | `dashboard/DashboardWidget.tsx` | 单组件卡片 + 删除/排序 |

@@ -107,6 +107,8 @@ export type ChartGeo3dStyle = {
   sceneFog?: boolean;
   /** 挤出侧壁/底板颜色（#rrggbb）；未设置时跟随样式预设 */
   shellColor?: string;
+  /** 挤出侧壁/底板不透明度（0–1，默认 1） */
+  shellOpacity?: number;
   /** @deprecated 不再渲染背景装饰 */
   effectsEnabled?: boolean;
   groundMirror?: boolean;
@@ -114,6 +116,7 @@ export type ChartGeo3dStyle = {
 };
 
 export const DEFAULT_GEO3D_EXTRUDE_INTENSITY = 1.15;
+export const DEFAULT_GEO3D_SHELL_OPACITY = 1;
 
 /** 饼图/环形图样式（对标 DE attr-style · 基础样式） */
 export type ChartPieStyle = {

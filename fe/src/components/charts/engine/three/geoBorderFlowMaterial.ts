@@ -38,9 +38,11 @@ void main() {
   float head = 1.0 - smoothstep(0.0, trail * 0.07, dist);
   float tail = 1.0 - smoothstep(0.0, trail, dist);
   float glow = head * tail;
-  if (glow < 0.03) discard;
-  vec3 color = mix(uBaseColor, uFlowColor, glow);
-  gl_FragColor = vec4(color, uOpacity * glow * 0.82);
+  float flow = smoothstep(0.03, 1.0, glow);
+  vec3 color = mix(uBaseColor, uFlowColor, flow);
+  float alpha = uOpacity * mix(0.32, 0.88, flow);
+  if (alpha < 0.02) discard;
+  gl_FragColor = vec4(color, alpha);
 }
 `;
 

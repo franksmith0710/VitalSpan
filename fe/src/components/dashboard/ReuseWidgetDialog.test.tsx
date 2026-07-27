@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ReuseWidgetDialog } from "./ReuseWidgetDialog";
+import { VizReuseDialog } from "./VizReuseDialog";
 import type { DashboardLayoutV1, DashboardLayoutV2 } from "./layoutUtils";
 
 vi.mock("@/lib/api", () => ({
@@ -51,7 +51,7 @@ function renderDialog(onInsertCloned = vi.fn()) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <ReuseWidgetDialog
+      <VizReuseDialog
         open
         onOpenChange={() => {}}
         currentDashboardId="current"
@@ -68,11 +68,14 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe("ReuseWidgetDialog", () => {
+describe("VizReuseDialog", () => {
   it("clones v1 widget without pixel geometry", async () => {
     const user = userEvent.setup();
     const onInsert = vi.fn();
     vi.mocked(apiFetch).mockImplementation(async (path: string) => {
+      if (path.includes("/viz-components")) {
+        return { items: [], total: 0, limit: 50, offset: 0 };
+      }
       if (path.includes("?limit=")) {
         return { items: [{ id: "src", name: "来源看板" }] };
       }
@@ -80,6 +83,7 @@ describe("ReuseWidgetDialog", () => {
     });
 
     renderDialog(onInsert);
+    await user.click(screen.getByRole("button", { name: "从其他看板" }));
     const [dashboardSelect] = screen.getAllByRole("combobox");
     await user.click(dashboardSelect);
     await user.click(await screen.findByRole("option", { name: "来源看板" }));
@@ -100,6 +104,9 @@ describe("ReuseWidgetDialog", () => {
     const user = userEvent.setup();
     const onInsert = vi.fn();
     vi.mocked(apiFetch).mockImplementation(async (path: string) => {
+      if (path.includes("/viz-components")) {
+        return { items: [], total: 0, limit: 50, offset: 0 };
+      }
       if (path.includes("?limit=")) {
         return { items: [{ id: "src", name: "像素看板" }] };
       }
@@ -107,6 +114,7 @@ describe("ReuseWidgetDialog", () => {
     });
 
     renderDialog(onInsert);
+    await user.click(screen.getByRole("button", { name: "从其他看板" }));
     const [dashboardSelect] = screen.getAllByRole("combobox");
     await user.click(dashboardSelect);
     await user.click(await screen.findByRole("option", { name: "像素看板" }));

@@ -37,6 +37,18 @@ export const queryKeys = {
     }) => ["dashboardTemplates", "list", params] as const,
     detail: (id: string) => ["dashboardTemplates", "detail", id] as const,
   },
+  vizComponents: {
+    all: ["vizComponents"] as const,
+    list: (params?: {
+      surfaceKind?: string;
+      widgetType?: string;
+      categoryKey?: string;
+      q?: string;
+      includeDrafts?: boolean;
+    }) => ["vizComponents", "list", params] as const,
+    detail: (id: string) => ["vizComponents", "detail", id] as const,
+    resolve: (ids: string[]) => ["vizComponents", "resolve", [...ids].sort().join(",")] as const,
+  },
   metadata: {
     entityTypes: ["metadata", "entityTypes"] as const,
     physicalTables: (entityTypeCode?: string) =>

@@ -7,6 +7,7 @@ import {
   hasCustomGeo3dShellColor,
   resolveGeo3dSceneFog,
   resolveGeo3dShellColorHex,
+  resolveGeo3dShellOpacity,
   resolveGeo3dStylePreset,
   resolveGeo3dVisualStyle,
   resolvePresetRegionBorderDefaults,
@@ -17,9 +18,9 @@ describe("geo3dVisualStyle", () => {
     expect(resolveGeo3dStylePreset({})).toBe("satellite");
   });
 
-  it("tech preset enables fog and prefers terrain", () => {
+  it("tech preset enables fog and disables terrain texture", () => {
     const defaults = geo3dPresetDefaults("tech");
-    expect(defaults.terrainTexture).toBe(true);
+    expect(defaults.terrainTexture).toBe(false);
     expect(defaults.sceneFog).toBe(true);
 
     const visual = resolveGeo3dVisualStyle({ stylePreset: "tech" }, true);
@@ -70,5 +71,18 @@ describe("geo3dVisualStyle", () => {
     expect(resolveGeo3dShellColorHex({ shellColor: "#AABBCC" }, true)).toBe("#aabbcc");
     expect(hasCustomGeo3dShellColor({ shellColor: "#112233" })).toBe(true);
     expect(hasCustomGeo3dShellColor({})).toBe(false);
+  });
+
+  it("resolves shell opacity with clamp", () => {
+    expect(resolveGeo3dShellOpacity({})).toBe(1);
+    expect(resolveGeo3dShellOpacity({ shellOpacity: 0.6 })).toBe(0.6);
+    expect(resolveGeo3dShellOpacity({ shellOpacity: 1.5 })).toBe(1);
+    expect(resolveGeo3dShellOpacity({ shellOpacity: -0.2 })).toBe(0);
+  });
+
+  it("content sig changes when shell opacity changes", () => {
+    const a = buildGeo3dStyleContentSig({ stylePreset: "satellite", shellOpacity: 1 });
+    const b = buildGeo3dStyleContentSig({ stylePreset: "satellite", shellOpacity: 0.5 });
+    expect(a).not.toBe(b);
   });
 });

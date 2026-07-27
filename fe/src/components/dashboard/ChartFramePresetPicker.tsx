@@ -3,7 +3,6 @@ import { Check, ChevronDown } from "lucide-react";
 import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { HintTooltip } from "@/components/ui/hint-tooltip";
 import {
   CHART_FRAME_BORDER_PRESETS,
   chartFramePresetThumbStyle,
@@ -33,6 +32,8 @@ type ChartFramePresetPickerProps = {
   /** 与 ColorField 并排时传可见标签；不传则仅按钮内文案 */
   label?: string;
   className?: string;
+  /** 窄右栏内优先向左展开，避免被视口底部裁切 */
+  popoverSide?: "left" | "bottom";
 };
 
 function presetIndex(presetId: string): string {
@@ -46,6 +47,7 @@ export function ChartFramePresetPicker({
   onChange,
   label,
   className,
+  popoverSide = "left",
 }: ChartFramePresetPickerProps) {
   const [open, setOpen] = useState(false);
   const selected = value ?? "frame-1";
@@ -62,13 +64,14 @@ export function ChartFramePresetPicker({
           {label}
         </span>
       ) : null}
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={setOpen} modal={false}>
         <PopoverTrigger asChild>
           <button
             type="button"
             className={triggerShellVariants({ open })}
             aria-label="选择装饰边框"
             aria-expanded={open}
+            onMouseDown={(event) => event.preventDefault()}
           >
             <span
               className="flex h-full w-11 shrink-0 items-center justify-center border-r border-gray-100 bg-gray-50/90 p-1 dark:border-gray-800 dark:bg-white/[0.04]"
@@ -100,10 +103,11 @@ export function ChartFramePresetPicker({
         </PopoverTrigger>
         <PopoverContent
           align="start"
-          side="bottom"
+          side={popoverSide}
           collisionPadding={12}
-          className="w-[min(15.5rem,calc(100vw-2rem))] p-2.5"
+          className="w-[min(15.5rem,calc(100vw-2rem))] max-h-[min(70vh,20rem)] overflow-y-auto overscroll-contain p-2.5"
           sideOffset={6}
+          onOpenAutoFocus={(event) => event.preventDefault()}
         >
           <p className="mb-2 text-[10px] font-medium text-gray-500 dark:text-gray-400">
             装饰边框样式
@@ -112,12 +116,13 @@ export function ChartFramePresetPicker({
             {CHART_FRAME_BORDER_PRESETS.map((preset) => {
               const active = preset.id === selected;
               return (
-                <HintTooltip key={preset.id} label={preset.label}>
-                  <button
-                    type="button"
-                    role="option"
-                    aria-selected={active}
-                    aria-label={preset.label}
+                <button
+                  key={preset.id}
+                  type="button"
+                  role="option"
+                  aria-selected={active}
+                  aria-label={preset.label}
+                  title={preset.label}
                   className={cn(
                     "group relative aspect-[4/3] overflow-hidden rounded-lg border transition-colors",
                     "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30",
@@ -144,7 +149,6 @@ export function ChartFramePresetPicker({
                     </span>
                   ) : null}
                 </button>
-                </HintTooltip>
               );
             })}
           </div>

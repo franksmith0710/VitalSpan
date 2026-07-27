@@ -134,18 +134,23 @@ export function VizTemplatesHubPage() {
       title={VIZ_TEMPLATES_HUB.title}
       description={VIZ_TEMPLATES_HUB.description}
       actions={
-        canEdit ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => importRef.current?.click()}
-            disabled={importMutation.isPending}
-          >
-            <Upload className="size-4" />
-            {VIZ_TEMPLATES_HUB.importJson}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" asChild>
+            <a href="/admin/viz-components">组织组件库</a>
           </Button>
-        ) : null
+          {canEdit ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => importRef.current?.click()}
+              disabled={importMutation.isPending}
+            >
+              <Upload className="size-4" />
+              {VIZ_TEMPLATES_HUB.importJson}
+            </Button>
+          ) : null}
+        </div>
       }
     >
       <input

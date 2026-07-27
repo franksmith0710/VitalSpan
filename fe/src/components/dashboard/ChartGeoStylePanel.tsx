@@ -19,6 +19,7 @@ import { useChartInspector } from "@/components/dashboard/chartInspectorContext"
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import {
   DEFAULT_GEO3D_EXTRUDE_INTENSITY,
+  DEFAULT_GEO3D_SHELL_OPACITY,
   patchChartDeStyleNested,
   readChartGeoStyle,
   readChartGeo3dStyle,
@@ -216,10 +217,16 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
               swatches={WIDGET_BORDER_RECOMMENDED}
               onChange={(next) => patchGeo3d({ shellColor: next })}
             />
-            <InspectorSwitchRow
-              label="地形贴图（离线卫星）"
-              checked={geo3d.terrainTexture !== false}
-              onCheckedChange={(terrainTexture) => patchGeo3d({ terrainTexture })}
+            <DeAttrSliderField
+              label="底板不透明度"
+              compact
+              value={geo3d.shellOpacity}
+              fallback={DEFAULT_GEO3D_SHELL_OPACITY}
+              min={0}
+              max={1}
+              step={0.05}
+              ariaLabel="底板不透明度"
+              onChange={(shellOpacity) => patchGeo3d({ shellOpacity })}
             />
             <InspectorSwitchRow
               label="场景雾"

@@ -59,6 +59,7 @@ type DashboardCanvasWidgetRendererProps = {
     widget: LayoutWidget,
     options?: RenderDashboardCanvasWidgetOptions,
   ) => ReactNode;
+  componentMap?: import("@/lib/resolveVizComponent").VizComponentMap;
 };
 
 function asLayoutWidget(
@@ -77,6 +78,7 @@ function widgetContentEqual(
   const b = asLayoutWidget(next);
   if (a.id !== b.id || a.type !== b.type || a.title !== b.title) return false;
   if (a.chartConfig !== b.chartConfig) return false;
+  if (a.componentRef !== b.componentRef) return false;
   if (a.textConfig !== b.textConfig) return false;
   if (a.tabsConfig !== b.tabsConfig) return false;
   if (a.filterConfig !== b.filterConfig) return false;
@@ -98,6 +100,7 @@ function rendererPropsEqual(
   if (prev.styleRevision !== next.styleRevision) return false;
   if (prev.dashboardStyle !== next.dashboardStyle) return false;
   if (prev.chartPaletteDefaults !== next.chartPaletteDefaults) return false;
+  if (prev.componentMap !== next.componentMap) return false;
   if (prev.allWidgets !== next.allWidgets) return false;
   if (!widgetContentEqual(prev.widget, next.widget)) return false;
   if (prev.gridSize?.w !== next.gridSize?.w || prev.gridSize?.h !== next.gridSize?.h) {
@@ -127,6 +130,7 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
   chartRefreshKeys,
   onTabPaletteDrop,
   renderChild,
+  componentMap,
 }: DashboardCanvasWidgetRendererProps) {
   const widget = asLayoutWidget(sourceWidget);
   const isShapePlaying = usePixelShapePlayer();
@@ -254,6 +258,7 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
         dashboardStyle={dashboardStyle}
         chartPaletteDefaults={chartPaletteDefaults}
         suspendLiveResize={isShapePlaying || isGridPlaying}
+        componentMap={componentMap}
       />
     </WidgetErrorBoundary>
   );

@@ -19,14 +19,18 @@ export const DASHBOARD_EDIT_RAIL_NARROW_SHELL_CLASS = DASHBOARD_EDIT_RAIL_SHELL_
 
 /**
  * 看板编辑右栏滚动。
- * - 壳层 `…-clip` 裁剪；`…-scroll` 供仪表板配置等长内容整体滚动
- * - 组件右栏（页签/图片/图表等）在 ChartInspectorTabs 面板内滚动（scrollMode=panel）
+ * - 壳层 `…-clip` 裁剪；`…-pass-through` 仅透传高度，由子级（ChartInspectorTabs 等）内部滚动
+ * - `…-scroll` 供仪表板配置等长内容整体滚动
  */
 export const DASHBOARD_EDIT_RAIL_SCROLL_CLIP_CLASS =
   "dashboard-edit-rail-scroll-clip h-0 min-h-0 flex-1 overflow-hidden px-2 py-1";
 
+/** 高度透传：子级 flex 链获得固定高度后在面板内滚动 */
+export const DASHBOARD_EDIT_RAIL_PASS_THROUGH_CLASS =
+  "flex h-full min-h-0 min-w-0 flex-col overflow-hidden";
+
 export const DASHBOARD_EDIT_RAIL_SCROLL_CLASS =
-  "dashboard-edit-rail-scroll h-full overflow-x-hidden overflow-y-auto overscroll-y-contain";
+  "dashboard-edit-rail-scroll h-full min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain";
 
 /** @deprecated 滚动已上移至 {@link DASHBOARD_EDIT_RAIL_SCROLL_CLASS}；保留别名避免遗漏引用 */
 export const DASHBOARD_CONFIG_RAIL_SCROLL_CLASS = DASHBOARD_EDIT_RAIL_SCROLL_CLASS;

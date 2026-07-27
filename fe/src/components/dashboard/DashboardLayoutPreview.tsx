@@ -29,11 +29,8 @@ import {
 } from "@/components/charts/ChartMountContext";
 import type { Geo3dRenderTier } from "@/components/charts/engine/three/geo3dRuntime";
 import { WidgetErrorBoundary } from "./WidgetErrorBoundary";
-import type {
-  DashboardLayout,
-  LayoutWidget,
-  PixelLayoutWidget,
-} from "./layoutUtils";
+import { useVizComponentMap } from "@/hooks/useVizComponentMap";
+import { resolveLayoutWidget } from "@/lib/resolveVizComponent";
 
 type DashboardLayoutPreviewProps = {
   layout: DashboardLayout;
@@ -86,6 +83,7 @@ export function DashboardLayoutPreview({
     displayLayout.version === 1
       ? displayLayout.widgets
       : displayLayout.widgets.map(pixelWidgetToLayoutWidget);
+  const { componentMap } = useVizComponentMap(widgets);
   const styleRevision = widgetDashboardStyleFingerprint(styleConfig);
   const effectiveLinkage: Linkage = linkage ?? {
     filters: [],
@@ -97,38 +95,40 @@ export function DashboardLayoutPreview({
     grid?: { w: number; h: number },
     shell: DashboardWidgetShell = "grid",
   ) => {
+    const displayWidget = componentMap ? resolveLayoutWidget(widget, componentMap) : widget;
     const renderNested = (child: LayoutWidget) =>
       renderWidget(child, { w: child.colSpan, h: child.rowSpan }, "shape");
     return (
-      <WidgetErrorBoundary widgetTitle={widget.title}>
+      <WidgetErrorBoundary widgetTitle={displayWidget.title}>
         <DashboardWidget
-          widget={widget}
+          widget={displayWidget}
           mode="view"
           shell={shell}
           gridSize={grid}
-          allWidgets={widget.type === "tabs" ? widgets : undefined}
+          allWidgets={displayWidget.type === "tabs" ? widgets : undefined}
           renderNestedWidget={renderNested}
           filterParameters={
-            widget.type === "chart"
-              ? buildWidgetFilterParams(widget.id, effectiveLinkage, filterValues)
+            displayWidget.type === "chart"
+              ? buildWidgetFilterParams(displayWidget.id, effectiveLinkage, filterValues)
               : undefined
           }
           executeKey={widgetFilterExecuteRevision(
-            widget.id,
+            displayWidget.id,
             effectiveLinkage,
             filterValues,
             undefined,
             globalChartRefreshKey,
           )}
           filterValue={
-            widget.filterConfig
-              ? filterValues[widget.filterConfig.filterId]
+            displayWidget.filterConfig
+              ? filterValues[displayWidget.filterConfig.filterId]
               : undefined
           }
           onFilterValueChange={onFilterValueChange}
           onTitleChange={() => {}}
           dashboardStyle={widgetDashboardStyle}
           geo3dRenderTier={geo3dRenderTier}
+          componentMap={componentMap}
         />
       </WidgetErrorBoundary>
     );

@@ -19,7 +19,8 @@ ChartRenderer
 |------|------|
 | `buildChartRenderPlan.ts` | `ChartViewModel` → `ChartRenderPlan`（`kind: "d3"`） |
 | `applyChartStyleChain.ts` | D3 主题 / 条件格式 / markLine |
-| `plugins/` | `metadata.ts` 真理源 · `buildPlanForType` |
+| `plugins/` | `metadata.ts` 真理源 · `buildPlanForType` · `registerChartPluginPackage` |
+| `plugins/bar/` | 示例单包插件（`ChartPluginPackage`） |
 | `d3/` | SVG 渲染实现 |
 | `geo/` | `OfflineGeoPort` · 下钻 · 占位视图 · `geoMapChart` join |
 | `three/` · `three/geo/` | `map-3d` Three.js choropleth · `chinaTerrainLoader` · `applyGeoTerrainSurface`（见 [docs/ui/map-texture.md](../../../../docs/ui/map-texture.md)） |

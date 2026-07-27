@@ -35,6 +35,12 @@ type PaintMode = "data" | "live" | "commit";
 
 const LIVE_RESIZE_THROTTLE_MS = 100;
 
+type ThreeMapApi = {
+  contentKey: string;
+  resize: (width: number, height: number) => boolean;
+  resumeBorderFlow?: () => void;
+};
+
 function D3GeoMapViewInner(props: ChartEngineViewProps) {
   const {
     viewModel,
@@ -114,12 +120,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   const lastMeasureRef = useRef({ width: 0, height: 0 });
   const liveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const renderGenRef = useRef(0);
-  const threeApiRef = useRef<{
-    contentKey: string;
-    resize: (width: number, height: number) => boolean;
-    setAnimationActive?: (active: boolean) => void;
-    resumeBorderFlow?: () => void;
-  } | null>(null);
+  const threeApiRef = useRef<ThreeMapApi | null>(null);
   const [renderError, setRenderError] = useState<string | null>(null);
   const [renderEngine, setRenderEngine] = useState<GeoMapRenderEngine | null>(null);
   const [fallbackReason, setFallbackReason] = useState<string | null>(null);
@@ -315,11 +316,13 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
                     threeApiRef.current = {
                       contentKey: renderContentKey,
                       resize: result.resize,
-                      setAnimationActive: result.setAnimationActive,
                       resumeBorderFlow: result.resumeBorderFlow,
                     };
+                    const paint = readPaintSize();
+                    if (paint && paint.width > 0 && paint.height > 0) {
+                      result.resize(paint.width, paint.height);
+                    }
                     result.resumeBorderFlow?.();
-                    result.setAnimationActive?.(props.geo3dAnimationActive !== false);
                   }
                   applyRenderMeta(result.engine, result.fallbackReason ?? null);
                   setRenderError(null);
@@ -390,21 +393,14 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       liveTimerRef.current = null;
     }
     setChartAnimationSuppressed(false);
-    if (isThreeMap && threeApiRef.current) {
+    if (isThreeMap) {
       tryThreeResize("commit");
       return;
     }
-    if (isThreeMap && tryThreeResize("commit")) return;
     measureAndRender("commit", true);
   }, [isThreeMap, tryThreeResize, measureAndRender]);
 
   useEmbeddedChartLiveResize(fill && !plan.empty, containerRef, onLiveResize, onCommitResize);
-
-  useEffect(() => {
-    if (!isThreeMap) return;
-    threeApiRef.current?.resumeBorderFlow?.();
-    threeApiRef.current?.setAnimationActive?.(props.geo3dAnimationActive !== false);
-  }, [isThreeMap, props.geo3dAnimationActive]);
 
   useEffect(() => {
     if (geoMapLoading) return;

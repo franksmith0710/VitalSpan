@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "check:design": "node scripts/check-design.mjs",
     "check:chart-engine": "node scripts/check-chart-engine.mjs",
+    "check:chart-plugin-parity": "vitest run src/components/charts/engine/plugins/pluginParity.test.ts",
     "test": "vitest run && node --test scripts/check-design.fixture.test.mjs scripts/lib/satelliteTileStitch.test.mjs scripts/lib/terrainDisplaceBake.test.mjs && node scripts/check-chart-engine.mjs",
     "test:e2e": "playwright test",
     "test:smoke": "vitest run src/routes.smoke.test.tsx",

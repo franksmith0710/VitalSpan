@@ -47,7 +47,8 @@ import type { Geo3dRenderTier } from "@/components/charts/engine/three/geo3dRunt
 import { pixelDragRailHeightPx, pixelViewTitleHeightPx, dwCaption } from "./dashboardWidgetTypography";
 import { usePixelCanvasScale } from "./pixelCanvas/PixelCanvasScaleContext";
 import { widgetChartIcon, WIDGET_CHART_LABELS } from "./widgetIcons";
-import { WidgetInlineTitle } from "./WidgetInlineTitle";
+import { resolveLayoutWidget, type VizComponentMap } from "@/lib/resolveVizComponent";
+import { isLinkedComponentRef } from "@/lib/vizComponents";
 
 function useWidgetAutoRefreshExecuteKey(
   chartConfig: ChartViewConfig | undefined,
@@ -99,6 +100,7 @@ type DashboardWidgetProps = {
   nested?: boolean;
   /** 3D 地图渲染分级：列表 thumbnail / 看板 embed / 全屏预览 full */
   geo3dRenderTier?: Geo3dRenderTier;
+  componentMap?: VizComponentMap;
 };
 
 function WidgetPendingPreview({
@@ -234,20 +236,37 @@ export function DashboardWidget({
   suspendLiveResize = false,
   nested = false,
   geo3dRenderTier = "embed",
+  componentMap,
 }: DashboardWidgetProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const canvasScale = usePixelCanvasScale();
+  const resolvedWidget = useMemo(
+    () => (componentMap ? resolveLayoutWidget(widget, componentMap) : widget),
+    [widget, componentMap],
+  );
+  const componentPending =
+    isLinkedComponentRef(widget.componentRef) &&
+    Boolean(componentMap) &&
+    !componentMap?.has(widget.componentRef.componentId);
   const chartPaletteDefaults = useMemo(
     () => chartPaletteDefaultsProp ?? pickChartPaletteDefaults(dashboardStyle),
     [chartPaletteDefaultsProp, chartPaletteDefaultsFingerprint(dashboardStyle)],
   );
-  const chartCfg = widget.type === "chart" ? widget.chartConfig : undefined;
+  const chartCfg = resolvedWidget.type === "chart" ? resolvedWidget.chartConfig : undefined;
   const widgetExecuteKey = useWidgetAutoRefreshExecuteKey(chartCfg, executeKey);
 
-  if (widget.type === "filter" && widget.filterConfig) {
+  if (componentPending) {
+    return (
+      <div className="flex h-full min-h-[64px] items-center justify-center px-3 text-theme-xs text-gray-500 dark:text-gray-400">
+        正在加载组件库配置…
+      </div>
+    );
+  }
+
+  if (resolvedWidget.type === "filter" && resolvedWidget.filterConfig) {
     return (
       <FilterWidget
-        widget={widget as LayoutWidget & { filterConfig: FilterWidgetConfig }}
+        widget={resolvedWidget as LayoutWidget & { filterConfig: FilterWidgetConfig }}
         mode={mode}
         shell={shell}
         nested={nested}
@@ -262,10 +281,10 @@ export function DashboardWidget({
     );
   }
 
-  if (widget.type === "text" && widget.textConfig) {
+  if (resolvedWidget.type === "text" && resolvedWidget.textConfig) {
     return (
       <TextWidget
-        widget={widget as LayoutWidget & { textConfig: TextWidgetConfig }}
+        widget={resolvedWidget as LayoutWidget & { textConfig: TextWidgetConfig }}
         mode={mode}
         shell={shell}
         nested={nested}
@@ -279,10 +298,10 @@ export function DashboardWidget({
     );
   }
 
-  if (widget.type === "media" && widget.mediaConfig) {
+  if (resolvedWidget.type === "media" && resolvedWidget.mediaConfig) {
     return (
       <MediaWidget
-        widget={widget as LayoutWidget & { mediaConfig: MediaWidgetConfig }}
+        widget={resolvedWidget as LayoutWidget & { mediaConfig: MediaWidgetConfig }}
         mode={mode}
         shell={shell}
         nested={nested}
@@ -295,10 +314,10 @@ export function DashboardWidget({
     );
   }
 
-  if (widget.type === "tabs" && widget.tabsConfig) {
+  if (resolvedWidget.type === "tabs" && resolvedWidget.tabsConfig) {
     return (
       <TabsWidget
-        widget={widget as LayoutWidget & { tabsConfig: TabsWidgetConfig }}
+        widget={resolvedWidget as LayoutWidget & { tabsConfig: TabsWidgetConfig }}
         allWidgets={allWidgets ?? []}
         mode={mode}
         shell={shell}
@@ -314,17 +333,17 @@ export function DashboardWidget({
     );
   }
 
-  if (widget.type !== "chart") {
+  if (resolvedWidget.type !== "chart") {
     return null;
   }
 
-  const chartType = widget.chartConfig?.chartType ?? "bar";
+  const chartType = resolvedWidget.chartConfig?.chartType ?? "bar";
   const Icon = widgetChartIcon(chartType);
   const typeLabel = WIDGET_CHART_LABELS[chartType] ?? chartType;
-  const configReady = isWidgetConfigReady(widget.chartConfig);
+  const configReady = isWidgetConfigReady(resolvedWidget.chartConfig);
   const inShapeShell = shell === "shape";
-  const sizeW = gridSize?.w ?? widget.colSpan;
-  const sizeH = gridSize?.h ?? widget.rowSpan;
+  const sizeW = gridSize?.w ?? resolvedWidget.colSpan;
+  const sizeH = gridSize?.h ?? resolvedWidget.rowSpan;
   const sizeLabel =
     inShapeShell && pixelSize
       ? `${Math.round(pixelSize.width)}×${Math.round(pixelSize.height)}`
@@ -332,38 +351,38 @@ export function DashboardWidget({
   const shapeContentChromePx =
     inShapeShell && mode === "edit" && selected
       ? pixelDragRailHeightPx(canvasScale)
-      : inShapeShell && mode === "view" && readChartTitleVisible(widget.chartConfig, dashboardStyle?.titleStyle)
+      : inShapeShell && mode === "view" && readChartTitleVisible(resolvedWidget.chartConfig, dashboardStyle?.titleStyle)
         ? pixelViewTitleHeightPx(canvasScale)
         : 0;
   const effectiveScheme = resolveWidgetEffectiveScheme(dashboardStyle);
-  const shellStyle = widget.chartConfig
+  const shellStyle = resolvedWidget.chartConfig
     ? resolveChartContentShellStyle(
         dashboardStyle?.widgetStyle,
-        widget.chartConfig,
+        resolvedWidget.chartConfig,
         effectiveScheme,
       ).outer
     : mergeWidgetShellStyle(dashboardStyle?.widgetStyle, effectiveScheme);
   const shellColor = resolveWidgetShellPaintColor(dashboardStyle);
   const chrome = resolveDashboardChrome(dashboardStyle);
   const chartTitleVisible =
-    inShapeShell && mode === "view" && readChartTitleVisible(widget.chartConfig, dashboardStyle?.titleStyle);
+    inShapeShell && mode === "view" && readChartTitleVisible(resolvedWidget.chartConfig, dashboardStyle?.titleStyle);
   const titleStyle =
-    widget.chartConfig
+    resolvedWidget.chartConfig
       ? mergeChartTitleStyle(
           dashboardStyle?.titleStyle,
-          widget.chartConfig,
+          resolvedWidget.chartConfig,
           effectiveScheme,
         )
       : mergeTitleStyle(dashboardStyle?.titleStyle);
-  const queryLimit = widget.chartConfig
-    ? resolveChartQueryLimit(widget.chartConfig, dashboardStyle ?? {})
+  const queryLimit = resolvedWidget.chartConfig
+    ? resolveChartQueryLimit(resolvedWidget.chartConfig, dashboardStyle ?? {})
     : 100;
-  const chartRemark = widget.chartConfig ? readChartRemark(widget.chartConfig) : { show: false, text: "" };
-  const readyChartConfig = widget.chartConfig;
+  const chartRemark = resolvedWidget.chartConfig ? readChartRemark(resolvedWidget.chartConfig) : { show: false, text: "" };
+  const readyChartConfig = resolvedWidget.chartConfig;
 
   const chartBody =
     mode === "edit" && !configReady ? (
-      <WidgetPendingPreview widget={widget} dashboardStyle={dashboardStyle} />
+      <WidgetPendingPreview widget={resolvedWidget} dashboardStyle={dashboardStyle} />
     ) : readyChartConfig ? (
       <DashboardChartMountGate widgetId={widget.id} selected={selected} mode={mode} shell={shell}>
         {({ queryEnabled, renderEnabled, mountGateStatus, onMountReady, viewportRef }) => (
@@ -526,7 +545,7 @@ export function DashboardWidget({
             </IconButton>
           ) : null}
         </div>
-      ) : readChartTitleVisible(widget.chartConfig, dashboardStyle?.titleStyle) ? (
+      ) : readChartTitleVisible(resolvedWidget.chartConfig, dashboardStyle?.titleStyle) ? (
         <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 px-3 py-2 dark:border-gray-800">
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-gray-100 text-gray-600 dark:bg-white/5 dark:text-gray-400">
             <Icon className="size-3.5" aria-hidden />

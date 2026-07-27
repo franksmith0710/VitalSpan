@@ -220,6 +220,10 @@ redoc: /redoc
 | POST | `/api/v1/dashboard-templates/{id}/archive` | 下架模板 | 内部 | 一期 | DASH-009 | 已实现 | `backend/app/api/v1/dashboard_templates.py` |
 | POST | `/api/v1/dashboard-templates/import` | 导入 `viz-layout` 信封为草稿 | 内部 | 一期 | DASH-009 | 已实现 | `backend/app/api/v1/dashboard_templates.py` |
 | GET | `/api/v1/dashboard-templates/{id}/export` | 导出 `viz-layout` 信封 | 内部 | 一期 | DASH-009 | 已实现 | `backend/app/api/v1/dashboard_templates.py` |
+| GET/POST | `/api/v1/viz-components` | 组件库列表/创建草稿 | 内部 | 一期 | DASH-010 | 已实现 | `backend/app/api/v1/viz_components.py` |
+| POST | `/api/v1/viz-components/batch-resolve` | 批量解析引用组件 payload | 内部 | 一期 | DASH-010 | 已实现 | `backend/app/api/v1/viz_components.py` |
+| GET/PUT/DELETE | `/api/v1/viz-components/{id}` | 组件详情/更新/删除 | 内部 | 一期 | DASH-010 | 已实现 | `backend/app/api/v1/viz_components.py` |
+| POST | `/api/v1/viz-components/{id}/publish` | 发布组件（`viz:component.manage`） | 内部 | 一期 | DASH-010 | 已实现 | `backend/app/api/v1/viz_components.py` |
 | POST | `/api/v1/views/validate` | DashboardView 协议校验；422 码：`VIEW_UNKNOWN_CHART_REF` / `VIEW_DEFAULT_SELF_REF` | IF-06 | 一期 | VIEW-001 | 已实现 | `backend/app/api/v1/views.py` |
 | GET | `/api/v1/views/schema` | DashboardView JSON Schema | IF-06 | 一期 | VIEW-001 | 已实现 | `backend/app/api/v1/views.py` |
 

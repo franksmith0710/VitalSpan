@@ -70,6 +70,11 @@ const VizTemplatesHubPage = lazy(() =>
     default: m.VizTemplatesHubPage,
   })),
 );
+const VizComponentsHubPage = lazy(() =>
+  import("@/pages/admin/viz-components/VizComponentsHubPage").then((m) => ({
+    default: m.VizComponentsHubPage,
+  })),
+);
 const DevChartsPage = lazy(() =>
   import("@/pages/dev/DevChartsPage").then((m) => ({ default: m.DevChartsPage })),
 );
@@ -121,6 +126,14 @@ export function AppRoutes() {
             element={
               <RequireCapabilityName capability="dashboard:read">
                 <Lazy><VizTemplatesHubPage /></Lazy>
+              </RequireCapabilityName>
+            }
+          />
+          <Route
+            path="viz-components"
+            element={
+              <RequireCapabilityName capability="dashboard:read">
+                <Lazy><VizComponentsHubPage /></Lazy>
               </RequireCapabilityName>
             }
           />
