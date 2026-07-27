@@ -17,7 +17,7 @@ export type CloudClusterBuildResult = {
   instancedMesh: THREE.InstancedMesh;
   clusters: CloudClusterRuntime[];
   sharedGeometry: THREE.SphereGeometry;
-  sharedMaterial: THREE.ShaderMaterial;
+  sharedMaterial: THREE.Material;
 };
 
 function seededUnit(seed: number): number {

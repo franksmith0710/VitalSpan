@@ -244,6 +244,7 @@ export const ChartRenderer = memo(function ChartRenderer({
     const revision =
       manualDrillStack === undefined ? "__unset__" : drillStackRevision(manualDrillStack);
     const configChanged = revision !== persistedRevisionRef.current;
+    if (!configChanged) return;
     persistedRevisionRef.current = revision;
 
     if (!isGeoMapChart) {
@@ -253,21 +254,15 @@ export const ChartRenderer = memo(function ChartRenderer({
       return;
     }
 
-    if (manualDrillStack !== undefined) {
-      if (manualDrillStack.length) drill.setStack(manualDrillStack);
-      else drill.reset();
+    // 仅在配置侧 revision 变化时同步；禁止用旧 config 覆盖用户刚点的「返回/全部」
+    if (manualDrillStack === undefined) {
+      if (!drill.stack.length && persistedDrillStack.length) {
+        drill.setStack(persistedDrillStack);
+      }
       return;
     }
-
-    if (configChanged) {
-      if (persistedDrillStack.length) drill.setStack(persistedDrillStack);
-      else drill.reset();
-      return;
-    }
-
-    if (drill.stack.length > 0) return;
-    if (!persistedDrillStack.length) return;
-    drill.setStack(persistedDrillStack);
+    if (manualDrillStack.length) drill.setStack(manualDrillStack);
+    else drill.reset();
   }, [
     drillEnabled,
     drill.active,
@@ -282,12 +277,13 @@ export const ChartRenderer = memo(function ChartRenderer({
 
   const effectiveDrillStack = useMemo(() => {
     if (isGeoMapChart) {
+      // 有 DrillContext 时以 live stack 为准，避免 config 滞后把返回全国冲掉
+      if (drill.active) return drill.stack;
       if (manualDrillStack !== undefined) return manualDrillStack;
-      if (drill.stack.length > 0) return drill.stack;
       return [];
     }
     return drill.stack.length > 0 ? drill.stack : persistedDrillStack;
-  }, [isGeoMapChart, manualDrillStack, drill.stack, persistedDrillStack]);
+  }, [isGeoMapChart, drill.active, drill.stack, manualDrillStack, persistedDrillStack]);
 
   const mergedFilterParameters = useMemo(
     () => ({
@@ -415,7 +411,8 @@ export const ChartRenderer = memo(function ChartRenderer({
     (stack: typeof effectiveDrillStack) => {
       if (!isGeoMapChartType(localConfig.chartType)) return;
       const next = patchChartDeStyleNested(localConfig, "geo", {
-        manualDrillStack: stack,
+        // 空栈写 undefined，表示「明确全国 / 未手动锁定」，避免 [] 与滞后 config 互相打架
+        manualDrillStack: stack.length ? stack : undefined,
       });
       setLocalConfig(next);
       onChartConfigChange?.(next);

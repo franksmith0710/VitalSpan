@@ -44,18 +44,29 @@ function normalizeRegionsGeo(geo: RegionsGeo): RegionsGeo {
 }
 
 function ensureDefaultMapRegistered(): void {
-  if (!registeredMaps.has(VS_REGIONS_MAP_ID)) {
-    registeredMaps.set(VS_REGIONS_MAP_ID, normalizeRegionsGeo(chinaProvincesGeo as RegionsGeo));
-  }
+  const current = registeredMaps.get(VS_REGIONS_MAP_ID);
+  if (current?.features?.length) return;
+  registeredMaps.set(VS_REGIONS_MAP_ID, normalizeRegionsGeo(chinaProvincesGeo as RegionsGeo));
+}
+
+/** 空 / 非法 mapId 回落到全国省级资产，避免 `??` 对 "" 失效 */
+export function resolveOfflineGeoMapId(mapId: string | null | undefined): string {
+  const trimmed = typeof mapId === "string" ? mapId.trim() : "";
+  return trimmed || VS_REGIONS_MAP_ID;
 }
 
 export function registerOfflineGeoMap(mapId: string, geo: RegionsGeo): void {
-  registeredMaps.set(mapId, normalizeRegionsGeo(geo));
+  const id = resolveOfflineGeoMapId(mapId);
+  registeredMaps.set(id, normalizeRegionsGeo(geo));
 }
 
 export function getOfflineGeoMap(mapId: string): RegionsGeo | undefined {
   ensureDefaultMapRegistered();
-  return registeredMaps.get(mapId);
+  const id = resolveOfflineGeoMapId(mapId);
+  if (id === VS_REGIONS_MAP_ID) {
+    ensureDefaultMapRegistered();
+  }
+  return registeredMaps.get(id);
 }
 
 function joinMapRows(
@@ -68,9 +79,10 @@ function joinMapRows(
   drillDepth = 0,
 ): Array<{ name: string; value: number; adcode?: number; geometry: GeoJSON.Geometry | null }> {
   ensureDefaultMapRegistered();
+  const resolvedMapId = resolveOfflineGeoMapId(mapId);
   const ri = columns.indexOf(regionField);
   const mi = columns.indexOf(metricField);
-  const geo = registeredMaps.get(mapId) ?? (chinaProvincesGeo as RegionsGeo);
+  const geo = registeredMaps.get(resolvedMapId) ?? (chinaProvincesGeo as RegionsGeo);
   const valueByName = new Map<string, number>();
   if (ri >= 0 && mi >= 0) {
     const knownNames = knownRegionNames ?? listVsRegionNames();

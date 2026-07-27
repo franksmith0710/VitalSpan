@@ -32,11 +32,13 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
     tooltipPresentation,
     valueFormat,
     knownRegionNames,
-    mapId = VS_REGIONS_MAP_ID,
+    mapId: mapIdRaw = VS_REGIONS_MAP_ID,
     isDark = false,
     geoStyle = {},
     onPointClick,
   } = config;
+
+  const mapId = mapIdRaw?.trim() || VS_REGIONS_MAP_ID;
 
   const roam = resolveEmbeddedGeoRoam(geoStyle.roam);
   const showRegionLabel = geoStyle.showRegionLabel === true;

@@ -10,6 +10,7 @@ import type { GeoMapRenderResult } from "@/components/charts/engine/geo/geoMapRe
 import {
   getOfflineGeoMap,
   joinOfflineMapFeatures,
+  resolveOfflineGeoMapId,
 } from "@/components/charts/engine/geo/OfflineGeoPort";
 import { ensureOfflineGeoMap } from "@/components/charts/engine/geo/geoMapLevels";
 import { colorForGeoHover } from "@/components/charts/engine/geo/geoSurfaceColors";
@@ -232,11 +233,14 @@ export async function renderThreeChoroplethChart(
     return { dispose: noopDispose, engine: "three" };
   }
 
-  const resolvedMapId = mapId ?? VS_REGIONS_MAP_ID;
-  if (!getOfflineGeoMap(resolvedMapId)?.features?.length && resolvedMapId !== VS_REGIONS_MAP_ID) {
-    await ensureOfflineGeoMap(resolvedMapId);
+  const resolvedMapId = resolveOfflineGeoMapId(mapId);
+  await ensureOfflineGeoMap(resolvedMapId);
+  let geo = getOfflineGeoMap(resolvedMapId);
+  if (!geo?.features?.length && resolvedMapId !== VS_REGIONS_MAP_ID) {
+    // 市级/区县缺失时回落全国，避免整图「资产缺失」白屏
+    await ensureOfflineGeoMap(VS_REGIONS_MAP_ID);
+    geo = getOfflineGeoMap(VS_REGIONS_MAP_ID);
   }
-  const geo = getOfflineGeoMap(resolvedMapId);
   if (!geo?.features?.length) {
     container.replaceChildren();
     const msg = document.createElement("div");
@@ -253,7 +257,7 @@ export async function renderThreeChoroplethChart(
     columns,
     regionField,
     metricField,
-    mapId ?? "",
+    resolvedMapId,
     knownRegionNames,
     drillDepth,
   ).filter((f) => f.geometry != null);
@@ -485,15 +489,22 @@ export async function renderThreeChoroplethChart(
 
     const borderZ =
       resolveGeoCapTopZ(plateDepth, Boolean(terrainPack?.colorMap)) + GEO_BORDER_ABOVE_CAP_Z;
-    const capSegments = collectCapBorderSegments(meshes);
-    const outerBorderFlowBundle = buildGeoOuterBorderFlowFromCapSegments(
-      capSegments,
-      borderZ,
-      borderColor,
-      isDark,
-      borderOpacity,
-      borderFlow,
-    );
+    let outerBorderFlowBundle: ReturnType<typeof buildGeoOuterBorderFlowFromCapSegments> = null;
+    try {
+      const capSegments = collectCapBorderSegments(meshes);
+      outerBorderFlowBundle = buildGeoOuterBorderFlowFromCapSegments(
+        capSegments,
+        borderZ,
+        borderColor,
+        isDark,
+        borderOpacity,
+        borderFlow,
+      );
+    } catch (flowErr) {
+      if (import.meta.env.DEV) {
+        console.warn("[map-3d] border flow disabled after init failure", flowErr);
+      }
+    }
     if (outerBorderFlowBundle) {
       if (isGeoBorderFlowMaterial(outerBorderFlowBundle.lines.material)) {
         borderFlowMaterials.push(outerBorderFlowBundle.lines.material);
@@ -536,7 +547,14 @@ export async function renderThreeChoroplethChart(
 
     scene.add(mapGroup);
     const orbitLayout = layoutThreeGeoMapGroup(mapGroup, { preCentered: false });
-    const sceneClouds = applyGeo3dSceneClouds(scene, orbitLayout, visualStyle, geo3dStyle);
+    let sceneClouds: ReturnType<typeof applyGeo3dSceneClouds> = null;
+    try {
+      sceneClouds = applyGeo3dSceneClouds(scene, orbitLayout, visualStyle, geo3dStyle);
+    } catch (cloudErr) {
+      if (import.meta.env.DEV) {
+        console.warn("[map-3d] scene clouds disabled after init failure", cloudErr);
+      }
+    }
 
     const roam = resolveEmbeddedGeoRoam(geoStyle.roam);
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -1115,7 +1133,10 @@ export async function renderThreeChoroplethChart(
       },
       dispose: disposeImpl,
     };
-  } catch {
+  } catch (err) {
+    if (import.meta.env.DEV) {
+      console.error("[map-3d] three init failed", err);
+    }
     releaseSlot();
     return d3Fallback(container, config, "three-init-failed");
   }

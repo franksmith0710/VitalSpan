@@ -166,18 +166,25 @@ export function isOfflineGeoMapReady(mapId: string): boolean {
 /** 确保离线 GeoJSON 已注册（HMR 后 registeredMaps 失步时可恢复） */
 export async function ensureOfflineGeoMap(mapId: string): Promise<boolean> {
   ensureVsRegionsMapRegistered();
-  if (mapId === VS_REGIONS_MAP_ID) return isOfflineGeoMapReady(mapId);
+  const trimmed = mapId.trim() || VS_REGIONS_MAP_ID;
+  if (trimmed === VS_REGIONS_MAP_ID) {
+    // 强制走 getOfflineGeoMap，触发全国资产幂等重注册
+    return isOfflineGeoMapReady(VS_REGIONS_MAP_ID);
+  }
 
-  const match = /^vs-geo-(\d{6})$/.exec(mapId.trim());
-  if (!match) return false;
-  if (isOfflineGeoMapReady(mapId)) return true;
+  const match = /^vs-geo-(\d{6})$/.exec(trimmed);
+  if (!match) {
+    // 未知 id：至少保证全国可渲染，避免白屏「资产缺失」
+    return isOfflineGeoMapReady(VS_REGIONS_MAP_ID);
+  }
+  if (isOfflineGeoMapReady(trimmed)) return true;
 
   const adcode = Number(match[1]);
   const cityIndex = await ensureCityMap(adcode);
-  if (cityIndex && isOfflineGeoMapReady(mapId)) return true;
+  if (cityIndex && isOfflineGeoMapReady(trimmed)) return true;
 
   const districtIndex = await ensureDistrictMap(adcode);
-  return Boolean(districtIndex && isOfflineGeoMapReady(mapId));
+  return Boolean(districtIndex && isOfflineGeoMapReady(trimmed));
 }
 
 async function ensureCityMap(provinceAdcode: number): Promise<GeoNameIndex | null> {

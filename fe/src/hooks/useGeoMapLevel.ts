@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ChartDrillFrame } from "@/lib/chartDrill";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import {
@@ -39,28 +39,37 @@ export function useGeoMapLevel({ enabled, config, drillStack }: Options) {
   const [version, setVersion] = useState(0);
   const stackKey = drillStack.map((frame) => `${frame.field}:${frame.value}`).join("|");
   const [resolvedStackKey, setResolvedStackKey] = useState("");
+  const configRef = useRef(config);
+  const stackRef = useRef(drillStack);
+  configRef.current = config;
+  stackRef.current = drillStack;
 
   const resolving = Boolean(enabled && config && stackKey !== resolvedStackKey);
 
   useEffect(() => {
-    if (!enabled || !config) {
+    if (!enabled || !configRef.current) {
       setContext(createProvinceContext());
       setResolvedStackKey("");
       return;
     }
 
     let cancelled = false;
-    void resolveGeoMapLevelContext({ config, drillStack }).then((next) => {
+    const requestKey = stackKey;
+    void resolveGeoMapLevelContext({
+      config: configRef.current,
+      drillStack: stackRef.current,
+    }).then((next) => {
       if (cancelled) return;
       setContext(next);
-      setResolvedStackKey(stackKey);
+      setResolvedStackKey(requestKey);
       setVersion((v) => v + 1);
     });
 
     return () => {
       cancelled = true;
     };
-  }, [enabled, config, stackKey]);
+    // 仅跟 stackKey / enabled：避免父组件每次新建 config 对象导致 resolve 被反复 cancel
+  }, [enabled, stackKey]);
 
   return { context, loading: resolving, version };
 }

@@ -15,9 +15,9 @@ describe("geo3dSceneClouds", () => {
     expect(handle.group.children.length).toBe(1);
     const instanced = handle.group.children[0] as THREE.InstancedMesh;
     expect(instanced).toBeInstanceOf(THREE.InstancedMesh);
-    const material = instanced.material as THREE.ShaderMaterial;
-    expect(material).toBeInstanceOf(THREE.ShaderMaterial);
-    expect((material.uniforms.uOpacity.value as number)).toBeGreaterThan(0.1);
+    const material = instanced.material as THREE.MeshBasicMaterial;
+    expect(material).toBeInstanceOf(THREE.MeshBasicMaterial);
+    expect(material.opacity).toBeGreaterThan(0.1);
     expect(instanced.count).toBeGreaterThanOrEqual(resolveClusterCount(0.55) * 5);
     handle.dispose();
   });
