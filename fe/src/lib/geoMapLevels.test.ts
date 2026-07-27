@@ -2,9 +2,12 @@ import { describe, expect, it } from "vitest";
 import { validateManualGeoMapDrillStack } from "@/lib/geoMapRegionPicker";
 import {
   findMapDrillFilterValue,
+  ensureOfflineGeoMap,
+  isOfflineGeoMapReady,
   lookupProvinceAdcode,
   resolveGeoMapLevelContext,
 } from "./geoMapLevels";
+import { getOfflineGeoMap, registerOfflineGeoMap } from "@/components/charts/engine/geo/OfflineGeoPort";
 import { VS_REGIONS_MAP_ID } from "./geoMapChart";
 
 describe("lookupProvinceAdcode", () => {
@@ -43,6 +46,21 @@ describe("resolveGeoMapLevelContext", () => {
     expect(ctx.drillDepth).toBe(1);
     expect(ctx.levelLabel).toBe("市级");
     expect(ctx.knownRegionNames).toContain("广州市");
+  });
+
+  it("loads hunan city map after province drill", async () => {
+    const ctx = await resolveGeoMapLevelContext({
+      config: {
+        chartType: "map-3d",
+        dimensions: [{ field: "province" }, { field: "city" }],
+        metrics: [{ field: "total" }],
+      } as never,
+      drillStack: [{ field: "province", value: "湖南省", label: "湖南省" }],
+    });
+    expect(ctx.mapId).toBe("vs-geo-430000");
+    expect(ctx.drillDepth).toBe(1);
+    expect(isOfflineGeoMapReady("vs-geo-430000")).toBe(true);
+    expect(getOfflineGeoMap("vs-geo-430000")?.features?.length).toBeGreaterThan(0);
   });
 
   it("loads district map after province and city drill", async () => {
@@ -133,6 +151,21 @@ describe("resolveGeoMapLevelContext", () => {
       [{ field: "province", value: "广东省", label: "广东省" }],
     );
     expect(result.ok).toBe(true);
+  });
+});
+
+describe("ensureOfflineGeoMap", () => {
+  it("recovers province map after registry was cleared", async () => {
+    const mapId = "vs-geo-430000";
+    expect(await ensureOfflineGeoMap(mapId)).toBe(true);
+    const featureCount = getOfflineGeoMap(mapId)?.features?.length ?? 0;
+    expect(featureCount).toBeGreaterThan(0);
+
+    registerOfflineGeoMap(mapId, { features: [] });
+    expect(getOfflineGeoMap(mapId)?.features?.length).toBe(0);
+
+    expect(await ensureOfflineGeoMap(mapId)).toBe(true);
+    expect(getOfflineGeoMap(mapId)?.features?.length).toBeGreaterThan(0);
   });
 });
 

@@ -136,7 +136,7 @@ export function createGeoBorderFlowParticles(
   points.frustumCulled = false;
 
   const driftAmp = Math.max(path.totalLength * 0.00035, 0.012);
-  const liftAmp = 0.012;
+  const liftAmp = 0.004;
   const dustOpacity = opacity * 0.32;
 
   const syncGpu = () => {

@@ -58,6 +58,7 @@ class VizComponentListItem(BaseModel):
     tags: list[str] = Field(default_factory=list)
     visibility: ComponentVisibility
     content_revision: int = Field(alias="contentRevision")
+    reference_count: int = Field(default=0, alias="referenceCount", ge=0)
     updated_at: datetime = Field(alias="updatedAt")
     published_at: datetime | None = Field(default=None, alias="publishedAt")
 
@@ -108,3 +109,18 @@ class VizComponentBatchResolveIn(BaseModel):
 
 class VizComponentBatchResolveResponse(BaseModel):
     items: list[VizComponentOut]
+
+
+class VizComponentReferenceItem(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    dashboard_id: uuid.UUID = Field(alias="dashboardId")
+    dashboard_name: str = Field(alias="dashboardName")
+    dashboard_surface_kind: SurfaceKind = Field(alias="dashboardSurfaceKind")
+    widget_id: str = Field(alias="widgetId")
+    widget_title: str | None = Field(default=None, alias="widgetTitle")
+
+
+class VizComponentReferencesResponse(BaseModel):
+    items: list[VizComponentReferenceItem]
+    total: int

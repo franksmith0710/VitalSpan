@@ -43,29 +43,30 @@ export function CanvasScaleArea({
     <div
       data-canvas-scale-area
       className={cn(
-        "absolute right-3 bottom-3 z-20 flex max-w-[min(100%,24rem)] items-center gap-2 rounded-lg border border-white/10 bg-[#0d1117]/90 px-2.5 py-1.5 text-[11px] text-white/75 shadow-lg backdrop-blur-sm select-none",
+        "absolute right-3 bottom-3 z-20 flex max-w-[calc(100%-1.5rem)] flex-wrap items-center justify-end gap-x-2 gap-y-1 rounded-lg border border-white/10 bg-[#0d1117]/90 px-2.5 py-1.5 text-[11px] text-white/75 shadow-lg backdrop-blur-sm select-none",
         spacePanActive && "border-cyan-500/40 text-cyan-50/90",
         className,
       )}
       onPointerDown={(event) => event.stopPropagation()}
     >
-      {designCanvasWidth != null && designCanvasHeight != null ? (
-        <span
-          className="shrink-0 tabular-nums text-white/55"
-          data-testid="canvas-design-size-hud"
-        >
-          {designCanvasWidth}×{designCanvasHeight}
-        </span>
-      ) : null}
-      {designCanvasWidth != null && designCanvasHeight != null ? (
-        <div className="hidden h-4 w-px shrink-0 bg-white/15 sm:block" aria-hidden />
-      ) : null}
-      <p className="hidden min-w-0 truncate sm:block">
-        <span className={spacePanActive ? "text-cyan-200" : undefined}>空格/中键/空白拖动画布</span>
-        <span className="mx-1.5 text-white/30">·</span>
-        <span>Ctrl+滚轮缩放</span>
-      </p>
-      <div className="hidden h-4 w-px shrink-0 bg-white/15 sm:block" aria-hidden />
+      <div className="hidden min-w-0 items-center gap-2 sm:flex">
+        {designCanvasWidth != null && designCanvasHeight != null ? (
+          <span
+            className="shrink-0 tabular-nums text-white/55"
+            data-testid="canvas-design-size-hud"
+          >
+            {designCanvasWidth}×{designCanvasHeight}
+          </span>
+        ) : null}
+        {designCanvasWidth != null && designCanvasHeight != null ? (
+          <div className="h-4 w-px shrink-0 bg-white/15" aria-hidden />
+        ) : null}
+        <p className="whitespace-nowrap">
+          <span className={spacePanActive ? "text-cyan-200" : undefined}>空格/中键拖动画布</span>
+          <span className="mx-1.5 text-white/30">·</span>
+          <span>Ctrl+滚轮缩放</span>
+        </p>
+      </div>
       <div className="flex shrink-0 items-center gap-0.5">
         <IconButton
           type="button"
@@ -105,19 +106,19 @@ export function CanvasScaleArea({
         >
           <Plus className="size-3.5" aria-hidden />
         </IconButton>
+        <div className="hidden h-4 w-px shrink-0 bg-white/15 md:block" aria-hidden />
+        <IconButton
+          type="button"
+          variant="ghost"
+          size="xs"
+          className="hidden size-7 text-white/80 hover:bg-white/10 hover:text-white md:inline-flex"
+          aria-label="重置视口"
+          tooltip="重置平移与缩放"
+          onClick={onResetViewport}
+        >
+          <RotateCcw className="size-3.5" aria-hidden />
+        </IconButton>
       </div>
-      <div className="hidden h-4 w-px shrink-0 bg-white/15 md:block" aria-hidden />
-      <IconButton
-        type="button"
-        variant="ghost"
-        size="xs"
-        className="hidden size-7 text-white/80 hover:bg-white/10 hover:text-white md:inline-flex"
-        aria-label="重置视口"
-        tooltip="重置平移与缩放"
-        onClick={onResetViewport}
-      >
-        <RotateCcw className="size-3.5" aria-hidden />
-      </IconButton>
     </div>
   );
 }

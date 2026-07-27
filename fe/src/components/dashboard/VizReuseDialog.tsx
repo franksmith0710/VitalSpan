@@ -135,6 +135,9 @@ function LibraryTab({
                     </span>
                     <span className="text-theme-xs text-gray-500 dark:text-gray-400">
                       {item.widgetType} · v{item.contentRevision}
+                      {typeof item.referenceCount === "number"
+                        ? ` · 引用 ${item.referenceCount}`
+                        : null}
                     </span>
                   </span>
                 </button>

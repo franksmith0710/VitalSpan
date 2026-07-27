@@ -103,8 +103,14 @@ export type ChartGeo3dStyle = {
   quality?: "auto" | "high" | "medium" | "low";
   /** 离线卫星地形贴图（diffuse） */
   terrainTexture?: boolean;
-  /** 场景雾（科技预设默认开启，可手动覆盖） */
+  /** 场景云（科技预设默认开启，可手动覆盖；配置键 sceneFog 保持兼容） */
   sceneFog?: boolean;
+  /** 场景云密度 0.1–1 */
+  sceneCloudDensity?: number;
+  /** 场景云漂移速度倍率 0–2 */
+  sceneCloudSpeed?: number;
+  /** 场景云高度倍率 0.2–2（相对地图尺度） */
+  sceneCloudHeight?: number;
   /** 挤出侧壁/底板颜色（#rrggbb）；未设置时跟随样式预设 */
   shellColor?: string;
   /** 挤出侧壁/底板不透明度（0–1，默认 1） */

@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import {
-  applyGeo3dSceneFog,
+  applyGeo3dSceneClouds,
   buildGeo3dStyleContentSig,
   geo3dPresetDefaults,
   hasCustomGeo3dShellColor,
-  resolveGeo3dSceneFog,
+  resolveGeo3dSceneClouds,
   resolveGeo3dShellColorHex,
   resolveGeo3dShellOpacity,
   resolveGeo3dStylePreset,
@@ -18,7 +18,7 @@ describe("geo3dVisualStyle", () => {
     expect(resolveGeo3dStylePreset({})).toBe("satellite");
   });
 
-  it("tech preset enables fog and disables terrain texture", () => {
+  it("tech preset enables scene clouds and disables terrain texture", () => {
     const defaults = geo3dPresetDefaults("tech");
     expect(defaults.terrainTexture).toBe(false);
     expect(defaults.sceneFog).toBe(true);
@@ -36,20 +36,19 @@ describe("geo3dVisualStyle", () => {
     expect(visual.preferTerrainTexture).toBe(false);
   });
 
-  it("scene fog resolves from preset when unset", () => {
-    expect(resolveGeo3dSceneFog({ stylePreset: "tech" })).toBe(true);
-    expect(resolveGeo3dSceneFog({ stylePreset: "satellite" })).toBe(false);
-    expect(resolveGeo3dSceneFog({ stylePreset: "tech", sceneFog: false })).toBe(false);
+  it("scene clouds resolve from preset when unset", () => {
+    expect(resolveGeo3dSceneClouds({ stylePreset: "tech" })).toBe(true);
+    expect(resolveGeo3dSceneClouds({ stylePreset: "satellite" })).toBe(false);
+    expect(resolveGeo3dSceneClouds({ stylePreset: "tech", sceneFog: false })).toBe(false);
   });
 
-  it("applyGeo3dSceneFog uses camera-relative distances", () => {
+  it("applyGeo3dSceneClouds mounts cloud group instead of linear fog", () => {
     const scene = new THREE.Scene();
     const visual = resolveGeo3dVisualStyle({ stylePreset: "tech" }, true);
-    applyGeo3dSceneFog(scene, { defaultDistance: 20 }, visual, true);
-    expect(scene.fog).toBeInstanceOf(THREE.Fog);
-    const fog = scene.fog as THREE.Fog;
-    expect(fog.near).toBeCloseTo(8.4);
-    expect(fog.far).toBeCloseTo(27.6);
+    const handle = applyGeo3dSceneClouds(scene, { halfX: 9, halfZ: 6, maxY: 1, defaultDistance: 20 }, visual);
+    expect(handle).not.toBeNull();
+    expect(scene.fog).toBeNull();
+    handle?.dispose();
   });
 
   it("preset region border defaults differ by preset", () => {
@@ -83,6 +82,12 @@ describe("geo3dVisualStyle", () => {
   it("content sig changes when shell opacity changes", () => {
     const a = buildGeo3dStyleContentSig({ stylePreset: "satellite", shellOpacity: 1 });
     const b = buildGeo3dStyleContentSig({ stylePreset: "satellite", shellOpacity: 0.5 });
+    expect(a).not.toBe(b);
+  });
+
+  it("content sig changes when cloud tuning changes", () => {
+    const a = buildGeo3dStyleContentSig({ stylePreset: "tech", sceneCloudDensity: 0.4 });
+    const b = buildGeo3dStyleContentSig({ stylePreset: "tech", sceneCloudDensity: 0.9 });
     expect(a).not.toBe(b);
   });
 });

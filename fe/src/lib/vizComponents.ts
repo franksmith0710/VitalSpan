@@ -29,6 +29,7 @@ export type VizComponentListItem = {
   tags: string[];
   visibility: "org" | "private";
   contentRevision: number;
+  referenceCount?: number;
   updatedAt: string;
   publishedAt: string | null;
 };
@@ -49,6 +50,19 @@ export type VizComponentListResponse = {
 
 export type VizComponentBatchResolveResponse = {
   items: VizComponentDetail[];
+};
+
+export type VizComponentReferenceItem = {
+  dashboardId: string;
+  dashboardName: string;
+  dashboardSurfaceKind: VizSurfaceKind;
+  widgetId: string;
+  widgetTitle: string | null;
+};
+
+export type VizComponentReferencesResponse = {
+  items: VizComponentReferenceItem[];
+  total: number;
 };
 
 export const VIZ_COMPONENT_CATEGORIES: { key: string; label: string }[] = [
@@ -93,6 +107,10 @@ export function fetchVizComponents(params: {
 
 export function fetchVizComponent(id: string) {
   return apiFetch<VizComponentDetail>(`/api/v1/viz-components/${id}`);
+}
+
+export function fetchVizComponentReferences(id: string) {
+  return apiFetch<VizComponentReferencesResponse>(`/api/v1/viz-components/${id}/references`);
 }
 
 export function batchResolveVizComponents(ids: string[]) {

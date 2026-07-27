@@ -90,6 +90,18 @@ def batch_resolve_components(
         return _error_response(exc)
 
 
+@router.get("/{component_id}/references")
+def get_component_references(
+    component_id: uuid.UUID,
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    db: Annotated[Session, Depends(_db)],
+):
+    try:
+        return component_service.get_component_references(db, component_id, user)
+    except VizComponentError as exc:
+        return _error_response(exc)
+
+
 @router.get("/{component_id}")
 def get_component(
     component_id: uuid.UUID,

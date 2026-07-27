@@ -1,12 +1,18 @@
+import type { ReactElement } from "react";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { CanvasScaleArea } from "./CanvasScaleArea";
 
 afterEach(() => cleanup());
 
+function renderScaleArea(ui: ReactElement) {
+  return render(<TooltipProvider delayDuration={0}>{ui}</TooltipProvider>);
+}
+
 describe("CanvasScaleArea", () => {
   it("renders shortcut hints and current zoom", () => {
-    render(
+    renderScaleArea(
       <CanvasScaleArea
         userZoom={0.6}
         onZoomChange={vi.fn()}
@@ -16,13 +22,13 @@ describe("CanvasScaleArea", () => {
       />,
     );
 
-    expect(screen.getByText("空格/中键/空白拖动画布")).toBeInTheDocument();
+    expect(screen.getByText("空格/中键拖动画布")).toBeInTheDocument();
     expect(screen.getByText("Ctrl+滚轮缩放")).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "画布缩放比例" })).toHaveTextContent("60%");
   });
 
   it("shows design canvas size when provided", () => {
-    render(
+    renderScaleArea(
       <CanvasScaleArea
         userZoom={1}
         designCanvasWidth={1920}
@@ -42,7 +48,7 @@ describe("CanvasScaleArea", () => {
     const onZoomOut = vi.fn();
     const onResetViewport = vi.fn();
 
-    render(
+    renderScaleArea(
       <CanvasScaleArea
         userZoom={1}
         onZoomChange={vi.fn()}

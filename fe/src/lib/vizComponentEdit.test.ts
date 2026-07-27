@@ -1,8 +1,21 @@
 import { describe, expect, it } from "vitest";
+import { createLinkedLayoutWidget } from "@/components/dashboard/createLayoutWidget";
 import type { LayoutWidget } from "@/components/dashboard/layoutUtils";
 import { relinkWidgetToComponent, isPublishableWidgetType } from "./vizComponentEdit";
 import { buildComponentMap, resolveLayoutWidget } from "./resolveVizComponent";
 import type { VizComponentDetail } from "./vizComponents";
+
+describe("createLinkedLayoutWidget", () => {
+  it("creates ref-only widget without inline payload", () => {
+    const linked = createLinkedLayoutWidget(
+      { id: "c1", name: "柱状图", widgetType: "chart" },
+      [],
+    );
+    expect(linked.componentRef).toEqual({ componentId: "c1" });
+    expect(linked.chartConfig).toBeUndefined();
+    expect(linked.type).toBe("chart");
+  });
+});
 
 describe("vizComponentEdit", () => {
   it("relinkWidgetToComponent strips inline payload and restores componentRef", () => {
@@ -39,7 +52,6 @@ describe("resolveLayoutWidget linked filter", () => {
       categoryKey: "filter",
       status: "published",
       contentRevision: 2,
-      referenceCount: 1,
       payloadJson: {
         filterConfig: {
           filterId: "placeholder",

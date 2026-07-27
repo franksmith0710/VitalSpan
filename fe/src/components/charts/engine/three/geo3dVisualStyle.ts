@@ -5,6 +5,16 @@ import {
   type ChartGeoStyle,
 } from "@/lib/chartDeStyle";
 import type { ThreeGeoOrbitLayout } from "@/components/charts/engine/three/threeGeoOrbit";
+import {
+  buildGeo3dSceneClouds,
+  removeGeo3dSceneClouds,
+  type Geo3dSceneCloudsHandle,
+} from "@/components/charts/engine/three/geo3dSceneClouds";
+import {
+  resolveGeo3dSceneCloudDensity,
+  resolveGeo3dSceneCloudHeight,
+  resolveGeo3dSceneCloudSpeed,
+} from "@/components/charts/engine/three/geo3dSceneCloudStyle";
 import { resolveGeoRegionBorderFlow } from "@/components/charts/engine/geo/geoRegionBorderStyle";
 import * as THREE from "three";
 
@@ -17,7 +27,7 @@ export const GEO3D_STYLE_PRESETS: ReadonlyArray<{
   hint: string;
 }> = [
   { value: "satellite", label: "卫星实景", hint: "离线卫星顶面 + 中性侧壁（默认）" },
-  { value: "tech", label: "科技深蓝", hint: "深色侧壁发光、青蓝边界、远景雾" },
+  { value: "tech", label: "科技深蓝", hint: "深色侧壁发光、青蓝边界、远景云海" },
   { value: "classic", label: "经典暖色", hint: "暖色实体顶面，关闭卫星贴图" },
   { value: "minimal", label: "简洁纯色", hint: "低饱和扁平色块、弱边界" },
 ] as const;
@@ -188,9 +198,37 @@ function hexFromColorNumber(n: number): string {
   return `#${n.toString(16).padStart(6, "0")}`;
 }
 
-export function resolveGeo3dSceneFog(style: ChartGeo3dStyle): boolean {
+export function resolveGeo3dSceneClouds(style: ChartGeo3dStyle): boolean {
   const preset = resolveGeo3dStylePreset(style);
   return style.sceneFog ?? PRESET_BASE[preset].sceneFog;
+}
+
+/** @deprecated 使用 {@link resolveGeo3dSceneClouds} */
+export const resolveGeo3dSceneFog = resolveGeo3dSceneClouds;
+
+/** 布局完成后挂载白色远景云海（替代线性场景雾） */
+export function applyGeo3dSceneClouds(
+  scene: THREE.Scene,
+  layout: Pick<ThreeGeoOrbitLayout, "halfX" | "halfZ" | "maxY" | "defaultDistance">,
+  visual: ResolvedGeo3dVisualStyle,
+  geo3dStyle: ChartGeo3dStyle = {},
+): Geo3dSceneCloudsHandle | null {
+  removeGeo3dSceneClouds(scene);
+  if (!visual.sceneFog) return null;
+  const handle = buildGeo3dSceneClouds(layout, geo3dStyle);
+  scene.add(handle.group);
+  return handle;
+}
+
+/** @deprecated 使用 {@link applyGeo3dSceneClouds} */
+export function applyGeo3dSceneFog(
+  scene: THREE.Scene,
+  layout: Pick<ThreeGeoOrbitLayout, "defaultDistance" | "halfX" | "halfZ" | "maxY">,
+  visual: ResolvedGeo3dVisualStyle,
+  _isDark?: boolean,
+  geo3dStyle: ChartGeo3dStyle = {},
+): Geo3dSceneCloudsHandle | null {
+  return applyGeo3dSceneClouds(scene, layout, visual, geo3dStyle);
 }
 
 /** 3D 预设下的行政区边界默认色（可被 geo.regionBorderColor 覆盖） */
@@ -249,25 +287,9 @@ export function resolveGeo3dVisualStyle(
   return {
     preset,
     ...base,
-    sceneFog: resolveGeo3dSceneFog(style),
+    sceneFog: resolveGeo3dSceneClouds(style),
     isDark,
   };
-}
-
-/** 布局完成后按相机距离设置雾（绝对 near/far 在归一化场景中会失效） */
-export function applyGeo3dSceneFog(
-  scene: THREE.Scene,
-  layout: Pick<ThreeGeoOrbitLayout, "defaultDistance">,
-  visual: ResolvedGeo3dVisualStyle,
-  isDark: boolean,
-): void {
-  if (!visual.sceneFog) {
-    scene.fog = null;
-    return;
-  }
-  const fogColor = isDark ? visual.fogColorDark : visual.fogColorLight;
-  const dist = layout.defaultDistance;
-  scene.fog = new THREE.Fog(fogColor, dist * 0.42, dist * 1.38);
 }
 
 /** 切换预设时写入的默认 geo3d 字段 */
@@ -290,7 +312,10 @@ export function buildGeo3dStyleContentSig(
     style.extrudeIntensity ?? DEFAULT_GEO3D_EXTRUDE_INTENSITY,
     style.quality ?? "auto",
     style.terrainTexture !== false ? 1 : 0,
-    resolveGeo3dSceneFog(style) ? 1 : 0,
+    resolveGeo3dSceneClouds(style) ? 1 : 0,
+    resolveGeo3dSceneCloudDensity(style),
+    resolveGeo3dSceneCloudSpeed(style),
+    resolveGeo3dSceneCloudHeight(style),
     style.shellColor?.toLowerCase() ?? "",
     resolveGeo3dShellOpacity(style),
     geoStyle.showRegionBorder !== false ? 1 : 0,

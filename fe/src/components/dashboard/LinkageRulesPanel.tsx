@@ -56,6 +56,7 @@ export function LinkageRulesPanel({
 
   const resolvedLinkage = effectiveLinkage ?? linkage;
   const filters = resolvedLinkage?.filters ?? [];
+  const hasFilters = filters.length > 0;
 
   useEffect(() => {
     setRules(resolvedLinkage?.linkageRules ?? []);
@@ -138,14 +139,8 @@ export function LinkageRulesPanel({
     }
   };
 
-  const emptyPlaceholder = (
-    <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50/60 px-3 py-2.5 text-theme-xs text-gray-500 dark:border-gray-700 dark:bg-white/[0.02] dark:text-gray-400">
-      从左侧拖入「筛选器」到画布，配置维度与参数名后即可驱动图表刷新。
-    </div>
-  );
-
-  if (!filters.length) {
-    return emptyPlaceholder;
+  if (!hasFilters) {
+    return null;
   }
 
   const panelBody = (

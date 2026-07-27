@@ -80,11 +80,13 @@ import {
 } from "@/components/dashboard/gridLayoutAdapter";
 import type { GridInsertAt } from "@/components/dashboard/DashboardGrid";
 import {
+  createLinkedLayoutWidget,
   createPaletteWidget,
   type PaletteInsertType,
 } from "@/components/dashboard/createLayoutWidget";
 import type { PaletteDragPayload } from "@/lib/dashboardDnd";
 import { readTabsWidgetIdFromDropEvent } from "@/lib/tabsDropTarget";
+import { cn } from "@/lib/utils";
 import { DashboardContextInspector } from "@/components/dashboard/DashboardContextInspector";
 import { DashboardTemplateExtras } from "@/components/dashboard/DashboardTemplateExtras";
 import { LayerPanel } from "@/components/dashboard/LayerPanel";
@@ -112,6 +114,7 @@ import { useVizComponentMap } from "@/hooks/useVizComponentMap";
 import { useVizComponentInspectorActions } from "@/hooks/useVizComponentInspectorActions";
 import { resolveLayoutWidget, resolveLayoutWidgets } from "@/lib/resolveVizComponent";
 import { isPublishableWidgetType } from "@/lib/vizComponentEdit";
+import { fetchVizComponent } from "@/lib/vizComponents";
 import { WidgetEnlargeDialog } from "@/components/dashboard/widget-actions/WidgetEnlargeDialog";
 import { WidgetViewDataDialog } from "@/components/dashboard/widget-actions/WidgetViewDataDialog";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
@@ -227,10 +230,12 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const styleConfigRef = useRef(styleConfig);
   const nameRef = useRef(name);
   const linkageRef = useRef(linkage);
+  const widgetsRef = useRef(widgets);
   layoutRef.current = layout;
   styleConfigRef.current = styleConfig;
   nameRef.current = name;
   linkageRef.current = linkage;
+  widgetsRef.current = widgets;
 
   const applyName = useCallback((value: SetStateAction<string>) => {
     setName((prev) => {
@@ -546,9 +551,9 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const widgetActionTarget = useMemo(
     () =>
       widgetActionDialog
-        ? (widgets.find((item) => item.id === widgetActionDialog.widgetId) ?? null)
+        ? (resolvedWidgets.find((item) => item.id === widgetActionDialog.widgetId) ?? null)
         : null,
-    [widgetActionDialog, widgets],
+    [widgetActionDialog, resolvedWidgets],
   );
 
   const widgetActionChartConfig = useMemo((): ChartViewConfig | null => {
@@ -716,6 +721,42 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     setWidgets((prev) => sortWidgets([...prev, placed]));
     handleSelect(placed.id, false);
   };
+
+  const appendClonedWidgetRef = useRef(appendClonedWidget);
+  appendClonedWidgetRef.current = appendClonedWidget;
+  const insertFromHubRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (mode !== "edit" || loading || missing || !canSave) return;
+    const componentId = new URLSearchParams(location.search).get("insertComponent");
+    if (!componentId) {
+      insertFromHubRef.current = null;
+      return;
+    }
+    if (insertFromHubRef.current === componentId) return;
+    insertFromHubRef.current = componentId;
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const detail = await fetchVizComponent(componentId);
+        if (cancelled) return;
+        const linked = createLinkedLayoutWidget(detail, widgetsRef.current);
+        appendClonedWidgetRef.current(linked);
+        refetchComponents();
+        navigate(location.pathname, { replace: true });
+        toast.success(`已插入组件「${detail.name}」`);
+      } catch (err) {
+        if (cancelled) return;
+        toast.error(mapApiError(err));
+        navigate(location.pathname, { replace: true });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, loading, missing, canSave, location.search, location.pathname, navigate, refetchComponents]);
 
   const handleInsert = (type: PaletteInsertType) => {
     appendWidget(type);
@@ -1370,7 +1411,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               />
               </div>
             ) : id ? (
-              <div className="flex h-full min-h-0 flex-col overflow-hidden">
+              <div className={cn(DASHBOARD_EDIT_RAIL_SCROLL_CLASS, "min-h-0 flex-1")}>
                 {isDataScreenSurface && layout.version === 2 ? (
                   <DataScreenConfigExtras
                     layout={layout}
@@ -1390,7 +1431,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                     selectedId={primarySelectedId}
                     onSelect={(widgetId) => selectWidgetOnCanvas(widgetId, false)}
                     onWidgetsChange={setWidgets}
-                    className="min-h-0 max-h-[min(42vh,280px)] shrink-0 border-b border-gray-100 pb-4 dark:border-white/[0.06]"
+                    className="shrink-0 border-b border-gray-100 pb-4 dark:border-white/[0.06]"
                   />
                 ) : null}
                 {!isDataScreenSurface ? (
@@ -1403,21 +1444,19 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                     dashboardId={id}
                   />
                 ) : null}
-                <div className={DASHBOARD_EDIT_RAIL_SCROLL_CLASS}>
-                  <DashboardContextInspector
-                    embedded
-                    widgetCount={widgets.length}
-                    widgets={widgets}
-                    styleConfig={styleConfig}
-                    onStyleChange={applyStyleConfig}
-                    onWidgetsChange={setWidgets}
-                    isPixelLayout={layout.version === 2}
-                    dashboardId={id}
-                    linkage={linkage}
-                    effectiveLinkage={effectiveLinkage}
-                    onLinkageChange={applyLinkage}
-                  />
-                </div>
+                <DashboardContextInspector
+                  embedded
+                  widgetCount={widgets.length}
+                  widgets={widgets}
+                  styleConfig={styleConfig}
+                  onStyleChange={applyStyleConfig}
+                  onWidgetsChange={setWidgets}
+                  isPixelLayout={layout.version === 2}
+                  dashboardId={id}
+                  linkage={linkage}
+                  effectiveLinkage={effectiveLinkage}
+                  onLinkageChange={applyLinkage}
+                />
               </div>
             ) : null
           }

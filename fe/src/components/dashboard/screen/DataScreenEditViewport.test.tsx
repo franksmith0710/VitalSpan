@@ -1,13 +1,19 @@
+import type { ReactElement } from "react";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { DataScreenEditViewport } from "./DataScreenEditViewport";
 
 afterEach(() => cleanup());
 
+function renderViewport(ui: ReactElement) {
+  return render(<TooltipProvider delayDuration={0}>{ui}</TooltipProvider>);
+}
+
 describe("DataScreenEditViewport blank selection", () => {
   it("calls onBlankPointerDown when clicking viewport letterbox", () => {
     const onBlankPointerDown = vi.fn();
-    render(
+    renderViewport(
       <DataScreenEditViewport
         canvasWidth={1920}
         canvasHeight={1080}
@@ -27,7 +33,7 @@ describe("DataScreenEditViewport blank selection", () => {
 
   it("does not call onBlankPointerDown when clicking a pixel widget", () => {
     const onBlankPointerDown = vi.fn();
-    render(
+    renderViewport(
       <DataScreenEditViewport
         canvasWidth={1920}
         canvasHeight={1080}
@@ -45,7 +51,7 @@ describe("DataScreenEditViewport blank selection", () => {
 
   it("calls onBlankPointerDown when clicking blank canvas stage", () => {
     const onBlankPointerDown = vi.fn();
-    render(
+    renderViewport(
       <DataScreenEditViewport
         canvasWidth={1920}
         canvasHeight={1080}
@@ -61,7 +67,7 @@ describe("DataScreenEditViewport blank selection", () => {
   });
 
   it("updates design stage dimensions when canvas size changes", () => {
-    const { rerender } = render(
+    const { rerender } = renderViewport(
       <DataScreenEditViewport canvasWidth={1920} canvasHeight={1080}>
         <div data-testid="canvas-stage" />
       </DataScreenEditViewport>,
@@ -73,9 +79,11 @@ describe("DataScreenEditViewport blank selection", () => {
     expect(stage).toHaveStyle({ width: "1920px", height: "1080px" });
 
     rerender(
-      <DataScreenEditViewport canvasWidth={2560} canvasHeight={1080}>
-        <div data-testid="canvas-stage" />
-      </DataScreenEditViewport>,
+      <TooltipProvider delayDuration={0}>
+        <DataScreenEditViewport canvasWidth={2560} canvasHeight={1080}>
+          <div data-testid="canvas-stage" />
+        </DataScreenEditViewport>
+      </TooltipProvider>,
     );
 
     expect(screen.getByTestId("data-screen-canvas-stage")).toHaveAttribute(
@@ -86,7 +94,7 @@ describe("DataScreenEditViewport blank selection", () => {
   });
 
   it("prevents browser zoom on ctrl+wheel over canvas viewport", () => {
-    render(
+    renderViewport(
       <DataScreenEditViewport canvasWidth={1920} canvasHeight={1080}>
         <div data-testid="canvas-stage" className="h-[1080px] w-[1920px]" />
       </DataScreenEditViewport>,
@@ -107,7 +115,7 @@ describe("DataScreenEditViewport blank selection", () => {
   });
 
   it("does not pan the viewport when wheel is over a map zoom surface", () => {
-    render(
+    renderViewport(
       <DataScreenEditViewport canvasWidth={1920} canvasHeight={1080}>
         <div data-testid="canvas-stage" className="h-[1080px] w-[1920px]">
           <div data-viz-wheel-zoom="true" data-testid="map-surface">
@@ -133,12 +141,12 @@ describe("DataScreenEditViewport blank selection", () => {
     expect(root).toHaveAttribute("data-view-pan-y", "0");
   });
 
-  it("updates view pan while dragging before pointer up", async () => {
+  it("updates view pan while dragging with space held", async () => {
     const raf = vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
       cb(0);
       return 1;
     });
-    render(
+    renderViewport(
       <DataScreenEditViewport canvasWidth={1920} canvasHeight={1080}>
         <div data-testid="canvas-stage" className="h-[1080px] w-[1920px]" />
       </DataScreenEditViewport>,
@@ -148,12 +156,32 @@ describe("DataScreenEditViewport blank selection", () => {
     const viewport = root.querySelector("[data-canvas-scale-viewport]") as HTMLElement;
     const panLayer = viewport.firstElementChild as HTMLElement;
 
+    fireEvent.keyDown(window, { code: "Space" });
     fireEvent.pointerDown(viewport, { clientX: 100, clientY: 100, pointerId: 1, button: 0 });
     fireEvent.pointerMove(document, { clientX: 150, clientY: 100, pointerId: 1 });
 
     expect(root).toHaveAttribute("data-view-pan-x", "50");
     expect(panLayer.style.transform).toBe("translate(50px, 0px)");
     fireEvent.pointerUp(document, { clientX: 150, clientY: 100, pointerId: 1 });
+    fireEvent.keyUp(window, { code: "Space" });
     raf.mockRestore();
+  });
+
+  it("does not pan the viewport when dragging blank canvas without space", () => {
+    renderViewport(
+      <DataScreenEditViewport canvasWidth={1920} canvasHeight={1080}>
+        <div data-testid="canvas-stage" className="h-[1080px] w-[1920px]" />
+      </DataScreenEditViewport>,
+    );
+
+    const root = screen.getByTestId("data-screen-edit-viewport");
+    const stage = screen.getByTestId("canvas-stage");
+
+    fireEvent.pointerDown(stage, { clientX: 100, clientY: 100, pointerId: 1, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 200, clientY: 200, pointerId: 1 });
+    fireEvent.pointerUp(document, { clientX: 200, clientY: 200, pointerId: 1 });
+
+    expect(root).toHaveAttribute("data-view-pan-x", "0");
+    expect(root).toHaveAttribute("data-view-pan-y", "0");
   });
 });

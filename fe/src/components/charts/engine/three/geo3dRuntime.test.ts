@@ -2,8 +2,10 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   GEO3D_MAX_WEBGL_INSTANCES,
   defaultGeo3dRenderTier,
+  releaseWebGLSlotIfCurrent,
   resetWebGLSlotsForTests,
   resolveTerrainTextureEnabled,
+  setWebGLSlotDispose,
   tryAcquireWebGLSlot,
 } from "@/components/charts/engine/three/geo3dRuntime";
 
@@ -26,6 +28,18 @@ describe("tryAcquireWebGLSlot", () => {
       expect(tryAcquireWebGLSlot(`other-${i}`)).toBe(true);
     }
     expect(tryAcquireWebGLSlot("another")).toBe(false);
+  });
+
+  it("releaseWebGLSlotIfCurrent only drops the active dispose callback", () => {
+    const staleDispose = () => undefined;
+    const activeDispose = () => undefined;
+    expect(tryAcquireWebGLSlot("widget-a")).toBe(true);
+    setWebGLSlotDispose("widget-a", staleDispose);
+    setWebGLSlotDispose("widget-a", activeDispose);
+    releaseWebGLSlotIfCurrent("widget-a", staleDispose);
+    expect(tryAcquireWebGLSlot("widget-a")).toBe(true);
+    releaseWebGLSlotIfCurrent("widget-a", activeDispose);
+    expect(tryAcquireWebGLSlot("widget-a")).toBe(true);
   });
 });
 

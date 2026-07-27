@@ -74,7 +74,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   const columns = viewModel.dataset.columns;
 
   const mapDrillEnabled = Boolean(chartConfig);
-  const { context: geoMapLevel, loading: geoMapLoading } = useGeoMapLevel({
+  const { context, loading: geoMapLoading, version: geoMapVersion } = useGeoMapLevel({
     enabled: mapDrillEnabled,
     config: chartConfig,
     drillStack,
@@ -221,6 +221,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       if (next.width <= 0 || next.height <= 0) return false;
       if (!api.resize(next.width, next.height)) return false;
       lastMeasureRef.current = next;
+      api.resumeBorderFlow?.();
       if (mode !== "live") setChartAnimationSuppressed(false);
       return true;
     },
@@ -394,7 +395,8 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     }
     setChartAnimationSuppressed(false);
     if (isThreeMap) {
-      tryThreeResize("commit");
+      if (tryThreeResize("commit")) return;
+      measureAndRender("commit", true);
       return;
     }
     measureAndRender("commit", true);
@@ -407,7 +409,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     threeApiRef.current = null;
     lastMeasureRef.current = { width: 0, height: 0 };
     measureAndRenderRef.current("data", true);
-  }, [contentKey, geoMapLoading]);
+  }, [contentKey, geoMapLoading, geoMapVersion]);
 
   useEffect(() => {
     if (!fill || plan.empty) return;

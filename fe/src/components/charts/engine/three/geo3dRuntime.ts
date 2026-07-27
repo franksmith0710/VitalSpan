@@ -34,6 +34,13 @@ export function releaseWebGLSlot(instanceKey: string): void {
   activeWebglSlots.delete(instanceKey);
 }
 
+/** 仅当 dispose 仍是槽位当前持有者时释放，避免过期异步渲染误伤新实例 */
+export function releaseWebGLSlotIfCurrent(instanceKey: string, dispose: () => void): void {
+  if (activeWebglSlots.get(instanceKey) === dispose) {
+    activeWebglSlots.delete(instanceKey);
+  }
+}
+
 /** @internal vitest 专用：清空槽位表 */
 export function resetWebGLSlotsForTests(): void {
   activeWebglSlots.clear();

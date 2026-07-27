@@ -1,6 +1,6 @@
 import type { ChartDrillFrame } from "@/lib/chartDrill";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
-import { registerOfflineGeoMap } from "@/components/charts/engine/geo/OfflineGeoPort";
+import { getOfflineGeoMap, registerOfflineGeoMap } from "@/components/charts/engine/geo/OfflineGeoPort";
 import chinaProvincesGeo from "@/assets/geo/china-provinces.json";
 import {
   VS_REGIONS_MAP_ID,
@@ -155,17 +155,40 @@ function districtModulePath(adcode: number): string | undefined {
 }
 
 function registerGeoMap(mapId: string, geo: RegionsGeo): void {
-  if (registeredMapIds.has(mapId)) return;
   registerOfflineGeoMap(mapId, geo);
   registeredMapIds.add(mapId);
 }
 
+export function isOfflineGeoMapReady(mapId: string): boolean {
+  return Boolean(getOfflineGeoMap(mapId)?.features?.length);
+}
+
+/** 确保离线 GeoJSON 已注册（HMR 后 registeredMaps 失步时可恢复） */
+export async function ensureOfflineGeoMap(mapId: string): Promise<boolean> {
+  ensureVsRegionsMapRegistered();
+  if (mapId === VS_REGIONS_MAP_ID) return isOfflineGeoMapReady(mapId);
+
+  const match = /^vs-geo-(\d{6})$/.exec(mapId.trim());
+  if (!match) return false;
+  if (isOfflineGeoMapReady(mapId)) return true;
+
+  const adcode = Number(match[1]);
+  const cityIndex = await ensureCityMap(adcode);
+  if (cityIndex && isOfflineGeoMapReady(mapId)) return true;
+
+  const districtIndex = await ensureDistrictMap(adcode);
+  return Boolean(districtIndex && isOfflineGeoMapReady(mapId));
+}
+
 async function ensureCityMap(provinceAdcode: number): Promise<GeoNameIndex | null> {
+  const mapId = geoMapId(provinceAdcode);
+  const cached = cityIndexCache.get(provinceAdcode);
+  if (cached && isOfflineGeoMapReady(mapId)) return cached;
+
   const path = cityModulePath(provinceAdcode);
   if (!path) return null;
   const geo = await loadBundledGeo(path);
   if (!geo?.features?.length) return null;
-  const mapId = geoMapId(provinceAdcode);
   registerGeoMap(mapId, geo);
   const index = buildGeoNameIndex(geo.features);
   cityIndexCache.set(provinceAdcode, index);

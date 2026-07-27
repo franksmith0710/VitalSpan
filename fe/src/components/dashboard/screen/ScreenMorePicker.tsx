@@ -8,6 +8,7 @@ import { SCREEN_MORE_CATALOG, type ScreenMoreCatalogItem } from "@/lib/screenMor
 type ScreenMorePickerProps = {
   onInsert: (type: PaletteInsertType) => void;
   onInserted?: () => void;
+  extraActions?: ReactNode;
 };
 
 const MORE_ICONS: Record<string, ReactNode> = {
@@ -58,7 +59,7 @@ function MoreTile({
   );
 }
 
-export function ScreenMorePicker({ onInsert, onInserted }: ScreenMorePickerProps) {
+export function ScreenMorePicker({ onInsert, onInserted, extraActions }: ScreenMorePickerProps) {
   return (
     <div className="p-3" data-testid="screen-more-picker">
       <p className="mb-2 px-1 text-[11px] text-gray-500 dark:text-gray-400">
@@ -69,6 +70,11 @@ export function ScreenMorePicker({ onInsert, onInserted }: ScreenMorePickerProps
           <MoreTile key={item.id} item={item} onInsert={onInsert} onInserted={onInserted} />
         ))}
       </div>
+      {extraActions ? (
+        <div className="mt-3 border-t border-gray-100 pt-3 dark:border-white/[0.06]">
+          {extraActions}
+        </div>
+      ) : null}
     </div>
   );
 }

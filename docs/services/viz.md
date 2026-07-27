@@ -27,7 +27,7 @@
 
 - 域：`backend/app/viz/components/`（与 `dashboard/templates/` 并列）
 - 消费：`fe/src/lib/resolveVizComponent.ts` 在 `ChartRenderer` / `DashboardWidget` 路径合并 `payloadJson`
-- 引用：`LayoutWidget.componentRef`；保存时剥离内联 payload（`stripLinkedWidgetForPersist`）
+  - 列表 companion：`referenceCount` 扫描 `dashboards.layout_json` 中未断链的 `componentRef`
 | `sdk_portal/` SDK init validate + lifecycle manifest（只读引用 `_ORIGIN_RE`） | npm JS SDK 发布、修改 `embed.py` 校验语义 |
 
 ## 依赖

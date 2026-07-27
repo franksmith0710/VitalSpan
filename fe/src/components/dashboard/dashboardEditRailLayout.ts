@@ -19,8 +19,8 @@ export const DASHBOARD_EDIT_RAIL_NARROW_SHELL_CLASS = DASHBOARD_EDIT_RAIL_SHELL_
 
 /**
  * 看板编辑右栏滚动。
- * - 壳层 `…-clip` 裁剪；`…-pass-through` 仅透传高度，由子级（ChartInspectorTabs 等）内部滚动
- * - `…-scroll` 供仪表板配置等长内容整体滚动
+ * - 壳层 `…-clip` 裁剪；`…-pass-through` 透传高度，供 ChartInspectorTabs 等面板内滚动
+ * - `…-scroll` 供仪表板配置 / 大屏画布设置等长内容整体滚动（见 DashboardEditPage chartRail）
  */
 export const DASHBOARD_EDIT_RAIL_SCROLL_CLIP_CLASS =
   "dashboard-edit-rail-scroll-clip h-0 min-h-0 flex-1 overflow-hidden px-2 py-1";

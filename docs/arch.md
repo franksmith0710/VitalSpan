@@ -78,6 +78,15 @@ flowchart TB
 | ADR-08 | M8 工作流 **Flowable / Camunda** 二选一 | 四期治理 BPM；具体选型待 M13 前锁定 | 待定 |
 | ADR-09 | M6 报表 **JasperReports** 或等价 | 模板 Word/Excel/PDF；二期末前选型 | 待定 |
 | ADR-10 | 演化指导库 **`.automate` submodule** | SOP/skills/agents 与产品代码分离；`install.sh` 同步至 `.cursor/` | 已部署 |
+| ADR-14 | **组织组件库 `componentRef` 引用模式** | 单 widget 级复用；layout 仅存引用，payload 在 `viz_components`；保存时剥离内联配置 | 已定 |
+
+### ADR-14 · 组织组件库（DASH-010）
+
+- **引用**：`LayoutWidget.componentRef = { componentId, pinnedRevision?, detached? }`；运行时经 `resolveLayoutWidget` 合并 `payloadJson`
+- **持久化**：已链接 widget 保存时剥离 `chartConfig` / `filterConfig` / `textConfig` / `mediaConfig`（`stripLinkedWidgetForPersist`）
+- **编辑**：Inspector 修改链接组件写回 `PUT /api/v1/viz-components/{id}`；断链后本地化副本（`detached: true`）
+- **与模板区分**：`viz-templates` 为整页 layout 信封；`viz-components` 为单 widget 级组织库
+- **代码锚点**：`backend/app/viz/components/` · `fe/src/lib/resolveVizComponent.ts` · `fe/src/components/dashboard/VizReuseDialog.tsx`
 
 ### ADR-12 · GEO-IRON-01（地图铁律）
 

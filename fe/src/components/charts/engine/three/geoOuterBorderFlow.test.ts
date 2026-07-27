@@ -1,20 +1,29 @@
 import * as d3 from "d3";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
+import chinaProvincesGeo from "@/assets/geo/china-provinces.json";
 import { fitChinaGeoProjection } from "@/components/charts/engine/geo/geoProjection";
-import { joinOfflineMapFeatures } from "@/components/charts/engine/geo/OfflineGeoPort";
-import { VS_REGIONS_MAP_ID } from "@/components/charts/engine/geo/geoConstants";
+import { isDecorativeGeoFeature } from "@/components/charts/engine/geo/geoProjection";
 import {
   pickOuterPerimeterSegments,
   ringToSegments,
   chainSegmentsIntoRings,
+  pickDominantOuterRing,
   pickLargestAreaRing,
   pickLongestRing,
   ringAbsArea,
+  ringBBoxArea,
+  segmentComponents,
+  pickOuterPerimeterFromCapSegments,
+  buildGeoOuterBorderFlowFromCapSegments,
   buildGeoOuterBorderFlowLines,
 } from "./geoOuterBorderFlow";
 
 const identityProject = (coord: [number, number]) => coord;
+
+function ringPerimeter(ring: { ax: number; ay: number; bx: number; by: number }[]): number {
+  return ring.reduce((sum, seg) => sum + Math.hypot(seg.bx - seg.ax, seg.by - seg.ay), 0);
+}
 
 function rectPolygon(x: number, y: number, w: number, h: number): GeoJSON.Polygon {
   return {
@@ -65,9 +74,22 @@ describe("geoOuterBorderFlow", () => {
     const rings = chainSegmentsIntoRings(outer);
     expect(rings.length).toBeGreaterThanOrEqual(2);
 
-    const picked = pickLargestAreaRing(outer);
-    expect(ringAbsArea(picked)).toBeCloseTo(80, 0);
+    const picked = pickDominantOuterRing(outer);
+    expect(ringBBoxArea(picked)).toBeCloseTo(80, 0);
+    expect(ringPerimeter(picked)).toBeCloseTo(36, 0);
+    expect(pickLargestAreaRing(outer)).toEqual(picked);
     expect(pickLongestRing(outer)).toEqual(picked);
+  });
+
+  it("drops shared interior edges between adjacent cap segments", () => {
+    const left = rectPolygon(0, 0, 1, 1);
+    const right = rectPolygon(1, 0, 1, 1);
+    const geoSegments = [
+      ...ringToSegments(left.coordinates[0] as [number, number][]),
+      ...ringToSegments(right.coordinates[0] as [number, number][]),
+    ];
+    const outer = pickOuterPerimeterFromCapSegments(geoSegments);
+    expect(outer.length).toBe(6);
   });
 
   it("builds flow lines only on outer perimeter", () => {
@@ -97,17 +119,17 @@ describe("geoOuterBorderFlow", () => {
     bundle!.particles.dispose();
   });
 
-  it("walks national outer perimeter as one closed ring", () => {
+  it("walks national outer perimeter on mainland not Taiwan island", { timeout: 15_000 }, () => {
     const width = 640;
     const height = 480;
-    const features = joinOfflineMapFeatures([], ["p", "v"], "p", "v", VS_REGIONS_MAP_ID).filter(
-      (f) => f.geometry,
+    const features = chinaProvincesGeo.features.filter(
+      (f) => !isDecorativeGeoFeature(f.properties ?? undefined) && f.geometry != null,
     );
     const collection = {
       type: "FeatureCollection" as const,
       features: features.map((f) => ({
         type: "Feature" as const,
-        properties: { name: f.name },
+        properties: { name: f.properties?.name },
         geometry: f.geometry!,
       })),
     };
@@ -119,15 +141,26 @@ describe("geoOuterBorderFlow", () => {
 
     const geometries = features.map((f) => f.geometry!);
     const outer = pickOuterPerimeterSegments(geometries, project);
+    const components = segmentComponents(outer);
     const rings = chainSegmentsIntoRings(outer);
-    const picked = pickLargestAreaRing(outer);
-    const areas = rings.map(ringAbsArea).sort((a, b) => b - a);
+    const picked = pickDominantOuterRing(outer);
+    const pickedBBox = ringBBoxArea(picked);
+    const pickedPerimeter = ringPerimeter(picked);
+
+    const taiwanFeature = features.find((f) => f.properties?.name === "台湾省");
+    expect(taiwanFeature?.geometry).toBeTruthy();
+    const taiwanOnly = pickOuterPerimeterSegments([taiwanFeature!.geometry!], project);
+    const taiwanRing = pickDominantOuterRing(taiwanOnly);
+    const taiwanPerimeter = ringPerimeter(taiwanRing);
 
     expect(outer.length).toBeGreaterThan(100);
+    expect(components.length).toBeGreaterThan(1);
     expect(rings.length).toBeGreaterThan(0);
     expect(picked.length).toBeGreaterThan(100);
-    expect(ringAbsArea(picked)).toBe(areas[0]);
-    expect(areas[0]!).toBeGreaterThan((areas[1] ?? 0) * 4);
+    expect(pickedPerimeter).toBeGreaterThan(taiwanPerimeter * 3);
+    expect(pickedBBox).toBeGreaterThan(ringBBoxArea(taiwanRing) * 4);
+    const sortedComponents = [...components].sort((a, b) => b.length - a.length);
+    expect(sortedComponents[0]!.length).toBeGreaterThan(sortedComponents.at(-1)!.length);
 
     for (let i = 0; i < picked.length; i++) {
       const cur = picked[i]!;

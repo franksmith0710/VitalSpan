@@ -48,6 +48,7 @@ export const queryKeys = {
     }) => ["vizComponents", "list", params] as const,
     detail: (id: string) => ["vizComponents", "detail", id] as const,
     resolve: (ids: string[]) => ["vizComponents", "resolve", [...ids].sort().join(",")] as const,
+    references: (id: string) => ["vizComponents", "references", id] as const,
   },
   metadata: {
     entityTypes: ["metadata", "entityTypes"] as const,

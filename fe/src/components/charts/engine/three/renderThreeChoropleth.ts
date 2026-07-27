@@ -11,6 +11,7 @@ import {
   getOfflineGeoMap,
   joinOfflineMapFeatures,
 } from "@/components/charts/engine/geo/OfflineGeoPort";
+import { ensureOfflineGeoMap } from "@/components/charts/engine/geo/geoMapLevels";
 import { colorForGeoHover } from "@/components/charts/engine/geo/geoSurfaceColors";
 import { createTooltipLayer, hideTooltip, showMergedTooltipAtViewport } from "@/components/charts/engine/d3/core/tooltipLayer";
 import type { D3Theme } from "@/components/charts/engine/d3/core/themeEngine";
@@ -33,7 +34,10 @@ import {
   resolveProvinceTerrainProbeUv,
 } from "@/components/charts/engine/three/geo/provinceTerrainProbe";
 import { buildGeoFlatPlateMesh, resolveGeoPlateDepth, GEO_BORDER_ABOVE_CAP_Z, resolveGeoCapTopZ } from "@/components/charts/engine/three/buildGeoFlatPlateMesh";
-import { buildGeoOuterBorderFlowLines } from "@/components/charts/engine/three/geoOuterBorderFlow";
+import {
+  buildGeoOuterBorderFlowFromCapSegments,
+  collectCapBorderSegments,
+} from "@/components/charts/engine/three/geoOuterBorderFlow";
 import type { GeoBorderFlowParticleSystem } from "@/components/charts/engine/three/geoBorderFlowParticles";
 import { mountThreeGeoVisualMap } from "@/components/charts/engine/three/threeGeoVisualMap";
 import {
@@ -52,6 +56,7 @@ import { DEFAULT_GEO3D_EXTRUDE_INTENSITY } from "@/lib/chartDeStyle";
 import { resolveGeo3dQuality, shouldRenderGeo3d } from "@/components/charts/engine/three/geo3dQuality";
 import {
   releaseWebGLSlot,
+  releaseWebGLSlotIfCurrent,
   resolveTerrainTextureEnabled,
   setWebGLSlotDispose,
   tryAcquireWebGLSlot,
@@ -69,7 +74,7 @@ import {
   toGeoBorderFlowDisplayPhase,
 } from "@/components/charts/engine/three/geoBorderFlowMaterial";
 import { prefersNativeReducedMotion } from "@/components/charts/engine/d3/core/animate";
-import { resolveGeo3dVisualStyle, applyGeo3dSceneFog, hasCustomGeo3dShellColor, resolveGeo3dShellColorNumber, resolveGeo3dShellOpacity } from "@/components/charts/engine/three/geo3dVisualStyle";
+import { resolveGeo3dVisualStyle, applyGeo3dSceneClouds, hasCustomGeo3dShellColor, resolveGeo3dShellColorNumber, resolveGeo3dShellOpacity } from "@/components/charts/engine/three/geo3dVisualStyle";
 
 function noopDispose(): void {
   /* empty */
@@ -227,7 +232,11 @@ export async function renderThreeChoroplethChart(
     return { dispose: noopDispose, engine: "three" };
   }
 
-  const geo = getOfflineGeoMap(mapId ?? "");
+  const resolvedMapId = mapId ?? VS_REGIONS_MAP_ID;
+  if (!getOfflineGeoMap(resolvedMapId)?.features?.length && resolvedMapId !== VS_REGIONS_MAP_ID) {
+    await ensureOfflineGeoMap(resolvedMapId);
+  }
+  const geo = getOfflineGeoMap(resolvedMapId);
   if (!geo?.features?.length) {
     container.replaceChildren();
     const msg = document.createElement("div");
@@ -414,7 +423,6 @@ export async function renderThreeChoroplethChart(
     const meshes: THREE.Group[] = [];
     const borderFlowMaterials: THREE.ShaderMaterial[] = [];
     let borderFlowParticleSystem: GeoBorderFlowParticleSystem | null = null;
-    const mapGeometries: GeoJSON.Geometry[] = [];
     const perShapeTerrainOpts = terrainPack
       ? {
           terrainColorMap: terrainPack.colorMap,
@@ -431,7 +439,6 @@ export async function renderThreeChoroplethChart(
 
     for (const feature of features) {
       if (!feature.geometry) continue;
-      mapGeometries.push(feature.geometry);
       const shapes = geometryToShapes(feature.geometry, project);
       if (shapes.length === 0) continue;
 
@@ -478,10 +485,10 @@ export async function renderThreeChoroplethChart(
 
     const borderZ =
       resolveGeoCapTopZ(plateDepth, Boolean(terrainPack?.colorMap)) + GEO_BORDER_ABOVE_CAP_Z;
-    const outerBorderFlowBundle = buildGeoOuterBorderFlowLines(
-      mapGeometries,
-      project,
-      borderZ + 0.02,
+    const capBorderSegments = collectCapBorderSegments(meshes);
+    const outerBorderFlowBundle = buildGeoOuterBorderFlowFromCapSegments(
+      capBorderSegments,
+      borderZ,
       borderColor,
       isDark,
       borderOpacity,
@@ -492,8 +499,16 @@ export async function renderThreeChoroplethChart(
         borderFlowMaterials.push(outerBorderFlowBundle.lines.material);
       }
       borderFlowParticleSystem = outerBorderFlowBundle.particles;
-      if (!regionBorder.show) outerBorderFlowBundle.group.visible = false;
+      outerBorderFlowBundle.group.visible = borderFlow.enabled;
       mapGroup.add(outerBorderFlowBundle.group);
+    }
+
+    if (import.meta.env.DEV) {
+      container.dataset.borderFlow = borderFlow.enabled
+        ? outerBorderFlowBundle
+          ? "ready"
+          : "missing-bundle"
+        : "off";
     }
 
     if (import.meta.env.DEV && borderFlow.enabled) {
@@ -521,7 +536,7 @@ export async function renderThreeChoroplethChart(
 
     scene.add(mapGroup);
     const orbitLayout = layoutThreeGeoMapGroup(mapGroup, { preCentered: false });
-    applyGeo3dSceneFog(scene, orbitLayout, visualStyle, isDark);
+    const sceneClouds = applyGeo3dSceneClouds(scene, orbitLayout, visualStyle, geo3dStyle);
 
     const roam = resolveEmbeddedGeoRoam(geoStyle.roam);
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -543,9 +558,13 @@ export async function renderThreeChoroplethChart(
     let hoverFrameId = 0;
     let renderFrameId = 0;
     let flowFrameId = 0;
+    let cloudFrameId = 0;
     let borderFlowLoopActive = false;
+    let cloudLoopActive = false;
     let flowPhase = 0;
     let flowStartMs = performance.now();
+    let cloudStartMs = performance.now();
+    let lastCloudTickMs = cloudStartMs;
     let lastFlowTickMs = flowStartMs;
     let lastHoverEvent: PointerEvent | null = null;
     let visibleInViewport = true;
@@ -676,15 +695,67 @@ export async function renderThreeChoroplethChart(
       }
     };
 
+    const stopClouds = () => {
+      cloudLoopActive = false;
+      if (cloudFrameId) {
+        cancelAnimationFrame(cloudFrameId);
+        cloudFrameId = 0;
+      }
+    };
+
+    const tickClouds = () => {
+      cloudFrameId = 0;
+      if (
+        !cloudLoopActive ||
+        renderDisposed ||
+        !sceneClouds ||
+        prefersNativeReducedMotion()
+      ) {
+        return;
+      }
+      const now = performance.now();
+      const deltaSec = Math.min(0.05, (now - lastCloudTickMs) / 1000);
+      lastCloudTickMs = now;
+      sceneClouds.update(deltaSec);
+      renderFrame();
+      if (
+        cloudLoopActive &&
+        !renderDisposed &&
+        sceneClouds &&
+        !prefersNativeReducedMotion()
+      ) {
+        cloudFrameId = requestAnimationFrame(tickClouds);
+      }
+    };
+
+    const startClouds = () => {
+      if (renderDisposed || !sceneClouds || prefersNativeReducedMotion()) return;
+      cloudLoopActive = true;
+      if (!cloudFrameId) {
+        cloudStartMs = performance.now();
+        lastCloudTickMs = cloudStartMs;
+        cloudFrameId = requestAnimationFrame(tickClouds);
+      }
+    };
+
+    const resumeClouds = () => {
+      stopClouds();
+      startClouds();
+    };
+
     const syncViewportVisibility = (intersecting: boolean) => {
       const wasVisible = visibleInViewport;
       visibleInViewport = intersecting;
       if (!intersecting) {
         stopDampingTail();
+        stopClouds();
         return;
       }
       if (!wasVisible && borderFlow.enabled) {
         resumeBorderFlow();
+      }
+      if (!wasVisible && sceneClouds) {
+        resumeClouds();
       }
     };
 
@@ -700,7 +771,14 @@ export async function renderThreeChoroplethChart(
       }
       syncBorderFlowPhase();
       renderFrame();
-      flowFrameId = requestAnimationFrame(tickBorderFlow);
+      if (
+        borderFlowLoopActive &&
+        !renderDisposed &&
+        borderFlow.enabled &&
+        !prefersNativeReducedMotion()
+      ) {
+        flowFrameId = requestAnimationFrame(tickBorderFlow);
+      }
     };
 
     const startBorderFlow = () => {
@@ -719,7 +797,10 @@ export async function renderThreeChoroplethChart(
     };
 
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") resumeBorderFlow();
+      if (document.visibilityState === "visible") {
+        resumeBorderFlow();
+        resumeClouds();
+      }
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
 
@@ -948,6 +1029,9 @@ export async function renderThreeChoroplethChart(
     if (borderFlow.enabled) {
       resumeBorderFlow();
     }
+    if (sceneClouds) {
+      resumeClouds();
+    }
 
     const resize = (nextWidth: number, nextHeight: number) => {
       if (nextWidth <= 0 || nextHeight <= 0) return false;
@@ -959,6 +1043,7 @@ export async function renderThreeChoroplethChart(
       renderer.setSize(nextWidth, nextHeight);
       renderFrame();
       if (borderFlow.enabled) resumeBorderFlow();
+      if (sceneClouds) resumeClouds();
       return true;
     };
 
@@ -967,6 +1052,7 @@ export async function renderThreeChoroplethChart(
       viewportObserver.disconnect();
       stopDampingTail();
       stopBorderFlow();
+      stopClouds();
       document.removeEventListener("visibilitychange", onVisibilityChange);
       if (hoverFrameId) {
         cancelAnimationFrame(hoverFrameId);
@@ -982,7 +1068,6 @@ export async function renderThreeChoroplethChart(
         lastLiftTs = 0;
       }
       persistOrbit();
-      releaseSlot();
       renderer.domElement.removeEventListener("pointerdown", onPointerDown);
       renderer.domElement.removeEventListener("pointerup", onPointerUp);
       renderer.domElement.removeEventListener("click", onClick);
@@ -997,6 +1082,7 @@ export async function renderThreeChoroplethChart(
       detachGrabCursor();
       detachTerrainHint();
       borderFlowParticleSystem?.dispose();
+      sceneClouds?.dispose();
       borderFlowParticleSystem = null;
       terrainPack?.dispose();
       terrainPack = null;
@@ -1004,7 +1090,17 @@ export async function renderThreeChoroplethChart(
       renderer.dispose();
       hideTooltip(tooltip);
       detachVisualMap();
-      container.replaceChildren();
+      const ownsContainerDom = renderer.domElement.parentElement === container;
+      if (ownsContainerDom) {
+        container.replaceChildren();
+      } else {
+        renderer.domElement.remove();
+      }
+      if (import.meta.env.DEV) {
+        delete container.dataset.borderFlow;
+      }
+      releaseWebGLSlotIfCurrent(webglSlotKey, disposeImpl);
+      slotReleased = true;
     };
 
     setWebGLSlotDispose(webglSlotKey, disposeImpl);

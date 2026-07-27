@@ -216,6 +216,23 @@ export function CanvasEditToolbar({
             <ScreenMorePicker
               onInsert={onInsert}
               onInserted={() => setMoreOpen(false)}
+              extraActions={
+                onOpenPublishToLibrary ? (
+                  <button
+                    type="button"
+                    disabled={publishToLibraryDisabled}
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-theme-xs text-gray-700 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-300 dark:hover:bg-white/5"
+                    data-testid="toolbar-publish-to-library"
+                    onClick={() => {
+                      onOpenPublishToLibrary();
+                      setMoreOpen(false);
+                    }}
+                  >
+                    <Upload className="size-4 shrink-0" aria-hidden />
+                    将选中组件发布到库
+                  </button>
+                ) : null
+              }
             />
           ) : (
             <>

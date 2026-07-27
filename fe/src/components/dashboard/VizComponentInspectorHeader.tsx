@@ -94,7 +94,7 @@ export function VizComponentInspectorHeader({
           </span>
           {component ? (
             <Button type="button" size="sm" variant="ghost" asChild>
-              <Link to="/admin/viz-components">在库中查看</Link>
+              <Link to={`/admin/viz-components/${component.id}/edit`}>在库中编辑</Link>
             </Button>
           ) : null}
           {onPushToLibrary ? (

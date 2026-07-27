@@ -201,7 +201,7 @@ export function createLinkedLayoutWidget(
 ): LayoutWidget {
   const widgetId = crypto.randomUUID();
   const maxOrder = widgets.reduce((m, w) => Math.max(m, w.order), -1);
-  const base = {
+  return {
     id: widgetId,
     type: component.widgetType,
     title: component.name,
@@ -212,17 +212,6 @@ export function createLinkedLayoutWidget(
     gridY: at?.gridY,
     componentRef: { componentId: component.id },
   } as LayoutWidget;
-
-  if (component.widgetType === "chart") {
-    return { ...base, type: "chart", chartConfig: { ...defaultChartConfig("bar"), chartId: widgetId } };
-  }
-  if (component.widgetType === "filter") {
-    return { ...base, type: "filter", filterConfig: defaultFilterConfig(widgetId) };
-  }
-  if (component.widgetType === "text") {
-    return { ...base, type: "text", textConfig: defaultTextConfig() };
-  }
-  return { ...base, type: "media", mediaConfig: defaultMediaConfig() };
 }
 
 export { isWidgetConfigReady } from "@/lib/chartConfigState";

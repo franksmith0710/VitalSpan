@@ -89,7 +89,7 @@ export function DashboardContextInspector({
         patchStyle={patchStyle}
         isPixelLayout={isPixelLayout}
       />
-      {dashboardId && onLinkageChange ? (
+      {dashboardId && onLinkageChange && (effectiveLinkage ?? linkage)?.filters?.length ? (
         <DashboardConfigSection
           title="筛选联动"
           defaultOpen

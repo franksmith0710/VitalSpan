@@ -85,7 +85,11 @@ export function DataScreenEditViewport({
   const spacePanRef = useRef(false);
   const panSessionRef = useRef<ViewportPanSession | null>(null);
   const panMovedRef = useRef(false);
-  const blankClickPendingRef = useRef(false);
+  const blankClickSessionRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+  } | null>(null);
   const panCommitFrameRef = useRef<number | null>(null);
   const onBlankPointerDownRef = useRef(onBlankPointerDown);
   onBlankPointerDownRef.current = onBlankPointerDown;
@@ -214,10 +218,6 @@ export function DataScreenEditViewport({
     if (session) {
       commitPanState(viewPanRef.current);
     }
-    if (blankClickPendingRef.current && !panMovedRef.current) {
-      onBlankPointerDownRef.current?.();
-    }
-    blankClickPendingRef.current = false;
     panMovedRef.current = false;
   }, [commitPanState]);
 
@@ -278,7 +278,24 @@ export function DataScreenEditViewport({
       }
     };
 
+    const finishBlankClickSession = (event: PointerEvent) => {
+      const session = blankClickSessionRef.current;
+      if (!session || session.pointerId !== event.pointerId) return;
+      blankClickSessionRef.current = null;
+      if (
+        !hasExceededPanClickThreshold(
+          session.startX,
+          session.startY,
+          event.clientX,
+          event.clientY,
+        )
+      ) {
+        onBlankPointerDownRef.current?.();
+      }
+    };
+
     const onPointerEnd = (event: PointerEvent) => {
+      finishBlankClickSession(event);
       const session = panSessionRef.current;
       if (!session || session.pointerId !== event.pointerId) return;
       releasePointerCapture(event);
@@ -288,9 +305,18 @@ export function DataScreenEditViewport({
     const onPointerDown = (event: PointerEvent) => {
       const middleMouse = event.button === 1;
       const spaceLeft = event.button === 0 && spacePanRef.current;
-      const blankLeft =
+      const blankClick =
         event.button === 0 && !spacePanRef.current && isPanEligibleTarget(event.target);
-      if (!middleMouse && !spaceLeft && !blankLeft) return;
+      if (!middleMouse && !spaceLeft) {
+        if (blankClick) {
+          blankClickSessionRef.current = {
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startY: event.clientY,
+          };
+        }
+        return;
+      }
 
       const viewportEl = viewportRef.current;
       if (!viewportEl) return;
@@ -302,7 +328,6 @@ export function DataScreenEditViewport({
         // jsdom / legacy browsers
       }
       panMovedRef.current = false;
-      blankClickPendingRef.current = blankLeft;
       panSessionRef.current = {
         pointerId: event.pointerId,
         startX: event.clientX,

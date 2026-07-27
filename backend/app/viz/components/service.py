@@ -22,12 +22,18 @@ from app.viz.components.payload_utils import (
     normalize_surface_kinds,
     validate_payload_for_widget_type,
 )
+from app.viz.components.reference_counts import (
+    count_component_references,
+    list_component_references,
+)
 from app.viz.components.schemas import (
     VizComponentBatchResolveResponse,
     VizComponentCreateIn,
     VizComponentListItem,
     VizComponentListResponse,
     VizComponentOut,
+    VizComponentReferenceItem,
+    VizComponentReferencesResponse,
     VizComponentUpdateIn,
 )
 
@@ -84,7 +90,7 @@ def _to_out(row: VizComponent) -> VizComponentOut:
     )
 
 
-def _to_list_item(row: VizComponent) -> VizComponentListItem:
+def _to_list_item(row: VizComponent, reference_counts: dict[str, int] | None = None) -> VizComponentListItem:
     return VizComponentListItem(
         id=row.id,
         component_key=row.component_key,
@@ -98,6 +104,7 @@ def _to_list_item(row: VizComponent) -> VizComponentListItem:
         tags=row.tags or [],
         visibility=row.visibility,  # type: ignore[arg-type]
         content_revision=row.content_revision,
+        reference_count=reference_counts.get(str(row.id), 0) if reference_counts else 0,
         updated_at=row.updated_at,
         published_at=row.published_at,
     )
@@ -185,8 +192,9 @@ def list_components(
         if _filter_list_row(actor, row, status=status, visibility=visibility, include_drafts=include_drafts):
             filtered.append(row)
     page = filtered[offset : offset + limit]
+    reference_counts = count_component_references(db)
     return VizComponentListResponse(
-        items=[_to_list_item(r) for r in page],
+        items=[_to_list_item(r, reference_counts) for r in page],
         total=len(filtered),
         limit=limit,
         offset=offset,
@@ -199,6 +207,33 @@ def get_component(db: Session, component_id: uuid.UUID, actor: UserContext) -> V
         raise VizComponentError("VIZ_COMPONENT_NOT_FOUND", "Component not found", 404)
     assert_component_read(actor, row)
     return _to_out(row)
+
+
+def get_component_references(
+    db: Session,
+    component_id: uuid.UUID,
+    actor: UserContext,
+) -> VizComponentReferencesResponse:
+    row = db.scalar(select(VizComponent).where(VizComponent.id == component_id))
+    if row is None:
+        raise VizComponentError("VIZ_COMPONENT_NOT_FOUND", "Component not found", 404)
+    assert_component_read(actor, row)
+    raw = list_component_references(db, str(component_id))
+    items: list[VizComponentReferenceItem] = []
+    for item in raw:
+        surface_kind = item["dashboard_surface_kind"]
+        if surface_kind not in ("dashboard", "data-screen"):
+            surface_kind = "dashboard"
+        items.append(
+            VizComponentReferenceItem(
+                dashboard_id=uuid.UUID(item["dashboard_id"]),
+                dashboard_name=item["dashboard_name"],
+                dashboard_surface_kind=surface_kind,  # type: ignore[arg-type]
+                widget_id=item["widget_id"],
+                widget_title=item["widget_title"],
+            ),
+        )
+    return VizComponentReferencesResponse(items=items, total=len(items))
 
 
 def batch_resolve(

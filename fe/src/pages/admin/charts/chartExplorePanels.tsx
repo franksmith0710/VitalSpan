@@ -2,6 +2,8 @@ import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { CanvasChartHost } from "@/components/charts/engine/CanvasChartHost";
 import { buildStyleContext } from "@/components/charts/engine/buildStyleContext";
+import { getChartPluginPackage } from "@/components/charts/engine/plugins/registry";
+import "@/components/charts/engine/plugins";
 import {
   CHART_CATALOG_SMOKE_CASES,
   smokeCaseToConfig,
@@ -22,6 +24,7 @@ const RENDERER_LABELS = CHART_RENDERER_LABELS;
 const CAPABILITY_LABELS = CHART_CAPABILITY_LABELS;
 
 export function ChartExplorePreview({ chartType }: { chartType: string }) {
+  const pluginDemo = getChartPluginPackage(chartType)?.demo;
   const fixture = CHART_CATALOG_SMOKE_CASES.find((item) => item.type === chartType);
   const config = useMemo(() => (fixture ? smokeCaseToConfig(fixture) : null), [fixture]);
   const viewModel = useMemo(() => (fixture ? smokeCaseToViewModel(fixture) : null), [fixture]);
@@ -33,6 +36,15 @@ export function ChartExplorePreview({ chartType }: { chartType: string }) {
       chartColors: resolveChartColors("default"),
     });
   }, [config]);
+
+  if (pluginDemo) {
+    const Demo = pluginDemo;
+    return (
+      <div className="h-[220px] w-full overflow-hidden rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
+        <Demo />
+      </div>
+    );
+  }
 
   if (!fixture || !config || !viewModel || !style) {
     return (

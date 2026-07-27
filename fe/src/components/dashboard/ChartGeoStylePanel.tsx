@@ -7,10 +7,15 @@ import {
 } from "@/components/charts/engine/geo/geoRegionBorderStyle";
 import { GEO_BORDER_FLOW_DEFAULTS } from "@/components/charts/engine/three/geoBorderFlowMaterial";
 import {
+  DEFAULT_SCENE_CLOUD_DENSITY,
+  DEFAULT_SCENE_CLOUD_HEIGHT,
+  DEFAULT_SCENE_CLOUD_SPEED,
+} from "@/components/charts/engine/three/geo3dSceneCloudStyle";
+import {
   GEO3D_STYLE_PRESETS,
   geo3dPresetDefaults,
   hasCustomGeo3dShellColor,
-  resolveGeo3dSceneFog,
+  resolveGeo3dSceneClouds,
   resolveGeo3dShellColorHex,
   resolveGeo3dStylePreset,
   type Geo3dStylePreset,
@@ -229,10 +234,47 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
               onChange={(shellOpacity) => patchGeo3d({ shellOpacity })}
             />
             <InspectorSwitchRow
-              label="场景雾"
-              checked={resolveGeo3dSceneFog(geo3d)}
+              label="场景云"
+              checked={resolveGeo3dSceneClouds(geo3d)}
               onCheckedChange={(sceneFog) => patchGeo3d({ sceneFog })}
             />
+            {resolveGeo3dSceneClouds(geo3d) ? (
+              <>
+                <DeAttrSliderField
+                  label="云密度"
+                  compact
+                  value={geo3d.sceneCloudDensity}
+                  fallback={DEFAULT_SCENE_CLOUD_DENSITY}
+                  min={0.1}
+                  max={1}
+                  step={0.05}
+                  ariaLabel="场景云密度"
+                  onChange={(sceneCloudDensity) => patchGeo3d({ sceneCloudDensity })}
+                />
+                <DeAttrSliderField
+                  label="漂移速度"
+                  compact
+                  value={geo3d.sceneCloudSpeed}
+                  fallback={DEFAULT_SCENE_CLOUD_SPEED}
+                  min={0}
+                  max={2}
+                  step={0.05}
+                  ariaLabel="场景云漂移速度"
+                  onChange={(sceneCloudSpeed) => patchGeo3d({ sceneCloudSpeed })}
+                />
+                <DeAttrSliderField
+                  label="云高度"
+                  compact
+                  value={geo3d.sceneCloudHeight}
+                  fallback={DEFAULT_SCENE_CLOUD_HEIGHT}
+                  min={0.2}
+                  max={2}
+                  step={0.05}
+                  ariaLabel="场景云高度"
+                  onChange={(sceneCloudHeight) => patchGeo3d({ sceneCloudHeight })}
+                />
+              </>
+            ) : null}
           </>
         ) : null}
         <p className={INSPECTOR_HINT}>
