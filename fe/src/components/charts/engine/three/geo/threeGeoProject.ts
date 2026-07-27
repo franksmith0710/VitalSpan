@@ -23,7 +23,13 @@ export const THREE_GEO_MAP_MARGIN: GeoMapLayoutMargin = {
 
 export type ThreeGeoProjectContext = {
   projection: d3.GeoProjection;
+  /** 全国外轮廓流光：全画布 fit，与 GeoJSON 单测一致 */
+  flowProjection: d3.GeoProjection;
   project: (coord: [number, number]) => [number, number] | null;
+  /** 未做 bounds 居中；外轮廓合并更稳定 */
+  projectForFlowPath: (coord: [number, number]) => [number, number] | null;
+  /** 将 flow path 平移到与 `project` 一致的 mesh 坐标 */
+  flowPathOffset: { x: number; y: number };
   projBounds: GeoProjBounds;
   margin: GeoMapLayoutMargin;
   centerX: number;
@@ -122,6 +128,12 @@ export function buildThreeGeoProject(
   const innerW = Math.max(0, width - margin.left - margin.right);
   const innerH = Math.max(0, height - margin.top - margin.bottom);
   const projection = fitChinaGeoProjection(d3.geoMercator(), innerW, innerH, fitCollection);
+  const flowProjection = fitChinaGeoProjection(d3.geoMercator(), width, height, fitCollection);
+  const projectForFlowPath = (coord: [number, number]): [number, number] | null => {
+    const p = flowProjection(coord);
+    if (!p) return null;
+    return [p[0] - width / 2, -(p[1] - height / 2)];
+  };
   const { centerX: layoutCenterX, centerY: layoutCenterY } = chinaGeoLayoutCenterInViewport(
     width,
     height,
@@ -146,7 +158,10 @@ export function buildThreeGeoProject(
 
   return {
     projection,
+    flowProjection,
     project,
+    projectForFlowPath,
+    flowPathOffset: { x: -centerX, y: -centerY },
     projBounds: computeGeoProjBounds(boundsFeatures, project),
     margin,
     centerX,

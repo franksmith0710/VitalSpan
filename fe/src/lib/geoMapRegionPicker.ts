@@ -1,6 +1,7 @@
 import type { ChartDrillFrame } from "@/lib/chartDrill";
 import { getDrillChain } from "@/lib/chartDrill";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import { readChartDeStyle, readChartGeoStyle } from "@/lib/chartDeStyle";
 import {
   isMunicipalityAdcode,
   lookupCityAdcode,
@@ -13,6 +14,13 @@ export type GeoMapRegionSelection = {
   city?: string;
   district?: string;
 };
+
+/** `undefined` = 未用手动地区；`[]` = 明确全国 */
+export function readManualGeoMapDrillStack(
+  config: ChartViewConfig,
+): ChartDrillFrame[] | undefined {
+  return readChartGeoStyle(readChartDeStyle(config)).manualDrillStack;
+}
 
 export function formatGeoMapRegionSelectionLabel(
   selection: GeoMapRegionSelection | null,

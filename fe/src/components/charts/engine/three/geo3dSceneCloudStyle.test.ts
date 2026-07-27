@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import * as THREE from "three";
 import {
   DEFAULT_SCENE_CLOUD_DENSITY,
   DEFAULT_SCENE_CLOUD_HEIGHT,
@@ -9,6 +10,7 @@ import {
   resolveGeo3dSceneCloudSpeed,
 } from "./geo3dSceneCloudStyle";
 import { buildGeo3dSceneCloudsWithOptions } from "./geo3dSceneClouds";
+import { resolveClusterCount } from "./geo3dSceneCloudClusters";
 
 describe("geo3dSceneCloudStyle", () => {
   it("falls back to defaults for invalid values", () => {
@@ -28,7 +30,8 @@ describe("geo3dSceneCloudStyle", () => {
     expect(options.height).toBe(2);
   });
 
-  it("scales layer count with density", () => {
+  it("scales cluster count with density", () => {
+    expect(resolveClusterCount(0.2)).toBeLessThan(resolveClusterCount(1));
     const low = buildGeo3dSceneCloudsWithOptions(
       { halfX: 9, halfZ: 6, maxY: 1, defaultDistance: 20 },
       { density: 0.2, speed: 1, height: 1 },
@@ -37,7 +40,9 @@ describe("geo3dSceneCloudStyle", () => {
       { halfX: 9, halfZ: 6, maxY: 1, defaultDistance: 20 },
       { density: 1, speed: 1, height: 1 },
     );
-    expect(high.group.children.length).toBeGreaterThan(low.group.children.length);
+    const lowMesh = low.group.children[0] as THREE.InstancedMesh;
+    const highMesh = high.group.children[0] as THREE.InstancedMesh;
+    expect(highMesh.count).toBeGreaterThan(lowMesh.count);
     low.dispose();
     high.dispose();
   });

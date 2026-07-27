@@ -19,54 +19,57 @@ export function VizComponentLivePreview({ widget, className }: VizComponentLiveP
     widget.type === "filter" ? widget.filterConfig?.defaultValue ?? "" : "",
   );
 
+  const chartWidth = Math.max(width, 320);
+  const chartHeight = Math.max(height, 280);
+
   return (
     <div
       ref={containerRef}
-      className={cn(
-        "flex min-h-[280px] flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]",
-        className,
-      )}
+      className={cn("relative h-full min-h-0 w-full", className)}
       data-testid="viz-component-live-preview"
     >
-      <div className="flex min-h-0 flex-1 flex-col p-4">
-        {widget.type === "chart" && widget.chartConfig ? (
-          <ChartRenderer
-            embedded
-            config={widget.chartConfig}
-            title={widget.title}
-            widgetId={widget.id}
-            queryEnabled
-            renderEnabled
-            dashboardEditMode
-            pixelSize={{
-              width: Math.max(width - 32, 320),
-              height: Math.max(height - 32, 240),
-            }}
-          />
-        ) : null}
-        {widget.type === "filter" && widget.filterConfig ? (
-          <div className="mx-auto w-full max-w-md pt-8">
+      {widget.type === "chart" && widget.chartConfig ? (
+        <ChartRenderer
+          embedded
+          config={widget.chartConfig}
+          title=""
+          widgetId={widget.id}
+          queryEnabled
+          renderEnabled
+          dashboardEditMode
+          pixelSize={{ width: chartWidth, height: chartHeight }}
+        />
+      ) : null}
+      {widget.type === "filter" && widget.filterConfig ? (
+        <div className="flex h-full items-start justify-center p-4">
+          <div className="w-full max-w-md">
             <FilterWidget
-              widget={widget as LayoutWidget & { filterConfig: NonNullable<typeof widget.filterConfig> }}
+              widget={
+                widget as LayoutWidget & { filterConfig: NonNullable<typeof widget.filterConfig> }
+              }
               mode="view"
               value={filterValue}
               onValueChange={(_, value) => setFilterValue(value)}
             />
           </div>
-        ) : null}
-        {widget.type === "text" && widget.textConfig ? (
+        </div>
+      ) : null}
+      {widget.type === "text" && widget.textConfig ? (
+        <div className="h-full overflow-auto p-3">
           <TextWidget
             widget={widget as LayoutWidget & { textConfig: NonNullable<typeof widget.textConfig> }}
             mode="view"
           />
-        ) : null}
-        {widget.type === "media" && widget.mediaConfig ? (
+        </div>
+      ) : null}
+      {widget.type === "media" && widget.mediaConfig ? (
+        <div className="flex h-full items-center justify-center p-3">
           <MediaWidget
             widget={widget as LayoutWidget & { mediaConfig: NonNullable<typeof widget.mediaConfig> }}
             mode="view"
           />
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </div>
   );
 }

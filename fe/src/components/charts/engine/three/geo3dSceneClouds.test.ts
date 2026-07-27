@@ -1,21 +1,24 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import { buildGeo3dSceneClouds, buildGeo3dSceneCloudsWithOptions } from "./geo3dSceneClouds";
+import { resolveClusterCount } from "./geo3dSceneCloudClusters";
 import { applyGeo3dSceneClouds, resolveGeo3dSceneClouds, resolveGeo3dVisualStyle } from "./geo3dVisualStyle";
 
 describe("geo3dSceneClouds", () => {
-  it("builds horizontal cloud sheets above the map", () => {
+  it("builds volumetric cloud clusters above the map", () => {
     const handle = buildGeo3dSceneClouds({
       halfX: 9,
       halfZ: 6,
       maxY: 1.2,
       defaultDistance: 20,
     });
-    expect(handle.group.children.length).toBeGreaterThanOrEqual(2);
-    const mesh = handle.group.children[0] as THREE.Mesh;
-    expect(mesh).toBeInstanceOf(THREE.Mesh);
-    expect(mesh.rotation.x).toBeCloseTo(-Math.PI / 2);
-    expect(mesh.material).toBeInstanceOf(THREE.ShaderMaterial);
+    expect(handle.group.children.length).toBe(1);
+    const instanced = handle.group.children[0] as THREE.InstancedMesh;
+    expect(instanced).toBeInstanceOf(THREE.InstancedMesh);
+    const material = instanced.material as THREE.ShaderMaterial;
+    expect(material).toBeInstanceOf(THREE.ShaderMaterial);
+    expect((material.uniforms.uOpacity.value as number)).toBeGreaterThan(0.1);
+    expect(instanced.count).toBeGreaterThanOrEqual(resolveClusterCount(0.55) * 5);
     handle.dispose();
   });
 
@@ -34,16 +37,20 @@ describe("geo3dSceneClouds", () => {
     handle?.dispose();
   });
 
-  it("advances shader time along prevailing wind", () => {
+  it("drifts cluster centers along prevailing wind", () => {
     const handle = buildGeo3dSceneCloudsWithOptions(
       { halfX: 9, halfZ: 6, maxY: 1.2, defaultDistance: 20 },
       { density: 0.5, speed: 1, height: 1 },
     );
-    const mesh = handle.group.children[0] as THREE.Mesh;
-    const material = mesh.material as THREE.ShaderMaterial;
-    const start = material.uniforms.uTime.value as number;
-    handle.update(2);
-    expect(material.uniforms.uTime.value as number).toBeGreaterThan(start);
+    const instanced = handle.group.children[0] as THREE.InstancedMesh;
+    const matrixBefore = new THREE.Matrix4();
+    instanced.getMatrixAt(0, matrixBefore);
+    const posBefore = new THREE.Vector3().setFromMatrixPosition(matrixBefore);
+    handle.update(3);
+    const matrixAfter = new THREE.Matrix4();
+    instanced.getMatrixAt(0, matrixAfter);
+    const posAfter = new THREE.Vector3().setFromMatrixPosition(matrixAfter);
+    expect(posAfter.x).toBeGreaterThan(posBefore.x);
     handle.dispose();
   });
 

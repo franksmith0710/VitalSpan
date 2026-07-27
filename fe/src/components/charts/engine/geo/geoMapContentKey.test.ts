@@ -7,7 +7,7 @@ describe("buildGeoMapContentKey", () => {
       chartType: "map-3d",
       mapId: "340000",
       drillDepth: 1,
-      drillStack: [{ dimension: "province", value: "安徽省" }],
+      drillStack: [{ field: "province", value: "安徽省" }],
       rowCount: 16,
       regionField: "city",
       rowsSample: [{ city: "合肥市" }, { city: "芜湖市" }],
@@ -22,7 +22,7 @@ describe("buildGeoMapContentKey", () => {
       chartType: "map-3d",
       mapId: "100000",
       drillDepth: 0,
-      drillStack: [] as { dimension: string; value: string }[],
+      drillStack: [] as { field: string; value: string }[],
       rowCount: 34,
       regionField: "province",
       rowsSample: [{ province: "安徽省" }],
@@ -34,7 +34,7 @@ describe("buildGeoMapContentKey", () => {
       ...base,
       mapId: "340000",
       drillDepth: 1,
-      drillStack: [{ dimension: "province", value: "安徽省" }],
+      drillStack: [{ field: "province", value: "安徽省" }],
     });
     expect(national).not.toBe(drilled);
   });
@@ -44,7 +44,7 @@ describe("buildGeoMapContentKey", () => {
       chartType: "map-3d",
       mapId: "100000",
       drillDepth: 0,
-      drillStack: [] as { dimension: string; value: string }[],
+      drillStack: [] as { field: string; value: string }[],
       rowCount: 34,
       regionField: "province",
       rowsSample: [{ province: "安徽省" }],

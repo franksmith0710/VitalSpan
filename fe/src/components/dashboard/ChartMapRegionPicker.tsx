@@ -197,7 +197,7 @@ export function ChartMapRegionPicker() {
     (stack: GeoMapRegionSelection | null) => {
       const frames = stack ? buildGeoMapDrillStackFromSelection(cfg, stack) : [];
       const nextCfg = patchChartDeStyleNested(cfg, "geo", {
-        manualDrillStack: frames.length ? frames : undefined,
+        manualDrillStack: frames,
       });
       onChange(nextCfg);
       if (drill.active) {

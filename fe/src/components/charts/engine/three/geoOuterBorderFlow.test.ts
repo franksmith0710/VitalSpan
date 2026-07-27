@@ -4,6 +4,17 @@ import * as THREE from "three";
 import chinaProvincesGeo from "@/assets/geo/china-provinces.json";
 import { fitChinaGeoProjection } from "@/components/charts/engine/geo/geoProjection";
 import { isDecorativeGeoFeature } from "@/components/charts/engine/geo/geoProjection";
+import { joinOfflineMapFeatures } from "@/components/charts/engine/geo/OfflineGeoPort";
+import { VS_REGIONS_MAP_ID } from "@/components/charts/engine/geo/geoConstants";
+import {
+  buildGeoFlatPlateMesh,
+  GEO_BORDER_ABOVE_CAP_Z,
+  resolveGeoCapTopZ,
+  resolveGeoPlateDepth,
+} from "@/components/charts/engine/three/buildGeoFlatPlateMesh";
+import { geometryToShapes } from "@/components/charts/engine/three/geoToThreeShapes";
+import { buildTerrainAlignedGeoProject } from "@/components/charts/engine/three/geo/threeGeoProject";
+import { getOfflineGeoMap } from "@/components/charts/engine/geo/OfflineGeoPort";
 import {
   pickOuterPerimeterSegments,
   ringToSegments,
@@ -15,6 +26,8 @@ import {
   ringBBoxArea,
   segmentComponents,
   pickOuterPerimeterFromCapSegments,
+  collectCapBorderSegments,
+  pickDominantCapOuterRing,
   buildGeoOuterBorderFlowFromCapSegments,
   buildGeoOuterBorderFlowLines,
 } from "./geoOuterBorderFlow";
@@ -167,5 +180,94 @@ describe("geoOuterBorderFlow", () => {
       const next = picked[(i + 1) % picked.length]!;
       expect(Math.hypot(cur.bx - next.ax, cur.by - next.ay)).toBeLessThan(0.15);
     }
+  });
+
+  it("cap render path: flow bundle aligns with plate top outline", { timeout: 30_000 }, () => {
+    const width = 640;
+    const height = 480;
+    const features = joinOfflineMapFeatures([], ["p", "v"], "p", "v", VS_REGIONS_MAP_ID).filter(
+      (f) => f.geometry,
+    );
+    const geo = getOfflineGeoMap(VS_REGIONS_MAP_ID)!;
+    const geoProject = buildTerrainAlignedGeoProject(width, height, VS_REGIONS_MAP_ID, 0, geo);
+    const plateDepth = resolveGeoPlateDepth(geoProject.projBounds, 1, 0);
+    const borderZ = resolveGeoCapTopZ(plateDepth, false) + GEO_BORDER_ABOVE_CAP_Z;
+    const borderFlow = {
+      enabled: true,
+      colorCss: "#22d3ee",
+      colorHex: 0x22d3ee,
+      speed: 4,
+      trailLength: 48,
+    };
+
+    const plateMeshes: THREE.Object3D[] = [];
+    for (const feature of features.slice(0, 8)) {
+      const shapes = geometryToShapes(feature.geometry!, geoProject.project);
+      for (const shape of shapes) {
+        const built = buildGeoFlatPlateMesh(shape, plateDepth, 0x4488aa, 0x7dd3fc, true, {
+          borderOpacity: 0.9,
+        });
+        built.mesh.userData.borderLines = built.borderLines;
+        plateMeshes.push(built.mesh);
+      }
+    }
+
+    const capSegments = collectCapBorderSegments(plateMeshes);
+    expect(capSegments.length).toBeGreaterThan(0);
+
+    const bundle = buildGeoOuterBorderFlowFromCapSegments(
+      capSegments,
+      borderZ,
+      0x7dd3fc,
+      true,
+      0.9,
+      borderFlow,
+    );
+    expect(bundle).not.toBeNull();
+    const pos = bundle!.lines.geometry.getAttribute("position");
+    expect(pos.count).toBeGreaterThan(0);
+    bundle!.lines.geometry.dispose();
+    (bundle!.lines.material as THREE.Material).dispose();
+    bundle!.particles.dispose();
+  });
+
+  it("render path: geo outer ring at cap-top Z walks mainland not Taiwan", { timeout: 30_000 }, () => {
+    const width = 640;
+    const height = 480;
+    const features = joinOfflineMapFeatures([], ["p", "v"], "p", "v", VS_REGIONS_MAP_ID).filter(
+      (f) => f.geometry,
+    );
+    const geo = getOfflineGeoMap(VS_REGIONS_MAP_ID)!;
+    const geoProject = buildTerrainAlignedGeoProject(width, height, VS_REGIONS_MAP_ID, 0, geo);
+    const plateDepth = resolveGeoPlateDepth(geoProject.projBounds, 1, 0);
+    const borderZ = resolveGeoCapTopZ(plateDepth, false) + GEO_BORDER_ABOVE_CAP_Z;
+    const borderFlow = {
+      enabled: true,
+      colorCss: "#22d3ee",
+      colorHex: 0x22d3ee,
+      speed: 4,
+      trailLength: 48,
+    };
+
+    const bundle = buildGeoOuterBorderFlowLines(
+      features.map((f) => f.geometry!),
+      geoProject.project,
+      borderZ,
+      0x7dd3fc,
+      true,
+      0.9,
+      borderFlow,
+      {
+        projectForPath: geoProject.projectForFlowPath,
+        flowProjection: geoProject.flowProjection,
+        viewport: geoProject.viewport,
+      },
+    );
+    expect(bundle).not.toBeNull();
+    const pos = bundle!.lines.geometry.getAttribute("position");
+    expect(pos.count).toBeGreaterThan(0);
+    bundle!.lines.geometry.dispose();
+    (bundle!.lines.material as THREE.Material).dispose();
+    bundle!.particles.dispose();
   });
 });

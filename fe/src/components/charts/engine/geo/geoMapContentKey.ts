@@ -16,7 +16,7 @@ export type GeoMapContentKeyInput = {
 
 /** 判断 3D 地图是否需要全量重建（数据/下钻/样式变更），尺寸变化走 resize。 */
 export function buildGeoMapContentKey(input: GeoMapContentKeyInput): string {
-  const drillSig = input.drillStack.map((f) => `${f.dimension}:${f.value}`).join("|");
+  const drillSig = input.drillStack.map((f) => `${f.field}:${f.value}`).join("|");
   const rowSig =
     input.regionField && input.rowsSample?.length
       ? input.rowsSample

@@ -19,6 +19,39 @@ export type GeoOuterBorderFlowBundle = {
 type Segment2 = { ax: number; ay: number; bx: number; by: number };
 type ProjectFn = (coord: [number, number]) => [number, number] | null;
 
+export type GeoOuterBorderFlowPathOptions = {
+  projectForPath?: ProjectFn;
+  offsetX?: number;
+  offsetY?: number;
+  flowProjection?: unknown;
+  viewport?: { width: number; height: number };
+};
+
+function resolveFlowRingOffset(
+  meshProject: ProjectFn,
+  flowProject: ProjectFn,
+  refs: [number, number][],
+): { x: number; y: number } {
+  for (const ref of refs) {
+    const mesh = meshProject(ref);
+    const flow = flowProject(ref);
+    if (mesh && flow) {
+      return { x: mesh[0] - flow[0], y: mesh[1] - flow[1] };
+    }
+  }
+  return { x: 0, y: 0 };
+}
+
+function shiftRing(ring: Segment2[], dx: number, dy: number): Segment2[] {
+  if (dx === 0 && dy === 0) return ring;
+  return ring.map((seg) => ({
+    ax: seg.ax + dx,
+    ay: seg.ay + dy,
+    bx: seg.bx + dx,
+    by: seg.by + dy,
+  }));
+}
+
 type BorderEdge = { segKey: string; seg: Segment2; aKey: string; bKey: string };
 
 const QUANT_STEP = 0.05;
@@ -363,6 +396,25 @@ function pickLargestFaceRing(segments: Segment2[]): Segment2[] {
   const rings = chainSegmentsIntoRings(segments);
   if (rings.length === 0) return [];
   return rings.reduce((best, ring) => (ringPerimeter(ring) > ringPerimeter(best) ? ring : best));
+}
+
+/** cap-top 边线外轮廓：半边面在吸附后边不稳定，改按连通分量内最大包围盒环选取 */
+export function pickDominantCapOuterRing(segments: Segment2[]): Segment2[] {
+  if (segments.length === 0) return [];
+
+  let bestRing: Segment2[] = [];
+  let bestBBox = 0;
+  for (const comp of segmentComponents(segments)) {
+    for (const ring of chainSegmentsIntoRings(comp)) {
+      if (ring.length < 3 || ringPerimeter(ring) <= 1) continue;
+      const bbox = ringBBoxArea(ring);
+      if (bbox > bestBBox) {
+        bestBBox = bbox;
+        bestRing = ring;
+      }
+    }
+  }
+  return bestRing.length > 0 ? bestRing : pickDominantOuterRing(segments);
 }
 
 function buildAdjacency(segments: Segment2[], grouper: EndpointGrouper): Map<string, BorderEdge[]> {
@@ -717,13 +769,24 @@ export function lineSegmentsToCapSegments(lines: THREE.LineSegments): Segment2[]
 
 /** 合并多块顶盖边线后仅保留外轮廓（共享边出现 2 次） */
 export function pickOuterPerimeterFromCapSegments(segments: Segment2[]): Segment2[] {
+  if (segments.length === 0) return [];
+  const snap = resolveAdjSnap(segments);
+  const grouper = createEndpointGrouper(snap);
   const counts = new Map<string, number>();
   const canonical = new Map<string, Segment2>();
+
   for (const seg of segments) {
-    const key = segmentKey(seg);
+    const [aKey, bKey] = segmentEndpointKey(seg, grouper);
+    if (aKey === bKey) continue;
+    const key = aKey < bKey ? `${aKey}|${bKey}` : `${bKey}|${aKey}`;
     counts.set(key, (counts.get(key) ?? 0) + 1);
-    canonical.set(key, seg);
+    if (!canonical.has(key)) {
+      const [ax, ay] = parsePointKey(aKey);
+      const [bx, by] = parsePointKey(bKey);
+      canonical.set(key, { ax, ay, bx, by });
+    }
   }
+
   return [...counts.entries()]
     .filter(([, count]) => count === 1)
     .map(([key]) => canonical.get(key)!);
@@ -789,7 +852,8 @@ export function buildGeoOuterBorderFlowFromCapSegments(
 ): GeoOuterBorderFlowBundle | null {
   if (!borderFlow.enabled || capSegments.length === 0) return null;
   const outerSegments = pickOuterPerimeterFromCapSegments(capSegments);
-  const orderedRing = orderRingExterior(pickLargestAreaRing(outerSegments));
+  if (outerSegments.length === 0) return null;
+  const orderedRing = orderRingExterior(pickDominantCapOuterRing(outerSegments));
   return buildFlowBundleFromRing(orderedRing, z, borderColor, isDark, borderOpacity, borderFlow);
 }
 
@@ -801,9 +865,25 @@ export function buildGeoOuterBorderFlowLines(
   isDark: boolean,
   borderOpacity: number,
   borderFlow: ResolvedGeoRegionBorderFlow,
+  pathOptions?: GeoOuterBorderFlowPathOptions,
 ): GeoOuterBorderFlowBundle | null {
   if (!borderFlow.enabled || geometries.length === 0) return null;
-  const outerSegments = pickOuterPerimeterSegments(geometries, project);
-  const orderedRing = orderRingExterior(pickLargestAreaRing(outerSegments));
+  const pathProject = pathOptions?.projectForPath ?? project;
+  const outerSegments = pickOuterPerimeterSegments(geometries, pathProject);
+  if (outerSegments.length === 0) return null;
+  let orderedRing = pickLargestAreaRing(outerSegments);
+  if (!pathOptions?.flowProjection) {
+    orderedRing = orderRingExterior(orderedRing);
+  }
+  if (pathOptions?.flowProjection && pathOptions.projectForPath) {
+    const offset = resolveFlowRingOffset(project, pathOptions.projectForPath, [
+      [116.4074, 39.9042],
+      [121.4737, 31.2304],
+      [113.2644, 23.1291],
+    ]);
+    orderedRing = shiftRing(orderedRing, offset.x, offset.y);
+  } else {
+    orderedRing = shiftRing(orderedRing, pathOptions?.offsetX ?? 0, pathOptions?.offsetY ?? 0);
+  }
   return buildFlowBundleFromRing(orderedRing, z, borderColor, isDark, borderOpacity, borderFlow);
 }

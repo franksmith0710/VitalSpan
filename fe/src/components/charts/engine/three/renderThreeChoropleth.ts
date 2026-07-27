@@ -485,9 +485,9 @@ export async function renderThreeChoroplethChart(
 
     const borderZ =
       resolveGeoCapTopZ(plateDepth, Boolean(terrainPack?.colorMap)) + GEO_BORDER_ABOVE_CAP_Z;
-    const capBorderSegments = collectCapBorderSegments(meshes);
+    const capSegments = collectCapBorderSegments(meshes);
     const outerBorderFlowBundle = buildGeoOuterBorderFlowFromCapSegments(
-      capBorderSegments,
+      capSegments,
       borderZ,
       borderColor,
       isDark,

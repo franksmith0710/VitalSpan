@@ -14,6 +14,12 @@ const ADMIN_LIST_FILL_PATTERNS: RegExp[] = [
 
 const ADMIN_SCREEN_PREVIEW_PATTERN = /^\/admin\/data-screens\/[^/]+\/preview\/?$/;
 
+const ADMIN_VIZ_COMPONENT_EDIT_PATTERN = /^\/admin\/viz-components\/[^/]+\/edit\/?$/;
+
+export function isAdminVizComponentEditRoute(pathname: string): boolean {
+  return ADMIN_VIZ_COMPONENT_EDIT_PATTERN.test(pathname);
+}
+
 export function isAdminScreenPreviewRoute(pathname: string): boolean {
   return ADMIN_SCREEN_PREVIEW_PATTERN.test(pathname);
 }

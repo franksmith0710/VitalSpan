@@ -10,6 +10,11 @@ import {
 
 export { CANVAS_VIEWPORT_SCROLLBAR_SIZE_PX };
 
+/** 水平滑块相对轨道左缘的内边距（与编辑视口预览对齐） */
+const HORIZONTAL_THUMB_LEFT_INSET_PX = 13;
+/** 水平滑块垂直偏移：相对轨道顶边略上移以居中细条 */
+const HORIZONTAL_THUMB_TOP_PX = -7;
+
 type ScrollbarAxisProps = {
   orientation: "horizontal" | "vertical";
   metrics: ViewportScrollAxisMetrics;
@@ -131,11 +136,15 @@ function ScrollbarAxis({
         <div
           className={cn(
             "absolute rounded-full bg-white/20 transition-colors hover:bg-white/30",
-            isHorizontal ? "top-1/2 h-1.5 -translate-y-1/2" : "left-1/2 w-1.5 -translate-x-1/2",
+            isHorizontal ? "h-1.5" : "left-1/2 w-1.5 -translate-x-1/2",
           )}
           style={
             isHorizontal
-              ? { width: `${thumbSizePercent}%`, left: `${thumbOffsetPercent}%` }
+              ? {
+                  width: `${thumbSizePercent}%`,
+                  left: `calc(${thumbOffsetPercent}% + ${HORIZONTAL_THUMB_LEFT_INSET_PX}px)`,
+                  top: HORIZONTAL_THUMB_TOP_PX,
+                }
               : { height: `${thumbSizePercent}%`, top: `${thumbOffsetPercent}%` }
           }
           onPointerDown={handleThumbPointerDown}

@@ -5,7 +5,7 @@
 | 日期 | 2026-07-27 |
 | 主模式 | **Thrash** |
 | 子类型 | Feature（视觉形态） |
-| 状态 | draft |
+| 状态 | done |
 | 正确性标准 | 开启「场景云」的 map-3d 正常渲染、可开关、密度/速度/高度滑块仍生效、无 WebGL 崩溃 |
 | 效果标准 | 远景可见**离散云团**（多块半透明球体叠成体积感），整体自西向东缓慢漂移；俯视/斜视均有「一团一团」而非「一层雾幕/贴图在滑」 |
 | 启用维度 | `ui-vertical`、`perf`、`regression`、`offline-asset` |
@@ -148,6 +148,12 @@
 
 ## 11. 审批记录
 
-- 决策：**待批**
-- 变更相对草稿：—
+- 决策：**批准**（用户 2026-07-27）
+- 变更相对草稿：按 P0 实现，未做 raymarch 备选
 - 豁免审批：否
+
+## 12. 收束（实现后）
+
+- **根源**：平面 primitive 无法表达块状体积 → 改为多球叠团 + InstancedMesh
+- **改动**：`geo3dSceneCloudClusters.ts` · `geo3dSceneCloudPuffMaterial.ts` · 重写 `geo3dSceneClouds.ts`；删除 `geo3dSceneCloudMaterial.ts`
+- **验证**：`vitest` 云相关 18 项全绿（2026-07-27）

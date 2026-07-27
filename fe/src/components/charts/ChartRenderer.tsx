@@ -44,6 +44,7 @@ import {
   getMapDrillClickField,
   preflightMapDrillClick,
 } from "@/lib/geoMapDrill";
+import { readManualGeoMapDrillStack } from "@/lib/geoMapRegionPicker";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmbeddedChartTable } from "./adapters/EmbeddedChartTable";
@@ -222,19 +223,26 @@ export const ChartRenderer = memo(function ChartRenderer({
 }: ChartRendererProps) {
   const drill = useChartDrill(drillEnabled ? widgetId : undefined);
   const effectiveConfig = useMemo(() => migrateChartViewConfig(config), [config]);
-  const persistedDrillStack = useMemo(
-    () => readChartGeoStyle(readChartDeStyle(effectiveConfig)).manualDrillStack ?? [],
+  const manualDrillStack = useMemo(
+    () => readManualGeoMapDrillStack(effectiveConfig),
     [effectiveConfig],
+  );
+  const persistedDrillStack = useMemo(
+    () => manualDrillStack ?? [],
+    [manualDrillStack],
   );
 
   const isGeoMapChart = isGeoMapChartType(effectiveConfig.chartType);
 
-  const persistedRevisionRef = useRef(drillStackRevision(persistedDrillStack));
+  const persistedRevisionRef = useRef(
+    manualDrillStack === undefined ? "__unset__" : drillStackRevision(manualDrillStack),
+  );
 
   useEffect(() => {
     if (!drillEnabled || !widgetId || !drill.active) return;
 
-    const revision = drillStackRevision(persistedDrillStack);
+    const revision =
+      manualDrillStack === undefined ? "__unset__" : drillStackRevision(manualDrillStack);
     const configChanged = revision !== persistedRevisionRef.current;
     persistedRevisionRef.current = revision;
 
@@ -242,6 +250,12 @@ export const ChartRenderer = memo(function ChartRenderer({
       if (drill.stack.length > 0) return;
       if (!persistedDrillStack.length) return;
       drill.setStack(persistedDrillStack);
+      return;
+    }
+
+    if (manualDrillStack !== undefined) {
+      if (manualDrillStack.length) drill.setStack(manualDrillStack);
+      else drill.reset();
       return;
     }
 
@@ -261,17 +275,19 @@ export const ChartRenderer = memo(function ChartRenderer({
     drill.setStack,
     drill.stack.length,
     isGeoMapChart,
+    manualDrillStack,
     persistedDrillStack,
     widgetId,
   ]);
 
   const effectiveDrillStack = useMemo(() => {
     if (isGeoMapChart) {
-      if (persistedDrillStack.length > 0) return persistedDrillStack;
-      return drill.stack;
+      if (manualDrillStack !== undefined) return manualDrillStack;
+      if (drill.stack.length > 0) return drill.stack;
+      return [];
     }
     return drill.stack.length > 0 ? drill.stack : persistedDrillStack;
-  }, [isGeoMapChart, drill.stack, persistedDrillStack]);
+  }, [isGeoMapChart, manualDrillStack, drill.stack, persistedDrillStack]);
 
   const mergedFilterParameters = useMemo(
     () => ({
@@ -399,7 +415,7 @@ export const ChartRenderer = memo(function ChartRenderer({
     (stack: typeof effectiveDrillStack) => {
       if (!isGeoMapChartType(localConfig.chartType)) return;
       const next = patchChartDeStyleNested(localConfig, "geo", {
-        manualDrillStack: stack.length ? stack : undefined,
+        manualDrillStack: stack,
       });
       setLocalConfig(next);
       onChartConfigChange?.(next);

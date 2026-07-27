@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isAdminListFillRoute, isAdminScreenPreviewRoute } from "./admin-layout-routes";
+import { isAdminListFillRoute, isAdminScreenPreviewRoute, isAdminVizComponentEditRoute } from "./admin-layout-routes";
 
 describe("isAdminListFillRoute", () => {
   it("matches paginated list routes", () => {
@@ -20,5 +20,14 @@ describe("isAdminScreenPreviewRoute", () => {
   it("matches data screen preview chromeless route", () => {
     expect(isAdminScreenPreviewRoute("/admin/data-screens/abc/preview")).toBe(true);
     expect(isAdminScreenPreviewRoute("/admin/data-screens/abc/edit")).toBe(false);
+  });
+});
+
+describe("isAdminVizComponentEditRoute", () => {
+  it("matches viz component edit fill route", () => {
+    expect(isAdminVizComponentEditRoute("/admin/viz-components/abc/edit")).toBe(true);
+    expect(isAdminVizComponentEditRoute("/admin/viz-components/abc/edit/")).toBe(true);
+    expect(isAdminVizComponentEditRoute("/admin/viz-components")).toBe(false);
+    expect(isAdminVizComponentEditRoute("/admin/viz-components/new")).toBe(false);
   });
 });

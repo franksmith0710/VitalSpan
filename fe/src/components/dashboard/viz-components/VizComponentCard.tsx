@@ -252,7 +252,7 @@ export function VizComponentCard({
 
             <div className="flex shrink-0 flex-col items-end gap-1">
 
-              {item.surfaceKinds.map((sk) => (
+              {(item.surfaceKinds ?? []).map((sk) => (
 
                 <span
 

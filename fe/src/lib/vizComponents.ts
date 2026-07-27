@@ -93,6 +93,31 @@ export function buildVizComponentsListUrl(params: {
   return `/api/v1/viz-components${qs ? `?${qs}` : ""}`;
 }
 
+function normalizeWidgetType(value: unknown): VizWidgetType {
+  if (value === "chart" || value === "filter" || value === "text" || value === "media") {
+    return value;
+  }
+  return "chart";
+}
+
+function normalizeSurfaceKinds(value: unknown): VizSurfaceKind[] {
+  if (!Array.isArray(value)) return ["dashboard"];
+  const kinds = value.filter(
+    (item): item is VizSurfaceKind => item === "dashboard" || item === "data-screen",
+  );
+  return kinds.length > 0 ? kinds : ["dashboard"];
+}
+
+function normalizeListItem(raw: VizComponentListItem): VizComponentListItem {
+  return {
+    ...raw,
+    widgetType: normalizeWidgetType(raw.widgetType),
+    surfaceKinds: normalizeSurfaceKinds(raw.surfaceKinds),
+    tags: Array.isArray(raw.tags) ? raw.tags : [],
+    referenceCount: typeof raw.referenceCount === "number" ? raw.referenceCount : 0,
+  };
+}
+
 export function fetchVizComponents(params: {
   surfaceKind?: VizSurfaceKind;
   widgetType?: VizWidgetType;
@@ -102,7 +127,10 @@ export function fetchVizComponents(params: {
   limit?: number;
   offset?: number;
 }) {
-  return apiFetch<VizComponentListResponse>(buildVizComponentsListUrl(params));
+  return apiFetch<VizComponentListResponse>(buildVizComponentsListUrl(params)).then((data) => ({
+    ...data,
+    items: (data.items ?? []).map(normalizeListItem),
+  }));
 }
 
 export function fetchVizComponent(id: string) {

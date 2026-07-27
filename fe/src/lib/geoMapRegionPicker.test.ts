@@ -70,6 +70,12 @@ describe("formatGeoMapRegionSelectionLabel", () => {
 
   it("falls back to national label", () => {
     expect(formatGeoMapRegionSelectionLabel(null)).toBe("全国");
+    expect(formatGeoMapRegionSelectionLabel(parseGeoMapDrillStackSelection([]))).toBe("全国");
+  });
+
+  it("persists empty manualDrillStack for national selection", () => {
+    const stack = buildGeoMapDrillStackFromSelection(mapConfig, null);
+    expect(stack).toEqual([]);
   });
 });
 

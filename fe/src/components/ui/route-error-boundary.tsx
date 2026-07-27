@@ -53,7 +53,9 @@ class RouteErrorBoundaryClass extends Component<
               {isApp ? "应用加载失败" : "页面加载失败"}
             </p>
             <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-              {mapApiError(error)}
+              {import.meta.env.DEV && error.message
+                ? error.message
+                : mapApiError(error)}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
               <Button type="button" variant="outline" size="sm" onClick={this.handleRetry}>

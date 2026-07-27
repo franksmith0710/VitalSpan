@@ -70,8 +70,15 @@ const PREVIEW_BY_TYPE: Record<VizWidgetType, () => ReactElement> = {
 };
 
 export function ComponentCardPreview({ widgetType, className }: ComponentCardPreviewProps) {
-  const Icon = WIDGET_ICONS[widgetType];
-  const Preview = PREVIEW_BY_TYPE[widgetType];
+  const safeType =
+    widgetType === "chart" ||
+    widgetType === "filter" ||
+    widgetType === "text" ||
+    widgetType === "media"
+      ? widgetType
+      : "chart";
+  const Icon = WIDGET_ICONS[safeType];
+  const Preview = PREVIEW_BY_TYPE[safeType];
 
   return (
     <div
@@ -93,7 +100,7 @@ export function ComponentCardPreview({ widgetType, className }: ComponentCardPre
       <Preview />
       <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-md bg-white/90 px-2 py-0.5 text-[10px] font-medium text-gray-600 shadow-sm dark:bg-gray-900/90 dark:text-gray-400">
         <Icon className="size-3" aria-hidden />
-        {widgetTypeLabel(widgetType)}
+        {widgetTypeLabel(safeType)}
       </span>
     </div>
   );

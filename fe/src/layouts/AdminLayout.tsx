@@ -16,7 +16,7 @@ import { resolveSidebarSections } from "@/lib/resolve-nav";
 import { sessionUserFromMe } from "@/lib/session";
 import { isDetachedFromWorkspacePath } from "@/lib/workspace";
 import { CHART_TYPES_CATALOG_PATH } from "@/lib/chartPaths";
-import { isAdminListFillRoute, isAdminScreenPreviewRoute } from "@/lib/admin-layout-routes";
+import { isAdminListFillRoute, isAdminScreenPreviewRoute, isAdminVizComponentEditRoute } from "@/lib/admin-layout-routes";
 import {
   ADMIN_CONTENT_MARGIN_COLLAPSED_CLASS,
   ADMIN_CONTENT_MARGIN_EXPANDED_CLASS,
@@ -46,7 +46,9 @@ function AdminLayoutContent() {
   );
   const isListFillRoute = isAdminListFillRoute(location.pathname);
   const isScreenPreviewRoute = isAdminScreenPreviewRoute(location.pathname);
-  const isFillHeightRoute = isChartTypesFill || isDashboardEditFill || isListFillRoute;
+  const isVizComponentEditFill = isAdminVizComponentEditRoute(location.pathname);
+  const isFillHeightRoute =
+    isChartTypesFill || isDashboardEditFill || isListFillRoute || isVizComponentEditFill;
   // 所有标准管理页锁住 html/body，仅 main 滚动，避免细/粗双滚动条并存
   useAdminFillScrollLock(!isScreenPreviewRoute);
 

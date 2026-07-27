@@ -241,7 +241,7 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
             {resolveGeo3dSceneClouds(geo3d) ? (
               <>
                 <DeAttrSliderField
-                  label="云密度"
+                  label="云团密度"
                   compact
                   value={geo3d.sceneCloudDensity}
                   fallback={DEFAULT_SCENE_CLOUD_DENSITY}

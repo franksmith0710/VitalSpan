@@ -1,12 +1,4 @@
-import { useMemo, type ReactElement } from "react";
-import { CanvasChartHost } from "@/components/charts/engine/CanvasChartHost";
-import { buildStyleContext } from "@/components/charts/engine/buildStyleContext";
-import {
-  CHART_CATALOG_SMOKE_CASES,
-  smokeCaseToConfig,
-  smokeCaseToViewModel,
-} from "@/components/charts/chartCatalogSmokeFixtures";
-import { resolveChartColors } from "@/lib/chartPalette";
+import type { ReactElement } from "react";
 import type { VizComponentPayload, VizWidgetType } from "@/lib/vizComponents";
 import { cn } from "@/lib/utils";
 import { textConfigToHtml } from "@/components/dashboard/richTextHtml";
@@ -18,6 +10,13 @@ type ComponentPayloadPreviewProps = {
   payload?: VizComponentPayload;
   className?: string;
 };
+
+function normalizeWidgetType(type: string | undefined): VizWidgetType {
+  if (type === "chart" || type === "filter" || type === "text" || type === "media") {
+    return type;
+  }
+  return "chart";
+}
 
 function FilterPayloadPreview({ payload }: { payload: VizComponentPayload }) {
   const config = payload.filterConfig;
@@ -73,40 +72,15 @@ function MediaPayloadPreview({ payload }: { payload: VizComponentPayload }) {
 }
 
 function ChartPayloadPreview({ payload }: { payload: VizComponentPayload }) {
-  const chartConfig = payload.chartConfig;
-  const fixture = useMemo(() => {
-    if (!chartConfig) return null;
-    return (
-      CHART_CATALOG_SMOKE_CASES.find((item) => item.type === chartConfig.chartType) ??
-      CHART_CATALOG_SMOKE_CASES.find((item) => item.type === "bar") ??
-      null
-    );
-  }, [chartConfig]);
-
-  const config = useMemo(() => {
-    if (!fixture || !chartConfig) return null;
-    return { ...smokeCaseToConfig(fixture), ...chartConfig };
-  }, [chartConfig, fixture]);
-
-  const viewModel = useMemo(() => (fixture ? smokeCaseToViewModel(fixture) : null), [fixture]);
-  const style = useMemo(() => {
-    if (!config) return null;
-    return buildStyleContext({
-      config,
-      scheme: "light",
-      chartColors: resolveChartColors("default"),
-    });
-  }, [config]);
-
-  if (!chartConfig || !config || !viewModel || !style) {
-    return null;
-  }
-
+  const chartType = payload.chartConfig?.chartType;
   return (
-    <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-2">
-      <div className="h-full w-full max-w-full">
-        <CanvasChartHost viewModel={viewModel} style={style} chartConfig={config} height={180} />
-      </div>
+    <div className="relative h-full w-full">
+      <ComponentCardPreview widgetType="chart" className="h-full" />
+      {chartType ? (
+        <span className="absolute right-2 top-2 rounded-md bg-white/95 px-2 py-0.5 text-[10px] font-medium text-gray-600 shadow-sm dark:bg-gray-900/95 dark:text-gray-400">
+          {chartType}
+        </span>
+      ) : null}
     </div>
   );
 }
@@ -126,15 +100,17 @@ export function ComponentPayloadPreview({
   payload,
   className,
 }: ComponentPayloadPreviewProps) {
+  const safeType = normalizeWidgetType(widgetType);
+
   if (!payload) {
-    return <ComponentCardPreview widgetType={widgetType} className={className} />;
+    return <ComponentCardPreview widgetType={safeType} className={className} />;
   }
 
-  const Preview = PAYLOAD_RENDERERS[widgetType];
+  const Preview = PAYLOAD_RENDERERS[safeType];
   const rendered = Preview(payload);
 
   if (!rendered) {
-    return <ComponentCardPreview widgetType={widgetType} className={className} />;
+    return <ComponentCardPreview widgetType={safeType} className={className} />;
   }
 
   return (
@@ -156,7 +132,7 @@ export function ComponentPayloadPreview({
       />
       {rendered}
       <span className="absolute bottom-2 left-2 rounded-md bg-white/90 px-2 py-0.5 text-[10px] font-medium text-gray-600 shadow-sm dark:bg-gray-900/90 dark:text-gray-400">
-        {widgetTypeLabel(widgetType)}
+        {widgetTypeLabel(safeType)}
       </span>
     </div>
   );

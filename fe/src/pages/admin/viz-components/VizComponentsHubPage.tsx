@@ -15,6 +15,7 @@ import {
 import { VizComponentCard } from "@/components/dashboard/viz-components/VizComponentCard";
 import { InsertVizComponentDialog } from "@/components/dashboard/viz-components/InsertVizComponentDialog";
 import { ComponentReferencesDialog } from "@/components/dashboard/viz-components/ComponentReferencesDialog";
+import { CreateVizComponentButton } from "@/components/dashboard/viz-components/CreateVizComponentDialog";
 import {
   SURFACE_TABS,
   VIZ_COMPONENTS_HUB,
@@ -56,8 +57,8 @@ function ComponentCardSkeleton() {
 const EMPTY_STEPS = [
   {
     step: 1,
-    title: "编辑看板或大屏",
-    description: "进入编辑页，配置图表、筛选器或装饰组件。",
+    title: "新建或发布组件",
+    description: "在 Hub 点击「新建组件」，或在看板/大屏编辑页发布到库。",
     icon: Pencil,
   },
   {
@@ -81,6 +82,7 @@ export function VizComponentsHubPage() {
     ? sessionUserFromMe(authUser)
     : sessionUserFromMe({ username: "访客", roles: ["viewer"] });
   const canManage = hasCapability(sessionUser, "viz:component.manage");
+  const canCreate = hasCapability(sessionUser, "dashboard:edit");
 
   const [searchParams, setSearchParams] = useSearchParams();
   const surfaceTab =
@@ -162,9 +164,12 @@ export function VizComponentsHubPage() {
       description={VIZ_COMPONENTS_HUB.description}
       className="gap-4"
       actions={
-        <Button type="button" variant="outline" size="sm" asChild>
-          <Link to="/admin/viz-templates">{VIZ_COMPONENTS_HUB.layoutTemplates}</Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          {canCreate ? <CreateVizComponentButton /> : null}
+          <Button type="button" variant="outline" size="sm" asChild>
+            <Link to="/admin/viz-templates">{VIZ_COMPONENTS_HUB.layoutTemplates}</Link>
+          </Button>
+        </div>
       }
     >
       <section className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -240,7 +245,8 @@ export function VizComponentsHubPage() {
           description={VIZ_COMPONENTS_HUB.emptyDescription}
           action={
             <div className="flex flex-wrap justify-center gap-2">
-              <Button type="button" size="sm" variant="primary" asChild>
+              {canCreate ? <CreateVizComponentButton /> : null}
+              <Button type="button" size="sm" variant={canCreate ? "outline" : "primary"} asChild>
                 <Link to="/admin/dashboards">{VIZ_COMPONENTS_HUB.goEditDashboard}</Link>
               </Button>
               <Button type="button" size="sm" variant="outline" asChild>

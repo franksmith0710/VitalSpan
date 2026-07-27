@@ -5,7 +5,7 @@
 | 日期 | 2026-07-27 |
 | 主模式 | **Thrash** |
 | 子类型 | Bug（下钻 P0 阻断）+ 效果未达标（流光路径） |
-| 状态 | **draft — 待审批** |
+| 状态 | 迭代 5 **done**（2026-07-27 实施） |
 | 正确性标准 | 全国→湖南省下钻后 3D 地图正常渲染市级轮廓；无「离线地图资产缺失」 |
 | 效果标准 | 流光沿**当前层级外轮廓顶边**连续单向绕行（大陆主体/省界外缘），非侧壁局部闪烁；不改用户自定义 `regionBorderFlowColor` |
 | 启用维度 | `ui-vertical`（地图下钻→3D 渲染全链路）、`async`（资产注册与渲染竞态） |
@@ -152,8 +152,134 @@
 
 ## 11. 审批记录
 
-- 决策：**待批准**
+- 决策：**已批准并实施**（2026-07-27）
 - 请回复：**批准** / **改方向**（说明） / **缩范围**（例如先只做下钻 P0）
+
+---
+
+> **HARD-GATE**：审批前不改业务代码。
+
+---
+
+# 迭代 5：用户反馈「未解决」— 发货缺口 + 验收闭环
+
+| 字段 | 值 |
+|------|-----|
+| 日期 | 2026-07-27 |
+| 主模式 | **Thrash** |
+| 子类型 | Bug（整图崩溃未发货）+ 效果未验收（流光 cap 路径缺集成测试） |
+| 状态 | **draft** |
+| 正确性标准 | 看板 3D 区域地图**不进** `WidgetErrorBoundary`；全国→湖南省下钻无「离线地图资产缺失」 |
+| 效果标准 | 流光沿**当前层级外轮廓顶边**连续单向绕行；不改 `regionBorderFlowColor` |
+| 启用维度 | `ui-vertical`、`async` |
+| 非目标 | 改色/混合模式；在线地图；2D 流光 |
+
+## 1. 现象 / 诉求
+
+- 用户本轮仅反馈：**「/root-first-solve 未解决」**（迭代 4 标 done 后）
+- [L2] 历史仍含：整图「3D 区域地图无法渲染」、下钻湖南失败、流光贴侧壁/绕台湾
+
+## 2. 需求锚定（对话优先）
+
+| Must | Out |
+|------|-----|
+| 3D 地图能加载、能下钻湖南 | 改流光配色 |
+| 流光沿外轮廓顶边连续运动 | 在线瓦片 |
+| 全国绕大陆主体 | 继续在纯 GeoJSON 图论上叠补丁 |
+
+## 3. 失败迭代复盘（迭代 4 之后）
+
+| # | 尝试了什么 | 为何仍「未解决」 | 证据 | 下轮禁止 |
+|---|------------|------------------|------|----------|
+| 5 | 迭代 4 全量提交 `9639ec9f`（cap 流光 + ensureOfflineGeoMap） | **关键修复未进提交**；单测未覆盖 cap 全国路径 | `git diff HEAD useGeoMapLevel.ts`；`geoOuterBorderFlow.test.ts` 无 cap 全国用例 | 标 done 却无浏览器验收、无发货核对 |
+| 6 | `useGeoMapLevel` 延迟 `listVsRegionNames()` | 仅工作区，**未 commit** | `git show HEAD:fe/src/hooks/useGeoMapLevel.ts` 仍为模块顶层 `PROVINCE_CONTEXT` | 假设用户已跑到最新 bundle |
+| 7 | `outerSegments.length === 0` 早退 | 同上，未 commit | `git diff geoOuterBorderFlow.ts` | — |
+
+**三问**
+
+1. **根因错位**：一部分是「修复写了没发货」；另一部分是「cap 路径缺全国集成测试 → 假绿」
+2. **效果标准**：迭代 4 单测只验 GeoJSON 路径的「大陆非台湾」，**未验** `buildGeoOuterBorderFlowFromCapSegments` 真渲染链
+3. **再失败原因**：继续改算法而不先 **commit + 硬刷新 + DEV 指标验收**
+
+## 4. 代码取证（本轮 L1）
+
+| 发现 | 路径 |
+|------|------|
+| 已提交 `9639ec9f` 含 cap 流光、`ensureOfflineGeoMap`、`collectCapBorderSegments` | `renderThreeChoropleth.ts:486-495` |
+| **未提交**：`createProvinceContext` + `useState(lazy init)` | `fe/src/hooks/useGeoMapLevel.ts`（HEAD 仍为模块顶层 `listVsRegionNames()`） |
+| **未提交**：`outerSegments.length === 0` 守卫 | `geoOuterBorderFlow.ts:792` |
+| 湖南市级资产存在 | `fe/src/assets/geo/cities/430000.json` |
+| 流光无 GeoJSON fallback，cap 失败 → `data-border-flow=missing-bundle` | `renderThreeChoropleth.ts:489-511` |
+| `geoOuterBorderFlow.test.ts` 7 项全过，但**无**全国 cap-segments 用例 | 仅 `buildGeoOuterBorderFlowLines` + GeoJSON 验台湾 |
+| `geoMap3d.audit.test.ts` 6 项全过（含广东下钻 resolve） | 不覆盖 React 挂载链 TDZ |
+
+### 5.a `ui-vertical`
+
+**画面验收**：看板 → 3D 区域地图组件 → 全国可见 → 点湖南 → 市级 3D + 外轮廓流光顶边绕行。
+
+| 层 | 状态 | 迭代 5 P0 |
+|----|------|-----------|
+| hook 初始化 | HEAD 模块顶层副作用 **[风险]** | 发货 lazy init |
+| 资产 ensure | 已提交 | 回归湖南 430000 |
+| three 流光 | cap 路径已提交，**未验全国** | 补集成测试 + 浏览器 DEV 指标 |
+
+## 7. 根源结论
+
+**一句话**：迭代 4 算法方向已对，但 **(1) 崩溃修复与空守卫未进仓库**，**(2) cap 流光缺少全国级集成测试与目视验收**，导致用户环境仍失败或效果仍差。
+
+主根因（按优先级）：
+
+1. **P0 阻断**：`useGeoMapLevel` 模块顶层 `listVsRegionNames()` 在 Vite 分包顺序下可触发 `provinceFullNames` TDZ → `WidgetErrorBoundary`（对话 L2；修复在工作区未 commit）
+2. **P0 效果假绿**：`buildGeoOuterBorderFlowFromCapSegments` 无全国「大陆非台湾」集成测试，视觉回归未被发现
+3. **次要**：`outerSegments` 空时未早退（未 commit）可能导致异常路径
+
+## 8. 问题分解
+
+| # | 子问题 | 优先级 |
+|---|--------|--------|
+| 1 | **发货** TDZ lazy init + outerSegments 守卫 | **P0** |
+| 2 | 新增 **cap 路径**全国外轮廓集成测试（对标现有 GeoJSON 台湾用例） | **P0** |
+| 3 | 若 (2) 失败：修 `collectCapBorderSegments` / `orderRingExterior` / Z 对齐 | P0 续 |
+| 4 | 浏览器验收：`data-border-flow=ready`、`ringSegments`、湖南下钻 | P0 闭合 |
+| 5 | 可选：拆环依赖 `geoMapChart` 默认参 `listVsRegionNames()` | P1 |
+
+## 9. 方案（推荐）
+
+### P0-A 发货未提交修复（最小 diff）
+
+- `useGeoMapLevel.ts`：`createProvinceContext()` + `useState(createProvinceContext)`（恢复工作区改动）
+- `geoOuterBorderFlow.ts`：`outerSegments.length === 0` 早退
+- 新增 `D3GeoMapView.import.test.ts`：动态 import 视图模块冒烟（防 TDZ 回归）
+
+### P0-B 补 cap 全国集成测试
+
+- 在 `geoOuterBorderFlow.test.ts` 增加用例：用全国省级 mesh 等价 cap segments（或经 `buildGeoFlatPlateMesh` 构建）调用 `buildGeoOuterBorderFlowFromCapSegments`，断言：
+  - bundle 非空
+  - 周长 / 包围盒显著大于台湾单省 cap 外轮廓
+  - 环段首尾连续
+
+### P0-C 目视验收清单（实施后在浏览器执行）
+
+1. 硬刷新（Ctrl+Shift+R）
+2. 全国 3D：控制台无 `ReferenceError`；`data-border-flow=ready`
+3. 下钻湖南：无红字「离线地图资产缺失」
+4. 观察流光 ≥10s：沿外轮廓顶边，不绕台湾、不贴侧壁
+
+**废弃**：在未发货 TDZ 修复前继续改流光 shader/粒子
+
+**风险与回滚**：P0-A 纯延迟初始化，可独立回滚；P0-B 仅测试，无运行时风险
+
+## 10. 验证计划
+
+- [ ] `vitest run geoOuterBorderFlow.test.ts geoMap3d.audit.test.ts geoMapLevels.test.ts` + 新 import 测试
+- [ ] `tsc --noEmit`
+- [ ] 浏览器：全国加载 + 湖南下钻 + `data-border-flow=ready`
+- [ ] 未改 `regionBorderFlowColor`
+
+## 11. 审批记录（迭代 5）
+
+- 决策：**已批准并实施**（2026-07-27 用户回复「执行」）
+- 请回复：**批准**（P0-A+B+C）/ **先只做 P0-A**（先能加载）/ **改方向**
 
 ---
 

@@ -80,4 +80,20 @@ describe("ChartMapRegionPicker", () => {
       ]);
     });
   });
+
+  it("persists empty manualDrillStack when selecting national", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    renderMapDataPanel(onChange);
+
+    await user.click(screen.getByTestId("chart-map-region-picker-trigger"));
+    await user.click(await screen.findByRole("button", { name: "广东省" }));
+    await user.click(screen.getByTestId("chart-map-region-picker-trigger"));
+    await user.click(await screen.findByRole("button", { name: "全国" }));
+
+    await waitFor(() => {
+      const lastCall = onChange.mock.calls.at(-1)?.[0];
+      expect(lastCall?.nativeBody?.deStyle?.geo?.manualDrillStack).toEqual([]);
+    });
+  });
 });

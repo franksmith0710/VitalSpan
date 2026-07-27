@@ -4,7 +4,12 @@ import {
   resolveGeo3dSceneCloudOptions,
   type ResolvedSceneCloudOptions,
 } from "@/components/charts/engine/three/geo3dSceneCloudStyle";
-import { createSceneCloudMaterial } from "@/components/charts/engine/three/geo3dSceneCloudMaterial";
+import {
+  buildCloudClusterInstances,
+  updateCloudClusterMatrices,
+  wrapClusterAxis,
+  type CloudClusterRuntime,
+} from "@/components/charts/engine/three/geo3dSceneCloudClusters";
 import type { ChartGeo3dStyle } from "@/lib/chartDeStyle";
 
 export const GEO3D_SCENE_CLOUDS_GROUP_NAME = "geo3d-scene-clouds";
@@ -19,20 +24,8 @@ export type Geo3dSceneCloudsHandle = {
   dispose: () => void;
 };
 
-type CloudSheet = {
-  mesh: THREE.Mesh;
-  material: THREE.ShaderMaterial;
-  timeRate: number;
-};
-
-function resolveLayerCount(density: number): number {
-  return Math.round(2 + density * 3);
-}
-
-/** 高层云移动更快（高空风），但绝对速度仍保持远景缓慢感 */
-function resolveTimeRate(speed: number, layerIndex: number, layerCount: number): number {
-  const altitudeFactor = 0.55 + (layerIndex / Math.max(1, layerCount - 1)) * 0.75;
-  return 0.045 * speed * altitudeFactor;
+function resolveDriftRate(speed: number, span: number): number {
+  return span * 0.018 * speed;
 }
 
 export function buildGeo3dSceneClouds(
@@ -48,61 +41,33 @@ export function buildGeo3dSceneCloudsWithOptions(
 ): Geo3dSceneCloudsHandle {
   const group = new THREE.Group();
   group.name = GEO3D_SCENE_CLOUDS_GROUP_NAME;
-  group.renderOrder = 6;
+  group.renderOrder = 20;
 
   const span = Math.max(layout.halfX, layout.halfZ, 4);
-  const planeSize = span * 3.8;
-  const layerCount = resolveLayerCount(options.density);
-  const sheets: CloudSheet[] = [];
-
-  for (let layerIndex = 0; layerIndex < layerCount; layerIndex += 1) {
-    const layerT = layerIndex / Math.max(1, layerCount - 1);
-    const heightLift =
-      layout.maxY + span * (0.12 + layerIndex * 0.085) * options.height;
-    const opacity = (0.1 + layerT * 0.08) * (0.55 + options.density * 0.65);
-    const material = createSceneCloudMaterial(
-      {
-        opacity: Math.min(0.48, opacity),
-        coverage: options.density,
-        scale: 0.11 - layerT * 0.028,
-        streak: 1.65 + layerT * 0.55,
-        phase: layerIndex * 4.7 + options.density * 2.3,
-      },
-      WIND_DIR,
-    );
-
-    const geometry = new THREE.PlaneGeometry(planeSize, planeSize, 1, 1);
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.rotation.x = -Math.PI / 2;
-    mesh.rotation.z = (layerIndex - layerCount * 0.5) * 0.04;
-    mesh.position.y = heightLift;
-    mesh.renderOrder = 6 + layerIndex;
-    group.add(mesh);
-
-    sheets.push({
-      mesh,
-      material,
-      timeRate: resolveTimeRate(options.speed, layerIndex, layerCount),
-    });
-  }
+  const halfExtent = span * 1.25;
+  const driftRate = resolveDriftRate(options.speed, span);
+  const build = buildCloudClusterInstances(span, layout.maxY, options);
+  const clusters: CloudClusterRuntime[] = build.clusters;
+  group.add(build.instancedMesh);
 
   return {
     group,
     update(deltaSec: number) {
       if (deltaSec <= 0) return;
-      for (const sheet of sheets) {
-        const uniform = sheet.material.uniforms.uTime;
-        if (!uniform) continue;
-        uniform.value += sheet.timeRate * deltaSec;
+      const dx = WIND_DIR.x * driftRate * deltaSec;
+      const dz = WIND_DIR.y * driftRate * deltaSec;
+      for (const cluster of clusters) {
+        const factor = cluster.speedFactor;
+        cluster.centerX = wrapClusterAxis(cluster.centerX + dx * factor, halfExtent);
+        cluster.centerZ = wrapClusterAxis(cluster.centerZ + dz * factor, halfExtent);
       }
+      updateCloudClusterMatrices(build.instancedMesh, clusters);
     },
     dispose() {
-      for (const sheet of sheets) {
-        sheet.mesh.geometry.dispose();
-        sheet.material.dispose();
-        group.remove(sheet.mesh);
-      }
-      sheets.length = 0;
+      group.remove(build.instancedMesh);
+      build.sharedGeometry.dispose();
+      build.sharedMaterial.dispose();
+      clusters.length = 0;
     },
   };
 }
