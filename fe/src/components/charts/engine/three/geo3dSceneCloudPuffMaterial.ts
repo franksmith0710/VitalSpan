@@ -6,16 +6,23 @@ export type CloudPuffMaterialOptions = {
 };
 
 const VERTEX_SHADER = /* glsl */ `
-attribute mat4 instanceMatrix;
+#include <common>
+#include <instancing_pars_vertex>
 
 varying vec3 vNormalView;
 varying vec3 vViewDir;
 
 void main() {
-  mat3 instanceNormal = mat3(instanceMatrix);
-  vec3 worldNormal = normalize(instanceNormal * normal);
-  vec4 mvPosition = modelViewMatrix * instanceMatrix * vec4(position, 1.0);
-  vNormalView = normalize(mat3(modelViewMatrix) * worldNormal);
+  vec3 transformed = vec3(position);
+  vec3 objectNormal = normal;
+
+  #ifdef USE_INSTANCING
+    objectNormal = mat3(instanceMatrix) * objectNormal;
+    transformed = (instanceMatrix * vec4(transformed, 1.0)).xyz;
+  #endif
+
+  vec4 mvPosition = modelViewMatrix * vec4(transformed, 1.0);
+  vNormalView = normalize(mat3(modelViewMatrix) * objectNormal);
   vViewDir = normalize(-mvPosition.xyz);
   gl_Position = projectionMatrix * mvPosition;
 }

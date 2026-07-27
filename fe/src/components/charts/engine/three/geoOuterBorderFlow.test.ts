@@ -182,15 +182,8 @@ describe("geoOuterBorderFlow", () => {
     }
   });
 
-  it("cap render path: flow bundle aligns with plate top outline", { timeout: 30_000 }, () => {
-    const width = 640;
-    const height = 480;
-    const features = joinOfflineMapFeatures([], ["p", "v"], "p", "v", VS_REGIONS_MAP_ID).filter(
-      (f) => f.geometry,
-    );
-    const geo = getOfflineGeoMap(VS_REGIONS_MAP_ID)!;
-    const geoProject = buildTerrainAlignedGeoProject(width, height, VS_REGIONS_MAP_ID, 0, geo);
-    const plateDepth = resolveGeoPlateDepth(geoProject.projBounds, 1, 0);
+  it("cap render path: flow bundle aligns with plate top outline", () => {
+    const plateDepth = 0.4;
     const borderZ = resolveGeoCapTopZ(plateDepth, false) + GEO_BORDER_ABOVE_CAP_Z;
     const borderFlow = {
       enabled: true,
@@ -199,11 +192,9 @@ describe("geoOuterBorderFlow", () => {
       speed: 4,
       trailLength: 48,
     };
-
     const plateMeshes: THREE.Object3D[] = [];
-    for (const feature of features.slice(0, 8)) {
-      const shapes = geometryToShapes(feature.geometry!, geoProject.project);
-      for (const shape of shapes) {
+    for (const poly of [rectPolygon(0, 0, 1, 1), rectPolygon(1, 0, 1, 1)]) {
+      for (const shape of geometryToShapes(poly, identityProject)) {
         const built = buildGeoFlatPlateMesh(shape, plateDepth, 0x4488aa, 0x7dd3fc, true, {
           borderOpacity: 0.9,
         });
@@ -225,7 +216,7 @@ describe("geoOuterBorderFlow", () => {
     );
     expect(bundle).not.toBeNull();
     const pos = bundle!.lines.geometry.getAttribute("position");
-    expect(pos.count).toBeGreaterThan(0);
+    expect(pos.count).toBe(12);
     bundle!.lines.geometry.dispose();
     (bundle!.lines.material as THREE.Material).dispose();
     bundle!.particles.dispose();

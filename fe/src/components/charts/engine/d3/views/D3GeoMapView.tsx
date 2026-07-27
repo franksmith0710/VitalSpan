@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buildChartRenderPlan } from "@/components/charts/engine/buildChartRenderPlan";
 import { applyChartStyleChain } from "@/components/charts/engine/applyChartStyleChain";
 import { chartViewModelToRenderSpec } from "@/components/charts/engine/buildChartViewModel";
@@ -435,15 +435,6 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     lastMeasureRef.current = { width: 0, height: 0 };
     measureAndRenderRef.current("data", true);
   }, [contentKey, geoMapLoading, geoMapVersion, geoMapLevelReady]);
-
-  useLayoutEffect(() => {
-    if (geoMapLoading || !geoMapLevelReady || plan.empty || !isThreeMap) return;
-    if (threeLoading || renderEngine !== null) return;
-    const id = requestAnimationFrame(() => {
-      measureAndRenderRef.current("data", true);
-    });
-    return () => cancelAnimationFrame(id);
-  }, [geoMapLoading, geoMapLevelReady, plan.empty, isThreeMap, threeLoading, renderEngine, contentKey]);
 
   useEffect(() => {
     if (!fill || plan.empty) return;
