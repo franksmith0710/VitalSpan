@@ -502,6 +502,7 @@ export function DeAttrSliderField({
   onPreviewChange,
 }: DeAttrSliderFieldProps) {
   const resolved = value ?? fallback;
+  const resolvedDensity = compact ? "narrow" : density;
 
   return (
     <div
@@ -511,7 +512,7 @@ export function DeAttrSliderField({
         className,
       )}
     >
-      {density === "narrow" ? (
+      {resolvedDensity === "narrow" ? (
         <DeSliderStackedRow
           label={label}
           value={resolved}
@@ -532,7 +533,7 @@ export function DeAttrSliderField({
           step={step}
           unit={unit}
           ariaLabel={ariaLabel}
-          density={density}
+          density={resolvedDensity}
           labelTone={labelTone}
           onChange={onChange}
           onPreview={onPreviewChange}

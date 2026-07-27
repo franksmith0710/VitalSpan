@@ -164,4 +164,20 @@ describe("DeAttrSliderField", () => {
     });
     expect(onChange).toHaveBeenCalledWith(20);
   });
+
+  it("uses full-width stacked track when compact in narrow chart rail", () => {
+    render(
+      <DeAttrSliderField
+        compact
+        label="拖影长度"
+        value={48}
+        min={8}
+        max={120}
+        onChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId("de-progress-slider")).toHaveClass("w-full", "min-w-0");
+    expect(screen.getByTestId("de-progress-slider")).not.toHaveClass(DE_SLIDER_WIDTH_WIDE);
+  });
 });
