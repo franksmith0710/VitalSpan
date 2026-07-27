@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import {
   attachBorderLineDistance,
+  computeGeoBorderFlowPhase,
   createGeoBorderFlowMaterial,
+  GEO_BORDER_FLOW_DEFAULTS,
+  toGeoBorderFlowDisplayPhase,
   trailLengthToFlowTrailWidth,
 } from "./geoBorderFlowMaterial";
 
@@ -29,5 +32,17 @@ describe("geoBorderFlowMaterial", () => {
     expect(material.uniforms.uPhase).toBeDefined();
     expect(material.uniforms.uTrailWidth!.value).toBeGreaterThan(0);
     material.dispose();
+  });
+
+  it("advances phase faster when speed is higher", () => {
+    const elapsed = 1;
+    const slow = computeGeoBorderFlowPhase(elapsed, GEO_BORDER_FLOW_DEFAULTS.speed);
+    const fast = computeGeoBorderFlowPhase(elapsed, GEO_BORDER_FLOW_DEFAULTS.speed * 2);
+    expect(fast).toBeGreaterThan(slow);
+  });
+
+  it("reverses phase for clockwise display", () => {
+    expect(toGeoBorderFlowDisplayPhase(0)).toBe(0);
+    expect(toGeoBorderFlowDisplayPhase(0.25)).toBeCloseTo(0.75, 5);
   });
 });

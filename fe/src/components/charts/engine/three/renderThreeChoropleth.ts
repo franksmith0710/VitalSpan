@@ -28,6 +28,7 @@ import {
 } from "@/components/charts/engine/three/geo/provinceTerrainProbe";
 import { buildGeoFlatPlateMesh, resolveGeoPlateDepth, GEO_BORDER_ABOVE_CAP_Z, resolveGeoCapTopZ } from "@/components/charts/engine/three/buildGeoFlatPlateMesh";
 import { buildGeoOuterBorderFlowLines } from "@/components/charts/engine/three/geoOuterBorderFlow";
+import type { GeoBorderFlowParticleSystem } from "@/components/charts/engine/three/geoBorderFlowParticles";
 import { mountThreeGeoVisualMap } from "@/components/charts/engine/three/threeGeoVisualMap";
 import {
   configureThreeGeoOrbitControls,
@@ -58,8 +59,10 @@ import {
 import { resolveGeoRegionBorder, resolveGeoRegionBorderFlow } from "@/components/charts/engine/geo/geoRegionBorderStyle";
 import {
   isGeoBorderFlowMaterial,
+  computeGeoBorderFlowPhase,
+  toGeoBorderFlowDisplayPhase,
 } from "@/components/charts/engine/three/geoBorderFlowMaterial";
-import { prefersReducedMotion } from "@/components/charts/engine/d3/core/animate";
+import { prefersNativeReducedMotion } from "@/components/charts/engine/d3/core/animate";
 import { resolveGeo3dVisualStyle, applyGeo3dSceneFog, hasCustomGeo3dShellColor, resolveGeo3dShellColorNumber } from "@/components/charts/engine/three/geo3dVisualStyle";
 
 function noopDispose(): void {
@@ -415,6 +418,7 @@ export async function renderThreeChoroplethChart(
     const mapGroup = new THREE.Group();
     const meshes: THREE.Group[] = [];
     const borderFlowMaterials: THREE.ShaderMaterial[] = [];
+    let borderFlowParticleSystem: GeoBorderFlowParticleSystem | null = null;
     const mapGeometries: GeoJSON.Geometry[] = [];
     const perShapeTerrainOpts = terrainPack
       ? {
@@ -482,7 +486,7 @@ export async function renderThreeChoroplethChart(
 
     const borderZ =
       resolveGeoCapTopZ(plateDepth, Boolean(terrainPack?.colorMap)) + GEO_BORDER_ABOVE_CAP_Z;
-    const outerBorderFlow = buildGeoOuterBorderFlowLines(
+    const outerBorderFlowBundle = buildGeoOuterBorderFlowLines(
       mapGeometries,
       project,
       borderZ + 0.02,
@@ -491,12 +495,13 @@ export async function renderThreeChoroplethChart(
       borderOpacity,
       borderFlow,
     );
-    if (outerBorderFlow) {
-      if (isGeoBorderFlowMaterial(outerBorderFlow.material)) {
-        borderFlowMaterials.push(outerBorderFlow.material);
+    if (outerBorderFlowBundle) {
+      if (isGeoBorderFlowMaterial(outerBorderFlowBundle.lines.material)) {
+        borderFlowMaterials.push(outerBorderFlowBundle.lines.material);
       }
-      if (!regionBorder.show) outerBorderFlow.visible = false;
-      mapGroup.add(outerBorderFlow);
+      borderFlowParticleSystem = outerBorderFlowBundle.particles;
+      if (!regionBorder.show) outerBorderFlowBundle.group.visible = false;
+      mapGroup.add(outerBorderFlowBundle.group);
     }
 
     logDevTerrainDiagnostics(terrainOn, terrainPack, firstCapMaterial, mapId, drillDepth, webglProbe.api ?? "none");
@@ -539,8 +544,8 @@ export async function renderThreeChoroplethChart(
     let flowFrameId = 0;
     let flowPhase = 0;
     let flowStartMs = performance.now();
+    let lastFlowTickMs = flowStartMs;
     let lastHoverEvent: PointerEvent | null = null;
-    let animationActive = true;
     let visibleInViewport = true;
     const enableHoverPick = renderTier !== "thumbnail";
     /** 悬停抬升：约为挤出厚度的 16%，与底板厚度解耦 */
@@ -649,13 +654,16 @@ export async function renderThreeChoroplethChart(
     };
 
     const syncBorderFlowPhase = () => {
-      if (!borderFlow.enabled || prefersReducedMotion()) return;
-      flowPhase =
-        (performance.now() - flowStartMs) / 1000 / Math.max(borderFlow.speed, 0.1);
-      flowPhase %= 1;
+      if (!borderFlow.enabled || prefersNativeReducedMotion()) return;
+      const now = performance.now();
+      const deltaSec = Math.min(0.05, (now - lastFlowTickMs) / 1000);
+      lastFlowTickMs = now;
+      flowPhase = computeGeoBorderFlowPhase((now - flowStartMs) / 1000, borderFlow.speed);
+      const displayPhase = toGeoBorderFlowDisplayPhase(flowPhase);
       for (const material of borderFlowMaterials) {
-        material.uniforms.uPhase!.value = flowPhase;
+        material.uniforms.uPhase!.value = displayPhase;
       }
+      borderFlowParticleSystem?.update(displayPhase, deltaSec, borderFlow.speed);
     };
 
     const stopBorderFlow = () => {
@@ -665,21 +673,37 @@ export async function renderThreeChoroplethChart(
       }
     };
 
+    const syncViewportVisibility = (intersecting: boolean) => {
+      visibleInViewport = intersecting;
+      if (!intersecting) stopDampingTail();
+    };
+
     const tickBorderFlow = () => {
       flowFrameId = 0;
-      if (!visibleInViewport || !animationActive || !borderFlow.enabled || prefersReducedMotion()) {
-        return;
-      }
+      if (renderDisposed || !borderFlow.enabled || prefersNativeReducedMotion()) return;
       syncBorderFlowPhase();
       renderFrame();
       flowFrameId = requestAnimationFrame(tickBorderFlow);
     };
 
     const startBorderFlow = () => {
-      if (!borderFlow.enabled || prefersReducedMotion() || flowFrameId) return;
-      flowStartMs = performance.now();
-      flowFrameId = requestAnimationFrame(tickBorderFlow);
+      if (renderDisposed || !borderFlow.enabled || prefersNativeReducedMotion()) return;
+      if (!flowFrameId) {
+        flowStartMs = performance.now();
+        lastFlowTickMs = flowStartMs;
+        flowFrameId = requestAnimationFrame(tickBorderFlow);
+      }
     };
+
+    const resumeBorderFlow = () => {
+      stopBorderFlow();
+      startBorderFlow();
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") resumeBorderFlow();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
 
     const onControlsChange = () => {
       scheduleRender();
@@ -888,18 +912,13 @@ export async function renderThreeChoroplethChart(
 
     const viewportObserver = new IntersectionObserver(
       ([entry]) => {
-        visibleInViewport = entry?.isIntersecting ?? false;
-        if (!visibleInViewport) {
-          stopDampingTail();
-          stopBorderFlow();
-        } else {
-          startBorderFlow();
-        }
+        syncViewportVisibility(entry?.isIntersecting ?? false);
       },
-      { threshold: 0 },
+      { threshold: 0.01 },
     );
     viewportObserver.observe(container);
-    startBorderFlow();
+    resumeBorderFlow();
+    requestAnimationFrame(() => resumeBorderFlow());
 
     const resize = (nextWidth: number, nextHeight: number) => {
       if (nextWidth <= 0 || nextHeight <= 0) return false;
@@ -910,6 +929,7 @@ export async function renderThreeChoroplethChart(
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxPixelRatio));
       renderer.setSize(nextWidth, nextHeight);
       renderFrame();
+      if (borderFlow.enabled) resumeBorderFlow();
       return true;
     };
 
@@ -918,6 +938,7 @@ export async function renderThreeChoroplethChart(
       viewportObserver.disconnect();
       stopDampingTail();
       stopBorderFlow();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       if (hoverFrameId) {
         cancelAnimationFrame(hoverFrameId);
         hoverFrameId = 0;
@@ -946,6 +967,8 @@ export async function renderThreeChoroplethChart(
       detachOrbitPan();
       detachGrabCursor();
       detachTerrainHint();
+      borderFlowParticleSystem?.dispose();
+      borderFlowParticleSystem = null;
       terrainPack?.dispose();
       terrainPack = null;
       for (const mesh of meshes) disposePlateGroup(mesh);
@@ -961,10 +984,9 @@ export async function renderThreeChoroplethChart(
       engine: "three",
       webglApi: webglProbe.api ?? "none",
       resize,
+      resumeBorderFlow,
       setAnimationActive: (active: boolean) => {
-        animationActive = active;
-        if (active) startBorderFlow();
-        else stopBorderFlow();
+        if (active && borderFlow.enabled) resumeBorderFlow();
       },
       dispose: disposeImpl,
     };

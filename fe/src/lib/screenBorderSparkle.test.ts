@@ -30,5 +30,6 @@ describe("screenBorderSparkle", () => {
     expect(trailLengthToMaskRadiusPx(8)).toBe(6);
     expect(trailLengthToMaskRadiusPx(48)).toBeCloseTo(21.82, 1);
     expect(trailLengthToMaskRadiusPx(120)).toBeCloseTo(54.55, 1);
+    expect(trailLengthToMaskRadiusPx(120, 200)).toBeCloseTo(28, 0);
   });
 });

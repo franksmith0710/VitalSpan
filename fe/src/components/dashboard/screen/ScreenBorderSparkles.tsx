@@ -9,6 +9,7 @@ import {
 import type { ScreenBorderVariant } from "@/lib/screenVisualStyle";
 import { getBorderFlowSegment } from "@/lib/screenBorderFlowPaths";
 import { scaleNormalizedFlowPath } from "@/lib/screenBorderFlowPathExtract";
+import { ScreenBorderFlowDust } from "./ScreenBorderFlowDust";
 
 type ScreenBorderSparklesProps = {
   sparkles: ScreenBorderSparkleConfig[];
@@ -23,8 +24,32 @@ type FlowSize = {
   height: number;
 };
 
+/** 低于此尺寸不渲染流光，避免 1×1 viewBox + 大半径 mask 撑满整块 */
+const MIN_FLOW_PX = 16;
+
 function safeId(id: string): string {
   return id.replace(/[^a-zA-Z0-9_-]/g, "");
+}
+
+function measureFlowSize(el: HTMLElement): FlowSize {
+  const rect = el.getBoundingClientRect();
+  let width = Math.round(rect.width);
+  let height = Math.round(rect.height);
+
+  if (width < MIN_FLOW_PX || height < MIN_FLOW_PX) {
+    const parent = el.parentElement;
+    if (parent) {
+      const parentRect = parent.getBoundingClientRect();
+      width = Math.round(parentRect.width);
+      height = Math.round(parentRect.height);
+    }
+  }
+
+  return { width, height };
+}
+
+function isFlowSizeReady(size: FlowSize): boolean {
+  return size.width >= MIN_FLOW_PX && size.height >= MIN_FLOW_PX;
 }
 
 /**
@@ -39,6 +64,9 @@ function MaskedFlowStroke({
   speed,
   phaseOffset,
   trailLengthPx,
+  boundsMinPx,
+  viewWidth,
+  viewHeight,
 }: {
   instanceScope: string;
   sparkleId: string;
@@ -47,13 +75,16 @@ function MaskedFlowStroke({
   speed: number;
   phaseOffset: number;
   trailLengthPx: number;
+  boundsMinPx: number;
+  viewWidth: number;
+  viewHeight: number;
 }) {
   const uid = safeId(sparkleId);
   const scope = safeId(instanceScope);
   const gradId = `border-flow-grad-${scope}-${uid}`;
   const maskId = `border-flow-mask-${scope}-${uid}`;
   const begin = `${-phaseOffset * speed}s`;
-  const maskRadius = trailLengthToMaskRadiusPx(trailLengthPx);
+  const maskRadius = trailLengthToMaskRadiusPx(trailLengthPx, boundsMinPx);
 
   return (
     <g>
@@ -67,7 +98,12 @@ function MaskedFlowStroke({
           id={maskId}
           maskUnits="userSpaceOnUse"
           maskContentUnits="userSpaceOnUse"
+          x={0}
+          y={0}
+          width={viewWidth}
+          height={viewHeight}
         >
+          <rect x={0} y={0} width={viewWidth} height={viewHeight} fill="black" />
           <circle r={maskRadius} cx={0} cy={0} fill={`url(#${gradId})`}>
             <animateMotion
               dur={`${speed}s`}
@@ -113,27 +149,36 @@ export function ScreenBorderSparkles({
     if (!el) return;
 
     const update = () => {
-      const { width, height } = el.getBoundingClientRect();
-      setFlowSize({
-        width: Math.max(1, Math.round(width)),
-        height: Math.max(1, Math.round(height)),
-      });
+      setFlowSize(measureFlowSize(el));
     };
 
     update();
+    let raf1 = 0;
+    let raf2 = 0;
+    raf1 = requestAnimationFrame(() => {
+      update();
+      raf2 = requestAnimationFrame(update);
+    });
+
     const observer = new ResizeObserver(update);
     observer.observe(el);
-    return () => observer.disconnect();
+    const parent = el.parentElement;
+    if (parent) observer.observe(parent);
+
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      observer.disconnect();
+    };
   }, []);
 
   if (sparkles.length === 0) return null;
 
   const { width, height } = flowSize;
+  const ready = isFlowSizeReady(flowSize);
   const segment = getBorderFlowSegment(variant, 0);
-  const pixelPath =
-    width > 0 && height > 0
-      ? scaleNormalizedFlowPath(segment.path, width, height)
-      : "";
+  const pixelPath = ready ? scaleNormalizedFlowPath(segment.path, width, height) : "";
+  const boundsMinPx = Math.min(width, height);
 
   return (
     <div
@@ -151,16 +196,28 @@ export function ScreenBorderSparkles({
             const sparkle = normalizeScreenBorderSparkle(raw);
             const phaseOffset = index / sparkles.length;
             return (
-              <MaskedFlowStroke
-                key={sparkle.id}
-                instanceScope={scope}
-                sparkleId={sparkle.id}
-                path={pixelPath}
-                color={sparkle.color}
-                speed={sparkle.speed}
-                phaseOffset={phaseOffset}
-                trailLengthPx={sparkle.trailLength}
-              />
+              <g key={sparkle.id}>
+                <MaskedFlowStroke
+                  instanceScope={scope}
+                  sparkleId={sparkle.id}
+                  path={pixelPath}
+                  color={sparkle.color}
+                  speed={sparkle.speed}
+                  phaseOffset={phaseOffset}
+                  trailLengthPx={sparkle.trailLength}
+                  boundsMinPx={boundsMinPx}
+                  viewWidth={width}
+                  viewHeight={height}
+                />
+                <ScreenBorderFlowDust
+                  pathD={pixelPath}
+                  color={sparkle.color}
+                  speed={sparkle.speed}
+                  phaseOffset={phaseOffset}
+                  trailLengthPx={sparkle.trailLength}
+                  boundsMinPx={boundsMinPx}
+                />
+              </g>
             );
           })}
         </svg>

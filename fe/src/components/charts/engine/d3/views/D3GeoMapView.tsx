@@ -118,6 +118,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     contentKey: string;
     resize: (width: number, height: number) => boolean;
     setAnimationActive?: (active: boolean) => void;
+    resumeBorderFlow?: () => void;
   } | null>(null);
   const [renderError, setRenderError] = useState<string | null>(null);
   const [renderEngine, setRenderEngine] = useState<GeoMapRenderEngine | null>(null);
@@ -315,7 +316,9 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
                       contentKey: renderContentKey,
                       resize: result.resize,
                       setAnimationActive: result.setAnimationActive,
+                      resumeBorderFlow: result.resumeBorderFlow,
                     };
+                    result.resumeBorderFlow?.();
                     result.setAnimationActive?.(props.geo3dAnimationActive !== false);
                   }
                   applyRenderMeta(result.engine, result.fallbackReason ?? null);
@@ -399,6 +402,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
 
   useEffect(() => {
     if (!isThreeMap) return;
+    threeApiRef.current?.resumeBorderFlow?.();
     threeApiRef.current?.setAnimationActive?.(props.geo3dAnimationActive !== false);
   }, [isThreeMap, props.geo3dAnimationActive]);
 

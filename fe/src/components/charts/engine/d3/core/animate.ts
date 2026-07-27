@@ -16,6 +16,11 @@ export function prefersReducedMotion(): boolean {
   return chartAnimationSuppressed || nativePrefersReducedMotion();
 }
 
+/** 连续型 3D 流光等不受看板缩放 suppress 影响的动画 */
+export function prefersNativeReducedMotion(): boolean {
+  return nativePrefersReducedMotion();
+}
+
 type TransitionLike = {
   duration: (ms: number) => TransitionLike;
   ease: (fn: (t: number) => number) => TransitionLike;

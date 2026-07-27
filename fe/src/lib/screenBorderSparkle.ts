@@ -100,13 +100,20 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 /** 拖影像素配置 → mask 圆半径（屏幕像素，光斑不随拉伸变椭圆） */
-export function trailLengthToMaskRadiusPx(trailLengthPx: number): number {
+export function trailLengthToMaskRadiusPx(
+  trailLengthPx: number,
+  boundsMinPx?: number,
+): number {
   const clamped = clamp(
     trailLengthPx,
     BORDER_FLOW_TRAIL_LENGTH_MIN_PX,
     BORDER_FLOW_TRAIL_LENGTH_MAX_PX,
   );
-  return Math.max(6, clamped / 2.2);
+  const base = Math.max(6, clamped / 2.2);
+  if (boundsMinPx != null && boundsMinPx > 0) {
+    return Math.min(base, boundsMinPx * 0.14);
+  }
+  return base;
 }
 
 /** @deprecated 拖影光斑半径（viewBox 0–100）；画布流光请用 trailLengthToMaskRadiusPx */
