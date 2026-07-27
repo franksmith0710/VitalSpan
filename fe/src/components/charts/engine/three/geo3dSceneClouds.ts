@@ -19,13 +19,13 @@ const WIND_DIR = new THREE.Vector2(1, 0.08).normalize();
 
 export type Geo3dSceneCloudsHandle = {
   group: THREE.Group;
-  /** @param deltaSec 帧间隔秒数 */
-  update: (deltaSec: number) => void;
+  /** @param deltaSec 帧间隔秒数；camera 用于贴片朝向与距离淡出 */
+  update: (deltaSec: number, camera?: THREE.Camera) => void;
   dispose: () => void;
 };
 
 function resolveDriftRate(speed: number, span: number): number {
-  return span * 0.018 * speed;
+  return span * 0.012 * speed;
 }
 
 export function buildGeo3dSceneClouds(
@@ -46,28 +46,44 @@ export function buildGeo3dSceneCloudsWithOptions(
   const span = Math.max(layout.halfX, layout.halfZ, 4);
   const halfExtent = span * 1.25;
   const driftRate = resolveDriftRate(options.speed, span);
-  const build = buildCloudClusterInstances(span, layout.maxY, options);
+  const build = buildCloudClusterInstances(span, layout.maxY, options, layout.defaultDistance);
   const clusters: CloudClusterRuntime[] = build.clusters;
   group.add(build.instancedMesh);
 
+  let elapsed = 0;
+
   return {
     group,
-    update(deltaSec: number) {
-      if (deltaSec <= 0) return;
-      const dx = WIND_DIR.x * driftRate * deltaSec;
-      const dz = WIND_DIR.y * driftRate * deltaSec;
-      for (const cluster of clusters) {
-        const factor = cluster.speedFactor;
-        cluster.centerX = wrapClusterAxis(cluster.centerX + dx * factor, halfExtent);
-        cluster.centerZ = wrapClusterAxis(cluster.centerZ + dz * factor, halfExtent);
+    update(deltaSec: number, camera?: THREE.Camera) {
+      if (deltaSec > 0) {
+        elapsed += deltaSec;
+        const dx = WIND_DIR.x * driftRate * deltaSec;
+        const dz = WIND_DIR.y * driftRate * deltaSec;
+        for (const cluster of clusters) {
+          const factor = cluster.speedFactor;
+          cluster.centerX = wrapClusterAxis(cluster.centerX + dx * factor, halfExtent);
+          cluster.centerZ = wrapClusterAxis(cluster.centerZ + dz * factor, halfExtent);
+        }
+        group.rotation.y = Math.cos(elapsed / 2) * 0.22;
+        group.rotation.x = Math.sin(elapsed / 2) * 0.12;
       }
-      updateCloudClusterMatrices(build.instancedMesh, clusters);
+      if (camera) {
+        group.updateMatrixWorld(true);
+        updateCloudClusterMatrices(
+          build.instancedMesh,
+          clusters,
+          build.puffs,
+          build.opacities,
+          camera,
+        );
+      }
     },
     dispose() {
       group.remove(build.instancedMesh);
       build.sharedGeometry.dispose();
       build.sharedMaterial.dispose();
       clusters.length = 0;
+      build.puffs.length = 0;
     },
   };
 }

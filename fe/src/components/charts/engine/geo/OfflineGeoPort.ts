@@ -28,7 +28,16 @@ type RegionsGeo = {
   features?: Array<{ properties?: { name?: string; adcode?: number }; geometry?: GeoJSON.Geometry }>;
 };
 
-const registeredMaps = new Map<string, RegionsGeo>();
+/** HMR 下模块可能双实例；用 globalThis 保证注册表唯一，避免 resolve 写入 A、render 读 B 导致「下钻资产未就绪」 */
+type OfflineGeoGlobal = typeof globalThis & {
+  __vsOfflineGeoMaps?: Map<string, RegionsGeo>;
+};
+
+function getRegisteredMaps(): Map<string, RegionsGeo> {
+  const g = globalThis as OfflineGeoGlobal;
+  if (!g.__vsOfflineGeoMaps) g.__vsOfflineGeoMaps = new Map();
+  return g.__vsOfflineGeoMaps;
+}
 
 function normalizeRegionsGeo(geo: RegionsGeo): RegionsGeo {
   return {
@@ -44,9 +53,10 @@ function normalizeRegionsGeo(geo: RegionsGeo): RegionsGeo {
 }
 
 function ensureDefaultMapRegistered(): void {
-  const current = registeredMaps.get(VS_REGIONS_MAP_ID);
+  const maps = getRegisteredMaps();
+  const current = maps.get(VS_REGIONS_MAP_ID);
   if (current?.features?.length) return;
-  registeredMaps.set(VS_REGIONS_MAP_ID, normalizeRegionsGeo(chinaProvincesGeo as RegionsGeo));
+  maps.set(VS_REGIONS_MAP_ID, normalizeRegionsGeo(chinaProvincesGeo as RegionsGeo));
 }
 
 /** 空 / 非法 mapId 回落到全国省级资产，避免 `??` 对 "" 失效 */
@@ -57,7 +67,7 @@ export function resolveOfflineGeoMapId(mapId: string | null | undefined): string
 
 export function registerOfflineGeoMap(mapId: string, geo: RegionsGeo): void {
   const id = resolveOfflineGeoMapId(mapId);
-  registeredMaps.set(id, normalizeRegionsGeo(geo));
+  getRegisteredMaps().set(id, normalizeRegionsGeo(geo));
 }
 
 export function getOfflineGeoMap(mapId: string): RegionsGeo | undefined {
@@ -66,7 +76,7 @@ export function getOfflineGeoMap(mapId: string): RegionsGeo | undefined {
   if (id === VS_REGIONS_MAP_ID) {
     ensureDefaultMapRegistered();
   }
-  return registeredMaps.get(id);
+  return getRegisteredMaps().get(id);
 }
 
 function joinMapRows(
@@ -82,7 +92,14 @@ function joinMapRows(
   const resolvedMapId = resolveOfflineGeoMapId(mapId);
   const ri = columns.indexOf(regionField);
   const mi = columns.indexOf(metricField);
-  const geo = registeredMaps.get(resolvedMapId) ?? (chinaProvincesGeo as RegionsGeo);
+  // 下钻 mapId 禁止回落全国 GeoJSON，否则会画出「全国轮廓」却挂着省级 drillDepth
+  let geo = getRegisteredMaps().get(resolvedMapId);
+  if (!geo?.features?.length) {
+    if (resolvedMapId !== VS_REGIONS_MAP_ID) {
+      return [];
+    }
+    geo = chinaProvincesGeo as RegionsGeo;
+  }
   const valueByName = new Map<string, number>();
   if (ri >= 0 && mi >= 0) {
     const knownNames = knownRegionNames ?? listVsRegionNames();

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import { buildGeo3dSceneClouds, buildGeo3dSceneCloudsWithOptions } from "./geo3dSceneClouds";
-import { resolveClusterCount } from "./geo3dSceneCloudClusters";
+import { resolveCloudVisualProfile } from "./geo3dSceneCloudStyle";
 import { applyGeo3dSceneClouds, resolveGeo3dSceneClouds, resolveGeo3dVisualStyle } from "./geo3dVisualStyle";
 
 describe("geo3dSceneClouds", () => {
@@ -15,10 +15,12 @@ describe("geo3dSceneClouds", () => {
     expect(handle.group.children.length).toBe(1);
     const instanced = handle.group.children[0] as THREE.InstancedMesh;
     expect(instanced).toBeInstanceOf(THREE.InstancedMesh);
-    const material = instanced.material as THREE.MeshBasicMaterial;
-    expect(material).toBeInstanceOf(THREE.MeshBasicMaterial);
+    const material = instanced.material as THREE.MeshLambertMaterial;
+    expect(material).toBeInstanceOf(THREE.MeshLambertMaterial);
+    expect(material.map).toBeTruthy();
     expect(material.opacity).toBeGreaterThan(0.1);
-    expect(instanced.count).toBeGreaterThanOrEqual(resolveClusterCount(0.55) * 5);
+    const profile = resolveCloudVisualProfile(0.55);
+    expect(instanced.count).toBe(profile.clusterCount * profile.puffPerCluster);
     handle.dispose();
   });
 
@@ -43,14 +45,25 @@ describe("geo3dSceneClouds", () => {
       { density: 0.5, speed: 1, height: 1 },
     );
     const instanced = handle.group.children[0] as THREE.InstancedMesh;
-    const matrixBefore = new THREE.Matrix4();
-    instanced.getMatrixAt(0, matrixBefore);
-    const posBefore = new THREE.Vector3().setFromMatrixPosition(matrixBefore);
-    handle.update(3);
-    const matrixAfter = new THREE.Matrix4();
-    instanced.getMatrixAt(0, matrixAfter);
-    const posAfter = new THREE.Vector3().setFromMatrixPosition(matrixAfter);
-    expect(posAfter.x).toBeGreaterThan(posBefore.x);
+    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 5000);
+    camera.position.set(0, 20, 30);
+    camera.lookAt(0, 0, 0);
+    camera.updateMatrixWorld();
+    const avgX = (mesh: THREE.InstancedMesh) => {
+      const matrix = new THREE.Matrix4();
+      const pos = new THREE.Vector3();
+      let sum = 0;
+      for (let i = 0; i < mesh.count; i += 1) {
+        mesh.getMatrixAt(i, matrix);
+        sum += pos.setFromMatrixPosition(matrix).x;
+      }
+      return sum / mesh.count;
+    };
+    handle.update(0, camera);
+    const avgBefore = avgX(instanced);
+    handle.update(3, camera);
+    const avgAfter = avgX(instanced);
+    expect(avgAfter).toBeGreaterThan(avgBefore);
     handle.dispose();
   });
 

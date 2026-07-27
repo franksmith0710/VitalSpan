@@ -63,8 +63,9 @@ export function lookupCityAdcode(
   cityName: string,
   provinceAdcode: number,
 ): number | null {
-  const index = cityIndexCache.get(provinceAdcode);
-  if (!index) return null;
+  const entry = cityIndexCache.get(provinceAdcode);
+  if (!entry) return null;
+  const index = entry.index;
   const resolved = resolveNameInGeoIndex(cityName, index);
   if (resolved.matched) {
     return index.nameToAdcode.get(resolved.name) ?? null;
@@ -79,8 +80,14 @@ type GeoNameIndex = {
   shortToFull: Map<string, string>;
 };
 
+type CityMapCacheEntry = {
+  index: GeoNameIndex;
+  /** 原始 GeoJSON，HMR/注册表失步时可重新 upsert，无需再打盘 */
+  geo: RegionsGeo;
+};
+
 let provinceGeoIndex: GeoNameIndex | null = null;
-const cityIndexCache = new Map<number, GeoNameIndex>();
+const cityIndexCache = new Map<number, CityMapCacheEntry>();
 
 function getProvinceGeoIndex(): GeoNameIndex {
   if (provinceGeoIndex) return provinceGeoIndex;
@@ -142,19 +149,29 @@ async function loadBundledGeo(path: string | undefined): Promise<RegionsGeo | nu
   if (!path) return null;
   const loader = cityGeoModules[path] ?? districtGeoModules[path];
   if (!loader) return null;
-  const mod = await loader();
-  return (mod as { default?: RegionsGeo }).default ?? mod;
+  return unwrapGlobGeoModule(await loader());
+}
+
+function findModulePathByAdcode(
+  modules: Record<string, () => Promise<unknown>>,
+  index: Map<number, string>,
+  adcode: number,
+): string | undefined {
+  const known = index.get(adcode);
+  if (known && modules[known]) return known;
+  return Object.keys(modules).find((key) => key.includes(`${adcode}.json`));
 }
 
 function cityModulePath(adcode: number): string | undefined {
-  return cityModuleByAdcode.get(adcode);
+  return findModulePathByAdcode(cityGeoModules, cityModuleByAdcode, adcode);
 }
 
 function districtModulePath(adcode: number): string | undefined {
-  return districtModuleByAdcode.get(adcode);
+  return findModulePathByAdcode(districtGeoModules, districtModuleByAdcode, adcode);
 }
 
 function registerGeoMap(mapId: string, geo: RegionsGeo): void {
+  // 始终 upsert（对标 9639ec9f）：禁止 registeredMapIds 短路导致空表残留
   registerOfflineGeoMap(mapId, geo);
   registeredMapIds.add(mapId);
 }
@@ -168,18 +185,14 @@ export async function ensureOfflineGeoMap(mapId: string): Promise<boolean> {
   ensureVsRegionsMapRegistered();
   const trimmed = mapId.trim() || VS_REGIONS_MAP_ID;
   if (trimmed === VS_REGIONS_MAP_ID) {
-    // 强制走 getOfflineGeoMap，触发全国资产幂等重注册
     return isOfflineGeoMapReady(VS_REGIONS_MAP_ID);
   }
 
   const match = /^vs-geo-(\d{6})$/.exec(trimmed);
-  if (!match) {
-    // 未知 id：至少保证全国可渲染，避免白屏「资产缺失」
-    return isOfflineGeoMapReady(VS_REGIONS_MAP_ID);
-  }
-  if (isOfflineGeoMapReady(trimmed)) return true;
+  if (!match) return false;
 
   const adcode = Number(match[1]);
+  // 即使已 ready 也走 ensureCityMap：缓存命中会 re-upsert，修复双实例/空表失步
   const cityIndex = await ensureCityMap(adcode);
   if (cityIndex && isOfflineGeoMapReady(trimmed)) return true;
 
@@ -187,29 +200,51 @@ export async function ensureOfflineGeoMap(mapId: string): Promise<boolean> {
   return Boolean(districtIndex && isOfflineGeoMapReady(trimmed));
 }
 
+/** ensure + 同模块读回，供 3D/2D 渲染直接使用（避免只 ensure 不取图） */
+export async function loadOfflineGeoMap(mapId: string): Promise<RegionsGeo | null> {
+  const trimmed = mapId.trim() || VS_REGIONS_MAP_ID;
+  const ok = await ensureOfflineGeoMap(trimmed);
+  if (!ok) return null;
+  return getOfflineGeoMap(trimmed) ?? null;
+}
+
 async function ensureCityMap(provinceAdcode: number): Promise<GeoNameIndex | null> {
   const mapId = geoMapId(provinceAdcode);
   const cached = cityIndexCache.get(provinceAdcode);
-  if (cached && isOfflineGeoMapReady(mapId)) return cached;
+  if (cached?.geo?.features?.length) {
+    // 对标今早 HMR：缓存命中也 upsert，避免 OfflineGeoPort 与 cache 失步
+    registerGeoMap(mapId, cached.geo);
+    if (isOfflineGeoMapReady(mapId)) return cached.index;
+  }
 
-  const path = cityModulePath(provinceAdcode);
-  if (!path) return null;
-  const geo = await loadBundledGeo(path);
+  // 对标上周：glob path → loadBundledGeo；路径索引失配时再扫 key
+  const geo = await loadBundledGeo(cityModulePath(provinceAdcode));
   if (!geo?.features?.length) return null;
   registerGeoMap(mapId, geo);
   const index = buildGeoNameIndex(geo.features);
-  cityIndexCache.set(provinceAdcode, index);
+  cityIndexCache.set(provinceAdcode, { index, geo });
   return index;
 }
 
 async function ensureDistrictMap(cityAdcode: number): Promise<GeoNameIndex | null> {
-  const path = districtModulePath(cityAdcode);
-  if (!path) return null;
-  const geo = await loadBundledGeo(path);
+  const geo = await loadBundledGeo(districtModulePath(cityAdcode));
   if (!geo?.features?.length) return null;
   const mapId = geoMapId(cityAdcode);
   registerGeoMap(mapId, geo);
   return buildGeoNameIndex(geo.features);
+}
+
+function unwrapGlobGeoModule(mod: unknown): RegionsGeo | null {
+  if (!mod || typeof mod !== "object") return null;
+  const withDefault = mod as { default?: unknown };
+  const candidates = [withDefault.default, mod];
+  for (const candidate of candidates) {
+    if (!candidate || typeof candidate !== "object") continue;
+    const geo = candidate as RegionsGeo & { default?: RegionsGeo };
+    if (geo.features?.length) return geo;
+    if (geo.default?.features?.length) return geo.default;
+  }
+  return null;
 }
 
 export type GeoMapLevelContext = {

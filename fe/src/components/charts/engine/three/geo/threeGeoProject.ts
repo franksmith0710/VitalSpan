@@ -61,8 +61,9 @@ export function buildProvinceOutlineFitCollection(adcode: number): GeoJSON.Featu
 }
 
 /**
- * 卫星纹理烘焙按省级轮廓 projBounds；下钻到市/区县时仍须用省轮廓做投影与 UV，
- * 否则顶盖 UV 错位（贴图区全黑）。
+ * 卫星纹理烘焙按省级轮廓 projBounds；下钻到市/区县时：
+ * - 有省级地形包：mesh/UV 用省轮廓 fit（与上周 bake 一致）
+ * - 无省级地形包：用当前下钻 GeoJSON（市/区县）fit，避免仍按全国投影导致「下钻图不对」
  */
 export function resolveTerrainProjectionFitCollection(
   mapId: string | undefined,
@@ -70,6 +71,7 @@ export function resolveTerrainProjectionFitCollection(
   drillGeo: { features?: Array<{ properties?: { adcode?: number | string; adchar?: string; name?: string }; geometry?: GeoJSON.Geometry | null }> },
 ): GeoJSON.FeatureCollection {
   const drillFit = buildMapFitCollection(drillGeo);
+  if (drillDepth <= 0) return drillFit;
   const { level, adcode } = resolveTerrainPackKey(mapId, drillDepth);
   if (level !== "province" || adcode == null) return drillFit;
   return buildProvinceOutlineFitCollection(adcode) ?? drillFit;

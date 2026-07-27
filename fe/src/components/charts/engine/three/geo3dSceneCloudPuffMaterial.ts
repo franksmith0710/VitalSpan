@@ -1,21 +1,47 @@
 import * as THREE from "three";
+import { getSceneCloudTexture } from "@/components/charts/engine/three/geo3dSceneCloudTexture";
 
 export type CloudPuffMaterialOptions = {
   opacity: number;
   color?: THREE.ColorRepresentation;
 };
 
-/**
- * InstancedMesh 使用内置材质，避免自定义 shader 与 Three 注入的 instanceMatrix 冲突。
- */
-export function createCloudPuffMaterial(options: CloudPuffMaterialOptions): THREE.MeshBasicMaterial {
-  return new THREE.MeshBasicMaterial({
-    color: options.color ?? 0xf0f6ff,
+const OPAQUE_FRAGMENT =
+  parseInt(THREE.REVISION.replace(/\D+/g, ""), 10) >= 154 ? "opaque_fragment" : "output_fragment";
+
+/** sc-datav / drei Cloud：Lambert + 纹理 alpha + 逐实例 cloudOpacity */
+export function createCloudPuffMaterial(options: CloudPuffMaterialOptions): THREE.MeshLambertMaterial {
+  const material = new THREE.MeshLambertMaterial({
+    map: getSceneCloudTexture(),
+    color: options.color ?? 0xffffff,
     transparent: true,
     opacity: options.opacity,
     depthWrite: false,
     depthTest: true,
     side: THREE.DoubleSide,
-    blending: THREE.NormalBlending,
   });
+
+  material.onBeforeCompile = (shader) => {
+    shader.vertexShader =
+      `attribute float cloudOpacity;
+varying float vCloudOpacity;
+` + shader.vertexShader.replace(
+        "#include <fog_vertex>",
+        `#include <fog_vertex>
+vCloudOpacity = cloudOpacity;
+`,
+      );
+
+    shader.fragmentShader =
+      `varying float vCloudOpacity;
+` + shader.fragmentShader.replace(
+        `#include <${OPAQUE_FRAGMENT}>`,
+        `#include <${OPAQUE_FRAGMENT}>
+gl_FragColor = vec4(outgoingLight, diffuseColor.a * vCloudOpacity);
+`,
+      );
+  };
+
+  material.customProgramCacheKey = () => "geo3d-scene-cloud-puff";
+  return material;
 }

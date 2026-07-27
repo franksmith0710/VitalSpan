@@ -12,7 +12,7 @@ import {
   joinOfflineMapFeatures,
   resolveOfflineGeoMapId,
 } from "@/components/charts/engine/geo/OfflineGeoPort";
-import { ensureOfflineGeoMap } from "@/components/charts/engine/geo/geoMapLevels";
+import { loadOfflineGeoMap, listBundledCityProvinceAdcodes } from "@/components/charts/engine/geo/geoMapLevels";
 import { colorForGeoHover } from "@/components/charts/engine/geo/geoSurfaceColors";
 import { createTooltipLayer, hideTooltip, showMergedTooltipAtViewport } from "@/components/charts/engine/d3/core/tooltipLayer";
 import type { D3Theme } from "@/components/charts/engine/d3/core/themeEngine";
@@ -233,21 +233,26 @@ export async function renderThreeChoroplethChart(
     return { dispose: noopDispose, engine: "three" };
   }
 
+  // 对标上周/今早：渲染前加载当前层级离线资产；禁止用全国 GeoJSON 顶替下钻 mapId
   const resolvedMapId = resolveOfflineGeoMapId(mapId);
-  await ensureOfflineGeoMap(resolvedMapId);
-  let geo = getOfflineGeoMap(resolvedMapId);
-  if (!geo?.features?.length && resolvedMapId !== VS_REGIONS_MAP_ID) {
-    // 市级/区县缺失时回落全国，避免整图「资产缺失」白屏
-    await ensureOfflineGeoMap(VS_REGIONS_MAP_ID);
-    geo = getOfflineGeoMap(VS_REGIONS_MAP_ID);
-  }
+  const geo = await loadOfflineGeoMap(resolvedMapId);
   if (!geo?.features?.length) {
     container.replaceChildren();
     const msg = document.createElement("div");
     msg.className =
       "flex h-full items-center justify-center px-3 text-center text-theme-sm text-error-600 dark:text-error-400";
     msg.setAttribute("role", "alert");
-    msg.textContent = "离线地图资产缺失，无法渲染";
+    msg.textContent =
+      resolvedMapId === VS_REGIONS_MAP_ID
+        ? "离线地图资产缺失，无法渲染"
+        : `下钻地图资产未就绪（${resolvedMapId}），请返回上一级或稍后重试`;
+    if (import.meta.env.DEV) {
+      console.error("[map-3d] drill geo missing after loadOfflineGeoMap", {
+        mapId: resolvedMapId,
+        drillDepth,
+        bundled: listBundledHint(resolvedMapId),
+      });
+    }
     container.appendChild(msg);
     return { dispose: () => container.replaceChildren(), engine: "three" };
   }
@@ -290,7 +295,7 @@ export async function renderThreeChoroplethChart(
 
   const webglSlotKey =
     instanceKey ??
-    `geo3d-${mapId ?? "map"}-${String(container.dataset.widgetId ?? (container.id || "anon"))}`;
+    `geo3d-${resolvedMapId}-${String(container.dataset.widgetId ?? (container.id || "anon"))}`;
   let slotReleased = false;
   const releaseSlot = () => {
     if (slotReleased) return;
@@ -335,9 +340,9 @@ export async function renderThreeChoroplethChart(
       geo3dStyle,
     );
 
-    const geoProject = buildTerrainAlignedGeoProject(width, height, mapId, drillDepth, geo);
+    const geoProject = buildTerrainAlignedGeoProject(width, height, resolvedMapId, drillDepth, geo);
     const { project, projBounds } = geoProject;
-    let provinceTerrain = terrainOn && shouldLoadProvinceTerrainPack(mapId, drillDepth);
+    let provinceTerrain = terrainOn && shouldLoadProvinceTerrainPack(resolvedMapId, drillDepth);
     const plateDepth = resolveGeoPlateDepth(projBounds, plateScale, drillDepth);
 
     let terrainPack: Awaited<ReturnType<typeof loadChinaTerrainPack>> | null = null;
@@ -348,12 +353,12 @@ export async function renderThreeChoroplethChart(
     if (terrainOn) {
       try {
         if (provinceTerrain) {
-          terrainPack = await loadChinaTerrainPack({ mapId, drillDepth, isDark });
-          const probeUv = resolveProvinceTerrainProbeUv(mapId, drillDepth, geo);
+          terrainPack = await loadChinaTerrainPack({ mapId: resolvedMapId, drillDepth, isDark });
+          const probeUv = resolveProvinceTerrainProbeUv(resolvedMapId, drillDepth, geo);
           if (terrainPack && !isProvinceTerrainPackUsable(terrainPack, probeUv)) {
             if (import.meta.env.DEV) {
               console.warn("[map-3d] province diffuse misaligned, fallback to national bridge", {
-                mapId,
+                mapId: resolvedMapId,
                 drillDepth,
                 probeUv,
               });
@@ -366,7 +371,7 @@ export async function renderThreeChoroplethChart(
         if (!terrainPack) {
           const useNationalBridge = drillDepth > 0;
           terrainPack = await loadChinaTerrainPack({
-            mapId: useNationalBridge ? VS_REGIONS_MAP_ID : mapId,
+            mapId: useNationalBridge ? VS_REGIONS_MAP_ID : resolvedMapId,
             drillDepth: useNationalBridge ? 0 : drillDepth,
             isDark,
           });
@@ -384,8 +389,8 @@ export async function renderThreeChoroplethChart(
       ? buildNationalTerrainProject(getOfflineGeoMap(VS_REGIONS_MAP_ID) ?? { features: [] })
       : null;
     const terrainUvBounds = provinceTerrain
-      ? (resolveProvinceTerrainUvBounds(mapId, drillDepth) ?? geoProject.projBounds)
-      : resolveProvinceTerrainUvBounds(mapId, drillDepth) ?? projBounds;
+      ? (resolveProvinceTerrainUvBounds(resolvedMapId, drillDepth) ?? geoProject.projBounds)
+      : resolveProvinceTerrainUvBounds(resolvedMapId, drillDepth) ?? projBounds;
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 5000);
@@ -531,7 +536,7 @@ export async function renderThreeChoroplethChart(
       });
     }
 
-    logDevTerrainDiagnostics(terrainOn, terrainPack, firstCapMaterial, mapId, drillDepth, webglProbe.api ?? "none");
+    logDevTerrainDiagnostics(terrainOn, terrainPack, firstCapMaterial, resolvedMapId, drillDepth, webglProbe.api ?? "none");
 
     if (meshes.length === 0) {
       renderer.dispose();
@@ -734,7 +739,7 @@ export async function renderThreeChoroplethChart(
       const now = performance.now();
       const deltaSec = Math.min(0.05, (now - lastCloudTickMs) / 1000);
       lastCloudTickMs = now;
-      sceneClouds.update(deltaSec);
+      sceneClouds.update(deltaSec, camera);
       renderFrame();
       if (
         cloudLoopActive &&

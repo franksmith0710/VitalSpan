@@ -4,13 +4,13 @@ import {
   DEFAULT_SCENE_CLOUD_DENSITY,
   DEFAULT_SCENE_CLOUD_HEIGHT,
   DEFAULT_SCENE_CLOUD_SPEED,
+  resolveCloudVisualProfile,
   resolveGeo3dSceneCloudDensity,
   resolveGeo3dSceneCloudHeight,
   resolveGeo3dSceneCloudOptions,
   resolveGeo3dSceneCloudSpeed,
 } from "./geo3dSceneCloudStyle";
 import { buildGeo3dSceneCloudsWithOptions } from "./geo3dSceneClouds";
-import { resolveClusterCount } from "./geo3dSceneCloudClusters";
 
 describe("geo3dSceneCloudStyle", () => {
   it("falls back to defaults for invalid values", () => {
@@ -30,11 +30,18 @@ describe("geo3dSceneCloudStyle", () => {
     expect(options.height).toBe(2);
   });
 
-  it("scales cluster count with density", () => {
-    expect(resolveClusterCount(0.2)).toBeLessThan(resolveClusterCount(1));
+  it("density scales both instance count and visual thickness", () => {
+    const sparse = resolveCloudVisualProfile(0.1);
+    const dense = resolveCloudVisualProfile(1);
+    expect(dense.clusterCount).toBeGreaterThan(sparse.clusterCount);
+    expect(dense.puffPerCluster).toBeGreaterThan(sparse.puffPerCluster);
+    expect(dense.boundsScale).toBeLessThan(sparse.boundsScale);
+    expect(dense.puffOpacity).toBeGreaterThan(sparse.puffOpacity);
+    expect(dense.volumeScale).toBeGreaterThan(sparse.volumeScale);
+
     const low = buildGeo3dSceneCloudsWithOptions(
       { halfX: 9, halfZ: 6, maxY: 1, defaultDistance: 20 },
-      { density: 0.2, speed: 1, height: 1 },
+      { density: 0.1, speed: 1, height: 1 },
     );
     const high = buildGeo3dSceneCloudsWithOptions(
       { halfX: 9, halfZ: 6, maxY: 1, defaultDistance: 20 },
@@ -43,6 +50,9 @@ describe("geo3dSceneCloudStyle", () => {
     const lowMesh = low.group.children[0] as THREE.InstancedMesh;
     const highMesh = high.group.children[0] as THREE.InstancedMesh;
     expect(highMesh.count).toBeGreaterThan(lowMesh.count);
+    expect((highMesh.material as THREE.MeshLambertMaterial).opacity).toBeGreaterThan(
+      (lowMesh.material as THREE.MeshLambertMaterial).opacity,
+    );
     low.dispose();
     high.dispose();
   });

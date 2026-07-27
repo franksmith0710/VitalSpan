@@ -1,6 +1,13 @@
 import * as THREE from "three";
-import type { ResolvedSceneCloudOptions } from "@/components/charts/engine/three/geo3dSceneCloudStyle";
+import {
+  resolveCloudVisualProfile,
+  type ResolvedSceneCloudOptions,
+} from "@/components/charts/engine/three/geo3dSceneCloudStyle";
 import { createCloudPuffMaterial } from "@/components/charts/engine/three/geo3dSceneCloudPuffMaterial";
+import {
+  getSceneCloudTexture,
+  resolveSceneCloudPlaneSize,
+} from "@/components/charts/engine/three/geo3dSceneCloudTexture";
 
 export type CloudClusterRuntime = {
   index: number;
@@ -9,15 +16,27 @@ export type CloudClusterRuntime = {
   baseY: number;
   speedFactor: number;
   puffIndices: number[];
-  localOffsets: THREE.Vector3[];
-  localScales: THREE.Vector3[];
+};
+
+export type CloudPuffRuntime = {
+  index: number;
+  clusterIndex: number;
+  localOffset: THREE.Vector3;
+  volume: number;
+  baseOpacity: number;
+  fade: number;
+  rotation: number;
+  rotationFactor: number;
 };
 
 export type CloudClusterBuildResult = {
   instancedMesh: THREE.InstancedMesh;
   clusters: CloudClusterRuntime[];
-  sharedGeometry: THREE.SphereGeometry;
-  sharedMaterial: THREE.Material;
+  puffs: CloudPuffRuntime[];
+  opacities: Float32Array;
+  sharedGeometry: THREE.PlaneGeometry;
+  sharedMaterial: THREE.MeshLambertMaterial;
+  fadeDistance: number;
 };
 
 function seededUnit(seed: number): number {
@@ -25,79 +44,102 @@ function seededUnit(seed: number): number {
   return x - Math.floor(x);
 }
 
-export function resolveClusterCount(density: number): number {
-  return Math.round(6 + density * 10);
-}
-
-function resolvePuffCount(clusterIndex: number, density: number): number {
-  const base = 9 + Math.floor(density * 5);
-  return base + (clusterIndex % 2);
-}
-
-function composePuffScale(puffRadius: number, aspectSeed: number): THREE.Vector3 {
-  const width = 1.05 + aspectSeed * 0.35;
-  const flat = 0.24 + aspectSeed * 0.12;
-  return new THREE.Vector3(puffRadius * width, puffRadius * flat, puffRadius * (0.9 + aspectSeed * 0.2));
+function distributePuffInCluster(
+  seed: number,
+  bounds: THREE.Vector3,
+  volume: number,
+  smallestVolume: number,
+): { offset: THREE.Vector3; puffVolume: number } {
+  let s = seed;
+  const rand = () => {
+    s += 1;
+    return seededUnit(s);
+  };
+  const offset = new THREE.Vector3(
+    (rand() * 2 - 1) * bounds.x,
+    (rand() * 2 - 1) * bounds.y,
+    (rand() * 2 - 1) * bounds.z,
+  );
+  const xDiff = Math.abs(offset.x);
+  const yDiff = Math.abs(offset.y);
+  const zDiff = Math.abs(offset.z);
+  const maxDiff = Math.max(xDiff, yDiff, zDiff);
+  let length = 1;
+  if (xDiff === maxDiff) length -= xDiff / bounds.x;
+  if (yDiff === maxDiff) length -= yDiff / bounds.y;
+  if (zDiff === maxDiff) length -= zDiff / bounds.z;
+  const volFactor = Math.max(smallestVolume, length);
+  return { offset, puffVolume: volFactor * volume };
 }
 
 export function buildCloudClusterInstances(
   span: number,
   maxY: number,
   options: ResolvedSceneCloudOptions,
+  defaultDistance: number,
 ): CloudClusterBuildResult {
-  const clusterCount = resolveClusterCount(options.density);
-  const clusters: CloudClusterRuntime[] = [];
-  let puffTotal = 0;
+  const profile = resolveCloudVisualProfile(options.density);
+  const clusterCount = profile.clusterCount;
+  const puffPerCluster = profile.puffPerCluster;
+  const puffTotal = clusterCount * puffPerCluster;
+  const texture = getSceneCloudTexture();
+  const plane = resolveSceneCloudPlaneSize(texture);
+  const sharedGeometry = new THREE.PlaneGeometry(plane.width, plane.height);
+  sharedGeometry.setAttribute(
+    "cloudOpacity",
+    new THREE.InstancedBufferAttribute(new Float32Array(puffTotal), 1),
+  );
 
-  for (let clusterIndex = 0; clusterIndex < clusterCount; clusterIndex += 1) {
-    puffTotal += resolvePuffCount(clusterIndex, options.density);
-  }
-
-  const sharedGeometry = new THREE.SphereGeometry(1, 8, 8);
-  const sharedMaterial = createCloudPuffMaterial({
-    opacity: 0.14 + options.density * 0.08,
-  });
+  const baseOpacity = profile.puffOpacity;
+  const sharedMaterial = createCloudPuffMaterial({ opacity: baseOpacity });
   const instancedMesh = new THREE.InstancedMesh(sharedGeometry, sharedMaterial, puffTotal);
   instancedMesh.name = "geo3d-cloud-puffs";
   instancedMesh.renderOrder = 20;
   instancedMesh.frustumCulled = false;
+  instancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
 
-  const matrix = new THREE.Matrix4();
-  const position = new THREE.Vector3();
-  const quaternion = new THREE.Quaternion();
-  const scale = new THREE.Vector3();
+  const opacities = new Float32Array(puffTotal);
+  const opacityAttr = sharedGeometry.getAttribute("cloudOpacity") as THREE.InstancedBufferAttribute;
+  const clusters: CloudClusterRuntime[] = [];
+  const puffs: CloudPuffRuntime[] = [];
+  const spread = span * profile.spreadScale;
+  const fadeDistance = Math.max(span * 2.5, defaultDistance * 0.65);
   let puffIndex = 0;
-  const spread = span * 2.1;
 
   for (let clusterIndex = 0; clusterIndex < clusterCount; clusterIndex += 1) {
     const seed = clusterIndex + 1;
     const centerX = (seededUnit(seed * 1.7) - 0.5) * spread;
     const centerZ = (seededUnit(seed * 2.3) - 0.5) * spread;
     const heightT = seededUnit(seed * 3.1);
-    const baseY = maxY + span * (0.05 + heightT * 0.1) * options.height;
-    const clusterScale = span * (0.055 + seededUnit(seed * 4.9) * 0.035);
-    const puffCount = resolvePuffCount(clusterIndex, options.density);
+    const baseY = maxY + span * (0.12 + heightT * 0.18) * options.height;
+    const bounds = new THREE.Vector3(
+      span * 0.42 * profile.boundsScale,
+      span * 0.09 * profile.boundsScale,
+      span * 0.22 * profile.boundsScale,
+    );
+    const volume = span * profile.volumeScale;
     const puffIndices: number[] = [];
-    const localOffsets: THREE.Vector3[] = [];
-    const localScales: THREE.Vector3[] = [];
 
-    for (let puff = 0; puff < puffCount; puff += 1) {
+    for (let puff = 0; puff < puffPerCluster; puff += 1) {
       const puffSeed = seed * 17 + puff * 5.3;
-      const offset = new THREE.Vector3(
-        (seededUnit(puffSeed) - 0.5) * clusterScale * 1.6,
-        (seededUnit(puffSeed + 1.1) - 0.5) * clusterScale * 0.35,
-        (seededUnit(puffSeed + 2.2) - 0.5) * clusterScale * 1.35,
+      const { offset, puffVolume } = distributePuffInCluster(
+        puffSeed,
+        bounds,
+        volume,
+        profile.smallestVolume,
       );
-      const puffRadius = clusterScale * (0.22 + seededUnit(puffSeed + 3.3) * 0.28);
-      const puffScale = composePuffScale(puffRadius, seededUnit(puffSeed + 4.4));
-      localOffsets.push(offset);
-      localScales.push(puffScale);
       puffIndices.push(puffIndex);
-
-      position.set(centerX + offset.x, baseY + offset.y, centerZ + offset.z);
-      scale.copy(puffScale);
-      matrix.compose(position, quaternion, scale);
-      instancedMesh.setMatrixAt(puffIndex, matrix);
+      puffs.push({
+        index: puffIndex,
+        clusterIndex,
+        localOffset: offset,
+        volume: puffVolume,
+        baseOpacity,
+        fade: fadeDistance,
+        rotation: puff * (Math.PI / puffPerCluster),
+        rotationFactor: 0,
+      });
+      opacities[puffIndex] = baseOpacity;
       puffIndex += 1;
     }
 
@@ -108,45 +150,89 @@ export function buildCloudClusterInstances(
       baseY,
       speedFactor: 0.55 + heightT * 0.65,
       puffIndices,
-      localOffsets,
-      localScales,
     });
   }
 
-  instancedMesh.instanceMatrix.needsUpdate = true;
-  return { instancedMesh, clusters, sharedGeometry, sharedMaterial };
+  opacityAttr.array = opacities;
+  opacityAttr.needsUpdate = true;
+  instancedMesh.count = puffTotal;
+
+  return {
+    instancedMesh,
+    clusters,
+    puffs,
+    opacities,
+    sharedGeometry,
+    sharedMaterial,
+    fadeDistance,
+  };
 }
+
+const parentMatrix = new THREE.Matrix4();
+const translation = new THREE.Vector3();
+const rotation = new THREE.Quaternion();
+const cpos = new THREE.Vector3();
+const cquat = new THREE.Quaternion();
+const cscale = new THREE.Vector3();
+const puffScale = new THREE.Vector3();
+const matrix = new THREE.Matrix4();
 
 export function updateCloudClusterMatrices(
   instancedMesh: THREE.InstancedMesh,
   clusters: CloudClusterRuntime[],
+  puffs: CloudPuffRuntime[],
+  opacities: Float32Array,
+  camera: THREE.Camera,
 ): void {
-  const matrix = new THREE.Matrix4();
-  const position = new THREE.Vector3();
-  const quaternion = new THREE.Quaternion();
-  const scale = new THREE.Vector3();
+  parentMatrix.copy(instancedMesh.matrixWorld).invert();
+  camera.matrixWorld.decompose(cpos, cquat, cscale);
 
-  for (const cluster of clusters) {
-    for (let i = 0; i < cluster.puffIndices.length; i += 1) {
-      const offset = cluster.localOffsets[i];
-      const puffScale = cluster.localScales[i];
-      position.set(
-        cluster.centerX + offset.x,
-        cluster.baseY + offset.y,
-        cluster.centerZ + offset.z,
-      );
-      scale.copy(puffScale);
-      matrix.compose(position, quaternion, scale);
-      instancedMesh.setMatrixAt(cluster.puffIndices[i], matrix);
-    }
+  const sorted = [...puffs].sort((a, b) => {
+    const clusterA = clusters[a.clusterIndex]!;
+    const clusterB = clusters[b.clusterIndex]!;
+    const distA = Math.hypot(
+      clusterA.centerX + a.localOffset.x - cpos.x,
+      clusterA.baseY + a.localOffset.y - cpos.y,
+      clusterA.centerZ + a.localOffset.z - cpos.z,
+    );
+    const distB = Math.hypot(
+      clusterB.centerX + b.localOffset.x - cpos.x,
+      clusterB.baseY + b.localOffset.y - cpos.y,
+      clusterB.centerZ + b.localOffset.z - cpos.z,
+    );
+    return distB - distA;
+  });
+
+  const opacityAttr = instancedMesh.geometry.getAttribute(
+    "cloudOpacity",
+  ) as THREE.InstancedBufferAttribute;
+
+  for (let drawIndex = 0; drawIndex < sorted.length; drawIndex += 1) {
+    const puff = sorted[drawIndex]!;
+    const cluster = clusters[puff.clusterIndex]!;
+    translation.set(
+      cluster.centerX + puff.localOffset.x,
+      cluster.baseY + puff.localOffset.y,
+      cluster.centerZ + puff.localOffset.z,
+    );
+    rotation.copy(cquat);
+    puffScale.setScalar(puff.volume);
+    matrix.compose(translation, rotation, puffScale).premultiply(parentMatrix);
+    instancedMesh.setMatrixAt(drawIndex, matrix);
+
+    const dist = translation.distanceTo(cpos);
+    const fade = puff.fade;
+    opacities[drawIndex] =
+      puff.baseOpacity * (dist < fade - 1 ? dist / fade : 1);
   }
+
+  opacityAttr.array = opacities;
+  opacityAttr.needsUpdate = true;
   instancedMesh.instanceMatrix.needsUpdate = true;
+  instancedMesh.count = sorted.length;
 }
 
-export function wrapClusterAxis(
-  value: number,
-  halfExtent: number,
-): number {
+export function wrapClusterAxis(value: number, halfExtent: number): number {
   const span = halfExtent * 2;
   if (value > halfExtent) return value - span;
   if (value < -halfExtent) return value + span;

@@ -21,10 +21,22 @@ describe("offline geo map id resolution", () => {
     expect(geo?.features?.length).toBeGreaterThan(30);
   });
 
+  it("does not pretend unknown ids are national", async () => {
+    expect(await ensureOfflineGeoMap("not-a-map")).toBe(false);
+  });
+
   it("loads hunan city map and can return to national", async () => {
     expect(await ensureOfflineGeoMap("vs-geo-430000")).toBe(true);
-    expect(getOfflineGeoMap("vs-geo-430000")?.features?.length).toBeGreaterThan(0);
+    const hunan = getOfflineGeoMap("vs-geo-430000");
+    expect(hunan?.features?.length).toBeGreaterThan(0);
+    // 下钻资产不得被当成全国省级
+    const nationalNames = new Set(
+      (getOfflineGeoMap(VS_REGIONS_MAP_ID)?.features ?? [])
+        .map((f) => f.properties?.name)
+        .filter(Boolean),
+    );
+    const hunanNames = (hunan?.features ?? []).map((f) => f.properties?.name).filter(Boolean);
+    expect(hunanNames.some((n) => n && !nationalNames.has(n))).toBe(true);
     expect(await ensureOfflineGeoMap(VS_REGIONS_MAP_ID)).toBe(true);
-    expect(getOfflineGeoMap(VS_REGIONS_MAP_ID)?.features?.length).toBeGreaterThan(30);
   });
 });
