@@ -8,9 +8,16 @@ import { DataScreenPresenter } from "@/components/dashboard/screen/DataScreenPre
 import { prepareLayoutForListPreview } from "@/components/dashboard/stylePipeline";
 import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
 import { TemplatePreviewFooter } from "@/components/dashboard/templates/TemplatePreviewFooter";
+import { TemplateGridFitPreview } from "@/components/dashboard/templates/TemplateGridFitPreview";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { DashboardTemplateListItem } from "@/lib/dashboardTemplates";
 import { fetchTemplateDetail } from "@/lib/dashboardTemplates";
+import { apiFetch } from "@/lib/api";
+import {
+  bindTemplateDemoDatasource,
+  layoutRequiresDemoCharts,
+  resolveTemplateDemoDatasourceId,
+} from "@/lib/templateDemoData";
 import { queryKeys } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";
 
@@ -46,13 +53,34 @@ export function TemplateCardPreview({
     staleTime: 60_000,
   });
 
+  const datasourcesQuery = useQuery({
+    queryKey: queryKeys.datasources.list({}),
+    queryFn: () =>
+      apiFetch<{ items: { id: string; name: string; code: string; database?: string }[] }>(
+        "/api/v1/datasources",
+      ),
+    enabled: active,
+    staleTime: 120_000,
+  });
+
   const layout = useMemo(() => {
     const raw = detailQuery.data?.layoutJson as DashboardLayout | undefined;
-    return raw ? prepareLayoutForListPreview(raw) : undefined;
-  }, [detailQuery.data]);
+    if (!raw) return undefined;
+    const demoId = resolveTemplateDemoDatasourceId(datasourcesQuery.data?.items ?? []);
+    const bound = bindTemplateDemoDatasource(raw, demoId);
+    return prepareLayoutForListPreview(bound);
+  }, [detailQuery.data, datasourcesQuery.data]);
 
   const isScreen = surfaceKind === "data-screen";
-  const loading = active && detailQuery.isLoading;
+  const datasourcesLoading = active && datasourcesQuery.isLoading;
+  const loading = active && (detailQuery.isLoading || datasourcesLoading);
+  const demoDatasourceId = resolveTemplateDemoDatasourceId(datasourcesQuery.data?.items ?? []);
+  const demoDatasourceMissing =
+    active &&
+    !datasourcesLoading &&
+    Boolean(layout) &&
+    layoutRequiresDemoCharts(layout!) &&
+    !demoDatasourceId;
 
   useEffect(() => {
     if (!active) return undefined;
@@ -120,7 +148,15 @@ export function TemplateCardPreview({
     >
       <ComponentPreviewShell footer={footer} className="h-full">
         {active && !loading && layout?.widgets?.length ? (
-          <div className="h-full w-full" data-testid="template-card-live-preview">
+          <div className="relative h-full w-full" data-testid="template-card-live-preview">
+            {demoDatasourceMissing ? (
+              <p
+                className="pointer-events-none absolute inset-x-0 top-2 z-20 mx-auto max-w-[90%] rounded-md bg-amber-50/90 px-2 py-1 text-center text-[10px] leading-snug text-amber-800 dark:bg-amber-950/80 dark:text-amber-200"
+                data-testid="template-demo-ds-hint"
+              >
+                请先在数据连接中配置 sample_db 演示数据源以预览真实图表
+              </p>
+            ) : null}
             {isScreen ? (
               <DataScreenPresenter
                 layout={layout}
@@ -128,11 +164,22 @@ export function TemplateCardPreview({
                 geo3dRenderTier="thumbnail"
                 className="pointer-events-none h-full min-h-0 select-none"
               />
+            ) : layout.version === 1 ? (
+              <TemplateGridFitPreview layout={layout}>
+                <DashboardLayoutPreview
+                  layout={layout}
+                  scaleMode="component"
+                  geo3dRenderTier="thumbnail"
+                  mountMaxConcurrent={6}
+                  className="pointer-events-none min-h-0 select-none"
+                />
+              </TemplateGridFitPreview>
             ) : (
               <DashboardLayoutPreview
                 layout={layout}
                 scaleMode="component"
                 geo3dRenderTier="thumbnail"
+                mountMaxConcurrent={6}
                 className="pointer-events-none h-full min-h-0 select-none [&_.pixel-canvas-host]:h-full [&_.pixel-canvas-host]:min-h-0 [&_.pixel-canvas-host]:overflow-hidden"
               />
             )}

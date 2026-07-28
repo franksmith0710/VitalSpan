@@ -128,14 +128,18 @@ def _screen_style(
         "canvasBackground": canvas,
         "canvasBackgroundCustom": True,
         "themeAccent": accent,
+        "paletteId": "default",
+        "gapPreset": "md",
         "widgetStyle": {
             "background": "rgba(15, 23, 42, 0.78)",
             "borderColor": f"{accent}59",
             "borderWidth": 1,
             "borderEnabled": True,
             "borderStyle": "solid",
+            "borderRadius": 10,
         },
-        "titleStyle": {"color": "#e2e8f0"},
+        "titleStyle": {"color": "#e2e8f0", "fontSize": 14, "fontWeight": 600},
+        "chartLabelStyle": {"color": "#cbd5e1"},
     }
     if decor:
         style["canvasDecorPresetId"] = decor
@@ -156,16 +160,18 @@ def _dash_style(
         "surfaceKind": "dashboard",
         "colorScheme": scheme,
         "themeAccent": accent,
+        "paletteId": "default",
+        "gapPreset": "md",
         "widgetStyle": {
             "background": "#ffffff" if not is_dark else "#1e293b",
             "borderColor": "#e4e7ec" if not is_dark else "#334155",
             "borderWidth": 1,
             "borderEnabled": True,
             "borderStyle": "solid",
+            "borderRadius": 12,
         },
-        "titleStyle": {"color": "#1d2939" if not is_dark else "#f2f4f7"},
-        "gap": 16,
-        "padding": 20,
+        "titleStyle": {"color": "#1d2939" if not is_dark else "#f2f4f7", "fontSize": 14, "fontWeight": 600},
+        "chartLabelStyle": {"color": "#667085" if not is_dark else "#98a2b3"},
     }
     if canvas:
         style["canvasBackground"] = canvas
@@ -258,7 +264,7 @@ def build_command_center_layout() -> dict[str, Any]:
             accent="#22d3ee",
             canvas="#020617",
             decor="gradient-radial",
-            bg_image="/template-assets/backgrounds/screen-tech-grid.svg",
+            bg_image="/template-assets/backgrounds/screen-dataease-aurora.svg",
         ),
     }
 
@@ -316,7 +322,7 @@ def build_tech_blue_layout() -> dict[str, Any]:
             accent="#38bdf8",
             canvas="#0c1222",
             decor="gradient-brand",
-            bg_image="/template-assets/backgrounds/screen-cyber-blue.svg",
+            bg_image="/template-assets/backgrounds/screen-dataease-aurora.svg",
         ),
     }
 

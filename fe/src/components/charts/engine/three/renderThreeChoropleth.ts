@@ -13,6 +13,7 @@ import {
   resolveOfflineGeoMapId,
 } from "@/components/charts/engine/geo/OfflineGeoPort";
 import { loadOfflineGeoMap, listBundledCityProvinceAdcodes } from "@/components/charts/engine/geo/geoMapLevels";
+import { isDecorativeGeoFeature } from "@/components/charts/engine/geo/geoProjection";
 import { colorForGeoHover } from "@/components/charts/engine/geo/geoSurfaceColors";
 import { createTooltipLayer, hideTooltip, showMergedTooltipAtViewport } from "@/components/charts/engine/d3/core/tooltipLayer";
 import type { D3Theme } from "@/components/charts/engine/d3/core/themeEngine";
@@ -38,10 +39,11 @@ import {
   buildGeoFlatPlateMesh, resolveGeoPlateDepth, GEO_BORDER_ABOVE_CAP_Z, resolveGeoCapTopZ } from "@/components/charts/engine/three/buildGeoFlatPlateMesh";
 import { resolveRegionAnchorProjected } from "@/components/charts/engine/three/geo3dRegionCentroid";
 import {
-  buildGeoOuterBorderFlowFromCapSegments,
+  buildGeoOuterBorderFlowForMap,
   collectCapBorderSegments,
+  disposeGeoOuterBorderFlowBundle,
+  resolveCapBorderFlowZ,
 } from "@/components/charts/engine/three/geoOuterBorderFlow";
-import type { GeoBorderFlyLineSystem } from "@/components/charts/engine/three/geoBorderFlowFlyLine";
 import { mountThreeGeoVisualMap } from "@/components/charts/engine/three/threeGeoVisualMap";
 import {
   configureThreeGeoOrbitControls,
@@ -443,8 +445,8 @@ export async function renderThreeChoroplethChart(
 
     const mapGroup = new THREE.Group();
     const meshes: THREE.Group[] = [];
-    let borderFlyLine: GeoBorderFlyLineSystem | null = null;
     const borderFlowMaterials: THREE.ShaderMaterial[] = [];
+    let borderFlyLine: { update: (d: number, s: number) => void } | null = null;
     const perShapeTerrainOpts = terrainPack
       ? {
           terrainColorMap: terrainPack.colorMap,
@@ -527,47 +529,6 @@ export async function renderThreeChoroplethChart(
 
     const borderZ =
       resolveGeoCapTopZ(plateDepth, Boolean(terrainPack?.colorMap)) + GEO_BORDER_ABOVE_CAP_Z;
-    let outerBorderFlowBundle: ReturnType<typeof buildGeoOuterBorderFlowFromCapSegments> = null;
-    try {
-      const capSegments = collectCapBorderSegments(meshes);
-      outerBorderFlowBundle = buildGeoOuterBorderFlowFromCapSegments(
-        capSegments,
-        borderZ,
-        borderColor,
-        isDark,
-        borderOpacity,
-        borderFlow,
-      );
-    } catch (flowErr) {
-      if (import.meta.env.DEV) {
-        console.warn("[map-3d] border flow disabled after init failure", flowErr);
-      }
-    }
-    if (outerBorderFlowBundle) {
-      borderFlyLine = outerBorderFlowBundle.flyLine;
-      if (isGeoBorderFlowMaterial(outerBorderFlowBundle.lines.material)) {
-        borderFlowMaterials.push(outerBorderFlowBundle.lines.material);
-      }
-      outerBorderFlowBundle.group.visible = borderFlow.enabled;
-      mapGroup.add(outerBorderFlowBundle.group);
-    }
-
-    if (import.meta.env.DEV) {
-      container.dataset.borderFlow = borderFlow.enabled
-        ? outerBorderFlowBundle
-          ? "ready"
-          : "missing-bundle"
-        : "off";
-    }
-
-    if (import.meta.env.DEV && borderFlow.enabled) {
-      console.debug("[map-3d] border flow ready", {
-        bundle: Boolean(outerBorderFlowBundle),
-        ringSegments: outerBorderFlowBundle
-          ? (outerBorderFlowBundle.flyLine.points.geometry.getAttribute("position")?.count ?? 0)
-          : 0,
-      });
-    }
 
     logDevTerrainDiagnostics(terrainOn, terrainPack, firstCapMaterial, resolvedMapId, drillDepth, webglProbe.api ?? "none");
 
@@ -583,8 +544,84 @@ export async function renderThreeChoroplethChart(
       return { dispose: () => container.replaceChildren(), engine: "three" };
     }
 
+    let outerBorderFlowBundle: ReturnType<typeof buildGeoOuterBorderFlowForMap> = null;
+    if (borderFlow.enabled) {
+      try {
+        const capSegments = collectCapBorderSegments(meshes);
+        const flowZ = resolveCapBorderFlowZ(meshes, borderZ);
+        outerBorderFlowBundle = buildGeoOuterBorderFlowForMap(
+          // 用完整离线 GeoJSON 提外缘（勿用仅含指标的子集心智）；与 mesh 同 project
+          geo.features
+            .filter((f) => f.geometry && !isDecorativeGeoFeature(f.properties ?? undefined))
+            .map((f) => f.geometry as GeoJSON.Geometry),
+          capSegments,
+          project,
+          flowZ,
+          borderColor,
+          isDark,
+          borderOpacity,
+          borderFlow,
+          { projBounds },
+        );
+      } catch (flowErr) {
+        if (import.meta.env.DEV) {
+          console.warn("[map-3d] border flow disabled after init failure", flowErr);
+        }
+      }
+      if (outerBorderFlowBundle) {
+        if (isGeoBorderFlowMaterial(outerBorderFlowBundle.lines.material)) {
+          borderFlowMaterials.push(outerBorderFlowBundle.lines.material);
+        }
+        borderFlyLine = outerBorderFlowBundle.flyLine;
+        outerBorderFlowBundle.group.visible = true;
+        // 必须在 layout 之前加入，与省 mesh 同坐标系一起居中/缩放
+        mapGroup.add(outerBorderFlowBundle.group);
+      }
+    }
+
     scene.add(mapGroup);
     const orbitLayout = layoutThreeGeoMapGroup(mapGroup, { preCentered: false });
+
+    if (import.meta.env.DEV) {
+      const lineSegs = outerBorderFlowBundle
+        ? (outerBorderFlowBundle.lines.geometry.getAttribute("position")?.count ?? 0) / 2
+        : 0;
+      const perim = outerBorderFlowBundle
+        ? Number(outerBorderFlowBundle.group.userData.outerBorderFlowPerimeter ?? 0)
+        : 0;
+      container.dataset.borderFlow = borderFlow.enabled
+        ? outerBorderFlowBundle
+          ? "ready"
+          : "missing-bundle"
+        : "off";
+      container.dataset.borderFlowSegs = String(lineSegs);
+      container.dataset.borderFlowPerim = String(Math.round(perim));
+      const posAttr = outerBorderFlowBundle?.lines.geometry.getAttribute("position") as
+        | THREE.BufferAttribute
+        | undefined;
+      if (posAttr && posAttr.count > 0) {
+        let minX = Infinity;
+        let maxX = -Infinity;
+        let minY = Infinity;
+        let maxY = -Infinity;
+        for (let i = 0; i < posAttr.count; i++) {
+          minX = Math.min(minX, posAttr.getX(i));
+          maxX = Math.max(maxX, posAttr.getX(i));
+          minY = Math.min(minY, posAttr.getY(i));
+          maxY = Math.max(maxY, posAttr.getY(i));
+        }
+        container.dataset.borderFlowBox = `${Math.round(minX)},${Math.round(minY)},${Math.round(maxX)},${Math.round(maxY)}`;
+      }
+      if (borderFlow.enabled) {
+        console.debug("[map-3d] border flow ready", {
+          bundle: Boolean(outerBorderFlowBundle),
+          lineSegments: lineSegs,
+          perimeter: perim,
+          source: "geo-bound-to-existing-outer-borders",
+        });
+      }
+    }
+
     let sceneClouds: ReturnType<typeof applyGeo3dSceneClouds> = null;
     let platformEffects: ReturnType<typeof applyGeo3dPlatformEffectsLayer> = null;
     let pointEffects: ReturnType<typeof applyGeo3dPointEffectsLayer> = null;
@@ -660,9 +697,9 @@ export async function renderThreeChoroplethChart(
     let cloudLoopActive = false;
     let cloudStartMs = performance.now();
     let lastCloudTickMs = cloudStartMs;
-    let lastFlowTickMs = cloudStartMs;
     let flowPhase = 0;
     let flowStartMs = cloudStartMs;
+    let lastFlowTickMs = cloudStartMs;
     let lastHoverEvent: PointerEvent | null = null;
     let visibleInViewport = true;
     const enableHoverPick = renderTier !== "thumbnail";
@@ -778,16 +815,22 @@ export async function renderThreeChoroplethChart(
     };
 
     const syncBorderFlowPhase = () => {
-      if (!borderFlow.enabled || prefersNativeReducedMotion()) return;
+      if (!borderFlow.enabled) return;
       const now = performance.now();
       const deltaSec = Math.min(0.05, (now - lastFlowTickMs) / 1000);
       lastFlowTickMs = now;
-      flowPhase = computeGeoBorderFlowPhase((now - flowStartMs) / 1000, borderFlow.speed);
-      const displayPhase = toGeoBorderFlowDisplayPhase(flowPhase);
+      if (!prefersNativeReducedMotion()) {
+        flowPhase = computeGeoBorderFlowPhase((now - flowStartMs) / 1000, borderFlow.speed);
+      }
+      const displayPhase = prefersNativeReducedMotion()
+        ? 0.25
+        : toGeoBorderFlowDisplayPhase(flowPhase);
       for (const material of borderFlowMaterials) {
         material.uniforms.uPhase!.value = displayPhase;
       }
-      borderFlyLine?.update(deltaSec, borderFlow.speed);
+      if (!prefersNativeReducedMotion()) {
+        borderFlyLine?.update(deltaSec, borderFlow.speed);
+      }
     };
 
     const stopBorderFlow = () => {
@@ -869,8 +912,7 @@ export async function renderThreeChoroplethChart(
       if (
         !borderFlowLoopActive ||
         renderDisposed ||
-        !borderFlow.enabled ||
-        prefersNativeReducedMotion()
+        !borderFlow.enabled
       ) {
         return;
       }
@@ -879,15 +921,14 @@ export async function renderThreeChoroplethChart(
       if (
         borderFlowLoopActive &&
         !renderDisposed &&
-        borderFlow.enabled &&
-        !prefersNativeReducedMotion()
+        borderFlow.enabled
       ) {
         flowFrameId = requestAnimationFrame(tickBorderFlow);
       }
     };
 
     const startBorderFlow = () => {
-      if (renderDisposed || !borderFlow.enabled || prefersNativeReducedMotion()) return;
+      if (renderDisposed || !borderFlow.enabled) return;
       borderFlowLoopActive = true;
       if (!flowFrameId) {
         flowStartMs = performance.now();
@@ -1122,7 +1163,10 @@ export async function renderThreeChoroplethChart(
     controls.addEventListener("start", onOrbitStart);
     controls.addEventListener("end", onOrbitEnd);
 
-    renderer.render(scene, camera);
+    if (borderFlow.enabled) {
+      syncBorderFlowPhase();
+    }
+    renderFrame();
 
     const viewportObserver = new IntersectionObserver(
       ([entry]) => {
@@ -1186,8 +1230,8 @@ export async function renderThreeChoroplethChart(
       detachOrbitPan();
       detachGrabCursor();
       detachTerrainHint();
-      borderFlyLine?.dispose();
-      borderFlyLine = null;
+      disposeGeoOuterBorderFlowBundle(outerBorderFlowBundle);
+      outerBorderFlowBundle = null;
       sceneClouds?.dispose();
       platformEffects?.dispose();
       pointEffects?.dispose();

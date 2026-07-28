@@ -41,6 +41,7 @@ const CODE_MESSAGES: Record<string, string> = {
   // 看板 / 视图
   DASH_NOT_FOUND: "看板不存在或已被删除",
   DASH_INVALID_LAYOUT: "看板布局校验失败，请检查组件配置",
+  DASH_TEMPLATE_DEMO_DS_MISSING: "请先在数据连接中配置 sample_db 演示数据源",
   VALIDATION_ERROR: "布局校验失败",
   DASH_FILTER_EMPTY_FILTERS: "请至少配置一个全局筛选器后再保存联动",
   DASH_FILTER_FORBIDDEN: "无权修改全局筛选联动",

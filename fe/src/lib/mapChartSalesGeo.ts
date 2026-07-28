@@ -11,15 +11,16 @@ export const SALES_GEO_PROVINCE_SQL = `SELECT province AS region, SUM(amount) AS
 FROM v_sales_geo
 GROUP BY province`;
 
-export type SampleDatasourceItem = { id: string; name: string; code: string };
+export type SampleDatasourceItem = { id: string; name: string; code: string; database?: string };
 
 /** 从已登记数据源中匹配 docker sample-mysql / sample_db */
 export function resolveSampleDbDatasource(
   items: SampleDatasourceItem[],
 ): SampleDatasourceItem | null {
   const score = (ds: SampleDatasourceItem): number => {
-    const hay = `${ds.code} ${ds.name}`.toLowerCase();
-    if (/sample_db|sample-mysql|demo-mysql/.test(hay)) return 3;
+    const hay = `${ds.code} ${ds.name} ${ds.database ?? ""}`.toLowerCase();
+    if (hay.includes("sample_db")) return 4;
+    if (/sample-mysql|demo-mysql/.test(hay)) return 3;
     if (/\bsample\b/.test(hay)) return 2;
     if (/3307/.test(hay)) return 1;
     return 0;

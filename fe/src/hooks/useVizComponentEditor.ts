@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { LayoutWidget } from "@/components/dashboard/layoutUtils";
@@ -7,12 +7,14 @@ import { queryKeys } from "@/lib/queryKeys";
 import {
   componentDetailToLayoutWidget,
   buildSingleComponentMap,
+  componentEditorSnapshot,
+  widgetEditorSnapshot,
 } from "@/lib/vizComponentPageUtils";
 import {
+  extractWidgetPayload,
   fetchVizComponent,
   updateVizComponent,
   type VizComponentDetail,
-  type VizComponentPayload,
 } from "@/lib/vizComponents";
 
 export function useVizComponentEditor(componentId: string | undefined) {
@@ -34,57 +36,41 @@ export function useVizComponentEditor(componentId: string | undefined) {
     setWidget(componentDetailToLayoutWidget(component));
   }, [component]);
 
-  const applyDetail = useCallback((detail: VizComponentDetail) => {
-    queryClient.setQueryData(queryKeys.vizComponents.detail(detail.id), detail);
-    void queryClient.invalidateQueries({ queryKey: queryKeys.vizComponents.all });
-    setWidget(componentDetailToLayoutWidget(detail));
-  }, [queryClient]);
+  const isDirty = useMemo(() => {
+    if (!component || !widget) return false;
+    return widgetEditorSnapshot(widget) !== componentEditorSnapshot(component);
+  }, [component, widget]);
 
-  const savePayload = useCallback(
-    async (payload: VizComponentPayload, patch?: Partial<LayoutWidget>) => {
-      if (!component || !widget) return;
-      setSaving(true);
-      try {
-        const updated = await updateVizComponent(component.id, {
-          payloadJson: payload,
-          contentRevision: component.contentRevision,
-        });
-        applyDetail(updated);
-        if (patch) {
-          setWidget((prev) => (prev ? { ...prev, ...patch } : prev));
-        }
-      } catch (err) {
-        const message = mapApiError(err);
-        toast.error(message);
-        if (message.includes("contentRevision") || message.includes("冲突")) {
-          void detailQuery.refetch();
-        }
-      } finally {
-        setSaving(false);
-      }
+  const applyDetail = useCallback(
+    (detail: VizComponentDetail) => {
+      queryClient.setQueryData(queryKeys.vizComponents.detail(detail.id), detail);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.vizComponents.all });
+      setWidget(componentDetailToLayoutWidget(detail));
     },
-    [applyDetail, component, detailQuery, widget],
+    [queryClient],
   );
 
-  const saveName = useCallback(
-    async (name: string) => {
-      if (!component) return;
-      setSaving(true);
-      try {
-        const updated = await updateVizComponent(component.id, {
-          name,
-          contentRevision: component.contentRevision,
-        });
-        applyDetail(updated);
-        setWidget((prev) => (prev ? { ...prev, title: name } : prev));
-      } catch (err) {
-        toast.error(mapApiError(err));
-      } finally {
-        setSaving(false);
+  const save = useCallback(async () => {
+    if (!component || !widget || !isDirty) return;
+    setSaving(true);
+    try {
+      const updated = await updateVizComponent(component.id, {
+        name: widget.title?.trim() || component.name,
+        payloadJson: extractWidgetPayload(widget),
+        contentRevision: component.contentRevision,
+      });
+      applyDetail(updated);
+      toast.success("组件已保存");
+    } catch (err) {
+      const message = mapApiError(err);
+      toast.error(message);
+      if (message.includes("contentRevision") || message.includes("冲突")) {
+        void detailQuery.refetch();
       }
-    },
-    [applyDetail, component],
-  );
+    } finally {
+      setSaving(false);
+    }
+  }, [applyDetail, component, detailQuery, isDirty, widget]);
 
   const patchWidget = useCallback((patch: Partial<LayoutWidget>) => {
     setWidget((prev) => (prev ? { ...prev, ...patch } : prev));
@@ -95,12 +81,12 @@ export function useVizComponentEditor(componentId: string | undefined) {
     widget,
     componentMap,
     saving,
+    isDirty,
     isLoading: detailQuery.isLoading,
     isError: detailQuery.isError,
     error: detailQuery.error,
     refetch: detailQuery.refetch,
-    savePayload,
-    saveName,
+    save,
     patchWidget,
   };
 }

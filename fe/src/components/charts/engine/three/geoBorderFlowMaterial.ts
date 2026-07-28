@@ -40,7 +40,7 @@ void main() {
   float glow = head * tail;
   float flow = smoothstep(0.03, 1.0, glow);
   vec3 color = mix(uBaseColor, uFlowColor, flow);
-  float alpha = uOpacity * mix(0.32, 0.88, flow);
+  float alpha = uOpacity * (0.65 + 0.35 * flow);
   if (alpha < 0.02) discard;
   gl_FragColor = vec4(color, alpha);
 }

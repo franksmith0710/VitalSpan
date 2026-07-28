@@ -20,6 +20,12 @@ from app.dashboard.templates.acl import (
     can_manage_templates,
 )
 from app.dashboard.templates.errors import DashboardTemplateError
+from app.dashboard.templates.demo_datasource import (
+    bind_template_demo_datasources,
+    layout_requires_demo_datasource,
+    repair_legacy_template_layout,
+    resolve_sample_db_datasource_id,
+)
 from app.dashboard.templates.layout_utils import regenerate_widget_ids, sanitize_layout_for_template
 from app.dashboard.templates.models import DashboardTemplate
 from app.dashboard.templates.schemas import (
@@ -70,7 +76,7 @@ def _to_out(row: DashboardTemplate) -> DashboardTemplateOut:
         category_key=row.category_key,
         surface_kind=row.surface_kind,  # type: ignore[arg-type]
         status=row.status,  # type: ignore[arg-type]
-        layout_json=row.layout_json,
+        layout_json=repair_legacy_template_layout(row.layout_json),
         thumbnail_ref=row.thumbnail_ref,
         source_dashboard_id=row.source_dashboard_id,
         visibility=row.visibility,  # type: ignore[arg-type]
@@ -370,7 +376,17 @@ def create_dashboard_from_template(
         if row.status == "archived":
             raise DashboardTemplateError("DASH_TEMPLATE_FORBIDDEN", "Archived template cannot instantiate", 403)
     assert_template_read(actor, row)
-    layout = regenerate_widget_ids(sanitize_layout_for_template(row.layout_json))
+    layout = regenerate_widget_ids(
+        repair_legacy_template_layout(sanitize_layout_for_template(row.layout_json)),
+    )
+    demo_ds = resolve_sample_db_datasource_id(db)
+    if demo_ds is None and layout_requires_demo_datasource(layout):
+        raise DashboardTemplateError(
+            "DASH_TEMPLATE_DEMO_DS_MISSING",
+            "请先在数据连接中配置 sample_db 演示数据源",
+            422,
+        )
+    layout = bind_template_demo_datasources(layout, demo_ds)
     dash_service.validate_layout(layout)
     name = (payload.name or row.name or "未命名").strip() or "未命名"
     slug = payload.slug or f"{_slugify(name)}-{int(time.time() * 1000)}"

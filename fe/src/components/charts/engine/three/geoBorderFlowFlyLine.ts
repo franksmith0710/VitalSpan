@@ -9,35 +9,14 @@ export type GeoBorderFlyLineSystem = {
   dispose: () => void;
 };
 
+/** 对标 sc-datav Demo0：整圈采样点数 */
 const PATH_SAMPLES = 800;
-const SEGMENT_SAMPLES = 200;
-const DEMO0_POINTS_PER_SEC = 60;
+/** 拖尾窗口取点（Demo0 num=50） */
 const DEFAULT_WINDOW_POINTS = 50;
-const DEFAULT_PIXEL_SIZE = 16;
-
-const VERTEX = /* glsl */ `
-attribute float percent;
-uniform float uPixelSize;
-uniform float uDpr;
-void main() {
-  vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-  float scale = uDpr * 420.0 / max(-mvPosition.z, 1.0);
-  gl_PointSize = max(percent * uPixelSize * scale, 0.0);
-  gl_Position = projectionMatrix * mvPosition;
-}
-`;
-
-const FRAGMENT = /* glsl */ `
-uniform vec3 uColor;
-uniform float uOpacity;
-void main() {
-  float r = distance(gl_PointCoord, vec2(0.5));
-  if (r > 0.5) discard;
-  float alpha = pow(1.0 - r / 0.5, 5.0) * uOpacity;
-  if (alpha < 0.02) discard;
-  gl_FragColor = vec4(uColor, alpha);
-}
-`;
+/** 窗口重采样（Demo0 getSpacedPoints(200)） */
+const SEGMENT_SAMPLES = 200;
+/** Demo0：index += 60 * delta */
+const DEMO0_POINTS_PER_SEC = 60;
 
 function ringToVector3Path(ring: GeoBorderRingSegment[], z: number): THREE.Vector3[] {
   if (ring.length === 0) return [];
@@ -65,6 +44,50 @@ function buildPercentEnvelope(count: number): Float32Array {
   return arr;
 }
 
+function densifyPolyline(
+  pts: THREE.Vector3[],
+  samples: number,
+  closed: boolean,
+): THREE.Vector3[] {
+  if (pts.length < 2 || samples < 2) return pts.slice();
+  const chain = pts.slice();
+  if (closed) {
+    const first = chain[0]!;
+    const last = chain[chain.length - 1]!;
+    if (first.distanceToSquared(last) > 1e-10) chain.push(first.clone());
+  }
+
+  const segLens: number[] = [];
+  let total = 0;
+  for (let i = 0; i < chain.length - 1; i++) {
+    const len = chain[i]!.distanceTo(chain[i + 1]!);
+    segLens.push(len);
+    total += len;
+  }
+  if (total <= 0) return pts.slice();
+
+  const out: THREE.Vector3[] = [];
+  const n = closed ? samples : samples;
+  for (let s = 0; s < n; s++) {
+    const u = closed ? s / samples : s / Math.max(1, samples - 1);
+    let d = u * total;
+    for (let i = 0; i < segLens.length; i++) {
+      const len = segLens[i]!;
+      if (d <= len || i === segLens.length - 1) {
+        const t = len > 0 ? Math.min(1, d / len) : 0;
+        out.push(new THREE.Vector3().lerpVectors(chain[i]!, chain[i + 1]!, t));
+        break;
+      }
+      d -= len;
+    }
+  }
+  return out;
+}
+
+function densifyClosedPolyline(pts: THREE.Vector3[], samples: number): THREE.Vector3[] {
+  return densifyPolyline(pts, samples, true);
+}
+
 function sliceWrapped(points: THREE.Vector3[], start: number, count: number): THREE.Vector3[] {
   const total = points.length;
   if (total === 0) return [];
@@ -80,33 +103,21 @@ export function resolveFlyLineWindowPoints(trailLengthPx: number): number {
   return Math.round(Math.min(90, Math.max(30, DEFAULT_WINDOW_POINTS * ratio)));
 }
 
+/** 世界空间点尺寸：相对路径周长，保证全国尺度仍清晰可见 */
+export function resolveFlyLineWorldSize(pathLength: number): number {
+  if (!(pathLength > 0)) return 0.8;
+  return Math.min(10, Math.max(0.6, pathLength / 400));
+}
+
 export function resolveFlyLinePixelSize(trailLengthPx: number): number {
   const ratio = trailLengthPx / GEO_BORDER_FLOW_DEFAULTS.trailLength;
-  return Math.min(28, Math.max(8, DEFAULT_PIXEL_SIZE * ratio));
+  return Math.min(36, Math.max(12, 24 * ratio));
 }
 
-function createFlyLineMaterial(
-  colorHex: number,
-  opacity: number,
-  pixelSize: number,
-): THREE.ShaderMaterial {
-  return new THREE.ShaderMaterial({
-    uniforms: {
-      uColor: { value: new THREE.Color(colorHex) },
-      uOpacity: { value: opacity },
-      uPixelSize: { value: pixelSize },
-      uDpr: { value: typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 2) : 1 },
-    },
-    vertexShader: VERTEX,
-    fragmentShader: FRAGMENT,
-    transparent: true,
-    depthTest: false,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-  });
-}
-
-/** 对标 sc-datav Demo0 flyLine：沿外轮廓滑动的点状拖尾流光 */
+/**
+ * 对标 sc-datav Demo0 flyLine，但路径用折线等距采样（非 CatmullRom），严丝合缝贴顶盖外缘：
+ * 外轮廓 densify → 800 点 → 滑动窗口 50 点 → 折线重采样 200 → percent 三角包络软圆粒子
+ */
 export function createGeoBorderFlyLine(
   ring: GeoBorderRingSegment[],
   z: number,
@@ -117,7 +128,10 @@ export function createGeoBorderFlyLine(
   const rawPath = ringToVector3Path(ring, z);
   const pathMeta = buildGeoBorderRingPath(ring);
   if (pathMeta.totalLength <= 0 || rawPath.length < 4) {
-    const empty = new THREE.Points(new THREE.BufferGeometry(), createFlyLineMaterial(colorHex, 0, 1));
+    const empty = new THREE.Points(
+      new THREE.BufferGeometry(),
+      new THREE.PointsMaterial({ visible: false }),
+    );
     return {
       points: empty,
       update() {},
@@ -128,11 +142,11 @@ export function createGeoBorderFlyLine(
     };
   }
 
-  const pixelSize = resolveFlyLinePixelSize(trailLengthPx);
   const windowPoints = resolveFlyLineWindowPoints(trailLengthPx);
+  const worldSize = resolveFlyLineWorldSize(pathMeta.totalLength);
 
-  const curve = new THREE.CatmullRomCurve3(rawPath, true, "catmullrom", 0.5);
-  const pathPoints = curve.getSpacedPoints(PATH_SAMPLES);
+  // 折线等距采样（不用 CatmullRom，避免削角离岸，严丝合缝贴边）
+  const pathPoints = densifyClosedPolyline(rawPath, PATH_SAMPLES);
 
   let index =
     pathPoints.length > windowPoints
@@ -140,21 +154,48 @@ export function createGeoBorderFlyLine(
       : 0;
 
   const geometry = new THREE.BufferGeometry();
-  const material = createFlyLineMaterial(colorHex, opacity, pixelSize);
+  const material = new THREE.PointsMaterial({
+    color: colorHex,
+    size: worldSize,
+    transparent: true,
+    opacity,
+    depthTest: false,
+    depthWrite: false,
+    sizeAttenuation: true,
+    blending: THREE.AdditiveBlending,
+  });
+
+  // Demo0：percent 控制点大小 + 软圆 alpha
+  material.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        "void main() {",
+        "attribute float percent;\nvoid main() {",
+      )
+      .replace("gl_PointSize = size;", "gl_PointSize = percent * size;");
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <output_fragment>",
+      `
+        #include <output_fragment>
+        float r = distance(gl_PointCoord, vec2(0.5));
+        float alpha = pow(1.0 - r / 0.5, 6.0);
+        gl_FragColor = vec4(gl_FragColor.rgb, gl_FragColor.a * alpha);
+      `,
+    );
+  };
+
   const points = new THREE.Points(geometry, material);
   points.renderOrder = 28;
   points.frustumCulled = false;
 
-  const scratchCurve = new THREE.CatmullRomCurve3([], false, "catmullrom", 0.5);
   let percentAttr: THREE.BufferAttribute | null = null;
 
   const updateGeometry = (startIdx: number) => {
     if (pathPoints.length < 4) return;
     const segment = sliceWrapped(pathPoints, startIdx, Math.min(windowPoints, pathPoints.length));
-    scratchCurve.points = segment;
-    const sampled = scratchCurve.getSpacedPoints(SEGMENT_SAMPLES);
-    geometry.setFromPoints(sampled);
-    const envelope = buildPercentEnvelope(sampled.length);
+    const sampled = densifyPolyline(segment, SEGMENT_SAMPLES, false);
+    geometry.setFromPoints(sampled.length >= 2 ? sampled : segment);
+    const envelope = buildPercentEnvelope(geometry.getAttribute("position")!.count);
     if (!percentAttr || percentAttr.count !== envelope.length) {
       percentAttr = new THREE.BufferAttribute(envelope, 1);
       geometry.setAttribute("percent", percentAttr);

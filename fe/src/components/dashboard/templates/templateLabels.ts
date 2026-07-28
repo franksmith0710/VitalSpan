@@ -6,7 +6,8 @@ import {
 
 export const VIZ_TEMPLATES_HUB = {
   title: "可视化模板",
-  description: "企业内看板与大屏布局模板库，选择模板快速创建或导入 JSON 扩展。",
+  description:
+    "企业内看板与大屏布局模板库；内置模板绑定 sample_db 演示数据（v_sales_geo / daily_kpi），需先配置演示数据源。",
   importJson: "导入 JSON",
   searchPlaceholder: "搜索模板名称…",
   searchAriaLabel: "搜索模板",
@@ -23,6 +24,7 @@ export const VIZ_TEMPLATES_HUB = {
 
 export const TEMPLATE_ACTIONS = {
   use: "使用模板",
+  preview: "预览",
   export: "导出",
   publish: "发布",
   archive: "下架",
@@ -75,7 +77,7 @@ export function categoryLabel(key: string): string {
 }
 
 export function templatePreviewAspectRatio(surfaceKind: VizSurfaceKind): string {
-  return surfaceKind === "data-screen" ? "16 / 9" : "16 / 10";
+  return surfaceKind === "data-screen" ? "16 / 9" : "4 / 3";
 }
 
 /** 内置模板缩略图（public 静态资源） */

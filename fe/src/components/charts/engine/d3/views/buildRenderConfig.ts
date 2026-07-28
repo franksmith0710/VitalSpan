@@ -66,6 +66,7 @@ export function buildD3DispatchPayload(
     const rows = (options.rows as unknown[][]) ?? [];
     const columns = (options.columns as string[]) ?? [];
     const geoStyle = props.chartConfig ? readChartGeoStyle(readChartDeStyle(props.chartConfig)) : {};
+    const isMap3d = props.viewModel.chartType === "map-3d";
     const geo3dStyleRaw = props.chartConfig ? readChartGeo3dStyle(readChartDeStyle(props.chartConfig)) : {};
     const renderTier = props.geo3dRenderTier ?? "full";
     const geo3dStyle = {
@@ -91,7 +92,9 @@ export function buildD3DispatchPayload(
           visualMap: geoStyle.visualMap,
           showRegionBorder: geoStyle.showRegionBorder,
           regionBorderColor: geoStyle.regionBorderColor,
-          regionBorderFlow: geoStyle.regionBorderFlow,
+          regionBorderFlow: isMap3d
+            ? geoStyle.regionBorderFlow !== false
+            : geoStyle.regionBorderFlow,
           regionBorderFlowColor: geoStyle.regionBorderFlowColor,
           regionBorderFlowSpeed: geoStyle.regionBorderFlowSpeed,
           regionBorderFlowTrailLength: geoStyle.regionBorderFlowTrailLength,

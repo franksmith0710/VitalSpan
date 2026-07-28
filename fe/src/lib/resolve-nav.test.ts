@@ -70,6 +70,15 @@ describe("resolveNavGroups", () => {
     expect(governanceFlow?.preview).toBeFalsy();
   });
 
+  it("T-NAV-MF-03b: admin sees M5 viz hub items without preview badge", () => {
+    const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]));
+    const analysis = groups.find((g) => g.title === "分析");
+    const templates = analysis?.items.find((i) => i.name === "可视化模板");
+    const components = analysis?.items.find((i) => i.name === "组件库");
+    expect(templates?.preview).toBeFalsy();
+    expect(components?.preview).toBeFalsy();
+  });
+
   it("T-NAV-MF-04: capabilities override filters M7/M11/M13 for admin", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]), {
       activeMilestones: new Set(["M1"]),

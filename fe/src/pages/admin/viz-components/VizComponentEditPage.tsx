@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router";
-import { ChevronLeft, Loader2 } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { Button } from "@/components/ui/button";
@@ -33,15 +33,11 @@ function ComponentEditRail({
   contentRevision,
   widget,
   patchWidget,
-  saveName,
-  savePayload,
 }: {
   componentId: string;
   contentRevision: number;
   widget: NonNullable<ReturnType<typeof useVizComponentEditor>["widget"]>;
   patchWidget: ReturnType<typeof useVizComponentEditor>["patchWidget"];
-  saveName: ReturnType<typeof useVizComponentEditor>["saveName"];
-  savePayload: ReturnType<typeof useVizComponentEditor>["savePayload"];
 }) {
   if (widget.type === "chart") {
     return (
@@ -49,14 +45,8 @@ function ComponentEditRail({
         key={`${componentId}-${contentRevision}`}
         className="min-h-0 flex-1"
         widget={widget}
-        onTitleChange={(name) => {
-          patchWidget({ title: name });
-          void saveName(name);
-        }}
-        onChange={(chartConfig) => {
-          patchWidget({ chartConfig });
-          void savePayload({ chartConfig });
-        }}
+        onTitleChange={(name) => patchWidget({ title: name })}
+        onChange={(chartConfig) => patchWidget({ chartConfig })}
       />
     );
   }
@@ -65,10 +55,7 @@ function ComponentEditRail({
       <FilterWidgetInspector
         embedded
         widget={widget as typeof widget & { filterConfig: FilterWidgetConfig }}
-        onChange={(filterConfig) => {
-          patchWidget({ filterConfig });
-          void savePayload({ filterConfig });
-        }}
+        onChange={(filterConfig) => patchWidget({ filterConfig })}
       />
     );
   }
@@ -77,14 +64,8 @@ function ComponentEditRail({
       <TextEditRail
         className="min-h-0 flex-1"
         widget={widget as typeof widget & { textConfig: TextWidgetConfig }}
-        onTitleChange={(name) => {
-          patchWidget({ title: name });
-          void saveName(name);
-        }}
-        onConfigChange={(textConfig) => {
-          patchWidget({ textConfig });
-          void savePayload({ textConfig });
-        }}
+        onTitleChange={(name) => patchWidget({ title: name })}
+        onConfigChange={(textConfig) => patchWidget({ textConfig })}
       />
     );
   }
@@ -93,14 +74,8 @@ function ComponentEditRail({
       <MediaEditRail
         className="min-h-0 flex-1"
         widget={widget as typeof widget & { mediaConfig: MediaWidgetConfig }}
-        onTitleChange={(name) => {
-          patchWidget({ title: name });
-          void saveName(name);
-        }}
-        onChange={(mediaConfig) => {
-          patchWidget({ mediaConfig });
-          void savePayload({ mediaConfig });
-        }}
+        onTitleChange={(name) => patchWidget({ title: name })}
+        onChange={(mediaConfig) => patchWidget({ mediaConfig })}
       />
     );
   }
@@ -113,12 +88,12 @@ export function VizComponentEditPage() {
     component,
     widget,
     saving,
+    isDirty,
     isLoading,
     isError,
     error,
     refetch,
-    savePayload,
-    saveName,
+    save,
     patchWidget,
   } = useVizComponentEditor(id);
 
@@ -126,6 +101,8 @@ export function VizComponentEditPage() {
   const meta = component
     ? `${widgetTypeLabel(component.widgetType)} · v${component.contentRevision}`
     : null;
+
+  const saveStatus = saving ? "保存中…" : isDirty ? "未保存" : "已保存";
 
   return (
     <AdminPageShell
@@ -143,14 +120,32 @@ export function VizComponentEditPage() {
           {meta ? (
             <span className="text-theme-xs text-gray-500 dark:text-gray-400">{meta}</span>
           ) : null}
-          <span className="inline-flex items-center gap-1 text-theme-xs text-gray-400 dark:text-gray-500">
-            {saving ? <Loader2 className="size-3 animate-spin" aria-hidden /> : null}
-            {saving ? "保存中…" : "自动保存"}
+          <span
+            className={
+              isDirty
+                ? "text-theme-xs text-warning-600 dark:text-warning-400"
+                : "text-theme-xs text-gray-400 dark:text-gray-500"
+            }
+          >
+            {saveStatus}
           </span>
         </div>
       }
       titleUnwrapped
       className="min-h-0"
+      actions={
+        component && widget ? (
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            disabled={saving || !isDirty}
+            onClick={() => void save()}
+          >
+            {saving ? "保存中…" : "保存"}
+          </Button>
+        ) : null
+      }
     >
       {isLoading ? (
         <EditPageSkeleton />
@@ -167,8 +162,6 @@ export function VizComponentEditPage() {
               contentRevision={component.contentRevision}
               widget={widget}
               patchWidget={patchWidget}
-              saveName={saveName}
-              savePayload={savePayload}
             />
           }
         />

@@ -1,5 +1,6 @@
 import type { LayoutWidget } from "@/components/dashboard/layoutUtils";
 import type { VizComponentMap } from "@/lib/resolveVizComponent";
+import { extractWidgetPayload } from "@/lib/vizComponents";
 import type { VizComponentDetail, VizComponentPayload, VizWidgetType } from "@/lib/vizComponents";
 
 export function vizPayloadToLayoutWidget(input: {
@@ -57,6 +58,20 @@ export function componentDetailToLayoutWidget(detail: VizComponentDetail): Layou
     widgetType: detail.widgetType,
     payload: detail.payloadJson,
     widgetIdPrefix: "vc-edit",
+  });
+}
+
+export function componentEditorSnapshot(detail: VizComponentDetail): string {
+  return JSON.stringify({
+    name: detail.name,
+    payload: detail.payloadJson,
+  });
+}
+
+export function widgetEditorSnapshot(widget: LayoutWidget): string {
+  return JSON.stringify({
+    name: widget.title ?? "",
+    payload: extractWidgetPayload(widget),
   });
 }
 

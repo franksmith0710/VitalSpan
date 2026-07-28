@@ -10,7 +10,7 @@ import {
 import type { NavSection, NavItem, NavSubItem } from "@/components/layout/app-sidebar";
 import type { SessionUser, SessionRole } from "@/lib/session";
 
-export const ACTIVE_MILESTONES = new Set(["M1", "M7", "M11", "M13"]);
+export const ACTIVE_MILESTONES = new Set(["M1", "M5", "M7", "M11", "M13"]);
 
 export type ResolveNavOptions = {
   activeMilestones?: Set<string>;

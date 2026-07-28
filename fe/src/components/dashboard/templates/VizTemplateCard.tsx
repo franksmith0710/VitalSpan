@@ -70,7 +70,10 @@ export function VizTemplateCard({
 
       <div
         className="relative overflow-hidden border-b border-gray-100 dark:border-white/[0.06]"
-        style={{ aspectRatio: templatePreviewAspectRatio(item.surfaceKind) }}
+        style={{
+          aspectRatio: templatePreviewAspectRatio(item.surfaceKind),
+          minHeight: item.surfaceKind === "data-screen" ? 220 : 260,
+        }}
       >
         <TemplateCardPreview
           templateId={item.id}
