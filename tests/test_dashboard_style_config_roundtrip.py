@@ -124,3 +124,23 @@ def test_validate_layout_dict_keeps_rich_style_config() -> None:
     assert style["chrome"]["showFloatingActions"] is False
     assert style["widgetStyle"]["padding"] == 10
     assert style["widgetStyle"]["borderEnabled"] is True
+
+
+def test_table_color_style_preserves_column_layout_fields() -> None:
+    cfg = DashboardStyleConfig.model_validate(
+        {
+            "tableColorStyle": {
+                "headerBg": "#1e293b",
+                "columnWidthMode": "custom",
+                "columnWidths": {"region": 40, "amount": 60},
+                "columnWidthsPx": {"region": 120, "amount": 180},
+                "seriesColumnWidthPx": 48,
+                "rowHeightPx": 52,
+            }
+        }
+    )
+    dumped = cfg.model_dump(by_alias=True, exclude_none=True)["tableColorStyle"]
+    assert dumped["columnWidths"] == {"region": 40, "amount": 60}
+    assert dumped["columnWidthsPx"] == {"region": 120, "amount": 180}
+    assert dumped["seriesColumnWidthPx"] == 48
+    assert dumped["rowHeightPx"] == 52

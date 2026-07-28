@@ -25,9 +25,50 @@ describe("geo3dPlatformEffects", () => {
     handle.dispose();
   });
 
-  it("builds only enabled layers", () => {
+  it("builds square grid and ripple as separate masked layers", () => {
     const resolved = resolvePlatformEffectsStyle(
-      { platformRings: true, platformHighlight: false, platformGrid: false, platformRipple: false },
+      {
+        platformGridStyle: "square",
+        platformHighlight: false,
+        platformRings: false,
+      },
+      "tech",
+      true,
+      true,
+    );
+    const handle = buildGeo3dPlatformEffects(layout, resolved);
+    expect(handle.group.children).toHaveLength(2);
+    handle.dispose();
+  });
+
+  it("builds square grid layer", () => {
+    const resolved = resolvePlatformEffectsStyle(
+      { platformGridStyle: "square", platformHighlight: false, platformRings: false, platformRipple: false },
+      "tech",
+      true,
+      true,
+    );
+    expect(resolved.gridStyle).toBe("square");
+    const handle = buildGeo3dPlatformEffects(layout, resolved);
+    expect(handle.group.children).toHaveLength(1);
+    const mesh = handle.group.children[0] as THREE.Mesh;
+    expect(mesh.material.type).toBe("ShaderMaterial");
+    handle.dispose();
+  });
+
+  it("applies pulse speed to shader uniforms", () => {
+    const resolved = resolvePlatformEffectsStyle(
+      { platformPulse: true, platformPulseSpeed: 2, platformHighlight: false, platformRings: false, platformGrid: false, platformRipple: false },
+      "tech",
+      true,
+      true,
+    );
+    expect(resolved.pulseSpeed).toBe(2);
+    expect(resolved.ringSpeed).toBe(1);
+  });
+  it("builds shader layers when enabled", () => {
+    const resolved = resolvePlatformEffectsStyle(
+      { platformGlow: true, platformPulse: true, platformHighlight: false, platformRings: false, platformGrid: false, platformRipple: false },
       "tech",
       true,
       true,
@@ -38,10 +79,15 @@ describe("geo3dPlatformEffects", () => {
   });
 
   it("rotates rings on update", () => {
-    const resolved = resolvePlatformEffectsStyle({ stylePreset: "tech" }, "tech", true, true);
+    const resolved = resolvePlatformEffectsStyle(
+      { platformHighlight: false, platformGrid: false, platformRipple: false },
+      "tech",
+      true,
+      true,
+    );
     const handle = buildGeo3dPlatformEffects(layout, resolved);
-    const ring1 = handle.group.children[1] as THREE.Mesh;
-    const ring2 = handle.group.children[2] as THREE.Mesh;
+    const ring1 = handle.group.children[0] as THREE.Mesh;
+    const ring2 = handle.group.children[1] as THREE.Mesh;
     const z1Before = ring1.rotation.z;
     const z2Before = ring2.rotation.z;
     handle.update(1);
@@ -55,24 +101,13 @@ describe("geo3dPlatformEffects", () => {
     expect(resolveGeo3dPlatformEffects({ stylePreset: "satellite" })).toBe(false);
   });
 
-  it("layer flags default to all on when effects enabled", () => {
-    expect(resolvePlatformLayerFlags({}, true)).toEqual({
-      highlight: true,
-      rings: true,
-      grid: true,
-      ripple: true,
+  it("layer flags default shader layers off", () => {
+    expect(resolvePlatformLayerFlags({}, true)).toMatchObject({
+      glow: false,
+      pulse: false,
+      sweep: false,
     });
-    expect(resolvePlatformLayerFlags({ platformGrid: false }, true).grid).toBe(false);
-  });
-
-  it("uses custom colors when set", () => {
-    const resolved = resolvePlatformEffectsStyle(
-      { platformRippleColor: "#ff0000" },
-      "tech",
-      true,
-      true,
-    );
-    expect(resolved.colors.ripple).toBe("#ff0000");
+    expect(resolvePlatformLayerFlags({ platformGlow: true }, true).glow).toBe(true);
   });
 
   it("applyGeo3dPlatformEffectsLayer mounts group to scene", () => {

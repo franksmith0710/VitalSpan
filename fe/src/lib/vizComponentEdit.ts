@@ -1,6 +1,7 @@
 import type { DashboardWidgetBase } from "@/components/dashboard/dashboardLayoutContracts";
 import type { LayoutWidget } from "@/components/dashboard/layoutUtils";
 import type { VizComponentMap } from "@/lib/resolveVizComponent";
+import type { VizComponentDetail } from "@/lib/vizComponents";
 import {
   extractWidgetPayload,
   isLinkedComponentRef,
@@ -12,17 +13,19 @@ export async function pushWidgetPayloadToLibrary(
   widget: LayoutWidget,
   componentMap: VizComponentMap,
   payload: VizComponentPayload,
-): Promise<void> {
+): Promise<VizComponentDetail | void> {
   const ref = widget.componentRef;
   if (!isLinkedComponentRef(ref)) return;
   const component = componentMap.get(ref.componentId);
   if (!component) {
     throw new Error("组件库条目不存在或无权访问");
   }
-  await updateVizComponent(component.id, {
+  const updated = await updateVizComponent(component.id, {
     payloadJson: payload,
     contentRevision: component.contentRevision,
   });
+  componentMap.set(component.id, updated);
+  return updated;
 }
 
 export async function syncResolvedWidgetToLibrary(

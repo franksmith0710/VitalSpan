@@ -121,22 +121,82 @@ export type ChartGeo3dStyle = {
   platformGrid?: boolean;
   /** 底座层：扩散涟漪 */
   platformRipple?: boolean;
+  /** 底座层：径向光晕（shader） */
+  platformGlow?: boolean;
+  /** 底座层：脉冲波（shader） */
+  platformPulse?: boolean;
+  /** 底座层：旋转扫光（shader） */
+  platformSweep?: boolean;
   /** 高光/双环颜色（#rrggbb） */
   platformHighlightColor?: string;
   /** 网格颜色（#rrggbb） */
   platformGridColor?: string;
+  /** 底网格样式：圆点纹理 / 正方形格 */
+  platformGridStyle?: "texture" | "square";
+  /** 正方形网格密度倍率 0.3–2 */
+  platformGridDensity?: number;
+  /** 扩散涟漪速度倍率 0.2–3（默认 1） */
+  platformRippleSpeed?: number;
+  /** 扩散涟漪频率（同时存在的波数）1–5 */
+  platformRippleFrequency?: number;
   /** 涟漪颜色（#rrggbb） */
   platformRippleColor?: string;
+  /** 光晕颜色（#rrggbb） */
+  platformGlowColor?: string;
+  /** 脉冲波颜色（#rrggbb） */
+  platformPulseColor?: string;
+  /** 扫光颜色（#rrggbb） */
+  platformSweepColor?: string;
   /** 高光不透明度 0–1 */
   platformHighlightOpacity?: number;
   /** 双环不透明度 0–1 */
   platformRingOpacity?: number;
+  /** 双环旋转速度倍率 0.2–3 */
+  platformRingSpeed?: number;
   /** 网格不透明度 0–1 */
   platformGridOpacity?: number;
   /** 涟漪不透明度 0–1 */
   platformRippleOpacity?: number;
+  /** 光晕不透明度 0–1 */
+  platformGlowOpacity?: number;
+  /** 脉冲波不透明度 0–1 */
+  platformPulseOpacity?: number;
+  /** 脉冲波速度倍率 0.2–3 */
+  platformPulseSpeed?: number;
+  /** 扫光不透明度 0–1 */
+  platformSweepOpacity?: number;
+  /** 旋转扫光速度倍率 0.2–3 */
+  platformSweepSpeed?: number;
   /** 环/高光尺寸倍率 0.4–1.6（相对地图） */
   platformSizeScale?: number;
+  /** 点位特效（热力 blob / 光柱 / 浮动标签；科技预设默认开启） */
+  pointEffects?: boolean;
+  /** 贴地热力 blob */
+  heatBlob?: boolean;
+  heatBlobOpacity?: number;
+  /** 热力 splat 半径（像素） */
+  heatBlobRadius?: number;
+  heatBlobBlur?: number;
+  /** 热力顶面抬升倍率 */
+  heatBlobLift?: number;
+  heatBlobColor?: string;
+  /** 热力开启时降低 choropleth 顶面着色强度 0–1 */
+  heatBlobDimChoropleth?: number;
+  /** 垂直光柱 */
+  pointPillar?: boolean;
+  pointPillarColorTop?: string;
+  pointPillarColorBottom?: string;
+  pointPillarOpacity?: number;
+  pointPillarHeightScale?: number;
+  pointPillarBaseRingOpacity?: number;
+  pointPillarRingSpeed?: number;
+  /** 浮动区域标签（map-3d） */
+  floatingLabels?: boolean;
+  floatingLabelFontSize?: number;
+  floatingLabelTextColor?: string;
+  floatingLabelBgColor?: string;
+  floatingLabelBorderColor?: string;
+  floatingLabelOffset?: number;
   /** 挤出侧壁/底板颜色（#rrggbb）；未设置时跟随样式预设 */
   shellColor?: string;
   /** 挤出侧壁/底板不透明度（0–1，默认 1） */

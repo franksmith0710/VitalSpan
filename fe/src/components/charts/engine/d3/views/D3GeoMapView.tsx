@@ -19,7 +19,7 @@ import {
 import { buildGeoMapContentKey } from "@/components/charts/engine/geo/geoMapContentKey";
 import { GeoMapOverlayHint } from "@/components/charts/engine/geo/GeoMapOverlayHint";
 import { loadOfflineGeoMap } from "@/components/charts/engine/geo/geoMapLevels";
-import { VS_REGIONS_MAP_ID } from "@/components/charts/engine/geo/geoConstants";
+import { VS_REGIONS_MAP_ID, withMapLoadTimeout } from "@/components/charts/engine/geo/geoConstants";
 import { activeGeoEngine } from "@/components/charts/engine/geoEnginePort";
 import type { ChartEngineViewProps } from "@/components/charts/engine/types";
 import { usePixelShapePlayer } from "@/components/dashboard/pixelCanvas/pixelShapePlayerContext";
@@ -36,23 +36,6 @@ import { cn } from "@/lib/utils";
 type PaintMode = "data" | "live" | "commit";
 
 const LIVE_RESIZE_THROTTLE_MS = 100;
-const MAP_LOAD_TIMEOUT_MS = 12_000;
-
-function withMapLoadTimeout<T>(promise: Promise<T>, ms = MAP_LOAD_TIMEOUT_MS): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error("地图加载超时，请重试")), ms);
-    promise.then(
-      (value) => {
-        clearTimeout(timer);
-        resolve(value);
-      },
-      (err) => {
-        clearTimeout(timer);
-        reject(err);
-      },
-    );
-  });
-}
 
 function geoAssetMissingMessage(mapId: string): string {
   const trimmed = mapId?.trim() || VS_REGIONS_MAP_ID;
@@ -157,6 +140,8 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   const [renderEngine, setRenderEngine] = useState<GeoMapRenderEngine | null>(null);
   const [fallbackReason, setFallbackReason] = useState<string | null>(null);
   const [threeLoading, setThreeLoading] = useState(false);
+  const [mapAssetLoading, setMapAssetLoading] = useState(false);
+  const [mapRetryToken, setMapRetryToken] = useState(0);
 
   const { ref: sizeRef, size } = useElementSize<HTMLDivElement>({
     enabled: !fill,
@@ -226,6 +211,14 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     if (threePendingGenRef.current !== gen) return;
     threePendingGenRef.current = 0;
     setThreeLoading(false);
+    setMapAssetLoading(false);
+  }, []);
+
+  const handleMapRetry = useCallback(() => {
+    setRenderError(null);
+    threeApiRef.current = null;
+    lastMeasureRef.current = { width: 0, height: 0 };
+    setMapRetryToken((token) => token + 1);
   }, []);
 
   const readPaintSize = useCallback(() => {
@@ -322,6 +315,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
 
       if (!isThreeMap) {
         setThreeLoading(false);
+        setMapAssetLoading(true);
         const mapIdToLoad = geoMapLevel.mapId;
         void withMapLoadTimeout(loadOfflineGeoMap(mapIdToLoad))
           .then((geo) => {
@@ -342,85 +336,76 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
             if (gen !== renderGenRef.current) return;
             setRenderError(err instanceof Error ? err.message : "地图资产加载失败");
             if (mode !== "live") setChartAnimationSuppressed(false);
+          })
+          .finally(() => {
+            if (gen !== renderGenRef.current) return;
+            setMapAssetLoading(false);
           });
         return;
       }
 
       setThreeLoading(true);
+      setMapAssetLoading(true);
       threePendingGenRef.current = gen;
       const renderContentKey = contentKey;
-      void withMapLoadTimeout(
-        import("@/components/charts/engine/three/renderThreeChoropleth"),
-      )
-        .then(async ({ renderThreeChoroplethChart }) => {
-          if (gen !== renderGenRef.current) {
-            clearThreePending(gen);
-            return;
-          }
-          try {
+
+      const runThreeRender = async () => {
+        const { renderThreeChoroplethChart } = await import(
+          "@/components/charts/engine/three/renderThreeChoropleth"
+        );
+        if (gen !== renderGenRef.current) return;
+
+        await new Promise<void>((resolve, reject) => {
+          let disposed = false;
+          let disposeFn: (() => void) | undefined;
+          runD3Renderer(el, () => {
             if (gen !== renderGenRef.current) {
-              clearThreePending(gen);
-              return;
+              reject(new Error("cancelled"));
+              return () => undefined;
             }
-            let disposed = false;
-            let disposeFn: (() => void) | undefined;
-            runD3Renderer(el, () => {
-              if (gen !== renderGenRef.current) {
-                clearThreePending(gen);
-                return () => undefined;
-              }
-              void renderThreeChoroplethChart(el, payload.config)
-                .then((result) => {
-                  if (gen !== renderGenRef.current || disposed) {
-                    result.dispose();
-                    return;
+            void renderThreeChoroplethChart(el, payload.config)
+              .then((result) => {
+                if (gen !== renderGenRef.current || disposed) {
+                  result.dispose();
+                  reject(new Error("cancelled"));
+                  return;
+                }
+                disposeFn = result.dispose;
+                if (result.engine === "three" && result.resize) {
+                  threeApiRef.current = {
+                    contentKey: renderContentKey,
+                    resize: result.resize,
+                    resumeBorderFlow: result.resumeBorderFlow,
+                  };
+                  const paint = readPaintSize();
+                  if (paint && paint.width > 0 && paint.height > 0) {
+                    result.resize(paint.width, paint.height);
                   }
-                  disposeFn = result.dispose;
-                  if (result.engine === "three" && result.resize) {
-                    threeApiRef.current = {
-                      contentKey: renderContentKey,
-                      resize: result.resize,
-                      resumeBorderFlow: result.resumeBorderFlow,
-                    };
-                    const paint = readPaintSize();
-                    if (paint && paint.width > 0 && paint.height > 0) {
-                      result.resize(paint.width, paint.height);
-                    }
-                    result.resumeBorderFlow?.();
-                  }
-                  applyRenderMeta(result.engine, result.fallbackReason ?? null);
-                  setRenderError(null);
-                })
-                .catch((err) => {
-                  if (gen !== renderGenRef.current || disposed) return;
-                  setRenderError(err instanceof Error ? err.message : "3D 地图渲染失败");
-                  applyRenderMeta(null, null);
-                })
-                .finally(() => {
-                  clearThreePending(gen);
-                  if (gen !== renderGenRef.current) return;
-                  if (mode !== "live") setChartAnimationSuppressed(false);
-                });
-              return () => {
-                disposed = true;
-                disposeFn?.();
-              };
-            });
-          } catch (err) {
-            setRenderError(err instanceof Error ? err.message : "3D 地图渲染失败");
-            applyRenderMeta(null, null);
-            clearThreePending(gen);
-            if (mode !== "live") setChartAnimationSuppressed(false);
-          }
-        })
+                  result.resumeBorderFlow?.();
+                }
+                applyRenderMeta(result.engine, result.fallbackReason ?? null);
+                setRenderError(null);
+                resolve();
+              })
+              .catch(reject);
+            return () => {
+              disposed = true;
+              disposeFn?.();
+            };
+          });
+        });
+      };
+
+      void withMapLoadTimeout(runThreeRender())
         .catch((err) => {
-          if (gen !== renderGenRef.current) {
-            clearThreePending(gen);
-            return;
-          }
-          setRenderError(err instanceof Error ? err.message : "3D 地图模块加载失败");
-          clearThreePending(gen);
+          if (gen !== renderGenRef.current) return;
+          if (err instanceof Error && err.message === "cancelled") return;
+          setRenderError(err instanceof Error ? err.message : "3D 地图渲染失败");
           applyRenderMeta(null, null);
+        })
+        .finally(() => {
+          clearThreePending(gen);
+          if (gen !== renderGenRef.current) return;
           if (mode !== "live") setChartAnimationSuppressed(false);
         });
     },
@@ -475,17 +460,20 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
 
   useEffect(() => {
     if (geoMapLoading || !geoMapLevelReady) return;
+    if (!fill && (size.width <= 0 || size.height <= 0)) return;
     threeApiRef.current = null;
     lastMeasureRef.current = { width: 0, height: 0 };
     measureAndRenderRef.current("data", true);
-  }, [contentKey, geoMapLoading, geoMapVersion, geoMapLevelReady]);
-
-  // 首帧容器尺寸为 0 时 measureAndRender 会 skip；尺寸就绪后强制重渲
-  useEffect(() => {
-    if (fill || geoMapLoading || !geoMapLevelReady) return;
-    if (size.width <= 0 || size.height <= 0) return;
-    measureAndRenderRef.current("data", true);
-  }, [fill, geoMapLoading, geoMapLevelReady, size.width, size.height]);
+  }, [
+    contentKey,
+    geoMapLoading,
+    geoMapVersion,
+    geoMapLevelReady,
+    fill,
+    size.width,
+    size.height,
+    mapRetryToken,
+  ]);
 
   useEffect(() => {
     if (!fill || plan.empty) return;
@@ -507,6 +495,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     threeApiRef.current = null;
     threePendingGenRef.current = 0;
     setThreeLoading(false);
+    setMapAssetLoading(false);
     applyRenderMeta(null, null);
     disposeD3Renderer(containerRef.current);
   }, [viewModel.chartType, applyRenderMeta]);
@@ -518,6 +507,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       threeApiRef.current = null;
       threePendingGenRef.current = 0;
       setThreeLoading(false);
+      setMapAssetLoading(false);
       disposeD3Renderer(containerRef.current);
       setChartAnimationSuppressed(false);
     };
@@ -588,7 +578,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
         className={cn("relative", fill ? "h-full min-h-0" : "w-full")}
         style={fill ? undefined : { height, width: width ?? "100%" }}
       >
-        {geoMapLoading && !threeLoading ? (
+        {(geoMapLoading || threeLoading || mapAssetLoading) ? (
           <p
             role="status"
             className="pointer-events-none absolute right-2 top-2 z-[1] text-theme-xs text-gray-500/80 dark:text-gray-400/80"
@@ -608,6 +598,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
             data-testid="geo-map-overlay-hint"
             message={overlayHint.message}
             tone={overlayHint.tone}
+            onRetry={renderError ? handleMapRetry : undefined}
           />
         ) : null}
         {showPlaceholderHint ? (

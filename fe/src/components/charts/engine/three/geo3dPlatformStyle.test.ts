@@ -39,6 +39,29 @@ describe("geo3dPlatformStyle", () => {
     expect(resolved.sizeScale).toBe(1.2);
   });
 
+  it("defaults shader layers off", () => {
+    expect(resolvePlatformLayerFlags({}, true)).toMatchObject({
+      glow: false,
+      pulse: false,
+      sweep: false,
+    });
+  });
+
+  it("provides distinct default accent colors per layer", () => {
+    const tech = resolvePlatformAccentColors({ stylePreset: "tech" }, "tech", true);
+    expect(tech.glow).not.toBe(tech.sweep);
+  });
+
+  it("applies custom glow color", () => {
+    const resolved = resolvePlatformEffectsStyle(
+      { platformGlowColor: "#ff00aa", platformGlow: true },
+      "tech",
+      true,
+      true,
+    );
+    expect(resolved.colors.glow).toBe("#ff00aa");
+  });
+
   it("content sig changes when layer toggles", () => {
     const a = buildPlatformEffectsContentSig({}, true);
     const b = buildPlatformEffectsContentSig({ platformRipple: false }, true);

@@ -6,6 +6,7 @@ import {
   type GeoMapLevelContext,
 } from "@/lib/geoMapLevels";
 import { VS_REGIONS_MAP_ID, listVsRegionNames } from "@/lib/geoMapChart";
+import { withMapLoadTimeout } from "@/components/charts/engine/geo/geoConstants";
 
 export const GEO_MAP_LEVEL_LOAD_FAILED_MSG =
   "地图层级加载失败，请返回上一级或重试";
@@ -60,10 +61,12 @@ export function useGeoMapLevel({ enabled, config, drillStack }: Options) {
     let cancelled = false;
     const requestKey = stackKey;
     const seq = ++requestSeqRef.current;
-    void resolveGeoMapLevelContext({
-      config: configRef.current,
-      drillStack: stackRef.current,
-    })
+    void withMapLoadTimeout(
+      resolveGeoMapLevelContext({
+        config: configRef.current,
+        drillStack: stackRef.current,
+      }),
+    )
       .then((next) => {
         if (cancelled || seq !== requestSeqRef.current) return;
         setContext(next);

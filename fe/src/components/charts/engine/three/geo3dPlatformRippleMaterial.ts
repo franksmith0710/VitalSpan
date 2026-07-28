@@ -6,22 +6,28 @@ const OPAQUE_FRAGMENT =
 export type PlatformRippleUniforms = {
   uTime: { value: number };
   uSpeed: { value: number };
+  uFrequency: { value: number };
   uWidth: { value: number };
   uColor: { value: THREE.Color };
-  uDir: { value: number };
 };
 
-export function createPlatformRippleUniforms(color: THREE.ColorRepresentation): PlatformRippleUniforms {
+export function createPlatformRippleUniforms(
+  color: THREE.ColorRepresentation,
+  speed = 1,
+  frequency = 1,
+): PlatformRippleUniforms {
   return {
     uTime: { value: 0 },
-    uSpeed: { value: 10 },
-    uWidth: { value: 20 },
+    uSpeed: { value: speed },
+    uFrequency: { value: frequency },
+    uWidth: { value: 0.14 },
     uColor: { value: new THREE.Color(color) },
-    uDir: { value: 2 },
   };
 }
 
-/** sc-datav bottom.tsx 扩散涟漪光环 */
+import { RIPPLE_SAMPLE_GLSL } from "@/components/charts/engine/three/geo3dPlatformRippleGlsl";
+
+/** 扩散涟漪：UV 归一化半径；支持频率（多道波） */
 export function applyPlatformRippleShader(
   material: THREE.MeshBasicMaterial,
   uniforms: PlatformRippleUniforms,
@@ -30,18 +36,19 @@ export function applyPlatformRippleShader(
     shader.uniforms = { ...shader.uniforms, ...uniforms };
     shader.vertexShader = shader.vertexShader.replace(
       "void main() {",
-      `varying vec3 vPosition;
+      `varying vec2 vRippleUv;
 void main() {
-  vPosition = position;`,
+  vRippleUv = uv;`,
     );
     shader.fragmentShader = shader.fragmentShader.replace(
       "void main() {",
       `uniform float uTime;
 uniform float uSpeed;
+uniform float uFrequency;
 uniform float uWidth;
 uniform vec3 uColor;
-uniform float uDir;
-varying vec3 vPosition;
+varying vec2 vRippleUv;
+${RIPPLE_SAMPLE_GLSL}
 void main() {`,
     );
     shader.fragmentShader = shader.fragmentShader.replace(
@@ -52,29 +59,27 @@ diffuseColor.a = 1.0;
 #ifdef USE_TRANSMISSION
 diffuseColor.a *= material.transmissionAlpha;
 #endif
-float r = uTime * uSpeed;
-float w = uTime * 5.0;
-if (w > uWidth) { w = uWidth; }
-vec2 center = vec2(0.0, 0.0);
-float rDistance = distance(vPosition.xz, center);
-if (uDir == 2.0) {
-  rDistance = distance(vPosition.xy, center);
-}
-if (rDistance > r && rDistance < r + 2.0 * w) {
-  float per = 0.0;
-  if (rDistance < r + w) {
-    per = (rDistance - r) / w;
-    outgoingLight = mix(outgoingLight, uColor, per);
-    gl_FragColor = vec4(outgoingLight, mix(0.0, diffuseColor.a, per));
-  } else {
-    per = (rDistance - r - w) / w;
-    outgoingLight = mix(uColor, outgoingLight, per);
-    gl_FragColor = vec4(outgoingLight, mix(diffuseColor.a, 0.0, per));
+float rDistance = length(vRippleUv - 0.5) * 2.0;
+bool hit = false;
+vec3 outLight = outgoingLight;
+float outAlpha = 0.0;
+for (int i = 0; i < 5; i++) {
+  if (float(i) >= uFrequency) break;
+  float phase = fract(uTime * uSpeed * 0.05 + float(i) / max(uFrequency, 1.0));
+  vec3 waveLight = outLight;
+  float waveAlpha = 0.0;
+  if (sampleRippleRing(rDistance, phase, uWidth, outgoingLight, diffuseColor.a, uColor, waveLight, waveAlpha)) {
+    hit = true;
+    outLight = waveLight;
+    outAlpha = max(outAlpha, waveAlpha);
   }
-} else {
+}
+if (!hit) {
   gl_FragColor = vec4(outgoingLight, 0.0);
+} else {
+  gl_FragColor = vec4(outLight, outAlpha);
 }`,
     );
   };
-  material.customProgramCacheKey = () => "geo3d-platform-ripple";
+  material.customProgramCacheKey = () => "geo3d-platform-ripple-uv-freq";
 }

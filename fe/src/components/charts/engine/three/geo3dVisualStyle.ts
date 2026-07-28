@@ -20,6 +20,17 @@ import {
   resolvePlatformEffectsStyle,
 } from "@/components/charts/engine/three/geo3dPlatformStyle";
 import {
+  buildPointEffectsContentSig,
+  resolveGeo3dPointEffects,
+  resolvePointEffectsStyle,
+} from "@/components/charts/engine/three/geo3dPointEffectsStyle";
+import {
+  buildGeo3dPointEffects,
+  removeGeo3dPointEffectsFromGroup,
+  type Geo3dPointEffectsHandle,
+} from "@/components/charts/engine/three/geo3dPointEffects";
+import type { JoinedMapFeature } from "@/components/charts/engine/three/geo3dRegionCentroid";
+import {
   resolveGeo3dSceneCloudDensity,
   resolveGeo3dSceneCloudHeight,
   resolveGeo3dSceneCloudSpeed,
@@ -73,6 +84,8 @@ type PresetBase = {
   techSatelliteOverlay: boolean;
   /** 地图下方双环/网格/涟漪底座装饰 */
   platformEffects: boolean;
+  /** 点位热力/光柱/浮动标签 */
+  pointEffects: boolean;
 };
 
 export type ResolvedGeo3dVisualStyle = PresetBase & {
@@ -110,6 +123,7 @@ const PRESET_BASE: Record<Geo3dStylePreset, PresetBase> = {
     capTintMixScale: 1,
     techSatelliteOverlay: false,
     platformEffects: false,
+    pointEffects: false,
   },
   tech: {
     shellColorDark: 0x0b1520,
@@ -140,6 +154,7 @@ const PRESET_BASE: Record<Geo3dStylePreset, PresetBase> = {
     capTintMixScale: 1.55,
     techSatelliteOverlay: true,
     platformEffects: true,
+    pointEffects: true,
   },
   classic: {
     shellColorDark: 0x3d2e1f,
@@ -170,6 +185,7 @@ const PRESET_BASE: Record<Geo3dStylePreset, PresetBase> = {
     capTintMixScale: 1,
     techSatelliteOverlay: false,
     platformEffects: false,
+    pointEffects: false,
   },
   minimal: {
     shellColorDark: 0x1e293b,
@@ -200,6 +216,7 @@ const PRESET_BASE: Record<Geo3dStylePreset, PresetBase> = {
     capTintMixScale: 0.75,
     techSatelliteOverlay: false,
     platformEffects: false,
+    pointEffects: false,
   },
 };
 
@@ -222,6 +239,8 @@ export function resolveGeo3dPlatformEffects(style: ChartGeo3dStyle): boolean {
   const preset = resolveGeo3dStylePreset(style);
   return style.platformEffects ?? PRESET_BASE[preset].platformEffects;
 }
+
+export { resolveGeo3dPointEffects } from "@/components/charts/engine/three/geo3dPointEffectsStyle";
 
 /** @deprecated 使用 {@link resolveGeo3dSceneClouds} */
 export const resolveGeo3dSceneFog = resolveGeo3dSceneClouds;
@@ -255,6 +274,51 @@ export function applyGeo3dPlatformEffectsLayer(
   const handle = buildGeo3dPlatformEffects(layout, resolved);
   scene.add(handle.group);
   return handle;
+}
+
+export type ApplyGeo3dPointEffectsInput = {
+  container: HTMLElement;
+  domElement: HTMLElement;
+  mapGroup: THREE.Group;
+  meshes: THREE.Object3D[];
+  features: JoinedMapFeature[];
+  project: (coord: [number, number]) => [number, number] | null;
+  projBounds: import("@/components/charts/engine/three/geo3dHeatCanvas").ProjBoundsLike;
+  minVal: number;
+  maxVal: number;
+  plateDepth: number;
+  terrainCap: boolean;
+  layout: Pick<ThreeGeoOrbitLayout, "halfX" | "halfZ">;
+  geo3dStyle?: ChartGeo3dStyle;
+  isDark?: boolean;
+};
+
+/** 布局完成后挂载热力 blob / 光柱 / 浮动标签 */
+export function applyGeo3dPointEffectsLayer(
+  input: ApplyGeo3dPointEffectsInput,
+): Geo3dPointEffectsHandle | null {
+  removeGeo3dPointEffectsFromGroup(input.mapGroup);
+  const geo3dStyle = input.geo3dStyle ?? {};
+  const preset = resolveGeo3dStylePreset(geo3dStyle);
+  const masterEnabled = resolveGeo3dPointEffects(geo3dStyle);
+  const resolved = resolvePointEffectsStyle(geo3dStyle, preset, input.isDark ?? true, masterEnabled);
+  if (!resolved.enabled || !Object.values(resolved.layers).some(Boolean)) return null;
+  const span = Math.max(input.layout.halfX, input.layout.halfZ, 4);
+  return buildGeo3dPointEffects({
+    container: input.container,
+    domElement: input.domElement,
+    mapGroup: input.mapGroup,
+    meshes: input.meshes,
+    features: input.features,
+    project: input.project,
+    projBounds: input.projBounds,
+    minVal: input.minVal,
+    maxVal: input.maxVal,
+    plateDepth: input.plateDepth,
+    terrainCap: input.terrainCap,
+    span,
+    style: resolved,
+  });
 }
 
 /** @deprecated 使用 {@link applyGeo3dSceneClouds} */
@@ -337,6 +401,7 @@ export function geo3dPresetDefaults(preset: Geo3dStylePreset): Partial<ChartGeo3
     terrainTexture: base.preferTerrainTexture,
     sceneFog: base.sceneFog,
     platformEffects: base.platformEffects,
+    pointEffects: base.pointEffects,
   };
 }
 
@@ -356,6 +421,8 @@ export function buildGeo3dStyleContentSig(
     resolveGeo3dSceneCloudHeight(style),
     resolveGeo3dPlatformEffects(style) ? 1 : 0,
     buildPlatformEffectsContentSig(style, resolveGeo3dPlatformEffects(style)),
+    resolveGeo3dPointEffects(style) ? 1 : 0,
+    buildPointEffectsContentSig(style, resolveGeo3dPointEffects(style)),
     style.shellColor?.toLowerCase() ?? "",
     resolveGeo3dShellOpacity(style),
     geoStyle.showRegionBorder !== false ? 1 : 0,

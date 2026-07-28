@@ -53,6 +53,9 @@ function renderPreview() {
         <TemplateCardPreview
           templateId="tpl-1"
           surfaceKind="dashboard"
+          categoryKey="analytics"
+          visibility="builtin"
+          status="published"
           eager
           className="h-full"
         />
@@ -62,30 +65,11 @@ function renderPreview() {
 }
 
 describe("TemplateCardPreview", () => {
-  it("loads template detail and renders layout thumb", async () => {
+  it("loads template detail and renders live layout preview", async () => {
     renderPreview();
     await waitFor(() => {
       expect(screen.getByTestId("template-card-preview")).toHaveAttribute("data-live", "true");
     });
-    expect(screen.getByTestId("dashboard-preview-thumb")).toBeInTheDocument();
-    expect(screen.getByTestId("dashboard-preview-widget-w1")).toBeInTheDocument();
-  });
-
-  it("renders thumbnail image when thumbnailRef is set", () => {
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const { container } = render(
-      <QueryClientProvider client={client}>
-        <div style={{ width: 320, height: 200 }}>
-          <TemplateCardPreview
-            templateId="tpl-2"
-            thumbnailRef="/thumbs/demo.png"
-            surfaceKind="dashboard"
-            className="h-full"
-          />
-        </div>
-      </QueryClientProvider>,
-    );
-    const img = container.querySelector('img[src="/thumbs/demo.png"]');
-    expect(img).not.toBeNull();
+    expect(screen.getByTestId("template-card-live-preview")).toBeInTheDocument();
   });
 });

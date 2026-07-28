@@ -203,6 +203,7 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
       if (!chartConfig) return;
       // 关联组件：layout 落库会剥 chartConfig，必须推组件库，否则下钻/样式保存丢失
       if (isLinkedComponentRef(widget.componentRef) && componentMap) {
+        updateWidget(widgetId, { chartConfig });
         void pushWidgetPayloadToLibrary(widget, componentMap, { chartConfig })
           .then(() => onLinkedPayloadSynced?.())
           .catch((err) => toast.error(mapApiError(err)));
@@ -223,6 +224,7 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
   const handleTextConfigChange = useCallback(
     (widgetId: string, textConfig: NonNullable<LayoutWidget["textConfig"]>) => {
       if (isLinkedComponentRef(widget.componentRef) && componentMap) {
+        updateWidget(widgetId, { textConfig });
         void pushWidgetPayloadToLibrary(widget, componentMap, { textConfig })
           .then(() => onLinkedPayloadSynced?.())
           .catch((err) => toast.error(mapApiError(err)));

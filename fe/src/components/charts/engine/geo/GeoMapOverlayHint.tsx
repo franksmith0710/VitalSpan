@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export type GeoMapOverlayTone = "warning" | "error" | "info";
@@ -6,6 +7,8 @@ export type GeoMapOverlayHintProps = {
   message: string;
   tone?: GeoMapOverlayTone;
   className?: string;
+  onRetry?: () => void;
+  retryLabel?: string;
   "data-testid"?: string;
 };
 
@@ -20,8 +23,35 @@ export function GeoMapOverlayHint({
   message,
   tone = "warning",
   className,
+  onRetry,
+  retryLabel = "重试",
   "data-testid": testId,
 }: GeoMapOverlayHintProps) {
+  if (onRetry) {
+    return (
+      <div
+        role="alert"
+        data-testid={testId}
+        className={cn(
+          "absolute inset-x-2 bottom-2 z-[1] flex flex-col items-center gap-1.5 text-center",
+          className,
+        )}
+      >
+        <p className={cn("dw-hint line-clamp-2", toneClass[tone])}>{message}</p>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-7 px-2.5 text-theme-xs"
+          onClick={onRetry}
+          data-testid={testId ? `${testId}-retry` : undefined}
+        >
+          {retryLabel}
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <p
       role="status"

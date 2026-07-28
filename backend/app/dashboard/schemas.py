@@ -208,6 +208,12 @@ class TableColorStyleConfig(BaseModel):
     column_width_mode: Literal["auto", "fixed", "custom"] | None = Field(
         default=None, alias="columnWidthMode"
     )
+    column_widths: dict[str, float] | None = Field(default=None, alias="columnWidths")
+    column_widths_px: dict[str, int] | None = Field(default=None, alias="columnWidthsPx")
+    series_column_width_px: int | None = Field(
+        default=None, alias="seriesColumnWidthPx", ge=1, le=512
+    )
+    row_height_px: int | None = Field(default=None, alias="rowHeightPx", ge=16, le=256)
     word_wrap: bool | None = Field(default=None, alias="wordWrap")
     row_hover: bool | None = Field(default=None, alias="rowHover")
     show_summary: bool | None = Field(default=None, alias="showSummary")

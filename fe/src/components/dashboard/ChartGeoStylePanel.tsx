@@ -12,22 +12,60 @@ import {
   DEFAULT_SCENE_CLOUD_SPEED,
 } from "@/components/charts/engine/three/geo3dSceneCloudStyle";
 import {
+  DEFAULT_PLATFORM_GRID_DENSITY,
+  DEFAULT_PLATFORM_RIPPLE_SPEED,
+  DEFAULT_PLATFORM_RIPPLE_FREQUENCY,
+  resolvePlatformGridStyle,
+} from "@/components/charts/engine/three/geo3dPlatformStyle";
+import {
   DEFAULT_PLATFORM_GRID_OPACITY,
+  DEFAULT_PLATFORM_GLOW_OPACITY,
   DEFAULT_PLATFORM_HIGHLIGHT_OPACITY,
+  DEFAULT_PLATFORM_PULSE_OPACITY,
+  DEFAULT_PLATFORM_PULSE_SPEED,
   DEFAULT_PLATFORM_RING_OPACITY,
+  DEFAULT_PLATFORM_RING_SPEED,
   DEFAULT_PLATFORM_RIPPLE_OPACITY,
   DEFAULT_PLATFORM_SIZE_SCALE,
+  DEFAULT_PLATFORM_SWEEP_OPACITY,
+  DEFAULT_PLATFORM_SWEEP_SPEED,
+  hasCustomPlatformGlowColor,
   hasCustomPlatformGridColor,
   hasCustomPlatformHighlightColor,
+  hasCustomPlatformPulseColor,
   hasCustomPlatformRippleColor,
+  hasCustomPlatformSweepColor,
+  resolvePlatformGlowColorHex,
   resolvePlatformGridColorHex,
   resolvePlatformHighlightColorHex,
+  resolvePlatformPulseColorHex,
   resolvePlatformRippleColorHex,
+  resolvePlatformSweepColorHex,
 } from "@/components/charts/engine/three/geo3dPlatformStyle";
+import {
+  DEFAULT_FLOATING_LABEL_FONT_SIZE,
+  DEFAULT_FLOATING_LABEL_OFFSET,
+  DEFAULT_HEAT_BLOB_BLUR,
+  DEFAULT_HEAT_BLOB_COLOR,
+  DEFAULT_HEAT_BLOB_DIM_CHOROPLETH,
+  DEFAULT_HEAT_BLOB_LIFT,
+  DEFAULT_HEAT_BLOB_OPACITY,
+  DEFAULT_HEAT_BLOB_RADIUS,
+  DEFAULT_POINT_PILLAR_BASE_RING_OPACITY,
+  DEFAULT_POINT_PILLAR_COLOR_BOTTOM,
+  DEFAULT_POINT_PILLAR_COLOR_TOP,
+  DEFAULT_POINT_PILLAR_HEIGHT_SCALE,
+  DEFAULT_POINT_PILLAR_OPACITY,
+  DEFAULT_POINT_PILLAR_RING_SPEED,
+  hasCustomHeatBlobColor,
+  hasCustomPointPillarColorBottom,
+  hasCustomPointPillarColorTop,
+} from "@/components/charts/engine/three/geo3dPointEffectsStyle";
 import {
   GEO3D_STYLE_PRESETS,
   geo3dPresetDefaults,
   hasCustomGeo3dShellColor,
+  resolveGeo3dPointEffects,
   resolveGeo3dSceneClouds,
   resolveGeo3dPlatformEffects,
   resolveGeo3dShellColorHex,
@@ -90,6 +128,13 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
   const platformRingsOn = platformOn && geo3d.platformRings !== false;
   const platformGridOn = platformOn && geo3d.platformGrid !== false;
   const platformRippleOn = platformOn && geo3d.platformRipple !== false;
+  const platformGlowOn = platformOn && geo3d.platformGlow === true;
+  const platformPulseOn = platformOn && geo3d.platformPulse === true;
+  const platformSweepOn = platformOn && geo3d.platformSweep === true;
+  const pointEffectsOn = resolveGeo3dPointEffects(geo3d);
+  const heatBlobOn = pointEffectsOn && geo3d.heatBlob !== false;
+  const pointPillarOn = pointEffectsOn && geo3d.pointPillar !== false;
+  const floatingLabelsOn = pointEffectsOn && geo3d.floatingLabels !== false;
 
   return (
     <ChartInspectorSection title={isMap ? "地图样式" : "热力图样式"} data-testid="chart-geo-style">
@@ -114,9 +159,6 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
             checked={geo.showCellLabel === true}
             onCheckedChange={(showCellLabel) => patchGeo({ showCellLabel })}
           />
-        ) : null}
-        {is3d ? (
-          <p className={INSPECTOR_HINT}>3D 地图暂不支持区域名称标签，请切换 2D 地图或依赖 Tooltip。</p>
         ) : null}
         <InspectorSwitchRow
           label="数值色带"
@@ -339,17 +381,30 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                   />
                 ) : null}
                 {platformRingsOn ? (
-                  <DeAttrSliderField
-                    label="双环不透明度"
-                    compact
-                    value={geo3d.platformRingOpacity}
-                    fallback={DEFAULT_PLATFORM_RING_OPACITY}
-                    min={0}
-                    max={1}
-                    step={0.05}
-                    ariaLabel="底座双环不透明度"
-                    onChange={(platformRingOpacity) => patchGeo3d({ platformRingOpacity })}
-                  />
+                  <>
+                    <DeAttrSliderField
+                      label="双环不透明度"
+                      compact
+                      value={geo3d.platformRingOpacity}
+                      fallback={DEFAULT_PLATFORM_RING_OPACITY}
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      ariaLabel="底座双环不透明度"
+                      onChange={(platformRingOpacity) => patchGeo3d({ platformRingOpacity })}
+                    />
+                    <DeAttrSliderField
+                      label="旋转速度"
+                      compact
+                      value={geo3d.platformRingSpeed}
+                      fallback={DEFAULT_PLATFORM_RING_SPEED}
+                      min={0.2}
+                      max={3}
+                      step={0.1}
+                      ariaLabel="底座双环旋转速度"
+                      onChange={(platformRingSpeed) => patchGeo3d({ platformRingSpeed })}
+                    />
+                  </>
                 ) : null}
                 <InspectorSwitchRow
                   label="底网格"
@@ -358,6 +413,37 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                 />
                 {platformGridOn ? (
                   <>
+                    <InspectorFieldRow label="网格样式">
+                      <Select
+                        value={resolvePlatformGridStyle(geo3d)}
+                        onValueChange={(platformGridStyle) =>
+                          patchGeo3d({
+                            platformGridStyle: platformGridStyle as "texture" | "square",
+                          })
+                        }
+                      >
+                        <SelectTrigger className={INSPECTOR_SELECT_TRIGGER} aria-label="底座网格样式">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="texture">圆点纹理</SelectItem>
+                          <SelectItem value="square">正方形格</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </InspectorFieldRow>
+                    {resolvePlatformGridStyle(geo3d) === "square" ? (
+                      <DeAttrSliderField
+                        label="方格密度"
+                        compact
+                        value={geo3d.platformGridDensity}
+                        fallback={DEFAULT_PLATFORM_GRID_DENSITY}
+                        min={0.5}
+                        max={3}
+                        step={0.05}
+                        ariaLabel="正方形网格密度"
+                        onChange={(platformGridDensity) => patchGeo3d({ platformGridDensity })}
+                      />
+                    ) : null}
                     <InspectorInlineColorRow
                       label="网格颜色"
                       value={resolvePlatformGridColorHex(geo3d, borderColorPreset, isDarkTheme)}
@@ -413,6 +499,146 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                       ariaLabel="底座涟漪不透明度"
                       onChange={(platformRippleOpacity) => patchGeo3d({ platformRippleOpacity })}
                     />
+                    <DeAttrSliderField
+                      label="涟漪速度"
+                      compact
+                      value={geo3d.platformRippleSpeed}
+                      fallback={DEFAULT_PLATFORM_RIPPLE_SPEED}
+                      min={0.2}
+                      max={3}
+                      step={0.1}
+                      ariaLabel="底座涟漪扩散速度"
+                      onChange={(platformRippleSpeed) => patchGeo3d({ platformRippleSpeed })}
+                    />
+                    <DeAttrSliderField
+                      label="涟漪频率"
+                      compact
+                      value={geo3d.platformRippleFrequency}
+                      fallback={DEFAULT_PLATFORM_RIPPLE_FREQUENCY}
+                      min={1}
+                      max={5}
+                      step={1}
+                      ariaLabel="底座涟漪波数"
+                      onChange={(platformRippleFrequency) => patchGeo3d({ platformRippleFrequency })}
+                    />
+                  </>
+                ) : null}
+                <InspectorSwitchRow
+                  label="径向光晕"
+                  checked={platformGlowOn}
+                  onCheckedChange={(platformGlow) => patchGeo3d({ platformGlow })}
+                />
+                {platformGlowOn ? (
+                  <>
+                    <InspectorInlineColorRow
+                      label="光晕颜色"
+                      value={resolvePlatformGlowColorHex(geo3d, borderColorPreset, isDarkTheme)}
+                      fallbackValue={resolvePlatformGlowColorHex(
+                        { ...geo3d, platformGlowColor: undefined },
+                        borderColorPreset,
+                        isDarkTheme,
+                      )}
+                      allowClear={hasCustomPlatformGlowColor(geo3d)}
+                      swatches={WIDGET_BORDER_RECOMMENDED}
+                      onChange={(next) => patchGeo3d({ platformGlowColor: next })}
+                    />
+                    <DeAttrSliderField
+                      label="光晕不透明度"
+                      compact
+                      value={geo3d.platformGlowOpacity}
+                      fallback={DEFAULT_PLATFORM_GLOW_OPACITY}
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      ariaLabel="底座光晕不透明度"
+                      onChange={(platformGlowOpacity) => patchGeo3d({ platformGlowOpacity })}
+                    />
+                  </>
+                ) : null}
+                <InspectorSwitchRow
+                  label="脉冲波"
+                  checked={platformPulseOn}
+                  onCheckedChange={(platformPulse) => patchGeo3d({ platformPulse })}
+                />
+                {platformPulseOn ? (
+                  <>
+                    <InspectorInlineColorRow
+                      label="脉冲颜色"
+                      value={resolvePlatformPulseColorHex(geo3d, borderColorPreset, isDarkTheme)}
+                      fallbackValue={resolvePlatformPulseColorHex(
+                        { ...geo3d, platformPulseColor: undefined },
+                        borderColorPreset,
+                        isDarkTheme,
+                      )}
+                      allowClear={hasCustomPlatformPulseColor(geo3d)}
+                      swatches={WIDGET_BORDER_RECOMMENDED}
+                      onChange={(next) => patchGeo3d({ platformPulseColor: next })}
+                    />
+                    <DeAttrSliderField
+                      label="脉冲不透明度"
+                      compact
+                      value={geo3d.platformPulseOpacity}
+                      fallback={DEFAULT_PLATFORM_PULSE_OPACITY}
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      ariaLabel="底座脉冲不透明度"
+                      onChange={(platformPulseOpacity) => patchGeo3d({ platformPulseOpacity })}
+                    />
+                    <DeAttrSliderField
+                      label="脉冲速度"
+                      compact
+                      value={geo3d.platformPulseSpeed}
+                      fallback={DEFAULT_PLATFORM_PULSE_SPEED}
+                      min={0.2}
+                      max={3}
+                      step={0.1}
+                      ariaLabel="底座脉冲波速度"
+                      onChange={(platformPulseSpeed) => patchGeo3d({ platformPulseSpeed })}
+                    />
+                  </>
+                ) : null}
+                <InspectorSwitchRow
+                  label="旋转扫光"
+                  checked={platformSweepOn}
+                  onCheckedChange={(platformSweep) => patchGeo3d({ platformSweep })}
+                />
+                {platformSweepOn ? (
+                  <>
+                    <InspectorInlineColorRow
+                      label="扫光颜色"
+                      value={resolvePlatformSweepColorHex(geo3d, borderColorPreset, isDarkTheme)}
+                      fallbackValue={resolvePlatformSweepColorHex(
+                        { ...geo3d, platformSweepColor: undefined },
+                        borderColorPreset,
+                        isDarkTheme,
+                      )}
+                      allowClear={hasCustomPlatformSweepColor(geo3d)}
+                      swatches={WIDGET_BORDER_RECOMMENDED}
+                      onChange={(next) => patchGeo3d({ platformSweepColor: next })}
+                    />
+                    <DeAttrSliderField
+                      label="扫光不透明度"
+                      compact
+                      value={geo3d.platformSweepOpacity}
+                      fallback={DEFAULT_PLATFORM_SWEEP_OPACITY}
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      ariaLabel="底座扫光不透明度"
+                      onChange={(platformSweepOpacity) => patchGeo3d({ platformSweepOpacity })}
+                    />
+                    <DeAttrSliderField
+                      label="扫光速度"
+                      compact
+                      value={geo3d.platformSweepSpeed}
+                      fallback={DEFAULT_PLATFORM_SWEEP_SPEED}
+                      min={0.2}
+                      max={3}
+                      step={0.1}
+                      ariaLabel="底座旋转扫光速度"
+                      onChange={(platformSweepSpeed) => patchGeo3d({ platformSweepSpeed })}
+                    />
                   </>
                 ) : null}
                 {(platformHighlightOn || platformRingsOn) ? (
@@ -427,6 +653,189 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                     ariaLabel="底座环尺寸倍率"
                     onChange={(platformSizeScale) => patchGeo3d({ platformSizeScale })}
                   />
+                ) : null}
+              </>
+            ) : null}
+            <InspectorSwitchRow
+              label="点位特效"
+              checked={pointEffectsOn}
+              onCheckedChange={(pointEffects) => patchGeo3d({ pointEffects })}
+            />
+            {pointEffectsOn ? (
+              <>
+                <InspectorSwitchRow
+                  label="贴地热力"
+                  checked={heatBlobOn}
+                  onCheckedChange={(heatBlob) => patchGeo3d({ heatBlob })}
+                />
+                {heatBlobOn ? (
+                  <>
+                    <DeAttrSliderField
+                      label="热力不透明度"
+                      compact
+                      value={geo3d.heatBlobOpacity}
+                      fallback={DEFAULT_HEAT_BLOB_OPACITY}
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      ariaLabel="贴地热力不透明度"
+                      onChange={(heatBlobOpacity) => patchGeo3d({ heatBlobOpacity })}
+                    />
+                    <DeAttrSliderField
+                      label="热力半径"
+                      compact
+                      value={geo3d.heatBlobRadius}
+                      fallback={DEFAULT_HEAT_BLOB_RADIUS}
+                      min={4}
+                      max={40}
+                      step={1}
+                      ariaLabel="贴地热力半径"
+                      onChange={(heatBlobRadius) => patchGeo3d({ heatBlobRadius })}
+                    />
+                    <DeAttrSliderField
+                      label="热力模糊"
+                      compact
+                      value={geo3d.heatBlobBlur}
+                      fallback={DEFAULT_HEAT_BLOB_BLUR}
+                      min={0.5}
+                      max={2}
+                      step={0.1}
+                      ariaLabel="贴地热力模糊"
+                      onChange={(heatBlobBlur) => patchGeo3d({ heatBlobBlur })}
+                    />
+                    <DeAttrSliderField
+                      label="热力抬升"
+                      compact
+                      value={geo3d.heatBlobLift}
+                      fallback={DEFAULT_HEAT_BLOB_LIFT}
+                      min={0}
+                      max={12}
+                      step={0.2}
+                      ariaLabel="贴地热力抬升"
+                      onChange={(heatBlobLift) => patchGeo3d({ heatBlobLift })}
+                    />
+                    <DeAttrSliderField
+                      label="弱化顶面着色"
+                      compact
+                      value={geo3d.heatBlobDimChoropleth}
+                      fallback={DEFAULT_HEAT_BLOB_DIM_CHOROPLETH}
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      ariaLabel="热力开启时弱化顶面着色"
+                      onChange={(heatBlobDimChoropleth) => patchGeo3d({ heatBlobDimChoropleth })}
+                    />
+                    <InspectorInlineColorRow
+                      label="热力乘色"
+                      value={geo3d.heatBlobColor ?? DEFAULT_HEAT_BLOB_COLOR}
+                      fallbackValue={DEFAULT_HEAT_BLOB_COLOR}
+                      allowClear={hasCustomHeatBlobColor(geo3d)}
+                      swatches={WIDGET_BORDER_RECOMMENDED}
+                      onChange={(next) => patchGeo3d({ heatBlobColor: next })}
+                    />
+                  </>
+                ) : null}
+                <InspectorSwitchRow
+                  label="垂直光柱"
+                  checked={pointPillarOn}
+                  onCheckedChange={(pointPillar) => patchGeo3d({ pointPillar })}
+                />
+                {pointPillarOn ? (
+                  <>
+                    <InspectorInlineColorRow
+                      label="光柱顶色"
+                      value={geo3d.pointPillarColorTop ?? DEFAULT_POINT_PILLAR_COLOR_TOP}
+                      fallbackValue={DEFAULT_POINT_PILLAR_COLOR_TOP}
+                      allowClear={hasCustomPointPillarColorTop(geo3d)}
+                      swatches={WIDGET_BORDER_RECOMMENDED}
+                      onChange={(next) => patchGeo3d({ pointPillarColorTop: next })}
+                    />
+                    <InspectorInlineColorRow
+                      label="光柱底色"
+                      value={geo3d.pointPillarColorBottom ?? DEFAULT_POINT_PILLAR_COLOR_BOTTOM}
+                      fallbackValue={DEFAULT_POINT_PILLAR_COLOR_BOTTOM}
+                      allowClear={hasCustomPointPillarColorBottom(geo3d)}
+                      swatches={WIDGET_BORDER_RECOMMENDED}
+                      onChange={(next) => patchGeo3d({ pointPillarColorBottom: next })}
+                    />
+                    <DeAttrSliderField
+                      label="光柱不透明度"
+                      compact
+                      value={geo3d.pointPillarOpacity}
+                      fallback={DEFAULT_POINT_PILLAR_OPACITY}
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      ariaLabel="垂直光柱不透明度"
+                      onChange={(pointPillarOpacity) => patchGeo3d({ pointPillarOpacity })}
+                    />
+                    <DeAttrSliderField
+                      label="光柱高度"
+                      compact
+                      value={geo3d.pointPillarHeightScale}
+                      fallback={DEFAULT_POINT_PILLAR_HEIGHT_SCALE}
+                      min={1}
+                      max={12}
+                      step={0.2}
+                      ariaLabel="垂直光柱高度倍率"
+                      onChange={(pointPillarHeightScale) => patchGeo3d({ pointPillarHeightScale })}
+                    />
+                    <DeAttrSliderField
+                      label="脚底环不透明度"
+                      compact
+                      value={geo3d.pointPillarBaseRingOpacity}
+                      fallback={DEFAULT_POINT_PILLAR_BASE_RING_OPACITY}
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      ariaLabel="光柱脚底环不透明度"
+                      onChange={(pointPillarBaseRingOpacity) =>
+                        patchGeo3d({ pointPillarBaseRingOpacity })
+                      }
+                    />
+                    <DeAttrSliderField
+                      label="脚底环速度"
+                      compact
+                      value={geo3d.pointPillarRingSpeed}
+                      fallback={DEFAULT_POINT_PILLAR_RING_SPEED}
+                      min={0.2}
+                      max={3}
+                      step={0.1}
+                      ariaLabel="光柱脚底环旋转速度"
+                      onChange={(pointPillarRingSpeed) => patchGeo3d({ pointPillarRingSpeed })}
+                    />
+                  </>
+                ) : null}
+                <InspectorSwitchRow
+                  label="浮动标签"
+                  checked={floatingLabelsOn}
+                  onCheckedChange={(floatingLabels) => patchGeo3d({ floatingLabels })}
+                />
+                {floatingLabelsOn ? (
+                  <>
+                    <DeAttrSliderField
+                      label="标签字号"
+                      compact
+                      value={geo3d.floatingLabelFontSize}
+                      fallback={DEFAULT_FLOATING_LABEL_FONT_SIZE}
+                      min={10}
+                      max={22}
+                      step={1}
+                      ariaLabel="浮动标签字号"
+                      onChange={(floatingLabelFontSize) => patchGeo3d({ floatingLabelFontSize })}
+                    />
+                    <DeAttrSliderField
+                      label="标签偏移"
+                      compact
+                      value={geo3d.floatingLabelOffset}
+                      fallback={DEFAULT_FLOATING_LABEL_OFFSET}
+                      min={0}
+                      max={2}
+                      step={0.05}
+                      ariaLabel="浮动标签柱顶偏移"
+                      onChange={(floatingLabelOffset) => patchGeo3d({ floatingLabelOffset })}
+                    />
+                  </>
                 ) : null}
               </>
             ) : null}

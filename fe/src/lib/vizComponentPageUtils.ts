@@ -1,25 +1,31 @@
 import type { LayoutWidget } from "@/components/dashboard/layoutUtils";
 import type { VizComponentMap } from "@/lib/resolveVizComponent";
-import type { VizComponentDetail } from "@/lib/vizComponents";
+import type { VizComponentDetail, VizComponentPayload, VizWidgetType } from "@/lib/vizComponents";
 
-export function componentDetailToLayoutWidget(detail: VizComponentDetail): LayoutWidget {
+export function vizPayloadToLayoutWidget(input: {
+  id: string;
+  name: string;
+  widgetType: VizWidgetType;
+  payload: VizComponentPayload;
+  widgetIdPrefix?: string;
+}): LayoutWidget {
   const base = {
-    id: `vc-edit-${detail.id}`,
-    title: detail.name,
+    id: `${input.widgetIdPrefix ?? "vc-preview"}-${input.id}`,
+    title: input.name,
     colSpan: 12,
     rowSpan: 8,
     order: 0,
-    componentRef: { componentId: detail.id },
+    componentRef: { componentId: input.id },
   };
 
-  const payload = detail.payloadJson;
-  switch (detail.widgetType) {
+  const payload = input.payload;
+  switch (input.widgetType) {
     case "chart":
       return {
         ...base,
         type: "chart",
         chartConfig: payload.chartConfig,
-        chartId: detail.id,
+        chartId: input.id,
       } as LayoutWidget;
     case "filter":
       return {
@@ -40,8 +46,18 @@ export function componentDetailToLayoutWidget(detail: VizComponentDetail): Layou
         mediaConfig: payload.mediaConfig!,
       } as LayoutWidget;
     default:
-      throw new Error(`Unsupported widget type: ${detail.widgetType}`);
+      throw new Error(`Unsupported widget type: ${input.widgetType}`);
   }
+}
+
+export function componentDetailToLayoutWidget(detail: VizComponentDetail): LayoutWidget {
+  return vizPayloadToLayoutWidget({
+    id: detail.id,
+    name: detail.name,
+    widgetType: detail.widgetType,
+    payload: detail.payloadJson,
+    widgetIdPrefix: "vc-edit",
+  });
 }
 
 export function buildSingleComponentMap(detail: VizComponentDetail): VizComponentMap {

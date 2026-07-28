@@ -12,6 +12,10 @@ import {
   ListGhostEmptyState,
   PanelEmptyStateSteps,
 } from "@/components/ui/panel-empty-state";
+import {
+  ChartMountProvider,
+  CHART_MOUNT_MAX_LIST,
+} from "@/components/charts/ChartMountContext";
 import { VizComponentCard } from "@/components/dashboard/viz-components/VizComponentCard";
 import { InsertVizComponentDialog } from "@/components/dashboard/viz-components/InsertVizComponentDialog";
 import { ComponentReferencesDialog } from "@/components/dashboard/viz-components/ComponentReferencesDialog";
@@ -172,8 +176,8 @@ export function VizComponentsHubPage() {
         </div>
       }
     >
-      <section className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
+      <section className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           {SURFACE_TABS.map((tab) => {
             const Icon =
               tab.key === "data-screen" ? Monitor : tab.key === "dashboard" ? LayoutDashboard : Boxes;
@@ -218,10 +222,11 @@ export function VizComponentsHubPage() {
           })}
         </div>
         <Input
+          size="sm"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder={VIZ_COMPONENTS_HUB.searchPlaceholder}
-          className="h-10 w-full shrink-0 sm:max-w-xs"
+          className="w-full shrink-0 sm:w-auto sm:min-w-[220px] sm:max-w-xs"
           aria-label={VIZ_COMPONENTS_HUB.searchAriaLabel}
         />
       </section>
@@ -257,22 +262,25 @@ export function VizComponentsHubPage() {
           footer={<PanelEmptyStateSteps steps={EMPTY_STEPS} />}
         />
       ) : (
-        <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {items.map((item) => (
-            <VizComponentCard
-              key={item.id}
-              item={item}
-              payload={payloadById.get(item.id)}
-              canManage={canManage}
-              pending={pending}
-              onInsert={() => setInsertTarget(item)}
-              onViewReferences={() => setReferencesTarget(item)}
-              onPublish={() => publishMutation.mutate(item.id)}
-              onArchive={() => archiveMutation.mutate(item.id)}
-              onDelete={() => deleteMutation.mutate(item.id)}
-            />
-          ))}
-        </section>
+        <ChartMountProvider maxConcurrent={CHART_MOUNT_MAX_LIST}>
+          <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {items.map((item) => (
+              <VizComponentCard
+                key={item.id}
+                item={item}
+                payload={payloadById.get(item.id)}
+                payloadLoading={resolveQuery.isLoading && !payloadById.has(item.id)}
+                canManage={canManage}
+                pending={pending}
+                onInsert={() => setInsertTarget(item)}
+                onViewReferences={() => setReferencesTarget(item)}
+                onPublish={() => publishMutation.mutate(item.id)}
+                onArchive={() => archiveMutation.mutate(item.id)}
+                onDelete={() => deleteMutation.mutate(item.id)}
+              />
+            ))}
+          </section>
+        </ChartMountProvider>
       )}
 
       <InsertVizComponentDialog

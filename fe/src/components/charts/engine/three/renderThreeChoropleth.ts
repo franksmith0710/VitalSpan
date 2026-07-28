@@ -75,7 +75,8 @@ import {
   toGeoBorderFlowDisplayPhase,
 } from "@/components/charts/engine/three/geoBorderFlowMaterial";
 import { prefersNativeReducedMotion } from "@/components/charts/engine/d3/core/animate";
-import { resolveGeo3dVisualStyle, applyGeo3dSceneClouds, applyGeo3dPlatformEffectsLayer, hasCustomGeo3dShellColor, resolveGeo3dShellColorNumber, resolveGeo3dShellOpacity } from "@/components/charts/engine/three/geo3dVisualStyle";
+import { resolveGeo3dVisualStyle, applyGeo3dSceneClouds, applyGeo3dPlatformEffectsLayer, applyGeo3dPointEffectsLayer, hasCustomGeo3dShellColor, resolveGeo3dShellColorNumber, resolveGeo3dShellOpacity, resolveGeo3dPointEffects } from "@/components/charts/engine/three/geo3dVisualStyle";
+import { resolvePointEffectsStyle } from "@/components/charts/engine/three/geo3dPointEffectsStyle";
 
 function noopDispose(): void {
   /* empty */
@@ -238,11 +239,7 @@ export async function renderThreeChoroplethChart(
   const geo = await loadOfflineGeoMap(resolvedMapId);
   if (!geo?.features?.length) {
     container.replaceChildren();
-    const msg = document.createElement("div");
-    msg.className =
-      "flex h-full items-center justify-center px-3 text-center text-theme-sm text-error-600 dark:text-error-400";
-    msg.setAttribute("role", "alert");
-    msg.textContent =
+    const message =
       resolvedMapId === VS_REGIONS_MAP_ID
         ? "离线地图资产缺失，无法渲染"
         : `下钻地图资产未就绪（${resolvedMapId}），请返回上一级或稍后重试`;
@@ -256,8 +253,7 @@ export async function renderThreeChoroplethChart(
           adcode != null ? listBundledCityProvinceAdcodes().includes(adcode) : undefined,
       });
     }
-    container.appendChild(msg);
-    return { dispose: () => container.replaceChildren(), engine: "three" };
+    throw new Error(message);
   }
 
   const features = joinOfflineMapFeatures(
@@ -318,6 +314,17 @@ export async function renderThreeChoroplethChart(
 
   try {
     const visualStyle = resolveGeo3dVisualStyle(geo3dStyle, isDark);
+    const pointEffectsStyle = resolvePointEffectsStyle(
+      geo3dStyle,
+      visualStyle.preset,
+      isDark,
+      resolveGeo3dPointEffects(geo3dStyle),
+    );
+    const enablePointEffects = renderTier !== "thumbnail" && pointEffectsStyle.enabled;
+    const heatBlobActive = enablePointEffects && pointEffectsStyle.layers.heatBlob;
+    const capTintMixScale =
+      visualStyle.capTintMixScale *
+      (heatBlobActive ? pointEffectsStyle.heatBlobDimChoropleth : 1);
     const surface = geoSurfaceColorsForPreset(isDark, visualStyle.preset);
     const values = features.map((f) => f.value);
     const minVal = Math.min(...values);
@@ -471,13 +478,23 @@ export async function renderThreeChoroplethChart(
           capEmissiveIntensity,
           capMetalness: visualStyle.capMetalness,
           capRoughness: visualStyle.capRoughness,
-          capTintMixScale: visualStyle.capTintMixScale,
+          capTintMixScale,
           techSatelliteOverlay: visualStyle.techSatelliteOverlay,
           borderOpacity,
           showBorderLines: regionBorder.show,
         });
         if (!firstCapMaterial) firstCapMaterial = built.capMaterial;
         const capRestingVisual = snapshotCapVisual(built.capMaterial);
+        const capTopZForAnchor = resolveGeoCapTopZ(plateDepth, Boolean(terrainPack?.colorMap));
+        const capBox2 = new THREE.Box2();
+        for (const pt of shape.getPoints()) {
+          capBox2.expandByPoint(pt);
+        }
+        const capAnchorLocal = new THREE.Vector3(
+          (capBox2.min.x + capBox2.max.x) * 0.5,
+          (capBox2.min.y + capBox2.max.y) * 0.5,
+          capTopZForAnchor,
+        );
         built.mesh.userData = {
           name: feature.name,
           value: feature.value,
@@ -489,6 +506,7 @@ export async function renderThreeChoroplethChart(
           borderLines: built.borderLines,
           borderColor,
           borderOpacity,
+          capAnchorLocal,
         };
         mapGroup.add(built.mesh);
         meshes.push(built.mesh);
@@ -557,6 +575,7 @@ export async function renderThreeChoroplethChart(
     const orbitLayout = layoutThreeGeoMapGroup(mapGroup, { preCentered: false });
     let sceneClouds: ReturnType<typeof applyGeo3dSceneClouds> = null;
     let platformEffects: ReturnType<typeof applyGeo3dPlatformEffectsLayer> = null;
+    let pointEffects: ReturnType<typeof applyGeo3dPointEffectsLayer> = null;
     try {
       sceneClouds = applyGeo3dSceneClouds(scene, orbitLayout, visualStyle, geo3dStyle);
     } catch (cloudErr) {
@@ -577,8 +596,32 @@ export async function renderThreeChoroplethChart(
         console.warn("[map-3d] platform effects disabled after init failure", platformErr);
       }
     }
+    if (enablePointEffects) {
+      try {
+        pointEffects = applyGeo3dPointEffectsLayer({
+          container,
+          domElement: renderer.domElement,
+          mapGroup,
+          meshes,
+          features,
+          project,
+          projBounds,
+          minVal,
+          maxVal,
+          plateDepth,
+          terrainCap: Boolean(terrainPack?.colorMap),
+          layout: orbitLayout,
+          geo3dStyle,
+          isDark,
+        });
+      } catch (pointErr) {
+        if (import.meta.env.DEV) {
+          console.warn("[map-3d] point effects disabled after init failure", pointErr);
+        }
+      }
+    }
 
-    const hasSceneDecor = () => Boolean(sceneClouds || platformEffects);
+    const hasSceneDecor = () => Boolean(sceneClouds || platformEffects || pointEffects);
 
     const roam = resolveEmbeddedGeoRoam(geoStyle.roam);
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -690,6 +733,9 @@ export async function renderThreeChoroplethChart(
     };
 
     const renderFrame = () => {
+      if (pointEffects?.floatingLabels) {
+        pointEffects.syncLabels(camera, renderer.domElement, container);
+      }
       renderer.render(scene, camera);
     };
 
@@ -760,6 +806,7 @@ export async function renderThreeChoroplethChart(
       lastCloudTickMs = now;
       sceneClouds?.update(deltaSec, camera);
       platformEffects?.update(deltaSec);
+      pointEffects?.update(deltaSec, prefersNativeReducedMotion());
       renderFrame();
       if (
         cloudLoopActive &&
@@ -982,7 +1029,7 @@ export async function renderThreeChoroplethChart(
                   partValueT,
                   isDark,
                   terrainCapSource,
-                  visualStyle.capTintMixScale,
+                  capTintMixScale,
                 )
               : hoverData;
             applyCapHoverVisual(cap, resting, hoverTint, isDark);
@@ -1127,6 +1174,7 @@ export async function renderThreeChoroplethChart(
       borderFlowParticleSystem?.dispose();
       sceneClouds?.dispose();
       platformEffects?.dispose();
+      pointEffects?.dispose();
       borderFlowParticleSystem = null;
       terrainPack?.dispose();
       terrainPack = null;

@@ -22,8 +22,28 @@ describe("threeGeoScreen", () => {
   it("maps world origin in front of camera to container center", () => {
     const container = document.createElement("div");
     const canvas = document.createElement("canvas");
+    Object.defineProperty(container, "clientWidth", { value: 400, configurable: true });
+    Object.defineProperty(container, "clientHeight", { value: 300, configurable: true });
     mockRect(container, { left: 100, top: 50, width: 400, height: 300 });
     mockRect(canvas, { left: 100, top: 50, width: 400, height: 300 });
+
+    const camera = new THREE.PerspectiveCamera(45, 4 / 3, 0.1, 100);
+    camera.position.set(0, 0, 10);
+    camera.lookAt(0, 0, 0);
+    camera.updateMatrixWorld();
+
+    const point = projectWorldToContainer(new THREE.Vector3(0, 0, 0), camera, canvas, container);
+    expect(point.x).toBeCloseTo(200, 0);
+    expect(point.y).toBeCloseTo(150, 0);
+  });
+
+  it("compensates for css scale on container when projecting labels", () => {
+    const container = document.createElement("div");
+    const canvas = document.createElement("canvas");
+    Object.defineProperty(container, "clientWidth", { value: 400, configurable: true });
+    Object.defineProperty(container, "clientHeight", { value: 300, configurable: true });
+    mockRect(container, { left: 100, top: 50, width: 408, height: 306 });
+    mockRect(canvas, { left: 100, top: 50, width: 408, height: 306 });
 
     const camera = new THREE.PerspectiveCamera(45, 4 / 3, 0.1, 100);
     camera.position.set(0, 0, 10);
