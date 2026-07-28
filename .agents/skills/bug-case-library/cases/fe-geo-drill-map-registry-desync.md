@@ -28,11 +28,17 @@
 - `OfflineGeoPort`：`registeredMaps` 挂 `globalThis.__vsOfflineGeoMaps`，跨 HMR 实例唯一
 - `geoMapLevels`：`ensureCityMap` 缓存 `{ index, geo }`，命中也 re-upsert；`loadOfflineGeoMap` = ensure + 同模块读回
 - `renderThreeChoropleth`：渲染前 `await loadOfflineGeoMap(resolvedMapId)`，禁止全国顶替下钻
+- **加载稳定化（2026-07-28）**：
+  - `useGeoMapLevel`：resolve 失败 `.catch` + `requestSeq`，避免永久 `resolving`
+  - `D3GeoMapView`：2D 分支 paint 前 `loadOfflineGeoMap`；尺寸 0→有效后强制重渲；3D 12s 超时清 `threePending`
+  - `geoMapLevels`：区县 `districtIndexCache` + city/district 缓存挂 `globalThis`
+  - `renderChoropleth`：`joinOfflineMapFeatures` 传入 `drillDepth`
 
 ## 验证
 
-- `vitest run src/components/charts/engine/geo/offlineGeoMapId.test.ts src/lib/geoMapLevels.test.ts`
+- `vitest run src/hooks/useGeoMapLevel.test.ts src/components/charts/engine/geo/offlineGeoMapId.test.ts src/lib/geoMapLevels.test.ts src/components/charts/engine/d3/geo/renderChoropleth.test.ts`
 - 手工：全国 → 青海/湖南下钻见市级轮廓 → 面包屑点「全部」回全国；开发态可硬刷新后再下钻
+- 窄容器首屏出图；快速连点下钻/返回不卡「正在加载…」；3D 不长期 `data-render-engine="pending"`
 
 ## 关联
 

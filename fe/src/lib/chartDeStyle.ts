@@ -111,6 +111,32 @@ export type ChartGeo3dStyle = {
   sceneCloudSpeed?: number;
   /** 场景云高度倍率 0.2–2（相对地图尺度） */
   sceneCloudHeight?: number;
+  /** 底座装饰（双环/网格/涟漪；科技预设默认开启） */
+  platformEffects?: boolean;
+  /** 底座层：中心高光 */
+  platformHighlight?: boolean;
+  /** 底座层：旋转双环 */
+  platformRings?: boolean;
+  /** 底座层：底网格 */
+  platformGrid?: boolean;
+  /** 底座层：扩散涟漪 */
+  platformRipple?: boolean;
+  /** 高光/双环颜色（#rrggbb） */
+  platformHighlightColor?: string;
+  /** 网格颜色（#rrggbb） */
+  platformGridColor?: string;
+  /** 涟漪颜色（#rrggbb） */
+  platformRippleColor?: string;
+  /** 高光不透明度 0–1 */
+  platformHighlightOpacity?: number;
+  /** 双环不透明度 0–1 */
+  platformRingOpacity?: number;
+  /** 网格不透明度 0–1 */
+  platformGridOpacity?: number;
+  /** 涟漪不透明度 0–1 */
+  platformRippleOpacity?: number;
+  /** 环/高光尺寸倍率 0.4–1.6（相对地图） */
+  platformSizeScale?: number;
   /** 挤出侧壁/底板颜色（#rrggbb）；未设置时跟随样式预设 */
   shellColor?: string;
   /** 挤出侧壁/底板不透明度（0–1，默认 1） */

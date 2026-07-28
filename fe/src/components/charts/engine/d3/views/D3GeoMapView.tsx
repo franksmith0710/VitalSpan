@@ -18,6 +18,8 @@ import {
 } from "@/components/charts/engine/geo/geoMapRenderResult";
 import { buildGeoMapContentKey } from "@/components/charts/engine/geo/geoMapContentKey";
 import { GeoMapOverlayHint } from "@/components/charts/engine/geo/GeoMapOverlayHint";
+import { loadOfflineGeoMap } from "@/components/charts/engine/geo/geoMapLevels";
+import { VS_REGIONS_MAP_ID } from "@/components/charts/engine/geo/geoConstants";
 import { activeGeoEngine } from "@/components/charts/engine/geoEnginePort";
 import type { ChartEngineViewProps } from "@/components/charts/engine/types";
 import { usePixelShapePlayer } from "@/components/dashboard/pixelCanvas/pixelShapePlayerContext";
@@ -34,6 +36,30 @@ import { cn } from "@/lib/utils";
 type PaintMode = "data" | "live" | "commit";
 
 const LIVE_RESIZE_THROTTLE_MS = 100;
+const MAP_LOAD_TIMEOUT_MS = 12_000;
+
+function withMapLoadTimeout<T>(promise: Promise<T>, ms = MAP_LOAD_TIMEOUT_MS): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("地图加载超时，请重试")), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      },
+    );
+  });
+}
+
+function geoAssetMissingMessage(mapId: string): string {
+  const trimmed = mapId?.trim() || VS_REGIONS_MAP_ID;
+  return trimmed === VS_REGIONS_MAP_ID
+    ? "离线地图资产缺失，无法渲染"
+    : `下钻地图资产未就绪（${trimmed}），请返回上一级或稍后重试`;
+}
 
 type ThreeMapApi = {
   contentKey: string;
@@ -296,19 +322,36 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
 
       if (!isThreeMap) {
         setThreeLoading(false);
-        try {
-          runD3();
-        } catch (err) {
-          setRenderError(err instanceof Error ? err.message : "地图渲染失败");
-          if (mode !== "live") setChartAnimationSuppressed(false);
-        }
+        const mapIdToLoad = geoMapLevel.mapId;
+        void withMapLoadTimeout(loadOfflineGeoMap(mapIdToLoad))
+          .then((geo) => {
+            if (gen !== renderGenRef.current) return;
+            if (!geo?.features?.length) {
+              setRenderError(geoAssetMissingMessage(mapIdToLoad));
+              if (mode !== "live") setChartAnimationSuppressed(false);
+              return;
+            }
+            try {
+              runD3();
+            } catch (err) {
+              setRenderError(err instanceof Error ? err.message : "地图渲染失败");
+              if (mode !== "live") setChartAnimationSuppressed(false);
+            }
+          })
+          .catch((err) => {
+            if (gen !== renderGenRef.current) return;
+            setRenderError(err instanceof Error ? err.message : "地图资产加载失败");
+            if (mode !== "live") setChartAnimationSuppressed(false);
+          });
         return;
       }
 
       setThreeLoading(true);
       threePendingGenRef.current = gen;
       const renderContentKey = contentKey;
-      void import("@/components/charts/engine/three/renderThreeChoropleth")
+      void withMapLoadTimeout(
+        import("@/components/charts/engine/three/renderThreeChoropleth"),
+      )
         .then(async ({ renderThreeChoroplethChart }) => {
           if (gen !== renderGenRef.current) {
             clearThreePending(gen);
@@ -370,12 +413,12 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
             if (mode !== "live") setChartAnimationSuppressed(false);
           }
         })
-        .catch(() => {
+        .catch((err) => {
           if (gen !== renderGenRef.current) {
             clearThreePending(gen);
             return;
           }
-          setRenderError("3D 地图模块加载失败");
+          setRenderError(err instanceof Error ? err.message : "3D 地图模块加载失败");
           clearThreePending(gen);
           applyRenderMeta(null, null);
           if (mode !== "live") setChartAnimationSuppressed(false);
@@ -385,6 +428,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       isThreeMap,
       geoMapLoading,
       geoMapLevelReady,
+      geoMapLevel.mapId,
       planWithGeo,
       contentKey,
       readPaintSize,
@@ -435,6 +479,13 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     lastMeasureRef.current = { width: 0, height: 0 };
     measureAndRenderRef.current("data", true);
   }, [contentKey, geoMapLoading, geoMapVersion, geoMapLevelReady]);
+
+  // 首帧容器尺寸为 0 时 measureAndRender 会 skip；尺寸就绪后强制重渲
+  useEffect(() => {
+    if (fill || geoMapLoading || !geoMapLevelReady) return;
+    if (size.width <= 0 || size.height <= 0) return;
+    measureAndRenderRef.current("data", true);
+  }, [fill, geoMapLoading, geoMapLevelReady, size.width, size.height]);
 
   useEffect(() => {
     if (!fill || plan.empty) return;

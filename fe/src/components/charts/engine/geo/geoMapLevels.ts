@@ -63,7 +63,7 @@ export function lookupCityAdcode(
   cityName: string,
   provinceAdcode: number,
 ): number | null {
-  const entry = cityIndexCache.get(provinceAdcode);
+  const entry = getCityIndexCache().get(provinceAdcode);
   if (!entry) return null;
   const index = entry.index;
   const resolved = resolveNameInGeoIndex(cityName, index);
@@ -86,8 +86,25 @@ type CityMapCacheEntry = {
   geo: RegionsGeo;
 };
 
+/** HMR 下与 OfflineGeoPort 注册表同理：索引缓存挂 globalThis */
+type GeoMapLevelsGlobal = typeof globalThis & {
+  __vsCityIndexCache?: Map<number, CityMapCacheEntry>;
+  __vsDistrictIndexCache?: Map<number, CityMapCacheEntry>;
+};
+
+function getCityIndexCache(): Map<number, CityMapCacheEntry> {
+  const g = globalThis as GeoMapLevelsGlobal;
+  if (!g.__vsCityIndexCache) g.__vsCityIndexCache = new Map();
+  return g.__vsCityIndexCache;
+}
+
+function getDistrictIndexCache(): Map<number, CityMapCacheEntry> {
+  const g = globalThis as GeoMapLevelsGlobal;
+  if (!g.__vsDistrictIndexCache) g.__vsDistrictIndexCache = new Map();
+  return g.__vsDistrictIndexCache;
+}
+
 let provinceGeoIndex: GeoNameIndex | null = null;
-const cityIndexCache = new Map<number, CityMapCacheEntry>();
 
 function getProvinceGeoIndex(): GeoNameIndex {
   if (provinceGeoIndex) return provinceGeoIndex;
@@ -210,6 +227,7 @@ export async function loadOfflineGeoMap(mapId: string): Promise<RegionsGeo | nul
 
 async function ensureCityMap(provinceAdcode: number): Promise<GeoNameIndex | null> {
   const mapId = geoMapId(provinceAdcode);
+  const cityIndexCache = getCityIndexCache();
   const cached = cityIndexCache.get(provinceAdcode);
   if (cached?.geo?.features?.length) {
     // 对标今早 HMR：缓存命中也 upsert，避免 OfflineGeoPort 与 cache 失步
@@ -227,11 +245,20 @@ async function ensureCityMap(provinceAdcode: number): Promise<GeoNameIndex | nul
 }
 
 async function ensureDistrictMap(cityAdcode: number): Promise<GeoNameIndex | null> {
+  const mapId = geoMapId(cityAdcode);
+  const districtIndexCache = getDistrictIndexCache();
+  const cached = districtIndexCache.get(cityAdcode);
+  if (cached?.geo?.features?.length) {
+    registerGeoMap(mapId, cached.geo);
+    if (isOfflineGeoMapReady(mapId)) return cached.index;
+  }
+
   const geo = await loadBundledGeo(districtModulePath(cityAdcode));
   if (!geo?.features?.length) return null;
-  const mapId = geoMapId(cityAdcode);
   registerGeoMap(mapId, geo);
-  return buildGeoNameIndex(geo.features);
+  const index = buildGeoNameIndex(geo.features);
+  districtIndexCache.set(cityAdcode, { index, geo });
+  return index;
 }
 
 function unwrapGlobGeoModule(mod: unknown): RegionsGeo | null {

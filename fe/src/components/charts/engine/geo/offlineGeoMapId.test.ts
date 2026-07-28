@@ -57,4 +57,13 @@ describe("offline geo map id resolution", () => {
     const geo = await loadOfflineGeoMap("vs-geo-630000");
     expect(geo?.features?.length).toBeGreaterThan(0);
   });
+
+  it("recovers changsha district map after empty registry overwrite", async () => {
+    const mapId = "vs-geo-430100";
+    expect(await ensureOfflineGeoMap(mapId)).toBe(true);
+    registerOfflineGeoMap(mapId, { features: [] });
+    expect(getOfflineGeoMap(mapId)?.features?.length ?? 0).toBe(0);
+    const geo = await loadOfflineGeoMap(mapId);
+    expect(geo?.features?.length).toBeGreaterThan(0);
+  });
 });

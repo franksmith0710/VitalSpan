@@ -943,7 +943,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     try {
       // 关联组件若画布侧留下了本地 config，先推库再 strip，避免「保存成功但配置丢失」
       try {
-        await flushLinkedLocalOverridesToLibrary(widgets, componentMap);
+        await flushLinkedLocalOverridesToLibrary(widgetsRef.current, componentMap);
         await refetchComponents();
       } catch (syncErr) {
         toast.error(mapApiError(syncErr));

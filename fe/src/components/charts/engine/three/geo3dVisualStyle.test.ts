@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import {
   applyGeo3dSceneClouds,
+  applyGeo3dPlatformEffectsLayer,
   buildGeo3dStyleContentSig,
   geo3dPresetDefaults,
   hasCustomGeo3dShellColor,
+  resolveGeo3dPlatformEffects,
   resolveGeo3dSceneClouds,
   resolveGeo3dShellColorHex,
   resolveGeo3dShellOpacity,
@@ -22,6 +24,7 @@ describe("geo3dVisualStyle", () => {
     const defaults = geo3dPresetDefaults("tech");
     expect(defaults.terrainTexture).toBe(false);
     expect(defaults.sceneFog).toBe(true);
+    expect(defaults.platformEffects).toBe(true);
 
     const visual = resolveGeo3dVisualStyle({ stylePreset: "tech" }, true);
     expect(visual.preset).toBe("tech");
@@ -40,6 +43,29 @@ describe("geo3dVisualStyle", () => {
     expect(resolveGeo3dSceneClouds({ stylePreset: "tech" })).toBe(true);
     expect(resolveGeo3dSceneClouds({ stylePreset: "satellite" })).toBe(false);
     expect(resolveGeo3dSceneClouds({ stylePreset: "tech", sceneFog: false })).toBe(false);
+  });
+
+  it("platform effects resolve from preset when unset", () => {
+    expect(resolveGeo3dPlatformEffects({ stylePreset: "tech" })).toBe(true);
+    expect(resolveGeo3dPlatformEffects({ stylePreset: "satellite" })).toBe(false);
+    expect(resolveGeo3dPlatformEffects({ stylePreset: "tech", platformEffects: false })).toBe(
+      false,
+    );
+  });
+
+  it("applyGeo3dPlatformEffectsLayer mounts platform group", () => {
+    const scene = new THREE.Scene();
+    const visual = resolveGeo3dVisualStyle({ stylePreset: "tech" }, true);
+    const handle = applyGeo3dPlatformEffectsLayer(
+      scene,
+      { halfX: 9, halfZ: 6, minY: -0.5 },
+      visual,
+      { stylePreset: "tech" },
+      true,
+    );
+    expect(handle).not.toBeNull();
+    expect(scene.children.some((child) => child.name === "geo3d-platform-effects")).toBe(true);
+    handle?.dispose();
   });
 
   it("applyGeo3dSceneClouds mounts cloud group instead of linear fog", () => {
@@ -88,6 +114,38 @@ describe("geo3dVisualStyle", () => {
   it("content sig changes when cloud tuning changes", () => {
     const a = buildGeo3dStyleContentSig({ stylePreset: "tech", sceneCloudDensity: 0.4 });
     const b = buildGeo3dStyleContentSig({ stylePreset: "tech", sceneCloudDensity: 0.9 });
+    expect(a).not.toBe(b);
+  });
+
+  it("content sig changes when platform effects toggle", () => {
+    const a = buildGeo3dStyleContentSig({ stylePreset: "tech", platformEffects: true });
+    const b = buildGeo3dStyleContentSig({ stylePreset: "tech", platformEffects: false });
+    expect(a).not.toBe(b);
+  });
+
+  it("content sig changes when platform layer toggles", () => {
+    const a = buildGeo3dStyleContentSig({
+      stylePreset: "tech",
+      platformEffects: true,
+    });
+    const b = buildGeo3dStyleContentSig({
+      stylePreset: "tech",
+      platformEffects: true,
+      platformRipple: false,
+    });
+    expect(a).not.toBe(b);
+  });
+
+  it("content sig changes when platform color changes", () => {
+    const a = buildGeo3dStyleContentSig({
+      stylePreset: "tech",
+      platformEffects: true,
+    });
+    const b = buildGeo3dStyleContentSig({
+      stylePreset: "tech",
+      platformEffects: true,
+      platformRippleColor: "#ff6600",
+    });
     expect(a).not.toBe(b);
   });
 });

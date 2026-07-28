@@ -12,10 +12,24 @@ import {
   DEFAULT_SCENE_CLOUD_SPEED,
 } from "@/components/charts/engine/three/geo3dSceneCloudStyle";
 import {
+  DEFAULT_PLATFORM_GRID_OPACITY,
+  DEFAULT_PLATFORM_HIGHLIGHT_OPACITY,
+  DEFAULT_PLATFORM_RING_OPACITY,
+  DEFAULT_PLATFORM_RIPPLE_OPACITY,
+  DEFAULT_PLATFORM_SIZE_SCALE,
+  hasCustomPlatformGridColor,
+  hasCustomPlatformHighlightColor,
+  hasCustomPlatformRippleColor,
+  resolvePlatformGridColorHex,
+  resolvePlatformHighlightColorHex,
+  resolvePlatformRippleColorHex,
+} from "@/components/charts/engine/three/geo3dPlatformStyle";
+import {
   GEO3D_STYLE_PRESETS,
   geo3dPresetDefaults,
   hasCustomGeo3dShellColor,
   resolveGeo3dSceneClouds,
+  resolveGeo3dPlatformEffects,
   resolveGeo3dShellColorHex,
   resolveGeo3dStylePreset,
   type Geo3dStylePreset,
@@ -71,6 +85,11 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
   const showRegionBorder = resolveGeoRegionBorderShow(geo);
   const borderFlow = resolveGeoRegionBorderFlow(geo);
   const borderColorPreset = is3d ? resolveGeo3dStylePreset(geo3d) : undefined;
+  const platformOn = resolveGeo3dPlatformEffects(geo3d);
+  const platformHighlightOn = platformOn && geo3d.platformHighlight !== false;
+  const platformRingsOn = platformOn && geo3d.platformRings !== false;
+  const platformGridOn = platformOn && geo3d.platformGrid !== false;
+  const platformRippleOn = platformOn && geo3d.platformRipple !== false;
 
   return (
     <ChartInspectorSection title={isMap ? "地图样式" : "热力图样式"} data-testid="chart-geo-style">
@@ -273,6 +292,142 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                   ariaLabel="场景云高度"
                   onChange={(sceneCloudHeight) => patchGeo3d({ sceneCloudHeight })}
                 />
+              </>
+            ) : null}
+            <InspectorSwitchRow
+              label="底座装饰"
+              checked={platformOn}
+              onCheckedChange={(platformEffects) => patchGeo3d({ platformEffects })}
+            />
+            {platformOn ? (
+              <>
+                <InspectorSwitchRow
+                  label="中心高光"
+                  checked={platformHighlightOn}
+                  onCheckedChange={(platformHighlight) => patchGeo3d({ platformHighlight })}
+                />
+                {platformHighlightOn ? (
+                  <DeAttrSliderField
+                    label="高光不透明度"
+                    compact
+                    value={geo3d.platformHighlightOpacity}
+                    fallback={DEFAULT_PLATFORM_HIGHLIGHT_OPACITY}
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    ariaLabel="底座高光不透明度"
+                    onChange={(platformHighlightOpacity) => patchGeo3d({ platformHighlightOpacity })}
+                  />
+                ) : null}
+                <InspectorSwitchRow
+                  label="旋转双环"
+                  checked={platformRingsOn}
+                  onCheckedChange={(platformRings) => patchGeo3d({ platformRings })}
+                />
+                {platformHighlightOn || platformRingsOn ? (
+                  <InspectorInlineColorRow
+                    label="高光/环颜色"
+                    value={resolvePlatformHighlightColorHex(geo3d, borderColorPreset, isDarkTheme)}
+                    fallbackValue={resolvePlatformHighlightColorHex(
+                      { ...geo3d, platformHighlightColor: undefined },
+                      borderColorPreset,
+                      isDarkTheme,
+                    )}
+                    allowClear={hasCustomPlatformHighlightColor(geo3d)}
+                    swatches={WIDGET_BORDER_RECOMMENDED}
+                    onChange={(next) => patchGeo3d({ platformHighlightColor: next })}
+                  />
+                ) : null}
+                {platformRingsOn ? (
+                  <DeAttrSliderField
+                    label="双环不透明度"
+                    compact
+                    value={geo3d.platformRingOpacity}
+                    fallback={DEFAULT_PLATFORM_RING_OPACITY}
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    ariaLabel="底座双环不透明度"
+                    onChange={(platformRingOpacity) => patchGeo3d({ platformRingOpacity })}
+                  />
+                ) : null}
+                <InspectorSwitchRow
+                  label="底网格"
+                  checked={platformGridOn}
+                  onCheckedChange={(platformGrid) => patchGeo3d({ platformGrid })}
+                />
+                {platformGridOn ? (
+                  <>
+                    <InspectorInlineColorRow
+                      label="网格颜色"
+                      value={resolvePlatformGridColorHex(geo3d, borderColorPreset, isDarkTheme)}
+                      fallbackValue={resolvePlatformGridColorHex(
+                        { ...geo3d, platformGridColor: undefined },
+                        borderColorPreset,
+                        isDarkTheme,
+                      )}
+                      allowClear={hasCustomPlatformGridColor(geo3d)}
+                      swatches={WIDGET_BORDER_RECOMMENDED}
+                      onChange={(next) => patchGeo3d({ platformGridColor: next })}
+                    />
+                    <DeAttrSliderField
+                      label="网格不透明度"
+                      compact
+                      value={geo3d.platformGridOpacity}
+                      fallback={DEFAULT_PLATFORM_GRID_OPACITY}
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      ariaLabel="底座网格不透明度"
+                      onChange={(platformGridOpacity) => patchGeo3d({ platformGridOpacity })}
+                    />
+                  </>
+                ) : null}
+                <InspectorSwitchRow
+                  label="扩散涟漪"
+                  checked={platformRippleOn}
+                  onCheckedChange={(platformRipple) => patchGeo3d({ platformRipple })}
+                />
+                {platformRippleOn ? (
+                  <>
+                    <InspectorInlineColorRow
+                      label="涟漪颜色"
+                      value={resolvePlatformRippleColorHex(geo3d, borderColorPreset, isDarkTheme)}
+                      fallbackValue={resolvePlatformRippleColorHex(
+                        { ...geo3d, platformRippleColor: undefined },
+                        borderColorPreset,
+                        isDarkTheme,
+                      )}
+                      allowClear={hasCustomPlatformRippleColor(geo3d)}
+                      swatches={WIDGET_BORDER_RECOMMENDED}
+                      onChange={(next) => patchGeo3d({ platformRippleColor: next })}
+                    />
+                    <DeAttrSliderField
+                      label="涟漪不透明度"
+                      compact
+                      value={geo3d.platformRippleOpacity}
+                      fallback={DEFAULT_PLATFORM_RIPPLE_OPACITY}
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      ariaLabel="底座涟漪不透明度"
+                      onChange={(platformRippleOpacity) => patchGeo3d({ platformRippleOpacity })}
+                    />
+                  </>
+                ) : null}
+                {(platformHighlightOn || platformRingsOn) ? (
+                  <DeAttrSliderField
+                    label="环尺寸"
+                    compact
+                    value={geo3d.platformSizeScale}
+                    fallback={DEFAULT_PLATFORM_SIZE_SCALE}
+                    min={0.4}
+                    max={1.6}
+                    step={0.05}
+                    ariaLabel="底座环尺寸倍率"
+                    onChange={(platformSizeScale) => patchGeo3d({ platformSizeScale })}
+                  />
+                ) : null}
               </>
             ) : null}
           </>

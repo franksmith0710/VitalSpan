@@ -36,6 +36,7 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
     isDark = false,
     geoStyle = {},
     onPointClick,
+    drillDepth = 0,
   } = config;
 
   const mapId = mapIdRaw?.trim() || VS_REGIONS_MAP_ID;
@@ -70,6 +71,7 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
     metricField,
     mapId,
     knownRegionNames,
+    drillDepth,
   ).filter((f) => f.geometry != null);
   if (features.length === 0) {
     container.replaceChildren();

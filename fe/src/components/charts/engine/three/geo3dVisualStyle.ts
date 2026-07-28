@@ -11,6 +11,15 @@ import {
   type Geo3dSceneCloudsHandle,
 } from "@/components/charts/engine/three/geo3dSceneClouds";
 import {
+  buildGeo3dPlatformEffects,
+  removeGeo3dPlatformEffects,
+  type Geo3dPlatformEffectsHandle,
+} from "@/components/charts/engine/three/geo3dPlatformEffects";
+import {
+  buildPlatformEffectsContentSig,
+  resolvePlatformEffectsStyle,
+} from "@/components/charts/engine/three/geo3dPlatformStyle";
+import {
   resolveGeo3dSceneCloudDensity,
   resolveGeo3dSceneCloudHeight,
   resolveGeo3dSceneCloudSpeed,
@@ -62,6 +71,8 @@ type PresetBase = {
   capTintMixScale: number;
   /** 科技预设：卫星顶面加发光质感（MeshStandard） */
   techSatelliteOverlay: boolean;
+  /** 地图下方双环/网格/涟漪底座装饰 */
+  platformEffects: boolean;
 };
 
 export type ResolvedGeo3dVisualStyle = PresetBase & {
@@ -98,6 +109,7 @@ const PRESET_BASE: Record<Geo3dStylePreset, PresetBase> = {
     preferTerrainTexture: true,
     capTintMixScale: 1,
     techSatelliteOverlay: false,
+    platformEffects: false,
   },
   tech: {
     shellColorDark: 0x0b1520,
@@ -127,6 +139,7 @@ const PRESET_BASE: Record<Geo3dStylePreset, PresetBase> = {
     preferTerrainTexture: false,
     capTintMixScale: 1.55,
     techSatelliteOverlay: true,
+    platformEffects: true,
   },
   classic: {
     shellColorDark: 0x3d2e1f,
@@ -156,6 +169,7 @@ const PRESET_BASE: Record<Geo3dStylePreset, PresetBase> = {
     preferTerrainTexture: false,
     capTintMixScale: 1,
     techSatelliteOverlay: false,
+    platformEffects: false,
   },
   minimal: {
     shellColorDark: 0x1e293b,
@@ -185,6 +199,7 @@ const PRESET_BASE: Record<Geo3dStylePreset, PresetBase> = {
     preferTerrainTexture: false,
     capTintMixScale: 0.75,
     techSatelliteOverlay: false,
+    platformEffects: false,
   },
 };
 
@@ -203,6 +218,11 @@ export function resolveGeo3dSceneClouds(style: ChartGeo3dStyle): boolean {
   return style.sceneFog ?? PRESET_BASE[preset].sceneFog;
 }
 
+export function resolveGeo3dPlatformEffects(style: ChartGeo3dStyle): boolean {
+  const preset = resolveGeo3dStylePreset(style);
+  return style.platformEffects ?? PRESET_BASE[preset].platformEffects;
+}
+
 /** @deprecated 使用 {@link resolveGeo3dSceneClouds} */
 export const resolveGeo3dSceneFog = resolveGeo3dSceneClouds;
 
@@ -216,6 +236,23 @@ export function applyGeo3dSceneClouds(
   removeGeo3dSceneClouds(scene);
   if (!visual.sceneFog) return null;
   const handle = buildGeo3dSceneClouds(layout, geo3dStyle);
+  scene.add(handle.group);
+  return handle;
+}
+
+/** 布局完成后挂载地图下方底座装饰（双环/网格/涟漪） */
+export function applyGeo3dPlatformEffectsLayer(
+  scene: THREE.Scene,
+  layout: Pick<ThreeGeoOrbitLayout, "halfX" | "halfZ" | "minY">,
+  visual: ResolvedGeo3dVisualStyle,
+  geo3dStyle: ChartGeo3dStyle = {},
+  isDark = true,
+): Geo3dPlatformEffectsHandle | null {
+  removeGeo3dPlatformEffects(scene);
+  if (!resolveGeo3dPlatformEffects(geo3dStyle)) return null;
+  const resolved = resolvePlatformEffectsStyle(geo3dStyle, visual.preset, isDark, true);
+  if (!Object.values(resolved.layers).some(Boolean)) return null;
+  const handle = buildGeo3dPlatformEffects(layout, resolved);
   scene.add(handle.group);
   return handle;
 }
@@ -299,6 +336,7 @@ export function geo3dPresetDefaults(preset: Geo3dStylePreset): Partial<ChartGeo3
     stylePreset: preset,
     terrainTexture: base.preferTerrainTexture,
     sceneFog: base.sceneFog,
+    platformEffects: base.platformEffects,
   };
 }
 
@@ -316,6 +354,8 @@ export function buildGeo3dStyleContentSig(
     resolveGeo3dSceneCloudDensity(style),
     resolveGeo3dSceneCloudSpeed(style),
     resolveGeo3dSceneCloudHeight(style),
+    resolveGeo3dPlatformEffects(style) ? 1 : 0,
+    buildPlatformEffectsContentSig(style, resolveGeo3dPlatformEffects(style)),
     style.shellColor?.toLowerCase() ?? "",
     resolveGeo3dShellOpacity(style),
     geoStyle.showRegionBorder !== false ? 1 : 0,

@@ -7,6 +7,9 @@ import {
 } from "@/lib/geoMapLevels";
 import { VS_REGIONS_MAP_ID, listVsRegionNames } from "@/lib/geoMapChart";
 
+export const GEO_MAP_LEVEL_LOAD_FAILED_MSG =
+  "地图层级加载失败，请返回上一级或重试";
+
 function createProvinceContext(): GeoMapLevelContext {
   return {
     mapId: VS_REGIONS_MAP_ID,
@@ -41,6 +44,7 @@ export function useGeoMapLevel({ enabled, config, drillStack }: Options) {
   const [resolvedStackKey, setResolvedStackKey] = useState("");
   const configRef = useRef(config);
   const stackRef = useRef(drillStack);
+  const requestSeqRef = useRef(0);
   configRef.current = config;
   stackRef.current = drillStack;
 
@@ -55,15 +59,26 @@ export function useGeoMapLevel({ enabled, config, drillStack }: Options) {
 
     let cancelled = false;
     const requestKey = stackKey;
+    const seq = ++requestSeqRef.current;
     void resolveGeoMapLevelContext({
       config: configRef.current,
       drillStack: stackRef.current,
-    }).then((next) => {
-      if (cancelled) return;
-      setContext(next);
-      setResolvedStackKey(requestKey);
-      setVersion((v) => v + 1);
-    });
+    })
+      .then((next) => {
+        if (cancelled || seq !== requestSeqRef.current) return;
+        setContext(next);
+        setResolvedStackKey(requestKey);
+        setVersion((v) => v + 1);
+      })
+      .catch(() => {
+        if (cancelled || seq !== requestSeqRef.current) return;
+        setContext({
+          ...createProvinceContext(),
+          missingAsset: GEO_MAP_LEVEL_LOAD_FAILED_MSG,
+        });
+        setResolvedStackKey(requestKey);
+        setVersion((v) => v + 1);
+      });
 
     return () => {
       cancelled = true;

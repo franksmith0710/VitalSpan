@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { isGeoMapLevelReady } from "@/hooks/useGeoMapLevel";
+import {
+  GEO_MAP_LEVEL_LOAD_FAILED_MSG,
+  isGeoMapLevelReady,
+} from "@/hooks/useGeoMapLevel";
 import { VS_REGIONS_MAP_ID } from "@/lib/geoMapChart";
 
 describe("isGeoMapLevelReady", () => {
@@ -50,6 +53,19 @@ describe("isGeoMapLevelReady", () => {
         {
           ...national,
           missingAsset: "台湾省暂无市级离线边界资产",
+        },
+        false,
+      ),
+    ).toBe(true);
+  });
+
+  it("allows resolve failure context to exit loading gate", () => {
+    expect(
+      isGeoMapLevelReady(
+        [{ field: "province", value: "湖南省" }],
+        {
+          ...national,
+          missingAsset: GEO_MAP_LEVEL_LOAD_FAILED_MSG,
         },
         false,
       ),

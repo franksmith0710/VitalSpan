@@ -75,7 +75,7 @@ import {
   toGeoBorderFlowDisplayPhase,
 } from "@/components/charts/engine/three/geoBorderFlowMaterial";
 import { prefersNativeReducedMotion } from "@/components/charts/engine/d3/core/animate";
-import { resolveGeo3dVisualStyle, applyGeo3dSceneClouds, hasCustomGeo3dShellColor, resolveGeo3dShellColorNumber, resolveGeo3dShellOpacity } from "@/components/charts/engine/three/geo3dVisualStyle";
+import { resolveGeo3dVisualStyle, applyGeo3dSceneClouds, applyGeo3dPlatformEffectsLayer, hasCustomGeo3dShellColor, resolveGeo3dShellColorNumber, resolveGeo3dShellOpacity } from "@/components/charts/engine/three/geo3dVisualStyle";
 
 function noopDispose(): void {
   /* empty */
@@ -556,6 +556,7 @@ export async function renderThreeChoroplethChart(
     scene.add(mapGroup);
     const orbitLayout = layoutThreeGeoMapGroup(mapGroup, { preCentered: false });
     let sceneClouds: ReturnType<typeof applyGeo3dSceneClouds> = null;
+    let platformEffects: ReturnType<typeof applyGeo3dPlatformEffectsLayer> = null;
     try {
       sceneClouds = applyGeo3dSceneClouds(scene, orbitLayout, visualStyle, geo3dStyle);
     } catch (cloudErr) {
@@ -563,6 +564,21 @@ export async function renderThreeChoroplethChart(
         console.warn("[map-3d] scene clouds disabled after init failure", cloudErr);
       }
     }
+    try {
+      platformEffects = applyGeo3dPlatformEffectsLayer(
+        scene,
+        orbitLayout,
+        visualStyle,
+        geo3dStyle,
+        isDark,
+      );
+    } catch (platformErr) {
+      if (import.meta.env.DEV) {
+        console.warn("[map-3d] platform effects disabled after init failure", platformErr);
+      }
+    }
+
+    const hasSceneDecor = () => Boolean(sceneClouds || platformEffects);
 
     const roam = resolveEmbeddedGeoRoam(geoStyle.roam);
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -734,7 +750,7 @@ export async function renderThreeChoroplethChart(
       if (
         !cloudLoopActive ||
         renderDisposed ||
-        !sceneClouds ||
+        !hasSceneDecor() ||
         prefersNativeReducedMotion()
       ) {
         return;
@@ -742,12 +758,13 @@ export async function renderThreeChoroplethChart(
       const now = performance.now();
       const deltaSec = Math.min(0.05, (now - lastCloudTickMs) / 1000);
       lastCloudTickMs = now;
-      sceneClouds.update(deltaSec, camera);
+      sceneClouds?.update(deltaSec, camera);
+      platformEffects?.update(deltaSec);
       renderFrame();
       if (
         cloudLoopActive &&
         !renderDisposed &&
-        sceneClouds &&
+        hasSceneDecor() &&
         !prefersNativeReducedMotion()
       ) {
         cloudFrameId = requestAnimationFrame(tickClouds);
@@ -755,7 +772,7 @@ export async function renderThreeChoroplethChart(
     };
 
     const startClouds = () => {
-      if (renderDisposed || !sceneClouds || prefersNativeReducedMotion()) return;
+      if (renderDisposed || !hasSceneDecor() || prefersNativeReducedMotion()) return;
       cloudLoopActive = true;
       if (!cloudFrameId) {
         cloudStartMs = performance.now();
@@ -780,7 +797,7 @@ export async function renderThreeChoroplethChart(
       if (!wasVisible && borderFlow.enabled) {
         resumeBorderFlow();
       }
-      if (!wasVisible && sceneClouds) {
+      if (!wasVisible && hasSceneDecor()) {
         resumeClouds();
       }
     };
@@ -1055,7 +1072,7 @@ export async function renderThreeChoroplethChart(
     if (borderFlow.enabled) {
       resumeBorderFlow();
     }
-    if (sceneClouds) {
+    if (hasSceneDecor()) {
       resumeClouds();
     }
 
@@ -1069,7 +1086,7 @@ export async function renderThreeChoroplethChart(
       renderer.setSize(nextWidth, nextHeight);
       renderFrame();
       if (borderFlow.enabled) resumeBorderFlow();
-      if (sceneClouds) resumeClouds();
+      if (hasSceneDecor()) resumeClouds();
       return true;
     };
 
@@ -1109,6 +1126,7 @@ export async function renderThreeChoroplethChart(
       detachTerrainHint();
       borderFlowParticleSystem?.dispose();
       sceneClouds?.dispose();
+      platformEffects?.dispose();
       borderFlowParticleSystem = null;
       terrainPack?.dispose();
       terrainPack = null;
