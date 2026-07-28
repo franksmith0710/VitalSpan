@@ -12,10 +12,6 @@ import {
   ListGhostEmptyState,
   PanelEmptyStateSteps,
 } from "@/components/ui/panel-empty-state";
-import {
-  ChartMountProvider,
-  CHART_MOUNT_MAX_LIST,
-} from "@/components/charts/ChartMountContext";
 import { VizComponentCard } from "@/components/dashboard/viz-components/VizComponentCard";
 import { InsertVizComponentDialog } from "@/components/dashboard/viz-components/InsertVizComponentDialog";
 import { ComponentReferencesDialog } from "@/components/dashboard/viz-components/ComponentReferencesDialog";
@@ -262,25 +258,23 @@ export function VizComponentsHubPage() {
           footer={<PanelEmptyStateSteps steps={EMPTY_STEPS} />}
         />
       ) : (
-        <ChartMountProvider maxConcurrent={CHART_MOUNT_MAX_LIST}>
-          <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {items.map((item) => (
-              <VizComponentCard
-                key={item.id}
-                item={item}
-                payload={payloadById.get(item.id)}
-                payloadLoading={resolveQuery.isLoading && !payloadById.has(item.id)}
-                canManage={canManage}
-                pending={pending}
-                onInsert={() => setInsertTarget(item)}
-                onViewReferences={() => setReferencesTarget(item)}
-                onPublish={() => publishMutation.mutate(item.id)}
-                onArchive={() => archiveMutation.mutate(item.id)}
-                onDelete={() => deleteMutation.mutate(item.id)}
-              />
-            ))}
-          </section>
-        </ChartMountProvider>
+        <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          {items.map((item) => (
+            <VizComponentCard
+              key={item.id}
+              item={item}
+              payload={payloadById.get(item.id)}
+              payloadLoading={resolveQuery.isLoading && !payloadById.has(item.id)}
+              canManage={canManage}
+              pending={pending}
+              onInsert={() => setInsertTarget(item)}
+              onViewReferences={() => setReferencesTarget(item)}
+              onPublish={() => publishMutation.mutate(item.id)}
+              onArchive={() => archiveMutation.mutate(item.id)}
+              onDelete={() => deleteMutation.mutate(item.id)}
+            />
+          ))}
+        </section>
       )}
 
       <InsertVizComponentDialog

@@ -34,12 +34,14 @@ import {
   isProvinceTerrainPackUsable,
   resolveProvinceTerrainProbeUv,
 } from "@/components/charts/engine/three/geo/provinceTerrainProbe";
-import { buildGeoFlatPlateMesh, resolveGeoPlateDepth, GEO_BORDER_ABOVE_CAP_Z, resolveGeoCapTopZ } from "@/components/charts/engine/three/buildGeoFlatPlateMesh";
+import {
+  buildGeoFlatPlateMesh, resolveGeoPlateDepth, GEO_BORDER_ABOVE_CAP_Z, resolveGeoCapTopZ } from "@/components/charts/engine/three/buildGeoFlatPlateMesh";
+import { resolveRegionAnchorProjected } from "@/components/charts/engine/three/geo3dRegionCentroid";
 import {
   buildGeoOuterBorderFlowFromCapSegments,
   collectCapBorderSegments,
 } from "@/components/charts/engine/three/geoOuterBorderFlow";
-import type { GeoBorderFlowParticleSystem } from "@/components/charts/engine/three/geoBorderFlowParticles";
+import type { GeoBorderFlyLineSystem } from "@/components/charts/engine/three/geoBorderFlowFlyLine";
 import { mountThreeGeoVisualMap } from "@/components/charts/engine/three/threeGeoVisualMap";
 import {
   configureThreeGeoOrbitControls,
@@ -53,7 +55,7 @@ import {
 } from "@/components/charts/engine/three/geo3dOrbitState";
 import { projectWorldToViewport, provinceWorldCenter } from "@/components/charts/engine/three/threeGeoScreen";
 import { resolveEmbeddedGeoRoam, VS_REGIONS_MAP_ID } from "@/components/charts/engine/geo/geoConstants";
-import { DEFAULT_GEO3D_EXTRUDE_INTENSITY } from "@/lib/chartDeStyle";
+import { DEFAULT_GEO3D_EXTRUDE_INTENSITY, resolveGeoVisualMapEnabled } from "@/lib/chartDeStyle";
 import { resolveGeo3dQuality, shouldRenderGeo3d } from "@/components/charts/engine/three/geo3dQuality";
 import {
   releaseWebGLSlot,
@@ -295,6 +297,7 @@ export async function renderThreeChoroplethChart(
   const webglSlotKey =
     instanceKey ??
     `geo3d-${resolvedMapId}-${String(container.dataset.widgetId ?? (container.id || "anon"))}`;
+  const orbitStateKey = instanceKey ? `${instanceKey}:${resolvedMapId}` : undefined;
   let slotReleased = false;
   const releaseSlot = () => {
     if (slotReleased) return;
@@ -331,7 +334,7 @@ export async function renderThreeChoroplethChart(
     const maxVal = Math.max(...values, 1);
     const plateScale = Math.max(0.35, geo3dStyle.extrudeIntensity ?? DEFAULT_GEO3D_EXTRUDE_INTENSITY);
     const regionBorder = resolveGeoRegionBorder(geoStyle, isDark, { preset: visualStyle.preset });
-    const borderFlow = resolveGeoRegionBorderFlow(geoStyle);
+    const borderFlow = resolveGeoRegionBorderFlow(geoStyle, { chartType: "map-3d" });
     const borderColor = regionBorder.colorHex;
     const borderOpacity = regionBorder.opacity;
     const customShell = hasCustomGeo3dShellColor(geo3dStyle);
@@ -344,7 +347,7 @@ export async function renderThreeChoroplethChart(
         : visualStyle.shellEmissiveLight;
     const shellEmissiveIntensity = customShell ? 0 : visualStyle.shellEmissiveIntensity;
     const capEmissiveIntensity = isDark ? visualStyle.capEmissiveDark : visualStyle.capEmissiveLight;
-    const showVisualMap = geoStyle.visualMap !== false;
+    const showVisualMap = resolveGeoVisualMapEnabled(geoStyle, "map-3d");
     const terrainOn = resolveTerrainTextureEnabled(
       renderTier as Geo3dRenderTier,
       geo3dStyle,
@@ -440,8 +443,8 @@ export async function renderThreeChoroplethChart(
 
     const mapGroup = new THREE.Group();
     const meshes: THREE.Group[] = [];
+    let borderFlyLine: GeoBorderFlyLineSystem | null = null;
     const borderFlowMaterials: THREE.ShaderMaterial[] = [];
-    let borderFlowParticleSystem: GeoBorderFlowParticleSystem | null = null;
     const perShapeTerrainOpts = terrainPack
       ? {
           terrainColorMap: terrainPack.colorMap,
@@ -463,6 +466,7 @@ export async function renderThreeChoroplethChart(
 
       const color = colorForValue(feature.value, minVal, maxVal, surface);
       const valueT = maxVal <= minVal ? 1 : (feature.value - minVal) / (maxVal - minVal);
+      const anchorXY = resolveRegionAnchorProjected(feature, project);
 
       for (const shape of shapes) {
         const built = buildGeoFlatPlateMesh(shape, plateDepth, color, borderColor, isDark, {
@@ -490,10 +494,17 @@ export async function renderThreeChoroplethChart(
         for (const pt of shape.getPoints()) {
           capBox2.expandByPoint(pt);
         }
-        const capAnchorLocal = new THREE.Vector3(
-          (capBox2.min.x + capBox2.max.x) * 0.5,
-          (capBox2.min.y + capBox2.max.y) * 0.5,
-          capTopZForAnchor,
+        const capAnchorLocal = anchorXY
+          ? new THREE.Vector3(anchorXY[0], anchorXY[1], capTopZForAnchor)
+          : new THREE.Vector3(
+              (capBox2.min.x + capBox2.max.x) * 0.5,
+              (capBox2.min.y + capBox2.max.y) * 0.5,
+              capTopZForAnchor,
+            );
+        const capExtent = Math.max(
+          capBox2.max.x - capBox2.min.x,
+          capBox2.max.y - capBox2.min.y,
+          1e-4,
         );
         built.mesh.userData = {
           name: feature.name,
@@ -507,6 +518,7 @@ export async function renderThreeChoroplethChart(
           borderColor,
           borderOpacity,
           capAnchorLocal,
+          capExtent,
         };
         mapGroup.add(built.mesh);
         meshes.push(built.mesh);
@@ -532,10 +544,10 @@ export async function renderThreeChoroplethChart(
       }
     }
     if (outerBorderFlowBundle) {
+      borderFlyLine = outerBorderFlowBundle.flyLine;
       if (isGeoBorderFlowMaterial(outerBorderFlowBundle.lines.material)) {
         borderFlowMaterials.push(outerBorderFlowBundle.lines.material);
       }
-      borderFlowParticleSystem = outerBorderFlowBundle.particles;
       outerBorderFlowBundle.group.visible = borderFlow.enabled;
       mapGroup.add(outerBorderFlowBundle.group);
     }
@@ -552,7 +564,7 @@ export async function renderThreeChoroplethChart(
       console.debug("[map-3d] border flow ready", {
         bundle: Boolean(outerBorderFlowBundle),
         ringSegments: outerBorderFlowBundle
-          ? (outerBorderFlowBundle.lines.geometry.getAttribute("position")?.count ?? 0) / 2
+          ? (outerBorderFlowBundle.flyLine.points.geometry.getAttribute("position")?.count ?? 0)
           : 0,
       });
     }
@@ -629,12 +641,12 @@ export async function renderThreeChoroplethChart(
     const detachOrbitPan = configureThreeGeoOrbitControls(camera, controls, orbitLayout, roam, {
       enableDamping: orbitDamping,
     });
-    const savedOrbit = readGeo3dOrbitState(instanceKey);
+    const savedOrbit = readGeo3dOrbitState(orbitStateKey);
     if (savedOrbit) {
       applyGeo3dOrbitSnapshot(camera, controls, savedOrbit);
     }
     const persistOrbit = () => {
-      writeGeo3dOrbitState(instanceKey, captureGeo3dOrbitSnapshot(camera, controls));
+      writeGeo3dOrbitState(orbitStateKey, captureGeo3dOrbitSnapshot(camera, controls));
     };
     const detachGrabCursor = attachOrbitGrabCursor(renderer.domElement, controls, roam);
 
@@ -646,11 +658,11 @@ export async function renderThreeChoroplethChart(
     let cloudFrameId = 0;
     let borderFlowLoopActive = false;
     let cloudLoopActive = false;
-    let flowPhase = 0;
-    let flowStartMs = performance.now();
     let cloudStartMs = performance.now();
     let lastCloudTickMs = cloudStartMs;
-    let lastFlowTickMs = flowStartMs;
+    let lastFlowTickMs = cloudStartMs;
+    let flowPhase = 0;
+    let flowStartMs = cloudStartMs;
     let lastHoverEvent: PointerEvent | null = null;
     let visibleInViewport = true;
     const enableHoverPick = renderTier !== "thumbnail";
@@ -733,6 +745,9 @@ export async function renderThreeChoroplethChart(
     };
 
     const renderFrame = () => {
+      if (pointEffects?.pillarLayer) {
+        pointEffects.update(0, true, camera);
+      }
       if (pointEffects?.floatingLabels) {
         pointEffects.syncLabels(camera, renderer.domElement, container);
       }
@@ -772,7 +787,7 @@ export async function renderThreeChoroplethChart(
       for (const material of borderFlowMaterials) {
         material.uniforms.uPhase!.value = displayPhase;
       }
-      borderFlowParticleSystem?.update(displayPhase, deltaSec, borderFlow.speed);
+      borderFlyLine?.update(deltaSec, borderFlow.speed);
     };
 
     const stopBorderFlow = () => {
@@ -806,7 +821,7 @@ export async function renderThreeChoroplethChart(
       lastCloudTickMs = now;
       sceneClouds?.update(deltaSec, camera);
       platformEffects?.update(deltaSec);
-      pointEffects?.update(deltaSec, prefersNativeReducedMotion());
+      pointEffects?.update(deltaSec, prefersNativeReducedMotion(), camera);
       renderFrame();
       if (
         cloudLoopActive &&
@@ -1171,11 +1186,11 @@ export async function renderThreeChoroplethChart(
       detachOrbitPan();
       detachGrabCursor();
       detachTerrainHint();
-      borderFlowParticleSystem?.dispose();
+      borderFlyLine?.dispose();
+      borderFlyLine = null;
       sceneClouds?.dispose();
       platformEffects?.dispose();
       pointEffects?.dispose();
-      borderFlowParticleSystem = null;
       terrainPack?.dispose();
       terrainPack = null;
       for (const mesh of meshes) disposePlateGroup(mesh);

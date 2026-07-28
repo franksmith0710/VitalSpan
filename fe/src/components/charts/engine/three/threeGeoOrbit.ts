@@ -17,8 +17,11 @@ export type ThreeGeoOrbitLayout = {
 };
 
 const GEO_MAP_TARGET_SPAN = 18;
-const GEO_DEFAULT_AZIMUTH = -Math.PI / 12;
-const GEO_DEFAULT_POLAR = 0.58;
+/** 正北朝上：相机置于地图北侧（+Z），朝南俯视 */
+export const GEO_DEFAULT_AZIMUTH = 0;
+/** 相对水平面抬升 40°（OrbitControls 极角 = 90° - 40°） */
+export const GEO_DEFAULT_TILT_DEG = 40;
+export const GEO_DEFAULT_POLAR = Math.PI / 2 - (GEO_DEFAULT_TILT_DEG * Math.PI) / 180;
 
 export function computeGeoOrbitDefaultDistance(
   camera: THREE.PerspectiveCamera,

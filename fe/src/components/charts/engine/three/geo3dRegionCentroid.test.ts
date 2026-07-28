@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
+import chinaProvincesGeo from "@/assets/geo/china-provinces.json";
 import {
   buildRegionPointSamples,
+  resolveRegionAnchorProjected,
   resolveRegionCentroidLngLat,
 } from "@/components/charts/engine/three/geo3dRegionCentroid";
-
+import { joinOfflineMapFeatures } from "@/components/charts/engine/geo/OfflineGeoPort";
+import {
+  buildMapFitCollection,
+  buildThreeGeoProject,
+} from "@/components/charts/engine/three/geo/threeGeoProject";
 describe("geo3dRegionCentroid", () => {
   it("computes centroid from point geometry", () => {
     const geometry: GeoJSON.Point = {
@@ -80,10 +86,25 @@ describe("geo3dRegionCentroid", () => {
       0,
       1,
     )[0];
-    const fromLngLat = project([101, 31]);
     expect(fromProjected?.x).toBeCloseTo(1010, 3);
     expect(fromProjected?.y).toBeCloseTo(310, 3);
-    expect(fromLngLat?.[0]).toBeCloseTo(1010, 3);
-    expect(fromLngLat?.[1]).toBeCloseTo(310, 3);
+  });
+
+  it("anchors provinces using official centroid from joined features", () => {
+    const joined = joinOfflineMapFeatures([], ["p", "v"], "p", "v", "vs-regions");
+    const fitCollection = buildMapFitCollection(chinaProvincesGeo);
+    const ctx = buildThreeGeoProject(800, 600, fitCollection.features, fitCollection);
+    const shandong = joined.find((f) => f.name === "山东省");
+    const hebei = joined.find((f) => f.name === "河北省");
+    expect(shandong?.labelLngLat).toBeTruthy();
+    expect(hebei?.labelLngLat).toBeTruthy();
+
+    const shandongAnchor = resolveRegionAnchorProjected(shandong!, ctx.project);
+    const hebeiAnchor = resolveRegionAnchorProjected(hebei!, ctx.project);
+
+    expect(shandongAnchor![0]).toBeCloseTo(ctx.project(shandong!.labelLngLat!)![0], 3);
+    expect(shandongAnchor![1]).toBeCloseTo(ctx.project(shandong!.labelLngLat!)![1], 3);
+    expect(hebeiAnchor![0]).toBeCloseTo(ctx.project(hebei!.labelLngLat!)![0], 3);
+    expect(hebeiAnchor![1]).toBeCloseTo(ctx.project(hebei!.labelLngLat!)![1], 3);
   });
 });

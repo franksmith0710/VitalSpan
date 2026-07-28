@@ -8,7 +8,7 @@ import {
 describe("geo3dPointEffectsStyle", () => {
   it("tech preset enables point effects by default", () => {
     expect(resolveGeo3dPointEffects({ stylePreset: "tech" })).toBe(true);
-    expect(resolveGeo3dPointEffects({ stylePreset: "satellite" })).toBe(false);
+    expect(resolveGeo3dPointEffects({ stylePreset: "satellite" })).toBe(true);
   });
 
   it("respects per-layer toggles", () => {
@@ -26,5 +26,12 @@ describe("geo3dPointEffectsStyle", () => {
   it("builds stable content signature", () => {
     const sig = buildPointEffectsContentSig({ stylePreset: "tech", pointPillarRingSpeed: 2 }, true);
     expect(sig).toContain("2");
+  });
+
+  it("tech preset uses warm pillar colors", () => {
+    const resolved = resolvePointEffectsStyle({ stylePreset: "tech" }, "tech", true, true);
+    expect(resolved.pointPillarColorTop).toBe("#fbdf88");
+    expect(resolved.pointPillarColorBottom).toBe("#ea580c");
+    expect(resolved.pointPillarBaseRingScale).toBe(2);
   });
 });

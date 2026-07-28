@@ -1,7 +1,5 @@
-import { useMemo, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import type { VizComponentListItem, VizComponentPayload, VizWidgetType } from "@/lib/vizComponents";
-import { vizPayloadToLayoutWidget } from "@/lib/vizComponentPageUtils";
-import { VizComponentLivePreview } from "@/components/dashboard/viz-components/VizComponentLivePreview";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ChartPreviewMock,
@@ -60,8 +58,6 @@ function MockPreview({ widgetType }: { widgetType: VizWidgetType }) {
 }
 
 export function ComponentPayloadPreview({
-  componentId,
-  componentName,
   widgetType,
   payload,
   payloadLoading = false,
@@ -71,33 +67,19 @@ export function ComponentPayloadPreview({
   className,
 }: ComponentPayloadPreviewProps) {
   const safeType = normalizeWidgetType(widgetType);
-  const widget = useMemo(() => {
-    if (!payload) return null;
-    return vizPayloadToLayoutWidget({
-      id: componentId,
-      name: componentName,
-      widgetType: safeType,
-      payload,
-    });
-  }, [componentId, componentName, payload, safeType]);
-
-  const footer = (
-    <PreviewFooterMeta
-      widgetType={safeType}
-      detail={buildDetail(safeType, payload)}
-      trailing={buildFooterTrailing({ categoryKey, visibility, status })}
-    />
-  );
 
   return (
-    <ComponentPreviewShell className={className} footer={footer}>
-      {payloadLoading ? (
-        <Skeleton className="h-full w-full rounded-none" />
-      ) : widget ? (
-        <VizComponentLivePreview widget={widget} lazy geo3dRenderTier="thumbnail" className="h-full" />
-      ) : (
-        <MockPreview widgetType={safeType} />
-      )}
+    <ComponentPreviewShell
+      className={className}
+      footer={
+        <PreviewFooterMeta
+          widgetType={safeType}
+          detail={buildDetail(safeType, payload)}
+          trailing={buildFooterTrailing({ categoryKey, visibility, status })}
+        />
+      }
+    >
+      {payloadLoading ? <Skeleton className="h-full w-full rounded-none" /> : <MockPreview widgetType={safeType} />}
     </ComponentPreviewShell>
   );
 }

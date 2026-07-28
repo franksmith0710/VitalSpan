@@ -22,6 +22,7 @@ export type ResolvedPointEffectsStyle = {
   pointPillarOpacity: number;
   pointPillarHeightScale: number;
   pointPillarBaseRingOpacity: number;
+  pointPillarBaseRingScale: number;
   pointPillarRingSpeed: number;
   floatingLabelFontSize: number;
   floatingLabelTextColor: string;
@@ -30,8 +31,8 @@ export type ResolvedPointEffectsStyle = {
   floatingLabelOffset: number;
 };
 
-export const DEFAULT_HEAT_BLOB_OPACITY = 0.92;
-export const DEFAULT_HEAT_BLOB_RADIUS = 10;
+export const DEFAULT_HEAT_BLOB_OPACITY = 0.85;
+export const DEFAULT_HEAT_BLOB_RADIUS = 8;
 export const DEFAULT_HEAT_BLOB_BLUR = 1;
 export const DEFAULT_HEAT_BLOB_LIFT = 4;
 export const DEFAULT_HEAT_BLOB_COLOR = "#ffffff";
@@ -42,6 +43,7 @@ export const DEFAULT_POINT_PILLAR_COLOR_BOTTOM = "#ea580c";
 export const DEFAULT_POINT_PILLAR_OPACITY = 1;
 export const DEFAULT_POINT_PILLAR_HEIGHT_SCALE = 5;
 export const DEFAULT_POINT_PILLAR_BASE_RING_OPACITY = 1;
+export const DEFAULT_POINT_PILLAR_BASE_RING_SCALE = 2;
 export const DEFAULT_POINT_PILLAR_RING_SPEED = 1;
 
 export const DEFAULT_FLOATING_LABEL_FONT_SIZE = 14;
@@ -69,12 +71,10 @@ function normalizeHex(value: string | undefined, fallback: string): string {
 }
 
 function presetPointEffectsEnabled(preset: Geo3dStylePreset): boolean {
-  return preset === "tech";
+  return preset === "tech" || preset === "satellite";
 }
 
-function presetPillarBottom(preset: Geo3dStylePreset, isDark: boolean): string {
-  if (preset === "tech") return isDark ? "#0ea5e9" : "#0284c7";
-  if (preset === "classic") return "#ea580c";
+function presetPillarBottom(_preset: Geo3dStylePreset, _isDark: boolean): string {
   return DEFAULT_POINT_PILLAR_COLOR_BOTTOM;
 }
 
@@ -99,7 +99,7 @@ export function resolvePointEffectsStyle(
     enabled,
     layers,
     heatBlobOpacity: clamp01(style.heatBlobOpacity, DEFAULT_HEAT_BLOB_OPACITY),
-    heatBlobRadius: clampRange(style.heatBlobRadius, DEFAULT_HEAT_BLOB_RADIUS, 4, 40),
+    heatBlobRadius: clampRange(style.heatBlobRadius, DEFAULT_HEAT_BLOB_RADIUS, 3, 16),
     heatBlobBlur: clampRange(style.heatBlobBlur, DEFAULT_HEAT_BLOB_BLUR, 0.5, 2),
     heatBlobLift: clampRange(style.heatBlobLift, DEFAULT_HEAT_BLOB_LIFT, 0, 12),
     heatBlobColor: normalizeHex(style.heatBlobColor, DEFAULT_HEAT_BLOB_COLOR),
@@ -119,6 +119,12 @@ export function resolvePointEffectsStyle(
     pointPillarBaseRingOpacity: clamp01(
       style.pointPillarBaseRingOpacity,
       DEFAULT_POINT_PILLAR_BASE_RING_OPACITY,
+    ),
+    pointPillarBaseRingScale: clampRange(
+      style.pointPillarBaseRingScale,
+      DEFAULT_POINT_PILLAR_BASE_RING_SCALE,
+      0.3,
+      2.5,
     ),
     pointPillarRingSpeed: clampRange(style.pointPillarRingSpeed, DEFAULT_POINT_PILLAR_RING_SPEED, 0.2, 3),
     floatingLabelFontSize: clampRange(
@@ -168,6 +174,7 @@ export function buildPointEffectsContentSig(
     resolved.pointPillarOpacity,
     resolved.pointPillarHeightScale,
     resolved.pointPillarBaseRingOpacity,
+    resolved.pointPillarBaseRingScale,
     resolved.pointPillarRingSpeed,
     resolved.layers.floatingLabels ? 1 : 0,
     resolved.floatingLabelFontSize,

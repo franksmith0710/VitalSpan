@@ -52,7 +52,10 @@ export function ComponentPreviewShell({
 export function ChartPreviewMock() {
   const heights = [42, 68, 55, 80, 48, 72, 60];
   return (
-    <div className="flex h-full items-end justify-center gap-1.5 px-6 pb-4 pt-6">
+    <div
+      className="flex h-full items-end justify-center gap-1.5 px-6 pb-4 pt-6"
+      data-testid="chart-preview-mock"
+    >
       {heights.map((h, i) => (
         <div
           key={i}

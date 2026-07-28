@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import {
-  bakeRegionHeatCanvas,
+  bakeFeatureHeatCanvas,
   resolveHeatBlobZScale,
   type ProjBoundsLike,
 } from "@/components/charts/engine/three/geo3dHeatCanvas";
@@ -28,13 +28,8 @@ uniform float uOpacity;
 void main() {
   vec4 heat = texture2D(uHeatMap, vUv);
   if (heat.a < 0.02) discard;
-  gl_FragColor = vec4(heat.rgb * uColor, heat.a * uOpacity);
+  gl_FragColor = vec4(uColor * heat.rgb, heat.a * uOpacity);
 }`;
-
-export function resolveHeatBlobZScale(span: number, lift: number): number {
-  const layoutSpan = Math.max(span, 1);
-  return lift * layoutSpan * 0.01;
-}
 
 export type Geo3dHeatBlobHandle = {
   mesh: THREE.Mesh;
@@ -48,12 +43,13 @@ export function buildGeo3dHeatBlobLayer(
   capTopZ: number,
   minVal: number,
   maxVal: number,
-  span: number,
+  visualMapSpan: number,
+  mapScale: number,
   style: ResolvedPointEffectsStyle,
 ): Geo3dHeatBlobHandle | null {
   if (!style.layers.heatBlob || features.length === 0) return null;
   const canvasSize = 512;
-  const baked = bakeRegionHeatCanvas({
+  const baked = bakeFeatureHeatCanvas({
     width: canvasSize,
     height: canvasSize,
     features,
@@ -61,6 +57,7 @@ export function buildGeo3dHeatBlobLayer(
     bounds: projBounds,
     minValue: minVal,
     maxValue: maxVal,
+    radius: style.heatBlobRadius,
     blur: style.heatBlobBlur,
   });
   const heatTexture = new THREE.CanvasTexture(baked.colorCanvas);
@@ -76,7 +73,9 @@ export function buildGeo3dHeatBlobLayer(
     uniforms: {
       uHeatMap: { value: heatTexture },
       uGreyMap: { value: greyTexture },
-      uZScale: { value: resolveHeatBlobZScale(span, style.heatBlobLift) },
+      uZScale: {
+        value: resolveHeatBlobZScale(visualMapSpan, style.heatBlobLift, mapScale),
+      },
       uColor: { value: new THREE.Color(style.heatBlobColor) },
       uOpacity: { value: style.heatBlobOpacity },
     },
@@ -88,15 +87,15 @@ export function buildGeo3dHeatBlobLayer(
   const spanY = Math.max(projBounds.maxY - projBounds.minY, 0.5);
   const planeWidth = spanX;
   const planeHeight = spanY;
-  const segments = 120;
+  const segments = 200;
   const mesh = new THREE.Mesh(
     new THREE.PlaneGeometry(planeWidth, planeHeight, segments, segments),
     material,
   );
   const centerX = (projBounds.minX + projBounds.maxX) * 0.5;
   const centerY = (projBounds.minY + projBounds.maxY) * 0.5;
-  mesh.position.set(centerX, centerY, capTopZ + 0.05);
-  mesh.renderOrder = 12;
+  mesh.position.set(centerX, centerY, capTopZ + 0.02);
+  mesh.renderOrder = 20;
   mesh.name = "geo3d-heat-blob";
 
   return {

@@ -124,12 +124,12 @@ describe("geoOuterBorderFlow", () => {
       },
     );
     expect(bundle).not.toBeNull();
-    const pos = bundle!.lines.geometry.getAttribute("position");
-    expect(pos.count).toBe(12);
+    const pos = bundle!.flyLine.points.geometry.getAttribute("position");
+    expect(pos.count).toBeGreaterThanOrEqual(200);
     expect(bundle!.group.children).toHaveLength(2);
+    bundle!.flyLine.dispose();
     bundle!.lines.geometry.dispose();
     (bundle!.lines.material as THREE.Material).dispose();
-    bundle!.particles.dispose();
   });
 
   it("walks national outer perimeter on mainland not Taiwan island", { timeout: 15_000 }, () => {
@@ -182,6 +182,33 @@ describe("geoOuterBorderFlow", () => {
     }
   });
 
+  it("cap outer ring prefers mainland over Taiwan island", () => {
+    const width = 640;
+    const height = 480;
+    const features = chinaProvincesGeo.features.filter(
+      (f) => !isDecorativeGeoFeature(f.properties ?? undefined) && f.geometry != null,
+    );
+    const collection = {
+      type: "FeatureCollection" as const,
+      features: features.map((f) => ({
+        type: "Feature" as const,
+        properties: { name: f.properties?.name },
+        geometry: f.geometry!,
+      })),
+    };
+    const projection = fitChinaGeoProjection(d3.geoMercator(), width, height, collection);
+    const project = (coord: [number, number]) => {
+      const p = projection(coord);
+      return p ? ([p[0] - width / 2, -(p[1] - height / 2)] as [number, number]) : null;
+    };
+    const geometries = features.map((f) => f.geometry!);
+    const outer = pickOuterPerimeterSegments(geometries, project);
+    const capPicked = pickDominantCapOuterRing(outer);
+    const geoPicked = pickDominantOuterRing(outer);
+    expect(capPicked.length).toBe(geoPicked.length);
+    expect(ringPerimeter(capPicked)).toBeGreaterThan(ringPerimeter(geoPicked) * 0.95);
+  });
+
   it("cap render path: flow bundle aligns with plate top outline", () => {
     const plateDepth = 0.4;
     const borderZ = resolveGeoCapTopZ(plateDepth, false) + GEO_BORDER_ABOVE_CAP_Z;
@@ -215,11 +242,11 @@ describe("geoOuterBorderFlow", () => {
       borderFlow,
     );
     expect(bundle).not.toBeNull();
-    const pos = bundle!.lines.geometry.getAttribute("position");
-    expect(pos.count).toBe(12);
+    const pos = bundle!.flyLine.points.geometry.getAttribute("position");
+    expect(pos.count).toBeGreaterThanOrEqual(200);
+    bundle!.flyLine.dispose();
     bundle!.lines.geometry.dispose();
     (bundle!.lines.material as THREE.Material).dispose();
-    bundle!.particles.dispose();
   });
 
   it("render path: geo outer ring at cap-top Z walks mainland not Taiwan", { timeout: 30_000 }, () => {
@@ -255,10 +282,10 @@ describe("geoOuterBorderFlow", () => {
       },
     );
     expect(bundle).not.toBeNull();
-    const pos = bundle!.lines.geometry.getAttribute("position");
-    expect(pos.count).toBeGreaterThan(0);
+    const pos = bundle!.flyLine.points.geometry.getAttribute("position");
+    expect(pos.count).toBeGreaterThanOrEqual(200);
+    bundle!.flyLine.dispose();
     bundle!.lines.geometry.dispose();
     (bundle!.lines.material as THREE.Material).dispose();
-    bundle!.particles.dispose();
   });
 });

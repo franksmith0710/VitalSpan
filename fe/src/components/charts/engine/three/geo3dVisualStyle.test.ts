@@ -25,6 +25,13 @@ describe("geo3dVisualStyle", () => {
     expect(defaults.terrainTexture).toBe(false);
     expect(defaults.sceneFog).toBe(true);
     expect(defaults.platformEffects).toBe(true);
+    expect(defaults.platformGlow).toBe(true);
+    expect(defaults.platformPulse).toBe(true);
+    expect(defaults.platformSweep).toBe(true);
+    expect(defaults.pointEffects).toBe(true);
+    expect(defaults.heatBlob).toBe(true);
+    expect(defaults.pointPillar).toBe(true);
+    expect(defaults.floatingLabels).toBe(true);
 
     const visual = resolveGeo3dVisualStyle({ stylePreset: "tech" }, true);
     expect(visual.preset).toBe("tech");
@@ -47,7 +54,7 @@ describe("geo3dVisualStyle", () => {
 
   it("platform effects resolve from preset when unset", () => {
     expect(resolveGeo3dPlatformEffects({ stylePreset: "tech" })).toBe(true);
-    expect(resolveGeo3dPlatformEffects({ stylePreset: "satellite" })).toBe(false);
+    expect(resolveGeo3dPlatformEffects({ stylePreset: "satellite" })).toBe(true);
     expect(resolveGeo3dPlatformEffects({ stylePreset: "tech", platformEffects: false })).toBe(
       false,
     );
@@ -134,6 +141,12 @@ describe("geo3dVisualStyle", () => {
       platformRipple: false,
     });
     expect(a).not.toBe(b);
+  });
+
+  it("content sig changes when visual map legend toggles", () => {
+    const on = buildGeo3dStyleContentSig({ stylePreset: "satellite" }, { visualMap: true });
+    const off = buildGeo3dStyleContentSig({ stylePreset: "satellite" }, { visualMap: false });
+    expect(on).not.toBe(off);
   });
 
   it("content sig changes when platform color changes", () => {

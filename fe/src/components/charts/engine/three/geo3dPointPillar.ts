@@ -2,8 +2,6 @@ import * as THREE from "three";
 import { getPointEffectTextures } from "@/components/charts/engine/three/geo3dPointTexture";
 import type { ResolvedPointEffectsStyle } from "@/components/charts/engine/three/geo3dPointEffectsStyle";
 
-const PILLAR_GLOW_ROTATIONS = [0, 60, 120];
-
 function buildPillarCoreMaterial(
   colorTop: THREE.Color,
   colorBottom: THREE.Color,
@@ -43,9 +41,52 @@ function buildPillarCoreMaterial(
   });
 }
 
+/** huiguang 贴图竖直光幕；每帧由 layer 绕 Z 轴朝向相机 */
+function buildPillarHuiguangBeam(
+  beamWidth: number,
+  barHeight: number,
+  color: THREE.Color,
+  opacity: number,
+): { mesh: THREE.Mesh; geometry: THREE.PlaneGeometry; material: THREE.MeshBasicMaterial } {
+  const geometry = new THREE.PlaneGeometry(beamWidth, barHeight);
+  geometry.rotateX(Math.PI / 2);
+  geometry.translate(0, 0, barHeight * 0.5);
+  const textures = getPointEffectTextures();
+  const material = new THREE.MeshBasicMaterial({
+    transparent: true,
+    color,
+    map: textures.glowSheet,
+    alphaMap: textures.glowSheet,
+    opacity,
+    depthTest: false,
+    depthWrite: false,
+    fog: false,
+    side: THREE.DoubleSide,
+    blending: THREE.AdditiveBlending,
+    alphaTest: 0.02,
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.renderOrder = 14;
+  return { mesh, geometry, material };
+}
+
+/** 水平 Billboard：保持竖直，绕 Z 轴朝向相机 */
+export function resolveVerticalBillboardYaw(
+  worldPos: THREE.Vector3,
+  camera: THREE.Camera,
+): number {
+  const camPos = new THREE.Vector3();
+  camera.getWorldPosition(camPos);
+  const dx = camPos.x - worldPos.x;
+  const dy = camPos.y - worldPos.y;
+  if (dx * dx + dy * dy < 1e-8) return 0;
+  return Math.atan2(dy, dx) - Math.PI / 2;
+}
+
 export type Geo3dPointPillar = {
   group: THREE.Group;
   barHeight: number;
+  beamMesh: THREE.Mesh;
   ringMesh: THREE.Mesh;
   dispose: () => void;
 };
@@ -53,41 +94,23 @@ export type Geo3dPointPillar = {
 export function buildGeo3dPointPillar(
   barHeight: number,
   style: ResolvedPointEffectsStyle,
-  span: number,
+  unit: number,
 ): Geo3dPointPillar {
   const textures = getPointEffectTextures();
   const colorTop = new THREE.Color(style.pointPillarColorTop);
   const colorBottom = new THREE.Color(style.pointPillarColorBottom);
   const factor = style.pointPillarHeightScale / 5;
-  const coreWidth = Math.max(span * 0.028, 0.16) * factor;
+  const coreWidth = Math.max(unit * 0.08, 0.02) * factor;
+  const beamWidth = Math.max(unit * 2.8, 0.12) * factor;
   const group = new THREE.Group();
 
-  const glow = new THREE.InstancedMesh(
-    new THREE.PlaneGeometry(span * 0.38 * factor, barHeight),
-    new THREE.MeshBasicMaterial({
-      transparent: true,
-      color: colorBottom,
-      map: textures.glowSheet,
-      opacity: 0.45 * style.pointPillarOpacity,
-      depthTest: false,
-      depthWrite: false,
-      side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending,
-    }),
-    3,
+  const beam = buildPillarHuiguangBeam(
+    beamWidth,
+    barHeight,
+    colorBottom,
+    0.4 * style.pointPillarOpacity,
   );
-  glow.rotation.x = Math.PI / 2;
-  glow.position.z = barHeight * 0.5;
-  glow.renderOrder = 14;
-  const matrix = new THREE.Matrix4();
-  const euler = new THREE.Euler();
-  for (let i = 0; i < PILLAR_GLOW_ROTATIONS.length; i += 1) {
-    euler.set(Math.PI / 2, (Math.PI / 180) * PILLAR_GLOW_ROTATIONS[i]!, 0);
-    matrix.makeRotationFromEuler(euler);
-    glow.setMatrixAt(i, matrix);
-  }
-  glow.instanceMatrix.needsUpdate = true;
-  group.add(glow);
+  group.add(beam.mesh);
 
   const coreGeom = new THREE.BoxGeometry(coreWidth, coreWidth, barHeight);
   coreGeom.translate(0, 0, barHeight * 0.5);
@@ -101,7 +124,7 @@ export function buildGeo3dPointPillar(
   core.renderOrder = 15;
   group.add(core);
 
-  const ringSize = span * 0.42 * factor;
+  const ringSize = Math.max(unit * style.pointPillarBaseRingScale, 0.05);
   const ringMesh = new THREE.Mesh(
     new THREE.PlaneGeometry(ringSize, ringSize),
     new THREE.MeshBasicMaterial({
@@ -111,8 +134,10 @@ export function buildGeo3dPointPillar(
       alphaMap: textures.baseRing,
       opacity: style.pointPillarBaseRingOpacity,
       depthTest: false,
+      depthWrite: false,
       fog: false,
       blending: THREE.AdditiveBlending,
+      alphaTest: 0.05,
     }),
   );
   ringMesh.renderOrder = 13;
@@ -121,10 +146,11 @@ export function buildGeo3dPointPillar(
   return {
     group,
     barHeight,
+    beamMesh: beam.mesh,
     ringMesh,
     dispose() {
-      glow.geometry.dispose();
-      (glow.material as THREE.Material).dispose();
+      beam.geometry.dispose();
+      beam.material.dispose();
       coreGeom.dispose();
       coreMat.dispose();
       ringMesh.geometry.dispose();
@@ -133,8 +159,12 @@ export function buildGeo3dPointPillar(
   };
 }
 
-export function resolvePillarHeight(valueT: number, span: number, style: ResolvedPointEffectsStyle): number {
-  const scale = style.pointPillarHeightScale / 5;
-  const base = span * 0.38 * scale;
-  return base * (0.35 + valueT * 0.65);
+export function resolvePillarHeight(
+  valueT: number,
+  unit: number,
+  style: ResolvedPointEffectsStyle,
+): number {
+  const factor = style.pointPillarHeightScale / 5;
+  const base = unit * (0.55 + valueT * 0.85);
+  return base * factor;
 }

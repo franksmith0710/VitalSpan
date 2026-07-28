@@ -1,5 +1,5 @@
 /** 看板内嵌 3D 地图：跨 React 重渲染保留用户 orbit 视角（避免重建后跳回默认机位） */
-export const GEO3D_ORBIT_STATE_VERSION = 4;
+export const GEO3D_ORBIT_STATE_VERSION = 6;
 
 export type Geo3dOrbitSnapshot = {
   v: number;

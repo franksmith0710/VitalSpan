@@ -20,6 +20,7 @@ import {
 } from "@/components/charts/engine/three/geo3dFloatingLabels";
 import type { ResolvedPointEffectsStyle } from "@/components/charts/engine/three/geo3dPointEffectsStyle";
 import { resolveGeoCapTopZ } from "@/components/charts/engine/three/buildGeoFlatPlateMesh";
+import { resolvePointEffectSizing, type OrbitLayoutSpan } from "@/components/charts/engine/three/geo3dPointEffectScale";
 
 export const GEO3D_POINT_EFFECTS_GROUP_NAME = "geo3d-point-effects";
 
@@ -30,7 +31,7 @@ export type Geo3dPointEffectsHandle = {
   heatBlob: Geo3dHeatBlobHandle | null;
   floatingLabels: Geo3dFloatingLabelsHandle | null;
   pillarHeights: Map<string, number>;
-  update: (deltaSec: number, reducedMotion: boolean) => void;
+  update: (deltaSec: number, reducedMotion: boolean, camera?: THREE.Camera) => void;
   syncLabels: (
     camera: THREE.Camera,
     domElement: HTMLElement,
@@ -51,7 +52,7 @@ type BuildGeo3dPointEffectsInput = {
   maxVal: number;
   plateDepth: number;
   terrainCap: boolean;
-  span: number;
+  layout: OrbitLayoutSpan;
   style: ResolvedPointEffectsStyle;
 };
 
@@ -68,7 +69,7 @@ export function buildGeo3dPointEffects(input: BuildGeo3dPointEffectsInput): Geo3
     maxVal,
     plateDepth,
     terrainCap,
-    span,
+    layout,
     style,
   } = input;
   if (!style.enabled || !Object.values(style.layers).some(Boolean)) return null;
@@ -77,6 +78,7 @@ export function buildGeo3dPointEffects(input: BuildGeo3dPointEffectsInput): Geo3
   if (samples.length === 0) return null;
 
   const capTopZ = resolveGeoCapTopZ(plateDepth, terrainCap);
+  const sizing = resolvePointEffectSizing(mapGroup, layout);
 
   const group = new THREE.Group();
   group.name = GEO3D_POINT_EFFECTS_GROUP_NAME;
@@ -88,12 +90,13 @@ export function buildGeo3dPointEffects(input: BuildGeo3dPointEffectsInput): Geo3
     capTopZ,
     minVal,
     maxVal,
-    span,
+    sizing.visualMapSpan,
+    sizing.mapScale,
     style,
   );
   if (heatBlob) group.add(heatBlob.mesh);
 
-  const pillarLayer = buildGeo3dPointPillarLayer(samples, meshes, capTopZ, span, style);
+  const pillarLayer = buildGeo3dPointPillarLayer(samples, meshes, capTopZ, sizing.effectUnit, style);
   if (pillarLayer) group.add(pillarLayer.group);
 
   const pillarHeights = new Map<string, number>();
@@ -103,6 +106,7 @@ export function buildGeo3dPointEffects(input: BuildGeo3dPointEffectsInput): Geo3
     }
   }
 
+  const sampleByName = new Map(samples.map((sample) => [sample.name, sample]));
   const pillarByName = new Map(
     pillarLayer?.pillars.map((entry) => [entry.name, entry.pillar]) ?? [],
   );
@@ -128,6 +132,7 @@ export function buildGeo3dPointEffects(input: BuildGeo3dPointEffectsInput): Geo3
       capTopZ,
       style.floatingLabelOffset,
       anchorWorld,
+      sampleByName.get(name)?.adcode,
     );
   };
 
@@ -138,8 +143,8 @@ export function buildGeo3dPointEffects(input: BuildGeo3dPointEffectsInput): Geo3
     heatBlob,
     floatingLabels,
     pillarHeights,
-    update(deltaSec, reducedMotion) {
-      pillarLayer?.update(deltaSec, reducedMotion);
+    update(deltaSec, reducedMotion, camera) {
+      pillarLayer?.update(deltaSec, reducedMotion, camera);
     },
     syncLabels(camera, canvas, chartContainer) {
       floatingLabels?.sync(camera, canvas, chartContainer, resolveAnchorWorld);

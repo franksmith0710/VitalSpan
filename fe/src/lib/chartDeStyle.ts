@@ -189,6 +189,8 @@ export type ChartGeo3dStyle = {
   pointPillarOpacity?: number;
   pointPillarHeightScale?: number;
   pointPillarBaseRingOpacity?: number;
+  /** 脚底环相对地图点位单位的尺寸倍率 */
+  pointPillarBaseRingScale?: number;
   pointPillarRingSpeed?: number;
   /** 浮动区域标签（map-3d） */
   floatingLabels?: boolean;
@@ -258,6 +260,17 @@ export function readChartGeoStyle(deStyle: ChartDeStyle) {
 
 export function readChartGeo3dStyle(deStyle: ChartDeStyle): ChartGeo3dStyle {
   return deStyle.geo3d ?? {};
+}
+
+export type GeoVisualMapChartType = "map" | "map-3d" | "heatmap";
+
+/** map-3d 默认关闭数值图例；2D 地图/热力默认开启，均可显式覆盖 */
+export function resolveGeoVisualMapEnabled(
+  geo: ChartGeoStyle,
+  chartType: GeoVisualMapChartType,
+): boolean {
+  if (chartType === "map-3d") return geo.visualMap === true;
+  return geo.visualMap !== false;
 }
 
 export function readChartPieStyle(deStyle: ChartDeStyle): ChartPieStyle {

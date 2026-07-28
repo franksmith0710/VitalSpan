@@ -6,7 +6,11 @@ export type JoinedMapFeature = {
   value: number;
   adcode?: number;
   geometry: GeoJSON.Geometry | null;
+  /** GeoJSON properties.centroid / center，官方标注点 */
+  labelLngLat?: [number, number];
 };
+
+type ProjectFn = (coord: [number, number]) => [number, number] | null;
 
 /** 从离线 GeoJSON 几何计算质心（lng, lat） */
 export function resolveRegionCentroidLngLat(
@@ -19,9 +23,19 @@ export function resolveRegionCentroidLngLat(
   return [c[0], c[1]];
 }
 
+function ringArea2(ring: [number, number][]): number {
+  let area2 = 0;
+  for (let i = 0; i < ring.length - 1; i += 1) {
+    const [x0, y0] = ring[i]!;
+    const [x1, y1] = ring[i + 1]!;
+    area2 += x0 * y1 - x1 * y0;
+  }
+  return area2 * 0.5;
+}
+
 function ringCentroidProjected(
   ring: [number, number][],
-  project: (coord: [number, number]) => [number, number] | null,
+  project: ProjectFn,
 ): [number, number] | null {
   const pts: [number, number][] = [];
   for (const coord of ring) {
@@ -34,33 +48,37 @@ function ringCentroidProjected(
     const sy = pts.reduce((sum, p) => sum + p[1], 0) / pts.length;
     return [sx, sy];
   }
-  let area2 = 0;
+  const area2 = ringArea2(pts) * 2;
+  if (Math.abs(area2) < 1e-6) {
+    const sx = pts.reduce((sum, p) => sum + p[0], 0) / pts.length;
+    const sy = pts.reduce((sum, p) => sum + p[1], 0) / pts.length;
+    return [sx, sy];
+  }
   let cx = 0;
   let cy = 0;
   for (let i = 0; i < pts.length - 1; i += 1) {
     const [x0, y0] = pts[i]!;
     const [x1, y1] = pts[i + 1]!;
     const cross = x0 * y1 - x1 * y0;
-    area2 += cross;
     cx += (x0 + x1) * cross;
     cy += (y0 + y1) * cross;
-  }
-  if (Math.abs(area2) < 1e-6) {
-    const sx = pts.reduce((sum, p) => sum + p[0], 0) / pts.length;
-    const sy = pts.reduce((sum, p) => sum + p[1], 0) / pts.length;
-    return [sx, sy];
   }
   return [cx / (3 * area2), cy / (3 * area2)];
 }
 
-/** 与 mesh 顶点同一投影平面上的质心（避免经纬度质心投影偏移） */
+function polygonOuterRing(geometry: GeoJSON.Polygon): [number, number][] | null {
+  const outer = geometry.coordinates[0] as [number, number][] | undefined;
+  return outer ?? null;
+}
+
+/** 与 mesh 顶点同一投影平面上的质心（MultiPolygon 按投影面积加权） */
 export function resolveRegionCentroidProjected(
   geometry: GeoJSON.Geometry | null | undefined,
-  project: (coord: [number, number]) => [number, number] | null,
+  project: ProjectFn,
 ): [number, number] | null {
   if (!geometry) return null;
   if (geometry.type === "Polygon") {
-    const outer = geometry.coordinates[0] as [number, number][] | undefined;
+    const outer = polygonOuterRing(geometry);
     return outer ? ringCentroidProjected(outer, project) : null;
   }
   if (geometry.type === "MultiPolygon") {
@@ -70,19 +88,41 @@ export function resolveRegionCentroidProjected(
     for (const poly of geometry.coordinates) {
       const outer = poly[0] as [number, number][] | undefined;
       if (!outer) continue;
+      const projected: [number, number][] = [];
+      for (const coord of outer) {
+        const p = project(coord);
+        if (p) projected.push(p);
+      }
+      if (projected.length < 3) continue;
+      const area = Math.abs(ringArea2(projected));
       const c = ringCentroidProjected(outer, project);
-      if (!c) continue;
-      sumX += c[0];
-      sumY += c[1];
-      weight += 1;
+      if (!c || area <= 1e-6) continue;
+      sumX += c[0] * area;
+      sumY += c[1] * area;
+      weight += area;
     }
-    if (weight === 0) return null;
+    if (weight <= 0) return null;
     return [sumX / weight, sumY / weight];
   }
   if (geometry.type === "Point") {
     return project(geometry.coordinates as [number, number]);
   }
   return null;
+}
+
+/**
+ * 点位锚点：优先 GeoJSON 官方 centroid/center，再回退投影面积加权质心。
+ * 光柱 / 标签 / capAnchor 必须共用此函数。
+ */
+export function resolveRegionAnchorProjected(
+  feature: Pick<JoinedMapFeature, "geometry" | "labelLngLat">,
+  project: ProjectFn,
+): [number, number] | null {
+  if (feature.labelLngLat) {
+    const projected = project(feature.labelLngLat);
+    if (projected) return projected;
+  }
+  return resolveRegionCentroidProjected(feature.geometry, project);
 }
 
 export type RegionPointSample = {
@@ -97,19 +137,14 @@ export type RegionPointSample = {
 
 export function buildRegionPointSamples(
   features: JoinedMapFeature[],
-  project: (coord: [number, number]) => [number, number] | null,
+  project: ProjectFn,
   minVal: number,
   maxVal: number,
 ): RegionPointSample[] {
   const span = maxVal - minVal;
   const samples: RegionPointSample[] = [];
   for (const feature of features) {
-    const projected =
-      resolveRegionCentroidProjected(feature.geometry, project) ??
-      (() => {
-        const lngLat = resolveRegionCentroidLngLat(feature.geometry);
-        return lngLat ? project(lngLat) : null;
-      })();
+    const projected = resolveRegionAnchorProjected(feature, project);
     if (!projected) continue;
     const valueT = span <= 0 ? 1 : (feature.value - minVal) / span;
     samples.push({
@@ -124,24 +159,26 @@ export function buildRegionPointSamples(
   return samples;
 }
 
+function meshMatchesRegion(mesh: THREE.Object3D, name: string, adcode?: number): boolean {
+  if (adcode != null && mesh.userData?.adcode != null) {
+    return Number(mesh.userData.adcode) === adcode;
+  }
+  return String(mesh.userData?.name ?? "") === name;
+}
+
 export function resolveRegionCapAnchorLocal(
   meshes: THREE.Object3D[],
   name: string,
   capTopZ: number,
+  adcode?: number,
 ): { x: number; y: number; z: number } | null {
-  let sumX = 0;
-  let sumY = 0;
-  let count = 0;
   for (const mesh of meshes) {
-    if (String(mesh.userData?.name ?? "") !== name) continue;
+    if (!meshMatchesRegion(mesh, name, adcode)) continue;
     const local = mesh.userData.capAnchorLocal as THREE.Vector3 | undefined;
     if (!local) continue;
-    sumX += local.x;
-    sumY += local.y;
-    count += 1;
+    return { x: local.x, y: local.y, z: capTopZ };
   }
-  if (count === 0) return null;
-  return { x: sumX / count, y: sumY / count, z: capTopZ };
+  return null;
 }
 
 export function resolveRegionCapAnchorWorld(
@@ -151,23 +188,12 @@ export function resolveRegionCapAnchorWorld(
   capTopZ: number,
   extraZ: number,
   target = new THREE.Vector3(),
+  adcode?: number,
 ): THREE.Vector3 | null {
-  let sumX = 0;
-  let sumY = 0;
-  let count = 0;
-  for (const mesh of meshes) {
-    if (String(mesh.userData?.name ?? "") !== name) continue;
-    const local = mesh.userData.capAnchorLocal as THREE.Vector3 | undefined;
-    if (!local) continue;
-    sumX += local.x;
-    sumY += local.y;
-    count += 1;
-  }
-  if (count === 0) return null;
+  const local = resolveRegionCapAnchorLocal(meshes, name, capTopZ, adcode);
+  if (!local) return null;
   mapGroup.updateMatrixWorld(true);
-  return target
-    .set(sumX / count, sumY / count, capTopZ + extraZ)
-    .applyMatrix4(mapGroup.matrixWorld);
+  return target.set(local.x, local.y, capTopZ + extraZ).applyMatrix4(mapGroup.matrixWorld);
 }
 
 export function resolvePillarTopWorld(

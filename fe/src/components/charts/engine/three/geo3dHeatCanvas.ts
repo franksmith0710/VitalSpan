@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import { geometryToShapes } from "@/components/charts/engine/three/geoToThreeShapes";
+import { resolveRegionAnchorProjected } from "@/components/charts/engine/three/geo3dRegionCentroid";
 
+export type HeatCanvasPoint = {
   x: number;
   y: number;
   value: number;
@@ -65,11 +67,70 @@ function drawSplat(
 ): void {
   const grd = ctx.createRadialGradient(x, y, 0, x, y, radius);
   grd.addColorStop(0, `rgba(0,0,0,${alpha})`);
+  grd.addColorStop(0.3, `rgba(0,0,0,${alpha * 0.72})`);
+  grd.addColorStop(0.62, `rgba(0,0,0,${alpha * 0.22})`);
   grd.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = grd;
   ctx.beginPath();
   ctx.arc(x, y, radius, 0, Math.PI * 2);
   ctx.fill();
+}
+
+/** 样式半径 → 画布像素（对标 sc-datav 500px 基准） */
+export function resolveHeatBlobRadiusPx(radius: number, width: number): number {
+  return radius * (width / 500);
+}
+
+function colorizeHeatAlphaCanvas(
+  alphaCtx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  gradient: HeatCanvasGradient,
+): BakedHeatCanvas {
+  const colorCanvas = document.createElement("canvas");
+  colorCanvas.width = width;
+  colorCanvas.height = height;
+  const colorCtx = colorCanvas.getContext("2d");
+  const greyCanvas = document.createElement("canvas");
+  greyCanvas.width = width;
+  greyCanvas.height = height;
+  const greyCtx = greyCanvas.getContext("2d");
+  if (!colorCtx || !greyCtx) throw new Error("heat canvas 2d unavailable");
+
+  const image = alphaCtx.getImageData(0, 0, width, height);
+  let peak = 0;
+  for (let i = 3; i < image.data.length; i += 4) {
+    peak = Math.max(peak, image.data[i]!);
+  }
+  const norm = peak > 8 ? 255 / peak : 1;
+
+  const colorData = colorCtx.createImageData(width, height);
+  const greyData = greyCtx.createImageData(width, height);
+  for (let i = 0; i < image.data.length; i += 4) {
+    const rawA = image.data[i + 3]! * norm;
+    const t = Math.min(1, rawA / 255);
+    const rgb = parseRgb(colorAtIntensity(gradient, 0.5 + t * 0.5));
+    const outA = Math.round(t * 255);
+    colorData.data[i] = rgb[0];
+    colorData.data[i + 1] = rgb[1];
+    colorData.data[i + 2] = rgb[2];
+    colorData.data[i + 3] = outA;
+    greyData.data[i] = outA;
+    greyData.data[i + 1] = outA;
+    greyData.data[i + 2] = outA;
+    greyData.data[i + 3] = outA;
+  }
+  colorCtx.putImageData(colorData, 0, 0);
+  greyCtx.putImageData(greyData, 0, 0);
+  return { colorCanvas, greyCanvas };
+}
+
+function applyHeatBlur(alphaCtx: CanvasRenderingContext2D, blur: number): void {
+  if (blur <= 0.5) return;
+  const { canvas } = alphaCtx;
+  alphaCtx.filter = `blur(${blur * 2}px)`;
+  alphaCtx.drawImage(canvas, 0, 0);
+  alphaCtx.filter = "none";
 }
 
 export type BakeHeatCanvasInput = {
@@ -107,42 +168,15 @@ export function bakeHeatCanvas(input: BakeHeatCanvasInput): BakedHeatCanvas {
   if (!alphaCtx) throw new Error("heat canvas 2d unavailable");
 
   alphaCtx.clearRect(0, 0, width, height);
+  alphaCtx.globalCompositeOperation = "lighter";
   for (const point of points) {
     const t = span <= 0 ? 1 : (point.value - minValue) / span;
-    const alpha = 0.25 + t * 0.75;
-    drawSplat(alphaCtx, point.x, point.y, radius * blur, alpha);
+    const alpha = 0.22 + t * 0.48;
+    drawSplat(alphaCtx, point.x, point.y, radius, alpha);
   }
-
-  const colorCanvas = document.createElement("canvas");
-  colorCanvas.width = width;
-  colorCanvas.height = height;
-  const colorCtx = colorCanvas.getContext("2d");
-  const greyCanvas = document.createElement("canvas");
-  greyCanvas.width = width;
-  greyCanvas.height = height;
-  const greyCtx = greyCanvas.getContext("2d");
-  if (!colorCtx || !greyCtx) throw new Error("heat canvas 2d unavailable");
-
-  const image = alphaCtx.getImageData(0, 0, width, height);
-  const colorData = colorCtx.createImageData(width, height);
-  const greyData = greyCtx.createImageData(width, height);
-  for (let i = 0; i < image.data.length; i += 4) {
-    const a = image.data[i + 3]! / 255;
-    const t = Math.min(1, Math.max(0, a));
-    const rgb = parseRgb(colorAtIntensity(gradient, 0.5 + t * 0.5));
-    colorData.data[i] = rgb[0];
-    colorData.data[i + 1] = rgb[1];
-    colorData.data[i + 2] = rgb[2];
-    colorData.data[i + 3] = Math.round(a * 255);
-    const grey = Math.round(a * 255);
-    greyData.data[i] = grey;
-    greyData.data[i + 1] = grey;
-    greyData.data[i + 2] = grey;
-    greyData.data[i + 3] = Math.round(a * 255);
-  }
-  colorCtx.putImageData(colorData, 0, 0);
-  greyCtx.putImageData(greyData, 0, 0);
-  return { colorCanvas, greyCanvas };
+  alphaCtx.globalCompositeOperation = "source-over";
+  applyHeatBlur(alphaCtx, blur);
+  return colorizeHeatAlphaCanvas(alphaCtx, width, height, gradient);
 }
 
 export type ProjBoundsLike = {
@@ -168,6 +202,17 @@ export function projectPointToCanvas(
     x: padding + ((x - bounds.minX) / spanX) * innerW,
     y: padding + ((bounds.maxY - y) / spanY) * innerH,
   };
+}
+
+/** @param mapVisualSpan 布局归一化后的整图视觉宽度 */
+export function resolveHeatBlobZScale(
+  mapVisualSpan: number,
+  lift: number,
+  mapScale = 1,
+): number {
+  const span = Math.max(mapVisualSpan, 4);
+  const visualLift = lift * span * 0.002;
+  return visualLift / Math.max(mapScale, 1e-6);
 }
 
 function fillProjectedShape(
@@ -196,30 +241,6 @@ function fillProjectedShape(
   ctx.fill("evenodd");
 }
 
-function traceProjectedRing(
-  ctx: CanvasRenderingContext2D,
-  ring: [number, number][],
-  project: (coord: [number, number]) => [number, number] | null,
-  bounds: ProjBoundsLike,
-  width: number,
-  height: number,
-): boolean {
-  let started = false;
-  for (const coord of ring) {
-    const p = project(coord);
-    if (!p) continue;
-    const c = projectPointToCanvas(p[0], p[1], bounds, width, height);
-    if (!started) {
-      ctx.moveTo(c.x, c.y);
-      started = true;
-    } else {
-      ctx.lineTo(c.x, c.y);
-    }
-  }
-  if (!started) return false;
-  ctx.closePath();
-  return true;
-}
 
 export type BakeRegionHeatInput = {
   width: number;
@@ -272,36 +293,76 @@ export function bakeRegionHeatCanvas(input: BakeRegionHeatInput): BakedHeatCanva
     alphaCtx.filter = "none";
   }
 
-  const colorCanvas = document.createElement("canvas");
-  colorCanvas.width = width;
-  colorCanvas.height = height;
-  const colorCtx = colorCanvas.getContext("2d");
-  const greyCanvas = document.createElement("canvas");
-  greyCanvas.width = width;
-  greyCanvas.height = height;
-  const greyCtx = greyCanvas.getContext("2d");
-  if (!colorCtx || !greyCtx) throw new Error("heat canvas 2d unavailable");
+  return colorizeHeatAlphaCanvas(alphaCtx, width, height, gradient);
+}
 
-  const image = alphaCtx.getImageData(0, 0, width, height);
-  const colorData = colorCtx.createImageData(width, height);
-  const greyData = greyCtx.createImageData(width, height);
-  for (let i = 0; i < image.data.length; i += 4) {
-    const a = image.data[i + 3]! / 255;
-    const t = Math.min(1, Math.max(0, a));
-    const rgb = parseRgb(colorAtIntensity(gradient, 0.45 + t * 0.55));
-    colorData.data[i] = rgb[0];
-    colorData.data[i + 1] = rgb[1];
-    colorData.data[i + 2] = rgb[2];
-    colorData.data[i + 3] = Math.round(a * 255);
-    const grey = Math.round(a * 255);
-    greyData.data[i] = grey;
-    greyData.data[i + 1] = grey;
-    greyData.data[i + 2] = grey;
-    greyData.data[i + 3] = Math.round(a * 255);
+export type BakeFeatureHeatInput = {
+  width: number;
+  height: number;
+  features: Array<{
+    value: number;
+    geometry: GeoJSON.Geometry | null;
+    labelLngLat?: [number, number];
+  }>;
+  project: (coord: [number, number]) => [number, number] | null;
+  bounds: ProjBoundsLike;
+  minValue: number;
+  maxValue: number;
+  radius: number;
+  blur: number;
+  gradient?: HeatCanvasGradient;
+  padding?: number;
+};
+
+/** 行政区淡填充 + 质心隆起（混合烘焙） */
+export function bakeFeatureHeatCanvas(input: BakeFeatureHeatInput): BakedHeatCanvas {
+  const {
+    width,
+    height,
+    features,
+    project,
+    bounds,
+    minValue,
+    maxValue,
+    radius,
+    blur,
+    gradient = DEFAULT_HEAT_BLOB_GRADIENT,
+    padding = 0,
+  } = input;
+  const span = maxValue - minValue;
+  const radiusPx = resolveHeatBlobRadiusPx(radius, width);
+  const peakRadiusPx = Math.max(radiusPx * 0.55, 2);
+
+  const alphaCanvas = document.createElement("canvas");
+  alphaCanvas.width = width;
+  alphaCanvas.height = height;
+  const alphaCtx = alphaCanvas.getContext("2d");
+  if (!alphaCtx) throw new Error("heat canvas 2d unavailable");
+
+  alphaCtx.clearRect(0, 0, width, height);
+  for (const feature of features) {
+    const geometry = feature.geometry;
+    if (!geometry) continue;
+    const t = span <= 0 ? 1 : (feature.value - minValue) / span;
+    alphaCtx.fillStyle = `rgba(0,0,0,${0.06 + t * 0.18})`;
+    const shapes = geometryToShapes(geometry, project);
+    for (const shape of shapes) {
+      fillProjectedShape(alphaCtx, shape, bounds, width, height);
+    }
   }
-  colorCtx.putImageData(colorData, 0, 0);
-  greyCtx.putImageData(greyData, 0, 0);
-  return { colorCanvas, greyCanvas };
+
+  alphaCtx.globalCompositeOperation = "lighter";
+  for (const feature of features) {
+    const projected = resolveRegionAnchorProjected(feature, project);
+    if (!projected) continue;
+    const t = span <= 0 ? 1 : (feature.value - minValue) / span;
+    const alpha = 0.16 + t * 0.38;
+    const { x, y } = projectPointToCanvas(projected[0], projected[1], bounds, width, height, padding);
+    drawSplat(alphaCtx, x, y, peakRadiusPx, alpha);
+  }
+  alphaCtx.globalCompositeOperation = "source-over";
+  applyHeatBlur(alphaCtx, blur);
+  return colorizeHeatAlphaCanvas(alphaCtx, width, height, gradient);
 }
 
 export function mapSamplesToCanvasPoints(

@@ -47,11 +47,19 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-export function resolveGeoRegionBorderFlow(geo: ChartGeoStyle = {}): ResolvedGeoRegionBorderFlow {
+export type GeoRegionBorderFlowContext = {
+  chartType?: "map" | "map-3d";
+};
+
+export function resolveGeoRegionBorderFlow(
+  geo: ChartGeoStyle = {},
+  context: GeoRegionBorderFlowContext = {},
+): ResolvedGeoRegionBorderFlow {
   const custom = geo.regionBorderFlowColor?.trim();
   const colorCss = isValidHex(custom) ? custom.toLowerCase() : SCREEN_ACCENT;
+  const defaultOn = context.chartType === "map-3d";
   return {
-    enabled: geo.regionBorderFlow === true,
+    enabled: defaultOn ? geo.regionBorderFlow !== false : geo.regionBorderFlow === true,
     colorCss,
     colorHex: hexToNumber(colorCss),
     speed: clamp(geo.regionBorderFlowSpeed ?? GEO_BORDER_FLOW_DEFAULTS.speed, 1, 20),

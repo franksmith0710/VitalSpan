@@ -17,11 +17,11 @@ import {
 describe("geo3dPlatformEffects", () => {
   const layout = { halfX: 9, halfZ: 6, minY: -0.5 };
 
-  it("builds five platform decoration layers by default", () => {
+  it("builds eight platform decoration layers by default", () => {
     const resolved = resolvePlatformEffectsStyle({ stylePreset: "tech" }, "tech", true, true);
     const handle = buildGeo3dPlatformEffects(layout, resolved);
     expect(handle.group.name).toBe(GEO3D_PLATFORM_GROUP_NAME);
-    expect(handle.group.children).toHaveLength(5);
+    expect(handle.group.children).toHaveLength(8);
     handle.dispose();
   });
 
@@ -31,6 +31,9 @@ describe("geo3dPlatformEffects", () => {
         platformGridStyle: "square",
         platformHighlight: false,
         platformRings: false,
+        platformGlow: false,
+        platformPulse: false,
+        platformSweep: false,
       },
       "tech",
       true,
@@ -43,7 +46,15 @@ describe("geo3dPlatformEffects", () => {
 
   it("builds square grid layer", () => {
     const resolved = resolvePlatformEffectsStyle(
-      { platformGridStyle: "square", platformHighlight: false, platformRings: false, platformRipple: false },
+      {
+        platformGridStyle: "square",
+        platformHighlight: false,
+        platformRings: false,
+        platformRipple: false,
+        platformGlow: false,
+        platformPulse: false,
+        platformSweep: false,
+      },
       "tech",
       true,
       true,
@@ -68,7 +79,15 @@ describe("geo3dPlatformEffects", () => {
   });
   it("builds shader layers when enabled", () => {
     const resolved = resolvePlatformEffectsStyle(
-      { platformGlow: true, platformPulse: true, platformHighlight: false, platformRings: false, platformGrid: false, platformRipple: false },
+      {
+        platformGlow: true,
+        platformPulse: true,
+        platformSweep: false,
+        platformHighlight: false,
+        platformRings: false,
+        platformGrid: false,
+        platformRipple: false,
+      },
       "tech",
       true,
       true,
@@ -80,7 +99,14 @@ describe("geo3dPlatformEffects", () => {
 
   it("rotates rings on update", () => {
     const resolved = resolvePlatformEffectsStyle(
-      { platformHighlight: false, platformGrid: false, platformRipple: false },
+      {
+        platformHighlight: false,
+        platformGrid: false,
+        platformRipple: false,
+        platformGlow: false,
+        platformPulse: false,
+        platformSweep: false,
+      },
       "tech",
       true,
       true,
@@ -98,16 +124,16 @@ describe("geo3dPlatformEffects", () => {
 
   it("tech preset enables platform effects by default", () => {
     expect(resolveGeo3dPlatformEffects({ stylePreset: "tech" })).toBe(true);
-    expect(resolveGeo3dPlatformEffects({ stylePreset: "satellite" })).toBe(false);
+    expect(resolveGeo3dPlatformEffects({ stylePreset: "satellite" })).toBe(true);
   });
 
-  it("layer flags default shader layers off", () => {
+  it("layer flags default shader layers on when effects enabled", () => {
     expect(resolvePlatformLayerFlags({}, true)).toMatchObject({
-      glow: false,
-      pulse: false,
-      sweep: false,
+      glow: true,
+      pulse: true,
+      sweep: true,
     });
-    expect(resolvePlatformLayerFlags({ platformGlow: true }, true).glow).toBe(true);
+    expect(resolvePlatformLayerFlags({ platformGlow: false }, true).glow).toBe(false);
   });
 
   it("applyGeo3dPlatformEffectsLayer mounts group to scene", () => {
@@ -132,6 +158,9 @@ describe("geo3dPlatformEffects", () => {
         platformRings: false,
         platformGrid: false,
         platformRipple: false,
+        platformGlow: false,
+        platformPulse: false,
+        platformSweep: false,
       },
       true,
     );

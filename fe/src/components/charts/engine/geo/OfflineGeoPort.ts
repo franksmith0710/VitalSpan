@@ -25,8 +25,28 @@ import type {
 import { formatChartValue } from "@/lib/chartValueFormat";
 
 type RegionsGeo = {
-  features?: Array<{ properties?: { name?: string; adcode?: number }; geometry?: GeoJSON.Geometry }>;
+  features?: Array<{
+    properties?: {
+      name?: string;
+      adcode?: number;
+      centroid?: number[];
+      center?: number[];
+    };
+    geometry?: GeoJSON.Geometry;
+  }>;
 };
+
+function readGeoLabelLngLat(properties?: {
+  centroid?: number[];
+  center?: number[];
+}): [number, number] | undefined {
+  const raw = properties?.centroid ?? properties?.center;
+  if (!Array.isArray(raw) || raw.length < 2) return undefined;
+  const lng = Number(raw[0]);
+  const lat = Number(raw[1]);
+  if (!Number.isFinite(lng) || !Number.isFinite(lat)) return undefined;
+  return [lng, lat];
+}
 
 /** HMR 下模块可能双实例；用 globalThis 保证注册表唯一，避免 resolve 写入 A、render 读 B 导致「下钻资产未就绪」 */
 type OfflineGeoGlobal = typeof globalThis & {
@@ -87,7 +107,13 @@ function joinMapRows(
   mapId: string,
   knownRegionNames?: string[],
   drillDepth = 0,
-): Array<{ name: string; value: number; adcode?: number; geometry: GeoJSON.Geometry | null }> {
+): Array<{
+  name: string;
+  value: number;
+  adcode?: number;
+  geometry: GeoJSON.Geometry | null;
+  labelLngLat?: [number, number];
+}> {
   ensureDefaultMapRegistered();
   const resolvedMapId = resolveOfflineGeoMapId(mapId);
   const ri = columns.indexOf(regionField);
@@ -121,6 +147,7 @@ function joinMapRows(
       value: valueByName.get(name) ?? 0,
       adcode: f.properties?.adcode,
       geometry: (f.geometry as GeoJSON.Geometry | null) ?? null,
+      labelLngLat: readGeoLabelLngLat(f.properties),
     };
   });
 }
@@ -134,7 +161,7 @@ export function joinOfflineMapFeatures(
   mapId: string,
   knownRegionNames?: string[],
   drillDepth = 0,
-): Array<{ name: string; value: number; adcode?: number; geometry: GeoJSON.Geometry | null }> {
+): Array<{ name: string; value: number; adcode?: number; geometry: GeoJSON.Geometry | null; labelLngLat?: [number, number] }> {
   return joinMapRows(rows, columns, regionField, metricField, mapId, knownRegionNames, drillDepth);
 }
 

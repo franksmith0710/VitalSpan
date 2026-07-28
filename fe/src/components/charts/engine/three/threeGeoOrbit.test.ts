@@ -59,4 +59,32 @@ describe("threeGeoOrbit", () => {
     expect(controls.enableRotate).toBe(true);
     expect(controls.enableZoom).toBe(true);
   });
+
+  it("defaults to true-north view with 40deg elevation", () => {
+    const group = mockMapGroup();
+    const layout = layoutThreeGeoMapGroup(group);
+    const camera = new THREE.PerspectiveCamera(38, 16 / 9, 0.1, 5000);
+    const controls = {
+      target: new THREE.Vector3(),
+      screenSpacePanning: false,
+      enableDamping: false,
+      dampingFactor: 0,
+      minPolarAngle: 0,
+      maxPolarAngle: Math.PI,
+      minDistance: 0,
+      maxDistance: 0,
+      enablePan: true,
+      enableZoom: true,
+      enableRotate: true,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      update: vi.fn(),
+    };
+    configureThreeGeoOrbitControls(camera, controls as never, layout, true);
+    expect(camera.position.z).toBeGreaterThan(0);
+    expect(Math.abs(camera.position.x)).toBeLessThan(0.05);
+    const horizontal = Math.hypot(camera.position.x, camera.position.z);
+    const elevationDeg = (Math.atan2(camera.position.y, horizontal) * 180) / Math.PI;
+    expect(elevationDeg).toBeCloseTo(40, 0);
+  });
 });

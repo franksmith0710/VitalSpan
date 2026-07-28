@@ -34,6 +34,11 @@ describe("geoRegionBorderStyle", () => {
   });
 
   it("resolves border flow defaults", () => {
+    expect(resolveGeoRegionBorderFlow({}, { chartType: "map-3d" }).enabled).toBe(true);
+    expect(resolveGeoRegionBorderFlow({ regionBorderFlow: false }, { chartType: "map-3d" }).enabled).toBe(
+      false,
+    );
+    expect(resolveGeoRegionBorderFlow({}, { chartType: "map" }).enabled).toBe(false);
     const flow = resolveGeoRegionBorderFlow({ regionBorderFlow: true });
     expect(flow.enabled).toBe(true);
     expect(flow.speed).toBe(4);

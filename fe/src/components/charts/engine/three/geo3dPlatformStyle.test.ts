@@ -13,6 +13,9 @@ describe("geo3dPlatformStyle", () => {
       rings: true,
       grid: true,
       ripple: true,
+      glow: true,
+      pulse: true,
+      sweep: true,
     });
   });
 
@@ -39,11 +42,11 @@ describe("geo3dPlatformStyle", () => {
     expect(resolved.sizeScale).toBe(1.2);
   });
 
-  it("defaults shader layers off", () => {
-    expect(resolvePlatformLayerFlags({}, true)).toMatchObject({
+  it("allows disabling shader layers explicitly", () => {
+    expect(resolvePlatformLayerFlags({ platformGlow: false }, true)).toMatchObject({
       glow: false,
-      pulse: false,
-      sweep: false,
+      pulse: true,
+      sweep: true,
     });
   });
 

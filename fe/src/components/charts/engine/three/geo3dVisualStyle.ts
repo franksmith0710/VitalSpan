@@ -1,6 +1,7 @@
 import {
   DEFAULT_GEO3D_EXTRUDE_INTENSITY,
   DEFAULT_GEO3D_SHELL_OPACITY,
+  resolveGeoVisualMapEnabled,
   type ChartGeo3dStyle,
   type ChartGeoStyle,
 } from "@/lib/chartDeStyle";
@@ -122,8 +123,8 @@ const PRESET_BASE: Record<Geo3dStylePreset, PresetBase> = {
     preferTerrainTexture: true,
     capTintMixScale: 1,
     techSatelliteOverlay: false,
-    platformEffects: false,
-    pointEffects: false,
+    platformEffects: true,
+    pointEffects: true,
   },
   tech: {
     shellColorDark: 0x0b1520,
@@ -303,7 +304,6 @@ export function applyGeo3dPointEffectsLayer(
   const masterEnabled = resolveGeo3dPointEffects(geo3dStyle);
   const resolved = resolvePointEffectsStyle(geo3dStyle, preset, input.isDark ?? true, masterEnabled);
   if (!resolved.enabled || !Object.values(resolved.layers).some(Boolean)) return null;
-  const span = Math.max(input.layout.halfX, input.layout.halfZ, 4);
   return buildGeo3dPointEffects({
     container: input.container,
     domElement: input.domElement,
@@ -316,7 +316,7 @@ export function applyGeo3dPointEffectsLayer(
     maxVal: input.maxVal,
     plateDepth: input.plateDepth,
     terrainCap: input.terrainCap,
-    span,
+    layout: input.layout,
     style: resolved,
   });
 }
@@ -396,20 +396,31 @@ export function resolveGeo3dVisualStyle(
 /** 切换预设时写入的默认 geo3d 字段 */
 export function geo3dPresetDefaults(preset: Geo3dStylePreset): Partial<ChartGeo3dStyle> {
   const base = PRESET_BASE[preset];
-  return {
+  const defaults: Partial<ChartGeo3dStyle> = {
     stylePreset: preset,
     terrainTexture: base.preferTerrainTexture,
     sceneFog: base.sceneFog,
     platformEffects: base.platformEffects,
     pointEffects: base.pointEffects,
   };
+  if (base.platformEffects) {
+    defaults.platformGlow = true;
+    defaults.platformPulse = true;
+    defaults.platformSweep = true;
+  }
+  if (base.pointEffects) {
+    defaults.heatBlob = true;
+    defaults.pointPillar = true;
+    defaults.floatingLabels = true;
+  }
+  return defaults;
 }
 
 export function buildGeo3dStyleContentSig(
   style: ChartGeo3dStyle,
   geoStyle: ChartGeoStyle = {},
 ): string {
-  const flow = resolveGeoRegionBorderFlow(geoStyle);
+  const flow = resolveGeoRegionBorderFlow(geoStyle, { chartType: "map-3d" });
   return [
     resolveGeo3dStylePreset(style),
     style.extrudeIntensity ?? DEFAULT_GEO3D_EXTRUDE_INTENSITY,
@@ -431,5 +442,6 @@ export function buildGeo3dStyleContentSig(
     flow.colorCss,
     flow.speed,
     flow.trailLength,
+    resolveGeoVisualMapEnabled(geoStyle, "map-3d") ? 1 : 0,
   ].join(",");
 }

@@ -186,9 +186,9 @@ export function resolvePlatformLayerFlags(style: ChartGeo3dStyle, effectsOn: boo
     rings: style.platformRings !== false,
     grid: style.platformGrid !== false,
     ripple: style.platformRipple !== false,
-    glow: style.platformGlow === true,
-    pulse: style.platformPulse === true,
-    sweep: style.platformSweep === true,
+    glow: style.platformGlow !== false,
+    pulse: style.platformPulse !== false,
+    sweep: style.platformSweep !== false,
   };
 }
 

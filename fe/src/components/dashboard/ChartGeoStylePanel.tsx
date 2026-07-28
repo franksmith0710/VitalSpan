@@ -52,6 +52,7 @@ import {
   DEFAULT_HEAT_BLOB_OPACITY,
   DEFAULT_HEAT_BLOB_RADIUS,
   DEFAULT_POINT_PILLAR_BASE_RING_OPACITY,
+  DEFAULT_POINT_PILLAR_BASE_RING_SCALE,
   DEFAULT_POINT_PILLAR_COLOR_BOTTOM,
   DEFAULT_POINT_PILLAR_COLOR_TOP,
   DEFAULT_POINT_PILLAR_HEIGHT_SCALE,
@@ -121,16 +122,16 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
   const isMap = chartType === "map" || chartType === "map-3d";
   const is3d = chartType === "map-3d";
   const showRegionBorder = resolveGeoRegionBorderShow(geo);
-  const borderFlow = resolveGeoRegionBorderFlow(geo);
+  const borderFlow = resolveGeoRegionBorderFlow(geo, { chartType: is3d ? "map-3d" : "map" });
   const borderColorPreset = is3d ? resolveGeo3dStylePreset(geo3d) : undefined;
   const platformOn = resolveGeo3dPlatformEffects(geo3d);
   const platformHighlightOn = platformOn && geo3d.platformHighlight !== false;
   const platformRingsOn = platformOn && geo3d.platformRings !== false;
   const platformGridOn = platformOn && geo3d.platformGrid !== false;
   const platformRippleOn = platformOn && geo3d.platformRipple !== false;
-  const platformGlowOn = platformOn && geo3d.platformGlow === true;
-  const platformPulseOn = platformOn && geo3d.platformPulse === true;
-  const platformSweepOn = platformOn && geo3d.platformSweep === true;
+  const platformGlowOn = platformOn && geo3d.platformGlow !== false;
+  const platformPulseOn = platformOn && geo3d.platformPulse !== false;
+  const platformSweepOn = platformOn && geo3d.platformSweep !== false;
   const pointEffectsOn = resolveGeo3dPointEffects(geo3d);
   const heatBlobOn = pointEffectsOn && geo3d.heatBlob !== false;
   const pointPillarOn = pointEffectsOn && geo3d.pointPillar !== false;
@@ -160,11 +161,13 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
             onCheckedChange={(showCellLabel) => patchGeo({ showCellLabel })}
           />
         ) : null}
-        <InspectorSwitchRow
-          label="数值色带"
-          checked={geo.visualMap !== false}
-          onCheckedChange={(visualMap) => patchGeo({ visualMap })}
-        />
+        {!is3d ? (
+          <InspectorSwitchRow
+            label="数值色带"
+            checked={geo.visualMap !== false}
+            onCheckedChange={(visualMap) => patchGeo({ visualMap })}
+          />
+        ) : null}
         {isMap ? (
           <>
             <InspectorSwitchRow
@@ -239,6 +242,11 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
         ) : null}
         {is3d ? (
           <>
+            <InspectorSwitchRow
+              label="数值图例"
+              checked={geo.visualMap === true}
+              onCheckedChange={(visualMap) => patchGeo({ visualMap })}
+            />
             <InspectorFieldRow label="3D 样式">
               <Select
                 value={resolveGeo3dStylePreset(geo3d)}
@@ -686,8 +694,8 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                       compact
                       value={geo3d.heatBlobRadius}
                       fallback={DEFAULT_HEAT_BLOB_RADIUS}
-                      min={4}
-                      max={40}
+                      min={3}
+                      max={16}
                       step={1}
                       ariaLabel="贴地热力半径"
                       onChange={(heatBlobRadius) => patchGeo3d({ heatBlobRadius })}
@@ -779,6 +787,19 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                       step={0.2}
                       ariaLabel="垂直光柱高度倍率"
                       onChange={(pointPillarHeightScale) => patchGeo3d({ pointPillarHeightScale })}
+                    />
+                    <DeAttrSliderField
+                      label="脚底环大小"
+                      compact
+                      value={geo3d.pointPillarBaseRingScale}
+                      fallback={DEFAULT_POINT_PILLAR_BASE_RING_SCALE}
+                      min={0.3}
+                      max={2.5}
+                      step={0.1}
+                      ariaLabel="光柱脚底环大小倍率"
+                      onChange={(pointPillarBaseRingScale) =>
+                        patchGeo3d({ pointPillarBaseRingScale })
+                      }
                     />
                     <DeAttrSliderField
                       label="脚底环不透明度"

@@ -2,18 +2,19 @@ import * as THREE from "three";
 import { prepareOfflineGeoGeometry } from "@/components/charts/engine/geo/geoProjection";
 import type { ResolvedGeoRegionBorderFlow } from "@/components/charts/engine/geo/geoRegionBorderStyle";
 import {
+  attachBorderLineDistance,
   createGeoBorderFlowMaterial,
   trailLengthToFlowTrailWidth,
 } from "@/components/charts/engine/three/geoBorderFlowMaterial";
 import {
-  createGeoBorderFlowParticles,
-  type GeoBorderFlowParticleSystem,
-} from "@/components/charts/engine/three/geoBorderFlowParticles";
+  createGeoBorderFlyLine,
+  type GeoBorderFlyLineSystem,
+} from "@/components/charts/engine/three/geoBorderFlowFlyLine";
 
 export type GeoOuterBorderFlowBundle = {
   group: THREE.Group;
+  flyLine: GeoBorderFlyLineSystem;
   lines: THREE.LineSegments;
-  particles: GeoBorderFlowParticleSystem;
 };
 
 type Segment2 = { ax: number; ay: number; bx: number; by: number };
@@ -398,23 +399,9 @@ function pickLargestFaceRing(segments: Segment2[]): Segment2[] {
   return rings.reduce((best, ring) => (ringPerimeter(ring) > ringPerimeter(best) ? ring : best));
 }
 
-/** cap-top 边线外轮廓：半边面在吸附后边不稳定，改按连通分量内最大包围盒环选取 */
+/** cap-top 边线外轮廓：与 GeoJSON 路径一致，按最大陆块面积选环（避免绕台湾等小岛） */
 export function pickDominantCapOuterRing(segments: Segment2[]): Segment2[] {
-  if (segments.length === 0) return [];
-
-  let bestRing: Segment2[] = [];
-  let bestBBox = 0;
-  for (const comp of segmentComponents(segments)) {
-    for (const ring of chainSegmentsIntoRings(comp)) {
-      if (ring.length < 3 || ringPerimeter(ring) <= 1) continue;
-      const bbox = ringBBoxArea(ring);
-      if (bbox > bestBBox) {
-        bestBBox = bbox;
-        bestRing = ring;
-      }
-    }
-  }
-  return bestRing.length > 0 ? bestRing : pickDominantOuterRing(segments);
+  return pickDominantOuterRing(segments);
 }
 
 function buildAdjacency(segments: Segment2[], grouper: EndpointGrouper): Map<string, BorderEdge[]> {
@@ -812,22 +799,22 @@ function buildFlowBundleFromRing(
 ): GeoOuterBorderFlowBundle | null {
   if (!borderFlow.enabled || orderedRing.length === 0) return null;
 
-  const geom = buildRingLineGeometry(orderedRing, z);
-  const flowOpacity = borderOpacity ?? (isDark ? 0.88 : 0.82);
-  const material = createGeoBorderFlowMaterial({
+  const flowOpacity = borderOpacity ?? (isDark ? 0.92 : 0.88);
+  const lineGeom = buildRingLineGeometry(orderedRing, z);
+  attachBorderLineDistance(lineGeom);
+  const lineMaterial = createGeoBorderFlowMaterial({
     baseColorHex: borderColor,
     flowColorHex: borderFlow.colorHex,
-    opacity: flowOpacity,
+    opacity: flowOpacity * 0.55,
     trailWidth: trailLengthToFlowTrailWidth(borderFlow.trailLength),
   });
-
-  const lines = new THREE.LineSegments(geom, material);
+  const lines = new THREE.LineSegments(lineGeom, lineMaterial);
   lines.renderOrder = 26;
   lines.frustumCulled = false;
 
-  const particles = createGeoBorderFlowParticles(
+  const flyLine = createGeoBorderFlyLine(
     orderedRing,
-    z + 0.004,
+    z + 0.02,
     borderFlow.colorHex,
     flowOpacity,
     borderFlow.trailLength,
@@ -836,9 +823,9 @@ function buildFlowBundleFromRing(
   const group = new THREE.Group();
   group.userData.outerBorderFlow = true;
   group.add(lines);
-  group.add(particles.points);
+  group.add(flyLine.points);
 
-  return { group, lines, particles };
+  return { group, flyLine, lines };
 }
 
 /** 从已构建的顶盖边线生成外轮廓流光（与 mesh 顶面 Z 对齐） */
