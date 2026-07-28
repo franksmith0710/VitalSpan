@@ -85,6 +85,7 @@ cases/<域>-<简短主题>.md
 | CASE-2026-07-16-001 | [fe-dashboard-pixel-drag-collision-squeeze.md](./cases/fe-dashboard-pixel-drag-collision-squeeze.md) | pixel canvas, drag, collision, 挤叠, 重叠, vacate, skipVerticalCompact |
 | CASE-2026-07-16-002 | [fe-dashboard-pixel-canvas-scroll-chain.md](./cases/fe-dashboard-pixel-canvas-scroll-chain.md) | pixel canvas, scroll, wheel, overscroll, 表格, 滚不动 |
 | CASE-2026-07-27-001 | [fe-geo-drill-map-registry-desync.md](./cases/fe-geo-drill-map-registry-desync.md) | 下钻, vs-geo-630000, OfflineGeoPort, HMR, 资产未就绪 |
+| CASE-2026-07-27-002 | [fe-dashboard-save-style-strip.md](./cases/fe-dashboard-save-style-strip.md) | 保存, styleConfig, 静默剥离, 关联组件, pack |
 
 ## 维护规则
 

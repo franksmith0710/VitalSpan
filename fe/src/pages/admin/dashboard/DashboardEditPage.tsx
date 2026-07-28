@@ -113,6 +113,7 @@ import { VizComponentInspectorHeader } from "@/components/dashboard/VizComponent
 import { useVizComponentMap } from "@/hooks/useVizComponentMap";
 import { useVizComponentInspectorActions } from "@/hooks/useVizComponentInspectorActions";
 import { resolveLayoutWidget, resolveLayoutWidgets } from "@/lib/resolveVizComponent";
+import { flushLinkedLocalOverridesToLibrary } from "@/lib/vizComponentEdit";
 import { isPublishableWidgetType } from "@/lib/vizComponentEdit";
 import { fetchVizComponent } from "@/lib/vizComponents";
 import { WidgetEnlargeDialog } from "@/components/dashboard/widget-actions/WidgetEnlargeDialog";
@@ -940,6 +941,15 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     setSaving(true);
     setError(null);
     try {
+      // 关联组件若画布侧留下了本地 config，先推库再 strip，避免「保存成功但配置丢失」
+      try {
+        await flushLinkedLocalOverridesToLibrary(widgets, componentMap);
+        await refetchComponents();
+      } catch (syncErr) {
+        toast.error(mapApiError(syncErr));
+        return false;
+      }
+
       const normalizedLayout = persistDashboardLayout(currentLayout, currentStyle);
       const normalized =
         normalizedLayout.version === 1

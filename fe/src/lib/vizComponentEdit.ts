@@ -33,6 +33,22 @@ export async function syncResolvedWidgetToLibrary(
   await pushWidgetPayloadToLibrary(widget, componentMap, extractWidgetPayload(resolved));
 }
 
+export async function flushLinkedLocalOverridesToLibrary(
+  widgets: LayoutWidget[],
+  componentMap: VizComponentMap,
+): Promise<void> {
+  for (const widget of widgets) {
+    if (!isLinkedComponentRef(widget.componentRef)) continue;
+    const hasLocalPayload =
+      (widget.type === "chart" && Boolean(widget.chartConfig)) ||
+      (widget.type === "filter" && Boolean(widget.filterConfig)) ||
+      (widget.type === "text" && Boolean(widget.textConfig)) ||
+      (widget.type === "media" && Boolean(widget.mediaConfig));
+    if (!hasLocalPayload) continue;
+    await pushWidgetPayloadToLibrary(widget, componentMap, extractWidgetPayload(widget));
+  }
+}
+
 export function relinkWidgetToComponent(
   widget: LayoutWidget,
   componentId: string,

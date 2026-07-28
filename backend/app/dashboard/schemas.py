@@ -81,30 +81,66 @@ class TabsWidgetConfig(BaseModel):
 
 
 class WidgetStyleConfig(BaseModel):
+    """对齐 FE `dashboardStyleConfig.WidgetStyleConfig`，禁止静默丢装饰/内边距字段。"""
+
     model_config = ConfigDict(populate_by_name=True)
-    background: str | None = Field(default=None, max_length=32)
+    background: str | None = Field(default=None, max_length=512)
+    background_image: str | None = Field(default=None, alias="backgroundImage", max_length=2048)
+    background_show: bool | None = Field(default=None, alias="backgroundShow")
+    background_mode: Literal["image", "frame", "border"] | None = Field(
+        default=None, alias="backgroundMode"
+    )
+    frame_preset_id: str | None = Field(default=None, alias="framePresetId", max_length=32)
+    frame_color: str | None = Field(default=None, alias="frameColor", max_length=64)
+    frame_opacity: float | None = Field(default=None, alias="frameOpacity", ge=0, le=1)
     opacity: float | None = Field(default=None, ge=0, le=1)
+    backdrop_blur: float | None = Field(default=None, alias="backdropBlur", ge=0, le=64)
     border_radius: int | None = Field(default=None, alias="borderRadius", ge=0, le=48)
-    border_color: str | None = Field(default=None, alias="borderColor", max_length=32)
+    border_radius_top_left: int | None = Field(
+        default=None, alias="borderRadiusTopLeft", ge=0, le=48
+    )
+    border_radius_top_right: int | None = Field(
+        default=None, alias="borderRadiusTopRight", ge=0, le=48
+    )
+    border_radius_bottom_left: int | None = Field(
+        default=None, alias="borderRadiusBottomLeft", ge=0, le=48
+    )
+    border_radius_bottom_right: int | None = Field(
+        default=None, alias="borderRadiusBottomRight", ge=0, le=48
+    )
+    radius_mode: Literal["unified", "individual"] | None = Field(default=None, alias="radiusMode")
+    padding: int | None = Field(default=None, ge=0, le=64)
+    padding_top: int | None = Field(default=None, alias="paddingTop", ge=0, le=64)
+    padding_right: int | None = Field(default=None, alias="paddingRight", ge=0, le=64)
+    padding_bottom: int | None = Field(default=None, alias="paddingBottom", ge=0, le=64)
+    padding_left: int | None = Field(default=None, alias="paddingLeft", ge=0, le=64)
+    padding_mode: Literal["unified", "individual"] | None = Field(
+        default=None, alias="paddingMode"
+    )
+    border_color: str | None = Field(default=None, alias="borderColor", max_length=64)
     border_width: int | None = Field(default=None, alias="borderWidth", ge=0, le=8)
     border_style: Literal["solid", "dashed", "dotted"] | None = Field(
         default=None, alias="borderStyle"
     )
+    border_enabled: bool | None = Field(default=None, alias="borderEnabled")
 
 
 class TitleStyleConfig(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
+    show: bool | None = None
     font_size: int | None = Field(default=None, alias="fontSize", ge=8, le=48)
-    color: str | None = Field(default=None, max_length=32)
+    color: str | None = Field(default=None, max_length=64)
     font_weight: int | None = Field(default=None, alias="fontWeight", ge=100, le=900)
+    font_style: Literal["normal", "italic"] | None = Field(default=None, alias="fontStyle")
     align: Literal["left", "center", "right"] | None = None
     letter_spacing: float | None = Field(default=None, alias="letterSpacing", ge=-2, le=8)
+    shadow: bool | None = None
 
 
 class FilterChromeStyleConfig(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     title_position: Literal["top", "left"] | None = Field(default=None, alias="titlePosition")
-    title_color: str | None = Field(default=None, alias="titleColor", max_length=32)
+    title_color: str | None = Field(default=None, alias="titleColor", max_length=64)
 
 
 class FilterControlStyleConfig(BaseModel):
@@ -113,31 +149,111 @@ class FilterControlStyleConfig(BaseModel):
     height: int | None = Field(default=None, ge=24, le=56)
 
 
+class DialogStyleConfig(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    background: str | None = Field(default=None, max_length=512)
+    font_color: str | None = Field(default=None, alias="fontColor", max_length=64)
+
+
+class DashboardChromeConfig(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    show_chart_loading_hint: bool | None = Field(default=None, alias="showChartLoadingHint")
+    show_floating_actions: bool | None = Field(default=None, alias="showFloatingActions")
+    show_chart_action_buttons: bool | None = Field(default=None, alias="showChartActionButtons")
+    show_auxiliary_grid: bool | None = Field(default=None, alias="showAuxiliaryGrid")
+
+
+class ChartLabelStyleConfig(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    font_size: int | None = Field(default=None, alias="fontSize", ge=8, le=48)
+    color: str | None = Field(default=None, max_length=64)
+
+
+class ChartTooltipStyleConfig(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    font_size: int | None = Field(default=None, alias="fontSize", ge=8, le=48)
+    color: str | None = Field(default=None, max_length=64)
+    background: str | None = Field(default=None, max_length=512)
+
+
+class TableColorStyleConfig(BaseModel):
+    """对齐 FE `ChartDeTableStyle` 看板默认表配色（子集 + 透传常用项）。"""
+
+    model_config = ConfigDict(populate_by_name=True)
+    opacity: float | None = Field(default=None, ge=0, le=100)
+    header_bg: str | None = Field(default=None, alias="headerBg", max_length=64)
+    header_fg: str | None = Field(default=None, alias="headerFg", max_length=64)
+    body_bg: str | None = Field(default=None, alias="bodyBg", max_length=64)
+    body_fg: str | None = Field(default=None, alias="bodyFg", max_length=64)
+    summary_bg: str | None = Field(default=None, alias="summaryBg", max_length=64)
+    summary_fg: str | None = Field(default=None, alias="summaryFg", max_length=64)
+    zebra_bg: str | None = Field(default=None, alias="zebraBg", max_length=64)
+    zebra_striped: bool | None = Field(default=None, alias="zebraStriped")
+    column_bg: str | None = Field(default=None, alias="columnBg", max_length=64)
+    corner_bg: str | None = Field(default=None, alias="cornerBg", max_length=64)
+    empty_hint_fg: str | None = Field(default=None, alias="emptyHintFg", max_length=64)
+    pagination_fg: str | None = Field(default=None, alias="paginationFg", max_length=64)
+    pagination_font_size: int | None = Field(
+        default=None, alias="paginationFontSize", ge=8, le=48
+    )
+    scrollbar_color: str | None = Field(default=None, alias="scrollbarColor", max_length=64)
+    border_color: str | None = Field(default=None, alias="borderColor", max_length=64)
+    pagination_mode: Literal["page", "scroll"] | None = Field(
+        default=None, alias="paginationMode"
+    )
+    page_size: Literal[20, 50, 100] | None = Field(default=None, alias="pageSize")
+    pagination_variant: Literal["compact", "normal"] | None = Field(
+        default=None, alias="paginationVariant"
+    )
+    column_width_mode: Literal["auto", "fixed", "custom"] | None = Field(
+        default=None, alias="columnWidthMode"
+    )
+    word_wrap: bool | None = Field(default=None, alias="wordWrap")
+    row_hover: bool | None = Field(default=None, alias="rowHover")
+    show_summary: bool | None = Field(default=None, alias="showSummary")
+
+
+class DataScreenPlaylistConfig(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    screen_ids: list[str] = Field(default_factory=list, alias="screenIds", max_length=32)
+    interval_sec: int = Field(default=30, alias="intervalSec", ge=5, le=3600)
+
+
 class ThemeVariantWidgetStyle(BaseModel):
     """DE §5.3 / 组件壳：随浅/深分别记忆的字段子集。"""
 
     model_config = ConfigDict(populate_by_name=True)
-    background: str | None = Field(default=None, max_length=32)
-    border_color: str | None = Field(default=None, alias="borderColor", max_length=32)
+    background: str | None = Field(default=None, max_length=512)
+    border_color: str | None = Field(default=None, alias="borderColor", max_length=64)
+    border_width: int | None = Field(default=None, alias="borderWidth", ge=0, le=8)
+    border_style: Literal["solid", "dashed", "dotted"] | None = Field(
+        default=None, alias="borderStyle"
+    )
+    border_enabled: bool | None = Field(default=None, alias="borderEnabled")
     opacity: float | None = Field(default=None, ge=0, le=1)
 
 
 class ThemeVariantTitleStyle(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
-    color: str | None = Field(default=None, max_length=32)
+    color: str | None = Field(default=None, max_length=64)
 
 
 class ThemeVariantFields(BaseModel):
     """DE 双主题：浅色/深色各自保存的画布与组件视觉（对标 themeVariants）。"""
 
     model_config = ConfigDict(populate_by_name=True)
-    canvas_background: str | None = Field(default=None, alias="canvasBackground", max_length=64)
+    canvas_background: str | None = Field(default=None, alias="canvasBackground", max_length=512)
     canvas_background_image: str | None = Field(
         default=None, alias="canvasBackgroundImage", max_length=2048
     )
     canvas_background_custom: bool | None = Field(default=None, alias="canvasBackgroundCustom")
+    canvas_decor_preset_id: str | None = Field(
+        default=None, alias="canvasDecorPresetId", max_length=64
+    )
+    theme_accent: str | None = Field(default=None, alias="themeAccent", max_length=64)
     widget_style: ThemeVariantWidgetStyle | None = Field(default=None, alias="widgetStyle")
     title_style: ThemeVariantTitleStyle | None = Field(default=None, alias="titleStyle")
+    dialog_style: DialogStyleConfig | None = Field(default=None, alias="dialogStyle")
     filter_chrome_style: FilterChromeStyleConfig | None = Field(
         default=None, alias="filterChromeStyle"
     )
@@ -152,16 +268,17 @@ class DashboardThemeVariants(BaseModel):
 class NumberFormatConfig(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     decimals: int | None = Field(default=None, ge=0, le=8)
-    type: Literal["number", "percent", "currency"] | None = None
+    type: Literal["auto", "number", "percent", "currency"] | None = None
     unit: str | None = Field(default=None, max_length=16)
+    thousand_separator: bool | None = Field(default=None, alias="thousandSeparator")
 
 
 class DashboardStyleConfig(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     widget_gap: int | None = Field(default=None, ge=0, le=48, alias="widgetGap")
-    canvas_background: str | None = Field(default=None, alias="canvasBackground", max_length=64)
+    canvas_background: str | None = Field(default=None, alias="canvasBackground", max_length=512)
     color_scheme: Literal["light", "dark"] | None = Field(default=None, alias="colorScheme")
-    theme_accent: str | None = Field(default=None, alias="themeAccent", max_length=32)
+    theme_accent: str | None = Field(default=None, alias="themeAccent", max_length=64)
     font_family: str | None = Field(default=None, alias="fontFamily", max_length=64)
     gap_preset: Literal["none", "sm", "md", "lg", "custom"] | None = Field(
         default=None, alias="gapPreset"
@@ -172,6 +289,9 @@ class DashboardStyleConfig(BaseModel):
         default=None, alias="canvasBackgroundImage", max_length=2048
     )
     canvas_background_custom: bool | None = Field(default=None, alias="canvasBackgroundCustom")
+    canvas_decor_preset_id: str | None = Field(
+        default=None, alias="canvasDecorPresetId", max_length=64
+    )
     refresh_interval_sec: int | None = Field(
         default=None, alias="refreshIntervalSec", ge=5, le=3600
     )
@@ -181,6 +301,22 @@ class DashboardStyleConfig(BaseModel):
     widget_style: WidgetStyleConfig | None = Field(default=None, alias="widgetStyle")
     palette_id: str | None = Field(default=None, alias="paletteId", max_length=32)
     palette_colors: list[str] | None = Field(default=None, alias="paletteColors", max_length=12)
+    palette_opacity: float | None = Field(default=None, alias="paletteOpacity", ge=0, le=1)
+    series_gradient: bool | None = Field(default=None, alias="seriesGradient")
+    depth_visual: Literal["off", "standard", "enhanced"] | None = Field(
+        default=None, alias="depthVisual"
+    )
+    chart_label_show: bool | None = Field(default=None, alias="chartLabelShow")
+    chart_label_style: ChartLabelStyleConfig | None = Field(
+        default=None, alias="chartLabelStyle"
+    )
+    tooltip_show: bool | None = Field(default=None, alias="tooltipShow")
+    chart_tooltip_style: ChartTooltipStyleConfig | None = Field(
+        default=None, alias="chartTooltipStyle"
+    )
+    table_color_style: TableColorStyleConfig | None = Field(
+        default=None, alias="tableColorStyle"
+    )
     title_style: TitleStyleConfig | None = Field(default=None, alias="titleStyle")
     filter_chrome_style: FilterChromeStyleConfig | None = Field(
         default=None, alias="filterChromeStyle"
@@ -189,13 +325,18 @@ class DashboardStyleConfig(BaseModel):
         default=None, alias="filterControlStyle"
     )
     number_format: NumberFormatConfig | None = Field(default=None, alias="numberFormat")
-    action_icon_color: str | None = Field(default=None, alias="actionIconColor", max_length=32)
+    action_icon_color: str | None = Field(default=None, alias="actionIconColor", max_length=64)
     drill_level_colors: list[str] | None = Field(
         default=None, alias="drillLevelColors", max_length=8
     )
+    dialog_style: DialogStyleConfig | None = Field(default=None, alias="dialogStyle")
+    chrome: DashboardChromeConfig | None = None
     theme_variants: DashboardThemeVariants | None = Field(default=None, alias="themeVariants")
     surface_kind: Literal["dashboard", "data-screen"] | None = Field(
         default=None, alias="surfaceKind"
+    )
+    screen_playlist: DataScreenPlaylistConfig | None = Field(
+        default=None, alias="screenPlaylist"
     )
 
     @model_validator(mode="after")

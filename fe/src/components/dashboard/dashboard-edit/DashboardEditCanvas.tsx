@@ -108,7 +108,7 @@ export function DashboardEditCanvas({
   widgetActions,
   dataScreenPresentationMode = DATA_SCREEN_EDIT_PRESENTATION_DEFAULT,
 }: DashboardEditCanvasProps) {
-  const { componentMap } = useVizComponentMap(widgets);
+  const { componentMap, refetch: refetchComponents } = useVizComponentMap(widgets);
   const effectiveStyle = useMemo(
     () => resolveEffectiveDashboardStyle(layout, styleConfig),
     [layout, styleConfig],
@@ -156,6 +156,7 @@ export function DashboardEditCanvas({
           chartRefreshKeys={chartRefreshKeys}
           onTabPaletteDrop={onTabPaletteDrop}
           componentMap={componentMap}
+          onLinkedPayloadSynced={refetchComponents}
         />
       );
     },
@@ -175,6 +176,7 @@ export function DashboardEditCanvas({
       chartRefreshKeys,
       onTabPaletteDrop,
       componentMap,
+      refetchComponents,
     ],
   );
 

@@ -1,4 +1,5 @@
 import { memo, useCallback, useMemo, type ReactNode } from "react";
+import { toast } from "sonner";
 import { DashboardWidget } from "../DashboardWidget";
 import {
   pixelWidgetToLayoutWidget,
@@ -19,6 +20,9 @@ import {
 } from "../layoutUtils";
 import { WidgetErrorBoundary } from "../WidgetErrorBoundary";
 import type { PaletteDragPayload } from "@/lib/dashboardDnd";
+import { mapApiError } from "@/lib/apiError";
+import { pushWidgetPayloadToLibrary } from "@/lib/vizComponentEdit";
+import { isLinkedComponentRef } from "@/lib/vizComponents";
 import { useDashboardGridPlayer } from "../dashboardGridPlayerContext";
 import { usePixelShapePlayer } from "../pixelCanvas/pixelShapePlayerContext";
 import { preservePixelCanvasHostScroll } from "../pixelCanvas/preserveCanvasHostScroll";
@@ -60,6 +64,8 @@ type DashboardCanvasWidgetRendererProps = {
     options?: RenderDashboardCanvasWidgetOptions,
   ) => ReactNode;
   componentMap?: import("@/lib/resolveVizComponent").VizComponentMap;
+  /** 关联组件推库成功后刷新 componentMap（否则 resolve 仍读旧 payload） */
+  onLinkedPayloadSynced?: () => void | Promise<unknown>;
 };
 
 function asLayoutWidget(
@@ -131,6 +137,7 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
   onTabPaletteDrop,
   renderChild,
   componentMap,
+  onLinkedPayloadSynced,
 }: DashboardCanvasWidgetRendererProps) {
   const widget = asLayoutWidget(sourceWidget);
   const isShapePlaying = usePixelShapePlayer();
@@ -193,9 +200,17 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
 
   const handleChartConfigChange = useCallback(
     (widgetId: string, chartConfig: LayoutWidget["chartConfig"]) => {
+      if (!chartConfig) return;
+      // 关联组件：layout 落库会剥 chartConfig，必须推组件库，否则下钻/样式保存丢失
+      if (isLinkedComponentRef(widget.componentRef) && componentMap) {
+        void pushWidgetPayloadToLibrary(widget, componentMap, { chartConfig })
+          .then(() => onLinkedPayloadSynced?.())
+          .catch((err) => toast.error(mapApiError(err)));
+        return;
+      }
       updateWidget(widgetId, { chartConfig });
     },
-    [updateWidget],
+    [componentMap, onLinkedPayloadSynced, updateWidget, widget],
   );
 
   const handleTabsConfigChange = useCallback(
@@ -207,9 +222,15 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
 
   const handleTextConfigChange = useCallback(
     (widgetId: string, textConfig: NonNullable<LayoutWidget["textConfig"]>) => {
+      if (isLinkedComponentRef(widget.componentRef) && componentMap) {
+        void pushWidgetPayloadToLibrary(widget, componentMap, { textConfig })
+          .then(() => onLinkedPayloadSynced?.())
+          .catch((err) => toast.error(mapApiError(err)));
+        return;
+      }
       updateWidget(widgetId, { textConfig });
     },
-    [updateWidget],
+    [componentMap, onLinkedPayloadSynced, updateWidget, widget],
   );
 
   const renderNested = useCallback(
