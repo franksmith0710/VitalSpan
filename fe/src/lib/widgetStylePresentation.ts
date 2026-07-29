@@ -85,10 +85,12 @@ export function buildWidgetBackgroundPresentation(
     }
   }
   if (frameLayer) {
-    const frameAlpha = bg.frameOpacity ?? bg.opacity;
-    if (frameAlpha != null && frameAlpha < 1) {
-      frameLayer = { ...frameLayer, opacity: frameAlpha };
-    }
+    // 装饰边框不透明度独立于背景 opacity；未设置时按完全不透明
+    const frameAlpha = bg.frameOpacity ?? 1;
+    frameLayer = {
+      ...frameLayer,
+      opacity: Math.min(1, Math.max(0, frameAlpha)),
+    };
   }
   presentation.frameLayer = frameLayer;
   return presentation;

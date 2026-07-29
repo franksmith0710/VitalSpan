@@ -1,6 +1,8 @@
+import type { ReactElement } from "react";
 import { CANVAS_BG_RECOMMENDED } from "@/components/dashboard/dashboardStyleConfig";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render as rtlRender, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { ColorField } from "./color-field";
 
 vi.mock("react-colorful", () => ({
@@ -19,6 +21,10 @@ vi.mock("react-colorful", () => ({
     />
   ),
 }));
+
+function render(ui: ReactElement) {
+  return rtlRender(<TooltipProvider delayDuration={0}>{ui}</TooltipProvider>);
+}
 
 describe("ColorField", () => {
   beforeEach(() => {
@@ -154,5 +160,24 @@ describe("ColorField", () => {
       "title",
       "字体颜色 · #667085",
     );
+  });
+
+  it("commits swatch picker color and clear without nesting tooltip trigger", () => {
+    const onChange = vi.fn();
+    render(
+      <ColorField
+        variant="swatch"
+        label="装饰色"
+        value="#3370ff"
+        onChange={onChange}
+        swatches={["#ff0000"]}
+        liveCommitMs={0}
+      />,
+    );
+    fireEvent.click(screen.getByLabelText("装饰色取色器"));
+    fireEvent.click(screen.getByRole("option", { name: "#ff0000" }));
+    expect(onChange).toHaveBeenCalledWith("#ff0000");
+    fireEvent.click(screen.getByRole("button", { name: "清除颜色" }));
+    expect(onChange).toHaveBeenCalledWith(undefined);
   });
 });

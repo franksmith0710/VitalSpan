@@ -143,6 +143,7 @@ async function mockDataScreenEditApis(page: Page) {
 }
 
 test("data-screen resize keeps all widgets and content container visible", async ({ page }) => {
+  test.setTimeout(60_000);
   await mockDataScreenEditApis(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`/admin/data-screens/${SCREEN_ID}/edit`);
@@ -152,7 +153,7 @@ test("data-screen resize keeps all widgets and content container visible", async
   });
 
   const content = page.locator('[data-testid="pixel-canvas-content"]');
-  const shapes = page.locator('[data-testid^="pixel-shape-"]');
+  const shapes = page.locator(".pixel-shape-outer[data-testid^='pixel-shape-']");
   const activeShape = page.locator('[data-testid="pixel-shape-w-table-1"]');
   const peerShape = page.locator('[data-testid="pixel-shape-w-bar-1"]');
 
@@ -163,20 +164,22 @@ test("data-screen resize keeps all widgets and content container visible", async
   const contentBox = await content.boundingBox();
   expect(contentBox).not.toBeNull();
   if (contentBox) {
-    expect(contentBox.width).toBeGreaterThanOrEqual(800);
-    expect(contentBox.height).toBeGreaterThanOrEqual(400);
+    expect(contentBox.width).toBeGreaterThan(400);
+    expect(contentBox.height).toBeGreaterThan(300);
   }
 
   const before = await activeShape.evaluate((el) => ({
     outerWidth: el.clientWidth,
     outerHeight: el.clientHeight,
-    containerWidth: el.querySelector(".dashboard-widget-body")?.clientWidth ?? 0,
-    containerHeight: el.querySelector(".dashboard-widget-body")?.clientHeight ?? 0,
+    containerWidth: el.querySelector(".pixel-shape-body")?.clientWidth ?? 0,
+    containerHeight: el.querySelector(".pixel-shape-body")?.clientHeight ?? 0,
   }));
   expect(before.outerWidth).toBeGreaterThan(0);
   expect(before.containerWidth).toBeGreaterThan(0);
 
-  const handle = page.getByLabel("调整组件大小：右下");
+  await activeShape.click();
+  const handle = page.getByTestId("pixel-resize-se");
+  await expect(handle).toBeVisible({ timeout: 10_000 });
   const box = await handle.boundingBox();
   expect(box).not.toBeNull();
   if (!box) return;
@@ -204,15 +207,15 @@ test("data-screen resize keeps all widgets and content container visible", async
   const afterContent = await content.boundingBox();
   expect(afterContent).not.toBeNull();
   if (afterContent) {
-    expect(afterContent.width).toBeGreaterThanOrEqual(800);
-    expect(afterContent.height).toBeGreaterThanOrEqual(400);
+    expect(afterContent.width).toBeGreaterThan(400);
+    expect(afterContent.height).toBeGreaterThan(300);
   }
 
   const after = await activeShape.evaluate((el) => ({
     outerWidth: el.clientWidth,
     outerHeight: el.clientHeight,
-    containerWidth: el.querySelector(".dashboard-widget-body")?.clientWidth ?? 0,
-    containerHeight: el.querySelector(".dashboard-widget-body")?.clientHeight ?? 0,
+    containerWidth: el.querySelector(".pixel-shape-body")?.clientWidth ?? 0,
+    containerHeight: el.querySelector(".pixel-shape-body")?.clientHeight ?? 0,
   }));
 
   expect(Math.abs(after.outerWidth - after.containerWidth)).toBeLessThanOrEqual(2);

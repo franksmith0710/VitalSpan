@@ -118,4 +118,35 @@ describe("chart catalog L3 FIELD", () => {
     expect(trimmed.dimensions?.length).toBeLessThanOrEqual(rule.maxDimensions);
     expect(trimmed.metrics?.length).toBeLessThanOrEqual(rule.maxMetrics);
   });
+
+  it("T-VIZ-R32-011: blueprint required slot counts stay within fieldRule bounds", () => {
+    for (const type of ACTIVE_TYPES) {
+      const rule = BACKEND_CATALOG_FIELD_RULES[type]!;
+      const slots = chartDataSlotBlueprint(type);
+      const requiredDims = slots.filter((s) => s.kind === "dimension" && s.required !== false).length;
+      const requiredMetrics = slots.filter((s) => s.kind === "metric" && s.required !== false).length;
+      expect(requiredDims, type).toBeGreaterThanOrEqual(rule.minDimensions);
+      expect(requiredDims, type).toBeLessThanOrEqual(rule.maxDimensions);
+      expect(requiredMetrics, type).toBeGreaterThanOrEqual(rule.minMetrics);
+      expect(requiredMetrics, type).toBeLessThanOrEqual(rule.maxMetrics);
+    }
+  });
+
+  it("T-VIZ-R32-012: gauge has no dimension slot and ignores stale dimensions in render model", () => {
+    expect(chartDataSlotBlueprint("gauge").some((s) => s.kind === "dimension")).toBe(false);
+    const gauge = smokeCaseToConfig(CHART_CATALOG_SMOKE_CASES.find((c) => c.type === "gauge")!);
+    const withDim = { ...gauge, dimensions: [{ field: "sale_date" }] };
+    const model = buildChartRenderModel(withDim, ["sale_date", "value"], [[100]]);
+    expect(model.kind).toBe("ready");
+  });
+
+  it("T-VIZ-R32-013: table-pivot missing column dimension yields error", () => {
+    const pivot = smokeCaseToConfig(CHART_CATALOG_SMOKE_CASES.find((c) => c.type === "table-pivot")!);
+    const model = buildChartRenderModel(
+      { ...pivot, dimensions: [{ field: "row_dim" }] },
+      ["row_dim", "col_dim", "amount"],
+      [["A", "X", 10]],
+    );
+    expect(model.kind).toBe("error");
+  });
 });

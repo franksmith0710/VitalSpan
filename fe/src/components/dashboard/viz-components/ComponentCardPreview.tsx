@@ -39,9 +39,9 @@ export function ComponentPreviewShell({
         }}
         aria-hidden
       />
-      <div className="relative min-h-0 flex-1 pb-5">{children}</div>
+      <div className="relative min-h-0 flex-1 pb-3.5">{children}</div>
       {footer ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-center justify-between gap-2 px-2.5 py-1">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-center justify-between gap-1.5 px-2 py-0.5">
           {footer}
         </div>
       ) : null}

@@ -15,14 +15,17 @@ describe("chartFrameBorderPresets", () => {
   it("builds tinted svg data urls", () => {
     const url = buildChartFrameBorderSvgUrl("frame-2", "#ff0000");
     expect(url.startsWith("data:image/svg+xml,")).toBe(true);
-    expect(decodeURIComponent(url)).toContain("#ff0000");
-    expect(decodeURIComponent(url)).toContain("<svg");
+    const decoded = decodeURIComponent(url);
+    expect(decoded).toContain('fill="#ff0000"');
+    expect(decoded).toContain("<svg");
+    expect(decoded).toContain("<path fill=\"#ff0000\"");
   });
 
   it("resolves stretch overlay styles", () => {
     const style = resolveChartFrameOverlayLayer("frame-1", "#3370ff");
     expect(style.backgroundImage).toContain("data:image/svg+xml");
     expect(style.backgroundSize).toBe("100% 100%");
+    expect(style.transform).toContain("translateZ");
   });
 });
 

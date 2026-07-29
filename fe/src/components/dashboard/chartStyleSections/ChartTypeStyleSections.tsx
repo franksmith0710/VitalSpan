@@ -89,6 +89,7 @@ export function ChartGaugeStyleSection() {
         <ChartDeSliderField label="最大值" value={gauge.max} fallback={100} min={1} max={10000} step={1} onChange={(max) => patch({ max })} />
         <ChartDeSliderField label="起始角 °" value={gauge.startAngleDeg} fallback={-135} min={-180} max={0} step={5} onChange={(startAngleDeg) => patch({ startAngleDeg })} />
         <ChartDeSliderField label="结束角 °" value={gauge.endAngleDeg} fallback={135} min={0} max={180} step={5} onChange={(endAngleDeg) => patch({ endAngleDeg })} />
+        <ChartDeSliderField label="刻度数" value={gauge.splitNumber} fallback={5} min={2} max={20} step={1} onChange={(splitNumber) => patch({ splitNumber })} />
       </div>
     </ChartInspectorSection>
   );

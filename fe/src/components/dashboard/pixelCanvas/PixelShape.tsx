@@ -308,8 +308,30 @@ function PixelShapeInnerChrome({
           <div className="relative z-[1] flex min-h-0 min-w-0 w-full flex-1 flex-col overflow-hidden">
             {chartBody}
           </div>
+          {contentShell.frameLayers.map((layer, index) =>
+            layer ? (
+              <div
+                key={`content-frame-${index}`}
+                className="pointer-events-none absolute inset-0 z-[2]"
+                style={layer}
+                aria-hidden
+                data-testid="pixel-shape-content-frame"
+              />
+            ) : null,
+          )}
         </div>
       </div>
+      {innerShell.frameLayers.map((layer, index) =>
+        layer ? (
+          <div
+            key={`shell-frame-${index}`}
+            className="pointer-events-none absolute inset-0 z-[3]"
+            style={layer}
+            aria-hidden
+            data-testid="pixel-shape-shell-frame"
+          />
+        ) : null,
+      )}
     </>
   );
 }

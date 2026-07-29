@@ -109,7 +109,8 @@ export function ColorField({
   const [open, setOpen] = useState(false);
   const onChangeRef = useRef(onChange);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingRef = useRef<string | undefined>(undefined);
+  /** null=清除；string=色值；undefined=无待提交 */
+  const pendingRef = useRef<string | null | undefined>(undefined);
 
   onChangeRef.current = onChange;
 
@@ -135,22 +136,39 @@ export function ColorField({
     if (pendingRef.current === undefined) return;
     const next = pendingRef.current;
     pendingRef.current = undefined;
-    onChangeRef.current(next === "" ? undefined : next);
+    onChangeRef.current(next === null || next === "" ? undefined : next);
   };
 
-  const commitNow = (raw: string) => {
-    pendingRef.current = resolveCommitValue(raw);
-    flushCommit();
-  };
-
-  const scheduleCommit = (raw: string) => {
-    pendingRef.current = resolveCommitValue(raw);
-    if (liveCommitMs <= 0) {
+  const queueCommit = (next: string | null, immediate: boolean) => {
+    pendingRef.current = next;
+    if (immediate || liveCommitMs <= 0) {
       flushCommit();
       return;
     }
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(flushCommit, liveCommitMs);
+  };
+
+  const commitNow = (raw: string) => {
+    const trimmed = raw.trim();
+    if (!trimmed) {
+      queueCommit(null, true);
+      return;
+    }
+    const resolved = resolveCommitValue(raw);
+    if (resolved === undefined) return;
+    queueCommit(resolved, true);
+  };
+
+  const scheduleCommit = (raw: string) => {
+    const trimmed = raw.trim();
+    if (!trimmed) {
+      queueCommit(null, false);
+      return;
+    }
+    const resolved = resolveCommitValue(raw);
+    if (resolved === undefined) return;
+    queueCommit(resolved, false);
   };
 
   const handleOpenChange = (next: boolean) => {
@@ -162,12 +180,7 @@ export function ColorField({
     setLocalValue(next);
     const resolved = resolveCommitValue(next);
     if (resolved === undefined) return;
-    pendingRef.current = resolved;
-    if (immediate || liveCommitMs <= 0) {
-      flushCommit();
-      return;
-    }
-    scheduleCommit(next);
+    queueCommit(resolved, immediate);
   };
 
   const explicitHex = normalizeHexColor(localValue);
@@ -245,8 +258,8 @@ export function ColorField({
           className="mt-2 w-full rounded-md border border-gray-200 px-2 py-1.5 text-[11px] text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
           onClick={() => {
             setLocalValue("");
-            pendingRef.current = "";
-            scheduleCommit("");
+            queueCommit(null, true);
+            setOpen(false);
           }}
         >
           清除颜色
@@ -269,7 +282,7 @@ export function ColorField({
         )}
         aria-label={pickerLabel}
         aria-expanded={open}
-        title={showHintTooltip ? undefined : swatchTitle}
+        title={swatchTitle}
         onMouseDown={(event) => event.preventDefault()}
       >
         {swatchTriggerPreset === "text" ? (
@@ -344,10 +357,9 @@ export function ColorField({
             {label}
           </Label>
         ) : null}
-        <Popover open={open} onOpenChange={handleOpenChange}>
-          <PopoverTrigger asChild>
-            {showHintTooltip ? <HintTooltip label={swatchTitle}>{swatchButton}</HintTooltip> : swatchButton}
-          </PopoverTrigger>
+        <Popover open={open} onOpenChange={handleOpenChange} modal={false}>
+          {/* 禁止 HintTooltip 套在 Trigger 内：TooltipTrigger+PopoverTrigger 双重 asChild 会抢走点击 */}
+          <PopoverTrigger asChild>{swatchButton}</PopoverTrigger>
           {popoverBody}
         </Popover>
       </div>
@@ -359,14 +371,14 @@ export function ColorField({
       {label ? (
         <Label className="text-theme-xs text-gray-600 dark:text-gray-400">{label}</Label>
       ) : null}
-      <Popover open={open} onOpenChange={handleOpenChange}>
+      <Popover open={open} onOpenChange={handleOpenChange} modal={false}>
         <div className={cn(FIELD_SHELL, compact ? "h-8" : "h-9")}>
           <PopoverTrigger asChild>
-            <HintTooltip label="打开取色器">
-              <button
-                type="button"
-                aria-label={pickerLabel}
-                aria-expanded={open}
+            <button
+              type="button"
+              aria-label={pickerLabel}
+              aria-expanded={open}
+              title="打开取色器"
               className={cn(
                 "flex shrink-0 items-center gap-1 rounded-md py-0.5 pl-0.5 pr-1 transition-colors",
                 "hover:bg-gray-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500/30",
@@ -383,7 +395,6 @@ export function ColorField({
                 aria-hidden
               />
             </button>
-            </HintTooltip>
           </PopoverTrigger>
           <input
             className="min-w-0 flex-1 border-0 bg-transparent px-0.5 font-mono text-[11px] uppercase tracking-wide text-gray-700 placeholder:normal-case placeholder:tracking-normal placeholder:text-gray-400 focus:outline-none dark:text-gray-200 dark:placeholder:text-gray-500"

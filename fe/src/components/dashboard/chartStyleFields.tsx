@@ -342,6 +342,7 @@ export function ChartBackgroundDeModeFields({
               label="装饰色"
               showLabel
               allowClear
+              showHintTooltip={false}
               swatches={WIDGET_BORDER_RECOMMENDED}
               value={value.frameColor ?? ""}
               onChange={(color) =>
@@ -370,18 +371,21 @@ export function ChartBackgroundDeModeFields({
             label="装饰边框不透明度"
             ariaLabel="装饰边框不透明度"
             value={
-              value.frameOpacity != null
-                ? Math.round(value.frameOpacity * 100)
-                : value.opacity != null
-                  ? Math.round(value.opacity * 100)
-                  : undefined
+              value.frameOpacity != null ? Math.round(value.frameOpacity * 100) : undefined
             }
             fallback={100}
             min={0}
             max={100}
             step={1}
             unit="%"
-            onChange={(opacity) => onChange({ frameOpacity: opacity / 100 })}
+            onChange={(opacity) =>
+              onChange({
+                frameOpacity: opacity / 100,
+                backgroundShow: true,
+                backgroundMode: "frame",
+                ...(value.framePresetId ? {} : { framePresetId: "frame-1" }),
+              })
+            }
           />
         </div>
       )}

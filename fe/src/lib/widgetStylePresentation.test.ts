@@ -19,7 +19,7 @@ describe("buildWidgetBackgroundPresentation", () => {
     expect(presentation.frameLayer?.opacity).not.toBe(presentation.backgroundLayer?.opacity);
   });
 
-  it("falls back frame opacity to background opacity when frameOpacity unset", () => {
+  it("keeps decorative frame fully opaque when frameOpacity unset (ignores background opacity)", () => {
     const presentation = buildWidgetBackgroundPresentation(
       {
         backgroundShow: true,
@@ -29,6 +29,7 @@ describe("buildWidgetBackgroundPresentation", () => {
       },
       "light",
     );
-    expect(presentation.frameLayer?.opacity).toBe(0.5);
+    expect(presentation.frameLayer?.opacity).toBe(1);
+    expect(presentation.frameLayer?.transform).toContain("translateZ");
   });
 });

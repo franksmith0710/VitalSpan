@@ -1,7 +1,7 @@
 import { Link } from "react-router";
-import { Archive, Copy, Link2, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Archive, Copy, Link2, MoreHorizontal, Pencil, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Button, IconButton } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,6 +48,10 @@ export function VizComponentCard({
   const showPublish = canManage && item.status === "draft";
   const showArchive = canManage && item.status === "published";
   const referenceCount = item.referenceCount ?? 0;
+  const surfaces = item.surfaceKinds ?? [];
+  const metaLine = item.description
+    ? item.description
+    : `${widgetTypeLabel(item.widgetType)} · v${item.contentRevision}`;
 
   const copyId = async () => {
     try {
@@ -61,7 +65,7 @@ export function VizComponentCard({
   return (
     <article
       className={cn(
-        "group flex flex-col overflow-hidden rounded-2xl border bg-white shadow-theme-xs",
+        "group flex flex-col overflow-hidden rounded-xl border bg-white shadow-theme-xs",
         "transition-all duration-300 hover:-translate-y-0.5 hover:shadow-theme-md",
         "border-gray-200 dark:border-gray-800 dark:bg-white/[0.03]",
         "hover:border-brand-200 dark:hover:border-brand-500/40",
@@ -84,101 +88,107 @@ export function VizComponentCard({
         />
       </div>
 
-      <div className="flex flex-1 flex-col gap-2.5 p-3">
-        <header className="space-y-1.5">
-          <div className="flex items-start justify-between gap-2">
-            <h2 className="line-clamp-2 text-theme-sm font-semibold leading-snug text-gray-900 dark:text-white">
+      <div className="flex flex-col gap-1.5 p-2.5">
+        <div className="flex min-w-0 items-start gap-1.5">
+          <div className="min-w-0 flex-1">
+            <h2 className="truncate text-theme-sm font-semibold text-gray-900 dark:text-white">
               {item.name}
             </h2>
-            <div className="flex shrink-0 flex-col items-end gap-1">
-              {(item.surfaceKinds ?? []).map((sk) => (
+            <p className="mt-0.5 truncate text-theme-xs text-gray-500 dark:text-gray-400">
+              {metaLine}
+            </p>
+          </div>
+          {surfaces.length > 0 ? (
+            <div className="flex max-w-[42%] shrink-0 flex-wrap justify-end gap-0.5">
+              {surfaces.map((sk) => (
                 <span
                   key={sk}
-                  className="rounded-md bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-white/[0.06] dark:text-gray-400"
+                  className="rounded bg-gray-100 px-1.5 py-px text-[10px] font-medium leading-4 text-gray-500 dark:bg-white/[0.06] dark:text-gray-400"
                 >
                   {surfaceLabel(sk)}
                 </span>
               ))}
             </div>
-          </div>
+          ) : null}
+        </div>
 
-          {item.description ? (
-            <p className="line-clamp-2 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-              {item.description}
-            </p>
-          ) : (
-            <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-              {widgetTypeLabel(item.widgetType)} · v{item.contentRevision}
-            </p>
-          )}
-
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
-            className="inline-flex items-center gap-1 text-theme-xs text-brand-600 hover:underline dark:text-brand-400"
+            className="inline-flex min-w-0 items-center gap-1 truncate text-theme-xs text-brand-600 hover:underline dark:text-brand-400"
             onClick={onViewReferences}
           >
-            <Link2 className="size-3" aria-hidden />
-            引用 {referenceCount} 处
+            <Link2 className="size-3 shrink-0" aria-hidden />
+            引用 {referenceCount}
           </button>
-        </header>
-
-        <div className="mt-auto flex flex-wrap items-center gap-2">
-          <Button type="button" size="sm" variant="primary" disabled={pending} asChild>
-            <Link to={`/admin/viz-components/${item.id}/edit`}>
-              <Pencil className="size-3.5" aria-hidden />
-              {COMPONENT_ACTIONS.edit}
-            </Link>
-          </Button>
-          <Button type="button" size="sm" variant="outline" disabled={pending} onClick={onInsert}>
-            {COMPONENT_ACTIONS.insert}
-          </Button>
-          {showPublish ? (
-            <Button type="button" size="sm" variant="outline" disabled={pending} onClick={onPublish}>
-              {COMPONENT_ACTIONS.publish}
+          <div className="ml-auto flex shrink-0 items-center gap-1">
+            <Button type="button" size="sm" variant="primary" className="h-7 px-2.5" disabled={pending} asChild>
+              <Link to={`/admin/viz-components/${item.id}/edit`}>
+                <Pencil className="size-3.5" aria-hidden />
+                {COMPONENT_ACTIONS.edit}
+              </Link>
             </Button>
-          ) : null}
-          {showArchive ? (
-            <Button type="button" size="sm" variant="outline" disabled={pending} onClick={onArchive}>
-              <Archive className="size-3.5" aria-hidden />
-              {COMPONENT_ACTIONS.archive}
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-7 px-2.5"
+              disabled={pending}
+              onClick={onInsert}
+            >
+              插入
             </Button>
-          ) : null}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="px-2"
-                disabled={pending}
-                aria-label="更多操作"
-              >
-                <MoreHorizontal className="size-4" aria-hidden />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-[10rem]">
-              <DropdownMenuItem onClick={onViewReferences}>
-                <Link2 className="size-4" aria-hidden />
-                {COMPONENT_ACTIONS.references}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => void copyId()}>
-                <Copy className="size-4" aria-hidden />
-                复制组件 ID
-              </DropdownMenuItem>
-              {canManage ? (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="text-error-600 focus:text-error-600 dark:text-error-400"
-                    onClick={onDelete}
-                  >
-                    <Trash2 className="size-4" aria-hidden />
-                    {COMPONENT_ACTIONS.delete}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton
+                  type="button"
+                  size="xs"
+                  variant="outline"
+                  disabled={pending}
+                  aria-label="更多操作"
+                >
+                  <MoreHorizontal className="size-3.5" aria-hidden />
+                </IconButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[10rem]">
+                <DropdownMenuItem onClick={onInsert}>
+                  <Upload className="size-4" aria-hidden />
+                  {COMPONENT_ACTIONS.insert}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onViewReferences}>
+                  <Link2 className="size-4" aria-hidden />
+                  {COMPONENT_ACTIONS.references}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => void copyId()}>
+                  <Copy className="size-4" aria-hidden />
+                  复制组件 ID
+                </DropdownMenuItem>
+                {showPublish ? (
+                  <DropdownMenuItem onClick={onPublish}>
+                    {COMPONENT_ACTIONS.publish}
                   </DropdownMenuItem>
-                </>
-              ) : null}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                ) : null}
+                {showArchive ? (
+                  <DropdownMenuItem onClick={onArchive}>
+                    <Archive className="size-4" aria-hidden />
+                    {COMPONENT_ACTIONS.archive}
+                  </DropdownMenuItem>
+                ) : null}
+                {canManage ? (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-error-600 focus:text-error-600 dark:text-error-400"
+                      onClick={onDelete}
+                    >
+                      <Trash2 className="size-4" aria-hidden />
+                      {COMPONENT_ACTIONS.delete}
+                    </DropdownMenuItem>
+                  </>
+                ) : null}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
     </article>

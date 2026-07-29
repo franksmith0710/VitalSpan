@@ -47,14 +47,15 @@ import { sessionUserFromMe } from "@/lib/session";
 
 function ComponentCardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
+    <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
       <Skeleton className="aspect-[16/10] w-full rounded-none" />
-      <div className="space-y-2 p-4">
+      <div className="space-y-1.5 p-2.5">
         <Skeleton className="h-4 w-2/3" />
         <Skeleton className="h-3 w-full" />
-        <div className="flex gap-2 pt-1">
-          <Skeleton className="h-8 w-24" />
-          <Skeleton className="h-8 w-16" />
+        <div className="flex justify-end gap-1 pt-0.5">
+          <Skeleton className="h-7 w-14" />
+          <Skeleton className="h-7 w-12" />
+          <Skeleton className="size-7" />
         </div>
       </div>
     </div>

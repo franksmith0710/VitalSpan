@@ -4,7 +4,7 @@
 
 | 字段 | 值 |
 |------|-----|
-| 状态 | 🔧 R6 已落地（Vitest 绿）；e2e **待本机** `npx playwright install` 后复跑 |
+| 状态 | ✅ R6 已落地（Vitest + e2e 绿 · 2026-07-29） |
 | 优先级 | P0 |
 | 影响面 | `surfaceKind=data-screen` 编辑态；拖手柄微调组件尺寸 |
 | 关联计划 | [`2026-07-20-data-screen-resize-geometry-pipeline.md`](../automate/plans/2026-07-20-data-screen-resize-geometry-pipeline.md) |
@@ -120,11 +120,11 @@ R4 在 `PixelShape` 订阅该事件后，`syncDisplayFromWidgetProps()` 用**未
 
 ## 验收标准
 
-- [ ] 大屏编辑：拖/缩放松手后**全部**组件仍可见，无需刷新（待手测）
+- [ ] 大屏编辑：拖/缩放松手后**全部**组件仍可见，无需刷新（MT 抽测；e2e 已绿）
 - [x] `pnpm exec vitest run src/components/dashboard/pixelCanvas/PixelCanvas.test.tsx` 通过（含多组件大屏 commit）
 - [x] 大屏无 rerender 回归用例绿
 - [x] 大屏首帧几何 + content 1920×1080 用例绿
-- [ ] `pnpm exec playwright test e2e/data-screen-resize-content.spec.ts` 通过
+- [x] `pnpm exec playwright test e2e/data-screen-resize-content.spec.ts --project=chromium` 通过（2026-07-29）
 
 ## 修订记录
 
@@ -133,4 +133,4 @@ R4 在 `PixelShape` 订阅该事件后，`syncDisplayFromWidgetProps()` 用**未
 | 2026-07-20 | 初版 |
 | 2026-07-23 | R5：imperative-only 回归修复；RC-G~J |
 | 2026-07-23 | R6：画布级消失收口；RC-K~O |
-| 2026-07-29 | Gap-fill 计划：多次 `playwright install chromium` zip 100% 后解压挂起（`chrome-win` 空）；Vitest 回归绿；runbook 见 master gap-fill §4 |
+| 2026-07-29 | Gap-fill：手动解压 chromium-1148 + headless_shell-1148；e2e 选择器/选中态修复后绿 |

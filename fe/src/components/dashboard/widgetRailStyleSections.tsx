@@ -1,5 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { ColorField } from "@/components/ui/color-field";
+import { Switch } from "@/components/ui/switch";
 import type { ChartBorderStyle } from "@/lib/chartDeStyle";
 import { ChartBackgroundStyleFields } from "./chartStyleFields";
 import {
@@ -10,7 +11,12 @@ import {
   DeSegmentGroup,
 } from "./dashboardInspectorUi";
 import { DashboardConfigSlider } from "./deAttrSlider";
-import { ChartInspectorSection, INSPECTOR_HINT, InspectorInlineColorRow } from "./inspectorCompact";
+import {
+  ChartInspectorSection,
+  INSPECTOR_HINT,
+  INSPECTOR_SWITCH_SIZE,
+  InspectorInlineColorRow,
+} from "./inspectorCompact";
 import { ChartPaletteFontSizeSelect } from "./chartPaletteShared";
 import type { WidgetStyleConfig } from "./dashboardStyleConfig";
 import { SURFACE_COLOR_RECOMMENDED } from "./dashboardStyleConfig";
@@ -93,8 +99,21 @@ export function WidgetShellBackgroundSection({
   onChange: (patch: Partial<WidgetStyleConfig>) => void;
 }) {
   const ws = value ?? {};
+  const backgroundEnabled = ws.backgroundShow !== false;
   return (
-    <ChartInspectorSection title="背景" defaultOpen>
+    <ChartInspectorSection
+      title="背景"
+      defaultOpen
+      enabled={backgroundEnabled}
+      action={
+        <Switch
+          checked={backgroundEnabled}
+          onCheckedChange={(show) => onChange({ backgroundShow: show })}
+          aria-label="启用背景"
+          size={INSPECTOR_SWITCH_SIZE}
+        />
+      }
+    >
       <ChartBackgroundStyleFields
         scope="chart"
         density="wide"

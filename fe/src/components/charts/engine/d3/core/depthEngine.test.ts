@@ -9,10 +9,13 @@ import {
 } from "./depthEngine";
 
 describe("shadeColor", () => {
-  it("returns rgb for hex base colors", () => {
-    expect(shadeColor("#808080", "top")).toMatch(/^rgb\(/);
-    expect(shadeColor("#808080", "side")).toMatch(/^rgb\(/);
-    expect(shadeColor("#808080", "shadow")).toMatch(/^rgb\(/);
+  it("lightens / darkens hex channels in 0–255 space (not clamped to 0–1)", () => {
+    expect(shadeColor("#808080", "top")).toBe("rgb(151, 151, 151)");
+    expect(shadeColor("#808080", "side")).toBe("rgb(92, 92, 92)");
+    expect(shadeColor("#808080", "shadow")).toBe("rgb(80, 80, 80)");
+    // 回归：曾误用 clamp01 把 0–255 压成 rgb(1,1,1)
+    expect(shadeColor("#465fff", "top")).not.toBe("rgb(1, 1, 1)");
+    expect(shadeColor("#465fff", "shadow")).not.toBe("rgb(1, 1, 1)");
   });
 
   it("returns original color for non-hex input", () => {

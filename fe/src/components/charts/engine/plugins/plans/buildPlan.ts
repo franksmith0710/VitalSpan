@@ -58,9 +58,19 @@ function resolveQuotaPercent(value: number): { percent: number; rawValue: number
   return { percent: 1, rawValue: value };
 }
 
-function gaugePlan(rows: unknown[][], columns: string[], metricField: string): ChartRenderPlan {
+function aggregateQuotaMetric(rows: unknown[][], columns: string[], metricField: string): number {
   const mi = colIndex(columns, metricField);
-  const value = rows.length ? Number(rows[0]?.[mi] ?? 0) : 0;
+  if (mi < 0) return 0;
+  let sum = 0;
+  for (const row of rows) {
+    const v = Number(row[mi] ?? 0);
+    if (Number.isFinite(v)) sum += v;
+  }
+  return sum;
+}
+
+function gaugePlan(rows: unknown[][], columns: string[], metricField: string): ChartRenderPlan {
+  const value = aggregateQuotaMetric(rows, columns, metricField);
   const { percent, rawValue } = resolveQuotaPercent(value);
   return d3Plan("Gauge", {
     percent,
@@ -72,8 +82,7 @@ function gaugePlan(rows: unknown[][], columns: string[], metricField: string): C
 }
 
 function liquidPlan(rows: unknown[][], columns: string[], metricField: string): ChartRenderPlan {
-  const mi = colIndex(columns, metricField);
-  const value = rows.length ? Number(rows[0]?.[mi] ?? 0) : 0;
+  const value = aggregateQuotaMetric(rows, columns, metricField);
   const { percent, rawValue } = resolveQuotaPercent(value);
   return d3Plan("Liquid", { percent, rawValue });
 }
@@ -365,22 +374,26 @@ function scatterPlan(
   spec: ReturnType<typeof chartViewModelToRenderSpec>,
   rows: unknown[][],
   columns: string[],
-  multi = false,
 ): ChartRenderPlan {
   const metrics = spec.encoding.metrics.map((m) => m.field).filter(Boolean);
-  const xField = metrics[0] ?? spec.encoding.dimensions[0]?.field ?? "";
+  const xField = metrics[0] ?? "";
   const yField = metrics[1] ?? metrics[0] ?? "";
+  const seriesField = spec.encoding.dimensions[0]?.field ?? "";
   const xi = colIndex(columns, xField);
   const yi = colIndex(columns, yField);
   if (xi < 0 || yi < 0) return errorPlan("散点图缺少指标列", "Scatter");
-  const seriesField = multi && metrics.length > 2 ? metrics[2] : undefined;
-  const si = seriesField ? colIndex(columns, seriesField) : -1;
+  const di = seriesField ? colIndex(columns, seriesField) : -1;
   const data = rows.map((r) => ({
     x: Number(r[xi] ?? 0),
     y: Number(r[yi] ?? 0),
-    ...(seriesField && si >= 0 ? { series: String(r[si] ?? "") } : {}),
+    ...(seriesField && di >= 0 ? { series: String(r[di] ?? "") } : {}),
   }));
-  return d3Plan("Scatter", { data, xField: "x", yField: "y", colorField: seriesField ? "series" : undefined });
+  return d3Plan("Scatter", {
+    data,
+    xField: "x",
+    yField: "y",
+    colorField: seriesField && di >= 0 ? "series" : undefined,
+  });
 }
 
 function quadrantPlan(
@@ -466,7 +479,7 @@ export function buildPlanForType(chartType: string, vm: ChartViewModel): ChartRe
     case "quadrant":
       return quadrantPlan(spec, capped, columns);
     case "multi-scatter":
-      return scatterPlan(spec, capped, columns, true);
+      return scatterPlan(spec, capped, columns);
     case "chart-mix":
       return dualAxesPlan(spec, capped, columns, "default");
     case "chart-mix-group":

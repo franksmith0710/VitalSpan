@@ -373,7 +373,7 @@ describe("mergeShapeInnerPresentation", () => {
     expect(merged.shell.style.borderStyle).toBe("solid");
   });
 
-  it("includes decorative frame overlay on shape-inner shell layers", () => {
+  it("includes decorative frame overlay on shape-inner frame layers (above content)", () => {
     const cfg = patchChartDeStyleNested(baseCfg, "background", {
       backgroundShow: true,
       backgroundMode: "frame",
@@ -386,7 +386,8 @@ describe("mergeShapeInnerPresentation", () => {
       innerBackgroundLayer: shell.innerBackgroundLayer,
       innerFrameLayer: shell.innerFrameLayer,
     });
-    expect(merged.shell.backgroundLayers[1]?.backgroundImage).toContain("data:image/svg+xml");
+    expect(merged.shell.backgroundLayers.every((layer) => !layer?.backgroundImage)).toBe(true);
+    expect(merged.shell.frameLayers[0]?.backgroundImage).toContain("data:image/svg+xml");
   });
 
   it("keeps shape-inner transparent when frosted glass backdrop layer is active", () => {

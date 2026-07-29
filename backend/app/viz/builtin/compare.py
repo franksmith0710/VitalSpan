@@ -6,6 +6,8 @@ from app.viz.builtin._helpers import CARTESIAN, antv
 
 _COMPARE = CARTESIAN
 _BI = FieldRule(1, 2, 1, 2)
+_BAR_RANGE = FieldRule(1, 1, 2, 2)
+_STOCK = FieldRule(1, 1, 4, 4)
 
 COMPARE_SPECS = (
     antv(
@@ -23,9 +25,9 @@ COMPARE_SPECS = (
     antv("bar-horizontal", "基础条形图", "compare"),
     antv("bar-stack-horizontal", "堆叠条形图", "compare"),
     antv("percentage-bar-stack-horizontal", "百分比条形图", "compare"),
-    antv("bar-range", "区间条形图", "compare"),
+    antv("bar-range", "区间条形图", "compare", field_rule=_BAR_RANGE),
     antv("bidirectional-bar", "对称条形图", "compare", field_rule=_BI),
     antv("progress-bar", "进度条", "compare", field_rule=FieldRule(1, 1, 1, 1)),
-    antv("stock-line", "K 线图", "compare"),
+    antv("stock-line", "K 线图", "compare", field_rule=_STOCK),
     antv("bullet-graph", "子弹图", "compare", field_rule=FieldRule(0, 2, 1, 3)),
 )

@@ -354,13 +354,25 @@ export function ChartLabelStyleSection() {
 export function ChartBackgroundStyleSection() {
   const { cfg, patchDeStyleNested } = useChartInspector();
   const deStyle = readChartDeStyle(cfg);
+  const backgroundEnabled = deStyle.background?.backgroundShow !== false;
   const patchBackground = (patch: Partial<WidgetStyleConfig>) =>
     patchDeStyleNested("background", patch);
   const patchBorder = (patch: Partial<NonNullable<ChartDeStyle["border"]>>) =>
     patchDeStyleNested("border", patch);
 
   return (
-    <ChartInspectorSection title="背景">
+    <ChartInspectorSection
+      title="背景"
+      enabled={backgroundEnabled}
+      action={
+        <Switch
+          checked={backgroundEnabled}
+          onCheckedChange={(show) => patchBackground({ backgroundShow: show })}
+          aria-label="启用背景"
+          size={INSPECTOR_SWITCH_SIZE}
+        />
+      }
+    >
       <ChartBackgroundStyleFields
         value={deStyle.background ?? {}}
         border={deStyle.border}

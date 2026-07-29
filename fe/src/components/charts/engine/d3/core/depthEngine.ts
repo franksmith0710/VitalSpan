@@ -38,7 +38,8 @@ export function shadeColor(base: string, role: DepthRole): string {
       : role === "side"
         ? 1 - VCDS.depth.sideDarken
         : 1 - VCDS.depth.sideDarken * 1.35;
-  const mix = (c: number) => Math.round(clamp01(role === "top" ? c * factor : c * factor));
+  // channel 为 0–255；不可用 clamp01（那是 0–1）
+  const mix = (c: number) => Math.round(Math.max(0, Math.min(255, c * factor)));
   return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
 }
 

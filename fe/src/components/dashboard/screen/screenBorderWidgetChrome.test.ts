@@ -18,7 +18,9 @@ describe("screenBorderWidgetChrome", () => {
     expect(layers.shell.style.border).toBe("none");
     expect(layers.shell.style.padding).toBe(0);
     expect(layers.shell.backgroundLayers).toEqual([]);
+    expect(layers.shell.frameLayers).toEqual([]);
     expect(layers.content.style.padding).toBe(0);
     expect(layers.content.backgroundLayers).toEqual([]);
+    expect(layers.content.frameLayers).toEqual([]);
   });
 });

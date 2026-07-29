@@ -1,12 +1,17 @@
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render as rtlRender, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { ChartStylePanel } from "./ChartStylePanel";
 import { ChartInspectorProvider } from "./ChartInspectorProvider";
 import { readChartDeStyle } from "@/lib/chartDeStyle";
 import type { LayoutWidget } from "./layoutUtils";
+
+function render(ui: ReactElement) {
+  return rtlRender(<TooltipProvider delayDuration={0}>{ui}</TooltipProvider>);
+}
 
 vi.mock("@/lib/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/api")>();
@@ -79,9 +84,23 @@ describe("ChartStylePanel", () => {
     expect(screen.getByRole("switch", { name: "显示图表提示" })).toBeInTheDocument();
     expect(screen.queryByTestId("chart-palette-inline-menu-panel")).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "背景" }));
+    const backgroundSwitch = screen.getByRole("switch", { name: "启用背景" });
+    expect(backgroundSwitch).toBeChecked();
+    // enabled=true 时区块自动展开，无需再点标题
+    expect(screen.getByRole("button", { name: "背景" })).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByRole("button", { name: "图片" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "装饰边框" })).toBeInTheDocument();
+
+    await user.click(backgroundSwitch);
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        nativeBody: expect.objectContaining({
+          deStyle: expect.objectContaining({
+            background: expect.objectContaining({ backgroundShow: false }),
+          }),
+        }),
+      }),
+    );
   });
 
   it("patches chart palette when selecting a preset in the inspector", async () => {

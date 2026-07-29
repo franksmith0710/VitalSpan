@@ -34,7 +34,49 @@ export function chartDataSlotBlueprint(chartType: ChartType | string): ChartData
   if (plugin) {
     switch (plugin.paletteCategory) {
       case "trend":
+        return [
+          { kind: "dimension", index: 0, label: "类别轴 / 维度", required: true },
+          { kind: "dimension", index: 1, label: "子类别 / 维度", required: false },
+          { kind: "metric", index: 0, label: "值轴 / 指标", required: true, showAggregation: true },
+          { kind: "dimension", index: 2, label: "钻取 / 维度", required: false },
+        ];
       case "compare":
+        if (chartType === "bar-range") {
+          return [
+            { kind: "dimension", index: 0, label: "类别 / 维度", required: true },
+            { kind: "metric", index: 0, label: "下限 / 指标", required: true, showAggregation: true },
+            { kind: "metric", index: 1, label: "上限 / 指标", required: true, showAggregation: true },
+          ];
+        }
+        if (chartType === "progress-bar") {
+          return [
+            { kind: "dimension", index: 0, label: "类别 / 维度", required: true },
+            { kind: "metric", index: 0, label: "进度值 / 指标", required: true, showAggregation: true },
+          ];
+        }
+        if (chartType === "stock-line") {
+          return [
+            { kind: "dimension", index: 0, label: "日期 / 维度", required: true },
+            { kind: "metric", index: 0, label: "开盘价", required: true, showAggregation: true },
+            { kind: "metric", index: 1, label: "收盘价", required: true, showAggregation: true },
+            { kind: "metric", index: 2, label: "最低价", required: true, showAggregation: true },
+            { kind: "metric", index: 3, label: "最高价", required: true, showAggregation: true },
+          ];
+        }
+        if (chartType === "bullet-graph") {
+          return [
+            { kind: "dimension", index: 0, label: "类别 / 维度", required: false },
+            { kind: "metric", index: 0, label: "实际值 / 指标", required: true, showAggregation: true },
+            { kind: "metric", index: 1, label: "目标值 / 指标", required: false, showAggregation: true },
+            { kind: "metric", index: 2, label: "区间上限 / 指标", required: false, showAggregation: true },
+          ];
+        }
+        if (chartType === "waterfall" || chartType === "bidirectional-bar") {
+          return [
+            { kind: "dimension", index: 0, label: "类别 / 维度", required: true },
+            { kind: "metric", index: 0, label: "数值 / 指标", required: true, showAggregation: true },
+          ];
+        }
         return [
           { kind: "dimension", index: 0, label: "类别轴 / 维度", required: true },
           { kind: "dimension", index: 1, label: "子类别 / 维度", required: false },
@@ -65,7 +107,7 @@ export function chartDataSlotBlueprint(chartType: ChartType | string): ChartData
         if (chartType === "table-pivot") {
           return [
             { kind: "dimension", index: 0, label: "行 / 维度", required: true },
-            { kind: "dimension", index: 1, label: "列 / 维度", required: false },
+            { kind: "dimension", index: 1, label: "列 / 维度", required: true },
             { kind: "metric", index: 0, label: "数值 / 指标", required: true, showAggregation: true },
           ];
         }
@@ -87,10 +129,13 @@ export function chartDataSlotBlueprint(chartType: ChartType | string): ChartData
           { kind: "metric", index: 0, label: "数值列 / 指标", required: false, showAggregation: true },
         ];
       case "quota":
-        return [
-          { kind: "dimension", index: 0, label: "分组 / 维度", required: false },
-          { kind: "metric", index: 0, label: "指标 / 度量", required: true, showAggregation: true },
-        ];
+        if (chartType === "kpi") {
+          return [
+            { kind: "dimension", index: 0, label: "分组 / 维度", required: false },
+            { kind: "metric", index: 0, label: "指标 / 度量", required: true, showAggregation: true },
+          ];
+        }
+        return [{ kind: "metric", index: 0, label: "指标 / 度量", required: true, showAggregation: true }];
       case "map":
         return [
           { kind: "dimension", index: 0, label: "地区 / 维度", required: true },
@@ -114,9 +159,9 @@ export function chartDataSlotBlueprint(chartType: ChartType | string): ChartData
         }
         if (chartType === "scatter" || chartType === "quadrant" || chartType === "multi-scatter") {
           return [
-            { kind: "dimension", index: 0, label: "X 轴 / 维度", required: true },
-            { kind: "metric", index: 0, label: "Y 轴 / 指标", required: true, showAggregation: true },
-            { kind: "metric", index: 1, label: "大小 / 指标", required: false, showAggregation: true },
+            { kind: "dimension", index: 0, label: "系列 / 维度", required: true },
+            { kind: "metric", index: 0, label: "X 轴 / 指标", required: true, showAggregation: true },
+            { kind: "metric", index: 1, label: "Y 轴 / 指标", required: true, showAggregation: true },
           ];
         }
         return [
@@ -155,10 +200,8 @@ export function chartDataSlotBlueprint(chartType: ChartType | string): ChartData
         { kind: "metric", index: 0, label: "指标 / 度量", required: true, showAggregation: true },
       ];
     case "gauge":
-      return [
-        { kind: "dimension", index: 0, label: "分组 / 维度", required: false },
-        { kind: "metric", index: 0, label: "指标 / 度量", required: true, showAggregation: true },
-      ];
+    case "liquid":
+      return [{ kind: "metric", index: 0, label: "指标 / 度量", required: true, showAggregation: true }];
     case "map":
       return [
         { kind: "dimension", index: 0, label: "地区 / 维度", required: true },
@@ -184,10 +227,12 @@ export function chartDataSlotBlueprint(chartType: ChartType | string): ChartData
         { kind: "metric", index: 0, label: "关系 / 指标", required: false, showAggregation: true },
       ];
     case "scatter":
+    case "quadrant":
+    case "multi-scatter":
       return [
-        { kind: "dimension", index: 0, label: "X 轴 / 维度", required: true },
-        { kind: "metric", index: 0, label: "Y 轴 / 指标", required: true, showAggregation: true },
-        { kind: "metric", index: 1, label: "大小 / 指标", required: false, showAggregation: true },
+        { kind: "dimension", index: 0, label: "系列 / 维度", required: true },
+        { kind: "metric", index: 0, label: "X 轴 / 指标", required: true, showAggregation: true },
+        { kind: "metric", index: 1, label: "Y 轴 / 指标", required: true, showAggregation: true },
       ];
     case "combo":
       return [

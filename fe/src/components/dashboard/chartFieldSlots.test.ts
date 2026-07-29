@@ -75,4 +75,25 @@ describe("chartFieldSlots", () => {
       minMetrics: 2,
     });
   });
+
+  it("T-INSP-DE-10: gauge and liquid expose metric-only slots", () => {
+    expect(chartDataSlotBlueprint("gauge").map((s) => s.label)).toEqual(["指标 / 度量"]);
+    expect(chartDataSlotBlueprint("liquid").map((s) => s.label)).toEqual(["指标 / 度量"]);
+    expect(chartRenderRequiredCounts("gauge")).toEqual({ minDimensions: 0, minMetrics: 1 });
+  });
+
+  it("T-INSP-DE-11: scatter family uses series dim + X/Y metrics", () => {
+    for (const type of ["scatter", "quadrant", "multi-scatter"]) {
+      expect(chartDataSlotBlueprint(type).map((s) => s.label)).toEqual([
+        "系列 / 维度",
+        "X 轴 / 指标",
+        "Y 轴 / 指标",
+      ]);
+    }
+  });
+
+  it("T-INSP-DE-12: table-pivot requires row and column dimensions", () => {
+    const slots = chartDataSlotBlueprint("table-pivot");
+    expect(slots.filter((s) => s.kind === "dimension" && s.required !== false).length).toBe(2);
+  });
 });

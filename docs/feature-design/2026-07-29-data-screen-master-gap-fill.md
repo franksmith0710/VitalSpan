@@ -4,7 +4,7 @@
 |----|-----|
 | 模式 | Gap-fill |
 | 日期 | 2026-07-29 |
-| 状态 | **P0 已登记；P1 手测待发版抽测** |
+| 状态 | **P0/P1/P2 计划项已闭合；发版前 MT 手测待发版抽测** |
 | 分片归档 | [Wave B](./2026-07-29-data-screen-wave-b-gap-fill.md) · [Wave C/D](./2026-07-29-data-screen-wave-cd-gap-fill.md) |
 
 ## 1. 问题与目标
@@ -54,7 +54,7 @@ cd fe && npx vitest run \
 
 | ID | 项 | 状态 |
 |----|-----|------|
-| P0-5 | BUG-12 resize e2e | **环境阻塞**（2026-07-29：zip 100% 后解压挂起，`chrome-win` 空目录）；Vitest 绿；见 §4 runbook |
+| P0-5 | BUG-12 resize e2e | ✅ `e2e/data-screen-resize-content.spec.ts` 绿（2026-07-29） |
 
 ### P1 · 发版前手测
 
@@ -90,13 +90,22 @@ cd fe && npx vitest run \
 
 ## 4. Playwright 环境 runbook
 
-若 `npx playwright install chromium` 失败或挂起：
+若 `npx playwright install chromium` 失败或挂起（zip 100% 后解压无输出）：
 
-1. 确认无并行安装进程（`Get-Process node -ErrorAction SilentlyContinue`）
-2. 删除锁：`Remove-Item -Recurse -Force "$env:LOCALAPPDATA\ms-playwright\__dirlock" -ErrorAction SilentlyContinue`
-3. 若 `chromium-1148\chrome-win` 为空，删除整个 `chromium-1148` 目录后重装
-4. 重试：`cd fe; npx playwright install chromium`
-5. 跑 e2e：`npx playwright test e2e/data-screen-resize-content.spec.ts --project=chromium`
+1. 确认无并行安装进程
+2. 删除锁与半成品：`Remove-Item -Recurse -Force "$env:LOCALAPPDATA\ms-playwright\__dirlock","$env:LOCALAPPDATA\ms-playwright\chromium-1148" -ErrorAction SilentlyContinue`
+3. **手动安装**（PowerShell）：
+   ```powershell
+   $zip = "$env:TEMP\chromium-1148-win64.zip"
+   $dest = "$env:LOCALAPPDATA\ms-playwright\chromium-1148"
+   Invoke-WebRequest -Uri "https://playwright.azureedge.net/builds/chromium/1148/chromium-win64.zip" -OutFile $zip
+   Expand-Archive -Path $zip -DestinationPath $dest -Force
+   $zip2 = "$env:TEMP\chromium-headless-shell-1148-win64.zip"
+   $dest2 = "$env:LOCALAPPDATA\ms-playwright\chromium_headless_shell-1148"
+   Invoke-WebRequest -Uri "https://playwright.azureedge.net/builds/chromium/1148/chromium-headless-shell-win64.zip" -OutFile $zip2
+   Expand-Archive -Path $zip2 -DestinationPath $dest2 -Force
+   ```
+4. 跑 e2e：`cd fe; npx playwright test e2e/data-screen-resize-content.spec.ts --project=chromium`
 
 ---
 
@@ -105,7 +114,7 @@ cd fe && npx vitest run \
 - [x] `master-gap-fill.md` 落盘且旧分片已交叉引用
 - [x] PRD / phase25-requirements / phase25-execute 状态一致
 - [x] 保存 WYSIWYG：BUG-14 + bug-case + 单测
-- [ ] BUG-12 e2e 绿（环境阻塞，见 §4）
+- [x] BUG-12 e2e 绿（§4 手动安装 runbook）
 - [x] Inspector + 投放手测表可执行（§3 MT-*）
 
 | 决策 | 结论 |

@@ -783,7 +783,10 @@ export function mergeChartDeStyleIntoWidgetShell(
 }
 
 function widgetStyleAllowsDecorativeFrame(ws: WidgetStyleConfig | undefined): boolean {
-  return ws?.backgroundMode === "frame" && Boolean(ws?.framePresetId);
+  if (!ws?.framePresetId) return false;
+  // 有预设即视为装饰边框；仅在明确为图片/线框模式时关闭
+  const mode = ws.backgroundMode ?? "frame";
+  return mode === "frame";
 }
 
 /** 看板 widgetStyle 外壳 + 图表 deStyle 外观合并到同一外框层 */
@@ -815,7 +818,10 @@ export function resolveChartContentShellStyle(
 
 export type ShapePresentationLayers = {
   style: CSSProperties;
+  /** 底色 / 底图：位于内容下方 */
   backgroundLayers: Array<CSSProperties | null>;
+  /** 装饰边框 overlay：必须盖在内容之上，否则被图表底色挡住 */
+  frameLayers: Array<CSSProperties | null>;
 };
 
 /** 外壳 widgetStyle + 单图 deStyle → shape-inner；shape-content 仅承载图表 */
@@ -841,11 +847,13 @@ export function mergeShapeInnerPresentation(shell: {
   return {
     shell: {
       style: shellStyle,
-      backgroundLayers: [shell.outer.backgroundLayer, shell.outer.frameLayer ?? null],
+      backgroundLayers: [shell.outer.backgroundLayer],
+      frameLayers: [shell.outer.frameLayer ?? null],
     },
     content: {
       style: { ...shell.inner },
-      backgroundLayers: [shell.innerBackgroundLayer, shell.innerFrameLayer ?? null],
+      backgroundLayers: [shell.innerBackgroundLayer],
+      frameLayers: [shell.innerFrameLayer ?? null],
     },
   };
 }

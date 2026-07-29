@@ -30,10 +30,13 @@ function resolvePresetId(presetId: string | undefined): ChartFramePresetId {
 
 /** 对标 DataEase Board.vue：整幅 SVG 拉伸铺满，fill 着色 */
 export function tintBoardSvg(svg: string, color: string): string {
+  const safe = color.trim() || "#3370ff";
   return svg
     .replace(/ preserveAspectRatio="none meet"/, ' preserveAspectRatio="none"')
     .replace(/\s(width|height)="[^"]*"/g, "")
-    .replace(/<svg /, `<svg fill="${color}" `);
+    .replace(/\sfill="[^"]*"/gi, "")
+    .replace(/<svg\b/, `<svg fill="${safe}"`)
+    .replace(/<path\b/gi, `<path fill="${safe}"`);
 }
 
 export function buildChartFrameBorderSvgUrl(
@@ -59,6 +62,12 @@ export function resolveChartFrameOverlayLayer(
     backgroundRepeat: "no-repeat",
     backgroundPosition: "center",
     borderRadius,
+    /**
+     * 图表 Canvas/WebGL 常被浏览器提升为独立合成层，普通绝对定位兄弟可能被盖住；
+     * translateZ(0) 强制边框层同样提升，避免「只有改不透明度才看得见」。
+     */
+    transform: "translateZ(0)",
+    backfaceVisibility: "hidden",
   };
 }
 

@@ -24,6 +24,7 @@ export function applyScreenBorderShellPresentation(
       ...layers.content,
       style: { ...layers.content.style, ...TRANSPARENT_SHELL },
       backgroundLayers: [],
+      frameLayers: [],
     },
   };
 }
