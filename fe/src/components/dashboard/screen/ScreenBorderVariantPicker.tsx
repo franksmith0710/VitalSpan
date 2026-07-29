@@ -1,14 +1,14 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Check, ChevronDown } from "lucide-react";
 import { cva } from "class-variance-authority";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { getScreenBorderCatalogItems } from "@/lib/screenMaterialCatalog";
 import type { ScreenBorderStyleConfig, ScreenBorderVariant } from "@/lib/screenVisualStyle";
-import { ScreenBorderStyleThumbnail } from "./ScreenBorderDisplay";
+import { ScreenBorderStyleThumbnail } from "./screenBorderVariants";
 
 const triggerShellVariants = cva(
-  "flex h-8 min-w-0 w-full overflow-hidden rounded-md border bg-white text-left shadow-theme-xs transition-[border-color,box-shadow] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30 dark:bg-white/[0.03]",
+  "flex h-9 min-w-0 w-full overflow-hidden rounded-lg border bg-white text-left shadow-theme-xs transition-[border-color,box-shadow] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30 dark:bg-white/[0.03]",
   {
     variants: {
       open: {
@@ -34,6 +34,14 @@ type ScreenBorderVariantPickerProps = {
   className?: string;
 };
 
+function BorderThumbFrame({ children }: { children: ReactNode }) {
+  return (
+    <span className="relative block size-full overflow-hidden rounded-[5px] border border-gray-200/90 dark:border-white/10">
+      {children}
+    </span>
+  );
+}
+
 export function ScreenBorderVariantPicker({
   style,
   onChange,
@@ -46,7 +54,7 @@ export function ScreenBorderVariantPicker({
     `边框${indexLabel}`;
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal={false}>
       <PopoverTrigger asChild>
         <button
           type="button"
@@ -54,16 +62,22 @@ export function ScreenBorderVariantPicker({
           aria-label="边框样式"
           aria-expanded={open}
           data-testid="border-variant-select"
+          onMouseDown={(event) => event.preventDefault()}
         >
           <span
-            className="relative flex h-full w-12 shrink-0 overflow-hidden border-r border-gray-100 bg-[#0a0e14] dark:border-gray-800"
+            className="flex h-full w-11 shrink-0 items-center justify-center border-r border-gray-100 bg-gray-50/90 p-1 dark:border-gray-800 dark:bg-white/[0.04]"
             aria-hidden
           >
-            <ScreenBorderStyleThumbnail styleConfig={style} />
+            <BorderThumbFrame>
+              <ScreenBorderStyleThumbnail styleConfig={style} />
+            </BorderThumbFrame>
           </span>
-          <span className="flex min-w-0 flex-1 items-center gap-2 px-2">
+          <span className="flex min-w-0 flex-1 items-center gap-2 px-2.5">
             <span className="min-w-0 flex-1 truncate text-theme-xs text-gray-700 dark:text-gray-200">
               {selectedLabel}
+            </span>
+            <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-md bg-gray-100 text-[10px] font-semibold tabular-nums text-gray-700 dark:bg-white/10 dark:text-gray-200">
+              {indexLabel}
             </span>
             <ChevronDown
               className={cn(
@@ -79,8 +93,9 @@ export function ScreenBorderVariantPicker({
         align="start"
         side="bottom"
         collisionPadding={12}
-        className="w-[min(15.5rem,calc(100vw-2rem))] p-2.5"
+        className="w-[min(15.5rem,calc(100vw-2rem))] max-h-[min(70vh,20rem)] overflow-y-auto overscroll-contain p-2.5"
         sideOffset={6}
+        onOpenAutoFocus={(event) => event.preventDefault()}
       >
         <p className="mb-2 text-[10px] font-medium text-gray-500 dark:text-gray-400">边框样式</p>
         <div className="grid grid-cols-3 gap-1.5" role="listbox" aria-label="边框样式">
@@ -98,7 +113,7 @@ export function ScreenBorderVariantPicker({
                 title={item.label}
                 data-testid={`border-variant-${variant}`}
                 className={cn(
-                  "group relative aspect-[4/3] overflow-hidden rounded-lg border transition-colors",
+                  "group relative aspect-[4/3] overflow-hidden rounded-lg border bg-gray-50/80 p-1 transition-colors dark:bg-white/[0.03]",
                   "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30",
                   active
                     ? "border-brand-500 ring-1 ring-brand-500/30 dark:border-brand-500/70"
@@ -109,13 +124,14 @@ export function ScreenBorderVariantPicker({
                   setOpen(false);
                 }}
               >
-                <span className="absolute inset-0 bg-[#0a0e14]" aria-hidden />
-                <ScreenBorderStyleThumbnail styleConfig={previewStyle} className="absolute inset-0" />
-                <span className="absolute bottom-1 right-1 rounded bg-white/90 px-1 py-px text-[9px] font-medium tabular-nums text-gray-600 shadow-theme-xs dark:bg-gray-900/90 dark:text-gray-300">
+                <BorderThumbFrame>
+                  <ScreenBorderStyleThumbnail styleConfig={previewStyle} />
+                </BorderThumbFrame>
+                <span className="absolute bottom-1.5 right-1.5 rounded bg-white/90 px-1 py-px text-[9px] font-medium tabular-nums text-gray-600 shadow-theme-xs dark:bg-gray-900/90 dark:text-gray-300">
                   {variantIndex(variant)}
                 </span>
                 {active ? (
-                  <span className="absolute left-1 top-1 flex size-4 items-center justify-center rounded-full bg-brand-500 text-white shadow-theme-xs">
+                  <span className="absolute left-1.5 top-1.5 flex size-4 items-center justify-center rounded-full bg-brand-500 text-white shadow-theme-xs">
                     <Check className="size-2.5" aria-hidden />
                   </span>
                 ) : null}

@@ -284,12 +284,12 @@ function normalizeChartWidgetTitle(widget: LayoutWidget): LayoutWidget {
 }
 
 export function getTopLevelWidgets(widgets: LayoutWidget[]): LayoutWidget[] {
-  return widgets.filter((w) => !w.parentTabsId);
+  return sortWidgets(widgets.filter((w) => !w.parentTabsId));
 }
 
 /** 像素画布仅渲染顶层 shape；Tab 内子组件在 TabsWidget 内嵌展示 */
 export function getTopLevelPixelWidgets(widgets: PixelLayoutWidget[]): PixelLayoutWidget[] {
-  return widgets.filter((w) => !w.parentTabsId);
+  return sortWidgets(widgets.filter((w) => !w.parentTabsId)) as PixelLayoutWidget[];
 }
 
 export function pointInPixelWidget(
@@ -592,11 +592,51 @@ export function appendWidgetToTabPane(
 }
 
 export function coerceLayoutWidgets(widgets: Array<Partial<LayoutWidget> & { id: string }>): LayoutWidget[] {
-  return reconcileTabPaneChildIds(widgets.map(coerceLayoutWidget));
+  return normalizeLayerOrders(reconcileTabPaneChildIds(widgets.map(coerceLayoutWidget)));
 }
 
 export function sortWidgets(widgets: LayoutWidget[]): LayoutWidget[] {
-  return [...widgets].sort((a, b) => a.order - b.order);
+  return [...widgets].sort(compareWidgetLayerOrder);
+}
+
+/** 同组内叠放顺序：order 升序，相同 order 以 id 稳定排序 */
+export function compareWidgetLayerOrder(
+  a: Pick<LayoutWidget, "order" | "id">,
+  b: Pick<LayoutWidget, "order" | "id">,
+): number {
+  const delta = a.order - b.order;
+  return delta !== 0 ? delta : a.id.localeCompare(b.id);
+}
+
+/**
+ * 将同级组件 order 压实为 0..n-1，消除重复/空洞，保证 z-index 与图层面板严格一致。
+ */
+export function normalizeLayerOrders(widgets: LayoutWidget[]): LayoutWidget[] {
+  const groups = new Map<string, LayoutWidget[]>();
+  for (const widget of widgets) {
+    const key = getLayerSiblingKey(widget);
+    const list = groups.get(key) ?? [];
+    list.push(widget);
+    groups.set(key, list);
+  }
+
+  const orderById = new Map<string, number>();
+  let dirty = false;
+  for (const siblings of groups.values()) {
+    const sorted = [...siblings].sort(compareWidgetLayerOrder);
+    sorted.forEach((widget, index) => {
+      orderById.set(widget.id, index);
+      if (widget.order !== index) dirty = true;
+    });
+  }
+
+  if (!dirty) return widgets;
+
+  return widgets.map((widget) => {
+    const nextOrder = orderById.get(widget.id);
+    if (nextOrder === undefined || nextOrder === widget.order) return widget;
+    return { ...widget, order: nextOrder };
+  });
 }
 
 /** 图层同级分组键：画布顶层 vs 同一 Tab 页签内 */
@@ -617,17 +657,19 @@ export function getLayerSiblings(widgets: LayoutWidget[], id: string): LayoutWid
 
 export function moveWidget(widgets: LayoutWidget[], id: string, direction: "up" | "down"): LayoutWidget[] {
   const siblings = getLayerSiblings(widgets, id);
-  const idx = siblings.findIndex((w) => w.id === id);
-  if (idx < 0) return widgets;
-  const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-  if (swapIdx < 0 || swapIdx >= siblings.length) return widgets;
-  const aOrder = siblings[idx]!.order;
-  const bOrder = siblings[swapIdx]!.order;
-  return widgets.map((w) => {
-    if (w.id === siblings[idx]!.id) return { ...w, order: bOrder };
-    if (w.id === siblings[swapIdx]!.id) return { ...w, order: aOrder };
-    return w;
-  });
+  const sorted = [...siblings].sort(compareWidgetLayerOrder);
+  const currentIdx = sorted.findIndex((w) => w.id === id);
+  if (currentIdx < 0) return widgets;
+  const swapIdx = direction === "up" ? currentIdx - 1 : currentIdx + 1;
+  if (swapIdx < 0 || swapIdx >= sorted.length) return widgets;
+  const reordered = [...sorted];
+  [reordered[currentIdx], reordered[swapIdx]] = [reordered[swapIdx]!, reordered[currentIdx]!];
+  const orderById = new Map(reordered.map((widget, index) => [widget.id, index]));
+  return normalizeLayerOrders(
+    widgets.map((widget) =>
+      orderById.has(widget.id) ? { ...widget, order: orderById.get(widget.id)! } : widget,
+    ),
+  );
 }
 
 export function moveWidgetToExtreme(
@@ -636,13 +678,20 @@ export function moveWidgetToExtreme(
   position: "top" | "bottom",
 ): LayoutWidget[] {
   const siblings = getLayerSiblings(widgets, id);
-  const idx = siblings.findIndex((w) => w.id === id);
-  if (idx < 0) return widgets;
-  const targetOrder =
-    position === "top"
-      ? Math.max(...siblings.map((w) => w.order)) + 1
-      : Math.min(...siblings.map((w) => w.order)) - 1;
-  return widgets.map((w) => (w.id === id ? { ...w, order: targetOrder } : w));
+  const sorted = [...siblings].sort(compareWidgetLayerOrder);
+  const currentIdx = sorted.findIndex((w) => w.id === id);
+  if (currentIdx < 0) return widgets;
+  const targetIdx = position === "top" ? sorted.length - 1 : 0;
+  if (currentIdx === targetIdx) return widgets;
+  const reordered = [...sorted];
+  const [item] = reordered.splice(currentIdx, 1);
+  reordered.splice(targetIdx, 0, item!);
+  const orderById = new Map(reordered.map((widget, index) => [widget.id, index]));
+  return normalizeLayerOrders(
+    widgets.map((widget) =>
+      orderById.has(widget.id) ? { ...widget, order: orderById.get(widget.id)! } : widget,
+    ),
+  );
 }
 
 export function resizeWidget(

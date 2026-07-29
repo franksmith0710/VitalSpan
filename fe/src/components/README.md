@@ -57,7 +57,9 @@
 | CanvasScaleViewport | `dashboard/screen/CanvasScaleViewport.tsx` | 视口级缩放（宽度/高度/等比/铺满/不缩放） |
 | CanvasScaleArea | `dashboard/screen/CanvasScaleArea.tsx` | 大屏编辑右下角缩放 HUD（快捷键提示、比例下拉、±、重置视口） |
 | CanvasViewportScrollbars | `dashboard/screen/CanvasViewportScrollbars.tsx` | 大屏编辑视口自定义滚动条（对标 DE scale-area 轨道） |
-| DataScreenEditViewport | `dashboard/screen/DataScreenEditViewport.tsx` | 大屏编辑视口（标尺、平移、缩放、scale-area） |
+| DataScreenEditViewport | `dashboard/screen/DataScreenEditViewport.tsx` | 大屏编辑视口（标尺、十字线、平移、缩放、scale-area） |
+| useDataScreenViewportState | `dashboard/screen/useDataScreenViewportState.ts` | 大屏编辑视口状态机（pan/zoom/reset/标尺偏移） |
+| CanvasRulerCrosshair | `dashboard/screen/CanvasRulerCrosshair.tsx` | 大屏编辑标尺十字线（指针设计坐标） |
 | ScreenPreviewChrome | `dashboard/screen/ScreenPreviewChrome.tsx` | 大屏预览顶栏（返回编辑、缩放模式、全屏） |
 | LayerPanel | `dashboard/LayerPanel.tsx` | 数据大屏图层管理（排序、显隐、锁定） |
 | DashboardGrid | `dashboard/DashboardGrid.tsx` | v1 栅格画布；引擎 **react-grid-layout**（`dashboardGridRgl.tsx` + WidthProvider 自适应宽度），仅历史兼容/紧急回退 |

@@ -15,4 +15,10 @@ describe("defaultMap3dChartDeStyle", () => {
   it("matches satellite preset defaults helper", () => {
     expect(geo3dPresetDefaults("satellite")).toEqual(DEFAULT_MAP_3D_CHART_DE_STYLE.geo3d);
   });
+
+  it("classic preset includes shared effects defaults", () => {
+    const defaults = geo3dPresetDefaults("classic");
+    expect(defaults.sceneFog).toBe(true);
+    expect(defaults.heatBlobRadius).toBe(15);
+  });
 });

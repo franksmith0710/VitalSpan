@@ -6,6 +6,7 @@ import {
   reconcileTabPaneChildIdsInPixelLayout,
   repairUnparkedTabChildren,
   syncParkedTabChildren,
+  normalizeLayerOrders,
 } from "../layoutUtils";
 import { compactPixelLayoutWhenZeroGap } from "./gapCompaction";
 import { layoutsOverlap, packPixelLayoutSeamless } from "./collisionLayout";
@@ -62,7 +63,9 @@ export function sanitizePixelLayoutGeometry(
     bootstrapDashboardStyleConfig(style ?? layout.styleConfig ?? {}),
   );
   const isDataScreen = readSurfaceKind(style ?? layout) === "data-screen";
-  let prepared = compactPixelLayoutWhenZeroGap(layout, gapConfig).layout;
+  let prepared = isDataScreen
+    ? layout
+    : compactPixelLayoutWhenZeroGap(layout, gapConfig).layout;
   prepared = repairPixelLayoutTabState(prepared);
   const hasOverlap = layoutsOverlap(prepared, 0);
   const shouldPack =
@@ -71,6 +74,10 @@ export function sanitizePixelLayoutGeometry(
     (options?.packOverlaps === true || options?.packOverlaps !== false);
   if (shouldPack) {
     prepared = packPixelLayoutSeamless(prepared);
+  }
+  const normalizedWidgets = normalizeLayerOrders(prepared.widgets);
+  if (normalizedWidgets !== prepared.widgets) {
+    prepared = { ...prepared, widgets: normalizedWidgets as typeof prepared.widgets };
   }
   if (isDataScreen) {
     return clampPixelLayoutToCanvasBounds(prepared);

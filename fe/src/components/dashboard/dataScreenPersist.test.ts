@@ -71,6 +71,30 @@ describe("data-screen persist bounds", () => {
     expect(after.fingerprint).toBe(before.fingerprint);
   });
 
+  it("preserves widget coordinates after persist roundtrip", () => {
+    let layout = buildDefaultLayoutForSurface("data-screen");
+    layout = insertPixelPaletteWidget("gauge", layout);
+    layout = insertPixelPaletteWidget("line", layout);
+    const widgets = layout.widgets.map((w, i) => ({
+      ...w,
+      x: i === 0 ? 120 : 680,
+      y: i === 0 ? 80 : 240,
+      width: 480,
+      height: 320,
+    }));
+    layout = { ...layout, widgets };
+    const style = hydrateDashboardStyle(layout.styleConfig);
+    const saved = persistDashboardLayout(layout, style);
+    const editorLayout = layoutForEditorAfterPersist(saved, style);
+    for (const original of widgets) {
+      const roundtripped = editorLayout.widgets.find((w) => w.id === original.id);
+      expect(roundtripped?.x).toBe(original.x);
+      expect(roundtripped?.y).toBe(original.y);
+      expect(roundtripped?.width).toBe(original.width);
+      expect(roundtripped?.height).toBe(original.height);
+    }
+  });
+
   it("editorResetBaselineSnapshot matches post-reset dirty state after save", () => {
     let layout = buildDefaultLayoutForSurface("data-screen");
     layout = insertPixelPaletteWidget("gauge", layout);

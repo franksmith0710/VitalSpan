@@ -1,10 +1,10 @@
 # BUG-12：数据大屏编辑 resize 后组件内容消失
 
-> 最近更新 2026-07-23（R6）
+> 最近更新 2026-07-29（R6 + e2e 环境阻塞）
 
 | 字段 | 值 |
 |------|-----|
-| 状态 | 🔧 R6 已落地（Vitest 绿；待大屏手测） |
+| 状态 | 🔧 R6 已落地（Vitest 绿）；e2e **待本机** `npx playwright install` 后复跑 |
 | 优先级 | P0 |
 | 影响面 | `surfaceKind=data-screen` 编辑态；拖手柄微调组件尺寸 |
 | 关联计划 | [`2026-07-20-data-screen-resize-geometry-pipeline.md`](../automate/plans/2026-07-20-data-screen-resize-geometry-pipeline.md) |
@@ -133,3 +133,4 @@ R4 在 `PixelShape` 订阅该事件后，`syncDisplayFromWidgetProps()` 用**未
 | 2026-07-20 | 初版 |
 | 2026-07-23 | R5：imperative-only 回归修复；RC-G~J |
 | 2026-07-23 | R6：画布级消失收口；RC-K~O |
+| 2026-07-29 | Gap-fill 计划：多次 `playwright install chromium` zip 100% 后解压挂起（`chrome-win` 空）；Vitest 回归绿；runbook 见 master gap-fill §4 |

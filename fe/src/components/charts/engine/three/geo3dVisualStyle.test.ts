@@ -33,9 +33,7 @@ describe("geo3dVisualStyle", () => {
     expect(defaults.terrainTexture).toBe(false);
     expect(defaults.sceneFog).toBe(true);
     expect(defaults.platformEffects).toBe(true);
-    expect(defaults.platformGlow).toBe(true);
-    expect(defaults.platformPulse).toBe(true);
-    expect(defaults.platformSweep).toBe(true);
+    expect(defaults.platformGlow).toBe(false);
     expect(defaults.pointEffects).toBe(true);
     expect(defaults.heatBlob).toBe(true);
     expect(defaults.pointPillar).toBe(true);
@@ -47,11 +45,24 @@ describe("geo3dVisualStyle", () => {
     expect(visual.techSatelliteOverlay).toBe(true);
   });
 
-  it("classic preset turns off terrain by default", () => {
+  it("classic preset enables full scene effects", () => {
     const defaults = geo3dPresetDefaults("classic");
     expect(defaults.terrainTexture).toBe(false);
+    expect(defaults.sceneFog).toBe(true);
+    expect(defaults.platformEffects).toBe(true);
+    expect(defaults.pointEffects).toBe(true);
     const visual = resolveGeo3dVisualStyle({ stylePreset: "classic" }, false);
     expect(visual.preferTerrainTexture).toBe(false);
+    expect(resolveGeo3dSceneClouds({ stylePreset: "classic" })).toBe(true);
+    expect(resolveGeo3dPlatformEffects({ stylePreset: "classic" })).toBe(true);
+  });
+
+  it("glass preset defaults to translucent shell", () => {
+    const defaults = geo3dPresetDefaults("glass");
+    expect(defaults.shellOpacity).toBe(0.48);
+    expect(defaults.sceneFog).toBe(true);
+    expect(defaults.pointEffects).toBe(true);
+    expect(resolveGeo3dShellOpacity({ stylePreset: "glass" })).toBe(0.48);
   });
 
   it("scene clouds resolve from preset when unset", () => {

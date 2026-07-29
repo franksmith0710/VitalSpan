@@ -95,6 +95,23 @@ describe("layoutSanitize", () => {
     expect(layoutsOverlap(sanitized, 0)).toBe(true);
   });
 
+  it("does not compact separated widgets on data-screen sanitize", () => {
+    const layout: DashboardLayoutV2 = {
+      version: 2,
+      canvas: { width: 1920, height: 1080 },
+      widgets: [
+        chart("a", 0, 0, 400, 300, 0),
+        chart("b", 500, 100, 400, 300, 1),
+      ],
+      globalFilters: [],
+      styleConfig: { surfaceKind: "data-screen", gapPreset: "none" },
+    };
+    const sanitized = sanitizePixelLayoutGeometry(layout);
+    const b = sanitized.widgets.find((w) => w.id === "b");
+    expect(b?.x).toBe(500);
+    expect(b?.y).toBe(100);
+  });
+
   it("clamps widgets when data-screen canvas shrinks", () => {
     const layout: DashboardLayoutV2 = {
       version: 2,

@@ -78,7 +78,7 @@ flowchart TB
 
 - [x] 大屏分享页缩放预览与 preview 视觉一致
 - [x] 配置 `refreshIntervalSec=30` 时图表刷新、页面不闪白
-- [ ] smoke：`DashboardSharePage` data-screen fixture
+- [x] smoke：`DashboardSharePage` data-screen fixture（`DashboardSharePage.smoke.test.tsx` A2 · 2026-07-29）
 
 ---
 
@@ -165,8 +165,8 @@ flowchart TB
 
 **验收**
 
-- [ ] 锁定后拖拽与八向手柄均无效
-- [ ] vitest：`PixelCanvas` locked 用例
+- [x] 锁定后拖拽与八向手柄均无效
+- [x] vitest：`PixelCanvas` locked 用例（2026-07-29 Wave B 验收闭合）
 
 ---
 
@@ -189,8 +189,8 @@ flowchart TB
 
 **验收**
 
-- [ ] 预览态 Tab 自动切换
-- [ ] 编辑态不切换
+- [x] 预览态 Tab 自动切换
+- [x] 编辑态不切换（`TabsWidget.test.tsx` · 2026-07-29）
 
 ---
 
@@ -210,7 +210,7 @@ flowchart TB
 
 **验收**
 
-- [ ] 导出文件可被列表「导入 JSON」成功创建
+- [x] 导出文件可被列表「导入 JSON」成功创建（`exportLayoutJson.test.ts` · `DataScreenConfigExtras` · 2026-07-29）
 
 ---
 
@@ -230,7 +230,7 @@ flowchart TB
 
 **验收**
 
-- [ ] 放大对话框下载 PNG 成功
+- [x] 放大对话框下载 PNG 成功（`WidgetEnlargeDialog.test.tsx` · 2026-07-29）
 
 ---
 
@@ -249,7 +249,7 @@ flowchart TB
 
 **验收**
 
-- [ ] Tab 内图表在图层列表可见
+- [x] Tab 内图表在图层列表可见（`LayerPanel.test.tsx` · 2026-07-29）
 
 ---
 
@@ -273,8 +273,8 @@ flowchart TB
 
 **验收**
 
-- [ ] 素材菜单可插入标题条
-- [ ] 图层显示 `素材 · 标题装饰`
+- [x] 素材菜单可插入标题条（`screenVisualAssets.test.ts` C1 · 2026-07-29）
+- [x] 图层显示 `素材 · 标题装饰`（`screenVisualAssets.test.ts` · 2026-07-29）
 
 ---
 
@@ -295,8 +295,8 @@ flowchart TB
 
 **验收**
 
-- [ ] 新建/切换 21:9 保存成功（height≥900）
-- [ ] preview 仍等比适配
+- [x] 新建/切换 21:9 保存成功（height≥900）（`surfacePreset.test.ts` C2 · 2026-07-29）
+- [x] preview 仍等比适配（`DataScreenPresenter` + `CanvasScaleViewport` 已有 · 2026-07-29）
 
 ---
 
@@ -321,8 +321,8 @@ flowchart TB
 
 **验收**
 
-- [ ] 导出 → 导入 round-trip 布局一致
-- [ ] `dataScreenTemplates.test.ts` 覆盖
+- [x] 导出 → 导入 round-trip 布局一致（`dataScreenTemplates.test.ts` · 2026-07-29）
+- [x] `dataScreenTemplates.test.ts` 覆盖（`round-trips template export wrapper` · 2026-07-29）
 
 ---
 
@@ -340,6 +340,11 @@ flowchart TB
 **内容**
 
 - 仅类型 + 文档；不实现播放逻辑
+
+**验收**
+
+- [x] `DataScreenPlaylistConfig` + `screenPlaylist?` 已存在于 `dashboardStyleConfig.ts`（2026-07-29）
+- [x] `dashboardStyleConfig.test.ts` schema round-trip（2026-07-29）
 
 ---
 

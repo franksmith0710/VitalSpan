@@ -202,10 +202,11 @@ export function resolvePixelCanvasMeasureElement(host: HTMLElement): HTMLElement
 /** 侧栏工具条屏幕宽度（px），用于左右翻转判定 */
 export const SHAPE_ACTION_RAIL_SCREEN_WIDTH = 36;
 export const SHAPE_ACTION_RAIL_ICON_SCREEN_WIDTH = 18;
-export const SHAPE_ACTION_RAIL_SCREEN_GAP = 8;
+export const SHAPE_RESIZE_HANDLE_SCREEN_PX = 28;
+/** 操作条与组件外缘间距（屏幕 px）；须避开边缘 resize 热区（手柄半宽 + 留白） */
+export const SHAPE_ACTION_RAIL_SCREEN_GAP = SHAPE_RESIZE_HANDLE_SCREEN_PX / 2 + 8;
 /** 对标 DE 左侧 edit-bar：屏幕 px，缩放后换算为画布命中宽 */
 export const SHAPE_EDIT_BAR_SCREEN_WIDTH = 32;
-export const SHAPE_RESIZE_HANDLE_SCREEN_PX = 28;
 export const SHAPE_RESIZE_VISUAL_SCREEN_PX = 12;
 /** DE `.de-drag-area` 透明边带（屏幕 px） */
 export const SHAPE_DRAG_EDGE_TOP_SCREEN_PX = 12;
@@ -420,4 +421,48 @@ export function applyPixelInteraction(
     : startBottom;
 
   return roundedRect(left, top, right - left, bottom - top);
+}
+
+export type PixelStackPickWidget = {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  order: number;
+  hidden?: boolean;
+  parentTabsId?: string;
+};
+
+/** 画布点下所有顶层组件，按叠放顺序（最前 → 最后） */
+export function findTopLevelWidgetsAtCanvasPoint(
+  widgets: PixelStackPickWidget[],
+  point: PixelPoint,
+): string[] {
+  return widgets
+    .filter((widget) => !widget.hidden && !widget.parentTabsId)
+    .filter(
+      (widget) =>
+        point.x >= widget.x &&
+        point.x <= widget.x + widget.width &&
+        point.y >= widget.y &&
+        point.y <= widget.y + widget.height,
+    )
+    .sort((left, right) => {
+      const delta = right.order - left.order;
+      return delta !== 0 ? delta : right.id.localeCompare(left.id);
+    })
+    .map((widget) => widget.id);
+}
+
+/** 重叠点选：在叠放列表中轮换到下一层 */
+export function resolveNextStackedWidgetAtPoint(
+  widgetIds: string[],
+  currentId: string,
+): string | undefined {
+  if (widgetIds.length === 0) return undefined;
+  if (widgetIds.length === 1) return widgetIds[0];
+  const index = widgetIds.indexOf(currentId);
+  if (index < 0) return widgetIds[0];
+  return widgetIds[(index + 1) % widgetIds.length];
 }

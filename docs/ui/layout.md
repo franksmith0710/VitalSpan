@@ -203,10 +203,10 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 
 | 场景 | 组件 | 行为 |
 |------|------|------|
-| **编辑** `/data-screens/:id/edit` | `DataScreenEditViewport` | 独立「相机」：`viewPan` translate + `userZoom` × fit 缩放；空格拖画布；标尺与 pan 同步；`PixelCanvas` `designViewportLocked` |
+| **编辑** `/data-screens/:id/edit` | `DataScreenEditViewport` | 独立「相机」：`useDataScreenViewportState` 管理 `viewPan` + `userZoom` × fit 缩放；**空格/中键**拖画布；**Ctrl+滚轮**指针锚点缩放；**标尺十字线**跟鼠标；右下角 `CanvasScaleArea`（比例下拉/±/重置）；`PixelCanvas` `designViewportLocked` |
 | **投放/预览** `/preview`、`/embed/screen/:id` | `DataScreenPresenter` + `CanvasScaleViewport` | 只读 fit 缩放，无编辑平移；不混用编辑视口 |
 
-代码锚点：`fe/src/components/dashboard/screen/DataScreenEditViewport.tsx` · `fe/src/components/dashboard/dashboard-edit/DashboardEditCanvas.tsx`（`isDataScreenEdit` 分支）。
+代码锚点：`fe/src/components/dashboard/screen/DataScreenEditViewport.tsx` · `useDataScreenViewportState.ts` · `CanvasRulerCrosshair.tsx` · `fe/src/components/dashboard/dashboard-edit/DashboardEditCanvas.tsx`（`isDataScreenEdit` 分支）。
 
 **素材组件（对标 DataEase）**：数据大屏编辑工具栏 **更多** 含时钟/边框/标题装饰；**素材** 为图标网格（日期时间、网页）。选中素材组件时右栏提供 **数据 + 样式** Tab（`ScreenVisualEditRail` / 网页走 `MediaEditRail`）。代码锚点：`fe/src/components/dashboard/CanvasEditToolbar.tsx` · `screen/ScreenMaterialPicker.tsx` · `lib/screenVisualAssets.ts` · `lib/screenVisualStyle.ts`。
 

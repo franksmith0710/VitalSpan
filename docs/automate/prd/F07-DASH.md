@@ -30,7 +30,12 @@
   - [x] **M-DASH-UX F-C**：编辑态稳定性 + 布局级撤销/重做（2026-07-09）
   - [x] BUG-2 Phase B：`layout.version=2` 像素契约、v1→v2 迁移、Pointer Capture 拖移/八向缩放、编辑/预览/分享/缩略图/View 双版本消费；v2 禁止降级写回 v1
   - [x] **数据大屏表面分化 companion**（2026-07-17）：`styleConfig.surfaceKind`（`dashboard` \| `data-screen`）；列表 `GET /dashboards?surfaceKind=`；路由 `/admin/data-screens/*`（含 `preview` 全屏投放）；默认画布大屏 **1920×1080**；编辑态最小缩放 `PIXEL_CANVAS_EDIT_MIN_SCALE=0.5`
-  - [ ] BUG-2 最终真实浏览器 Pointer QA：拖移、八向缩放、保存并刷新后位置/尺寸保持（代码完成不等于用户验收通过）
+  - [x] **Phase 2.5 Wave B 编辑深化 companion**（2026-07-29）：图层锁定、Tab 预览轮播、布局 JSON 导出、图表 PNG 导出、图层 Panel Tab 子项——Vitest 验收闭合（见 `docs/feature-design/2026-07-29-data-screen-wave-b-gap-fill.md`）
+  - [x] **Phase 2.5 Wave C/D companion**（2026-07-29）：标题装饰条、21:9 画布预设、模板导出 round-trip（见 `docs/feature-design/2026-07-29-data-screen-wave-cd-gap-fill.md`）
+  - [x] **Phase 2.6 编辑视口 companion**（2026-07-29）：`useDataScreenViewportState`、标尺十字线、Ctrl+滚轮指针锚点缩放（见 `plans/2026-07-20-data-screen-edit-viewport-de.md`）
+  - [x] **保存 WYSIWYG companion**（2026-07-29）：数据大屏跳过 `compactPixelLayoutWhenZeroGap`（[BUG-14](../../bugs/BUG-14_data-screen-save-gap-compaction_2026-07-29.md)）
+  - [x] **Master gap-fill 真理源**（2026-07-29）：`docs/feature-design/2026-07-29-data-screen-master-gap-fill.md`
+  - [ ] BUG-2 最终真实浏览器 Pointer QA：拖移、八向缩放、保存并刷新后位置/尺寸保持（手测表见 master gap-fill MT-DEPLOY / MT-INS）
   - [ ] **M-DEPTH F-B**：layout widget 类型扩展 `filter`（兼容旧 layout round-trip；后端 schema + FE `layoutUtils`）
 - **代码锚点**：`fe/src/pages/admin/dashboard/` · `fe/src/pages/admin/data-screens/` · `fe/src/lib/surfacePreset.ts` · `backend/app/dashboard/surface_kind.py` · `fe/src/pages/admin/dashboard/DashboardSharePage.tsx` · `fe/src/components/dashboard/pixelCanvas/` · `fe/src/components/dashboard/screen/` · `fe/src/components/dashboard/dashboard-edit/` · `fe/src/components/dashboard/DashboardLayoutPreview.tsx` · `fe/src/components/dashboard/DashboardPreviewThumb.tsx` · `fe/src/components/dashboard/dashboardCanvasMode.ts` · `fe/src/hooks/useDashboardCanvasState.ts` · `backend/app/dashboard/schemas.py` · `backend/app/dashboard/layout_migration.py`
 - **演化建议**：先完成 BUG-2 真实 Pointer QA；再补 Playwright 指针回归。M-DEPTH F-B 闭合 filter widget 类型。

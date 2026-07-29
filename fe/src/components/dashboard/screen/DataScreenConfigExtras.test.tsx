@@ -76,4 +76,22 @@ describe("DataScreenConfigExtras canvas size", () => {
     fireEvent.click(screen.getByRole("button", { name: "增加宽度" }));
     expect(onCanvasSizeChange).toHaveBeenCalledWith({ width: 2073 });
   });
+
+  it("disables export actions when layout cannot be saved", () => {
+    render(
+      <DataScreenConfigExtras
+        layout={baseLayout}
+        styleConfig={baseLayout.styleConfig!}
+        widgets={[]}
+        name="测试大屏"
+        canSave={false}
+        presentationMode="fitWidth"
+        onPresentationModeChange={vi.fn()}
+        onCanvasSizeChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "布局 JSON" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /导出模板/ })).toBeDisabled();
+  });
 });

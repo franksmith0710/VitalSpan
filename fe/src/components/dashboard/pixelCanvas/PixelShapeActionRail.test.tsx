@@ -130,6 +130,21 @@ describe("PixelShapeActionRail", () => {
     });
   });
 
+  it("offsets external action rail past resize handle hot zone", () => {
+    render(
+      <PixelShapeActionRail
+        widget={chartWidget}
+        scale={1}
+        viewport={{ x: 0, width: 1440 }}
+        actions={{ onCopy: vi.fn() }}
+      />,
+    );
+
+    const rail = screen.getByTestId("pixel-shape-actions-w-map");
+    expect(rail).toHaveAttribute("data-placement", "right");
+    expect(rail.style.left).toBe("calc(100% + 22px)");
+  });
+
   it("overlays action rail inside the widget when both sides overflow viewport", () => {
     render(
       <PixelShapeActionRail
@@ -142,7 +157,7 @@ describe("PixelShapeActionRail", () => {
 
     const rail = screen.getByTestId("pixel-shape-actions-w-map");
     expect(rail).toHaveAttribute("data-placement", "overlay");
-    expect(rail.style.right).toBe("0px");
-    expect(rail.style.top).toBe("0px");
+    expect(rail.style.right).toBe("14px");
+    expect(rail.style.top).toBe("14px");
   });
 });

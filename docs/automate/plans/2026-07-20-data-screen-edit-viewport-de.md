@@ -47,20 +47,20 @@ DataScreenEditShell
 
 **验收**：`fitHeight` 贴满时，空格+拖动画布仍可见平移。
 
-### T2 · 视口状态机抽离（P1）
+### T2 · 视口状态机抽离（P1）✅ 2026-07-29
 
 - 新建 `useDataScreenViewportState.ts`（pan/zoom/fit/reset）
 - 单测覆盖 pan/zoom/标尺偏移公式
-- `presentationMode` 写入 `styleConfig` 可选持久化
+- `presentationMode` 写入 `styleConfig` 可选持久化（本轮未做 pan/zoom 持久化）
 
-### T3 · DE 对齐增强（P2）
+### T3 · DE 对齐增强（P2）✅ 2026-07-29
 
 - 缩放百分比下拉（50%–200%）+ 重置视口
 - 标尺十字线跟鼠标
 - 中键拖动画布（可选）
 - 缩放锚点：Ctrl+滚轮以指针为中心
 
-### T4 · 文档与登记（P1）
+### T4 · 文档与登记（P1）✅ 2026-07-29
 
 - `docs/ui/layout.md`：大屏编辑视口 IA
 - `fe/src/components/README.md`：登记 `DataScreenEditViewport`

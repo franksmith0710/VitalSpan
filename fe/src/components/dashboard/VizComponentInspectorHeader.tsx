@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { WidgetRailCollapseButton } from "./widgetRailChrome";
 import type { LayoutWidget } from "./layoutUtils";
 import type { VizComponentMap } from "@/lib/resolveVizComponent";
 import { detachLinkedWidget } from "@/lib/resolveVizComponent";
@@ -28,6 +29,7 @@ type VizComponentInspectorHeaderProps = {
   onPublish?: () => void;
   onPushToLibrary?: () => void;
   pushing?: boolean;
+  onCollapse?: () => void;
 };
 
 export function VizComponentInspectorHeader({
@@ -39,6 +41,7 @@ export function VizComponentInspectorHeader({
   onPublish,
   onPushToLibrary,
   pushing,
+  onCollapse,
 }: VizComponentInspectorHeaderProps) {
   const [detachOpen, setDetachOpen] = useState(false);
   const linked = isLinkedComponentRef(widget.componentRef);
@@ -69,6 +72,7 @@ export function VizComponentInspectorHeader({
             发布为新组件
           </Button>
         ) : null}
+        {onCollapse ? <WidgetRailCollapseButton onClick={onCollapse} /> : null}
       </div>
     );
   }
@@ -111,6 +115,7 @@ export function VizComponentInspectorHeader({
           <Button type="button" size="sm" variant="ghost" onClick={() => setDetachOpen(true)}>
             断开链接
           </Button>
+          {onCollapse ? <WidgetRailCollapseButton onClick={onCollapse} /> : null}
         </div>
         <AlertDialog open={detachOpen} onOpenChange={setDetachOpen}>
           <AlertDialogContent>
@@ -140,11 +145,12 @@ export function VizComponentInspectorHeader({
   if (!onPublish) return null;
 
   return (
-    <div className="flex shrink-0 justify-end border-b border-gray-100 px-2 py-1.5 dark:border-white/[0.06]">
+    <div className="flex shrink-0 items-center justify-end gap-1 border-b border-gray-100 px-2 py-1.5 dark:border-white/[0.06]">
       <Button type="button" size="sm" variant="ghost" className="gap-1.5" onClick={onPublish}>
         <Upload className="size-3.5" aria-hidden />
         发布到组件库
       </Button>
+      {onCollapse ? <WidgetRailCollapseButton onClick={onCollapse} /> : null}
     </div>
   );
 }

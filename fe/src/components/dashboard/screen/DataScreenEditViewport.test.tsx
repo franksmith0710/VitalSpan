@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { DataScreenEditViewport } from "./DataScreenEditViewport";
@@ -112,6 +112,42 @@ describe("DataScreenEditViewport blank selection", () => {
     const preventDefault = vi.spyOn(event, "preventDefault");
     viewport.dispatchEvent(event);
     expect(preventDefault).toHaveBeenCalled();
+  });
+
+  it("zooms at pointer with pan compensation on ctrl+wheel", async () => {
+    renderViewport(
+      <DataScreenEditViewport canvasWidth={1920} canvasHeight={1080}>
+        <div data-testid="canvas-stage" className="h-[1080px] w-[1920px]" />
+      </DataScreenEditViewport>,
+    );
+
+    const root = screen.getByTestId("data-screen-edit-viewport");
+    const viewport = root.querySelector("[data-canvas-scale-viewport]") as HTMLElement;
+    vi.spyOn(viewport, "getBoundingClientRect").mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 800,
+      height: 600,
+      right: 800,
+      bottom: 600,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    });
+
+    const event = new WheelEvent("wheel", {
+      deltaY: -100,
+      ctrlKey: true,
+      clientX: 400,
+      clientY: 300,
+      bubbles: true,
+      cancelable: true,
+    });
+    viewport.dispatchEvent(event);
+
+    await waitFor(() => {
+      expect(Number(root.getAttribute("data-user-zoom"))).toBeGreaterThan(1);
+    });
   });
 
   it("does not pan the viewport when wheel is over a map zoom surface", () => {

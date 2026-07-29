@@ -7,10 +7,13 @@ describe("isAdminListFillRoute", () => {
     expect(isAdminListFillRoute("/admin/system/users/")).toBe(true);
     expect(isAdminListFillRoute("/admin/dashboards")).toBe(true);
     expect(isAdminListFillRoute("/admin/data-screens")).toBe(true);
+    expect(isAdminListFillRoute("/admin/viz-templates")).toBe(true);
+    expect(isAdminListFillRoute("/admin/viz-components")).toBe(true);
   });
 
   it("does not match edit or detail routes", () => {
     expect(isAdminListFillRoute("/admin/dashboards/abc/edit")).toBe(false);
+    expect(isAdminListFillRoute("/admin/viz-components/abc/edit")).toBe(false);
     expect(isAdminListFillRoute("/admin/datasources/new")).toBe(false);
     expect(isAdminListFillRoute("/admin/account/profile")).toBe(false);
   });

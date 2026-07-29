@@ -2,12 +2,15 @@ import { useMemo, type MouseEvent } from "react";
 import {
   ArrowDown,
   ArrowUp,
+  ChevronDown,
+  ChevronUp,
   Eye,
   EyeOff,
   Filter,
   Image,
   LayoutList,
   Lock,
+  Trash2,
   Type,
   Unlock,
 } from "lucide-react";
@@ -27,6 +30,9 @@ export type LayerPanelProps = {
   selectedId?: string | null;
   onSelect: (widgetId: string) => void;
   onWidgetsChange: (widgets: LayoutWidget[]) => void;
+  onDelete?: (widgetId: string) => void;
+  onBringToFront?: (widgetId: string) => void;
+  onSendToBack?: (widgetId: string) => void;
   className?: string;
 };
 
@@ -75,10 +81,14 @@ export function LayerPanel({
   selectedId,
   onSelect,
   onWidgetsChange,
+  onDelete,
+  onBringToFront,
+  onSendToBack,
   className,
 }: LayerPanelProps) {
   const rows = useMemo(() => buildLayerRows(widgets), [widgets]);
   const topLevelCount = rows.filter((row) => row.depth === 0).length;
+  const showStackHints = Boolean(onBringToFront || onSendToBack);
 
   const patchWidget = (id: string, patch: Partial<LayoutWidget>) => {
     onWidgetsChange(widgets.map((w) => (w.id === id ? { ...w, ...patch } : w)));
@@ -89,7 +99,10 @@ export function LayerPanel({
       <header className="mb-2 flex shrink-0 items-center justify-between gap-2">
         <div className="min-w-0">
           <h3 className="text-theme-sm font-medium text-gray-800 dark:text-white/90">图层管理</h3>
-          <p className="text-[10px] text-gray-400 dark:text-gray-500">自上而下为叠放顺序，画布组件互为平级</p>
+          <p className="text-[10px] leading-snug text-gray-400 dark:text-gray-500">
+            自上而下为叠放顺序；点击图层可选中组件
+            {showStackHints ? "，画布重叠处 Alt+点击可轮换" : ""}
+          </p>
         </div>
         <span className="shrink-0 text-theme-xs text-gray-500">{topLevelCount} 项</span>
       </header>
@@ -104,7 +117,7 @@ export function LayerPanel({
                 role="button"
                 tabIndex={0}
                 className={cn(
-                  "group flex items-center gap-1 rounded-lg border px-1.5 py-1 transition-colors",
+                  "group flex cursor-pointer items-center gap-1 rounded-lg border px-1.5 py-1 transition-colors",
                   depth > 0 && "ml-3 border-dashed",
                   selected
                     ? "border-brand-300 bg-brand-50 dark:border-brand-500/40 dark:bg-brand-500/10"
@@ -131,7 +144,7 @@ export function LayerPanel({
                   <Icon className="size-3.5" />
                 </span>
 
-                <div className="min-w-0 flex-1 py-0.5" onClick={stopRowSelect}>
+                <div className="min-w-0 flex-1 py-0.5">
                   <WidgetInlineTitle
                     value={resolveScreenWidgetLayerLabel(widget)}
                     editable={selected}
@@ -188,6 +201,19 @@ export function LayerPanel({
                   </IconButton>
                   {!sortReadOnly ? (
                     <>
+                      {onBringToFront ? (
+                        <IconButton
+                          type="button"
+                          variant="ghost"
+                          size="xs"
+                          className="dashboard-no-drag size-7 opacity-70 group-hover:opacity-100"
+                          aria-label="置于顶层"
+                          tooltip="置于顶层"
+                          onClick={() => onBringToFront(widget.id)}
+                        >
+                          <ChevronUp className="size-3.5" />
+                        </IconButton>
+                      ) : null}
                       <IconButton
                         type="button"
                         variant="ghost"
@@ -210,7 +236,33 @@ export function LayerPanel({
                       >
                         <ArrowDown className="size-3.5" />
                       </IconButton>
+                      {onSendToBack ? (
+                        <IconButton
+                          type="button"
+                          variant="ghost"
+                          size="xs"
+                          className="dashboard-no-drag size-7 opacity-70 group-hover:opacity-100"
+                          aria-label="置于底层"
+                          tooltip="置于底层"
+                          onClick={() => onSendToBack(widget.id)}
+                        >
+                          <ChevronDown className="size-3.5" />
+                        </IconButton>
+                      ) : null}
                     </>
+                  ) : null}
+                  {onDelete ? (
+                    <IconButton
+                      type="button"
+                      variant="ghost"
+                      size="xs"
+                      className="dashboard-no-drag size-7 text-gray-500 hover:bg-error-50 hover:text-error-600 dark:text-gray-400 dark:hover:bg-error-500/10 dark:hover:text-error-400"
+                      aria-label="删除图层"
+                      tooltip="删除"
+                      onClick={() => onDelete(widget.id)}
+                    >
+                      <Trash2 className="size-3.5" />
+                    </IconButton>
                   ) : null}
                 </div>
               </div>

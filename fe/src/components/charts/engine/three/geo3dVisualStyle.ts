@@ -4,7 +4,7 @@ import {
   DEFAULT_GEO3D_SHELL_OPACITY,
   resolveGeoVisualMapEnabled,
 } from "@/lib/chartDeStyle";
-import { DEFAULT_MAP_3D_CHART_DE_STYLE } from "@/lib/defaultMap3dChartDeStyle";
+import { DEFAULT_MAP_3D_CHART_DE_STYLE, GEO3D_SHARED_EFFECTS_DEFAULTS } from "@/lib/defaultMap3dChartDeStyle";
 import type { ThreeGeoOrbitLayout } from "@/components/charts/engine/three/threeGeoOrbit";
 import {
   buildGeo3dSceneClouds,
@@ -40,7 +40,14 @@ import {
 import * as THREE from "three";
 
 /** 对标 sc-datav Demo0/1/2 的 3D 地图视觉预设 */
-export type Geo3dStylePreset = "satellite" | "tech" | "classic" | "minimal";
+export type Geo3dStylePreset =
+  | "satellite"
+  | "tech"
+  | "classic"
+  | "minimal"
+  | "glass"
+  | "glass-warm"
+  | "glass-night";
 
 export const GEO3D_STYLE_PRESETS: ReadonlyArray<{
   value: Geo3dStylePreset;
@@ -49,8 +56,11 @@ export const GEO3D_STYLE_PRESETS: ReadonlyArray<{
 }> = [
   { value: "satellite", label: "卫星实景", hint: "离线卫星顶面 + 中性侧壁（默认）" },
   { value: "tech", label: "科技深蓝", hint: "深色侧壁发光、青蓝边界、远景云海" },
-  { value: "classic", label: "经典暖色", hint: "暖色实体顶面，关闭卫星贴图" },
-  { value: "minimal", label: "简洁纯色", hint: "低饱和扁平色块、弱边界" },
+  { value: "classic", label: "经典暖色", hint: "暖色实体顶面 + 场景云与点位特效" },
+  { value: "minimal", label: "简洁纯色", hint: "低饱和扁平色块 + 完整场景特效" },
+  { value: "glass", label: "半透明琉璃", hint: "青蓝半透明侧壁，适合浅色大屏" },
+  { value: "glass-warm", label: "半透明琥珀", hint: "暖色半透明玻璃质感" },
+  { value: "glass-night", label: "半透明墨蓝", hint: "深色半透明玻璃，适合暗色大屏" },
 ] as const;
 
 type PresetBase = {
@@ -87,6 +97,8 @@ type PresetBase = {
   platformEffects: boolean;
   /** 点位热力/光柱/浮动标签 */
   pointEffects: boolean;
+  /** 预设默认底板不透明度（可被 shellOpacity 覆盖） */
+  defaultShellOpacity: number;
 };
 
 export type ResolvedGeo3dVisualStyle = PresetBase & {
@@ -125,6 +137,7 @@ const PRESET_BASE: Record<Geo3dStylePreset, PresetBase> = {
     techSatelliteOverlay: false,
     platformEffects: true,
     pointEffects: true,
+    defaultShellOpacity: 1,
   },
   tech: {
     shellColorDark: 0x0b1520,
@@ -156,6 +169,7 @@ const PRESET_BASE: Record<Geo3dStylePreset, PresetBase> = {
     techSatelliteOverlay: true,
     platformEffects: true,
     pointEffects: true,
+    defaultShellOpacity: 1,
   },
   classic: {
     shellColorDark: 0x3d2e1f,
@@ -179,14 +193,15 @@ const PRESET_BASE: Record<Geo3dStylePreset, PresetBase> = {
     keyLight: 1.05,
     fillDark: 0.4,
     fillLight: 0.3,
-    sceneFog: false,
+    sceneFog: true,
     fogColorDark: 0x1a1208,
     fogColorLight: 0xfef3c7,
     preferTerrainTexture: false,
     capTintMixScale: 1,
     techSatelliteOverlay: false,
-    platformEffects: false,
-    pointEffects: false,
+    platformEffects: true,
+    pointEffects: true,
+    defaultShellOpacity: 1,
   },
   minimal: {
     shellColorDark: 0x1e293b,
@@ -210,14 +225,111 @@ const PRESET_BASE: Record<Geo3dStylePreset, PresetBase> = {
     keyLight: 0.62,
     fillDark: 0.22,
     fillLight: 0.16,
-    sceneFog: false,
+    sceneFog: true,
     fogColorDark: 0x0f172a,
     fogColorLight: 0xf1f5f9,
     preferTerrainTexture: false,
     capTintMixScale: 0.75,
     techSatelliteOverlay: false,
-    platformEffects: false,
-    pointEffects: false,
+    platformEffects: true,
+    pointEffects: true,
+    defaultShellOpacity: 1,
+  },
+  glass: {
+    shellColorDark: 0x0e4a6e,
+    shellColorLight: 0x7dd3fc,
+    shellEmissiveDark: 0x0891b2,
+    shellEmissiveLight: 0x67e8f9,
+    shellEmissiveIntensity: 0.28,
+    shellMetalness: 0.35,
+    shellRoughness: 0.25,
+    capEmissiveDark: 0.22,
+    capEmissiveLight: 0.35,
+    capMetalness: 0.42,
+    capRoughness: 0.35,
+    borderColorDark: 0x67e8f9,
+    borderColorLight: 0x0284c7,
+    borderOpacityDark: 0.85,
+    borderOpacityLight: 0.72,
+    ambientDark: 0.42,
+    ambientLight: 0.36,
+    keyDark: 1.05,
+    keyLight: 0.88,
+    fillDark: 0.38,
+    fillLight: 0.28,
+    sceneFog: true,
+    fogColorDark: 0x0c4a6e,
+    fogColorLight: 0xe0f2fe,
+    preferTerrainTexture: false,
+    capTintMixScale: 1.15,
+    techSatelliteOverlay: true,
+    platformEffects: true,
+    pointEffects: true,
+    defaultShellOpacity: 0.48,
+  },
+  "glass-warm": {
+    shellColorDark: 0x7c2d12,
+    shellColorLight: 0xfcd34d,
+    shellEmissiveDark: 0xea580c,
+    shellEmissiveLight: 0xfbbf24,
+    shellEmissiveIntensity: 0.22,
+    shellMetalness: 0.28,
+    shellRoughness: 0.32,
+    capEmissiveDark: 0.38,
+    capEmissiveLight: 0.45,
+    capMetalness: 0.2,
+    capRoughness: 0.42,
+    borderColorDark: 0xfbbf24,
+    borderColorLight: 0xd97706,
+    borderOpacityDark: 0.88,
+    borderOpacityLight: 0.76,
+    ambientDark: 0.5,
+    ambientLight: 0.42,
+    keyDark: 1.15,
+    keyLight: 0.95,
+    fillDark: 0.36,
+    fillLight: 0.28,
+    sceneFog: true,
+    fogColorDark: 0x431407,
+    fogColorLight: 0xfff7ed,
+    preferTerrainTexture: false,
+    capTintMixScale: 1.1,
+    techSatelliteOverlay: true,
+    platformEffects: true,
+    pointEffects: true,
+    defaultShellOpacity: 0.52,
+  },
+  "glass-night": {
+    shellColorDark: 0x0f172a,
+    shellColorLight: 0x334155,
+    shellEmissiveDark: 0x1e3a8a,
+    shellEmissiveLight: 0x3b82f6,
+    shellEmissiveIntensity: 0.35,
+    shellMetalness: 0.48,
+    shellRoughness: 0.28,
+    capEmissiveDark: 0.28,
+    capEmissiveLight: 0.18,
+    capMetalness: 0.45,
+    capRoughness: 0.38,
+    borderColorDark: 0x93c5fd,
+    borderColorLight: 0x2563eb,
+    borderOpacityDark: 0.92,
+    borderOpacityLight: 0.8,
+    ambientDark: 0.32,
+    ambientLight: 0.26,
+    keyDark: 1.2,
+    keyLight: 1,
+    fillDark: 0.45,
+    fillLight: 0.32,
+    sceneFog: true,
+    fogColorDark: 0x020617,
+    fogColorLight: 0x1e293b,
+    preferTerrainTexture: false,
+    capTintMixScale: 1.35,
+    techSatelliteOverlay: true,
+    platformEffects: true,
+    pointEffects: true,
+    defaultShellOpacity: 0.45,
   },
 };
 
@@ -377,8 +489,11 @@ export function hasCustomGeo3dShellColor(style: ChartGeo3dStyle): boolean {
 
 export function resolveGeo3dShellOpacity(style: ChartGeo3dStyle): number {
   const raw = style.shellOpacity;
-  if (raw == null || !Number.isFinite(raw)) return DEFAULT_GEO3D_SHELL_OPACITY;
-  return Math.min(1, Math.max(0, raw));
+  if (raw != null && Number.isFinite(raw)) {
+    return Math.min(1, Math.max(0, raw));
+  }
+  const preset = resolveGeo3dStylePreset(style);
+  return PRESET_BASE[preset].defaultShellOpacity;
 }
 
 export function resolveGeo3dVisualStyle(
@@ -395,30 +510,18 @@ export function resolveGeo3dVisualStyle(
   };
 }
 
-/** 切换预设时写入的默认 geo3d 字段 */
+/** 切换预设时写入的默认 geo3d 字段（含完整场景特效） */
 export function geo3dPresetDefaults(preset: Geo3dStylePreset): Partial<ChartGeo3dStyle> {
-  const base = PRESET_BASE[preset];
   if (preset === "satellite") {
     return { ...DEFAULT_MAP_3D_CHART_DE_STYLE.geo3d, stylePreset: "satellite" };
   }
-  const defaults: Partial<ChartGeo3dStyle> = {
+  const base = PRESET_BASE[preset];
+  return {
+    ...GEO3D_SHARED_EFFECTS_DEFAULTS,
     stylePreset: preset,
     terrainTexture: base.preferTerrainTexture,
-    sceneFog: base.sceneFog,
-    platformEffects: base.platformEffects,
-    pointEffects: base.pointEffects,
+    shellOpacity: base.defaultShellOpacity,
   };
-  if (base.platformEffects) {
-    defaults.platformGlow = true;
-    defaults.platformPulse = true;
-    defaults.platformSweep = true;
-  }
-  if (base.pointEffects) {
-    defaults.heatBlob = true;
-    defaults.pointPillar = true;
-    defaults.floatingLabels = true;
-  }
-  return defaults;
 }
 
 export function buildGeo3dStyleContentSig(

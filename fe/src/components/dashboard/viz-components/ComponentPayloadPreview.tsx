@@ -1,5 +1,6 @@
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import type { VizComponentListItem, VizComponentPayload, VizWidgetType } from "@/lib/vizComponents";
+import { vizPayloadToLayoutWidget } from "@/lib/vizComponentPageUtils";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ChartPreviewMock,
@@ -9,6 +10,7 @@ import {
   PreviewFooterMeta,
   TextPreviewMock,
 } from "./ComponentCardPreview";
+import { VizComponentLivePreview } from "./VizComponentLivePreview";
 import { categoryLabel, statusLabel, visibilityLabel } from "./componentLabels";
 
 type ComponentPayloadPreviewProps = {
@@ -50,6 +52,15 @@ function buildDetail(widgetType: VizWidgetType, payload?: VizComponentPayload): 
   return undefined;
 }
 
+function hasRenderablePayload(widgetType: VizWidgetType, payload?: VizComponentPayload): boolean {
+  if (!payload) return false;
+  if (widgetType === "chart") return Boolean(payload.chartConfig);
+  if (widgetType === "filter") return Boolean(payload.filterConfig);
+  if (widgetType === "text") return Boolean(payload.textConfig);
+  if (widgetType === "media") return Boolean(payload.mediaConfig);
+  return false;
+}
+
 function MockPreview({ widgetType }: { widgetType: VizWidgetType }) {
   if (widgetType === "filter") return <FilterPreviewMock />;
   if (widgetType === "text") return <TextPreviewMock />;
@@ -58,6 +69,8 @@ function MockPreview({ widgetType }: { widgetType: VizWidgetType }) {
 }
 
 export function ComponentPayloadPreview({
+  componentId,
+  componentName,
   widgetType,
   payload,
   payloadLoading = false,
@@ -67,6 +80,18 @@ export function ComponentPayloadPreview({
   className,
 }: ComponentPayloadPreviewProps) {
   const safeType = normalizeWidgetType(widgetType);
+  const canLive = hasRenderablePayload(safeType, payload);
+
+  const widget = useMemo(() => {
+    if (!canLive || !payload) return null;
+    return vizPayloadToLayoutWidget({
+      id: componentId,
+      name: componentName,
+      widgetType: safeType,
+      payload,
+      widgetIdPrefix: "vc-card",
+    });
+  }, [canLive, componentId, componentName, payload, safeType]);
 
   return (
     <ComponentPreviewShell
@@ -79,7 +104,13 @@ export function ComponentPayloadPreview({
         />
       }
     >
-      {payloadLoading ? <Skeleton className="h-full w-full rounded-none" /> : <MockPreview widgetType={safeType} />}
+      {payloadLoading ? (
+        <Skeleton className="h-full w-full rounded-none" />
+      ) : widget ? (
+        <VizComponentLivePreview widget={widget} lazy geo3dRenderTier="thumbnail" />
+      ) : (
+        <MockPreview widgetType={safeType} />
+      )}
     </ComponentPreviewShell>
   );
 }

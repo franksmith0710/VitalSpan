@@ -24,6 +24,7 @@ import {
   ListPageSection,
   ListPageTableFrame,
   ListPageToolbar,
+  LIST_PAGE_CARD_GRID_CLASS,
   PageErrorBanner,
   RowActions,
 } from "@/components/layout/list-page-kit";
@@ -381,7 +382,7 @@ export function DataScreenListPage() {
         {viewMode === "grid" ? (
           <ListPageTableFrame>
           {listQuery.isLoading ? (
-            <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className={LIST_PAGE_CARD_GRID_CLASS}>
               {Array.from({ length: 6 }).map((_, index) => (
                 <DashboardListCardSkeleton key={index} />
               ))}
@@ -397,7 +398,7 @@ export function DataScreenListPage() {
             />
           ) : (
             <>
-              <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <div className={LIST_PAGE_CARD_GRID_CLASS}>
                 {sortedItems.map((screen) => (
                   <DashboardListCard
                     key={screen.id}

@@ -91,7 +91,7 @@ export type ChartGeoStyle = {
 
 export type ChartGeo3dStyle = {
   /** 视觉预设：卫星 / 科技 / 经典 / 简洁（对标 sc-datav Demo0–2） */
-  stylePreset?: "satellite" | "tech" | "classic" | "minimal";
+  stylePreset?: "satellite" | "tech" | "classic" | "minimal" | "glass" | "glass-warm" | "glass-night";
   extrudeIntensity?: number;
   quality?: "auto" | "high" | "medium" | "low";
   /** 离线卫星地形贴图（diffuse） */

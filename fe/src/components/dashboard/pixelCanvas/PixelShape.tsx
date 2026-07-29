@@ -98,6 +98,9 @@ type PixelShapeProps = {
   suppressResizePreview?: boolean;
   /** 仪表板碰撞 preview 推挤期：邻块仅 imperative，不写 React 几何 */
   layoutStyleDeferred?: boolean;
+  /** 重叠布局：Alt/Ctrl+点击轮换选中下层组件 */
+  allowStackCycleSelect?: boolean;
+  onCycleStackSelect?: (clientX: number, clientY: number, hitWidgetId: string) => void;
 };
 
 const HANDLE_POSITION: Record<ResizeDirection, string> = {
@@ -337,6 +340,8 @@ export function PixelShape({
   allowBottomGrowth = true,
   suppressResizePreview = false,
   layoutStyleDeferred = false,
+  allowStackCycleSelect = false,
+  onCycleStackSelect,
 }: PixelShapeProps) {
   const bindDocumentDrag = usePixelShapeDocumentDrag();
   const paletteDragActive = usePaletteDragActive();
@@ -700,6 +705,16 @@ export function PixelShape({
                   if (mode === "edit" && !paletteDragActive) {
                     const target = event.target as HTMLElement;
                     if (target.closest("[data-tabs-widget-id]")) {
+                      return;
+                    }
+                    if (
+                      allowStackCycleSelect &&
+                      onCycleStackSelect &&
+                      (event.altKey || event.ctrlKey)
+                    ) {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      onCycleStackSelect(event.clientX, event.clientY, widget.id);
                       return;
                     }
                     onSelect?.(widget.id, event.shiftKey);

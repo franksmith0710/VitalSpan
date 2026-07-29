@@ -8,12 +8,21 @@
 |------|----|
 | phase | **A8_DONE** |
 | status | **DONE** |
+| request | 数据大屏 Phase 2.6 编辑视口 T2–T3（DE 对齐） |
+| type | feature |
+| plan | `docs/automate/plans/2026-07-20-data-screen-edit-viewport-de.md` |
+| goal | 抽离 `useDataScreenViewportState`；Ctrl+滚轮指针锚点缩放；标尺十字线 |
+| last_verified | 2026-07-29：`vitest` useDataScreenViewportState/dataScreenViewportZoomAtPointer/DataScreenEditViewport/CanvasRulerCrosshair 绿 |
+| repair_rounds | 0 |
+
+## 上一轮（归档）
+
+| 字段 | 值 |
+|------|----|
 | request | `/dev-autopilot 修复上面问题`（3D 贴地热力 code-review P1 批次） |
 | type | bug |
-| plan | `docs/automate/plans/2026-07-29-geo3d-heat-review-fixes.md`（内联执行，无独立文件） |
-| goal | 修复热力锚点 region_id 上卷、精确匹配、同位置求和、未匹配行告警 |
-| last_verified | 2026-07-29：`vitest` geoHeatRegionAnchors/geo3dHeatSamples/demoMysqlRegions 12 passed；`tsc --noEmit` exit 0 |
-| repair_rounds | 1 |
+| plan | `docs/automate/plans/2026-07-29-geo3d-heat-review-fixes.md` |
+| last_verified | 2026-07-29：geoHeatRegionAnchors/geo3dHeatSamples 12 passed |
 
 ## 当前需求契约
 

@@ -150,6 +150,45 @@ function paletteForMapPreset(preset: Geo3dStylePreset, isDark: boolean): Platfor
           sweep: "#cbd5e1",
         };
   }
+  if (preset === "glass") {
+    return isDark
+      ? {
+          highlight: "#67e8f9",
+          grid: "#22d3ee",
+          ripple: "#06b6d4",
+          glow: "#22d3ee",
+          pulse: "#38bdf8",
+          sweep: "#a5f3fc",
+        }
+      : {
+          highlight: "#bae6fd",
+          grid: "#38bdf8",
+          ripple: "#0284c7",
+          glow: "#67e8f9",
+          pulse: "#0ea5e9",
+          sweep: "#7dd3fc",
+        };
+  }
+  if (preset === "glass-warm") {
+    return {
+      highlight: "#fcd34d",
+      grid: "#fbbf24",
+      ripple: "#f97316",
+      glow: "#fb923c",
+      pulse: "#ea580c",
+      sweep: "#fde68a",
+    };
+  }
+  if (preset === "glass-night") {
+    return {
+      highlight: "#93c5fd",
+      grid: "#60a5fa",
+      ripple: "#3b82f6",
+      glow: "#818cf8",
+      pulse: "#6366f1",
+      sweep: "#c4b5fd",
+    };
+  }
   return isDark
     ? {
         highlight: "#93c5fd",

@@ -3,6 +3,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { ChartEditRail } from "./ChartEditRail";
 import { defaultChartConfig, type LayoutWidget } from "./layoutUtils";
 
@@ -49,9 +50,11 @@ describe("ChartEditRail", () => {
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={qc}>
-        <MemoryRouter>
-          <ChartEditRail widget={widget} onChange={vi.fn()} />
-        </MemoryRouter>
+        <TooltipProvider delayDuration={0}>
+          <MemoryRouter>
+            <ChartEditRail widget={widget} onChange={vi.fn()} />
+          </MemoryRouter>
+        </TooltipProvider>
       </QueryClientProvider>,
     );
 
@@ -75,9 +78,11 @@ describe("ChartEditRail", () => {
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={qc}>
-        <MemoryRouter>
-          <ChartEditRail widget={widget} onChange={vi.fn()} />
-        </MemoryRouter>
+        <TooltipProvider delayDuration={0}>
+          <MemoryRouter>
+            <ChartEditRail widget={widget} onChange={vi.fn()} />
+          </MemoryRouter>
+        </TooltipProvider>
       </QueryClientProvider>,
     );
 

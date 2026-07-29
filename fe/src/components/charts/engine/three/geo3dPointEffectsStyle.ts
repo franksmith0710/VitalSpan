@@ -72,8 +72,8 @@ function normalizeHex(value: string | undefined, fallback: string): string {
   return trimmed.toLowerCase();
 }
 
-function presetPointEffectsEnabled(preset: Geo3dStylePreset): boolean {
-  return preset === "tech" || preset === "satellite";
+function presetPointEffectsEnabled(_preset: Geo3dStylePreset): boolean {
+  return true;
 }
 
 function presetPillarBottom(_preset: Geo3dStylePreset, _isDark: boolean): string {

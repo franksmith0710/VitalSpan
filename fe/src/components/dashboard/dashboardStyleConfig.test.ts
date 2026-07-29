@@ -196,6 +196,22 @@ describe("dashboardStyleConfig theme vs background", () => {
   });
 });
 
+describe("DataScreenPlaylistConfig schema (Wave E Phase 3 hook)", () => {
+  it("round-trips screenPlaylist on DashboardStyleConfig", async () => {
+    type DashboardStyleConfig = import("./dashboardStyleConfig").DashboardStyleConfig;
+    const config: DashboardStyleConfig = {
+      surfaceKind: "data-screen",
+      screenPlaylist: {
+        screenIds: ["5178bce9-e257-45f9-ad21-2d38b8202401", "e54f6aaa-506f-4693-bf60-1ef34117c05c"],
+        intervalSec: 30,
+      },
+    };
+    expect(config.screenPlaylist?.screenIds).toHaveLength(2);
+    expect(config.screenPlaylist?.intervalSec).toBe(30);
+    expect(JSON.parse(JSON.stringify(config)).screenPlaylist).toEqual(config.screenPlaylist);
+  });
+});
+
 describe("resolveDashboardFontOptionValue", () => {
   it("maps legacy niche fonts to current universal options", () => {
     expect(resolveDashboardFontOptionValue(undefined)).toBe("");

@@ -1,6 +1,27 @@
 import { IconButton } from "@/components/ui/button";
 import { RailFoldIcon } from "./RailFoldTab";
 
+export function WidgetRailCollapseButton({
+  onClick,
+  ariaLabel = "收起配置",
+}: {
+  onClick: () => void;
+  ariaLabel?: string;
+}) {
+  return (
+    <IconButton
+      type="button"
+      variant="ghost"
+      size="sm"
+      className="size-7 shrink-0 text-gray-400 hover:bg-white hover:text-gray-600 dark:hover:bg-white/[0.06] dark:hover:text-gray-300"
+      aria-label={ariaLabel}
+      onClick={onClick}
+    >
+      <RailFoldIcon />
+    </IconButton>
+  );
+}
+
 /** 单列组件配置栏顶栏（对标 DatasetPickerPanel「收起」） */
 export function WidgetRailPanelHeader({
   title,
@@ -20,16 +41,10 @@ export function WidgetRailPanelHeader({
           {title}
         </h3>
         {onCollapse ? (
-          <IconButton
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="size-7 shrink-0 text-gray-400 hover:bg-white hover:text-gray-600 dark:hover:bg-white/[0.06] dark:hover:text-gray-300"
-            aria-label={collapseAriaLabel ?? `收起${title}`}
+          <WidgetRailCollapseButton
             onClick={onCollapse}
-          >
-            <RailFoldIcon />
-          </IconButton>
+            ariaLabel={collapseAriaLabel ?? `收起${title}`}
+          />
         ) : null}
       </div>
       {subtitle ? (

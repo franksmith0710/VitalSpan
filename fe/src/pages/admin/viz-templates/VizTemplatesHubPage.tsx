@@ -4,10 +4,17 @@ import { useNavigate, useSearchParams } from "react-router";
 import { LayoutDashboard, LayoutTemplate, Monitor, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import {
+  LIST_PAGE_CARD_GRID_CLASS,
+  ListPageBody,
+  ListPageSection,
+  ListPageTableFrame,
+  ListPageToolbar,
+  PageErrorBanner,
+} from "@/components/layout/list-page-kit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { PanelEmptyState } from "@/components/ui/panel-empty-state";
 import { VizTemplateCard } from "@/components/dashboard/templates/VizTemplateCard";
 import {
@@ -131,6 +138,7 @@ export function VizTemplatesHubPage() {
 
   return (
     <AdminPageShell
+      layout="list"
       title={VIZ_TEMPLATES_HUB.title}
       description={VIZ_TEMPLATES_HUB.description}
       actions={
@@ -175,89 +183,111 @@ export function VizTemplatesHubPage() {
         }}
       />
 
-      <section className="mb-4 flex flex-wrap gap-2">
-        {SURFACE_TABS.map((tab) => {
-          const Icon = tab.key === "data-screen" ? Monitor : LayoutDashboard;
-          const active = surfaceKind === tab.key;
-          return (
-            <Button
-              key={tab.key}
-              type="button"
+      <ListPageSection>
+        <ListPageToolbar
+          filters={
+            <div className="flex w-full min-w-0 flex-col gap-3">
+              <div className="flex flex-wrap gap-1.5">
+                {SURFACE_TABS.map((tab) => {
+                  const Icon = tab.key === "data-screen" ? Monitor : LayoutDashboard;
+                  const active = surfaceKind === tab.key;
+                  return (
+                    <Button
+                      key={tab.key}
+                      type="button"
+                      size="sm"
+                      variant={active ? "primary" : "outline"}
+                      onClick={() => {
+                        const next = new URLSearchParams(searchParams);
+                        next.set("surfaceKind", tab.key);
+                        setSearchParams(next);
+                      }}
+                    >
+                      <Icon className="size-4" />
+                      {tab.label}
+                    </Button>
+                  );
+                })}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={categoryKey === null ? "primary" : "ghost"}
+                  onClick={() => setCategoryKey(null)}
+                >
+                  {VIZ_TEMPLATES_HUB.allCategories}
+                </Button>
+                {TEMPLATE_CATEGORIES.map((cat) => (
+                  <Button
+                    key={cat.key}
+                    type="button"
+                    size="sm"
+                    variant={categoryKey === cat.key ? "primary" : "ghost"}
+                    onClick={() => setCategoryKey(cat.key)}
+                  >
+                    {cat.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          }
+          actions={
+            <Input
               size="sm"
-              variant={active ? "primary" : "outline"}
-              onClick={() => {
-                const next = new URLSearchParams(searchParams);
-                next.set("surfaceKind", tab.key);
-                setSearchParams(next);
-              }}
-            >
-              <Icon className="size-4" />
-              {tab.label}
-            </Button>
-          );
-        })}
-      </section>
-
-      <section className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <Input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder={VIZ_TEMPLATES_HUB.searchPlaceholder}
-          className="sm:max-w-xs"
-          aria-label={VIZ_TEMPLATES_HUB.searchAriaLabel}
-        />
-        <section className="flex flex-wrap gap-1.5">
-          <Button
-            type="button"
-            size="sm"
-            variant={categoryKey === null ? "primary" : "ghost"}
-            onClick={() => setCategoryKey(null)}
-          >
-            {VIZ_TEMPLATES_HUB.allCategories}
-          </Button>
-          {TEMPLATE_CATEGORIES.map((cat) => (
-            <Button
-              key={cat.key}
-              type="button"
-              size="sm"
-              variant={categoryKey === cat.key ? "primary" : "ghost"}
-              onClick={() => setCategoryKey(cat.key)}
-            >
-              {cat.label}
-            </Button>
-          ))}
-        </section>
-      </section>
-
-      {listQuery.isLoading ? (
-        <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <TemplateCardSkeleton key={i} />
-          ))}
-        </section>
-      ) : listQuery.isError ? (
-        <PageErrorBanner message={mapApiError(listQuery.error)} onRetry={() => void listQuery.refetch()} />
-      ) : items.length === 0 ? (
-        <PanelEmptyState
-          icon={<LayoutTemplate className="size-8" aria-hidden />}
-          title={VIZ_TEMPLATES_HUB.emptyTitle}
-          description={VIZ_TEMPLATES_HUB.emptyDescription}
-        />
-      ) : (
-        <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3">
-          {items.map((item) => (
-            <VizTemplateCard
-              key={item.id}
-              item={item}
-              canManage={canManage}
-              pending={pending}
-              onUse={() => useMutation_.mutate(item)}
-              onPublish={() => publishMutation.mutate(item.id)}
-              onArchive={() => archiveMutation.mutate(item.id)}
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder={VIZ_TEMPLATES_HUB.searchPlaceholder}
+              className="w-full sm:w-auto sm:min-w-[220px]"
+              aria-label={VIZ_TEMPLATES_HUB.searchAriaLabel}
             />
-          ))}
-        </section>
-      )}
+          }
+        />
+
+        {listQuery.isError ? (
+          <ListPageBody>
+            <PageErrorBanner
+              message={mapApiError(listQuery.error)}
+              onRetry={() => void listQuery.refetch()}
+            />
+          </ListPageBody>
+        ) : null}
+
+        <ListPageTableFrame>
+          {listQuery.isLoading ? (
+            <div className={LIST_PAGE_CARD_GRID_CLASS}>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <TemplateCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : listQuery.isError ? null : items.length === 0 ? (
+            <PanelEmptyState
+              icon={<LayoutTemplate className="size-8" aria-hidden />}
+              title={VIZ_TEMPLATES_HUB.emptyTitle}
+              description={VIZ_TEMPLATES_HUB.emptyDescription}
+            />
+          ) : (
+            <>
+              <div className={LIST_PAGE_CARD_GRID_CLASS}>
+                {items.map((item) => (
+                  <VizTemplateCard
+                    key={item.id}
+                    item={item}
+                    canManage={canManage}
+                    pending={pending}
+                    onUse={() => useMutation_.mutate(item)}
+                    onPublish={() => publishMutation.mutate(item.id)}
+                    onArchive={() => archiveMutation.mutate(item.id)}
+                  />
+                ))}
+              </div>
+              <p className="mt-4 text-theme-xs text-gray-500 dark:text-gray-400">
+                共 {listQuery.data?.total ?? items.length} 个模板
+              </p>
+            </>
+          )}
+        </ListPageTableFrame>
+      </ListPageSection>
     </AdminPageShell>
   );
 }

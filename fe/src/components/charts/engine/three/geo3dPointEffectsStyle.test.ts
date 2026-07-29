@@ -32,6 +32,11 @@ describe("geo3dPointEffectsStyle", () => {
     const resolved = resolvePointEffectsStyle({ stylePreset: "tech" }, "tech", true, true);
     expect(resolved.pointPillarColorTop).toBe("#fbdf88");
     expect(resolved.pointPillarColorBottom).toBe("#ea580c");
-    expect(resolved.pointPillarBaseRingScale).toBe(2);
+    expect(resolved.pointPillarBaseRingScale).toBe(0.6);
+  });
+
+  it("classic preset enables point effects by default", () => {
+    expect(resolveGeo3dPointEffects({ stylePreset: "classic" })).toBe(true);
+    expect(resolveGeo3dPointEffects({ stylePreset: "glass" })).toBe(true);
   });
 });

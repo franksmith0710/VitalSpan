@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildDefaultLayoutForSurface, getSurfacePreset } from "./surfacePreset";
+import {
+  buildDefaultLayoutForSurface,
+  DATA_SCREEN_CANVAS_PRESETS,
+  getSurfacePreset,
+} from "./surfacePreset";
 
 describe("surfacePreset", () => {
   it("dashboard preset uses 1440 light canvas", () => {
@@ -22,5 +26,13 @@ describe("surfacePreset", () => {
     expect(layout.version).toBe(2);
     expect(layout.canvas).toEqual({ width: 1920, height: 1080 });
     expect(layout.styleConfig?.surfaceKind).toBe("data-screen");
+  });
+
+  it("C2: exposes 21:9 canvas preset at 2560x1080", () => {
+    expect(DATA_SCREEN_CANVAS_PRESETS["21:9"]).toEqual({
+      width: 2560,
+      height: 1080,
+      label: "2560×1080 (21:9)",
+    });
   });
 });

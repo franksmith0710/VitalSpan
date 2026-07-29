@@ -1,7 +1,6 @@
 import {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -9,8 +8,13 @@ import {
 } from "react";
 import { cn } from "@/lib/utils";
 import { CanvasRuler } from "./CanvasRuler";
-import { canvasRulerChromeVars, canvasRulerCornerClass, canvasRulerCornerStyle, CanvasRulerCornerMark } from "./canvasRulerChrome";
-import { CANVAS_RULER_SIZE_PX, DATA_SCREEN_VIEWPORT_BG, resolveCanvasRulerScrollOffset } from "./canvasRulerUtils";
+import {
+  canvasRulerChromeVars,
+  canvasRulerCornerClass,
+  canvasRulerCornerStyle,
+  CanvasRulerCornerMark,
+} from "./canvasRulerChrome";
+import { CANVAS_RULER_SIZE_PX, DATA_SCREEN_VIEWPORT_BG } from "./canvasRulerUtils";
 import {
   applyViewportPanTranslate,
   type ViewportPanSession,
@@ -22,12 +26,9 @@ import {
   hasExceededPanClickThreshold,
 } from "./viewportPanLayer";
 import {
-  computePresentationTransform,
   DATA_SCREEN_EDIT_PRESENTATION_DEFAULT,
-  resolveDataScreenEditViewportOffsets,
   type PresentationMode,
 } from "./presentationScale";
-
 import { CanvasScaleArea } from "./CanvasScaleArea";
 import { DataScreenVisualScaleProvider } from "./dataScreenVisualScaleContext";
 import {
@@ -35,16 +36,8 @@ import {
   CanvasViewportScrollbarVertical,
   canvasViewportScrollbarStyle,
 } from "./CanvasViewportScrollbars";
-import {
-  clampViewportPan,
-  computeViewportScrollMetrics,
-  CANVAS_VIEWPORT_SCROLLBAR_SIZE_PX,
-} from "./dataScreenViewportScroll";
-import {
-  clampDataScreenUserZoom,
-  DATA_SCREEN_ZOOM_WHEEL_STEP,
-  stepDataScreenUserZoom,
-} from "./dataScreenViewportZoom";
+import { clampViewportPan, CANVAS_VIEWPORT_SCROLLBAR_SIZE_PX } from "./dataScreenViewportScroll";
+import { useDataScreenViewportState } from "./useDataScreenViewportState";
 
 export type DataScreenEditViewportProps = {
   canvasWidth: number;
@@ -67,10 +60,6 @@ function isEditableTarget(target: EventTarget | null): boolean {
   );
 }
 
-function clampZoom(value: number): number {
-  return clampDataScreenUserZoom(value);
-}
-
 export function DataScreenEditViewport({
   canvasWidth,
   canvasHeight,
@@ -90,44 +79,42 @@ export function DataScreenEditViewport({
     startX: number;
     startY: number;
   } | null>(null);
-  const panCommitFrameRef = useRef<number | null>(null);
   const onBlankPointerDownRef = useRef(onBlankPointerDown);
   onBlankPointerDownRef.current = onBlankPointerDown;
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
-  const [viewPan, setViewPan] = useState({ x: 0, y: 0 });
-  const viewPanRef = useRef(viewPan);
-  viewPanRef.current = viewPan;
-  const [userZoom, setUserZoom] = useState(1);
   const [spacePan, setSpacePan] = useState(false);
   const [panDragging, setPanDragging] = useState(false);
 
-  useEffect(() => {
-    setViewPan({ x: 0, y: 0 });
-    setUserZoom(1);
-  }, [canvasWidth, canvasHeight, presentationMode]);
-
-  useEffect(() => {
-    const viewportEl = viewportRef.current;
-    if (!viewportEl) return undefined;
-    const observer = new ResizeObserver(([entry]) => {
-      const { width, height } = entry.contentRect;
-      setViewportSize({ width, height });
-    });
-    observer.observe(viewportEl);
-    return () => observer.disconnect();
-  }, []);
-
-  const baseTransform = computePresentationTransform(
-    viewportSize.width,
-    viewportSize.height,
+  const viewport = useDataScreenViewportState({
     canvasWidth,
     canvasHeight,
     presentationMode,
-  );
-  const scale = baseTransform.scaleX * userZoom;
-  const scaledWidth = canvasWidth * scale;
-  const scaledHeight = canvasHeight * scale;
-  const { offsetX, offsetY } = resolveDataScreenEditViewportOffsets();
+    viewportSize,
+  });
+
+  const {
+    viewPan,
+    userZoom,
+    viewPanRef,
+    scale,
+    offsetX,
+    offsetY,
+    rulerOffsetX,
+    rulerOffsetY,
+    scrollMetrics,
+    boundsRef,
+    commitPanState,
+    schedulePanStateCommit,
+    cancelPanStateCommit,
+    applyPanPatch,
+    handleZoomChange,
+    handleZoomIn,
+    handleZoomOut,
+    resetViewport,
+    applyWheelZoom,
+    applyWheelPan,
+  } = viewport;
+
   const offsetXRef = useRef(offsetX);
   const offsetYRef = useRef(offsetY);
   offsetXRef.current = offsetX;
@@ -142,74 +129,20 @@ export function DataScreenEditViewport({
     );
   }, []);
 
-  const commitPanState = useCallback((pan: { x: number; y: number }) => {
-    viewPanRef.current = pan;
-    setViewPan(pan);
-  }, []);
-
-  const schedulePanStateCommit = useCallback(() => {
-    if (panCommitFrameRef.current != null) return;
-    panCommitFrameRef.current = window.requestAnimationFrame(() => {
-      panCommitFrameRef.current = null;
-      setViewPan({ ...viewPanRef.current });
+  useEffect(() => {
+    const viewportEl = viewportRef.current;
+    if (!viewportEl) return undefined;
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      setViewportSize({ width, height });
     });
+    observer.observe(viewportEl);
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
     syncPanLayer(viewPan);
   }, [viewPan.x, viewPan.y, offsetX, offsetY, syncPanLayer]);
-
-  const contentLayout = useMemo(
-    () => ({
-      scaledWidth,
-      scaledHeight,
-      offsetX,
-      offsetY,
-    }),
-    [scaledWidth, scaledHeight, offsetX, offsetY],
-  );
-
-  const scrollMetrics = useMemo(
-    () => computeViewportScrollMetrics(viewportSize, contentLayout, viewPan),
-    [viewportSize, contentLayout, viewPan],
-  );
-  const boundsRef = useRef(scrollMetrics.bounds);
-  boundsRef.current = scrollMetrics.bounds;
-
-  const applyPan = useCallback(
-    (next: { x: number; y: number } | ((prev: { x: number; y: number }) => { x: number; y: number })) => {
-      setViewPan((previous) => {
-        const resolved = typeof next === "function" ? next(previous) : next;
-        const clamped = clampViewportPan(resolved, boundsRef.current);
-        viewPanRef.current = clamped;
-        syncPanLayer(clamped);
-        return clamped;
-      });
-    },
-    [syncPanLayer],
-  );
-
-  const applyPanPatch = useCallback(
-    (patch: { x?: number; y?: number }) => {
-      applyPan((previous) => ({
-        x: patch.x ?? previous.x,
-        y: patch.y ?? previous.y,
-      }));
-    },
-    [applyPan],
-  );
-
-  useEffect(() => {
-    setViewPan((previous) => clampViewportPan(previous, scrollMetrics.bounds));
-  }, [
-    scrollMetrics.bounds.minPanX,
-    scrollMetrics.bounds.maxPanX,
-    scrollMetrics.bounds.minPanY,
-    scrollMetrics.bounds.maxPanY,
-    viewportSize.width,
-    viewportSize.height,
-    scale,
-  ]);
 
   const endPanSession = useCallback(() => {
     const session = panSessionRef.current;
@@ -219,7 +152,7 @@ export function DataScreenEditViewport({
       commitPanState(viewPanRef.current);
     }
     panMovedRef.current = false;
-  }, [commitPanState]);
+  }, [commitPanState, viewPanRef]);
 
   const isPanEligibleTarget = useCallback((target: EventTarget | null) => {
     if (!(target instanceof Node)) return false;
@@ -357,7 +290,7 @@ export function DataScreenEditViewport({
       document.removeEventListener("pointercancel", onPointerEnd, { capture: true });
       document.removeEventListener("lostpointercapture", onPointerEnd, { capture: true });
     };
-  }, [endPanSession, isPanEligibleTarget, schedulePanStateCommit, syncPanLayer]);
+  }, [endPanSession, isPanEligibleTarget, schedulePanStateCommit, syncPanLayer, boundsRef, viewPanRef]);
 
   useEffect(() => {
     const wheelHost = wheelHostRef.current;
@@ -372,9 +305,13 @@ export function DataScreenEditViewport({
 
       if (isZoomGesture) {
         if (event.cancelable) event.preventDefault();
-        if (!onCanvasViewport) return;
+        if (!onCanvasViewport || !viewportRef.current) return;
+        const rect = viewportRef.current.getBoundingClientRect();
+        const pointerX = event.clientX - rect.left;
+        const pointerY = event.clientY - rect.top;
         const direction = event.deltaY > 0 ? -1 : 1;
-        setUserZoom((previous) => clampZoom(previous + direction * DATA_SCREEN_ZOOM_WHEEL_STEP));
+        const { pan } = applyWheelZoom(pointerX, pointerY, direction as 1 | -1);
+        syncPanLayer(pan);
         return;
       }
 
@@ -385,47 +322,21 @@ export function DataScreenEditViewport({
 
       if (event.deltaX === 0 && event.deltaY === 0) return;
       if (event.cancelable) event.preventDefault();
-      const clamped = clampViewportPan(
-        {
-          x: viewPanRef.current.x - event.deltaX,
-          y: viewPanRef.current.y - event.deltaY,
-        },
-        boundsRef.current,
-      );
-      viewPanRef.current = clamped;
+      const clamped = applyWheelPan(event.deltaX, event.deltaY);
       syncPanLayer(clamped);
-      schedulePanStateCommit();
     };
 
     wheelHost.addEventListener("wheel", onWheel, { passive: false, capture: true });
     return () => {
       wheelHost.removeEventListener("wheel", onWheel, { capture: true });
-      if (panCommitFrameRef.current != null) {
-        window.cancelAnimationFrame(panCommitFrameRef.current);
-        panCommitFrameRef.current = null;
-      }
+      cancelPanStateCommit();
     };
-  }, [schedulePanStateCommit, syncPanLayer]);
-
-  const handleZoomChange = useCallback((zoom: number) => {
-    setUserZoom(clampZoom(zoom));
-  }, []);
-
-  const handleZoomIn = useCallback(() => {
-    setUserZoom((previous) => stepDataScreenUserZoom(previous, 1));
-  }, []);
-
-  const handleZoomOut = useCallback(() => {
-    setUserZoom((previous) => stepDataScreenUserZoom(previous, -1));
-  }, []);
+  }, [applyWheelZoom, applyWheelPan, syncPanLayer, cancelPanStateCommit]);
 
   const handleResetViewport = useCallback(() => {
-    setUserZoom(1);
-    const resetPan = { x: 0, y: 0 };
-    viewPanRef.current = resetPan;
+    const resetPan = resetViewport();
     syncPanLayer(resetPan);
-    setViewPan(resetPan);
-  }, [syncPanLayer]);
+  }, [resetViewport, syncPanLayer]);
 
   const stageStyle: CSSProperties = {
     width: canvasWidth,
@@ -433,9 +344,6 @@ export function DataScreenEditViewport({
     transform: `scale(${scale})`,
     transformOrigin: "top left",
   };
-
-  const rulerOffsetX = resolveCanvasRulerScrollOffset(viewPan.x, offsetX);
-  const rulerOffsetY = resolveCanvasRulerScrollOffset(viewPan.y, offsetY);
 
   return (
     <div
@@ -449,7 +357,7 @@ export function DataScreenEditViewport({
     >
       <div
         ref={wheelHostRef}
-        className="grid min-h-0 flex-1"
+        className="relative grid min-h-0 flex-1"
         style={
           {
             ...canvasViewportScrollbarStyle(),

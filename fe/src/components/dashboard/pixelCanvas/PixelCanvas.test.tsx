@@ -1145,6 +1145,54 @@ describe("PixelCanvas", () => {
     expect(screen.queryByLabelText("调整组件大小：右下")).not.toBeInTheDocument();
   });
 
+  it("does not move or resize locked widget via keyboard", async () => {
+    const lockedLayout: DashboardLayoutV2 = {
+      ...layout,
+      widgets: [{ ...widget, locked: true }],
+    };
+    const onChange = vi.fn();
+    render(
+      <PixelCanvas
+        mode="edit"
+        layout={lockedLayout}
+        selectedIds={new Set(["w1"])}
+        onLayoutChange={onChange}
+        renderWidget={(item) => <button data-pixel-no-drag>{item.title}</button>}
+      />,
+    );
+    const drag = screen.getByLabelText("拖动组件");
+    fireEvent.keyDown(drag, { key: "ArrowRight" });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("does not start pointer drag when widget is locked", async () => {
+    const lockedLayout: DashboardLayoutV2 = {
+      ...layout,
+      widgets: [{ ...widget, locked: true }],
+    };
+    const onChange = vi.fn();
+    render(
+      <PixelCanvas
+        mode="edit"
+        layout={lockedLayout}
+        selectedIds={new Set(["w1"])}
+        onLayoutChange={onChange}
+        renderWidget={(item) => <button data-pixel-no-drag>{item.title}</button>}
+      />,
+    );
+    await pinPixelHostMetrics();
+    fireEvent.pointerDown(screen.getByLabelText("拖动组件"), {
+      pointerId: 9,
+      clientX: 0,
+      clientY: 0,
+      button: 0,
+    });
+    fireEvent.pointerMove(document, { pointerId: 9, clientX: 80, clientY: 0 });
+    await flushPixelPointerFrames();
+    fireEvent.pointerUp(document, { pointerId: 9, clientX: 80, clientY: 0 });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it("supports keyboard move and resize without Enter or Space mutations", async () => {
     const onChange = await renderCanvas("edit");
     const drag = screen.getByLabelText("拖动组件");

@@ -1,8 +1,7 @@
-import { useId } from "react";
 import type { ScreenBorderStyleConfig } from "@/lib/screenVisualStyle";
 import { normalizeScreenBorderStyle } from "@/lib/screenVisualStyle";
 import { cn } from "@/lib/utils";
-import { renderScreenBorderVariant } from "./screenBorderVariants";
+import { renderScreenBorderVariant, ScreenBorderStyleThumbnail } from "./screenBorderVariants";
 import { ScreenBorderSparkles } from "./ScreenBorderSparkles";
 
 export type ScreenBorderDisplayProps = {
@@ -12,20 +11,7 @@ export type ScreenBorderDisplayProps = {
   showSparkle?: boolean;
 };
 
-/** 配置栏缩略图：与画布 ScreenBorderDisplay 同一路径渲染 */
-export function ScreenBorderStyleThumbnail({
-  styleConfig,
-  className,
-}: {
-  styleConfig?: ScreenBorderStyleConfig;
-  className?: string;
-}) {
-  return (
-    <div className={cn("relative size-full min-h-0 overflow-hidden", className)}>
-      <ScreenBorderDisplay className="absolute inset-0" styleConfig={styleConfig} showSparkle={false} />
-    </div>
-  );
-}
+export { ScreenBorderStyleThumbnail };
 
 /** 对标 DataEase 素材边框 + screen-panel 角标发光 */
 export function ScreenBorderDisplay({
@@ -33,7 +19,6 @@ export function ScreenBorderDisplay({
   styleConfig,
   showSparkle = true,
 }: ScreenBorderDisplayProps) {
-  const instanceScope = useId();
   const style = normalizeScreenBorderStyle(styleConfig);
   const accent = style.accentColor;
   const glow = style.glowEnabled
@@ -53,7 +38,6 @@ export function ScreenBorderDisplay({
       })}
       {showSparkle && style.sparkle.enabled ? (
         <ScreenBorderSparkles
-          instanceScope={instanceScope}
           sparkles={style.sparkle.sparkles}
           variant={style.variant}
         />

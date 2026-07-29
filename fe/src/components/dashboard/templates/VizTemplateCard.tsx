@@ -87,7 +87,7 @@ export function VizTemplateCard({
         />
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 p-4">
+      <div className="flex flex-1 flex-col gap-2.5 p-3">
         <header className="space-y-1.5">
           <div className="flex items-start justify-between gap-2">
             <h2 className="text-theme-sm font-semibold leading-snug text-gray-900 dark:text-white">

@@ -4,10 +4,17 @@ import { Link, useSearchParams } from "react-router";
 import { Boxes, LayoutDashboard, Monitor, Pencil, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import {
+  LIST_PAGE_CARD_GRID_CLASS,
+  ListPageBody,
+  ListPageSection,
+  ListPageTableFrame,
+  ListPageToolbar,
+  PageErrorBanner,
+} from "@/components/layout/list-page-kit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import {
   ListGhostEmptyState,
   PanelEmptyStateSteps,
@@ -160,9 +167,9 @@ export function VizComponentsHubPage() {
 
   return (
     <AdminPageShell
+      layout="list"
       title={VIZ_COMPONENTS_HUB.title}
       description={VIZ_COMPONENTS_HUB.description}
-      className="gap-4"
       actions={
         <div className="flex items-center gap-2">
           {canCreate ? <CreateVizComponentButton /> : null}
@@ -172,110 +179,131 @@ export function VizComponentsHubPage() {
         </div>
       }
     >
-      <section className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-          {SURFACE_TABS.map((tab) => {
-            const Icon =
-              tab.key === "data-screen" ? Monitor : tab.key === "dashboard" ? LayoutDashboard : Boxes;
-            const active = surfaceTab === tab.key;
-            return (
-              <Button
-                key={tab.key}
-                type="button"
-                size="sm"
-                variant={active ? "primary" : "outline"}
-                onClick={() => {
-                  const next = new URLSearchParams(searchParams);
-                  if (tab.key === "all") next.delete("surfaceKind");
-                  else next.set("surfaceKind", tab.key);
-                  setSearchParams(next);
-                }}
-              >
-                <Icon className="size-4" aria-hidden />
-                {tab.label}
-              </Button>
-            );
-          })}
-          <span
-            className="mx-0.5 hidden h-5 w-px shrink-0 bg-gray-200 dark:bg-gray-700 sm:block"
-            aria-hidden
-          />
-          {WIDGET_TYPE_FILTERS.map((filter) => {
-            const Icon = filter.icon;
-            const active = widgetType === filter.key;
-            return (
-              <Button
-                key={filter.key}
-                type="button"
-                size="sm"
-                variant={active ? "primary" : "ghost"}
-                onClick={() => setWidgetType(filter.key)}
-              >
-                <Icon className="size-3.5" aria-hidden />
-                {filter.label}
-              </Button>
-            );
-          })}
-        </div>
-        <Input
-          size="sm"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder={VIZ_COMPONENTS_HUB.searchPlaceholder}
-          className="w-full shrink-0 sm:w-auto sm:min-w-[220px] sm:max-w-xs"
-          aria-label={VIZ_COMPONENTS_HUB.searchAriaLabel}
-        />
-      </section>
-
-      {listQuery.isLoading ? (
-        <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <ComponentCardSkeleton key={i} />
-          ))}
-        </section>
-      ) : listQuery.isError ? (
-        <PageErrorBanner
-          message={mapApiError(listQuery.error)}
-          onRetry={() => void listQuery.refetch()}
-        />
-      ) : items.length === 0 ? (
-        <ListGhostEmptyState
-          layout="cards"
-          icon={<Boxes className="size-8" aria-hidden />}
-          title={VIZ_COMPONENTS_HUB.emptyTitle}
-          description={VIZ_COMPONENTS_HUB.emptyDescription}
-          action={
-            <div className="flex flex-wrap justify-center gap-2">
-              {canCreate ? <CreateVizComponentButton /> : null}
-              <Button type="button" size="sm" variant={canCreate ? "outline" : "primary"} asChild>
-                <Link to="/admin/dashboards">{VIZ_COMPONENTS_HUB.goEditDashboard}</Link>
-              </Button>
-              <Button type="button" size="sm" variant="outline" asChild>
-                <Link to="/admin/data-screens">{VIZ_COMPONENTS_HUB.goEditDataScreen}</Link>
-              </Button>
+      <ListPageSection>
+        <ListPageToolbar
+          filters={
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+              {SURFACE_TABS.map((tab) => {
+                const Icon =
+                  tab.key === "data-screen"
+                    ? Monitor
+                    : tab.key === "dashboard"
+                      ? LayoutDashboard
+                      : Boxes;
+                const active = surfaceTab === tab.key;
+                return (
+                  <Button
+                    key={tab.key}
+                    type="button"
+                    size="sm"
+                    variant={active ? "primary" : "outline"}
+                    onClick={() => {
+                      const next = new URLSearchParams(searchParams);
+                      if (tab.key === "all") next.delete("surfaceKind");
+                      else next.set("surfaceKind", tab.key);
+                      setSearchParams(next);
+                    }}
+                  >
+                    <Icon className="size-4" aria-hidden />
+                    {tab.label}
+                  </Button>
+                );
+              })}
+              <span
+                className="mx-0.5 hidden h-5 w-px shrink-0 bg-gray-200 dark:bg-gray-700 sm:block"
+                aria-hidden
+              />
+              {WIDGET_TYPE_FILTERS.map((filter) => {
+                const Icon = filter.icon;
+                const active = widgetType === filter.key;
+                return (
+                  <Button
+                    key={filter.key}
+                    type="button"
+                    size="sm"
+                    variant={active ? "primary" : "ghost"}
+                    onClick={() => setWidgetType(filter.key)}
+                  >
+                    <Icon className="size-3.5" aria-hidden />
+                    {filter.label}
+                  </Button>
+                );
+              })}
             </div>
           }
-          footer={<PanelEmptyStateSteps steps={EMPTY_STEPS} />}
-        />
-      ) : (
-        <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {items.map((item) => (
-            <VizComponentCard
-              key={item.id}
-              item={item}
-              payload={payloadById.get(item.id)}
-              payloadLoading={resolveQuery.isLoading && !payloadById.has(item.id)}
-              canManage={canManage}
-              pending={pending}
-              onInsert={() => setInsertTarget(item)}
-              onViewReferences={() => setReferencesTarget(item)}
-              onPublish={() => publishMutation.mutate(item.id)}
-              onArchive={() => archiveMutation.mutate(item.id)}
-              onDelete={() => deleteMutation.mutate(item.id)}
+          actions={
+            <Input
+              size="sm"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder={VIZ_COMPONENTS_HUB.searchPlaceholder}
+              className="w-full sm:w-auto sm:min-w-[220px]"
+              aria-label={VIZ_COMPONENTS_HUB.searchAriaLabel}
             />
-          ))}
-        </section>
-      )}
+          }
+        />
+
+        {listQuery.isError ? (
+          <ListPageBody>
+            <PageErrorBanner
+              message={mapApiError(listQuery.error)}
+              onRetry={() => void listQuery.refetch()}
+            />
+          </ListPageBody>
+        ) : null}
+
+        <ListPageTableFrame>
+          {listQuery.isLoading ? (
+            <div className={LIST_PAGE_CARD_GRID_CLASS}>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <ComponentCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : listQuery.isError ? null : items.length === 0 ? (
+            <ListGhostEmptyState
+              layout="cards"
+              icon={<Boxes className="size-8" aria-hidden />}
+              title={VIZ_COMPONENTS_HUB.emptyTitle}
+              description={VIZ_COMPONENTS_HUB.emptyDescription}
+              action={
+                <div className="flex flex-wrap justify-center gap-2">
+                  {canCreate ? <CreateVizComponentButton /> : null}
+                  <Button type="button" size="sm" variant={canCreate ? "outline" : "primary"} asChild>
+                    <Link to="/admin/dashboards">{VIZ_COMPONENTS_HUB.goEditDashboard}</Link>
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" asChild>
+                    <Link to="/admin/data-screens">{VIZ_COMPONENTS_HUB.goEditDataScreen}</Link>
+                  </Button>
+                </div>
+              }
+              footer={<PanelEmptyStateSteps steps={EMPTY_STEPS} />}
+            />
+          ) : (
+            <>
+              <div className={LIST_PAGE_CARD_GRID_CLASS}>
+                {items.map((item) => (
+                  <VizComponentCard
+                    key={item.id}
+                    item={item}
+                    payload={payloadById.get(item.id)}
+                    payloadLoading={resolveQuery.isLoading && !payloadById.has(item.id)}
+                    canManage={canManage}
+                    pending={pending}
+                    onInsert={() => setInsertTarget(item)}
+                    onViewReferences={() => setReferencesTarget(item)}
+                    onPublish={() => publishMutation.mutate(item.id)}
+                    onArchive={() => archiveMutation.mutate(item.id)}
+                    onDelete={() => deleteMutation.mutate(item.id)}
+                  />
+                ))}
+              </div>
+              <p className="mt-4 text-theme-xs text-gray-500 dark:text-gray-400">
+                共 {listQuery.data?.total ?? items.length} 个组件
+              </p>
+            </>
+          )}
+        </ListPageTableFrame>
+      </ListPageSection>
 
       <InsertVizComponentDialog
         open={Boolean(insertTarget)}

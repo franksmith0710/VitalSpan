@@ -28,6 +28,7 @@ import {
   SHAPE_ACTION_RAIL_ICON_SCREEN_WIDTH,
   SHAPE_ACTION_RAIL_SCREEN_GAP,
   SHAPE_ACTION_RAIL_SCREEN_WIDTH,
+  SHAPE_RESIZE_HANDLE_SCREEN_PX,
   type PixelRect,
   type ShapeActionRailPlacement,
 } from "./geometry";
@@ -102,9 +103,10 @@ function menuSeparatorClass(scheme: ColorScheme): string | undefined {
 function railPositionStyle(
   placement: ShapeActionRailPlacement,
   gapPx: number,
+  handleClearancePx: number,
 ): Record<string, string | number> {
   if (placement === "overlay") {
-    return { right: 0, top: 0 };
+    return { right: handleClearancePx, top: handleClearancePx };
   }
   if (placement === "right") {
     return { left: `calc(100% + ${gapPx}px)` };
@@ -184,6 +186,7 @@ export function PixelShapeActionRail({
   const placement = resolveShapeActionRailPlacement(widget, viewport, safeScale, otherWidgets);
   const railPx = SHAPE_ACTION_RAIL_SCREEN_WIDTH / safeScale;
   const gapPx = SHAPE_ACTION_RAIL_SCREEN_GAP / safeScale;
+  const handleClearancePx = SHAPE_RESIZE_HANDLE_SCREEN_PX / 2 / safeScale;
   const iconPx = SHAPE_ACTION_RAIL_ICON_SCREEN_WIDTH / safeScale;
   const isChart = widget.type === "chart";
   const menuSide = placement === "left" ? "right" : "left";
@@ -206,7 +209,7 @@ export function PixelShapeActionRail({
       )}
       style={{
         width: railPx,
-        ...railPositionStyle(placement, gapPx),
+        ...railPositionStyle(placement, gapPx, handleClearancePx),
       }}
       data-pixel-no-drag
       onPointerDown={stopPointer}

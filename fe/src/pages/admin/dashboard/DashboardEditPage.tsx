@@ -451,6 +451,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const canPublishSelected =
     multiSelectCount < 2 &&
     Boolean(selectedWidget && isPublishableWidgetType(selectedWidget.type));
+  const collapseChartRail = useCallback(() => setChartRailOpen(false), []);
   const vizComponentHeader =
     selectedWidget && isPublishableWidgetType(selectedWidget.type) ? (
       <VizComponentInspectorHeader
@@ -462,10 +463,9 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         onPublish={() => setPublishComponentOpen(true)}
         onPushToLibrary={() => void vizInspectorActions.pushToLibrary()}
         pushing={vizInspectorActions.pushing}
+        onCollapse={collapseChartRail}
       />
     ) : null;
-
-  const collapseChartRail = useCallback(() => setChartRailOpen(false), []);
 
   const selectWidgetOnCanvas = useCallback(
     (widgetId: string, additive: boolean) => {
@@ -1305,7 +1305,6 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                       { filterConfig },
                     );
                   }}
-                  onRailCollapse={collapseChartRail}
                 />
               </div>
             ) : selectedWidget?.type === "text" && inspectorWidget?.textConfig ? (
@@ -1327,7 +1326,6 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                       void vizInspectorActions.applyPayloadChange({ textConfig }, { textConfig });
                     }}
                     onDelete={() => handleDeleteWidget(primarySelectedId!)}
-                    onRailCollapse={collapseChartRail}
                   />
                 </div>
               ) : (
@@ -1348,7 +1346,6 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                   void vizInspectorActions.applyPayloadChange({ textConfig }, { textConfig });
                 }}
                 onDelete={() => handleDeleteWidget(primarySelectedId!)}
-                onRailCollapse={collapseChartRail}
               />
               </div>
               )
@@ -1370,7 +1367,6 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                   );
                 }}
                 onDelete={() => handleDeleteWidget(primarySelectedId!)}
-                onRailCollapse={collapseChartRail}
               />
               </div>
             ) : selectedWidget?.type === "tabs" && selectedWidget.tabsConfig ? (
@@ -1441,6 +1437,13 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                     selectedId={primarySelectedId}
                     onSelect={(widgetId) => selectWidgetOnCanvas(widgetId, false)}
                     onWidgetsChange={setWidgets}
+                    onDelete={handleDeleteWidget}
+                    onBringToFront={(widgetId) =>
+                      setWidgets((prev) => moveWidgetToExtreme(prev, widgetId, "top"))
+                    }
+                    onSendToBack={(widgetId) =>
+                      setWidgets((prev) => moveWidgetToExtreme(prev, widgetId, "bottom"))
+                    }
                     className="shrink-0 border-b border-gray-100 pb-4 dark:border-white/[0.06]"
                   />
                 ) : null}

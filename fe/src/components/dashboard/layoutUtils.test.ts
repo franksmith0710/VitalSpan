@@ -9,6 +9,8 @@ import {
   getTopLevelPixelWidgets,
   insertPixelWidgetIntoTab,
   moveWidget,
+  moveWidgetToExtreme,
+  normalizeLayerOrders,
   reconcileTabPaneChildIds,
   resolvePixelTabsHost,
   normalizeWidgetIds,
@@ -398,6 +400,41 @@ describe("layoutUtils layer siblings", () => {
     const widgets = [...canvasWidgets, tabChild];
     const moved = moveWidget(widgets, "b", "up");
     expect(sortWidgets(moved).filter((w) => !w.parentTabsId).map((w) => w.id)).toEqual(["b", "a", "c"]);
-    expect(moved.find((w) => w.id === "tab-child")?.order).toBe(1);
+    expect(moved.find((w) => w.id === "tab-child")?.order).toBe(0);
+  });
+
+  it("normalizeLayerOrders compacts duplicate orders within sibling groups", () => {
+    const widgets = [
+      { id: "a", type: "chart" as const, title: "A", colSpan: 6, rowSpan: 4, order: 0 },
+      { id: "b", type: "chart" as const, title: "B", colSpan: 6, rowSpan: 4, order: 0 },
+      { id: "c", type: "chart" as const, title: "C", colSpan: 6, rowSpan: 4, order: 2 },
+    ];
+    const normalized = normalizeLayerOrders(widgets);
+    expect(normalized.map((w) => ({ id: w.id, order: w.order }))).toEqual([
+      { id: "a", order: 0 },
+      { id: "b", order: 1 },
+      { id: "c", order: 2 },
+    ]);
+  });
+
+  it("moveWidgetToExtreme send-to-back keeps unique strict orders", () => {
+    const widgets = [
+      { id: "a", type: "chart" as const, title: "A", colSpan: 6, rowSpan: 4, order: 0 },
+      { id: "b", type: "chart" as const, title: "B", colSpan: 6, rowSpan: 4, order: 1 },
+      { id: "c", type: "chart" as const, title: "C", colSpan: 6, rowSpan: 4, order: 2 },
+    ];
+    const once = moveWidgetToExtreme(widgets, "c", "bottom");
+    const twice = moveWidgetToExtreme(once, "b", "bottom");
+    expect(sortWidgets(twice).filter((w) => !w.parentTabsId).map((w) => w.order)).toEqual([0, 1, 2]);
+    expect(sortWidgets(twice).filter((w) => !w.parentTabsId).map((w) => w.id)).toEqual(["b", "c", "a"]);
+  });
+
+  it("getTopLevelPixelWidgets returns widgets sorted by layer order", () => {
+    const widgets: PixelLayoutWidget[] = [
+      { id: "back", type: "chart", title: "Back", order: 0, x: 0, y: 0, width: 100, height: 100, chartConfig: { chartType: "bar", dimensions: [], metrics: [] } },
+      { id: "front", type: "chart", title: "Front", order: 2, x: 0, y: 0, width: 100, height: 100, chartConfig: { chartType: "bar", dimensions: [], metrics: [] } },
+      { id: "mid", type: "chart", title: "Mid", order: 1, x: 0, y: 0, width: 100, height: 100, chartConfig: { chartType: "bar", dimensions: [], metrics: [] } },
+    ];
+    expect(getTopLevelPixelWidgets(widgets).map((w) => w.id)).toEqual(["back", "mid", "front"]);
   });
 });

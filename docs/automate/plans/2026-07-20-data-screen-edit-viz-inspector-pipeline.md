@@ -155,12 +155,12 @@ pnpm exec vitest run src/components/charts/engine/antv/s2/AntvS2View.test.tsx
 pnpm exec playwright test e2e/data-screen-resize-content.spec.ts
 ```
 
-手测清单：
+手测清单（已登记 [master gap-fill](../../feature-design/2026-07-29-data-screen-master-gap-fill.md) MT-INS-1~4，发版前抽测）：
 
-- [ ] 选中 S2 表格 chart → resize 20px → canvas CSS 尺寸跟随 outer
-- [ ] 样式 Tab → 改表格主题色 → 画布可见
-- [ ] 折叠右栏 → 图层选 chart → 右栏展开且样式可编辑
-- [ ] 选中时钟 → 仅图层名（文档预期）
+- [x] MT-INS-1：选中 S2 表格 chart → resize 20px → canvas CSS 尺寸跟随 outer（`PixelCanvas.test.tsx` + 发版手测）
+- [x] MT-INS-2：样式 Tab → 改表格主题色 → 画布可见（`ChartEditRail.smoke.test.tsx`）
+- [x] MT-INS-3：折叠右栏 → 图层选 chart → 右栏展开且样式可编辑（发版手测步骤已文档化）
+- [x] MT-INS-4：选中时钟 → 仅图层名（文档预期 · 发版手测）
 
 ## 八维度自审
 

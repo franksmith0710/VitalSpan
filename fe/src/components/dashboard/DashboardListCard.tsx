@@ -80,12 +80,12 @@ export function DashboardListCard({
   const editPath = isScreen ? dataScreenEditPath(dashboard.id) : `${routeBase}/${dashboard.id}/edit`;
   const sharePath = dashboardSharePath(dashboard.id, isScreen);
   const primaryPath = canEdit ? editPath : viewPath;
-  const previewAspectRatio = isScreen ? "16 / 9" : DASHBOARD_LIST_CARD_ASPECT_RATIO;
+  const previewAspectRatio = DASHBOARD_LIST_CARD_ASPECT_RATIO;
 
   return (
     <article
       className={cn(
-        "group flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs transition hover:border-brand-200 hover:shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03] dark:hover:border-brand-500/30",
+        "group flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs transition hover:border-brand-200 hover:shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03] dark:hover:border-brand-500/30",
         className,
       )}
     >
@@ -119,7 +119,7 @@ export function DashboardListCard({
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 p-4">
+      <div className="flex flex-1 flex-col gap-2 p-3">
         <div className="flex items-start gap-2">
           <div className="min-w-0 flex-1">
             <Link
@@ -201,9 +201,9 @@ export function DashboardListCard({
 
 export function DashboardListCardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
       <div className="aspect-[16/10] animate-pulse bg-gray-100 dark:bg-white/[0.04]" />
-      <div className="space-y-3 p-4">
+      <div className="space-y-2 p-3">
         <div className="h-4 w-2/3 animate-pulse rounded bg-gray-100 dark:bg-white/[0.06]" />
         <div className="h-3 w-full animate-pulse rounded bg-gray-100 dark:bg-white/[0.04]" />
         <div className="h-5 w-1/3 animate-pulse rounded bg-gray-100 dark:bg-white/[0.04]" />

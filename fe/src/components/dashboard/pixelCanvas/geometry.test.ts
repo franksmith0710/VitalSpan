@@ -12,6 +12,8 @@ import {
   resolveShapeActionRailPlacement,
   resolveShapeActionRailSide,
   resolveScaleDesignHeight,
+  findTopLevelWidgetsAtCanvasPoint,
+  resolveNextStackedWidgetAtPoint,
   snapScaledContentWidth,
   scaledCanvasMetrics,
   screenDeltaToCanvas,
@@ -305,5 +307,36 @@ describe("pixel canvas geometry", () => {
       pixelShapeZIndex(999_999, true),
     );
     expect(PIXEL_MARK_LINE_Z_INDEX).toBeGreaterThan(PIXEL_SHAPE_SELECTED_Z_BOOST);
+  });
+});
+
+describe("stack pick at canvas point", () => {
+  const stacked = [
+    { id: "back", x: 0, y: 0, width: 200, height: 200, order: 0 },
+    { id: "mid", x: 50, y: 50, width: 200, height: 200, order: 1 },
+    { id: "front", x: 100, y: 100, width: 200, height: 200, order: 2 },
+  ];
+
+  it("returns top-to-bottom widget ids at a point", () => {
+    expect(findTopLevelWidgetsAtCanvasPoint(stacked, { x: 120, y: 120 })).toEqual([
+      "front",
+      "mid",
+      "back",
+    ]);
+  });
+
+  it("cycles to the next stacked widget", () => {
+    const ids = ["front", "mid", "back"];
+    expect(resolveNextStackedWidgetAtPoint(ids, "front")).toBe("mid");
+    expect(resolveNextStackedWidgetAtPoint(ids, "mid")).toBe("back");
+    expect(resolveNextStackedWidgetAtPoint(ids, "back")).toBe("front");
+  });
+
+  it("breaks equal-order ties by id when picking stacked widgets", () => {
+    const stacked = [
+      { id: "a", x: 0, y: 0, width: 200, height: 200, order: 1 },
+      { id: "b", x: 0, y: 0, width: 200, height: 200, order: 1 },
+    ];
+    expect(findTopLevelWidgetsAtCanvasPoint(stacked, { x: 10, y: 10 })).toEqual(["b", "a"]);
   });
 });

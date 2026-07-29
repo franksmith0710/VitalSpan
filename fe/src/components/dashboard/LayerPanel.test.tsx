@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render as rtlRender, within } from "@testing-library/react";
+import { cleanup, fireEvent, render as rtlRender, screen, within } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -89,5 +89,85 @@ describe("LayerPanel", () => {
     const rows = document.querySelectorAll("[data-layer-panel] li [role='button']");
     fireEvent.click(rows[rows.length - 1] as HTMLElement);
     expect(onSelect).toHaveBeenCalledWith("w1");
+  });
+
+  it("selects layer when clicking title text", () => {
+    const onSelect = vi.fn();
+    render(
+      <LayerPanel widgets={widgets} selectedId={null} onSelect={onSelect} onWidgetsChange={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByText("透视表"));
+    expect(onSelect).toHaveBeenCalledWith("w1");
+  });
+
+  it("deletes layer via trash button", () => {
+    const onDelete = vi.fn();
+    render(
+      <LayerPanel
+        widgets={widgets}
+        selectedId={null}
+        onSelect={vi.fn()}
+        onWidgetsChange={vi.fn()}
+        onDelete={onDelete}
+      />,
+    );
+    const rows = document.querySelectorAll("[data-layer-panel] li > div[role='button']");
+    fireEvent.click(within(rows[1] as HTMLElement).getByRole("button", { name: "删除图层" }));
+    expect(onDelete).toHaveBeenCalledWith("w2");
+  });
+
+  it("brings layer to front and sends to back", () => {
+    const onBringToFront = vi.fn();
+    const onSendToBack = vi.fn();
+    render(
+      <LayerPanel
+        widgets={widgets}
+        selectedId={null}
+        onSelect={vi.fn()}
+        onWidgetsChange={vi.fn()}
+        onBringToFront={onBringToFront}
+        onSendToBack={onSendToBack}
+      />,
+    );
+    const rows = document.querySelectorAll("[data-layer-panel] li > div[role='button']");
+    const heatmapRow = rows[0] as HTMLElement;
+    fireEvent.click(within(heatmapRow).getByRole("button", { name: "置于顶层" }));
+    fireEvent.click(within(heatmapRow).getByRole("button", { name: "置于底层" }));
+    expect(onBringToFront).toHaveBeenCalledWith("w3");
+    expect(onSendToBack).toHaveBeenCalledWith("w3");
+  });
+
+  it("lists tab child widgets with indent label", () => {
+    const tabWidgets: LayoutWidget[] = [
+      {
+        id: "tabs-1",
+        type: "tabs",
+        title: "页签",
+        order: 0,
+        tabsConfig: {
+          activePaneId: "pane-1",
+          panes: [{ id: "pane-1", title: "A", childWidgetIds: ["child-1"] }],
+        },
+      },
+      {
+        id: "child-1",
+        type: "chart",
+        title: "内嵌图表",
+        order: 1,
+        parentTabsId: "tabs-1",
+        tabPaneId: "pane-1",
+        chartConfig: { chartType: "bar", dimensions: [], metrics: [] },
+      },
+    ];
+    render(
+      <LayerPanel
+        widgets={tabWidgets}
+        selectedId={null}
+        onSelect={vi.fn()}
+        onWidgetsChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("内嵌图表")).toBeInTheDocument();
+    expect(screen.getByText("Tab 内嵌")).toBeInTheDocument();
   });
 });

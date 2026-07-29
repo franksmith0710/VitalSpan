@@ -3,6 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { CanvasEditToolbar } from "./CanvasEditToolbar";
 import { ScreenMorePicker } from "./screen/ScreenMorePicker";
+import { createPaletteWidget } from "./createLayoutWidget";
+import { isScreenTitleBarWidget } from "@/lib/screenVisualAssets";
 import {
   DASHBOARD_SCREEN_INSERT_DND_TYPE,
   readPaletteDragPayload,
@@ -41,6 +43,26 @@ describe("CanvasEditToolbar screen materials", () => {
 
     expect(screen.getByTestId("screen-more-datetime")).toHaveAttribute("draggable", "true");
     expect(screen.getByTestId("screen-more-webpage")).toHaveAttribute("draggable", "true");
+  });
+
+  it("wires screen-title-bar insert through createPaletteWidget like DashboardEditPage", () => {
+    const widgets: ReturnType<typeof createPaletteWidget>[] = [];
+    const onInsert = vi.fn((type: Parameters<typeof createPaletteWidget>[0]) => {
+      widgets.push(createPaletteWidget(type, widgets));
+    });
+
+    render(
+      <CanvasEditToolbar
+        onInsert={onInsert}
+        showScreenVisualAssets
+        onAuxiliaryGridChange={vi.fn()}
+      />,
+    );
+
+    onInsert("screen-title-bar");
+    expect(onInsert).toHaveBeenCalledWith("screen-title-bar");
+    expect(widgets).toHaveLength(1);
+    expect(isScreenTitleBarWidget(widgets[0]!)).toBe(true);
   });
 
   it("serializes screen insert drag payload", () => {

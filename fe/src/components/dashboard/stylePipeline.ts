@@ -23,7 +23,6 @@ import {
   syncChartWidgetsForColorScheme,
 } from "./dashboardThemeVariants";
 import { migrateLayoutChartTypes } from "@/lib/migrateChartTypes";
-import { compactPixelLayoutWhenZeroGap } from "./pixelCanvas/gapCompaction";
 import { sanitizePixelLayoutGeometry } from "./pixelCanvas/layoutSanitize";
 
 /** load / save / patch 后统一 hydrate（含 gap normalize + theme bundle） */

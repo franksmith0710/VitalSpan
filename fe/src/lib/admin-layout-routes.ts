@@ -2,6 +2,8 @@
 const ADMIN_LIST_FILL_PATTERNS: RegExp[] = [
   /^\/admin\/dashboards\/?$/,
   /^\/admin\/data-screens\/?$/,
+  /^\/admin\/viz-templates\/?$/,
+  /^\/admin\/viz-components\/?$/,
   /^\/admin\/datasources\/?$/,
   /^\/admin\/datasets\/?$/,
   /^\/admin\/services\/?$/,

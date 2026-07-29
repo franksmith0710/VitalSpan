@@ -59,7 +59,9 @@ import type { PixelPoint, PixelRect } from "./geometry";
 import {
   clampPixelRectToCanvas,
   clientPointToCanvasFromStage,
+  findTopLevelWidgetsAtCanvasPoint,
   PIXEL_CANVAS_EDIT_MIN_SCALE,
+  resolveNextStackedWidgetAtPoint,
   resolvePixelCanvasMeasureElement,
   resolvePixelCanvasMeasureWidth,
   resolveScaleDesignHeight,
@@ -891,6 +893,17 @@ export function PixelCanvas({
     [onSelect],
   );
 
+  const handleCycleStackSelect = useCallback(
+    (clientX: number, clientY: number, hitWidgetId: string) => {
+      const point = resolveClientToCanvas(clientX, clientY);
+      if (!point) return;
+      const stackedIds = findTopLevelWidgetsAtCanvasPoint(topLevelWidgets, point);
+      const nextId = resolveNextStackedWidgetAtPoint(stackedIds, hitWidgetId);
+      if (nextId) handleSelect(nextId, false);
+    },
+    [handleSelect, resolveClientToCanvas, topLevelWidgets],
+  );
+
   const handleBlankPointerDown = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
       if (event.target === event.currentTarget) onClearSelection?.();
@@ -1094,6 +1107,8 @@ export function PixelCanvas({
                 layoutStyleDeferred={Boolean(
                   (shapeDragWidget || paletteReflowPreviewActive) && !allowWidgetOverlap,
                 )}
+                allowStackCycleSelect={allowWidgetOverlap}
+                onCycleStackSelect={allowWidgetOverlap ? handleCycleStackSelect : undefined}
               >
                 <PixelWidgetSlot
                   widget={widget}
