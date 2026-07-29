@@ -1,5 +1,6 @@
 import { act, cleanup, fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { endPaletteDragSession } from "@/lib/paletteDragSession";
 import type { DashboardLayoutV2, LayoutWidget, PixelLayoutWidget } from "../layoutUtils";
 import { PIXEL_CANVAS_GUTTER, PixelCanvas, PIXEL_PREVIEW_THROTTLE_MS } from "./PixelCanvas";
 import {
@@ -28,7 +29,10 @@ const layout: DashboardLayoutV2 = {
   globalFilters: [{ id: "region" }],
 };
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  endPaletteDragSession();
+});
 
 function triggerResizeObservers() {
   (

@@ -28,6 +28,7 @@ import { usePaletteDragActive, useTabInsertIntent } from "./paletteDragContext";
 import { isPaletteDragSessionActive, getPaletteDragSessionPayload } from "@/lib/paletteDragSession";
 import { PaletteDropPreview } from "./PaletteDropPreview";
 import { resolvePaletteDropPreviewRect } from "./createPixelWidget";
+import { resolvePaletteDropCollisionPreview } from "./paletteDropCollisionPreview";
 import { TabPaletteDropZones } from "./TabPaletteDropZones";
 import { preservePixelCanvasHostScroll, consumePendingCanvasHostScrollRestore } from "./preserveCanvasHostScroll";
 import type { TabInsertIntent } from "./tabInsertResolver";
@@ -209,6 +210,7 @@ export function PixelCanvas({
   const [paletteDragPoint, setPaletteDragPoint] = useState<PixelPoint | null>(null);
   const [paletteDragPayload, setPaletteDragPayload] = useState<PaletteDragPayload | null>(null);
   const [shapeDragWidget, setShapeDragWidget] = useState<PixelLayoutWidget | null>(null);
+  const [paletteReflowPreviewActive, setPaletteReflowPreviewActive] = useState(false);
   const shapeDragWidgetRef = useRef<PixelLayoutWidget | null>(null);
   const paletteDragActive = usePaletteDragActive();
   const tabInsertIntent = useTabInsertIntent();
@@ -218,6 +220,12 @@ export function PixelCanvas({
   const previewThrottleRef = useRef(0);
   const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingPreviewRef = useRef<PixelLayoutWidget | null>(null);
+  const pendingPalettePreviewRef = useRef<{
+    point: PixelPoint;
+    payload: PaletteDragPayload;
+  } | null>(null);
+  const palettePreviewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const palettePreviewPositionsRef = useRef<Map<string, PixelRect> | null>(null);
   const [visibleViewport, setVisibleViewport] = useState<PixelRect>(() => ({
     x: 0,
     y: 0,
@@ -615,9 +623,84 @@ export function PixelCanvas({
     [flushPreview],
   );
 
+  const flushPaletteDropPreview = useCallback(
+    (point: PixelPoint, payload: PaletteDragPayload) => {
+      if (allowWidgetOverlap) return;
+      const preview = resolvePaletteDropCollisionPreview(
+        activeLayout,
+        point,
+        payload,
+        {
+          gap: gapRuntime.collisionGapPx,
+          minOverlap: gapRuntime.collisionOverlapBufferPx,
+        },
+        TAB_PALETTE_DROP_BUFFER_PX,
+      );
+      if (!preview) {
+        palettePreviewPositionsRef.current = null;
+        setPaletteReflowPreviewActive(false);
+        clearPreviewChrome();
+        return;
+      }
+      palettePreviewPositionsRef.current = preview.positions;
+      setPaletteReflowPreviewActive(true);
+      previewRegistryRef.current.applyAll(preview.positions);
+      syncPreviewStageMetrics(preview.nextLayout);
+    },
+    [
+      activeLayout,
+      allowWidgetOverlap,
+      clearPreviewChrome,
+      gapRuntime.collisionGapPx,
+      gapRuntime.collisionOverlapBufferPx,
+      syncPreviewStageMetrics,
+    ],
+  );
+
+  const schedulePaletteDropPreview = useCallback(
+    (point: PixelPoint, payload: PaletteDragPayload) => {
+      if (allowWidgetOverlap) return;
+      const elapsed = Date.now() - previewThrottleRef.current;
+      if (elapsed >= PIXEL_PREVIEW_THROTTLE_MS) {
+        flushPaletteDropPreview(point, payload);
+        previewThrottleRef.current = Date.now();
+        pendingPalettePreviewRef.current = null;
+        return;
+      }
+      pendingPalettePreviewRef.current = { point, payload };
+      if (palettePreviewTimerRef.current) return;
+      palettePreviewTimerRef.current = setTimeout(() => {
+        palettePreviewTimerRef.current = null;
+        const pending = pendingPalettePreviewRef.current;
+        if (!pending) return;
+        flushPaletteDropPreview(pending.point, pending.payload);
+        previewThrottleRef.current = Date.now();
+        pendingPalettePreviewRef.current = null;
+      }, PIXEL_PREVIEW_THROTTLE_MS - elapsed);
+    },
+    [allowWidgetOverlap, flushPaletteDropPreview],
+  );
+
+  const clearPaletteDropPreview = useCallback(() => {
+    pendingPalettePreviewRef.current = null;
+    if (palettePreviewTimerRef.current) {
+      clearTimeout(palettePreviewTimerRef.current);
+      palettePreviewTimerRef.current = null;
+    }
+    palettePreviewPositionsRef.current = null;
+    setPaletteReflowPreviewActive(false);
+    clearPreviewChrome();
+  }, [clearPreviewChrome]);
+
+  useLayoutEffect(() => {
+    if (!paletteReflowPreviewActive || !palettePreviewPositionsRef.current) return;
+    previewRegistryRef.current.applyAll(palettePreviewPositionsRef.current);
+  }, [paletteReflowPreviewActive, topLevelWidgets]);
+
   useEffect(
     () => () => {
       if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
+      if (palettePreviewTimerRef.current) clearTimeout(palettePreviewTimerRef.current);
     },
     [],
   );
@@ -765,7 +848,10 @@ export function PixelCanvas({
     (clientX: number, clientY: number) => {
       const stage = stageRef.current;
       if (!stage) return null;
-      return clientPointToCanvasFromStage(stage, clientX, clientY, scale);
+      if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return null;
+      const point = clientPointToCanvasFromStage(stage, clientX, clientY, scale);
+      if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) return null;
+      return point;
     },
     [scale],
   );
@@ -785,8 +871,9 @@ export function PixelCanvas({
       if (payload) setPaletteDragPayload(payload);
       const point = resolveClientToCanvas(event.clientX, event.clientY);
       if (point) setPaletteDragPoint(point);
+      if (point && payload) schedulePaletteDropPreview(point, payload);
     },
-    [onPaletteDrop, onTabPaletteDrop, paletteDragActive, resolveClientToCanvas],
+    [onPaletteDrop, onTabPaletteDrop, paletteDragActive, resolveClientToCanvas, schedulePaletteDropPreview],
   );
 
   const handleDragLeave = useCallback((event: DragEvent<HTMLDivElement>) => {
@@ -794,7 +881,8 @@ export function PixelCanvas({
     setPaletteDragOver(false);
     setPaletteDragPoint(null);
     setPaletteDragPayload(null);
-  }, []);
+    clearPaletteDropPreview();
+  }, [clearPaletteDropPreview]);
 
   const handleSelect = useCallback(
     (widgetId: string, additive: boolean) => {
@@ -817,6 +905,7 @@ export function PixelCanvas({
       setPaletteDragOver(false);
       setPaletteDragPoint(null);
       setPaletteDragPayload(null);
+      clearPaletteDropPreview();
       const payload = readPaletteDragPayload(event.nativeEvent);
       const point = resolveClientToCanvas(event.clientX, event.clientY);
       if (!payload || !point) return;
@@ -843,6 +932,7 @@ export function PixelCanvas({
     },
     [
       activeLayout.widgets,
+      clearPaletteDropPreview,
       onPaletteDrop,
       onTabPaletteDrop,
       resolveClientToCanvas,
@@ -1001,7 +1091,9 @@ export function PixelCanvas({
                 registerPreviewSync={mode === "edit" ? registerPreviewSync : undefined}
                 allowBottomGrowth={!fixedCanvasBounds}
                 suppressResizePreview={allowWidgetOverlap}
-                layoutStyleDeferred={Boolean(shapeDragWidget && !allowWidgetOverlap)}
+                layoutStyleDeferred={Boolean(
+                  (shapeDragWidget || paletteReflowPreviewActive) && !allowWidgetOverlap,
+                )}
               >
                 <PixelWidgetSlot
                   widget={widget}

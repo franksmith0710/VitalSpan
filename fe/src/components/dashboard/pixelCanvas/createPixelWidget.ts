@@ -123,6 +123,22 @@ export function defaultPixelSizeForPalettePayload(
   return PIXEL_DEFAULT_CHART_SIZE;
 }
 
+export const PALETTE_DROP_PREVIEW_WIDGET_ID = "__palette-drop-preview__";
+
+export function buildPaletteDropPreviewWidget(
+  _payload: PaletteDragPayload,
+  rect: PixelRect,
+  order: number,
+): PixelLayoutWidget {
+  return {
+    id: PALETTE_DROP_PREVIEW_WIDGET_ID,
+    type: "chart",
+    title: "",
+    order,
+    ...rect,
+  };
+}
+
 export function resolvePaletteDropPreviewRect(
   point: PixelPoint,
   payload: PaletteDragPayload,
