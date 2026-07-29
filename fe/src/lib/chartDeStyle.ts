@@ -87,13 +87,6 @@ export type ChartGeoStyle = {
   showRegionBorder?: boolean;
   /** 行政边界线颜色（#rrggbb）；未设置时跟随 3D 样式预设或主题 */
   regionBorderColor?: string;
-  /** 行政区边界流光（仅 map-3d） */
-  regionBorderFlow?: boolean;
-  regionBorderFlowColor?: string;
-  /** 绕边界一圈的秒数 */
-  regionBorderFlowSpeed?: number;
-  /** 拖影长度（像素，对标大屏边框流光） */
-  regionBorderFlowTrailLength?: number;
 };
 
 export type ChartGeo3dStyle = {

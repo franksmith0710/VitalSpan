@@ -1,45 +1,69 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
 import {
-  estimateV1GridCanvasHeight,
   resolveTemplateGridFitScale,
+  type TemplateGridFitMode,
 } from "./templateGridFitScale";
 
 type TemplateGridFitPreviewProps = {
   layout: DashboardLayout;
+  fitMode?: TemplateGridFitMode;
   children: ReactNode;
 };
 
-/** 仪表板 v1 栅格在窄卡片内 scale-to-fit，避免只露出底栏元信息 */
-export function TemplateGridFitPreview({ layout, children }: TemplateGridFitPreviewProps) {
+/** 仪表板 v1 栅格在窄卡片 / 预览弹窗内 scale-to-fit */
+export function TemplateGridFitPreview({
+  layout,
+  fitMode = "card",
+  children,
+}: TemplateGridFitPreviewProps) {
   const hostRef = useRef<HTMLDivElement>(null);
-  const contentHeight = useMemo(
-    () => estimateV1GridCanvasHeight(layout.widgets),
-    [layout.widgets],
-  );
+  const contentRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
 
   useEffect(() => {
-    const el = hostRef.current;
-    if (!el) return undefined;
+    const host = hostRef.current;
+    const content = contentRef.current;
+    if (!host || !content) return undefined;
 
     const update = () => {
-      setScale(resolveTemplateGridFitScale(el.clientHeight, contentHeight));
+      const naturalHeight = content.scrollHeight;
+      const naturalWidth = content.scrollWidth;
+      if (naturalHeight <= 0 || naturalWidth <= 0) return;
+      setScale(
+        resolveTemplateGridFitScale(host.clientHeight, naturalHeight, {
+          mode: fitMode,
+          availableWidth: host.clientWidth,
+          contentWidth: naturalWidth,
+        }),
+      );
     };
 
     update();
     const observer = new ResizeObserver(update);
-    observer.observe(el);
+    observer.observe(host);
+    observer.observe(content);
     return () => observer.disconnect();
-  }, [contentHeight]);
+  }, [layout.widgets, fitMode]);
+
+  const centered = fitMode === "dialog";
 
   return (
-    <div ref={hostRef} className="h-full w-full overflow-hidden" data-testid="template-grid-fit-host">
+    <div
+      ref={hostRef}
+      className={
+        centered
+          ? "flex h-full w-full items-center justify-center overflow-hidden"
+          : "h-full w-full overflow-hidden"
+      }
+      data-testid="template-grid-fit-host"
+      data-fit-mode={fitMode}
+    >
       <div
-        className="origin-top-left"
+        ref={contentRef}
+        className={centered ? "origin-center" : "origin-top-left"}
         style={{
           width: scale > 0 ? `${100 / scale}%` : "100%",
-          height: contentHeight,
           transform: `scale(${scale})`,
         }}
       >

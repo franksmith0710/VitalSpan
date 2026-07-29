@@ -22,6 +22,7 @@ import {
   bootstrapDashboardStyleConfig,
   syncChartWidgetsForColorScheme,
 } from "./dashboardThemeVariants";
+import { migrateLayoutChartTypes } from "@/lib/migrateChartTypes";
 import { compactPixelLayoutWhenZeroGap } from "./pixelCanvas/gapCompaction";
 import { sanitizePixelLayoutGeometry } from "./pixelCanvas/layoutSanitize";
 
@@ -81,10 +82,11 @@ export function persistDashboardFingerprint(
   );
 }
 
-/** 列表卡片预览：与 load 路径一致的 hydrate + 图表 deStyle 同步 */
+/** 列表卡片预览：与 load 路径一致的 hydrate + 弃用 chartType 迁移 + 图表 deStyle 同步 */
 export function prepareLayoutForListPreview(layout: DashboardLayout): DashboardLayout {
-  const style = hydrateDashboardStyle(layout.styleConfig);
-  let prepared: DashboardLayout = { ...layout, styleConfig: style };
+  const migrated = migrateLayoutChartTypes(layout) as DashboardLayout;
+  const style = hydrateDashboardStyle(migrated.styleConfig);
+  let prepared: DashboardLayout = { ...migrated, styleConfig: style };
   if (prepared.version === 2) {
     prepared = syncPixelLayoutChartStyles(prepared, style.colorScheme ?? "light");
     prepared = preparePixelLayoutForDisplay(prepared, style);

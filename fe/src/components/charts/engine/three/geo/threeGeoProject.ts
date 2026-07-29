@@ -23,7 +23,7 @@ export const THREE_GEO_MAP_MARGIN: GeoMapLayoutMargin = {
 
 export type ThreeGeoProjectContext = {
   projection: d3.GeoProjection;
-  /** 全国外轮廓流光：全画布 fit，与 GeoJSON 单测一致 */
+  /** 全国地图投影：全画布 fit，与 GeoJSON 单测一致 */
   flowProjection: d3.GeoProjection;
   project: (coord: [number, number]) => [number, number] | null;
   /** 未做 bounds 居中；外轮廓合并更稳定 */

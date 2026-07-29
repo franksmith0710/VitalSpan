@@ -9,8 +9,6 @@ export type GeoMapRenderResult = {
   resize?: (width: number, height: number) => boolean;
   /** 暂停/恢复 Three rAF（编辑态未选中、屏外） */
   setAnimationActive?: (active: boolean) => void;
-  /** 强制重启边界流光动画循环 */
-  resumeBorderFlow?: () => void;
 };
 
 export const GEO_MAP_WEBGL_FALLBACK_BANNER =

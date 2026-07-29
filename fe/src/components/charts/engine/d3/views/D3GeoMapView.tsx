@@ -47,7 +47,6 @@ function geoAssetMissingMessage(mapId: string): string {
 type ThreeMapApi = {
   contentKey: string;
   resize: (width: number, height: number) => boolean;
-  resumeBorderFlow?: () => void;
 };
 
 function D3GeoMapViewInner(props: ChartEngineViewProps) {
@@ -252,7 +251,6 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       if (next.width <= 0 || next.height <= 0) return false;
       if (!api.resize(next.width, next.height)) return false;
       lastMeasureRef.current = next;
-      api.resumeBorderFlow?.();
       if (mode !== "live") setChartAnimationSuppressed(false);
       return true;
     },
@@ -375,13 +373,11 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
                   threeApiRef.current = {
                     contentKey: renderContentKey,
                     resize: result.resize,
-                    resumeBorderFlow: result.resumeBorderFlow,
                   };
                   const paint = readPaintSize();
                   if (paint && paint.width > 0 && paint.height > 0) {
                     result.resize(paint.width, paint.height);
                   }
-                  result.resumeBorderFlow?.();
                 }
                 applyRenderMeta(result.engine, result.fallbackReason ?? null);
                 setRenderError(null);

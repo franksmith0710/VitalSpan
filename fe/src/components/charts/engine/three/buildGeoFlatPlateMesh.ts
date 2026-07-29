@@ -88,7 +88,7 @@ function buildPlateTopOutline(
   isDark: boolean,
   borderOpacity?: number,
 ): THREE.LineSegments {
-  // divisions=1：折线只保留端点，邻省共享边坐标一致才能被外轮廓算法抵消，流光严丝合缝贴挤出外缘
+  // divisions=1：折线只保留端点，邻省共享边坐标一致才能对齐
   const { shape: outline, holes } = shape.extractPoints(1);
   const positions: number[] = [];
   const pushRing = (pts: THREE.Vector2[]) => {

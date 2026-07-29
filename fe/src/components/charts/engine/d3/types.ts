@@ -108,10 +108,6 @@ export type D3GeoStyleProps = {
   visualMap?: boolean;
   showRegionBorder?: boolean;
   regionBorderColor?: string;
-  regionBorderFlow?: boolean;
-  regionBorderFlowColor?: string;
-  regionBorderFlowSpeed?: number;
-  regionBorderFlowTrailLength?: number;
 };
 
 export type D3GeoRenderConfig = D3RenderConfigBase & {

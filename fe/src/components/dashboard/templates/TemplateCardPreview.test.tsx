@@ -1,21 +1,18 @@
-import type { ReactNode } from "react";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TemplateCardPreview } from "./TemplateCardPreview";
 
-vi.mock("./TemplateGridFitPreview", () => ({
-  TemplateGridFitPreview: ({ children }: { children: ReactNode }) => (
-    <div data-testid="template-grid-fit-host">{children}</div>
+vi.mock("./TemplateLayoutLivePreview", () => ({
+  TemplateLayoutLivePreview: ({
+    demoDatasourceMissing,
+  }: {
+    demoDatasourceMissing?: boolean;
+  }) => (
+    <div data-testid="template-layout-live-preview" data-demo-missing={String(demoDatasourceMissing)}>
+      live preview
+    </div>
   ),
-}));
-
-vi.mock("@/components/dashboard/DashboardLayoutPreview", () => ({
-  DashboardLayoutPreview: () => <div data-testid="dashboard-layout-preview-mock" />,
-}));
-
-vi.mock("@/components/dashboard/screen/DataScreenPresenter", () => ({
-  DataScreenPresenter: () => <div data-testid="data-screen-presenter-mock" />,
 }));
 
 vi.mock("@/components/charts/engine/d3/core/animate", () => ({
@@ -56,6 +53,7 @@ vi.mock("@/lib/dashboardTemplates", async (importOriginal) => {
               chartType: "bar",
               mode: "sql",
               sql: "SELECT 1",
+              dataSourceId: "__demo:sample_db__",
             },
           },
         ],
@@ -100,8 +98,16 @@ describe("TemplateCardPreview", () => {
     await waitFor(() => {
       expect(screen.getByTestId("template-card-preview")).toHaveAttribute("data-live", "true");
     });
-    expect(screen.getByTestId("template-card-live-preview")).toBeInTheDocument();
-    expect(screen.getByTestId("template-grid-fit-host")).toBeInTheDocument();
-    expect(screen.getByTestId("dashboard-layout-preview-mock")).toBeInTheDocument();
+    expect(screen.getByTestId("template-layout-live-preview")).toBeInTheDocument();
+  });
+
+  it("flags missing demo datasource for templates that require charts", async () => {
+    renderPreview();
+    await waitFor(() => {
+      expect(screen.getByTestId("template-layout-live-preview")).toHaveAttribute(
+        "data-demo-missing",
+        "true",
+      );
+    });
   });
 });

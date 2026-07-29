@@ -114,6 +114,48 @@ def test_import_export_envelope_roundtrip(client: TestClient, auth_headers: dict
     assert imported.json()["status"] == "draft"
 
 
+def test_export_envelope_repairs_deprecated_chart_types(client: TestClient, auth_headers: dict) -> None:
+    widget_id = str(uuid.uuid4())
+    create = client.post(
+        "/api/v1/dashboard-templates",
+        headers=auth_headers,
+        json={
+            "name": "export-migrate-test",
+            "surfaceKind": "dashboard",
+            "layoutJson": {
+                "version": 1,
+                "widgets": [
+                    {
+                        "id": widget_id,
+                        "type": "chart",
+                        "title": "detail",
+                        "order": 0,
+                        "colSpan": 12,
+                        "rowSpan": 4,
+                        "chartConfig": {
+                            "chartId": widget_id,
+                            "chartType": "table",
+                            "mode": "sql",
+                            "sql": "SELECT 1",
+                        },
+                    }
+                ],
+                "globalFilters": [],
+                "styleConfig": {"surfaceKind": "dashboard"},
+            },
+        },
+    )
+    assert create.status_code == 201
+    template_id = create.json()["id"]
+    exported = client.get(
+        f"/api/v1/dashboard-templates/{template_id}/export",
+        headers=auth_headers,
+    )
+    assert exported.status_code == 200
+    chart_type = exported.json()["layout"]["widgets"][0]["chartConfig"]["chartType"]
+    assert chart_type == "table-info"
+
+
 def test_publish_requires_manage(client: TestClient, auth_headers: dict, db_session) -> None:
     from app.dashboard.templates.seed import seed_builtin_dashboard_templates
 

@@ -487,7 +487,7 @@ def build_triple_analysis_layout() -> dict[str, Any]:
         order=1,
     )
     w_table = _chart(
-        chart_type="table",
+        chart_type="table-info",
         title="城市 TOP10",
         sql=SQL_TOP_CITIES,
         dimensions=[{"field": "city"}],
@@ -641,7 +641,7 @@ def build_ops_dashboard_layout() -> dict[str, Any]:
                 order=2,
             ),
             _chart(
-                chart_type="table",
+                chart_type="table-info",
                 title="城市明细",
                 sql=SQL_TOP_CITIES,
                 dimensions=[{"field": "city"}],

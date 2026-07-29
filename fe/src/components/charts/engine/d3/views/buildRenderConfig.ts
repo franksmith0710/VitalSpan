@@ -92,12 +92,6 @@ export function buildD3DispatchPayload(
           visualMap: geoStyle.visualMap,
           showRegionBorder: geoStyle.showRegionBorder,
           regionBorderColor: geoStyle.regionBorderColor,
-          regionBorderFlow: isMap3d
-            ? geoStyle.regionBorderFlow !== false
-            : geoStyle.regionBorderFlow,
-          regionBorderFlowColor: geoStyle.regionBorderFlowColor,
-          regionBorderFlowSpeed: geoStyle.regionBorderFlowSpeed,
-          regionBorderFlowTrailLength: geoStyle.regionBorderFlowTrailLength,
         },
         geo3dStyle,
         renderTier,

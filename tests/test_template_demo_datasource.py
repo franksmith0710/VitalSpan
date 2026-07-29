@@ -11,7 +11,6 @@ from app.dashboard.templates.demo_datasource import (
 )
 from app.dashboard.templates import presets
 from app.dashboard.service import validate_layout
-import uuid
 
 
 def test_bind_template_demo_datasources_replaces_magic_ref() -> None:
@@ -51,6 +50,51 @@ def test_repair_legacy_template_layout_normalizes_gap_and_chart_style() -> None:
     assert repaired["styleConfig"]["gapPreset"] == "md"
     assert repaired["styleConfig"]["chartLabelStyle"] == {"color": "#abc"}
     assert "chartStyle" not in repaired["styleConfig"]
+
+
+def test_repair_legacy_template_layout_migrates_deprecated_chart_types() -> None:
+    layout = {
+        "version": 1,
+        "widgets": [
+            {
+                "id": "w1",
+                "type": "chart",
+                "chartConfig": {
+                    "chartId": "w1",
+                    "chartType": "table",
+                    "mode": "sql",
+                    "sql": "SELECT 1",
+                },
+            }
+        ],
+        "globalFilters": [],
+    }
+    repaired = repair_legacy_template_layout(layout)
+    assert repaired["widgets"][0]["chartConfig"]["chartType"] == "table-info"
+
+
+DEPRECATED_CHART_TYPES = frozenset({"table", "combo", "heatmap", "wordCloud", "timeline"})
+
+
+def test_builtin_preset_layouts_avoid_deprecated_chart_types() -> None:
+    builders = [
+        presets.build_screen_blank_layout,
+        presets.build_command_center_layout,
+        presets.build_tech_blue_layout,
+        presets.build_gov_minimal_layout,
+        presets.build_sales_geo_screen_layout,
+        presets.build_dash_blank_layout,
+        presets.build_dual_kpi_layout,
+        presets.build_triple_analysis_layout,
+        presets.build_ops_dashboard_layout,
+    ]
+    for builder in builders:
+        layout = builder()
+        for widget in layout.get("widgets", []):
+            if widget.get("type") != "chart":
+                continue
+            chart_type = widget["chartConfig"]["chartType"]
+            assert chart_type not in DEPRECATED_CHART_TYPES, f"{builder.__name__}: {chart_type}"
 
 
 def test_builtin_preset_layout_validates_after_demo_bind() -> None:

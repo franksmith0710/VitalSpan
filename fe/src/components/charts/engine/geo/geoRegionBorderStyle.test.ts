@@ -4,7 +4,6 @@ import {
   hasCustomGeoRegionBorderColor,
   resolveGeoRegionBorder,
   resolveGeoRegionBorderColorHex,
-  resolveGeoRegionBorderFlow,
   resolveGeoRegionBorderShow,
 } from "./geoRegionBorderStyle";
 
@@ -31,26 +30,5 @@ describe("geoRegionBorderStyle", () => {
     const colored = buildGeoRegionBorderContentSig({ regionBorderColor: "#112233" });
     expect(on).not.toBe(off);
     expect(on).not.toBe(colored);
-  });
-
-  it("resolves border flow defaults", () => {
-    expect(resolveGeoRegionBorderFlow({}, { chartType: "map-3d" }).enabled).toBe(true);
-    expect(resolveGeoRegionBorderFlow({ regionBorderFlow: false }, { chartType: "map-3d" }).enabled).toBe(
-      false,
-    );
-    expect(resolveGeoRegionBorderFlow({}, { chartType: "map" }).enabled).toBe(false);
-    const flow = resolveGeoRegionBorderFlow({ regionBorderFlow: true });
-    expect(flow.enabled).toBe(true);
-    expect(flow.speed).toBe(4);
-    expect(flow.trailLength).toBe(48);
-  });
-
-  it("content sig tracks border flow", () => {
-    const plain = buildGeoRegionBorderContentSig({});
-    const flowing = buildGeoRegionBorderContentSig({
-      regionBorderFlow: true,
-      regionBorderFlowColor: "#ff00aa",
-    });
-    expect(plain).not.toBe(flowing);
   });
 });

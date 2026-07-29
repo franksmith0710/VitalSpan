@@ -20,7 +20,6 @@
 ## 错误做法（避免）
 
 - 下钻失败时用全国 `vs-regions` GeoJSON 静默顶替省级 `mapId`
-- 用改 `regionBorderFlowColor` 等方式掩盖加载失败
 - `registerGeoMap` 用 Set 短路跳过 upsert
 
 ## 修复方式

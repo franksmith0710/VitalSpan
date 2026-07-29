@@ -3,6 +3,7 @@ import { resolveComponentGapRuntime } from "./componentGapRuntime";
 import {
   dashboardLayoutPersistRoundtrip,
   hydrateDashboardStyle,
+  prepareLayoutForListPreview,
   resolveEffectiveDashboardStyle,
   syncPixelLayoutChartStyles,
 } from "./stylePipeline";
@@ -103,5 +104,29 @@ describe("stylePipeline", () => {
     );
     expect(synced.widgets[0]).toMatchObject({ x: 0, y: 0, width: 1440, height: 280 });
     expect(synced.widgets[1]).toMatchObject({ x: 0, y: 300, width: 480, height: 260 });
+  });
+
+  it("prepareLayoutForListPreview migrates deprecated table chartType", () => {
+    const prepared = prepareLayoutForListPreview({
+      version: 1,
+      widgets: [
+        {
+          id: "w1",
+          type: "chart",
+          title: "明细",
+          order: 0,
+          colSpan: 12,
+          rowSpan: 4,
+          chartConfig: {
+            chartId: "w1",
+            chartType: "table",
+            mode: "sql",
+            sql: "SELECT 1",
+          },
+        },
+      ],
+      globalFilters: [],
+    });
+    expect(prepared.widgets[0]?.chartConfig?.chartType).toBe("table-info");
   });
 });

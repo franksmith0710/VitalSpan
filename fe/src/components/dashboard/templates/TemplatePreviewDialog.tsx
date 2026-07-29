@@ -1,112 +1,141 @@
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Eye } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Skeleton } from "@/components/ui/skeleton";
-import { PageErrorBanner } from "@/components/ui/page-error-banner";
-import { TemplateLayoutLivePreview } from "@/components/dashboard/templates/TemplateLayoutLivePreview";
-import { prepareLayoutForListPreview } from "@/components/dashboard/stylePipeline";
-import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
-import {
-  fetchTemplateDetail,
-  type DashboardTemplateListItem,
-} from "@/lib/dashboardTemplates";
-import { apiFetch } from "@/lib/api";
-import { mapApiError } from "@/lib/apiError";
-import {
-  bindTemplateDemoDatasource,
-  layoutRequiresDemoCharts,
-  resolveTemplateDemoDatasourceId,
-} from "@/lib/templateDemoData";
-import { queryKeys } from "@/lib/queryKeys";
-import { surfaceLabel } from "@/components/dashboard/templates/templateLabels";
-
-type TemplatePreviewDialogProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  item: DashboardTemplateListItem | null;
-};
-
-export function TemplatePreviewDialog({ open, onOpenChange, item }: TemplatePreviewDialogProps) {
-  const templateId = item?.id;
-
-  const detailQuery = useQuery({
-    queryKey: queryKeys.dashboardTemplates.detail(templateId ?? ""),
-    queryFn: () => fetchTemplateDetail(templateId!),
-    enabled: open && Boolean(templateId),
-    staleTime: 60_000,
-  });
-
-  const datasourcesQuery = useQuery({
-    queryKey: queryKeys.datasources.list({}),
-    queryFn: () =>
-      apiFetch<{ items: { id: string; name: string; code: string; database?: string }[] }>(
-        "/api/v1/datasources",
-      ),
-    enabled: open,
-    staleTime: 120_000,
-  });
-
-  const layout = useMemo(() => {
-    const raw = detailQuery.data?.layoutJson as DashboardLayout | undefined;
-    if (!raw) return undefined;
-    const demoId = resolveTemplateDemoDatasourceId(datasourcesQuery.data?.items ?? []);
-    const bound = bindTemplateDemoDatasource(raw, demoId);
-    return prepareLayoutForListPreview(bound);
-  }, [detailQuery.data, datasourcesQuery.data]);
-
-  const loading = detailQuery.isLoading || datasourcesQuery.isLoading;
-  const demoDatasourceMissing =
-    !loading &&
-    Boolean(layout) &&
-    layoutRequiresDemoCharts(layout!) &&
-    !resolveTemplateDemoDatasourceId(datasourcesQuery.data?.items ?? []);
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="flex h-[min(92vh,960px)] max-w-[min(96vw,1440px)] flex-col gap-3 p-4 sm:p-5"
-        data-testid="template-preview-dialog"
-      >
-        <DialogHeader className="shrink-0 text-left">
-          <DialogTitle className="flex items-center gap-2 pr-8">
-            <Eye className="size-5 shrink-0 text-brand-500" aria-hidden />
-            <span className="truncate">{item?.name ?? "模板预览"}</span>
-          </DialogTitle>
-          {item ? (
-            <DialogDescription className="line-clamp-2">
-              {item.description || `${surfaceLabel(item.surfaceKind)}模板预览`}
-            </DialogDescription>
-          ) : null}
-        </DialogHeader>
-
-        <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-950/40">
-          {loading ? (
-            <Skeleton className="h-full w-full rounded-none" />
-          ) : detailQuery.isError ? (
-            <div className="flex h-full items-center justify-center p-6">
-              <PageErrorBanner
-                message={mapApiError(detailQuery.error)}
-                onRetry={() => void detailQuery.refetch()}
-              />
-            </div>
-          ) : layout ? (
-            <TemplateLayoutLivePreview
-              layout={layout}
-              surfaceKind={item?.surfaceKind ?? "dashboard"}
-              geo3dRenderTier="embed"
-              demoDatasourceMissing={demoDatasourceMissing}
-              className="h-full"
-            />
-          ) : null}
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Eye } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PageErrorBanner } from "@/components/ui/page-error-banner";
+import { TemplateLayoutLivePreview } from "@/components/dashboard/templates/TemplateLayoutLivePreview";
+import { prepareLayoutForListPreview } from "@/components/dashboard/stylePipeline";
+import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
+import {
+  fetchTemplateDetail,
+  type DashboardTemplateListItem,
+} from "@/lib/dashboardTemplates";
+import { apiFetch } from "@/lib/api";
+import { mapApiError } from "@/lib/apiError";
+import {
+  bindTemplateDemoDatasource,
+  layoutRequiresDemoCharts,
+  resolveTemplateDemoDatasourceId,
+} from "@/lib/templateDemoData";
+import { queryKeys } from "@/lib/queryKeys";
+import {
+  categoryLabel,
+  surfaceLabel,
+  visibilityLabel,
+} from "@/components/dashboard/templates/templateLabels";
+
+type TemplatePreviewDialogProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  item: DashboardTemplateListItem | null;
+};
+
+export function TemplatePreviewDialog({ open, onOpenChange, item }: TemplatePreviewDialogProps) {
+  const templateId = item?.id;
+
+  const detailQuery = useQuery({
+    queryKey: queryKeys.dashboardTemplates.detail(templateId ?? ""),
+    queryFn: () => fetchTemplateDetail(templateId!),
+    enabled: open && Boolean(templateId),
+    staleTime: 60_000,
+  });
+
+  const datasourcesQuery = useQuery({
+    queryKey: queryKeys.datasources.list({}),
+    queryFn: () =>
+      apiFetch<{ items: { id: string; name: string; code: string; database?: string }[] }>(
+        "/api/v1/datasources",
+      ),
+    enabled: open,
+    staleTime: 120_000,
+  });
+
+  const layout = useMemo(() => {
+    const raw = detailQuery.data?.layoutJson as DashboardLayout | undefined;
+    if (!raw) return undefined;
+    const demoId = resolveTemplateDemoDatasourceId(datasourcesQuery.data?.items ?? []);
+    const bound = bindTemplateDemoDatasource(raw, demoId);
+    return prepareLayoutForListPreview(bound);
+  }, [detailQuery.data, datasourcesQuery.data]);
+
+  const loading = detailQuery.isLoading || datasourcesQuery.isLoading;
+  const demoDatasourceMissing =
+    !loading &&
+    Boolean(layout) &&
+    layoutRequiresDemoCharts(layout!) &&
+    !resolveTemplateDemoDatasourceId(datasourcesQuery.data?.items ?? []);
+
+  const isScreen = item?.surfaceKind === "data-screen";
+  const colorScheme = layout?.styleConfig?.colorScheme ?? "light";
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        className="flex h-[min(96vh,1080px)] w-[min(98vw,1680px)] max-w-none flex-col gap-0 overflow-hidden rounded-2xl border border-gray-200 p-0 shadow-theme-lg sm:max-w-[min(98vw,1680px)] dark:border-gray-800"
+        data-testid="template-preview-dialog"
+      >
+        <header className="flex shrink-0 items-center gap-3 border-b border-gray-200 px-4 py-2.5 pr-12 dark:border-gray-800">
+          <DialogTitle className="flex min-w-0 max-w-[38%] shrink-0 items-center gap-2 text-theme-sm font-semibold text-gray-900 dark:text-white">
+            <Eye className="size-4 shrink-0 text-brand-500" aria-hidden />
+            <span className="truncate">{item?.name ?? "模板预览"}</span>
+          </DialogTitle>
+          {item?.description ? (
+            <p className="hidden min-w-0 flex-1 truncate text-theme-xs text-gray-500 sm:block dark:text-gray-400">
+              {item.description}
+            </p>
+          ) : null}
+          {item ? (
+            <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1">
+              <Badge variant="light" color="light" size="sm">
+                {surfaceLabel(item.surfaceKind)}
+              </Badge>
+              <Badge variant="light" color="light" size="sm">
+                {categoryLabel(item.categoryKey)}
+              </Badge>
+              {visibilityLabel(item.visibility) ? (
+                <Badge variant="light" color="light" size="sm">
+                  {visibilityLabel(item.visibility)}
+                </Badge>
+              ) : null}
+            </div>
+          ) : null}
+        </header>
+
+        <div
+          className={
+            isScreen
+              ? "relative min-h-0 flex-1 overflow-hidden bg-slate-950"
+              : "dashboard-canvas-surface min-h-0 flex-1 overflow-auto p-1"
+          }
+          data-dashboard-color-scheme={isScreen ? "dark" : colorScheme}
+        >
+          {loading ? (
+            <Skeleton className="min-h-[420px] w-full rounded-lg" />
+          ) : detailQuery.isError ? (
+            <div className="flex min-h-[420px] items-center justify-center p-6">
+              <PageErrorBanner
+                message={mapApiError(detailQuery.error)}
+                onRetry={() => void detailQuery.refetch()}
+              />
+            </div>
+          ) : layout ? (
+            <TemplateLayoutLivePreview
+              layout={layout}
+              surfaceKind={item?.surfaceKind ?? "dashboard"}
+              variant="dialog"
+              geo3dRenderTier="embed"
+              demoDatasourceMissing={demoDatasourceMissing}
+            />
+          ) : null}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+

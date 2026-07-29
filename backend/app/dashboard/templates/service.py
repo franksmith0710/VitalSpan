@@ -360,7 +360,7 @@ def export_envelope(db: Session, template_id: uuid.UUID, actor: UserContext) -> 
         "name": row.name,
         "description": row.description,
         "categoryKey": row.category_key,
-        "layout": row.layout_json,
+        "layout": repair_legacy_template_layout(sanitize_layout_for_template(row.layout_json)),
     }
 
 

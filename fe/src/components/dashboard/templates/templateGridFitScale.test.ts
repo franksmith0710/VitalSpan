@@ -26,11 +26,26 @@ describe("templateGridFitScale", () => {
         gridY: 1,
       },
     ]);
-    expect(height).toBe(6 * 32 + 5 * 12);
+    expect(height).toBe(6 * 32);
   });
 
-  it("scales down when content exceeds host height", () => {
-    expect(resolveTemplateGridFitScale(120, 240)).toBe(0.5);
-    expect(resolveTemplateGridFitScale(300, 240)).toBe(1);
+  it("scales down when content exceeds host height in card mode", () => {
+    expect(resolveTemplateGridFitScale(120, 240, { mode: "card" })).toBe(0.5);
+    expect(resolveTemplateGridFitScale(300, 240, { mode: "card" })).toBe(1);
+  });
+
+  it("scales up in dialog mode to fill tall viewport", () => {
+    expect(resolveTemplateGridFitScale(720, 240, { mode: "dialog" })).toBe(1.75);
+    expect(resolveTemplateGridFitScale(480, 240, { mode: "dialog" })).toBe(1.75);
+  });
+
+  it("limits scale when content is wider than host", () => {
+    expect(
+      resolveTemplateGridFitScale(720, 240, {
+        mode: "dialog",
+        availableWidth: 400,
+        contentWidth: 800,
+      }),
+    ).toBe(0.65);
   });
 });

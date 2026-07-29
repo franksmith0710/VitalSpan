@@ -4,6 +4,7 @@ import type { Geo3dRenderTier } from "@/components/charts/engine/three/geo3dRunt
 import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
 import type { DashboardTemplateListItem } from "@/lib/dashboardTemplates";
 import { TemplateGridFitPreview } from "@/components/dashboard/templates/TemplateGridFitPreview";
+import type { TemplateGridFitMode } from "@/components/dashboard/templates/templateGridFitScale";
 import { cn } from "@/lib/utils";
 
 type TemplateLayoutLivePreviewProps = {
@@ -12,6 +13,8 @@ type TemplateLayoutLivePreviewProps = {
   className?: string;
   geo3dRenderTier?: Geo3dRenderTier;
   demoDatasourceMissing?: boolean;
+  /** card=Hub 缩略图；dialog=全屏预览弹窗 */
+  variant?: "card" | "dialog";
 };
 
 /** 模板布局实时预览（Hub 卡片 / 预览弹窗共用） */
@@ -21,11 +24,18 @@ export function TemplateLayoutLivePreview({
   className,
   geo3dRenderTier = "thumbnail",
   demoDatasourceMissing = false,
+  variant = "card",
 }: TemplateLayoutLivePreviewProps) {
   const isScreen = surfaceKind === "data-screen";
+  const gridFitMode: TemplateGridFitMode = variant === "dialog" ? "dialog" : "card";
+  const effectiveTier = variant === "dialog" && geo3dRenderTier === "thumbnail" ? "embed" : geo3dRenderTier;
 
   return (
-    <div className={cn("relative h-full w-full", className)} data-testid="template-layout-live-preview">
+    <div
+      className={cn("relative h-full w-full", className)}
+      data-testid="template-layout-live-preview"
+      data-preview-variant={variant}
+    >
       {demoDatasourceMissing ? (
         <p
           className="pointer-events-none absolute inset-x-0 top-2 z-20 mx-auto max-w-[90%] rounded-md bg-amber-50/90 px-2 py-1 text-center text-[10px] leading-snug text-amber-800 dark:bg-amber-950/80 dark:text-amber-200 sm:text-theme-xs"
@@ -38,25 +48,36 @@ export function TemplateLayoutLivePreview({
         <DataScreenPresenter
           layout={layout}
           presentationMode="fit"
-          geo3dRenderTier={geo3dRenderTier}
+          geo3dRenderTier={effectiveTier}
           className="pointer-events-none h-full min-h-0 select-none"
         />
       ) : layout.version === 1 ? (
-        <TemplateGridFitPreview layout={layout}>
+        variant === "dialog" ? (
           <DashboardLayoutPreview
             layout={layout}
+            styleConfig={layout.styleConfig}
             scaleMode="component"
-            geo3dRenderTier={geo3dRenderTier}
-            mountMaxConcurrent={6}
-            className="pointer-events-none min-h-0 select-none"
+            geo3dRenderTier={effectiveTier}
+            mountMaxConcurrent={8}
+            className="pointer-events-none relative z-[1] min-h-0 w-full select-none"
           />
-        </TemplateGridFitPreview>
+        ) : (
+          <TemplateGridFitPreview layout={layout} fitMode={gridFitMode}>
+            <DashboardLayoutPreview
+              layout={layout}
+              scaleMode="component"
+              geo3dRenderTier={effectiveTier}
+              mountMaxConcurrent={8}
+              className="pointer-events-none min-h-0 select-none"
+            />
+          </TemplateGridFitPreview>
+        )
       ) : (
         <DashboardLayoutPreview
           layout={layout}
           scaleMode="component"
-          geo3dRenderTier={geo3dRenderTier}
-          mountMaxConcurrent={6}
+          geo3dRenderTier={effectiveTier}
+          mountMaxConcurrent={8}
           className="pointer-events-none h-full min-h-0 select-none [&_.pixel-canvas-host]:h-full [&_.pixel-canvas-host]:min-h-0 [&_.pixel-canvas-host]:overflow-hidden"
         />
       )}

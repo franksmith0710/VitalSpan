@@ -125,7 +125,7 @@ def seed_builtin_dashboard_templates(db: Session) -> int:
                 layout_json=spec["layout_json"],
                 thumbnail_ref=spec.get("thumbnail_ref"),
                 visibility="builtin",
-                content_revision=4,
+                content_revision=5,
             )
             db.add(row)
             upserted += 1
@@ -137,6 +137,6 @@ def seed_builtin_dashboard_templates(db: Session) -> int:
             existing.thumbnail_ref = spec.get("thumbnail_ref")
             existing.status = "published"
             existing.visibility = "builtin"
-            existing.content_revision = max(existing.content_revision, 4)
+            existing.content_revision = max(existing.content_revision, 5)
     db.commit()
     return upserted

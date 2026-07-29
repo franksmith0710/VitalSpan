@@ -1,8 +1,9 @@
 import { useMutation } from "@tanstack/react-query";
-import { Archive, Download } from "lucide-react";
+import { Archive, Download, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { TemplateCardPreview } from "@/components/dashboard/templates/TemplateCardPreview";
+import { TemplatePreviewDialog } from "@/components/dashboard/templates/TemplatePreviewDialog";
 import {
   CATEGORY_ACCENT,
   surfaceLabel,
@@ -41,6 +42,7 @@ export function VizTemplateCard({
   pending,
 }: VizTemplateCardProps) {
   const [exporting, setExporting] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const accent = CATEGORY_ACCENT[item.categoryKey] ?? CATEGORY_ACCENT.general;
   const showPublish = canManage && item.status === "draft";
   const showArchive =
@@ -103,6 +105,10 @@ export function VizTemplateCard({
         </header>
 
         <div className="mt-auto flex flex-wrap gap-2">
+          <Button type="button" size="sm" variant="outline" disabled={pending} onClick={() => setPreviewOpen(true)}>
+            <Eye className="size-3.5" aria-hidden />
+            {TEMPLATE_ACTIONS.preview}
+          </Button>
           <Button type="button" size="sm" variant="primary" disabled={pending} onClick={onUse}>
             {TEMPLATE_ACTIONS.use}
           </Button>
@@ -132,6 +138,8 @@ export function VizTemplateCard({
           ) : null}
         </div>
       </div>
+
+      <TemplatePreviewDialog open={previewOpen} onOpenChange={setPreviewOpen} item={item} />
     </article>
   );
 }

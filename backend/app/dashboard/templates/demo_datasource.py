@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.datasources.models import DataSource
+from app.viz.migrate_chart_types import migrate_layout_chart_configs
 
 TEMPLATE_DEMO_DATASOURCE_REF = "__demo:sample_db__"
 
@@ -59,7 +60,7 @@ def repair_legacy_template_layout(layout: dict[str, Any]) -> dict[str, Any]:
             continue
         if chart_cfg.get("dataSourceId") == TEMPLATE_DEMO_DATASOURCE_REF:
             chart_cfg.pop("dataSourceId", None)
-    return cloned
+    return migrate_layout_chart_configs(cloned)
 
 
 def layout_requires_demo_datasource(layout: dict[str, Any]) -> bool:

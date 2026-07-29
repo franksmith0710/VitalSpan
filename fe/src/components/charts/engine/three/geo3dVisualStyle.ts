@@ -36,7 +36,6 @@ import {
   resolveGeo3dSceneCloudHeight,
   resolveGeo3dSceneCloudSpeed,
 } from "@/components/charts/engine/three/geo3dSceneCloudStyle";
-import { resolveGeoRegionBorderFlow } from "@/components/charts/engine/geo/geoRegionBorderStyle";
 import * as THREE from "three";
 
 /** 对标 sc-datav Demo0/1/2 的 3D 地图视觉预设 */
@@ -420,7 +419,6 @@ export function buildGeo3dStyleContentSig(
   style: ChartGeo3dStyle,
   geoStyle: ChartGeoStyle = {},
 ): string {
-  const flow = resolveGeoRegionBorderFlow(geoStyle, { chartType: "map-3d" });
   return [
     resolveGeo3dStylePreset(style),
     style.extrudeIntensity ?? DEFAULT_GEO3D_EXTRUDE_INTENSITY,
@@ -438,10 +436,6 @@ export function buildGeo3dStyleContentSig(
     resolveGeo3dShellOpacity(style),
     geoStyle.showRegionBorder !== false ? 1 : 0,
     geoStyle.regionBorderColor?.toLowerCase() ?? "",
-    flow.enabled ? 1 : 0,
-    flow.colorCss,
-    flow.speed,
-    flow.trailLength,
     resolveGeoVisualMapEnabled(geoStyle, "map-3d") ? 1 : 0,
   ].join(",");
 }

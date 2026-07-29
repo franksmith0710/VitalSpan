@@ -1,11 +1,8 @@
 import {
   hasCustomGeoRegionBorderColor,
   resolveGeoRegionBorderColorHex,
-  resolveGeoRegionBorderFlow,
-  resolveGeoRegionBorderFlowColorHex,
   resolveGeoRegionBorderShow,
 } from "@/components/charts/engine/geo/geoRegionBorderStyle";
-import { GEO_BORDER_FLOW_DEFAULTS } from "@/components/charts/engine/three/geoBorderFlowMaterial";
 import {
   DEFAULT_SCENE_CLOUD_DENSITY,
   DEFAULT_SCENE_CLOUD_HEIGHT,
@@ -122,7 +119,6 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
   const isMap = chartType === "map" || chartType === "map-3d";
   const is3d = chartType === "map-3d";
   const showRegionBorder = resolveGeoRegionBorderShow(geo);
-  const borderFlow = resolveGeoRegionBorderFlow(geo, { chartType: is3d ? "map-3d" : "map" });
   const borderColorPreset = is3d ? resolveGeo3dStylePreset(geo3d) : undefined;
   const platformOn = resolveGeo3dPlatformEffects(geo3d);
   const platformHighlightOn = platformOn && geo3d.platformHighlight !== false;
@@ -162,11 +158,11 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
           />
         ) : null}
         {!is3d ? (
-          <InspectorSwitchRow
-            label="数值色带"
-            checked={geo.visualMap !== false}
-            onCheckedChange={(visualMap) => patchGeo({ visualMap })}
-          />
+        <InspectorSwitchRow
+          label="数值色带"
+          checked={geo.visualMap !== false}
+          onCheckedChange={(visualMap) => patchGeo({ visualMap })}
+        />
         ) : null}
         {isMap ? (
           <>
@@ -188,52 +184,6 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                 swatches={WIDGET_BORDER_RECOMMENDED}
                 onChange={(next) => patchGeo({ regionBorderColor: next })}
               />
-            ) : null}
-            {is3d && showRegionBorder ? (
-              <>
-                <InspectorSwitchRow
-                  label="边界流光"
-                  checked={borderFlow.enabled}
-                  onCheckedChange={(regionBorderFlow) => patchGeo({ regionBorderFlow })}
-                />
-                {borderFlow.enabled ? (
-                  <>
-                    <InspectorInlineColorRow
-                      label="流光颜色"
-                      value={resolveGeoRegionBorderFlowColorHex(geo)}
-                      fallbackValue={borderFlow.colorCss}
-                      allowClear={false}
-                      swatches={WIDGET_BORDER_RECOMMENDED}
-                      onChange={(next) => patchGeo({ regionBorderFlowColor: next ?? borderFlow.colorCss })}
-                    />
-                    <DeAttrSliderField
-                      label="流光速度"
-                      compact
-                      value={borderFlow.speed}
-                      fallback={GEO_BORDER_FLOW_DEFAULTS.speed}
-                      min={1}
-                      max={20}
-                      step={0.5}
-                      ariaLabel="流光速度"
-                      onChange={(regionBorderFlowSpeed) => patchGeo({ regionBorderFlowSpeed })}
-                    />
-                    <DeAttrSliderField
-                      label="拖影长度"
-                      compact
-                      value={borderFlow.trailLength}
-                      fallback={GEO_BORDER_FLOW_DEFAULTS.trailLength}
-                      min={GEO_BORDER_FLOW_DEFAULTS.trailMin}
-                      max={GEO_BORDER_FLOW_DEFAULTS.trailMax}
-                      step={1}
-                      ariaLabel="拖影长度"
-                      onChange={(regionBorderFlowTrailLength) => patchGeo({ regionBorderFlowTrailLength })}
-                    />
-                    <p className={INSPECTOR_HINT}>
-                      流光仅沿当前层级外轮廓流动（全国仅国界线，下钻后仅该省/市外缘）。
-                    </p>
-                  </>
-                ) : null}
-              </>
             ) : null}
             <p className={INSPECTOR_HINT}>
               边界随下钻层级切换：全国显示省界，省级显示市界，市级显示区县界。
@@ -260,9 +210,9 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                 <SelectContent>
                   {GEO3D_STYLE_PRESETS.map((opt) => (
                     <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
+                    {opt.label}
                     </SelectItem>
-                  ))}
+                ))}
                 </SelectContent>
               </Select>
             </InspectorFieldRow>
@@ -274,9 +224,9 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
               compact
               value={geo3d.extrudeIntensity}
               fallback={DEFAULT_GEO3D_EXTRUDE_INTENSITY}
-              min={0.2}
-              max={1.5}
-              step={0.05}
+                min={0.2}
+                max={1.5}
+                step={0.05}
               ariaLabel="底板厚度"
               onChange={(extrudeIntensity) => patchGeo3d({ extrudeIntensity })}
             />

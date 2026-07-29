@@ -69,7 +69,7 @@
 ### 5.b `perf`
 
 - 目标：单图 **≤12 云团 × 每团 5–8 球**（`InstancedMesh` 合并绘制），密度滑块线性增减团数
-- 测量：Chrome 下 orbit + 云动画，目标稳 30fps+（与现 borderFlow rAF 同级）
+- 测量：Chrome 下 orbit + 云动画，目标稳 30fps+
 - 降级：`prefers-reduced-motion` 已有停止动画；密度下限保底 2 团
 
 ### 5.c `offline-asset` / `regression`

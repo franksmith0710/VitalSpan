@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router";
@@ -116,6 +116,7 @@ describe("VizTemplatesHubPage smoke", () => {
     expect(screen.getByRole("button", { name: /数据大屏/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /导入 JSON/ })).toBeInTheDocument();
     expect(await screen.findByText("空白看板")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "预览" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "使用模板" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "导出" })).toBeInTheDocument();
   });
@@ -133,5 +134,13 @@ describe("VizTemplatesHubPage smoke", () => {
         "空白看板-template.json",
       );
     });
+  });
+
+  it("opens preview dialog from card", async () => {
+    const user = userEvent.setup();
+    renderHub();
+    const [card] = await screen.findAllByTestId("viz-template-card-tpl-1");
+    await user.click(within(card).getByRole("button", { name: "预览" }));
+    expect(await screen.findByTestId("template-preview-dialog")).toBeInTheDocument();
   });
 });
