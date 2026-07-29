@@ -26,6 +26,7 @@ import { ChartPickerPopover } from "./ChartPickerPopover";
 import { QueryComponentPicker } from "./QueryComponentPicker";
 import { ScreenMaterialPicker } from "./screen/ScreenMaterialPicker";
 import { ScreenMorePicker } from "./screen/ScreenMorePicker";
+import { usePaletteDropdownDragLock } from "./paletteDropdownDragLock";
 
 type CanvasEditToolbarProps = {
   onInsert: (type: PaletteInsertType) => void;
@@ -91,13 +92,19 @@ export function CanvasEditToolbar({
   const [queryOpen, setQueryOpen] = useState(false);
   const [materialOpen, setMaterialOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const chartDragLock = usePaletteDropdownDragLock();
+  const moreDragLock = usePaletteDropdownDragLock();
 
   return (
     <div
       className="flex shrink-0 flex-wrap items-center gap-0.5"
       data-testid="canvas-edit-toolbar"
     >
-      <DropdownMenu open={chartOpen} onOpenChange={setChartOpen} modal={false}>
+      <DropdownMenu
+        open={chartOpen}
+        onOpenChange={(open) => chartDragLock.guardOpenChange(open, setChartOpen)}
+        modal={false}
+      >
         <DropdownMenuTrigger asChild>
           <ToolbarNavButton
             icon={<LayoutGrid aria-hidden />}
@@ -113,10 +120,13 @@ export function CanvasEditToolbar({
           className="w-[min(100vw-2rem,520px)] overflow-hidden p-0"
           data-testid="palette-dropdown-menu"
           onCloseAutoFocus={(e) => e.preventDefault()}
+          {...chartDragLock.dismissGuardProps}
         >
           <ChartPickerPopover
             onInsert={onInsert}
             onInserted={() => setChartOpen(false)}
+            onPaletteDragStart={chartDragLock.onDragStart}
+            onPaletteDragEnd={chartDragLock.onDragEnd}
           />
         </DropdownMenuContent>
       </DropdownMenu>
@@ -192,7 +202,11 @@ export function CanvasEditToolbar({
         </DropdownMenu>
       ) : null}
 
-      <DropdownMenu open={moreOpen} onOpenChange={setMoreOpen} modal={false}>
+      <DropdownMenu
+        open={moreOpen}
+        onOpenChange={(open) => moreDragLock.guardOpenChange(open, setMoreOpen)}
+        modal={false}
+      >
         <DropdownMenuTrigger asChild>
           <ToolbarNavButton
             icon={<MoreHorizontal aria-hidden />}
@@ -211,11 +225,14 @@ export function CanvasEditToolbar({
           )}
           data-testid="toolbar-more-menu"
           onCloseAutoFocus={(e) => e.preventDefault()}
+          {...moreDragLock.dismissGuardProps}
         >
           {showScreenVisualAssets ? (
             <ScreenMorePicker
               onInsert={onInsert}
               onInserted={() => setMoreOpen(false)}
+              onPaletteDragStart={moreDragLock.onDragStart}
+              onPaletteDragEnd={moreDragLock.onDragEnd}
               extraActions={
                 onOpenPublishToLibrary ? (
                   <button

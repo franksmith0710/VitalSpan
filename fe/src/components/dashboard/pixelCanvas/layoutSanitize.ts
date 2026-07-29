@@ -51,7 +51,7 @@ export function repairPixelLayoutTabState(layout: DashboardLayoutV2): DashboardL
 /**
  * 加载 / 保存 / 展示前统一消毒：
  * 1. 间隙压实 2. Tab 归属对齐 3. 未 park 子组件折叠
- * 4. 可选：顶层重叠则 pack（默认关闭——保存/回显须原样，避免「保存后跳位」）
+ * 4. 仪表板：顶层重叠则 pack（修复误叠放）；数据大屏保留叠放（WYSIWYG）
  */
 export function sanitizePixelLayoutGeometry(
   layout: DashboardLayoutV2,
@@ -64,8 +64,12 @@ export function sanitizePixelLayoutGeometry(
   const isDataScreen = readSurfaceKind(style ?? layout) === "data-screen";
   let prepared = compactPixelLayoutWhenZeroGap(layout, gapConfig).layout;
   prepared = repairPixelLayoutTabState(prepared);
-  const shouldPack = options?.packOverlaps === true && !isDataScreen;
-  if (shouldPack && layoutsOverlap(prepared, 0)) {
+  const hasOverlap = layoutsOverlap(prepared, 0);
+  const shouldPack =
+    !isDataScreen &&
+    hasOverlap &&
+    (options?.packOverlaps === true || options?.packOverlaps !== false);
+  if (shouldPack) {
     prepared = packPixelLayoutSeamless(prepared);
   }
   if (isDataScreen) {

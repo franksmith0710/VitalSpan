@@ -69,6 +69,7 @@ import {
 import { resolveGeoRegionBorder } from "@/components/charts/engine/geo/geoRegionBorderStyle";
 import { prefersNativeReducedMotion } from "@/components/charts/engine/d3/core/animate";
 import { resolveGeo3dVisualStyle, applyGeo3dSceneClouds, applyGeo3dPlatformEffectsLayer, applyGeo3dPointEffectsLayer, hasCustomGeo3dShellColor, resolveGeo3dShellColorNumber, resolveGeo3dShellOpacity, resolveGeo3dPointEffects } from "@/components/charts/engine/three/geo3dVisualStyle";
+import { buildHeatBlobSamplesForMap } from "@/components/charts/engine/three/geo3dHeatSamples";
 import { resolvePointEffectsStyle } from "@/components/charts/engine/three/geo3dPointEffectsStyle";
 
 function noopDispose(): void {
@@ -531,7 +532,7 @@ export async function renderThreeChoroplethChart(
     }
 
     scene.add(mapGroup);
-    const orbitLayout = layoutThreeGeoMapGroup(mapGroup, { preCentered: false });
+    const orbitLayout = layoutThreeGeoMapGroup(mapGroup, { preCentered: true });
 
     let sceneClouds: ReturnType<typeof applyGeo3dSceneClouds> = null;
     let platformEffects: ReturnType<typeof applyGeo3dPlatformEffectsLayer> = null;
@@ -558,11 +559,22 @@ export async function renderThreeChoroplethChart(
     }
     if (enablePointEffects) {
       try {
+        const heatBlobSamples = heatBlobActive
+          ? await buildHeatBlobSamplesForMap(
+              rows,
+              columns,
+              regionField,
+              metricField,
+              features,
+              project,
+            )
+          : [];
         pointEffects = applyGeo3dPointEffectsLayer({
           container,
           domElement: renderer.domElement,
           mapGroup,
           meshes,
+          heatBlobSamples,
           features,
           project,
           projBounds,

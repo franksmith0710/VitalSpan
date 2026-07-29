@@ -25,6 +25,9 @@ import type {
 import { getTopLevelPixelWidgets, findTabsHostAtPoint } from "../layoutUtils";
 import type { ScaleMode, DashboardStyleConfig } from "../dashboardStyleConfig";
 import { usePaletteDragActive, useTabInsertIntent } from "./paletteDragContext";
+import { isPaletteDragSessionActive, getPaletteDragSessionPayload } from "@/lib/paletteDragSession";
+import { PaletteDropPreview } from "./PaletteDropPreview";
+import { resolvePaletteDropPreviewRect } from "./createPixelWidget";
 import { TabPaletteDropZones } from "./TabPaletteDropZones";
 import { preservePixelCanvasHostScroll, consumePendingCanvasHostScrollRestore } from "./preserveCanvasHostScroll";
 import type { TabInsertIntent } from "./tabInsertResolver";
@@ -204,6 +207,7 @@ export function PixelCanvas({
   const [scrollX, setScrollX] = useState(false);
   const [paletteDragOver, setPaletteDragOver] = useState(false);
   const [paletteDragPoint, setPaletteDragPoint] = useState<PixelPoint | null>(null);
+  const [paletteDragPayload, setPaletteDragPayload] = useState<PaletteDragPayload | null>(null);
   const [shapeDragWidget, setShapeDragWidget] = useState<PixelLayoutWidget | null>(null);
   const shapeDragWidgetRef = useRef<PixelLayoutWidget | null>(null);
   const paletteDragActive = usePaletteDragActive();
@@ -769,10 +773,16 @@ export function PixelCanvas({
   const handleDragOver = useCallback(
     (event: DragEvent<HTMLDivElement>) => {
       if (!onPaletteDrop && !onTabPaletteDrop) return;
-      if (!isPaletteDragEvent(event) && !paletteDragActive) return;
+      const paletteDrag =
+        isPaletteDragEvent(event) ||
+        paletteDragActive ||
+        isPaletteDragSessionActive();
+      if (!paletteDrag) return;
       event.preventDefault();
       event.dataTransfer.dropEffect = "copy";
       setPaletteDragOver(true);
+      const payload = readPaletteDragPayload(event.nativeEvent);
+      if (payload) setPaletteDragPayload(payload);
       const point = resolveClientToCanvas(event.clientX, event.clientY);
       if (point) setPaletteDragPoint(point);
     },
@@ -783,6 +793,7 @@ export function PixelCanvas({
     if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
     setPaletteDragOver(false);
     setPaletteDragPoint(null);
+    setPaletteDragPayload(null);
   }, []);
 
   const handleSelect = useCallback(
@@ -805,6 +816,7 @@ export function PixelCanvas({
       event.preventDefault();
       setPaletteDragOver(false);
       setPaletteDragPoint(null);
+      setPaletteDragPayload(null);
       const payload = readPaletteDragPayload(event.nativeEvent);
       const point = resolveClientToCanvas(event.clientX, event.clientY);
       if (!payload || !point) return;
@@ -837,6 +849,21 @@ export function PixelCanvas({
       tabInsertIntent,
     ],
   );
+
+  const paletteDropPreviewRect = useMemo(() => {
+    if (!paletteDragOver || !paletteDragPoint || activeTabDropId) {
+      return null;
+    }
+    const payload = paletteDragPayload ?? getPaletteDragSessionPayload();
+    if (!payload) return null;
+    return resolvePaletteDropPreviewRect(paletteDragPoint, payload, viewCanvas);
+  }, [
+    activeTabDropId,
+    paletteDragOver,
+    paletteDragPayload,
+    paletteDragPoint,
+    viewCanvas,
+  ]);
 
   const handleTabChildExtractEnd = useCallback(
     (widgetId: string, point: PixelPoint) => {
@@ -877,6 +904,7 @@ export function PixelCanvas({
         publishViewport(visibleCanvasViewport(event.currentTarget, scale, viewCanvas));
       }}
       onPointerDown={handleBlankPointerDown}
+      onDragEnter={handleDragOver}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -887,6 +915,7 @@ export function PixelCanvas({
         className="relative shrink-0"
         style={{ width: resolvedContentSize.width, height: resolvedContentSize.height }}
         onPointerDown={handleBlankPointerDown}
+        onDragEnter={handleDragOver}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -920,6 +949,7 @@ export function PixelCanvas({
             transform: designViewportLocked ? undefined : `scale(${scale})`,
           }}
           onPointerDown={handleBlankPointerDown}
+          onDragEnter={handleDragOver}
           onDragOver={handleDragOver}
           onDrop={handleDrop}
         >
@@ -929,6 +959,9 @@ export function PixelCanvas({
             style={artboardStyle}
             aria-hidden
           />
+          {paletteDropPreviewRect ? (
+            <PaletteDropPreview rect={paletteDropPreviewRect} />
+          ) : null}
           {showAuxGrid ? (
             <div
               data-testid="pixel-canvas-aux-grid"

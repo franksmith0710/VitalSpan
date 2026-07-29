@@ -8,46 +8,49 @@
 |------|----|
 | phase | **A8_DONE** |
 | status | **DONE** |
-| request | 组件库 Hub P0：真实预览、插入看板、引用明细 |
-| type | small-change |
-| plan | 内联（Superset 对标缺口 P0） |
-| goal | Hub 卡片展示 payload 预览；支持插入到看板；展示引用明细 |
-| last_verified | 2026-07-27：`pytest` viz-components 4 passed；`vitest` vizComponentEdit 4 passed |
-| repair_rounds | 0 |
+| request | `/dev-autopilot 修复上面问题`（3D 贴地热力 code-review P1 批次） |
+| type | bug |
+| plan | `docs/automate/plans/2026-07-29-geo3d-heat-review-fixes.md`（内联执行，无独立文件） |
+| goal | 修复热力锚点 region_id 上卷、精确匹配、同位置求和、未匹配行告警 |
+| last_verified | 2026-07-29：`vitest` geoHeatRegionAnchors/geo3dHeatSamples/demoMysqlRegions 12 passed；`tsc --noEmit` exit 0 |
+| repair_rounds | 1 |
 
 ## 当前需求契约
 
-- **request**: `/dev-autopilot 修复问题`（组件库对标缺口）
-- **type**: small-change
-- **goal**: 补齐组件库 Hub 三项 P0 能力
-- **scope_include**: viz-components API/Hub 卡片、DashboardEditPage insertComponent 深链
-- **scope_exclude**: pinnedRevision、组件详情页、全类型 plugins 迁移
-- **acceptance**: 列表 batch-resolve 驱动真实预览；插入对话框 + edit 页自动插入；GET references API + 对话框
+- **request**: 按 code-reviewer 批次 A–D 修复 3D 贴地热力锚点与聚合问题
+- **type**: bug
+- **goal**: region_id 区县级上卷到省/市锚点；去除 startsWith 全表模糊；同地区多行求和；DEV 未匹配告警
+- **scope_include**: `geoHeatRegionAnchors.ts`、`geo3dHeatSamples.ts`、`demoMysqlRegions.ts`、相关测试、`ChartGeoStylePanel` 说明
+- **scope_exclude**: 光柱/标签数据源统一（P2，记录为已知分裂）；shader/相机/半径等非评审项
+- **acceptance**: 相关 vitest 通过；`tsc --noEmit` 通过
 - **risk_level**: low
-- **autonomy_policy**: auto_accept_low_risk（默认）
+- **autonomy_policy**: auto_accept_low_risk（会话续接，未重跑 grill-me）
 
 ## 本轮修复摘要
 
 | 项 | 修复 |
 |----|------|
-| P0 真实预览 | `ComponentPayloadPreview` + Hub `batchResolveVizComponents` |
-| P0 插入看板 | `InsertVizComponentDialog` + `?insertComponent=` 编辑页自动插入 |
-| P0 引用明细 | `GET /viz-components/{id}/references` + `ComponentReferencesDialog` |
+| P1-1 region_id 上卷 | `listDemoMysqlRegionAncestorNames` + 祖先链逐级 `lookupAnchorName` |
+| P1-2 模糊匹配 | 移除 `lookupAnchorName` startsWith 全表扫描，改精确/别名表 |
+| P1-3 同位置聚合 | `aggregateHeatBlobSamplesByPosition` 对 lng/lat 与地区路径均求和 |
+| P1-4 静默丢行 | DEV `console.warn` 未匹配行计数 |
+| P2/D | 样式面板补热力 vs 光柱来源说明；去除重复 import |
 
 ## artifacts
 
-- `backend/app/viz/components/reference_counts.py`
-- `backend/app/api/v1/viz_components.py`
-- `fe/src/components/dashboard/viz-components/ComponentPayloadPreview.tsx`
-- `fe/src/components/dashboard/viz-components/InsertVizComponentDialog.tsx`
-- `fe/src/components/dashboard/viz-components/ComponentReferencesDialog.tsx`
-- `fe/src/pages/admin/viz-components/VizComponentsHubPage.tsx`
-- `fe/src/pages/admin/dashboard/DashboardEditPage.tsx`
-- `docs/api/README.md`
+- `fe/src/lib/demoMysqlRegions.ts`
+- `fe/src/components/charts/engine/geo/geoHeatRegionAnchors.ts`
+- `fe/src/components/charts/engine/geo/geoHeatRegionAnchors.test.ts`
+- `fe/src/components/charts/engine/three/geo3dHeatSamples.ts`
+- `fe/src/components/charts/engine/three/geo3dHeatSamples.test.ts`
+- `fe/src/components/charts/engine/three/geo3dHeatBlobLayer.ts`
+- `fe/src/lib/demoMysqlRegions.test.ts`
+- `fe/src/components/dashboard/ChartGeoStylePanel.tsx`
 
 ## 修订记录
 
 | 日期 | 说明 |
 |------|------|
+| 2026-07-29 | 3D 贴地热力 code-review P1 修复与测试 |
 | 2026-07-27 | 组件库 Hub P0：预览/插入/引用明细 |
 | 2026-07-23 | 性能门控 code-review 修复落地 |

@@ -169,10 +169,11 @@ export function bakeHeatCanvas(input: BakeHeatCanvasInput): BakedHeatCanvas {
 
   alphaCtx.clearRect(0, 0, width, height);
   alphaCtx.globalCompositeOperation = "lighter";
+  const radiusPx = resolveHeatBlobRadiusPx(radius, width);
   for (const point of points) {
     const t = span <= 0 ? 1 : (point.value - minValue) / span;
-    const alpha = 0.22 + t * 0.48;
-    drawSplat(alphaCtx, point.x, point.y, radius, alpha);
+    const alpha = Math.max(0.01, t);
+    drawSplat(alphaCtx, point.x, point.y, radiusPx, alpha);
   }
   alphaCtx.globalCompositeOperation = "source-over";
   applyHeatBlur(alphaCtx, blur);

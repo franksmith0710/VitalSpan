@@ -1,4 +1,5 @@
 import type { ChartType } from "@/lib/chartViewConfig";
+import { getChartTypeDisplayName } from "@/lib/chartRegistry";
 import { isWidgetConfigReady } from "@/lib/chartConfigState";
 import {
   DEFAULT_WIDGET_COLSPAN,

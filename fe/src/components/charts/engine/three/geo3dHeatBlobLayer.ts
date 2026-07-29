@@ -1,11 +1,19 @@
 import * as THREE from "three";
 import {
-  bakeFeatureHeatCanvas,
+  bakeHeatCanvas,
+  mapSamplesToCanvasPoints,
   resolveHeatBlobZScale,
   type ProjBoundsLike,
 } from "@/components/charts/engine/three/geo3dHeatCanvas";
-import type { JoinedMapFeature } from "@/components/charts/engine/three/geo3dRegionCentroid";
+import {
+  resolveHeatBlobValueRange,
+  type HeatBlobSample,
+} from "@/components/charts/engine/three/geo3dHeatSamples";
 import type { ResolvedPointEffectsStyle } from "@/components/charts/engine/three/geo3dPointEffectsStyle";
+
+/** 对标 sc-datav Demo1 heatmap.tsx */
+const DEMO1_HEAT_CANVAS_SIZE = 500;
+const DEMO1_HEAT_SEGMENTS = 300;
 
 const HEAT_VERT = `
 uniform float uZScale;
@@ -26,9 +34,7 @@ uniform sampler2D uHeatMap;
 uniform vec3 uColor;
 uniform float uOpacity;
 void main() {
-  vec4 heat = texture2D(uHeatMap, vUv);
-  if (heat.a < 0.02) discard;
-  gl_FragColor = vec4(uColor * heat.rgb, heat.a * uOpacity);
+  gl_FragColor = vec4(uColor, uOpacity) * texture2D(uHeatMap, vUv);
 }`;
 
 export type Geo3dHeatBlobHandle = {
@@ -37,8 +43,7 @@ export type Geo3dHeatBlobHandle = {
 };
 
 export function buildGeo3dHeatBlobLayer(
-  features: JoinedMapFeature[],
-  project: (coord: [number, number]) => [number, number] | null,
+  samples: HeatBlobSample[],
   projBounds: ProjBoundsLike,
   capTopZ: number,
   minVal: number,
@@ -47,19 +52,28 @@ export function buildGeo3dHeatBlobLayer(
   mapScale: number,
   style: ResolvedPointEffectsStyle,
 ): Geo3dHeatBlobHandle | null {
-  if (!style.layers.heatBlob || features.length === 0) return null;
-  const canvasSize = 512;
-  const baked = bakeFeatureHeatCanvas({
-    width: canvasSize,
-    height: canvasSize,
-    features,
-    project,
-    bounds: projBounds,
-    minValue: minVal,
-    maxValue: maxVal,
+  if (!style.layers.heatBlob || samples.length === 0) return null;
+
+  const { min: heatMin, max: heatMax } = resolveHeatBlobValueRange(samples, minVal, maxVal);
+
+  const canvasPoints = mapSamplesToCanvasPoints(
+    samples,
+    projBounds,
+    DEMO1_HEAT_CANVAS_SIZE,
+    DEMO1_HEAT_CANVAS_SIZE,
+    0,
+  );
+
+  const baked = bakeHeatCanvas({
+    width: DEMO1_HEAT_CANVAS_SIZE,
+    height: DEMO1_HEAT_CANVAS_SIZE,
+    points: canvasPoints,
+    minValue: heatMin,
+    maxValue: heatMax,
     radius: style.heatBlobRadius,
     blur: style.heatBlobBlur,
   });
+
   const heatTexture = new THREE.CanvasTexture(baked.colorCanvas);
   heatTexture.needsUpdate = true;
   const greyTexture = new THREE.CanvasTexture(baked.greyCanvas);
@@ -68,7 +82,6 @@ export function buildGeo3dHeatBlobLayer(
   const material = new THREE.ShaderMaterial({
     transparent: true,
     side: THREE.DoubleSide,
-    depthTest: false,
     depthWrite: false,
     uniforms: {
       uHeatMap: { value: heatTexture },
@@ -85,15 +98,12 @@ export function buildGeo3dHeatBlobLayer(
 
   const spanX = Math.max(projBounds.maxX - projBounds.minX, 0.5);
   const spanY = Math.max(projBounds.maxY - projBounds.minY, 0.5);
-  const planeWidth = spanX;
-  const planeHeight = spanY;
-  const segments = 200;
-  const mesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(planeWidth, planeHeight, segments, segments),
-    material,
-  );
   const centerX = (projBounds.minX + projBounds.maxX) * 0.5;
   const centerY = (projBounds.minY + projBounds.maxY) * 0.5;
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(spanX, spanY, DEMO1_HEAT_SEGMENTS, DEMO1_HEAT_SEGMENTS),
+    material,
+  );
   mesh.position.set(centerX, centerY, capTopZ + 0.02);
   mesh.renderOrder = 20;
   mesh.name = "geo3d-heat-blob";

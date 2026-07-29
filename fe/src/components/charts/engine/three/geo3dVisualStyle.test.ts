@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { GEO3D_SCENE_CLOUD_LIGHTS_GROUP_NAME } from "./geo3dSceneCloudLights";
+import { GEO3D_SCENE_CLOUDS_GROUP_NAME } from "./geo3dSceneClouds";
 import {
   applyGeo3dSceneClouds,
   applyGeo3dPlatformEffectsLayer,
@@ -19,6 +19,13 @@ import {
 describe("geo3dVisualStyle", () => {
   it("defaults to satellite preset", () => {
     expect(resolveGeo3dStylePreset({})).toBe("satellite");
+  });
+
+  it("satellite preset defaults match product tuned map-3d style", () => {
+    const defaults = geo3dPresetDefaults("satellite");
+    expect(defaults.sceneFog).toBe(true);
+    expect(defaults.platformGlow).toBe(false);
+    expect(defaults.heatBlobRadius).toBe(15);
   });
 
   it("tech preset enables scene clouds and disables terrain texture", () => {
@@ -49,7 +56,7 @@ describe("geo3dVisualStyle", () => {
 
   it("scene clouds resolve from preset when unset", () => {
     expect(resolveGeo3dSceneClouds({ stylePreset: "tech" })).toBe(true);
-    expect(resolveGeo3dSceneClouds({ stylePreset: "satellite" })).toBe(false);
+    expect(resolveGeo3dSceneClouds({ stylePreset: "satellite" })).toBe(true);
     expect(resolveGeo3dSceneClouds({ stylePreset: "tech", sceneFog: false })).toBe(false);
   });
 
@@ -82,7 +89,7 @@ describe("geo3dVisualStyle", () => {
     const handle = applyGeo3dSceneClouds(scene, { halfX: 9, halfZ: 6, maxY: 1, defaultDistance: 20 }, visual);
     expect(handle).not.toBeNull();
     expect(scene.fog).toBeNull();
-    expect(scene.children.some((child) => child.name === GEO3D_SCENE_CLOUD_LIGHTS_GROUP_NAME)).toBe(
+    expect(scene.children.some((child) => child.name === GEO3D_SCENE_CLOUDS_GROUP_NAME)).toBe(
       true,
     );
     handle?.dispose();

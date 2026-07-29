@@ -1,14 +1,11 @@
+import type { ChartGeo3dStyle, ChartGeoStyle } from "@/lib/chartDeStyle";
 import {
   DEFAULT_GEO3D_EXTRUDE_INTENSITY,
   DEFAULT_GEO3D_SHELL_OPACITY,
   resolveGeoVisualMapEnabled,
-  type ChartGeo3dStyle,
-  type ChartGeoStyle,
 } from "@/lib/chartDeStyle";
+import { DEFAULT_MAP_3D_CHART_DE_STYLE } from "@/lib/defaultMap3dChartDeStyle";
 import type { ThreeGeoOrbitLayout } from "@/components/charts/engine/three/threeGeoOrbit";
-import {
-  buildGeo3dSceneCloudLights,
-} from "@/components/charts/engine/three/geo3dSceneCloudLights";
 import {
   buildGeo3dSceneClouds,
   removeGeo3dSceneClouds,
@@ -34,6 +31,7 @@ import {
   type Geo3dPointEffectsHandle,
 } from "@/components/charts/engine/three/geo3dPointEffects";
 import type { JoinedMapFeature } from "@/components/charts/engine/three/geo3dRegionCentroid";
+import type { HeatBlobSample } from "@/components/charts/engine/three/geo3dHeatSamples";
 import {
   resolveGeo3dSceneCloudDensity,
   resolveGeo3dSceneCloudHeight,
@@ -119,7 +117,7 @@ const PRESET_BASE: Record<Geo3dStylePreset, PresetBase> = {
     keyLight: 0.78,
     fillDark: 0.34,
     fillLight: 0.26,
-    sceneFog: false,
+    sceneFog: true,
     fogColorDark: 0x020617,
     fogColorLight: 0xe2e8f0,
     preferTerrainTexture: true,
@@ -258,17 +256,8 @@ export function applyGeo3dSceneClouds(
   removeGeo3dSceneClouds(scene);
   if (!visual.sceneFog) return null;
   const handle = buildGeo3dSceneClouds(layout, geo3dStyle);
-  const lights = buildGeo3dSceneCloudLights(layout);
   scene.add(handle.group);
-  scene.add(lights.group);
-  const cloudDispose = handle.dispose.bind(handle);
-  return {
-    ...handle,
-    dispose() {
-      cloudDispose();
-      lights.dispose();
-    },
-  };
+  return handle;
 }
 
 /** 布局完成后挂载地图下方底座装饰（双环/网格/涟漪） */
@@ -293,6 +282,7 @@ export type ApplyGeo3dPointEffectsInput = {
   domElement: HTMLElement;
   mapGroup: THREE.Group;
   meshes: THREE.Object3D[];
+  heatBlobSamples: HeatBlobSample[];
   features: JoinedMapFeature[];
   project: (coord: [number, number]) => [number, number] | null;
   projBounds: import("@/components/charts/engine/three/geo3dHeatCanvas").ProjBoundsLike;
@@ -320,6 +310,7 @@ export function applyGeo3dPointEffectsLayer(
     domElement: input.domElement,
     mapGroup: input.mapGroup,
     meshes: input.meshes,
+    heatBlobSamples: input.heatBlobSamples,
     features: input.features,
     project: input.project,
     projBounds: input.projBounds,
@@ -407,6 +398,9 @@ export function resolveGeo3dVisualStyle(
 /** 切换预设时写入的默认 geo3d 字段 */
 export function geo3dPresetDefaults(preset: Geo3dStylePreset): Partial<ChartGeo3dStyle> {
   const base = PRESET_BASE[preset];
+  if (preset === "satellite") {
+    return { ...DEFAULT_MAP_3D_CHART_DE_STYLE.geo3d, stylePreset: "satellite" };
+  }
   const defaults: Partial<ChartGeo3dStyle> = {
     stylePreset: preset,
     terrainTexture: base.preferTerrainTexture,

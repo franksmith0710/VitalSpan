@@ -21,16 +21,22 @@ import { ChartTypePreviewIcon } from "./chartPicker/ChartTypePreviewIcon";
 type ChartPickerPopoverProps = {
   onInsert: (type: ChartType) => void;
   onInserted?: () => void;
+  onPaletteDragStart?: () => void;
+  onPaletteDragEnd?: () => void;
 };
 
 function ChartTypeTile({
   item,
   onInsert,
   onInserted,
+  onPaletteDragStart,
+  onPaletteDragEnd,
 }: {
   item: ChartTypeCatalogItem;
   onInsert: (type: ChartType) => void;
   onInserted?: () => void;
+  onPaletteDragStart?: () => void;
+  onPaletteDragEnd?: () => void;
 }) {
   const chartType = item.type as ChartType;
   const label = item.displayName || getChartTypeDisplayName(item.type);
@@ -40,7 +46,14 @@ function ChartTypeTile({
       role="button"
       tabIndex={0}
       draggable
-      onDragStart={(e) => setChartTypeDragData(e.dataTransfer, chartType)}
+      onDragStart={(e) => {
+        setChartTypeDragData(e.dataTransfer, chartType);
+        onPaletteDragStart?.();
+        e.stopPropagation();
+      }}
+      onDragEnd={() => {
+        onPaletteDragEnd?.();
+      }}
       onClick={() => {
         onInsert(chartType);
         onInserted?.();
@@ -72,17 +85,28 @@ function SectionGrid({
   section,
   onInsert,
   onInserted,
+  onPaletteDragStart,
+  onPaletteDragEnd,
 }: {
   section: DePaletteSection;
   onInsert: (type: ChartType) => void;
   onInserted?: () => void;
+  onPaletteDragStart?: () => void;
+  onPaletteDragEnd?: () => void;
 }) {
   return (
     <section className="space-y-2">
       <h3 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">{section.label}</h3>
       <div className="grid grid-cols-4 gap-1">
         {section.items.map((item) => (
-          <ChartTypeTile key={item.type} item={item} onInsert={onInsert} onInserted={onInserted} />
+          <ChartTypeTile
+            key={item.type}
+            item={item}
+            onInsert={onInsert}
+            onInserted={onInserted}
+            onPaletteDragStart={onPaletteDragStart}
+            onPaletteDragEnd={onPaletteDragEnd}
+          />
         ))}
       </div>
     </section>
@@ -90,7 +114,12 @@ function SectionGrid({
 }
 
 /** DataEase 风格：左侧分类导航 + 右侧连续滚动分区 */
-export function ChartPickerPopover({ onInsert, onInserted }: ChartPickerPopoverProps) {
+export function ChartPickerPopover({
+  onInsert,
+  onInserted,
+  onPaletteDragStart,
+  onPaletteDragEnd,
+}: ChartPickerPopoverProps) {
   const [catalog, setCatalog] = useState<ChartTypeCatalogItem[] | null>(null);
   const [activeSectionId, setActiveSectionId] = useState<string>("quota");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -190,7 +219,13 @@ export function ChartPickerPopover({ onInsert, onInserted }: ChartPickerPopoverP
               data-section-id={section.id}
               className="scroll-mt-1"
             >
-              <SectionGrid section={section} onInsert={onInsert} onInserted={onInserted} />
+              <SectionGrid
+                section={section}
+                onInsert={onInsert}
+                onInserted={onInserted}
+                onPaletteDragStart={onPaletteDragStart}
+                onPaletteDragEnd={onPaletteDragEnd}
+              />
             </div>
           ))}
         </div>

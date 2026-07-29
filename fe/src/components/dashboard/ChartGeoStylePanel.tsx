@@ -49,6 +49,8 @@ import {
   DEFAULT_HEAT_BLOB_LIFT,
   DEFAULT_HEAT_BLOB_OPACITY,
   DEFAULT_HEAT_BLOB_RADIUS,
+  MAX_HEAT_BLOB_RADIUS,
+  MIN_HEAT_BLOB_RADIUS,
   DEFAULT_POINT_PILLAR_BASE_RING_OPACITY,
   DEFAULT_POINT_PILLAR_BASE_RING_SCALE,
   DEFAULT_POINT_PILLAR_COLOR_BOTTOM,
@@ -126,9 +128,9 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
   const platformRingsOn = platformOn && geo3d.platformRings !== false;
   const platformGridOn = platformOn && geo3d.platformGrid !== false;
   const platformRippleOn = platformOn && geo3d.platformRipple !== false;
-  const platformGlowOn = platformOn && geo3d.platformGlow !== false;
-  const platformPulseOn = platformOn && geo3d.platformPulse !== false;
-  const platformSweepOn = platformOn && geo3d.platformSweep !== false;
+  const platformGlowOn = platformOn && geo3d.platformGlow === true;
+  const platformPulseOn = platformOn && geo3d.platformPulse === true;
+  const platformSweepOn = platformOn && geo3d.platformSweep === true;
   const pointEffectsOn = resolveGeo3dPointEffects(geo3d);
   const heatBlobOn = pointEffectsOn && geo3d.heatBlob !== false;
   const pointPillarOn = pointEffectsOn && geo3d.pointPillar !== false;
@@ -645,8 +647,8 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                       compact
                       value={geo3d.heatBlobRadius}
                       fallback={DEFAULT_HEAT_BLOB_RADIUS}
-                      min={3}
-                      max={16}
+                      min={MIN_HEAT_BLOB_RADIUS}
+                      max={MAX_HEAT_BLOB_RADIUS}
                       step={1}
                       ariaLabel="贴地热力半径"
                       onChange={(heatBlobRadius) => patchGeo3d({ heatBlobRadius })}
@@ -692,6 +694,9 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                       swatches={WIDGET_BORDER_RECOMMENDED}
                       onChange={(next) => patchGeo3d({ heatBlobColor: next })}
                     />
+                    <p className={INSPECTOR_HINT}>
+                      贴地热力按数据行地区/经纬度落点（同位置自动求和）；光柱与浮动标签仍按当前地图层级行政区显示。
+                    </p>
                   </>
                 ) : null}
                 <InspectorSwitchRow

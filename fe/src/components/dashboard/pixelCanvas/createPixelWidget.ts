@@ -16,6 +16,11 @@ import { findNextOpenSlot, resolvePixelLayoutWithActiveRect } from "./collisionL
 import { pixelWidgetToLayoutWidget } from "../dashboardCanvasMode";
 import type { DashboardLayoutV2, LayoutWidget, PixelLayoutWidget } from "../layoutUtils";
 import { getTopLevelPixelWidgets, insertPixelWidgetIntoTab } from "../layoutUtils";
+import type { PaletteDragPayload } from "@/lib/dashboardDnd";
+import {
+  isScreenMaterialInsertType,
+  isScreenVisualInsertType,
+} from "@/lib/screenVisualAssets";
 import type { PixelPoint, PixelRect } from "./geometry";
 
 /** 1440 基准画布上的默认插入尺寸（约 1/3 宽 × 适中高，编辑态更易辨认） */
@@ -87,6 +92,43 @@ function placeInNextOpenSlot(
     width,
     height,
   };
+}
+
+export function defaultPixelSizeForPalettePayload(
+  payload: PaletteDragPayload,
+): { width: number; height: number } {
+  if (payload === "filter") return PIXEL_DEFAULT_FILTER_SIZE;
+  if (payload === "text") return PIXEL_DEFAULT_TEXT_SIZE;
+  if (payload === "media") return PIXEL_DEFAULT_MEDIA_SIZE;
+  if (payload === "tabs") return PIXEL_DEFAULT_TABS_SIZE;
+  if (isScreenMaterialInsertType(payload)) {
+    switch (payload) {
+      case "screen-clock":
+        return PIXEL_DEFAULT_SCREEN_CLOCK_SIZE;
+      case "screen-border":
+        return PIXEL_DEFAULT_SCREEN_BORDER_SIZE;
+      case "screen-title-bar":
+        return PIXEL_DEFAULT_SCREEN_TITLE_BAR_SIZE;
+      case "screen-datetime":
+        return PIXEL_DEFAULT_SCREEN_DATETIME_SIZE;
+      case "screen-webpage":
+        return PIXEL_DEFAULT_SCREEN_WEBPAGE_SIZE;
+      default:
+        break;
+    }
+  }
+  if (isScreenVisualInsertType(payload)) {
+    return PIXEL_DEFAULT_TEXT_SIZE;
+  }
+  return PIXEL_DEFAULT_CHART_SIZE;
+}
+
+export function resolvePaletteDropPreviewRect(
+  point: PixelPoint,
+  payload: PaletteDragPayload,
+  canvas: DashboardCanvas,
+): PixelRect {
+  return placeAtPoint(defaultPixelSizeForPalettePayload(payload), canvas, point);
 }
 
 function placeAtPoint(

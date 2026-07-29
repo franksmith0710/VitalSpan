@@ -7,6 +7,10 @@ import {
   type ReactNode,
 } from "react";
 import { isNativePaletteDragEvent } from "@/lib/dashboardDnd";
+import {
+  endPaletteDragSession,
+  isPaletteDragSessionActive,
+} from "@/lib/paletteDragSession";
 import type { TabInsertIntent } from "./tabInsertResolver";
 
 type PaletteDragContextValue = {
@@ -65,9 +69,14 @@ export function usePaletteDocumentDrag(enabled: boolean): boolean {
       return;
     }
     const activate = (event: DragEvent) => {
-      if (isNativePaletteDragEvent(event)) setActive(true);
+      if (isNativePaletteDragEvent(event) || isPaletteDragSessionActive()) {
+        setActive(true);
+      }
     };
-    const end = () => setActive(false);
+    const end = () => {
+      endPaletteDragSession();
+      setActive(false);
+    };
     document.addEventListener("dragstart", activate, true);
     document.addEventListener("dragover", activate, true);
     document.addEventListener("dragend", end);

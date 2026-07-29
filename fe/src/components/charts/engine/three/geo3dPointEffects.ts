@@ -5,6 +5,7 @@ import {
   resolveRegionCapAnchorWorld,
   resolvePillarTopWorld,
 } from "@/components/charts/engine/three/geo3dRegionCentroid";
+import type { HeatBlobSample } from "@/components/charts/engine/three/geo3dHeatSamples";
 import type { ProjBoundsLike } from "@/components/charts/engine/three/geo3dHeatCanvas";
 import {
   buildGeo3dHeatBlobLayer,
@@ -45,6 +46,7 @@ type BuildGeo3dPointEffectsInput = {
   domElement: HTMLElement;
   mapGroup: THREE.Group;
   meshes: THREE.Object3D[];
+  heatBlobSamples: HeatBlobSample[];
   features: JoinedMapFeature[];
   project: (coord: [number, number]) => [number, number] | null;
   projBounds: ProjBoundsLike;
@@ -62,6 +64,7 @@ export function buildGeo3dPointEffects(input: BuildGeo3dPointEffectsInput): Geo3
     domElement,
     mapGroup,
     meshes,
+    heatBlobSamples,
     features,
     project,
     projBounds,
@@ -83,17 +86,18 @@ export function buildGeo3dPointEffects(input: BuildGeo3dPointEffectsInput): Geo3
   const group = new THREE.Group();
   group.name = GEO3D_POINT_EFFECTS_GROUP_NAME;
 
-  const heatBlob = buildGeo3dHeatBlobLayer(
-    features,
-    project,
-    projBounds,
-    capTopZ,
-    minVal,
-    maxVal,
-    sizing.visualMapSpan,
-    sizing.mapScale,
-    style,
-  );
+  const heatBlob = style.layers.heatBlob
+    ? buildGeo3dHeatBlobLayer(
+        heatBlobSamples,
+        projBounds,
+        capTopZ,
+        minVal,
+        maxVal,
+        sizing.visualMapSpan,
+        sizing.mapScale,
+        style,
+      )
+    : null;
   if (heatBlob) group.add(heatBlob.mesh);
 
   const pillarLayer = buildGeo3dPointPillarLayer(samples, meshes, capTopZ, sizing.effectUnit, style);

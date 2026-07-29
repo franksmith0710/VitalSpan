@@ -31,7 +31,7 @@ describe("layoutSanitize", () => {
     expect(layoutsOverlap(repaired, 0)).toBe(false);
   });
 
-  it("preserves overlapping top-level widgets by default (WYSIWYG save/load)", () => {
+  it("packs overlapping dashboard widgets by default on sanitize", () => {
     const layout: DashboardLayoutV2 = {
       version: 2,
       canvas: { width: 1440, height: 900 },
@@ -43,6 +43,20 @@ describe("layoutSanitize", () => {
     };
     expect(layoutsOverlap(layout, 0)).toBe(true);
     const sanitized = sanitizePixelLayoutGeometry(layout);
+    expect(layoutsOverlap(sanitized, 0)).toBe(false);
+  });
+
+  it("preserves overlapping dashboard widgets when packOverlaps is false", () => {
+    const layout: DashboardLayoutV2 = {
+      version: 2,
+      canvas: { width: 1440, height: 900 },
+      widgets: [
+        chart("a", 0, 0, 400, 300, 0),
+        chart("b", 100, 100, 400, 300, 1),
+      ],
+      globalFilters: [],
+    };
+    const sanitized = sanitizePixelLayoutGeometry(layout, null, { packOverlaps: false });
     const b = sanitized.widgets.find((w) => w.id === "b");
     expect(b?.x).toBe(100);
     expect(b?.y).toBe(100);

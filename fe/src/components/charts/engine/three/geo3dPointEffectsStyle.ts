@@ -31,26 +31,28 @@ export type ResolvedPointEffectsStyle = {
   floatingLabelOffset: number;
 };
 
-export const DEFAULT_HEAT_BLOB_OPACITY = 0.85;
-export const DEFAULT_HEAT_BLOB_RADIUS = 8;
-export const DEFAULT_HEAT_BLOB_BLUR = 1;
-export const DEFAULT_HEAT_BLOB_LIFT = 4;
+export const DEFAULT_HEAT_BLOB_OPACITY = 1;
+export const DEFAULT_HEAT_BLOB_RADIUS = 15;
+export const MIN_HEAT_BLOB_RADIUS = 3;
+export const MAX_HEAT_BLOB_RADIUS = 40;
+export const DEFAULT_HEAT_BLOB_BLUR = 1.2;
+export const DEFAULT_HEAT_BLOB_LIFT = 8;
 export const DEFAULT_HEAT_BLOB_COLOR = "#ffffff";
-export const DEFAULT_HEAT_BLOB_DIM_CHOROPLETH = 0.35;
+export const DEFAULT_HEAT_BLOB_DIM_CHOROPLETH = 0.55;
 
 export const DEFAULT_POINT_PILLAR_COLOR_TOP = "#fbdf88";
 export const DEFAULT_POINT_PILLAR_COLOR_BOTTOM = "#ea580c";
 export const DEFAULT_POINT_PILLAR_OPACITY = 1;
-export const DEFAULT_POINT_PILLAR_HEIGHT_SCALE = 5;
-export const DEFAULT_POINT_PILLAR_BASE_RING_OPACITY = 1;
-export const DEFAULT_POINT_PILLAR_BASE_RING_SCALE = 2;
-export const DEFAULT_POINT_PILLAR_RING_SPEED = 1;
+export const DEFAULT_POINT_PILLAR_HEIGHT_SCALE = 3.8;
+export const DEFAULT_POINT_PILLAR_BASE_RING_OPACITY = 0.6;
+export const DEFAULT_POINT_PILLAR_BASE_RING_SCALE = 0.6;
+export const DEFAULT_POINT_PILLAR_RING_SPEED = 0.9;
 
-export const DEFAULT_FLOATING_LABEL_FONT_SIZE = 14;
+export const DEFAULT_FLOATING_LABEL_FONT_SIZE = 13;
 export const DEFAULT_FLOATING_LABEL_TEXT_COLOR = "#fdb961";
 export const DEFAULT_FLOATING_LABEL_BG_COLOR = "#ffffff";
 export const DEFAULT_FLOATING_LABEL_BORDER_COLOR = "#fdb961";
-export const DEFAULT_FLOATING_LABEL_OFFSET = 0.2;
+export const DEFAULT_FLOATING_LABEL_OFFSET = 0.05;
 
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 
@@ -99,7 +101,12 @@ export function resolvePointEffectsStyle(
     enabled,
     layers,
     heatBlobOpacity: clamp01(style.heatBlobOpacity, DEFAULT_HEAT_BLOB_OPACITY),
-    heatBlobRadius: clampRange(style.heatBlobRadius, DEFAULT_HEAT_BLOB_RADIUS, 3, 16),
+    heatBlobRadius: clampRange(
+      style.heatBlobRadius,
+      DEFAULT_HEAT_BLOB_RADIUS,
+      MIN_HEAT_BLOB_RADIUS,
+      MAX_HEAT_BLOB_RADIUS,
+    ),
     heatBlobBlur: clampRange(style.heatBlobBlur, DEFAULT_HEAT_BLOB_BLUR, 0.5, 2),
     heatBlobLift: clampRange(style.heatBlobLift, DEFAULT_HEAT_BLOB_LIFT, 0, 12),
     heatBlobColor: normalizeHex(style.heatBlobColor, DEFAULT_HEAT_BLOB_COLOR),

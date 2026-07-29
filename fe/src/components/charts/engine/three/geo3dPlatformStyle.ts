@@ -43,18 +43,18 @@ export type ResolvedPlatformEffectsStyle = {
   sweepSpeed: number;
 };
 
-export const DEFAULT_PLATFORM_HIGHLIGHT_OPACITY = 1;
-export const DEFAULT_PLATFORM_RING_OPACITY = 0.3;
+export const DEFAULT_PLATFORM_HIGHLIGHT_OPACITY = 0.7;
+export const DEFAULT_PLATFORM_RING_OPACITY = 0.7;
 export const DEFAULT_PLATFORM_GRID_OPACITY = 0.1;
-export const DEFAULT_PLATFORM_RIPPLE_OPACITY = 0.5;
+export const DEFAULT_PLATFORM_RIPPLE_OPACITY = 0.85;
 export const DEFAULT_PLATFORM_GLOW_OPACITY = 0.55;
 export const DEFAULT_PLATFORM_PULSE_OPACITY = 0.65;
 export const DEFAULT_PLATFORM_SWEEP_OPACITY = 0.45;
-export const DEFAULT_PLATFORM_SIZE_SCALE = 1;
+export const DEFAULT_PLATFORM_SIZE_SCALE = 1.35;
 export const DEFAULT_PLATFORM_GRID_DENSITY = 1.25;
-export const DEFAULT_PLATFORM_RIPPLE_SPEED = 1;
+export const DEFAULT_PLATFORM_RIPPLE_SPEED = 0.7;
 export const DEFAULT_PLATFORM_RIPPLE_FREQUENCY = 1;
-export const DEFAULT_PLATFORM_RING_SPEED = 1;
+export const DEFAULT_PLATFORM_RING_SPEED = 2.5;
 export const DEFAULT_PLATFORM_PULSE_SPEED = 1;
 export const DEFAULT_PLATFORM_SWEEP_SPEED = 1;
 export const DEFAULT_PLATFORM_SQUARE_GRID_CELLS = 160;
@@ -186,9 +186,9 @@ export function resolvePlatformLayerFlags(style: ChartGeo3dStyle, effectsOn: boo
     rings: style.platformRings !== false,
     grid: style.platformGrid !== false,
     ripple: style.platformRipple !== false,
-    glow: style.platformGlow !== false,
-    pulse: style.platformPulse !== false,
-    sweep: style.platformSweep !== false,
+    glow: style.platformGlow === true,
+    pulse: style.platformPulse === true,
+    sweep: style.platformSweep === true,
   };
 }
 

@@ -1,8 +1,8 @@
 import type { ChartGeo3dStyle } from "@/lib/chartDeStyle";
 
-export const DEFAULT_SCENE_CLOUD_DENSITY = 0.55;
-export const DEFAULT_SCENE_CLOUD_SPEED = 0.45;
-export const DEFAULT_SCENE_CLOUD_HEIGHT = 1;
+export const DEFAULT_SCENE_CLOUD_DENSITY = 0.7;
+export const DEFAULT_SCENE_CLOUD_SPEED = 4;
+export const DEFAULT_SCENE_CLOUD_HEIGHT = 1.55;
 export const SCENE_CLOUD_SPEED_MAX = 6;
 
 export type ResolvedSceneCloudOptions = {

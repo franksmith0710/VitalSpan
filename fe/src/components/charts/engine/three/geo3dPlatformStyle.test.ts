@@ -7,15 +7,15 @@ import {
 } from "./geo3dPlatformStyle";
 
 describe("geo3dPlatformStyle", () => {
-  it("defaults all layers on when effects enabled", () => {
+  it("defaults core layers on and shader layers off when effects enabled", () => {
     expect(resolvePlatformLayerFlags({}, true)).toMatchObject({
       highlight: true,
       rings: true,
       grid: true,
       ripple: true,
-      glow: true,
-      pulse: true,
-      sweep: true,
+      glow: false,
+      pulse: false,
+      sweep: false,
     });
   });
 
@@ -45,8 +45,13 @@ describe("geo3dPlatformStyle", () => {
   it("allows disabling shader layers explicitly", () => {
     expect(resolvePlatformLayerFlags({ platformGlow: false }, true)).toMatchObject({
       glow: false,
+      pulse: false,
+      sweep: false,
+    });
+    expect(resolvePlatformLayerFlags({ platformGlow: true, platformPulse: true }, true)).toMatchObject({
+      glow: true,
       pulse: true,
-      sweep: true,
+      sweep: false,
     });
   });
 

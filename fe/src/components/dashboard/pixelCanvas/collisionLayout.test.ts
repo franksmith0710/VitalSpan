@@ -223,6 +223,20 @@ describe("collisionLayout", () => {
     expect(slot).toEqual({ x: 960, y: 0 });
   });
 
+  it("finds a non-overlapping slot when occupied rects already overlap", () => {
+    const occupied = [
+      { x: 0, y: 0, width: 480, height: 320 },
+      { x: 100, y: 100, width: 480, height: 320 },
+    ];
+    const size = { width: 480, height: 320 };
+    const canvas = { width: 1440, height: 900 };
+    const slot = findNextOpenSlot(size, occupied, canvas);
+    const candidate = { ...slot, ...size };
+    for (const rect of occupied) {
+      expect(rectsOverlap(rect, candidate, 0)).toBe(false);
+    }
+  });
+
   it("does not leave overlaps in a dense grid move", () => {
     const layout = baseLayout([
       widget("a", 0, 0, 480, 320, 1),

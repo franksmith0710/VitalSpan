@@ -9,6 +9,8 @@ type ScreenMorePickerProps = {
   onInsert: (type: PaletteInsertType) => void;
   onInserted?: () => void;
   extraActions?: ReactNode;
+  onPaletteDragStart?: () => void;
+  onPaletteDragEnd?: () => void;
 };
 
 const MORE_ICONS: Record<string, ReactNode> = {
@@ -20,17 +22,28 @@ function MoreTile({
   item,
   onInsert,
   onInserted,
+  onPaletteDragStart,
+  onPaletteDragEnd,
 }: {
   item: ScreenMoreCatalogItem;
   onInsert: (type: PaletteInsertType) => void;
   onInserted?: () => void;
+  onPaletteDragStart?: () => void;
+  onPaletteDragEnd?: () => void;
 }) {
   return (
     <div
       role="button"
       tabIndex={0}
       draggable
-      onDragStart={(event) => setScreenInsertDragData(event.dataTransfer, item.insertType)}
+      onDragStart={(event) => {
+        setScreenInsertDragData(event.dataTransfer, item.insertType);
+        onPaletteDragStart?.();
+        event.stopPropagation();
+      }}
+      onDragEnd={() => {
+        onPaletteDragEnd?.();
+      }}
       onClick={() => {
         onInsert(item.insertType);
         onInserted?.();
@@ -59,7 +72,13 @@ function MoreTile({
   );
 }
 
-export function ScreenMorePicker({ onInsert, onInserted, extraActions }: ScreenMorePickerProps) {
+export function ScreenMorePicker({
+  onInsert,
+  onInserted,
+  extraActions,
+  onPaletteDragStart,
+  onPaletteDragEnd,
+}: ScreenMorePickerProps) {
   return (
     <div className="p-3" data-testid="screen-more-picker">
       <p className="mb-2 px-1 text-[11px] text-gray-500 dark:text-gray-400">
@@ -67,7 +86,14 @@ export function ScreenMorePicker({ onInsert, onInserted, extraActions }: ScreenM
       </p>
       <div className="grid grid-cols-2 gap-2">
         {SCREEN_MORE_CATALOG.map((item) => (
-          <MoreTile key={item.id} item={item} onInsert={onInsert} onInserted={onInserted} />
+          <MoreTile
+            key={item.id}
+            item={item}
+            onInsert={onInsert}
+            onInserted={onInserted}
+            onPaletteDragStart={onPaletteDragStart}
+            onPaletteDragEnd={onPaletteDragEnd}
+          />
         ))}
       </div>
       {extraActions ? (

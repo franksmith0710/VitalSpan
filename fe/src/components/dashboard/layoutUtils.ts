@@ -3,6 +3,7 @@ import { migrateChartViewConfig } from "@/lib/migrateChartTypes";
 import { resolveChartWidgetTitle } from "@/lib/chartTypeDisplayNames";
 import { chartInspectorCapabilities } from "@/lib/chartInspectorCapabilities";
 import { DEFAULT_CHART_LEGEND_STYLE, readChartDeStyle } from "@/lib/chartDeStyle";
+import { DEFAULT_MAP_3D_CHART_DE_STYLE } from "@/lib/defaultMap3dChartDeStyle";
 import type { ScreenVisualStyleConfig } from "@/lib/screenVisualStyle";
 import type { DashboardLayoutV2, LayoutWidget, PixelLayoutWidget } from "./dashboardLayoutContracts";
 import type { WidgetStyleConfig } from "./dashboardStyleConfig";
@@ -699,6 +700,19 @@ export function defaultChartConfig(type: ChartType): ChartViewConfig {
       ...base,
       dimensions: [],
       metrics: [],
+    });
+  }
+  if (type === "map-3d") {
+    return withLegendDefault({
+      chartType: "map-3d",
+      ...base,
+      dimensions: [],
+      metrics: [],
+      nativeBody: {
+        deStyle: {
+          ...DEFAULT_MAP_3D_CHART_DE_STYLE,
+        },
+      },
     });
   }
   return withLegendDefault({

@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { buildGeo3dSceneClouds, buildGeo3dSceneCloudsWithOptions } from "./geo3dSceneClouds";
-import { GEO3D_SCENE_CLOUD_LIGHTS_GROUP_NAME } from "./geo3dSceneCloudLights";
-import { resolveCloudVisualProfile } from "./geo3dSceneCloudStyle";
+import { buildGeo3dSceneClouds, buildGeo3dSceneCloudsWithOptions, GEO3D_SCENE_CLOUDS_GROUP_NAME } from "./geo3dSceneClouds";
+import { DEFAULT_SCENE_CLOUD_DENSITY, resolveCloudVisualProfile } from "./geo3dSceneCloudStyle";
 import { applyGeo3dSceneClouds, resolveGeo3dSceneClouds, resolveGeo3dVisualStyle } from "./geo3dVisualStyle";
 
 describe("geo3dSceneClouds", () => {
@@ -16,11 +15,11 @@ describe("geo3dSceneClouds", () => {
     expect(handle.group.children.length).toBe(1);
     const instanced = handle.group.children[0] as THREE.InstancedMesh;
     expect(instanced).toBeInstanceOf(THREE.InstancedMesh);
-    const material = instanced.material as THREE.MeshLambertMaterial;
-    expect(material).toBeInstanceOf(THREE.MeshLambertMaterial);
+    const material = instanced.material as THREE.MeshBasicMaterial;
+    expect(material).toBeInstanceOf(THREE.MeshBasicMaterial);
     expect(material.map).toBeTruthy();
     expect(material.opacity).toBeGreaterThan(0.1);
-    const profile = resolveCloudVisualProfile(0.55);
+    const profile = resolveCloudVisualProfile(DEFAULT_SCENE_CLOUD_DENSITY);
     expect(instanced.count).toBe(profile.clusterCount * profile.puffPerCluster);
     handle.dispose();
   });
@@ -36,12 +35,8 @@ describe("geo3dSceneClouds", () => {
     );
     expect(handle).not.toBeNull();
     expect(scene.fog).toBeNull();
-    expect(scene.children.some((child) => child.name === "geo3d-scene-clouds")).toBe(true);
-    expect(scene.children.some((child) => child.name === GEO3D_SCENE_CLOUD_LIGHTS_GROUP_NAME)).toBe(
-      true,
-    );
+    expect(scene.children.some((child) => child.name === GEO3D_SCENE_CLOUDS_GROUP_NAME)).toBe(true);
     handle?.dispose();
-    expect(scene.getObjectByName(GEO3D_SCENE_CLOUD_LIGHTS_GROUP_NAME)).toBeUndefined();
   });
 
   it("drifts cluster centers along prevailing wind", () => {

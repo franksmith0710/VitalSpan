@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { resolveDemoMysqlRegionByDrillDepth } from "./demoMysqlRegions";
+import {
+  listDemoMysqlRegionAncestorNames,
+  resolveDemoMysqlRegionByDrillDepth,
+} from "./demoMysqlRegions";
 
 describe("resolveDemoMysqlRegionByDrillDepth", () => {
   it("区县 region_id 上卷到省级", () => {
@@ -14,5 +17,15 @@ describe("resolveDemoMysqlRegionByDrillDepth", () => {
 
   it("省级 id 在全国视图直接匹配", () => {
     expect(resolveDemoMysqlRegionByDrillDepth(16, 0)?.name).toBe("安徽省");
+  });
+});
+
+describe("listDemoMysqlRegionAncestorNames", () => {
+  it("returns names from district up to province", () => {
+    expect(listDemoMysqlRegionAncestorNames(911)).toEqual([
+      "武侯区",
+      "成都市",
+      "四川省",
+    ]);
   });
 });

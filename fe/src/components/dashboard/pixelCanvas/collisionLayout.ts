@@ -410,10 +410,35 @@ export function findNextOpenSlot(
 
   if (best) return best;
 
+  const lowestExtent = occupied.reduce(
+    (max, rect) => Math.max(max, rect.y + rect.height),
+    0,
+  );
+  let y = lowestExtent + gap;
+  const x = 0;
+  const scanLimit = Math.max(
+    canvas.height,
+    lowestExtent + size.height * 4,
+    lowestExtent + PACK_SCAN_STEP * 32,
+  );
+  while (y + size.height <= scanLimit) {
+    const candidate = { x, y, width: size.width, height: size.height };
+    if (!occupied.some((rect) => rectsOverlap(rect, candidate, gap))) {
+      return { x, y };
+    }
+    y += PACK_SCAN_STEP;
+  }
+
   const lowest = occupied.reduce((top, rect) =>
     rect.y + rect.height > top.y + top.height ? rect : top,
   );
-  return { x: 0, y: lowest.y + lowest.height + gap };
+  return {
+    x: 0,
+    y: Math.min(
+      lowest.y + lowest.height + gap,
+      Math.max(0, canvas.height - size.height),
+    ),
+  };
 }
 
 export function packPixelLayoutSeamless(

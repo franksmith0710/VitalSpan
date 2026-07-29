@@ -68,7 +68,7 @@ export function migrateDashboardLayoutV1(layout: DashboardLayoutV1): DashboardLa
   };
 }
 
-/** 载入 / resetLayout 与 save 单路径：Tab 修复 + 顶层重叠 pack + 零间隙压实 */
+/** 载入 / resetLayout 与 save 单路径：Tab 修复 + 仪表板重叠 pack + 零间隙压实 */
 function preparePixelLayoutGeometry(layout: DashboardLayoutV2): DashboardLayoutV2 {
   return sanitizePixelLayoutGeometry(layout, layout.styleConfig);
 }

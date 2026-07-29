@@ -35,7 +35,7 @@ export type CloudClusterBuildResult = {
   puffs: CloudPuffRuntime[];
   opacities: Float32Array;
   sharedGeometry: THREE.PlaneGeometry;
-  sharedMaterial: THREE.MeshLambertMaterial;
+  sharedMaterial: THREE.MeshBasicMaterial;
   fadeDistance: number;
 };
 

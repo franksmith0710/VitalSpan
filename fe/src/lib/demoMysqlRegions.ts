@@ -138,3 +138,15 @@ export function resolveDemoMysqlRegionByDrillDepth(
 export function isDemoMysqlRegionId(raw: unknown): boolean {
   return resolveDemoMysqlRegionNode(raw) != null;
 }
+
+/** 演示库 region_id：从当前节点向上收集名称（细→粗），供热力锚点逐级匹配 */
+export function listDemoMysqlRegionAncestorNames(raw: unknown): string[] {
+  const names: string[] = [];
+  let node = resolveDemoMysqlRegionNode(raw);
+  while (node) {
+    names.push(node.name);
+    if (node.parentId == null) break;
+    node = DEMO_BY_ID.get(node.parentId) ?? null;
+  }
+  return names;
+}

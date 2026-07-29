@@ -1,8 +1,15 @@
 import type { ChartType } from "@/lib/chartViewConfig";
 import {
+  beginPaletteDragSession,
+  getPaletteDragSessionPayload,
+} from "@/lib/paletteDragSession";
+
+export { getPaletteDragSessionPayload };
+import {
   isScreenMaterialInsertType,
   type ScreenMaterialInsertType,
 } from "@/lib/screenVisualAssets";
+
 
 /** HTML5 拖放 MIME；对齐 DataEase/Superset「组件面板 → 画布」 */
 export const DASHBOARD_CHART_DND_TYPE = "application/vnd.vitalspan.chart-type";
@@ -16,11 +23,13 @@ export const DEFAULT_WIDGET_ROWSPAN = 3;
 export type PaletteDragPayload = ChartType | "filter" | ScreenMaterialInsertType;
 
 export function setChartTypeDragData(dataTransfer: DataTransfer, chartType: ChartType): void {
+  beginPaletteDragSession(chartType);
   dataTransfer.setData(DASHBOARD_CHART_DND_TYPE, chartType);
   dataTransfer.effectAllowed = "copy";
 }
 
 export function setFilterWidgetDragData(dataTransfer: DataTransfer): void {
+  beginPaletteDragSession("filter");
   dataTransfer.setData(DASHBOARD_FILTER_DND_TYPE, "filter");
   dataTransfer.effectAllowed = "copy";
 }
@@ -29,6 +38,7 @@ export function setScreenInsertDragData(
   dataTransfer: DataTransfer,
   insertType: ScreenMaterialInsertType,
 ): void {
+  beginPaletteDragSession(insertType);
   dataTransfer.setData(DASHBOARD_SCREEN_INSERT_DND_TYPE, insertType);
   dataTransfer.effectAllowed = "copy";
 }
@@ -61,11 +71,13 @@ export function readScreenInsertFromDragEvent(event: Event): ScreenMaterialInser
 
 export function readPaletteDragPayload(event: Event): PaletteDragPayload | null {
   const dt = (event as DragEvent).dataTransfer;
-  if (!dt) return null;
+  if (!dt) return getPaletteDragSessionPayload();
   if (dt.getData(DASHBOARD_FILTER_DND_TYPE) === "filter") return "filter";
   const screenInsert = readScreenInsertFromDragEvent(event);
   if (screenInsert) return screenInsert;
-  return readChartTypeFromDragEvent(event);
+  const chartType = readChartTypeFromDragEvent(event);
+  if (chartType) return chartType;
+  return getPaletteDragSessionPayload();
 }
 
 export function isChartTypeDragEvent(event: React.DragEvent): boolean {
