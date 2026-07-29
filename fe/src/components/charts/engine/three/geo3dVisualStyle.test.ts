@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
+import { GEO3D_SCENE_CLOUD_LIGHTS_GROUP_NAME } from "./geo3dSceneCloudLights";
 import {
   applyGeo3dSceneClouds,
   applyGeo3dPlatformEffectsLayer,
@@ -81,6 +82,9 @@ describe("geo3dVisualStyle", () => {
     const handle = applyGeo3dSceneClouds(scene, { halfX: 9, halfZ: 6, maxY: 1, defaultDistance: 20 }, visual);
     expect(handle).not.toBeNull();
     expect(scene.fog).toBeNull();
+    expect(scene.children.some((child) => child.name === GEO3D_SCENE_CLOUD_LIGHTS_GROUP_NAME)).toBe(
+      true,
+    );
     handle?.dispose();
   });
 

@@ -4,6 +4,7 @@ import {
   DEFAULT_SCENE_CLOUD_DENSITY,
   DEFAULT_SCENE_CLOUD_HEIGHT,
   DEFAULT_SCENE_CLOUD_SPEED,
+  SCENE_CLOUD_SPEED_MAX,
   resolveCloudVisualProfile,
   resolveGeo3dSceneCloudDensity,
   resolveGeo3dSceneCloudHeight,
@@ -28,6 +29,9 @@ describe("geo3dSceneCloudStyle", () => {
     expect(options.density).toBe(1);
     expect(options.speed).toBe(0);
     expect(options.height).toBe(2);
+    expect(
+      resolveGeo3dSceneCloudSpeed({ sceneCloudSpeed: SCENE_CLOUD_SPEED_MAX + 2 }),
+    ).toBe(SCENE_CLOUD_SPEED_MAX);
   });
 
   it("density scales both instance count and visual thickness", () => {

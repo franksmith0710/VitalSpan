@@ -7,6 +7,9 @@ import {
 } from "@/lib/chartDeStyle";
 import type { ThreeGeoOrbitLayout } from "@/components/charts/engine/three/threeGeoOrbit";
 import {
+  buildGeo3dSceneCloudLights,
+} from "@/components/charts/engine/three/geo3dSceneCloudLights";
+import {
   buildGeo3dSceneClouds,
   removeGeo3dSceneClouds,
   type Geo3dSceneCloudsHandle,
@@ -255,8 +258,17 @@ export function applyGeo3dSceneClouds(
   removeGeo3dSceneClouds(scene);
   if (!visual.sceneFog) return null;
   const handle = buildGeo3dSceneClouds(layout, geo3dStyle);
+  const lights = buildGeo3dSceneCloudLights(layout);
   scene.add(handle.group);
-  return handle;
+  scene.add(lights.group);
+  const cloudDispose = handle.dispose.bind(handle);
+  return {
+    ...handle,
+    dispose() {
+      cloudDispose();
+      lights.dispose();
+    },
+  };
 }
 
 /** 布局完成后挂载地图下方底座装饰（双环/网格/涟漪） */

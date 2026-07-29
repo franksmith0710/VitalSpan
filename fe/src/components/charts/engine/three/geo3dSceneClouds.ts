@@ -10,6 +10,9 @@ import {
   wrapClusterAxis,
   type CloudClusterRuntime,
 } from "@/components/charts/engine/three/geo3dSceneCloudClusters";
+import {
+  removeGeo3dSceneCloudLights,
+} from "@/components/charts/engine/three/geo3dSceneCloudLights";
 import type { ChartGeo3dStyle } from "@/lib/chartDeStyle";
 
 export const GEO3D_SCENE_CLOUDS_GROUP_NAME = "geo3d-scene-clouds";
@@ -90,6 +93,7 @@ export function buildGeo3dSceneCloudsWithOptions(
 
 export function removeGeo3dSceneClouds(scene: THREE.Scene): void {
   scene.fog = null;
+  removeGeo3dSceneCloudLights(scene);
   const existing = scene.getObjectByName(GEO3D_SCENE_CLOUDS_GROUP_NAME);
   if (existing) scene.remove(existing);
 }

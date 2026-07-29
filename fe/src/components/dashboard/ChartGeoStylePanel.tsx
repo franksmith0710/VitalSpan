@@ -7,6 +7,7 @@ import {
   DEFAULT_SCENE_CLOUD_DENSITY,
   DEFAULT_SCENE_CLOUD_HEIGHT,
   DEFAULT_SCENE_CLOUD_SPEED,
+  SCENE_CLOUD_SPEED_MAX,
 } from "@/components/charts/engine/three/geo3dSceneCloudStyle";
 import {
   DEFAULT_PLATFORM_GRID_DENSITY,
@@ -276,7 +277,7 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                   value={geo3d.sceneCloudSpeed}
                   fallback={DEFAULT_SCENE_CLOUD_SPEED}
                   min={0}
-                  max={2}
+                  max={SCENE_CLOUD_SPEED_MAX}
                   step={0.05}
                   ariaLabel="场景云漂移速度"
                   onChange={(sceneCloudSpeed) => patchGeo3d({ sceneCloudSpeed })}

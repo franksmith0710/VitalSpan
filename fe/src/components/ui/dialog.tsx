@@ -24,10 +24,15 @@ const DialogOverlay = React.forwardRef<
 ));
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
+type DialogContentProps = React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+  /** 全宽/紧凑标题栏弹层可内联关闭按钮并设为 true */
+  hideCloseButton?: boolean;
+};
+
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+  DialogContentProps
+>(({ className, children, hideCloseButton = false, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
@@ -40,19 +45,21 @@ const DialogContent = React.forwardRef<
       {...props}
     >
       {children}
-      <DialogPrimitive.Close
-        className={cn(
-          "absolute top-4 right-4 inline-flex size-9 items-center justify-center rounded-full",
-          "bg-gray-100 text-gray-500 transition-colors",
-          "hover:bg-gray-200 hover:text-gray-700",
-          "focus:outline-hidden focus-visible:ring-3 focus-visible:ring-brand-500/20",
-          "disabled:pointer-events-none",
-          "dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-200",
-        )}
-      >
-        <X className="size-4" />
-        <span className="sr-only">关闭</span>
-      </DialogPrimitive.Close>
+      {hideCloseButton ? null : (
+        <DialogPrimitive.Close
+          className={cn(
+            "absolute top-4 right-4 inline-flex size-9 items-center justify-center rounded-full",
+            "bg-gray-100 text-gray-500 transition-colors",
+            "hover:bg-gray-200 hover:text-gray-700",
+            "focus:outline-hidden focus-visible:ring-3 focus-visible:ring-brand-500/20",
+            "disabled:pointer-events-none",
+            "dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-200",
+          )}
+        >
+          <X className="size-4" />
+          <span className="sr-only">关闭</span>
+        </DialogPrimitive.Close>
+      )}
     </DialogPrimitive.Content>
   </DialogPortal>
 ));

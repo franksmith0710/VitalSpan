@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import { buildGeo3dSceneClouds, buildGeo3dSceneCloudsWithOptions } from "./geo3dSceneClouds";
+import { GEO3D_SCENE_CLOUD_LIGHTS_GROUP_NAME } from "./geo3dSceneCloudLights";
 import { resolveCloudVisualProfile } from "./geo3dSceneCloudStyle";
 import { applyGeo3dSceneClouds, resolveGeo3dSceneClouds, resolveGeo3dVisualStyle } from "./geo3dVisualStyle";
 
@@ -36,7 +37,11 @@ describe("geo3dSceneClouds", () => {
     expect(handle).not.toBeNull();
     expect(scene.fog).toBeNull();
     expect(scene.children.some((child) => child.name === "geo3d-scene-clouds")).toBe(true);
+    expect(scene.children.some((child) => child.name === GEO3D_SCENE_CLOUD_LIGHTS_GROUP_NAME)).toBe(
+      true,
+    );
     handle?.dispose();
+    expect(scene.getObjectByName(GEO3D_SCENE_CLOUD_LIGHTS_GROUP_NAME)).toBeUndefined();
   });
 
   it("drifts cluster centers along prevailing wind", () => {

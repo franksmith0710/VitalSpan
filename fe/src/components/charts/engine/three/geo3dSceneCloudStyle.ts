@@ -3,6 +3,7 @@ import type { ChartGeo3dStyle } from "@/lib/chartDeStyle";
 export const DEFAULT_SCENE_CLOUD_DENSITY = 0.55;
 export const DEFAULT_SCENE_CLOUD_SPEED = 0.45;
 export const DEFAULT_SCENE_CLOUD_HEIGHT = 1;
+export const SCENE_CLOUD_SPEED_MAX = 6;
 
 export type ResolvedSceneCloudOptions = {
   density: number;
@@ -67,7 +68,7 @@ export function resolveGeo3dSceneCloudDensity(style: ChartGeo3dStyle): number {
 export function resolveGeo3dSceneCloudSpeed(style: ChartGeo3dStyle): number {
   const raw = style.sceneCloudSpeed;
   if (raw == null || !Number.isFinite(raw)) return DEFAULT_SCENE_CLOUD_SPEED;
-  return clamp(raw, 0, 2);
+  return clamp(raw, 0, SCENE_CLOUD_SPEED_MAX);
 }
 
 export function resolveGeo3dSceneCloudHeight(style: ChartGeo3dStyle): number {
