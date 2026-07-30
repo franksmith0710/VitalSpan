@@ -174,7 +174,7 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
               checked={showRegionBorder}
               onCheckedChange={(next) => patchGeo({ showRegionBorder: next })}
             />
-            {showRegionBorder ? (
+            {showRegionBorder && is3d ? (
               <InspectorInlineColorRow
                 label="边界颜色"
                 value={resolveGeoRegionBorderColorHex(geo, isDarkTheme, borderColorPreset)}
@@ -190,6 +190,7 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
             ) : null}
             <p className={INSPECTOR_HINT}>
               边界随下钻层级切换：全国显示省界，省级显示市界，市级显示区县界。
+              {chartType === "map" ? " 2D 地图边线颜色请在「基础样式」中调整。" : null}
             </p>
           </>
         ) : null}

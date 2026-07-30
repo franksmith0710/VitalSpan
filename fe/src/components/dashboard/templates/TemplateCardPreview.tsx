@@ -6,7 +6,6 @@ import { ComponentPreviewShell } from "@/components/dashboard/viz-components/Com
 import { prepareLayoutForListPreview } from "@/components/dashboard/stylePipeline";
 import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
 import { TemplateLayoutLivePreview } from "@/components/dashboard/templates/TemplateLayoutLivePreview";
-import { TemplatePreviewFooter } from "@/components/dashboard/templates/TemplatePreviewFooter";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { DashboardTemplateListItem } from "@/lib/dashboardTemplates";
 import { fetchTemplateDetail } from "@/lib/dashboardTemplates";
@@ -22,24 +21,16 @@ import { cn } from "@/lib/utils";
 type TemplateCardPreviewProps = {
   templateId: string;
   surfaceKind: DashboardTemplateListItem["surfaceKind"];
-  categoryKey: string;
-  visibility: DashboardTemplateListItem["visibility"];
-  status: DashboardTemplateListItem["status"];
   className?: string;
   eager?: boolean;
   /** 静态缩略图：live 预览加载前展示，避免灰块空壳 */
   thumbnailSrc?: string | null;
 };
 
-/**
- * 模板卡片预览：与可视化组件库 ComponentPayloadPreview 同壳层 + 顶栏元信息。
- */
+/** 模板卡片预览区：纯布局/live 缩略图，元信息由 VizTemplateCard 正文展示。 */
 export function TemplateCardPreview({
   templateId,
   surfaceKind,
-  categoryKey,
-  visibility,
-  status,
   className,
   eager = false,
   thumbnailSrc = null,
@@ -115,15 +106,6 @@ export function TemplateCardPreview({
     return () => observer.disconnect();
   }, [eager, templateId]);
 
-  const metaBar = (
-    <TemplatePreviewFooter
-      surfaceKind={surfaceKind}
-      categoryKey={categoryKey}
-      visibility={visibility}
-      status={status}
-    />
-  );
-
   const thumbnailFallback = thumbnailSrc ? (
     <img
       src={thumbnailSrc}
@@ -139,7 +121,7 @@ export function TemplateCardPreview({
   if (!layout?.widgets?.length && !loading && active && !detailQuery.isLoading) {
     return (
       <div ref={hostRef} className={cn("h-full", className)} data-testid="template-card-preview">
-        <ComponentPreviewShell header={metaBar} className="h-full">
+        <ComponentPreviewShell className="h-full">
           <div className="flex h-full items-center justify-center">
             <LayoutDashboard
               className={cn("size-10", isScreen ? "text-slate-600" : "text-gray-300 dark:text-gray-600")}
@@ -159,7 +141,7 @@ export function TemplateCardPreview({
       data-live={active && !loading && layout ? "true" : "false"}
       aria-hidden
     >
-      <ComponentPreviewShell header={metaBar} className="h-full">
+      <ComponentPreviewShell className="h-full">
         {active && !loading && layout?.widgets?.length ? (
           <TemplateLayoutLivePreview
             layout={layout}

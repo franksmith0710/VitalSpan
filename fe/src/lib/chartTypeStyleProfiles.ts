@@ -49,6 +49,8 @@ const PIE_STYLE: ChartStyleSectionId[] = [
   "tooltip",
 ];
 
+const MAP_2D_STYLE: ChartStyleSectionId[] = ["background", "mapBasic", "title", "geo", "remark"];
+
 const GEO_STYLE: ChartStyleSectionId[] = [...SHELL, "geo", "remark"];
 
 const MINIMAL: ChartStyleSectionId[] = [...SHELL];
@@ -92,7 +94,7 @@ const PROFILE_BY_TYPE: Record<string, ChartStyleSectionId[]> = {
   "word-cloud": [...MINIMAL, "wordCloudShape"],
   wordCloud: [...MINIMAL, "wordCloudShape"],
 
-  map: GEO_STYLE,
+  map: MAP_2D_STYLE,
   "map-3d": GEO_STYLE,
   heatmap: MINIMAL,
 

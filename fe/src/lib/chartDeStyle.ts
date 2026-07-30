@@ -87,6 +87,10 @@ export type ChartGeoStyle = {
   showRegionBorder?: boolean;
   /** 行政边界线颜色（#rrggbb）；未设置时跟随 3D 样式预设或主题 */
   regionBorderColor?: string;
+  /** 无数据/零值区块填充色（#rrggbb，2D 地图） */
+  regionFillColor?: string;
+  /** 地图右下角缩放 +/- 按钮（2D 地图） */
+  showZoomControl?: boolean;
 };
 
 export type ChartGeo3dStyle = {

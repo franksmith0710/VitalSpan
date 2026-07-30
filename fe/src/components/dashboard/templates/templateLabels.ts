@@ -82,8 +82,9 @@ export function categoryLabel(key: string): string {
   return TEMPLATE_CATEGORIES.find((c) => c.key === key)?.label ?? key;
 }
 
-export function templatePreviewAspectRatio(surfaceKind: VizSurfaceKind): string {
-  return surfaceKind === "data-screen" ? "16 / 9" : "4 / 3";
+export function templatePreviewAspectRatio(_surfaceKind: VizSurfaceKind): string {
+  /** Hub 卡片与组件库、看板列表缩略图统一 16:10，避免 minHeight 把预览区撑过高 */
+  return "16 / 10";
 }
 
 /** 内置模板缩略图（public 静态资源） */

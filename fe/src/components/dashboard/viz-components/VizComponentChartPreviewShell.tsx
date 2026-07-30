@@ -20,12 +20,15 @@ import { widgetChartIcon, WIDGET_CHART_LABELS } from "@/components/dashboard/wid
 type VizComponentChartPreviewShellProps = {
   widget: LayoutWidget & { chartConfig: ChartViewConfig };
   children: ReactNode;
+  /** 列表卡片缩略图：隐藏组件内标题栏，避免与卡片正文重复 */
+  compact?: boolean;
 };
 
 /** 组件库编辑预览：栅格看板 view 态外壳（含装饰边框 overlay），与 DashboardWidget 一致 */
 export function VizComponentChartPreviewShell({
   widget,
   children,
+  compact = false,
 }: VizComponentChartPreviewShellProps) {
   const chartConfig = widget.chartConfig;
   const scheme = resolveWidgetEffectiveScheme(undefined);
@@ -53,7 +56,7 @@ export function VizComponentChartPreviewShell({
       data-testid="viz-component-chart-shell"
     >
       <WidgetShellBackgroundLayers layers={shell} prefix="viz-chart-shell" />
-      {titleVisible ? (
+      {!compact && titleVisible ? (
         <div className="relative z-[1] flex shrink-0 items-center gap-2 border-b border-gray-100 px-3 py-2 dark:border-gray-800">
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-gray-100 text-gray-600 dark:bg-white/5 dark:text-gray-400">
             <Icon className="size-3.5" aria-hidden />
@@ -67,7 +70,7 @@ export function VizComponentChartPreviewShell({
           <span className="shrink-0 text-theme-sm text-gray-400">{typeLabel}</span>
         </div>
       ) : null}
-      {chartRemark.show ? (
+      {!compact && chartRemark.show ? (
         <p
           className="dw-hint relative z-[1] shrink-0 border-b border-gray-100 px-3 py-1.5 text-gray-500 dark:border-gray-800 dark:text-gray-400"
           data-testid={`viz-preview-chart-remark-${widget.id}`}

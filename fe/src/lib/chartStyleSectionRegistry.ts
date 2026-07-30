@@ -25,6 +25,7 @@ export type ChartStyleSectionId =
   | "stockLineShape"
   | "tooltip"
   | "palette"
+  | "mapBasic"
   | "geo"
   | "title"
   | "remark"

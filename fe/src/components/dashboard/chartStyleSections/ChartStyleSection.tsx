@@ -14,6 +14,7 @@ import {
   ChartRemarkStyleSection,
   ChartTitleStyleSection,
 } from "./ChartCommonStyleSections";
+import { ChartMapBasicStyleSection } from "./ChartMapBasicStyleSection";
 import {
   ChartAxisStyleSection,
   ChartCartesianShapeSection,
@@ -92,6 +93,8 @@ export function ChartStyleSection({ sectionId }: ChartStyleSectionProps) {
       return <ChartTooltipStyleSection />;
     case "palette":
       return <ChartPaletteStyleSection />;
+    case "mapBasic":
+      return cfg.chartType === "map" ? <ChartMapBasicStyleSection /> : null;
     case "geo":
       return (
         <ChartGeoStylePanel

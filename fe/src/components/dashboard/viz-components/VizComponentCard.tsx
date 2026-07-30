@@ -11,10 +11,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ComponentPayloadPreview } from "@/components/dashboard/viz-components/ComponentPayloadPreview";
 import {
+  categoryLabel,
   COMPONENT_ACTIONS,
+  statusLabel,
   surfaceLabel,
+  visibilityLabel,
   widgetTypeLabel,
 } from "@/components/dashboard/viz-components/componentLabels";
+import { WIDGET_CHART_LABELS } from "@/components/dashboard/widgetIcons";
 import type { VizComponentListItem, VizComponentPayload } from "@/lib/vizComponents";
 import { cn } from "@/lib/utils";
 
@@ -47,9 +51,23 @@ export function VizComponentCard({
   const showArchive = canManage && item.status === "published";
   const referenceCount = item.referenceCount ?? 0;
   const surfaces = item.surfaceKinds ?? [];
-  const metaLine = item.description
-    ? item.description
-    : `${widgetTypeLabel(item.widgetType)} · v${item.contentRevision}`;
+
+  const chartTypeLabel =
+    item.widgetType === "chart" && payload?.chartConfig?.chartType
+      ? WIDGET_CHART_LABELS[payload.chartConfig.chartType] ?? payload.chartConfig.chartType
+      : undefined;
+
+  const typeHint =
+    item.widgetType === "chart" ? chartTypeLabel : widgetTypeLabel(item.widgetType);
+
+  const metaParts = [
+    typeHint,
+    categoryLabel(item.categoryKey),
+    visibilityLabel(item.visibility),
+    item.status !== "published" ? statusLabel(item.status) : null,
+  ].filter(Boolean);
+
+  const secondaryLine = item.description ?? metaParts.join(" · ");
 
   const copyId = async () => {
     try {
@@ -77,9 +95,6 @@ export function VizComponentCard({
           widgetType={item.widgetType}
           payload={payload}
           payloadLoading={payloadLoading}
-          categoryKey={item.categoryKey}
-          visibility={item.visibility}
-          status={item.status}
           className="h-full"
         />
       </div>
@@ -90,9 +105,11 @@ export function VizComponentCard({
             <h2 className="truncate text-theme-sm font-semibold text-gray-900 dark:text-white">
               {item.name}
             </h2>
-            <p className="mt-0.5 truncate text-theme-xs text-gray-500 dark:text-gray-400">
-              {metaLine}
-            </p>
+            {secondaryLine ? (
+              <p className="mt-0.5 truncate text-theme-xs text-gray-500 dark:text-gray-400">
+                {secondaryLine}
+              </p>
+            ) : null}
           </div>
           {surfaces.length > 0 ? (
             <div className="flex max-w-[42%] shrink-0 flex-wrap justify-end gap-0.5">

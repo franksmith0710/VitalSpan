@@ -137,7 +137,7 @@ export function PreviewFooterMeta({ widgetType, detail, trailing }: PreviewFoote
   const Icon = WIDGET_ICONS[safeType];
 
   return (
-    <>
+    <div className="flex w-full items-center justify-between gap-1.5">
       <span className="inline-flex min-w-0 items-center gap-1 truncate text-[10px] font-medium text-gray-600 dark:text-gray-400">
         <Icon className="size-3 shrink-0" aria-hidden />
         <span className="truncate">{widgetTypeLabel(safeType)}</span>
@@ -155,7 +155,7 @@ export function PreviewFooterMeta({ widgetType, detail, trailing }: PreviewFoote
           {trailing}
         </span>
       ) : null}
-    </>
+    </div>
   );
 }
 

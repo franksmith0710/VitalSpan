@@ -4,11 +4,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { TemplateCardPreview } from "@/components/dashboard/templates/TemplateCardPreview";
 import { TemplatePreviewDialog } from "@/components/dashboard/templates/TemplatePreviewDialog";
+import { TemplatePreviewFooter } from "@/components/dashboard/templates/TemplatePreviewFooter";
 import {
   resolveTemplateThumbnail,
-  surfaceLabel,
   TEMPLATE_ACTIONS,
-  templatePreviewAspectRatio,
 } from "@/components/dashboard/templates/templateLabels";
 import {
   exportTemplateEnvelope,
@@ -71,19 +70,10 @@ export function VizTemplateCard({
       )}
       data-testid={`viz-template-card-${item.id}`}
     >
-      <div
-        className="relative overflow-hidden border-b border-gray-100 dark:border-white/[0.06]"
-        style={{
-          aspectRatio: templatePreviewAspectRatio(item.surfaceKind),
-          minHeight: item.surfaceKind === "data-screen" ? 220 : 260,
-        }}
-      >
+      <div className="relative aspect-[16/10] overflow-hidden border-b border-gray-100 dark:border-white/[0.06]">
         <TemplateCardPreview
           templateId={item.id}
           surfaceKind={item.surfaceKind}
-          categoryKey={item.categoryKey}
-          visibility={item.visibility}
-          status={item.status}
           thumbnailSrc={thumbnailSrc}
           eager={previewEager}
           className="h-full"
@@ -91,15 +81,16 @@ export function VizTemplateCard({
       </div>
 
       <div className="flex flex-1 flex-col gap-2.5 p-3">
-        <header className="space-y-1.5">
-          <div className="flex items-start justify-between gap-2">
-            <h2 className="text-theme-sm font-semibold leading-snug text-gray-900 dark:text-white">
-              {item.name}
-            </h2>
-            <span className="shrink-0 rounded-md bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-white/[0.06] dark:text-gray-400">
-              {surfaceLabel(item.surfaceKind)}
-            </span>
-          </div>
+        <header className="space-y-1">
+          <h2 className="text-theme-sm font-semibold leading-snug text-gray-900 dark:text-white">
+            {item.name}
+          </h2>
+          <TemplatePreviewFooter
+            surfaceKind={item.surfaceKind}
+            categoryKey={item.categoryKey}
+            visibility={item.visibility}
+            status={item.status}
+          />
           {item.description ? (
             <p className="line-clamp-2 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
               {item.description}

@@ -30,7 +30,7 @@ import { useChartVisualScale } from "@/hooks/useChartVisualScale";
 import { VIZ_WHEEL_ZOOM_SURFACE_ATTR } from "@/components/dashboard/pixelCanvas/pixelCanvasWheelScroll";
 import { readChartDeStyle, readChartGeoStyle, readChartGeo3dStyle } from "@/lib/chartDeStyle";
 import { buildGeo3dStyleContentSig } from "@/components/charts/engine/three/geo3dVisualStyle";
-import { buildGeoRegionBorderContentSig } from "@/components/charts/engine/geo/geoRegionBorderStyle";
+import { buildGeoMapStyleContentSig } from "@/components/charts/engine/geo/geoRegionFillStyle";
 import { cn } from "@/lib/utils";
 
 type PaintMode = "data" | "live" | "commit";
@@ -167,7 +167,10 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     if (isThreeMap) {
       return buildGeo3dStyleContentSig(readChartGeo3dStyle(de), geo);
     }
-    return buildGeoRegionBorderContentSig(geo);
+    return buildGeoMapStyleContentSig(geo, {
+      paletteOpacity: de.paletteOpacity,
+      paletteId: de.paletteId,
+    });
   }, [chartConfig, isThreeMap]);
   const contentKey = useMemo(
     () =>

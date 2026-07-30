@@ -8,12 +8,14 @@ import { fitChinaGeoProjection } from "@/components/charts/engine/geo/geoProject
 import { mountGeoChoroplethAtmosphere, paintGeoSilhouetteGlow } from "@/components/charts/engine/geo/geoChoroplethVisual";
 import { GEO_MAP_SCALE_LIMIT, resolveEmbeddedGeoRoam, VS_REGIONS_MAP_ID } from "@/components/charts/engine/geo/geoConstants";
 import {
+  buildGeoSurfacePalette,
   colorForGeoHover,
   colorForGeoValue,
   geoStrokeWidth,
-  geoSurfaceColors,
+  resolveGeoMapOpacity,
 } from "@/components/charts/engine/geo/geoSurfaceColors";
 import { resolveGeoRegionBorder } from "@/components/charts/engine/geo/geoRegionBorderStyle";
+import { mountGeoZoomControls } from "@/components/charts/engine/geo/geoZoomControls";
 import { createTooltipLayer, hideTooltip, showMergedTooltip } from "@/components/charts/engine/d3/core/tooltipLayer";
 import { chartTransition, prefersReducedMotion } from "@/components/charts/engine/d3/core/animate";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
@@ -42,6 +44,8 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
   const mapId = mapIdRaw?.trim() || VS_REGIONS_MAP_ID;
 
   const roam = resolveEmbeddedGeoRoam(geoStyle.roam);
+  const showZoomControl = geoStyle.showZoomControl === true;
+  const mapOpacity = resolveGeoMapOpacity(geoStyle.mapOpacity);
   const showRegionLabel = geoStyle.showRegionLabel === true;
   const showVisualMap = geoStyle.visualMap !== false;
   const regionBorder = resolveGeoRegionBorder(geoStyle, isDark);
@@ -86,7 +90,10 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
 
   container.replaceChildren();
 
-  const surface = geoSurfaceColors(isDark);
+  const surface = buildGeoSurfacePalette(isDark, {
+    colors: config.colors,
+    regionFillColor: geoStyle.regionFillColor,
+  });
   const margin = { top: 8, right: 12, bottom: 24, left: 12 };
   const innerW = Math.max(0, width - margin.left - margin.right);
   const innerH = Math.max(0, height - margin.top - margin.bottom);
@@ -151,7 +158,7 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
     .attr("class", "region")
     .attr("d", (d) => pathGen({ type: "Feature", properties: {}, geometry: d.geometry! }) ?? "")
     .attr("fill", (d) => colorForGeoValue(d.value, minVal, maxVal, surface))
-    .attr("fill-opacity", (d) => (d.value > 0 ? 0.96 : 0.88))
+    .attr("fill-opacity", (d) => ((d.value > 0 ? 0.96 : 0.88) * mapOpacity))
     .attr("fill-rule", "evenodd")
     .attr("stroke", regionBorder.show ? regionBorder.colorCss : "none")
     .attr("stroke-width", regionBorder.show ? strokeWidth : 0)
@@ -183,7 +190,7 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
       .style("display", null)
       .attr("d", featurePath(d.geometry!))
       .attr("fill", colorForGeoHover(d.value, minVal, maxVal, surface))
-      .attr("fill-opacity", 1)
+      .attr("fill-opacity", mapOpacity)
       .attr("stroke", regionBorder.show ? regionBorder.hoverColorCss : "none")
       .attr("stroke-width", regionBorder.show ? strokeWidth * 1.55 : 0)
       .attr("stroke-opacity", 0.95);
@@ -292,7 +299,8 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
   }
 
   let detachZoom = () => undefined;
-  if (roam) {
+  let detachZoomControls = () => undefined;
+  if (roam || showZoomControl) {
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([GEO_MAP_SCALE_LIMIT.min, GEO_MAP_SCALE_LIMIT.max])
@@ -300,21 +308,38 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
         [0, 0],
         [width, height],
       ])
+      .filter((event) => {
+        if (event.type === "wheel" || event.type === "mousedown" || event.type.startsWith("touch")) {
+          return roam;
+        }
+        return true;
+      })
       .on("zoom", (event) => {
         g.attr("transform", event.transform.toString());
       });
     root.call(zoom);
-    try {
-      root.call(zoom.transform, d3.zoomIdentity);
-    } catch {
-      // jsdom 无 layout，跳过初始 transform
+    if (roam) {
+      try {
+        root.call(zoom.transform, d3.zoomIdentity);
+      } catch {
+        // jsdom 无 layout，跳过初始 transform
+      }
+      root.on("dblclick.zoom", () => {
+        root.transition().duration(300).call(zoom.transform, d3.zoomIdentity);
+      });
     }
-    root.on("dblclick.zoom", () => {
-      root.transition().duration(300).call(zoom.transform, d3.zoomIdentity);
-    });
+    if (showZoomControl) {
+      detachZoomControls = mountGeoZoomControls({
+        container,
+        svg: root.node()!,
+        zoom,
+        zoomRoot: g,
+      });
+    }
     detachZoom = () => {
       root.on(".zoom", null);
       root.on("dblclick.zoom", null);
+      detachZoomControls();
     };
   }
 

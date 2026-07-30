@@ -19,6 +19,8 @@ type VizComponentLivePreviewProps = {
   /** 列表卡片等场景：进视口后再挂载图表 */
   lazy?: boolean;
   geo3dRenderTier?: Geo3dRenderTier;
+  /** 列表卡片缩略图：隐藏组件内标题栏 */
+  compact?: boolean;
 };
 
 export function VizComponentLivePreview({
@@ -26,6 +28,7 @@ export function VizComponentLivePreview({
   className,
   lazy = false,
   geo3dRenderTier,
+  compact = false,
 }: VizComponentLivePreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { ref: viewRef, inView } = useInViewport<HTMLDivElement>({
@@ -59,6 +62,7 @@ export function VizComponentLivePreview({
       {widget.type === "chart" && widget.chartConfig ? (
         <VizComponentChartPreviewShell
           widget={widget as LayoutWidget & { chartConfig: NonNullable<typeof widget.chartConfig> }}
+          compact={compact}
         >
           <WidgetShellLegendProvider>
             <WidgetChartLegendShell>

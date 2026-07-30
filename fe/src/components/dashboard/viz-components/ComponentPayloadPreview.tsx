@@ -1,5 +1,5 @@
-import { useMemo, type ReactNode } from "react";
-import type { VizComponentListItem, VizComponentPayload, VizWidgetType } from "@/lib/vizComponents";
+import { useMemo } from "react";
+import type { VizComponentPayload, VizWidgetType } from "@/lib/vizComponents";
 import { vizPayloadToLayoutWidget } from "@/lib/vizComponentPageUtils";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -7,11 +7,9 @@ import {
   ComponentPreviewShell,
   FilterPreviewMock,
   MediaPreviewMock,
-  PreviewFooterMeta,
   TextPreviewMock,
 } from "./ComponentCardPreview";
 import { VizComponentLivePreview } from "./VizComponentLivePreview";
-import { categoryLabel, statusLabel, visibilityLabel } from "./componentLabels";
 
 type ComponentPayloadPreviewProps = {
   componentId: string;
@@ -19,9 +17,6 @@ type ComponentPayloadPreviewProps = {
   widgetType: VizWidgetType;
   payload?: VizComponentPayload;
   payloadLoading?: boolean;
-  categoryKey?: string;
-  visibility?: VizComponentListItem["visibility"];
-  status?: VizComponentListItem["status"];
   className?: string;
 };
 
@@ -30,26 +25,6 @@ function normalizeWidgetType(type: string | undefined): VizWidgetType {
     return type;
   }
   return "chart";
-}
-
-function buildFooterTrailing({
-  categoryKey,
-  visibility,
-  status,
-}: Pick<ComponentPayloadPreviewProps, "categoryKey" | "visibility" | "status">): ReactNode {
-  const parts: string[] = [];
-  if (categoryKey) parts.push(categoryLabel(categoryKey));
-  if (visibility) parts.push(visibilityLabel(visibility));
-  if (status && status !== "published") parts.push(statusLabel(status));
-  if (parts.length === 0) return null;
-  return parts.join(" · ");
-}
-
-function buildDetail(widgetType: VizWidgetType, payload?: VizComponentPayload): string | undefined {
-  if (widgetType === "chart") {
-    return payload?.chartConfig?.chartType;
-  }
-  return undefined;
 }
 
 function hasRenderablePayload(widgetType: VizWidgetType, payload?: VizComponentPayload): boolean {
@@ -68,15 +43,13 @@ function MockPreview({ widgetType }: { widgetType: VizWidgetType }) {
   return <ChartPreviewMock />;
 }
 
+/** 组件卡片预览区：纯 payload/live 缩略图，元信息由 VizComponentCard 正文展示。 */
 export function ComponentPayloadPreview({
   componentId,
   componentName,
   widgetType,
   payload,
   payloadLoading = false,
-  categoryKey,
-  visibility,
-  status,
   className,
 }: ComponentPayloadPreviewProps) {
   const safeType = normalizeWidgetType(widgetType);
@@ -94,20 +67,11 @@ export function ComponentPayloadPreview({
   }, [canLive, componentId, componentName, payload, safeType]);
 
   return (
-    <ComponentPreviewShell
-      className={className}
-      footer={
-        <PreviewFooterMeta
-          widgetType={safeType}
-          detail={buildDetail(safeType, payload)}
-          trailing={buildFooterTrailing({ categoryKey, visibility, status })}
-        />
-      }
-    >
+    <ComponentPreviewShell className={className}>
       {payloadLoading ? (
         <Skeleton className="h-full w-full rounded-none" />
       ) : widget ? (
-        <VizComponentLivePreview widget={widget} lazy geo3dRenderTier="thumbnail" />
+        <VizComponentLivePreview widget={widget} lazy geo3dRenderTier="thumbnail" compact />
       ) : (
         <MockPreview widgetType={safeType} />
       )}

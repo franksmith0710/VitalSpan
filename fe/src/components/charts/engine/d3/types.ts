@@ -108,6 +108,10 @@ export type D3GeoStyleProps = {
   visualMap?: boolean;
   showRegionBorder?: boolean;
   regionBorderColor?: string;
+  regionFillColor?: string;
+  showZoomControl?: boolean;
+  /** 配色不透明度 0–1（deStyle.paletteOpacity） */
+  mapOpacity?: number;
 };
 
 export type D3GeoRenderConfig = D3RenderConfigBase & {

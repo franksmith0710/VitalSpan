@@ -165,3 +165,31 @@ export function geoValueIntensity(value: number, min: number, max: number): numb
 export function geoStrokeWidth(chartWidth: number): number {
   return Math.max(0.75, Math.min(1.2, chartWidth / 320));
 }
+
+/** 图表配色 + 自定义区块填充 → 2D choropleth 色带 */
+export function buildGeoSurfacePalette(
+  isDark: boolean,
+  options: { colors?: readonly string[]; regionFillColor?: string } = {},
+): GeoSurfacePalette {
+  const fallback = geoSurfaceColors(isDark);
+  const palette = options.colors?.filter(Boolean) ?? [];
+  const emptyFill = options.regionFillColor?.trim() || fallback.emptyFill;
+  if (palette.length === 0) {
+    return { ...fallback, emptyFill };
+  }
+  const at = (index: number, defaultColor: string) =>
+    palette[Math.min(index, palette.length - 1)] ?? defaultColor;
+  return {
+    ...fallback,
+    emptyFill,
+    rangeLow: at(0, fallback.rangeLow),
+    rangeMid: at(Math.max(1, Math.floor(palette.length / 3)), fallback.rangeMid),
+    rangeHigh: at(Math.max(2, Math.floor((palette.length * 2) / 3)), fallback.rangeHigh),
+    rangePeak: at(palette.length - 1, fallback.rangePeak),
+  };
+}
+
+export function resolveGeoMapOpacity(opacity?: number): number {
+  if (opacity == null || !Number.isFinite(opacity)) return 1;
+  return Math.max(0, Math.min(1, opacity));
+}
