@@ -63,4 +63,19 @@ describe("embedSdk", () => {
     destroy(handle);
     expect(host.innerHTML).toBe("");
   });
+
+  it("T-VIZ-R237-007-04: dashboard target uses /embed/screen/ path", async () => {
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    const handle = await init({
+      container: host,
+      token: "tok-dash",
+      targetType: "dashboard",
+      targetId: "dash-99",
+    });
+    expect(handle.iframe.src).toContain("/embed/screen/dash-99");
+    expect(handle.iframe.src).not.toContain("/embed/chart/");
+    expect(handle.iframe.title).toBe("VitalSpan 嵌入大屏");
+    destroy(handle);
+  });
 });

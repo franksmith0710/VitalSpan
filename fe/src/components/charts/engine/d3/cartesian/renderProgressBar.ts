@@ -29,6 +29,7 @@ export function renderD3ProgressBarChart(
     barWidthRatio,
     barRadius,
     axisStyle,
+    trackOpacity = 0.35,
   } = config;
 
   const barRx = barRadius ?? BAR_RX;
@@ -68,7 +69,7 @@ export function renderD3ProgressBarChart(
     .attr("height", y.bandwidth())
     .attr("rx", barRx)
     .attr("fill", trackColor)
-    .attr("opacity", 0.35);
+    .attr("opacity", trackOpacity);
 
   plot
     .selectAll("g.progress")

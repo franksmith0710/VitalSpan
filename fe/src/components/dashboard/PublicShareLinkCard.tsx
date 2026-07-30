@@ -52,7 +52,8 @@ export function PublicShareLinkCard({
       </CardHeader>
       <CardContent className="space-y-3 pt-6">
         <p className="text-theme-sm text-gray-500 dark:text-gray-400">
-          生成带过期时间的只读链接，持有链接者无需登录即可在浏览器中查看「{name}」。
+          生成带过期时间的只读链接，持有链接者无需登录即可在浏览器中查看「{name}」。链接路径为
+          /embed/screen/…（整板只读预览；v1 看板以网格布局展示）。
         </p>
         <p className="text-theme-xs text-amber-600 dark:text-amber-400">
           请仅在受控范围内分享；链接到期后自动失效。

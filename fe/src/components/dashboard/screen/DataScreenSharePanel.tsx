@@ -10,6 +10,7 @@ import { useScreenAutoRefresh } from "@/components/dashboard/screen/useScreenAut
 import { dataScreenPreviewPath } from "@/lib/dataScreenLayout";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
+import { ChartEmbedShareActions } from "@/components/dashboard/ChartEmbedShareActions";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import type { DashboardWidgetBase } from "@/components/dashboard/layoutUtils";
 
@@ -121,12 +122,11 @@ export function DataScreenSharePanel({ dashboardId, name, layout }: DataScreenSh
             {widgets.map((widget) => {
               const chartId = chartIdFromWidget(widget);
               if (!chartId) return null;
-              const embedUrl = `${window.location.origin}/embed/chart/${chartId}`;
               return (
                 <div key={widget.id} className="space-y-2 border-b border-gray-100 pb-4 last:border-0 dark:border-gray-800">
                   <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">{widget.title}</p>
-                  <p className="break-all font-mono text-theme-xs text-gray-500">{embedUrl}</p>
-                  <p className="text-theme-xs text-gray-400">须通过嵌入分享页签发 token 后访问。</p>
+                  <p className="text-theme-xs text-gray-400">单组件链接须签发 token 后方可匿名访问。</p>
+                  <ChartEmbedShareActions chartId={chartId} mode="public" theme="dark" />
                 </div>
               );
             })}

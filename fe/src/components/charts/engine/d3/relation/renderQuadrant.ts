@@ -2,6 +2,7 @@ import * as d3 from "d3";
 import { resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
 import { renderD3ScatterChart } from "@/components/charts/engine/d3/relation/renderScatter";
 import type { D3RenderConfig } from "@/components/charts/engine/d3/types";
+import { readCompareStyleFromPlanOptions } from "@/lib/applyChartDeStyleBlocks";
 
 /** 象限图：散点 + 均值十字分割线 */
 export function renderD3QuadrantChart(container: HTMLElement, config: D3RenderConfig): () => void {
@@ -31,8 +32,14 @@ export function renderD3QuadrantChart(container: HTMLElement, config: D3RenderCo
   const plot = d3.select(svg).select<SVGGElement>("g");
   if (plot.empty()) return cleanupScatter;
 
+  const quadrantStyle = readCompareStyleFromPlanOptions(config.options);
+  const lineColor = quadrantStyle.quadrantLineColor ?? "#64748b";
+  const lineWidth = quadrantStyle.quadrantLineWidth ?? 1.5;
+  const showRegionBg = quadrantStyle.quadrantShowRegionBg !== false;
+  const regionOpacity = quadrantStyle.quadrantRegionOpacity ?? 0.1;
+
   const depthLevel = resolveEffectiveDepth(config.depthVisual);
-  if (depthLevel !== "off") {
+  if (depthLevel !== "off" && showRegionBg) {
     const xMid = xScale(xMean);
     const yMid = yScale(yMean);
     const quadrants = [
@@ -60,7 +67,7 @@ export function renderD3QuadrantChart(container: HTMLElement, config: D3RenderCo
         .attr("cx", q.cx === 0 ? "0%" : "100%")
         .attr("cy", q.cy === 0 ? "0%" : "100%")
         .attr("r", "100%");
-      grad.append("stop").attr("offset", "0%").attr("stop-color", "#465fff").attr("stop-opacity", 0.1);
+      grad.append("stop").attr("offset", "0%").attr("stop-color", "#465fff").attr("stop-opacity", regionOpacity);
       grad.append("stop").attr("offset", "100%").attr("stop-color", "#465fff").attr("stop-opacity", 0);
       bg.append("rect")
         .attr("x", q.x)
@@ -79,8 +86,8 @@ export function renderD3QuadrantChart(container: HTMLElement, config: D3RenderCo
     .attr("x2", margin.left + xScale(xMean))
     .attr("y1", margin.top)
     .attr("y2", margin.top + innerH)
-    .attr("stroke", "#64748b")
-    .attr("stroke-width", 1.5)
+    .attr("stroke", lineColor)
+    .attr("stroke-width", lineWidth)
     .attr("stroke-dasharray", "4 3");
 
   plot
@@ -90,8 +97,8 @@ export function renderD3QuadrantChart(container: HTMLElement, config: D3RenderCo
     .attr("x2", margin.left + innerW)
     .attr("y1", margin.top + yScale(yMean))
     .attr("y2", margin.top + yScale(yMean))
-    .attr("stroke", "#64748b")
-    .attr("stroke-width", 1.5)
+    .attr("stroke", lineColor)
+    .attr("stroke-width", lineWidth)
     .attr("stroke-dasharray", "4 3");
 
   return () => {

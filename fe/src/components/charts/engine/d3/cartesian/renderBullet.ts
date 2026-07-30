@@ -26,6 +26,8 @@ export function renderD3BulletChart(container: HTMLElement, config: D3BulletRend
     barWidthRatio,
     barRadius,
     axisStyle,
+    targetLineWidth = 2,
+    rangeOpacity = 0.55,
   } = config;
 
   const barRx = barRadius ?? BAR_RX;
@@ -62,7 +64,7 @@ export function renderD3BulletChart(container: HTMLElement, config: D3BulletRend
         .attr("width", Math.max(0, x(zone.end) - x(start)))
         .attr("height", barH)
         .attr("fill", zone.color)
-        .attr("opacity", 0.55);
+        .attr("opacity", rangeOpacity);
       start = zone.end;
     }
 
@@ -107,7 +109,7 @@ export function renderD3BulletChart(container: HTMLElement, config: D3BulletRend
       .attr("y1", y0 - 2)
       .attr("y2", y0 + barH + 2)
       .attr("stroke", theme.axisLabel)
-      .attr("stroke-width", 2);
+      .attr("stroke-width", targetLineWidth);
 
     if (showLabel) {
       plot

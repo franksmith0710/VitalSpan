@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ScreenVisualEditRail } from "./ScreenVisualEditRail";
 import {
   createScreenBorderWidget,
+  createScreenDateTimeWidget,
   createScreenIconWidget,
   createScreenShapeWidget,
   createScreenTitleBarWidget,
@@ -128,5 +129,20 @@ describe("ScreenVisualEditRail", () => {
 
     const lastCall = onTextConfigChange.mock.calls.at(-1)?.[0];
     expect(lastCall?.screenStyle?.titleBar?.showSideLines).toBe(false);
+  });
+
+  it("updates datetime weekday visibility from style panel", async () => {
+    const user = userEvent.setup();
+    const onTextConfigChange = vi.fn();
+    const datetimeWidget = asTextWidget(createScreenDateTimeWidget([]));
+
+    render(
+      <ScreenVisualEditRail widget={datetimeWidget} onTextConfigChange={onTextConfigChange} />,
+    );
+
+    await user.click(screen.getByRole("switch", { name: "显示星期" }));
+
+    const lastCall = onTextConfigChange.mock.calls.at(-1)?.[0];
+    expect(lastCall?.screenStyle?.datetime?.showWeekday).toBe(false);
   });
 });

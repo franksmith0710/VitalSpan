@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { useNavigate } from "react-router";
-import { apiFetch, registerUnauthorizedHandler } from "@/lib/api";
+import { apiFetch, isEmbedShareContext, registerUnauthorizedHandler } from "@/lib/api";
 import { clearAuthToken, getAuthToken } from "@/lib/auth-token";
 import { shouldClearAuthSession } from "@/lib/auth-session";
 import type { SessionRole } from "@/lib/session";
@@ -84,7 +84,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const unregisterUnauthorizedHandler = registerUnauthorizedHandler(logout);
+    const unregisterUnauthorizedHandler = registerUnauthorizedHandler(() => {
+      if (isEmbedShareContext()) {
+        clearAuthToken();
+        setUser(null);
+        return;
+      }
+      logout();
+    });
     void refresh();
     return unregisterUnauthorizedHandler;
   }, [logout, refresh]);

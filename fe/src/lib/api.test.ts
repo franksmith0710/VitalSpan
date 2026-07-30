@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ApiRequestError,
   apiFetch,
+  getAuthHeaders,
+  isEmbedShareContext,
   registerUnauthorizedHandler,
   resetUnauthorizedHandler,
 } from "@/lib/api";
@@ -208,5 +210,34 @@ describe("apiFetch 401 classification", () => {
     const fetchOptions = vi.mocked(fetch).mock.calls[0]?.[1];
     expect(fetchOptions).toMatchObject({ method: "POST" });
     expect(fetchOptions).not.toHaveProperty("preserveSessionOn401Codes");
+  });
+});
+
+describe("embed share auth", () => {
+  const embedLocation = {
+    pathname: "/embed/screen/d1",
+    search: "?token=embed-public-token&shareMode=public",
+    href: "http://localhost:5173/embed/screen/d1?token=embed-public-token&shareMode=public",
+  };
+
+  it("prefers embed token over stale bearer on embed URLs", () => {
+    vi.stubGlobal("location", embedLocation);
+    setAuthToken("stale-jwt");
+    expect(getAuthHeaders()).toEqual({ "X-Embed-Token": "embed-public-token" });
+    expect(isEmbedShareContext()).toBe(true);
+  });
+
+  it("does not redirect to login on 401 when embed token is present", async () => {
+    vi.stubGlobal("location", embedLocation);
+    setAuthToken("stale-jwt");
+    const onUnauthorized = vi.fn();
+    registerUnauthorizedHandler(onUnauthorized);
+    mockJson({ message: "Invalid embed token", code: "EMBED_TOKEN_INVALID" }, 401);
+
+    const error = await expectApiError(apiFetch("/api/v1/embed/query/execute"));
+
+    expect(getAuthToken()).toBe("stale-jwt");
+    expect(onUnauthorized).not.toHaveBeenCalled();
+    expect(error.code).toBe("EMBED_TOKEN_INVALID");
   });
 });

@@ -42,10 +42,11 @@ async function fetchSdkParams(apiBase: string, token: string): Promise<SdkParams
 function buildEmbedSrc(targetType: string, targetId: string, token: string, theme?: string): string {
   const origin = window.location.origin;
   const themeQs = theme ? `&theme=${encodeURIComponent(theme)}` : "";
-  if (targetType === "dashboard") {
-    return `${origin}/embed/chart/${encodeURIComponent(targetId)}?token=${encodeURIComponent(token)}${themeQs}`;
-  }
-  return `${origin}/embed/chart/${encodeURIComponent(targetId)}?token=${encodeURIComponent(token)}${themeQs}`;
+  const path =
+    targetType === "dashboard"
+      ? `/embed/screen/${encodeURIComponent(targetId)}`
+      : `/embed/chart/${encodeURIComponent(targetId)}`;
+  return `${origin}${path}?token=${encodeURIComponent(token)}${themeQs}`;
 }
 
 export async function init(options: EmbedSdkInitOptions): Promise<EmbedSdkHandle> {
@@ -65,7 +66,7 @@ export async function init(options: EmbedSdkInitOptions): Promise<EmbedSdkHandle
   iframe.src = buildEmbedSrc(options.targetType, options.targetId, options.token, options.theme);
   iframe.className = "w-full border-0";
   iframe.style.height = "480px";
-  iframe.title = "VitalSpan 嵌入图表";
+  iframe.title = options.targetType === "dashboard" ? "VitalSpan 嵌入大屏" : "VitalSpan 嵌入图表";
   iframe.addEventListener("load", () => options.onReady?.(), { once: true });
   host.innerHTML = "";
   host.appendChild(iframe);

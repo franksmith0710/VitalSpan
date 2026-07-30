@@ -1,6 +1,7 @@
 import type { EngineCapabilities } from "@/components/charts/engine/capabilities";
 import type { ChartPluginDef, DePaletteCategory } from "@/components/charts/engine/plugins/types";
-import type { ChartStyleSectionId } from "@/lib/chartStyleSectionRegistry";
+import { chartStyleSectionsFromProfile } from "@/lib/chartTypeStyleProfiles";
+import type { ChartType } from "@/lib/chartViewConfig";
 
 const STATS: EngineCapabilities = {
   legend: true,
@@ -65,31 +66,13 @@ const KPI: EngineCapabilities = {
   styleVariant: false,
 };
 
-const LINE_BAR_SECTIONS: ChartStyleSectionId[] = [
-  "variantBasic",
-  "background",
-  "palette",
-  "title",
-  "remark",
-  "legend",
-  "label",
-];
-
-const PIE_SECTIONS: ChartStyleSectionId[] = LINE_BAR_SECTIONS;
-const GEO_SECTIONS: ChartStyleSectionId[] = ["background", "palette", "geo", "title", "remark"];
-const TABLE_SECTIONS: ChartStyleSectionId[] = ["tableBasic", "palette", "title", "background"];
-const MINIMAL: ChartStyleSectionId[] = ["background", "palette", "title"];
-const FLOW_WITH_LEGEND: ChartStyleSectionId[] = ["background", "palette", "title", "legend"];
-const HEATMAP_SECTIONS: ChartStyleSectionId[] = ["background", "palette", "geo", "title"];
-const KPI_SECTIONS: ChartStyleSectionId[] = ["background", "palette", "title", "label"];
-
+/** properties 镜像 chartTypeStyleProfiles（G13：废弃手工 sections 分叉） */
 function def(
   type: string,
   paletteCategory: DePaletteCategory,
   library: ChartPluginDef["library"],
   renderer: ChartPluginDef["renderer"],
   engineCapabilities: EngineCapabilities,
-  properties: ChartStyleSectionId[],
   extra?: Partial<ChartPluginDef>,
 ): ChartPluginDef {
   return {
@@ -98,66 +81,66 @@ function def(
     paletteCategory,
     renderer,
     engineCapabilities,
-    properties,
+    properties: chartStyleSectionsFromProfile(type as ChartType),
     ...extra,
   };
 }
 
 export const BUILTIN_PLUGIN_DEFS: ChartPluginDef[] = [
-  def("gauge", "quota", "d3", "antv", GAUGE, MINIMAL),
-  def("liquid", "quota", "d3", "antv", GAUGE, MINIMAL),
-  def("kpi", "quota", "d3", "antv", KPI, KPI_SECTIONS),
+  def("gauge", "quota", "d3", "antv", GAUGE),
+  def("liquid", "quota", "d3", "antv", GAUGE),
+  def("kpi", "quota", "d3", "antv", KPI),
 
-  def("table", "table", "react", "table", TABLE, TABLE_SECTIONS, { deprecated: true, migratesTo: "table-info" }),
-  def("table-info", "table", "d3", "antv", TABLE, TABLE_SECTIONS),
-  def("table-normal", "table", "d3", "antv", TABLE, TABLE_SECTIONS),
-  def("table-pivot", "table", "d3", "antv", TABLE, TABLE_SECTIONS),
-  def("t-heatmap", "table", "d3", "antv", TABLE, HEATMAP_SECTIONS),
+  def("table", "table", "react", "table", TABLE, { deprecated: true, migratesTo: "table-info" }),
+  def("table-info", "table", "d3", "antv", TABLE),
+  def("table-normal", "table", "d3", "antv", TABLE),
+  def("table-pivot", "table", "d3", "antv", TABLE),
+  def("t-heatmap", "table", "d3", "antv", TABLE),
 
-  def("line", "trend", "d3", "antv", STATS, LINE_BAR_SECTIONS),
-  def("area", "trend", "d3", "antv", STATS, LINE_BAR_SECTIONS),
-  def("area-stack", "trend", "d3", "antv", STATS, LINE_BAR_SECTIONS),
-  def("timeline", "trend", "d3", "antv", STATS, LINE_BAR_SECTIONS, { deprecated: true, migratesTo: "line" }),
+  def("line", "trend", "d3", "antv", STATS),
+  def("area", "trend", "d3", "antv", STATS),
+  def("area-stack", "trend", "d3", "antv", STATS),
+  def("timeline", "trend", "d3", "antv", STATS, { deprecated: true, migratesTo: "line" }),
 
-  def("bar", "compare", "d3", "antv", STATS, LINE_BAR_SECTIONS),
-  def("bar-stack", "compare", "d3", "antv", STATS, LINE_BAR_SECTIONS),
-  def("percentage-bar-stack", "compare", "d3", "antv", STATS, LINE_BAR_SECTIONS),
-  def("bar-group", "compare", "d3", "antv", STATS, LINE_BAR_SECTIONS),
-  def("bar-group-stack", "compare", "d3", "antv", STATS, LINE_BAR_SECTIONS),
-  def("waterfall", "compare", "d3", "antv", FLOW, LINE_BAR_SECTIONS),
-  def("bar-horizontal", "compare", "d3", "antv", STATS, LINE_BAR_SECTIONS),
-  def("bar-stack-horizontal", "compare", "d3", "antv", STATS, LINE_BAR_SECTIONS),
-  def("percentage-bar-stack-horizontal", "compare", "d3", "antv", STATS, LINE_BAR_SECTIONS),
-  def("bar-range", "compare", "d3", "antv", STATS, LINE_BAR_SECTIONS),
-  def("bidirectional-bar", "compare", "d3", "antv", STATS, LINE_BAR_SECTIONS),
-  def("progress-bar", "compare", "d3", "antv", STATS, LINE_BAR_SECTIONS),
-  def("stock-line", "compare", "d3", "antv", STATS, LINE_BAR_SECTIONS),
-  def("bullet-graph", "compare", "d3", "antv", STATS, LINE_BAR_SECTIONS),
+  def("bar", "compare", "d3", "antv", STATS),
+  def("bar-stack", "compare", "d3", "antv", STATS),
+  def("percentage-bar-stack", "compare", "d3", "antv", STATS),
+  def("bar-group", "compare", "d3", "antv", STATS),
+  def("bar-group-stack", "compare", "d3", "antv", STATS),
+  def("waterfall", "compare", "d3", "antv", FLOW),
+  def("bar-horizontal", "compare", "d3", "antv", STATS),
+  def("bar-stack-horizontal", "compare", "d3", "antv", STATS),
+  def("percentage-bar-stack-horizontal", "compare", "d3", "antv", STATS),
+  def("bar-range", "compare", "d3", "antv", STATS),
+  def("bidirectional-bar", "compare", "d3", "antv", STATS),
+  def("progress-bar", "compare", "d3", "antv", STATS),
+  def("stock-line", "compare", "d3", "antv", STATS),
+  def("bullet-graph", "compare", "d3", "antv", STATS),
 
-  def("pie", "distribute", "d3", "antv", PIE, PIE_SECTIONS),
-  def("pie-donut", "distribute", "d3", "antv", PIE, PIE_SECTIONS),
-  def("pie-rose", "distribute", "d3", "antv", PIE, PIE_SECTIONS),
-  def("pie-donut-rose", "distribute", "d3", "antv", PIE, PIE_SECTIONS),
-  def("radar", "distribute", "d3", "antv", PIE, PIE_SECTIONS),
-  def("treemap", "distribute", "d3", "antv", PIE, PIE_SECTIONS),
-  def("word-cloud", "distribute", "d3", "antv", PIE, MINIMAL),
-  def("wordCloud", "distribute", "d3", "antv", PIE, PIE_SECTIONS, { deprecated: true, migratesTo: "word-cloud" }),
+  def("pie", "distribute", "d3", "antv", PIE),
+  def("pie-donut", "distribute", "d3", "antv", PIE),
+  def("pie-rose", "distribute", "d3", "antv", PIE),
+  def("pie-donut-rose", "distribute", "d3", "antv", PIE),
+  def("radar", "distribute", "d3", "antv", PIE),
+  def("treemap", "distribute", "d3", "antv", PIE),
+  def("word-cloud", "distribute", "d3", "antv", PIE),
+  def("wordCloud", "distribute", "d3", "antv", PIE, { deprecated: true, migratesTo: "word-cloud" }),
 
-  def("map", "map", "d3", "antv", MAP, GEO_SECTIONS),
-  def("map-3d", "map", "d3", "antv", MAP, GEO_SECTIONS),
-  def("heatmap", "map", "d3", "antv", MAP, MINIMAL, { deprecated: true, migratesTo: "t-heatmap" }),
+  def("map", "map", "d3", "antv", MAP),
+  def("map-3d", "map", "d3", "antv", MAP),
+  def("heatmap", "map", "d3", "antv", MAP, { deprecated: true, migratesTo: "t-heatmap" }),
 
-  def("scatter", "relation", "d3", "antv", STATS, LINE_BAR_SECTIONS),
-  def("quadrant", "relation", "d3", "antv", STATS, LINE_BAR_SECTIONS),
-  def("funnel", "relation", "d3", "antv", FLOW, FLOW_WITH_LEGEND),
-  def("sankey", "relation", "d3", "antv", FLOW, MINIMAL),
-  def("circle-packing", "relation", "d3", "antv", PIE, MINIMAL),
-  def("multi-scatter", "relation", "d3", "antv", STATS, LINE_BAR_SECTIONS),
-  def("graph", "relation", "d3", "antv", FLOW, MINIMAL),
+  def("scatter", "relation", "d3", "antv", STATS),
+  def("quadrant", "relation", "d3", "antv", STATS),
+  def("funnel", "relation", "d3", "antv", FLOW),
+  def("sankey", "relation", "d3", "antv", FLOW),
+  def("circle-packing", "relation", "d3", "antv", PIE),
+  def("multi-scatter", "relation", "d3", "antv", STATS),
+  def("graph", "relation", "d3", "antv", FLOW),
 
-  def("combo", "dual_axes", "d3", "antv", STATS, LINE_BAR_SECTIONS, { deprecated: true, migratesTo: "chart-mix" }),
-  def("chart-mix", "dual_axes", "d3", "antv", STATS, LINE_BAR_SECTIONS),
-  def("chart-mix-group", "dual_axes", "d3", "antv", STATS, LINE_BAR_SECTIONS),
-  def("chart-mix-stack", "dual_axes", "d3", "antv", STATS, LINE_BAR_SECTIONS),
-  def("chart-mix-dual-line", "dual_axes", "d3", "antv", STATS, LINE_BAR_SECTIONS),
+  def("combo", "dual_axes", "d3", "antv", STATS, { deprecated: true, migratesTo: "chart-mix" }),
+  def("chart-mix", "dual_axes", "d3", "antv", STATS),
+  def("chart-mix-group", "dual_axes", "d3", "antv", STATS),
+  def("chart-mix-stack", "dual_axes", "d3", "antv", STATS),
+  def("chart-mix-dual-line", "dual_axes", "d3", "antv", STATS),
 ];

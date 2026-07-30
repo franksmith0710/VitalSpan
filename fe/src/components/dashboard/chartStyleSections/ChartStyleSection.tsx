@@ -19,6 +19,12 @@ import {
   ChartCartesianShapeSection,
 } from "./ChartCartesianStyleSections";
 import {
+  ChartBulletShapeSection,
+  ChartProgressBarShapeSection,
+  ChartQuadrantShapeSection,
+  ChartStockLineShapeSection,
+} from "./ChartCompareStyleSections";
+import {
   ChartFunnelShapeSection,
   ChartGaugeStyleSection,
   ChartGraphShapeSection,
@@ -74,6 +80,14 @@ export function ChartStyleSection({ sectionId }: ChartStyleSectionProps) {
       return <ChartTreemapShapeSection />;
     case "circlePackingShape":
       return <ChartCirclePackingShapeSection />;
+    case "quadrantShape":
+      return <ChartQuadrantShapeSection />;
+    case "progressBarShape":
+      return <ChartProgressBarShapeSection />;
+    case "bulletShape":
+      return <ChartBulletShapeSection />;
+    case "stockLineShape":
+      return <ChartStockLineShapeSection />;
     case "tooltip":
       return <ChartTooltipStyleSection />;
     case "palette":

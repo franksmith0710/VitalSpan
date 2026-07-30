@@ -200,6 +200,7 @@ export type D3ProgressBarRenderConfig = D3RenderConfigBase & {
   showLabel?: boolean;
   labelFontSize?: number;
   onPointClick?: (datum: D3ProgressBarDatum) => void;
+  trackOpacity?: number;
 };
 
 export type D3BulletDatum = {
@@ -214,6 +215,8 @@ export type D3BulletRenderConfig = D3RenderConfigBase & {
   showLabel?: boolean;
   labelFontSize?: number;
   onPointClick?: (datum: D3BulletDatum) => void;
+  targetLineWidth?: number;
+  rangeOpacity?: number;
 };
 
 export type D3StockDatum = {
@@ -229,4 +232,5 @@ export type D3StockRenderConfig = D3RenderConfigBase & {
   showLabel?: boolean;
   labelFontSize?: number;
   onPointClick?: (datum: D3StockDatum) => void;
+  bodyWidthRatio?: number;
 };

@@ -4,7 +4,7 @@
 |------|-----|
 | 日期 | 2026-07-30 |
 | 调研对象 | 图表样式 Tab（`ChartEditRail` → `ChartStylePanel`）、看板 widget（`widgetRailStyleSections`）、大屏素材（`ScreenVisualEditRail`） |
-| 状态 | **approved** |
+| 状态 | **P0 已闭合**（2026-07-30 实施 + Vitest 31 项全绿） |
 | **用户确认范围** | **G1, G2, G8, G9, G10, G14, G20**（默认 P0 包） |
 | 成功标准 | 确认项样式字段写入 `deStyle`/`screenStyle` 后 300ms 内预览可见；44 活跃 chartType profile 自动化门禁；大屏素材样式 Vitest 回归 |
 | 非目标 | G0 在线地图/瓦片/Key；G3–G7、G11–G13、G15–G19（P1/P2）；tooltip 轮播独立 section |
@@ -19,18 +19,17 @@
 - **Out**：在线地图样式、表格高级样式、双轴独立样式、笛卡尔字段矩阵补全。
 - **约束**：GEO-IRON-01（地图样式仅离线中国项）。
 
-## 2. 现状审计
+## 2. 现状审计（P0 闭合后）
 
-| 区域 | 已有 | 缺口/可优化 | 证据 |
-|------|------|-------------|------|
-| 分区注册 | 27 种 `ChartStyleSectionId` | treemap/circle-packing 无专有 shape | `chartStyleSectionRegistry.ts` |
-| treemap profile | common + label | 无 `treemapShape` | `chartTypeStyleProfiles.ts:80` |
-| circle-packing profile | common + label | 无 `circlePackingShape` | `chartTypeStyleProfiles.ts:92` |
-| sankey 样式链 | UI + `applyChartDeStyleBlocks` | 缺 sankey 专项测试 | `renderSankey.ts:100-102` |
-| wordCloud 样式链 | UI + apply + render | 已有 chain 测试，缺 render 断言 | `applyChartStyleChain.test.ts:133-137` |
-| treemap 标签 | `showLabel` 已接 | 字号硬编码 11px | `renderTreemap.ts:152` |
-| profile 测试 | 5 spot cases | 无 44 活跃型全覆盖 | `chartTypeStyleProfiles.test.ts` |
-| 大屏素材测试 | 时钟/边框/图形/图标 | 缺标题样式用例 | `ScreenVisualEditRail.test.tsx` |
+| 区域 | 已有 | 剩余缺口（P1+） | 证据 |
+|------|------|----------------|------|
+| 分区注册 | **29** 种 `ChartStyleSectionId`（+treemapShape、+circlePackingShape） | quadrant/compare 专有 shape（P1） | `chartStyleSectionRegistry.ts` |
+| treemap / circle-packing | `treemapShape` / `circlePackingShape` UI + render | 面包屑等 DE 高级项 | `chartTypeStyleProfiles.ts` · `renderTreemap.ts` |
+| sankey / wordCloud 样式链 | UI → apply → render + 单测 | legend/label 能力仍 missing（门控隐藏） | `renderSankey.test.ts` · `renderWordCloud.test.ts` |
+| treemap 标签 | `labelFontSize` 已接 render | — | `renderTreemap.ts` |
+| profile 测试 | 44 活跃型 gated sections 全覆盖 | 逐字段 render 断言（compare 等待 P1） | `chartTypeStyleProfiles.test.ts` |
+| 大屏素材测试 | 时钟/边框/图形/图标/标题 | datetime 专项用例（审计批次补） | `ScreenVisualEditRail.test.tsx` |
+| metadata.properties | 仍与 profiles 双轨 | G13 收敛（审计批次） | `plugins/metadata.ts` |
 
 ## 3. 外部调研（DE 对标摘要）
 
@@ -127,13 +126,13 @@ circlePacking?: { layoutPadding?: number; labelMinRadius?: number };
 
 ## 10. 验收清单（仅确认项）
 
-- [ ] G1：treemap 样式 Tab 出现「矩形树图样式」；改内间距预览变化
-- [ ] G2：circle-packing 出现「圆形填充样式」；改布局间距预览变化
-- [ ] G8：`applyChartStyleChain` / `applyChartDeStyleBlocks` sankey 字段断言
-- [ ] G9：`renderWordCloud` 消费 __wordCloud* 单元测试
-- [ ] G10：treemap 标签字号跟随 label section
-- [ ] G14：44 活跃 chartType 均有非空 profile sections
-- [ ] G20：大屏标题 screenStyle 写入测试
+- [x] G1：treemap 样式 Tab 出现「矩形树图样式」；改内间距预览变化
+- [x] G2：circle-packing 出现「圆形填充样式」；改布局间距预览变化
+- [x] G8：`applyChartStyleChain` / `applyChartDeStyleBlocks` sankey 字段断言
+- [x] G9：`renderWordCloud` 消费 __wordCloud* 单元测试
+- [x] G10：treemap 标签字号跟随 label section
+- [x] G14：44 活跃 chartType 均有非空 profile sections
+- [x] G20：大屏标题 screenStyle 写入测试
 
 ## 11. 审批与交接
 

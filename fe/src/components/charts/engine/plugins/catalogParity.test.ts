@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import "@/components/charts/engine/plugins/index";
 import { BUILTIN_PLUGIN_DEFS } from "@/components/charts/engine/plugins/metadata";
 import { getChartPlugin, listChartPluginTypes } from "@/components/charts/engine/plugins/registry";
+import { chartStyleSectionsFromProfile } from "@/lib/chartTypeStyleProfiles";
+import type { ChartType } from "@/lib/chartViewConfig";
 
 const EXPECTED_CHART_TYPE_COUNT = 49;
 
@@ -33,6 +35,15 @@ describe("chart catalog parity (FE registry ↔ metadata)", () => {
     for (const def of BUILTIN_PLUGIN_DEFS) {
       if (!def.migratesTo) continue;
       expect(types.has(def.migratesTo), `${def.type} → ${def.migratesTo}`).toBe(true);
+    }
+  });
+
+  it("plugin.properties mirrors chartTypeStyleProfiles (G13)", () => {
+    for (const def of BUILTIN_PLUGIN_DEFS) {
+      const plugin = getChartPlugin(def.type);
+      const fromProfile = chartStyleSectionsFromProfile(def.type as ChartType);
+      expect(plugin?.properties, def.type).toEqual(fromProfile);
+      expect(def.properties, def.type).toEqual(fromProfile);
     }
   });
 });

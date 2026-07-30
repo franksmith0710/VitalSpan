@@ -14,6 +14,10 @@ const ACTIVE_TYPES = BUILTIN_PLUGIN_DEFS.filter((d) => !d.deprecated).map(
 const TYPE_SHAPE_SECTION: Partial<Record<ChartType, string>> = {
   treemap: "treemapShape",
   "circle-packing": "circlePackingShape",
+  quadrant: "quadrantShape",
+  "progress-bar": "progressBarShape",
+  "bullet-graph": "bulletShape",
+  "stock-line": "stockLineShape",
   sankey: "sankeyShape",
   "word-cloud": "wordCloudShape",
   radar: "radarShape",

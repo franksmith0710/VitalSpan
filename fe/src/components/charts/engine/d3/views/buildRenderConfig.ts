@@ -6,7 +6,7 @@ import type { ChartEngineViewProps } from "@/components/charts/engine/types";
 import type { D3DispatchPayload } from "@/components/charts/engine/d3/renderDispatch";
 import { buildD3StyleProps } from "@/components/charts/engine/d3/views/buildStyleProps";
 import { extractDrillValue, buildCartesianRenderConfig } from "@/components/charts/engine/d3/views/buildCartesianConfig";
-import { readCartesianStyleFromPlanOptions } from "@/lib/applyChartDeStyleBlocks";
+import { readCartesianStyleFromPlanOptions, readCompareStyleFromPlanOptions } from "@/lib/applyChartDeStyleBlocks";
 import { readChartDeStyle, readChartGeoStyle, readChartGeo3dStyle } from "@/lib/chartDeStyle";
 import {
   defaultGeo3dRenderTier,
@@ -50,6 +50,7 @@ export function buildD3DispatchPayload(
   const options = plan.options;
   const plotType = plan.plotType;
   const cartesianStyle = readCartesianStyleFromPlanOptions(options);
+  const compareStyle = readCompareStyleFromPlanOptions(options);
 
   const presentation = {
     labelFontSize: styleProps.labelFontSize,
@@ -239,6 +240,7 @@ export function buildD3DispatchPayload(
       ...presentation,
       valueFormat: styleProps.valueFormat,
       ...cartesianStyle,
+      ...compareStyle,
       onPointClick: props.onInteraction
         ? (datum: { type: string }) =>
             props.onInteraction?.({ kind: "drill", value: datum.type, label: datum.type })
@@ -273,6 +275,7 @@ export function buildD3DispatchPayload(
       markLines: styleProps.markLines,
       legendLayout: styleProps.legendLayout,
       ...cartesianStyle,
+      ...compareStyle,
       onPointClick: props.onInteraction
         ? (datum) => {
             const label = String(datum.type ?? datum.stage ?? datum.name ?? datum.word ?? "");

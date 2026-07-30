@@ -88,7 +88,8 @@ describe("DashboardSharePage", () => {
     await waitFor(() => {
       expect(screen.getAllByText("销售额").length).toBeGreaterThanOrEqual(2);
     });
-    expect(screen.getByText(/\/embed\/chart\/w1/)).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "生成公开链接" }).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/单组件链接须签发 token/)).toBeInTheDocument();
     expect(screen.queryByText("该看板暂无组件，请先添加图表。")).not.toBeInTheDocument();
     expect(document.querySelector(".dashboard-grid-view")).toBeTruthy();
   });
@@ -127,7 +128,7 @@ describe("DashboardSharePage", () => {
 
     expect(await screen.findByTestId("pixel-canvas-host")).toBeInTheDocument();
     expect(screen.queryByTestId("pixel-drag-edge-top-w2")).not.toBeInTheDocument();
-    expect(screen.getByText(/\/embed\/chart\/w2/)).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "生成公开链接" }).length).toBeGreaterThanOrEqual(1);
   });
 
   it("A2: renders data-screen share route with read-only pixel canvas", async () => {
@@ -165,7 +166,7 @@ describe("DashboardSharePage", () => {
 
     expect(await screen.findByTestId("pixel-canvas-host")).toBeInTheDocument();
     expect(screen.queryByTestId("pixel-drag-edge-top-w-ds1")).not.toBeInTheDocument();
-    expect(screen.getByText(/\/embed\/chart\/w-ds1/)).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "生成公开链接" }).length).toBeGreaterThanOrEqual(1);
   });
 
   it("API-006: shows public share link card for dashboard", async () => {
@@ -198,6 +199,6 @@ describe("DashboardSharePage", () => {
     renderSharePage("/admin/dashboards/d3/share", "/admin/dashboards/:id/share");
 
     expect(await screen.findByText("公开链接")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "生成公开链接" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "生成公开链接" }).length).toBeGreaterThanOrEqual(1);
   });
 });

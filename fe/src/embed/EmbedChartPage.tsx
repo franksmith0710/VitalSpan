@@ -1,12 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { ChartRenderer } from "@/components/charts/ChartRenderer";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { localizeApiMessage } from "@/lib/apiError";
-import { isOriginAllowed } from "./EmbedSharePanel";
-
-const DEFAULT_ALLOWED = ["http://localhost:5173", "https://localhost:5173"];
+import { isEmbedPageAuthorized } from "./embedAccess";
 
 export function EmbedChartPage() {
   const { chartId } = useParams<{ chartId: string }>();
@@ -14,14 +12,8 @@ export function EmbedChartPage() {
   const parentOrigin = window.location.origin;
   const embedToken = searchParams.get("token");
 
-  const allowedOrigins = useMemo(() => {
-    const raw = searchParams.get("allowedOrigins");
-    if (raw) return raw.split(",").filter(Boolean);
-    return DEFAULT_ALLOWED;
-  }, [searchParams]);
-
   const theme = searchParams.get("theme") === "dark" ? "dark" : "light";
-  const authorized = isOriginAllowed(parentOrigin, allowedOrigins);
+  const authorized = isEmbedPageAuthorized(searchParams, parentOrigin, Boolean(embedToken));
 
   const [config, setConfig] = useState<ChartViewConfig | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -116,9 +108,6 @@ export function EmbedChartPage() {
   return (
     <div className={`min-h-[240px] p-4 ${theme === "dark" ? "dark" : ""}`}>
       <ChartRenderer config={config} title="嵌入图表" />
-      <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => window.location.reload()}>
-        重试
-      </Button>
     </div>
   );
 }

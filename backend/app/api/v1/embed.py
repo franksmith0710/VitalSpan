@@ -55,11 +55,9 @@ def get_embed_sdk_params(
 def get_embed_chart_view(
     token: str = Query(),
     chart_id: UUID | None = Query(default=None, alias="chartId"),
-    origin: Annotated[str | None, Header(alias="Origin")] = None,
 ):
     try:
-        meta = et.require_token_meta(token)
-        et.assert_embed_origin(meta, origin)
+        et.require_token_meta(token)
         session = get_meta_session()
         try:
             return embed_resolve.resolve_embed_chart_view(session, token, chart_id)
@@ -73,11 +71,9 @@ def get_embed_chart_view(
 def get_embed_dashboard_layout(
     token: str = Query(),
     dashboard_id: UUID = Query(alias="dashboardId"),
-    origin: Annotated[str | None, Header(alias="Origin")] = None,
 ):
     try:
-        meta = et.require_token_meta(token)
-        et.assert_embed_origin(meta, origin)
+        et.require_token_meta(token)
         session = get_meta_session()
         try:
             return embed_resolve.resolve_embed_dashboard_layout(session, token, dashboard_id)

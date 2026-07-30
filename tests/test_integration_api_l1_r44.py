@@ -551,6 +551,86 @@ def test_embed_public_share_rejects_origins_r44(client):
     assert resp.json()["code"] == "EMBED_PUBLIC_ORIGINS_FORBIDDEN"
 
 
+def _seed_dashboard_chart(client: TestClient, chart_id: uuid.UUID) -> str:
+    dash = client.post(
+        "/api/v1/dashboards",
+        headers=AUTH,
+        json={"name": "Embed Chart", "slug": f"embed-{chart_id.hex[:8]}"},
+    )
+    assert dash.status_code == 201, dash.text
+    dash_id = dash.json()["id"]
+    layout = {
+        "version": 1,
+        "widgets": [
+            {
+                "id": str(chart_id),
+                "type": "chart",
+                "title": "Embed",
+                "colSpan": 6,
+                "rowSpan": 1,
+                "order": 0,
+                "chartConfig": {
+                    "chartType": "table",
+                    "chartId": str(chart_id),
+                    "dataSourceId": "00000000-0000-4000-8000-000000000010",
+                    "mode": "sql",
+                    "sql": "SELECT 1 AS id",
+                },
+            }
+        ],
+        "globalFilters": [],
+    }
+    put = client.put(
+        f"/api/v1/dashboards/{dash_id}/layout",
+        headers=AUTH,
+        json={"layoutJson": layout},
+    )
+    assert put.status_code == 200, put.text
+    return dash_id
+
+
+def test_embed_chart_view_anonymous_public_r44(client):
+    """API-006 F-D: 无 Bearer 可 GET chart-view?token=…（public shareMode）。"""
+    chart_id = uuid.uuid4()
+    _seed_dashboard_chart(client, chart_id)
+    created = client.post(
+        "/api/v1/embed/token",
+        headers=AUTH,
+        json={"chartId": str(chart_id), "shareMode": "public"},
+    )
+    assert created.status_code == 201
+    token = created.json()["token"]
+    resp = client.get(f"/api/v1/embed/chart-view?token={token}&chartId={chart_id}")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["chartType"] in ("table", "table-info")
+    assert body["chartId"] == str(chart_id)
+
+
+def test_embed_chart_view_iframe_fe_origin_r44(client):
+    """iframe 内请求 Origin 为 FE 域时，chart-view 不因 portal 白名单拒载。"""
+    chart_id = uuid.uuid4()
+    _seed_dashboard_chart(client, chart_id)
+    created = client.post(
+        "/api/v1/embed/token",
+        headers=AUTH,
+        json={
+            "chartId": str(chart_id),
+            "allowedOrigins": ["https://portal.example.com"],
+        },
+    )
+    assert created.status_code == 201
+    token = created.json()["token"]
+    resp = client.get(
+        f"/api/v1/embed/chart-view?token={token}&chartId={chart_id}",
+        headers={"Origin": "http://testserver"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["chartType"] in ("table", "table-info")
+    assert body["chartId"] == str(chart_id)
+
+
 def test_openapi_version_policy_extension_r44(client):
     """T-API-R44-007-01: info.x-api-version-policy 存在。"""
     resp = client.get("/openapi.json")

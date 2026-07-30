@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
@@ -6,9 +6,7 @@ import { DataScreenPresenter } from "@/components/dashboard/screen/DataScreenPre
 import { useScreenAutoRefresh } from "@/components/dashboard/screen/useScreenAutoRefresh";
 import type { PresentationMode } from "@/components/dashboard/screen/presentationScale";
 import { localizeApiMessage } from "@/lib/apiError";
-import { isOriginAllowed } from "./EmbedSharePanel";
-
-const DEFAULT_ALLOWED = ["http://localhost:5173", "https://localhost:5173"];
+import { isEmbedPageAuthorized } from "./embedAccess";
 
 type EmbedDashboardDetail = {
   id: string;
@@ -22,16 +20,8 @@ export function EmbedScreenPage() {
   const parentOrigin = window.location.origin;
   const embedToken = searchParams.get("token");
 
-  const allowedOrigins = useMemo(() => {
-    const raw = searchParams.get("allowedOrigins");
-    if (raw) return raw.split(",").filter(Boolean);
-    return DEFAULT_ALLOWED;
-  }, [searchParams]);
-
   const presentationMode = (searchParams.get("mode") as PresentationMode | null) ?? "fit";
-  const shareMode = searchParams.get("shareMode");
-  const isPublicShare = shareMode === "public";
-  const authorized = isPublicShare || isOriginAllowed(parentOrigin, allowedOrigins);
+  const authorized = isEmbedPageAuthorized(searchParams, parentOrigin, Boolean(embedToken));
 
   const [detail, setDetail] = useState<EmbedDashboardDetail | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);

@@ -15,16 +15,22 @@ export function resetUnauthorizedHandler(): void {
   onUnauthorized = null;
 }
 
-function getEmbedTokenFromLocation(): string | null {
+export function getEmbedTokenFromLocation(): string | null {
   if (typeof window === "undefined") return null;
   return new URLSearchParams(window.location.search).get("token");
 }
 
+export function isEmbedShareContext(): boolean {
+  if (typeof window === "undefined") return false;
+  if (!window.location.pathname.startsWith("/embed/")) return false;
+  return Boolean(getEmbedTokenFromLocation());
+}
+
 export function getAuthHeaders(): Record<string, string> {
-  const token = getAuthToken();
-  if (token) return { Authorization: `Bearer ${token}` };
   const embedToken = getEmbedTokenFromLocation();
   if (embedToken) return { "X-Embed-Token": embedToken };
+  const token = getAuthToken();
+  if (token) return { Authorization: `Bearer ${token}` };
   return {};
 }
 
@@ -166,9 +172,14 @@ export async function apiFetch<T>(
     if (preservesSession) {
       throw toApiRequestError(body);
     }
-    clearAuthToken();
-    onUnauthorized?.();
-    throw new ApiRequestError("登录已过期，请重新登录", "UNAUTHORIZED");
+    if (!isEmbedShareContext()) {
+      clearAuthToken();
+      onUnauthorized?.();
+    }
+    throw new ApiRequestError(
+      isEmbedShareContext() ? (body?.message ?? "嵌入令牌无效或已过期") : "登录已过期，请重新登录",
+      isEmbedShareContext() ? body?.code ?? "EMBED_UNAUTHORIZED" : "UNAUTHORIZED",
+    );
   }
   if (!response.ok) {
     throw toApiRequestError(await parseErrorBody(response));

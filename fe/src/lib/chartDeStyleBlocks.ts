@@ -90,6 +90,26 @@ export type ChartCirclePackingStyle = {
   labelMinRadius?: number;
 };
 
+export type ChartQuadrantStyle = {
+  lineColor?: string;
+  lineWidth?: number;
+  showRegionBg?: boolean;
+  regionOpacity?: number;
+};
+
+export type ChartProgressBarStyle = {
+  trackOpacity?: number;
+};
+
+export type ChartBulletStyle = {
+  targetLineWidth?: number;
+  rangeOpacity?: number;
+};
+
+export type ChartStockLineStyle = {
+  bodyWidthRatio?: number;
+};
+
 export const DEFAULT_CARTESIAN_BAR_WIDTH_RATIO = 0.55;
 export const DEFAULT_CARTESIAN_POINT_SIZE = 4;
 export const DEFAULT_PIE_OUTER_RADIUS_PERCENT = 70;
@@ -109,4 +129,8 @@ export type ChartDeStyleBlocks = {
   wordCloud?: ChartWordCloudStyle;
   treemap?: ChartTreemapStyle;
   circlePacking?: ChartCirclePackingStyle;
+  quadrant?: ChartQuadrantStyle;
+  progressBar?: ChartProgressBarStyle;
+  bullet?: ChartBulletStyle;
+  stockLine?: ChartStockLineStyle;
 };

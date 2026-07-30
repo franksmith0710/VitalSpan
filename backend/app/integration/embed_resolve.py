@@ -6,7 +6,6 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.dashboard.models import Dashboard
-from app.dashboard.surface_kind import read_surface_kind_from_layout
 from app.integration import embed_token as et
 from app.integration.errors import IntegrationError
 from app.schemas.chart_view import ChartViewError, validate_chart_view_config
@@ -83,12 +82,6 @@ def resolve_embed_dashboard_layout(
     if row is None or row.deleted_at is not None:
         raise IntegrationError("EMBED_DASHBOARD_NOT_FOUND", "Dashboard not found for embed", 404)
     layout = row.layout_json if isinstance(row.layout_json, dict) else {}
-    if read_surface_kind_from_layout(layout) != "data-screen":
-        raise IntegrationError(
-            "EMBED_NOT_DATA_SCREEN",
-            "Dashboard is not a data screen layout",
-            422,
-        )
     return {
         "id": str(row.id),
         "name": row.name,

@@ -61,6 +61,24 @@ describe("applyChartDeStyleBlocksToPlan", () => {
     expect(plan.options.__circlePackingPadding).toBe(3);
     expect(plan.options.__circlePackingLabelMinRadius).toBe(22);
   });
+
+  it("maps quadrant and compare shape blocks to plan options", () => {
+    const deStyle: ChartDeStyle = {
+      quadrant: { lineColor: "#ff0000", lineWidth: 2, showRegionBg: true, regionOpacity: 0.2 },
+      progressBar: { trackOpacity: 0.5 },
+      bullet: { targetLineWidth: 3, rangeOpacity: 0.7 },
+      stockLine: { bodyWidthRatio: 0.75 },
+    };
+    const plan = applyChartDeStyleBlocksToPlan(
+      { kind: "d3", plotType: "Quadrant", empty: false, options: {} },
+      deStyle,
+    );
+    expect(plan.options.__quadrantLineColor).toBe("#ff0000");
+    expect(plan.options.__quadrantLineWidth).toBe(2);
+    expect(plan.options.__progressBarTrackOpacity).toBe(0.5);
+    expect(plan.options.__bulletTargetLineWidth).toBe(3);
+    expect(plan.options.__stockBodyWidthRatio).toBe(0.75);
+  });
 });
 
 describe("resolveCartesianLineSmooth", () => {

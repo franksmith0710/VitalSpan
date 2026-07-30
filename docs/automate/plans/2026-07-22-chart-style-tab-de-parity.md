@@ -3,9 +3,9 @@
 > **Plan type**: Headless Automation Plan  
 > **Cursor Build**: disabled  
 > **Execution trigger**: dev-autopilot A5 plan-execute  
-> **状态**：P0–P4 已实施 · code-review 二轮闭环完成（批次 A–C，2026-07-22）  
+> **状态**：P0–P4 已实施 · code-review 二轮闭环完成（批次 A–C，2026-07-22）· **§4 矩阵 2026-07-30 刷新**（profiles 真理源 + P0/P1 shape 接线）  
 > **触发**：看板/大屏编辑右栏「样式」Tab — 各 `chartType` 应有**独立**样式分区，且配置必须渲染生效  
-> **真理源**：`fe/src/lib/chartDeStyle.ts` · `fe/src/components/charts/engine/plugins/metadata.ts` · `fe/src/components/charts/engine/d3/inspectorCapabilityMatrix.ts` · `fe/src/lib/chartTableInspector.ts` · `docs/automate/plans/2026-07-21-chart-per-type-verification.md`  
+> **真理源**：`fe/src/lib/chartTypeStyleProfiles.ts`（样式 Tab 分区）· `fe/src/lib/chartDeStyle.ts` · `fe/src/components/charts/engine/d3/inspectorCapabilityMatrix.ts` · `fe/src/lib/chartTableInspector.ts` · `docs/feature-design/2026-07-30-component-style-per-type-land-design.md`  
 > **DE 参考**：[DataEase v2 图表样式设计](https://dataease.cn/docs/v2/user_manual/view_module/view_style_design/)（仅借鉴离线区域地图相关项，遵守 GEO-IRON-01）
 
 ---
@@ -66,9 +66,9 @@ ChartEditRail
 
 **入口文件**：`ChartEditRail.tsx` · `ChartEditorColumn.tsx`（`style={<ChartStylePanel />}`）· `ChartStylePanel.tsx` · `ChartStyleSection.tsx`
 
-### 2.2 样式分区 ID（当前 10 种）
+### 2.2 样式分区 ID（当前 33 种，2026-07-30）
 
-定义：`fe/src/lib/chartStyleSectionRegistry.ts:7-17`
+定义：`fe/src/lib/chartStyleSectionRegistry.ts` · 分区组合真理源：`fe/src/lib/chartTypeStyleProfiles.ts`（**metadata.properties 已镜像 profiles，G13**）
 
 | Section ID | UI 组件 | 写入路径 | 渲染消费 | 状态 |
 |------------|---------|----------|----------|------|

@@ -10,7 +10,7 @@ export function renderD3StockChart(container: HTMLElement, config: D3StockRender
   container.replaceChildren();
   if (config.width <= 0 || config.height <= 0 || config.data.length === 0) return () => undefined;
 
-  const { width, height, data, colors, theme, showTooltip, showLabel, labelFontSize, labelColor, valueFormat, onPointClick, axisStyle } = config;
+  const { width, height, data, colors, theme, showTooltip, showLabel, labelFontSize, labelColor, valueFormat, onPointClick, axisStyle, bodyWidthRatio = 0.6 } = config;
 
   const categories = data.map((d) => d.type);
   const yMin = d3.min(data, (d) => d.low) ?? 0;
@@ -23,7 +23,7 @@ export function renderD3StockChart(container: HTMLElement, config: D3StockRender
 
   const x = d3.scaleBand<string>().domain(categories).range([0, innerW]).padding(0.3);
   const y = d3.scaleLinear().domain([yMin, yMax]).nice().range([innerH, 0]);
-  const bodyW = Math.max(4, x.bandwidth() * 0.6);
+  const bodyW = Math.max(4, x.bandwidth() * bodyWidthRatio);
   const depthOn = resolveEffectiveDepth() !== "off";
 
   const root = appendChartSvg(container, width, height);

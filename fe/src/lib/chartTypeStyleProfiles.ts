@@ -29,6 +29,17 @@ const CARTESIAN_NO_LEGEND: ChartStyleSectionId[] = [
   "label",
 ];
 
+const QUADRANT_STYLE: ChartStyleSectionId[] = [
+  "axis",
+  "cartesianShape",
+  "quadrantShape",
+  ...SHELL,
+  "remark",
+  "legend",
+  "label",
+  "tooltip",
+];
+
 const PIE_STYLE: ChartStyleSectionId[] = [
   "pieShape",
   ...SHELL,
@@ -68,9 +79,9 @@ const PROFILE_BY_TYPE: Record<string, ChartStyleSectionId[]> = {
   "percentage-bar-stack-horizontal": CARTESIAN_CORE,
   "bar-range": CARTESIAN_NO_LEGEND,
   "bidirectional-bar": CARTESIAN_CORE,
-  "progress-bar": CARTESIAN_NO_LEGEND,
-  "stock-line": CARTESIAN_NO_LEGEND,
-  "bullet-graph": CARTESIAN_NO_LEGEND,
+  "progress-bar": ["axis", "cartesianShape", "progressBarShape", ...SHELL, "remark", "label"],
+  "stock-line": ["axis", "cartesianShape", "stockLineShape", ...SHELL, "remark", "label"],
+  "bullet-graph": ["axis", "cartesianShape", "bulletShape", ...SHELL, "remark", "label"],
 
   pie: PIE_STYLE,
   "pie-donut": PIE_STYLE,
@@ -86,7 +97,7 @@ const PROFILE_BY_TYPE: Record<string, ChartStyleSectionId[]> = {
   heatmap: MINIMAL,
 
   scatter: CARTESIAN_CORE,
-  quadrant: CARTESIAN_CORE,
+  quadrant: QUADRANT_STYLE,
   funnel: [...SHELL, "legend", "funnelShape"],
   sankey: [...MINIMAL, "sankeyShape"],
   "circle-packing": [...MINIMAL, "label", "circlePackingShape"],

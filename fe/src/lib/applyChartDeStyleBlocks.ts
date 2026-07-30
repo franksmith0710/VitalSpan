@@ -10,6 +10,34 @@ import {
   type ChartDeStyleBlocks,
 } from "@/lib/chartDeStyleBlocks";
 
+export type PlanCompareStyle = {
+  trackOpacity?: number;
+  targetLineWidth?: number;
+  rangeOpacity?: number;
+  bodyWidthRatio?: number;
+  quadrantLineColor?: string;
+  quadrantLineWidth?: number;
+  quadrantShowRegionBg?: boolean;
+  quadrantRegionOpacity?: number;
+};
+
+/** 从 plan.options 读取 compare / quadrant 样式块 */
+export function readCompareStyleFromPlanOptions(
+  options: Record<string, unknown>,
+): PlanCompareStyle {
+  return {
+    trackOpacity: options.__progressBarTrackOpacity as number | undefined,
+    targetLineWidth: options.__bulletTargetLineWidth as number | undefined,
+    rangeOpacity: options.__bulletRangeOpacity as number | undefined,
+    bodyWidthRatio: options.__stockBodyWidthRatio as number | undefined,
+    quadrantLineColor: options.__quadrantLineColor as string | undefined,
+    quadrantLineWidth: options.__quadrantLineWidth as number | undefined,
+    quadrantShowRegionBg:
+      options.__quadrantShowRegionBg != null ? Boolean(options.__quadrantShowRegionBg) : undefined,
+    quadrantRegionOpacity: options.__quadrantRegionOpacity as number | undefined,
+  };
+}
+
 export type PlanCartesianStyle = {
   barWidthRatio?: number;
   barRadius?: number;
@@ -169,6 +197,30 @@ export function applyChartDeStyleBlocksToPlan(
     const c = blocks.circlePacking;
     if (c.layoutPadding != null) options.__circlePackingPadding = c.layoutPadding;
     if (c.labelMinRadius != null) options.__circlePackingLabelMinRadius = c.labelMinRadius;
+  }
+
+  if (blocks.quadrant) {
+    const q = blocks.quadrant;
+    if (q.lineColor) options.__quadrantLineColor = q.lineColor;
+    if (q.lineWidth != null) options.__quadrantLineWidth = q.lineWidth;
+    if (q.showRegionBg != null) options.__quadrantShowRegionBg = q.showRegionBg;
+    if (q.regionOpacity != null) options.__quadrantRegionOpacity = q.regionOpacity;
+  }
+
+  if (blocks.progressBar) {
+    const p = blocks.progressBar;
+    if (p.trackOpacity != null) options.__progressBarTrackOpacity = p.trackOpacity;
+  }
+
+  if (blocks.bullet) {
+    const b = blocks.bullet;
+    if (b.targetLineWidth != null) options.__bulletTargetLineWidth = b.targetLineWidth;
+    if (b.rangeOpacity != null) options.__bulletRangeOpacity = b.rangeOpacity;
+  }
+
+  if (blocks.stockLine) {
+    const s = blocks.stockLine;
+    if (s.bodyWidthRatio != null) options.__stockBodyWidthRatio = s.bodyWidthRatio;
   }
 
   if (blocks.kpi) {

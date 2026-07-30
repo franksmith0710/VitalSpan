@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router";
-import { Copy, ExternalLink } from "lucide-react";
-import { toast } from "sonner";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { DataScreenSharePanel } from "@/components/dashboard/screen/DataScreenSharePanel";
 import { PublicShareLinkCard } from "@/components/dashboard/PublicShareLinkCard";
+import { ChartEmbedShareActions } from "@/components/dashboard/ChartEmbedShareActions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -72,11 +71,6 @@ export function DashboardSharePage() {
     return () => window.clearInterval(timer);
   }, [load, refreshSec, isScreen]);
 
-  const copyUrl = (url: string) => {
-    void navigator.clipboard.writeText(url);
-    toast.success("已复制链接");
-  };
-
   const widgets = detail?.layoutJson?.widgets ?? [];
   const editPath = id
     ? isScreen
@@ -130,37 +124,18 @@ export function DashboardSharePage() {
         <div className="mt-4 grid gap-4">
           {widgets.map((widget) => {
             const chartId = chartIdFromWidget(widget);
-            const embedUrl = chartId
-              ? `${window.location.origin}/embed/chart/${chartId}`
-              : null;
             return (
               <Card key={widget.id}>
                 <CardHeader>
                   <CardTitle className="text-theme-base">{widget.title}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {embedUrl ? (
+                  {chartId ? (
                     <>
-                      <p className="break-all font-mono text-theme-xs text-gray-600 dark:text-gray-400">
-                        {embedUrl}
+                      <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+                        单组件链接须签发 token 后方可匿名访问。
                       </p>
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={() => copyUrl(embedUrl)}
-                        >
-                          <Copy className="size-4" aria-hidden />
-                          复制链接
-                        </Button>
-                        <Button asChild size="sm" variant="outline">
-                          <a href={embedUrl} target="_blank" rel="noreferrer">
-                            <ExternalLink className="size-4" aria-hidden />
-                            预览
-                          </a>
-                        </Button>
-                      </div>
+                      <ChartEmbedShareActions chartId={chartId} mode="public" />
                     </>
                   ) : (
                     <p className="text-theme-xs text-gray-500">无 chartId，无法生成嵌入链接。</p>
