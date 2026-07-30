@@ -115,6 +115,8 @@ def _is_public_embed_route(path: str, request: Request) -> bool:
         return True
     if path == "/api/v1/embed/chart-view" and request.query_params.get("token"):
         return True
+    if path == "/api/v1/embed/dashboard-layout" and request.query_params.get("token"):
+        return True
     if path == "/api/v1/embed/query/execute":
         return bool(request.headers.get("X-Embed-Token", "").strip())
     return False

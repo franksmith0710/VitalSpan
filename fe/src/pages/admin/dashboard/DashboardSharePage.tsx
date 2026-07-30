@@ -4,6 +4,7 @@ import { Copy, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { DataScreenSharePanel } from "@/components/dashboard/screen/DataScreenSharePanel";
+import { PublicShareLinkCard } from "@/components/dashboard/PublicShareLinkCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -107,7 +108,13 @@ export function DashboardSharePage() {
         </p>
       ) : null}
       {!loading && detail && widgets.length > 0 && isScreen && id ? (
-        <DataScreenSharePanel dashboardId={id} name={detail.name} layout={detail.layoutJson} />
+        <div className="space-y-4">
+          <DataScreenSharePanel dashboardId={id} name={detail.name} layout={detail.layoutJson} />
+          <PublicShareLinkCard dashboardId={id} name={detail.name} theme="dark" />
+        </div>
+      ) : null}
+      {!loading && detail && widgets.length > 0 && !isScreen && id ? (
+        <PublicShareLinkCard dashboardId={id} name={detail.name} />
       ) : null}
       {!loading && detail && widgets.length > 0 && !isScreen ? (
         <Card className="overflow-hidden rounded-2xl border-gray-200 shadow-theme-sm dark:border-gray-800">

@@ -117,8 +117,8 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │   ├── /dashboards/:id              # 查看 view · bi-dashboard-builder（只读）
 │   ├── /dashboards/:id/edit         # 构建器 edit · bi-dashboard-builder
 │   ├── /dashboards/:id/preview      # （规划）构建器 preview；当前以 `/dashboards/:id` view 模式替代
-│   ├── /dashboards/:id/share        # 分享/嵌入 · bi-share-embed（有 edit 权）
-│   ├── /charts/types                # 图表类型目录（**已移出侧栏**；仅 Palette「查看全部类型」深链）
+│   ├── /dashboards/:id/share        # 分享/嵌入 · bi-share-embed（含公开链接 + iframe 嵌入）
+│   # 图表类型目录：Palette Drawer「查看全部类型」（无独立 `/charts/types` 路由；旧路径重定向 dashboards）
 │
 ├── 报表
 │   ├── /reports/center              # 报表中心 hub（授权模板 + 快捷入口）

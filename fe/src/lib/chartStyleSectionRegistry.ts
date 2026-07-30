@@ -17,6 +17,8 @@ export type ChartStyleSectionId =
   | "graphShape"
   | "radarShape"
   | "wordCloudShape"
+  | "treemapShape"
+  | "circlePackingShape"
   | "tooltip"
   | "palette"
   | "geo"

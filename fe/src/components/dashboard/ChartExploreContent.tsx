@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router";
-import { LayoutDashboard, MousePointerClick, Search } from "lucide-react";
-import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import { MousePointerClick, Search } from "lucide-react";
 import { ListPageSection, ListPageToolbar } from "@/components/layout/list-page-kit";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -21,13 +19,21 @@ import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { chartCategoryLabel, groupCatalogItemsByCategory } from "@/lib/chartTypeCatalogDisplay";
 import { queryKeys } from "@/lib/queryKeys";
-import { WORKSPACE_HOME_PATH } from "@/lib/workspace";
-import { CatalogListItem, CatalogMetric, ChartTypeDetail } from "./chartExplorePanels";
-import type { ChartTypeCatalogEntry } from "./chartExploreTypes";
+import {
+  CatalogListItem,
+  CatalogMetric,
+  ChartTypeDetail,
+} from "@/pages/admin/charts/chartExplorePanels";
+import type { ChartTypeCatalogEntry } from "@/pages/admin/charts/chartExploreTypes";
 
-export type { ChartTypeCatalogEntry } from "./chartExploreTypes";
+export type { ChartTypeCatalogEntry };
 
-export function ChartExplorePage() {
+type ChartExploreContentProps = {
+  /** Drawer 内嵌时省略外层 min-h 约束 */
+  embedded?: boolean;
+};
+
+export function ChartExploreContent({ embedded = false }: ChartExploreContentProps) {
   const [category, setCategory] = useState<string>("__all__");
   const [query, setQuery] = useState("");
   const [selectedType, setSelectedType] = useState<string | null>(null);
@@ -79,26 +85,14 @@ export function ChartExplorePage() {
     : 0;
 
   return (
-    <AdminPageShell
-      title="图表类型目录"
-      description="浏览平台已注册的图表类型、渲染器与字段绑定规则（VIZ-003）。"
-      layout="fill"
-      actions={
-        <Button asChild variant="primary" size="sm">
-          <Link to={WORKSPACE_HOME_PATH}>
-            <LayoutDashboard className="size-4" aria-hidden />
-            去仪表板建图
-          </Link>
-        </Button>
-      }
-    >
+    <div className={embedded ? "flex min-h-0 flex-1 flex-col gap-4" : "flex min-h-0 flex-1 flex-col gap-4"}>
       {isError ? (
         <PageErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} />
       ) : null}
 
       <Alert severity="info" appearance="subtle" className="shrink-0">
         <AlertDescription>
-          本页为只读参考目录；实际建图请在仪表板编辑态添加组件，并配置数据源与 SQL。
+          本目录为只读参考；实际建图请在仪表板编辑态添加组件，并配置数据源与 SQL。
         </AlertDescription>
       </Alert>
 
@@ -263,6 +257,6 @@ export function ChartExplorePage() {
           </section>
         </div>
       </ListPageSection>
-    </AdminPageShell>
+    </div>
   );
 }

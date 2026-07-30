@@ -79,6 +79,17 @@ export type ChartWordCloudStyle = {
   spacing?: number;
 };
 
+export type ChartTreemapStyle = {
+  paddingInner?: number;
+  paddingOuter?: number;
+  cellRadius?: number;
+};
+
+export type ChartCirclePackingStyle = {
+  layoutPadding?: number;
+  labelMinRadius?: number;
+};
+
 export const DEFAULT_CARTESIAN_BAR_WIDTH_RATIO = 0.55;
 export const DEFAULT_CARTESIAN_POINT_SIZE = 4;
 export const DEFAULT_PIE_OUTER_RADIUS_PERCENT = 70;
@@ -96,4 +107,6 @@ export type ChartDeStyleBlocks = {
   graph?: ChartGraphStyle;
   radar?: ChartRadarStyle;
   wordCloud?: ChartWordCloudStyle;
+  treemap?: ChartTreemapStyle;
+  circlePacking?: ChartCirclePackingStyle;
 };

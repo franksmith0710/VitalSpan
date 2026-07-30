@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const mockUseAuth = vi.fn(() => ({
   user: { id: "1", username: "admin", roles: ["admin"] as const },
@@ -67,9 +68,11 @@ function renderRoutes(initialEntries: string[]) {
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={initialEntries}>
-        <AppRoutes />
-      </MemoryRouter>
+      <TooltipProvider delayDuration={0}>
+        <MemoryRouter initialEntries={initialEntries}>
+          <AppRoutes />
+        </MemoryRouter>
+      </TooltipProvider>
     </QueryClientProvider>,
   );
 }
@@ -158,7 +161,7 @@ describe("AppRoutes smoke", () => {
     expect(link).toHaveAttribute("href", "/admin/ingestion/sync-jobs");
   });
 
-  it("redirects AdminHome to dashboards h1 after resolve (T-FE-09)", async () => {
+  it("redirects /admin index to dashboards list (T-FE-09)", async () => {
     setDesktopViewport();
     mockApiFetch.mockResolvedValueOnce({ items: [] });
     renderRoutes(["/admin"]);

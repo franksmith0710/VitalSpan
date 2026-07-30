@@ -158,6 +158,19 @@ export function applyChartDeStyleBlocksToPlan(
     if (w.spacing != null) options.__wordCloudSpacing = w.spacing;
   }
 
+  if (blocks.treemap) {
+    const t = blocks.treemap;
+    if (t.paddingInner != null) options.__treemapPaddingInner = t.paddingInner;
+    if (t.paddingOuter != null) options.__treemapPaddingOuter = t.paddingOuter;
+    if (t.cellRadius != null) options.__treemapCellRadius = t.cellRadius;
+  }
+
+  if (blocks.circlePacking) {
+    const c = blocks.circlePacking;
+    if (c.layoutPadding != null) options.__circlePackingPadding = c.layoutPadding;
+    if (c.labelMinRadius != null) options.__circlePackingLabelMinRadius = c.labelMinRadius;
+  }
+
   if (blocks.kpi) {
     const k = blocks.kpi;
     if (k.fontSize != null) options.__kpiFontSize = k.fontSize;

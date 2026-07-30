@@ -79,6 +79,25 @@ flowchart TB
 | ADR-09 | M6 报表 **JasperReports** 或等价 | 模板 Word/Excel/PDF；二期末前选型 | 待定 |
 | ADR-10 | 演化指导库 **`.automate` submodule** | SOP/skills/agents 与产品代码分离；`install.sh` 同步至 `.cursor/` | 已部署 |
 | ADR-14 | **组织组件库 `componentRef` 引用模式** | 单 widget 级复用；layout 仅存引用，payload 在 `viz_components`；保存时剥离内联配置 | 已定 |
+| ADR-15 | **designer / gov query-design 双 API 收敛策略** | 短期保持双路由；中期抽取 `designer/translator` 公共模块；gov 委托 validate/preview | 已定 |
+
+### ADR-15 · 查询设计器内核收敛（DESIGN-001 F-D）
+
+**背景**：`/api/v1/designer/*`（四期查询设计器 + 快照/工单提交）与 `/api/v1/gov/query-design`（治理域可视化查询配置）在 validate / translate / preview 语义上重叠（DUP-01）。
+
+| 维度 | `/api/v1/designer/*` | `/gov/query-design` |
+|------|----------------------|---------------------|
+| 用途 | Admin 设计器三面板 + 提交工单 | 治理 catalog 内可视化查询配置 |
+| 存储 | designer snapshots / conditions / compute-rules | gov ref + `visual_query_design` |
+| FE 入口 | `/admin/designer` | 治理工单链深链 |
+
+**决策**：
+
+- **短期（当前）**：保持双 API 与双 FE 页；不合并路由、不删 gov 端点。
+- **中期（Phase 4）**：抽取 `backend/app/designer/translator/`；gov `query_design/service.py` 委托 designer validate + preview。
+- **不做**：本里程碑不改动运行时行为；仅登记 ADR 供后续里程碑引用。
+
+**代码锚点**：`backend/app/designer/` · `backend/app/governance/query_design/` · `fe/src/pages/admin/designer/DesignerPage.tsx` · `docs/automate/prd/F12-DESIGN.md` · `F10-GOV.md`
 
 ### ADR-14 · 组织组件库（DASH-010）
 
@@ -404,3 +423,4 @@ pnpm dev            # 默认 :5173
 | 1.0.2 | 2026-07-03 | FR-DATA/FR-ETL 纳入 M1B；增 ingestion 域与 ANALYTICS_DATABASE_URL |
 | 1.0.3 | 2026-07-03 | ADR-11 单应用 + RBAC；架构图 WebApp + Embed；废止双 URL 双端 |
 | 1.0.4 | 2026-07-17 | §9 compose 六服务；§6.2 双查询路径（直连 + Dataset）；Dataset 已落地说明 |
+| 1.0.5 | 2026-07-30 | ADR-15 designer/gov query-design 收敛策略（DESIGN-001 F-D） |

@@ -24,7 +24,7 @@ type PackDatum = { name: string; value: number };
 type TreeNode = { name: string; value?: number; children?: TreeNode[] };
 
 const PACK_PLOT_PAD = 4;
-const PACK_LAYOUT_PADDING = 0;
+const PACK_LAYOUT_PADDING_DEFAULT = 0;
 
 function positionTooltip(
   tooltip: d3.Selection<HTMLDivElement, unknown, null, undefined>,
@@ -79,29 +79,32 @@ function packLeaves(
   data: PackDatum[],
   width: number,
   height: number,
+  layoutPadding: number,
 ): d3.HierarchyCircularNode<TreeNode>[] {
   const root = d3
     .hierarchy<TreeNode>({ name: "root", children: data })
     .sum((d) => d.value ?? 0)
     .sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
 
-  d3.pack<TreeNode>().size([width, height]).padding(PACK_LAYOUT_PADDING)(root);
+  d3.pack<TreeNode>().size([width, height]).padding(layoutPadding)(root);
   return root.descendants().filter((d) => d.depth > 0) as d3.HierarchyCircularNode<TreeNode>[];
 }
 
 export function renderD3CirclePackingChart(container: HTMLElement, config: D3RenderConfig): () => void {
   container.replaceChildren();
-  const { width, height, colors, theme, showLabel, showTooltip, valueFormat, options, onPointClick, depthVisual } =
+  const { width, height, colors, theme, showLabel, showTooltip, valueFormat, options, onPointClick, depthVisual, labelFontSize = 11 } =
     config;
   const depthLevel = resolveEffectiveDepth(depthVisual);
   const data = (options.data as PackDatum[]) ?? [];
+  const layoutPadding = Number(options.__circlePackingPadding ?? PACK_LAYOUT_PADDING_DEFAULT);
+  const labelMinRadius = Number(options.__circlePackingLabelMinRadius ?? 18);
   if (width <= 0 || height <= 0 || data.length === 0) return () => undefined;
 
   const innerW = Math.max(0, width - PACK_PLOT_PAD * 2);
   const innerH = Math.max(0, height - PACK_PLOT_PAD * 2);
   const strokeWidth = depthLevel === "off" ? 1.5 : 1;
 
-  const packed = packLeaves(data, innerW, innerH);
+  const packed = packLeaves(data, innerW, innerH, layoutPadding);
   const rawLayout = packed.map((d) => ({ name: d.data.name, x: d.x, y: d.y, r: d.r }));
   const maxR = rawLayout.length > 0 ? Math.max(...rawLayout.map((d) => d.r)) : 0;
   const avgR =
@@ -158,8 +161,8 @@ export function renderD3CirclePackingChart(container: HTMLElement, config: D3Ren
     groups.attr("transform", (d) => `translate(${d.x ?? d.targetX},${d.y ?? d.targetY})`);
     groups.select("circle").attr("r", (d) => packNodeRadius(d));
     if (labels) {
-      labels.style("font-size", (d) => `${Math.min(14, Math.max(9, packNodeRadius(d) / 3))}px`);
-      labels.text((d) => (packNodeRadius(d) > 18 ? d.name : ""));
+      labels.style("font-size", (d) => `${Math.min(labelFontSize + 3, Math.max(9, packNodeRadius(d) / 3))}px`);
+      labels.text((d) => (packNodeRadius(d) > labelMinRadius ? d.name : ""));
     }
   };
 

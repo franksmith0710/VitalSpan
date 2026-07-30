@@ -4,7 +4,7 @@
 |----|-----|
 | 模式 | Gap-fill |
 | 日期 | 2026-07-29 |
-| 状态 | **P0 已闭合 · 文档 sync 2026-07-29** |
+| 状态 | **P0 已闭合 · F-D 收官 2026-07-30** |
 | 分片归档 | [数据大屏 master](./2026-07-29-data-screen-master-gap-fill.md) · [land-design plan](../../.cursor/plans/vitalspan_整体缺口_overview_以_gap-fill_模式盘点_vitalspan_在「129_项_prd_合同已勾完」之后的真实补充面：m-depth_余项、体验_companion_7e22bb9a.plan.md) |
 
 ## 1. 问题与目标
@@ -15,7 +15,7 @@
 
 **成功标准**：M-DEPTH F-C 零 `[ ]`；project master 可索引全项目 P0/P1/P2 缺口；API-003 可在 `/admin/services` 完成参数试跑 + 结果 + OpenAPI。
 
-**非目标**：P1 看板 canvas UX、map-3d 纹理、真实总线 HTTP、Phase 3 大屏播放、API-006 公开分享。
+**非目标**：P1 看板 canvas UX、map-3d 纹理、真实总线 HTTP、Phase 3 大屏播放。
 
 ---
 
@@ -31,6 +31,7 @@
 | M-DEPTH F-E | 报表诚实化 | mock 投递显式失败 |
 | VIZ companion | 列驱动 Inspector | `useInspectorColumns.ts` · `DatasetFieldGroups.tsx` |
 | 数据大屏 | Phase 2.5/2.6 + BUG-14 + BUG-12 e2e | [data-screen master](./2026-07-29-data-screen-master-gap-fill.md) |
+| M-DEPTH F-D | API-006 公开分享 + BOOT-002 IA + ADR-15 | `PublicShareLinkCard` · `ChartExploreDrawer` · `docs/arch.md` ADR-15 |
 
 ---
 
@@ -43,14 +44,14 @@
 | P0-1 | project master 文档 | ✅ 本页 |
 | P0-2 | PRD/plan 漂移回写 | ✅ |
 | P0-3 | API-003 服务试跑加深 | ✅ |
-| P0-4 | BUG-2 Pointer QA 手测表 | §6 |
+| P0-4 | BUG-2 Pointer QA 手测表 | §6.1 · Vitest 绿 · 发版手测待抽测 |
 
 ### P1 · 下一迭代
 
 | ID | 项 | 依据 |
 |----|-----|------|
 | P1-1 | 看板 canvas UX | `plans/2026-07-14-dashboard-canvas-ux-de-complete.md` |
-| P1-2 | 大屏 MT 手测发版抽测 | [data-screen master §3](./2026-07-29-data-screen-master-gap-fill.md) |
+| P1-2 | 大屏 MT 手测发版抽测 | [data-screen master §3](./2026-07-29-data-screen-master-gap-fill.md) · MT-INS/MT-DEPLOY 部分自动化已绿 |
 | P1-3 | map-3d normal/displacement 运行时 | `buildGeoFlatPlateMesh.ts` |
 | P1-4 | Embed CSP / X-Frame-Options | `main.py` 无 HTTP 安全头 |
 | P1-5 | 治理真实总线 HTTP | `GovernanceHonestyBanner` |
@@ -62,7 +63,7 @@
 |----|-----|
 | P2-1 | `screenPlaylist` 播放逻辑 |
 | P2-2 | 视口 pan/zoom 持久化 |
-| P2-3 | API-006 公开分享、NFR 生产化、Dataset 多表 join |
+| P2-3 | NFR 生产化、Dataset 多表 join |
 
 ---
 
@@ -72,7 +73,7 @@
 |----|----------------|------|
 | dashboard | v2 像素画布已实现；BUG-2 手测待发版 | `docs/services/dashboard.md` |
 | metadata | Dataset ORM + 编辑已实现 | `docs/services/metadata.md` |
-| integration | API-003 试跑 UI 已实现 | `QueryServiceTrialSheet.tsx` · `QueryServicesPage` |
+| integration | API-003 试跑 + API-006 公开分享已实现 | `QueryServiceTrialSheet.tsx` · `PublicShareLinkCard.tsx` |
 | reports | 调度历史/重试 UI 已实现 | `SchedulePanel.tsx` |
 | auth | RLS/审计 FE 已实现 | `RlsAdminPage` · `AuditLogPage` |
 | viz | 列驱动 Inspector 已实现 | `useInspectorColumns.ts` |
@@ -80,13 +81,17 @@
 
 ---
 
-## 5. 验证命令（P0 合并）
+## 5. 验证命令（F-D + P0）
 
 ```bash
+# API-006 embed
+pytest tests/test_integration_api_l1_r44.py -k embed -q
+
+# FE F-D
 cd fe && npx vitest run \
-  src/pages/admin/services/queryServicePathUtils.test.ts \
-  src/pages/admin/services/QueryServicesPage.smoke.test.tsx \
-  src/pages/admin/reports/SchedulePanel.smoke.test.tsx
+  src/pages/admin/dashboard/DashboardSharePage.smoke.test.tsx \
+  src/components/dashboard/ChartExploreContent.test.tsx \
+  src/routes.smoke.test.tsx -t "T-FE-09"
 ```
 
 数据大屏回归见 [data-screen master §2](./2026-07-29-data-screen-master-gap-fill.md)。
@@ -104,13 +109,23 @@ cd fe && npx vitest run \
 | BUG2-MT-3 | 保存 → 刷新 | 位置/尺寸保持 |
 | BUG2-MT-4 | 多选 + 方向键 nudge | 位移正确 |
 
-**状态**：手测表已登记 · 待发版抽测（Vitest：`PixelCanvas.test.tsx` 30+ 用例已绿）
+**状态**：Vitest `PixelCanvas.test.tsx` 30+ 用例 ✅ 2026-07-30 · **发版 Pointer 手测待抽测**
 
 **参考**：`docs/superpowers/specs/2026-07-13-dashboard-de-canvas-design.md` §验收
 
 ### 6.2 数据大屏 MT（引用）
 
-见 [data-screen master §3 MT-*](./2026-07-29-data-screen-master-gap-fill.md)（MT-1~7、MT-INS、MT-DEPLOY）。
+见 [data-screen master §3 MT-*](./2026-07-29-data-screen-master-gap-fill.md)。
+
+**抽测登记（2026-07-30）**：MT-INS-2 Vitest 绿；MT-DEPLOY-2/3 API-006 embed pytest + SharePage smoke 绿；MT-1/6/7 等发版手测仍待浏览器抽测。
+
+### 6.3 F-D 验收（2026-07-30）
+
+| ID | 项 | 自动化 | 手测 |
+|----|-----|--------|------|
+| FD-1 | API-006 公开链接 | pytest embed 12/12 · SharePage smoke | 分享页生成 → 无登录打开 |
+| FD-2 | BOOT-002 Palette Drawer | ChartExploreContent.test · T-VIZ-FC-04 | Palette 无 `/charts/types` 死链 |
+| FD-3 | DESIGN-001 ADR-15 | `docs/arch.md` 落盘 | — |
 
 ---
 
@@ -120,7 +135,9 @@ cd fe && npx vitest run \
 - [x] PRD F-B / AUTH F-C / RPT-005 / VIZ 列驱动 / API-003 回写
 - [x] plan.md §M-DEPTH F-C 两项 `[x]`
 - [x] API-003 Trial Sheet 浏览器可试跑
-- [x] BUG-2 手测表登记（§6.1）
+- [x] BUG-2 手测表登记（§6.1 · Vitest 绿）
+- [x] F-D 三项 plan/PRD 回写（2026-07-30）
+- [x] F-D 自动化回归（§6.3）
 
 ---
 

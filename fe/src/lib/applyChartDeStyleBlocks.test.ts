@@ -41,6 +41,26 @@ describe("applyChartDeStyleBlocksToPlan", () => {
     );
     expect(plan.options.smooth).toBe(true);
   });
+
+  it("maps sankey treemap and circlePacking blocks to plan options", () => {
+    const deStyle: ChartDeStyle = {
+      sankey: { nodeWidth: 16, nodeGap: 12, linkOpacity: 0.6 },
+      treemap: { paddingInner: 5, paddingOuter: 7, cellRadius: 4 },
+      circlePacking: { layoutPadding: 3, labelMinRadius: 22 },
+    };
+    const plan = applyChartDeStyleBlocksToPlan(
+      { kind: "d3", plotType: "Sankey", empty: false, options: {} },
+      deStyle,
+    );
+    expect(plan.options.__sankeyNodeWidth).toBe(16);
+    expect(plan.options.__sankeyNodeGap).toBe(12);
+    expect(plan.options.__sankeyLinkOpacity).toBe(0.6);
+    expect(plan.options.__treemapPaddingInner).toBe(5);
+    expect(plan.options.__treemapPaddingOuter).toBe(7);
+    expect(plan.options.__treemapCellRadius).toBe(4);
+    expect(plan.options.__circlePackingPadding).toBe(3);
+    expect(plan.options.__circlePackingLabelMinRadius).toBe(22);
+  });
 });
 
 describe("resolveCartesianLineSmooth", () => {

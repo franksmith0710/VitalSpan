@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router";
-import { ExternalLink, Filter, GripVertical, Plus } from "lucide-react";
+import { Filter, GripVertical, Plus } from "lucide-react";
 import type { ChartType } from "@/lib/chartViewConfig";
 import { setChartTypeDragData, setFilterWidgetDragData } from "@/lib/dashboardDnd";
 import { fetchChartTypeCatalog, buildFallbackCatalogItems, type ChartTypeCatalogItem } from "@/lib/chartRegistry";
 import {
   groupCatalogItemsByCategory,
 } from "@/lib/chartTypeCatalogDisplay";
-import { CHART_TYPES_CATALOG_PATH } from "@/lib/chartPaths";
 import { cn } from "@/lib/utils";
+import {
+  ChartExploreCatalogTrigger,
+  ChartExploreDrawer,
+} from "@/components/dashboard/ChartExploreDrawer";
 import type { PaletteInsertType } from "./createLayoutWidget";
 import { widgetChartIcon } from "./widgetIcons";
 
@@ -128,26 +130,17 @@ function PaletteGroup({
   );
 }
 
-function CatalogFooterLink() {
+function CatalogFooter({ onOpenCatalog }: { onOpenCatalog: () => void }) {
   return (
     <div className="border-t border-gray-200 pt-3 dark:border-gray-800">
-      <Link
-        to={CHART_TYPES_CATALOG_PATH}
-        className={cn(
-          "flex items-center gap-2 rounded-lg px-3 py-2 text-theme-xs font-medium text-brand-600 transition-colors",
-          "hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10",
-          "focus-visible:outline-hidden focus-visible:ring-3 focus-visible:ring-brand-500/10",
-        )}
-      >
-        <ExternalLink className="size-3.5 shrink-0" aria-hidden />
-        查看全部类型与字段规则
-      </Link>
+      <ChartExploreCatalogTrigger onOpen={onOpenCatalog} />
     </div>
   );
 }
 
 export function WidgetPalette({ onInsert, embedded = false }: WidgetPaletteProps) {
   const [catalog, setCatalog] = useState<ChartTypeCatalogItem[] | null>(null);
+  const [catalogOpen, setCatalogOpen] = useState(false);
 
   useEffect(() => {
     void fetchChartTypeCatalog()
@@ -176,12 +169,19 @@ export function WidgetPalette({ onInsert, embedded = false }: WidgetPaletteProps
           onInsert={onInsert}
         />
       ))}
-      <CatalogFooterLink />
+      <CatalogFooter onOpenCatalog={() => setCatalogOpen(true)} />
     </div>
   );
 
+  const paletteBody = (
+    <>
+      {content}
+      <ChartExploreDrawer open={catalogOpen} onOpenChange={setCatalogOpen} />
+    </>
+  );
+
   if (embedded) {
-    return content;
+    return paletteBody;
   }
 
   return (
@@ -191,7 +191,7 @@ export function WidgetPalette({ onInsert, embedded = false }: WidgetPaletteProps
         <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
           拖拽到画布，或点击追加到末尾
         </p>
-        <div className="mt-4">{content}</div>
+        <div className="mt-4">{paletteBody}</div>
       </div>
     </aside>
   );

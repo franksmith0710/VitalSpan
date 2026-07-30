@@ -25,7 +25,7 @@ import {
 } from "@/lib/chartDeStyle";
 import { DEFAULT_PIE_OUTER_RADIUS_PERCENT } from "@/lib/chartDeStyleBlocks";
 
-function patchBlock<K extends "pie" | "gauge" | "liquid" | "kpi" | "funnel" | "sankey" | "graph" | "radar" | "wordCloud">(
+function patchBlock<K extends "pie" | "gauge" | "liquid" | "kpi" | "funnel" | "sankey" | "graph" | "radar" | "wordCloud" | "treemap" | "circlePacking">(
   cfg: Parameters<typeof patchChartDeStyleNested>[0],
   key: K,
   patch: Record<string, unknown>,
@@ -277,6 +277,39 @@ export function ChartWordCloudShapeSection() {
         <ChartDeSliderField label="最小字号" value={wordCloud.fontSizeMin} fallback={12} min={8} max={48} step={1} onChange={(fontSizeMin) => patch({ fontSizeMin })} />
         <ChartDeSliderField label="最大字号" value={wordCloud.fontSizeMax} fallback={48} min={16} max={96} step={1} onChange={(fontSizeMax) => patch({ fontSizeMax })} />
         <ChartDeSliderField label="间距" value={wordCloud.spacing} fallback={2} min={0} max={16} step={1} onChange={(spacing) => patch({ spacing })} />
+      </div>
+    </ChartInspectorSection>
+  );
+}
+
+export function ChartTreemapShapeSection() {
+  const { cfg, mutateChartConfig } = useChartInspector();
+  const treemap = readChartDeStyle(cfg).treemap ?? {};
+  const patch = (p: Record<string, unknown>) =>
+    mutateChartConfig((c) => patchChartDeStyleNested(c, "treemap", p));
+
+  return (
+    <ChartInspectorSection title="矩形树图样式" data-testid="chart-treemap-shape">
+      <div className={INSPECTOR_SECTION_GAP}>
+        <ChartDeSliderField label="内间距" value={treemap.paddingInner} fallback={2} min={0} max={24} step={1} onChange={(paddingInner) => patch({ paddingInner })} />
+        <ChartDeSliderField label="外间距" value={treemap.paddingOuter} fallback={4} min={0} max={24} step={1} onChange={(paddingOuter) => patch({ paddingOuter })} />
+        <ChartDeSliderField label="圆角" value={treemap.cellRadius} fallback={3} min={0} max={12} step={1} onChange={(cellRadius) => patch({ cellRadius })} />
+      </div>
+    </ChartInspectorSection>
+  );
+}
+
+export function ChartCirclePackingShapeSection() {
+  const { cfg, mutateChartConfig } = useChartInspector();
+  const circlePacking = readChartDeStyle(cfg).circlePacking ?? {};
+  const patch = (p: Record<string, unknown>) =>
+    mutateChartConfig((c) => patchChartDeStyleNested(c, "circlePacking", p));
+
+  return (
+    <ChartInspectorSection title="圆形填充样式" data-testid="chart-circle-packing-shape">
+      <div className={INSPECTOR_SECTION_GAP}>
+        <ChartDeSliderField label="布局间距" value={circlePacking.layoutPadding} fallback={0} min={0} max={16} step={1} onChange={(layoutPadding) => patch({ layoutPadding })} />
+        <ChartDeSliderField label="标签最小半径" value={circlePacking.labelMinRadius} fallback={18} min={8} max={48} step={1} onChange={(labelMinRadius) => patch({ labelMinRadius })} />
       </div>
     </ChartInspectorSection>
   );

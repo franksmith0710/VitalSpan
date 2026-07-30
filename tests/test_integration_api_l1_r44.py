@@ -507,6 +507,50 @@ def test_embed_sdk_params_invalid_r44(client):
     assert resp.json()["code"] == "EMBED_TOKEN_INVALID"
 
 
+def test_embed_public_share_token_r44(client):
+    """API-006 F-D: public shareMode → embedUrl 含 shareMode=public。"""
+    dash_id = uuid.uuid4()
+    resp = client.post(
+        "/api/v1/embed/token",
+        headers=AUTH,
+        json={"dashboardId": str(dash_id), "shareMode": "public"},
+    )
+    assert resp.status_code == 201
+    body = resp.json()
+    assert "shareMode=public" in body["embedUrl"]
+    assert f"/embed/screen/{dash_id}" in body["embedUrl"]
+
+
+def test_embed_dashboard_layout_anonymous_r44(client):
+    """API-006 F-D: 无 Bearer 可 GET dashboard-layout?token=…。"""
+    dash_id = uuid.uuid4()
+    created = client.post(
+        "/api/v1/embed/token",
+        headers=AUTH,
+        json={"dashboardId": str(dash_id), "shareMode": "public"},
+    )
+    token = created.json()["token"]
+    resp = client.get(
+        f"/api/v1/embed/dashboard-layout?token={token}&dashboardId={dash_id}",
+    )
+    assert resp.status_code in (200, 404)
+
+
+def test_embed_public_share_rejects_origins_r44(client):
+    """API-006 F-D: public + allowedOrigins → 422。"""
+    resp = client.post(
+        "/api/v1/embed/token",
+        headers=AUTH,
+        json={
+            "dashboardId": str(uuid.uuid4()),
+            "shareMode": "public",
+            "allowedOrigins": ["https://portal.example.com"],
+        },
+    )
+    assert resp.status_code == 422
+    assert resp.json()["code"] == "EMBED_PUBLIC_ORIGINS_FORBIDDEN"
+
+
 def test_openapi_version_policy_extension_r44(client):
     """T-API-R44-007-01: info.x-api-version-policy 存在。"""
     resp = client.get("/openapi.json")

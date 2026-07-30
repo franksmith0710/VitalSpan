@@ -7,7 +7,6 @@ import { EmbedLayout } from "@/layouts/EmbedLayout";
 import { EmbedChartPage } from "@/embed/EmbedChartPage";
 import { EmbedScreenPage } from "@/embed/EmbedScreenPage";
 import { EmbedSharePanel } from "@/embed/EmbedSharePanel";
-import { AdminHomePage } from "@/pages/admin/AdminHomePage";
 import { SyncJobsPage } from "@/pages/admin/ingestion/SyncJobsPage";
 import { SyncJobFormPage } from "@/pages/admin/ingestion/SyncJobFormPage";
 import { SyncJobHistoryPage } from "@/pages/admin/ingestion/SyncJobHistoryPage";
@@ -44,7 +43,6 @@ import { ReportCenterPage } from "@/pages/admin/reports/ReportCenterPage";
 import { ReportViewPage } from "@/pages/admin/reports/ReportViewPage";
 import { DataScreenListPage } from "@/pages/admin/data-screens/DataScreenListPage";
 import { DataScreenViewRedirect } from "@/pages/admin/data-screens/DataScreenViewRedirect";
-import { CHART_TYPES_CATALOG_PATH } from "@/lib/chartPaths";
 import { ACCOUNT_PREFERENCES_PATH } from "@/lib/workspace";
 import { withRouteSuspense } from "@/lib/routeLazy";
 
@@ -58,9 +56,6 @@ const DataScreenPreviewPage = lazy(() =>
   import("@/pages/admin/data-screens/DataScreenPreviewPage").then((m) => ({
     default: m.DataScreenPreviewPage,
   })),
-);
-const ChartExplorePage = lazy(() =>
-  import("@/pages/admin/charts/ChartExplorePage").then((m) => ({ default: m.ChartExplorePage })),
 );
 const DesignerPage = lazy(() =>
   import("@/pages/admin/designer/DesignerPage").then((m) => ({ default: m.DesignerPage })),
@@ -101,7 +96,7 @@ export function AppRoutes() {
       ) : null}
       <Route path="/admin" element={<RequireAuth />}>
         <Route element={<AdminLayout />}>
-          <Route index element={<AdminHomePage />} />
+          <Route index element={<Navigate to="/admin/dashboards" replace />} />
           <Route path="datasources" element={<RequireCapabilityName capability="datasource:*"><DatasourceListPage /></RequireCapabilityName>} />
           <Route path="datasources/new" element={<RequireCapabilityName capability="datasource:*"><DatasourceFormPage mode="create" /></RequireCapabilityName>} />
           <Route path="datasources/:id/edit" element={<RequireCapabilityName capability="datasource:*"><DatasourceFormPage mode="edit" /></RequireCapabilityName>} />
@@ -158,16 +153,12 @@ export function AppRoutes() {
           <Route path="reports/templates/:nodeId" element={<RequireCapabilityName capability="report:manage"><ReportTemplatesPage /></RequireCapabilityName>} />
           <Route path="reports/schedules" element={<RequireCapabilityName capability="report:manage"><ReportSchedulesPage /></RequireCapabilityName>} />
           <Route
-            path="charts/types"
-            element={
-              <RequireCapabilityName capability="dashboard:read">
-                <Lazy><ChartExplorePage /></Lazy>
-              </RequireCapabilityName>
-            }
+            path="charts/explore"
+            element={<Navigate to="/admin/dashboards" replace />}
           />
           <Route
-            path="charts/explore"
-            element={<Navigate to={CHART_TYPES_CATALOG_PATH} replace />}
+            path="charts/types"
+            element={<Navigate to="/admin/dashboards" replace />}
           />
           <Route
             path="designer"

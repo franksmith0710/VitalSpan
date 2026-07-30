@@ -1,8 +1,13 @@
+import { useState } from "react";
 import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ChartExplorePage } from "./ChartExplorePage";
+import { ChartExploreContent } from "@/components/dashboard/ChartExploreContent";
+import {
+  ChartExploreCatalogTrigger,
+  ChartExploreDrawer,
+} from "@/components/dashboard/ChartExploreDrawer";
 
 vi.mock("@/lib/api", () => ({
   apiFetch: vi.fn(async () => [
@@ -27,35 +32,53 @@ vi.mock("@/lib/api", () => ({
   ]),
 }));
 
-function renderPage() {
+function renderContent() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <MemoryRouter>
-        <ChartExplorePage />
-      </MemoryRouter>
+      <ChartExploreContent embedded />
     </QueryClientProvider>,
   );
 }
 
-describe("ChartExplorePage", () => {
+function DrawerHarness() {
+  const [open, setOpen] = useState(false);
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return (
+    <QueryClientProvider client={client}>
+      <ChartExploreCatalogTrigger onOpen={() => setOpen(true)} />
+      <ChartExploreDrawer open={open} onOpenChange={setOpen} />
+    </QueryClientProvider>
+  );
+}
+
+describe("ChartExploreContent", () => {
   afterEach(() => cleanup());
 
   it("does not show governance honesty banner", async () => {
-    renderPage();
+    renderContent();
     expect(screen.queryByTestId("gov-honesty-banner")).not.toBeInTheDocument();
   });
 
-  it("renders catalog title and read-only hint", async () => {
-    renderPage();
-    expect(screen.getByRole("heading", { name: "图表类型目录" })).toBeInTheDocument();
-    expect(screen.getByText(/本页为只读参考目录/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /去仪表板建图/ })).toBeInTheDocument();
+  it("renders read-only hint", async () => {
+    renderContent();
+    expect(screen.getByText(/本目录为只读参考/)).toBeInTheDocument();
   });
 
   it("loads chart types into detail panel", async () => {
-    renderPage();
+    renderContent();
     expect(await screen.findByRole("heading", { name: "折线图" })).toBeInTheDocument();
     expect(screen.getByText("line")).toBeInTheDocument();
+  });
+});
+
+describe("ChartExploreDrawer", () => {
+  afterEach(() => cleanup());
+
+  it("opens catalog drawer from palette trigger", async () => {
+    const user = userEvent.setup();
+    render(<DrawerHarness />);
+    await user.click(screen.getByRole("button", { name: /查看全部类型与字段规则/ }));
+    expect(await screen.findByText("图表类型目录")).toBeInTheDocument();
   });
 });

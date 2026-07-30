@@ -29,7 +29,9 @@ export function EmbedScreenPage() {
   }, [searchParams]);
 
   const presentationMode = (searchParams.get("mode") as PresentationMode | null) ?? "fit";
-  const authorized = isOriginAllowed(parentOrigin, allowedOrigins);
+  const shareMode = searchParams.get("shareMode");
+  const isPublicShare = shareMode === "public";
+  const authorized = isPublicShare || isOriginAllowed(parentOrigin, allowedOrigins);
 
   const [detail, setDetail] = useState<EmbedDashboardDetail | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);

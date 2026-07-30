@@ -167,4 +167,37 @@ describe("DashboardSharePage", () => {
     expect(screen.queryByTestId("pixel-drag-edge-top-w-ds1")).not.toBeInTheDocument();
     expect(screen.getByText(/\/embed\/chart\/w-ds1/)).toBeInTheDocument();
   });
+
+  it("API-006: shows public share link card for dashboard", async () => {
+    mockApiFetch.mockResolvedValue({
+      id: "d3",
+      name: "公开看板",
+      layoutJson: {
+        version: 1,
+        widgets: [
+          {
+            id: "w3",
+            type: "chart",
+            title: "指标",
+            colSpan: 6,
+            rowSpan: 2,
+            order: 0,
+            chartConfig: {
+              chartType: "bar",
+              chartId: "w3",
+              dataSourceId: "00000000-0000-4000-8000-000000000010",
+              mode: "sql",
+              sql: "SELECT 1",
+            },
+          },
+        ],
+        globalFilters: [],
+      },
+    });
+
+    renderSharePage("/admin/dashboards/d3/share", "/admin/dashboards/:id/share");
+
+    expect(await screen.findByText("公开链接")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "生成公开链接" })).toBeInTheDocument();
+  });
 });

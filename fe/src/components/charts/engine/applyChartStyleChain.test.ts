@@ -103,6 +103,7 @@ describe("applyChartStyleChain", () => {
         liquid: { targetValue: 80, outlineWidth: 2, waveColor: "#12b76a" },
         radar: { shape: "circle", areaOpacity: 0.3, showAxisName: false },
         wordCloud: { fontSizeMin: 10, fontSizeMax: 36, spacing: 4 },
+        sankey: { nodeWidth: 14, nodeGap: 9, linkOpacity: 0.55 },
         graph: { layout: "dagre", edgeLength: 96, repulsion: 180 },
       },
     };
@@ -135,6 +136,12 @@ describe("applyChartStyleChain", () => {
     expect(wordNext.options.__wordCloudFontMin).toBe(10);
     expect(wordNext.options.__wordCloudFontMax).toBe(36);
     expect(wordNext.options.__wordCloudSpacing).toBe(4);
+
+    const sankeyPlan: ChartRenderPlan = { kind: "d3", plotType: "Sankey", empty: false, options: {} };
+    const sankeyNext = applyChartStyleChain(sankeyPlan, style);
+    expect(sankeyNext.options.__sankeyNodeWidth).toBe(14);
+    expect(sankeyNext.options.__sankeyNodeGap).toBe(9);
+    expect(sankeyNext.options.__sankeyLinkOpacity).toBe(0.55);
 
     const graphPlan: ChartRenderPlan = { kind: "d3", plotType: "Graph", empty: false, options: {} };
     const graphNext = applyChartStyleChain(graphPlan, style);

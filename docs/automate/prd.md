@@ -1,8 +1,8 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.120
-last_updated: 2026-07-29
+version: 1.2.121
+last_updated: 2026-07-30
 truth_source: true
 evolution_hub: true
 goal_ref: docs/automate/goal.md
@@ -20,6 +20,8 @@ domain_count: 16
 > 更新：2026-07-08 · 规范见 `prd-scoring` · 本轮重评：CONN-023/024、BOOT-002、VIZ-002、DESIGN-004（M-PRODUCT F-A/F-C companion IA）
 
 > **Doc sync 注记（2026-07-29）**：M-DEPTH 必做 F-A/B/C/E 叙事已与代码对齐（见 [project master](../feature-design/2026-07-29-vitalspan-project-master-gap-fill.md)）。分片内剩余 `[ ]` 多为 **演化建议 / 可选 / 发版 QA**，不等同于 129 项合同未交付。
+
+> **Doc sync 注记（2026-07-30）**：M-DEPTH **F-D 三项已闭合**（API-006 公开分享 · BOOT-002 Palette Drawer · DESIGN-001 ADR-15）；plan.md F-D 3/3 `[x]`。
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|

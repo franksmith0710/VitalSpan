@@ -74,7 +74,7 @@
 - **里程碑对齐**：
 ### [API-006] IF-04 门户嵌入 API
 
-- **状态**：已实现（骨架；**M-DEPTH F-D 可选 companion**）
+- **状态**：已实现（**M-DEPTH F-D 已闭合 · 2026-07-30**）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：三期
 - **描述**：IF-04 门户嵌入 API（SRS 追溯项）。token/sdk-params 已实现；公开/匿名分享链接为可选加深。
@@ -83,10 +83,10 @@
   - [x] GET `/api/v1/embed/sdk-params` SDK 初始化参数解析（r44）
   - [x] Origin 守卫 + 角色拒绝 smoke（r44）
   - [x] token 过期与非法 origin 拦截（`expiresAt` + `EMBED_ORIGIN_DENIED`，r45 companion）
-  - [ ] **M-DEPTH F-D〔可选〕**：公开/匿名分享链接落地（需安全确认：origin 白名单 + token 校验；匿名看板路由）
+  - [x] **M-DEPTH F-D〔可选〕**：公开/匿名分享链接落地（`shareMode: public` + `PublicShareLinkCard` + middleware 放行 `dashboard-layout` · 2026-07-30）
 - **代码锚点**：`backend/app/api/v1/embed.py` · `backend/app/integration/embed_token.py`
-- **演化建议**：F-D 可选；JWT 轮换与前端 Embed SDK 联动
-- **里程碑对齐**：r45 · 已完成；**M-DEPTH F-D 可选 · 2026-07-10**
+- **演化建议**：JWT 轮换与前端 Embed SDK 联动；政企禁匿名可通过 capability 开关
+- **里程碑对齐**：r45 · 已完成；**M-DEPTH F-D · 2026-07-30**
 ### [API-007] OpenAPI 规范与版本策略
 
 - **状态**：已实现

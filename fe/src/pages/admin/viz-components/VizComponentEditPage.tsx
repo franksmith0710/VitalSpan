@@ -4,6 +4,16 @@ import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ChartEditRail } from "@/components/dashboard/ChartEditRail";
 import { FilterWidgetInspector } from "@/components/dashboard/FilterWidgetInspector";
 import { TextEditRail } from "@/components/dashboard/TextEditRail";
@@ -12,6 +22,7 @@ import { VizComponentEditLayout } from "@/components/dashboard/viz-components/Vi
 import { VizComponentLivePreview } from "@/components/dashboard/viz-components/VizComponentLivePreview";
 import { widgetTypeLabel } from "@/components/dashboard/viz-components/componentLabels";
 import { useVizComponentEditor } from "@/hooks/useVizComponentEditor";
+import { useUnsavedLeaveGuard } from "@/hooks/use-unsaved-leave-guard";
 import { mapApiError } from "@/lib/apiError";
 import type {
   FilterWidgetConfig,
@@ -98,43 +109,34 @@ export function VizComponentEditPage() {
   } = useVizComponentEditor(id);
 
   const title = component?.name ?? "编辑组件";
-  const meta = component
+  const typeMeta = component
     ? `${widgetTypeLabel(component.widgetType)} · v${component.contentRevision}`
     : null;
 
-  const saveStatus = saving ? "保存中…" : isDirty ? "未保存" : "已保存";
+  const { leaveDialogOpen, confirmLeave, cancelLeave } = useUnsavedLeaveGuard({
+    enabled: Boolean(component && widget && isDirty),
+  });
 
-  return (
-    <AdminPageShell
-      layout="fill"
-      title={
-        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          <Button type="button" variant="ghost" size="sm" className="-ml-1 px-2" asChild>
-            <Link to="/admin/viz-components" aria-label="返回组件库">
-              <ChevronLeft className="size-5" aria-hidden />
-            </Link>
-          </Button>
-          <h1 className="truncate text-title-sm font-semibold text-gray-900 dark:text-white">
-            {title}
-          </h1>
-          {meta ? (
-            <span className="text-theme-xs text-gray-500 dark:text-gray-400">{meta}</span>
-          ) : null}
+  const handleSaveAndLeave = async () => {
+    const ok = await save();
+    if (ok) confirmLeave();
+  };
+
+  const headerActions = (
+    <div className="flex flex-wrap items-center gap-2">
+      <Button asChild variant="ghost" size="sm">
+        <Link to="/admin/viz-components">
+          <ChevronLeft className="size-4" aria-hidden />
+          <span className="hidden sm:inline">返回</span>
+        </Link>
+      </Button>
+
+      {component && widget ? (
+        <>
           <span
-            className={
-              isDirty
-                ? "text-theme-xs text-warning-600 dark:text-warning-400"
-                : "text-theme-xs text-gray-400 dark:text-gray-500"
-            }
-          >
-            {saveStatus}
-          </span>
-        </div>
-      }
-      titleUnwrapped
-      className="min-h-0"
-      actions={
-        component && widget ? (
+            className="hidden h-5 w-px shrink-0 bg-gray-200 dark:bg-gray-700 sm:block"
+            aria-hidden
+          />
           <Button
             type="button"
             variant="primary"
@@ -144,8 +146,27 @@ export function VizComponentEditPage() {
           >
             {saving ? "保存中…" : "保存"}
           </Button>
-        ) : null
-      }
+        </>
+      ) : null}
+    </div>
+  );
+
+  const pageDescription =
+    component && widget
+      ? isDirty
+        ? "有未保存的更改 · 保存后生效"
+        : typeMeta
+          ? `已保存 · ${typeMeta}`
+          : "已保存"
+      : undefined;
+
+  return (
+    <AdminPageShell
+      layout="fill"
+      title={title}
+      description={pageDescription}
+      className="min-h-0"
+      actions={headerActions}
     >
       {isLoading ? (
         <EditPageSkeleton />
@@ -166,6 +187,36 @@ export function VizComponentEditPage() {
           }
         />
       )}
+      {component && widget ? (
+        <AlertDialog open={leaveDialogOpen} onOpenChange={(open) => !open && cancelLeave()}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>未保存的更改</AlertDialogTitle>
+              <AlertDialogDescription>
+                组件有未保存的修改，离开后将丢失。请先保存，或确认放弃更改。
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex-col gap-2 sm:flex-row sm:justify-end">
+              <AlertDialogCancel onClick={cancelLeave}>留在此页</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-white/10 dark:text-white/90 dark:hover:bg-white/15"
+                onClick={confirmLeave}
+              >
+                放弃更改并离开
+              </AlertDialogAction>
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                disabled={saving}
+                onClick={() => void handleSaveAndLeave()}
+              >
+                {saving ? "保存中…" : "保存并离开"}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      ) : null}
     </AdminPageShell>
   );
 }

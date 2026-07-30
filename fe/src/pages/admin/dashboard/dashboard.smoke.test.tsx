@@ -388,16 +388,18 @@ describe("dashboard admin smoke", () => {
     expect(widget.textConfig?.variant).toBe("html");
   });
 
-  it("T-VIZ-FC-04: palette links to chart types catalog", () => {
+  it("T-VIZ-FC-04: palette opens chart types catalog drawer", async () => {
+    const user = userEvent.setup();
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
-      <MemoryRouter>
-        <WidgetPalette onInsert={vi.fn()} />
-      </MemoryRouter>,
+      <QueryClientProvider client={qc}>
+        <MemoryRouter>
+          <WidgetPalette onInsert={vi.fn()} />
+        </MemoryRouter>
+      </QueryClientProvider>,
     );
-    expect(screen.getByRole("link", { name: /查看全部类型与字段规则/ })).toHaveAttribute(
-      "href",
-      "/admin/charts/types",
-    );
+    await user.click(screen.getByRole("button", { name: /查看全部类型与字段规则/ }));
+    expect(await screen.findByText("图表类型目录")).toBeInTheDocument();
   });
 
   it("T-DASH-R28-003-03: delete widget from inspector only", async () => {

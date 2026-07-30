@@ -27,6 +27,8 @@ import {
   ChartPieShapeSection,
   ChartRadarShapeSection,
   ChartSankeyShapeSection,
+  ChartCirclePackingShapeSection,
+  ChartTreemapShapeSection,
   ChartTooltipStyleSection,
   ChartWordCloudShapeSection,
 } from "./ChartTypeStyleSections";
@@ -68,6 +70,10 @@ export function ChartStyleSection({ sectionId }: ChartStyleSectionProps) {
       return <ChartRadarShapeSection />;
     case "wordCloudShape":
       return <ChartWordCloudShapeSection />;
+    case "treemapShape":
+      return <ChartTreemapShapeSection />;
+    case "circlePackingShape":
+      return <ChartCirclePackingShapeSection />;
     case "tooltip":
       return <ChartTooltipStyleSection />;
     case "palette":

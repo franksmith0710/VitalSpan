@@ -58,25 +58,25 @@ cd fe && npx vitest run \
 
 ### P1 · 发版前手测
 
-| ID | 步骤 | 期望 |
-|----|------|------|
-| MT-1 | 图层锁定 → 拖/缩/方向键 | 无位移（Wave B） |
-| MT-2 | Tab 轮播 → 保存 → preview | 仅预览轮播 |
-| MT-3 | 布局 JSON 导出 → 导入 | 布局一致 |
-| MT-4 | 图表放大 → 导出 PNG | 下载成功 |
-| MT-5 | 图层 Panel Tab 子项 | 缩进 +「Tab 内嵌」 |
-| **MT-6** | 自由摆放组件（含间隙）→ 保存 | **坐标不变**（BUG-14） |
-| **MT-7** | 切换 21:9 → 保存 → preview | 等比适配；已有组件不自动缩放 |
-| **MT-INS-1** | 选中 S2 表格 → resize 20px | content 尺寸跟随 outer |
-| **MT-INS-2** | 样式 Tab 改主题色 | 画布可见（Vitest：`ChartEditRail.smoke`） |
-| **MT-INS-3** | 折叠右栏 → 图层选 chart | 右栏展开且样式可编辑 |
-| **MT-INS-4** | 选中时钟 | 仅图层名（无 DE 样式 Tab） |
-| **MT-DEPLOY-1** | 列表 → 查看/preview | 16:9 chromeless |
-| **MT-DEPLOY-2** | 分享页整屏 embed 链接 | iframe 可展示 |
-| **MT-DEPLOY-3** | embed token + `/embed/screen/:id` | 整屏投放 |
-| **MT-DEPLOY-4** | `refreshIntervalSec=30` | 图表刷新、页面不闪白 |
-| **MT-DEPLOY-5** | 锁定图层 + 预览 | 与编辑一致 |
-| **MT-DEPLOY-6** | 导出 JSON → 导入新建 | 成功 |
+| ID | 步骤 | 期望 | 状态 |
+|----|------|------|------|
+| MT-1 | 图层锁定 → 拖/缩/方向键 | 无位移（Wave B） | 发版抽测 |
+| MT-2 | Tab 轮播 → 保存 → preview | 仅预览轮播 | 发版抽测 |
+| MT-3 | 布局 JSON 导出 → 导入 | 布局一致 | 发版抽测 |
+| MT-4 | 图表放大 → 导出 PNG | 下载成功 | 发版抽测 |
+| MT-5 | 图层 Panel Tab 子项 | 缩进 +「Tab 内嵌」 | 发版抽测 |
+| **MT-6** | 自由摆放组件（含间隙）→ 保存 | **坐标不变**（BUG-14） | 发版抽测 |
+| **MT-7** | 切换 21:9 → 保存 → preview | 等比适配；已有组件不自动缩放 | 发版抽测 |
+| **MT-INS-1** | 选中 S2 表格 → resize 20px | content 尺寸跟随 outer | Vitest + 发版抽测 |
+| **MT-INS-2** | 样式 Tab 改主题色 | 画布可见 | ✅ Vitest 2026-07-30 |
+| **MT-INS-3** | 折叠右栏 → 图层选 chart | 右栏展开且样式可编辑 | 发版抽测 |
+| **MT-INS-4** | 选中时钟 | 仅图层名（无 DE 样式 Tab） | 发版抽测 |
+| **MT-DEPLOY-1** | 列表 → 查看/preview | 16:9 chromeless | 发版抽测 |
+| **MT-DEPLOY-2** | 分享页整屏 embed 链接 | iframe 可展示 | ✅ API smoke 2026-07-30 |
+| **MT-DEPLOY-3** | embed token + `/embed/screen/:id` | 整屏投放 | ✅ pytest embed 2026-07-30 |
+| **MT-DEPLOY-4** | `refreshIntervalSec=30` | 图表刷新、页面不闪白 | 发版抽测 |
+| **MT-DEPLOY-5** | 锁定图层 + 预览 | 与编辑一致 | 发版抽测 |
+| **MT-DEPLOY-6** | 导出 JSON → 导入新建 | 成功 | 发版抽测 |
 
 ### P2 · Phase 3 挂点
 

@@ -50,8 +50,8 @@ export function useVizComponentEditor(componentId: string | undefined) {
     [queryClient],
   );
 
-  const save = useCallback(async () => {
-    if (!component || !widget || !isDirty) return;
+  const save = useCallback(async (): Promise<boolean> => {
+    if (!component || !widget || !isDirty) return true;
     setSaving(true);
     try {
       const updated = await updateVizComponent(component.id, {
@@ -61,12 +61,14 @@ export function useVizComponentEditor(componentId: string | undefined) {
       });
       applyDetail(updated);
       toast.success("组件已保存");
+      return true;
     } catch (err) {
       const message = mapApiError(err);
       toast.error(message);
       if (message.includes("contentRevision") || message.includes("冲突")) {
         void detailQuery.refetch();
       }
+      return false;
     } finally {
       setSaving(false);
     }

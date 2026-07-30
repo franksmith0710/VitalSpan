@@ -1,6 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router";
-import { ExternalLink } from "lucide-react";
 import type { ChartType } from "@/lib/chartViewConfig";
 import { setChartTypeDragData } from "@/lib/dashboardDnd";
 import {
@@ -14,8 +12,11 @@ import {
   buildDeStylePaletteSections,
   type DePaletteSection,
 } from "@/lib/chartPaletteTaxonomy";
-import { CHART_TYPES_CATALOG_PATH } from "@/lib/chartPaths";
 import { cn } from "@/lib/utils";
+import {
+  ChartExploreCatalogTrigger,
+  ChartExploreDrawer,
+} from "@/components/dashboard/ChartExploreDrawer";
 import { ChartTypePreviewIcon } from "./chartPicker/ChartTypePreviewIcon";
 
 type ChartPickerPopoverProps = {
@@ -121,6 +122,7 @@ export function ChartPickerPopover({
   onPaletteDragEnd,
 }: ChartPickerPopoverProps) {
   const [catalog, setCatalog] = useState<ChartTypeCatalogItem[] | null>(null);
+  const [catalogOpen, setCatalogOpen] = useState(false);
   const [activeSectionId, setActiveSectionId] = useState<string>("quota");
   const scrollRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef(new Map<string, HTMLElement>());
@@ -185,6 +187,7 @@ export function ChartPickerPopover({
   };
 
   return (
+    <>
     <div className="flex h-[min(70vh,400px)] min-h-[360px]" data-testid="chart-picker-popover">
       <nav
         className="flex w-[84px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-gray-200 py-1 pr-1 dark:border-gray-800"
@@ -230,18 +233,11 @@ export function ChartPickerPopover({
           ))}
         </div>
         <div className="mt-4 border-t border-gray-200 pt-2 dark:border-gray-800">
-          <Link
-            to={CHART_TYPES_CATALOG_PATH}
-            className={cn(
-              "flex items-center gap-2 rounded-lg px-1 py-1 text-[11px] font-medium text-brand-600",
-              "hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10",
-            )}
-          >
-            <ExternalLink className="size-3.5 shrink-0" aria-hidden />
-            查看全部类型与字段规则
-          </Link>
+          <ChartExploreCatalogTrigger dense onOpen={() => setCatalogOpen(true)} />
         </div>
       </div>
     </div>
+    <ChartExploreDrawer open={catalogOpen} onOpenChange={setCatalogOpen} />
+    </>
   );
 }

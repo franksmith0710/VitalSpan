@@ -41,6 +41,7 @@ export function renderD3TreemapChart(container: HTMLElement, config: D3RenderCon
     onPointClick,
     conditionalRules = [],
     depthVisual,
+    labelFontSize = 11,
   } = config;
   const depthLevel = resolveEffectiveDepth(depthVisual);
   const data = (options.data as TreemapDatum[]) ?? [];
@@ -51,7 +52,15 @@ export function renderD3TreemapChart(container: HTMLElement, config: D3RenderCon
     .sum((d) => d.value ?? 0)
     .sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
 
-  d3.treemap<TreeNode>().size([width, height]).paddingInner(2).paddingOuter(4).round(true)(root);
+  const paddingInner = Number(options.__treemapPaddingInner ?? 2);
+  const paddingOuter = Number(options.__treemapPaddingOuter ?? 4);
+  const cellRadius = Number(options.__treemapCellRadius ?? 3);
+
+  d3.treemap<TreeNode>()
+    .size([width, height])
+    .paddingInner(paddingInner)
+    .paddingOuter(paddingOuter)
+    .round(true)(root);
 
   const leaves = root.leaves() as d3.HierarchyRectangularNode<TreeNode>[];
   const colorScale = d3
@@ -79,7 +88,7 @@ export function renderD3TreemapChart(container: HTMLElement, config: D3RenderCon
     .append("rect")
     .attr("width", (d) => Math.max(0, d.x1 - d.x0))
     .attr("height", (d) => Math.max(0, d.y1 - d.y0))
-    .attr("rx", 3)
+    .attr("rx", cellRadius)
     .attr("fill", (d) => {
       const base = colorScale(d.data.name) ?? colors[0] ?? "#465fff";
       return conditionalRules.length > 0
@@ -149,7 +158,7 @@ export function renderD3TreemapChart(container: HTMLElement, config: D3RenderCon
       .attr("x", 6)
       .attr("y", 14)
       .attr("fill", "#fff")
-      .style("font-size", "11px")
+      .style("font-size", `${labelFontSize}px`)
       .style("pointer-events", "none")
       .text((d) => {
         const w = d.x1 - d.x0;

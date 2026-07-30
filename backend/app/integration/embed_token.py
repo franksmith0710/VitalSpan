@@ -14,6 +14,9 @@ from app.viz.embed import _ORIGIN_RE
 _TOKEN_STORE: dict[str, dict] = {}
 
 
+ShareMode = Literal["embed", "public"]
+
+
 class EmbedTokenIn(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     chart_id: uuid.UUID | None = Field(default=None, alias="chartId")
@@ -21,6 +24,7 @@ class EmbedTokenIn(BaseModel):
     allowed_origins: list[str] = Field(default_factory=list, alias="allowedOrigins")
     expires_in_sec: int = Field(default=3600, alias="expiresInSec", ge=60, le=86400)
     theme: Literal["light", "dark"] = "light"
+    share_mode: ShareMode = Field(default="embed", alias="shareMode")
 
 
 class EmbedTokenOut(BaseModel):
@@ -39,6 +43,17 @@ def _assert_embed_issue(actor: UserContext) -> None:
         "Embed token requires admin or dashboard:share role",
         403,
     )
+
+
+def assert_embed_origin(meta: dict, origin_header: str | None) -> None:
+    if meta.get("share_mode") == "public":
+        allowed = meta.get("allowed_origins") or []
+        if not allowed:
+            return
+    else:
+        allowed = meta.get("allowed_origins") or []
+    if allowed and origin_header and origin_header not in allowed:
+        raise IntegrationError("EMBED_ORIGIN_DENIED", "Origin not allowed", 403)
 
 
 def _validate_origins(origins: list[str]) -> None:
@@ -79,8 +94,15 @@ def issue_embed_token(
                 {"field": "dashboardId", "message": "conflict"},
             ],
         )
+    if payload.share_mode == "public" and payload.allowed_origins:
+        raise IntegrationError(
+            "EMBED_PUBLIC_ORIGINS_FORBIDDEN",
+            "public shareMode must not set allowedOrigins",
+            422,
+            fields=[{"field": "allowedOrigins", "message": "must be empty for public shareMode"}],
+        )
     _validate_origins(payload.allowed_origins)
-    if origin_header and payload.allowed_origins:
+    if payload.share_mode != "public" and origin_header and payload.allowed_origins:
         if origin_header not in payload.allowed_origins:
             raise IntegrationError(
                 "EMBED_ORIGIN_DENIED",
@@ -97,6 +119,7 @@ def issue_embed_token(
         "theme": payload.theme,
         "api_base": api_base,
         "allowed_origins": list(payload.allowed_origins),
+        "share_mode": payload.share_mode,
         "chart_id": payload.chart_id,
         "dashboard_id": payload.dashboard_id,
         "actor_id": actor.id,
@@ -105,12 +128,13 @@ def issue_embed_token(
         "actor_permissions": list(actor.permissions),
         "actor_is_root": actor.is_root,
     }
+    share_qs = "&shareMode=public" if payload.share_mode == "public" else ""
     if payload.chart_id is not None:
-        embed_path = f"/embed/chart/{payload.chart_id}?token={token}"
+        embed_path = f"/embed/chart/{payload.chart_id}?token={token}{share_qs}"
     elif payload.dashboard_id is not None:
-        embed_path = f"/embed/screen/{payload.dashboard_id}?token={token}"
+        embed_path = f"/embed/screen/{payload.dashboard_id}?token={token}{share_qs}"
     else:
-        embed_path = f"/embed/chart?token={token}"
+        embed_path = f"/embed/chart?token={token}{share_qs}"
     return EmbedTokenOut(
         token=token,
         expires_at=expires_at.isoformat(),
@@ -146,9 +170,7 @@ def resolve_embed_actor(token: str) -> UserContext:
 
 def resolve_sdk_params(token: str, origin_header: str | None = None) -> dict:
     row = require_token_meta(token)
-    allowed = row.get("allowed_origins") or []
-    if allowed and origin_header and origin_header not in allowed:
-        raise IntegrationError("EMBED_ORIGIN_DENIED", "Origin not allowed", 403)
+    assert_embed_origin(row, origin_header)
     return {
         "containerId": row["container_id"],
         "theme": row["theme"],

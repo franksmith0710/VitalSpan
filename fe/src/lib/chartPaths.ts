@@ -1,5 +1,5 @@
-/** VIZ-003 图表类型注册表浏览页（只读目录，非即席建图） */
+/** @deprecated 图表类型目录已改为 Palette Drawer；路由重定向至 `/admin/dashboards` */
 export const CHART_TYPES_CATALOG_PATH = "/admin/charts/types";
 
-/** 旧路径，路由重定向至 {@link CHART_TYPES_CATALOG_PATH} */
+/** @deprecated 旧路径，路由重定向至 `/admin/dashboards` */
 export const CHART_TYPES_CATALOG_LEGACY_PATH = "/admin/charts/explore";

@@ -59,9 +59,7 @@ def get_embed_chart_view(
 ):
     try:
         meta = et.require_token_meta(token)
-        allowed = meta.get("allowed_origins") or []
-        if allowed and origin and origin not in allowed:
-            raise IntegrationError("EMBED_ORIGIN_DENIED", "Origin not allowed", 403)
+        et.assert_embed_origin(meta, origin)
         session = get_meta_session()
         try:
             return embed_resolve.resolve_embed_chart_view(session, token, chart_id)
@@ -79,9 +77,7 @@ def get_embed_dashboard_layout(
 ):
     try:
         meta = et.require_token_meta(token)
-        allowed = meta.get("allowed_origins") or []
-        if allowed and origin and origin not in allowed:
-            raise IntegrationError("EMBED_ORIGIN_DENIED", "Origin not allowed", 403)
+        et.assert_embed_origin(meta, origin)
         session = get_meta_session()
         try:
             return embed_resolve.resolve_embed_dashboard_layout(session, token, dashboard_id)

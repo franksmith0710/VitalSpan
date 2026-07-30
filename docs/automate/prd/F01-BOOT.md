@@ -46,7 +46,7 @@
   - [x] `layout.md` §3/§6 同步默认 IA 矩阵（数据工程/治理默认隐藏）
   - [x] **M-DEPTH F-0**：侧栏删「图表类型目录/实体与主题/独立数据接入」；数据连接嵌套同步任务；路由深链保留（2026-07-10）
   - [x] **M-DEPTH F-0**：`RequireCapabilityName` 与侧栏 capability 对齐；analyst 报表仅 `report:read`；`/embed/sdk-demo` 仅 DEV（2026-07-10）
-  - [ ] **M-DEPTH F-D〔可选〕**：ChartExplore → Palette Drawer；删 AdminHome 空跳转
+  - [x] **M-DEPTH F-D〔可选〕**：ChartExplore → Palette Drawer；删 AdminHome 空跳转（`ChartExploreDrawer` · `/admin` index → `/admin/dashboards` · 2026-07-30）
 - **代码锚点**：`fe/src/config/nav-manifest.tsx` · `fe/src/lib/capabilities.ts` · `fe/src/lib/resolve-nav.ts` · `fe/src/lib/resolve-nav.test.ts` · `fe/src/components/auth/require-capability.tsx` · `fe/src/layouts/AdminLayout.tsx` · `fe/src/layouts/AdminLayout.smoke.test.tsx` · `fe/src/pages/admin/AdminHomePage.tsx` · `fe/src/lib/defaultViewResolve.ts` · `fe/src/routes.tsx` · `fe/src/routes.smoke.test.tsx` · `fe/src/lib/api.ts` · `fe/src/lib/queryKeys.ts` · `fe/src/lib/apiError.ts` · `fe/scripts/check-design.mjs` · `docs/ui/layout.md`
 - **演化建议**：F-D 可选精简；Playwright E2E 登录落点与业务页 Query 缓存策略调优
 

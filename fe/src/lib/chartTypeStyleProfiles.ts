@@ -77,7 +77,7 @@ const PROFILE_BY_TYPE: Record<string, ChartStyleSectionId[]> = {
   "pie-rose": PIE_STYLE,
   "pie-donut-rose": PIE_STYLE,
   radar: [...SHELL, "remark", "label", "radarShape"],
-  treemap: [...SHELL, "remark", "label"],
+  treemap: [...SHELL, "remark", "label", "treemapShape"],
   "word-cloud": [...MINIMAL, "wordCloudShape"],
   wordCloud: [...MINIMAL, "wordCloudShape"],
 
@@ -89,7 +89,7 @@ const PROFILE_BY_TYPE: Record<string, ChartStyleSectionId[]> = {
   quadrant: CARTESIAN_CORE,
   funnel: [...SHELL, "legend", "funnelShape"],
   sankey: [...MINIMAL, "sankeyShape"],
-  "circle-packing": [...MINIMAL, "label"],
+  "circle-packing": [...MINIMAL, "label", "circlePackingShape"],
   "multi-scatter": CARTESIAN_CORE,
   graph: [...MINIMAL, "label", "graphShape"],
 

@@ -2,13 +2,13 @@
 
 > 人工维护（`create-evolution-plan`）；演化 agent **只读**。
 > **当前节** = **companion backlog**（发版 QA + F-D 可选）；**M-DEPTH 必做 F-A~C/E 已收官（2026-07-29）**。**M-FINAL 已冻结**；**M-PRODUCT + M-DASH-UX 已收官**。  
-> **全量路线图**：M1–M12 + M-FE-1~3 + M-FINAL + M-PRODUCT + M-DASH-UX + **M-DEPTH 必做** 已完成；**PRD 总数 129**（合同已实现）；活跃 companion 见 [data-screen master](../feature-design/2026-07-29-data-screen-master-gap-fill.md) MT 抽测 / §M-DEPTH F-D 可选。  
+> **全量路线图**：M1–M12 + M-FE-1~3 + M-FINAL + M-PRODUCT + M-DASH-UX + **M-DEPTH 必做 + F-D** 已完成（2026-07-30）；**PRD 总数 129**（合同已实现）；活跃 companion 见 [project master](../feature-design/2026-07-29-vitalspan-project-master-gap-fill.md) 发版 QA 抽测。  
 > **完成定义**：`[x]` = companion 浏览器可感知 / 合同项分片「已实现」；`[ ]` = companion 未达；标「可选」不阻塞收官。  
 > **实施细则**：架构见 [`../arch.md`](../arch.md)；验收见 [`prd/F07-DASH.md`](./prd/F07-DASH.md) · [`prd/F11-META.md`](./prd/F11-META.md)；壳层见 [`../ui/layout.md`](../ui/layout.md)；全栈审视见 [`plans/2026-07-10-fe-de-ss-ia-optimization.md`](./plans/2026-07-10-fe-de-ss-ia-optimization.md)。
 
 ```yaml
-version: 3.0.2
-last_updated: 2026-07-29
+version: 3.0.3
+last_updated: 2026-07-30
 archive_ref: docs/automate/plan.archive.md
 execute_scope: companion-backlog
 frozen_milestone: M-FINAL
@@ -995,9 +995,9 @@ F-A → F-B → F-C ∥ F-B → F-E；F-D 可选（人工点名）
 
 ### F-D — 可选（不阻塞收官 · G2 默认跳过）
 
-- [ ] API-006: 公开/匿名分享链接落地〔可选 · 需安全确认〕
-- [ ] BOOT-002: ChartExplore → Palette Drawer；删 AdminHome 空跳转〔可选〕
-- [ ] DESIGN-001: designer / gov query-design 内核收敛 ADR〔可选 · 先评审〕
+- [x] API-006: 公开/匿名分享链接落地〔可选 · 需安全确认〕（完成于 2026-07-30）
+- [x] BOOT-002: ChartExplore → Palette Drawer；删 AdminHome 空跳转〔可选〕（完成于 2026-07-30）
+- [x] DESIGN-001: designer / gov query-design 内核收敛 ADR〔可选 · 先评审〕（ADR-15 · 2026-07-30）
 
 ### M-DEPTH 收官信号
 
@@ -1008,8 +1008,8 @@ F-A → F-B → F-C ∥ F-B → F-E；F-D 可选（人工点名）
 | RLS/审计 FE | F-C AUTH-006/008 | **是 · 已勾** |
 | 报表诚实化 | F-E 全勾 | **是 · 已勾** |
 | 调度历史 / 服务试跑增强 | F-C 余 2 项 | **是 · 已勾**（2026-07-29） |
-| 公开分享 / IA 精简 / 设计器 ADR | F-D 可选 | 否 |
+| 公开分享 / IA 精简 / 设计器 ADR | F-D 可选 | 否 · **已勾**（2026-07-30） |
 
-> **M-DEPTH 必做 gate**：**已通过**（2026-07-29）。F-D 与演化 companion 不阻塞发版。
+> **M-DEPTH 必做 gate**：**已通过**（2026-07-29）。**F-D 可选**：**已通过**（2026-07-30）。演化 companion 与发版 QA 不阻塞发版。
 
 > **明确不含**：SQLBot/AI；完整 SQL Lab；文本/图片/Tab 积木（未立项）；NFR probe 扩面。
