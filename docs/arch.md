@@ -73,7 +73,7 @@ flowchart TB
 | ADR-13 | 前端 **`fe/src/components/charts/engine/`** 引擎端口 + registry | `CanvasChartHost` → `ChartEngineView`；`@antv/*` 仅 `engine/antv/**`；地图经 `GeoEnginePort`/`OfflineGeoPort` | 已定 |
 | ADR-04 | **ConnectorRegistry** 插件式数据源 | NFR-04：新增类型不改核心服务与查询执行器 | 已定 |
 | ADR-05 | 查询双路径：**SqlCapable** + **NativeQuery** | 关系型/OLAP 走 SQL；时序/文档/搜索走原生 DSL | 已定 |
-| ADR-06 | 凭证 **Fernet / SM4** 可插拔（`CredentialCryptoProvider`） | NFR-03；默认 SM4；Fernet 遗留双读；API 不返回明文密码 | 已定 |
+| ADR-06 | 凭证 **SM4** 固定写入（Fernet 遗留双读） | NFR-03；无运行时算法切换；API 不返回明文密码 | 已定 |
 | ADR-16 | 登录密码 **SM3** 哈希（bcrypt 遗留双读 + 登录升级） | 政企国密应用层；JWT 仍 HS256 | 已定 |
 | ADR-07 | 平台元数据 **PostgreSQL / MySQL 8+ / SQLite** | 生产推荐 PG 或 MySQL（对标 DataEase）；SQLite 用于开发单文件；与业务分析库分离 | 已定 |
 | ADR-08 | M8 工作流 **Flowable / Camunda** 二选一 | 四期治理 BPM；具体选型待 M13 前锁定 | 待定 |
@@ -354,7 +354,7 @@ Dataset CRUD（ORM `datasets` 表）
 | 项 | 实现要点 | NFR |
 |----|----------|-----|
 | 传输 | 生产全站 HTTPS | NFR-03 |
-| 凭证 | SM4 加密存储（默认）；Fernet 遗留双读；响应脱敏 | NFR-03 / ADR-06 |
+| 凭证 | SM4 加密存储（固定）；Fernet 遗留双读；响应脱敏 | NFR-03 / ADR-06 |
 | 登录密码 | SM3 哈希（bcrypt 遗留 + 登录升级） | ADR-16 |
 | 查询 | 强制 LIMIT；参数化；RLS 注入 | M7 |
 | 审计 | 权限变更、敏感操作写审计日志 | AUTH-008 |
