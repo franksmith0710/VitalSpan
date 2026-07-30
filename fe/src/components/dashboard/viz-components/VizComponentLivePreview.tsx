@@ -1,10 +1,13 @@
 import { useEffect, useRef } from "react";
 import { ChartRenderer } from "@/components/charts/ChartRenderer";
+import { WidgetChartLegendShell } from "@/components/charts/WidgetChartLegendShell";
 import { setChartAnimationSuppressed } from "@/components/charts/engine/d3/core/animate";
 import { FilterWidget } from "@/components/dashboard/FilterWidget";
 import { TextWidget } from "@/components/dashboard/TextWidget";
 import { MediaWidget } from "@/components/dashboard/MediaWidget";
 import type { LayoutWidget } from "@/components/dashboard/layoutUtils";
+import { WidgetShellLegendProvider } from "@/components/dashboard/pixelCanvas/widgetShellLegendContext";
+import { VizComponentChartPreviewShell } from "@/components/dashboard/viz-components/VizComponentChartPreviewShell";
 import type { Geo3dRenderTier } from "@/components/charts/engine/three/geo3dRuntime";
 import { useElementSize } from "@/hooks/useElementSize";
 import { useInViewport } from "@/hooks/useInViewport";
@@ -54,47 +57,48 @@ export function VizComponentLivePreview({
       data-live={active ? "true" : "false"}
     >
       {widget.type === "chart" && widget.chartConfig ? (
-        <ChartRenderer
-          embedded
-          config={widget.chartConfig}
-          title=""
-          widgetId={widget.id}
-          queryEnabled={active}
-          renderEnabled={active}
-          dashboardEditMode
-          pixelSize={{ width: chartWidth, height: chartHeight }}
-          geo3dRenderTier={geo3dRenderTier}
-        />
+        <VizComponentChartPreviewShell
+          widget={widget as LayoutWidget & { chartConfig: NonNullable<typeof widget.chartConfig> }}
+        >
+          <WidgetShellLegendProvider>
+            <WidgetChartLegendShell>
+              <ChartRenderer
+                embedded
+                config={widget.chartConfig}
+                title={widget.title}
+                widgetId={widget.id}
+                queryEnabled={active}
+                renderEnabled={active}
+                dashboardEditMode
+                pixelSize={{ width: chartWidth, height: chartHeight }}
+                geo3dRenderTier={geo3dRenderTier}
+              />
+            </WidgetChartLegendShell>
+          </WidgetShellLegendProvider>
+        </VizComponentChartPreviewShell>
       ) : null}
       {widget.type === "filter" && widget.filterConfig ? (
-        <div className="flex h-full items-start justify-center p-3">
-          <div className="w-full max-w-md">
-            <FilterWidget
-              widget={
-                widget as LayoutWidget & { filterConfig: NonNullable<typeof widget.filterConfig> }
-              }
-              mode="view"
-              value={widget.filterConfig.defaultValue ?? ""}
-              onValueChange={() => undefined}
-            />
-          </div>
-        </div>
+        <FilterWidget
+          widget={widget as LayoutWidget & { filterConfig: NonNullable<typeof widget.filterConfig> }}
+          mode="view"
+          shell="grid"
+          value={widget.filterConfig.defaultValue ?? ""}
+          onValueChange={() => undefined}
+        />
       ) : null}
       {widget.type === "text" && widget.textConfig ? (
-        <div className="h-full overflow-auto p-3">
-          <TextWidget
-            widget={widget as LayoutWidget & { textConfig: NonNullable<typeof widget.textConfig> }}
-            mode="view"
-          />
-        </div>
+        <TextWidget
+          widget={widget as LayoutWidget & { textConfig: NonNullable<typeof widget.textConfig> }}
+          mode="view"
+          shell="grid"
+        />
       ) : null}
       {widget.type === "media" && widget.mediaConfig ? (
-        <div className="flex h-full items-center justify-center p-3">
-          <MediaWidget
-            widget={widget as LayoutWidget & { mediaConfig: NonNullable<typeof widget.mediaConfig> }}
-            mode="view"
-          />
-        </div>
+        <MediaWidget
+          widget={widget as LayoutWidget & { mediaConfig: NonNullable<typeof widget.mediaConfig> }}
+          mode="view"
+          shell="grid"
+        />
       ) : null}
     </div>
   );

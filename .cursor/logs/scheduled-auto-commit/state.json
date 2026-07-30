@@ -1,4 +1,5 @@
 ﻿{
-    "status":  "running",
-    "startedAt":  "2026-07-30T15:03:53.3121631+08:00"
+    "status":  "idle",
+    "lastRun":  "2026-07-30T150353",
+    "lastOutcome":  "success"
 }

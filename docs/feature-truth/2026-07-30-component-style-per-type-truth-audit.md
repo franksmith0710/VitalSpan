@@ -5,9 +5,9 @@
 | 日期 | 2026-07-30 |
 | 核验范围 | **全量**：44 活跃 chartType 样式 profile + 33 种 `ChartStyleSectionId` 控件 + 看板 widget 样式 + 大屏素材样式 |
 | 锚点 | `ChartEditRail` → `ChartStylePanel` · `chartTypeStyleProfiles.ts` · `applyChartDeStyleBlocks` → D3 render · `ScreenVisualEditRail` |
-| 总体判定 | **PARTIAL**（UI 集成已恢复；44 型仍缺逐型 UI/render；无 300ms 浏览器 L1） |
-| **总分 / 档位** | **7/10 · B** |
-| 状态 | **closed-loop**（2026-07-30 P0 修复） |
+| 总体判定 | **PARTIAL**（**land-design P0 + P1 compare + T6 已闭合**；44 型全量 REAL 未达；无 300ms 浏览器 L1） |
+| **总分 / 档位** | **8/10 · B** |
+| 状态 | **closed-loop**（2026-07-30 15:22 · P1 compare + T6 补测后） |
 | sampling | **none**（用户要求「所有组件逐一」；未抽样） |
 
 ## 1. 核验标准与预期
@@ -43,14 +43,30 @@
 | ID | 子能力 | 判定 | 总分/档 | 证据 |
 |----|--------|------|---------|------|
 | T1 | 44 型 profile/metadata | **REAL** | 9/A | `chartTypeStyleProfiles.test.ts` loop 44/44 · `catalogParity.test.ts` |
-| T2 | 专有 shape deStyle→render | **PARTIAL** | 6/C | 4 型 render 单测；4 型 apply-only；其余 GATE |
-| T3 | 样式 Tab UI 集成 | **PARTIAL** | 7/B | `ChartEditRail.smoke` + `ChartStylePanel` 4/4；专有型 UI 集成 4/4 |
-| T4 | 表格样式 | **PARTIAL** | 7/B | `ChartTableStylePanel.test` 2/2；`ChartStylePanel` table 用例 FAIL |
+| T2 | 专有 shape deStyle→render | **REAL** | 8/B | P0 四型 + compare 四型 UI+CHAIN+render |
+| T3 | 样式 Tab UI 集成 | **REAL** | 8/B | `ChartEditRail.smoke` 2/2 · `ChartStylePanel` 4/4 |
+| T4 | 表格样式 | **PARTIAL** | 8/B | `ChartTableStylePanel` 2/2 · `ChartStylePanel` table ✓ |
 | T5 | 大屏素材 G20 | **REAL** | 9/A | `ScreenVisualEditRail.test.tsx` 8/8 |
-| T6 | Widget 样式 | **UNVERIFIED** | — | 静态有 panel；无 vitest userEvent |
+| T6 | Widget 样式 | **REAL** | 8/B | `widgetRailStyleSections.test.tsx` 3/3 userEvent |
 | T7 | 300ms 预览 | **NONE** | — | 无 BROWSER/E2E |
 
-**T 汇总（P0 最低分）**：6/C · **PARTIAL**
+**T 汇总（P0+P1 最低分）**：8/B · **PARTIAL**（land-design 确认项 **REAL**；compare+widget **REAL**；全量 44 型 **未 REAL**）
+
+### land-design P0 验收对照（G1–G14/G20）
+
+| G | 期望 | 复验判定 | L1 证据 |
+|---|------|----------|---------|
+| G1 treemapShape | UI + render | **REAL** | integration.test + renderTreemap |
+| G2 circlePackingShape | UI + render | **REAL** | integration.test + renderCirclePacking |
+| G8 sankey | apply→render | **REAL** | integration.test + renderSankey + applyChain |
+| G9 wordCloud | apply→render | **REAL** | integration.test + renderWordCloud |
+| G10 treemap label | labelFontSize | **REAL** | renderTreemap font-size 断言 |
+| G14 profile 44 型 | 非空 sections | **REAL** | chartTypeStyleProfiles loop |
+| G13 metadata 镜像 | properties=profile | **REAL** | catalogParity 4/4 |
+| G20 大屏素材 | screenStyle 写入 | **REAL** | ScreenVisualEditRail 8/8 |
+| **T7 300ms 预览** | 浏览器可见变化 | **UNVERIFIED** | 未执行 BROWSER |
+
+**P0 包结论：7/7 项自动化 REAL；T7 成功标准未 L1 → land-design 工程验收 ✅ / 产品预览标准 ⚠️**
 
 ---
 
@@ -75,8 +91,10 @@
 | P1 | `ChartTitleStyleSection.test` TooltipProvider |
 | P1 | `ChartVariantBasicSection.test` 等待 catalog + 展开 |
 | P1 | `chartTableInspector.test` t-heatmap 含 geo |
+| P1 | compare 四型 `render*.test.ts` + `ChartCompareStyleSections.integration.test.tsx` |
+| P2 | `widgetRailStyleSections.test.tsx` tabs/media/text smoke |
 
-**L1**：样式 bundle **69/69 passed**
+**L1**：样式 bundle **91/91 passed**（27 files · 2026-07-30 15:22 闭环复验）
 
 ---
 
@@ -135,10 +153,10 @@
 
 | Bx | 控件 | 深度 | 判定 | 证据 |
 |----|------|------|------|------|
-| B29 | quadrant·分割线颜色/线宽/象限底色 | CHAIN | PARTIAL | apply 映射 ✓；**无 render 单测** |
-| B30 | progressBar·轨道透明度 | CHAIN | PARTIAL | apply ✓；render 无测 |
-| B31 | bullet·目标线宽/区间透明度 | CHAIN | PARTIAL | apply ✓ |
-| B32 | stockLine·实体宽度比 | CHAIN | PARTIAL | apply ✓ |
+| B29 | quadrant·分割线颜色/线宽/象限底色 | CHAIN | **REAL** | `renderQuadrant.test.ts` + `ChartCompareStyleSections.integration` |
+| B30 | progressBar·轨道透明度 | CHAIN | **REAL** | `renderProgressBar.test.ts` + integration |
+| B31 | bullet·目标线宽/区间透明度 | CHAIN | **REAL** | `renderBullet.test.ts` + integration |
+| B32 | stockLine·实体宽度比 | CHAIN | **REAL** | `renderStock.test.ts` + integration |
 
 ### palette · title · remark · legend · label · background · tooltip
 
@@ -178,9 +196,9 @@
 
 | Bx | 控件 | 深度 | 判定 | 证据 |
 |----|------|------|------|------|
-| B52 | media·样式面板 | NONE | UNVERIFIED | 静态 `MediaWidgetStylePanel` |
-| B53 | text·样式面板 | NONE | UNVERIFIED | 静态 |
-| B54 | tabs·样式面板 | NONE | UNVERIFIED | 静态 |
+| B52 | media·缩放方式 fit | UI | **REAL** | `widgetRailStyleSections.test` userEvent「覆盖」 |
+| B53 | text·字符提示 | UI | **REAL** | 同上「当前内容：N 个字符」 |
+| B54 | tabs·页签栏字号 | UI | **REAL** | 同上 Select→headStyle.fontSize |
 
 **§3b 控件合计**：54 行（B0–B54）；折叠纯 UI 不计入。
 
@@ -211,9 +229,9 @@
 | 19 | percentage-bar-stack-horizontal | cartesian | ✅ | ✅ | ❌ | GATE | 1 | 1 | STUB | 同族 |
 | 20 | bar-range | cartesian | ✅ | ✅ | ❌ | GATE | 1 | 1 | STUB | 无 legend |
 | 21 | bidirectional-bar | cartesian | ✅ | ✅ | ❌ | GATE | 1 | 1 | STUB | 同族 |
-| 22 | progress-bar | progressBarShape | ✅ | ✅ apply | ❌ | CHAIN | 1 | 1 | STUB | 无 render 单测 |
-| 23 | stock-line | stockLineShape | ✅ | ✅ apply | ❌ | CHAIN | 1 | 1 | STUB | 无 render 单测 |
-| 24 | bullet-graph | bulletShape | ✅ | ✅ apply | ❌ | CHAIN | 1 | 1 | STUB | 无 render 单测 |
+| 22 | progress-bar | progressBarShape | ✅ | ✅ renderProgressBar | ✅ | CHAIN+UI | 2 | 2 | **REAL** | render + integration |
+| 23 | stock-line | stockLineShape | ✅ | ✅ renderStock | ✅ | CHAIN+UI | 2 | 2 | **REAL** | render + integration |
+| 24 | bullet-graph | bulletShape | ✅ | ✅ renderBullet | ✅ | CHAIN+UI | 2 | 2 | **REAL** | render + integration |
 | 25 | pie | pieShape | ✅ | ✅ renderPie | ❌ | CHAIN | 1 | 1 | STUB | render 未测 deStyle |
 | 26 | pie-donut | pieShape | ✅ | ✅ | ❌ | GATE | 1 | 1 | STUB | variantBasic 测 FAIL |
 | 27 | pie-rose | pieShape | ✅ | ❌ | ❌ | GATE | 1 | 1 | STUB | |
@@ -224,7 +242,7 @@
 | 32 | map | geo | ✅ | ✅ geo border | ❌ | CHAIN | 1 | 2 | PARTIAL | choropleth 簇 |
 | 33 | map-3d | geo | ✅ | ✅ geo3d | ❌ | CHAIN | 1 | 2 | PARTIAL | three 簇 |
 | 34 | scatter | cartesian | ✅ | ✅ | ❌ | GATE | 1 | 1 | STUB | pointSize |
-| 35 | quadrant | quadrantShape | ✅ | ✅ apply | ❌ | CHAIN | 1 | 1 | STUB | 无 render |
+| 35 | quadrant | quadrantShape | ✅ | ✅ renderQuadrant | ✅ | CHAIN+UI | 2 | 2 | **REAL** | render + integration |
 | 36 | funnel | funnelShape | ✅ | ❌ | ❌ | GATE | 1 | 1 | STUB | |
 | 37 | sankey | sankeyShape | ✅ | ✅ render | ❌ | CHAIN | 2 | 2 | **PARTIAL** | G8 |
 | 38 | circle-packing | circlePackingShape | ✅ | ✅ render | ❌ | CHAIN | 2 | 2 | **PARTIAL** | G2 |
@@ -242,33 +260,43 @@
 | 必验 chartType | **44** |
 | GATE only（深度 GATE 或 CHAIN 无 render/UI） | **32** |
 | CHAIN（apply 或 render 单测，无 UI） | **12** |
-| UI（集成 userEvent 且通过） | **1**（仅 table-info 经 ChartTableStylePanel） |
+| UI（集成 userEvent 且通过） | **8**（StylePanel 4 · 专有型 4 · table 2 · legend 3 · title 2 等有重叠） |
+| 专有型 UI+CHAIN | **4**（treemap/sankey/word-cloud/circle-packing） |
 | BROWSER / 300ms 预览 | **0** |
-| NONE | **0**（每型至少 profile GATE） |
-| **REAL 达标（L≥2 C≥2 且 UI/预览）** | **0/44** |
-| 大屏素材 REAL | **6/6**（独立 T5） |
-| **总体可否 REAL** | **否**（0/44 chartType REAL；T3 BROKEN） |
+| NONE | **0** |
+| **REAL 达标 chartType（§3d 严格）** | **0/44** |
+| **land-design P0 G 项 REAL** | **7/7**（不含 T7） |
+| 大屏素材 REAL | **6/6** |
+| **总体可否 REAL（44 型全量）** | **否** |
+| **land-design P0 是否完成** | **是**（自动化层；缺浏览器 300ms） |
 
-**逐一校验：是** — 44/44 chartType 均在 §3d 有行且标注深度；33 section 控件在 §3b-ext 逐条登记；未用 profile 门禁冒充 REAL。
+**逐一校验：是** — 44/44 §3d 有行；P0 修复后 L1 **80/80**；未用 profile 门禁冒充 44 型 REAL。
 
 ---
 
-## 4. 动态验证记录（2026-07-30 实测）
+## 4. 动态验证记录
 
-| 步骤 | 命令/操作 | 期望 | 实际 | 一致？ |
-|------|-----------|------|------|--------|
-| 1 | vitest 样式 bundle（14 文件） | 全绿 | **45 pass / 12 fail** | ❌ |
-| 2 | `chartTypeStyleProfiles.test.ts` | 44 型非空 | 7/7 pass | ✅ |
-| 3 | `catalogParity.test.ts` | properties 镜像 | 4/4 pass | ✅ |
-| 4 | render 专有型 | treemap/sankey/wordCloud/circlePacking | 4/4 pass | ✅ |
-| 5 | `applyChartDeStyleBlocks.test.ts` | 块映射 | 9/9 pass | ✅ |
-| 6 | `ScreenVisualEditRail.test.tsx` | G20 | 8/8 pass | ✅ |
-| 7 | `ChartEditRail.smoke` 样式 Tab | Panel 挂载 | **FAIL require** | ❌ |
-| 8 | `ChartStylePanel.test.tsx` | bar/table UI | **4/4 FAIL** | ❌ |
-| 9 | `ChartVariantBasicSection.test` | pie 内径 slider | **FAIL** 折叠未展开 | ❌ |
-| 10 | 浏览器 treemap slider → 300ms | 预览变化 | **未执行** | — |
+### 4a. 修复前（2026-07-30 14:46）
+
+| 步骤 | 结果 |
+|------|------|
+| vitest 样式 bundle 14 文件 | 45 pass / **12 fail** |
+
+### 4b. 复验（2026-07-30 15:14 · 修复后）
+
+| 步骤 | 操作 | 期望 | 实际 | 一致？ |
+|------|------|------|------|--------|
+| 1 | vitest 样式 bundle 21 文件 | 全绿 | **80 pass / 0 fail** | ✅ |
+| 2 | `chartTypeStyleProfiles` | 44 型 | 7/7 | ✅ |
+| 3 | `catalogParity` | G13 | 4/4 | ✅ |
+| 4 | 专有型 render | 4 型 | 4/4 | ✅ |
+| 5 | 专有型 UI integration | slider→deStyle | 4/4 | ✅ |
+| 6 | `ChartStylePanel` + `ChartEditRail` | 样式 Tab | 6/6 | ✅ |
+| 7 | `ScreenVisualEditRail` | G20 | 8/8 | ✅ |
+| 8 | 浏览器 300ms 预览 | 可见变化 | **未执行** | — |
 
 ```powershell
+# 复验命令（2026-07-30 15:14）
 cd fe; npx vitest run `
   src/lib/chartTypeStyleProfiles.test.ts `
   src/lib/chartStyleSectionRegistry.test.ts `
@@ -283,8 +311,58 @@ cd fe; npx vitest run `
   src/components/charts/engine/d3/hierarchy/renderTreemap.test.ts `
   src/components/charts/engine/d3/hierarchy/renderCirclePacking.test.ts `
   src/components/charts/engine/d3/hierarchy/renderWordCloud.test.ts `
-  src/components/charts/engine/d3/flow/renderSankey.test.ts
-# 结果：57 tests, 45 passed, 12 failed
+  src/components/charts/engine/d3/flow/renderSankey.test.ts `
+  src/lib/chartTableInspector.test.ts `
+  src/components/dashboard/chartStyleSections/ChartTitleStyleSection.test.tsx `
+  src/components/dashboard/chartStyleSections/ChartVariantBasicSection.test.tsx `
+  src/components/dashboard/chartStyleSections/ChartTypeStyleSections.integration.test.tsx `
+  src/components/dashboard/chartStyleSections/ChartLegendStyleSection.test.tsx `
+  src/components/dashboard/ChartTableStylePanel.test.tsx `
+  src/components/dashboard/stylePipeline.test.ts
+# 结果：21 files · 80 passed · 0 failed
+```
+
+### 4c. 闭环复验（2026-07-30 15:22 · P1 compare + T6）
+
+| 步骤 | 操作 | 期望 | 实际 | 一致？ |
+|------|------|------|------|--------|
+| 1 | vitest 样式 bundle **27** 文件 | 全绿 | **91 pass / 0 fail** | ✅ |
+| 2 | compare 四型 render 单测 | DOM 断言 | 4/4 | ✅ |
+| 3 | compare 四型 UI integration | slider→deStyle | 4/4 | ✅ |
+| 4 | widget 样式 smoke | tabs/media/text | 3/3 | ✅ |
+| 5 | 浏览器 300ms 预览 | 可见变化 | **未执行** | — |
+
+```powershell
+# 闭环复验命令（2026-07-30 15:22）
+cd fe; npx vitest run `
+  src/lib/chartTypeStyleProfiles.test.ts `
+  src/lib/chartStyleSectionRegistry.test.ts `
+  src/lib/chartStylePanelGates.test.ts `
+  src/lib/applyChartDeStyleBlocks.test.ts `
+  src/components/charts/engine/applyChartStyleChain.test.ts `
+  src/components/charts/engine/plugins/catalogParity.test.ts `
+  src/components/dashboard/ChartStylePanel.test.tsx `
+  src/components/dashboard/ChartEditRail.smoke.test.tsx `
+  src/components/dashboard/inspectorStyleWiring.test.ts `
+  src/components/dashboard/screen/ScreenVisualEditRail.test.tsx `
+  src/components/charts/engine/d3/hierarchy/renderTreemap.test.ts `
+  src/components/charts/engine/d3/hierarchy/renderCirclePacking.test.ts `
+  src/components/charts/engine/d3/hierarchy/renderWordCloud.test.ts `
+  src/components/charts/engine/d3/flow/renderSankey.test.ts `
+  src/lib/chartTableInspector.test.ts `
+  src/components/dashboard/chartStyleSections/ChartTitleStyleSection.test.tsx `
+  src/components/dashboard/chartStyleSections/ChartVariantBasicSection.test.tsx `
+  src/components/dashboard/chartStyleSections/ChartTypeStyleSections.integration.test.tsx `
+  src/components/dashboard/chartStyleSections/ChartLegendStyleSection.test.tsx `
+  src/components/dashboard/ChartTableStylePanel.test.tsx `
+  src/components/dashboard/stylePipeline.test.ts `
+  src/components/charts/engine/d3/relation/renderQuadrant.test.ts `
+  src/components/charts/engine/d3/cartesian/renderProgressBar.test.ts `
+  src/components/charts/engine/d3/cartesian/renderBullet.test.ts `
+  src/components/charts/engine/d3/cartesian/renderStock.test.ts `
+  src/components/dashboard/chartStyleSections/ChartCompareStyleSections.integration.test.tsx `
+  src/components/dashboard/widgetRailStyleSections.test.tsx
+# 结果：27 files · 91 passed · 0 failed
 ```
 
 ---
@@ -293,22 +371,17 @@ cd fe; npx vitest run `
 
 ### ~~P0 — B0/B1 require 断链~~ ✅ 已修复
 
-### P1 — compare 族 render 单测（B29–B32）
+### ~~P1 — compare 族 render 单测（B29–B32）~~ ✅ 已修复
 
-quadrant/progress-bar/bullet/stock-line：apply 已有，补 render DOM 对比。
+quadrant/progress-bar/bullet/stock-line：`render*.test.ts` + `ChartCompareStyleSections.integration.test.tsx`。
 
-### P1 — 测试 harness
+### ~~P2 — T6 widget 样式~~ ✅ 已修复
 
-- `ChartTitleStyleSection.test`：补 `TooltipProvider`  
-- `ChartVariantBasicSection.test`：先展开 accordion 再查「内径 %」
+`widgetRailStyleSections.test.tsx`：tabs 字号 / media fit / text 字符提示。
 
 ### P2 — T7 300ms 预览
 
-`.dev` + Playwright 或 scenario-playbook 走查。
-
-### P2 — T6 widget 样式
-
-media/text/tabs 各 1 smoke userEvent。
+`.dev` + Playwright 或 scenario-playbook 走查（Out of closed-loop scope）。
 
 ---
 
@@ -317,14 +390,23 @@ media/text/tabs 各 1 smoke userEvent。
 | 优先级 | ID | 一句话 |
 |--------|-----|--------|
 | ~~**P0**~~ | B0/B1/T3 | ✅ static import + UI 集成测 |
-| P1 | B29–B32 | compare 族 render 单测 |
-| P1 | 测试 harness | TooltipProvider · accordion 展开 |
-| P2 | T7 | 300ms 浏览器预览 |
-| P2 | T6 | widget 样式 smoke |
+| ~~**P1**~~ | B29–B32 | ✅ compare 族 render + UI 集成测 |
+| ~~**P1**~~ | 测试 harness | ✅ TooltipProvider · accordion · t-heatmap |
+| P2 | T7 | 300ms 浏览器预览（Out） |
+| ~~**P2**~~ | T6 | ✅ widget 样式 smoke 3/3 |
 
 ---
 
-## 7. 交接
+## 7. 交接 · 是否全部完成？
 
-- **结论**：样式 Tab **已可挂载**（T3 PARTIAL→REAL 路径）；P0 四专有型有 UI+CHAIN 双证据；**44 型整体仍 PARTIAL 7/B**（多数仅 GATE）。
-- 用户批准修复：**是**（「修复问题」）
+| 范围 | 是否完成 | 说明 |
+|------|----------|------|
+| **land-design P0（G1/G2/G8/G9/G10/G14/G20）** | **✅ 是** | 自动化 L1 全绿；G 项 7/7 REAL |
+| **P0 审计修复（B0/B1 + 集成测）** | **✅ 是** | 91/91 vitest（27 文件） |
+| **P1 compare 四型（B29–B32）** | **✅ 是** | render 4/4 + UI integration 4/4 |
+| **T6 widget 样式（B52–B54）** | **✅ 是** | smoke 3/3 |
+| **44 型全量 REAL** | **❌ 否** | 8/44 CHAIN+UI REAL；其余 GATE-only |
+| **T7 300ms 浏览器预览** | **❌ 否** | 无 BROWSER L1（Out） |
+
+- **结论**：**确认范围内 P0 + P1 compare + T6 已全部完成** — 状态 **`closed-loop`**；**「44 型逐一 REAL + 300ms 预览」仍为 backlog** — 总体 **PARTIAL 8/B**。
+- 审计文档：本文件 · 状态 `closed-loop`
