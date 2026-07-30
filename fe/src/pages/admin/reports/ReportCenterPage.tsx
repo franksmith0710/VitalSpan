@@ -20,6 +20,7 @@ import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { apiFetch } from "@/lib/api";
 import { matchesCapability, resolveEffectiveCapabilities } from "@/lib/capabilities";
 import { resolveDefaultReportTemplateNodeId } from "@/lib/defaultViewResolve";
+import { prefabReportsRunPath } from "./reportRoutes";
 import { mapApiError } from "@/lib/apiError";
 import {
   fetchAllCatalogTemplates,
@@ -119,7 +120,9 @@ function PrefabRow({ binding }: { binding: PrefabBinding }) {
         <p className="text-theme-xs text-gray-500">{binding.analysisType}</p>
       </div>
       <Button type="button" variant="outline" size="sm" asChild>
-        <Link to="/admin/reports">运行</Link>
+        <Link to={prefabReportsRunPath(binding.bindingKey)} aria-label={`运行 ${binding.displayName}`}>
+          运行
+        </Link>
       </Button>
     </div>
   );

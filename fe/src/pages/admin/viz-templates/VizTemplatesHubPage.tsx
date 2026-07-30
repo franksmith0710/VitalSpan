@@ -71,16 +71,19 @@ export function VizTemplatesHubPage() {
   const [q, setQ] = useState("");
   const importRef = useRef<HTMLInputElement>(null);
 
+  /** 政务模板跨大屏/看板；选「政务」时不按 surfaceKind 过滤，一次展示全部政企模板。 */
+  const listSurfaceKind = categoryKey === "government" ? undefined : surfaceKind;
+
   const listQuery = useQuery({
     queryKey: queryKeys.dashboardTemplates.list({
-      surfaceKind,
+      surfaceKind: listSurfaceKind,
       categoryKey: categoryKey ?? undefined,
       q,
       includeDrafts: canManage,
     }),
     queryFn: () =>
       fetchDashboardTemplates({
-        surfaceKind,
+        surfaceKind: listSurfaceKind,
         categoryKey: categoryKey ?? undefined,
         q: q || undefined,
         includeDrafts: canManage,
@@ -230,6 +233,11 @@ export function VizTemplatesHubPage() {
                   </Button>
                 ))}
               </div>
+              {categoryKey === "government" ? (
+                <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+                  政务模板含数据大屏与仪表板，已合并展示。
+                </p>
+              ) : null}
             </div>
           }
           actions={

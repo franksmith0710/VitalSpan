@@ -3,6 +3,7 @@
 
 SET NAMES utf8mb4;
 
+DROP VIEW IF EXISTS v_gov_region_service;
 DROP VIEW IF EXISTS de_map_flow;
 DROP VIEW IF EXISTS de_map_heat;
 DROP VIEW IF EXISTS de_map_district;
@@ -10,6 +11,12 @@ DROP VIEW IF EXISTS de_map_city;
 DROP VIEW IF EXISTS de_map_province;
 DROP VIEW IF EXISTS de_sales_wide;
 DROP VIEW IF EXISTS v_sales_geo;
+DROP TABLE IF EXISTS gov_eco_monitor;
+DROP TABLE IF EXISTS gov_investment;
+DROP TABLE IF EXISTS gov_grid_stats;
+DROP TABLE IF EXISTS gov_incidents;
+DROP TABLE IF EXISTS gov_budget_items;
+DROP TABLE IF EXISTS gov_service_metrics;
 DROP TABLE IF EXISTS map_flows;
 DROP TABLE IF EXISTS geo_locations;
 
@@ -609,3 +616,145 @@ JOIN regions prov ON city.parent_id = prov.id
 JOIN products p ON s.product_id = p.id
 JOIN product_categories pc ON p.category_id = pc.id
 LEFT JOIN customers c ON s.customer_id = c.id;
+
+-- ---------------------------------------------------------------------------
+-- 政企模板演示数据（10 套内置模板 SQL 引用）
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS gov_service_metrics (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  stat_date DATE NOT NULL,
+  department VARCHAR(64) NOT NULL,
+  metric_code VARCHAR(32) NOT NULL,
+  metric_name VARCHAR(64) NOT NULL,
+  region_id INT NULL,
+  value DECIMAL(16, 2) NOT NULL,
+  INDEX idx_gov_svc_date (stat_date),
+  INDEX idx_gov_svc_dept (department),
+  INDEX idx_gov_svc_code (metric_code)
+);
+
+CREATE TABLE IF NOT EXISTS gov_budget_items (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  fiscal_year INT NOT NULL,
+  category VARCHAR(64) NOT NULL,
+  budget_amount DECIMAL(16, 2) NOT NULL,
+  spent_amount DECIMAL(16, 2) NOT NULL,
+  INDEX idx_gov_budget_year (fiscal_year)
+);
+
+CREATE TABLE IF NOT EXISTS gov_incidents (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  report_date DATE NOT NULL,
+  incident_type VARCHAR(64) NOT NULL,
+  severity VARCHAR(16) NOT NULL,
+  region_id INT NULL,
+  status VARCHAR(16) NOT NULL,
+  count INT NOT NULL DEFAULT 1,
+  INDEX idx_gov_inc_date (report_date)
+);
+
+CREATE TABLE IF NOT EXISTS gov_grid_stats (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  grid_name VARCHAR(64) NOT NULL,
+  district VARCHAR(64) NOT NULL,
+  event_count INT NOT NULL,
+  resolved_count INT NOT NULL,
+  pending_count INT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS gov_investment (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  report_date DATE NOT NULL,
+  industry VARCHAR(64) NOT NULL,
+  region_id INT NULL,
+  investment_amount DECIMAL(16, 2) NOT NULL,
+  project_count INT NOT NULL,
+  INDEX idx_gov_inv_date (report_date)
+);
+
+CREATE TABLE IF NOT EXISTS gov_eco_monitor (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  monitor_date DATE NOT NULL,
+  monitor_point VARCHAR(64) NOT NULL,
+  index_code VARCHAR(32) NOT NULL,
+  index_name VARCHAR(64) NOT NULL,
+  index_value DECIMAL(10, 2) NOT NULL,
+  region_id INT NULL,
+  INDEX idx_gov_eco_date (monitor_date)
+);
+
+INSERT INTO gov_service_metrics (stat_date, department, metric_code, metric_name, region_id, value) VALUES
+  ('2025-07-01', '市场监管局', 'satisfaction', '满意度(%)', NULL, 92.50),
+  ('2025-07-01', '住建局', 'satisfaction', '满意度(%)', NULL, 88.30),
+  ('2025-07-01', '卫健委', 'satisfaction', '满意度(%)', NULL, 91.20),
+  ('2025-07-01', '教育局', 'satisfaction', '满意度(%)', NULL, 89.80),
+  ('2025-07-01', '公安局', 'satisfaction', '满意度(%)', NULL, 87.60),
+  ('2025-07-01', '人社局', 'satisfaction', '满意度(%)', NULL, 90.10),
+  ('2025-07-02', '市场监管局', 'satisfaction', '满意度(%)', NULL, 93.10),
+  ('2025-07-02', '住建局', 'satisfaction', '满意度(%)', NULL, 89.00),
+  ('2025-07-02', '卫健委', 'satisfaction', '满意度(%)', NULL, 91.80),
+  ('2025-07-03', '市场监管局', 'satisfaction', '满意度(%)', NULL, 92.80),
+  ('2025-07-01', '政务服务中心', 'cases_handled', '办件量', NULL, 1280),
+  ('2025-07-01', '政务服务中心', 'online_rate', '网办率(%)', NULL, 96.50),
+  ('2025-07-01', '政务服务中心', 'response_time', '平均响应(小时)', NULL, 4.20),
+  ('2025-07-02', '政务服务中心', 'cases_handled', '办件量', NULL, 1356),
+  ('2025-07-02', '政务服务中心', 'online_rate', '网办率(%)', NULL, 97.10),
+  ('2025-07-03', '政务服务中心', 'cases_handled', '办件量', NULL, 1198),
+  ('2025-07-03', '政务服务中心', 'online_rate', '网办率(%)', NULL, 96.80);
+
+INSERT INTO gov_budget_items (fiscal_year, category, budget_amount, spent_amount) VALUES
+  (2025, '教育支出', 85000000.00, 52300000.00),
+  (2025, '医疗卫生', 62000000.00, 41800000.00),
+  (2025, '社会保障', 98000000.00, 67200000.00),
+  (2025, '公共安全', 45000000.00, 28900000.00),
+  (2025, '城乡社区', 38000000.00, 24100000.00),
+  (2025, '交通运输', 72000000.00, 46500000.00);
+
+INSERT INTO gov_incidents (report_date, incident_type, severity, region_id, status, count) VALUES
+  ('2025-07-01', '自然灾害', 'high', 5, 'resolved', 2),
+  ('2025-07-01', '安全生产', 'medium', 7, 'handling', 5),
+  ('2025-07-01', '公共卫生', 'medium', 8, 'resolved', 3),
+  ('2025-07-01', '交通拥堵', 'low', 8, 'resolved', 12),
+  ('2025-07-01', '舆情预警', 'high', NULL, 'handling', 1),
+  ('2025-07-02', '安全生产', 'high', 10, 'handling', 2),
+  ('2025-07-02', '自然灾害', 'medium', 9, 'resolved', 1),
+  ('2025-07-02', '公共卫生', 'low', 7, 'resolved', 4);
+
+INSERT INTO gov_grid_stats (grid_name, district, event_count, resolved_count, pending_count) VALUES
+  ('城东第一网格', '天河区', 156, 142, 14),
+  ('城东第二网格', '天河区', 128, 119, 9),
+  ('城西综合网格', '越秀区', 98, 91, 7),
+  ('南湖社区网格', '海珠区', 112, 105, 7),
+  ('北苑服务网格', '白云区', 87, 80, 7),
+  ('高新园区网格', '黄埔区', 134, 126, 8),
+  ('滨江治理网格', '荔湾区', 76, 72, 4),
+  ('大学城网格', '番禺区', 65, 61, 4);
+
+INSERT INTO gov_investment (report_date, industry, region_id, investment_amount, project_count) VALUES
+  ('2025-07-01', '新一代信息技术', 5, 125000000.00, 8),
+  ('2025-07-01', '高端装备制造', 10, 98000000.00, 6),
+  ('2025-07-01', '生物医药', 8, 76000000.00, 5),
+  ('2025-07-01', '绿色能源', 7, 54000000.00, 4),
+  ('2025-07-01', '现代服务业', 5, 112000000.00, 11),
+  ('2025-07-02', '新一代信息技术', 5, 88000000.00, 5),
+  ('2025-07-02', '高端装备制造', 6, 67000000.00, 3);
+
+INSERT INTO gov_eco_monitor (monitor_date, monitor_point, index_code, index_name, region_id, index_value) VALUES
+  ('2025-07-01', '城北监测站', 'aqi', '空气质量指数', 7, 68.00),
+  ('2025-07-01', '城南监测站', 'aqi', '空气质量指数', 8, 72.00),
+  ('2025-07-01', '饮用水源地', 'water', '水质达标率(%)', 5, 98.50),
+  ('2025-07-01', '工业园区站', 'aqi', '空气质量指数', 10, 81.00),
+  ('2025-07-02', '城北监测站', 'aqi', '空气质量指数', 7, 65.00),
+  ('2025-07-02', '城南监测站', 'aqi', '空气质量指数', 8, 70.00),
+  ('2025-07-02', '饮用水源地', 'water', '水质达标率(%)', 5, 98.80),
+  ('2025-07-03', '城北监测站', 'aqi', '空气质量指数', 7, 62.00);
+
+CREATE OR REPLACE VIEW v_gov_region_service AS
+SELECT
+  province,
+  city,
+  district,
+  ROUND(SUM(amount) * 1.35, 2) AS service_volume
+FROM v_sales_geo
+GROUP BY province, city, district;

@@ -63,9 +63,9 @@
 - **期次**：一期
 - **描述**：凭证加密存储（SRS 追溯项）。
 - **验收标准**：
-  - [x] 密码 Fernet 加密落库
+  - [x] 密码 SM4 加密落库（默认 `CREDENTIAL_CRYPTO_PROVIDER=sm4`；Fernet 遗留双读）
   - [x] API 不返回明文密码
-- **代码锚点**：`backend/app/datasources/credentials.py` · `backend/app/datasources/models.py` · `tests/test_datasources_l1.py` T-DS-K01~K04 · `tests/test_datasources_quality_r23.py` T-DS-K05~K08 · `tests/test_datasources_quality_r24.py` T-DS-K09~K12
+- **代码锚点**：`backend/app/core/crypto/credentials.py` · `backend/app/datasources/credentials.py` · `backend/app/datasources/models.py` · `tests/test_crypto_sm4.py` · `tests/test_datasources_l1.py` T-DS-K01~K04 · `tests/test_datasources_quality_r23.py` T-DS-K05~K08 · `tests/test_datasources_quality_r24.py` T-DS-K09~K12
 - **演化建议**：凭证轮换 runbook；访问审计与 M7 ACL 联动；密钥轮换生产化
 - **里程碑对齐**：
 ### [DS-006] 连接池按 dataSourceId 隔离

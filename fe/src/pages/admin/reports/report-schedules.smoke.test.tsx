@@ -3,6 +3,7 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { ReportSchedulesPage } from "./ReportSchedulesPage";
 
 const mockApiFetch = vi.fn();
@@ -12,9 +13,11 @@ function renderPage() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      <MemoryRouter>
-        <ReportSchedulesPage />
-      </MemoryRouter>
+      <TooltipProvider delayDuration={0}>
+        <MemoryRouter>
+          <ReportSchedulesPage />
+        </MemoryRouter>
+      </TooltipProvider>
     </QueryClientProvider>,
   );
 }
@@ -62,7 +65,7 @@ describe("ReportSchedulesPage smoke", () => {
               status: "semi_real_failed",
               artifactRef: "semi://x",
               executedAt: "2026-07-07T00:00:00Z",
-              errorMessage: "smtp unavailable",
+              errorMessage: "邮件投递不可用",
             },
           ],
           total: 1,
@@ -88,6 +91,6 @@ describe("ReportSchedulesPage smoke", () => {
     await screen.findByText("销售月报");
     await user.click(screen.getByRole("button", { name: "销售月报" }));
     expect(await screen.findByText("重试")).toBeInTheDocument();
-    expect(screen.getByText("smtp unavailable")).toBeInTheDocument();
+    expect(screen.getByText("邮件投递不可用")).toBeInTheDocument();
   });
 });

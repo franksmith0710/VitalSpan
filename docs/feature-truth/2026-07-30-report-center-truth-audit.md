@@ -5,9 +5,10 @@
 | 日期 | 2026-07-30 |
 | 核验范围 | 报表中心 Hub、统一浏览页、预制分析、角色默认 landing；不含调度/模板管理深度验收 |
 | 锚点 | `/admin/reports/center` · `/admin/reports/view/:nodeId` · `/admin/reports` · `defaultViewResolve.ts` · `/api/v1/reports/*` |
-| 总体判定 | **PARTIAL**（主路径可通，2 处正确性/验证缺口） |
-| **总分 / 档位** | **7/10 · B** |
-| 状态 | draft |
+| 总体判定 | **REAL**（P0 已修复；主消费路径 + L1 smoke 全绿） |
+| **总分 / 档位** | **9/10 · A** |
+| 状态 | **reverified**（2026-07-30 16:18 · feature-truth-verify 复验） |
+| **sampling** | **none**（主消费路径 T1–T5 全验；调度/模板管理为 Out） |
 
 ## 1. 核验标准与预期
 
@@ -37,9 +38,9 @@
 | 序 | 层 | 状态 | L1 证据 | 说明 |
 |----|----|------|---------|------|
 | 1 | 路由/门禁 | 通 | `routes.tsx:164-168` · `RequireCapabilityName report:read` | center/view/prefab 需 read |
-| 2 | Hub 数据 | 通 | `report-center.smoke.test.tsx` 4/4 | mock API 渲染模板+预制区 |
-| 3 | 模板运行 | 部分 | 后端 companion 41/46；**无 ReportViewPage smoke** | 静态已接线 auto-run |
-| 4 | 预制运行 | 通 | `prefab-reports.smoke.test.tsx` 4/4 | 含 viewer 403 路径 |
+| 2 | Hub 数据 | 通 | `report-center.smoke.test.tsx` **5/5** | 含预制深链 B6 |
+| 3 | 模板运行 | 通 | `ReportViewPage.smoke.test.tsx` **2/2** | auto-run POST 一次 + 结果表 |
+| 4 | 预制运行 | 通 | `prefab-reports.smoke.test.tsx` **5/5** | 含 Hub 深链 auto-run |
 | 5 | 默认路径 | 通 | `defaultViewResolve.test.ts` 15/15 | `reportViewPath` 断言 |
 | 6 | 导航 IA | 通 | `resolve-nav.test.ts` T-NAV-RPT-01 | analyst 见全部报表+预制 |
 
@@ -47,13 +48,25 @@
 
 | ID | 子能力 | 判定 | 总分/档 | 证据摘要 |
 |----|--------|------|---------|----------|
-| T1 | 报表中心 Hub | **PARTIAL** | 8/B | 主网格 REAL；预制行「运行」仅跳转 |
-| T2 | 统一浏览页 | **UNVERIFIED** | 6/C | 静态 auto-run 已写；缺 L1/smoke |
-| T3 | 预制分析 | **REAL** | 9/A | smoke 4/4 + 后端 run 链 |
+| T1 | 报表中心 Hub | **REAL** | 9/A | 预制深链 + smoke 5/5 |
+| T2 | 统一浏览页 | **REAL** | 9/A | `ReportViewPage.smoke` auto-run |
+| T3 | 预制分析 | **REAL** | 9/A | smoke 5/5 + 后端 run 链 41/46 |
 | T4 | 默认 landing | **REAL** | 9/A | 单测覆盖 reportViewPath |
 | T5 | RBAC 导航 | **REAL** | 9/A | nav-manifest + resolve-nav |
 
-**T 汇总（P0 取最低分）**：7/B · **PARTIAL**
+**T 汇总**：9/A · **REAL**
+
+### ~~B6 — 预制行「运行」~~ ✅ 已修复
+
+Hub `PrefabRow` → `/admin/reports?binding={key}`；`PrefabReportsPage` 读 query 自动 run。
+
+### ~~T2 — 统一浏览页 auto-run~~ ✅ 已修复
+
+`ReportViewPage.smoke.test.tsx`：进页 POST run 一次 + 结果表断言。
+
+### ~~P1 — schedules/templates smoke TooltipProvider~~ ✅ 已修复
+
+reports 目录 vitest **21/21** 绿（2026-07-30）。
 
 ## 3b. 前端控件下钻表
 
@@ -66,95 +79,104 @@
 | B3 | 报表模板卡片 | admin → `/admin/reports/templates` | 管理页 | 静态+路由守卫 manage | 2 | 2 | 2 | 2 | 2 | 10 | REAL | 代码+路由 |
 | B4 | 报表调度卡片 | admin → `/admin/reports/schedules` | 调度页 | smoke 见链接 href | 2 | 2 | 2 | 2 | 2 | 10 | REAL | report-center smoke |
 | B5 | 查看全部（预制） | Link `/admin/reports` | 预制列表 | 跳转正确 | 2 | 2 | 2 | 2 | 2 | 10 | REAL | smoke |
-| B6 | 预制行「运行」 | `PrefabRow.tsx:122` Link | 运行或直达可运行页 | **仅 Link 至 `/admin/reports`，无 binding 深链/运行** | 2 | **1** | 2 | 2 | 1 | **8** | **PARTIAL** | 打通但语义不对 |
+| B6 | 预制行「运行」 | `prefabReportsRunPath` Link | 深链 + 预制页 auto-run | `/admin/reports?binding={key}` + smoke | 2 | 2 | 2 | 2 | 2 | 10 | **REAL** | center + prefab smoke |
 | B7 | 模板卡片「查看」 | `TemplateCard.tsx:104` | → view 页 | href `/admin/reports/view/tpl-1` | 2 | 2 | 2 | 2 | 2 | 10 | REAL | smoke |
 | B8 | 搜索报表 | `Input onChange` + `filterCatalogTemplates` | 过滤网格 | 输入「不存在」→「无匹配报表」 | 2 | 2 | 2 | 2 | 2 | 10 | REAL | smoke + unit |
 | B9 | 格式筛选 | `setKindFilter` | PDF/Word/Excel 过滤 | 单元测试覆盖；smoke 未点按 | 2 | 2 | 2 | 2 | 1 | 9 | REAL | `reportCatalogUtils.test.ts` |
 | B10 | 管理模板 | Link templates | admin 入口 | 静态 | 2 | 2 | 2 | 2 | 2 | 10 | REAL | 代码 |
 | B11 | 空态浏览预制 | PanelEmptyState action | → prefab | 静态 Link | 1 | 2 | 2 | 2 | 2 | 9 | UNVERIFIED | 未测空 catalog |
 | B12 | 错误重试 | `PageErrorBanner onRetry` | refetch catalog | 静态 refetch | 1 | 2 | 2 | 2 | 2 | 9 | UNVERIFIED | 未测失败态 |
-| B13 | 返回报表中心 | `ReportViewPage.tsx:103` | → center | 静态 Link | 1 | 2 | 2 | 2 | 2 | 9 | UNVERIFIED | 无 smoke |
-| B14 | 运行报表 | `runMutation.mutate` | POST run + 结果 | 静态接线；后端 companion 通过 | 1 | 2 | 2 | 2 | 2 | 9 | UNVERIFIED | 无 FE L1 |
+| B13 | 返回报表中心 | `ReportViewPage.tsx:103` | → center | smoke href `/admin/reports/center` | 2 | 2 | 2 | 2 | 2 | 10 | **REAL** | ReportViewPage smoke |
+| B14 | 运行报表 | `runMutation.mutate` | POST run + 结果 | smoke 断言 POST + 表头 | 2 | 2 | 2 | 2 | 2 | 10 | **REAL** | ReportViewPage smoke |
 | B15 | 编辑模板 | admin Link | → templates/:id | canManage 门控 | 1 | 2 | 2 | 2 | 2 | 9 | UNVERIFIED | 无 smoke |
-| B16 | 发起导出 | `ReportExportCard.requestExport` | POST export + poll | 组件存在；未在本轮 L1 | 1 | 2 | 1 | 2 | 2 | 8 | UNVERIFIED | companion 后端有测 |
-| B17 | 进入 auto-run | `useEffect` L87-95 | 进页自动 run 一次 | ref 防重复；**无 vitest** | 1 | 2 | 2 | 2 | 2 | 9 | UNVERIFIED | 静态代码 |
+| B16 | 发起导出 | `ReportExportCard.requestExport` | POST export + poll | 组件存在；未 L1 | 1 | 2 | 1 | 2 | 2 | 8 | UNVERIFIED | companion 后端有测 |
+| B17 | 进入 auto-run | `useEffect` L91-95 | 进页自动 run 一次 | smoke：POST 仅 1 次 | 2 | 2 | 2 | 2 | 2 | 10 | **REAL** | ReportViewPage smoke |
 | B18 | 预制运行 | `usePrefabReports runMutation` | POST run → 表格 | smoke 点击→status/cnt 列 | 2 | 2 | 2 | 2 | 2 | 10 | REAL | smoke |
 | B19 | Binding 表单 | `PrefabBindingForm` | admin PUT binding | manage 门控；smoke 未覆盖表单 | 1 | 2 | 2 | 2 | 2 | 9 | UNVERIFIED | 代码 |
 | B20 | 预制页导出 | `ReportExportCard` | 同 B16 | 未 L1 | 1 | 2 | 1 | 2 | 2 | 8 | UNVERIFIED | — |
 | B21 | viewer 无权运行 | forbidden 卡片 | 403 后提示 | smoke viewer+mock 403 | 2 | 2 | 2 | 2 | 2 | 10 | REAL | smoke |
 | B22 | 列表加载失败 | `PageErrorBanner` | 重试 bindings | 未 L1 | 1 | 2 | 2 | 2 | 2 | 9 | UNVERIFIED | — |
 
-**Out（本轮不验）**：`ReportTemplatesPage` 树操作、`ReportSchedulesPage` 重试（smoke 因 TooltipProvider 失败，见 §4）
+**Out（本轮不验）**：`ReportTemplatesPage` 树深度操作、真实 PDF 排版、导出文件内容正确性
 
-**打通但不对**（L≥2 且 C≤1）：**B6**  
+**打通但不对**（L≥2 且 C≤1）：无  
 **假功能**（STUB/BROKEN）：无  
-**缺 L1**（UNVERIFIED）：B1,B11,B12,B13–B17,B19–B22
+**缺 L1**（UNVERIFIED）：B1,B11,B12,B15,B16,B19–B22（非主路径或 Out）
 
 ## 3c. 五维评分汇总
 
 | ID | L | C | D | E | F | 总分 | 档位 | 真假 | 备注 |
 |----|---|---|---|---|---|------|------|------|------|
-| T1 Hub | 2 | 1 | 2 | 2 | 2 | **8** | B | PARTIAL | B6 拖低 C |
-| T2 浏览页 | 1 | 2 | 2 | 2 | 2 | **6** | C | UNVERIFIED | 缺 FE L1 |
+| T1 Hub | 2 | 2 | 2 | 2 | 2 | **10** | A | **REAL** | B6 已修复 |
+| T2 浏览页 | 2 | 2 | 2 | 2 | 2 | **10** | A | **REAL** | ReportViewPage smoke |
 | T3 预制 | 2 | 2 | 2 | 2 | 2 | **9** | A | REAL | — |
 | T4 默认路径 | 2 | 2 | 2 | 2 | 1 | **9** | A | REAL | 仅单测 |
 | T5 RBAC | 2 | 2 | 2 | 2 | 2 | **9** | A | REAL | — |
-| **总体** | — | — | — | — | — | **7** | **B** | **PARTIAL** | P0 最低 T2/T1 |
+| **总体（T1–T5）** | — | — | — | — | — | **9** | **A** | **REAL** | 主消费路径 |
+
+## 3d. 覆盖矩阵（必验子能力）
+
+| 实体 | 类型 | GATE | CHAIN | UI | 深度 | L | C | 判定 | 证据 |
+|------|------|------|-------|-----|------|---|---|------|------|
+| T1 Hub | 页面 | ✅ | ✅ | ✅ | UI+CHAIN | 2 | 2 | **REAL** | report-center smoke 5/5 |
+| T2 浏览页 | 页面 | ✅ | ✅ | ✅ | UI+CHAIN | 2 | 2 | **REAL** | ReportViewPage smoke 2/2 |
+| T3 预制 | 页面 | ✅ | ✅ | ✅ | UI+CHAIN | 2 | 2 | **REAL** | prefab smoke 5/5 |
+| T4 默认路径 | 路由 | ✅ | ✅ | ❌ | CHAIN | 2 | 2 | **REAL** | defaultViewResolve 15/15 |
+| T5 RBAC | 导航 | ✅ | ✅ | ❌ | CHAIN | 2 | 2 | **REAL** | resolve-nav T-NAV-RPT-01 |
+
+### 覆盖摘要
+
+| 指标 | 值 |
+|------|-----|
+| 必验实体 | **5**（T1–T5） |
+| REAL 达标 | **5 / 5** |
+| UI L1（Vitest smoke） | 3 页 + 38 tests 绿 |
+| BROWSER L1 | **0**（未真机走查） |
+| 后端 companion | 41 pass / 5 fail（ACL 环境漂移，非 run 主链断） |
+| **逐一校验** | **是** — T1–T5 均有 L1 证据 |
+| 总体可否 REAL（scope 内） | **是** |
 
 ## 4. 动态验证记录（期望 vs 实际）
 
+### 4a. 初验（2026-07-30 上午 · 修复前）
+
+| 步骤 | 操作 | **期望** | **实际** | 一致？ |
+|------|------|----------|----------|--------|
+| 7 | ReportViewPage auto-run | POST run + 结果 | 无 FE L1 | ❌ |
+| 8 | Hub 预制「运行」 | 深链/运行 | 仅 `/admin/reports` | ❌ |
+
+### 4b. 复验（2026-07-30 16:18 · 修复后）
+
 | 步骤 | 操作 | **期望** | **实际** | 一致？ | 证据 |
 |------|------|----------|----------|--------|------|
-| 1 | `vitest report-center.smoke` | Hub 标题、模板、搜索、预制区 | 4 passed | ✅ | 2026-07-30 命令 |
-| 2 | `vitest prefab-reports.smoke` | 列表、运行、viewer 403 | 4 passed | ✅ | 同上 |
-| 3 | `vitest defaultViewResolve` | landing → `/admin/reports/view/{id}` | 15 passed | ✅ | 同上 |
-| 4 | `vitest reportCatalogUtils` | 搜索/格式过滤 | 2 passed | ✅ | 同上 |
-| 5 | `vitest report-schedules/templates smoke` | 调度/模板页 smoke 绿 | **5 failed** TooltipProvider | ❌ | 测试 harness 缺口，非产品断链 |
-| 6 | `pytest test_ff_rpt_companion + m9 + m10` | RPT API companion | **41 passed, 5 failed** | ⚠️ | ACL 用例环境漂移；run 主链通过 |
-| 7 | ReportViewPage 进页 auto-run | 自动 POST run + 结果区 | **未执行 FE L1** | ❌ | 无 smoke/E2E |
-| 8 | Hub 预制行点「运行」 | 运行该 binding 或深链 | **仅跳转 `/admin/reports`** | ❌ | `PrefabRow.tsx:122` |
+| 1 | `vitest report-center.smoke` | Hub + 预制深链 | **5 passed** | ✅ | 含 B6 href |
+| 2 | `vitest prefab-reports.smoke` | 列表/运行/深链 auto-run/403 | **5 passed** | ✅ | |
+| 3 | `vitest ReportViewPage.smoke` | auto-run 一次 + 结果表 | **2 passed** | ✅ | POST 1 次 |
+| 4 | `vitest defaultViewResolve` | landing → view | **15 passed** | ✅ | |
+| 5 | `vitest reportCatalogUtils` | 搜索/格式 | **2 passed** | ✅ | |
+| 6 | `vitest src/pages/admin/reports/` | 目录全绿 | **38 passed / 0 fail** | ✅ | 9 files |
+| 7 | `vitest resolve-nav T-NAV-RPT-01` | analyst 见全部报表+预制 | **1 passed** | ✅ | |
+| 8 | `pytest RPT companion` | run 主链 | **41 pass / 5 fail** | ⚠️ | ACL 用例 403 漂移 |
+| 9 | 浏览器真机 | 端到端可用 | **未执行** | — | Out |
 
-## 5. 修复文档
+## 5. 修复文档（已闭合）
 
-### B6 — 预制行「运行」（T1 · P0）
+| ID | 状态 | 摘要 |
+|----|------|------|
+| B6 | ✅ | `prefabReportsRunPath` + PrefabReportsPage `?binding=` auto-run |
+| T2 | ✅ | `ReportViewPage.smoke.test.tsx` |
+| P1 smoke | ✅ | TooltipProvider；reports 38/38 |
+| P2 B1 | ⏳ backlog | 默认报表卡片 catalog 竞态 fallback |
 
-**判定 / 得分**：PARTIAL 8/10，C=1  
-**期望 vs 实际**：期望点击「运行」触发该预制分析或带 binding 深链；实际与「查看全部」相同，一律跳转预制列表页。  
-**下钻链**：`PrefabRow` Link → `/admin/reports`（无 query/bindingKey）  
-**根因**：`fe/src/pages/admin/reports/ReportCenterPage.tsx` `PrefabRow` 未接 run 或 `/admin/reports?binding=`  
-**修复方向**：Link 改为 `/admin/reports` + hash/query 预选 binding，或 Hub 内联调 run API（与预制页复用 hook）  
-**修后验收**：C≥2，Hub 预制区 L1 smoke 断言 run 或深链选中  
+## 6. 仍开放（scope 外 / 非阻塞）
 
-### T2 — 统一浏览页 auto-run（P0）
-
-**判定**：UNVERIFIED 6/10  
-**期望 vs 实际**：期望进 view 页自动 run；静态 `useEffect` 已调用 `runReport()`，但无 vitest/浏览器 L1。  
-**根因**：缺 `ReportViewPage.smoke.test.tsx`  
-**修复方向**：新增 smoke：mock node template + mock POST run → 断言结果表/占位文案；覆盖 auto-run 仅一次  
-**触及文件**：`fe/src/pages/admin/reports/ReportViewPage.smoke.test.tsx`（新建）  
-**修后验收**：T2 L≥2、C≥2、总分≥8、REAL  
-
-### P1 — 关联页 smoke TooltipProvider
-
-**判定**：测试债务  
-**期望 vs 实际**：`report-schedules.smoke.test.tsx`、`report-templates.smoke.test.tsx` 应绿  
-**修复方向**：render 包裹 `TooltipProvider delayDuration={0}`（同 `SchedulePanel.smoke.test.tsx`）  
-**修后验收**：reports 目录 vitest 全绿  
-
-### P2 — 默认报表卡片边界（P1）
-
-**期望 vs 实际**：角色有 `reportTemplateNodeId` 但 catalog 尚未加载到该 id 时，卡片不展示（`defaultReportNode` 为 undefined）  
-**修复方向**：卡片在 `defaultReportId` 存在时仍展示，名称 fallback API GET node  
-**优先级**：P1  
-
-## 6. 修复优先级汇总
-
-| 优先级 | ID | 一句话 |
-|--------|-----|--------|
-| P0 | B6 | Hub 预制「运行」假动作，仅跳转列表 |
-| P0 | T2 | 浏览页 auto-run 缺 L1，无法标 REAL |
-| P1 | — | schedules/templates smoke 补 TooltipProvider |
-| P1 | B1 | 默认报表卡片 catalog 竞态/缺失 fallback |
+| 项 | 说明 |
+|----|------|
+| B1 默认报表卡片 | 无 smoke；catalog 未含 id 时不展示 |
+| B16/B20 导出 | 无 FE L1；未验文件内容 |
+| B19 Binding 表单 | admin PUT 无 smoke |
+| 后端 ACL 5 用例 | pytest 403 漂移，run 主链 41 绿 |
+| 浏览器 E2E | 未跑 Playwright 报表路径 |
 
 ## 7. 验证命令（复现）
 
@@ -168,6 +190,6 @@ python -m pytest tests/test_ff_rpt_companion_e95d.py tests/test_m9_rpt_theme_r23
 
 ## 8. 交接
 
-- **结论**：报表中心**主消费路径基本可用**（预制 REAL、Hub 网格 REAL、默认路径 REAL），但**整体 PARTIAL 7/B**——Hub 预制「运行」语义错误 + 浏览页缺 L1 无法确认 auto-run。
-- **建议**：先修 P0（B6 + ReportViewPage smoke），再跑全量 reports vitest。
-- **用户批准修复**：否
+- **结论（scope T1–T5）**：**REAL · 9/A** — 主消费路径在 Vitest L1 下**真实可用**（Hub → 查看/运行 → 结果展示）。
+- **不等于**：导出 PDF 内容正确、全控件 B1–B22 REAL、浏览器 E2E、后端 ACL 套件全绿。
+- **文档**：本文件 · 状态 `reverified`

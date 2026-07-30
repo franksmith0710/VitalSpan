@@ -6,6 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 
+const SHARE_CARD_HEADER_CLASS =
+  "border-b border-gray-200 bg-gray-50/50 dark:border-gray-800 dark:bg-white/[0.02]";
+
 type PublicShareLinkCardProps = {
   dashboardId: string;
   name: string;
@@ -47,7 +50,7 @@ export function PublicShareLinkCard({
 
   return (
     <Card className="overflow-hidden rounded-2xl border-gray-200 shadow-theme-sm dark:border-gray-800">
-      <CardHeader className="border-b border-gray-200 dark:border-gray-800">
+      <CardHeader className={SHARE_CARD_HEADER_CLASS}>
         <CardTitle className="text-theme-base">公开链接</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 pt-6">

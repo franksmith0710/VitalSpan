@@ -79,7 +79,7 @@
 
 ## 实现笔记
 
-- L1：`data_sources` 表 + CRUD + 凭证 Fernet + 双连通测试端点；首期方言 `mysql`；不含连接池与 schema 浏览。
+- L1：`data_sources` 表 + CRUD + 凭证 SM4（Fernet 遗留双读，见 `core/crypto/` · ADR-06）+ 双连通测试端点；首期方言 `mysql`；不含连接池与 schema 浏览。
 - r23：`ConnectorRegistry.unregister` + `register_usage_checker` 引用保护；MySQL `dialects/errors.py` 稳定错误码（`MYSQL_*`）；`deleted_at` 软删 L1；列表分页/PATCH；连通性测试进程内 2s 防重 L1（单 worker）；`CredentialDecryptError` 结构化解密失败；test 响应 `traceId`。
 
 ### r24 质量推分（2026-07-03）

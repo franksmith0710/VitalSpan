@@ -14,6 +14,9 @@ import { ChartEmbedShareActions } from "@/components/dashboard/ChartEmbedShareAc
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import type { DashboardWidgetBase } from "@/components/dashboard/layoutUtils";
 
+const SHARE_CARD_HEADER_CLASS =
+  "border-b border-gray-200 bg-gray-50/50 dark:border-gray-800 dark:bg-white/[0.02]";
+
 type DataScreenSharePanelProps = {
   dashboardId: string;
   name: string;
@@ -59,28 +62,30 @@ export function DataScreenSharePanel({ dashboardId, name, layout }: DataScreenSh
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <Card className="overflow-hidden rounded-2xl border-gray-200 shadow-theme-sm dark:border-gray-800">
-        <CardHeader className="flex flex-row items-center justify-between gap-3 border-b border-gray-200 dark:border-gray-800">
+        <CardHeader
+          className={`flex flex-row items-center justify-between gap-3 ${SHARE_CARD_HEADER_CLASS}`}
+        >
           <CardTitle className="text-theme-base">大屏投放预览</CardTitle>
           <Button asChild variant="outline" size="sm">
             <Link to={dataScreenPreviewPath(dashboardId)}>打开全屏预览</Link>
           </Button>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="aspect-video w-full bg-slate-950">
+          <div className="min-h-[min(70vh,720px)] w-full bg-slate-950">
             <DataScreenPresenter
               layout={layout}
               presentationMode="fit"
               globalChartRefreshKey={autoRefresh.globalChartRefreshKey}
-              className="h-full"
+              className="h-full min-h-[inherit]"
             />
           </div>
         </CardContent>
       </Card>
 
       <Card className="overflow-hidden rounded-2xl border-gray-200 shadow-theme-sm dark:border-gray-800">
-        <CardHeader className="border-b border-gray-200 dark:border-gray-800">
+        <CardHeader className={SHARE_CARD_HEADER_CLASS}>
           <CardTitle className="text-theme-base">整屏嵌入</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 pt-6">
@@ -115,7 +120,7 @@ export function DataScreenSharePanel({ dashboardId, name, layout }: DataScreenSh
 
       {widgets.some((w) => chartIdFromWidget(w)) ? (
         <Card className="overflow-hidden rounded-2xl border-gray-200 shadow-theme-sm dark:border-gray-800">
-          <CardHeader className="border-b border-gray-200 dark:border-gray-800">
+          <CardHeader className={SHARE_CARD_HEADER_CLASS}>
             <CardTitle className="text-theme-base">单组件嵌入（次要）</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 pt-6">

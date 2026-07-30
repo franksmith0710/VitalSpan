@@ -8,6 +8,113 @@ from sqlalchemy.orm import Session
 
 from app.dashboard.templates.models import DashboardTemplate
 from app.dashboard.templates import presets
+from app.dashboard.templates import presets_gov
+
+
+def _gov_template_specs() -> list[dict[str, Any]]:
+    """10 套政企风格内置模板（绑定 gov_* 演示库）。"""
+    return [
+        {
+            "id": uuid.UUID("00000000-0000-4000-8001-000000000201"),
+            "template_key": "builtin-gov-smart-city",
+            "name": "智慧城市运行监测",
+            "description": "地图主视觉 + 部门满意度 + 政务 KPI，绑定 v_gov_region_service",
+            "category_key": "government",
+            "surface_kind": "data-screen",
+            "thumbnail_ref": "/template-assets/thumbs/gov-smart-city.svg",
+            "layout_json": presets_gov.build_gov_smart_city_screen(),
+        },
+        {
+            "id": uuid.UUID("00000000-0000-4000-8001-000000000202"),
+            "template_key": "builtin-gov-digital-cockpit",
+            "name": "数字政府 KPI 驾驶舱",
+            "description": "全宽趋势 + 四象限指标，绑定 gov_service_metrics",
+            "category_key": "government",
+            "surface_kind": "data-screen",
+            "thumbnail_ref": "/template-assets/thumbs/gov-digital-cockpit.svg",
+            "layout_json": presets_gov.build_gov_digital_cockpit_screen(),
+        },
+        {
+            "id": uuid.UUID("00000000-0000-4000-8001-000000000203"),
+            "template_key": "builtin-gov-emergency-command",
+            "name": "应急指挥调度中心",
+            "description": "事件分类 + 区域地图 + 网格待办，绑定 gov_incidents / gov_grid_stats",
+            "category_key": "government",
+            "surface_kind": "data-screen",
+            "thumbnail_ref": "/template-assets/thumbs/gov-emergency-command.svg",
+            "layout_json": presets_gov.build_gov_emergency_command_screen(),
+        },
+        {
+            "id": uuid.UUID("00000000-0000-4000-8001-000000000204"),
+            "template_key": "builtin-gov-eco-monitor",
+            "name": "生态环境监测大屏",
+            "description": "生态地图 + 监测站点 + 支出结构，绑定 gov_eco_monitor",
+            "category_key": "government",
+            "surface_kind": "data-screen",
+            "thumbnail_ref": "/template-assets/thumbs/gov-eco-monitor.svg",
+            "layout_json": presets_gov.build_gov_eco_monitor_screen(),
+        },
+        {
+            "id": uuid.UUID("00000000-0000-4000-8001-000000000205"),
+            "template_key": "builtin-gov-community",
+            "name": "社区治理一张图",
+            "description": "网格明细 + 社区地图 + 部门服务，绑定 gov_grid_stats",
+            "category_key": "government",
+            "surface_kind": "data-screen",
+            "thumbnail_ref": "/template-assets/thumbs/gov-community.svg",
+            "layout_json": presets_gov.build_gov_community_screen(),
+        },
+        {
+            "id": uuid.UUID("00000000-0000-4000-8001-000000000206"),
+            "template_key": "builtin-gov-efficiency",
+            "name": "政务效能分析看板",
+            "description": "KPI 条 + 部门柱图 + 满意度趋势",
+            "category_key": "government",
+            "surface_kind": "dashboard",
+            "thumbnail_ref": "/template-assets/thumbs/gov-efficiency.svg",
+            "layout_json": presets_gov.build_gov_efficiency_dashboard(),
+        },
+        {
+            "id": uuid.UUID("00000000-0000-4000-8001-000000000207"),
+            "template_key": "builtin-gov-satisfaction",
+            "name": "公共服务满意度",
+            "description": "事件占比 + 部门满意度 + 网格服务表",
+            "category_key": "government",
+            "surface_kind": "dashboard",
+            "thumbnail_ref": "/template-assets/thumbs/gov-satisfaction.svg",
+            "layout_json": presets_gov.build_gov_satisfaction_dashboard(),
+        },
+        {
+            "id": uuid.UUID("00000000-0000-4000-8001-000000000208"),
+            "template_key": "builtin-gov-finance",
+            "name": "财政收支概览",
+            "description": "支出执行 + 预算对比 + 趋势参考，绑定 gov_budget_items",
+            "category_key": "government",
+            "surface_kind": "dashboard",
+            "thumbnail_ref": "/template-assets/thumbs/gov-finance.svg",
+            "layout_json": presets_gov.build_gov_finance_dashboard(),
+        },
+        {
+            "id": uuid.UUID("00000000-0000-4000-8001-000000000209"),
+            "template_key": "builtin-gov-investment",
+            "name": "招商引资分析",
+            "description": "区域地图 + 产业投资柱图，绑定 gov_investment",
+            "category_key": "government",
+            "surface_kind": "dashboard",
+            "thumbnail_ref": "/template-assets/thumbs/gov-investment.svg",
+            "layout_json": presets_gov.build_gov_investment_dashboard(),
+        },
+        {
+            "id": uuid.UUID("00000000-0000-4000-8001-000000000210"),
+            "template_key": "builtin-gov-grid",
+            "name": "基层网格化管理",
+            "description": "网格事件表 + 区域热力 + 事件分类",
+            "category_key": "government",
+            "surface_kind": "dashboard",
+            "thumbnail_ref": "/template-assets/thumbs/gov-grid.svg",
+            "layout_json": presets_gov.build_gov_grid_dashboard(),
+        },
+    ]
 
 
 def _builtin_template_specs() -> list[dict[str, Any]]:
@@ -102,6 +209,7 @@ def _builtin_template_specs() -> list[dict[str, Any]]:
             "thumbnail_ref": "/template-assets/thumbs/dash-ops.svg",
             "layout_json": presets.build_ops_dashboard_layout(),
         },
+        *_gov_template_specs(),
     ]
 
 
@@ -125,7 +233,7 @@ def seed_builtin_dashboard_templates(db: Session) -> int:
                 layout_json=spec["layout_json"],
                 thumbnail_ref=spec.get("thumbnail_ref"),
                 visibility="builtin",
-                content_revision=5,
+                content_revision=6,
             )
             db.add(row)
             upserted += 1
@@ -137,6 +245,6 @@ def seed_builtin_dashboard_templates(db: Session) -> int:
             existing.thumbnail_ref = spec.get("thumbnail_ref")
             existing.status = "published"
             existing.visibility = "builtin"
-            existing.content_revision = max(existing.content_revision, 5)
+            existing.content_revision = max(existing.content_revision, 6)
     db.commit()
     return upserted

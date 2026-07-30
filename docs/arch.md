@@ -379,7 +379,8 @@ Dataset CRUD（ORM `datasets` 表）
 
 ```powershell
 # Windows：备份 compose 全部数据服务 → data/backups/<timestamp>/
-.\scripts\backup-databases.ps1
+python scripts/backup-databases.py
+# 或 .\scripts\backup-databases.ps1
 ```
 
 恢复须同时保管 `keys-checklist.txt` 中列出的密钥（含 `CREDENTIAL_SM4_KEY` / `CREDENTIAL_FERNET_KEY`）。凭证国密迁移：`python scripts/migrate-credentials-to-sm4.py --dry-run`。

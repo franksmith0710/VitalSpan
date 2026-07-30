@@ -34,7 +34,9 @@ def _warm_meta_database() -> None:
     try:
         session.execute(text("SELECT 1"))
         try:
-            seed_builtin_dashboard_templates(session)
+            inserted = seed_builtin_dashboard_templates(session)
+            if inserted:
+                logger.info("dashboard_template_seed_ok inserted=%s", inserted)
         except Exception:
             logger.warning("dashboard_template_seed_failed", exc_info=True)
         if settings.vitalspan_env == "development":

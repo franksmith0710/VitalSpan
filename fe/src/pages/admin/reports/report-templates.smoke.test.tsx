@@ -3,6 +3,7 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { ReportTemplatesPage } from "./ReportTemplatesPage";
 
 const mockApiFetch = vi.fn();
@@ -56,9 +57,11 @@ describe("report templates smoke", () => {
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={qc}>
-        <MemoryRouter>
-          <ReportTemplatesPage />
-        </MemoryRouter>
+        <TooltipProvider delayDuration={0}>
+          <MemoryRouter>
+            <ReportTemplatesPage />
+          </MemoryRouter>
+        </TooltipProvider>
       </QueryClientProvider>,
     );
     await waitFor(() => expect(screen.getByText(/暂无模板目录/)).toBeInTheDocument());
@@ -68,9 +71,11 @@ describe("report templates smoke", () => {
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={qc}>
-        <MemoryRouter initialEntries={[`/admin/reports/templates/${NODE_ID}`]}>
-          <ReportTemplatesPage />
-        </MemoryRouter>
+        <TooltipProvider delayDuration={0}>
+          <MemoryRouter initialEntries={[`/admin/reports/templates/${NODE_ID}`]}>
+            <ReportTemplatesPage />
+          </MemoryRouter>
+        </TooltipProvider>
       </QueryClientProvider>,
     );
     await waitFor(() => expect(screen.getByText("销售模板")).toBeInTheDocument());
@@ -83,9 +88,11 @@ describe("report templates smoke", () => {
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={qc}>
-        <MemoryRouter>
-          <ReportTemplatesPage />
-        </MemoryRouter>
+        <TooltipProvider delayDuration={0}>
+          <MemoryRouter>
+            <ReportTemplatesPage />
+          </MemoryRouter>
+        </TooltipProvider>
       </QueryClientProvider>,
     );
     await waitFor(() => expect(screen.getByText("销售模板")).toBeInTheDocument());

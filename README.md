@@ -10,7 +10,7 @@
 
 | 域 | 说明 |
 |----|------|
-| 数据源 | 插件式连接器（关系型 / OLAP / 时序 / 文档 / 搜索等），凭证 Fernet 加密 |
+| 数据源 | 插件式连接器（关系型 / OLAP / 时序 / 文档 / 搜索等），凭证 **SM4** 加密（Fernet 遗留双读） |
 | 查询 | SQL 与 Native 双路径；Dataset 路径已可用（四期语义层持续演进） |
 | 看板 | v1 栅格 + v2 像素画布；组件库、主题、分享与嵌入 |
 | 数据大屏 | 1920×1080 设计稿、编辑视口、预览 / 分享 / 整屏 embed；Phase 2.5/2.6 主链已通 |
@@ -70,13 +70,35 @@ docker compose up -d postgres analytics-postgres
 ```bash
 cd backend
 cp .env.example .env
-# 生成 CREDENTIAL_FERNET_KEY：
+# 生成密钥：
+# python -c "import secrets; print(secrets.token_hex(16))"   # CREDENTIAL_SM4_KEY
 # python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 
-pip install -e ".[dev]"
+pip install -e ".[dev]"   # 含 gmssl（国密 SM4/SM3）
 alembic upgrade head
 uvicorn app.main:app --reload --port 8000
 ```
+
+**国密相关环境变量**（见 `backend/.env.example`）：
+
+| 变量 | 说明 |
+|------|------|
+| `CREDENTIAL_SM4_KEY` | SM4 凭证加密密钥（32 位 hex） |
+| `CREDENTIAL_CRYPTO_PROVIDER` | `sm4`（默认）或 `fernet` |
+| `PASSWORD_HASH_ALGORITHM` | `sm3`（默认）或 `bcrypt` |
+| `CREDENTIAL_FERNET_KEY` | 解密遗留 Fernet 密文，迁移期须保留 |
+
+凭证迁移（备份后执行）：`python scripts/migrate-credentials-to-sm4.py --dry-run`
+
+**数据库备份**：
+
+```powershell
+# Windows / Linux 均可
+python scripts/backup-databases.py
+# 或 .\scripts\backup-databases.ps1
+```
+
+恢复须同时保管备份目录内 `keys-checklist.txt` 所列密钥。
 
 - API 文档：<http://localhost:8000/docs>
 - 健康检查：<http://localhost:8000/health>
@@ -116,6 +138,7 @@ pnpm test:chart-catalog  # 图表目录与引擎回归
 
 ```bash
 pytest                # 单元 / 集成测试
+python ../scripts/test-data-connectivity.py   # 元库 + 数据源连通性
 ruff check .          # 静态检查（若已配置）
 ```
 

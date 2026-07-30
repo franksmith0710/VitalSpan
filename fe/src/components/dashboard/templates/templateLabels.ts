@@ -7,7 +7,7 @@ import {
 export const VIZ_TEMPLATES_HUB = {
   title: "可视化模板",
   description:
-    "企业内看板与大屏布局模板库；内置模板绑定 sample_db 演示数据（v_sales_geo / daily_kpi），需先配置演示数据源。",
+    "企业内看板与大屏布局模板库；内置模板绑定 sample_db 演示数据（gov_* / v_sales_geo / daily_kpi），需先配置演示数据源。",
   importJson: "导入 JSON",
   searchPlaceholder: "搜索模板名称…",
   searchAriaLabel: "搜索模板",
@@ -91,6 +91,16 @@ export const BUILTIN_TEMPLATE_THUMBS: Record<string, string> = {
   "builtin-dash-dual-kpi": "/template-assets/thumbs/dash-dual-kpi.svg",
   "builtin-dash-triple-analysis": "/template-assets/thumbs/dash-triple-analysis.svg",
   "builtin-dash-ops": "/template-assets/thumbs/dash-ops.svg",
+  "builtin-gov-smart-city": "/template-assets/thumbs/gov-smart-city.svg",
+  "builtin-gov-digital-cockpit": "/template-assets/thumbs/gov-digital-cockpit.svg",
+  "builtin-gov-emergency-command": "/template-assets/thumbs/gov-emergency-command.svg",
+  "builtin-gov-eco-monitor": "/template-assets/thumbs/gov-eco-monitor.svg",
+  "builtin-gov-community": "/template-assets/thumbs/gov-community.svg",
+  "builtin-gov-efficiency": "/template-assets/thumbs/gov-efficiency.svg",
+  "builtin-gov-satisfaction": "/template-assets/thumbs/gov-satisfaction.svg",
+  "builtin-gov-finance": "/template-assets/thumbs/gov-finance.svg",
+  "builtin-gov-investment": "/template-assets/thumbs/gov-investment.svg",
+  "builtin-gov-grid": "/template-assets/thumbs/gov-grid.svg",
 };
 
 export const CATEGORY_ACCENT: Record<string, string> = {

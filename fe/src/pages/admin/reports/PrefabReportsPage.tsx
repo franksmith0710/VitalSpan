@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react";
+import { useSearchParams } from "react-router";
 import { useAuth } from "@/context/auth-context";
 import { matchesCapability, resolveEffectiveCapabilities } from "@/lib/capabilities";
 import { Lock } from "lucide-react";
@@ -14,6 +16,7 @@ import { PrefabReportsEmptyPreview } from "./components/PrefabReportsEmptyPrevie
 import { PrefabBindingForm } from "./components/PrefabBindingForm";
 import { ReportExportCard } from "./components/ReportExportCard";
 import { usePrefabReports } from "./usePrefabReports";
+import { PREFAB_BINDING_QUERY } from "./reportRoutes";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 
 function ResultTable({ columns, rows }: { columns: string[]; rows: unknown[][] }) {
@@ -50,6 +53,9 @@ export function PrefabReportsPage() {
   const caps = resolveEffectiveCapabilities(user);
   const canManage = matchesCapability(caps, "report:manage");
   const { bindingsQuery, runMutation } = usePrefabReports();
+  const [searchParams] = useSearchParams();
+  const bindingFromUrl = searchParams.get(PREFAB_BINDING_QUERY);
+  const autoRanBindingRef = useRef<string | null>(null);
 
   const bindings = bindingsQuery.data?.items ?? [];
   const section = runMutation.data?.renderSpec.sections[0];
@@ -57,6 +63,20 @@ export function PrefabReportsPage() {
     runMutation.isError &&
     runMutation.error instanceof ApiRequestError &&
     runMutation.error.code === "RPT_PREFAB_RUN_FORBIDDEN";
+
+  const { mutate: runBinding, isPending: isRunning } = runMutation;
+
+  useEffect(() => {
+    autoRanBindingRef.current = null;
+  }, [bindingFromUrl]);
+
+  useEffect(() => {
+    if (!bindingFromUrl || bindingsQuery.isLoading || bindings.length === 0 || isRunning) return;
+    if (!bindings.some((b) => b.bindingKey === bindingFromUrl)) return;
+    if (autoRanBindingRef.current === bindingFromUrl) return;
+    autoRanBindingRef.current = bindingFromUrl;
+    runBinding(bindingFromUrl);
+  }, [bindingFromUrl, bindings, bindingsQuery.isLoading, isRunning, runBinding]);
 
   return (
     <AdminPageShell title="预制分析报表" description="浏览并运行系统预置的分析报表。">

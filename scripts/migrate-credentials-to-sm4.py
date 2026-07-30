@@ -8,8 +8,22 @@ import os
 import sys
 
 _REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+_BACKEND = os.path.join(_REPO, "backend")
 if _REPO not in sys.path:
-    sys.path.insert(0, os.path.join(_REPO, "backend"))
+    sys.path.insert(0, _BACKEND)
+
+
+def _load_backend_env() -> None:
+    env_path = os.path.join(_BACKEND, ".env")
+    if not os.path.isfile(env_path):
+        return
+    with open(env_path, encoding="utf-8") as handle:
+        for line in handle:
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#") or "=" not in stripped:
+                continue
+            key, _, value = stripped.partition("=")
+            os.environ.setdefault(key.strip(), value.strip())
 
 from sqlalchemy import create_engine, text
 
@@ -41,6 +55,7 @@ def main() -> int:
     args = parser.parse_args()
 
     get_settings.cache_clear()
+    _load_backend_env()
     settings = get_settings()
     if settings.credential_crypto_provider != "sm4":
         print("CREDENTIAL_CRYPTO_PROVIDER 须为 sm4", file=sys.stderr)

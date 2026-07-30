@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -32,13 +32,15 @@ vi.mock("@/lib/api", async (importOriginal) => {
 
 import { PrefabReportsPage } from "./PrefabReportsPage";
 
-function renderPage() {
+function renderPage(initialEntry = "/admin/reports") {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
       <TooltipProvider delayDuration={0}>
-        <MemoryRouter>
-          <PrefabReportsPage />
+        <MemoryRouter initialEntries={[initialEntry]}>
+          <Routes>
+            <Route path="/admin/reports" element={<PrefabReportsPage />} />
+          </Routes>
         </MemoryRouter>
       </TooltipProvider>
     </QueryClientProvider>,
@@ -108,6 +110,19 @@ describe("PrefabReportsPage smoke", () => {
     await user.click(await screen.findByRole("button", { name: "运行报表 实体生命周期分布" }));
     expect(await screen.findByText("status")).toBeInTheDocument();
     expect(screen.getByText("cnt")).toBeInTheDocument();
+  });
+
+  it("auto-runs binding from hub deep-link query", async () => {
+    renderPage("/admin/reports?binding=prefab-entity-lifecycle");
+    expect(await screen.findByText("实体生命周期分布")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        "/api/v1/reports/prefab/bindings/prefab-entity-lifecycle/run",
+        expect.objectContaining({ method: "POST" }),
+      );
+    });
+    expect(await screen.findByText("status")).toBeInTheDocument();
+    expect(mockApiFetch.mock.calls.filter(([path]) => String(path).includes("/run")).length).toBe(1);
   });
 
   it("viewer sees forbidden message on run error", async () => {

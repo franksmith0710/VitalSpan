@@ -81,4 +81,10 @@ describe("ReportCenterPage smoke", () => {
     expect(await screen.findByText("预制分析")).toBeInTheDocument();
     expect(screen.getByText("预制A")).toBeInTheDocument();
   });
+
+  it("prefab run links to binding deep-link on prefab page", async () => {
+    renderPage();
+    expect(await screen.findByText("预制A")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "运行 预制A" })).toHaveAttribute("href", "/admin/reports?binding=k1");
+  });
 });
