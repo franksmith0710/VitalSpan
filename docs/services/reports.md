@@ -5,7 +5,7 @@
 | 模块路径 | `backend/app/reports/` |
 | PRD | [F08-RPT](../automate/prd/F08-RPT.md) · RPT-001 ~ RPT-007 |
 | 里程碑 | M6 / M10 / M12 |
-| 状态 | **L1 kickoff (r60)**：catalog + scheduler + extension + batch + engine run |
+| 状态 | **部分（BE L1 + FE 中心/调度/重试已交付 · M-DEPTH F-C 历史 UI 2026-07-29）** |
 
 ## 职责
 
@@ -77,7 +77,7 @@
 | **FE** | `fe/src/pages/admin/reports/PrefabReportsPage.tsx` + `usePrefabReports.ts`（列表/运行/空态 vitest） | RPT-002 | M3-LITE 已实现 r233 |
 | **FE** | `fe/src/pages/admin/reports/ReportCenterPage.tsx` + `reportCatalogUtils.ts`（Hub 授权模板网格） | RPT-004/001 | 已实现（2026-07-17 IA） |
 | **FE** | `fe/src/pages/admin/reports/ReportViewPage.tsx`（模板运行 + 导出） | RPT-001 | 已实现（2026-07-17 IA） |
-| **FE** | `fe/src/pages/admin/reports/ReportSchedulesPage.tsx` + `useReportSchedules.ts`（调度列表/历史/重试） | RPT-005 | 已实现（2026-07-17 IA） |
+| **FE** | `fe/src/pages/admin/reports/ReportSchedulesPage.tsx` + `SchedulePanel.tsx` + `SchedulePanel.smoke.test.tsx`（调度列表/历史/重试） | RPT-005 | M-DEPTH F-C · 2026-07-29 |
 | `templates/acl.py` | viewer 禁写 + enterprise scope（`set_user_template_scope`） | RPT-003 | companion 已实现 r67 |
 | `templates/probe.py` | validate/get/list perf probe ≤50ms | RPT-003 | M10 已实现 r234 |
 | `templates/service.py` | 模板块 validate/upsert/get/list/delete + `storageRef`/`exportHook` + duplicate block 守卫 | RPT-003 | M10 已实现 r234 |

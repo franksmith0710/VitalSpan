@@ -5,7 +5,7 @@
 | 模块路径 | `backend/app/metadata/` |
 | PRD | [F11-META](../automate/prd/F11-META.md) · META-001 ~ META-006 |
 | 里程碑 | M1（四期 Dataset 语义层） |
-| 状态 | **部分（L1）** · META-004 ORM + Admin UI 已实现（M-DEPTH F-A · 2026-07-10） |
+| 状态 | **已实现（M-DEPTH F-A）** · META-004 ORM + Admin UI + DatasetListPage（2026-07-29 doc sync） |
 
 ## 职责
 
@@ -48,6 +48,7 @@
 | `entity/service` | 实体类型 schema CRUD + `validate_entity_type_ref` | META-006 | L1 已实现 r54 |
 | `dataset/service` + `DatasetRecord` | Dataset ORM（`datasets` · Alembic `0023`）+ validate/list/create/update/delete/bind + scope ACL + probe | META-004 | **已实现**（M-DEPTH F-A） |
 | `physical/service` | 物理表 validate/register/list/update/delete + register-from-schema + `_ds_table_index` 复合唯一 | META-005 | L1 M8 r232 收官 |
+| **FE** | `fe/src/pages/admin/datasets/DatasetListPage.tsx` · `DatasetEditorForm.tsx`（可视化编辑） | META-004 | M-DEPTH F-A · 2026-07-29 |
 | `DatasetService` | 语义层 CRUD（ORM 四期） | META-001~003 | 待建 |
 | `SemanticResolver` | 逻辑 → 物理 SQL | META-004 | 待建 |
 

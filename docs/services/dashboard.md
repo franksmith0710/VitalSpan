@@ -5,7 +5,7 @@
 | 模块路径 | `backend/app/dashboard/` |
 | PRD | [F07-DASH](../automate/prd/F07-DASH.md) · DASH-001 ~ DASH-006 |
 | 里程碑 | M5 |
-| 状态 | **已实现**（v1 栅格 + v2 像素布局；真实浏览器 Pointer QA 待执行） |
+| 状态 | **已实现**（v1 栅格 + v2 像素布局；BUG-2 Pointer QA 待发版抽测 — 见 [project master §6.1](../feature-design/2026-07-29-vitalspan-project-master-gap-fill.md)） |
 
 ## 职责
 

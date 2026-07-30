@@ -4,7 +4,7 @@
 |----|-----|
 | 模式 | Gap-fill |
 | 日期 | 2026-07-29 |
-| 状态 | **P0/P1/P2 计划项已闭合；发版前 MT 手测待发版抽测** |
+| 状态 | **P0/P1/P2 计划项已闭合；plan/PRD M-DEPTH 叙事已 sync（2026-07-29）；发版前 MT 手测待发版抽测** |
 | 分片归档 | [Wave B](./2026-07-29-data-screen-wave-b-gap-fill.md) · [Wave C/D](./2026-07-29-data-screen-wave-cd-gap-fill.md) |
 
 ## 1. 问题与目标

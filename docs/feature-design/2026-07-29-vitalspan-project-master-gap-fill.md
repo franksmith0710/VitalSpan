@@ -4,7 +4,7 @@
 |----|-----|
 | 模式 | Gap-fill |
 | 日期 | 2026-07-29 |
-| 状态 | **P0 已闭合**（2026-07-29） |
+| 状态 | **P0 已闭合 · 文档 sync 2026-07-29** |
 | 分片归档 | [数据大屏 master](./2026-07-29-data-screen-master-gap-fill.md) · [land-design plan](../../.cursor/plans/vitalspan_整体缺口_overview_以_gap-fill_模式盘点_vitalspan_在「129_项_prd_合同已勾完」之后的真实补充面：m-depth_余项、体验_companion_7e22bb9a.plan.md) |
 
 ## 1. 问题与目标
@@ -72,7 +72,7 @@
 |----|----------------|------|
 | dashboard | v2 像素画布已实现；BUG-2 手测待发版 | `docs/services/dashboard.md` |
 | metadata | Dataset ORM + 编辑已实现 | `docs/services/metadata.md` |
-| integration | API-003 试跑 UI 加深中 | `QueryServicesPage.tsx` |
+| integration | API-003 试跑 UI 已实现 | `QueryServiceTrialSheet.tsx` · `QueryServicesPage` |
 | reports | 调度历史/重试 UI 已实现 | `SchedulePanel.tsx` |
 | auth | RLS/审计 FE 已实现 | `RlsAdminPage` · `AuditLogPage` |
 | viz | 列驱动 Inspector 已实现 | `useInspectorColumns.ts` |
@@ -131,3 +131,4 @@ cd fe && npx vitest run \
 | P0 先回写再开发 | **是** — 避免重复实现 F-B/RPT-005/RLS |
 | API-003 范围 | services 页内参数试跑 + 结果表 + OpenAPI Sheet |
 | BUG-2 e2e | 非阻塞；Vitest 已覆盖 |
+| **文档对齐策略** | **代码 + 可感知行为 > PRD companion `[ ]`**；`[ ]` 多为演化/可选/QA，非合同未交付 |

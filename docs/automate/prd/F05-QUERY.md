@@ -121,4 +121,4 @@
   - [x] **M-DEPTH F-A**：Dataset 真实 execute（`execute_config.py` → `QueryExecutor`；出真实 rows；重启后 bound Dataset 仍可出图）（完成于 2026-07-10）
 - **代码锚点**：`backend/app/query/dataset/guard.py` · `backend/app/query/dataset/executor.py` · `backend/app/query/dataset/execute_config.py` · `backend/app/query/dataset/schemas.py` · `backend/app/api/v1/query.py` · `fe/src/components/dashboard/WidgetInspector.tsx` · `fe/src/components/charts/useChartExecute.ts` · `fe/src/lib/chartExecuteProbe.ts` · `fe/src/lib/chartViewConfig.ts` · `tests/test_dash_rpt_query_nfr_r53.py` T-QUERY-R53-009-01~07 · `tests/test_dash_rpt_query_nfr_r57.py` T-QUERY-R57-009-01~07 · `tests/test_mfinal_fd_r243.py` T-QUERY-R243-009-01~05
 - **演化建议**：M-DEPTH F-A 闭合真实 SQL execute；execute-plan 保留为文档/探针，不再作为出图主路径
-- **里程碑对齐**：M-FINAL · F-D · 已完成 · 2026-07-07；M-PRODUCT F-A · Dashboard FE · 2026-07-08；**M-DEPTH F-A · 当前节 · 2026-07-10**
+- **里程碑对齐**：M-FINAL · F-D · 已完成 · 2026-07-07；M-PRODUCT F-A · Dashboard FE · 2026-07-08；**M-DEPTH F-A · 已闭合 · 2026-07-29**

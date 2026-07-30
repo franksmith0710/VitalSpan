@@ -17,10 +17,10 @@
 - **里程碑对齐**：M-DEPTH F-0 · 快速创建 · 2026-07-10
 ### [DASH-002] Dashboard 容器与布局引擎
 
-- **状态**：已实现（v2 像素画布代码完成；最终真实浏览器 Pointer QA 待执行）
+- **状态**：已实现（v2 像素画布；QA 待发版抽测 — 非功能缺失）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：一期
-- **里程碑对齐**：M-FE-2 · 已完成 · 2026-07-06；M-PRODUCT F-A · 分享页 · 2026-07-08；**M-DEPTH F-B · 当前节 · 2026-07-10**
+- **里程碑对齐**：M-FE-2 · 已完成 · 2026-07-06；M-PRODUCT F-A · 分享页 · 2026-07-08；**M-DEPTH F-B · 已闭合 · 2026-07-29**
 - **描述**：Dashboard 容器与布局引擎（SRS 追溯项）。布局统一支持 v1 栅格与 v2 像素契约；默认编辑路径将 v1 内存迁移为 v2，v1 RGL 仅作紧急回退。
 - **验收标准**：
   - [x] 空 Dashboard 可创建展示
@@ -38,7 +38,7 @@
   - [ ] BUG-2 最终真实浏览器 Pointer QA：拖移、八向缩放、保存并刷新后位置/尺寸保持（手测表见 [project master §6.1](../../feature-design/2026-07-29-vitalspan-project-master-gap-fill.md) · 已登记 · 待发版抽测）
   - [x] **M-DEPTH F-B**：layout widget 类型扩展 `filter`（兼容旧 layout round-trip；后端 schema + FE `layoutUtils`）（完成于 2026-07-29 · 代码实扫回写）
 - **代码锚点**：`fe/src/pages/admin/dashboard/` · `fe/src/pages/admin/data-screens/` · `fe/src/lib/surfacePreset.ts` · `backend/app/dashboard/surface_kind.py` · `fe/src/pages/admin/dashboard/DashboardSharePage.tsx` · `fe/src/components/dashboard/pixelCanvas/` · `fe/src/components/dashboard/screen/` · `fe/src/components/dashboard/dashboard-edit/` · `fe/src/components/dashboard/DashboardLayoutPreview.tsx` · `fe/src/components/dashboard/DashboardPreviewThumb.tsx` · `fe/src/components/dashboard/dashboardCanvasMode.ts` · `fe/src/hooks/useDashboardCanvasState.ts` · `backend/app/dashboard/schemas.py` · `backend/app/dashboard/layout_migration.py`
-- **演化建议**：先完成 BUG-2 真实 Pointer QA；再补 Playwright 指针回归。M-DEPTH F-B 闭合 filter widget 类型。
+- **演化建议**：BUG-2 Pointer QA 待发版抽测（见 project master §6.1）；Playwright 指针回归留远期
 ### [DASH-003] Dashboard 组件库
 
 - **状态**：已实现（M5 DASH-003）
@@ -56,7 +56,7 @@
 - **状态**：已实现（M-FE-3 FE + M8 r231 BE execute；**M-DEPTH F-B 深度 companion 已闭合** · 2026-07-29）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
-- **描述**：全局筛选器联动（SRS 追溯项）。当前 `GlobalFilterBar` 为纯文本 Input；M-DEPTH 升级控件并支持画布内 filter widget。
+- **描述**：全局筛选器联动（SRS 追溯项）。`GlobalFilterBar` 与画布内 filter widget 已支持下拉/日期/多选等控件（M-DEPTH F-B · 2026-07-29）。
 - **验收标准**：
   - [x] 联动规则可配置（r61 L1：`POST validate` + `PUT/GET /api/v1/dashboards/{id}/global-filters` + config_store `global_filter_linkage` + `DASH_FILTER_*` + widget 存在性校验 + viewer ACL）
   - [x] companion validate/get perf probe + ACL 边界（r67：非法 dimensionRef/重复 parameterKey 422；enterprise 越权 GET 403、viewer save 403；`probe_validate_linkage_budget_ms`/`probe_get_linkage_budget_ms` ≤50ms）
@@ -68,8 +68,8 @@
   - [x] **M-DEPTH F-B**：GlobalFilterBar 控件升级（下拉/日期/多选；替纯 Input）（完成于 2026-07-29 · `FilterWidgetControls.tsx`）
   - [x] **M-DEPTH F-B**：筛选值驱动关联 chart execute 刷新（与 filter widget / 全局条统一参数注入）（完成于 2026-07-29 · `dashboardFilterUtils` · `useChartExecute`）
 - **代码锚点**：`backend/app/dashboard/global_filters/` · `backend/app/query/sql_parameters.py` · `backend/app/api/v1/dashboards.py` · `fe/src/components/dashboard/GlobalFilterBar.tsx` · `fe/src/components/dashboard/LinkageRulesPanel.tsx` · `fe/src/components/dashboard/dashboardFilterUtils.ts` · `tests/test_meta_dash_m8_r231.py` T-DASH-R231-004-03~07 · `tests/test_cat_dash_viz_nfr_r61.py` T-DASH-R61-004-01~07 · `fe/src/pages/admin/dashboard/dashboard-view.smoke.test.tsx` · `fe/src/pages/admin/dashboard/dashboard.smoke.test.tsx`
-- **演化建议**：M-DEPTH F-B 闭合控件与 filter widget；跨 widget 口径联动与 Playwright E2E 留远期
-- **里程碑对齐**：M8 · 已完成 · 2026-07-06；**M-DEPTH F-B · 当前节 · 2026-07-10**
+- **演化建议**：跨 widget 口径联动与 Playwright E2E 留远期
+- **里程碑对齐**：M8 · 已完成 · 2026-07-06；**M-DEPTH F-B · 已闭合 · 2026-07-29**
 ### [DASH-005] 实体总览页 FR-6.2
 
 - **状态**：已实现（M8 r232 收官）

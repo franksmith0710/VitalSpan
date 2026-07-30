@@ -1,38 +1,39 @@
 # 演化里程碑计划（活跃）
 
 > 人工维护（`create-evolution-plan`）；演化 agent **只读**。
-> **当前节** = **数据大屏编辑视口 companion**（`plans/2026-07-20-data-screen-edit-viewport-de.md`）；§M-DEPTH 深度打穿仍开放 backlog。**M-FINAL 已冻结**；**M-PRODUCT + M-DASH-UX 已收官**。  
-> **全量路线图**：M1–M12 + M-FE-1~3 + M-FINAL + M-PRODUCT + M-DASH-UX 已完成；**PRD 总数 129**（合同已实现）；当前 companion 见 §M-DEPTH。  
+> **当前节** = **companion backlog**（发版 QA + F-D 可选）；**M-DEPTH 必做 F-A~C/E 已收官（2026-07-29）**。**M-FINAL 已冻结**；**M-PRODUCT + M-DASH-UX 已收官**。  
+> **全量路线图**：M1–M12 + M-FE-1~3 + M-FINAL + M-PRODUCT + M-DASH-UX + **M-DEPTH 必做** 已完成；**PRD 总数 129**（合同已实现）；活跃 companion 见 [data-screen master](../feature-design/2026-07-29-data-screen-master-gap-fill.md) MT 抽测 / §M-DEPTH F-D 可选。  
 > **完成定义**：`[x]` = companion 浏览器可感知 / 合同项分片「已实现」；`[ ]` = companion 未达；标「可选」不阻塞收官。  
 > **实施细则**：架构见 [`../arch.md`](../arch.md)；验收见 [`prd/F07-DASH.md`](./prd/F07-DASH.md) · [`prd/F11-META.md`](./prd/F11-META.md)；壳层见 [`../ui/layout.md`](../ui/layout.md)；全栈审视见 [`plans/2026-07-10-fe-de-ss-ia-optimization.md`](./plans/2026-07-10-fe-de-ss-ia-optimization.md)。
 
 ```yaml
-version: 3.0.1
-last_updated: 2026-07-20
+version: 3.0.2
+last_updated: 2026-07-29
 archive_ref: docs/automate/plan.archive.md
-execute_scope: M-DEPTH
+execute_scope: companion-backlog
 frozen_milestone: M-FINAL
-queued_milestone: data-screen-edit-viewport
+queued_milestone: data-screen-qa
 roadmap: M1-M12+M-FE-1~3+M-FINAL+M-PRODUCT+M-DASH-UX+M-DEPTH+data-screen-companion
 prd_total: 129
 prd_in_scope: 129
 prd_completed_in_scope: 129
 prd_remaining_in_scope: 0
-companion_scope: M-DEPTH + data-screen
-companion_active_plan: docs/automate/plans/2026-07-20-data-screen-edit-viewport-de.md
-intervention: data-screen-phase25-done-2026-07-17
+companion_scope: data-screen-qa + M-DEPTH-F-D-optional
+companion_active_plan: docs/feature-design/2026-07-29-data-screen-master-gap-fill.md
+intervention: mdepth-mandatory-closed-2026-07-29
 ```
 
-> **决策（2026-07-17）**：数据大屏 `surfaceKind=data-screen` Phase 1 + Phase 2.5（投放/导出/编辑深化）已交付；计划见 `plans/archive/2026-07-17-data-screen-*`。  
-> **决策（2026-07-20）**：大屏**编辑视口**对标 DE 为当前 companion，计划 `plans/2026-07-20-data-screen-edit-viewport-de.md`；看板画布 UX 排队 `plans/2026-07-14-dashboard-canvas-ux-de-complete.md`。
+> **决策（2026-07-20）**：大屏**编辑视口** companion 已交付（`plans/2026-07-20-data-screen-edit-viewport-de.md`）；看板画布 UX 排队 `plans/2026-07-14-dashboard-canvas-ux-de-complete.md`。  
+> **决策（2026-07-29）**：§M-DEPTH 必做 F-A/B/C/E 全勾收官；文档与代码实扫对齐见 [project master](../feature-design/2026-07-29-vitalspan-project-master-gap-fill.md)。
 
-### 执行范围：M-FINAL 已冻结 · M-DEPTH 深度 companion（2026-07-10）
+### 执行范围：M-FINAL 已冻结 · M-DEPTH 必做已收官（2026-07-29）
 
 > **决策（2026-07-07）**：将 **M-FE-4/5**、**M13**、**F-G** 合并为 **§M-FINAL**；**2026-07-08 收官**（129/129 PRD 合同勾完）。  
 > **决策（2026-07-08）**：追加 **§M-PRODUCT** 处理成品感、DataEase 数据源分类、IA 收敛与 companion 验收清扫。  
 > **决策（2026-07-09）**：方案 A → **§M-DASH-UX** 为当前节；**§M-PRODUCT** queued → 同日全勾收官。  
-> **决策（2026-07-10）**：毕业后全栈 DE/SS 审视（SATURATED）→ 插入 **§M-DEPTH** 为当前节；不扩 PRD 合同面，对已实现 ID 做持久化/可视化/控件/消费落差 companion。  
-> **依据**：`goal.md` G1/G3/G5；代码证据：Dataset ORM + 真实 execute 已落地（M-DEPTH F-A · 2026-07-10）；`GlobalFilterBar` 纯 Input；`/rls/groups` `/audit/events` 后端已有、FE 未消费。
+> **决策（2026-07-10）**：毕业后全栈 DE/SS 审视（SATURATED）→ 插入 **§M-DEPTH**；不扩 PRD 合同面，对已实现 ID 做持久化/可视化/控件/消费落差 companion。  
+> **决策（2026-07-29）**：M-DEPTH 必做 gate 通过（F-A Dataset · F-B filter · F-C RLS/审计/调度/服务试跑 · F-E 报表诚实化）；活跃 companion 转为发版 QA + F-D 可选 backlog。  
+> **依据（2026-07-29 已闭合）**：Dataset ORM + 真实 execute；`FilterWidget` / `GlobalFilterBar` 控件链；`RlsAdminPage` / `AuditLogPage`；`SchedulePanel` 历史重试；`QueryServiceTrialSheet` 服务试跑。
 
 | 范围 | 子批 | PRD 项 | 已实现 | 待完成 | 状态 |
 |------|------|--------|--------|--------|------|
@@ -41,24 +42,23 @@ intervention: data-screen-phase25-done-2026-07-17
 | **最后一期** | **M-FINAL · F-A ~ F-G** | **38†** | **38** | **0** | **已冻结** |
 | **成品收官** | **M-PRODUCT · F-A ~ F-F** | **companion** | **38‡** | **0** | **已完成** |
 | **编辑体验** | **M-DASH-UX · F-A ~ F-D** | **companion** | **12** | **0** | **已完成** |
-| **深度打穿** | **M-DEPTH · F-A ~ F-C** | **companion** | **3§** | **12** | **当前节** |
+| **深度打穿** | **M-DEPTH · F-A ~ F-C + F-E** | **companion** | **12** | **0** | **已完成** |
 | 一期–三期 | M2 – M12 | 88 | 88 | 0 | 已完成 |
 
 \* M-FE 与 M2–M5 有 ID 重叠，为浏览器交付轨。  
 † M-FINAL companion 行映射既有 PRD ID，合同 129 项已全部勾选。  
 ‡ M-PRODUCT F-A~F 全勾（2026-07-09 五轨 worktree merge）。  
-§ M-DEPTH F-0（IA 减法）已勾；必做 F-A/B/C 共 12 项待办；F-D 可选不计 gate。
+§ M-DEPTH F-0（IA 减法）已勾；必做 F-A/B/C/E 共 12 项已勾（2026-07-29）；F-D 可选为 companion backlog。
 
 **推荐执行顺序（全局 · 当前）**：
 
 ```
-M-DEPTH F-A（Dataset 持久化 + 真实 execute + 可视化编辑）  ← 首轮必做
-  → F-B（仪表板筛选器组件 + GlobalFilterBar 控件升级）
-  → F-C（RLS/审计/调度历史/服务目录 FE 消费）∥ 可与 F-B 并行
-  → F-D 可选（公开分享 / IA 精简 / 设计器收敛 ADR）仅人工点名
+发版 QA（BUG-2 Pointer · 数据大屏 MT 抽测）  ← 按需
+  → §M-DEPTH F-D 可选（公开分享 / IA 精简 / 设计器 ADR）仅人工点名
+  → 演化 companion（看板 canvas UX · map-3d · Embed CSP 等）按需
 ```
 
-**G2 选题约束**：每轮从 **§M-DEPTH 含 `[ ]` 且非「可选」** 的子批取 **3–5 项**；**首轮必须 F-A**。**禁止**选题：F-D 可选项（除非人工点名）、AI/SQLBot、完整 SQL Lab、NFR probe 扩面、fork DE/SS。
+**G2 选题约束**：M-DEPTH 必做已收官；新轮仅从 **F-D 可选** 或 **演化/QA backlog** 选题；**禁止**重复开发已闭合 F-A/B/C。**禁止**：AI/SQLBot、完整 SQL Lab、NFR probe 扩面、fork DE/SS。
 **前三期完成信号**（不新增 PRD ID）：
 
 | 验收 | 映射 |
@@ -909,31 +909,30 @@ F-A  DashboardWidget 编辑分支 → ChartRenderer + useChartExecute（SQL + Da
 
 ---
 
-## M-DEPTH — DE/SS 深度打穿（全栈）【当前节】
+## M-DEPTH — DE/SS 深度打穿（全栈）【已收官 · 2026-07-29】
 
 > **人工干预（2026-07-10）**：毕业后全栈审视 → [`plans/2026-07-10-fe-de-ss-ia-optimization.md`](./plans/2026-07-10-fe-de-ss-ia-optimization.md) v3。  
 > **策略**：不扩 PRD 合同面；对已实现 ID 做 **持久化 / 可视化 / 控件 / 消费落差** companion。  
 > **禁止**：AI/SQLBot、完整 SQL Lab、fork DE/SS、NFR probe 扩面。  
-> **完成定义**：`[x]` = 浏览器可感知 + 分片可回写；可选行不阻塞收官。
+> **完成定义**：`[x]` = 浏览器可感知 + 分片可回写；可选行不阻塞收官。  
+> **收官（2026-07-29）**：必做 F-A/B/C/E 全勾；F-D 三项仍为可选 backlog。
 
 | 子批 | 主题 | 必做 | 可选 | 状态 |
 |------|------|------|------|------|
 | F-0 | IA 减法（已落地） | 0 | 0 | **已完成** |
-| **F-A** | Dataset 打穿 | 4 | 0 | **当前 · 首轮** |
-| F-B | 仪表板筛选器 | 4 | 0 | 依赖 F-A |
-| F-C | 后端能力前端消费 | 4 | 0 | 可与 B 并行 |
-| F-D | 分享 / 精简 / 去重 | 0 | 3 | 可选 |
+| **F-A** | Dataset 打穿 | 4 | 0 | **已完成** |
+| F-B | 仪表板筛选器 | 4 | 0 | **已完成** |
+| F-C | 后端能力前端消费 | 4 | 0 | **已完成** |
+| F-E | 报表诚实化 | 2 | 0 | **已完成** |
+| F-D | 分享 / 精简 / 去重 | 0 | 3 | **可选 backlog** |
 
-**推荐执行顺序**：
+**历史执行顺序（已闭合）**：
 
 ```
-F-A  Dataset ORM + 真实 execute + 可视化编辑器 + 计算字段行编辑
-  → F-B  widget filter 类型 + FilterWidget + GlobalFilterBar 升级 + 驱动 execute
-  → F-C  RLS 分组 UI ∥ 审计页 ∥ 调度历史 ∥ 服务目录增强
-  → F-D  可选（人工点名）
+F-A → F-B → F-C ∥ F-B → F-E；F-D 可选（人工点名）
 ```
 
-**G2 选题约束**：每轮取 **3–5 项必做 `[ ]`**；**首轮 F-A 全量**。可选行默认跳过。
+**G2 选题约束（2026-07-29 起）**：M-DEPTH 必做 gate 已通过；仅 F-D 可选或演化 backlog 可选题。
 
 ### F-0 — IA 减法【已完成 · 2026-07-10】
 
@@ -945,7 +944,7 @@ F-A  Dataset ORM + 真实 execute + 可视化编辑器 + 计算字段行编辑
 
 **验收信号**：`resolve-nav` / `routes.smoke` / QuickCreate smoke 绿；`layout.md` IA 叙事已同步。
 
-### F-A — Dataset 打穿【必做 · 首轮】
+### F-A — Dataset 打穿【已完成 · 2026-07-10】
 
 > **对标**：DataEase 数据集可视化建模；生产可用（重启不丢）。  
 > **状态（2026-07-10）**：T1 已合入 `dev-auto`（`cf877f62`）。
@@ -959,7 +958,7 @@ F-A  Dataset ORM + 真实 execute + 可视化编辑器 + 计算字段行编辑
 
 **代码锚点**：`backend/app/api/v1/datasets.py` · `backend/app/metadata/dataset/` · `fe/src/pages/admin/datasets/DatasetListPage.tsx` · `SchemaBrowser`
 
-### F-B — 仪表板筛选器组件【必做】
+### F-B — 仪表板筛选器组件【已完成 · 2026-07-29】
 
 > **对标**：DE/SS 仪表板 filter 组件 + 原生筛选控件。  
 > **状态（2026-07-10）**：T2 已合入（`e24182e0`）。
@@ -973,7 +972,7 @@ F-A  Dataset ORM + 真实 execute + 可视化编辑器 + 计算字段行编辑
 
 **代码锚点**：`layoutUtils.ts` · `GlobalFilterBar.tsx` · `dashboard/schemas.py` · `dashboardFilterUtils` · `useChartExecute`
 
-### F-C — 后端能力前端消费【必做】
+### F-C — 后端能力前端消费【已完成 · 2026-07-29】
 
 > **对标**：把已实现 API 变成管理员可操作的 UI（消费落差）。  
 > **状态（2026-07-29）**：F-C 全勾；RPT-005 历史 UI 与 API-003 Trial Sheet 已闭合。
@@ -1010,5 +1009,7 @@ F-A  Dataset ORM + 真实 execute + 可视化编辑器 + 计算字段行编辑
 | 报表诚实化 | F-E 全勾 | **是 · 已勾** |
 | 调度历史 / 服务试跑增强 | F-C 余 2 项 | **是 · 已勾**（2026-07-29） |
 | 公开分享 / IA 精简 / 设计器 ADR | F-D 可选 | 否 |
+
+> **M-DEPTH 必做 gate**：**已通过**（2026-07-29）。F-D 与演化 companion 不阻塞发版。
 
 > **明确不含**：SQLBot/AI；完整 SQL Lab；文本/图片/Tab 积木（未立项）；NFR probe 扩面。

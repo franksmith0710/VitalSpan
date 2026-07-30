@@ -98,7 +98,7 @@ API 登记见 [`docs/api/README.md`](../../api/README.md) §认证（PRD 列 `�
   - [x] **M-DEPTH F-C**：RLS 维度分组配置 UI（接 `/rls/groups*` + 角色 `dimension-groups` 绑定；admin 可完成分组 CRUD 与角色关联）（完成于 2026-07-29 · `RlsAdminPage.tsx`）
 - **代码锚点**：`backend/app/auth/rls/groups/service.py` · `backend/app/auth/rls/bindings/service.py` · `backend/app/api/v1/rls.py` · `backend/app/api/v1/roles.py` · `tests/test_auth_rbac_l1.py` T-AUTH-GP01~GP15
 - **演化建议**：M-DEPTH F-C 闭合 Admin UI；生产维度值校验扩展
-- **里程碑对齐**：r21 · 已完成；**M-DEPTH F-C · 当前节 · 2026-07-10**
+- **里程碑对齐**：r21 · 已完成；**M-DEPTH F-C · 已闭合 · 2026-07-29**
 
 ### [AUTH-007] RLS 谓词生成与注入
 
@@ -125,4 +125,4 @@ API 登记见 [`docs/api/README.md`](../../api/README.md) §认证（PRD 列 `�
   - [x] **M-DEPTH F-C**：审计事件浏览页（接 `GET /audit/events` 时间窗过滤；detail 脱敏展示）（完成于 2026-07-29 · `AuditLogPage.tsx`）
 - **代码锚点**：`backend/app/auth/audit/write_hooks.py` · `backend/app/auth/audit/service.py` · `backend/app/api/v1/audit.py` · `tests/test_auth_rbac_l1.py` T-AUTH-AU01~AU13 · T-AUTH-A01~A09 回归
 - **演化建议**：M-DEPTH F-C 闭合浏览 UI；非 auth 域写操作扩展；生产留存策略
-- **里程碑对齐**：r21 · 已完成；**M-DEPTH F-C · 当前节 · 2026-07-10**
+- **里程碑对齐**：r21 · 已完成；**M-DEPTH F-C · 已闭合 · 2026-07-29**

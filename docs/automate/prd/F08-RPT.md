@@ -60,7 +60,7 @@
   - [x] 目录权限受 M7 控制（r57 companion：`reports/catalog/acl.py` viewer 禁写/owner 删叶/admin 绕过 move；ACL 判定 ≤10ms）
   - [x] extension 同比环比（r58 companion：`compareMode` yoy/mom + `POST .../compare-preview` + render-spec `compareMetrics`；`extension/acl.py` viewer 禁写）
   - [x] M10 templateKey 唯一关联 + list probe（r234：`RPT_CATALOG_DUPLICATE_TEMPLATE_KEY`/`RPT_CATALOG_TEMPLATE_KIND_MISMATCH`/`RPT_CATALOG_TEMPLATE_NOT_FOUND`；`catalog/probe.py` list ≤50ms；`ReportTemplatesPage` 树浏览）
-  - [ ] 另存为/手工执行（companion）
+  - [ ] 另存为/手工执行（companion · **演化建议 / 非阻塞**）
 - **代码锚点**：`backend/app/reports/catalog/service.py` · `backend/app/reports/catalog/probe.py` · `fe/src/pages/admin/reports/components/CatalogTreeNode.tsx` · `tests/test_dash_rpt_query_nfr_r53.py` T-RPT-R53-004-01~06 · `tests/test_dash_rpt_r58.py` T-RPT-R58-004-01~08 · `tests/test_m10_report_templates_r234.py` T-RPT-R234-004-01~06
 - **演化建议**：r234 闭合 catalog `templateKey` 外键唯一、list perf probe 与 FE 树形管理；另存为/手工执行留 companion
 - **里程碑对齐**：M10 · 已完成 · 2026-07-07
@@ -80,10 +80,10 @@
   - [x] M12 Admin 调度 UI（r238：`SchedulePanel` + `TemplateDetailPanel` 调度 Tab；`SchedulePanel.smoke.test.tsx`）
   - [x] 真实 SMTP/对象存储投递（companion r-e95d：`RPT_DELIVERY_MODE=mock|smtp` + MailHog 兼容 SMTP 适配器）
   - [x] **M-DEPTH F-C**：调度执行历史 / 重试 UI 增强（接 `GET .../executions` + `POST .../retry`；失败可读、可重试）（完成于 2026-07-29 · `SchedulePanel.tsx` · `SchedulePanel.smoke.test.tsx`）
-  - [ ] 组合调度粒度枚举（companion）
+  - [ ] 组合调度粒度枚举（companion · **演化建议 / 非阻塞**）
 - **代码锚点**：`backend/app/reports/scheduler/service.py` · `backend/app/reports/scheduler/jobs.py` · `backend/app/reports/scheduler/executor.py` · `backend/app/reports/scheduler/delivery_adapter.py` · `fe/src/pages/admin/reports/components/SchedulePanel.tsx` · `backend/app/api/v1/reports/__init__.py` · `tests/test_ff_rpt_companion_e95d.py` · `tests/test_m12_batch1_r238.py` T-RPT-R238-005-* · `tests/test_dash_rpt_query_nfr_r53.py` T-RPT-R53-005-01~08 · `tests/test_dash_rpt_query_nfr_r57.py` T-RPT-R57-005-01~07 · `tests/test_dash_rpt_r58.py` T-RPT-R58-005-01~07
 - **演化建议**：M-DEPTH F-C 加深 SchedulePanel 历史/重试；组合调度粒度留远期
-- **里程碑对齐**：M12 · 已完成 · 2026-07-07；**M-DEPTH F-C · 当前节 · 2026-07-10**
+- **里程碑对齐**：M12 · 已完成 · 2026-07-07；**M-DEPTH F-C · 已闭合 · 2026-07-29**
 ### [RPT-006] 报表扩展配置 FR-6.3
 
 - **状态**：已实现（M10 r234）
@@ -96,7 +96,7 @@
   - [x] render-spec 可见指标/修订历史/内存持久化快照（r55 companion：`build_extension_render_spec` + revisions + snapshot）
   - [x] batch compare 联动（r58 companion：batch yoy render-spec compareMetrics + `probe_render_spec_budget_ms` ≤50ms）
   - [x] M10 Admin 扩展配置 UI（r234：`TemplateDetailPanel` 扩展 Tab metrics/changeNote PUT + 预览 Tab render-spec JSON；folder 节点 extension 422 回归）
-  - [ ] 真实 DB 持久化与运行时渲染展现（companion）
+  - [ ] 真实 DB 持久化与运行时渲染展现（companion · **演化建议 / 非阻塞**）
 - **代码锚点**：`backend/app/reports/extension/` · `fe/src/pages/admin/reports/components/TemplateDetailPanel.tsx` · `fe/src/pages/admin/reports/useReportTemplates.ts` · `tests/test_rpt_gov_meta_conn_r55.py` T-RPT-R55-01~08 · `tests/test_m10_report_templates_r234.py` T-RPT-R234-006-01~03
 - **演化建议**：r234 闭合 Admin 扩展配置与 render-spec 预览 UI；真实 DB 持久化与运行时渲染展现留 companion
 - **里程碑对齐**：M10 · 已完成 · 2026-07-07

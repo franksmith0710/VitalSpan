@@ -5,7 +5,7 @@
 | 模块路径 | `backend/app/integration/` |
 | PRD | [F13-API](../automate/prd/F13-API.md)（API-003~007） |
 | 里程碑 | M8 / M12 / M13 |
-| 状态 | **companion 已实现（r45）** |
+| 状态 | **companion 已实现（r45 + M-DEPTH F-C · 2026-07-29）** |
 
 ## 职责
 
@@ -38,6 +38,7 @@
 |------|------|-----|------|
 | `IntegrationError` | 集成 API 统一错误 | API-003~007 | 已实现 |
 | `list_published_services` / `execute_published_service` | IF-02 查询服务门面（`;requires=` 校验、`Idempotency-Key`） | API-003 | companion |
+| **FE** | `QueryServicesPage` · `QueryServiceTrialSheet` · `queryServicePathUtils`（试跑 + OpenAPI + 参数表单） | API-003 | M-DEPTH F-C · 2026-07-29 |
 | `publish_service` | draft→published + 自动总线注册 | API-003/004 | companion |
 | `register_catalog_to_bus` / `register_on_publish` | IF-01 总线注册 + retry + payload 校验 | API-004 | companion |
 | `create_export_request` / `get_export_status` / `get_export_file` | IF-03 同步生成 + 下载 | API-005 | companion |

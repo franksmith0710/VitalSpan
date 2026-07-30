@@ -41,9 +41,9 @@
   - [x] 版本 v1 前缀（`/api/v1/services`）
   - [x] `/admin/services` 查询服务 Admin 列表页（M-PRODUCT F-A；`QueryServicesPage` · manifest 治理分组）
   - [x] **M-DEPTH F-C**：已发布服务目录消费增强（试跑入口 + OpenAPI 片段可见；失败态可读）（完成于 2026-07-29 · `QueryServiceTrialSheet.tsx` · `QueryServicesPage.smoke.test.tsx`）
-- **代码锚点**：`backend/app/api/v1/services.py` · `backend/app/integration/query_services.py` · `fe/src/pages/admin/services/QueryServicesPage.tsx` · `fe/src/routes.tsx` · `fe/src/config/nav-manifest.tsx`
-- **演化建议**：M-DEPTH F-C 加深试跑/OpenAPI 消费；真实查询执行链路可继续加固
-- **里程碑对齐**：M-PRODUCT F-A · 服务页 FE · 2026-07-08；**M-DEPTH F-C · 当前节 · 2026-07-10**
+- **代码锚点**：`backend/app/api/v1/services.py` · `backend/app/integration/query_services.py` · `fe/src/pages/admin/services/QueryServicesPage.tsx` · `fe/src/pages/admin/services/QueryServiceTrialSheet.tsx` · `fe/src/pages/admin/services/queryServicePathUtils.ts` · `fe/src/routes.tsx` · `fe/src/config/nav-manifest.tsx`
+- **演化建议**：真实查询执行链路可继续加固；生产级限流留远期
+- **里程碑对齐**：M-PRODUCT F-A · 服务页 FE · 2026-07-08；**M-DEPTH F-C · 已闭合 · 2026-07-29**
 ### [API-004] IF-01 总线注册适配
 
 - **状态**：已实现

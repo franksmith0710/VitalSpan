@@ -64,7 +64,7 @@
   - [ ] Dataset 对标 DE/SS 全量能力（远期 companion；含多表 join 可视化等，不阻塞 F-A 收官）
 - **代码锚点**：`backend/app/metadata/dataset/models.py` · `backend/migrations/versions/0023_datasets_orm.py` · `backend/app/metadata/dataset/service.py` · `backend/app/api/v1/datasets.py` · `fe/src/pages/admin/datasets/DatasetListPage.tsx` · `fe/src/pages/admin/datasets/DatasetEditorForm.tsx` · `fe/src/pages/admin/datasets/components/DatasetBindPanel.tsx` · `fe/src/hooks/useInspectorColumns.ts` · `fe/src/lib/chartExecuteProbe.ts` · `fe/src/components/dashboard/ChartEditRail.tsx` · `fe/src/components/charts/useChartExecute.ts` · `tests/test_mfinal_fd_meta_r244.py` T-META-R244-004-01~08
 - **演化建议**：M-DEPTH F-A 优先 ORM + 可视化编辑；全量 DE/SS 对标（多表 join UX 等）留远期
-- **里程碑对齐**：M-FINAL · F-D · 已完成 · 2026-07-07；M-PRODUCT F-A · Dashboard 绑定 · 2026-07-08；**M-DEPTH F-A · 当前节 · 2026-07-10**
+- **里程碑对齐**：M-FINAL · F-D · 已完成 · 2026-07-07；M-PRODUCT F-A · Dashboard 绑定 · 2026-07-08；**M-DEPTH F-A · 已闭合 · 2026-07-29**
 ### [META-005] 物理表元数据登记 M1-ENTITY
 
 - **状态**：已实现（M8 r232 收官）
