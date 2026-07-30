@@ -45,6 +45,8 @@ export const queryKeys = {
       categoryKey?: string;
       q?: string;
       includeDrafts?: boolean;
+      limit?: number;
+      offset?: number;
     }) => ["vizComponents", "list", params] as const,
     detail: (id: string) => ["vizComponents", "detail", id] as const,
     resolve: (ids: string[]) => ["vizComponents", "resolve", [...ids].sort().join(",")] as const,

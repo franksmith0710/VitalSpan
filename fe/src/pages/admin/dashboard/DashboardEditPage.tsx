@@ -74,8 +74,8 @@ import { cloneLayoutWidget } from "@/components/dashboard/cloneLayoutWidget";
 import type { PixelWidgetActions } from "@/components/dashboard/pixelCanvas/PixelShapeActionRail";
 import {
   normalizeWidgetLayout,
-  placeNewWidget,
   placeWidgetAt,
+  placeWidgetAtGridCenter,
   placeWidgetExact,
 } from "@/components/dashboard/gridLayoutAdapter";
 import type { GridInsertAt } from "@/components/dashboard/DashboardGrid";
@@ -692,9 +692,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
             })
           : at != null
             ? placeWidgetAt(widgets, draft, at.gridX, at.gridY)
-            : widgets.length === 0
-              ? { ...draft, gridX: 0, gridY: 0 }
-              : placeNewWidget(widgets, draft);
+            : placeWidgetAtGridCenter(widgets, draft);
       next = sortWidgets([...widgets, placed]);
       draft = placed;
     }
@@ -718,7 +716,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       handleSelect(draft.id, false);
       return;
     }
-    const placed = placeNewWidget(widgets, widget);
+    const placed = placeWidgetAtGridCenter(widgets, widget);
     setWidgets((prev) => sortWidgets([...prev, placed]));
     handleSelect(placed.id, false);
   };

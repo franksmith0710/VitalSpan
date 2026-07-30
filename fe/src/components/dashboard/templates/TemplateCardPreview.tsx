@@ -32,7 +32,7 @@ type TemplateCardPreviewProps = {
 };
 
 /**
- * 模板卡片预览：与可视化组件库 ComponentPayloadPreview 同壳层 + 底栏元信息。
+ * 模板卡片预览：与可视化组件库 ComponentPayloadPreview 同壳层 + 顶栏元信息。
  */
 export function TemplateCardPreview({
   templateId,
@@ -115,7 +115,7 @@ export function TemplateCardPreview({
     return () => observer.disconnect();
   }, [eager, templateId]);
 
-  const footer = (
+  const metaBar = (
     <TemplatePreviewFooter
       surfaceKind={surfaceKind}
       categoryKey={categoryKey}
@@ -139,7 +139,7 @@ export function TemplateCardPreview({
   if (!layout?.widgets?.length && !loading && active && !detailQuery.isLoading) {
     return (
       <div ref={hostRef} className={cn("h-full", className)} data-testid="template-card-preview">
-        <ComponentPreviewShell footer={footer} className="h-full">
+        <ComponentPreviewShell header={metaBar} className="h-full">
           <div className="flex h-full items-center justify-center">
             <LayoutDashboard
               className={cn("size-10", isScreen ? "text-slate-600" : "text-gray-300 dark:text-gray-600")}
@@ -159,7 +159,7 @@ export function TemplateCardPreview({
       data-live={active && !loading && layout ? "true" : "false"}
       aria-hidden
     >
-      <ComponentPreviewShell footer={footer} className="h-full">
+      <ComponentPreviewShell header={metaBar} className="h-full">
         {active && !loading && layout?.widgets?.length ? (
           <TemplateLayoutLivePreview
             layout={layout}

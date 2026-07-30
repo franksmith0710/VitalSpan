@@ -101,6 +101,15 @@ describe("TemplateCardPreview", () => {
     expect(screen.getByTestId("template-layout-live-preview")).toBeInTheDocument();
   });
 
+  it("renders meta bar at top of preview shell", async () => {
+    renderPreview();
+    await waitFor(() => {
+      expect(screen.getByTestId("template-card-preview")).toHaveAttribute("data-live", "true");
+    });
+    expect(screen.getByText("仪表板")).toBeInTheDocument();
+    expect(screen.getByText("分析 · 内置")).toBeInTheDocument();
+  });
+
   it("flags missing demo datasource for templates that require charts", async () => {
     renderPreview();
     await waitFor(() => {

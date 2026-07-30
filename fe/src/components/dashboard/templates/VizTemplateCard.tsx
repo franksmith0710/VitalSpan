@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { TemplateCardPreview } from "@/components/dashboard/templates/TemplateCardPreview";
 import { TemplatePreviewDialog } from "@/components/dashboard/templates/TemplatePreviewDialog";
 import {
-  CATEGORY_ACCENT,
   resolveTemplateThumbnail,
   surfaceLabel,
   TEMPLATE_ACTIONS,
@@ -47,7 +46,6 @@ export function VizTemplateCard({
 }: VizTemplateCardProps) {
   const [exporting, setExporting] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const accent = CATEGORY_ACCENT[item.categoryKey] ?? CATEGORY_ACCENT.general;
   const thumbnailSrc = resolveTemplateThumbnail(item.templateKey, item.thumbnailRef);
   const showPublish = canManage && item.status === "draft";
   const showArchive =
@@ -73,8 +71,6 @@ export function VizTemplateCard({
       )}
       data-testid={`viz-template-card-${item.id}`}
     >
-      <div className={cn("h-1 w-full bg-gradient-to-r", accent)} aria-hidden />
-
       <div
         className="relative overflow-hidden border-b border-gray-100 dark:border-white/[0.06]"
         style={{

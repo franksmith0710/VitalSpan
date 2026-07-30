@@ -7,6 +7,7 @@ import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import {
   LIST_PAGE_CARD_GRID_CLASS,
   ListPageBody,
+  ListPagePagination,
   ListPageSection,
   ListPageTableFrame,
   ListPageToolbar,
@@ -41,6 +42,7 @@ import {
 } from "@/lib/vizComponents";
 import { hasCapability } from "@/lib/capabilities";
 import { mapApiError } from "@/lib/apiError";
+import { useListPagination } from "@/lib/list-pagination";
 import { queryKeys } from "@/lib/queryKeys";
 import { useAuth } from "@/context/auth-context";
 import { sessionUserFromMe } from "@/lib/session";
@@ -99,6 +101,7 @@ export function VizComponentsHubPage() {
   const [q, setQ] = useState("");
   const [insertTarget, setInsertTarget] = useState<VizComponentListItem | null>(null);
   const [referencesTarget, setReferencesTarget] = useState<VizComponentListItem | null>(null);
+  const pagination = useListPagination(20, [surfaceTab, widgetType, q]);
 
   const listQuery = useQuery({
     queryKey: queryKeys.vizComponents.list({
@@ -106,6 +109,8 @@ export function VizComponentsHubPage() {
       widgetType: widgetType === "all" ? undefined : widgetType,
       q,
       includeDrafts: canManage,
+      limit: pagination.pageSize,
+      offset: pagination.offset,
     }),
     queryFn: () =>
       fetchVizComponents({
@@ -113,7 +118,8 @@ export function VizComponentsHubPage() {
         widgetType: widgetType === "all" ? undefined : widgetType,
         q: q || undefined,
         includeDrafts: canManage,
-        limit: 100,
+        limit: pagination.pageSize,
+        offset: pagination.offset,
       }),
   });
 
@@ -150,6 +156,7 @@ export function VizComponentsHubPage() {
   const pending =
     publishMutation.isPending || archiveMutation.isPending || deleteMutation.isPending;
   const items = listQuery.data?.items ?? [];
+  const total = listQuery.data?.total ?? 0;
   const itemIds = useMemo(() => items.map((item) => item.id), [items]);
 
   const resolveQuery = useQuery({
@@ -280,30 +287,35 @@ export function VizComponentsHubPage() {
               footer={<PanelEmptyStateSteps steps={EMPTY_STEPS} />}
             />
           ) : (
-            <>
-              <div className={LIST_PAGE_CARD_GRID_CLASS}>
-                {items.map((item) => (
-                  <VizComponentCard
-                    key={item.id}
-                    item={item}
-                    payload={payloadById.get(item.id)}
-                    payloadLoading={resolveQuery.isLoading && !payloadById.has(item.id)}
-                    canManage={canManage}
-                    pending={pending}
-                    onInsert={() => setInsertTarget(item)}
-                    onViewReferences={() => setReferencesTarget(item)}
-                    onPublish={() => publishMutation.mutate(item.id)}
-                    onArchive={() => archiveMutation.mutate(item.id)}
-                    onDelete={() => deleteMutation.mutate(item.id)}
-                  />
-                ))}
-              </div>
-              <p className="mt-4 text-theme-xs text-gray-500 dark:text-gray-400">
-                共 {listQuery.data?.total ?? items.length} 个组件
-              </p>
-            </>
+            <div className={LIST_PAGE_CARD_GRID_CLASS}>
+              {items.map((item) => (
+                <VizComponentCard
+                  key={item.id}
+                  item={item}
+                  payload={payloadById.get(item.id)}
+                  payloadLoading={resolveQuery.isLoading && !payloadById.has(item.id)}
+                  canManage={canManage}
+                  pending={pending}
+                  onInsert={() => setInsertTarget(item)}
+                  onViewReferences={() => setReferencesTarget(item)}
+                  onPublish={() => publishMutation.mutate(item.id)}
+                  onArchive={() => archiveMutation.mutate(item.id)}
+                  onDelete={() => deleteMutation.mutate(item.id)}
+                />
+              ))}
+            </div>
           )}
         </ListPageTableFrame>
+
+        {!listQuery.isLoading && total > 0 ? (
+          <ListPagePagination
+            current={pagination.page}
+            pageSize={pagination.pageSize}
+            total={total}
+            showSizeChanger
+            onChange={pagination.onPageChange}
+          />
+        ) : null}
       </ListPageSection>
 
       <InsertVizComponentDialog

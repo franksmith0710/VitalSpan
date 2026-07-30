@@ -97,5 +97,6 @@ describe("VizComponentsHubPage", () => {
       expect(screen.getByText("测试图表")).toBeInTheDocument();
     });
     expect(screen.getByRole("link", { name: /编辑/ })).toBeInTheDocument();
+    expect(screen.getByText(/每页/)).toBeInTheDocument();
   });
 });

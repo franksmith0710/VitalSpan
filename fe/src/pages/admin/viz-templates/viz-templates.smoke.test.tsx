@@ -18,11 +18,26 @@ vi.mock("@/context/auth-context", () => ({
   }),
 }));
 
+const mockTemplateItem = {
+  id: "tpl-1",
+  templateKey: "builtin-dash-dual-kpi",
+  name: "双栏 KPI 分析",
+  description: "KPI 条 + 渠道柱图 / 趋势折线，演示库即开即用",
+  categoryKey: "analytics",
+  surfaceKind: "dashboard" as const,
+  status: "published" as const,
+  thumbnailRef: null,
+  visibility: "builtin" as const,
+  contentRevision: 1,
+  updatedAt: new Date().toISOString(),
+  publishedAt: new Date().toISOString(),
+};
+
 const mockExportEnvelope = {
   templateVersion: 1,
   kind: "viz-layout",
   surfaceKind: "dashboard",
-  name: "空白看板",
+  name: "双栏 KPI 分析",
   layout: { version: 1, widgets: [], globalFilters: [] },
 };
 
@@ -31,8 +46,9 @@ vi.mock("@/lib/api", () => ({
     if (url.startsWith("/api/v1/dashboard-templates?")) {
       return {
         items: [
+          mockTemplateItem,
           {
-            id: "tpl-1",
+            id: "tpl-blank",
             templateKey: "builtin-dash-blank",
             name: "空白看板",
             description: "12 列栅格画布，从零搭建",
@@ -46,25 +62,14 @@ vi.mock("@/lib/api", () => ({
             publishedAt: new Date().toISOString(),
           },
         ],
-        total: 1,
+        total: 2,
         limit: 100,
         offset: 0,
       };
     }
     if (url === "/api/v1/dashboard-templates/tpl-1") {
       return {
-        id: "tpl-1",
-        templateKey: "builtin-dash-blank",
-        name: "空白看板",
-        description: "12 列栅格画布，从零搭建",
-        categoryKey: "general",
-        surfaceKind: "dashboard",
-        status: "published",
-        thumbnailRef: null,
-        visibility: "builtin",
-        contentRevision: 1,
-        updatedAt: new Date().toISOString(),
-        publishedAt: new Date().toISOString(),
+        ...mockTemplateItem,
         layoutJson: {
           version: 1,
           widgets: [
@@ -87,6 +92,9 @@ vi.mock("@/lib/api", () => ({
     }
     if (url === "/api/v1/dashboard-templates/tpl-1/export") {
       return mockExportEnvelope;
+    }
+    if (url === "/api/v1/datasources") {
+      return { items: [] };
     }
     if (url === "/api/v1/dashboards/from-template" && init?.method === "POST") {
       return { id: "dash-new" };
@@ -115,7 +123,8 @@ describe("VizTemplatesHubPage smoke", () => {
     expect(screen.getByRole("button", { name: /仪表板/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /数据大屏/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /导入 JSON/ })).toBeInTheDocument();
-    expect(await screen.findByText("空白看板")).toBeInTheDocument();
+    expect(await screen.findByText("双栏 KPI 分析")).toBeInTheDocument();
+    expect(screen.queryByText("空白看板")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "预览" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "使用模板" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "导出" })).toBeInTheDocument();
@@ -126,12 +135,12 @@ describe("VizTemplatesHubPage smoke", () => {
     const downloadMock = vi.mocked(downloadJsonFile);
     downloadMock.mockClear();
     renderHub();
-    await screen.findByText("空白看板");
+    await screen.findByText("双栏 KPI 分析");
     await user.click(screen.getByRole("button", { name: "导出" }));
     await waitFor(() => {
       expect(downloadMock).toHaveBeenCalledWith(
         mockExportEnvelope,
-        "空白看板-template.json",
+        "双栏-KPI-分析-template.json",
       );
     });
   });

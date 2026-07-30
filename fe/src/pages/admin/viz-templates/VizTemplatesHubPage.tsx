@@ -26,6 +26,7 @@ import {
   archiveTemplate,
   createFromTemplate,
   fetchDashboardTemplates,
+  filterTemplatesForHub,
   importTemplateEnvelope,
   publishTemplate,
   TEMPLATE_CATEGORIES,
@@ -138,7 +139,7 @@ export function VizTemplatesHubPage() {
   const pending =
     useMutation_.isPending || publishMutation.isPending || archiveMutation.isPending;
 
-  const items = listQuery.data?.items ?? [];
+  const items = filterTemplatesForHub(listQuery.data?.items ?? []);
   const isGovView = categoryKey === "government";
   const govScreens = isGovView
     ? items.filter((item) => item.surfaceKind === "data-screen")
@@ -332,7 +333,7 @@ export function VizTemplatesHubPage() {
                 renderCardGrid(items, 4)
               )}
               <p className="mt-4 text-theme-xs text-gray-500 dark:text-gray-400">
-                共 {listQuery.data?.total ?? items.length} 个模板
+                共 {items.length} 个模板
               </p>
             </>
           )}

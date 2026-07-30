@@ -69,6 +69,35 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
+function viewportCenterPoint(
+  canvas: DashboardCanvas,
+  visibleViewport?: PixelRect,
+): PixelPoint {
+  if (visibleViewport && visibleViewport.width > 0 && visibleViewport.height > 0) {
+    return {
+      x: visibleViewport.x + visibleViewport.width / 2,
+      y: visibleViewport.y + visibleViewport.height / 2,
+    };
+  }
+  return { x: canvas.width / 2, y: canvas.height / 2 };
+}
+
+/** 调色板点击（非拖放）落点：优先视口中心，空画布无视口时居中画布 */
+function placeForPaletteClick(
+  size: { width: number; height: number },
+  widgets: PixelLayoutWidget[],
+  canvas: DashboardCanvas,
+  visibleViewport?: PixelRect,
+): Pick<PixelLayoutWidget, "x" | "y" | "width" | "height"> {
+  if (visibleViewport && visibleViewport.width > 0 && visibleViewport.height > 0) {
+    return placeAtPoint(size, canvas, viewportCenterPoint(canvas, visibleViewport));
+  }
+  if (widgets.length === 0) {
+    return placeAtPoint(size, canvas, viewportCenterPoint(canvas));
+  }
+  return placeInNextOpenSlot(size, widgets, canvas);
+}
+
 function placeInNextOpenSlot(
   size: { width: number; height: number },
   widgets: PixelLayoutWidget[],
@@ -230,7 +259,12 @@ export function insertPixelPaletteWidget(
     gridY: undefined,
   }));
   const legacy = createPaletteWidget(type, legacyWidgets);
-  const placement = placeInNextOpenSlot(defaultSize(legacy), getTopLevelPixelWidgets(layout.widgets), layout.canvas);
+  const placement = placeForPaletteClick(
+    defaultSize(legacy),
+    getTopLevelPixelWidgets(layout.widgets),
+    layout.canvas,
+    visibleViewport,
+  );
   const draft = buildDraftWidget(type, layout.widgets, placement);
   return resolveInsert(layout, draft);
 }
@@ -303,7 +337,12 @@ export function insertClonedPixelWidget(
         height: Math.min(sourcePixel.height, layout.canvas.height),
       }
     : defaultSize(widget);
-  const placement = placeInNextOpenSlot(size, getTopLevelPixelWidgets(layout.widgets), layout.canvas);
+  const placement = placeForPaletteClick(
+    size,
+    getTopLevelPixelWidgets(layout.widgets),
+    layout.canvas,
+    visibleViewport,
+  );
   const {
     colSpan: _colSpan,
     rowSpan: _rowSpan,

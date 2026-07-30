@@ -164,6 +164,16 @@ export function placeWidgetExact(
   };
 }
 
+/** 调色板点击（非拖放）：水平居中栅格，纵向从首行起找空位 */
+export function placeWidgetAtGridCenter(
+  widgets: LayoutWidget[],
+  widget: LayoutWidget,
+): LayoutWidget {
+  const w = clampColSpan(widget.colSpan);
+  const centerX = Math.floor((GRID_COLS - w) / 2);
+  return placeWidgetAt(widgets, widget, centerX, 0);
+}
+
 /** 拖放落点：优先使用指针位置，冲突时向下顺延 */
 export function placeWidgetAt(
   widgets: LayoutWidget[],

@@ -50,6 +50,18 @@ export const TEMPLATE_CATEGORIES: { key: string; label: string }[] = [
   { key: "analytics", label: "分析" },
 ];
 
+/** Hub / 模板选择器不展示的内置空白起步模板（列表页仍可「新建空白」） */
+export const HUB_HIDDEN_BUILTIN_TEMPLATE_KEYS = new Set([
+  "builtin-screen-blank",
+  "builtin-dash-blank",
+]);
+
+export function filterTemplatesForHub(
+  items: DashboardTemplateListItem[],
+): DashboardTemplateListItem[] {
+  return items.filter((item) => !HUB_HIDDEN_BUILTIN_TEMPLATE_KEYS.has(item.templateKey));
+}
+
 export function buildTemplatesListUrl(params: {
   surfaceKind?: VizSurfaceKind;
   categoryKey?: string;

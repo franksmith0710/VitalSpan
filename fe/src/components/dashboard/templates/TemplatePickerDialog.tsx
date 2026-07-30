@@ -16,6 +16,7 @@ import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { mapApiError } from "@/lib/apiError";
 import {
   fetchDashboardTemplates,
+  filterTemplatesForHub,
   type DashboardTemplateListItem,
   type VizSurfaceKind,
 } from "@/lib/dashboardTemplates";
@@ -54,6 +55,8 @@ export function TemplatePickerDialog({
     enabled: open,
   });
 
+  const pickerItems = filterTemplatesForHub(listQuery.data?.items ?? []);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
@@ -86,13 +89,13 @@ export function TemplatePickerDialog({
               message={mapApiError(listQuery.error)}
               onRetry={() => void listQuery.refetch()}
             />
-          ) : listQuery.data?.items.length === 0 ? (
+          ) : pickerItems.length === 0 ? (
             <p className="py-8 text-center text-theme-sm text-gray-500 dark:text-gray-400">
               暂无可用模板
             </p>
           ) : (
             <ul className="grid gap-2">
-              {listQuery.data?.items.map((item) => (
+              {pickerItems.map((item) => (
                 <li key={item.id}>
                   <button
                     type="button"

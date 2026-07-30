@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ComponentPayloadPreview } from "@/components/dashboard/viz-components/ComponentPayloadPreview";
 import {
-  CATEGORY_ACCENT,
   COMPONENT_ACTIONS,
   surfaceLabel,
   widgetTypeLabel,
@@ -44,7 +43,6 @@ export function VizComponentCard({
   onArchive,
   onDelete,
 }: VizComponentCardProps) {
-  const accent = CATEGORY_ACCENT[item.categoryKey] ?? CATEGORY_ACCENT.general;
   const showPublish = canManage && item.status === "draft";
   const showArchive = canManage && item.status === "published";
   const referenceCount = item.referenceCount ?? 0;
@@ -72,8 +70,6 @@ export function VizComponentCard({
       )}
       data-testid={`viz-component-card-${item.id}`}
     >
-      <div className={cn("h-1 w-full bg-gradient-to-r", accent)} aria-hidden />
-
       <div className="relative aspect-[16/10] overflow-hidden border-b border-gray-100 dark:border-white/[0.06]">
         <ComponentPayloadPreview
           componentId={item.id}
