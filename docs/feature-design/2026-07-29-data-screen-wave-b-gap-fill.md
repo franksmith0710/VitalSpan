@@ -41,7 +41,7 @@ Phase 2.5 Wave B（编辑深化）代码早已落地，但执行计划勾选与�
 |----|------|
 | 编辑视口 T2–T3 | ✅ 已闭合 · `plans/2026-07-20-data-screen-edit-viewport-de.md` |
 | 保存 WYSIWYG（gap 压实） | ✅ [BUG-14](../bugs/BUG-14_data-screen-save-gap-compaction_2026-07-29.md) |
-| BUG-12 resize e2e | 见 master runbook · `fe/e2e/data-screen-resize-content.spec.ts` |
+| BUG-12 resize e2e | ✅ `e2e/data-screen-resize-content.spec.ts` 绿（2026-07-30 复验） |
 | A2 share smoke | ✅ `DashboardSharePage.smoke.test.tsx` |
 | Wave C/D | ✅ [wave-cd-gap-fill](./2026-07-29-data-screen-wave-cd-gap-fill.md) |
 

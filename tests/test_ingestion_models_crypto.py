@@ -28,6 +28,9 @@ def test_settings_invalid_credential_fernet_key_length_raises(monkeypatch):
         Settings(
             database_url=os.environ["DATABASE_URL"],
             secret_key=os.environ["SECRET_KEY"],
+            credential_sm4_key=os.environ.get(
+                "CREDENTIAL_SM4_KEY", "0123456789abcdef0123456789abcdef"
+            ),
         )
 
 

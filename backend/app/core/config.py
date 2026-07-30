@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     database_url: str
     secret_key: str
     credential_fernet_key: str
+    credential_crypto_provider: Literal["sm4", "fernet"] = "sm4"
+    credential_sm4_key: str = ""
+    password_hash_algorithm: Literal["sm3", "bcrypt"] = "sm3"
     cors_origins_raw: str = "http://localhost:5173"
     log_level: str = "INFO"
     query_default_limit: int = 1000
@@ -47,6 +50,7 @@ class Settings(BaseSettings):
 
     _DEV_SECRET_KEY: ClassVar[str] = "change-me-in-production"
     _DEV_FERNET_EXAMPLE: ClassVar[str] = "SN0VrKv3d9y1xCzRerwAlw0VdGvrNqWacCMhrYbq2YI="
+    _DEV_SM4_EXAMPLE: ClassVar[str] = "0123456789abcdef0123456789abcdef"
 
     @field_validator("push_wecom_webhook", "push_dingtalk_webhook", mode="before")
     @classmethod
@@ -132,6 +136,25 @@ class Settings(BaseSettings):
             raise ValueError("CREDENTIAL_FERNET_KEY 须为合法 Fernet 密钥") from None
         return value
 
+    @field_validator("credential_sm4_key")
+    @classmethod
+    def validate_credential_sm4_key(cls, value: str) -> str:
+        if not value:
+            return value
+        try:
+            key = bytes.fromhex(value)
+        except ValueError as exc:
+            raise ValueError("CREDENTIAL_SM4_KEY 须为 32 位十六进制（16 字节）") from exc
+        if len(key) != 16:
+            raise ValueError("CREDENTIAL_SM4_KEY 须为 32 位十六进制（16 字节）")
+        return value.lower()
+
+    @model_validator(mode="after")
+    def validate_crypto_settings(self) -> "Settings":
+        if self.credential_crypto_provider == "sm4" and not self.credential_sm4_key:
+            raise ValueError("CREDENTIAL_CRYPTO_PROVIDER=sm4 时须设置 CREDENTIAL_SM4_KEY")
+        return self
+
     @model_validator(mode="after")
     def enforce_production_safety(self) -> "Settings":
         if self.vitalspan_env != "production":
@@ -140,6 +163,11 @@ class Settings(BaseSettings):
             raise ValueError("生产环境 SECRET_KEY 不能使用示例占位值")
         if self.credential_fernet_key == self._DEV_FERNET_EXAMPLE:
             raise ValueError("生产环境 CREDENTIAL_FERNET_KEY 必须重新生成")
+        if (
+            self.credential_crypto_provider == "sm4"
+            and self.credential_sm4_key == self._DEV_SM4_EXAMPLE
+        ):
+            raise ValueError("生产环境 CREDENTIAL_SM4_KEY 必须重新生成")
         if self.nfr08_runtime_mode != "strict":
             raise ValueError("生产环境 NFR08_RUNTIME_MODE 须为 strict")
         return self

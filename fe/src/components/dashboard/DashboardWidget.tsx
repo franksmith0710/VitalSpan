@@ -35,13 +35,17 @@ import type {
   TextWidgetConfig,
   DashboardStyleConfig,
 } from "./layoutUtils";
-import { mergeTitleStyle, mergeWidgetShellStyle, pickChartPaletteDefaults, resolveWidgetShellPaintColor, chartPaletteDefaultsFingerprint } from "./dashboardStyleConfig";
+import { mergeTitleStyle, pickChartPaletteDefaults, resolveWidgetShellPaintColor, chartPaletteDefaultsFingerprint } from "./dashboardStyleConfig";
 import { resolveDashboardChrome } from "./dashboardChromeConfig";
 import { parseDeRefreshIntervalSec, readChartDeDisplay, resolveChartQueryLimit } from "@/lib/chartDeDisplay";
 import { resolveWidgetEffectiveScheme } from "@/lib/chartSurfaceTheme";
-import { mergeChartTitleStyle, readChartRemark, readChartTitleVisible, resolveChartContentShellStyle } from "@/lib/chartDeStyle";
+import { mergeChartTitleStyle, mergeShapeInnerPresentation, readChartRemark, readChartTitleVisible, resolveChartContentShellStyle } from "@/lib/chartDeStyle";
 import { WidgetShellLegendProvider } from "./pixelCanvas/widgetShellLegendContext";
 import { WidgetChartLegendShell } from "@/components/charts/WidgetChartLegendShell";
+import {
+  WidgetShellBackgroundLayers,
+  WidgetShellFrameLayers,
+} from "@/components/dashboard/WidgetShellPresentationLayers";
 import { isWidgetConfigReady } from "./createLayoutWidget";
 import type { Geo3dRenderTier } from "@/components/charts/engine/three/geo3dRuntime";
 import { pixelDragRailHeightPx, pixelViewTitleHeightPx, dwCaption } from "./dashboardWidgetTypography";
@@ -355,13 +359,21 @@ export function DashboardWidget({
         ? pixelViewTitleHeightPx(canvasScale)
         : 0;
   const effectiveScheme = resolveWidgetEffectiveScheme(dashboardStyle);
-  const shellStyle = resolvedWidget.chartConfig
+  const shellResolved = resolvedWidget.chartConfig
     ? resolveChartContentShellStyle(
         dashboardStyle?.widgetStyle,
         resolvedWidget.chartConfig,
         effectiveScheme,
-      ).outer
-    : mergeWidgetShellStyle(dashboardStyle?.widgetStyle, effectiveScheme);
+      )
+    : null;
+  const gridShellPresentation = shellResolved
+    ? mergeShapeInnerPresentation({
+        outer: shellResolved.outer,
+        inner: shellResolved.inner,
+        innerBackgroundLayer: shellResolved.innerBackgroundLayer,
+        innerFrameLayer: shellResolved.innerFrameLayer,
+      })
+    : null;
   const shellColor = resolveWidgetShellPaintColor(dashboardStyle);
   const chrome = resolveDashboardChrome(dashboardStyle);
   const chartTitleVisible =
@@ -493,17 +505,20 @@ export function DashboardWidget({
   return (
     <div
       className={cn(
-        "flex h-full min-h-0 flex-col overflow-hidden rounded-xl border bg-white shadow-theme-xs transition-[border-color,box-shadow] dark:bg-white/[0.03]",
+        "relative flex h-full min-h-0 flex-col overflow-hidden rounded-xl border shadow-theme-xs transition-[border-color,box-shadow] dark:bg-white/[0.03]",
         selected && "dashboard-widget-selected",
         selected
           ? "border-gray-400 shadow-theme-sm ring-1 ring-gray-300/70 dark:border-gray-600 dark:ring-gray-600/40"
           : "border-gray-200 dark:border-gray-800",
-        shellStyle.className,
+        gridShellPresentation?.shell.style.backgroundColor ? undefined : "bg-white",
       )}
-      style={shellStyle.style}
+      style={gridShellPresentation?.shell.style}
     >
+      {gridShellPresentation ? (
+        <WidgetShellBackgroundLayers layers={gridShellPresentation.shell} prefix={`grid-${widget.id}`} />
+      ) : null}
       {mode === "edit" && chrome.showChartActionButtons ? (
-        <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 bg-gray-50/90 px-2 py-1.5 dark:border-gray-800 dark:bg-white/[0.04]">
+        <div className="relative z-[1] flex shrink-0 items-center gap-2 border-b border-gray-100 bg-gray-50/90 px-2 py-1.5 dark:border-gray-800 dark:bg-white/[0.04]">
           <HintTooltip label="拖动以移动组件">
             <div
               className="dashboard-drag-handle flex shrink-0 cursor-grab items-center active:cursor-grabbing"
@@ -546,7 +561,7 @@ export function DashboardWidget({
           ) : null}
         </div>
       ) : readChartTitleVisible(resolvedWidget.chartConfig, dashboardStyle?.titleStyle) ? (
-        <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 px-3 py-2 dark:border-gray-800">
+        <div className="relative z-[1] flex shrink-0 items-center gap-2 border-b border-gray-100 px-3 py-2 dark:border-gray-800">
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-gray-100 text-gray-600 dark:bg-white/5 dark:text-gray-400">
             <Icon className="size-3.5" aria-hidden />
           </span>
@@ -562,7 +577,7 @@ export function DashboardWidget({
       {chartRemark.show ? (
         <p
           className={cn(
-            "dw-hint shrink-0 border-b border-gray-100 px-3 py-1.5 text-gray-500 dark:border-gray-800 dark:text-gray-400",
+            "dw-hint relative z-[1] shrink-0 border-b border-gray-100 px-3 py-1.5 text-gray-500 dark:border-gray-800 dark:text-gray-400",
           )}
           data-testid={`grid-chart-remark-${widget.id}`}
         >
@@ -597,13 +612,38 @@ export function DashboardWidget({
         )}
       >
         {chartBody ? (
-          <div className="flex min-h-0 flex-1 flex-col p-2">
-            <WidgetShellLegendProvider>
-              <WidgetChartLegendShell>{chartBody}</WidgetChartLegendShell>
-            </WidgetShellLegendProvider>
+          <div
+            className="relative flex min-h-0 flex-1 flex-col p-2"
+            style={gridShellPresentation?.content.style}
+          >
+            {gridShellPresentation ? (
+              <WidgetShellBackgroundLayers
+                layers={gridShellPresentation.content}
+                prefix={`grid-content-${widget.id}`}
+              />
+            ) : null}
+            <div className="relative z-[1] flex min-h-0 flex-1 flex-col">
+              <WidgetShellLegendProvider>
+                <WidgetChartLegendShell>{chartBody}</WidgetChartLegendShell>
+              </WidgetShellLegendProvider>
+            </div>
+            {gridShellPresentation ? (
+              <WidgetShellFrameLayers
+                layers={gridShellPresentation.content}
+                prefix={`grid-content-${widget.id}`}
+              />
+            ) : null}
           </div>
         ) : null}
       </div>
+
+      {gridShellPresentation ? (
+        <WidgetShellFrameLayers
+          layers={gridShellPresentation.shell}
+          prefix={`grid-shell-${widget.id}`}
+          zClassName="z-[3]"
+        />
+      ) : null}
 
       {onDelete ? (
         <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>

@@ -9,7 +9,12 @@ from pydantic import ValidationError
 from app.core.config import Settings, get_settings
 from app.core.logging import configure_logging
 
-REQUIRED_ENV_KEYS = ("DATABASE_URL", "SECRET_KEY", "CREDENTIAL_FERNET_KEY")
+REQUIRED_ENV_KEYS = (
+    "DATABASE_URL",
+    "SECRET_KEY",
+    "CREDENTIAL_FERNET_KEY",
+    "CREDENTIAL_SM4_KEY",
+)
 ENV_TO_FIELD = {
     "DATABASE_URL": "database_url",
     "SECRET_KEY": "secret_key",
@@ -31,6 +36,7 @@ def test_cors_origins_raw_splits_and_trims():
         database_url="postgresql+psycopg://ci:ci@localhost:5432/ci",
         secret_key="ci-test-secret-key-min-32-chars-long!!",
         credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        credential_sm4_key="0123456789abcdef0123456789abcdef",
         cors_origins_raw=" http://a.com , http://b.com ",
     )
     assert settings.cors_origins == ["http://a.com", "http://b.com"]
@@ -42,6 +48,7 @@ def test_vitalspan_env_defaults_to_development():
         database_url="postgresql+psycopg://ci:ci@localhost:5432/ci",
         secret_key="ci-test-secret-key-min-32-chars-long!!",
         credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        credential_sm4_key="0123456789abcdef0123456789abcdef",
     )
     assert settings.vitalspan_env == "development"
 
@@ -66,6 +73,7 @@ _BASE_KWARGS = {
     "database_url": "postgresql+psycopg://ci:ci@localhost:5432/ci",
     "secret_key": "ci-test-secret-key-min-32-chars-long!!",
     "credential_fernet_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    "credential_sm4_key": "0123456789abcdef0123456789abcdef",
 }
 
 
@@ -136,13 +144,23 @@ def test_analytics_database_url_rejects_mysql():
     assert "postgresql" in message
 
 
+def test_sm4_key_required_when_provider_sm4():
+    """T-CFG-15: sm4 provider 缺 CREDENTIAL_SM4_KEY → ValidationError。"""
+    kwargs = {k: v for k, v in _BASE_KWARGS.items() if k != "credential_sm4_key"}
+    with pytest.raises(ValidationError) as exc_info:
+        Settings(**kwargs, credential_crypto_provider="sm4", credential_sm4_key="")
+    assert "CREDENTIAL_SM4_KEY" in str(exc_info.value)
+
+
 def test_production_env_allows_sqlite_meta_url():
     """T-CFG-13: vitalspan_env=production + sqlite database_url 可实例化（文档化现状）。"""
     settings = Settings(
         database_url="sqlite+pysqlite:///./meta.db",
         secret_key="ci-test-secret-key-min-32-chars-long!!",
         credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        credential_sm4_key="fedcba9876543210fedcba9876543210",
         vitalspan_env="production",
+        nfr08_runtime_mode="strict",
     )
     assert settings.vitalspan_env == "production"
     assert settings.database_url.startswith("sqlite+")

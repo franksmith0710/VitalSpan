@@ -14,13 +14,13 @@ from __future__ import annotations
 import sys
 import uuid
 
-import bcrypt
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth.audit.service import record_event
 from app.auth.models import AuthRole, AuthUser, AuthUserRole
+from app.auth.password.service import hash_password
 
 ROOT_ROLE_CODE = "admin"
 # 确定性 root 角色 ID：仅在全新库首次插入时生效；已存在 admin 角色时按 code upsert 保留原 ID。
@@ -127,10 +127,6 @@ def assert_root_admin_survives(
         raise RootAdminRequiredError()
 
 
-def _hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-
-
 def ensure_root_role(session: Session) -> AuthRole:
     """获取或创建唯一 root 角色（code='admin'），并保证 is_root/is_system/启用。"""
     stmt = select(AuthRole).where(AuthRole.code == ROOT_ROLE_CODE)
@@ -218,7 +214,7 @@ def bootstrap_root(
             user = AuthUser(
                 username=username,
                 display_name="Root Admin",
-                password_hash=_hash_password(password),
+                password_hash=hash_password(password),
                 is_active=True,
             )
             session.add(user)
@@ -226,7 +222,7 @@ def bootstrap_root(
         else:
             user = existing
             user.is_active = True
-            user.password_hash = _hash_password(password)
+            user.password_hash = hash_password(password)
             session.flush()
 
         binding = session.get(AuthUserRole, {"user_id": user.id, "role_id": role.id})

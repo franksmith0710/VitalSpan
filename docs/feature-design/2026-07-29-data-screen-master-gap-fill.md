@@ -4,7 +4,7 @@
 |----|-----|
 | 模式 | Gap-fill |
 | 日期 | 2026-07-29 |
-| 状态 | **P0/P1/P2 计划项已闭合；plan/PRD M-DEPTH 叙事已 sync（2026-07-29）；发版前 MT 手测待发版抽测** |
+| 状态 | **P0/P1/P2 计划项已闭合；2026-07-30 复验 vitest 68/68 + playwright e2e 1/1 绿** |
 | 分片归档 | [Wave B](./2026-07-29-data-screen-wave-b-gap-fill.md) · [Wave C/D](./2026-07-29-data-screen-wave-cd-gap-fill.md) |
 
 ## 1. 问题与目标
@@ -54,7 +54,7 @@ cd fe && npx vitest run \
 
 | ID | 项 | 状态 |
 |----|-----|------|
-| P0-5 | BUG-12 resize e2e | ✅ `e2e/data-screen-resize-content.spec.ts` 绿（2026-07-29） |
+| P0-5 | BUG-12 resize e2e | ✅ `e2e/data-screen-resize-content.spec.ts` 绿（2026-07-30 复验） |
 
 ### P1 · 发版前手测
 
@@ -77,6 +77,10 @@ cd fe && npx vitest run \
 | **MT-DEPLOY-4** | `refreshIntervalSec=30` | 图表刷新、页面不闪白 | 发版抽测 |
 | **MT-DEPLOY-5** | 锁定图层 + 预览 | 与编辑一致 | 发版抽测 |
 | **MT-DEPLOY-6** | 导出 JSON → 导入新建 | 成功 | 发版抽测 |
+| **MT-BUG2-DS-1** | 大屏编辑拖移组件 | 位置实时更新 | 发版抽测 |
+| **MT-BUG2-DS-2** | 八向 resize 手柄 | 外框+内容可见（[BUG-12](../bugs/BUG-12_data-screen-resize-content-vanish_2026-07-20.md)） | ✅ e2e 2026-07-30 |
+| **MT-BUG2-DS-3** | 保存 → 刷新 | 位置/尺寸保持 | 发版抽测 |
+| **MT-BUG2-DS-4** | 拖移+缩放后保存 | 与 MT-6 叠加验证 BUG-14 | 发版抽测 |
 
 ### P2 · Phase 3 挂点
 
@@ -107,6 +111,18 @@ cd fe && npx vitest run \
    ```
 4. 跑 e2e：`cd fe; npx playwright test e2e/data-screen-resize-content.spec.ts --project=chromium`
 
+**最近复验**：2026-07-30 — e2e 1 passed（15.7s）。
+
+---
+
+## 5. 分期建议
+
+| 阶段 | 范围 | 说明 |
+|------|------|------|
+| **P0（本周）** | master 真理源、PRD/执行计划 sync、BUG-14、BUG-12 e2e | ✅ 已闭合 |
+| **P1（下一迭代）** | MT 手测 + Inspector/投放 smoke | Vitest/smoke 已绿；MT-* 发版前抽测 |
+| **P2（挂 Phase 3）** | `screenPlaylist` 播放、pan/zoom 持久化、视频/跑马灯 | schema 已挂；实现留 Phase 3 land-design |
+
 ---
 
 ## 6. 验收清单（land-design）
@@ -114,7 +130,7 @@ cd fe && npx vitest run \
 - [x] `master-gap-fill.md` 落盘且旧分片已交叉引用
 - [x] PRD / phase25-requirements / phase25-execute 状态一致
 - [x] 保存 WYSIWYG：BUG-14 + bug-case + 单测
-- [x] BUG-12 e2e 绿（§4 手动安装 runbook）
+- [x] BUG-12 e2e 绿（§4 runbook · 2026-07-30 复验 1/1）
 - [x] Inspector + 投放手测表可执行（§3 MT-*）
 
 | 决策 | 结论 |

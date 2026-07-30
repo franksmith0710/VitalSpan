@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import {
   mergeChartTitleStyle,
+  mergeShapeInnerPresentation,
   readChartRemark,
   readChartTitleVisible,
   resolveChartContentShellStyle,
@@ -9,6 +10,10 @@ import { resolveWidgetEffectiveScheme } from "@/lib/chartSurfaceTheme";
 import { cn } from "@/lib/utils";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import type { LayoutWidget } from "@/components/dashboard/layoutUtils";
+import {
+  WidgetShellBackgroundLayers,
+  WidgetShellFrameLayers,
+} from "@/components/dashboard/WidgetShellPresentationLayers";
 import { gridWidgetShellClassName } from "@/components/dashboard/widgetRailStyleSections";
 import { widgetChartIcon, WIDGET_CHART_LABELS } from "@/components/dashboard/widgetIcons";
 
@@ -17,14 +22,20 @@ type VizComponentChartPreviewShellProps = {
   children: ReactNode;
 };
 
-/** 组件库编辑预览：栅格看板 view 态外壳（边框/标题/备注），与 DashboardWidget 一致 */
+/** 组件库编辑预览：栅格看板 view 态外壳（含装饰边框 overlay），与 DashboardWidget 一致 */
 export function VizComponentChartPreviewShell({
   widget,
   children,
 }: VizComponentChartPreviewShellProps) {
   const chartConfig = widget.chartConfig;
   const scheme = resolveWidgetEffectiveScheme(undefined);
-  const shellStyle = resolveChartContentShellStyle(undefined, chartConfig, scheme).outer;
+  const shellResolved = resolveChartContentShellStyle(undefined, chartConfig, scheme);
+  const { shell, content } = mergeShapeInnerPresentation({
+    outer: shellResolved.outer,
+    inner: shellResolved.inner,
+    innerBackgroundLayer: shellResolved.innerBackgroundLayer,
+    innerFrameLayer: shellResolved.innerFrameLayer,
+  });
   const titleVisible = readChartTitleVisible(chartConfig, undefined);
   const titleStyle = mergeChartTitleStyle(undefined, chartConfig, scheme);
   const chartRemark = readChartRemark(chartConfig);
@@ -35,14 +46,15 @@ export function VizComponentChartPreviewShell({
   return (
     <div
       className={cn(
-        gridWidgetShellClassName(true, false, shellStyle.className),
-        "bg-white dark:bg-white/[0.03]",
+        gridWidgetShellClassName(true, false),
+        "relative dark:bg-white/[0.03]",
       )}
-      style={shellStyle.style}
+      style={shell.style}
       data-testid="viz-component-chart-shell"
     >
+      <WidgetShellBackgroundLayers layers={shell} prefix="viz-chart-shell" />
       {titleVisible ? (
-        <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 px-3 py-2 dark:border-gray-800">
+        <div className="relative z-[1] flex shrink-0 items-center gap-2 border-b border-gray-100 px-3 py-2 dark:border-gray-800">
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-gray-100 text-gray-600 dark:bg-white/5 dark:text-gray-400">
             <Icon className="size-3.5" aria-hidden />
           </span>
@@ -57,13 +69,18 @@ export function VizComponentChartPreviewShell({
       ) : null}
       {chartRemark.show ? (
         <p
-          className="dw-hint shrink-0 border-b border-gray-100 px-3 py-1.5 text-gray-500 dark:border-gray-800 dark:text-gray-400"
+          className="dw-hint relative z-[1] shrink-0 border-b border-gray-100 px-3 py-1.5 text-gray-500 dark:border-gray-800 dark:text-gray-400"
           data-testid={`viz-preview-chart-remark-${widget.id}`}
         >
           {chartRemark.text}
         </p>
       ) : null}
-      <div className="flex min-h-0 flex-1 flex-col p-2">{children}</div>
+      <div className="relative z-[1] flex min-h-0 flex-1 flex-col p-2" style={content.style}>
+        <WidgetShellBackgroundLayers layers={content} prefix="viz-chart-content" />
+        <div className="relative z-[1] flex min-h-0 flex-1 flex-col">{children}</div>
+        <WidgetShellFrameLayers layers={content} prefix="viz-chart-content" />
+      </div>
+      <WidgetShellFrameLayers layers={shell} prefix="viz-chart-shell" zClassName="z-[3]" />
     </div>
   );
 }

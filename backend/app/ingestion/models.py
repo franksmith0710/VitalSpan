@@ -4,12 +4,11 @@ import uuid
 from datetime import datetime
 from typing import Any, Literal
 
-from cryptography.fernet import Fernet, InvalidToken
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text, Uuid, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-from app.core.config import get_settings
+from app.core.crypto.credentials import decrypt_credential, encrypt_credential
 from app.core.db.meta import get_meta_engine, get_meta_session
 from app.query.rls.guard import validate_identifier
 
@@ -111,16 +110,12 @@ class SourceConnectionOut(BaseModel):
     table: str
 
 
-def _fernet() -> Fernet:
-    return Fernet(get_settings().credential_fernet_key.encode())
-
-
 def encrypt_password(plain: str) -> str:
-    return _fernet().encrypt(plain.encode()).decode()
+    return encrypt_credential(plain)
 
 
 def decrypt_password(cipher: str) -> str:
     try:
-        return _fernet().decrypt(cipher.encode()).decode()
-    except InvalidToken as exc:
+        return decrypt_credential(cipher)
+    except Exception as exc:
         raise ValueError("invalid encrypted password") from exc

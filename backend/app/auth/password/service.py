@@ -5,14 +5,17 @@ from __future__ import annotations
 import secrets
 import string
 
-import bcrypt
-
 from app.core.config import get_settings
+from app.core.crypto.password import (
+    hash_password as _hash_password,
+    is_legacy_bcrypt_hash,
+    needs_password_rehash,
+    verify_password as _verify_password,
+)
 
 MIN_PASSWORD_LENGTH = 8
 MAX_PASSWORD_LENGTH = 128
 
-# 临时密码字符集：大小写字母、数字与策略允许的符号。
 _TEMP_PASSWORD_ALPHABET = string.ascii_letters + string.digits + "!@#$%^&*-_"
 
 
@@ -36,13 +39,11 @@ def validate_password_policy(password: str) -> None:
 
 
 def hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+    return _hash_password(password)
 
 
 def verify_password(password: str, password_hash: str) -> bool:
-    if not password_hash:
-        return False
-    return bcrypt.checkpw(password.encode(), password_hash.encode())
+    return _verify_password(password, password_hash)
 
 
 def generate_temporary_password(length: int | None = None) -> str:
@@ -55,3 +56,16 @@ def generate_temporary_password(length: int | None = None) -> str:
         except PasswordPolicyError:
             continue
         return candidate
+
+
+__all__ = [
+    "MIN_PASSWORD_LENGTH",
+    "MAX_PASSWORD_LENGTH",
+    "PasswordPolicyError",
+    "generate_temporary_password",
+    "hash_password",
+    "is_legacy_bcrypt_hash",
+    "needs_password_rehash",
+    "validate_password_policy",
+    "verify_password",
+]

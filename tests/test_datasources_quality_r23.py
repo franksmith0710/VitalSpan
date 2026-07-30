@@ -239,7 +239,7 @@ def test_decrypt_corrupt_ciphertext_raises_credential_decrypt_error():
 def test_decrypt_wrong_key_raises_credential_decrypt_error(monkeypatch):
     """T-DS-K06 单元部分: 错密钥 decrypt 失败。"""
     cipher = encrypt_credential("secret")
-    monkeypatch.setenv("CREDENTIAL_FERNET_KEY", "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=")
+    monkeypatch.setenv("CREDENTIAL_SM4_KEY", "fedcba9876543210fedcba9876543210")
     get_settings.cache_clear()
     with pytest.raises(CredentialDecryptError):
         decrypt_credential(cipher)

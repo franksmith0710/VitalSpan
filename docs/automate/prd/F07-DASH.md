@@ -35,7 +35,7 @@
   - [x] **Phase 2.6 编辑视口 companion**（2026-07-29）：`useDataScreenViewportState`、标尺十字线、Ctrl+滚轮指针锚点缩放（见 `plans/2026-07-20-data-screen-edit-viewport-de.md`）
   - [x] **保存 WYSIWYG companion**（2026-07-29）：数据大屏跳过 `compactPixelLayoutWhenZeroGap`（[BUG-14](../../bugs/BUG-14_data-screen-save-gap-compaction_2026-07-29.md)）
   - [x] **Master gap-fill 真理源**（2026-07-29）：`docs/feature-design/2026-07-29-data-screen-master-gap-fill.md`
-  - [ ] BUG-2 最终真实浏览器 Pointer QA：拖移、八向缩放、保存并刷新后位置/尺寸保持（手测表见 [project master §6.1](../../feature-design/2026-07-29-vitalspan-project-master-gap-fill.md) · 已登记 · 待发版抽测）
+  - [ ] BUG-2 最终真实浏览器 Pointer QA：拖移、八向缩放、保存并刷新后位置/尺寸保持（手测表见 [project master §6.1](../../feature-design/2026-07-29-vitalspan-project-master-gap-fill.md) · 大屏路径见 [data-screen master §3 MT-BUG2-DS-*](../../feature-design/2026-07-29-data-screen-master-gap-fill.md) · 已登记 · 待发版抽测）
   - [x] **M-DEPTH F-B**：layout widget 类型扩展 `filter`（兼容旧 layout round-trip；后端 schema + FE `layoutUtils`）（完成于 2026-07-29 · 代码实扫回写）
 - **代码锚点**：`fe/src/pages/admin/dashboard/` · `fe/src/pages/admin/data-screens/` · `fe/src/lib/surfacePreset.ts` · `backend/app/dashboard/surface_kind.py` · `fe/src/pages/admin/dashboard/DashboardSharePage.tsx` · `fe/src/components/dashboard/pixelCanvas/` · `fe/src/components/dashboard/screen/` · `fe/src/components/dashboard/dashboard-edit/` · `fe/src/components/dashboard/DashboardLayoutPreview.tsx` · `fe/src/components/dashboard/DashboardPreviewThumb.tsx` · `fe/src/components/dashboard/dashboardCanvasMode.ts` · `fe/src/hooks/useDashboardCanvasState.ts` · `backend/app/dashboard/schemas.py` · `backend/app/dashboard/layout_migration.py`
 - **演化建议**：BUG-2 Pointer QA 待发版抽测（见 project master §6.1）；Playwright 指针回归留远期

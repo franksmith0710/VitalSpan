@@ -40,15 +40,29 @@ def test_bearer_dev_rejected(client):
     assert response.status_code == 401
 
 
-def test_dev_switch_not_found_in_production(client, admin_auth_headers, monkeypatch):
+def test_dev_switch_not_found_in_production(client, monkeypatch):
     monkeypatch.setenv("VITALSPAN_ENV", "production")
+    monkeypatch.setenv("NFR08_RUNTIME_MODE", "strict")
+    monkeypatch.setenv("SECRET_KEY", "production-secret-key-min-32-chars!!")
+    monkeypatch.setenv("CREDENTIAL_SM4_KEY", "fedcba9876543210fedcba9876543210")
+    monkeypatch.setenv(
+        "CREDENTIAL_FERNET_KEY",
+        "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
+    )
     from app.core.config import get_settings
 
     get_settings.cache_clear()
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"username": "admin", "password": "changeme"},
+    )
+    if login.status_code != 200:
+        pytest.skip("admin user not seeded")
+    headers = {"Authorization": f"Bearer {login.json()['accessToken']}"}
     response = client.post(
         "/api/v1/auth/dev-switch",
         json={"username": "admin"},
-        headers=admin_auth_headers,
+        headers=headers,
     )
     get_settings.cache_clear()
     assert response.status_code == 404
@@ -85,6 +99,53 @@ def test_dev_switch_user_not_found(client, admin_auth_headers):
 def test_login_public_without_auth(client):
     response = client.post("/api/v1/auth/login", json={"username": "x", "password": "y"})
     assert response.status_code == 401
+
+
+def test_login_bcrypt_upgrades_to_sm3(client, monkeypatch):
+    """登录成功后 bcrypt 遗留哈希自动升级为 SM3。"""
+    import uuid
+
+    import bcrypt
+
+    from app.auth.models import AuthUser, Base, get_meta_engine, get_meta_session
+    from app.auth.password.service import needs_password_rehash
+
+    monkeypatch.setenv("PASSWORD_HASH_ALGORITHM", "sm3")
+    from app.core.config import get_settings
+
+    get_settings.cache_clear()
+
+    engine = get_meta_engine()
+    Base.metadata.create_all(engine)
+    username = f"bcrypt_up_{uuid.uuid4().hex[:8]}"
+    legacy_hash = bcrypt.hashpw(b"upgrade-me-1", bcrypt.gensalt()).decode()
+    session = get_meta_session()
+    try:
+        session.add(
+            AuthUser(
+                username=username,
+                password_hash=legacy_hash,
+                is_active=True,
+            )
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"username": username, "password": "upgrade-me-1"},
+    )
+    assert response.status_code == 200
+
+    session = get_meta_session()
+    try:
+        user = session.query(AuthUser).filter(AuthUser.username == username).one()
+        assert user.password_hash.startswith("$sm3$")
+        assert not needs_password_rehash(user.password_hash)
+    finally:
+        session.close()
+    get_settings.cache_clear()
 
 
 def test_login_jwt_carries_user_token_version(client):

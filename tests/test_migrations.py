@@ -44,6 +44,7 @@ def test_migrations_env_binds_settings_database_url(monkeypatch):
         database_url=KNOWN_URL,
         secret_key="ci-test-secret-key-min-32-chars-long!!",
         credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        credential_sm4_key="0123456789abcdef0123456789abcdef",
     )
     monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
     get_settings.cache_clear()
@@ -164,6 +165,7 @@ def test_migrations_offline_url_matches_settings(monkeypatch):
         database_url=KNOWN_URL,
         secret_key="ci-test-secret-key-min-32-chars-long!!",
         credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        credential_sm4_key="0123456789abcdef0123456789abcdef",
     )
     monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
     get_settings.cache_clear()
@@ -220,6 +222,7 @@ def test_migrations_offline_run_migrations_called(monkeypatch):
         database_url=KNOWN_URL,
         secret_key="ci-test-secret-key-min-32-chars-long!!",
         credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        credential_sm4_key="0123456789abcdef0123456789abcdef",
     )
     monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
     get_settings.cache_clear()
@@ -294,6 +297,7 @@ def test_migrations_online_path_connects_and_runs(monkeypatch):
         database_url=KNOWN_URL,
         secret_key="ci-test-secret-key-min-32-chars-long!!",
         credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        credential_sm4_key="0123456789abcdef0123456789abcdef",
     )
     monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
     get_settings.cache_clear()
@@ -329,6 +333,7 @@ def test_migrations_offline_import_under_budget(monkeypatch):
         database_url=KNOWN_URL,
         secret_key="ci-test-secret-key-min-32-chars-long!!",
         credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        credential_sm4_key="0123456789abcdef0123456789abcdef",
     )
     monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
     get_settings.cache_clear()
@@ -458,6 +463,7 @@ def test_settings_env_py_binding_end_to_end(monkeypatch):
         database_url=bound_url,
         secret_key="ci-test-secret-key-min-32-chars-long!!",
         credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        credential_sm4_key="0123456789abcdef0123456789abcdef",
     )
     monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
     get_settings.cache_clear()
@@ -526,6 +532,7 @@ def test_migrations_online_uses_null_pool(monkeypatch):
         database_url=KNOWN_URL,
         secret_key="ci-test-secret-key-min-32-chars-long!!",
         credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        credential_sm4_key="0123456789abcdef0123456789abcdef",
     )
     monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
     get_settings.cache_clear()
@@ -577,6 +584,7 @@ def test_migrations_online_connect_operational_error_propagates(monkeypatch):
         database_url=KNOWN_URL,
         secret_key="ci-test-secret-key-min-32-chars-long!!",
         credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        credential_sm4_key="0123456789abcdef0123456789abcdef",
     )
     monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
     get_settings.cache_clear()
@@ -806,6 +814,7 @@ def test_unreachable_host_operational_error_message(monkeypatch):
         database_url=unreachable_url,
         secret_key="ci-test-secret-key-min-32-chars-long!!",
         credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        credential_sm4_key="0123456789abcdef0123456789abcdef",
     )
     monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
     get_settings.cache_clear()

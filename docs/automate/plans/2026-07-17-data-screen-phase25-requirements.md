@@ -6,7 +6,7 @@
 | 日期 | 2026-07-17 |
 | 状态 | **已实现**（Wave A–D + Phase 2.6 视口；见 [master gap-fill](../../feature-design/2026-07-29-data-screen-master-gap-fill.md)） |
 | 前置 | [Phase 1 表面分化](./2026-07-17-data-screen-de-surface-phase1.md) ✅ · Phase 2 素材/模板/刷新 ✅ |
-| 执行计划 | [Phase 2.5 执行计划](./2026-07-17-data-screen-phase25-execute.md) |
+| 执行计划 | [Phase 2.5 执行计划](./archive/2026-07-17-data-screen-phase25-execute.md) |
 | PRD 锚点 | `F07-DASH` DASH-002 companion · `F06-VIZ` VIZ-006 演化 |
 | 对标 | [DataEase 数据大屏基础功能](https://dataease.cn/docs/v2/user_manual/panel_basicfunctions/) · [其他组件/素材](https://dataease.cn/docs/v2/user_manual/other_module/panel_style_module/) |
 

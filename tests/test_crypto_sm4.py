@@ -1,0 +1,62 @@
+import os
+
+import pytest
+
+from app.core.config import get_settings
+from app.core.crypto.credentials import (
+    CredentialDecryptError,
+    decrypt_credential,
+    encrypt_credential,
+)
+from app.core.crypto.sm4 import Sm4CredentialProvider
+
+
+@pytest.fixture(autouse=True)
+def _sm4_env(monkeypatch):
+    monkeypatch.setenv("CREDENTIAL_CRYPTO_PROVIDER", "sm4")
+    monkeypatch.setenv("CREDENTIAL_SM4_KEY", "0123456789abcdef0123456789abcdef")
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
+
+
+def test_sm4_round_trip():
+    plain = "mysql-secret-pw"
+    cipher = encrypt_credential(plain)
+    assert cipher.startswith("sm4:")
+    assert decrypt_credential(cipher) == plain
+
+
+def test_sm4_iv_unique():
+    a = encrypt_credential("same")
+    b = encrypt_credential("same")
+    assert a != b
+
+
+def test_sm4_wrong_key_fails(monkeypatch):
+    cipher = encrypt_credential("x")
+    monkeypatch.setenv("CREDENTIAL_SM4_KEY", "fedcba9876543210fedcba9876543210")
+    get_settings.cache_clear()
+    with pytest.raises(CredentialDecryptError):
+        decrypt_credential(cipher)
+
+
+def test_fernet_legacy_decrypt(monkeypatch):
+    from cryptography.fernet import Fernet
+
+    key = os.environ["CREDENTIAL_FERNET_KEY"]
+    body = Fernet(key.encode()).encrypt(b"legacy").decode()
+    assert decrypt_credential(body) == "legacy"
+
+
+def test_fernet_prefixed_decrypt(monkeypatch):
+    from cryptography.fernet import Fernet
+
+    key = os.environ["CREDENTIAL_FERNET_KEY"]
+    body = Fernet(key.encode()).encrypt(b"legacy2").decode()
+    assert decrypt_credential(f"fernet:{body}") == "legacy2"
+
+
+def test_sm4_provider_invalid_key():
+    with pytest.raises(ValueError, match="16 bytes"):
+        Sm4CredentialProvider("abcd")

@@ -9,12 +9,17 @@ os.environ.setdefault(
     "CREDENTIAL_FERNET_KEY",
     "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
 )
+os.environ.setdefault(
+    "CREDENTIAL_SM4_KEY",
+    "0123456789abcdef0123456789abcdef",
+)
+os.environ.setdefault("CREDENTIAL_CRYPTO_PROVIDER", "sm4")
+os.environ.setdefault("PASSWORD_HASH_ALGORITHM", "sm3")
 os.environ.setdefault("VITALSPAN_ENV", "development")
 
 import socket
 import uuid
 
-import bcrypt
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -61,7 +66,9 @@ def _seed_ci_admin_user() -> None:
             admin_user = session.query(AuthUser).filter(AuthUser.username == "admin").first()
         if admin_user is None:
             password = os.environ.get("VITALSPAN_DEV_ADMIN_PASSWORD", "changeme")
-            hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+            from app.auth.password.service import hash_password
+
+            hashed = hash_password(password)
             admin_user = AuthUser(
                 id=_ADMIN_USER_ID,
                 username="admin",

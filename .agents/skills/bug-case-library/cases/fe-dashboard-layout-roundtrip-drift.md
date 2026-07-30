@@ -32,3 +32,4 @@
 
 - `docs/bugs/BUG-6_dashboard-layout-roundtrip-drift_2026-07-15.md`
 - `docs/automate/plans/2026-07-15-dashboard-layout-roundtrip-drift.md`
+- **大屏变体（gap 压实）**：`fe-data-screen-save-gap-compaction.md` · [BUG-14](../../../../docs/bugs/BUG-14_data-screen-save-gap-compaction_2026-07-29.md)

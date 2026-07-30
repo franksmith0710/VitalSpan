@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.audit import service as audit_service
 from app.auth.models import AuthUser
-from app.auth.password.service import verify_password
+from app.auth.password.service import hash_password, needs_password_rehash, verify_password
 from app.auth.users import service as user_service
 from app.core.config import get_settings
 from app.core.logging import trace_id_var
@@ -70,7 +70,11 @@ def authenticate(session: Session, username: str, password: str) -> AuthUser:
     lock_expired = locked_until is not None and locked_until <= now
 
     if verify_password(password, user.password_hash):
-        if user.failed_login_count or user.locked_until is not None:
+        dirty = bool(user.failed_login_count or user.locked_until is not None)
+        if needs_password_rehash(user.password_hash):
+            user.password_hash = hash_password(password)
+            dirty = True
+        if dirty:
             user.failed_login_count = 0
             user.locked_until = None
             session.commit()

@@ -1,93 +1,173 @@
-# Vitalspan
+# VitalSpan
 
+自研 BI 平台（对标 DataEase / Superset 的产品能力，**零第三方 BI 运行时依赖**）。面向政企与行业 IT / 数据团队，提供数据源连接、查询执行、看板与数据大屏、报表、嵌入投放等能力。
 
+> 需求合同见 [`docs/srs/`](docs/srs/) · 功能验收见 [`docs/automate/prd.md`](docs/automate/prd.md) · 架构见 [`docs/arch.md`](docs/arch.md)
 
-## Getting started
+---
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## 核心能力
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+| 域 | 说明 |
+|----|------|
+| 数据源 | 插件式连接器（关系型 / OLAP / 时序 / 文档 / 搜索等），凭证 Fernet 加密 |
+| 查询 | SQL 与 Native 双路径；Dataset 路径已可用（四期语义层持续演进） |
+| 看板 | v1 栅格 + v2 像素画布；组件库、主题、分享与嵌入 |
+| 数据大屏 | 1920×1080 设计稿、编辑视口、预览 / 分享 / 整屏 embed；Phase 2.5/2.6 主链已通 |
+| 报表 | 模板、调度、PDF/Word 导出（companion 能力持续完善） |
+| 地图 | **仅离线中国 GeoJSON**（GEO-IRON-01）；禁止在线瓦片与地图 Key |
+| 嵌入 | iframe / SDK；单图表与整屏大屏投放 |
 
-## Add your files
+---
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+## 技术栈
+
+| 层次 | 技术 |
+|------|------|
+| 前端 | React 19 · Vite · shadcn/ui · Radix · Tailwind CSS v4 · **`fe/`** |
+| 图表 | 自研 ChartEngine（AntV / D3 / Three.js）；地图经 `GeoEnginePort` |
+| 后端 | FastAPI · Pydantic v2 · SQLAlchemy 2 · Alembic · **`backend/`** |
+| API | REST **`/api/v1/*`** · 健康检查 **`/health`**（无 v1 前缀） |
+| 平台库 | PostgreSQL / MySQL 8+ / SQLite（开发） |
+
+---
+
+## 仓库结构
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.ontomind.net/infra/vitalspan.git
-git branch -M main
-git push -uf origin main
+VitalSpan/
+├── backend/          # FastAPI 应用（app/core、auth、api/v1、dashboard、query…）
+├── fe/               # React 单应用前端（禁止 frontend/ 命名）
+├── docs/             # SRS · PRD · 架构 · API · 域附录 · 演化计划
+├── tests/            # 后端集成 / smoke 测试
+├── docker-compose.yml  # 平台库与样例数据源
+├── .cursor/rules/    # 项目约定（Agent / 开发纪律）
+└── .agents/skills/   # 项目级 Agent 技能
 ```
 
-## Integrate with your tools
+前端公共组件清单：[`fe/src/components/README.md`](fe/src/components/README.md)
 
-- [ ] [Set up project integrations](https://gitlab.ontomind.net/infra/vitalspan/-/settings/integrations)
+---
 
-## Collaborate with your team
+## 快速开始
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+### 环境要求
 
-## Test and Deploy
+- **Node.js** 20+ · **pnpm** 9+
+- **Python** 3.11+
+- **Docker**（可选，用于 PostgreSQL / MySQL 等依赖服务）
 
-Use the built-in continuous integration in GitLab.
+### 1. 启动依赖服务
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+```bash
+docker compose up -d postgres analytics-postgres
+```
 
-***
+如需样例 MySQL / ClickHouse / TimescaleDB 等，见 [`docker-compose.yml`](docker-compose.yml) 中对应 service。
 
-# Editing this README
+### 2. 后端
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+```bash
+cd backend
+cp .env.example .env
+# 生成 CREDENTIAL_FERNET_KEY：
+# python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 
-## Suggestions for a good README
+pip install -e ".[dev]"
+alembic upgrade head
+uvicorn app.main:app --reload --port 8000
+```
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+- API 文档：<http://localhost:8000/docs>
+- 健康检查：<http://localhost:8000/health>
 
-## Name
-Choose a self-explaining name for your project.
+### 3. 前端
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+```bash
+cd fe
+pnpm install
+cp .env.example .env
+pnpm dev
+```
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+- 管理端：<http://localhost:5173/admin>
+- 本地 dev 默认通过 Vite proxy 转发 `/api`，无需设置 `VITE_API_BASE_URL`
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+### 4. 默认开发账号
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+环境变量 `VITALSPAN_DEV_ADMIN_PASSWORD`（见 `backend/.env.example`）控制开发态管理员密码。
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+---
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+## 常用命令
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+### 前端（`fe/`）
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+```bash
+pnpm dev              # 开发服务器
+pnpm build            # 生产构建
+pnpm test             # Vitest + 设计/引擎检查
+pnpm test:smoke       # 路由 smoke
+pnpm test:e2e         # Playwright（需先 npx playwright install chromium）
+pnpm test:chart-catalog  # 图表目录与引擎回归
+```
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+### 后端（`backend/`）
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+```bash
+pytest                # 单元 / 集成测试
+ruff check .          # 静态检查（若已配置）
+```
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+### 数据大屏回归（示例）
 
-## License
-For open source projects, say how it is licensed.
+```bash
+cd fe && npx vitest run \
+  src/components/dashboard/dataScreenPersist.test.ts \
+  src/components/dashboard/pixelCanvas/layoutSanitize.test.ts \
+  src/pages/admin/dashboard/DashboardSharePage.smoke.test.tsx
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+cd fe && npx playwright test e2e/data-screen-resize-content.spec.ts --project=chromium
+```
+
+完整清单见 [`docs/feature-design/2026-07-29-data-screen-master-gap-fill.md`](docs/feature-design/2026-07-29-data-screen-master-gap-fill.md) §2。
+
+---
+
+## 文档索引
+
+| 文档 | 路径 | 用途 |
+|------|------|------|
+| 需求规格（SRS） | [`docs/srs/`](docs/srs/) | 需求合同与分期边界 |
+| PRD 索引 | [`docs/automate/prd.md`](docs/automate/prd.md) | 功能 ID、验收标准、代码锚点 |
+| 架构 | [`docs/arch.md`](docs/arch.md) | ADR、目录、环境变量 |
+| API 契约 | [`docs/api/README.md`](docs/api/README.md) | REST 路由登记 |
+| 业务域 | [`docs/services/README.md`](docs/services/README.md) | 域职责与边界 |
+| 壳层 IA | [`docs/ui/layout.md`](docs/ui/layout.md) | 路由与导航 |
+| 演化计划 | [`docs/automate/plan.md`](docs/automate/plan.md) | 里程碑与 companion backlog |
+| Bug 登记 | [`docs/bugs/README.md`](docs/bugs/README.md) | 已知问题与修复追溯 |
+| 数据大屏 gap-fill | [`docs/feature-design/2026-07-29-data-screen-master-gap-fill.md`](docs/feature-design/2026-07-29-data-screen-master-gap-fill.md) | 大屏已闭合项与发版手测 |
+
+---
+
+## 开发约定（摘要）
+
+- 前端根目录固定为 **`fe/`**，API 前缀 **`/api/v1/`**，鉴权模块 **`backend/app/auth/`**
+- 地图仅离线中国；不引入 Superset / DataEase 运行时依赖
+- 代码变更后按 [`.cursor/rules/prd-sync.mdc`](.cursor/rules/prd-sync.mdc) 评估文档同步
+- 修 bug 前先检索 [`.agents/skills/bug-case-library/cases/`](.agents/skills/bug-case-library/cases/)
+
+详细纪律见 [`.cursor/rules/vitalspan-project.mdc`](.cursor/rules/vitalspan-project.mdc)。
+
+---
+
+## 项目状态
+
+- **PRD 合同 129 项**：已实现（2026-07-30）
+- **当前活跃 companion**：发版 QA 抽测（看板 Pointer、数据大屏 MT 手测等），见 [`docs/automate/plan.md`](docs/automate/plan.md) 与 [project master gap-fill](docs/feature-design/2026-07-29-vitalspan-project-master-gap-fill.md)
+
+---
+
+## 许可证
+
+内部项目；对外分发策略以组织规定为准。

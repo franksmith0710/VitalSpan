@@ -170,6 +170,7 @@ def test_settings_missing_credential_fernet_key_raises(monkeypatch):
         Settings(
             database_url=os.environ["DATABASE_URL"],
             secret_key=os.environ["SECRET_KEY"],
+            credential_sm4_key=os.environ["CREDENTIAL_SM4_KEY"],
         )
     get_settings.cache_clear()
 

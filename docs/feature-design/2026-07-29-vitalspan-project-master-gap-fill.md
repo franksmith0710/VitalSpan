@@ -115,7 +115,7 @@ cd fe && npx vitest run \
 
 ### 6.2 数据大屏 MT（引用）
 
-见 [data-screen master §3 MT-*](./2026-07-29-data-screen-master-gap-fill.md)。
+见 [data-screen master §3 MT-* / MT-BUG2-DS-*](./2026-07-29-data-screen-master-gap-fill.md)。
 
 **抽测登记（2026-07-30）**：MT-INS-2 Vitest 绿；MT-DEPLOY-2/3 API-006 embed pytest + SharePage smoke 绿；MT-1/6/7 等发版手测仍待浏览器抽测。
 

@@ -19,6 +19,7 @@ _BACKEND_ROOT = Path(__file__).resolve().parents[1] / "backend"
 _BASE_KWARGS = {
     "secret_key": "ci-test-secret-key-min-32-chars-long!!",
     "credential_fernet_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    "credential_sm4_key": "0123456789abcdef0123456789abcdef",
 }
 
 
@@ -70,6 +71,7 @@ def _run_alembic_upgrade(database_url: str) -> subprocess.CompletedProcess:
     env["DATABASE_URL"] = database_url
     env.setdefault("SECRET_KEY", _BASE_KWARGS["secret_key"])
     env.setdefault("CREDENTIAL_FERNET_KEY", _BASE_KWARGS["credential_fernet_key"])
+    env.setdefault("CREDENTIAL_SM4_KEY", _BASE_KWARGS["credential_sm4_key"])
     env.setdefault("VITALSPAN_ENV", "development")
     return subprocess.run(
         [sys.executable, "-m", "alembic", "upgrade", "head"],
