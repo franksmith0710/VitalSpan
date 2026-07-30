@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChartInspectorProvider } from "../ChartInspectorProvider";
 import type { LayoutWidget } from "../layoutUtils";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { ChartTitleStyleSection } from "./ChartCommonStyleSections";
 
 const widget: LayoutWidget = {
@@ -33,13 +34,15 @@ function renderTitleSection(
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      <ChartInspectorProvider
-        widget={widget}
-        onChange={vi.fn()}
-        dashboardStyle={options?.dashboardStyle}
-      >
-        {ui}
-      </ChartInspectorProvider>
+      <TooltipProvider delayDuration={0}>
+        <ChartInspectorProvider
+          widget={widget}
+          onChange={vi.fn()}
+          dashboardStyle={options?.dashboardStyle}
+        >
+          {ui}
+        </ChartInspectorProvider>
+      </TooltipProvider>
     </QueryClientProvider>,
   );
 }
@@ -62,9 +65,11 @@ describe("ChartTitleStyleSection", () => {
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={qc}>
-        <ChartInspectorProvider widget={widget} onChange={onChange} dashboardStyle={{}}>
-          <ChartTitleStyleSection />
-        </ChartInspectorProvider>
+        <TooltipProvider delayDuration={0}>
+          <ChartInspectorProvider widget={widget} onChange={onChange} dashboardStyle={{}}>
+            <ChartTitleStyleSection />
+          </ChartInspectorProvider>
+        </TooltipProvider>
       </QueryClientProvider>,
     );
 

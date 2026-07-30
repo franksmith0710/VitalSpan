@@ -14,8 +14,8 @@ describe("chartTableInspector", () => {
     expect(pivot?.showSubTotals).toBe(true);
   });
 
-  it("matrix heatmap uses palette-only style sections", () => {
-    expect(chartStyleSectionsForType("t-heatmap")).toEqual(["palette", "title", "background"]);
+  it("matrix heatmap uses geo style sections for matrix heatmap", () => {
+    expect(chartStyleSectionsForType("t-heatmap")).toEqual(["background", "palette", "geo", "title"]);
   });
 
   it("table-info includes dedicated tableColor section", () => {

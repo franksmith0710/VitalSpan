@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChartVariantBasicSection } from "./ChartVariantBasicSection";
 import { ChartInspectorProvider } from "../ChartInspectorProvider";
@@ -59,7 +60,16 @@ describe("ChartVariantBasicSection", () => {
       </QueryClientProvider>,
     );
 
-    expect(await screen.findByText("内径 %")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId("chart-variant-basic")).toBeInTheDocument();
+    });
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: /基础样式/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText("内径 %")).toBeInTheDocument();
+    });
 
     const slider = screen.getByRole("slider", { name: "内径 %" });
     fireEvent.pointerDown(slider);
