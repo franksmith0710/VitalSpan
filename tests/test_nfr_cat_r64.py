@@ -19,11 +19,9 @@ _R64_SQLITE_URL = "sqlite+pysqlite:///file:nfr_cat_r64?mode=memory&cache=shared&
 @pytest.fixture(scope="module", autouse=True)
 def r64_sqlite_env():
     previous_db = os.environ.get("DATABASE_URL")
-    previous_nfr08 = os.environ.get("NFR08_RUNTIME_MODE")
     previous_dfs = os.environ.get("DASHBOARD_FIRST_SCREEN_MODE")
     previous_ham = os.environ.get("HTTPS_AUDIT_MODE")
     os.environ["DATABASE_URL"] = _R64_SQLITE_URL
-    os.environ.setdefault("NFR08_RUNTIME_MODE", "permissive")
     os.environ.pop("DASHBOARD_FIRST_SCREEN_MODE", None)
     os.environ.pop("HTTPS_AUDIT_MODE", None)
     get_settings.cache_clear()
@@ -48,10 +46,6 @@ def r64_sqlite_env():
         os.environ.pop("DATABASE_URL", None)
     else:
         os.environ["DATABASE_URL"] = previous_db
-    if previous_nfr08 is None:
-        os.environ.pop("NFR08_RUNTIME_MODE", None)
-    else:
-        os.environ["NFR08_RUNTIME_MODE"] = previous_nfr08
     if previous_dfs is None:
         os.environ.pop("DASHBOARD_FIRST_SCREEN_MODE", None)
     else:

@@ -239,10 +239,15 @@ describe("resolveNavGroups", () => {
     }
   });
 
-  it("T-VIZ-FC-02: admin analysis group is dashboard-only", () => {
+  it("T-VIZ-FC-02: admin analysis group includes core viz entries", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]));
     const analysis = groups.find((g) => g.title === "分析");
-    expect(analysis?.items.map((i) => i.name)).toEqual(["仪表板", "数据大屏"]);
+    expect(analysis?.items.map((i) => i.name)).toEqual([
+      "仪表板",
+      "数据大屏",
+      "可视化模板",
+      "组件库",
+    ]);
   });
 
   it("T-VIZ-FC-03: admin nav no longer lists 图表类型目录（Palette 深链保留）", () => {

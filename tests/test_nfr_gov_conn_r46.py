@@ -271,18 +271,17 @@ def test_nfr007_build_compliance_report_unit():
     """T-R46-007-03: build_compliance_report 返回 overallStatus。"""
     report = build_compliance_report()
     assert report.overall_status in {"compliant", "non_compliant", "degraded"}
-    assert report.mode in {"strict", "permissive"}
+    assert report.mode == "strict"
 
 
 def test_nfr007_strict_mode_non_compliant_422(client, monkeypatch):
-    """T-R46-007-04: strict + 违规平台库 → 422 XINCHUANG_NON_COMPLIANT。"""
+    """T-R46-007-04: 违规平台库 → 422 XINCHUANG_NON_COMPLIANT。"""
     mock_settings = get_settings()
     monkeypatch.setattr(
         "app.api.v1.nfr.get_settings",
         lambda: type("S", (), {
-            **{k: getattr(mock_settings, k) for k in ("database_url", "vitalspan_env", "xinchuang_mode")},
-            "xinchuang_mode": "strict",
-            "database_url": "mysql://bad:3306/db",
+            **{k: getattr(mock_settings, k) for k in mock_settings.model_fields},
+            "database_url": "oracle://bad:1521/db",
         })(),
     )
     resp = client.get("/api/v1/nfr/xinchuang/compliance", headers=AUTH)
@@ -290,16 +289,21 @@ def test_nfr007_strict_mode_non_compliant_422(client, monkeypatch):
     assert resp.json()["code"] == XINCHUANG_NON_COMPLIANT
 
 
-def test_nfr007_assert_raises_on_non_compliant():
-    """T-R46-007-05: assert_xinchuang_compliant strict 违规抛错。"""
+def test_nfr007_assert_raises_on_non_compliant(monkeypatch):
+    """T-R46-007-05: assert_xinchuang_compliant 违规抛错。"""
     from app.core.nfr.xinchuang import XinchuangComplianceError
 
-    class _BadSettings:
-        xinchuang_mode = "strict"
-        database_url = "mysql://bad:3306/db"
+    mock_settings = get_settings()
+    monkeypatch.setattr(
+        "app.core.nfr.xinchuang.get_settings",
+        lambda: type("S", (), {
+            **{k: getattr(mock_settings, k) for k in mock_settings.model_fields},
+            "database_url": "oracle://bad:1521/db",
+        })(),
+    )
 
     with pytest.raises(XinchuangComplianceError) as exc:
-        assert_xinchuang_compliant(_BadSettings())  # type: ignore[arg-type]
+        assert_xinchuang_compliant()
     assert exc.value.code == XINCHUANG_NON_COMPLIANT
 
 
@@ -318,29 +322,27 @@ def test_nfr006_default_disabled(monkeypatch):
     assert out.degraded_reason
 
 
-def test_nfr006_active_when_browser_and_wecom(monkeypatch):
-    """T-R46-006-02: 浏览器 + 合法企微 webhook → active。"""
-    monkeypatch.setenv("PUSH_BROWSER_ENABLED", "true")
+def test_nfr006_active_when_wecom(monkeypatch):
+    """T-R46-006-02: 合法企微 webhook → active。"""
     monkeypatch.setenv("PUSH_WECOM_WEBHOOK", "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=x")
     get_settings.cache_clear()
     out = resolve_push_mode()
     assert out.delivery_mode == "active"
+    assert out.browser_enabled is False
 
 
-def test_nfr006_degraded_partial_channel(monkeypatch):
-    """T-R46-006-03: 仅浏览器无消息通道 → degraded。"""
-    monkeypatch.setenv("PUSH_BROWSER_ENABLED", "true")
+def test_nfr006_disabled_without_channels(monkeypatch):
+    """T-R46-006-03: 无消息通道 → disabled。"""
     monkeypatch.delenv("PUSH_WECOM_WEBHOOK", raising=False)
     monkeypatch.delenv("PUSH_DINGTALK_WEBHOOK", raising=False)
     get_settings.cache_clear()
     out = resolve_push_mode()
-    assert out.delivery_mode == "degraded"
+    assert out.delivery_mode == "disabled"
 
 
 def test_nfr006_invalid_webhook_raises():
     """T-R46-006-04: 非 https webhook → PUSH_CONFIG_INVALID。"""
     class _S:
-        push_browser_enabled = True
         push_wecom_webhook = "http://insecure.example/hook"
         push_dingtalk_webhook = None
 
@@ -366,14 +368,13 @@ def test_nfr006_push_config_http(client):
 
 
 def test_nfr007_compliance_http_strict_guard(client, monkeypatch):
-    """T-R46-007-06: strict 非合规 GET compliance → 422（复用 Task4 场景）。"""
+    """T-R46-007-06: 非合规 GET compliance → 422。"""
     mock_settings = get_settings()
     monkeypatch.setattr(
         "app.api.v1.nfr.get_settings",
         lambda: type("S", (), {
-            **{k: getattr(mock_settings, k) for k in ("database_url", "vitalspan_env", "xinchuang_mode")},
-            "xinchuang_mode": "strict",
-            "database_url": "mysql://bad:3306/db",
+            **{k: getattr(mock_settings, k) for k in mock_settings.model_fields},
+            "database_url": "oracle://bad:1521/db",
         })(),
     )
     resp = client.get("/api/v1/nfr/xinchuang/compliance", headers=AUTH)

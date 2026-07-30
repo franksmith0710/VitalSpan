@@ -34,7 +34,6 @@ import {
   type TextWidgetConfig,
 } from "@/components/dashboard/layoutUtils";
 import {
-  isPixelCanvasEnabled,
   pixelWidgetToLayoutWidget,
   prepareDashboardLayout,
 } from "@/components/dashboard/dashboardCanvasMode";
@@ -164,7 +163,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   }, [mode]);
 
   const [name, setName] = useState("");
-  const pixelEnabled = isPixelCanvasEnabled(import.meta.env.VITE_DASHBOARD_PIXEL_CANVAS);
+  const pixelEnabled = true;
   const {
     editor,
     canSave,

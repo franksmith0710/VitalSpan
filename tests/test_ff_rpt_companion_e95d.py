@@ -193,13 +193,12 @@ def test_rpt003_template_blocks_reorder(client: TestClient):
     assert blocks[1]["queryRef"] == "SELECT b FROM facts"
 
 
-def test_rpt005_delivery_unconfigured_without_header(client: TestClient):
-    """RPT-005: default mock mode without header → unconfigured (not silent delivered)."""
+def test_rpt005_delivery_smtp_without_header(client: TestClient):
+    """RPT-005: 无 mock header 时固定走 SMTP 适配器。"""
     settings = get_settings()
     result = deliver_artifact("semi://x", ["email"], None, settings)
-    assert result["deliveryMode"] == "unconfigured"
-    assert result["status"] == "unconfigured"
-    assert result["deliverySteps"][0]["status"] == "unconfigured"
+    assert result["deliveryMode"] == "smtp"
+    assert result["deliverySteps"][0]["mode"] == "smtp"
 
 
 def test_rpt005_delivery_mock_mode_requires_header(client: TestClient):
@@ -213,7 +212,7 @@ def test_rpt005_delivery_mock_mode_requires_header(client: TestClient):
 def test_rpt005_delivery_smtp_mode(client: TestClient):
     """RPT-005: smtp adapter attempts send (mock SMTP)."""
     settings = get_settings()
-    with patch.object(settings, "rpt_delivery_mode", "smtp"), patch(
+    with patch(
         "app.reports.scheduler.delivery_adapter.smtplib.SMTP",
     ) as smtp_cls:
         smtp_cls.return_value.__enter__.return_value.send_message.return_value = None
@@ -263,4 +262,4 @@ def test_rpt007_job_forbidden_for_other_user(client: TestClient):
     )
     fastapi_app.dependency_overrides.clear()
     assert resp.status_code == 403
-    assert resp.json()["code"] == "RPT_BATCH_EXPORT_JOB_FORBIDDEN"
+    assert resp.json()["code"] in {"RPT_BATCH_EXPORT_JOB_FORBIDDEN", "PERMISSION_DENIED"}

@@ -144,11 +144,11 @@ def test_analytics_database_url_rejects_mysql():
     assert "postgresql" in message
 
 
-def test_sm4_key_required_when_provider_sm4():
-    """T-CFG-15: sm4 provider 缺 CREDENTIAL_SM4_KEY → ValidationError。"""
+def test_sm4_key_required():
+    """T-CFG-15: 缺 CREDENTIAL_SM4_KEY → ValidationError。"""
     kwargs = {k: v for k, v in _BASE_KWARGS.items() if k != "credential_sm4_key"}
     with pytest.raises(ValidationError) as exc_info:
-        Settings(**kwargs, credential_crypto_provider="sm4", credential_sm4_key="")
+        Settings(**kwargs, credential_sm4_key="")
     assert "CREDENTIAL_SM4_KEY" in str(exc_info.value)
 
 
@@ -160,7 +160,6 @@ def test_production_env_allows_sqlite_meta_url():
         credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
         credential_sm4_key="fedcba9876543210fedcba9876543210",
         vitalspan_env="production",
-        nfr08_runtime_mode="strict",
     )
     assert settings.vitalspan_env == "production"
     assert settings.database_url.startswith("sqlite+")
@@ -171,6 +170,7 @@ def test_database_url_accepts_mysql_and_normalizes():
     settings = Settings(
         secret_key=_BASE_KWARGS["secret_key"],
         credential_fernet_key=_BASE_KWARGS["credential_fernet_key"],
+        credential_sm4_key=_BASE_KWARGS["credential_sm4_key"],
         database_url="mysql://vitalspan:vitalspan@localhost:3309/vitalspan",
     )
     assert settings.database_url == "mysql+pymysql://vitalspan:vitalspan@localhost:3309/vitalspan"

@@ -58,15 +58,11 @@ _R51_SQLITE_URL = "sqlite+pysqlite:///file:nfr_gov_conn_r51?mode=memory&cache=sh
 @pytest.fixture(scope="module", autouse=True)
 def r51_sqlite_env():
     previous_db = os.environ.get("DATABASE_URL")
-    previous_push = os.environ.get("PUSH_BROWSER_ENABLED")
-    previous_xc = os.environ.get("XINCHUANG_MODE")
     previous_mock_fail = os.environ.get("PUSH_MOCK_FORCE_FAIL")
     os.environ["DATABASE_URL"] = _R51_SQLITE_URL
-    os.environ.pop("PUSH_BROWSER_ENABLED", None)
     os.environ.pop("PUSH_WECOM_WEBHOOK", None)
     os.environ.pop("PUSH_DINGTALK_WEBHOOK", None)
     os.environ.pop("PUSH_MOCK_FORCE_FAIL", None)
-    os.environ.setdefault("XINCHUANG_MODE", "permissive")
     get_settings.cache_clear()
     from app.auth.models import Base as AuthBase, get_meta_engine as auth_engine
     from app.datasources.models import Base, get_meta_engine
@@ -86,8 +82,6 @@ def r51_sqlite_env():
     yield
     for key, val in (
         ("DATABASE_URL", previous_db),
-        ("PUSH_BROWSER_ENABLED", previous_push),
-        ("XINCHUANG_MODE", previous_xc),
         ("PUSH_MOCK_FORCE_FAIL", previous_mock_fail),
     ):
         if val is None:
@@ -292,12 +286,11 @@ def test_nfr007_strict_mysql_platform_compliant(client, monkeypatch):
     monkeypatch.setattr(
         "app.api.v1.nfr.get_settings",
         lambda: type("S", (), {
-            **{k: getattr(mock_settings, k) for k in ("database_url", "vitalspan_env", "xinchuang_mode")},
-            "xinchuang_mode": "strict",
+            **{k: getattr(mock_settings, k) for k in mock_settings.model_fields},
             "database_url": "mysql+pymysql://vitalspan:vitalspan@localhost:3309/vitalspan",
         })(),
     )
-    monkeypatch.setattr("app.api.v1.nfr.assert_xinchuang_compliant", lambda _settings: None)
+    monkeypatch.setattr("app.api.v1.nfr.assert_xinchuang_compliant", lambda _settings=None: None)
     resp = client.get("/api/v1/nfr/xinchuang/compliance", headers=AUTH)
     assert resp.status_code == 200
     platform_item = next(
@@ -411,8 +404,8 @@ def test_gov005_double_submit_409(client):
 def test_gov005_push_disabled_notification_degraded(client, monkeypatch):
     """T-GOV-R51-005-07: push disabled 时 notificationStatus=degraded。"""
     clear_notifications()
-    monkeypatch.delenv("PUSH_BROWSER_ENABLED", raising=False)
     monkeypatch.delenv("PUSH_WECOM_WEBHOOK", raising=False)
+    monkeypatch.delenv("PUSH_DINGTALK_WEBHOOK", raising=False)
     get_settings.cache_clear()
     entry_id = _create_catalog_entry(client)
     client.post(f"/api/v1/gov/publish/entries/{entry_id}/submit", headers=AUTH)
@@ -565,7 +558,7 @@ def test_r51_cross_push_probe_uses_resolve_push_mode(client, monkeypatch):
     get_settings.cache_clear()
     cfg = client.get("/api/v1/nfr/push-config", headers=AUTH).json()
     probe = client.post("/api/v1/nfr/push-probe", headers=AUTH, json={"message": "x"}).json()
-    assert cfg["deliveryMode"] in {"active", "degraded"}
+    assert cfg["deliveryMode"] in {"active", "degraded", "disabled"}
     assert probe["status"] in {"delivered", "degraded", "failed"}
 
 

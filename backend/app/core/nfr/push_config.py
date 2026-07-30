@@ -43,12 +43,11 @@ def resolve_push_mode(settings: Settings | None = None) -> PushConfigOut:
     validate_push_settings(settings)
     wecom_ok = _is_valid_webhook(settings.push_wecom_webhook)
     ding_ok = _is_valid_webhook(settings.push_dingtalk_webhook)
-    browser = settings.push_browser_enabled
-    if not browser and not wecom_ok and not ding_ok:
+    if not wecom_ok and not ding_ok:
         return PushConfigOut(False, False, False, "disabled", "push channels not configured")
-    if browser and (wecom_ok or ding_ok):
-        return PushConfigOut(browser, wecom_ok, ding_ok, "active", None)
-    return PushConfigOut(browser, wecom_ok, ding_ok, "degraded", "partial push channel configuration")
+    if wecom_ok or ding_ok:
+        return PushConfigOut(False, wecom_ok, ding_ok, "active", None)
+    return PushConfigOut(False, wecom_ok, ding_ok, "degraded", "partial push channel configuration")
 
 
 def summarize_channel_probe(payload: dict | None = None) -> str:

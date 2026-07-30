@@ -129,7 +129,7 @@
 - **RPT-001**：`integration/reports_export.py` catalog 模板 UUID 导出链 + mock bytes；`exportHook.placeholder=false`
 - **RPT-002**：FE `PrefabBindingForm` + PUT prefab bindings
 - **RPT-003**：FE `TemplateBlockEditor` 块列表/SQL/重排
-- **RPT-005**：`scheduler/delivery_adapter.py` — `RPT_DELIVERY_MODE=mock|smtp`
+- **RPT-005**：`scheduler/delivery_adapter.py` — 固定 SMTP；测试 mock 仅 `X-Rpt-Delivery-Mock` header
 - **RPT-007**：`batch/export_jobs.py` — `POST /batch/export` + `GET /jobs/{id}` 轮询
 
 - **RPT-003**：`GET/DELETE /reports/templates`；`storageRef` 默认 `mock://templates/{key}.{format}`；`exportHook`（IF-03 placeholder）；`engine/service.run_template` word/excel/pdf 返回 `exportHook`

@@ -20,7 +20,6 @@ _R238_SQLITE_URL = "sqlite+pysqlite:///file:m12_batch1_r238?mode=memory&cache=sh
 def r238_sqlite_env():
     previous_db = os.environ.get("DATABASE_URL")
     os.environ["DATABASE_URL"] = _R238_SQLITE_URL
-    os.environ.setdefault("NFR08_RUNTIME_MODE", "permissive")
     get_settings.cache_clear()
     from app.auth.models import Base as AuthBase, get_meta_engine as auth_engine
     from app.datasources.models import Base, get_meta_engine

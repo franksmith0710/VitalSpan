@@ -315,34 +315,37 @@ Dataset CRUD（ORM `datasets` 表）
 | `fe/.env.example` | 前端 `VITE_*` 模板 | ✅ |
 | `docker-compose.yml` | 本地平台库 + 托管分析库 + 样例连接器库（见 §9） | ✅ |
 
-### 7.2 后端环境变量（规划）
+### 7.2 后端环境变量
+
+> **无运行时功能开关**：算法（SM4/SM3）、NFR strict、报表 SMTP、信创门禁等行为在代码中写死；环境变量仅承载密钥、连接串与运营参数值。
 
 | 变量 | 必填 | 说明 | 默认 |
 |------|:----:|------|------|
-| `VITALSPAN_ENV` | | `development` / `staging` / `production` | `development` |
+| `VITALSPAN_ENV` | | 部署标识：`development` / `staging` / `production`（非功能开关） | `development` |
 | `DATABASE_URL` | ✅ | 平台元数据库（PostgreSQL / MySQL 8+ / SQLite） | — |
 | `SECRET_KEY` | ✅ | JWT / 会话签名 | — |
-| `CREDENTIAL_FERNET_KEY` | ✅ | 遗留凭证 Fernet 解密 / fernet 写入模式 | — |
-| `CREDENTIAL_SM4_KEY` | ✅* | 国密 SM4 凭证加密（`*` `CREDENTIAL_CRYPTO_PROVIDER=sm4` 时必填） | — |
-| `CREDENTIAL_CRYPTO_PROVIDER` | | `sm4` / `fernet` | `sm4` |
-| `PASSWORD_HASH_ALGORITHM` | | `sm3` / `bcrypt` | `sm3` |
+| `CREDENTIAL_FERNET_KEY` | ✅ | 遗留凭证 Fernet 解密（迁移期） | — |
+| `CREDENTIAL_SM4_KEY` | ✅ | 国密 SM4 凭证加密（固定写入算法） | — |
 | `CORS_ORIGINS` | | 前端源，逗号分隔 | `http://localhost:5173` |
 | `LOG_LEVEL` | | 日志级别 | `INFO` |
 | `QUERY_DEFAULT_LIMIT` | | 查询硬上限 | `1000` |
 | `QUERY_TIMEOUT_SECONDS` | | 单次查询超时 | `30` |
 | `ANALYTICS_DATABASE_URL` | | 平台托管分析库（M1B 同步/清洗目标库） | — |
-| `DASHBOARD_AVAILABILITY_MODE` | | 核心看板可用性门禁：`strict`（不达标 503）/ `permissive` | `permissive` |
-| `XINCHUANG_DEPLOY_MODE` | | 信创部署验收：`strict` / `permissive` / `conditional` | `permissive` |
-| `RPT_DELIVERY_MODE` | | 报表调度投递：`mock` / `smtp`（MailHog 默认 1025） | `mock` |
-| `RPT_SMTP_HOST` | | SMTP 主机（`RPT_DELIVERY_MODE=smtp`） | `localhost` |
+| `RPT_SMTP_HOST` | ✅* | 报表 SMTP 主机（`*` 生产 `VITALSPAN_ENV=production` 必填） | `localhost` |
 | `RPT_SMTP_PORT` | | SMTP 端口 | `1025` |
-| `RPT_SMTP_FROM` | | 发件人地址 | `reports@vitalspan.local` |
+| `RPT_SMTP_FROM` | ✅* | 发件人地址（生产必填） | `reports@vitalspan.local` |
+| `RPT_SMTP_USER` | | SMTP 用户名（可选） | — |
+| `RPT_SMTP_PASSWORD` | | SMTP 密码（可选） | — |
+| `PUSH_WECOM_WEBHOOK` | | 企业微信 webhook（https） | — |
+| `PUSH_DINGTALK_WEBHOOK` | | 钉钉 webhook（https） | — |
 
-### 7.3 前端环境变量（规划）
+### 7.3 前端环境变量
 
 | 变量 | 说明 |
 |------|------|
-| `VITE_API_BASE_URL` | 后端 API 根，如 `http://localhost:8000` |
+| `VITE_API_BASE_URL` | 后端 API 根（生产 build）；本地 dev 走 Vite proxy 可不设 |
+
+**写死的产品行为（无 env 开关）**：治理侧栏隐藏；看板像素画布始终开启；NFR/信创/compose 门禁始终 strict。
 
 ---
 

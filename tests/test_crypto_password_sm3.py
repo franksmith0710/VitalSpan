@@ -2,15 +2,6 @@ import bcrypt
 import pytest
 
 from app.auth.password.service import hash_password, needs_password_rehash, verify_password
-from app.core.config import get_settings
-
-
-@pytest.fixture(autouse=True)
-def _sm3_env(monkeypatch):
-    monkeypatch.setenv("PASSWORD_HASH_ALGORITHM", "sm3")
-    get_settings.cache_clear()
-    yield
-    get_settings.cache_clear()
 
 
 def test_sm3_hash_and_verify():

@@ -58,7 +58,7 @@
   - [x] 敏感字段脱敏+审计（r64 L1：`POST /api/v1/nfr/https-audit/mask-probe` password/apiKey/token 脱敏 + maskedFields + auditLogged mock）
   - [x] companion auditScope ACL + simulateAuditFailure + perf probe（r68：`set_user_https_audit_scope` + `NFR_HTTPS_AUDIT_SCOPE_INVALID` 422；enterprise scope 403；`simulateAuditFailure` 503；`probe_https_audit_mask_budget_ms`/`probe_https_audit_status_budget_ms` ≤50ms）
   - [x] M6 HTTPS audit guard middleware + `GET /api/v1/nfr/https-audit/audit-probe` 响应脱敏无明文泄漏（`core/middleware/https_audit_guard.py` · `test_nfr_004_https_audit.py` T-NFR-004-M6-01~05）
-  - [x] 国密应用层：SM4 凭证加密（默认 `CREDENTIAL_CRYPTO_PROVIDER=sm4`）+ SM3 登录密码哈希；Fernet/bcrypt 遗留双读；登录 bcrypt 自动升级（`core/crypto/` · ADR-16 · `tests/test_crypto_sm4.py` · `tests/test_crypto_password_sm3.py`）
+  - [x] 国密应用层：SM4 凭证加密 + SM3 登录密码哈希（代码写死，无 env 切换）；Fernet/bcrypt 遗留双读；登录 bcrypt 自动升级（`core/crypto/` · ADR-16 · `tests/test_crypto_sm4.py` · `tests/test_crypto_password_sm3.py`）
   - [ ] 生产 TLS 终止与全链路审计 store（无 ingress 强制与持久化审计写入）
 - **代码锚点**：`backend/app/core/nfr/https_audit.py` · `backend/app/core/crypto/` · `backend/app/core/middleware/https_audit_guard.py` · `backend/app/api/v1/nfr.py` · `tests/test_nfr_cat_r64.py` T-NFR-R64-004-01~06 · `tests/test_nfr_gov_rpt_view_r68.py` T-NFR-R68-004-01~09 · `tests/test_nfr_004_https_audit.py` · `tests/test_crypto_sm4.py` · `tests/test_crypto_password_sm3.py`
 - **演化建议**：M6 L1 已闭合 audit guard middleware + audit-probe 无泄漏回归；后续补生产 TLS 强制与审计 store 全链路
@@ -119,7 +119,7 @@
   - [x] 生产无 Superset/DataEase 进程（r53 L1：`GET /api/v1/nfr/runtime-compliance` loaded-modules + pyproject 依赖扫描；非 OS 进程枚举）
   - [x] 依赖审计通过（pyproject-dependencies item + remediation；strict/permissive `POST assert`）
   - [x] 部署验收报告（r57 companion：`GET /api/v1/nfr/deployment-report` accepted/conditional/rejected + remediation_index；≤100ms）
-  - [x] compose 禁入扫描（r249：`forbiddenComposeHits` mock superset/dataease 镜像 → conditional/rejected；`NFR08_RUNTIME_MODE=strict`）
+  - [x] compose 禁入扫描（r249：`forbiddenComposeHits` 命中 superset/dataease 镜像 → `rejected`；始终 strict，无 permissive env）
   - [x] Markdown 部署报告（r249：`format=markdown` `text/markdown` 含 `## 零第三方 BI`；`docs/nfr/zero-de-ss-deployment.md`）
   - [x] 性能预算与 strict assert（r249：`probe_deployment_report_budget_ms` ≤100ms；`POST assert` strict 违规 → 503 `NFR_RUNTIME_VIOLATION`）
 - **代码锚点**：`backend/app/core/nfr/runtime_guard.py` · `backend/app/core/nfr/deployment_report.py` · `backend/app/api/v1/nfr.py` · `docs/nfr/zero-de-ss-deployment.md` · `tests/test_dash_rpt_query_nfr_r53.py` T-NFR-R53-008-01~06 · `tests/test_dash_rpt_query_nfr_r57.py` T-NFR-R57-008-01~05 · `tests/test_mfinal_ff_fg_batch1_r249.py` T-NFR-R249-008-01~06

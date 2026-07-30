@@ -78,7 +78,7 @@
   - [x] APScheduler 调度注册 + lifespan（r238：`scheduler/jobs.py` + `main.py` lifespan hook）
   - [x] 列表/历史/重试 API（r238：`GET /api/v1/reports/schedules` + `GET .../executions` + `POST .../retry` + failed 错误信息）
   - [x] M12 Admin 调度 UI（r238：`SchedulePanel` + `TemplateDetailPanel` 调度 Tab；`SchedulePanel.smoke.test.tsx`）
-  - [x] 真实 SMTP/对象存储投递（companion r-e95d：`RPT_DELIVERY_MODE=mock|smtp` + MailHog 兼容 SMTP 适配器）
+  - [x] 真实 SMTP 投递（companion r-e95d：固定 SMTP + MailHog 兼容适配器；测试 mock 仅 header）
   - [x] **M-DEPTH F-C**：调度执行历史 / 重试 UI 增强（接 `GET .../executions` + `POST .../retry`；失败可读、可重试）（完成于 2026-07-29 · `SchedulePanel.tsx` · `SchedulePanel.smoke.test.tsx`）
   - [ ] 组合调度粒度枚举（companion · **演化建议 / 非阻塞**）
 - **代码锚点**：`backend/app/reports/scheduler/service.py` · `backend/app/reports/scheduler/jobs.py` · `backend/app/reports/scheduler/executor.py` · `backend/app/reports/scheduler/delivery_adapter.py` · `fe/src/pages/admin/reports/components/SchedulePanel.tsx` · `backend/app/api/v1/reports/__init__.py` · `tests/test_ff_rpt_companion_e95d.py` · `tests/test_m12_batch1_r238.py` T-RPT-R238-005-* · `tests/test_dash_rpt_query_nfr_r53.py` T-RPT-R53-005-01~08 · `tests/test_dash_rpt_query_nfr_r57.py` T-RPT-R57-005-01~07 · `tests/test_dash_rpt_r58.py` T-RPT-R58-005-01~07

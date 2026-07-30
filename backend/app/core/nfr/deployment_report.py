@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import pathlib
 import time
 from dataclasses import dataclass
@@ -90,7 +89,7 @@ def render_nfr08_deployment_markdown(report: DeploymentAcceptanceReport) -> str:
         lines.extend(["", "### remediation_index"])
         for key, val in report.remediation_index.items():
             lines.append(f"- {key}: {val}")
-    lines.extend(["", "### CI 门禁", "- 设置 `NFR08_RUNTIME_MODE=strict` 于 CI 阻断违规部署"])
+    lines.extend(["", "### 门禁", "- 运行时与 compose 违规即 rejected（无 permissive 模式）"])
     return "\n".join(lines)
 
 
@@ -100,8 +99,8 @@ def build_deployment_acceptance_report(
     mode: str | None = None,
     compose_text: str | None = None,
 ) -> DeploymentAcceptanceReport:
+    del mode
     runtime = build_runtime_report(pyproject_text)
-    mode = mode or os.environ.get("NFR08_RUNTIME_MODE", "permissive")
     compose_raw = compose_text if compose_text is not None else _read_compose_text()
     compose_services = _parse_compose_services(compose_raw)
     forbidden_hits = _scan_forbidden_compose_hits(compose_raw, compose_services)
@@ -117,7 +116,6 @@ def build_deployment_acceptance_report(
             "pass" if runtime.overall_status == "compliant" else "fail",
             "Runtime must be compliant for deployment",
         ),
-        RuntimeCheckItem("ci-gate-hint", "pass", "Set NFR08_RUNTIME_MODE=strict for CI gates"),
     )
     checklist = runtime.items + extra
     remediation = {i.id: i.remediation for i in checklist if i.remediation and i.status == "fail"}
@@ -128,12 +126,9 @@ def build_deployment_acceptance_report(
     if runtime.overall_status == "compliant" and not forbidden_hits:
         overall: Literal["accepted", "rejected", "conditional"] = "accepted"
         ops = "Runtime compliance accepted; compose scan clean; ready for deployment verification."
-    elif mode == "strict" and (runtime.overall_status != "compliant" or forbidden_hits):
-        overall = "rejected"
-        ops = "Deployment rejected under strict mode; remediate runtime or compose violations."
     else:
-        overall = "conditional"
-        ops = "Deployment conditional; review remediation_index before production."
+        overall = "rejected"
+        ops = "Deployment rejected; remediate runtime or compose violations."
     return DeploymentAcceptanceReport(
         report_version=REPORT_VERSION,
         schema_version=SCHEMA_VERSION,

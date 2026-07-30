@@ -812,8 +812,18 @@ export function resolveChartContentShellStyle(
   const outer = mergeWidgetShellStyle(mergedWidgetStyle, colorScheme, {
     allowDecorativeFrame: allowFrame,
   });
+  const outerStyle = { ...outer.style };
+  if (
+    outer.backgroundLayer?.backgroundImage &&
+    !outerStyle.background &&
+    (outerStyle.backgroundColor === "var(--dashboard-widget-surface)" ||
+      outerStyle.backgroundColor === "transparent")
+  ) {
+    outerStyle.backgroundColor = "transparent";
+  }
+
   return {
-    outer,
+    outer: { ...outer, style: outerStyle },
     inner: {},
     innerBackgroundLayer: null,
     innerFrameLayer: null,
@@ -842,10 +852,23 @@ export function mergeShapeInnerPresentation(shell: {
   const usesBackdropGlass = Boolean(
     shell.outer.backgroundLayer?.backdropFilter ?? shell.outer.backgroundLayer?.WebkitBackdropFilter,
   );
-  if (!hasShellBackground && !usesBackdropGlass) {
+  const usesBackgroundImageLayer = Boolean(
+    shell.outer.backgroundLayer?.backgroundImage ||
+      shell.innerBackgroundLayer?.backgroundImage,
+  );
+  if (!hasShellBackground && !usesBackdropGlass && !usesBackgroundImageLayer) {
     shellStyle.backgroundColor = "var(--dashboard-widget-surface)";
-  } else if (usesBackdropGlass && !hasShellBackground) {
+  } else if ((usesBackdropGlass || usesBackgroundImageLayer) && !hasShellBackground) {
     shellStyle.backgroundColor = "transparent";
+  }
+
+  const contentStyle: CSSProperties = { ...shell.inner };
+  if (
+    shell.innerBackgroundLayer?.backgroundImage &&
+    !contentStyle.background &&
+    !contentStyle.backgroundColor
+  ) {
+    contentStyle.backgroundColor = "transparent";
   }
 
   return {
@@ -855,7 +878,7 @@ export function mergeShapeInnerPresentation(shell: {
       frameLayers: [shell.outer.frameLayer ?? null],
     },
     content: {
-      style: { ...shell.inner },
+      style: contentStyle,
       backgroundLayers: [shell.innerBackgroundLayer],
       frameLayers: [shell.innerFrameLayer ?? null],
     },

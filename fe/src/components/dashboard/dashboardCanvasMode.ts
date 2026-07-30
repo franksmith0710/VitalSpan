@@ -39,8 +39,8 @@ export type PreparedDashboardLayout = {
   layout: DashboardLayout;
 };
 
-export function isPixelCanvasEnabled(value: string | undefined): boolean {
-  return value !== "false";
+export function isPixelCanvasEnabled(_value?: string): boolean {
+  return true;
 }
 
 export function migrateDashboardLayoutV1(layout: DashboardLayoutV1): DashboardLayoutV2 {

@@ -190,7 +190,7 @@ def dashboard_availability_smoke(
 ):
     reports = probe_core_dashboards_smoke(actor, simulate_breach=simulate_breach)
     all_ok = all(r.within_sla and r.within_first_screen_budget for r in reports)
-    if get_settings().dashboard_availability_mode == "strict" and not all_ok:
+    if not all_ok:
         return JSONResponse(
             status_code=503,
             content={
@@ -230,10 +230,7 @@ def dashboard_availability_report(
         return _dashboard_sla_error(exc)
     except DashboardFirstScreenError as exc:
         return _dashboard_first_screen_error(exc)
-    if (
-        get_settings().dashboard_availability_mode == "strict"
-        and report.overall_status != "available"
-    ):
+    if report.overall_status != "available":
         return JSONResponse(
             status_code=503,
             content={

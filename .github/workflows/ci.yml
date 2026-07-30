@@ -14,8 +14,6 @@ jobs:
       SECRET_KEY: ci-test-secret-key-min-32-chars-long!!
       CREDENTIAL_FERNET_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
       CREDENTIAL_SM4_KEY: 0123456789abcdef0123456789abcdef
-      CREDENTIAL_CRYPTO_PROVIDER: sm4
-      PASSWORD_HASH_ALGORITHM: sm3
     defaults:
       run:
         working-directory: backend

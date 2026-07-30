@@ -76,9 +76,10 @@ function applyBackgroundPaintToLayer(
 
 export function needsWidgetBackgroundLayer(style: CSSProperties): boolean {
   if (style.backdropFilter || style.WebkitBackdropFilter) return true;
+  if (style.backgroundImage) return true;
   const opacity = readOpacity(style.opacity);
   if (opacity == null || opacity >= 1) return false;
-  return Boolean(style.backgroundImage);
+  return false;
 }
 
 export type WidgetBackgroundPresentation = {

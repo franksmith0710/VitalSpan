@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
@@ -106,13 +106,15 @@ function renderEditPage(path = "/admin/dashboards/d1/edit") {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={[path]}>
-        <Routes>
-          <Route path="/admin/dashboards" element={<div>看板列表页</div>} />
-          <Route path="/admin/dashboards/:id/edit" element={<DashboardEditPage mode="edit" />} />
-          <Route path="/admin/dashboards/:id" element={<DashboardEditPage mode="view" />} />
-        </Routes>
-      </MemoryRouter>
+      <TooltipProvider delayDuration={0}>
+        <MemoryRouter initialEntries={[path]}>
+          <Routes>
+            <Route path="/admin/dashboards" element={<div>看板列表页</div>} />
+            <Route path="/admin/dashboards/:id/edit" element={<DashboardEditPage mode="edit" />} />
+            <Route path="/admin/dashboards/:id" element={<DashboardEditPage mode="view" />} />
+          </Routes>
+        </MemoryRouter>
+      </TooltipProvider>
     </QueryClientProvider>,
   );
 }
@@ -197,11 +199,9 @@ describe("dashboard admin smoke", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
     resetChartTypeCatalogCache();
-    vi.stubEnv("VITE_DASHBOARD_PIXEL_CANVAS", "false");
   });
   afterEach(() => {
     cleanup();
-    vi.unstubAllEnvs();
   });
 
   it("T-DASH-R28-002-01: empty edit grid shows drop zone guidance", () => {
@@ -939,7 +939,6 @@ describe("dashboard admin smoke", () => {
   });
 
   it("B3: pixel on + v1 migrates in memory and first save writes complete v2 layout", async () => {
-    vi.stubEnv("VITE_DASHBOARD_PIXEL_CANVAS", "true");
     const user = userEvent.setup();
     let layoutPut: { layoutJson?: { version?: number; canvas?: unknown; widgets?: unknown[] } } | undefined;
     mockApiFetch.mockImplementation(async (...args: unknown[]) => {
@@ -978,7 +977,7 @@ describe("dashboard admin smoke", () => {
     );
   });
 
-  it("B3: pixel off + v2 is read-only and never offers save", async () => {
+  it("B3: v2 layout stays editable with pixel canvas fixed on", async () => {
     const pixelWidget = {
       ...sampleWidgets[0],
       x: 120,
@@ -993,15 +992,12 @@ describe("dashboard admin smoke", () => {
       gridY: _gridY,
       ...v2Widget
     } = pixelWidget;
-    let writes = 0;
     mockApiFetch.mockImplementation(async (...args: unknown[]) => {
       const filters = mockGlobalFiltersPath(String(args[0] ?? ""));
-      const init = args[1] as RequestInit | undefined;
-      if (init?.method === "PUT" || init?.method === "DELETE") writes += 1;
       if (filters) return filters;
       return {
         id: "d1",
-        name: "只读像素",
+        name: "像素编辑",
         layoutJson: {
           version: 2,
           canvas: { width: 1440, height: 900 },
@@ -1013,28 +1009,21 @@ describe("dashboard admin smoke", () => {
 
     renderEditPage();
     expect(await screen.findByTestId("pixel-canvas-host")).toBeInTheDocument();
-    expect(screen.getByText(/像素布局只读/)).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "保存" })).not.toBeInTheDocument();
-    expect(screen.queryByTestId("pixel-drag-edge-top-w1")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("palette-toolbar-toggle")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("toolbar-open-reuse")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("toolbar-more-toggle")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "删除看板" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "删除组件" })).not.toBeInTheDocument();
-    expect(writes).toBe(0);
+    expect(screen.queryByText(/像素布局只读/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "保存" })).toBeInTheDocument();
+    expect(screen.getByTestId("pixel-drag-edge-top-w1")).toBeInTheDocument();
+    expect(screen.getByTestId("palette-toolbar-toggle")).toBeInTheDocument();
   });
 
-  it("B3: pixel off + v1 keeps the editable RGL quadrant", async () => {
+  it("B3: v1 migrates to pixel canvas on load", async () => {
     mockDashboardLoad(sampleWidgets.slice(0, 1));
-    const { container } = renderEditPage();
-    await screen.findByTestId("widget-inline-title-w1");
-    expect(container.querySelector(".dashboard-grid-edit .react-grid-layout")).toBeTruthy();
+    renderEditPage();
+    expect(await screen.findByTestId("pixel-canvas-host")).toBeInTheDocument();
     expect(screen.getByTestId("palette-toolbar-toggle")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "删除看板" })).toBeInTheDocument();
   });
 
   it("B3: ignores a stale dashboard response after the route id changes", async () => {
-    vi.stubEnv("VITE_DASHBOARD_PIXEL_CANVAS", "true");
     let resolveFirst!: (detail: unknown) => void;
     const first = new Promise((resolve) => {
       resolveFirst = resolve;
@@ -1080,7 +1069,6 @@ describe("dashboard admin smoke", () => {
   });
 
   it("B3: pixel on + v2 edits and saves without changing pixel geometry", async () => {
-    vi.stubEnv("VITE_DASHBOARD_PIXEL_CANVAS", "true");
     const user = userEvent.setup();
     const { colSpan: _colSpan, rowSpan: _rowSpan, ...base } = sampleWidgets[0];
     let saved: { layoutJson?: { version?: number; widgets?: Array<Record<string, unknown>> } } | undefined;
@@ -1118,7 +1106,6 @@ describe("dashboard admin smoke", () => {
   });
 
   it("B3: v2 save preserves widget array order and order while normalizing overlaps", async () => {
-    vi.stubEnv("VITE_DASHBOARD_PIXEL_CANVAS", "true");
     const user = userEvent.setup();
     const { colSpan: _colSpan, rowSpan: _rowSpan, ...base } = sampleWidgets[0];
     let saved: { layoutJson?: { widgets?: Array<Record<string, unknown>> } } | undefined;
@@ -1161,7 +1148,6 @@ describe("dashboard admin smoke", () => {
   });
 
   it("B3: pixel edit page exposes DE chrome and marks widget content non-draggable", async () => {
-    vi.stubEnv("VITE_DASHBOARD_PIXEL_CANVAS", "true");
     mockDashboardLoad(sampleWidgets.slice(0, 1));
     renderEditPage();
     const content = await screen.findByTestId("chart-mock");
@@ -1173,7 +1159,6 @@ describe("dashboard admin smoke", () => {
   });
 
   it("B3: inserts a new v2 widget inside the scrolled visible viewport", async () => {
-    vi.stubEnv("VITE_DASHBOARD_PIXEL_CANVAS", "true");
     const user = userEvent.setup();
     mockDashboardLoad([]);
     renderEditPage();
@@ -1192,7 +1177,6 @@ describe("dashboard admin smoke", () => {
   });
 
   it("B3: selecting a pixel chart opens chart rail without ChartInspector crash", async () => {
-    vi.stubEnv("VITE_DASHBOARD_PIXEL_CANVAS", "true");
     const { colSpan: _colSpan, rowSpan: _rowSpan, ...base } = sampleWidgets[1];
     mockApiFetch.mockImplementation(async (...args: unknown[]) => {
       const path = String(args[0] ?? "");
@@ -1229,7 +1213,6 @@ describe("dashboard admin smoke", () => {
   });
 
   it("B3: deletes a v2 widget without converting the layout", async () => {
-    vi.stubEnv("VITE_DASHBOARD_PIXEL_CANVAS", "true");
     const user = userEvent.setup();
     mockDashboardLoad(sampleWidgets.slice(0, 1));
     renderEditPage();

@@ -6,6 +6,7 @@ import {
   resolveBoxPadding,
   resolveBoxRadius,
 } from "@/components/dashboard/dashboardStyleConfig";
+import { formatWidgetBackgroundImageCss } from "@/components/dashboard/imageSourceUtils";
 import { resolveChartFrameOverlayLayer } from "@/lib/chartFrameBorderPresets";
 import {
   applyBackgroundOpacityOnly,
@@ -38,29 +39,49 @@ export function buildWidgetBackgroundPresentation(
   const useThemeDefault =
     options?.applyThemeDefaultSurface === true &&
     isThemeDefaultShellBackground(bg.background, colorScheme);
+  const mode = showBackground
+    ? (bg.backgroundMode ??
+        (bg.backgroundImage?.trim()
+          ? "image"
+          : bg.framePresetId
+            ? "frame"
+            : "image"))
+    : null;
+  const allowFrame = options?.allowDecorativeFrame !== false;
+  const willUseImage =
+    showBackground &&
+    mode !== "border" &&
+    mode !== "frame" &&
+    Boolean(bg.backgroundImage?.trim());
 
   if (useThemeDefault) {
     style.backgroundColor = "var(--dashboard-widget-surface)";
   } else if (coerced) {
     style.background = coerced;
+  } else if (willUseImage) {
+    style.backgroundColor = "transparent";
   } else {
     style.backgroundColor = "var(--dashboard-widget-surface)";
   }
 
   if (showBackground) {
-    const mode = bg.backgroundMode ?? (bg.framePresetId ? "frame" : "image");
-    const allowFrame = options?.allowDecorativeFrame !== false;
     if (allowFrame && mode === "frame" && bg.framePresetId) {
       frameLayer = resolveChartFrameOverlayLayer(bg.framePresetId, bg.frameColor, radius);
     } else if (mode !== "border" && bg.backgroundImage) {
-      const imageUrl = `url(${bg.backgroundImage})`;
+      const imageUrl = formatWidgetBackgroundImageCss(bg.backgroundImage);
       const blurPx = bg.backdropBlur ?? 0;
+      const blurStyle = blurPx > 0 ? buildWidgetImageBlurStyle(blurPx) : null;
       imageLayer = {
         backgroundImage: imageUrl,
-        backgroundSize: "cover",
+        backgroundSize: "100% 100%",
+        backgroundRepeat: "no-repeat",
         backgroundPosition: "center",
         borderRadius: radius,
-        ...(blurPx > 0 ? buildWidgetImageBlurStyle(blurPx) : {}),
+        transform: blurStyle?.transform ? `translateZ(0) ${blurStyle.transform}` : "translateZ(0)",
+        backfaceVisibility: "hidden",
+        ...(blurStyle
+          ? { filter: blurStyle.filter, transformOrigin: blurStyle.transformOrigin }
+          : {}),
       };
     }
     if (bg.opacity != null) style.opacity = bg.opacity;

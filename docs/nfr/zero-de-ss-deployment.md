@@ -12,7 +12,9 @@
 
 | 变量 | 值 | 说明 |
 |------|-----|------|
-| `NFR08_RUNTIME_MODE` | `permissive`（默认）/ `strict` | strict 时 runtime 或 compose 违规 → `rejected` / assert 503 |
+| 门禁 | 始终 strict | runtime 或 compose 违规 → `rejected` / assert 503 |
+
+> 本项目不提供 `NFR08_RUNTIME_MODE` 等运行时功能开关。
 
 ## Compose 禁入规则
 

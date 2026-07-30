@@ -14,6 +14,15 @@ export function isImageSourceValue(value: string): boolean {
   return isHttpImageUrl(trimmed) || isDataImageUrl(trimmed);
 }
 
+/** CSS background-image：避免重复 url() 包裹，data URL 用引号防止解析失败 */
+export function formatWidgetBackgroundImageCss(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (/^url\s*\(/i.test(trimmed)) return trimmed;
+  const escaped = trimmed.replace(/"/g, '\\"');
+  return `url("${escaped}")`;
+}
+
 export async function readImageFileAsDataUrl(
   file: File,
   maxBytes = MAX_IMAGE_SOURCE_BYTES,

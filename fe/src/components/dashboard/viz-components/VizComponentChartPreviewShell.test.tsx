@@ -58,6 +58,34 @@ describe("VizComponentChartPreviewShell", () => {
     expect(frame.style.backgroundImage).toContain("data:image/svg+xml");
   });
 
+  it("renders background image on shell layer from deStyle", () => {
+    const widget: LayoutWidget = {
+      id: "vc-edit-3",
+      type: "chart",
+      title: "带底图",
+      colSpan: 12,
+      rowSpan: 8,
+      order: 0,
+      chartConfig: patchChartDeStyleNested(defaultChartConfig("line"), "background", {
+        backgroundShow: true,
+        backgroundMode: "image",
+        backgroundImage: "data:image/svg+xml;base64,PHN2Zy8+",
+      }),
+    };
+
+    render(
+      <VizComponentChartPreviewShell
+        widget={widget as LayoutWidget & { chartConfig: NonNullable<typeof widget.chartConfig> }}
+      >
+        <div>chart</div>
+      </VizComponentChartPreviewShell>,
+    );
+
+    const bg = document.querySelector('[data-testid="viz-chart-shell-bg-0"]') as HTMLElement | null;
+    expect(bg?.style.backgroundImage).toContain("data:image/svg+xml");
+    expect(bg?.style.backgroundSize).toBe("100% 100%");
+  });
+
   it("hides title bar in compact list-card mode", () => {
     const widget: LayoutWidget = {
       id: "vc-card-1",

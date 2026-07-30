@@ -24,8 +24,7 @@
 
 | 变量 | 说明 |
 |------|------|
-| `DASHBOARD_AVAILABILITY_MODE=strict` | `overallStatus != available` 或 smoke `allAvailable=false` 时 HTTP 503 `DASHBOARD_AVAILABILITY_BREACH` |
-| `DASHBOARD_AVAILABILITY_MODE=permissive` | 默认；仅返回报告 JSON |
+| 门禁 | 始终 strict | `overallStatus != available` 或 smoke `allAvailable=false` 时 HTTP 503 `DASHBOARD_AVAILABILITY_BREACH` |
 
 ## CI / pytest
 

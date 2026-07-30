@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import sys
 import uuid
 from collections.abc import Generator
 from unittest.mock import patch
@@ -19,9 +20,7 @@ _R53_SQLITE_URL = "sqlite+pysqlite:///file:dash_rpt_query_nfr_r53?mode=memory&ca
 @pytest.fixture(scope="module", autouse=True)
 def r53_sqlite_env():
     previous_db = os.environ.get("DATABASE_URL")
-    previous_nfr08 = os.environ.get("NFR08_RUNTIME_MODE")
     os.environ["DATABASE_URL"] = _R53_SQLITE_URL
-    os.environ.setdefault("NFR08_RUNTIME_MODE", "permissive")
     get_settings.cache_clear()
     from app.auth.models import Base as AuthBase, get_meta_engine as auth_engine
     from app.datasources.models import Base, get_meta_engine
@@ -44,10 +43,6 @@ def r53_sqlite_env():
         os.environ.pop("DATABASE_URL", None)
     else:
         os.environ["DATABASE_URL"] = previous_db
-    if previous_nfr08 is None:
-        os.environ.pop("NFR08_RUNTIME_MODE", None)
-    else:
-        os.environ["NFR08_RUNTIME_MODE"] = previous_nfr08
     get_settings.cache_clear()
     get_meta_engine.cache_clear()
     auth_engine.cache_clear()
@@ -462,8 +457,8 @@ def test_nfr008_pyproject_violation_detected(client):
 
 
 def test_nfr008_loaded_modules_violation(client):
-    """T-NFR-R53-008-03: mock find_spec(superset) → loaded-modules fail。"""
-    with patch("importlib.util.find_spec", return_value=object()):
+    """T-NFR-R53-008-03: mock superset in sys.modules → loaded-modules fail。"""
+    with patch.dict(sys.modules, {"superset": object()}):
         resp = client.get("/api/v1/nfr/runtime-compliance", headers=AUTH)
     assert resp.status_code == 200
     mod = next(i for i in resp.json()["items"] if i["id"] == "loaded-modules")
@@ -471,27 +466,21 @@ def test_nfr008_loaded_modules_violation(client):
 
 
 def test_nfr008_strict_assert_503(client):
-    """T-NFR-R53-008-04: strict + 违规 → POST assert 503 NFR_RUNTIME_VIOLATION。"""
+    """T-NFR-R53-008-04: 违规 → POST assert 503 NFR_RUNTIME_VIOLATION。"""
     fake = '[project]\ndependencies = ["dataease-client"]\n'
-    with patch.dict(os.environ, {"NFR08_RUNTIME_MODE": "strict"}):
-        get_settings.cache_clear()
-        with patch("app.core.nfr.runtime_guard._read_pyproject_text", return_value=fake):
-            resp = client.post("/api/v1/nfr/runtime-compliance/assert", headers=AUTH)
-        get_settings.cache_clear()
+    with patch("app.core.nfr.runtime_guard._read_pyproject_text", return_value=fake):
+        resp = client.post("/api/v1/nfr/runtime-compliance/assert", headers=AUTH)
     assert resp.status_code == 503
     assert resp.json()["code"] == "NFR_RUNTIME_VIOLATION"
 
 
-def test_nfr008_permissive_assert_200(client):
-    """T-NFR-R53-008-05: permissive + 违规 → POST assert 200。"""
+def test_nfr008_violation_always_assert_503(client):
+    """T-NFR-R53-008-05: 无 permissive；违规始终 POST assert 503。"""
     fake = '[project]\ndependencies = ["dataease-client"]\n'
-    with patch.dict(os.environ, {"NFR08_RUNTIME_MODE": "permissive"}):
-        get_settings.cache_clear()
-        with patch("app.core.nfr.runtime_guard._read_pyproject_text", return_value=fake):
-            resp = client.post("/api/v1/nfr/runtime-compliance/assert", headers=AUTH)
-        get_settings.cache_clear()
-    assert resp.status_code == 200
-    assert resp.json()["overallStatus"] == "non_compliant"
+    with patch("app.core.nfr.runtime_guard._read_pyproject_text", return_value=fake):
+        resp = client.post("/api/v1/nfr/runtime-compliance/assert", headers=AUTH)
+    assert resp.status_code == 503
+    assert resp.json()["code"] == "NFR_RUNTIME_VIOLATION"
 
 
 def test_nfr008_zero_runtime_field(client):

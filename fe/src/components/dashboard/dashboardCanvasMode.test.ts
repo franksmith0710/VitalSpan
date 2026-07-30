@@ -51,11 +51,11 @@ const v2: DashboardLayoutV2 = {
 };
 
 describe("dashboard canvas mode", () => {
-  it("默认开启且仅显式 false 关闭像素画布", () => {
+  it("像素画布固定开启", () => {
     expect(isPixelCanvasEnabled(undefined)).toBe(true);
     expect(isPixelCanvasEnabled("")).toBe(true);
     expect(isPixelCanvasEnabled("0")).toBe(true);
-    expect(isPixelCanvasEnabled("false")).toBe(false);
+    expect(isPixelCanvasEnabled("false")).toBe(true);
   });
 
   it.each([

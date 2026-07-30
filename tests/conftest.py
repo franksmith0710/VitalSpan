@@ -13,8 +13,6 @@ os.environ.setdefault(
     "CREDENTIAL_SM4_KEY",
     "0123456789abcdef0123456789abcdef",
 )
-os.environ.setdefault("CREDENTIAL_CRYPTO_PROVIDER", "sm4")
-os.environ.setdefault("PASSWORD_HASH_ALGORITHM", "sm3")
 os.environ.setdefault("VITALSPAN_ENV", "development")
 
 import socket

@@ -149,8 +149,7 @@ def probe_dashboard_first_screen(
     payload: DashboardFirstScreenProbeIn, actor: UserContext | None = None,
 ) -> DashboardFirstScreenProbeOut:
     item = _guard(payload, actor or _default_actor())
-    strict = os.environ.get("DASHBOARD_FIRST_SCREEN_MODE") == "strict"
-    slow = item.simulate_slow or strict
+    slow = item.simulate_slow
     elapsed = _SLOW_ELAPSED_MS if slow else _MOCK_ELAPSED_MS
     within = elapsed <= item.budget_ms
     return DashboardFirstScreenProbeOut(

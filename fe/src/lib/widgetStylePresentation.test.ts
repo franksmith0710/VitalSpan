@@ -32,4 +32,30 @@ describe("buildWidgetBackgroundPresentation", () => {
     expect(presentation.frameLayer?.opacity).toBe(1);
     expect(presentation.frameLayer?.transform).toContain("translateZ");
   });
+
+  it("uses transparent shell surface when background image is active", () => {
+    const presentation = buildWidgetBackgroundPresentation(
+      {
+        backgroundShow: true,
+        backgroundMode: "image",
+        backgroundImage: "https://example.com/bg.png",
+      },
+      "light",
+    );
+    expect(presentation.surface.backgroundColor).toBe("transparent");
+    expect(presentation.backgroundLayer?.backgroundImage).toContain('url("https://example.com/bg.png")');
+  });
+
+  it("creates image layer when backgroundImage coexists with framePresetId and no explicit mode", () => {
+    const presentation = buildWidgetBackgroundPresentation(
+      {
+        backgroundShow: true,
+        backgroundImage: "https://example.com/bg.png",
+        framePresetId: "frame-1",
+      },
+      "light",
+    );
+    expect(presentation.backgroundLayer?.backgroundImage).toContain("example.com/bg.png");
+    expect(presentation.frameLayer).toBeNull();
+  });
 });

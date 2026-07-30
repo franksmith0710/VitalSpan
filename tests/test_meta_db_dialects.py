@@ -59,7 +59,6 @@ def test_xinchuang_platform_db_passes_for_mysql():
     settings = Settings(
         **_BASE_KWARGS,
         database_url="mysql+pymysql://vitalspan:vitalspan@localhost:3309/vitalspan",
-        xinchuang_mode="strict",
     )
     report = build_compliance_report(settings)
     platform_item = next(item for item in report.items if item.id == "xc-platform-db")

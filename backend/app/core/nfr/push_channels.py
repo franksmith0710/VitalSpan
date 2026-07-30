@@ -8,7 +8,7 @@ from app.core.nfr.errors import PUSH_CHANNEL_ALL_FAILED, PUSH_CHANNEL_DEGRADED
 from app.core.nfr.push_config import resolve_push_mode
 
 probe_push_dispatch_budget_ms: int = 100
-PUSH_CHANNEL_ORDER: tuple[str, ...] = ("browser", "wecom", "dingtalk")
+PUSH_CHANNEL_ORDER: tuple[str, ...] = ("wecom", "dingtalk")
 
 _PUSH_MOCK_LOG: list[dict] = []
 
@@ -28,13 +28,6 @@ def clear_push_mock_log() -> None:
 
 def _mock_send(channel: str, payload: dict, settings: Settings) -> bool:
     force_fail = os.environ.get("PUSH_MOCK_FORCE_FAIL")
-    if channel == "browser":
-        if not settings.push_browser_enabled:
-            return False
-        if force_fail in ("browser", "wecom"):
-            return False
-        _PUSH_MOCK_LOG.append({"channel": channel, "payload": payload})
-        return True
     if channel == "wecom":
         if not settings.push_wecom_webhook:
             return False

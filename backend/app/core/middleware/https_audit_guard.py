@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import json
-import os
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 
+from app.core.config import get_settings
 from app.core.logging import trace_id_var
 from app.core.nfr.https_audit import record_audit_event
 
@@ -14,7 +14,7 @@ from app.core.nfr.https_audit import record_audit_event
 class HttpsAuditGuardMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         response = await call_next(request)
-        if os.environ.get("HTTPS_AUDIT_GUARD") != "1":
+        if get_settings().vitalspan_env != "production":
             return response
         path = request.url.path
         if not path.startswith("/api/v1/"):

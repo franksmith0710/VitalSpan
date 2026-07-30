@@ -342,6 +342,37 @@ describe("resolveChartContentShellStyle", () => {
     expect(resolved.outer.style.borderColor).toBe("#112233");
     expect(resolved.outer.style.borderWidth).toBe(2);
   });
+
+  it("keeps chart background image on shape-inner shell like solid color", () => {
+    const cfg = patchChartDeStyleNested(baseCfg, "background", {
+      backgroundShow: true,
+      backgroundMode: "image",
+      backgroundImage: "data:image/svg+xml;base64,PHN2Zy8+",
+    });
+    const resolved = resolveChartContentShellStyle(undefined, cfg, "light");
+    expect(resolved.innerBackgroundLayer).toBeNull();
+    expect(resolved.outer.backgroundLayer?.backgroundImage).toContain("data:image/svg+xml");
+    expect(resolved.outer.backgroundLayer?.backgroundSize).toBe("100% 100%");
+    const merged = mergeShapeInnerPresentation({
+      outer: resolved.outer,
+      inner: resolved.inner,
+      innerBackgroundLayer: resolved.innerBackgroundLayer,
+      innerFrameLayer: resolved.innerFrameLayer,
+    });
+    expect(merged.shell.backgroundLayers[0]?.backgroundImage).toContain("data:image/svg+xml");
+    expect(merged.content.backgroundLayers.every((layer) => !layer?.backgroundImage)).toBe(true);
+    expect(merged.shell.style.backgroundColor).toBe("transparent");
+  });
+
+  it("prefers image mode when backgroundImage exists alongside framePresetId", () => {
+    const cfg = patchChartDeStyleNested(baseCfg, "background", {
+      backgroundShow: true,
+      backgroundImage: "https://example.com/panel.png",
+      framePresetId: "frame-1",
+    });
+    const resolved = resolveChartContentShellStyle(undefined, cfg, "light");
+    expect(resolved.outer.backgroundLayer?.backgroundImage).toContain("example.com/panel.png");
+  });
 });
 
 describe("mergeShapeInnerPresentation", () => {

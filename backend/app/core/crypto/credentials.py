@@ -3,7 +3,7 @@ from __future__ import annotations
 from cryptography.fernet import InvalidToken
 
 from app.core.config import get_settings
-from app.core.crypto.fernet import FernetCredentialProvider, decrypt_with_fernet_keys, fernet_candidate_keys
+from app.core.crypto.fernet import decrypt_with_fernet_keys, fernet_candidate_keys
 from app.core.crypto.sm4 import Sm4CredentialProvider
 
 SM4_PREFIX = "sm4:"
@@ -16,20 +16,10 @@ class CredentialDecryptError(Exception):
         super().__init__(message)
 
 
-def _write_provider():
-    settings = get_settings()
-    if settings.credential_crypto_provider == "sm4":
-        return Sm4CredentialProvider(settings.credential_sm4_key)
-    return FernetCredentialProvider(settings.credential_fernet_key)
-
-
-def _format_cipher(prefix: str, body: str) -> str:
-    return f"{prefix}:{body}"
-
-
 def encrypt_credential(plain: str) -> str:
-    provider = _write_provider()
-    return _format_cipher(provider.prefix, provider.encrypt(plain))
+    settings = get_settings()
+    body = Sm4CredentialProvider(settings.credential_sm4_key).encrypt(plain)
+    return f"{SM4_PREFIX}{body}"
 
 
 def _decrypt_body(prefix: str | None, body: str) -> str:

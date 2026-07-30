@@ -270,8 +270,6 @@ def main() -> int:
                 "CREDENTIAL_FERNET_KEY",
                 "CREDENTIAL_FERNET_KEY_PREVIOUS",
                 "CREDENTIAL_SM4_KEY",
-                "CREDENTIAL_CRYPTO_PROVIDER",
-                "PASSWORD_HASH_ALGORITHM",
             ]
         )
         + "\n",

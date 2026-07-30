@@ -18,7 +18,6 @@ _DASH_FF_SQLITE = "sqlite+pysqlite:///file:ff_track_d_dash005?mode=memory&cache=
 def dash005_sqlite_env():
     previous_db = os.environ.get("DATABASE_URL")
     os.environ["DATABASE_URL"] = _DASH_FF_SQLITE
-    os.environ.setdefault("NFR08_RUNTIME_MODE", "permissive")
     get_settings.cache_clear()
     from app.auth.models import Base as AuthBase, get_meta_engine as auth_engine
     from app.datasources.models import Base, get_meta_engine

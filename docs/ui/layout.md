@@ -142,7 +142,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │   ├── /system/audit                # 审计日志（含时间窗筛选）· table-list
 │   └── /system/grants               # 资源授权 · table-list + dialog form
 │
-├── 治理                            # H1：默认隐藏；仅 `VITE_GOV_NAV=1` 时侧栏可见
+├── 治理                            # H1：固定隐藏（无 env 开关；测试可传 resolveNav govNavEnabled）
 │   ├── /governance/catalog         # 深链可达；页顶诚实横幅（未对接真实总线）
 │   ├── /governance/tickets
 │   ├── /governance/publish
@@ -157,7 +157,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 | 分析 | 仪表板、数据大屏、可视化模板 | — | M1/M5 | admin/analyst/viewer | **展开**（主路径） |
 | 报表 | 报表中心（含「全部报表」hub；analyst/viewer 见全部报表+预制；admin 另含模板/调度） | `report:read` / `report:manage` | M1/M7/M11 | 全员 | **展开** |
 | 数据 | 数据连接（连接管理/同步任务）、**数据集** | `datasource:*` / `dataset:*` | M1/M13 | admin | **展开** |
-| 治理 | 治理流程、查询服务、查询设计器 | `governance:*` | M1/M13 | admin | **H1 默认隐藏**（`VITE_GOV_NAV=1` 才显示） |
+| 治理 | 治理流程、查询服务、查询设计器 | `governance:*` | M1/M13 | admin | **H1 固定隐藏**（测试专用 `govNavEnabled`） |
 | 我的 | 个人资料、偏好、安全 | — | — | 全员 | 头像菜单进入 |
 | 后台管理 | 权限与安全 / 组织 / 审计 | `system:*` | M1 | admin | 头像菜单进入 |
 
@@ -246,7 +246,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 | 分组 | admin | analyst | viewer |
 |------|-------|---------|--------|
 | 数据（含嵌套「实体与主题」子分组） | 可见 | 隐藏 | 隐藏 |
-| 治理 | **默认隐藏**（`VITE_GOV_NAV=1` 可见） | 隐藏 | 隐藏 |
+| 治理 | **固定隐藏** | 隐藏 | 隐藏 |
 | 分析（仪表板 / 数据大屏） | 可见 | 可见 | 可见 |
 | 报表 | 可见 | 可见 | 可见 |
 | 我的 | 可见 | 可见 | 可见 |
@@ -300,7 +300,7 @@ fe/src/
 |------|------|------|
 | 1.3.3 | 2026-07-20 | 大屏编辑：`DataScreenEditViewport` 与投放 `CanvasScaleViewport` 分层说明 |
 | 1.3.2 | 2026-07-17 | 数据大屏 Phase 1：补 `preview`/`share` 路由；`surfaceKind` 与 view/preview 语义区分 |
-| 1.3.1 | 2026-07-10 | H1：治理侧栏默认隐藏（`VITE_GOV_NAV`）；深链诚实横幅；RLS/审计 Admin 说明 |
+| 1.3.1 | 2026-07-10 | H1：治理侧栏固定隐藏；深链诚实横幅；RLS/审计 Admin 说明 |
 | 1.2.3 | 2026-07-09 | F-F VIEW-001 companion：`dashboardLayoutToView` 适配层与 Dashboard PUT 校验说明 |
 | 1.0.0 | 2026-07-03 | 初版：Admin/Portal/Embed 双端 IA（已废止） |
 | 1.1.0 | 2026-07-03 | 单应用 + Embed；合并消费路由；ADR 不做 `/portal/*` |

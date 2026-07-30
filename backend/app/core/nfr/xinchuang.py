@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import importlib.util
 import pathlib
+import sys
 import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -99,7 +99,7 @@ def probe_compliance_non_blocking(
 
 def _check_forbidden_runtime() -> XinchuangChecklistItem:
     for name in _FORBIDDEN_MODULES:
-        if importlib.util.find_spec(name) is not None:
+        if name in sys.modules:
             return XinchuangChecklistItem("xc-forbidden-runtime", "fail", f"forbidden module loaded: {name}")
     return XinchuangChecklistItem("xc-forbidden-runtime", "pass", "no forbidden BI runtime modules")
 
@@ -131,7 +131,7 @@ def build_compliance_report(settings: Settings | None = None) -> ComplianceRepor
         overall = "compliant"
     remediated = tuple(_with_remediation(i) for i in items)
     return ComplianceReport(
-        mode=settings.xinchuang_mode,
+        mode="strict",
         overall_status=overall,
         items=remediated,
         registered_xinchuang_connectors=tuple(xc_registered),
@@ -139,9 +139,6 @@ def build_compliance_report(settings: Settings | None = None) -> ComplianceRepor
 
 
 def assert_xinchuang_compliant(settings: Settings | None = None) -> None:
-    settings = settings or get_settings()
-    if settings.xinchuang_mode != "strict":
-        return
     report = build_compliance_report(settings)
     if report.overall_status == "non_compliant":
         raise XinchuangComplianceError(XINCHUANG_NON_COMPLIANT, "xinchuang compliance check failed")
@@ -181,7 +178,6 @@ def _parse_compose_services() -> tuple[str, ...]:
 
 
 def build_xinchuang_deployment_report() -> XinchuangDeploymentReport:
-    settings = get_settings()
     xc = _registered_xinchuang()
     registered_set = set(xc)
     missing = sorted(set(EXPECTED_XINCHUANG_TYPES) - registered_set)
@@ -191,7 +187,7 @@ def build_xinchuang_deployment_report() -> XinchuangDeploymentReport:
         ok = conn is not None
         smoke.append({"type": t, "ok": ok})
     overall = "accepted" if xc else "conditional"
-    if settings.xinchuang_deploy_mode == "strict" and not xc:
+    if not xc:
         raise XinchuangComplianceError(XINCHUANG_NON_COMPLIANT, "missing xinchuang connectors")
     return XinchuangDeploymentReport(
         schema_version="1.0",

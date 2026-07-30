@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import binascii
 import secrets
-import bcrypt
-from gmssl import sm3, func
 
-from app.core.config import get_settings
+import bcrypt
+from gmssl import func, sm3
 
 SM3_PREFIX = "$sm3$"
 
@@ -42,9 +41,6 @@ def _verify_sm3(password: str, password_hash: str) -> bool:
 
 
 def hash_password(password: str) -> str:
-    settings = get_settings()
-    if settings.password_hash_algorithm == "bcrypt":
-        return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
     return _hash_sm3(password)
 
 
@@ -59,7 +55,4 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 
 def needs_password_rehash(password_hash: str) -> bool:
-    settings = get_settings()
-    if settings.password_hash_algorithm == "bcrypt":
-        return False
     return is_legacy_bcrypt_hash(password_hash)

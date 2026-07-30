@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import importlib.util
-import os
+import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -55,15 +54,22 @@ def _scan_pyproject(text: str) -> RuntimeCheckItem:
     return RuntimeCheckItem("pyproject-dependencies", "pass", "No forbidden BI dependencies in pyproject")
 
 
-def _scan_modules() -> RuntimeCheckItem:
+def _forbidden_module_loaded() -> str | None:
     for mod in _FORBIDDEN_MODULES:
-        if importlib.util.find_spec(mod) is not None:
-            return RuntimeCheckItem(
-                "loaded-modules",
-                "fail",
-                f"Forbidden module loaded: {mod}",
-                "Remove superset/dataease from runtime environment",
-            )
+        if mod in sys.modules:
+            return mod
+    return None
+
+
+def _scan_modules() -> RuntimeCheckItem:
+    loaded = _forbidden_module_loaded()
+    if loaded:
+        return RuntimeCheckItem(
+            "loaded-modules",
+            "fail",
+            f"Forbidden module loaded: {loaded}",
+            "Remove superset/dataease from runtime environment",
+        )
     return RuntimeCheckItem("loaded-modules", "pass", "No forbidden BI modules loaded")
 
 
@@ -82,14 +88,8 @@ def build_runtime_report(pyproject_text: str | None = None) -> RuntimeCompliance
 
 
 def assert_runtime_compliant(mode: str | None = None) -> RuntimeComplianceReport:
-    if mode is None:
-        try:
-            from app.core.config import get_settings
-
-            mode = get_settings().nfr08_runtime_mode
-        except Exception:
-            mode = os.environ.get("NFR08_RUNTIME_MODE", "permissive")
+    del mode
     report = build_runtime_report()
-    if mode == "strict" and report.overall_status != "compliant":
+    if report.overall_status != "compliant":
         raise RuntimeComplianceError(NFR_RUNTIME_VIOLATION, "Runtime compliance violation detected")
     return report

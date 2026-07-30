@@ -1,4 +1,4 @@
-/** H1：治理侧栏开关。仅当 `VITE_GOV_NAV=1` 时为 true。 */
+/** 治理侧栏固定隐藏（未对接真实总线，不提供 env 开关）。 */
 export function isGovNavEnabledFromEnv(): boolean {
-  return import.meta.env.VITE_GOV_NAV === "1";
+  return false;
 }

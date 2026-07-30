@@ -24,9 +24,7 @@ _R57_SQLITE_URL = "sqlite+pysqlite:///file:dash_rpt_query_nfr_r57?mode=memory&ca
 @pytest.fixture(scope="module", autouse=True)
 def r57_sqlite_env():
     previous_db = os.environ.get("DATABASE_URL")
-    previous_nfr08 = os.environ.get("NFR08_RUNTIME_MODE")
     os.environ["DATABASE_URL"] = _R57_SQLITE_URL
-    os.environ.setdefault("NFR08_RUNTIME_MODE", "permissive")
     get_settings.cache_clear()
     from app.auth.models import Base as AuthBase, get_meta_engine as auth_engine
     from app.datasources.models import Base, get_meta_engine
@@ -49,10 +47,6 @@ def r57_sqlite_env():
         os.environ.pop("DATABASE_URL", None)
     else:
         os.environ["DATABASE_URL"] = previous_db
-    if previous_nfr08 is None:
-        os.environ.pop("NFR08_RUNTIME_MODE", None)
-    else:
-        os.environ["NFR08_RUNTIME_MODE"] = previous_nfr08
     get_settings.cache_clear()
     get_meta_engine.cache_clear()
     auth_engine.cache_clear()
@@ -633,24 +627,21 @@ def test_nfr008_deployment_report_accepted(client: TestClient):
     assert body["overallAcceptance"] == "accepted"
 
 
-def test_nfr008_pyproject_violation_conditional(client: TestClient):
-    """T-NFR-R57-008-02: mock pyproject 违规 → conditional + remediation_index。"""
+def test_nfr008_pyproject_violation_rejected(client: TestClient):
+    """T-NFR-R57-008-02: mock pyproject 违规 → rejected + remediation_index。"""
     fake = '[project]\ndependencies = ["apache-superset>=3.0"]\n'
     with patch("app.core.nfr.runtime_guard._read_pyproject_text", return_value=fake):
         resp = client.get("/api/v1/nfr/runtime-compliance/deployment-report", headers=AUTH)
     assert resp.status_code == 200
     body = resp.json()
-    assert body["overallAcceptance"] == "conditional"
+    assert body["overallAcceptance"] == "rejected"
     assert body["remediationIndex"]
 
 
-def test_nfr008_strict_rejected(client: TestClient):
-    """T-NFR-R57-008-03: strict + loaded-modules fail → rejected。"""
-    with patch.dict(os.environ, {"NFR08_RUNTIME_MODE": "strict"}):
-        get_settings.cache_clear()
-        with patch("importlib.util.find_spec", return_value=object()):
-            resp = client.get("/api/v1/nfr/runtime-compliance/deployment-report", headers=AUTH)
-        get_settings.cache_clear()
+def test_nfr008_violation_always_rejected(client: TestClient):
+    """T-NFR-R57-008-03: loaded-modules fail → rejected。"""
+    with patch.dict(sys.modules, {"superset": object()}):
+        resp = client.get("/api/v1/nfr/runtime-compliance/deployment-report", headers=AUTH)
     assert resp.status_code == 200
     assert resp.json()["overallAcceptance"] == "rejected"
 

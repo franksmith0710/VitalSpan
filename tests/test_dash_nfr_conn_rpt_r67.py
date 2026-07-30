@@ -19,9 +19,7 @@ _R67_WIDGET_ID = "22222222-2222-4222-8222-222222222222"
 @pytest.fixture(scope="module", autouse=True)
 def r67_sqlite_env():
     previous_db = os.environ.get("DATABASE_URL")
-    previous_nfr08 = os.environ.get("NFR08_RUNTIME_MODE")
     os.environ["DATABASE_URL"] = _R67_SQLITE_URL
-    os.environ.setdefault("NFR08_RUNTIME_MODE", "permissive")
     get_settings.cache_clear()
     from app.auth.models import Base as AuthBase, get_meta_engine as auth_engine
     from app.datasources.models import Base, get_meta_engine
@@ -47,10 +45,6 @@ def r67_sqlite_env():
         os.environ.pop("DATABASE_URL", None)
     else:
         os.environ["DATABASE_URL"] = previous_db
-    if previous_nfr08 is None:
-        os.environ.pop("NFR08_RUNTIME_MODE", None)
-    else:
-        os.environ["NFR08_RUNTIME_MODE"] = previous_nfr08
     get_settings.cache_clear()
     get_meta_engine.cache_clear()
     auth_engine.cache_clear()

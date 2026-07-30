@@ -49,7 +49,7 @@
 
 - 中间件注册顺序（`main.py`）：CORS → TraceId → Auth（后注册者先执行）
 - 鉴权逻辑委托 `auth/`；`AuthMiddleware` 由 `main.py` 注册，不在 `core/` 内实现
-- r53 NFR-008：`runtime_guard.py` 扫描 pyproject 禁止 superset/dataease 依赖 + `importlib` 模块探测；`GET/POST /api/v1/nfr/runtime-compliance`；env `NFR08_RUNTIME_MODE=strict|permissive`
+- r53 NFR-008：`runtime_guard.py` 扫描 pyproject 禁止 superset/dataease 依赖 + 已加载模块探测；`GET/POST /api/v1/nfr/runtime-compliance`；**始终 strict**（无 env 模式开关）
 - r57 NFR-008 companion：`deployment_report.py` — `build_deployment_acceptance_report`（`reportVersion=nfr08-deployment-v1`）；`overallAcceptance` accepted/rejected/conditional；`remediation_index` 聚合 fail 项；`GET /api/v1/nfr/runtime-compliance/deployment-report`；`probe_deployment_report_budget_ms` ≤100ms
 - r61 NFR-002：`report_perf.py` — 进程内 mock `elapsedMs=120` + budget/sample 守卫；`POST /api/v1/nfr/report-query-perf/probe|validate`；错误码 `REPORT_PERF_*`
 - r64 NFR-001：`dashboard_first_screen.py` — 进程内 mock `elapsedMs=800` + budget/widget 守卫；`POST /api/v1/nfr/dashboard-first-screen/probe|validate`；错误码 `DASHBOARD_FIRST_SCREEN_*`

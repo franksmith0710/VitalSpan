@@ -57,9 +57,6 @@ def main() -> int:
     get_settings.cache_clear()
     _load_backend_env()
     settings = get_settings()
-    if settings.credential_crypto_provider != "sm4":
-        print("CREDENTIAL_CRYPTO_PROVIDER 须为 sm4", file=sys.stderr)
-        return 1
 
     engine = create_engine(settings.database_url)
     ds_count = _migrate_table(engine, "data_sources", "password_encrypted", dry_run=args.dry_run)

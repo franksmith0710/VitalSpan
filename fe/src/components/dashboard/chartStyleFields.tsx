@@ -329,7 +329,13 @@ export function ChartBackgroundDeModeFields({
           inputClassName={INSPECTOR_CTRL}
           value={value.backgroundImage ?? ""}
           onChange={(backgroundImage) =>
-            onChange({ backgroundImage, backgroundShow: true, backgroundMode: "image" })
+            onChange({
+              backgroundImage,
+              backgroundShow: true,
+              backgroundMode: "image",
+              framePresetId: undefined,
+              frameColor: undefined,
+            })
           }
         />
       ) : useLineBorder ? (

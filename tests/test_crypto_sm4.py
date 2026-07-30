@@ -13,7 +13,6 @@ from app.core.crypto.sm4 import Sm4CredentialProvider
 
 @pytest.fixture(autouse=True)
 def _sm4_env(monkeypatch):
-    monkeypatch.setenv("CREDENTIAL_CRYPTO_PROVIDER", "sm4")
     monkeypatch.setenv("CREDENTIAL_SM4_KEY", "0123456789abcdef0123456789abcdef")
     get_settings.cache_clear()
     yield

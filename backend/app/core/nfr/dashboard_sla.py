@@ -129,8 +129,7 @@ def probe_dashboard_sla(
     item = _guard(payload, actor or _default_actor())
     uptime = 99.0 if item.simulate_breach else _MOCK_UPTIME
     within = uptime >= item.sla_target_percent
-    strict = os.environ.get("DASHBOARD_SLA_MODE") == "strict"
-    if (item.simulate_breach or strict) and not within:
+    if item.simulate_breach and not within:
         raise DashboardSlaError(DASHBOARD_SLA_BELOW_TARGET, "SLA below target", 503)
     return DashboardSlaProbeOut(
         dashboard_id=item.dashboard_id,

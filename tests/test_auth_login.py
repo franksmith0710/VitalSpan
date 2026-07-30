@@ -42,7 +42,6 @@ def test_bearer_dev_rejected(client):
 
 def test_dev_switch_not_found_in_production(client, monkeypatch):
     monkeypatch.setenv("VITALSPAN_ENV", "production")
-    monkeypatch.setenv("NFR08_RUNTIME_MODE", "strict")
     monkeypatch.setenv("SECRET_KEY", "production-secret-key-min-32-chars!!")
     monkeypatch.setenv("CREDENTIAL_SM4_KEY", "fedcba9876543210fedcba9876543210")
     monkeypatch.setenv(
@@ -110,7 +109,6 @@ def test_login_bcrypt_upgrades_to_sm3(client, monkeypatch):
     from app.auth.models import AuthUser, Base, get_meta_engine, get_meta_session
     from app.auth.password.service import needs_password_rehash
 
-    monkeypatch.setenv("PASSWORD_HASH_ALGORITHM", "sm3")
     from app.core.config import get_settings
 
     get_settings.cache_clear()

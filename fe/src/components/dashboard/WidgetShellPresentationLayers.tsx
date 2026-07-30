@@ -10,6 +10,7 @@ export function WidgetShellBackgroundLayers({ layers, prefix }: LayerStackProps)
     layer ? (
       <div
         key={`${prefix}-bg-${index}`}
+        data-testid={`${prefix}-bg-${index}`}
         className="pointer-events-none absolute inset-0 z-0"
         style={layer}
         aria-hidden

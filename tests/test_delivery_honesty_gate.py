@@ -27,11 +27,11 @@ def test_honesty_gate_schedule_default_artifact_not_mock_scheme() -> None:
 
 
 def test_honesty_gate_h1_gov_nav_default_off() -> None:
-    """H1: 治理侧栏默认隐藏，除非 VITE_GOV_NAV=1。"""
+    """H1: 治理侧栏固定隐藏（无 env 开关）。"""
     gov_nav = (_ROOT / "fe" / "src" / "lib" / "gov-nav.ts").read_text(encoding="utf-8")
-    assert 'import.meta.env.VITE_GOV_NAV === "1"' in gov_nav
+    assert "returnfalse" in gov_nav.replace(" ", "")
     resolve_nav = (_ROOT / "fe" / "src" / "lib" / "resolve-nav.ts").read_text(encoding="utf-8")
-    assert "isGovNavEnabledFromEnv" in resolve_nav
+    assert "govNavEnabled??false" in resolve_nav.replace(" ", "")
 
 
 def test_honesty_gate_filter_controls_are_real() -> None:

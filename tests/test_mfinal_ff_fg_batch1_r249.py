@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
-from jwt_auth import jwt_auth_headers
+from jwt_auth import AUTH
 
 from app.core.config import get_settings
 from app.core.nfr.deployment_report import (
@@ -24,7 +24,6 @@ from app.datasources.dialects.impala import ImpalaConnector
 from app.datasources.registry import export_type_catalog
 from app.main import app
 
-AUTH = jwt_auth_headers()
 _R249_SQLITE_URL = "sqlite+pysqlite:///file:mfinal_ff_fg_r249?mode=memory&cache=shared&uri=true"
 
 pytestmark = [pytest.mark.integration]
@@ -99,8 +98,8 @@ def test_nfr_r249_008_01_deployment_report_accepted_with_compose(client: TestCli
     assert len(body["composeServices"]) >= 1
 
 
-def test_nfr_r249_008_02_forbidden_compose_conditional(client: TestClient):
-    """T-NFR-R249-008-02: mock compose 含 superset → forbiddenComposeHits 非空，conditional。"""
+def test_nfr_r249_008_02_forbidden_compose_rejected(client: TestClient):
+    """T-NFR-R249-008-02: mock compose 含 superset → forbiddenComposeHits 非空，rejected。"""
     with patch(
         "app.core.nfr.deployment_report._read_compose_text",
         return_value=MOCK_COMPOSE_SUPERSET,
@@ -108,19 +107,16 @@ def test_nfr_r249_008_02_forbidden_compose_conditional(client: TestClient):
         resp = client.get("/api/v1/nfr/runtime-compliance/deployment-report", headers=AUTH)
     body = resp.json()
     assert body["forbiddenComposeHits"]
-    assert body["overallAcceptance"] == "conditional"
+    assert body["overallAcceptance"] == "rejected"
 
 
-def test_nfr_r249_008_03_strict_forbidden_rejected(client: TestClient):
-    """T-NFR-R249-008-03: strict + forbidden hit → rejected。"""
-    with patch.dict(os.environ, {"NFR08_RUNTIME_MODE": "strict"}):
-        get_settings.cache_clear()
-        with patch(
-            "app.core.nfr.deployment_report._read_compose_text",
-            return_value=MOCK_COMPOSE_SUPERSET,
-        ):
-            resp = client.get("/api/v1/nfr/runtime-compliance/deployment-report", headers=AUTH)
-        get_settings.cache_clear()
+def test_nfr_r249_008_03_forbidden_always_rejected(client: TestClient):
+    """T-NFR-R249-008-03: forbidden hit → rejected（无 permissive）。"""
+    with patch(
+        "app.core.nfr.deployment_report._read_compose_text",
+        return_value=MOCK_COMPOSE_SUPERSET,
+    ):
+        resp = client.get("/api/v1/nfr/runtime-compliance/deployment-report", headers=AUTH)
     assert resp.json()["overallAcceptance"] == "rejected"
 
 
@@ -150,12 +146,11 @@ def test_nfr_r249_008_05_budget_ms():
 
 
 def test_nfr_r249_008_06_strict_assert_503(client: TestClient):
-    """T-NFR-R249-008-06: POST assert strict 违规 → 503 NFR_RUNTIME_VIOLATION。"""
-    with patch.dict(os.environ, {"NFR08_RUNTIME_MODE": "strict"}):
-        get_settings.cache_clear()
-        with patch("importlib.util.find_spec", return_value=object()):
-            resp = client.post("/api/v1/nfr/runtime-compliance/assert", headers=AUTH)
-        get_settings.cache_clear()
+    """T-NFR-R249-008-06: POST assert 违规 → 503 NFR_RUNTIME_VIOLATION。"""
+    import sys
+
+    with patch.dict(sys.modules, {"superset": object()}):
+        resp = client.post("/api/v1/nfr/runtime-compliance/assert", headers=AUTH)
     assert resp.status_code == 503
     assert resp.json()["code"] == "NFR_RUNTIME_VIOLATION"
 

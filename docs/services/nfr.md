@@ -25,7 +25,7 @@
 
 ## 依赖
 
-- `core/config`：`PUSH_*`、`XINCHUANG_MODE`、`CREDENTIAL_SM4_KEY`、`PASSWORD_HASH_ALGORITHM` 环境变量
+- `core/config`：`PUSH_*` webhook、`CREDENTIAL_SM4_KEY` 等密钥/连接 env（**无** `XINCHUANG_MODE` / `NFR08_RUNTIME_MODE` 类产品开关）
 - `core/crypto/`：SM4 凭证加解密、SM3 密码哈希（Fernet/bcrypt 遗留双读）
 - `datasources/registry`：`register_dialect`、类型清单（信创连接器探测）
 - `governance/publish/errors`：GOV 发布错误码常量集中出口（`core/nfr/errors.py`）
@@ -52,4 +52,4 @@
 - r46：`core/nfr/` 五文件（errors、plugin_extension、push_config、xinchuang）；`gbase` 经 `register_connector_plugin` 登记演练扩展点路径
 - r51 companion：`browser_matrix.py` / `push_channels.py`；信创 remediation + 非阻塞 probe；`describe_registration_path` + registry probe；内存 `_PUSH_MOCK_LOG` 非生产持久化
 - 推送 webhook 仅返回 configured 布尔，不泄露 URL 明文
-- `XINCHUANG_MODE=strict` 下平台元库须为 postgresql / mysql / sqlite 协议之一；否则 422 `XINCHUANG_NON_COMPLIANT`
+- 信创合规始终 strict；平台元库须为 postgresql / mysql / sqlite 协议之一，否则 422 `XINCHUANG_NON_COMPLIANT`

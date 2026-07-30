@@ -111,8 +111,7 @@ def _guard_scope(audit_scope: str) -> None:
 
 def get_https_audit_status() -> HttpsAuditStatusOut:
     settings = get_settings()
-    mode = os.environ.get("HTTPS_AUDIT_MODE", "auto")
-    https_enforced = mode == "strict" or bool(getattr(settings, "cors_origins", None))
+    https_enforced = bool(settings.cors_origins)
     webhook_https_only = True
     return HttpsAuditStatusOut(
         httpsEnforced=https_enforced,
