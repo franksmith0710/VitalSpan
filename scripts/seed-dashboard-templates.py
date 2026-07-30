@@ -46,6 +46,8 @@ def main() -> int:
         ).all()
         for key in keys:
             print(f"  - {key}")
+        print("")
+        print("若图表仍无数据，请运行: powershell -File scripts/seed-demo-mysql.ps1")
         return 0
     finally:
         session.close()

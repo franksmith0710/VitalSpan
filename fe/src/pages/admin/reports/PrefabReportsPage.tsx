@@ -1,12 +1,18 @@
-import { useEffect, useRef } from "react";
-import { useSearchParams } from "react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router";
 import { useAuth } from "@/context/auth-context";
 import { matchesCapability, resolveEffectiveCapabilities } from "@/lib/capabilities";
-import { Lock } from "lucide-react";
+import { ArrowLeft, Lock } from "lucide-react";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import {
+  ListPageSection,
+  ListPageTableFrame,
+  ListPageToolbar,
+  PageErrorBanner,
+} from "@/components/layout/list-page-kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { mapApiError } from "@/lib/apiError";
 import { ApiRequestError } from "@/lib/api";
@@ -17,7 +23,6 @@ import { PrefabBindingForm } from "./components/PrefabBindingForm";
 import { ReportExportCard } from "./components/ReportExportCard";
 import { usePrefabReports } from "./usePrefabReports";
 import { PREFAB_BINDING_QUERY } from "./reportRoutes";
-import { PageErrorBanner } from "@/components/ui/page-error-banner";
 
 function ResultTable({ columns, rows }: { columns: string[]; rows: unknown[][] }) {
   return (
@@ -56,9 +61,21 @@ export function PrefabReportsPage() {
   const [searchParams] = useSearchParams();
   const bindingFromUrl = searchParams.get(PREFAB_BINDING_QUERY);
   const autoRanBindingRef = useRef<string | null>(null);
+  const [search, setSearch] = useState("");
 
   const bindings = bindingsQuery.data?.items ?? [];
+  const filteredBindings = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return bindings;
+    return bindings.filter(
+      (binding) =>
+        binding.displayName.toLowerCase().includes(q) ||
+        binding.analysisType.toLowerCase().includes(q) ||
+        binding.entityTypeCode.toLowerCase().includes(q),
+    );
+  }, [bindings, search]);
   const section = runMutation.data?.renderSpec.sections[0];
+  const runningKey = runMutation.isPending ? runMutation.variables : null;
   const runForbidden =
     runMutation.isError &&
     runMutation.error instanceof ApiRequestError &&
@@ -79,67 +96,110 @@ export function PrefabReportsPage() {
   }, [bindingFromUrl, bindings, bindingsQuery.isLoading, isRunning, runBinding]);
 
   return (
-    <AdminPageShell title="预制分析报表" description="浏览并运行系统预置的分析报表。">
+    <AdminPageShell
+      title="预制分析报表"
+      description="浏览并运行系统预置的分析报表。"
+      actions={
+        <Button type="button" variant="outline" size="sm" asChild>
+          <Link to="/admin/reports/center">
+            <ArrowLeft className="size-4" aria-hidden />
+            返回全部报表
+          </Link>
+        </Button>
+      }
+    >
       <div className="flex flex-col gap-6">
-        {bindingsQuery.isError ? (
-          <PageErrorBanner
-            message={mapApiError(bindingsQuery.error)}
-            onRetry={() => void bindingsQuery.refetch()}
+        <ListPageSection>
+          <ListPageToolbar
+            filters={
+              <>
+                <Input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="搜索报表名称或分析类型…"
+                  className="max-w-md"
+                  aria-label="搜索预制报表"
+                  disabled={bindingsQuery.isLoading || bindings.length === 0}
+                />
+                {!bindingsQuery.isLoading && bindings.length > 0 ? (
+                  <span className="text-theme-xs text-gray-500 dark:text-gray-400">
+                    筛选结果 {filteredBindings.length} 条
+                  </span>
+                ) : null}
+              </>
+            }
           />
-        ) : null}
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-theme-base">报表列表</CardTitle>
-          </CardHeader>
-          <CardContent>
+          {bindingsQuery.isError ? (
+            <div className="shrink-0 border-b border-gray-100 px-5 py-3 dark:border-white/[0.06]">
+              <PageErrorBanner
+                message={mapApiError(bindingsQuery.error)}
+                onRetry={() => void bindingsQuery.refetch()}
+              />
+            </div>
+          ) : null}
+
+          <ListPageTableFrame>
             {bindingsQuery.isLoading ? (
-              <div className="space-y-3">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
+              <div className="space-y-2">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
               </div>
             ) : bindings.length === 0 ? (
               <PrefabReportsEmptyPreview />
+            ) : filteredBindings.length === 0 ? (
+              <PanelEmptyState title="无匹配报表" description="请调整搜索词。" variant="framed" />
             ) : (
-              <ScrollArea className="max-h-[320px]">
-                <ul className="divide-y divide-gray-100 dark:divide-gray-800">
-                  {bindings.map((binding) => (
-                    <li
-                      key={binding.bindingKey}
-                      className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between"
-                    >
-                      <div className="min-w-0">
-                        <TruncateHint
-                          title={binding.displayName}
-                          as="p"
-                          className="max-w-[200px] text-theme-sm font-medium text-gray-800 dark:text-white/90"
-                        >
-                          {binding.displayName}
-                        </TruncateHint>
-                        <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-                          {binding.analysisType} · {binding.entityTypeCode}
-                        </p>
-                      </div>
-                      <Button
-                        type="button"
-                        size="sm"
-                        disabled={runMutation.isPending}
-                        aria-label={`运行报表 ${binding.displayName}`}
-                        onClick={() => runMutation.mutate(binding.bindingKey)}
+              <div className="overflow-x-only">
+                <table className="min-w-[640px] w-full text-left text-theme-sm">
+                  <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
+                    <tr>
+                      <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">报表名称</th>
+                      <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">分析类型</th>
+                      <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">实体类型</th>
+                      <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredBindings.map((binding) => (
+                      <tr
+                        key={binding.bindingKey}
+                        className="border-b border-gray-100 dark:border-gray-800"
                       >
-                        {runMutation.isPending ? "运行中…" : "运行"}
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              </ScrollArea>
+                        <td className="px-4 py-3">
+                          <TruncateHint
+                            title={binding.displayName}
+                            as="span"
+                            className="font-medium text-gray-800 dark:text-white/90"
+                          >
+                            {binding.displayName}
+                          </TruncateHint>
+                        </td>
+                        <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{binding.analysisType}</td>
+                        <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{binding.entityTypeCode}</td>
+                        <td className="px-4 py-3">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={runningKey === binding.bindingKey}
+                            aria-label={`运行报表 ${binding.displayName}`}
+                            onClick={() => runMutation.mutate(binding.bindingKey)}
+                          >
+                            {runningKey === binding.bindingKey ? "运行中…" : "运行"}
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
-          </CardContent>
-        </Card>
+          </ListPageTableFrame>
+        </ListPageSection>
 
         {canManage ? <PrefabBindingForm binding={bindings[0] ?? null} /> : null}
-
-        <ReportExportCard />
 
         {runForbidden ? (
           <Card>
@@ -172,13 +232,17 @@ export function PrefabReportsPage() {
               <CardTitle className="text-theme-base">运行结果</CardTitle>
             </CardHeader>
             <CardContent className="min-h-[240px]">
-              {section.kind === "table" || !section.chartType ? (
-                <ResultTable columns={section.columns} rows={section.rows} />
-              ) : (
-                <ResultTable columns={section.columns} rows={section.rows} />
-              )}
+              <ResultTable columns={section.columns} rows={section.rows} />
             </CardContent>
           </Card>
+        ) : null}
+
+        {canManage ? (
+          <ReportExportCard
+            showTemplateIdField
+            disabled={!section}
+            disabledHint={!section ? "请先运行预制分析；导出需指定报表模板 ID。" : undefined}
+          />
         ) : null}
       </div>
     </AdminPageShell>

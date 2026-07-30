@@ -14,6 +14,7 @@ import {
   syncChartWidgetsForColorScheme,
 } from "./dashboardThemeVariants";
 import { CANVAS_BG_DARK_DEFAULT, CANVAS_BG_LIGHT_DEFAULT } from "./dashboardStyleConfig";
+import { hydrateDashboardStyle } from "./stylePipeline";
 
 describe("dashboardThemeVariants", () => {
   it("switching to dark applies default dark canvas when no variant saved", () => {
@@ -82,6 +83,26 @@ describe("dashboardThemeVariants", () => {
     expect(next.widgetStyle?.background).toBe("#1e293b");
     expect(next.themeVariants?.light?.canvasBackground).toBe(CANVAS_BG_LIGHT_DEFAULT);
     expect(next.themeVariants?.dark?.canvasBackground).toBe(CANVAS_BG_DARK_DEFAULT);
+  });
+
+  it("preserves template palette and widget border when legacy themeAccent is stripped", () => {
+    const hydrated = hydrateDashboardStyle({
+      surfaceKind: "data-screen",
+      colorScheme: "dark",
+      themeAccent: "#22d3ee",
+      canvasBackgroundCustom: true,
+      canvasBackground: "radial-gradient(ellipse 100% 85% at 50% -5%, #22d3ee40 0%, #0f172a 42%, #020617 100%)",
+      canvasBackgroundImage: "/template-assets/backgrounds/screen-gov-cyan-grid.svg",
+      paletteId: "custom",
+      paletteColors: ["#22d3ee", "#38bdf8", "#0ea5e9"],
+      widgetStyle: {
+        borderColor: "#22d3ee80",
+        borderEnabled: true,
+      },
+    });
+    expect(hydrated.themeAccent).toBeUndefined();
+    expect(hydrated.widgetStyle?.borderColor).toBe("#22d3ee80");
+    expect(hydrated.paletteColors).toEqual(["#22d3ee", "#38bdf8", "#0ea5e9"]);
   });
 
   it("hydrateDashboardStyleConfig resets deprecated themeAccent to standard presets", () => {

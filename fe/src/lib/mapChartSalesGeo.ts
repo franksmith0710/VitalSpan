@@ -18,12 +18,16 @@ export function resolveSampleDbDatasource(
   items: SampleDatasourceItem[],
 ): SampleDatasourceItem | null {
   const score = (ds: SampleDatasourceItem): number => {
-    const hay = `${ds.code} ${ds.name} ${ds.database ?? ""}`.toLowerCase();
-    if (hay.includes("sample_db")) return 4;
-    if (/sample-mysql|demo-mysql/.test(hay)) return 3;
-    if (/\bsample\b/.test(hay)) return 2;
-    if (/3307/.test(hay)) return 1;
-    return 0;
+    const dbName = (ds.database ?? "").toLowerCase();
+    const code = ds.code.toLowerCase();
+    const name = ds.name.toLowerCase();
+    let s = 0;
+    if (dbName === "sample_db") s += 10;
+    else if (dbName.includes("sample_db")) s += 6;
+    if (code === "sample-mysql") s += 4;
+    else if (/sample-mysql|demo-mysql/.test(`${code} ${name}`)) s += 3;
+    else if (/\bsample\b/.test(`${code} ${name}`)) s += 1;
+    return s;
   };
   const ranked = items
     .map((ds) => ({ ds, s: score(ds) }))

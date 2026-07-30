@@ -67,7 +67,19 @@ def _unique_template_key(db: Session, base: str) -> str:
         suffix += 1
 
 
-def _to_out(row: DashboardTemplate) -> DashboardTemplateOut:
+def _layout_for_client(db: Session, layout: dict[str, Any]) -> dict[str, Any]:
+    """Hub 预览/详情：修复 legacy 字段并绑定 sample_db 演示数据源。"""
+    repaired = repair_legacy_template_layout(layout)
+    demo_ds = resolve_sample_db_datasource_id(db)
+    return bind_template_demo_datasources(repaired, demo_ds)
+
+
+def _to_out(row: DashboardTemplate, db: Session | None = None) -> DashboardTemplateOut:
+    layout = row.layout_json
+    if db is not None:
+        layout = _layout_for_client(db, layout)
+    else:
+        layout = repair_legacy_template_layout(layout)
     return DashboardTemplateOut(
         id=row.id,
         template_key=row.template_key,
@@ -76,7 +88,7 @@ def _to_out(row: DashboardTemplate) -> DashboardTemplateOut:
         category_key=row.category_key,
         surface_kind=row.surface_kind,  # type: ignore[arg-type]
         status=row.status,  # type: ignore[arg-type]
-        layout_json=repair_legacy_template_layout(row.layout_json),
+        layout_json=layout,
         thumbnail_ref=row.thumbnail_ref,
         source_dashboard_id=row.source_dashboard_id,
         visibility=row.visibility,  # type: ignore[arg-type]
@@ -180,7 +192,7 @@ def get_template(db: Session, template_id: uuid.UUID, actor: UserContext) -> Das
     if row is None:
         raise DashboardTemplateError("DASH_TEMPLATE_NOT_FOUND", "Template not found", 404)
     assert_template_read(actor, row)
-    return _to_out(row)
+    return _to_out(row, db)
 
 
 def _resolve_layout_from_create(

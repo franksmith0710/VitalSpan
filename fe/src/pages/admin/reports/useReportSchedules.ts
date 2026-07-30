@@ -113,6 +113,34 @@ export const SCHEDULE_ACTION_LABELS: Record<string, string> = {
   cancel: "取消",
 };
 
+export const SCHEDULE_STATUS_LABELS: Record<string, string> = {
+  scheduled: "已调度",
+  paused: "已暂停",
+  draft: "草稿",
+  cancelled: "已取消",
+};
+
+export const EXECUTION_STATUS_LABELS: Record<string, string> = {
+  pending: "进行中",
+  succeeded: "成功",
+  failed: "失败",
+  semi_real_succeeded: "执行成功",
+  semi_real_failed: "执行失败",
+  semi_real_delivery_degraded: "已生成（投递降级）",
+};
+
+export function localizeScheduleStatus(status: string): string {
+  return SCHEDULE_STATUS_LABELS[status] ?? status;
+}
+
+export function localizeExecutionStatus(status: string): string {
+  if (EXECUTION_STATUS_LABELS[status]) return EXECUTION_STATUS_LABELS[status];
+  if (status.includes("failed")) return "失败";
+  if (status.includes("degraded")) return "部分成功";
+  if (status.includes("succeeded")) return "成功";
+  return status;
+}
+
 export function scheduleStatusColor(status: string): "primary" | "success" | "warning" | "error" {
   if (status === "scheduled") return "success";
   if (status === "paused" || status === "draft") return "warning";

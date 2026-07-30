@@ -112,6 +112,29 @@ describe("dashboardStyleConfig theme vs background", () => {
     });
   });
 
+  it("layers template background image over accent radial gradient", () => {
+    expect(
+      canvasBackgroundStyle({
+        colorScheme: "dark",
+        canvasBackgroundCustom: true,
+        canvasBackground:
+          "radial-gradient(ellipse 100% 85% at 50% -5%, #22d3ee40 0%, #0f172a 42%, #020617 100%)",
+        canvasBackgroundImage: "/template-assets/backgrounds/screen-gov-cyan-grid.svg",
+      }),
+    ).toMatchObject({
+      backgroundImage: expect.stringContaining("screen-gov-cyan-grid.svg"),
+      backgroundSize: "cover, cover",
+    });
+    const bgImage = canvasBackgroundStyle({
+      colorScheme: "dark",
+      canvasBackgroundCustom: true,
+      canvasBackground:
+        "radial-gradient(ellipse 100% 85% at 50% -5%, #22d3ee40 0%, #0f172a 42%, #020617 100%)",
+      canvasBackgroundImage: "/template-assets/backgrounds/screen-gov-cyan-grid.svg",
+    }).backgroundImage as string;
+    expect(bgImage).toContain("radial-gradient");
+  });
+
   it("layers background image in user background style", () => {
     expect(
       canvasBackgroundStyle({

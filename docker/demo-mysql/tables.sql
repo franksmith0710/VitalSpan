@@ -11,6 +11,9 @@ DROP VIEW IF EXISTS de_map_city;
 DROP VIEW IF EXISTS de_map_province;
 DROP VIEW IF EXISTS de_sales_wide;
 DROP VIEW IF EXISTS v_sales_geo;
+DROP TABLE IF EXISTS gov_alerts;
+DROP TABLE IF EXISTS gov_issues;
+DROP TABLE IF EXISTS gov_hotwords;
 DROP TABLE IF EXISTS gov_eco_monitor;
 DROP TABLE IF EXISTS gov_investment;
 DROP TABLE IF EXISTS gov_grid_stats;
@@ -684,42 +687,73 @@ CREATE TABLE IF NOT EXISTS gov_eco_monitor (
   INDEX idx_gov_eco_date (monitor_date)
 );
 
-INSERT INTO gov_service_metrics (stat_date, department, metric_code, metric_name, region_id, value) VALUES
-  ('2025-07-01', '市场监管局', 'satisfaction', '满意度(%)', NULL, 92.50),
-  ('2025-07-01', '住建局', 'satisfaction', '满意度(%)', NULL, 88.30),
-  ('2025-07-01', '卫健委', 'satisfaction', '满意度(%)', NULL, 91.20),
-  ('2025-07-01', '教育局', 'satisfaction', '满意度(%)', NULL, 89.80),
-  ('2025-07-01', '公安局', 'satisfaction', '满意度(%)', NULL, 87.60),
-  ('2025-07-01', '人社局', 'satisfaction', '满意度(%)', NULL, 90.10),
-  ('2025-07-02', '市场监管局', 'satisfaction', '满意度(%)', NULL, 93.10),
-  ('2025-07-02', '住建局', 'satisfaction', '满意度(%)', NULL, 89.00),
-  ('2025-07-02', '卫健委', 'satisfaction', '满意度(%)', NULL, 91.80),
-  ('2025-07-03', '市场监管局', 'satisfaction', '满意度(%)', NULL, 92.80),
-  ('2025-07-01', '政务服务中心', 'cases_handled', '办件量', NULL, 1280),
-  ('2025-07-01', '政务服务中心', 'online_rate', '网办率(%)', NULL, 96.50),
-  ('2025-07-01', '政务服务中心', 'response_time', '平均响应(小时)', NULL, 4.20),
-  ('2025-07-02', '政务服务中心', 'cases_handled', '办件量', NULL, 1356),
-  ('2025-07-02', '政务服务中心', 'online_rate', '网办率(%)', NULL, 97.10),
-  ('2025-07-03', '政务服务中心', 'cases_handled', '办件量', NULL, 1198),
-  ('2025-07-03', '政务服务中心', 'online_rate', '网办率(%)', NULL, 96.80);
+CREATE TABLE IF NOT EXISTS gov_hotwords (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  word VARCHAR(64) NOT NULL,
+  weight INT NOT NULL,
+  category VARCHAR(32) NOT NULL DEFAULT 'department'
+);
 
-INSERT INTO gov_budget_items (fiscal_year, category, budget_amount, spent_amount) VALUES
-  (2025, '教育支出', 85000000.00, 52300000.00),
-  (2025, '医疗卫生', 62000000.00, 41800000.00),
-  (2025, '社会保障', 98000000.00, 67200000.00),
-  (2025, '公共安全', 45000000.00, 28900000.00),
-  (2025, '城乡社区', 38000000.00, 24100000.00),
-  (2025, '交通运输', 72000000.00, 46500000.00);
+CREATE TABLE IF NOT EXISTS gov_issues (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  seq INT NOT NULL,
+  issue_type VARCHAR(64) NOT NULL,
+  location VARCHAR(128) NOT NULL,
+  unit VARCHAR(64) NOT NULL,
+  found_at DATETIME NOT NULL,
+  status VARCHAR(16) NOT NULL,
+  progress VARCHAR(16) NOT NULL
+);
 
-INSERT INTO gov_incidents (report_date, incident_type, severity, region_id, status, count) VALUES
-  ('2025-07-01', '自然灾害', 'high', 5, 'resolved', 2),
-  ('2025-07-01', '安全生产', 'medium', 7, 'handling', 5),
-  ('2025-07-01', '公共卫生', 'medium', 8, 'resolved', 3),
-  ('2025-07-01', '交通拥堵', 'low', 8, 'resolved', 12),
-  ('2025-07-01', '舆情预警', 'high', NULL, 'handling', 1),
-  ('2025-07-02', '安全生产', 'high', 10, 'handling', 2),
-  ('2025-07-02', '自然灾害', 'medium', 9, 'resolved', 1),
-  ('2025-07-02', '公共卫生', 'low', 7, 'resolved', 4);
+CREATE TABLE IF NOT EXISTS gov_alerts (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  alert_time VARCHAR(16) NOT NULL,
+  location VARCHAR(128) NOT NULL,
+  content VARCHAR(256) NOT NULL,
+  status VARCHAR(16) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0
+);
+
+INSERT INTO gov_service_metrics (stat_date, department, metric_code, metric_name, region_id, value)
+SELECT DATE_SUB(CURDATE(), INTERVAL 0 DAY), '市场监管局', 'satisfaction', '满意度(%)', NULL, 92.50
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 1 DAY), '市场监管局', 'satisfaction', '满意度(%)', NULL, 93.10
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 2 DAY), '市场监管局', 'satisfaction', '满意度(%)', NULL, 92.80
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 3 DAY), '住建局', 'satisfaction', '满意度(%)', NULL, 88.30
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 4 DAY), '住建局', 'satisfaction', '满意度(%)', NULL, 89.00
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 5 DAY), '卫健委', 'satisfaction', '满意度(%)', NULL, 91.20
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 6 DAY), '卫健委', 'satisfaction', '满意度(%)', NULL, 91.80
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 7 DAY), '教育局', 'satisfaction', '满意度(%)', NULL, 89.80
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 8 DAY), '公安局', 'satisfaction', '满意度(%)', NULL, 87.60
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 9 DAY), '人社局', 'satisfaction', '满意度(%)', NULL, 90.10
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 0 DAY), '政务服务中心', 'cases_handled', '办件量', NULL, 1280
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 1 DAY), '政务服务中心', 'cases_handled', '办件量', NULL, 1356
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 2 DAY), '政务服务中心', 'cases_handled', '办件量', NULL, 1198
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 0 DAY), '政务服务中心', 'online_rate', '网办率(%)', NULL, 96.50
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 1 DAY), '政务服务中心', 'online_rate', '网办率(%)', NULL, 97.10
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 2 DAY), '政务服务中心', 'online_rate', '网办率(%)', NULL, 96.80
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 0 DAY), '政务服务中心', 'response_time', '平均响应(小时)', NULL, 4.20
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 5 DAY), '政务服务中心', 'response_time', '平均响应(小时)', NULL, 4.50
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 10 DAY), '市场监管局', 'satisfaction', '满意度(%)', NULL, 91.40
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 15 DAY), '住建局', 'satisfaction', '满意度(%)', NULL, 88.90
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 20 DAY), '卫健委', 'satisfaction', '满意度(%)', NULL, 90.60;
+
+INSERT INTO gov_budget_items (fiscal_year, category, budget_amount, spent_amount)
+SELECT YEAR(CURDATE()), '教育支出', 85000000.00, 52300000.00
+UNION ALL SELECT YEAR(CURDATE()), '医疗卫生', 62000000.00, 41800000.00
+UNION ALL SELECT YEAR(CURDATE()), '社会保障', 98000000.00, 67200000.00
+UNION ALL SELECT YEAR(CURDATE()), '公共安全', 45000000.00, 28900000.00
+UNION ALL SELECT YEAR(CURDATE()), '城乡社区', 38000000.00, 24100000.00
+UNION ALL SELECT YEAR(CURDATE()), '交通运输', 72000000.00, 46500000.00;
+
+INSERT INTO gov_incidents (report_date, incident_type, severity, region_id, status, count)
+SELECT DATE_SUB(CURDATE(), INTERVAL 0 DAY), '自然灾害', 'high', 5, 'resolved', 2
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 0 DAY), '安全生产', 'medium', 7, 'handling', 5
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 1 DAY), '公共卫生', 'medium', 8, 'resolved', 3
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 1 DAY), '交通拥堵', 'low', 8, 'resolved', 12
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 2 DAY), '舆情预警', 'high', NULL, 'handling', 1
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 3 DAY), '安全生产', 'high', 10, 'handling', 2
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 4 DAY), '自然灾害', 'medium', 9, 'resolved', 1
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 5 DAY), '公共卫生', 'low', 7, 'resolved', 4;
 
 INSERT INTO gov_grid_stats (grid_name, district, event_count, resolved_count, pending_count) VALUES
   ('城东第一网格', '天河区', 156, 142, 14),
@@ -740,15 +774,43 @@ INSERT INTO gov_investment (report_date, industry, region_id, investment_amount,
   ('2025-07-02', '新一代信息技术', 5, 88000000.00, 5),
   ('2025-07-02', '高端装备制造', 6, 67000000.00, 3);
 
-INSERT INTO gov_eco_monitor (monitor_date, monitor_point, index_code, index_name, region_id, index_value) VALUES
-  ('2025-07-01', '城北监测站', 'aqi', '空气质量指数', 7, 68.00),
-  ('2025-07-01', '城南监测站', 'aqi', '空气质量指数', 8, 72.00),
-  ('2025-07-01', '饮用水源地', 'water', '水质达标率(%)', 5, 98.50),
-  ('2025-07-01', '工业园区站', 'aqi', '空气质量指数', 10, 81.00),
-  ('2025-07-02', '城北监测站', 'aqi', '空气质量指数', 7, 65.00),
-  ('2025-07-02', '城南监测站', 'aqi', '空气质量指数', 8, 70.00),
-  ('2025-07-02', '饮用水源地', 'water', '水质达标率(%)', 5, 98.80),
-  ('2025-07-03', '城北监测站', 'aqi', '空气质量指数', 7, 62.00);
+INSERT INTO gov_eco_monitor (monitor_date, monitor_point, index_code, index_name, region_id, index_value)
+SELECT DATE_SUB(CURDATE(), INTERVAL 0 DAY), '城北监测站', 'aqi', '空气质量指数', 7, 68.00
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 0 DAY), '城南监测站', 'aqi', '空气质量指数', 8, 72.00
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 1 DAY), '饮用水源地', 'water', '水质达标率(%)', 5, 98.50
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 1 DAY), '工业园区站', 'aqi', '空气质量指数', 10, 81.00
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 2 DAY), '城北监测站', 'aqi', '空气质量指数', 7, 65.00
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 3 DAY), '城南监测站', 'aqi', '空气质量指数', 8, 70.00
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 4 DAY), '饮用水源地', 'water', '水质达标率(%)', 5, 98.80
+UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 5 DAY), '城北监测站', 'aqi', '空气质量指数', 7, 62.00;
+
+INSERT INTO gov_hotwords (word, weight, category) VALUES
+  ('城管', 95, 'department'),
+  ('交通', 88, 'department'),
+  ('环保', 82, 'department'),
+  ('应急', 76, 'department'),
+  ('公安', 90, 'department'),
+  ('水务', 68, 'department'),
+  ('住建', 74, 'department'),
+  ('市场监管', 62, 'department'),
+  ('卫健', 58, 'department'),
+  ('消防', 85, 'department');
+
+INSERT INTO gov_issues (seq, issue_type, location, unit, found_at, status, progress) VALUES
+  (1, '市容秩序', '解放路步行街', '城管局', DATE_SUB(NOW(), INTERVAL 2 DAY), '整改中', '60%'),
+  (2, '交通拥堵', '二环高架东段', '交警支队', DATE_SUB(NOW(), INTERVAL 3 DAY), '已派单', '30%'),
+  (3, '噪声扰民', '学府小区北侧', '生态环境局', DATE_SUB(NOW(), INTERVAL 4 DAY), '待复核', '80%'),
+  (4, '积水内涝', '站前广场地下通道', '水务集团', DATE_SUB(NOW(), INTERVAL 5 DAY), '整改中', '45%'),
+  (5, '设施损坏', '市民公园照明', '市政养护', DATE_SUB(NOW(), INTERVAL 6 DAY), '已完成', '100%'),
+  (6, '食品安全', '农贸市场3号档口', '市场监管局', DATE_SUB(NOW(), INTERVAL 7 DAY), '已闭环', '100%');
+
+INSERT INTO gov_alerts (alert_time, location, content, status, sort_order) VALUES
+  ('14:32', '滨江大道', '占道施工未报备，影响晚高峰通行', 'warning', 1),
+  ('14:18', '高新区', 'PM2.5 短时升高，已派巡检车复核', 'info', 2),
+  ('13:56', '地铁2号线', '站台客流超限，已增派疏导人员', 'critical', 3),
+  ('13:41', '南湖片区', '消防通道占用已清理完毕', 'resolved', 4),
+  ('13:22', '政务中心', '窗口排队时长超15分钟预警', 'warning', 5),
+  ('12:58', '长江大桥', '桥面风速监测正常，无限行', 'info', 6);
 
 CREATE OR REPLACE VIEW v_gov_region_service AS
 SELECT

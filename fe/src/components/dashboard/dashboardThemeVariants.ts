@@ -250,11 +250,14 @@ export function bootstrapDashboardStyleConfig(
 ): DashboardStyleConfig {
   const scheme = config.colorScheme ?? "light";
   const stripAccent = hasDeprecatedThemeAccent(config);
+  const hasExplicitTemplateChrome =
+    Boolean(config.widgetStyle?.borderColor?.trim()) ||
+    Boolean(config.paletteColors?.length);
   let working: DashboardStyleConfig = stripAccent
     ? { ...config, themeAccent: undefined }
     : config;
 
-  if (stripAccent) {
+  if (stripAccent && !hasExplicitTemplateChrome) {
     working = mergeThemeVariantIntoConfig(working, defaultThemeVariant(scheme));
   }
 

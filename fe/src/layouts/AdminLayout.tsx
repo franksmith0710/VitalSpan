@@ -15,7 +15,7 @@ import { VitalSpanLogo } from "@/components/layout/vitalspan-logo";
 import { resolveSidebarSections } from "@/lib/resolve-nav";
 import { sessionUserFromMe } from "@/lib/session";
 import { isDetachedFromWorkspacePath } from "@/lib/workspace";
-import { isAdminListFillRoute, isAdminScreenPreviewRoute, isAdminVizComponentEditRoute } from "@/lib/admin-layout-routes";
+import { isAdminListFillRoute, isAdminMaxWidthNoneRoute, isAdminScreenPreviewRoute, isAdminShareRoute, isAdminVizComponentEditRoute } from "@/lib/admin-layout-routes";
 import {
   ADMIN_CONTENT_MARGIN_COLLAPSED_CLASS,
   ADMIN_CONTENT_MARGIN_EXPANDED_CLASS,
@@ -43,10 +43,14 @@ function AdminLayoutContent() {
     dashboardEditMatch || dashboardDetailMatch || dataScreenEditMatch || dataScreenDetailMatch,
   );
   const isListFillRoute = isAdminListFillRoute(location.pathname);
+  const isShareRoute = isAdminShareRoute(location.pathname);
   const isScreenPreviewRoute = isAdminScreenPreviewRoute(location.pathname);
   const isVizComponentEditFill = isAdminVizComponentEditRoute(location.pathname);
   const isFillHeightRoute =
-    isDashboardEditFill || isListFillRoute || isVizComponentEditFill;
+    isDashboardEditFill || isListFillRoute || isVizComponentEditFill || isShareRoute;
+  const isMaxWidthNoneRoute = isAdminMaxWidthNoneRoute(location.pathname, {
+    dashboardBuilder: isDashboardEditFill,
+  });
   // 所有标准管理页锁住 html/body，仅 main 滚动，避免细/粗双滚动条并存
   useAdminFillScrollLock(!isScreenPreviewRoute);
 
@@ -101,7 +105,7 @@ function AdminLayoutContent() {
         <main
           className={cn(
             "mx-auto flex min-h-0 w-full flex-1 flex-col",
-            isFillHeightRoute ? "max-w-none" : "max-w-(--breakpoint-2xl)",
+            isMaxWidthNoneRoute ? "max-w-none" : "max-w-(--breakpoint-2xl)",
             isFillHeightRoute
               ? "overflow-hidden p-1.5 md:p-2 [&>*]:min-h-0 [&>*]:flex-1"
               : "custom-scrollbar overflow-y-auto p-4 pb-20 md:p-6 md:pb-24 [&>*]:shrink-0",

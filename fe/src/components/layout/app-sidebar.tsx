@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router";
 import { ChevronDown } from "lucide-react";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import { HintTooltip } from "@/components/ui/hint-tooltip";
+import { isNavPathActive, navPathMatches, resolveActiveNavPath } from "@/lib/nav-active";
 import { cn } from "@/lib/utils";
 import {
   ADMIN_CONTENT_MARGIN_COLLAPSED_CLASS,
@@ -147,10 +148,13 @@ function SidebarNavItem({
   showLabels: boolean;
 }) {
   const location = useLocation();
+  const subPaths = item.subItems?.map((sub) => sub.path) ?? [];
+  const activeSubPath = subPaths.length ? resolveActiveNavPath(location.pathname, subPaths) : null;
   const isActive = (path: string) =>
-    location.pathname === path || location.pathname.startsWith(`${path}/`);
-  const hasActiveChild =
-    item.subItems?.some((sub) => isActive(sub.path)) ?? false;
+    subPaths.length > 0
+      ? isNavPathActive(location.pathname, path, subPaths)
+      : navPathMatches(location.pathname, path);
+  const hasActiveChild = activeSubPath !== null;
   const { open, handleOpenChange, hoverZoneProps, toggleFromClick, toggleFromKeyboard } =
     useCollapsibleOpen(hasActiveChild);
 
@@ -300,13 +304,12 @@ function SidebarSection({
 }) {
   const location = useLocation();
   const hasActiveItem = section.items.some((item) => {
-    if (item.path && (location.pathname === item.path || location.pathname.startsWith(`${item.path}/`))) {
-      return true;
+    if (item.subItems?.length) {
+      const subPaths = item.subItems.map((sub) => sub.path);
+      return resolveActiveNavPath(location.pathname, subPaths) !== null;
     }
-    return item.subItems?.some(
-      (sub) =>
-        location.pathname === sub.path || location.pathname.startsWith(`${sub.path}/`),
-    );
+    if (item.path) return navPathMatches(location.pathname, item.path);
+    return false;
   });
   const { open, handleOpenChange, hoverZoneProps, toggleFromClick, toggleFromKeyboard } =
     useCollapsibleOpen(hasActiveItem, section.defaultCollapsed ? false : true);

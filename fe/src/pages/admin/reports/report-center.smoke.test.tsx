@@ -58,9 +58,9 @@ describe("ReportCenterPage smoke", () => {
 
   it("renders hub title and template card", async () => {
     renderPage();
-    expect(await screen.findByText("报表中心")).toBeInTheDocument();
+    expect(await screen.findByText("全部报表")).toBeInTheDocument();
     expect(await screen.findByText("月报模板")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "查看" })).toHaveAttribute("href", "/admin/reports/view/tpl-1");
+    expect(screen.getByRole("link", { name: "打开并运行" })).toHaveAttribute("href", "/admin/reports/view/tpl-1");
   });
 
   it("shows quick links for admin", async () => {

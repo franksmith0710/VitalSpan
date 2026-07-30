@@ -90,6 +90,17 @@ function QuickLinkCard({
   );
 }
 
+const KIND_SUBTITLE: Record<string, string> = {
+  word: "Word 报表",
+  excel: "Excel 报表",
+  pdf: "PDF 报表",
+};
+
+function templateSubtitle(node: ReportCatalogNode): string {
+  if (node.templateKind) return KIND_SUBTITLE[node.templateKind] ?? "报表模板";
+  return "报表模板";
+}
+
 function TemplateCard({ node }: { node: ReportCatalogNode }) {
   return (
     <Card className="shadow-theme-xs">
@@ -98,19 +109,19 @@ function TemplateCard({ node }: { node: ReportCatalogNode }) {
         <TemplateKindBadge kind={node.templateKind} />
       </CardHeader>
       <CardContent className="flex items-center justify-between gap-2 pt-0">
-        <p className="truncate text-theme-xs text-gray-500 dark:text-gray-400">
-          {node.templateKey ?? node.id.slice(0, 8)}
-        </p>
+        <p className="truncate text-theme-xs text-gray-500 dark:text-gray-400">{templateSubtitle(node)}</p>
         <Button type="button" variant="outline" size="sm" asChild>
           <Link to={`/admin/reports/view/${node.id}`}>
             <Play className="size-3.5" aria-hidden />
-            查看
+            打开并运行
           </Link>
         </Button>
       </CardContent>
     </Card>
   );
 }
+
+const PREFAB_HUB_PREVIEW = 6;
 
 function PrefabRow({ binding }: { binding: PrefabBinding }) {
   return (
@@ -134,6 +145,7 @@ export function ReportCenterPage() {
   const roleCodes = user?.roles ?? [];
   const [search, setSearch] = useState("");
   const [kindFilter, setKindFilter] = useState<TemplateKindFilter>("all");
+  const [prefabExpanded, setPrefabExpanded] = useState(false);
 
   const templatesQuery = useQuery({
     queryKey: ["reports", "center", "templates"],
@@ -162,11 +174,13 @@ export function ReportCenterPage() {
   );
   const defaultReportId = defaultReportQuery.data;
   const defaultReportNode = templates.find((node) => node.id === defaultReportId);
+  const prefabPreviewItems = prefabExpanded ? prefabItems : prefabItems.slice(0, PREFAB_HUB_PREVIEW);
+  const hasMorePrefab = prefabItems.length > PREFAB_HUB_PREVIEW;
 
   return (
     <AdminPageShell
-      title="报表中心"
-      description="浏览授权报表、预制分析与模板，对标 DataEase 报表消费入口。"
+      title="全部报表"
+      description="浏览您有权限的报表模板，运行系统预制分析，或打开角色默认报表。"
     >
       {templatesQuery.isError ? (
         <PageErrorBanner
@@ -175,7 +189,13 @@ export function ReportCenterPage() {
         />
       ) : null}
 
-      {defaultReportNode ? (
+      {defaultReportQuery.isLoading || (defaultReportId && templatesQuery.isLoading) ? (
+        <Card className="mb-6 border-brand-200 bg-brand-50/30 dark:border-brand-500/30 dark:bg-brand-500/5">
+          <CardContent className="py-4">
+            <Skeleton className="h-12 w-full max-w-xl" />
+          </CardContent>
+        </Card>
+      ) : defaultReportNode ? (
         <Card className="mb-6 border-brand-200 bg-brand-50/30 dark:border-brand-500/30 dark:bg-brand-500/5">
           <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
             <div className="flex min-w-0 items-start gap-3">
@@ -188,6 +208,22 @@ export function ReportCenterPage() {
             <Button type="button" size="sm" variant="primary" asChild>
               <Link to={`/admin/reports/view/${defaultReportNode.id}`}>打开默认报表</Link>
             </Button>
+          </CardContent>
+        </Card>
+      ) : defaultReportId ? (
+        <Card className="mb-6 border-amber-200 bg-amber-50/40 dark:border-amber-500/30 dark:bg-amber-500/5">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
+            <div>
+              <p className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">角色默认报表</p>
+              <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+                默认模板暂未在目录中同步，请联系管理员。
+              </p>
+            </div>
+            {canManage ? (
+              <Button type="button" size="sm" variant="outline" asChild>
+                <Link to="/admin/reports/templates">管理模板</Link>
+              </Button>
+            ) : null}
           </CardContent>
         </Card>
       ) : null}
@@ -221,12 +257,19 @@ export function ReportCenterPage() {
         <section className="mb-6 space-y-3">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">预制分析</h2>
-            <Button type="button" variant="outline" size="sm" asChild>
-              <Link to="/admin/reports">查看全部</Link>
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              {hasMorePrefab ? (
+                <Button type="button" variant="ghost" size="sm" onClick={() => setPrefabExpanded((v) => !v)}>
+                  {prefabExpanded ? "收起" : `展开全部 (${prefabItems.length})`}
+                </Button>
+              ) : null}
+              <Button type="button" variant="outline" size="sm" asChild>
+                <Link to="/admin/reports">进入预制报表</Link>
+              </Button>
+            </div>
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
-            {prefabItems.slice(0, 4).map((binding) => (
+            {prefabPreviewItems.map((binding) => (
               <PrefabRow key={binding.bindingKey} binding={binding} />
             ))}
           </div>
@@ -247,7 +290,7 @@ export function ReportCenterPage() {
           <Input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="搜索报表名称或 templateKey…"
+            placeholder="搜索报表名称…"
             className="max-w-md"
             aria-label="搜索报表"
           />

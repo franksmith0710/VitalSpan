@@ -58,9 +58,9 @@ export function ChartEmbedShareActions({
   }
 
   return (
-    <>
+    <div className="flex max-w-xl flex-col items-end gap-2 text-right">
       <p className="break-all font-mono text-theme-xs text-gray-600 dark:text-gray-400">{embedUrl}</p>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap justify-end gap-2">
         <Button type="button" size="sm" variant="outline" onClick={() => copyUrl(embedUrl)}>
           <Copy className="size-4" aria-hidden />
           复制链接
@@ -72,6 +72,6 @@ export function ChartEmbedShareActions({
           </a>
         </Button>
       </div>
-    </>
+    </div>
   );
 }

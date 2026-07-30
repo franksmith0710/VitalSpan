@@ -20,6 +20,8 @@ import { fetchAllCatalogTemplates } from "@/lib/reportCatalogUtils";
 import {
   SCHEDULE_ACTION_LABELS,
   canRetryExecution,
+  localizeExecutionStatus,
+  localizeScheduleStatus,
   scheduleStatusColor,
   useReportScheduleMutations,
   useReportSchedulesList,
@@ -80,7 +82,7 @@ function ScheduleHistoryPanel({
             <tbody>
               {history.map((row) => (
                 <tr key={row.executionId} className="border-b border-gray-50 dark:border-gray-800/60">
-                  <td className="px-3 py-2">{row.status}</td>
+                  <td className="px-3 py-2">{localizeExecutionStatus(row.status)}</td>
                   <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.executedAt}</td>
                   <td className="max-w-[200px] px-3 py-2 text-gray-600 dark:text-gray-400">
                     {row.errorMessage ? (
@@ -161,7 +163,7 @@ function ScheduleRow({
         <td className="px-4 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{schedule.timezone}</td>
         <td className="px-4 py-3">
           <Badge variant="light" color={scheduleStatusColor(schedule.status)} size="sm">
-            {schedule.status}
+            {localizeScheduleStatus(schedule.status)}
           </Badge>
         </td>
         <td className="px-4 py-3">
@@ -231,7 +233,7 @@ export function ReportSchedulesPage() {
   return (
     <AdminPageShell
       title="报表调度"
-      description="管理报表定时任务、查看执行历史与失败重试（RPT-005）。"
+      description="管理报表定时任务，查看执行历史与失败重试。"
       actions={
         <Button type="button" variant="outline" size="sm" asChild>
           <Link to="/admin/reports/templates">在模板中新建调度</Link>

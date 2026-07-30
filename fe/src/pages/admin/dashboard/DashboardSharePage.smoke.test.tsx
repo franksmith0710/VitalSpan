@@ -89,7 +89,7 @@ describe("DashboardSharePage", () => {
       expect(screen.getAllByText("销售额").length).toBeGreaterThanOrEqual(2);
     });
     expect(screen.getAllByRole("button", { name: "生成公开链接" }).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText(/单组件链接须签发 token/)).toBeInTheDocument();
+    expect(screen.getByText(/须签发 token 后方可匿名访问/)).toBeInTheDocument();
     expect(screen.queryByText("该看板暂无组件，请先添加图表。")).not.toBeInTheDocument();
     expect(document.querySelector(".dashboard-grid-view")).toBeTruthy();
   });

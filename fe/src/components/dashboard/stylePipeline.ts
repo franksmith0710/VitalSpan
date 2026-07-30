@@ -17,6 +17,7 @@ import type {
   DashboardStyleConfig,
   LayoutWidget,
 } from "./layoutUtils";
+import { materializeDecorStyleConfig } from "./dashboardStyleConfig";
 import { reconcileTabPaneChildIdsInPixelLayout } from "./layoutUtils";
 import {
   bootstrapDashboardStyleConfig,
@@ -25,11 +26,11 @@ import {
 import { migrateLayoutChartTypes } from "@/lib/migrateChartTypes";
 import { sanitizePixelLayoutGeometry } from "./pixelCanvas/layoutSanitize";
 
-/** load / save / patch 后统一 hydrate（含 gap normalize + theme bundle） */
+/** load / save / patch 后统一 hydrate（含 gap normalize + theme bundle + decor 物化） */
 export function hydrateDashboardStyle(
   input?: DashboardStyleConfig | null,
 ): DashboardStyleConfig {
-  return bootstrapDashboardStyleConfig(input ?? {});
+  return materializeDecorStyleConfig(bootstrapDashboardStyleConfig(input ?? {}));
 }
 
 /** 编辑态 liveStyle 优先；只读/预览可仅传 layout */

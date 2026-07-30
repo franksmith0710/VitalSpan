@@ -20,14 +20,24 @@ def resolve_sample_db_datasource_id(db: Session) -> uuid.UUID | None:
     best_score = 0
     best_id: uuid.UUID | None = None
     for row in rows:
-        hay = f"{row.code} {row.name} {row.database}".lower()
+        db_name = (row.database or "").lower()
+        code = (row.code or "").lower()
+        name = (row.name or "").lower()
         score = 0
-        if "sample_db" in hay:
-            score = 3
-        elif "sample-mysql" in hay or "demo-mysql" in hay:
-            score = 2
-        elif "sample" in hay:
-            score = 1
+        if db_name == "sample_db":
+            score += 10
+        elif "sample_db" in db_name:
+            score += 6
+        if code == "sample-mysql":
+            score += 4
+        elif "sample-mysql" in code or "demo-mysql" in code:
+            score += 3
+        elif "sample" in f"{code} {name}":
+            score += 1
+        if row.port == 3307:
+            score += 2
+        if row.type and row.type.lower() == "mysql" and score > 0:
+            score += 1
         if score > best_score:
             best_score = score
             best_id = row.id

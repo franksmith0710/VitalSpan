@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   hasUserCanvasBackground,
+  materializeDecorStyleConfig,
   patchDecorPresetStyle,
   resolveArtboardStyle,
   resolveCanvasDecorPresetId,
@@ -65,5 +66,33 @@ describe("canvas background edit pipeline", () => {
     });
     const hydrated = hydrateDashboardStyle(patched);
     expect(resolveArtboardStyle(hydrated).background).toBe("#7556b8");
+  });
+
+  it("seed layout with decor id only materializes gradient background on hydrate", () => {
+    const seeded = {
+      surfaceKind: "data-screen" as const,
+      colorScheme: "dark" as const,
+      canvasDecorPresetId: "gradient-radial" as const,
+    };
+    expect(seeded.canvasBackground).toBeUndefined();
+
+    const hydrated = hydrateDashboardStyle(seeded);
+    expect(hydrated.canvasBackgroundCustom).toBe(true);
+    expect(hydrated.canvasBackground).toContain("radial-gradient");
+    expect(hasUserCanvasBackground(hydrated)).toBe(true);
+    expect(resolveArtboardStyle(hydrated).background).toContain("radial-gradient");
+  });
+
+  it("materializeDecorStyleConfig leaves custom image backgrounds untouched", () => {
+    const withImage = materializeDecorStyleConfig({
+      colorScheme: "dark",
+      canvasBackgroundCustom: true,
+      canvasBackground: "#0f172a",
+      canvasBackgroundImage: "/template-assets/backgrounds/screen-gov-indigo.svg",
+      canvasDecorPresetId: "gradient-soft",
+    });
+    expect(withImage.canvasBackgroundImage).toBe(
+      "/template-assets/backgrounds/screen-gov-indigo.svg",
+    );
   });
 });

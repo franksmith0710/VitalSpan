@@ -102,7 +102,7 @@ export function ReportViewPage() {
         <Button type="button" variant="outline" size="sm" asChild>
           <Link to="/admin/reports/center">
             <ArrowLeft className="size-4" aria-hidden />
-            返回报表中心
+            返回全部报表
           </Link>
         </Button>
       }
@@ -157,7 +157,11 @@ export function ReportViewPage() {
               </CardHeader>
               <CardContent>
                 {section.placeholder ? (
-                  <p className="text-theme-sm text-gray-500">占位数据（请配置扩展指标与数据源后查看真实结果）</p>
+                  <p className="text-theme-sm text-gray-500">
+                    {canManage
+                      ? "占位数据（请配置扩展指标与数据源后查看真实结果）"
+                      : "暂无业务数据，当前为示例展示。如需完整报表，请联系管理员完善模板配置。"}
+                  </p>
                 ) : section.columns && section.rows ? (
                   <ResultTable columns={section.columns} rows={section.rows} />
                 ) : (

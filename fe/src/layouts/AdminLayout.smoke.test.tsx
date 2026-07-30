@@ -1,7 +1,9 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render as rtlRender, screen, waitFor } from "@testing-library/react";
+import type { RenderOptions } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const mockUseAuth = vi.fn(() => ({
   user: { id: "1", username: "admin", roles: ["admin"] as const },
@@ -21,6 +23,10 @@ vi.mock("@/lib/gov-nav", () => ({
 }));
 
 import { AdminLayout } from "./AdminLayout";
+
+function render(ui: React.ReactElement, options?: RenderOptions) {
+  return rtlRender(<TooltipProvider delayDuration={0}>{ui}</TooltipProvider>, options);
+}
 
 describe("AdminLayout smoke", () => {
   afterEach(() => {
@@ -160,6 +166,23 @@ describe("AdminLayout smoke", () => {
     expect(main.className).toContain("overflow-hidden");
     expect(main.className).not.toContain("overflow-y-auto");
     expect(document.documentElement.classList.contains("admin-fill-lock")).toBe(true);
+  });
+
+  it("share route uses full-width fill-height main (bi-share-embed)", () => {
+    render(
+      <MemoryRouter initialEntries={["/admin/data-screens/ds1/share"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="data-screens/:id/share" element={<div>share page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    const main = screen.getAllByRole("main")[0];
+    expect(main.className).toContain("max-w-none");
+    expect(main.className).not.toContain("max-w-(--breakpoint-2xl)");
+    expect(main.className).toContain("overflow-hidden");
+    expect(main.className).not.toContain("overflow-y-auto");
   });
 
   it("T-NAV-02: dashboard edit → list keeps AdminLayout mounted (useMatch hooks stable)", async () => {

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { isAdminListFillRoute, isAdminScreenPreviewRoute, isAdminVizComponentEditRoute } from "./admin-layout-routes";
+import {
+  isAdminListFillRoute,
+  isAdminScreenPreviewRoute,
+  isAdminShareRoute,
+  isAdminVizComponentEditRoute,
+} from "./admin-layout-routes";
 
 describe("isAdminListFillRoute", () => {
   it("matches paginated list routes", () => {
@@ -32,5 +37,18 @@ describe("isAdminVizComponentEditRoute", () => {
     expect(isAdminVizComponentEditRoute("/admin/viz-components/abc/edit/")).toBe(true);
     expect(isAdminVizComponentEditRoute("/admin/viz-components")).toBe(false);
     expect(isAdminVizComponentEditRoute("/admin/viz-components/new")).toBe(false);
+  });
+});
+
+describe("isAdminShareRoute", () => {
+  it("matches dashboard and data screen share routes", () => {
+    expect(isAdminShareRoute("/admin/dashboards/d1/share")).toBe(true);
+    expect(isAdminShareRoute("/admin/data-screens/ds1/share/")).toBe(true);
+  });
+
+  it("does not match edit, preview, or list routes", () => {
+    expect(isAdminShareRoute("/admin/dashboards")).toBe(false);
+    expect(isAdminShareRoute("/admin/dashboards/d1/edit")).toBe(false);
+    expect(isAdminShareRoute("/admin/data-screens/ds1/preview")).toBe(false);
   });
 });

@@ -5,6 +5,8 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
+from app.dashboard.templates.demo_datasource import TEMPLATE_DEMO_DATASOURCE_REF
+
 SCREEN_BORDER_MARKER = "__vs_screen_border__"
 SCREEN_CLOCK_MARKER = "__vs_screen_clock__"
 SCREEN_TITLE_BAR_MARKER = "__vs_screen_title_bar__"
@@ -44,6 +46,22 @@ SQL_TOP_CITIES = (
     "LIMIT 10"
 )
 
+DECOR_GRADIENT_DARK: dict[str, str] = {
+    "gradient-soft": "linear-gradient(160deg, #0f172a 0%, #1e293b 48%, #172554 100%)",
+    "gradient-brand": "linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #0f172a 100%)",
+    "gradient-radial": (
+        "radial-gradient(ellipse 90% 70% at 50% -10%, #312e81 0%, #0f172a 55%, #020617 100%)"
+    ),
+}
+
+DECOR_GRADIENT_LIGHT: dict[str, str] = {
+    "gradient-soft": "linear-gradient(160deg, #eff6ff 0%, #f8fafc 45%, #fef3c7 100%)",
+    "gradient-brand": "linear-gradient(135deg, #eef2ff 0%, #f8fafc 52%, #ffffff 100%)",
+    "gradient-radial": (
+        "radial-gradient(ellipse 90% 70% at 50% -10%, #e0e7ff 0%, #f8fafc 50%, #ffffff 100%)"
+    ),
+}
+
 
 def _wid() -> str:
     return str(uuid.uuid4())
@@ -56,6 +74,8 @@ def _chart(
     sql: str,
     dimensions: list[dict[str, str]] | None = None,
     metrics: list[dict[str, str]] | None = None,
+    de_style: dict[str, Any] | None = None,
+    data_source_ref: str | None = TEMPLATE_DEMO_DATASOURCE_REF,
     **geo: Any,
 ) -> dict[str, Any]:
     wid = _wid()
@@ -69,6 +89,10 @@ def _chart(
         cfg["dimensions"] = dimensions
     if metrics:
         cfg["metrics"] = metrics
+    if data_source_ref:
+        cfg["dataSourceId"] = data_source_ref
+    if de_style:
+        cfg["nativeBody"] = {"deStyle": de_style}
     return {
         "id": wid,
         "type": "chart",
@@ -78,8 +102,11 @@ def _chart(
     }
 
 
-def _border(variant: str, **geo: Any) -> dict[str, Any]:
+def _border(variant: str, accent: str | None = None, **geo: Any) -> dict[str, Any]:
     wid = _wid()
+    border_style: dict[str, Any] = {"variant": variant}
+    if accent:
+        border_style["accentColor"] = accent
     return {
         "id": wid,
         "type": "text",
@@ -87,7 +114,7 @@ def _border(variant: str, **geo: Any) -> dict[str, Any]:
         "textConfig": {
             "content": SCREEN_BORDER_MARKER,
             "variant": "plain",
-            "screenStyle": {"border": {"variant": variant}},
+            "screenStyle": {"border": border_style},
         },
         **geo,
     }
@@ -104,15 +131,114 @@ def _clock(**geo: Any) -> dict[str, Any]:
     }
 
 
-def _title_bar(**geo: Any) -> dict[str, Any]:
+def _title_bar(accent: str | None = None, **geo: Any) -> dict[str, Any]:
     wid = _wid()
+    text_config: dict[str, Any] = {
+        "content": SCREEN_TITLE_BAR_MARKER,
+        "variant": "plain",
+    }
+    if accent:
+        text_config["screenStyle"] = {"titleBar": {"accentColor": accent}}
     return {
         "id": wid,
         "type": "text",
         "title": "标题装饰",
-        "textConfig": {"content": SCREEN_TITLE_BAR_MARKER, "variant": "plain"},
+        "textConfig": text_config,
         **geo,
     }
+
+
+def _accent_canvas_gradient(accent: str, canvas: str) -> str:
+    """模板画布底色：accent 光晕 + 深色底，与 SVG 底图叠加。"""
+    return (
+        f"radial-gradient(ellipse 100% 85% at 50% -5%, {accent}40 0%, "
+        f"{canvas} 42%, #020617 100%)"
+    )
+
+
+def _materialize_screen_style(
+    *,
+    accent: str = "#22d3ee",
+    canvas: str = "#0f172a",
+    decor: str | None = "gradient-soft",
+    bg_image: str | None = None,
+    palette_colors: list[str] | None = None,
+) -> dict[str, Any]:
+    """写入 FE 可直接渲染的 styleConfig（渐变/底图/调色板）。"""
+    style = _screen_style(accent=accent, canvas=canvas, decor=decor, bg_image=bg_image)
+    style["canvasBackground"] = _accent_canvas_gradient(accent, canvas)
+    if decor and decor in DECOR_GRADIENT_DARK and not bg_image:
+        style["canvasBackground"] = DECOR_GRADIENT_DARK[decor]
+    style["seriesGradient"] = True
+    if palette_colors:
+        style["paletteId"] = "custom"
+        style["paletteColors"] = palette_colors
+    widget = style.setdefault("widgetStyle", {})
+    if isinstance(widget, dict):
+        widget["background"] = f"{accent}12"
+        widget["borderColor"] = f"{accent}80"
+        widget["borderWidth"] = 1
+        widget["borderEnabled"] = True
+        widget["borderRadius"] = 10
+    return style
+
+
+def _materialize_dash_style(
+    *,
+    scheme: str = "light",
+    accent: str = "#465fff",
+    decor: str | None = "gradient-soft",
+    canvas: str | None = None,
+    palette_colors: list[str] | None = None,
+) -> dict[str, Any]:
+    is_dark = scheme == "dark"
+    gradient_map = DECOR_GRADIENT_DARK if is_dark else DECOR_GRADIENT_LIGHT
+    resolved_canvas = canvas
+    if not resolved_canvas and decor and decor in gradient_map:
+        resolved_canvas = gradient_map[decor]
+    style = _dash_style(
+        scheme=scheme,
+        accent=accent,
+        decor=decor,
+        canvas=resolved_canvas,
+    )
+    if resolved_canvas:
+        style["canvasBackgroundCustom"] = True
+    style["seriesGradient"] = True
+    if palette_colors:
+        style["paletteId"] = "custom"
+        style["paletteColors"] = palette_colors
+    return style
+
+
+def _chart_de_style_for_accent(
+    accent: str,
+    *,
+    chart_type: str,
+    palette: list[str] | None = None,
+) -> dict[str, Any]:
+    """模板默认 chart deStyle（深色大屏）。"""
+    colors = palette or [accent, "#38bdf8", "#6366f1", "#34d399", "#fbbf24", "#f472b6"]
+    de_style: dict[str, Any] = {
+        "seriesGradient": True,
+        "label": {"show": True, "color": "#cbd5e1", "fontSize": 12},
+        "legend": {"show": True, "color": "#94a3b8", "fontSize": 11},
+        "border": {"show": True, "color": f"{accent}59", "width": 1, "radius": 8},
+    }
+    if chart_type == "map":
+        de_style["geo"] = {
+            "mapArea": "china",
+            "visualMap": True,
+            "areaColor": f"{accent}22",
+            "borderColor": accent,
+        }
+    if chart_type in ("bar", "line", "pie", "gauge", "word-cloud", "kpi"):
+        de_style["paletteId"] = "custom"
+        de_style["seriesColor"] = [
+            {"name": f"series-{index}", "color": color}
+            for index, color in enumerate(colors[:6])
+        ]
+    return de_style
 
 
 def _screen_style(
@@ -127,7 +253,6 @@ def _screen_style(
         "colorScheme": "dark",
         "canvasBackground": canvas,
         "canvasBackgroundCustom": True,
-        "themeAccent": accent,
         "paletteId": "default",
         "gapPreset": "md",
         "widgetStyle": {
@@ -159,7 +284,6 @@ def _dash_style(
     style: dict[str, Any] = {
         "surfaceKind": "dashboard",
         "colorScheme": scheme,
-        "themeAccent": accent,
         "paletteId": "default",
         "gapPreset": "md",
         "widgetStyle": {

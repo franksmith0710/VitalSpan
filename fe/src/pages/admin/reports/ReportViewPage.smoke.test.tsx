@@ -81,7 +81,7 @@ describe("ReportViewPage smoke", () => {
 
   it("links back to report center hub", async () => {
     renderPage();
-    expect(await screen.findByRole("link", { name: /返回报表中心/ })).toHaveAttribute(
+    expect(await screen.findByRole("link", { name: /返回全部报表/ })).toHaveAttribute(
       "href",
       "/admin/reports/center",
     );

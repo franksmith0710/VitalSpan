@@ -353,6 +353,39 @@ export function decorGradientForScheme(presetId: string, scheme: ColorScheme = "
   return DECOR_GRADIENT_BY_SCHEME[presetId]?.[scheme];
 }
 
+/** 模板 seed / hydrate：仅有 decor id 时物化为可渲染的画布底色或平铺纹理 */
+export function materializeDecorStyleConfig(
+  config: DashboardStyleConfig,
+): DashboardStyleConfig {
+  const scheme = config.colorScheme ?? "light";
+  const hasImage = Boolean(config.canvasBackgroundImage?.trim());
+  const hasCustomBg =
+    Boolean(config.canvasBackgroundCustom) && Boolean(config.canvasBackground?.trim());
+  if (hasImage || hasCustomBg) {
+    return config;
+  }
+
+  const presetId = config.canvasDecorPresetId ?? resolveCanvasDecorPresetId(config);
+  if (!presetId || presetId === "none") {
+    return config;
+  }
+
+  if (GRADIENT_DECOR_PRESET_IDS.has(presetId)) {
+    const gradient = decorGradientForScheme(presetId, scheme);
+    if (!gradient) return config;
+    return {
+      ...config,
+      canvasBackground: gradient,
+      canvasBackgroundCustom: true,
+      canvasDecorPresetId: presetId,
+    };
+  }
+
+  const patch = patchDecorPresetStyle(presetId, config);
+  if (Object.keys(patch).length === 0) return config;
+  return { ...config, ...patch };
+}
+
 const GRADIENT_DECOR_PRESET_IDS = new Set(Object.keys(DECOR_GRADIENT_BY_SCHEME));
 
 export type CanvasDecorPreset = {
@@ -835,6 +868,10 @@ export function canvasChromeUsesDotGrid(config: DashboardStyleConfig): boolean {
   return !hasUserCanvasBackground(config);
 }
 
+function isCssGradient(value: string): boolean {
+  return /^(linear|radial|conic)-gradient\(/i.test(value.trim());
+}
+
 /** §5.3 用户显式设置的仪表板背景（与主题无关） */
 export function canvasBackgroundStyle(config: DashboardStyleConfig): CSSProperties {
   const style: CSSProperties = {};
@@ -846,16 +883,28 @@ export function canvasBackgroundStyle(config: DashboardStyleConfig): CSSProperti
       : undefined;
 
   if (backgroundImage) {
-    if (customSolid?.startsWith("linear-gradient")) {
+    const decorLayers = resolveDecorImageStyle(
+      backgroundImage,
+      scheme,
+      config.canvasDecorPresetId,
+    );
+    if (customSolid && isCssGradient(customSolid)) {
+      const imageLayer = decorLayers.backgroundImage ?? `url("${backgroundImage}")`;
+      style.backgroundImage = `${imageLayer}, ${customSolid}`;
+      style.backgroundSize = `${decorLayers.backgroundSize ?? "cover"}, cover`;
+      style.backgroundPosition = `${decorLayers.backgroundPosition ?? "center"}, center`;
+      style.backgroundRepeat = "no-repeat, no-repeat";
+    } else if (customSolid?.startsWith("linear-gradient")) {
       style.background = customSolid;
+      Object.assign(style, decorLayers);
     } else {
       const fill = customSolid || defaultSolidArtboardColor(scheme);
-      style.backgroundColor = fill;
+      style.backgroundColor = isCssGradient(fill) ? undefined : fill;
+      if (isCssGradient(fill)) {
+        style.background = fill;
+      }
+      Object.assign(style, decorLayers);
     }
-    Object.assign(
-      style,
-      resolveDecorImageStyle(backgroundImage, scheme, config.canvasDecorPresetId),
-    );
     return style;
   }
 
