@@ -41,3 +41,19 @@ export async function fetchAllCatalogTemplates(): Promise<ReportCatalogNode[]> {
   await walk(null);
   return templates.sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "zh-CN"));
 }
+
+export function filterCatalogTemplates(
+  templates: ReportCatalogNode[],
+  query: string,
+  kind: "all" | "word" | "excel" | "pdf",
+): ReportCatalogNode[] {
+  const q = query.trim().toLowerCase();
+  return templates.filter((node) => {
+    if (kind !== "all" && node.templateKind !== kind) return false;
+    if (!q) return true;
+    return (
+      node.name.toLowerCase().includes(q) ||
+      (node.templateKey?.toLowerCase().includes(q) ?? false)
+    );
+  });
+}

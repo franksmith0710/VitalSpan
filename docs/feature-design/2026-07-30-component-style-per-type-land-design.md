@@ -23,13 +23,14 @@
 
 | 区域 | 已有 | 剩余缺口（P1+） | 证据 |
 |------|------|----------------|------|
-| 分区注册 | **29** 种 `ChartStyleSectionId`（+treemapShape、+circlePackingShape） | quadrant/compare 专有 shape（P1） | `chartStyleSectionRegistry.ts` |
+| 分区注册 | **33** 种 `ChartStyleSectionId`（P0 +treemap/circlePacking；P1 +quadrant/progressBar/bullet/stockLine） | chart-mix 双轴独立样式（G5） | `chartStyleSectionRegistry.ts` |
 | treemap / circle-packing | `treemapShape` / `circlePackingShape` UI + render | 面包屑等 DE 高级项 | `chartTypeStyleProfiles.ts` · `renderTreemap.ts` |
+| quadrant / compare 专有 shape | `quadrantShape` / `progressBarShape` / `bulletShape` / `stockLineShape` UI + apply + render | 坐标轴 DE 全量字段（G11） | `ChartCompareStyleSections.tsx` · `applyChartDeStyleBlocks.ts` |
 | sankey / wordCloud 样式链 | UI → apply → render + 单测 | legend/label 能力仍 missing（门控隐藏） | `renderSankey.test.ts` · `renderWordCloud.test.ts` |
 | treemap 标签 | `labelFontSize` 已接 render | — | `renderTreemap.ts` |
-| profile 测试 | 44 活跃型 gated sections 全覆盖 | 逐字段 render 断言（compare 等待 P1） | `chartTypeStyleProfiles.test.ts` |
-| 大屏素材测试 | 时钟/边框/图形/图标/标题 | datetime 专项用例（审计批次补） | `ScreenVisualEditRail.test.tsx` |
-| metadata.properties | 仍与 profiles 双轨 | G13 收敛（审计批次） | `plugins/metadata.ts` |
+| profile 测试 | 44 活跃型 gated sections 全覆盖 | 逐字段 render 断言（compare 已 apply 单测） | `chartTypeStyleProfiles.test.ts` |
+| 大屏素材测试 | 时钟/边框/图形/图标/标题/**datetime** | 字间距/发光等 DE 扩展（G19） | `ScreenVisualEditRail.test.tsx` |
+| metadata.properties | **已镜像 profiles（G13）** | — | `plugins/register.ts` · `catalogParity.test.ts` |
 
 ## 3. 外部调研（DE 对标摘要）
 
@@ -81,7 +82,7 @@
 
 - **落点**：`fe/src/lib/chartDeStyleBlocks.ts`、`chartTypeStyleProfiles.ts`、`ChartTypeStyleSections.tsx`、`applyChartDeStyleBlocks.ts`、D3 hierarchy/flow renderers、测试文件。
 - **依赖**：`patchChartDeStyleNested`、`ChartStylePanel` 现有折叠框架。
-- **不碰**：后端 schema、Dataset/SQL 数据 Tab、metadata.properties 退役（G13）。
+- **不碰**：后端 schema、Dataset/SQL 数据 Tab。
 
 ## 7. 数据与契约
 
@@ -137,4 +138,4 @@ circlePacking?: { layoutPadding?: number; labelMinRadius?: number };
 ## 11. 审批与交接
 
 - **决策**：批准（用户 2026-07-30「Implement the plan」视为门禁 B 通过）
-- **交接**：P1 backlog — G3 quadrantShape、G4 progress/bullet/stock shape、G5 双轴样式、G11 笛卡尔字段矩阵、G13 metadata 退役、G15 DE parity 文档刷新
+- **交接**：P2 backlog — G5 双轴样式、G6 玫瑰专有控件、G11 笛卡尔字段矩阵、G16–G19 widget/大屏 DE 扩展。审计批次（2026-07-30）已闭合 G3/G4/G13/G15 + renderCirclePacking/datetime 测试。

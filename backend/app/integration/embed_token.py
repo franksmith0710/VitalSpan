@@ -176,4 +176,15 @@ def resolve_sdk_params(token: str, origin_header: str | None = None) -> dict:
         "theme": row["theme"],
         "apiBase": row["api_base"],
         "token": token,
+        "shareMode": row.get("share_mode") or "embed",
+        **(
+            {"targetType": "chart", "targetId": str(row["chart_id"])}
+            if row.get("chart_id") is not None
+            else {}
+        ),
+        **(
+            {"targetType": "dashboard", "targetId": str(row["dashboard_id"])}
+            if row.get("dashboard_id") is not None
+            else {}
+        ),
     }

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
 import {
@@ -8,17 +8,24 @@ import {
   FileText,
   LayoutTemplate,
   Play,
+  Star,
 } from "lucide-react";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PanelEmptyState } from "@/components/ui/panel-empty-state";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { apiFetch } from "@/lib/api";
 import { matchesCapability, resolveEffectiveCapabilities } from "@/lib/capabilities";
+import { resolveDefaultReportTemplateNodeId } from "@/lib/defaultViewResolve";
 import { mapApiError } from "@/lib/apiError";
-import { fetchAllCatalogTemplates, type ReportCatalogNode } from "@/lib/reportCatalogUtils";
+import {
+  fetchAllCatalogTemplates,
+  filterCatalogTemplates,
+  type ReportCatalogNode,
+} from "@/lib/reportCatalogUtils";
 import { queryKeys } from "@/lib/queryKeys";
 import { useAuth } from "@/context/auth-context";
 import { cn } from "@/lib/utils";
@@ -28,6 +35,15 @@ type PrefabBinding = {
   displayName: string;
   analysisType: string;
 };
+
+type TemplateKindFilter = "all" | "word" | "excel" | "pdf";
+
+const KIND_FILTERS: { id: TemplateKindFilter; label: string }[] = [
+  { id: "all", label: "全部" },
+  { id: "pdf", label: "PDF" },
+  { id: "word", label: "Word" },
+  { id: "excel", label: "Excel" },
+];
 
 const KIND_ICON: Record<string, ReactNode> = {
   word: <FileText className="size-5" aria-hidden />,
@@ -95,9 +111,26 @@ function TemplateCard({ node }: { node: ReportCatalogNode }) {
   );
 }
 
+function PrefabRow({ binding }: { binding: PrefabBinding }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-gray-100 px-3 py-2 dark:border-gray-800">
+      <div className="min-w-0">
+        <p className="truncate text-theme-sm font-medium text-gray-800 dark:text-white/90">{binding.displayName}</p>
+        <p className="text-theme-xs text-gray-500">{binding.analysisType}</p>
+      </div>
+      <Button type="button" variant="outline" size="sm" asChild>
+        <Link to="/admin/reports">运行</Link>
+      </Button>
+    </div>
+  );
+}
+
 export function ReportCenterPage() {
   const { user } = useAuth();
   const caps = resolveEffectiveCapabilities(user);
+  const roleCodes = user?.roles ?? [];
+  const [search, setSearch] = useState("");
+  const [kindFilter, setKindFilter] = useState<TemplateKindFilter>("all");
 
   const templatesQuery = useQuery({
     queryKey: ["reports", "center", "templates"],
@@ -111,9 +144,21 @@ export function ReportCenterPage() {
     enabled: matchesCapability(caps, "report:read"),
   });
 
+  const defaultReportQuery = useQuery({
+    queryKey: ["reports", "center", "default-report", roleCodes.join(",")],
+    queryFn: () => resolveDefaultReportTemplateNodeId(roleCodes),
+    enabled: roleCodes.length > 0,
+  });
+
   const canManage = matchesCapability(caps, "report:manage");
   const templates = templatesQuery.data ?? [];
-  const prefabCount = prefabQuery.data?.items.length ?? 0;
+  const prefabItems = prefabQuery.data?.items ?? [];
+  const filteredTemplates = useMemo(
+    () => filterCatalogTemplates(templates, search, kindFilter),
+    [templates, search, kindFilter],
+  );
+  const defaultReportId = defaultReportQuery.data;
+  const defaultReportNode = templates.find((node) => node.id === defaultReportId);
 
   return (
     <AdminPageShell
@@ -127,10 +172,27 @@ export function ReportCenterPage() {
         />
       ) : null}
 
+      {defaultReportNode ? (
+        <Card className="mb-6 border-brand-200 bg-brand-50/30 dark:border-brand-500/30 dark:bg-brand-500/5">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
+            <div className="flex min-w-0 items-start gap-3">
+              <Star className="mt-0.5 size-5 shrink-0 text-brand-600 dark:text-brand-400" aria-hidden />
+              <div>
+                <p className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">角色默认报表</p>
+                <p className="text-theme-xs text-gray-500 dark:text-gray-400">{defaultReportNode.name}</p>
+              </div>
+            </div>
+            <Button type="button" size="sm" variant="primary" asChild>
+              <Link to={`/admin/reports/view/${defaultReportNode.id}`}>打开默认报表</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <QuickLinkCard
           title="预制报表"
-          description={`${prefabCount} 个系统预置分析`}
+          description={`${prefabItems.length} 个系统预置分析`}
           to="/admin/reports"
           icon={<FileBarChart className="size-5" aria-hidden />}
         />
@@ -152,14 +214,53 @@ export function ReportCenterPage() {
         ) : null}
       </div>
 
+      {prefabItems.length > 0 ? (
+        <section className="mb-6 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">预制分析</h2>
+            <Button type="button" variant="outline" size="sm" asChild>
+              <Link to="/admin/reports">查看全部</Link>
+            </Button>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {prefabItems.slice(0, 4).map((binding) => (
+              <PrefabRow key={binding.bindingKey} binding={binding} />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <section className="space-y-3">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">授权报表模板</h2>
           {canManage ? (
             <Button type="button" variant="outline" size="sm" asChild>
               <Link to="/admin/reports/templates">管理模板</Link>
             </Button>
           ) : null}
+        </div>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="搜索报表名称或 templateKey…"
+            className="max-w-md"
+            aria-label="搜索报表"
+          />
+          <div className="flex flex-wrap gap-1">
+            {KIND_FILTERS.map((item) => (
+              <Button
+                key={item.id}
+                type="button"
+                size="sm"
+                variant={kindFilter === item.id ? "primary" : "outline"}
+                onClick={() => setKindFilter(item.id)}
+              >
+                {item.label}
+              </Button>
+            ))}
+          </div>
         </div>
 
         {templatesQuery.isLoading ? (
@@ -180,9 +281,15 @@ export function ReportCenterPage() {
             }
             variant="framed"
           />
+        ) : filteredTemplates.length === 0 ? (
+          <PanelEmptyState
+            title="无匹配报表"
+            description="请调整搜索词或格式筛选。"
+            variant="framed"
+          />
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {templates.map((node) => (
+            {filteredTemplates.map((node) => (
               <TemplateCard key={node.id} node={node} />
             ))}
           </div>

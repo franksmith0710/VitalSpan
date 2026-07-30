@@ -1,5 +1,4 @@
 import type { ChartType } from "@/lib/chartViewConfig";
-import { chartStyleSectionsFromProfile } from "@/lib/chartTypeStyleProfiles";
 
 /** 样式 Tab 折叠块 ID（按图表类型组合，对标 DataEase attr-style） */
 export type ChartStyleSectionId =
@@ -50,6 +49,8 @@ export const STYLE_VARIANT_LABELS: Record<string, string> = {
 
 /** 返回当前图表类型应展示的样式折叠块（读 chartTypeStyleProfiles） */
 export function chartStyleSectionsForType(chartType: ChartType): ChartStyleSectionId[] {
+  const { chartStyleSectionsFromProfile } =
+    require("@/lib/chartTypeStyleProfiles") as typeof import("@/lib/chartTypeStyleProfiles");
   return chartStyleSectionsFromProfile(chartType);
 }
 

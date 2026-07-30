@@ -1,14 +1,5 @@
 import { isOriginAllowed } from "./EmbedSharePanel";
 
-/** 浏览器直开 embed 页（非 iframe 嵌套） */
-export function isTopLevelEmbedView(): boolean {
-  try {
-    return window.self === window.top;
-  } catch {
-    return true;
-  }
-}
-
 export function resolveEmbedAllowedOrigins(searchParams: URLSearchParams): string[] {
   const raw = searchParams.get("allowedOrigins");
   if (raw) return raw.split(",").filter(Boolean);
@@ -16,8 +7,8 @@ export function resolveEmbedAllowedOrigins(searchParams: URLSearchParams): strin
 }
 
 /**
- * 前端 embed 来源门禁：公开链 / 直开带 token / iframe 白名单。
- * 后端仍校验 token 与 origin。
+ * 前端 embed 来源门禁：公开链 / 有效 token / 无 token 时 origin 白名单。
+ * 含 token 时不再校验 FE origin（iframe 内文档源恒为 VitalSpan；portal 白名单在 sdk-params 签发层校验）。
  */
 export function isEmbedPageAuthorized(
   searchParams: URLSearchParams,
@@ -25,6 +16,6 @@ export function isEmbedPageAuthorized(
   hasToken: boolean,
 ): boolean {
   if (searchParams.get("shareMode") === "public") return true;
-  if (hasToken && isTopLevelEmbedView()) return true;
+  if (hasToken) return true;
   return isOriginAllowed(parentOrigin, resolveEmbedAllowedOrigins(searchParams));
 }

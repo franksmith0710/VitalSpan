@@ -114,9 +114,23 @@ export function AppRoutes() {
           <Route path="account" element={<Navigate to="/admin/account/profile" replace />} />
           <Route path="dashboards" element={<DashboardListPage />} />
           <Route path="dashboards/:id/edit" element={<Lazy><DashboardEditPage mode="edit" /></Lazy>} />
-          <Route path="dashboards/:id/share" element={<Lazy><DashboardSharePage /></Lazy>} />
+          <Route
+            path="dashboards/:id/share"
+            element={
+              <RequireCapabilityName capability="dashboard:share">
+                <Lazy><DashboardSharePage /></Lazy>
+              </RequireCapabilityName>
+            }
+          />
           <Route path="dashboards/:id" element={<Lazy><DashboardEditPage mode="view" /></Lazy>} />
-          <Route path="data-screens/:id/share" element={<Lazy><DashboardSharePage /></Lazy>} />
+          <Route
+            path="data-screens/:id/share"
+            element={
+              <RequireCapabilityName capability="dashboard:share">
+                <Lazy><DashboardSharePage /></Lazy>
+              </RequireCapabilityName>
+            }
+          />
           <Route path="data-screens" element={<DataScreenListPage />} />
           <Route path="data-screens/:id/edit" element={<Lazy><DashboardEditPage mode="edit" /></Lazy>} />
           <Route path="data-screens/:id/preview" element={<Lazy><DataScreenPreviewPage /></Lazy>} />

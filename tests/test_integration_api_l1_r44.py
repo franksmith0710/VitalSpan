@@ -485,16 +485,21 @@ def test_embed_origin_denied_r44(client):
 
 
 def test_embed_sdk_params_ok_r44(client):
-    """T-API-R44-006-07: GET sdk-params 有效 token → containerId。"""
+    """T-API-R44-006-07: GET sdk-params 有效 token → containerId + target。"""
+    chart_id = uuid.uuid4()
     created = client.post(
         "/api/v1/embed/token",
         headers=AUTH,
-        json={"chartId": str(uuid.uuid4()), "allowedOrigins": []},
+        json={"chartId": str(chart_id), "shareMode": "public", "allowedOrigins": []},
     )
     token = created.json()["token"]
     resp = client.get(f"/api/v1/embed/sdk-params?token={token}", headers=AUTH)
     assert resp.status_code == 200
-    assert resp.json()["containerId"]
+    body = resp.json()
+    assert body["containerId"]
+    assert body["shareMode"] == "public"
+    assert body["targetType"] == "chart"
+    assert body["targetId"] == str(chart_id)
 
 
 def test_embed_sdk_params_invalid_r44(client):

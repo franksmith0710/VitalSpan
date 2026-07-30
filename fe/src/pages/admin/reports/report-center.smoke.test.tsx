@@ -1,7 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { ReportCenterPage } from "./ReportCenterPage";
 
 const mockApiFetch = vi.fn();
@@ -13,13 +15,19 @@ vi.mock("@/context/auth-context", () => ({
   }),
 }));
 
+vi.mock("@/lib/defaultViewResolve", () => ({
+  resolveDefaultReportTemplateNodeId: vi.fn().mockResolvedValue(null),
+}));
+
 function renderPage() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      <MemoryRouter>
-        <ReportCenterPage />
-      </MemoryRouter>
+      <TooltipProvider delayDuration={0}>
+        <MemoryRouter>
+          <ReportCenterPage />
+        </MemoryRouter>
+      </TooltipProvider>
     </QueryClientProvider>,
   );
 }
@@ -52,12 +60,25 @@ describe("ReportCenterPage smoke", () => {
     renderPage();
     expect(await screen.findByText("报表中心")).toBeInTheDocument();
     expect(await screen.findByText("月报模板")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /查看/i })).toHaveAttribute("href", "/admin/reports/view/tpl-1");
+    expect(screen.getByRole("link", { name: "查看" })).toHaveAttribute("href", "/admin/reports/view/tpl-1");
   });
 
   it("shows quick links for admin", async () => {
     renderPage();
     await waitFor(() => expect(screen.getByText("报表模板")).toBeInTheDocument());
     expect(screen.getByRole("link", { name: /报表调度/ })).toHaveAttribute("href", "/admin/reports/schedules");
+  });
+
+  it("filters templates by search query", async () => {
+    renderPage();
+    expect(await screen.findByText("月报模板")).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText("搜索报表"), "不存在");
+    expect(screen.getByText("无匹配报表")).toBeInTheDocument();
+  });
+
+  it("lists prefab bindings section", async () => {
+    renderPage();
+    expect(await screen.findByText("预制分析")).toBeInTheDocument();
+    expect(screen.getByText("预制A")).toBeInTheDocument();
   });
 });

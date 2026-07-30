@@ -253,7 +253,7 @@ describe("Embed", () => {
   it("T-VIZ-R43-006-03: 未授权 origin → 错误态文案", () => {
     vi.stubGlobal("location", { ...window.location, origin: "https://evil.com" });
     render(
-      <MemoryRouter initialEntries={["/embed/chart/test-id"]}>
+      <MemoryRouter initialEntries={["/embed/chart/test-id?allowedOrigins=https://portal.example.com"]}>
         <Routes>
           <Route path="/embed/chart/:chartId" element={<EmbedChartPage />} />
         </Routes>

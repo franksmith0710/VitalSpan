@@ -107,7 +107,7 @@ export function EmbedChartPage() {
 
   return (
     <div className={`min-h-[240px] p-4 ${theme === "dark" ? "dark" : ""}`}>
-      <ChartRenderer config={config} title="嵌入图表" />
+      <ChartRenderer config={config} title="嵌入图表" embedded />
     </div>
   );
 }

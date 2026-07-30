@@ -78,4 +78,34 @@ describe("embedSdk", () => {
     expect(handle.iframe.title).toBe("VitalSpan 嵌入大屏");
     destroy(handle);
   });
+
+  it("T-VIZ-R237-007-05: sdk-params shareMode=public is appended to iframe src", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          containerId: "host-1",
+          apiBase: "/api/v1",
+          token: "pub-tok",
+          theme: "light",
+          shareMode: "public",
+          targetType: "chart",
+          targetId: "chart-42",
+        }),
+      }),
+    );
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    const handle = await init({
+      container: host,
+      token: "pub-tok",
+      targetType: "chart",
+      targetId: "fallback-id",
+    });
+    expect(handle.iframe.src).toContain("shareMode=public");
+    expect(handle.iframe.src).toContain("/embed/chart/chart-42");
+    destroy(handle);
+    vi.unstubAllGlobals();
+  });
 });

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router";
 import { ArrowLeft, Loader2 } from "lucide-react";
@@ -80,6 +81,18 @@ export function ReportViewPage() {
 
   const node = nodeQuery.data;
   const section = runMutation.data?.renderSpec.sections[0];
+  const { mutate: runReport, isPending: isRunning } = runMutation;
+  const autoRanRef = useRef(false);
+
+  useEffect(() => {
+    autoRanRef.current = false;
+  }, [nodeId]);
+
+  useEffect(() => {
+    if (!node || node.nodeType !== "template" || autoRanRef.current || isRunning) return;
+    autoRanRef.current = true;
+    runReport();
+  }, [node, isRunning, runReport]);
 
   return (
     <AdminPageShell

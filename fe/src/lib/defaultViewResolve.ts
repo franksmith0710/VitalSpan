@@ -59,6 +59,34 @@ async function fetchRoleDefaults(roleKey: string): Promise<DefaultViews | null> 
   }
 }
 
+function reportViewPath(nodeId: string): string {
+  return `/admin/reports/view/${nodeId}`;
+}
+
+async function resolveInheritedReportNodeId(
+  roleKey: string,
+  depth: number,
+  visited: Set<string>,
+): Promise<string | null> {
+  if (depth > MAX_INHERIT_DEPTH || visited.has(roleKey)) return null;
+  visited.add(roleKey);
+  const data = await fetchRoleDefaults(roleKey);
+  if (!data) return null;
+  if (data.reportTemplateNodeId) return data.reportTemplateNodeId;
+  if (data.inheritFromRoleId) {
+    return resolveInheritedReportNodeId(data.inheritFromRoleId, depth + 1, visited);
+  }
+  return null;
+}
+
+export async function resolveDefaultReportTemplateNodeId(roleCodes: string[]): Promise<string | null> {
+  for (const code of roleCodes) {
+    const nodeId = await resolveInheritedReportNodeId(code, 0, new Set());
+    if (nodeId) return nodeId;
+  }
+  return null;
+}
+
 async function resolveInheritedLanding(
   roleKey: string,
   depth: number,
@@ -73,7 +101,7 @@ async function resolveInheritedLanding(
     if (path) return path;
   }
   if (data.reportTemplateNodeId) {
-    return `/admin/reports/templates/${data.reportTemplateNodeId}?panel=run`;
+    return reportViewPath(data.reportTemplateNodeId);
   }
   if (data.inheritFromRoleId) {
     return resolveInheritedLanding(data.inheritFromRoleId, depth + 1, visited);

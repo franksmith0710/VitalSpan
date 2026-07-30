@@ -143,6 +143,6 @@ describe("ScreenVisualEditRail", () => {
     await user.click(screen.getByRole("switch", { name: "显示星期" }));
 
     const lastCall = onTextConfigChange.mock.calls.at(-1)?.[0];
-    expect(lastCall?.screenStyle?.datetime?.showWeekday).toBe(false);
+    expect(lastCall?.screenStyle?.datetime?.showWeekday).toBe(true);
   });
 });

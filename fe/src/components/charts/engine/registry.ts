@@ -1,4 +1,3 @@
-import "@/components/charts/engine/plugins/index";
 import type { ChartEngineId, ChartViewModel } from "@/components/charts/engine/types";
 import type { ChartType } from "@/lib/chartViewConfig";
 import { exportD3PngFromContainer } from "@/components/charts/engine/d3/exportPng";

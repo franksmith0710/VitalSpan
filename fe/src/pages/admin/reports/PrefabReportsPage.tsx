@@ -1,4 +1,5 @@
 import { useAuth } from "@/context/auth-context";
+import { matchesCapability, resolveEffectiveCapabilities } from "@/lib/capabilities";
 import { Lock } from "lucide-react";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { Button } from "@/components/ui/button";
@@ -46,25 +47,9 @@ function ResultTable({ columns, rows }: { columns: string[]; rows: unknown[][] }
 
 export function PrefabReportsPage() {
   const { user } = useAuth();
+  const caps = resolveEffectiveCapabilities(user);
+  const canManage = matchesCapability(caps, "report:manage");
   const { bindingsQuery, runMutation } = usePrefabReports();
-  const isViewerOnly = user?.roles?.length === 1 && user.roles[0] === "viewer";
-
-  if (isViewerOnly) {
-    return (
-      <AdminPageShell title="预制分析报表" description="浏览并运行系统预置的分析报表。">
-        <Card>
-          <CardContent>
-            <PanelEmptyState
-              icon={<Lock className="size-7" aria-hidden />}
-              title="无权运行预制报表"
-              description="当前账号仅有查看权限，请联系管理员开通分析或管理权限。"
-              variant="framed"
-            />
-          </CardContent>
-        </Card>
-      </AdminPageShell>
-    );
-  }
 
   const bindings = bindingsQuery.data?.items ?? [];
   const section = runMutation.data?.renderSpec.sections[0];
@@ -132,7 +117,7 @@ export function PrefabReportsPage() {
           </CardContent>
         </Card>
 
-        <PrefabBindingForm binding={bindings[0] ?? null} />
+        {canManage ? <PrefabBindingForm binding={bindings[0] ?? null} /> : null}
 
         <ReportExportCard />
 

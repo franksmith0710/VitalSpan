@@ -3,12 +3,17 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const mockApiFetch = vi.fn();
 
+const authState = {
+  user: { id: "1", username: "admin", roles: ["admin"] as string[] },
+};
+
 vi.mock("@/context/auth-context", () => ({
   useAuth: () => ({
-    user: { id: "1", username: "admin", roles: ["admin"] },
+    user: authState.user,
     isLoading: false,
     isAuthenticated: true,
     logout: vi.fn(),
@@ -31,15 +36,18 @@ function renderPage() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      <MemoryRouter>
-        <PrefabReportsPage />
-      </MemoryRouter>
+      <TooltipProvider delayDuration={0}>
+        <MemoryRouter>
+          <PrefabReportsPage />
+        </MemoryRouter>
+      </TooltipProvider>
     </QueryClientProvider>,
   );
 }
 
 describe("PrefabReportsPage smoke", () => {
   beforeEach(() => {
+    authState.user = { id: "1", username: "admin", roles: ["admin"] };
     mockApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
       if (path === "/api/v1/reports/prefab/bindings") {
         return {
@@ -103,26 +111,31 @@ describe("PrefabReportsPage smoke", () => {
   });
 
   it("viewer sees forbidden message on run error", async () => {
-    vi.resetModules();
-    vi.doMock("@/context/auth-context", () => ({
-      useAuth: () => ({
-        user: { id: "v1", username: "viewer", roles: ["viewer"] },
-        isLoading: false,
-        isAuthenticated: true,
-        logout: vi.fn(),
-        refresh: vi.fn(async () => {}),
-      }),
-      AuthProvider: ({ children }: { children: React.ReactNode }) => children,
-    }));
-    const { PrefabReportsPage: ViewerPage } = await import("./PrefabReportsPage");
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    render(
-      <QueryClientProvider client={qc}>
-        <MemoryRouter>
-          <ViewerPage />
-        </MemoryRouter>
-      </QueryClientProvider>,
-    );
+    const { ApiRequestError } = await import("@/lib/api");
+    authState.user = { id: "v1", username: "viewer", roles: ["viewer"] };
+    mockApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === "/api/v1/reports/prefab/bindings") {
+        return {
+          items: [
+            {
+              bindingKey: "prefab-entity-lifecycle",
+              displayName: "实体生命周期分布",
+              analysisType: "lifecycle",
+              entityTypeCode: "equipment",
+              dimensionCodes: ["status"],
+            },
+          ],
+          total: 1,
+        };
+      }
+      if (path.includes("/run") && init?.method === "POST") {
+        throw new ApiRequestError("无权运行", "RPT_PREFAB_RUN_FORBIDDEN");
+      }
+      return { items: [], total: 0 };
+    });
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole("button", { name: "运行报表 实体生命周期分布" }));
     await waitFor(() => {
       expect(screen.getByText("无权运行预制报表")).toBeInTheDocument();
     });

@@ -1,7 +1,5 @@
 import type { EngineCapabilities } from "@/components/charts/engine/capabilities";
 import type { ChartPluginDef, DePaletteCategory } from "@/components/charts/engine/plugins/types";
-import { chartStyleSectionsFromProfile } from "@/lib/chartTypeStyleProfiles";
-import type { ChartType } from "@/lib/chartViewConfig";
 
 const STATS: EngineCapabilities = {
   legend: true,
@@ -66,7 +64,7 @@ const KPI: EngineCapabilities = {
   styleVariant: false,
 };
 
-/** properties 镜像 chartTypeStyleProfiles（G13：废弃手工 sections 分叉） */
+/** properties 在 registerBuiltinChartPlugins 时从 chartTypeStyleProfiles 注入（G13） */
 function def(
   type: string,
   paletteCategory: DePaletteCategory,
@@ -81,7 +79,7 @@ function def(
     paletteCategory,
     renderer,
     engineCapabilities,
-    properties: chartStyleSectionsFromProfile(type as ChartType),
+    properties: [],
     ...extra,
   };
 }

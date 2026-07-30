@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockApiFetch = vi.fn();
 vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => mockApiFetch(...args) }));
 
-import { resolveDefaultDashboardPath, resolveDefaultLandingPath } from "./defaultViewResolve";
+import { resolveDefaultDashboardPath, resolveDefaultLandingPath, resolveDefaultReportTemplateNodeId } from "./defaultViewResolve";
 
 function mockDashboardExists(id: string) {
   mockApiFetch.mockResolvedValueOnce({ id });
@@ -174,7 +174,7 @@ describe("resolveDefaultLandingPath report template fallback", () => {
         inheritFromRoleId: null,
       });
     expect(await resolveDefaultLandingPath(["viewer"])).toBe(
-      "/admin/reports/templates/tpl-node-1?panel=run",
+      "/admin/reports/view/tpl-node-1",
     );
   });
 
@@ -204,7 +204,20 @@ describe("resolveDefaultLandingPath report template fallback", () => {
         inheritFromRoleId: null,
       });
     expect(await resolveDefaultLandingPath(["viewer"])).toBe(
-      "/admin/reports/templates/tpl-inherited?panel=run",
+      "/admin/reports/view/tpl-inherited",
     );
+  });
+});
+
+describe("resolveDefaultReportTemplateNodeId", () => {
+  beforeEach(() => mockApiFetch.mockReset());
+
+  it("returns first role report template node id", async () => {
+    mockApiFetch.mockResolvedValueOnce({
+      dashboardId: null,
+      reportTemplateNodeId: "tpl-99",
+      inheritFromRoleId: null,
+    });
+    expect(await resolveDefaultReportTemplateNodeId(["viewer"])).toBe("tpl-99");
   });
 });

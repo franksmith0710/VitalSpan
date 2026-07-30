@@ -1,6 +1,10 @@
 import type { ChartStyleSectionId } from "@/lib/chartStyleSectionRegistry";
-import { getChartPlugin } from "@/components/charts/engine/plugins/registry";
+import { BUILTIN_PLUGIN_DEFS } from "@/components/charts/engine/plugins/metadata";
 import { isLegacyTableChartType } from "@/lib/chartViewConfig";
+
+const TABLE_PALETTE_TYPES = new Set(
+  BUILTIN_PLUGIN_DEFS.filter((def) => def.paletteCategory === "table").map((def) => def.type),
+);
 
 export type TableChartKind = "legacy" | "info" | "normal" | "pivot" | "matrix-heat";
 
@@ -124,7 +128,7 @@ export function resolveTableChartKind(chartType: string): TableChartKind | null 
     case "t-heatmap":
       return "matrix-heat";
     default:
-      if (getChartPlugin(chartType)?.paletteCategory === "table") return "info";
+      if (TABLE_PALETTE_TYPES.has(chartType)) return "info";
       return null;
   }
 }

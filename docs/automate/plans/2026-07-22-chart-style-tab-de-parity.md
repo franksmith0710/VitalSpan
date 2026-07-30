@@ -98,7 +98,7 @@ ChartDeStyle = {
 }
 ```
 
-**不存在**：`axis`、`cartesian`、`gauge`、`liquid`、`funnel`、`sankey`、`graph`、`radar`、`wordCloud` 等类型块 — 类型特化样式无法系统化「配置→渲染」。
+**不存在（P1+ 已增 compare 块）**：`gauge`、`liquid`、`funnel`、`sankey`、`graph`、`radar`、`wordCloud` 等类型块仍待系统化扩展；**已增** `quadrant` / `progressBar` / `bullet` / `stockLine` / `treemap` / `circlePacking` 块 — 见 `chartDeStyleBlocks.ts`。
 
 ### 2.4 样式管线 — 到达 D3 的键
 
@@ -258,9 +258,9 @@ ChartDeStyle = {
 | `waterfall` | LINE_BAR | legend/label wired；dataZoom/markLine missing | ❌ 合计色/连接线样式；无坐标轴 |
 | `bar-range` | LINE_BAR | legend:**missing**, label wired | ❌ 区间色/坐标轴 |
 | `bidirectional-bar` | LINE_BAR | legend/label wired | ❌ 对称轴/中心线 |
-| `progress-bar` | LINE_BAR | legend missing | ❌ 进度条轨道/阈值色 |
-| `stock-line` | LINE_BAR | legend missing | ❌ K 线涨跌色/坐标轴（DE 豁免圆角） |
-| `bullet-graph` | LINE_BAR | legend missing | ❌ 实际/目标/范围带样式 |
+| `progress-bar` | axis + cartesian + **progressBarShape** | legend missing, label wired | progressBarShape 轨道透明度 ✓（2026-07-30） |
+| `stock-line` | axis + cartesian + **stockLineShape** | legend missing, label wired | stockLineShape 实体宽度比 ✓ |
+| `bullet-graph` | axis + cartesian + **bulletShape** | legend missing, label wired | bulletShape 目标线/区间 ✓ |
 
 ### 4.5 分布（distribute）
 
@@ -269,10 +269,10 @@ ChartDeStyle = {
 | `pie` | PIE_SECTIONS | legend/label wired | ⚠️ 仅 donut+pie 类型有内径；❌ 外径/padAngle/TopN §2 |
 | `pie-donut` | 同 pie | wired | innerRadius ✓；❌ 外径 |
 | `pie-rose` / `pie-donut-rose` | 同 pie | wired | ❌ 玫瑰半径模式 |
-| `radar` | PIE_SECTIONS（含 legend） | legend:**missing**, label wired | **假绿**：legend section 展示但不渲染；❌ radarShape 轴/区域 |
-| `treemap` | PIE_SECTIONS（含 legend） | legend:**missing** | **假绿**；❌ 层级间距/面包屑 |
-| `word-cloud` | **MINIMAL**（无 legend/label） | 全 missing | ❌ 字号区间/间距 §3；metadata PIE caps 与 sections 不一致 |
-| `wordCloud`（deprecated） | PIE_SECTIONS | — | 迁 word-cloud |
+| `radar` | profile（无 legend） | legend:**missing**, label wired | radarShape ✓；legend 门控隐藏 |
+| `treemap` | treemapShape + label | legend:**missing**, label wired | treemapShape 间距/圆角 ✓（2026-07-30） |
+| `word-cloud` | wordCloudShape | label missing（profile 无 label） | wordCloudShape 字号/间距 ✓ |
+| `wordCloud`（deprecated） | — | — | 迁 word-cloud |
 
 ### 4.6 地图（map）
 
@@ -287,12 +287,12 @@ ChartDeStyle = {
 | chartType | 注册 sections | D3 接线 | DE 特化缺口 |
 |-----------|---------------|---------|-------------|
 | `scatter` | LINE_BAR | 全 wired | ❌ 坐标轴；点大小 |
-| `quadrant` | LINE_BAR | wired | ❌ 象限线/区域色 |
-| `multi-scatter` | LINE_BAR | wired | ❌ 多系列点形 |
-| `funnel` | FLOW_WITH_LEGEND | legend/label wired | ❌ 排序/间距/转化率标签 §4 |
-| `sankey` | MINIMAL | 全 missing | ❌ 节点宽/间距/链接透明度 |
-| `circle-packing` | MINIMAL | label wired | ❌ 层级 padding/描边 |
-| `graph` | MINIMAL | legend missing, label wired | ❌ 布局 force/dagre（catalog 有 variant 但无 UI） |
+| `quadrant` | axis + cartesian + **quadrantShape** | wired | quadrantShape 分割线/区域 ✓（2026-07-30） |
+| `multi-scatter` | cartesian | wired | ❌ 多系列点形 |
+| `funnel` | funnelShape + legend | legend/label wired | funnelShape ✓ |
+| `sankey` | sankeyShape | legend/label missing（门控） | sankeyShape 节点/链接 ✓（2026-07-30） |
+| `circle-packing` | circlePackingShape + label | label wired | circlePackingShape ✓ |
+| `graph` | graphShape + label | legend missing, label wired | graphShape force/dagre ✓ |
 
 ### 4.8 双轴（dual_axes）
 
@@ -309,10 +309,9 @@ ChartDeStyle = {
 
 | 问题 | 类型 | UI | 渲染 | 修复策略 |
 |------|------|-----|------|----------|
-| legend section 无 D3 消费 | radar, treemap | 展示 | matrix missing | P0：门控隐藏 legend；P3：接 renderRadar/renderTreemap |
-| legend section 无消费 | bar-range, progress-bar, stock-line, bullet-graph | 展示 | legend missing | P0 隐藏或 P1 接线 |
-| graph legend metadata true | graph | 不展示（MINIMAL） | missing | P0 收敛 metadata |
-| word-cloud caps vs sections | word-cloud | MINIMAL | 全 missing | P0 统一为 MINIMAL + caps false |
+| legend section 无 D3 消费 | radar, treemap | **已门控隐藏** | matrix missing | ✅ 2026-07-30 |
+| sankey/wordCloud 专有 shape 假绿 | sankey, word-cloud | sankeyShape/wordCloudShape | 已接线 + 单测 | ✅ 2026-07-30 |
+| metadata.properties 漂移 | 全 catalog | 双轨 | profiles 真理源 | ✅ G13 镜像 |
 | variantBasic 空折叠 | bar 等 40+ 型 | 注册无 UI | — | P0 从 profile 移除或按 catalog 条件注册 |
 | gauge progress variant | gauge | 无 variantBasic | — | P2 加 gaugeShape + variantBasic |
 | graph force/dagre | graph | 无 variantBasic | styleVariant 未消费 | P3 graphShape |

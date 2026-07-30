@@ -13,15 +13,13 @@ describe("renderD3CirclePackingChart", () => {
       }) as DOMRect;
   });
 
-  it("applies circlePacking layout padding and label min radius from plan options", () => {
-    const container = document.createElement("div");
+  it("respects labelMinRadius when deciding visible labels", () => {
     const data = [
       { name: "A", value: 100 },
       { name: "B", value: 60 },
       { name: "C", value: 30 },
     ];
-
-    const cleanup = renderD3CirclePackingChart(container, {
+    const base = {
       width: 320,
       height: 240,
       colors: ["#465fff", "#12b76a", "#f79009"],
@@ -30,15 +28,29 @@ describe("renderD3CirclePackingChart", () => {
       showTooltip: false,
       showLegend: false,
       labelFontSize: 11,
-      options: {
-        data,
-        __circlePackingPadding: 4,
-        __circlePackingLabelMinRadius: 30,
-      },
-    });
+      options: { data },
+    };
 
-    const labels = [...container.querySelectorAll("text")].map((node) => node.textContent ?? "");
-    expect(labels.every((text) => text === "")).toBe(true);
-    cleanup();
+    const lowThreshold = document.createElement("div");
+    const cleanupLow = renderD3CirclePackingChart(lowThreshold, {
+      ...base,
+      options: { ...base.options, __circlePackingLabelMinRadius: 8 },
+    });
+    const lowLabels = [...lowThreshold.querySelectorAll("g.pack-node text")].filter(
+      (node) => (node.textContent ?? "").length > 0,
+    ).length;
+    cleanupLow();
+
+    const highThreshold = document.createElement("div");
+    const cleanupHigh = renderD3CirclePackingChart(highThreshold, {
+      ...base,
+      options: { ...base.options, __circlePackingLabelMinRadius: 999 },
+    });
+    const highLabels = [...highThreshold.querySelectorAll("g.pack-node text")].filter(
+      (node) => (node.textContent ?? "").length > 0,
+    ).length;
+    cleanupHigh();
+
+    expect(lowLabels).toBeGreaterThan(highLabels);
   });
 });

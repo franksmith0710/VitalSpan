@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import "@/components/charts/engine/plugins/index";
+import { registerBuiltinChartPlugins } from "@/components/charts/engine/plugins/register";
 import { BUILTIN_PLUGIN_DEFS } from "@/components/charts/engine/plugins/metadata";
 import { getChartPlugin, listChartPluginTypes } from "@/components/charts/engine/plugins/registry";
 import { chartStyleSectionsFromProfile } from "@/lib/chartTypeStyleProfiles";
@@ -8,6 +8,8 @@ import type { ChartType } from "@/lib/chartViewConfig";
 const EXPECTED_CHART_TYPE_COUNT = 49;
 
 describe("chart catalog parity (FE registry ↔ metadata)", () => {
+  registerBuiltinChartPlugins();
+
   it("registers all builtin plugin defs", () => {
     expect(BUILTIN_PLUGIN_DEFS.length).toBe(EXPECTED_CHART_TYPE_COUNT);
     expect(listChartPluginTypes().length).toBe(EXPECTED_CHART_TYPE_COUNT);

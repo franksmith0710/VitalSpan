@@ -154,7 +154,7 @@ export function renderD3CirclePackingChart(container: HTMLElement, config: D3Ren
         .attr("dy", "0.35em")
         .attr("fill", "#fff")
         .style("pointer-events", "none")
-        .text((d) => d.name)
+        .text((d) => (packNodeRadius(d) > labelMinRadius ? d.name : ""))
     : null;
 
   const updateVisual = () => {
