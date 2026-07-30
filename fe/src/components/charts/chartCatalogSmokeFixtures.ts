@@ -62,7 +62,7 @@ export const CHART_CATALOG_SMOKE_CASES: ChartCatalogSmokeCase[] = [
     columns: ["revenue", "rate"],
     rows: [[1280, 12.5]],
     dimensions: [],
-    metrics: [{ field: "revenue" }, { field: "rate" }],
+    metrics: [{ field: "revenue" }],
   },
 
   // table
@@ -74,7 +74,7 @@ export const CHART_CATALOG_SMOKE_CASES: ChartCatalogSmokeCase[] = [
       [1, "Alpha"],
       [2, "Beta"],
     ],
-    dimensions: [],
+    dimensions: [{ field: "id" }, { field: "name" }],
     metrics: [],
   },
   {
@@ -232,10 +232,10 @@ export const CHART_CATALOG_SMOKE_CASES: ChartCatalogSmokeCase[] = [
   {
     type: "progress-bar",
     testId: "d3-progress-bar-chart",
-    columns: ["cat", "value"],
-    rows: [["A", 50]],
+    columns: ["cat", "target", "current"],
+    rows: [["A", 100, 50]],
     dimensions: [{ field: "cat" }],
-    metrics: [{ field: "value" }],
+    metrics: [{ field: "target" }, { field: "current" }],
   },
   {
     type: "stock-line",
@@ -345,13 +345,13 @@ export const CHART_CATALOG_SMOKE_CASES: ChartCatalogSmokeCase[] = [
   {
     type: "scatter",
     testId: "d3-scatter-chart",
-    columns: ["series", "x", "y"],
+    columns: ["category", "value"],
     rows: [
-      ["A", 10, 20],
-      ["B", 15, 25],
+      ["A", 20],
+      ["B", 25],
     ],
-    dimensions: [{ field: "series" }],
-    metrics: [{ field: "x" }, { field: "y" }],
+    dimensions: [{ field: "category" }],
+    metrics: [{ field: "value" }],
   },
   {
     type: "quadrant",
@@ -367,13 +367,13 @@ export const CHART_CATALOG_SMOKE_CASES: ChartCatalogSmokeCase[] = [
   {
     type: "multi-scatter",
     testId: "d3-scatter-chart",
-    columns: ["series", "x", "y"],
+    columns: ["color", "x", "y"],
     rows: [
-      ["A", 10, 20],
-      ["B", 15, 25],
+      ["红", 10, 20],
+      ["蓝", 15, 25],
     ],
-    dimensions: [{ field: "series" }],
-    metrics: [{ field: "x" }, { field: "y" }],
+    dimensions: [{ field: "color" }],
+    metrics: [{ field: "y" }, { field: "x" }],
   },
   {
     type: "funnel",

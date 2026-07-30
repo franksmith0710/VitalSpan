@@ -9,15 +9,17 @@ from typing import Sequence, Union
 import sqlalchemy as sa
 from alembic import op
 
+from migrations.dialect_ops import json_layout_default, now_server_default
+
 revision: str = "0013"
 down_revision: Union[str, None] = "0012"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
-DEFAULT_LAYOUT = {"version": 1, "widgets": [], "globalFilters": []}
-
 
 def upgrade() -> None:
+    bind = op.get_bind()
+    now = now_server_default(bind)
     op.create_table(
         "dashboards",
         sa.Column("id", sa.Uuid(), nullable=False),
@@ -28,13 +30,11 @@ def upgrade() -> None:
             "layout_json",
             sa.JSON(),
             nullable=False,
-            server_default=sa.text(
-                "'{\"version\"\\:1,\"widgets\"\\:[],\"globalFilters\"\\:[]}'::json"
-            ),
+            server_default=json_layout_default(bind),
         ),
         sa.Column("created_by", sa.Uuid(), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("CURRENT_TIMESTAMP"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("CURRENT_TIMESTAMP"), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=now, nullable=False),
+        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=now, nullable=False),
         sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("slug", name="uq_dashboards_slug"),

@@ -26,6 +26,33 @@ def test_layout_shell_accepts_legacy_stacked_variants():
     assert cfg.style_variant == "default"
 
 
+def test_layout_shell_persists_de_axes():
+    cfg = ChartViewConfigLayout.model_validate(
+        {
+            "chartType": "kpi",
+            "styleVariant": "default",
+            "dimensions": [],
+            "metrics": [{"field": "amount"}],
+            "axes": {"yAxis": [{"field": "amount"}]},
+        },
+    )
+    assert cfg.axes is not None
+    assert cfg.axes["yAxis"][0].field == "amount"
+
+
+def test_layout_rejects_unknown_axis_id():
+    import pytest
+
+    with pytest.raises(ValueError, match="CHART_INVALID_AXIS"):
+        ChartViewConfigLayout.model_validate(
+            {
+                "chartType": "line",
+                "styleVariant": "default",
+                "axes": {"unknownAxis": [{"field": "x"}]},
+            },
+        )
+
+
 def test_migrate_layout_widgets():
     layout = migrate_layout_chart_configs(
         {

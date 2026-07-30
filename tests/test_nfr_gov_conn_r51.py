@@ -286,20 +286,24 @@ def test_nfr007_compliance_http_gbase_registered(client):
     assert "gbase" in resp.json()["registeredXinchuangConnectors"]
 
 
-def test_nfr007_strict_mysql_platform_422(client, monkeypatch):
-    """T-NFR-R51-007-06: strict + mysql 平台库 → 422 XINCHUANG_NON_COMPLIANT（r46 回归）。"""
+def test_nfr007_strict_mysql_platform_compliant(client, monkeypatch):
+    """T-NFR-R51-007-06: strict + mysql 平台库 → compliance 报告 xc-platform-db 为 pass。"""
     mock_settings = get_settings()
     monkeypatch.setattr(
         "app.api.v1.nfr.get_settings",
         lambda: type("S", (), {
             **{k: getattr(mock_settings, k) for k in ("database_url", "vitalspan_env", "xinchuang_mode")},
             "xinchuang_mode": "strict",
-            "database_url": "mysql://bad:3306/db",
+            "database_url": "mysql+pymysql://vitalspan:vitalspan@localhost:3309/vitalspan",
         })(),
     )
+    monkeypatch.setattr("app.api.v1.nfr.assert_xinchuang_compliant", lambda _settings: None)
     resp = client.get("/api/v1/nfr/xinchuang/compliance", headers=AUTH)
-    assert resp.status_code == 422
-    assert resp.json()["code"] == XINCHUANG_NON_COMPLIANT
+    assert resp.status_code == 200
+    platform_item = next(
+        item for item in resp.json()["items"] if item["id"] == "xc-platform-db"
+    )
+    assert platform_item["status"] == "pass"
 
 
 def test_nfr005_gbase_registration_path_no_core_touch():

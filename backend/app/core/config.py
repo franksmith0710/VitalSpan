@@ -108,9 +108,19 @@ class Settings(BaseSettings):
             raise ValueError("DATABASE_URL 不能为空")
         stripped = value.strip()
         if not stripped.startswith(
-            ("postgresql://", "postgresql+psycopg://", "sqlite+")
+            (
+                "postgresql://",
+                "postgresql+psycopg://",
+                "mysql://",
+                "mysql+pymysql://",
+                "sqlite+",
+            )
         ):
-            raise ValueError("平台元库 URL 须为 postgresql 或 postgresql+psycopg 协议")
+            raise ValueError(
+                "平台元库 URL 须为 postgresql、mysql 或 sqlite 协议"
+            )
+        if stripped.startswith("mysql://"):
+            return "mysql+pymysql://" + stripped[len("mysql://") :]
         return stripped
 
     @field_validator("credential_fernet_key")

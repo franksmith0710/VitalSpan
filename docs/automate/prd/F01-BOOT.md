@@ -90,9 +90,9 @@
 - **描述**：数据库迁移框架（SRS 追溯项）。
 - **验收标准**：
   - [x] Alembic 或等价迁移可执行（`alembic upgrade head`）
-  - [x] 平台元数据库可连接（`docker-compose.yml` 本地 PostgreSQL）
-- **代码锚点**：`backend/migrations/` · `docker-compose.yml` · `backend/migrations/env.py`
-- **演化建议**：`tests/test_migrations.py` 31 项覆盖 alembic heads 单 head（T-MIG-25）、`upgrade --sql` smoke（T-MIG-29）、revision 链完整性（T-MIG-30）、不可达 host（T-MIG-31）；CI 仍不跑 docker `alembic upgrade`；M1B 增 ingestion 元表 revision
+  - [x] 平台元数据库可连接（`docker-compose.yml` PostgreSQL / MySQL / SQLite 三方言）
+- **代码锚点**：`backend/migrations/` · `backend/migrations/dialect_ops.py` · `backend/app/core/db/meta.py` · `docker-compose.yml` · `backend/migrations/env.py`
+- **演化建议**：`tests/test_meta_db_dialects.py` 覆盖 Settings 三方言 URL 与 SQLite `alembic upgrade head`；MySQL 集成测依赖 compose `meta-mysql:3309`；CI 仍不默认跑 docker `alembic upgrade`
 
 ### [BOOT-006] CI 与质量门禁
 

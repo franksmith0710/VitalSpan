@@ -1,13 +1,14 @@
 import { ChartFieldSlot } from "./ChartFieldSlot";
 import { chartDataSlotBlueprint } from "./chartFieldSlots";
 import { useChartInspector } from "./chartInspectorContext";
-import type { SlotTarget } from "./chartInspectorTypes";
+import { isSameSlotTarget, type SlotTarget } from "./chartInspectorTypes";
 import { MapChartFieldHintBanner } from "./MapChartFieldHint";
 import { mapChartFieldHint } from "@/lib/mapChartDataHint";
 import { isGeoMapChartType } from "@/lib/chartViewConfig";
+import { clearAxisField, fieldAtSlot, writeAxisField } from "@/lib/resolveChartEncoding";
 
-function isActiveSlot(a: SlotTarget | null, b: SlotTarget): boolean {
-  return a?.kind === b.kind && a?.index === b.index;
+function slotKindForUi(kind: "dimension" | "metric" | "both"): "dimension" | "metric" {
+  return kind === "metric" ? "metric" : "dimension";
 }
 
 export function ChartDataSlots({ hideMapHint = false }: { hideMapHint?: boolean }) {
@@ -30,24 +31,7 @@ export function ChartDataSlots({ hideMapHint = false }: { hideMapHint?: boolean 
 
   const clearSlot = (target: SlotTarget) => {
     clearFieldAssignError();
-    if (target.kind === "dimension") {
-      const dimensions = [...(cfg.dimensions ?? [])];
-      while (dimensions.length <= target.index) dimensions.push({ field: "" });
-      dimensions[target.index] = { field: "" };
-      onChange({ ...cfg, dimensions });
-      return;
-    }
-    const metrics = [...(cfg.metrics ?? [])];
-    while (metrics.length <= target.index) metrics.push({ field: "" });
-    metrics[target.index] = { field: "" };
-    onChange({ ...cfg, metrics });
-  };
-
-  const fieldAt = (target: SlotTarget): string | undefined => {
-    if (target.kind === "dimension") {
-      return cfg.dimensions?.[target.index]?.field || undefined;
-    }
-    return cfg.metrics?.[target.index]?.field || undefined;
+    onChange(clearAxisField(cfg, target));
   };
 
   return (
@@ -62,18 +46,18 @@ export function ChartDataSlots({ hideMapHint = false }: { hideMapHint?: boolean 
         <p className="text-theme-xs text-gray-500 dark:text-gray-400">正在加载字段…</p>
       ) : null}
       {slots.map((slot) => {
-        const target: SlotTarget = { kind: slot.kind, index: slot.index };
-        const rawField = fieldAt(target);
+        const target: SlotTarget = { axisId: slot.axisId, index: slot.index };
+        const rawField = fieldAtSlot(cfg, target);
         return (
           <ChartFieldSlot
-            key={`${slot.kind}-${slot.index}-${slot.label}`}
+            key={`${slot.axisId}-${slot.index}-${slot.label}`}
             label={slot.label}
             required={slot.required !== false}
             optional={slot.required === false}
             fieldName={rawField}
             fieldSuffix={rawField && slot.showAggregation ? "求和" : undefined}
-            slotKind={slot.kind === "metric" ? "metric" : "dimension"}
-            active={isActiveSlot(activeSlot, target)}
+            slotKind={slotKindForUi(slot.kind)}
+            active={isSameSlotTarget(activeSlot, target)}
             disabled={columnsDisabled}
             onClick={() => {
               clearFieldAssignError();

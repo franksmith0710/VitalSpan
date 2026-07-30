@@ -49,6 +49,23 @@ services:
       timeout: 5s
       retries: 10
 
+  meta-mysql:
+    image: mysql:8.0
+    ports:
+      - "3309:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: vitalspan
+      MYSQL_USER: vitalspan
+      MYSQL_PASSWORD: vitalspan
+    volumes:
+      - vitalspan_meta_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uvitalspan", "-pvitalspan"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   sample-mariadb:
     image: mariadb:11
     ports:
@@ -100,4 +117,5 @@ services:
 volumes:
   vitalspan_pg_data:
   vitalspan_analytics_pg_data:
+  vitalspan_meta_mysql_data:
   vitalspan_ops_tsdb_data:

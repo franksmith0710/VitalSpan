@@ -17,7 +17,7 @@ _FORBIDDEN_MODULES = frozenset({"superset", "dataease"})
 
 _REMEDIATION: dict[str, str] = {
     "xc-db-connector": "Register xinchuang dialect via register_connector_plugin (e.g. gbase, dm, gaussdb)",
-    "xc-platform-db": "Set DATABASE_URL to postgresql:// or sqlite+ for dev",
+    "xc-platform-db": "Set DATABASE_URL to postgresql://, mysql://, or sqlite+ for dev",
     "xc-forbidden-runtime": "Remove superset/dataease from runtime dependencies",
     "xc-connector-plugin": "Declare PLUGIN_EXTENSION_POINTS in plugin_extension module",
 }
@@ -60,7 +60,15 @@ def _registered_xinchuang() -> list[str]:
 
 def _check_platform_db(settings: Settings) -> XinchuangChecklistItem:
     url = settings.database_url
-    if url.startswith(("postgresql://", "postgresql+psycopg://", "sqlite+")):
+    if url.startswith(
+        (
+            "postgresql://",
+            "postgresql+psycopg://",
+            "mysql://",
+            "mysql+pymysql://",
+            "sqlite+",
+        )
+    ):
         return XinchuangChecklistItem("xc-platform-db", "pass", "platform meta db protocol ok")
     return XinchuangChecklistItem("xc-platform-db", "fail", f"non-compliant platform db: {url.split(':', 1)[0]}")
 

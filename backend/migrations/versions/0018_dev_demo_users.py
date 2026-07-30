@@ -72,11 +72,13 @@ def _ensure_user(bind, username: str, password_hash: str) -> str:
 
 
 def _bind_role(bind, user_id: str, role_id: str) -> None:
+    sql = (
+        "INSERT INTO auth_user_roles (user_id, role_id) VALUES (:uid, :rid)"
+    )
+    from migrations.dialect_ops import insert_ignore_statement
+
     bind.execute(
-        sa.text(
-            "INSERT INTO auth_user_roles (user_id, role_id) VALUES (:uid, :rid) "
-            "ON CONFLICT DO NOTHING"
-        ),
+        sa.text(insert_ignore_statement(bind, sql)),
         {"uid": user_id, "rid": role_id},
     )
 

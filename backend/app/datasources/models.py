@@ -2,12 +2,9 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from functools import lru_cache
 
-from sqlalchemy import JSON, DateTime, Integer, String, Text, Uuid, create_engine, func
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
-
-from app.core.config import get_settings
+from sqlalchemy import JSON, DateTime, Integer, String, Text, Uuid, func
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
 class Base(DeclarativeBase):
@@ -35,12 +32,6 @@ class DataSource(Base):
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
-@lru_cache
-def get_meta_engine():
-    url = get_settings().database_url
-    connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
-    return create_engine(url, pool_pre_ping=True, connect_args=connect_args)
+from app.core.db.meta import get_meta_engine, get_meta_session
 
-
-def get_meta_session():
-    return sessionmaker(bind=get_meta_engine(), autoflush=False, autocommit=False)()
+__all__ = ["Base", "DataSource", "get_meta_engine", "get_meta_session"]

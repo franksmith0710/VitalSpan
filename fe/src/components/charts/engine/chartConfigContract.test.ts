@@ -370,7 +370,7 @@ describe("chart config contract L2", () => {
       mode: "sql",
       sql: "select 1",
       dimensions: [{ field: "cat" }],
-      metrics: [{ field: "value" }],
+      metrics: [{ field: "target" }, { field: "value" }],
       nativeBody: {
         deStyle: {
           cartesian: { barRadius: 10 },
@@ -379,8 +379,8 @@ describe("chart config contract L2", () => {
       },
     };
     const vm = buildChartViewModel(progressConfig, {
-      columns: ["cat", "value"],
-      rows: [["A", 50]],
+      columns: ["cat", "target", "value"],
+      rows: [["A", 100, 50]],
     });
     const style = buildStyleContext({ config: progressConfig, chartColors: ["#465fff"] });
     const plan = applyChartStyleChain(buildChartRenderPlan(vm), style, progressConfig);

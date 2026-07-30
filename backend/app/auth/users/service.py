@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core.db.sql_compat import ilike
 from app.auth.audit import service as audit_service
 from app.auth.bootstrap_root import (
     RootAdminRequiredError,
@@ -260,8 +261,8 @@ def list_users(
     count_stmt = select(func.count()).select_from(AuthUser)
     if q:
         pattern = f"%{q}%"
-        base = base.where(AuthUser.username.ilike(pattern))
-        count_stmt = count_stmt.where(AuthUser.username.ilike(pattern))
+        base = base.where(ilike(AuthUser.username, pattern))
+        count_stmt = count_stmt.where(ilike(AuthUser.username, pattern))
     total = session.scalar(count_stmt) or 0
     items = list(session.scalars(base.limit(capped).offset(max(offset, 0))))
     return items, total

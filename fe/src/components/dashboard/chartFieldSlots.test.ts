@@ -51,7 +51,8 @@ describe("chartFieldSlots", () => {
     expect(chartDataSlotBlueprint("map").map((s) => s.label)).toEqual([
       "地区 / 维度",
       "数据 / 指标",
-      "钻取 / 维度",
+      "钻取 / 维度 · 市级",
+      "钻取 / 维度 · 区县",
     ]);
   });
 
@@ -77,23 +78,60 @@ describe("chartFieldSlots", () => {
   });
 
   it("T-INSP-DE-10: gauge and liquid expose metric-only slots", () => {
-    expect(chartDataSlotBlueprint("gauge").map((s) => s.label)).toEqual(["指标 / 度量"]);
-    expect(chartDataSlotBlueprint("liquid").map((s) => s.label)).toEqual(["指标 / 度量"]);
+    expect(chartDataSlotBlueprint("gauge").map((s) => s.label)).toEqual(["指针角度 / 指标"]);
+    expect(chartDataSlotBlueprint("liquid").map((s) => s.label)).toEqual(["进度指示 / 指标"]);
     expect(chartRenderRequiredCounts("gauge")).toEqual({ minDimensions: 0, minMetrics: 1 });
   });
 
-  it("T-INSP-DE-11: scatter family uses series dim + X/Y metrics", () => {
-    for (const type of ["scatter", "quadrant", "multi-scatter"]) {
-      expect(chartDataSlotBlueprint(type).map((s) => s.label)).toEqual([
-        "系列 / 维度",
-        "X 轴 / 指标",
-        "Y 轴 / 指标",
-      ]);
-    }
+  it("T-INSP-DE-11: scatter uses category dim + value metric (+ optional bubble)", () => {
+    expect(chartDataSlotBlueprint("scatter").map((s) => s.label)).toEqual([
+      "类别轴 / 维度",
+      "值轴 / 指标",
+      "气泡大小 / 指标",
+    ]);
   });
 
-  it("T-INSP-DE-12: table-pivot requires row and column dimensions", () => {
+  it("T-INSP-DE-11b: quadrant uses category dim + X/Y metrics (+ optional bubble)", () => {
+    expect(chartDataSlotBlueprint("quadrant").map((s) => s.label)).toEqual([
+      "类别 / 维度",
+      "X 轴 / 指标",
+      "Y 轴 / 指标",
+      "气泡大小 / 指标",
+    ]);
+    expect(chartRenderRequiredCounts("quadrant")).toEqual({ minDimensions: 1, minMetrics: 2 });
+  });
+
+  it("T-INSP-DE-11d: bidirectional-bar requires two metrics", () => {
+    expect(chartRenderRequiredCounts("bidirectional-bar")).toEqual({
+      minDimensions: 1,
+      minMetrics: 2,
+    });
+  });
+
+  it("T-INSP-DE-11c: multi-scatter uses DE axis order", () => {
+    expect(chartDataSlotBlueprint("multi-scatter").map((s) => s.label)).toEqual([
+      "颜色 / 维度",
+      "X 轴 / 时间维度或指标",
+      "Y 轴 / 指标",
+      "明暗 / 指标",
+      "气泡大小 / 指标",
+    ]);
+    expect(chartRenderRequiredCounts("multi-scatter")).toEqual({ minDimensions: 1, minMetrics: 2 });
+  });
+
+  it("T-INSP-DE-11e: kpi is metric-only", () => {
+    expect(chartDataSlotBlueprint("kpi").map((s) => s.label)).toEqual(["指标 / 度量"]);
+    expect(chartRenderRequiredCounts("kpi")).toEqual({ minDimensions: 0, minMetrics: 1 });
+  });
+
+  it("T-INSP-DE-11f: stock-line uses single yAxis with four OHLC slots", () => {
+    const ySlots = chartDataSlotBlueprint("stock-line").filter((s) => s.axisId === "yAxis");
+    expect(ySlots).toHaveLength(4);
+  });
+
+  it("T-INSP-DE-12: table-pivot requires row dimension; column dimension is optional", () => {
     const slots = chartDataSlotBlueprint("table-pivot");
-    expect(slots.filter((s) => s.kind === "dimension" && s.required !== false).length).toBe(2);
+    expect(slots.filter((s) => s.kind === "dimension" && s.required !== false).length).toBe(1);
+    expect(chartRenderRequiredCounts("table-pivot")).toEqual({ minDimensions: 1, minMetrics: 1 });
   });
 });

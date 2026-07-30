@@ -50,4 +50,4 @@
 - r46：`core/nfr/` 五文件（errors、plugin_extension、push_config、xinchuang）；`gbase` 经 `register_connector_plugin` 登记演练扩展点路径
 - r51 companion：`browser_matrix.py` / `push_channels.py`；信创 remediation + 非阻塞 probe；`describe_registration_path` + registry probe；内存 `_PUSH_MOCK_LOG` 非生产持久化
 - 推送 webhook 仅返回 configured 布尔，不泄露 URL 明文
-- `XINCHUANG_MODE=strict` 下平台元库非 postgresql/sqlite → 422 `XINCHUANG_NON_COMPLIANT`
+- `XINCHUANG_MODE=strict` 下平台元库须为 postgresql / mysql / sqlite 协议之一；否则 422 `XINCHUANG_NON_COMPLIANT`

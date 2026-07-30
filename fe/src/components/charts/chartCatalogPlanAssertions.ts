@@ -191,15 +191,21 @@ export function assertPlanMatchesFixture(item: ChartCatalogSmokeCase, plan: Char
     return;
   }
 
-  if (type === "quadrant") {
-    expect(plan.plotType).toBe("Quadrant");
-  }
-
-  if (type === "scatter" || type === "quadrant" || type === "multi-scatter") {
+  if (type === "scatter") {
     const data = plan.options.data as Array<{ x: number; y: number }>;
     expect(data.length).toBeGreaterThan(0);
-    const xMi = colIndex(item.columns, item.metrics[0]!.field);
-    const yMi = colIndex(item.columns, item.metrics[1]!.field);
+    const yi = colIndex(item.columns, item.metrics[0]!.field);
+    expect(data[0]!.y).toBe(Number(item.rows[0]![yi]));
+    return;
+  }
+
+  if (type === "quadrant" || type === "multi-scatter") {
+    const data = plan.options.data as Array<{ x: number; y: number }>;
+    expect(data.length).toBeGreaterThan(0);
+    const xField = type === "multi-scatter" ? item.metrics[1]!.field : item.metrics[0]!.field;
+    const yField = type === "multi-scatter" ? item.metrics[0]!.field : item.metrics[1]!.field;
+    const xMi = colIndex(item.columns, xField);
+    const yMi = colIndex(item.columns, yField);
     expect(data[0]!.x).toBe(Number(item.rows[0]![xMi]));
     expect(data[0]!.y).toBe(Number(item.rows[0]![yMi]));
     return;

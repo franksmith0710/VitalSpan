@@ -26,15 +26,11 @@ _ADMIN_USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
 
 
 def _clear_meta_engine_caches() -> None:
-    from app.auth.models import get_meta_engine as auth_engine
     from app.core.config import get_settings
-    from app.datasources.models import get_meta_engine as ds_engine
-    from app.ingestion.models import get_meta_engine as ing_engine
-    from app.query.models import get_meta_engine as query_engine
+    from app.core.db.meta import get_meta_engine
 
     get_settings.cache_clear()
-    for engine_fn in (auth_engine, ds_engine, ing_engine, query_engine):
-        engine_fn.cache_clear()
+    get_meta_engine.cache_clear()
 
 
 def _seed_ci_admin_user() -> None:

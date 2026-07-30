@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from functools import lru_cache
 from typing import Any, Literal
 
 from cryptography.fernet import Fernet, InvalidToken
 from pydantic import BaseModel, Field, field_validator
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text, Uuid, create_engine, func
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text, Uuid, func
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from app.core.config import get_settings
+from app.core.db.meta import get_meta_engine, get_meta_session
 from app.query.rls.guard import validate_identifier
 
 INGESTION_MAX_ROWS = 100_000
@@ -124,14 +124,3 @@ def decrypt_password(cipher: str) -> str:
         return _fernet().decrypt(cipher.encode()).decode()
     except InvalidToken as exc:
         raise ValueError("invalid encrypted password") from exc
-
-
-@lru_cache
-def get_meta_engine():
-    url = get_settings().database_url
-    connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
-    return create_engine(url, pool_pre_ping=True, connect_args=connect_args)
-
-
-def get_meta_session():
-    return sessionmaker(bind=get_meta_engine(), autoflush=False, autocommit=False)()

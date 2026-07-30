@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { SchedulePanel } from "./components/SchedulePanel";
 
 const mockApiFetch = vi.fn();
@@ -8,7 +9,11 @@ vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => mockApiFetch(...
 
 function wrap(ui: React.ReactNode) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return <QueryClientProvider client={qc}>{ui}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={qc}>
+      <TooltipProvider delayDuration={0}>{ui}</TooltipProvider>
+    </QueryClientProvider>
+  );
 }
 
 describe("SchedulePanel smoke", () => {

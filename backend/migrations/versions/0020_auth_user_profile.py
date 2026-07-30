@@ -32,11 +32,19 @@ def upgrade() -> None:
             "UPDATE auth_users SET display_name = username WHERE display_name IS NULL"
         )
     )
-    bind.execute(
-        sa.text(
-            "UPDATE auth_users SET email = username || '@vitalspan.local' WHERE email IS NULL"
+    if bind.dialect.name == "mysql":
+        bind.execute(
+            sa.text(
+                "UPDATE auth_users SET email = CONCAT(username, '@vitalspan.local') "
+                "WHERE email IS NULL"
+            )
         )
-    )
+    else:
+        bind.execute(
+            sa.text(
+                "UPDATE auth_users SET email = username || '@vitalspan.local' WHERE email IS NULL"
+            )
+        )
 
 
 def downgrade() -> None:

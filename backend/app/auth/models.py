@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from functools import lru_cache
 
 from sqlalchemy import (
     Boolean,
@@ -14,12 +13,9 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     Uuid,
-    create_engine,
     func,
 )
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
-
-from app.core.config import get_settings
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
 class Base(DeclarativeBase):
@@ -245,23 +241,6 @@ class AuthDimensionTypeRef(Base):
     ref_source: Mapped[str] = mapped_column(String(32), nullable=False, server_default="group")
 
 
-def _meta_connect_args(url: str) -> dict:
-    if url.startswith("sqlite"):
-        return {"check_same_thread": False}
-    if url.startswith(("postgresql://", "postgresql+psycopg://")):
-        return {"connect_timeout": 5}
-    return {}
+from app.core.db.meta import get_meta_engine, get_meta_session
 
-
-@lru_cache
-def get_meta_engine():
-    url = get_settings().database_url
-    return create_engine(
-        url,
-        pool_pre_ping=True,
-        connect_args=_meta_connect_args(url),
-    )
-
-
-def get_meta_session():
-    return sessionmaker(bind=get_meta_engine(), autoflush=False, autocommit=False)()
+__all__ = ["get_meta_engine", "get_meta_session"]

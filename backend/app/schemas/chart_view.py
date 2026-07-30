@@ -32,6 +32,26 @@ class ChartFieldRef(BaseModel):
     label: str | None = Field(default=None, max_length=128)
 
 
+_DE_AXIS_IDS = frozenset(
+    {"xAxis", "yAxis", "yAxisExt", "xAxisExt", "extBubble", "extColor", "drill", "extStack", "filter"}
+)
+
+
+def _validate_axes_payload(axes: dict[str, list[ChartFieldRef]] | None) -> dict[str, list[ChartFieldRef]] | None:
+    if axes is None:
+        return None
+    out: dict[str, list[ChartFieldRef]] = {}
+    for key, refs in axes.items():
+        if key not in _DE_AXIS_IDS:
+            raise ValueError(f"CHART_INVALID_AXIS:未知命名轴「{key}」")
+        if len(refs) > 8:
+            raise ValueError(f"CHART_INVALID_AXIS:命名轴「{key}」最多 8 个字段")
+        cleaned = [r for r in refs if r.field.strip()]
+        if cleaned:
+            out[key] = cleaned
+    return out or None
+
+
 class ChartFilterRef(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     field: str = Field(min_length=1, max_length=128)
@@ -148,6 +168,7 @@ class ChartViewConfig(BaseModel):
     index: str | None = None
     dimensions: list[ChartFieldRef] = Field(default_factory=list, max_length=8)
     metrics: list[ChartFieldRef] = Field(default_factory=list, max_length=8)
+    axes: dict[str, list[ChartFieldRef]] | None = Field(default=None, description="DE 命名轴（可选）")
     filters: list[ChartFilterRef] = Field(default_factory=list, max_length=16)
     time_range: ChartTimeRangeRef | None = Field(default=None, alias="timeRange")
 
@@ -155,6 +176,11 @@ class ChartViewConfig(BaseModel):
     @classmethod
     def coerce_optional_ids(cls, data: Any) -> Any:
         return normalize_chart_config_input(data)
+
+    @model_validator(mode="after")
+    def validate_axes(self) -> ChartViewConfig:
+        self.axes = _validate_axes_payload(self.axes)
+        return self
 
     @model_validator(mode="after")
     def validate_l1_rules(self) -> ChartViewConfig:
@@ -261,6 +287,7 @@ class ChartViewConfigLayout(BaseModel):
     index: str | None = None
     dimensions: list[ChartFieldRef] = Field(default_factory=list, max_length=8)
     metrics: list[ChartFieldRef] = Field(default_factory=list, max_length=8)
+    axes: dict[str, list[ChartFieldRef]] | None = Field(default=None, description="DE 命名轴（可选）")
     filters: list[ChartFilterRef] = Field(default_factory=list, max_length=16)
     time_range: ChartTimeRangeRef | None = Field(default=None, alias="timeRange")
 
@@ -268,6 +295,11 @@ class ChartViewConfigLayout(BaseModel):
     @classmethod
     def coerce_optional_ids(cls, data: Any) -> Any:
         return normalize_chart_config_input(data)
+
+    @model_validator(mode="after")
+    def validate_axes_layout(self) -> ChartViewConfigLayout:
+        self.axes = _validate_axes_payload(self.axes)
+        return self
 
     @model_validator(mode="after")
     def validate_layout_shell(self) -> ChartViewConfigLayout:

@@ -54,7 +54,7 @@
   - [x] 堆叠/分组/面积/环形等（`bar`: stacked/grouped/horizontal；`line`: area/smooth；`pie`: donut）
   - [x] styleVariant 生效（后端校验 + 前端 `renderFromSpec`/`ChartConfigPanel` 变体渲染）
   - [x] **M-DASH-UX F-B**：`WidgetInspector` 嵌入 `ChartConfigPanel` 可改 styleVariant/筛选（Wave1；`columns=[]` 时维度/度量下拉禁用）
-  - [ ] 检视器内维度/度量列驱动选择（需 schema/`columns` 接线；companion）
+  - [x] 检视器内维度/度量列驱动选择（需 schema/`columns` 接线；companion）（完成于 2026-07-29 · `useInspectorColumns.ts` · `DatasetFieldGroups.tsx`）
 - **代码锚点**：`backend/app/viz/specs.py` · `backend/app/viz/builtin.py` · `fe/src/components/charts/ChartConfigPanel.tsx` · `fe/src/components/charts/adapters/renderFromSpec.ts` · `fe/src/components/dashboard/WidgetInspector.tsx` · `fe/src/components/dashboard/WidgetInspector.smoke.test.tsx`
 - **演化建议**：styleVariant 与 dashboard 主题全局联动；更多高级类型变体；r250 补 `buildBarOption`/`buildPieOption` 显式构建函数（T-VIZ-R250-004-01~02：stacked→stack非空、donut→radius数组）
 - **里程碑对齐**：
@@ -66,10 +66,11 @@
 - **描述**：维度指标筛选配置 UI（SRS 追溯项）。r42 交付 FieldRule + registry 驱动校验；r43 companion 交付 `ChartConfigPanel` 维度/指标字段绑定与 style_variant 选择；r236 交付多字段/筛选器动态增删与 native execute 联动；r237 交付 `timeRange` 相对/绝对 preset + sql `time_start`/`time_end` 注入链。
 - **验收标准**：
   - [x] 维度/指标/筛选器可配置（`ChartConfigPanel` 多字段动态增删 + operator/value 筛选器 + 后端 FieldRule 校验链）
+  - [x] **DE 字段轴对齐**（2026-07-30）：Inspector 槽位名称/顺序/必填/可拖类型与 DataEase v2 `axisConfig` 一致；`ChartViewConfig.axes` 命名轴存储；`chartDeAxis/catalog` + `resolveChartEncoding` + parity 测试 T-VIZ-R32-011
   - [x] native mode 图表执行链（r236：`useChartExecute` mode=native + `ChartRenderer` rerun）
   - [x] 时间范围选择（r237：`TimeRangeConfig` + `ChartTimeRangeRef` FE/BE 校验 + `buildTimeRangeParameters` sql 注入）
   - [x] **M-DASH-UX F-B**：检视器内嵌 `ChartConfigPanel` 筛选/时间范围 onChange 合并回 `chartConfig`（Wave1；`WidgetInspector.smoke` F-B）
-- **代码锚点**：`backend/app/viz/specs.py`（FieldRule）· `backend/app/schemas/chart_view.py` · `fe/src/components/charts/ChartConfigPanel.tsx` · `fe/src/components/charts/TimeRangeConfig.tsx` · `fe/src/components/charts/useChartExecute.ts` · `fe/src/lib/chartViewConfig.ts` · `fe/src/components/dashboard/WidgetInspector.tsx` · `tests/test_m11_batch3_r237.py` T-VIZ-R237-005-01~02
+- **代码锚点**：`backend/app/viz/specs.py`（FieldRule）· `backend/app/schemas/chart_view.py` · `fe/src/components/charts/ChartConfigPanel.tsx` · `fe/src/components/charts/TimeRangeConfig.tsx` · `fe/src/components/charts/useChartExecute.ts` · `fe/src/lib/chartViewConfig.ts` · `fe/src/lib/chartDeAxis/` · `fe/src/lib/resolveChartEncoding.ts` · `fe/src/components/dashboard/ChartDataSlots.tsx` · `fe/src/components/dashboard/WidgetInspector.tsx` · `tests/test_m11_batch3_r237.py` T-VIZ-R237-005-01~02
 - **演化建议**：Playwright E2E 真实出数；native mode timeRange 执行链扩展
 - **里程碑对齐**：M11 · 已完成 · 2026-07-07
 ### [VIZ-006] iframe 嵌入门户

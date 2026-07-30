@@ -13,6 +13,7 @@ import type { LayoutWidget } from "./layoutUtils";
 import { defaultChartConfig } from "./layoutUtils";
 import { WIDGET_CHART_LABELS } from "./widgetIcons";
 import { resolveAutoAssignTarget, validateFieldAssignment } from "@/lib/chartFieldAssignment";
+import { writeAxisField } from "@/lib/resolveChartEncoding";
 import type { SlotTarget } from "./chartInspectorTypes";
 
 type DataSourceListItem = { id: string; name: string; code: string };
@@ -156,7 +157,8 @@ export function useChartInspectorState(
     const reconciled = reconcileChartFields(current, columns);
     const same =
       JSON.stringify(current.dimensions) === JSON.stringify(reconciled.dimensions) &&
-      JSON.stringify(current.metrics) === JSON.stringify(reconciled.metrics);
+      JSON.stringify(current.metrics) === JSON.stringify(reconciled.metrics) &&
+      JSON.stringify(current.axes) === JSON.stringify(reconciled.axes);
     if (!same) emitChange(reconciled);
     // 仅在列集合变化时剔除无效字段，避免拖入字段时被立即清掉
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -178,17 +180,7 @@ export function useChartInspectorState(
       }
 
       setFieldAssignError(null);
-      if (slot.kind === "dimension") {
-        const dimensions = [...(current.dimensions ?? [])];
-        while (dimensions.length <= slot.index) dimensions.push({ field: "" });
-        dimensions[slot.index] = { field: fieldName };
-        emitChange({ ...current, dimensions });
-      } else {
-        const metrics = [...(current.metrics ?? [])];
-        while (metrics.length <= slot.index) metrics.push({ field: "" });
-        metrics[slot.index] = { field: fieldName };
-        emitChange({ ...current, metrics });
-      }
+      emitChange(writeAxisField(current, slot, fieldName));
       setActiveSlot(null);
     },
     [activeSlot, emitChange, readChartConfig],

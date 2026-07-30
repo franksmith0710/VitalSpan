@@ -280,16 +280,31 @@ function dualAxesPlan(
   const catSpec = trimSpecToCategoryAxis(spec);
 
   if (mode === "dual-line") {
+    const axes = spec.encoding.axes ?? {};
     const leftMetric = metrics[0] ?? "";
     const rightMetric = metrics[1] ?? metrics[0] ?? "";
+    const rightSeriesDim = axes.extBubble?.[0]?.field?.trim() ?? "";
     const lineEnc = encodeCartesianRows(
       specWithMetrics(catSpec, [leftMetric]),
       rows,
       columns,
       "line",
     );
+    const rightSpec = rightSeriesDim
+      ? {
+          ...catSpec,
+          encoding: {
+            ...catSpec.encoding,
+            dimensions: [
+              ...catSpec.encoding.dimensions.slice(0, 1),
+              { field: rightSeriesDim },
+              ...catSpec.encoding.dimensions.slice(2),
+            ],
+          },
+        }
+      : catSpec;
     const lineEnc2 = encodeCartesianRows(
-      specWithMetrics(catSpec, [rightMetric]),
+      specWithMetrics(rightSpec, [rightMetric]),
       rows,
       columns,
       "line",
@@ -370,7 +385,42 @@ function progressBarPlanWrapper(
   return progressBarPlan(spec, rows, columns);
 }
 
-function scatterPlan(
+function basicScatterPlan(
+  spec: ReturnType<typeof chartViewModelToRenderSpec>,
+  rows: unknown[][],
+  columns: string[],
+): ChartRenderPlan {
+  const dimField = spec.encoding.dimensions[0]?.field ?? "";
+  const yField = spec.encoding.metrics[0]?.field ?? "";
+  const bubbleField = spec.encoding.metrics[1]?.field;
+  const di = colIndex(columns, dimField);
+  const yi = colIndex(columns, yField);
+  if (di < 0 || yi < 0) return errorPlan("散点图缺少维度或指标列", "Scatter");
+
+  const categories = [...new Set(rows.map((r) => String(r[di] ?? "")))];
+  const xIndex = new Map(categories.map((c, i) => [c, i]));
+  const bi = bubbleField ? colIndex(columns, bubbleField) : -1;
+
+  const data = rows.map((r) => {
+    const category = String(r[di] ?? "");
+    return {
+      x: xIndex.get(category) ?? 0,
+      y: Number(r[yi] ?? 0),
+      series: category,
+      ...(bi >= 0 ? { size: Number(r[bi] ?? 0) } : {}),
+    };
+  });
+
+  return d3Plan("Scatter", {
+    data,
+    xField: "x",
+    yField: "y",
+    colorField: "series",
+    sizeField: bi >= 0 ? "size" : undefined,
+  });
+}
+
+function xyScatterPlan(
   spec: ReturnType<typeof chartViewModelToRenderSpec>,
   rows: unknown[][],
   columns: string[],
@@ -378,22 +428,34 @@ function scatterPlan(
   const metrics = spec.encoding.metrics.map((m) => m.field).filter(Boolean);
   const xField = metrics[0] ?? "";
   const yField = metrics[1] ?? metrics[0] ?? "";
+  const bubbleField = spec.encoding.metrics[2]?.field;
   const seriesField = spec.encoding.dimensions[0]?.field ?? "";
   const xi = colIndex(columns, xField);
   const yi = colIndex(columns, yField);
   if (xi < 0 || yi < 0) return errorPlan("散点图缺少指标列", "Scatter");
   const di = seriesField ? colIndex(columns, seriesField) : -1;
+  const bi = bubbleField ? colIndex(columns, bubbleField) : -1;
   const data = rows.map((r) => ({
     x: Number(r[xi] ?? 0),
     y: Number(r[yi] ?? 0),
     ...(seriesField && di >= 0 ? { series: String(r[di] ?? "") } : {}),
+    ...(bi >= 0 ? { size: Number(r[bi] ?? 0) } : {}),
   }));
   return d3Plan("Scatter", {
     data,
     xField: "x",
     yField: "y",
     colorField: seriesField && di >= 0 ? "series" : undefined,
+    sizeField: bi >= 0 ? "size" : undefined,
   });
+}
+
+function scatterPlan(
+  spec: ReturnType<typeof chartViewModelToRenderSpec>,
+  rows: unknown[][],
+  columns: string[],
+): ChartRenderPlan {
+  return basicScatterPlan(spec, rows, columns);
 }
 
 function quadrantPlan(
@@ -401,9 +463,59 @@ function quadrantPlan(
   rows: unknown[][],
   columns: string[],
 ): ChartRenderPlan {
-  const base = scatterPlan(spec, rows, columns);
+  const base = xyScatterPlan(spec, rows, columns);
   if (base.empty) return base;
   return { ...base, plotType: "Quadrant" };
+}
+
+function multiScatterPlan(
+  spec: ReturnType<typeof chartViewModelToRenderSpec>,
+  rows: unknown[][],
+  columns: string[],
+): ChartRenderPlan {
+  const axes = spec.encoding.axes ?? {};
+  const colorField =
+    axes.extColor?.[0]?.field?.trim() ?? spec.encoding.dimensions[0]?.field ?? "";
+  const xAxisField =
+    axes.xAxis?.[0]?.field?.trim() ??
+    spec.encoding.metrics[1]?.field ??
+    spec.encoding.dimensions[1]?.field ??
+    "";
+  const yField = axes.yAxis?.[0]?.field?.trim() ?? spec.encoding.metrics[0]?.field ?? "";
+  const lightnessField =
+    axes.yAxisExt?.[0]?.field?.trim() ?? spec.encoding.metrics[2]?.field;
+  const bubbleField =
+    axes.extBubble?.[0]?.field?.trim() ?? spec.encoding.metrics[3]?.field;
+  const ci = colIndex(columns, colorField);
+  const yi = colIndex(columns, yField);
+  if (ci < 0 || yi < 0) return errorPlan("多维散点图缺少颜色维度或 Y 轴指标", "Scatter");
+  if (!xAxisField) return errorPlan("多维散点图缺少 X 轴字段", "Scatter");
+
+  const xi = colIndex(columns, xAxisField);
+  if (xi < 0) return errorPlan("多维散点图缺少 X 轴字段", "Scatter");
+
+  const li = lightnessField ? colIndex(columns, lightnessField) : -1;
+  const bi = bubbleField ? colIndex(columns, bubbleField) : -1;
+  const xIsNumeric = rows.some((r) => {
+    const v = r[xi];
+    return typeof v === "number" || (typeof v === "string" && v.trim() !== "" && !Number.isNaN(Number(v)));
+  });
+
+  const data = rows.map((r) => ({
+    x: xIsNumeric ? Number(r[xi] ?? 0) : String(r[xi] ?? ""),
+    y: Number(r[yi] ?? 0),
+    series: String(r[ci] ?? ""),
+    ...(li >= 0 ? { lightness: Number(r[li] ?? 0) } : {}),
+    ...(bi >= 0 ? { size: Number(r[bi] ?? 0) } : {}),
+  }));
+
+  return d3Plan("Scatter", {
+    data,
+    xField: "x",
+    yField: "y",
+    colorField: "series",
+    sizeField: bi >= 0 ? "size" : undefined,
+  });
 }
 
 function d3TablePlan(type: string, vm: ChartViewModel): ChartRenderPlan {
@@ -479,7 +591,7 @@ export function buildPlanForType(chartType: string, vm: ChartViewModel): ChartRe
     case "quadrant":
       return quadrantPlan(spec, capped, columns);
     case "multi-scatter":
-      return scatterPlan(spec, capped, columns);
+      return multiScatterPlan(spec, capped, columns);
     case "chart-mix":
       return dualAxesPlan(spec, capped, columns, "default");
     case "chart-mix-group":

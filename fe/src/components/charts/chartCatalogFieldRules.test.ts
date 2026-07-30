@@ -8,6 +8,7 @@ import {
 import { sanitizeChartFieldsForValidate } from "@/lib/chartFieldRules";
 import { buildChartRenderModel } from "@/lib/buildChartRenderModel";
 import { BACKEND_CATALOG_FIELD_RULES } from "./chartCatalogBackendFieldRules";
+import { deriveFieldRuleFromDeCatalog } from "@/lib/chartDeAxis";
 import {
   assertCatalogSmokeCoverage,
   CHART_CATALOG_SMOKE_CASES,
@@ -99,11 +100,12 @@ describe("chart catalog L3 FIELD", () => {
     expect(model.kind).toBe("ready");
   });
 
-  it("T-VIZ-R32-009: dual-axis types require at least two metrics in rule", () => {
-    for (const type of ["chart-mix", "chart-mix-group", "chart-mix-stack", "chart-mix-dual-line"]) {
+  it("T-VIZ-R32-009: dual-axis types require at least two metrics in rule (except dual-line)", () => {
+    for (const type of ["chart-mix", "chart-mix-group", "chart-mix-stack"]) {
       const rule = BACKEND_CATALOG_FIELD_RULES[type]!;
       expect(rule.minMetrics).toBeGreaterThanOrEqual(2);
     }
+    expect(BACKEND_CATALOG_FIELD_RULES["chart-mix-dual-line"]!.minMetrics).toBe(1);
   });
 
   it("T-VIZ-R32-010: sanitize slot capacity respects backend max", () => {
@@ -119,16 +121,12 @@ describe("chart catalog L3 FIELD", () => {
     expect(trimmed.metrics?.length).toBeLessThanOrEqual(rule.maxMetrics);
   });
 
-  it("T-VIZ-R32-011: blueprint required slot counts stay within fieldRule bounds", () => {
+  it("T-VIZ-R32-011: DE catalog min field rules align with backend snapshot", () => {
     for (const type of ACTIVE_TYPES) {
       const rule = BACKEND_CATALOG_FIELD_RULES[type]!;
-      const slots = chartDataSlotBlueprint(type);
-      const requiredDims = slots.filter((s) => s.kind === "dimension" && s.required !== false).length;
-      const requiredMetrics = slots.filter((s) => s.kind === "metric" && s.required !== false).length;
-      expect(requiredDims, type).toBeGreaterThanOrEqual(rule.minDimensions);
-      expect(requiredDims, type).toBeLessThanOrEqual(rule.maxDimensions);
-      expect(requiredMetrics, type).toBeGreaterThanOrEqual(rule.minMetrics);
-      expect(requiredMetrics, type).toBeLessThanOrEqual(rule.maxMetrics);
+      const deRule = deriveFieldRuleFromDeCatalog(type);
+      expect(deRule.minDimensions, type).toBe(rule.minDimensions);
+      expect(deRule.minMetrics, type).toBe(rule.minMetrics);
     }
   });
 
@@ -140,13 +138,13 @@ describe("chart catalog L3 FIELD", () => {
     expect(model.kind).toBe("ready");
   });
 
-  it("T-VIZ-R32-013: table-pivot missing column dimension yields error", () => {
+  it("T-VIZ-R32-013: table-pivot allows row-only pivot when column dimension omitted", () => {
     const pivot = smokeCaseToConfig(CHART_CATALOG_SMOKE_CASES.find((c) => c.type === "table-pivot")!);
     const model = buildChartRenderModel(
       { ...pivot, dimensions: [{ field: "row_dim" }] },
       ["row_dim", "col_dim", "amount"],
       [["A", "X", 10]],
     );
-    expect(model.kind).toBe("error");
+    expect(model.kind).toBe("ready");
   });
 });

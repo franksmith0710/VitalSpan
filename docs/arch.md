@@ -74,7 +74,7 @@ flowchart TB
 | ADR-04 | **ConnectorRegistry** 插件式数据源 | NFR-04：新增类型不改核心服务与查询执行器 | 已定 |
 | ADR-05 | 查询双路径：**SqlCapable** + **NativeQuery** | 关系型/OLAP 走 SQL；时序/文档/搜索走原生 DSL | 已定 |
 | ADR-06 | 凭证 **Fernet** 加密（可换 KMS） | NFR-03；API 不返回明文密码 | 已定 |
-| ADR-07 | 平台元数据 **PostgreSQL**（建议） | 角色、数据源、Dashboard、审计等；与业务分析库分离 | 建议 |
+| ADR-07 | 平台元数据 **PostgreSQL / MySQL 8+ / SQLite** | 生产推荐 PG 或 MySQL（对标 DataEase）；SQLite 用于开发单文件；与业务分析库分离 | 已定 |
 | ADR-08 | M8 工作流 **Flowable / Camunda** 二选一 | 四期治理 BPM；具体选型待 M13 前锁定 | 待定 |
 | ADR-09 | M6 报表 **JasperReports** 或等价 | 模板 Word/Excel/PDF；二期末前选型 | 待定 |
 | ADR-10 | 演化指导库 **`.automate` submodule** | SOP/skills/agents 与产品代码分离；`install.sh` 同步至 `.cursor/` | 已部署 |
@@ -105,7 +105,7 @@ flowchart TB
 | 前端 UI | React · shadcn/ui · Radix · Tailwind CSS v4 | 单应用主壳层（`/admin/*`） |
 | 前端图表 | ChartEngine（生产 AntV） | `fe/src/components/charts/engine/`；registry 全 canvas→antv；地图见 ADR-12 |
 | 后端 API | FastAPI · Pydantic v2 · Uvicorn | REST `/api/v1/*` |
-| 平台库 | SQLAlchemy 2 · Alembic | 元数据 ORM + 迁移 |
+| 平台库 | SQLAlchemy 2 · Alembic | 元数据 ORM + 迁移；`DATABASE_URL` 支持 PostgreSQL / MySQL 8+ / SQLite |
 | 连接层 | ConnectorRegistry · SQLAlchemy 连接池 | 按 `dataSourceId` 隔离 |
 | SQL 方言 | 每连接器 dialect 模块 | RLS 注入、LIMIT、转义 |
 | Native 驱动 | influxdb-client · pymongo · elasticsearch | `mode=native` |
@@ -300,7 +300,7 @@ Dataset CRUD（ORM `datasets` 表）
 | 变量 | 必填 | 说明 | 默认 |
 |------|:----:|------|------|
 | `VITALSPAN_ENV` | | `development` / `staging` / `production` | `development` |
-| `DATABASE_URL` | ✅ | 平台元数据库（PostgreSQL 推荐） | — |
+| `DATABASE_URL` | ✅ | 平台元数据库（PostgreSQL / MySQL 8+ / SQLite） | — |
 | `SECRET_KEY` | ✅ | JWT / 会话签名 | — |
 | `CREDENTIAL_FERNET_KEY` | ✅ | 数据源密码加密（ADR-06） | — |
 | `CORS_ORIGINS` | | 前端源，逗号分隔 | `http://localhost:5173` |
@@ -341,7 +341,8 @@ Dataset CRUD（ORM `datasets` 表）
 
 | 服务 | 宿主机端口 | 库/用途 |
 |------|-----------|---------|
-| `postgres` | 5432 | 平台元库 `vitalspan`（`DATABASE_URL`） |
+| `postgres` | 5432 | 平台元库 `vitalspan`（`DATABASE_URL` 默认） |
+| `meta-mysql` | 3309 | 平台元库 MySQL 8 备选（`DATABASE_URL=mysql://…@localhost:3309/vitalspan`） |
 | `analytics-postgres` | 5433 | 托管分析库 `analytics`（`ANALYTICS_DATABASE_URL`；ingestion 同步目标） |
 | `sample-mysql` | 3307 | 样例 OLTP `sample_db` |
 | `sample-mariadb` | 3308 | MariaDB 连接器集成测 |

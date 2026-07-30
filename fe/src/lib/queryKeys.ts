@@ -121,6 +121,7 @@ export const queryKeys = {
   },
   services: {
     list: (params?: { limit?: number; offset?: number }) => ["services", "list", params] as const,
+    openapi: (serviceId: string) => ["services", "openapi", serviceId] as const,
   },
   charts: {
     types: ["charts", "types"] as const,

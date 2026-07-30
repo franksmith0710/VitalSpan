@@ -34,12 +34,20 @@ describe("buildComparePlans", () => {
     ]);
   });
 
-  it("progressBarPlan normalizes against max value", () => {
-    const plan = progressBarPlan(baseSpec(["value"]), rows, ["category", "value"]);
+  it("progressBarPlan computes completion from target and current metrics", () => {
+    const progressRows = [
+      ["A", 100, 10],
+      ["B", 100, 20],
+    ];
+    const plan = progressBarPlan(
+      baseSpec(["target", "current"]),
+      progressRows,
+      ["category", "target", "current"],
+    );
     expect(plan.plotType).toBe("ProgressBar");
     expect(plan.options.data).toEqual([
-      { type: "A", value: 10, max: 20 },
-      { type: "B", value: 20, max: 20 },
+      { type: "A", value: 10, target: 100, progress: 10, max: 100 },
+      { type: "B", value: 20, target: 100, progress: 20, max: 100 },
     ]);
   });
 

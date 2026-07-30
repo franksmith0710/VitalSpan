@@ -2,6 +2,7 @@ import type { ChartRenderPlan } from "@/components/charts/engine/buildChartRende
 import { chartViewModelToRenderSpec } from "@/components/charts/engine/buildChartViewModel";
 import { colIndex } from "@/components/charts/engine/buildDatasetEncoding";
 import type { RenderSpec } from "@/components/charts/engine/types";
+import { coerceAxisNumeric, fieldFromAxisOrLegacy } from "@/lib/chartAxisPlanFields";
 
 function d3Plan(plotType: string, options: Record<string, unknown>): ChartRenderPlan {
   return { kind: "d3", plotType, options };
@@ -47,20 +48,17 @@ export function barRangePlan(
   rows: unknown[][],
   columns: string[],
 ): ChartRenderPlan {
-  const lowField = spec.encoding.metrics[0]?.field ?? "";
-  const highField = spec.encoding.metrics[1]?.field ?? lowField;
-  const li = colIndex(columns, lowField);
-  const hi = colIndex(columns, highField);
-  if (li < 0) return errorPlan(`指标列「${lowField}」不存在`, "BarRange");
+  const catField = fieldFromAxisOrLegacy(spec, "xAxis", 0, "dimension", 0);
+  const lowField = fieldFromAxisOrLegacy(spec, "yAxis", 0, "metric", 0);
+  const highField = fieldFromAxisOrLegacy(spec, "yAxisExt", 0, "metric", 1) || lowField;
+  const ci = colIndex(columns, catField);
+  if (ci < 0 && catField) return errorPlan(`维度列「${catField}」不存在`, "BarRange");
+  if (!lowField) return errorPlan("区间图缺少开始值字段", "BarRange");
 
-  const data = aggregateDimMetric(spec, rows, columns, (row, di) => ({
-    type: di >= 0 ? String(row[di] ?? "") : "?",
-    low: Number(row[li] ?? 0),
-    high: Number(row[hi >= 0 ? hi : li] ?? 0),
-  })).map((row) => ({
-    type: String(row.type ?? ""),
-    low: Number(row.low ?? 0),
-    high: Number(row.high ?? 0),
+  const data = rows.map((row) => ({
+    type: ci >= 0 ? String(row[ci] ?? "") : "?",
+    low: coerceAxisNumeric(row, columns, lowField),
+    high: coerceAxisNumeric(row, columns, highField),
   }));
 
   return d3Plan("BarRange", { data });
@@ -71,20 +69,29 @@ export function progressBarPlan(
   rows: unknown[][],
   columns: string[],
 ): ChartRenderPlan {
-  const metric = spec.encoding.metrics[0]?.field ?? "";
-  const mi = colIndex(columns, metric);
-  if (mi < 0) return errorPlan(`指标列「${metric}」不存在`, "ProgressBar");
+  const targetField = spec.encoding.metrics[0]?.field ?? "";
+  const currentField = spec.encoding.metrics[1]?.field ?? "";
+  const ti = colIndex(columns, targetField);
+  const ci = colIndex(columns, currentField);
+  if (ti < 0 || ci < 0) return errorPlan("进度条缺少目标值或实际值指标列", "ProgressBar");
 
-  const raw = aggregateDimMetric(spec, rows, columns, (row, di, idx) => ({
+  const data = aggregateDimMetric(spec, rows, columns, (row, di, idx) => ({
     type: di >= 0 ? String(row[di] ?? "") : "?",
-    value: Number(row[idx[0] ?? -1] ?? 0),
-  }));
-  const maxVal = Math.max(...raw.map((r) => Number(r.value ?? 0)), 1);
-  const data = raw.map((row) => ({
-    type: String(row.type ?? ""),
-    value: Number(row.value ?? 0),
-    max: maxVal,
-  }));
+    target: Number(row[ti] ?? 0),
+    current: Number(row[ci] ?? 0),
+  })).map((row) => {
+    const target = Number(row.target ?? 0);
+    const current = Number(row.current ?? 0);
+    let progress = 100;
+    if (target !== 0) progress = (current / target) * 100;
+    return {
+      type: String(row.type ?? ""),
+      value: current,
+      target,
+      progress: Math.min(Math.max(progress, 0), 100),
+      max: target || Math.max(current, 1),
+    };
+  });
 
   return d3Plan("ProgressBar", { data });
 }
@@ -128,13 +135,16 @@ export function stockLinePlan(
   rows: unknown[][],
   columns: string[],
 ): ChartRenderPlan {
-  const dim = spec.encoding.dimensions[0]?.field ?? "";
-  const metrics = spec.encoding.metrics.map((m) => m.field).filter(Boolean);
+  const dim = fieldFromAxisOrLegacy(spec, "xAxis", 0, "dimension", 0);
+  const openField = fieldFromAxisOrLegacy(spec, "yAxis", 0, "metric", 0);
+  const closeField = fieldFromAxisOrLegacy(spec, "yAxis", 1, "metric", 1) || openField;
+  const lowField = fieldFromAxisOrLegacy(spec, "yAxis", 2, "metric", 2) || closeField;
+  const highField = fieldFromAxisOrLegacy(spec, "yAxis", 3, "metric", 3) || lowField;
   const di = colIndex(columns, dim);
-  const oi = colIndex(columns, metrics[0] ?? "");
-  const ci = colIndex(columns, metrics[1] ?? metrics[0] ?? "");
-  const li = colIndex(columns, metrics[2] ?? metrics[1] ?? metrics[0] ?? "");
-  const hi = colIndex(columns, metrics[3] ?? metrics[2] ?? metrics[1] ?? metrics[0] ?? "");
+  const oi = colIndex(columns, openField);
+  const ci = colIndex(columns, closeField);
+  const li = colIndex(columns, lowField);
+  const hi = colIndex(columns, highField);
   if (di < 0 || oi < 0) return errorPlan("K 线图缺少日期或价格列", "Stock");
 
   const data = rows.map((row) => {

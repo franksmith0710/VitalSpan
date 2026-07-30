@@ -9,6 +9,8 @@ from typing import Sequence, Union
 import sqlalchemy as sa
 from alembic import op
 
+from migrations.dialect_ops import now_server_default
+
 revision: str = "0014"
 down_revision: Union[str, None] = "0013"
 branch_labels: Union[str, Sequence[str], None] = None
@@ -22,6 +24,7 @@ SEED_CATEGORIES = [
 
 
 def upgrade() -> None:
+    now = now_server_default(op.get_bind())
     op.create_table(
         "catalog_categories",
         sa.Column("code", sa.String(16), primary_key=True),
@@ -38,7 +41,7 @@ def upgrade() -> None:
         sa.Column("category_codes", sa.JSON(), nullable=False),
         sa.Column("openapi_operation_id", sa.String(128), nullable=True),
         sa.Column("status", sa.String(16), nullable=False, server_default="draft"),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=now, nullable=False),
     )
     op.create_table(
         "bus_registrations",
@@ -53,7 +56,7 @@ def upgrade() -> None:
         sa.Column("trace_id", sa.String(64), nullable=False),
         sa.Column("bus_payload", sa.JSON(), nullable=True),
         sa.Column("error_message", sa.Text(), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=now, nullable=False),
     )
     categories = sa.table(
         "catalog_categories",

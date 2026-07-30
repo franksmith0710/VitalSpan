@@ -13,6 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth.models import AuthResourceGrant
+from app.core.db.sql_compat import ilike
 from app.core.logging import trace_id_var
 from app.datasources.acl import apply_list_filter, assert_visible
 from app.datasources.credentials import CredentialDecryptError, decrypt_credential, encrypt_credential
@@ -188,7 +189,7 @@ def list_data_sources(
         base = base.where(DataSource.type == type)
     if q:
         pattern = f"%{q}%"
-        base = base.where(or_(DataSource.name.ilike(pattern), DataSource.code.ilike(pattern)))
+        base = base.where(or_(ilike(DataSource.name, pattern), ilike(DataSource.code, pattern)))
     count_stmt = select(func.count()).select_from(DataSource)
     count_stmt = _active_filter(count_stmt)
     count_stmt = apply_list_filter(count_stmt, session, role_codes)
@@ -196,7 +197,7 @@ def list_data_sources(
         count_stmt = count_stmt.where(DataSource.type == type)
     if q:
         pattern = f"%{q}%"
-        count_stmt = count_stmt.where(or_(DataSource.name.ilike(pattern), DataSource.code.ilike(pattern)))
+        count_stmt = count_stmt.where(or_(ilike(DataSource.name, pattern), ilike(DataSource.code, pattern)))
     total = session.scalar(count_stmt) or 0
     rows = list(session.scalars(base.order_by(DataSource.code).limit(limit).offset(offset)))
     return DataSourceListResponse(

@@ -19,6 +19,24 @@ describe("buildTableModel", () => {
     expect(model.columnMeta[0]?.label).toBe("区域");
   });
 
+  it("prefers xAxis column order from encoding.axes for detail table", () => {
+    const model = buildDetailTableModel({
+      plotType: "table-info",
+      columns: ["region", "amount", "sale_date"],
+      rows: [["华东", 10, "2025-01-01"]],
+      spec: {
+        encoding: {
+          dimensions: [{ field: "region" }],
+          metrics: [{ field: "amount" }, { field: "sale_date" }],
+          axes: {
+            xAxis: [{ field: "amount" }, { field: "region" }, { field: "sale_date" }],
+          },
+        },
+      } as never,
+    });
+    expect(model.columns).toEqual(["amount", "region", "sale_date"]);
+  });
+
   it("aggregates pivot cells by row and column keys", () => {
     const model = buildPivotTableModel({
       plotType: "table-pivot",

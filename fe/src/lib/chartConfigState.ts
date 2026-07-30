@@ -2,8 +2,7 @@ import type { ChartFieldRef, ChartViewConfig } from "@/lib/chartViewConfig";
 import { isD3TableChartType } from "@/components/charts/engine/registry";
 import { isLegacyTableChartType } from "@/lib/chartViewConfig";
 import { isChartExecuteReady } from "@/lib/chartExecuteProbe";
-import { getChartPlugin } from "@/components/charts/engine/plugins/registry";
-import { chartRenderRequiredCounts } from "@/components/dashboard/chartFieldSlots";
+import { deAxisRenderReady, syncLegacyFieldsFromAxes } from "@/lib/resolveChartEncoding";
 
 export type ChartConfigPhase = {
   bindingReady: boolean;
@@ -19,18 +18,6 @@ export function normalizeChartFieldRefs(refs: ChartFieldRef[] | undefined): Char
   return activeFieldRefs(refs);
 }
 
-function hasRequiredFields(
-  refs: ChartFieldRef[] | undefined,
-  minCount: number,
-): boolean {
-  if (minCount <= 0) return true;
-  const list = refs ?? [];
-  for (let i = 0; i < minCount; i += 1) {
-    if (!list[i]?.field?.trim()) return false;
-  }
-  return true;
-}
-
 export function resolveChartConfigPhase(config: ChartViewConfig | undefined): ChartConfigPhase {
   const queryReady = config ? isChartExecuteReady(config) : false;
   const dimFields = activeFieldRefs(config?.dimensions);
@@ -42,14 +29,9 @@ export function resolveChartConfigPhase(config: ChartViewConfig | undefined): Ch
     if (isLegacyTableChartType(chartType)) {
       renderReady = dimFields.length > 0 || metricFields.length > 0;
     } else if (isD3TableChartType(chartType)) {
-      renderReady = true;
-    } else if (chartType === "kpi") {
-      renderReady = metricFields.length > 0;
+      renderReady = deAxisRenderReady(config) || dimFields.length > 0 || metricFields.length > 0;
     } else {
-      const { minDimensions, minMetrics } = chartRenderRequiredCounts(chartType);
-      renderReady =
-        hasRequiredFields(config.dimensions, minDimensions) &&
-        hasRequiredFields(config.metrics, minMetrics);
+      renderReady = deAxisRenderReady(config);
     }
   }
 
@@ -64,6 +46,20 @@ export function isWidgetConfigReady(chartConfig: ChartViewConfig | undefined): b
   return chartConfig ? isChartExecuteReady(chartConfig) : false;
 }
 
+function reconcileAxisFields(
+  axes: ChartViewConfig["axes"],
+  colSet: Set<string>,
+): ChartViewConfig["axes"] {
+  if (!axes) return axes;
+  const next: NonNullable<ChartViewConfig["axes"]> = {};
+  for (const [axisId, refs] of Object.entries(axes)) {
+    next[axisId as keyof typeof next] = (refs ?? []).map((r) =>
+      r.field?.trim() && colSet.has(r.field) ? r : { field: "" },
+    );
+  }
+  return next;
+}
+
 export function reconcileChartFields(
   config: ChartViewConfig,
   availableColumns: string[],
@@ -71,10 +67,8 @@ export function reconcileChartFields(
   const colSet = new Set(availableColumns);
   const reconcile = (refs: ChartFieldRef[] | undefined) =>
     (refs ?? []).map((r) => (r.field?.trim() && colSet.has(r.field) ? r : { field: "" }));
-  return {
-    ...config,
-    dimensions: reconcile(config.dimensions),
-    metrics: reconcile(config.metrics),
-  };
+  const axes = reconcileAxisFields(config.axes, colSet);
+  const withAxes = { ...config, dimensions: reconcile(config.dimensions), metrics: reconcile(config.metrics), axes };
+  return syncLegacyFieldsFromAxes(withAxes);
 }
 

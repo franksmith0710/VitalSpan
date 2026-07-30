@@ -1,16 +1,23 @@
 import type { RenderSpec } from "@/components/charts/engine/types";
 import { safeColIndex } from "@/components/charts/engine/buildDatasetEncoding";
+import { fieldFromAxisOrLegacy } from "@/lib/chartAxisPlanFields";
 
 export type AntvPieRow = { type: string; value: number };
 
-/** 按维度聚合指标（与笛卡尔图 sumAt 语义一致） */
+/** 按维度聚合指标（与笛卡尔图 sumAt 语义一致）；优先 DE xAxis/yAxis */
 export function encodePieRows(
   spec: RenderSpec,
   rows: unknown[][],
   columns: string[],
 ): AntvPieRow[] {
-  const dim = spec.encoding.dimensions[0]?.field ?? "";
-  const metric = spec.encoding.metrics[0]?.field ?? "";
+  const dim =
+    fieldFromAxisOrLegacy(spec, "xAxis", 0, "dimension", 0) ||
+    spec.encoding.dimensions[0]?.field?.trim() ||
+    "";
+  const metric =
+    fieldFromAxisOrLegacy(spec, "yAxis", 0, "metric", 0) ||
+    spec.encoding.metrics[0]?.field?.trim() ||
+    "";
   const di = safeColIndex(columns, dim);
   const mi = safeColIndex(columns, metric);
   if (di === null || mi === null) return [];

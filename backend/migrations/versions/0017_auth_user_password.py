@@ -54,10 +54,14 @@ def upgrade() -> None:
             sa.text("SELECT id FROM auth_roles WHERE code = 'admin' LIMIT 1")
         ).first()
         if role:
+            from migrations.dialect_ops import insert_ignore_statement
+
             bind.execute(
                 sa.text(
-                    "INSERT INTO auth_user_roles (user_id, role_id) VALUES (:uid, :rid) "
-                    "ON CONFLICT DO NOTHING"
+                    insert_ignore_statement(
+                        bind,
+                        "INSERT INTO auth_user_roles (user_id, role_id) VALUES (:uid, :rid)",
+                    )
                 ),
                 {"uid": str(user_id), "rid": str(role[0])},
             )

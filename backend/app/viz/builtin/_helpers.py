@@ -7,14 +7,17 @@ CAPS = ("style_variant", "field_config", "render_spec")
 CARTESIAN = FieldRule(1, 8, 1, 8)
 PIE_RULE = FieldRule(1, 1, 1, 1)
 SCATTER_RULE = FieldRule(1, 2, 1, 2)
+QUADRANT_RULE = FieldRule(1, 2, 2, 2)
+MULTI_SCATTER_RULE = FieldRule(1, 2, 2, 4)
 FLOW_RULE = FieldRule(2, 2, 1, 1)
 GRAPH_RULE = FieldRule(2, 2, 0, 1, note="关系图需 2 个维度（source,target）")
 TABLE_RULE = FieldRule(0, 8, 0, 8)
-KPI_RULE = FieldRule(0, 1, 1, 4)
+KPI_RULE = FieldRule(0, 0, 1, 1)
 GAUGE_RULE = FieldRule(0, 0, 1, 1)
 MAP_RULE = FieldRule(1, 3, 1, 1)
 HEATMAP_MATRIX = FieldRule(2, 2, 1, 1)
 COMBO_RULE = FieldRule(1, 8, 2, 8)
+DUAL_LINE_RULE = FieldRule(1, 8, 1, 8)
 
 
 def antv(

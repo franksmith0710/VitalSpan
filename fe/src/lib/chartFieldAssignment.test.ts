@@ -6,25 +6,25 @@ import {
 
 describe("chartFieldAssignment", () => {
   it("allows sale_date on line category axis and amount on metric axis", () => {
-    const cfg = { dimensions: [{ field: "" }], metrics: [{ field: "" }] };
+    const cfg = { chartType: "line" as const, dimensions: [{ field: "" }], metrics: [{ field: "" }] };
     expect(
-      validateFieldAssignment("sale_date", { kind: "dimension", index: 0 }, "line").ok,
+      validateFieldAssignment("sale_date", { axisId: "xAxis", index: 0 }, "line").ok,
     ).toBe(true);
     expect(
-      validateFieldAssignment("amount", { kind: "metric", index: 0 }, "line").ok,
+      validateFieldAssignment("amount", { axisId: "yAxis", index: 0 }, "line").ok,
     ).toBe(true);
     expect(resolveAutoAssignTarget(cfg, "line", "sale_date")).toEqual({
-      target: { kind: "dimension", index: 0 },
+      target: { axisId: "xAxis", index: 0 },
     });
     expect(resolveAutoAssignTarget(cfg, "line", "amount")).toEqual({
-      target: { kind: "metric", index: 0 },
+      target: { axisId: "yAxis", index: 0 },
     });
   });
 
   it("rejects metric field in dimension slot", () => {
     const result = validateFieldAssignment(
       "amount",
-      { kind: "dimension", index: 0 },
+      { axisId: "xAxis", index: 0 },
       "line",
     );
     expect(result.ok).toBe(false);
@@ -33,10 +33,19 @@ describe("chartFieldAssignment", () => {
     }
   });
 
+  it("allows both field types on word-cloud label axis", () => {
+    expect(
+      validateFieldAssignment("word", { axisId: "xAxis", index: 0 }, "word-cloud").ok,
+    ).toBe(true);
+    expect(
+      validateFieldAssignment("weight", { axisId: "xAxis", index: 0 }, "word-cloud").ok,
+    ).toBe(true);
+  });
+
   it("rejects non-date field on timeline dimension", () => {
     const result = validateFieldAssignment(
       "region",
-      { kind: "dimension", index: 0 },
+      { axisId: "xAxis", index: 0 },
       "timeline",
     );
     expect(result.ok).toBe(false);
@@ -48,7 +57,7 @@ describe("chartFieldAssignment", () => {
   it("allows region_id on map geo dimension (demo mysql id mapping)", () => {
     const result = validateFieldAssignment(
       "region_id",
-      { kind: "dimension", index: 0 },
+      { axisId: "xAxis", index: 0 },
       "map",
     );
     expect(result.ok).toBe(true);

@@ -68,6 +68,15 @@
 - **GEO-IRON-01**（ADR-12）：地图仅离线中国 GeoJSON；见 `.cursor/rules/geo-map-offline-china.mdc`
 - `schemas/chart_view` 校验查 registry 用函数内惰性 import，`app.viz` 包内为 submodule-only import，无循环依赖
 
+### DE 命名轴字段模型（2026-07-30）
+
+- **真理源**：`fe/src/lib/chartDeAxis/catalog.ts`（对标 DataEase v2 `axisConfig` 快照）
+- **持久化**：`ChartViewConfig.axes`（FE 权威）+ `ChartViewConfigLayout.axes`（BE layout）；`dimensions`/`metrics` 为 buildPlan 兼容投影；提交前 `sanitizeChartFieldsForValidate` 同步并裁剪空槽
+- **编码解析**：`fe/src/lib/resolveChartEncoding.ts`（`migrateChartConfigToDeAxes` · `deAxisRenderReady`）
+- **Inspector**：`ChartDataSlots` / `SlotTarget { axisId, index }` 与 catalog 槽位一致；`both` 轴支持维/指标混拖
+- **buildPlan 读轴**：`fe/src/lib/chartAxisPlanFields.ts` · `fieldFromAxisOrLegacy`；`bar-range` / `stock-line` / `word-cloud` / `multi-scatter` / `chart-mix-dual-line.extBubble` 优先读 `encoding.axes`
+- **parity 门禁**：`chartCatalogFieldRules.test.ts` T-VIZ-R32-011 · `chartAxisEncodingPath.test.ts` · `tests/test_viz_chart_catalog_parity.py`
+
 ### Companion r63（VIZ-007）
 
 - `viz/sdk_portal/probe.py`：`probe_validate_sdk_budget_ms` / `probe_lifecycle_budget_ms`（50ms 同进程 perf_counter）

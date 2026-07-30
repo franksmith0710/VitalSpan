@@ -2,6 +2,7 @@ import type { ChartDrillFrame } from "@/lib/chartDrill";
 import type { ChartDeFeatures } from "@/lib/chartDeFeatures";
 import type { ChartDeStyle } from "@/lib/chartDeStyle";
 import type { ChartFieldRef, ChartViewConfig } from "@/lib/chartViewConfig";
+import type { ChartAxesConfig } from "@/lib/chartDeAxis";
 import type { ColorScheme, NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import type { ChartLegendItem } from "@/lib/chartLegendItems";
 
@@ -21,6 +22,7 @@ export type ChartViewModel = {
   encoding: {
     dimensions: ChartFieldRef[];
     metrics: ChartFieldRef[];
+    axes?: ChartAxesConfig;
   };
   dataset: VizDataset;
   source: Record<string, unknown>;
@@ -92,6 +94,6 @@ export type RenderSpec = {
   engine: ChartEngineId;
   chartType: string;
   styleVariant: string;
-  encoding: { dimensions: ChartFieldRef[]; metrics: ChartFieldRef[] };
+  encoding: { dimensions: ChartFieldRef[]; metrics: ChartFieldRef[]; axes?: import("@/lib/chartDeAxis").ChartAxesConfig };
   source: Record<string, unknown>;
 };

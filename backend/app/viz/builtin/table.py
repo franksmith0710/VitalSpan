@@ -5,7 +5,7 @@ from app.viz.specs import FieldRule
 from app.viz.builtin._helpers import HEATMAP_MATRIX, TABLE_RULE, antv, react_type
 
 TABLE_NORMAL_RULE = FieldRule(1, 8, 1, 8)
-TABLE_PIVOT_RULE = FieldRule(2, 8, 1, 8)
+TABLE_PIVOT_RULE = FieldRule(1, 8, 1, 8)
 
 TABLE_SPECS = (
     react_type(

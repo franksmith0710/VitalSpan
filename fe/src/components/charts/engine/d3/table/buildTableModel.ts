@@ -1,6 +1,9 @@
 import type { BuildTableModelInput, PivotTableModel, TableColumnMeta, TableDetailModel, TableModel } from "@/components/charts/engine/d3/table/types";
 
 function resolveFields(spec: BuildTableModelInput["spec"], columns: string[]) {
+  const axisColumnFields = (spec.encoding.axes?.xAxis ?? [])
+    .map((ref) => ref.field?.trim())
+    .filter((field): field is string => Boolean(field));
   const dimFields = spec.encoding.dimensions
     .map((d) => d.field)
     .filter((field): field is string => Boolean(field?.trim()));
@@ -8,7 +11,11 @@ function resolveFields(spec: BuildTableModelInput["spec"], columns: string[]) {
     .map((m) => m.field)
     .filter((field): field is string => Boolean(field?.trim()));
   const fallbackFields =
-    dimFields.length + metricFields.length > 0 ? [...dimFields, ...metricFields] : columns;
+    axisColumnFields.length > 0
+      ? axisColumnFields
+      : dimFields.length + metricFields.length > 0
+        ? [...dimFields, ...metricFields]
+        : columns;
   return { dimFields, metricFields, fallbackFields };
 }
 

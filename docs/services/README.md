@@ -20,11 +20,11 @@
 |------|----------|----------|--------|------|
 | [core.md](./core.md) | `app/core/` | F01-BOOT | M1 | 已实现 |
 | [nfr.md](./nfr.md) | `app/core/nfr/` | F15-NFR | 横切 | 部分（L1） |
-| [metadata.md](./metadata.md) | `app/metadata/` | F11-META | M1（四期） | 部分（L1 · **META-004 ORM + 可视化编辑已实现**） |
+| [metadata.md](./metadata.md) | `app/metadata/` | F11-META | M1（四期） | **已实现**（ORM + 可视化编辑 · 2026-07-29 回写） |
 | [datasources.md](./datasources.md) | `app/datasources/` | F03-DS · F04-CONN | 连接层 | 部分（L1 · r59 CONN-018 kingbase） |
 | [query.md](./query.md) | `app/query/` | F05-QUERY | M3 | 部分（L1） |
 | [designer.md](./designer.md) | `app/designer/` | F12-DESIGN | M2（四期） | 部分（L1 · r59 DESIGN-004 workflow-link） |
-| [dashboard.md](./dashboard.md) | `app/dashboard/` | F07-DASH | M5 | **已实现**（v1 栅格 + v2 像素布局；Pointer QA 待执行） |
+| [dashboard.md](./dashboard.md) | `app/dashboard/` | F07-DASH | M5 | **已实现**（v1 栅格 + v2 像素布局；BUG-2 手测表见 [project master §6.1](../feature-design/2026-07-29-vitalspan-project-master-gap-fill.md)） |
 | [reports.md](./reports.md) | `app/reports/` | F08-RPT | M6/M10/M12 | **部分**（BE L1 + FE 中心/调度/重试已交付） |
 | [views.md](./views.md) | `app/views/` | F09-VIEW | FR-VIEW | **部分**（VIEW-001~003 API + FE 偏好已接线） |
 | [auth.md](./auth.md) | `app/auth/` | F02-AUTH | M7 | 已实现 |

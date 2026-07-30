@@ -1,6 +1,7 @@
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { activeFieldRefs } from "@/lib/chartConfigState";
 import { getEngineIdForChartType } from "@/components/charts/engine/registry";
+import { resolveChartEncoding } from "@/lib/resolveChartEncoding";
 import type { ChartViewModel, RenderSpec, VizDataset } from "@/components/charts/engine/types";
 
 function buildRenderSource(config: ChartViewConfig): Record<string, unknown> {
@@ -25,13 +26,15 @@ export function buildChartViewModel(
   dataset: VizDataset,
 ): ChartViewModel {
   const chartType = config.chartType;
+  const encoding = resolveChartEncoding(config);
   return {
     chartType,
     styleVariant: config.styleVariant ?? "default",
     engine: getEngineIdForChartType(chartType),
     encoding: {
-      dimensions: activeFieldRefs(config.dimensions),
-      metrics: activeFieldRefs(config.metrics),
+      dimensions: encoding.dimensions,
+      metrics: encoding.metrics,
+      axes: encoding.axes,
     },
     dataset,
     source: buildRenderSource(config),

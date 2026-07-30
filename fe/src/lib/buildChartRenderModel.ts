@@ -1,7 +1,8 @@
 import { isGeoMapChartType } from "@/lib/chartViewConfig";
 import { isLegacyTableChartType } from "@/lib/chartViewConfig";
 import { activeFieldRefs } from "@/lib/chartConfigState";
-import { chartRenderRequiredCounts } from "@/components/dashboard/chartFieldSlots";
+import { deAxisRenderReady, resolveChartEncoding } from "@/lib/resolveChartEncoding";
+import type { ChartViewConfig } from "@/lib/chartViewConfig";
 
 export type ChartRenderModel =
   | { kind: "error"; message: string }
@@ -16,17 +17,6 @@ export function parseMetricValue(raw: unknown): number | null {
     return Number.isFinite(parsed) ? parsed : null;
   }
   return null;
-}
-
-function hasRequiredFields(
-  refs: ReturnType<typeof activeFieldRefs>,
-  minCount: number,
-): boolean {
-  if (minCount <= 0) return true;
-  for (let i = 0; i < minCount; i += 1) {
-    if (!refs[i]?.field?.trim()) return false;
-  }
-  return true;
 }
 
 function validateFieldColumns(
@@ -62,11 +52,12 @@ export function buildChartRenderModel(
   columns: string[],
   rows: (string | number | boolean | null)[][],
 ): ChartRenderModel {
+  const encoding = resolveChartEncoding(config);
+  const dims = encoding.dimensions;
+  const metrics = encoding.metrics;
+
   if (isLegacyTableChartType(config.chartType)) {
-    const fields = [
-      ...activeFieldRefs(config.dimensions).map((d) => d.field),
-      ...activeFieldRefs(config.metrics).map((m) => m.field),
-    ];
+    const fields = [...dims.map((d) => d.field), ...metrics.map((m) => m.field)];
     const displayCols = pickColumns(columns, fields);
     if (rows.length === 0) return { kind: "empty" };
     return { kind: "table", displayCols: displayCols.length ? displayCols : columns };
@@ -77,15 +68,16 @@ export function buildChartRenderModel(
     config.chartType === "table-normal" ||
     config.chartType === "table-pivot"
   ) {
-    const dims = activeFieldRefs(config.dimensions);
-    const metrics = activeFieldRefs(config.metrics);
-    if (config.chartType === "table-normal") {
-      if (!dims.length) return { kind: "error", message: "请配置维度字段" };
-      if (!metrics.length) return { kind: "error", message: "请配置指标字段" };
-    }
-    if (config.chartType === "table-pivot") {
-      if (dims.length < 2) return { kind: "error", message: "请配置行维度与列维度" };
-      if (!metrics.length) return { kind: "error", message: "请配置指标字段" };
+    if (!deAxisRenderReady(config)) {
+      if (config.chartType === "table-normal") {
+        if (!dims.length) return { kind: "error", message: "请配置维度字段" };
+        return { kind: "error", message: "请配置指标字段" };
+      }
+      if (config.chartType === "table-pivot") {
+        if (!dims.length) return { kind: "error", message: "请配置行维度" };
+        return { kind: "error", message: "请配置指标字段" };
+      }
+      return { kind: "error", message: "请配置数据列" };
     }
     for (const field of [...dims, ...metrics].map((f) => f.field)) {
       if (field && !columns.includes(field)) {
@@ -97,15 +89,11 @@ export function buildChartRenderModel(
   }
 
   if (config.chartType === "kpi" || config.chartType === "gauge" || config.chartType === "liquid") {
-    const metrics = activeFieldRefs(config.metrics);
     if (!metrics.length) return { kind: "error", message: "请配置指标字段" };
     const columnError = validateFieldColumns(columns, [], metrics);
     if (columnError) return columnError;
     return readyWhenRows(rows);
   }
-
-  const dims = activeFieldRefs(config.dimensions);
-  const metrics = activeFieldRefs(config.metrics);
 
   if (isGeoMapChartType(config.chartType)) {
     const regionDim = dims[0]?.field;
@@ -113,27 +101,6 @@ export function buildChartRenderModel(
     if (!metrics.length) return { kind: "error", message: "请配置指标字段" };
     if (!columns.includes(regionDim)) {
       return { kind: "error", message: `维度列「${regionDim}」不存在，请检查字段配置` };
-    }
-    for (const metric of metrics) {
-      if (!columns.includes(metric.field)) {
-        return { kind: "error", message: `指标列「${metric.field}」不存在，请检查字段配置` };
-      }
-    }
-    if (rows.length === 0) return { kind: "empty" };
-
-    return { kind: "ready" };
-  }
-
-  if (config.chartType === "heatmap" || config.chartType === "t-heatmap") {
-    const xDim = dims[0]?.field;
-    const yDim = dims[1]?.field;
-    if (!xDim || !yDim) return { kind: "error", message: "请配置横轴与纵轴维度" };
-    if (!metrics.length) return { kind: "error", message: "请配置指标字段" };
-    if (!columns.includes(xDim)) {
-      return { kind: "error", message: `横轴列「${xDim}」不存在，请检查字段配置` };
-    }
-    if (!columns.includes(yDim)) {
-      return { kind: "error", message: `纵轴列「${yDim}」不存在，请检查字段配置` };
     }
     for (const metric of metrics) {
       if (!columns.includes(metric.field)) {
@@ -149,11 +116,7 @@ export function buildChartRenderModel(
     const dst = dims[1]?.field;
     if (!src || !dst) return { kind: "error", message: "请配置起止维度字段" };
     if (!metrics.length) return { kind: "error", message: "请配置指标字段" };
-    const columnError = validateFieldColumns(
-      columns,
-      dims.slice(0, 2),
-      metrics,
-    );
+    const columnError = validateFieldColumns(columns, dims.slice(0, 2), metrics);
     if (columnError) return columnError;
     return readyWhenRows(rows);
   }
@@ -167,13 +130,10 @@ export function buildChartRenderModel(
     return readyWhenRows(rows);
   }
 
-  const { minDimensions, minMetrics } = chartRenderRequiredCounts(config.chartType);
-  if (!hasRequiredFields(dims, minDimensions)) {
-    return { kind: "error", message: "请配置维度字段" };
+  if (!deAxisRenderReady(config)) {
+    return { kind: "error", message: "请完成必填字段轴配置" };
   }
-  if (!hasRequiredFields(metrics, minMetrics)) {
-    return { kind: "error", message: "请配置指标字段" };
-  }
+
   const columnError = validateFieldColumns(columns, dims, metrics);
   if (columnError) return columnError;
   return readyWhenRows(rows);

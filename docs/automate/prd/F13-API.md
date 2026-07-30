@@ -30,7 +30,7 @@
 - **里程碑对齐**：
 ### [API-003] IF-02 查询服务 API
 
-- **状态**：已实现（**M-DEPTH F-C 深度 companion 进行中**）
+- **状态**：已实现（**M-DEPTH F-C 深度 companion 已闭合** · 2026-07-29）
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：四期
 - **描述**：IF-02 查询服务 API（SRS 追溯项）。
@@ -40,7 +40,7 @@
   - [x] 配置生成的标准查询接口（publish 路由 + `;requires=` 参数校验 + Idempotency-Key，r45 companion）
   - [x] 版本 v1 前缀（`/api/v1/services`）
   - [x] `/admin/services` 查询服务 Admin 列表页（M-PRODUCT F-A；`QueryServicesPage` · manifest 治理分组）
-  - [ ] **M-DEPTH F-C**：已发布服务目录消费增强（试跑入口 + OpenAPI 片段可见；失败态可读）
+  - [x] **M-DEPTH F-C**：已发布服务目录消费增强（试跑入口 + OpenAPI 片段可见；失败态可读）（完成于 2026-07-29 · `QueryServiceTrialSheet.tsx` · `QueryServicesPage.smoke.test.tsx`）
 - **代码锚点**：`backend/app/api/v1/services.py` · `backend/app/integration/query_services.py` · `fe/src/pages/admin/services/QueryServicesPage.tsx` · `fe/src/routes.tsx` · `fe/src/config/nav-manifest.tsx`
 - **演化建议**：M-DEPTH F-C 加深试跑/OpenAPI 消费；真实查询执行链路可继续加固
 - **里程碑对齐**：M-PRODUCT F-A · 服务页 FE · 2026-07-08；**M-DEPTH F-C · 当前节 · 2026-07-10**

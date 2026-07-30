@@ -146,3 +146,13 @@ def test_production_env_allows_sqlite_meta_url():
     )
     assert settings.vitalspan_env == "production"
     assert settings.database_url.startswith("sqlite+")
+
+
+def test_database_url_accepts_mysql_and_normalizes():
+    """T-CFG-14: mysql:// 平台元库 URL 归一化为 mysql+pymysql://。"""
+    settings = Settings(
+        secret_key=_BASE_KWARGS["secret_key"],
+        credential_fernet_key=_BASE_KWARGS["credential_fernet_key"],
+        database_url="mysql://vitalspan:vitalspan@localhost:3309/vitalspan",
+    )
+    assert settings.database_url == "mysql+pymysql://vitalspan:vitalspan@localhost:3309/vitalspan"

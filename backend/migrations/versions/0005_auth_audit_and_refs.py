@@ -9,6 +9,8 @@ from typing import Sequence, Union
 import sqlalchemy as sa
 from alembic import op
 
+from migrations.dialect_ops import now_server_default
+
 revision: str = "0005"
 down_revision: Union[str, None] = "0004"
 branch_labels: Union[str, Sequence[str], None] = None
@@ -16,6 +18,8 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    bind = op.get_bind()
+    now = now_server_default(bind)
     op.create_table(
         "auth_audit_events",
         sa.Column("id", sa.Uuid(), primary_key=True),
@@ -26,7 +30,7 @@ def upgrade() -> None:
         sa.Column("action", sa.String(64), nullable=False),
         sa.Column("detail", sa.Text(), nullable=True),
         sa.Column("trace_id", sa.String(64), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=now, nullable=False),
     )
     op.create_index(
         "ix_auth_audit_events_target_created",

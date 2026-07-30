@@ -49,6 +49,8 @@ export type ChartViewConfig = {
   index?: string;
   dimensions?: ChartFieldRef[];
   metrics?: ChartFieldRef[];
+  /** DE 命名轴（权威存储）；dimensions/metrics 为投影兼容 */
+  axes?: import("@/lib/chartDeAxis").ChartAxesConfig;
   filters?: ChartFilterRef[];
   timeRange?: ChartTimeRangeRef;
 };
