@@ -39,4 +39,21 @@ describe("geo3dPointEffectsStyle", () => {
     expect(resolveGeo3dPointEffects({ stylePreset: "classic" })).toBe(true);
     expect(resolveGeo3dPointEffects({ stylePreset: "glass" })).toBe(true);
   });
+
+  it("applies custom floating label colors", () => {
+    const resolved = resolvePointEffectsStyle(
+      {
+        stylePreset: "tech",
+        floatingLabelTextColor: "#112233",
+        floatingLabelBgColor: "#445566",
+        floatingLabelBorderColor: "#778899",
+      },
+      "tech",
+      true,
+      true,
+    );
+    expect(resolved.floatingLabelTextColor).toBe("#112233");
+    expect(resolved.floatingLabelBgColor).toBe("#445566");
+    expect(resolved.floatingLabelBorderColor).toBe("#778899");
+  });
 });

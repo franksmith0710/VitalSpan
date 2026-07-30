@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Download, LayoutTemplate } from "lucide-react";
+import { Download, FileJson, LayoutTemplate } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ChartInspectorSection } from "@/components/dashboard/inspectorCompact";
@@ -9,7 +9,7 @@ import { TEMPLATE_ACTIONS } from "@/components/dashboard/templates/templateLabel
 import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
 import type { DashboardStyleConfig } from "@/components/dashboard/dashboardStyleConfig";
 import { buildVizLayoutEnvelope } from "@/lib/dashboardTemplates";
-import { downloadJsonFile } from "@/lib/exportLayoutJson";
+import { downloadJsonFile, downloadLayoutJson } from "@/lib/exportLayoutJson";
 
 type DashboardTemplateExtrasProps = {
   layout: DashboardLayout;
@@ -48,14 +48,25 @@ export function DashboardTemplateExtras({
     <>
       <ChartInspectorSection title={TEMPLATE_ACTIONS.templateSection} defaultOpen>
         <DeAttrForm>
-          <div
-            className="border-t border-gray-100 pt-3 dark:border-white/[0.06]"
-            data-testid="dashboard-template-actions"
-          >
+          <div data-testid="dashboard-template-actions">
             <p className="mb-2 text-[11px] font-medium text-gray-500 dark:text-gray-400">
               {TEMPLATE_ACTIONS.exportSection}
             </p>
             <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5 px-2 text-[11px] font-medium"
+                disabled={!canSave}
+                onClick={() => {
+                  downloadLayoutJson(exportLayout, name);
+                  toast.success("布局 JSON 已下载");
+                }}
+              >
+                <FileJson className="size-3.5 shrink-0 opacity-70" aria-hidden />
+                <span className="truncate">{TEMPLATE_ACTIONS.layoutJson}</span>
+              </Button>
               <Button
                 type="button"
                 variant="outline"

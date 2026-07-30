@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice">
+  <g transform="scale(0.16666666666666666 0.16666666666666666)">
+  
+  <defs>
+    <linearGradient id="ab28b107-base" x1="0" y1="0" x2="1920" y2="1080">
+      <stop stop-color="#fafafa"/>
+      <stop offset="1" stop-color="#ede9fe"/>
+    </linearGradient>
+    <radialGradient id="ab28b107-glow" cx="50%" cy="30%" r="50%">
+      <stop stop-color="#6366f1" stop-opacity="0.1"/>
+      <stop offset="1" stop-opacity="0"/>
+    </radialGradient>
+  <linearGradient id="ab28b107-pat" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#4338ca" stop-opacity="0.08"/><stop offset="1" stop-opacity="0"/></linearGradient>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#ab28b107-base)"/>
+  <rect width="1920" height="1080" fill="url(#ab28b107-glow)"/>
+  <rect width="1920" height="96" fill="url(#ab28b107-pat)"/>
+  <line x1="32" y1="96" x2="1888" y2="96" stroke="#4338ca" stroke-width="1.5" opacity="0.2"/>
+  <path d="M120 36 L128.4 44.4 L128.4 52.8 Q120 58.8 111.6 52.8 L111.6 44.4 Z" fill="none" stroke="#4338ca" stroke-width="1.2" opacity="0.35"/>
+  <path d="M192 36 L200.4 44.4 L200.4 52.8 Q192 58.8 183.6 52.8 L183.6 44.4 Z" fill="none" stroke="#4338ca" stroke-width="1.2" opacity="0.35"/>
+  <path d="M264 36 L272.4 44.4 L272.4 52.8 Q264 58.8 255.6 52.8 L255.6 44.4 Z" fill="none" stroke="#4338ca" stroke-width="1.2" opacity="0.35"/>
+  <path d="M336 36 L344.4 44.4 L344.4 52.8 Q336 58.8 327.6 52.8 L327.6 44.4 Z" fill="none" stroke="#4338ca" stroke-width="1.2" opacity="0.35"/>
+  <path d="M408 36 L416.4 44.4 L416.4 52.8 Q408 58.8 399.6 52.8 L399.6 44.4 Z" fill="none" stroke="#4338ca" stroke-width="1.2" opacity="0.35"/>
+  <path d="M1840 32 L1851.2 43.2 L1851.2 54.4 Q1840 62.4 1828.8 54.4 L1828.8 43.2 Z" fill="none" stroke="#4338ca" stroke-width="1.2" opacity="0.25"/>
+
+  </g>
+</svg>

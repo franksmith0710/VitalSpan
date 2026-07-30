@@ -1,5 +1,7 @@
 import type { DashboardLayoutV2, PixelLayoutWidget } from "@/components/dashboard/layoutUtils";
 import { defaultChartConfig } from "@/components/dashboard/layoutUtils";
+import { buildDashboardLayoutForSave } from "@/components/dashboard/dashboardCanvasMode";
+import { bootstrapDashboardStyleConfig } from "@/components/dashboard/dashboardThemeVariants";
 import { buildDefaultLayoutForSurface } from "@/lib/surfacePreset";
 import { SCREEN_ACCENT, SCREEN_CANVAS_BG, SCREEN_TITLE_COLOR } from "@/lib/screenTokens";
 import {
@@ -278,16 +280,22 @@ export function parseImportedDataScreenLayout(raw: unknown): DashboardLayoutV2 {
   if (!layout.canvas?.width || !layout.canvas?.height) {
     throw new Error("缺少 canvas 尺寸");
   }
-  return {
+  const styleConfig = bootstrapDashboardStyleConfig({
+    ...layout.styleConfig,
+    surfaceKind: "data-screen",
+    colorScheme: layout.styleConfig?.colorScheme ?? "dark",
+  });
+  const draft: DashboardLayoutV2 = {
     ...layout,
-    styleConfig: {
-      ...layout.styleConfig,
-      surfaceKind: "data-screen",
-      colorScheme: layout.styleConfig?.colorScheme ?? "dark",
-    },
+    styleConfig,
     widgets: Array.isArray(layout.widgets) ? layout.widgets : [],
     globalFilters: Array.isArray(layout.globalFilters) ? layout.globalFilters : [],
   };
+  const sanitized = buildDashboardLayoutForSave(draft, styleConfig);
+  if (sanitized.version !== 2) {
+    throw new Error("仅支持 version 2 像素布局");
+  }
+  return sanitized;
 }
 
 export type VizLayoutEnvelope = {
@@ -304,17 +312,19 @@ export function exportDataScreenTemplate(
   layout: DashboardLayoutV2,
   name: string,
 ): VizLayoutEnvelope {
+  const styleConfig = bootstrapDashboardStyleConfig({
+    ...layout.styleConfig,
+    surfaceKind: "data-screen",
+  });
+  const cleanLayout = buildDashboardLayoutForSave(
+    { ...layout, styleConfig },
+    styleConfig,
+  ) as DashboardLayoutV2;
   return {
     templateVersion: 1,
     kind: "viz-layout",
     surfaceKind: "data-screen",
     name: name.trim() || "未命名大屏",
-    layout: {
-      ...layout,
-      styleConfig: {
-        ...layout.styleConfig,
-        surfaceKind: "data-screen",
-      },
-    },
+    layout: cleanLayout,
   };
 }

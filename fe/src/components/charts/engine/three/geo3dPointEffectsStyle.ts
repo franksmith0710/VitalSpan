@@ -206,3 +206,18 @@ export function hasCustomHeatBlobColor(style: ChartGeo3dStyle): boolean {
   const v = style.heatBlobColor?.trim();
   return Boolean(v && HEX_COLOR.test(v));
 }
+
+export function hasCustomFloatingLabelTextColor(style: ChartGeo3dStyle): boolean {
+  const v = style.floatingLabelTextColor?.trim();
+  return Boolean(v && HEX_COLOR.test(v));
+}
+
+export function hasCustomFloatingLabelBgColor(style: ChartGeo3dStyle): boolean {
+  const v = style.floatingLabelBgColor?.trim();
+  return Boolean(v && HEX_COLOR.test(v));
+}
+
+export function hasCustomFloatingLabelBorderColor(style: ChartGeo3dStyle): boolean {
+  const v = style.floatingLabelBorderColor?.trim();
+  return Boolean(v && HEX_COLOR.test(v));
+}

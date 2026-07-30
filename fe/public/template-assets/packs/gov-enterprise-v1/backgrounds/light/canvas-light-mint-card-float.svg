@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="2bd43d0c-base" x1="0" y1="0" x2="1920" y2="1080">
+      <stop stop-color="#f0fdf4"/>
+      <stop offset="1" stop-color="#dcfce7"/>
+    </linearGradient>
+    <radialGradient id="2bd43d0c-glow" cx="50%" cy="30%" r="50%">
+      <stop stop-color="#22c55e" stop-opacity="0.1"/>
+      <stop offset="1" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#2bd43d0c-base)"/>
+  <rect width="1920" height="1080" fill="url(#2bd43d0c-glow)"/>
+  <rect x="80" y="120" width="420" height="260" rx="6" fill="white" fill-opacity="0.55" stroke="#15803d" stroke-width="0.8" opacity="0.9"/>
+  <path d="M104 130 Q114 140 104 150 Q94 140 104 130" fill="none" stroke="#15803d" stroke-width="1" opacity="0.4"/>
+  <line x1="104" y1="130" x2="104" y2="150" stroke="#15803d" stroke-width="0.6" opacity="0.24"/>
+  <rect x="1420" y="120" width="420" height="260" rx="6" fill="white" fill-opacity="0.55" stroke="#15803d" stroke-width="0.8" opacity="0.9"/>
+  <path d="M1444 130 Q1454 140 1444 150 Q1434 140 1444 130" fill="none" stroke="#15803d" stroke-width="1" opacity="0.4"/>
+  <line x1="1444" y1="130" x2="1444" y2="150" stroke="#15803d" stroke-width="0.6" opacity="0.24"/>
+  <rect x="80" y="420" width="1760" height="280" rx="6" fill="white" fill-opacity="0.55" stroke="#15803d" stroke-width="0.8" opacity="0.9"/>
+  <path d="M104 430 Q114 440 104 450 Q94 440 104 430" fill="none" stroke="#15803d" stroke-width="1" opacity="0.4"/>
+  <line x1="104" y1="430" x2="104" y2="450" stroke="#15803d" stroke-width="0.6" opacity="0.24"/>
+</svg>

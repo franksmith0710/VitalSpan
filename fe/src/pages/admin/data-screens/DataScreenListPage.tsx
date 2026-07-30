@@ -233,7 +233,7 @@ export function DataScreenListPage() {
       navigate(dataScreenEditPath(created.id));
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : mapApiError(err));
+      toast.error(mapApiError(err));
     },
   });
 

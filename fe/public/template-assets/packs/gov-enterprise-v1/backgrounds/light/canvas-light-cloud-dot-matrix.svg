@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="b4b5dd1b-base" x1="0" y1="0" x2="1920" y2="1080">
+      <stop stop-color="#f1f5f9"/>
+      <stop offset="1" stop-color="#e0f2f1"/>
+    </linearGradient>
+    <radialGradient id="b4b5dd1b-glow" cx="50%" cy="30%" r="50%">
+      <stop stop-color="#14b8a6" stop-opacity="0.1"/>
+      <stop offset="1" stop-opacity="0"/>
+    </radialGradient>
+  <pattern id="b4b5dd1b-pat" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="12" cy="12" r="1.2" fill="#0f766e" opacity="0.1"/></pattern>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#b4b5dd1b-base)"/>
+  <rect width="1920" height="1080" fill="url(#b4b5dd1b-glow)"/>
+  <rect width="1920" height="1080" fill="url(#b4b5dd1b-pat)"/>
+  <polygon points="1003.3012701892219,353 1003.3012701892219,403 960,428 916.6987298107781,403 916.6987298107781,353 960,328" fill="none" stroke="#0f766e" stroke-width="1.2" opacity="0.06"/>
+  <circle cx="960" cy="378" r="12.5" fill="#0f766e" opacity="0.036"/>
+</svg>

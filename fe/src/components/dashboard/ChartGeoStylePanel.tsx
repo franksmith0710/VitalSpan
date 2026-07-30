@@ -43,6 +43,9 @@ import {
 import {
   DEFAULT_FLOATING_LABEL_FONT_SIZE,
   DEFAULT_FLOATING_LABEL_OFFSET,
+  DEFAULT_FLOATING_LABEL_TEXT_COLOR,
+  DEFAULT_FLOATING_LABEL_BG_COLOR,
+  DEFAULT_FLOATING_LABEL_BORDER_COLOR,
   DEFAULT_HEAT_BLOB_BLUR,
   DEFAULT_HEAT_BLOB_COLOR,
   DEFAULT_HEAT_BLOB_DIM_CHOROPLETH,
@@ -59,6 +62,9 @@ import {
   DEFAULT_POINT_PILLAR_OPACITY,
   DEFAULT_POINT_PILLAR_RING_SPEED,
   hasCustomHeatBlobColor,
+  hasCustomFloatingLabelTextColor,
+  hasCustomFloatingLabelBgColor,
+  hasCustomFloatingLabelBorderColor,
   hasCustomPointPillarColorBottom,
   hasCustomPointPillarColorTop,
 } from "@/components/charts/engine/three/geo3dPointEffectsStyle";
@@ -801,6 +807,30 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                       step={1}
                       ariaLabel="浮动标签字号"
                       onChange={(floatingLabelFontSize) => patchGeo3d({ floatingLabelFontSize })}
+                    />
+                    <InspectorInlineColorRow
+                      label="标签文字色"
+                      value={geo3d.floatingLabelTextColor ?? DEFAULT_FLOATING_LABEL_TEXT_COLOR}
+                      fallbackValue={DEFAULT_FLOATING_LABEL_TEXT_COLOR}
+                      allowClear={hasCustomFloatingLabelTextColor(geo3d)}
+                      swatches={WIDGET_BORDER_RECOMMENDED}
+                      onChange={(next) => patchGeo3d({ floatingLabelTextColor: next })}
+                    />
+                    <InspectorInlineColorRow
+                      label="标签背景色"
+                      value={geo3d.floatingLabelBgColor ?? DEFAULT_FLOATING_LABEL_BG_COLOR}
+                      fallbackValue={DEFAULT_FLOATING_LABEL_BG_COLOR}
+                      allowClear={hasCustomFloatingLabelBgColor(geo3d)}
+                      swatches={WIDGET_BORDER_RECOMMENDED}
+                      onChange={(next) => patchGeo3d({ floatingLabelBgColor: next })}
+                    />
+                    <InspectorInlineColorRow
+                      label="标签边框色"
+                      value={geo3d.floatingLabelBorderColor ?? DEFAULT_FLOATING_LABEL_BORDER_COLOR}
+                      fallbackValue={DEFAULT_FLOATING_LABEL_BORDER_COLOR}
+                      allowClear={hasCustomFloatingLabelBorderColor(geo3d)}
+                      swatches={WIDGET_BORDER_RECOMMENDED}
+                      onChange={(next) => patchGeo3d({ floatingLabelBorderColor: next })}
                     />
                     <DeAttrSliderField
                       label="标签偏移"

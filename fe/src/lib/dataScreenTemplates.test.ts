@@ -48,4 +48,36 @@ describe("dataScreenTemplates", () => {
     expect(imported.canvas).toEqual(layout.canvas);
     expect(imported.styleConfig?.surfaceKind).toBe("data-screen");
   });
+
+  it("strips legacy grid fields from v2 widgets on import", () => {
+    const imported = parseImportedDataScreenLayout({
+      version: 2,
+      canvas: { width: 1920, height: 1080 },
+      widgets: [
+        {
+          id: "w1",
+          type: "text",
+          title: "标题",
+          order: 0,
+          x: 100,
+          y: 80,
+          width: 400,
+          height: 64,
+          colSpan: 12,
+          rowSpan: 2,
+          gridX: 0,
+          gridY: 0,
+          textConfig: { content: "hello", variant: "plain" },
+        },
+      ],
+      globalFilters: [],
+      styleConfig: { colorScheme: "dark" },
+    });
+    const widget = imported.widgets[0] as Record<string, unknown>;
+    expect(widget.colSpan).toBeUndefined();
+    expect(widget.rowSpan).toBeUndefined();
+    expect(widget.gridX).toBeUndefined();
+    expect(widget.gridY).toBeUndefined();
+    expect(widget.x).toBe(100);
+  });
 });
