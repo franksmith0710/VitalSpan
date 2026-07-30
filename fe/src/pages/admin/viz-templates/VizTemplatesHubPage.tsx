@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PanelEmptyState } from "@/components/ui/panel-empty-state";
 import { VizTemplateCard } from "@/components/dashboard/templates/VizTemplateCard";
 import {
+  GOV_SECTION_LABELS,
   SURFACE_TABS,
   VIZ_TEMPLATES_HUB,
 } from "@/components/dashboard/templates/templateLabels";
@@ -138,6 +139,30 @@ export function VizTemplatesHubPage() {
     useMutation_.isPending || publishMutation.isPending || archiveMutation.isPending;
 
   const items = listQuery.data?.items ?? [];
+  const isGovView = categoryKey === "government";
+  const govScreens = isGovView
+    ? items.filter((item) => item.surfaceKind === "data-screen")
+    : [];
+  const govDashboards = isGovView
+    ? items.filter((item) => item.surfaceKind === "dashboard")
+    : [];
+
+  const renderCardGrid = (gridItems: DashboardTemplateListItem[], eagerCount = 0) => (
+    <div className={LIST_PAGE_CARD_GRID_CLASS}>
+      {gridItems.map((item, index) => (
+        <VizTemplateCard
+          key={item.id}
+          item={item}
+          canManage={canManage}
+          pending={pending}
+          previewEager={index < eagerCount}
+          onUse={() => useMutation_.mutate(item)}
+          onPublish={() => publishMutation.mutate(item.id)}
+          onArchive={() => archiveMutation.mutate(item.id)}
+        />
+      ))}
+    </div>
+  );
 
   return (
     <AdminPageShell
@@ -191,26 +216,28 @@ export function VizTemplatesHubPage() {
           filters={
             <div className="flex w-full min-w-0 flex-col gap-3">
               <div className="flex flex-wrap gap-1.5">
-                {SURFACE_TABS.map((tab) => {
-                  const Icon = tab.key === "data-screen" ? Monitor : LayoutDashboard;
-                  const active = surfaceKind === tab.key;
-                  return (
-                    <Button
-                      key={tab.key}
-                      type="button"
-                      size="sm"
-                      variant={active ? "primary" : "outline"}
-                      onClick={() => {
-                        const next = new URLSearchParams(searchParams);
-                        next.set("surfaceKind", tab.key);
-                        setSearchParams(next);
-                      }}
-                    >
-                      <Icon className="size-4" />
-                      {tab.label}
-                    </Button>
-                  );
-                })}
+                {!isGovView
+                  ? SURFACE_TABS.map((tab) => {
+                      const Icon = tab.key === "data-screen" ? Monitor : LayoutDashboard;
+                      const active = surfaceKind === tab.key;
+                      return (
+                        <Button
+                          key={tab.key}
+                          type="button"
+                          size="sm"
+                          variant={active ? "primary" : "outline"}
+                          onClick={() => {
+                            const next = new URLSearchParams(searchParams);
+                            next.set("surfaceKind", tab.key);
+                            setSearchParams(next);
+                          }}
+                        >
+                          <Icon className="size-4" />
+                          {tab.label}
+                        </Button>
+                      );
+                    })
+                  : null}
               </div>
               <div className="flex flex-wrap gap-1.5">
                 <Button
@@ -233,9 +260,9 @@ export function VizTemplatesHubPage() {
                   </Button>
                 ))}
               </div>
-              {categoryKey === "government" ? (
+              {isGovView ? (
                 <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-                  政务模板含数据大屏与仪表板，已合并展示。
+                  {GOV_SECTION_LABELS.hint}
                 </p>
               ) : null}
             </div>
@@ -276,19 +303,34 @@ export function VizTemplatesHubPage() {
             />
           ) : (
             <>
-              <div className={LIST_PAGE_CARD_GRID_CLASS}>
-                {items.map((item) => (
-                  <VizTemplateCard
-                    key={item.id}
-                    item={item}
-                    canManage={canManage}
-                    pending={pending}
-                    onUse={() => useMutation_.mutate(item)}
-                    onPublish={() => publishMutation.mutate(item.id)}
-                    onArchive={() => archiveMutation.mutate(item.id)}
-                  />
-                ))}
-              </div>
+              {isGovView ? (
+                <div className="space-y-8">
+                  {govScreens.length > 0 ? (
+                    <section>
+                      <h2 className="mb-3 text-theme-sm font-semibold text-gray-800 dark:text-gray-200">
+                        {GOV_SECTION_LABELS.dataScreen}
+                        <span className="ml-2 font-normal text-gray-500 dark:text-gray-400">
+                          ({govScreens.length})
+                        </span>
+                      </h2>
+                      {renderCardGrid(govScreens, 6)}
+                    </section>
+                  ) : null}
+                  {govDashboards.length > 0 ? (
+                    <section>
+                      <h2 className="mb-3 text-theme-sm font-semibold text-gray-800 dark:text-gray-200">
+                        {GOV_SECTION_LABELS.dashboard}
+                        <span className="ml-2 font-normal text-gray-500 dark:text-gray-400">
+                          ({govDashboards.length})
+                        </span>
+                      </h2>
+                      {renderCardGrid(govDashboards, 6)}
+                    </section>
+                  ) : null}
+                </div>
+              ) : (
+                renderCardGrid(items, 4)
+              )}
               <p className="mt-4 text-theme-xs text-gray-500 dark:text-gray-400">
                 共 {listQuery.data?.total ?? items.length} 个模板
               </p>

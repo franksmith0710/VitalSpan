@@ -227,6 +227,38 @@ describe("dashboard canvas mode", () => {
     expect(fingerprint).toBe(JSON.stringify(saved));
   });
 
+  it("buildDashboardLayoutForSave strips empty dimension placeholders before persist", () => {
+    const layout: DashboardLayoutV2 = {
+      version: 2,
+      canvas: { width: 1440, height: 900 },
+      widgets: [
+        {
+          id: "map-1",
+          type: "chart",
+          title: "区域地图",
+          order: 0,
+          x: 0,
+          y: 0,
+          width: 800,
+          height: 600,
+          chartConfig: {
+            chartType: "map",
+            dimensions: [{ field: "province" }, { field: "" }, { field: "  " }],
+            metrics: [{ field: "value" }, { field: "" }],
+          },
+        },
+      ],
+      globalFilters: [],
+    };
+    const saved = buildDashboardLayoutForSave(layout, { widgetGap: 8 });
+    const chart = saved.widgets[0];
+    expect(chart.type).toBe("chart");
+    if (chart.type !== "chart" || !chart.chartConfig) throw new Error("expected chart widget");
+    expect(chart.chartConfig.dimensions).toEqual([{ field: "province" }]);
+    expect(chart.chartConfig.metrics).toEqual([{ field: "value" }]);
+    expect(chart.chartConfig.chartId).toBe("map-1");
+  });
+
   it("buildDashboardLayoutForSave persists themeVariants for DE dual-theme round-trip", () => {
     const layout: DashboardLayoutV2 = {
       version: 2,

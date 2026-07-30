@@ -43,6 +43,9 @@ def test_gov_screens_are_v2_with_l3_density() -> None:
         presets_gov.build_gov_smart_city_screen,
         presets_gov.build_gov_emergency_command_screen,
         presets_gov.build_gov_eco_monitor_screen,
+    }
+    no_map_builders = {
+        presets_gov.build_gov_digital_cockpit_screen,
         presets_gov.build_gov_community_screen,
     }
     table_builders = {
@@ -67,6 +70,8 @@ def test_gov_screens_are_v2_with_l3_density() -> None:
         types = {w["chartConfig"]["chartType"] for w in charts}
         if build in map_builders:
             assert "map" in types
+        if build in no_map_builders:
+            assert "map" not in types
         if build in table_builders:
             assert "table-info" in types
 

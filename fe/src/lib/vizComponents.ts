@@ -1,10 +1,18 @@
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import { sanitizeChartFieldsForValidate } from "@/lib/chartFieldRules";
 import { apiFetch } from "@/lib/api";
 import type {
   DashboardWidgetBase,
   VizComponentRef,
 } from "@/components/dashboard/dashboardLayoutContracts";
 import type { FilterWidgetConfig, MediaWidgetConfig, TextWidgetConfig } from "@/components/dashboard/layoutUtils";
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export function isValidComponentUuid(id: string): boolean {
+  return UUID_RE.test(id.trim());
+}
 
 export type VizSurfaceKind = "dashboard" | "data-screen";
 export type VizWidgetType = "chart" | "filter" | "text" | "media";
@@ -204,7 +212,7 @@ export function extractWidgetPayload(widget: DashboardWidgetBase): VizComponentP
   switch (widget.type) {
     case "chart":
       if (!widget.chartConfig) throw new Error("chart widget missing chartConfig");
-      return { chartConfig: widget.chartConfig };
+      return { chartConfig: sanitizeChartFieldsForValidate(widget.chartConfig) };
     case "filter":
       if (!widget.filterConfig) throw new Error("filter widget missing filterConfig");
       return { filterConfig: widget.filterConfig };
@@ -226,7 +234,9 @@ export function isLinkedComponentRef(ref?: VizComponentRef): ref is VizComponent
 export function collectComponentIds(widgets: DashboardWidgetBase[]): string[] {
   const ids = new Set<string>();
   for (const w of widgets) {
-    if (isLinkedComponentRef(w.componentRef)) ids.add(w.componentRef.componentId);
+    if (!isLinkedComponentRef(w.componentRef)) continue;
+    const id = w.componentRef.componentId.trim();
+    if (isValidComponentUuid(id)) ids.add(id);
   }
   return [...ids];
 }

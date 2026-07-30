@@ -27,6 +27,8 @@ type TemplateCardPreviewProps = {
   status: DashboardTemplateListItem["status"];
   className?: string;
   eager?: boolean;
+  /** 静态缩略图：live 预览加载前展示，避免灰块空壳 */
+  thumbnailSrc?: string | null;
 };
 
 /**
@@ -40,6 +42,7 @@ export function TemplateCardPreview({
   status,
   className,
   eager = false,
+  thumbnailSrc = null,
 }: TemplateCardPreviewProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(eager);
@@ -121,6 +124,18 @@ export function TemplateCardPreview({
     />
   );
 
+  const thumbnailFallback = thumbnailSrc ? (
+    <img
+      src={thumbnailSrc}
+      alt=""
+      className="h-full w-full object-cover object-center"
+      loading={eager ? "eager" : "lazy"}
+      decoding="async"
+    />
+  ) : (
+    <Skeleton className="h-full w-full rounded-none" />
+  );
+
   if (!layout?.widgets?.length && !loading && active && !detailQuery.isLoading) {
     return (
       <div ref={hostRef} className={cn("h-full", className)} data-testid="template-card-preview">
@@ -154,7 +169,7 @@ export function TemplateCardPreview({
             demoDatasourceMissing={demoDatasourceMissing}
           />
         ) : (
-          <Skeleton className="h-full w-full rounded-none" />
+          thumbnailFallback
         )}
       </ComponentPreviewShell>
     </div>

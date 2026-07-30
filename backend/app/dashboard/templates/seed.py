@@ -18,7 +18,7 @@ def _gov_template_specs() -> list[dict[str, Any]]:
             "id": uuid.UUID("00000000-0000-4000-8001-000000000201"),
             "template_key": "builtin-gov-smart-city",
             "name": "智慧城市运行监测",
-            "description": "地图主视觉 + 部门满意度 + 政务 KPI，绑定 v_gov_region_service",
+            "description": "城市运行态势地图 + 产业与投资指标 + 问题整改清单",
             "category_key": "government",
             "surface_kind": "data-screen",
             "thumbnail_ref": "/template-assets/thumbs/gov-smart-city.svg",
@@ -28,7 +28,7 @@ def _gov_template_specs() -> list[dict[str, Any]]:
             "id": uuid.UUID("00000000-0000-4000-8001-000000000202"),
             "template_key": "builtin-gov-digital-cockpit",
             "name": "数字政府 KPI 驾驶舱",
-            "description": "全宽趋势 + 四象限指标，绑定 gov_service_metrics",
+            "description": "顶栏 KPI + 全宽满意度趋势 + 三栏分析（无地图）",
             "category_key": "government",
             "surface_kind": "data-screen",
             "thumbnail_ref": "/template-assets/thumbs/gov-digital-cockpit.svg",
@@ -38,7 +38,7 @@ def _gov_template_specs() -> list[dict[str, Any]]:
             "id": uuid.UUID("00000000-0000-4000-8001-000000000203"),
             "template_key": "builtin-gov-emergency-command",
             "name": "应急指挥调度中心",
-            "description": "事件分类 + 区域地图 + 网格待办，绑定 gov_incidents / gov_grid_stats",
+            "description": "顶栏实时告警 + 事件分类与区域态势 + 网格待办",
             "category_key": "government",
             "surface_kind": "data-screen",
             "thumbnail_ref": "/template-assets/thumbs/gov-emergency-command.svg",
@@ -48,7 +48,7 @@ def _gov_template_specs() -> list[dict[str, Any]]:
             "id": uuid.UUID("00000000-0000-4000-8001-000000000204"),
             "template_key": "builtin-gov-eco-monitor",
             "name": "生态环境监测大屏",
-            "description": "生态地图 + 监测站点 + 支出结构，绑定 gov_eco_monitor",
+            "description": "AQI 趋势主视觉 + 水质监测 + 生态问题清单",
             "category_key": "government",
             "surface_kind": "data-screen",
             "thumbnail_ref": "/template-assets/thumbs/gov-eco-monitor.svg",
@@ -58,7 +58,7 @@ def _gov_template_specs() -> list[dict[str, Any]]:
             "id": uuid.UUID("00000000-0000-4000-8001-000000000205"),
             "template_key": "builtin-gov-community",
             "name": "社区治理一张图",
-            "description": "网格明细 + 社区地图 + 部门服务，绑定 gov_grid_stats",
+            "description": "网格事件明细表 + 治理热词 + 满意度走势",
             "category_key": "government",
             "surface_kind": "data-screen",
             "thumbnail_ref": "/template-assets/thumbs/gov-community.svg",
@@ -88,7 +88,7 @@ def _gov_template_specs() -> list[dict[str, Any]]:
             "id": uuid.UUID("00000000-0000-4000-8001-000000000208"),
             "template_key": "builtin-gov-finance",
             "name": "财政收支概览",
-            "description": "支出执行 + 预算对比 + 趋势参考，绑定 gov_budget_items",
+            "description": "财政支出执行与预算对比，附满意度参考趋势",
             "category_key": "government",
             "surface_kind": "dashboard",
             "thumbnail_ref": "/template-assets/thumbs/gov-finance.svg",
@@ -98,7 +98,7 @@ def _gov_template_specs() -> list[dict[str, Any]]:
             "id": uuid.UUID("00000000-0000-4000-8001-000000000209"),
             "template_key": "builtin-gov-investment",
             "name": "招商引资分析",
-            "description": "区域地图 + 产业投资柱图，绑定 gov_investment",
+            "description": "区域产业分布地图 + 重点行业投资柱图",
             "category_key": "government",
             "surface_kind": "dashboard",
             "thumbnail_ref": "/template-assets/thumbs/gov-investment.svg",
@@ -233,7 +233,7 @@ def seed_builtin_dashboard_templates(db: Session) -> int:
                 layout_json=spec["layout_json"],
                 thumbnail_ref=spec.get("thumbnail_ref"),
                 visibility="builtin",
-                content_revision=8,
+                content_revision=9,
             )
             db.add(row)
             upserted += 1
@@ -245,6 +245,6 @@ def seed_builtin_dashboard_templates(db: Session) -> int:
             existing.thumbnail_ref = spec.get("thumbnail_ref")
             existing.status = "published"
             existing.visibility = "builtin"
-            existing.content_revision = max(existing.content_revision, 8)
+            existing.content_revision = max(existing.content_revision, 9)
     db.commit()
     return upserted

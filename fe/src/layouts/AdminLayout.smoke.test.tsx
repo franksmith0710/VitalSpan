@@ -185,6 +185,36 @@ describe("AdminLayout smoke", () => {
     expect(main.className).not.toContain("overflow-y-auto");
   });
 
+  it("report center uses full-width scrollable main", () => {
+    render(
+      <MemoryRouter initialEntries={["/admin/reports/center"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="reports/center" element={<div>report center</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    const main = screen.getAllByRole("main")[0];
+    expect(main.className).toContain("max-w-none");
+    expect(main.className).toContain("overflow-y-auto");
+  });
+
+  it("account profile keeps max-w-2xl constrained main", () => {
+    render(
+      <MemoryRouter initialEntries={["/admin/account/profile"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="account/profile" element={<div>profile</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    const main = screen.getAllByRole("main")[0];
+    expect(main.className).toContain("max-w-(--breakpoint-2xl)");
+    expect(main.className).not.toContain("max-w-none");
+  });
+
   it("T-NAV-02: dashboard edit → list keeps AdminLayout mounted (useMatch hooks stable)", async () => {
     setDesktopViewport(1600);
     const user = userEvent.setup();

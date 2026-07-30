@@ -30,7 +30,12 @@ import { sanitizePixelLayoutGeometry } from "./pixelCanvas/layoutSanitize";
 export function hydrateDashboardStyle(
   input?: DashboardStyleConfig | null,
 ): DashboardStyleConfig {
-  return materializeDecorStyleConfig(bootstrapDashboardStyleConfig(input ?? {}));
+  const bootstrapped = bootstrapDashboardStyleConfig(input ?? {});
+  const normalizedOpacity =
+    bootstrapped.paletteOpacity != null && bootstrapped.paletteOpacity > 1
+      ? { ...bootstrapped, paletteOpacity: bootstrapped.paletteOpacity / 100 }
+      : bootstrapped;
+  return materializeDecorStyleConfig(normalizedOpacity);
 }
 
 /** 编辑态 liveStyle 优先；只读/预览可仅传 layout */

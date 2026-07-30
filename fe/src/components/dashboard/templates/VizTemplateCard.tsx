@@ -6,6 +6,7 @@ import { TemplateCardPreview } from "@/components/dashboard/templates/TemplateCa
 import { TemplatePreviewDialog } from "@/components/dashboard/templates/TemplatePreviewDialog";
 import {
   CATEGORY_ACCENT,
+  resolveTemplateThumbnail,
   surfaceLabel,
   TEMPLATE_ACTIONS,
   templatePreviewAspectRatio,
@@ -26,6 +27,8 @@ type VizTemplateCardProps = {
   onPublish: () => void;
   onArchive: () => void;
   pending: boolean;
+  /** 首屏卡片 eager 加载 live 预览，减少灰块空壳感 */
+  previewEager?: boolean;
 };
 
 function sanitizeFilename(name: string): string {
@@ -40,10 +43,12 @@ export function VizTemplateCard({
   onPublish,
   onArchive,
   pending,
+  previewEager = false,
 }: VizTemplateCardProps) {
   const [exporting, setExporting] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const accent = CATEGORY_ACCENT[item.categoryKey] ?? CATEGORY_ACCENT.general;
+  const thumbnailSrc = resolveTemplateThumbnail(item.templateKey, item.thumbnailRef);
   const showPublish = canManage && item.status === "draft";
   const showArchive =
     canManage && item.status === "published" && item.visibility !== "builtin";
@@ -83,6 +88,8 @@ export function VizTemplateCard({
           categoryKey={item.categoryKey}
           visibility={item.visibility}
           status={item.status}
+          thumbnailSrc={thumbnailSrc}
+          eager={previewEager}
           className="h-full"
         />
       </div>

@@ -19,6 +19,7 @@ import {
   clampCanvasHeightForPersist,
   resolvePersistedCanvasMinHeight,
 } from "@/lib/canvasPersistPolicy";
+import { sanitizeChartFieldsForValidate } from "@/lib/chartFieldRules";
 import { isLinkedComponentRef } from "@/lib/vizComponents";
 
 const CANVAS_WIDTH = 1440 as const;
@@ -170,7 +171,16 @@ export function mergeLayoutWidgetIntoPixel(
   };
 }
 
-const V1_LAYOUT_GEOMETRY_KEYS = ["colSpan", "rowSpan", "gridX", "gridY"] as const;
+const V1_LAYOUT_GEOMETRY_KEYS = [
+  "colSpan",
+  "rowSpan",
+  "gridX",
+  "gridY",
+  "col_span",
+  "row_span",
+  "grid_x",
+  "grid_y",
+] as const;
 
 /** v2 持久化禁止携带栅格几何字段，否则后端 422 */
 function stripV1LayoutGeometry<T extends Record<string, unknown>>(widget: T): T {
@@ -205,6 +215,20 @@ function stripLinkedWidgetForPersist<T extends { componentRef?: { componentId: s
   return next as T;
 }
 
+/** 持久化前剔除 UI 占位空 field，避免后端 ChartFieldRef min_length=1 422 */
+function prepareChartWidgetForPersist<W extends LayoutWidget>(
+  widget: W,
+  options?: { attachChartId?: boolean },
+): W {
+  const stripped = stripLinkedWidgetForPersist(widget);
+  if (stripped.type !== "chart" || !stripped.chartConfig) return stripped;
+  const chartConfig = sanitizeChartFieldsForValidate(stripped.chartConfig);
+  return {
+    ...stripped,
+    chartConfig: options?.attachChartId ? { ...chartConfig, chartId: stripped.id } : chartConfig,
+  };
+}
+
 /** v1 可规范化栅格；v2 只补公共 ID，严格保留数组顺序、order 与像素几何。 */
 export function buildDashboardLayoutForSave(
   layout: DashboardLayout,
@@ -214,7 +238,9 @@ export function buildDashboardLayoutForSave(
     return {
       ...layout,
       widgets: normalizeWidgetIds(
-        normalizeWidgetLayout(sortWidgets(layout.widgets)).map(stripLinkedWidgetForPersist),
+        normalizeWidgetLayout(sortWidgets(layout.widgets)).map((widget) =>
+          prepareChartWidgetForPersist(widget),
+        ),
       ),
       styleConfig: persistedStyle(styleConfig),
     };
@@ -223,17 +249,11 @@ export function buildDashboardLayoutForSave(
   const fitted = fitCanvasHeightToContent(
     {
       ...layout,
-      widgets: layout.widgets.map((widget) => {
-        const stripped = stripLinkedWidgetForPersist(widget);
-        const withChartId =
-          stripped.type === "chart" && stripped.chartConfig
-            ? {
-                ...stripped,
-                chartConfig: { ...stripped.chartConfig, chartId: stripped.id },
-              }
-            : stripped;
-        return stripV1LayoutGeometry(withChartId as Record<string, unknown>) as typeof widget;
-      }),
+      widgets: layout.widgets.map((widget) =>
+        stripV1LayoutGeometry(
+          prepareChartWidgetForPersist(widget, { attachChartId: true }) as Record<string, unknown>,
+        ) as typeof widget,
+      ),
       styleConfig: persistedStyle(styleConfig),
     },
     minCanvasHeight,

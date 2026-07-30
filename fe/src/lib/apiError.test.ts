@@ -25,7 +25,17 @@ describe("mapApiError", () => {
     const err = new ApiRequestError("body.layoutJson.canvas.height: ge", "VALIDATION_ERROR", [
       { field: "body.layoutJson.canvas.height", message: "Input should be greater than or equal to 900" },
     ]);
-    expect(mapApiError(err)).toContain("布局校验失败");
+    expect(mapApiError(err)).toContain("画布高度不能低于 900");
+  });
+
+  it("maps paletteOpacity range validation", () => {
+    const err = new ApiRequestError("body.layoutJson.styleConfig.paletteOpacity: le", "VALIDATION_ERROR", [
+      {
+        field: "body.layoutJson.styleConfig.paletteOpacity",
+        message: "Input should be less than or equal to 1",
+      },
+    ]);
+    expect(mapApiError(err)).toContain("配色不透明度");
   });
 
   it("falls back to generic message for unknown English", () => {

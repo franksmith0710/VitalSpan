@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Copy, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
+import { ShareIssuedUrlPanel } from "@/components/dashboard/ShareIssuedUrlPanel";
 
 type ChartEmbedShareActionsProps = {
   chartId: string;
@@ -19,11 +19,6 @@ export function ChartEmbedShareActions({
 }: ChartEmbedShareActionsProps) {
   const [issuing, setIssuing] = useState(false);
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
-
-  const copyUrl = (url: string) => {
-    void navigator.clipboard.writeText(url);
-    toast.success("已复制链接");
-  };
 
   const issueLink = async () => {
     setIssuing(true);
@@ -57,21 +52,5 @@ export function ChartEmbedShareActions({
     );
   }
 
-  return (
-    <div className="flex max-w-xl flex-col items-end gap-2 text-right">
-      <p className="break-all font-mono text-theme-xs text-gray-600 dark:text-gray-400">{embedUrl}</p>
-      <div className="flex flex-wrap justify-end gap-2">
-        <Button type="button" size="sm" variant="outline" onClick={() => copyUrl(embedUrl)}>
-          <Copy className="size-4" aria-hidden />
-          复制链接
-        </Button>
-        <Button asChild size="sm" variant="outline">
-          <a href={embedUrl} target="_blank" rel="noreferrer">
-            <ExternalLink className="size-4" aria-hidden />
-            预览
-          </a>
-        </Button>
-      </div>
-    </div>
-  );
+  return <ShareIssuedUrlPanel url={embedUrl} />;
 }

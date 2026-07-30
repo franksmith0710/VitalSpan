@@ -129,4 +129,9 @@ describe("stylePipeline", () => {
     });
     expect(prepared.widgets[0]?.chartConfig?.chartType).toBe("table-info");
   });
+
+  it("normalizes legacy paletteOpacity percent to fraction on hydrate", () => {
+    const style = hydrateDashboardStyle({ paletteOpacity: 85, colorScheme: "light" });
+    expect(style.paletteOpacity).toBeCloseTo(0.85);
+  });
 });

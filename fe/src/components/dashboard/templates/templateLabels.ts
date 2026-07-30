@@ -7,7 +7,7 @@ import {
 export const VIZ_TEMPLATES_HUB = {
   title: "可视化模板",
   description:
-    "企业内看板与大屏布局模板库；内置模板绑定 127.0.0.1:3307 sample_db 演示库（gov_* / v_sales_geo），需先在「数据连接」登记 sample-mysql 并运行 scripts/seed-demo-mysql.ps1。",
+    "企业看板与大屏布局模板库。内置政务演示模板需先在「数据连接」配置演示数据源（sample_db），详见帮助文档。",
   importJson: "导入 JSON",
   searchPlaceholder: "搜索模板名称…",
   searchAriaLabel: "搜索模板",
@@ -33,6 +33,12 @@ export const TEMPLATE_ACTIONS = {
   layoutJson: "布局 JSON",
   templateSection: "模板",
   exportSection: "导出",
+} as const;
+
+export const GOV_SECTION_LABELS = {
+  dataScreen: "数据大屏",
+  dashboard: "仪表板",
+  hint: "政务模板含数据大屏与仪表板，已按类型分段展示。",
 } as const;
 
 export const SURFACE_TABS: { key: VizSurfaceKind; label: string }[] = [

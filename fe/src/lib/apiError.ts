@@ -52,6 +52,10 @@ const CODE_MESSAGES: Record<string, string> = {
   DASH_FILTER_UNKNOWN_SOURCE: "筛选联动引用了不存在的筛选器",
   DASH_FILTER_INVALID_DIMENSION_REF: "筛选器维度引用无效",
   DASH_FILTER_DUPLICATE_PARAMETER_KEY: "筛选联动参数键重复",
+  VIZ_COMPONENT_NOT_FOUND: "组件库条目不存在或无权访问",
+  VIZ_COMPONENT_REVISION_CONFLICT: "组件库版本冲突，请刷新后重试",
+  VIZ_COMPONENT_INVALID_PAYLOAD: "组件配置无效，无法写入组件库",
+  VIZ_COMPONENT_UNSUPPORTED_WIDGET: "该组件类型无法发布到组件库",
   DASH_OVERVIEW_FORBIDDEN: "无权访问实体总览",
   DASH_OVERVIEW_NOT_FOUND: "实体总览尚未配置",
   DASH_OVERVIEW_DASHBOARD_NOT_FOUND: "关联看板不存在",
@@ -259,9 +263,39 @@ function asCodedError(err: unknown): CodedError | null {
   return err as CodedError;
 }
 
+const PYDANTIC_MESSAGE_MAP: Array<[RegExp, string]> = [
+  [/less than or equal to 1/i, "数值不能超过 1（配色不透明度请使用 0–1，勿填百分比）"],
+  [/greater than or equal to 900/i, "画布高度不能低于 900"],
+  [/valid UUID/i, "ID 格式无效，请检查关联组件引用"],
+  [/extra inputs are not permitted/i, "包含后端不接受的字段"],
+  [/version 2 widgets must not use fields: colSpan/i, "像素布局不能携带栅格字段 colSpan，请刷新后重试"],
+  [/x \+ width must not exceed/i, "组件超出画布宽度，请调整位置或尺寸"],
+  [/y \+ height must not exceed/i, "组件超出画布高度，请调整位置或尺寸"],
+];
+
+function formatValidationDetail(message: string, fields?: Array<{ field: string; message: string }>): string {
+  const fieldPath = fields?.[0]?.field?.replace(/^body\.layoutJson\./, "") ?? "";
+  const raw = fields?.[0]?.message ?? message;
+  for (const [pattern, zh] of PYDANTIC_MESSAGE_MAP) {
+    if (pattern.test(raw) || pattern.test(message)) return fieldPath ? `${zh}（${fieldPath}）` : zh;
+  }
+  const localized = localizeApiMessage(raw);
+  if (localized !== GENERIC_FAILURE) {
+    return fieldPath ? `${localized}（${fieldPath}）` : localized;
+  }
+  if (message.includes(":")) {
+    const tail = message.split(":").slice(1).join(":").trim();
+    if (tail && containsCjk(tail)) return fieldPath ? `${tail}（${fieldPath}）` : tail;
+  }
+  return fieldPath ? `布局校验失败（${fieldPath}）` : "布局校验失败，请检查看板配置与组件样式";
+}
+
 export function mapApiError(err: unknown): string {
   const coded = asCodedError(err);
   if (coded) {
+    if (coded.code === "VALIDATION_ERROR") {
+      return formatValidationDetail(coded.message ?? "", coded.fields);
+    }
     if (coded.code && CODE_MESSAGES[coded.code]) {
       const mapped = CODE_MESSAGES[coded.code];
       const fieldHint = coded.fields?.[0]?.message?.trim();
