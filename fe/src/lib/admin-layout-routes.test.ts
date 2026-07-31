@@ -15,6 +15,7 @@ import {
 describe("isAdminListFillRoute", () => {
   it("matches paginated list routes", () => {
     expect(isAdminListFillRoute("/admin/system/roles")).toBe(true);
+    expect(isAdminListFillRoute("/admin/system")).toBe(true);
     expect(isAdminListFillRoute("/admin/system/users/")).toBe(true);
     expect(isAdminListFillRoute("/admin/system/rls")).toBe(true);
     expect(isAdminListFillRoute("/admin/system/orgs")).toBe(true);

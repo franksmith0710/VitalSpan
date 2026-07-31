@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router";
 import { Box, Check, ChevronDown, Pencil, Plus, RefreshCw } from "lucide-react";
-import { Button, IconButton } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,7 +25,7 @@ type DatasetSelectorProps = {
   className?: string;
 };
 
-/** DataEase `dataset-select`：紧凑 input 触发器 + 右侧编辑/刷新图标 */
+/** DataEase `dataset-select`：紧凑 input 触发器 + 下拉内编辑/刷新 */
 export function DatasetSelector({
   widgetId,
   datasetId,
@@ -54,15 +54,16 @@ export function DatasetSelector({
   const hasSelection = Boolean(selected);
 
   return (
-    <div className={cn("flex min-w-0 items-center gap-1", className)}>
+    <div className={cn("min-w-0", className)}>
       <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
             id={`dataset-picker-${widgetId}`}
             aria-label="选择数据集"
+            title={hasSelection ? triggerLabel : undefined}
             className={cn(
-              "flex h-7 min-w-0 flex-1 items-center gap-1 rounded-md border bg-white px-2 text-left transition-colors",
+              "flex h-8 w-full min-w-0 items-center gap-1.5 rounded-md border bg-white px-2.5 text-left transition-colors",
               "hover:border-brand-400 focus-visible:border-brand-500 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/20",
               "dark:bg-gray-900",
               open || hasSelection
@@ -72,7 +73,7 @@ export function DatasetSelector({
           >
             <span
               className={cn(
-                "min-w-0 flex-1 truncate text-theme-xs",
+                "min-w-0 flex-1 truncate text-theme-xs leading-tight",
                 hasSelection
                   ? "font-medium text-brand-600 dark:text-brand-400"
                   : "text-gray-500 dark:text-gray-400",
@@ -93,7 +94,7 @@ export function DatasetSelector({
         <DropdownMenuContent
           align="start"
           sideOffset={6}
-          className="w-[var(--radix-dropdown-menu-trigger-width)] max-w-[calc(100vw-2rem)] p-0"
+          className="min-w-[min(320px,var(--radix-dropdown-menu-trigger-width))] max-w-[calc(100vw-2rem)] p-0"
           onCloseAutoFocus={(event) => event.preventDefault()}
         >
           <div
@@ -141,7 +142,7 @@ export function DatasetSelector({
                   <DropdownMenuItem
                     key={item.datasetId}
                     className={cn(
-                      "gap-2.5 rounded-lg px-2.5 py-2",
+                      "items-start gap-2.5 rounded-lg px-2.5 py-2",
                       active && "bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400",
                     )}
                     onSelect={() => {
@@ -153,20 +154,32 @@ export function DatasetSelector({
                     <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-400">
                       <Box className="size-4" aria-hidden />
                     </span>
-                    <span className="min-w-0 flex-1 truncate text-theme-xs">
+                    <span className="min-w-0 flex-1 text-theme-xs leading-snug break-words">
                       {item.displayName}
                       {!item.boundConfigId ? (
-                        <span className="text-theme-xs text-gray-400">（未绑定）</span>
+                        <span className="block text-theme-xs text-warning-600 dark:text-warning-400">
+                          未绑定查询配置
+                        </span>
                       ) : null}
                     </span>
-                    {active ? <Check className="size-4 shrink-0" aria-hidden /> : null}
+                    {active ? <Check className="mt-0.5 size-4 shrink-0" aria-hidden /> : null}
                   </DropdownMenuItem>
                 );
               })
             )}
           </div>
           <DropdownMenuSeparator className="mx-0" />
-          <div className="p-2">
+          <div className="flex flex-col gap-0.5 p-2">
+            {datasetId ? (
+              <Link
+                to={`/admin/datasets/${datasetId}/edit`}
+                className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-theme-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/[0.06]"
+                onClick={() => setOpen(false)}
+              >
+                <Pencil className="size-4 shrink-0" aria-hidden />
+                编辑当前数据集
+              </Link>
+            ) : null}
             <Link
               to="/admin/datasets"
               className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-theme-xs font-medium text-brand-600 transition-colors hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10"
@@ -177,44 +190,6 @@ export function DatasetSelector({
           </div>
         </DropdownMenuContent>
       </DropdownMenu>
-
-      {datasetId ? (
-        <IconButton
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="size-6 shrink-0 text-gray-400 hover:text-brand-600 dark:hover:text-brand-400"
-          aria-label="编辑数据集"
-          asChild
-        >
-          <Link to={`/admin/datasets/${datasetId}/edit`}>
-            <Pencil className="size-3.5" aria-hidden />
-          </Link>
-        </IconButton>
-      ) : (
-        <IconButton
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="size-6 shrink-0 text-gray-300 dark:text-gray-600"
-          aria-label="编辑数据集"
-          disabled
-        >
-          <Pencil className="size-3.5" aria-hidden />
-        </IconButton>
-      )}
-
-      <IconButton
-        type="button"
-        variant="ghost"
-        size="sm"
-        className="size-6 shrink-0 text-gray-400 hover:text-brand-600 dark:hover:text-brand-400"
-        aria-label="刷新数据集列表"
-        onClick={() => onRefresh?.()}
-        disabled={datasetsLoading}
-      >
-        <RefreshCw className={cn("size-3.5", datasetsLoading && "animate-spin")} aria-hidden />
-      </IconButton>
     </div>
   );
 }

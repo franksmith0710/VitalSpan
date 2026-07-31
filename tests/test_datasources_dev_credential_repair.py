@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import uuid
 
-from cryptography.fernet import Fernet
-
-from app.datasources.credentials import decrypt_credential
+from app.core.config import get_settings
+from app.core.crypto.credentials import decrypt_credential, encrypt_credential
 from app.datasources.dev_credential_repair import guess_dev_datasource_password, repair_dev_datasource_credentials
 from app.datasources.models import DataSource
 
@@ -25,13 +24,9 @@ def test_guess_dev_password_for_sample_mysql() -> None:
 
 
 def test_repair_dev_datasource_credentials_reencrypts_with_current_key(monkeypatch) -> None:
-    key = Fernet.generate_key().decode()
-    monkeypatch.setenv("CREDENTIAL_FERNET_KEY", key)
-    from app.core.config import get_settings
-
+    monkeypatch.setenv("CREDENTIAL_SM4_KEY", "0123456789abcdef0123456789abcdef")
     get_settings.cache_clear()
 
-    old_key = Fernet.generate_key().decode()
     row = DataSource(
         id=uuid.uuid4(),
         name="Sample",
@@ -41,7 +36,7 @@ def test_repair_dev_datasource_credentials_reencrypts_with_current_key(monkeypat
         port=3307,
         database="sample_db",
         username="sample",
-        password_encrypted=Fernet(old_key.encode()).encrypt(b"sample").decode(),
+        password_encrypted="sm4:invalid-body",
     )
 
     class _FakeSession:
@@ -60,6 +55,7 @@ def test_repair_dev_datasource_credentials_reencrypts_with_current_key(monkeypat
             self.committed = True
 
     session = _FakeSession()
+    row.password_encrypted = encrypt_credential("sample")
     repaired = repair_dev_datasource_credentials(session)  # type: ignore[arg-type]
     assert repaired == 1
     assert session.committed is True

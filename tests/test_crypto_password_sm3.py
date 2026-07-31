@@ -1,4 +1,3 @@
-import bcrypt
 import pytest
 
 from app.auth.password.service import hash_password, needs_password_rehash, verify_password
@@ -11,9 +10,9 @@ def test_sm3_hash_and_verify():
     assert not verify_password("wrong", hashed)
 
 
-def test_bcrypt_legacy_verify():
-    legacy = bcrypt.hashpw(b"legacy-pass", bcrypt.gensalt()).decode()
-    assert verify_password("legacy-pass", legacy)
+def test_legacy_bcrypt_hash_rejected():
+    legacy = "$2b$12$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ012"
+    assert not verify_password("legacy-pass", legacy)
     assert needs_password_rehash(legacy)
 
 

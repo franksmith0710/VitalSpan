@@ -53,9 +53,9 @@
 | B-2 | 1 | P0 | 是 | 否 | ~~无权限矩阵~~ **已修复** | — | `RoleListPage.tsx` 权限 Tab · `RolePermissionsPanel.tsx` |
 | B-3 | 2 | P0 | 否 | 否 | ~~手填 UUID~~ **已修复** | — | `ResourceGrantPicker.tsx` · `GrantsDialogs.tsx` |
 | B-4 | 2 | P1 | 否 | 否 | ~~用户页无组织/改密~~ **已修复** | — | `UserManageSheet.tsx` · org/reset-password |
-| B-5 | 3 | P1 | 否 | 否 | 组织树仅新建 | 「写错只能找 DBA」 | `OrgTreePage.tsx` |
+| B-5 | 3 | P1 | 否 | 否 | ~~组织树仅新建~~ **已修复** | — | `OrgTreePage.tsx` 编辑/删除 |
 | B-6 | 6 | P1 | 否 | 否 | 角色状态筛选仅当前页 | total 与筛选不一致 | `RoleListPage.tsx` `filteredItems` |
-| B-7 | 7 | P1 | 否 | 否 | 后台管理藏头像菜单 | 新管理员难发现 | `user-dropdown.tsx` |
+| B-7 | 7 | P1 | 否 | 否 | ~~无引导~~ **部分修复** | 配置向导首页 + 导航重组 | `SystemAdminHomePage.tsx` |
 | B-8 | 3 | P2 | 否 | 否 | RLS 维度类型只读 | 建错维度无法改 | `RlsAdminPage.tsx` |
 | B-9 | 5 | P2 | 否 | 否 | 角色基本信息混默认看板 | 改名字却要懂 Dashboard | `RoleProfileFormFields.tsx` |
 | B-10 | 7 | P2 | 否 | 是 | 授权页布局不统一 | 像后补模块 | `GrantsPage.tsx` |
@@ -71,9 +71,9 @@
 | B-2 | P0 | 是 | 否 | **verified** | r2 再评确认 | 权限 Tab + `RolePermissionsPanel` | `RolePermissionsPanel.smoke.test.tsx` 1 passed | — | 2026-07-31 |
 | B-3 | P0 | 否 | 否 | **verified** | r2 再评确认 | `ResourceGrantPicker` 下拉选资源 | `grants.smoke.test.tsx` 4 passed | — | 2026-07-31 |
 | B-4 | P1 | 否 | 否 | **verified** | P1 修复 | `UserManageSheet` 组织 Tab + 重置密码 | `users.smoke.test.tsx` T-AUTH-003-04/05 | — | 2026-07-31 |
-| B-5 | P1 | 否 | 否 | open | — | — | — | — | 2026-07-31 |
+| B-5 | P1 | 否 | 否 | **verified** | UX 优化 | 组织节点编辑/删除 + 错误文案 | `orgs.smoke.test.tsx` 3 passed | — | 2026-07-31 |
 | B-6 | P1 | 否 | 否 | open | — | — | — | — | 2026-07-31 |
-| B-7 | P1 | 否 | 否 | open | — | — | — | — | 2026-07-31 |
+| B-7 | P1 | 否 | 否 | **partial** | UX 优化 | `/admin/system` 配置向导；RLS 收至高级 | `system-admin.smoke.test.tsx` | — | 2026-07-31 |
 | B-8 | P2 | 否 | 否 | open | — | — | — | — | 2026-07-31 |
 | B-9 | P2 | 否 | 否 | open | — | — | — | — | 2026-07-31 |
 | B-10 | P2 | 否 | 是 | open | — | — | — | ui-ux-reviewer | 2026-07-31 |

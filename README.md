@@ -87,12 +87,10 @@ uvicorn app.main:app --reload --port 8000
 
 | 变量 | 说明 |
 |------|------|
+| `JWT_SM2_PRIVATE_KEY` / `JWT_SM2_PUBLIC_KEY` | SM2 JWT 签名密钥对（`python scripts/generate-jwt-sm2-keys.py`） |
 | `CREDENTIAL_SM4_KEY` | SM4 凭证加密密钥（32 位 hex，固定算法） |
-| `CREDENTIAL_FERNET_KEY` | 解密遗留 Fernet 密文，迁移期须保留 |
 
-> 本项目**不提供**运行时算法 / NFR / mock / 前端功能开关 env；`VITALSPAN_ENV` 仅作部署标识。
-
-凭证迁移（备份后执行）：`python scripts/migrate-credentials-to-sm4.py --dry-run`
+> 部署 SM2 JWT 后须重新登录。凭证/密码仅 SM4/SM3 路径。
 
 **数据库备份**：
 

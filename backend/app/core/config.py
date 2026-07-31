@@ -1,9 +1,10 @@
 from functools import lru_cache
 from typing import Any, ClassVar, Literal
 
-from cryptography.fernet import Fernet
 from pydantic import computed_field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from app.core.crypto.sm2 import Sm2CryptoError, derive_public_key
 
 
 class Settings(BaseSettings):
@@ -15,8 +16,8 @@ class Settings(BaseSettings):
 
     vitalspan_env: Literal["development", "staging", "production"] = "development"
     database_url: str
-    secret_key: str
-    credential_fernet_key: str
+    jwt_sm2_private_key: str
+    jwt_sm2_public_key: str
     credential_sm4_key: str
     cors_origins_raw: str = "http://localhost:5173"
     log_level: str = "INFO"
@@ -43,8 +44,12 @@ class Settings(BaseSettings):
     ensure_official_demo_datasource: bool = True
     sample_mysql_url: str | None = None
 
-    _DEV_SECRET_KEY: ClassVar[str] = "change-me-in-production"
-    _DEV_FERNET_EXAMPLE: ClassVar[str] = "SN0VrKv3d9y1xCzRerwAlw0VdGvrNqWacCMhrYbq2YI="
+    _DEV_JWT_SM2_PRIVATE: ClassVar[str] = (
+        "3DA75A807474C867E8E5C60B3E4E32DC8D319D4447B9594D394E6D3BD8778D1F"
+    )
+    _DEV_JWT_SM2_PUBLIC: ClassVar[str] = (
+        "1AE135607AEEB4D7722756BC8C736C79DE6E72452E1CF4DC32448C7393B290B946D1A7D2614DA4814F7AEDAEB92741DB46775298CDFE3D832AD5A44572ADD899"
+    )
     _DEV_SM4_EXAMPLE: ClassVar[str] = "0123456789abcdef0123456789abcdef"
 
     @field_validator("push_wecom_webhook", "push_dingtalk_webhook", mode="before")
@@ -122,14 +127,32 @@ class Settings(BaseSettings):
             return "mysql+pymysql://" + stripped[len("mysql://") :]
         return stripped
 
-    @field_validator("credential_fernet_key")
+    @field_validator("jwt_sm2_private_key")
     @classmethod
-    def validate_credential_fernet_key(cls, value: str) -> str:
+    def validate_jwt_sm2_private_key(cls, value: str) -> str:
+        normalized = value.strip().upper()
+        if len(normalized) != 64:
+            raise ValueError("JWT_SM2_PRIVATE_KEY 须为 64 位十六进制（32 字节）")
         try:
-            Fernet(value.encode())
-        except (TypeError, ValueError):
-            raise ValueError("CREDENTIAL_FERNET_KEY 须为合法 Fernet 密钥") from None
-        return value
+            int(normalized, 16)
+        except ValueError as exc:
+            raise ValueError("JWT_SM2_PRIVATE_KEY 须为十六进制") from exc
+        return normalized
+
+    @field_validator("jwt_sm2_public_key")
+    @classmethod
+    def validate_jwt_sm2_public_key(cls, value: str) -> str:
+        stripped = value.strip()
+        if stripped.startswith("04"):
+            stripped = stripped[2:]
+        normalized = stripped.upper()
+        if len(normalized) != 128:
+            raise ValueError("JWT_SM2_PUBLIC_KEY 须为 128 位十六进制（未压缩公钥）")
+        try:
+            int(normalized, 16)
+        except ValueError as exc:
+            raise ValueError("JWT_SM2_PUBLIC_KEY 须为十六进制") from exc
+        return normalized
 
     @field_validator("credential_sm4_key")
     @classmethod
@@ -145,13 +168,21 @@ class Settings(BaseSettings):
         return value.lower()
 
     @model_validator(mode="after")
+    def validate_jwt_sm2_keypair(self) -> "Settings":
+        try:
+            derived = derive_public_key(self.jwt_sm2_private_key).upper()
+        except Sm2CryptoError as exc:
+            raise ValueError("JWT SM2 私钥无效") from exc
+        if derived != self.jwt_sm2_public_key:
+            raise ValueError("JWT_SM2_PUBLIC_KEY 与 JWT_SM2_PRIVATE_KEY 不匹配")
+        return self
+
+    @model_validator(mode="after")
     def enforce_production_safety(self) -> "Settings":
         if self.vitalspan_env != "production":
             return self
-        if self.secret_key == self._DEV_SECRET_KEY:
-            raise ValueError("生产环境 SECRET_KEY 不能使用示例占位值")
-        if self.credential_fernet_key == self._DEV_FERNET_EXAMPLE:
-            raise ValueError("生产环境 CREDENTIAL_FERNET_KEY 必须重新生成")
+        if self.jwt_sm2_private_key == self._DEV_JWT_SM2_PRIVATE:
+            raise ValueError("生产环境 JWT_SM2_PRIVATE_KEY 必须重新生成")
         if self.credential_sm4_key == self._DEV_SM4_EXAMPLE:
             raise ValueError("生产环境 CREDENTIAL_SM4_KEY 必须重新生成")
         if not self.rpt_smtp_host.strip():

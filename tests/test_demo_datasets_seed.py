@@ -9,6 +9,7 @@ from sqlalchemy import select, text
 
 from app.core.config import get_settings
 from app.datasources.models import Base, get_meta_engine, get_meta_session
+from app.metadata.dataset.demo_bindings import ensure_demo_dataset_bindings
 from app.metadata.dataset.demo_seed import DEMO_DATASET_IDS, seed_demo_datasets
 from app.metadata.dataset.models import DatasetRecord
 
@@ -25,6 +26,8 @@ def demo_ds_sqlite_env():
     get_meta_engine.cache_clear()
     auth_get_meta_engine.cache_clear()
     engine = get_meta_engine()
+    import app.query.config_store.models  # noqa: F401
+
     Base.metadata.create_all(engine)
     with engine.begin() as conn:
         conn.execute(text("DELETE FROM datasets"))
@@ -80,3 +83,44 @@ def test_dataset_list_marks_demo_package(client, auth_headers, db_session) -> No
     demo_items = [item for item in res.json()["items"] if item["datasetId"].startswith("demo-")]
     assert len(demo_items) == len(DEMO_DATASET_IDS)
     assert all(item["isDemoPackage"] is True for item in demo_items)
+
+
+def test_ensure_demo_dataset_bindings_idempotent(db_session) -> None:
+    import uuid
+
+    from app.datasources.models import DataSource
+    from app.dashboard.templates.demo_datasource import OFFICIAL_DEMO_DATASOURCE_CODE
+    from app.query.config_store.models import QueryConfigRecord
+
+    ds_id = uuid.uuid4()
+    db_session.add(
+        DataSource(
+            id=ds_id,
+            name="示例数据",
+            code=OFFICIAL_DEMO_DATASOURCE_CODE,
+            type="mysql",
+            host="127.0.0.1",
+            port=3307,
+            database="sample_db",
+            username="sample",
+            password_encrypted="enc",
+        ),
+    )
+    db_session.commit()
+
+    seed_demo_datasets(db_session)
+    first = ensure_demo_dataset_bindings(db_session)
+    assert first == len(DEMO_DATASET_IDS)
+
+    rows = db_session.scalars(
+        select(DatasetRecord).where(DatasetRecord.dataset_id.in_(DEMO_DATASET_IDS)),
+    ).all()
+    assert all(row.bound_config_id is not None for row in rows)
+
+    config_count = db_session.scalar(
+        select(QueryConfigRecord.id).where(QueryConfigRecord.config_type == "dataset_query"),
+    )
+    assert config_count is not None
+
+    second = ensure_demo_dataset_bindings(db_session)
+    assert second == 0

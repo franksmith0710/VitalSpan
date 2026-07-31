@@ -96,25 +96,45 @@ def _border(variant: str, accent: str | None = None, **geo: Any) -> dict[str, An
     }
 
 
-def _clock(**geo: Any) -> dict[str, Any]:
+def _clock(
+    *,
+    screen_style: dict[str, Any] | None = None,
+    **geo: Any,
+) -> dict[str, Any]:
     wid = _wid()
+    text_config: dict[str, Any] = {
+        "content": SCREEN_CLOCK_MARKER,
+        "variant": "plain",
+    }
+    if screen_style:
+        text_config["screenStyle"] = screen_style
     return {
         "id": wid,
         "type": "text",
         "title": "时钟",
-        "textConfig": {"content": SCREEN_CLOCK_MARKER, "variant": "plain"},
+        "textConfig": text_config,
         **geo,
     }
 
 
-def _title_bar(accent: str | None = None, **geo: Any) -> dict[str, Any]:
+def _title_bar(
+    accent: str | None = None,
+    *,
+    screen_style: dict[str, Any] | None = None,
+    **geo: Any,
+) -> dict[str, Any]:
     wid = _wid()
     text_config: dict[str, Any] = {
         "content": SCREEN_TITLE_BAR_MARKER,
         "variant": "plain",
     }
+    merged_style = dict(screen_style or {})
     if accent:
-        text_config["screenStyle"] = {"titleBar": {"accentColor": accent}}
+        title_bar = dict(merged_style.get("titleBar") or {})
+        title_bar["accentColor"] = accent
+        merged_style["titleBar"] = title_bar
+    if merged_style:
+        text_config["screenStyle"] = merged_style
     return {
         "id": wid,
         "type": "text",
@@ -141,21 +161,35 @@ def _materialize_screen_style(
     palette_colors: list[str] | None = None,
 ) -> dict[str, Any]:
     """写入 FE 可直接渲染的 styleConfig（渐变/底图/调色板）。"""
-    style = _screen_style(accent=accent, canvas=canvas, decor=decor, bg_image=bg_image)
-    style["canvasBackground"] = _accent_canvas_gradient(accent, canvas)
-    if decor and decor in DECOR_GRADIENT_DARK and not bg_image:
-        style["canvasBackground"] = DECOR_GRADIENT_DARK[decor]
+    style = _screen_style(
+        accent=accent,
+        canvas=canvas,
+        decor=None if bg_image else decor,
+        bg_image=bg_image,
+    )
+    if bg_image:
+        # 有底图时用纯色垫底，避免渐变盖住 SVG 背景
+        style["canvasBackground"] = canvas
+    else:
+        style["canvasBackground"] = _accent_canvas_gradient(accent, canvas)
+        if decor and decor in DECOR_GRADIENT_DARK:
+            style["canvasBackground"] = DECOR_GRADIENT_DARK[decor]
     style["seriesGradient"] = True
     if palette_colors:
         style["paletteId"] = "custom"
         style["paletteColors"] = palette_colors
     widget = style.setdefault("widgetStyle", {})
     if isinstance(widget, dict):
-        widget["background"] = f"{accent}12"
-        widget["borderColor"] = f"{accent}80"
-        widget["borderWidth"] = 1
-        widget["borderEnabled"] = True
-        widget["borderRadius"] = 10
+        if bg_image:
+            widget["background"] = "rgba(15, 23, 42, 0.45)"
+            widget["borderEnabled"] = False
+            widget["borderRadius"] = 8
+        else:
+            widget["background"] = f"{accent}12"
+            widget["borderColor"] = f"{accent}80"
+            widget["borderWidth"] = 1
+            widget["borderEnabled"] = True
+            widget["borderRadius"] = 10
     return style
 
 
@@ -182,12 +216,22 @@ def _materialize_dash_style(
     if bg_image:
         style["canvasBackgroundImage"] = bg_image
         style["canvasBackgroundCustom"] = True
+        style["canvasBackground"] = "#0f172a" if is_dark else "#f8fafc"
+        style["canvasDecorPresetId"] = "none"
     elif resolved_canvas:
         style["canvasBackgroundCustom"] = True
     style["seriesGradient"] = True
     if palette_colors:
         style["paletteId"] = "custom"
         style["paletteColors"] = palette_colors
+    if bg_image:
+        widget = style.setdefault("widgetStyle", {})
+        if isinstance(widget, dict):
+            widget["borderEnabled"] = False
+            widget["borderRadius"] = 8
+            widget["background"] = (
+                "rgba(15, 23, 42, 0.45)" if is_dark else "rgba(255, 255, 255, 0.78)"
+            )
     return style
 
 

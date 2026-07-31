@@ -47,11 +47,11 @@ alwaysApply: true
 | 用途 | 算法 | VitalSpan 锚点 |
 |------|------|----------------|
 | 凭证加密 | **SM4** | ADR-06 · `app/core/crypto/sm4.py` |
-| 登录摘要 | **SM3** | ADR-16 · 遗留 bcrypt 双读 + 登录升级 |
-| 签名/非对称 | **SM2** | 新能力默认 SM2；无 ADR 不得改国际算法为主路径 |
+| 登录摘要 | **SM3** | ADR-16 · `app/core/crypto/password.py` |
+| 会话 JWT | **SM2** | ADR-17 · `app/auth/jwt.py` |
+| 签名/非对称 | **SM2** | 新能力默认 SM2 |
 
-- Fernet 仅**遗留双读**；新写入一律 SM4 前缀 `sm4:`
-- 统一经 `app/core/crypto/`；禁止业务散落 crypto SDK
+- 凭证/密码/JWT **仅**国密路径；统一经 `app/core/crypto/`；禁止业务散落 crypto SDK
 - 根密钥/DEK/凭证分档；API **不返回**明文密码；日志/API 脱敏
 
 ## 异步作业（R21）

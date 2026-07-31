@@ -120,7 +120,7 @@ describe("UserListPage smoke", () => {
     renderUsers();
     await userEvent.click(screen.getByRole("button", { name: "创建用户" }));
     await userEvent.type(screen.getByLabelText("用户名"), "bob");
-    await userEvent.type(screen.getByLabelText("初始密码"), "Secret123!");
+    await userEvent.type(screen.getByRole("textbox", { name: /初始密码/ }), "Secret123!");
     await userEvent.click(screen.getByRole("button", { name: "创建" }));
     await waitFor(() => {
       const postCall = mockApiFetch.mock.calls.find(

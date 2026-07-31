@@ -12,7 +12,7 @@
 - NFR-005：连接器插件扩展点声明与 `register_connector_plugin` 登记钩子
 - NFR-006：浏览器/消息推送配置契约与 `resolve_push_mode` 降级守卫
 - NFR-007：信创国产化合规检查清单与 strict 模式守卫
-- 国密应用层：`core/crypto/`（SM4 凭证 + SM3 登录密码，见 ADR-16）
+- 国密应用层：`core/crypto/`（SM4 凭证 + SM3 登录密码 + SM2 JWT，见 ADR-06/16/17）
 
 ## 边界
 
@@ -26,7 +26,7 @@
 ## 依赖
 
 - `core/config`：`PUSH_*` webhook、`CREDENTIAL_SM4_KEY` 等密钥/连接 env（**无** `XINCHUANG_MODE` / `NFR08_RUNTIME_MODE` 类产品开关）
-- `core/crypto/`：SM4 凭证加解密、SM3 密码哈希（Fernet/bcrypt 遗留双读）
+- `core/crypto/`：SM4 凭证加解密、SM3 密码哈希、SM2 JWT 签名
 - `datasources/registry`：`register_dialect`、类型清单（信创连接器探测）
 - `governance/publish/errors`：GOV 发布错误码常量集中出口（`core/nfr/errors.py`）
 

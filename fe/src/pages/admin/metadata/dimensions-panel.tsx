@@ -22,11 +22,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  AdminFormDialogBody,
+  AdminFormDialogContent,
+  AdminFormDialogFooter,
+  AdminFormDialogHeader,
+  AdminFormField,
+} from "@/components/layout/admin-form-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { SearchField } from "@/components/ui/search-field";
 import {
   Select,
@@ -306,23 +312,20 @@ export function DimensionsPanel({
       </ListPageBody>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
+        <AdminFormDialogContent size="md">
+          <AdminFormDialogHeader>
             <DialogTitle>{editing ? "编辑维度" : "新建维度"}</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4">
+          </AdminFormDialogHeader>
+          <AdminFormDialogBody>
             {!editing ? (
-              <div className="grid gap-2">
-                <Label htmlFor="dim-code">编码</Label>
+              <AdminFormField label="编码" htmlFor="dim-code">
                 <Input id="dim-code" value={code} onChange={(e) => setCode(e.target.value)} />
-              </div>
+              </AdminFormField>
             ) : null}
-            <div className="grid gap-2">
-              <Label htmlFor="dim-name">名称</Label>
+            <AdminFormField label="名称" htmlFor="dim-name">
               <Input id="dim-name" value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
-            <div className="grid gap-2">
-              <Label>所属主题</Label>
+            </AdminFormField>
+            <AdminFormField label="所属主题">
               <Select value={themeNodeId} onValueChange={setThemeNodeId}>
                 <SelectTrigger>
                   <SelectValue placeholder="可选" />
@@ -336,39 +339,41 @@ export function DimensionsPanel({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-          </div>
-          <DialogFooter>
+            </AdminFormField>
+          </AdminFormDialogBody>
+          <AdminFormDialogFooter>
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               取消
             </Button>
             <Button type="button" variant="primary" disabled={save.isPending} onClick={() => save.mutate()}>
               保存
             </Button>
-          </DialogFooter>
-        </DialogContent>
+          </AdminFormDialogFooter>
+        </AdminFormDialogContent>
       </Dialog>
 
       <Dialog open={valuesOpen} onOpenChange={setValuesOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
+        <AdminFormDialogContent size="md" scrollable>
+          <AdminFormDialogHeader>
             <DialogTitle>注册枚举值 — {valuesTarget?.name}</DialogTitle>
-          </DialogHeader>
-          <Textarea
-            value={valuesText}
-            onChange={(e) => setValuesText(e.target.value)}
-            placeholder="open,开启"
-            rows={6}
-          />
-          <DialogFooter>
+          </AdminFormDialogHeader>
+          <AdminFormDialogBody scrollable>
+            <Textarea
+              value={valuesText}
+              onChange={(e) => setValuesText(e.target.value)}
+              placeholder="open,开启"
+              rows={6}
+            />
+          </AdminFormDialogBody>
+          <AdminFormDialogFooter>
             <Button type="button" variant="outline" onClick={() => setValuesOpen(false)}>
               取消
             </Button>
             <Button type="button" variant="primary" disabled={regValues.isPending} onClick={() => regValues.mutate()}>
               注册
             </Button>
-          </DialogFooter>
-        </DialogContent>
+          </AdminFormDialogFooter>
+        </AdminFormDialogContent>
       </Dialog>
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>

@@ -42,11 +42,15 @@ def test_bearer_dev_rejected(client):
 
 def test_dev_switch_not_found_in_production(client, monkeypatch):
     monkeypatch.setenv("VITALSPAN_ENV", "production")
-    monkeypatch.setenv("SECRET_KEY", "production-secret-key-min-32-chars!!")
     monkeypatch.setenv("CREDENTIAL_SM4_KEY", "fedcba9876543210fedcba9876543210")
     monkeypatch.setenv(
-        "CREDENTIAL_FERNET_KEY",
-        "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
+        "JWT_SM2_PRIVATE_KEY",
+        "7AF248DE02B19AA0AC4A0B0D553198984B1EF67C24E2255F8AB13BB44D7EB5AC",
+    )
+    monkeypatch.setenv(
+        "JWT_SM2_PUBLIC_KEY",
+        "EAECFB11DAC50283B90A47C6BF1A433D041C7160B12666759F3671AB68D6637F"
+        "114C18CC7A4ECE8EC9BBED49AA0D060032177F80F53697A7D72383C1428AA711",
     )
     from app.core.config import get_settings
 
@@ -100,23 +104,19 @@ def test_login_public_without_auth(client):
     assert response.status_code == 401
 
 
-def test_login_bcrypt_upgrades_to_sm3(client, monkeypatch):
-    """登录成功后 bcrypt 遗留哈希自动升级为 SM3。"""
+def test_login_legacy_bcrypt_hash_rejected(client):
+    """bcrypt 遗留哈希不可登录（须 SM3 或管理员重置）。"""
     import uuid
 
-    import bcrypt
-
     from app.auth.models import AuthUser, Base, get_meta_engine, get_meta_session
-    from app.auth.password.service import needs_password_rehash
-
     from app.core.config import get_settings
 
     get_settings.cache_clear()
 
     engine = get_meta_engine()
     Base.metadata.create_all(engine)
-    username = f"bcrypt_up_{uuid.uuid4().hex[:8]}"
-    legacy_hash = bcrypt.hashpw(b"upgrade-me-1", bcrypt.gensalt()).decode()
+    username = f"bcrypt_reject_{uuid.uuid4().hex[:8]}"
+    legacy_hash = "$2b$12$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ012"
     session = get_meta_session()
     try:
         session.add(
@@ -134,15 +134,7 @@ def test_login_bcrypt_upgrades_to_sm3(client, monkeypatch):
         "/api/v1/auth/login",
         json={"username": username, "password": "upgrade-me-1"},
     )
-    assert response.status_code == 200
-
-    session = get_meta_session()
-    try:
-        user = session.query(AuthUser).filter(AuthUser.username == username).one()
-        assert user.password_hash.startswith("$sm3$")
-        assert not needs_password_rehash(user.password_hash)
-    finally:
-        session.close()
+    assert response.status_code == 401
     get_settings.cache_clear()
 
 

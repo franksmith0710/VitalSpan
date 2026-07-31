@@ -22,11 +22,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  AdminFormDialogBody,
+  AdminFormDialogContent,
+  AdminFormDialogFooter,
+  AdminFormDialogHeader,
+  AdminFormField,
+} from "@/components/layout/admin-form-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { SearchField } from "@/components/ui/search-field";
 import { Textarea } from "@/components/ui/textarea";
 import { apiFetch } from "@/lib/api";
@@ -261,32 +267,29 @@ export function GlossaryPanel({
       </ListPageBody>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
+        <AdminFormDialogContent size="md">
+          <AdminFormDialogHeader>
             <DialogTitle>{editing ? "编辑术语" : "新建术语"}</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4">
+          </AdminFormDialogHeader>
+          <AdminFormDialogBody>
             {!editing ? (
-              <div className="grid gap-2">
-                <Label htmlFor="term-code">编码</Label>
+              <AdminFormField label="编码" htmlFor="term-code">
                 <Input id="term-code" value={code} onChange={(e) => setCode(e.target.value)} />
-              </div>
+              </AdminFormField>
             ) : null}
-            <div className="grid gap-2">
-              <Label htmlFor="term-name">名称</Label>
+            <AdminFormField label="名称" htmlFor="term-name">
               <Input
                 id="term-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 aria-invalid={!name.trim()}
               />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="term-def">定义</Label>
+            </AdminFormField>
+            <AdminFormField label="定义" htmlFor="term-def">
               <Textarea id="term-def" value={definition} onChange={(e) => setDefinition(e.target.value)} rows={4} />
-            </div>
-          </div>
-          <DialogFooter>
+            </AdminFormField>
+          </AdminFormDialogBody>
+          <AdminFormDialogFooter>
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               取消
             </Button>
@@ -298,8 +301,8 @@ export function GlossaryPanel({
             >
               保存
             </Button>
-          </DialogFooter>
-        </DialogContent>
+          </AdminFormDialogFooter>
+        </AdminFormDialogContent>
       </Dialog>
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>

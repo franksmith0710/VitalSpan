@@ -524,7 +524,7 @@ export function RoleListPage() {
                   reportTemplates={reportTemplates?.items}
                 />
               </TabsContent>
-              <TabsContent value="permissions" className="mt-0 min-h-0 flex-1 overflow-y-auto px-6 py-5">
+              <TabsContent value="permissions" className="mt-0 min-h-0 flex-1 overflow-y-auto px-5 py-4">
                 <RolePermissionsPanel
                   roleId={editing.id}
                   roleName={editing.name}
@@ -533,7 +533,7 @@ export function RoleListPage() {
               </TabsContent>
             </Tabs>
           ) : (
-            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
               <RoleProfileFormFields
                 editing={null}
                 form={form}
@@ -545,7 +545,7 @@ export function RoleListPage() {
             </div>
           )}
           {dialogTab === "profile" || !editing ? (
-            <DialogFooter className="shrink-0 px-6 py-4">
+            <AdminFormDialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 取消
               </Button>
@@ -557,15 +557,15 @@ export function RoleListPage() {
               >
                 {saveMutation.isPending ? "保存中…" : "保存"}
               </Button>
-            </DialogFooter>
+            </AdminFormDialogFooter>
           ) : (
-            <DialogFooter className="shrink-0 px-6 py-4">
+            <AdminFormDialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 关闭
               </Button>
-            </DialogFooter>
+            </AdminFormDialogFooter>
           )}
-        </DialogContent>
+        </AdminFormDialogContent>
       </Dialog>
 
       <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(o) => !o && setDeleteTarget(null)}>

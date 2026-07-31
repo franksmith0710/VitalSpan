@@ -13,15 +13,20 @@ from sqlalchemy import pool as sa_pool
 from sqlalchemy.exc import OperationalError
 
 from app.core.config import Settings, get_settings
+from crypto_test_env import settings_kwargs
 
 KNOWN_URL = "postgresql+psycopg://mock:mock@localhost:5432/mock"
 
 
 def _migration_subprocess_env() -> dict[str, str]:
+    from crypto_test_env import TEST_JWT_SM2_PRIVATE, TEST_JWT_SM2_PUBLIC, TEST_SM4_KEY
+
     env = os.environ.copy()
     env["DATABASE_URL"] = KNOWN_URL
-    env["SECRET_KEY"] = "ci-test-secret-key-min-32-chars-long!!"
-    env["CREDENTIAL_FERNET_KEY"] = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+    env.setdefault("JWT_SM2_PRIVATE_KEY", TEST_JWT_SM2_PRIVATE)
+    env.setdefault("JWT_SM2_PUBLIC_KEY", TEST_JWT_SM2_PUBLIC)
+    env.setdefault("CREDENTIAL_SM4_KEY", TEST_SM4_KEY)
+    env.setdefault("VITALSPAN_ENV", "development")
     return env
 
 
@@ -42,9 +47,7 @@ def test_migrations_env_binds_settings_database_url(monkeypatch):
     """T-MIG-02: migrations/env.py 将 settings.database_url 写入 alembic config。"""
     fake_settings = Settings(
         database_url=KNOWN_URL,
-        secret_key="ci-test-secret-key-min-32-chars-long!!",
-        credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-        credential_sm4_key="0123456789abcdef0123456789abcdef",
+        **settings_kwargs(),
     )
     monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
     get_settings.cache_clear()
@@ -69,10 +72,7 @@ def test_settings_missing_database_url_raises(monkeypatch):
     monkeypatch.delenv("DATABASE_URL", raising=False)
     get_settings.cache_clear()
     with pytest.raises(ValidationError):
-        Settings(
-            secret_key="ci-test-secret-key-min-32-chars-long!!",
-            credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-        )
+        Settings(**{k: v for k, v in settings_kwargs().items() if k != "database_url"})
 
 
 def test_settings_env_override_database_url(monkeypatch):
@@ -102,26 +102,20 @@ def test_settings_empty_database_url_raises(monkeypatch):
     assert "DATABASE_URL" in str(exc_info.value) or "不能为空" in str(exc_info.value)
 
 
-def test_settings_missing_secret_key_raises(monkeypatch):
-    """T-MIG-07: 缺 SECRET_KEY 时 Settings 实例化失败。"""
-    monkeypatch.delenv("SECRET_KEY", raising=False)
+def test_settings_missing_jwt_sm2_private_key_raises(monkeypatch):
+    """T-MIG-07: 缺 JWT_SM2_PRIVATE_KEY 时 Settings 实例化失败。"""
+    monkeypatch.delenv("JWT_SM2_PRIVATE_KEY", raising=False)
     get_settings.cache_clear()
     with pytest.raises(ValidationError):
-        Settings(
-            database_url=KNOWN_URL,
-            credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-        )
+        Settings(**{k: v for k, v in settings_kwargs().items() if k != "jwt_sm2_private_key"}, database_url=KNOWN_URL)
 
 
-def test_settings_missing_credential_fernet_key_raises(monkeypatch):
-    """T-MIG-08: 缺 CREDENTIAL_FERNET_KEY 时 Settings 实例化失败。"""
-    monkeypatch.delenv("CREDENTIAL_FERNET_KEY", raising=False)
+def test_settings_missing_credential_sm4_key_raises(monkeypatch):
+    """T-MIG-08: 缺 CREDENTIAL_SM4_KEY 时 Settings 实例化失败。"""
+    monkeypatch.delenv("CREDENTIAL_SM4_KEY", raising=False)
     get_settings.cache_clear()
     with pytest.raises(ValidationError):
-        Settings(
-            database_url=KNOWN_URL,
-            secret_key="ci-test-secret-key-min-32-chars-long!!",
-        )
+        Settings(**{k: v for k, v in settings_kwargs().items() if k != "credential_sm4_key"}, database_url=KNOWN_URL)
 
 
 def test_migrations_env_fails_when_get_settings_raises(monkeypatch):
@@ -153,8 +147,7 @@ def test_settings_invalid_database_url_raises():
     with pytest.raises(ValidationError) as exc_info:
         Settings(
             database_url="not-a-url",
-            secret_key="ci-test-secret-key-min-32-chars-long!!",
-            credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+            **settings_kwargs(),
         )
     assert "postgresql" in str(exc_info.value)
 
@@ -163,9 +156,7 @@ def test_migrations_offline_url_matches_settings(monkeypatch):
     """T-MIG-11: offline 模式 context.configure 的 url 与 set_main_option 一致。"""
     fake_settings = Settings(
         database_url=KNOWN_URL,
-        secret_key="ci-test-secret-key-min-32-chars-long!!",
-        credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-        credential_sm4_key="0123456789abcdef0123456789abcdef",
+        **settings_kwargs(),
     )
     monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
     get_settings.cache_clear()
@@ -220,9 +211,7 @@ def test_migrations_offline_run_migrations_called(monkeypatch):
     """T-MIG-14: offline 模式触发 context.run_migrations()。"""
     fake_settings = Settings(
         database_url=KNOWN_URL,
-        secret_key="ci-test-secret-key-min-32-chars-long!!",
-        credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-        credential_sm4_key="0123456789abcdef0123456789abcdef",
+        **settings_kwargs(),
     )
     monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
     get_settings.cache_clear()
@@ -295,9 +284,7 @@ def test_migrations_online_path_connects_and_runs(monkeypatch):
     """T-MIG-16: is_offline_mode=False 时 connect() 与 run_migrations() 被调用。"""
     fake_settings = Settings(
         database_url=KNOWN_URL,
-        secret_key="ci-test-secret-key-min-32-chars-long!!",
-        credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-        credential_sm4_key="0123456789abcdef0123456789abcdef",
+        **settings_kwargs(),
     )
     monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
     get_settings.cache_clear()
@@ -331,9 +318,7 @@ def test_migrations_offline_import_under_budget(monkeypatch):
     """T-MIG-17: offline 导入 migrations.env 全流程 < 2s。"""
     fake_settings = Settings(
         database_url=KNOWN_URL,
-        secret_key="ci-test-secret-key-min-32-chars-long!!",
-        credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-        credential_sm4_key="0123456789abcdef0123456789abcdef",
+        **settings_kwargs(),
     )
     monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
     get_settings.cache_clear()
@@ -435,10 +420,10 @@ def test_alembic_downgrade_base_sql_contains_ingestion_drop():
 
 
 def test_alembic_upgrade_sql_stdout_excludes_secrets():
-    """T-MIG-22: upgrade head --sql stdout 不含 SECRET_KEY 明文。"""
+    """T-MIG-22: upgrade head --sql stdout 不含 JWT 私钥明文。"""
     backend_dir = Path(__file__).resolve().parents[1] / "backend"
     env = _migration_subprocess_env()
-    secret = env["SECRET_KEY"]
+    secret = env["JWT_SM2_PRIVATE_KEY"]
     result = subprocess.run(
         [sys.executable, "-m", "alembic", "upgrade", "head", "--sql"],
         cwd=backend_dir,
@@ -449,7 +434,6 @@ def test_alembic_upgrade_sql_stdout_excludes_secrets():
     )
     assert result.returncode == 0, result.stderr
     assert secret not in result.stdout
-    assert "ci-test-secret" not in result.stdout
 
 
 def test_settings_env_py_binding_end_to_end(monkeypatch):
@@ -461,9 +445,7 @@ def test_settings_env_py_binding_end_to_end(monkeypatch):
 
     fake_settings = Settings(
         database_url=bound_url,
-        secret_key="ci-test-secret-key-min-32-chars-long!!",
-        credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-        credential_sm4_key="0123456789abcdef0123456789abcdef",
+        **settings_kwargs(),
     )
     monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
     get_settings.cache_clear()
@@ -530,9 +512,7 @@ def test_migrations_online_uses_null_pool(monkeypatch):
     """T-MIG-26: online 路径 engine_from_config 使用 poolclass=NullPool。"""
     fake_settings = Settings(
         database_url=KNOWN_URL,
-        secret_key="ci-test-secret-key-min-32-chars-long!!",
-        credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-        credential_sm4_key="0123456789abcdef0123456789abcdef",
+        **settings_kwargs(),
     )
     monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
     get_settings.cache_clear()
@@ -567,24 +547,20 @@ def test_migrations_online_uses_null_pool(monkeypatch):
     sys.modules.pop("migrations.env", None)
 
 
-def test_settings_mysql_protocol_raises():
-    """T-MIG-27: mysql:// 协议 Settings → ValidationError 含 postgresql。"""
+def test_settings_unsupported_protocol_raises():
+    """T-MIG-27: 不支持的数据库协议 → ValidationError。"""
     with pytest.raises(ValidationError) as exc_info:
         Settings(
-            database_url="mysql://user:pass@localhost:3306/db",
-            secret_key="ci-test-secret-key-min-32-chars-long!!",
-            credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+            **settings_kwargs(database_url="oracle://user:pass@localhost/xe"),
         )
-    assert "postgresql" in str(exc_info.value)
+    assert "postgresql" in str(exc_info.value) or "mysql" in str(exc_info.value)
 
 
 def test_migrations_online_connect_operational_error_propagates(monkeypatch):
     """T-MIG-28: online connect() 抛 OperationalError 向上传播。"""
     fake_settings = Settings(
         database_url=KNOWN_URL,
-        secret_key="ci-test-secret-key-min-32-chars-long!!",
-        credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-        credential_sm4_key="0123456789abcdef0123456789abcdef",
+        **settings_kwargs(),
     )
     monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
     get_settings.cache_clear()
@@ -812,9 +788,7 @@ def test_unreachable_host_operational_error_message(monkeypatch):
     unreachable_url = "postgresql+psycopg://ci:ci@127.0.0.1:1/ci_unreachable"
     fake_settings = Settings(
         database_url=unreachable_url,
-        secret_key="ci-test-secret-key-min-32-chars-long!!",
-        credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-        credential_sm4_key="0123456789abcdef0123456789abcdef",
+        **settings_kwargs(),
     )
     monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
     get_settings.cache_clear()

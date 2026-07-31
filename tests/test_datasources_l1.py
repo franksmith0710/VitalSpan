@@ -6,6 +6,7 @@ import uuid
 from unittest.mock import MagicMock, patch
 
 import pytest
+from crypto_test_env import settings_kwargs
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 from sqlalchemy import select, text
@@ -162,16 +163,12 @@ def test_credential_encrypt_decrypt_roundtrip():
     assert decrypt_credential(cipher) == plain
 
 
-def test_settings_missing_credential_fernet_key_raises(monkeypatch):
-    """T-DS-K04: 缺 CREDENTIAL_FERNET_KEY 时 Settings 构造失败。"""
-    monkeypatch.delenv("CREDENTIAL_FERNET_KEY", raising=False)
-    get_settings.cache_clear()
+def test_settings_missing_credential_sm4_key_raises(monkeypatch):
+    """T-DS-K04: 缺 CREDENTIAL_SM4_KEY 时 Settings 构造失败。"""
+    kwargs = settings_kwargs()
+    kwargs["credential_sm4_key"] = ""
     with pytest.raises(ValidationError):
-        Settings(
-            database_url=os.environ["DATABASE_URL"],
-            secret_key=os.environ["SECRET_KEY"],
-            credential_sm4_key=os.environ["CREDENTIAL_SM4_KEY"],
-        )
+        Settings(**kwargs)
     get_settings.cache_clear()
 
 

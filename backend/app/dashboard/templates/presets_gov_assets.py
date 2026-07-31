@@ -17,34 +17,34 @@ def thumb(name: str) -> str:
     return f"{PACK}/thumbs/{name}.svg"
 
 
-# —— 数据大屏：深色 canvas + 缩略图 ——
-SMART_CITY_BG = bg_dark("canvas-dark-cyan-command")
-SMART_CITY_THUMB = thumb("canvas-dark-cyan-command")
+# 深色大屏：command / header-band 系，纹理克制
+SMART_CITY_BG = bg_dark("canvas-dark-slate-command")
+SMART_CITY_THUMB = thumb("canvas-dark-slate-command")
 
-DIGITAL_COCKPIT_BG = bg_dark("canvas-dark-indigo-hud-scan")
-DIGITAL_COCKPIT_THUMB = thumb("canvas-dark-indigo-hud-scan")
+DIGITAL_COCKPIT_BG = bg_dark("canvas-dark-indigo-command")
+DIGITAL_COCKPIT_THUMB = thumb("canvas-dark-indigo-command")
 
-EMERGENCY_BG = bg_dark("canvas-dark-crimson-aurora")
-EMERGENCY_THUMB = thumb("canvas-dark-crimson-aurora")
+EMERGENCY_BG = bg_dark("canvas-dark-crimson-command")
+EMERGENCY_THUMB = thumb("canvas-dark-crimson-command")
 
-ECO_MONITOR_BG = bg_dark("canvas-dark-emerald-circuit")
-ECO_MONITOR_THUMB = thumb("canvas-dark-emerald-circuit")
+ECO_MONITOR_BG = bg_dark("canvas-dark-emerald-command")
+ECO_MONITOR_THUMB = thumb("canvas-dark-emerald-command")
 
-COMMUNITY_BG = bg_dark("canvas-dark-violet-honeycomb")
-COMMUNITY_THUMB = thumb("canvas-dark-violet-honeycomb")
+COMMUNITY_BG = bg_dark("canvas-dark-violet-command")
+COMMUNITY_THUMB = thumb("canvas-dark-violet-command")
 
-# —— 仪表板：浅色 canvas + 缩略图 ——
+# 浅色看板：header-band / card-float，干净政务报表风
 EFFICIENCY_BG = bg_light("canvas-light-cloud-header-band")
 EFFICIENCY_THUMB = thumb("canvas-light-cloud-header-band")
 
-SATISFACTION_BG = bg_light("canvas-light-lavender-card-float")
-SATISFACTION_THUMB = thumb("canvas-light-lavender-card-float")
+SATISFACTION_BG = bg_light("canvas-light-ivory-header-band")
+SATISFACTION_THUMB = thumb("canvas-light-ivory-header-band")
 
-FINANCE_BG = bg_light("canvas-light-mint-ribbon")
-FINANCE_THUMB = thumb("canvas-light-mint-ribbon")
+FINANCE_BG = bg_light("canvas-light-mint-header-band")
+FINANCE_THUMB = thumb("canvas-light-mint-header-band")
 
 INVESTMENT_BG = bg_dark("canvas-dark-royal-command")
 INVESTMENT_THUMB = thumb("canvas-dark-royal-command")
 
-GRID_BG = bg_light("canvas-light-paper-watermark")
-GRID_THUMB = thumb("canvas-light-paper-watermark")
+GRID_BG = bg_light("canvas-light-paper-header-band")
+GRID_THUMB = thumb("canvas-light-paper-header-band")

@@ -14,6 +14,7 @@ import { defaultChartConfig } from "./layoutUtils";
 import { WIDGET_CHART_LABELS } from "./widgetIcons";
 import { resolveAutoAssignTarget, validateFieldAssignment } from "@/lib/chartFieldAssignment";
 import { writeAxisField } from "@/lib/resolveChartEncoding";
+import { isDemoPackageDataset } from "@/lib/demoPackage";
 import type { SlotTarget } from "./chartInspectorTypes";
 
 type DataSourceListItem = { id: string; name: string; code: string };
@@ -90,8 +91,12 @@ export function useChartInspectorState(
         } catch {
           setDatasetBindingError("数据集绑定解析失败，请检查数据集配置或改用手写 SQL");
         }
+      } else if (isDemoPackageDataset(datasetId, ds?.displayName)) {
+        setDatasetBindingError(
+          "官方示例 Dataset 查询配置尚未就绪，请重启后端或运行 python scripts/seed-demo-package.py",
+        );
       } else {
-        setDatasetBindingError(null);
+        setDatasetBindingError("该 Dataset 尚未绑定查询配置，请先在数据集管理中绑定");
       }
 
       emitChange({
@@ -111,7 +116,14 @@ export function useChartInspectorState(
 
     const ds = datasetItems.find((d) => d.datasetId === cfg.datasetId);
     const boundId = ds?.boundConfigId;
-    if (!boundId) return;
+    if (!boundId) {
+      if (isDemoPackageDataset(cfg.datasetId, ds?.displayName)) {
+        setDatasetBindingError(
+          "官方示例 Dataset 查询配置尚未就绪，请重启后端或运行 python scripts/seed-demo-package.py",
+        );
+      }
+      return;
+    }
 
     const needsConfig = cfg.configId !== boundId;
     const needsDs = !cfg.dataSourceId;

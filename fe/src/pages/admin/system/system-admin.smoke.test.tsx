@@ -4,6 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { TooltipProvider } from "@/components/ui/tooltip";
+
 const mockApiFetch = vi.fn();
 vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => mockApiFetch(...args) }));
 vi.mock("@/context/auth-context", () => ({
@@ -23,11 +25,13 @@ function renderHome() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={["/admin/system"]}>
-        <Routes>
-          <Route path="/admin/system" element={<SystemAdminHomePage />} />
-        </Routes>
-      </MemoryRouter>
+      <TooltipProvider delayDuration={0}>
+        <MemoryRouter initialEntries={["/admin/system"]}>
+          <Routes>
+            <Route path="/admin/system" element={<SystemAdminHomePage />} />
+          </Routes>
+        </MemoryRouter>
+      </TooltipProvider>
     </QueryClientProvider>,
   );
 }
@@ -55,12 +59,13 @@ describe("SystemAdminHomePage smoke", () => {
     });
     renderHome();
     expect(await screen.findByText("首租户配置向导")).toBeInTheDocument();
-    expect(screen.getByText("建立组织架构")).toBeInTheDocument();
-    expect(screen.getByText("配置岗位角色")).toBeInTheDocument();
+    expect(await screen.findByText("建立组织架构")).toBeInTheDocument();
+    expect(await screen.findByText("配置岗位角色")).toBeInTheDocument();
   });
 
   it("links to org setup step", async () => {
-    mockApiFetch.mockImplementation(async (path: string) => {
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
       if (path === "/api/v1/orgs") return { items: [] };
       if (path.startsWith("/api/v1/users")) return { total: 1, items: [] };
       if (path.startsWith("/api/v1/roles")) return { items: [{ id: "r1", isRoot: true }], total: 1 };

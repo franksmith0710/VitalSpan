@@ -73,8 +73,9 @@ flowchart TB
 | ADR-13 | 前端 **`fe/src/components/charts/engine/`** 引擎端口 + registry | `CanvasChartHost` → `ChartEngineView`；`@antv/*` 仅 `engine/antv/**`；地图经 `GeoEnginePort`/`OfflineGeoPort` | 已定 |
 | ADR-04 | **ConnectorRegistry** 插件式数据源 | NFR-04：新增类型不改核心服务与查询执行器 | 已定 |
 | ADR-05 | 查询双路径：**SqlCapable** + **NativeQuery** | 关系型/OLAP 走 SQL；时序/文档/搜索走原生 DSL | 已定 |
-| ADR-06 | 凭证 **SM4** 固定写入（Fernet 遗留双读） | NFR-03；无运行时算法切换；API 不返回明文密码 | 已定 |
-| ADR-16 | 登录密码 **SM3** 哈希（bcrypt 遗留双读 + 登录升级） | 政企国密应用层；JWT 仍 HS256 | 已定 |
+| ADR-06 | 凭证 **SM4** 固定读写（纯国密） | NFR-03；无运行时算法切换；API 不返回明文密码 | 已定 |
+| ADR-16 | 登录密码 **SM3** 哈希（纯国密） | 政企国密应用层 | 已定 |
+| ADR-17 | 会话 JWT **SM2** 签名（废止 HS256） | `alg: SM2`；部署后须重新登录 | 已定 |
 | ADR-07 | 平台元数据 **PostgreSQL / MySQL 8+ / SQLite** | 生产推荐 PG 或 MySQL（对标 DataEase）；SQLite 用于开发单文件；与业务分析库分离 | 已定 |
 | ADR-08 | M8 工作流 **Flowable / Camunda** 二选一 | 四期治理 BPM；具体选型待 M13 前锁定 | 待定 |
 | ADR-09 | M6 报表 **JasperReports** 或等价 | 模板 Word/Excel/PDF；二期末前选型 | 待定 |
@@ -115,6 +116,13 @@ flowchart TB
 - **3D 地形纹理**（仅 `map-3d`）：离线 hillshade WebP 贴 Extrude 顶面；`pnpm run build:geo-terrain` → `fe/src/assets/geo/terrain/`；详见 [ui/map-texture.md](ui/map-texture.md)
 - **禁止**：高德/天地图/腾讯/Mapbox/MapLibre/OSM、AntV L7 在线 Scene、世界地图/境外行政区、地图 Key 配置项
 - **执行规则**：`.cursor/rules/geo-map-offline-china.mdc`（`alwaysApply: true`）
+
+### ADR-17 · JWT SM2 签名（废止 HS256）
+
+- **算法**：JWT Header `alg: SM2`；签名输入 `base64url(header).base64url(payload)`；SM3 摘要 + SM2 签名（`gmssl` `sign_with_sm3`）
+- **密钥**：`JWT_SM2_PRIVATE_KEY`（64 hex）· `JWT_SM2_PUBLIC_KEY`（128 hex，须与私钥匹配）
+- **废止**：`SECRET_KEY` + PyJWT HS256；部署切换后**所有旧 token 失效**，用户须重新登录
+- **代码锚点**：`backend/app/core/crypto/sm2.py` · `backend/app/auth/jwt.py` · `scripts/generate-jwt-sm2-keys.py`
 
 ---
 
@@ -323,9 +331,9 @@ Dataset CRUD（ORM `datasets` 表）
 |------|:----:|------|------|
 | `VITALSPAN_ENV` | | 部署标识：`development` / `staging` / `production`（非功能开关） | `development` |
 | `DATABASE_URL` | ✅ | 平台元数据库（PostgreSQL / MySQL 8+ / SQLite） | — |
-| `SECRET_KEY` | ✅ | JWT / 会话签名 | — |
-| `CREDENTIAL_FERNET_KEY` | ✅ | 遗留凭证 Fernet 解密（迁移期） | — |
-| `CREDENTIAL_SM4_KEY` | ✅ | 国密 SM4 凭证加密（固定写入算法） | — |
+| `JWT_SM2_PRIVATE_KEY` | ✅ | 国密 SM2 JWT 签名私钥（32 字节 hex） | — |
+| `JWT_SM2_PUBLIC_KEY` | ✅ | 国密 SM2 JWT 验签公钥（64 字节 hex，未压缩点） | — |
+| `CREDENTIAL_SM4_KEY` | ✅ | 国密 SM4 凭证加密 | — |
 | `CORS_ORIGINS` | | 前端源，逗号分隔 | `http://localhost:5173` |
 | `LOG_LEVEL` | | 日志级别 | `INFO` |
 | `QUERY_DEFAULT_LIMIT` | | 查询硬上限 | `1000` |
@@ -354,8 +362,9 @@ Dataset CRUD（ORM `datasets` 表）
 | 项 | 实现要点 | NFR |
 |----|----------|-----|
 | 传输 | 生产全站 HTTPS | NFR-03 |
-| 凭证 | SM4 加密存储（固定）；Fernet 遗留双读；响应脱敏 | NFR-03 / ADR-06 |
-| 登录密码 | SM3 哈希（bcrypt 遗留 + 登录升级） | ADR-16 |
+| 凭证 | SM4 加密存储（固定）；响应脱敏 | NFR-03 / ADR-06 |
+| 登录密码 | SM3 哈希 | ADR-16 |
+| 会话 JWT | SM2 签名 | ADR-17 |
 | 查询 | 强制 LIMIT；参数化；RLS 注入 | M7 |
 | 审计 | 权限变更、敏感操作写审计日志 | AUTH-008 |
 | 依赖 | 禁止 GPL BI 运行时；信创连接器按需打包 | NFR-06/08 |
@@ -386,7 +395,7 @@ python scripts/backup-databases.py
 # 或 .\scripts\backup-databases.ps1
 ```
 
-恢复须同时保管 `keys-checklist.txt` 中列出的密钥（含 `CREDENTIAL_SM4_KEY` / `CREDENTIAL_FERNET_KEY`）。凭证国密迁移：`python scripts/migrate-credentials-to-sm4.py --dry-run`。
+恢复须同时保管 `keys-checklist.txt` 中列出的密钥（含 `JWT_SM2_*` / `CREDENTIAL_SM4_KEY`）。
 
 ### 9.2 启动步骤
 ```bash
@@ -459,3 +468,4 @@ pnpm dev            # 默认 :5173
 | 1.0.4 | 2026-07-17 | §9 compose 六服务；§6.2 双查询路径（直连 + Dataset）；Dataset 已落地说明 |
 | 1.0.5 | 2026-07-30 | ADR-15 designer/gov query-design 收敛策略（DESIGN-001 F-D） |
 | 1.0.6 | 2026-07-31 | §10 增文档总索引、`.dev`、Agent 规则索引 |
+| 1.0.7 | 2026-07-31 | ADR-17 JWT SM2；废止 Fernet/bcrypt/HS256；§7.2 环境变量国密化 |

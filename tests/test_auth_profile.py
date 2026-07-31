@@ -8,7 +8,7 @@ from collections.abc import Generator
 from pathlib import Path
 from typing import Any, TypedDict
 
-import bcrypt
+from app.core.crypto.password import hash_password
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
@@ -50,7 +50,7 @@ def _seed_profile_user(
 ) -> None:
     engine = get_meta_engine()
     Base.metadata.create_all(engine)
-    hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+    hashed = hash_password(password)
     with Session(engine) as session:
         # Task 4 起 AuthMiddleware 依赖 has_enabled_root_user（要求 is_root 角色）作为
         # 部署门禁；隔离 DB 的 admin 角色须标记为真实 root，否则所有受保护请求 503。

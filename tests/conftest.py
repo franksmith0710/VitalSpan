@@ -1,18 +1,14 @@
 import os
 
+from crypto_test_env import TEST_JWT_SM2_PRIVATE, TEST_JWT_SM2_PUBLIC, TEST_SM4_KEY
+
 os.environ.setdefault(
     "DATABASE_URL",
     "postgresql+psycopg://vitalspan:vitalspan@localhost:5432/vitalspan",
 )
-os.environ.setdefault("SECRET_KEY", "ci-test-secret-key-min-32-chars-long!!")
-os.environ.setdefault(
-    "CREDENTIAL_FERNET_KEY",
-    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-)
-os.environ.setdefault(
-    "CREDENTIAL_SM4_KEY",
-    "0123456789abcdef0123456789abcdef",
-)
+os.environ.setdefault("JWT_SM2_PRIVATE_KEY", TEST_JWT_SM2_PRIVATE)
+os.environ.setdefault("JWT_SM2_PUBLIC_KEY", TEST_JWT_SM2_PUBLIC)
+os.environ.setdefault("CREDENTIAL_SM4_KEY", TEST_SM4_KEY)
 os.environ.setdefault("VITALSPAN_ENV", "development")
 
 import socket
@@ -96,15 +92,32 @@ def _ensure_admin_role_binding() -> None:
     兼容两种后端：postgres（迁移 seed 的 admin 用户 id 与 _ADMIN_USER_ID 不同，
     且 rbac/生命周期用例会删除 root 绑定）与 sqlite（id 即 _ADMIN_USER_ID）。
     以用户名而非固定 id 定位，避免向已存在的 admin 用户名再插入冲突。
+
+    国密迁移后：若 admin 仍为 bcrypt 或账户被锁定，幂等重算 SM3 并解锁，
+    以便 ``/api/v1/auth/login`` 契约测试可登录。
     """
     from app.auth.models import AuthRole, AuthUser, AuthUserRole, Base, get_meta_engine
+    from app.auth.password.service import hash_password, needs_password_rehash
 
     engine = get_meta_engine()
     Base.metadata.create_all(engine)
+    dev_password = os.environ.get("VITALSPAN_DEV_ADMIN_PASSWORD", "changeme")
+    dirty = False
     with Session(engine) as session:
         admin_user = session.query(AuthUser).filter(AuthUser.username == "admin").first()
         if admin_user is None:
-            return
+            admin_user = AuthUser(
+                id=_ADMIN_USER_ID,
+                username="admin",
+                display_name="Admin",
+                email="admin@vitalspan.local",
+                password_hash=hash_password(dev_password),
+                is_active=True,
+                token_version=1,
+            )
+            session.add(admin_user)
+            session.flush()
+            dirty = True
         admin_role = session.query(AuthRole).filter(AuthRole.code == "admin").first()
         if admin_role is None:
             admin_role = AuthRole(
@@ -120,7 +133,27 @@ def _ensure_admin_role_binding() -> None:
         )
         if binding is None:
             session.add(AuthUserRole(user_id=admin_user.id, role_id=admin_role.id))
-        session.commit()
+            dirty = True
+
+        if not admin_user.is_active:
+            admin_user.is_active = True
+            dirty = True
+        if admin_user.failed_login_count or admin_user.locked_until is not None:
+            admin_user.failed_login_count = 0
+            admin_user.locked_until = None
+            dirty = True
+        if os.environ.get("VITALSPAN_ENV", "development") == "development":
+            admin_user.password_hash = hash_password(dev_password)
+            dirty = True
+        elif admin_user.password_hash and needs_password_rehash(admin_user.password_hash):
+            admin_user.password_hash = hash_password(dev_password)
+            dirty = True
+        elif not admin_user.password_hash:
+            admin_user.password_hash = hash_password(dev_password)
+            dirty = True
+
+        if dirty:
+            session.commit()
 
 # Fixture contract (BOOT-006):
 # - client: TestClient(app) for all backend HTTP tests
@@ -169,10 +202,9 @@ def admin_auth_headers() -> dict[str, str]:
             return {"Authorization": f"Bearer {token}"}
     except Exception:
         pass
-    from app.auth.jwt import create_access_token
+    from jwt_auth import jwt_auth_headers
 
-    token = create_access_token("00000000-0000-0000-0000-000000000001", "admin")
-    return {"Authorization": f"Bearer {token}"}
+    return jwt_auth_headers()
 
 
 @pytest.fixture

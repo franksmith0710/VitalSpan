@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mockApiFetch = vi.fn();
@@ -23,9 +24,11 @@ function renderRls() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      <MemoryRouter>
-        <RlsAdminPage />
-      </MemoryRouter>
+      <TooltipProvider delayDuration={0}>
+        <MemoryRouter>
+          <RlsAdminPage />
+        </MemoryRouter>
+      </TooltipProvider>
     </QueryClientProvider>,
   );
 }
@@ -80,7 +83,7 @@ describe("RlsAdminPage smoke", () => {
     const user = userEvent.setup();
     renderRls();
 
-    expect(await screen.findByRole("heading", { name: "行级权限" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "行级权限（高级）" })).toBeInTheDocument();
     expect(await screen.findByText("区域")).toBeInTheDocument();
 
     await user.click(screen.getByRole("tab", { name: "维度分组" }));

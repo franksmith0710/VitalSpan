@@ -1,6 +1,7 @@
 import os
 
 import pytest
+from crypto_test_env import settings_kwargs
 
 from app.core.config import Settings, get_settings
 
@@ -15,21 +16,13 @@ def clear_settings_cache():
 def test_settings_loads_analytics_database_url_from_env(monkeypatch):
     url = "postgresql+psycopg://vitalspan:vitalspan@localhost:5433/analytics"
     monkeypatch.setenv("ANALYTICS_DATABASE_URL", url)
-    settings = Settings(
-        database_url=os.environ["DATABASE_URL"],
-        secret_key=os.environ["SECRET_KEY"],
-        credential_fernet_key=os.environ["CREDENTIAL_FERNET_KEY"],
-    )
+    settings = Settings(**settings_kwargs(), analytics_database_url=url)
     assert settings.analytics_database_url == url
 
 
 def test_settings_analytics_database_url_optional(monkeypatch):
     monkeypatch.delenv("ANALYTICS_DATABASE_URL", raising=False)
-    settings = Settings(
-        database_url=os.environ["DATABASE_URL"],
-        secret_key=os.environ["SECRET_KEY"],
-        credential_fernet_key=os.environ["CREDENTIAL_FERNET_KEY"],
-    )
+    settings = Settings(**settings_kwargs())
     assert settings.analytics_database_url is None
 
 
@@ -39,11 +32,7 @@ from pydantic import ValidationError
 def test_settings_analytics_url_blank_treated_as_none(monkeypatch):
     """T-D04-03: 空白 ANALYTICS_DATABASE_URL → None。"""
     monkeypatch.setenv("ANALYTICS_DATABASE_URL", "   ")
-    settings = Settings(
-        database_url=os.environ["DATABASE_URL"],
-        secret_key=os.environ["SECRET_KEY"],
-        credential_fernet_key=os.environ["CREDENTIAL_FERNET_KEY"],
-    )
+    settings = Settings(**settings_kwargs())
     assert settings.analytics_database_url is None
 
 
@@ -51,11 +40,7 @@ def test_settings_analytics_url_invalid_raises_validation_error(monkeypatch):
     """T-D04-03: 非法 scheme → ValidationError。"""
     monkeypatch.setenv("ANALYTICS_DATABASE_URL", "not-a-valid-url")
     with pytest.raises(ValidationError) as exc_info:
-        Settings(
-            database_url=os.environ["DATABASE_URL"],
-            secret_key=os.environ["SECRET_KEY"],
-            credential_fernet_key=os.environ["CREDENTIAL_FERNET_KEY"],
-        )
+        Settings(**settings_kwargs())
     assert "托管分析库 URL" in str(exc_info.value)
 
 
@@ -63,11 +48,7 @@ def test_settings_analytics_url_valid_postgresql_passes(monkeypatch):
     """T-D04-08: 合法 postgresql+psycopg URL 通过。"""
     url = "postgresql+psycopg://vitalspan:vitalspan@localhost:5433/analytics"
     monkeypatch.setenv("ANALYTICS_DATABASE_URL", url)
-    settings = Settings(
-        database_url=os.environ["DATABASE_URL"],
-        secret_key=os.environ["SECRET_KEY"],
-        credential_fernet_key=os.environ["CREDENTIAL_FERNET_KEY"],
-    )
+    settings = Settings(**settings_kwargs())
     assert settings.analytics_database_url == url
 
 
@@ -87,14 +68,11 @@ def test_ingestion_migration_0002_revision_and_tables_exist():
         assert table in text
 
 
-def test_settings_missing_credential_fernet_key_raises(monkeypatch):
-    """T-D04-04: 缺 CREDENTIAL_FERNET_KEY 时 Settings 实例化失败。"""
-    monkeypatch.delenv("CREDENTIAL_FERNET_KEY", raising=False)
+def test_settings_missing_jwt_sm2_private_key_raises(monkeypatch):
+    """T-D04-04: 缺 JWT_SM2_PRIVATE_KEY 时 Settings 实例化失败。"""
+    monkeypatch.delenv("JWT_SM2_PRIVATE_KEY", raising=False)
     with pytest.raises(ValidationError):
-        Settings(
-            database_url=os.environ["DATABASE_URL"],
-            secret_key=os.environ["SECRET_KEY"],
-        )
+        Settings(**{k: v for k, v in settings_kwargs().items() if k != "jwt_sm2_private_key"})
 
 
 from unittest.mock import MagicMock, patch
@@ -144,11 +122,7 @@ def test_settings_rejects_sqlite_analytics_url(monkeypatch):
     """T-D04-12: Settings 校验拒绝 sqlite 托管库 URL（生产仅 postgresql）。"""
     monkeypatch.setenv("ANALYTICS_DATABASE_URL", "sqlite+pysqlite:///:memory:")
     with pytest.raises(ValidationError) as exc_info:
-        Settings(
-            database_url=os.environ["DATABASE_URL"],
-            secret_key=os.environ["SECRET_KEY"],
-            credential_fernet_key=os.environ["CREDENTIAL_FERNET_KEY"],
-        )
+        Settings(**settings_kwargs())
     assert "托管分析库 URL" in str(exc_info.value)
 
 

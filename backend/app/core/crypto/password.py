@@ -3,14 +3,9 @@ from __future__ import annotations
 import binascii
 import secrets
 
-import bcrypt
 from gmssl import func, sm3
 
 SM3_PREFIX = "$sm3$"
-
-
-def is_legacy_bcrypt_hash(password_hash: str) -> bool:
-    return password_hash.startswith(("$2a$", "$2b$", "$2y$"))
 
 
 def _sm3_hex(data: bytes) -> str:
@@ -47,12 +42,10 @@ def hash_password(password: str) -> str:
 def verify_password(password: str, password_hash: str) -> bool:
     if not password_hash:
         return False
-    if password_hash.startswith(SM3_PREFIX):
-        return _verify_sm3(password, password_hash)
-    if is_legacy_bcrypt_hash(password_hash):
-        return bcrypt.checkpw(password.encode(), password_hash.encode())
-    return False
+    if not password_hash.startswith(SM3_PREFIX):
+        return False
+    return _verify_sm3(password, password_hash)
 
 
 def needs_password_rehash(password_hash: str) -> bool:
-    return is_legacy_bcrypt_hash(password_hash)
+    return not password_hash.startswith(SM3_PREFIX)

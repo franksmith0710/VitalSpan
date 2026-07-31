@@ -64,6 +64,11 @@ def _warm_meta_database() -> None:
                 ds_count = seed_demo_datasets(session)
                 if ds_count:
                     logger.info("demo_datasets_seed_ok inserted=%s", ds_count)
+                from app.metadata.dataset.demo_bindings import ensure_demo_dataset_bindings
+
+                bind_count = ensure_demo_dataset_bindings(session)
+                if bind_count:
+                    logger.info("demo_dataset_bindings_ok bound=%s", bind_count)
             except Exception:
                 logger.warning("demo_datasets_seed_failed", exc_info=True)
         if settings.vitalspan_env == "development":

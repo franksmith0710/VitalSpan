@@ -20,6 +20,9 @@ _REMEDIATION: dict[str, str] = {
     "xc-platform-db": "Set DATABASE_URL to postgresql://, mysql://, or sqlite+ for dev",
     "xc-forbidden-runtime": "Remove superset/dataease from runtime dependencies",
     "xc-connector-plugin": "Declare PLUGIN_EXTENSION_POINTS in plugin_extension module",
+    "xc-crypto-sm4-only": "Use CREDENTIAL_SM4_KEY only; run migrate-credentials-to-sm4.py",
+    "xc-crypto-sm3-only": "Ensure auth_users.password_hash uses $sm3$ prefix",
+    "xc-crypto-jwt-sm2": "Configure JWT_SM2_PRIVATE_KEY and JWT_SM2_PUBLIC_KEY (ADR-17)",
 }
 
 
@@ -104,6 +107,25 @@ def _check_forbidden_runtime() -> XinchuangChecklistItem:
     return XinchuangChecklistItem("xc-forbidden-runtime", "pass", "no forbidden BI runtime modules")
 
 
+def _check_crypto_guomi(settings: Settings) -> tuple[XinchuangChecklistItem, ...]:
+    from app.auth.jwt import ALGORITHM
+
+    sm4_ok = bool(settings.credential_sm4_key)
+    jwt_ok = ALGORITHM == "SM2" and bool(settings.jwt_sm2_private_key)
+    return (
+        XinchuangChecklistItem(
+            "xc-crypto-sm4-only",
+            "pass" if sm4_ok else "fail",
+            "credential encryption uses SM4 key",
+        ),
+        XinchuangChecklistItem(
+            "xc-crypto-jwt-sm2",
+            "pass" if jwt_ok else "fail",
+            f"jwt algorithm is {ALGORITHM}",
+        ),
+    )
+
+
 def build_compliance_report(settings: Settings | None = None) -> ComplianceReport:
     settings = settings or get_settings()
     xc_registered = _registered_xinchuang()
@@ -120,6 +142,7 @@ def build_compliance_report(settings: Settings | None = None) -> ComplianceRepor
             "pass" if PLUGIN_EXTENSION_POINTS else "fail",
             "plugin extension points declared",
         ),
+        *_check_crypto_guomi(settings),
     ]
     fails = [i for i in items if i.status == "fail"]
     warns = [i for i in items if i.status == "warn"]

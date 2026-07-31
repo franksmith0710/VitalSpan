@@ -20,10 +20,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  AdminFormDialogBody,
+  AdminFormDialogContent,
+  AdminFormDialogFooter,
+  AdminFormDialogHeader,
+  AdminFormField,
+} from "@/components/layout/admin-form-dialog";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { ListGhostEmptyState } from "@/components/ui/panel-empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -198,17 +204,15 @@ export function ThemesPanel({ emptyIcon }: { emptyIcon: ReactNode }) {
       </ListPageBody>
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
+        <AdminFormDialogContent size="md">
+          <AdminFormDialogHeader>
             <DialogTitle>{parentForCreate ? "新建子节点" : "新建根节点"}</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="theme-name">名称</Label>
+          </AdminFormDialogHeader>
+          <AdminFormDialogBody>
+            <AdminFormField label="名称" htmlFor="theme-name">
               <Input id="theme-name" value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
-            <div className="grid gap-2">
-              <Label>关联术语</Label>
+            </AdminFormField>
+            <AdminFormField label="关联术语">
               <Select value={termId} onValueChange={setTermId}>
                 <SelectTrigger>
                   <SelectValue placeholder="可选" />
@@ -222,9 +226,9 @@ export function ThemesPanel({ emptyIcon }: { emptyIcon: ReactNode }) {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-          </div>
-          <DialogFooter>
+            </AdminFormField>
+          </AdminFormDialogBody>
+          <AdminFormDialogFooter>
             <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
               取消
             </Button>
@@ -236,8 +240,8 @@ export function ThemesPanel({ emptyIcon }: { emptyIcon: ReactNode }) {
             >
               创建
             </Button>
-          </DialogFooter>
-        </DialogContent>
+          </AdminFormDialogFooter>
+        </AdminFormDialogContent>
       </Dialog>
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>

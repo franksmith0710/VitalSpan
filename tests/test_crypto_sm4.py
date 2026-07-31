@@ -40,20 +40,9 @@ def test_sm4_wrong_key_fails(monkeypatch):
         decrypt_credential(cipher)
 
 
-def test_fernet_legacy_decrypt(monkeypatch):
-    from cryptography.fernet import Fernet
-
-    key = os.environ["CREDENTIAL_FERNET_KEY"]
-    body = Fernet(key.encode()).encrypt(b"legacy").decode()
-    assert decrypt_credential(body) == "legacy"
-
-
-def test_fernet_prefixed_decrypt(monkeypatch):
-    from cryptography.fernet import Fernet
-
-    key = os.environ["CREDENTIAL_FERNET_KEY"]
-    body = Fernet(key.encode()).encrypt(b"legacy2").decode()
-    assert decrypt_credential(f"fernet:{body}") == "legacy2"
+def test_non_sm4_prefix_decrypt_fails():
+    with pytest.raises(CredentialDecryptError, match="sm4:"):
+        decrypt_credential("fernet:legacy-ciphertext")
 
 
 def test_sm4_provider_invalid_key():

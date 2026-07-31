@@ -4,6 +4,13 @@ import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import {
+  AdminFormDialogBody,
+  AdminFormDialogContent,
+  AdminFormDialogFooter,
+  AdminFormDialogHeader,
+  AdminFormField,
+} from "@/components/layout/admin-form-dialog";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -14,15 +21,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -142,22 +142,20 @@ export function OrgTreePage() {
       </div>
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent>
-          <DialogHeader>
+        <AdminFormDialogContent>
+          <AdminFormDialogHeader>
             <DialogTitle>新建组织</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="org-create-name">名称</Label>
+          </AdminFormDialogHeader>
+          <AdminFormDialogBody>
+            <AdminFormField label="名称" htmlFor="org-create-name">
               <Input
                 id="org-create-name"
                 value={createName}
                 onChange={(e) => setCreateName(e.target.value)}
                 placeholder="如：综合处、华东区"
               />
-            </div>
-            <div className="grid gap-2">
-              <Label>上级组织</Label>
+            </AdminFormField>
+            <AdminFormField label="上级组织">
               <Select value={createParentId} onValueChange={setCreateParentId}>
                 <SelectTrigger>
                   <SelectValue />
@@ -171,9 +169,9 @@ export function OrgTreePage() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-          </div>
-          <DialogFooter>
+            </AdminFormField>
+          </AdminFormDialogBody>
+          <AdminFormDialogFooter>
             <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
               取消
             </Button>
@@ -190,26 +188,24 @@ export function OrgTreePage() {
             >
               创建
             </Button>
-          </DialogFooter>
-        </DialogContent>
+          </AdminFormDialogFooter>
+        </AdminFormDialogContent>
       </Dialog>
 
       <Dialog open={Boolean(editOrg)} onOpenChange={(o) => !o && setEditOrg(null)}>
-        <DialogContent>
-          <DialogHeader>
+        <AdminFormDialogContent>
+          <AdminFormDialogHeader>
             <DialogTitle>编辑组织</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="org-edit-name">名称</Label>
+          </AdminFormDialogHeader>
+          <AdminFormDialogBody>
+            <AdminFormField label="名称" htmlFor="org-edit-name">
               <Input
                 id="org-edit-name"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
               />
-            </div>
-            <div className="grid gap-2">
-              <Label>上级组织</Label>
+            </AdminFormField>
+            <AdminFormField label="上级组织">
               <Select value={editParentId} onValueChange={setEditParentId}>
                 <SelectTrigger>
                   <SelectValue />
@@ -223,9 +219,9 @@ export function OrgTreePage() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-          </div>
-          <DialogFooter>
+            </AdminFormField>
+          </AdminFormDialogBody>
+          <AdminFormDialogFooter>
             <Button type="button" variant="outline" onClick={() => setEditOrg(null)}>
               取消
             </Button>
@@ -244,8 +240,8 @@ export function OrgTreePage() {
             >
               保存
             </Button>
-          </DialogFooter>
-        </DialogContent>
+          </AdminFormDialogFooter>
+        </AdminFormDialogContent>
       </Dialog>
 
       <AlertDialog open={Boolean(deleteOrg)} onOpenChange={(o) => !o && setDeleteOrg(null)}>

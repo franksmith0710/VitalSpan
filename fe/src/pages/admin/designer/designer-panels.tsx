@@ -13,12 +13,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  AdminFormDialogBody,
+  AdminFormDialogContent,
+  AdminFormDialogFooter,
+  AdminFormDialogHeader,
+  AdminFormField,
+} from "@/components/layout/admin-form-dialog";
+import { Dialog, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PanelEmptyState } from "@/components/ui/panel-empty-state";
@@ -309,22 +310,19 @@ export function ComputeRulesPanel({ rules, onChange, fieldOptions }: ComputeRule
         </div>
       )}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
+        <AdminFormDialogContent size="md">
+          <AdminFormDialogHeader>
             <DialogTitle>{draft?.id ? "编辑规则" : "新建规则"}</DialogTitle>
-          </DialogHeader>
+          </AdminFormDialogHeader>
           {draft ? (
-            <div className="grid gap-3">
-              <div>
-                <Label>规则 ID</Label>
+            <AdminFormDialogBody>
+              <AdminFormField label="规则 ID">
                 <Input value={draft.id} onChange={(e) => setDraft({ ...draft, id: e.target.value })} />
-              </div>
-              <div>
-                <Label>名称</Label>
+              </AdminFormField>
+              <AdminFormField label="名称">
                 <Input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
-              </div>
-              <div>
-                <Label>规则类型</Label>
+              </AdminFormField>
+              <AdminFormField label="规则类型">
                 <Select value={draft.ruleType} onValueChange={(v) => setDraft({ ...draft, ruleType: v })}>
                   <SelectTrigger>
                     <SelectValue />
@@ -337,34 +335,32 @@ export function ComputeRulesPanel({ rules, onChange, fieldOptions }: ComputeRule
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              <div>
-                <Label>目标字段</Label>
+              </AdminFormField>
+              <AdminFormField label="目标字段" error={dialogErrors.targetField}>
                 <Input
                   value={draft.targetField}
                   aria-invalid={!!dialogErrors.targetField}
                   onChange={(e) => setDraft({ ...draft, targetField: e.target.value })}
                 />
-              </div>
-              <div>
-                <Label>表达式</Label>
+              </AdminFormField>
+              <AdminFormField label="表达式" error={dialogErrors.expression}>
                 <Input
                   value={draft.expression}
                   aria-invalid={!!dialogErrors.expression}
                   onChange={(e) => setDraft({ ...draft, expression: e.target.value })}
                 />
-              </div>
-            </div>
+              </AdminFormField>
+            </AdminFormDialogBody>
           ) : null}
-          <DialogFooter>
+          <AdminFormDialogFooter>
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               取消
             </Button>
             <Button type="button" variant="primary" onClick={() => void saveDraft()}>
               确定
             </Button>
-          </DialogFooter>
-        </DialogContent>
+          </AdminFormDialogFooter>
+        </AdminFormDialogContent>
       </Dialog>
     </div>
   );

@@ -37,10 +37,10 @@ export function ScreenTitleBarDisplay({
         <span className="min-w-0 flex-1" />
       )}
       <span
-        className="shrink-0 text-center text-lg font-semibold tracking-[0.2em]"
+        className="shrink-0 text-center text-lg font-semibold tracking-[0.12em]"
         style={{
           color: style.titleColor,
-          textShadow: `0 0 20px ${accent}59`,
+          textShadow: "0 1px 2px rgba(15, 23, 42, 0.35)",
         }}
       >
         {title}

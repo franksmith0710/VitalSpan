@@ -9,6 +9,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
+from crypto_test_env import TEST_SM4_KEY, settings_kwargs
 from pydantic import ValidationError
 
 from app.core.config import Settings, get_settings
@@ -16,11 +17,6 @@ from app.core.db.meta import detect_meta_dialect, normalize_meta_database_url
 from app.core.nfr.xinchuang import build_compliance_report
 
 _BACKEND_ROOT = Path(__file__).resolve().parents[1] / "backend"
-_BASE_KWARGS = {
-    "secret_key": "ci-test-secret-key-min-32-chars-long!!",
-    "credential_fernet_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-    "credential_sm4_key": "0123456789abcdef0123456789abcdef",
-}
 
 
 @pytest.fixture(autouse=True)
@@ -32,18 +28,20 @@ def clear_settings_cache():
 
 def test_database_url_accepts_mysql_and_normalizes():
     settings = Settings(
-        **_BASE_KWARGS,
-        database_url="mysql://vitalspan:vitalspan@localhost:3309/vitalspan",
+        **settings_kwargs(
+            database_url="mysql://vitalspan:vitalspan@localhost:3309/vitalspan",
+        ),
     )
     assert settings.database_url.startswith("mysql+pymysql://")
     assert detect_meta_dialect(settings.database_url) == "mysql"
 
 
 def test_database_url_accepts_sqlite_and_postgresql():
-    sqlite = Settings(**_BASE_KWARGS, database_url="sqlite+pysqlite:///./meta.db")
+    sqlite = Settings(**settings_kwargs(database_url="sqlite+pysqlite:///./meta.db"))
     pg = Settings(
-        **_BASE_KWARGS,
-        database_url="postgresql+psycopg://vitalspan:vitalspan@localhost:5432/vitalspan",
+        **settings_kwargs(
+            database_url="postgresql+psycopg://vitalspan:vitalspan@localhost:5432/vitalspan",
+        ),
     )
     assert detect_meta_dialect(sqlite.database_url) == "sqlite"
     assert detect_meta_dialect(pg.database_url) == "postgresql"
@@ -51,14 +49,15 @@ def test_database_url_accepts_sqlite_and_postgresql():
 
 def test_database_url_rejects_unsupported_protocol():
     with pytest.raises(ValidationError) as exc_info:
-        Settings(**_BASE_KWARGS, database_url="oracle://user:pass@localhost/xe")
+        Settings(**settings_kwargs(database_url="oracle://user:pass@localhost/xe"))
     assert "postgresql" in str(exc_info.value) or "mysql" in str(exc_info.value)
 
 
 def test_xinchuang_platform_db_passes_for_mysql():
     settings = Settings(
-        **_BASE_KWARGS,
-        database_url="mysql+pymysql://vitalspan:vitalspan@localhost:3309/vitalspan",
+        **settings_kwargs(
+            database_url="mysql+pymysql://vitalspan:vitalspan@localhost:3309/vitalspan",
+        ),
     )
     report = build_compliance_report(settings)
     platform_item = next(item for item in report.items if item.id == "xc-platform-db")
@@ -66,11 +65,13 @@ def test_xinchuang_platform_db_passes_for_mysql():
 
 
 def _run_alembic_upgrade(database_url: str) -> subprocess.CompletedProcess:
+    from crypto_test_env import TEST_JWT_SM2_PRIVATE, TEST_JWT_SM2_PUBLIC
+
     env = os.environ.copy()
     env["DATABASE_URL"] = database_url
-    env.setdefault("SECRET_KEY", _BASE_KWARGS["secret_key"])
-    env.setdefault("CREDENTIAL_FERNET_KEY", _BASE_KWARGS["credential_fernet_key"])
-    env.setdefault("CREDENTIAL_SM4_KEY", _BASE_KWARGS["credential_sm4_key"])
+    env.setdefault("JWT_SM2_PRIVATE_KEY", TEST_JWT_SM2_PRIVATE)
+    env.setdefault("JWT_SM2_PUBLIC_KEY", TEST_JWT_SM2_PUBLIC)
+    env.setdefault("CREDENTIAL_SM4_KEY", TEST_SM4_KEY)
     env.setdefault("VITALSPAN_ENV", "development")
     return subprocess.run(
         [sys.executable, "-m", "alembic", "upgrade", "head"],

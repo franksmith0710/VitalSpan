@@ -266,9 +266,8 @@ def main() -> int:
         "\n".join(
             [
                 "# Store these secrets separately (no plaintext in backup dir)",
-                "SECRET_KEY",
-                "CREDENTIAL_FERNET_KEY",
-                "CREDENTIAL_FERNET_KEY_PREVIOUS",
+                "JWT_SM2_PRIVATE_KEY",
+                "JWT_SM2_PUBLIC_KEY",
                 "CREDENTIAL_SM4_KEY",
             ]
         )

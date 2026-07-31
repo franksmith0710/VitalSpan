@@ -7,12 +7,18 @@ import {
   ListRowCheckbox,
   useListBatchMode,
 } from "@/components/layout/list-batch-delete";
+import {
+  AdminFormDialogBody,
+  AdminFormDialogContent,
+  AdminFormDialogFooter,
+  AdminFormDialogHeader,
+  AdminFormField,
+} from "@/components/layout/admin-form-dialog";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { IconButton } from "@/components/ui/button";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 
@@ -74,93 +80,92 @@ export function TermFieldMappingDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
+      <AdminFormDialogContent size="md" scrollable>
+        <AdminFormDialogHeader>
           <DialogTitle>物理字段映射 — {termName}</DialogTitle>
-        </DialogHeader>
-        <ListPageBatchActions
-          batchMode={batch.batchMode}
-          onToggleBatchMode={batch.toggleBatchMode}
-          selectedCount={selection.selectedCount}
-          entityLabel="条映射"
-          onClear={selection.clear}
-          onDelete={removeSelected}
-          className="mb-2"
-        />
-        <div className="grid gap-3">
-          {rows.map((row, idx) => (
-            <div
-              key={idx}
-              className={
-                batch.batchMode
-                  ? "grid gap-2 sm:grid-cols-[auto_1fr_1fr_auto] sm:items-end"
-                  : "grid gap-2 sm:grid-cols-[1fr_1fr_auto] sm:items-end"
-              }
-            >
-              {batch.batchMode ? (
-                <ListRowCheckbox
-                  checked={selection.isSelected(String(idx))}
-                  onCheckedChange={() => selection.toggle(String(idx))}
-                  ariaLabel={`选择映射行 ${idx + 1}`}
-                />
-              ) : null}
-              <div className="grid gap-1">
-                <Label htmlFor={`fqn-${idx}`}>表 FQN</Label>
-                <Input
-                  id={`fqn-${idx}`}
-                  placeholder="schema.table"
-                  value={row.tableFqn}
-                  onChange={(e) =>
-                    setRows((prev) =>
-                      prev.map((r, i) => (i === idx ? { ...r, tableFqn: e.target.value } : r)),
-                    )
-                  }
-                />
-              </div>
-              <div className="grid gap-1">
-                <Label htmlFor={`col-${idx}`}>列名</Label>
-                <Input
-                  id={`col-${idx}`}
-                  placeholder="column_name"
-                  value={row.columnName}
-                  onChange={(e) =>
-                    setRows((prev) =>
-                      prev.map((r, i) => (i === idx ? { ...r, columnName: e.target.value } : r)),
-                    )
-                  }
-                />
-              </div>
-              <IconButton
-                variant="ghost"
-                size="sm"
-                aria-label="删除映射行"
-                disabled={rows.length <= 1}
-                onClick={() => setRows((prev) => prev.filter((_, i) => i !== idx))}
+        </AdminFormDialogHeader>
+        <AdminFormDialogBody scrollable>
+          <ListPageBatchActions
+            batchMode={batch.batchMode}
+            onToggleBatchMode={batch.toggleBatchMode}
+            selectedCount={selection.selectedCount}
+            entityLabel="条映射"
+            onClear={selection.clear}
+            onDelete={removeSelected}
+          />
+          <div className="grid gap-3">
+            {rows.map((row, idx) => (
+              <div
+                key={idx}
+                className={
+                  batch.batchMode
+                    ? "grid gap-2 sm:grid-cols-[auto_1fr_1fr_auto] sm:items-end"
+                    : "grid gap-2 sm:grid-cols-[1fr_1fr_auto] sm:items-end"
+                }
               >
-                <Trash2 className="size-4" />
-              </IconButton>
-            </div>
-          ))}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="w-fit"
-            onClick={() => setRows((prev) => [...prev, { tableFqn: "", columnName: "" }])}
-          >
-            <Plus className="size-4" aria-hidden />
-            添加映射
-          </Button>
-        </div>
-        <DialogFooter>
+                {batch.batchMode ? (
+                  <ListRowCheckbox
+                    checked={selection.isSelected(String(idx))}
+                    onCheckedChange={() => selection.toggle(String(idx))}
+                    ariaLabel={`选择映射行 ${idx + 1}`}
+                  />
+                ) : null}
+                <AdminFormField label="表 FQN" htmlFor={`fqn-${idx}`}>
+                  <Input
+                    id={`fqn-${idx}`}
+                    placeholder="schema.table"
+                    value={row.tableFqn}
+                    onChange={(e) =>
+                      setRows((prev) =>
+                        prev.map((r, i) => (i === idx ? { ...r, tableFqn: e.target.value } : r)),
+                      )
+                    }
+                  />
+                </AdminFormField>
+                <AdminFormField label="列名" htmlFor={`col-${idx}`}>
+                  <Input
+                    id={`col-${idx}`}
+                    placeholder="column_name"
+                    value={row.columnName}
+                    onChange={(e) =>
+                      setRows((prev) =>
+                        prev.map((r, i) => (i === idx ? { ...r, columnName: e.target.value } : r)),
+                      )
+                    }
+                  />
+                </AdminFormField>
+                <IconButton
+                  variant="ghost"
+                  size="sm"
+                  aria-label="删除映射行"
+                  disabled={rows.length <= 1}
+                  onClick={() => setRows((prev) => prev.filter((_, i) => i !== idx))}
+                >
+                  <Trash2 className="size-4" />
+                </IconButton>
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-fit"
+              onClick={() => setRows((prev) => [...prev, { tableFqn: "", columnName: "" }])}
+            >
+              <Plus className="size-4" aria-hidden />
+              添加映射
+            </Button>
+          </div>
+        </AdminFormDialogBody>
+        <AdminFormDialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             取消
           </Button>
           <Button type="button" variant="primary" disabled={save.isPending} onClick={() => save.mutate()}>
             保存
           </Button>
-        </DialogFooter>
-      </DialogContent>
+        </AdminFormDialogFooter>
+      </AdminFormDialogContent>
     </Dialog>
   );
 }

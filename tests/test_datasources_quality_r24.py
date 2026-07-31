@@ -11,11 +11,12 @@ from unittest.mock import MagicMock, patch
 import httpx
 import pymysql.err
 import pytest
-from cryptography.fernet import Fernet
+from crypto_test_env import settings_kwargs
+from pydantic import ValidationError
 from httpx import ASGITransport
 from sqlalchemy import text
 
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
 from app.auth.models import Base as AuthBase
 from app.datasources import register_builtin_dialects
 from app.datasources.credentials import CredentialDecryptError, decrypt_credential
@@ -242,33 +243,24 @@ def clean_data_sources_r24():
         conn.execute(text("DELETE FROM data_sources"))
 
 
-def test_decrypt_with_previous_key_roundtrip(monkeypatch):
-    """T-DS-K09: PREVIOUS key 可解密旧密文。"""
-    old_key = Fernet.generate_key().decode()
-    new_key = Fernet.generate_key().decode()
-    plain = "rotate-me"
-    cipher = Fernet(old_key.encode()).encrypt(plain.encode()).decode()
-    monkeypatch.setenv("CREDENTIAL_FERNET_KEY", new_key)
-    monkeypatch.setenv("CREDENTIAL_FERNET_KEY_PREVIOUS", old_key)
-    get_settings.cache_clear()
-    assert decrypt_credential(cipher) == plain
+def test_settings_missing_credential_sm4_key_raises():
+    """T-DS-K11: 缺 CREDENTIAL_SM4_KEY → Settings 构造失败。"""
+    kwargs = settings_kwargs()
+    kwargs["credential_sm4_key"] = ""
+    with pytest.raises(ValidationError):
+        Settings(**kwargs)
 
 
-def test_decrypt_both_keys_fail_raises(monkeypatch):
-    """T-DS-K10: 双钥均失败 → CredentialDecryptError。"""
-    monkeypatch.setenv("CREDENTIAL_FERNET_KEY", Fernet.generate_key().decode())
-    monkeypatch.setenv("CREDENTIAL_FERNET_KEY_PREVIOUS", Fernet.generate_key().decode())
-    get_settings.cache_clear()
+def test_decrypt_non_sm4_ciphertext_raises():
+    """T-DS-K09: 非 sm4 前缀密文 → CredentialDecryptError。"""
     with pytest.raises(CredentialDecryptError):
-        decrypt_credential("not-valid-fernet-token")
+        decrypt_credential("legacy-fernet-body")
 
 
-def test_settings_fails_without_credential_fernet_key(monkeypatch):
-    """T-DS-K11: 缺 CREDENTIAL_FERNET_KEY → Settings 构造失败。"""
-    monkeypatch.delenv("CREDENTIAL_FERNET_KEY", raising=False)
-    get_settings.cache_clear()
-    with pytest.raises(Exception):
-        get_settings()
+def test_decrypt_invalid_sm4_body_raises():
+    """T-DS-K10: 无效 sm4 密文 → CredentialDecryptError。"""
+    with pytest.raises(CredentialDecryptError):
+        decrypt_credential("sm4:not-valid-base64!!!")
 
 
 def test_test_failure_path_logs_no_secrets(caplog, client, auth_headers):

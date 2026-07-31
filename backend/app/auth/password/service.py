@@ -8,7 +8,6 @@ import string
 from app.core.config import get_settings
 from app.core.crypto.password import (
     hash_password as _hash_password,
-    is_legacy_bcrypt_hash,
     needs_password_rehash,
     verify_password as _verify_password,
 )
@@ -64,7 +63,6 @@ __all__ = [
     "PasswordPolicyError",
     "generate_temporary_password",
     "hash_password",
-    "is_legacy_bcrypt_hash",
     "needs_password_rehash",
     "validate_password_policy",
     "verify_password",

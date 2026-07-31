@@ -8,11 +8,13 @@ import time
 from pathlib import Path
 
 import pytest
+from crypto_test_env import TEST_JWT_SM2_PRIVATE, TEST_JWT_SM2_PUBLIC, TEST_SM4_KEY
 
 CONFTEST_DEFAULTS = {
     "DATABASE_URL": "postgresql+psycopg://vitalspan:vitalspan@localhost:5432/vitalspan",
-    "SECRET_KEY": "ci-test-secret-key-min-32-chars-long!!",
-    "CREDENTIAL_FERNET_KEY": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    "JWT_SM2_PRIVATE_KEY": TEST_JWT_SM2_PRIVATE,
+    "JWT_SM2_PUBLIC_KEY": TEST_JWT_SM2_PUBLIC,
+    "CREDENTIAL_SM4_KEY": TEST_SM4_KEY,
 }
 
 CI_YML = Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
@@ -32,7 +34,7 @@ def _extract_backend_env_value(text: str, key: str) -> str:
 
 
 def test_ci_yml_backend_env_has_required_keys(ci_yml_text):
-    """T-CI-01: ci.yml backend job env 含三必填键。"""
+    """T-CI-01: ci.yml backend job env 含必填键。"""
     for key in CONFTEST_DEFAULTS:
         assert f"{key}:" in ci_yml_text
 
@@ -52,7 +54,7 @@ def test_ci_frontend_job_has_test_build_check_design(ci_yml_text):
 
 
 def test_pytest_collect_minimum_threshold():
-    """T-CI-04: pytest --collect-only 收集下限 ≥225 tests（基线 207 + 本轮 ~19）。"""
+    """T-CI-04: pytest --collect-only 收集下限 ≥ 225 tests（基线 207 + 本轮 ~19）。"""
     backend_dir = Path(__file__).resolve().parents[1] / "backend"
     result = subprocess.run(
         [sys.executable, "-m", "pytest", "--collect-only", "-q", "../tests"],
@@ -64,7 +66,7 @@ def test_pytest_collect_minimum_threshold():
     assert result.returncode == 0, result.stderr
     last_line = result.stdout.strip().splitlines()[-1]
     count_str = last_line.split()[0]
-    assert int(count_str) >= 225, f"expected ≥225 tests, got: {last_line}"
+    assert int(count_str) >= 225, f"expected ≥ 225 tests, got: {last_line}"
 
 
 def test_pytest_collect_includes_r14_modules():
@@ -107,7 +109,7 @@ def test_pytest_subset_elapsed_under_budget():
 
 
 def test_pytest_collect_minimum_232():
-    """T-CI-07: pytest --collect-only 收集下限 ≥232。"""
+    """T-CI-07: pytest --collect-only 收集下限 ≥ 232。"""
     backend_dir = Path(__file__).resolve().parents[1] / "backend"
     result = subprocess.run(
         [sys.executable, "-m", "pytest", "--collect-only", "-q", "../tests"],
@@ -119,7 +121,7 @@ def test_pytest_collect_minimum_232():
     assert result.returncode == 0, result.stderr
     last_line = result.stdout.strip().splitlines()[-1]
     count_str = last_line.split()[0]
-    assert int(count_str) >= 232, f"expected ≥232 tests, got: {last_line}"
+    assert int(count_str) >= 232, f"expected ≥ 232 tests, got: {last_line}"
 
 
 def test_ci_frontend_job_step_order(ci_yml_text):
@@ -153,7 +155,7 @@ def test_vitest_routes_smoke_elapsed_under_budget():
 
 
 def test_pytest_collect_minimum_258():
-    """T-CI-10: pytest --collect-only 收集下限 ≥258。"""
+    """T-CI-10: pytest --collect-only 收集下限 ≥ 258。"""
     backend_dir = Path(__file__).resolve().parents[1] / "backend"
     result = subprocess.run(
         [sys.executable, "-m", "pytest", "--collect-only", "-q", "../tests"],
@@ -165,7 +167,7 @@ def test_pytest_collect_minimum_258():
     assert result.returncode == 0, result.stderr
     last_line = result.stdout.strip().splitlines()[-1]
     count_str = last_line.split()[0]
-    assert int(count_str) >= 258, f"expected ≥258 tests, got: {last_line}"
+    assert int(count_str) >= 258, f"expected ≥ 258 tests, got: {last_line}"
 
 
 def test_ci_jobs_have_timeout_minutes(ci_yml_text):
@@ -183,7 +185,7 @@ def test_ci_frontend_cache_dependency_path(ci_yml_text):
 
 
 def test_ingestion_vitest_case_floor():
-    """T-CI-13: ingestion.smoke.test.tsx 中 it( 计数 ≥35。"""
+    """T-CI-13: ingestion.smoke.test.tsx 中 it( 计数 ≥ 35。"""
     smoke_path = (
         Path(__file__).resolve().parents[1]
         / "fe"
@@ -195,7 +197,7 @@ def test_ingestion_vitest_case_floor():
     )
     source = smoke_path.read_text(encoding="utf-8")
     count = source.count("it(")
-    assert count >= 35, f"expected ≥35 vitest cases, got {count}"
+    assert count >= 35, f"expected ≥ 35 vitest cases, got {count}"
 
 
 @pytest.mark.skipif(

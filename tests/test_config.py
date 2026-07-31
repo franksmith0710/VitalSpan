@@ -8,17 +8,18 @@ from pydantic import ValidationError
 
 from app.core.config import Settings, get_settings
 from app.core.logging import configure_logging
+from crypto_test_env import TEST_JWT_SM2_PRIVATE, settings_kwargs
 
 REQUIRED_ENV_KEYS = (
     "DATABASE_URL",
-    "SECRET_KEY",
-    "CREDENTIAL_FERNET_KEY",
+    "JWT_SM2_PRIVATE_KEY",
+    "JWT_SM2_PUBLIC_KEY",
     "CREDENTIAL_SM4_KEY",
 )
 ENV_TO_FIELD = {
     "DATABASE_URL": "database_url",
-    "SECRET_KEY": "secret_key",
-    "CREDENTIAL_FERNET_KEY": "credential_fernet_key",
+    "JWT_SM2_PRIVATE_KEY": "jwt_sm2_private_key",
+    "JWT_SM2_PUBLIC_KEY": "jwt_sm2_public_key",
     "CORS_ORIGINS": "cors_origins_raw",
 }
 
@@ -33,10 +34,7 @@ def clear_settings_cache():
 def test_cors_origins_raw_splits_and_trims():
     """T-CFG-01: cors_origins_raw 逗号分割与 trim。"""
     settings = Settings(
-        database_url="postgresql+psycopg://ci:ci@localhost:5432/ci",
-        secret_key="ci-test-secret-key-min-32-chars-long!!",
-        credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-        credential_sm4_key="0123456789abcdef0123456789abcdef",
+        **settings_kwargs(),
         cors_origins_raw=" http://a.com , http://b.com ",
     )
     assert settings.cors_origins == ["http://a.com", "http://b.com"]
@@ -44,12 +42,7 @@ def test_cors_origins_raw_splits_and_trims():
 
 def test_vitalspan_env_defaults_to_development():
     """T-CFG-02: vitalspan_env 默认 development。"""
-    settings = Settings(
-        database_url="postgresql+psycopg://ci:ci@localhost:5432/ci",
-        secret_key="ci-test-secret-key-min-32-chars-long!!",
-        credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-        credential_sm4_key="0123456789abcdef0123456789abcdef",
-    )
+    settings = Settings(**settings_kwargs())
     assert settings.vitalspan_env == "development"
 
 
@@ -69,32 +62,25 @@ def test_env_example_covers_required_settings_fields():
             assert field_name in Settings.model_fields
 
 
-_BASE_KWARGS = {
-    "database_url": "postgresql+psycopg://ci:ci@localhost:5432/ci",
-    "secret_key": "ci-test-secret-key-min-32-chars-long!!",
-    "credential_fernet_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-    "credential_sm4_key": "0123456789abcdef0123456789abcdef",
-}
-
-
 def test_vitalspan_env_invalid_enum_raises():
     """T-CFG-04: vitalspan_env 非法枚举 → ValidationError。"""
     with pytest.raises(ValidationError):
-        Settings(**_BASE_KWARGS, vitalspan_env="invalid")
+        Settings(**settings_kwargs(), vitalspan_env="invalid")
 
 
-def test_credential_fernet_key_invalid_raises():
-    """T-CFG-05: 非法 credential_fernet_key → ValidationError 含中文提示。"""
-    kwargs = {**_BASE_KWARGS, "credential_fernet_key": "not-a-valid-fernet-key"}
+def test_jwt_sm2_public_mismatch_raises():
+    """T-CFG-05: JWT 公私钥不匹配 → ValidationError。"""
+    kwargs = settings_kwargs()
+    kwargs["jwt_sm2_public_key"] = "0" * 128
     with pytest.raises(ValidationError) as exc_info:
         Settings(**kwargs)
     message = str(exc_info.value)
-    assert "Fernet" in message or "CREDENTIAL_FERNET_KEY" in message
+    assert "JWT_SM2_PUBLIC_KEY" in message or "不匹配" in message
 
 
 def test_query_default_limit_zero_documents_current_behavior():
     """T-CFG-06: query_default_limit=0 记录现状（当前无 ge 约束）。"""
-    settings = Settings(**_BASE_KWARGS, query_default_limit=0)
+    settings = Settings(**settings_kwargs(), query_default_limit=0)
     assert settings.query_default_limit == 0
 
 
@@ -106,47 +92,46 @@ def test_configure_logging_accepts_warning_level(monkeypatch):
     assert logging.getLogger().level == logging.WARNING
 
 
-def test_missing_secret_key_env_raises(monkeypatch):
-    """T-CFG-08: 缺 SECRET_KEY env → ValidationError。"""
-    monkeypatch.delenv("SECRET_KEY", raising=False)
-    get_settings.cache_clear()
+def test_missing_jwt_sm2_private_key_env_raises():
+    """T-CFG-08: 空 jwt_sm2_private_key → ValidationError。"""
+    kwargs = settings_kwargs()
+    kwargs["jwt_sm2_private_key"] = ""
     with pytest.raises(ValidationError):
-        get_settings()
+        Settings(**kwargs)
 
 
-def test_blank_secret_key_documents_behavior():
-    """T-CFG-09: 空白 secret_key 记录当前 pydantic 行为。"""
-    kwargs = {k: v for k, v in _BASE_KWARGS.items() if k != "secret_key"}
-    try:
-        settings = Settings(**kwargs, secret_key="   ")
-        assert settings.secret_key.strip() != "" or settings.secret_key == "   "
-    except ValidationError:
-        pass
+def test_blank_jwt_sm2_private_key_raises():
+    """T-CFG-09: 空白 jwt_sm2_private_key → ValidationError。"""
+    kwargs = settings_kwargs()
+    kwargs["jwt_sm2_private_key"] = "   "
+    with pytest.raises(ValidationError):
+        Settings(**kwargs)
 
 
 def test_query_timeout_seconds_zero_documents_behavior():
     """T-CFG-10: query_timeout_seconds=0 记录现状（当前无 ge 约束）。"""
-    settings = Settings(**_BASE_KWARGS, query_timeout_seconds=0)
+    settings = Settings(**settings_kwargs(), query_timeout_seconds=0)
     assert settings.query_timeout_seconds == 0
 
 
 def test_cors_origins_raw_empty_string():
     """T-CFG-11: cors_origins_raw='' → cors_origins == []。"""
-    settings = Settings(**_BASE_KWARGS, cors_origins_raw="")
+    settings = Settings(**settings_kwargs(), cors_origins_raw="")
     assert settings.cors_origins == []
 
 
 def test_analytics_database_url_rejects_mysql():
     """T-CFG-12: analytics_database_url=mysql:// → ValidationError 含 postgresql 提示。"""
     with pytest.raises(ValidationError) as exc_info:
-        Settings(**_BASE_KWARGS, analytics_database_url="mysql://bad")
+        Settings(**settings_kwargs(), analytics_database_url="mysql://bad")
     message = str(exc_info.value)
     assert "postgresql" in message
 
 
 def test_sm4_key_required():
     """T-CFG-15: 缺 CREDENTIAL_SM4_KEY → ValidationError。"""
-    kwargs = {k: v for k, v in _BASE_KWARGS.items() if k != "credential_sm4_key"}
+    kwargs = settings_kwargs()
+    kwargs.pop("credential_sm4_key")
     with pytest.raises(ValidationError) as exc_info:
         Settings(**kwargs, credential_sm4_key="")
     assert "CREDENTIAL_SM4_KEY" in str(exc_info.value)
@@ -154,13 +139,16 @@ def test_sm4_key_required():
 
 def test_production_env_allows_sqlite_meta_url():
     """T-CFG-13: vitalspan_env=production + sqlite database_url 可实例化（文档化现状）。"""
-    settings = Settings(
+    prod_kwargs = settings_kwargs(
         database_url="sqlite+pysqlite:///./meta.db",
-        secret_key="ci-test-secret-key-min-32-chars-long!!",
-        credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
         credential_sm4_key="fedcba9876543210fedcba9876543210",
-        vitalspan_env="production",
+        jwt_sm2_private_key="7AF248DE02B19AA0AC4A0B0D553198984B1EF67C24E2255F8AB13BB44D7EB5AC",
+        jwt_sm2_public_key=(
+            "EAECFB11DAC50283B90A47C6BF1A433D041C7160B12666759F3671AB68D6637F"
+            "114C18CC7A4ECE8EC9BBED49AA0D060032177F80F53697A7D72383C1428AA711"
+        ),
     )
+    settings = Settings(**prod_kwargs, vitalspan_env="production")
     assert settings.vitalspan_env == "production"
     assert settings.database_url.startswith("sqlite+")
 
@@ -168,9 +156,20 @@ def test_production_env_allows_sqlite_meta_url():
 def test_database_url_accepts_mysql_and_normalizes():
     """T-CFG-14: mysql:// 平台元库 URL 归一化为 mysql+pymysql://。"""
     settings = Settings(
-        secret_key=_BASE_KWARGS["secret_key"],
-        credential_fernet_key=_BASE_KWARGS["credential_fernet_key"],
-        credential_sm4_key=_BASE_KWARGS["credential_sm4_key"],
-        database_url="mysql://vitalspan:vitalspan@localhost:3309/vitalspan",
+        **settings_kwargs(
+            database_url="mysql://vitalspan:vitalspan@localhost:3309/vitalspan",
+        ),
     )
     assert settings.database_url == "mysql+pymysql://vitalspan:vitalspan@localhost:3309/vitalspan"
+
+
+def test_production_rejects_dev_jwt_private_key():
+    """T-CFG-16: 生产环境拒绝示例 JWT 私钥。"""
+    with pytest.raises(ValidationError) as exc_info:
+        Settings(
+            **settings_kwargs(
+                credential_sm4_key="fedcba9876543210fedcba9876543210",
+            ),
+            vitalspan_env="production",
+        )
+    assert "JWT_SM2_PRIVATE_KEY" in str(exc_info.value)

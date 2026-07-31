@@ -8,6 +8,7 @@ import pytest
 
 from app.core.config import Settings, get_settings
 from app.core.logging import JsonFormatter, configure_logging
+from crypto_test_env import settings_kwargs
 
 TRACE_ID_HEX_PATTERN = re.compile(r"^[0-9a-f]{32}$")
 
@@ -100,9 +101,7 @@ def test_empty_trace_id_header_generates_new_trace(client):
 def test_configure_logging_rejects_invalid_log_level():
     """T-TRC-08: 非法 LOG_LEVEL 结构化失败。"""
     settings = Settings(
-        database_url="postgresql+psycopg://ci:ci@localhost:5432/ci",
-        secret_key="ci-test-secret-key-min-32-chars-long!!",
-        credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        **settings_kwargs(),
         log_level="NOT_A_LEVEL",
     )
     with pytest.raises(ValueError):
@@ -124,9 +123,9 @@ def _capture_http_logs(client) -> list[str]:
         logger.removeHandler(handler)
 
 
-def test_request_log_excludes_secret_key_plaintext(client):
-    """T-TRC-09: 请求日志 JSON 不含 SECRET_KEY 明文。"""
-    secret = os.environ["SECRET_KEY"]
+def test_request_log_excludes_jwt_private_key_plaintext(client):
+    """T-TRC-09: 请求日志 JSON 不含 JWT 私钥明文。"""
+    secret = os.environ["JWT_SM2_PRIVATE_KEY"]
     lines = _capture_http_logs(client)
     assert lines
     for line in lines:

@@ -29,6 +29,7 @@ def main() -> int:
     from app.dashboard.templates.demo_datasource import ensure_official_demo_datasource
     from app.dashboard.templates.official_demo_bootstrap import ensure_sample_db_schema
     from app.dashboard.templates.seed import seed_builtin_dashboard_templates
+    from app.metadata.dataset.demo_bindings import ensure_demo_dataset_bindings
     from app.metadata.dataset.demo_seed import resolve_demo_dataset_ids, seed_demo_datasets
 
     schema = ensure_sample_db_schema()
@@ -44,6 +45,8 @@ def main() -> int:
         print(f"[instances] upserted={inst} ids={resolve_demo_instance_ids(session)}")
         ds = seed_demo_datasets(session)
         print(f"[datasets] upserted={ds} ids={resolve_demo_dataset_ids(session)}")
+        bound = ensure_demo_dataset_bindings(session)
+        print(f"[dataset-bindings] bound={bound}")
         status = build_demo_package_status(session, refresh_schema=False)
         print(
             f"[status] ready={status.ready} message={status.message or 'ok'} "

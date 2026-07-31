@@ -41,7 +41,7 @@
 - 依赖：`docker compose up -d postgres sample-mysql`（官方演示包需 sample-mysql:3307）
 - 后端：`backend/` → `alembic upgrade head` → `uvicorn app.main:app --reload --port 8000`
 - 前端：`fe/` → `pnpm dev` → <http://localhost:5173/admin>
-- 国密密钥：`CREDENTIAL_SM4_KEY`（32 hex）· 遗留 `CREDENTIAL_FERNET_KEY` 须保留至迁移完成
+- 国密密钥：`JWT_SM2_*` · `CREDENTIAL_SM4_KEY`（32 hex）
 - **不提供**业务/NFR/mock 功能开关 env
 
 ## 技能索引
