@@ -22,6 +22,7 @@ class RoleError(Exception):
 def list_roles(
     session: Session,
     code_prefix: str | None = None,
+    is_active: bool | None = None,
     limit: int = 100,
     offset: int = 0,
 ) -> tuple[list[AuthRole], int]:
@@ -31,6 +32,9 @@ def list_roles(
     if code_prefix:
         base = base.where(AuthRole.code.startswith(code_prefix))
         count_stmt = count_stmt.where(AuthRole.code.startswith(code_prefix))
+    if is_active is not None:
+        base = base.where(AuthRole.is_active.is_(is_active))
+        count_stmt = count_stmt.where(AuthRole.is_active.is_(is_active))
     total = session.scalar(count_stmt) or 0
     items = list(session.scalars(base.limit(capped).offset(max(offset, 0))))
     return items, total

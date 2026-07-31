@@ -1,22 +1,19 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
+import { RefreshCw } from "lucide-react";
+import { AdminPageHeaderIcon, AdminPageShell } from "@/components/layout/admin-page-shell";
+import { ADMIN_PAGE_SURFACE_CLASS } from "@/components/layout/list-page-kit";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { PageErrorBanner } from "@/components/ui/page-error-banner";
 
 type JobFormState = {
   name: string;
-  source_type: "mysql" | "postgres";
   host: string;
   port: string;
   database: string;
@@ -25,11 +22,11 @@ type JobFormState = {
   table: string;
   target_table: string;
   schedule_cron: string;
+  enabled: boolean;
 };
 
 const emptyForm: JobFormState = {
   name: "",
-  source_type: "mysql",
   host: "127.0.0.1",
   port: "3307",
   database: "sample_db",
@@ -38,7 +35,14 @@ const emptyForm: JobFormState = {
   table: "dirty_orders",
   target_table: "orders_clean",
   schedule_cron: "",
+  enabled: true,
 };
+
+const syncJobPageIcon = (
+  <AdminPageHeaderIcon>
+    <RefreshCw className="size-6" aria-hidden />
+  </AdminPageHeaderIcon>
+);
 
 export function SyncJobFormPage() {
   const { id } = useParams();
@@ -56,8 +60,9 @@ export function SyncJobFormPage() {
       try {
         const job = await apiFetch<{
           name: string;
+          enabled: boolean;
           source: {
-            type: "mysql" | "postgres";
+            type: string;
             host: string;
             port: number;
             database: string;
@@ -70,7 +75,6 @@ export function SyncJobFormPage() {
         }>(`/api/v1/ingestion/sync-jobs/${id}`);
         setForm({
           name: job.name,
-          source_type: job.source.type,
           host: job.source.host,
           port: String(job.source.port),
           database: job.source.database,
@@ -79,6 +83,7 @@ export function SyncJobFormPage() {
           table: job.source.table,
           target_table: job.target_table,
           schedule_cron: job.schedule_cron ?? "",
+          enabled: job.enabled,
         });
       } catch (err) {
         setError(mapApiError(err));
@@ -88,7 +93,7 @@ export function SyncJobFormPage() {
     })();
   }, [id]);
 
-  const update = (key: keyof JobFormState, value: string) => {
+  const update = (key: keyof JobFormState, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -100,7 +105,7 @@ export function SyncJobFormPage() {
     const payload = {
       name: form.name,
       source: {
-        type: form.source_type,
+        type: "mysql" as const,
         host: form.host,
         port: Number(form.port),
         database: form.database,
@@ -110,6 +115,7 @@ export function SyncJobFormPage() {
       },
       target_table: form.target_table,
       schedule_cron: form.schedule_cron || null,
+      enabled: form.enabled,
     };
     try {
       if (isEdit && id) {
@@ -133,45 +139,41 @@ export function SyncJobFormPage() {
 
   if (loading) {
     return (
-      <div className="w-full space-y-4">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-64 w-full" />
-      </div>
+      <AdminPageShell
+        layout="fill"
+        title={isEdit ? "编辑同步任务" : "新建同步任务"}
+        icon={syncJobPageIcon}
+      >
+        <Skeleton className="h-full min-h-[480px] w-full rounded-2xl" />
+      </AdminPageShell>
     );
   }
 
   return (
-    <div className="w-full space-y-6">
-      <h1 className="text-theme-xl font-semibold text-gray-900 dark:text-white">
-        {isEdit ? "编辑同步任务" : "新建同步任务"}
-      </h1>
-
+    <AdminPageShell
+      layout="fill"
+      title={isEdit ? "编辑同步任务" : "新建同步任务"}
+      icon={syncJobPageIcon}
+      description="配置 MySQL 源库连接、目标表与可选 Cron 调度；M1B 执行器仅支持 MySQL 全量同步。"
+      actions={
+        <Button asChild variant="outline" size="sm">
+          <Link to="/admin/ingestion/sync-jobs">返回列表</Link>
+        </Button>
+      }
+    >
       {error ? (
-        <div className="rounded-xl border border-error-500 bg-error-50 p-4 text-theme-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/15 dark:text-error-400">
-          {error}
+        <div className="mb-4 shrink-0">
+          <PageErrorBanner message={error} onRetry={() => setError(null)} />
         </div>
       ) : null}
 
       <form
         onSubmit={handleSubmit}
-        className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900"
+        className={`${ADMIN_PAGE_SURFACE_CLASS} space-y-4 p-6 lg:p-8`}
       >
         <div className="space-y-2">
           <Label htmlFor="name">任务名称</Label>
           <Input id="name" value={form.name} onChange={(e) => update("name", e.target.value)} required />
-        </div>
-
-        <div className="space-y-2">
-          <Label>源类型</Label>
-          <Select value={form.source_type} onValueChange={(v) => update("source_type", v)}>
-            <SelectTrigger>
-              <SelectValue placeholder="选择源类型" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="mysql">MySQL</SelectItem>
-              <SelectItem value="postgres">PostgreSQL</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -242,6 +244,20 @@ export function SyncJobFormPage() {
           />
         </div>
 
+        <div className="flex items-center justify-between rounded-lg border border-gray-100 px-4 py-3 dark:border-gray-800">
+          <div>
+            <Label htmlFor="enabled">启用任务</Label>
+            <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+              停用后不会参与 Cron 调度，仍可手动运行。
+            </p>
+          </div>
+          <Switch
+            id="enabled"
+            checked={form.enabled}
+            onCheckedChange={(checked) => update("enabled", checked)}
+          />
+        </div>
+
         <div className="flex gap-3 pt-2">
           <Button type="submit" variant="primary" loading={submitting}>
             {isEdit ? "保存" : "创建"}
@@ -251,6 +267,6 @@ export function SyncJobFormPage() {
           </Button>
         </div>
       </form>
-    </div>
+    </AdminPageShell>
   );
 }

@@ -46,8 +46,11 @@ function renderUsers() {
   );
 }
 
-function listUsersResponse() {
-  return { items: [{ id: USER_A, username: "alice" }], total: 1 };
+function listUsersResponse(overrides: Record<string, unknown> = {}) {
+  return {
+    items: [{ id: USER_A, username: "alice", isActive: true, lockedUntil: null, ...overrides }],
+    total: 1,
+  };
 }
 
 describe("UserListPage smoke", () => {
@@ -200,5 +203,38 @@ describe("UserListPage smoke", () => {
       expect(postCall).toBeTruthy();
     });
     expect(await screen.findByText("TempPass99!")).toBeInTheDocument();
+  });
+
+  it("T-AUTH-003-06: disable user triggers POST /users/{id}/disable", async () => {
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      const init = args[1] as RequestInit | undefined;
+      if (path === `/api/v1/users/${USER_A}/disable` && init?.method === "POST") {
+        return { id: USER_A, username: "alice", isActive: false, lockedUntil: null };
+      }
+      if (path === `/api/v1/users/${USER_A}/org`) {
+        throw new ApiRequestError("User has no org assignment", "USER_ORG_NOT_SET", 404);
+      }
+      if (path.startsWith("/api/v1/orgs")) {
+        return { items: [] };
+      }
+      if (path.startsWith("/api/v1/users") && !path.includes("/roles")) {
+        return listUsersResponse();
+      }
+      return { items: [] };
+    });
+    renderUsers();
+    await userEvent.click(await screen.findByRole("button", { name: "管理" }));
+    await userEvent.click(await screen.findByRole("tab", { name: "组织与安全" }));
+    await userEvent.click(screen.getByRole("button", { name: "停用账号" }));
+    await userEvent.click(await screen.findByRole("button", { name: "确认停用" }));
+    await waitFor(() => {
+      const postCall = mockApiFetch.mock.calls.find(
+        (c) => c[0] === `/api/v1/users/${USER_A}/disable` && (c[1] as RequestInit)?.method === "POST",
+      );
+      expect(postCall).toBeTruthy();
+    });
+    expect(await screen.findByRole("button", { name: "重新启用" })).toBeInTheDocument();
+    expect(screen.getByText("已停用")).toBeInTheDocument();
   });
 });

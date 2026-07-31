@@ -3,31 +3,19 @@
   
   <defs>
     <linearGradient id="c4cbf899-base" x1="0" y1="0" x2="1920" y2="1080">
-      <stop stop-color="#f1f5f9"/>
-      <stop offset="1" stop-color="#e0f2f1"/>
+      <stop stop-color="#f8fafc"/>
+      <stop offset="1" stop-color="#f1f5f9"/>
     </linearGradient>
-    <radialGradient id="c4cbf899-glow" cx="50%" cy="30%" r="50%">
-      <stop stop-color="#14b8a6" stop-opacity="0.1"/>
+    <radialGradient id="c4cbf899-glow" cx="50%" cy="24%" r="45%">
+      <stop stop-color="#3b82f6" stop-opacity="0.04"/>
       <stop offset="1" stop-opacity="0"/>
     </radialGradient>
-  <linearGradient id="c4cbf899-pat" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#0f766e" stop-opacity="0.08"/><stop offset="1" stop-opacity="0"/></linearGradient>
+  <linearGradient id="c4cbf899-pat" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#2563eb" stop-opacity="0.06"/><stop offset="1" stop-opacity="0"/></linearGradient>
   </defs>
   <rect width="1920" height="1080" fill="url(#c4cbf899-base)"/>
   <rect width="1920" height="1080" fill="url(#c4cbf899-glow)"/>
-  <rect width="1920" height="96" fill="url(#c4cbf899-pat)"/>
-  <line x1="32" y1="96" x2="1888" y2="96" stroke="#0f766e" stroke-width="1.5" opacity="0.2"/>
-  <polygon points="130.39230484541326,42 130.39230484541326,54 120,60 109.60769515458674,54 109.60769515458674,42 119.99999999999999,36" fill="none" stroke="#0f766e" stroke-width="1.2" opacity="0.35"/>
-  <circle cx="120" cy="48" r="3" fill="#0f766e" opacity="0.21"/>
-  <polygon points="202.39230484541326,42 202.39230484541326,54 192,60 181.60769515458674,54 181.60769515458674,42 192,36" fill="none" stroke="#0f766e" stroke-width="1.2" opacity="0.35"/>
-  <circle cx="192" cy="48" r="3" fill="#0f766e" opacity="0.21"/>
-  <polygon points="274.39230484541326,42 274.39230484541326,54 264,60 253.60769515458674,54 253.60769515458674,42 264,36" fill="none" stroke="#0f766e" stroke-width="1.2" opacity="0.35"/>
-  <circle cx="264" cy="48" r="3" fill="#0f766e" opacity="0.21"/>
-  <polygon points="346.39230484541326,42 346.39230484541326,54 336,60 325.60769515458674,54 325.60769515458674,42 336,36" fill="none" stroke="#0f766e" stroke-width="1.2" opacity="0.35"/>
-  <circle cx="336" cy="48" r="3" fill="#0f766e" opacity="0.21"/>
-  <polygon points="418.39230484541326,42 418.39230484541326,54 408,60 397.60769515458674,54 397.60769515458674,42 408,36" fill="none" stroke="#0f766e" stroke-width="1.2" opacity="0.35"/>
-  <circle cx="408" cy="48" r="3" fill="#0f766e" opacity="0.21"/>
-  <polygon points="1853.856406460551,40 1853.856406460551,56 1840,64 1826.143593539449,56 1826.143593539449,40.00000000000001 1840,32" fill="none" stroke="#0f766e" stroke-width="1.2" opacity="0.25"/>
-  <circle cx="1840" cy="48" r="4" fill="#0f766e" opacity="0.15"/>
+  <rect width="1920" height="72" fill="url(#c4cbf899-pat)"/>
+  <line x1="32" y1="72" x2="1888" y2="72" stroke="#2563eb" stroke-width="1" opacity="0.15"/>
 
   </g>
 </svg>

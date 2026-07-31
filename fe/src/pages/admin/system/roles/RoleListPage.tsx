@@ -114,8 +114,10 @@ export function RoleListPage() {
       limit: pagination.pageSize,
       offset: pagination.offset,
       ...(debouncedPrefix ? { codePrefix: debouncedPrefix } : {}),
+      ...(statusFilter === "active" ? { isActive: true } : {}),
+      ...(statusFilter === "inactive" ? { isActive: false } : {}),
     }),
-    [debouncedPrefix, pagination.pageSize, pagination.offset],
+    [debouncedPrefix, pagination.pageSize, pagination.offset, statusFilter],
   );
 
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -126,20 +128,16 @@ export function RoleListPage() {
         offset: String(pagination.offset),
       });
       if (debouncedPrefix) params.set("code_prefix", debouncedPrefix);
+      if (statusFilter === "active") params.set("is_active", "true");
+      if (statusFilter === "inactive") params.set("is_active", "false");
       return apiFetch<{ items: RoleOut[]; total: number }>(`/api/v1/roles?${params}`);
     },
   });
 
   const total = data?.total ?? 0;
+  const items = data?.items ?? [];
 
-  const filteredItems = useMemo(() => {
-    const items = data?.items ?? [];
-    if (statusFilter === "active") return items.filter((row) => row.isActive);
-    if (statusFilter === "inactive") return items.filter((row) => !row.isActive);
-    return items;
-  }, [data?.items, statusFilter]);
-
-  const rowIds = useMemo(() => filteredItems.map((row) => row.id), [filteredItems]);
+  const rowIds = useMemo(() => items.map((row) => row.id), [items]);
   const selection = useListRowSelection(rowIds);
   const batch = useListBatchMode(selection.clear);
   const tableColSpan = batch.batchMode ? 6 : 5;
@@ -329,7 +327,7 @@ export function RoleListPage() {
               {!isLoading && data ? (
                 <p className="text-theme-sm text-gray-500 dark:text-gray-400">
                   {debouncedPrefix || statusFilter !== "all"
-                    ? `显示 ${filteredItems.length} 个`
+                    ? `显示 ${data.total} 个`
                     : `共 ${data.total} 个角色`}
                 </p>
               ) : null}
@@ -358,7 +356,7 @@ export function RoleListPage() {
                       <ListHeaderCheckbox
                         checked={selection.allSelected}
                         indeterminate={selection.someSelected}
-                        disabled={filteredItems.length === 0}
+                        disabled={items.length === 0}
                         onCheckedChange={() => selection.toggleAll()}
                       />
                     </th>
@@ -382,16 +380,6 @@ export function RoleListPage() {
                       </tr>
                     ))
                   : null}
-                {!isLoading && data && data.items.length > 0 && filteredItems.length === 0 ? (
-                  <tr>
-                    <td
-                      className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
-                      colSpan={tableColSpan}
-                    >
-                      当前筛选条件下暂无角色
-                    </td>
-                  </tr>
-                ) : null}
                 {!isLoading && data?.items.length === 0 ? (
                   <tr>
                     <td
@@ -400,6 +388,8 @@ export function RoleListPage() {
                     >
                       {debouncedPrefix ? (
                         <>未找到编码以「{debouncedPrefix}」开头的角色</>
+                      ) : statusFilter !== "all" ? (
+                        <>当前筛选条件下暂无角色</>
                       ) : (
                         <>
                           暂无角色
@@ -414,7 +404,7 @@ export function RoleListPage() {
                   </tr>
                 ) : null}
                 {!isLoading
-                  ? filteredItems.map((row) => (
+                  ? items.map((row) => (
                       <tr
                         key={row.id}
                         className="border-b border-gray-100 transition-colors last:border-0 hover:bg-gray-50/80 dark:border-gray-800 dark:hover:bg-white/[0.02]"

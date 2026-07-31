@@ -4,6 +4,8 @@ const BUILTIN_ROLE_CAPABILITIES: Record<SessionRole, readonly string[]> = {
   admin: [
     "system:*",
     "datasource:*",
+    "ingestion:read",
+    "ingestion:manage",
     "dashboard:read",
     "dashboard:edit",
     "dashboard:share",

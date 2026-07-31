@@ -72,7 +72,7 @@ export const NAV_MANIFEST: NavManifestSection[] = [
             name: "同步任务",
             path: "/admin/ingestion/sync-jobs",
             milestone: "M1",
-            capability: "datasource:*",
+            capability: "ingestion:read",
           },
         ],
       },

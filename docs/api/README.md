@@ -60,7 +60,7 @@ redoc: /redoc
 | GET | `/api/v1/permissions` | 权限目录全集（`PermissionListOut`；`system:role.read`） | 内部 | M7 | AUTH-001 | 已实现 | `backend/app/api/v1/permissions.py` |
 | GET | `/api/v1/roles/{id}/permissions` | 角色权限绑定（`RolePermissionsOut`；root 返回 `allPermissions=true`；`system:role.read`） | 内部 | M7 | AUTH-001 | 已实现 | `backend/app/api/v1/roles.py` |
 | PUT | `/api/v1/roles/{id}/permissions` | 角色权限全量替换（`expectedVersion` 乐观锁；冲突 409 `ROLE_PERMISSION_VERSION_CONFLICT`；root 禁改 409 `AUTH_ROOT_ROLE_IMMUTABLE`；`system:role.manage`） | 内部 | M7 | AUTH-001 | 已实现 | `backend/app/api/v1/roles.py` |
-| GET/POST | `/api/v1/users` | 用户列表/创建（POST body `{username, displayName?, email?, orgId?, roleIds, initialPassword}`；保存 bcrypt hash，不返回密码；`system:user.manage`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
+| GET/POST | `/api/v1/users` | 用户列表/创建（POST body `{username, displayName?, email?, orgId?, roleIds, initialPassword}`；保存 SM3 hash（`$sm3$`），不返回密码；`system:user.manage`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
 | PATCH | `/api/v1/users/{id}` | 用户信息/角色更新（`{displayName?, email?, orgId?, roleIds?}`；根管理员保护；`system:user.manage`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
 | POST | `/api/v1/users/{id}/disable` · `/enable` · `/unlock` | 用户启停/解锁（解锁清零失败计数与 `lockedUntil`；`system:user.manage`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
 | POST | `/api/v1/users/{id}/reset-password` | 管理员重置密码（返回 `{temporaryPassword, passwordChangedAt}`；`Cache-Control: no-store`；`token_version+1`；审计无明文；`system:user.password.reset`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
@@ -429,8 +429,8 @@ redoc: /redoc
 
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
-| GET/POST | `/api/v1/ingestion/sync-jobs` | 同步任务 CRUD | 内部 | M1B | DATA-001 | 已实现 | `backend/app/api/v1/ingestion/sync.py` |
-| DELETE | `/api/v1/ingestion/sync-jobs/{id}` | 删除同步任务 | 内部 | M1B | DATA-001 | 已实现 | `backend/app/api/v1/ingestion/sync.py` |
+| GET/POST | `/api/v1/ingestion/sync-jobs` | 同步任务列表与创建 | 内部 | M1B | DATA-001 | 已实现 | `backend/app/api/v1/ingestion/sync.py` |
+| GET/PUT/DELETE | `/api/v1/ingestion/sync-jobs/{id}` | 同步任务详情、更新与删除 | 内部 | M1B | DATA-001 | 已实现 | `backend/app/api/v1/ingestion/sync.py` |
 | POST | `/api/v1/ingestion/sync-jobs/{id}/run` | 手动触发同步 | 内部 | M1B | DATA-002 | 已实现 | `backend/app/ingestion/sync_executor.py` |
 | GET | `/api/v1/ingestion/sync-jobs/{id}/runs` | 运行历史 | 内部 | M1B | DATA-002 | 已实现 | `backend/app/api/v1/ingestion/sync.py` |
 | GET/PUT | `/api/v1/ingestion/sync-jobs/{id}/etl-rules` | 清洗规则配置 | 内部 | M1B | ETL-001 | 已实现 | `backend/app/ingestion/etl_rules.py` |

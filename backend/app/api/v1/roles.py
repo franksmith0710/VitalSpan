@@ -70,10 +70,11 @@ def list_roles(
     _: Annotated[UserContext, Depends(require_permission("system:role.read"))],
     db: Annotated[Session, Depends(_db)],
     code_prefix: str | None = None,
+    is_active: bool | None = None,
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
 ) -> RoleListResponse:
-    items, total = role_service.list_roles(db, code_prefix, limit, offset)
+    items, total = role_service.list_roles(db, code_prefix, is_active, limit, offset)
     return RoleListResponse(items=[RoleOut.model_validate(r) for r in items], total=total)
 
 

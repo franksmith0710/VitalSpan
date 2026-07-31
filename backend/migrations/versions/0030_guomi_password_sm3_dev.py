@@ -1,20 +1,19 @@
 """国密应用层：纯 SM3 密码哈希（dev demo 用户重算）
 
-Revision ID: 0020
-Revises: 0019
+Revision ID: 0030
+Revises: 0029
 """
 
 from __future__ import annotations
 
 import os
-import uuid
 from typing import Sequence, Union
 
 import sqlalchemy as sa
 from alembic import context, op
 
-revision: str = "0020"
-down_revision: Union[str, None] = "0019"
+revision: str = "0030"
+down_revision: Union[str, None] = "0029"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -23,12 +22,9 @@ _BCRYPT_PREFIXES = ("$2a$", "$2b$", "$2y$")
 
 
 def _hash_sm3_for_migration(password: str) -> str:
-    import binascii
-    import secrets
-
     from gmssl import func, sm3
 
-    salt = secrets.token_hex(16)
+    salt = __import__("secrets").token_hex(16)
     digest = sm3.sm3_hash(func.bytes_to_list(f"{salt}{password}".encode()))
     return f"$sm3${salt}${digest}"
 

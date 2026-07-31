@@ -16,22 +16,34 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiFetch } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
 import { mapUserError } from "./userErrors";
+import { UserAccountStatusPanel } from "./UserAccountStatusPanel";
 import { UserOrgBindingPanel } from "./UserOrgBindingPanel";
 import { UserResetPasswordPanel } from "./UserResetPasswordPanel";
+import type { UserAccountFields } from "./userAccountStatus";
 
-type UserOut = { id: string; username: string };
+type UserOut = { id: string; username: string } & UserAccountFields;
 type RoleOut = { id: string; code: string; name: string; isActive?: boolean };
 
 type UserManageSheetProps = {
   user: UserOut | null;
   onOpenChange: (open: boolean) => void;
   onActionError: (message: string | null) => void;
+  onUserChange?: (user: UserOut) => void;
 };
 
-export function UserManageSheet({ user, onOpenChange, onActionError }: UserManageSheetProps) {
+export function UserManageSheet({
+  user,
+  onOpenChange,
+  onActionError,
+  onUserChange,
+}: UserManageSheetProps) {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<"roles" | "org">("roles");
   const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
+  const [accountStatus, setAccountStatus] = useState<Required<UserAccountFields>>({
+    isActive: true,
+    lockedUntil: null,
+  });
 
   const { data: allRoles, isLoading: rolesCatalogLoading } = useQuery({
     queryKey: queryKeys.roles.list({ limit: 500, offset: 0 }),
@@ -53,6 +65,14 @@ export function UserManageSheet({ user, onOpenChange, onActionError }: UserManag
 
   useEffect(() => {
     if (!user) setTab("roles");
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    setAccountStatus({
+      isActive: user.isActive ?? true,
+      lockedUntil: user.lockedUntil ?? null,
+    });
   }, [user]);
 
   const saveRolesMutation = useMutation({
@@ -138,6 +158,24 @@ export function UserManageSheet({ user, onOpenChange, onActionError }: UserManag
           <TabsContent value="org" className="mt-4 space-y-6">
             {user ? (
               <>
+                <UserAccountStatusPanel
+                  userId={user.id}
+                  username={user.username}
+                  isActive={accountStatus.isActive}
+                  lockedUntil={accountStatus.lockedUntil}
+                  onStatusChange={(status) => {
+                    setAccountStatus({
+                      isActive: status.isActive ?? true,
+                      lockedUntil: status.lockedUntil ?? null,
+                    });
+                    onUserChange?.({
+                      ...user,
+                      isActive: status.isActive,
+                      lockedUntil: status.lockedUntil,
+                    });
+                  }}
+                  onActionError={onActionError}
+                />
                 <UserOrgBindingPanel userId={user.id} onActionError={onActionError} />
                 <UserResetPasswordPanel
                   userId={user.id}

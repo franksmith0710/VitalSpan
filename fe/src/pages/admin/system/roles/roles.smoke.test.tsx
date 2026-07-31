@@ -92,4 +92,26 @@ describe("RoleListPage smoke", () => {
     await userEvent.click(screen.getByRole("button", { name: "保存" }));
     await waitFor(() => expect(screen.getByText("viewer2")).toBeInTheDocument());
   });
+
+  it("T-AUTH-001-04: inactive filter sends is_active=false", async () => {
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      if (path.startsWith("/api/v1/roles")) {
+        expect(path).toContain("is_active=false");
+        return { items: [], total: 0 };
+      }
+      if (path.startsWith("/api/v1/dashboards")) return { items: [] };
+      return {};
+    });
+    const user = userEvent.setup();
+    renderRoles();
+    await screen.findByRole("button", { name: "新建角色" });
+    await user.click(screen.getByRole("combobox", { name: "筛选角色状态" }));
+    await user.click(await screen.findByRole("option", { name: "仅停用" }));
+    await waitFor(() => {
+      expect(
+        mockApiFetch.mock.calls.some((c) => String(c[0]).includes("is_active=false")),
+      ).toBe(true);
+    });
+  });
 });

@@ -98,7 +98,7 @@
 - **DS-001**：`ConnectorRegistry` `RLock`；`export_type_catalog()` DS-007 预留形状
 - **DS-002**：`connection_options` JSON 列；软删后 `code` 可复用（PostgreSQL 部分唯一索引 + service 层检测）
 - **DS-003**：inflight acquire + finally release；测试日志 `datasource_test` + `traceId`
-- **DS-005**：`CREDENTIAL_FERNET_KEY_PREVIOUS` 双钥解密占位
+- **DS-005**：凭证 `password_encrypted` 仅 SM4（`sm4:` 前缀）；部署前运行 `scripts/migrate-credentials-to-sm4.py`
 
 ### r25 companion kickoff（2026-07-03）
 

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="6b753507-base" x1="0" y1="0" x2="1920" y2="1080">
+      <stop stop-color="#fafafa"/>
+      <stop offset="1" stop-color="#fff1f2"/>
+    </linearGradient>
+    <radialGradient id="6b753507-glow" cx="50%" cy="24%" r="45%">
+      <stop stop-color="#fb7185" stop-opacity="0.04"/>
+      <stop offset="1" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#6b753507-base)"/>
+  <rect width="1920" height="1080" fill="url(#6b753507-glow)"/>
+  <path d="M960 340 L1100 480 L1100 620 Q960 720 820 620 L820 480 Z" fill="none" stroke="#be123c" stroke-width="1.2" opacity="0.04"/>
+  <path d="M160 140 L188 168 L188 196 Q160 216 132 196 L132 168 Z" fill="none" stroke="#be123c" stroke-width="1.2" opacity="0.03"/>
+  <path d="M680 140 L708 168 L708 196 Q680 216 652 196 L652 168 Z" fill="none" stroke="#be123c" stroke-width="1.2" opacity="0.03"/>
+  <path d="M1200 140 L1228 168 L1228 196 Q1200 216 1172 196 L1172 168 Z" fill="none" stroke="#be123c" stroke-width="1.2" opacity="0.03"/>
+  <path d="M160 500 L188 528 L188 556 Q160 576 132 556 L132 528 Z" fill="none" stroke="#be123c" stroke-width="1.2" opacity="0.03"/>
+  <path d="M680 500 L708 528 L708 556 Q680 576 652 556 L652 528 Z" fill="none" stroke="#be123c" stroke-width="1.2" opacity="0.03"/>
+  <path d="M1200 500 L1228 528 L1228 556 Q1200 576 1172 556 L1172 528 Z" fill="none" stroke="#be123c" stroke-width="1.2" opacity="0.03"/>
+</svg>

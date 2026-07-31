@@ -31,7 +31,7 @@ def _gov_template_specs() -> list[dict[str, Any]]:
             "id": uuid.UUID("00000000-0000-4000-8001-000000000201"),
             "template_key": "builtin-gov-smart-city",
             "name": "智慧城市运行监测",
-            "description": "指挥中心风 cyan 底图 · 城市态势地图 · 产业指标 · 官方示例数据即开即用",
+            "description": "浅色 frost 顶栏 · 城市态势地图 · 产业指标 · 官方示例数据",
             "category_key": "government",
             "surface_kind": "data-screen",
             "thumbnail_ref": SMART_CITY_THUMB,
@@ -41,7 +41,7 @@ def _gov_template_specs() -> list[dict[str, Any]]:
             "id": uuid.UUID("00000000-0000-4000-8001-000000000202"),
             "template_key": "builtin-gov-digital-cockpit",
             "name": "数字政府 KPI 驾驶舱",
-            "description": "HUD 扫描 indigo 底图 · 顶栏 KPI · 满意度趋势 · 官方示例数据",
+            "description": "浅色 paper 顶栏 · 顶栏 KPI · 满意度趋势 · 官方示例数据",
             "category_key": "government",
             "surface_kind": "data-screen",
             "thumbnail_ref": DIGITAL_COCKPIT_THUMB,
@@ -51,7 +51,7 @@ def _gov_template_specs() -> list[dict[str, Any]]:
             "id": uuid.UUID("00000000-0000-4000-8001-000000000203"),
             "template_key": "builtin-gov-emergency-command",
             "name": "应急指挥调度中心",
-            "description": "极光 crimson 底图 · 实时告警带 · 区域态势 · 官方示例数据",
+            "description": "浅色 rose 顶栏 · 实时告警带 · 区域态势 · 官方示例数据",
             "category_key": "government",
             "surface_kind": "data-screen",
             "thumbnail_ref": EMERGENCY_THUMB,
@@ -61,7 +61,7 @@ def _gov_template_specs() -> list[dict[str, Any]]:
             "id": uuid.UUID("00000000-0000-4000-8001-000000000204"),
             "template_key": "builtin-gov-eco-monitor",
             "name": "生态环境监测大屏",
-            "description": "电路线 emerald 底图 · AQI 趋势主视觉 · 水质监测 · 官方示例数据",
+            "description": "浅色 mint 顶栏 · AQI 趋势 · 水质监测 · 官方示例数据",
             "category_key": "government",
             "surface_kind": "data-screen",
             "thumbnail_ref": ECO_MONITOR_THUMB,
@@ -71,7 +71,7 @@ def _gov_template_specs() -> list[dict[str, Any]]:
             "id": uuid.UUID("00000000-0000-4000-8001-000000000205"),
             "template_key": "builtin-gov-community",
             "name": "社区治理一张图",
-            "description": "蜂窝 violet 底图 · 网格事件表 · 治理热词 · 官方示例数据",
+            "description": "浅色 lavender 顶栏 · 网格事件表 · 治理热词 · 官方示例数据",
             "category_key": "government",
             "surface_kind": "data-screen",
             "thumbnail_ref": COMMUNITY_THUMB,
@@ -81,7 +81,7 @@ def _gov_template_specs() -> list[dict[str, Any]]:
             "id": uuid.UUID("00000000-0000-4000-8001-000000000206"),
             "template_key": "builtin-gov-efficiency",
             "name": "政务效能分析看板",
-            "description": "浅色 cloud 底图 · KPI 条 + 部门效能 · 官方示例数据",
+            "description": "浅色 cloud 顶栏 · KPI 条 + 部门效能 · 官方示例数据",
             "category_key": "government",
             "surface_kind": "dashboard",
             "thumbnail_ref": EFFICIENCY_THUMB,
@@ -111,7 +111,7 @@ def _gov_template_specs() -> list[dict[str, Any]]:
             "id": uuid.UUID("00000000-0000-4000-8001-000000000209"),
             "template_key": "builtin-gov-investment",
             "name": "招商引资分析",
-            "description": "royal 指挥底图 · 区域产业地图 · 投资柱图 · 官方示例数据",
+            "description": "浅色 paper 顶栏 · 区域产业地图 · 投资柱图 · 官方示例数据",
             "category_key": "government",
             "surface_kind": "dashboard",
             "thumbnail_ref": INVESTMENT_THUMB,
@@ -256,7 +256,7 @@ def seed_builtin_dashboard_templates(db: Session) -> int:
                 layout_json=spec["layout_json"],
                 thumbnail_ref=spec.get("thumbnail_ref"),
                 visibility="builtin",
-                content_revision=14,
+                content_revision=15,
             )
             db.add(row)
             upserted += 1
@@ -268,6 +268,6 @@ def seed_builtin_dashboard_templates(db: Session) -> int:
             existing.thumbnail_ref = spec.get("thumbnail_ref")
             existing.status = "published"
             existing.visibility = "builtin"
-            existing.content_revision = max(existing.content_revision, 14)
+            existing.content_revision = max(existing.content_revision, 15)
     db.commit()
     return upserted

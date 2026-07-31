@@ -104,11 +104,11 @@ export function AppRoutes() {
           <Route path="datasources/:id/edit" element={<RequireCapabilityName capability="datasource:*"><DatasourceFormPage mode="edit" /></RequireCapabilityName>} />
           <Route path="datasources/:id" element={<RequireCapabilityName capability="datasource:*"><DatasourceDetailPage /></RequireCapabilityName>} />
           <Route path="connectors" element={<Navigate to="/admin/datasources" replace />} />
-          <Route path="ingestion/sync-jobs" element={<RequireCapabilityName capability="datasource:*"><SyncJobsPage /></RequireCapabilityName>} />
-          <Route path="ingestion/sync-jobs/new" element={<RequireCapabilityName capability="datasource:*"><SyncJobFormPage /></RequireCapabilityName>} />
-          <Route path="ingestion/sync-jobs/:id/edit" element={<RequireCapabilityName capability="datasource:*"><SyncJobFormPage /></RequireCapabilityName>} />
-          <Route path="ingestion/sync-jobs/:id/history" element={<RequireCapabilityName capability="datasource:*"><SyncJobHistoryPage /></RequireCapabilityName>} />
-          <Route path="ingestion/sync-jobs/:id/etl-rules" element={<RequireCapabilityName capability="datasource:*"><EtlRulesPage /></RequireCapabilityName>} />
+          <Route path="ingestion/sync-jobs" element={<RequireCapabilityName capability="ingestion:read"><SyncJobsPage /></RequireCapabilityName>} />
+          <Route path="ingestion/sync-jobs/new" element={<RequireCapabilityName capability="ingestion:manage"><SyncJobFormPage /></RequireCapabilityName>} />
+          <Route path="ingestion/sync-jobs/:id/edit" element={<RequireCapabilityName capability="ingestion:manage"><SyncJobFormPage /></RequireCapabilityName>} />
+          <Route path="ingestion/sync-jobs/:id/history" element={<RequireCapabilityName capability="ingestion:read"><SyncJobHistoryPage /></RequireCapabilityName>} />
+          <Route path="ingestion/sync-jobs/:id/etl-rules" element={<RequireCapabilityName capability="ingestion:manage"><EtlRulesPage /></RequireCapabilityName>} />
           <Route path="account/profile" element={<AccountProfilePage />} />
           <Route path="account/theme" element={<AccountThemePage />} />
           <Route path="account/landing" element={<AccountLandingPage />} />

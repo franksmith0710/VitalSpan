@@ -270,6 +270,7 @@ def delete_sync_job(
         )
     db.delete(job)
     db.commit()
+    refresh_all_jobs()
 
 
 @router.get("/sync-jobs/{job_id}/etl-rules", response_model=EtlRulesResponse)

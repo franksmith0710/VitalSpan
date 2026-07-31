@@ -18,9 +18,37 @@ import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { useListPagination } from "@/lib/list-pagination";
 import { CreateUserDialog } from "./CreateUserDialog";
 import { UserManageSheet } from "./UserManageSheet";
+import { isUserLocked } from "./userAccountStatus";
 
-type UserOut = { id: string; username: string };
+type UserOut = {
+  id: string;
+  username: string;
+  isActive?: boolean;
+  lockedUntil?: string | null;
+};
 type RoleOut = { id: string; code: string; name: string };
+
+function UserStatusBadge({ isActive, lockedUntil }: { isActive?: boolean; lockedUntil?: string | null }) {
+  if (isUserLocked(lockedUntil)) {
+    return (
+      <Badge variant="light" color="warning" size="sm">
+        已锁定
+      </Badge>
+    );
+  }
+  if (isActive === false) {
+    return (
+      <Badge variant="light" color="error" size="sm">
+        已停用
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="light" color="success" size="sm">
+      正常
+    </Badge>
+  );
+}
 
 function UserRoleBadges({ userId }: { userId: string }) {
   const { data } = useQuery({
@@ -118,6 +146,7 @@ export function UserListPage() {
               <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
                 <tr>
                   <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">用户名</th>
+                  <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">状态</th>
                   <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
                     已绑定角色
                   </th>
@@ -130,7 +159,7 @@ export function UserListPage() {
                 {isLoading
                   ? Array.from({ length: 5 }).map((_, i) => (
                       <tr key={i} className="border-b border-gray-100 dark:border-gray-800">
-                        <td className="px-4 py-3" colSpan={3}>
+                        <td className="px-4 py-3" colSpan={4}>
                           <Skeleton className="h-6 w-full" />
                         </td>
                       </tr>
@@ -140,7 +169,7 @@ export function UserListPage() {
                   <tr>
                     <td
                       className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
-                      colSpan={3}
+                      colSpan={4}
                     >
                       暂无用户
                     </td>
@@ -151,6 +180,9 @@ export function UserListPage() {
                       <tr key={row.id} className="border-b border-gray-100 dark:border-gray-800">
                         <td className="px-4 py-3 font-medium text-gray-800 dark:text-white/90">
                           {row.username}
+                        </td>
+                        <td className="px-4 py-3">
+                          <UserStatusBadge isActive={row.isActive} lockedUntil={row.lockedUntil} />
                         </td>
                         <td className="px-4 py-3">
                           <UserRoleBadges userId={row.id} />
@@ -192,6 +224,7 @@ export function UserListPage() {
         user={sheetUser}
         onOpenChange={(open) => !open && setSheetUser(null)}
         onActionError={setActionError}
+        onUserChange={setSheetUser}
       />
     </AdminPageShell>
   );

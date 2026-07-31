@@ -30,17 +30,19 @@ const DARK_PALETTES = {
 };
 
 const LIGHT_PALETTES = {
-  ivory: { base: "#f8f6f1", accent: "#1d4ed8", cardTint: "#e8eef8", accentLight: "#3b82f6", motif: "diamond" },
-  cloud: { base: "#f1f5f9", accent: "#0f766e", cardTint: "#e0f2f1", accentLight: "#14b8a6", motif: "hex" },
-  paper: { base: "#fafafa", accent: "#4338ca", cardTint: "#ede9fe", accentLight: "#6366f1", motif: "shield" },
-  frost: { base: "#f0f9ff", accent: "#0369a1", cardTint: "#e0f2fe", accentLight: "#0ea5e9", motif: "orbit" },
-  mint: { base: "#f0fdf4", accent: "#15803d", cardTint: "#dcfce7", accentLight: "#22c55e", motif: "leaf" },
-  lavender: { base: "#faf5ff", accent: "#7e22ce", cardTint: "#f3e8ff", accentLight: "#a855f7", motif: "star" },
+  ivory: { base: "#fafafa", accent: "#334155", cardTint: "#f4f4f5", accentLight: "#64748b", motif: "diamond" },
+  cloud: { base: "#f8fafc", accent: "#2563eb", cardTint: "#f1f5f9", accentLight: "#3b82f6", motif: "hex" },
+  paper: { base: "#fafafa", accent: "#4f46e5", cardTint: "#f4f4f5", accentLight: "#6366f1", motif: "shield" },
+  frost: { base: "#f8fafc", accent: "#0369a1", cardTint: "#f0f9ff", accentLight: "#0ea5e9", motif: "orbit" },
+  mint: { base: "#f8fafc", accent: "#047857", cardTint: "#f0fdf4", accentLight: "#10b981", motif: "leaf" },
+  lavender: { base: "#fafafa", accent: "#6d28d9", cardTint: "#f5f3ff", accentLight: "#8b5cf6", motif: "star" },
+  rose: { base: "#fafafa", accent: "#be123c", cardTint: "#fff1f2", accentLight: "#fb7185", motif: "shield" },
 };
 
-/** Each pattern is visually distinct — not just a texture overlay */
+/** 深色 canvas 保留供选用；内置模板已切换浅色 clean-header */
 const DARK_PATTERNS = ["command", "aurora", "honeycomb", "circuit", "hud-scan", "topbar-icons"];
-const LIGHT_PATTERNS = ["header-band", "card-float", "watermark", "corner-fold", "dot-matrix", "ribbon"];
+/** 浅色 pattern；clean-header 为政务模板默认（顶栏线 + 无装饰） */
+const LIGHT_PATTERNS = ["clean-header", "header-band", "card-float", "watermark", "corner-fold", "dot-matrix", "ribbon"];
 
 const PANEL_STYLES = ["de-frame", "hud-bracket", "badge-header", "tech-rail"];
 const PANEL_COLORS = ["cyan", "indigo", "emerald", "amber", "crimson", "royal"];
@@ -239,8 +241,8 @@ function defsBaseLight(palette, w, h, seed) {
       <stop stop-color="${palette.base}"/>
       <stop offset="1" stop-color="${palette.cardTint}"/>
     </linearGradient>
-    <radialGradient id="${id}-glow" cx="50%" cy="30%" r="50%">
-      <stop stop-color="${palette.accentLight}" stop-opacity="0.1"/>
+    <radialGradient id="${id}-glow" cx="50%" cy="24%" r="45%">
+      <stop stop-color="${palette.accentLight}" stop-opacity="0.04"/>
       <stop offset="1" stop-opacity="0"/>
     </radialGradient>
   </defs>`,
@@ -317,13 +319,17 @@ function lightPatternBody(pattern, palette, accent, w, h, id) {
   const pid = `${id}-pat`;
   const motif = palette.motif;
   switch (pattern) {
+    case "clean-header":
+      return {
+        extraDefs: `<linearGradient id="${pid}" x1="0" y1="0" x2="0" y2="1"><stop stop-color="${accent}" stop-opacity="0.05"/><stop offset="1" stop-opacity="0"/></linearGradient>`,
+        body: `<rect width="${w}" height="56" fill="url(#${pid})"/>
+  <line x1="24" y1="56" x2="${w - 24}" y2="56" stroke="${accent}" stroke-width="1" opacity="0.12"/>`,
+      };
     case "header-band":
       return {
-        extraDefs: `<linearGradient id="${pid}" x1="0" y1="0" x2="0" y2="1"><stop stop-color="${accent}" stop-opacity="0.08"/><stop offset="1" stop-opacity="0"/></linearGradient>`,
-        body: `<rect width="${w}" height="96" fill="url(#${pid})"/>
-  <line x1="32" y1="96" x2="${w - 32}" y2="96" stroke="${accent}" stroke-width="1.5" opacity="0.2"/>
-  ${Array.from({ length: 5 }, (_, i) => renderMotif(motif, 120 + i * 72, 48, 12, accent, 0.35)).join("\n  ")}
-  ${renderMotif(motif, w - 80, 48, 16, accent, 0.25)}`,
+        extraDefs: `<linearGradient id="${pid}" x1="0" y1="0" x2="0" y2="1"><stop stop-color="${accent}" stop-opacity="0.06"/><stop offset="1" stop-opacity="0"/></linearGradient>`,
+        body: `<rect width="${w}" height="72" fill="url(#${pid})"/>
+  <line x1="32" y1="72" x2="${w - 32}" y2="72" stroke="${accent}" stroke-width="1" opacity="0.15"/>`,
       };
     case "card-float":
       return {
@@ -631,7 +637,7 @@ function generate() {
 
   const manifest = {
     id: PACK_ID,
-    version: 2,
+    version: 3,
     generatedAt,
     total: items.length,
     categories,
@@ -654,13 +660,11 @@ function generate() {
 | title-strip | ${categories["title-strip"].count} | 720×64 | 标题装饰条 |
 | **合计** | **${items.length}** | | |
 
-## 视觉特性（v2）
+## 视觉特性（v3）
 
-- 每种 **palette** 有专属 **motif 图标**（hex / diamond / shield / star / orbit 等）
-- 深色 **pattern** 彼此差异大：command / aurora / honeycomb / circuit / hud-scan / topbar-icons
-- 浅色 **pattern**：header-band / card-float / watermark / corner-fold / dot-matrix / ribbon
-- 组件框：de-frame / hud-bracket / badge-header / tech-rail（含角标、扫描环、徽章）
-- 标题条：diamond-flank / shield-badge / hex-nodes
+- 政务模板默认 **clean-header**：浅灰底 + 顶栏细线，无图标/纹理
+- 浅色 **pattern**：clean-header / header-band / card-float / watermark / corner-fold / dot-matrix / ribbon
+- 深色 canvas 仍保留供选用，内置模板已切换为浅色
 
 ## 命名规则
 

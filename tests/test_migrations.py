@@ -23,10 +23,10 @@ def _migration_subprocess_env() -> dict[str, str]:
 
     env = os.environ.copy()
     env["DATABASE_URL"] = KNOWN_URL
-    env.setdefault("JWT_SM2_PRIVATE_KEY", TEST_JWT_SM2_PRIVATE)
-    env.setdefault("JWT_SM2_PUBLIC_KEY", TEST_JWT_SM2_PUBLIC)
-    env.setdefault("CREDENTIAL_SM4_KEY", TEST_SM4_KEY)
-    env.setdefault("VITALSPAN_ENV", "development")
+    env["JWT_SM2_PRIVATE_KEY"] = TEST_JWT_SM2_PRIVATE
+    env["JWT_SM2_PUBLIC_KEY"] = TEST_JWT_SM2_PUBLIC
+    env["CREDENTIAL_SM4_KEY"] = TEST_SM4_KEY
+    env["VITALSPAN_ENV"] = "development"
     return env
 
 
@@ -45,10 +45,7 @@ def test_settings_database_url_matches_env():
 
 def test_migrations_env_binds_settings_database_url(monkeypatch):
     """T-MIG-02: migrations/env.py 将 settings.database_url 写入 alembic config。"""
-    fake_settings = Settings(
-        database_url=KNOWN_URL,
-        **settings_kwargs(),
-    )
+    fake_settings = Settings(**settings_kwargs(database_url=KNOWN_URL))
     monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
     get_settings.cache_clear()
 
@@ -72,7 +69,9 @@ def test_settings_missing_database_url_raises(monkeypatch):
     monkeypatch.delenv("DATABASE_URL", raising=False)
     get_settings.cache_clear()
     with pytest.raises(ValidationError):
-        Settings(**{k: v for k, v in settings_kwargs().items() if k != "database_url"})
+        kwargs = settings_kwargs()
+        kwargs["database_url"] = ""
+        Settings(**kwargs)
 
 
 def test_settings_env_override_database_url(monkeypatch):
@@ -106,16 +105,20 @@ def test_settings_missing_jwt_sm2_private_key_raises(monkeypatch):
     """T-MIG-07: 缺 JWT_SM2_PRIVATE_KEY 时 Settings 实例化失败。"""
     monkeypatch.delenv("JWT_SM2_PRIVATE_KEY", raising=False)
     get_settings.cache_clear()
+    kwargs = settings_kwargs(database_url=KNOWN_URL)
+    kwargs["jwt_sm2_private_key"] = ""
     with pytest.raises(ValidationError):
-        Settings(**{k: v for k, v in settings_kwargs().items() if k != "jwt_sm2_private_key"}, database_url=KNOWN_URL)
+        Settings(**kwargs)
 
 
 def test_settings_missing_credential_sm4_key_raises(monkeypatch):
     """T-MIG-08: 缺 CREDENTIAL_SM4_KEY 时 Settings 实例化失败。"""
     monkeypatch.delenv("CREDENTIAL_SM4_KEY", raising=False)
     get_settings.cache_clear()
+    kwargs = settings_kwargs(database_url=KNOWN_URL)
+    kwargs["credential_sm4_key"] = ""
     with pytest.raises(ValidationError):
-        Settings(**{k: v for k, v in settings_kwargs().items() if k != "credential_sm4_key"}, database_url=KNOWN_URL)
+        Settings(**kwargs)
 
 
 def test_migrations_env_fails_when_get_settings_raises(monkeypatch):
@@ -145,19 +148,13 @@ def test_migrations_env_fails_when_get_settings_raises(monkeypatch):
 def test_settings_invalid_database_url_raises():
     """T-MIG-10: 非法格式 database_url → ValidationError 含协议提示。"""
     with pytest.raises(ValidationError) as exc_info:
-        Settings(
-            database_url="not-a-url",
-            **settings_kwargs(),
-        )
+        Settings(**settings_kwargs(database_url="not-a-url"))
     assert "postgresql" in str(exc_info.value)
 
 
 def test_migrations_offline_url_matches_settings(monkeypatch):
     """T-MIG-11: offline 模式 context.configure 的 url 与 set_main_option 一致。"""
-    fake_settings = Settings(
-        database_url=KNOWN_URL,
-        **settings_kwargs(),
-    )
+    fake_settings = Settings(**settings_kwargs(database_url=KNOWN_URL))
     monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
     get_settings.cache_clear()
 
@@ -209,10 +206,7 @@ def test_revision_chain_0002_down_revision_is_0001():
 
 def test_migrations_offline_run_migrations_called(monkeypatch):
     """T-MIG-14: offline 模式触发 context.run_migrations()。"""
-    fake_settings = Settings(
-        database_url=KNOWN_URL,
-        **settings_kwargs(),
-    )
+    fake_settings = Settings(**settings_kwargs(database_url=KNOWN_URL))
     monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
     get_settings.cache_clear()
 
@@ -247,7 +241,12 @@ def test_revision_directory_single_head_chain():
         module = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[module.revision] = module.down_revision
 
-    assert set(revisions.keys()) == {"0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008", "0009", "0010", "0011", "0012", "0013", "0014", "0015", "0016", "0017", "0018", "0019", "0020", "0021", "0022", "0023", "0024", "0025"}
+    assert set(revisions.keys()) == {
+        "0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008", "0009",
+        "0010", "0011", "0012", "0013", "0014", "0015", "0016", "0017", "0018",
+        "0019", "0020", "0021", "0022", "0023", "0024", "0025", "0026", "0027",
+        "0028", "0029", "0030",
+    }
     assert len(revisions) == len(set(revisions.keys()))
     assert revisions["0001"] is None
     assert revisions["0002"] == "0001"
@@ -274,18 +273,20 @@ def test_revision_directory_single_head_chain():
     assert revisions["0023"] == "0022"
     assert revisions["0024"] == "0023"
     assert revisions["0025"] == "0024"
+    assert revisions["0026"] == "0025"
+    assert revisions["0027"] == "0026"
+    assert revisions["0028"] == "0027"
+    assert revisions["0029"] == "0028"
+    assert revisions["0030"] == "0029"
 
     referred_down = {d for d in revisions.values() if d}
     heads = [rev for rev in revisions if rev not in referred_down]
-    assert heads == ["0025"]
+    assert heads == ["0030"]
 
 
 def test_migrations_online_path_connects_and_runs(monkeypatch):
     """T-MIG-16: is_offline_mode=False 时 connect() 与 run_migrations() 被调用。"""
-    fake_settings = Settings(
-        database_url=KNOWN_URL,
-        **settings_kwargs(),
-    )
+    fake_settings = Settings(**settings_kwargs(database_url=KNOWN_URL))
     monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
     get_settings.cache_clear()
     sys.modules.pop("migrations.env", None)
@@ -316,10 +317,7 @@ def test_migrations_online_path_connects_and_runs(monkeypatch):
 
 def test_migrations_offline_import_under_budget(monkeypatch):
     """T-MIG-17: offline 导入 migrations.env 全流程 < 2s。"""
-    fake_settings = Settings(
-        database_url=KNOWN_URL,
-        **settings_kwargs(),
-    )
+    fake_settings = Settings(**settings_kwargs(database_url=KNOWN_URL))
     monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
     get_settings.cache_clear()
     sys.modules.pop("migrations.env", None)
@@ -443,10 +441,7 @@ def test_settings_env_py_binding_end_to_end(monkeypatch):
     get_settings.cache_clear()
     assert get_settings().database_url == bound_url
 
-    fake_settings = Settings(
-        database_url=bound_url,
-        **settings_kwargs(),
-    )
+    fake_settings = Settings(**settings_kwargs(database_url=bound_url))
     monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
     get_settings.cache_clear()
     sys.modules.pop("migrations.env", None)
@@ -505,15 +500,12 @@ def test_alembic_heads_single_head():
         timeout=60,
     )
     assert result.returncode == 0, result.stderr
-    assert "0025" in result.stdout
+    assert "0030" in result.stdout
 
 
 def test_migrations_online_uses_null_pool(monkeypatch):
     """T-MIG-26: online 路径 engine_from_config 使用 poolclass=NullPool。"""
-    fake_settings = Settings(
-        database_url=KNOWN_URL,
-        **settings_kwargs(),
-    )
+    fake_settings = Settings(**settings_kwargs(database_url=KNOWN_URL))
     monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
     get_settings.cache_clear()
     sys.modules.pop("migrations.env", None)
@@ -558,10 +550,7 @@ def test_settings_unsupported_protocol_raises():
 
 def test_migrations_online_connect_operational_error_propagates(monkeypatch):
     """T-MIG-28: online connect() 抛 OperationalError 向上传播。"""
-    fake_settings = Settings(
-        database_url=KNOWN_URL,
-        **settings_kwargs(),
-    )
+    fake_settings = Settings(**settings_kwargs(database_url=KNOWN_URL))
     monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
     get_settings.cache_clear()
     sys.modules.pop("migrations.env", None)
@@ -620,7 +609,7 @@ def test_revision_chain_no_orphans_head_0003():
 
     referred_down = {d for d in revisions.values() if d}
     heads = [rev for rev in revisions if rev not in referred_down]
-    assert heads == ["0025"]
+    assert heads == ["0030"]
 
 
 def test_revision_chain_head_is_0013():
@@ -634,7 +623,7 @@ def test_revision_chain_head_is_0013():
         revisions[module.revision] = module.down_revision
 
     heads = [rev for rev, down in revisions.items() if not any(d == rev for d in revisions.values())]
-    assert heads == ["0025"]
+    assert heads == ["0030"]
 
     mod = importlib.import_module("migrations.versions.0013_dashboards")
     assert mod.down_revision == "0012"
@@ -680,7 +669,7 @@ def test_revision_chain_head_0012_down_revision():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert "0025" in heads
+    assert "0030" in heads
     assert revisions["0012"] == "0011"
 
 
@@ -709,7 +698,7 @@ def test_revision_chain_head_0012_down_revision_t_mig38():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert "0025" in heads
+    assert "0030" in heads
     assert revisions["0012"] == "0011"
 
 
@@ -737,7 +726,7 @@ def test_revision_chain_head_0012_down_revision_t_mig40():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert "0025" in heads
+    assert "0030" in heads
     assert revisions["0012"] == "0011"
 
 
@@ -751,7 +740,7 @@ def test_revision_chain_head_0013_down_revision_t_mig41():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert heads == ["0025"]
+    assert heads == ["0030"]
     assert revisions["0013"] == "0012"
 
 
@@ -825,7 +814,7 @@ def test_revision_chain_head_0014_down_revision_t_mig43():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert heads == ["0025"]
+    assert heads == ["0030"]
     assert revisions["0014"] == "0013"
 
 
@@ -837,7 +826,7 @@ def test_revision_chain_head_0015_down_revision_t_mig45():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert heads == ["0025"]
+    assert heads == ["0030"]
     assert revisions["0015"] == "0014"
 
 
@@ -849,7 +838,7 @@ def test_revision_chain_head_0016_down_revision_t_mig46():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert heads == ["0025"]
+    assert heads == ["0030"]
     assert revisions["0016"] == "0015"
     assert revisions["0017"] == "0016"
     assert revisions["0018"] == "0017"

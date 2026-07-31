@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -50,6 +50,7 @@ function filterByStatus(jobs: SyncJobSummary[], statusFilter: SyncJobStatusFilte
 }
 
 export function SyncJobsPage() {
+  const navigate = useNavigate();
   const [jobs, setJobs] = useState<SyncJobSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -116,11 +117,17 @@ export function SyncJobsPage() {
     return hasFilter ? `显示 ${filteredJobs.length} 个` : `共 ${jobs.length} 个任务`;
   }, [filteredJobs.length, jobs.length, search, statusFilter]);
 
-  const handleRun = async (jobId: string) => {
-    setRunningId(jobId);
+  const handleRun = async (job: SyncJobSummary) => {
+    setRunningId(job.id);
     try {
-      await apiFetch(`/api/v1/ingestion/sync-jobs/${jobId}/run`, { method: "POST" });
+      await apiFetch(`/api/v1/ingestion/sync-jobs/${job.id}/run`, { method: "POST" });
       setRunTarget(null);
+      toast.success(`任务「${job.name}」已开始同步`, {
+        action: {
+          label: "查看历史",
+          onClick: () => navigate(`/admin/ingestion/sync-jobs/${job.id}/history`),
+        },
+      });
     } catch (err) {
       setError(mapApiError(err));
     } finally {
@@ -301,7 +308,7 @@ export function SyncJobsPage() {
               disabled={runningId !== null}
               onClick={(event) => {
                 event.preventDefault();
-                if (runTarget) void handleRun(runTarget.id);
+                if (runTarget) void handleRun(runTarget);
               }}
             >
               {runningId === runTarget?.id ? "运行中…" : "运行"}

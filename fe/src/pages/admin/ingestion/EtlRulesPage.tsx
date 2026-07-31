@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router";
-import { Plus, Trash2 } from "lucide-react";
+import { Link, useParams } from "react-router";
+import { Plus, Settings2, Trash2 } from "lucide-react";
+import { AdminPageHeaderIcon, AdminPageShell } from "@/components/layout/admin-page-shell";
+import { ADMIN_PAGE_SURFACE_CLASS } from "@/components/layout/list-page-kit";
 import {
   ListPageBatchActions,
   ListRowCheckbox,
@@ -13,6 +15,7 @@ import { Button, IconButton } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import {
   Select,
   SelectContent,
@@ -35,6 +38,12 @@ const RULE_TYPES = [
 
 const PLACEHOLDER_HINT =
   "推荐链：product_name→product、amount→float、note 填「无备注」、过滤 status≠deleted";
+
+const etlRulesPageIcon = (
+  <AdminPageHeaderIcon>
+    <Settings2 className="size-6" aria-hidden />
+  </AdminPageHeaderIcon>
+);
 
 function emptyRule(type = "rename_column"): EtlRule {
   if (type === "rename_column") return { type, from: "", to: "" };
@@ -147,43 +156,47 @@ export function EtlRulesPage() {
 
   if (loading) {
     return (
-      <div className="w-full space-y-4">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-64 w-full" />
-      </div>
+      <AdminPageShell layout="fill" title="清洗规则" icon={etlRulesPageIcon}>
+        <Skeleton className="h-full min-h-[480px] w-full rounded-2xl" />
+      </AdminPageShell>
     );
   }
 
   return (
-    <div className="w-full space-y-6">
-      <h1 className="text-theme-xl font-semibold text-gray-900 dark:text-white">清洗规则</h1>
-      <p className="text-theme-sm text-gray-500 dark:text-gray-400">{PLACEHOLDER_HINT}</p>
-
+    <AdminPageShell
+      layout="fill"
+      title="清洗规则"
+      icon={etlRulesPageIcon}
+      description={PLACEHOLDER_HINT}
+      actions={
+        <Button asChild variant="outline" size="sm">
+          <Link to="/admin/ingestion/sync-jobs">返回列表</Link>
+        </Button>
+      }
+    >
       {error ? (
-        <div
-          role="alert"
-          className="rounded-xl border border-error-500 bg-error-50 p-4 text-theme-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/15 dark:text-error-400"
-        >
-          {error}
+        <div className="mb-4 shrink-0">
+          <PageErrorBanner message={error} onRetry={() => void loadRules()} />
         </div>
       ) : null}
 
       {saved ? (
-        <div className="rounded-xl border border-success-500 bg-success-50 p-4 text-theme-sm text-success-700 dark:border-success-500/30 dark:bg-success-500/15 dark:text-success-400">
+        <div className="mb-4 shrink-0 rounded-xl border border-success-500 bg-success-50 p-4 text-theme-sm text-success-700 dark:border-success-500/30 dark:bg-success-500/15 dark:text-success-400">
           规则已保存
         </div>
       ) : null}
 
-      <ListPageBatchActions
-        batchMode={batch.batchMode}
-        onToggleBatchMode={batch.toggleBatchMode}
-        selectedCount={selection.selectedCount}
-        entityLabel="条规则"
-        onClear={selection.clear}
-        onDelete={removeSelectedRules}
-      />
+      <div className={`${ADMIN_PAGE_SURFACE_CLASS} space-y-4 p-6 lg:p-8`}>
+        <ListPageBatchActions
+          batchMode={batch.batchMode}
+          onToggleBatchMode={batch.toggleBatchMode}
+          selectedCount={selection.selectedCount}
+          entityLabel="条规则"
+          onClear={selection.clear}
+          onDelete={removeSelectedRules}
+        />
 
-      <div className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+        <div className="space-y-4">
         {rules.map((rule, index) => (
           <div
             key={index}
@@ -343,7 +356,8 @@ export function EtlRulesPage() {
             保存规则
           </Button>
         </div>
+        </div>
       </div>
-    </div>
+    </AdminPageShell>
   );
 }

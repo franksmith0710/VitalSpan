@@ -1,7 +1,9 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render as rtlRender, screen, waitFor, within } from "@testing-library/react";
+import type { ReactElement } from "react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import * as ReactRouter from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { EtlRulesPage } from "./EtlRulesPage";
 import { SyncJobFormPage } from "./SyncJobFormPage";
 import { SyncJobHistoryPage } from "./SyncJobHistoryPage";
@@ -13,6 +15,18 @@ const mockApiFetch = vi.fn();
 vi.mock("@/lib/api", () => ({
   apiFetch: (...args: unknown[]) => mockApiFetch(...args),
 }));
+
+vi.mock("sonner", () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+    warning: vi.fn(),
+  },
+}));
+
+function render(ui: ReactElement) {
+  return rtlRender(<TooltipProvider delayDuration={0}>{ui}</TooltipProvider>);
+}
 
 function setViewport(width: number) {
   Object.defineProperty(window, "innerWidth", {
@@ -397,7 +411,7 @@ describe("ingestion admin smoke", () => {
     );
     await screen.findByText("暂无运行记录");
     expect(mockApiFetch).toHaveBeenCalledWith(
-      "/api/v1/ingestion/sync-jobs/job-1/runs?limit=20",
+      "/api/v1/ingestion/sync-jobs/job-1/runs?limit=100",
     );
   });
 

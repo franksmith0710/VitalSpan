@@ -64,11 +64,18 @@ def test_public_paths_accessible_without_token(client, path):
 
 
 def test_me_jwt_valid_in_production(client, admin_auth_headers, monkeypatch):
-    """T-ME-08: production 环境 JWT 仍有效（secret 一致）。"""
+    """T-ME-08: production 环境 JWT 仍有效（SM2 密钥一致）。"""
     from app.auth.middleware import AuthMiddleware
     from app.core.config import get_settings
     from app.main import app
 
+    prod_private = (
+        "7AF248DE02B19AA0AC4A0B0D553198984B1EF67C24E2255F8AB13BB44D7EB5AC"
+    )
+    prod_public = (
+        "EAECFB11DAC50283B90A47C6BF1A433D041C7160B12666759F3671AB68D6637F"
+        "114C18CC7A4ECE8EC9BBED49AA0D060032177F80F53697A7D72383C1428AA711"
+    )
     client.get("/health")
     auth_mw = None
     layer = app.middleware_stack
@@ -81,9 +88,22 @@ def test_me_jwt_valid_in_production(client, admin_auth_headers, monkeypatch):
     prev_settings = auth_mw.settings
     try:
         monkeypatch.setenv("VITALSPAN_ENV", "production")
+        monkeypatch.setenv("JWT_SM2_PRIVATE_KEY", prod_private)
+        monkeypatch.setenv("JWT_SM2_PUBLIC_KEY", prod_public)
+        monkeypatch.setenv("CREDENTIAL_SM4_KEY", "fedcba9876543210fedcba9876543210")
         get_settings.cache_clear()
         auth_mw.settings = get_settings()
-        response = client.get("/api/v1/me", headers=admin_auth_headers)
+        from app.auth.jwt import create_access_token
+        from jwt_auth import resolve_admin_user_id, resolve_admin_token_version
+
+        user_id = resolve_admin_user_id()
+        token = create_access_token(
+            user_id,
+            "admin",
+            token_version=resolve_admin_token_version(user_id),
+        )
+        headers = {"Authorization": f"Bearer {token}"}
+        response = client.get("/api/v1/me", headers=headers)
         assert response.status_code == 200
         assert response.json()["username"] == "admin"
     finally:
@@ -117,9 +137,13 @@ def test_me_concurrent_requests_stable(client, admin_auth_headers, monkeypatch):
     """T-ME-12: 并发 5× GET /api/v1/me + auth_headers 全部 200 且用户上下文一致。"""
     from uuid import UUID
 
+    from app.auth.jwt import decode_access_token, token_version_from_claims
     from app.auth.profile.schemas import MeProfileOut
+    from jwt_auth import resolve_admin_user_id
 
-    admin_id = UUID("00000000-0000-0000-0000-000000000001")
+    admin_id = UUID(resolve_admin_user_id())
+    token = admin_auth_headers["Authorization"].removeprefix("Bearer ").strip()
+    claimed_version = token_version_from_claims(decode_access_token(token))
 
     def fake_build_me_profile(_db, user_id, roles, *, permissions=None, is_root=False):
         return MeProfileOut(
@@ -141,7 +165,7 @@ def test_me_concurrent_requests_stable(client, admin_auth_headers, monkeypatch):
 
     class _FakeUser:
         id = admin_id
-        token_version = 1
+        token_version = claimed_version
         is_active = True
         locked_until = None
 
@@ -159,7 +183,12 @@ def test_me_concurrent_requests_stable(client, admin_auth_headers, monkeypatch):
     monkeypatch.setattr("app.api.v1.me.profile_service.build_me_profile", fake_build_me_profile)
 
     def fetch_me():
-        return client.get("/api/v1/me", headers=admin_auth_headers)
+        from fastapi.testclient import TestClient
+
+        from app.main import app
+
+        thread_client = TestClient(app)
+        return thread_client.get("/api/v1/me", headers=admin_auth_headers)
 
     with ThreadPoolExecutor(max_workers=5) as executor:
         responses = list(executor.map(lambda _: fetch_me(), range(5)))

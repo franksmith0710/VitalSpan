@@ -13,11 +13,32 @@ def jwt_auth_headers(
     *,
     user_id: str | None = None,
     username: str = "admin",
-    token_version: int = DEFAULT_TOKEN_VERSION,
+    token_version: int | None = None,
 ) -> dict[str, str]:
     resolved_id = user_id if user_id is not None else resolve_admin_user_id()
-    token = create_access_token(resolved_id, username, token_version=token_version)
+    resolved_version = (
+        token_version if token_version is not None else resolve_admin_token_version(resolved_id)
+    )
+    token = create_access_token(resolved_id, username, token_version=resolved_version)
     return {"Authorization": f"Bearer {token}"}
+
+
+def resolve_admin_token_version(user_id: str) -> int:
+    """对齐 DB 中 admin 用户 token_version，避免 TOKEN_REVOKED。"""
+    import uuid as _uuid
+
+    from app.auth.models import AuthUser, Base, get_meta_engine
+    from sqlalchemy.orm import Session
+
+    engine = get_meta_engine()
+    Base.metadata.create_all(engine)
+    with Session(engine) as session:
+        user = session.get(AuthUser, _uuid.UUID(user_id))
+        if user is None:
+            user = session.query(AuthUser).filter(AuthUser.username == "admin").first()
+        if user is not None:
+            return int(user.token_version or DEFAULT_TOKEN_VERSION)
+    return DEFAULT_TOKEN_VERSION
 
 
 def resolve_admin_user_id() -> str:
