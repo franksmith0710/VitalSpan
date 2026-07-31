@@ -66,6 +66,7 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
           cron: resolveScheduleCron(form),
           timezone: form.timezone,
           recipients: form.recipients.filter((r) => r.value.trim()),
+          attachmentFormats: form.attachmentFormats,
         }),
       }),
     onSuccess: () => {
@@ -147,7 +148,13 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
           <CardTitle className="text-title-sm">新建调度</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <ScheduleFormFields value={form} onChange={setForm} disabled={readOnly} idPrefix="template-schedule" />
+          <ScheduleFormFields
+            value={form}
+            onChange={setForm}
+            disabled={readOnly}
+            showAttachments
+            idPrefix="template-schedule"
+          />
           {!readOnly ? (
             <Button
               type="button"
@@ -168,6 +175,9 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
     wizard: parseCronToWizard(schedule.cron) ?? DEFAULT_SCHEDULE_FORM.wizard,
     cron: schedule.cron,
     timezone: schedule.timezone,
+    attachmentFormats: (schedule.attachmentFormats?.length
+      ? schedule.attachmentFormats
+      : form.attachmentFormats) as ScheduleFormValue["attachmentFormats"],
     recipients: schedule.recipients?.length
       ? schedule.recipients.map((r) => ({
           type: r.type as ScheduleFormValue["recipients"][0]["type"],
@@ -187,8 +197,14 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
             value={displayForm}
             onChange={setForm}
             disabled={readOnly || schedule.status !== "draft"}
+            showAttachments
             idPrefix="template-schedule-edit"
           />
+          {schedule.status !== "draft" && !readOnly ? (
+            <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+              调度已激活后无法直接修改配置。如需调整接收人或频率，请先「取消调度」后重新创建。
+            </p>
+          ) : null}
           <p className="text-theme-xs text-gray-500 dark:text-gray-400">
             {describeCron(schedule.cron)} · 接收人：{summarizeRecipients(schedule.recipients)}
           </p>

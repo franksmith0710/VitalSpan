@@ -55,9 +55,24 @@ beforeEach(() => {
   mockApiFetch.mockReset();
 });
 
+function mockShareApi(dashboardPayload: object) {
+  mockApiFetch.mockImplementation((url: string) => {
+    if (typeof url === "string" && url.includes("/reports/schedules")) {
+      return Promise.resolve({ items: [], total: 0 });
+    }
+    if (typeof url === "string" && url.includes("/users")) {
+      return Promise.resolve({ items: [{ id: "u1", username: "admin" }], total: 1 });
+    }
+    if (typeof url === "string" && url.includes("/dashboards/")) {
+      return Promise.resolve(dashboardPayload);
+    }
+    return Promise.resolve({});
+  });
+}
+
 describe("DashboardSharePage", () => {
-  it("P0-01: reads layoutJson.widgets and lists embed links", async () => {
-    mockApiFetch.mockResolvedValue({
+  it("P0-01: reads layoutJson.widgets and lists embed links in dialog", async () => {
+    mockShareApi({
       id: "d1",
       name: "销售看板",
       layoutJson: {
@@ -86,16 +101,18 @@ describe("DashboardSharePage", () => {
     renderSharePage("/admin/dashboards/d1/share", "/admin/dashboards/:id/share");
 
     await waitFor(() => {
-      expect(screen.getAllByText("销售额").length).toBeGreaterThanOrEqual(2);
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+      expect(screen.getByText("销售看板 · 分享")).toBeInTheDocument();
     });
+    expect(screen.getByText("销售额")).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "生成公开链接" }).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/须签发 token 后方可匿名访问/)).toBeInTheDocument();
     expect(screen.queryByText("该看板暂无组件，请先添加图表。")).not.toBeInTheDocument();
-    expect(document.querySelector(".dashboard-grid-view")).toBeTruthy();
+    expect(document.querySelector(".dashboard-grid-view")).toBeNull();
   });
 
-  it("B3: renders a v2 layout with the read-only pixel engine", async () => {
-    mockApiFetch.mockResolvedValue({
+  it("B3: renders a v2 layout share dialog without canvas preview", async () => {
+    mockShareApi({
       id: "d2",
       name: "像素分享",
       layoutJson: {
@@ -126,13 +143,13 @@ describe("DashboardSharePage", () => {
 
     renderSharePage("/admin/dashboards/d2/share", "/admin/dashboards/:id/share");
 
-    expect(await screen.findByTestId("pixel-canvas-host")).toBeInTheDocument();
-    expect(screen.queryByTestId("pixel-drag-edge-top-w2")).not.toBeInTheDocument();
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(screen.queryByTestId("pixel-canvas-host")).not.toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "生成公开链接" }).length).toBeGreaterThanOrEqual(1);
   });
 
-  it("A2: renders data-screen share route with read-only pixel canvas", async () => {
-    mockApiFetch.mockResolvedValue({
+  it("A2: renders data-screen share dialog without canvas preview", async () => {
+    mockShareApi({
       id: "ds1",
       name: "运营大屏",
       layoutJson: {
@@ -164,13 +181,15 @@ describe("DashboardSharePage", () => {
 
     renderSharePage("/admin/data-screens/ds1/share", "/admin/data-screens/:id/share");
 
-    expect(await screen.findByTestId("pixel-canvas-host")).toBeInTheDocument();
-    expect(screen.queryByTestId("pixel-drag-edge-top-w-ds1")).not.toBeInTheDocument();
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByText("运营大屏 · 分享")).toBeInTheDocument();
+    expect(screen.getByText("整屏嵌入")).toBeInTheDocument();
+    expect(screen.queryByTestId("pixel-canvas-host")).not.toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "生成公开链接" }).length).toBeGreaterThanOrEqual(1);
   });
 
   it("API-006: shows public share link card for dashboard", async () => {
-    mockApiFetch.mockResolvedValue({
+    mockShareApi({
       id: "d3",
       name: "公开看板",
       layoutJson: {
@@ -202,10 +221,13 @@ describe("DashboardSharePage", () => {
     expect(screen.getAllByRole("button", { name: "生成公开链接" }).length).toBeGreaterThanOrEqual(1);
   });
 
-  it("G5: shows dashboard schedule panel on share page", async () => {
+  it("G5: shows dashboard schedule panel on share dialog", async () => {
     mockApiFetch.mockImplementation((url: string) => {
       if (typeof url === "string" && url.includes("/reports/schedules")) {
         return Promise.resolve({ items: [], total: 0 });
+      }
+      if (typeof url === "string" && url.includes("/users")) {
+        return Promise.resolve({ items: [{ id: "u1", username: "admin" }], total: 1 });
       }
       return Promise.resolve({
         id: "d4",
@@ -236,8 +258,9 @@ describe("DashboardSharePage", () => {
 
     renderSharePage("/admin/dashboards/d4/share", "/admin/dashboards/:id/share");
 
-    expect(await screen.findByText("定时报告")).toBeInTheDocument();
-    expect(screen.queryByText(/DataEase/i)).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("定时报告")).toBeInTheDocument();
+    });
     expect(screen.getByRole("button", { name: "创建定时报告" })).toBeInTheDocument();
     expect(mockApiFetch).toHaveBeenCalledWith(
       expect.stringContaining("/api/v1/reports/schedules?sourceId=d4"),

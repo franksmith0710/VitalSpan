@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +45,7 @@ export function ScheduleRecipientsField({
   disabled,
   idPrefix = "schedule-recipient",
 }: ScheduleRecipientsFieldProps) {
+  const [userFilter, setUserFilter] = useState("");
   const usersQuery = useQuery({
     queryKey: ["users", "schedule-recipients"],
     queryFn: () =>
@@ -51,6 +53,10 @@ export function ScheduleRecipientsField({
     staleTime: 60_000,
   });
   const users = usersQuery.data?.items ?? [];
+  const filteredUsers = users.filter((u) =>
+    u.username.toLowerCase().includes(userFilter.trim().toLowerCase()),
+  );
+  const hasUserRow = value.some((row) => row.type === "user");
 
   const addRow = () => {
     onChange([...value, { type: "role", value: "admin" }]);
@@ -76,6 +82,16 @@ export function ScheduleRecipientsField({
           </Button>
         ) : null}
       </div>
+      {hasUserRow ? (
+        <Input
+          value={userFilter}
+          onChange={(event) => setUserFilter(event.target.value)}
+          placeholder="搜索用户名…"
+          className="h-9 max-w-xs"
+          disabled={disabled}
+          aria-label="搜索用户"
+        />
+      ) : null}
       <div className="space-y-2">
         {value.map((row, index) => (
           <div key={index} className="flex flex-wrap items-start gap-2">
@@ -120,13 +136,13 @@ export function ScheduleRecipientsField({
               <Select
                 value={row.value}
                 onValueChange={(v) => updateRow(index, { value: v })}
-                disabled={disabled || usersQuery.isLoading}
+                disabled={disabled || usersQuery.isLoading || filteredUsers.length === 0}
               >
                 <SelectTrigger className="h-11 min-w-[160px] flex-1">
                   <SelectValue placeholder={usersQuery.isLoading ? "加载用户…" : "选择用户"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {users.map((u) => (
+                  {filteredUsers.map((u) => (
                     <SelectItem key={u.id} value={u.username}>
                       {u.username}
                     </SelectItem>

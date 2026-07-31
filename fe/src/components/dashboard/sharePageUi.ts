@@ -47,7 +47,16 @@ export const SHARE_FILL_SIDE_STACK_CLASS =
   "custom-scrollbar flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overflow-x-hidden pb-8 pr-0.5";
 
 /** 弹窗内分享配置纵向堆叠 */
-export const SHARE_DIALOG_STACK_CLASS = "flex flex-col gap-3";
+export const SHARE_DIALOG_STACK_CLASS = "divide-y divide-gray-100 dark:divide-gray-800";
+
+/** 弹窗内容区滚动容器 */
+export const SHARE_DIALOG_CONTENT_CLASS = "gap-0 overflow-hidden p-0 sm:max-w-2xl";
+
+export const SHARE_DIALOG_HEADER_CLASS =
+  "border-b border-gray-100 px-6 py-5 dark:border-white/[0.06]";
+
+export const SHARE_DIALOG_BODY_CLASS =
+  "custom-scrollbar max-h-[min(78vh,720px)] overflow-y-auto overflow-x-hidden px-6 py-3 pb-6";
 
 /** 与 `DatasourceDetailPage` DetailSkeleton 同高 */
 export const SHARE_PAGE_SKELETON_CLASS = "h-[520px] w-full rounded-xl";

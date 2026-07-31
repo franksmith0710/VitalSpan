@@ -98,9 +98,11 @@ describe("PrefabReportsPage smoke", () => {
     });
     renderPage();
     expect(await screen.findByText("暂无预制报表")).toBeInTheDocument();
-    expect(screen.getByText(/请联系管理员添加实体与分析类型绑定/)).toBeInTheDocument();
+    expect(screen.getAllByText(/预制绑定配置/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole("button", { name: "配置首条绑定" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "暂无预制报表" })).toBeInTheDocument();
     expect(screen.queryByText("运行结果")).not.toBeInTheDocument();
+    expect(screen.queryByText("报表导出")).not.toBeInTheDocument();
   });
 
   it("run success displays table headers", async () => {

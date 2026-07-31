@@ -8,7 +8,7 @@ type ShareIssuedUrlPanelProps = {
   className?: string;
 };
 
-/** 已签发链接：全宽换行展示 + 操作按钮 */
+/** 已签发链接：全宽展示 + 复制/预览 */
 export function ShareIssuedUrlPanel({ url, className }: ShareIssuedUrlPanelProps) {
   const copyUrl = () => {
     void navigator.clipboard.writeText(url);
@@ -16,8 +16,8 @@ export function ShareIssuedUrlPanel({ url, className }: ShareIssuedUrlPanelProps
   };
 
   return (
-    <div className={cn("w-full min-w-0 space-y-2", className)}>
-      <p className="w-full min-w-0 break-all rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 font-mono text-theme-xs leading-relaxed text-gray-600 dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-400">
+    <div className={cn("space-y-2.5", className)}>
+      <p className="w-full min-w-0 break-all rounded-lg border border-gray-200 bg-gray-50 px-3.5 py-2.5 font-mono text-theme-xs leading-relaxed text-gray-600 dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-400">
         {url}
       </p>
       <div className="flex flex-wrap gap-2">

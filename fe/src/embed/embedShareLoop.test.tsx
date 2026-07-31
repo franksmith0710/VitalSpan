@@ -68,7 +68,7 @@ describe("embed share loop", () => {
     mockApiFetch.mockResolvedValue({
       embedUrl: "/embed/screen/dash-1?token=scr-tok&shareMode=public",
     });
-    render(<PublicShareLinkCard dashboardId="dash-1" name="测试看板" />);
+    render(<PublicShareLinkCard dashboardId="dash-1" name="测试看板" variant="card" />);
     await userEvent.click(screen.getByRole("button", { name: "生成公开链接" }));
     expect(await screen.findByText(/\/embed\/screen\/dash-1/)).toBeInTheDocument();
   });

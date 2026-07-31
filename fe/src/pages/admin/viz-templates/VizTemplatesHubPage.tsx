@@ -43,12 +43,13 @@ import { sessionUserFromMe } from "@/lib/session";
 
 function TemplateCardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
+    <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
       <Skeleton className="aspect-[16/10] w-full rounded-none" />
-      <div className="space-y-2 p-4">
+      <div className="space-y-1.5 p-2.5">
         <Skeleton className="h-4 w-2/3" />
         <Skeleton className="h-3 w-full" />
-        <div className="flex gap-2 pt-1">
+        <Skeleton className="h-3 w-4/5" />
+        <div className="flex gap-1.5 pt-0.5">
           <Skeleton className="h-8 w-20" />
           <Skeleton className="h-8 w-16" />
         </div>

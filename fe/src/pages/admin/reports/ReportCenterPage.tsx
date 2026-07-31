@@ -252,7 +252,7 @@ export function ReportCenterPage() {
             />
             <QuickLinkCard
               title="看板定时报告"
-              description="在看板分享页创建 PDF 定时推送"
+              description="管理看板与大屏 PDF 定时推送"
               to="/admin/reports/schedules?tab=dashboard"
               icon={<Monitor className="size-5" aria-hidden />}
             />

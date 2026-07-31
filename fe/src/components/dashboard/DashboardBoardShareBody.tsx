@@ -1,13 +1,12 @@
 import { Link } from "react-router";
+import { Puzzle, Settings2 } from "lucide-react";
 import { ChartEmbedShareActions } from "@/components/dashboard/ChartEmbedShareActions";
 import { PublicShareLinkCard } from "@/components/dashboard/PublicShareLinkCard";
-import { ShareSectionActionRow } from "@/components/dashboard/shareSectionActionRow";
-import { SHARE_DIALOG_STACK_CLASS, SHARE_SECTION_CARD_CLASS, SHARE_SECTION_CARD_HEADER_CLASS } from "@/components/dashboard/sharePageUi";
+import { ShareDialogList, ShareDialogSection } from "@/components/dashboard/ShareDialogSection";
+import { SHARE_DIALOG_STACK_CLASS } from "@/components/dashboard/sharePageUi";
 import type { DashboardLayout, DashboardWidgetBase } from "@/components/dashboard/layoutUtils";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 
 type DashboardBoardShareBodyProps = {
   dashboardId: string;
@@ -32,53 +31,42 @@ export function DashboardBoardShareBody({
 
   return (
     <div className={SHARE_DIALOG_STACK_CLASS} data-share-layout="board">
-      <PublicShareLinkCard dashboardId={dashboardId} name={name} density="compact" className="shrink-0" />
+      <PublicShareLinkCard dashboardId={dashboardId} name={name} density="compact" variant="dialog" />
 
       {embeddableWidgets.length > 0 ? (
-        <Card className={cn(SHARE_SECTION_CARD_CLASS, "shrink-0")}>
-          <CardHeader className={SHARE_SECTION_CARD_HEADER_CLASS}>
-            <CardTitle className="text-theme-base">单组件嵌入</CardTitle>
-            <CardDescription>须签发 token 后方可匿名访问</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 pt-4">
+        <ShareDialogSection
+          icon={Puzzle}
+          title="单组件嵌入"
+          description="须签发 token 后方可匿名访问；每个图表可单独生成公开链接。"
+        >
+          <ShareDialogList>
             {embeddableWidgets.map((widget) => {
               const chartId = chartIdFromWidget(widget);
               if (!chartId) return null;
               return (
-                <div
+                <ChartEmbedShareActions
                   key={widget.id}
-                  className="space-y-2 border-b border-gray-100 pb-4 last:border-0 last:pb-0 dark:border-gray-800"
-                >
-                  <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">
-                    {widget.title}
-                  </p>
-                  <ChartEmbedShareActions chartId={chartId} mode="public" />
-                </div>
+                  chartId={chartId}
+                  mode="public"
+                  title={widget.title}
+                  layout="list"
+                />
               );
             })}
-          </CardContent>
-        </Card>
+          </ShareDialogList>
+        </ShareDialogSection>
       ) : null}
 
-      <Card className={cn(SHARE_SECTION_CARD_CLASS, "shrink-0")}>
-        <CardHeader className={SHARE_SECTION_CARD_HEADER_CLASS}>
-          <CardTitle className="text-theme-base">高级嵌入配置</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-4">
-          <ShareSectionActionRow
-            description={
-              <p className="text-theme-sm text-gray-500 dark:text-gray-400">
-                配置来源白名单并生成带校验的 iframe 链接。
-              </p>
-            }
-            actions={
-              <Button asChild variant="outline" size="sm">
-                <Link to="/embed/share">打开嵌入分享</Link>
-              </Button>
-            }
-          />
-        </CardContent>
-      </Card>
+      <ShareDialogSection
+        icon={Settings2}
+        title="高级嵌入"
+        description="配置来源白名单并生成带校验的 iframe 链接。"
+        trailing={
+          <Button asChild variant="outline" size="sm">
+            <Link to="/embed/share">打开配置</Link>
+          </Button>
+        }
+      />
     </div>
   );
 }

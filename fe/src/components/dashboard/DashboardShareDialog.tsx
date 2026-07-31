@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { LayoutPanelTop } from "lucide-react";
-import { DashboardSchedulePanel } from "@/pages/admin/reports/components/DashboardSchedulePanel";
+import { LayoutPanelTop, Share2 } from "lucide-react";
 import { DashboardBoardShareBody } from "@/components/dashboard/DashboardBoardShareBody";
 import { DataScreenSharePanel } from "@/components/dashboard/screen/DataScreenSharePanel";
 import {
@@ -18,7 +17,10 @@ import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { PanelEmptyState } from "@/components/ui/panel-empty-state";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { SHARE_DIALOG_BODY_CLASS, SHARE_DIALOG_CONTENT_CLASS, SHARE_DIALOG_HEADER_CLASS } from "@/components/dashboard/sharePageUi";
+import { DashboardSchedulePanel } from "@/pages/admin/reports/components/DashboardSchedulePanel";
+import { useAuth } from "@/context/auth-context";
+import { matchesCapability, resolveEffectiveCapabilities } from "@/lib/capabilities";
 
 type DashboardDetail = {
   id: string;
@@ -46,6 +48,8 @@ export function DashboardShareDialog({
   isScreen: isScreenProp,
   initialDetail,
 }: DashboardShareDialogProps) {
+  const { user } = useAuth();
+  const canManageSchedule = matchesCapability(resolveEffectiveCapabilities(user), "report:manage");
   const [detail, setDetail] = useState<DashboardDetail | null>(
     initialDetail
       ? { id: dashboardId, name: initialDetail.name, layoutJson: initialDetail.layoutJson }
@@ -94,17 +98,24 @@ export function DashboardShareDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn("gap-0 p-0 sm:max-w-xl")}>
-        <DialogHeader className="border-b border-gray-100 px-5 py-4 dark:border-white/[0.06]">
-          <DialogTitle className="text-theme-base">{title}</DialogTitle>
-          <DialogDescription className="text-theme-xs">
-            {isScreen
-              ? "生成公开链接与 iframe 嵌入地址，不含画布预览。"
-              : "为看板内图表生成公开链接与嵌入地址。"}
-          </DialogDescription>
+      <DialogContent className={SHARE_DIALOG_CONTENT_CLASS}>
+        <DialogHeader className={SHARE_DIALOG_HEADER_CLASS}>
+          <div className="flex items-start gap-3.5 pr-8">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-500 dark:bg-brand-500/10 dark:text-brand-400">
+              <Share2 className="size-5" aria-hidden />
+            </span>
+            <div className="min-w-0 space-y-1.5">
+              <DialogTitle className="text-title-sm">{title}</DialogTitle>
+              <DialogDescription className="text-theme-sm leading-relaxed">
+                {isScreen
+                  ? "生成公开链接与 iframe 嵌入地址。"
+                  : "为看板生成公开链接与组件嵌入地址。"}
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
 
-        <div className="custom-scrollbar max-h-[min(72vh,640px)] overflow-y-auto overflow-x-hidden px-5 py-4">
+        <div className={SHARE_DIALOG_BODY_CLASS}>
           {error ? (
             <PageErrorBanner message={error} onRetry={() => void load()} className="mb-3" />
           ) : null}
@@ -130,27 +141,29 @@ export function DashboardShareDialog({
           ) : null}
 
           {!loading && detail && widgets.length > 0 ? (
-            <div className="flex flex-col gap-4">
-              {isScreen ? (
-                <DataScreenSharePanel
-                  dashboardId={dashboardId}
-                  name={detail.name}
-                  layout={detail.layoutJson}
-                />
-              ) : (
-                <DashboardBoardShareBody
-                  dashboardId={dashboardId}
-                  name={detail.name}
-                  layout={detail.layoutJson}
-                  widgets={widgets}
-                />
-              )}
-              <DashboardSchedulePanel
-                sourceId={dashboardId}
-                sourceType={isScreen ? "data_screen" : "dashboard"}
-                sourceName={detail.name}
+            isScreen ? (
+              <DataScreenSharePanel
+                dashboardId={dashboardId}
+                name={detail.name}
+                layout={detail.layoutJson}
               />
-            </div>
+            ) : (
+              <DashboardBoardShareBody
+                dashboardId={dashboardId}
+                name={detail.name}
+                layout={detail.layoutJson}
+                widgets={widgets}
+              />
+            )
+          ) : null}
+
+          {!loading && detail ? (
+            <DashboardSchedulePanel
+              sourceId={dashboardId}
+              sourceType={isScreen ? "data_screen" : "dashboard"}
+              sourceName={detail.name}
+              readOnly={!canManageSchedule}
+            />
           ) : null}
         </div>
       </DialogContent>

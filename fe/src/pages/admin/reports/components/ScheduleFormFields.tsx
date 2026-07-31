@@ -99,8 +99,8 @@ export function ScheduleFormFields({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Asia/Shanghai">Asia/Shanghai</SelectItem>
-              <SelectItem value="UTC">UTC</SelectItem>
+              <SelectItem value="Asia/Shanghai">中国标准时间 (UTC+8)</SelectItem>
+              <SelectItem value="UTC">协调世界时 (UTC)</SelectItem>
             </SelectContent>
           </Select>
         </div>

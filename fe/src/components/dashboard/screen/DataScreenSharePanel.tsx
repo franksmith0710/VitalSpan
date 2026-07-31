@@ -1,7 +1,16 @@
 import { useState } from "react";
+import { MonitorPlay, Puzzle } from "lucide-react";
 import { toast } from "sonner";
+import { ChartEmbedShareActions } from "@/components/dashboard/ChartEmbedShareActions";
+import { PublicShareLinkCard } from "@/components/dashboard/PublicShareLinkCard";
+import { ShareIssuedUrlPanel } from "@/components/dashboard/ShareIssuedUrlPanel";
+import { ShareDialogList, ShareDialogSection } from "@/components/dashboard/ShareDialogSection";
+import { SHARE_DIALOG_STACK_CLASS } from "@/components/dashboard/sharePageUi";
+import type { DashboardLayout, DashboardWidgetBase } from "@/components/dashboard/layoutUtils";
+import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import { apiFetch } from "@/lib/api";
+import { mapApiError } from "@/lib/apiError";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 type DataScreenSharePanelProps = {
   dashboardId: string;
@@ -41,6 +50,18 @@ export function DataScreenSharePanel({ dashboardId, name, layout }: DataScreenSh
     }
   };
 
+  const screenEmbedAction = screenEmbedUrl ? null : (
+    <Button
+      type="button"
+      size="sm"
+      variant="primary"
+      disabled={issuing}
+      onClick={() => void issueScreenEmbed()}
+    >
+      {issuing ? "签发中…" : "签发整屏嵌入"}
+    </Button>
+  );
+
   return (
     <div className={SHARE_DIALOG_STACK_CLASS} data-share-layout="screen">
       <PublicShareLinkCard
@@ -48,57 +69,41 @@ export function DataScreenSharePanel({ dashboardId, name, layout }: DataScreenSh
         name={name}
         theme="dark"
         density="compact"
-        className="shrink-0"
+        variant="dialog"
       />
 
-      <Card className={cn(SHARE_SECTION_CARD_CLASS, "shrink-0")}>
-        <CardHeader className={SHARE_SECTION_CARD_HEADER_CLASS}>
-          <CardTitle className="text-theme-base">整屏嵌入</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 pt-4">
-          <p className="text-theme-sm text-gray-500 dark:text-gray-400">
-            生成带令牌的大屏 iframe 链接，用于 OA / 指挥墙等外部页面嵌入「{name}」。
-          </p>
-          {screenEmbedUrl ? (
-            <ShareIssuedUrlPanel url={screenEmbedUrl} />
-          ) : (
-            <Button
-              type="button"
-              size="sm"
-              variant="primary"
-              disabled={issuing}
-              onClick={() => void issueScreenEmbed()}
-            >
-              {issuing ? "签发中…" : "签发整屏嵌入链接"}
-            </Button>
-          )}
-        </CardContent>
-      </Card>
+      <ShareDialogSection
+        icon={MonitorPlay}
+        title="整屏嵌入"
+        description={<>生成 iframe 链接，用于 OA / 指挥墙等外部页面嵌入「{name}」。</>}
+        trailing={screenEmbedAction}
+      >
+        {screenEmbedUrl ? <ShareIssuedUrlPanel url={screenEmbedUrl} /> : null}
+      </ShareDialogSection>
 
       {embeddableWidgets.length > 0 ? (
-        <Card className={cn(SHARE_SECTION_CARD_CLASS, "shrink-0")}>
-          <CardHeader className={SHARE_SECTION_CARD_HEADER_CLASS}>
-            <CardTitle className="text-theme-base">单组件嵌入</CardTitle>
-            <CardDescription>须签发 token 后方可匿名访问</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 pt-4">
+        <ShareDialogSection
+          icon={Puzzle}
+          title="单组件嵌入"
+          description="须签发 token 后方可匿名访问；每个组件可单独生成公开链接。"
+        >
+          <ShareDialogList>
             {embeddableWidgets.map((widget) => {
               const chartId = chartIdFromWidget(widget);
               if (!chartId) return null;
               return (
-                <div
+                <ChartEmbedShareActions
                   key={widget.id}
-                  className="space-y-2 border-b border-gray-100 pb-4 last:border-0 last:pb-0 dark:border-gray-800"
-                >
-                  <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">
-                    {widget.title}
-                  </p>
-                  <ChartEmbedShareActions chartId={chartId} mode="public" theme="dark" />
-                </div>
+                  chartId={chartId}
+                  mode="public"
+                  theme="dark"
+                  title={widget.title}
+                  layout="list"
+                />
               );
             })}
-          </CardContent>
-        </Card>
+          </ShareDialogList>
+        </ShareDialogSection>
       ) : null}
     </div>
   );

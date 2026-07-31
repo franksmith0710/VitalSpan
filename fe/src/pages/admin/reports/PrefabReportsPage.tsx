@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useAuth } from "@/context/auth-context";
 import { matchesCapability, resolveEffectiveCapabilities } from "@/lib/capabilities";
-import { ArrowLeft, Lock } from "lucide-react";
+import { ArrowLeft, ChevronDown, Lock, Search, Settings2 } from "lucide-react";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import {
   ListPageSection,
@@ -11,15 +11,24 @@ import {
   PageErrorBanner,
 } from "@/components/layout/list-page-kit";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { mapApiError } from "@/lib/apiError";
 import { ApiRequestError } from "@/lib/api";
 import { PanelEmptyState } from "@/components/ui/panel-empty-state";
-import { TruncateHint } from "@/components/ui/hint-tooltip";
-import { PrefabReportsEmptyPreview } from "./components/PrefabReportsEmptyPreview";
+import { cn } from "@/lib/utils";
+import {
+  PrefabReportsAdminSteps,
+  PrefabReportsEmptyPreview,
+} from "./components/PrefabReportsEmptyPreview";
 import { PrefabBindingForm } from "./components/PrefabBindingForm";
+import { PrefabBindingsTable } from "./components/PrefabBindingsTable";
 import { ReportExportCard } from "./components/ReportExportCard";
 import { ReportResultTable } from "./components/ReportResultTable";
 import { usePrefabReports } from "./usePrefabReports";
@@ -33,7 +42,9 @@ export function PrefabReportsPage() {
   const [searchParams] = useSearchParams();
   const bindingFromUrl = searchParams.get(PREFAB_BINDING_QUERY);
   const autoRanBindingRef = useRef<string | null>(null);
+  const adminPanelRef = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState("");
+  const [adminOpen, setAdminOpen] = useState(false);
 
   const bindings = bindingsQuery.data?.items ?? [];
   const filteredBindings = useMemo(() => {
@@ -52,6 +63,7 @@ export function PrefabReportsPage() {
     runMutation.isError &&
     runMutation.error instanceof ApiRequestError &&
     runMutation.error.code === "RPT_PREFAB_RUN_FORBIDDEN";
+  const isEmpty = !bindingsQuery.isLoading && bindings.length === 0;
 
   const { mutate: runBinding, isPending: isRunning } = runMutation;
 
@@ -66,6 +78,17 @@ export function PrefabReportsPage() {
     autoRanBindingRef.current = bindingFromUrl;
     runBinding(bindingFromUrl);
   }, [bindingFromUrl, bindings, bindingsQuery.isLoading, isRunning, runBinding]);
+
+  useEffect(() => {
+    if (canManage && isEmpty) setAdminOpen(true);
+  }, [canManage, isEmpty]);
+
+  const scrollToAdmin = () => {
+    setAdminOpen(true);
+    requestAnimationFrame(() => {
+      adminPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  };
 
   return (
     <AdminPageShell
@@ -89,13 +112,13 @@ export function PrefabReportsPage() {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="搜索报表名称或分析类型…"
-                  className="max-w-md"
+                  className="h-11 max-w-md"
                   aria-label="搜索预制报表"
                   disabled={bindingsQuery.isLoading || bindings.length === 0}
                 />
                 {!bindingsQuery.isLoading && bindings.length > 0 ? (
                   <span className="text-theme-xs text-gray-500 dark:text-gray-400">
-                    筛选结果 {filteredBindings.length} 条
+                    共 {bindings.length} 条 · 筛选 {filteredBindings.length} 条
                   </span>
                 ) : null}
               </>
@@ -113,74 +136,84 @@ export function PrefabReportsPage() {
 
           <ListPageTableFrame>
             {bindingsQuery.isLoading ? (
-              <div className="space-y-2">
+              <div className="space-y-2 p-4">
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
+                  <Skeleton key={i} className="h-12 w-full rounded-lg" />
                 ))}
               </div>
-            ) : bindings.length === 0 ? (
-              <PrefabReportsEmptyPreview />
+            ) : isEmpty ? (
+              <PrefabReportsEmptyPreview isAdmin={canManage} onConfigure={scrollToAdmin} />
             ) : filteredBindings.length === 0 ? (
-              <PanelEmptyState title="无匹配报表" description="请调整搜索词。" variant="framed" />
+              <PanelEmptyState
+                icon={<Search className="size-7" aria-hidden />}
+                title="无匹配报表"
+                description="请调整搜索词后重试。"
+                variant="framed"
+                size="sm"
+              />
             ) : (
-              <div className="overflow-x-only">
-                <table className="min-w-[640px] w-full text-left text-theme-sm">
-                  <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
-                    <tr>
-                      <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">报表名称</th>
-                      <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">分析类型</th>
-                      <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">实体类型</th>
-                      <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">操作</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredBindings.map((binding) => (
-                      <tr
-                        key={binding.bindingKey}
-                        className="border-b border-gray-100 dark:border-gray-800"
-                      >
-                        <td className="px-4 py-3">
-                          <TruncateHint
-                            title={binding.displayName}
-                            as="span"
-                            className="font-medium text-gray-800 dark:text-white/90"
-                          >
-                            {binding.displayName}
-                          </TruncateHint>
-                        </td>
-                        <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{binding.analysisType}</td>
-                        <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{binding.entityTypeCode}</td>
-                        <td className="px-4 py-3">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            disabled={runningKey === binding.bindingKey}
-                            aria-label={`运行报表 ${binding.displayName}`}
-                            onClick={() => runMutation.mutate(binding.bindingKey)}
-                          >
-                            {runningKey === binding.bindingKey ? "运行中…" : "运行"}
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <PrefabBindingsTable
+                bindings={filteredBindings}
+                runningKey={runningKey}
+                onRun={(key) => runMutation.mutate(key)}
+              />
             )}
           </ListPageTableFrame>
         </ListPageSection>
 
-        {canManage ? <PrefabBindingForm binding={bindings[0] ?? null} /> : null}
+        {canManage ? (
+          <div ref={adminPanelRef}>
+            <Collapsible open={adminOpen} onOpenChange={setAdminOpen}>
+              <Card className="overflow-hidden shadow-theme-xs">
+                <CollapsibleTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex w-full items-start gap-3 p-5 text-left transition-colors hover:bg-gray-50/80 dark:hover:bg-white/[0.02]"
+                  >
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-600 dark:bg-white/[0.06] dark:text-gray-400">
+                      <Settings2 className="size-5" aria-hidden />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-2 text-theme-sm font-semibold text-gray-800 dark:text-white/90">
+                        预制绑定配置
+                        <ChevronDown
+                          className={cn(
+                            "size-4 text-gray-400 transition-transform",
+                            adminOpen && "rotate-180",
+                          )}
+                          aria-hidden
+                        />
+                      </span>
+                      <span className="mt-1 block text-theme-xs text-gray-500 dark:text-gray-400">
+                        高级：配置实体类型、分析模型与维度，供管理员维护系统预置分析。
+                      </span>
+                    </span>
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="border-t border-gray-100 pt-0 dark:border-gray-800">
+                    {isEmpty ? (
+                      <div className="mb-6 mt-5">
+                        <PrefabReportsAdminSteps />
+                      </div>
+                    ) : null}
+                    <PrefabBindingForm binding={bindings[0] ?? null} />
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+          </div>
+        ) : null}
 
         {runForbidden ? (
-          <Card>
-            <CardContent>
+          <Card className="shadow-theme-xs">
+            <CardContent className="py-2">
               <PanelEmptyState
                 icon={<Lock className="size-7" aria-hidden />}
                 title="无权运行预制报表"
                 description="当前账号没有运行该报表的权限，请联系管理员调整角色或绑定范围。"
                 variant="framed"
+                size="sm"
               />
             </CardContent>
           </Card>
@@ -191,30 +224,36 @@ export function PrefabReportsPage() {
         ) : null}
 
         {runMutation.isPending ? (
-          <Card>
-            <CardContent className="py-6">
-              <Skeleton className="h-[240px] w-full" />
+          <Card className="shadow-theme-xs">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-theme-sm">运行结果</CardTitle>
+              <CardDescription>正在拉取分析数据…</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-[200px] w-full rounded-xl" />
             </CardContent>
           </Card>
         ) : null}
 
         {section ? (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-theme-base">运行结果</CardTitle>
+          <Card className="shadow-theme-xs">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-theme-sm">运行结果</CardTitle>
+              <CardDescription>当前预制分析的数据预览</CardDescription>
             </CardHeader>
-            <CardContent className="min-h-[240px]">
+            <CardContent className="min-h-[200px]">
               <ReportResultTable columns={section.columns} rows={section.rows} />
             </CardContent>
+            {canManage ? (
+              <CardContent className="border-t border-gray-100 pt-5 dark:border-gray-800">
+                <ReportExportCard
+                  embedded
+                  showTemplateIdField
+                  disabled={!section}
+                />
+              </CardContent>
+            ) : null}
           </Card>
-        ) : null}
-
-        {canManage ? (
-          <ReportExportCard
-            showTemplateIdField
-            disabled={!section}
-            disabledHint={!section ? "请先运行预制分析；导出需指定报表模板 ID。" : undefined}
-          />
         ) : null}
       </div>
     </AdminPageShell>

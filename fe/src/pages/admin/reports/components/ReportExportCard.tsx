@@ -37,11 +37,13 @@ export function ReportExportCard({
   showTemplateIdField = false,
   disabled = false,
   disabledHint,
+  embedded = false,
 }: {
   defaultTemplateId?: string;
   showTemplateIdField?: boolean;
   disabled?: boolean;
   disabledHint?: string;
+  embedded?: boolean;
 }) {
   const [templateId, setTemplateId] = useState(defaultTemplateId ?? "");
   const [format, setFormat] = useState("pdf");
@@ -94,65 +96,81 @@ export function ReportExportCard({
     return null;
   }
 
+  const body = (
+    <div className={embedded ? "grid gap-4 sm:grid-cols-2" : "grid gap-4 sm:grid-cols-2"}>
+      {showTemplateIdField ? (
+        <div className="grid gap-2">
+          <Label htmlFor="export-template-id">模板 ID</Label>
+          <Input
+            id="export-template-id"
+            className="h-11"
+            value={templateId}
+            onChange={(e) => setTemplateId(e.target.value)}
+            placeholder="粘贴报表模板 UUID"
+          />
+        </div>
+      ) : null}
+      <div className="grid gap-2">
+        <Label htmlFor="export-format">导出格式</Label>
+        <Select value={format} onValueChange={setFormat}>
+          <SelectTrigger id="export-format" className="h-11">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="pdf">PDF</SelectItem>
+            <SelectItem value="word">Word</SelectItem>
+            <SelectItem value="excel">Excel</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
+        <Button
+          type="button"
+          className="h-11"
+          variant="primary"
+          disabled={loading || !canExport}
+          onClick={() => void requestExport()}
+        >
+          {loading ? "导出中…" : "发起导出"}
+        </Button>
+        {disabled && disabledHint ? (
+          <span className="text-theme-sm text-gray-500 dark:text-gray-400">{disabledHint}</span>
+        ) : null}
+        {status ? (
+          <span className="text-theme-sm text-gray-600 dark:text-gray-400">
+            状态：{localizeExportStatus(status)}
+          </span>
+        ) : null}
+        {downloadUrl ? (
+          <Button asChild className="h-11" variant="outline">
+            <a href={downloadUrl} download>
+              <Download className="size-4" aria-hidden />
+              下载
+            </a>
+          </Button>
+        ) : null}
+      </div>
+    </div>
+  );
+
+  if (embedded) {
+    return (
+      <div className="space-y-3">
+        <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">导出为文件</p>
+        <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+          将当前分析结果关联到报表模板并导出 PDF / Word / Excel。
+        </p>
+        {body}
+      </div>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-theme-base">报表导出</CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-4 sm:grid-cols-2">
-        {showTemplateIdField ? (
-          <div className="grid gap-2">
-            <Label htmlFor="export-template-id">模板 ID</Label>
-            <Input
-              id="export-template-id"
-              className="h-11"
-              value={templateId}
-              onChange={(e) => setTemplateId(e.target.value)}
-              placeholder="UUID"
-            />
-          </div>
-        ) : null}
-        <div className="grid gap-2">
-          <Label>格式</Label>
-          <Select value={format} onValueChange={setFormat}>
-            <SelectTrigger className="h-11">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="pdf">PDF</SelectItem>
-              <SelectItem value="word">Word</SelectItem>
-              <SelectItem value="excel">Excel</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="sm:col-span-2 flex flex-wrap items-center gap-3">
-          <Button
-            type="button"
-            size="sm"
-            variant="primary"
-            disabled={loading || !canExport}
-            onClick={() => void requestExport()}
-          >
-            {loading ? "导出中…" : "发起导出"}
-          </Button>
-          {disabled && disabledHint ? (
-            <span className="text-theme-sm text-gray-500 dark:text-gray-400">{disabledHint}</span>
-          ) : null}
-          {status ? (
-            <span className="text-theme-sm text-gray-600 dark:text-gray-400">
-              状态：{localizeExportStatus(status)}
-            </span>
-          ) : null}
-          {downloadUrl ? (
-            <Button asChild size="sm" variant="outline">
-              <a href={downloadUrl} download>
-                <Download className="size-4" aria-hidden />
-                下载
-              </a>
-            </Button>
-          ) : null}
-        </div>
-      </CardContent>
+      <CardContent>{body}</CardContent>
     </Card>
   );
 }

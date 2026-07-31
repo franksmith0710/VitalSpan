@@ -7,6 +7,13 @@ import { toast } from "sonner";
 import { apiFetch } from "@/lib/api";
 import { isDashboardNotFound, mapApiError } from "@/lib/apiError";
 import { DashboardShareDialog } from "@/components/dashboard/DashboardShareDialog";
+import {
+  dataScreenListPath,
+  dataScreenPreviewPath,
+  ensureDataScreenStyleConfig,
+  isDataScreenAdminPath,
+  isDataScreenLayout,
+} from "@/lib/dataScreenLayout";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { GlobalFilterBar } from "@/components/dashboard/GlobalFilterBar";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
@@ -191,7 +198,6 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   }, [layout, loading, routeIsDataScreen]);
   const listPath = isDataScreenSurface ? dataScreenListPath() : "/admin/dashboards";
   const routeBase = isDataScreenSurface ? "/admin/data-screens" : "/admin/dashboards";
-  const sharePath = id ? dashboardSharePath(id, isDataScreenSurface) : "/admin/dashboards";
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteDashboardOpen, setDeleteDashboardOpen] = useState(false);
