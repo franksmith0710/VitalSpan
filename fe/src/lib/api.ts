@@ -105,41 +105,69 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 async function parseErrorBody(response: Response): Promise<ApiErrorBody | null> {
+  let text: string;
   try {
-    const body: unknown = await response.json();
-    if (!isRecord(body)) return null;
-
-    if (Array.isArray(body.detail)) {
-      const fields = body.detail
-        .map((item) => {
-          if (!isRecord(item)) return null;
-          const loc = Array.isArray(item.loc)
-            ? item.loc.filter((part) => typeof part === "string").join(".")
-            : "";
-          const message = typeof item.msg === "string" ? item.msg : "";
-          if (!message) return null;
-          return { field: loc || "detail", message };
-        })
-        .filter((item): item is { field: string; message: string } => item !== null);
-      const first = fields[0];
-      return {
-        message: first ? `${first.field}: ${first.message}` : undefined,
-        code: typeof body.code === "string" ? body.code : "VALIDATION_ERROR",
-        fields: fields.length > 0 ? fields : undefined,
-      };
-    }
-
-    const detail = isRecord(body.detail) ? body.detail : null;
-    return {
-      message: typeof body.message === "string" ? body.message : undefined,
-      code: typeof body.code === "string" ? body.code : undefined,
-      fields: Array.isArray(detail?.fields)
-        ? (detail.fields as Array<{ field: string; message: string }>)
-        : undefined,
-    };
+    text = await response.text();
   } catch {
     return null;
   }
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+
+  let body: unknown;
+  try {
+    body = JSON.parse(trimmed) as unknown;
+  } catch {
+    if (/internal server error/i.test(trimmed)) {
+      return {
+        message: "后端服务内部错误，请重启 uvicorn 并查看终端日志",
+        code: "INTERNAL_SERVER_ERROR",
+      };
+    }
+    return { message: trimmed.slice(0, 200), code: "HTTP_ERROR" };
+  }
+
+  if (!isRecord(body)) return null;
+
+  if (Array.isArray(body.detail)) {
+    const fields = body.detail
+      .map((item) => {
+        if (!isRecord(item)) return null;
+        const loc = Array.isArray(item.loc)
+          ? item.loc.filter((part) => typeof part === "string").join(".")
+          : "";
+        const message = typeof item.msg === "string" ? item.msg : "";
+        if (!message) return null;
+        return { field: loc || "detail", message };
+      })
+      .filter((item): item is { field: string; message: string } => item !== null);
+    const first = fields[0];
+    return {
+      message: first ? `${first.field}: ${first.message}` : undefined,
+      code: typeof body.code === "string" ? body.code : "VALIDATION_ERROR",
+      fields: fields.length > 0 ? fields : undefined,
+    };
+  }
+
+  const detail = isRecord(body.detail) ? body.detail : null;
+  const detailMessage =
+    typeof body.detail === "string" && body.detail.trim() ? body.detail.trim() : undefined;
+  const message =
+    typeof body.message === "string" && body.message.trim()
+      ? body.message
+      : detailMessage;
+  return {
+    message,
+    code:
+      typeof body.code === "string"
+        ? body.code
+        : message
+          ? "HTTP_ERROR"
+          : undefined,
+    fields: Array.isArray(detail?.fields)
+      ? (detail.fields as Array<{ field: string; message: string }>)
+      : undefined,
+  };
 }
 
 function toApiRequestError(body: ApiErrorBody | null): ApiRequestError {

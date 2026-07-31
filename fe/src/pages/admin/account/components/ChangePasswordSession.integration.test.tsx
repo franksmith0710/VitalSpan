@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthProvider } from "@/context/auth-context";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { clearAuthToken, setAuthToken } from "@/lib/auth-token";
 import { resetUnauthorizedHandler } from "@/lib/api";
 import { ChangePasswordSection } from "./ChangePasswordSection";
@@ -62,16 +63,18 @@ describe("ChangePasswordSession integration", () => {
     });
 
     render(
-      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-        <MemoryRouter initialEntries={["/admin/account/security"]}>
-          <AuthProvider>
-            <Routes>
-              <Route path="/admin/account/security" element={<ChangePasswordSection />} />
-              <Route path="/login" element={<div>login-page</div>} />
-            </Routes>
-          </AuthProvider>
-        </MemoryRouter>
-      </QueryClientProvider>,
+      <TooltipProvider delayDuration={0}>
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <MemoryRouter initialEntries={["/admin/account/security"]}>
+            <AuthProvider>
+              <Routes>
+                <Route path="/admin/account/security" element={<ChangePasswordSection />} />
+                <Route path="/login" element={<div>login-page</div>} />
+              </Routes>
+            </AuthProvider>
+          </MemoryRouter>
+        </QueryClientProvider>
+      </TooltipProvider>,
     );
 
     await waitFor(() => expect(getPasswordInput("currentPassword")).toBeInTheDocument());

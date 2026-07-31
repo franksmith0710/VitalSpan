@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { AccountProfilePage } from "./AccountProfilePage";
 
 const mockApiFetch = vi.fn();
@@ -15,9 +16,11 @@ vi.mock("@/context/auth-context", () => ({
 function wrap(ui: React.ReactNode) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return (
-    <QueryClientProvider client={qc}>
-      <MemoryRouter>{ui}</MemoryRouter>
-    </QueryClientProvider>
+    <TooltipProvider delayDuration={0}>
+      <QueryClientProvider client={qc}>
+        <MemoryRouter>{ui}</MemoryRouter>
+      </QueryClientProvider>
+    </TooltipProvider>
   );
 }
 
@@ -42,5 +45,7 @@ describe("AccountProfilePage smoke", () => {
     expect(screen.getByText("安全与偏好")).toBeInTheDocument();
     expect(screen.getAllByText("admin@vitalspan.local").length).toBeGreaterThan(0);
     expect(screen.getByText("登录账号", { selector: "dt" })).toBeInTheDocument();
+    expect(screen.getAllByText("会话状态", { selector: "dt" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("已登录").length).toBeGreaterThan(0);
   });
 });

@@ -23,12 +23,30 @@ function InfoGrid({ rows }: { rows: InfoRow[] }) {
   );
 }
 
+function RoleBadges({ roles, isRoot }: { roles: string[]; isRoot?: boolean }) {
+  const sessionRoles = (roles.length > 0 ? roles : ["viewer"]) as SessionRole[];
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {sessionRoles.map((role) => (
+        <Badge key={role} variant="light" color="info" size="sm">
+          {primaryRoleLabel([role])}
+        </Badge>
+      ))}
+      {isRoot ? (
+        <Badge variant="light" color="warning" size="sm">
+          超级管理员
+        </Badge>
+      ) : null}
+    </div>
+  );
+}
+
 type AccountInfoCardProps = {
   profile: MeProfile;
 };
 
 export function AccountInfoCard({ profile }: AccountInfoCardProps) {
-  const roleLabel = primaryRoleLabel(profile.roles as SessionRole[]);
+  const permissionCount = profile.permissions?.length ?? 0;
 
   return (
     <section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
@@ -43,13 +61,28 @@ export function AccountInfoCard({ profile }: AccountInfoCardProps) {
           { label: "用户 ID", value: <span className="font-mono text-theme-xs">{profile.id}</span> },
           { label: "显示名称", value: profile.displayName },
           { label: "登录账号", value: profile.username },
-          { label: "平台角色", value: roleLabel },
+          {
+            label: "平台角色",
+            value: <RoleBadges roles={profile.roles} isRoot={profile.isRoot} />,
+          },
           { label: "电子邮箱", value: profile.email },
           {
-            label: "账户状态",
+            label: "权限范围",
+            value: profile.isRoot ? (
+              <Badge variant="light" color="success" size="sm">
+                全部权限
+              </Badge>
+            ) : permissionCount > 0 ? (
+              <span>{permissionCount} 项已授权</span>
+            ) : (
+              <span className="text-gray-500 dark:text-gray-400">未分配权限</span>
+            ),
+          },
+          {
+            label: "会话状态",
             value: (
               <Badge variant="light" color="success" size="sm">
-                正常
+                已登录
               </Badge>
             ),
           },

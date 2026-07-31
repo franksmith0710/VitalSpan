@@ -13,11 +13,17 @@ import { ProfileEditDialog } from "./components/ProfileEditDialog";
 
 export function AccountProfilePage() {
   const [editOpen, setEditOpen] = useState(false);
+  const [editFocus, setEditFocus] = useState<"profile" | "email" | undefined>();
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: queryKeys.me,
     queryFn: () => apiFetch<MeProfile>("/api/v1/me"),
   });
+
+  const openEdit = (focus?: "profile" | "email") => {
+    setEditFocus(focus);
+    setEditOpen(true);
+  };
 
   return (
     <AdminPageShell
@@ -38,13 +44,17 @@ export function AccountProfilePage() {
         </div>
       ) : (
         <div className="grid gap-6">
-          <AccountProfileHero profile={data} onEdit={() => setEditOpen(true)} />
+          <AccountProfileHero profile={data} onEdit={() => openEdit("profile")} />
           <AccountInfoCard profile={data} />
-          <AccountSecurityLinks email={data.email} onEditEmail={() => setEditOpen(true)} />
+          <AccountSecurityLinks email={data.email} onEditEmail={() => openEdit("email")} />
           <ProfileEditDialog
             open={editOpen}
-            onOpenChange={setEditOpen}
+            onOpenChange={(open) => {
+              setEditOpen(open);
+              if (!open) setEditFocus(undefined);
+            }}
             profile={data}
+            focus={editFocus}
           />
         </div>
       )}

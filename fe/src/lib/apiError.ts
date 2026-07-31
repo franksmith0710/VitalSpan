@@ -5,6 +5,8 @@ const CODE_MESSAGES: Record<string, string> = {
   // 鉴权 / 会话
   AUTH_INVALID_CREDENTIALS: "用户名或密码错误",
   REQUEST_TIMEOUT: "请求超时，请确认后端服务与数据库已启动",
+  INTERNAL_SERVER_ERROR: "后端服务内部错误，请重启 uvicorn 并查看终端日志",
+  HTTP_ERROR: "请求失败，请稍后重试",
   AUTH_CONTEXT_UNAVAILABLE: "登录失败，无法获取用户信息",
   AUTH_INVALID_CURRENT_PASSWORD: "当前密码不正确",
   AUTH_PASSWORD_UNCHANGED: "新密码不能与当前密码相同",

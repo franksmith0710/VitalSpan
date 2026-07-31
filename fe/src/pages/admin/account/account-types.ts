@@ -4,4 +4,6 @@ export type MeProfile = {
   displayName: string;
   email: string;
   roles: string[];
+  permissions?: string[];
+  isRoot?: boolean;
 };

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,13 +24,17 @@ type ProfileEditDialogProps = {
   focus?: "profile" | "email";
 };
 
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
 export function ProfileEditDialog({
   open,
   onOpenChange,
   profile,
+  focus = "profile",
 }: ProfileEditDialogProps) {
   const queryClient = useQueryClient();
   const { refresh } = useAuth();
+  const emailRef = useRef<HTMLInputElement>(null);
   const [displayName, setDisplayName] = useState(profile.displayName);
   const [email, setEmail] = useState(profile.email);
   const [error, setError] = useState<string | null>(null);
@@ -42,11 +46,17 @@ export function ProfileEditDialog({
     setError(null);
   }, [open, profile.displayName, profile.email]);
 
+  useEffect(() => {
+    if (!open) return;
+    const target = focus === "email" ? emailRef.current : null;
+    requestAnimationFrame(() => target?.focus());
+  }, [open, focus]);
+
   const saveMutation = useMutation({
     mutationFn: () =>
       apiFetch<MeProfile>("/api/v1/me", {
         method: "PATCH",
-        body: JSON.stringify({ displayName, email }),
+        body: JSON.stringify({ displayName: displayName.trim(), email: email.trim() }),
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.me });
@@ -59,19 +69,29 @@ export function ProfileEditDialog({
     },
   });
 
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    const trimmedName = displayName.trim();
+    const trimmedEmail = email.trim();
+    if (!trimmedName) {
+      setError("显示名称不能为空");
+      return;
+    }
+    if (!EMAIL_RE.test(trimmedEmail)) {
+      setError("请输入有效的电子邮箱");
+      return;
+    }
+    setError(null);
+    saveMutation.mutate();
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>编辑基本资料</DialogTitle>
         </DialogHeader>
-        <form
-          className="grid gap-4"
-          onSubmit={(event) => {
-            event.preventDefault();
-            saveMutation.mutate();
-          }}
-        >
+        <form className="grid gap-4" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <Label htmlFor="edit-display-name">显示名称</Label>
             <Input
@@ -84,6 +104,7 @@ export function ProfileEditDialog({
           <div className="space-y-2">
             <Label htmlFor="edit-email">电子邮箱</Label>
             <Input
+              ref={emailRef}
               id="edit-email"
               type="email"
               value={email}

@@ -57,8 +57,15 @@ const ROLE_LABELS: Record<SessionRole, string> = {
   viewer: "查看者",
 };
 
+export function primaryRoleCode(roles: string[]): string {
+  const sessionRoles = roles as SessionRole[];
+  if (sessionRoles.includes("admin")) return "admin";
+  if (sessionRoles.includes("analyst")) return "analyst";
+  if (sessionRoles.includes("viewer")) return "viewer";
+  return roles[0] ?? "viewer";
+}
+
 export function primaryRoleLabel(roles: SessionRole[]): string {
-  if (roles.includes("admin")) return ROLE_LABELS.admin;
-  if (roles.includes("analyst")) return ROLE_LABELS.analyst;
-  return ROLE_LABELS.viewer;
+  const code = primaryRoleCode(roles) as SessionRole;
+  return ROLE_LABELS[code] ?? code;
 }

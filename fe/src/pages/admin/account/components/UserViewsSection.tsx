@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { LayoutDashboard, Trash2 } from "lucide-react";
+import { ExternalLink, LayoutDashboard, Pencil, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Link } from "react-router";
 import { toast } from "sonner";
 import {
   BatchDeleteDialog,
@@ -22,18 +23,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -43,9 +35,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
-import { PageErrorBanner } from "@/components/ui/page-error-banner";
+import {
+  buildDashboardNameMap,
+  useDashboardOptions,
+} from "./DashboardPickerSelect";
+import { UserViewFormDialog } from "./UserViewFormDialog";
 
 type ViewRow = {
   id: string;
@@ -54,13 +51,18 @@ type ViewRow = {
   layout?: Record<string, unknown>;
 };
 
+const DEFAULT_VIEW_NAME = "默认";
+
 export function UserViewsSection() {
   const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [name, setName] = useState("默认");
-  const [dashboardId, setDashboardId] = useState("");
+  const [formOpen, setFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState<"create" | "edit">("create");
+  const [editingRow, setEditingRow] = useState<ViewRow | null>(null);
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [batchDeleting, setBatchDeleting] = useState(false);
+
+  const dashboardsQuery = useDashboardOptions();
+  const dashboardMap = buildDashboardNameMap(dashboardsQuery.data?.items);
 
   const listQuery = useQuery({
     queryKey: ["users", "me", "views"],
@@ -70,14 +72,14 @@ export function UserViewsSection() {
   const invalidate = () => void qc.invalidateQueries({ queryKey: ["users", "me", "views"] });
 
   const createMutation = useMutation({
-    mutationFn: () =>
+    mutationFn: (values: { name: string; dashboardId: string }) =>
       apiFetch("/api/v1/users/me/views", {
         method: "POST",
-        body: JSON.stringify({ name, dashboardId, layout: {} }),
+        body: JSON.stringify({ name: values.name, dashboardId: values.dashboardId, layout: {} }),
       }),
     onSuccess: () => {
       toast.success("个人视图已创建");
-      setOpen(false);
+      setFormOpen(false);
       invalidate();
     },
     onError: (err) => toast.error(mapApiError(err)),
@@ -95,6 +97,8 @@ export function UserViewsSection() {
       }),
     onSuccess: () => {
       toast.success("已更新");
+      setFormOpen(false);
+      setEditingRow(null);
       invalidate();
     },
     onError: (err) => toast.error(mapApiError(err)),
@@ -114,14 +118,35 @@ export function UserViewsSection() {
     const items = listQuery.data?.items ?? [];
     for (const row of items) {
       if (row.id === target.id) {
-        await updateMutation.mutateAsync({ ...row, name: "默认" });
-      } else if (row.name === "默认") {
+        await updateMutation.mutateAsync({ ...row, name: DEFAULT_VIEW_NAME });
+      } else if (row.name === DEFAULT_VIEW_NAME) {
         await updateMutation.mutateAsync({
           ...row,
           name: `备份-${row.id.slice(0, 6)}`,
         });
       }
     }
+  };
+
+  const openCreate = () => {
+    setFormMode("create");
+    setEditingRow(null);
+    setFormOpen(true);
+  };
+
+  const openEdit = (row: ViewRow) => {
+    setFormMode("edit");
+    setEditingRow(row);
+    setFormOpen(true);
+  };
+
+  const handleFormSubmit = (values: { name: string; dashboardId: string }) => {
+    if (formMode === "create") {
+      createMutation.mutate(values);
+      return;
+    }
+    if (!editingRow) return;
+    updateMutation.mutate({ ...editingRow, ...values });
   };
 
   const items = (listQuery.data?.items ?? []).slice(0, 20);
@@ -146,9 +171,14 @@ export function UserViewsSection() {
 
   if (listQuery.isError) {
     return (
-      <PageErrorBanner message={mapApiError(listQuery.error)} onRetry={() => void listQuery.refetch()} />
+      <PageErrorBanner
+        message={mapApiError(listQuery.error)}
+        onRetry={() => void listQuery.refetch()}
+      />
     );
   }
+
+  const formPending = createMutation.isPending || updateMutation.isPending;
 
   return (
     <Card>
@@ -157,45 +187,14 @@ export function UserViewsSection() {
           <LayoutDashboard className="size-4" aria-hidden />
           个人默认视图
         </CardTitle>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button type="button" variant="primary" size="sm">
-              新建视图
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>创建个人视图覆盖</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-2">
-              <div className="grid gap-2">
-                <Label htmlFor="view-name">名称</Label>
-                <Input id="view-name" value={name} onChange={(e) => setName(e.target.value)} />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="view-dash">仪表板 ID</Label>
-                <Input
-                  id="view-dash"
-                  value={dashboardId}
-                  onChange={(e) => setDashboardId(e.target.value)}
-                  placeholder="UUID"
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="primary"
-                disabled={!dashboardId.trim() || createMutation.isPending}
-                onClick={() => createMutation.mutate()}
-              >
-                {createMutation.isPending ? "保存中…" : "保存个人视图"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button type="button" variant="primary" size="sm" onClick={openCreate}>
+          新建视图
+        </Button>
       </CardHeader>
       <CardContent>
+        <p className="mb-4 text-theme-sm text-gray-600 dark:text-gray-400">
+          配置登录后优先进入的仪表板。名称为「{DEFAULT_VIEW_NAME}」的视图将作为个人默认入口。
+        </p>
         {listQuery.isLoading ? (
           <div className="space-y-2">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -203,9 +202,14 @@ export function UserViewsSection() {
             ))}
           </div>
         ) : items.length === 0 ? (
-          <p className="py-8 text-center text-theme-sm text-gray-600 dark:text-gray-400">
-            尚未配置个人默认视图，将使用角色默认
-          </p>
+          <div className="rounded-xl border border-dashed border-gray-200 px-6 py-10 text-center dark:border-gray-800">
+            <p className="text-theme-sm text-gray-600 dark:text-gray-400">
+              尚未配置个人默认视图，将使用角色默认入口
+            </p>
+            <Button type="button" variant="outline" size="sm" className="mt-4" onClick={openCreate}>
+              创建第一个视图
+            </Button>
+          </div>
         ) : (
           <>
             <ListPageBatchActions
@@ -231,67 +235,116 @@ export function UserViewsSection() {
                     </TableHead>
                   ) : null}
                   <TableHead>名称</TableHead>
-                <TableHead>仪表板 ID</TableHead>
-                <TableHead className="text-right">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.map((row) => (
-                <TableRow key={row.id}>
-                  {batch.batchMode ? (
-                    <TableCell>
-                      <ListRowCheckbox
-                        checked={selection.isSelected(row.id)}
-                        onCheckedChange={() => selection.toggle(row.id)}
-                        ariaLabel={`选择视图 ${row.name}`}
-                      />
-                    </TableCell>
-                  ) : null}
-                  <TableCell>{row.name}</TableCell>
-                  <TableCell className="font-mono text-theme-xs">{row.dashboardId}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={row.name === "默认" || updateMutation.isPending}
-                        onClick={() => void setDefault(row)}
-                      >
-                        设为默认
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button type="button" variant="destructive" size="sm">
-                            <Trash2 className="size-4" aria-hidden />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>删除个人视图？</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              删除后将回落到角色默认仪表板。
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>取消</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => deleteMutation.mutate(row.id)}
-                            >
-                              删除
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
+                  <TableHead>仪表板</TableHead>
+                  <TableHead className="text-right">操作</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {items.map((row) => {
+                  const dashboardName = dashboardMap.get(row.dashboardId);
+                  return (
+                    <TableRow key={row.id}>
+                      {batch.batchMode ? (
+                        <TableCell>
+                          <ListRowCheckbox
+                            checked={selection.isSelected(row.id)}
+                            onCheckedChange={() => selection.toggle(row.id)}
+                            ariaLabel={`选择视图 ${row.name}`}
+                          />
+                        </TableCell>
+                      ) : null}
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span>{row.name}</span>
+                          {row.name === DEFAULT_VIEW_NAME ? (
+                            <Badge variant="light" color="success" size="sm">
+                              默认
+                            </Badge>
+                          ) : null}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-0.5">
+                          <Link
+                            to={`/admin/dashboards/${row.dashboardId}`}
+                            className="inline-flex items-center gap-1 text-theme-sm text-brand-600 hover:underline dark:text-brand-400"
+                          >
+                            {dashboardName ?? "未命名仪表板"}
+                            <ExternalLink className="size-3.5" aria-hidden />
+                          </Link>
+                          <span className="font-mono text-theme-xs text-gray-500">
+                            {row.dashboardId}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            aria-label={`编辑视图 ${row.name}`}
+                            onClick={() => openEdit(row)}
+                          >
+                            <Pencil className="size-4" aria-hidden />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={row.name === DEFAULT_VIEW_NAME || updateMutation.isPending}
+                            onClick={() => void setDefault(row)}
+                          >
+                            设为默认
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                aria-label={`删除视图 ${row.name}`}
+                              >
+                                <Trash2 className="size-4" aria-hidden />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>删除个人视图？</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  删除后将回落到角色默认仪表板。
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>取消</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => deleteMutation.mutate(row.id)}>
+                                  删除
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </>
         )}
       </CardContent>
+
+      <UserViewFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        mode={formMode}
+        initial={{
+          name: editingRow?.name ?? "",
+          dashboardId: editingRow?.dashboardId ?? "",
+        }}
+        pending={formPending}
+        onSubmit={handleFormSubmit}
+      />
 
       <BatchDeleteDialog
         open={batchDeleteOpen}

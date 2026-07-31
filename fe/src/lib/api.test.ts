@@ -150,6 +150,30 @@ describe("apiFetch 401 classification", () => {
     expect(error.code).toBe("UNAUTHORIZED");
   });
 
+  it("maps FastAPI string detail to a readable error", async () => {
+    setAuthToken(TOKEN);
+    mockJson({ detail: "column surface_kind does not exist" }, 500);
+
+    const error = await expectApiError(apiFetch("/api/v1/dashboards"));
+
+    expect(error).toMatchObject({
+      message: "column surface_kind does not exist",
+      code: "HTTP_ERROR",
+    });
+  });
+
+  it("maps plain-text 500 responses to an internal server error", async () => {
+    setAuthToken(TOKEN);
+    mockResponse("Internal Server Error", 500);
+
+    const error = await expectApiError(apiFetch("/api/v1/dashboards"));
+
+    expect(error).toMatchObject({
+      message: "后端服务内部错误，请重启 uvicorn 并查看终端日志",
+      code: "INTERNAL_SERVER_ERROR",
+    });
+  });
+
   it("keeps the existing error body behavior for non-401 responses", async () => {
     setAuthToken(TOKEN);
     const onUnauthorized = vi.fn();

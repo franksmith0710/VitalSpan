@@ -5,10 +5,6 @@ import { Button } from "@/components/ui/button";
 import { primaryRoleLabel, type SessionRole } from "@/lib/session";
 import type { MeProfile } from "../account-types";
 
-function shortUserId(id: string): string {
-  return id.length > 8 ? id.slice(0, 8) : id;
-}
-
 type AccountProfileHeroProps = {
   profile: MeProfile;
   onEdit: () => void;
@@ -17,6 +13,7 @@ type AccountProfileHeroProps = {
 export function AccountProfileHero({ profile, onEdit }: AccountProfileHeroProps) {
   const roleLabel = primaryRoleLabel(profile.roles as SessionRole[]);
   const label = profile.displayName || profile.username;
+  const shortId = profile.id.length > 8 ? profile.id.slice(0, 8) : profile.id;
 
   return (
     <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
@@ -30,6 +27,11 @@ export function AccountProfileHero({ profile, onEdit }: AccountProfileHeroProps)
               <h2 className="truncate text-title-xs font-semibold text-gray-900 dark:text-white">
                 {label}
               </h2>
+              {profile.isRoot ? (
+                <Badge variant="light" color="warning" size="sm">
+                  超级管理员
+                </Badge>
+              ) : null}
               <Button
                 type="button"
                 variant="ghost"
@@ -52,14 +54,14 @@ export function AccountProfileHero({ profile, onEdit }: AccountProfileHeroProps)
           <div className="px-5 py-3 text-center">
             <dt className="text-theme-xs text-gray-500 dark:text-gray-400">用户 ID</dt>
             <dd className="mt-1 font-mono text-theme-sm font-medium text-gray-800 dark:text-white/90">
-              {shortUserId(profile.id)}
+              {shortId}
             </dd>
           </div>
           <div className="px-5 py-3 text-center">
-            <dt className="text-theme-xs text-gray-500 dark:text-gray-400">账户状态</dt>
+            <dt className="text-theme-xs text-gray-500 dark:text-gray-400">会话状态</dt>
             <dd className="mt-1">
               <Badge variant="light" color="success" size="sm">
-                正常
+                已登录
               </Badge>
             </dd>
           </div>

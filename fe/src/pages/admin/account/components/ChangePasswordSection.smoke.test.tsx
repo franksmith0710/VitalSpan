@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { ApiRequestError } from "@/lib/api";
 import { ChangePasswordSection } from "./ChangePasswordSection";
 
@@ -24,7 +25,11 @@ vi.mock("sonner", () => ({
 
 function wrap(ui: React.ReactNode) {
   const qc = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
-  return <QueryClientProvider client={qc}>{ui}</QueryClientProvider>;
+  return (
+    <TooltipProvider delayDuration={0}>
+      <QueryClientProvider client={qc}>{ui}</QueryClientProvider>
+    </TooltipProvider>
+  );
 }
 
 const VALID_FORM = {

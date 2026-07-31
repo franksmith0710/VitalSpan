@@ -396,7 +396,7 @@ export function DataScreenListPage() {
                 <DashboardListCardSkeleton key={index} />
               ))}
             </div>
-          ) : sortedItems.length === 0 ? (
+          ) : listQuery.isError ? null : sortedItems.length === 0 ? (
             <ListPageCardGridEmptyState
               icon={<Monitor className="size-7" aria-hidden />}
               title="暂无数据大屏"
@@ -436,7 +436,7 @@ export function DataScreenListPage() {
           <ListPageTableFrame>
             <DataTable
               loading={listQuery.isLoading}
-              empty={!listQuery.isLoading && sortedItems.length === 0}
+              empty={!listQuery.isLoading && !listQuery.isError && sortedItems.length === 0}
               headers={[
                 ...(canEdit && batch.batchMode
                   ? [
