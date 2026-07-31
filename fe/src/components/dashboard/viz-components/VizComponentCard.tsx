@@ -162,13 +162,13 @@ export function VizComponentCard({
               <IconButton
                 type="button"
                 variant="ghost"
-                size="sm"
+                size="xs"
                 showTooltip={false}
                 disabled={pending}
                 aria-label={`${item.name} 更多操作`}
                 className={HUB_CARD_BODY_MORE_TRIGGER_CLASS}
               >
-                <MoreHorizontal className="size-4" aria-hidden />
+                <MoreHorizontal className="size-3.5" aria-hidden />
               </IconButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-[10rem]">

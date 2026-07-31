@@ -15,7 +15,7 @@ import { VitalSpanLogo } from "@/components/layout/vitalspan-logo";
 import { resolveSidebarSections } from "@/lib/resolve-nav";
 import { sessionUserFromMe } from "@/lib/session";
 import { isDetachedFromWorkspacePath } from "@/lib/workspace";
-import { isAdminListFillRoute, isAdminMaxWidthNoneRoute, isAdminScreenPreviewRoute, isAdminShareRoute, isAdminVizComponentEditRoute } from "@/lib/admin-layout-routes";
+import { isAdminListFillRoute, isAdminMaxWidthNoneRoute, isAdminScreenPreviewRoute, isAdminShareRoute, isAdminDatasetFormRoute, isAdminVizComponentEditRoute } from "@/lib/admin-layout-routes";
 import {
   ADMIN_CONTENT_MARGIN_COLLAPSED_CLASS,
   ADMIN_CONTENT_MARGIN_EXPANDED_CLASS,
@@ -46,8 +46,9 @@ function AdminLayoutContent() {
   const isShareRoute = isAdminShareRoute(location.pathname);
   const isScreenPreviewRoute = isAdminScreenPreviewRoute(location.pathname);
   const isVizComponentEditFill = isAdminVizComponentEditRoute(location.pathname);
+  const isDatasetFormFill = isAdminDatasetFormRoute(location.pathname);
   const isFillHeightRoute =
-    isDashboardEditFill || isListFillRoute || isVizComponentEditFill || isShareRoute;
+    isDashboardEditFill || isListFillRoute || isVizComponentEditFill || isDatasetFormFill || isShareRoute;
   const isMaxWidthNoneRoute = isAdminMaxWidthNoneRoute(location.pathname, {
     dashboardBuilder: isDashboardEditFill,
   });

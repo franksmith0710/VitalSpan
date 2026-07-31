@@ -1,5 +1,8 @@
 export const queryKeys = {
   me: ["me"] as const,
+  demoPackage: {
+    status: ["demoPackage", "status"] as const,
+  },
   datasources: {
     all: ["datasources"] as const,
     list: (params?: { q?: string; type?: string; limit?: number; offset?: number }) =>

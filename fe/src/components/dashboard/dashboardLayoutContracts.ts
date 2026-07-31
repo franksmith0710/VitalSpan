@@ -57,6 +57,12 @@ export type DashboardLayoutV1 = {
   widgets: LayoutWidget[];
   globalFilters: unknown[];
   styleConfig?: DashboardStyleConfig;
+  demoPackage?: DemoPackageLayoutMeta;
+};
+
+export type DemoPackageLayoutMeta = {
+  seed?: boolean;
+  sourceTemplateKey?: string;
 };
 
 export type DashboardLayoutV2 = {
@@ -65,6 +71,7 @@ export type DashboardLayoutV2 = {
   widgets: PixelLayoutWidget[];
   globalFilters: unknown[];
   styleConfig?: DashboardStyleConfig;
+  demoPackage?: DemoPackageLayoutMeta;
 };
 
 export type DashboardLayout = DashboardLayoutV1 | DashboardLayoutV2;

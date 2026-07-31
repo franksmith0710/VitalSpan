@@ -7,7 +7,7 @@ import {
 export const VIZ_TEMPLATES_HUB = {
   title: "可视化模板",
   description:
-    "企业看板与大屏布局模板库。内置政务演示模板需先在「数据连接」配置演示数据源（sample_db），详见帮助文档。",
+    "企业看板与大屏布局模板库。内置模板预览将自动绑定「示例数据」演示源。",
   importJson: "导入 JSON",
   searchPlaceholder: "搜索模板名称…",
   searchAriaLabel: "搜索模板",

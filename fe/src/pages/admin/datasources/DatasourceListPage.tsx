@@ -56,6 +56,8 @@ import { useListPagination } from "@/lib/list-pagination";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { runBatchDelete } from "@/lib/runBatchDelete";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { isDemoPackageDatasource } from "@/lib/demoPackage";
 
 type DataSourceOut = {
   id: string;
@@ -66,6 +68,7 @@ type DataSourceOut = {
   port: number;
   database: string;
   description?: string | null;
+  isDemoPackage?: boolean;
 };
 
 type DataSourceListResponse = {
@@ -189,7 +192,14 @@ export function DatasourceListPage() {
     onError: (err) => setDeleteError(mapApiError(err)),
   });
 
-  const items = data?.items ?? [];
+  const items = useMemo(() => {
+    const raw = data?.items ?? [];
+    return [...raw].sort((a, b) => {
+      const aDemo = isDemoPackageDatasource(a.code) || a.isDemoPackage ? 1 : 0;
+      const bDemo = isDemoPackageDatasource(b.code) || b.isDemoPackage ? 1 : 0;
+      return bDemo - aDemo;
+    });
+  }, [data?.items]);
   const total = data?.total ?? 0;
   const rowIds = useMemo(() => items.map((item) => item.id), [items]);
   const selection = useListRowSelection(rowIds);
@@ -359,6 +369,11 @@ export function DatasourceListPage() {
                       <code className="rounded-md bg-gray-100 px-1.5 py-0.5 font-mono text-theme-xs text-gray-600 dark:bg-white/10 dark:text-gray-300">
                         {row.code}
                       </code>
+                      {isDemoPackageDatasource(row.code) || row.isDemoPackage ? (
+                        <Badge variant="light" color="primary" size="sm">
+                          官方演示
+                        </Badge>
+                      ) : null}
                       {row.description?.trim() ? (
                         <TruncateHint
                           title={row.description.trim()}
@@ -399,6 +414,12 @@ export function DatasourceListPage() {
                       variant="ghost"
                       size="sm"
                       aria-label={`删除 ${row.name}`}
+                      disabled={isDemoPackageDatasource(row.code) || row.isDemoPackage}
+                      title={
+                        isDemoPackageDatasource(row.code) || row.isDemoPackage
+                          ? "官方演示数据源不可删除"
+                          : undefined
+                      }
                       onClick={() => {
                         setDeleteError(null);
                         setDeleteTarget(row);

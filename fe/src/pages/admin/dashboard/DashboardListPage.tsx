@@ -52,6 +52,7 @@ import { runBatchDelete } from "@/lib/runBatchDelete";
 import { useAuth } from "@/context/auth-context";
 import { buildDashboardsListUrl } from "@/lib/dashboardsListQuery";
 import { createFromTemplate, type DashboardTemplateListItem } from "@/lib/dashboardTemplates";
+import { isDemoPackageDashboard } from "@/lib/demoPackage";
 
 type DashboardListResponse = {
   items: DashboardListItem[];
@@ -62,10 +63,13 @@ type DashboardListResponse = {
 
 type ViewMode = "grid" | "list";
 
-function sortByRecent(items: DashboardListItem[]): DashboardListItem[] {
-  return [...items].sort(
-    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-  );
+function sortDashboardListItems(items: DashboardListItem[]): DashboardListItem[] {
+  return [...items].sort((a, b) => {
+    const aDemo = isDemoPackageDashboard({ slug: a.slug, layoutJson: a.layoutJson }) ? 1 : 0;
+    const bDemo = isDemoPackageDashboard({ slug: b.slug, layoutJson: b.layoutJson }) ? 1 : 0;
+    if (aDemo !== bDemo) return bDemo - aDemo;
+    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+  });
 }
 
 function formatUpdatedAt(value: string): string {
@@ -184,7 +188,7 @@ export function DashboardListPage() {
 
   const items = listQuery.data?.items ?? [];
   const total = listQuery.data?.total ?? items.length;
-  const sortedItems = useMemo(() => sortByRecent(items), [items]);
+  const sortedItems = useMemo(() => sortDashboardListItems(items), [items]);
   const rowIds = useMemo(() => sortedItems.map((item) => item.id), [sortedItems]);
   const selection = useListRowSelection(rowIds);
   const batch = useListBatchMode(selection.clear);

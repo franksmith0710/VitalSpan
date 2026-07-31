@@ -48,6 +48,31 @@ describe("DashboardListCard", () => {
     cleanup();
   });
 
+  it("shows official demo badge for demo slug dashboards", () => {
+    const { getByText } = render(
+      <TooltipProvider delayDuration={0}>
+        <MemoryRouter>
+          <DashboardListCard
+            dashboard={{
+              id: "demo-1",
+              name: "官方示例 · 双栏 KPI 分析",
+              slug: "demo-dual-kpi",
+              updatedAt: "2026-07-14T12:00:00.000Z",
+              layoutJson: {
+                version: 1,
+                widgets: [],
+                globalFilters: [],
+                demoPackage: { seed: true, sourceTemplateKey: "builtin-dash-dual-kpi" },
+              },
+            }}
+            canEdit
+          />
+        </MemoryRouter>
+      </TooltipProvider>,
+    );
+    expect(getByText("官方示例")).toBeInTheDocument();
+  });
+
   it("uses fixed list card aspect ratio regardless of canvas height", () => {
     const { container } = render(
       <TooltipProvider delayDuration={0}>

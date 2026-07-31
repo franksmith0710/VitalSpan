@@ -371,7 +371,7 @@ Dataset CRUD（ORM `datasets` 表）
 | `postgres` | 5432 | 平台元库 `vitalspan`（`DATABASE_URL` 默认） |
 | `meta-mysql` | 3309 | 平台元库 MySQL 8 备选（`DATABASE_URL=mysql://…@localhost:3309/vitalspan`） |
 | `analytics-postgres` | 5433 | 托管分析库 `analytics`（`ANALYTICS_DATABASE_URL`；ingestion 同步目标） |
-| `sample-mysql` | 3307 | 样例 OLTP `sample_db`（含 `vs_official_*` 官方演示视图；元库 code `official-demo-mysql`） |
+| `sample-mysql` | 3307 | 样例 OLTP `sample_db`（启动增量迁移 `vs_official_*`；元库 code **`demo`** / 「示例数据」） |
 | `sample-mariadb` | 3308 | MariaDB 连接器集成测 |
 | `sample-clickhouse` | 8124 | ClickHouse 连接器集成测 |
 | `sample-timescaledb` | **5434** | 运维时序样例 **`ops_tsdb`**（TimescaleDB；CONN-013 演示，**非** 5433） |

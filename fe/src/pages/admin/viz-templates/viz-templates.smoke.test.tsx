@@ -96,6 +96,17 @@ vi.mock("@/lib/api", () => ({
     if (url === "/api/v1/datasources") {
       return { items: [] };
     }
+    if (url === "/api/v1/demo-package/status") {
+      return {
+        ready: true,
+        mysqlReachable: true,
+        schemaVersion: 3,
+        datasourceId: "ds-demo",
+        datasourceCode: "demo",
+        demoDashboardIds: ["d1", "d2", "d3"],
+        message: null,
+      };
+    }
     if (url === "/api/v1/dashboards/from-template" && init?.method === "POST") {
       return { id: "dash-new" };
     }
@@ -130,13 +141,19 @@ describe("VizTemplatesHubPage smoke", () => {
     expect(screen.getByRole("button", { name: "双栏 KPI 分析 更多操作" })).toBeInTheDocument();
   });
 
+  it("shows demo package ready banner", async () => {
+    renderHub();
+    expect(await screen.findByText("官方演示数据已就绪")).toBeInTheDocument();
+    expect(screen.getByText(/模板预览与官方示例看板将自动使用/)).toBeInTheDocument();
+  });
+
   it("exports template json from card menu", async () => {
     const user = userEvent.setup();
     const downloadMock = vi.mocked(downloadJsonFile);
     downloadMock.mockClear();
     renderHub();
-    await screen.findByText("双栏 KPI 分析");
-    await user.click(screen.getByRole("button", { name: "双栏 KPI 分析 更多操作" }));
+    const [card] = await screen.findAllByTestId("viz-template-card-tpl-1");
+    await user.click(within(card).getByRole("button", { name: "双栏 KPI 分析 更多操作" }));
     await user.click(await screen.findByRole("menuitem", { name: "导出" }));
     await waitFor(() => {
       expect(downloadMock).toHaveBeenCalledWith(

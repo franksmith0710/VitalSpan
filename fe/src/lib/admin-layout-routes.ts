@@ -21,6 +21,9 @@ const ADMIN_SCREEN_PREVIEW_PATTERN = /^\/admin\/data-screens\/[^/]+\/preview\/?$
 
 const ADMIN_VIZ_COMPONENT_EDIT_PATTERN = /^\/admin\/viz-components\/[^/]+\/edit\/?$/;
 
+/** Dataset 新建/编辑：全宽 + fill 高度（Schema 浏览器占满视口） */
+const ADMIN_DATASET_FORM_PATTERN = /^\/admin\/datasets\/(?:new|[^/]+\/edit)\/?$/;
+
 /** 分享/嵌入配置页：全宽 fill（bi-share-embed） */
 const ADMIN_SHARE_PATTERNS: RegExp[] = [
   /^\/admin\/dashboards\/[^/]+\/share\/?$/,
@@ -55,6 +58,10 @@ export function isAdminVizComponentEditRoute(pathname: string): boolean {
   return ADMIN_VIZ_COMPONENT_EDIT_PATTERN.test(pathname);
 }
 
+export function isAdminDatasetFormRoute(pathname: string): boolean {
+  return ADMIN_DATASET_FORM_PATTERN.test(pathname);
+}
+
 export function isAdminScreenPreviewRoute(pathname: string): boolean {
   return ADMIN_SCREEN_PREVIEW_PATTERN.test(pathname);
 }
@@ -81,6 +88,7 @@ export function isAdminMaxWidthNoneRoute(
     isAdminListFillRoute(pathname) ||
     isAdminShareRoute(pathname) ||
     isAdminVizComponentEditRoute(pathname) ||
+    isAdminDatasetFormRoute(pathname) ||
     isAdminWideScrollRoute(pathname) ||
     options?.dashboardBuilder === true
   );
@@ -91,8 +99,6 @@ const ADMIN_CONSTRAINED_PATTERNS: RegExp[] = [
   /^\/admin\/account(?:\/|$)/,
   /^\/admin\/datasources\/new\/?$/,
   /^\/admin\/datasources\/[^/]+\/edit\/?$/,
-  /^\/admin\/datasets\/new\/?$/,
-  /^\/admin\/datasets\/[^/]+\/edit\/?$/,
   /^\/admin\/ingestion\/sync-jobs\/new\/?$/,
   /^\/admin\/ingestion\/sync-jobs\/[^/]+\/edit\/?$/,
 ];

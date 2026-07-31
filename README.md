@@ -60,10 +60,12 @@ VitalSpan/
 ### 1. 启动依赖服务
 
 ```bash
-docker compose up -d postgres analytics-postgres
+docker compose up -d postgres sample-mysql
 ```
 
-如需样例 MySQL / ClickHouse / TimescaleDB 等，见 [`docker-compose.yml`](docker-compose.yml) 中对应 service。
+`sample-mysql`（3307 / `sample_db`）为**官方演示包必需**：后端启动时会自动增量迁移 `vs_official_*` 视图、注册 code=`demo` 的「示例数据」源，并预置官方示例看板/大屏。
+
+如需 ClickHouse / TimescaleDB 等其它样例库，见 [`docker-compose.yml`](docker-compose.yml) 中对应 service。
 
 ### 2. 后端
 
@@ -118,6 +120,17 @@ pnpm dev
 ### 4. 默认开发账号
 
 环境变量 `VITALSPAN_DEV_ADMIN_PASSWORD`（见 `backend/.env.example`）控制开发态管理员密码。
+
+---
+
+## 官方演示包 FAQ
+
+| 现象 | 处理 |
+|------|------|
+| Hub 横幅「尚未就绪」、schema 未迁移 | 确认 `docker compose up -d sample-mysql` 后**重启后端**（启动时会跑 `docker/demo-mysql/migrations/`） |
+| 有 `sample-mysql` 源但无 `demo` | 重启后端；legacy `official-demo-mysql` 会自动 rename 为 `demo` |
+| 看板列表无「官方示例」 | 重启后端触发 `seed_demo_instances`；或调 `GET /api/v1/demo-package/status?refresh=true` 排查 |
+| 迁移仍失败 | 检查 3307 端口与 `backend/.env` 中 `SAMPLE_MYSQL_URL`；必要时备份后重建 sample-mysql 卷 |
 
 ---
 

@@ -86,8 +86,8 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
 
   if (mode === "edit" && detailQuery.isLoading) {
     return (
-      <AdminPageShell title="编辑 Dataset">
-        <Skeleton className="h-[520px] w-full rounded-2xl" />
+      <AdminPageShell title="编辑数据集" layout="fill">
+        <Skeleton className="h-full min-h-[520px] w-full rounded-2xl" />
       </AdminPageShell>
     );
   }
@@ -95,7 +95,8 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
   if (mode === "edit" && detailQuery.isError) {
     return (
       <AdminPageShell
-        title="编辑 Dataset"
+        title="编辑数据集"
+        layout="fill"
         actions={
           <Button asChild variant="outline">
             <Link to="/admin/datasets">返回列表</Link>
@@ -109,8 +110,9 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
 
   return (
     <AdminPageShell
-      title={mode === "create" ? "新建 Dataset" : "编辑 Dataset"}
+      title={mode === "create" ? "新建 Dataset" : "编辑数据集"}
       description="配置语义层数据集：从数据源选择物理表，并定义可在报表中复用的计算字段。"
+      layout="fill"
       actions={
         <Button asChild variant="outline">
           <Link to="/admin/datasets">返回列表</Link>

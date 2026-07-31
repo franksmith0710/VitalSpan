@@ -27,6 +27,7 @@ import {
 import { mapApiError } from "@/lib/apiError";
 import { downloadJsonFile } from "@/lib/exportLayoutJson";
 import {
+  HUB_CARD_BODY_ACTION_RAIL_CLASS,
   HUB_CARD_BODY_CLASS,
   HUB_CARD_BODY_MORE_TRIGGER_CLASS,
   HUB_CARD_PREVIEW_CONTENT_CLASS,
@@ -122,7 +123,7 @@ export function VizTemplateCard({
       </div>
 
       <div className={HUB_CARD_BODY_CLASS}>
-        <div className="flex min-w-0 items-start gap-1.5">
+        <div className="flex min-w-0 items-stretch gap-2">
           <div className="min-w-0 flex-1">
             <h2 className="truncate text-theme-sm font-semibold text-gray-900 dark:text-white">
               {item.name}
@@ -133,47 +134,46 @@ export function VizTemplateCard({
               </p>
             ) : null}
           </div>
-          <span className="shrink-0 rounded bg-gray-100 px-1.5 py-px text-[10px] font-medium leading-4 text-gray-500 dark:bg-white/[0.06] dark:text-gray-400">
-            {surfaceLabel(item.surfaceKind)}
-          </span>
-        </div>
-
-        <div className="flex items-center justify-end">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <IconButton
-                type="button"
-                variant="ghost"
-                size="sm"
-                showTooltip={false}
-                disabled={pending || exporting}
-                aria-label={`${item.name} 更多操作`}
-                className={HUB_CARD_BODY_MORE_TRIGGER_CLASS}
-              >
-                <MoreHorizontal className="size-4" aria-hidden />
-              </IconButton>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-[10rem]">
-              <DropdownMenuItem disabled={exporting} onClick={handleExport}>
-                <Download className="size-4" aria-hidden />
-                {TEMPLATE_ACTIONS.export}
-              </DropdownMenuItem>
-              {showPublish ? (
-                <DropdownMenuItem disabled={pending} onClick={onPublish}>
-                  {TEMPLATE_ACTIONS.publish}
+          <div className={HUB_CARD_BODY_ACTION_RAIL_CLASS}>
+            <span className="rounded bg-gray-100 px-1.5 py-px text-[10px] font-medium leading-4 text-gray-500 dark:bg-white/[0.06] dark:text-gray-400">
+              {surfaceLabel(item.surfaceKind)}
+            </span>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton
+                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  showTooltip={false}
+                  disabled={pending || exporting}
+                  aria-label={`${item.name} 更多操作`}
+                  className={HUB_CARD_BODY_MORE_TRIGGER_CLASS}
+                >
+                  <MoreHorizontal className="size-3.5" aria-hidden />
+                </IconButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[10rem]">
+                <DropdownMenuItem disabled={exporting} onClick={handleExport}>
+                  <Download className="size-4" aria-hidden />
+                  {TEMPLATE_ACTIONS.export}
                 </DropdownMenuItem>
-              ) : null}
-              {showArchive ? (
-                <>
-                  {showPublish ? <DropdownMenuSeparator /> : null}
-                  <DropdownMenuItem disabled={pending} onClick={onArchive}>
-                    <Archive className="size-4" aria-hidden />
-                    {TEMPLATE_ACTIONS.archive}
+                {showPublish ? (
+                  <DropdownMenuItem disabled={pending} onClick={onPublish}>
+                    {TEMPLATE_ACTIONS.publish}
                   </DropdownMenuItem>
-                </>
-              ) : null}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                ) : null}
+                {showArchive ? (
+                  <>
+                    {showPublish ? <DropdownMenuSeparator /> : null}
+                    <DropdownMenuItem disabled={pending} onClick={onArchive}>
+                      <Archive className="size-4" aria-hidden />
+                      {TEMPLATE_ACTIONS.archive}
+                    </DropdownMenuItem>
+                  </>
+                ) : null}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 

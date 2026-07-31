@@ -24,8 +24,9 @@ export function resolveSampleDbDatasource(
     let s = 0;
     if (dbName === "sample_db") s += 10;
     else if (dbName.includes("sample_db")) s += 6;
-    if (code === "sample-mysql") s += 4;
-    else if (/sample-mysql|demo-mysql/.test(`${code} ${name}`)) s += 3;
+    if (code === "demo") s += 20;
+    else if (code === "sample-mysql") s += 4;
+    else if (/sample-mysql|demo-mysql|official-demo/.test(`${code} ${name}`)) s += 3;
     else if (/\bsample\b/.test(`${code} ${name}`)) s += 1;
     return s;
   };

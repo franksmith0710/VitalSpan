@@ -28,11 +28,15 @@ export function SchemaBrowser({
   className,
   embedded = false,
   defaultDatabase,
+  onSelectionChange,
+  toolbarActions,
 }: {
   dataSourceId: string;
   className?: string;
   embedded?: boolean;
   defaultDatabase?: string;
+  onSelectionChange?: (selection: TableSelection | null) => void;
+  toolbarActions?: ReactNode;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [hideSystem, setHideSystem] = useState(true);
@@ -62,6 +66,13 @@ export function SchemaBrowser({
   );
 
   useEffect(() => {
+    initRef.current = false;
+    setSelection(null);
+    setExpandedSchemas({});
+    setSearchQuery("");
+  }, [dataSourceId]);
+
+  useEffect(() => {
     if (!schemaNames.length || initRef.current) return;
     const preferred =
       (defaultDatabase && schemaNames.includes(defaultDatabase) && defaultDatabase) ||
@@ -71,6 +82,10 @@ export function SchemaBrowser({
       setExpandedSchemas((s) => ({ ...s, [preferred]: true }));
     }
   }, [defaultDatabase, schemaNames, userSchemas]);
+
+  useEffect(() => {
+    onSelectionChange?.(selection);
+  }, [onSelectionChange, selection]);
 
   const handleTablesLoaded = useCallback((schema: string, tables: TableMeta[]) => {
     if (initRef.current || !tables.length) return;
@@ -161,7 +176,7 @@ export function SchemaBrowser({
         placeholder="搜索 Schema 或表名…"
         aria-label="搜索元数据"
       />
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
           <Checkbox
             id="hide-system-schemas"
@@ -172,15 +187,24 @@ export function SchemaBrowser({
             隐藏系统库
           </Label>
         </div>
-        <Badge variant="light" color="light" size="sm">
-          {schemaNames.length} 个 schema
-        </Badge>
+        {toolbarActions}
+        {!embedded ? (
+          <Badge variant="light" color="light" size="sm">
+            {schemaNames.length} 个 schema
+          </Badge>
+        ) : null}
       </div>
     </div>
   );
 
   const splitView = (
-    <div className="grid min-h-[420px] flex-1 lg:grid-cols-[minmax(260px,320px)_1fr]">
+    <div
+      className={cn(
+        "grid min-h-0 flex-1 lg:grid-cols-[minmax(260px,320px)_1fr]",
+        !embedded && "min-h-[420px]",
+      )}
+      data-testid="schema-browser-split"
+    >
       <SchemaTreePanel
         dataSourceId={dataSourceId}
         userSchemas={filteredUserSchemas}
@@ -200,7 +224,7 @@ export function SchemaBrowser({
 
   if (embedded) {
     return (
-      <div className={cn("flex min-h-0 flex-1 flex-col", className)}>
+      <div className={cn("flex min-h-0 flex-1 flex-col", className)} data-testid="schema-browser">
         {toolbar}
         {splitView}
       </div>

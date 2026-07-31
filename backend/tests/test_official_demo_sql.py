@@ -76,7 +76,11 @@ def _sample_mysql_reachable() -> bool:
 @pytest.mark.skipif(not _sample_mysql_reachable(), reason="sample-mysql not running on 3307")
 def test_official_views_queryable() -> None:
     from app.dashboard.templates.demo_datasource import resolve_official_demo_connection
+    from app.dashboard.templates.official_demo_bootstrap import ensure_sample_db_schema
     from app.datasources.dialects.mysql import MysqlConnector
+
+    bootstrap = ensure_sample_db_schema()
+    assert bootstrap.mysql_reachable, bootstrap.message
 
     conn = resolve_official_demo_connection()
     connector = MysqlConnector()
@@ -95,7 +99,7 @@ def test_official_views_queryable() -> None:
                 (conn.database,),
             )
             if cur.fetchone() is None:
-                pytest.skip("vs_official_* views missing — re-apply docker/demo-mysql/tables.sql")
+                pytest.fail("vs_official_* views missing after migration bootstrap")
             for chart_type in sorted(all_covered_chart_types()):
                 sql = get_official_sql(chart_type).sql.strip().rstrip(";")
                 cur.execute(f"SELECT * FROM ({sql}) AS official_probe LIMIT 1")

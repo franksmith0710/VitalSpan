@@ -27,14 +27,20 @@ def _warm_meta_database() -> None:
     """预热元数据库连接池；开发环境顺带修复 admin 孤儿绑定与样例源凭证。"""
     from app.auth.bootstrap_root import ensure_admin_username_root_binding
     from app.auth.models import get_meta_session
+    from app.dashboard.templates.official_demo_bootstrap import ensure_sample_db_schema
     from app.dashboard.templates.demo_datasource import ensure_official_demo_datasource
     from app.dashboard.templates.seed import seed_builtin_dashboard_templates
+    from app.dashboard.demo_instances.seed import seed_demo_instances
     from app.datasources.dev_credential_repair import repair_dev_datasource_credentials
 
     session = get_meta_session()
     try:
         session.execute(text("SELECT 1"))
         if settings.ensure_official_demo_datasource:
+            try:
+                ensure_sample_db_schema()
+            except Exception:
+                logger.warning("sample_db_schema_bootstrap_failed", exc_info=True)
             try:
                 ensure_official_demo_datasource(session)
             except Exception:
@@ -45,6 +51,13 @@ def _warm_meta_database() -> None:
                 logger.info("dashboard_template_seed_ok inserted=%s", inserted)
         except Exception:
             logger.warning("dashboard_template_seed_failed", exc_info=True)
+        if settings.ensure_official_demo_datasource:
+            try:
+                demo_inserted = seed_demo_instances(session)
+                if demo_inserted:
+                    logger.info("demo_instances_seed_ok inserted=%s", demo_inserted)
+            except Exception:
+                logger.warning("demo_instances_seed_failed", exc_info=True)
         if settings.vitalspan_env == "development":
             ensure_admin_username_root_binding(
                 session,

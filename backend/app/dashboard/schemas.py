@@ -470,6 +470,12 @@ class DashboardCanvas(BaseModel):
     height: int = Field(default=MIN_CANVAS_HEIGHT, ge=1)
 
 
+class DemoPackageMeta(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    seed: bool = True
+    source_template_key: str = Field(alias="sourceTemplateKey")
+
+
 class DashboardLayout(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
     version: Literal[1, 2] = 1
@@ -477,6 +483,7 @@ class DashboardLayout(BaseModel):
     widgets: list[LayoutWidget] = Field(default_factory=list, max_length=32)
     global_filters: list[Any] = Field(default_factory=list, alias="globalFilters", max_length=16)
     style_config: DashboardStyleConfig | None = Field(default=None, alias="styleConfig")
+    demo_package: DemoPackageMeta | None = Field(default=None, alias="demoPackage")
 
     @model_validator(mode="before")
     @classmethod

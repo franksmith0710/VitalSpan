@@ -1,8 +1,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const mockApiFetch = vi.fn();
 vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => mockApiFetch(...args) }));
@@ -21,30 +21,33 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 import { DatasetFormPage } from "./DatasetFormPage";
 import { DatasetListPage } from "./DatasetListPage";
 
-function renderCreateForm() {
+function renderWithProviders(ui: React.ReactNode) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={["/admin/datasets/new"]}>
-        <Routes>
-          <Route path="/admin/datasets/new" element={<DatasetFormPage mode="create" />} />
-        </Routes>
-      </MemoryRouter>
+      <TooltipProvider delayDuration={0}>{ui}</TooltipProvider>
     </QueryClientProvider>,
   );
 }
 
+function renderCreateForm() {
+  return renderWithProviders(
+    <MemoryRouter initialEntries={["/admin/datasets/new"]}>
+      <Routes>
+        <Route path="/admin/datasets/new" element={<DatasetFormPage mode="create" />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+}
+
 function renderList() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={["/admin/datasets"]}>
-        <Routes>
-          <Route path="/admin/datasets" element={<DatasetListPage />} />
-          <Route path="/admin/datasets/new" element={<DatasetFormPage mode="create" />} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
+  return renderWithProviders(
+    <MemoryRouter initialEntries={["/admin/datasets"]}>
+      <Routes>
+        <Route path="/admin/datasets" element={<DatasetListPage />} />
+        <Route path="/admin/datasets/new" element={<DatasetFormPage mode="create" />} />
+      </Routes>
+    </MemoryRouter>,
   );
 }
 
@@ -73,6 +76,7 @@ describe("Dataset form pages", () => {
     expect(await screen.findByRole("heading", { name: "新建 Dataset" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "返回列表" })).toHaveAttribute("href", "/admin/datasets");
     expect(await screen.findByLabelText("选择数据源")).toBeInTheDocument();
+    expect(await screen.findByTestId("schema-browser")).toBeInTheDocument();
     expect(screen.queryByLabelText(/计算字段 JSON/)).not.toBeInTheDocument();
     await waitFor(() =>
       expect(mockApiFetch).toHaveBeenCalledWith("/api/v1/datasources/ds-1/schemas"),
@@ -112,18 +116,16 @@ describe("Dataset form pages", () => {
       return {};
     });
 
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    render(
-      <QueryClientProvider client={qc}>
-        <MemoryRouter initialEntries={["/admin/datasets/ds-demo/edit"]}>
-          <Routes>
-            <Route path="/admin/datasets/:id/edit" element={<DatasetFormPage mode="edit" />} />
-          </Routes>
-        </MemoryRouter>
-      </QueryClientProvider>,
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/admin/datasets/ds-demo/edit"]}>
+        <Routes>
+          <Route path="/admin/datasets/:id/edit" element={<DatasetFormPage mode="edit" />} />
+        </Routes>
+      </MemoryRouter>,
     );
 
-    expect(await screen.findByRole("heading", { name: "编辑 Dataset" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "编辑数据集" })).toBeInTheDocument();
+    expect(await screen.findByTestId("schema-browser")).toBeInTheDocument();
     expect(await screen.findByDisplayValue("amt2")).toBeInTheDocument();
     expect(screen.getAllByText("public.orders").length).toBeGreaterThan(0);
     expect(screen.getByText("绑定查询配置")).toBeInTheDocument();

@@ -31,7 +31,15 @@ describe("mapChartSalesGeo", () => {
     expect(isSalesGeoMapConfig(baseCfg)).toBe(false);
   });
 
-  it("resolves sample datasource by code, name or database", () => {
+  it("resolves demo code before other sample heuristics", () => {
+    const items = [
+      { id: "1", name: "演示 MySQL", code: "demo-mysql", database: "sample_db" },
+      { id: "2", name: "示例数据", code: "demo", database: "sample_db" },
+    ];
+    expect(resolveSampleDbDatasource(items)?.id).toBe("2");
+  });
+
+  it("resolves sample_db datasource by code, name or database", () => {
     const items = [
       { id: "1", name: "生产 PG", code: "prod-pg", database: "analytics" },
       { id: "2", name: "演示 MySQL", code: "demo-mysql", database: "sample_db" },

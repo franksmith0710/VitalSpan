@@ -137,7 +137,7 @@ describe("AdminLayout smoke", () => {
     expect(main.className).toContain("max-w-(--breakpoint-2xl)");
   });
 
-  it("default admin route locks document scroll and scrolls in main", () => {
+  it("dataset edit route uses fill-height full-width main", () => {
     render(
       <MemoryRouter initialEntries={["/admin/datasets/ds-demo/edit"]}>
         <Routes>
@@ -148,7 +148,9 @@ describe("AdminLayout smoke", () => {
       </MemoryRouter>,
     );
     const main = screen.getAllByRole("main")[0];
-    expect(main.className).toContain("overflow-y-auto");
+    expect(main.className).toContain("overflow-hidden");
+    expect(main.className).toContain("max-w-none");
+    expect(main.className).not.toContain("max-w-(--breakpoint-2xl)");
     expect(document.documentElement.classList.contains("admin-fill-lock")).toBe(true);
   });
 

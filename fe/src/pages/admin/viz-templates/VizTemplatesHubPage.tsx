@@ -45,7 +45,13 @@ import {
   HUB_CARD_SKELETON_BODY_CLASS,
   HUB_CARD_SKELETON_PREVIEW_CLASS,
 } from "@/components/dashboard/hubCardUi";
+import { Link } from "react-router";
 import { cn } from "@/lib/utils";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  demoPackageStatusQueryKey,
+  fetchDemoPackageStatus,
+} from "@/lib/demoPackageStatus";
 
 function TemplateCardSkeleton() {
   return (
@@ -98,6 +104,12 @@ export function VizTemplatesHubPage() {
         includeDrafts: canManage,
         limit: 100,
       }),
+  });
+
+  const demoStatusQuery = useQuery({
+    queryKey: demoPackageStatusQueryKey,
+    queryFn: () => fetchDemoPackageStatus(),
+    staleTime: 30_000,
   });
 
   const invalidate = () =>
@@ -286,6 +298,35 @@ export function VizTemplatesHubPage() {
             />
           }
         />
+
+        {demoStatusQuery.data ? (
+          <ListPageBody className="border-b py-3">
+            <Alert severity={demoStatusQuery.data.ready ? "success" : "warning"} banner>
+              <AlertTitle>
+                {demoStatusQuery.data.ready
+                  ? "官方演示数据已就绪"
+                  : "官方演示数据尚未就绪"}
+              </AlertTitle>
+              <AlertDescription>
+                {demoStatusQuery.data.ready
+                  ? "模板预览与官方示例看板将自动使用「示例数据」数据源。"
+                  : demoStatusQuery.data.message ??
+                    "请启动 sample-mysql 并检查数据连接中的「示例数据」源。"}
+                {!demoStatusQuery.data.ready ? (
+                  <>
+                    {" "}
+                    <Link
+                      to="/admin/datasources"
+                      className="font-medium text-brand-600 underline dark:text-brand-400"
+                    >
+                      前往数据连接
+                    </Link>
+                  </>
+                ) : null}
+              </AlertDescription>
+            </Alert>
+          </ListPageBody>
+        ) : null}
 
         {listQuery.isError ? (
           <ListPageBody>

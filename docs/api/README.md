@@ -214,6 +214,7 @@ redoc: /redoc
 | PUT/GET | `/api/v1/dashboards/{id}/global-filters` | 全局筛选联动 save/get（`config_type=global_filter_linkage`；含 `affectedWidgetCount`） | 内部 | 一期 | DASH-004 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | POST | `/api/v1/dashboards/{dashboard_id}/widgets/{widget_id}/execute` | M8 DASH-004 BE filter execute（linkage 合并 + SQL 参数注入） | 内部 | 一期 | DASH-004 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | POST | `/api/v1/dashboards/from-template` | 从可视化模板原子创建 Dashboard + layout（`templateId`） | 内部 | 一期 | DASH-009 | 已实现 | `backend/app/api/v1/dashboards.py` |
+| GET | `/api/v1/demo-package/status` | 官方演示包就绪状态（sample_db 迁移 / demo 源 / 示例实例） | 内部 | 一期 | DASH-009 | 已实现 | `backend/app/api/v1/demo_package.py` |
 | GET/POST | `/api/v1/dashboard-templates` | 可视化模板列表/创建草稿 | 内部 | 一期 | DASH-009 | 已实现 | `backend/app/api/v1/dashboard_templates.py` |
 | GET/PUT/DELETE | `/api/v1/dashboard-templates/{id}` | 模板详情/更新/删除（builtin 只读） | 内部 | 一期 | DASH-009 | 已实现 | `backend/app/api/v1/dashboard_templates.py` |
 | POST | `/api/v1/dashboard-templates/{id}/publish` | 发布模板（`dashboard:template.manage`） | 内部 | 一期 | DASH-009 | 已实现 | `backend/app/api/v1/dashboard_templates.py` |

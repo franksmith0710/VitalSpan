@@ -66,6 +66,7 @@ import { runBatchDelete } from "@/lib/runBatchDelete";
 import { canEditDashboards, sessionUserFromMe } from "@/lib/session";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { useAuth } from "@/context/auth-context";
+import { isDemoPackageDashboard } from "@/lib/demoPackage";
 
 type DashboardListResponse = {
   items: DashboardListItem[];
@@ -76,10 +77,13 @@ type DashboardListResponse = {
 
 type ViewMode = "grid" | "list";
 
-function sortByRecent(items: DashboardListItem[]): DashboardListItem[] {
-  return [...items].sort(
-    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-  );
+function sortDashboardListItems(items: DashboardListItem[]): DashboardListItem[] {
+  return [...items].sort((a, b) => {
+    const aDemo = isDemoPackageDashboard({ slug: a.slug, layoutJson: a.layoutJson }) ? 1 : 0;
+    const bDemo = isDemoPackageDashboard({ slug: b.slug, layoutJson: b.layoutJson }) ? 1 : 0;
+    if (aDemo !== bDemo) return bDemo - aDemo;
+    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+  });
 }
 
 function formatUpdatedAt(value: string): string {
@@ -251,7 +255,7 @@ export function DataScreenListPage() {
   });
 
   const sortedItems = useMemo(
-    () => sortByRecent(listQuery.data?.items ?? []),
+    () => sortDashboardListItems(listQuery.data?.items ?? []),
     [listQuery.data?.items],
   );
   const total = listQuery.data?.total ?? 0;

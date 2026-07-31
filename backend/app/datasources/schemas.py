@@ -84,6 +84,7 @@ class DataSourceOut(BaseModel):
     password: str = "***"
     description: str | None
     connection_options: ConnectionOptions | None = Field(default=None, alias="connectionOptions")
+    is_demo_package: bool = Field(default=False, alias="isDemoPackage")
 
     model_config = {"populate_by_name": True}
 

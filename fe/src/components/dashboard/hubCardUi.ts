@@ -24,10 +24,14 @@ export const HUB_CARD_PREVIEW_HOVER_OVERLAY_CLASS =
 export const HUB_CARD_PREVIEW_HOVER_OUTLINE_BTN_CLASS =
   "border-white/30 bg-white/10 text-white hover:bg-white/20";
 
-export const HUB_CARD_BODY_CLASS = "flex flex-col gap-2 p-3";
+export const HUB_CARD_BODY_CLASS = "flex flex-col gap-1 p-3";
 
 /** 卡片正文区更多菜单触发器（始终可见） */
 export const HUB_CARD_BODY_MORE_TRIGGER_CLASS = "shrink-0";
+
+/** 卡片正文右侧：标签与更多操作上下分布 */
+export const HUB_CARD_BODY_ACTION_RAIL_CLASS =
+  "flex min-h-[2.75rem] shrink-0 flex-col items-end justify-between gap-0.5 self-stretch py-px";
 
 export function hubCardPreviewFrameStyle(): CSSProperties {
   return { aspectRatio: HUB_CARD_ASPECT_RATIO };

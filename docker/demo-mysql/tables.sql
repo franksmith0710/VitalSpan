@@ -870,7 +870,7 @@ JOIN regions prov ON city.parent_id = prov.id;
 
 CREATE OR REPLACE VIEW vs_official_matrix_heat AS
 SELECT
-  CASE DAYOFWEEK(s.sale_date)
+  CASE day_of_week
     WHEN 1 THEN '周日'
     WHEN 2 THEN '周一'
     WHEN 3 THEN '周二'
@@ -879,10 +879,12 @@ SELECT
     WHEN 6 THEN '周五'
     WHEN 7 THEN '周六'
   END AS x_dim,
-  s.channel AS y_dim,
-  SUM(s.amount) AS heat_value
-FROM sales s
-GROUP BY DAYOFWEEK(s.sale_date), s.channel;
+  channel AS y_dim,
+  SUM(amount) AS heat_value
+FROM (
+  SELECT DAYOFWEEK(sale_date) AS day_of_week, channel, amount FROM sales
+) src
+GROUP BY day_of_week, channel;
 
 CREATE OR REPLACE VIEW vs_official_stock_ohlc AS
 SELECT

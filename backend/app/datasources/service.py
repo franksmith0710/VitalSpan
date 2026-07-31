@@ -80,7 +80,12 @@ def _to_out(row: DataSource) -> DataSourceOut:
         password="***",
         description=row.description,
         connection_options=opts,
+        is_demo_package=is_demo_package_datasource_code(row.code),
     )
+
+
+def is_demo_package_datasource_code(code: str | None) -> bool:
+    return (code or "").lower() == "demo"
 
 
 def _resolve_connector(type: str):
@@ -334,6 +339,12 @@ def delete_data_source(session: Session, data_source_id: uuid.UUID, *, role_code
     row = session.get(DataSource, data_source_id)
     if row is None or row.deleted_at is not None:
         raise DataSourceError("DATASOURCE_NOT_FOUND", "Data source not found", 404)
+    if is_demo_package_datasource_code(row.code):
+        raise DataSourceError(
+            "DATASOURCE_DEMO_PROTECTED",
+            "官方演示数据源不可删除",
+            409,
+        )
     grant = session.scalar(
         select(AuthResourceGrant)
         .where(

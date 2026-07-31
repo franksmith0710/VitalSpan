@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   isAdminConstrainedRoute,
   isAdminDashboardBuilderRoute,
+  isAdminDatasetFormRoute,
   isAdminListFillRoute,
   isAdminMaxWidthNoneRoute,
   isAdminScreenPreviewRoute,
@@ -70,8 +71,12 @@ describe("isAdminMaxWidthNoneRoute", () => {
   it("stays false for constrained form and account routes", () => {
     expect(isAdminMaxWidthNoneRoute("/admin/account/profile")).toBe(false);
     expect(isAdminMaxWidthNoneRoute("/admin/datasources/new")).toBe(false);
-    expect(isAdminMaxWidthNoneRoute("/admin/datasets/d1/edit")).toBe(false);
     expect(isAdminMaxWidthNoneRoute("/admin/ingestion/sync-jobs/new")).toBe(false);
+  });
+
+  it("is true for dataset form routes", () => {
+    expect(isAdminMaxWidthNoneRoute("/admin/datasets/new")).toBe(true);
+    expect(isAdminMaxWidthNoneRoute("/admin/datasets/d1/edit")).toBe(true);
   });
 });
 
@@ -80,6 +85,11 @@ describe("isAdminConstrainedRoute", () => {
     expect(isAdminConstrainedRoute("/admin/account/security")).toBe(true);
     expect(isAdminConstrainedRoute("/admin/datasources/new")).toBe(true);
     expect(isAdminConstrainedRoute("/admin/ingestion/sync-jobs/j1/edit")).toBe(true);
+  });
+
+  it("does not match dataset form routes (now full-width fill)", () => {
+    expect(isAdminConstrainedRoute("/admin/datasets/new")).toBe(false);
+    expect(isAdminConstrainedRoute("/admin/datasets/d1/edit")).toBe(false);
   });
 });
 
@@ -105,6 +115,15 @@ describe("isAdminVizComponentEditRoute", () => {
     expect(isAdminVizComponentEditRoute("/admin/viz-components/abc/edit/")).toBe(true);
     expect(isAdminVizComponentEditRoute("/admin/viz-components")).toBe(false);
     expect(isAdminVizComponentEditRoute("/admin/viz-components/new")).toBe(false);
+  });
+});
+
+describe("isAdminDatasetFormRoute", () => {
+  it("matches dataset new and edit fill routes", () => {
+    expect(isAdminDatasetFormRoute("/admin/datasets/new")).toBe(true);
+    expect(isAdminDatasetFormRoute("/admin/datasets/d1/edit")).toBe(true);
+    expect(isAdminDatasetFormRoute("/admin/datasets/d1/edit/")).toBe(true);
+    expect(isAdminDatasetFormRoute("/admin/datasets")).toBe(false);
   });
 });
 

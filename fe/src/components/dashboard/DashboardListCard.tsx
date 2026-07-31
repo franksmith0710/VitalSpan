@@ -32,6 +32,7 @@ import {
   isDataScreenLayout,
 } from "@/lib/dataScreenLayout";
 import { previewSummaryToLayout, type DashboardPreviewSummary } from "@/lib/dashboardListPreview";
+import { isDemoPackageDashboard } from "@/lib/demoPackage";
 
 export type DashboardListItem = {
   id: string;
@@ -89,6 +90,10 @@ export function DashboardListCard({
   const editPath = isScreen ? dataScreenEditPath(dashboard.id) : `${routeBase}/${dashboard.id}/edit`;
   const sharePath = dashboardSharePath(dashboard.id, isScreen);
   const primaryPath = canEdit ? editPath : viewPath;
+  const isOfficialDemo = isDemoPackageDashboard({
+    slug: dashboard.slug,
+    layoutJson: layoutForPreview,
+  });
 
   return (
     <article className={cn(HUB_CARD_SHELL_CLASS, className)}>
@@ -152,6 +157,11 @@ export function DashboardListCard({
         </div>
 
         <div className="flex items-center gap-2">
+          {isOfficialDemo ? (
+            <Badge variant="light" color="primary" size="sm">
+              官方示例
+            </Badge>
+          ) : null}
           <Badge variant="light" color="light" size="sm">
             {widgetCount} 个组件
           </Badge>
@@ -162,12 +172,12 @@ export function DashboardListCard({
             <DropdownMenuTrigger asChild>
               <IconButton
                 variant="ghost"
-                size="sm"
+                size="xs"
                 showTooltip={false}
                 aria-label={`${dashboard.name} 更多操作`}
                 className={HUB_CARD_BODY_MORE_TRIGGER_CLASS}
               >
-                <MoreHorizontal className="size-4" />
+                <MoreHorizontal className="size-3.5" />
               </IconButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">

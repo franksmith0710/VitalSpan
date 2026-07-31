@@ -28,6 +28,7 @@ from app.api.v1.integration_bus import router as integration_bus_router
 from app.api.v1.reports.export import router as reports_export_router
 from app.api.v1.reports import router as reports_router
 from app.api.v1.datasets import router as datasets_router
+from app.api.v1.demo_package import router as demo_package_router
 from app.api.v1.embed import router as embed_router
 from app.api.v1.stats import router as stats_router
 
@@ -41,6 +42,7 @@ api_v1_router.include_router(query_configs_router)
 api_v1_router.include_router(charts_router)
 api_v1_router.include_router(dashboards_router)
 api_v1_router.include_router(dashboard_templates_router)
+api_v1_router.include_router(demo_package_router)
 api_v1_router.include_router(viz_components_router)
 api_v1_router.include_router(designer_router)
 api_v1_router.include_router(gov_router)

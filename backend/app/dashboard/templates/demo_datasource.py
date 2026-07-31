@@ -13,6 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.datasources.credentials import encrypt_credential
 from app.datasources.dialects.mysql import MysqlConnector
 from app.datasources.models import DataSource
 from app.datasources.schemas import DataSourceCreate
@@ -22,7 +23,9 @@ from app.viz.migrate_chart_types import migrate_layout_chart_configs
 logger = logging.getLogger(__name__)
 
 TEMPLATE_DEMO_DATASOURCE_REF = "__demo:sample_db__"
-OFFICIAL_DEMO_DATASOURCE_CODE = "official-demo-mysql"
+OFFICIAL_DEMO_DATASOURCE_CODE = "demo"
+LEGACY_DEMO_DATASOURCE_CODES = frozenset({"official-demo-mysql", "sample-mysql-dev"})
+DEMO_DATASOURCE_NAME = "示例数据"
 
 _DEFAULT_HOST = "127.0.0.1"
 _DEFAULT_PORT = 3307
@@ -38,6 +41,10 @@ class SampleMysqlConnection:
     database: str
     username: str
     password: str
+
+
+def is_demo_package_datasource_code(code: str | None) -> bool:
+    return (code or "").lower() == OFFICIAL_DEMO_DATASOURCE_CODE
 
 
 def _parse_sample_mysql_url(raw: str) -> SampleMysqlConnection | None:
@@ -67,15 +74,16 @@ def resolve_official_demo_connection() -> SampleMysqlConnection:
     )
 
 
-def _can_connect_sample_mysql(conn: SampleMysqlConnection) -> bool:
+def can_connect_sample_mysql(conn: SampleMysqlConnection | None = None) -> bool:
+    resolved = conn or resolve_official_demo_connection()
     connector = MysqlConnector()
     try:
         result = connector.test_connection(
-            host=conn.host,
-            port=conn.port,
-            database=conn.database,
-            username=conn.username,
-            password=conn.password,
+            host=resolved.host,
+            port=resolved.port,
+            database=resolved.database,
+            username=resolved.username,
+            password=resolved.password,
             timeout_sec=3.0,
         )
         return bool(result.ok)
@@ -83,15 +91,44 @@ def _can_connect_sample_mysql(conn: SampleMysqlConnection) -> bool:
         return False
 
 
+def _sync_demo_row(row: DataSource, conn: SampleMysqlConnection) -> None:
+    row.name = DEMO_DATASOURCE_NAME
+    row.code = OFFICIAL_DEMO_DATASOURCE_CODE
+    row.host = conn.host
+    row.port = conn.port
+    row.database = conn.database
+    row.username = conn.username
+    row.password_encrypted = encrypt_credential(conn.password)
+    row.description = "VitalSpan 官方演示包（对标 DataEase 内置示例数据）"
+
+
+def _migrate_legacy_demo_code(db: Session) -> DataSource | None:
+    for legacy_code in LEGACY_DEMO_DATASOURCE_CODES:
+        row = db.scalar(
+            select(DataSource).where(
+                DataSource.code == legacy_code,
+                DataSource.deleted_at.is_(None),
+            ),
+        )
+        if row is not None:
+            row.code = OFFICIAL_DEMO_DATASOURCE_CODE
+            row.name = DEMO_DATASOURCE_NAME
+            db.commit()
+            db.refresh(row)
+            logger.info("demo_datasource_legacy_renamed from=%s id=%s", legacy_code, row.id)
+            return row
+    return None
+
+
 def resolve_sample_db_datasource_id(db: Session) -> uuid.UUID | None:
-    official = db.scalar(
+    demo = db.scalar(
         select(DataSource.id).where(
             DataSource.code == OFFICIAL_DEMO_DATASOURCE_CODE,
             DataSource.deleted_at.is_(None),
         ),
     )
-    if official is not None:
-        return official
+    if demo is not None:
+        return demo
 
     rows = db.scalars(select(DataSource).where(DataSource.deleted_at.is_(None))).all()
     best_score = 0
@@ -101,8 +138,8 @@ def resolve_sample_db_datasource_id(db: Session) -> uuid.UUID | None:
         code = (row.code or "").lower()
         name = (row.name or "").lower()
         score = 0
-        if code == OFFICIAL_DEMO_DATASOURCE_CODE:
-            score += 20
+        if code in LEGACY_DEMO_DATASOURCE_CODES:
+            score += 18
         if db_name == "sample_db":
             score += 10
         elif "sample_db" in db_name:
@@ -124,18 +161,28 @@ def resolve_sample_db_datasource_id(db: Session) -> uuid.UUID | None:
 
 
 def ensure_official_demo_datasource(db: Session) -> uuid.UUID | None:
-    """幂等创建/确认官方演示 MySQL 连接；sample-mysql 不可达时 skip。"""
-    official = db.scalar(
-        select(DataSource.id).where(
+    """幂等创建/确认 demo 演示 MySQL 连接；sample-mysql 不可达时 skip。"""
+    conn = resolve_official_demo_connection()
+    existing = db.scalar(
+        select(DataSource).where(
             DataSource.code == OFFICIAL_DEMO_DATASOURCE_CODE,
             DataSource.deleted_at.is_(None),
         ),
     )
-    if official is not None:
-        return official
+    if existing is not None:
+        if can_connect_sample_mysql(conn):
+            _sync_demo_row(existing, conn)
+            db.commit()
+        return existing.id
 
-    conn = resolve_official_demo_connection()
-    if not _can_connect_sample_mysql(conn):
+    migrated = _migrate_legacy_demo_code(db)
+    if migrated is not None:
+        if can_connect_sample_mysql(conn):
+            _sync_demo_row(migrated, conn)
+            db.commit()
+        return migrated.id
+
+    if not can_connect_sample_mysql(conn):
         logger.info("official_demo_datasource_skip unreachable host=%s port=%s", conn.host, conn.port)
         return resolve_sample_db_datasource_id(db)
 
@@ -143,7 +190,7 @@ def ensure_official_demo_datasource(db: Session) -> uuid.UUID | None:
         out = create_data_source(
             db,
             DataSourceCreate(
-                name="官方演示库 (sample_db)",
+                name=DEMO_DATASOURCE_NAME,
                 code=OFFICIAL_DEMO_DATASOURCE_CODE,
                 type="mysql",
                 host=conn.host,
@@ -151,7 +198,7 @@ def ensure_official_demo_datasource(db: Session) -> uuid.UUID | None:
                 database=conn.database,
                 username=conn.username,
                 password=conn.password,
-                description="VitalSpan 官方可视化模板演示数据源（对标 DataEase 内置样例库）",
+                description="VitalSpan 官方演示包（对标 DataEase 内置示例数据）",
             ),
         )
         logger.info("official_demo_datasource_created id=%s", out.id)
