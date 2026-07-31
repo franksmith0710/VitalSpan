@@ -5,7 +5,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -155,6 +155,12 @@ def validate_layout(layout: dict[str, Any]) -> dict[str, Any]:
     return validate_layout_dict(layout)
 
 
+def _official_demo_slugs() -> set[str]:
+    from app.dashboard.demo_instances.seed import DEMO_INSTANCE_SLUGS, LEGACY_DEMO_INSTANCE_SLUGS
+
+    return set(DEMO_INSTANCE_SLUGS) | set(LEGACY_DEMO_INSTANCE_SLUGS.keys())
+
+
 def list_dashboards(
     db: Session,
     *,
@@ -169,7 +175,13 @@ def list_dashboards(
             actor_uuid = uuid.UUID(actor.id)
         except ValueError:
             return DashboardListResponse(items=[], total=0, limit=limit, offset=offset)
-        base = base.where(Dashboard.created_by == actor_uuid)
+        official_slugs = _official_demo_slugs()
+        base = base.where(
+            or_(
+                Dashboard.created_by == actor_uuid,
+                Dashboard.slug.in_(official_slugs),
+            ),
+        )
     if surface_kind == "data-screen":
         base = base.where(Dashboard.surface_kind == "data-screen")
     elif surface_kind == "dashboard":

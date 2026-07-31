@@ -30,7 +30,7 @@
 | DevUserSwitcher | `layout/dev-user-switcher.tsx` | 开发态 RBAC 用户切换（已从用户菜单移除，组件保留供 dev 复用） |
 | RequireCapability | `auth/require-capability.tsx` | 路由级 RBAC 守卫（`RequireCapabilityName` 与侧栏 `resolveNavGroups` 对齐） |
 | VitalSpanLogo | `layout/vitalspan-logo.tsx` | 侧栏品牌标（展开/折叠） |
-| AdminPageShell | `layout/admin-page-shell.tsx` | PageHeader：标题 + 描述 + 操作区 + `gap-6` 主内容栅格 |
+| AdminPageShell | `layout/admin-page-shell.tsx` | PageHeader：可选 `icon`（AdminPageHeaderIcon）+ 标题/描述 Hero 块 + 操作区；`layout=fill|list` 占满视口 |
 | ListPageSection / DataTable | `layout/list-page-kit.tsx` | 列表/Hub 页卡片容器、工具栏、表格、`ListPageCardGridEmptyState` 栅格空态、分页 |
 | ListBatchDeleteBar / BatchDeleteDialog | `layout/list-batch-delete.tsx` | 列表多选勾选列 + 批量删除工具条与确认框；配合 `hooks/useListRowSelection.ts` · `lib/runBatchDelete.ts` |
 | PaginationBar | `ui/pagination-bar.tsx` | 列表底部分页（上一页/下一页/每页条数） |

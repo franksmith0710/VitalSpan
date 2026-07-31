@@ -55,8 +55,8 @@ describe("DashboardListCard", () => {
           <DashboardListCard
             dashboard={{
               id: "demo-1",
-              name: "官方示例 · 双栏 KPI 分析",
-              slug: "demo-dual-kpi",
+              name: "官方示例 · 双栏指标看板",
+              slug: "官方示例-双栏指标看板",
               updatedAt: "2026-07-14T12:00:00.000Z",
               layoutJson: {
                 version: 1,

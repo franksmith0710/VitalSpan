@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router";
-import { Eye, LayoutGrid, LayoutList, LayoutTemplate, Pencil, Plus, Share2, Trash2 } from "lucide-react";
+import { Eye, LayoutDashboard, LayoutGrid, LayoutList, LayoutTemplate, Pencil, Plus, Share2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   BatchDeleteDialog,
@@ -10,7 +10,7 @@ import {
   ListRowCheckbox,
   useListBatchMode,
 } from "@/components/layout/list-batch-delete";
-import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import {
   DashboardListCard,
   DashboardListCardSkeleton,
@@ -237,6 +237,11 @@ export function DashboardListPage() {
     <AdminPageShell
       layout="list"
       title="数据看板"
+      icon={
+        <AdminPageHeaderIcon>
+          <LayoutDashboard className="size-6" aria-hidden />
+        </AdminPageHeaderIcon>
+      }
       description={
         canEdit
           ? "创建并管理可视化看板，拖拽组件、绑定数据源后发布给业务用户。"

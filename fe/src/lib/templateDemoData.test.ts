@@ -46,8 +46,8 @@ describe("templateDemoData", () => {
 
   it("resolves sample_db datasource from list", () => {
     const id = resolveTemplateDemoDatasourceId([
-      { id: "other", name: "prod", code: "prod" },
-      { id: "ds-sample", name: "sample_db", code: "sample_db" },
+      { id: "other", name: "prod", code: "prod", database: "analytics" },
+      { id: "ds-sample", name: "Sample MySQL", code: "sample-mysql-dev", database: "sample_db" },
     ]);
     expect(id).toBe("ds-sample");
   });

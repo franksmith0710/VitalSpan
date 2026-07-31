@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from sqlalchemy.orm import Session
 
 from app.dashboard.demo_instances.seed import DEMO_INSTANCE_SLUGS, resolve_demo_instance_ids
+from app.metadata.dataset.demo_seed import DEMO_DATASET_IDS, resolve_demo_dataset_ids
 from app.dashboard.templates.demo_datasource import (
     OFFICIAL_DEMO_DATASOURCE_CODE,
     resolve_sample_db_datasource_id,
@@ -28,6 +29,7 @@ class DemoPackageStatus:
     datasource_id: uuid.UUID | None
     datasource_code: str
     demo_dashboard_ids: list[uuid.UUID]
+    demo_dataset_ids: list[str]
     message: str | None
 
     def as_dict(self) -> dict:
@@ -38,6 +40,7 @@ class DemoPackageStatus:
             "datasourceId": str(self.datasource_id) if self.datasource_id else None,
             "datasourceCode": self.datasource_code,
             "demoDashboardIds": [str(item) for item in self.demo_dashboard_ids],
+            "demoDatasetIds": list(self.demo_dataset_ids),
             "message": self.message,
         }
 
@@ -55,22 +58,27 @@ def build_demo_package_status(
 
     datasource_id = resolve_sample_db_datasource_id(db)
     demo_ids = resolve_demo_instance_ids(db)
+    demo_dataset_ids = resolve_demo_dataset_ids(db)
     expected_instances = len(DEMO_INSTANCE_SLUGS)
+    expected_datasets = len(DEMO_DATASET_IDS)
     has_datasource = datasource_id is not None
     has_instances = len(demo_ids) >= expected_instances
+    has_datasets = len(demo_dataset_ids) >= expected_datasets
 
-    ready = schema.ready and has_datasource and has_instances
+    ready = schema.ready and has_datasource and has_instances and has_datasets
     message = schema.message
     if ready:
         message = None
     elif not schema.mysql_reachable:
-        message = message or "sample_db 不可达，请启动 docker compose sample-mysql"
+        message = message or "示例 MySQL（sample-mysql）不可达，请先启动容器"
     elif not schema.ready:
-        message = message or "演示库 schema 未完全迁移"
+        message = message or "演示库结构未完全迁移，请重启后端或查看日志"
     elif not has_datasource:
-        message = "未找到 code=demo 的示例数据源"
+        message = "未找到「示例数据」数据源，请重启后端完成注册"
     elif not has_instances:
-        message = "官方示例看板/大屏尚未就绪，请重启后端完成 seed"
+        message = "官方示例看板/大屏尚未就绪，请重启后端完成预置"
+    elif not has_datasets:
+        message = "官方示例 Dataset 尚未就绪，请运行 scripts/seed-demo-package.py"
 
     return DemoPackageStatus(
         ready=ready,
@@ -79,5 +87,6 @@ def build_demo_package_status(
         datasource_id=datasource_id,
         datasource_code=OFFICIAL_DEMO_DATASOURCE_CODE,
         demo_dashboard_ids=demo_ids,
+        demo_dataset_ids=demo_dataset_ids,
         message=message,
     )

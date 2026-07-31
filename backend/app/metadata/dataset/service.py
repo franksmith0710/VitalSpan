@@ -11,10 +11,12 @@ from sqlalchemy.orm import Session
 from app.auth.deps import UserContext
 from app.datasources.models import get_meta_session
 from app.metadata.dataset.errors import (
+    META_DATASET_DEMO_PROTECTED,
     META_DATASET_DUPLICATE_TABLE,
     META_DATASET_FORBIDDEN,
     DatasetError,
 )
+from app.metadata.dataset.demo_seed import is_demo_package_dataset
 from app.metadata.dataset.models import DatasetRecord
 from app.metadata.dataset.schemas import (
     DatasetItemIn,
@@ -79,6 +81,7 @@ def _row_to_out(row: DatasetRecord) -> DatasetItemOut:
         "computedFields": row.computed_fields or [],
         "allowedRoles": list(row.allowed_roles or []),
         "boundConfigId": row.bound_config_id,
+        "isDemoPackage": is_demo_package_dataset(row.dataset_id, row.display_name),
     })
 
 
@@ -177,6 +180,12 @@ def list_datasets(
             stmt = stmt.where(DatasetRecord.dataset_id.startswith(prefix))
         capped = min(max(limit, 1), 500)
         rows = list(session.scalars(stmt))
+        rows.sort(
+            key=lambda r: (
+                0 if is_demo_package_dataset(r.dataset_id, r.display_name) else 1,
+                r.dataset_id,
+            ),
+        )
         if user is not None and "admin" not in set(user.roles):
             rows = [r for r in rows if _can_read_dataset(user, r)]
         total = len(rows)
@@ -259,6 +268,12 @@ def delete_dataset(dataset_id: str, user: UserContext) -> None:
         row = session.get(DatasetRecord, dataset_id)
         if row is None:
             raise DatasetError("META_DATASET_NOT_FOUND", "Dataset not found", 404)
+        if is_demo_package_dataset(row.dataset_id, row.display_name):
+            raise DatasetError(
+                META_DATASET_DEMO_PROTECTED,
+                "Official demo datasets cannot be deleted",
+                409,
+            )
         session.delete(row)
 
     _with_session(_op)

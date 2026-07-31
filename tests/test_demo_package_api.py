@@ -100,6 +100,11 @@ def test_demo_package_status_response_shape(
         "resolve_demo_instance_ids",
         lambda _db: [dash_id, dash_id, dash_id],
     )
+    monkeypatch.setattr(
+        demo_status,
+        "resolve_demo_dataset_ids",
+        lambda _db: ["demo-sales-wide", "demo-orders", "demo-daily-kpi", "demo-gov-service", "demo-sales-detail"],
+    )
 
     res = client.get("/api/v1/demo-package/status", headers=auth_headers)
     assert res.status_code == 200
@@ -110,6 +115,7 @@ def test_demo_package_status_response_shape(
     assert body["datasourceId"] == str(ds_id)
     assert body["datasourceCode"] == "demo"
     assert len(body["demoDashboardIds"]) == 3
+    assert len(body["demoDatasetIds"]) == 5
     assert body["message"] is None
 
 
@@ -178,9 +184,9 @@ def test_seed_demo_instances_idempotent(db_session, monkeypatch: pytest.MonkeyPa
 
     second = seed_demo_instances(db_session)
     assert second == 0
-    assert db_session.scalar(select(Dashboard).where(Dashboard.slug == "demo-dual-kpi")).name.startswith(
-        "官方示例",
-    )
+    assert db_session.scalar(
+        select(Dashboard).where(Dashboard.slug == "官方示例-双栏指标看板"),
+    ).name.startswith("官方示例")
 
 
 def test_openapi_includes_demo_package_status(client: TestClient) -> None:

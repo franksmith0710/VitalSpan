@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarClock, LayoutTemplate, Monitor, Search } from "lucide-react";
-import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import { Button } from "@/components/ui/button";
 import {
   ListPageSection,
@@ -154,6 +154,11 @@ export function ReportSchedulesPage() {
     <AdminPageShell
       layout="list"
       title="报表调度"
+      icon={
+        <AdminPageHeaderIcon>
+          <CalendarClock className="size-6" aria-hidden />
+        </AdminPageHeaderIcon>
+      }
       description="统一管理模板与看板/大屏的定时生成、投递与执行历史。"
     >
       {schedulesQuery.isError ? (

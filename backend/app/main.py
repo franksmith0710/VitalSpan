@@ -58,6 +58,14 @@ def _warm_meta_database() -> None:
                     logger.info("demo_instances_seed_ok inserted=%s", demo_inserted)
             except Exception:
                 logger.warning("demo_instances_seed_failed", exc_info=True)
+            try:
+                from app.metadata.dataset.demo_seed import seed_demo_datasets
+
+                ds_count = seed_demo_datasets(session)
+                if ds_count:
+                    logger.info("demo_datasets_seed_ok inserted=%s", ds_count)
+            except Exception:
+                logger.warning("demo_datasets_seed_failed", exc_info=True)
         if settings.vitalspan_env == "development":
             ensure_admin_username_root_binding(
                 session,

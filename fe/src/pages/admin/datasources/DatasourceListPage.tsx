@@ -10,7 +10,7 @@ import {
   useListBatchMode,
 } from "@/components/layout/list-batch-delete";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import {
   DataTable,
   ListPageBody,
@@ -226,6 +226,11 @@ export function DatasourceListPage() {
     <AdminPageShell
       layout="list"
       title="数据源"
+      icon={
+        <AdminPageHeaderIcon>
+          <Database className="size-6" aria-hidden />
+        </AdminPageHeaderIcon>
+      }
       description="配置与管理数据库、文件及 API 连接，供图表与看板直接查询使用。"
       actions={
         <Button asChild variant="primary" size="sm">
@@ -371,7 +376,7 @@ export function DatasourceListPage() {
                       </code>
                       {isDemoPackageDatasource(row.code) || row.isDemoPackage ? (
                         <Badge variant="light" color="primary" size="sm">
-                          官方演示
+                          官方示例数据
                         </Badge>
                       ) : null}
                       {row.description?.trim() ? (
@@ -417,7 +422,7 @@ export function DatasourceListPage() {
                       disabled={isDemoPackageDatasource(row.code) || row.isDemoPackage}
                       title={
                         isDemoPackageDatasource(row.code) || row.isDemoPackage
-                          ? "官方演示数据源不可删除"
+                          ? "官方示例数据连接不可删除"
                           : undefined
                       }
                       onClick={() => {

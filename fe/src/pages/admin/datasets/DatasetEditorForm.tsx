@@ -14,26 +14,30 @@ function DatasetFormSection({
   description,
   children,
   className,
+  stretch,
 }: {
   title: string;
   description?: string;
   children: ReactNode;
   className?: string;
+  /** 子内容区占满 section 剩余高度（fill 布局 Schema 区） */
+  stretch?: boolean;
 }) {
   return (
     <section
       className={cn(
-        "grid gap-3 border-b border-gray-100 pb-5 last:border-b-0 dark:border-gray-800",
+        "flex flex-col gap-3 border-b border-gray-100 pb-5 last:border-b-0 dark:border-gray-800",
+        stretch && "min-h-0 flex-1",
         className,
       )}
     >
-      <div>
+      <div className="shrink-0">
         <h3 className="text-theme-sm font-semibold text-gray-900 dark:text-white">{title}</h3>
         {description ? (
           <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">{description}</p>
         ) : null}
       </div>
-      {children}
+      <div className={cn(stretch && "flex min-h-0 flex-1 flex-col")}>{children}</div>
     </section>
   );
 }
@@ -134,11 +138,12 @@ export function DatasetEditorForm({
             </div>
           ) : null}
 
-          <div className="flex min-h-0 flex-1 flex-col px-6 py-4">
+          <div className="flex min-h-[320px] min-h-0 flex-1 flex-col px-6 py-4">
             <DatasetFormSection
               title="数据表"
               description={`从数据源 Schema 浏览并添加表；已选 ${values.tables.length} 张。`}
-              className="flex min-h-0 flex-1 flex-col border-b-0 pb-0"
+              stretch
+              className="border-b-0 pb-0"
             >
               <DatasetTablePicker
                 tables={values.tables}

@@ -99,7 +99,7 @@ def _sync_demo_row(row: DataSource, conn: SampleMysqlConnection) -> None:
     row.database = conn.database
     row.username = conn.username
     row.password_encrypted = encrypt_credential(conn.password)
-    row.description = "VitalSpan 官方演示包（对标 DataEase 内置示例数据）"
+    row.description = "官方内置示例库（sample_db），供模板预览与官方示例看板使用。"
 
 
 def _migrate_legacy_demo_code(db: Session) -> DataSource | None:
@@ -198,7 +198,7 @@ def ensure_official_demo_datasource(db: Session) -> uuid.UUID | None:
                 database=conn.database,
                 username=conn.username,
                 password=conn.password,
-                description="VitalSpan 官方演示包（对标 DataEase 内置示例数据）",
+                description="官方内置示例库（sample_db），供模板预览与官方示例看板使用。",
             ),
         )
         logger.info("official_demo_datasource_created id=%s", out.id)

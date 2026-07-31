@@ -84,7 +84,7 @@
 
 - **物理库**：compose `sample-mysql:3307` / `sample_db`；首次 init 见 `docker/demo-mysql/tables.sql`；**存量卷**由启动时 `ensure_sample_db_schema()` 应用 `docker/demo-mysql/migrations/` 增量迁移（含 `vs_official_*` 视图）
 - **元库注册**：启动顺序 `ensure_sample_db_schema` → `ensure_official_demo_datasource()`（`ENSURE_OFFICIAL_DEMO_DATASOURCE`，默认开）幂等写入 code **`demo`**；legacy `official-demo-mysql` 一次性 rename；`delete` 对 `demo` 返回 409
-- **示例实例**：`seed_demo_instances()` 预置 slug `demo-*` 看板/大屏（绑定 `demo` 源）
+- **示例实例**：`seed_demo_instances()` 预置中文 slug「官方示例-*」看板/大屏（绑定「示例数据」源；legacy `demo-*` slug 自动迁移）
 - **就绪 API**：`GET /api/v1/demo-package/status`（Hub 横幅 / 运维探测）
 - **SQL 契约**：内置模板 chart 须引用 `backend/app/dashboard/templates/official_demo_sql.py` + 占位 `__demo:sample_db__`
 - **验收模板**：`builtin-viz-component-gallery`（Hub 默认隐藏，43 种 chartType 各一 widget）

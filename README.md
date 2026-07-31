@@ -129,7 +129,8 @@ pnpm dev
 |------|------|
 | Hub 横幅「尚未就绪」、schema 未迁移 | 确认 `docker compose up -d sample-mysql` 后**重启后端**（启动时会跑 `docker/demo-mysql/migrations/`） |
 | 有 `sample-mysql` 源但无 `demo` | 重启后端；legacy `official-demo-mysql` 会自动 rename 为 `demo` |
-| 看板列表无「官方示例」 | 重启后端触发 `seed_demo_instances`；或调 `GET /api/v1/demo-package/status?refresh=true` 排查 |
+| 看板列表无「官方示例」 | 运行 `python scripts/seed-demo-package.py` 或重启后端；再调 `GET /api/v1/demo-package/status?refresh=true` |
+| 在 **Dataset** 页找不到官方数据 | **正常**：演示包不经 Dataset，请去 **数据连接 → 示例数据** 与 **看板/大屏列表** |
 | 迁移仍失败 | 检查 3307 端口与 `backend/.env` 中 `SAMPLE_MYSQL_URL`；必要时备份后重建 sample-mysql 卷 |
 
 ---

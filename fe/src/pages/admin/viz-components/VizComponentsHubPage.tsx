@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router";
 import { Boxes, LayoutDashboard, Monitor, Pencil, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import {
   LIST_PAGE_CARD_GRID_CLASS,
   ListPageBody,
@@ -183,6 +183,11 @@ export function VizComponentsHubPage() {
     <AdminPageShell
       layout="list"
       title={VIZ_COMPONENTS_HUB.title}
+      icon={
+        <AdminPageHeaderIcon tone="blue">
+          <Boxes className="size-6" aria-hidden />
+        </AdminPageHeaderIcon>
+      }
       description={VIZ_COMPONENTS_HUB.description}
       actions={
         <div className="flex items-center gap-2">

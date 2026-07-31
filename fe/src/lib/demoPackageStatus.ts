@@ -8,6 +8,7 @@ export type DemoPackageStatus = {
   datasourceId: string | null;
   datasourceCode: string;
   demoDashboardIds: string[];
+  demoDatasetIds: string[];
   message: string | null;
 };
 

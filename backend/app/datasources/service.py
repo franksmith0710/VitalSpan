@@ -342,7 +342,7 @@ def delete_data_source(session: Session, data_source_id: uuid.UUID, *, role_code
     if is_demo_package_datasource_code(row.code):
         raise DataSourceError(
             "DATASOURCE_DEMO_PROTECTED",
-            "官方演示数据源不可删除",
+            "官方示例数据连接不可删除",
             409,
         )
     grant = session.scalar(

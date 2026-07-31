@@ -9,7 +9,7 @@ import {
   ListRowCheckbox,
   useListBatchMode,
 } from "@/components/layout/list-batch-delete";
-import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import {
   DataTable,
   ListPagePagination,
@@ -40,12 +40,15 @@ import { useListPagination } from "@/lib/list-pagination";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { runBatchDelete } from "@/lib/runBatchDelete";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { isDemoPackageDataset } from "@/lib/demoPackage";
 
 type DatasetItem = {
   datasetId: string;
   displayName: string;
   tables: Array<{ name: string }>;
   boundConfigId?: string | null;
+  isDemoPackage?: boolean;
 };
 
 function matchesDatasetSearch(item: DatasetItem, query: string): boolean {
@@ -89,10 +92,14 @@ export function DatasetListPage() {
   const items = data?.items ?? [];
   const total = data?.total ?? 0;
   const hasFilters = Boolean(search.trim());
-  const filteredItems = useMemo(
-    () => items.filter((item) => matchesDatasetSearch(item, search)),
-    [items, search],
-  );
+  const filteredItems = useMemo(() => {
+    const matched = items.filter((item) => matchesDatasetSearch(item, search));
+    return [...matched].sort((a, b) => {
+      const aDemo = isDemoPackageDataset(a.datasetId, a.displayName) || a.isDemoPackage ? 1 : 0;
+      const bDemo = isDemoPackageDataset(b.datasetId, b.displayName) || b.isDemoPackage ? 1 : 0;
+      return bDemo - aDemo || a.displayName.localeCompare(b.displayName, "zh-CN");
+    });
+  }, [items, search]);
   const rowIds = useMemo(() => filteredItems.map((item) => item.datasetId), [filteredItems]);
   const selection = useListRowSelection(rowIds);
   const batch = useListBatchMode(selection.clear);
@@ -126,7 +133,12 @@ export function DatasetListPage() {
     <AdminPageShell
       layout="list"
       title="Dataset"
-      description="语义层数据集管理：表关联、计算字段与授权角色（META-004）。"
+      icon={
+        <AdminPageHeaderIcon tone="blue">
+          <Layers className="size-6" aria-hidden />
+        </AdminPageHeaderIcon>
+      }
+      description="语义层数据集管理。安装后可在列表中看到「【官方示例】」预置数据集（对标 DataEase 数据准备）。"
       actions={createButton}
     >
       <ListPageSection>
@@ -209,8 +221,13 @@ export function DatasetListPage() {
                       />,
                     ]
                   : []),
-                <span key="n" className="font-medium text-gray-900 dark:text-white/90">
+                <span key="n" className="inline-flex flex-wrap items-center gap-2 font-medium text-gray-900 dark:text-white/90">
                   {d.displayName}
+                  {isDemoPackageDataset(d.datasetId, d.displayName) || d.isDemoPackage ? (
+                    <Badge variant="light" color="primary" size="sm">
+                      官方示例
+                    </Badge>
+                  ) : null}
                 </span>,
                 <code
                   key="id"
@@ -230,6 +247,12 @@ export function DatasetListPage() {
                     variant="ghost"
                     size="sm"
                     aria-label={`删除 ${d.displayName}`}
+                    disabled={isDemoPackageDataset(d.datasetId, d.displayName) || d.isDemoPackage}
+                    title={
+                      isDemoPackageDataset(d.datasetId, d.displayName) || d.isDemoPackage
+                        ? "官方示例 Dataset 不可删除"
+                        : undefined
+                    }
                     onClick={() => setDeleteTarget(d)}
                   >
                     <Trash2 className="size-4" />

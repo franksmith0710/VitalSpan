@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router";
 import { LayoutDashboard, LayoutTemplate, Monitor, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import {
   LIST_PAGE_CARD_GRID_CLASS,
   ListPageBody,
@@ -188,6 +188,11 @@ export function VizTemplatesHubPage() {
     <AdminPageShell
       layout="list"
       title={VIZ_TEMPLATES_HUB.title}
+      icon={
+        <AdminPageHeaderIcon tone="warning">
+          <LayoutTemplate className="size-6" aria-hidden />
+        </AdminPageHeaderIcon>
+      }
       description={VIZ_TEMPLATES_HUB.description}
       actions={
         <div className="flex flex-wrap items-center gap-2">
@@ -311,7 +316,7 @@ export function VizTemplatesHubPage() {
                 {demoStatusQuery.data.ready
                   ? "模板预览与官方示例看板将自动使用「示例数据」数据源。"
                   : demoStatusQuery.data.message ??
-                    "请启动 sample-mysql 并检查数据连接中的「示例数据」源。"}
+                    "请启动示例 MySQL（docker compose sample-mysql）并检查「示例数据」连接。"}
                 {!demoStatusQuery.data.ready ? (
                   <>
                     {" "}

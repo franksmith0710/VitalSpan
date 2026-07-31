@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Layers } from "lucide-react";
 import { toast } from "sonner";
-import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
@@ -11,6 +12,12 @@ import { queryKeys } from "@/lib/queryKeys";
 import { DatasetBindPanel } from "./components/DatasetBindPanel";
 import { DatasetEditorForm } from "./DatasetEditorForm";
 import type { DatasetEditorValues, DatasetItem } from "./types";
+
+const datasetPageIcon = (
+  <AdminPageHeaderIcon tone="blue">
+    <Layers className="size-6" aria-hidden />
+  </AdminPageHeaderIcon>
+);
 
 const EMPTY: DatasetEditorValues = {
   datasetId: "",
@@ -86,7 +93,7 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
 
   if (mode === "edit" && detailQuery.isLoading) {
     return (
-      <AdminPageShell title="编辑数据集" layout="fill">
+      <AdminPageShell title="编辑数据集" layout="fill" icon={datasetPageIcon}>
         <Skeleton className="h-full min-h-[520px] w-full rounded-2xl" />
       </AdminPageShell>
     );
@@ -97,6 +104,7 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
       <AdminPageShell
         title="编辑数据集"
         layout="fill"
+        icon={datasetPageIcon}
         actions={
           <Button asChild variant="outline">
             <Link to="/admin/datasets">返回列表</Link>
@@ -111,8 +119,8 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
   return (
     <AdminPageShell
       title={mode === "create" ? "新建 Dataset" : "编辑数据集"}
-      description="配置语义层数据集：从数据源选择物理表，并定义可在报表中复用的计算字段。"
       layout="fill"
+      icon={datasetPageIcon}
       actions={
         <Button asChild variant="outline">
           <Link to="/admin/datasets">返回列表</Link>

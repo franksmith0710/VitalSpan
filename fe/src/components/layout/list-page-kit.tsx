@@ -15,6 +15,50 @@ import { cn } from "@/lib/utils";
 
 export { PageErrorBanner } from "@/components/ui/page-error-banner";
 
+/** 管理页白色面板外框：列表区、页头栏等与 main 灰底区分 */
+export const ADMIN_PAGE_SURFACE_CLASS =
+  "rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]";
+
+/** AdminPageShell 页头外框（内边距由内部区块控制） */
+export const ADMIN_PAGE_HEADER_FRAME_CLASS = cn(ADMIN_PAGE_SURFACE_CLASS, "shrink-0 overflow-hidden");
+
+/** 页头内容区内边距 */
+export const ADMIN_PAGE_HEADER_BODY_CLASS = "px-5 py-5";
+
+/** 页头操作区：与标题块右对齐 */
+export const ADMIN_PAGE_HEADER_ACTIONS_CLASS =
+  "flex shrink-0 flex-wrap items-center justify-end gap-2 sm:gap-2.5";
+
+const ADMIN_PAGE_HEADER_ICON_TONE_CLASS = {
+  brand: "bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400",
+  success: "bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-400",
+  blue: "bg-blue-light-50 text-blue-light-600 dark:bg-blue-light-500/15 dark:text-blue-light-400",
+  warning: "bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-warning-400",
+} as const;
+
+/** 页头左侧图标块（对标 TailAdmin 页面 Hero 头图） */
+export function AdminPageHeaderIcon({
+  children,
+  tone = "brand",
+  className,
+}: {
+  children: ReactNode;
+  tone?: keyof typeof ADMIN_PAGE_HEADER_ICON_TONE_CLASS;
+  className?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        "flex size-12 shrink-0 items-center justify-center rounded-xl",
+        ADMIN_PAGE_HEADER_ICON_TONE_CLASS[tone],
+        className,
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
 /** 看板 / 大屏等列表卡片栅格：宽屏一行 4 列 */
 export const LIST_PAGE_CARD_GRID_CLASS =
   "grid grid-cols-1 items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
@@ -29,7 +73,8 @@ export function ListPageSection({
   return (
     <section
       className={cn(
-        "flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]",
+        ADMIN_PAGE_SURFACE_CLASS,
+        "flex min-h-0 flex-1 flex-col overflow-hidden",
         className,
       )}
     >

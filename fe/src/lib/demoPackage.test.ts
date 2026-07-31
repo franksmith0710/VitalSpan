@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   isDemoPackageDashboard,
   isDemoPackageDatasource,
+  isDemoPackageDataset,
   readDemoPackageMeta,
 } from "./demoPackage";
 
@@ -11,7 +12,14 @@ describe("demoPackage", () => {
     expect(isDemoPackageDatasource("prod")).toBe(false);
   });
 
-  it("detects demo dashboard by slug or layout meta", () => {
+  it("detects demo package dataset", () => {
+    expect(isDemoPackageDataset("demo-sales-wide", "【官方示例】区域销售宽表")).toBe(true);
+    expect(isDemoPackageDataset("custom-ds", "【官方示例】测试")).toBe(true);
+    expect(isDemoPackageDataset("my-dataset", "业务数据集")).toBe(false);
+  });
+
+  it("detects demo dashboard by Chinese slug, legacy slug or layout meta", () => {
+    expect(isDemoPackageDashboard({ slug: "官方示例-双栏指标看板" })).toBe(true);
     expect(isDemoPackageDashboard({ slug: "demo-dual-kpi" })).toBe(true);
     expect(
       isDemoPackageDashboard({

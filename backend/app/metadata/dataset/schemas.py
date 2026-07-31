@@ -44,6 +44,7 @@ class DatasetItemOut(BaseModel):
     computed_fields: list[DatasetComputedField] = Field(alias="computedFields")
     allowed_roles: list[str] = Field(alias="allowedRoles")
     bound_config_id: uuid.UUID | None = Field(default=None, alias="boundConfigId")
+    is_demo_package: bool = Field(default=False, alias="isDemoPackage")
 
 
 class DatasetBindConfigIn(BaseModel):

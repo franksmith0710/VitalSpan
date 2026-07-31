@@ -10,7 +10,7 @@ import {
   ListRowCheckbox,
   useListBatchMode,
 } from "@/components/layout/list-batch-delete";
-import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import {
   DashboardListCard,
   DashboardListCardSkeleton,
@@ -351,6 +351,11 @@ export function DataScreenListPage() {
     <AdminPageShell
       layout="list"
       title="数据大屏"
+      icon={
+        <AdminPageHeaderIcon tone="success">
+          <Monitor className="size-6" aria-hidden />
+        </AdminPageHeaderIcon>
+      }
       description="16:9 深色可视化大屏，对标 DataEase 数据大屏；复用像素画布编辑与发布。"
       actions={
         <>
