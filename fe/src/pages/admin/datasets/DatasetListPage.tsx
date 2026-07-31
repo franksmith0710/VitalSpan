@@ -12,7 +12,6 @@ import {
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import {
   DataTable,
-  ListPageBody,
   ListPagePagination,
   ListPageSection,
   ListPageTableFrame,
@@ -31,6 +30,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button, IconButton } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { SearchField } from "@/components/ui/search-field";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
@@ -38,6 +39,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useListPagination } from "@/lib/list-pagination";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { runBatchDelete } from "@/lib/runBatchDelete";
+import { cn } from "@/lib/utils";
 
 type DatasetItem = {
   datasetId: string;
@@ -46,12 +48,22 @@ type DatasetItem = {
   boundConfigId?: string | null;
 };
 
+function matchesDatasetSearch(item: DatasetItem, query: string): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  return (
+    item.displayName.toLowerCase().includes(q) ||
+    item.datasetId.toLowerCase().includes(q)
+  );
+}
+
 export function DatasetListPage() {
   const qc = useQueryClient();
+  const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<DatasetItem | null>(null);
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [batchDeleting, setBatchDeleting] = useState(false);
-  const pagination = useListPagination(20);
+  const pagination = useListPagination(20, [search]);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: queryKeys.datasets.list({
@@ -76,9 +88,15 @@ export function DatasetListPage() {
 
   const items = data?.items ?? [];
   const total = data?.total ?? 0;
-  const rowIds = useMemo(() => items.map((item) => item.datasetId), [items]);
+  const hasFilters = Boolean(search.trim());
+  const filteredItems = useMemo(
+    () => items.filter((item) => matchesDatasetSearch(item, search)),
+    [items, search],
+  );
+  const rowIds = useMemo(() => filteredItems.map((item) => item.datasetId), [filteredItems]);
   const selection = useListRowSelection(rowIds);
   const batch = useListBatchMode(selection.clear);
+  const isEmpty = !isLoading && filteredItems.length === 0;
 
   const handleBatchDelete = async () => {
     const ids = [...selection.selectedIds];
@@ -113,93 +131,116 @@ export function DatasetListPage() {
     >
       <ListPageSection>
         <ListPageToolbar
+          filters={
+            <div className="grid w-full gap-2 sm:max-w-xs">
+              <Label className="sr-only">搜索 Dataset</Label>
+              <SearchField
+                value={search}
+                onChange={setSearch}
+                placeholder="搜索名称或 ID…"
+                aria-label="搜索 Dataset"
+              />
+            </div>
+          }
           actions={
-            <ListPageBatchActions
-              batchMode={batch.batchMode}
-              onToggleBatchMode={batch.toggleBatchMode}
-              selectedCount={selection.selectedCount}
-              entityLabel="个 Dataset"
-              onClear={selection.clear}
-              onDelete={() => setBatchDeleteOpen(true)}
-            />
+            <div className="flex flex-wrap items-center gap-3">
+              <ListPageBatchActions
+                batchMode={batch.batchMode}
+                onToggleBatchMode={batch.toggleBatchMode}
+                selectedCount={selection.selectedCount}
+                entityLabel="个 Dataset"
+                onClear={selection.clear}
+                onDelete={() => setBatchDeleteOpen(true)}
+              />
+              {!isLoading && hasFilters ? (
+                <p className="text-theme-sm text-gray-500 dark:text-gray-400">
+                  筛选结果 {filteredItems.length} 条
+                </p>
+              ) : null}
+            </div>
           }
         />
-        {isError ? (
-          <ListPageBody>
-            <PageErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} />
-          </ListPageBody>
-        ) : null}
-        <ListPageTableFrame>
-          <DataTable
-            loading={isLoading}
-            empty={items.length === 0}
-            lastColumnAlign="right"
-            emptyState={{
-              icon: <Layers className="size-7" aria-hidden />,
-              title: "暂无 Dataset",
-              description: "创建语义层数据集，配置表关联与计算字段。",
-              action: createButton,
-            }}
-            headers={[
-              ...(batch.batchMode
-                ? [
-                    <ListHeaderCheckbox
-                      key="select-all"
-                      checked={selection.allSelected}
-                      indeterminate={selection.someSelected}
-                      disabled={items.length === 0}
-                      onCheckedChange={() => selection.toggleAll()}
-                    />,
-                  ]
-                : []),
-              "显示名",
-              "ID",
-              "绑定配置",
-              "表数量",
-              "操作",
-            ]}
-            rows={items.map((d) => [
-              ...(batch.batchMode
-                ? [
-                    <ListRowCheckbox
-                      key={`${d.datasetId}-select`}
-                      checked={selection.isSelected(d.datasetId)}
-                      onCheckedChange={() => selection.toggle(d.datasetId)}
-                      ariaLabel={`选择 Dataset ${d.displayName}`}
-                    />,
-                  ]
-                : []),
-              <span key="n" className="font-medium text-gray-900 dark:text-white/90">
-                {d.displayName}
-              </span>,
-              <code
-                key="id"
-                className="rounded-md bg-gray-100 px-1.5 py-0.5 font-mono text-theme-xs text-gray-600 dark:bg-white/10 dark:text-gray-300"
-              >
-                {d.datasetId}
-              </code>,
-              d.boundConfigId ? `${d.boundConfigId.slice(0, 8)}…` : "—",
-              d.tables.length,
-              <RowActions key="a">
-                <IconButton asChild variant="ghost" size="sm" aria-label={`编辑 ${d.displayName}`}>
-                  <Link to={`/admin/datasets/${d.datasetId}/edit`}>
-                    <Pencil className="size-4" />
-                  </Link>
-                </IconButton>
-                <IconButton
-                  variant="ghost"
-                  size="sm"
-                  aria-label={`删除 ${d.displayName}`}
-                  onClick={() => setDeleteTarget(d)}
+
+        <ListPageTableFrame className={cn(isEmpty && !isLoading ? "px-0" : undefined)}>
+          {isError ? (
+            <div className="px-5 pb-5">
+              <PageErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} />
+            </div>
+          ) : (
+            <DataTable
+              loading={isLoading}
+              empty={isEmpty}
+              lastColumnAlign="right"
+              loadingRows={5}
+              emptyState={{
+                icon: <Layers className="size-7" aria-hidden />,
+                title: hasFilters ? "未找到匹配的 Dataset" : "暂无 Dataset",
+                description: hasFilters
+                  ? "尝试调整搜索关键词。"
+                  : "创建语义层数据集，配置表关联与计算字段。",
+                action: hasFilters ? undefined : createButton,
+              }}
+              headers={[
+                ...(batch.batchMode
+                  ? [
+                      <ListHeaderCheckbox
+                        key="select-all"
+                        checked={selection.allSelected}
+                        indeterminate={selection.someSelected}
+                        disabled={filteredItems.length === 0}
+                        onCheckedChange={() => selection.toggleAll()}
+                      />,
+                    ]
+                  : []),
+                "显示名",
+                "ID",
+                "绑定配置",
+                "表数量",
+                "操作",
+              ]}
+              rows={filteredItems.map((d) => [
+                ...(batch.batchMode
+                  ? [
+                      <ListRowCheckbox
+                        key={`${d.datasetId}-select`}
+                        checked={selection.isSelected(d.datasetId)}
+                        onCheckedChange={() => selection.toggle(d.datasetId)}
+                        ariaLabel={`选择 Dataset ${d.displayName}`}
+                      />,
+                    ]
+                  : []),
+                <span key="n" className="font-medium text-gray-900 dark:text-white/90">
+                  {d.displayName}
+                </span>,
+                <code
+                  key="id"
+                  className="rounded-md bg-gray-100 px-1.5 py-0.5 font-mono text-theme-xs text-gray-600 dark:bg-white/10 dark:text-gray-300"
                 >
-                  <Trash2 className="size-4" />
-                </IconButton>
-              </RowActions>,
-            ])}
-          />
+                  {d.datasetId}
+                </code>,
+                d.boundConfigId ? `${d.boundConfigId.slice(0, 8)}…` : "—",
+                d.tables.length,
+                <RowActions key="a">
+                  <IconButton asChild variant="ghost" size="sm" aria-label={`编辑 ${d.displayName}`}>
+                    <Link to={`/admin/datasets/${d.datasetId}/edit`}>
+                      <Pencil className="size-4" />
+                    </Link>
+                  </IconButton>
+                  <IconButton
+                    variant="ghost"
+                    size="sm"
+                    aria-label={`删除 ${d.displayName}`}
+                    onClick={() => setDeleteTarget(d)}
+                  >
+                    <Trash2 className="size-4" />
+                  </IconButton>
+                </RowActions>,
+              ])}
+            />
+          )}
         </ListPageTableFrame>
 
-        {!isLoading && total > 0 ? (
+        {!isLoading && total > 0 && !hasFilters ? (
           <ListPagePagination
             current={pagination.page}
             pageSize={pagination.pageSize}

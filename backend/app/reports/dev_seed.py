@@ -154,6 +154,7 @@ def _seed_demo_template(actor: UserContext) -> tuple[int, uuid.UUID | None]:
     if existing is not None:
         return 0, existing
     template_service.upsert_template_definition(
+        _DEMO_TEMPLATE_KEY,
         TemplateDefinitionIn(
             templateKey=_DEMO_TEMPLATE_KEY,
             format="pdf",
@@ -210,6 +211,7 @@ def _seed_demo_schedule(node_id: uuid.UUID, actor: UserContext) -> int:
     sched = scheduler_service.create_schedule(
         ScheduleCreate(
             catalogNodeId=node_id,
+            sourceId=node_id,
             cron="0 8 * * *",
             recipients=[ScheduleRecipientIn(type="role", value="admin")],
         ),

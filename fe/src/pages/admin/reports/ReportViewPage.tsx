@@ -13,6 +13,7 @@ import { mapApiError } from "@/lib/apiError";
 import { useAuth } from "@/context/auth-context";
 import type { ReportCatalogNode } from "@/lib/reportCatalogUtils";
 import { ReportExportCard } from "./components/ReportExportCard";
+import { ReportResultTable } from "./components/ReportResultTable";
 
 type RenderSection = {
   kind: string;
@@ -28,35 +29,6 @@ type RenderRunOut = {
   };
   exportHook?: { integrationPath: string; format: string; placeholder: boolean };
 };
-
-function ResultTable({ columns, rows }: { columns: string[]; rows: unknown[][] }) {
-  return (
-    <div className="overflow-x-only">
-      <table className="w-full min-w-[320px] text-theme-sm">
-        <thead>
-          <tr className="border-b border-gray-200 dark:border-gray-800">
-            {columns.map((col) => (
-              <th key={col} className="px-3 py-2 text-left font-medium text-gray-700 dark:text-gray-300">
-                {col}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, i) => (
-            <tr key={i} className="border-b border-gray-100 dark:border-gray-800/60">
-              {row.map((cell, j) => (
-                <td key={j} className="px-3 py-2 text-gray-600 dark:text-gray-400">
-                  {String(cell ?? "")}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
 
 export function ReportViewPage() {
   const { nodeId } = useParams<{ nodeId: string }>();
@@ -163,7 +135,7 @@ export function ReportViewPage() {
                       : "暂无业务数据，当前为示例展示。如需完整报表，请联系管理员完善模板配置。"}
                   </p>
                 ) : section.columns && section.rows ? (
-                  <ResultTable columns={section.columns} rows={section.rows} />
+                  <ReportResultTable columns={section.columns} rows={section.rows} />
                 ) : (
                   <pre className="overflow-x-auto rounded-lg bg-gray-50 p-3 text-theme-xs dark:bg-white/[0.04]">
                     {JSON.stringify(section, null, 2)}

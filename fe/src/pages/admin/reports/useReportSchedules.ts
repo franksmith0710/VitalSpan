@@ -84,6 +84,7 @@ export function useReportScheduleMutations(filter?: ReportScheduleListFilter) {
       cron: string;
       timezone: string;
       recipients?: ScheduleRecipient[];
+      attachmentFormats?: string[];
     }) =>
       apiFetch<ReportScheduleRow>("/api/v1/reports/schedules", {
         method: "POST",

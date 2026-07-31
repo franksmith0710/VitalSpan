@@ -4,6 +4,7 @@ import {
   ChartDeSliderField,
   DashboardConfigGridSlider,
   DashboardConfigSlider,
+  InspectorSliderField,
 } from "./deAttrSlider";
 import { SpacingModeToggle } from "./inspectorSpacing";
 import { InspectorInlineColorRow } from "./inspectorCompact";
@@ -47,7 +48,7 @@ export function WidgetSurfaceAppearanceFields({
   const Slider =
     density === "narrow"
       ? (props: ComponentProps<typeof ChartDeSliderField>) => (
-          <ChartDeSliderField layout="inline" {...props} />
+          <InspectorSliderField {...props} />
         )
       : DashboardConfigSlider;
 
@@ -140,7 +141,7 @@ export function WidgetSurfaceSpacingFields({
   const Slider =
     density === "narrow"
       ? (props: ComponentProps<typeof ChartDeSliderField>) => (
-          <ChartDeSliderField layout="inline" {...props} />
+          <InspectorSliderField {...props} />
         )
       : DashboardConfigSlider;
   const GridSlider = DashboardConfigGridSlider;

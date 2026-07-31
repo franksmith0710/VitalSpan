@@ -61,6 +61,29 @@ def client() -> TestClient:
     return TestClient(fastapi_app)
 
 
+def test_dev_seed_creates_demo_template_when_datasource_available(monkeypatch):
+    from app.auth.models import get_meta_session
+    from app.reports import dev_seed
+
+    fake_ds = "00000000-0000-4000-8000-000000000099"
+    monkeypatch.setattr(dev_seed, "_resolve_or_create_datasource", lambda _s: fake_ds)
+    monkeypatch.setattr(dev_seed, "_seed_equipment_entity", lambda *_a, **_k: 0)
+    session = get_meta_session()
+    try:
+        counts = dev_seed.seed_dev_reports(session)
+    finally:
+        session.close()
+    assert counts["template"] == 1
+    assert counts["catalogNodeId"] is not None
+    assert counts["schedule"] == 1
+    import uuid as _uuid
+
+    node = catalog_service.get_node(_uuid.UUID(str(counts["catalogNodeId"])))
+    assert node.name == "演示销售报表"
+    tpl = template_service.get_template_definition("dev_demo_report", dev_seed._ADMIN)
+    assert tpl.display_name == "演示销售报表"
+
+
 def test_dev_seed_idempotent_without_mysql(monkeypatch):
     from app.auth.models import get_meta_session
     from app.reports import dev_seed

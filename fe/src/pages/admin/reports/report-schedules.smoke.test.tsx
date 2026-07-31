@@ -34,10 +34,14 @@ describe("ReportSchedulesPage smoke", () => {
             {
               id: scheduleId,
               catalogNodeId: nodeId,
+              sourceType: "template",
+              sourceId: nodeId,
               cron: "0 8 * * *",
               timezone: "Asia/Shanghai",
               status: "scheduled",
               allowedActions: ["pause"],
+              recipients: [{ type: "role", value: "admin" }],
+              attachmentFormats: ["pdf"],
             },
           ],
           total: 1,
@@ -83,6 +87,15 @@ describe("ReportSchedulesPage smoke", () => {
     renderPage();
     expect(await screen.findByText("销售月报")).toBeInTheDocument();
     expect(screen.getByText("每天 08:00")).toBeInTheDocument();
+    expect(screen.getAllByText("模板").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/角色:管理员/)).toBeInTheDocument();
+  });
+
+  it("shows create entry buttons and tabs", async () => {
+    renderPage();
+    expect(await screen.findByRole("link", { name: "在模板中新建" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "在看板分享页新建" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "看板/大屏" })).toBeInTheDocument();
   });
 
   it("expands history and shows retry", async () => {

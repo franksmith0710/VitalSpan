@@ -21,37 +21,9 @@ import { TruncateHint } from "@/components/ui/hint-tooltip";
 import { PrefabReportsEmptyPreview } from "./components/PrefabReportsEmptyPreview";
 import { PrefabBindingForm } from "./components/PrefabBindingForm";
 import { ReportExportCard } from "./components/ReportExportCard";
+import { ReportResultTable } from "./components/ReportResultTable";
 import { usePrefabReports } from "./usePrefabReports";
 import { PREFAB_BINDING_QUERY } from "./reportRoutes";
-
-function ResultTable({ columns, rows }: { columns: string[]; rows: unknown[][] }) {
-  return (
-    <div className="overflow-x-only">
-      <table className="w-full min-w-[320px] text-theme-sm">
-        <thead>
-          <tr className="border-b border-gray-200 dark:border-gray-800">
-            {columns.map((col) => (
-              <th key={col} className="px-3 py-2 text-left font-medium text-gray-700 dark:text-gray-300">
-                {col}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, i) => (
-            <tr key={i} className="border-b border-gray-100 dark:border-gray-800/60">
-              {row.map((cell, j) => (
-                <td key={j} className="px-3 py-2 text-gray-600 dark:text-gray-400">
-                  {String(cell ?? "")}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
 
 export function PrefabReportsPage() {
   const { user } = useAuth();
@@ -232,7 +204,7 @@ export function PrefabReportsPage() {
               <CardTitle className="text-theme-base">运行结果</CardTitle>
             </CardHeader>
             <CardContent className="min-h-[240px]">
-              <ResultTable columns={section.columns} rows={section.rows} />
+              <ReportResultTable columns={section.columns} rows={section.rows} />
             </CardContent>
           </Card>
         ) : null}

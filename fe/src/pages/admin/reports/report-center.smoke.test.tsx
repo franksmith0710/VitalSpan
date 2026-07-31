@@ -67,6 +67,10 @@ describe("ReportCenterPage smoke", () => {
     renderPage();
     await waitFor(() => expect(screen.getByText("报表模板")).toBeInTheDocument());
     expect(screen.getByRole("link", { name: /报表调度/ })).toHaveAttribute("href", "/admin/reports/schedules");
+    expect(screen.getByRole("link", { name: /看板定时报告/ })).toHaveAttribute(
+      "href",
+      "/admin/reports/schedules?tab=dashboard",
+    );
   });
 
   it("filters templates by search query", async () => {

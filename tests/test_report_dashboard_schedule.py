@@ -73,3 +73,30 @@ def test_create_dashboard_schedule(client: TestClient):
     body = resp.json()
     assert body["sourceType"] == "dashboard"
     assert body["sourceLabel"] == "Scheduled Dash"
+
+
+def test_list_schedules_by_source_id(client: TestClient):
+    dash = client.post(
+        "/api/v1/dashboards",
+        headers=AUTH,
+        json={"name": "Filter Dash", "description": "g5-list"},
+    )
+    dash_id = dash.json()["id"]
+    client.post(
+        "/api/v1/reports/schedules",
+        headers=AUTH,
+        json={
+            "sourceType": "dashboard",
+            "sourceId": dash_id,
+            "cron": "0 9 * * *",
+            "recipients": [{"type": "role", "value": "admin"}],
+        },
+    )
+    resp = client.get(
+        f"/api/v1/reports/schedules?sourceId={dash_id}&sourceType=dashboard",
+        headers=AUTH,
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["total"] == 1
+    assert body["items"][0]["sourceId"] == dash_id

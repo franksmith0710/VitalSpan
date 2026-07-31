@@ -27,9 +27,19 @@ describe("SchedulePanel smoke", () => {
   });
   afterEach(() => cleanup());
 
-  it("renders create schedule form", async () => {
+  it("renders create schedule form with recipients", async () => {
+    mockApiFetch.mockImplementation(async (path: string) => {
+      if (path.includes("/users")) {
+        return { items: [{ id: "u1", username: "admin" }] };
+      }
+      if (path.includes("/schedules?")) {
+        return { items: [], total: 0 };
+      }
+      return {};
+    });
     render(wrap(<SchedulePanel catalogNodeId="node-1" readOnly={false} />));
     expect(await screen.findByText("新建调度")).toBeInTheDocument();
+    expect(screen.getByText("接收人")).toBeInTheDocument();
     expect(screen.getByText("创建调度")).toBeInTheDocument();
   });
 

@@ -1,0 +1,66 @@
+import { dashboardSharePath } from "@/lib/dataScreenLayout";
+import type { ReportScheduleRow } from "@/pages/admin/reports/useReportSchedules";
+
+export function localizeSourceType(sourceType?: string): string {
+  if (sourceType === "dashboard") return "看板";
+  if (sourceType === "data_screen") return "大屏";
+  return "模板";
+}
+
+export function sourceTypeBadgeColor(
+  sourceType?: string,
+): "primary" | "success" | "warning" | "error" {
+  if (sourceType === "dashboard") return "primary";
+  if (sourceType === "data_screen") return "warning";
+  return "success";
+}
+
+export function scheduleSourceHref(schedule: Pick<ReportScheduleRow, "sourceType" | "sourceId" | "catalogNodeId">): string {
+  const id = schedule.sourceId ?? schedule.catalogNodeId;
+  if (!id) return "/admin/reports/schedules";
+  if (schedule.sourceType === "data_screen") {
+    return dashboardSharePath(id, true);
+  }
+  if (schedule.sourceType === "dashboard") {
+    return dashboardSharePath(id, false);
+  }
+  return `/admin/reports/templates/${id}`;
+}
+
+const ROLE_LABELS: Record<string, string> = {
+  admin: "管理员",
+  analyst: "分析师",
+  viewer: "查看者",
+};
+
+export function summarizeRecipients(
+  recipients?: { type: string; value: string }[],
+): string {
+  if (!recipients?.length) return "—";
+  const parts = recipients.map((r) => {
+    if (r.type === "role") return `角色:${ROLE_LABELS[r.value] ?? r.value}`;
+    if (r.type === "user") return `用户:${r.value}`;
+    if (r.type === "email") return r.value;
+    return r.value;
+  });
+  if (parts.length <= 2) return parts.join("、");
+  return `${parts.slice(0, 2).join("、")} 等 ${parts.length} 项`;
+}
+
+export function formatAttachmentLabels(formats?: string[]): string {
+  if (!formats?.length) return "PDF";
+  return formats.map((f) => f.toUpperCase()).join(" / ");
+}
+
+export type ScheduleTabFilter = "all" | "template" | "dashboard";
+
+export function filterSchedulesByTab<T extends { sourceType?: string }>(
+  items: T[],
+  tab: ScheduleTabFilter,
+): T[] {
+  if (tab === "all") return items;
+  if (tab === "template") {
+    return items.filter((s) => !s.sourceType || s.sourceType === "template");
+  }
+  return items.filter((s) => s.sourceType === "dashboard" || s.sourceType === "data_screen");
+}

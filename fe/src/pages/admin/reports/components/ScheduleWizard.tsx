@@ -21,6 +21,7 @@ type ScheduleWizardProps = {
   showAdvancedCron?: boolean;
   cron?: string;
   onCronChange?: (cron: string) => void;
+  idPrefix?: string;
 };
 
 export function ScheduleWizard({
@@ -30,6 +31,7 @@ export function ScheduleWizard({
   showAdvancedCron,
   cron,
   onCronChange,
+  idPrefix = "schedule-wizard",
 }: ScheduleWizardProps) {
   const preview = describeCron(cron ?? cronFromWizard(value));
 
@@ -37,7 +39,7 @@ export function ScheduleWizard({
     <div className="space-y-4">
       <div className="grid gap-2 sm:grid-cols-2">
         <div className="grid gap-2">
-          <Label>频率</Label>
+          <Label htmlFor={`${idPrefix}-frequency`}>频率</Label>
           <Select
             value={value.frequency}
             onValueChange={(frequency) =>
@@ -45,7 +47,7 @@ export function ScheduleWizard({
             }
             disabled={disabled}
           >
-            <SelectTrigger>
+            <SelectTrigger id={`${idPrefix}-frequency`} className="h-11">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -59,18 +61,22 @@ export function ScheduleWizard({
           <Label>执行时间</Label>
           <div className="flex gap-2">
             <Input
+              id={`${idPrefix}-hour`}
               type="number"
               min={0}
               max={23}
+              className="h-11"
               value={value.hour}
               disabled={disabled}
               onChange={(e) => onChange({ ...value, hour: Number(e.target.value) })}
               aria-label="小时"
             />
             <Input
+              id={`${idPrefix}-minute`}
               type="number"
               min={0}
               max={59}
+              className="h-11"
               value={value.minute}
               disabled={disabled}
               onChange={(e) => onChange({ ...value, minute: Number(e.target.value) })}
@@ -81,13 +87,13 @@ export function ScheduleWizard({
       </div>
       {value.frequency === "weekly" ? (
         <div className="grid gap-2">
-          <Label>星期</Label>
+          <Label htmlFor={`${idPrefix}-weekday`}>星期</Label>
           <Select
             value={String(value.weekday)}
             onValueChange={(v) => onChange({ ...value, weekday: Number(v) })}
             disabled={disabled}
           >
-            <SelectTrigger>
+            <SelectTrigger id={`${idPrefix}-weekday`} className="h-11">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -102,11 +108,13 @@ export function ScheduleWizard({
       ) : null}
       {value.frequency === "monthly" ? (
         <div className="grid gap-2">
-          <Label>每月第几天</Label>
+          <Label htmlFor={`${idPrefix}-day`}>每月第几天</Label>
           <Input
+            id={`${idPrefix}-day`}
             type="number"
             min={1}
             max={31}
+            className="h-11"
             value={value.dayOfMonth}
             disabled={disabled}
             onChange={(e) => onChange({ ...value, dayOfMonth: Number(e.target.value) })}
@@ -116,9 +124,10 @@ export function ScheduleWizard({
       <p className="text-theme-xs text-gray-500 dark:text-gray-400">预览：{preview}</p>
       {showAdvancedCron && onCronChange ? (
         <div className="grid gap-2">
-          <Label htmlFor="schedule-cron-advanced">高级 Cron</Label>
+          <Label htmlFor={`${idPrefix}-cron-advanced`}>高级 Cron</Label>
           <Input
-            id="schedule-cron-advanced"
+            id={`${idPrefix}-cron-advanced`}
+            className="h-11"
             value={cron ?? cronFromWizard(value)}
             onChange={(e) => onCronChange(e.target.value)}
             disabled={disabled}

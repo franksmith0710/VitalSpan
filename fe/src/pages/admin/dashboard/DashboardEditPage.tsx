@@ -6,7 +6,7 @@ import { ChevronLeft, Redo2, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api";
 import { isDashboardNotFound, mapApiError } from "@/lib/apiError";
-import { isDataScreenAdminPath, dataScreenListPath, dataScreenPreviewPath, dashboardSharePath, ensureDataScreenStyleConfig, isDataScreenLayout } from "@/lib/dataScreenLayout";
+import { DashboardShareDialog } from "@/components/dashboard/DashboardShareDialog";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { GlobalFilterBar } from "@/components/dashboard/GlobalFilterBar";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
@@ -213,6 +213,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const [savedLinkageSnapshot, setSavedLinkageSnapshot] = useState<string | null>(null);
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [styleConfig, setStyleConfig] = useState<DashboardStyleConfig>({});
+  const [shareOpen, setShareOpen] = useState(false);
   const [reuseOpen, setReuseOpen] = useState(false);
   const [publishComponentOpen, setPublishComponentOpen] = useState(false);
   const [chartRailOpen, setChartRailOpen] = useState(true);
@@ -1057,8 +1058,8 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                   预览
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link to={sharePath}>分享</Link>
+              <Button type="button" variant="outline" size="sm" onClick={() => setShareOpen(true)}>
+                分享
               </Button>
             </>
           ) : (
@@ -1630,6 +1631,15 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+      ) : null}
+      {id && !missing ? (
+        <DashboardShareDialog
+          open={shareOpen}
+          onOpenChange={setShareOpen}
+          dashboardId={id}
+          isScreen={isDataScreenSurface}
+          initialDetail={{ name, layoutJson: layout }}
+        />
       ) : null}
     </AdminPageShell>
   );

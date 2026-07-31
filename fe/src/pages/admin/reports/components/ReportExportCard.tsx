@@ -105,6 +105,7 @@ export function ReportExportCard({
             <Label htmlFor="export-template-id">模板 ID</Label>
             <Input
               id="export-template-id"
+              className="h-11"
               value={templateId}
               onChange={(e) => setTemplateId(e.target.value)}
               placeholder="UUID"
@@ -114,7 +115,7 @@ export function ReportExportCard({
         <div className="grid gap-2">
           <Label>格式</Label>
           <Select value={format} onValueChange={setFormat}>
-            <SelectTrigger>
+            <SelectTrigger className="h-11">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

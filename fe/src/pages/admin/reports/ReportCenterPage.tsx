@@ -7,6 +7,7 @@ import {
   FileSpreadsheet,
   FileText,
   LayoutTemplate,
+  Monitor,
   Play,
   Star,
 } from "lucide-react";
@@ -248,6 +249,12 @@ export function ReportCenterPage() {
               description="定时生成与投递任务"
               to="/admin/reports/schedules"
               icon={<CalendarClock className="size-5" aria-hidden />}
+            />
+            <QuickLinkCard
+              title="看板定时报告"
+              description="在看板分享页创建 PDF 定时推送"
+              to="/admin/reports/schedules?tab=dashboard"
+              icon={<Monitor className="size-5" aria-hidden />}
             />
           </>
         ) : null}

@@ -1,4 +1,3 @@
-import type { ComponentProps } from "react";
 import { Switch } from "@/components/ui/switch";
 import { ColorField } from "@/components/ui/color-field";
 import { ImageSourceField } from "./imageSourceField";
@@ -11,7 +10,7 @@ import {
   InspectorInlineColorRow,
   InspectorSwitchRow,
 } from "./inspectorCompact";
-import { DashboardConfigSlider, ChartDeSliderField } from "./deAttrSlider";
+import { DashboardConfigSlider, InspectorSliderField } from "./deAttrSlider";
 import { DeSegmentGroup } from "./dashboardInspectorUi";
 import { ChartDeSegmentField } from "./chartInspectorDeFields";
 import { ChartFramePresetPicker } from "./ChartFramePresetPicker";
@@ -279,11 +278,7 @@ export function ChartBackgroundDeModeFields({
   const segmentOptions = useLineBorder ? BG_MODE_LINE_BORDER_OPTIONS : BG_MODE_OPTIONS;
   const lineOn = value.borderEnabled !== false;
   const FrameOpacitySlider =
-    density === "narrow"
-      ? (props: ComponentProps<typeof ChartDeSliderField>) => (
-          <ChartDeSliderField layout="inline" {...props} />
-        )
-      : DashboardConfigSlider;
+    density === "narrow" ? InspectorSliderField : DashboardConfigSlider;
 
   return (
     <div className="space-y-2">

@@ -2,52 +2,23 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { TruncateHint } from "@/components/ui/hint-tooltip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { apiFetch } from "@/lib/api";
-import { localizeApiMessage, mapApiError } from "@/lib/apiError";
-import { parseCronToWizard, type ScheduleWizardState } from "@/lib/scheduleCronWizard";
+import { mapApiError } from "@/lib/apiError";
+import { parseCronToWizard } from "@/lib/scheduleCronWizard";
+import { summarizeRecipients } from "@/lib/scheduleSourceMeta";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
-import { cronFromWizard, describeCron, ScheduleWizard } from "./ScheduleWizard";
-
-type ScheduleRow = {
-  id: string;
-  catalogNodeId?: string | null;
-  sourceType?: string;
-  sourceId?: string;
-  cron: string;
-  timezone: string;
-  status: string;
-  allowedActions: string[];
-  recipients?: { type: string; value: string }[];
-};
-
-type HistoryRow = {
-  executionId: string;
-  scheduleId: string;
-  status: string;
-  artifactRef: string;
-  executedAt: string;
-  errorMessage?: string | null;
-  parentExecutionId?: string | null;
-};
+import { describeCron } from "./ScheduleWizard";
+import {
+  DEFAULT_SCHEDULE_FORM,
+  isScheduleFormSubmittable,
+  resolveScheduleCron,
+  ScheduleFormFields,
+  type ScheduleFormValue,
+} from "./ScheduleFormFields";
+import { ScheduleHistoryTable } from "./ScheduleHistoryTable";
+import type { ReportScheduleRow, ScheduleExecutionRow } from "../useReportSchedules";
 
 const ACTION_LABELS: Record<string, string> = {
   schedule: "激活调度",
@@ -58,24 +29,12 @@ const ACTION_LABELS: Record<string, string> = {
 
 export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: string; readOnly: boolean }) {
   const qc = useQueryClient();
-  const [wizard, setWizard] = useState<ScheduleWizardState>(
-    parseCronToWizard("0 8 * * *") ?? {
-      frequency: "daily",
-      hour: 8,
-      minute: 0,
-      weekday: 1,
-      dayOfMonth: 1,
-    },
-  );
-  const [cron, setCron] = useState("0 8 * * *");
-  const [showAdvancedCron, setShowAdvancedCron] = useState(false);
-  const [recipientRole, setRecipientRole] = useState("admin");
-  const [timezone, setTimezone] = useState("Asia/Shanghai");
+  const [form, setForm] = useState<ScheduleFormValue>(DEFAULT_SCHEDULE_FORM);
 
   const listQuery = useQuery({
     queryKey: ["reports", "schedules", catalogNodeId],
     queryFn: () =>
-      apiFetch<{ items: ScheduleRow[]; total: number }>(
+      apiFetch<{ items: ReportScheduleRow[]; total: number }>(
         `/api/v1/reports/schedules?catalogNodeId=${encodeURIComponent(catalogNodeId)}`,
       ),
   });
@@ -85,7 +44,7 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
   const historyQuery = useQuery({
     queryKey: ["reports", "schedule-executions", schedule?.id],
     queryFn: () =>
-      apiFetch<{ items: HistoryRow[]; total: number }>(
+      apiFetch<{ items: ScheduleExecutionRow[]; total: number }>(
         `/api/v1/reports/schedules/${schedule!.id}/executions`,
       ),
     enabled: Boolean(schedule?.id),
@@ -100,13 +59,13 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
 
   const createMutation = useMutation({
     mutationFn: () =>
-      apiFetch<ScheduleRow>("/api/v1/reports/schedules", {
+      apiFetch<ReportScheduleRow>("/api/v1/reports/schedules", {
         method: "POST",
         body: JSON.stringify({
           catalogNodeId,
-          cron: showAdvancedCron ? cron : cronFromWizard(wizard),
-          timezone,
-          recipients: [{ type: "role", value: recipientRole }],
+          cron: resolveScheduleCron(form),
+          timezone: form.timezone,
+          recipients: form.recipients.filter((r) => r.value.trim()),
         }),
       }),
     onSuccess: () => {
@@ -118,7 +77,7 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
 
   const transitionMutation = useMutation({
     mutationFn: ({ id, action }: { id: string; action: string }) =>
-      apiFetch<ScheduleRow>(`/api/v1/reports/schedules/${id}/transition`, {
+      apiFetch<ReportScheduleRow>(`/api/v1/reports/schedules/${id}/transition`, {
         method: "POST",
         body: JSON.stringify({ action }),
       }),
@@ -158,18 +117,13 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
     onError: (err) => toast.error(mapApiError(err)),
   });
 
-  const handleSave = () => {
-    if (!schedule) {
-      createMutation.mutate();
+  const handleCreate = () => {
+    if (!isScheduleFormSubmittable(form)) {
+      toast.error("请配置至少一位有效接收人");
       return;
     }
-    if (schedule.status === "draft") {
-      transitionMutation.mutate({ id: schedule.id, action: "schedule" });
-    }
+    createMutation.mutate();
   };
-
-  const isLoading = listQuery.isLoading;
-  const history = historyQuery.data?.items ?? [];
 
   if (listQuery.isError) {
     return (
@@ -177,7 +131,7 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
     );
   }
 
-  if (isLoading) {
+  if (listQuery.isLoading) {
     return (
       <div className="grid gap-4 lg:grid-cols-2">
         <Skeleton className="h-48 w-full" />
@@ -193,61 +147,34 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
           <CardTitle className="text-title-sm">新建调度</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <ScheduleWizard
-            value={wizard}
-            onChange={(next) => {
-              setWizard(next);
-              setCron(cronFromWizard(next));
-            }}
-            disabled={readOnly}
-            showAdvancedCron={showAdvancedCron}
-            cron={cron}
-            onCronChange={setCron}
-          />
-          <div className="grid gap-2">
-            <Label htmlFor="schedule-recipient-role">接收角色</Label>
-            <Select value={recipientRole} onValueChange={setRecipientRole} disabled={readOnly}>
-              <SelectTrigger id="schedule-recipient-role">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="admin">管理员</SelectItem>
-                <SelectItem value="analyst">分析师</SelectItem>
-                <SelectItem value="viewer">查看者</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="schedule-tz-new">时区</Label>
-            <Select value={timezone} onValueChange={setTimezone} disabled={readOnly}>
-              <SelectTrigger id="schedule-tz-new">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Asia/Shanghai">Asia/Shanghai</SelectItem>
-                <SelectItem value="UTC">UTC</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {!readOnly ? (
-              <Button type="button" variant="primary" disabled={createMutation.isPending} onClick={handleSave}>
-                {createMutation.isPending ? "创建中…" : "创建调度"}
-              </Button>
-            ) : null}
+          <ScheduleFormFields value={form} onChange={setForm} disabled={readOnly} idPrefix="template-schedule" />
+          {!readOnly ? (
             <Button
               type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowAdvancedCron((v) => !v)}
+              variant="primary"
+              disabled={createMutation.isPending || !isScheduleFormSubmittable(form)}
+              onClick={handleCreate}
             >
-              {showAdvancedCron ? "隐藏高级 Cron" : "高级 Cron"}
+              {createMutation.isPending ? "创建中…" : "创建调度"}
             </Button>
-          </div>
+          ) : null}
         </CardContent>
       </Card>
     );
   }
+
+  const displayForm: ScheduleFormValue = {
+    ...form,
+    wizard: parseCronToWizard(schedule.cron) ?? DEFAULT_SCHEDULE_FORM.wizard,
+    cron: schedule.cron,
+    timezone: schedule.timezone,
+    recipients: schedule.recipients?.length
+      ? schedule.recipients.map((r) => ({
+          type: r.type as ScheduleFormValue["recipients"][0]["type"],
+          value: r.value,
+        }))
+      : form.recipients,
+  };
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
@@ -256,30 +183,15 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
           <CardTitle className="text-title-sm">调度配置</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <ScheduleWizard
-            value={parseCronToWizard(cron) ?? wizard}
-            onChange={(next) => {
-              setWizard(next);
-              setCron(cronFromWizard(next));
-            }}
+          <ScheduleFormFields
+            value={displayForm}
+            onChange={setForm}
             disabled={readOnly || schedule.status !== "draft"}
-            showAdvancedCron={showAdvancedCron}
-            cron={cron}
-            onCronChange={setCron}
+            idPrefix="template-schedule-edit"
           />
-          <p className="text-theme-xs text-gray-500">{describeCron(cron)}</p>
-          <div className="grid gap-2">
-            <Label htmlFor="schedule-tz">时区</Label>
-            <Select value={timezone} onValueChange={setTimezone} disabled={readOnly}>
-              <SelectTrigger id="schedule-tz">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Asia/Shanghai">Asia/Shanghai</SelectItem>
-                <SelectItem value="UTC">UTC</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+            {describeCron(schedule.cron)} · 接收人：{summarizeRecipients(schedule.recipients)}
+          </p>
           <div className="flex flex-wrap gap-2">
             {schedule.allowedActions.map((action) => (
               <Button
@@ -293,27 +205,18 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
                 {ACTION_LABELS[action] ?? action}
               </Button>
             ))}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {!readOnly ? (
+            {!readOnly && schedule.status === "scheduled" ? (
               <Button
                 type="button"
-                variant="primary"
-                disabled={createMutation.isPending || transitionMutation.isPending}
-                onClick={handleSave}
+                variant="outline"
+                size="sm"
+                disabled={executeMutation.isPending}
+                onClick={() => executeMutation.mutate(schedule.id)}
+                aria-label="手动执行报表调度"
               >
-                保存调度
+                {executeMutation.isPending ? "执行中…" : "立即执行"}
               </Button>
             ) : null}
-            <Button
-              type="button"
-              variant="outline"
-              disabled={readOnly || schedule.status !== "scheduled" || executeMutation.isPending}
-              onClick={() => executeMutation.mutate(schedule.id)}
-              aria-label="手动执行报表调度"
-            >
-              {executeMutation.isPending ? "执行中…" : "立即执行"}
-            </Button>
           </div>
         </CardContent>
       </Card>
@@ -322,59 +225,15 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
         <CardHeader>
           <CardTitle className="text-title-sm">执行历史</CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-only">
+        <CardContent>
           {historyQuery.isLoading ? <Skeleton className="h-32 w-full" /> : null}
-          {history.length === 0 && !historyQuery.isLoading ? (
-            <p className="py-6 text-center text-theme-sm text-gray-500">暂无执行记录</p>
-          ) : null}
-          {history.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>状态</TableHead>
-                  <TableHead>执行时间</TableHead>
-                  <TableHead>错误</TableHead>
-                  <TableHead className="w-20" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {history.map((row) => {
-                  const canRetry =
-                    !readOnly &&
-                    (row.status.includes("degraded") || row.status.includes("failed"));
-                  return (
-                    <TableRow key={row.executionId}>
-                      <TableCell className="text-theme-sm">{row.status}</TableCell>
-                      <TableCell className="text-theme-sm">{row.executedAt}</TableCell>
-                      <TableCell className="max-w-[160px] text-theme-sm text-gray-600 dark:text-gray-400">
-                        {row.errorMessage ? (
-                          <TruncateHint title={localizeApiMessage(row.errorMessage)}>
-                            <span className="line-clamp-2">
-                              {localizeApiMessage(row.errorMessage)}
-                            </span>
-                          </TruncateHint>
-                        ) : (
-                          "—"
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {canRetry ? (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            disabled={retryMutation.isPending}
-                            onClick={() => retryMutation.mutate(row.executionId)}
-                          >
-                            重试
-                          </Button>
-                        ) : null}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+          {!historyQuery.isLoading ? (
+            <ScheduleHistoryTable
+              rows={historyQuery.data?.items ?? []}
+              readOnly={readOnly}
+              retryPending={retryMutation.isPending}
+              onRetry={(executionId) => retryMutation.mutate(executionId)}
+            />
           ) : null}
         </CardContent>
       </Card>
