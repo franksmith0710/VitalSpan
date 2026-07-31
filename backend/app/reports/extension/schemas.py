@@ -30,10 +30,7 @@ class ExtensionConfigUpsert(BaseModel):
     metrics: list[MetricAdjustment] = Field(default_factory=list)
     filters: list[FilterAdjustment] = Field(default_factory=list)
     change_note: str | None = Field(default=None, max_length=500, alias="changeNote")
-
-
-class ExtensionConfigOut(ExtensionConfigUpsert):
-    revision: int
+    default_data_source_id: uuid.UUID | None = Field(default=None, alias="defaultDataSourceId")
 
 
 class ExtensionRenderSpecOut(BaseModel):
@@ -55,6 +52,11 @@ class ExtensionRevisionOut(BaseModel):
 
 class ExtensionRevisionListOut(BaseModel):
     items: list[ExtensionRevisionOut]
+
+
+class TemplateReadinessIn(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    node_ids: list[uuid.UUID] = Field(default_factory=list, alias="nodeIds")
 
 
 class ExtensionPersistenceSnapshotOut(BaseModel):

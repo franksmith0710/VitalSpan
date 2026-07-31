@@ -46,9 +46,16 @@ function mockViewsApi(views: ViewRow[]) {
     }
     if (url.startsWith("/api/v1/users/me/views/") && options?.method === "PUT") {
       const id = url.split("/").pop()!;
-      const body = JSON.parse(options.body ?? "{}") as Omit<ViewRow, "id">;
+      const body = JSON.parse(options.body ?? "{}") as Omit<ViewRow, "id"> & { isDefault?: boolean };
       const index = views.findIndex((row) => row.id === id);
-      if (index >= 0) views[index] = { id, ...body };
+      if (index >= 0) {
+        if (body.isDefault) {
+          views.forEach((row) => {
+            row.isDefault = row.id === id;
+          });
+        }
+        views[index] = { id, ...views[index], ...body };
+      }
       return views[index];
     }
     if (url.startsWith("/api/v1/users/me/views/") && options?.method === "DELETE") {
@@ -128,5 +135,38 @@ describe("UserViewsSection smoke", () => {
       );
     });
     expect(await screen.findByText("我的总览")).toBeInTheDocument();
+  });
+
+  it("sets login entry without renaming the view", async () => {
+    const views: ViewRow[] = [
+      { id: "view-1", name: "销售总览", dashboardId: "dash-1", layout: {}, isDefault: true },
+      { id: "view-2", name: "备份视图", dashboardId: "dash-1", layout: {} },
+    ];
+    mockViewsApi(views);
+    const user = userEvent.setup();
+    render(wrap(<UserViewsSection />));
+
+    expect(await screen.findByText("备份视图")).toBeInTheDocument();
+    expect(screen.getByText("销售总览")).toBeInTheDocument();
+
+    await user.click(within(screen.getByText("备份视图").closest("tr")!).getByRole("button", {
+      name: "设为登录入口",
+    }));
+    await waitFor(() => {
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        "/api/v1/users/me/views/view-2",
+        expect.objectContaining({
+          method: "PUT",
+          body: JSON.stringify({
+            name: "备份视图",
+            dashboardId: "dash-1",
+            layout: {},
+            isDefault: true,
+          }),
+        }),
+      );
+    });
+    expect(screen.getByText("备份视图")).toBeInTheDocument();
+    expect(screen.queryByText("备份-")).not.toBeInTheDocument();
   });
 });

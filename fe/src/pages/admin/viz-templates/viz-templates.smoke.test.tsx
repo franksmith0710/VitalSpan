@@ -127,12 +127,17 @@ function renderHub() {
   );
 }
 
+function hubFilters() {
+  const nodes = screen.getAllByTestId("viz-templates-hub-filters");
+  return nodes[nodes.length - 1]!;
+}
+
 describe("VizTemplatesHubPage smoke", () => {
   it("renders hub title, tabs and template card", async () => {
     renderHub();
     expect(screen.getByRole("heading", { name: "可视化模板" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /仪表板/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /数据大屏/ })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /仪表板/ })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /数据大屏/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /导入 JSON/ })).toBeInTheDocument();
     expect(await screen.findByText("双栏 KPI 分析")).toBeInTheDocument();
     expect(screen.queryByText("空白看板")).not.toBeInTheDocument();
@@ -144,7 +149,7 @@ describe("VizTemplatesHubPage smoke", () => {
   it("shows demo package ready banner", async () => {
     renderHub();
     expect(await screen.findByText("官方演示数据已就绪")).toBeInTheDocument();
-    expect(screen.getByText(/模板预览与官方示例看板将自动使用/)).toBeInTheDocument();
+    expect(screen.getAllByText(/模板预览与官方示例看板将自动使用/).length).toBeGreaterThan(0);
   });
 
   it("exports template json from card menu", async () => {
@@ -169,5 +174,20 @@ describe("VizTemplatesHubPage smoke", () => {
     const [card] = await screen.findAllByTestId("viz-template-card-tpl-1");
     await user.click(within(card).getByRole("button", { name: "预览" }));
     expect(await screen.findByTestId("template-preview-dialog")).toBeInTheDocument();
+  });
+
+  it("keeps surface tabs when 政务 category is selected", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    renderHub();
+    await waitFor(() => {
+      expect(within(hubFilters()).getByRole("tab", { name: /仪表板/ })).toBeInTheDocument();
+    });
+    await user.click(within(hubFilters()).getByRole("button", { name: "政务" }));
+    await waitFor(() => {
+      expect(within(hubFilters()).getByRole("button", { name: "政务" })).toHaveClass(/bg-brand-50/);
+    });
+    expect(within(hubFilters()).getByRole("tab", { name: /仪表板/ })).toBeInTheDocument();
+    expect(within(hubFilters()).getByRole("tab", { name: /数据大屏/ })).toBeInTheDocument();
+    expect(within(hubFilters()).queryByText("政务 · 大屏与看板")).not.toBeInTheDocument();
   });
 });

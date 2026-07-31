@@ -9,6 +9,7 @@ import { mapApiError } from "@/lib/apiError";
 import { parseCronToWizard } from "@/lib/scheduleCronWizard";
 import { summarizeRecipients } from "@/lib/scheduleSourceMeta";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
+import { pickActiveSchedule, scheduleRowToForm } from "../scheduleFormUtils";
 import { describeCron } from "./ScheduleWizard";
 import {
   DEFAULT_SCHEDULE_FORM,
@@ -30,6 +31,7 @@ const ACTION_LABELS: Record<string, string> = {
 export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: string; readOnly: boolean }) {
   const qc = useQueryClient();
   const [form, setForm] = useState<ScheduleFormValue>(DEFAULT_SCHEDULE_FORM);
+  const [clonePending, setClonePending] = useState(false);
 
   const listQuery = useQuery({
     queryKey: ["reports", "schedules", catalogNodeId],
@@ -39,7 +41,7 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
       ),
   });
 
-  const schedule = listQuery.data?.items[0] ?? null;
+  const schedule = pickActiveSchedule(listQuery.data?.items ?? []);
 
   const historyQuery = useQuery({
     queryKey: ["reports", "schedule-executions", schedule?.id],
@@ -126,6 +128,23 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
     createMutation.mutate();
   };
 
+  const handleCloneConfig = async () => {
+    if (!schedule || readOnly) return;
+    setClonePending(true);
+    try {
+      const cloned = scheduleRowToForm(schedule);
+      if (schedule.allowedActions.includes("cancel")) {
+        await transitionMutation.mutateAsync({ id: schedule.id, action: "cancel" });
+      }
+      setForm(cloned);
+      toast.success("已复制配置，请编辑后创建新调度");
+    } catch (err) {
+      toast.error(mapApiError(err));
+    } finally {
+      setClonePending(false);
+    }
+  };
+
   if (listQuery.isError) {
     return (
       <PageErrorBanner message={mapApiError(listQuery.error)} onRetry={() => void listQuery.refetch()} />
@@ -202,13 +221,24 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
           />
           {schedule.status !== "draft" && !readOnly ? (
             <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-              调度已激活后无法直接修改配置。如需调整接收人或频率，请先「取消调度」后重新创建。
+              调度已激活后无法直接修改配置。可「复制配置新建」，或先「取消调度」后重建。
             </p>
           ) : null}
           <p className="text-theme-xs text-gray-500 dark:text-gray-400">
             {describeCron(schedule.cron)} · 接收人：{summarizeRecipients(schedule.recipients)}
           </p>
           <div className="flex flex-wrap gap-2">
+            {schedule.status !== "draft" && !readOnly ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={clonePending || transitionMutation.isPending}
+                onClick={() => void handleCloneConfig()}
+              >
+                {clonePending ? "处理中…" : "复制配置新建"}
+              </Button>
+            ) : null}
             {schedule.allowedActions.map((action) => (
               <Button
                 key={action}

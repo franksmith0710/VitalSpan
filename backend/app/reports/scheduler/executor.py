@@ -38,10 +38,24 @@ def _append_history(
         "scheduleId": out.schedule_id,
         "status": out.status,
         "artifactRef": out.artifact_ref,
+        "artifactKind": out.artifact_kind,
         "executedAt": out.executed_at,
         "errorMessage": error_message or out.error_message,
         "parentExecutionId": out.parent_execution_id,
     })
+
+
+def list_recent_failed_executions(limit: int = 20) -> dict:
+    rows: list[dict] = []
+    for schedule_id, history in _HISTORY.items():
+        for entry in history:
+            status = entry.get("status", "")
+            if "failed" not in status and "degraded" not in status:
+                continue
+            rows.append({**entry, "scheduleId": schedule_id})
+    rows.sort(key=lambda r: r.get("executedAt", ""), reverse=True)
+    page = rows[:limit]
+    return {"items": page, "total": len(rows)}
 
 
 def list_executions(schedule_id: uuid.UUID, limit: int = 50, offset: int = 0) -> dict:
@@ -111,8 +125,10 @@ def semi_real_execute_schedule(
         except Exception:
             pass
     artifact_ref = f"semi://reports/{schedule_id}/{execution_id}"
+    artifact_kind = "template_render"
     if source_type in {"dashboard", "data_screen"} and source_id is not None:
         fmt = (row.get("attachment_formats") or ["pdf"])[0]
+        artifact_kind = "layout_inventory"
         with Session(bind=get_meta_engine()) as db:
             job = dashboard_export_jobs.submit_dashboard_export(db, source_id, fmt, actor)
         artifact_ref = job.download_url or artifact_ref
@@ -132,6 +148,7 @@ def semi_real_execute_schedule(
         ["email"],
         delivery_mock,
         recipient_emails=recipient_emails,
+        artifact_kind=artifact_kind,
     )
     error_message: str | None = None
     if delivery_mock == "fail":
@@ -153,6 +170,7 @@ def semi_real_execute_schedule(
         scheduleId=schedule_id,
         status=status,
         artifactRef=artifact_ref,
+        artifactKind=artifact_kind,
         idempotencyKey=idempotency_key,
         executedAt=datetime.now(UTC).isoformat(),
         deliverySteps=delivery["deliverySteps"],

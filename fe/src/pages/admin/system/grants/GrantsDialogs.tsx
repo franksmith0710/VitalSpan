@@ -16,8 +16,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ResourceGrantPicker } from "./ResourceGrantPicker";
 import {
   Select,
   SelectContent,
@@ -97,7 +97,9 @@ export function GrantsDialogs({
               <Label htmlFor="grant-type">资源类型</Label>
               <Select
                 value={form.resourceType}
-                onValueChange={(v) => setForm({ ...form, resourceType: v as ResourceType })}
+                onValueChange={(v) =>
+                  setForm({ ...form, resourceType: v as ResourceType, resourceId: "" })
+                }
               >
                 <SelectTrigger id="grant-type" aria-label="资源类型">
                   <SelectValue placeholder="请选择资源类型" />
@@ -115,13 +117,13 @@ export function GrantsDialogs({
               ) : null}
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="grant-resource-id">资源 ID</Label>
-              <Input
-                id="grant-resource-id"
+              <Label htmlFor="grant-resource">资源</Label>
+              <ResourceGrantPicker
+                id="grant-resource"
+                resourceType={form.resourceType}
                 value={form.resourceId}
-                onChange={(e) => setForm({ ...form, resourceId: e.target.value })}
-                placeholder="UUID 格式"
-                aria-invalid={Boolean(formErrors.resourceId)}
+                onValueChange={(resourceId) => setForm({ ...form, resourceId })}
+                disabled={createPending}
               />
               {formErrors.resourceId ? (
                 <p className="text-theme-xs text-error-600">{formErrors.resourceId}</p>

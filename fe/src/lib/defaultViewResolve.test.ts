@@ -67,7 +67,18 @@ describe("resolveDefaultDashboardPath", () => {
     expect(mockApiFetch).not.toHaveBeenCalledWith("/api/v1/roles/viewer/default-views");
   });
 
-  it("prefers override named 默认 over other items", async () => {
+  it("prefers isDefault flag over legacy name and other items", async () => {
+    mockApiFetch.mockResolvedValueOnce({
+      items: [
+        { name: "默认", dashboardId: "d-legacy", isDefault: false },
+        { name: "我的总览", dashboardId: "d-flagged", isDefault: true },
+      ],
+    });
+    mockDashboardExists("d-flagged");
+    expect(await resolveDefaultDashboardPath(["viewer"])).toBe("/admin/dashboards/d-flagged");
+  });
+
+  it("prefers override named 默认 over other items when no isDefault flag", async () => {
     mockApiFetch.mockResolvedValueOnce({
       items: [
         { name: "其他", dashboardId: "d-other" },

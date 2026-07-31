@@ -70,7 +70,8 @@ def build_dashboard_pdf(
 ) -> bytes:
     widget_lines = widget_summary_lines(layout)
     header_lines = [
-        "VitalSpan Dashboard Export",
+        "VitalSpan Dashboard Export — LAYOUT INVENTORY PREVIEW",
+        "NOTE: This PDF lists dashboard widgets; it is NOT a chart render snapshot.",
         f"Name: {name}",
         f"Dashboard ID: {dashboard_id}",
         f"Exported: {datetime.now(UTC).isoformat()}",

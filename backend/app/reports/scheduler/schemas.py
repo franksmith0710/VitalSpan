@@ -69,6 +69,7 @@ class ExecutionHistoryItemOut(BaseModel):
     schedule_id: uuid.UUID = Field(alias="scheduleId")
     status: str
     artifact_ref: str = Field(alias="artifactRef")
+    artifact_kind: str | None = Field(default=None, alias="artifactKind")
     executed_at: str = Field(alias="executedAt")
     error_message: str | None = Field(default=None, alias="errorMessage")
     parent_execution_id: uuid.UUID | None = Field(default=None, alias="parentExecutionId")
@@ -101,6 +102,7 @@ class ScheduleExecuteOut(BaseModel):
         "semi_real_failed",
     ]
     artifact_ref: str = Field(alias="artifactRef")
+    artifact_kind: str | None = Field(default=None, alias="artifactKind")
     idempotency_key: str = Field(alias="idempotencyKey")
     executed_at: str = Field(alias="executedAt")
     delivery_steps: list[dict[str, Any]] = Field(default_factory=list, alias="deliverySteps")

@@ -91,4 +91,50 @@ describe("ChangePasswordSession integration", () => {
     expect(logoutSpy).not.toHaveBeenCalled();
     expect(screen.queryByText("login-page")).not.toBeInTheDocument();
   });
+
+  it("logs out and navigates to login after a successful password change", async () => {
+    const user = userEvent.setup();
+
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith("/api/v1/me")) {
+        return jsonResponse({
+          id: "user-1",
+          username: "admin",
+          displayName: "Admin",
+          email: "admin@example.com",
+          roles: ["admin"],
+        });
+      }
+      if (url.endsWith("/api/v1/auth/change-password") && init?.method === "POST") {
+        return new Response(null, { status: 204 });
+      }
+      return jsonResponse({ code: "NOT_FOUND", message: "Not found", detail: null }, 404);
+    });
+
+    render(
+      <TooltipProvider delayDuration={0}>
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <MemoryRouter initialEntries={["/admin/account/security"]}>
+            <AuthProvider>
+              <Routes>
+                <Route path="/admin/account/security" element={<ChangePasswordSection />} />
+                <Route path="/login" element={<div>login-page</div>} />
+              </Routes>
+            </AuthProvider>
+          </MemoryRouter>
+        </QueryClientProvider>
+      </TooltipProvider>,
+    );
+
+    await waitFor(() => expect(getPasswordInput("currentPassword")).toBeInTheDocument());
+
+    await user.type(getPasswordInput("currentPassword"), "oldpass123");
+    await user.type(getPasswordInput("newPassword"), "newpass123");
+    await user.type(getPasswordInput("confirmPassword"), "newpass123");
+    await user.click(screen.getByRole("button", { name: "更新密码" }));
+
+    await waitFor(() => expect(screen.getByText("login-page")).toBeInTheDocument());
+    expect(localStorage.getItem("vitalspan:access_token")).toBeNull();
+  });
 });

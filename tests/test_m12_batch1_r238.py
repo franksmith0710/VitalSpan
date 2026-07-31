@@ -308,6 +308,45 @@ def test_view_r238_put_delete(client):
     assert listing.json()["items"] == []
 
 
+def test_view_r238_set_default_preserves_name(client):
+    """PUT isDefault=true keeps view name; only one default flag."""
+    dash_id = _create_dashboard(client)
+    first = client.post(
+        "/api/v1/users/me/views",
+        headers=AUTH,
+        json={"name": "销售总览", "dashboardId": dash_id, "layout": {}, "isDefault": True},
+    )
+    second = client.post(
+        "/api/v1/users/me/views",
+        headers=AUTH,
+        json={"name": "备份视图", "dashboardId": dash_id, "layout": {}},
+    )
+    assert first.status_code == 201
+    assert second.status_code == 201
+    view_id = second.json()["id"]
+    updated = client.put(
+        f"/api/v1/users/me/views/{view_id}",
+        headers=AUTH,
+        json={
+            "name": "备份视图",
+            "dashboardId": dash_id,
+            "layout": {},
+            "isDefault": True,
+        },
+    )
+    assert updated.status_code == 200
+    body = updated.json()
+    assert body["name"] == "备份视图"
+    assert body["isDefault"] is True
+    listing = client.get("/api/v1/users/me/views", headers=AUTH)
+    items = listing.json()["items"]
+    assert len(items) == 2
+    defaults = [item for item in items if item.get("isDefault")]
+    assert len(defaults) == 1
+    assert defaults[0]["id"] == view_id
+    assert defaults[0]["name"] == "备份视图"
+
+
 def test_view_r238_store_helpers():
     """T-VIEW-R238-003-02: store update/remove helpers."""
     from app.views import store

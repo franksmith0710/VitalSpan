@@ -41,9 +41,17 @@ def _sqlite():
 
 @pytest.fixture(autouse=True)
 def _reset_schedules():
+    from app.reports.scheduler import executor as scheduler_executor
+
     scheduler_service._schedules.clear()
+    scheduler_executor._EXECUTION_LOG.clear()
+    scheduler_executor._EXECUTION_BY_ID.clear()
+    scheduler_executor._HISTORY.clear()
     yield
     scheduler_service._schedules.clear()
+    scheduler_executor._EXECUTION_LOG.clear()
+    scheduler_executor._EXECUTION_BY_ID.clear()
+    scheduler_executor._HISTORY.clear()
 
 
 @pytest.fixture
@@ -100,3 +108,45 @@ def test_list_schedules_by_source_id(client: TestClient):
     body = resp.json()
     assert body["total"] == 1
     assert body["items"][0]["sourceId"] == dash_id
+
+
+def test_delivery_health_endpoint(client: TestClient):
+    resp = client.get("/api/v1/reports/schedules/delivery-health", headers=AUTH)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["status"] in {"reachable", "unreachable", "unconfigured"}
+
+
+def test_dashboard_execute_records_layout_inventory_artifact(client: TestClient):
+    dash = client.post(
+        "/api/v1/dashboards",
+        headers=AUTH,
+        json={"name": "Exec Dash", "description": "artifact-kind"},
+    )
+    assert dash.status_code == 201
+    dash_id = dash.json()["id"]
+    sched = client.post(
+        "/api/v1/reports/schedules",
+        headers=AUTH,
+        json={
+            "sourceType": "dashboard",
+            "sourceId": dash_id,
+            "cron": "0 9 * * *",
+            "recipients": [{"type": "role", "value": "admin"}],
+        },
+    )
+    schedule_id = sched.json()["id"]
+    client.post(
+        f"/api/v1/reports/schedules/{schedule_id}/transition",
+        headers=AUTH,
+        json={"action": "schedule"},
+    )
+    exec_resp = client.post(
+        f"/api/v1/reports/schedules/{schedule_id}/execute",
+        headers={**AUTH, "Idempotency-Key": "artifact-kind-1", "X-Rpt-Semi-Real": "1"},
+    )
+    assert exec_resp.status_code == 200, exec_resp.text
+    body = exec_resp.json()
+    assert body.get("artifactKind") == "layout_inventory"
+    hist = client.get(f"/api/v1/reports/schedules/{schedule_id}/executions", headers=AUTH)
+    assert hist.json()["items"][0]["artifactKind"] == "layout_inventory"

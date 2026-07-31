@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { mapApiError } from "@/lib/apiError";
 import { summarizeRecipients } from "@/lib/scheduleSourceMeta";
+import { pickActiveSchedule, scheduleRowToForm } from "../scheduleFormUtils";
 import {
   localizeScheduleStatus,
   SCHEDULE_ACTION_LABELS,
@@ -23,6 +24,7 @@ import {
   ScheduleFormFields,
   type ScheduleFormValue,
 } from "./ScheduleFormFields";
+import { ScheduleArtifactNotice } from "./ScheduleArtifactNotice";
 import { ScheduleHistoryTable } from "./ScheduleHistoryTable";
 
 type DashboardSchedulePanelProps = {
@@ -40,7 +42,7 @@ export function DashboardSchedulePanel({
 }: DashboardSchedulePanelProps) {
   const filter = { sourceId, sourceType };
   const listQuery = useReportSchedulesList(filter);
-  const schedule = listQuery.data?.items?.[0] ?? null;
+  const schedule = pickActiveSchedule(listQuery.data?.items ?? []);
   const historyQuery = useScheduleExecutions(schedule?.id ?? null);
   const { createSchedule, transitionSchedule, executeSchedule, retryExecution } =
     useReportScheduleMutations(filter);
@@ -49,10 +51,11 @@ export function DashboardSchedulePanel({
     ...DEFAULT_SCHEDULE_FORM,
     attachmentFormats: ["pdf"],
   });
+  const [clonePending, setClonePending] = useState(false);
 
   const label = sourceType === "data_screen" ? "大屏" : "看板";
   const isPending =
-    createSchedule.isPending || transitionSchedule.isPending || executeSchedule.isPending;
+    createSchedule.isPending || transitionSchedule.isPending || executeSchedule.isPending || clonePending;
 
   const handleCreate = async () => {
     if (!isScheduleFormSubmittable(form)) {
@@ -71,6 +74,23 @@ export function DashboardSchedulePanel({
       toast.success("定时报告已创建");
     } catch (err) {
       toast.error(mapApiError(err));
+    }
+  };
+
+  const handleCloneConfig = async () => {
+    if (!schedule || readOnly) return;
+    setClonePending(true);
+    try {
+      const cloned = scheduleRowToForm(schedule);
+      if (schedule.allowedActions.includes("cancel")) {
+        await transitionSchedule.mutateAsync({ id: schedule.id, action: "cancel" });
+      }
+      setForm(cloned);
+      toast.success("已复制配置，请编辑后创建新定时报告");
+    } catch (err) {
+      toast.error(mapApiError(err));
+    } finally {
+      setClonePending(false);
     }
   };
 
@@ -94,13 +114,14 @@ export function DashboardSchedulePanel({
           定时报告
         </CardTitle>
         <CardDescription>
-          为「{sourceName}」{label}按日/周/月自动生成 PDF 并邮件投递。
+          为「{sourceName}」{label}按日/周/月生成布局摘要附件并邮件投递（非图表渲染快照）。
           <Link to="/admin/reports/schedules?tab=dashboard" className="ml-1 text-brand-500 hover:underline">
             查看全部调度
           </Link>
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <ScheduleArtifactNotice show />
         {!schedule ? (
           <>
             <ScheduleFormFields
@@ -130,7 +151,23 @@ export function DashboardSchedulePanel({
               <p className="text-theme-xs text-gray-500 dark:text-gray-400">
                 接收人：{summarizeRecipients(schedule.recipients)}
               </p>
+              {schedule.status !== "draft" && !readOnly ? (
+                <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+                  已激活后无法直接修改。可「复制配置新建」或先「取消」后重建。
+                </p>
+              ) : null}
               <div className="flex flex-wrap gap-2">
+                {schedule.status !== "draft" && !readOnly ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isPending}
+                    onClick={() => void handleCloneConfig()}
+                  >
+                    {clonePending ? "处理中…" : "复制配置新建"}
+                  </Button>
+                ) : null}
                 {schedule.allowedActions.map((action) => (
                   <Button
                     key={action}

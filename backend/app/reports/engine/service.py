@@ -108,12 +108,8 @@ def run_template(template_id: uuid.UUID, payload: RenderRunIn, actor: UserContex
     except ReportExtensionError:
         ext = None
 
-    if has_extension and ds_id is None:
-        raise ReportEngineError(
-            RPT_ENGINE_DATASOURCE_REQUIRED,
-            "dataSourceId required when template has extension metrics",
-            422,
-        )
+    if ds_id is None and ext is not None and ext.default_data_source_id is not None:
+        ds_id = ext.default_data_source_id
 
     export_hook: ExportHookOut | None = None
     if node.template_kind in _EXPORT_KINDS:

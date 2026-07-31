@@ -51,6 +51,7 @@ def apply_first_login_inherit(
         "layout": layout,
         "classificationScope": None,
         "inheritedFromRole": True,
+        "isDefault": True,
     }
     store.add_user_override(user_id, item)
     return item

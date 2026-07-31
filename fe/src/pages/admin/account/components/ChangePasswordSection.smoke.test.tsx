@@ -8,6 +8,7 @@ import { ChangePasswordSection } from "./ChangePasswordSection";
 
 const mockApiFetch = vi.fn();
 const mockToastSuccess = vi.fn();
+const mockLogout = vi.fn();
 
 vi.mock("@/lib/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/api")>();
@@ -16,6 +17,10 @@ vi.mock("@/lib/api", async (importOriginal) => {
     apiFetch: (...args: unknown[]) => mockApiFetch(...args),
   };
 });
+
+vi.mock("@/context/auth-context", () => ({
+  useAuth: () => ({ logout: mockLogout }),
+}));
 
 vi.mock("sonner", () => ({
   toast: {
@@ -58,6 +63,7 @@ describe("ChangePasswordSection", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
     mockToastSuccess.mockReset();
+    mockLogout.mockReset();
     mockApiFetch.mockResolvedValue(undefined);
   });
 
@@ -214,7 +220,7 @@ describe("ChangePasswordSection", () => {
     });
   });
 
-  it("clears the form and shows success toast after a successful submit", async () => {
+  it("clears the form, shows re-login toast, and logs out after a successful submit", async () => {
     const user = userEvent.setup();
     render(wrap(<ChangePasswordSection />));
 
@@ -222,8 +228,9 @@ describe("ChangePasswordSection", () => {
     await user.click(screen.getByRole("button", { name: "更新密码" }));
 
     await waitFor(() => {
-      expect(mockToastSuccess).toHaveBeenCalledWith("密码已更新");
+      expect(mockToastSuccess).toHaveBeenCalledWith("密码已更新，请使用新密码重新登录");
     });
+    expect(mockLogout).toHaveBeenCalledTimes(1);
     expect(getPasswordInput("current-password")).toHaveValue("");
     expect(getPasswordInput("new-password")).toHaveValue("");
     expect(getPasswordInput("confirm-password")).toHaveValue("");

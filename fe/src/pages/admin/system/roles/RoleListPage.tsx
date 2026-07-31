@@ -32,7 +32,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button, IconButton } from "@/components/ui/button";
-import { TruncateHint } from "@/components/ui/hint-tooltip";
 import {
   Dialog,
   DialogContent,
@@ -40,8 +39,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { SearchField } from "@/components/ui/search-field";
 import {
   Select,
@@ -51,8 +48,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
@@ -66,6 +62,8 @@ import {
   type RoleCreateValues,
   type RoleEditValues,
 } from "./roleFormSchema";
+import { RolePermissionsPanel } from "./RolePermissionsPanel";
+import { RoleProfileFormFields } from "./RoleProfileFormFields";
 
 type RoleOut = {
   id: string;
@@ -73,6 +71,7 @@ type RoleOut = {
   name: string;
   description: string | null;
   isActive: boolean;
+  isRoot?: boolean;
 };
 
 type DashboardSummary = { id: string; name: string };
@@ -92,6 +91,7 @@ export function RoleListPage() {
   const [debouncedPrefix, setDebouncedPrefix] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogTab, setDialogTab] = useState<"profile" | "permissions">("profile");
   const [editing, setEditing] = useState<RoleOut | null>(null);
   const [form, setForm] = useState<RoleCreateValues | RoleEditValues>(EMPTY_CREATE);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -157,6 +157,7 @@ export function RoleListPage() {
 
   const openCreate = () => {
     setEditing(null);
+    setDialogTab("profile");
     setForm(EMPTY_CREATE);
     setFormErrors({});
     setActionError(null);
@@ -165,6 +166,7 @@ export function RoleListPage() {
 
   const openEdit = async (role: RoleOut) => {
     setEditing(role);
+    setDialogTab("profile");
     setFormErrors({});
     setActionError(null);
     let defaultDashboardId = "";
@@ -483,123 +485,84 @@ export function RoleListPage() {
         ) : null}
       </ListPageSection>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) setDialogTab("profile");
+        }}
+      >
         <DialogContent className="flex max-h-[min(90dvh,720px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
           <DialogHeader className="shrink-0 border-b border-gray-100 px-6 py-5 dark:border-white/[0.06]">
             <DialogTitle>{editing ? "编辑角色" : "新建角色"}</DialogTitle>
           </DialogHeader>
-          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-            <div className="grid gap-4">
-            {!editing ? (
-              <div className="grid gap-2">
-                <Label htmlFor="role-code">角色编码</Label>
-                <Input
-                  id="role-code"
-                  value={(form as RoleCreateValues).code}
-                  onChange={(e) => setForm({ ...form, code: e.target.value })}
-                  aria-invalid={Boolean(formErrors.code)}
-                />
-                {formErrors.code ? (
-                  <p className="text-theme-xs text-error-600">{formErrors.code}</p>
-                ) : null}
-              </div>
-            ) : (
-              <div className="grid gap-2">
-                <Label>角色编码</Label>
-                <Input value={editing.code} readOnly disabled />
-              </div>
-            )}
-            <div className="grid gap-2">
-              <Label htmlFor="role-name">显示名</Label>
-              <Input
-                id="role-name"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                aria-invalid={Boolean(formErrors.name)}
-              />
-              {formErrors.name ? (
-                <p className="text-theme-xs text-error-600">{formErrors.name}</p>
-              ) : null}
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="role-desc">描述</Label>
-              <Textarea
-                id="role-desc"
-                value={form.description ?? ""}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-              />
-            </div>
-            {editing ? (
-              <div className="flex items-center justify-between gap-4">
-                <Label htmlFor="role-active">启用</Label>
-                <Switch
-                  id="role-active"
-                  checked={(form as RoleEditValues).isActive}
-                  onCheckedChange={(checked) =>
-                    setForm({ ...form, isActive: checked } as RoleEditValues)
-                  }
-                />
-              </div>
-            ) : null}
-            <div className="grid gap-2">
-              <Label htmlFor="role-dash">默认仪表板</Label>
-              <Select
-                value={form.defaultDashboardId || "__none__"}
-                onValueChange={(v) =>
-                  setForm({ ...form, defaultDashboardId: v === "__none__" ? "" : v })
-                }
-              >
-                <SelectTrigger id="role-dash">
-                  <SelectValue placeholder="不设置" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">不设置</SelectItem>
-                  {dashboards?.items.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>
-                      {d.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="role-report-tpl">默认报表模板</Label>
-              <Select
-                value={form.defaultReportTemplateNodeId || "__none__"}
-                onValueChange={(v) =>
-                  setForm({ ...form, defaultReportTemplateNodeId: v === "__none__" ? "" : v })
-                }
-              >
-                <SelectTrigger id="role-report-tpl">
-                  <SelectValue placeholder="不设置" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">不设置</SelectItem>
-                  {reportTemplates?.items.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      <TruncateHint title={t.name} className="truncate">
-                        {t.name}
-                      </TruncateHint>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            </div>
-          </div>
-          <DialogFooter className="shrink-0 px-6 py-4">
-            <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-              取消
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              disabled={saveMutation.isPending}
-              onClick={() => saveMutation.mutate()}
+          {editing ? (
+            <Tabs
+              value={dialogTab}
+              onValueChange={(v) => setDialogTab(v as "profile" | "permissions")}
+              className="flex min-h-0 flex-1 flex-col"
             >
-              {saveMutation.isPending ? "保存中…" : "保存"}
-            </Button>
-          </DialogFooter>
+              <div className="shrink-0 border-b border-gray-100 px-6 dark:border-white/[0.06]">
+                <TabsList className="h-10 w-full justify-start rounded-none border-0 bg-transparent p-0">
+                  <TabsTrigger value="profile" className="rounded-lg">
+                    基本信息
+                  </TabsTrigger>
+                  <TabsTrigger value="permissions" className="rounded-lg">
+                    权限
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+              <TabsContent value="profile" className="mt-0 min-h-0 flex-1 overflow-y-auto px-6 py-5">
+                <RoleProfileFormFields
+                  editing={editing}
+                  form={form}
+                  setForm={setForm}
+                  formErrors={formErrors}
+                  dashboards={dashboards?.items}
+                  reportTemplates={reportTemplates?.items}
+                />
+              </TabsContent>
+              <TabsContent value="permissions" className="mt-0 min-h-0 flex-1 overflow-y-auto px-6 py-5">
+                <RolePermissionsPanel
+                  roleId={editing.id}
+                  roleName={editing.name}
+                  isRoot={editing.isRoot}
+                />
+              </TabsContent>
+            </Tabs>
+          ) : (
+            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+              <RoleProfileFormFields
+                editing={null}
+                form={form}
+                setForm={setForm}
+                formErrors={formErrors}
+                dashboards={dashboards?.items}
+                reportTemplates={reportTemplates?.items}
+              />
+            </div>
+          )}
+          {dialogTab === "profile" || !editing ? (
+            <DialogFooter className="shrink-0 px-6 py-4">
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                取消
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                disabled={saveMutation.isPending}
+                onClick={() => saveMutation.mutate()}
+              >
+                {saveMutation.isPending ? "保存中…" : "保存"}
+              </Button>
+            </DialogFooter>
+          ) : (
+            <DialogFooter className="shrink-0 px-6 py-4">
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                关闭
+              </Button>
+            </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
 

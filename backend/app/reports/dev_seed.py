@@ -149,9 +149,25 @@ def _find_demo_node_id() -> uuid.UUID | None:
     return None
 
 
-def _seed_demo_template(actor: UserContext) -> tuple[int, uuid.UUID | None]:
+def _seed_demo_template(actor: UserContext, ds_id: uuid.UUID | None) -> tuple[int, uuid.UUID | None]:
     existing = _find_demo_node_id()
     if existing is not None:
+        if ds_id is not None:
+            try:
+                ext = extension_service.get_extension(existing)
+                extension_service.upsert(
+                    existing,
+                    ExtensionConfigUpsert(
+                        catalogNodeId=existing,
+                        metrics=ext.metrics,
+                        filters=ext.filters,
+                        defaultDataSourceId=ds_id,
+                        changeNote="dev seed datasource link",
+                    ),
+                    actor,
+                )
+            except ReportExtensionError:
+                pass
         return 0, existing
     template_service.upsert_template_definition(
         _DEMO_TEMPLATE_KEY,
@@ -198,6 +214,7 @@ def _seed_demo_template(actor: UserContext) -> tuple[int, uuid.UUID | None]:
             ],
             filters=[],
             changeNote="dev seed",
+            defaultDataSourceId=ds_id,
         ),
         actor,
     )
@@ -240,7 +257,7 @@ def seed_dev_reports(session: Session, *, actor: UserContext | None = None) -> d
         return counts
     counts["dataSourceId"] = str(ds_id)
     counts["equipment"] = _seed_equipment_entity(session, ds_id, user)
-    tpl_n, node_id = _seed_demo_template(user)
+    tpl_n, node_id = _seed_demo_template(user, ds_id)
     counts["template"] = tpl_n
     counts["prefab"] = seed_builtin_prefab_bindings(user)
     if node_id is not None:

@@ -49,3 +49,9 @@ def remove_user_override(user_id: str, view_id: str) -> None:
     if len(next_bucket) == len(bucket):
         raise KeyError(view_id)
     _user_overrides[user_id] = next_bucket
+
+
+def apply_default_flag(user_id: str, view_id: str | None) -> None:
+    bucket = _user_overrides.get(user_id, [])
+    for item in bucket:
+        item["isDefault"] = bool(view_id) and item.get("id") == view_id

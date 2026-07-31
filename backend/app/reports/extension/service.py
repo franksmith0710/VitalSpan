@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 import uuid
 from datetime import UTC, datetime
+from typing import Literal
 
 from app.auth.deps import UserContext
 from app.reports.catalog import service as catalog_service
@@ -85,6 +86,7 @@ def upsert(node_id: uuid.UUID, payload: ExtensionConfigUpsert, actor: UserContex
         "metrics": [m.model_dump(by_alias=True) for m in payload.metrics],
         "filters": [f.model_dump(by_alias=True) for f in payload.filters],
         "change_note": payload.change_note,
+        "default_data_source_id": payload.default_data_source_id,
         "revision": revision,
     }
     _store[node_id] = record
@@ -105,6 +107,7 @@ def get_extension(node_id: uuid.UUID) -> ExtensionConfigOut:
         metrics=record["metrics"],
         filters=record["filters"],
         change_note=record.get("change_note"),
+        default_data_source_id=record.get("default_data_source_id"),
         revision=record["revision"],
     )
 
@@ -160,3 +163,20 @@ def get_render_spec(node_id: uuid.UUID) -> dict:
         raise ReportExtensionError("RPT_EXT_NODE_NOT_FOUND", "Extension config not found", 404)
     node = catalog_service.get_node(node_id)
     return build_extension_render_spec(record, node.template_kind)
+
+
+def resolve_template_readiness(node_id: uuid.UUID) -> Literal["live", "demo"]:
+    try:
+        ext = get_extension(node_id)
+    except ReportExtensionError:
+        return "demo"
+    if not ext.metrics:
+        return "demo"
+    if ext.default_data_source_id is not None:
+        return "live"
+    return "demo"
+
+
+def list_templates_readiness(node_ids: list[uuid.UUID]) -> dict:
+    items = [{"nodeId": str(nid), "readiness": resolve_template_readiness(nid)} for nid in node_ids]
+    return {"items": items}

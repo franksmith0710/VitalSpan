@@ -17,18 +17,21 @@ vi.mock("@/context/auth-context", () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { RoleListPage } from "./RoleListPage";
 
 function renderRoles() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={["/admin/system/roles"]}>
-        <Routes>
-          <Route path="/admin/system/roles" element={<RoleListPage />} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
+    <TooltipProvider delayDuration={0}>
+      <QueryClientProvider client={qc}>
+        <MemoryRouter initialEntries={["/admin/system/roles"]}>
+          <Routes>
+            <Route path="/admin/system/roles" element={<RoleListPage />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
+    </TooltipProvider>,
   );
 }
 

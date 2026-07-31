@@ -26,10 +26,12 @@ import {
   resolveScheduleSourceLabel,
   ScheduleListTable,
 } from "./components/ScheduleListTable";
+import { ScheduleRecentFailuresPanel } from "./components/ScheduleRecentFailuresPanel";
 import {
   SchedulePageOverview,
   SchedulePageOverviewSkeleton,
 } from "./components/SchedulePageOverview";
+import { useReportScheduleMutations } from "./useReportSchedules";
 
 const TAB_OPTIONS: { id: ScheduleTabFilter; label: string }[] = [
   { id: "all", label: "全部" },
@@ -118,6 +120,7 @@ export function ReportSchedulesPage() {
   const readOnly = false;
 
   const schedulesQuery = useReportSchedulesList();
+  const { retryExecution } = useReportScheduleMutations();
   const templatesQuery = useQuery({
     queryKey: ["reports", "center", "templates"],
     queryFn: fetchAllCatalogTemplates,
@@ -169,6 +172,18 @@ export function ReportSchedulesPage() {
       ) : null}
 
       {isLoading ? <SchedulePageOverviewSkeleton /> : <SchedulePageOverview stats={stats} />}
+
+      {!isLoading ? (
+        <ScheduleRecentFailuresPanel
+          onSelectSchedule={(id) => setExpandedId(id)}
+          onRetry={(executionId, scheduleId) =>
+            void retryExecution
+              .mutateAsync({ executionId, scheduleId })
+              .then(() => setExpandedId(scheduleId))
+          }
+          retryPending={retryExecution.isPending}
+        />
+      ) : null}
 
       <ListPageSection className="min-h-0 flex-1">
         <ListPageToolbar

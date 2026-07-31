@@ -18,6 +18,11 @@ export const queryKeys = {
     all: ["roles"] as const,
     list: (params?: { codePrefix?: string; limit?: number; offset?: number }) =>
       ["roles", "list", params] as const,
+    dimensionGroups: (roleId: string) => ["roles", roleId, "dimension-groups"] as const,
+  },
+  permissions: {
+    catalog: ["permissions", "catalog"] as const,
+    role: (roleId: string) => ["permissions", "role", roleId] as const,
   },
   resourceGrants: {
     all: ["resourceGrants"] as const,

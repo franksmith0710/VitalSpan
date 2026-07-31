@@ -28,6 +28,12 @@ describe("ReportSchedulesPage smoke", () => {
 
   beforeEach(() => {
     mockApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path.includes("/schedules/delivery-health")) {
+        return { status: "reachable", host: "localhost", port: 1025, error: null };
+      }
+      if (path.includes("/executions/recent-failures")) {
+        return { items: [], total: 0 };
+      }
       if (path === "/api/v1/reports/schedules") {
         return {
           items: [

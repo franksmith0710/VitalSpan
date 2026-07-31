@@ -98,6 +98,7 @@ class UserViewOverrideIn(BaseModel):
     dashboard_id: uuid.UUID = Field(alias="dashboardId")
     layout: dict
     classification_scope: str | None = Field(default=None, alias="classificationScope")
+    is_default: bool | None = Field(default=None, alias="isDefault")
 
 
 @user_views_router.get("/me/views/{view_id}", response_model=None)

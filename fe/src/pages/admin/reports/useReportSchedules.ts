@@ -23,6 +23,7 @@ export type ScheduleExecutionRow = {
   scheduleId: string;
   status: string;
   artifactRef: string;
+  artifactKind?: string | null;
   executedAt: string;
   errorMessage?: string | null;
   parentExecutionId?: string | null;

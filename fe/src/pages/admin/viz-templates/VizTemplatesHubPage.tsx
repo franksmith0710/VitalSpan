@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router";
-import { LayoutDashboard, LayoutTemplate, Monitor, Upload } from "lucide-react";
+import { LayoutTemplate, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import {
@@ -17,11 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PanelEmptyState } from "@/components/ui/panel-empty-state";
 import { VizTemplateCard } from "@/components/dashboard/templates/VizTemplateCard";
-import {
-  GOV_SECTION_LABELS,
-  SURFACE_TABS,
-  VIZ_TEMPLATES_HUB,
-} from "@/components/dashboard/templates/templateLabels";
+import { VIZ_TEMPLATES_HUB } from "@/components/dashboard/templates/templateLabels";
 import {
   archiveTemplate,
   createFromTemplate,
@@ -29,7 +25,6 @@ import {
   filterTemplatesForHub,
   importTemplateEnvelope,
   publishTemplate,
-  TEMPLATE_CATEGORIES,
   type DashboardTemplateListItem,
   type VizLayoutEnvelope,
   type VizSurfaceKind,
@@ -52,6 +47,7 @@ import {
   demoPackageStatusQueryKey,
   fetchDemoPackageStatus,
 } from "@/lib/demoPackageStatus";
+import { VizTemplatesHubFilters } from "./VizTemplatesHubFilters";
 
 function TemplateCardSkeleton() {
   return (
@@ -86,8 +82,8 @@ export function VizTemplatesHubPage() {
   const [q, setQ] = useState("");
   const importRef = useRef<HTMLInputElement>(null);
 
-  /** 政务模板跨大屏/看板；选「政务」时不按 surfaceKind 过滤，一次展示全部政企模板。 */
-  const listSurfaceKind = categoryKey === "government" ? undefined : surfaceKind;
+  /** 类型 + 分类联合筛选；政务与其他分类交互一致。 */
+  const listSurfaceKind = surfaceKind;
 
   const listQuery = useQuery({
     queryKey: queryKeys.dashboardTemplates.list({
@@ -159,13 +155,16 @@ export function VizTemplatesHubPage() {
     useMutation_.isPending || publishMutation.isPending || archiveMutation.isPending;
 
   const items = filterTemplatesForHub(listQuery.data?.items ?? []);
-  const isGovView = categoryKey === "government";
-  const govScreens = isGovView
-    ? items.filter((item) => item.surfaceKind === "data-screen")
-    : [];
-  const govDashboards = isGovView
-    ? items.filter((item) => item.surfaceKind === "dashboard")
-    : [];
+
+  const handleSurfaceKindChange = (kind: VizSurfaceKind) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("surfaceKind", kind);
+    setSearchParams(next, { replace: true });
+  };
+
+  const handleCategoryChange = (key: string | null) => {
+    setCategoryKey(key);
+  };
 
   const renderCardGrid = (gridItems: DashboardTemplateListItem[], eagerCount = 0) => (
     <div className={LIST_PAGE_CARD_GRID_CLASS}>
@@ -239,58 +238,12 @@ export function VizTemplatesHubPage() {
       <ListPageSection>
         <ListPageToolbar
           filters={
-            <div className="flex w-full min-w-0 flex-col gap-3">
-              <div className="flex flex-wrap gap-1.5">
-                {!isGovView
-                  ? SURFACE_TABS.map((tab) => {
-                      const Icon = tab.key === "data-screen" ? Monitor : LayoutDashboard;
-                      const active = surfaceKind === tab.key;
-                      return (
-                        <Button
-                          key={tab.key}
-                          type="button"
-                          size="sm"
-                          variant={active ? "primary" : "outline"}
-                          onClick={() => {
-                            const next = new URLSearchParams(searchParams);
-                            next.set("surfaceKind", tab.key);
-                            setSearchParams(next);
-                          }}
-                        >
-                          <Icon className="size-4" />
-                          {tab.label}
-                        </Button>
-                      );
-                    })
-                  : null}
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={categoryKey === null ? "primary" : "ghost"}
-                  onClick={() => setCategoryKey(null)}
-                >
-                  {VIZ_TEMPLATES_HUB.allCategories}
-                </Button>
-                {TEMPLATE_CATEGORIES.map((cat) => (
-                  <Button
-                    key={cat.key}
-                    type="button"
-                    size="sm"
-                    variant={categoryKey === cat.key ? "primary" : "ghost"}
-                    onClick={() => setCategoryKey(cat.key)}
-                  >
-                    {cat.label}
-                  </Button>
-                ))}
-              </div>
-              {isGovView ? (
-                <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-                  {GOV_SECTION_LABELS.hint}
-                </p>
-              ) : null}
-            </div>
+            <VizTemplatesHubFilters
+              surfaceKind={surfaceKind}
+              categoryKey={categoryKey}
+              onSurfaceKindChange={handleSurfaceKindChange}
+              onCategoryChange={handleCategoryChange}
+            />
           }
           actions={
             <Input
@@ -357,34 +310,7 @@ export function VizTemplatesHubPage() {
             />
           ) : (
             <>
-              {isGovView ? (
-                <div className="space-y-8">
-                  {govScreens.length > 0 ? (
-                    <section>
-                      <h2 className="mb-3 text-theme-sm font-semibold text-gray-800 dark:text-gray-200">
-                        {GOV_SECTION_LABELS.dataScreen}
-                        <span className="ml-2 font-normal text-gray-500 dark:text-gray-400">
-                          ({govScreens.length})
-                        </span>
-                      </h2>
-                      {renderCardGrid(govScreens, 6)}
-                    </section>
-                  ) : null}
-                  {govDashboards.length > 0 ? (
-                    <section>
-                      <h2 className="mb-3 text-theme-sm font-semibold text-gray-800 dark:text-gray-200">
-                        {GOV_SECTION_LABELS.dashboard}
-                        <span className="ml-2 font-normal text-gray-500 dark:text-gray-400">
-                          ({govDashboards.length})
-                        </span>
-                      </h2>
-                      {renderCardGrid(govDashboards, 6)}
-                    </section>
-                  ) : null}
-                </div>
-              ) : (
-                renderCardGrid(items, 4)
-              )}
+              {renderCardGrid(items, 4)}
               <p className="mt-4 text-theme-xs text-gray-500 dark:text-gray-400">
                 共 {items.length} 个模板
               </p>

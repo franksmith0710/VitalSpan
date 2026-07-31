@@ -13,6 +13,39 @@ from app.views.schemas import ViewError
 from app.views.validate import validate_dashboard_view
 
 _CLASSIFICATION_ALLOWLIST = frozenset({"CAT-01", "CAT-02", "CAT-03"})
+_LEGACY_DEFAULT_VIEW_NAME = "默认"
+
+
+def _normalize_item(item: dict[str, Any]) -> dict[str, Any]:
+    out = dict(item)
+    out["isDefault"] = bool(item.get("isDefault"))
+    return out
+
+
+def _migrate_legacy_defaults(user_id: str) -> None:
+    bucket = store.list_user_overrides(user_id)
+    if not bucket:
+        return
+    if any(bool(item.get("isDefault")) for item in bucket):
+        return
+    legacy = next((item for item in bucket if item.get("name") == _LEGACY_DEFAULT_VIEW_NAME), None)
+    if legacy is not None:
+        store.apply_default_flag(user_id, legacy.get("id"))
+        return
+    if len(bucket) == 1:
+        store.apply_default_flag(user_id, bucket[0].get("id"))
+
+
+def _apply_default_flag(user_id: str, view_id: str | None) -> None:
+    store.apply_default_flag(user_id, view_id)
+
+
+def _read_is_default(payload: dict[str, Any]) -> bool | None:
+    if "isDefault" in payload:
+        return bool(payload["isDefault"])
+    if "is_default" in payload:
+        return bool(payload["is_default"])
+    return None
 
 
 def _widget_count(layout: dict[str, Any]) -> int:
@@ -26,21 +59,27 @@ def list_overrides(user_id: str, db: Session | None = None, role_codes: list[str
         from app.views.onboarding import apply_first_login_inherit
 
         apply_first_login_inherit(db, user_id, role_codes)
-    return {"items": store.list_user_overrides(user_id)}
+    _migrate_legacy_defaults(user_id)
+    items = [_normalize_item(item) for item in store.list_user_overrides(user_id)]
+    return {"items": items}
 
 
 def get_override(user_id: str, view_id: str) -> dict[str, Any]:
+    _migrate_legacy_defaults(user_id)
     for item in store.list_user_overrides(user_id):
         if item.get("id") == view_id:
-            return item
+            return _normalize_item(item)
     raise ViewError("VIEW_OVERRIDE_NOT_FOUND", "View override not found", 404)
 
 
 def create_override(db: Session, actor: UserContext, payload: dict[str, Any]) -> dict[str, Any]:
     name = payload.get("name")
     user_id = actor.id
+    is_default = _read_is_default(payload)
     if not name and not store.list_user_overrides(user_id):
-        name = "默认"
+        name = _LEGACY_DEFAULT_VIEW_NAME
+        if is_default is None:
+            is_default = True
     if not name:
         name = payload["name"]
     for existing in store.list_user_overrides(user_id):
@@ -75,14 +114,20 @@ def create_override(db: Session, actor: UserContext, payload: dict[str, Any]) ->
     except ViewError:
         raise
 
+    view_id = str(uuid.uuid4())
     item = {
-        "id": str(uuid.uuid4()),
+        "id": view_id,
         "name": name,
         "dashboardId": str(payload["dashboardId"]),
         "layout": layout,
         "classificationScope": scope,
+        "isDefault": bool(is_default),
     }
-    return store.add_user_override(user_id, item)
+    created = store.add_user_override(user_id, item)
+    if is_default:
+        _apply_default_flag(user_id, view_id)
+        created = get_override(user_id, view_id)
+    return _normalize_item(created)
 
 
 def _validate_override_payload(db: Session, actor: UserContext, payload: dict[str, Any], *, exclude_id: str | None = None) -> None:
@@ -135,8 +180,14 @@ def update_override(db: Session, actor: UserContext, view_id: str, payload: dict
     }
     if "classificationScope" in payload:
         patch["classificationScope"] = payload.get("classificationScope")
+    is_default = _read_is_default(payload)
+    if is_default is not None:
+        patch["isDefault"] = is_default
+        if is_default:
+            _apply_default_flag(actor.id, view_id)
     try:
-        return store.update_user_override(actor.id, view_id, patch)
+        updated = store.update_user_override(actor.id, view_id, patch)
+        return _normalize_item(updated)
     except KeyError:
         raise ViewError("VIEW_OVERRIDE_NOT_FOUND", "View override not found", 404) from None
 

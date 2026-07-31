@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button, IconButton } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RequiredLabel } from "@/components/ui/label";
+import { useAuth } from "@/context/auth-context";
 import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import {
@@ -59,6 +60,7 @@ function buildDescribedBy(helperId: string, errorId: string, hasError: boolean, 
 }
 
 export function ChangePasswordSection() {
+  const { logout } = useAuth();
   const [form, setForm] = useState<ChangePasswordFormValues>(EMPTY_FORM);
   const [clientErrors, setClientErrors] = useState<Partial<Record<PasswordFieldName, string>>>({});
   const [serverFieldErrors, setServerFieldErrors] = useState<
@@ -157,7 +159,7 @@ export function ChangePasswordSection() {
       });
     },
     onSuccess: () => {
-      toast.success("密码已更新");
+      toast.success("密码已更新，请使用新密码重新登录");
       setForm(EMPTY_FORM);
       setClientErrors({});
       setServerFieldErrors({});
@@ -168,6 +170,7 @@ export function ChangePasswordSection() {
         newPassword: false,
         confirmPassword: false,
       });
+      logout();
     },
     onError: (err: unknown) => {
       const mapped = mapChangePasswordApiError(err);

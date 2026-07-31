@@ -9,6 +9,7 @@ type DefaultViews = {
 type UserViewItem = {
   name?: string;
   dashboardId?: string | null;
+  isDefault?: boolean;
 };
 
 type UserViewsResponse = {
@@ -37,7 +38,10 @@ async function fetchUserOverridePath(): Promise<string | null> {
     const data = await apiFetch<UserViewsResponse>("/api/v1/users/me/views");
     const items = data.items ?? [];
     if (items.length === 0) return null;
-    const preferred = items.find((item) => item.name === "默认") ?? items[0];
+    const preferred =
+      items.find((item) => item.isDefault) ??
+      items.find((item) => item.name === "默认") ??
+      items[0];
     if (preferred.dashboardId) {
       return verifyDashboardPath(preferred.dashboardId);
     }

@@ -49,9 +49,8 @@ type ViewRow = {
   name: string;
   dashboardId: string;
   layout?: Record<string, unknown>;
+  isDefault?: boolean;
 };
-
-const DEFAULT_VIEW_NAME = "默认";
 
 export function UserViewsSection() {
   const qc = useQueryClient();
@@ -93,6 +92,7 @@ export function UserViewsSection() {
           name: row.name,
           dashboardId: row.dashboardId,
           layout: row.layout ?? {},
+          ...(row.isDefault !== undefined ? { isDefault: row.isDefault } : {}),
         }),
       }),
     onSuccess: () => {
@@ -114,18 +114,8 @@ export function UserViewsSection() {
     onError: (err) => toast.error(mapApiError(err)),
   });
 
-  const setDefault = async (target: ViewRow) => {
-    const items = listQuery.data?.items ?? [];
-    for (const row of items) {
-      if (row.id === target.id) {
-        await updateMutation.mutateAsync({ ...row, name: DEFAULT_VIEW_NAME });
-      } else if (row.name === DEFAULT_VIEW_NAME) {
-        await updateMutation.mutateAsync({
-          ...row,
-          name: `备份-${row.id.slice(0, 6)}`,
-        });
-      }
-    }
+  const setDefault = (target: ViewRow) => {
+    updateMutation.mutate({ ...target, isDefault: true });
   };
 
   const openCreate = () => {
@@ -193,7 +183,7 @@ export function UserViewsSection() {
       </CardHeader>
       <CardContent>
         <p className="mb-4 text-theme-sm text-gray-600 dark:text-gray-400">
-          配置登录后优先进入的仪表板。名称为「{DEFAULT_VIEW_NAME}」的视图将作为个人默认入口。
+          配置登录后优先进入的仪表板。标记为「登录入口」的视图将优先于角色默认设置。
         </p>
         {listQuery.isLoading ? (
           <div className="space-y-2">
@@ -256,9 +246,9 @@ export function UserViewsSection() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <span>{row.name}</span>
-                          {row.name === DEFAULT_VIEW_NAME ? (
+                          {row.isDefault ? (
                             <Badge variant="light" color="success" size="sm">
-                              默认
+                              登录入口
                             </Badge>
                           ) : null}
                         </div>
@@ -292,10 +282,10 @@ export function UserViewsSection() {
                             type="button"
                             variant="outline"
                             size="sm"
-                            disabled={row.name === DEFAULT_VIEW_NAME || updateMutation.isPending}
-                            onClick={() => void setDefault(row)}
+                            disabled={row.isDefault || updateMutation.isPending}
+                            onClick={() => setDefault(row)}
                           >
-                            设为默认
+                            设为登录入口
                           </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>

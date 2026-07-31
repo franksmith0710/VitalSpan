@@ -18,6 +18,7 @@ from app.reports.extension.schemas import (
     ExtensionConfigUpsert,
     ExtensionRevisionListOut,
     ExtensionRevisionOut,
+    TemplateReadinessIn,
 )
 from app.reports.extension import service as extension_service
 from app.reports.batch.schemas import BatchCreateReportsIn, BatchExportJobIn
@@ -185,6 +186,14 @@ def list_catalog_nodes(
     return catalog_service.list_nodes(parent_id, user)
 
 
+@router.post("/catalog/templates/readiness", response_model=None)
+def list_template_readiness(
+    payload: TemplateReadinessIn,
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+):
+    return extension_service.list_templates_readiness(payload.node_ids)
+
+
 @router.post("/catalog/nodes", status_code=status.HTTP_201_CREATED, response_model=None)
 def create_catalog_node(
     payload: CatalogNodeCreate,
@@ -254,6 +263,35 @@ def create_schedule(
         return _catalog_error(exc)
     except ScheduleError as exc:
         return _schedule_error(exc)
+
+
+@router.get("/schedules/delivery-health", response_model=None)
+def schedule_delivery_health(
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+):
+    from app.reports.scheduler.delivery_adapter import probe_smtp_health
+
+    return probe_smtp_health()
+
+
+@router.get("/schedules/executions/recent-failures", response_model=None)
+def list_recent_schedule_failures(
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    limit: int = Query(default=20, ge=1, le=100),
+):
+    from app.reports.scheduler import acl as schedule_acl
+    from app.reports.scheduler import executor as scheduler_executor
+
+    data = scheduler_executor.list_recent_failed_executions(limit=limit)
+    visible: list[dict] = []
+    for entry in data["items"]:
+        try:
+            row = scheduler_service._get_row(entry["scheduleId"])
+            schedule_acl.assert_schedule_read(user, row)
+            visible.append(entry)
+        except ScheduleError:
+            continue
+    return {"items": visible, "total": len(visible)}
 
 
 @router.get("/schedules/{schedule_id}", response_model=None)

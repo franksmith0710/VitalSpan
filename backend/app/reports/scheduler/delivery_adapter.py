@@ -22,18 +22,36 @@ def _format_smtp_error(exc: OSError, settings: Settings) -> str:
     return f"邮件投递失败：{exc}"
 
 
+_ARTIFACT_EMAIL: dict[str, tuple[str, str]] = {
+    "layout_inventory": (
+        "VitalSpan 看板定时报告（布局摘要预览）",
+        "附件为看板组件布局清单 PDF/CSV，非图表渲染快照。"
+        "完整可视化导出能力规划中。\n\n下载引用：{ref}",
+    ),
+    "template_render": (
+        "VitalSpan 报表定时报告",
+        "报表已生成，附件引用如下：\n\n{ref}",
+    ),
+}
+
+
 def _send_smtp(
     artifact_ref: str,
     settings: Settings,
     *,
     recipient_emails: list[str] | None = None,
+    artifact_kind: str | None = None,
 ) -> dict:
     to_addrs = recipient_emails or [settings.rpt_smtp_from]
+    subject, body_tpl = _ARTIFACT_EMAIL.get(
+        artifact_kind or "",
+        ("VitalSpan scheduled report", "Report artifact: {ref}"),
+    )
     msg = EmailMessage()
-    msg["Subject"] = "VitalSpan scheduled report"
+    msg["Subject"] = subject
     msg["From"] = settings.rpt_smtp_from
     msg["To"] = ", ".join(to_addrs)
-    msg.set_content(f"Report artifact: {artifact_ref}")
+    msg.set_content(body_tpl.format(ref=artifact_ref))
     try:
         with smtplib.SMTP(settings.rpt_smtp_host, settings.rpt_smtp_port, timeout=5) as smtp:
             if settings.rpt_smtp_user and settings.rpt_smtp_password:
@@ -86,6 +104,30 @@ def _deliver_explicit_mock(channels: list[str], mock_mode: str) -> dict:
     }
 
 
+def probe_smtp_health(settings: Settings | None = None) -> dict:
+    settings = settings or get_settings()
+    host = settings.rpt_smtp_host.strip()
+    port = settings.rpt_smtp_port
+    if not host or not settings.rpt_smtp_from.strip():
+        return {
+            "status": "unconfigured",
+            "host": host or None,
+            "port": port,
+            "error": "SMTP 未配置：请设置 RPT_SMTP_HOST 与 RPT_SMTP_FROM。",
+        }
+    try:
+        with smtplib.SMTP(host, port, timeout=3) as smtp:
+            smtp.ehlo()
+    except OSError as exc:
+        return {
+            "status": "unreachable",
+            "host": host,
+            "port": port,
+            "error": _format_smtp_error(exc, settings),
+        }
+    return {"status": "reachable", "host": host, "port": port, "error": None}
+
+
 def deliver_artifact(
     artifact_ref: str,
     channels: list[str],
@@ -93,6 +135,7 @@ def deliver_artifact(
     settings: Settings | None = None,
     *,
     recipient_emails: list[str] | None = None,
+    artifact_kind: str | None = None,
 ) -> dict:
     settings = settings or get_settings()
     channel_list = channels or ["email"]
@@ -100,7 +143,12 @@ def deliver_artifact(
     if mock_mode is not None:
         return _deliver_explicit_mock(channel_list, mock_mode)
 
-    step = _send_smtp(artifact_ref, settings, recipient_emails=recipient_emails)
+    step = _send_smtp(
+        artifact_ref,
+        settings,
+        recipient_emails=recipient_emails,
+        artifact_kind=artifact_kind,
+    )
     steps = [step]
     overall = "delivered" if step["status"] == "delivered" else "degraded"
     error = step.get("error") if step["status"] != "delivered" else None

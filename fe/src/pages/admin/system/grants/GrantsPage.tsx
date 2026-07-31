@@ -30,11 +30,13 @@ import { mapApiError } from "@/lib/apiError";
 import { apiFetch } from "@/lib/api";
 import type { ResourceType } from "./grantFormSchema";
 import { GrantsDialogs, RESOURCE_TYPE_LABELS } from "./GrantsDialogs";
+import { useGrantResourceNameMaps } from "./ResourceGrantPicker";
 import { useGrantsPage } from "./useGrantsPage";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 
 export function GrantsPage() {
   const page = useGrantsPage();
+  const { nameByTypeAndId } = useGrantResourceNameMaps();
   const { isLoading, isError, error, refetch } = page.grantsQuery;
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [batchDeleting, setBatchDeleting] = useState(false);
@@ -141,7 +143,7 @@ export function GrantsPage() {
                 ) : null}
                 <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">角色名称</th>
                 <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">资源类型</th>
-                <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">资源 ID</th>
+                <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">资源</th>
                 <th className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-400">
                   操作
                 </th>
@@ -193,8 +195,27 @@ export function GrantsPage() {
                           {RESOURCE_TYPE_LABELS[row.resourceType as ResourceType]}
                         </Badge>
                       </td>
-                      <td className="max-w-xs truncate px-4 py-3 font-mono text-theme-xs text-gray-800 dark:text-white/90">
-                        {row.resourceId}
+                      <td className="max-w-xs px-4 py-3">
+                        {(() => {
+                          const name = nameByTypeAndId(
+                            row.resourceType as ResourceType,
+                            row.resourceId,
+                          );
+                          return name ? (
+                            <div className="min-w-0">
+                              <p className="truncate text-theme-sm text-gray-800 dark:text-white/90">
+                                {name}
+                              </p>
+                              <p className="truncate font-mono text-theme-xs text-gray-500 dark:text-gray-400">
+                                {row.resourceId}
+                              </p>
+                            </div>
+                          ) : (
+                            <span className="font-mono text-theme-xs text-gray-800 dark:text-white/90">
+                              {row.resourceId}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <Button

@@ -17,22 +17,26 @@ vi.mock("@/context/auth-context", () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { GrantsPage } from "./GrantsPage";
 
 const ROLE_ID = "11111111-1111-4111-8111-111111111111";
 const RES_ID = "22222222-2222-4222-8222-222222222222";
 const GRANT_ID = "33333333-3333-4333-8333-333333333333";
+const DASH_NAME = "销售看板";
 
 function renderGrants() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={["/admin/system/grants"]}>
-        <Routes>
-          <Route path="/admin/system/grants" element={<GrantsPage />} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
+    <TooltipProvider delayDuration={0}>
+      <QueryClientProvider client={qc}>
+        <MemoryRouter initialEntries={["/admin/system/grants"]}>
+          <Routes>
+            <Route path="/admin/system/grants" element={<GrantsPage />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
+    </TooltipProvider>,
   );
 }
 
@@ -86,7 +90,7 @@ describe("GrantsPage smoke", () => {
       const path = String(args[0] ?? "");
       const init = args[1] as RequestInit | undefined;
       if (path === "/api/v1/resource-grants" && init?.method === "POST") {
-        return { id: GRANT_ID, roleId: ROLE_ID, resourceType: "report", resourceId: RES_ID };
+        return { id: GRANT_ID, roleId: ROLE_ID, resourceType: "dashboard", resourceId: RES_ID };
       }
       if (path.startsWith("/api/v1/roles")) {
         return {
@@ -96,12 +100,15 @@ describe("GrantsPage smoke", () => {
           total: 1,
         };
       }
+      if (path.includes("/api/v1/dashboards")) {
+        return { items: [{ id: RES_ID, name: DASH_NAME }], total: 1, limit: 100, offset: 0 };
+      }
       if (path.startsWith("/api/v1/resource-grants")) {
         listCalls += 1;
         if (listCalls === 1) return { items: [] };
         return {
           items: [
-            { id: GRANT_ID, roleId: ROLE_ID, resourceType: "report", resourceId: RES_ID },
+            { id: GRANT_ID, roleId: ROLE_ID, resourceType: "dashboard", resourceId: RES_ID },
           ],
         };
       }
@@ -112,11 +119,12 @@ describe("GrantsPage smoke", () => {
     await userEvent.click(screen.getByLabelText("角色"));
     await userEvent.click(await screen.findByRole("option", { name: "分析师" }));
     await userEvent.click(screen.getByLabelText("资源类型"));
-    await userEvent.click(await screen.findByRole("option", { name: "报表" }));
-    await userEvent.type(screen.getByLabelText("资源 ID"), RES_ID);
+    await userEvent.click(await screen.findByRole("option", { name: "仪表板" }));
+    await userEvent.click(screen.getByLabelText("选择仪表板"));
+    await userEvent.click(await screen.findByRole("option", { name: DASH_NAME }));
     await userEvent.click(screen.getByRole("button", { name: "确认" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-    expect(await screen.findByText("报表")).toBeInTheDocument();
+    expect(await screen.findByText(DASH_NAME)).toBeInTheDocument();
   });
 
   it("T-AUTH-004-FE-04: revoke AlertDialog calls DELETE", async () => {

@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { TruncateHint } from "@/components/ui/hint-tooltip";
 import {
   Table,
@@ -14,6 +15,7 @@ import {
   localizeExecutionStatus,
   type ScheduleExecutionRow,
 } from "../useReportSchedules";
+import { localizeArtifactKind } from "@/lib/scheduleArtifactMeta";
 
 type ScheduleHistoryTableProps = {
   rows: ScheduleExecutionRow[];
@@ -53,6 +55,7 @@ export function ScheduleHistoryTable({
         <TableHeader>
           <TableRow className="border-gray-100 dark:border-gray-800">
             <TableHead className="px-3 py-2">状态</TableHead>
+            <TableHead className="px-3 py-2">产物</TableHead>
             <TableHead className="px-3 py-2">执行时间</TableHead>
             {!compact ? <TableHead className="px-3 py-2">错误信息</TableHead> : null}
             <TableHead className="w-16 px-3 py-2" />
@@ -62,6 +65,15 @@ export function ScheduleHistoryTable({
           {rows.map((row) => (
             <TableRow key={row.executionId} className="border-gray-50 dark:border-gray-800/60">
               <TableCell className="px-3 py-2">{localizeExecutionStatus(row.status)}</TableCell>
+              <TableCell className="px-3 py-2">
+                {localizeArtifactKind(row.artifactKind) ? (
+                  <Badge variant="outline" className="text-[10px] font-normal">
+                    {localizeArtifactKind(row.artifactKind)}
+                  </Badge>
+                ) : (
+                  "—"
+                )}
+              </TableCell>
               <TableCell className="px-3 py-2 text-gray-600 dark:text-gray-400">
                 {row.executedAt}
               </TableCell>
