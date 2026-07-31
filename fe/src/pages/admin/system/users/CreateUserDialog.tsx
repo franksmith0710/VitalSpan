@@ -11,15 +11,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  AdminFormDialogBody,
+  AdminFormDialogContent,
+  AdminFormDialogFooter,
+  AdminFormDialogHeader,
+  AdminFormField,
+} from "@/components/layout/admin-form-dialog";
 import { apiFetch } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
 import { mapUserError } from "./userErrors";
@@ -102,32 +102,38 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-md">
-          <DialogHeader className="border-b border-gray-100 px-6 py-5 dark:border-white/[0.06]">
+        <AdminFormDialogContent>
+          <AdminFormDialogHeader>
             <DialogTitle>创建用户</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 px-6 py-5">
-            <div className="grid gap-2">
-              <Label htmlFor="new-username">用户名</Label>
+          </AdminFormDialogHeader>
+          <AdminFormDialogBody>
+            <AdminFormField label="用户名" htmlFor="new-username">
               <Input
                 id="new-username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 autoComplete="off"
               />
-            </div>
-            <div className="grid gap-2">
-              <div className="flex items-center justify-between gap-2">
-                <Label htmlFor="new-password">初始密码</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setInitialPassword(generateTemporaryPassword())}
-                >
-                  生成随机密码
-                </Button>
-              </div>
+            </AdminFormField>
+            <AdminFormField
+              label={
+                <span className="flex w-full items-center justify-between gap-2">
+                  初始密码
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 shrink-0"
+                    onClick={() => setInitialPassword(generateTemporaryPassword())}
+                  >
+                    生成随机密码
+                  </Button>
+                </span>
+              }
+              htmlFor="new-password"
+              hint="创建成功后请妥善交付初始密码；用户首次登录后建议修改。"
+              error={error}
+            >
               <Input
                 id="new-password"
                 type="text"
@@ -136,13 +142,9 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                 autoComplete="new-password"
                 placeholder={`至少 ${MIN_INITIAL_PASSWORD_LENGTH} 个字符`}
               />
-              <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-                创建成功后请妥善交付初始密码；用户首次登录后建议修改。
-              </p>
-            </div>
-            {error ? <p className="text-theme-xs text-error-600">{error}</p> : null}
-          </div>
-          <DialogFooter className="px-6 py-4">
+            </AdminFormField>
+          </AdminFormDialogBody>
+          <AdminFormDialogFooter>
             <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
               取消
             </Button>
@@ -157,8 +159,8 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
             >
               {createMutation.isPending ? "创建中…" : "创建"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
+          </AdminFormDialogFooter>
+        </AdminFormDialogContent>
       </Dialog>
 
       <AlertDialog

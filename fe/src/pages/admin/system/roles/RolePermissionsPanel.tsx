@@ -148,9 +148,6 @@ export function RolePermissionsPanel({ roleId, roleName, isRoot }: RolePermissio
                         <span className="text-theme-sm font-medium text-gray-800 dark:text-white/90">
                           {perm.name}
                         </span>
-                        <span className="mt-0.5 block font-mono text-theme-xs text-gray-500">
-                          {perm.code}
-                        </span>
                         {perm.description ? (
                           <span className="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
                             {perm.description}

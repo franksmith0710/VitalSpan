@@ -33,10 +33,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button, IconButton } from "@/components/ui/button";
 import {
+  AdminFormDialogContent,
+  AdminFormDialogFooter,
+  AdminFormDialogHeader,
+} from "@/components/layout/admin-form-dialog";
+import {
   Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { SearchField } from "@/components/ui/search-field";
@@ -281,7 +283,7 @@ export function RoleListPage() {
     <AdminPageShell
       layout="list"
       title="角色管理"
-      description="创建与管理角色，可配置默认仪表板与报表模板。"
+      description="定义岗位（如分析员、领导只读）及其功能权限。超级管理员角色拥有全部权限，无需单独配置。"
       actions={
         <Button type="button" variant="primary" onClick={openCreate}>
           新建角色
@@ -492,10 +494,10 @@ export function RoleListPage() {
           if (!open) setDialogTab("profile");
         }}
       >
-        <DialogContent className="flex max-h-[min(90dvh,720px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
-          <DialogHeader className="shrink-0 border-b border-gray-100 px-6 py-5 dark:border-white/[0.06]">
+        <AdminFormDialogContent size="md" scrollable>
+          <AdminFormDialogHeader>
             <DialogTitle>{editing ? "编辑角色" : "新建角色"}</DialogTitle>
-          </DialogHeader>
+          </AdminFormDialogHeader>
           {editing ? (
             <Tabs
               value={dialogTab}
@@ -512,7 +514,7 @@ export function RoleListPage() {
                   </TabsTrigger>
                 </TabsList>
               </div>
-              <TabsContent value="profile" className="mt-0 min-h-0 flex-1 overflow-y-auto px-6 py-5">
+              <TabsContent value="profile" className="mt-0 min-h-0 flex-1 overflow-y-auto px-5 py-4">
                 <RoleProfileFormFields
                   editing={editing}
                   form={form}

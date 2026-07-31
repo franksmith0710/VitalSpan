@@ -14,7 +14,7 @@ export const ACCOUNT_SETTINGS_PATH = "/admin/account/settings";
 export const ACCOUNT_CENTER_PATH = ACCOUNT_PROFILE_PATH;
 
 /** 后台管理默认入口（用户菜单进入） */
-export const SYSTEM_ADMIN_HOME_PATH = "/admin/system/roles";
+export const SYSTEM_ADMIN_HOME_PATH = "/admin/system";
 
 /** 登录后离开工作台进入独立管理区时，用于恢复导航的快照 key */
 export const WORKSPACE_RETURN_PATH_KEY = "workspace:returnPath";

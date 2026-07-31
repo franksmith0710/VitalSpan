@@ -523,7 +523,7 @@ describe("AdminLayout smoke", () => {
       </MemoryRouter>,
     );
     expect(screen.getByRole("heading", { name: "后台管理" })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "权限与安全" }));
+    await user.click(screen.getByRole("button", { name: "人员与权限" }));
     const link = screen.getByRole("link", { name: "资源授权" });
     expect(link).toHaveAttribute("href", "/admin/system/grants");
   });

@@ -31,6 +31,7 @@ import { OrgTreePage } from "@/pages/admin/system/orgs/OrgTreePage";
 import { RlsAdminPage } from "@/pages/admin/system/rls/RlsAdminPage";
 import { AuditLogPage } from "@/pages/admin/system/audit/AuditLogPage";
 import { GrantsPage } from "@/pages/admin/system/grants/GrantsPage";
+import { SystemAdminHomePage } from "@/pages/admin/system/SystemAdminHomePage";
 import { GovernanceCatalogPage } from "@/pages/admin/governance/GovernanceCatalogPage";
 import { GovernanceWorkflowPage } from "@/pages/admin/governance/GovernanceWorkflowPage";
 import { GovernancePublishPage } from "@/pages/admin/governance/GovernancePublishPage";
@@ -198,6 +199,7 @@ export function AppRoutes() {
           <Route path="datasets/:id/edit" element={<RequireCapabilityName capability="dataset:*"><DatasetFormPage mode="edit" /></RequireCapabilityName>} />
           <Route path="me/views" element={<Navigate to={ACCOUNT_LANDING_PATH} replace />} />
           <Route path="themes/:dashboardId" element={<RequireCapabilityName capability="theme:*"><ThemeAnalysisPage /></RequireCapabilityName>} />
+          <Route path="system" element={<RequireCapabilityName capability="system:*"><SystemAdminHomePage /></RequireCapabilityName>} />
           <Route path="system/roles" element={<RequireCapabilityName capability="system:*"><RoleListPage /></RequireCapabilityName>} />
           <Route path="system/users" element={<RequireCapabilityName capability="system:*"><UserListPage /></RequireCapabilityName>} />
           <Route path="system/orgs" element={<RequireCapabilityName capability="system:*"><OrgTreePage /></RequireCapabilityName>} />

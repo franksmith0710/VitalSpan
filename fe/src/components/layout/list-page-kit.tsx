@@ -10,6 +10,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  type TableSize,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
@@ -192,6 +193,8 @@ type DataTableEmptyProps = {
   description: string;
   action?: ReactNode;
   layout?: ListEmptyPreviewLayout;
+  density?: "default" | "compact";
+  rows?: number;
 };
 
 export type DataTableProps = {
@@ -202,6 +205,7 @@ export type DataTableProps = {
   emptyState?: DataTableEmptyProps;
   lastColumnAlign?: "left" | "right";
   loadingRows?: number;
+  size?: TableSize;
 };
 
 export function DataTable({
@@ -212,6 +216,7 @@ export function DataTable({
   emptyState,
   lastColumnAlign = "left",
   loadingRows = 4,
+  size = "comfortable",
 }: DataTableProps) {
   const lastIndex = headers.length - 1;
 
@@ -224,13 +229,15 @@ export function DataTable({
         action={emptyState.action}
         headingId="data-table-empty"
         layout={emptyState.layout}
+        density={emptyState.density}
+        rows={emptyState.rows}
       />
     );
   }
 
   return (
     <div className="overflow-x-only">
-      <Table size="comfortable" wrapperClassName="min-w-[640px] border-0 shadow-none">
+      <Table size={size} wrapperClassName="min-w-[640px] border-0 shadow-none">
       <TableHeader className="bg-gray-50/80 dark:bg-white/[0.02]">
         <TableRow className="hover:bg-transparent">
           {headers.map((header, index) => (

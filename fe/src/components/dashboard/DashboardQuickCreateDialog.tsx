@@ -6,16 +6,8 @@ import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -23,6 +15,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AdminFormDialogBody,
+  AdminFormDialogContent,
+  AdminFormDialogDescription,
+  AdminFormDialogFooter,
+  AdminFormDialogHeader,
+  AdminFormField,
+} from "@/components/layout/admin-form-dialog";
 import { createLayoutWidget } from "@/components/dashboard/createLayoutWidget";
 import { placeNewWidget } from "@/components/dashboard/gridLayoutAdapter";
 import { normalizeWidgetIds } from "@/components/dashboard/layoutUtils";
@@ -154,29 +154,27 @@ export function DashboardQuickCreateDialog({
         onOpenChange(next);
       }}
     >
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <AdminFormDialogContent>
+        <AdminFormDialogHeader>
           <DialogTitle>快速创建看板</DialogTitle>
-          <DialogDescription>
+          <AdminFormDialogDescription>
             选择数据源与 Dataset，自动插入首个图表并进入编辑。
-          </DialogDescription>
-        </DialogHeader>
+          </AdminFormDialogDescription>
+        </AdminFormDialogHeader>
 
-        <div className="grid gap-4 py-2">
-          <div className="grid gap-2">
-            <Label htmlFor="quick-dash-name">看板名称</Label>
+        <AdminFormDialogBody>
+          <AdminFormField label="看板名称" htmlFor="quick-dash-name">
             <Input
               id="quick-dash-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="未命名看板"
             />
-          </div>
+          </AdminFormField>
 
-          <div className="grid gap-2">
-            <Label htmlFor="quick-dash-ds">数据源</Label>
+          <AdminFormField label="数据源" htmlFor="quick-dash-ds">
             <Select value={dataSourceId || undefined} onValueChange={setDataSourceId}>
-              <SelectTrigger id="quick-dash-ds" className="h-11">
+              <SelectTrigger id="quick-dash-ds">
                 <SelectValue placeholder={dsLoading ? "加载中…" : "选择数据源"} />
               </SelectTrigger>
               <SelectContent>
@@ -197,12 +195,11 @@ export function DashboardQuickCreateDialog({
                 )}
               </SelectContent>
             </Select>
-          </div>
+          </AdminFormField>
 
-          <div className="grid gap-2">
-            <Label htmlFor="quick-dash-dataset">Dataset</Label>
+          <AdminFormField label="Dataset" htmlFor="quick-dash-dataset">
             <Select value={datasetId || undefined} onValueChange={setDatasetId}>
-              <SelectTrigger id="quick-dash-dataset" className="h-11">
+              <SelectTrigger id="quick-dash-dataset">
                 <SelectValue placeholder={datasetsLoading ? "加载中…" : "选择已绑定配置的 Dataset"} />
               </SelectTrigger>
               <SelectContent>
@@ -223,15 +220,11 @@ export function DashboardQuickCreateDialog({
                 )}
               </SelectContent>
             </Select>
-          </div>
+          </AdminFormField>
 
-          <div className="grid gap-2">
-            <Label htmlFor="quick-dash-chart">首个图表类型</Label>
-            <Select
-              value={chartType}
-              onValueChange={(v) => setChartType(v as ChartType)}
-            >
-              <SelectTrigger id="quick-dash-chart" className="h-11">
+          <AdminFormField label="首个图表类型" htmlFor="quick-dash-chart">
+            <Select value={chartType} onValueChange={(v) => setChartType(v as ChartType)}>
+              <SelectTrigger id="quick-dash-chart">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -242,16 +235,16 @@ export function DashboardQuickCreateDialog({
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </AdminFormField>
 
           {createMutation.isError ? (
             <p className="text-theme-xs text-error-600 dark:text-error-400">
               {mapApiError(createMutation.error)}
             </p>
           ) : null}
-        </div>
+        </AdminFormDialogBody>
 
-        <DialogFooter className="flex-col gap-2 sm:flex-col sm:items-stretch">
+        <AdminFormDialogFooter className="flex-col gap-2 sm:flex-col sm:items-stretch">
           <Button
             type="button"
             variant="primary"
@@ -270,8 +263,8 @@ export function DashboardQuickCreateDialog({
               {blankPending ? "创建中…" : "创建空白看板"}
             </Button>
           ) : null}
-        </DialogFooter>
-      </DialogContent>
+        </AdminFormDialogFooter>
+      </AdminFormDialogContent>
     </Dialog>
   );
 }

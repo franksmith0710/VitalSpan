@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  AdminFormDialogBody,
+  AdminFormDialogContent,
+  AdminFormDialogFooter,
+  AdminFormDialogHeader,
+  AdminFormField,
+} from "@/components/layout/admin-form-dialog";
 import { DashboardPickerSelect } from "./DashboardPickerSelect";
 
 export type UserViewFormValues = {
@@ -46,31 +46,29 @@ export function UserViewFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
+      <AdminFormDialogContent>
+        <AdminFormDialogHeader>
           <DialogTitle>{mode === "create" ? "创建个人视图" : "编辑个人视图"}</DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-4 py-2">
-          <div className="grid gap-2">
-            <Label htmlFor="view-name">名称</Label>
+        </AdminFormDialogHeader>
+        <AdminFormDialogBody>
+          <AdminFormField label="名称" htmlFor="view-name">
             <Input
               id="view-name"
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="例如：销售总览"
             />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="view-dashboard">关联仪表板</Label>
+          </AdminFormField>
+          <AdminFormField label="关联仪表板" htmlFor="view-dashboard">
             <DashboardPickerSelect
               id="view-dashboard"
               value={dashboardId}
               onValueChange={setDashboardId}
               disabled={pending}
             />
-          </div>
-        </div>
-        <DialogFooter>
+          </AdminFormField>
+        </AdminFormDialogBody>
+        <AdminFormDialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             取消
           </Button>
@@ -82,8 +80,8 @@ export function UserViewFormDialog({
           >
             {pending ? "保存中…" : mode === "create" ? "创建" : "保存"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
+        </AdminFormDialogFooter>
+      </AdminFormDialogContent>
     </Dialog>
   );
 }

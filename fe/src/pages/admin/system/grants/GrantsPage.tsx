@@ -66,7 +66,7 @@ export function GrantsPage() {
   return (
     <AdminPageShell
       title="资源授权"
-      description="按角色绑定数据源、仪表板或报表资源的访问授权。"
+      description="指定各角色可访问的仪表板、报表或数据源。若角色权限已覆盖所需功能，本步可跳过。"
       actions={
         <Button type="button" variant="primary" onClick={page.openCreate}>
           新建授权

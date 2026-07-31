@@ -69,7 +69,7 @@ describe("ReportCenterPage smoke", () => {
   it("shows admin overview shortcuts", async () => {
     renderPage();
     await waitFor(() => expect(screen.getByText("定时调度")).toBeInTheDocument());
-    expect(screen.getByRole("link", { name: /报表模板/ })).toHaveAttribute("href", "/admin/reports/templates");
+    expect(screen.getByRole("link", { name: /管理模板/ })).toHaveAttribute("href", "/admin/reports/templates");
     expect(screen.getByRole("link", { name: /定时调度/ })).toHaveAttribute("href", "/admin/reports/schedules");
   });
 
@@ -82,7 +82,7 @@ describe("ReportCenterPage smoke", () => {
 
   it("lists prefab bindings section", async () => {
     renderPage();
-    expect(await screen.findByText("预制分析")).toBeInTheDocument();
+    expect(await screen.findByTestId("report-center-prefab-heading")).toBeInTheDocument();
     expect(await screen.findByText("预制A")).toBeInTheDocument();
   });
 

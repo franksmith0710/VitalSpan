@@ -165,6 +165,7 @@ def _materialize_dash_style(
     accent: str = "#465fff",
     decor: str | None = "gradient-soft",
     canvas: str | None = None,
+    bg_image: str | None = None,
     palette_colors: list[str] | None = None,
 ) -> dict[str, Any]:
     is_dark = scheme == "dark"
@@ -178,7 +179,10 @@ def _materialize_dash_style(
         decor=decor,
         canvas=resolved_canvas,
     )
-    if resolved_canvas:
+    if bg_image:
+        style["canvasBackgroundImage"] = bg_image
+        style["canvasBackgroundCustom"] = True
+    elif resolved_canvas:
         style["canvasBackgroundCustom"] = True
     style["seriesGradient"] = True
     if palette_colors:

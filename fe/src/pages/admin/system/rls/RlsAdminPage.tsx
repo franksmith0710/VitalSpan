@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -245,9 +246,17 @@ export function RlsAdminPage() {
   return (
     <AdminPageShell
       layout="list"
-      title="行级权限"
-      description="配置 RLS 维度类型与分组，管理分组成员值，并为角色绑定维度分组。"
+      title="行级权限（高级）"
+      description="按组织或自定义维度过滤查询结果。日常「谁能看哪些报表」请优先使用角色权限与资源授权；仅在有细粒度数据范围需求时配置本模块。"
     >
+      <div className="mx-5 mt-4 rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-theme-sm text-gray-700 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-gray-300">
+        <strong className="font-medium">提示：</strong>
+        本模块面向数据安全进阶场景。若只需控制菜单与报表可见性，请返回
+        <Link to="/admin/system" className="mx-1 text-brand-600 underline dark:text-brand-400">
+          配置向导
+        </Link>
+        完成角色与用户配置即可。
+      </div>
       {dimensionsCatalogQuery.isError ? (
         <PageErrorBanner
           message={mapApiError(dimensionsCatalogQuery.error)}

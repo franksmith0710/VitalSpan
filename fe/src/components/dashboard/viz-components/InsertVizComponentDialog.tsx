@@ -2,16 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { LayoutDashboard } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -19,6 +11,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AdminFormDialogBody,
+  AdminFormDialogContent,
+  AdminFormDialogDescription,
+  AdminFormDialogFooter,
+  AdminFormDialogHeader,
+  AdminFormField,
+} from "@/components/layout/admin-form-dialog";
 import { apiFetch } from "@/lib/api";
 import { buildDashboardsListUrl } from "@/lib/dashboardsListQuery";
 import { queryKeys } from "@/lib/queryKeys";
@@ -56,6 +56,7 @@ export function InsertVizComponentDialog({
   const navigate = useNavigate();
   const [dashboardId, setDashboardId] = useState("");
   const surfaceKind = component ? resolveSurfaceKind(component) : "dashboard";
+  const surfaceLabel = surfaceKind === "data-screen" ? "大屏" : "看板";
 
   const listQuery = useQuery({
     queryKey: queryKeys.dashboards.list({ limit: 100, offset: 0, surfaceKind }),
@@ -82,35 +83,35 @@ export function InsertVizComponentDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>插入到看板</DialogTitle>
-          <DialogDescription>
-            选择目标{surfaceKind === "data-screen" ? "大屏" : "看板"}，将在编辑页自动插入组件「
-            {component?.name ?? ""}」的链接引用。
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-1.5 py-1">
-          <Label>目标{surfaceKind === "data-screen" ? "大屏" : "看板"}</Label>
-          <Select value={dashboardId} onValueChange={setDashboardId} disabled={listQuery.isLoading}>
-            <SelectTrigger>
-              <SelectValue placeholder={listQuery.isLoading ? "加载中…" : "选择看板"} />
-            </SelectTrigger>
-            <SelectContent>
-              {dashboards.map((item) => (
-                <SelectItem key={item.id} value={item.id}>
-                  {item.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {!listQuery.isLoading && dashboards.length === 0 ? (
-            <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-              暂无可用的{surfaceKind === "data-screen" ? "大屏" : "看板"}，请先创建。
-            </p>
-          ) : null}
-        </div>
-        <DialogFooter>
+      <AdminFormDialogContent>
+        <AdminFormDialogHeader>
+          <DialogTitle>插入到{surfaceLabel}</DialogTitle>
+          <AdminFormDialogDescription>
+            选择目标{surfaceLabel}，编辑页将自动插入组件「{component?.name ?? ""}」的链接引用。
+          </AdminFormDialogDescription>
+        </AdminFormDialogHeader>
+        <AdminFormDialogBody>
+          <AdminFormField label={`目标${surfaceLabel}`}>
+            <Select value={dashboardId} onValueChange={setDashboardId} disabled={listQuery.isLoading}>
+              <SelectTrigger>
+                <SelectValue placeholder={listQuery.isLoading ? "加载中…" : `选择${surfaceLabel}`} />
+              </SelectTrigger>
+              <SelectContent>
+                {dashboards.map((item) => (
+                  <SelectItem key={item.id} value={item.id}>
+                    {item.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {!listQuery.isLoading && dashboards.length === 0 ? (
+              <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+                暂无可用的{surfaceLabel}，请先创建。
+              </p>
+            ) : null}
+          </AdminFormField>
+        </AdminFormDialogBody>
+        <AdminFormDialogFooter>
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
             取消
           </Button>
@@ -123,8 +124,8 @@ export function InsertVizComponentDialog({
             <LayoutDashboard className="size-4" aria-hidden />
             前往编辑并插入
           </Button>
-        </DialogFooter>
-      </DialogContent>
+        </AdminFormDialogFooter>
+      </AdminFormDialogContent>
     </Dialog>
   );
 }

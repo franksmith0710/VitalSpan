@@ -133,8 +133,8 @@ describe("resolveNavGroups", () => {
     );
     const system = sections.find((g) => g.title === "后台管理");
     expect(system).toBeDefined();
-    const security = system?.items.find((i) => i.name === "权限与安全");
-    expect(security?.subItems?.map((s) => s.name)).toContain("资源授权");
+    const people = system?.items.find((i) => i.name === "人员与权限");
+    expect(people?.subItems?.map((s) => s.name)).toContain("资源授权");
   });
 
   it("T-NAV-CAP-02: viewer does not see 系统 section", () => {
@@ -319,8 +319,10 @@ describe("resolveSidebarSections", () => {
     expect(sections).toHaveLength(1);
     expect(sections[0]?.title).toBe("后台管理");
     expect(sections[0]?.items.map((i) => i.name)).toEqual([
-      "权限与安全",
+      "配置向导",
       "组织架构",
+      "人员与权限",
+      "高级 · 行级权限",
       "审计日志",
     ]);
   });

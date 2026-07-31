@@ -52,6 +52,7 @@ def test_gov_smart_city_detail_has_materialized_layout(
     style = layout["styleConfig"]
     assert style.get("canvasBackgroundCustom") is True
     assert style.get("canvasBackgroundImage") or style.get("canvasBackground")
+    assert "gov-enterprise-v1" in (style.get("canvasBackgroundImage") or "")
     assert style.get("paletteColors")
     charts = [w for w in layout["widgets"] if w.get("type") == "chart"]
     assert len(charts) >= 6

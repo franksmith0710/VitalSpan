@@ -9,14 +9,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogTitle } from "@/components/ui/dialog";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+  AdminFormDialogBody,
+  AdminFormDialogContent,
+  AdminFormDialogFooter,
+  AdminFormDialogHeader,
+  AdminFormField,
+} from "@/components/layout/admin-form-dialog";
 import { ResourceGrantPicker } from "./ResourceGrantPicker";
 import {
   Select,
@@ -66,13 +66,12 @@ export function GrantsDialogs({
   return (
     <>
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-lg">
-          <DialogHeader>
+        <AdminFormDialogContent size="md">
+          <AdminFormDialogHeader>
             <DialogTitle>新建授权</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-2">
-            <div className="grid gap-2">
-              <Label htmlFor="grant-role">角色</Label>
+          </AdminFormDialogHeader>
+          <AdminFormDialogBody>
+            <AdminFormField label="角色" htmlFor="grant-role" error={formErrors.roleId}>
               <Select
                 value={form.roleId || "__none__"}
                 onValueChange={(v) => setForm({ ...form, roleId: v === "__none__" ? "" : v })}
@@ -89,12 +88,8 @@ export function GrantsDialogs({
                   ))}
                 </SelectContent>
               </Select>
-              {formErrors.roleId ? (
-                <p className="text-theme-xs text-error-600">{formErrors.roleId}</p>
-              ) : null}
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="grant-type">资源类型</Label>
+            </AdminFormField>
+            <AdminFormField label="资源类型" htmlFor="grant-type" error={formErrors.resourceType}>
               <Select
                 value={form.resourceType}
                 onValueChange={(v) =>
@@ -112,12 +107,8 @@ export function GrantsDialogs({
                   ))}
                 </SelectContent>
               </Select>
-              {formErrors.resourceType ? (
-                <p className="text-theme-xs text-error-600">{formErrors.resourceType}</p>
-              ) : null}
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="grant-resource">资源</Label>
+            </AdminFormField>
+            <AdminFormField label="资源" htmlFor="grant-resource" error={formErrors.resourceId}>
               <ResourceGrantPicker
                 id="grant-resource"
                 resourceType={form.resourceType}
@@ -125,20 +116,17 @@ export function GrantsDialogs({
                 onValueChange={(resourceId) => setForm({ ...form, resourceId })}
                 disabled={createPending}
               />
-              {formErrors.resourceId ? (
-                <p className="text-theme-xs text-error-600">{formErrors.resourceId}</p>
-              ) : null}
-            </div>
-          </div>
-          <DialogFooter>
+            </AdminFormField>
+          </AdminFormDialogBody>
+          <AdminFormDialogFooter>
             <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
               取消
             </Button>
             <Button type="button" variant="primary" disabled={createPending} onClick={onSubmitCreate}>
               {createPending ? "提交中…" : "确认"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
+          </AdminFormDialogFooter>
+        </AdminFormDialogContent>
       </Dialog>
 
       <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(o) => !o && setDeleteTarget(null)}>

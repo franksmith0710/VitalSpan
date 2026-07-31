@@ -10,6 +10,7 @@ const ADMIN_LIST_FILL_PATTERNS: RegExp[] = [
   /^\/admin\/governance\/catalog\/?$/,
   /^\/admin\/system\/audit\/?$/,
   /^\/admin\/system\/users\/?$/,
+  /^\/admin\/system\/?$/,
   /^\/admin\/system\/roles\/?$/,
   /^\/admin\/system\/rls\/?$/,
   /^\/admin\/system\/orgs\/?$/,

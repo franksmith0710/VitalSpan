@@ -3,16 +3,8 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -20,6 +12,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AdminFormDialogBody,
+  AdminFormDialogContent,
+  AdminFormDialogFooter,
+  AdminFormDialogHeader,
+  AdminFormField,
+} from "@/components/layout/admin-form-dialog";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
@@ -64,21 +63,19 @@ export function CreateWorkflowTemplateDialog({ onCreated }: CreateTemplateDialog
           创建自定义模板
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader>
+      <AdminFormDialogContent size="md" scrollable>
+        <AdminFormDialogHeader>
           <DialogTitle>基于标准模板创建</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="tpl-name">模板名称</Label>
+        </AdminFormDialogHeader>
+        <AdminFormDialogBody scrollable>
+          <AdminFormField label="模板名称" htmlFor="tpl-name">
             <Input
               id="tpl-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-1"
             />
-          </div>
-          <div className="space-y-3">
+          </AdminFormField>
+          <div className="space-y-2">
             {nodes.map((node, index) => (
               <div
                 key={node.id}
@@ -110,8 +107,8 @@ export function CreateWorkflowTemplateDialog({ onCreated }: CreateTemplateDialog
               </div>
             ))}
           </div>
-        </div>
-        <DialogFooter>
+        </AdminFormDialogBody>
+        <AdminFormDialogFooter>
           <Button type="button" variant="outline" onClick={() => setOpen(false)}>
             取消
           </Button>
@@ -123,8 +120,8 @@ export function CreateWorkflowTemplateDialog({ onCreated }: CreateTemplateDialog
           >
             {createMutation.isPending ? "提交中…" : "创建"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
+        </AdminFormDialogFooter>
+      </AdminFormDialogContent>
     </Dialog>
   );
 }

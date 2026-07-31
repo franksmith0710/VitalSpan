@@ -4,16 +4,8 @@ import { useMutation } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -21,6 +13,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AdminFormCheckboxOption,
+  AdminFormDialogBody,
+  AdminFormDialogContent,
+  AdminFormDialogDescription,
+  AdminFormDialogFooter,
+  AdminFormDialogHeader,
+  AdminFormField,
+} from "@/components/layout/admin-form-dialog";
 import { mapApiError } from "@/lib/apiError";
 import {
   createVizComponent,
@@ -32,6 +33,11 @@ import { defaultVizComponentName, defaultVizComponentPayload } from "@/lib/vizCo
 import { widgetTypeLabel } from "./componentLabels";
 
 const WIDGET_TYPES: VizWidgetType[] = ["chart", "filter", "text", "media"];
+
+const SURFACE_OPTIONS: { kind: VizSurfaceKind; label: string }[] = [
+  { kind: "dashboard", label: "仪表板" },
+  { kind: "data-screen", label: "数据大屏" },
+];
 
 type CreateVizComponentDialogProps = {
   open: boolean;
@@ -70,37 +76,35 @@ export function CreateVizComponentDialog({ open, onOpenChange }: CreateVizCompon
     onError: (err) => toast.error(mapApiError(err)),
   });
 
-  const toggleSurface = (kind: VizSurfaceKind) => {
+  const toggleSurface = (kind: VizSurfaceKind, checked: boolean) => {
     setSurfaceKinds((prev) => {
-      if (prev.includes(kind)) {
-        const next = prev.filter((item) => item !== kind);
-        return next.length > 0 ? next : [kind];
+      if (checked) {
+        return prev.includes(kind) ? prev : [...prev, kind];
       }
-      return [...prev, kind];
+      const next = prev.filter((item) => item !== kind);
+      return next.length > 0 ? next : [kind];
     });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <AdminFormDialogContent>
+        <AdminFormDialogHeader>
           <DialogTitle>新建组件</DialogTitle>
-          <DialogDescription>
-            创建草稿组件并进入编辑页；配置完成后可在 Hub 发布，供看板/大屏复用。
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-1">
-          <div className="space-y-1.5">
-            <Label htmlFor="viz-component-name">名称</Label>
+          <AdminFormDialogDescription>
+            创建草稿并进入编辑；完成后可在 Hub 发布供看板/大屏复用。
+          </AdminFormDialogDescription>
+        </AdminFormDialogHeader>
+        <AdminFormDialogBody>
+          <AdminFormField label="名称" htmlFor="viz-component-name">
             <Input
               id="viz-component-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={defaultVizComponentName(widgetType)}
             />
-          </div>
-          <div className="space-y-1.5">
-            <Label>组件类型</Label>
+          </AdminFormField>
+          <AdminFormField label="组件类型">
             <Select value={widgetType} onValueChange={(v) => setWidgetType(v as VizWidgetType)}>
               <SelectTrigger>
                 <SelectValue />
@@ -113,9 +117,8 @@ export function CreateVizComponentDialog({ open, onOpenChange }: CreateVizCompon
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>分类</Label>
+          </AdminFormField>
+          <AdminFormField label="分类">
             <Select value={categoryKey} onValueChange={setCategoryKey}>
               <SelectTrigger>
                 <SelectValue />
@@ -128,30 +131,22 @@ export function CreateVizComponentDialog({ open, onOpenChange }: CreateVizCompon
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>适用场景</Label>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                size="sm"
-                variant={surfaceKinds.includes("dashboard") ? "primary" : "outline"}
-                onClick={() => toggleSurface("dashboard")}
-              >
-                仪表板
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant={surfaceKinds.includes("data-screen") ? "primary" : "outline"}
-                onClick={() => toggleSurface("data-screen")}
-              >
-                数据大屏
-              </Button>
+          </AdminFormField>
+          <AdminFormField label="适用场景" hint="至少保留一项">
+            <div className="grid gap-2 sm:grid-cols-2">
+              {SURFACE_OPTIONS.map(({ kind, label }) => (
+                <AdminFormCheckboxOption
+                  key={kind}
+                  id={`viz-surface-${kind}`}
+                  label={label}
+                  checked={surfaceKinds.includes(kind)}
+                  onCheckedChange={(checked) => toggleSurface(kind, checked)}
+                />
+              ))}
             </div>
-          </div>
-        </div>
-        <DialogFooter>
+          </AdminFormField>
+        </AdminFormDialogBody>
+        <AdminFormDialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             取消
           </Button>
@@ -162,10 +157,10 @@ export function CreateVizComponentDialog({ open, onOpenChange }: CreateVizCompon
             onClick={() => createMutation.mutate()}
           >
             <Plus className="size-4" aria-hidden />
-            创建并编辑
+            {createMutation.isPending ? "创建中…" : "创建并编辑"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
+        </AdminFormDialogFooter>
+      </AdminFormDialogContent>
     </Dialog>
   );
 }

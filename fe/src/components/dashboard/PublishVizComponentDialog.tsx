@@ -2,16 +2,8 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -19,6 +11,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AdminFormDialogBody,
+  AdminFormDialogContent,
+  AdminFormDialogDescription,
+  AdminFormDialogFooter,
+  AdminFormDialogHeader,
+  AdminFormField,
+} from "@/components/layout/admin-form-dialog";
 import { mapApiError } from "@/lib/apiError";
 import { readSurfaceKind } from "@/lib/dataScreenLayout";
 import {
@@ -98,70 +98,67 @@ export function PublishVizComponentDialog({
         onOpenChange(next);
       }}
     >
-      <DialogContent className="sm:max-w-md" data-testid="publish-viz-component-dialog">
-        <DialogHeader>
+      <AdminFormDialogContent data-testid="publish-viz-component-dialog">
+        <AdminFormDialogHeader>
           <DialogTitle>发布到组件库</DialogTitle>
-          <DialogDescription>
-            将当前组件配置保存到组织库，其他看板与大屏可通过「复用」引用并自动同步。
-          </DialogDescription>
-        </DialogHeader>
+          <AdminFormDialogDescription>
+            保存当前配置到组织库，其他看板与大屏可通过「复用」引用并自动同步。
+          </AdminFormDialogDescription>
+        </AdminFormDialogHeader>
         <form
-          className="grid gap-3 py-1"
           onSubmit={(e) => {
             e.preventDefault();
             publishMutation.mutate();
           }}
         >
-          <p className="grid gap-2">
-            <Label htmlFor="vc-name">组件名称</Label>
-            <Input id="vc-name" value={name} onChange={(e) => setName(e.target.value)} required />
-          </p>
-          <p className="grid gap-2">
-            <Label htmlFor="vc-desc">描述</Label>
-            <Input
-              id="vc-desc"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="可选"
-            />
-          </p>
-          <p className="grid gap-2">
-            <Label>分类</Label>
-            <Select value={categoryKey} onValueChange={setCategoryKey}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {VIZ_COMPONENT_CATEGORIES.map((cat) => (
-                  <SelectItem key={cat.key} value={cat.key}>
-                    {cat.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </p>
-          <p className="grid gap-2">
-            <Label>可见范围</Label>
-            <Select value={visibility} onValueChange={(v) => setVisibility(v as "org" | "private")}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="org">组织内</SelectItem>
-                <SelectItem value="private">仅自己</SelectItem>
-              </SelectContent>
-            </Select>
-          </p>
-          <DialogFooter>
+          <AdminFormDialogBody>
+            <AdminFormField label="组件名称" htmlFor="vc-name">
+              <Input id="vc-name" value={name} onChange={(e) => setName(e.target.value)} required />
+            </AdminFormField>
+            <AdminFormField label="描述" htmlFor="vc-desc">
+              <Input
+                id="vc-desc"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="可选"
+              />
+            </AdminFormField>
+            <AdminFormField label="分类">
+              <Select value={categoryKey} onValueChange={setCategoryKey}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {VIZ_COMPONENT_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat.key} value={cat.key}>
+                      {cat.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </AdminFormField>
+            <AdminFormField label="可见范围">
+              <Select value={visibility} onValueChange={(v) => setVisibility(v as "org" | "private")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="org">组织内</SelectItem>
+                  <SelectItem value="private">仅自己</SelectItem>
+                </SelectContent>
+              </Select>
+            </AdminFormField>
+          </AdminFormDialogBody>
+          <AdminFormDialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               取消
             </Button>
             <Button type="submit" disabled={!widget || publishMutation.isPending}>
-              发布
+              {publishMutation.isPending ? "发布中…" : "发布"}
             </Button>
-          </DialogFooter>
+          </AdminFormDialogFooter>
         </form>
-      </DialogContent>
+      </AdminFormDialogContent>
     </Dialog>
   );
 }

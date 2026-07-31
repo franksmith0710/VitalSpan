@@ -5,6 +5,18 @@ from __future__ import annotations
 from typing import Any
 
 from app.dashboard.templates import presets_gov_sql as sql
+from app.dashboard.templates.presets_gov_assets import (
+    COMMUNITY_BG,
+    DIGITAL_COCKPIT_BG,
+    ECO_MONITOR_BG,
+    EFFICIENCY_BG,
+    EMERGENCY_BG,
+    FINANCE_BG,
+    GRID_BG,
+    INVESTMENT_BG,
+    SATISFACTION_BG,
+    SMART_CITY_BG,
+)
 from app.dashboard.templates.presets import (
     _chart,
     _chart_de_style_for_accent,
@@ -80,6 +92,7 @@ def build_gov_efficiency_dashboard() -> dict[str, Any]:
         "styleConfig": _materialize_dash_style(
             accent=accent,
             palette_colors=["#4f46e5", "#6366f1", "#818cf8", "#22d3ee", "#34d399"],
+            bg_image=EFFICIENCY_BG,
         ),
     }
 
@@ -113,6 +126,7 @@ def build_gov_satisfaction_dashboard() -> dict[str, Any]:
         "styleConfig": _materialize_dash_style(
             scheme="light", accent=accent,
             palette_colors=["#6366f1", "#818cf8", "#22d3ee", "#34d399"],
+            bg_image=SATISFACTION_BG,
         ),
     }
 
@@ -146,6 +160,7 @@ def build_gov_finance_dashboard() -> dict[str, Any]:
         "styleConfig": _materialize_dash_style(
             accent=accent,
             palette_colors=["#0d9488", "#14b8a6", "#2dd4bf", "#6366f1"],
+            bg_image=FINANCE_BG,
         ),
     }
 
@@ -179,6 +194,7 @@ def build_gov_investment_dashboard() -> dict[str, Any]:
         "styleConfig": _materialize_dash_style(
             scheme="dark", accent=accent,
             palette_colors=["#2563eb", "#3b82f6", "#22d3ee", "#6366f1"],
+            bg_image=INVESTMENT_BG,
         ),
     }
 
@@ -213,5 +229,6 @@ def build_gov_grid_dashboard() -> dict[str, Any]:
         "styleConfig": _materialize_dash_style(
             accent=accent,
             palette_colors=["#475569", "#64748b", "#94a3b8", "#6366f1"],
+            bg_image=GRID_BG,
         ),
     }

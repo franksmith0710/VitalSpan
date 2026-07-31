@@ -5,6 +5,13 @@ from __future__ import annotations
 from typing import Any
 
 from app.dashboard.templates import presets_gov_sql as sql
+from app.dashboard.templates.presets_gov_assets import (
+    COMMUNITY_BG,
+    DIGITAL_COCKPIT_BG,
+    ECO_MONITOR_BG,
+    EMERGENCY_BG,
+    SMART_CITY_BG,
+)
 from app.dashboard.templates.presets import (
     _border,
     _chart,
@@ -85,13 +92,17 @@ def _l3_screen_style(
     decor: str = "gradient-radial",
     palette: list[str],
 ) -> dict[str, Any]:
-    return _materialize_screen_style(
+    style = _materialize_screen_style(
         accent=accent,
         canvas=canvas,
         decor=decor,
         bg_image=bg,
         palette_colors=palette,
     )
+    widget = style.get("widgetStyle")
+    if isinstance(widget, dict) and bg:
+        widget["background"] = "rgba(15, 23, 42, 0.58)"
+    return style
 
 
 def build_gov_smart_city_screen() -> dict[str, Any]:
@@ -153,7 +164,7 @@ def build_gov_smart_city_screen() -> dict[str, Any]:
         "styleConfig": _l3_screen_style(
             accent=accent,
             canvas="#061018",
-            bg="/template-assets/backgrounds/screen-gov-cyan-grid.svg",
+            bg=SMART_CITY_BG,
             palette=palette,
         ),
     }
@@ -208,7 +219,7 @@ def build_gov_digital_cockpit_screen() -> dict[str, Any]:
         "styleConfig": _l3_screen_style(
             accent=accent,
             canvas="#0c0a1e",
-            bg="/template-assets/backgrounds/screen-gov-indigo.svg",
+            bg=DIGITAL_COCKPIT_BG,
             palette=palette,
         ),
     }
@@ -275,7 +286,7 @@ def build_gov_emergency_command_screen() -> dict[str, Any]:
         "styleConfig": _l3_screen_style(
             accent=accent,
             canvas="#1c0a0a",
-            bg="/template-assets/backgrounds/screen-dataease-aurora.svg",
+            bg=EMERGENCY_BG,
             decor="gradient-radial",
             palette=palette,
         ),
@@ -341,7 +352,7 @@ def build_gov_eco_monitor_screen() -> dict[str, Any]:
         "styleConfig": _l3_screen_style(
             accent=accent,
             canvas="#041016",
-            bg="/template-assets/backgrounds/screen-emerald-grid.svg",
+            bg=ECO_MONITOR_BG,
             palette=palette,
         ),
     }
@@ -403,7 +414,7 @@ def build_gov_community_screen() -> dict[str, Any]:
         "styleConfig": _l3_screen_style(
             accent=accent,
             canvas="#120a1e",
-            bg="/template-assets/backgrounds/screen-gov-community.svg",
+            bg=COMMUNITY_BG,
             palette=palette,
         ),
     }
