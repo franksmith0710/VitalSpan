@@ -21,6 +21,8 @@ type ScheduleHistoryTableProps = {
   onRetry?: (executionId: string) => void;
   retryPending?: boolean;
   compact?: boolean;
+  /** 嵌套在展开面板内：去掉外层卡片边框 */
+  embedded?: boolean;
 };
 
 export function ScheduleHistoryTable({
@@ -29,6 +31,7 @@ export function ScheduleHistoryTable({
   onRetry,
   retryPending,
   compact,
+  embedded = false,
 }: ScheduleHistoryTableProps) {
   if (rows.length === 0) {
     return (
@@ -39,8 +42,14 @@ export function ScheduleHistoryTable({
   }
 
   return (
-    <div className="overflow-x-only rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-      <Table className="min-w-[480px] text-theme-sm">
+    <div
+      className={
+        embedded
+          ? "overflow-x-only rounded-lg border border-gray-200/80 bg-white dark:border-gray-800 dark:bg-gray-900/40"
+          : "overflow-x-only rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
+      }
+    >
+      <Table size="compact" wrapperClassName="min-w-[480px] border-0 shadow-none">
         <TableHeader>
           <TableRow className="border-gray-100 dark:border-gray-800">
             <TableHead className="px-3 py-2">状态</TableHead>

@@ -1,4 +1,7 @@
-"""内置可视化模板布局预设（对标 DataEase 模板市场视觉密度）。"""
+"""内置可视化模板布局预设（对标 DataEase 模板市场视觉密度）。
+
+内置模板 chart 的 SQL 须来自 ``official_demo_sql``，数据源占位 ``__demo:sample_db__``。
+"""
 
 from __future__ import annotations
 
@@ -6,45 +9,18 @@ import uuid
 from typing import Any
 
 from app.dashboard.templates.demo_datasource import TEMPLATE_DEMO_DATASOURCE_REF
+from app.dashboard.templates.official_demo_sql import (
+    SQL_DAILY_KPI,
+    SQL_SALES_BY_CHANNEL,
+    SQL_SALES_BY_PROVINCE,
+    SQL_SALES_GEO_DRILL,
+    SQL_SALES_TREND,
+    SQL_TOP_CITIES,
+)
 
 SCREEN_BORDER_MARKER = "__vs_screen_border__"
 SCREEN_CLOCK_MARKER = "__vs_screen_clock__"
 SCREEN_TITLE_BAR_MARKER = "__vs_screen_title_bar__"
-
-SQL_SALES_BY_PROVINCE = (
-    "SELECT province AS region, SUM(amount) AS total\n"
-    "FROM v_sales_geo\n"
-    "GROUP BY province"
-)
-SQL_SALES_TREND = (
-    "SELECT sale_date AS day, SUM(amount) AS total\n"
-    "FROM v_sales_geo\n"
-    "GROUP BY sale_date\n"
-    "ORDER BY day"
-)
-SQL_SALES_BY_CHANNEL = (
-    "SELECT channel, SUM(amount) AS total\n"
-    "FROM v_sales_geo\n"
-    "GROUP BY channel"
-)
-SQL_SALES_GEO_DRILL = (
-    "SELECT province, city, district, SUM(amount) AS total\n"
-    "FROM v_sales_geo\n"
-    "GROUP BY province, city, district"
-)
-SQL_DAILY_KPI = (
-    "SELECT metric_name, AVG(value) AS avg_value\n"
-    "FROM daily_kpi\n"
-    "WHERE stat_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)\n"
-    "GROUP BY metric_name"
-)
-SQL_TOP_CITIES = (
-    "SELECT city, SUM(amount) AS total\n"
-    "FROM v_sales_geo\n"
-    "GROUP BY city\n"
-    "ORDER BY total DESC\n"
-    "LIMIT 10"
-)
 
 DECOR_GRADIENT_DARK: dict[str, str] = {
     "gradient-soft": "linear-gradient(160deg, #0f172a 0%, #1e293b 48%, #172554 100%)",
@@ -320,8 +296,8 @@ def build_command_center_layout() -> dict[str, Any]:
         chart_type="bar",
         title="渠道销售",
         sql=SQL_SALES_BY_CHANNEL,
-        dimensions=[{"field": "channel"}],
-        metrics=[{"field": "total"}],
+        dimensions=[{"field": "渠道"}],
+        metrics=[{"field": "销售额"}],
         x=48,
         y=128,
         width=520,
@@ -333,11 +309,11 @@ def build_command_center_layout() -> dict[str, Any]:
         title="区域销售地图",
         sql=SQL_SALES_GEO_DRILL,
         dimensions=[
-            {"field": "province"},
-            {"field": "city"},
-            {"field": "district"},
+            {"field": "省份"},
+            {"field": "城市"},
+            {"field": "区县"},
         ],
-        metrics=[{"field": "total"}],
+        metrics=[{"field": "销售额"}],
         x=600,
         y=128,
         width=720,
@@ -348,8 +324,8 @@ def build_command_center_layout() -> dict[str, Any]:
         chart_type="line",
         title="销售趋势",
         sql=SQL_SALES_TREND,
-        dimensions=[{"field": "day"}],
-        metrics=[{"field": "total"}],
+        dimensions=[{"field": "日期"}],
+        metrics=[{"field": "销售额"}],
         x=1352,
         y=128,
         width=520,
@@ -360,8 +336,8 @@ def build_command_center_layout() -> dict[str, Any]:
         chart_type="pie",
         title="省份占比",
         sql=SQL_SALES_BY_PROVINCE,
-        dimensions=[{"field": "region"}],
-        metrics=[{"field": "total"}],
+        dimensions=[{"field": "省份"}],
+        metrics=[{"field": "销售额"}],
         x=600,
         y=680,
         width=720,
@@ -398,8 +374,8 @@ def build_tech_blue_layout() -> dict[str, Any]:
         chart_type="line",
         title="核心指标趋势",
         sql=SQL_SALES_TREND,
-        dimensions=[{"field": "day"}],
-        metrics=[{"field": "total"}],
+        dimensions=[{"field": "日期"}],
+        metrics=[{"field": "销售额"}],
         x=120,
         y=160,
         width=1680,
@@ -410,8 +386,8 @@ def build_tech_blue_layout() -> dict[str, Any]:
         chart_type="bar",
         title="渠道对比",
         sql=SQL_SALES_BY_CHANNEL,
-        dimensions=[{"field": "channel"}],
-        metrics=[{"field": "total"}],
+        dimensions=[{"field": "渠道"}],
+        metrics=[{"field": "销售额"}],
         x=120,
         y=960,
         width=520,
@@ -422,8 +398,8 @@ def build_tech_blue_layout() -> dict[str, Any]:
         chart_type="pie",
         title="区域结构",
         sql=SQL_SALES_BY_PROVINCE,
-        dimensions=[{"field": "region"}],
-        metrics=[{"field": "total"}],
+        dimensions=[{"field": "省份"}],
+        metrics=[{"field": "销售额"}],
         x=1280,
         y=960,
         width=520,
@@ -457,11 +433,11 @@ def build_gov_minimal_layout() -> dict[str, Any]:
         title="全国销售分布",
         sql=SQL_SALES_GEO_DRILL,
         dimensions=[
-            {"field": "province"},
-            {"field": "city"},
-            {"field": "district"},
+            {"field": "省份"},
+            {"field": "城市"},
+            {"field": "区县"},
         ],
-        metrics=[{"field": "total"}],
+        metrics=[{"field": "销售额"}],
         x=360,
         y=200,
         width=1200,
@@ -472,8 +448,8 @@ def build_gov_minimal_layout() -> dict[str, Any]:
         chart_type="bar",
         title="重点城市",
         sql=SQL_TOP_CITIES,
-        dimensions=[{"field": "city"}],
-        metrics=[{"field": "total"}],
+        dimensions=[{"field": "城市"}],
+        metrics=[{"field": "销售额"}],
         x=64,
         y=200,
         width=280,
@@ -484,8 +460,8 @@ def build_gov_minimal_layout() -> dict[str, Any]:
         chart_type="line",
         title="月度趋势",
         sql=SQL_SALES_TREND,
-        dimensions=[{"field": "day"}],
-        metrics=[{"field": "total"}],
+        dimensions=[{"field": "日期"}],
+        metrics=[{"field": "销售额"}],
         x=1576,
         y=200,
         width=280,
@@ -537,8 +513,8 @@ def build_dual_kpi_layout() -> dict[str, Any]:
         chart_type="bar",
         title="渠道销售对比",
         sql=SQL_SALES_BY_CHANNEL,
-        dimensions=[{"field": "channel"}],
-        metrics=[{"field": "total"}],
+        dimensions=[{"field": "渠道"}],
+        metrics=[{"field": "销售额"}],
         colSpan=6,
         rowSpan=5,
         gridX=0,
@@ -549,8 +525,8 @@ def build_dual_kpi_layout() -> dict[str, Any]:
         chart_type="line",
         title="销售趋势",
         sql=SQL_SALES_TREND,
-        dimensions=[{"field": "day"}],
-        metrics=[{"field": "total"}],
+        dimensions=[{"field": "日期"}],
+        metrics=[{"field": "销售额"}],
         colSpan=6,
         rowSpan=5,
         gridX=6,
@@ -561,8 +537,8 @@ def build_dual_kpi_layout() -> dict[str, Any]:
         chart_type="kpi",
         title="核心 KPI",
         sql=SQL_DAILY_KPI,
-        dimensions=[{"field": "metric_name"}],
-        metrics=[{"field": "avg_value"}],
+        dimensions=[{"field": "指标"}],
+        metrics=[{"field": "数值"}],
         colSpan=12,
         rowSpan=1,
         gridX=0,
@@ -587,11 +563,11 @@ def build_triple_analysis_layout() -> dict[str, Any]:
         title="区域分布",
         sql=SQL_SALES_GEO_DRILL,
         dimensions=[
-            {"field": "province"},
-            {"field": "city"},
-            {"field": "district"},
+            {"field": "省份"},
+            {"field": "城市"},
+            {"field": "区县"},
         ],
-        metrics=[{"field": "total"}],
+        metrics=[{"field": "销售额"}],
         colSpan=5,
         rowSpan=6,
         gridX=0,
@@ -602,8 +578,8 @@ def build_triple_analysis_layout() -> dict[str, Any]:
         chart_type="pie",
         title="渠道结构",
         sql=SQL_SALES_BY_CHANNEL,
-        dimensions=[{"field": "channel"}],
-        metrics=[{"field": "total"}],
+        dimensions=[{"field": "渠道"}],
+        metrics=[{"field": "销售额"}],
         colSpan=4,
         rowSpan=6,
         gridX=5,
@@ -614,8 +590,8 @@ def build_triple_analysis_layout() -> dict[str, Any]:
         chart_type="table-info",
         title="城市 TOP10",
         sql=SQL_TOP_CITIES,
-        dimensions=[{"field": "city"}],
-        metrics=[{"field": "total"}],
+        dimensions=[{"field": "城市"}],
+        metrics=[{"field": "销售额"}],
         colSpan=3,
         rowSpan=6,
         gridX=9,
@@ -641,11 +617,11 @@ def build_sales_geo_screen_layout() -> dict[str, Any]:
         title="销售地理分布",
         sql=SQL_SALES_GEO_DRILL,
         dimensions=[
-            {"field": "province"},
-            {"field": "city"},
-            {"field": "district"},
+            {"field": "省份"},
+            {"field": "城市"},
+            {"field": "区县"},
         ],
-        metrics=[{"field": "total"}],
+        metrics=[{"field": "销售额"}],
         x=480,
         y=140,
         width=960,
@@ -663,8 +639,8 @@ def build_sales_geo_screen_layout() -> dict[str, Any]:
                 chart_type="bar",
                 title="省份 TOP",
                 sql=SQL_SALES_BY_PROVINCE,
-                dimensions=[{"field": "region"}],
-                metrics=[{"field": "total"}],
+                dimensions=[{"field": "省份"}],
+                metrics=[{"field": "销售额"}],
                 x=48,
                 y=140,
                 width=400,
@@ -675,8 +651,8 @@ def build_sales_geo_screen_layout() -> dict[str, Any]:
                 chart_type="line",
                 title="趋势",
                 sql=SQL_SALES_TREND,
-                dimensions=[{"field": "day"}],
-                metrics=[{"field": "total"}],
+                dimensions=[{"field": "日期"}],
+                metrics=[{"field": "销售额"}],
                 x=48,
                 y=520,
                 width=400,
@@ -688,8 +664,8 @@ def build_sales_geo_screen_layout() -> dict[str, Any]:
                 chart_type="pie",
                 title="渠道",
                 sql=SQL_SALES_BY_CHANNEL,
-                dimensions=[{"field": "channel"}],
-                metrics=[{"field": "total"}],
+                dimensions=[{"field": "渠道"}],
+                metrics=[{"field": "销售额"}],
                 x=1472,
                 y=140,
                 width=400,
@@ -700,8 +676,8 @@ def build_sales_geo_screen_layout() -> dict[str, Any]:
                 chart_type="bar",
                 title="城市 TOP10",
                 sql=SQL_TOP_CITIES,
-                dimensions=[{"field": "city"}],
-                metrics=[{"field": "total"}],
+                dimensions=[{"field": "城市"}],
+                metrics=[{"field": "销售额"}],
                 x=1472,
                 y=520,
                 width=400,
@@ -728,8 +704,8 @@ def build_ops_dashboard_layout() -> dict[str, Any]:
                 chart_type="kpi",
                 title="运营 KPI",
                 sql=SQL_DAILY_KPI,
-                dimensions=[{"field": "metric_name"}],
-                metrics=[{"field": "avg_value"}],
+                dimensions=[{"field": "指标"}],
+                metrics=[{"field": "数值"}],
                 colSpan=12,
                 rowSpan=1,
                 gridX=0,
@@ -741,11 +717,11 @@ def build_ops_dashboard_layout() -> dict[str, Any]:
                 title="区域热力",
                 sql=SQL_SALES_GEO_DRILL,
                 dimensions=[
-                    {"field": "province"},
-                    {"field": "city"},
-                    {"field": "district"},
+                    {"field": "省份"},
+                    {"field": "城市"},
+                    {"field": "区县"},
                 ],
-                metrics=[{"field": "total"}],
+                metrics=[{"field": "销售额"}],
                 colSpan=7,
                 rowSpan=5,
                 gridX=0,
@@ -756,8 +732,8 @@ def build_ops_dashboard_layout() -> dict[str, Any]:
                 chart_type="line",
                 title="销售走势",
                 sql=SQL_SALES_TREND,
-                dimensions=[{"field": "day"}],
-                metrics=[{"field": "total"}],
+                dimensions=[{"field": "日期"}],
+                metrics=[{"field": "销售额"}],
                 colSpan=5,
                 rowSpan=3,
                 gridX=7,
@@ -768,8 +744,8 @@ def build_ops_dashboard_layout() -> dict[str, Any]:
                 chart_type="table-info",
                 title="城市明细",
                 sql=SQL_TOP_CITIES,
-                dimensions=[{"field": "city"}],
-                metrics=[{"field": "total"}],
+                dimensions=[{"field": "城市"}],
+                metrics=[{"field": "销售额"}],
                 colSpan=5,
                 rowSpan=2,
                 gridX=7,

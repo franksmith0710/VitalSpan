@@ -91,11 +91,11 @@ describe("ReportSchedulesPage smoke", () => {
     expect(screen.getByText(/角色:管理员/)).toBeInTheDocument();
   });
 
-  it("shows create entry buttons and tabs", async () => {
+  it("shows create entry links and tab filters", async () => {
     renderPage();
-    expect(await screen.findByRole("link", { name: "在模板中新建" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "在看板分享页新建" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "看板/大屏" })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: /从模板创建/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /从看板创建/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "看板/大屏" })).toBeInTheDocument();
   });
 
   it("expands history and shows retry", async () => {

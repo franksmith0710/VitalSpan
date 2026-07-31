@@ -54,6 +54,7 @@ export const TEMPLATE_CATEGORIES: { key: string; label: string }[] = [
 export const HUB_HIDDEN_BUILTIN_TEMPLATE_KEYS = new Set([
   "builtin-screen-blank",
   "builtin-dash-blank",
+  "builtin-viz-component-gallery",
 ]);
 
 export function filterTemplatesForHub(

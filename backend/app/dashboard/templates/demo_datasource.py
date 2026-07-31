@@ -3,19 +3,96 @@
 from __future__ import annotations
 
 import copy
+import logging
 import uuid
+from dataclasses import dataclass
 from typing import Any
+from urllib.parse import urlparse
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
+from app.datasources.dialects.mysql import MysqlConnector
 from app.datasources.models import DataSource
+from app.datasources.schemas import DataSourceCreate
+from app.datasources.service import create_data_source
 from app.viz.migrate_chart_types import migrate_layout_chart_configs
 
+logger = logging.getLogger(__name__)
+
 TEMPLATE_DEMO_DATASOURCE_REF = "__demo:sample_db__"
+OFFICIAL_DEMO_DATASOURCE_CODE = "official-demo-mysql"
+
+_DEFAULT_HOST = "127.0.0.1"
+_DEFAULT_PORT = 3307
+_DEFAULT_DATABASE = "sample_db"
+_DEFAULT_USERNAME = "sample"
+_DEFAULT_PASSWORD = "sample"
+
+
+@dataclass(frozen=True)
+class SampleMysqlConnection:
+    host: str
+    port: int
+    database: str
+    username: str
+    password: str
+
+
+def _parse_sample_mysql_url(raw: str) -> SampleMysqlConnection | None:
+    parsed = urlparse(raw.strip())
+    if parsed.scheme not in {"mysql", "mysql+pymysql"}:
+        return None
+    host = parsed.hostname or _DEFAULT_HOST
+    port = parsed.port or _DEFAULT_PORT
+    database = (parsed.path or "").lstrip("/") or _DEFAULT_DATABASE
+    username = parsed.username or _DEFAULT_USERNAME
+    password = parsed.password or _DEFAULT_PASSWORD
+    return SampleMysqlConnection(host, port, database, username, password)
+
+
+def resolve_official_demo_connection() -> SampleMysqlConnection:
+    settings = get_settings()
+    if settings.sample_mysql_url:
+        parsed = _parse_sample_mysql_url(settings.sample_mysql_url)
+        if parsed is not None:
+            return parsed
+    return SampleMysqlConnection(
+        _DEFAULT_HOST,
+        _DEFAULT_PORT,
+        _DEFAULT_DATABASE,
+        _DEFAULT_USERNAME,
+        _DEFAULT_PASSWORD,
+    )
+
+
+def _can_connect_sample_mysql(conn: SampleMysqlConnection) -> bool:
+    connector = MysqlConnector()
+    try:
+        result = connector.test_connection(
+            host=conn.host,
+            port=conn.port,
+            database=conn.database,
+            username=conn.username,
+            password=conn.password,
+            timeout_sec=3.0,
+        )
+        return bool(result.ok)
+    except Exception:
+        return False
 
 
 def resolve_sample_db_datasource_id(db: Session) -> uuid.UUID | None:
+    official = db.scalar(
+        select(DataSource.id).where(
+            DataSource.code == OFFICIAL_DEMO_DATASOURCE_CODE,
+            DataSource.deleted_at.is_(None),
+        ),
+    )
+    if official is not None:
+        return official
+
     rows = db.scalars(select(DataSource).where(DataSource.deleted_at.is_(None))).all()
     best_score = 0
     best_id: uuid.UUID | None = None
@@ -24,6 +101,8 @@ def resolve_sample_db_datasource_id(db: Session) -> uuid.UUID | None:
         code = (row.code or "").lower()
         name = (row.name or "").lower()
         score = 0
+        if code == OFFICIAL_DEMO_DATASOURCE_CODE:
+            score += 20
         if db_name == "sample_db":
             score += 10
         elif "sample_db" in db_name:
@@ -42,6 +121,44 @@ def resolve_sample_db_datasource_id(db: Session) -> uuid.UUID | None:
             best_score = score
             best_id = row.id
     return best_id
+
+
+def ensure_official_demo_datasource(db: Session) -> uuid.UUID | None:
+    """幂等创建/确认官方演示 MySQL 连接；sample-mysql 不可达时 skip。"""
+    official = db.scalar(
+        select(DataSource.id).where(
+            DataSource.code == OFFICIAL_DEMO_DATASOURCE_CODE,
+            DataSource.deleted_at.is_(None),
+        ),
+    )
+    if official is not None:
+        return official
+
+    conn = resolve_official_demo_connection()
+    if not _can_connect_sample_mysql(conn):
+        logger.info("official_demo_datasource_skip unreachable host=%s port=%s", conn.host, conn.port)
+        return resolve_sample_db_datasource_id(db)
+
+    try:
+        out = create_data_source(
+            db,
+            DataSourceCreate(
+                name="官方演示库 (sample_db)",
+                code=OFFICIAL_DEMO_DATASOURCE_CODE,
+                type="mysql",
+                host=conn.host,
+                port=conn.port,
+                database=conn.database,
+                username=conn.username,
+                password=conn.password,
+                description="VitalSpan 官方可视化模板演示数据源（对标 DataEase 内置样例库）",
+            ),
+        )
+        logger.info("official_demo_datasource_created id=%s", out.id)
+        return out.id
+    except Exception:
+        logger.warning("official_demo_datasource_create_failed", exc_info=True)
+        return resolve_sample_db_datasource_id(db)
 
 
 def repair_legacy_template_layout(layout: dict[str, Any]) -> dict[str, Any]:

@@ -1,18 +1,18 @@
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
+import { CalendarClock, LayoutTemplate, Monitor, Search } from "lucide-react";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { Button } from "@/components/ui/button";
 import {
-  ListPageBody,
   ListPageSection,
   ListPageTableFrame,
   ListPageToolbar,
   PageErrorBanner,
 } from "@/components/layout/list-page-kit";
-import { Input } from "@/components/ui/input";
+import { PanelEmptyState } from "@/components/ui/panel-empty-state";
+import { SearchField } from "@/components/ui/search-field";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { mapApiError } from "@/lib/apiError";
 import { describeCron } from "@/lib/scheduleCronWizard";
 import { fetchAllCatalogTemplates } from "@/lib/reportCatalogUtils";
@@ -26,15 +26,67 @@ import {
   resolveScheduleSourceLabel,
   ScheduleListTable,
 } from "./components/ScheduleListTable";
+import {
+  SchedulePageOverview,
+  SchedulePageOverviewSkeleton,
+} from "./components/SchedulePageOverview";
 
-function emptyMessage(tab: ScheduleTabFilter): string {
+const TAB_OPTIONS: { id: ScheduleTabFilter; label: string }[] = [
+  { id: "all", label: "全部" },
+  { id: "template", label: "模板" },
+  { id: "dashboard", label: "看板/大屏" },
+];
+
+function emptyTitle(tab: ScheduleTabFilter, hasSearch: boolean): string {
+  if (hasSearch) return "无匹配调度";
+  if (tab === "template") return "暂无模板调度";
+  if (tab === "dashboard") return "暂无看板/大屏调度";
+  return "暂无调度任务";
+}
+
+function emptyDescription(tab: ScheduleTabFilter, hasSearch: boolean): string {
+  if (hasSearch) return "请调整搜索词，或切换上方分类筛选。";
   if (tab === "template") {
-    return "暂无模板调度。请在「报表模板」详情页的调度 Tab 中创建。";
+    return "在「报表模板」详情页的调度 Tab 中创建定时生成与投递。";
   }
   if (tab === "dashboard") {
-    return "暂无看板/大屏定时报告。请进入看板列表，打开分享页底部的「定时报告」创建。";
+    return "进入看板或大屏幕列表，在分享页底部配置「定时报告」。";
   }
-  return "暂无调度任务。可从模板详情页或看板分享页创建定时报告。";
+  return "可从报表模板详情页或看板分享页创建定时报告。";
+}
+
+function emptyAction(tab: ScheduleTabFilter, hasSearch: boolean) {
+  if (hasSearch) return undefined;
+  if (tab === "template") {
+    return (
+      <Button type="button" variant="primary" size="sm" asChild>
+        <Link to="/admin/reports/templates">
+          <LayoutTemplate className="size-3.5" aria-hidden />
+          前往报表模板
+        </Link>
+      </Button>
+    );
+  }
+  if (tab === "dashboard") {
+    return (
+      <Button type="button" variant="primary" size="sm" asChild>
+        <Link to="/admin/dashboards">
+          <Monitor className="size-3.5" aria-hidden />
+          前往看板列表
+        </Link>
+      </Button>
+    );
+  }
+  return (
+    <div className="flex flex-wrap justify-center gap-2">
+      <Button type="button" variant="primary" size="sm" asChild>
+        <Link to="/admin/reports/templates">从模板创建</Link>
+      </Button>
+      <Button type="button" variant="outline" size="sm" asChild>
+        <Link to="/admin/dashboards">从看板创建</Link>
+      </Button>
+    </div>
+  );
 }
 
 function matchesSearch(
@@ -48,6 +100,14 @@ function matchesSearch(
   const recipients = summarizeRecipients(schedule.recipients).toLowerCase();
   const cron = describeCron(schedule.cron).toLowerCase();
   return label.includes(q) || recipients.includes(q) || cron.includes(q);
+}
+
+function summarizeStats(items: { status?: string }[]) {
+  const active = items.filter((item) => item.status === "scheduled").length;
+  const inactive = items.filter(
+    (item) => item.status === "paused" || item.status === "cancelled" || item.status === "draft",
+  ).length;
+  return { total: items.length, active, inactive };
 }
 
 export function ReportSchedulesPage() {
@@ -72,10 +132,14 @@ export function ReportSchedulesPage() {
   }, [templatesQuery.data]);
 
   const allItems = schedulesQuery.data?.items ?? [];
+  const stats = useMemo(() => summarizeStats(allItems), [allItems]);
   const items = useMemo(() => {
     const tabbed = filterSchedulesByTab(allItems, tab);
     return tabbed.filter((schedule) => matchesSearch(schedule, nameByNodeId, search));
   }, [allItems, tab, search, nameByNodeId]);
+
+  const hasSearch = Boolean(search.trim());
+  const isLoading = schedulesQuery.isLoading;
 
   const setTab = (next: ScheduleTabFilter) => {
     if (next === "all") {
@@ -88,18 +152,9 @@ export function ReportSchedulesPage() {
 
   return (
     <AdminPageShell
+      layout="list"
       title="报表调度"
-      description="管理报表定时任务，查看执行历史与失败重试。"
-      actions={
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" size="sm" asChild>
-            <Link to="/admin/reports/templates">在模板中新建</Link>
-          </Button>
-          <Button type="button" variant="primary" size="sm" asChild>
-            <Link to="/admin/dashboards">在看板分享页新建</Link>
-          </Button>
-        </div>
-      }
+      description="统一管理模板与看板/大屏的定时生成、投递与执行历史。"
     >
       {schedulesQuery.isError ? (
         <PageErrorBanner
@@ -108,41 +163,68 @@ export function ReportSchedulesPage() {
         />
       ) : null}
 
-      <ListPageSection>
-        <Tabs value={tab} onValueChange={(v) => setTab(v as ScheduleTabFilter)} className="mb-4">
-          <TabsList>
-            <TabsTrigger value="all">全部</TabsTrigger>
-            <TabsTrigger value="template">模板</TabsTrigger>
-            <TabsTrigger value="dashboard">看板/大屏</TabsTrigger>
-          </TabsList>
-        </Tabs>
+      {isLoading ? <SchedulePageOverviewSkeleton /> : <SchedulePageOverview stats={stats} />}
 
+      <ListPageSection className="min-h-0 flex-1">
         <ListPageToolbar
           filters={
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="搜索调度源、接收人或频率…"
-              className="max-w-md"
-              aria-label="搜索调度"
-              disabled={schedulesQuery.isLoading}
-            />
+            <>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {TAB_OPTIONS.map((option) => (
+                  <Button
+                    key={option.id}
+                    type="button"
+                    size="sm"
+                    variant={tab === option.id ? "primary" : "outline"}
+                    onClick={() => setTab(option.id)}
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
+              <SearchField
+                value={search}
+                onChange={setSearch}
+                placeholder="搜索调度源、接收人或频率…"
+                className="w-full max-w-md"
+                aria-label="搜索调度"
+                disabled={isLoading}
+              />
+            </>
+          }
+          actions={
+            !isLoading ? (
+              <span className="text-theme-xs tabular-nums text-gray-500 dark:text-gray-400">
+                共 {items.length} 条
+              </span>
+            ) : null
           }
         />
 
-        <ListPageTableFrame>
-          {schedulesQuery.isLoading ? (
-            <ListPageBody>
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="mb-2 h-12 w-full" />
+        <ListPageTableFrame className="py-0">
+          {isLoading ? (
+            <div className="space-y-2 py-5">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full rounded-lg" />
               ))}
-            </ListPageBody>
+            </div>
           ) : items.length === 0 ? (
-            <ListPageBody>
-              <p className="py-10 text-center text-theme-sm text-gray-500 dark:text-gray-400">
-                {search.trim() ? "无匹配调度，请调整搜索词。" : emptyMessage(tab)}
-              </p>
-            </ListPageBody>
+            <div className="py-6">
+              <PanelEmptyState
+                layout="inline"
+                variant="framed"
+                icon={
+                  hasSearch ? (
+                    <Search className="size-5" aria-hidden />
+                  ) : (
+                    <CalendarClock className="size-5" aria-hidden />
+                  )
+                }
+                title={emptyTitle(tab, hasSearch)}
+                description={emptyDescription(tab, hasSearch)}
+                action={emptyAction(tab, hasSearch)}
+              />
+            </div>
           ) : (
             <ScheduleListTable
               items={items}

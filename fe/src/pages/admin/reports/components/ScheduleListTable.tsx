@@ -1,8 +1,15 @@
 import { Link } from "react-router";
-import { ChevronDown, ChevronRight, ExternalLink, RefreshCw } from "lucide-react";
+import { ChevronDown, ChevronRight, ExternalLink, MoreHorizontal, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, IconButton } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { TruncateHint } from "@/components/ui/hint-tooltip";
 import { RowActions } from "@/components/layout/list-page-kit";
 import {
   Table,
@@ -42,9 +49,11 @@ function ScheduleHistoryPanel({
   const { executeSchedule, retryExecution } = useReportScheduleMutations();
 
   return (
-    <div className="space-y-3 border-t border-gray-100 bg-gray-50/60 px-4 py-4 dark:border-gray-800 dark:bg-white/[0.02]">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-theme-xs font-medium text-gray-600 dark:text-gray-400">执行历史</p>
+    <div className="border-t border-gray-100 bg-gray-50/50 px-5 py-4 dark:border-white/[0.06] dark:bg-white/[0.02]">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-theme-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          执行历史
+        </p>
         {!readOnly ? (
           <Button
             type="button"
@@ -70,6 +79,7 @@ function ScheduleHistoryPanel({
           rows={historyQuery.data?.items ?? []}
           readOnly={readOnly}
           retryPending={retryExecution.isPending}
+          embedded
           onRetry={(executionId) =>
             retryExecution.mutate(
               { executionId, scheduleId: schedule.id },
@@ -103,16 +113,16 @@ function ScheduleDataRow({
 
   return (
     <>
-      <TableRow className="border-gray-100 dark:border-gray-800">
-        <TableCell className="px-4 py-3">
+      <TableRow className="border-gray-100 hover:bg-gray-50/60 dark:border-gray-800 dark:hover:bg-white/[0.02]">
+        <TableCell>
           <Badge variant="light" color={sourceTypeBadgeColor(schedule.sourceType)} size="sm">
             {localizeSourceType(schedule.sourceType)}
           </Badge>
         </TableCell>
-        <TableCell className="px-4 py-3">
+        <TableCell>
           <button
             type="button"
-            className="inline-flex items-center gap-1 text-left text-theme-sm font-medium text-gray-800 dark:text-white/90"
+            className="inline-flex max-w-[220px] items-center gap-1.5 text-left text-theme-sm font-medium text-gray-800 transition-colors hover:text-brand-600 dark:text-white/90 dark:hover:text-brand-400"
             onClick={onToggle}
             aria-expanded={expanded}
           >
@@ -121,24 +131,28 @@ function ScheduleDataRow({
             ) : (
               <ChevronRight className="size-4 shrink-0 text-gray-400" aria-hidden />
             )}
-            {sourceLabel}
+            <TruncateHint title={sourceLabel}>
+              <span className="truncate">{sourceLabel}</span>
+            </TruncateHint>
           </button>
         </TableCell>
-        <TableCell className="px-4 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
+        <TableCell className="text-theme-sm text-gray-600 dark:text-gray-400">
           {describeCron(schedule.cron)}
         </TableCell>
-        <TableCell className="max-w-[180px] px-4 py-3 text-theme-xs text-gray-600 dark:text-gray-400">
-          {summarizeRecipients(schedule.recipients)}
+        <TableCell className="max-w-[180px] text-theme-xs text-gray-600 dark:text-gray-400">
+          <TruncateHint title={summarizeRecipients(schedule.recipients)}>
+            <span className="truncate">{summarizeRecipients(schedule.recipients)}</span>
+          </TruncateHint>
         </TableCell>
-        <TableCell className="px-4 py-3 text-theme-xs text-gray-600 dark:text-gray-400">
+        <TableCell className="text-theme-xs text-gray-600 dark:text-gray-400">
           {formatAttachmentLabels(schedule.attachmentFormats)}
         </TableCell>
-        <TableCell className="px-4 py-3">
+        <TableCell>
           <Badge variant="light" color={scheduleStatusColor(schedule.status)} size="sm">
             {localizeScheduleStatus(schedule.status)}
           </Badge>
         </TableCell>
-        <TableCell className="px-4 py-3">
+        <TableCell className="text-right">
           <RowActions>
             <Button type="button" variant="ghost" size="sm" asChild>
               <Link to={sourceHref}>
@@ -146,28 +160,39 @@ function ScheduleDataRow({
                 查看源
               </Link>
             </Button>
-            {!readOnly
-              ? schedule.allowedActions.map((action) => (
-                  <Button
-                    key={action}
+            {!readOnly && schedule.allowedActions.length > 0 ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <IconButton
                     type="button"
+                    size="xs"
                     variant="outline"
-                    size="sm"
                     disabled={transitionSchedule.isPending}
-                    onClick={() =>
-                      transitionSchedule.mutate(
-                        { id: schedule.id, action },
-                        {
-                          onSuccess: () => toast.success("调度状态已更新"),
-                          onError: (err) => toast.error(mapApiError(err)),
-                        },
-                      )
-                    }
+                    aria-label="调度操作"
                   >
-                    {SCHEDULE_ACTION_LABELS[action] ?? action}
-                  </Button>
-                ))
-              : null}
+                    <MoreHorizontal className="size-3.5" aria-hidden />
+                  </IconButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[8rem]">
+                  {schedule.allowedActions.map((action) => (
+                    <DropdownMenuItem
+                      key={action}
+                      onClick={() =>
+                        transitionSchedule.mutate(
+                          { id: schedule.id, action },
+                          {
+                            onSuccess: () => toast.success("调度状态已更新"),
+                            onError: (err) => toast.error(mapApiError(err)),
+                          },
+                        )
+                      }
+                    >
+                      {SCHEDULE_ACTION_LABELS[action] ?? action}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
           </RowActions>
         </TableCell>
       </TableRow>
@@ -213,17 +238,17 @@ export function ScheduleListTable({
   onToggleExpand,
 }: ScheduleListTableProps) {
   return (
-    <div className="overflow-x-only rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-      <Table className="min-w-[960px] text-theme-sm">
-        <TableHeader>
-          <TableRow className="border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
-            <TableHead className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">源类型</TableHead>
-            <TableHead className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">调度源</TableHead>
-            <TableHead className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">频率</TableHead>
-            <TableHead className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">接收人</TableHead>
-            <TableHead className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">附件</TableHead>
-            <TableHead className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">状态</TableHead>
-            <TableHead className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">操作</TableHead>
+    <div className="overflow-x-only">
+      <Table size="comfortable" wrapperClassName="min-w-[960px] border-0 shadow-none">
+        <TableHeader className="bg-gray-50/80 dark:bg-white/[0.02]">
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="font-medium text-gray-600 dark:text-gray-400">源类型</TableHead>
+            <TableHead className="font-medium text-gray-600 dark:text-gray-400">调度源</TableHead>
+            <TableHead className="font-medium text-gray-600 dark:text-gray-400">频率</TableHead>
+            <TableHead className="font-medium text-gray-600 dark:text-gray-400">接收人</TableHead>
+            <TableHead className="font-medium text-gray-600 dark:text-gray-400">附件</TableHead>
+            <TableHead className="font-medium text-gray-600 dark:text-gray-400">状态</TableHead>
+            <TableHead className="text-right font-medium text-gray-600 dark:text-gray-400">操作</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

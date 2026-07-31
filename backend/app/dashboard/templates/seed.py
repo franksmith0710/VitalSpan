@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.dashboard.templates.models import DashboardTemplate
 from app.dashboard.templates import presets
 from app.dashboard.templates import presets_gov
+from app.dashboard.templates.presets_official_gallery import build_official_component_gallery_layout
 
 
 def _gov_template_specs() -> list[dict[str, Any]]:
@@ -209,6 +210,16 @@ def _builtin_template_specs() -> list[dict[str, Any]]:
             "thumbnail_ref": "/template-assets/thumbs/dash-ops.svg",
             "layout_json": presets.build_ops_dashboard_layout(),
         },
+        {
+            "id": uuid.UUID("00000000-0000-4000-8001-000000000020"),
+            "template_key": "builtin-viz-component-gallery",
+            "name": "官方组件验收大屏",
+            "description": "43 种 chartType 各一 widget，绑定官方演示 SQL 注册表",
+            "category_key": "general",
+            "surface_kind": "data-screen",
+            "thumbnail_ref": "/template-assets/thumbs/screen-blank.svg",
+            "layout_json": build_official_component_gallery_layout(),
+        },
         *_gov_template_specs(),
     ]
 
@@ -233,7 +244,7 @@ def seed_builtin_dashboard_templates(db: Session) -> int:
                 layout_json=spec["layout_json"],
                 thumbnail_ref=spec.get("thumbnail_ref"),
                 visibility="builtin",
-                content_revision=9,
+                content_revision=10,
             )
             db.add(row)
             upserted += 1
@@ -245,6 +256,6 @@ def seed_builtin_dashboard_templates(db: Session) -> int:
             existing.thumbnail_ref = spec.get("thumbnail_ref")
             existing.status = "published"
             existing.visibility = "builtin"
-            existing.content_revision = max(existing.content_revision, 9)
+            existing.content_revision = max(existing.content_revision, 10)
     db.commit()
     return upserted

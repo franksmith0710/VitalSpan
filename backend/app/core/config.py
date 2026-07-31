@@ -40,6 +40,8 @@ class Settings(BaseSettings):
     rpt_smtp_from: str = "reports@vitalspan.local"
     vitalspan_data_dir: str = "./data"
     dev_report_seed: bool = False
+    ensure_official_demo_datasource: bool = True
+    sample_mysql_url: str | None = None
 
     _DEV_SECRET_KEY: ClassVar[str] = "change-me-in-production"
     _DEV_FERNET_EXAMPLE: ClassVar[str] = "SN0VrKv3d9y1xCzRerwAlw0VdGvrNqWacCMhrYbq2YI="
