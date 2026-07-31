@@ -9,6 +9,7 @@ import {
   LayoutTemplate,
   Monitor,
   Play,
+  Search,
   Star,
 } from "lucide-react";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
@@ -293,28 +294,30 @@ export function ReportCenterPage() {
           ) : null}
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="搜索报表名称…"
-            className="max-w-md"
-            aria-label="搜索报表"
-          />
-          <div className="flex flex-wrap gap-1">
-            {KIND_FILTERS.map((item) => (
-              <Button
-                key={item.id}
-                type="button"
-                size="sm"
-                variant={kindFilter === item.id ? "primary" : "outline"}
-                onClick={() => setKindFilter(item.id)}
-              >
-                {item.label}
-              </Button>
-            ))}
+        {templates.length > 0 ? (
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="搜索报表名称…"
+              className="max-w-md"
+              aria-label="搜索报表"
+            />
+            <div className="flex flex-wrap gap-1">
+              {KIND_FILTERS.map((item) => (
+                <Button
+                  key={item.id}
+                  type="button"
+                  size="sm"
+                  variant={kindFilter === item.id ? "primary" : "outline"}
+                  onClick={() => setKindFilter(item.id)}
+                >
+                  {item.label}
+                </Button>
+              ))}
+            </div>
           </div>
-        </div>
+        ) : null}
 
         {templatesQuery.isLoading ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -324,11 +327,12 @@ export function ReportCenterPage() {
           </div>
         ) : templates.length === 0 ? (
           <PanelEmptyState
-            icon={<FileBarChart className="size-7" aria-hidden />}
+            layout="inline"
+            icon={<FileBarChart className="size-5" aria-hidden />}
             title="暂无授权报表"
             description="管理员可在「报表模板」中创建模板；或使用「预制报表」运行系统预置分析。"
             action={
-              <Button type="button" variant="primary" asChild>
+              <Button type="button" variant="primary" size="sm" asChild>
                 <Link to="/admin/reports">浏览预制报表</Link>
               </Button>
             }
@@ -336,6 +340,8 @@ export function ReportCenterPage() {
           />
         ) : filteredTemplates.length === 0 ? (
           <PanelEmptyState
+            layout="inline"
+            icon={<Search className="size-5" aria-hidden />}
             title="无匹配报表"
             description="请调整搜索词或格式筛选。"
             variant="framed"

@@ -26,6 +26,8 @@ export type PanelEmptyStateProps = {
   size?: PanelEmptyStateSize;
   variant?: PanelEmptyStateVariant;
   tone?: PanelEmptyStateTone;
+  /** centered：区块居中空态；inline：横向紧凑条，适合 Hub 分区底部 */
+  layout?: "centered" | "inline";
   headingId?: string;
   className?: string;
 };
@@ -39,27 +41,71 @@ export function PanelEmptyState({
   size = "md",
   variant = "plain",
   tone = "brand",
+  layout = "centered",
   headingId,
   className,
 }: PanelEmptyStateProps) {
+  const framedClass =
+    variant === "framed"
+      ? "rounded-2xl border border-dashed border-gray-300 bg-gradient-to-b from-gray-50/90 to-white dark:border-gray-700 dark:from-white/[0.03] dark:to-white/[0.01]"
+      : variant === "elevated"
+        ? "rounded-2xl border border-gray-200/90 bg-white/95 shadow-theme-md ring-1 ring-gray-200/60 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/95 dark:ring-white/10"
+        : undefined;
+
+  const iconShellClass =
+    tone === "brand"
+      ? "bg-brand-50 text-brand-600 ring-brand-500/10 dark:bg-brand-500/15 dark:text-brand-400 dark:ring-brand-500/20"
+      : "bg-gray-100 text-gray-500 ring-gray-200/80 dark:bg-white/5 dark:text-gray-400 dark:ring-gray-800";
+
+  if (layout === "inline") {
+    return (
+      <div
+        className={cn(
+          "flex w-full flex-col gap-4 px-4 py-4 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left",
+          framedClass,
+          className,
+        )}
+      >
+        <div className="flex min-w-0 flex-col items-center gap-3 sm:flex-row sm:items-start">
+          <div
+            className={cn(
+              "flex size-10 shrink-0 items-center justify-center rounded-xl shadow-theme-xs ring-1",
+              iconShellClass,
+            )}
+          >
+            {icon}
+          </div>
+          <div className="min-w-0">
+            <h3
+              id={headingId}
+              className="text-theme-sm font-semibold text-gray-900 dark:text-white"
+            >
+              {title}
+            </h3>
+            <p className="mt-1 max-w-xl text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
+              {description}
+            </p>
+          </div>
+        </div>
+        {action ? <div className="flex shrink-0 flex-wrap justify-center gap-2 sm:justify-end">{action}</div> : null}
+        {footer ? <div className="w-full sm:col-span-2">{footer}</div> : null}
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(
         "flex w-full flex-col items-center justify-center text-center",
         SIZE_CLASS[size],
-        variant === "framed" &&
-          "rounded-2xl border border-dashed border-gray-300 bg-gradient-to-b from-gray-50/90 to-white dark:border-gray-700 dark:from-white/[0.03] dark:to-white/[0.01]",
-        variant === "elevated" &&
-          "rounded-2xl border border-gray-200/90 bg-white/95 shadow-theme-md ring-1 ring-gray-200/60 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/95 dark:ring-white/10",
+        framedClass,
         className,
       )}
     >
       <div
         className={cn(
           "mb-5 flex size-16 items-center justify-center rounded-2xl shadow-theme-xs ring-1",
-          tone === "brand"
-            ? "bg-brand-50 text-brand-600 ring-brand-500/10 dark:bg-brand-500/15 dark:text-brand-400 dark:ring-brand-500/20"
-            : "bg-gray-100 text-gray-500 ring-gray-200/80 dark:bg-white/5 dark:text-gray-400 dark:ring-gray-800",
+          iconShellClass,
         )}
       >
         {icon}

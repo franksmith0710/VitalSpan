@@ -91,4 +91,16 @@ describe("ReportCenterPage smoke", () => {
     expect(await screen.findByText("预制A")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "运行 预制A" })).toHaveAttribute("href", "/admin/reports?binding=k1");
   });
+
+  it("shows compact empty hint when no authorized templates", async () => {
+    mockApiFetch.mockImplementation(async (path: string) => {
+      if (path === "/api/v1/reports/prefab/bindings") return { items: [], total: 0 };
+      if (path.startsWith("/api/v1/reports/catalog/nodes")) return [];
+      return { items: [], total: 0 };
+    });
+    renderPage();
+    expect(await screen.findByText("暂无授权报表")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "浏览预制报表" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("搜索报表")).not.toBeInTheDocument();
+  });
 });
