@@ -1,49 +1,36 @@
 ---
-description: VitalSpan 项目身份、文档分层与关键路径约定
+description: VitalSpan 项目身份与文档分层（摘要；总约束见 project.mdc）
 alwaysApply: true
 ---
 
-# VitalSpan 项目约定
+# VitalSpan 项目约定（摘要）
 
-自研 BI 平台（对标 DataEase/Superset），**零第三方 BI 运行时依赖**。面向政企/行业 IT 与数据团队。
+> **总约束与任务路由** → @.cursor/rules/project.mdc  
+> **工程体量/分层** → @.cursor/rules/engineering.mdc · @.cursor/rules/common.mdc  
+> **生产红线** → @.cursor/rules/production.mdc
 
-## 文档分层（改代码前先找对真理源）
+自研 BI 平台，**零第三方 BI 运行时依赖**。面向政企/行业 IT 与数据团队。
+
+## 文档分层
 
 | 层 | 路径 | 用途 |
 |----|------|------|
-| SRS | `docs/srs/` | 需求权威；人工修订，演化只读 |
-| Goal/PRD/Plan | `docs/automate/` | 执行真理源；验收以 PRD 分片为准 |
+| SRS | `docs/srs/` | 需求权威 |
+| Goal/PRD/Plan | `docs/automate/` | 执行真理源 |
 | 架构 | `docs/arch.md` | 技术决策、目录、环境变量 |
-| API / 服务 / UI | `docs/api/` · `docs/services/` · `docs/ui/` | 契约与域附录登记簿 |
-
-当前里程碑：**M1 工程基线**（M1B queued，不参与当期执行）→ `docs/automate/plan.md` v1.2.1。
+| API / 服务 / UI | `docs/api/` · `docs/services/` · `docs/ui/` | 契约与域附录 |
 
 ## 目录铁律
 
 | 项 | 约定 |
 |----|------|
-| 前端 | **`fe/`**（禁止 `frontend/`） |
-| 后端域 | `backend/app/{core,auth,api/v1,datasources,query,ingestion,…}` |
-| 鉴权 | 模块 `app/auth/`；**`main.py` 注册** `AuthMiddleware` |
-| API 前缀 | `/api/v1/`；健康检查 `/health`（无 v1 前缀） |
-| 公开路径 | `/health`、`/docs`、`/redoc`、`/openapi.json` |
-
-工程分层与体量：@.cursor/rules/common.mdc
+| 前端 | **`fe/`** |
+| API 前缀 | `/api/v1/`；健康 `/health` |
+| 鉴权 | `app/auth/` + `main.py` 注册 `AuthMiddleware` |
+| 地图 | 仅离线中国 — @.cursor/rules/geo-map-offline-china.mdc |
 
 ## 实现纪律
 
-- 修 bug 前检索 `.agents/skills/bug-case-library/cases/`
-- 代码变更后按 @.cursor/rules/prd-sync.mdc 评估文档同步
-- 不预置业务场景包；附录 S 仅文档参考
-- `goal.md` 仅经 `create-evolution-goal` 人工修订
-- 一至三期图表直连 `dataSourceId` + SQL/表，**不经 Dataset**（四期 M13）
-- **地图仅离线中国**（GEO-IRON-01）：见 @.cursor/rules/geo-map-offline-china.mdc
-
-## 技能索引
-
-| 场景 | 路径 |
-|------|------|
-| 后端 FastAPI | `.agents/skills/fastapi/SKILL.md` · @.cursor/rules/backend-fastapi.mdc |
-| 前端视觉 | `.agents/skills/b-design-system-tailadmin-radix/SKILL.md` · @.cursor/rules/fe-ui.mdc |
-| 演化 SOP | `.cursor/automate/skills/`（只读，subagent 用） |
-| Superpowers 产出 | `docs/superpowers/`（design/plan 归档） |
+- 修 bug 前：`.agents/skills/bug-case-library/cases/`
+- 文档同步：@.cursor/rules/prd-sync.mdc
+- 技能索引：见根 `AGENTS.md`

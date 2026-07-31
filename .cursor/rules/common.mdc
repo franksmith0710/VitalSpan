@@ -5,40 +5,13 @@ alwaysApply: true
 
 # 公共工程规范
 
+> **体量 · 信封 · 分层 · 复用** 真理源 → @.cursor/rules/engineering.mdc  
 > 栈专项：@.cursor/rules/backend-fastapi.mdc · @.cursor/rules/fe-ui.mdc  
-> **路径与模块边界以 `docs/arch.md` 为准**；本文定义角色、依赖方向与体量，不重复栈细节。
+> **路径与模块边界**以 `docs/arch.md` 为准；本文保留 VitalSpan 项目铁律摘要。
 
-## 体量（软约束）
+## 体量 · 分层 · 信封
 
-| 范围 | 上限 | 说明 |
-|------|------|------|
-| 单函数 | ≤ **60** 行 | 超出拆私有函数或子模块 |
-| 单文件（业务） | fe ≤ **300** 行；py ≤ **200** 行 | fe 细则见 `fe-ui.mdc` |
-| 同目录手写源文件 | ≤ **12** 个 | 超出建子包/子目录 |
-| **豁免** | — | Alembic 迁移、生成物、脚手架模板不计入；禁止为凑数搬文件 |
-
-## 分层角色（先于路径）
-
-按**职责**分层；目录名以 `docs/arch.md` §4 为准：
-
-| 角色 | 职责 | VitalSpan 后端 | VitalSpan 前端 `fe/` |
-|------|------|----------------|----------------------|
-| **entry** | 路由/协议绑定，薄 | `app/api/v1/`、`main.py` | `routes.tsx`、`pages/**` 路由入口 |
-| **use-case** | 编排、事务边界、调用域服务 | 域模块内 `service.py` 或薄 orchestrator | `hooks/`、页面内编排（M1 仅壳层可省略） |
-| **domain** | 可复用业务规则、无 HTTP | `datasources/`、`query/`、`ingestion/`、`auth/`… | `components/`（业务块）、`lib/` 业务工具 |
-| **shared** | 无状态横切能力 | `core/`（config、logging、middleware）、`schemas/` | `components/ui/`、`lib/utils.ts` |
-| **outbound** | 第三方/出站代理 | `datasources/dialects/*`、外部 HTTP 客户端 | `@/lib/api.ts`（仅 HTTP 出站） |
-
-**依赖速记**：
-
-```
-entry → use-case → domain
-outbound → 外部系统（DB、总线、第三方 API）
-```
-
-- **禁止** outbound 直接触达 ORM 会话管理（连接池归 `datasources/`）
-- **禁止** shared（`core/`）依赖上层 domain 业务逻辑
-- **禁止** entry 写 SQL/方言/连接器细节
+见 @.cursor/rules/engineering.mdc（单函数 ≤60 行、py ≤200/fe ≤300、API `{code,message,detail}`、entry→domain 依赖方向）。
 
 ## 公共代码（防漂移）
 
@@ -60,7 +33,7 @@ outbound → 外部系统（DB、总线、第三方 API）
 
 ## 安全与文档
 
-- 凭证：`CREDENTIAL_FERNET_KEY`（ADR-06）；日志/API 响应脱敏见 `backend-fastapi.mdc`
+- 凭证与国密：@.cursor/rules/production.mdc · ADR-06/16
 - 代码变更后文档同步：@.cursor/rules/prd-sync.mdc
 - 修 bug 前检索：`.agents/skills/bug-case-library/cases/`
 
@@ -68,10 +41,8 @@ outbound → 外部系统（DB、总线、第三方 API）
 
 | 项 | 约定 |
 |----|------|
-| 前端根目录 | **`fe/`**（禁止 `frontend/`） |
-| API 前缀 | `/api/v1/`；健康检查 `/health` |
-| 鉴权模块 | `backend/app/auth/`；**`main.py` 注册** `AuthMiddleware` |
-| 公开路径 | `/health`、`/docs`、`/redoc`、`/openapi.json` |
-| BI 运行时 | **零** Superset/DataEase 依赖（NFR-08） |
+| 前端根目录 | **`fe/`** |
+| API 前缀 | `/api/v1/`；健康 `/health` |
+| BI 运行时 | **零** Superset/DataEase 依赖 |
 
-详述：@.cursor/rules/vitalspan-project.mdc
+详述：@.cursor/rules/project.mdc · @.cursor/rules/vitalspan-project.mdc
