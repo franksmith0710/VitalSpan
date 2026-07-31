@@ -42,7 +42,7 @@ describe("AccountProfilePage smoke", () => {
     await waitFor(() => {
       expect(screen.getByText("账户信息")).toBeInTheDocument();
     });
-    expect(screen.getByText("安全与偏好")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "修改电子邮箱" })).toBeInTheDocument();
     expect(screen.getAllByText("admin@vitalspan.local").length).toBeGreaterThan(0);
     expect(screen.getByText("登录账号", { selector: "dt" })).toBeInTheDocument();
     expect(screen.getAllByText("会话状态", { selector: "dt" }).length).toBeGreaterThan(0);

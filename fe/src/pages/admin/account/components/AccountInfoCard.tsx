@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
+import { Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { primaryRoleLabel, type SessionRole } from "@/lib/session";
 import type { MeProfile } from "../account-types";
 
@@ -43,9 +45,10 @@ function RoleBadges({ roles, isRoot }: { roles: string[]; isRoot?: boolean }) {
 
 type AccountInfoCardProps = {
   profile: MeProfile;
+  onEditEmail?: () => void;
 };
 
-export function AccountInfoCard({ profile }: AccountInfoCardProps) {
+export function AccountInfoCard({ profile, onEditEmail }: AccountInfoCardProps) {
   const permissionCount = profile.permissions?.length ?? 0;
 
   return (
@@ -65,7 +68,26 @@ export function AccountInfoCard({ profile }: AccountInfoCardProps) {
             label: "平台角色",
             value: <RoleBadges roles={profile.roles} isRoot={profile.isRoot} />,
           },
-          { label: "电子邮箱", value: profile.email },
+          {
+            label: "电子邮箱",
+            value: (
+              <span className="inline-flex items-center gap-2">
+                <span>{profile.email}</span>
+                {onEditEmail ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-7 shrink-0"
+                    aria-label="修改电子邮箱"
+                    onClick={onEditEmail}
+                  >
+                    <Pencil className="size-3.5" aria-hidden />
+                  </Button>
+                ) : null}
+              </span>
+            ),
+          },
           {
             label: "权限范围",
             value: profile.isRoot ? (

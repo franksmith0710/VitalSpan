@@ -12,18 +12,24 @@ type PrefabReportsEmptyPreviewProps = {
 const ADMIN_STEPS = [
   {
     step: 1,
+    title: "准备演示数据",
+    description: "开发环境在 .env 设置 DEV_REPORT_SEED=1 并重启后端，写入样例库、实体表与演示模板。",
+    icon: Settings2,
+  },
+  {
+    step: 2,
     title: "定义绑定键",
     description: "为预制分析指定唯一标识，便于 Hub 与深链跳转。",
     icon: Settings2,
   },
   {
-    step: 2,
+    step: 3,
     title: "关联实体与分析",
-    description: "选择实体类型与分析模型（生命周期、趋势等）。",
+    description: "选择实体类型与分析模型；实体表未注册时运行会提示「实体数据尚未就绪」。",
     icon: BarChart3,
   },
   {
-    step: 3,
+    step: 4,
     title: "保存并运行",
     description: "保存绑定后，列表将出现可运行的预制报表。",
     icon: BarChart3,

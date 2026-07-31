@@ -67,9 +67,9 @@
 
 | ID | 优先级 | 硬门槛 | 视觉债 | 状态 | 本轮动作 | 改动摘要（路径/行为） | 验证 | 规格/工单 | 更新于 |
 |----|--------|--------|--------|------|----------|----------------------|------|-----------|--------|
-| B-1 | P0 | 是 | 否 | done | GET 回填 + 清空确认 | `RlsRoleBindingPanel.tsx` · `RlsRoleBindingPanel.smoke.test.tsx` | vitest RlsRoleBindingPanel 1 passed | — | 2026-07-31 |
-| B-2 | P0 | 是 | 否 | done | 角色编辑「权限」Tab + `RolePermissionsPanel` | `RoleListPage.tsx` · `RolePermissionsPanel.tsx` | vitest RolePermissionsPanel 1 passed | — | 2026-07-31 |
-| B-3 | P0 | 否 | 否 | done | `ResourceGrantPicker` 按类型下拉选资源 | `GrantsDialogs.tsx` · `GrantsPage.tsx` · `ResourceGrantPicker.tsx` | vitest grants 4 passed | — | 2026-07-31 |
+| B-1 | P0 | 是 | 否 | verified | GET 回填 + 清空确认 | `RlsRoleBindingPanel.tsx` · `RlsRoleBindingPanel.smoke.test.tsx` | r2 再评确认 | — | 2026-07-31 |
+| B-2 | P0 | 是 | 否 | verified | 角色编辑「权限」Tab + `RolePermissionsPanel` | `RoleListPage.tsx` · `RolePermissionsPanel.tsx` | r2 再评确认 | — | 2026-07-31 |
+| B-3 | P0 | 否 | 否 | verified | `ResourceGrantPicker` 按类型下拉选资源 | `GrantsDialogs.tsx` · `GrantsPage.tsx` · `ResourceGrantPicker.tsx` | r2 再评确认 | — | 2026-07-31 |
 | B-4 | P1 | 否 | 否 | open | — | — | — | — | 2026-07-31 |
 | B-5 | P1 | 否 | 否 | open | — | — | — | — | 2026-07-31 |
 | B-6 | P1 | 否 | 否 | open | — | — | — | — | 2026-07-31 |

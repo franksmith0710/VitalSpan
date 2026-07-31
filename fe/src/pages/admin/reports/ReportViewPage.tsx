@@ -10,6 +10,7 @@ import { PanelEmptyState } from "@/components/ui/panel-empty-state";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
+import { matchesCapability, resolveEffectiveCapabilities } from "@/lib/capabilities";
 import { useAuth } from "@/context/auth-context";
 import type { ReportCatalogNode } from "@/lib/reportCatalogUtils";
 import { ReportExportCard } from "./components/ReportExportCard";
@@ -33,9 +34,8 @@ type RenderRunOut = {
 export function ReportViewPage() {
   const { nodeId } = useParams<{ nodeId: string }>();
   const { user } = useAuth();
-  const canManage = Boolean(
-    user?.isRoot || user?.roles?.includes("admin") || user?.roles?.includes("analyst"),
-  );
+  const caps = resolveEffectiveCapabilities(user);
+  const canManage = matchesCapability(caps, "report:manage");
 
   const nodeQuery = useQuery({
     queryKey: ["reports", "catalog-node", nodeId],

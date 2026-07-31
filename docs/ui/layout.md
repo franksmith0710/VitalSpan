@@ -129,10 +129,11 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │   └── /reports/schedules           # 调度（admin · `report:manage`）
 │
 ├── 我的                            # 用户菜单进入（脱离主侧栏 IA）
-│   ├── /account/profile             # 用户资料（个人中心首页）
-│   ├── /account/preferences         # 偏好设置（默认看板 / 个人视图）
+│   ├── /account/profile             # 用户资料
+│   ├── /account/theme               # 界面主题
+│   ├── /account/landing             # 登录入口（个人视图 / 角色默认看板）
 │   └── /account/security            # 安全设置（修改密码）
-│   # /account/settings 重定向至 preferences（兼容旧链接）
+│   # /account/preferences、/account/settings 重定向至 landing（兼容旧链接）
 │
 ├── 后台管理                        # 用户菜单进入（admin · `system:*`）
 │   ├── /system/roles                # AUTH · crud-flow（含维度分组绑定入口见 RLS）

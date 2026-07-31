@@ -8,7 +8,6 @@ import { queryKeys } from "@/lib/queryKeys";
 import type { MeProfile } from "./account-types";
 import { AccountInfoCard } from "./components/AccountInfoCard";
 import { AccountProfileHero } from "./components/AccountProfileHero";
-import { AccountSecurityLinks } from "./components/AccountSecurityLinks";
 import { ProfileEditDialog } from "./components/ProfileEditDialog";
 
 export function AccountProfilePage() {
@@ -45,8 +44,7 @@ export function AccountProfilePage() {
       ) : (
         <div className="grid gap-6">
           <AccountProfileHero profile={data} onEdit={() => openEdit("profile")} />
-          <AccountInfoCard profile={data} />
-          <AccountSecurityLinks email={data.email} onEditEmail={() => openEdit("email")} />
+          <AccountInfoCard profile={data} onEditEmail={() => openEdit("email")} />
           <ProfileEditDialog
             open={editOpen}
             onOpenChange={(open) => {

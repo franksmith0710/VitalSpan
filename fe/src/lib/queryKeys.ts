@@ -88,6 +88,7 @@ export const queryKeys = {
     list: (params?: { q?: string; limit?: number; offset?: number }) =>
       ["users", "list", params] as const,
     roles: (userId: string) => ["users", userId, "roles"] as const,
+    org: (userId: string) => ["users", userId, "org"] as const,
     views: ["users", "me", "views"] as const,
   },
   orgs: {

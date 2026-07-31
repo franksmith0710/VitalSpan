@@ -33,6 +33,10 @@ class ExtensionConfigUpsert(BaseModel):
     default_data_source_id: uuid.UUID | None = Field(default=None, alias="defaultDataSourceId")
 
 
+class ExtensionConfigOut(ExtensionConfigUpsert):
+    revision: int
+
+
 class ExtensionRenderSpecOut(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     template_node_id: str = Field(alias="templateNodeId")

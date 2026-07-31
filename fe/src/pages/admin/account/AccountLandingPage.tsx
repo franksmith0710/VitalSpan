@@ -5,10 +5,9 @@ import { apiFetch } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
 import type { MeProfile } from "./account-types";
 import { RoleDefaultViewCard } from "./components/RoleDefaultViewCard";
-import { ThemePreferencesSection } from "./components/ThemePreferencesSection";
 import { UserViewsSection } from "./components/UserViewsSection";
 
-export function AccountPreferencesPage() {
+export function AccountLandingPage() {
   const meQuery = useQuery({
     queryKey: queryKeys.me,
     queryFn: () => apiFetch<MeProfile>("/api/v1/me"),
@@ -16,11 +15,10 @@ export function AccountPreferencesPage() {
 
   return (
     <AdminPageShell
-      title="偏好设置"
-      description="配置界面主题、登录后的默认看板与个人视图。"
+      title="登录入口"
+      description="配置登录后优先进入的个人视图，或查看角色默认看板。"
     >
       <div className="grid w-full gap-6">
-        <ThemePreferencesSection />
         {meQuery.isLoading ? (
           <Skeleton className="h-40 w-full rounded-2xl" />
         ) : meQuery.data ? (

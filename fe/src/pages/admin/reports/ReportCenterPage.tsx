@@ -1,37 +1,34 @@
-import { type ReactNode, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
+import { FileBarChart, LayoutTemplate, Search } from "lucide-react";
+import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import {
-  CalendarClock,
-  FileBarChart,
-  FileSpreadsheet,
-  FileText,
-  LayoutTemplate,
-  Monitor,
-  Play,
-  Search,
-  Star,
-} from "lucide-react";
-import { AdminPageShell } from "@/components/layout/admin-page-shell";
+  DataTable,
+  ListPageSection,
+  ListPageTableFrame,
+  ListPageToolbar,
+  PageErrorBanner,
+} from "@/components/layout/list-page-kit";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ListGhostEmptyState } from "@/components/ui/panel-empty-state";
-import { PageErrorBanner } from "@/components/ui/page-error-banner";
+import { Label } from "@/components/ui/label";
+import { SearchField } from "@/components/ui/search-field";
 import { apiFetch } from "@/lib/api";
 import { matchesCapability, resolveEffectiveCapabilities } from "@/lib/capabilities";
 import { resolveDefaultReportTemplateNodeId } from "@/lib/defaultViewResolve";
-import { prefabReportsRunPath } from "./reportRoutes";
 import { mapApiError } from "@/lib/apiError";
-import {
-  fetchAllCatalogTemplates,
-  filterCatalogTemplates,
-  type ReportCatalogNode,
-} from "@/lib/reportCatalogUtils";
+import { fetchAllCatalogTemplates, filterCatalogTemplates } from "@/lib/reportCatalogUtils";
 import { queryKeys } from "@/lib/queryKeys";
+import type { TemplateReadiness } from "@/lib/reportTemplateReadiness";
+import {
+  readPinnedPrefabKeys,
+  sortPrefabsByPin,
+  togglePinnedPrefabKey,
+} from "@/lib/reportCenterPrefs";
 import { useAuth } from "@/context/auth-context";
-import { cn } from "@/lib/utils";
+import { ReportCenterOverview, ReportCenterOverviewSkeleton } from "./components/ReportCenterOverview";
+import { ReportCenterPrefabPanel } from "./components/ReportCenterPrefabPanel";
+import { buildReportCenterTemplateRows } from "./components/ReportCenterTemplateTable";
 
 type PrefabBinding = {
   bindingKey: string;
@@ -48,106 +45,13 @@ const KIND_FILTERS: { id: TemplateKindFilter; label: string }[] = [
   { id: "excel", label: "Excel" },
 ];
 
-const KIND_ICON: Record<string, ReactNode> = {
-  word: <FileText className="size-5" aria-hidden />,
-  excel: <FileSpreadsheet className="size-5" aria-hidden />,
-  pdf: <FileBarChart className="size-5" aria-hidden />,
-};
-
-function TemplateKindBadge({ kind }: { kind: string | null }) {
-  const label = kind?.toUpperCase() ?? "报表";
-  return (
-    <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2 py-0.5 text-[10px] font-medium uppercase text-gray-600 dark:bg-white/[0.06] dark:text-gray-400">
-      {KIND_ICON[kind ?? ""]}
-      {label}
-    </span>
-  );
-}
-
-function QuickLinkCard({
-  title,
-  description,
-  to,
-  icon,
-}: {
-  title: string;
-  description: string;
-  to: string;
-  icon: ReactNode;
-}) {
-  return (
-    <Link
-      to={to}
-      className={cn(
-        "group flex flex-col gap-2 rounded-xl border border-gray-200 bg-white p-4 shadow-theme-xs transition-colors",
-        "hover:border-brand-200 hover:bg-brand-50/40 dark:border-gray-800 dark:bg-white/[0.02] dark:hover:border-brand-500/30 dark:hover:bg-brand-500/5",
-      )}
-    >
-      <span className="flex size-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400">
-        {icon}
-      </span>
-      <span className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">{title}</span>
-      <span className="text-theme-xs text-gray-500 dark:text-gray-400">{description}</span>
-    </Link>
-  );
-}
-
-const KIND_SUBTITLE: Record<string, string> = {
-  word: "Word 报表",
-  excel: "Excel 报表",
-  pdf: "PDF 报表",
-};
-
-function templateSubtitle(node: ReportCatalogNode): string {
-  if (node.templateKind) return KIND_SUBTITLE[node.templateKind] ?? "报表模板";
-  return "报表模板";
-}
-
-function TemplateCard({ node }: { node: ReportCatalogNode }) {
-  return (
-    <Card className="shadow-theme-xs">
-      <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 pb-2">
-        <CardTitle className="text-theme-sm font-semibold leading-snug">{node.name}</CardTitle>
-        <TemplateKindBadge kind={node.templateKind} />
-      </CardHeader>
-      <CardContent className="flex items-center justify-between gap-2 pt-0">
-        <p className="truncate text-theme-xs text-gray-500 dark:text-gray-400">{templateSubtitle(node)}</p>
-        <Button type="button" variant="outline" size="sm" asChild>
-          <Link to={`/admin/reports/view/${node.id}`}>
-            <Play className="size-3.5" aria-hidden />
-            打开并运行
-          </Link>
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
-
-const PREFAB_HUB_PREVIEW = 6;
-
-function PrefabRow({ binding }: { binding: PrefabBinding }) {
-  return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-gray-100 px-3 py-2 dark:border-gray-800">
-      <div className="min-w-0">
-        <p className="truncate text-theme-sm font-medium text-gray-800 dark:text-white/90">{binding.displayName}</p>
-        <p className="text-theme-xs text-gray-500">{binding.analysisType}</p>
-      </div>
-      <Button type="button" variant="outline" size="sm" asChild>
-        <Link to={prefabReportsRunPath(binding.bindingKey)} aria-label={`运行 ${binding.displayName}`}>
-          运行
-        </Link>
-      </Button>
-    </div>
-  );
-}
-
 export function ReportCenterPage() {
   const { user } = useAuth();
   const caps = resolveEffectiveCapabilities(user);
   const roleCodes = user?.roles ?? [];
   const [search, setSearch] = useState("");
   const [kindFilter, setKindFilter] = useState<TemplateKindFilter>("all");
-  const [prefabExpanded, setPrefabExpanded] = useState(false);
+  const [pinnedPrefabs, setPinnedPrefabs] = useState<string[]>(() => readPinnedPrefabKeys());
 
   const templatesQuery = useQuery({
     queryKey: ["reports", "center", "templates"],
@@ -169,20 +73,71 @@ export function ReportCenterPage() {
 
   const canManage = matchesCapability(caps, "report:manage");
   const templates = templatesQuery.data ?? [];
+  const templateIdsKey = templates.map((node) => node.id).join(",");
+  const readinessQuery = useQuery({
+    queryKey: ["reports", "template-readiness", templateIdsKey],
+    queryFn: () =>
+      apiFetch<{ items: { nodeId: string; readiness: TemplateReadiness }[] }>(
+        "/api/v1/reports/catalog/templates/readiness",
+        {
+          method: "POST",
+          body: JSON.stringify({ nodeIds: templates.map((node) => node.id) }),
+        },
+      ),
+    enabled: templates.length > 0,
+  });
+  const readinessByNodeId = useMemo(() => {
+    const map = new Map<string, TemplateReadiness>();
+    for (const item of readinessQuery.data?.items ?? []) {
+      map.set(item.nodeId, item.readiness);
+    }
+    return map;
+  }, [readinessQuery.data]);
+
   const prefabItems = prefabQuery.data?.items ?? [];
+  const sortedPrefabItems = useMemo(
+    () => sortPrefabsByPin(prefabItems, pinnedPrefabs),
+    [prefabItems, pinnedPrefabs],
+  );
   const filteredTemplates = useMemo(
     () => filterCatalogTemplates(templates, search, kindFilter),
     [templates, search, kindFilter],
   );
+
   const defaultReportId = defaultReportQuery.data;
   const defaultReportNode = templates.find((node) => node.id === defaultReportId);
-  const prefabPreviewItems = prefabExpanded ? prefabItems : prefabItems.slice(0, PREFAB_HUB_PREVIEW);
-  const hasMorePrefab = prefabItems.length > PREFAB_HUB_PREVIEW;
+  const defaultLoading =
+    defaultReportQuery.isLoading || (Boolean(defaultReportId) && templatesQuery.isLoading);
+  const hasTemplates = templates.length > 0;
+  const hasFilters = Boolean(search.trim()) || kindFilter !== "all";
+  const isLoading = templatesQuery.isLoading;
+  const isEmpty = !isLoading && filteredTemplates.length === 0;
+
+  const templateRows = useMemo(
+    () => buildReportCenterTemplateRows(filteredTemplates, readinessByNodeId),
+    [filteredTemplates, readinessByNodeId],
+  );
+
+  const headerActions = canManage ? (
+    <Button type="button" variant="outline" size="sm" asChild>
+      <Link to="/admin/reports/templates">
+        <LayoutTemplate className="size-4" aria-hidden />
+        管理模板
+      </Link>
+    </Button>
+  ) : undefined;
 
   return (
     <AdminPageShell
+      layout="list"
       title="全部报表"
-      description="浏览您有权限的报表模板，运行系统预制分析，或打开角色默认报表。"
+      icon={
+        <AdminPageHeaderIcon>
+          <FileBarChart className="size-6" aria-hidden />
+        </AdminPageHeaderIcon>
+      }
+      description="浏览授权模板、运行预制分析，或打开角色默认报表。"
+      actions={headerActions}
     >
       {templatesQuery.isError ? (
         <PageErrorBanner
@@ -191,173 +146,129 @@ export function ReportCenterPage() {
         />
       ) : null}
 
-      {defaultReportQuery.isLoading || (defaultReportId && templatesQuery.isLoading) ? (
-        <Card className="mb-6 border-brand-200 bg-brand-50/30 dark:border-brand-500/30 dark:bg-brand-500/5">
-          <CardContent className="py-4">
-            <Skeleton className="h-12 w-full max-w-xl" />
-          </CardContent>
-        </Card>
-      ) : defaultReportNode ? (
-        <Card className="mb-6 border-brand-200 bg-brand-50/30 dark:border-brand-500/30 dark:bg-brand-500/5">
-          <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
-            <div className="flex min-w-0 items-start gap-3">
-              <Star className="mt-0.5 size-5 shrink-0 text-brand-600 dark:text-brand-400" aria-hidden />
-              <div>
-                <p className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">角色默认报表</p>
-                <p className="text-theme-xs text-gray-500 dark:text-gray-400">{defaultReportNode.name}</p>
-              </div>
-            </div>
-            <Button type="button" size="sm" variant="primary" asChild>
-              <Link to={`/admin/reports/view/${defaultReportNode.id}`}>打开默认报表</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      ) : defaultReportId ? (
-        <Card className="mb-6 border-amber-200 bg-amber-50/40 dark:border-amber-500/30 dark:bg-amber-500/5">
-          <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
-            <div>
-              <p className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">角色默认报表</p>
-              <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-                默认模板暂未在目录中同步，请联系管理员。
-              </p>
-            </div>
-            {canManage ? (
-              <Button type="button" size="sm" variant="outline" asChild>
-                <Link to="/admin/reports/templates">管理模板</Link>
-              </Button>
-            ) : null}
-          </CardContent>
-        </Card>
-      ) : null}
-
-      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <QuickLinkCard
-          title="预制报表"
-          description={`${prefabItems.length} 个系统预置分析`}
-          to="/admin/reports"
-          icon={<FileBarChart className="size-5" aria-hidden />}
+      {isLoading ? (
+        <ReportCenterOverviewSkeleton />
+      ) : (
+        <ReportCenterOverview
+          templateCount={templates.length}
+          prefabCount={prefabItems.length}
+          canManage={canManage}
+          defaultReport={
+            defaultReportNode ? { id: defaultReportNode.id, name: defaultReportNode.name } : null
+          }
+          defaultReportStale={Boolean(defaultReportId && !defaultReportNode)}
+          defaultLoading={defaultLoading}
         />
-        {canManage ? (
-          <>
-            <QuickLinkCard
-              title="报表模板"
-              description="管理 Word / Excel / PDF 模板目录"
-              to="/admin/reports/templates"
-              icon={<LayoutTemplate className="size-5" aria-hidden />}
-            />
-            <QuickLinkCard
-              title="报表调度"
-              description="定时生成与投递任务"
-              to="/admin/reports/schedules"
-              icon={<CalendarClock className="size-5" aria-hidden />}
-            />
-            <QuickLinkCard
-              title="看板定时报告"
-              description="管理看板与大屏 PDF 定时推送"
-              to="/admin/reports/schedules?tab=dashboard"
-              icon={<Monitor className="size-5" aria-hidden />}
-            />
-          </>
-        ) : null}
-      </div>
+      )}
 
-      {prefabItems.length > 0 ? (
-        <section className="mb-6 space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">预制分析</h2>
-            <div className="flex flex-wrap items-center gap-2">
-              {hasMorePrefab ? (
-                <Button type="button" variant="ghost" size="sm" onClick={() => setPrefabExpanded((v) => !v)}>
-                  {prefabExpanded ? "收起" : `展开全部 (${prefabItems.length})`}
-                </Button>
-              ) : null}
-              <Button type="button" variant="outline" size="sm" asChild>
-                <Link to="/admin/reports">进入预制报表</Link>
-              </Button>
-            </div>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {prefabPreviewItems.map((binding) => (
-              <PrefabRow key={binding.bindingKey} binding={binding} />
-            ))}
-          </div>
-        </section>
-      ) : null}
+      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-stretch">
+        <ListPageSection>
+          <ListPageToolbar
+            filters={
+              hasTemplates ? (
+                <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
+                  <p className="shrink-0 text-theme-sm font-semibold text-gray-800 dark:text-white/90">
+                    授权模板
+                  </p>
+                  <div className="grid w-full min-w-[200px] max-w-xs flex-1 gap-2 sm:max-w-sm">
+                    <Label className="sr-only">搜索报表</Label>
+                    <SearchField
+                      value={search}
+                      onChange={setSearch}
+                      placeholder="搜索名称或 Key…"
+                      aria-label="搜索报表"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <p className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">授权模板</p>
+              )
+            }
+            actions={
+              hasTemplates ? (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {KIND_FILTERS.map((item) => (
+                    <Button
+                      key={item.id}
+                      type="button"
+                      size="sm"
+                      variant={kindFilter === item.id ? "primary" : "outline"}
+                      onClick={() => setKindFilter(item.id)}
+                    >
+                      {item.label}
+                    </Button>
+                  ))}
+                  {hasFilters ? (
+                    <span className="ml-1 text-theme-sm tabular-nums text-gray-500 dark:text-gray-400">
+                      {filteredTemplates.length} 条
+                    </span>
+                  ) : null}
+                </div>
+              ) : undefined
+            }
+          />
 
-      <section className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">授权报表模板</h2>
-          {canManage ? (
-            <Button type="button" variant="outline" size="sm" asChild>
-              <Link to="/admin/reports/templates">管理模板</Link>
-            </Button>
-          ) : null}
-        </div>
-
-        {templates.length > 0 ? (
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="搜索报表名称…"
-              className="max-w-md"
-              aria-label="搜索报表"
+          <ListPageTableFrame className={isEmpty && !isLoading ? "px-0 py-0" : "px-0 py-0"}>
+            <DataTable
+              loading={isLoading}
+              empty={isEmpty}
+              lastColumnAlign="right"
+              loadingRows={5}
+              headers={["报表名称", "格式", "数据", "操作"]}
+              rows={templateRows}
+              emptyState={{
+                icon: hasFilters ? (
+                  <Search className="size-7" aria-hidden />
+                ) : (
+                  <FileBarChart className="size-7" aria-hidden />
+                ),
+                title: hasFilters ? "无匹配报表" : "暂无授权报表",
+                description: hasFilters
+                  ? "请调整搜索词或格式筛选。"
+                  : "管理员可在「报表模板」中创建；或从右侧运行预制分析。",
+                action: hasFilters ? undefined : (
+                  <Button type="button" variant="primary" size="sm" asChild>
+                    <Link to="/admin/reports">浏览预制报表</Link>
+                  </Button>
+                ),
+              }}
             />
-            <div className="flex flex-wrap gap-1">
-              {KIND_FILTERS.map((item) => (
-                <Button
-                  key={item.id}
-                  type="button"
-                  size="sm"
-                  variant={kindFilter === item.id ? "primary" : "outline"}
-                  onClick={() => setKindFilter(item.id)}
-                >
-                  {item.label}
-                </Button>
-              ))}
-            </div>
-          </div>
-        ) : null}
+          </ListPageTableFrame>
+        </ListPageSection>
 
-        {templatesQuery.isLoading ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-28 w-full rounded-xl" />
-            ))}
-          </div>
-        ) : templates.length === 0 ? (
-          <ListGhostEmptyState
-            layout="cards"
-            density="compact"
-            rows={4}
-            headingId="reports-templates-empty"
-            icon={<FileBarChart className="size-8" aria-hidden />}
-            title="暂无授权报表"
-            description="管理员可在「报表模板」中创建模板；或使用「预制报表」运行系统预置分析。"
-            action={
-              <Button type="button" variant="primary" size="sm" asChild>
-                <Link to="/admin/reports">浏览预制报表</Link>
+        <ListPageSection>
+          <ListPageToolbar
+            filters={
+              <div className="min-w-0">
+                <p className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">预制分析</p>
+                <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                  固定常用项后优先展示
+                </p>
+              </div>
+            }
+            actions={
+              <Button type="button" variant="ghost" size="sm" asChild>
+                <Link to="/admin/reports">全部</Link>
               </Button>
             }
           />
-        ) : filteredTemplates.length === 0 ? (
-          <ListGhostEmptyState
-            layout="cards"
-            density="compact"
-            rows={3}
-            headingId="reports-templates-filter-empty"
-            icon={<Search className="size-8" aria-hidden />}
-            title="无匹配报表"
-            description="请调整搜索词或格式筛选。"
-          />
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredTemplates.map((node) => (
-              <TemplateCard key={node.id} node={node} />
-            ))}
-          </div>
-        )}
-      </section>
+          <ListPageTableFrame className="px-5 py-4">
+            {prefabQuery.isLoading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="h-12 animate-pulse rounded-lg bg-gray-100 dark:bg-white/[0.04]" />
+                ))}
+              </div>
+            ) : (
+              <ReportCenterPrefabPanel
+                items={sortedPrefabItems}
+                pinnedKeys={pinnedPrefabs}
+                onTogglePin={(key) => setPinnedPrefabs(togglePinnedPrefabKey(key))}
+              />
+            )}
+          </ListPageTableFrame>
+        </ListPageSection>
+      </div>
     </AdminPageShell>
   );
 }

@@ -66,17 +66,17 @@
 
 | ID | 优先级 | 硬门槛 | 视觉债 | 状态 | 本轮动作 | 改动摘要（路径/行为） | 验证 | 规格/工单 | 更新于 |
 |----|--------|--------|--------|------|----------|----------------------|------|-----------|--------|
-| B-1 | P0 | 是 | 否 | done | 诚实标注第一刀 | `artifactKind` + PDF/邮件文案 + FE Alert/Badge · `export_layout.py` · `DashboardSchedulePanel.tsx` · `ScheduleHistoryTable.tsx` | vitest 29/29 · pytest 4/4 | — | 2026-07-31 |
-| B-2 | P1 | 否 | 否 | open | — | — | — | — | 2026-07-31 |
-| B-3 | P1 | 否 | 否 | done | 复制配置新建 | `SchedulePanel.tsx` · `DashboardSchedulePanel.tsx` · `scheduleFormUtils.ts` | vitest 29/29 | — | 2026-07-31 |
+| B-1 | P0 | 是 | 否 | done | 诚实标注第一刀 | `artifactKind` + PDF/邮件文案 + FE Alert/Badge | vitest 31/31 · pytest | — | 2026-07-31 |
+| B-2 | P1 | 否 | 否 | done | Hub 模板就绪 Badge | `defaultDataSourceId` · `POST /catalog/templates/readiness` · `ReportCenterPage` | vitest + pytest | — | 2026-07-31 |
+| B-3 | P1 | 否 | 否 | done | 复制配置新建 | `SchedulePanel.tsx` · `DashboardSchedulePanel.tsx` | vitest 31/31 | — | 2026-07-31 |
 | B-4 | P1 | 否 | 否 | done | SMTP 健康检查 | `GET /schedules/delivery-health` · `ScheduleDeliveryHealthAlert.tsx` | pytest + vitest | — | 2026-07-31 |
-| B-5 | P1 | 否 | 否 | open | — | — | — | — | 2026-07-31 |
+| B-5 | P1 | 否 | 否 | done | 预制 onboarding | `PrefabReportsEmptyPreview` DEV_REPORT_SEED 步骤 | vitest | — | 2026-07-31 |
 | B-6 | P2 | 否 | 是 | open | — | — | — | — | 2026-07-31 |
 | B-7 | P2 | 否 | 否 | open | — | — | — | — | 2026-07-31 |
-| B-8 | P1 | 否 | 否 | done | 近期失败面板 | `ScheduleRecentFailuresPanel.tsx` · `GET /executions/recent-failures` | vitest | — | 2026-07-31 |
-| B-9 | P2 | 否 | 否 | open | — | — | — | — | 2026-07-31 |
-| B-10 | P2 | 否 | 否 | open | — | — | — | — | 2026-07-31 |
-| B-11 | P2 | 否 | 否 | open | — | — | — | — | 2026-07-31 |
+| B-8 | P1 | 否 | 否 | done | 近期失败面板 | `ScheduleRecentFailuresPanel.tsx` | vitest | — | 2026-07-31 |
+| B-9 | P2 | 否 | 否 | done | 导出下载 smoke | `ReportExportCard.smoke.test.tsx` | vitest | — | 2026-07-31 |
+| B-10 | P2 | 否 | 否 | done | Hub 预制 pinning | `reportCenterPrefs.ts` · Hub Pin 按钮 | vitest | — | 2026-07-31 |
+| B-11 | P2 | 否 | 否 | done | 浏览页编辑门控 | `ReportViewPage` 使用 `report:manage` | vitest | — | 2026-07-31 |
 | B-12 | P2 | 否 | 否 | open | — | — | — | — | 2026-07-31 |
 
 ## 改进建议与方案

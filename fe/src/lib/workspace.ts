@@ -2,9 +2,12 @@
 export const WORKSPACE_HOME_PATH = "/admin/dashboards";
 
 export const ACCOUNT_PROFILE_PATH = "/admin/account/profile";
-export const ACCOUNT_PREFERENCES_PATH = "/admin/account/preferences";
+export const ACCOUNT_THEME_PATH = "/admin/account/theme";
+export const ACCOUNT_LANDING_PATH = "/admin/account/landing";
 export const ACCOUNT_SECURITY_PATH = "/admin/account/security";
-/** @deprecated 兼容旧链接，路由重定向至 preferences */
+/** @deprecated 兼容旧链接，路由重定向至 landing */
+export const ACCOUNT_PREFERENCES_PATH = "/admin/account/preferences";
+/** @deprecated 兼容旧链接，路由重定向至 landing */
 export const ACCOUNT_SETTINGS_PATH = "/admin/account/settings";
 
 /** 个人中心入口（与 profile 同路径） */

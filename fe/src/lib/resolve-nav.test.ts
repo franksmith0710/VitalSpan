@@ -299,7 +299,8 @@ describe("resolveSidebarSections", () => {
     expect(sections[0]?.title).toBe("个人中心");
     expect(sections[0]?.items.map((i) => i.name)).toEqual([
       "个人资料",
-      "偏好设置",
+      "界面主题",
+      "登录入口",
       "安全设置",
     ]);
     expect(isAccountManagementPath(ACCOUNT_SECURITY_PATH)).toBe(true);

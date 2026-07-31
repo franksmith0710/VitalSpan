@@ -34,7 +34,10 @@ function renderPage() {
 
 describe("ReportCenterPage smoke", () => {
   beforeEach(() => {
-    mockApiFetch.mockImplementation(async (path: string) => {
+    mockApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === "/api/v1/reports/catalog/templates/readiness" && init?.method === "POST") {
+        return { items: [{ nodeId: "tpl-1", readiness: "demo" }] };
+      }
       if (path === "/api/v1/reports/prefab/bindings") {
         return { items: [{ bindingKey: "k1", displayName: "预制A", analysisType: "lifecycle" }], total: 1 };
       }
@@ -60,17 +63,14 @@ describe("ReportCenterPage smoke", () => {
     renderPage();
     expect(await screen.findByText("全部报表")).toBeInTheDocument();
     expect(await screen.findByText("月报模板")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "打开并运行" })).toHaveAttribute("href", "/admin/reports/view/tpl-1");
+    expect(screen.getByRole("link", { name: "运行" })).toHaveAttribute("href", "/admin/reports/view/tpl-1");
   });
 
-  it("shows quick links for admin", async () => {
+  it("shows admin overview shortcuts", async () => {
     renderPage();
-    await waitFor(() => expect(screen.getByText("报表模板")).toBeInTheDocument());
-    expect(screen.getByRole("link", { name: /报表调度/ })).toHaveAttribute("href", "/admin/reports/schedules");
-    expect(screen.getByRole("link", { name: /看板定时报告/ })).toHaveAttribute(
-      "href",
-      "/admin/reports/schedules?tab=dashboard",
-    );
+    await waitFor(() => expect(screen.getByText("定时调度")).toBeInTheDocument());
+    expect(screen.getByRole("link", { name: /报表模板/ })).toHaveAttribute("href", "/admin/reports/templates");
+    expect(screen.getByRole("link", { name: /定时调度/ })).toHaveAttribute("href", "/admin/reports/schedules");
   });
 
   it("filters templates by search query", async () => {
@@ -83,7 +83,7 @@ describe("ReportCenterPage smoke", () => {
   it("lists prefab bindings section", async () => {
     renderPage();
     expect(await screen.findByText("预制分析")).toBeInTheDocument();
-    expect(screen.getByText("预制A")).toBeInTheDocument();
+    expect(await screen.findByText("预制A")).toBeInTheDocument();
   });
 
   it("prefab run links to binding deep-link on prefab page", async () => {
@@ -94,6 +94,9 @@ describe("ReportCenterPage smoke", () => {
 
   it("shows compact empty hint when no authorized templates", async () => {
     mockApiFetch.mockImplementation(async (path: string) => {
+      if (path === "/api/v1/reports/catalog/templates/readiness") {
+        return { items: [] };
+      }
       if (path === "/api/v1/reports/prefab/bindings") return { items: [], total: 0 };
       if (path.startsWith("/api/v1/reports/catalog/nodes")) return [];
       return { items: [], total: 0 };

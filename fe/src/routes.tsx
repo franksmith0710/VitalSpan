@@ -12,7 +12,8 @@ import { SyncJobFormPage } from "@/pages/admin/ingestion/SyncJobFormPage";
 import { SyncJobHistoryPage } from "@/pages/admin/ingestion/SyncJobHistoryPage";
 import { EtlRulesPage } from "@/pages/admin/ingestion/EtlRulesPage";
 import { AccountProfilePage } from "@/pages/admin/account/AccountProfilePage";
-import { AccountPreferencesPage } from "@/pages/admin/account/AccountPreferencesPage";
+import { AccountThemePage } from "@/pages/admin/account/AccountThemePage";
+import { AccountLandingPage } from "@/pages/admin/account/AccountLandingPage";
 import { AccountSecurityPage } from "@/pages/admin/account/AccountSecurityPage";
 import { DashboardListPage } from "@/pages/admin/dashboard/DashboardListPage";
 import { LoginPage } from "@/pages/login/LoginPage";
@@ -43,7 +44,7 @@ import { ReportCenterPage } from "@/pages/admin/reports/ReportCenterPage";
 import { ReportViewPage } from "@/pages/admin/reports/ReportViewPage";
 import { DataScreenListPage } from "@/pages/admin/data-screens/DataScreenListPage";
 import { DataScreenViewRedirect } from "@/pages/admin/data-screens/DataScreenViewRedirect";
-import { ACCOUNT_PREFERENCES_PATH } from "@/lib/workspace";
+import { ACCOUNT_LANDING_PATH } from "@/lib/workspace";
 import { withRouteSuspense } from "@/lib/routeLazy";
 
 const DashboardEditPage = lazy(() =>
@@ -108,9 +109,11 @@ export function AppRoutes() {
           <Route path="ingestion/sync-jobs/:id/history" element={<RequireCapabilityName capability="datasource:*"><SyncJobHistoryPage /></RequireCapabilityName>} />
           <Route path="ingestion/sync-jobs/:id/etl-rules" element={<RequireCapabilityName capability="datasource:*"><EtlRulesPage /></RequireCapabilityName>} />
           <Route path="account/profile" element={<AccountProfilePage />} />
-          <Route path="account/preferences" element={<AccountPreferencesPage />} />
+          <Route path="account/theme" element={<AccountThemePage />} />
+          <Route path="account/landing" element={<AccountLandingPage />} />
           <Route path="account/security" element={<AccountSecurityPage />} />
-          <Route path="account/settings" element={<Navigate to={ACCOUNT_PREFERENCES_PATH} replace />} />
+          <Route path="account/preferences" element={<Navigate to={ACCOUNT_LANDING_PATH} replace />} />
+          <Route path="account/settings" element={<Navigate to={ACCOUNT_LANDING_PATH} replace />} />
           <Route path="account" element={<Navigate to="/admin/account/profile" replace />} />
           <Route path="dashboards" element={<DashboardListPage />} />
           <Route path="dashboards/:id/edit" element={<Lazy><DashboardEditPage mode="edit" /></Lazy>} />
@@ -193,7 +196,7 @@ export function AppRoutes() {
           <Route path="datasets" element={<RequireCapabilityName capability="dataset:*"><DatasetListPage /></RequireCapabilityName>} />
           <Route path="datasets/new" element={<RequireCapabilityName capability="dataset:*"><DatasetFormPage mode="create" /></RequireCapabilityName>} />
           <Route path="datasets/:id/edit" element={<RequireCapabilityName capability="dataset:*"><DatasetFormPage mode="edit" /></RequireCapabilityName>} />
-          <Route path="me/views" element={<Navigate to={ACCOUNT_PREFERENCES_PATH} replace />} />
+          <Route path="me/views" element={<Navigate to={ACCOUNT_LANDING_PATH} replace />} />
           <Route path="themes/:dashboardId" element={<RequireCapabilityName capability="theme:*"><ThemeAnalysisPage /></RequireCapabilityName>} />
           <Route path="system/roles" element={<RequireCapabilityName capability="system:*"><RoleListPage /></RequireCapabilityName>} />
           <Route path="system/users" element={<RequireCapabilityName capability="system:*"><UserListPage /></RequireCapabilityName>} />

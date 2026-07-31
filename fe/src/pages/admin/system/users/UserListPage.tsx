@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import {
   ListPagePagination,
@@ -10,34 +9,18 @@ import {
 } from "@/components/layout/list-page-kit";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Sheet,
-  SheetContent,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
-import { mapUserError } from "./userErrors";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { useListPagination } from "@/lib/list-pagination";
+import { CreateUserDialog } from "./CreateUserDialog";
+import { UserManageSheet } from "./UserManageSheet";
 
 type UserOut = { id: string; username: string };
-type RoleOut = { id: string; code: string; name: string; isActive?: boolean };
+type RoleOut = { id: string; code: string; name: string };
 
 function UserRoleBadges({ userId }: { userId: string }) {
   const { data } = useQuery({
@@ -58,14 +41,10 @@ function UserRoleBadges({ userId }: { userId: string }) {
 }
 
 export function UserListPage() {
-  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
-  const [newUsername, setNewUsername] = useState("");
-  const [createError, setCreateError] = useState<string | null>(null);
   const [sheetUser, setSheetUser] = useState<UserOut | null>(null);
-  const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
   const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -98,75 +77,11 @@ export function UserListPage() {
 
   const total = data?.total ?? 0;
 
-  const { data: allRoles } = useQuery({
-    queryKey: queryKeys.roles.list({ limit: 500, offset: 0 }),
-    queryFn: () =>
-      apiFetch<{ items: RoleOut[] }>("/api/v1/roles?limit=500&offset=0").then((r) => r.items),
-    enabled: Boolean(sheetUser),
-  });
-
-  const { data: boundRoles, isLoading: rolesLoading } = useQuery({
-    queryKey: sheetUser ? queryKeys.users.roles(sheetUser.id) : ["noop"],
-    queryFn: () =>
-      apiFetch<{ items: RoleOut[] }>(`/api/v1/users/${sheetUser!.id}/roles`).then((r) => r.items),
-    enabled: Boolean(sheetUser),
-  });
-
-  useEffect(() => {
-    if (boundRoles) setSelectedRoleIds(boundRoles.map((r) => r.id));
-  }, [boundRoles]);
-
-  const openSheet = (user: UserOut) => {
-    setSheetUser(user);
-    setActionError(null);
-  };
-
-  const createMutation = useMutation({
-    mutationFn: async () => {
-      const username = newUsername.trim();
-      if (!username) throw new Error("请输入用户名");
-      await apiFetch("/api/v1/users", {
-        method: "POST",
-        body: JSON.stringify({ username }),
-      });
-    },
-    onSuccess: async () => {
-      toast.success("用户已创建");
-      setCreateOpen(false);
-      setNewUsername("");
-      setCreateError(null);
-      await queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
-    },
-    onError: (err) => setCreateError(mapUserError(err)),
-  });
-
-  const saveRolesMutation = useMutation({
-    mutationFn: async () => {
-      if (!sheetUser) return;
-      await apiFetch(`/api/v1/users/${sheetUser.id}/roles`, {
-        method: "PUT",
-        body: JSON.stringify({ role_ids: selectedRoleIds }),
-      });
-    },
-    onSuccess: async () => {
-      toast.success("角色已更新");
-      setSheetUser(null);
-      await queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
-    },
-    onError: (err) => setActionError(mapUserError(err)),
-  });
-
-  const toggleRole = (roleId: string, checked: boolean) => {
-    setSelectedRoleIds((prev) =>
-      checked ? [...prev, roleId] : prev.filter((id) => id !== roleId),
-    );
-  };
-
   return (
     <AdminPageShell
       layout="list"
       title="用户管理"
-      description="查看用户并分配角色。"
+      description="创建用户、分配角色与组织归属，并可重置登录密码。"
       actions={
         <Button type="button" variant="primary" onClick={() => setCreateOpen(true)}>
           创建用户
@@ -245,9 +160,12 @@ export function UserListPage() {
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() => openSheet(row)}
+                            onClick={() => {
+                              setSheetUser(row);
+                              setActionError(null);
+                            }}
                           >
-                            管理角色
+                            管理
                           </Button>
                         </td>
                       </tr>
@@ -269,77 +187,12 @@ export function UserListPage() {
         ) : null}
       </ListPageSection>
 
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-md">
-          <DialogHeader className="border-b border-gray-100 px-6 py-5 dark:border-white/[0.06]">
-            <DialogTitle>创建用户</DialogTitle>
-          </DialogHeader>
-          <div className="px-6 py-5">
-            <div className="grid gap-2">
-            <Label htmlFor="new-username">用户名</Label>
-            <Input
-              id="new-username"
-              value={newUsername}
-              onChange={(e) => setNewUsername(e.target.value)}
-            />
-            {createError ? (
-              <p className="text-theme-xs text-error-600">{createError}</p>
-            ) : null}
-            </div>
-          </div>
-          <DialogFooter className="px-6 py-4">
-            <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
-              取消
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              disabled={createMutation.isPending}
-              onClick={() => createMutation.mutate()}
-            >
-              {createMutation.isPending ? "保存中…" : "保存"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Sheet open={Boolean(sheetUser)} onOpenChange={(o) => !o && setSheetUser(null)}>
-        <SheetContent className="w-full sm:max-w-md">
-          <SheetHeader>
-            <SheetTitle>角色绑定 — {sheetUser?.username}</SheetTitle>
-          </SheetHeader>
-          <ScrollArea className="mt-4 h-[min(60vh,400px)] pr-4">
-            <div className="grid gap-3" aria-label="选择角色">
-              {rolesLoading ? <Skeleton className="h-8 w-full" /> : null}
-              {allRoles?.map((role) => (
-                <label
-                  key={role.id}
-                  className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 px-3 py-2 dark:border-gray-800"
-                >
-                  <Checkbox
-                    checked={selectedRoleIds.includes(role.id)}
-                    onCheckedChange={(c) => toggleRole(role.id, c === true)}
-                    aria-label={role.name}
-                  />
-                  <span className="text-theme-sm">{role.name}</span>
-                  <span className="ml-auto font-mono text-theme-xs text-gray-500">{role.code}</span>
-                </label>
-              ))}
-            </div>
-          </ScrollArea>
-          <SheetFooter className="mt-4">
-            <Button
-              type="button"
-              variant="primary"
-              className="w-full"
-              disabled={saveRolesMutation.isPending}
-              onClick={() => saveRolesMutation.mutate()}
-            >
-              {saveRolesMutation.isPending ? "保存中…" : "保存角色绑定"}
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+      <CreateUserDialog open={createOpen} onOpenChange={setCreateOpen} />
+      <UserManageSheet
+        user={sheetUser}
+        onOpenChange={(open) => !open && setSheetUser(null)}
+        onActionError={setActionError}
+      />
     </AdminPageShell>
   );
 }

@@ -23,6 +23,7 @@ from app.metadata.physical.errors import PhysicalTableError
 from app.metadata.physical.schemas import PhysicalTableRegisterFromSchemaIn
 from app.reports.catalog import service as catalog_service
 from app.reports.catalog.schemas import CatalogNodeCreate
+from app.reports.errors import ReportExtensionError
 from app.reports.extension.schemas import ExtensionConfigUpsert, MetricAdjustment
 from app.reports.extension import service as extension_service
 from app.reports.prefab.seed import seed_builtin_prefab_bindings
