@@ -8,6 +8,7 @@ import { isDataScreenLayout } from "@/lib/dataScreenLayout";
 import { DashboardLayoutPreview } from "./DashboardLayoutPreview";
 import { DataScreenPresenter } from "./screen/DataScreenPresenter";
 import { prepareLayoutForListPreview } from "./stylePipeline";
+import { TemplateGridFitPreview } from "@/components/dashboard/templates/TemplateGridFitPreview";
 import type { DashboardLayout } from "./layoutUtils";
 
 type DashboardListCardPreviewProps = {
@@ -118,10 +119,19 @@ export function DashboardListCardPreview({
           {isScreen ? (
             <DataScreenPresenter
               layout={resolvedLayout}
-              presentationMode="fit"
+              presentationMode="fill"
               geo3dRenderTier="thumbnail"
               className="pointer-events-none h-full min-h-0 select-none"
             />
+          ) : resolvedLayout.version === 1 ? (
+            <TemplateGridFitPreview layout={resolvedLayout} fitMode="card">
+              <DashboardLayoutPreview
+                layout={resolvedLayout}
+                scaleMode="component"
+                geo3dRenderTier="thumbnail"
+                className="pointer-events-none min-h-0 select-none"
+              />
+            </TemplateGridFitPreview>
           ) : (
             <DashboardLayoutPreview
               layout={resolvedLayout}

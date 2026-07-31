@@ -12,10 +12,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { TemplateCardPreview } from "@/components/dashboard/templates/TemplateCardPreview";
 import { TemplatePreviewDialog } from "@/components/dashboard/templates/TemplatePreviewDialog";
-import { TemplatePreviewFooter } from "@/components/dashboard/templates/TemplatePreviewFooter";
 import {
+  categoryLabel,
   resolveTemplateThumbnail,
+  statusLabel,
+  surfaceLabel,
   TEMPLATE_ACTIONS,
+  visibilityLabel,
 } from "@/components/dashboard/templates/templateLabels";
 import {
   exportTemplateEnvelope,
@@ -23,7 +26,14 @@ import {
 } from "@/lib/dashboardTemplates";
 import { mapApiError } from "@/lib/apiError";
 import { downloadJsonFile } from "@/lib/exportLayoutJson";
-import { cn } from "@/lib/utils";
+import {
+  HUB_CARD_BODY_CLASS,
+  HUB_CARD_PREVIEW_FRAME_CLASS,
+  HUB_CARD_SHELL_CLASS,
+  HUB_CARD_SKELETON_BODY_CLASS,
+  HUB_CARD_SKELETON_PREVIEW_CLASS,
+  hubCardPreviewFrameStyle,
+} from "@/components/dashboard/hubCardUi";
 
 type VizTemplateCardProps = {
   item: DashboardTemplateListItem;
@@ -56,6 +66,12 @@ export function VizTemplateCard({
   const showPublish = canManage && item.status === "draft";
   const showArchive =
     canManage && item.status === "published" && item.visibility !== "builtin";
+  const metaParts = [
+    categoryLabel(item.categoryKey),
+    visibilityLabel(item.visibility),
+    item.status !== "published" ? statusLabel(item.status) : null,
+  ].filter(Boolean);
+  const secondaryLine = item.description ?? metaParts.join(" · ");
 
   const exportMutation = useMutation({
     mutationFn: () => exportTemplateEnvelope(item.id),
@@ -73,16 +89,8 @@ export function VizTemplateCard({
   };
 
   return (
-    <article
-      className={cn(
-        "group flex flex-col overflow-hidden rounded-xl border bg-white shadow-theme-xs",
-        "transition-all duration-300 hover:-translate-y-0.5 hover:shadow-theme-md",
-        "border-gray-200 dark:border-gray-800 dark:bg-white/[0.03]",
-        "hover:border-brand-200 dark:hover:border-brand-500/40",
-      )}
-      data-testid={`viz-template-card-${item.id}`}
-    >
-      <div className="relative aspect-[16/10] overflow-hidden border-b border-gray-100 dark:border-white/[0.06]">
+    <article className={HUB_CARD_SHELL_CLASS} data-testid={`viz-template-card-${item.id}`}>
+      <div className={HUB_CARD_PREVIEW_FRAME_CLASS} style={hubCardPreviewFrameStyle()}>
         <TemplateCardPreview
           templateId={item.id}
           surfaceKind={item.surfaceKind}
@@ -90,85 +98,80 @@ export function VizTemplateCard({
           eager={previewEager}
           className="h-full"
         />
-        <div
-          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-gray-900/10 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:from-black/30"
-          aria-hidden
-        />
       </div>
 
-      <div className="flex flex-col gap-1.5 p-2.5">
-        <div className="min-w-0 space-y-1">
-          <h2 className="line-clamp-1 text-theme-sm font-semibold text-gray-900 dark:text-white">
-            {item.name}
-          </h2>
-          <TemplatePreviewFooter
-            surfaceKind={item.surfaceKind}
-            categoryKey={item.categoryKey}
-            visibility={item.visibility}
-            status={item.status}
-          />
-          {item.description ? (
-            <p className="line-clamp-2 text-theme-xs leading-snug text-gray-500 dark:text-gray-400">
-              {item.description}
-            </p>
-          ) : null}
+      <div className={HUB_CARD_BODY_CLASS}>
+        <div className="flex min-w-0 items-start gap-1.5">
+          <div className="min-w-0 flex-1">
+            <h2 className="truncate text-theme-sm font-semibold text-gray-900 dark:text-white">
+              {item.name}
+            </h2>
+            {secondaryLine ? (
+              <p className="mt-0.5 truncate text-theme-xs text-gray-500 dark:text-gray-400">
+                {secondaryLine}
+              </p>
+            ) : null}
+          </div>
+          <span className="shrink-0 rounded bg-gray-100 px-1.5 py-px text-[10px] font-medium leading-4 text-gray-500 dark:bg-white/[0.06] dark:text-gray-400">
+            {surfaceLabel(item.surfaceKind)}
+          </span>
         </div>
 
-        <div className="flex items-center gap-1.5 pt-0.5">
-          <Button
-            type="button"
-            size="sm"
-            variant="primary"
-            className="h-8 px-3"
-            disabled={pending}
-            onClick={onUse}
-          >
-            {TEMPLATE_ACTIONS.use}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="h-8 px-3"
-            disabled={pending}
-            onClick={() => setPreviewOpen(true)}
-          >
-            <Eye className="size-3.5" aria-hidden />
-            {TEMPLATE_ACTIONS.preview}
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <IconButton
-                type="button"
-                size="xs"
-                variant="outline"
-                disabled={pending || exporting}
-                aria-label="更多操作"
-              >
-                <MoreHorizontal className="size-3.5" aria-hidden />
-              </IconButton>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-[10rem]">
-              <DropdownMenuItem disabled={exporting} onClick={handleExport}>
-                <Download className="size-4" aria-hidden />
-                {TEMPLATE_ACTIONS.export}
-              </DropdownMenuItem>
-              {showPublish ? (
-                <DropdownMenuItem disabled={pending} onClick={onPublish}>
-                  {TEMPLATE_ACTIONS.publish}
+        <div className="flex items-center gap-1.5">
+          <div className="ml-auto flex shrink-0 items-center gap-1">
+            <Button
+              type="button"
+              size="sm"
+              variant="primary"
+              disabled={pending}
+              onClick={onUse}
+            >
+              {TEMPLATE_ACTIONS.use}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={pending}
+              onClick={() => setPreviewOpen(true)}
+            >
+              <Eye className="size-3.5" aria-hidden />
+              {TEMPLATE_ACTIONS.preview}
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton
+                  type="button"
+                  size="xs"
+                  variant="outline"
+                  disabled={pending || exporting}
+                  aria-label="更多操作"
+                >
+                  <MoreHorizontal className="size-3.5" aria-hidden />
+                </IconButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[10rem]">
+                <DropdownMenuItem disabled={exporting} onClick={handleExport}>
+                  <Download className="size-4" aria-hidden />
+                  {TEMPLATE_ACTIONS.export}
                 </DropdownMenuItem>
-              ) : null}
-              {showArchive ? (
-                <>
-                  {showPublish ? <DropdownMenuSeparator /> : null}
-                  <DropdownMenuItem disabled={pending} onClick={onArchive}>
-                    <Archive className="size-4" aria-hidden />
-                    {TEMPLATE_ACTIONS.archive}
+                {showPublish ? (
+                  <DropdownMenuItem disabled={pending} onClick={onPublish}>
+                    {TEMPLATE_ACTIONS.publish}
                   </DropdownMenuItem>
-                </>
-              ) : null}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                ) : null}
+                {showArchive ? (
+                  <>
+                    {showPublish ? <DropdownMenuSeparator /> : null}
+                    <DropdownMenuItem disabled={pending} onClick={onArchive}>
+                      <Archive className="size-4" aria-hidden />
+                      {TEMPLATE_ACTIONS.archive}
+                    </DropdownMenuItem>
+                  </>
+                ) : null}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 

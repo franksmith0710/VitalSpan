@@ -1,8 +1,13 @@
 import { Link } from "react-router";
 import { Eye, LayoutDashboard, MoreHorizontal, Pencil, Share2, Trash2 } from "lucide-react";
 import {
-  DASHBOARD_LIST_CARD_ASPECT_RATIO,
-} from "@/components/dashboard/DashboardPreviewThumb";
+  HUB_CARD_BODY_CLASS,
+  HUB_CARD_PREVIEW_FRAME_CLASS,
+  HUB_CARD_SHELL_CLASS,
+  HUB_CARD_SKELETON_BODY_CLASS,
+  HUB_CARD_SKELETON_PREVIEW_CLASS,
+  hubCardPreviewFrameStyle,
+} from "@/components/dashboard/hubCardUi";
 import { DashboardListCardPreview } from "@/components/dashboard/DashboardListCardPreview";
 import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
 import { Badge } from "@/components/ui/badge";
@@ -80,19 +85,10 @@ export function DashboardListCard({
   const editPath = isScreen ? dataScreenEditPath(dashboard.id) : `${routeBase}/${dashboard.id}/edit`;
   const sharePath = dashboardSharePath(dashboard.id, isScreen);
   const primaryPath = canEdit ? editPath : viewPath;
-  const previewAspectRatio = DASHBOARD_LIST_CARD_ASPECT_RATIO;
 
   return (
-    <article
-      className={cn(
-        "group flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs transition hover:border-brand-200 hover:shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03] dark:hover:border-brand-500/30",
-        className,
-      )}
-    >
-      <div
-        className="relative overflow-hidden border-b border-gray-100 dark:border-white/[0.06]"
-        style={{ aspectRatio: previewAspectRatio }}
-      >
+    <article className={cn(HUB_CARD_SHELL_CLASS, className)}>
+      <div className={HUB_CARD_PREVIEW_FRAME_CLASS} style={hubCardPreviewFrameStyle()}>
         {onToggleSelect ? (
           <div className="absolute left-2 top-2 z-10 rounded-md bg-white/90 p-0.5 shadow-sm dark:bg-gray-900/90">
             <ListRowCheckbox
@@ -119,7 +115,7 @@ export function DashboardListCard({
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col gap-2 p-3">
+      <div className={HUB_CARD_BODY_CLASS}>
         <div className="flex items-start gap-2">
           <div className="min-w-0 flex-1">
             <Link
@@ -147,6 +143,7 @@ export function DashboardListCard({
               <IconButton
                 variant="ghost"
                 size="sm"
+                showTooltip={false}
                 aria-label={`${dashboard.name} 更多操作`}
                 className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 data-[state=open]:opacity-100"
               >
@@ -186,7 +183,7 @@ export function DashboardListCard({
           </DropdownMenu>
         </div>
 
-        <div className="mt-auto flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Badge variant="light" color="light" size="sm">
             {widgetCount} 个组件
           </Badge>
@@ -201,9 +198,9 @@ export function DashboardListCard({
 
 export function DashboardListCardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-      <div className="aspect-[16/10] animate-pulse bg-gray-100 dark:bg-white/[0.04]" />
-      <div className="space-y-2 p-3">
+    <div className={cn(HUB_CARD_SHELL_CLASS, "shadow-none")}>
+      <div className={HUB_CARD_SKELETON_PREVIEW_CLASS} />
+      <div className={HUB_CARD_SKELETON_BODY_CLASS}>
         <div className="h-4 w-2/3 animate-pulse rounded bg-gray-100 dark:bg-white/[0.06]" />
         <div className="h-3 w-full animate-pulse rounded bg-gray-100 dark:bg-white/[0.04]" />
         <div className="h-5 w-1/3 animate-pulse rounded bg-gray-100 dark:bg-white/[0.04]" />

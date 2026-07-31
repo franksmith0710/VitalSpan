@@ -144,7 +144,10 @@ def semi_real_execute_schedule(
         error_message = delivery.get("error") or "SMTP delivery not configured"
     else:
         status = "semi_real_delivery_degraded"
-        error_message = delivery.get("error")
+        error_message = delivery.get("error") or next(
+            (step.get("error") for step in delivery.get("deliverySteps", []) if step.get("error")),
+            None,
+        )
     out = ScheduleExecuteOut(
         executionId=execution_id,
         scheduleId=schedule_id,

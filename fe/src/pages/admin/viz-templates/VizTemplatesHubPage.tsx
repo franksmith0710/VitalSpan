@@ -40,18 +40,24 @@ import { queryKeys } from "@/lib/queryKeys";
 import { dataScreenEditPath } from "@/lib/dataScreenLayout";
 import { useAuth } from "@/context/auth-context";
 import { sessionUserFromMe } from "@/lib/session";
+import {
+  HUB_CARD_SHELL_CLASS,
+  HUB_CARD_SKELETON_BODY_CLASS,
+  HUB_CARD_SKELETON_PREVIEW_CLASS,
+} from "@/components/dashboard/hubCardUi";
+import { cn } from "@/lib/utils";
 
 function TemplateCardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
-      <Skeleton className="aspect-[16/10] w-full rounded-none" />
-      <div className="space-y-1.5 p-2.5">
+    <div className={cn(HUB_CARD_SHELL_CLASS, "shadow-none")}>
+      <Skeleton className={cn(HUB_CARD_SKELETON_PREVIEW_CLASS, "rounded-none")} />
+      <div className={HUB_CARD_SKELETON_BODY_CLASS}>
         <Skeleton className="h-4 w-2/3" />
         <Skeleton className="h-3 w-full" />
         <Skeleton className="h-3 w-4/5" />
-        <div className="flex gap-1.5 pt-0.5">
-          <Skeleton className="h-8 w-20" />
-          <Skeleton className="h-8 w-16" />
+        <div className="flex gap-1.5">
+          <Skeleton className="h-9 w-20" />
+          <Skeleton className="h-9 w-16" />
         </div>
       </div>
     </div>

@@ -47,7 +47,7 @@ export function TemplateLayoutLivePreview({
       {isScreen ? (
         <DataScreenPresenter
           layout={layout}
-          presentationMode="fit"
+          presentationMode={variant === "card" ? "fill" : "fit"}
           geo3dRenderTier={effectiveTier}
           className="pointer-events-none h-full min-h-0 select-none"
         />

@@ -98,8 +98,8 @@ describe("PrefabReportsPage smoke", () => {
     });
     renderPage();
     expect(await screen.findByText("暂无预制报表")).toBeInTheDocument();
-    expect(screen.getAllByText(/预制绑定配置/).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByRole("button", { name: "配置首条绑定" })).toBeInTheDocument();
+    expect(screen.getByText("定义绑定键")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "保存绑定" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "暂无预制报表" })).toBeInTheDocument();
     expect(screen.queryByText("运行结果")).not.toBeInTheDocument();
     expect(screen.queryByText("报表导出")).not.toBeInTheDocument();
@@ -155,5 +155,34 @@ describe("PrefabReportsPage smoke", () => {
     await waitFor(() => {
       expect(screen.getByText("无权运行预制报表")).toBeInTheDocument();
     });
+  });
+
+  it("shows entity-not-ready guidance when physical table missing", async () => {
+    const { ApiRequestError } = await import("@/lib/api");
+    mockApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === "/api/v1/reports/prefab/bindings") {
+        return {
+          items: [
+            {
+              bindingKey: "prefab-entity-lifecycle",
+              displayName: "实体生命周期分布",
+              analysisType: "lifecycle",
+              entityTypeCode: "equipment",
+              dimensionCodes: ["status"],
+            },
+          ],
+          total: 1,
+        };
+      }
+      if (path.includes("/run") && init?.method === "POST") {
+        throw new ApiRequestError("no physical table", "RPT_PREFAB_ENTITY_NOT_READY");
+      }
+      return { items: [], total: 0 };
+    });
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole("button", { name: "运行报表 实体生命周期分布" }));
+    expect(await screen.findByText("实体数据尚未就绪")).toBeInTheDocument();
+    expect(screen.getByText(/DEV_REPORT_SEED=1/)).toBeInTheDocument();
   });
 });

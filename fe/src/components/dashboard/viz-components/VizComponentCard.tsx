@@ -20,7 +20,12 @@ import {
 } from "@/components/dashboard/viz-components/componentLabels";
 import { WIDGET_CHART_LABELS } from "@/components/dashboard/widgetIcons";
 import type { VizComponentListItem, VizComponentPayload } from "@/lib/vizComponents";
-import { cn } from "@/lib/utils";
+import {
+  HUB_CARD_BODY_CLASS,
+  HUB_CARD_PREVIEW_FRAME_CLASS,
+  HUB_CARD_SHELL_CLASS,
+  hubCardPreviewFrameStyle,
+} from "@/components/dashboard/hubCardUi";
 
 type VizComponentCardProps = {
   item: VizComponentListItem;
@@ -79,16 +84,8 @@ export function VizComponentCard({
   };
 
   return (
-    <article
-      className={cn(
-        "group flex flex-col overflow-hidden rounded-xl border bg-white shadow-theme-xs",
-        "transition-all duration-300 hover:-translate-y-0.5 hover:shadow-theme-md",
-        "border-gray-200 dark:border-gray-800 dark:bg-white/[0.03]",
-        "hover:border-brand-200 dark:hover:border-brand-500/40",
-      )}
-      data-testid={`viz-component-card-${item.id}`}
-    >
-      <div className="relative aspect-[16/10] overflow-hidden border-b border-gray-100 dark:border-white/[0.06]">
+    <article className={HUB_CARD_SHELL_CLASS} data-testid={`viz-component-card-${item.id}`}>
+      <div className={HUB_CARD_PREVIEW_FRAME_CLASS} style={hubCardPreviewFrameStyle()}>
         <ComponentPayloadPreview
           componentId={item.id}
           componentName={item.name}
@@ -99,7 +96,7 @@ export function VizComponentCard({
         />
       </div>
 
-      <div className="flex flex-col gap-1.5 p-2.5">
+      <div className={HUB_CARD_BODY_CLASS}>
         <div className="flex min-w-0 items-start gap-1.5">
           <div className="min-w-0 flex-1">
             <h2 className="truncate text-theme-sm font-semibold text-gray-900 dark:text-white">
@@ -135,7 +132,7 @@ export function VizComponentCard({
             引用 {referenceCount}
           </button>
           <div className="ml-auto flex shrink-0 items-center gap-1">
-            <Button type="button" size="sm" variant="primary" className="h-7 px-2.5" disabled={pending} asChild>
+            <Button type="button" size="sm" variant="primary" disabled={pending} asChild>
               <Link to={`/admin/viz-components/${item.id}/edit`}>
                 <Pencil className="size-3.5" aria-hidden />
                 {COMPONENT_ACTIONS.edit}
@@ -145,7 +142,6 @@ export function VizComponentCard({
               type="button"
               size="sm"
               variant="outline"
-              className="h-7 px-2.5"
               disabled={pending}
               onClick={onInsert}
             >

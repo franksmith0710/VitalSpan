@@ -85,7 +85,7 @@ export function VizComponentLivePreview({
         <FilterWidget
           widget={widget as LayoutWidget & { filterConfig: NonNullable<typeof widget.filterConfig> }}
           mode="view"
-          shell="grid"
+          shell={compact ? "shape" : "grid"}
           value={widget.filterConfig.defaultValue ?? ""}
           onValueChange={() => undefined}
         />
@@ -94,14 +94,14 @@ export function VizComponentLivePreview({
         <TextWidget
           widget={widget as LayoutWidget & { textConfig: NonNullable<typeof widget.textConfig> }}
           mode="view"
-          shell="grid"
+          shell={compact ? "shape" : "grid"}
         />
       ) : null}
       {widget.type === "media" && widget.mediaConfig ? (
         <MediaWidget
           widget={widget as LayoutWidget & { mediaConfig: NonNullable<typeof widget.mediaConfig> }}
           mode="view"
-          shell="grid"
+          shell={compact ? "shape" : "grid"}
         />
       ) : null}
     </div>

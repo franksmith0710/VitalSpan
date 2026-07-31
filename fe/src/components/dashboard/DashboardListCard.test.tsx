@@ -1,6 +1,11 @@
 import { cleanup, render } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
+
+vi.mock("@/components/dashboard/DashboardListCardPreview", () => ({
+  DashboardListCardPreview: () => <div data-testid="mock-preview" className="h-full" />,
+}));
 import {
   DashboardListCard,
   type DashboardListItem,
@@ -25,6 +30,13 @@ const tallCanvasDashboard: DashboardListItem = {
         y: 4200,
         width: 400,
         height: 300,
+        chartConfig: {
+          chartType: "bar",
+          chartId: "w1",
+          dataSourceId: "00000000-0000-4000-8000-000000000010",
+          mode: "sql",
+          sql: "SELECT 1",
+        },
       },
     ],
     globalFilters: [],
@@ -38,9 +50,11 @@ describe("DashboardListCard", () => {
 
   it("uses fixed list card aspect ratio regardless of canvas height", () => {
     const { container } = render(
-      <MemoryRouter>
-        <DashboardListCard dashboard={tallCanvasDashboard} canEdit />
-      </MemoryRouter>,
+      <TooltipProvider delayDuration={0}>
+        <MemoryRouter>
+          <DashboardListCard dashboard={tallCanvasDashboard} canEdit />
+        </MemoryRouter>
+      </TooltipProvider>,
     );
 
     const preview = container.querySelector("article > div");

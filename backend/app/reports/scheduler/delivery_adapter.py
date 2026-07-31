@@ -1,9 +1,25 @@
 from __future__ import annotations
 
+import logging
 import smtplib
 from email.message import EmailMessage
 
 from app.core.config import Settings, get_settings
+
+logger = logging.getLogger(__name__)
+
+
+def _format_smtp_error(exc: OSError, settings: Settings) -> str:
+    host = settings.rpt_smtp_host
+    port = settings.rpt_smtp_port
+    if isinstance(exc, ConnectionRefusedError) or "Connection refused" in str(exc):
+        return (
+            f"邮件投递失败：无法连接 SMTP {host}:{port}。"
+            "本地开发请启动 MailHog（端口 1025）或配置 RPT_SMTP_* 环境变量。"
+        )
+    if "timed out" in str(exc).lower():
+        return f"邮件投递失败：连接 SMTP {host}:{port} 超时，请检查网络与防火墙。"
+    return f"邮件投递失败：{exc}"
 
 
 def _send_smtp(
@@ -24,12 +40,14 @@ def _send_smtp(
                 smtp.login(settings.rpt_smtp_user, settings.rpt_smtp_password)
             smtp.send_message(msg)
     except OSError as exc:
+        error = _format_smtp_error(exc, settings)
+        logger.warning("SMTP delivery failed: %s", error)
         return {
             "channel": "email",
             "status": "failed",
             "attempt": 1,
             "mode": "smtp",
-            "error": str(exc),
+            "error": error,
             "recipients": to_addrs,
         }
     return {
@@ -85,9 +103,11 @@ def deliver_artifact(
     step = _send_smtp(artifact_ref, settings, recipient_emails=recipient_emails)
     steps = [step]
     overall = "delivered" if step["status"] == "delivered" else "degraded"
+    error = step.get("error") if step["status"] != "delivered" else None
     return {
         "status": overall,
         "attempts": 1,
         "deliverySteps": steps,
         "deliveryMode": "smtp",
+        "error": error,
     }

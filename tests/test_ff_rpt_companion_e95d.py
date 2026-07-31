@@ -221,6 +221,20 @@ def test_rpt005_delivery_smtp_mode(client: TestClient):
     assert result["deliverySteps"][0]["mode"] == "smtp"
 
 
+def test_rpt005_delivery_smtp_connection_refused_surfaces_error():
+    """RPT-005: SMTP 连接失败时返回可读中文错误并写入顶层 error。"""
+    settings = get_settings()
+    with patch(
+        "app.reports.scheduler.delivery_adapter.smtplib.SMTP",
+        side_effect=ConnectionRefusedError(111, "Connection refused"),
+    ):
+        result = deliver_artifact("semi://reports/x/y", ["email"], None, settings)
+    assert result["status"] == "degraded"
+    assert result["deliverySteps"][0]["status"] == "failed"
+    assert "邮件投递失败" in (result.get("error") or "")
+    assert "MailHog" in (result.get("error") or "")
+
+
 def test_rpt007_batch_export_job_poll(client: TestClient):
     """RPT-007: async batch export job pending → ready + download."""
     node_id = _put_template(client)

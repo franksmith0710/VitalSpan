@@ -110,4 +110,29 @@ describe("VizComponentChartPreviewShell", () => {
     expect(within(shell).queryByRole("heading", { level: 4 })).not.toBeInTheDocument();
     expect(within(shell).getByTestId("chart-body")).toBeInTheDocument();
   });
+
+  it("omits grid border chrome in compact hub-card mode", () => {
+    const widget: LayoutWidget = {
+      id: "vc-card-2",
+      type: "chart",
+      title: "3dmap",
+      colSpan: 12,
+      rowSpan: 8,
+      order: 0,
+      chartConfig: defaultChartConfig("map-3d"),
+    };
+
+    const { container } = render(
+      <VizComponentChartPreviewShell
+        widget={widget as LayoutWidget & { chartConfig: NonNullable<typeof widget.chartConfig> }}
+        compact
+      >
+        <div>chart</div>
+      </VizComponentChartPreviewShell>,
+    );
+
+    const shell = within(container).getByTestId("viz-component-chart-shell");
+    expect(shell.className).not.toContain("rounded-xl");
+    expect(shell.className).not.toContain("border-gray-200");
+  });
 });

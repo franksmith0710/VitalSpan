@@ -1,11 +1,12 @@
 import { Link } from "react-router";
 import { BarChart3, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ListGhostEmptyState, PanelEmptyStateSteps } from "@/components/ui/panel-empty-state";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PanelEmptyState, PanelEmptyStateSteps } from "@/components/ui/panel-empty-state";
+import { PrefabBindingForm } from "./PrefabBindingForm";
 
 type PrefabReportsEmptyPreviewProps = {
   isAdmin?: boolean;
-  onConfigure?: () => void;
 };
 
 const ADMIN_STEPS = [
@@ -29,34 +30,58 @@ const ADMIN_STEPS = [
   },
 ] as const;
 
-export function PrefabReportsEmptyPreview({ isAdmin, onConfigure }: PrefabReportsEmptyPreviewProps) {
+/** 非管理员：与 Report Center 空态同尺度 */
+export function PrefabReportsEmptyPreview({ isAdmin }: PrefabReportsEmptyPreviewProps) {
   return (
-    <ListGhostEmptyState
+    <PanelEmptyState
       icon={<BarChart3 className="size-7" aria-hidden />}
       title="暂无预制报表"
       description={
         isAdmin
-          ? "尚未配置系统预置分析。展开下方「预制绑定配置」添加首条绑定后即可运行。"
+          ? "尚未配置系统预置分析，请联系具备报表管理权限的管理员添加绑定。"
           : "系统预置的分析报表尚未配置，请联系管理员添加实体与分析类型绑定。"
       }
       headingId="prefab-empty-title"
-      layout="cards"
-      rows={6}
+      size="md"
+      variant="framed"
       action={
-        isAdmin ? (
-          <Button type="button" variant="primary" size="sm" onClick={onConfigure}>
-            配置首条绑定
-          </Button>
-        ) : (
-          <Button type="button" variant="outline" size="sm" asChild>
+        !isAdmin ? (
+          <Button type="button" variant="primary" size="sm" asChild>
             <Link to="/admin/reports/center">返回全部报表</Link>
           </Button>
-        )
+        ) : undefined
       }
     />
   );
 }
 
-export function PrefabReportsAdminSteps() {
-  return <PanelEmptyStateSteps steps={ADMIN_STEPS} />;
+/** 管理员首配：Report Center 分区 + 标准步骤卡片 + 表单 Card */
+export function PrefabReportsAdminOnboarding() {
+  return (
+    <div className="space-y-6">
+      <PanelEmptyState
+        icon={<BarChart3 className="size-7" aria-hidden />}
+        title="暂无预制报表"
+        description="完成下方绑定配置并保存后，即可在本页运行系统预置分析。"
+        headingId="prefab-empty-title"
+        size="md"
+        variant="framed"
+      />
+
+      <section className="space-y-3">
+        <h2 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">配置步骤</h2>
+        <PanelEmptyStateSteps steps={ADMIN_STEPS} />
+      </section>
+
+      <Card className="shadow-theme-xs">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-theme-sm font-semibold">绑定配置</CardTitle>
+          <CardDescription>填写标识、实体与分析维度，保存后即可运行预制分析。</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PrefabBindingForm />
+        </CardContent>
+      </Card>
+    </div>
+  );
 }

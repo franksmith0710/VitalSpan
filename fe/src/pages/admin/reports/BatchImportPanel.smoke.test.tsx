@@ -31,4 +31,21 @@ describe("BatchImportPanel smoke", () => {
     await user.upload(input, file);
     expect(await screen.findByText(/无法解析 JSON/)).toBeInTheDocument();
   });
+
+  it("imports valid json and shows created count", async () => {
+    const user = userEvent.setup();
+    render(wrap(<BatchImportPanel readOnly={false} />));
+    const input = screen.getByLabelText("选择批量导入 JSON 文件");
+    const payload = JSON.stringify({ items: [{ name: "批量节点 A", templateKind: "excel" }] });
+    const file = new File([payload], "batch.json", { type: "application/json" });
+    Object.defineProperty(file, "text", { value: async () => payload });
+    await user.upload(input, file);
+    expect(await screen.findByText("批量节点 A")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "开始导入" }));
+    expect(await screen.findByText(/成功创建 1 项/)).toBeInTheDocument();
+    expect(mockApiFetch).toHaveBeenCalledWith(
+      "/api/v1/reports/batch",
+      expect.objectContaining({ method: "POST" }),
+    );
+  });
 });

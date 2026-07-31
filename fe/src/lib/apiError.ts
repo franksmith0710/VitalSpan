@@ -168,6 +168,7 @@ const CODE_MESSAGES: Record<string, string> = {
   RPT_TEMPLATE_IN_USE: "模板仍被目录引用",
   RPT_SCHEDULE_FORBIDDEN: "无权操作报表调度",
   RPT_PREFAB_FORBIDDEN: "无权操作预制报表绑定",
+  RPT_PREFAB_ENTITY_NOT_READY: "实体物理表尚未就绪，无法运行预制分析",
   RPT_EXT_FORBIDDEN: "无权修改报表扩展",
   AUDIT_FORBIDDEN: "无权查询审计日志",
   CONFIG_NOT_FOUND: "查询配置不存在",
@@ -219,6 +220,10 @@ const MESSAGE_PREFIX_MAP: Array<[RegExp, string]> = [
   [/^Org tree depth cannot exceed/i, "组织树层级超过上限"],
   [/^Invalid dashboardId/i, "看板 ID 无效"],
   [/^Unknown connector type:/i, "不支持的连接器类型"],
+  [/^邮件投递失败：/i, "邮件投递失败，请检查 SMTP 配置或启动 MailHog"],
+  [/SMTP delivery not configured/i, "邮件投递未配置，请设置 RPT_SMTP_* 环境变量"],
+  [/delivery failed/i, "邮件投递失败"],
+  [/delivery degraded/i, "邮件投递降级（部分渠道未送达）"],
 ];
 
 const GENERIC_FAILURE = "操作失败，请稍后重试";

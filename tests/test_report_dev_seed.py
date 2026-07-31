@@ -124,6 +124,8 @@ def test_schedule_with_recipients_and_source_fields(client: TestClient):
 
 
 def test_dashboard_export_job(client: TestClient):
+    import uuid as _uuid
+
     dash = client.post(
         "/api/v1/dashboards",
         headers=AUTH,
@@ -131,6 +133,34 @@ def test_dashboard_export_job(client: TestClient):
     )
     assert dash.status_code == 201, dash.text
     dash_id = dash.json()["id"]
+    widget_id = str(_uuid.uuid4())
+    layout = client.put(
+        f"/api/v1/dashboards/{dash_id}/layout",
+        headers=AUTH,
+        json={
+            "layoutJson": {
+                "version": 1,
+                "widgets": [
+                    {
+                        "id": widget_id,
+                        "type": "chart",
+                        "title": "Sales KPI",
+                        "colSpan": 12,
+                        "rowSpan": 1,
+                        "order": 0,
+                        "chartConfig": {
+                            "chartType": "table",
+                            "dataSourceId": str(_uuid.uuid4()),
+                            "mode": "sql",
+                            "sql": "SELECT 1 AS id",
+                        },
+                    }
+                ],
+                "globalFilters": [],
+            }
+        },
+    )
+    assert layout.status_code == 200, layout.text
     job = client.post(
         f"/api/v1/dashboards/{dash_id}/export-jobs",
         headers=AUTH,
@@ -140,4 +170,18 @@ def test_dashboard_export_job(client: TestClient):
     assert job.json()["status"] == "ready"
     dl = client.get(job.json()["downloadUrl"], headers=AUTH)
     assert dl.status_code == 200
-    assert len(dl.content) > 0
+    content = dl.content
+    assert content.startswith(b"%PDF")
+    assert b"Export Dash" in content
+    assert b"Sales KPI" in content
+    assert b"Widget inventory" in content
+
+    excel_job = client.post(
+        f"/api/v1/dashboards/{dash_id}/export-jobs",
+        headers=AUTH,
+        json={"format": "excel"},
+    )
+    assert excel_job.status_code == 201, excel_job.text
+    excel_dl = client.get(excel_job.json()["downloadUrl"], headers=AUTH)
+    assert excel_dl.status_code == 200
+    assert b"Sales KPI" in excel_dl.content

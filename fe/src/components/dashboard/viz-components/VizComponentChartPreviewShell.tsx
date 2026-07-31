@@ -45,17 +45,27 @@ export function VizComponentChartPreviewShell({
   const chartType = chartConfig.chartType;
   const Icon = widgetChartIcon(chartType);
   const typeLabel = WIDGET_CHART_LABELS[chartType] ?? chartType;
+  const shellStyle = compact
+    ? {
+        ...shell.style,
+        borderWidth: 0,
+        borderStyle: "none",
+        borderColor: "transparent",
+        backgroundColor: "transparent",
+        boxShadow: "none",
+      }
+    : shell.style;
 
   return (
     <div
       className={cn(
-        gridWidgetShellClassName(true, false),
-        "relative dark:bg-white/[0.03]",
+        gridWidgetShellClassName(!compact, false),
+        !compact && "relative dark:bg-white/[0.03]",
       )}
-      style={shell.style}
+      style={shellStyle}
       data-testid="viz-component-chart-shell"
     >
-      <WidgetShellBackgroundLayers layers={shell} prefix="viz-chart-shell" />
+      {!compact ? <WidgetShellBackgroundLayers layers={shell} prefix="viz-chart-shell" /> : null}
       {!compact && titleVisible ? (
         <div className="relative z-[1] flex shrink-0 items-center gap-2 border-b border-gray-100 px-3 py-2 dark:border-gray-800">
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-gray-100 text-gray-600 dark:bg-white/5 dark:text-gray-400">
@@ -78,12 +88,17 @@ export function VizComponentChartPreviewShell({
           {chartRemark.text}
         </p>
       ) : null}
-      <div className="relative z-[1] flex min-h-0 flex-1 flex-col p-2" style={content.style}>
+      <div
+        className={cn("relative z-[1] flex min-h-0 flex-1 flex-col", !compact && "p-2")}
+        style={content.style}
+      >
         <WidgetShellBackgroundLayers layers={content} prefix="viz-chart-content" />
         <div className="relative z-[1] flex min-h-0 flex-1 flex-col">{children}</div>
         <WidgetShellFrameLayers layers={content} prefix="viz-chart-content" />
       </div>
-      <WidgetShellFrameLayers layers={shell} prefix="viz-chart-shell" zClassName="z-[3]" />
+      {!compact ? (
+        <WidgetShellFrameLayers layers={shell} prefix="viz-chart-shell" zClassName="z-[3]" />
+      ) : null}
     </div>
   );
 }
