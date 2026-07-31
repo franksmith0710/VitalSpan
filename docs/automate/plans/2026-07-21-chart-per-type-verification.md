@@ -26,7 +26,19 @@
 
 ## 2. 标准夹具（Fixture）
 
-所有逐型验收**优先使用下列固定数据集**，便于 DE 对照与回归复现。SQL 模式可用内置 SQLite 演示源或 mock `apiFetch`。
+所有逐型验收**优先使用官方演示包**（`sample_db` @ compose `sample-mysql:3307`），SQL 真理源为 [`backend/app/dashboard/templates/official_demo_sql.py`](../../../backend/app/dashboard/templates/official_demo_sql.py)，物理视图为 `docker/demo-mysql/tables.sql` 中 `vs_official_*` / `de_*` / `gov_*`。Vitest/pytest 仍可用 mock `apiFetch`；集成测见 `tests/test_official_demo_sql.py`。
+
+| 夹具 | sample_db 对象 | 覆盖 chartType |
+|------|----------------|----------------|
+| F1 日销售 | `de_sales_wide` | line / area / bar* / chart-mix* |
+| F2 地区占比 | `vs_official_region_share` | pie* / radar / treemap |
+| F3 省级地图 | `de_map_province` | map / map-3d |
+| F4 桑基/关系 | `vs_official_flow` · `vs_official_graph_edges` | sankey / graph |
+| F5 明细表 | `vs_official_order_detail` | table-info / table-normal / table-pivot |
+| F6 矩阵热力 | `vs_official_matrix_heat` | t-heatmap |
+| F7 单指标 | `vs_official_gauge` · `daily_kpi` | gauge / liquid / kpi |
+| F8 K 线 | `vs_official_stock_ohlc` | stock-line |
+| F9 子弹图 | `vs_official_bullet` | bullet-graph |
 
 ### F1 · 日销售（笛卡尔通用）
 

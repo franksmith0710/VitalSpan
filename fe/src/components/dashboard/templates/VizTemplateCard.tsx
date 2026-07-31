@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { Archive, Download, Eye, MoreHorizontal } from "lucide-react";
+import { Archive, Download, MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Button, IconButton } from "@/components/ui/button";
@@ -28,7 +28,11 @@ import { mapApiError } from "@/lib/apiError";
 import { downloadJsonFile } from "@/lib/exportLayoutJson";
 import {
   HUB_CARD_BODY_CLASS,
+  HUB_CARD_BODY_MORE_TRIGGER_CLASS,
+  HUB_CARD_PREVIEW_CONTENT_CLASS,
   HUB_CARD_PREVIEW_FRAME_CLASS,
+  HUB_CARD_PREVIEW_HOVER_OUTLINE_BTN_CLASS,
+  HUB_CARD_PREVIEW_HOVER_OVERLAY_CLASS,
   HUB_CARD_SHELL_CLASS,
   HUB_CARD_SKELETON_BODY_CLASS,
   HUB_CARD_SKELETON_PREVIEW_CLASS,
@@ -91,13 +95,30 @@ export function VizTemplateCard({
   return (
     <article className={HUB_CARD_SHELL_CLASS} data-testid={`viz-template-card-${item.id}`}>
       <div className={HUB_CARD_PREVIEW_FRAME_CLASS} style={hubCardPreviewFrameStyle()}>
-        <TemplateCardPreview
-          templateId={item.id}
-          surfaceKind={item.surfaceKind}
-          thumbnailSrc={thumbnailSrc}
-          eager={previewEager}
-          className="h-full"
-        />
+        <div className={HUB_CARD_PREVIEW_CONTENT_CLASS}>
+          <TemplateCardPreview
+            templateId={item.id}
+            surfaceKind={item.surfaceKind}
+            thumbnailSrc={thumbnailSrc}
+            eager={previewEager}
+            className="h-full"
+          />
+        </div>
+        <div className={HUB_CARD_PREVIEW_HOVER_OVERLAY_CLASS}>
+          <Button type="button" variant="primary" size="sm" disabled={pending} onClick={onUse}>
+            {TEMPLATE_ACTIONS.use}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className={HUB_CARD_PREVIEW_HOVER_OUTLINE_BTN_CLASS}
+            disabled={pending}
+            onClick={() => setPreviewOpen(true)}
+          >
+            {TEMPLATE_ACTIONS.preview}
+          </Button>
+        </div>
       </div>
 
       <div className={HUB_CARD_BODY_CLASS}>
@@ -117,61 +138,42 @@ export function VizTemplateCard({
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          <div className="ml-auto flex shrink-0 items-center gap-1">
-            <Button
-              type="button"
-              size="sm"
-              variant="primary"
-              disabled={pending}
-              onClick={onUse}
-            >
-              {TEMPLATE_ACTIONS.use}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              disabled={pending}
-              onClick={() => setPreviewOpen(true)}
-            >
-              <Eye className="size-3.5" aria-hidden />
-              {TEMPLATE_ACTIONS.preview}
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  type="button"
-                  size="xs"
-                  variant="outline"
-                  disabled={pending || exporting}
-                  aria-label="更多操作"
-                >
-                  <MoreHorizontal className="size-3.5" aria-hidden />
-                </IconButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-[10rem]">
-                <DropdownMenuItem disabled={exporting} onClick={handleExport}>
-                  <Download className="size-4" aria-hidden />
-                  {TEMPLATE_ACTIONS.export}
+        <div className="flex items-center justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <IconButton
+                type="button"
+                variant="ghost"
+                size="sm"
+                showTooltip={false}
+                disabled={pending || exporting}
+                aria-label={`${item.name} 更多操作`}
+                className={HUB_CARD_BODY_MORE_TRIGGER_CLASS}
+              >
+                <MoreHorizontal className="size-4" aria-hidden />
+              </IconButton>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[10rem]">
+              <DropdownMenuItem disabled={exporting} onClick={handleExport}>
+                <Download className="size-4" aria-hidden />
+                {TEMPLATE_ACTIONS.export}
+              </DropdownMenuItem>
+              {showPublish ? (
+                <DropdownMenuItem disabled={pending} onClick={onPublish}>
+                  {TEMPLATE_ACTIONS.publish}
                 </DropdownMenuItem>
-                {showPublish ? (
-                  <DropdownMenuItem disabled={pending} onClick={onPublish}>
-                    {TEMPLATE_ACTIONS.publish}
+              ) : null}
+              {showArchive ? (
+                <>
+                  {showPublish ? <DropdownMenuSeparator /> : null}
+                  <DropdownMenuItem disabled={pending} onClick={onArchive}>
+                    <Archive className="size-4" aria-hidden />
+                    {TEMPLATE_ACTIONS.archive}
                   </DropdownMenuItem>
-                ) : null}
-                {showArchive ? (
-                  <>
-                    {showPublish ? <DropdownMenuSeparator /> : null}
-                    <DropdownMenuItem disabled={pending} onClick={onArchive}>
-                      <Archive className="size-4" aria-hidden />
-                      {TEMPLATE_ACTIONS.archive}
-                    </DropdownMenuItem>
-                  </>
-                ) : null}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+                </>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 

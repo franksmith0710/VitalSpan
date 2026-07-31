@@ -166,6 +166,8 @@ export type ListGhostEmptyStateProps = {
   headingId?: string;
   rows?: number;
   layout?: ListEmptyPreviewLayout;
+  /** compact：Hub 分区内紧凑高度；default：列表页全高空态 */
+  density?: "default" | "compact";
   className?: string;
 };
 
@@ -178,27 +180,30 @@ export function ListGhostEmptyState({
   headingId,
   rows = 5,
   layout = "table",
+  density = "default",
   className,
 }: ListGhostEmptyStateProps) {
   const isGridLayout = layout === "cards" || layout === "data-screen";
+  const isCompact = density === "compact";
+  const heightClass = isCompact
+    ? "min-h-[260px]"
+    : isGridLayout
+      ? "min-h-[min(480px,58vh)]"
+      : "min-h-[400px]";
+  const padClass = isCompact ? "p-4 sm:p-5" : "p-5 sm:p-6 md:p-8";
 
   return (
     <div
       className={cn(
         "relative w-full overflow-hidden rounded-2xl border border-gray-200/90 bg-gray-50/60 dark:border-gray-800 dark:bg-white/[0.02]",
-        isGridLayout ? "min-h-[min(480px,58vh)]" : "min-h-[400px]",
+        heightClass,
         className,
       )}
       aria-labelledby={headingId}
     >
       <ListEmptyPreviewBackdrop layout={layout} rows={rows} />
 
-      <div
-        className={cn(
-          "relative flex h-full flex-col justify-end p-5 sm:p-6 md:p-8",
-          isGridLayout ? "min-h-[min(480px,58vh)]" : "min-h-[400px]",
-        )}
-      >
+      <div className={cn("relative flex h-full flex-col justify-end", padClass, heightClass)}>
         <ListEmptyHeroPanel
           icon={icon}
           title={title}

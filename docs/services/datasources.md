@@ -21,6 +21,7 @@
 | In | Out |
 |----|-----|
 | 连接配置、方言适配、池化、元数据浏览 L1 API | SQL 语义解析与图表绑定（→ `query`） |
+| 官方演示源 `official-demo-mysql`（`sample_db` 自动注册，供内置可视化模板） | 生产环境业务库直连（非演示包） |
 | CONN-014~016：`probe_readonly_*` + `execute_native_query`（MongoDB find / ES·OS search） | GridFS 写入、集群管理、OpenSearch Dashboards 嵌入 |
 | CONN-023~026（**r249**）：REST API / Excel·CSV 文件 / Db2 / Impala 方言注册与连通链 | OAuth2 专用表单项、文件上传 UI、`query/native/executor` HTTP 出数（companion） |
 | 连接器插件目录 `dialects/`（mysql、postgresql） | Dataset 语义层（四期 → `metadata` + `query`） |
@@ -78,6 +79,13 @@
 见 [api/README.md](../api/README.md) §数据源。
 
 ## 实现笔记
+
+### 官方演示数据源（可视化模板）
+
+- **物理库**：compose `sample-mysql:3307` / `sample_db`；种子与 `vs_official_*` 视图见 `docker/demo-mysql/tables.sql`
+- **元库注册**：启动时 `ensure_official_demo_datasource()`（`ENSURE_OFFICIAL_DEMO_DATASOURCE`，默认开）幂等写入 code **`official-demo-mysql`**
+- **SQL 契约**：内置模板 chart 须引用 `backend/app/dashboard/templates/official_demo_sql.py` + 占位 `__demo:sample_db__`
+- **验收模板**：`builtin-viz-component-gallery`（Hub 默认隐藏，43 种 chartType 各一 widget）
 
 - L1：`data_sources` 表 + CRUD + 凭证 SM4（Fernet 遗留双读，见 `core/crypto/` · ADR-06）+ 双连通测试端点；首期方言 `mysql`；不含连接池与 schema 浏览。
 - r23：`ConnectorRegistry.unregister` + `register_usage_checker` 引用保护；MySQL `dialects/errors.py` 稳定错误码（`MYSQL_*`）；`deleted_at` 软删 L1；列表分页/PATCH；连通性测试进程内 2s 防重 L1（单 worker）；`CredentialDecryptError` 结构化解密失败；test 响应 `traceId`。

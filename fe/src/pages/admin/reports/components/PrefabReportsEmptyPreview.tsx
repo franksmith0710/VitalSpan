@@ -2,7 +2,7 @@ import { Link } from "react-router";
 import { BarChart3, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PanelEmptyState, PanelEmptyStateSteps } from "@/components/ui/panel-empty-state";
+import { PanelEmptyStateSteps, ListGhostEmptyState } from "@/components/ui/panel-empty-state";
 import { PrefabBindingForm } from "./PrefabBindingForm";
 
 type PrefabReportsEmptyPreviewProps = {
@@ -30,11 +30,14 @@ const ADMIN_STEPS = [
   },
 ] as const;
 
-/** 非管理员：与 Report Center 空态同尺度 */
+/** 非管理员：ghost 背景空态 */
 export function PrefabReportsEmptyPreview({ isAdmin }: PrefabReportsEmptyPreviewProps) {
   return (
-    <PanelEmptyState
-      icon={<BarChart3 className="size-7" aria-hidden />}
+    <ListGhostEmptyState
+      layout="cards"
+      density="compact"
+      rows={4}
+      icon={<BarChart3 className="size-8" aria-hidden />}
       title="暂无预制报表"
       description={
         isAdmin
@@ -42,8 +45,6 @@ export function PrefabReportsEmptyPreview({ isAdmin }: PrefabReportsEmptyPreview
           : "系统预置的分析报表尚未配置，请联系管理员添加实体与分析类型绑定。"
       }
       headingId="prefab-empty-title"
-      size="md"
-      variant="framed"
       action={
         !isAdmin ? (
           <Button type="button" variant="primary" size="sm" asChild>
@@ -55,17 +56,18 @@ export function PrefabReportsEmptyPreview({ isAdmin }: PrefabReportsEmptyPreview
   );
 }
 
-/** 管理员首配：Report Center 分区 + 标准步骤卡片 + 表单 Card */
+/** 管理员首配：ghost 引导头 + 步骤 + 表单 Card */
 export function PrefabReportsAdminOnboarding() {
   return (
     <div className="space-y-6">
-      <PanelEmptyState
-        icon={<BarChart3 className="size-7" aria-hidden />}
+      <ListGhostEmptyState
+        layout="cards"
+        density="compact"
+        rows={4}
+        icon={<BarChart3 className="size-8" aria-hidden />}
         title="暂无预制报表"
         description="完成下方绑定配置并保存后，即可在本页运行系统预置分析。"
         headingId="prefab-empty-title"
-        size="md"
-        variant="framed"
       />
 
       <section className="space-y-3">

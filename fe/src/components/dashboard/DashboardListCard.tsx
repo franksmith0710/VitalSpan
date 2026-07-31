@@ -2,7 +2,11 @@ import { Link } from "react-router";
 import { Eye, LayoutDashboard, MoreHorizontal, Pencil, Share2, Trash2 } from "lucide-react";
 import {
   HUB_CARD_BODY_CLASS,
+  HUB_CARD_BODY_MORE_TRIGGER_CLASS,
+  HUB_CARD_PREVIEW_CONTENT_CLASS,
   HUB_CARD_PREVIEW_FRAME_CLASS,
+  HUB_CARD_PREVIEW_HOVER_OUTLINE_BTN_CLASS,
+  HUB_CARD_PREVIEW_HOVER_OVERLAY_CLASS,
   HUB_CARD_SHELL_CLASS,
   HUB_CARD_SKELETON_BODY_CLASS,
   HUB_CARD_SKELETON_PREVIEW_CLASS,
@@ -90,7 +94,7 @@ export function DashboardListCard({
     <article className={cn(HUB_CARD_SHELL_CLASS, className)}>
       <div className={HUB_CARD_PREVIEW_FRAME_CLASS} style={hubCardPreviewFrameStyle()}>
         {onToggleSelect ? (
-          <div className="absolute left-2 top-2 z-10 rounded-md bg-white/90 p-0.5 shadow-sm dark:bg-gray-900/90">
+          <div className="absolute left-2 top-2 z-20 rounded-md bg-white/90 p-0.5 shadow-sm dark:bg-gray-900/90">
             <ListRowCheckbox
               checked={Boolean(selected)}
               onCheckedChange={() => onToggleSelect()}
@@ -98,17 +102,24 @@ export function DashboardListCard({
             />
           </div>
         ) : null}
-        <DashboardListCardPreview
-          dashboardId={dashboard.id}
-          layoutJson={layoutForPreview}
-          className="h-full"
-        />
-        <div className="absolute inset-0 flex items-center justify-center gap-2 bg-gray-900/30 opacity-0 backdrop-blur-[3px] transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+        <div className={HUB_CARD_PREVIEW_CONTENT_CLASS}>
+          <DashboardListCardPreview
+            dashboardId={dashboard.id}
+            layoutJson={layoutForPreview}
+            className="h-full"
+          />
+        </div>
+        <div className={HUB_CARD_PREVIEW_HOVER_OVERLAY_CLASS}>
           <Button asChild variant="primary" size="sm">
             <Link to={primaryPath}>{canEdit ? "编辑" : "查看"}</Link>
           </Button>
           {canEdit ? (
-            <Button asChild variant="outline" size="sm" className="border-white/30 bg-white/10 text-white hover:bg-white/20">
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className={HUB_CARD_PREVIEW_HOVER_OUTLINE_BTN_CLASS}
+            >
               <Link to={viewPath}>预览</Link>
             </Button>
           ) : null}
@@ -138,6 +149,15 @@ export function DashboardListCard({
               </p>
             )}
           </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Badge variant="light" color="light" size="sm">
+            {widgetCount} 个组件
+          </Badge>
+          <span className="min-w-0 flex-1 truncate text-theme-xs text-gray-400 dark:text-gray-500">
+            更新于 {formatUpdatedAt(dashboard.updatedAt)}
+          </span>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <IconButton
@@ -145,7 +165,7 @@ export function DashboardListCard({
                 size="sm"
                 showTooltip={false}
                 aria-label={`${dashboard.name} 更多操作`}
-                className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 data-[state=open]:opacity-100"
+                className={HUB_CARD_BODY_MORE_TRIGGER_CLASS}
               >
                 <MoreHorizontal className="size-4" />
               </IconButton>
@@ -181,15 +201,6 @@ export function DashboardListCard({
               ) : null}
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="light" color="light" size="sm">
-            {widgetCount} 个组件
-          </Badge>
-          <span className="text-theme-xs text-gray-400 dark:text-gray-500">
-            更新于 {formatUpdatedAt(dashboard.updatedAt)}
-          </span>
         </div>
       </div>
     </article>

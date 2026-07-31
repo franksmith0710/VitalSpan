@@ -22,7 +22,11 @@ import { WIDGET_CHART_LABELS } from "@/components/dashboard/widgetIcons";
 import type { VizComponentListItem, VizComponentPayload } from "@/lib/vizComponents";
 import {
   HUB_CARD_BODY_CLASS,
+  HUB_CARD_BODY_MORE_TRIGGER_CLASS,
+  HUB_CARD_PREVIEW_CONTENT_CLASS,
   HUB_CARD_PREVIEW_FRAME_CLASS,
+  HUB_CARD_PREVIEW_HOVER_OUTLINE_BTN_CLASS,
+  HUB_CARD_PREVIEW_HOVER_OVERLAY_CLASS,
   HUB_CARD_SHELL_CLASS,
   hubCardPreviewFrameStyle,
 } from "@/components/dashboard/hubCardUi";
@@ -56,6 +60,7 @@ export function VizComponentCard({
   const showArchive = canManage && item.status === "published";
   const referenceCount = item.referenceCount ?? 0;
   const surfaces = item.surfaceKinds ?? [];
+  const editPath = `/admin/viz-components/${item.id}/edit`;
 
   const chartTypeLabel =
     item.widgetType === "chart" && payload?.chartConfig?.chartType
@@ -86,14 +91,34 @@ export function VizComponentCard({
   return (
     <article className={HUB_CARD_SHELL_CLASS} data-testid={`viz-component-card-${item.id}`}>
       <div className={HUB_CARD_PREVIEW_FRAME_CLASS} style={hubCardPreviewFrameStyle()}>
-        <ComponentPayloadPreview
-          componentId={item.id}
-          componentName={item.name}
-          widgetType={item.widgetType}
-          payload={payload}
-          payloadLoading={payloadLoading}
-          className="h-full"
-        />
+        <div className={HUB_CARD_PREVIEW_CONTENT_CLASS}>
+          <ComponentPayloadPreview
+            componentId={item.id}
+            componentName={item.name}
+            widgetType={item.widgetType}
+            payload={payload}
+            payloadLoading={payloadLoading}
+            className="h-full"
+          />
+        </div>
+        <div className={HUB_CARD_PREVIEW_HOVER_OVERLAY_CLASS}>
+          <Button type="button" variant="primary" size="sm" disabled={pending} asChild>
+            <Link to={editPath}>
+              <Pencil className="size-3.5" aria-hidden />
+              {COMPONENT_ACTIONS.edit}
+            </Link>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className={HUB_CARD_PREVIEW_HOVER_OUTLINE_BTN_CLASS}
+            disabled={pending}
+            onClick={onInsert}
+          >
+            {COMPONENT_ACTIONS.insert}
+          </Button>
+        </div>
       </div>
 
       <div className={HUB_CARD_BODY_CLASS}>
@@ -131,71 +156,58 @@ export function VizComponentCard({
             <Link2 className="size-3 shrink-0" aria-hidden />
             引用 {referenceCount}
           </button>
-          <div className="ml-auto flex shrink-0 items-center gap-1">
-            <Button type="button" size="sm" variant="primary" disabled={pending} asChild>
-              <Link to={`/admin/viz-components/${item.id}/edit`}>
-                <Pencil className="size-3.5" aria-hidden />
-                {COMPONENT_ACTIONS.edit}
-              </Link>
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              disabled={pending}
-              onClick={onInsert}
-            >
-              插入
-            </Button>
+          <div className="ml-auto shrink-0">
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  type="button"
-                  size="xs"
-                  variant="outline"
-                  disabled={pending}
-                  aria-label="更多操作"
-                >
-                  <MoreHorizontal className="size-3.5" aria-hidden />
-                </IconButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-[10rem]">
-                <DropdownMenuItem onClick={onInsert}>
-                  <Upload className="size-4" aria-hidden />
-                  {COMPONENT_ACTIONS.insert}
+            <DropdownMenuTrigger asChild>
+              <IconButton
+                type="button"
+                variant="ghost"
+                size="sm"
+                showTooltip={false}
+                disabled={pending}
+                aria-label={`${item.name} 更多操作`}
+                className={HUB_CARD_BODY_MORE_TRIGGER_CLASS}
+              >
+                <MoreHorizontal className="size-4" aria-hidden />
+              </IconButton>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[10rem]">
+              <DropdownMenuItem onClick={onInsert}>
+                <Upload className="size-4" aria-hidden />
+                {COMPONENT_ACTIONS.insert}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onViewReferences}>
+                <Link2 className="size-4" aria-hidden />
+                {COMPONENT_ACTIONS.references}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => void copyId()}>
+                <Copy className="size-4" aria-hidden />
+                复制组件 ID
+              </DropdownMenuItem>
+              {showPublish ? (
+                <DropdownMenuItem onClick={onPublish}>
+                  {COMPONENT_ACTIONS.publish}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={onViewReferences}>
-                  <Link2 className="size-4" aria-hidden />
-                  {COMPONENT_ACTIONS.references}
+              ) : null}
+              {showArchive ? (
+                <DropdownMenuItem onClick={onArchive}>
+                  <Archive className="size-4" aria-hidden />
+                  {COMPONENT_ACTIONS.archive}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => void copyId()}>
-                  <Copy className="size-4" aria-hidden />
-                  复制组件 ID
-                </DropdownMenuItem>
-                {showPublish ? (
-                  <DropdownMenuItem onClick={onPublish}>
-                    {COMPONENT_ACTIONS.publish}
+              ) : null}
+              {canManage ? (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-error-600 focus:text-error-600 dark:text-error-400"
+                    onClick={onDelete}
+                  >
+                    <Trash2 className="size-4" aria-hidden />
+                    {COMPONENT_ACTIONS.delete}
                   </DropdownMenuItem>
-                ) : null}
-                {showArchive ? (
-                  <DropdownMenuItem onClick={onArchive}>
-                    <Archive className="size-4" aria-hidden />
-                    {COMPONENT_ACTIONS.archive}
-                  </DropdownMenuItem>
-                ) : null}
-                {canManage ? (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="text-error-600 focus:text-error-600 dark:text-error-400"
-                      onClick={onDelete}
-                    >
-                      <Trash2 className="size-4" aria-hidden />
-                      {COMPONENT_ACTIONS.delete}
-                    </DropdownMenuItem>
-                  </>
-                ) : null}
-              </DropdownMenuContent>
+                </>
+              ) : null}
+            </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>

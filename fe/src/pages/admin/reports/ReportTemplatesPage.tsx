@@ -17,7 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { mapApiError } from "@/lib/apiError";
 import { cn } from "@/lib/utils";
 import { CatalogTreeNode } from "./components/CatalogTreeNode";
-import { PanelEmptyState } from "@/components/ui/panel-empty-state";
+import { ListGhostEmptyState } from "@/components/ui/panel-empty-state";
 import { TemplateDetailPanel } from "./components/TemplateDetailPanel";
 import { useReportTemplates } from "./useReportTemplates";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
@@ -66,12 +66,15 @@ export function ReportTemplatesPage() {
       ))}
     </div>
   ) : nodes.length === 0 ? (
-    <PanelEmptyState
-      icon={<FolderOpen className="size-7" aria-hidden />}
+    <ListGhostEmptyState
+      layout="table"
+      density="compact"
+      rows={4}
+      headingId="templates-catalog-empty"
+      icon={<FolderOpen className="size-8" aria-hidden />}
       title="暂无模板目录"
       description="创建文件夹组织模板，或新建 Word / Excel / PDF 报表模板。"
       action={createActions}
-      size="lg"
     />
   ) : (
     <ScrollArea className="h-full max-h-[min(560px,calc(100vh-280px))] pr-2">
@@ -92,15 +95,18 @@ export function ReportTemplatesPage() {
     selected && selected.nodeType === "template" ? (
       <TemplateDetailPanel node={selected} readOnly={readOnly} />
     ) : (
-      <PanelEmptyState
-        icon={<MousePointerClick className="size-7" aria-hidden />}
+      <ListGhostEmptyState
+        layout="table"
+        density="compact"
+        rows={3}
+        headingId="templates-detail-empty"
+        icon={<MousePointerClick className="size-8" aria-hidden />}
         title={selectedId ? "请选择模板节点" : "从目录选择模板"}
         description={
           selectedId
             ? "当前选中的是文件夹，请展开目录并选择具体模板查看配置。"
             : "在左侧目录中选择 Word、Excel 或 PDF 模板，查看扩展配置、预览与调度。"
         }
-        size="lg"
       />
     );
 
@@ -137,7 +143,7 @@ export function ReportTemplatesPage() {
         )}
       >
         {nodes.length === 0 && !nodesQuery.isLoading ? (
-          <div className="min-h-[420px]">{catalogBody}</div>
+          <div className="p-4">{catalogBody}</div>
         ) : (
           <div className="grid min-h-[560px] lg:grid-cols-[minmax(260px,300px)_1fr]">
             <aside className="hidden flex-col border-b border-gray-200 lg:flex lg:border-b-0 lg:border-r dark:border-gray-800">
@@ -150,7 +156,7 @@ export function ReportTemplatesPage() {
               <div className="flex min-h-0 flex-1 flex-col p-3">{catalogBody}</div>
             </aside>
 
-            <section className="flex min-h-[420px] flex-col">{detailBody}</section>
+            <section className="flex min-h-[280px] flex-col p-4">{detailBody}</section>
           </div>
         )}
       </div>

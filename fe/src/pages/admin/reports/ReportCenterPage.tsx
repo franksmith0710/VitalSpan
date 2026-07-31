@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PanelEmptyState } from "@/components/ui/panel-empty-state";
+import { ListGhostEmptyState } from "@/components/ui/panel-empty-state";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { apiFetch } from "@/lib/api";
 import { matchesCapability, resolveEffectiveCapabilities } from "@/lib/capabilities";
@@ -326,9 +326,12 @@ export function ReportCenterPage() {
             ))}
           </div>
         ) : templates.length === 0 ? (
-          <PanelEmptyState
-            layout="inline"
-            icon={<FileBarChart className="size-5" aria-hidden />}
+          <ListGhostEmptyState
+            layout="cards"
+            density="compact"
+            rows={4}
+            headingId="reports-templates-empty"
+            icon={<FileBarChart className="size-8" aria-hidden />}
             title="暂无授权报表"
             description="管理员可在「报表模板」中创建模板；或使用「预制报表」运行系统预置分析。"
             action={
@@ -336,15 +339,16 @@ export function ReportCenterPage() {
                 <Link to="/admin/reports">浏览预制报表</Link>
               </Button>
             }
-            variant="framed"
           />
         ) : filteredTemplates.length === 0 ? (
-          <PanelEmptyState
-            layout="inline"
-            icon={<Search className="size-5" aria-hidden />}
+          <ListGhostEmptyState
+            layout="cards"
+            density="compact"
+            rows={3}
+            headingId="reports-templates-filter-empty"
+            icon={<Search className="size-8" aria-hidden />}
             title="无匹配报表"
             description="请调整搜索词或格式筛选。"
-            variant="framed"
           />
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

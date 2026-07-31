@@ -127,7 +127,7 @@ describe("VizTemplatesHubPage smoke", () => {
     expect(screen.queryByText("空白看板")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "预览" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "使用模板" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "更多操作" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "双栏 KPI 分析 更多操作" })).toBeInTheDocument();
   });
 
   it("exports template json from card menu", async () => {
@@ -136,7 +136,7 @@ describe("VizTemplatesHubPage smoke", () => {
     downloadMock.mockClear();
     renderHub();
     await screen.findByText("双栏 KPI 分析");
-    await user.click(screen.getByRole("button", { name: "更多操作" }));
+    await user.click(screen.getByRole("button", { name: "双栏 KPI 分析 更多操作" }));
     await user.click(await screen.findByRole("menuitem", { name: "导出" }));
     await waitFor(() => {
       expect(downloadMock).toHaveBeenCalledWith(

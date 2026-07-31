@@ -29,6 +29,7 @@ describe("filterTemplatesForHub", () => {
     const items = [
       mockTemplate({ templateKey: "builtin-screen-blank", name: "空白大屏", surfaceKind: "data-screen" }),
       mockTemplate({ templateKey: "builtin-dash-blank", name: "空白看板" }),
+      mockTemplate({ templateKey: "builtin-viz-component-gallery", name: "官方组件验收大屏", surfaceKind: "data-screen" }),
       mockTemplate({ templateKey: "builtin-dash-dual-kpi", name: "双栏 KPI 分析" }),
     ];
     const filtered = filterTemplatesForHub(items);
