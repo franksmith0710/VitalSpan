@@ -9,7 +9,7 @@ import {
 
 /** 标尺角块：与尺同底色、不拦截指针事件 */
 export const canvasRulerCornerClass =
-  "pointer-events-none relative z-0 shrink-0 border-b border-r border-[var(--canvas-ruler-edge)] bg-[var(--canvas-ruler-bg)]";
+  "pointer-events-none relative z-0 shrink-0 bg-[var(--canvas-ruler-bg)]";
 
 export const canvasRulerCornerStyle = {
   width: CANVAS_RULER_SIZE_PX,

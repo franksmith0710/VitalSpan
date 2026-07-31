@@ -22,6 +22,24 @@ import {
   WidgetSurfaceSpacingFields,
   type WidgetSurfaceStyleDensity,
 } from "./widgetSurfaceStyleFields";
+import type { SurfaceKind } from "@/lib/surfacePreset";
+
+type BackgroundPatch = Partial<WidgetStyleConfig>;
+
+function patchWidgetBackgroundImageUpload(
+  value: WidgetStyleConfig,
+  backgroundImage: string | undefined,
+): BackgroundPatch {
+  const trimmed = backgroundImage?.trim();
+  return {
+    backgroundImage: trimmed || undefined,
+    backgroundShow: true,
+    backgroundMode: "image",
+    framePresetId: undefined,
+    frameColor: undefined,
+    ...(trimmed && value.backgroundImageOpacity == null ? { backgroundImageOpacity: 1 } : {}),
+  };
+}
 
 const LINE_BORDER_STYLES = [
   { value: "solid", label: "实线" },
@@ -38,8 +56,6 @@ const BG_MODE_LINE_BORDER_OPTIONS = [
   { value: "image", label: "图片" },
   { value: "border", label: "线框" },
 ] as const;
-
-type BackgroundPatch = Partial<WidgetStyleConfig>;
 
 type ChartBackgroundDeModeFieldsProps = {
   value: WidgetStyleConfig;
@@ -252,17 +268,10 @@ export function ChartBackgroundDeModeFields({
     return (
       <ImageSourceField
         variant="rail"
+        showPreview
         inputClassName={INSPECTOR_CTRL}
         value={value.backgroundImage ?? ""}
-        onChange={(backgroundImage) =>
-          onChange({
-            backgroundImage,
-            backgroundShow: true,
-            backgroundMode: "image",
-            framePresetId: undefined,
-            frameColor: undefined,
-          })
-        }
+        onChange={(backgroundImage) => onChange(patchWidgetBackgroundImageUpload(value, backgroundImage))}
       />
     );
   }
@@ -326,16 +335,11 @@ export function ChartBackgroundDeModeFields({
       {mode === "image" ? (
         <ImageSourceField
           variant="rail"
+          showPreview
           inputClassName={INSPECTOR_CTRL}
           value={value.backgroundImage ?? ""}
           onChange={(backgroundImage) =>
-            onChange({
-              backgroundImage,
-              backgroundShow: true,
-              backgroundMode: "image",
-              framePresetId: undefined,
-              frameColor: undefined,
-            })
+            onChange(patchWidgetBackgroundImageUpload(value, backgroundImage))
           }
         />
       ) : useLineBorder ? (
@@ -428,6 +432,7 @@ type ChartBackgroundStyleFieldsProps = {
   /** dashboard：看板默认 widgetStyle；chart：单图 deStyle */
   scope?: "chart" | "dashboard";
   density?: WidgetSurfaceStyleDensity;
+  surfaceKind?: SurfaceKind;
 };
 
 /** DataEase 样式 Tab · 背景区块（看板 widgetStyle 或单图 deStyle.background + 线框） */
@@ -439,6 +444,7 @@ export function ChartBackgroundStyleFields({
   showHeaderToggle = true,
   scope = "chart",
   density = "narrow",
+  surfaceKind,
 }: ChartBackgroundStyleFieldsProps) {
   const ws = value;
   const showBackground = ws.backgroundShow !== false;
@@ -469,6 +475,7 @@ export function ChartBackgroundStyleFields({
               onChange={onChange}
               onPreviewChange={onChange}
               density={density}
+              surfaceKind={surfaceKind}
             />
           </InspectorNestedSection>
 

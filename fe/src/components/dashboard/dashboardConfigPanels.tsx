@@ -120,6 +120,7 @@ export function DashboardWidgetStyleSections({
           scope="dashboard"
           density="wide"
           showHeaderToggle={false}
+          surfaceKind={styleConfig.surfaceKind ?? "dashboard"}
         />
       </DashboardConfigSection>
 

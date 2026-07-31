@@ -28,6 +28,7 @@ import {
   useScheduleExecutions,
   type ReportScheduleRow,
 } from "./useReportSchedules";
+import { describeCron } from "@/lib/scheduleCronWizard";
 
 function ScheduleHistoryPanel({
   schedule,
@@ -158,7 +159,7 @@ function ScheduleRow({
           </button>
         </td>
         <td className="px-4 py-3 font-mono text-theme-xs text-gray-600 dark:text-gray-400">
-          {schedule.cron}
+          {describeCron(schedule.cron)}
         </td>
         <td className="px-4 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{schedule.timezone}</td>
         <td className="px-4 py-3">
@@ -169,9 +170,17 @@ function ScheduleRow({
         <td className="px-4 py-3">
           <RowActions>
             <Button type="button" variant="ghost" size="sm" asChild>
-              <Link to={`/admin/reports/templates/${schedule.catalogNodeId}`}>
+              <Link
+                to={
+                  schedule.sourceType === "dashboard" || schedule.sourceType === "data_screen"
+                    ? `/admin/dashboards/${schedule.sourceId ?? schedule.catalogNodeId}`
+                    : `/admin/reports/templates/${schedule.catalogNodeId ?? schedule.sourceId}`
+                }
+              >
                 <ExternalLink className="size-3.5" aria-hidden />
-                模板
+                {schedule.sourceType === "dashboard" || schedule.sourceType === "data_screen"
+                  ? "看板"
+                  : "模板"}
               </Link>
             </Button>
             {!readOnly
@@ -266,8 +275,8 @@ export function ReportSchedulesPage() {
               <table className="min-w-[720px] w-full text-left text-theme-sm">
                 <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
                   <tr>
-                    <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">报表模板</th>
-                    <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Cron</th>
+                    <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">调度源</th>
+                    <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">频率</th>
                     <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">时区</th>
                     <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">状态</th>
                     <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">操作</th>
@@ -278,7 +287,11 @@ export function ReportSchedulesPage() {
                     <ScheduleRow
                       key={schedule.id}
                       schedule={schedule}
-                      templateName={nameByNodeId.get(schedule.catalogNodeId) ?? schedule.catalogNodeId.slice(0, 8)}
+                      templateName={
+                        schedule.sourceLabel ??
+                        nameByNodeId.get(schedule.catalogNodeId ?? schedule.sourceId ?? "") ??
+                        (schedule.sourceType === "dashboard" ? "看板定时报告" : "报表模板")
+                      }
                       readOnly={readOnly}
                       expanded={expandedId === schedule.id}
                       onToggle={() =>

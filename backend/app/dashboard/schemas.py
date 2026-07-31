@@ -94,6 +94,9 @@ class WidgetStyleConfig(BaseModel):
     frame_color: str | None = Field(default=None, alias="frameColor", max_length=64)
     frame_opacity: float | None = Field(default=None, alias="frameOpacity", ge=0, le=1)
     opacity: float | None = Field(default=None, ge=0, le=1)
+    background_image_opacity: float | None = Field(
+        default=None, alias="backgroundImageOpacity", ge=0, le=1
+    )
     backdrop_blur: float | None = Field(default=None, alias="backdropBlur", ge=0, le=64)
     border_radius: int | None = Field(default=None, alias="borderRadius", ge=0, le=48)
     border_radius_top_left: int | None = Field(

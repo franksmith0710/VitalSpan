@@ -120,8 +120,8 @@ export function CanvasRuler({
       className={cn(
         canvasRulerSurfaceClass,
         isHorizontal
-          ? "h-[var(--canvas-ruler-size)] border-b border-[var(--canvas-ruler-edge)]"
-          : "w-[var(--canvas-ruler-size)] border-r border-[var(--canvas-ruler-edge)]",
+          ? "h-[var(--canvas-ruler-size)]"
+          : "w-[var(--canvas-ruler-size)]",
         className,
       )}
       style={{ "--canvas-ruler-size": `${CANVAS_RULER_SIZE_PX}px` } as CSSProperties}

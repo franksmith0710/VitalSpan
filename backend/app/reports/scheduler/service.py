@@ -3,13 +3,18 @@ from __future__ import annotations
 import re
 import uuid
 
+from sqlalchemy.orm import Session
+
 from app.auth.deps import UserContext
+from app.datasources.models import get_meta_engine
+from app.dashboard import service as dash_service
 from app.reports.catalog import service as catalog_service
 from app.reports.catalog.acl import register_node_owner
 from app.reports.catalog.errors import ReportCatalogError
 from app.reports.scheduler import acl as schedule_acl
 from app.reports.scheduler import jobs as schedule_jobs
 from app.reports.scheduler.errors import ScheduleError
+from app.reports.scheduler.recipients import validate_recipients_present
 from app.reports.scheduler.schemas import ScheduleCreate, ScheduleListOut, ScheduleStatusOut
 
 _ALLOWED: dict[str, frozenset[str]] = {
@@ -23,7 +28,7 @@ _TRANSITIONS: dict[str, dict[str, str]] = {
     "scheduled": {"pause": "paused", "cancel": "cancelled"},
     "paused": {"resume": "scheduled", "cancel": "cancelled"},
 }
-_CRON_PART = re.compile(r"^[\d*,\-]+$")
+_CRON_PART = re.compile(r"^[\d*,\-/]+$")
 _schedules: dict[uuid.UUID, dict] = {}
 
 
@@ -46,10 +51,34 @@ def _get_row(schedule_id: uuid.UUID) -> dict:
     return row
 
 
+def _source_label(row: dict) -> str | None:
+    source_type = row.get("source_type", "template")
+    source_id = row.get("source_id") or row.get("catalog_node_id")
+    if source_id is None:
+        return None
+    try:
+        if source_type == "template":
+            node = catalog_service.get_node(source_id)
+            return node.name
+        if source_type in {"dashboard", "data_screen"}:
+            with Session(bind=get_meta_engine()) as db:
+                dash = dash_service.get_dashboard(db, source_id)
+                return dash.name
+    except Exception:
+        return None
+    return None
+
+
 def _out(row: dict) -> ScheduleStatusOut:
+    recipients = row.get("recipients") or []
     return ScheduleStatusOut(
         id=row["id"],
-        catalogNodeId=row["catalog_node_id"],
+        catalogNodeId=row.get("catalog_node_id"),
+        sourceType=row.get("source_type", "template"),
+        sourceId=row.get("source_id") or row["catalog_node_id"],
+        sourceLabel=_source_label(row),
+        recipients=recipients,
+        attachmentFormats=row.get("attachment_formats") or ["pdf"],
         cron=row["cron"],
         timezone=row["timezone"],
         status=row["status"],
@@ -57,15 +86,39 @@ def _out(row: dict) -> ScheduleStatusOut:
     )
 
 
+def _assert_source_exists(payload: ScheduleCreate) -> None:
+    if payload.source_type == "template":
+        if not catalog_service.node_exists(payload.source_id):
+            raise ReportCatalogError("RPT_CATALOG_NODE_NOT_FOUND", "Catalog node not found", 404)
+        return
+    if payload.source_type in {"dashboard", "data_screen"}:
+        with Session(bind=get_meta_engine()) as db:
+            try:
+                dash_service.get_dashboard(db, payload.source_id)
+            except dash_service.DashboardError as exc:
+                raise ScheduleError(
+                    "RPT_SCHEDULE_SOURCE_NOT_FOUND",
+                    exc.message,
+                    exc.status,
+                ) from exc
+        return
+    raise ScheduleError("RPT_SCHEDULE_INVALID_SOURCE", "Invalid sourceType", 422)
+
+
 def create_schedule(payload: ScheduleCreate, actor: UserContext) -> ScheduleStatusOut:
-    if not catalog_service.node_exists(payload.catalog_node_id):
-        raise ReportCatalogError("RPT_CATALOG_NODE_NOT_FOUND", "Catalog node not found", 404)
+    _assert_source_exists(payload)
     _validate_cron(payload.cron)
-    register_node_owner(payload.catalog_node_id, actor.id)
+    recipients = [r.model_dump(by_alias=True) for r in payload.recipients]
+    if payload.source_type == "template" and payload.catalog_node_id:
+        register_node_owner(payload.catalog_node_id, actor.id)
     schedule_id = uuid.uuid4()
     row = {
         "id": schedule_id,
         "catalog_node_id": payload.catalog_node_id,
+        "source_type": payload.source_type,
+        "source_id": payload.source_id,
+        "recipients": recipients,
+        "attachment_formats": list(payload.attachment_formats),
         "cron": payload.cron,
         "timezone": payload.timezone,
         "status": "draft",
@@ -87,12 +140,21 @@ def list_schedules(
     actor: UserContext,
     *,
     catalog_node_id: uuid.UUID | None = None,
+    source_id: uuid.UUID | None = None,
+    source_type: str | None = None,
     limit: int = 50,
     offset: int = 0,
 ) -> ScheduleListOut:
     rows = list(_schedules.values())
     if catalog_node_id is not None:
-        rows = [r for r in rows if r["catalog_node_id"] == catalog_node_id]
+        rows = [
+            r for r in rows
+            if r.get("catalog_node_id") == catalog_node_id or r.get("source_id") == catalog_node_id
+        ]
+    if source_id is not None:
+        rows = [r for r in rows if r.get("source_id") == source_id]
+    if source_type is not None:
+        rows = [r for r in rows if r.get("source_type", "template") == source_type]
     visible: list[dict] = []
     for row in rows:
         try:
@@ -112,6 +174,10 @@ def transition_schedule(schedule_id: uuid.UUID, action: str, actor: UserContext)
     mapping = _TRANSITIONS.get(status, {})
     if action not in mapping:
         raise ScheduleError("RPT_SCHEDULE_INVALID_TRANSITION", f"Cannot {action} from {status}", 400)
+    if action == "schedule":
+        if not row.get("recipients"):
+            row["recipients"] = [{"type": "role", "value": "admin"}]
+        validate_recipients_present(row["recipients"])
     row["status"] = mapping[action]
     if row["status"] == "scheduled":
         schedule_jobs.register_job_on_transition(schedule_id, row)

@@ -79,10 +79,10 @@ describe("ReportSchedulesPage smoke", () => {
   });
   afterEach(() => cleanup());
 
-  it("lists schedules with template name and cron", async () => {
+  it("lists schedules with template name and frequency label", async () => {
     renderPage();
     expect(await screen.findByText("销售月报")).toBeInTheDocument();
-    expect(screen.getByText("0 8 * * *")).toBeInTheDocument();
+    expect(screen.getByText("每天 08:00")).toBeInTheDocument();
   });
 
   it("expands history and shows retry", async () => {

@@ -58,4 +58,31 @@ describe("buildWidgetBackgroundPresentation", () => {
     expect(presentation.backgroundLayer?.backgroundImage).toContain("example.com/bg.png");
     expect(presentation.frameLayer).toBeNull();
   });
+
+  it("does not inherit shell opacity onto image layer when backgroundImageOpacity unset", () => {
+    const presentation = buildWidgetBackgroundPresentation(
+      {
+        backgroundShow: true,
+        backgroundMode: "image",
+        backgroundImage: "https://example.com/bg.png",
+        opacity: 0,
+      },
+      "light",
+    );
+    expect(presentation.backgroundLayer?.opacity).toBeUndefined();
+  });
+
+  it("applies backgroundImageOpacity only to image layer", () => {
+    const presentation = buildWidgetBackgroundPresentation(
+      {
+        backgroundShow: true,
+        backgroundMode: "image",
+        backgroundImage: "https://example.com/bg.png",
+        opacity: 0,
+        backgroundImageOpacity: 0.5,
+      },
+      "light",
+    );
+    expect(presentation.backgroundLayer?.opacity).toBe(0.5);
+  });
 });

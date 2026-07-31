@@ -8,9 +8,18 @@ import {
 import { SpacingModeToggle } from "./inspectorSpacing";
 import { InspectorInlineColorRow } from "./inspectorCompact";
 
+import type { SurfaceKind } from "@/lib/surfacePreset";
+
 export type WidgetSurfaceStyleDensity = "wide" | "narrow";
 
 type PatchFn = (patch: Partial<WidgetStyleConfig>) => void;
+
+/** 面板滑块 fallback：仪表板 100%，大屏 0% */
+export function resolveWidgetShellOpacityFallback(
+  surfaceKind?: SurfaceKind,
+): number {
+  return surfaceKind === "data-screen" ? 0 : 100;
+}
 
 /** 组件底 · 外观补充：底色 / 模糊 / 透明度 */
 export function WidgetSurfaceAppearanceFields({
@@ -19,6 +28,7 @@ export function WidgetSurfaceAppearanceFields({
   onPreviewChange,
   disabled = false,
   density = "wide",
+  surfaceKind,
 }: {
   value: WidgetStyleConfig;
   onChange: PatchFn;
@@ -26,8 +36,13 @@ export function WidgetSurfaceAppearanceFields({
   onPreviewChange?: PatchFn;
   disabled?: boolean;
   density?: WidgetSurfaceStyleDensity;
+  surfaceKind?: SurfaceKind;
 }) {
   if (disabled) return null;
+
+  const shellOpacityFallback = resolveWidgetShellOpacityFallback(surfaceKind);
+  const hasBackgroundImage =
+    Boolean(value.backgroundImage?.trim()) || value.backgroundMode === "image";
 
   const Slider =
     density === "narrow"
@@ -42,13 +57,30 @@ export function WidgetSurfaceAppearanceFields({
         label="背景不透明度"
         ariaLabel="背景不透明度"
         value={value.opacity != null ? Math.round(value.opacity * 100) : undefined}
-        fallback={100}
+        fallback={shellOpacityFallback}
         min={0}
         max={100}
         step={1}
         unit="%"
         onChange={(opacity) => onChange({ opacity: opacity / 100 })}
       />
+      {hasBackgroundImage ? (
+        <Slider
+          label="底图不透明度"
+          ariaLabel="底图不透明度"
+          value={
+            value.backgroundImageOpacity != null
+              ? Math.round(value.backgroundImageOpacity * 100)
+              : undefined
+          }
+          fallback={100}
+          min={0}
+          max={100}
+          step={1}
+          unit="%"
+          onChange={(opacity) => onChange({ backgroundImageOpacity: opacity / 100 })}
+        />
+      ) : null}
       <InspectorInlineColorRow
         label="背景色"
         allowClear

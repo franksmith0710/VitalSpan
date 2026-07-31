@@ -246,15 +246,17 @@ export function ImageSourceField({
       {error ? <FieldError error={error} /> : null}
       {showPreview && hasPreview ? (
         <div
-          className="h-16 overflow-hidden rounded-md border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"
-          style={{
-            backgroundImage: `url(${previewUrl})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
+          className="relative h-16 overflow-hidden rounded-md border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"
           role="img"
           aria-label="图片预览"
-        />
+        >
+          <img
+            key={previewUrl}
+            src={previewUrl}
+            alt=""
+            className="h-full w-full object-cover object-center"
+          />
+        </div>
       ) : null}
     </div>
   );

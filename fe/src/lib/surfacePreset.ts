@@ -88,6 +88,7 @@ const DATA_SCREEN_PRESET: SurfacePreset = {
     gapPreset: "none",
     widgetGap: 0,
     pixelGutter: 0,
+    widgetStyle: { opacity: 0 },
     themeAccent: SCREEN_ACCENT,
     refreshIntervalSec: 60,
   },

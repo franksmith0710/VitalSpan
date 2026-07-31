@@ -22,6 +22,8 @@ import {
   patchChartLabelStyle,
   patchChartShowLabel,
   readChartDeStyle,
+  readEffectiveChartBorder,
+  resolveEffectiveWidgetShellConfig,
   readChartLegendVisible,
   readChartShowLabel,
   readChartTitleVisible,
@@ -352,13 +354,14 @@ export function ChartLabelStyleSection() {
 }
 
 export function ChartBackgroundStyleSection() {
-  const { cfg, patchDeStyleNested } = useChartInspector();
-  const deStyle = readChartDeStyle(cfg);
-  const backgroundEnabled = deStyle.background?.backgroundShow !== false;
+  const { cfg, patchDeStyleNested, dashboardStyle } = useChartInspector();
+  const effective = resolveEffectiveWidgetShellConfig(dashboardStyle?.widgetStyle, cfg);
+  const backgroundEnabled = effective.backgroundShow !== false;
   const patchBackground = (patch: Partial<WidgetStyleConfig>) =>
     patchDeStyleNested("background", patch);
   const patchBorder = (patch: Partial<NonNullable<ChartDeStyle["border"]>>) =>
     patchDeStyleNested("border", patch);
+  const surfaceKind = dashboardStyle?.surfaceKind ?? "dashboard";
 
   return (
     <ChartInspectorSection
@@ -374,11 +377,12 @@ export function ChartBackgroundStyleSection() {
       }
     >
       <ChartBackgroundStyleFields
-        value={deStyle.background ?? {}}
-        border={deStyle.border}
+        value={effective}
+        border={readEffectiveChartBorder(cfg, dashboardStyle?.widgetStyle)}
         onChange={(patch) => patchBackground(patch)}
         onBorderChange={(patch) => patchBorder(patch)}
         showHeaderToggle={false}
+        surfaceKind={surfaceKind}
       />
     </ChartInspectorSection>
   );

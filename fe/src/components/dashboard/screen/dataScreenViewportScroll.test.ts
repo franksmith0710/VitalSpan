@@ -17,22 +17,23 @@ describe("dataScreenViewportScroll", () => {
     offsetY: 0,
   };
 
-  it("treats left and top rulers as hard boundaries", () => {
+  it("uses symmetric pan padding on all sides (no ruler hard stop at origin)", () => {
     const { padX, padY } = resolveDataScreenEditPanPadding(viewport, content);
     const bounds = computeViewportPanBounds(viewport, content);
-    expect(bounds.minPanX).toBe(0);
-    expect(bounds.minPanY).toBe(0);
+    expect(bounds.minPanX).toBe(-padX);
+    expect(bounds.minPanY).toBe(-padY);
     expect(bounds.maxPanX).toBe(padX);
     expect(bounds.maxPanY).toBe(padY);
-    expect(clampViewportPan({ x: -100, y: -50 }, bounds)).toEqual({ x: 0, y: 0 });
+    expect(clampViewportPan({ x: -100, y: -50 }, bounds)).toEqual({ x: -100, y: -50 });
   });
 
-  it("allows pan up to letterbox offset when content is centered", () => {
+  it("extends symmetric bounds when content is letterboxed", () => {
     const letterboxed = { ...content, offsetX: 40, offsetY: 30 };
+    const { padX, padY } = resolveDataScreenEditPanPadding(viewport, letterboxed);
     const bounds = computeViewportPanBounds(viewport, letterboxed);
-    expect(bounds.minPanX).toBe(-40);
-    expect(bounds.minPanY).toBe(-30);
-    expect(clampViewportPan({ x: -80, y: -60 }, bounds)).toEqual({ x: -40, y: -30 });
+    expect(bounds.minPanX).toBe(-(padX + 40));
+    expect(bounds.minPanY).toBe(-(padY + 30));
+    expect(clampViewportPan({ x: -80, y: -60 }, bounds)).toEqual({ x: -80, y: -60 });
   });
 
   it("anchors home at pan=0 and extends workspace padding on right/bottom", () => {
@@ -44,11 +45,11 @@ describe("dataScreenViewportScroll", () => {
     };
     const { padX, padY } = resolveDataScreenEditPanPadding(viewport, smaller);
     const bounds = computeViewportPanBounds(viewport, smaller);
-    expect(bounds.minPanX).toBe(0);
-    expect(bounds.minPanY).toBe(0);
+    expect(bounds.minPanX).toBe(-padX);
+    expect(bounds.minPanY).toBe(-padY);
     expect(bounds.maxPanX).toBe(padX);
     expect(bounds.maxPanY).toBe(padY);
-    expect(clampViewportPan({ x: -80, y: -200 }, bounds)).toEqual({ x: 0, y: 0 });
+    expect(clampViewportPan({ x: -80, y: -200 }, bounds)).toEqual({ x: -80, y: -200 });
     expect(clampViewportPan({ x: 200, y: 150 }, bounds)).toEqual({ x: 200, y: 150 });
     expect(clampViewportPan({ x: 9999, y: 9999 }, bounds)).toEqual({ x: padX, y: padY });
   });

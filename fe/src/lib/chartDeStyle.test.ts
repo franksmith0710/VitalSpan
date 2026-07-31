@@ -13,6 +13,8 @@ import {
   resolveChartLabelDisplayColor,
   readChartTitleVisible,
   resolveChartContentShellStyle,
+  resolveEffectiveWidgetShellConfig,
+  readEffectiveChartBorder,
   resolveWidgetShellStyle,
   stripChartLabelFormatOverrides,
   stripChartPaletteOverrides,
@@ -44,7 +46,7 @@ describe("widgetStyleToContentCss", () => {
     expect(surface.background).toBe("#ffffff");
   });
 
-  it("applies backdrop blur and background-only opacity", () => {
+  it("applies backdrop blur on image layer without inheriting shell opacity", () => {
     const { surface, backgroundLayer } = widgetStyleToContentCss({
       backgroundImage: "https://example.com/bg.png",
       backdropBlur: 8,
@@ -54,7 +56,16 @@ describe("widgetStyleToContentCss", () => {
     expect(surface.backdropFilter).toBeUndefined();
     expect(backgroundLayer?.backgroundImage).toContain("example.com/bg.png");
     expect(backgroundLayer?.filter).toBe("blur(8px)");
-    expect(backgroundLayer?.opacity).toBe(0.9);
+    expect(backgroundLayer?.opacity).toBeUndefined();
+  });
+
+  it("uses backgroundImageOpacity only on image layer", () => {
+    const { backgroundLayer } = widgetStyleToContentCss({
+      backgroundImage: "https://example.com/bg.png",
+      opacity: 0,
+      backgroundImageOpacity: 0.5,
+    });
+    expect(backgroundLayer?.opacity).toBe(0.5);
   });
 
   it("keeps custom background color when enabling backdrop blur", () => {
@@ -431,5 +442,30 @@ describe("mergeShapeInnerPresentation", () => {
     });
     expect(outer.backgroundLayer?.backdropFilter).toBe("blur(12px)");
     expect(merged.shell.style.backgroundColor).toBe("transparent");
+  });
+});
+
+describe("resolveEffectiveWidgetShellConfig", () => {
+  it("inherits dashboard opacity when chart has no background override", () => {
+    const effective = resolveEffectiveWidgetShellConfig({ opacity: 0 }, baseCfg);
+    expect(effective.opacity).toBe(0);
+  });
+
+  it("chart background override wins over dashboard widgetStyle", () => {
+    const cfg = patchChartDeStyleNested(baseCfg, "background", { opacity: 0.6 });
+    const effective = resolveEffectiveWidgetShellConfig({ opacity: 0 }, cfg);
+    expect(effective.opacity).toBe(0.6);
+  });
+
+  it("readEffectiveChartBorder merges deStyle.border onto global shell", () => {
+    const cfg = patchChartDeStyleNested(baseCfg, "border", {
+      show: true,
+      color: "#ff0000",
+      width: 2,
+    });
+    const border = readEffectiveChartBorder(cfg, { borderColor: "#000000" });
+    expect(border.show).toBe(true);
+    expect(border.color).toBe("#ff0000");
+    expect(border.width).toBe(2);
   });
 });

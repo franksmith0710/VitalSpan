@@ -27,9 +27,10 @@ describe("SchedulePanel smoke", () => {
   });
   afterEach(() => cleanup());
 
-  it("renders empty state", async () => {
+  it("renders create schedule form", async () => {
     render(wrap(<SchedulePanel catalogNodeId="node-1" readOnly={false} />));
-    expect(await screen.findByText("尚未配置调度")).toBeInTheDocument();
+    expect(await screen.findByText("新建调度")).toBeInTheDocument();
+    expect(screen.getByText("创建调度")).toBeInTheDocument();
   });
 
   it("shows retry for degraded history", async () => {

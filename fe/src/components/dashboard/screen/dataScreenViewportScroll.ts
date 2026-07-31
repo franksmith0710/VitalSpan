@@ -52,16 +52,16 @@ export function resolveDataScreenEditPanPadding(
   };
 }
 
-/** 平移上下界：左上标尺为硬边界（画布不得越过）；右下保留工作区留白。 */
+/** 平移上下界：四向对称留白，左上标尺不再硬裁切画布。 */
 export function computeViewportPanBounds(
   viewport: ViewportSize,
   content: ContentLayout,
 ): ViewportPanBounds {
   const { padX, padY } = resolveDataScreenEditPanPadding(viewport, content);
   return {
-    minPanX: content.offsetX ? -content.offsetX : 0,
+    minPanX: -(padX + content.offsetX),
     maxPanX: padX,
-    minPanY: content.offsetY ? -content.offsetY : 0,
+    minPanY: -(padY + content.offsetY),
     maxPanY: padY,
   };
 }

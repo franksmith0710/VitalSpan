@@ -786,6 +786,30 @@ export function mergeChartDeStyleIntoWidgetShell(
   return merged;
 }
 
+/** 面板展示用：与渲染链 mergeChartDeStyleIntoWidgetShell 同源 */
+export function resolveEffectiveWidgetShellConfig(
+  globalWidgetStyle: WidgetStyleConfig | undefined,
+  cfg?: ChartViewConfig,
+): WidgetStyleConfig {
+  const de = cfg ? readChartDeStyle(cfg) : {};
+  return mergeChartDeStyleIntoWidgetShell(globalWidgetStyle, de);
+}
+
+/** 合并后 widgetStyle → ChartBorderStyle（单图样式 Tab 线框区） */
+export function readEffectiveChartBorder(
+  cfg: ChartViewConfig | undefined,
+  globalWidgetStyle: WidgetStyleConfig | undefined,
+): ChartBorderStyle {
+  const merged = resolveEffectiveWidgetShellConfig(globalWidgetStyle, cfg);
+  return {
+    show: merged.borderEnabled,
+    color: merged.borderColor,
+    width: merged.borderWidth,
+    style: merged.borderStyle,
+    radius: merged.borderRadius,
+  };
+}
+
 function widgetStyleAllowsDecorativeFrame(ws: WidgetStyleConfig | undefined): boolean {
   if (!ws?.framePresetId) return false;
   // 有预设即视为装饰边框；仅在明确为图片/线框模式时关闭

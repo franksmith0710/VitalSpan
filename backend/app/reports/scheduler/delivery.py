@@ -11,7 +11,11 @@ def dispatch_artifact(
     channels: list[str],
     mock_mode: str | None,
     settings: Settings | None = None,
+    *,
+    recipient_emails: list[str] | None = None,
 ) -> dict:
-    result = deliver_artifact(artifact_ref, channels, mock_mode, settings)
+    result = deliver_artifact(
+        artifact_ref, channels, mock_mode, settings, recipient_emails=recipient_emails,
+    )
     _DELIVERY_LOG.append({"ref": artifact_ref, **result})
     return result

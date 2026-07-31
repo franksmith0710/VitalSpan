@@ -27,6 +27,7 @@ from app.dashboard.entity_overview import service as overview_service
 from app.dashboard.global_filters.errors import GlobalFilterError
 from app.dashboard.global_filters.schemas import GlobalFilterLinkageItem, GlobalFilterLinkageOut
 from app.dashboard.global_filters import service as global_filter_service
+from app.dashboard.export_jobs_schemas import DashboardExportJobIn
 from app.datasources.models import get_meta_session
 
 router = APIRouter(prefix="/dashboards", tags=["dashboards"])
@@ -412,6 +413,52 @@ def download_dashboard_thumbnail(
             content=body,
             media_type=media_type,
             headers={"Cache-Control": "private, max-age=3600"},
+        )
+    except dash_service.DashboardError as exc:
+        return _error_response(exc)
+
+
+@router.post("/{dashboard_id}/export-jobs", status_code=status.HTTP_201_CREATED)
+def create_dashboard_export_job(
+    dashboard_id: uuid.UUID,
+    payload: DashboardExportJobIn,
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    db: Annotated[Session, Depends(_db)],
+):
+    from app.dashboard.export_jobs import submit_dashboard_export
+
+    try:
+        return submit_dashboard_export(db, dashboard_id, payload.format, user)
+    except dash_service.DashboardError as exc:
+        return _error_response(exc)
+
+
+@router.get("/export-jobs/{job_id}")
+def get_dashboard_export_job_route(
+    job_id: uuid.UUID,
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+):
+    from app.dashboard.export_jobs import get_dashboard_export_job
+
+    try:
+        return get_dashboard_export_job(job_id, user)
+    except dash_service.DashboardError as exc:
+        return _error_response(exc)
+
+
+@router.get("/export-jobs/{job_id}/download")
+def download_dashboard_export_job(
+    job_id: uuid.UUID,
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+):
+    from app.dashboard.export_jobs import read_dashboard_export_bytes
+
+    try:
+        body, media_type, filename = read_dashboard_export_bytes(job_id, user)
+        return Response(
+            content=body,
+            media_type=media_type,
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )
     except dash_service.DashboardError as exc:
         return _error_response(exc)

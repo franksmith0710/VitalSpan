@@ -2,9 +2,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
 
+export type ScheduleRecipient = { type: "role" | "user" | "email"; value: string };
+
 export type ReportScheduleRow = {
   id: string;
-  catalogNodeId: string;
+  catalogNodeId?: string | null;
+  sourceType?: string;
+  sourceId?: string;
+  sourceLabel?: string | null;
+  recipients?: ScheduleRecipient[];
+  attachmentFormats?: string[];
   cron: string;
   timezone: string;
   status: string;
@@ -21,17 +28,28 @@ export type ScheduleExecutionRow = {
   parentExecutionId?: string | null;
 };
 
-export function useReportSchedulesList(catalogNodeId?: string) {
+export type ReportScheduleListFilter = {
+  catalogNodeId?: string;
+  sourceId?: string;
+  sourceType?: string;
+};
+
+function scheduleListQuery(filter?: ReportScheduleListFilter): string {
+  const params = new URLSearchParams();
+  if (filter?.catalogNodeId) params.set("catalogNodeId", filter.catalogNodeId);
+  if (filter?.sourceId) params.set("sourceId", filter.sourceId);
+  if (filter?.sourceType) params.set("sourceType", filter.sourceType);
+  const q = params.toString();
+  return q ? `?${q}` : "";
+}
+
+export function useReportSchedulesList(filter?: ReportScheduleListFilter) {
   return useQuery({
-    queryKey: queryKeys.reportSchedules(catalogNodeId),
-    queryFn: () => {
-      const q = catalogNodeId
-        ? `?catalogNodeId=${encodeURIComponent(catalogNodeId)}`
-        : "";
-      return apiFetch<{ items: ReportScheduleRow[]; total: number }>(
-        `/api/v1/reports/schedules${q}`,
-      );
-    },
+    queryKey: queryKeys.reportSchedules(filter),
+    queryFn: () =>
+      apiFetch<{ items: ReportScheduleRow[]; total: number }>(
+        `/api/v1/reports/schedules${scheduleListQuery(filter)}`,
+      ),
   });
 }
 
@@ -46,20 +64,27 @@ export function useScheduleExecutions(scheduleId: string | null) {
   });
 }
 
-export function useReportScheduleMutations(catalogNodeId?: string) {
+export function useReportScheduleMutations(filter?: ReportScheduleListFilter) {
   const qc = useQueryClient();
-  const listKey = queryKeys.reportSchedules(catalogNodeId);
+  const listKey = queryKeys.reportSchedules(filter);
 
   const invalidate = (scheduleId?: string) => {
     void qc.invalidateQueries({ queryKey: listKey });
     if (scheduleId) {
       void qc.invalidateQueries({ queryKey: ["reports", "schedule-executions", scheduleId] });
     }
-    void qc.invalidateQueries({ queryKey: queryKeys.reportSchedules() });
+    void qc.invalidateQueries({ queryKey: ["reports", "schedules"] });
   };
 
   const createSchedule = useMutation({
-    mutationFn: (body: { catalogNodeId: string; cron: string; timezone: string }) =>
+    mutationFn: (body: {
+      catalogNodeId?: string;
+      sourceType?: string;
+      sourceId?: string;
+      cron: string;
+      timezone: string;
+      recipients?: ScheduleRecipient[];
+    }) =>
       apiFetch<ReportScheduleRow>("/api/v1/reports/schedules", {
         method: "POST",
         body: JSON.stringify(body),

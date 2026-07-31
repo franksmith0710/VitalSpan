@@ -1,12 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Clock } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { TruncateHint } from "@/components/ui/hint-tooltip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PanelEmptyState } from "@/components/ui/panel-empty-state";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -26,15 +23,20 @@ import {
 } from "@/components/ui/table";
 import { apiFetch } from "@/lib/api";
 import { localizeApiMessage, mapApiError } from "@/lib/apiError";
+import { parseCronToWizard, type ScheduleWizardState } from "@/lib/scheduleCronWizard";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
+import { cronFromWizard, describeCron, ScheduleWizard } from "./ScheduleWizard";
 
 type ScheduleRow = {
   id: string;
-  catalogNodeId: string;
+  catalogNodeId?: string | null;
+  sourceType?: string;
+  sourceId?: string;
   cron: string;
   timezone: string;
   status: string;
   allowedActions: string[];
+  recipients?: { type: string; value: string }[];
 };
 
 type HistoryRow = {
@@ -56,7 +58,18 @@ const ACTION_LABELS: Record<string, string> = {
 
 export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: string; readOnly: boolean }) {
   const qc = useQueryClient();
+  const [wizard, setWizard] = useState<ScheduleWizardState>(
+    parseCronToWizard("0 8 * * *") ?? {
+      frequency: "daily",
+      hour: 8,
+      minute: 0,
+      weekday: 1,
+      dayOfMonth: 1,
+    },
+  );
   const [cron, setCron] = useState("0 8 * * *");
+  const [showAdvancedCron, setShowAdvancedCron] = useState(false);
+  const [recipientRole, setRecipientRole] = useState("admin");
   const [timezone, setTimezone] = useState("Asia/Shanghai");
 
   const listQuery = useQuery({
@@ -89,7 +102,12 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
     mutationFn: () =>
       apiFetch<ScheduleRow>("/api/v1/reports/schedules", {
         method: "POST",
-        body: JSON.stringify({ catalogNodeId, cron, timezone }),
+        body: JSON.stringify({
+          catalogNodeId,
+          cron: showAdvancedCron ? cron : cronFromWizard(wizard),
+          timezone,
+          recipients: [{ type: "role", value: recipientRole }],
+        }),
       }),
     onSuccess: () => {
       toast.success("调度已创建");
@@ -171,20 +189,61 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
   if (!schedule) {
     return (
       <Card>
-        <CardContent>
-          <PanelEmptyState
-            icon={<Clock className="size-7" aria-hidden />}
-            title="尚未配置调度"
-            description="为当前报表模板创建定时任务，系统将按计划自动生成并投递报表。"
-            action={
-              !readOnly ? (
-                <Button type="button" variant="primary" disabled={createMutation.isPending} onClick={handleSave}>
-                  {createMutation.isPending ? "创建中…" : "创建调度"}
-                </Button>
-              ) : undefined
-            }
-            size="md"
+        <CardHeader>
+          <CardTitle className="text-title-sm">新建调度</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <ScheduleWizard
+            value={wizard}
+            onChange={(next) => {
+              setWizard(next);
+              setCron(cronFromWizard(next));
+            }}
+            disabled={readOnly}
+            showAdvancedCron={showAdvancedCron}
+            cron={cron}
+            onCronChange={setCron}
           />
+          <div className="grid gap-2">
+            <Label htmlFor="schedule-recipient-role">接收角色</Label>
+            <Select value={recipientRole} onValueChange={setRecipientRole} disabled={readOnly}>
+              <SelectTrigger id="schedule-recipient-role">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="admin">管理员</SelectItem>
+                <SelectItem value="analyst">分析师</SelectItem>
+                <SelectItem value="viewer">查看者</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="schedule-tz-new">时区</Label>
+            <Select value={timezone} onValueChange={setTimezone} disabled={readOnly}>
+              <SelectTrigger id="schedule-tz-new">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Asia/Shanghai">Asia/Shanghai</SelectItem>
+                <SelectItem value="UTC">UTC</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {!readOnly ? (
+              <Button type="button" variant="primary" disabled={createMutation.isPending} onClick={handleSave}>
+                {createMutation.isPending ? "创建中…" : "创建调度"}
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAdvancedCron((v) => !v)}
+            >
+              {showAdvancedCron ? "隐藏高级 Cron" : "高级 Cron"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
@@ -197,15 +256,18 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
           <CardTitle className="text-title-sm">调度配置</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-2">
-            <Label htmlFor="schedule-cron">Cron 表达式</Label>
-            <Input
-              id="schedule-cron"
-              value={cron}
-              onChange={(e) => setCron(e.target.value)}
-              disabled={readOnly}
-            />
-          </div>
+          <ScheduleWizard
+            value={parseCronToWizard(cron) ?? wizard}
+            onChange={(next) => {
+              setWizard(next);
+              setCron(cronFromWizard(next));
+            }}
+            disabled={readOnly || schedule.status !== "draft"}
+            showAdvancedCron={showAdvancedCron}
+            cron={cron}
+            onCronChange={setCron}
+          />
+          <p className="text-theme-xs text-gray-500">{describeCron(cron)}</p>
           <div className="grid gap-2">
             <Label htmlFor="schedule-tz">时区</Label>
             <Select value={timezone} onValueChange={setTimezone} disabled={readOnly}>

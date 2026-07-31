@@ -95,4 +95,17 @@ describe("canvas background edit pipeline", () => {
       "/template-assets/backgrounds/screen-gov-indigo.svg",
     );
   });
+
+  it("preserves uploaded data URL through patch + hydrate", () => {
+    const dataUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+    const base = bootstrapDashboardStyleConfig({ colorScheme: "light" });
+    const { styleConfig: patched } = applyDashboardStylePatch(base, [], {
+      canvasBackgroundImage: dataUrl,
+      canvasBackgroundCustom: true,
+      canvasDecorPresetId: "custom",
+    });
+    const hydrated = hydrateDashboardStyle(patched);
+    expect(hydrated.canvasBackgroundImage).toBe(dataUrl);
+    expect(hydrated.canvasDecorPresetId).toBe("custom");
+  });
 });

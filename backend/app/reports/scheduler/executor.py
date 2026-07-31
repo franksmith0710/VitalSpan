@@ -4,13 +4,19 @@ import time
 import uuid
 from datetime import UTC, datetime
 
+from sqlalchemy.orm import Session
+
 from app.auth.deps import UserContext
+from app.auth.models import get_meta_session
+from app.dashboard import export_jobs as dashboard_export_jobs
+from app.datasources.models import get_meta_engine
 from app.reports.catalog.acl import register_artifact_owner
 from app.reports.extension import service as extension_service
 from app.reports.scheduler import acl as schedule_acl
 from app.reports.scheduler.delivery import dispatch_artifact
 from app.reports.scheduler.errors import ScheduleError
-from app.reports.scheduler.schemas import ScheduleExecuteOut
+from app.reports.scheduler.recipients import resolve_recipient_emails
+from app.reports.scheduler.schemas import ScheduleExecuteOut, ScheduleRecipientIn
 from app.reports.scheduler import service as scheduler_service
 
 _EXECUTION_LOG: dict[str, ScheduleExecuteOut] = {}
@@ -92,18 +98,41 @@ def semi_real_execute_schedule(
     if row["status"] != "scheduled":
         raise ScheduleError("RPT_SCHEDULE_EXECUTE_NOT_READY", f"Cannot execute from {row['status']}", 400)
     execution_id = uuid.uuid4()
-    catalog_node_id = row["catalog_node_id"]
+    source_type = row.get("source_type", "template")
+    source_id = row.get("source_id") or row["catalog_node_id"]
     revision_snapshot = None
-    try:
-        ext = extension_service.get_extension(catalog_node_id)
-        revision_snapshot = {
-            "revision": ext.revision,
-            "metricCount": len(ext.metrics),
-        }
-    except Exception:
-        pass
+    if source_type == "template" and source_id is not None:
+        try:
+            ext = extension_service.get_extension(source_id)
+            revision_snapshot = {
+                "revision": ext.revision,
+                "metricCount": len(ext.metrics),
+            }
+        except Exception:
+            pass
     artifact_ref = f"semi://reports/{schedule_id}/{execution_id}"
-    delivery = dispatch_artifact(artifact_ref, ["email", "webhook"], delivery_mock)
+    if source_type in {"dashboard", "data_screen"} and source_id is not None:
+        fmt = (row.get("attachment_formats") or ["pdf"])[0]
+        with Session(bind=get_meta_engine()) as db:
+            job = dashboard_export_jobs.submit_dashboard_export(db, source_id, fmt, actor)
+        artifact_ref = job.download_url or artifact_ref
+    recipient_emails: list[str] | None = None
+    raw_recipients = row.get("recipients") or []
+    if raw_recipients:
+        session = get_meta_session()
+        try:
+            recipient_emails = resolve_recipient_emails(
+                session,
+                [ScheduleRecipientIn.model_validate(r) for r in raw_recipients],
+            )
+        finally:
+            session.close()
+    delivery = dispatch_artifact(
+        artifact_ref,
+        ["email"],
+        delivery_mock,
+        recipient_emails=recipient_emails,
+    )
     error_message: str | None = None
     if delivery_mock == "fail":
         status = "semi_real_failed"

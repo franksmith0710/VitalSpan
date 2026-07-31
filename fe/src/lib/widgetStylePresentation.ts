@@ -97,12 +97,17 @@ export function buildWidgetBackgroundPresentation(
 
   const presentation = applyBackgroundOpacityOnly(style);
   if (imageLayer) {
+    const imageAlpha = bg.backgroundImageOpacity ?? 1;
+    const imageOpacityStyle =
+      imageAlpha < 1 ? { opacity: Math.min(1, Math.max(0, imageAlpha)) } : {};
     if (presentation.backgroundLayer) {
-      presentation.backgroundLayer = { ...presentation.backgroundLayer, ...imageLayer };
-    } else if (bg.opacity != null && bg.opacity < 1) {
-      presentation.backgroundLayer = { opacity: bg.opacity, ...imageLayer };
+      presentation.backgroundLayer = {
+        ...presentation.backgroundLayer,
+        ...imageLayer,
+        ...imageOpacityStyle,
+      };
     } else {
-      presentation.backgroundLayer = imageLayer;
+      presentation.backgroundLayer = { ...imageLayer, ...imageOpacityStyle };
     }
   }
   if (frameLayer) {

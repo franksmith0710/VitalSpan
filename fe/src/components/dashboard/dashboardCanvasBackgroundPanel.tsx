@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { DeAttrField, DeAttrForm } from "./dashboardInspectorUi";
@@ -42,14 +42,8 @@ export function DashboardCanvasBackgroundPanel({
       ? styleConfig.canvasBackground.trim()
       : undefined;
   const imageUrl = styleConfig.canvasBackgroundImage ?? "";
-  const [localImageUrl, setLocalImageUrl] = useState(imageUrl);
-  const previewUrl = localImageUrl.trim();
+  const previewUrl = imageUrl.trim();
   const imageInvalid = previewUrl.length > 0 && !isImageSourceValue(previewUrl);
-
-  useEffect(() => {
-    setLocalImageUrl(imageUrl);
-    if (imageUrl.trim()) setCustomImageEnabled(true);
-  }, [imageUrl]);
 
   const commitImageUrl = (next: string) => {
     const trimmed = next.trim();
@@ -63,7 +57,6 @@ export function DashboardCanvasBackgroundPanel({
   const handleCustomImageToggle = (enabled: boolean) => {
     setCustomImageEnabled(enabled);
     if (!enabled) {
-      setLocalImageUrl("");
       commitImageUrl("");
     }
   };
@@ -141,12 +134,8 @@ export function DashboardCanvasBackgroundPanel({
               <ImageSourceField
                 variant="rail"
                 showPreview
-                value={localImageUrl}
-                onChange={(next) => {
-                  const value = next ?? "";
-                  setLocalImageUrl(value);
-                  commitImageUrl(value);
-                }}
+                value={imageUrl}
+                onChange={(next) => commitImageUrl(next ?? "")}
               />
               {imageInvalid ? (
                 <p className="text-theme-xs text-error-600 dark:text-error-400" role="alert">
