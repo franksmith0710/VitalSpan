@@ -15,7 +15,7 @@ import { VitalSpanLogo } from "@/components/layout/vitalspan-logo";
 import { resolveSidebarSections } from "@/lib/resolve-nav";
 import { sessionUserFromMe } from "@/lib/session";
 import { isDetachedFromWorkspacePath } from "@/lib/workspace";
-import { isAdminListFillRoute, isAdminMaxWidthNoneRoute, isAdminScreenPreviewRoute, isAdminShareRoute, isAdminDatasetFormRoute, isAdminVizComponentEditRoute } from "@/lib/admin-layout-routes";
+import { isAdminListFillRoute, isAdminScreenPreviewRoute, isAdminShareRoute, isAdminDatasetFormRoute, isAdminDatasourceFormRoute, isAdminVizComponentEditRoute } from "@/lib/admin-layout-routes";
 import {
   ADMIN_CONTENT_MARGIN_COLLAPSED_CLASS,
   ADMIN_CONTENT_MARGIN_EXPANDED_CLASS,
@@ -47,11 +47,9 @@ function AdminLayoutContent() {
   const isScreenPreviewRoute = isAdminScreenPreviewRoute(location.pathname);
   const isVizComponentEditFill = isAdminVizComponentEditRoute(location.pathname);
   const isDatasetFormFill = isAdminDatasetFormRoute(location.pathname);
+  const isDatasourceFormFill = isAdminDatasourceFormRoute(location.pathname);
   const isFillHeightRoute =
-    isDashboardEditFill || isListFillRoute || isVizComponentEditFill || isDatasetFormFill || isShareRoute;
-  const isMaxWidthNoneRoute = isAdminMaxWidthNoneRoute(location.pathname, {
-    dashboardBuilder: isDashboardEditFill,
-  });
+    isDashboardEditFill || isListFillRoute || isVizComponentEditFill || isDatasetFormFill || isDatasourceFormFill || isShareRoute;
   // 所有标准管理页锁住 html/body，仅 main 滚动，避免细/粗双滚动条并存
   useAdminFillScrollLock(!isScreenPreviewRoute);
 
@@ -105,8 +103,7 @@ function AdminLayoutContent() {
         />
         <main
           className={cn(
-            "mx-auto flex min-h-0 w-full flex-1 flex-col",
-            isMaxWidthNoneRoute ? "max-w-none" : "max-w-(--breakpoint-2xl)",
+            "mx-auto flex min-h-0 w-full max-w-none flex-1 flex-col",
             isFillHeightRoute
               ? "overflow-hidden p-1.5 md:p-2 [&>*]:min-h-0 [&>*]:flex-1"
               : "custom-scrollbar overflow-y-auto p-4 pb-20 md:p-6 md:pb-24 [&>*]:shrink-0",

@@ -24,6 +24,9 @@ const ADMIN_VIZ_COMPONENT_EDIT_PATTERN = /^\/admin\/viz-components\/[^/]+\/edit\
 /** Dataset 新建/编辑：全宽 + fill 高度（Schema 浏览器占满视口） */
 const ADMIN_DATASET_FORM_PATTERN = /^\/admin\/datasets\/(?:new|[^/]+\/edit)\/?$/;
 
+/** 数据源新建/编辑：全宽 + fill 高度（连接表单分区布局） */
+const ADMIN_DATASOURCE_FORM_PATTERN = /^\/admin\/datasources\/(?:new|[^/]+\/edit)\/?$/;
+
 /** 分享/嵌入配置页：全宽 fill（bi-share-embed） */
 const ADMIN_SHARE_PATTERNS: RegExp[] = [
   /^\/admin\/dashboards\/[^/]+\/share\/?$/,
@@ -32,7 +35,6 @@ const ADMIN_SHARE_PATTERNS: RegExp[] = [
 
 /**
  * 宽内容页：全宽但保留 main 纵向滚动（表格/主从/Hub/详情/设计器）。
- * 表单与账号页不在此列，仍用 max-w-2xl。
  */
 const ADMIN_WIDE_SCROLL_PATTERNS: RegExp[] = [
   /^\/admin\/reports(?:\/|$)/,
@@ -62,6 +64,10 @@ export function isAdminDatasetFormRoute(pathname: string): boolean {
   return ADMIN_DATASET_FORM_PATTERN.test(pathname);
 }
 
+export function isAdminDatasourceFormRoute(pathname: string): boolean {
+  return ADMIN_DATASOURCE_FORM_PATTERN.test(pathname);
+}
+
 export function isAdminScreenPreviewRoute(pathname: string): boolean {
   return ADMIN_SCREEN_PREVIEW_PATTERN.test(pathname);
 }
@@ -79,30 +85,16 @@ export function isAdminDashboardBuilderRoute(pathname: string): boolean {
   return ADMIN_DASHBOARD_BUILDER_PATTERN.test(pathname);
 }
 
-/** main 区应使用 max-w-none（全宽） */
+/** main 区应使用 max-w-none（全宽）：所有 /admin 路由 */
 export function isAdminMaxWidthNoneRoute(
   pathname: string,
   options?: { dashboardBuilder?: boolean },
 ): boolean {
-  return (
-    isAdminListFillRoute(pathname) ||
-    isAdminShareRoute(pathname) ||
-    isAdminVizComponentEditRoute(pathname) ||
-    isAdminDatasetFormRoute(pathname) ||
-    isAdminWideScrollRoute(pathname) ||
-    options?.dashboardBuilder === true
-  );
+  if (options?.dashboardBuilder) return true;
+  return pathname.startsWith("/admin");
 }
 
-/** 仍使用 max-w-2xl 的表单/账号类路由（显式登记，便于审计） */
-const ADMIN_CONSTRAINED_PATTERNS: RegExp[] = [
-  /^\/admin\/account(?:\/|$)/,
-  /^\/admin\/datasources\/new\/?$/,
-  /^\/admin\/datasources\/[^/]+\/edit\/?$/,
-  /^\/admin\/ingestion\/sync-jobs\/new\/?$/,
-  /^\/admin\/ingestion\/sync-jobs\/[^/]+\/edit\/?$/,
-];
-
-export function isAdminConstrainedRoute(pathname: string): boolean {
-  return ADMIN_CONSTRAINED_PATTERNS.some((pattern) => pattern.test(pathname));
+/** @deprecated 管理端已统一全宽；保留供审计，恒为 false */
+export function isAdminConstrainedRoute(_pathname: string): boolean {
+  return false;
 }

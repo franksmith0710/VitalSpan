@@ -29,28 +29,19 @@ export const ADMIN_PAGE_HEADER_BODY_CLASS = "px-5 py-5";
 export const ADMIN_PAGE_HEADER_ACTIONS_CLASS =
   "flex shrink-0 flex-wrap items-center justify-end gap-2 sm:gap-2.5";
 
-const ADMIN_PAGE_HEADER_ICON_TONE_CLASS = {
-  brand: "bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400",
-  success: "bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-400",
-  blue: "bg-blue-light-50 text-blue-light-600 dark:bg-blue-light-500/15 dark:text-blue-light-400",
-  warning: "bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-warning-400",
-} as const;
-
 /** 页头左侧图标块（对标 TailAdmin 页面 Hero 头图） */
 export function AdminPageHeaderIcon({
   children,
-  tone = "brand",
   className,
 }: {
   children: ReactNode;
-  tone?: keyof typeof ADMIN_PAGE_HEADER_ICON_TONE_CLASS;
   className?: string;
 }) {
   return (
     <span
       className={cn(
         "flex size-12 shrink-0 items-center justify-center rounded-xl",
-        ADMIN_PAGE_HEADER_ICON_TONE_CLASS[tone],
+        "bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400",
         className,
       )}
     >

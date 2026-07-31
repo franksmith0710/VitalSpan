@@ -3,6 +3,7 @@ import {
   isAdminConstrainedRoute,
   isAdminDashboardBuilderRoute,
   isAdminDatasetFormRoute,
+  isAdminDatasourceFormRoute,
   isAdminListFillRoute,
   isAdminMaxWidthNoneRoute,
   isAdminScreenPreviewRoute,
@@ -59,37 +60,30 @@ describe("isAdminWideScrollRoute", () => {
 });
 
 describe("isAdminMaxWidthNoneRoute", () => {
-  it("is true for list, share, wide scroll, and dashboard builder routes", () => {
+  it("is true for all admin routes", () => {
     expect(isAdminMaxWidthNoneRoute("/admin/dashboards")).toBe(true);
     expect(isAdminMaxWidthNoneRoute("/admin/reports/center")).toBe(true);
     expect(isAdminMaxWidthNoneRoute("/admin/dashboards/d1/share")).toBe(true);
+    expect(isAdminMaxWidthNoneRoute("/admin/account/profile")).toBe(true);
+    expect(isAdminMaxWidthNoneRoute("/admin/ingestion/sync-jobs/new")).toBe(true);
+    expect(isAdminMaxWidthNoneRoute("/admin/datasources/new")).toBe(true);
+    expect(isAdminMaxWidthNoneRoute("/admin/datasets/d1/edit")).toBe(true);
     expect(
       isAdminMaxWidthNoneRoute("/admin/dashboards/d1/edit", { dashboardBuilder: true }),
     ).toBe(true);
   });
 
-  it("stays false for constrained form and account routes", () => {
-    expect(isAdminMaxWidthNoneRoute("/admin/account/profile")).toBe(false);
-    expect(isAdminMaxWidthNoneRoute("/admin/datasources/new")).toBe(false);
-    expect(isAdminMaxWidthNoneRoute("/admin/ingestion/sync-jobs/new")).toBe(false);
-  });
-
-  it("is true for dataset form routes", () => {
-    expect(isAdminMaxWidthNoneRoute("/admin/datasets/new")).toBe(true);
-    expect(isAdminMaxWidthNoneRoute("/admin/datasets/d1/edit")).toBe(true);
+  it("is false for non-admin paths", () => {
+    expect(isAdminMaxWidthNoneRoute("/login")).toBe(false);
+    expect(isAdminMaxWidthNoneRoute("/embed/dashboard/x")).toBe(false);
   });
 });
 
 describe("isAdminConstrainedRoute", () => {
-  it("matches account and form-only routes", () => {
-    expect(isAdminConstrainedRoute("/admin/account/security")).toBe(true);
-    expect(isAdminConstrainedRoute("/admin/datasources/new")).toBe(true);
-    expect(isAdminConstrainedRoute("/admin/ingestion/sync-jobs/j1/edit")).toBe(true);
-  });
-
-  it("does not match dataset form routes (now full-width fill)", () => {
+  it("always false after unified full-width layout", () => {
+    expect(isAdminConstrainedRoute("/admin/account/security")).toBe(false);
+    expect(isAdminConstrainedRoute("/admin/ingestion/sync-jobs/j1/edit")).toBe(false);
     expect(isAdminConstrainedRoute("/admin/datasets/new")).toBe(false);
-    expect(isAdminConstrainedRoute("/admin/datasets/d1/edit")).toBe(false);
   });
 });
 
@@ -115,6 +109,15 @@ describe("isAdminVizComponentEditRoute", () => {
     expect(isAdminVizComponentEditRoute("/admin/viz-components/abc/edit/")).toBe(true);
     expect(isAdminVizComponentEditRoute("/admin/viz-components")).toBe(false);
     expect(isAdminVizComponentEditRoute("/admin/viz-components/new")).toBe(false);
+  });
+});
+
+describe("isAdminDatasourceFormRoute", () => {
+  it("matches datasource new and edit fill routes", () => {
+    expect(isAdminDatasourceFormRoute("/admin/datasources/new")).toBe(true);
+    expect(isAdminDatasourceFormRoute("/admin/datasources/ds-1/edit")).toBe(true);
+    expect(isAdminDatasourceFormRoute("/admin/datasources/ds-1/edit/")).toBe(true);
+    expect(isAdminDatasourceFormRoute("/admin/datasources")).toBe(false);
   });
 });
 

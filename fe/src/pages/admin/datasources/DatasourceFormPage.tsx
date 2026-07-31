@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import { Database } from "lucide-react";
+import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
+import { ADMIN_PAGE_SURFACE_CLASS } from "@/components/layout/list-page-kit";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiRequestError, apiFetch } from "@/lib/api";
@@ -28,6 +30,12 @@ import {
 
 type WizardStep = "category" | "type" | "form";
 type ConnectorTypeListResponse = { items: RawConnectorTypeItem[] };
+
+const datasourcePageIcon = (
+  <AdminPageHeaderIcon>
+    <Database className="size-6" aria-hidden />
+  </AdminPageHeaderIcon>
+);
 
 type DataSourceOut = {
   id: string;
@@ -185,9 +193,9 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
 
   if (mode === "edit" && detailQuery.isLoading) {
     return (
-      <div className="mx-auto max-w-2xl p-6">
-        <Skeleton className="h-64 w-full" />
-      </div>
+      <AdminPageShell title="编辑数据源" layout="fill" icon={datasourcePageIcon}>
+        <Skeleton className="h-full min-h-[480px] w-full rounded-2xl" />
+      </AdminPageShell>
     );
   }
 
@@ -197,10 +205,16 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
 
   return (
     <AdminPageShell
+      layout="fill"
       title={mode === "create" ? "新建数据源" : "编辑数据源"}
-      description={mode === "create" ? "填写连接信息以注册新的数据源。" : "更新连接配置；留空密码表示不修改。"}
+      icon={datasourcePageIcon}
+      description={
+        mode === "create"
+          ? "选择连接器类型并填写连接信息以注册新的数据源。"
+          : undefined
+      }
       actions={
-        <Button asChild variant="outline">
+        <Button asChild variant="outline" size="sm">
           <Link to="/admin/datasources">返回列表</Link>
         </Button>
       }
@@ -208,14 +222,14 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
       {mode === "create" ? (
         <div
           className={cn(
-            "overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-sm",
-            "dark:border-gray-800 dark:bg-white/[0.03]",
+            ADMIN_PAGE_SURFACE_CLASS,
+            "flex min-h-0 flex-1 flex-col overflow-hidden",
           )}
         >
-          <div className="border-b border-gray-200 px-6 py-5 dark:border-gray-800">
+          <div className="shrink-0 border-b border-gray-200 px-6 py-5 dark:border-gray-800">
             <DatasourceWizardStepper current={wizardStep} />
           </div>
-          <div className="p-6 lg:p-8">
+          <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar px-6 py-6 lg:px-8 lg:py-8">
             {wizardStep !== "form" ? (
               <DatasourceFormWizard
                 wizardStep={wizardStep}
@@ -265,29 +279,38 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
         </div>
       ) : (
         showForm && (
-          <DatasourceConnectionForm
-            mode={mode}
-            form={form}
-            selectedTypeLabel={selectedTypeLabel}
-            typeItems={connectorTypes}
-            error={error}
-            errorCode={errorCode}
-            isSaving={isSaving}
-            advancedOpen={advancedOpen}
-            codeInputRef={codeInputRef}
-            restApiCompanion={restApiCompanion}
-            fileCompanion={fileCompanion}
-            onAdvancedOpenChange={setAdvancedOpen}
-            onClearError={clearError}
-            onFieldChange={setField}
-            onTypeChange={(v) => {
-              clearError();
-              setForm((prev) => ({ ...prev, type: v, port: applyTypePort(v, prev.port) }));
-            }}
-            onRestApiChange={setRestApiCompanion}
-            onFileChange={setFileCompanion}
-            onSubmit={() => void handleSave()}
-          />
+          <div
+            className={cn(
+              ADMIN_PAGE_SURFACE_CLASS,
+              "flex min-h-0 flex-1 flex-col overflow-hidden",
+            )}
+          >
+            <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar px-6 py-6 lg:px-8 lg:py-8">
+              <DatasourceConnectionForm
+                mode={mode}
+                form={form}
+                selectedTypeLabel={selectedTypeLabel}
+                typeItems={connectorTypes}
+                error={error}
+                errorCode={errorCode}
+                isSaving={isSaving}
+                advancedOpen={advancedOpen}
+                codeInputRef={codeInputRef}
+                restApiCompanion={restApiCompanion}
+                fileCompanion={fileCompanion}
+                onAdvancedOpenChange={setAdvancedOpen}
+                onClearError={clearError}
+                onFieldChange={setField}
+                onTypeChange={(v) => {
+                  clearError();
+                  setForm((prev) => ({ ...prev, type: v, port: applyTypePort(v, prev.port) }));
+                }}
+                onRestApiChange={setRestApiCompanion}
+                onFileChange={setFileCompanion}
+                onSubmit={() => void handleSave()}
+              />
+            </div>
+          </div>
         )
       )}
     </AdminPageShell>

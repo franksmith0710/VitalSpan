@@ -12,3 +12,6 @@ fe/.vite/
 .ruff_cache/
 .worktrees/
 .arch-inspect/
+.dev/secrets.env
+.dev/walkthrough/
+.dev/baselines/

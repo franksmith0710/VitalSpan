@@ -133,7 +133,7 @@ export function SyncJobFormPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-2xl space-y-4">
+      <div className="w-full space-y-4">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-64 w-full" />
       </div>
@@ -141,7 +141,7 @@ export function SyncJobFormPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="w-full space-y-6">
       <h1 className="text-theme-xl font-semibold text-gray-900 dark:text-white">
         {isEdit ? "编辑同步任务" : "新建同步任务"}
       </h1>

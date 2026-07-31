@@ -17,15 +17,18 @@ vi.mock("@/context/auth-context", () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuditLogPage } from "./AuditLogPage";
 
 function renderAuditPage() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      <MemoryRouter>
-        <AuditLogPage />
-      </MemoryRouter>
+      <TooltipProvider delayDuration={0}>
+        <MemoryRouter>
+          <AuditLogPage />
+        </MemoryRouter>
+      </TooltipProvider>
     </QueryClientProvider>,
   );
 }

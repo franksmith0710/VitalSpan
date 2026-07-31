@@ -24,6 +24,7 @@ vi.mock("@/context/auth-context", () => ({
 }));
 
 import { ApiRequestError } from "@/lib/api";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { DatasourceFormPage } from "./DatasourceFormPage";
 
 const MOCK_TYPES = {
@@ -47,13 +48,15 @@ const MOCK_TYPES = {
 function renderForm() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={["/admin/datasources/new"]}>
-        <Routes>
-          <Route path="/admin/datasources/new" element={<DatasourceFormPage mode="create" />} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
+    <TooltipProvider delayDuration={0}>
+      <QueryClientProvider client={qc}>
+        <MemoryRouter initialEntries={["/admin/datasources/new"]}>
+          <Routes>
+            <Route path="/admin/datasources/new" element={<DatasourceFormPage mode="create" />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
+    </TooltipProvider>,
   );
 }
 
@@ -117,13 +120,15 @@ describe("DatasourceFormPage wizard smoke", () => {
     });
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
-      <QueryClientProvider client={qc}>
-        <MemoryRouter initialEntries={["/admin/datasources/ds-1/edit"]}>
-          <Routes>
-            <Route path="/admin/datasources/:id/edit" element={<DatasourceFormPage mode="edit" />} />
-          </Routes>
-        </MemoryRouter>
-      </QueryClientProvider>,
+      <TooltipProvider delayDuration={0}>
+        <QueryClientProvider client={qc}>
+          <MemoryRouter initialEntries={["/admin/datasources/ds-1/edit"]}>
+            <Routes>
+              <Route path="/admin/datasources/:id/edit" element={<DatasourceFormPage mode="edit" />} />
+            </Routes>
+          </MemoryRouter>
+        </QueryClientProvider>
+      </TooltipProvider>,
     );
     await waitFor(() => expect(screen.getByLabelText("名称")).toHaveValue("prod"));
     expect(screen.queryByRole("button", { name: /关系型数据库/ })).not.toBeInTheDocument();

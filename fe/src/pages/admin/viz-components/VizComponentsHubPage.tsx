@@ -184,7 +184,7 @@ export function VizComponentsHubPage() {
       layout="list"
       title={VIZ_COMPONENTS_HUB.title}
       icon={
-        <AdminPageHeaderIcon tone="blue">
+        <AdminPageHeaderIcon>
           <Boxes className="size-6" aria-hidden />
         </AdminPageHeaderIcon>
       }

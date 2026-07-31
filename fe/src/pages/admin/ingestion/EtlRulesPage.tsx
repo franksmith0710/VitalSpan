@@ -147,7 +147,7 @@ export function EtlRulesPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-2xl space-y-4">
+      <div className="w-full space-y-4">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-64 w-full" />
       </div>
@@ -155,7 +155,7 @@ export function EtlRulesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="w-full space-y-6">
       <h1 className="text-theme-xl font-semibold text-gray-900 dark:text-white">清洗规则</h1>
       <p className="text-theme-sm text-gray-500 dark:text-gray-400">{PLACEHOLDER_HINT}</p>
 

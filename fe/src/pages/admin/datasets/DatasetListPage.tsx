@@ -134,7 +134,7 @@ export function DatasetListPage() {
       layout="list"
       title="Dataset"
       icon={
-        <AdminPageHeaderIcon tone="blue">
+        <AdminPageHeaderIcon>
           <Layers className="size-6" aria-hidden />
         </AdminPageHeaderIcon>
       }

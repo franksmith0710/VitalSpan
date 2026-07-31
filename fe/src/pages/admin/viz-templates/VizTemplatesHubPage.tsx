@@ -189,7 +189,7 @@ export function VizTemplatesHubPage() {
       layout="list"
       title={VIZ_TEMPLATES_HUB.title}
       icon={
-        <AdminPageHeaderIcon tone="warning">
+        <AdminPageHeaderIcon>
           <LayoutTemplate className="size-6" aria-hidden />
         </AdminPageHeaderIcon>
       }

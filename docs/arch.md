@@ -5,7 +5,7 @@
 
 ```yaml
 version: 1.0.0
-last_updated: 2026-07-17
+last_updated: 2026-07-31
 status: bootstrap
 srs_ref: docs/srs/全生命周期系统需求规格说明书.md
 prd_ref: docs/automate/prd.md
@@ -430,7 +430,23 @@ pnpm dev            # 默认 :5173
 | [ui/layout.md](ui/layout.md) | 壳层与信息架构（单应用 + Embed） |
 | [ui/map-texture.md](ui/map-texture.md) | 3D 地图离线 hillshade 纹理管线（`map-3d`） |
 | [superpowers/README.md](superpowers/README.md) | 演化轮次 design/plan 产出（G2–P3） |
-| `.cursor/rules/` | Cursor 项目规则（见 `vitalspan-project.mdc`） |
+| [README.md](README.md) | 文档总索引（分层与快速跳转） |
+| `AGENTS.md` | 代理协作与环境选源（仓库根） |
+| `.dev/config.yaml` | 本项目环境地图与走查配置（密钥见 `.dev/secrets.env`） |
+| `.cursor/rules/` | Cursor 项目规则（见下表） |
+
+### Agent 规则索引
+
+| 规则 | 职责 |
+|------|------|
+| `project.mdc` | 会话启动、任务路由、目录铁律 |
+| `production.mdc` | 生产红线：国密、观测、弹性、RBAC、迁移、测试 |
+| `engineering.mdc` | 体量、API 信封、分层依赖 |
+| `delivery.mdc` | 打包/部署门禁；`.dev` 与 `$HOME/.dev` 分工 |
+| `vitalspan-project.mdc` | 项目身份摘要 |
+| `common.mdc` | 公共复用清单 |
+| `backend-fastapi.mdc` · `fe-ui.mdc` | 栈专项 |
+| `prd-sync.mdc` · `docs-layer.mdc` | 文档同步与编辑边界 |
 
 ---
 
@@ -442,3 +458,4 @@ pnpm dev            # 默认 :5173
 | 1.0.3 | 2026-07-03 | ADR-11 单应用 + RBAC；架构图 WebApp + Embed；废止双 URL 双端 |
 | 1.0.4 | 2026-07-17 | §9 compose 六服务；§6.2 双查询路径（直连 + Dataset）；Dataset 已落地说明 |
 | 1.0.5 | 2026-07-30 | ADR-15 designer/gov query-design 收敛策略（DESIGN-001 F-D） |
+| 1.0.6 | 2026-07-31 | §10 增文档总索引、`.dev`、Agent 规则索引 |

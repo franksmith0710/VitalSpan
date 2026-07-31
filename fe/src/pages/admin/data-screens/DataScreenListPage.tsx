@@ -352,7 +352,7 @@ export function DataScreenListPage() {
       layout="list"
       title="数据大屏"
       icon={
-        <AdminPageHeaderIcon tone="success">
+        <AdminPageHeaderIcon>
           <Monitor className="size-6" aria-hidden />
         </AdminPageHeaderIcon>
       }

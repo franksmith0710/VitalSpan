@@ -1,10 +1,9 @@
 import * as Collapsible from "@radix-ui/react-collapsible";
 import { ChevronDown } from "lucide-react";
-import type { RefObject } from "react";
+import type { ReactNode, RefObject } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { ConnectorTypeItem } from "@/lib/connector-taxonomy";
@@ -39,6 +38,28 @@ type Props = {
   onSubmit: () => void;
 };
 
+function FormSection({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="border-b border-gray-100 pb-6 last:border-b-0 last:pb-0 dark:border-gray-800">
+      <div className="mb-4">
+        <h3 className="text-theme-sm font-semibold text-gray-900 dark:text-white">{title}</h3>
+        {description ? (
+          <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">{description}</p>
+        ) : null}
+      </div>
+      <div className="grid gap-4">{children}</div>
+    </section>
+  );
+}
+
 export function DatasourceConnectionForm({
   mode,
   form,
@@ -63,7 +84,7 @@ export function DatasourceConnectionForm({
 }: Props) {
   const formBody = (
     <form
-      className="grid gap-5"
+      className="grid gap-6"
       onSubmit={(e) => {
         e.preventDefault();
         onSubmit();
@@ -77,58 +98,72 @@ export function DatasourceConnectionForm({
         </Alert>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="grid gap-2 sm:col-span-2">
-          <Label htmlFor="name">名称</Label>
-          <Input
-            id="name"
-            value={form.name}
-            onChange={(e) => onFieldChange("name", e.target.value)}
-            required
-            className="h-11"
-            fieldState={errorCode === "DATASOURCE_NAME_CONFLICT" ? "error" : "default"}
-            aria-invalid={errorCode === "DATASOURCE_NAME_CONFLICT" || undefined}
-          />
+      <FormSection
+        title="基本信息"
+        description="名称与标识用于在列表、查询与看板绑定中识别此连接。"
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-2 sm:col-span-2">
+            <Label htmlFor="name">名称</Label>
+            <Input
+              id="name"
+              value={form.name}
+              onChange={(e) => onFieldChange("name", e.target.value)}
+              required
+              className="h-11"
+              fieldState={errorCode === "DATASOURCE_NAME_CONFLICT" ? "error" : "default"}
+              aria-invalid={errorCode === "DATASOURCE_NAME_CONFLICT" || undefined}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="code">标识</Label>
+            <Input
+              ref={codeInputRef}
+              id="code"
+              value={form.code}
+              onChange={(e) => onFieldChange("code", e.target.value)}
+              required
+              readOnly={mode === "edit"}
+              className="h-11"
+              fieldState={errorCode === "DATASOURCE_CODE_CONFLICT" && mode === "create" ? "error" : "default"}
+              aria-invalid={errorCode === "DATASOURCE_CODE_CONFLICT" && mode === "create" ? true : undefined}
+            />
+          </div>
+          {!embedded ? (
+            <DatasourceTypeField
+              mode={mode}
+              type={form.type}
+              selectedTypeLabel={selectedTypeLabel}
+              typeItems={typeItems}
+              onTypeChange={(v) => onTypeChange(v)}
+            />
+          ) : null}
         </div>
-        <div className="grid gap-2">
-          <Label htmlFor="code">标识</Label>
-          <Input
-            ref={codeInputRef}
-            id="code"
-            value={form.code}
-            onChange={(e) => onFieldChange("code", e.target.value)}
-            required
-            readOnly={mode === "edit"}
-            className="h-11"
-            fieldState={errorCode === "DATASOURCE_CODE_CONFLICT" && mode === "create" ? "error" : "default"}
-            aria-invalid={errorCode === "DATASOURCE_CODE_CONFLICT" && mode === "create" ? true : undefined}
-          />
-        </div>
-        {!embedded ? (
-          <DatasourceTypeField
-            mode={mode}
-            type={form.type}
-            selectedTypeLabel={selectedTypeLabel}
-            typeItems={typeItems}
-            onTypeChange={(v) => onTypeChange(v)}
-          />
-        ) : null}
-      </div>
+      </FormSection>
 
-      {embedded ? <TypeHint type={form.type} /> : null}
+      <FormSection
+        title="连接参数"
+        description={
+          embedded
+            ? "保存后可在详情页测试连通性并用于查询。"
+            : "主机、库名与凭证；编辑时留空密码表示不修改。"
+        }
+      >
+        {embedded ? <TypeHint type={form.type} /> : null}
 
-      {form.type === "rest_api" ? (
-        <RestApiConnectionFields value={restApiCompanion} onChange={onRestApiChange} />
-      ) : form.type === "excel" || form.type === "csv" ? (
-        <FileSourceConnectionFields sourceType={form.type} value={fileCompanion} onChange={onFileChange} />
-      ) : (
-        <GenericConnectionFields form={form} mode={mode} onFieldChange={onFieldChange} />
-      )}
+        {form.type === "rest_api" ? (
+          <RestApiConnectionFields value={restApiCompanion} onChange={onRestApiChange} />
+        ) : form.type === "excel" || form.type === "csv" ? (
+          <FileSourceConnectionFields sourceType={form.type} value={fileCompanion} onChange={onFileChange} />
+        ) : (
+          <GenericConnectionFields form={form} mode={mode} onFieldChange={onFieldChange} />
+        )}
+      </FormSection>
 
       <Collapsible.Root open={advancedOpen} onOpenChange={onAdvancedOpenChange}>
         <Collapsible.Trigger
           type="button"
-          className="flex w-full items-center justify-between rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-theme-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-300 dark:hover:bg-white/[0.04]"
+          className="flex w-full items-center justify-between rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-theme-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-300 dark:hover:bg-white/[0.04]"
         >
           高级选项
           <ChevronDown className={cn("size-4 transition-transform", advancedOpen && "rotate-180")} />
@@ -141,12 +176,13 @@ export function DatasourceConnectionForm({
               value={form.description}
               onChange={(e) => onFieldChange("description", e.target.value)}
               className="h-11"
+              placeholder="可选，便于团队识别用途"
             />
           </div>
         </Collapsible.Content>
       </Collapsible.Root>
 
-      <div className="flex flex-wrap items-center justify-end gap-3 border-t border-gray-100 pt-5 dark:border-gray-800">
+      <div className="sticky bottom-0 -mx-6 flex flex-wrap items-center justify-end gap-3 border-t border-gray-100 bg-white/95 px-6 py-4 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/95 lg:-mx-8 lg:px-8">
         <Button type="submit" variant="primary" disabled={isSaving} loading={isSaving} loadingText="保存中…">
           保存
         </Button>
@@ -156,7 +192,7 @@ export function DatasourceConnectionForm({
 
   if (embedded) {
     return (
-      <div className="mx-auto w-full max-w-3xl">
+      <div className="w-full">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 className="text-theme-base font-semibold text-gray-900 dark:text-white">填写连接信息</h2>
@@ -181,12 +217,20 @@ export function DatasourceConnectionForm({
   }
 
   return (
-    <Card className="mx-auto w-full max-w-2xl">
-      <CardHeader>
-        <CardTitle>连接信息</CardTitle>
-      </CardHeader>
-      <CardContent>{formBody}</CardContent>
-    </Card>
+    <div className="w-full">
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-theme-base font-semibold text-gray-900 dark:text-white">连接信息</h2>
+          <p className="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">
+            {mode === "edit" ? "更新连接配置；留空密码表示不修改。" : "填写连接参数以注册新的数据源。"}
+          </p>
+        </div>
+        <Badge variant="light" color="primary" size="sm">
+          {selectedTypeLabel}
+        </Badge>
+      </div>
+      {formBody}
+    </div>
   );
 }
 

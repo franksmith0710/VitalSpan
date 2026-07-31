@@ -27,6 +27,7 @@ export function GenericConnectionFields({ form, mode, onFieldChange }: Props) {
             value={form.host}
             onChange={(e) => onFieldChange("host", e.target.value)}
             required
+            className="h-11"
           />
         </div>
         {hidePortField(form.type) ? null : (
@@ -38,6 +39,7 @@ export function GenericConnectionFields({ form, mode, onFieldChange }: Props) {
               value={form.port}
               onChange={(e) => onFieldChange("port", e.target.value)}
               required
+              className="h-11"
             />
           </div>
         )}
@@ -49,6 +51,7 @@ export function GenericConnectionFields({ form, mode, onFieldChange }: Props) {
           value={form.database}
           onChange={(e) => onFieldChange("database", e.target.value)}
           required
+          className="h-11"
           aria-describedby={hintId}
         />
       </div>
@@ -59,6 +62,7 @@ export function GenericConnectionFields({ form, mode, onFieldChange }: Props) {
           value={form.username}
           onChange={(e) => onFieldChange("username", e.target.value)}
           required
+          className="h-11"
         />
       </div>
       <div className="grid gap-2">
@@ -69,6 +73,7 @@ export function GenericConnectionFields({ form, mode, onFieldChange }: Props) {
           value={form.password}
           onChange={(e) => onFieldChange("password", e.target.value)}
           required={mode === "create"}
+          className="h-11"
           autoComplete={mode === "create" ? "new-password" : "current-password"}
         />
       </div>

@@ -14,7 +14,7 @@ import { DatasetEditorForm } from "./DatasetEditorForm";
 import type { DatasetEditorValues, DatasetItem } from "./types";
 
 const datasetPageIcon = (
-  <AdminPageHeaderIcon tone="blue">
+  <AdminPageHeaderIcon>
     <Layers className="size-6" aria-hidden />
   </AdminPageHeaderIcon>
 );

@@ -23,6 +23,7 @@ const ACTION_LABELS: Record<string, string> = {
   "role.delete": "删除角色",
   "role.dimension.replace": "替换角色维度",
   "role.group.replace": "替换角色分组",
+  "role.permissions.replace": "替换角色权限",
   "group.create": "创建分组",
   "group.update": "更新分组",
   "group.delete": "删除分组",
@@ -119,6 +120,28 @@ export function formatAuditDetailPretty(detail: string | null): string {
   if (parsed == null) return "—";
   if (typeof parsed === "string") return parsed;
   return JSON.stringify(parsed, null, 2);
+}
+
+export type AuditDetailEntry = {
+  key: string;
+  label: string;
+  value: string;
+};
+
+export function parseAuditDetailEntries(detail: string | null): AuditDetailEntry[] {
+  const parsed = parseDetail(detail);
+  if (parsed == null) return [];
+  if (typeof parsed === "string") {
+    return [{ key: "_raw", label: "内容", value: parsed }];
+  }
+  if (typeof parsed === "object" && !Array.isArray(parsed)) {
+    return Object.entries(parsed as Record<string, unknown>).map(([key, value]) => ({
+      key,
+      label: DETAIL_KEY_LABELS[key] ?? key,
+      value: formatDetailValue(key, value),
+    }));
+  }
+  return [{ key: "_raw", label: "内容", value: String(parsed) }];
 }
 
 export function formatAuditTimestamp(value: string): { date: string; time: string } {

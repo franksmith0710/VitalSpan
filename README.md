@@ -42,6 +42,8 @@ VitalSpan/
 ├── tests/            # 后端集成 / smoke 测试
 ├── docker-compose.yml  # 平台库与样例数据源
 ├── .cursor/rules/    # 项目约定（Agent / 开发纪律）
+├── .dev/             # 环境地图与 browser-reviewer 走查配置
+├── AGENTS.md         # 代理协作与环境选源
 └── .agents/skills/   # 项目级 Agent 技能
 ```
 
@@ -119,7 +121,13 @@ pnpm dev
 
 ### 4. 默认开发账号
 
-环境变量 `VITALSPAN_DEV_ADMIN_PASSWORD`（见 `backend/.env.example`）控制开发态管理员密码。
+环境变量 `VITALSPAN_DEV_ADMIN_PASSWORD`（见 `backend/.env.example`）控制开发态管理员密码。  
+开发 RBAC 演示账号：`admin` / `analyst` / `viewer`（同密码）。
+
+### 5. 环境地图（Agent / 走查）
+
+仓库 [`.dev/`](.dev/README.md) 登记本机 URL、compose 依赖与走查账号；密钥复制 [`.dev/secrets.env.example`](.dev/secrets.env.example) → `.dev/secrets.env`。  
+跨项目 LDAP/S3/日志验真读家目录 **`$HOME/.dev`**（见 [`AGENTS.md`](AGENTS.md)）。
 
 ---
 

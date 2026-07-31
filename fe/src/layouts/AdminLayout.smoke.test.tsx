@@ -123,7 +123,7 @@ describe("AdminLayout smoke", () => {
     });
   });
 
-  it("main content area uses max-w breakpoint contract (T-FE-16)", () => {
+  it("main content area uses full-width contract (T-FE-16)", () => {
     render(
       <MemoryRouter initialEntries={["/admin"]}>
         <Routes>
@@ -134,7 +134,8 @@ describe("AdminLayout smoke", () => {
       </MemoryRouter>,
     );
     const main = screen.getAllByRole("main")[0];
-    expect(main.className).toContain("max-w-(--breakpoint-2xl)");
+    expect(main.className).toContain("max-w-none");
+    expect(main.className).not.toContain("max-w-(--breakpoint-2xl)");
   });
 
   it("dataset edit route uses fill-height full-width main", () => {
@@ -202,7 +203,7 @@ describe("AdminLayout smoke", () => {
     expect(main.className).toContain("overflow-y-auto");
   });
 
-  it("account profile keeps max-w-2xl constrained main", () => {
+  it("account profile uses full-width main", () => {
     render(
       <MemoryRouter initialEntries={["/admin/account/profile"]}>
         <Routes>
@@ -213,8 +214,8 @@ describe("AdminLayout smoke", () => {
       </MemoryRouter>,
     );
     const main = screen.getAllByRole("main")[0];
-    expect(main.className).toContain("max-w-(--breakpoint-2xl)");
-    expect(main.className).not.toContain("max-w-none");
+    expect(main.className).toContain("max-w-none");
+    expect(main.className).not.toContain("max-w-(--breakpoint-2xl)");
   });
 
   it("T-NAV-02: dashboard edit → list keeps AdminLayout mounted (useMatch hooks stable)", async () => {
@@ -294,7 +295,8 @@ describe("AdminLayout smoke", () => {
       </MemoryRouter>,
     );
     const main = screen.getAllByRole("main")[0];
-    expect(main.className).toContain("max-w-(--breakpoint-2xl)");
+    expect(main.className).toContain("max-w-none");
+    expect(main.className).not.toContain("max-w-(--breakpoint-2xl)");
     expect(
       screen.getAllByRole("navigation", { name: "管理端导航" }).length,
     ).toBeGreaterThanOrEqual(1);

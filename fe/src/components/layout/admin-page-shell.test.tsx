@@ -16,7 +16,7 @@ describe("AdminPageShell", () => {
         layout="list"
         title="数据大屏"
         icon={
-          <AdminPageHeaderIcon tone="success">
+          <AdminPageHeaderIcon>
             <Database className="size-6" aria-hidden />
           </AdminPageHeaderIcon>
         }
