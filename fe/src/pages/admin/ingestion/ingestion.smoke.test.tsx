@@ -293,6 +293,41 @@ describe("ingestion admin smoke", () => {
     expect(screen.getByLabelText("增量字段")).toBeInTheDocument();
   });
 
+  it("SyncJobsPage_shows_consume_guide_after_success", async () => {
+    setViewport(1400);
+    mockApiFetch.mockResolvedValueOnce({
+      items: [
+        {
+          id: "job-1",
+          name: "demo",
+          source_type: "mysql",
+          target_table: "orders_clean",
+          enabled: true,
+          schedule_cron: null,
+          last_run: {
+            status: "succeeded",
+            started_at: "2026-08-03T07:00:00Z",
+            finished_at: "2026-08-03T07:01:00Z",
+            rows_synced: 5,
+            error_message: null,
+          },
+        },
+      ],
+    });
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs" element={<SyncJobsPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText(/同步成功 · 下一步/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "登记分析库" })).toHaveAttribute(
+      "href",
+      "/admin/datasources/new",
+    );
+  });
+
   it("SyncJobsEmptyState_shows_consume_step", async () => {
     setViewport(1400);
     mockApiFetch.mockResolvedValueOnce({ items: [] });

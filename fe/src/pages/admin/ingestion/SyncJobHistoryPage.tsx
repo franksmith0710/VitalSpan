@@ -120,6 +120,11 @@ export function SyncJobHistoryPage() {
     [runs],
   );
 
+  const latestSucceededRun = useMemo(
+    () => runs.find((run) => run.status === "succeeded"),
+    [runs],
+  );
+
   return (
     <AdminPageShell
       layout="list"
@@ -158,7 +163,10 @@ export function SyncJobHistoryPage() {
       <ListPageSection>
         {hasSucceededRun && targetTable ? (
           <div className="border-b border-gray-200 px-6 py-4 dark:border-gray-800">
-            <SyncJobConsumeGuide targetTable={targetTable} />
+            <SyncJobConsumeGuide
+              targetTable={targetTable}
+              rowsSynced={latestSucceededRun?.rows_synced}
+            />
           </div>
         ) : null}
         {loading ? (

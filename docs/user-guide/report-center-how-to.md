@@ -109,7 +109,7 @@
 3. 点击 **创建定时报告**，再 **激活**；可选 **立即执行** 验证。
 4. 在 **报表调度 → 看板/大屏** Tab 统一管理。
 
-> **产物说明（2026-07-31）**：当前看板/大屏定时附件为 **组件布局摘要**（PDF/CSV 清单），**不是**图表渲染快照；执行历史会标注「布局摘要」。完整可视化 PDF 导出能力规划中。
+> **产物说明（2026-08-03）**：看板/大屏定时 PDF 附件为 **可视化快照**（Playwright 截取画布 PDF）；执行历史标注「可视化快照」。历史「布局摘要」记录为升级前产物。Excel/CSV 导出仍为组件布局清单。
 
 ### 维护预制绑定（高级）
 
@@ -121,6 +121,9 @@
 
 | 现象 | 可能原因 | 建议 |
 |------|----------|------|
+| 定时报告执行失败「SMTP 未配置」 | `RPT_SMTP_*` 未设置或 MailHog 未启动 | 本地开发：`RPT_SMTP_HOST=localhost`、`RPT_SMTP_PORT=1025` 并启动 MailHog；见 `backend/.env.example` |
+| PDF 导出失败「Playwright 未安装」 | 后端缺少 Chromium | `pip install playwright && playwright install chromium`；配置 `FE_BASE_URL` 指向前端 |
+| 预制报表无法运行 | `DEV_REPORT_SEED=0` 且无实体物理表 | 开发环境设 `DEV_REPORT_SEED=1` 并重启后端 |
 | 侧栏没有「报表模板/调度」 | 账号仅有 `report:read` | 联系管理员分配 `report:manage` 或 admin 角色 |
 | 预制运行提示无权 | 绑定 `allowedRoles` 未包含当前角色 | 管理员调整预制绑定或用户角色 |
 | 浏览页只有示例数据 | 模板扩展/数据源未配置 | 管理员在 **扩展配置** Tab 完善 |

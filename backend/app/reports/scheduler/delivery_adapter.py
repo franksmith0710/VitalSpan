@@ -23,10 +23,13 @@ def _format_smtp_error(exc: OSError, settings: Settings) -> str:
 
 
 _ARTIFACT_EMAIL: dict[str, tuple[str, str]] = {
+    "visual_snapshot": (
+        "VitalSpan 看板定时报告（可视化快照）",
+        "附件为看板/大屏画布可视化 PDF 快照。\n\n下载引用：{ref}",
+    ),
     "layout_inventory": (
         "VitalSpan 看板定时报告（布局摘要预览）",
-        "附件为看板组件布局清单 PDF/CSV，非图表渲染快照。"
-        "完整可视化导出能力规划中。\n\n下载引用：{ref}",
+        "附件为看板组件布局清单 PDF/CSV（历史或降级产物），非图表渲染快照。\n\n下载引用：{ref}",
     ),
     "template_render": (
         "VitalSpan 报表定时报告",

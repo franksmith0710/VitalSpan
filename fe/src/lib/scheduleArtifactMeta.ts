@@ -1,7 +1,8 @@
-export type ScheduleArtifactKind = "layout_inventory" | "template_render" | (string & {});
+export type ScheduleArtifactKind = "layout_inventory" | "visual_snapshot" | "template_render" | (string & {});
 
 const ARTIFACT_KIND_LABELS: Record<string, string> = {
   layout_inventory: "布局摘要",
+  visual_snapshot: "可视化快照",
   template_render: "报表渲染",
 };
 
@@ -15,4 +16,4 @@ export function isLayoutInventoryArtifact(kind: string | null | undefined): bool
 }
 
 export const LAYOUT_INVENTORY_NOTICE =
-  "当前附件为看板/大屏组件布局摘要（PDF/CSV 清单），非图表渲染快照；完整可视化导出能力规划中。";
+  "历史记录为布局摘要附件（升级前产物）；新执行的看板定时报告将投递可视化快照 PDF。";

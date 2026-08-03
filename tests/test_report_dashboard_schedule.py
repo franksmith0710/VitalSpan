@@ -41,17 +41,36 @@ def _sqlite():
 
 @pytest.fixture(autouse=True)
 def _reset_schedules():
+    from app.dashboard.export_jobs import reset_export_jobs_for_tests
+    from app.dashboard.export_token import reset_export_tokens_for_tests
     from app.reports.scheduler import executor as scheduler_executor
 
     scheduler_service._schedules.clear()
     scheduler_executor._EXECUTION_LOG.clear()
     scheduler_executor._EXECUTION_BY_ID.clear()
     scheduler_executor._HISTORY.clear()
+    reset_export_jobs_for_tests()
+    reset_export_tokens_for_tests()
     yield
     scheduler_service._schedules.clear()
     scheduler_executor._EXECUTION_LOG.clear()
     scheduler_executor._EXECUTION_BY_ID.clear()
     scheduler_executor._HISTORY.clear()
+    reset_export_jobs_for_tests()
+    reset_export_tokens_for_tests()
+
+
+@pytest.fixture(autouse=True)
+def _mock_visual_pdf(monkeypatch):
+    fake_pdf = b"%PDF-1.4 schedule visual\n" + b"y" * 600
+
+    def _fake_render(dashboard_id, *, token, surface="dashboard"):
+        return fake_pdf
+
+    monkeypatch.setattr(
+        "app.dashboard.export_jobs.render_dashboard_visual_pdf",
+        _fake_render,
+    )
 
 
 @pytest.fixture
@@ -117,7 +136,7 @@ def test_delivery_health_endpoint(client: TestClient):
     assert body["status"] in {"reachable", "unreachable", "unconfigured"}
 
 
-def test_dashboard_execute_records_layout_inventory_artifact(client: TestClient):
+def test_dashboard_execute_records_visual_snapshot_artifact(client: TestClient):
     dash = client.post(
         "/api/v1/dashboards",
         headers=AUTH,
@@ -147,6 +166,6 @@ def test_dashboard_execute_records_layout_inventory_artifact(client: TestClient)
     )
     assert exec_resp.status_code == 200, exec_resp.text
     body = exec_resp.json()
-    assert body.get("artifactKind") == "layout_inventory"
+    assert body.get("artifactKind") == "visual_snapshot"
     hist = client.get(f"/api/v1/reports/schedules/{schedule_id}/executions", headers=AUTH)
-    assert hist.json()["items"][0]["artifactKind"] == "layout_inventory"
+    assert hist.json()["items"][0]["artifactKind"] == "visual_snapshot"

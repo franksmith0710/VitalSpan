@@ -343,6 +343,32 @@
 
 ---
 
+---
+
+## 第八组：G5 可视化 PDF（交付签收）
+
+> **目标**：看板定时报告附件为可视化快照，非布局文字清单  
+> **PRD**：RPT-005 · [交付闭环设计](../feature-design/2026-08-03-report-center-delivery-closure.md)
+
+### Case 18 — 看板定时 PDF 视觉验收
+
+**前置**：`playwright install chromium` 已执行；后端 `FE_BASE_URL` 指向前端 dev/preview；SMTP（MailHog 1025）可选。
+
+**操作步骤**：
+
+1. admin 登录 → 打开含至少 1 个图表的看板 → **分享** → **定时报告**。
+2. 配置 PDF 附件、接收人 → **创建** → **激活** → **立即执行**。
+3. 展开执行历史，查看 **产物类型** 与 **状态**。
+4. 下载附件 PDF，目视检查内容。
+
+**预期**：
+
+- 历史 `artifactKind` 显示 **可视化快照**（非布局摘要）。
+- 渲染失败时状态为 **执行失败**，`errorMessage` 说明原因（非 silent 成功）。
+- PDF 可见画布/图表区域；正文 **不得** 以 `LAYOUT INVENTORY PREVIEW` 开头。
+
+---
+
 ## 评分汇总
 
 | 组别 | 主题 | Case 数 | 通过 | 失败 | 阻塞 |

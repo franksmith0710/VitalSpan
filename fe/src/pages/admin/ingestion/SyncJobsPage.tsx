@@ -29,6 +29,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { SyncJobsEmptyState } from "./components/SyncJobsEmptyState";
+import { SyncJobConsumeGuide, pickLatestSucceededJob } from "./components/SyncJobConsumeGuide";
 import { SyncJobsMetrics } from "./components/SyncJobsMetrics";
 import { SyncJobsTable } from "./components/SyncJobsTable";
 import {
@@ -90,22 +91,57 @@ export function SyncJobsPage() {
     }
   }, []);
 
-  const startRunPolling = useCallback(() => {
-    if (pollTimerRef.current !== null) {
-      window.clearInterval(pollTimerRef.current);
-    }
-    let ticks = 0;
-    pollTimerRef.current = window.setInterval(() => {
-      ticks += 1;
-      void loadJobs({ silent: true });
-      if (ticks >= 5) {
-        if (pollTimerRef.current !== null) {
-          window.clearInterval(pollTimerRef.current);
-          pollTimerRef.current = null;
-        }
+  const startRunPolling = useCallback(
+    (jobId: string, jobName: string) => {
+      if (pollTimerRef.current !== null) {
+        window.clearInterval(pollTimerRef.current);
       }
-    }, 2000);
-  }, [loadJobs]);
+      let ticks = 0;
+      pollTimerRef.current = window.setInterval(() => {
+        ticks += 1;
+        void (async () => {
+          try {
+            const data = await apiFetch<SyncJobListResponse>("/api/v1/ingestion/sync-jobs");
+            setJobs(data.items);
+            const job = data.items.find((item) => item.id === jobId);
+            const status = job?.last_run?.status;
+            if (status === "succeeded") {
+              if (pollTimerRef.current !== null) {
+                window.clearInterval(pollTimerRef.current);
+                pollTimerRef.current = null;
+              }
+              const rows = job.last_run?.rows_synced;
+              toast.success(
+                `任务「${jobName}」同步成功${rows != null ? `，写入 ${rows} 行` : ""}`,
+                {
+                  duration: 8000,
+                  action: {
+                    label: "登记分析库",
+                    onClick: () => navigate("/admin/datasources/new"),
+                  },
+                },
+              );
+            } else if (status === "failed") {
+              if (pollTimerRef.current !== null) {
+                window.clearInterval(pollTimerRef.current);
+                pollTimerRef.current = null;
+              }
+              toast.error(`任务「${jobName}」同步失败，请查看运行历史`);
+            }
+          } catch {
+            /* 轮询失败忽略，下一轮重试 */
+          }
+          if (ticks >= 15) {
+            if (pollTimerRef.current !== null) {
+              window.clearInterval(pollTimerRef.current);
+              pollTimerRef.current = null;
+            }
+          }
+        })();
+      }, 2000);
+    },
+    [navigate],
+  );
 
   useEffect(() => {
     return () => {
@@ -155,6 +191,8 @@ export function SyncJobsPage() {
     return hasFilter ? `显示 ${filteredJobs.length} 个` : `共 ${jobs.length} 个任务`;
   }, [filteredJobs.length, jobs.length, search, statusFilter]);
 
+  const latestSucceededJob = useMemo(() => pickLatestSucceededJob(jobs), [jobs]);
+
   const handleRun = async (job: SyncJobSummary) => {
     setRunningId(job.id);
     try {
@@ -167,7 +205,7 @@ export function SyncJobsPage() {
         },
       });
       void loadJobs({ silent: true });
-      startRunPolling();
+      startRunPolling(job.id, job.name);
     } catch (err) {
       setError(mapApiError(err));
     } finally {
@@ -246,6 +284,14 @@ export function SyncJobsPage() {
           <div className="shrink-0">
             <SyncJobsMetrics stats={stats} />
           </div>
+          {latestSucceededJob ? (
+            <div className="shrink-0">
+              <SyncJobConsumeGuide
+                targetTable={latestSucceededJob.target_table}
+                rowsSynced={latestSucceededJob.last_run?.rows_synced}
+              />
+            </div>
+          ) : null}
           <ListPageSection>
             <SyncJobsToolbar
               search={search}

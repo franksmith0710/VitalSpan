@@ -24,6 +24,7 @@ import {
   ScheduleFormFields,
   type ScheduleFormValue,
 } from "./ScheduleFormFields";
+import { isLayoutInventoryArtifact } from "@/lib/scheduleArtifactMeta";
 import { ScheduleArtifactNotice } from "./ScheduleArtifactNotice";
 import { ScheduleHistoryTable } from "./ScheduleHistoryTable";
 
@@ -105,6 +106,7 @@ export function DashboardSchedulePanel({
   }
 
   const history = historyQuery.data?.items ?? [];
+  const showLegacyNotice = history.some((row) => isLayoutInventoryArtifact(row.artifactKind));
 
   return (
     <Card>
@@ -114,14 +116,14 @@ export function DashboardSchedulePanel({
           定时报告
         </CardTitle>
         <CardDescription>
-          为「{sourceName}」{label}按日/周/月生成布局摘要附件并邮件投递（非图表渲染快照）。
+          为「{sourceName}」{label}按日/周/月生成可视化 PDF 快照并邮件投递。
           <Link to="/admin/reports/schedules?tab=dashboard" className="ml-1 text-brand-500 hover:underline">
             查看全部调度
           </Link>
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <ScheduleArtifactNotice show />
+        <ScheduleArtifactNotice show={showLegacyNotice} />
         {!schedule ? (
           <>
             <ScheduleFormFields

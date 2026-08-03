@@ -110,6 +110,16 @@ def _public_paths_for(settings: Settings) -> frozenset[str]:
     return PUBLIC_PATHS_BASE
 
 
+def _is_public_export_route(path: str, request: Request) -> bool:
+    if "/export-layout" in path and request.query_params.get("token"):
+        return True
+    if path == "/api/v1/dashboards/export-query/execute":
+        token = request.headers.get("X-Export-Token", "").strip()
+        dash_id = request.headers.get("X-Export-Dashboard-Id", "").strip()
+        return bool(token and dash_id)
+    return False
+
+
 def _is_public_embed_route(path: str, request: Request) -> bool:
     if path == "/api/v1/embed/sdk-params" and request.query_params.get("token"):
         return True
@@ -143,6 +153,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if path in _public_paths_for(self.settings) or path.startswith("/docs"):
             return await call_next(request)
         if _is_public_embed_route(path, request):
+            return await call_next(request)
+        if _is_public_export_route(path, request):
             return await call_next(request)
 
         auth_header = request.headers.get("Authorization", "")

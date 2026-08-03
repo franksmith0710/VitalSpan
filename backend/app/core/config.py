@@ -43,6 +43,8 @@ class Settings(BaseSettings):
     dev_report_seed: bool = False
     ensure_official_demo_datasource: bool = True
     sample_mysql_url: str | None = None
+    fe_base_url: str = "http://localhost:5173"
+    rpt_export_fallback: bool = False
 
     _DEV_JWT_SM2_PRIVATE: ClassVar[str] = (
         "3DA75A807474C867E8E5C60B3E4E32DC8D319D4447B9594D394E6D3BD8778D1F"

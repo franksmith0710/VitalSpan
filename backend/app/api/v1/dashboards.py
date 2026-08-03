@@ -28,6 +28,8 @@ from app.dashboard.global_filters.errors import GlobalFilterError
 from app.dashboard.global_filters.schemas import GlobalFilterLinkageItem, GlobalFilterLinkageOut
 from app.dashboard.global_filters import service as global_filter_service
 from app.dashboard.export_jobs_schemas import DashboardExportJobIn
+from app.dashboard.export_snapshot import execute_export_query, get_export_layout
+from app.query.schemas import ExecuteRequest
 from app.datasources.models import get_meta_session
 
 router = APIRouter(prefix="/dashboards", tags=["dashboards"])
@@ -459,6 +461,43 @@ def download_dashboard_export_job(
             content=body,
             media_type=media_type,
             headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+    except dash_service.DashboardError as exc:
+        return _error_response(exc)
+
+
+@router.get("/{dashboard_id}/export-layout")
+def get_dashboard_export_layout_route(
+    dashboard_id: uuid.UUID,
+    token: str = Query(),
+    db: Annotated[Session, Depends(_db)] = None,
+):
+    try:
+        return get_export_layout(db, dashboard_id, token)
+    except dash_service.DashboardError as exc:
+        return _error_response(exc)
+
+
+@router.post("/export-query/execute")
+def post_dashboard_export_query(
+    payload: ExecuteRequest,
+    request: Request,
+    db: Annotated[Session, Depends(_db)] = None,
+):
+    token = request.headers.get("X-Export-Token", "").strip()
+    dash_raw = request.headers.get("X-Export-Dashboard-Id", "").strip()
+    if not token or not dash_raw:
+        return JSONResponse(
+            status_code=401,
+            content={"code": "UNAUTHORIZED", "message": "Missing export token", "detail": None},
+        )
+    try:
+        dashboard_id = uuid.UUID(dash_raw)
+        return execute_export_query(db, dashboard_id, token, payload)
+    except ValueError:
+        return JSONResponse(
+            status_code=422,
+            content={"code": "VALIDATION_ERROR", "message": "Invalid dashboard id", "detail": None},
         )
     except dash_service.DashboardError as exc:
         return _error_response(exc)

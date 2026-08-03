@@ -5,7 +5,7 @@
 | 模块路径 | `backend/app/reports/` |
 | PRD | [F08-RPT](../automate/prd/F08-RPT.md) · RPT-001 ~ RPT-007 |
 | 里程碑 | M6 / M10 / M12 |
-| 状态 | **部分（BE L1 + FE 中心/调度/重试已交付 · M-DEPTH F-C 历史 UI 2026-07-29）** |
+| 状态 | **已交付（G5 可视化 PDF · 2026-08-03）** |
 
 ## 职责
 

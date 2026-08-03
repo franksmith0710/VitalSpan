@@ -5,9 +5,16 @@ from typing import Any, Literal
 SurfaceKindFilter = Literal["dashboard", "data-screen"]
 
 
-def read_surface_kind_from_layout(layout_json: dict[str, Any] | None) -> SurfaceKindFilter:
-    if not layout_json:
-        return "dashboard"
+def layout_to_dict(layout_json: Any) -> dict[str, Any]:
+    if layout_json is None:
+        return {}
+    if hasattr(layout_json, "model_dump"):
+        return layout_json.model_dump(by_alias=True, mode="json")
+    return layout_json if isinstance(layout_json, dict) else {}
+
+
+def read_surface_kind_from_layout(layout_json: dict[str, Any] | Any | None) -> SurfaceKindFilter:
+    layout_json = layout_to_dict(layout_json)
     style = layout_json.get("styleConfig") or layout_json.get("style_config") or {}
     if not isinstance(style, dict):
         return "dashboard"

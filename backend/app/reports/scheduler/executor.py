@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.auth.deps import UserContext
 from app.auth.models import get_meta_session
 from app.dashboard import export_jobs as dashboard_export_jobs
+from app.dashboard import service as dash_service
 from app.datasources.models import get_meta_engine
 from app.reports.catalog.acl import register_artifact_owner
 from app.reports.extension import service as extension_service
@@ -126,12 +127,33 @@ def semi_real_execute_schedule(
             pass
     artifact_ref = f"semi://reports/{schedule_id}/{execution_id}"
     artifact_kind = "template_render"
+    export_error: str | None = None
     if source_type in {"dashboard", "data_screen"} and source_id is not None:
         fmt = (row.get("attachment_formats") or ["pdf"])[0]
-        artifact_kind = "layout_inventory"
-        with Session(bind=get_meta_engine()) as db:
-            job = dashboard_export_jobs.submit_dashboard_export(db, source_id, fmt, actor)
-        artifact_ref = job.download_url or artifact_ref
+        try:
+            with Session(bind=get_meta_engine()) as db:
+                job = dashboard_export_jobs.submit_dashboard_export(db, source_id, fmt, actor)
+            artifact_kind = job.artifact_kind or "visual_snapshot"
+            artifact_ref = job.download_url or artifact_ref
+        except dash_service.DashboardError as exc:
+            export_error = exc.message
+    if export_error:
+        out = ScheduleExecuteOut(
+            executionId=execution_id,
+            scheduleId=schedule_id,
+            status="semi_real_failed",
+            artifactRef=artifact_ref,
+            artifactKind=None,
+            idempotencyKey=idempotency_key,
+            executedAt=datetime.now(UTC).isoformat(),
+            deliverySteps=[],
+            revisionSnapshot=revision_snapshot,
+            errorMessage=export_error,
+        )
+        _EXECUTION_LOG[idempotency_key] = out
+        _EXECUTION_BY_ID[execution_id] = out
+        _append_history(schedule_id, out, error_message=export_error)
+        return out
     recipient_emails: list[str] | None = None
     raw_recipients = row.get("recipients") or []
     if raw_recipients:

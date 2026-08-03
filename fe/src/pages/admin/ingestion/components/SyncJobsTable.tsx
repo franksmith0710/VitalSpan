@@ -52,6 +52,14 @@ function LastRunCell({ job }: { job: SyncJobSummary }) {
       {lastRun.status === "succeeded" && lastRun.rows_synced != null ? (
         <div className="text-theme-xs text-gray-500">{lastRun.rows_synced} 行</div>
       ) : null}
+      {lastRun.status === "succeeded" ? (
+        <Link
+          to={`/admin/ingestion/sync-jobs/${job.id}/history`}
+          className="text-theme-xs text-brand-600 underline-offset-2 hover:underline dark:text-brand-400"
+        >
+          下一步：出图指引
+        </Link>
+      ) : null}
       {lastRun.status === "failed" && lastRun.error_message ? (
         <TruncateHint
           title={localizeApiMessage(lastRun.error_message)}

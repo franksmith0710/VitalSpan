@@ -1,4 +1,9 @@
 import { clearAuthToken, getAuthToken } from "@/lib/auth-token";
+import {
+  getExportAuthHeaders,
+  isExportSnapshotContext,
+  resolveExportQueryExecutePath,
+} from "@/lib/exportSnapshot";
 
 let onUnauthorized: (() => void) | null = null;
 
@@ -29,12 +34,20 @@ export function isEmbedShareContext(): boolean {
 export function getAuthHeaders(): Record<string, string> {
   const embedToken = getEmbedTokenFromLocation();
   if (embedToken) return { "X-Embed-Token": embedToken };
+  if (isExportSnapshotContext()) {
+    const match = window.location.pathname.match(
+      /^\/export\/(?:dashboard|data-screen)\/([^/]+)/,
+    );
+    const dashboardId = match?.[1];
+    if (dashboardId) return getExportAuthHeaders(dashboardId);
+  }
   const token = getAuthToken();
   if (token) return { Authorization: `Bearer ${token}` };
   return {};
 }
 
 export function resolveQueryExecutePath(): string {
+  if (isExportSnapshotContext()) return resolveExportQueryExecutePath();
   return getEmbedTokenFromLocation()
     ? "/api/v1/embed/query/execute"
     : "/api/v1/query/execute";

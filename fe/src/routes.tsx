@@ -59,6 +59,11 @@ const DataScreenPreviewPage = lazy(() =>
     default: m.DataScreenPreviewPage,
   })),
 );
+const DashboardExportSnapshotPage = lazy(() =>
+  import("@/pages/export/DashboardExportSnapshotPage").then((m) => ({
+    default: m.DashboardExportSnapshotPage,
+  })),
+);
 const DesignerPage = lazy(() =>
   import("@/pages/admin/designer/DesignerPage").then((m) => ({ default: m.DesignerPage })),
 );
@@ -90,6 +95,14 @@ export function AppRoutes() {
     <Routes>
       <Route path="/" element={<Navigate to="/admin" replace />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route
+        path="/export/dashboard/:id"
+        element={<Lazy><DashboardExportSnapshotPage surface="dashboard" /></Lazy>}
+      />
+      <Route
+        path="/export/data-screen/:id"
+        element={<Lazy><DashboardExportSnapshotPage surface="data-screen" /></Lazy>}
+      />
       {import.meta.env.DEV ? (
         <Route
           path="/dev/charts"

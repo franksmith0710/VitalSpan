@@ -82,6 +82,7 @@ flowchart TB
 | ADR-10 | 演化指导库 **`.automate` submodule** | SOP/skills/agents 与产品代码分离；`install.sh` 同步至 `.cursor/` | 已部署 |
 | ADR-14 | **组织组件库 `componentRef` 引用模式** | 单 widget 级复用；layout 仅存引用，payload 在 `viz_components`；保存时剥离内联配置 | 已定 |
 | ADR-15 | **designer / gov query-design 双 API 收敛策略** | 短期保持双路由；中期抽取 `designer/translator` 公共模块；gov 委托 validate/preview | 已定 |
+| ADR-18 | **看板定时 PDF 可视化导出（Playwright）** | G5 交付：BE 无头 Chromium 打开 FE `/export/*?token=` → `page.pdf()`；`artifactKind=visual_snapshot`；Playwright 为 optional 运行时依赖，非 Superset/DE 运行时 | 已定 |
 
 ### ADR-15 · 查询设计器内核收敛（DESIGN-001 F-D）
 
@@ -100,6 +101,19 @@ flowchart TB
 - **不做**：本里程碑不改动运行时行为；仅登记 ADR 供后续里程碑引用。
 
 **代码锚点**：`backend/app/designer/` · `backend/app/governance/query_design/` · `fe/src/pages/admin/designer/DesignerPage.tsx` · `docs/automate/prd/F12-DESIGN.md` · `F10-GOV.md`
+
+### ADR-18 · 看板/大屏可视化 PDF 导出（RPT-005 G5）
+
+**背景**：定时报告附件原先为 `layout_inventory` 文字清单 PDF，不满足生产交付。
+
+**决策**：
+
+- BE `export_render.py` 使用 **Playwright Chromium** 访问 FE 无壳层路由 `/export/dashboard/:id?token=`（或 data-screen 对称路径），等待 `data-export-ready` 后 `page.pdf()`。
+- 短期鉴权：`export_token`（5min TTL，内存签发）；公开 `GET .../export-layout?token=` 与 `POST .../export-query/execute`（`X-Export-Token` 头）。
+- 产物枚举：`visual_snapshot`（默认）· `layout_inventory`（Excel 或 `RPT_EXPORT_FALLBACK=1` 降级）。
+- **环境**：`FE_BASE_URL`（默认 `http://localhost:5173`）；`pip install playwright && playwright install chromium`。
+
+**代码锚点**：`backend/app/dashboard/export_render.py` · `export_token.py` · `fe/src/pages/export/DashboardExportSnapshotPage.tsx` · `docs/feature-design/2026-08-03-report-center-delivery-closure.md`
 
 ### ADR-14 · 组织组件库（DASH-010）
 

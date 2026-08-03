@@ -24,6 +24,8 @@
 业务 MySQL 源表  →  [同步任务 + 可选 ETL]  →  托管 PostgreSQL 分析库目标表  →  图表 / 仪表板 SQL 查询
 ```
 
+> 不了解「托管分析库」？见下文 **[托管分析库是什么？](#托管分析库是什么)** 与 **[本地环境准备](#本地环境准备同步前检查)**。
+
 ---
 
 ## 谁可以做什么
@@ -34,6 +36,90 @@
 | 新建 / 编辑 / 删除任务、配置 ETL、手动运行 | `ingestion:manage` | 数据管理员 |
 
 本地开发环境默认 admin 账号通常具备上述权限。
+
+---
+
+## 托管分析库是什么？
+
+**托管分析库**是 VitalSpan 专门用来存放 **同步清洗后的业务数据** 的 PostgreSQL 数据库，供图表、仪表板、SQL 查询消费。同步任务从业务源库 **读**，向托管分析库 **写**；BI 再从分析库 **查**。
+
+```
+业务 MySQL（源表 dirty_orders）
+        ↓ 读取
+  [同步任务 + 可选 ETL 清洗]
+        ↓ 写入
+托管 PostgreSQL 分析库（目标表 orders_clean）
+        ↓ SQL 查询
+   图表 / 仪表板
+```
+
+### 和平台里其他库的区别
+
+本地开发环境通常同时存在 **三个** 数据库，职责不要混淆：
+
+| 库 | 本地典型地址 | 存什么 | 谁写入 |
+|----|--------------|--------|--------|
+| **平台元库** | `localhost:5432/vitalspan` | 用户、看板、同步任务配置、运行历史、ETL 规则 | VitalSpan 平台 |
+| **托管分析库** | `localhost:5433/analytics` | 同步后的业务表（如 `orders_clean`） | **同步任务执行器** |
+| **样例 MySQL 源库** | `localhost:3307/sample_db` | 原始业务表（如 `dirty_orders`） | 外部业务 / 演示种子数据 |
+
+要点：
+
+- 表单里的 **目标表** = 写入 **托管分析库** 的表名，不是 MySQL 里的表。
+- **元库** 记录「任务怎么配、跑过几次」；**分析库** 才是分析用的数据。
+- 平台 **不会自动** 在「数据连接」里帮你登记分析库；同步成功后需 **手动登记一次** PostgreSQL 数据源，才能在图表里选到它（见下文「同步完成后：在 BI 里使用数据」）。
+
+### 后端如何连接分析库
+
+后端通过环境变量 **`ANALYTICS_DATABASE_URL`** 连接托管分析库（与元库 `DATABASE_URL` 分离）。本地 `backend/.env.example` 默认：
+
+```text
+ANALYTICS_DATABASE_URL=postgresql+psycopg://vitalspan:vitalspan@localhost:5433/analytics
+```
+
+若该变量未配置或分析库服务未启动，手动/定时同步会在 **写入阶段失败**，运行历史中常见 `connection timeout` 一类错误。
+
+### 如何启动（本地 Docker）
+
+在项目根目录执行：
+
+```powershell
+docker compose up -d sample-mysql analytics-postgres
+```
+
+> **网络提示**：若拉取 `postgres:16-alpine` 超时，本仓库 `docker-compose.yml` 已改用 DaoCloud 镜像 `docker.m.daocloud.io/library/postgres:16-alpine`。仍失败时可手动：`docker pull docker.m.daocloud.io/library/postgres:16-alpine`，再 `docker compose up -d analytics-postgres`。
+
+| Compose 服务 | 宿主机端口 | 库名 | 账号/密码 |
+|--------------|------------|------|-----------|
+| `sample-mysql` | 3307 | `sample_db` | `sample` / `sample` |
+| `analytics-postgres` | 5433 | `analytics` | `vitalspan` / `vitalspan` |
+
+确认端口可用（PowerShell）：
+
+```powershell
+Test-NetConnection 127.0.0.1 -Port 3307   # MySQL 源
+Test-NetConnection 127.0.0.1 -Port 5433   # 托管分析库
+```
+
+同时需要：
+
+- 后端：`uvicorn app.main:app --reload --host 127.0.0.1 --port 8000`（`backend/` 目录）
+- 前端：`pnpm dev`（`fe/` 目录）
+
+---
+
+## 本地环境准备（同步前检查）
+
+在创建或运行同步任务前，建议按顺序确认：
+
+| # | 检查项 | 通过标准 |
+|---|--------|----------|
+| 1 | 样例 MySQL | `3307` 可连接；存在源表（如 `dirty_orders`） |
+| 2 | 托管分析库 | `5433` 可连接；`ANALYTICS_DATABASE_URL` 已配置 |
+| 3 | 后端 / 前端 | `8000` / `5173` 可访问管理端 |
+| 4 | 源数据源（可选） | **数据连接 → 连接管理** 中已有 MySQL 条目且测试通过 |
+
+调试阶段建议：**Cron 留空**或 **停用任务**，先用手动 **运行** 验证全链路，再开定时，避免分析库未就绪时整点任务占坑失败。
 
 ---
 
@@ -291,13 +377,26 @@ VitalSpan 使用 **5 个字段**，字段之间用**空格**分隔：
 
 ## 同步完成后：在 BI 里使用数据
 
-同步成功后，数据位于**托管 PostgreSQL 分析库**（本地 docker 环境通常为 `localhost:5433/analytics`）中的 **目标表**。
+同步成功后，列表页会出现蓝色 **「同步成功 · 下一步：在 BI 中使用数据」** 引导卡片；运行历史页顶部也有相同指引。手动运行成功后，toast 会提供 **「登记分析库」** 快捷入口。
+
+数据位于**托管 PostgreSQL 分析库**（本地 docker 环境通常为 `localhost:5433/analytics`）中的 **目标表**。
 
 ### 步骤 1：登记分析库数据源
 
 1. 进入 **数据连接 → 连接管理**（`/admin/datasources`）。
-2. 若尚无「分析库」条目，新增一个 **PostgreSQL** 数据源，指向托管分析库。
-3. 保存并 **测试连接** 通过。
+2. 点击 **新建数据源**，类型选 **PostgreSQL**。
+3. 填写连接信息（与本地 compose 默认值一致）：
+
+| 字段 | 示例值 |
+|------|--------|
+| 名称 | `托管分析库` 或 `Analytics` |
+| 主机 | `127.0.0.1` |
+| 端口 | `5433` |
+| 数据库 | `analytics` |
+| 用户名 | `vitalspan` |
+| 密码 | `vitalspan` |
+
+4. 保存并点击 **测试连接**，显示成功即可。
 
 ### 步骤 2：建图表或仪表板
 
@@ -346,8 +445,34 @@ SELECT * FROM "orders_clean"
 2. 常见原因：
    - MySQL 连接失败（主机/端口/账号/防火墙）
    - 源表不存在或无权访问
-   - 分析库不可用（`ANALYTICS_DATABASE_URL` 未配置或服务未启动）
+   - **托管分析库不可用**（`5433` 未启动、`ANALYTICS_DATABASE_URL` 未配置）→ 错误常含 `connection timeout`
    - ETL 规则导致异常（如类型转换失败）
+
+### 点击「运行 / 重新同步」提示失败，Network 里为 409
+
+**现象**：终端或浏览器 Network 显示 `POST .../run` → **409 Conflict**；历史里有一条 **运行中** 长时间不结束。
+
+**原因**：同一任务已有一条 `running` 状态的运行记录（常见于：上一次同步卡在连分析库、定时任务刚触发尚未结束）。后端错误码为 **`RUN_ALREADY_IN_PROGRESS`**，不允许并发再跑。
+
+**处理**：
+
+1. 打开 **运行历史**，看是否仍有 **运行中**；若已超过数分钟，多半是上次挂起，先 **刷新** 页面。
+2. **优先启动托管分析库**：`docker compose up -d analytics-postgres`，确认 `5433` 可连。
+3. 等待卡住的记录变为 **失败**（连接超时后会自动结束，可能需数分钟）；若确认无真实进程在跑，联系运维将异常 `running` 记录标为失败后再试。
+4. 再次点击 **运行** 或历史页 **重新同步**。
+
+> 刷新前端后，409 应提示：**「该任务正在运行中，请稍后在运行历史中查看结果」**（而非笼统的「操作失败」）。
+
+### 运行历史显示「connection timeout」或连接分析库失败
+
+**原因**：**托管分析库**（`localhost:5433`）未启动或网络不通；同步已从 MySQL 读到数据，但 **写分析库** 失败。
+
+**处理**：
+
+1. `docker compose up -d analytics-postgres`
+2. `Test-NetConnection 127.0.0.1 -Port 5433`
+3. 确认 `backend/.env` 中 `ANALYTICS_DATABASE_URL` 指向 `...5433/analytics`
+4. 重启 uvicorn 后，在历史页 **重新同步**
 
 ### 增量同步「没有新数据」
 
@@ -369,6 +494,39 @@ SELECT * FROM "orders_clean"
 ### 无「新建任务」或无法编辑
 
 当前账号缺少 `ingestion:manage` 权限，联系管理员分配角色。
+
+---
+
+## 测试与验收
+
+### 手工验收（推荐）
+
+按 **[本地环境准备](#本地环境准备同步前检查)** 启动 `sample-mysql` 与 `analytics-postgres` 后：
+
+| 步骤 | 操作 | 预期 |
+|------|------|------|
+| 1 | 新建全量任务：源表 `dirty_orders` → 目标 `orders_clean`，Cron 留空 | 创建成功 |
+| 2 | 列表 **运行** → 确认 | 历史 **成功**，有同步行数 |
+| 3 | 配置 ETL 规则 → 再运行 | 仍成功 |
+| 4 | Cron 填非法值保存 | 提示 Cron 无效 |
+| 5 | **连接管理** 登记 `5433/analytics` → 图表 SQL 查目标表 | 能查到数据 |
+
+样例表 `dirty_orders` **无** `updated_at` 列；手工验证 **增量** 前需在 MySQL 自行加列，或先用 **全量** 跑通主链路。
+
+### 自动化回归（研发）
+
+```powershell
+# 前端 smoke
+cd fe
+npx vitest run src/pages/admin/ingestion/ingestion.smoke.test.tsx
+
+# 后端 API / 执行器
+cd backend
+pytest ../tests/test_ingestion_api.py ../tests/test_sync_executor.py ../tests/test_etl_rules.py -v
+
+# 真库集成（需 compose 中 MySQL + analytics 均已启动）
+pytest ../tests/test_ingestion_e2e.py -m integration -v
+```
 
 ---
 
@@ -400,6 +558,14 @@ SELECT * FROM "orders_clean"
 | 运行历史 | `/admin/ingestion/sync-jobs/{id}/history` |
 | 清洗规则 | `/admin/ingestion/sync-jobs/{id}/etl-rules` |
 | 连接管理 | `/admin/datasources` |
+
+### 本地 Docker 服务速查
+
+| 服务 | 端口 | 用途 |
+|------|------|------|
+| `postgres` | 5432 | 平台元库 |
+| `analytics-postgres` | 5433 | **托管分析库**（同步写入目标） |
+| `sample-mysql` | 3307 | 演示 MySQL 源库 |
 
 ---
 

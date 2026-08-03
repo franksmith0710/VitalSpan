@@ -256,6 +256,9 @@ def test_rpt007_batch_export_job_poll(client: TestClient):
     assert b"batch-export" in dl.content
 
 
+VIEWER_USER_ID = "00000000-0000-4000-8000-000000000099"
+
+
 def test_rpt007_job_forbidden_for_other_user(client: TestClient):
     """RPT-007: non-owner viewer cannot poll job."""
     node_id = _put_template(client)
@@ -267,12 +270,12 @@ def test_rpt007_job_forbidden_for_other_user(client: TestClient):
     job_id = submit.json()["jobId"]
 
     async def _viewer() -> UserContext:
-        return UserContext(id="viewer-x", username="viewer", roles=["viewer"])
+        return UserContext(id=VIEWER_USER_ID, username="viewer", roles=["viewer"])
 
     fastapi_app.dependency_overrides[get_current_user] = _viewer
     resp = client.get(
         f"/api/v1/reports/jobs/{job_id}",
-        headers=jwt_auth_headers(user_id="viewer-x", username="viewer"),
+        headers=jwt_auth_headers(user_id=VIEWER_USER_ID, username="viewer"),
     )
     fastapi_app.dependency_overrides.clear()
     assert resp.status_code == 403

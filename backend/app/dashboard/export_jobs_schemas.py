@@ -15,3 +15,4 @@ class DashboardExportJobOut(BaseModel):
     job_id: uuid.UUID = Field(alias="jobId")
     status: str
     download_url: str | None = Field(default=None, alias="downloadUrl")
+    artifact_kind: str | None = Field(default=None, alias="artifactKind")
