@@ -26,7 +26,10 @@ export function isAccountManagementPath(pathname: string): boolean {
 
 /** 后台管理区（权限、组织、审计等） */
 export function isSystemAdminPath(pathname: string): boolean {
-  return pathname.startsWith("/admin/system/");
+  return (
+    pathname === SYSTEM_ADMIN_HOME_PATH ||
+    pathname.startsWith(`${SYSTEM_ADMIN_HOME_PATH}/`)
+  );
 }
 
 /** 脱离工作台主 IA 的壳层（个人中心 / 后台管理） */

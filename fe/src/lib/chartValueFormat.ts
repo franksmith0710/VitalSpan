@@ -1,19 +1,24 @@
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import { formatMetricValue } from "@/components/dashboard/dashboardStyleConfig";
 import type { ChartLabelStyle } from "@/lib/chartDeStyle";
+import { resolveLiquidMetricFormat } from "@/lib/liquidLabelFormat";
 
-/** 组件 deStyle.label 优先于看板 numberFormat */
+/** 组件 deStyle.label 优先于看板 numberFormat；水波图指标行走 resolveLiquidMetricFormat */
 export function resolveChartValueFormat(
   deLabel: ChartLabelStyle | undefined,
   dashboardFormat: NumberFormatConfig | undefined,
+  chartType?: string,
 ): NumberFormatConfig {
-  if (!deLabel?.formatType && deLabel?.thousandSeparator === undefined && !dashboardFormat) {
+  if (chartType === "liquid") {
+    return resolveLiquidMetricFormat(deLabel, dashboardFormat);
+  }
+  if (!deLabel?.formatType && deLabel?.thousandSeparator === undefined && deLabel?.decimals == null && !deLabel?.unit && !dashboardFormat) {
     return { type: "auto", thousandSeparator: true };
   }
   return {
     type: deLabel?.formatType ?? dashboardFormat?.type ?? "auto",
-    decimals: dashboardFormat?.decimals,
-    unit: dashboardFormat?.unit,
+    decimals: deLabel?.decimals ?? dashboardFormat?.decimals,
+    unit: deLabel?.unit ?? dashboardFormat?.unit,
     thousandSeparator:
       deLabel?.thousandSeparator !== undefined
         ? deLabel.thousandSeparator

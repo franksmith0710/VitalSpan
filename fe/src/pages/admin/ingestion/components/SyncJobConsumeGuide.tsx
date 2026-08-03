@@ -1,20 +1,28 @@
-import { BarChart3, Database, Layers, LayoutDashboard } from "lucide-react";
+import { BarChart3, Database, Layers, LayoutDashboard, X } from "lucide-react";
 import { Link } from "react-router";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { buildDatasetCreatePath } from "@/lib/syncConsumePaths";
 
 type SyncJobConsumeGuideProps = {
+  /** 任务显示名；有则标题会标明是哪条任务 */
+  jobName?: string;
   targetTable: string;
   rowsSynced?: number | null;
   analyticsDatasourceId?: string | null;
+  /** after_success：刚跑成功；how_to：编辑页参考说明（不宣称已成功） */
+  variant?: "after_success" | "how_to";
+  onDismiss?: () => void;
   className?: string;
 };
 
 export function SyncJobConsumeGuide({
+  jobName,
   targetTable,
   rowsSynced,
   analyticsDatasourceId,
+  variant = "after_success",
+  onDismiss,
   className,
 }: SyncJobConsumeGuideProps) {
   const datasetCreatePath = buildDatasetCreatePath({
@@ -23,18 +31,63 @@ export function SyncJobConsumeGuide({
     dataSourceId: analyticsDatasourceId ?? undefined,
   });
 
+  const title =
+    variant === "how_to"
+      ? "同步完成后 · 如何在 BI 中使用数据"
+      : jobName
+        ? `任务「${jobName}」同步成功 · 下一步出图`
+        : "同步成功 · 下一步出图";
+
+  const intro =
+    variant === "how_to" ? (
+      <p>
+        目标表为
+        <span className="font-mono text-theme-xs"> {targetTable}</span>
+        ，写入托管分析库
+        <span className="font-mono text-theme-xs"> localhost:5433/analytics</span>
+        。按下面三步在 Dataset / 看板中消费（无需在看板里写 SQL）。
+      </p>
+    ) : (
+      <p>
+        任务
+        {jobName ? (
+          <>
+            <span className="font-medium text-gray-700 dark:text-gray-300">「{jobName}」</span>
+            已将数据写入
+          </>
+        ) : (
+          "已将数据写入"
+        )}
+        托管分析库
+        <span className="font-mono text-theme-xs"> localhost:5433/analytics</span>
+        的表
+        <span className="font-mono text-theme-xs"> {targetTable}</span>
+        {rowsSynced != null ? `（本次 ${rowsSynced} 行）` : ""}。按下面三步即可出图。
+      </p>
+    );
+
   return (
     <Alert variant="info" className={className}>
-      <BarChart3 className="size-4" aria-hidden />
-      <AlertTitle>同步成功 · 下一步：在 BI 中使用数据</AlertTitle>
+      <div className="flex items-start gap-3">
+        <BarChart3 className="mt-0.5 size-4 shrink-0" aria-hidden />
+        <div className="min-w-0 flex-1 space-y-3">
+          <div className="flex items-start justify-between gap-2">
+            <AlertTitle className="mb-0">{title}</AlertTitle>
+            {onDismiss ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 shrink-0 p-0 text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                aria-label="关闭引导"
+                onClick={onDismiss}
+              >
+                <X className="size-4" aria-hidden />
+              </Button>
+            ) : null}
+          </div>
       <div className="space-y-3 text-theme-sm text-gray-500 dark:text-gray-400">
-        <p>
-          数据已写入托管分析库
-          <span className="font-mono text-theme-xs"> localhost:5433/analytics</span>
-          的表
-          <span className="font-mono text-theme-xs"> {targetTable}</span>
-          {rowsSynced != null ? `（本次 ${rowsSynced} 行）` : ""}。按下面三步即可出图（无需在看板里写 SQL）。
-        </p>
+        {intro}
         <ol className="list-decimal space-y-2 pl-4">
           <li className="flex items-start gap-1.5">
             <Database className="mt-0.5 size-3.5 shrink-0 opacity-70" aria-hidden />
@@ -46,13 +99,10 @@ export function SyncJobConsumeGuide({
               >
                 数据连接 → 连接管理 → 新建
               </Link>
-              登记 PostgreSQL 分析库（类型 PostgreSQL；主机
+              登记 PostgreSQL 分析库（主机
               <span className="font-mono text-theme-xs"> 127.0.0.1</span>，端口
               <span className="font-mono text-theme-xs"> 5433</span>，库
-              <span className="font-mono text-theme-xs"> analytics</span>，用户/密码
-              <span className="font-mono text-theme-xs"> vitalspan</span>）。开发环境可启用
-              <span className="font-mono text-theme-xs"> ENSURE_ANALYTICS_DATASOURCE=1</span>{" "}
-              自动登记。
+              <span className="font-mono text-theme-xs"> analytics</span>）。
             </span>
           </li>
           <li className="flex items-start gap-1.5">
@@ -64,7 +114,7 @@ export function SyncJobConsumeGuide({
               >
                 创建 Dataset
               </Link>
-              ，选择刚登记的分析库并勾选表
+              ，选择分析库并勾选表
               <span className="font-mono text-theme-xs"> {targetTable}</span>，保存后绑定查询配置。
             </span>
           </li>
@@ -94,16 +144,8 @@ export function SyncJobConsumeGuide({
           </Button>
         </div>
       </div>
+        </div>
+      </div>
     </Alert>
   );
-}
-
-export function pickLatestSucceededJob<
-  T extends { last_run?: { status: string; finished_at?: string | null } | null },
->(jobs: T[]): T | undefined {
-  return jobs
-    .filter((job) => job.last_run?.status === "succeeded")
-    .sort((a, b) =>
-      (b.last_run?.finished_at ?? "").localeCompare(a.last_run?.finished_at ?? ""),
-    )[0];
 }

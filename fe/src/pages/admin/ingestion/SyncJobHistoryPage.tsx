@@ -55,6 +55,7 @@ export function SyncJobHistoryPage() {
   );
   const [runs, setRuns] = useState<SyncRunItem[]>([]);
   const [targetTable, setTargetTable] = useState<string | null>(null);
+  const [jobName, setJobName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
@@ -69,10 +70,11 @@ export function SyncJobHistoryPage() {
         apiFetch<SyncRunListResponse>(
           `/api/v1/ingestion/sync-jobs/${id}/runs?limit=${RUNS_FETCH_LIMIT}`,
         ),
-        apiFetch<{ target_table: string }>(`/api/v1/ingestion/sync-jobs/${id}`),
+        apiFetch<{ target_table: string; name: string }>(`/api/v1/ingestion/sync-jobs/${id}`),
       ]);
       setRuns(data.items);
       setTargetTable(job.target_table);
+      setJobName(job.name);
     } catch (err) {
       setError(mapApiError(err));
     } finally {
@@ -121,7 +123,10 @@ export function SyncJobHistoryPage() {
   );
 
   const latestSucceededRun = useMemo(
-    () => runs.find((run) => run.status === "succeeded"),
+    () =>
+      runs
+        .filter((run) => run.status === "succeeded")
+        .sort((a, b) => (b.finished_at ?? "").localeCompare(a.finished_at ?? ""))[0],
     [runs],
   );
 
@@ -164,6 +169,7 @@ export function SyncJobHistoryPage() {
         {hasSucceededRun && targetTable ? (
           <div className="border-b border-gray-200 px-6 py-4 dark:border-gray-800">
             <SyncJobConsumeGuide
+              jobName={jobName ?? undefined}
               targetTable={targetTable}
               rowsSynced={latestSucceededRun?.rows_synced}
             />

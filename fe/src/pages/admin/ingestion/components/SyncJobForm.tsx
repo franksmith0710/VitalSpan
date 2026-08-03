@@ -414,7 +414,7 @@ export function SyncJobForm({
       </FormSection>
 
       {isEdit && form.target_table ? (
-        <SyncJobConsumeGuide targetTable={form.target_table} />
+        <SyncJobConsumeGuide targetTable={form.target_table} variant="how_to" />
       ) : null}
     </form>
   );

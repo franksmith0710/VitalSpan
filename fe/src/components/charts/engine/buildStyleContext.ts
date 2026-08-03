@@ -46,7 +46,7 @@ export function buildStyleContext(input: BuildStyleContextInput): ChartStyleCont
   const seriesGradient = readChartSeriesGradient(config, dashboardDefaults);
   const depthVisual = readChartDepthVisual(config, dashboardDefaults);
   const dataZoom = readChartDataZoom(config);
-  const valueFormat = resolveChartValueFormat(deStyle.label, input.numberFormat);
+  const valueFormat = resolveChartValueFormat(deStyle.label, input.numberFormat, config.chartType);
 
   return {
     scheme,

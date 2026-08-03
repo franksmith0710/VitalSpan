@@ -57,7 +57,7 @@ function LastRunCell({ job }: { job: SyncJobSummary }) {
           to={`/admin/ingestion/sync-jobs/${job.id}/history`}
           className="text-theme-xs text-brand-600 underline-offset-2 hover:underline dark:text-brand-400"
         >
-          下一步：出图指引
+          查看出图步骤
         </Link>
       ) : null}
       {lastRun.status === "failed" && lastRun.error_message ? (

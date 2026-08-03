@@ -485,8 +485,8 @@ export const ChartRenderer = memo(function ChartRenderer({
     return applyChartColorsOpacity(base, opacity);
   }, [deStyle.paletteId, localConfig, dashboardColorDefaults, paletteId, paletteColors]);
   const valueFormat = useMemo(
-    () => resolveChartValueFormat(deStyle.label, numberFormat),
-    [deStyle.label, numberFormat],
+    () => resolveChartValueFormat(deStyle.label, numberFormat, localConfig.chartType),
+    [deStyle.label, numberFormat, localConfig.chartType],
   );
 
   const mapPlaceholderHint = useMemo(() => {

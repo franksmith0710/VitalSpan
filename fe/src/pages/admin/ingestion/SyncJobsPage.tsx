@@ -30,7 +30,7 @@ import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { buildDatasetCreatePath } from "@/lib/syncConsumePaths";
 import { SyncJobsEmptyState } from "./components/SyncJobsEmptyState";
-import { SyncJobConsumeGuide, pickLatestSucceededJob } from "./components/SyncJobConsumeGuide";
+import { SyncJobConsumeGuide } from "./components/SyncJobConsumeGuide";
 import { SyncJobsMetrics } from "./components/SyncJobsMetrics";
 import { SyncJobsTable } from "./components/SyncJobsTable";
 import {
@@ -40,6 +40,13 @@ import {
 import { type SyncJobListResponse, type SyncJobSummary } from "./components/sync-job-types";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { sliceListPage, useListPagination } from "@/lib/list-pagination";
+
+type RecentRunSuccess = {
+  jobId: string;
+  jobName: string;
+  targetTable: string;
+  rowsSynced: number | null;
+};
 
 function filterByStatus(jobs: SyncJobSummary[], statusFilter: SyncJobStatusFilter) {
   switch (statusFilter) {
@@ -73,6 +80,7 @@ export function SyncJobsPage() {
   const [deleting, setDeleting] = useState(false);
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [batchDeleting, setBatchDeleting] = useState(false);
+  const [recentRunSuccess, setRecentRunSuccess] = useState<RecentRunSuccess | null>(null);
   const pagination = useListPagination(undefined, [search, statusFilter]);
 
   const loadJobs = useCallback(async (options?: { silent?: boolean }) => {
@@ -106,12 +114,18 @@ export function SyncJobsPage() {
             setJobs(data.items);
             const job = data.items.find((item) => item.id === jobId);
             const status = job?.last_run?.status;
-            if (status === "succeeded") {
+            if (status === "succeeded" && job) {
               if (pollTimerRef.current !== null) {
                 window.clearInterval(pollTimerRef.current);
                 pollTimerRef.current = null;
               }
               const rows = job.last_run?.rows_synced;
+              setRecentRunSuccess({
+                jobId: job.id,
+                jobName: job.name,
+                targetTable: job.target_table,
+                rowsSynced: job.last_run?.rows_synced ?? null,
+              });
               toast.success(
                 `任务「${jobName}」同步成功${rows != null ? `，写入 ${rows} 行` : ""}`,
                 {
@@ -203,9 +217,8 @@ export function SyncJobsPage() {
     return hasFilter ? `显示 ${filteredJobs.length} 个` : `共 ${jobs.length} 个任务`;
   }, [filteredJobs.length, jobs.length, search, statusFilter]);
 
-  const latestSucceededJob = useMemo(() => pickLatestSucceededJob(jobs), [jobs]);
-
   const handleRun = async (job: SyncJobSummary) => {
+    setRecentRunSuccess(null);
     setRunningId(job.id);
     try {
       await apiFetch(`/api/v1/ingestion/sync-jobs/${job.id}/run`, { method: "POST" });
@@ -296,11 +309,13 @@ export function SyncJobsPage() {
           <div className="shrink-0">
             <SyncJobsMetrics stats={stats} />
           </div>
-          {latestSucceededJob ? (
+          {recentRunSuccess ? (
             <div className="shrink-0">
               <SyncJobConsumeGuide
-                targetTable={latestSucceededJob.target_table}
-                rowsSynced={latestSucceededJob.last_run?.rows_synced}
+                jobName={recentRunSuccess.jobName}
+                targetTable={recentRunSuccess.targetTable}
+                rowsSynced={recentRunSuccess.rowsSynced}
+                onDismiss={() => setRecentRunSuccess(null)}
               />
             </div>
           ) : null}

@@ -3,10 +3,13 @@ import { prefersReducedMotion } from "@/components/charts/engine/d3/core/animate
 import { depthPieExtrudeOffset, resolveEffectiveDepth, shadeColor } from "@/components/charts/engine/d3/core/depthEngine";
 import { radialMargin } from "@/components/charts/engine/d3/core/margin";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
+import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import type { D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { resolveLiquidPercent } from "@/lib/applyChartDeStyleBlocks";
 import { DEFAULT_LIQUID_SIZE } from "@/lib/chartDeStyleBlocks";
 import { formatChartValue } from "@/lib/chartValueFormat";
+import { resolveLiquidRatioFormat } from "@/lib/liquidLabelFormat";
+import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 
 function wavePath(width: number, amplitude: number, phase: number): string {
   const mid = width / 2;
@@ -19,15 +22,75 @@ function wavePath(width: number, amplitude: number, phase: number): string {
   return d;
 }
 
-function liquidPercentLabel(
+function buildLiquidLabelLines(
+  rawValue: number,
   labelPercent: number,
-  valueFormat: D3RenderConfig["valueFormat"],
-): string {
-  // formatMetricValue(percent) 内部已 ×100，勿再传 labelPercent*100
-  return formatChartValue(
-    labelPercent,
-    valueFormat ? { ...valueFormat, type: "percent" } : { type: "percent" },
-  );
+  options: Record<string, unknown>,
+): string[] {
+  const showMetric = options.__liquidShowMetric !== false;
+  const showRatio = options.__liquidShowRatio === true;
+  const metricFormat = (options.__liquidMetricFormat as NumberFormatConfig | undefined) ?? {
+    type: "auto",
+    thousandSeparator: true,
+  };
+  const lines: string[] = [];
+
+  if (showMetric) {
+    lines.push(formatChartValue(rawValue, metricFormat));
+  }
+  if (showRatio) {
+    lines.push(
+      formatChartValue(
+        labelPercent,
+        resolveLiquidRatioFormat(
+          { ratioDecimals: Number(options.__liquidRatioDecimals ?? 0) },
+          metricFormat,
+        ),
+      ),
+    );
+  }
+  return lines;
+}
+
+function appendCenterLabels(
+  root: d3.Selection<SVGSVGElement, unknown, null, undefined>,
+  cx: number,
+  cy: number,
+  lines: string[],
+  theme: D3RenderConfig["theme"],
+  labelFontSize: number,
+  labelColor?: string,
+): void {
+  if (lines.length === 0) return;
+
+  const fill = resolveLabelFill(theme, labelColor);
+  const text = root
+    .append("text")
+    .attr("x", cx)
+    .attr("text-anchor", "middle")
+    .attr("fill", fill)
+    .style("font-weight", "600");
+
+  if (lines.length === 1) {
+    text
+      .attr("y", cy)
+      .attr("dy", "0.35em")
+      .style("font-size", `${labelFontSize + 4}px`)
+      .text(lines[0]);
+    return;
+  }
+
+  const lineHeight = labelFontSize + 6;
+  const startY = cy - ((lines.length - 1) * lineHeight) / 2;
+  text.style("font-size", `${labelFontSize + 2}px`);
+  lines.forEach((line, index) => {
+    text
+      .append("tspan")
+      .attr("x", cx)
+      .attr("y", startY + index * lineHeight)
+      .attr("dy", index === 0 ? "0.35em" : "0")
+      .text(line);
+  });
 }
 
 export function renderD3LiquidChart(container: HTMLElement, config: D3RenderConfig): () => void {
@@ -41,6 +104,7 @@ export function renderD3LiquidChart(container: HTMLElement, config: D3RenderConf
     showLabel,
     showTooltip,
     labelFontSize,
+    labelColor,
     valueFormat,
     tooltipPresentation,
     options,
@@ -58,6 +122,8 @@ export function renderD3LiquidChart(container: HTMLElement, config: D3RenderConf
   const outlineWidth = Number(options.__liquidOutlineWidth ?? 1.5);
   const waveColor = String(options.__liquidWaveColor ?? "");
   const liquidSize = Number(options.__liquidSize ?? DEFAULT_LIQUID_SIZE);
+  const labelLines = buildLiquidLabelLines(rawValue, labelPercent, options);
+  const tooltipText = labelLines.join("\n");
 
   if (width <= 0 || height <= 0) return () => undefined;
 
@@ -72,7 +138,6 @@ export function renderD3LiquidChart(container: HTMLElement, config: D3RenderConf
   const depthOn = depthLevel !== "off";
   const depthOffset = depthPieExtrudeOffset(depthLevel);
   const clipId = `d3-liquid-clip-${Math.random().toString(36).slice(2, 9)}`;
-  const percentLabel = liquidPercentLabel(labelPercent, valueFormat);
 
   const root = d3
     .select(container)
@@ -170,20 +235,11 @@ export function renderD3LiquidChart(container: HTMLElement, config: D3RenderConf
       });
   }
 
-  if (showLabel) {
-    root
-      .append("text")
-      .attr("x", cx)
-      .attr("y", cy)
-      .attr("text-anchor", "middle")
-      .attr("dy", "0.35em")
-      .attr("fill", theme.legendText)
-      .style("font-size", `${labelFontSize + 4}px`)
-      .style("font-weight", "600")
-      .text(percentLabel);
+  if (showLabel && labelLines.length > 0) {
+    appendCenterLabels(root, cx, cy, labelLines, theme, labelFontSize, labelColor);
   }
 
-  if (showTooltip) {
+  if (showTooltip && tooltipText) {
     const tip = createTooltip(container, theme, tooltipPresentation);
 
     root
@@ -194,7 +250,7 @@ export function renderD3LiquidChart(container: HTMLElement, config: D3RenderConf
       .attr("fill", "transparent")
       .style("cursor", "default")
       .on("mousemove", (event) => {
-        tip.style("opacity", "1").text(percentLabel);
+        tip.style("opacity", "1").text(tooltipText);
         const rect = container.getBoundingClientRect();
         tip
           .style("left", `${event.clientX - rect.left + 10}px`)

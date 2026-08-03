@@ -12,6 +12,7 @@ import {
   type ChartLiquidStyle,
 } from "@/lib/chartDeStyleBlocks";
 import { aggregateQuotaMetric } from "@/lib/quotaMetricAggregate";
+import { resolveLiquidMetricFormat } from "@/lib/liquidLabelFormat";
 
 export type PlanCompareStyle = {
   trackOpacity?: number;
@@ -201,6 +202,17 @@ export function applyChartDeStyleBlocksToPlan(
 
   if (plan.plotType === "Liquid") {
     applyLiquidStyleToPlan(options, blocks.liquid ?? {});
+    const label = deStyle.label;
+    if (label) {
+      options.__liquidShowMetric = label.showMetric !== false;
+      options.__liquidShowRatio = label.showRatio === true;
+      if (label.ratioDecimals != null) options.__liquidRatioDecimals = label.ratioDecimals;
+      options.__liquidMetricFormat = resolveLiquidMetricFormat(label);
+    } else {
+      options.__liquidShowMetric = true;
+      options.__liquidShowRatio = false;
+      options.__liquidMetricFormat = resolveLiquidMetricFormat(undefined);
+    }
   }
 
   if (blocks.funnel) {

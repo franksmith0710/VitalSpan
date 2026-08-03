@@ -52,6 +52,7 @@ import { isTableLikeChartType, tableStyleSectionsForType } from "@/lib/chartTabl
 import { chartTypeHasTooltipSection } from "@/lib/chartStyleCartesianFields";
 import { ChartInspectorSection, INSPECTOR_HINT, INSPECTOR_SELECT, INSPECTOR_SWITCH_SIZE, InspectorInlineColorRow } from "../inspectorCompact";
 import { DeTitleStyleToolbar } from "../deTitleStyleToolbar";
+import { ChartLiquidLabelFields } from "./ChartLiquidLabelFields";
 
 export function ChartPaletteStyleSection() {
   const { cfg, patchDeStyle, patchDeStyleNested, mutateChartConfig, dashboardStyle } = useChartInspector();
@@ -274,6 +275,7 @@ export function ChartLabelStyleSection() {
   const patchLabel = (patch: Partial<NonNullable<ChartDeStyle["label"]>>) =>
     patchDeStyleNested("label", patch);
   const isKpi = cfg.chartType === "kpi";
+  const isLiquid = cfg.chartType === "liquid";
 
   return (
     <ChartInspectorSection
@@ -314,7 +316,9 @@ export function ChartLabelStyleSection() {
           />
         </>
       ) : null}
-      {caps.labelFormat ? (
+      {isLiquid ? (
+        <ChartLiquidLabelFields label={deStyle.label} patchLabel={patchLabel} />
+      ) : caps.labelFormat ? (
         <>
           <ChartDeAttrField label="格式类型">
             <Select
@@ -350,10 +354,6 @@ export function ChartLabelStyleSection() {
             })}
           </p>
         </>
-      ) : cfg.chartType === "liquid" ? (
-        <p className="px-0 py-1 text-[10px] text-gray-400">
-          水波图中心标签固定为完成度百分比；请在「水波样式」中设置目标值。
-        </p>
       ) : null}
     </ChartInspectorSection>
   );

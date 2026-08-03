@@ -510,6 +510,22 @@ describe("AdminLayout smoke", () => {
     expect(screen.getByRole("heading", { name: "分析" })).toBeInTheDocument();
   });
 
+  it("T-FE-SMFB-00: system admin home sidebar shows 配置向导", () => {
+    setDesktopViewport(1600);
+    render(
+      <MemoryRouter initialEntries={["/admin/system"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="system" element={<div>system home</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("heading", { name: "后台管理" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "配置向导" })).toHaveAttribute("href", "/admin/system");
+    expect(screen.queryByRole("heading", { name: "数据" })).not.toBeInTheDocument();
+  });
+
   it("T-FE-SMFB-01: system admin sidebar has 资源授权 link", async () => {
     setDesktopViewport(1600);
     const user = userEvent.setup();

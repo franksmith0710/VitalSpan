@@ -5,6 +5,8 @@ import {
   ACCOUNT_PROFILE_PATH,
   ACCOUNT_SECURITY_PATH,
   isAccountManagementPath,
+  isDetachedFromWorkspacePath,
+  SYSTEM_ADMIN_HOME_PATH,
 } from "./workspace";
 import { sessionUserFromAuth } from "./session";
 
@@ -325,6 +327,15 @@ describe("resolveSidebarSections", () => {
       "高级 · 行级权限",
       "审计日志",
     ]);
+  });
+
+  it("uses system admin nav on /admin/system home path", () => {
+    const admin = sessionUserFromAuth("admin", ["admin"]);
+    const sections = resolveSidebarSections(admin, SYSTEM_ADMIN_HOME_PATH);
+    expect(sections).toHaveLength(1);
+    expect(sections[0]?.title).toBe("后台管理");
+    expect(sections[0]?.items[0]?.name).toBe("配置向导");
+    expect(isDetachedFromWorkspacePath(SYSTEM_ADMIN_HOME_PATH)).toBe(true);
   });
 });
 

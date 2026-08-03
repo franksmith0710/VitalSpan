@@ -59,6 +59,19 @@ export type ChartLabelStyle = {
   color?: string;
   formatType?: NumberFormatConfig["type"];
   thousandSeparator?: boolean;
+  decimals?: number;
+  unit?: string;
+  /** 水波图指标行：格式（不含 percent，占比单独配置） */
+  metricFormatType?: NumberFormatConfig["type"];
+  metricDecimals?: number;
+  metricUnit?: string;
+  metricThousandSeparator?: boolean;
+  /** 水波图：显示指标原值（对标 DE「指标」，默认开） */
+  showMetric?: boolean;
+  /** 水波图：显示占比（对标 DE「占比」，默认关） */
+  showRatio?: boolean;
+  /** 水波图占比保留小数位 */
+  ratioDecimals?: number;
 };
 
 export type ChartBorderStyle = {

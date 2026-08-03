@@ -318,7 +318,7 @@ describe("ingestion admin smoke", () => {
     expect(screen.getByLabelText("增量字段")).toBeInTheDocument();
   });
 
-  it("SyncJobsPage_shows_consume_guide_after_success", async () => {
+  it("SyncJobsPage_hides_stale_consume_guide_on_load", async () => {
     setViewport(1400);
     mockApiFetch.mockResolvedValueOnce({
       items: [
@@ -346,15 +346,9 @@ describe("ingestion admin smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(await screen.findByText(/同步成功 · 下一步/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "登记分析库" })).toHaveAttribute(
-      "href",
-      "/admin/datasources/new",
-    );
-    expect(screen.getByRole("link", { name: "创建数据集" })).toHaveAttribute(
-      "href",
-      "/admin/datasets/new?targetTable=orders_clean&suggestedDatasetId=orders_clean",
-    );
+    await screen.findByText("demo");
+    expect(screen.queryByText(/同步成功 · 下一步/)).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "查看出图步骤" })).toBeInTheDocument();
   });
 
   it("SyncJobsEmptyState_shows_consume_step", async () => {

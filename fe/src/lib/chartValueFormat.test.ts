@@ -8,12 +8,13 @@ import {
 describe("chartValueFormat", () => {
   it("merges deStyle label over dashboard numberFormat", () => {
     const fmt = resolveChartValueFormat(
-      { formatType: "percent", thousandSeparator: false },
-      { type: "number", thousandSeparator: true, decimals: 2 },
+      { formatType: "percent", thousandSeparator: false, decimals: 1, unit: "万" },
+      { type: "number", thousandSeparator: true, decimals: 2, unit: "千" },
     );
     expect(fmt.type).toBe("percent");
     expect(fmt.thousandSeparator).toBe(false);
-    expect(fmt.decimals).toBe(2);
+    expect(fmt.decimals).toBe(1);
+    expect(fmt.unit).toBe("万");
   });
 
   it("formats chart values with thousand separator", () => {

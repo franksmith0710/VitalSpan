@@ -131,6 +131,9 @@ describe("applyChartStyleChain", () => {
     expect(liquidNext.options.__liquidWaveColor).toBe("#12b76a");
     expect(liquidNext.options.__liquidSize).toBe(80);
     expect(liquidNext.options.__liquidFillPercent).toBeCloseTo(238676 / 500000);
+    expect(liquidNext.options.__liquidShowMetric).toBe(true);
+    expect(liquidNext.options.__liquidShowRatio).toBe(false);
+    expect(liquidNext.options.__liquidMetricFormat).toMatchObject({ type: "auto" });
 
     const radarPlan: ChartRenderPlan = { kind: "d3", plotType: "Radar", empty: false, options: {} };
     const radarNext = applyChartStyleChain(radarPlan, style);
