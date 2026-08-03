@@ -225,7 +225,7 @@ describe("ingestion admin smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
-    fireEvent.click(await screen.findByRole("button", { name: "使用已有数据源" }));
+    fireEvent.click(await screen.findByRole("button", { name: "使用已有 MySQL 连接" }));
     expect(await screen.findByLabelText("MySQL 数据源")).toBeInTheDocument();
   });
 
@@ -252,7 +252,7 @@ describe("ingestion admin smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
-    fireEvent.click(await screen.findByRole("button", { name: "使用已有数据源" }));
+    fireEvent.click(await screen.findByRole("button", { name: "使用已有 MySQL 连接" }));
     fireEvent.click(await screen.findByRole("combobox", { name: "MySQL 数据源" }));
     fireEvent.click(await screen.findByRole("option", { name: "Sample MySQL" }));
     fireEvent.change(screen.getByLabelText("任务名称"), { target: { value: "ds-ref-smoke" } });

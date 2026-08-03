@@ -62,4 +62,10 @@ describe("chartFieldAssignment", () => {
     );
     expect(result.ok).toBe(true);
   });
+
+  it("allows dimension field in kpi metric slot (DataEase count)", () => {
+    expect(
+      validateFieldAssignment("region_name", { axisId: "yAxis", index: 0 }, "kpi").ok,
+    ).toBe(true);
+  });
 });

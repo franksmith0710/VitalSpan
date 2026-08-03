@@ -96,7 +96,8 @@ function kpiPlan(
     field: m.field,
     label: m.label ?? m.field,
   }));
-  return d3Plan("Kpi", { metrics, rows, columns });
+  const labelField = spec.encoding.dimensions[0]?.field;
+  return d3Plan("Kpi", { metrics, rows, columns, labelField });
 }
 
 function aggregateByDimension(

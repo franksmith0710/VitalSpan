@@ -1,3 +1,4 @@
+import { classifyDatasetField } from "./datasetFieldClassification";
 import { ChartFieldSlot } from "./ChartFieldSlot";
 import { chartDataSlotBlueprint } from "./chartFieldSlots";
 import { useChartInspector } from "./chartInspectorContext";
@@ -48,6 +49,12 @@ export function ChartDataSlots({ hideMapHint = false }: { hideMapHint?: boolean 
       {slots.map((slot) => {
         const target: SlotTarget = { axisId: slot.axisId, index: slot.index };
         const rawField = fieldAtSlot(cfg, target);
+        const aggregationSuffix =
+          rawField && slot.showAggregation
+            ? classifyDatasetField(rawField) === "metric"
+              ? "求和"
+              : "计数"
+            : undefined;
         return (
           <ChartFieldSlot
             key={`${slot.axisId}-${slot.index}-${slot.label}`}
@@ -55,7 +62,7 @@ export function ChartDataSlots({ hideMapHint = false }: { hideMapHint?: boolean 
             required={slot.required !== false}
             optional={slot.required === false}
             fieldName={rawField}
-            fieldSuffix={rawField && slot.showAggregation ? "求和" : undefined}
+            fieldSuffix={aggregationSuffix}
             slotKind={slotKindForUi(slot.kind)}
             active={isSameSlotTarget(activeSlot, target)}
             disabled={columnsDisabled}

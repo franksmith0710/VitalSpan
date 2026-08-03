@@ -10,7 +10,7 @@ export type BackendFieldRule = {
 export const BACKEND_CATALOG_FIELD_RULES: Record<string, BackendFieldRule> = {
   gauge: { minDimensions: 0, maxDimensions: 0, minMetrics: 1, maxMetrics: 1 },
   liquid: { minDimensions: 0, maxDimensions: 0, minMetrics: 1, maxMetrics: 1 },
-  kpi: { minDimensions: 0, maxDimensions: 0, minMetrics: 1, maxMetrics: 1 },
+  kpi: { minDimensions: 0, maxDimensions: 1, minMetrics: 1, maxMetrics: 1 },
   table: { minDimensions: 0, maxDimensions: 8, minMetrics: 0, maxMetrics: 8 },
   "table-info": { minDimensions: 0, maxDimensions: 8, minMetrics: 0, maxMetrics: 8 },
   "table-normal": { minDimensions: 1, maxDimensions: 8, minMetrics: 1, maxMetrics: 8 },

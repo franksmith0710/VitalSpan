@@ -150,8 +150,8 @@ export function SyncJobForm({
       </FormSection>
 
       <FormSection
-        title="数据源"
-        description="从已登记 MySQL 数据源引用连接，或手动填写源库凭证。"
+        title="MySQL 源库"
+        description="业务 MySQL 源库连接：从已登记连接引用，或手动填写凭证。此处不是托管分析库（5433）。"
       >
         <div className="grid gap-3">
           <Label>源连接方式</Label>
@@ -159,14 +159,14 @@ export function SyncJobForm({
             ariaLabel="源连接方式"
             value={form.sourceMode}
             options={[
-              { value: "datasource", label: "使用已有数据源" },
+              { value: "datasource", label: "使用已有 MySQL 连接" },
               { value: "inline", label: "手动填写连接" },
             ]}
             onChange={(value) => onChange("sourceMode", value)}
           />
           {form.sourceMode === "datasource" ? (
             <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-              引用数据源时会快照连接信息；数据源改密后请重新保存任务。
+              引用连接时会快照凭证；源库改密后请重新保存任务。
             </p>
           ) : null}
         </div>
@@ -283,6 +283,14 @@ export function SyncJobForm({
             />
           </div>
         </div>
+        <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+          目标库地址由平台环境变量{" "}
+          <span className="font-mono">ANALYTICS_DATABASE_URL</span> 决定（本地默认{" "}
+          <span className="font-mono">127.0.0.1:5433/analytics</span>
+          ）。同步成功后，请在{" "}
+          <span className="font-medium text-gray-600 dark:text-gray-300">数据连接 → 连接管理</span>{" "}
+          登记该 PostgreSQL，才能在图表/看板中选到并查询目标表。
+        </p>
       </FormSection>
 
       <FormSection title="同步策略" description="全量每次覆盖目标表；增量按主键 upsert 并记录水位。">

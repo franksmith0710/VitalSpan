@@ -119,8 +119,8 @@ describe("chartFieldSlots", () => {
     expect(chartRenderRequiredCounts("multi-scatter")).toEqual({ minDimensions: 1, minMetrics: 2 });
   });
 
-  it("T-INSP-DE-11e: kpi is metric-only", () => {
-    expect(chartDataSlotBlueprint("kpi").map((s) => s.label)).toEqual(["指标 / 度量"]);
+  it("T-INSP-DE-11e: kpi uses single 指标 slot", () => {
+    expect(chartDataSlotBlueprint("kpi").map((s) => s.label)).toEqual(["指标"]);
     expect(chartRenderRequiredCounts("kpi")).toEqual({ minDimensions: 0, minMetrics: 1 });
   });
 

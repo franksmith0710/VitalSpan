@@ -33,7 +33,7 @@ const DE_AXIS_CATALOG: Record<string, ChartAxisEntry> = {
   // quota
   gauge: entry([deAxis.yMet("指针角度 / 指标")], [{ axisId: "yAxis", index: 0, legacy: { kind: "metric", index: 0 } }]),
   liquid: entry([deAxis.yMet("进度指示 / 指标")], [{ axisId: "yAxis", index: 0, legacy: { kind: "metric", index: 0 } }]),
-  kpi: entry([deAxis.yMet("指标 / 度量", { required: true })], [{ axisId: "yAxis", index: 0, legacy: { kind: "metric", index: 0 } }]),
+  kpi: entry([deAxis.yMet("指标", { required: true })], [{ axisId: "yAxis", index: 0, legacy: { kind: "metric", index: 0 } }]),
 
   // table
   "table-info": entry(

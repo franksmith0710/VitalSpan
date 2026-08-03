@@ -90,7 +90,7 @@ export function buildChartRenderModel(
 
   if (config.chartType === "kpi" || config.chartType === "gauge" || config.chartType === "liquid") {
     if (!metrics.length) return { kind: "error", message: "请配置指标字段" };
-    const columnError = validateFieldColumns(columns, [], metrics);
+    const columnError = validateFieldColumns(columns, dims, metrics);
     if (columnError) return columnError;
     return readyWhenRows(rows);
   }

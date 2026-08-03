@@ -18,10 +18,10 @@ describe("chartDeAxis catalog", () => {
     }
   });
 
-  it("kpi has metric-only axis (no dimension slot)", () => {
+  it("kpi has single metric slot like DataEase", () => {
     const slots = getDeAxisBlueprint("kpi");
     expect(slots).toHaveLength(1);
-    expect(slots[0]?.label).toBe("指标 / 度量");
+    expect(slots[0]?.label).toBe("指标");
     expect(slots[0]?.fieldType).toBe("metric");
     expect(deriveFieldRuleFromDeCatalog("kpi")).toEqual({
       minDimensions: 0,

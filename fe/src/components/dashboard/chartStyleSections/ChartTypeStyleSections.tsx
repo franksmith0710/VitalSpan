@@ -124,7 +124,7 @@ export function ChartKpiIndicatorSection() {
   return (
     <ChartInspectorSection title="指标样式" data-testid="chart-kpi-indicator">
       <div className={INSPECTOR_SECTION_GAP}>
-        <ChartDeSliderField label="字号" value={kpi.fontSize} fallback={28} min={12} max={64} step={1} onChange={(fontSize) => patch({ fontSize })} />
+        <ChartDeSliderField label="字号" value={kpi.fontSize} fallback={40} min={20} max={80} step={1} onChange={(fontSize) => patch({ fontSize })} />
         <div className="border-b border-gray-100 py-2 dark:border-white/[0.06]">
           <p className="mb-1.5 text-[11px] font-medium text-gray-600 dark:text-gray-300">对齐</p>
           <Select value={kpi.align ?? "center"} onValueChange={(align) => patch({ align })}>

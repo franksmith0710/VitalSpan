@@ -44,6 +44,9 @@ export function validateFieldAssignment(
   }
 
   if (slot.kind === "metric" && fieldKind === "dimension") {
+    if (chartType === "kpi" && target.axisId === "yAxis") {
+      return { ok: true };
+    }
     return {
       ok: false,
       message: `「${trimmed}」是维度字段，不能放入「${slot.label}」。请从右侧「维度」分组拖入，或改放维度槽`,

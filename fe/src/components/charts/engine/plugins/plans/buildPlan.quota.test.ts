@@ -47,6 +47,28 @@ describe("buildPlanForType quota charts", () => {
     );
     expect(plan.options.rawValue).toBe(0.5);
   });
+
+  it("kpi passes label dimension for multi-row indicators", () => {
+    const plan = buildPlanForType("kpi", {
+      chartType: "kpi",
+      styleVariant: "default",
+      engine: "antv",
+      encoding: {
+        dimensions: [{ field: "指标", label: null }],
+        metrics: [{ field: "数值", label: null }],
+      },
+      dataset: {
+        rows: [
+          ["办件量", 1280],
+          ["在线率", 92.5],
+        ],
+        columns: ["指标", "数值"],
+      },
+      source: {},
+    });
+    expect(plan.options.labelField).toBe("指标");
+    expect(plan.options.metrics).toEqual([{ field: "数值", label: "数值" }]);
+  });
 });
 
 describe("buildPlanForType scatter encoding", () => {
