@@ -162,6 +162,29 @@ describe("apiFetch 401 classification", () => {
     });
   });
 
+  it("maps FastAPI object detail with code for 409 conflicts", async () => {
+    setAuthToken(TOKEN);
+    mockJson(
+      {
+        detail: {
+          code: "RUN_ALREADY_IN_PROGRESS",
+          message: "该任务正在运行中",
+          detail: null,
+        },
+      },
+      409,
+    );
+
+    const error = await expectApiError(
+      apiFetch("/api/v1/ingestion/sync-jobs/job-1/run", { method: "POST" }),
+    );
+
+    expect(error).toMatchObject({
+      message: "该任务正在运行中",
+      code: "RUN_ALREADY_IN_PROGRESS",
+    });
+  });
+
   it("maps plain-text 500 responses to an internal server error", async () => {
     setAuthToken(TOKEN);
     mockResponse("Internal Server Error", 500);

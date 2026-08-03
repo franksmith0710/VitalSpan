@@ -152,18 +152,19 @@ async function parseErrorBody(response: Response): Promise<ApiErrorBody | null> 
   const detail = isRecord(body.detail) ? body.detail : null;
   const detailMessage =
     typeof body.detail === "string" && body.detail.trim() ? body.detail.trim() : undefined;
+  const detailCode = typeof detail?.code === "string" ? detail.code : undefined;
+  const detailNestedMessage =
+    typeof detail?.message === "string" && detail.message.trim() ? detail.message.trim() : undefined;
   const message =
     typeof body.message === "string" && body.message.trim()
       ? body.message
-      : detailMessage;
+      : detailNestedMessage ?? detailMessage;
   return {
     message,
     code:
       typeof body.code === "string"
         ? body.code
-        : message
-          ? "HTTP_ERROR"
-          : undefined,
+        : detailCode ?? (message ? "HTTP_ERROR" : undefined),
     fields: Array.isArray(detail?.fields)
       ? (detail.fields as Array<{ field: string; message: string }>)
       : undefined,

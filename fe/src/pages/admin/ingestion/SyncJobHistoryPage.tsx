@@ -107,7 +107,9 @@ export function SyncJobHistoryPage() {
       toast.success("已重新触发同步");
       await loadRuns();
     } catch (err) {
-      setError(mapApiError(err));
+      const message = mapApiError(err);
+      setError(message);
+      toast.error(message);
     } finally {
       setRetrying(false);
     }
