@@ -69,7 +69,7 @@
 | chartType | DE 名称 | 数据 Tab 差异 | 样式 Tab 差异 | 高级 Tab |
 |-----------|---------|---------------|---------------|----------|
 | table（legacy） | 明细表旧 | 同明细 | 分页+汇总+列宽 | jump + timeRange |
-| table-info | 明细表 | 列可选；提示 SQL 全列 | +序号列 | jump + timeRange |
+| table-info | 明细表 | **单容器**「数据列/维度或指标」多 chip 追加 + 钻取/维度 | +序号列 | jump + timeRange |
 | table-normal | 汇总表 | 维+指标必填 | +小计 | jump + timeRange |
 | table-pivot | 透视表 | 行/列/指标槽 | +小计/合计 | jump + timeRange |
 | t-heatmap | 矩阵热力 | 两维+指标 | 最小样式集 | 条件样式 |

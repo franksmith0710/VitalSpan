@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from sqlalchemy import select
@@ -13,7 +13,7 @@ from app.ingestion.models import EtlRuleSet, SyncJob, SyncRun, get_meta_session
 from app.ingestion.sync_fetch import compute_next_watermark, fetch_mysql_rows, validate_sync_table_names
 from app.ingestion.sync_write import write_analytics
 
-__all__ = ["run_job", "validate_sync_table_names", "INGESTION_MAX_ROWS"]
+__all__ = ["run_job", "reconcile_stale_running_runs", "validate_sync_table_names", "INGESTION_MAX_ROWS"]
 
 from app.ingestion.models import INGESTION_MAX_ROWS  # noqa: E402
 
@@ -22,6 +22,29 @@ def _update_run(db: Session, run: SyncRun, **fields: Any) -> None:
     for key, value in fields.items():
         setattr(run, key, value)
     db.commit()
+
+
+def reconcile_stale_running_runs(*, max_age_seconds: int = 600) -> int:
+    """将超时仍停留在 running 的记录标为失败（进程中断或源库连接挂起）。"""
+    db = get_meta_session()
+    try:
+        cutoff = datetime.now(timezone.utc) - timedelta(seconds=max_age_seconds)
+        runs = db.scalars(
+            select(SyncRun).where(SyncRun.status == "running", SyncRun.started_at < cutoff),
+        ).all()
+        if not runs:
+            return 0
+        now = datetime.now(timezone.utc)
+        for run in runs:
+            run.status = "failed"
+            run.finished_at = now
+            run.error_message = (
+                "运行超时或进程中断，已自动标记失败。请检查 MySQL 源库与分析库连通性后重试。"
+            )
+        db.commit()
+        return len(runs)
+    finally:
+        db.close()
 
 
 def run_job(job_id: uuid.UUID, trace_id: str, *, run_id: uuid.UUID | None = None, attempt: int = 0) -> uuid.UUID:

@@ -295,13 +295,20 @@ describe("patchChartLabelStyle", () => {
   });
 
   it("does not toggle showLabel when only fontSize changes", () => {
-    const cfg = patchChartLabelStyle(baseCfg, { fontSize: 16 });
+    const cfg = patchChartLabelStyle(
+      patchChartShowLabel(baseCfg, false),
+      { fontSize: 16 },
+    );
     expect(readChartShowLabel(cfg)).toBe(false);
     expect(cfg.nativeBody?.deStyle?.label?.fontSize).toBe(16);
   });
 });
 
 describe("readChartShowLabel", () => {
+  it("defaults to true when unset", () => {
+    expect(readChartShowLabel(baseCfg)).toBe(true);
+  });
+
   it("prefers explicit label.show over deFeatures.showLabel", () => {
     const cfg: ChartViewConfig = {
       ...baseCfg,

@@ -280,7 +280,7 @@ export function ChartLabelStyleSection() {
   return (
     <ChartInspectorSection
       title={isKpi ? "指标格式" : "标签"}
-      enabled={!isKpi ? showLabel : undefined}
+      defaultOpen
       action={
         !isKpi ? (
           <Switch

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  appendAxisField,
   deAxisRenderReady,
   migrateChartConfigToDeAxes,
+  removeAxisFieldAt,
   resolveChartEncoding,
   writeAxisField,
 } from "@/lib/resolveChartEncoding";
@@ -57,16 +59,33 @@ describe("resolveChartEncoding", () => {
     expect(deAxisRenderReady(migrateChartConfigToDeAxes(complete))).toBe(true);
   });
 
-  it("table-info projects multiple xAxis columns to render encoding", () => {
+  it("table-info appends multiple xAxis columns and syncs legacy fields", () => {
     let config: ChartViewConfig = { chartType: "table-info" };
-    config = writeAxisField(config, { axisId: "xAxis", index: 0 }, "region");
-    config = writeAxisField(config, { axisId: "xAxis", index: 1 }, "amount");
-    config = writeAxisField(config, { axisId: "xAxis", index: 2 }, "sale_date");
+    config = appendAxisField(config, "xAxis", "region");
+    config = appendAxisField(config, "xAxis", "amount");
+    config = appendAxisField(config, "xAxis", "sale_date");
 
     const encoding = resolveChartEncoding(config);
     expect(encoding.axes.xAxis?.map((r) => r.field)).toEqual(["region", "amount", "sale_date"]);
     expect(encoding.dimensions.map((d) => d.field)).toContain("region");
     expect(encoding.metrics.map((m) => m.field)).toContain("amount");
+    expect(deAxisRenderReady(config)).toBe(true);
+  });
+
+  it("table-info removeAxisFieldAt updates axes and legacy", () => {
+    let config: ChartViewConfig = {
+      chartType: "table-info",
+      axes: { xAxis: [{ field: "a" }, { field: "b" }] },
+    };
+    config = removeAxisFieldAt(config, "xAxis", 0);
+    expect(config.axes?.xAxis?.map((r) => r.field)).toEqual(["b"]);
+  });
+
+  it("table-info syncs drill field to dimensions tail", () => {
+    let config: ChartViewConfig = { chartType: "table-info" };
+    config = appendAxisField(config, "xAxis", "region");
+    config = writeAxisField(config, { axisId: "drill", index: 0 }, "channel");
+    expect(config.dimensions?.map((d) => d.field)).toEqual(["region", "channel"]);
   });
 
   it("map drill axes sync to dimensions[1/2]", () => {

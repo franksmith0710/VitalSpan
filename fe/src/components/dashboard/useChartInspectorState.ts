@@ -12,8 +12,8 @@ import { useInspectorColumns } from "@/hooks/useInspectorColumns";
 import type { LayoutWidget } from "./layoutUtils";
 import { defaultChartConfig } from "./layoutUtils";
 import { WIDGET_CHART_LABELS } from "./widgetIcons";
-import { resolveAutoAssignTarget, validateFieldAssignment } from "@/lib/chartFieldAssignment";
-import { writeAxisField } from "@/lib/resolveChartEncoding";
+import { resolveAutoAssignTarget } from "@/lib/chartFieldAssignment";
+import { appendAxisField, writeAxisField } from "@/lib/resolveChartEncoding";
 import { isDemoPackageDataset } from "@/lib/demoPackage";
 import type { SlotTarget } from "./chartInspectorTypes";
 
@@ -184,15 +184,12 @@ export function useChartInspectorState(
         setFieldAssignError(resolved.error);
         return;
       }
-      const slot = resolved.target;
-      const check = validateFieldAssignment(fieldName, slot, current.chartType);
-      if (!check.ok) {
-        setFieldAssignError(check.message);
-        return;
-      }
-
       setFieldAssignError(null);
-      emitChange(writeAxisField(current, slot, fieldName));
+      if (resolved.append) {
+        emitChange(appendAxisField(current, resolved.target.axisId, fieldName));
+      } else {
+        emitChange(writeAxisField(current, resolved.target, fieldName));
+      }
       setActiveSlot(null);
     },
     [activeSlot, emitChange, readChartConfig],

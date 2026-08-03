@@ -14,7 +14,6 @@ from app.core.logging import configure_logging
 from app.core.nfr.runtime_guard import assert_runtime_compliant
 from app.core.middleware import TraceIdMiddleware
 from app.core.middleware.https_audit_guard import HttpsAuditGuardMiddleware
-from app.ingestion.scheduler import get_scheduler, refresh_all_jobs
 from app.reports.scheduler.jobs import get_report_scheduler, refresh_schedule_jobs
 from app.openapi.extensions import customize_openapi
 
@@ -99,7 +98,16 @@ def _warm_meta_database() -> None:
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    from app.ingestion.scheduler import get_scheduler, refresh_all_jobs
+    from app.ingestion.sync_executor import reconcile_stale_running_runs
+
     assert_runtime_compliant()
+    try:
+        reconciled = reconcile_stale_running_runs(max_age_seconds=120)
+        if reconciled:
+            logger.info("ingestion_stale_runs_reconciled count=%s", reconciled)
+    except Exception:
+        logger.warning("ingestion_stale_runs_reconcile_failed", exc_info=True)
     _warm_meta_database()
     scheduler = get_scheduler()
     refresh_all_jobs()

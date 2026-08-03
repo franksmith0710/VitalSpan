@@ -68,4 +68,24 @@ describe("chartFieldAssignment", () => {
       validateFieldAssignment("region_name", { axisId: "yAxis", index: 0 }, "kpi").ok,
     ).toBe(true);
   });
+
+  it("table-info appends fields to multi data column", () => {
+    const cfg = { chartType: "table-info" as const, axes: { xAxis: [{ field: "sale_date" }] } };
+    expect(resolveAutoAssignTarget(cfg, "table-info", "amount")).toEqual({
+      target: { axisId: "xAxis", index: 0 },
+      append: true,
+    });
+  });
+
+  it("table-info rejects duplicate field in multi column", () => {
+    const cfg = {
+      chartType: "table-info" as const,
+      axes: { xAxis: [{ field: "amount" }] },
+    };
+    const result = resolveAutoAssignTarget(cfg, "table-info", "amount");
+    expect("error" in result).toBe(true);
+    if ("error" in result) {
+      expect(result.error).toContain("已在");
+    }
+  });
 });

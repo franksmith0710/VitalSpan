@@ -1,4 +1,5 @@
 import { classifyDatasetField } from "./datasetFieldClassification";
+import { ChartFieldMultiSlot } from "./ChartFieldMultiSlot";
 import { ChartFieldSlot } from "./ChartFieldSlot";
 import { chartDataSlotBlueprint } from "./chartFieldSlots";
 import { useChartInspector } from "./chartInspectorContext";
@@ -6,7 +7,13 @@ import { isSameSlotTarget, type SlotTarget } from "./chartInspectorTypes";
 import { MapChartFieldHintBanner } from "./MapChartFieldHint";
 import { mapChartFieldHint } from "@/lib/mapChartDataHint";
 import { isGeoMapChartType } from "@/lib/chartViewConfig";
-import { clearAxisField, fieldAtSlot, writeAxisField } from "@/lib/resolveChartEncoding";
+import {
+  axisFieldList,
+  clearAxis,
+  clearAxisField,
+  fieldAtSlot,
+  removeAxisFieldAt,
+} from "@/lib/resolveChartEncoding";
 
 function slotKindForUi(kind: "dimension" | "metric" | "both"): "dimension" | "metric" {
   return kind === "metric" ? "metric" : "dimension";
@@ -48,6 +55,34 @@ export function ChartDataSlots({ hideMapHint = false }: { hideMapHint?: boolean 
       ) : null}
       {slots.map((slot) => {
         const target: SlotTarget = { axisId: slot.axisId, index: slot.index };
+
+        if (slot.uiMode === "multi") {
+          const fields = axisFieldList(cfg, slot.axisId);
+          return (
+            <ChartFieldMultiSlot
+              key={`${slot.axisId}-multi`}
+              label={slot.label}
+              required={slot.required !== false}
+              axisId={slot.axisId}
+              fields={fields}
+              showAggregation={slot.showAggregation}
+              active={activeSlot?.axisId === slot.axisId}
+              disabled={columnsDisabled}
+              onClick={() => {
+                clearFieldAssignError();
+                setActiveSlot(target);
+              }}
+              onClearAll={
+                fields.length
+                  ? () => onChange(clearAxis(cfg, slot.axisId))
+                  : undefined
+              }
+              onRemoveAt={(index) => onChange(removeAxisFieldAt(cfg, slot.axisId, index))}
+              onDropField={(field) => assignField(field, target)}
+            />
+          );
+        }
+
         const rawField = fieldAtSlot(cfg, target);
         const aggregationSuffix =
           rawField && slot.showAggregation

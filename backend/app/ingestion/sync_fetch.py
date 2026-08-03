@@ -42,6 +42,8 @@ def fetch_mysql_rows(job: SyncJob) -> list[dict[str, Any]]:
         password=decrypt_password(job.source_password_encrypted),
         database=job.source_database,
         cursorclass=pymysql.cursors.DictCursor,
+        connect_timeout=10,
+        read_timeout=60,
     )
     table = job.source_table
     try:

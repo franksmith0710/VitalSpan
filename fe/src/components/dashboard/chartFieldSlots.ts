@@ -21,6 +21,10 @@ export type ChartDataSlotBlueprint = {
   label: string;
   required?: boolean;
   showAggregation?: boolean;
+  uiMode?: "single" | "multi";
+  limit?: number;
+  maxDimensions?: number;
+  maxMetrics?: number;
 };
 
 function firstSlotLabel(slots: ChartDataSlotBlueprint[], kind: DeAxisFieldType): string | undefined {
@@ -45,6 +49,10 @@ export function chartDataSlotBlueprint(chartType: ChartType | string): ChartData
     label: slot.label,
     required: slot.required,
     showAggregation: slot.showAggregation,
+    uiMode: slot.uiMode,
+    limit: slot.limit,
+    maxDimensions: slot.maxDimensions,
+    maxMetrics: slot.maxMetrics,
   }));
 }
 
@@ -69,6 +77,7 @@ export function chartRenderRequiredCounts(chartType: ChartType | string): {
 
   for (const slot of slots) {
     if (slot.required === false) continue;
+    if (slot.uiMode === "multi") continue;
     if (slot.fieldType === "dimension") {
       requiredDims += 1;
     } else if (slot.fieldType === "metric") {

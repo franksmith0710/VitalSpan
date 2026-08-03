@@ -12,7 +12,7 @@ import {
 import { ListHeaderCheckbox, ListRowCheckbox, listTableSelectCellClass, listTableSelectHeadClass } from "@/components/layout/list-batch-delete";
 import { Badge } from "@/components/ui/badge";
 import { IconButton } from "@/components/ui/button";
-import { TruncateHint } from "@/components/ui/hint-tooltip";
+import { HintTooltip, TruncateHint } from "@/components/ui/hint-tooltip";
 import { cn } from "@/lib/utils";
 import { localizeApiMessage } from "@/lib/apiError";
 import {
@@ -27,6 +27,7 @@ type SyncJobsTableProps = {
   jobs: SyncJobSummary[];
   canManage: boolean;
   runningId: string | null;
+  pollingJobId?: string | null;
   onRun: (job: SyncJobSummary) => void;
   onDelete: (job: SyncJobSummary) => void;
   selectedIds?: Set<string>;
@@ -76,6 +77,7 @@ export function SyncJobsTable({
   jobs,
   canManage,
   runningId,
+  pollingJobId = null,
   onRun,
   onDelete,
   selectedIds,
@@ -104,8 +106,8 @@ export function SyncJobsTable({
             <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">源</th>
             <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">同步方式</th>
             <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">目标表</th>
-            <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">调度</th>
-            <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">任务状态</th>
+            <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">定时调度</th>
+            <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Cron 开关</th>
             <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">最近运行</th>
             <th className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-400">操作</th>
           </tr>
@@ -163,7 +165,7 @@ export function SyncJobsTable({
               </td>
               <td className="px-4 py-3">
                 <Badge color={job.enabled ? "success" : "light"} variant="light" size="sm">
-                  {job.enabled ? "已启用" : "已停用"}
+                  {job.enabled ? "Cron 已启用" : "Cron 已停用"}
                 </Badge>
               </td>
               <td className="px-4 py-3">
@@ -173,17 +175,30 @@ export function SyncJobsTable({
                 <div className="flex items-center justify-end gap-0.5">
                   {canManage ? (
                     <>
-                      <IconButton
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        aria-label="手动运行同步"
-                        disabled={runningId === job.id}
-                        loading={runningId === job.id}
-                        onClick={() => onRun(job)}
-                      >
-                        <Play className="size-4" />
-                      </IconButton>
+                      {(() => {
+                        const runInProgress =
+                          job.last_run?.status === "running" ||
+                          runningId === job.id ||
+                          pollingJobId === job.id;
+                        const runTip = runInProgress
+                          ? "同步进行中，完成后自动更新；当前不支持暂停或取消"
+                          : "手动运行同步（全量将覆盖目标表）";
+                        return (
+                          <HintTooltip label={runTip}>
+                            <IconButton
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              aria-label="手动运行同步"
+                              disabled={runInProgress}
+                              loading={runInProgress}
+                              onClick={() => onRun(job)}
+                            >
+                              <Play className="size-4" />
+                            </IconButton>
+                          </HintTooltip>
+                        );
+                      })()}
                       <IconButton asChild variant="ghost" size="sm" aria-label="配置清洗规则">
                         <Link to={`/admin/ingestion/sync-jobs/${job.id}/etl-rules`}>
                           <Settings2 className="size-4" />

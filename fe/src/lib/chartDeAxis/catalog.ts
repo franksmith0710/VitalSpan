@@ -37,8 +37,20 @@ const DE_AXIS_CATALOG: Record<string, ChartAxisEntry> = {
 
   // table
   "table-info": entry(
-    [deAxis.both("数据列", { limit: 8, required: false })],
-    [{ axisId: "xAxis", index: 0, legacy: { kind: "dimension", index: 0 } }],
+    [
+      deAxis.both("数据列 / 维度或指标", {
+        limit: 16,
+        required: true,
+        uiMode: "multi",
+        maxDimensions: 8,
+        maxMetrics: 8,
+      }),
+      deAxis.drill(),
+    ],
+    [
+      { axisId: "xAxis", index: 0, legacy: { kind: "dimension", index: 0 } },
+      { axisId: "drill", index: 0, legacy: { kind: "dimension", index: 1 } },
+    ],
   ),
   "table-normal": entry(
     [deAxis.xDim("数据列 / 维度"), deAxis.yMet("数据列 / 指标")],
@@ -68,8 +80,20 @@ const DE_AXIS_CATALOG: Record<string, ChartAxisEntry> = {
     ],
   ),
   table: entry(
-    [deAxis.both("数据列", { limit: 8, required: false })],
-    [{ axisId: "xAxis", index: 0, legacy: { kind: "dimension", index: 0 } }],
+    [
+      deAxis.both("数据列 / 维度或指标", {
+        limit: 16,
+        required: true,
+        uiMode: "multi",
+        maxDimensions: 8,
+        maxMetrics: 8,
+      }),
+      deAxis.drill(),
+    ],
+    [
+      { axisId: "xAxis", index: 0, legacy: { kind: "dimension", index: 0 } },
+      { axisId: "drill", index: 0, legacy: { kind: "dimension", index: 1 } },
+    ],
   ),
 
   // trend
@@ -450,6 +474,11 @@ export function deriveFieldRuleFromDeCatalog(chartType: string): {
   let minM = 0;
   let maxM = 0;
   for (const spec of specs) {
+    if (spec.fieldType === "both" && spec.uiMode === "multi") {
+      maxD += spec.maxDimensions ?? 8;
+      maxM += spec.maxMetrics ?? 8;
+      continue;
+    }
     if (spec.fieldType === "both") {
       const legacy = entry.legacy.find((m) => m.axisId === spec.id && m.index === 0)?.legacy;
       if (legacy?.kind === "metric") {

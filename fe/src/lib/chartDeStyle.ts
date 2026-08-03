@@ -658,7 +658,7 @@ export function readChartShowLabel(
   if (features && typeof features === "object" && "showLabel" in features) {
     return Boolean((features as { showLabel?: boolean }).showLabel);
   }
-  return defaults?.chartLabelShow ?? false;
+  return defaults?.chartLabelShow ?? true;
 }
 
 export function readChartTooltipShow(

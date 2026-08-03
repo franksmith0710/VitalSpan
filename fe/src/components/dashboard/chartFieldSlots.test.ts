@@ -134,4 +134,12 @@ describe("chartFieldSlots", () => {
     expect(slots.filter((s) => s.kind === "dimension" && s.required !== false).length).toBe(1);
     expect(chartRenderRequiredCounts("table-pivot")).toEqual({ minDimensions: 1, minMetrics: 1 });
   });
+
+  it("T-INSP-DE-13: table-info uses single multi data column + drill slots", () => {
+    expect(chartDataSlotBlueprint("table-info").map((s) => s.label)).toEqual([
+      "数据列 / 维度或指标",
+      "钻取 / 维度",
+    ]);
+    expect(chartDataSlotBlueprint("table-info")[0]?.uiMode).toBe("multi");
+  });
 });

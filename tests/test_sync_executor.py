@@ -821,3 +821,40 @@ def test_incremental_watermark_advances(mock_fetch, mock_write):
     job = db.get(SyncJob, job_id)
     assert job.last_watermark == "200"
     db.close()
+
+
+def test_reconcile_stale_running_runs_marks_old_running_as_failed():
+    from datetime import datetime, timedelta, timezone
+
+    from app.ingestion.sync_executor import reconcile_stale_running_runs
+
+    job_id = _seed_job()
+    db = get_meta_session()
+    stale = SyncRun(
+        job_id=job_id,
+        status="running",
+        trace_id="stale",
+        started_at=datetime.now(timezone.utc) - timedelta(minutes=5),
+    )
+    fresh = SyncRun(
+        job_id=job_id,
+        status="running",
+        trace_id="fresh",
+        started_at=datetime.now(timezone.utc),
+    )
+    db.add_all([stale, fresh])
+    db.commit()
+    stale_id, fresh_id = stale.id, fresh.id
+    db.close()
+
+    count = reconcile_stale_running_runs(max_age_seconds=120)
+    assert count == 1
+
+    db = get_meta_session()
+    stale_run = db.get(SyncRun, stale_id)
+    fresh_run = db.get(SyncRun, fresh_id)
+    assert stale_run.status == "failed"
+    assert stale_run.finished_at is not None
+    assert "超时" in (stale_run.error_message or "")
+    assert fresh_run.status == "running"
+    db.close()

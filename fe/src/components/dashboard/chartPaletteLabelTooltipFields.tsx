@@ -55,7 +55,7 @@ export function ChartPaletteLabelTooltipFields({
         <ChartPaletteNestedSection
           compact={compact}
           title="图表标签"
-          enabled={labelShow}
+          defaultOpen
           action={
             <ChartPaletteSectionSwitch
               checked={labelShow}

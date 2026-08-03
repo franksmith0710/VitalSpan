@@ -94,7 +94,12 @@ export function syncLegacyFieldsFromAxes(config: ChartViewConfig): ChartViewConf
 
   if (chartType === "table-info" || chartType === "table") {
     const { dimensions, metrics } = syncTableBothAxesToLegacy(axes);
-    return { ...config, axes, dimensions, metrics };
+    const drillField = axisField(axes, "drill", 0);
+    const nextDimensions = [...dimensions];
+    if (drillField) {
+      nextDimensions.push({ field: drillField });
+    }
+    return { ...config, axes, dimensions: nextDimensions, metrics };
   }
 
   const legacyMap = getDeAxisLegacyMap(chartType);
@@ -137,6 +142,44 @@ export function firstAxisField(
   return encoding.axes[axisId]?.[index]?.field?.trim() ?? "";
 }
 
+export function axisFieldList(config: ChartViewConfig, axisId: DeAxisId): string[] {
+  const migrated = migrateChartConfigToDeAxes(config);
+  return (migrated.axes?.[axisId] ?? [])
+    .map((ref) => ref.field?.trim())
+    .filter((field): field is string => Boolean(field));
+}
+
+export function appendAxisField(
+  config: ChartViewConfig,
+  axisId: DeAxisId,
+  field: string,
+): ChartViewConfig {
+  const axes = { ...(config.axes ?? {}) };
+  const list = [...(axes[axisId] ?? [])];
+  list.push({ field });
+  axes[axisId] = list;
+  return syncLegacyFieldsFromAxes({ ...config, axes });
+}
+
+export function removeAxisFieldAt(
+  config: ChartViewConfig,
+  axisId: DeAxisId,
+  index: number,
+): ChartViewConfig {
+  const axes = { ...(config.axes ?? {}) };
+  const list = [...(axes[axisId] ?? [])];
+  if (index < 0 || index >= list.length) return config;
+  list.splice(index, 1);
+  axes[axisId] = list;
+  return syncLegacyFieldsFromAxes({ ...config, axes });
+}
+
+export function clearAxis(config: ChartViewConfig, axisId: DeAxisId): ChartViewConfig {
+  const axes = { ...(config.axes ?? {}) };
+  axes[axisId] = [];
+  return syncLegacyFieldsFromAxes({ ...config, axes });
+}
+
 export function writeAxisField(
   config: ChartViewConfig,
   slot: Pick<DeAxisSlot, "axisId" | "index">,
@@ -169,6 +212,11 @@ export function deAxisRenderReady(config: ChartViewConfig): boolean {
 
   for (const slot of slots) {
     if (!slot.required) continue;
+    if (slot.uiMode === "multi") {
+      const fields = axisFieldList(config, slot.axisId);
+      if (fields.length === 0) return false;
+      continue;
+    }
     const field = axisField(encoding.axes, slot.axisId, slot.index);
     if (!field) return false;
   }

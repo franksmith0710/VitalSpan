@@ -1,7 +1,10 @@
-import { chartDataSlotBlueprint } from "@/components/dashboard/chartFieldSlots";
+import {
+  chartDataSlotBlueprint,
+  type ChartDataSlotBlueprint,
+} from "@/components/dashboard/chartFieldSlots";
 import { classifyDatasetField } from "@/components/dashboard/datasetFieldClassification";
 import type { SlotTarget } from "@/components/dashboard/chartInspectorTypes";
-import { fieldAtSlot, writeAxisField } from "@/lib/resolveChartEncoding";
+import { axisFieldList, fieldAtSlot } from "@/lib/resolveChartEncoding";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 
 export type FieldAssignResult = { ok: true } | { ok: false; message: string };
@@ -12,7 +15,7 @@ const GEO_FIELD =
   /(?:^|_)(region|area|city|province|country|geo|name|district|地名|省份|城市)(?:$|_)|省|市|自治区|区$|县$/i;
 const REGION_ID_FIELD = /(?:^|_)(region_id|adcode|area_code|geo_id)(?:$|_)|^id$|_id$/i;
 
-function slotMeta(chartType: string, target: SlotTarget) {
+function slotMeta(chartType: string, target: SlotTarget): ChartDataSlotBlueprint | undefined {
   return chartDataSlotBlueprint(chartType).find(
     (s) => s.axisId === target.axisId && s.index === target.index,
   );
@@ -90,14 +93,57 @@ export function validateFieldAssignment(
   return { ok: true };
 }
 
-/** 点击字段库时：按槽位顺序找第一个可接受该字段的空槽 */
+/** 多字段容器：重复与维/指标上限 */
+export function validateMultiAxisAppend(
+  cfg: ChartViewConfig,
+  field: string,
+  slot: ChartDataSlotBlueprint,
+  chartType: string,
+): FieldAssignResult {
+  const typeCheck = validateFieldAssignment(field, { axisId: slot.axisId, index: slot.index }, chartType);
+  if (!typeCheck.ok) return typeCheck;
+
+  const trimmed = field.trim();
+  const existing = axisFieldList(cfg, slot.axisId);
+  if (existing.includes(trimmed)) {
+    return { ok: false, message: `「${trimmed}」已在「${slot.label}」中` };
+  }
+
+  const maxTotal = slot.limit ?? 16;
+  if (existing.length >= maxTotal) {
+    return { ok: false, message: `「${slot.label}」最多 ${maxTotal} 个字段` };
+  }
+
+  const fieldKind = classifyDatasetField(trimmed);
+  const dimCount = existing.filter((f) => classifyDatasetField(f) !== "metric").length;
+  const metCount = existing.filter((f) => classifyDatasetField(f) === "metric").length;
+  const maxD = slot.maxDimensions ?? 8;
+  const maxM = slot.maxMetrics ?? 8;
+
+  if (fieldKind === "metric" && metCount >= maxM) {
+    return { ok: false, message: `「${slot.label}」指标字段已达上限（${maxM} 个）` };
+  }
+  if (fieldKind !== "metric" && dimCount >= maxD) {
+    return { ok: false, message: `「${slot.label}」维度字段已达上限（${maxD} 个）` };
+  }
+
+  return { ok: true };
+}
+
+/** 点击字段库时：multi 槽追加；single 槽找空位 */
 export function resolveAutoAssignTarget(
   cfg: ChartViewConfig,
   chartType: string,
   field: string,
   preferred?: SlotTarget | null,
-): { target: SlotTarget } | { error: string } {
+): { target: SlotTarget; append?: boolean } | { error: string } {
   if (preferred) {
+    const slot = slotMeta(chartType, preferred);
+    if (slot?.uiMode === "multi") {
+      const check = validateMultiAxisAppend(cfg, field, slot, chartType);
+      if (!check.ok) return { error: check.message };
+      return { target: preferred, append: true };
+    }
     const empty = !fieldAtSlot(cfg, preferred);
     if (!empty) {
       return { error: `请先清空当前槽位再绑定「${field}」` };
@@ -109,6 +155,15 @@ export function resolveAutoAssignTarget(
 
   for (const slot of chartDataSlotBlueprint(chartType)) {
     const target: SlotTarget = { axisId: slot.axisId, index: slot.index };
+    if (slot.uiMode === "multi") {
+      const check = validateMultiAxisAppend(cfg, field, slot, chartType);
+      if (check.ok) return { target, append: true };
+      const trimmed = field.trim();
+      if (axisFieldList(cfg, slot.axisId).includes(trimmed)) {
+        return { error: check.message };
+      }
+      continue;
+    }
     if (fieldAtSlot(cfg, target)) continue;
     const check = validateFieldAssignment(field, target, chartType);
     if (check.ok) return { target };

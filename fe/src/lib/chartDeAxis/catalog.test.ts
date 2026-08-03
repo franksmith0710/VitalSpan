@@ -38,10 +38,26 @@ describe("chartDeAxis catalog", () => {
     expect(ySlots.every((s) => s.fieldType === "metric")).toBe(true);
   });
 
-  it("table-info uses both-type data column axis", () => {
+  it("table-info uses multi data column container + drill like DataEase", () => {
     const slots = getDeAxisBlueprint("table-info");
-    expect(slots[0]?.fieldType).toBe("both");
-    expect(slots[0]?.label).toBe("数据列");
+    expect(slots).toHaveLength(2);
+    expect(slots[0]).toMatchObject({
+      fieldType: "both",
+      label: "数据列 / 维度或指标",
+      uiMode: "multi",
+      axisId: "xAxis",
+    });
+    expect(slots[1]).toMatchObject({
+      label: "钻取 / 维度",
+      fieldType: "dimension",
+      axisId: "drill",
+    });
+    expect(deriveFieldRuleFromDeCatalog("table-info")).toEqual({
+      minDimensions: 0,
+      maxDimensions: 9,
+      minMetrics: 0,
+      maxMetrics: 8,
+    });
   });
 
   it("multi-scatter DE axis order and labels", () => {

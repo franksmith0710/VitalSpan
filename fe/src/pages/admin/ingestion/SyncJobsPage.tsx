@@ -75,6 +75,7 @@ export function SyncJobsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<SyncJobStatusFilter>("all");
   const [runningId, setRunningId] = useState<string | null>(null);
+  const [pollingJobId, setPollingJobId] = useState<string | null>(null);
   const [runTarget, setRunTarget] = useState<SyncJobSummary | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SyncJobSummary | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -105,6 +106,14 @@ export function SyncJobsPage() {
       if (pollTimerRef.current !== null) {
         window.clearInterval(pollTimerRef.current);
       }
+      setPollingJobId(jobId);
+      const stopPolling = () => {
+        if (pollTimerRef.current !== null) {
+          window.clearInterval(pollTimerRef.current);
+          pollTimerRef.current = null;
+        }
+        setPollingJobId((current) => (current === jobId ? null : current));
+      };
       let ticks = 0;
       pollTimerRef.current = window.setInterval(() => {
         ticks += 1;
@@ -115,10 +124,7 @@ export function SyncJobsPage() {
             const job = data.items.find((item) => item.id === jobId);
             const status = job?.last_run?.status;
             if (status === "succeeded" && job) {
-              if (pollTimerRef.current !== null) {
-                window.clearInterval(pollTimerRef.current);
-                pollTimerRef.current = null;
-              }
+              stopPolling();
               const rows = job.last_run?.rows_synced;
               setRecentRunSuccess({
                 jobId: job.id,
@@ -148,20 +154,14 @@ export function SyncJobsPage() {
                 },
               );
             } else if (status === "failed") {
-              if (pollTimerRef.current !== null) {
-                window.clearInterval(pollTimerRef.current);
-                pollTimerRef.current = null;
-              }
+              stopPolling();
               toast.error(`任务「${jobName}」同步失败，请查看运行历史`);
             }
           } catch {
             /* 轮询失败忽略，下一轮重试 */
           }
           if (ticks >= 15) {
-            if (pollTimerRef.current !== null) {
-              window.clearInterval(pollTimerRef.current);
-              pollTimerRef.current = null;
-            }
+            stopPolling();
           }
         })();
       }, 2000);
@@ -352,6 +352,7 @@ export function SyncJobsPage() {
                     jobs={pagedJobs}
                     canManage={canManage}
                     runningId={runningId}
+                    pollingJobId={pollingJobId}
                     onRun={setRunTarget}
                     onDelete={setDeleteTarget}
                     selectedIds={selection.selectedIds}
