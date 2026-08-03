@@ -111,7 +111,8 @@ flowchart TB
 - BE `export_render.py` 使用 **Playwright Chromium** 访问 FE 无壳层路由 `/export/dashboard/:id?token=`（或 data-screen 对称路径），等待 `data-export-ready` 后 `page.pdf()`。
 - 短期鉴权：`export_token`（5min TTL，内存签发）；公开 `GET .../export-layout?token=` 与 `POST .../export-query/execute`（`X-Export-Token` 头）。
 - 产物枚举：`visual_snapshot`（默认）· `layout_inventory`（Excel 或 `RPT_EXPORT_FALLBACK=1` 降级）。
-- **环境**：`FE_BASE_URL`（默认 `http://localhost:5173`）；`pip install playwright && playwright install chromium`。
+- **环境**：`FE_BASE_URL`（默认 `http://127.0.0.1:5173`，Windows 避免 `localhost` 命中其他 Vite）；可选 `FE_BASE_PATH`（Vite 子路径部署）；`docker compose up -d mailhog`（SMTP 1025 / UI 8025）；`pip install playwright && playwright install chromium`。
+- **投递**：`delivery_adapter.py` 对 `visual_snapshot` 使用 `EmailMessage.add_attachment` 发送 PDF bytes（非 JWT 下载链接）。
 
 **代码锚点**：`backend/app/dashboard/export_render.py` · `export_token.py` · `fe/src/pages/export/DashboardExportSnapshotPage.tsx` · `docs/feature-design/2026-08-03-report-center-delivery-closure.md`
 

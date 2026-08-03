@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DashboardExportSnapshotPage } from "./DashboardExportSnapshotPage";
@@ -50,5 +50,29 @@ describe("DashboardExportSnapshotPage", () => {
     expect(await screen.findByTestId("layout-preview")).toBeInTheDocument();
     expect(document.querySelector("[data-export-snapshot]")).toBeTruthy();
     expect(document.querySelector("[data-dashboard-thumbnail-capture]")).toBeTruthy();
+  });
+
+  it("sets data-export-ready after layout settle delay", async () => {
+    vi.mocked(fetchExportLayout).mockResolvedValue({
+      id: "d1",
+      name: "Demo",
+      surfaceKind: "dashboard",
+      layoutJson: { version: 1, widgets: [], globalFilters: [] },
+    });
+    render(
+      <MemoryRouter initialEntries={["/export/dashboard/d1?token=abc"]}>
+        <Routes>
+          <Route path="/export/dashboard/:id" element={<DashboardExportSnapshotPage surface="dashboard" />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await screen.findByTestId("layout-preview");
+    expect(document.querySelector('[data-export-ready="true"]')).toBeNull();
+    await waitFor(
+      () => {
+        expect(document.querySelector('[data-export-ready="true"]')).toBeTruthy();
+      },
+      { timeout: 2000 },
+    );
   });
 });

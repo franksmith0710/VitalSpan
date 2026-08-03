@@ -40,17 +40,17 @@ def render_dashboard_visual_pdf(
             browser = playwright.chromium.launch(headless=True)
             try:
                 page = browser.new_page(viewport={"width": 1440, "height": 900})
-                page.goto(url, wait_until="networkidle", timeout=NAV_TIMEOUT_MS)
+                page.goto(url, wait_until="domcontentloaded", timeout=NAV_TIMEOUT_MS)
                 page.wait_for_selector(CAPTURE_SELECTOR, timeout=NAV_TIMEOUT_MS)
                 page.wait_for_timeout(SETTLE_MS)
                 pdf_bytes = page.pdf(format="A4", print_background=True, landscape=True)
             finally:
                 browser.close()
     except PlaywrightError as exc:
-        logger.warning("dashboard_visual_export_failed id=%s err=%s", dashboard_id, exc)
+        logger.warning("dashboard_visual_export_failed id=%s url=%s err=%s", dashboard_id, url, exc)
         raise dash_service.DashboardError(
             "DASH_EXPORT_RENDER_FAILED",
-            f"可视化导出渲染失败：{exc}",
+            f"可视化导出渲染失败（{url}）：{exc}",
             502,
         ) from exc
 

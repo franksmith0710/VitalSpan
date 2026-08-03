@@ -352,7 +352,12 @@
 
 ### Case 18 — 看板定时 PDF 视觉验收
 
-**前置**：`playwright install chromium` 已执行；后端 `FE_BASE_URL` 指向前端 dev/preview；SMTP（MailHog 1025）可选。
+**前置**：
+
+- `playwright install chromium` 已执行
+- 单实例前端 dev：`pnpm dev --host 127.0.0.1 --port 5173`
+- 后端 `FE_BASE_URL=http://127.0.0.1:5173`（`FE_BASE_PATH` 留空）；重启 uvicorn
+- SMTP（可选）：`docker compose up -d mailhog`（1025 / UI 8025）
 
 **操作步骤**：
 
@@ -366,6 +371,7 @@
 - 历史 `artifactKind` 显示 **可视化快照**（非布局摘要）。
 - 渲染失败时状态为 **执行失败**，`errorMessage` 说明原因（非 silent 成功）。
 - PDF 可见画布/图表区域；正文 **不得** 以 `LAYOUT INVENTORY PREVIEW` 开头。
+- 邮件（MailHog 运行时）：收件箱可见 **PDF MIME 附件**，无需登录下载链接。
 
 ---
 

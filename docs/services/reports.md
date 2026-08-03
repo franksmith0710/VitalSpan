@@ -5,7 +5,7 @@
 | 模块路径 | `backend/app/reports/` |
 | PRD | [F08-RPT](../automate/prd/F08-RPT.md) · RPT-001 ~ RPT-007 |
 | 里程碑 | M6 / M10 / M12 |
-| 状态 | **部分（G5 管线已接线 · 邮件 PDF 附件与 live 渲染未闭环 · [真值复验 2026-08-03](../feature-truth/2026-08-03-report-center-g5-visual-pdf-truth-audit.md)）** |
+| 状态 | **部分（G5 PDF live 已闭环 · SMTP 附件已实现 · MailHog 本地 optional · [真值 2026-08-03](../feature-truth/2026-08-03-report-center-g5-visual-pdf-truth-audit.md)）** |
 
 ## 职责
 
@@ -129,7 +129,7 @@
 - **RPT-001**：`integration/reports_export.py` catalog 模板 UUID 导出链 + mock bytes；`exportHook.placeholder=false`
 - **RPT-002**：FE `PrefabBindingForm` + PUT prefab bindings
 - **RPT-003**：FE `TemplateBlockEditor` 块列表/SQL/重排
-- **RPT-005**：`scheduler/delivery_adapter.py` — 固定 SMTP；测试 mock 仅 `X-Rpt-Delivery-Mock` header
+- **RPT-005**：`scheduler/delivery_adapter.py` — SMTP `add_attachment` 发送 visual_snapshot PDF；固定 SMTP；测试 mock 仅 `X-Rpt-Delivery-Mock` header
 - **RPT-007**：`batch/export_jobs.py` — `POST /batch/export` + `GET /jobs/{id}` 轮询
 
 - **RPT-003**：`GET/DELETE /reports/templates`；`storageRef` 默认 `mock://templates/{key}.{format}`；`exportHook`（IF-03 placeholder）；`engine/service.run_template` word/excel/pdf 返回 `exportHook`

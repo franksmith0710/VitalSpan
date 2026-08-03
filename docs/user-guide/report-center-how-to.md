@@ -111,6 +111,13 @@
 
 > **产物说明（2026-08-03）**：看板/大屏定时 PDF 附件为 **可视化快照**（Playwright 截取画布 PDF）；执行历史标注「可视化快照」。历史「布局摘要」记录为升级前产物。Excel/CSV 导出仍为组件布局清单。
 
+**本地可视化 PDF 闭环前置（开发）**
+
+1. 仅保留**一个**前端 dev：`cd fe && pnpm dev --host 127.0.0.1 --port 5173`（避免 `localhost:5173` 上旧 Vite 子路径实例干扰 Playwright）。
+2. 后端 `backend/.env`：`FE_BASE_URL=http://127.0.0.1:5173`，`FE_BASE_PATH` 留空；重启 uvicorn。
+3. `docker compose up -d mailhog`（SMTP `1025`，Web UI `http://localhost:8025`）。
+4. `pip install playwright && playwright install chromium`。
+
 ### 维护预制绑定（高级）
 
 管理员在 **预制报表** 页底部可见 **预制绑定** 表单（编辑首条绑定的实体类型、分析类型等）。一般仅在扩展系统预置分析时使用。
@@ -122,7 +129,8 @@
 | 现象 | 可能原因 | 建议 |
 |------|----------|------|
 | 定时报告执行失败「SMTP 未配置」 | `RPT_SMTP_*` 未设置或 MailHog 未启动 | 本地开发：`RPT_SMTP_HOST=localhost`、`RPT_SMTP_PORT=1025` 并启动 MailHog；见 `backend/.env.example` |
-| PDF 导出失败「Playwright 未安装」 | 后端缺少 Chromium | `pip install playwright && playwright install chromium`；配置 `FE_BASE_URL` 指向前端 |
+| PDF 导出失败「Playwright 未安装」 | 后端缺少 Chromium | `pip install playwright && playwright install chromium`；`FE_BASE_URL=http://127.0.0.1:5173` 且前端 dev 已启动 |
+| PDF 导出 502 / selector 超时 | Playwright 打不开 export 页 | 确认单实例 Vite；勿用 `localhost` 若另有 `/sc-datav/` 进程占用 5173 |
 | 预制报表无法运行 | `DEV_REPORT_SEED=0` 且无实体物理表 | 开发环境设 `DEV_REPORT_SEED=1` 并重启后端 |
 | 侧栏没有「报表模板/调度」 | 账号仅有 `report:read` | 联系管理员分配 `report:manage` 或 admin 角色 |
 | 预制运行提示无权 | 绑定 `allowedRoles` 未包含当前角色 | 管理员调整预制绑定或用户角色 |

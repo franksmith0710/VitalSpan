@@ -1,3 +1,4 @@
+import { matchExportDashboardId } from "@/lib/appBasePath";
 import { clearAuthToken, getAuthToken } from "@/lib/auth-token";
 import {
   getExportAuthHeaders,
@@ -35,10 +36,7 @@ export function getAuthHeaders(): Record<string, string> {
   const embedToken = getEmbedTokenFromLocation();
   if (embedToken) return { "X-Embed-Token": embedToken };
   if (isExportSnapshotContext()) {
-    const match = window.location.pathname.match(
-      /^\/export\/(?:dashboard|data-screen)\/([^/]+)/,
-    );
-    const dashboardId = match?.[1];
+    const dashboardId = matchExportDashboardId();
     if (dashboardId) return getExportAuthHeaders(dashboardId);
   }
   const token = getAuthToken();

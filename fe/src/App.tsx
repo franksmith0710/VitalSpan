@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import { AuthProvider } from "@/context/auth-context";
 import { AppErrorBoundary } from "@/components/ui/route-error-boundary";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { getAppBasePath } from "@/lib/appBasePath";
 import { AppRoutes } from "@/routes";
 
 const queryClient = new QueryClient({
@@ -13,7 +14,7 @@ const queryClient = new QueryClient({
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <BrowserRouter basename={getAppBasePath()}>
         <AppErrorBoundary>
           <TooltipProvider delayDuration={250}>
             <AuthProvider>

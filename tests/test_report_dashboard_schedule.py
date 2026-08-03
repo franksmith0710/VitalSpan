@@ -203,6 +203,9 @@ def test_dashboard_execute_smtp_attaches_pdf(client: TestClient):
             headers={**AUTH, "Idempotency-Key": "smtp-attach-1", "X-Rpt-Semi-Real": "1"},
         )
         assert exec_resp.status_code == 200, exec_resp.text
+        body = exec_resp.json()
+        assert body.get("status") == "semi_real_succeeded"
+        assert body.get("deliverySteps")[0]["status"] == "delivered"
         smtp_instance.send_message.assert_called_once()
         msg = smtp_instance.send_message.call_args[0][0]
         attachments = list(msg.iter_attachments())

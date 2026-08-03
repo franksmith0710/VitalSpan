@@ -38,7 +38,7 @@ def execute_export_query(
     actor = UserContext(
         id="export-renderer",
         username="export-renderer",
-        roles=["admin"],
+        roles=[],
         permissions={"query:execute", "datasource:read", "dashboard:read"},
     )
     try:

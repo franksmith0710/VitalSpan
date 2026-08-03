@@ -1,4 +1,4 @@
-import { getEmbedTokenFromLocation } from "@/lib/api";
+import { isExportSnapshotPath } from "@/lib/appBasePath";
 
 export function getExportTokenFromLocation(): string | null {
   if (typeof window === "undefined") return null;
@@ -7,7 +7,7 @@ export function getExportTokenFromLocation(): string | null {
 
 export function isExportSnapshotContext(): boolean {
   if (typeof window === "undefined") return false;
-  return window.location.pathname.startsWith("/export/");
+  return isExportSnapshotPath();
 }
 
 export function getExportAuthHeaders(dashboardId: string): Record<string, string> {

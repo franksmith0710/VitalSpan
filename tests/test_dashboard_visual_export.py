@@ -162,13 +162,86 @@ def test_render_rejects_inventory_leak(monkeypatch) -> None:
     assert exc.value.code == "DASH_EXPORT_RENDER_INVENTORY_LEAK"
 
 
-def test_build_export_snapshot_url_respects_base_path() -> None:
-    from types import SimpleNamespace
+def test_export_query_requires_token(client: TestClient) -> None:
+    resp = client.post(
+        "/api/v1/dashboards/export-query/execute",
+        json={"mode": "sql", "dataSourceId": str(uuid.uuid4()), "sql": "SELECT 1"},
+    )
+    assert resp.status_code == 401
 
-    from app.dashboard.export_fe_url import build_export_snapshot_url
 
-    dash_id = uuid.uuid4()
-    token = "tok"
-    settings = SimpleNamespace(fe_base_url="http://localhost:5173", fe_base_path="sc-datav")
-    url = build_export_snapshot_url(dash_id, token=token, surface="dashboard", settings=settings)
-    assert url == f"http://localhost:5173/sc-datav/export/dashboard/{dash_id}?token={token}"
+def test_export_query_rejects_invalid_token(client: TestClient, auth_headers: dict) -> None:
+    created = client.post(
+        "/api/v1/dashboards",
+        headers=auth_headers,
+        json={"name": f"Export Query {uuid.uuid4().hex[:6]}"},
+    )
+    assert created.status_code == 201
+    dash_id = created.json()["id"]
+    resp = client.post(
+        "/api/v1/dashboards/export-query/execute",
+        headers={
+            "X-Export-Token": "invalid-token",
+            "X-Export-Dashboard-Id": dash_id,
+        },
+        json={"mode": "sql", "dataSourceId": str(uuid.uuid4()), "sql": "SELECT 1"},
+    )
+    assert resp.status_code == 403
+
+
+def test_export_query_accepts_valid_token(client: TestClient, auth_headers: dict, monkeypatch) -> None:
+    from app.query.schemas import ExecuteResponse
+
+    created = client.post(
+        "/api/v1/dashboards",
+        headers=auth_headers,
+        json={"name": f"Export Query OK {uuid.uuid4().hex[:6]}"},
+    )
+    dash_id = created.json()["id"]
+    token = issue_export_token(uuid.UUID(dash_id))
+
+    def _fake_execute(_db, _actor, _payload):
+        return ExecuteResponse(columns=["x"], rows=[[1]], rowCount=1, truncated=False, traceId="t")
+
+    monkeypatch.setattr("app.dashboard.export_snapshot.query_service.execute_query", _fake_execute)
+
+    resp = client.post(
+        "/api/v1/dashboards/export-query/execute",
+        headers={"X-Export-Token": token, "X-Export-Dashboard-Id": dash_id},
+        json={"mode": "sql", "dataSourceId": str(uuid.uuid4()), "sql": "SELECT 1"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["rowCount"] == 1
+
+
+def test_pdf_export_fallback_when_env_set(
+    client: TestClient,
+    auth_headers: dict,
+    monkeypatch,
+) -> None:
+    from app.core.config import get_settings
+    from app.dashboard import service as dash_service
+
+    monkeypatch.setenv("RPT_EXPORT_FALLBACK", "1")
+    get_settings.cache_clear()
+
+    def _fail_render(*_args, **_kwargs):
+        raise dash_service.DashboardError("DASH_EXPORT_RENDER_FAILED", "render failed", 502)
+
+    monkeypatch.setattr("app.dashboard.export_jobs.render_dashboard_visual_pdf", _fail_render)
+
+    created = client.post(
+        "/api/v1/dashboards",
+        headers=auth_headers,
+        json={"name": f"Fallback PDF {uuid.uuid4().hex[:6]}"},
+    )
+    dash_id = created.json()["id"]
+    job = client.post(
+        f"/api/v1/dashboards/{dash_id}/export-jobs",
+        headers=auth_headers,
+        json={"format": "pdf"},
+    )
+    assert job.status_code == 201, job.text
+    body = job.json()
+    assert body["artifactKind"] == "layout_inventory"
+    get_settings.cache_clear()

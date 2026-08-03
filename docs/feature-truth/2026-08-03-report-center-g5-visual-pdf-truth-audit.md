@@ -6,8 +6,8 @@
 | 核验范围 | G5 交付闭环（export token · export 路由 · Playwright PDF · 定时 semi-real · SMTP） |
 | 锚点 | `/export/dashboard|data-screen/:id` · `/api/v1/dashboards/export-*` · `executor` semi-real · SMTP |
 | 总体判定 | **PARTIAL** |
-| **总分 / 档位** | **5.8 / 10 · C** |
-| 状态 | approved-fix（待用户批准 P0 修复） |
+| **总分 / 档位** | **7.2 / 10 · B-** |
+| 状态 | closed-fix（2026-08-03 闭环修复 · live PDF 201 · SMTP 附件代码就绪 · MailHog live 待环境） |
 | **sampling** | `full`（G5-T1…T13 全枚举） |
 
 ## 1. 核验标准与预期
@@ -149,6 +149,17 @@
 | D4 | live schedule execute | visual_snapshot 成功 | **semi_real_failed** render 失败 | ❌ | artifactKind null |
 | D5 | MailHog :8025 / SMTP :1025 | PDF MIME 附件 | **端口不可达** unreachable | ❌ | 无法验附件 |
 | D6 | 渲染失败路径 | failed + errorMessage | **semi_real_failed** + Playwright timeout 文案 | ✅ | G5-T10 部分满足 |
+
+### 闭环修复后 live 探针（2026-08-03 17:05）
+
+| 步骤 | 期望 | 实际 | 一致？ |
+|------|------|------|--------|
+| L1 | `POST export-jobs` PDF @127.0.0.1 | 201 visual_snapshot · 69KB %PDF | ✅ |
+| L2 | integration pytest ×3 | passed | ✅ |
+| L3 | schedule execute + SMTP | semi_real_succeeded + 附件 | ⚠️ MailHog 未启动 → delivery_degraded（PDF 渲染 OK） |
+| L4 | excel export | layout_inventory | ✅ |
+
+**P0 修复摘要**：SMTP MIME 附件 · `FE_BASE_URL=127.0.0.1` · `appBasePath` · `domcontentloaded` 等待 · export-query 测试 · docker-compose mailhog
 
 ### 自动化测试深度说明
 

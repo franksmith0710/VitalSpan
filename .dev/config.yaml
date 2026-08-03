@@ -78,8 +78,9 @@ environments:
       allow_writes: false
       allow_destructive: false
     notes: |
-      走查前须：`docker compose up -d postgres sample-mysql`；
+      走查前须：`docker compose up -d postgres sample-mysql mailhog`；
       `cd backend && alembic upgrade head && uvicorn app.main:app --reload --port 8000`。
+      看板 PDF 导出闭环：`cd fe && pnpm dev --host 127.0.0.1 --port 5173`（单实例；backend `FE_BASE_URL=http://127.0.0.1:5173`）。
       开发 RBAC 切换：admin / analyst / viewer（同 VITALSPAN_DEV_ADMIN_PASSWORD）。
 
   staging:
