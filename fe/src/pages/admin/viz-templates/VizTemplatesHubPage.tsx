@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import {
   LIST_PAGE_CARD_GRID_CLASS,
-  ListPageBody,
   ListPageSection,
   ListPageTableFrame,
   ListPageToolbar,
@@ -40,13 +39,12 @@ import {
   HUB_CARD_SKELETON_BODY_CLASS,
   HUB_CARD_SKELETON_PREVIEW_CLASS,
 } from "@/components/dashboard/hubCardUi";
-import { Link } from "react-router";
 import { cn } from "@/lib/utils";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   demoPackageStatusQueryKey,
   fetchDemoPackageStatus,
 } from "@/lib/demoPackageStatus";
+import { DemoPackageStatusHint } from "./DemoPackageStatusHint";
 import { VizTemplatesHubFilters } from "./VizTemplatesHubFilters";
 
 function TemplateCardSkeleton() {
@@ -246,53 +244,33 @@ export function VizTemplatesHubPage() {
             />
           }
           actions={
-            <Input
-              size="sm"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder={VIZ_TEMPLATES_HUB.searchPlaceholder}
-              className="w-full sm:w-auto sm:min-w-[220px]"
-              aria-label={VIZ_TEMPLATES_HUB.searchAriaLabel}
-            />
+            <div className="flex w-full min-w-0 flex-col items-stretch gap-2 sm:w-auto sm:items-end">
+              {demoStatusQuery.data ? (
+                <DemoPackageStatusHint
+                  ready={demoStatusQuery.data.ready}
+                  message={demoStatusQuery.data.message}
+                  className="sm:max-w-md"
+                />
+              ) : null}
+              <Input
+                size="sm"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder={VIZ_TEMPLATES_HUB.searchPlaceholder}
+                className="w-full sm:min-w-[220px]"
+                aria-label={VIZ_TEMPLATES_HUB.searchAriaLabel}
+              />
+            </div>
           }
         />
 
-        {demoStatusQuery.data ? (
-          <ListPageBody className="border-b py-3">
-            <Alert severity={demoStatusQuery.data.ready ? "success" : "warning"} banner>
-              <AlertTitle>
-                {demoStatusQuery.data.ready
-                  ? "官方演示数据已就绪"
-                  : "官方演示数据尚未就绪"}
-              </AlertTitle>
-              <AlertDescription>
-                {demoStatusQuery.data.ready
-                  ? "模板预览与官方示例看板将自动使用「示例数据」数据源。"
-                  : demoStatusQuery.data.message ??
-                    "请启动示例 MySQL（docker compose sample-mysql）并检查「示例数据」连接。"}
-                {!demoStatusQuery.data.ready ? (
-                  <>
-                    {" "}
-                    <Link
-                      to="/admin/datasources"
-                      className="font-medium text-brand-600 underline dark:text-brand-400"
-                    >
-                      前往数据连接
-                    </Link>
-                  </>
-                ) : null}
-              </AlertDescription>
-            </Alert>
-          </ListPageBody>
-        ) : null}
-
         {listQuery.isError ? (
-          <ListPageBody>
+          <div className="shrink-0 border-b px-5 py-3">
             <PageErrorBanner
               message={mapApiError(listQuery.error)}
               onRetry={() => void listQuery.refetch()}
             />
-          </ListPageBody>
+          </div>
         ) : null}
 
         <ListPageTableFrame>

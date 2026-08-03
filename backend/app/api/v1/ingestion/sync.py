@@ -5,7 +5,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field, field_validator
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext, require_permission
@@ -13,6 +13,7 @@ from app.auth.deps import UserContext, require_permission
 PERM_READ = "ingestion:read"
 PERM_MANAGE = "ingestion:manage"
 from app.core.config import get_settings
+from app.ingestion.cron_validate import validate_schedule_cron
 from app.ingestion.models import (
     EtlRuleSet,
     SourceConnectionIn,
@@ -37,6 +38,16 @@ class SyncJobCreate(BaseModel):
     schedule_cron: str | None = None
     enabled: bool = True
 
+    @field_validator("schedule_cron")
+    @classmethod
+    def validate_cron(cls, value: str | None) -> str | None:
+        if value:
+            try:
+                validate_schedule_cron(value)
+            except Exception as exc:
+                raise ValueError("Cron 表达式格式无效") from exc
+        return value
+
     @field_validator("target_table")
     @classmethod
     def validate_target_table(cls, value: str) -> str:
@@ -51,11 +62,29 @@ class SyncJobUpdate(BaseModel):
     schedule_cron: str | None = None
     enabled: bool = True
 
+    @field_validator("schedule_cron")
+    @classmethod
+    def validate_cron(cls, value: str | None) -> str | None:
+        if value:
+            try:
+                validate_schedule_cron(value)
+            except Exception as exc:
+                raise ValueError("Cron 表达式格式无效") from exc
+        return value
+
     @field_validator("target_table")
     @classmethod
     def validate_target_table(cls, value: str) -> str:
         validate_identifier(value)
         return value
+
+
+class SyncJobLastRun(BaseModel):
+    status: str
+    started_at: str
+    finished_at: str | None
+    rows_synced: int | None
+    error_message: str | None
 
 
 class SyncJobSummary(BaseModel):
@@ -65,6 +94,7 @@ class SyncJobSummary(BaseModel):
     target_table: str
     enabled: bool
     schedule_cron: str | None
+    last_run: SyncJobLastRun | None = None
 
 
 class SyncJobDetail(SyncJobSummary):
@@ -146,12 +176,43 @@ def _apply_source(
     job.source_table = source.table
 
 
+def _last_runs_by_job_id(db: Session, job_ids: list[uuid.UUID]) -> dict[uuid.UUID, SyncRun]:
+    if not job_ids:
+        return {}
+    subq = (
+        select(SyncRun.job_id, func.max(SyncRun.started_at).label("max_started"))
+        .where(SyncRun.job_id.in_(job_ids))
+        .group_by(SyncRun.job_id)
+        .subquery()
+    )
+    runs = db.scalars(
+        select(SyncRun).join(
+            subq,
+            (SyncRun.job_id == subq.c.job_id) & (SyncRun.started_at == subq.c.max_started),
+        )
+    ).all()
+    return {run.job_id: run for run in runs}
+
+
+def _to_last_run(run: SyncRun | None) -> SyncJobLastRun | None:
+    if run is None:
+        return None
+    return SyncJobLastRun(
+        status=run.status,
+        started_at=run.started_at.isoformat(),
+        finished_at=run.finished_at.isoformat() if run.finished_at else None,
+        rows_synced=run.rows_synced,
+        error_message=run.error_message,
+    )
+
+
 @router.get("/sync-jobs", response_model=SyncJobListResponse)
 def list_sync_jobs(
     _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> SyncJobListResponse:
     jobs = db.scalars(select(SyncJob).order_by(SyncJob.created_at.desc())).all()
+    last_runs = _last_runs_by_job_id(db, [j.id for j in jobs])
     return SyncJobListResponse(
         items=[
             SyncJobSummary(
@@ -161,6 +222,7 @@ def list_sync_jobs(
                 target_table=j.target_table,
                 enabled=j.enabled,
                 schedule_cron=j.schedule_cron,
+                last_run=_to_last_run(last_runs.get(j.id)),
             )
             for j in jobs
         ]

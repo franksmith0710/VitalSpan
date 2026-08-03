@@ -5,7 +5,7 @@ const STEPS = [
   {
     step: 1,
     title: "配置源库连接",
-    description: "填写 MySQL 等源库地址、账号密码与待同步源表。",
+    description: "填写 MySQL 源库地址、账号密码与待同步源表。",
     icon: Settings2,
   },
   {

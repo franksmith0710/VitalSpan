@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router";
-import { Boxes, LayoutDashboard, Monitor, Pencil, Upload } from "lucide-react";
+import { Boxes, Pencil, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import {
@@ -25,9 +25,7 @@ import { InsertVizComponentDialog } from "@/components/dashboard/viz-components/
 import { ComponentReferencesDialog } from "@/components/dashboard/viz-components/ComponentReferencesDialog";
 import { CreateVizComponentButton } from "@/components/dashboard/viz-components/CreateVizComponentDialog";
 import {
-  SURFACE_TABS,
   VIZ_COMPONENTS_HUB,
-  WIDGET_TYPE_FILTERS,
 } from "@/components/dashboard/viz-components/componentLabels";
 import {
   archiveVizComponent,
@@ -52,6 +50,7 @@ import {
   HUB_CARD_SKELETON_PREVIEW_CLASS,
 } from "@/components/dashboard/hubCardUi";
 import { cn } from "@/lib/utils";
+import { VizComponentsHubFilters } from "./VizComponentsHubFilters";
 
 function ComponentCardSkeleton() {
   return (
@@ -201,54 +200,17 @@ export function VizComponentsHubPage() {
       <ListPageSection>
         <ListPageToolbar
           filters={
-            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-              {SURFACE_TABS.map((tab) => {
-                const Icon =
-                  tab.key === "data-screen"
-                    ? Monitor
-                    : tab.key === "dashboard"
-                      ? LayoutDashboard
-                      : Boxes;
-                const active = surfaceTab === tab.key;
-                return (
-                  <Button
-                    key={tab.key}
-                    type="button"
-                    size="sm"
-                    variant={active ? "primary" : "outline"}
-                    onClick={() => {
-                      const next = new URLSearchParams(searchParams);
-                      if (tab.key === "all") next.delete("surfaceKind");
-                      else next.set("surfaceKind", tab.key);
-                      setSearchParams(next);
-                    }}
-                  >
-                    <Icon className="size-4" aria-hidden />
-                    {tab.label}
-                  </Button>
-                );
-              })}
-              <span
-                className="mx-0.5 hidden h-5 w-px shrink-0 bg-gray-200 dark:bg-gray-700 sm:block"
-                aria-hidden
-              />
-              {WIDGET_TYPE_FILTERS.map((filter) => {
-                const Icon = filter.icon;
-                const active = widgetType === filter.key;
-                return (
-                  <Button
-                    key={filter.key}
-                    type="button"
-                    size="sm"
-                    variant={active ? "primary" : "ghost"}
-                    onClick={() => setWidgetType(filter.key)}
-                  >
-                    <Icon className="size-3.5" aria-hidden />
-                    {filter.label}
-                  </Button>
-                );
-              })}
-            </div>
+            <VizComponentsHubFilters
+              surfaceTab={surfaceTab}
+              widgetType={widgetType}
+              onSurfaceTabChange={(tab) => {
+                const next = new URLSearchParams(searchParams);
+                if (tab === "all") next.delete("surfaceKind");
+                else next.set("surfaceKind", tab);
+                setSearchParams(next);
+              }}
+              onWidgetTypeChange={setWidgetType}
+            />
           }
           actions={
             <Input

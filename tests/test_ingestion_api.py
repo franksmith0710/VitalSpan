@@ -201,6 +201,39 @@ def test_trigger_run_conflict_when_running_exists_409(client, auth_headers, job_
     client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
 
 
+def test_create_job_invalid_cron_422(client, auth_headers, job_payload):
+    bad = {**job_payload, "schedule_cron": "not-a-cron"}
+    response = client.post("/api/v1/ingestion/sync-jobs", json=bad, headers=auth_headers)
+    assert response.status_code == 422
+
+
+def test_list_sync_jobs_includes_last_run(client, auth_headers, job_payload):
+    create = client.post("/api/v1/ingestion/sync-jobs", json=job_payload, headers=auth_headers)
+    job_id = create.json()["id"]
+    db = get_meta_session()
+    db.add(
+        SyncRun(
+            job_id=uuid.UUID(job_id),
+            status="succeeded",
+            trace_id="list-last-run",
+            started_at=datetime.now(timezone.utc),
+            finished_at=datetime.now(timezone.utc),
+            rows_synced=12,
+        )
+    )
+    db.commit()
+    db.close()
+
+    listed = client.get("/api/v1/ingestion/sync-jobs", headers=auth_headers)
+    assert listed.status_code == 200
+    item = next(i for i in listed.json()["items"] if i["id"] == job_id)
+    assert item["last_run"] is not None
+    assert item["last_run"]["status"] == "succeeded"
+    assert item["last_run"]["rows_synced"] == 12
+
+    client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
 def test_openapi_lists_ingestion_sync_job_routes(client):
     """T-D01-12: OpenAPI paths 含 sync-jobs CRUD、run、runs、etl-rules。"""
     paths = client.get("/openapi.json").json()["paths"]

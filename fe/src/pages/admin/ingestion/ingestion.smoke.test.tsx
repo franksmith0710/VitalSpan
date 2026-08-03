@@ -16,6 +16,13 @@ vi.mock("@/lib/api", () => ({
   apiFetch: (...args: unknown[]) => mockApiFetch(...args),
 }));
 
+vi.mock("@/context/auth-context", () => ({
+  useAuth: () => ({
+    user: { id: "1", username: "admin", roles: ["admin"], isRoot: true, permissions: [] },
+    isLoading: false,
+  }),
+}));
+
 vi.mock("sonner", () => ({
   toast: {
     success: vi.fn(),

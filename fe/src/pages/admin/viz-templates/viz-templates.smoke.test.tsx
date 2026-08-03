@@ -149,7 +149,7 @@ describe("VizTemplatesHubPage smoke", () => {
   it("shows demo package ready banner", async () => {
     renderHub();
     expect(await screen.findByText("官方演示数据已就绪")).toBeInTheDocument();
-    expect(screen.getAllByText(/模板预览与官方示例看板将自动使用/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/模板预览将使用「示例数据」/).length).toBeGreaterThan(0);
   });
 
   it("exports template json from card menu", async () => {

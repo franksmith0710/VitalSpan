@@ -79,6 +79,12 @@ const CODE_MESSAGES: Record<string, string> = {
   DATASOURCE_CODE_CONFLICT: "数据源标识已存在，请更换为唯一标识",
   DATASOURCE_NAME_CONFLICT: "数据源名称已存在，请更换名称",
   DATASOURCE_TEST_INFLIGHT: "已有连接测试进行中，请稍候",
+
+  // 数据接入 / 同步任务
+  ANALYTICS_DB_NOT_CONFIGURED:
+    "托管分析库未配置。请在 backend/.env 设置 ANALYTICS_DATABASE_URL，并启动 docker-compose 中的分析库服务后重试。",
+  RUN_ALREADY_IN_PROGRESS: "该任务正在运行中，请稍后在运行历史中查看结果",
+  INVALID_CRON: "Cron 表达式格式无效，请使用五段式如 0 2 * * *",
   TEST_IN_PROGRESS: "已有连接测试进行中，请稍候",
   UNKNOWN_CONNECTOR_TYPE: "不支持的连接器类型",
   CREDENTIAL_DECRYPT_FAILED: "数据源凭证无法解密，请重启后端或在「数据连接」中重新保存密码",

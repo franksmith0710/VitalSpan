@@ -63,15 +63,15 @@
 
 | ID | 优先级 | 硬门槛 | 视觉债 | 状态 | 本轮动作 | 改动摘要（路径/行为） | 验证 | 规格/工单 | 更新于 |
 |----|--------|--------|--------|------|----------|----------------------|------|-----------|--------|
-| B-1 | P0 | 是 | 否 | open | — | — | — | — | 2026-07-31 |
-| B-2 | P1 | 否 | 否 | open | — | — | — | — | 2026-07-31 |
-| B-3 | P1 | 否 | 否 | open | — | — | — | — | 2026-07-31 |
+| B-1 | P0 | 是 | 否 | done | FE 按 ingestion:manage 隐藏写操作 | `SyncJobsPage.tsx` · `SyncJobsTable.tsx` | vitest 35/35 | — | 2026-08-03 |
+| B-2 | P1 | 否 | 否 | done | 列表 API last_run + 列展示 + run 后轮询刷新 | `sync.py` · `SyncJobsTable.tsx` | pytest + vitest | — | 2026-08-03 |
+| B-3 | P1 | 否 | 否 | done | 运行确认框明示 TRUNCATE 覆盖目标表 | `SyncJobsPage.tsx` | vitest | — | 2026-08-03 |
 | B-4 | P1 | 否 | 否 | open | — | — | — | — | 2026-07-31 |
-| B-5 | P1 | 否 | 否 | open | — | — | — | — | 2026-07-31 |
-| B-6 | P2 | 否 | 否 | open | — | — | — | — | 2026-07-31 |
-| B-7 | P2 | 否 | 否 | open | — | — | — | — | 2026-07-31 |
-| B-8 | P1 | 否 | 否 | open | — | — | — | — | 2026-07-31 |
-| B-9 | P2 | 否 | 否 | open | — | — | — | — | 2026-07-31 |
+| B-5 | P1 | 否 | 否 | done | apiError 映射 ANALYTICS_DB_NOT_CONFIGURED 等 | `fe/src/lib/apiError.ts` | — | — | 2026-08-03 |
+| B-6 | P2 | 否 | 否 | done | Cron 创建/更新 422；scheduler 逐 job 跳过非法 cron | `cron_validate.py` · `sync.py` · `scheduler.py` | pytest | — | 2026-08-03 |
+| B-7 | P2 | 否 | 否 | done | 历史页 description 明示最多 100 条 | `SyncJobHistoryPage.tsx` | vitest | — | 2026-08-03 |
+| B-8 | P1 | 否 | 否 | done | 历史页「重新同步」按钮（manage 权限） | `SyncJobHistoryPage.tsx` | vitest | — | 2026-08-03 |
+| B-9 | P2 | 否 | 否 | done | 表单 Cron 快捷预设按钮 | `SyncJobFormPage.tsx` · `sync-job-types.ts` | — | — | 2026-08-03 |
 
 ## 改进建议与方案
 

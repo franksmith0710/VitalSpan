@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
-import { Copy, History } from "lucide-react";
+import { Copy, History, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/context/auth-context";
 import { AdminPageHeaderIcon, AdminPageShell } from "@/components/layout/admin-page-shell";
 import { ListPagePagination, ListPageSection } from "@/components/layout/list-page-kit";
 import { apiFetch } from "@/lib/api";
+import { hasCapability } from "@/lib/capabilities";
 import { localizeApiMessage, mapApiError } from "@/lib/apiError";
+import { sessionUserFromMe } from "@/lib/session";
 import { sliceListPage, useListPagination } from "@/lib/list-pagination";
 import { Badge } from "@/components/ui/badge";
 import { Button, IconButton } from "@/components/ui/button";
@@ -44,9 +47,15 @@ const historyPageIcon = (
 
 export function SyncJobHistoryPage() {
   const { id } = useParams();
+  const { user } = useAuth();
+  const canManage = useMemo(
+    () => (user ? hasCapability(sessionUserFromMe(user), "ingestion:manage") : false),
+    [user],
+  );
   const [runs, setRuns] = useState<SyncRunItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retrying, setRetrying] = useState(false);
   const pagination = useListPagination();
 
   const loadRuns = useCallback(async () => {
@@ -83,14 +92,41 @@ export function SyncJobHistoryPage() {
     }
   };
 
+  const handleRetry = async () => {
+    if (!id || retrying) return;
+    setRetrying(true);
+    setError(null);
+    try {
+      await apiFetch(`/api/v1/ingestion/sync-jobs/${id}/run`, { method: "POST" });
+      toast.success("已重新触发同步");
+      await loadRuns();
+    } catch (err) {
+      setError(mapApiError(err));
+    } finally {
+      setRetrying(false);
+    }
+  };
+
   return (
     <AdminPageShell
       layout="list"
       title="运行历史"
-      description="查看同步任务每次运行的状态、行数与 Trace ID。"
+      description={`查看同步任务每次运行的状态、行数与 Trace ID。列表最多展示最近 ${RUNS_FETCH_LIMIT} 次运行。`}
       icon={historyPageIcon}
       actions={
         <div className="flex items-center gap-2">
+          {canManage ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              loading={retrying}
+              onClick={() => void handleRetry()}
+            >
+              <RotateCcw className="size-4" aria-hidden />
+              重新同步
+            </Button>
+          ) : null}
           <Button type="button" variant="outline" size="sm" onClick={() => void loadRuns()}>
             刷新
           </Button>
@@ -120,7 +156,7 @@ export function SyncJobHistoryPage() {
         ) : (
           <>
             <div className="min-h-0 flex-1 overflow-x-only">
-              <table className="w-full min-w-[800px] text-left text-theme-sm">
+              <table className="w-full min-w-[880px] text-left text-theme-sm">
                 <thead className="border-b border-gray-200 bg-gray-50 text-gray-500 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-400">
                   <tr>
                     <th className="px-6 py-4 font-medium">状态</th>

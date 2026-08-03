@@ -1,7 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/context/auth-context";
+import { hasCapability } from "@/lib/capabilities";
+import { sessionUserFromMe } from "@/lib/session";
 import {
   BatchDeleteDialog,
   ListPageBatchActions,
@@ -51,6 +54,12 @@ function filterByStatus(jobs: SyncJobSummary[], statusFilter: SyncJobStatusFilte
 
 export function SyncJobsPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const canManage = useMemo(
+    () => (user ? hasCapability(sessionUserFromMe(user), "ingestion:manage") : false),
+    [user],
+  );
+  const pollTimerRef = useRef<number | null>(null);
   const [jobs, setJobs] = useState<SyncJobSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -64,8 +73,10 @@ export function SyncJobsPage() {
   const [batchDeleting, setBatchDeleting] = useState(false);
   const pagination = useListPagination(undefined, [search, statusFilter]);
 
-  const loadJobs = useCallback(async () => {
-    setLoading(true);
+  const loadJobs = useCallback(async (options?: { silent?: boolean }) => {
+    if (!options?.silent) {
+      setLoading(true);
+    }
     setError(null);
     try {
       const data = await apiFetch<SyncJobListResponse>("/api/v1/ingestion/sync-jobs");
@@ -73,8 +84,35 @@ export function SyncJobsPage() {
     } catch (err) {
       setError(mapApiError(err));
     } finally {
-      setLoading(false);
+      if (!options?.silent) {
+        setLoading(false);
+      }
     }
+  }, []);
+
+  const startRunPolling = useCallback(() => {
+    if (pollTimerRef.current !== null) {
+      window.clearInterval(pollTimerRef.current);
+    }
+    let ticks = 0;
+    pollTimerRef.current = window.setInterval(() => {
+      ticks += 1;
+      void loadJobs({ silent: true });
+      if (ticks >= 5) {
+        if (pollTimerRef.current !== null) {
+          window.clearInterval(pollTimerRef.current);
+          pollTimerRef.current = null;
+        }
+      }
+    }, 2000);
+  }, [loadJobs]);
+
+  useEffect(() => {
+    return () => {
+      if (pollTimerRef.current !== null) {
+        window.clearInterval(pollTimerRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -128,6 +166,8 @@ export function SyncJobsPage() {
           onClick: () => navigate(`/admin/ingestion/sync-jobs/${job.id}/history`),
         },
       });
+      void loadJobs({ silent: true });
+      startRunPolling();
     } catch (err) {
       setError(mapApiError(err));
     } finally {
@@ -170,12 +210,14 @@ export function SyncJobsPage() {
       title="同步任务"
       description="管理源库到托管分析库的全量同步任务，配置定时计划与清洗规则。"
       actions={
-        <Button asChild variant="primary">
-          <Link to="/admin/ingestion/sync-jobs/new">
-            <Plus className="size-4" aria-hidden />
-            新建任务
-          </Link>
-        </Button>
+        canManage ? (
+          <Button asChild variant="primary">
+            <Link to="/admin/ingestion/sync-jobs/new">
+              <Plus className="size-4" aria-hidden />
+              新建任务
+            </Link>
+          </Button>
+        ) : null
       }
     >
       {error ? (
@@ -212,14 +254,16 @@ export function SyncJobsPage() {
               onStatusFilterChange={setStatusFilter}
               resultLabel={resultLabel}
               trailing={
-                <ListPageBatchActions
-                  batchMode={batch.batchMode}
-                  onToggleBatchMode={batch.toggleBatchMode}
-                  selectedCount={selection.selectedCount}
-                  entityLabel="个任务"
-                  onClear={selection.clear}
-                  onDelete={() => setBatchDeleteOpen(true)}
-                />
+                canManage ? (
+                  <ListPageBatchActions
+                    batchMode={batch.batchMode}
+                    onToggleBatchMode={batch.toggleBatchMode}
+                    selectedCount={selection.selectedCount}
+                    entityLabel="个任务"
+                    onClear={selection.clear}
+                    onDelete={() => setBatchDeleteOpen(true)}
+                  />
+                ) : null
               }
             />
             {filteredJobs.length === 0 ? (
@@ -233,6 +277,7 @@ export function SyncJobsPage() {
                 <div className="min-h-0 flex-1 overflow-hidden">
                   <SyncJobsTable
                     jobs={pagedJobs}
+                    canManage={canManage}
                     runningId={runningId}
                     onRun={setRunTarget}
                     onDelete={setDeleteTarget}
@@ -297,9 +342,16 @@ export function SyncJobsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>确认手动运行同步？</AlertDialogTitle>
             <AlertDialogDescription>
-              {runTarget
-                ? `确定立即运行任务「${runTarget.name}」？将全量同步源表数据到托管分析库。`
-                : null}
+              {runTarget ? (
+                <>
+                  确定立即运行任务「{runTarget.name}」？将从源表全量读取数据，并
+                  <strong className="font-semibold text-error-600 dark:text-error-400">
+                    清空并覆盖
+                  </strong>
+                  托管分析库目标表
+                  <span className="font-mono"> {runTarget.target_table}</span> 中的全部现有数据。
+                </>
+              ) : null}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

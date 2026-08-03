@@ -4,6 +4,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy import select
 
+from app.ingestion.cron_validate import validate_schedule_cron
 from app.ingestion.models import SyncJob, get_meta_session
 from app.ingestion.sync_executor import run_job
 
@@ -27,14 +28,16 @@ def refresh_all_jobs() -> None:
         for job in jobs:
             if not job.schedule_cron:
                 continue
-            scheduler.add_job(
-                run_job,
-                trigger=CronTrigger.from_crontab(job.schedule_cron),
-                id=str(job.id),
-                kwargs={"job_id": job.id, "trace_id": f"schedule-{job.id}"},
-                replace_existing=True,
-            )
-    except Exception:
-        pass
+            try:
+                validate_schedule_cron(job.schedule_cron)
+                scheduler.add_job(
+                    run_job,
+                    trigger=CronTrigger.from_crontab(job.schedule_cron),
+                    id=str(job.id),
+                    kwargs={"job_id": job.id, "trace_id": f"schedule-{job.id}"},
+                    replace_existing=True,
+                )
+            except Exception:
+                continue
     finally:
         db.close()

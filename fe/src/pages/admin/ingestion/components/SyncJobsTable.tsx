@@ -12,11 +12,19 @@ import {
 import { ListHeaderCheckbox, ListRowCheckbox, listTableSelectCellClass, listTableSelectHeadClass } from "@/components/layout/list-batch-delete";
 import { Badge } from "@/components/ui/badge";
 import { IconButton } from "@/components/ui/button";
+import { TruncateHint } from "@/components/ui/hint-tooltip";
 import { cn } from "@/lib/utils";
-import { sourceTypeLabel, type SyncJobSummary } from "./sync-job-types";
+import { localizeApiMessage } from "@/lib/apiError";
+import {
+  lastRunBadgeColor,
+  lastRunStatusLabel,
+  sourceTypeLabel,
+  type SyncJobSummary,
+} from "./sync-job-types";
 
 type SyncJobsTableProps = {
   jobs: SyncJobSummary[];
+  canManage: boolean;
   runningId: string | null;
   onRun: (job: SyncJobSummary) => void;
   onDelete: (job: SyncJobSummary) => void;
@@ -27,8 +35,37 @@ type SyncJobsTableProps = {
   someSelected?: boolean;
 };
 
+function LastRunCell({ job }: { job: SyncJobSummary }) {
+  const lastRun = job.last_run;
+  if (!lastRun) {
+    return <span className="text-gray-400">暂无记录</span>;
+  }
+  return (
+    <div className="space-y-1">
+      <Badge color={lastRunBadgeColor(lastRun.status)} variant="light" size="sm">
+        {lastRunStatusLabel(lastRun.status)}
+      </Badge>
+      <div className="text-theme-xs text-gray-500 dark:text-gray-400">
+        {new Date(lastRun.started_at).toLocaleString("zh-CN")}
+      </div>
+      {lastRun.status === "succeeded" && lastRun.rows_synced != null ? (
+        <div className="text-theme-xs text-gray-500">{lastRun.rows_synced} 行</div>
+      ) : null}
+      {lastRun.status === "failed" && lastRun.error_message ? (
+        <TruncateHint
+          title={localizeApiMessage(lastRun.error_message)}
+          className="max-w-[160px] text-theme-xs text-error-600 dark:text-error-400"
+        >
+          {localizeApiMessage(lastRun.error_message)}
+        </TruncateHint>
+      ) : null}
+    </div>
+  );
+}
+
 export function SyncJobsTable({
   jobs,
+  canManage,
   runningId,
   onRun,
   onDelete,
@@ -38,10 +75,10 @@ export function SyncJobsTable({
   allSelected = false,
   someSelected = false,
 }: SyncJobsTableProps) {
-  const showSelection = Boolean(onToggleSelect);
+  const showSelection = Boolean(onToggleSelect) && canManage;
   return (
     <div className="overflow-x-only">
-      <table className="min-w-[800px] w-full text-left text-theme-sm">
+      <table className="min-w-[960px] w-full text-left text-theme-sm">
         <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
           <tr>
             {showSelection ? (
@@ -58,7 +95,8 @@ export function SyncJobsTable({
             <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">源类型</th>
             <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">目标表</th>
             <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">调度</th>
-            <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">状态</th>
+            <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">任务状态</th>
+            <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">最近运行</th>
             <th className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-400">操作</th>
           </tr>
         </thead>
@@ -114,44 +152,51 @@ export function SyncJobsTable({
                 </Badge>
               </td>
               <td className="px-4 py-3">
+                <LastRunCell job={job} />
+              </td>
+              <td className="px-4 py-3">
                 <div className="flex items-center justify-end gap-0.5">
-                  <IconButton
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    aria-label="手动运行同步"
-                    disabled={runningId === job.id}
-                    loading={runningId === job.id}
-                    onClick={() => onRun(job)}
-                  >
-                    <Play className="size-4" />
-                  </IconButton>
+                  {canManage ? (
+                    <>
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label="手动运行同步"
+                        disabled={runningId === job.id}
+                        loading={runningId === job.id}
+                        onClick={() => onRun(job)}
+                      >
+                        <Play className="size-4" />
+                      </IconButton>
+                      <IconButton asChild variant="ghost" size="sm" aria-label="配置清洗规则">
+                        <Link to={`/admin/ingestion/sync-jobs/${job.id}/etl-rules`}>
+                          <Settings2 className="size-4" />
+                        </Link>
+                      </IconButton>
+                      <IconButton asChild variant="ghost" size="sm" aria-label="编辑任务">
+                        <Link to={`/admin/ingestion/sync-jobs/${job.id}/edit`}>
+                          <Pencil className="size-4" />
+                        </Link>
+                      </IconButton>
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className={cn(
+                          "text-gray-500 hover:text-error-600 dark:text-gray-400 dark:hover:text-error-400",
+                        )}
+                        aria-label="删除任务"
+                        onClick={() => onDelete(job)}
+                      >
+                        <Trash2 className="size-4" />
+                      </IconButton>
+                    </>
+                  ) : null}
                   <IconButton asChild variant="ghost" size="sm" aria-label="查看运行历史">
                     <Link to={`/admin/ingestion/sync-jobs/${job.id}/history`}>
                       <History className="size-4" />
                     </Link>
-                  </IconButton>
-                  <IconButton asChild variant="ghost" size="sm" aria-label="配置清洗规则">
-                    <Link to={`/admin/ingestion/sync-jobs/${job.id}/etl-rules`}>
-                      <Settings2 className="size-4" />
-                    </Link>
-                  </IconButton>
-                  <IconButton asChild variant="ghost" size="sm" aria-label="编辑任务">
-                    <Link to={`/admin/ingestion/sync-jobs/${job.id}/edit`}>
-                      <Pencil className="size-4" />
-                    </Link>
-                  </IconButton>
-                  <IconButton
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className={cn(
-                      "text-gray-500 hover:text-error-600 dark:text-gray-400 dark:hover:text-error-400",
-                    )}
-                    aria-label="删除任务"
-                    onClick={() => onDelete(job)}
-                  >
-                    <Trash2 className="size-4" />
                   </IconButton>
                 </div>
               </td>

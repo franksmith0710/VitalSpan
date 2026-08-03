@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
+import { CRON_PRESETS } from "./components/sync-job-types";
 
 type JobFormState = {
   name: string;
@@ -238,10 +239,23 @@ export function SyncJobFormPage() {
           <Label htmlFor="schedule_cron">定时 Cron（可选）</Label>
           <Input
             id="schedule_cron"
-            placeholder="例：0 2 * * *"
+            placeholder="例：0 2 * * *（分 时 日 月 周）"
             value={form.schedule_cron}
             onChange={(e) => update("schedule_cron", e.target.value)}
           />
+          <div className="flex flex-wrap gap-2 pt-1">
+            {CRON_PRESETS.map((preset) => (
+              <Button
+                key={preset.value}
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => update("schedule_cron", preset.value)}
+              >
+                {preset.label}
+              </Button>
+            ))}
+          </div>
         </div>
 
         <div className="flex items-center justify-between rounded-lg border border-gray-100 px-4 py-3 dark:border-gray-800">
