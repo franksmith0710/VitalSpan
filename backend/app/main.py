@@ -29,6 +29,7 @@ def _warm_meta_database() -> None:
     from app.auth.models import get_meta_session
     from app.dashboard.templates.official_demo_bootstrap import ensure_sample_db_schema
     from app.dashboard.templates.demo_datasource import ensure_official_demo_datasource
+    from app.ingestion.analytics_datasource import ensure_analytics_datasource
     from app.dashboard.templates.seed import seed_builtin_dashboard_templates
     from app.dashboard.demo_instances.seed import seed_demo_instances
     from app.datasources.dev_credential_repair import repair_dev_datasource_credentials
@@ -45,6 +46,11 @@ def _warm_meta_database() -> None:
                 ensure_official_demo_datasource(session)
             except Exception:
                 logger.warning("official_demo_datasource_seed_failed", exc_info=True)
+        if settings.ensure_analytics_datasource:
+            try:
+                ensure_analytics_datasource(session)
+            except Exception:
+                logger.warning("analytics_datasource_seed_failed", exc_info=True)
         try:
             inserted = seed_builtin_dashboard_templates(session)
             if inserted:

@@ -62,7 +62,7 @@ export function assertPlanMatchesFixture(item: ChartCatalogSmokeCase, plan: Char
   if (type === "liquid") {
     const mi = colIndex(item.columns, item.metrics[0]!.field);
     const raw = Number(item.rows[0]?.[mi] ?? 0);
-    expect(plan.options.percent).toBeCloseTo(raw);
+    expect(plan.options.rawValue).toBeCloseTo(raw);
     return;
   }
 

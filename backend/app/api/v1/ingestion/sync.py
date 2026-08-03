@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext, require_permission
 from app.core.config import get_settings
+from app.ingestion.analytics_datasource import resolve_analytics_datasource_id
 from app.datasources.models import DataSource
 from app.ingestion.cron_validate import validate_schedule_cron
 from app.ingestion.models import (
@@ -180,6 +181,14 @@ class SyncJobDetail(SyncJobSummary):
     primary_key: str | None = None
     incremental_column: str | None = None
     last_watermark: str | None = None
+
+
+class SyncJobConsumeHints(BaseModel):
+    target_table: str = Field(alias="targetTable")
+    suggested_dataset_id: str = Field(alias="suggestedDatasetId")
+    analytics_datasource_id: uuid.UUID | None = Field(default=None, alias="analyticsDatasourceId")
+
+    model_config = {"populate_by_name": True}
 
 
 class SyncJobListResponse(BaseModel):
@@ -388,6 +397,26 @@ def get_sync_job(
         )
     ds_labels = _datasource_labels(db, [job])
     return _to_detail(job, None, ds_labels)
+
+
+@router.get("/sync-jobs/{job_id}/consume-hints", response_model=SyncJobConsumeHints)
+def get_sync_job_consume_hints(
+    job_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    db: Annotated[Session, Depends(_db)],
+) -> SyncJobConsumeHints:
+    job = db.get(SyncJob, job_id)
+    if job is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "NOT_FOUND", "message": "任务不存在", "detail": None},
+        )
+    analytics_id = resolve_analytics_datasource_id(db)
+    return SyncJobConsumeHints(
+        target_table=job.target_table,
+        suggested_dataset_id=job.target_table,
+        analytics_datasource_id=analytics_id,
+    )
 
 
 @router.put("/sync-jobs/{job_id}", response_model=SyncJobDetail)

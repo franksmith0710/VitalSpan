@@ -28,6 +28,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
+import { buildDatasetCreatePath } from "@/lib/syncConsumePaths";
 import { SyncJobsEmptyState } from "./components/SyncJobsEmptyState";
 import { SyncJobConsumeGuide, pickLatestSucceededJob } from "./components/SyncJobConsumeGuide";
 import { SyncJobsMetrics } from "./components/SyncJobsMetrics";
@@ -116,8 +117,19 @@ export function SyncJobsPage() {
                 {
                   duration: 8000,
                   action: {
-                    label: "登记分析库",
-                    onClick: () => navigate("/admin/datasources/new"),
+                    label: "创建数据集",
+                    onClick: () => {
+                      if (!job?.target_table) {
+                        navigate("/admin/datasets/new");
+                        return;
+                      }
+                      navigate(
+                        buildDatasetCreatePath({
+                          targetTable: job.target_table,
+                          suggestedDatasetId: job.target_table,
+                        }),
+                      );
+                    },
                   },
                 },
               );

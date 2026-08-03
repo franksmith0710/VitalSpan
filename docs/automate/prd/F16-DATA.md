@@ -98,7 +98,8 @@
   - [x] 浏览器可创建任务并手动运行
   - [x] 可查看运行历史
   - [x] 表单支持引用数据源 / 内联连接双模式与全量/增量配置
-  - [x] UI 展示「同步后如何出图」消费引导（`SyncJobConsumeGuide`）
+  - [x] UI 展示「同步后如何出图」消费引导（`SyncJobConsumeGuide`：登记分析库 → 创建 Dataset → 空白看板选 Dataset；无看板 SQL）
+  - [x] 同步成功 toast / 引导卡片提供「创建数据集」deep link（`buildDatasetCreatePath`）
 - **代码锚点**：`fe/src/pages/admin/ingestion/`
 - **演化建议**：`ingestion.smoke.test.tsx` 35 项（T-ING-32~35 failed error_message、skeleton loading、401 无 success、run dialog pending 禁用）；二期 Playwright 真浏览器 L1
 

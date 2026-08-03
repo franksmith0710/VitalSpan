@@ -64,6 +64,31 @@ function mockSyncJobHistoryApi(
   });
 }
 
+function mockEtlRulesApi(
+  rules: unknown[] = [],
+  sourceTable = "orders",
+  handlers?: {
+    onPut?: () => Promise<unknown>;
+    loadError?: Error;
+  },
+) {
+  mockApiFetch.mockImplementation((url: string, init?: { method?: string }) => {
+    if (handlers?.loadError) {
+      return Promise.reject(handlers.loadError);
+    }
+    if (typeof url === "string" && url.includes("/etl-rules")) {
+      if (init?.method === "PUT") {
+        return handlers?.onPut ? handlers.onPut() : Promise.resolve({ rules });
+      }
+      return Promise.resolve({ rules });
+    }
+    if (typeof url === "string" && /\/sync-jobs\/[^/]+$/.test(url)) {
+      return Promise.resolve({ source: { table: sourceTable } });
+    }
+    return Promise.reject(new Error(`unexpected apiFetch: ${url}`));
+  });
+}
+
 describe("ingestion admin smoke", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
@@ -326,6 +351,10 @@ describe("ingestion admin smoke", () => {
       "href",
       "/admin/datasources/new",
     );
+    expect(screen.getByRole("link", { name: "创建数据集" })).toHaveAttribute(
+      "href",
+      "/admin/datasets/new?targetTable=orders_clean&suggestedDatasetId=orders_clean",
+    );
   });
 
   it("SyncJobsEmptyState_shows_consume_step", async () => {
@@ -338,7 +367,7 @@ describe("ingestion admin smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(await screen.findByText("登记分析库并出图")).toBeInTheDocument();
+    expect(await screen.findByText("创建 Dataset 并出图")).toBeInTheDocument();
   });
 
   it("SyncJobFormPage_blocks_submit_when_name_empty (T-ING-06)", async () => {
@@ -376,7 +405,7 @@ describe("ingestion admin smoke", () => {
 
   it("EtlRulesPage_renders_default_rule_row_when_empty (T-ING-08)", async () => {
     setViewport(1400);
-    mockApiFetch.mockResolvedValueOnce({ rules: [] });
+    mockEtlRulesApi([]);
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/etl-rules"]}>
         <Routes>
@@ -533,7 +562,7 @@ describe("ingestion admin smoke", () => {
 
   it("EtlRulesPage_error_state (T-ING-15)", async () => {
     setViewport(375);
-    mockApiFetch.mockRejectedValueOnce(new Error("加载规则失败"));
+    mockEtlRulesApi([], "orders", { loadError: new Error("加载规则失败") });
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/etl-rules"]}>
         <Routes>
@@ -603,11 +632,11 @@ describe("ingestion admin smoke", () => {
     const savePromise = new Promise<void>((r) => {
       resolveSave = r;
     });
-    mockApiFetch
-      .mockResolvedValueOnce({
-        rules: [{ type: "rename_column", from: "product_name", to: "product" }],
-      })
-      .mockImplementationOnce(() => savePromise);
+    mockEtlRulesApi(
+      [{ type: "rename_column", from: "product_name", to: "product" }],
+      "orders",
+      { onPut: () => savePromise },
+    );
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/etl-rules"]}>
         <Routes>
@@ -683,7 +712,7 @@ describe("ingestion admin smoke", () => {
 
   it("EtlRulesPage_blocks_save_on_empty_rename_column (T-ING-20)", async () => {
     setViewport(1400);
-    mockApiFetch.mockResolvedValueOnce({ rules: [{ type: "rename_column", from: "", to: "product" }] });
+    mockEtlRulesApi([{ type: "rename_column", from: "", to: "product" }]);
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/etl-rules"]}>
         <Routes>
@@ -842,9 +871,7 @@ describe("ingestion admin smoke", () => {
 
   it("EtlRulesPage_empty_column_sets_aria_invalid (T-ING-25)", async () => {
     setViewport(1400);
-    mockApiFetch.mockResolvedValueOnce({
-      rules: [{ type: "rename_column", from: "", to: "product" }],
-    });
+    mockEtlRulesApi([{ type: "rename_column", from: "", to: "product" }]);
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/etl-rules"]}>
         <Routes>
@@ -1073,11 +1100,9 @@ describe("ingestion admin smoke", () => {
 
   it("EtlRulesPage_save_401_shows_error_no_success (T-ING-34)", async () => {
     setViewport(375);
-    mockApiFetch
-      .mockResolvedValueOnce({
-        rules: [{ type: "rename_column", from: "a", to: "b" }],
-      })
-      .mockRejectedValueOnce(new Error("未授权"));
+    mockEtlRulesApi([{ type: "rename_column", from: "a", to: "b" }], "orders", {
+      onPut: () => Promise.reject(new Error("未授权")),
+    });
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/etl-rules"]}>
         <Routes>

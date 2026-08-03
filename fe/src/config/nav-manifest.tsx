@@ -52,7 +52,7 @@ type NavManifestSection = {
 
 export const NAV_MANIFEST: NavManifestSection[] = [
   {
-    title: "数据",
+    title: "数据准备",
     roles: ["admin"],
     iaTier: "engineering",
     items: [

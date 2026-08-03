@@ -1,4 +1,5 @@
 import type { FormEvent, ReactNode } from "react";
+import { Link } from "react-router";
 import {
   HUB_SEGMENTED_BUTTON_CLASS,
   HUB_SEGMENTED_SHELL_CLASS,
@@ -17,6 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { SyncJobConsumeGuide } from "./SyncJobConsumeGuide";
 import { CRON_PRESETS } from "./sync-job-types";
+import { DIRTY_ORDERS_DEMO_SOURCE_TABLE } from "../etlDemoTemplate";
 
 export const SYNC_JOB_FORM_ID = "sync-job-form";
 
@@ -53,6 +55,7 @@ export type JobFormState = {
 type SyncJobFormProps = {
   form: JobFormState;
   isEdit: boolean;
+  etlRulesHref?: string;
   datasources: DatasourceItem[];
   selectedDatasource?: DatasourceItem;
   fieldErrors: Record<string, string>;
@@ -122,6 +125,7 @@ function SegmentedChoice<T extends string>({
 export function SyncJobForm({
   form,
   isEdit,
+  etlRulesHref,
   datasources,
   selectedDatasource,
   fieldErrors,
@@ -283,13 +287,28 @@ export function SyncJobForm({
             />
           </div>
         </div>
+        {form.table.trim() === DIRTY_ORDERS_DEMO_SOURCE_TABLE ? (
+          <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+            演示源表含脏数据（如 amount=not-a-number）。保存任务后，在{" "}
+            {etlRulesHref ? (
+              <Link
+                to={etlRulesHref}
+                className="text-brand-600 underline-offset-2 hover:underline dark:text-brand-400"
+              >
+                清洗规则
+              </Link>
+            ) : (
+              "清洗规则"
+            )}{" "}
+            页点击「应用演示清洗模板」，在入湖时 cast amount 并过滤 deleted 行；Dataset 不负责洗数据。
+          </p>
+        ) : null}
         <p className="text-theme-xs text-gray-500 dark:text-gray-400">
           目标库地址由平台环境变量{" "}
           <span className="font-mono">ANALYTICS_DATABASE_URL</span> 决定（本地默认{" "}
           <span className="font-mono">127.0.0.1:5433/analytics</span>
-          ）。同步成功后，请在{" "}
-          <span className="font-medium text-gray-600 dark:text-gray-300">数据连接 → 连接管理</span>{" "}
-          登记该 PostgreSQL，才能在图表/看板中选到并查询目标表。
+          ）。同步成功后请登记该 PostgreSQL 为数据源，再创建 Dataset 选目标表；看板通过 Dataset
+          出图，无需在此写 SQL。
         </p>
       </FormSection>
 

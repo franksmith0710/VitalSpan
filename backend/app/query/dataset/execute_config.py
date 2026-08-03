@@ -86,6 +86,7 @@ def execute_dataset_from_config(
         rls_config=rls_config,
         apply_rls=apply_rls,
         parameters=parameters,
+        skip_wrap_limit=True,
     )
     return DatasetExecuteResponse(
         configId=req.config_id,

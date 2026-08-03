@@ -46,6 +46,9 @@ describe("buildPlanForType quota charts", () => {
       ),
     );
     expect(plan.options.rawValue).toBe(0.5);
+    expect(plan.options.rows).toHaveLength(2);
+    expect(plan.options.columns).toEqual(["ratio"]);
+    expect(plan.options.metricField).toBe("ratio");
   });
 
   it("kpi passes label dimension for multi-row indicators", () => {

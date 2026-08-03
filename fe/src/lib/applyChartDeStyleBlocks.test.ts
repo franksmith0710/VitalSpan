@@ -5,6 +5,7 @@ import {
   resolveBarBandPadding,
   resolveCartesianLineSmooth,
   resolveGaugeValuePercent,
+  resolveLiquidPercent,
 } from "@/lib/applyChartDeStyleBlocks";
 import type { ChartDeStyle } from "@/lib/chartDeStyle";
 
@@ -123,5 +124,39 @@ describe("resolveGaugeValuePercent", () => {
   it("maps raw value into min/max range", () => {
     expect(resolveGaugeValuePercent({ __gaugeMin: 0, __gaugeMax: 200 }, 100, 0)).toBe(0.5);
     expect(resolveGaugeValuePercent({ __gaugeMin: 20, __gaugeMax: 120 }, 70, 0)).toBe(0.5);
+  });
+});
+
+describe("resolveLiquidPercent", () => {
+  it("uses fix max for fill and label percent", () => {
+    const result = resolveLiquidPercent({ rows: [], columns: [] }, 238676, { maxType: "fix", max: 500000 });
+    expect(result.max).toBe(500000);
+    expect(result.labelPercent).toBeCloseTo(238676 / 500000);
+    expect(result.fillPercent).toBeCloseTo(238676 / 500000);
+  });
+
+  it("defaults max to raw value when fix max unset", () => {
+    const result = resolveLiquidPercent({ rows: [], columns: [] }, 72, { maxType: "fix" });
+    expect(result.max).toBe(72);
+    expect(result.fillPercent).toBe(1);
+  });
+
+  it("aggregates dynamic max field from rows", () => {
+    const result = resolveLiquidPercent(
+      {
+        rows: [[100], [50]],
+        columns: ["target"],
+      },
+      75,
+      { maxType: "dynamic", maxField: "target" },
+    );
+    expect(result.max).toBe(150);
+    expect(result.fillPercent).toBeCloseTo(0.5);
+  });
+
+  it("caps fill at 100% but label percent can exceed 1", () => {
+    const result = resolveLiquidPercent({ rows: [], columns: [] }, 200, { maxType: "fix", max: 100 });
+    expect(result.fillPercent).toBe(1);
+    expect(result.labelPercent).toBe(2);
   });
 });

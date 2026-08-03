@@ -42,6 +42,7 @@ export function DatasetEditorForm({
   isSaving,
   submitDisabled = false,
   bindPanel,
+  tablePickerPrefill,
 }: {
   mode: "create" | "edit";
   values: DatasetEditorValues;
@@ -50,6 +51,10 @@ export function DatasetEditorForm({
   isSaving: boolean;
   submitDisabled?: boolean;
   bindPanel?: ReactNode;
+  tablePickerPrefill?: {
+    preferredDataSourceId?: string;
+    prefillTable?: string;
+  };
 }) {
   const canSubmit =
     values.datasetId.trim().length > 0 &&
@@ -146,6 +151,8 @@ export function DatasetEditorForm({
               <DatasetTablePicker
                 tables={values.tables}
                 onChange={(tables) => onChange({ ...values, tables })}
+                preferredDataSourceId={tablePickerPrefill?.preferredDataSourceId}
+                prefillTable={tablePickerPrefill?.prefillTable}
               />
             </TabsContent>
 

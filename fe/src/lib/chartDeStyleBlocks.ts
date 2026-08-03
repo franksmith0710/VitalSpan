@@ -39,9 +39,18 @@ export type ChartGaugeStyle = {
 };
 
 export type ChartLiquidStyle = {
-  targetValue?: number;
+  /** 目标值类型：固定值 / 动态字段聚合（对标 DE liquidMaxType） */
+  maxType?: "fix" | "dynamic";
+  /** 固定目标值；水位 = 指标 / max */
+  max?: number;
+  /** 动态目标字段名（sum 聚合） */
+  maxField?: string;
+  /** 图形大小 %，对标 DE liquidSize，默认 80 */
+  size?: number;
   outlineWidth?: number;
   waveColor?: string;
+  /** @deprecated 旧参考线语义，不再参与水位计算 */
+  targetValue?: number;
 };
 
 export type ChartKpiStyle = {
@@ -115,6 +124,7 @@ export const DEFAULT_CARTESIAN_POINT_SIZE = 4;
 export const DEFAULT_PIE_OUTER_RADIUS_PERCENT = 70;
 export const DEFAULT_GAUGE_MIN = 0;
 export const DEFAULT_GAUGE_MAX = 100;
+export const DEFAULT_LIQUID_SIZE = 80;
 
 export type ChartDeStyleBlocks = {
   axis?: ChartAxisStyle;

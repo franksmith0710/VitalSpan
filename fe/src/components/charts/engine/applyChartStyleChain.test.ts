@@ -100,7 +100,7 @@ describe("applyChartStyleChain", () => {
       deStyle: {
         cartesian: { barWidthRatio: 0.72, barRadius: 6, lineSmooth: true, pointSize: 6, areaOpacity: 0.4 },
         axis: { x: { name: "类目" }, y: { show: true, name: "数值" } },
-        liquid: { targetValue: 80, outlineWidth: 2, waveColor: "#12b76a" },
+        liquid: { max: 500000, outlineWidth: 2, waveColor: "#12b76a", size: 80 },
         radar: { shape: "circle", areaOpacity: 0.3, showAxisName: false },
         wordCloud: { fontSizeMin: 10, fontSizeMax: 36, spacing: 4 },
         sankey: { nodeWidth: 14, nodeGap: 9, linkOpacity: 0.55 },
@@ -119,11 +119,18 @@ describe("applyChartStyleChain", () => {
     const lineNext = applyChartStyleChain(linePlan, style, barConfig);
     expect(lineNext.options.smooth).toBe(true);
 
-    const liquidPlan: ChartRenderPlan = { kind: "d3", plotType: "Liquid", empty: false, options: {} };
+    const liquidPlan: ChartRenderPlan = {
+      kind: "d3",
+      plotType: "Liquid",
+      empty: false,
+      options: { rawValue: 238676, rows: [], columns: [] },
+    };
     const liquidNext = applyChartStyleChain(liquidPlan, style);
-    expect(liquidNext.options.__liquidTarget).toBe(80);
+    expect(liquidNext.options.__liquidMax).toBe(500000);
     expect(liquidNext.options.__liquidOutlineWidth).toBe(2);
     expect(liquidNext.options.__liquidWaveColor).toBe("#12b76a");
+    expect(liquidNext.options.__liquidSize).toBe(80);
+    expect(liquidNext.options.__liquidFillPercent).toBeCloseTo(238676 / 500000);
 
     const radarPlan: ChartRenderPlan = { kind: "d3", plotType: "Radar", empty: false, options: {} };
     const radarNext = applyChartStyleChain(radarPlan, style);

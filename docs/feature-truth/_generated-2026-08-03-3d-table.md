@@ -19,7 +19,7 @@
 | S1 | gauge | data | — | ✅ | ✅ | ○ | REAL |  |
 | S1 | gauge | style · advanced | variantBasic → background → palette → title → label → gaugeShape | ✅ | partial | ○ | STUB |  |
 | S1 | liquid | data | — | ✅ | ✅ | ○ | REAL |  |
-| S1 | liquid | style · advanced | background → palette → title → label → liquidShape | ✅ | partial | ○ | STUB |  |
+| S1 | liquid | style · advanced | background → palette → title → label → liquidShape | ✅ | partial | ○ | STUB | 2026-07-28：水位=指标/目标值；图表提示已接 tooltipPresentation |
 | S1 | kpi | data | — | ✅ | ✅ | ✅ | REAL | 2026-08-03 BROWSER 重验 REAL |
 | S1 | kpi | style | background → palette → title → label → kpiIndicator | ✅ | partial | ✅ | STUB | 2026-08-03 BROWSER 重验 REAL |
 | S1 | kpi | advanced-out | — | OUT | — | ○ | OUT | 2026-08-03 BROWSER 重验 REAL |

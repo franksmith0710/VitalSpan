@@ -23,7 +23,13 @@ import { queryKeys } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";
 import type { DatasetTable } from "./types";
 
-type DsItem = { id: string; name: string; database?: string };
+type DsItem = {
+  id: string;
+  name: string;
+  database?: string;
+  type?: string;
+  port?: number;
+};
 
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -31,16 +37,43 @@ function isEditableTarget(target: EventTarget | null): boolean {
   return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.isContentEditable;
 }
 
+function resolvePreferredDataSourceId(items: DsItem[], preferred?: string): string {
+  if (preferred && items.some((d) => d.id === preferred)) return preferred;
+  const analytics = items.find(
+    (d) =>
+      (d.type === "postgresql" || d.type === "postgres") &&
+      d.port === 5433 &&
+      d.database === "analytics",
+  );
+  if (analytics) return analytics.id;
+  return items[0]?.id ?? "";
+}
+
+function parseFocusTable(prefillTable?: string): { schema: string; table: string } | undefined {
+  if (!prefillTable?.trim()) return undefined;
+  const raw = prefillTable.trim();
+  if (raw.includes(".")) {
+    const [schema, table] = raw.split(".", 2);
+    if (schema && table) return { schema, table };
+  }
+  return { schema: "public", table: raw };
+}
+
 export function DatasetTablePicker({
   tables,
   onChange,
+  preferredDataSourceId,
+  prefillTable,
 }: {
   tables: DatasetTable[];
   onChange: (next: DatasetTable[]) => void;
+  preferredDataSourceId?: string;
+  prefillTable?: string;
 }) {
   const [dataSourceId, setDataSourceId] = useState("");
   const [selection, setSelection] = useState<TableSelection | null>(null);
   const [selectedFilter, setSelectedFilter] = useState("");
+  const focusTable = useMemo(() => parseFocusTable(prefillTable), [prefillTable]);
 
   const dsQuery = useQuery({
     queryKey: queryKeys.datasources.list(),
@@ -51,8 +84,10 @@ export function DatasetTablePicker({
   const selectedDs = items.find((d) => d.id === dataSourceId);
 
   useEffect(() => {
-    if (!dataSourceId && items[0]) setDataSourceId(items[0].id);
-  }, [dataSourceId, items]);
+    if (items.length === 0) return;
+    const nextId = resolvePreferredDataSourceId(items, preferredDataSourceId);
+    if (nextId && nextId !== dataSourceId) setDataSourceId(nextId);
+  }, [dataSourceId, items, preferredDataSourceId]);
 
   const selectedNames = useMemo(() => new Set(tables.map((t) => t.name)), [tables]);
 
@@ -192,6 +227,7 @@ export function DatasetTablePicker({
               dataSourceId={dataSourceId}
               embedded
               defaultDatabase={selectedDs?.database}
+              focusTable={focusTable}
               className="h-full min-h-0"
               onSelectionChange={setSelection}
               addedTableNames={selectedNames}

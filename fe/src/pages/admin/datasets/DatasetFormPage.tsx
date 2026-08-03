@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Layers } from "lucide-react";
 import { toast } from "sonner";
@@ -46,11 +46,35 @@ function serializeDatasetValues(values: DatasetEditorValues): string {
   return JSON.stringify(normalizeValues(values));
 }
 
+function valuesFromSearchParams(searchParams: URLSearchParams): DatasetEditorValues {
+  const targetTable = searchParams.get("targetTable")?.trim() ?? "";
+  const suggestedDatasetId =
+    searchParams.get("suggestedDatasetId")?.trim() || targetTable;
+  const tableName = targetTable
+    ? targetTable.includes(".")
+      ? targetTable
+      : `public.${targetTable}`
+    : "";
+  return {
+    ...EMPTY,
+    datasetId: suggestedDatasetId,
+    displayName: suggestedDatasetId,
+    tables: tableName ? [{ name: tableName }] : [],
+  };
+}
+
 export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [values, setValues] = useState<DatasetEditorValues>(EMPTY);
+  const createPrefill = useMemo(
+    () => (mode === "create" ? valuesFromSearchParams(searchParams) : EMPTY),
+    [mode, searchParams],
+  );
+  const preferredDataSourceId = searchParams.get("dataSourceId")?.trim() || undefined;
+  const prefillTable = searchParams.get("targetTable")?.trim() || undefined;
+  const [values, setValues] = useState<DatasetEditorValues>(createPrefill);
   const [isSaving, setIsSaving] = useState(false);
 
   const detailQuery = useQuery({
@@ -75,7 +99,8 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
 
   useEffect(() => {
     if (mode === "create") {
-      resetBaseline(EMPTY);
+      setValues(createPrefill);
+      resetBaseline(createPrefill);
       return;
     }
     if (!detailQuery.data) return;
@@ -89,7 +114,7 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
     };
     setValues(nextValues);
     resetBaseline(nextValues);
-  }, [detailQuery.data, mode, resetBaseline]);
+  }, [detailQuery.data, mode, resetBaseline, createPrefill]);
 
   const handleSave = async (): Promise<boolean> => {
     const body = normalizeValues(values);
@@ -175,6 +200,10 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
         onSubmit={() => void handleSave()}
         isSaving={isSaving}
         submitDisabled={mode === "edit" && !isDirty}
+        tablePickerPrefill={{
+          preferredDataSourceId,
+          prefillTable,
+        }}
         bindPanel={
           mode === "edit" && id ? (
             <DatasetBindPanel

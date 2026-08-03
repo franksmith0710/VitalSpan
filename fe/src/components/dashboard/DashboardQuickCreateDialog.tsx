@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { useNavigate } from "react-router";
+import { useNavigate, Link } from "react-router";
 
 import type { ChartType } from "@/lib/chartViewConfig";
 
@@ -399,6 +399,19 @@ export function DashboardQuickCreateDialog({
               onValueChange={setDatasetId}
 
             />
+
+            {!datasetsLoading && boundDatasets.length === 0 ? (
+              <p className="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">
+                暂无已绑定查询配置的 Dataset。请先{" "}
+                <Link
+                  to="/admin/datasets/new"
+                  className="text-brand-600 underline-offset-2 hover:underline dark:text-brand-400"
+                >
+                  创建数据集
+                </Link>
+                ，选表并绑定后再快速创建看板。
+              </p>
+            ) : null}
 
           </AdminFormField>
 

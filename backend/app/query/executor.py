@@ -64,11 +64,12 @@ class QueryExecutor:
     def execute_sql(
         self, session: Session, user: UserContext, data_source_id: uuid.UUID, sql: str, *,
         limit: int, offset: int = 0, rls_config: dict | None = None, apply_rls: bool = True,
-        parameters: dict[str, object] | None = None,
+        parameters: dict[str, object] | None = None, skip_wrap_limit: bool = False,
     ) -> QueryResult:
         return self._run(
             session, user, data_source_id, sql, limit=limit, offset=offset,
             rls_config=rls_config, apply_rls=apply_rls, parameters=parameters,
+            skip_wrap_limit=skip_wrap_limit,
         )
 
     def execute_table(

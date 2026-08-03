@@ -20,7 +20,7 @@
 | In | Out |
 |----|-----|
 | 库表级同步、规则表级清洗 | 完整可视化 ETL 设计器（远期） |
-| 内联 SourceConnection 或引用 `dataSourceId`（MySQL 快照） | 自动创建/同步托管库数据源记录（用户手动登记 PG） |
+| 内联 SourceConnection 或引用 `dataSourceId`（MySQL 快照） | 自动创建/同步托管库数据源记录（默认手动登记 PG；开发环境 `ENSURE_ANALYTICS_DATASOURCE=1` 可自动登记） |
 | 全量 TRUNCATE + 增量 upsert | 增量删除、复合主键 |
 | 托管分析库写入 | BI 查询执行（→ `query`） |
 | M1B 手动/定时同步 | 连接器插件注册（→ `datasources`，M3+） |

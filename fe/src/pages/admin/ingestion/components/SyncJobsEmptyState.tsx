@@ -22,8 +22,8 @@ const STEPS = [
   },
   {
     step: 4,
-    title: "登记分析库并出图",
-    description: "在数据源中登记托管 PostgreSQL 分析库，用 SQL 查询同步表建图表。",
+    title: "创建 Dataset 并出图",
+    description: "登记托管 PostgreSQL 分析库，创建 Dataset 选同步表，再在空白看板中选 Dataset 出图。",
     icon: BarChart3,
   },
 ] as const;

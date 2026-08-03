@@ -28,6 +28,7 @@ export function SchemaBrowser({
   className,
   embedded = false,
   defaultDatabase,
+  focusTable,
   onSelectionChange,
   toolbarActions,
   addedTableNames,
@@ -37,6 +38,7 @@ export function SchemaBrowser({
   className?: string;
   embedded?: boolean;
   defaultDatabase?: string;
+  focusTable?: { schema: string; table: string };
   onSelectionChange?: (selection: TableSelection | null) => void;
   toolbarActions?: ReactNode;
   /** Dataset 选表：已加入的表名集合 */
@@ -81,23 +83,35 @@ export function SchemaBrowser({
   useEffect(() => {
     if (!schemaNames.length || initRef.current) return;
     const preferred =
+      (focusTable?.schema && schemaNames.includes(focusTable.schema) && focusTable.schema) ||
       (defaultDatabase && schemaNames.includes(defaultDatabase) && defaultDatabase) ||
       userSchemas[0] ||
       schemaNames[0];
     if (preferred) {
       setExpandedSchemas((s) => ({ ...s, [preferred]: true }));
     }
-  }, [defaultDatabase, schemaNames, userSchemas]);
+  }, [defaultDatabase, focusTable?.schema, schemaNames, userSchemas]);
 
   useEffect(() => {
     onSelectionChange?.(selection);
   }, [onSelectionChange, selection]);
 
-  const handleTablesLoaded = useCallback((schema: string, tables: TableMeta[]) => {
-    if (initRef.current || !tables.length) return;
-    initRef.current = true;
-    setSelection({ schema, table: tables[0].name, type: tables[0].type });
-  }, []);
+  const handleTablesLoaded = useCallback(
+    (schema: string, tables: TableMeta[]) => {
+      if (initRef.current || !tables.length) return;
+      if (focusTable && focusTable.schema === schema) {
+        const match = tables.find((t) => t.name === focusTable.table);
+        if (match) {
+          initRef.current = true;
+          setSelection({ schema, table: match.name, type: match.type });
+          return;
+        }
+      }
+      initRef.current = true;
+      setSelection({ schema, table: tables[0].name, type: tables[0].type });
+    },
+    [focusTable],
+  );
 
   const handleToggleSchema = (schema: string) => {
     setExpandedSchemas((s) => ({ ...s, [schema]: !s[schema] }));

@@ -79,6 +79,24 @@ def test_sync_jobs_crud_roundtrip(client: TestClient, auth_headers: dict, job_pa
     assert delete.status_code == 204
 
 
+def test_sync_job_consume_hints(client: TestClient, auth_headers: dict, job_payload: dict):
+    create = client.post("/api/v1/ingestion/sync-jobs", json=job_payload, headers=auth_headers)
+    assert create.status_code == 201, create.text
+    job_id = create.json()["id"]
+
+    resp = client.get(
+        f"/api/v1/ingestion/sync-jobs/{job_id}/consume-hints",
+        headers=auth_headers,
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["targetTable"] == "orders_clean"
+    assert body["suggestedDatasetId"] == "orders_clean"
+    assert "analyticsDatasourceId" in body
+
+    client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
 def test_create_job_invalid_source_422(client, auth_headers, job_payload):
     bad = {**job_payload, "source": {**job_payload["source"], "password": ""}}
     response = client.post("/api/v1/ingestion/sync-jobs", json=bad, headers=auth_headers)

@@ -11,12 +11,14 @@ import { TEXT_COLOR_RECOMMENDED } from "@/components/dashboard/dashboardStyleCon
 import { useChartInspector } from "../ChartInspectorContext";
 import {
   ChartInspectorSection,
+  INSPECTOR_HINT,
   INSPECTOR_SECTION_GAP,
   INSPECTOR_SELECT,
   INSPECTOR_SWITCH_SIZE,
   InspectorInlineColorRow,
   InspectorSwitchRow,
 } from "../inspectorCompact";
+import { ChartDeSegmentField } from "../chartInspectorDeFields";
 import { ChartDeSliderField } from "../deAttrSlider";
 import {
   DEFAULT_PIE_INNER_RADIUS_PERCENT,
@@ -27,7 +29,7 @@ import {
   resolveChartTooltipDisplayBackground,
   resolveChartTooltipDisplayColor,
 } from "@/lib/chartDeStyle";
-import { DEFAULT_PIE_OUTER_RADIUS_PERCENT } from "@/lib/chartDeStyleBlocks";
+import { DEFAULT_LIQUID_SIZE, DEFAULT_PIE_OUTER_RADIUS_PERCENT } from "@/lib/chartDeStyleBlocks";
 
 function patchBlock<K extends "pie" | "gauge" | "liquid" | "kpi" | "funnel" | "sankey" | "graph" | "radar" | "wordCloud" | "treemap" | "circlePacking">(
   cfg: Parameters<typeof patchChartDeStyleNested>[0],
@@ -100,15 +102,76 @@ export function ChartGaugeStyleSection() {
 }
 
 export function ChartLiquidStyleSection() {
-  const { cfg, mutateChartConfig } = useChartInspector();
+  const { cfg, columns, mutateChartConfig } = useChartInspector();
   const liquid = readChartDeStyle(cfg).liquid ?? {};
+  const maxType = liquid.maxType ?? "fix";
   const patch = (p: Record<string, unknown>) =>
     mutateChartConfig((c) => patchChartDeStyleNested(c, "liquid", p));
 
   return (
     <ChartInspectorSection title="水波样式" data-testid="chart-liquid-shape">
       <div className={INSPECTOR_SECTION_GAP}>
-        <ChartDeSliderField label="目标线（%）" value={liquid.targetValue} fallback={100} min={0} max={100} step={1} onChange={(targetValue) => patch({ targetValue })} />
+        <p className={INSPECTOR_HINT}>水位 = 指标值 ÷ 目标值（对标 DataEase 大小设置）</p>
+        <ChartDeSegmentField
+          label="目标值类型"
+          value={maxType}
+          options={[
+            { value: "fix", label: "固定值" },
+            { value: "dynamic", label: "动态值" },
+          ]}
+          onChange={(value) =>
+            patch({
+              maxType: value as "fix" | "dynamic",
+              ...(value === "fix" ? { maxField: undefined } : {}),
+            })
+          }
+        />
+        {maxType === "fix" ? (
+          <div className="border-b border-gray-100 py-2 dark:border-white/[0.06]">
+            <p className="mb-1.5 text-[11px] font-medium text-gray-600 dark:text-gray-300">目标值</p>
+            <Input
+              type="number"
+              min={1}
+              className={INSPECTOR_SELECT}
+              value={liquid.max ?? ""}
+              placeholder="未设置则与指标相同"
+              onChange={(e) => {
+                const raw = e.target.value.trim();
+                patch({ max: raw ? Number(raw) : undefined });
+              }}
+            />
+          </div>
+        ) : (
+          <div className="border-b border-gray-100 py-2 dark:border-white/[0.06]">
+            <p className="mb-1.5 text-[11px] font-medium text-gray-600 dark:text-gray-300">动态字段</p>
+            <Select
+              value={liquid.maxField ?? ""}
+              onValueChange={(maxField) => patch({ maxField })}
+            >
+              <SelectTrigger className={INSPECTOR_SELECT} aria-label="动态目标字段">
+                <SelectValue placeholder="选择数值字段" />
+              </SelectTrigger>
+              <SelectContent>
+                {columns.length === 0 ? (
+                  <SelectItem value="__none__" disabled>暂无字段</SelectItem>
+                ) : (
+                  columns.map((col) => (
+                    <SelectItem key={col} value={col}>{col}</SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        <ChartDeSliderField
+          label="图形大小"
+          value={liquid.size}
+          fallback={DEFAULT_LIQUID_SIZE}
+          min={20}
+          max={100}
+          step={1}
+          onChange={(size) => patch({ size })}
+        />
         <ChartDeSliderField label="轮廓宽度" value={liquid.outlineWidth} fallback={2} min={0} max={8} step={1} onChange={(outlineWidth) => patch({ outlineWidth })} />
       </div>
     </ChartInspectorSection>

@@ -15,6 +15,7 @@ import { encodeCartesianRows } from "@/components/charts/engine/antv/spec/encode
 import { encodePieRows } from "@/components/charts/engine/antv/spec/encodePie";
 import { PIE_RADIUS_FRAC_DEFAULT } from "@/components/charts/engine/d3/radial/pieLayout";
 import type { ChartViewModel, RenderSpec } from "@/components/charts/engine/types";
+import { aggregateQuotaMetric } from "@/lib/quotaMetricAggregate";
 
 export function emptyPlan(plotType = "Line", error?: string): ChartRenderPlan {
   return { kind: "d3", plotType, options: { data: [] }, empty: true, error };
@@ -58,19 +59,12 @@ function resolveQuotaPercent(value: number): { percent: number; rawValue: number
   return { percent: 1, rawValue: value };
 }
 
-function aggregateQuotaMetric(rows: unknown[][], columns: string[], metricField: string): number {
-  const mi = colIndex(columns, metricField);
-  if (mi < 0) return 0;
-  let sum = 0;
-  for (const row of rows) {
-    const v = Number(row[mi] ?? 0);
-    if (Number.isFinite(v)) sum += v;
-  }
-  return sum;
+function aggregateQuotaMetricLocal(rows: unknown[][], columns: string[], metricField: string): number {
+  return aggregateQuotaMetric(rows, columns, metricField);
 }
 
 function gaugePlan(rows: unknown[][], columns: string[], metricField: string): ChartRenderPlan {
-  const value = aggregateQuotaMetric(rows, columns, metricField);
+  const value = aggregateQuotaMetricLocal(rows, columns, metricField);
   const { percent, rawValue } = resolveQuotaPercent(value);
   return d3Plan("Gauge", {
     percent,
@@ -82,9 +76,8 @@ function gaugePlan(rows: unknown[][], columns: string[], metricField: string): C
 }
 
 function liquidPlan(rows: unknown[][], columns: string[], metricField: string): ChartRenderPlan {
-  const value = aggregateQuotaMetric(rows, columns, metricField);
-  const { percent, rawValue } = resolveQuotaPercent(value);
-  return d3Plan("Liquid", { percent, rawValue });
+  const rawValue = aggregateQuotaMetricLocal(rows, columns, metricField);
+  return d3Plan("Liquid", { rawValue, rows, columns, metricField });
 }
 
 function kpiPlan(

@@ -302,6 +302,7 @@ export function SyncJobFormPage() {
           <SyncJobForm
             form={form}
             isEdit={isEdit}
+            etlRulesHref={isEdit && id ? `/admin/ingestion/sync-jobs/${id}/etl-rules` : undefined}
             datasources={datasources}
             selectedDatasource={selectedDatasource}
             fieldErrors={fieldErrors}

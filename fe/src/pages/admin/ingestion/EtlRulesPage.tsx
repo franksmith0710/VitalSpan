@@ -41,6 +41,11 @@ const RULE_TYPES = [
   { value: "filter_rows", label: "行过滤" },
 ];
 
+import {
+  DIRTY_ORDERS_DEMO_ETL_RULES,
+  DIRTY_ORDERS_DEMO_SOURCE_TABLE,
+} from "./etlDemoTemplate";
+
 const PLACEHOLDER_HINT =
   "推荐链：product_name→product、amount→float、note 填「无备注」、过滤 status≠deleted";
 
@@ -64,6 +69,7 @@ function serializeRules(rules: EtlRule[]): string {
 export function EtlRulesPage() {
   const { id } = useParams();
   const [rules, setRules] = useState<EtlRule[]>([]);
+  const [sourceTable, setSourceTable] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -95,11 +101,13 @@ export function EtlRulesPage() {
     setError(null);
     setFieldErrors(false);
     try {
-      const data = await apiFetch<{ rules: EtlRule[] }>(
-        `/api/v1/ingestion/sync-jobs/${id}/etl-rules`,
-      );
-      setRules(data.rules.length > 0 ? data.rules : [emptyRule()]);
-      resetBaseline(data.rules.length > 0 ? data.rules : [emptyRule()]);
+      const [rulesData, jobData] = await Promise.all([
+        apiFetch<{ rules: EtlRule[] }>(`/api/v1/ingestion/sync-jobs/${id}/etl-rules`),
+        apiFetch<{ source?: { table?: string } }>(`/api/v1/ingestion/sync-jobs/${id}`),
+      ]);
+      setSourceTable(jobData.source?.table ?? null);
+      setRules(rulesData.rules.length > 0 ? rulesData.rules : [emptyRule()]);
+      resetBaseline(rulesData.rules.length > 0 ? rulesData.rules : [emptyRule()]);
     } catch (err) {
       setError(mapApiError(err));
     } finally {
@@ -176,6 +184,15 @@ export function EtlRulesPage() {
     if (ok) confirmLeave();
   };
 
+  const applyDirtyOrdersDemoTemplate = () => {
+    setRules([...DIRTY_ORDERS_DEMO_ETL_RULES]);
+    setError(null);
+    setFieldErrors(false);
+  };
+
+  const showDemoTemplate =
+    sourceTable?.trim().toLowerCase() === DIRTY_ORDERS_DEMO_SOURCE_TABLE;
+
   const pageDescription = useMemo(() => {
     if (!isBaselineReady) return PLACEHOLDER_HINT;
     if (isDirty) return "有未保存的更改 · 保存后生效";
@@ -212,6 +229,18 @@ export function EtlRulesPage() {
           {error ? (
             <div className="mb-4 shrink-0">
               <PageErrorBanner message={error} onRetry={() => void loadRules()} />
+            </div>
+          ) : null}
+
+          {showDemoTemplate ? (
+            <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-brand-200 bg-brand-50/60 px-4 py-3 dark:border-brand-500/30 dark:bg-brand-500/10">
+              <p className="flex-1 text-theme-xs text-gray-600 dark:text-gray-300">
+                源表为 <span className="font-mono">{DIRTY_ORDERS_DEMO_SOURCE_TABLE}</span>
+                ：可一键应用演示模板（amount cast→float，过滤 status=deleted）。
+              </p>
+              <Button type="button" variant="outline" size="sm" onClick={applyDirtyOrdersDemoTemplate}>
+                应用演示清洗模板
+              </Button>
             </div>
           ) : null}
 

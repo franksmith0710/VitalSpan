@@ -5,10 +5,13 @@ import {
   DEFAULT_CARTESIAN_POINT_SIZE,
   DEFAULT_GAUGE_MAX,
   DEFAULT_GAUGE_MIN,
+  DEFAULT_LIQUID_SIZE,
   DEFAULT_PIE_OUTER_RADIUS_PERCENT,
   type ChartAxisStyle,
   type ChartDeStyleBlocks,
+  type ChartLiquidStyle,
 } from "@/lib/chartDeStyleBlocks";
+import { aggregateQuotaMetric } from "@/lib/quotaMetricAggregate";
 
 export type PlanCompareStyle = {
   trackOpacity?: number;
@@ -96,6 +99,58 @@ export function resolveGaugeValuePercent(
   return Math.min(1, Math.max(0, fallbackPercent));
 }
 
+function resolveLiquidMaxValue(
+  options: Record<string, unknown>,
+  liquid: ChartLiquidStyle,
+  rawValue: number,
+): number {
+  const maxType = liquid.maxType ?? "fix";
+  if (maxType === "dynamic") {
+    const field = liquid.maxField?.trim();
+    const rows = options.rows as unknown[][] | undefined;
+    const columns = options.columns as string[] | undefined;
+    if (field && rows && columns) {
+      return Math.max(aggregateQuotaMetric(rows, columns, field), 1e-6);
+    }
+    return Math.max(rawValue, 1e-6);
+  }
+  if (liquid.max != null && Number.isFinite(liquid.max)) {
+    return Math.max(liquid.max, 1e-6);
+  }
+  return Math.max(rawValue, 1e-6);
+}
+
+/** 对标 DE：labelPercent = value/max；fill 封顶 100% */
+export function resolveLiquidPercent(
+  options: Record<string, unknown>,
+  rawValue: number,
+  liquid?: ChartLiquidStyle,
+): { fillPercent: number; labelPercent: number; max: number } {
+  const value = Number.isFinite(rawValue) ? rawValue : 0;
+  const max = resolveLiquidMaxValue(options, liquid ?? {}, value);
+  const labelPercent = value / max;
+  const fillPercent = Math.min(1, Math.max(0, labelPercent));
+  return { fillPercent, labelPercent, max };
+}
+
+function applyLiquidStyleToPlan(
+  options: Record<string, unknown>,
+  liquid: ChartLiquidStyle,
+): void {
+  if (liquid.maxType) options.__liquidMaxType = liquid.maxType;
+  if (liquid.max != null) options.__liquidMax = liquid.max;
+  if (liquid.maxField) options.__liquidMaxField = liquid.maxField;
+  if (liquid.size != null) options.__liquidSize = liquid.size;
+  if (liquid.outlineWidth != null) options.__liquidOutlineWidth = liquid.outlineWidth;
+  if (liquid.waveColor) options.__liquidWaveColor = liquid.waveColor;
+
+  const rawValue = Number(options.rawValue ?? 0);
+  const resolved = resolveLiquidPercent(options, rawValue, liquid);
+  options.__liquidMax = resolved.max;
+  options.__liquidFillPercent = resolved.fillPercent;
+  options.__liquidLabelPercent = resolved.labelPercent;
+}
+
 function readBlocks(deStyle: ChartDeStyle): ChartDeStyleBlocks {
   return deStyle as ChartDeStyle & ChartDeStyleBlocks;
 }
@@ -144,11 +199,8 @@ export function applyChartDeStyleBlocksToPlan(
     if (g.splitNumber != null) options.__gaugeSplitNumber = g.splitNumber;
   }
 
-  if (plan.plotType === "Liquid" && blocks.liquid) {
-    const l = blocks.liquid;
-    if (l.targetValue != null) options.__liquidTarget = l.targetValue;
-    if (l.outlineWidth != null) options.__liquidOutlineWidth = l.outlineWidth;
-    if (l.waveColor) options.__liquidWaveColor = l.waveColor;
+  if (plan.plotType === "Liquid") {
+    applyLiquidStyleToPlan(options, blocks.liquid ?? {});
   }
 
   if (blocks.funnel) {
