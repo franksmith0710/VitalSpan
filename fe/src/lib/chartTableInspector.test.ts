@@ -10,7 +10,7 @@ describe("chartTableInspector", () => {
     expect(info?.showSeriesNumber).toBe(true);
     expect(info?.showPagination).toBe(true);
     expect(pivot?.showSeriesNumber).toBe(false);
-    expect(pivot?.showPagination).toBe(false);
+    expect(pivot?.showPagination).toBe(true);
     expect(pivot?.showSubTotals).toBe(true);
   });
 

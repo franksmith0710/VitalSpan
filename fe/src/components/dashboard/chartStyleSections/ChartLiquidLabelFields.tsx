@@ -8,9 +8,10 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatMetricValue } from "@/components/dashboard/dashboardStyleConfig";
-import { ChartDeAttrField, CHART_DE_INPUT } from "../chartInspectorDeFields";
-import { INSPECTOR_HINT, INSPECTOR_SELECT } from "../inspectorCompact";
+import { ChartDeAttrField, ChartDeSegmentField, CHART_DE_INPUT } from "../chartInspectorDeFields";
+import { INSPECTOR_SELECT } from "../inspectorCompact";
 import type { ChartDeStyle } from "@/lib/chartDeStyle";
+import type { ChartLiquidStyle } from "@/lib/chartDeStyleBlocks";
 import { resolveLiquidMetricFormat } from "@/lib/liquidLabelFormat";
 
 const METRIC_FORMAT_TYPES = [
@@ -23,12 +24,22 @@ const RATIO_DECIMAL_LABELS = ["零位", "一位", "二位", "三位", "四位"] 
 
 type ChartLiquidLabelFieldsProps = {
   label: ChartDeStyle["label"];
+  liquid: ChartLiquidStyle | undefined;
+  columns: string[];
   patchLabel: (patch: Partial<NonNullable<ChartDeStyle["label"]>>) => void;
+  patchLiquid: (patch: Partial<ChartLiquidStyle>) => void;
 };
 
-export function ChartLiquidLabelFields({ label, patchLabel }: ChartLiquidLabelFieldsProps) {
+export function ChartLiquidLabelFields({
+  label,
+  liquid,
+  columns,
+  patchLabel,
+  patchLiquid,
+}: ChartLiquidLabelFieldsProps) {
   const showMetric = label?.showMetric !== false;
   const showRatio = label?.showRatio === true;
+  const maxType = liquid?.maxType ?? "fix";
 
   const metricUnit = label?.metricUnit ?? label?.unit;
   const unitSelectValue =
@@ -40,7 +51,11 @@ export function ChartLiquidLabelFields({ label, patchLabel }: ChartLiquidLabelFi
 
   const metricFormat = resolveLiquidMetricFormat(label);
   const metricPreview = formatMetricValue(61930, metricFormat);
-  const ratioPreview = formatMetricValue(1, {
+  const ratioSample =
+    liquid?.max != null && Number.isFinite(liquid.max) && liquid.max > 0
+      ? 61930 / liquid.max
+      : 1;
+  const ratioPreview = formatMetricValue(ratioSample, {
     type: "percent",
     decimals: label?.ratioDecimals ?? 0,
     thousandSeparator: metricFormat.thousandSeparator,
@@ -48,6 +63,60 @@ export function ChartLiquidLabelFields({ label, patchLabel }: ChartLiquidLabelFi
 
   return (
     <>
+      <div className="border-b border-gray-100 pb-2 dark:border-white/[0.06]">
+        <p className="py-2 text-[11px] font-medium text-gray-700 dark:text-gray-200">完成度</p>
+        <p className="mb-2 text-[10px] text-gray-400">水位与占比均 = 指标 ÷ 目标值，在此一处配置即可。</p>
+        <ChartDeSegmentField
+          label="目标值类型"
+          value={maxType}
+          options={[
+            { value: "fix", label: "固定值" },
+            { value: "dynamic", label: "动态值" },
+          ]}
+          onChange={(value) =>
+            patchLiquid({
+              maxType: value as "fix" | "dynamic",
+              ...(value === "fix" ? { maxField: undefined } : {}),
+            })
+          }
+        />
+        {maxType === "fix" ? (
+          <ChartDeAttrField label="目标值">
+            <Input
+              type="number"
+              min={1}
+              className={CHART_DE_INPUT}
+              value={liquid?.max ?? ""}
+              placeholder="必填，如 61930"
+              onChange={(e) => {
+                const raw = e.target.value.trim();
+                patchLiquid({ max: raw ? Number(raw) : undefined });
+              }}
+            />
+          </ChartDeAttrField>
+        ) : (
+          <ChartDeAttrField label="动态字段">
+            <Select
+              value={liquid?.maxField ?? ""}
+              onValueChange={(maxField) => patchLiquid({ maxField })}
+            >
+              <SelectTrigger className={INSPECTOR_SELECT} aria-label="动态目标字段">
+                <SelectValue placeholder="选择数值字段" />
+              </SelectTrigger>
+              <SelectContent>
+                {columns.length === 0 ? (
+                  <SelectItem value="__none__" disabled>暂无字段</SelectItem>
+                ) : (
+                  columns.map((col) => (
+                    <SelectItem key={col} value={col}>{col}</SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </ChartDeAttrField>
+        )}
+      </div>
+
       <label className="flex items-center gap-2 border-b border-gray-100 py-2 text-[11px] text-gray-600 dark:border-white/[0.06] dark:text-gray-300">
         <Checkbox
           checked={showMetric}
@@ -74,16 +143,6 @@ export function ChartLiquidLabelFields({ label, patchLabel }: ChartLiquidLabelFi
                 {METRIC_FORMAT_TYPES.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                 ))}
-              </SelectContent>
-            </Select>
-          </ChartDeAttrField>
-          <ChartDeAttrField label="单位语言">
-            <Select value="zh" disabled>
-              <SelectTrigger className={INSPECTOR_SELECT}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="zh">中文</SelectItem>
               </SelectContent>
             </Select>
           </ChartDeAttrField>
@@ -173,10 +232,6 @@ export function ChartLiquidLabelFields({ label, patchLabel }: ChartLiquidLabelFi
           <p className="px-0 py-1 text-[10px] text-gray-400">占比示例：{ratioPreview}</p>
         </div>
       ) : null}
-
-      <p className={INSPECTOR_HINT}>
-        指标显示原值；占比显示「指标÷目标值」。百分比请用占比，勿在指标格式中选百分比。
-      </p>
     </>
   );
 }

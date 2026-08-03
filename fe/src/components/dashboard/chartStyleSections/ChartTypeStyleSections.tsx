@@ -102,67 +102,15 @@ export function ChartGaugeStyleSection() {
 }
 
 export function ChartLiquidStyleSection() {
-  const { cfg, columns, mutateChartConfig } = useChartInspector();
+  const { cfg, mutateChartConfig } = useChartInspector();
   const liquid = readChartDeStyle(cfg).liquid ?? {};
-  const maxType = liquid.maxType ?? "fix";
   const patch = (p: Record<string, unknown>) =>
     mutateChartConfig((c) => patchChartDeStyleNested(c, "liquid", p));
 
   return (
     <ChartInspectorSection title="水波样式" data-testid="chart-liquid-shape">
       <div className={INSPECTOR_SECTION_GAP}>
-        <p className={INSPECTOR_HINT}>水位 = 指标值 ÷ 目标值（对标 DataEase 大小设置）</p>
-        <ChartDeSegmentField
-          label="目标值类型"
-          value={maxType}
-          options={[
-            { value: "fix", label: "固定值" },
-            { value: "dynamic", label: "动态值" },
-          ]}
-          onChange={(value) =>
-            patch({
-              maxType: value as "fix" | "dynamic",
-              ...(value === "fix" ? { maxField: undefined } : {}),
-            })
-          }
-        />
-        {maxType === "fix" ? (
-          <div className="border-b border-gray-100 py-2 dark:border-white/[0.06]">
-            <p className="mb-1.5 text-[11px] font-medium text-gray-600 dark:text-gray-300">目标值</p>
-            <Input
-              type="number"
-              min={1}
-              className={INSPECTOR_SELECT}
-              value={liquid.max ?? ""}
-              placeholder="未设置则与指标相同"
-              onChange={(e) => {
-                const raw = e.target.value.trim();
-                patch({ max: raw ? Number(raw) : undefined });
-              }}
-            />
-          </div>
-        ) : (
-          <div className="border-b border-gray-100 py-2 dark:border-white/[0.06]">
-            <p className="mb-1.5 text-[11px] font-medium text-gray-600 dark:text-gray-300">动态字段</p>
-            <Select
-              value={liquid.maxField ?? ""}
-              onValueChange={(maxField) => patch({ maxField })}
-            >
-              <SelectTrigger className={INSPECTOR_SELECT} aria-label="动态目标字段">
-                <SelectValue placeholder="选择数值字段" />
-              </SelectTrigger>
-              <SelectContent>
-                {columns.length === 0 ? (
-                  <SelectItem value="__none__" disabled>暂无字段</SelectItem>
-                ) : (
-                  columns.map((col) => (
-                    <SelectItem key={col} value={col}>{col}</SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+        <p className={INSPECTOR_HINT}>目标值请在「标签 → 完成度」配置；此处仅调整图形外观。</p>
         <ChartDeSliderField
           label="图形大小"
           value={liquid.size}

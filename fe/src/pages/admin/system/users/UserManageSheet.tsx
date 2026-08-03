@@ -45,12 +45,13 @@ export function UserManageSheet({
     lockedUntil: null,
   });
 
-  const { data: allRoles, isLoading: rolesCatalogLoading } = useQuery({
+  const { data: rolesCatalog, isLoading: rolesCatalogLoading } = useQuery({
     queryKey: queryKeys.roles.list({ limit: 500, offset: 0 }),
     queryFn: () =>
-      apiFetch<{ items: RoleOut[] }>("/api/v1/roles?limit=500&offset=0").then((r) => r.items),
+      apiFetch<{ items: RoleOut[]; total: number }>("/api/v1/roles?limit=500&offset=0"),
     enabled: Boolean(user),
   });
+  const allRoles = rolesCatalog?.items ?? [];
 
   const { data: boundRoles, isLoading: rolesLoading } = useQuery({
     queryKey: user ? queryKeys.users.roles(user.id) : ["noop"],
@@ -124,7 +125,7 @@ export function UserManageSheet({
                 {rolesLoading || rolesCatalogLoading ? (
                   <Skeleton className="h-8 w-full" />
                 ) : null}
-                {allRoles?.map((role) => (
+                {allRoles.map((role) => (
                   <label
                     key={role.id}
                     className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 px-3 py-2 dark:border-gray-800"

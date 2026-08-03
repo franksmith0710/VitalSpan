@@ -185,10 +185,33 @@ export function ChartTableStylePanel() {
         ) : null}
 
         {profile.showSummary ? (
+          profile.showSubTotals && cfg.chartType === "table-pivot" ? (
+            <>
+              <DeAttrToggleRow
+                label="显示行合计"
+                checked={tableStyle.showRowTotal ?? tableStyle.showSummary !== false}
+                onCheckedChange={(showRowTotal) => patch({ showRowTotal })}
+              />
+              <DeAttrToggleRow
+                label="显示列合计"
+                checked={tableStyle.showColTotal ?? tableStyle.showSummary !== false}
+                onCheckedChange={(showColTotal) => patch({ showColTotal })}
+              />
+            </>
+          ) : (
+            <DeAttrToggleRow
+              label={profile.showSubTotals ? "显示合计" : "显示汇总行"}
+              checked={summaryChecked}
+              onCheckedChange={(showSummary) => patch({ showSummary })}
+            />
+          )
+        ) : null}
+
+        {profile.showSeriesNumber ? (
           <DeAttrToggleRow
-            label={profile.showSubTotals ? "显示合计/小计" : "显示汇总行"}
-            checked={summaryChecked}
-            onCheckedChange={(showSummary) => patch({ showSummary })}
+            label="显示序号列"
+            checked={tableStyle.showSeriesNumber ?? true}
+            onCheckedChange={(showSeriesNumber) => patch({ showSeriesNumber })}
           />
         ) : null}
 
@@ -198,12 +221,6 @@ export function ChartTableStylePanel() {
             checked={tableStyle.rowHover !== false}
             onCheckedChange={(rowHover) => patch({ rowHover })}
           />
-        ) : null}
-
-        {profile.showSeriesNumber ? (
-          <p className="px-1 pb-1 text-[10px] leading-snug text-gray-400 dark:text-gray-500">
-            明细表左侧序号列已启用（对标 DataEase 序号列）。
-          </p>
         ) : null}
       </div>
     </ChartInspectorSection>

@@ -51,6 +51,12 @@ export type ChartDeTableStyle = {
   rowHover?: boolean;
   /** 是否显示底部汇总行；undefined 时在存在可汇总列时自动显示 */
   showSummary?: boolean;
+  /** 明细表左侧序号列 */
+  showSeriesNumber?: boolean;
+  /** 透视表行末合计列 */
+  showRowTotal?: boolean;
+  /** 透视表底部合计行 */
+  showColTotal?: boolean;
 };
 
 export const DEFAULT_TABLE_PAGE_SIZE = 20;

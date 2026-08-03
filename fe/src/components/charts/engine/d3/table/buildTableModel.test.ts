@@ -62,4 +62,20 @@ describe("buildTableModel", () => {
     expect(model.cells.A?.上海?.amount).toBe(20);
     expect(model.cells.B?.北京?.amount).toBe(5);
   });
+
+  it("respects pivot total visibility options", () => {
+    const input = {
+      plotType: "table-pivot" as const,
+      columns: ["product", "city", "amount"],
+      rows: [["A", "北京", 10]],
+      spec: {
+        encoding: {
+          dimensions: [{ field: "product" }, { field: "city" }],
+          metrics: [{ field: "amount" }],
+        },
+      } as never,
+    };
+    expect(buildPivotTableModel(input, { showRowTotal: false }).showRowTotal).toBe(false);
+    expect(buildPivotTableModel(input, { showColTotal: false }).showColTotal).toBe(false);
+  });
 });

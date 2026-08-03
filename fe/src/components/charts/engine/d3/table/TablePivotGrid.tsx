@@ -2,9 +2,10 @@ import { useCallback, useMemo, useRef, type CSSProperties } from "react";
 import { useEmbeddedChartLiveResize } from "@/hooks/useEmbeddedChartLiveResize";
 import { TruncateHint } from "@/components/ui/hint-tooltip";
 import { dwTableCell } from "@/components/dashboard/dashboardWidgetTypography";
+import { TablePaginationBar } from "@/components/charts/adapters/TablePaginationBar";
 import { cn } from "@/lib/utils";
 import type { ChartDeTableStyle } from "@/lib/chartDeTableStyle";
-import { resolveTableZebraBg } from "@/lib/chartDeTableStyle";
+import { DEFAULT_TABLE_PAGE_SIZE, resolveTableZebraBg } from "@/lib/chartDeTableStyle";
 import { formatTableCellValue } from "@/lib/chartValueFormat";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import {
@@ -19,6 +20,7 @@ import {
 import { TABLE_DEFAULT_COL_PX } from "@/components/charts/engine/d3/table/tableLayoutConstants";
 import { TableResizeHandle } from "@/components/charts/engine/d3/table/TableResizeHandle";
 import { TableResizeGuide } from "@/components/charts/engine/d3/table/TableResizeGuide";
+import { TableStatusBar } from "@/components/charts/engine/d3/table/TableStatusBar";
 import { useTableLayoutResize } from "@/components/charts/engine/d3/table/useTableLayoutResize";
 import type { PivotTableModel } from "@/components/charts/engine/d3/table/types";
 import type { DepthVisualLevel } from "@/components/charts/engine/d3/core/chartVisualTokens";
@@ -35,6 +37,10 @@ type TablePivotGridProps = {
   embedded?: boolean;
   testId?: string;
   layoutInteractive?: boolean;
+  page?: number;
+  onPageChange?: (page: number) => void;
+  drillField?: string;
+  onDrillCellClick?: (field: string, value: string) => void;
   onTableStylePatch?: (patch: Partial<ChartDeTableStyle>) => void;
   depthVisual?: DepthVisualLevel;
 };
@@ -64,6 +70,10 @@ export function TablePivotGrid({
   embedded = false,
   testId = "d3-table-chart",
   layoutInteractive = false,
+  page = 1,
+  onPageChange,
+  drillField,
+  onDrillCellClick,
   onTableStylePatch,
   depthVisual,
 }: TablePivotGridProps) {
@@ -76,12 +86,24 @@ export function TablePivotGrid({
   }, []);
   useEmbeddedChartLiveResize(embedded, containerRef, remeasureLayout);
 
-  const showTotals = tableStyle.showSummary !== false;
+  const pageSize = tableStyle.pageSize ?? DEFAULT_TABLE_PAGE_SIZE;
+  const paginationMode = tableStyle.paginationMode ?? "page";
+  const totalRowCount = model.rowKeys.length;
+  const usePagination = paginationMode === "page" && totalRowCount > pageSize;
+  const showPaginationBar = paginationMode === "page";
+  const scrollMode = paginationMode === "scroll";
+  const visibleRowKeys = usePagination
+    ? model.rowKeys.slice((page - 1) * pageSize, page * pageSize)
+    : model.rowKeys;
+  const totalPages = Math.max(1, Math.ceil(totalRowCount / pageSize));
+
+  const showRowTotalCol = model.showRowTotal;
+  const showColTotalRow = model.showColTotal;
   const resizeColumns = useMemo(() => {
     const cols = [PIVOT_ROW_FIELD, ...model.colKeys.map(pivotColField)];
-    if (showTotals && model.showRowTotal) cols.push(PIVOT_TOTAL_FIELD);
+    if (showRowTotalCol) cols.push(PIVOT_TOTAL_FIELD);
     return cols;
-  }, [model.colKeys, model.showRowTotal, showTotals]);
+  }, [model.colKeys, showRowTotalCol]);
 
   const { layout, guide, startColumnResize, startRowResize } = useTableLayoutResize({
     columns: resizeColumns,
@@ -193,7 +215,7 @@ export function TablePivotGrid({
                   <col key={`${ck}-${metric.field}`} style={{ width: metricColWidth(ck) }} />
                 )),
               )}
-              {showTotals && model.showRowTotal ? (
+              {showRowTotalCol ? (
                 <col style={{ width: colWidth(PIVOT_TOTAL_FIELD) }} />
               ) : null}
             </colgroup>
@@ -205,7 +227,7 @@ export function TablePivotGrid({
                   <col key={`${ck}-${metric.field}`} style={{ width: `${TABLE_DEFAULT_COL_PX}px` }} />
                 )),
               )}
-              {showTotals && model.showRowTotal ? (
+              {showRowTotalCol ? (
                 <col style={{ width: `${TABLE_DEFAULT_COL_PX}px` }} />
               ) : null}
             </colgroup>
@@ -239,7 +261,7 @@ export function TablePivotGrid({
                   ) : null}
                 </th>
               ))}
-              {showTotals && model.showRowTotal ? (
+              {showRowTotalCol ? (
                 <th
                   rowSpan={metricCount > 1 ? 2 : 1}
                   className={cn(headerClass, "group/th relative")}
@@ -271,7 +293,7 @@ export function TablePivotGrid({
             {layoutInteractive ? (
               <tr className="vs-table-row-resize pointer-events-none" aria-hidden>
                 <td
-                  colSpan={1 + model.colKeys.length * metricCount + (showTotals && model.showRowTotal ? 1 : 0)}
+                  colSpan={1 + model.colKeys.length * metricCount + (showRowTotalCol ? 1 : 0)}
                   className="relative h-0 border-0 p-0"
                 >
                   <TableResizeHandle
@@ -284,7 +306,9 @@ export function TablePivotGrid({
             ) : null}
           </thead>
           <tbody className="bg-[var(--dashboard-table-body-bg,transparent)]">
-            {model.rowKeys.map((rk, rowIndex) => (
+            {visibleRowKeys.map((rk, rowIndex) => {
+              const rowDrillable = drillField === model.rowField && onDrillCellClick && rk !== "";
+              return (
               <tr
                 key={rk}
                 className={cn(
@@ -294,7 +318,16 @@ export function TablePivotGrid({
               >
                 <td
                   style={rowStyle}
-                  className={cn(cellClass, "font-medium text-[var(--dashboard-table-body-fg,#344054)]")}
+                  className={cn(
+                    cellClass,
+                    "font-medium text-[var(--dashboard-table-body-fg,#344054)]",
+                    rowDrillable && "vs-table-drillable cursor-pointer",
+                  )}
+                  onClick={
+                    rowDrillable
+                      ? () => onDrillCellClick(model.rowField, rk)
+                      : undefined
+                  }
                 >
                   {rk}
                 </td>
@@ -315,7 +348,7 @@ export function TablePivotGrid({
                     );
                   }),
                 )}
-                {showTotals && model.showRowTotal ? (
+                {showRowTotalCol ? (
                   <td
                     style={rowStyle}
                     className={cn(cellClass, "font-medium text-[var(--dashboard-table-body-fg,#344054)]")}
@@ -327,8 +360,9 @@ export function TablePivotGrid({
                   </td>
                 ) : null}
               </tr>
-            ))}
-            {showTotals && model.showColTotal ? (
+              );
+            })}
+            {showColTotalRow ? (
               <tr className="vs-table-summary-row border-t-2 border-[var(--dashboard-table-border,#f2f4f7)]">
                 <td className={cn(cellClass, "font-medium")}>合计</td>
                 {model.colKeys.map((ck) =>
@@ -338,7 +372,7 @@ export function TablePivotGrid({
                     </td>
                   )),
                 )}
-                {model.showRowTotal ? (
+                {showRowTotalCol ? (
                   <td className={cn(cellClass, "font-medium")}>
                     {formatTableCellValue(
                       model.metrics.reduce((sum, m) => sum + sumMetric(model, null, null, m.field), 0),
@@ -351,6 +385,18 @@ export function TablePivotGrid({
           </tbody>
         </table>
       </div>
+      {showPaginationBar && onPageChange ? (
+        <TablePaginationBar
+          page={page}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          totalRows={totalRowCount}
+          tableStyle={tableStyle}
+          onPageChange={onPageChange}
+        />
+      ) : (
+        <TableStatusBar totalRows={totalRowCount} scrollMode={scrollMode} />
+      )}
     </div>
   );
 }

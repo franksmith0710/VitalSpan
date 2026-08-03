@@ -85,9 +85,12 @@ export function DatasetTablePicker({
 
   useEffect(() => {
     if (items.length === 0) return;
-    const nextId = resolvePreferredDataSourceId(items, preferredDataSourceId);
-    if (nextId && nextId !== dataSourceId) setDataSourceId(nextId);
-  }, [dataSourceId, items, preferredDataSourceId]);
+    setDataSourceId((current) => {
+      // 保留用户手动切换；仅在未选或当前项已失效时应用预填/分析库默认
+      if (current && items.some((d) => d.id === current)) return current;
+      return resolvePreferredDataSourceId(items, preferredDataSourceId);
+    });
+  }, [items, preferredDataSourceId]);
 
   const selectedNames = useMemo(() => new Set(tables.map((t) => t.name)), [tables]);
 

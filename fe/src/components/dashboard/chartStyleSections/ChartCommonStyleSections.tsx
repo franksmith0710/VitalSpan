@@ -268,7 +268,7 @@ export function ChartLegendStyleSection() {
 }
 
 export function ChartLabelStyleSection() {
-  const { cfg, mutateChartConfig, patchDeStyleNested, dashboardStyle } = useChartInspector();
+  const { cfg, columns, mutateChartConfig, patchDeStyleNested, dashboardStyle } = useChartInspector();
   const deStyle = readChartDeStyle(cfg);
   const caps = chartInspectorCapabilities(cfg.chartType);
   const showLabel = readChartShowLabel(cfg, dashboardStyle);
@@ -317,7 +317,13 @@ export function ChartLabelStyleSection() {
         </>
       ) : null}
       {isLiquid ? (
-        <ChartLiquidLabelFields label={deStyle.label} patchLabel={patchLabel} />
+        <ChartLiquidLabelFields
+          label={deStyle.label}
+          liquid={deStyle.liquid}
+          columns={columns}
+          patchLabel={patchLabel}
+          patchLiquid={(patch) => patchDeStyleNested("liquid", patch)}
+        />
       ) : caps.labelFormat ? (
         <>
           <ChartDeAttrField label="格式类型">

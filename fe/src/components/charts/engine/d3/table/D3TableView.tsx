@@ -61,16 +61,21 @@ function D3TableViewInner(props: ChartEngineViewProps) {
     setPage(1);
   }, [allRows, tableStyle.pageSize, tableStyle.paginationMode, viewModel.chartType]);
 
-  const tableModel = useMemo(
-    () =>
-      buildTableModel({
-        plotType: viewModel.chartType,
-        rows: allRows,
-        columns: allColumns,
-        spec,
-      }),
-    [allColumns, allRows, spec, viewModel.chartType],
-  );
+  const tableModel = useMemo(() => {
+    const base = buildTableModel({
+      plotType: viewModel.chartType,
+      rows: allRows,
+      columns: allColumns,
+      spec,
+    });
+    if (base.kind !== "pivot") return base;
+    const summaryOn = tableStyle.showSummary !== false;
+    return {
+      ...base,
+      showRowTotal: tableStyle.showRowTotal ?? (summaryOn && base.showRowTotal),
+      showColTotal: tableStyle.showColTotal ?? (summaryOn && base.showColTotal),
+    };
+  }, [allColumns, allRows, spec, tableStyle.showColTotal, tableStyle.showRowTotal, tableStyle.showSummary, viewModel.chartType]);
 
   const themeVars = useMemo(
     () =>
@@ -128,6 +133,10 @@ function D3TableViewInner(props: ChartEngineViewProps) {
           valueFormat={style.valueFormat}
           embedded={fill}
           layoutInteractive
+          page={page}
+          onPageChange={setPage}
+          drillField={drillClickField}
+          onDrillCellClick={onInteraction || onJumpClick ? handleDrillCellClick : undefined}
           onTableStylePatch={onTableStylePatch}
           depthVisual={style.depthVisual}
         />
@@ -157,7 +166,9 @@ function D3TableViewInner(props: ChartEngineViewProps) {
         onDrillCellClick={onInteraction || onJumpClick ? handleDrillCellClick : undefined}
         metricFields={metricFields}
         embedded={fill}
-        showSeriesNumber={profile?.showSeriesNumber}
+        showSeriesNumber={
+          profile?.showSeriesNumber ? (tableStyle.showSeriesNumber ?? true) : false
+        }
         layoutInteractive
         onTableStylePatch={onTableStylePatch}
         depthVisual={style.depthVisual}

@@ -86,7 +86,7 @@ const PROFILES: Record<TableChartKind, TableInspectorProfile> = {
     label: "透视表",
     dataHint: "行维度、列维度与指标均为必填；列维度可选第二维度字段。",
     styleSections: TABLE_BASIC_SECTIONS,
-    showPagination: false,
+    showPagination: true,
     showSummary: true,
     showSeriesNumber: false,
     showColumnWidth: true,

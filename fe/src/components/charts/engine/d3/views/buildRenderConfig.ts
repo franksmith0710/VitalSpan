@@ -140,9 +140,20 @@ export function buildD3DispatchPayload(
         showCellLabel: geoStyle.showCellLabel === true,
         showVisualMap: geoStyle.visualMap !== false,
         depthVisual: styleProps.depthVisual,
-        onPointClick: props.onInteraction
-          ? (datum) => props.onInteraction?.({ kind: "drill", value: datum.x, label: `${datum.x}/${datum.y}` })
-          : undefined,
+        onPointClick:
+          props.onInteraction || props.onJumpClick
+            ? (datum) => {
+                if (props.onJumpClick) {
+                  props.onJumpClick();
+                  return;
+                }
+                props.onInteraction?.({
+                  kind: "drill",
+                  value: datum.x,
+                  label: `${datum.x}/${datum.y}`,
+                });
+              }
+            : undefined,
       },
     };
   }
