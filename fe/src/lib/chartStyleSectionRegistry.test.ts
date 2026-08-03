@@ -32,7 +32,7 @@ describe("chartStyleSectionsForType", () => {
     expect(chartStyleSectionsForType("map")).toContain("mapBasic");
     expect(chartStyleSectionsForType("map")).not.toContain("palette");
     expect(chartStyleSectionsForType("map-3d")).toContain("geo");
-    expect(chartStyleSectionsForType("map-3d")).toContain("palette");
+    expect(chartStyleSectionsForType("map-3d")).not.toContain("palette");
     expect(chartStyleSectionsForType("map-3d")).not.toContain("mapBasic");
     expect(chartStyleSectionsForType("map-3d")).not.toContain("label");
   });

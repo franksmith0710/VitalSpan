@@ -9,6 +9,13 @@ export function isDemoPackageDatasource(code: string | undefined | null): boolea
   return (code ?? "").toLowerCase() === "demo";
 }
 
+export function isProtectedDemoDatasource(input: {
+  code?: string | null;
+  isDemoPackage?: boolean;
+}): boolean {
+  return isDemoPackageDatasource(input.code) || Boolean(input.isDemoPackage);
+}
+
 export function isOfficialDemoSlug(slug: string): boolean {
   return OFFICIAL_DEMO_SLUG_PREFIXES.some((prefix) => slug.startsWith(prefix));
 }

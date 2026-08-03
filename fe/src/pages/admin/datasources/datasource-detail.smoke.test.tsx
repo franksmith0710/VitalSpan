@@ -3,6 +3,7 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const mockApiFetch = vi.fn();
 vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => mockApiFetch(...args) }));
@@ -23,11 +24,13 @@ function renderDetail(id = "ds-1") {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={[`/admin/datasources/${id}`]}>
-        <Routes>
-          <Route path="/admin/datasources/:id" element={<DatasourceDetailPage />} />
-        </Routes>
-      </MemoryRouter>
+      <TooltipProvider delayDuration={0}>
+        <MemoryRouter initialEntries={[`/admin/datasources/${id}`]}>
+          <Routes>
+            <Route path="/admin/datasources/:id" element={<DatasourceDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      </TooltipProvider>
     </QueryClientProvider>,
   );
 }
@@ -92,6 +95,27 @@ describe("datasource detail schema browser", () => {
     });
     renderDetail();
     expect(await screen.findByText(/无法连接数据源/)).toBeInTheDocument();
+  });
+
+  it("T-DS-DEMO-01: official demo datasource hides edit action and shows lock hint", async () => {
+    mockApiFetch.mockImplementation(async (path: string) => {
+      if (path.endsWith("/schemas")) return { items: [{ name: "sample_db" }] };
+      return {
+        id: "ds-demo",
+        name: "示例数据",
+        code: "demo",
+        type: "mysql",
+        host: "127.0.0.1",
+        port: 3307,
+        database: "sample_db",
+        username: "sample",
+        isDemoPackage: true,
+      };
+    });
+    renderDetail("ds-demo");
+    expect(await screen.findByText("官方示例数据")).toBeInTheDocument();
+    expect(screen.queryByLabelText("编辑")).not.toBeInTheDocument();
+    expect(await screen.findByText(/不可修改或删除/)).toBeInTheDocument();
   });
 
   it("T-DS-004-03: successful test connection refetches schemas", async () => {

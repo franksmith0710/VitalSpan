@@ -4,65 +4,18 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-import pymysql
-from sqlalchemy import create_engine, select, text
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.ingestion.etl_rules import apply_rules
-from app.ingestion.models import (
-    INGESTION_MAX_ROWS,
-    EtlRuleSet,
-    SyncJob,
-    SyncRun,
-    decrypt_password,
-    get_meta_session,
-)
+from app.ingestion.models import EtlRuleSet, SyncJob, SyncRun, get_meta_session
+from app.ingestion.sync_fetch import compute_next_watermark, fetch_mysql_rows, validate_sync_table_names
+from app.ingestion.sync_write import write_analytics
 
+__all__ = ["run_job", "validate_sync_table_names", "INGESTION_MAX_ROWS"]
 
-from app.query.rls.guard import validate_identifier
-
-
-def validate_sync_table_names(source_table: str, target_table: str) -> None:
-    validate_identifier(source_table)
-    validate_identifier(target_table)
-
-
-def _fetch_mysql_rows(job: SyncJob) -> list[dict[str, Any]]:
-    validate_sync_table_names(job.source_table, job.target_table)
-    conn = pymysql.connect(
-        host=job.source_host,
-        port=job.source_port,
-        user=job.source_username,
-        password=decrypt_password(job.source_password_encrypted),
-        database=job.source_database,
-        cursorclass=pymysql.cursors.DictCursor,
-    )
-    try:
-        with conn.cursor() as cur:
-            cur.execute(f"SELECT * FROM `{job.source_table}` LIMIT %s", (INGESTION_MAX_ROWS,))
-            return list(cur.fetchall())
-    finally:
-        conn.close()
-
-
-def _write_analytics(job: SyncJob, rows: list[dict[str, Any]]) -> int:
-    settings = get_settings()
-    if not settings.analytics_database_url:
-        raise RuntimeError("ANALYTICS_DB_NOT_CONFIGURED")
-    engine = create_engine(settings.analytics_database_url, pool_pre_ping=True)
-    if not rows:
-        return 0
-    columns = list(rows[0].keys())
-    col_defs = ", ".join(f'"{c}" TEXT' for c in columns)
-    placeholders = ", ".join(f":{c}" for c in columns)
-    insert_sql = text(f'INSERT INTO "{job.target_table}" ({", ".join(columns)}) VALUES ({placeholders})')
-    with engine.begin() as conn:
-        conn.execute(text(f'CREATE TABLE IF NOT EXISTS "{job.target_table}" ({col_defs})'))
-        conn.execute(text(f'TRUNCATE TABLE "{job.target_table}"'))
-        for row in rows:
-            conn.execute(insert_sql, row)
-    return len(rows)
+from app.ingestion.models import INGESTION_MAX_ROWS  # noqa: E402
 
 
 def _update_run(db: Session, run: SyncRun, **fields: Any) -> None:
@@ -96,9 +49,12 @@ def run_job(job_id: uuid.UUID, trace_id: str, *, run_id: uuid.UUID | None = None
             raise RuntimeError("ANALYTICS_DB_NOT_CONFIGURED")
         if job.source_type != "mysql":
             raise RuntimeError("M1B 仅支持 mysql 源")
-        raw = _fetch_mysql_rows(job)
+        raw = fetch_mysql_rows(job)
         cleaned = apply_rules(raw, rules)
-        count = _write_analytics(job, cleaned)
+        count = write_analytics(job, cleaned)
+        next_watermark = compute_next_watermark(job, cleaned)
+        if next_watermark is not None:
+            job.last_watermark = next_watermark
         _update_run(
             db,
             run,
@@ -107,6 +63,7 @@ def run_job(job_id: uuid.UUID, trace_id: str, *, run_id: uuid.UUID | None = None
             rows_synced=count,
             error_message=None,
         )
+        db.commit()
     except Exception as exc:  # noqa: BLE001 — 记录用户可读摘要
         if attempt < 1:
             _update_run(db, run, retry_count=attempt + 1)

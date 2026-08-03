@@ -161,7 +161,9 @@ describe("ingestion admin smoke", () => {
 
   it("SyncJobFormPage_create_submit", async () => {
     setViewport(375);
-    mockApiFetch.mockResolvedValueOnce({ id: "new-job" });
+    mockApiFetch
+      .mockResolvedValueOnce({ items: [] })
+      .mockResolvedValueOnce({ id: "new-job" });
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
         <Routes>
@@ -177,8 +179,64 @@ describe("ingestion admin smoke", () => {
         "/api/v1/ingestion/sync-jobs",
         expect.objectContaining({ method: "POST" }),
       );
-      expect(mockNavigate).toHaveBeenCalledWith("/admin/ingestion/sync-jobs");
+      expect(mockNavigate).toHaveBeenCalledWith("/admin/ingestion/sync-jobs/new-job/edit", {
+        replace: true,
+      });
     });
+  });
+
+  it("SyncJobFormPage_datasource_mode_renders_select", async () => {
+    setViewport(1400);
+    mockApiFetch.mockResolvedValueOnce({
+      items: [
+        {
+          id: "ds-1",
+          name: "Sample MySQL",
+          type: "mysql",
+          host: "127.0.0.1",
+          port: 3307,
+          database: "sample_db",
+        },
+      ],
+    });
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs/new" element={<SyncJobFormPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "使用已有数据源" }));
+    expect(await screen.findByLabelText("MySQL 数据源")).toBeInTheDocument();
+  });
+
+  it("SyncJobFormPage_incremental_fields_conditional", async () => {
+    setViewport(1400);
+    mockApiFetch.mockResolvedValueOnce({ items: [] });
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs/new" element={<SyncJobFormPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.queryByLabelText("主键字段")).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByRole("button", { name: "增量" }));
+    expect(await screen.findByLabelText("主键字段")).toBeInTheDocument();
+    expect(screen.getByLabelText("增量字段")).toBeInTheDocument();
+  });
+
+  it("SyncJobsEmptyState_shows_consume_step", async () => {
+    setViewport(1400);
+    mockApiFetch.mockResolvedValueOnce({ items: [] });
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs" element={<SyncJobsPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText("登记分析库并出图")).toBeInTheDocument();
   });
 
   it("SyncJobFormPage_blocks_submit_when_name_empty (T-ING-06)", async () => {

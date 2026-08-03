@@ -343,14 +343,25 @@ export function SyncJobsPage() {
             <AlertDialogTitle>确认手动运行同步？</AlertDialogTitle>
             <AlertDialogDescription>
               {runTarget ? (
-                <>
-                  确定立即运行任务「{runTarget.name}」？将从源表全量读取数据，并
-                  <strong className="font-semibold text-error-600 dark:text-error-400">
-                    清空并覆盖
-                  </strong>
-                  托管分析库目标表
-                  <span className="font-mono"> {runTarget.target_table}</span> 中的全部现有数据。
-                </>
+                runTarget.sync_mode === "incremental" ? (
+                  <>
+                    确定立即运行增量任务「{runTarget.name}」？将拉取水位之后的新数据，并按主键
+                    <strong className="font-semibold text-warning-600 dark:text-warning-400">
+                      upsert
+                    </strong>
+                    到托管分析库目标表
+                    <span className="font-mono"> {runTarget.target_table}</span>，不会清空现有数据。
+                  </>
+                ) : (
+                  <>
+                    确定立即运行任务「{runTarget.name}」？将从源表全量读取数据，并
+                    <strong className="font-semibold text-error-600 dark:text-error-400">
+                      清空并覆盖
+                    </strong>
+                    托管分析库目标表
+                    <span className="font-mono"> {runTarget.target_table}</span> 中的全部现有数据。
+                  </>
+                )
               ) : null}
             </AlertDialogDescription>
           </AlertDialogHeader>

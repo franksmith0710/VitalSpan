@@ -15,6 +15,7 @@ import { Button, IconButton } from "@/components/ui/button";
 import { TruncateHint } from "@/components/ui/hint-tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
+import { SyncJobConsumeGuide } from "./components/SyncJobConsumeGuide";
 
 const RUNS_FETCH_LIMIT = 100;
 
@@ -53,6 +54,7 @@ export function SyncJobHistoryPage() {
     [user],
   );
   const [runs, setRuns] = useState<SyncRunItem[]>([]);
+  const [targetTable, setTargetTable] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
@@ -63,10 +65,14 @@ export function SyncJobHistoryPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiFetch<SyncRunListResponse>(
-        `/api/v1/ingestion/sync-jobs/${id}/runs?limit=${RUNS_FETCH_LIMIT}`,
-      );
+      const [data, job] = await Promise.all([
+        apiFetch<SyncRunListResponse>(
+          `/api/v1/ingestion/sync-jobs/${id}/runs?limit=${RUNS_FETCH_LIMIT}`,
+        ),
+        apiFetch<{ target_table: string }>(`/api/v1/ingestion/sync-jobs/${id}`),
+      ]);
       setRuns(data.items);
+      setTargetTable(job.target_table);
     } catch (err) {
       setError(mapApiError(err));
     } finally {
@@ -107,6 +113,11 @@ export function SyncJobHistoryPage() {
     }
   };
 
+  const hasSucceededRun = useMemo(
+    () => runs.some((run) => run.status === "succeeded"),
+    [runs],
+  );
+
   return (
     <AdminPageShell
       layout="list"
@@ -143,6 +154,11 @@ export function SyncJobHistoryPage() {
       ) : null}
 
       <ListPageSection>
+        {hasSucceededRun && targetTable ? (
+          <div className="border-b border-gray-200 px-6 py-4 dark:border-gray-800">
+            <SyncJobConsumeGuide targetTable={targetTable} />
+          </div>
+        ) : null}
         {loading ? (
           <div className="space-y-3 p-6">
             {Array.from({ length: 5 }).map((_, i) => (

@@ -8,6 +8,7 @@ import { Button, IconButton } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
+import { isProtectedDemoDatasource } from "@/lib/demoPackage";
 import { queryKeys } from "@/lib/queryKeys";
 import {
   ConnectionStatusBadge,
@@ -27,6 +28,7 @@ type DataSourceOut = {
   database: string;
   username: string;
   description?: string | null;
+  isDemoPackage?: boolean;
 };
 
 function DetailSkeleton() {
@@ -104,6 +106,7 @@ export function DatasourceDetailPage() {
 
   if (!data) return null;
 
+  const isLocked = isProtectedDemoDatasource(data);
   const connectionStatus = deriveConnectionStatus(
     testMutation.isPending,
     testError,
@@ -119,6 +122,11 @@ export function DatasourceDetailPage() {
           <Badge variant="light" color="primary" size="sm">
             {sourceTypeLabel(data.type)}
           </Badge>
+          {isLocked ? (
+            <Badge variant="light" color="primary" size="sm">
+              官方示例数据
+            </Badge>
+          ) : null}
           <span className="font-mono text-theme-xs text-gray-500 dark:text-gray-400">
             {data.code}
           </span>
@@ -142,14 +150,21 @@ export function DatasourceDetailPage() {
             <PlugZap aria-hidden />
             {testMutation.isPending ? "测试中…" : "测试连接"}
           </Button>
-          <IconButton asChild variant="ghost" size="sm" aria-label="编辑">
-            <Link to={`/admin/datasources/${id}/edit`}>
-              <Pencil className="size-4" />
-            </Link>
-          </IconButton>
+          {!isLocked ? (
+            <IconButton asChild variant="ghost" size="sm" aria-label="编辑">
+              <Link to={`/admin/datasources/${id}/edit`}>
+                <Pencil className="size-4" />
+              </Link>
+            </IconButton>
+          ) : null}
         </div>
       }
     >
+      {isLocked ? (
+        <p className="mb-4 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-theme-sm text-brand-800 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-300">
+          官方内置示例库，仅供模板预览与官方示例看板使用，不可修改或删除。
+        </p>
+      ) : null}
       <DatasourceDetailPanel
         dataSourceId={id}
         host={data.host}

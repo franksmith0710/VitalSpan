@@ -40,6 +40,7 @@ export function DatasetEditorForm({
   onChange,
   onSubmit,
   isSaving,
+  submitDisabled = false,
   bindPanel,
 }: {
   mode: "create" | "edit";
@@ -47,6 +48,7 @@ export function DatasetEditorForm({
   onChange: (next: DatasetEditorValues) => void;
   onSubmit: () => void;
   isSaving: boolean;
+  submitDisabled?: boolean;
   bindPanel?: ReactNode;
 }) {
   const canSubmit =
@@ -176,7 +178,7 @@ export function DatasetEditorForm({
             <Button
               type="submit"
               variant="primary"
-              disabled={!canSubmit || isSaving}
+              disabled={!canSubmit || isSaving || submitDisabled}
               loading={isSaving}
               loadingText="保存中…"
             >

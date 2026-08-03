@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Layers } from "lucide-react";
@@ -6,6 +6,9 @@ import { toast } from "sonner";
 import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { UnsavedLeaveDialog } from "@/components/ui/unsaved-leave-dialog";
+import { useFormDirtyState } from "@/hooks/use-form-dirty-state";
+import { useUnsavedLeaveGuard } from "@/hooks/use-unsaved-leave-guard";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
@@ -39,6 +42,10 @@ function normalizeValues(values: DatasetEditorValues): DatasetEditorValues {
   };
 }
 
+function serializeDatasetValues(values: DatasetEditorValues): string {
+  return JSON.stringify(normalizeValues(values));
+}
+
 export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -56,40 +63,73 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
     },
   });
 
+  const { isDirty, isBaselineReady, resetBaseline, markSaved } = useFormDirtyState(
+    values,
+    serializeDatasetValues,
+  );
+
+  const leaveGuardEnabled = isBaselineReady && isDirty;
+  const { leaveDialogOpen, confirmLeave, cancelLeave } = useUnsavedLeaveGuard({
+    enabled: leaveGuardEnabled,
+  });
+
   useEffect(() => {
+    if (mode === "create") {
+      resetBaseline(EMPTY);
+      return;
+    }
     if (!detailQuery.data) return;
     const item = detailQuery.data;
-    setValues({
+    const nextValues: DatasetEditorValues = {
       datasetId: item.datasetId,
       displayName: item.displayName,
       tables: item.tables.map((t) => ({ ...t })),
       computedFields: item.computedFields.map((c) => ({ ...c })),
       allowedRoles: [...item.allowedRoles],
-    });
-  }, [detailQuery.data]);
+    };
+    setValues(nextValues);
+    resetBaseline(nextValues);
+  }, [detailQuery.data, mode, resetBaseline]);
 
-  const handleSave = async () => {
+  const handleSave = async (): Promise<boolean> => {
     const body = normalizeValues(values);
     setIsSaving(true);
     try {
-      if (mode === "create") {
-        await apiFetch("/api/v1/datasets", { method: "POST", body: JSON.stringify(body) });
-        toast.success("Dataset 已创建");
-      } else {
-        await apiFetch(`/api/v1/datasets/${body.datasetId}`, {
-          method: "PUT",
-          body: JSON.stringify(body),
-        });
-        toast.success("Dataset 已更新");
-      }
+      const saved =
+        mode === "create"
+          ? await apiFetch<DatasetItem>("/api/v1/datasets", {
+              method: "POST",
+              body: JSON.stringify(body),
+            })
+          : await apiFetch<DatasetItem>(`/api/v1/datasets/${body.datasetId}`, {
+              method: "PUT",
+              body: JSON.stringify(body),
+            });
+      toast.success(mode === "create" ? "Dataset 已创建" : "Dataset 已更新");
       await queryClient.invalidateQueries({ queryKey: ["datasets"] });
-      navigate("/admin/datasets");
+      markSaved(body);
+      if (mode === "create") {
+        navigate(`/admin/datasets/${saved.datasetId}/edit`, { replace: true });
+      }
+      return true;
     } catch (err) {
       toast.error(mapApiError(err));
+      return false;
     } finally {
       setIsSaving(false);
     }
   };
+
+  const handleSaveAndLeave = async () => {
+    const ok = await handleSave();
+    if (ok) confirmLeave();
+  };
+
+  const pageDescription = useMemo(() => {
+    if (!isBaselineReady) return undefined;
+    if (isDirty) return "有未保存的更改 · 保存后生效";
+    return mode === "create" ? "填写完成后保存以创建 Dataset" : "已保存";
+  }, [isBaselineReady, isDirty, mode]);
 
   if (mode === "edit" && detailQuery.isLoading) {
     return (
@@ -121,6 +161,7 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
       title={mode === "create" ? "新建 Dataset" : "编辑数据集"}
       layout="fill"
       icon={datasetPageIcon}
+      description={pageDescription}
       actions={
         <Button asChild variant="outline">
           <Link to="/admin/datasets">返回列表</Link>
@@ -133,6 +174,7 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
         onChange={setValues}
         onSubmit={() => void handleSave()}
         isSaving={isSaving}
+        submitDisabled={mode === "edit" && !isDirty}
         bindPanel={
           mode === "edit" && id ? (
             <DatasetBindPanel
@@ -143,6 +185,14 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
             />
           ) : null
         }
+      />
+      <UnsavedLeaveDialog
+        open={leaveDialogOpen}
+        saving={isSaving}
+        entityLabel="Dataset"
+        onStay={cancelLeave}
+        onDiscardLeave={confirmLeave}
+        onSaveAndLeave={handleSaveAndLeave}
       />
     </AdminPageShell>
   );

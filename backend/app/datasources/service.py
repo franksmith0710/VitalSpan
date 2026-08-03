@@ -88,6 +88,15 @@ def is_demo_package_datasource_code(code: str | None) -> bool:
     return (code or "").lower() == "demo"
 
 
+def _assert_demo_editable(row: DataSource) -> None:
+    if is_demo_package_datasource_code(row.code):
+        raise DataSourceError(
+            "DATASOURCE_DEMO_PROTECTED",
+            "官方示例数据连接不可修改",
+            409,
+        )
+
+
 def _resolve_connector(type: str):
     try:
         return registry.get(type)
@@ -269,6 +278,7 @@ def update_data_source(
     row = session.get(DataSource, data_source_id)
     if row is None or row.deleted_at is not None:
         raise DataSourceError("DATASOURCE_NOT_FOUND", "Data source not found", 404)
+    _assert_demo_editable(row)
     row.name = payload.name
     row.host = payload.host
     row.port = payload.port
@@ -308,6 +318,7 @@ def patch_data_source(
     row = session.get(DataSource, data_source_id)
     if row is None or row.deleted_at is not None:
         raise DataSourceError("DATASOURCE_NOT_FOUND", "Data source not found", 404)
+    _assert_demo_editable(row)
     data = payload.model_dump(exclude_unset=True, by_alias=False)
     if "connection_options" in data:
         raw = data.pop("connection_options")

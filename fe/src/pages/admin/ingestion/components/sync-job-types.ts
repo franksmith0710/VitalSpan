@@ -10,6 +10,10 @@ export type SyncJobSummary = {
   id: string;
   name: string;
   source_type: string;
+  source_database?: string | null;
+  source_label?: string | null;
+  source_data_source_id?: string | null;
+  sync_mode?: string;
   target_table: string;
   enabled: boolean;
   schedule_cron: string | null;
@@ -30,6 +34,18 @@ const SOURCE_TYPE_LABELS: Record<string, string> = {
 
 export function sourceTypeLabel(type: string) {
   return SOURCE_TYPE_LABELS[type.toLowerCase()] ?? type;
+}
+
+export function syncModeLabel(mode: string | undefined) {
+  if (mode === "incremental") return "增量";
+  return "全量";
+}
+
+export function sourceSummaryLabel(job: Pick<SyncJobSummary, "source_type" | "source_database" | "source_label">) {
+  if (job.source_label) return job.source_label;
+  const type = sourceTypeLabel(job.source_type);
+  if (job.source_database) return `${type} · ${job.source_database}`;
+  return type;
 }
 
 export function lastRunStatusLabel(status: string) {

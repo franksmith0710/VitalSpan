@@ -23,6 +23,7 @@ type Props = {
   error: string | null;
   errorCode: string | null;
   isSaving: boolean;
+  submitDisabled?: boolean;
   advancedOpen: boolean;
   codeInputRef: RefObject<HTMLInputElement | null>;
   restApiCompanion: RestApiCompanionState;
@@ -68,6 +69,7 @@ export function DatasourceConnectionForm({
   error,
   errorCode,
   isSaving,
+  submitDisabled = false,
   advancedOpen,
   codeInputRef,
   restApiCompanion,
@@ -183,7 +185,13 @@ export function DatasourceConnectionForm({
       </Collapsible.Root>
 
       <div className="sticky bottom-0 -mx-6 flex flex-wrap items-center justify-end gap-3 border-t border-gray-100 bg-white/95 px-6 py-4 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/95 lg:-mx-8 lg:px-8">
-        <Button type="submit" variant="primary" disabled={isSaving} loading={isSaving} loadingText="保存中…">
+        <Button
+          type="submit"
+          variant="primary"
+          disabled={isSaving || submitDisabled}
+          loading={isSaving}
+          loadingText="保存中…"
+        >
           保存
         </Button>
       </div>

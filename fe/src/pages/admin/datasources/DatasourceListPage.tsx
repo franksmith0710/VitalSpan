@@ -57,7 +57,7 @@ import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { runBatchDelete } from "@/lib/runBatchDelete";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { isDemoPackageDatasource } from "@/lib/demoPackage";
+import { isProtectedDemoDatasource } from "@/lib/demoPackage";
 
 type DataSourceOut = {
   id: string;
@@ -195,8 +195,8 @@ export function DatasourceListPage() {
   const items = useMemo(() => {
     const raw = data?.items ?? [];
     return [...raw].sort((a, b) => {
-      const aDemo = isDemoPackageDatasource(a.code) || a.isDemoPackage ? 1 : 0;
-      const bDemo = isDemoPackageDatasource(b.code) || b.isDemoPackage ? 1 : 0;
+      const aDemo = isProtectedDemoDatasource(a) ? 1 : 0;
+      const bDemo = isProtectedDemoDatasource(b) ? 1 : 0;
       return bDemo - aDemo;
     });
   }, [data?.items]);
@@ -208,7 +208,10 @@ export function DatasourceListPage() {
   const isEmpty = !isLoading && items.length === 0;
 
   const handleBatchDelete = async () => {
-    const ids = [...selection.selectedIds];
+    const ids = [...selection.selectedIds].filter((selectedId) => {
+      const row = items.find((item) => item.id === selectedId);
+      return row ? !isProtectedDemoDatasource(row) : false;
+    });
     if (ids.length === 0) return;
     setBatchDeleting(true);
     const { ok, failed } = await runBatchDelete(ids, (id) =>
@@ -350,12 +353,14 @@ export function DatasourceListPage() {
                 const meta = typeById.get(row.type);
                 const endpoint = formatConnectionEndpoint(row);
 
+                const isLocked = isProtectedDemoDatasource(row);
                 return [
                   ...(batch.batchMode
                     ? [
                         <ListRowCheckbox
                           key={`${row.id}-select`}
                           checked={selection.isSelected(row.id)}
+                          disabled={isLocked}
                           onCheckedChange={() => selection.toggle(row.id)}
                           ariaLabel={`选择数据源 ${row.name}`}
                         />,
@@ -374,7 +379,7 @@ export function DatasourceListPage() {
                       <code className="rounded-md bg-gray-100 px-1.5 py-0.5 font-mono text-theme-xs text-gray-600 dark:bg-white/10 dark:text-gray-300">
                         {row.code}
                       </code>
-                      {isDemoPackageDatasource(row.code) || row.isDemoPackage ? (
+                      {isLocked ? (
                         <Badge variant="light" color="primary" size="sm">
                           官方示例数据
                         </Badge>
@@ -410,21 +415,30 @@ export function DatasourceListPage() {
                         <Eye className="size-4" />
                       </Link>
                     </IconButton>
-                    <IconButton asChild variant="ghost" size="sm" aria-label={`编辑 ${row.name}`}>
-                      <Link to={`/admin/datasources/${row.id}/edit`}>
-                        <Pencil className="size-4" />
-                      </Link>
+                    <IconButton
+                      asChild={!isLocked}
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`编辑 ${row.name}`}
+                      disabled={isLocked}
+                      title={isLocked ? "官方示例数据连接不可修改" : undefined}
+                    >
+                      {isLocked ? (
+                        <span className="inline-flex">
+                          <Pencil className="size-4 opacity-40" />
+                        </span>
+                      ) : (
+                        <Link to={`/admin/datasources/${row.id}/edit`}>
+                          <Pencil className="size-4" />
+                        </Link>
+                      )}
                     </IconButton>
                     <IconButton
                       variant="ghost"
                       size="sm"
                       aria-label={`删除 ${row.name}`}
-                      disabled={isDemoPackageDatasource(row.code) || row.isDemoPackage}
-                      title={
-                        isDemoPackageDatasource(row.code) || row.isDemoPackage
-                          ? "官方示例数据连接不可删除"
-                          : undefined
-                      }
+                      disabled={isLocked}
+                      title={isLocked ? "官方示例数据连接不可删除" : undefined}
                       onClick={() => {
                         setDeleteError(null);
                         setDeleteTarget(row);

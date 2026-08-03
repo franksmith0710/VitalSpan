@@ -379,7 +379,8 @@ def test_openapi_ingestion_contract_snapshot(client):
             assert "ingestion" in op.get("tags", []), f"{method} {path}"
     components = spec["components"]["schemas"]
     create_required = set(components["SyncJobCreate"]["required"])
-    assert {"name", "source", "target_table"}.issubset(create_required)
+    assert {"name", "target_table"}.issubset(create_required)
+    # inline 模式：source 可选；datasource 模式：source_data_source_id + source_table
     src_required = set(components["SourceConnectionIn"]["required"])
     assert {"type", "host", "port", "database", "username", "password", "table"}.issubset(
         src_required
@@ -570,6 +571,116 @@ def test_create_five_jobs_p95_under_800ms(client, auth_headers, job_payload):
     assert durations_sorted[p95_index] < 0.8
     for job_id in job_ids:
         client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+from app.core.crypto.credentials import encrypt_credential
+from app.datasources.models import Base as DatasourceBase, DataSource
+
+
+@pytest.fixture(scope="module", autouse=True)
+def ensure_datasource_table(ensure_ingestion_tables):
+    engine = get_meta_engine()
+    DatasourceBase.metadata.create_all(engine)
+    yield
+    with engine.begin() as conn:
+        conn.execute(text("DELETE FROM data_sources"))
+
+
+def _seed_mysql_datasource(db_session=None) -> uuid.UUID:
+    db = db_session or get_meta_session()
+    row = DataSource(
+        name="sample-mysql-ds",
+        code="sample_mysql_sync",
+        type="mysql",
+        host="127.0.0.1",
+        port=3307,
+        database="sample_db",
+        username="sample",
+        password_encrypted=encrypt_credential("sample"),
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    ds_id = row.id
+    if db_session is None:
+        db.close()
+    return ds_id
+
+
+def test_create_job_with_datasource_snapshot(client, auth_headers):
+    ds_id = _seed_mysql_datasource()
+    payload = {
+        "name": "ds-ref-job",
+        "source_mode": "datasource",
+        "source_data_source_id": str(ds_id),
+        "source_table": "dirty_orders",
+        "target_table": "orders_from_ds",
+        "schedule_cron": None,
+    }
+    create = client.post("/api/v1/ingestion/sync-jobs", json=payload, headers=auth_headers)
+    assert create.status_code == 201, create.text
+    body = create.json()
+    job_id = body["id"]
+    assert body["source"]["host"] == "127.0.0.1"
+    assert body["source"]["database"] == "sample_db"
+    assert body["source"]["table"] == "dirty_orders"
+
+    listed = client.get("/api/v1/ingestion/sync-jobs", headers=auth_headers)
+    item = next(i for i in listed.json()["items"] if i["id"] == job_id)
+    assert item["source_data_source_id"] == str(ds_id)
+    assert item["source_label"] == "sample-mysql-ds"
+
+    client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+def test_create_job_datasource_not_found_404(client, auth_headers):
+    payload = {
+        "name": "bad-ds",
+        "source_mode": "datasource",
+        "source_data_source_id": str(uuid.uuid4()),
+        "source_table": "t",
+        "target_table": "tgt",
+    }
+    response = client.post("/api/v1/ingestion/sync-jobs", json=payload, headers=auth_headers)
+    assert response.status_code == 404
+
+
+def test_create_job_datasource_non_mysql_422(client, auth_headers):
+    db = get_meta_session()
+    row = DataSource(
+        name="pg-ds",
+        code="pg_sync",
+        type="postgresql",
+        host="127.0.0.1",
+        port=5432,
+        database="pg",
+        username="u",
+        password_encrypted=encrypt_credential("p"),
+    )
+    db.add(row)
+    db.commit()
+    ds_id = row.id
+    db.close()
+
+    payload = {
+        "name": "pg-ref",
+        "source_mode": "datasource",
+        "source_data_source_id": str(ds_id),
+        "source_table": "t",
+        "target_table": "tgt",
+    }
+    response = client.post("/api/v1/ingestion/sync-jobs", json=payload, headers=auth_headers)
+    assert response.status_code == 422
+
+
+def test_create_incremental_job_missing_pk_422(client, auth_headers, job_payload):
+    bad = {
+        **job_payload,
+        "sync_mode": "incremental",
+        "incremental_column": "updated_at",
+    }
+    response = client.post("/api/v1/ingestion/sync-jobs", json=bad, headers=auth_headers)
+    assert response.status_code == 422
 
 
 def test_openapi_sync_run_item_required_fields(client):

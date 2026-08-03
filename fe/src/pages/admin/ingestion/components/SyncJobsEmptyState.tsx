@@ -1,4 +1,4 @@
-import { History, RefreshCw, Settings2 } from "lucide-react";
+import { BarChart3, History, RefreshCw, Settings2 } from "lucide-react";
 import { PanelEmptyState, PanelEmptyStateSteps } from "@/components/ui/panel-empty-state";
 
 const STEPS = [
@@ -17,8 +17,14 @@ const STEPS = [
   {
     step: 3,
     title: "运行并监控",
-    description: "手动或定时触发全量同步，在历史记录中查看执行结果。",
+    description: "手动或定时触发同步，在历史记录中查看执行结果。",
     icon: History,
+  },
+  {
+    step: 4,
+    title: "登记分析库并出图",
+    description: "在数据源中登记托管 PostgreSQL 分析库，用 SQL 查询同步表建图表。",
+    icon: BarChart3,
   },
 ] as const;
 
@@ -28,7 +34,7 @@ export function SyncJobsEmptyState() {
       <PanelEmptyState
         icon={<RefreshCw className="size-7" aria-hidden />}
         title="暂无同步任务"
-        description="将业务源库数据全量同步到托管分析库，供仪表板与查询使用。点击右上角「新建任务」开始配置。"
+        description="将业务源库数据同步到托管分析库，供仪表板与查询使用。点击右上角「新建任务」开始配置。"
         size="lg"
         footer={
           <div className="border-t border-gray-200 px-6 pb-6 pt-2 dark:border-gray-800">

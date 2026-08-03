@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
 import { Plus, Settings2, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { AdminPageHeaderIcon, AdminPageShell } from "@/components/layout/admin-page-shell";
 import { ADMIN_PAGE_SURFACE_CLASS } from "@/components/layout/list-page-kit";
 import { cn } from "@/lib/utils";
@@ -10,6 +11,8 @@ import {
   useListBatchMode,
 } from "@/components/layout/list-batch-delete";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
+import { useFormDirtyState } from "@/hooks/use-form-dirty-state";
+import { useUnsavedLeaveGuard } from "@/hooks/use-unsaved-leave-guard";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { Button, IconButton } from "@/components/ui/button";
@@ -17,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
+import { UnsavedLeaveDialog } from "@/components/ui/unsaved-leave-dialog";
 import {
   Select,
   SelectContent,
@@ -53,14 +57,27 @@ function emptyRule(type = "rename_column"): EtlRule {
   return { type, column: "", op: "ne", value: "" };
 }
 
+function serializeRules(rules: EtlRule[]): string {
+  return JSON.stringify(rules);
+}
+
 export function EtlRulesPage() {
   const { id } = useParams();
   const [rules, setRules] = useState<EtlRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
   const [fieldErrors, setFieldErrors] = useState(false);
+
+  const { isDirty, isBaselineReady, resetBaseline, markSaved } = useFormDirtyState(
+    rules,
+    serializeRules,
+  );
+
+  const leaveGuardEnabled = isBaselineReady && isDirty;
+  const { leaveDialogOpen, confirmLeave, cancelLeave } = useUnsavedLeaveGuard({
+    enabled: leaveGuardEnabled,
+  });
 
   const rowIds = useMemo(() => rules.map((_, index) => String(index)), [rules]);
   const selection = useListRowSelection(rowIds);
@@ -70,7 +87,6 @@ export function EtlRulesPage() {
     const indices = new Set([...selection.selectedIds].map(Number));
     setRules((prev) => prev.filter((_, i) => !indices.has(i)));
     selection.clear();
-    setSaved(false);
   };
 
   const loadRules = useCallback(async () => {
@@ -83,12 +99,13 @@ export function EtlRulesPage() {
         `/api/v1/ingestion/sync-jobs/${id}/etl-rules`,
       );
       setRules(data.rules.length > 0 ? data.rules : [emptyRule()]);
+      resetBaseline(data.rules.length > 0 ? data.rules : [emptyRule()]);
     } catch (err) {
       setError(mapApiError(err));
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, resetBaseline]);
 
   useEffect(() => {
     void loadRules();
@@ -98,27 +115,23 @@ export function EtlRulesPage() {
     setRules((prev) =>
       prev.map((rule, i) => (i === index ? { ...rule, [key]: value } : rule)),
     );
-    setSaved(false);
   };
 
   const changeRuleType = (index: number, type: string) => {
     setRules((prev) => prev.map((rule, i) => (i === index ? emptyRule(type) : rule)));
-    setSaved(false);
   };
 
   const addRule = () => {
     setRules((prev) => [...prev, emptyRule()]);
-    setSaved(false);
   };
 
   const removeRule = (index: number) => {
     setRules((prev) => prev.filter((_, i) => i !== index));
-    setSaved(false);
   };
 
-  const handleSave = async () => {
-    if (!id) return;
-    if (saving) return;
+  const handleSave = async (): Promise<boolean> => {
+    if (!id) return false;
+    if (saving) return false;
     for (const rule of rules) {
       if (
         rule.type === "rename_column" &&
@@ -126,7 +139,7 @@ export function EtlRulesPage() {
       ) {
         setFieldErrors(true);
         setError("请填写完整的列重命名规则");
-        return;
+        return false;
       }
       if (
         (rule.type === "cast_type" ||
@@ -136,7 +149,7 @@ export function EtlRulesPage() {
       ) {
         setFieldErrors(true);
         setError("请填写规则涉及的列名");
-        return;
+        return false;
       }
     }
     setSaving(true);
@@ -147,13 +160,27 @@ export function EtlRulesPage() {
         body: JSON.stringify({ rules }),
       });
       setFieldErrors(false);
-      setSaved(true);
+      markSaved(rules);
+      toast.success("清洗规则已保存");
+      return true;
     } catch (err) {
       setError(mapApiError(err));
+      return false;
     } finally {
       setSaving(false);
     }
   };
+
+  const handleSaveAndLeave = async () => {
+    const ok = await handleSave();
+    if (ok) confirmLeave();
+  };
+
+  const pageDescription = useMemo(() => {
+    if (!isBaselineReady) return PLACEHOLDER_HINT;
+    if (isDirty) return "有未保存的更改 · 保存后生效";
+    return `已保存 · ${PLACEHOLDER_HINT}`;
+  }, [isBaselineReady, isDirty]);
 
   if (loading) {
     return (
@@ -168,7 +195,7 @@ export function EtlRulesPage() {
       layout="fill"
       title="清洗规则"
       icon={etlRulesPageIcon}
-      description={PLACEHOLDER_HINT}
+      description={pageDescription}
       actions={
         <Button asChild variant="outline" size="sm">
           <Link to="/admin/ingestion/sync-jobs">返回列表</Link>
@@ -185,12 +212,6 @@ export function EtlRulesPage() {
           {error ? (
             <div className="mb-4 shrink-0">
               <PageErrorBanner message={error} onRetry={() => void loadRules()} />
-            </div>
-          ) : null}
-
-          {saved ? (
-            <div className="mb-4 shrink-0 rounded-xl border border-success-500 bg-success-50 p-4 text-theme-sm text-success-700 dark:border-success-500/30 dark:bg-success-500/15 dark:text-success-400">
-              规则已保存
             </div>
           ) : null}
 
@@ -359,13 +380,27 @@ export function EtlRulesPage() {
             <Plus className="size-4" />
             添加规则
           </Button>
-          <Button type="button" variant="primary" loading={saving} onClick={() => void handleSave()}>
+          <Button
+            type="button"
+            variant="primary"
+            loading={saving}
+            disabled={!isDirty}
+            onClick={() => void handleSave()}
+          >
             保存规则
           </Button>
         </div>
           </div>
         </div>
       </div>
+      <UnsavedLeaveDialog
+        open={leaveDialogOpen}
+        saving={saving}
+        entityLabel="清洗规则"
+        onStay={cancelLeave}
+        onDiscardLeave={confirmLeave}
+        onSaveAndLeave={handleSaveAndLeave}
+      />
     </AdminPageShell>
   );
 }

@@ -1,11 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, Navigate, useNavigate, useParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Database } from "lucide-react";
+import { toast } from "sonner";
 import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import { ADMIN_PAGE_SURFACE_CLASS } from "@/components/layout/list-page-kit";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { UnsavedLeaveDialog } from "@/components/ui/unsaved-leave-dialog";
+import { useFormDirtyState } from "@/hooks/use-form-dirty-state";
+import { useUnsavedLeaveGuard } from "@/hooks/use-unsaved-leave-guard";
 import { ApiRequestError, apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import {
@@ -16,6 +20,7 @@ import {
   type RawConnectorTypeItem,
 } from "@/lib/connector-taxonomy";
 import { queryKeys } from "@/lib/queryKeys";
+import { isProtectedDemoDatasource } from "@/lib/demoPackage";
 import { cn } from "@/lib/utils";
 import { emptyForm, type FormState } from "./components/datasource-form-constants";
 import { applyTypePort, DatasourceConnectionForm } from "./components/DatasourceConnectionForm";
@@ -26,6 +31,8 @@ import {
   buildRestApiPayload,
   defaultFileSourceCompanion,
   defaultRestApiCompanion,
+  type FileSourceCompanionState,
+  type RestApiCompanionState,
 } from "./components/datasource-form-types";
 
 type WizardStep = "category" | "type" | "form";
@@ -48,7 +55,33 @@ type DataSourceOut = {
   username: string;
   description?: string | null;
   connectionOptions?: { connectTimeoutSec?: number };
+  isDemoPackage?: boolean;
 };
+
+function serializeDatasourceDraft({
+  mode,
+  wizardStep,
+  selectedGroup,
+  form,
+  restApiCompanion,
+  fileCompanion,
+}: {
+  mode: "create" | "edit";
+  wizardStep: WizardStep;
+  selectedGroup: DisplayGroup | null;
+  form: FormState;
+  restApiCompanion: RestApiCompanionState;
+  fileCompanion: FileSourceCompanionState;
+}): string {
+  return JSON.stringify({
+    mode,
+    wizardStep: mode === "create" ? wizardStep : "form",
+    selectedGroup: mode === "create" ? selectedGroup : null,
+    form: { ...form, password: form.password || "" },
+    restApiCompanion,
+    fileCompanion: { ...fileCompanion, fileError: null },
+  });
+}
 
 export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
   const { id } = useParams();
@@ -91,10 +124,43 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
     enabled: mode === "edit" && Boolean(id),
   });
 
+  const draftSnapshot = useMemo(
+    () => ({
+      mode,
+      wizardStep,
+      selectedGroup,
+      form,
+      restApiCompanion,
+      fileCompanion,
+    }),
+    [mode, wizardStep, selectedGroup, form, restApiCompanion, fileCompanion],
+  );
+
+  const { isDirty, isBaselineReady, resetBaseline, markSaved } = useFormDirtyState(
+    draftSnapshot,
+    serializeDatasourceDraft,
+  );
+
+  const leaveGuardEnabled = isBaselineReady && isDirty;
+  const { leaveDialogOpen, confirmLeave, cancelLeave } = useUnsavedLeaveGuard({
+    enabled: leaveGuardEnabled,
+  });
+
   useEffect(() => {
+    if (mode === "create") {
+      resetBaseline({
+        mode,
+        wizardStep: "category",
+        selectedGroup: null,
+        form: emptyForm,
+        restApiCompanion: defaultRestApiCompanion,
+        fileCompanion: defaultFileSourceCompanion,
+      });
+      return;
+    }
     if (!detailQuery.data) return;
     const ds = detailQuery.data;
-    setForm({
+    const nextForm: FormState = {
       name: ds.name,
       code: ds.code,
       type: ds.type,
@@ -104,28 +170,41 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
       username: ds.username,
       password: "",
       description: ds.description ?? "",
-    });
+    };
+    let nextRestApi = restApiCompanion;
+    let nextFile = fileCompanion;
     if (ds.type === "rest_api") {
-      setRestApiCompanion({
+      nextRestApi = {
         baseUrl: ds.host,
         authMode: ds.username === "none" ? "none" : ds.username === "oauth2" ? "oauth2" : "basic",
         username: ds.username === "none" || ds.username === "oauth2" ? "" : ds.username,
         password: "",
         healthPath: ds.database || "/",
         connectTimeoutSec: ds.connectionOptions?.connectTimeoutSec ?? 5,
-      });
+      };
     } else if (ds.type === "excel" || ds.type === "csv") {
       const isRemote = ds.host.startsWith("http://") || ds.host.startsWith("https://");
-      setFileCompanion({
+      nextFile = {
         mode: isRemote ? "remote" : "local",
         remoteUrl: isRemote ? ds.host : "",
         serverPath: isRemote ? "" : ds.host,
         sheetName: ds.database || "",
         selectedFileName: isRemote ? "" : (ds.host.split("/").pop() ?? ""),
         fileError: null,
-      });
+      };
     }
-  }, [detailQuery.data]);
+    setForm(nextForm);
+    setRestApiCompanion(nextRestApi);
+    setFileCompanion(nextFile);
+    resetBaseline({
+      mode,
+      wizardStep: "form",
+      selectedGroup: null,
+      form: nextForm,
+      restApiCompanion: nextRestApi,
+      fileCompanion: nextFile,
+    });
+  }, [detailQuery.data, mode, resetBaseline]);
 
   useEffect(() => {
     if (errorCode === "DATASOURCE_CODE_CONFLICT" && mode === "create") {
@@ -144,7 +223,7 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSave = async () => {
+  const handleSave = async (): Promise<boolean> => {
     clearError();
     setIsSaving(true);
     try {
@@ -182,14 +261,32 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
             });
 
       await queryClient.invalidateQueries({ queryKey: queryKeys.datasources.all });
-      navigate(`/admin/datasources/${saved.id}`);
+      toast.success(mode === "create" ? "数据源已创建" : "数据源已更新");
+      markSaved(draftSnapshot);
+      if (mode === "create") {
+        navigate(`/admin/datasources/${saved.id}/edit`, { replace: true });
+      }
+      return true;
     } catch (err) {
       if (err instanceof ApiRequestError) setErrorCode(err.code ?? null);
       setError(mapApiError(err));
+      return false;
     } finally {
       setIsSaving(false);
     }
   };
+
+  const handleSaveAndLeave = async () => {
+    const ok = await handleSave();
+    if (ok) confirmLeave();
+  };
+
+  const pageDescription = useMemo(() => {
+    if (!isBaselineReady) return undefined;
+    if (isDirty) return "有未保存的更改 · 保存后生效";
+    if (mode === "create") return "选择连接器类型并填写连接信息以注册新的数据源。";
+    return "已保存";
+  }, [isBaselineReady, isDirty, mode]);
 
   if (mode === "edit" && detailQuery.isLoading) {
     return (
@@ -197,6 +294,14 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
         <Skeleton className="h-full min-h-[480px] w-full rounded-2xl" />
       </AdminPageShell>
     );
+  }
+
+  if (
+    mode === "edit" &&
+    detailQuery.data &&
+    isProtectedDemoDatasource(detailQuery.data)
+  ) {
+    return <Navigate to={`/admin/datasources/${id}`} replace />;
   }
 
   const showForm = mode === "edit" || wizardStep === "form";
@@ -208,11 +313,7 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
       layout="fill"
       title={mode === "create" ? "新建数据源" : "编辑数据源"}
       icon={datasourcePageIcon}
-      description={
-        mode === "create"
-          ? "选择连接器类型并填写连接信息以注册新的数据源。"
-          : undefined
-      }
+      description={pageDescription}
       actions={
         <Button asChild variant="outline" size="sm">
           <Link to="/admin/datasources">返回列表</Link>
@@ -273,6 +374,7 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
                 onRestApiChange={setRestApiCompanion}
                 onFileChange={setFileCompanion}
                 onSubmit={() => void handleSave()}
+                submitDisabled={mode === "edit" && !isDirty}
               />
             ) : null}
           </div>
@@ -294,6 +396,7 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
                 error={error}
                 errorCode={errorCode}
                 isSaving={isSaving}
+                submitDisabled={!isDirty}
                 advancedOpen={advancedOpen}
                 codeInputRef={codeInputRef}
                 restApiCompanion={restApiCompanion}
@@ -313,6 +416,14 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
           </div>
         )
       )}
+      <UnsavedLeaveDialog
+        open={leaveDialogOpen}
+        saving={isSaving}
+        entityLabel="数据源"
+        onStay={cancelLeave}
+        onDiscardLeave={confirmLeave}
+        onSaveAndLeave={handleSaveAndLeave}
+      />
     </AdminPageShell>
   );
 }

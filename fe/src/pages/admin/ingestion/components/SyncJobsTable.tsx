@@ -18,7 +18,8 @@ import { localizeApiMessage } from "@/lib/apiError";
 import {
   lastRunBadgeColor,
   lastRunStatusLabel,
-  sourceTypeLabel,
+  sourceSummaryLabel,
+  syncModeLabel,
   type SyncJobSummary,
 } from "./sync-job-types";
 
@@ -78,7 +79,7 @@ export function SyncJobsTable({
   const showSelection = Boolean(onToggleSelect) && canManage;
   return (
     <div className="overflow-x-only">
-      <table className="min-w-[960px] w-full text-left text-theme-sm">
+      <table className="min-w-[1024px] w-full text-left text-theme-sm">
         <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
           <tr>
             {showSelection ? (
@@ -92,7 +93,8 @@ export function SyncJobsTable({
               </th>
             ) : null}
             <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">任务</th>
-            <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">源类型</th>
+            <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">源</th>
+            <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">同步方式</th>
             <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">目标表</th>
             <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">调度</th>
             <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">任务状态</th>
@@ -125,7 +127,12 @@ export function SyncJobsTable({
               </td>
               <td className="px-4 py-3">
                 <Badge variant="light" color="primary" size="sm">
-                  {sourceTypeLabel(job.source_type)}
+                  {sourceSummaryLabel(job)}
+                </Badge>
+              </td>
+              <td className="px-4 py-3">
+                <Badge variant="light" color={job.sync_mode === "incremental" ? "warning" : "light"} size="sm">
+                  {syncModeLabel(job.sync_mode)}
                 </Badge>
               </td>
               <td className="px-4 py-3 font-mono text-theme-xs text-gray-600 dark:text-gray-300">

@@ -1,18 +1,16 @@
 from __future__ import annotations
 
 import uuid
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext, require_permission
-
-PERM_READ = "ingestion:read"
-PERM_MANAGE = "ingestion:manage"
 from app.core.config import get_settings
+from app.datasources.models import DataSource
 from app.ingestion.cron_validate import validate_schedule_cron
 from app.ingestion.models import (
     EtlRuleSet,
@@ -21,22 +19,48 @@ from app.ingestion.models import (
     SourceConnectionUpdateIn,
     SyncJob,
     SyncRun,
-    encrypt_password,
     get_meta_session,
 )
 from app.ingestion.scheduler import refresh_all_jobs
+from app.ingestion.source_resolver import (
+    SourceResolverError,
+    http_exception_from_resolver,
+    resolve_and_apply_source,
+)
 from app.ingestion.sync_executor import run_job
 from app.query.rls.guard import validate_identifier
 
 router = APIRouter(prefix="/ingestion", tags=["ingestion"])
 
+PERM_READ = "ingestion:read"
+PERM_MANAGE = "ingestion:manage"
+
+
+def _validate_incremental_fields(
+    sync_mode: str,
+    primary_key: str | None,
+    incremental_column: str | None,
+) -> None:
+    if sync_mode != "incremental":
+        return
+    if not primary_key or not incremental_column:
+        raise ValueError("增量同步须指定 primary_key 与 incremental_column")
+    validate_identifier(primary_key)
+    validate_identifier(incremental_column)
+
 
 class SyncJobCreate(BaseModel):
     name: str = Field(min_length=1, max_length=120)
-    source: SourceConnectionIn
     target_table: str
     schedule_cron: str | None = None
     enabled: bool = True
+    sync_mode: Literal["full", "incremental"] = "full"
+    primary_key: str | None = None
+    incremental_column: str | None = None
+    source_mode: Literal["inline", "datasource"] = "inline"
+    source_data_source_id: uuid.UUID | None = None
+    source: SourceConnectionIn | None = None
+    source_table: str | None = None
 
     @field_validator("schedule_cron")
     @classmethod
@@ -53,14 +77,42 @@ class SyncJobCreate(BaseModel):
     def validate_target_table(cls, value: str) -> str:
         validate_identifier(value)
         return value
+
+    @field_validator("source_table")
+    @classmethod
+    def validate_source_table_field(cls, value: str | None) -> str | None:
+        if value is not None:
+            validate_identifier(value)
+        return value
+
+    @model_validator(mode="after")
+    def validate_modes(self) -> SyncJobCreate:
+        _validate_incremental_fields(self.sync_mode, self.primary_key, self.incremental_column)
+        if self.source_mode == "datasource":
+            if self.source_data_source_id is None:
+                raise ValueError("数据源模式须指定 source_data_source_id")
+            table = self.source_table or (self.source.table if self.source else None)
+            if not table:
+                raise ValueError("须指定 source_table")
+            validate_identifier(table)
+            object.__setattr__(self, "source_table", table)
+        elif self.source is None:
+            raise ValueError("内联模式须指定 source")
+        return self
 
 
 class SyncJobUpdate(BaseModel):
     name: str = Field(min_length=1, max_length=120)
-    source: SourceConnectionUpdateIn
     target_table: str
     schedule_cron: str | None = None
     enabled: bool = True
+    sync_mode: Literal["full", "incremental"] = "full"
+    primary_key: str | None = None
+    incremental_column: str | None = None
+    source_mode: Literal["inline", "datasource"] = "inline"
+    source_data_source_id: uuid.UUID | None = None
+    source: SourceConnectionUpdateIn | None = None
+    source_table: str | None = None
 
     @field_validator("schedule_cron")
     @classmethod
@@ -77,6 +129,28 @@ class SyncJobUpdate(BaseModel):
     def validate_target_table(cls, value: str) -> str:
         validate_identifier(value)
         return value
+
+    @field_validator("source_table")
+    @classmethod
+    def validate_source_table_field(cls, value: str | None) -> str | None:
+        if value is not None:
+            validate_identifier(value)
+        return value
+
+    @model_validator(mode="after")
+    def validate_modes(self) -> SyncJobUpdate:
+        _validate_incremental_fields(self.sync_mode, self.primary_key, self.incremental_column)
+        if self.source_mode == "datasource":
+            if self.source_data_source_id is None:
+                raise ValueError("数据源模式须指定 source_data_source_id")
+            table = self.source_table or (self.source.table if self.source else None)
+            if not table:
+                raise ValueError("须指定 source_table")
+            validate_identifier(table)
+            object.__setattr__(self, "source_table", table)
+        elif self.source is None:
+            raise ValueError("内联模式须指定 source")
+        return self
 
 
 class SyncJobLastRun(BaseModel):
@@ -91,15 +165,21 @@ class SyncJobSummary(BaseModel):
     id: uuid.UUID
     name: str
     source_type: str
+    source_database: str | None = None
+    source_label: str | None = None
     target_table: str
+    sync_mode: str
     enabled: bool
     schedule_cron: str | None
+    source_data_source_id: uuid.UUID | None = None
     last_run: SyncJobLastRun | None = None
 
 
 class SyncJobDetail(SyncJobSummary):
     source: SourceConnectionOut
-    source_data_source_id: uuid.UUID | None = None
+    primary_key: str | None = None
+    incremental_column: str | None = None
+    last_watermark: str | None = None
 
 
 class SyncJobListResponse(BaseModel):
@@ -160,20 +240,26 @@ def _to_source_out(job: SyncJob) -> SourceConnectionOut:
     )
 
 
-def _apply_source(
-    job: SyncJob,
-    source: SourceConnectionIn | SourceConnectionUpdateIn,
-    *,
-    preserve_password: bool = False,
-) -> None:
-    job.source_type = source.type
-    job.source_host = source.host
-    job.source_port = source.port
-    job.source_database = source.database
-    job.source_username = source.username
-    if not (preserve_password and not source.password):
-        job.source_password_encrypted = encrypt_password(source.password)
-    job.source_table = source.table
+def _apply_sync_mode_fields(job: SyncJob, payload: SyncJobCreate | SyncJobUpdate) -> None:
+    job.sync_mode = payload.sync_mode
+    job.primary_key = payload.primary_key if payload.sync_mode == "incremental" else None
+    job.incremental_column = payload.incremental_column if payload.sync_mode == "incremental" else None
+    if payload.sync_mode == "full":
+        job.last_watermark = None
+
+
+def _resolve_source_table(payload: SyncJobCreate | SyncJobUpdate) -> str | None:
+    if payload.source_mode == "datasource":
+        return payload.source_table
+    return payload.source.table if payload.source else None
+
+
+def _datasource_labels(db: Session, jobs: list[SyncJob]) -> dict[uuid.UUID, str]:
+    ids = {j.source_data_source_id for j in jobs if j.source_data_source_id}
+    if not ids:
+        return {}
+    rows = db.scalars(select(DataSource).where(DataSource.id.in_(ids))).all()
+    return {row.id: row.name for row in rows if row.deleted_at is None}
 
 
 def _last_runs_by_job_id(db: Session, job_ids: list[uuid.UUID]) -> dict[uuid.UUID, SyncRun]:
@@ -206,6 +292,34 @@ def _to_last_run(run: SyncRun | None) -> SyncJobLastRun | None:
     )
 
 
+def _to_summary(job: SyncJob, last_run: SyncRun | None, ds_labels: dict[uuid.UUID, str]) -> SyncJobSummary:
+    label = ds_labels.get(job.source_data_source_id) if job.source_data_source_id else None
+    return SyncJobSummary(
+        id=job.id,
+        name=job.name,
+        source_type=job.source_type,
+        source_database=job.source_database,
+        source_label=label,
+        target_table=job.target_table,
+        sync_mode=job.sync_mode,
+        enabled=job.enabled,
+        schedule_cron=job.schedule_cron,
+        source_data_source_id=job.source_data_source_id,
+        last_run=_to_last_run(last_run),
+    )
+
+
+def _to_detail(job: SyncJob, last_run: SyncRun | None, ds_labels: dict[uuid.UUID, str]) -> SyncJobDetail:
+    summary = _to_summary(job, last_run, ds_labels)
+    return SyncJobDetail(
+        **summary.model_dump(),
+        source=_to_source_out(job),
+        primary_key=job.primary_key,
+        incremental_column=job.incremental_column,
+        last_watermark=job.last_watermark,
+    )
+
+
 @router.get("/sync-jobs", response_model=SyncJobListResponse)
 def list_sync_jobs(
     _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
@@ -213,19 +327,9 @@ def list_sync_jobs(
 ) -> SyncJobListResponse:
     jobs = db.scalars(select(SyncJob).order_by(SyncJob.created_at.desc())).all()
     last_runs = _last_runs_by_job_id(db, [j.id for j in jobs])
+    ds_labels = _datasource_labels(db, jobs)
     return SyncJobListResponse(
-        items=[
-            SyncJobSummary(
-                id=j.id,
-                name=j.name,
-                source_type=j.source_type,
-                target_table=j.target_table,
-                enabled=j.enabled,
-                schedule_cron=j.schedule_cron,
-                last_run=_to_last_run(last_runs.get(j.id)),
-            )
-            for j in jobs
-        ]
+        items=[_to_summary(j, last_runs.get(j.id), ds_labels) for j in jobs],
     )
 
 
@@ -240,25 +344,34 @@ def create_sync_job(
         target_table=payload.target_table,
         schedule_cron=payload.schedule_cron,
         enabled=payload.enabled,
-        source_data_source_id=None,
+        source_type="mysql",
+        source_host="",
+        source_port=0,
+        source_database="",
+        source_username="",
+        source_password_encrypted="",
+        source_table="",
     )
-    _apply_source(job, payload.source)
+    _apply_sync_mode_fields(job, payload)
+    try:
+        resolve_and_apply_source(
+            db,
+            job,
+            source_mode=payload.source_mode,
+            source_table=_resolve_source_table(payload),
+            source_data_source_id=payload.source_data_source_id,
+            inline_source=payload.source,
+        )
+    except SourceResolverError as exc:
+        raise http_exception_from_resolver(exc) from exc
     db.add(job)
     db.flush()
     db.add(EtlRuleSet(job_id=job.id, rules=[]))
     db.commit()
     db.refresh(job)
     refresh_all_jobs()
-    return SyncJobDetail(
-        id=job.id,
-        name=job.name,
-        source_type=job.source_type,
-        target_table=job.target_table,
-        enabled=job.enabled,
-        schedule_cron=job.schedule_cron,
-        source=_to_source_out(job),
-        source_data_source_id=job.source_data_source_id,
-    )
+    ds_labels = _datasource_labels(db, [job])
+    return _to_detail(job, None, ds_labels)
 
 
 @router.get("/sync-jobs/{job_id}", response_model=SyncJobDetail)
@@ -273,16 +386,8 @@ def get_sync_job(
             status_code=404,
             detail={"code": "NOT_FOUND", "message": "任务不存在", "detail": None},
         )
-    return SyncJobDetail(
-        id=job.id,
-        name=job.name,
-        source_type=job.source_type,
-        target_table=job.target_table,
-        enabled=job.enabled,
-        schedule_cron=job.schedule_cron,
-        source=_to_source_out(job),
-        source_data_source_id=job.source_data_source_id,
-    )
+    ds_labels = _datasource_labels(db, [job])
+    return _to_detail(job, None, ds_labels)
 
 
 @router.put("/sync-jobs/{job_id}", response_model=SyncJobDetail)
@@ -302,20 +407,24 @@ def update_sync_job(
     job.target_table = payload.target_table
     job.schedule_cron = payload.schedule_cron
     job.enabled = payload.enabled
-    _apply_source(job, payload.source, preserve_password=True)
+    _apply_sync_mode_fields(job, payload)
+    try:
+        resolve_and_apply_source(
+            db,
+            job,
+            source_mode=payload.source_mode,
+            source_table=_resolve_source_table(payload),
+            source_data_source_id=payload.source_data_source_id,
+            inline_source=payload.source,
+            preserve_password=True,
+        )
+    except SourceResolverError as exc:
+        raise http_exception_from_resolver(exc) from exc
     db.commit()
     db.refresh(job)
     refresh_all_jobs()
-    return SyncJobDetail(
-        id=job.id,
-        name=job.name,
-        source_type=job.source_type,
-        target_table=job.target_table,
-        enabled=job.enabled,
-        schedule_cron=job.schedule_cron,
-        source=_to_source_out(job),
-        source_data_source_id=job.source_data_source_id,
-    )
+    ds_labels = _datasource_labels(db, [job])
+    return _to_detail(job, None, ds_labels)
 
 
 @router.delete("/sync-jobs/{job_id}", status_code=status.HTTP_204_NO_CONTENT)

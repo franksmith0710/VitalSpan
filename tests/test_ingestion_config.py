@@ -78,13 +78,13 @@ def test_settings_missing_jwt_sm2_private_key_raises(monkeypatch):
 from unittest.mock import MagicMock, patch
 
 from app.ingestion.models import SyncJob, encrypt_password
-from app.ingestion.sync_executor import _write_analytics
+from app.ingestion.sync_write import write_analytics
 
 
-@patch("app.ingestion.sync_executor.create_engine")
-@patch("app.ingestion.sync_executor.get_settings")
+@patch("app.ingestion.sync_write.create_engine")
+@patch("app.ingestion.sync_write.get_settings")
 def test_write_analytics_uses_pool_pre_ping(mock_get_settings, mock_create_engine):
-    """T-D04-11: _write_analytics 使用 pool_pre_ping=True。"""
+    """T-D04-11: write_analytics 使用 pool_pre_ping=True。"""
     mock_get_settings.return_value.analytics_database_url = (
         "postgresql+psycopg://vitalspan:vitalspan@localhost:5433/analytics"
     )
@@ -105,7 +105,7 @@ def test_write_analytics_uses_pool_pre_ping(mock_get_settings, mock_create_engin
         target_table="tgt_pool",
         enabled=True,
     )
-    _write_analytics(job, [{"col": "val"}])
+    write_analytics(job, [{"col": "val"}])
 
     mock_create_engine.assert_called_once_with(
         "postgresql+psycopg://vitalspan:vitalspan@localhost:5433/analytics",
@@ -192,10 +192,10 @@ def _latest_run_for_config(job_id: uuid.UUID) -> SyncRun:
     return run
 
 
-@patch("app.ingestion.sync_executor.create_engine")
-@patch("app.ingestion.sync_executor.get_settings")
+@patch("app.ingestion.sync_write.create_engine")
+@patch("app.ingestion.sync_write.get_settings")
 def test_write_analytics_connection_refused_propagates(mock_get_settings, mock_create_engine):
-    """T-D04-14: begin() OperationalError → _write_analytics 向外传播。"""
+    """T-D04-14: begin() OperationalError → write_analytics 向外传播。"""
     mock_get_settings.return_value.analytics_database_url = (
         "postgresql+psycopg://vitalspan:vitalspan@localhost:5433/analytics"
     )
@@ -216,13 +216,13 @@ def test_write_analytics_connection_refused_propagates(mock_get_settings, mock_c
         enabled=True,
     )
     with pytest.raises(OperationalError, match="connection refused"):
-        _write_analytics(job, [{"col": "val"}])
+        write_analytics(job, [{"col": "val"}])
 
 
-@patch("app.ingestion.sync_executor.create_engine")
-@patch("app.ingestion.sync_executor.get_settings")
+@patch("app.ingestion.sync_write.create_engine")
+@patch("app.ingestion.sync_write.get_settings")
 @patch(
-    "app.ingestion.sync_executor._fetch_mysql_rows",
+    "app.ingestion.sync_fetch.fetch_mysql_rows",
     return_value=[{"product_name": "A", "amount": "1", "status": "active", "note": None}],
 )
 def test_run_job_analytics_connection_refused_failed(
@@ -245,10 +245,10 @@ def test_run_job_analytics_connection_refused_failed(
     assert len(run.error_message) <= 500
 
 
-@patch("app.ingestion.sync_executor.create_engine")
-@patch("app.ingestion.sync_executor.get_settings")
+@patch("app.ingestion.sync_write.create_engine")
+@patch("app.ingestion.sync_write.get_settings")
 @patch(
-    "app.ingestion.sync_executor._fetch_mysql_rows",
+    "app.ingestion.sync_fetch.fetch_mysql_rows",
     return_value=[{"col": "v"}],
 )
 def test_run_job_bad_analytics_host_runtime_write_failed(
@@ -278,10 +278,10 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 
-@patch("app.ingestion.sync_executor.create_engine")
-@patch("app.ingestion.sync_executor.get_settings")
+@patch("app.ingestion.sync_write.create_engine")
+@patch("app.ingestion.sync_write.get_settings")
 @patch(
-    "app.ingestion.sync_executor._fetch_mysql_rows",
+    "app.ingestion.sync_fetch.fetch_mysql_rows",
     return_value=[{"col": "v"}],
 )
 def test_run_job_connection_timeout_failed(

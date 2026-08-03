@@ -3,6 +3,7 @@ import {
   isDemoPackageDashboard,
   isDemoPackageDatasource,
   isDemoPackageDataset,
+  isProtectedDemoDatasource,
   readDemoPackageMeta,
 } from "./demoPackage";
 
@@ -10,6 +11,12 @@ describe("demoPackage", () => {
   it("detects demo datasource code", () => {
     expect(isDemoPackageDatasource("demo")).toBe(true);
     expect(isDemoPackageDatasource("prod")).toBe(false);
+  });
+
+  it("detects protected demo datasource", () => {
+    expect(isProtectedDemoDatasource({ code: "demo" })).toBe(true);
+    expect(isProtectedDemoDatasource({ code: "custom", isDemoPackage: true })).toBe(true);
+    expect(isProtectedDemoDatasource({ code: "prod" })).toBe(false);
   });
 
   it("detects demo package dataset", () => {

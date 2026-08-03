@@ -78,6 +78,7 @@ const CODE_MESSAGES: Record<string, string> = {
   DATASOURCE_IN_USE: "数据源正在被引用，无法删除",
   DATASOURCE_CODE_CONFLICT: "数据源标识已存在，请更换为唯一标识",
   DATASOURCE_NAME_CONFLICT: "数据源名称已存在，请更换名称",
+  DATASOURCE_DEMO_PROTECTED: "官方示例数据连接不可修改或删除",
   DATASOURCE_TEST_INFLIGHT: "已有连接测试进行中，请稍候",
 
   // 数据接入 / 同步任务
