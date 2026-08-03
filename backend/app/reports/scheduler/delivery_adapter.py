@@ -25,7 +25,7 @@ def _format_smtp_error(exc: OSError, settings: Settings) -> str:
 _ARTIFACT_EMAIL: dict[str, tuple[str, str]] = {
     "visual_snapshot": (
         "VitalSpan 看板定时报告（可视化快照）",
-        "附件为看板/大屏画布可视化 PDF 快照。\n\n下载引用：{ref}",
+        "见附件 PDF：看板/大屏画布可视化快照。",
     ),
     "layout_inventory": (
         "VitalSpan 看板定时报告（布局摘要预览）",
@@ -44,6 +44,9 @@ def _send_smtp(
     *,
     recipient_emails: list[str] | None = None,
     artifact_kind: str | None = None,
+    attachment_bytes: bytes | None = None,
+    attachment_filename: str | None = None,
+    attachment_mime: str | None = None,
 ) -> dict:
     to_addrs = recipient_emails or [settings.rpt_smtp_from]
     subject, body_tpl = _ARTIFACT_EMAIL.get(
@@ -54,7 +57,17 @@ def _send_smtp(
     msg["Subject"] = subject
     msg["From"] = settings.rpt_smtp_from
     msg["To"] = ", ".join(to_addrs)
-    msg.set_content(body_tpl.format(ref=artifact_ref))
+    body = body_tpl.format(ref=artifact_ref) if "{ref}" in body_tpl else body_tpl
+    msg.set_content(body)
+    if attachment_bytes and attachment_filename:
+        maintype, _, subtype = (attachment_mime or "application/pdf").partition("/")
+        subtype = subtype or "octet-stream"
+        msg.add_attachment(
+            attachment_bytes,
+            maintype=maintype,
+            subtype=subtype,
+            filename=attachment_filename,
+        )
     try:
         with smtplib.SMTP(settings.rpt_smtp_host, settings.rpt_smtp_port, timeout=5) as smtp:
             if settings.rpt_smtp_user and settings.rpt_smtp_password:
@@ -139,6 +152,9 @@ def deliver_artifact(
     *,
     recipient_emails: list[str] | None = None,
     artifact_kind: str | None = None,
+    attachment_bytes: bytes | None = None,
+    attachment_filename: str | None = None,
+    attachment_mime: str | None = None,
 ) -> dict:
     settings = settings or get_settings()
     channel_list = channels or ["email"]
@@ -151,6 +167,9 @@ def deliver_artifact(
         settings,
         recipient_emails=recipient_emails,
         artifact_kind=artifact_kind,
+        attachment_bytes=attachment_bytes,
+        attachment_filename=attachment_filename,
+        attachment_mime=attachment_mime,
     )
     steps = [step]
     overall = "delivered" if step["status"] == "delivered" else "degraded"

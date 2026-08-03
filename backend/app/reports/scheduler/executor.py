@@ -128,6 +128,9 @@ def semi_real_execute_schedule(
     artifact_ref = f"semi://reports/{schedule_id}/{execution_id}"
     artifact_kind = "template_render"
     export_error: str | None = None
+    attachment_bytes: bytes | None = None
+    attachment_filename: str | None = None
+    attachment_mime: str | None = None
     if source_type in {"dashboard", "data_screen"} and source_id is not None:
         fmt = (row.get("attachment_formats") or ["pdf"])[0]
         try:
@@ -135,6 +138,11 @@ def semi_real_execute_schedule(
                 job = dashboard_export_jobs.submit_dashboard_export(db, source_id, fmt, actor)
             artifact_kind = job.artifact_kind or "visual_snapshot"
             artifact_ref = job.download_url or artifact_ref
+            job_id = dashboard_export_jobs.parse_export_job_id_from_download_url(job.download_url)
+            if job_id is not None:
+                attachment = dashboard_export_jobs.read_export_attachment(job_id)
+                if attachment is not None:
+                    attachment_bytes, attachment_mime, attachment_filename = attachment
         except dash_service.DashboardError as exc:
             export_error = exc.message
     if export_error:
@@ -171,6 +179,9 @@ def semi_real_execute_schedule(
         delivery_mock,
         recipient_emails=recipient_emails,
         artifact_kind=artifact_kind,
+        attachment_bytes=attachment_bytes,
+        attachment_filename=attachment_filename,
+        attachment_mime=attachment_mime,
     )
     error_message: str | None = None
     if delivery_mock == "fail":

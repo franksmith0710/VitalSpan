@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -169,3 +170,42 @@ def test_dashboard_execute_records_visual_snapshot_artifact(client: TestClient):
     assert body.get("artifactKind") == "visual_snapshot"
     hist = client.get(f"/api/v1/reports/schedules/{schedule_id}/executions", headers=AUTH)
     assert hist.json()["items"][0]["artifactKind"] == "visual_snapshot"
+
+
+def test_dashboard_execute_smtp_attaches_pdf(client: TestClient):
+    dash = client.post(
+        "/api/v1/dashboards",
+        headers=AUTH,
+        json={"name": "Attach Dash", "description": "smtp-pdf"},
+    )
+    assert dash.status_code == 201
+    dash_id = dash.json()["id"]
+    sched = client.post(
+        "/api/v1/reports/schedules",
+        headers=AUTH,
+        json={
+            "sourceType": "dashboard",
+            "sourceId": dash_id,
+            "cron": "0 9 * * *",
+            "recipients": [{"type": "role", "value": "admin"}],
+        },
+    )
+    schedule_id = sched.json()["id"]
+    client.post(
+        f"/api/v1/reports/schedules/{schedule_id}/transition",
+        headers=AUTH,
+        json={"action": "schedule"},
+    )
+    with patch("app.reports.scheduler.delivery_adapter.smtplib.SMTP") as smtp_cls:
+        smtp_instance = smtp_cls.return_value.__enter__.return_value
+        exec_resp = client.post(
+            f"/api/v1/reports/schedules/{schedule_id}/execute",
+            headers={**AUTH, "Idempotency-Key": "smtp-attach-1", "X-Rpt-Semi-Real": "1"},
+        )
+        assert exec_resp.status_code == 200, exec_resp.text
+        smtp_instance.send_message.assert_called_once()
+        msg = smtp_instance.send_message.call_args[0][0]
+        attachments = list(msg.iter_attachments())
+        assert len(attachments) == 1
+        assert attachments[0].get_filename().endswith(".pdf")
+        assert attachments[0].get_content().startswith(b"%PDF")

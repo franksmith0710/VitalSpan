@@ -5,7 +5,7 @@
 | 模块路径 | `backend/app/reports/` |
 | PRD | [F08-RPT](../automate/prd/F08-RPT.md) · RPT-001 ~ RPT-007 |
 | 里程碑 | M6 / M10 / M12 |
-| 状态 | **已交付（G5 可视化 PDF · 2026-08-03）** |
+| 状态 | **部分（G5 管线已接线 · 邮件 PDF 附件与 live 渲染未闭环 · [真值复验 2026-08-03](../feature-truth/2026-08-03-report-center-g5-visual-pdf-truth-audit.md)）** |
 
 ## 职责
 

@@ -3,7 +3,7 @@
 | 字段 | 值 |
 |------|-----|
 | 日期 | 2026-08-03 |
-| 状态 | **已完成** |
+| 状态 | **PARTIAL（G5 管线已接线 · 邮件 PDF 附件与 live Playwright 未闭环 · 2026-08-03 真值复验）** |
 | 范围 | G5 看板/大屏定时报告可视化 PDF · export 路由 · token · 测试 · 文档签收 |
 | 关联 PRD | [F08-RPT](../automate/prd/F08-RPT.md) RPT-005 |
 | 前置审计 | [2026-07-31 全模块真值](../feature-truth/2026-07-31-report-center-full-truth-audit.md) |

@@ -44,6 +44,61 @@ describe("DashboardQuickCreateDialog", () => {
     mockNavigate.mockReset();
   });
 
+  it("keeps dialog open when opening dataset select", async () => {
+    mockApiFetch.mockImplementation(async (path: string) => {
+      if (path === "/api/v1/datasources") {
+        return { items: [{ id: "ds-1", name: "分析库", code: "a" }] };
+      }
+      if (path.includes("/api/v1/datasets")) {
+        return {
+          items: [
+            {
+              datasetId: "orders_ds",
+              displayName: "订单",
+              boundConfigId: "cfg-11111111-1111-4111-8111-111111111111",
+            },
+          ],
+        };
+      }
+      return {};
+    });
+
+    const user = userEvent.setup();
+    const { onOpenChange } = renderDialog();
+
+    const datasetCombo = await screen.findByRole("combobox", { name: /dataset/i });
+    await user.click(datasetCombo);
+
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
+    expect(screen.getByText("快速创建看板")).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "订单" })).toBeInTheDocument();
+    expect(document.querySelector('[role="menu"][data-state="open"]')).toBeTruthy();
+  });
+
+  it("keeps dialog open when clicking form label while select is open", async () => {
+    mockApiFetch.mockImplementation(async (path: string) => {
+      if (path === "/api/v1/datasources") {
+        return { items: [{ id: "ds-1", name: "分析库", code: "a" }] };
+      }
+      if (path.includes("/api/v1/datasets")) {
+        return { items: [] };
+      }
+      return {};
+    });
+
+    const user = userEvent.setup();
+    const { onOpenChange } = renderDialog();
+
+    await user.click(await screen.findByRole("combobox", { name: /数据源/i }));
+    await user.click(screen.getByRole("menuitem", { name: "分析库" }));
+
+    await user.click(screen.getByRole("combobox", { name: /数据源/i }));
+    await user.click(screen.getByText("看板名称"));
+
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
+    expect(screen.getByText("快速创建看板")).toBeInTheDocument();
+  });
+
   it("creates dashboard with probed dimensions in layout", async () => {
     mockApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
       if (path === "/api/v1/datasources") {
@@ -82,10 +137,10 @@ describe("DashboardQuickCreateDialog", () => {
     renderDialog();
 
     await user.click(await screen.findByRole("combobox", { name: /数据源/i }));
-    await user.click(screen.getByRole("option", { name: "分析库" }));
+    await user.click(screen.getByRole("menuitem", { name: "分析库" }));
 
     await user.click(screen.getByRole("combobox", { name: /dataset/i }));
-    await user.click(screen.getByRole("option", { name: "订单" }));
+    await user.click(screen.getByRole("menuitem", { name: "订单" }));
 
     await user.click(screen.getByRole("button", { name: "创建并编辑" }));
 

@@ -221,6 +221,30 @@ def test_rpt005_delivery_smtp_mode(client: TestClient):
     assert result["deliverySteps"][0]["mode"] == "smtp"
 
 
+def test_rpt005_delivery_smtp_includes_pdf_attachment(client: TestClient):
+    """RPT-005: visual_snapshot 投递应附带 PDF MIME 附件。"""
+    settings = get_settings()
+    pdf_bytes = b"%PDF-1.4 attachment test\n" + b"x" * 64
+    with patch("app.reports.scheduler.delivery_adapter.smtplib.SMTP") as smtp_cls:
+        smtp_instance = smtp_cls.return_value.__enter__.return_value
+        result = deliver_artifact(
+            "/api/v1/dashboards/export-jobs/00000000-0000-4000-8000-000000000001/download",
+            ["email"],
+            None,
+            settings,
+            artifact_kind="visual_snapshot",
+            attachment_bytes=pdf_bytes,
+            attachment_filename="dashboard-test.pdf",
+            attachment_mime="application/pdf",
+        )
+        assert result["deliveryMode"] == "smtp"
+        assert result["status"] == "delivered"
+        msg = smtp_instance.send_message.call_args[0][0]
+        attachments = list(msg.iter_attachments())
+        assert len(attachments) == 1
+        assert attachments[0].get_content() == pdf_bytes
+
+
 def test_rpt005_delivery_smtp_connection_refused_surfaces_error():
     """RPT-005: SMTP 连接失败时返回可读中文错误并写入顶层 error。"""
     settings = get_settings()

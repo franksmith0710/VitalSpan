@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     ensure_official_demo_datasource: bool = True
     sample_mysql_url: str | None = None
     fe_base_url: str = "http://localhost:5173"
+    fe_base_path: str = ""
     rpt_export_fallback: bool = False
 
     _DEV_JWT_SM2_PRIVATE: ClassVar[str] = (

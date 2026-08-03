@@ -57,9 +57,12 @@ SelectScrollDownButton.displayName = SelectPrimitive.ScrollDownButton.displayNam
 
 const SelectContent = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
->(({ className, children, position = "popper", ...props }, ref) => (
-  <SelectPrimitive.Portal>
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content> & {
+    /** Portal 挂载容器；Dialog 内 Select 须传入 Dialog 内节点，避免误关弹层 */
+    container?: HTMLElement | null;
+  }
+>(({ className, children, position = "popper", container, onPointerDownOutside, ...props }, ref) => (
+  <SelectPrimitive.Portal container={container ?? undefined}>
     <SelectPrimitive.Content
       ref={ref}
       data-slot="select-content"
@@ -70,6 +73,12 @@ const SelectContent = React.forwardRef<
         className,
       )}
       position={position}
+      onPointerDownOutside={(event) => {
+        if (container instanceof HTMLElement && event.target instanceof Node && container.contains(event.target)) {
+          event.preventDefault();
+        }
+        onPointerDownOutside?.(event);
+      }}
       {...props}
     >
       <SelectScrollUpButton />

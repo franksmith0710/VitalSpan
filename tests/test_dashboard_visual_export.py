@@ -160,3 +160,15 @@ def test_render_rejects_inventory_leak(monkeypatch) -> None:
     with pytest.raises(dash_service.DashboardError) as exc:
         render_dashboard_visual_pdf(dash_id, token=token)
     assert exc.value.code == "DASH_EXPORT_RENDER_INVENTORY_LEAK"
+
+
+def test_build_export_snapshot_url_respects_base_path() -> None:
+    from types import SimpleNamespace
+
+    from app.dashboard.export_fe_url import build_export_snapshot_url
+
+    dash_id = uuid.uuid4()
+    token = "tok"
+    settings = SimpleNamespace(fe_base_url="http://localhost:5173", fe_base_path="sc-datav")
+    url = build_export_snapshot_url(dash_id, token=token, surface="dashboard", settings=settings)
+    assert url == f"http://localhost:5173/sc-datav/export/dashboard/{dash_id}?token={token}"

@@ -7,12 +7,11 @@ from uuid import UUID
 
 from app.core.config import get_settings
 from app.dashboard import service as dash_service
+from app.dashboard.export_fe_url import build_export_snapshot_url
 
 logger = logging.getLogger(__name__)
 
-CAPTURE_SELECTOR = (
-    '[data-dashboard-thumbnail-capture], [data-testid="pixel-canvas-stage"], [data-export-ready="true"]'
-)
+CAPTURE_SELECTOR = '[data-export-ready="true"]'
 SETTLE_MS = 1500
 NAV_TIMEOUT_MS = 30_000
 
@@ -24,9 +23,7 @@ def render_dashboard_visual_pdf(
     surface: str = "dashboard",
 ) -> bytes:
     settings = get_settings()
-    fe_base = settings.fe_base_url.rstrip("/")
-    path = "data-screen" if surface == "data_screen" else "dashboard"
-    url = f"{fe_base}/export/{path}/{dashboard_id}?token={token}"
+    url = build_export_snapshot_url(dashboard_id, token=token, surface=surface, settings=settings)
 
     try:
         from playwright.sync_api import Error as PlaywrightError

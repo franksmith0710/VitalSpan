@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -31,6 +32,30 @@ class _ExportJob:
 
 
 _jobs: dict[uuid.UUID, _ExportJob] = {}
+
+_EXPORT_JOB_URL_RE = re.compile(r"/export-jobs/([0-9a-f-]{36})/download", re.I)
+
+
+def parse_export_job_id_from_download_url(download_url: str | None) -> uuid.UUID | None:
+    if not download_url:
+        return None
+    match = _EXPORT_JOB_URL_RE.search(download_url)
+    if match is None:
+        return None
+    try:
+        return uuid.UUID(match.group(1))
+    except ValueError:
+        return None
+
+
+def read_export_attachment(job_id: uuid.UUID) -> tuple[bytes, str, str] | None:
+    """Internal delivery path: no auth check."""
+    job = _jobs.get(job_id)
+    if job is None or job.bytes_data is None or job.status != "ready":
+        return None
+    content_type = "application/pdf" if job.fmt == "pdf" else "application/vnd.ms-excel"
+    filename = f"dashboard-{job.dashboard_id}.{job.fmt}"
+    return job.bytes_data, content_type, filename
 
 
 def _build_pdf_bytes(db: Session, dashboard_id: uuid.UUID, row) -> tuple[bytes, str]:
