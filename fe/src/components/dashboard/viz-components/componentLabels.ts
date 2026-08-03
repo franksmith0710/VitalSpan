@@ -1,16 +1,29 @@
-import type { LucideIcon } from "lucide-react";
-import {
-  BarChart3,
-  Filter,
-  Image,
-  Type,
-} from "lucide-react";
 import {
   VIZ_COMPONENT_CATEGORIES,
   type VizComponentListItem,
   type VizSurfaceKind,
   type VizWidgetType,
 } from "@/lib/vizComponents";
+import { DE_PALETTE_CATEGORY_SECTIONS } from "@/lib/chartPaletteTaxonomy";
+
+export type VizComponentHubWidgetFilter =
+  | "all"
+  | VizWidgetType
+  | (typeof DE_PALETTE_CATEGORY_SECTIONS)[number]["id"];
+
+export function resolveHubWidgetFilter(filter: VizComponentHubWidgetFilter): {
+  widgetType?: VizWidgetType;
+  chartPaletteCategory?: string;
+} {
+  if (filter === "all") return {};
+  if (filter === "filter" || filter === "text" || filter === "media") {
+    return { widgetType: filter };
+  }
+  if (filter === "chart") {
+    return { widgetType: "chart" };
+  }
+  return { widgetType: "chart", chartPaletteCategory: filter };
+}
 
 export const VIZ_COMPONENTS_HUB = {
   title: "可视化组件库",
@@ -53,12 +66,15 @@ export const SURFACE_TABS: { key: VizSurfaceKind | "all"; label: string }[] = [
   { key: "data-screen", label: "数据大屏" },
 ];
 
-export const WIDGET_TYPE_FILTERS: { key: VizWidgetType | "all"; label: string; icon: LucideIcon }[] = [
-  { key: "all", label: "全部类型", icon: BarChart3 },
-  { key: "chart", label: "图表", icon: BarChart3 },
-  { key: "filter", label: "筛选器", icon: Filter },
-  { key: "text", label: "富文本", icon: Type },
-  { key: "media", label: "媒体", icon: Image },
+export const WIDGET_TYPE_FILTERS: { key: VizComponentHubWidgetFilter; label: string }[] = [
+  { key: "all", label: "全部类型" },
+  ...DE_PALETTE_CATEGORY_SECTIONS.map((section) => ({
+    key: section.id as VizComponentHubWidgetFilter,
+    label: section.label,
+  })),
+  { key: "filter", label: "筛选器" },
+  { key: "text", label: "富文本" },
+  { key: "media", label: "媒体" },
 ];
 
 export const CATEGORY_ACCENT: Record<string, string> = {

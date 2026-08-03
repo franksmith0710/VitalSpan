@@ -5,6 +5,7 @@ import {
   isDemoPackageDataset,
   isProtectedDemoDatasource,
   readDemoPackageMeta,
+  shouldShowOfficialDemoBadge,
 } from "./demoPackage";
 
 describe("demoPackage", () => {
@@ -40,6 +41,21 @@ describe("demoPackage", () => {
       }),
     ).toBe(true);
     expect(isDemoPackageDashboard({ slug: "custom-board" })).toBe(false);
+  });
+
+  it("hides official demo badge when title already labels demo", () => {
+    expect(
+      shouldShowOfficialDemoBadge({
+        slug: "官方示例-双栏指标看板",
+        name: "官方示例 · 双栏指标看板",
+      }),
+    ).toBe(false);
+    expect(
+      shouldShowOfficialDemoBadge({
+        slug: "官方示例-双栏指标看板",
+        name: "我的销售看板",
+      }),
+    ).toBe(true);
   });
 
   it("reads demo package meta only when seeded", () => {

@@ -67,6 +67,7 @@ def list_components(
             user,
             surface_kind=surface_kind,
             widget_type=widget_type,
+            chart_palette_category=chart_palette_category,
             status=status,
             category_key=category_key,
             visibility=visibility,

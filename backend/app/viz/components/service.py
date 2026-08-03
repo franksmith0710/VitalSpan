@@ -15,6 +15,7 @@ from app.viz.components.acl import (
     assert_component_write,
     can_manage_components,
 )
+from app.viz.components.chart_palette import chart_palette_category_from_payload
 from app.viz.components.errors import VizComponentError
 from app.viz.components.models import VizComponent
 from app.viz.components.payload_utils import (
@@ -182,6 +183,12 @@ def list_components(
             continue
         if widget_type is not None and row.widget_type != widget_type:
             continue
+        if chart_palette_category is not None:
+            if row.widget_type != "chart":
+                continue
+            palette = chart_palette_category_from_payload(row.payload_json)
+            if palette != chart_palette_category:
+                continue
         if category_key is not None and row.category_key != category_key:
             continue
         if q:

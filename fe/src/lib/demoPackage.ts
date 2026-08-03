@@ -37,3 +37,15 @@ export function isDemoPackageDashboard(input: {
   if (isOfficialDemoSlug(input.slug)) return true;
   return Boolean(readDemoPackageMeta(input.layoutJson)?.seed);
 }
+
+/** 列表卡片是否在标题外额外展示「官方示例」徽章（标题已含则不再重复） */
+export function shouldShowOfficialDemoBadge(input: {
+  slug: string;
+  name: string;
+  layoutJson?: DashboardLayout;
+}): boolean {
+  if (!isDemoPackageDashboard({ slug: input.slug, layoutJson: input.layoutJson })) {
+    return false;
+  }
+  return !input.name.includes("官方示例");
+}

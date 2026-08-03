@@ -50,6 +50,7 @@ export const queryKeys = {
     list: (params?: {
       surfaceKind?: string;
       widgetType?: string;
+      chartPaletteCategory?: string;
       categoryKey?: string;
       q?: string;
       includeDrafts?: boolean;

@@ -32,7 +32,7 @@ import {
   isDataScreenLayout,
 } from "@/lib/dataScreenLayout";
 import { previewSummaryToLayout, type DashboardPreviewSummary } from "@/lib/dashboardListPreview";
-import { isDemoPackageDashboard } from "@/lib/demoPackage";
+import { shouldShowOfficialDemoBadge } from "@/lib/demoPackage";
 
 export type DashboardListItem = {
   id: string;
@@ -90,8 +90,9 @@ export function DashboardListCard({
   const editPath = isScreen ? dataScreenEditPath(dashboard.id) : `${routeBase}/${dashboard.id}/edit`;
   const sharePath = dashboardSharePath(dashboard.id, isScreen);
   const primaryPath = canEdit ? editPath : viewPath;
-  const isOfficialDemo = isDemoPackageDashboard({
+  const showOfficialDemoBadge = shouldShowOfficialDemoBadge({
     slug: dashboard.slug,
+    name: dashboard.name,
     layoutJson: layoutForPreview,
   });
 
@@ -157,7 +158,7 @@ export function DashboardListCard({
         </div>
 
         <div className="flex items-center gap-2">
-          {isOfficialDemo ? (
+          {showOfficialDemoBadge ? (
             <Badge variant="light" color="primary" size="sm">
               官方示例
             </Badge>

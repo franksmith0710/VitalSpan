@@ -14,7 +14,7 @@ import {
   PageErrorBanner,
 } from "@/components/layout/list-page-kit";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { SearchField } from "@/components/ui/search-field";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ListGhostEmptyState,
@@ -26,6 +26,8 @@ import { ComponentReferencesDialog } from "@/components/dashboard/viz-components
 import { CreateVizComponentButton } from "@/components/dashboard/viz-components/CreateVizComponentDialog";
 import {
   VIZ_COMPONENTS_HUB,
+  resolveHubWidgetFilter,
+  type VizComponentHubWidgetFilter,
 } from "@/components/dashboard/viz-components/componentLabels";
 import {
   archiveVizComponent,
@@ -36,7 +38,6 @@ import {
   type VizComponentListItem,
   type VizComponentPayload,
   type VizSurfaceKind,
-  type VizWidgetType,
 } from "@/lib/vizComponents";
 import { hasCapability } from "@/lib/capabilities";
 import { mapApiError } from "@/lib/apiError";
@@ -102,16 +103,18 @@ export function VizComponentsHubPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const surfaceTab =
     (searchParams.get("surfaceKind") as VizSurfaceKind | "all" | null) ?? "all";
-  const [widgetType, setWidgetType] = useState<VizWidgetType | "all">("all");
+  const [widgetFilter, setWidgetFilter] = useState<VizComponentHubWidgetFilter>("all");
+  const hubWidgetQuery = resolveHubWidgetFilter(widgetFilter);
   const [q, setQ] = useState("");
   const [insertTarget, setInsertTarget] = useState<VizComponentListItem | null>(null);
   const [referencesTarget, setReferencesTarget] = useState<VizComponentListItem | null>(null);
-  const pagination = useListPagination(20, [surfaceTab, widgetType, q]);
+  const pagination = useListPagination(20, [surfaceTab, widgetFilter, q]);
 
   const listQuery = useQuery({
     queryKey: queryKeys.vizComponents.list({
       surfaceKind: surfaceTab === "all" ? undefined : surfaceTab,
-      widgetType: widgetType === "all" ? undefined : widgetType,
+      widgetType: hubWidgetQuery.widgetType,
+      chartPaletteCategory: hubWidgetQuery.chartPaletteCategory,
       q,
       includeDrafts: canManage,
       limit: pagination.pageSize,
@@ -120,7 +123,8 @@ export function VizComponentsHubPage() {
     queryFn: () =>
       fetchVizComponents({
         surfaceKind: surfaceTab === "all" ? undefined : surfaceTab,
-        widgetType: widgetType === "all" ? undefined : widgetType,
+        widgetType: hubWidgetQuery.widgetType,
+        chartPaletteCategory: hubWidgetQuery.chartPaletteCategory,
         q: q || undefined,
         includeDrafts: canManage,
         limit: pagination.pageSize,
@@ -202,23 +206,22 @@ export function VizComponentsHubPage() {
           filters={
             <VizComponentsHubFilters
               surfaceTab={surfaceTab}
-              widgetType={widgetType}
+              widgetFilter={widgetFilter}
               onSurfaceTabChange={(tab) => {
                 const next = new URLSearchParams(searchParams);
                 if (tab === "all") next.delete("surfaceKind");
                 else next.set("surfaceKind", tab);
                 setSearchParams(next);
               }}
-              onWidgetTypeChange={setWidgetType}
+              onWidgetFilterChange={setWidgetFilter}
             />
           }
           actions={
-            <Input
-              size="sm"
+            <SearchField
+              className="w-full sm:max-w-xs"
               value={q}
-              onChange={(e) => setQ(e.target.value)}
+              onChange={setQ}
               placeholder={VIZ_COMPONENTS_HUB.searchPlaceholder}
-              className="w-full sm:w-auto sm:min-w-[220px]"
               aria-label={VIZ_COMPONENTS_HUB.searchAriaLabel}
             />
           }

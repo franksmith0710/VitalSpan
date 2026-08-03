@@ -49,4 +49,26 @@ describe("AdminPageShell", () => {
     expect(screen.getByText("内联标题")).toBeInTheDocument();
     expect(screen.getByText("有未保存的更改 · 保存后生效")).toHaveClass("sm:max-w-md");
   });
+
+  it("hero layout: leadingActions render before icon", () => {
+    renderShell(
+      <AdminPageShell
+        layout="fill"
+        title="编辑数据源"
+        leadingActions={<button type="button">返回列表</button>}
+        icon={
+          <AdminPageHeaderIcon>
+            <Database className="size-6" aria-hidden />
+          </AdminPageHeaderIcon>
+        }
+        actions={<button type="button">保存</button>}
+      >
+        <div>body</div>
+      </AdminPageShell>,
+    );
+
+    const back = screen.getByRole("button", { name: "返回列表" });
+    const save = screen.getByRole("button", { name: "保存" });
+    expect(back.compareDocumentPosition(save) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
 });

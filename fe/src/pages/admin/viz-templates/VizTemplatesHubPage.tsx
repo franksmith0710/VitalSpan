@@ -12,7 +12,7 @@ import {
   PageErrorBanner,
 } from "@/components/layout/list-page-kit";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { SearchField } from "@/components/ui/search-field";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PanelEmptyState } from "@/components/ui/panel-empty-state";
 import { VizTemplateCard } from "@/components/dashboard/templates/VizTemplateCard";
@@ -233,12 +233,11 @@ export function VizTemplatesHubPage() {
             />
           }
           actions={
-            <Input
-              size="sm"
+            <SearchField
+              className="w-full sm:max-w-xs"
               value={q}
-              onChange={(e) => setQ(e.target.value)}
+              onChange={setQ}
               placeholder={VIZ_TEMPLATES_HUB.searchPlaceholder}
-              className="w-full sm:w-auto sm:min-w-[220px]"
               aria-label={VIZ_TEMPLATES_HUB.searchAriaLabel}
             />
           }

@@ -15,6 +15,8 @@ import { GenericConnectionFields } from "./GenericConnectionFields";
 import { RestApiConnectionFields } from "./RestApiConnectionFields";
 import type { FileSourceCompanionState, RestApiCompanionState } from "./datasource-form-types";
 
+export const DATASOURCE_CONNECTION_FORM_ID = "datasource-connection-form";
+
 type Props = {
   mode: "create" | "edit";
   form: FormState;
@@ -29,6 +31,7 @@ type Props = {
   restApiCompanion: RestApiCompanionState;
   fileCompanion: FileSourceCompanionState;
   embedded?: boolean;
+  formId?: string;
   onChangeType?: () => void;
   onAdvancedOpenChange: (open: boolean) => void;
   onClearError: () => void;
@@ -75,6 +78,7 @@ export function DatasourceConnectionForm({
   restApiCompanion,
   fileCompanion,
   embedded = false,
+  formId = DATASOURCE_CONNECTION_FORM_ID,
   onChangeType,
   onAdvancedOpenChange,
   onClearError,
@@ -86,7 +90,8 @@ export function DatasourceConnectionForm({
 }: Props) {
   const formBody = (
     <form
-      className="grid gap-6"
+      id={formId}
+      className="mx-auto grid w-full max-w-3xl gap-6"
       onSubmit={(e) => {
         e.preventDefault();
         onSubmit();
@@ -183,25 +188,13 @@ export function DatasourceConnectionForm({
           </div>
         </Collapsible.Content>
       </Collapsible.Root>
-
-      <div className="sticky bottom-0 -mx-6 flex flex-wrap items-center justify-end gap-3 border-t border-gray-100 bg-white/95 px-6 py-4 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/95 lg:-mx-8 lg:px-8">
-        <Button
-          type="submit"
-          variant="primary"
-          disabled={isSaving || submitDisabled}
-          loading={isSaving}
-          loadingText="保存中…"
-        >
-          保存
-        </Button>
-      </div>
     </form>
   );
 
   if (embedded) {
     return (
       <div className="w-full">
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="mx-auto mb-6 flex w-full max-w-3xl flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 className="text-theme-base font-semibold text-gray-900 dark:text-white">填写连接信息</h2>
             <p className="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">
@@ -226,13 +219,7 @@ export function DatasourceConnectionForm({
 
   return (
     <div className="w-full">
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-theme-base font-semibold text-gray-900 dark:text-white">连接信息</h2>
-          <p className="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">
-            {mode === "edit" ? "更新连接配置；留空密码表示不修改。" : "填写连接参数以注册新的数据源。"}
-          </p>
-        </div>
+      <div className="mx-auto mb-6 flex w-full max-w-3xl justify-end">
         <Badge variant="light" color="primary" size="sm">
           {selectedTypeLabel}
         </Badge>

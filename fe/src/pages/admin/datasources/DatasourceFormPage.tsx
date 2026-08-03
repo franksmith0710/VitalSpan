@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Database } from "lucide-react";
+import { ArrowLeft, Database } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import { ADMIN_PAGE_SURFACE_CLASS } from "@/components/layout/list-page-kit";
@@ -23,7 +23,7 @@ import { queryKeys } from "@/lib/queryKeys";
 import { isProtectedDemoDatasource } from "@/lib/demoPackage";
 import { cn } from "@/lib/utils";
 import { emptyForm, type FormState } from "./components/datasource-form-constants";
-import { applyTypePort, DatasourceConnectionForm } from "./components/DatasourceConnectionForm";
+import { applyTypePort, DatasourceConnectionForm, DATASOURCE_CONNECTION_FORM_ID } from "./components/DatasourceConnectionForm";
 import { DatasourceFormWizard } from "./components/DatasourceFormWizard";
 import { DatasourceWizardStepper } from "./components/DatasourceWizardStepper";
 import {
@@ -285,8 +285,33 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
     if (!isBaselineReady) return undefined;
     if (isDirty) return "有未保存的更改 · 保存后生效";
     if (mode === "create") return "选择连接器类型并填写连接信息以注册新的数据源。";
-    return "已保存";
+    return "已保存 · 留空密码表示不修改";
   }, [isBaselineReady, isDirty, mode]);
+
+  const showHeaderSave = mode === "edit" || (mode === "create" && wizardStep === "form");
+
+  const headerLeadingActions = (
+    <Button asChild variant="outline" size="sm">
+      <Link to="/admin/datasources">
+        <ArrowLeft className="size-4" aria-hidden />
+        返回列表
+      </Link>
+    </Button>
+  );
+
+  const headerActions = showHeaderSave ? (
+    <Button
+      type="submit"
+      form={DATASOURCE_CONNECTION_FORM_ID}
+      variant="primary"
+      size="sm"
+      loading={isSaving}
+      loadingText="保存中…"
+      disabled={isSaving || (mode === "edit" && !isDirty)}
+    >
+      保存
+    </Button>
+  ) : null;
 
   if (mode === "edit" && detailQuery.isLoading) {
     return (
@@ -314,11 +339,8 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
       title={mode === "create" ? "新建数据源" : "编辑数据源"}
       icon={datasourcePageIcon}
       description={pageDescription}
-      actions={
-        <Button asChild variant="outline" size="sm">
-          <Link to="/admin/datasources">返回列表</Link>
-        </Button>
-      }
+      leadingActions={headerLeadingActions}
+      actions={headerActions}
     >
       {mode === "create" ? (
         <div

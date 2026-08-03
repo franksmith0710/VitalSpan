@@ -12,6 +12,8 @@ export type AdminPageShellProps = {
   description?: ReactNode;
   /** 页头左侧图标（建议 AdminPageHeaderIcon 包裹 lucide 图标） */
   icon?: ReactNode;
+  /** 页头最左侧操作（如返回列表），位于图标之前 */
+  leadingActions?: ReactNode;
   actions?: ReactNode;
   children: ReactNode;
   className?: string;
@@ -79,6 +81,7 @@ function PageHeaderTitle({
 
 function PageHeaderHero({
   icon,
+  leadingActions,
   title,
   description,
   actions,
@@ -87,6 +90,7 @@ function PageHeaderHero({
   bodyClassName,
 }: {
   icon?: ReactNode;
+  leadingActions?: ReactNode;
   title: ReactNode;
   description?: ReactNode;
   actions?: ReactNode;
@@ -102,6 +106,9 @@ function PageHeaderHero({
       }}
     >
       <div className="flex items-start gap-4 sm:gap-5">
+        {leadingActions ? (
+          <div className={cn(ADMIN_PAGE_HEADER_ACTIONS_CLASS, "shrink-0 pt-0.5")}>{leadingActions}</div>
+        ) : null}
         {icon ? <div className="shrink-0">{icon}</div> : null}
         <div className="flex min-w-0 flex-1 items-start justify-between gap-4">
           <div
@@ -126,6 +133,7 @@ export function AdminPageShell({
   title,
   description,
   icon,
+  leadingActions,
   actions,
   children,
   className,
@@ -162,6 +170,9 @@ export function AdminPageShell({
                   if (event.target === event.currentTarget) onHeaderBlankPointerDown?.();
                 }}
               >
+                {leadingActions ? (
+                  <div className={cn(ADMIN_PAGE_HEADER_ACTIONS_CLASS, "shrink-0")}>{leadingActions}</div>
+                ) : null}
                 <PageHeaderTitle title={title} titleUnwrapped={titleUnwrapped} variant="toolbar" />
                 {description ? (
                   <>
@@ -181,6 +192,7 @@ export function AdminPageShell({
         ) : (
           <PageHeaderHero
             icon={icon}
+            leadingActions={leadingActions}
             title={title}
             description={description}
             actions={actions}

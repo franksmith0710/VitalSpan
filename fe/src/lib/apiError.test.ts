@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ApiRequestError } from "@/lib/api";
-import { localizeApiMessage, mapApiError } from "./apiError";
+import { localizeApiMessage, getApiValidationFieldErrors, mapApiError } from "./apiError";
 
 describe("mapApiError", () => {
   it("maps DATASOURCE_NOT_FOUND by code", () => {
@@ -44,5 +44,21 @@ describe("mapApiError", () => {
 
   it("preserves Chinese messages", () => {
     expect(mapApiError(new Error("查询失败"))).toBe("查询失败");
+  });
+
+  it("maps schedule_cron validation with friendly field label", () => {
+    const err = new ApiRequestError("body.schedule_cron: Value error", "VALIDATION_ERROR", [
+      { field: "body.schedule_cron", message: "Value error, Cron 表达式格式无效" },
+    ]);
+    expect(mapApiError(err)).toBe("Cron 表达式格式无效（定时 Cron）");
+  });
+
+  it("extracts field errors from validation response", () => {
+    const err = new ApiRequestError("body.schedule_cron: Value error", "VALIDATION_ERROR", [
+      { field: "body.schedule_cron", message: "Value error, Cron 表达式格式无效" },
+    ]);
+    expect(getApiValidationFieldErrors(err)).toEqual({
+      schedule_cron: "Cron 表达式格式无效",
+    });
   });
 });

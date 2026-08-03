@@ -285,11 +285,54 @@ const PYDANTIC_MESSAGE_MAP: Array<[RegExp, string]> = [
   [/version 2 widgets must not use fields: colSpan/i, "像素布局不能携带栅格字段 colSpan，请刷新后重试"],
   [/x \+ width must not exceed/i, "组件超出画布宽度，请调整位置或尺寸"],
   [/y \+ height must not exceed/i, "组件超出画布高度，请调整位置或尺寸"],
+  [/Cron 表达式格式无效/i, "Cron 表达式格式无效"],
 ];
 
+const VALIDATION_FIELD_LABELS: Record<string, string> = {
+  schedule_cron: "定时 Cron",
+  target_table: "目标表",
+  source_table: "源表",
+  primary_key: "主键字段",
+  incremental_column: "增量字段",
+  source_data_source_id: "数据源",
+};
+
+function normalizeValidationField(field: string): string {
+  return field.replace(/^body\.layoutJson\./, "").replace(/^body\./, "");
+}
+
+function validationFieldLabel(field: string): string {
+  const normalized = normalizeValidationField(field);
+  return VALIDATION_FIELD_LABELS[normalized] ?? normalized;
+}
+
+function stripPydanticValueErrorPrefix(message: string): string {
+  return message.replace(/^Value error,\s*/i, "").trim();
+}
+
+export function getApiValidationFieldErrors(err: unknown): Record<string, string> {
+  const coded = asCodedError(err);
+  if (!coded?.fields?.length) return {};
+  const out: Record<string, string> = {};
+  for (const { field, message } of coded.fields) {
+    const key = normalizeValidationField(field);
+    const raw = stripPydanticValueErrorPrefix(message);
+    for (const [pattern, zh] of PYDANTIC_MESSAGE_MAP) {
+      if (pattern.test(raw)) {
+        out[key] = zh;
+        break;
+      }
+    }
+    if (!out[key]) {
+      out[key] = localizeApiMessage(raw);
+    }
+  }
+  return out;
+}
+
 function formatValidationDetail(message: string, fields?: Array<{ field: string; message: string }>): string {
-  const fieldPath = fields?.[0]?.field?.replace(/^body\.layoutJson\./, "") ?? "";
-  const raw = fields?.[0]?.message ?? message;
+  const fieldPath = fields?.[0]?.field ? validationFieldLabel(fields[0].field) : "";
+  const raw = stripPydanticValueErrorPrefix(fields?.[0]?.message ?? message);
   for (const [pattern, zh] of PYDANTIC_MESSAGE_MAP) {
     if (pattern.test(raw) || pattern.test(message)) return fieldPath ? `${zh}（${fieldPath}）` : zh;
   }
@@ -301,7 +344,7 @@ function formatValidationDetail(message: string, fields?: Array<{ field: string;
     const tail = message.split(":").slice(1).join(":").trim();
     if (tail && containsCjk(tail)) return fieldPath ? `${tail}（${fieldPath}）` : tail;
   }
-  return fieldPath ? `布局校验失败（${fieldPath}）` : "布局校验失败，请检查看板配置与组件样式";
+  return fieldPath ? `表单校验失败（${fieldPath}）` : "表单校验失败，请检查填写内容";
 }
 
 export function mapApiError(err: unknown): string {

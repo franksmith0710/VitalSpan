@@ -83,6 +83,7 @@ export const VIZ_COMPONENT_CATEGORIES: { key: string; label: string }[] = [
 export function buildVizComponentsListUrl(params: {
   surfaceKind?: VizSurfaceKind;
   widgetType?: VizWidgetType;
+  chartPaletteCategory?: string;
   categoryKey?: string;
   q?: string;
   includeDrafts?: boolean;
@@ -92,6 +93,7 @@ export function buildVizComponentsListUrl(params: {
   const search = new URLSearchParams();
   if (params.surfaceKind) search.set("surfaceKind", params.surfaceKind);
   if (params.widgetType) search.set("widgetType", params.widgetType);
+  if (params.chartPaletteCategory) search.set("chartPaletteCategory", params.chartPaletteCategory);
   if (params.categoryKey) search.set("categoryKey", params.categoryKey);
   if (params.q) search.set("q", params.q);
   if (params.includeDrafts) search.set("includeDrafts", "true");
@@ -129,6 +131,7 @@ function normalizeListItem(raw: VizComponentListItem): VizComponentListItem {
 export function fetchVizComponents(params: {
   surfaceKind?: VizSurfaceKind;
   widgetType?: VizWidgetType;
+  chartPaletteCategory?: string;
   categoryKey?: string;
   q?: string;
   includeDrafts?: boolean;

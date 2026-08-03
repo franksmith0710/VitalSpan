@@ -4,6 +4,7 @@ import {
   SURFACE_TABS,
   VIZ_COMPONENTS_HUB,
   WIDGET_TYPE_FILTERS,
+  type VizComponentHubWidgetFilter,
 } from "@/components/dashboard/viz-components/componentLabels";
 import {
   HUB_FILTER_LABEL_CLASS,
@@ -12,21 +13,21 @@ import {
   HUB_SEGMENTED_BUTTON_CLASS,
   HUB_SEGMENTED_SHELL_CLASS,
 } from "@/components/dashboard/hubFilterUi";
-import type { VizSurfaceKind, VizWidgetType } from "@/lib/vizComponents";
+import type { VizSurfaceKind } from "@/lib/vizComponents";
 import { cn } from "@/lib/utils";
 
 type VizComponentsHubFiltersProps = {
   surfaceTab: VizSurfaceKind | "all";
-  widgetType: VizWidgetType | "all";
+  widgetFilter: VizComponentHubWidgetFilter;
   onSurfaceTabChange: (tab: VizSurfaceKind | "all") => void;
-  onWidgetTypeChange: (type: VizWidgetType | "all") => void;
+  onWidgetFilterChange: (filter: VizComponentHubWidgetFilter) => void;
 };
 
 export function VizComponentsHubFilters({
   surfaceTab,
-  widgetType,
+  widgetFilter,
   onSurfaceTabChange,
-  onWidgetTypeChange,
+  onWidgetFilterChange,
 }: VizComponentsHubFiltersProps) {
   return (
     <div className={HUB_FILTERS_STACK_CLASS} data-testid="viz-components-hub-filters">
@@ -74,7 +75,7 @@ export function VizComponentsHubFilters({
           className={cn(HUB_SEGMENTED_SHELL_CLASS, "flex min-w-0 flex-wrap gap-0.5")}
         >
           {WIDGET_TYPE_FILTERS.map((filter) => {
-            const active = widgetType === filter.key;
+            const active = widgetFilter === filter.key;
             return (
               <Button
                 key={filter.key}
@@ -82,7 +83,7 @@ export function VizComponentsHubFilters({
                 size="sm"
                 variant={active ? "subtle" : "ghost"}
                 className={HUB_SEGMENTED_BUTTON_CLASS}
-                onClick={() => onWidgetTypeChange(filter.key)}
+                onClick={() => onWidgetFilterChange(filter.key)}
               >
                 {filter.label}
               </Button>

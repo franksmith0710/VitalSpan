@@ -67,6 +67,56 @@ def _chart_payload() -> dict:
     }
 
 
+def _line_payload() -> dict:
+    payload = _chart_payload()
+    payload["chartConfig"]["chartType"] = "line"
+    return payload
+
+
+def test_list_filters_by_chart_palette_category(client: TestClient, auth_headers: dict, db_session) -> None:
+    bar = client.post(
+        "/api/v1/viz-components",
+        headers=auth_headers,
+        json={
+            "name": "柱状组件",
+            "widgetType": "chart",
+            "payloadJson": _chart_payload(),
+            "visibility": "org",
+        },
+    )
+    line = client.post(
+        "/api/v1/viz-components",
+        headers=auth_headers,
+        json={
+            "name": "折线组件",
+            "widgetType": "chart",
+            "payloadJson": _line_payload(),
+            "visibility": "org",
+        },
+    )
+    assert bar.status_code == 201
+    assert line.status_code == 201
+    client.post(f"/api/v1/viz-components/{bar.json()['id']}/publish", headers=auth_headers)
+    client.post(f"/api/v1/viz-components/{line.json()['id']}/publish", headers=auth_headers)
+
+    compare = client.get(
+        "/api/v1/viz-components?widgetType=chart&chartPaletteCategory=compare",
+        headers=auth_headers,
+    )
+    trend = client.get(
+        "/api/v1/viz-components?widgetType=chart&chartPaletteCategory=trend",
+        headers=auth_headers,
+    )
+    assert compare.status_code == 200
+    assert trend.status_code == 200
+    compare_names = {item["name"] for item in compare.json()["items"]}
+    trend_names = {item["name"] for item in trend.json()["items"]}
+    assert "柱状组件" in compare_names
+    assert "折线组件" not in compare_names
+    assert "折线组件" in trend_names
+    assert "柱状组件" not in trend_names
+
+
 def test_create_publish_and_batch_resolve(client: TestClient, auth_headers: dict, db_session) -> None:
     created = client.post(
         "/api/v1/viz-components",

@@ -717,6 +717,41 @@ describe("ingestion admin smoke", () => {
     expect(await screen.findByText(/请求参数无效|操作失败/)).toBeInTheDocument();
   });
 
+  it("SyncJobFormPage_invalid_cron_shows_field_error_and_toast", async () => {
+    setViewport(1400);
+    const { toast } = await import("sonner");
+    mockApiFetch.mockImplementation((url: string, init?: { method?: string }) => {
+      if (url === "/api/v1/datasources") {
+        return Promise.resolve({ items: [] });
+      }
+      if (url === "/api/v1/ingestion/sync-jobs" && init?.method === "POST") {
+        return Promise.reject(
+          Object.assign(new Error("body.schedule_cron: Value error"), {
+            code: "VALIDATION_ERROR",
+            fields: [{ field: "body.schedule_cron", message: "Value error, Cron 表达式格式无效" }],
+          }),
+        );
+      }
+      return Promise.resolve({});
+    });
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs/new" element={<SyncJobFormPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await screen.findByLabelText("任务名称");
+    fireEvent.change(screen.getByLabelText("任务名称"), { target: { value: "bad-cron-job" } });
+    fireEvent.change(screen.getByLabelText("定时 Cron（可选）"), {
+      target: { value: "0 0 *0 *15 *" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "创建" }));
+    expect(await screen.findByText(/Cron 表达式格式无效（定时 Cron）/)).toBeInTheDocument();
+    expect(document.getElementById("schedule_cron-error")).toHaveTextContent("Cron 表达式格式无效");
+    expect(vi.mocked(toast.error)).toHaveBeenCalledWith("Cron 表达式格式无效（定时 Cron）");
+  });
+
   it("SyncJobHistoryPage_error_state_uses_semantic_tokens (T-ING-23)", async () => {
     setViewport(1400);
     mockApiFetch.mockImplementation((url: string) => {

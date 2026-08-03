@@ -48,14 +48,39 @@ describe("DashboardListCard", () => {
     cleanup();
   });
 
-  it("shows official demo badge for demo slug dashboards", () => {
-    const { getByText } = render(
+  it("hides official demo badge when title already contains 官方示例", () => {
+    const { queryByText } = render(
       <TooltipProvider delayDuration={0}>
         <MemoryRouter>
           <DashboardListCard
             dashboard={{
               id: "demo-1",
               name: "官方示例 · 双栏指标看板",
+              slug: "官方示例-双栏指标看板",
+              updatedAt: "2026-07-14T12:00:00.000Z",
+              layoutJson: {
+                version: 1,
+                widgets: [],
+                globalFilters: [],
+                demoPackage: { seed: true, sourceTemplateKey: "builtin-dash-dual-kpi" },
+              },
+            }}
+            canEdit
+          />
+        </MemoryRouter>
+      </TooltipProvider>,
+    );
+    expect(queryByText("官方示例", { exact: true })).not.toBeInTheDocument();
+  });
+
+  it("shows official demo badge when demo instance was renamed", () => {
+    const { getByText } = render(
+      <TooltipProvider delayDuration={0}>
+        <MemoryRouter>
+          <DashboardListCard
+            dashboard={{
+              id: "demo-1",
+              name: "我的销售看板",
               slug: "官方示例-双栏指标看板",
               updatedAt: "2026-07-14T12:00:00.000Z",
               layoutJson: {
