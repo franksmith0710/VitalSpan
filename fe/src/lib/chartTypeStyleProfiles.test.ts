@@ -69,6 +69,23 @@ describe("chartTypeStyleProfiles", () => {
     }
   });
 
+  it("table types exclude palette section", () => {
+    for (const type of ["table-info", "table-normal", "table-pivot", "table"] as const) {
+      expect(chartStyleSectionsFromProfile(type), type).not.toContain("palette");
+      expect(chartStyleSectionsFromProfile(type), type).toContain("tableColor");
+    }
+  });
+
+  it("stock-line uses stockLineShape without cartesianShape", () => {
+    const sections = chartStyleSectionsFromProfile("stock-line");
+    expect(sections).toContain("stockLineShape");
+    expect(sections).not.toContain("cartesianShape");
+  });
+
+  it("map-3d has no palette section", () => {
+    expect(chartStyleSectionsFromProfile("map-3d")).not.toContain("palette");
+  });
+
   it("treemap and circle-packing expose new shape sections", () => {
     expect(chartStyleSectionsFromProfile("treemap")).toContain("treemapShape");
     expect(chartStyleSectionsFromProfile("circle-packing")).toContain("circlePackingShape");

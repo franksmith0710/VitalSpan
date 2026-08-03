@@ -435,7 +435,23 @@ redoc: /redoc
 | GET | `/api/v1/ingestion/sync-jobs/{id}/runs` | 运行历史 | 内部 | M1B | DATA-002 | 已实现 | `backend/app/api/v1/ingestion/sync.py` |
 | GET/PUT | `/api/v1/ingestion/sync-jobs/{id}/etl-rules` | 清洗规则配置 | 内部 | M1B | ETL-001 | 已实现 | `backend/app/ingestion/etl_rules.py` |
 
-### SourceConnection（`source` 嵌套对象）
+### SyncJobCreate（POST/PUT 请求体）
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|:----:|------|
+| name | string | ✓ | 任务名称 |
+| target_table | string | ✓ | 托管分析库目标表 |
+| source_mode | `inline` \| `datasource` | — | 默认 `inline` |
+| source | SourceConnection | inline 时 ✓ | 见下表 |
+| source_data_source_id | uuid | datasource 时 ✓ | 已登记 MySQL 数据源 |
+| source_table | string | datasource 时 ✓ | 源表名 |
+| sync_mode | `full` \| `incremental` | — | 默认 `full` |
+| primary_key | string | 增量时 ✓ | 单列主键 |
+| incremental_column | string | 增量时 ✓ | 水位列 |
+| schedule_cron | string | — | 可选 |
+| enabled | bool | — | 默认 true |
+
+### SourceConnection（`source_mode=inline` 时 `source` 嵌套对象）
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|:----:|------|
@@ -454,6 +470,7 @@ redoc: /redoc
 ```json
 {
   "name": "sample-mysql-orders",
+  "source_mode": "inline",
   "source": {
     "type": "mysql",
     "host": "127.0.0.1",
@@ -464,7 +481,23 @@ redoc: /redoc
     "table": "dirty_orders"
   },
   "target_table": "orders_clean",
+  "sync_mode": "full",
   "schedule_cron": null
+}
+```
+
+**数据源引用模式示例**：
+
+```json
+{
+  "name": "orders-from-ds",
+  "source_mode": "datasource",
+  "source_data_source_id": "550e8400-e29b-41d4-a716-446655440000",
+  "source_table": "dirty_orders",
+  "target_table": "orders_clean",
+  "sync_mode": "incremental",
+  "primary_key": "id",
+  "incremental_column": "updated_at"
 }
 ```
 

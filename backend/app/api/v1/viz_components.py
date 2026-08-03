@@ -54,6 +54,7 @@ def list_components(
         Literal["chart", "filter", "text", "media"] | None,
         Query(alias="widgetType"),
     ] = None,
+    chart_palette_category: Annotated[str | None, Query(alias="chartPaletteCategory")] = None,
     status: Annotated[Literal["draft", "published", "archived"] | None, Query()] = None,
     category_key: Annotated[str | None, Query(alias="categoryKey")] = None,
     visibility: Annotated[Literal["org", "private"] | None, Query()] = None,

@@ -28,7 +28,6 @@ export type TableInspectorProfile = {
 const TABLE_BASIC_SECTIONS: ChartStyleSectionId[] = [
   "tableBasic",
   "tableColor",
-  "palette",
   "title",
   "background",
 ];

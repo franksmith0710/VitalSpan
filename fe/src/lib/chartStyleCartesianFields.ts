@@ -8,7 +8,6 @@ export function resolveCartesianShapeFields(chartType: ChartType): string[] | un
     chartType.startsWith("percentage-bar") ||
     chartType.startsWith("chart-mix")
   ) {
-    if (chartType === "stock-line") return ["lineSmooth", "pointSize"];
     if (chartType === "waterfall") return ["barRadius"];
     if (chartType === "bar-range" || chartType === "progress-bar" || chartType === "bullet-graph") {
       return ["barWidthRatio", "barRadius"];

@@ -21,9 +21,25 @@
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：M1B
 - **里程碑对齐**：M1B · 已完成 · 2026-07-03
-- **描述**：同步任务 CRUD（内联 `SourceConnection`、源表、目标表、调度）。
+- **描述**：同步任务 CRUD；支持内联 `SourceConnection` 或引用已登记 MySQL 数据源（快照连接）；源表、目标表、全量/增量模式与调度。
 
-**SourceConnection 字段（请求/响应 `source` 对象）**
+**创建请求（`SyncJobCreate`）**
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|:----:|------|
+| name | string | ✓ | 任务名称 |
+| target_table | string | ✓ | 托管分析库目标表 |
+| source_mode | `inline` \| `datasource` | — | 默认 `inline` |
+| source | SourceConnection | inline 时 ✓ | 内联连接 |
+| source_data_source_id | uuid | datasource 时 ✓ | 引用 `datasources` 中 MySQL |
+| source_table | string | datasource 时 ✓ | 源表（可与 inline 的 `source.table` 二选一） |
+| sync_mode | `full` \| `incremental` | — | 默认 `full` |
+| primary_key | string | 增量时 ✓ | 单列主键 |
+| incremental_column | string | 增量时 ✓ | 整型或时间戳水位列 |
+| schedule_cron | string | — | 可选 Cron |
+| enabled | bool | — | 默认 true |
+
+**SourceConnection 字段（`source_mode=inline` 时 `source` 对象）**
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|:----:|------|
@@ -38,7 +54,9 @@
 - **验收标准**：
   - [x] `GET/POST /api/v1/ingestion/sync-jobs` 可用
   - [x] OpenAPI 可访问
-- **代码锚点**：`backend/app/ingestion/` · `backend/app/api/v1/ingestion/`
+  - [x] 可选 `source_data_source_id` 引用 MySQL 数据源并快照连接（B-4）
+  - [x] 增量模式创建时校验 `primary_key` / `incremental_column`
+- **代码锚点**：`backend/app/ingestion/` · `backend/app/api/v1/ingestion/` · `source_resolver.py`
 - **演化建议**：`tests/test_ingestion_api.py` T-D01-23~25（PUT 空密码保留密文、create P95 <0.8s、OpenAPI SyncRunItem 快照）；补 postgres 源类型 executor 覆盖；OpenAPI 示例与 api/README 持续对齐
 
 ### [DATA-002] 同步执行器
@@ -47,12 +65,14 @@
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：M1B
 - **里程碑对齐**：M1B · 已完成 · 2026-07-03
-- **描述**：全量/增量同步执行（M1B 可先全量）与定时调度。
+- **描述**：全量 TRUNCATE+INSERT 与增量 upsert（单列 PK + 水位）同步执行，及定时调度。
 - **验收标准**：
   - [x] 手动 `POST .../run` 可将源表写入托管库
   - [x] 运行历史含状态与 `traceId` 日志
-- **代码锚点**：`backend/app/ingestion/sync_executor.py` · `scheduler.py`
-- **演化建议**：`tests/test_sync_executor.py` T-D02-19（全量刷新契约）、T-D02-23~25（并发 POST 409、10000 行 P95 <3s、重试耗尽 failed+traceId）；`tests/test_scheduler.py` T-D02-26（非法 cron refresh 不崩）；`tests/test_ingestion_l1_smoke.py` T-L1-09 compose L1 编排；补增量同步与大批量分批写入 perf 基准
+  - [x] 全量任务覆盖目标表（T-D02-19）；增量任务 upsert 不 TRUNCATE（T-INC-01~03）
+  - [x] 增量成功后写回 `last_watermark`
+- **代码锚点**：`backend/app/ingestion/sync_executor.py` · `sync_fetch.py` · `sync_write.py` · `scheduler.py`
+- **演化建议**：`tests/test_sync_executor.py` T-INC-* 增量契约；复合主键、增量删除、Postgres 源 executor；大批量分批写入 perf 基准
 
 ### [ETL-001] 清洗规则引擎（轻量）
 
@@ -77,6 +97,8 @@
 - **验收标准**：
   - [x] 浏览器可创建任务并手动运行
   - [x] 可查看运行历史
+  - [x] 表单支持引用数据源 / 内联连接双模式与全量/增量配置
+  - [x] UI 展示「同步后如何出图」消费引导（`SyncJobConsumeGuide`）
 - **代码锚点**：`fe/src/pages/admin/ingestion/`
 - **演化建议**：`ingestion.smoke.test.tsx` 35 项（T-ING-32~35 failed error_message、skeleton loading、401 无 success、run dialog pending 禁用）；二期 Playwright 真浏览器 L1
 

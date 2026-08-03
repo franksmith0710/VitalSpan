@@ -7,12 +7,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { TEXT_COLOR_RECOMMENDED } from "@/components/dashboard/dashboardStyleConfig";
 import { useChartInspector } from "../ChartInspectorContext";
 import {
   ChartInspectorSection,
   INSPECTOR_SECTION_GAP,
   INSPECTOR_SELECT,
   INSPECTOR_SWITCH_SIZE,
+  InspectorInlineColorRow,
   InspectorSwitchRow,
 } from "../inspectorCompact";
 import { ChartDeSliderField } from "../deAttrSlider";
@@ -22,6 +24,8 @@ import {
   PIE_INNER_RADIUS_MAX,
   PIE_INNER_RADIUS_MIN,
   readChartDeStyle,
+  resolveChartTooltipDisplayBackground,
+  resolveChartTooltipDisplayColor,
 } from "@/lib/chartDeStyle";
 import { DEFAULT_PIE_OUTER_RADIUS_PERCENT } from "@/lib/chartDeStyleBlocks";
 
@@ -336,6 +340,26 @@ export function ChartTooltipStyleSection() {
       }
     >
       <div className={INSPECTOR_SECTION_GAP}>
+        <InspectorInlineColorRow
+          label="字体颜色"
+          allowClear
+          swatches={TEXT_COLOR_RECOMMENDED}
+          value={tooltip.color ?? ""}
+          fallbackValue={resolveChartTooltipDisplayColor(cfg, dashboardStyle)}
+          onChange={(color) =>
+            patchDeStyleNested("tooltip", { color: color || undefined })
+          }
+        />
+        <InspectorInlineColorRow
+          label="背景颜色"
+          allowClear
+          swatches={TEXT_COLOR_RECOMMENDED}
+          value={tooltip.background ?? ""}
+          fallbackValue={resolveChartTooltipDisplayBackground(cfg, dashboardStyle)}
+          onChange={(background) =>
+            patchDeStyleNested("tooltip", { background: background || undefined })
+          }
+        />
         <ChartDeSliderField
           label="字号"
           value={tooltip.fontSize}

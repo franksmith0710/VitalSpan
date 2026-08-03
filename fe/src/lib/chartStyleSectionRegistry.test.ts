@@ -7,7 +7,6 @@ describe("chartStyleSectionsForType", () => {
     expect(chartStyleSectionsForType("table-info")).toEqual([
       "tableBasic",
       "tableColor",
-      "palette",
       "title",
       "background",
     ]);

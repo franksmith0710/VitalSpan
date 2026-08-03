@@ -164,6 +164,7 @@ def list_components(
     *,
     surface_kind: SurfaceKind | None = None,
     widget_type: WidgetType = None,
+    chart_palette_category: str | None = None,
     status: ComponentStatus = None,
     category_key: str | None = None,
     visibility: ComponentVisibility = None,

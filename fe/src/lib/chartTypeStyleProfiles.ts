@@ -82,7 +82,7 @@ const PROFILE_BY_TYPE: Record<string, ChartStyleSectionId[]> = {
   "bar-range": CARTESIAN_NO_LEGEND,
   "bidirectional-bar": CARTESIAN_CORE,
   "progress-bar": ["axis", "cartesianShape", "progressBarShape", ...SHELL, "remark", "label"],
-  "stock-line": ["axis", "cartesianShape", "stockLineShape", ...SHELL, "remark", "label"],
+  "stock-line": ["axis", "stockLineShape", ...SHELL, "remark", "label"],
   "bullet-graph": ["axis", "cartesianShape", "bulletShape", ...SHELL, "remark", "label"],
 
   pie: PIE_STYLE,

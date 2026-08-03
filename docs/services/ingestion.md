@@ -10,7 +10,8 @@
 
 ## 职责
 
-- 同步任务定义与调度（内联 `SourceConnection` → 托管分析库表）
+- 同步任务定义与调度（内联或引用 MySQL 数据源 → 托管分析库表）
+- 全量覆盖与增量 upsert（单列 PK + 水位）
 - 轻量 ETL 规则（写库前清洗）
 - 同步运行历史与失败重试
 
@@ -19,9 +20,10 @@
 | In | Out |
 |----|-----|
 | 库表级同步、规则表级清洗 | 完整可视化 ETL 设计器（远期） |
-| 内联 SourceConnection（M1B L1） | L2 托管库登记 dataSourceId（M3/M4） |
+| 内联 SourceConnection 或引用 `dataSourceId`（MySQL 快照） | 自动创建/同步托管库数据源记录（用户手动登记 PG） |
+| 全量 TRUNCATE + 增量 upsert | 增量删除、复合主键 |
 | 托管分析库写入 | BI 查询执行（→ `query`） |
-| M1B 手动/定时全量同步 | 连接器插件注册（→ `datasources`，M3+） |
+| M1B 手动/定时同步 | 连接器插件注册（→ `datasources`，M3+） |
 
 ## 依赖
 
@@ -34,7 +36,9 @@
 | 符号 | 说明 | 状态 |
 |------|------|------|
 | `ingestion.models` | `SyncJob`、`SyncRun`、`EtlRuleSet`、`SourceConnection` | 已实现 |
-| `ingestion.sync_executor` | 同步执行（mysql 源，1 次重试） | 已实现 |
+| `ingestion.source_resolver` | 内联 vs 数据源引用解析与快照 | 已实现 |
+| `ingestion.sync_fetch` / `sync_write` | MySQL 拉取 + PG 全量/增量写入 | 已实现 |
+| `ingestion.sync_executor` | 同步编排（mysql 源，1 次重试） | 已实现 |
 | `ingestion.etl_rules` | 清洗规则引擎 | 已实现 |
 | `ingestion.scheduler` | APScheduler 定时触发 | 已实现 |
 | `GET/POST /api/v1/ingestion/sync-jobs` | 任务 API | 已实现 |

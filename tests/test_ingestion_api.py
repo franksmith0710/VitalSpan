@@ -633,6 +633,78 @@ def test_create_job_with_datasource_snapshot(client, auth_headers):
     client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
 
 
+def test_update_sync_job_datasource_roundtrip(client, auth_headers):
+    """T5-put-datasource-update: PUT 换数据源与源表 → GET 快照一致。"""
+    ds_a = _seed_mysql_datasource()
+    db = get_meta_session()
+    row_b = DataSource(
+        name="second-mysql-ds",
+        code="sample_mysql_sync_b",
+        type="mysql",
+        host="10.0.0.2",
+        port=3308,
+        database="other_db",
+        username="other",
+        password_encrypted=encrypt_credential("other"),
+    )
+    db.add(row_b)
+    db.commit()
+    db.refresh(row_b)
+    ds_b = row_b.id
+    db.close()
+
+    create = client.post(
+        "/api/v1/ingestion/sync-jobs",
+        json={
+            "name": "ds-job-before-update",
+            "source_mode": "datasource",
+            "source_data_source_id": str(ds_a),
+            "source_table": "dirty_orders",
+            "target_table": "orders_from_ds",
+            "schedule_cron": None,
+        },
+        headers=auth_headers,
+    )
+    assert create.status_code == 201, create.text
+    job_id = create.json()["id"]
+
+    updated = client.put(
+        f"/api/v1/ingestion/sync-jobs/{job_id}",
+        json={
+            "name": "ds-job-after-update",
+            "source_mode": "datasource",
+            "source_data_source_id": str(ds_b),
+            "source_table": "orders_live",
+            "target_table": "orders_from_ds_v2",
+            "schedule_cron": "0 3 * * *",
+            "enabled": True,
+            "sync_mode": "incremental",
+            "primary_key": "id",
+            "incremental_column": "updated_at",
+        },
+        headers=auth_headers,
+    )
+    assert updated.status_code == 200, updated.text
+    body = updated.json()
+    assert body["name"] == "ds-job-after-update"
+    assert body["target_table"] == "orders_from_ds_v2"
+    assert body["sync_mode"] == "incremental"
+    assert body["source"]["host"] == "10.0.0.2"
+    assert body["source"]["port"] == 3308
+    assert body["source"]["database"] == "other_db"
+    assert body["source"]["table"] == "orders_live"
+    assert body["source_data_source_id"] == str(ds_b)
+
+    got = client.get(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+    assert got.status_code == 200
+    detail = got.json()
+    assert detail["source"]["table"] == "orders_live"
+    assert detail["primary_key"] == "id"
+    assert detail["incremental_column"] == "updated_at"
+
+    client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
 def test_create_job_datasource_not_found_404(client, auth_headers):
     payload = {
         "name": "bad-ds",

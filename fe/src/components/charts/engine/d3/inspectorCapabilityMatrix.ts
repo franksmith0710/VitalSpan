@@ -52,6 +52,7 @@ const D3_WIRING_BY_TYPE: Record<string, D3InspectorFeatureMatrix> = {
   radar: { legend: "missing", label: "wired", dataZoom: "missing", markLines: "missing", conditional: "wired" },
   treemap: { legend: "missing", label: "wired", dataZoom: "missing", markLines: "missing", conditional: "wired" },
   "word-cloud": { legend: "missing", label: "missing", dataZoom: "missing", markLines: "missing", conditional: "missing" },
+  wordCloud: { legend: "missing", label: "missing", dataZoom: "missing", markLines: "missing", conditional: "missing" },
   map: { legend: "missing", label: "wired", dataZoom: "missing", markLines: "missing", conditional: "missing" },
   "map-3d": { legend: "missing", label: "missing", dataZoom: "missing", markLines: "missing", conditional: "missing" },
   gauge: { legend: "missing", label: "wired", dataZoom: "missing", markLines: "missing", conditional: "missing" },

@@ -3,6 +3,7 @@ import {
   filterStyleSectionsForChart,
   resolveLegendEditorMode,
   supportsDepthVisualToggle,
+  supportsPaletteOpacity,
   supportsSeriesGradientToggle,
 } from "./chartStylePanelGates";
 
@@ -29,10 +30,19 @@ describe("chartStylePanelGates", () => {
     expect(supportsDepthVisualToggle("gauge")).toBe(true);
   });
 
-  it("series gradient excludes map and gauge", () => {
+  it("series gradient whitelist: bar/line yes, pie/map no", () => {
     expect(supportsSeriesGradientToggle("bar")).toBe(true);
+    expect(supportsSeriesGradientToggle("line")).toBe(true);
+    expect(supportsSeriesGradientToggle("pie")).toBe(false);
     expect(supportsSeriesGradientToggle("map")).toBe(false);
     expect(supportsSeriesGradientToggle("gauge")).toBe(false);
+    expect(supportsSeriesGradientToggle("scatter")).toBe(false);
+  });
+
+  it("palette opacity only for 2D map", () => {
+    expect(supportsPaletteOpacity("map")).toBe(true);
+    expect(supportsPaletteOpacity("bar")).toBe(false);
+    expect(supportsPaletteOpacity("t-heatmap")).toBe(false);
   });
 
   it("resolves legend editor mode", () => {

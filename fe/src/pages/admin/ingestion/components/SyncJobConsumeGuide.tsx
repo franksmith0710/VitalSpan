@@ -19,7 +19,7 @@ export function SyncJobConsumeGuide({ targetTable, className }: SyncJobConsumeGu
           中的表
           <span className="font-mono text-theme-xs"> {targetTable}</span>。
         </p>
-        <ol className="list-decimal space-y-1 pl-4">
+        <ol className="list-decimal space-y-1 pl-4 text-theme-sm">
           <li className="flex items-start gap-1.5">
             <Database className="mt-0.5 size-3.5 shrink-0 opacity-70" aria-hidden />
             <span>

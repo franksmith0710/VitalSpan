@@ -222,7 +222,7 @@ def test_write_analytics_connection_refused_propagates(mock_get_settings, mock_c
 @patch("app.ingestion.sync_write.create_engine")
 @patch("app.ingestion.sync_write.get_settings")
 @patch(
-    "app.ingestion.sync_fetch.fetch_mysql_rows",
+    "app.ingestion.sync_executor.fetch_mysql_rows",
     return_value=[{"product_name": "A", "amount": "1", "status": "active", "note": None}],
 )
 def test_run_job_analytics_connection_refused_failed(
@@ -248,7 +248,7 @@ def test_run_job_analytics_connection_refused_failed(
 @patch("app.ingestion.sync_write.create_engine")
 @patch("app.ingestion.sync_write.get_settings")
 @patch(
-    "app.ingestion.sync_fetch.fetch_mysql_rows",
+    "app.ingestion.sync_executor.fetch_mysql_rows",
     return_value=[{"col": "v"}],
 )
 def test_run_job_bad_analytics_host_runtime_write_failed(
@@ -281,7 +281,7 @@ from app.main import app
 @patch("app.ingestion.sync_write.create_engine")
 @patch("app.ingestion.sync_write.get_settings")
 @patch(
-    "app.ingestion.sync_fetch.fetch_mysql_rows",
+    "app.ingestion.sync_executor.fetch_mysql_rows",
     return_value=[{"col": "v"}],
 )
 def test_run_job_connection_timeout_failed(

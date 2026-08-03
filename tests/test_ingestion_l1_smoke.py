@@ -46,8 +46,8 @@ def smoke_client(monkeypatch) -> TestClient:
     return TestClient(app)
 
 
-@patch("app.ingestion.sync_write.write_analytics", return_value=2)
-@patch("app.ingestion.sync_fetch.fetch_mysql_rows", return_value=MOCK_ROWS)
+@patch("app.ingestion.sync_executor.write_analytics", return_value=2)
+@patch("app.ingestion.sync_executor.fetch_mysql_rows", return_value=MOCK_ROWS)
 def test_l1_mock_smoke_success(mock_fetch, mock_write, smoke_client, auth_headers):
     """T-D05-01 / T-D02-07: mock L1 创建→规则→run→succeeded + traceId/行数。"""
     payload = {
@@ -110,8 +110,8 @@ def test_l1_mock_smoke_success(mock_fetch, mock_write, smoke_client, auth_header
     smoke_client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
 
 
-@patch("app.ingestion.sync_write.write_analytics", return_value=1)
-@patch("app.ingestion.sync_fetch.fetch_mysql_rows", return_value=MOCK_ROWS[:1])
+@patch("app.ingestion.sync_executor.write_analytics", return_value=1)
+@patch("app.ingestion.sync_executor.fetch_mysql_rows", return_value=MOCK_ROWS[:1])
 def test_l1_mock_smoke_history_list_order(mock_fetch, mock_write, smoke_client, auth_headers):
     """T-D05-03: runs 按 started_at 降序。"""
     payload = {
@@ -163,7 +163,7 @@ def test_l1_mock_smoke_history_list_order(mock_fetch, mock_write, smoke_client, 
     smoke_client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
 
 
-@patch("app.ingestion.sync_fetch.fetch_mysql_rows", side_effect=ConnectionError("mock source down"))
+@patch("app.ingestion.sync_executor.fetch_mysql_rows", side_effect=ConnectionError("mock source down"))
 def test_l1_mock_smoke_source_failure(mock_fetch, smoke_client, auth_headers):
     """T-D05-02: mock L1 源失败 → failed + errorMessage + traceId。"""
     payload = {
@@ -213,8 +213,8 @@ def test_l1_mock_smoke_source_failure(mock_fetch, smoke_client, auth_headers):
     smoke_client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
 
 
-@patch("app.ingestion.sync_write.write_analytics", return_value=2)
-@patch("app.ingestion.sync_fetch.fetch_mysql_rows", return_value=MOCK_ROWS)
+@patch("app.ingestion.sync_executor.write_analytics", return_value=2)
+@patch("app.ingestion.sync_executor.fetch_mysql_rows", return_value=MOCK_ROWS)
 def test_l1_mock_smoke_end_to_end_under_three_seconds(
     mock_fetch, mock_write, smoke_client, auth_headers
 ):
@@ -321,10 +321,10 @@ def _sqlite_write_analytics(job, rows):
     return len(rows)
 
 
-@patch("app.ingestion.sync_write.write_analytics", side_effect=_sqlite_write_analytics)
+@patch("app.ingestion.sync_executor.write_analytics", side_effect=_sqlite_write_analytics)
 @patch("app.api.v1.ingestion.sync.get_settings")
 @patch("app.ingestion.sync_executor.get_settings")
-@patch("app.ingestion.sync_fetch.fetch_mysql_rows", return_value=MOCK_ROWS)
+@patch("app.ingestion.sync_executor.fetch_mysql_rows", return_value=MOCK_ROWS)
 def test_l1_analytics_sqlite_write_through(
     mock_fetch,
     mock_exec_settings,
@@ -412,8 +412,8 @@ def test_l1_analytics_sqlite_write_through(
     )
 
 
-@patch("app.ingestion.sync_write.write_analytics", return_value=1)
-@patch("app.ingestion.sync_fetch.fetch_mysql_rows", return_value=MOCK_ROWS[:1])
+@patch("app.ingestion.sync_executor.write_analytics", return_value=1)
+@patch("app.ingestion.sync_executor.fetch_mysql_rows", return_value=MOCK_ROWS[:1])
 def test_l1_runs_started_at_descending(
     mock_fetch, mock_write, smoke_client, auth_headers
 ):
@@ -465,8 +465,8 @@ def test_l1_runs_started_at_descending(
     smoke_client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
 
 
-@patch("app.ingestion.sync_write.write_analytics", return_value=2)
-@patch("app.ingestion.sync_fetch.fetch_mysql_rows", return_value=MOCK_ROWS)
+@patch("app.ingestion.sync_executor.write_analytics", return_value=2)
+@patch("app.ingestion.sync_executor.fetch_mysql_rows", return_value=MOCK_ROWS)
 def test_l1_data_smoke_orchestrator(mock_fetch, mock_write, smoke_client, auth_headers):
     """T-L1-07: 单测编排 create→rules→run→poll→succeeded + trace + rows + 规则后列名。"""
     payload = {
@@ -527,8 +527,8 @@ def test_l1_data_smoke_orchestrator(mock_fetch, mock_write, smoke_client, auth_h
     smoke_client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
 
 
-@patch("app.ingestion.sync_write.write_analytics", return_value=2)
-@patch("app.ingestion.sync_fetch.fetch_mysql_rows", return_value=MOCK_ROWS)
+@patch("app.ingestion.sync_executor.write_analytics", return_value=2)
+@patch("app.ingestion.sync_executor.fetch_mysql_rows", return_value=MOCK_ROWS)
 def test_l1_data_smoke_orchestrator_under_2_5_seconds(
     mock_fetch, mock_write, smoke_client, auth_headers
 ):

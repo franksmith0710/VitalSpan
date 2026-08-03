@@ -44,6 +44,26 @@ function setViewport(width: number) {
   window.dispatchEvent(new Event("resize"));
 }
 
+function markEtlRulesDirty() {
+  const fromInput = screen.getByPlaceholderText("product_name");
+  fireEvent.change(fromInput, { target: { value: `${fromInput.getAttribute("value") ?? "x"} ` } });
+}
+
+function mockSyncJobHistoryApi(
+  runs: unknown[],
+  targetTable = "orders_clean",
+) {
+  mockApiFetch.mockImplementation((url: string) => {
+    if (typeof url === "string" && url.includes("/runs")) {
+      return Promise.resolve({ items: runs });
+    }
+    if (typeof url === "string" && url.includes("/sync-jobs/")) {
+      return Promise.resolve({ target_table: targetTable });
+    }
+    return Promise.resolve({});
+  });
+}
+
 describe("ingestion admin smoke", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
@@ -121,8 +141,7 @@ describe("ingestion admin smoke", () => {
 
   it("SyncJobHistoryPage_shows_runs", async () => {
     setViewport(1400);
-    mockApiFetch.mockResolvedValueOnce({
-      items: [
+    mockSyncJobHistoryApi([
         {
           id: "run-1",
           status: "succeeded",
@@ -144,7 +163,7 @@ describe("ingestion admin smoke", () => {
           retry_count: 1,
         },
       ],
-    });
+    );
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/history"]}>
         <Routes>
@@ -210,6 +229,54 @@ describe("ingestion admin smoke", () => {
     expect(await screen.findByLabelText("MySQL 数据源")).toBeInTheDocument();
   });
 
+  it("SyncJobFormPage_datasource_mode_submit_payload", async () => {
+    setViewport(1400);
+    mockApiFetch
+      .mockResolvedValueOnce({
+        items: [
+          {
+            id: "ds-1",
+            name: "Sample MySQL",
+            type: "mysql",
+            host: "127.0.0.1",
+            port: 3307,
+            database: "sample_db",
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ id: "new-ds-job" });
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs/new" element={<SyncJobFormPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "使用已有数据源" }));
+    fireEvent.click(await screen.findByRole("combobox", { name: "MySQL 数据源" }));
+    fireEvent.click(await screen.findByRole("option", { name: "Sample MySQL" }));
+    fireEvent.change(screen.getByLabelText("任务名称"), { target: { value: "ds-ref-smoke" } });
+    fireEvent.change(screen.getByLabelText("源表"), { target: { value: "dirty_orders" } });
+    fireEvent.change(screen.getByLabelText("目标表"), { target: { value: "orders_from_ds" } });
+    fireEvent.click(screen.getByRole("button", { name: "创建" }));
+    await waitFor(() => {
+      const postCall = mockApiFetch.mock.calls.find(
+        (c) => c[0] === "/api/v1/ingestion/sync-jobs" && c[1]?.method === "POST",
+      );
+      expect(postCall).toBeDefined();
+      const body = JSON.parse(String(postCall![1]?.body));
+      expect(body).toMatchObject({
+        name: "ds-ref-smoke",
+        source_mode: "datasource",
+        source_data_source_id: "ds-1",
+        source_table: "dirty_orders",
+        target_table: "orders_from_ds",
+        sync_mode: "full",
+      });
+      expect(body.source).toBeUndefined();
+    });
+  });
+
   it("SyncJobFormPage_incremental_fields_conditional", async () => {
     setViewport(1400);
     mockApiFetch.mockResolvedValueOnce({ items: [] });
@@ -241,6 +308,7 @@ describe("ingestion admin smoke", () => {
 
   it("SyncJobFormPage_blocks_submit_when_name_empty (T-ING-06)", async () => {
     setViewport(375);
+    mockApiFetch.mockResolvedValueOnce({ items: [] });
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
         <Routes>
@@ -251,11 +319,15 @@ describe("ingestion admin smoke", () => {
     const nameInput = await screen.findByLabelText("任务名称");
     fireEvent.change(nameInput, { target: { value: "" } });
     fireEvent.click(screen.getAllByRole("button", { name: "创建" })[0]);
-    expect(mockApiFetch).not.toHaveBeenCalled();
+    const postCalls = mockApiFetch.mock.calls.filter(
+      (c) => c[0] === "/api/v1/ingestion/sync-jobs" && c[1]?.method === "POST",
+    );
+    expect(postCalls).toHaveLength(0);
   });
 
   it("SyncJobFormPage_password_field_is_masked (T-ING-07)", async () => {
     setViewport(1400);
+    mockApiFetch.mockResolvedValueOnce({ items: [] });
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
         <Routes>
@@ -286,7 +358,7 @@ describe("ingestion admin smoke", () => {
 
   it("SyncJobHistoryPage_empty_state (T-ING-09)", async () => {
     setViewport(1400);
-    mockApiFetch.mockResolvedValueOnce({ items: [] });
+    mockSyncJobHistoryApi([]);
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/history"]}>
         <Routes>
@@ -442,7 +514,18 @@ describe("ingestion admin smoke", () => {
 
   it("SyncJobHistoryPage_error_state (T-ING-14)", async () => {
     setViewport(375);
-    mockApiFetch.mockRejectedValueOnce(new Error("加载历史失败"));
+    let historyLoads = 0;
+    mockApiFetch.mockImplementation((url: string) => {
+      if (typeof url === "string" && url.includes("/ingestion/sync-jobs/")) {
+        historyLoads += 1;
+        if (historyLoads <= 2) {
+          return Promise.reject(new Error("加载历史失败"));
+        }
+        if (url.includes("/runs")) return Promise.resolve({ items: [] });
+        return Promise.resolve({ target_table: "orders_clean" });
+      }
+      return Promise.resolve({});
+    });
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/history"]}>
         <Routes>
@@ -454,16 +537,15 @@ describe("ingestion admin smoke", () => {
       </MemoryRouter>,
     );
     expect(await screen.findByText("加载历史失败")).toBeInTheDocument();
-    mockApiFetch.mockResolvedValueOnce({ items: [] });
     fireEvent.click(screen.getByRole("button", { name: "重试" }));
     await waitFor(() => {
-      expect(mockApiFetch).toHaveBeenCalledTimes(2);
+      expect(mockApiFetch.mock.calls.length).toBeGreaterThanOrEqual(4);
     });
   });
 
   it("SyncJobHistoryPage_requests_limit_20 (T-ING-16)", async () => {
     setViewport(1400);
-    mockApiFetch.mockResolvedValueOnce({ items: [] });
+    mockSyncJobHistoryApi([]);
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/history"]}>
         <Routes>
@@ -502,6 +584,7 @@ describe("ingestion admin smoke", () => {
       </MemoryRouter>,
     );
     const saveBtn = await screen.findByRole("button", { name: "保存规则" });
+    markEtlRulesDirty();
     fireEvent.click(saveBtn);
     fireEvent.click(saveBtn);
     const putCalls = mockApiFetch.mock.calls.filter(
@@ -517,7 +600,9 @@ describe("ingestion admin smoke", () => {
     const createPromise = new Promise<{ id: string }>((r) => {
       resolveCreate = () => r({ id: "new-job" });
     });
-    mockApiFetch.mockImplementationOnce(() => createPromise);
+    mockApiFetch
+      .mockResolvedValueOnce({ items: [] })
+      .mockImplementationOnce(() => createPromise);
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
         <Routes>
@@ -575,6 +660,7 @@ describe("ingestion admin smoke", () => {
       </MemoryRouter>,
     );
     const saveBtn = await screen.findByRole("button", { name: "保存规则" });
+    markEtlRulesDirty();
     fireEvent.click(saveBtn);
     expect(await screen.findByText(/请填写完整的列重命名规则|请填写规则涉及的列名/)).toBeInTheDocument();
     const putCalls = mockApiFetch.mock.calls.filter(
@@ -595,7 +681,7 @@ describe("ingestion admin smoke", () => {
       error_message: i % 3 === 0 ? "mock error" : null,
       retry_count: 0,
     }));
-    mockApiFetch.mockResolvedValueOnce({ items: runs });
+    mockSyncJobHistoryApi(runs);
     const start = performance.now();
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/history"]}>
@@ -633,7 +719,12 @@ describe("ingestion admin smoke", () => {
 
   it("SyncJobHistoryPage_error_state_uses_semantic_tokens (T-ING-23)", async () => {
     setViewport(1400);
-    mockApiFetch.mockRejectedValueOnce(new Error("加载历史失败"));
+    mockApiFetch.mockImplementation((url: string) => {
+      if (typeof url === "string" && url.includes("/ingestion/sync-jobs/")) {
+        return Promise.reject(new Error("加载历史失败"));
+      }
+      return Promise.resolve({});
+    });
     const { container } = render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/history"]}>
         <Routes>
@@ -663,7 +754,7 @@ describe("ingestion admin smoke", () => {
       error_message: i % 4 === 0 ? "mock sync error message" : null,
       retry_count: 0,
     }));
-    mockApiFetch.mockResolvedValueOnce({ items: runs });
+    mockSyncJobHistoryApi(runs);
     const start = performance.now();
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/history"]}>
@@ -695,6 +786,7 @@ describe("ingestion admin smoke", () => {
       </MemoryRouter>,
     );
     const saveBtn = await screen.findByRole("button", { name: "保存规则" });
+    markEtlRulesDirty();
     fireEvent.click(saveBtn);
     await screen.findByText(/请填写完整的列重命名规则/);
     const fromInput = screen.getByPlaceholderText("product_name");
@@ -703,7 +795,12 @@ describe("ingestion admin smoke", () => {
 
   it("SyncJobHistoryPage_error_banner_has_role_alert (T-ING-26)", async () => {
     setViewport(1400);
-    mockApiFetch.mockRejectedValueOnce(new Error("加载历史失败"));
+    mockApiFetch.mockImplementation((url: string) => {
+      if (typeof url === "string" && url.includes("/ingestion/sync-jobs/")) {
+        return Promise.reject(new Error("加载历史失败"));
+      }
+      return Promise.resolve({});
+    });
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/history"]}>
         <Routes>
@@ -839,7 +936,7 @@ describe("ingestion admin smoke", () => {
       error_message: null,
       retry_count: 0,
     }));
-    mockApiFetch.mockResolvedValueOnce({ items: runs });
+    mockSyncJobHistoryApi(runs);
     const start = performance.now();
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/history"]}>
@@ -857,20 +954,18 @@ describe("ingestion admin smoke", () => {
 
   it("SyncJobHistoryPage_failed_row_shows_error_message (T-ING-32)", async () => {
     setViewport(1400);
-    mockApiFetch.mockResolvedValueOnce({
-      items: [
-        {
-          id: "run-fail",
-          status: "failed",
-          started_at: "2026-07-03T10:00:00Z",
-          finished_at: "2026-07-03T10:00:02Z",
-          rows_synced: null,
-          error_message: "连接失败",
-          trace_id: "trace-fail-32",
-          retry_count: 1,
-        },
-      ],
-    });
+    mockSyncJobHistoryApi([
+      {
+        id: "run-fail",
+        status: "failed",
+        started_at: "2026-07-03T10:00:00Z",
+        finished_at: "2026-07-03T10:00:02Z",
+        rows_synced: null,
+        error_message: "连接失败",
+        trace_id: "trace-fail-32",
+        retry_count: 1,
+      },
+    ]);
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/history"]}>
         <Routes>
@@ -924,6 +1019,7 @@ describe("ingestion admin smoke", () => {
       </MemoryRouter>,
     );
     await screen.findByRole("button", { name: "保存规则" });
+    markEtlRulesDirty();
     fireEvent.click(screen.getByRole("button", { name: "保存规则" }));
     expect(await screen.findByText("未授权")).toBeInTheDocument();
     expect(screen.queryByText("已保存")).not.toBeInTheDocument();

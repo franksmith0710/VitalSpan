@@ -11,7 +11,7 @@
 | 上轮报告 | — |
 | 总分 | **69** / 100（硬门槛封顶） |
 | 较上轮 Δ | — |
-| 结论 | **小改后可用**（M1B 主链路已通；权责诚实与运营闭环须先还债再扩 L2） |
+| 结论 | **M1B 可交付**（主链路 + 数据源引用 + 增量 upsert + 出图引导；复合 PK / 增量删除留二期） |
 | 硬门槛 | B-1（只读角色可见管理动作且可点，API 403） |
 
 ## Review Card
@@ -66,7 +66,7 @@
 | B-1 | P0 | 是 | 否 | done | FE 按 ingestion:manage 隐藏写操作 | `SyncJobsPage.tsx` · `SyncJobsTable.tsx` | vitest 35/35 | — | 2026-08-03 |
 | B-2 | P1 | 否 | 否 | done | 列表 API last_run + 列展示 + run 后轮询刷新 | `sync.py` · `SyncJobsTable.tsx` | pytest + vitest | — | 2026-08-03 |
 | B-3 | P1 | 否 | 否 | done | 运行确认框明示 TRUNCATE 覆盖目标表 | `SyncJobsPage.tsx` | vitest | — | 2026-08-03 |
-| B-4 | P1 | 否 | 否 | open | — | — | — | — | 2026-07-31 |
+| B-4 | P1 | 否 | 否 | done | 表单双模式 + source_resolver 快照 | `SyncJobFormPage.tsx` · `source_resolver.py` · `sync.py` | pytest + vitest | — | 2026-08-03 |
 | B-5 | P1 | 否 | 否 | done | apiError 映射 ANALYTICS_DB_NOT_CONFIGURED 等 | `fe/src/lib/apiError.ts` | — | — | 2026-08-03 |
 | B-6 | P2 | 否 | 否 | done | Cron 创建/更新 422；scheduler 逐 job 跳过非法 cron | `cron_validate.py` · `sync.py` · `scheduler.py` | pytest | — | 2026-08-03 |
 | B-7 | P2 | 否 | 否 | done | 历史页 description 明示最多 100 条 | `SyncJobHistoryPage.tsx` | vitest | — | 2026-08-03 |

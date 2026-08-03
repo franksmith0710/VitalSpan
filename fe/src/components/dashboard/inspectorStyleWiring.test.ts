@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { chartStyleSectionsForType } from "@/lib/chartStyleSectionRegistry";
-import { filterStyleSectionsForChart } from "@/lib/chartStylePanelGates";
+import {
+  filterStyleSectionsForChart,
+  supportsPaletteOpacity,
+  supportsSeriesGradientToggle,
+} from "@/lib/chartStylePanelGates";
 import { resolveChartContentShellStyle } from "@/lib/chartDeStyle";
+import { resolveD3InspectorFeatureMatrix } from "@/components/charts/engine/d3/inspectorCapabilityMatrix";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 
 describe("inspector style wiring registry", () => {
@@ -19,6 +24,27 @@ describe("inspector style wiring registry", () => {
     const sections = chartStyleSectionsForType("line");
     expect(sections[0]).toBe("variantBasic");
     expect(sections[1]).toBe("axis");
+  });
+
+  it("wordCloud D3 matrix aligns with word-cloud", () => {
+    expect(resolveD3InspectorFeatureMatrix("wordCloud")).toEqual(
+      resolveD3InspectorFeatureMatrix("word-cloud"),
+    );
+  });
+
+  it("table-info has tableColor not palette", () => {
+    const sections = chartStyleSectionsForType("table-info");
+    expect(sections).toContain("tableColor");
+    expect(sections).not.toContain("palette");
+  });
+
+  it("pie hides series gradient and palette opacity gates", () => {
+    expect(supportsSeriesGradientToggle("pie")).toBe(false);
+    expect(supportsPaletteOpacity("pie")).toBe(false);
+  });
+
+  it("map-3d style sections exclude palette", () => {
+    expect(chartStyleSectionsForType("map-3d")).not.toContain("palette");
   });
 
   it("grid shell merges per-chart background override", () => {

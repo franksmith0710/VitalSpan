@@ -1,11 +1,5 @@
 import type { ChartType } from "@/lib/chartViewConfig";
 import {
-  isGeoMapChartType,
-  isKpiType,
-  isMatrixHeatmapChartType,
-} from "@/lib/chartViewConfig";
-import { isTableLikeChartType } from "@/lib/chartTableInspector";
-import {
   chartInspectorCapabilities,
   supportsEmbeddedShellLegend,
 } from "@/lib/chartInspectorCapabilities";
@@ -30,18 +24,25 @@ const DEPTH_VISUAL_CHART_TYPES = new Set<ChartType>([
   "funnel",
 ]);
 
-const SERIES_GRADIENT_EXCLUDED = new Set<ChartType>([
-  "gauge",
-  "liquid",
-  "radar",
-  "sankey",
-  "graph",
-  "word-cloud",
-  "stock-line",
-  "map",
-  "map-3d",
-  "kpi",
-  "t-heatmap",
+/** D3 renderer 实测消费 seriesGradient 的类型（renderBar/Area/Line/DualAxes 族） */
+const SERIES_GRADIENT_CHART_TYPES = new Set<ChartType>([
+  "line",
+  "area",
+  "area-stack",
+  "timeline",
+  "bar",
+  "bar-stack",
+  "percentage-bar-stack",
+  "bar-group",
+  "bar-group-stack",
+  "bar-horizontal",
+  "bar-stack-horizontal",
+  "percentage-bar-stack-horizontal",
+  "combo",
+  "chart-mix",
+  "chart-mix-group",
+  "chart-mix-stack",
+  "chart-mix-dual-line",
 ]);
 
 export type LegendEditorMode = "shell" | "d3" | "none";
@@ -50,12 +51,17 @@ export function supportsDepthVisualToggle(chartType: ChartType): boolean {
   return DEPTH_VISUAL_CHART_TYPES.has(chartType);
 }
 
+/** paletteOpacity 仅 2D choropleth map 渲染消费 */
+export function supportsPaletteOpacity(chartType: ChartType): boolean {
+  return chartType === "map";
+}
+
 export function supportsSeriesGradientToggle(chartType: ChartType): boolean {
-  if (isTableLikeChartType(chartType)) return false;
-  if (isMatrixHeatmapChartType(chartType)) return false;
-  if (isKpiType(chartType)) return false;
-  if (isGeoMapChartType(chartType)) return false;
-  return !SERIES_GRADIENT_EXCLUDED.has(chartType);
+  return SERIES_GRADIENT_CHART_TYPES.has(chartType);
+}
+
+export function listSeriesGradientChartTypes(): ChartType[] {
+  return [...SERIES_GRADIENT_CHART_TYPES];
 }
 
 const D3_INLINE_LEGEND_TYPES = new Set<ChartType>([

@@ -39,6 +39,7 @@ import {
 import type { WidgetStyleConfig } from "../dashboardStyleConfig";
 import {
   supportsDepthVisualToggle,
+  supportsPaletteOpacity,
   supportsSeriesGradientToggle,
   resolveLegendEditorMode,
 } from "@/lib/chartStylePanelGates";
@@ -101,6 +102,7 @@ export function ChartPaletteStyleSection() {
         tooltipBackgroundFallback={resolveChartTooltipDisplayBackground(cfg, dashboardStyle)}
         showLabelToggle={caps.label}
         showTooltipToggle={!isTableLike && tooltipInOwnSection && cfg.chartType !== "t-heatmap"}
+        showOpacity={supportsPaletteOpacity(cfg.chartType)}
         showGradientToggle={supportsSeriesGradientToggle(cfg.chartType)}
         showDepthToggle={supportsDepthVisualToggle(cfg.chartType)}
         onPaletteChange={(paletteId) => {
