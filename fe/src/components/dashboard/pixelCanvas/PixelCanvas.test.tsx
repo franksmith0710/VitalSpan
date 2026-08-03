@@ -1209,7 +1209,7 @@ describe("PixelCanvas", () => {
 });
 
 describe("v2 widget creation and history", () => {
-  it("creates chart and filter widgets in seamless open slots", () => {
+  it("creates chart and filter widgets centered on canvas", () => {
     const chartLayout = insertPixelPaletteWidget("bar", {
       version: 2,
       canvas: layout.canvas,
@@ -1222,9 +1222,11 @@ describe("v2 widget creation and history", () => {
       chartLayout,
     );
     const filter = filterLayout.widgets.find((item) => item.type === "filter")!;
+    const chartAfterFilter = filterLayout.widgets.find((item) => item.type === "chart")!;
 
-    expect(chart).toMatchObject({ type: "chart", x: 0, y: 0, width: 480, height: 300 });
-    expect(filter).toMatchObject({ type: "filter", x: 480, y: 0, width: 320, height: 140 });
+    expect(chart).toMatchObject({ type: "chart", x: 480, y: 300, width: 480, height: 300 });
+    expect(filter).toMatchObject({ type: "filter", x: 560, y: 380, width: 320, height: 140 });
+    expect(chartAfterFilter).toMatchObject({ x: 480, y: 520 });
     expect(layoutsOverlap(filterLayout, 0)).toBe(false);
   });
 
@@ -1249,8 +1251,8 @@ describe("v2 widget creation and history", () => {
       title: "复用说明",
       order: 8,
       textConfig: { content: "复用内容" },
-      x: 400,
-      y: 0,
+      x: 460,
+      y: 410,
       width: 480,
       height: 180,
     });

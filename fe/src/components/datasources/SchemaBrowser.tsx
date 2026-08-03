@@ -167,7 +167,12 @@ export function SchemaBrowser({
   }
 
   const toolbar = (
-    <div className="flex shrink-0 flex-col gap-3 border-b border-gray-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800 sm:px-5">
+    <div
+      className={cn(
+        "flex shrink-0 flex-col gap-3 border-b border-gray-200 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between",
+        embedded ? "px-4 py-2.5 sm:px-4" : "px-4 py-4 sm:px-5",
+      )}
+    >
       <SearchField
         className="w-full sm:max-w-xs"
         inputClassName="h-10"

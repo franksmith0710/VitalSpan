@@ -251,12 +251,16 @@ describe("collisionLayout", () => {
     expect(resolved.widgets.find((item) => item.id === "e")).toMatchObject(activeRect);
   });
 
-  it("inserts widgets into the next open slot without pushing existing ones", () => {
+  it("centers palette widgets on canvas when viewport is unavailable", () => {
     const layout = baseLayout([widget("a", 0, 0, 360, 220, 1)]);
     const resolved = insertPixelPaletteWidget("bar", layout);
-    expect(layoutsOverlap(resolved, 0)).toBe(false);
     expect(resolved.widgets.find((item) => item.id === "a")).toMatchObject({ x: 0, y: 0 });
-    expect(resolved.widgets.find((item) => item.id !== "a")).toMatchObject({ x: 360, y: 0 });
+    expect(resolved.widgets.find((item) => item.id !== "a")).toMatchObject({
+      x: 480,
+      y: 300,
+      width: 480,
+      height: 300,
+    });
   });
 
   it("inserts palette widgets at the visible viewport center on click", () => {

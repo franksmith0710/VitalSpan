@@ -46,6 +46,23 @@ const SURFACE_OPTIONS: { kind: VizSurfaceKind; label: string }[] = [
   { kind: "data-screen", label: "数据大屏" },
 ];
 
+/** 与 ChartPickerPopover 一致，切换组件类型时保持弹窗高度稳定 */
+const TYPE_PICKER_SLOT_CLASS = "h-[min(45vh,360px)] min-h-[280px]";
+
+const TYPE_PICKER_HINT: Record<VizWidgetType, string | undefined> = {
+  chart: "与看板/大屏编辑页图表面板一致",
+  filter: "创建后可在编辑页配置筛选字段",
+  text: "创建后可在编辑页编辑富文本内容",
+  media: "创建后可在编辑页上传图片或视频",
+};
+
+const TYPE_PICKER_LABEL: Record<VizWidgetType, string> = {
+  chart: "图表类型",
+  filter: "筛选器",
+  text: "富文本",
+  media: "媒体",
+};
+
 type CreateVizComponentDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -125,11 +142,7 @@ export function CreateVizComponentDialog({ open, onOpenChange }: CreateVizCompon
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <AdminFormDialogContent
-        size="lg"
-        scrollable
-        className={cn(isChart && "sm:max-w-[540px]")}
-      >
+      <AdminFormDialogContent size="lg" scrollable className="sm:max-w-[540px]">
         <AdminFormDialogHeader>
           <DialogTitle>新建组件</DialogTitle>
           <AdminFormDialogDescription>
@@ -171,18 +184,37 @@ export function CreateVizComponentDialog({ open, onOpenChange }: CreateVizCompon
               })}
             </div>
           </AdminFormField>
-          {isChart ? (
-            <AdminFormField label="图表类型" hint="与看板/大屏编辑页图表面板一致">
-              <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
+          <AdminFormField label={TYPE_PICKER_LABEL[widgetType]} hint={TYPE_PICKER_HINT[widgetType]}>
+            <div
+              className={cn(
+                "relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800",
+                TYPE_PICKER_SLOT_CLASS,
+              )}
+            >
+              <div className={cn("absolute inset-0", !isChart && "hidden")} aria-hidden={!isChart}>
                 <ChartPickerPopover
                   selectedType={chartType}
                   enableDrag={false}
-                  className="h-[min(45vh,360px)] min-h-[280px]"
+                  className="h-full min-h-0"
                   onInsert={setChartType}
                 />
               </div>
-            </AdminFormField>
-          ) : null}
+              <div
+                className={cn(
+                  "flex h-full flex-col items-center justify-center gap-2 px-6 text-center",
+                  isChart && "hidden",
+                )}
+                aria-hidden={isChart}
+              >
+                <p className="text-theme-sm font-medium text-gray-700 dark:text-gray-300">
+                  {widgetTypeLabel(widgetType)}
+                </p>
+                <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+                  {TYPE_PICKER_HINT[widgetType]}
+                </p>
+              </div>
+            </div>
+          </AdminFormField>
           <AdminFormField label="分类">
             <Select value={categoryKey} onValueChange={setCategoryKey}>
               <SelectTrigger>

@@ -12,10 +12,10 @@ import {
   type PaletteInsertType,
 } from "../createLayoutWidget";
 import { cloneLayoutWidget } from "../cloneLayoutWidget";
-import { findNextOpenSlot, resolvePixelLayoutWithActiveRect } from "./collisionLayout";
+import { resolvePixelLayoutWithActiveRect } from "./collisionLayout";
 import { pixelWidgetToLayoutWidget } from "../dashboardCanvasMode";
-import type { DashboardLayoutV2, LayoutWidget, PixelLayoutWidget } from "../layoutUtils";
-import { getTopLevelPixelWidgets, insertPixelWidgetIntoTab } from "../layoutUtils";
+import type { DashboardCanvas, DashboardLayoutV2, LayoutWidget, PixelLayoutWidget } from "../layoutUtils";
+import { insertPixelWidgetIntoTab } from "../layoutUtils";
 import type { PaletteDragPayload } from "@/lib/dashboardDnd";
 import {
   isScreenMaterialInsertType,
@@ -82,45 +82,16 @@ function viewportCenterPoint(
   return { x: canvas.width / 2, y: canvas.height / 2 };
 }
 
-/** 调色板点击（非拖放）落点：优先视口中心，空画布无视口时居中画布 */
+/** 调色板点击（非拖放）落点：优先视口中心，否则居中画布（大屏允许叠放，不再挤左下角空位） */
 function placeForPaletteClick(
   size: { width: number; height: number },
-  widgets: PixelLayoutWidget[],
   canvas: DashboardCanvas,
   visibleViewport?: PixelRect,
 ): Pick<PixelLayoutWidget, "x" | "y" | "width" | "height"> {
   if (visibleViewport && visibleViewport.width > 0 && visibleViewport.height > 0) {
     return placeAtPoint(size, canvas, viewportCenterPoint(canvas, visibleViewport));
   }
-  if (widgets.length === 0) {
-    return placeAtPoint(size, canvas, viewportCenterPoint(canvas));
-  }
-  return placeInNextOpenSlot(size, widgets, canvas);
-}
-
-function placeInNextOpenSlot(
-  size: { width: number; height: number },
-  widgets: PixelLayoutWidget[],
-  canvas: DashboardCanvas,
-): Pick<PixelLayoutWidget, "x" | "y" | "width" | "height"> {
-  const width = Math.min(size.width, canvas.width);
-  const height = Math.min(size.height, canvas.height);
-  const slot = findNextOpenSlot(
-    { width, height },
-    widgets.map((widget) => ({
-      x: widget.x,
-      y: widget.y,
-      width: widget.width,
-      height: widget.height,
-    })),
-    canvas,
-  );
-  return {
-    x: Math.round(slot.x),
-    y: Math.round(slot.y),
-    width,
-    height,
-  };
+  return placeAtPoint(size, canvas, viewportCenterPoint(canvas));
 }
 
 export function defaultPixelSizeForPalettePayload(
@@ -261,7 +232,6 @@ export function insertPixelPaletteWidget(
   const legacy = createPaletteWidget(type, legacyWidgets);
   const placement = placeForPaletteClick(
     defaultSize(legacy),
-    getTopLevelPixelWidgets(layout.widgets),
     layout.canvas,
     visibleViewport,
   );
@@ -339,7 +309,6 @@ export function insertClonedPixelWidget(
     : defaultSize(widget);
   const placement = placeForPaletteClick(
     size,
-    getTopLevelPixelWidgets(layout.widgets),
     layout.canvas,
     visibleViewport,
   );

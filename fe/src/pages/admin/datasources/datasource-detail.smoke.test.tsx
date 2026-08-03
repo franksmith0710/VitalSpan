@@ -66,7 +66,7 @@ describe("datasource detail schema browser", () => {
       "href",
       "/admin/datasources",
     );
-    expect(await screen.findByText("元数据浏览")).toBeInTheDocument();
+    expect(await screen.findByText("Schema / 表")).toBeInTheDocument();
     await waitFor(() =>
       expect(mockApiFetch).toHaveBeenCalledWith("/api/v1/datasources/ds-1/tables?schema=public"),
     );

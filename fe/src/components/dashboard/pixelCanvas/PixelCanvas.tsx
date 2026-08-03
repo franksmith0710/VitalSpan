@@ -237,9 +237,10 @@ export function PixelCanvas({
 
   const publishViewport = useCallback(
     (next: PixelRect) => {
-      if (pixelRectsNearlyEqual(viewportRef.current, next)) return;
+      const changed = !pixelRectsNearlyEqual(viewportRef.current, next);
       viewportRef.current = next;
-      setVisibleViewport(next);
+      if (changed) setVisibleViewport(next);
+      // 父级 ref 需在首帧就写入；若仅在与初始值相等时跳过，大屏调色板插入会拿不到视口
       onViewportChange?.(next);
     },
     [onViewportChange],
