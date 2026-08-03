@@ -112,6 +112,7 @@ export function DatasourceDetailPage() {
 
   return (
     <AdminPageShell
+      layout="fill"
       title={data.name}
       description={
         <div className="flex flex-wrap items-center gap-2">

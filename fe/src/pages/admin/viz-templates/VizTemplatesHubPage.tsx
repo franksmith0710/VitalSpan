@@ -40,11 +40,6 @@ import {
   HUB_CARD_SKELETON_PREVIEW_CLASS,
 } from "@/components/dashboard/hubCardUi";
 import { cn } from "@/lib/utils";
-import {
-  demoPackageStatusQueryKey,
-  fetchDemoPackageStatus,
-} from "@/lib/demoPackageStatus";
-import { DemoPackageStatusHint } from "./DemoPackageStatusHint";
 import { VizTemplatesHubFilters } from "./VizTemplatesHubFilters";
 
 function TemplateCardSkeleton() {
@@ -98,12 +93,6 @@ export function VizTemplatesHubPage() {
         includeDrafts: canManage,
         limit: 100,
       }),
-  });
-
-  const demoStatusQuery = useQuery({
-    queryKey: demoPackageStatusQueryKey,
-    queryFn: () => fetchDemoPackageStatus(),
-    staleTime: 30_000,
   });
 
   const invalidate = () =>
@@ -244,23 +233,14 @@ export function VizTemplatesHubPage() {
             />
           }
           actions={
-            <div className="flex w-full min-w-0 flex-col items-stretch gap-2 sm:w-auto sm:items-end">
-              {demoStatusQuery.data ? (
-                <DemoPackageStatusHint
-                  ready={demoStatusQuery.data.ready}
-                  message={demoStatusQuery.data.message}
-                  className="sm:max-w-md"
-                />
-              ) : null}
-              <Input
-                size="sm"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder={VIZ_TEMPLATES_HUB.searchPlaceholder}
-                className="w-full sm:min-w-[220px]"
-                aria-label={VIZ_TEMPLATES_HUB.searchAriaLabel}
-              />
-            </div>
+            <Input
+              size="sm"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder={VIZ_TEMPLATES_HUB.searchPlaceholder}
+              className="w-full sm:w-auto sm:min-w-[220px]"
+              aria-label={VIZ_TEMPLATES_HUB.searchAriaLabel}
+            />
           }
         />
 

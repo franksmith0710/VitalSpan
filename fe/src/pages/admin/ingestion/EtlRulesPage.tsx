@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router";
 import { Plus, Settings2, Trash2 } from "lucide-react";
 import { AdminPageHeaderIcon, AdminPageShell } from "@/components/layout/admin-page-shell";
 import { ADMIN_PAGE_SURFACE_CLASS } from "@/components/layout/list-page-kit";
+import { cn } from "@/lib/utils";
 import {
   ListPageBatchActions,
   ListRowCheckbox,
@@ -174,29 +175,35 @@ export function EtlRulesPage() {
         </Button>
       }
     >
-      {error ? (
-        <div className="mb-4 shrink-0">
-          <PageErrorBanner message={error} onRetry={() => void loadRules()} />
-        </div>
-      ) : null}
+      <div
+        className={cn(
+          ADMIN_PAGE_SURFACE_CLASS,
+          "flex min-h-0 flex-1 flex-col overflow-hidden",
+        )}
+      >
+        <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar px-6 py-6 lg:px-8 lg:py-8">
+          {error ? (
+            <div className="mb-4 shrink-0">
+              <PageErrorBanner message={error} onRetry={() => void loadRules()} />
+            </div>
+          ) : null}
 
-      {saved ? (
-        <div className="mb-4 shrink-0 rounded-xl border border-success-500 bg-success-50 p-4 text-theme-sm text-success-700 dark:border-success-500/30 dark:bg-success-500/15 dark:text-success-400">
-          规则已保存
-        </div>
-      ) : null}
+          {saved ? (
+            <div className="mb-4 shrink-0 rounded-xl border border-success-500 bg-success-50 p-4 text-theme-sm text-success-700 dark:border-success-500/30 dark:bg-success-500/15 dark:text-success-400">
+              规则已保存
+            </div>
+          ) : null}
 
-      <div className={`${ADMIN_PAGE_SURFACE_CLASS} space-y-4 p-6 lg:p-8`}>
-        <ListPageBatchActions
-          batchMode={batch.batchMode}
-          onToggleBatchMode={batch.toggleBatchMode}
-          selectedCount={selection.selectedCount}
-          entityLabel="条规则"
-          onClear={selection.clear}
-          onDelete={removeSelectedRules}
-        />
+          <ListPageBatchActions
+            batchMode={batch.batchMode}
+            onToggleBatchMode={batch.toggleBatchMode}
+            selectedCount={selection.selectedCount}
+            entityLabel="条规则"
+            onClear={selection.clear}
+            onDelete={removeSelectedRules}
+          />
 
-        <div className="space-y-4">
+          <div className="mt-4 space-y-4">
         {rules.map((rule, index) => (
           <div
             key={index}
@@ -356,6 +363,7 @@ export function EtlRulesPage() {
             保存规则
           </Button>
         </div>
+          </div>
         </div>
       </div>
     </AdminPageShell>

@@ -15,7 +15,7 @@ import { VitalSpanLogo } from "@/components/layout/vitalspan-logo";
 import { resolveSidebarSections } from "@/lib/resolve-nav";
 import { sessionUserFromMe } from "@/lib/session";
 import { isDetachedFromWorkspacePath } from "@/lib/workspace";
-import { isAdminListFillRoute, isAdminScreenPreviewRoute, isAdminShareRoute, isAdminDatasetFormRoute, isAdminDatasourceFormRoute, isAdminVizComponentEditRoute } from "@/lib/admin-layout-routes";
+import { isAdminListFillRoute, isAdminScreenPreviewRoute, isAdminShareRoute, isAdminDatasetFormRoute, isAdminDatasourceFormRoute, isAdminDatasourceDetailRoute, isAdminSyncJobFormRoute, isAdminVizComponentEditRoute } from "@/lib/admin-layout-routes";
 import {
   ADMIN_CONTENT_MARGIN_COLLAPSED_CLASS,
   ADMIN_CONTENT_MARGIN_EXPANDED_CLASS,
@@ -48,8 +48,10 @@ function AdminLayoutContent() {
   const isVizComponentEditFill = isAdminVizComponentEditRoute(location.pathname);
   const isDatasetFormFill = isAdminDatasetFormRoute(location.pathname);
   const isDatasourceFormFill = isAdminDatasourceFormRoute(location.pathname);
+  const isDatasourceDetailFill = isAdminDatasourceDetailRoute(location.pathname);
+  const isSyncJobFormFill = isAdminSyncJobFormRoute(location.pathname);
   const isFillHeightRoute =
-    isDashboardEditFill || isListFillRoute || isVizComponentEditFill || isDatasetFormFill || isDatasourceFormFill || isShareRoute;
+    isDashboardEditFill || isListFillRoute || isVizComponentEditFill || isDatasetFormFill || isDatasourceFormFill || isDatasourceDetailFill || isSyncJobFormFill || isShareRoute;
   // 所有标准管理页锁住 html/body，仅 main 滚动，避免细/粗双滚动条并存
   useAdminFillScrollLock(!isScreenPreviewRoute);
 

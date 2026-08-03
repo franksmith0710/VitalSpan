@@ -28,6 +28,13 @@ const ADMIN_DATASET_FORM_PATTERN = /^\/admin\/datasets\/(?:new|[^/]+\/edit)\/?$/
 /** 数据源新建/编辑：全宽 + fill 高度（连接表单分区布局） */
 const ADMIN_DATASOURCE_FORM_PATTERN = /^\/admin\/datasources\/(?:new|[^/]+\/edit)\/?$/;
 
+/** 数据源详情：全宽 + fill 高度（元数据浏览占满剩余视口） */
+const ADMIN_DATASOURCE_DETAIL_PATTERN = /^\/admin\/datasources\/(?!new$)[^/]+\/?$/;
+
+/** 同步任务新建/编辑/清洗规则：全宽 + fill 高度（表单在壳内滚动） */
+const ADMIN_SYNC_JOB_FORM_PATTERN =
+  /^\/admin\/ingestion\/sync-jobs\/(?:new|[^/]+\/edit|[^/]+\/etl-rules)\/?$/;
+
 /** 分享/嵌入配置页：全宽 fill（bi-share-embed） */
 const ADMIN_SHARE_PATTERNS: RegExp[] = [
   /^\/admin\/dashboards\/[^/]+\/share\/?$/,
@@ -43,10 +50,9 @@ const ADMIN_WIDE_SCROLL_PATTERNS: RegExp[] = [
   /^\/admin\/governance\/publish\/?$/,
   /^\/admin\/designer\/?$/,
   /^\/admin\/metadata(?:\/|$)/,
-  /^\/admin\/datasources\/(?!new$)[^/]+\/?$/,
   /^\/admin\/themes\/[^/]+\/?$/,
   /^\/admin\/entities\/overview\/?$/,
-  /^\/admin\/ingestion\/sync-jobs\/[^/]+\/(?:history|etl-rules)\/?$/,
+  /^\/admin\/ingestion\/sync-jobs\/[^/]+\/history\/?$/,
 ];
 
 /** 看板/大屏编辑与查看（由 AdminLayout useMatch 判定，此处供测试与文档） */
@@ -67,6 +73,14 @@ export function isAdminDatasetFormRoute(pathname: string): boolean {
 
 export function isAdminDatasourceFormRoute(pathname: string): boolean {
   return ADMIN_DATASOURCE_FORM_PATTERN.test(pathname);
+}
+
+export function isAdminDatasourceDetailRoute(pathname: string): boolean {
+  return ADMIN_DATASOURCE_DETAIL_PATTERN.test(pathname);
+}
+
+export function isAdminSyncJobFormRoute(pathname: string): boolean {
+  return ADMIN_SYNC_JOB_FORM_PATTERN.test(pathname);
 }
 
 export function isAdminScreenPreviewRoute(pathname: string): boolean {

@@ -4,13 +4,27 @@ import {
   defaultMediaConfig,
   defaultTextConfig,
 } from "@/components/dashboard/layoutUtils";
+import { getChartTypeDisplayName } from "@/lib/chartRegistry";
+import type { ChartType } from "@/lib/chartViewConfig";
 import type { VizComponentPayload, VizWidgetType } from "./vizComponents";
 
-export function defaultVizComponentPayload(widgetType: VizWidgetType): VizComponentPayload {
+export type VizComponentDefaultsOptions = {
+  chartType?: ChartType;
+};
+
+export function defaultVizComponentPayload(
+  widgetType: VizWidgetType,
+  options?: VizComponentDefaultsOptions,
+): VizComponentPayload {
   const seedId = crypto.randomUUID();
   switch (widgetType) {
     case "chart":
-      return { chartConfig: { ...defaultChartConfig("bar"), chartId: seedId } };
+      return {
+        chartConfig: {
+          ...defaultChartConfig(options?.chartType ?? "bar"),
+          chartId: seedId,
+        },
+      };
     case "filter":
       return { filterConfig: defaultFilterConfig(seedId) };
     case "text":
@@ -22,9 +36,15 @@ export function defaultVizComponentPayload(widgetType: VizWidgetType): VizCompon
   }
 }
 
-export function defaultVizComponentName(widgetType: VizWidgetType): string {
+export function defaultVizComponentName(
+  widgetType: VizWidgetType,
+  options?: VizComponentDefaultsOptions,
+): string {
   switch (widgetType) {
     case "chart":
+      if (options?.chartType) {
+        return `未命名${getChartTypeDisplayName(options.chartType)}`;
+      }
       return "未命名图表";
     case "filter":
       return "未命名筛选器";

@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router";
 import { RefreshCw } from "lucide-react";
 import { AdminPageHeaderIcon, AdminPageShell } from "@/components/layout/admin-page-shell";
 import { ADMIN_PAGE_SURFACE_CLASS } from "@/components/layout/list-page-kit";
+import { cn } from "@/lib/utils";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { Button } from "@/components/ui/button";
@@ -162,16 +163,20 @@ export function SyncJobFormPage() {
         </Button>
       }
     >
-      {error ? (
-        <div className="mb-4 shrink-0">
-          <PageErrorBanner message={error} onRetry={() => setError(null)} />
-        </div>
-      ) : null}
-
-      <form
-        onSubmit={handleSubmit}
-        className={`${ADMIN_PAGE_SURFACE_CLASS} space-y-4 p-6 lg:p-8`}
+      <div
+        className={cn(
+          ADMIN_PAGE_SURFACE_CLASS,
+          "flex min-h-0 flex-1 flex-col overflow-hidden",
+        )}
       >
+        <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar px-6 py-6 lg:px-8 lg:py-8">
+          {error ? (
+            <div className="mb-4 shrink-0">
+              <PageErrorBanner message={error} onRetry={() => setError(null)} />
+            </div>
+          ) : null}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="name">任务名称</Label>
           <Input id="name" value={form.name} onChange={(e) => update("name", e.target.value)} required />
@@ -280,7 +285,9 @@ export function SyncJobFormPage() {
             <Link to="/admin/ingestion/sync-jobs">取消</Link>
           </Button>
         </div>
-      </form>
+          </form>
+        </div>
+      </div>
     </AdminPageShell>
   );
 }

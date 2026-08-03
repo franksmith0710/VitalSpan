@@ -69,15 +69,15 @@ export function DatasourceDetailPanel({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-3">
+    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden md:gap-6">
+      <div className="grid shrink-0 gap-4 sm:grid-cols-3">
         {STAT_ITEMS.map(({ key, label, icon }) => (
           <StatCard key={key} label={label} value={statValues[key]} icon={icon} />
         ))}
       </div>
 
       {description ? (
-        <Card elevation={1}>
+        <Card elevation={1} className="shrink-0">
           <CardContent className="p-5 sm:p-6">
             <p className="text-theme-xs text-gray-500 dark:text-gray-400">描述</p>
             <p className="mt-2 text-theme-sm leading-relaxed text-gray-700 dark:text-gray-300">
@@ -87,10 +87,12 @@ export function DatasourceDetailPanel({
         </Card>
       ) : null}
 
-      <DatasourceTestStatus error={testError} result={testResult} layout="card" />
+      <div className="shrink-0">
+        <DatasourceTestStatus error={testError} result={testResult} layout="card" />
+      </div>
 
-      <Card elevation={1} className="flex min-h-[560px] flex-col overflow-hidden">
-        <CardHeader className="border-b border-gray-200 px-5 py-5 sm:px-6 dark:border-gray-800">
+      <Card elevation={1} className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <CardHeader className="shrink-0 border-b border-gray-200 px-5 py-5 sm:px-6 dark:border-gray-800">
           <div className="flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400">
               <FolderTree className="size-5" aria-hidden />

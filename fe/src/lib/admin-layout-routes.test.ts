@@ -4,6 +4,8 @@ import {
   isAdminDashboardBuilderRoute,
   isAdminDatasetFormRoute,
   isAdminDatasourceFormRoute,
+  isAdminDatasourceDetailRoute,
+  isAdminSyncJobFormRoute,
   isAdminListFillRoute,
   isAdminMaxWidthNoneRoute,
   isAdminScreenPreviewRoute,
@@ -45,11 +47,15 @@ describe("isAdminWideScrollRoute", () => {
     expect(isAdminWideScrollRoute("/admin/designer")).toBe(true);
     expect(isAdminWideScrollRoute("/admin/metadata")).toBe(true);
     expect(isAdminWideScrollRoute("/admin/metadata/glossary")).toBe(true);
-    expect(isAdminWideScrollRoute("/admin/datasources/ds-1")).toBe(true);
     expect(isAdminWideScrollRoute("/admin/themes/dash-1")).toBe(true);
     expect(isAdminWideScrollRoute("/admin/entities/overview")).toBe(true);
     expect(isAdminWideScrollRoute("/admin/ingestion/sync-jobs/j1/history")).toBe(true);
-    expect(isAdminWideScrollRoute("/admin/ingestion/sync-jobs/j1/etl-rules")).toBe(true);
+  });
+
+  it("does not match sync job form fill routes", () => {
+    expect(isAdminWideScrollRoute("/admin/ingestion/sync-jobs/new")).toBe(false);
+    expect(isAdminWideScrollRoute("/admin/ingestion/sync-jobs/j1/edit")).toBe(false);
+    expect(isAdminWideScrollRoute("/admin/ingestion/sync-jobs/j1/etl-rules")).toBe(false);
   });
 
   it("does not match form routes or datasource list", () => {
@@ -113,12 +119,32 @@ describe("isAdminVizComponentEditRoute", () => {
   });
 });
 
+describe("isAdminDatasourceDetailRoute", () => {
+  it("matches datasource detail fill route", () => {
+    expect(isAdminDatasourceDetailRoute("/admin/datasources/ds-1")).toBe(true);
+    expect(isAdminDatasourceDetailRoute("/admin/datasources/ds-1/")).toBe(true);
+    expect(isAdminDatasourceDetailRoute("/admin/datasources/new")).toBe(false);
+    expect(isAdminDatasourceDetailRoute("/admin/datasources/ds-1/edit")).toBe(false);
+    expect(isAdminDatasourceDetailRoute("/admin/datasources")).toBe(false);
+  });
+});
+
 describe("isAdminDatasourceFormRoute", () => {
   it("matches datasource new and edit fill routes", () => {
     expect(isAdminDatasourceFormRoute("/admin/datasources/new")).toBe(true);
     expect(isAdminDatasourceFormRoute("/admin/datasources/ds-1/edit")).toBe(true);
     expect(isAdminDatasourceFormRoute("/admin/datasources/ds-1/edit/")).toBe(true);
     expect(isAdminDatasourceFormRoute("/admin/datasources")).toBe(false);
+  });
+});
+
+describe("isAdminSyncJobFormRoute", () => {
+  it("matches sync job new, edit, and etl-rules fill routes", () => {
+    expect(isAdminSyncJobFormRoute("/admin/ingestion/sync-jobs/new")).toBe(true);
+    expect(isAdminSyncJobFormRoute("/admin/ingestion/sync-jobs/j1/edit")).toBe(true);
+    expect(isAdminSyncJobFormRoute("/admin/ingestion/sync-jobs/j1/etl-rules/")).toBe(true);
+    expect(isAdminSyncJobFormRoute("/admin/ingestion/sync-jobs")).toBe(false);
+    expect(isAdminSyncJobFormRoute("/admin/ingestion/sync-jobs/j1/history")).toBe(false);
   });
 });
 

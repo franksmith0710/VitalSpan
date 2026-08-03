@@ -24,6 +24,11 @@ type ChartPickerPopoverProps = {
   onInserted?: () => void;
   onPaletteDragStart?: () => void;
   onPaletteDragEnd?: () => void;
+  /** 选择态高亮（新建组件等场景） */
+  selectedType?: ChartType;
+  /** 默认 true；对话框内选类型时可关闭拖拽 */
+  enableDrag?: boolean;
+  className?: string;
 };
 
 function ChartTypeTile({
@@ -32,12 +37,16 @@ function ChartTypeTile({
   onInserted,
   onPaletteDragStart,
   onPaletteDragEnd,
+  selected = false,
+  enableDrag = true,
 }: {
   item: ChartTypeCatalogItem;
   onInsert: (type: ChartType) => void;
   onInserted?: () => void;
   onPaletteDragStart?: () => void;
   onPaletteDragEnd?: () => void;
+  selected?: boolean;
+  enableDrag?: boolean;
 }) {
   const chartType = item.type as ChartType;
   const label = item.displayName || getChartTypeDisplayName(item.type);
@@ -46,13 +55,16 @@ function ChartTypeTile({
     <div
       role="button"
       tabIndex={0}
-      draggable
+      draggable={enableDrag}
+      aria-pressed={selected}
       onDragStart={(e) => {
+        if (!enableDrag) return;
         setChartTypeDragData(e.dataTransfer, chartType);
         onPaletteDragStart?.();
         e.stopPropagation();
       }}
       onDragEnd={() => {
+        if (!enableDrag) return;
         onPaletteDragEnd?.();
       }}
       onClick={() => {
@@ -67,8 +79,11 @@ function ChartTypeTile({
         }
       }}
       className={cn(
-        "flex cursor-grab flex-col items-center gap-1.5 rounded-lg border border-transparent p-1.5 text-center transition-colors active:cursor-grabbing",
-        "hover:border-brand-200 hover:bg-brand-50/60 dark:hover:border-brand-500/30 dark:hover:bg-brand-500/10",
+        "flex flex-col items-center gap-1.5 rounded-lg border p-1.5 text-center transition-colors",
+        enableDrag ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
+        selected
+          ? "border-brand-500 bg-brand-50 ring-2 ring-brand-500/20 dark:border-brand-500/60 dark:bg-brand-500/10 dark:ring-brand-500/25"
+          : "border-transparent hover:border-brand-200 hover:bg-brand-50/60 dark:hover:border-brand-500/30 dark:hover:bg-brand-500/10",
         "focus-visible:outline-hidden focus-visible:ring-3 focus-visible:ring-brand-500/20",
       )}
     >
@@ -88,12 +103,16 @@ function SectionGrid({
   onInserted,
   onPaletteDragStart,
   onPaletteDragEnd,
+  selectedType,
+  enableDrag,
 }: {
   section: DePaletteSection;
   onInsert: (type: ChartType) => void;
   onInserted?: () => void;
   onPaletteDragStart?: () => void;
   onPaletteDragEnd?: () => void;
+  selectedType?: ChartType;
+  enableDrag?: boolean;
 }) {
   return (
     <section className="space-y-2">
@@ -107,6 +126,8 @@ function SectionGrid({
             onInserted={onInserted}
             onPaletteDragStart={onPaletteDragStart}
             onPaletteDragEnd={onPaletteDragEnd}
+            selected={selectedType === item.type}
+            enableDrag={enableDrag}
           />
         ))}
       </div>
@@ -120,6 +141,9 @@ export function ChartPickerPopover({
   onInserted,
   onPaletteDragStart,
   onPaletteDragEnd,
+  selectedType,
+  enableDrag = true,
+  className,
 }: ChartPickerPopoverProps) {
   const [catalog, setCatalog] = useState<ChartTypeCatalogItem[] | null>(null);
   const [catalogOpen, setCatalogOpen] = useState(false);
@@ -188,7 +212,10 @@ export function ChartPickerPopover({
 
   return (
     <>
-    <div className="flex h-[min(70vh,400px)] min-h-[360px]" data-testid="chart-picker-popover">
+    <div
+      className={cn("flex h-[min(70vh,400px)] min-h-[360px]", className)}
+      data-testid="chart-picker-popover"
+    >
       <nav
         className="flex w-[84px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-gray-200 py-1 pr-1 dark:border-gray-800"
         aria-label="图表分类"
@@ -228,6 +255,8 @@ export function ChartPickerPopover({
                 onInserted={onInserted}
                 onPaletteDragStart={onPaletteDragStart}
                 onPaletteDragEnd={onPaletteDragEnd}
+                selectedType={selectedType}
+                enableDrag={enableDrag}
               />
             </div>
           ))}

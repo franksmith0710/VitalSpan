@@ -22,7 +22,13 @@ import {
   AdminFormDialogHeader,
   AdminFormField,
 } from "@/components/layout/admin-form-dialog";
+import { ChartPickerPopover } from "@/components/dashboard/ChartPickerPopover";
+import {
+  HUB_SEGMENTED_BUTTON_CLASS,
+  HUB_SEGMENTED_SHELL_CLASS,
+} from "@/components/dashboard/hubFilterUi";
 import { mapApiError } from "@/lib/apiError";
+import type { ChartType } from "@/lib/chartViewConfig";
 import {
   createVizComponent,
   VIZ_COMPONENT_CATEGORIES,
@@ -30,6 +36,7 @@ import {
   type VizWidgetType,
 } from "@/lib/vizComponents";
 import { defaultVizComponentName, defaultVizComponentPayload } from "@/lib/vizComponentDefaults";
+import { cn } from "@/lib/utils";
 import { widgetTypeLabel } from "./componentLabels";
 
 const WIDGET_TYPES: VizWidgetType[] = ["chart", "filter", "text", "media"];
@@ -44,37 +51,65 @@ type CreateVizComponentDialogProps = {
   onOpenChange: (open: boolean) => void;
 };
 
+function resetCreateFormState() {
+  return {
+    name: "",
+    widgetType: "chart" as VizWidgetType,
+    chartType: "bar" as ChartType,
+    categoryKey: "general",
+    surfaceKinds: ["dashboard", "data-screen"] as VizSurfaceKind[],
+  };
+}
+
 export function CreateVizComponentDialog({ open, onOpenChange }: CreateVizComponentDialogProps) {
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [widgetType, setWidgetType] = useState<VizWidgetType>("chart");
+  const [chartType, setChartType] = useState<ChartType>("bar");
   const [categoryKey, setCategoryKey] = useState("general");
   const [surfaceKinds, setSurfaceKinds] = useState<VizSurfaceKind[]>([
     "dashboard",
     "data-screen",
   ]);
 
+  const chartDefaults = { chartType };
+
   const createMutation = useMutation({
     mutationFn: async () => {
-      const trimmed = name.trim() || defaultVizComponentName(widgetType);
+      const trimmed =
+        name.trim() ||
+        defaultVizComponentName(widgetType, widgetType === "chart" ? chartDefaults : undefined);
       return createVizComponent({
         name: trimmed,
         categoryKey,
         widgetType,
         surfaceKinds,
-        payloadJson: defaultVizComponentPayload(widgetType),
+        payloadJson: defaultVizComponentPayload(
+          widgetType,
+          widgetType === "chart" ? chartDefaults : undefined,
+        ),
         visibility: "org",
       });
     },
     onSuccess: (created) => {
       toast.success("组件已创建，进入编辑");
-      onOpenChange(false);
-      setName("");
-      setWidgetType("chart");
+      handleOpenChange(false);
       navigate(`/admin/viz-components/${created.id}/edit`);
     },
     onError: (err) => toast.error(mapApiError(err)),
   });
+
+  const handleOpenChange = (next: boolean) => {
+    if (!next) {
+      const reset = resetCreateFormState();
+      setName(reset.name);
+      setWidgetType(reset.widgetType);
+      setChartType(reset.chartType);
+      setCategoryKey(reset.categoryKey);
+      setSurfaceKinds(reset.surfaceKinds);
+    }
+    onOpenChange(next);
+  };
 
   const toggleSurface = (kind: VizSurfaceKind, checked: boolean) => {
     setSurfaceKinds((prev) => {
@@ -86,38 +121,68 @@ export function CreateVizComponentDialog({ open, onOpenChange }: CreateVizCompon
     });
   };
 
+  const isChart = widgetType === "chart";
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <AdminFormDialogContent>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <AdminFormDialogContent
+        size="lg"
+        scrollable
+        className={cn(isChart && "sm:max-w-[540px]")}
+      >
         <AdminFormDialogHeader>
           <DialogTitle>新建组件</DialogTitle>
           <AdminFormDialogDescription>
             创建草稿并进入编辑；完成后可在 Hub 发布供看板/大屏复用。
           </AdminFormDialogDescription>
         </AdminFormDialogHeader>
-        <AdminFormDialogBody>
+        <AdminFormDialogBody scrollable>
           <AdminFormField label="名称" htmlFor="viz-component-name">
             <Input
               id="viz-component-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={defaultVizComponentName(widgetType)}
+              placeholder={defaultVizComponentName(
+                widgetType,
+                isChart ? chartDefaults : undefined,
+              )}
             />
           </AdminFormField>
           <AdminFormField label="组件类型">
-            <Select value={widgetType} onValueChange={(v) => setWidgetType(v as VizWidgetType)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {WIDGET_TYPES.map((type) => (
-                  <SelectItem key={type} value={type}>
+            <div
+              role="group"
+              aria-label="组件类型"
+              className={cn(HUB_SEGMENTED_SHELL_CLASS, "flex flex-wrap gap-0.5")}
+            >
+              {WIDGET_TYPES.map((type) => {
+                const active = widgetType === type;
+                return (
+                  <Button
+                    key={type}
+                    type="button"
+                    size="sm"
+                    variant={active ? "subtle" : "ghost"}
+                    className={HUB_SEGMENTED_BUTTON_CLASS}
+                    onClick={() => setWidgetType(type)}
+                  >
                     {widgetTypeLabel(type)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                  </Button>
+                );
+              })}
+            </div>
           </AdminFormField>
+          {isChart ? (
+            <AdminFormField label="图表类型" hint="与看板/大屏编辑页图表面板一致">
+              <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
+                <ChartPickerPopover
+                  selectedType={chartType}
+                  enableDrag={false}
+                  className="h-[min(45vh,360px)] min-h-[280px]"
+                  onInsert={setChartType}
+                />
+              </div>
+            </AdminFormField>
+          ) : null}
           <AdminFormField label="分类">
             <Select value={categoryKey} onValueChange={setCategoryKey}>
               <SelectTrigger>
@@ -147,7 +212,7 @@ export function CreateVizComponentDialog({ open, onOpenChange }: CreateVizCompon
           </AdminFormField>
         </AdminFormDialogBody>
         <AdminFormDialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
             取消
           </Button>
           <Button

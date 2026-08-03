@@ -200,7 +200,7 @@ export function SchemaBrowser({
   const splitView = (
     <div
       className={cn(
-        "grid min-h-0 flex-1 lg:grid-cols-[minmax(260px,320px)_1fr]",
+        "grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[minmax(260px,320px)_1fr]",
         !embedded && "min-h-[420px]",
       )}
       data-testid="schema-browser-split"

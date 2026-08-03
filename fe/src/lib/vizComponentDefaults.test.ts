@@ -8,6 +8,11 @@ describe("defaultVizComponentPayload", () => {
     expect(payload.chartConfig?.chartId).toBeTruthy();
   });
 
+  it("creates chart payload for selected type", () => {
+    const payload = defaultVizComponentPayload("chart", { chartType: "line" });
+    expect(payload.chartConfig?.chartType).toBe("line");
+  });
+
   it("creates filter payload with filterId", () => {
     const payload = defaultVizComponentPayload("filter");
     expect(payload.filterConfig?.filterId).toBeTruthy();

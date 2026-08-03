@@ -96,17 +96,6 @@ vi.mock("@/lib/api", () => ({
     if (url === "/api/v1/datasources") {
       return { items: [] };
     }
-    if (url === "/api/v1/demo-package/status") {
-      return {
-        ready: true,
-        mysqlReachable: true,
-        schemaVersion: 3,
-        datasourceId: "ds-demo",
-        datasourceCode: "demo",
-        demoDashboardIds: ["d1", "d2", "d3"],
-        message: null,
-      };
-    }
     if (url === "/api/v1/dashboards/from-template" && init?.method === "POST") {
       return { id: "dash-new" };
     }
@@ -144,12 +133,6 @@ describe("VizTemplatesHubPage smoke", () => {
     expect(screen.getByRole("button", { name: "预览" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "使用模板" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "双栏 KPI 分析 更多操作" })).toBeInTheDocument();
-  });
-
-  it("shows demo package ready banner", async () => {
-    renderHub();
-    expect(await screen.findByText("官方演示数据已就绪")).toBeInTheDocument();
-    expect(screen.getAllByText(/模板预览将使用「示例数据」/).length).toBeGreaterThan(0);
   });
 
   it("exports template json from card menu", async () => {
