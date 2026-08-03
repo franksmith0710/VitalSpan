@@ -95,7 +95,7 @@ export function DatasetBindPanel({
   if (tables.length === 0) return null;
 
   return (
-    <section className="grid gap-4 border-b border-gray-100 pb-6 dark:border-gray-800">
+    <section className="grid gap-4">
       <div>
         <div className="flex flex-wrap items-center gap-2">
           <h3 className="text-theme-sm font-semibold text-gray-900 dark:text-white">绑定查询配置</h3>

@@ -30,6 +30,8 @@ export function SchemaBrowser({
   defaultDatabase,
   onSelectionChange,
   toolbarActions,
+  addedTableNames,
+  onAddTable,
 }: {
   dataSourceId: string;
   className?: string;
@@ -37,6 +39,10 @@ export function SchemaBrowser({
   defaultDatabase?: string;
   onSelectionChange?: (selection: TableSelection | null) => void;
   toolbarActions?: ReactNode;
+  /** Dataset 选表：已加入的表名集合 */
+  addedTableNames?: ReadonlySet<string>;
+  /** Dataset 选表：点击/双击添加 */
+  onAddTable?: (selection: TableSelection) => void;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [hideSystem, setHideSystem] = useState(true);
@@ -193,6 +199,11 @@ export function SchemaBrowser({
           </Label>
         </div>
         {toolbarActions}
+        {onAddTable ? (
+          <p className="hidden text-theme-xs text-gray-500 lg:block dark:text-gray-400">
+            双击表名或点 <span className="font-medium text-gray-700 dark:text-gray-300">+</span> 添加
+          </p>
+        ) : null}
         {!embedded ? (
           <Badge variant="light" color="light" size="sm">
             {schemaNames.length} 个 schema
@@ -222,8 +233,15 @@ export function SchemaBrowser({
         onToggleSchema={handleToggleSchema}
         onSelectTable={handleSelectTable}
         onTablesLoaded={handleTablesLoaded}
+        addedTableNames={addedTableNames}
+        onAddTable={onAddTable}
       />
-      <TableColumnsPanel dataSourceId={dataSourceId} selection={selection} />
+      <TableColumnsPanel
+        dataSourceId={dataSourceId}
+        selection={selection}
+        addedTableNames={addedTableNames}
+        onAddTable={onAddTable}
+      />
     </div>
   );
 

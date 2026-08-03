@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Copy, Table2 } from "lucide-react";
+import { Copy, Plus, Table2 } from "lucide-react";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/table";
 import {
   buildSelectSql,
+  isTableAdded,
   mapMetadataError,
   qualifiedTableName,
   type ColumnMeta,
@@ -31,6 +32,8 @@ async function copyText(text: string, label: string) {
 type TableColumnsPanelProps = {
   dataSourceId: string;
   selection: TableSelection | null;
+  addedTableNames?: ReadonlySet<string>;
+  onAddTable?: (selection: TableSelection) => void;
 };
 
 function ColumnsEmptyState() {
@@ -45,7 +48,12 @@ function ColumnsEmptyState() {
   );
 }
 
-export function TableColumnsPanel({ dataSourceId, selection }: TableColumnsPanelProps) {
+export function TableColumnsPanel({
+  dataSourceId,
+  selection,
+  addedTableNames,
+  onAddTable,
+}: TableColumnsPanelProps) {
   const columnsQuery = useQuery({
     queryKey: selection
       ? queryKeys.datasources.columns(dataSourceId, selection.schema, selection.table)
@@ -60,6 +68,7 @@ export function TableColumnsPanel({ dataSourceId, selection }: TableColumnsPanel
   if (!selection) return <ColumnsEmptyState />;
 
   const tableKey = qualifiedTableName(selection.schema, selection.table);
+  const added = addedTableNames ? isTableAdded(selection, addedTableNames) : false;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -79,9 +88,25 @@ export function TableColumnsPanel({ dataSourceId, selection }: TableColumnsPanel
                   {columnsQuery.data.items.length} 个字段
                 </Badge>
               ) : null}
+              {added ? (
+                <Badge variant="light" color="success" size="sm">
+                  已加入
+                </Badge>
+              ) : null}
             </div>
           </div>
           <div className="flex shrink-0 flex-wrap gap-2">
+            {onAddTable ? (
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={added}
+                onClick={() => onAddTable(selection)}
+              >
+                <Plus className="size-4" aria-hidden />
+                {added ? "已添加" : "加入 Dataset"}
+              </Button>
+            ) : null}
             <Button variant="outline" size="sm" onClick={() => void copyText(tableKey, "表名")}>
               <Copy aria-hidden />
               复制表名

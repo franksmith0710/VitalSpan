@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, Database, Table2 } from "lucide-react";
+import { ChevronRight, Check, Database, Plus, Table2 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { TruncateHint } from "@/components/ui/hint-tooltip";
 import { cn } from "@/lib/utils";
 import {
   filterTables,
+  isTableAdded,
   mapMetadataError,
   matchesSearch,
   type TableMeta,
@@ -25,6 +26,8 @@ type SchemaGroupProps = {
   onToggle: () => void;
   onSelectTable: (schema: string, table: TableMeta) => void;
   onTablesLoaded?: (schema: string, tables: TableMeta[]) => void;
+  addedTableNames?: ReadonlySet<string>;
+  onAddTable?: (selection: TableSelection) => void;
 };
 
 function SchemaGroup({
@@ -37,6 +40,8 @@ function SchemaGroup({
   onToggle,
   onSelectTable,
   onTablesLoaded,
+  addedTableNames,
+  onAddTable,
 }: SchemaGroupProps) {
   const tablesQuery = useQuery({
     queryKey: queryKeys.datasources.tables(dataSourceId, schema),
@@ -99,23 +104,63 @@ function SchemaGroup({
           {tables.map((table) => {
             const active =
               selection?.schema === schema && selection?.table === table.name;
+            const added = addedTableNames
+              ? isTableAdded({ schema, table: table.name }, addedTableNames)
+              : false;
+            const pickable = Boolean(onAddTable);
             return (
-              <button
+              <div
                 key={table.name}
-                type="button"
-                onClick={() => onSelectTable(schema, table)}
                 className={cn(
-                  "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-theme-sm transition-colors",
+                  "group flex w-full items-center gap-1 rounded-lg pr-1 transition-colors",
                   active
-                    ? "bg-brand-50 font-medium text-brand-700 dark:bg-brand-500/15 dark:text-brand-400"
-                    : "text-gray-700 hover:bg-white dark:text-gray-300 dark:hover:bg-white/5",
+                    ? "bg-brand-50 dark:bg-brand-500/15"
+                    : "hover:bg-white dark:hover:bg-white/5",
                 )}
               >
-                <Table2 className="size-3.5 shrink-0 opacity-70" aria-hidden />
-                <TruncateHint title={table.name} className="min-w-0 flex-1">
-                  {table.name}
-                </TruncateHint>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => onSelectTable(schema, table)}
+                  onDoubleClick={() => {
+                    if (!pickable || added) return;
+                    onAddTable?.({ schema, table: table.name, type: table.type });
+                  }}
+                  className={cn(
+                    "flex min-w-0 flex-1 items-center gap-2 px-3 py-2 text-left text-theme-sm transition-colors",
+                    active
+                      ? "font-medium text-brand-700 dark:text-brand-400"
+                      : "text-gray-700 dark:text-gray-300",
+                  )}
+                >
+                  <Table2 className="size-3.5 shrink-0 opacity-70" aria-hidden />
+                  <TruncateHint title={table.name} className="min-w-0 flex-1">
+                    {table.name}
+                  </TruncateHint>
+                </button>
+                {pickable ? (
+                  added ? (
+                    <span
+                      className="mr-2 flex size-7 shrink-0 items-center justify-center text-success-600 dark:text-success-400"
+                      aria-label="已加入 Dataset"
+                      title="已加入"
+                    >
+                      <Check className="size-3.5" aria-hidden />
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="mr-1 flex size-7 shrink-0 items-center justify-center rounded-md text-gray-400 opacity-0 transition-opacity hover:bg-brand-50 hover:text-brand-600 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/20 dark:hover:bg-brand-500/15 dark:hover:text-brand-400"
+                      aria-label={`添加 ${table.name}`}
+                      title="添加此表"
+                      onClick={() =>
+                        onAddTable?.({ schema, table: table.name, type: table.type })
+                      }
+                    >
+                      <Plus className="size-3.5" aria-hidden />
+                    </button>
+                  )
+                ) : null}
+              </div>
             );
           })}
         </div>
@@ -136,6 +181,8 @@ type SchemaTreePanelProps = {
   onToggleSchema: (schema: string) => void;
   onSelectTable: (schema: string, table: TableMeta) => void;
   onTablesLoaded: (schema: string, tables: TableMeta[]) => void;
+  addedTableNames?: ReadonlySet<string>;
+  onAddTable?: (selection: TableSelection) => void;
 };
 
 export function SchemaTreePanel({
@@ -150,6 +197,8 @@ export function SchemaTreePanel({
   onToggleSchema,
   onSelectTable,
   onTablesLoaded,
+  addedTableNames,
+  onAddTable,
 }: SchemaTreePanelProps) {
   const visibleSystem = hideSystem
     ? []
@@ -181,6 +230,8 @@ export function SchemaTreePanel({
                 onToggle={() => onToggleSchema(schema)}
                 onSelectTable={onSelectTable}
                 onTablesLoaded={onTablesLoaded}
+                addedTableNames={addedTableNames}
+                onAddTable={onAddTable}
               />
             ))}
             {visibleSystem.length > 0 ? (
@@ -198,6 +249,8 @@ export function SchemaTreePanel({
                     onToggle={() => onToggleSchema(schema)}
                     onSelectTable={onSelectTable}
                     onTablesLoaded={onTablesLoaded}
+                    addedTableNames={addedTableNames}
+                    onAddTable={onAddTable}
                   />
                 ))}
               </div>

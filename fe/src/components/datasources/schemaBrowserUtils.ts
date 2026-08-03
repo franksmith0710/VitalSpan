@@ -24,6 +24,14 @@ export function qualifiedTableName(schema: string, table: string): string {
   return `${schema}.${table}`;
 }
 
+export function isTableAdded(
+  selection: Pick<TableSelection, "schema" | "table">,
+  addedNames: ReadonlySet<string>,
+): boolean {
+  const qualified = qualifiedTableName(selection.schema, selection.table);
+  return addedNames.has(qualified) || addedNames.has(selection.table);
+}
+
 export function buildSelectSql(schema: string, table: string): string {
   return `SELECT * FROM ${qualifiedTableName(schema, table)} LIMIT 100`;
 }

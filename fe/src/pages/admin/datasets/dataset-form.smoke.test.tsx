@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -126,8 +127,13 @@ describe("Dataset form pages", () => {
 
     expect(await screen.findByRole("heading", { name: "编辑数据集" })).toBeInTheDocument();
     expect(await screen.findByTestId("schema-browser")).toBeInTheDocument();
-    expect(await screen.findByDisplayValue("amt2")).toBeInTheDocument();
     expect(screen.getAllByText("public.orders").length).toBeGreaterThan(0);
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("tab", { name: /计算字段/ }));
+    expect(await screen.findByDisplayValue("amt2")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: /绑定配置/ }));
     expect(screen.getByText("绑定查询配置")).toBeInTheDocument();
   });
 });
