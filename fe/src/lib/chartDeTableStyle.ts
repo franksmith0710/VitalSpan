@@ -66,9 +66,22 @@ export const DEFAULT_TABLE_ZEBRA_BG = "rgba(148, 163, 184, 0.12)";
 export const DEFAULT_TABLE_COLUMN_WIDTH_MODE: TableColumnWidthMode = "auto";
 
 export function resolveTableZebraBg(style: ChartDeTableStyle): string | undefined {
+  if (style.zebraStriped === false) return undefined;
   if (style.zebraBg?.trim()) return style.zebraBg;
   if (style.zebraStriped === true) return DEFAULT_TABLE_ZEBRA_BG;
   return undefined;
+}
+
+/** 渲染层：组件 zebra 配置 + 主题 CSS 变量（清除斑马纹时 zebraStriped=false 不再回退默认） */
+export function resolveEffectiveTableZebraBg(
+  tableStyle: ChartDeTableStyle,
+  themeVars?: Record<string, string>,
+): string | undefined {
+  if (tableStyle.zebraStriped === false) return undefined;
+  const explicit = resolveTableZebraBg(tableStyle);
+  if (explicit) return explicit;
+  const fromTheme = themeVars?.["--dashboard-table-zebra-bg"];
+  return typeof fromTheme === "string" && fromTheme.trim() ? fromTheme : undefined;
 }
 
 /** 组件 deTableStyle 覆盖看板默认表格配色 */

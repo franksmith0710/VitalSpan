@@ -5,7 +5,10 @@ import { dwTableCell } from "@/components/dashboard/dashboardWidgetTypography";
 import { TablePaginationBar } from "@/components/charts/adapters/TablePaginationBar";
 import { cn } from "@/lib/utils";
 import type { ChartDeTableStyle } from "@/lib/chartDeTableStyle";
-import { DEFAULT_TABLE_PAGE_SIZE, resolveTableZebraBg } from "@/lib/chartDeTableStyle";
+import {
+  DEFAULT_TABLE_PAGE_SIZE,
+  resolveEffectiveTableZebraBg,
+} from "@/lib/chartDeTableStyle";
 import { formatTableCellValue } from "@/lib/chartValueFormat";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import {
@@ -129,7 +132,7 @@ export function TablePivotGrid({
 
   const wordWrap = tableStyle.wordWrap ?? false;
   const rowHover = tableStyle.rowHover !== false;
-  const zebraBg = resolveTableZebraBg(tableStyle);
+  const zebraBg = resolveEffectiveTableZebraBg(tableStyle, themeVars);
   const density = tableStyle.paginationVariant === "compact" ? "compact" : "comfortable";
   const hostOpacity = resolveTableHostOpacity(tableStyle);
   const borderColor = tableStyle.borderColor;
@@ -163,10 +166,13 @@ export function TablePivotGrid({
       <div
         ref={containerRef}
         className={cn(
-          "flex min-h-0 w-full items-center justify-center px-3 py-6 text-center",
+          "flex min-h-0 w-full items-center justify-center px-3 py-6 text-center text-theme-sm",
           embedded && "absolute inset-0",
         )}
-        style={mergedThemeStyle}
+        style={{
+          ...mergedThemeStyle,
+          color: "var(--dashboard-table-empty-fg, #98a2b3)",
+        }}
         data-testid={testId}
       >
         暂无数据
@@ -395,7 +401,11 @@ export function TablePivotGrid({
           onPageChange={onPageChange}
         />
       ) : (
-        <TableStatusBar totalRows={totalRowCount} scrollMode={scrollMode} />
+        <TableStatusBar
+          totalRows={totalRowCount}
+          scrollMode={scrollMode}
+          tableStyle={tableStyle}
+        />
       )}
     </div>
   );

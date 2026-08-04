@@ -13,7 +13,7 @@ import {
   computeTableSummaryValues,
   DEFAULT_TABLE_PAGE_SIZE,
   resolveTableSummaryColumns,
-  resolveTableZebraBg,
+  resolveEffectiveTableZebraBg,
 } from "@/lib/chartDeTableStyle";
 import { formatTableCellValue } from "@/lib/chartValueFormat";
 import {
@@ -122,11 +122,7 @@ export function VitalSpanTable({
   const wordWrap = tableStyle.wordWrap ?? false;
   const rowHover = tableStyle.rowHover !== false;
   const density = tableStyle.paginationVariant === "compact" ? "compact" : "comfortable";
-  const zebraBg =
-    resolveTableZebraBg(tableStyle) ??
-    (typeof themeVars?.["--dashboard-table-zebra-bg"] === "string"
-      ? themeVars["--dashboard-table-zebra-bg"]
-      : undefined);
+  const zebraBg = resolveEffectiveTableZebraBg(tableStyle, themeVars);
   const hostOpacity = resolveTableHostOpacity(tableStyle);
   const borderColor = tableStyle.borderColor;
 
@@ -557,7 +553,11 @@ export function VitalSpanTable({
           onPageChange={onPageChange}
         />
       ) : (
-        <TableStatusBar totalRows={sortedRows.length} scrollMode={scrollMode} />
+        <TableStatusBar
+          totalRows={sortedRows.length}
+          scrollMode={scrollMode}
+          tableStyle={tableStyle}
+        />
       )}
     </div>
   );

@@ -70,6 +70,34 @@ describe("D3TableView table color wiring", () => {
     expect(host.style.getPropertyValue("--dashboard-table-body-fg")).toBe("#211f1f");
   });
 
+  it("applies bodyBg to data cells via CSS variable chain", () => {
+    const { container } = renderTable(
+      tableProps({
+        style: {
+          scheme: "light",
+          deStyle: {},
+          deFeatures: {},
+          chartColors: [],
+          dataScreenSurface: false,
+          showLabel: false,
+          showTooltip: true,
+          seriesGradient: false,
+          depthVisual: "off",
+          dataZoom: false,
+          labelPresentation: { fontSize: 12 },
+          tooltipPresentation: { fontSize: 12 },
+          shellLegend: false,
+          embedEdit: false,
+          tableColorStyle: { bodyBg: "#e1e1e1", zebraStriped: false },
+        },
+      }),
+    );
+    const host = container.querySelector(".embedded-chart-table-host") as HTMLElement;
+    expect(host.style.getPropertyValue("--dashboard-table-body-bg")).toBe("#e1e1e1");
+    const dataCell = container.querySelector("tbody td.vs-table-td:not(.vs-table-index)");
+    expect(dataCell).toBeTruthy();
+  });
+
   it("component deTableStyle overrides dashboard tableColorStyle", () => {
     const { container } = renderTable(
       tableProps({

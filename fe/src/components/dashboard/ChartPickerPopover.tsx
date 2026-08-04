@@ -13,11 +13,11 @@ import {
   type DePaletteSection,
 } from "@/lib/chartPaletteTaxonomy";
 import { cn } from "@/lib/utils";
+import { chartTypeIcon } from "@/lib/chartTypeIcons";
 import {
   ChartExploreCatalogTrigger,
   ChartExploreDrawer,
 } from "@/components/dashboard/ChartExploreDrawer";
-import { ChartTypePreviewIcon } from "./chartPicker/ChartTypePreviewIcon";
 
 type ChartPickerPopoverProps = {
   onInsert: (type: ChartType) => void;
@@ -50,6 +50,7 @@ function ChartTypeTile({
 }) {
   const chartType = item.type as ChartType;
   const label = item.displayName || getChartTypeDisplayName(item.type);
+  const Icon = chartTypeIcon(item.type);
 
   return (
     <div
@@ -87,8 +88,8 @@ function ChartTypeTile({
         "focus-visible:outline-hidden focus-visible:ring-3 focus-visible:ring-brand-500/20",
       )}
     >
-      <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-gray-100 dark:bg-white/[0.06]">
-        <ChartTypePreviewIcon type={item.type} className="size-10" />
+      <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-brand-500 dark:bg-white/[0.06] dark:text-brand-400">
+        <Icon className="size-6" strokeWidth={1.75} aria-hidden />
       </span>
       <span className="line-clamp-2 w-full text-[11px] leading-tight text-gray-700 dark:text-gray-300">
         {label}

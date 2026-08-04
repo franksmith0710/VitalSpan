@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy import select
 
 from app.ingestion.cron_validate import validate_schedule_cron
 from app.ingestion.models import SyncJob, get_meta_session
-from app.ingestion.sync_executor import run_job
+from app.ingestion.sync_executor import reconcile_stale_running_runs, run_job
 
 _scheduler: BackgroundScheduler | None = None
 

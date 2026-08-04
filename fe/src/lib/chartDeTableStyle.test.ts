@@ -3,6 +3,7 @@ import {
   patchChartDeTableStyle,
   patchTableColumnWidthMode,
   readChartDeTableStyle,
+  resolveEffectiveTableZebraBg,
 } from "@/lib/chartDeTableStyle";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 
@@ -36,5 +37,33 @@ describe("chartDeTableStyle column width mode patches", () => {
     expect(style.columnWidthMode).toBe("fixed");
     expect(style.columnWidths).toBeUndefined();
     expect(style.columnWidthsPx).toBeUndefined();
+  });
+});
+
+describe("resolveEffectiveTableZebraBg", () => {
+  it("respects zebraStriped=false and skips theme fallback", () => {
+    expect(
+      resolveEffectiveTableZebraBg({ zebraStriped: false }, { "--dashboard-table-zebra-bg": "#eee" }),
+    ).toBeUndefined();
+  });
+
+  it("falls back to theme zebra when no component override", () => {
+    expect(
+      resolveEffectiveTableZebraBg({}, { "--dashboard-table-zebra-bg": "rgba(0,0,0,0.08)" }),
+    ).toBe("rgba(0,0,0,0.08)");
+  });
+});
+
+describe("resolveEffectiveTableZebraBg", () => {
+  it("respects zebraStriped=false and skips theme fallback", () => {
+    expect(
+      resolveEffectiveTableZebraBg({ zebraStriped: false }, { "--dashboard-table-zebra-bg": "#eee" }),
+    ).toBeUndefined();
+  });
+
+  it("falls back to theme zebra when no component override", () => {
+    expect(
+      resolveEffectiveTableZebraBg({}, { "--dashboard-table-zebra-bg": "rgba(0,0,0,0.08)" }),
+    ).toBe("rgba(0,0,0,0.08)");
   });
 });

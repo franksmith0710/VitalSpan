@@ -162,7 +162,7 @@ export function ChartTableColorFields({
           onChange={(zebraBg) => {
             onPatch({
               zebraBg: zebraBg || undefined,
-              ...(zebraBg ? { zebraStriped: undefined } : {}),
+              ...(zebraBg ? { zebraStriped: undefined } : { zebraStriped: false }),
             });
           }}
         />

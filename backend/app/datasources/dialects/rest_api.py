@@ -16,8 +16,69 @@ from app.datasources.dialects.errors import (
 )
 from app.query.native.guard import guard_native_injection
 from app.query.schemas import QueryError
+from app.sample_api.internal import SampleApiAuthError, dispatch_sample_api_get
 
 REST_API_MAX_COLUMNS = 500
+
+_LOCAL_VITALSPAN_PORTS = frozenset({8000, 80})
+
+
+def _is_local_vitalspan_base(base: str) -> bool:
+    parsed = urlparse(base)
+    host = (parsed.hostname or "").lower()
+    if host not in ("127.0.0.1", "localhost", "::1"):
+        return False
+    port = parsed.port
+    if port is None:
+        port = 443 if parsed.scheme == "https" else 80
+    return port in _LOCAL_VITALSPAN_PORTS
+
+
+def _is_sample_api_path(path: str) -> bool:
+    normalized = path if path.startswith("/") else f"/{path}"
+    return normalized == "/sample-api" or normalized.startswith("/sample-api/")
+
+
+def _normalize_probe_path(probe: str) -> str:
+    return probe if probe.startswith("/") else f"/{probe}"
+
+
+def _auth_credentials(auth: object | None) -> tuple[str | None, str | None]:
+    if auth is None:
+        return None, None
+    if isinstance(auth, tuple) and len(auth) == 2:
+        username, password = auth
+        return str(username), str(password)
+    return None, None
+
+
+def _fetch_sample_api_payload(
+    path: str,
+    auth: object | None,
+) -> object:
+    username, password = _auth_credentials(auth)
+    try:
+        return dispatch_sample_api_get(path, username=username, password=password)
+    except SampleApiAuthError as exc:
+        raise QueryError(REST_API_AUTH_FAILED, "Unauthorized", 401) from exc
+
+
+def _payload_to_rows(payload: object, *, limit: int, offset: int, json_path: str | None) -> tuple[list[str], list[list], bool]:
+    if json_path and isinstance(payload, dict):
+        payload = payload.get(json_path, [])
+    if isinstance(payload, dict):
+        columns = sorted(payload.keys())[:REST_API_MAX_COLUMNS]
+        rows = [[payload.get(c) for c in columns]]
+        return columns, rows, False
+    if isinstance(payload, list):
+        if not payload:
+            return [], [], False
+        if isinstance(payload[0], dict):
+            columns = sorted({k for item in payload[:limit] for k in item})[:REST_API_MAX_COLUMNS]
+            rows = [[item.get(c) for c in columns] for item in payload[offset : offset + limit + 1]]
+            truncated = len(rows) > limit
+            return columns, rows[:limit], truncated
+    return ["value"], [[json.dumps(payload)]], False
 
 
 def _normalize_base_url(host: str, port: int) -> str:
@@ -59,16 +120,22 @@ class RestApiConnector:
             if not urlparse(base).scheme:
                 raise ValueError("invalid url: missing scheme")
             probe = kwargs.get("database") or "/"
-            with self._client(**kwargs) as client:
-                resp = client.get(probe if probe.startswith("/") else f"/{probe}")
-            if resp.status_code == 401:
-                code, detail = REST_API_AUTH_FAILED, "Unauthorized"
-                ok = False
-            elif not resp.is_success:
-                code, detail = REST_API_PROBE_FAILED, f"HTTP {resp.status_code}"
-                ok = False
-            else:
+            probe_path = _normalize_probe_path(probe)
+            if _is_local_vitalspan_base(base) and _is_sample_api_path(probe_path):
+                with self._client(**kwargs) as client:
+                    _fetch_sample_api_payload(probe_path, client.auth)
                 ok, code, detail = True, None, "Connection successful"
+            else:
+                with self._client(**kwargs) as client:
+                    resp = client.get(probe_path)
+                if resp.status_code == 401:
+                    code, detail = REST_API_AUTH_FAILED, "Unauthorized"
+                    ok = False
+                elif not resp.is_success:
+                    code, detail = REST_API_PROBE_FAILED, f"HTTP {resp.status_code}"
+                    ok = False
+                else:
+                    ok, code, detail = True, None, "Connection successful"
         except Exception as exc:
             code, detail = map_rest_api_error(exc)
             if "missing scheme" in str(exc).lower():

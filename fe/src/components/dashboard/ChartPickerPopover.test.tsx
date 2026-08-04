@@ -39,6 +39,7 @@ describe("ChartPickerPopover drag", () => {
     );
 
     const tile = await screen.findByRole("button", { name: /基础折线图/i });
+    expect(tile.querySelector("svg")).toBeTruthy();
     const transfer = {
       types: [] as string[],
       effectAllowed: "none",

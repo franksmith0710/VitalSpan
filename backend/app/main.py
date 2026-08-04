@@ -99,7 +99,7 @@ def _warm_meta_database() -> None:
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    from app.ingestion.scheduler import get_scheduler, refresh_all_jobs
+    from app.ingestion.scheduler import get_scheduler, refresh_all_jobs, register_stale_run_reconcile
     from app.ingestion.sync_executor import reconcile_stale_running_runs
 
     assert_runtime_compliant()
@@ -111,6 +111,7 @@ async def lifespan(_app: FastAPI):
         logger.warning("ingestion_stale_runs_reconcile_failed", exc_info=True)
     _warm_meta_database()
     scheduler = get_scheduler()
+    register_stale_run_reconcile()
     refresh_all_jobs()
     scheduler.start()
     refresh_schedule_jobs()

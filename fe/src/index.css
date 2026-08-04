@@ -816,6 +816,10 @@ html.admin-fill-lock #root {
   color: var(--dashboard-table-body-fg, #344054);
 }
 
+.dashboard-theme-scope .dashboard-chart-table tbody :where(td.vs-table-td:not(.vs-table-index)) {
+  background-color: var(--dashboard-table-column-bg, var(--dashboard-table-body-bg, transparent));
+}
+
 .dashboard-theme-scope .dashboard-chart-table[data-row-hover] tbody tr {
   transition: background-color 120ms ease;
 }
@@ -899,7 +903,7 @@ html.admin-fill-lock #root {
 }
 
 .vs-chart-table :where(td.vs-table-td) {
-  background-color: var(--dashboard-table-column-bg, transparent);
+  background-color: var(--dashboard-table-column-bg, var(--dashboard-table-body-bg, transparent));
 }
 
 .vs-chart-table thead .vs-table-sticky-lead,
@@ -913,6 +917,10 @@ html.admin-fill-lock #root {
 
 .vs-chart-table :where(.vs-table-th:last-child, .vs-table-td:last-child) {
   border-right: none;
+}
+
+.vs-chart-table[data-zebra] tbody tr:nth-child(odd) :where(td.vs-table-td:not(.vs-table-index)) {
+  background-color: var(--dashboard-table-column-bg, var(--dashboard-table-body-bg, transparent));
 }
 
 .vs-chart-table[data-zebra] tbody tr:nth-child(even) td {
