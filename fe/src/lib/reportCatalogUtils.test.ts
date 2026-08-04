@@ -1,5 +1,22 @@
-import { describe, expect, it } from "vitest";
-import { filterCatalogTemplates, normalizeCatalogNodes } from "./reportCatalogUtils";
+import { describe, expect, it, vi } from "vitest";
+import { fetchAllCatalogTemplates, filterCatalogTemplates, normalizeCatalogNodes } from "./reportCatalogUtils";
+
+vi.mock("@/lib/api", () => ({
+  apiFetch: vi.fn(async (url: string) => {
+    if (url === "/api/v1/reports/catalog/nodes") {
+      return [
+        { id: "f1", name: "Folder", parentId: null, nodeType: "folder", templateKind: null, templateKey: null, sortOrder: 0 },
+        { id: "t1", name: "Template A", parentId: null, nodeType: "template", templateKind: "pdf", templateKey: "a", sortOrder: 1 },
+      ];
+    }
+    if (url.includes("parentId=f1")) {
+      return [
+        { id: "t2", name: "Template B", parentId: "f1", nodeType: "template", templateKind: "excel", templateKey: "b", sortOrder: 0 },
+      ];
+    }
+    return [];
+  }),
+}));
 
 describe("reportCatalogUtils", () => {
   it("normalizeCatalogNodes accepts array or items wrapper", () => {
@@ -40,5 +57,10 @@ describe("reportCatalogUtils", () => {
     expect(filterCatalogTemplates(nodes, "月报", "all")).toHaveLength(1);
     expect(filterCatalogTemplates(nodes, "", "excel")).toHaveLength(1);
     expect(filterCatalogTemplates(nodes, "ledger", "all")).toHaveLength(1);
+  });
+
+  it("fetchAllCatalogTemplates collects templates via parallel BFS", async () => {
+    const templates = await fetchAllCatalogTemplates();
+    expect(templates.map((node) => node.id).sort()).toEqual(["t1", "t2"]);
   });
 });

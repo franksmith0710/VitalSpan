@@ -1,4 +1,5 @@
 import * as React from "react";
+import { flushSync } from "react-dom";
 import { Link, useLocation } from "react-router";
 import { ChevronDown } from "lucide-react";
 import * as Collapsible from "@radix-ui/react-collapsible";
@@ -13,6 +14,8 @@ import {
   ADMIN_SIDEBAR_EXPANDED_CLASS,
 } from "@/lib/adminLayoutTokens";
 import { useSidebar } from "@/context/sidebar-context";
+import { prefetchAdminRoute } from "@/lib/routePrefetch";
+import { beginAdminNavTransition } from "@/lib/adminHeavyRenderSuspend";
 
 export type NavSubItem = {
   name: string;
@@ -220,6 +223,8 @@ function SidebarNavItem({
                     <Link
                       to={subItem.path}
                       target={subItem.target}
+                      onMouseEnter={() => prefetchAdminRoute(subItem.path)}
+                      onFocus={() => prefetchAdminRoute(subItem.path)}
                       className={cn(
                         "menu-dropdown-item",
                         active
@@ -258,6 +263,8 @@ function SidebarNavItem({
     <Link
       to={item.path}
       target={item.target}
+      onMouseEnter={() => prefetchAdminRoute(item.path)}
+      onFocus={() => prefetchAdminRoute(item.path)}
       className={cn(
         "group menu-item",
         active ? "menu-item-active" : "menu-item-inactive",
@@ -291,6 +298,13 @@ function SidebarNavItem({
   }
 
   return link;
+}
+
+function handleSidebarNavPointerDownCapture(event: React.PointerEvent<HTMLElement>) {
+  const target = event.target as Element | null;
+  const link = target?.closest("a[href]");
+  if (!link || link.getAttribute("target") === "_blank") return;
+  flushSync(() => beginAdminNavTransition());
 }
 
 function SidebarSection({
@@ -449,6 +463,7 @@ export function AppSidebar({
       )}
       onMouseEnter={() => !isExpanded && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onPointerDownCapture={handleSidebarNavPointerDownCapture}
     >
       <div
         className={cn(

@@ -17,6 +17,7 @@ import {
 } from "@/lib/templateDemoData";
 import { queryKeys } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";
+import { useAdminHeavyRenderSuspended } from "@/hooks/useAdminHeavyRenderSuspended";
 import {
   releaseListPreviewSlot,
   requestListPreviewSlot,
@@ -39,6 +40,7 @@ export function TemplateCardPreview({
   eager = false,
   thumbnailSrc = null,
 }: TemplateCardPreviewProps) {
+  const navSuspended = useAdminHeavyRenderSuspended();
   const hostRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(eager);
   const [slotGranted, setSlotGranted] = useState(eager);
@@ -46,7 +48,7 @@ export function TemplateCardPreview({
   const detailQuery = useQuery({
     queryKey: queryKeys.dashboardTemplates.detail(templateId),
     queryFn: () => fetchTemplateDetail(templateId),
-    enabled: active && slotGranted,
+    enabled: active && slotGranted && !navSuspended,
     staleTime: 60_000,
   });
 
@@ -56,7 +58,7 @@ export function TemplateCardPreview({
       apiFetch<{ items: { id: string; name: string; code: string; database?: string }[] }>(
         "/api/v1/datasources",
       ),
-    enabled: active && slotGranted,
+    enabled: active && slotGranted && !navSuspended,
     staleTime: 120_000,
   });
 
@@ -80,7 +82,7 @@ export function TemplateCardPreview({
     !demoDatasourceId;
 
   useEffect(() => {
-    if (!active || slotGranted || eager) return undefined;
+    if (!active || slotGranted || eager || navSuspended) return undefined;
     let cancelled = false;
     void requestListPreviewSlot().then(() => {
       if (!cancelled) setSlotGranted(true);
@@ -96,10 +98,10 @@ export function TemplateCardPreview({
   }, [slotGranted, eager]);
 
   useEffect(() => {
-    if (!active) return undefined;
+    if (!active || navSuspended) return undefined;
     setChartAnimationSuppressed(true);
     return () => setChartAnimationSuppressed(false);
-  }, [active]);
+  }, [active, navSuspended]);
 
   useEffect(() => {
     if (eager) {
@@ -116,16 +118,31 @@ export function TemplateCardPreview({
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry?.isIntersecting) {
+        if (entry?.isIntersecting && !navSuspended) {
           setActive(true);
           observer.disconnect();
         }
       },
-      { rootMargin: "160px" },
+      { rootMargin: "80px" },
     );
     observer.observe(el);
+
+    const syncVisible = () => {
+      if (navSuspended) return;
+      const rect = el.getBoundingClientRect();
+      const margin = 80;
+      if (rect.bottom >= -margin && rect.top <= window.innerHeight + margin) {
+        setActive(true);
+        observer.disconnect();
+      }
+    };
+    syncVisible();
+    if (!navSuspended) {
+      requestAnimationFrame(syncVisible);
+    }
+
     return () => observer.disconnect();
-  }, [eager, templateId]);
+  }, [eager, templateId, navSuspended]);
 
   const thumbnailFallback = thumbnailSrc ? (
     <img
@@ -138,6 +155,20 @@ export function TemplateCardPreview({
   ) : (
     <Skeleton className="h-full w-full rounded-none" />
   );
+
+  if (navSuspended) {
+    return (
+      <div
+        ref={hostRef}
+        className={cn("h-full", className)}
+        data-testid="template-card-preview"
+        data-live="false"
+        aria-hidden
+      >
+        <ComponentPreviewShell className="h-full">{thumbnailFallback}</ComponentPreviewShell>
+      </div>
+    );
+  }
 
   if (!layout?.widgets?.length && !loading && active && !detailQuery.isLoading) {
     return (

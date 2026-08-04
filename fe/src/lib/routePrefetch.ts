@@ -10,15 +10,29 @@ export const ADMIN_ROUTE_PREFETCH: Record<string, () => Promise<unknown>> = {
 };
 
 const prefetched = new Set<string>();
+let idlePrefetchHandle: number | null = null;
 
 export function prefetchAdminRoute(path: string | undefined): void {
   if (!path) return;
   const loader = ADMIN_ROUTE_PREFETCH[path];
   if (!loader || prefetched.has(path)) return;
-  prefetched.add(path);
-  void loader().catch(() => {
-    prefetched.delete(path);
-  });
+
+  const run = () => {
+    idlePrefetchHandle = null;
+    prefetched.add(path);
+    void loader().catch(() => {
+      prefetched.delete(path);
+    });
+  };
+
+  if (typeof requestIdleCallback !== "undefined") {
+    if (idlePrefetchHandle !== null) {
+      cancelIdleCallback(idlePrefetchHandle);
+    }
+    idlePrefetchHandle = requestIdleCallback(run, { timeout: 2000 });
+  } else {
+    run();
+  }
 }
 
 export function resetRoutePrefetchForTests(): void {

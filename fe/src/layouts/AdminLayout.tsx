@@ -7,6 +7,7 @@ import { SidebarProvider, useSidebar } from "@/context/sidebar-context";
 import { WorkspaceProvider } from "@/context/workspace-context";
 import { AccountSidebarBack } from "@/components/layout/account-sidebar-back";
 import { AppSidebar } from "@/components/layout/app-sidebar";
+import { AdminNavPerfTracker } from "@/components/layout/AdminNavPerfTracker";
 import { AppHeader } from "@/components/layout/app-header";
 import { Backdrop } from "@/components/layout/backdrop";
 import { ThemeToggleButton } from "@/components/layout/theme-toggle";
@@ -70,6 +71,7 @@ function AdminLayoutContent() {
       className="flex h-dvh max-h-dvh min-h-0 overflow-hidden"
       data-admin-layout={isFillHeightRoute ? "fill" : "default"}
     >
+      <AdminNavPerfTracker />
       <AppSidebar
         sections={navSections}
         logo={<VitalSpanLogo />}

@@ -58,6 +58,7 @@ import {
   resolveTableThemeVars,
 } from "@/lib/chartSurfaceTheme";
 import { useElementSize } from "@/hooks/useElementSize";
+import { useAdminHeavyRenderSuspended } from "@/hooks/useAdminHeavyRenderSuspended";
 import { useDashboardColorScheme } from "@/hooks/useDashboardColorScheme";
 import { useDashboardGridPlayer } from "@/components/dashboard/dashboardGridPlayerContext";
 import { usePixelShapePlayer } from "@/components/dashboard/pixelCanvas/pixelShapePlayerContext";
@@ -227,6 +228,9 @@ export const ChartRenderer = memo(function ChartRenderer({
   geo3dRenderTier,
   geo3dAnimationActive = true,
 }: ChartRendererProps) {
+  const navSuspended = useAdminHeavyRenderSuspended();
+  const effectiveQueryEnabled = queryEnabled && !navSuspended;
+  const effectiveRenderEnabled = renderEnabled && !navSuspended;
   const drill = useChartDrill(drillEnabled ? widgetId : undefined);
   const effectiveConfig = useMemo(() => migrateChartViewConfig(config), [config]);
   const manualDrillStack = useMemo(
@@ -345,7 +349,7 @@ export const ChartRenderer = memo(function ChartRenderer({
     filterParameters: mergedFilterParameters,
     executeKey: resolvedExecuteKey,
     limit: queryLimit,
-    enabled: queryEnabled,
+    enabled: effectiveQueryEnabled,
   });
   const mountReadySentRef = useRef(false);
   const [page, setPage] = useState(1);
@@ -359,15 +363,15 @@ export const ChartRenderer = memo(function ChartRenderer({
 
   useEffect(() => {
     mountReadySentRef.current = false;
-  }, [config, drillRevision, renderEnabled, queryEnabled]);
+  }, [config, drillRevision, effectiveRenderEnabled, effectiveQueryEnabled]);
 
   useEffect(() => {
-    if (!renderEnabled || mountReadySentRef.current || !onMountReady) return;
-    if (!queryEnabled) return;
+    if (!effectiveRenderEnabled || mountReadySentRef.current || !onMountReady) return;
+    if (!effectiveQueryEnabled) return;
     if (loading) return;
     mountReadySentRef.current = true;
     onMountReady();
-  }, [renderEnabled, queryEnabled, loading, error, empty, isGeoChart, onMountReady]);
+  }, [effectiveRenderEnabled, effectiveQueryEnabled, loading, error, empty, isGeoChart, onMountReady]);
 
   useLayoutEffect(() => {
     setLocalConfig(effectiveConfig);
@@ -714,7 +718,7 @@ export const ChartRenderer = memo(function ChartRenderer({
   );
 
   const renderBody = () => {
-    if (!renderEnabled) {
+    if (!effectiveRenderEnabled) {
       const gateLabel =
         mountGateStatus === "offscreen" ? "图表屏外已暂停" : "图表排队加载中";
       return embedded ? (
@@ -858,7 +862,7 @@ export const ChartRenderer = memo(function ChartRenderer({
   if (embedded) {
     const gateLabel =
       mountGateStatus === "offscreen" ? "图表屏外已暂停" : "图表排队加载中";
-    if (!renderEnabled || !queryEnabled) {
+    if (!effectiveRenderEnabled || !effectiveQueryEnabled) {
       return (
         <div ref={bodyRef} className="relative h-full min-h-0 w-full min-w-0 overflow-hidden">
           <Skeleton

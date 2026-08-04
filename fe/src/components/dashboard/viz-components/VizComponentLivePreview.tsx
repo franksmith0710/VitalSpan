@@ -12,6 +12,7 @@ import { VizComponentChartPreviewShell } from "@/components/dashboard/viz-compon
 import type { Geo3dRenderTier } from "@/components/charts/engine/three/geo3dRuntime";
 import { useElementSize } from "@/hooks/useElementSize";
 import { useInViewport } from "@/hooks/useInViewport";
+import { useAdminHeavyRenderSuspended } from "@/hooks/useAdminHeavyRenderSuspended";
 import { isGeoMapChartType, type ChartViewConfig } from "@/lib/chartViewConfig";
 import { cn } from "@/lib/utils";
 
@@ -35,13 +36,14 @@ export function VizComponentLivePreview({
   compact = false,
   onChartConfigChange,
 }: VizComponentLivePreviewProps) {
+  const navSuspended = useAdminHeavyRenderSuspended();
   const containerRef = useRef<HTMLDivElement>(null);
   const { ref: viewRef, inView } = useInViewport<HTMLDivElement>({
     enabled: lazy,
-    rootMargin: "160px",
+    rootMargin: "80px",
   });
   const { width, height } = useElementSize(containerRef);
-  const active = !lazy || inView;
+  const active = !navSuspended && (!lazy || inView);
 
   const setContainerRef = (node: HTMLDivElement | null) => {
     containerRef.current = node;

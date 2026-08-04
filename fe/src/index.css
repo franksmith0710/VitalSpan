@@ -81,7 +81,7 @@
 }
 
 @utility menu-item {
-  @apply relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-theme-sm font-medium transition-colors;
+  @apply relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-theme-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-500/35 focus-visible:ring-offset-1 dark:focus-visible:ring-brand-400/40;
 }
 
 @utility menu-item-active {
@@ -117,7 +117,7 @@
 }
 
 @utility menu-dropdown-item {
-  @apply relative flex items-center rounded-lg px-3 py-1.5 text-theme-sm transition-colors;
+  @apply relative flex items-center rounded-lg px-3 py-1.5 text-theme-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-500/35 focus-visible:ring-offset-1 dark:focus-visible:ring-brand-400/40;
 }
 
 @utility menu-dropdown-item-active {
