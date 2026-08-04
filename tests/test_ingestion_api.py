@@ -865,8 +865,8 @@ def test_create_job_datasource_not_found_404(client, auth_headers):
     assert response.status_code == 404
 
 
-def test_create_job_datasource_metadata_only_422(client, auth_headers):
-    """仅元数据浏览的连接器（如 hive）不可作同步源。"""
+def test_create_job_hive_datasource_201(client, auth_headers):
+    """Hive 等湖仓连接器可作同步源。"""
     db = get_meta_session()
     row = DataSource(
         name="hive-ds",
@@ -888,10 +888,13 @@ def test_create_job_datasource_metadata_only_422(client, auth_headers):
         "source_mode": "datasource",
         "source_data_source_id": str(ds_id),
         "source_table": "t",
-        "target_table": "tgt",
+        "target_table": "tgt_hive",
     }
     response = client.post("/api/v1/ingestion/sync-jobs", json=payload, headers=auth_headers)
-    assert response.status_code == 422
+    assert response.status_code == 201, response.text
+    body = response.json()
+    assert body["source"]["type"] == "hive"
+    client.delete(f"/api/v1/ingestion/sync-jobs/{body['id']}", headers=auth_headers)
 
 
 def test_create_job_postgresql_datasource_201(client, auth_headers):

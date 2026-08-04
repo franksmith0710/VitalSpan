@@ -16,6 +16,7 @@ import {
   patchTableColumnWidthMode,
   readChartDeTableStyle,
   DEFAULT_TABLE_PAGE_SIZE,
+  DEFAULT_TABLE_COLUMN_WIDTH_MODE,
 } from "@/lib/chartDeTableStyle";
 import { tableInspectorProfile } from "@/lib/chartTableInspector";
 
@@ -27,7 +28,7 @@ export function ChartTableStylePanel() {
   const profile = tableInspectorProfile(cfg.chartType);
   const tableStyle = readChartDeTableStyle(cfg);
   const paginationMode = tableStyle.paginationMode ?? "page";
-  const columnWidthMode = tableStyle.columnWidthMode ?? "auto";
+  const columnWidthMode = tableStyle.columnWidthMode ?? DEFAULT_TABLE_COLUMN_WIDTH_MODE;
   const hasMetrics = (cfg.metrics?.length ?? 0) > 0;
   const summaryChecked =
     tableStyle.showSummary === true ||

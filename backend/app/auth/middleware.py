@@ -152,6 +152,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
         path = request.url.path
         if path in _public_paths_for(self.settings) or path.startswith("/docs"):
             return await call_next(request)
+        if path.startswith("/sample-api"):
+            return await call_next(request)
         if _is_public_embed_route(path, request):
             return await call_next(request)
         if _is_public_export_route(path, request):

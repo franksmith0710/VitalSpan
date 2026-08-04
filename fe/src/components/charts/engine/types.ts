@@ -1,3 +1,4 @@
+import type { ChartDeTableStyle } from "@/lib/chartDeTableStyle";
 import type { ChartDrillFrame } from "@/lib/chartDrill";
 import type { ChartDeFeatures } from "@/lib/chartDeFeatures";
 import type { ChartDeStyle } from "@/lib/chartDeStyle";
@@ -48,6 +49,8 @@ export type ChartStyleContext = {
   embedEdit: boolean;
   /** 看板组件壳层背景色，表格主题与 legacy EmbeddedChartTable 对齐 */
   widgetShellBg?: string;
+  /** 看板级表格配色默认（与 pickChartPaletteDefaults.tableColorStyle 对齐） */
+  tableColorStyle?: ChartDeTableStyle;
 };
 
 export type ChartInteractionEvent =

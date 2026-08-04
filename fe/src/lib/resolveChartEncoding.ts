@@ -3,6 +3,7 @@ import { classifyDatasetField } from "@/components/dashboard/datasetFieldClassif
 import {
   getDeAxisBlueprint,
   getDeAxisLegacyMap,
+  getDeAxisSpecs,
   type ChartAxesConfig,
   type DeAxisId,
   type DeAxisSlot,
@@ -49,6 +50,24 @@ export function migrateChartConfigToDeAxes(config: ChartViewConfig): ChartViewCo
     return syncLegacyFieldsFromAxes({ ...config, axes });
   }
 
+  if (chartType === "table-normal") {
+    const legacyMap = getDeAxisLegacyMap(chartType);
+    const drillLegacy = legacyMap.find((m) => m.axisId === "drill" && m.index === 0)?.legacy;
+    const drillIndex = drillLegacy?.kind === "dimension" ? drillLegacy.index : -1;
+    const rawDims = config.dimensions?.map((d) => d.field?.trim()).filter(Boolean) ?? [];
+    const drillField =
+      drillIndex >= 0 && rawDims.length > drillIndex ? rawDims[drillIndex] : undefined;
+    const xFields =
+      drillIndex >= 0 ? rawDims.filter((_, i) => i !== drillIndex) : rawDims;
+    const mets = config.metrics?.map((m) => m.field?.trim()).filter(Boolean) ?? [];
+    const axes: ChartAxesConfig = {
+      xAxis: xFields.map((field) => ({ field })),
+      yAxis: mets.map((field) => ({ field })),
+      ...(drillField ? { drill: [{ field: drillField }] } : {}),
+    };
+    return syncLegacyFieldsFromAxes({ ...config, axes });
+  }
+
   const legacyMap = getDeAxisLegacyMap(chartType);
   const axes: ChartAxesConfig = {};
 
@@ -87,6 +106,62 @@ function syncTableBothAxesToLegacy(
   return { dimensions, metrics };
 }
 
+function syncAxesSpecsToLegacy(
+  chartType: string,
+  axes: ChartAxesConfig,
+): { dimensions: ChartFieldRef[]; metrics: ChartFieldRef[] } {
+  const specs = getDeAxisSpecs(chartType);
+  const dimensions: ChartFieldRef[] = [];
+  const metrics: ChartFieldRef[] = [];
+
+  for (const spec of specs) {
+    const axisId = spec.id;
+    const fields = (axes[axisId] ?? [])
+      .map((ref) => ref.field?.trim())
+      .filter((field): field is string => Boolean(field));
+
+    if (spec.fieldType === "dimension") {
+      if (spec.uiMode === "multi") {
+        for (const field of fields) dimensions.push({ field });
+      } else if (spec.limit > 1 && !spec.uiMode) {
+        for (let i = 0; i < spec.limit; i += 1) {
+          const field = axisField(axes, axisId, i);
+          if (field) dimensions.push({ field });
+        }
+      } else {
+        const field = axisField(axes, axisId, 0);
+        if (field) dimensions.push({ field });
+      }
+      continue;
+    }
+
+    if (spec.fieldType === "metric") {
+      if (spec.uiMode === "multi") {
+        for (const field of fields) metrics.push({ field });
+      } else if (spec.limit > 1 && !spec.uiMode) {
+        for (let i = 0; i < spec.limit; i += 1) {
+          const field = axisField(axes, axisId, i);
+          if (field) metrics.push({ field });
+        }
+      } else {
+        const field = axisField(axes, axisId, 0);
+        if (field) metrics.push({ field });
+      }
+      continue;
+    }
+
+    if (spec.fieldType === "both") {
+      if (spec.uiMode === "multi") continue;
+      const field = axisField(axes, axisId, 0);
+      if (!field) continue;
+      if (classifyDatasetField(field) === "metric") metrics.push({ field });
+      else dimensions.push({ field });
+    }
+  }
+
+  return { dimensions, metrics };
+}
+
 /** axes 权威 → 投影 dimensions/metrics（buildPlan 兼容） */
 export function syncLegacyFieldsFromAxes(config: ChartViewConfig): ChartViewConfig {
   const chartType = config.chartType;
@@ -102,18 +177,21 @@ export function syncLegacyFieldsFromAxes(config: ChartViewConfig): ChartViewConf
     return { ...config, axes, dimensions: nextDimensions, metrics };
   }
 
-  const legacyMap = getDeAxisLegacyMap(chartType);
-  const dimensions = [...(config.dimensions ?? [])];
-  const metrics = [...(config.metrics ?? [])];
-
-  for (const map of legacyMap) {
-    if (!map.legacy) continue;
-    const field = axisField(axes, map.axisId, map.index);
-    const target = map.legacy.kind === "dimension" ? dimensions : metrics;
-    while (target.length <= map.legacy.index) target.push({ field: "" });
-    target[map.legacy.index] = { field };
+  if (chartType === "table-normal") {
+    const dimensions = (axes.xAxis ?? [])
+      .map((ref) => ref.field?.trim())
+      .filter((field): field is string => Boolean(field))
+      .map((field) => ({ field }));
+    const drillField = axisField(axes, "drill", 0);
+    if (drillField) dimensions.push({ field: drillField });
+    const metrics = (axes.yAxis ?? [])
+      .map((ref) => ref.field?.trim())
+      .filter((field): field is string => Boolean(field))
+      .map((field) => ({ field }));
+    return { ...config, axes, dimensions, metrics };
   }
 
+  const { dimensions, metrics } = syncAxesSpecsToLegacy(chartType, axes);
   return { ...config, axes, dimensions, metrics };
 }
 

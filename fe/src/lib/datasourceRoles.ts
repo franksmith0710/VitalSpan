@@ -1,6 +1,6 @@
 export const ANALYTICS_DATASOURCE_CODE = "analytics";
 
-/** 与后端 sync_source_capabilities 对齐：可 SQL / Native 查询的连接器可作同步源候选 */
+/** 与后端 is_query_capable / is_sync_fetch_implemented 对齐：全部可查询连接器 */
 const SYNC_CAPABLE_TYPES = new Set([
   "mysql",
   "mariadb",
@@ -18,12 +18,20 @@ const SYNC_CAPABLE_TYPES = new Set([
   "sqlite",
   "sqlserver",
   "oracle",
+  "dm",
+  "db2",
+  "hive",
+  "impala",
+  "trino",
+  "presto",
   "mongodb",
   "elasticsearch",
   "opensearch",
   "csv",
   "excel",
   "rest_api",
+  "influxdb",
+  "tdengine",
 ]);
 
 export function isAnalyticsDatasource(code: string): boolean {
@@ -39,28 +47,7 @@ export function isSyncSourceCapable(type: string): boolean {
   return SYNC_CAPABLE_TYPES.has(type);
 }
 
-/** 与 backend sync_source_capabilities.is_sync_fetch_implemented 对齐 */
-const SYNC_FETCH_IMPLEMENTED_TYPES = new Set([
-  "mysql",
-  "mariadb",
-  "tidb",
-  "starrocks",
-  "doris",
-  "oceanbase",
-  "gbase",
-  "postgresql",
-  "kingbase",
-  "gaussdb",
-  "redshift",
-  "timescaledb",
-  "mongodb",
-  "elasticsearch",
-  "opensearch",
-  "csv",
-  "excel",
-  "rest_api",
-]);
-
+/** 可查询类型均支持同步拉数（与后端最终形态一致） */
 export function isSyncFetchImplemented(type: string): boolean {
-  return SYNC_FETCH_IMPLEMENTED_TYPES.has(type);
+  return isSyncSourceCapable(type);
 }

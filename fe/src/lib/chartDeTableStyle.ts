@@ -62,6 +62,8 @@ export type ChartDeTableStyle = {
 export const DEFAULT_TABLE_PAGE_SIZE = 20;
 export const DEFAULT_TABLE_PAGINATION_FONT_SIZE = 14;
 export const DEFAULT_TABLE_ZEBRA_BG = "rgba(148, 163, 184, 0.12)";
+/** 对标 DataEase：新建表格类组件默认列宽「自适应」 */
+export const DEFAULT_TABLE_COLUMN_WIDTH_MODE: TableColumnWidthMode = "auto";
 
 export function resolveTableZebraBg(style: ChartDeTableStyle): string | undefined {
   if (style.zebraBg?.trim()) return style.zebraBg;

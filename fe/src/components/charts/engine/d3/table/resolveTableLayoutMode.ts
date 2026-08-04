@@ -1,11 +1,11 @@
-import type { TableColumnWidthMode } from "@/lib/chartDeTableStyle";
+import {
+  DEFAULT_TABLE_COLUMN_WIDTH_MODE,
+  type TableColumnWidthMode,
+} from "@/lib/chartDeTableStyle";
 import {
   TABLE_DEFAULT_COL_PX,
   TABLE_DEFAULT_SERIES_PX,
 } from "@/components/charts/engine/d3/table/tableLayoutConstants";
-
-/** 列数较多时默认走固定列宽，避免等分压扁（仅 mode 未显式设置时） */
-export const AUTO_EQUAL_SPLIT_MAX_COLUMNS = 4;
 
 export const TABLE_SERIES_FIELD = "__vs_series__";
 
@@ -19,11 +19,9 @@ export type TableColumnWidthPlan = {
 
 export function resolveEffectiveColumnWidthMode(
   mode: TableColumnWidthMode | undefined,
-  columnCount: number,
+  _columnCount?: number,
 ): TableColumnWidthMode {
-  if (mode) return mode;
-  if (columnCount > AUTO_EQUAL_SPLIT_MAX_COLUMNS) return "fixed";
-  return "auto";
+  return mode ?? DEFAULT_TABLE_COLUMN_WIDTH_MODE;
 }
 
 type BuildColumnWidthPlanInput = {

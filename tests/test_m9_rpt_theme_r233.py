@@ -80,7 +80,12 @@ def client() -> TestClient:
 @pytest.fixture
 def viewer_user() -> Generator[None, None, None]:
     async def _override() -> UserContext:
-        return UserContext(id="viewer-r233", username="viewer", roles=["viewer"])
+        return UserContext(
+            id="viewer-r233",
+            username="viewer",
+            roles=["viewer"],
+            permissions={"report:read", "theme:read"},
+        )
 
     fastapi_app.dependency_overrides[get_current_user] = _override
     yield
@@ -385,12 +390,24 @@ def test_r233_theme_execute_plan_regression(client):
     assert all(s["status"] in ("pass", "skip") for s in resp.json()["steps"])
 
 
-def test_r233_theme_viewer_put_forbidden(client, viewer_user):
+def test_r233_theme_viewer_put_forbidden(client):
     """R233-DASH-006-03: viewer PUT → 403 DASH_THEME_FORBIDDEN。"""
     dash_id = _create_dashboard(client)
-    resp = client.put("/api/v1/dashboards/theme-analysis", headers=AUTH, json=_theme_payload(dash_id))
-    assert resp.status_code == 403
-    assert resp.json()["code"] == "DASH_THEME_FORBIDDEN"
+    async def _viewer() -> UserContext:
+        return UserContext(
+            id="viewer-r233",
+            username="viewer",
+            roles=["viewer"],
+            permissions={"report:read", "theme:read"},
+        )
+
+    fastapi_app.dependency_overrides[get_current_user] = _viewer
+    try:
+        resp = client.put("/api/v1/dashboards/theme-analysis", headers=AUTH, json=_theme_payload(dash_id))
+        assert resp.status_code == 403
+        assert resp.json()["code"] == "DASH_THEME_FORBIDDEN"
+    finally:
+        fastapi_app.dependency_overrides.pop(get_current_user, None)
 
 
 def test_r233_theme_dimension_unknown_422(client):

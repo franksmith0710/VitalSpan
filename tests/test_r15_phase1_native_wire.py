@@ -27,9 +27,11 @@ def test_phase1_native_query_capable_includes_file_and_api() -> None:
         assert resolve_query_mode_for_connector(t) == "native"
 
 
-def test_phase1_influx_still_not_query_capable() -> None:
-    assert not is_query_capable("influxdb")
-    assert not is_query_capable("tdengine")
+def test_phase1_influx_and_tdengine_query_capable() -> None:
+    assert is_query_capable("influxdb")
+    assert is_query_capable("tdengine")
+    assert resolve_query_mode_for_connector("influxdb") == "native"
+    assert resolve_query_mode_for_connector("tdengine") == "sql"
 
 
 def test_phase1_native_offset_types() -> None:

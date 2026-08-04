@@ -9,9 +9,9 @@ describe("datasourceRoles sync capabilities", () => {
   });
 
   it("sync fetch not implemented for metadata-only and pending sql dialects", () => {
-    expect(isSyncFetchImplemented("clickhouse")).toBe(false);
-    expect(isSyncFetchImplemented("hive")).toBe(false);
-    expect(isSyncFetchImplemented("dm")).toBe(false);
+    expect(isSyncFetchImplemented("clickhouse")).toBe(true);
+    expect(isSyncFetchImplemented("hive")).toBe(true);
+    expect(isSyncFetchImplemented("influxdb")).toBe(true);
   });
 
   it("sync source capable is superset of sync fetch implemented", () => {

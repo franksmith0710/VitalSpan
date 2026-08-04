@@ -56,7 +56,7 @@ class InfluxdbConnector:
 
     type = "influxdb"
     category = "timeseries"
-    capabilities = ("connectivity_test", "schema_browser")
+    capabilities = ("connectivity_test", "schema_browser", "native_query")
     display_name = "InfluxDB"
 
     def test_connection(
@@ -139,3 +139,40 @@ class InfluxdbConnector:
         except Exception:
             return []
         return columns
+
+    def execute_native_query(
+        self,
+        connection: Any,
+        *,
+        body: dict,
+        limit: int,
+        offset: int = 0,
+        database: str | None = None,
+        index: str | None = None,
+    ) -> tuple[list[str], list[list], bool]:
+        bucket = (database or body.get("bucket") or "").strip()
+        measurement = (body.get("measurement") or index or "").strip()
+        if not bucket or not measurement:
+            raise ValueError("influxdb native query requires bucket and measurement")
+        flux = (
+            f'from(bucket: "{bucket}") |> range(start: -30d) '
+            f'|> filter(fn: (r) => r._measurement == "{measurement}") '
+            f"|> limit(n: {int(limit)}, offset: {int(offset)})"
+        )
+        tables = _query_api(connection).query(flux)
+        columns: list[str] = []
+        rows: list[list] = []
+        for table in tables:
+            for record in table.records:
+                row = {
+                    "_time": str(record.get_time()),
+                    "_measurement": record.get_measurement(),
+                    "_field": record.get_field(),
+                    "_value": record.get_value(),
+                }
+                for key, val in row.items():
+                    if key not in columns:
+                        columns.append(key)
+                rows.append([row.get(c) for c in columns])
+        truncated = len(rows) >= limit
+        return columns, rows[:limit], truncated

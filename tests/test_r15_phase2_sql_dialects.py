@@ -71,10 +71,10 @@ def test_phase2_export_type_catalog_query_capable() -> None:
         assert by_type[t]["queryMode"] == "sql"
 
 
-def test_phase2_dm_still_unsupported() -> None:
-    with pytest.raises(UnsupportedDialectError):
-        get_sql_dialect("dm")
-    assert not is_query_capable("dm")
+def test_phase2_dm_uses_oracle_dialect_alias() -> None:
+    dialect = get_sql_dialect("dm")
+    assert dialect.connector_type == "oracle"
+    assert is_query_capable("dm")
 
 
 def test_phase2_sqlite_execute_integration(tmp_path) -> None:

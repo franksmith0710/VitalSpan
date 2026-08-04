@@ -50,12 +50,21 @@ def _live_auth_headers() -> dict[str, str]:
     return headers
 
 
-def _live_request(method: str, path: str, body: dict | None = None) -> tuple[int, bytes]:
+def _live_request(
+    method: str,
+    path: str,
+    body: dict | None = None,
+    *,
+    extra_headers: dict[str, str] | None = None,
+) -> tuple[int, bytes]:
     data = json.dumps(body).encode() if body is not None else None
+    headers = _live_auth_headers()
+    if extra_headers:
+        headers.update(extra_headers)
     req = urllib.request.Request(
         f"{BACKEND_BASE.rstrip('/')}{path}",
         data=data,
-        headers=_live_auth_headers(),
+        headers=headers,
         method=method,
     )
     try:
@@ -94,6 +103,28 @@ def test_live_pdf_export_without_playwright_mock():
     assert status == 201, raw.decode("utf-8", "replace")
     dash_id = json.loads(raw)["id"]
 
+    widget_id = str(uuid.uuid4())
+    status, raw = _live_request(
+        "PUT",
+        f"/api/v1/dashboards/{dash_id}/layout",
+        {
+            "layoutJson": {
+                "version": 1,
+                "widgets": [
+                    {
+                        "id": widget_id,
+                        "type": "text",
+                        "title": "Live probe",
+                        "textConfig": {"content": "export probe"},
+                        "colSpan": 6,
+                        "rowSpan": 2,
+                    },
+                ],
+            },
+        },
+    )
+    assert status == 200, raw.decode("utf-8", "replace")
+
     status, raw = _live_request("POST", f"/api/v1/dashboards/{dash_id}/export-jobs", {"format": "pdf"})
     assert status == 201, raw.decode("utf-8", "replace")
     body = json.loads(raw)
@@ -116,11 +147,31 @@ def _mailhog_reachable() -> bool:
         return False
 
 
-def test_template_schedule_smtp_live():
+@pytest.fixture(scope="module")
+def _mailhog_sink():
+    """Use real MailHog when reachable; otherwise start stdlib local sink on 1025/8025."""
+    if _mailhog_reachable():
+        yield "external"
+        return
+    from local_mailhog import clear_messages, start_local_mailhog, stop_local_mailhog
+
+    start_local_mailhog()
+    try:
+        yield "local"
+    finally:
+        stop_local_mailhog()
+
+
+def test_template_schedule_smtp_live(_mailhog_sink):
     """Live: template schedule execute → MailHog receives PDF attachment."""
     if not _url_reachable(f"{BACKEND_BASE.rstrip('/')}/health"):
         pytest.skip("uvicorn not running at VITALSPAN_LIVE_API")
-    if not _mailhog_reachable():
+
+    from local_mailhog import clear_messages
+
+    if _mailhog_sink == "local":
+        clear_messages()
+    elif not _mailhog_reachable():
         pytest.skip("MailHog API not reachable")
 
     tpl_key = f"live-{uuid.uuid4().hex[:6]}"
@@ -148,13 +199,15 @@ def test_template_schedule_smtp_live():
     )
     assert status == 201, raw.decode("utf-8", "replace")
     node_id = json.loads(raw)["id"]
+    ds_id = str(uuid.uuid4())
 
     status, raw = _live_request(
         "PUT",
         f"/api/v1/reports/catalog/nodes/{node_id}/extension",
         {
             "catalogNodeId": node_id,
-            "metrics": [{"key": "m1", "label": "M1", "expression": "SELECT 1 AS m1", "visible": True}],
+            "defaultDataSourceId": ds_id,
+            "metrics": [],
             "filters": [],
             "changeNote": "live",
         },
@@ -186,6 +239,7 @@ def test_template_schedule_smtp_live():
         "POST",
         f"/api/v1/reports/schedules/{schedule_id}/execute",
         None,
+        extra_headers={"Idempotency-Key": f"live-{schedule_id}", "X-Rpt-Semi-Real": "1"},
     )
     assert status == 200, raw.decode("utf-8", "replace")
     body = json.loads(raw)

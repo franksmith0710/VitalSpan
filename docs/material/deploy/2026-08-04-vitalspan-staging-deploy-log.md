@@ -155,3 +155,36 @@ sudo nginx -t && sudo systemctl reload nginx
 curl http://127.0.0.1:8088/health
 curl http://127.0.0.1:8088/admin -o /dev/null -w '%{http_code}\n'
 ```
+
+---
+
+## 报表中心 P3 staging（本地 / 演示机）
+
+报表元数据、调度与产物在 **staging/production** 须启用 DB + 文件产物。可复制模板：
+
+```bash
+cp backend/.env.staging.example backend/.env
+# 填入 JWT_SM2_* / CREDENTIAL_SM4_KEY
+```
+
+```env
+# backend/.env（staging）
+RPT_SCHEDULE_STORE=db
+RPT_METADATA_STORE=db
+ARTIFACT_STORAGE_BACKEND=fs
+ARTIFACT_STORAGE_PATH=./data/artifacts
+RPT_SMTP_HOST=localhost
+RPT_SMTP_PORT=1025
+FE_BASE_URL=http://127.0.0.1:5173
+MAILHOG_API=http://127.0.0.1:8025
+```
+
+**本地签收启动顺序**：
+
+1. `docker compose up -d postgres mailhog`（Docker 不可用时：`pytest` 会自动起 `tests/local_mailhog.py` 于 1025/8025）
+2. `cd backend && alembic upgrade head`
+3. `uvicorn app.main:app --reload --host 127.0.0.1 --port 8000`
+4. `cd fe && pnpm dev --host 127.0.0.1 --port 5173`
+5. Live 回归：`pytest tests/test_g5_live_export.py -m integration`
+6. 自动化签收：`pytest tests/test_report_manual_cases_p3.py`（Case 19/20）
+7. 手测（可选复核）：Case 18（看板定时 PDF）· Case 19 · Case 20

@@ -10,8 +10,8 @@ describe("resolveTableLayoutMode", () => {
     expect(resolveEffectiveColumnWidthMode("fixed", 2)).toBe("fixed");
   });
 
-  it("defaults to fixed when many columns and mode unset", () => {
-    expect(resolveEffectiveColumnWidthMode(undefined, 6)).toBe("fixed");
+  it("defaults to auto when mode unset", () => {
+    expect(resolveEffectiveColumnWidthMode(undefined, 6)).toBe("auto");
     expect(resolveEffectiveColumnWidthMode(undefined, 3)).toBe("auto");
   });
 

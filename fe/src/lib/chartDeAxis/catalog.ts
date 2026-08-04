@@ -2,7 +2,7 @@
  * DataEase v2 最新 stable axisConfig 快照（真理源）
  * 对标：dataease/dataease core-frontend panel/charts
  */
-import { cartesianTrendAxes, deAxis, expandAxisSpecs } from "./builders";
+import { cartesianTrendAxes, deAxis, expandAxisSpecs, MULTI_DIM_OPTS, MULTI_MET_OPTS } from "./builders";
 import type { DeAxisSlot, DeAxisSpec } from "./types";
 
 type ChartAxisEntry = {
@@ -53,10 +53,15 @@ const DE_AXIS_CATALOG: Record<string, ChartAxisEntry> = {
     ],
   ),
   "table-normal": entry(
-    [deAxis.xDim("数据列 / 维度"), deAxis.yMet("数据列 / 指标")],
+    [
+      deAxis.xDim("数据列 / 维度", { ...MULTI_DIM_OPTS, required: true }),
+      deAxis.yMet("数据列 / 指标", { ...MULTI_MET_OPTS, required: true }),
+      deAxis.drill(),
+    ],
     [
       { axisId: "xAxis", index: 0, legacy: { kind: "dimension", index: 0 } },
       { axisId: "yAxis", index: 0, legacy: { kind: "metric", index: 0 } },
+      { axisId: "drill", index: 0, legacy: { kind: "dimension", index: 1 } },
     ],
   ),
   "table-pivot": entry(
@@ -320,7 +325,7 @@ const DE_AXIS_CATALOG: Record<string, ChartAxisEntry> = {
 
   // dual_axes
   combo: entry(
-    [deAxis.xDim(), deAxis.yMet("柱指标"), deAxis.yExt("线指标")],
+    [deAxis.xDim(), deAxis.yMet("柱指标", MULTI_MET_OPTS), deAxis.yExt("线指标", MULTI_MET_OPTS)],
     [
       { axisId: "xAxis", index: 0, legacy: { kind: "dimension", index: 0 } },
       { axisId: "yAxis", index: 0, legacy: { kind: "metric", index: 0 } },
@@ -331,8 +336,8 @@ const DE_AXIS_CATALOG: Record<string, ChartAxisEntry> = {
     [
       deAxis.xDim(),
       deAxis.xExt(),
-      deAxis.yMet("左值轴 / 柱指标"),
-      deAxis.yExt("右值轴 / 线指标"),
+      deAxis.yMet("左值轴 / 柱指标", MULTI_MET_OPTS),
+      deAxis.yExt("右值轴 / 线指标", MULTI_MET_OPTS),
       deAxis.drill(),
     ],
     [
@@ -344,7 +349,9 @@ const DE_AXIS_CATALOG: Record<string, ChartAxisEntry> = {
     ],
   ),
   "chart-mix-group": entry(
-    cartesianTrendAxes("分组项 / 维度").slice(0, 3).concat(deAxis.yExt("右值轴 / 线指标"), deAxis.drill()),
+    cartesianTrendAxes("分组项 / 维度")
+      .slice(0, 3)
+      .concat(deAxis.yExt("右值轴 / 线指标", MULTI_MET_OPTS), deAxis.drill()),
     [
       { axisId: "xAxis", index: 0, legacy: { kind: "dimension", index: 0 } },
       { axisId: "xAxisExt", index: 0, legacy: { kind: "dimension", index: 1 } },
@@ -354,7 +361,9 @@ const DE_AXIS_CATALOG: Record<string, ChartAxisEntry> = {
     ],
   ),
   "chart-mix-stack": entry(
-    cartesianTrendAxes("堆叠项 / 维度").slice(0, 3).concat(deAxis.yExt("右值轴 / 线指标"), deAxis.drill()),
+    cartesianTrendAxes("堆叠项 / 维度")
+      .slice(0, 3)
+      .concat(deAxis.yExt("右值轴 / 线指标", MULTI_MET_OPTS), deAxis.drill()),
     [
       { axisId: "xAxis", index: 0, legacy: { kind: "dimension", index: 0 } },
       { axisId: "xAxisExt", index: 0, legacy: { kind: "dimension", index: 1 } },
@@ -367,9 +376,9 @@ const DE_AXIS_CATALOG: Record<string, ChartAxisEntry> = {
     [
       deAxis.xDim(),
       deAxis.xExt(),
-      deAxis.yMet("左值轴 / 线指标"),
+      deAxis.yMet("左值轴 / 线指标", MULTI_MET_OPTS),
       deAxis.bubble("右子类别 / 维度", { fieldType: "dimension" as never, showAggregation: false }),
-      deAxis.yExt("右值轴 / 线指标", { required: false }),
+      deAxis.yExt("右值轴 / 线指标", { ...MULTI_MET_OPTS, required: false }),
       deAxis.drill(),
     ].map((s) =>
       s.id === "extBubble" && (s as DeAxisSpec).fieldType === ("dimension" as never)
@@ -477,6 +486,16 @@ export function deriveFieldRuleFromDeCatalog(chartType: string): {
     if (spec.fieldType === "both" && spec.uiMode === "multi") {
       maxD += spec.maxDimensions ?? 8;
       maxM += spec.maxMetrics ?? 8;
+      continue;
+    }
+    if (spec.uiMode === "multi") {
+      if (spec.fieldType === "dimension") {
+        maxD += spec.maxDimensions ?? spec.limit;
+        if (spec.required) minD += 1;
+      } else if (spec.fieldType === "metric") {
+        maxM += spec.maxMetrics ?? spec.limit;
+        if (spec.required) minM += 1;
+      }
       continue;
     }
     if (spec.fieldType === "both") {

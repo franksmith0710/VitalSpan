@@ -47,10 +47,20 @@ def fetch_native_rows(job: SyncJob) -> list[dict[str, Any]]:
                 offset=0,
                 database=job.source_database,
             )
-        elif job.source_type in ("csv", "excel", "rest_api"):
+        elif job.source_type in ("csv", "excel"):
             columns, rows, _ = connector.execute_native_query(
                 conn,
                 body={},
+                limit=INGESTION_MAX_ROWS,
+                offset=0,
+            )
+        elif job.source_type == "rest_api":
+            path = job.source_table.strip()
+            if not path.startswith("/"):
+                path = f"/{path}"
+            columns, rows, _ = connector.execute_native_query(
+                conn,
+                body={"path": path},
                 limit=INGESTION_MAX_ROWS,
                 offset=0,
             )
@@ -61,6 +71,14 @@ def fetch_native_rows(job: SyncJob) -> list[dict[str, Any]]:
                 body={},
                 index=index,
                 limit=INGESTION_MAX_ROWS,
+            )
+        elif job.source_type == "influxdb":
+            columns, rows, _ = connector.execute_native_query(
+                conn,
+                body={"measurement": job.source_table, "bucket": job.source_database},
+                limit=INGESTION_MAX_ROWS,
+                offset=0,
+                database=job.source_database,
             )
         else:
             raise RuntimeError(f"未实现的 Native 同步源: {job.source_type}")

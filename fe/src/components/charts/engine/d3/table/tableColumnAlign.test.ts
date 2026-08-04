@@ -7,8 +7,8 @@ describe("resolveTableLayoutMode", () => {
     expect(resolveEffectiveColumnWidthMode("auto", 3)).toBe("auto");
   });
 
-  it("switches to fixed scroll layout when many columns and mode unset", () => {
-    expect(resolveEffectiveColumnWidthMode(undefined, 9)).toBe("fixed");
+  it("defaults to auto when mode unset regardless of column count", () => {
+    expect(resolveEffectiveColumnWidthMode(undefined, 9)).toBe("auto");
   });
 });
 

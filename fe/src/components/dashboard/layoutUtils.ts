@@ -3,6 +3,8 @@ import { migrateChartViewConfig } from "@/lib/migrateChartTypes";
 import { resolveChartWidgetTitle } from "@/lib/chartTypeDisplayNames";
 import { chartInspectorCapabilities } from "@/lib/chartInspectorCapabilities";
 import { DEFAULT_CHART_LEGEND_STYLE, readChartDeStyle } from "@/lib/chartDeStyle";
+import { DEFAULT_TABLE_COLUMN_WIDTH_MODE } from "@/lib/chartDeTableStyle";
+import { isTableLikeChartType } from "@/lib/chartTableInspector";
 import { DEFAULT_MAP_3D_CHART_DE_STYLE } from "@/lib/defaultMap3dChartDeStyle";
 import type { ScreenVisualStyleConfig } from "@/lib/screenVisualStyle";
 import type { DashboardLayoutV2, LayoutWidget, PixelLayoutWidget } from "./dashboardLayoutContracts";
@@ -740,8 +742,26 @@ export function defaultChartConfig(type: ChartType): ChartViewConfig {
       },
     };
   };
+  const withTableColumnWidthDefault = (cfg: ChartViewConfig): ChartViewConfig => {
+    if (!isTableLikeChartType(type)) return cfg;
+    return {
+      ...cfg,
+      nativeBody: {
+        ...cfg.nativeBody,
+        deTableStyle: {
+          columnWidthMode: DEFAULT_TABLE_COLUMN_WIDTH_MODE,
+          ...cfg.nativeBody?.deTableStyle,
+        },
+      },
+    };
+  };
   if (type === "table") {
-    return { chartType: "table", ...base, dimensions: [], metrics: [] };
+    return withTableColumnWidthDefault({
+      chartType: "table",
+      ...base,
+      dimensions: [],
+      metrics: [],
+    });
   }
   if (type === "kpi") {
     return withLegendDefault({
@@ -764,10 +784,12 @@ export function defaultChartConfig(type: ChartType): ChartViewConfig {
       },
     });
   }
-  return withLegendDefault({
-    chartType: type,
-    ...base,
-    dimensions: [],
-    metrics: [],
-  });
+  return withTableColumnWidthDefault(
+    withLegendDefault({
+      chartType: type,
+      ...base,
+      dimensions: [],
+      metrics: [],
+    }),
+  );
 }

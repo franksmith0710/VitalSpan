@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.v1 import api_v1_router
+from app.sample_api.router import router as sample_api_router
 from app.auth.deps import PermissionDeniedError
 from app.auth.middleware import AuthMiddleware
 from app.core.config import get_settings
@@ -158,6 +159,7 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+app.include_router(sample_api_router)
 app.include_router(api_v1_router, prefix="/api/v1")
 
 

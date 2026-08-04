@@ -13,6 +13,12 @@ describe("chartFieldSlots", () => {
     expect(chartFieldSlotHints("pie").dimensionLabel).toBe("扇区 / 维度");
   });
 
+  it("T-INSP-DE-03b: line chart value axis supports multi metrics container", () => {
+    const ySlot = chartDataSlotBlueprint("line").find((s) => s.axisId === "yAxis");
+    expect(ySlot?.uiMode).toBe("multi");
+    expect(ySlot?.label).toBe("值轴 / 指标");
+  });
+
   it("T-INSP-DE-03: line chart exposes DE slot blueprint", () => {
     expect(chartDataSlotBlueprint("line").map((s) => s.label)).toEqual([
       "类别轴 / 维度",
@@ -133,6 +139,17 @@ describe("chartFieldSlots", () => {
     const slots = chartDataSlotBlueprint("table-pivot");
     expect(slots.filter((s) => s.kind === "dimension" && s.required !== false).length).toBe(1);
     expect(chartRenderRequiredCounts("table-pivot")).toEqual({ minDimensions: 1, minMetrics: 1 });
+  });
+
+  it("T-INSP-DE-13a: table-normal uses multi dimension and metric slots", () => {
+    const slots = chartDataSlotBlueprint("table-normal");
+    expect(slots.map((s) => s.label)).toEqual([
+      "数据列 / 维度",
+      "数据列 / 指标",
+      "钻取 / 维度",
+    ]);
+    expect(slots[0]?.uiMode).toBe("multi");
+    expect(slots[1]?.uiMode).toBe("multi");
   });
 
   it("T-INSP-DE-13: table-info uses single multi data column + drill slots", () => {

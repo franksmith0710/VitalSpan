@@ -38,6 +38,31 @@ describe("chartDeAxis catalog", () => {
     expect(ySlots.every((s) => s.fieldType === "metric")).toBe(true);
   });
 
+  it("table-normal uses multi dimension and metric containers like DataEase", () => {
+    const slots = getDeAxisBlueprint("table-normal");
+    expect(slots.map((s) => s.label)).toEqual([
+      "数据列 / 维度",
+      "数据列 / 指标",
+      "钻取 / 维度",
+    ]);
+    expect(slots[0]).toMatchObject({
+      axisId: "xAxis",
+      fieldType: "dimension",
+      uiMode: "multi",
+    });
+    expect(slots[1]).toMatchObject({
+      axisId: "yAxis",
+      fieldType: "metric",
+      uiMode: "multi",
+    });
+    expect(deriveFieldRuleFromDeCatalog("table-normal")).toEqual({
+      minDimensions: 1,
+      maxDimensions: 9,
+      minMetrics: 1,
+      maxMetrics: 8,
+    });
+  });
+
   it("table-info uses multi data column container + drill like DataEase", () => {
     const slots = getDeAxisBlueprint("table-info");
     expect(slots).toHaveLength(2);

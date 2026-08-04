@@ -47,7 +47,7 @@ import {
   resolveChartSeriesColorItems,
   supportsChartSeriesColorEditing,
 } from "@/lib/chartSeriesColor";
-import { patchChartDeTableStyle, readChartDeTableStyle } from "@/lib/chartDeTableStyle";
+import { mergeChartTableStyle, patchChartDeTableStyle, readChartDeTableStyle } from "@/lib/chartDeTableStyle";
 import { isTableLikeChartType, tableStyleSectionsForType } from "@/lib/chartTableInspector";
 import { chartTypeHasTooltipSection } from "@/lib/chartStyleCartesianFields";
 import { ChartInspectorSection, INSPECTOR_HINT, INSPECTOR_SELECT, INSPECTOR_SWITCH_SIZE, InspectorInlineColorRow } from "../inspectorCompact";
@@ -134,7 +134,10 @@ export function ChartPaletteStyleSection() {
           isTableLike && !tableColorInOwnSection ? (
             <ChartTableColorFields
               compact
-              tableStyle={readChartDeTableStyle(cfg)}
+              tableStyle={mergeChartTableStyle(
+                readChartDeTableStyle(cfg),
+                dashboardStyle?.tableColorStyle,
+              )}
               onPatch={(patch) =>
                 mutateChartConfig((current) => patchChartDeTableStyle(current, patch))
               }

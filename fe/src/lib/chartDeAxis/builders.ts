@@ -2,6 +2,22 @@ import type { DeAxisFieldType, DeAxisId, DeAxisSlot, DeAxisSpec } from "./types"
 
 type AxisOpts = Partial<Omit<DeAxisSpec, "id" | "label">> & { label?: string };
 
+/** DE 式多字段容器默认上限 */
+export const DE_MULTI_FIELD_LIMIT = 8;
+
+export const MULTI_DIM_OPTS: AxisOpts = {
+  uiMode: "multi",
+  limit: DE_MULTI_FIELD_LIMIT,
+  maxDimensions: DE_MULTI_FIELD_LIMIT,
+};
+
+export const MULTI_MET_OPTS: AxisOpts = {
+  uiMode: "multi",
+  limit: DE_MULTI_FIELD_LIMIT,
+  maxMetrics: DE_MULTI_FIELD_LIMIT,
+  showAggregation: true,
+};
+
 function axis(
   id: DeAxisId,
   label: string,
@@ -42,12 +58,12 @@ export const deAxis = {
     axis("xAxis", label, "both", opts),
 };
 
-/** 笛卡尔默认：类别 + 子类别 + 值轴 + 钻取 */
+/** 笛卡尔默认：类别 + 子类别 + 值轴（可多指标）+ 钻取 */
 export function cartesianTrendAxes(subLabel = "子类别 / 维度"): DeAxisSpec[] {
   return [
     deAxis.xDim(),
     deAxis.xExt(subLabel),
-    deAxis.yMet(),
+    deAxis.yMet("值轴 / 指标", MULTI_MET_OPTS),
     deAxis.drill(),
   ];
 }

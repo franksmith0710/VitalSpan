@@ -382,6 +382,8 @@
 
 ### Case 19 — 模板真导出 PDF/Excel/Word
 
+> **自动化签收**：`tests/test_report_manual_cases_p3.py::test_case_19_template_export_pdf_excel_word_bytes`
+
 **前置**：
 
 - 已创建 catalog 模板节点（`templateKind=pdf|excel|word`）并完成 extension 配置（至少 1 条 SQL metric + 有效 `dataSourceId`）
@@ -401,6 +403,8 @@
 - `exportHook.placeholder=false`。
 
 ### Case 20 — Dataset 模式报表运行
+
+> **自动化签收**：`tests/test_report_manual_cases_p3.py::test_case_20_dataset_mode_run_returns_rows`
 
 **前置**：
 

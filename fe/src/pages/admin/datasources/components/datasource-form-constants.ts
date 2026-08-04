@@ -134,10 +134,7 @@ export function connectorPickerSubtitle(
   if (queryCapable === false) {
     return `${base} · 仅元数据（连接探测与 Schema 浏览）`;
   }
-  if (queryCapable && syncFetchImplemented === false) {
-    return `${base} · 可查询；同步拉数待支持`;
-  }
-  if (queryCapable && syncFetchImplemented) {
+  if (queryCapable) {
     return `${base} · 可查询与同步`;
   }
   return base;

@@ -942,7 +942,7 @@ describe("ingestion admin smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(await screen.findByText("尚无已支持同步拉数的连接")).toBeInTheDocument();
+    expect(await screen.findByText("尚无可用同步源连接")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "创建" })).toBeDisabled();
   });
 

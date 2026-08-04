@@ -50,10 +50,11 @@ def test_r15_phase2_sql_dialect_query_capable(connector_type: str) -> None:
     assert resolve_query_mode(connector_type) == "sql"
 
 
-def test_r15_dm_still_unsupported_for_execute() -> None:
-    with pytest.raises(UnsupportedDialectError):
-        get_sql_dialect("dm")
-    assert not is_query_capable("dm")
+def test_r15_dm_query_capable():
+    dialect = get_sql_dialect("dm")
+    assert dialect.connector_type == "oracle"
+    assert is_sql_query_capable("dm")
+    assert is_query_capable("dm")
 
 
 def test_r15_export_type_catalog_query_capable_flags() -> None:
@@ -62,14 +63,16 @@ def test_r15_export_type_catalog_query_capable_flags() -> None:
     assert by_type["mysql"]["queryMode"] == "sql"
     assert by_type["mariadb"]["queryCapable"] is True
     assert by_type["mongodb"]["queryMode"] == "native"
-    assert by_type["hive"]["queryCapable"] is False
-    assert by_type["hive"]["queryMode"] is None
+    assert by_type["hive"]["queryCapable"] is True
+    assert by_type["hive"]["queryMode"] == "sql"
     assert by_type["csv"]["queryCapable"] is True
     assert by_type["csv"]["queryMode"] == "native"
     assert by_type["excel"]["queryCapable"] is True
     assert by_type["rest_api"]["queryCapable"] is True
+    assert by_type["influxdb"]["queryCapable"] is True
+    assert by_type["clickhouse"]["syncFetchImplemented"] is True
 
 
 def test_r15_alias_registry_covers_conn_q_01_to_09_and_19() -> None:
-    expected = set(_MYSQL_ALIASES) | set(_PG_ALIASES)
+    expected = set(_MYSQL_ALIASES) | set(_PG_ALIASES) | {"dm", "impala", "presto"}
     assert expected == set(CONNECTOR_SQL_DIALECT_ALIASES.keys())

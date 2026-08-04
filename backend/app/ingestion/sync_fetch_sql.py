@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-import psycopg
-import pymysql
-from psycopg.rows import dict_row
-
-from app.ingestion.models import INGESTION_MAX_ROWS, SyncJob, decrypt_password
+from app.datasources.registry import ConnectorNotFoundError, registry
+from app.ingestion.models import SyncJob, decrypt_password
+from app.ingestion.sync_sql_builder import build_sync_select
+from app.query.capabilities import resolve_sql_dialect_type
 from app.query.rls.guard import validate_identifier
 
 
@@ -15,80 +14,80 @@ def _validate_sync_table_names(source_table: str, target_table: str) -> None:
     validate_identifier(target_table)
 
 
-def _fetch_mysql_dialect_rows(job: SyncJob) -> list[dict[str, Any]]:
-    _validate_sync_table_names(job.source_table, job.target_table)
-    conn = pymysql.connect(
-        host=job.source_host,
-        port=job.source_port,
-        user=job.source_username,
-        password=decrypt_password(job.source_password_encrypted),
-        database=job.source_database,
-        cursorclass=pymysql.cursors.DictCursor,
-        connect_timeout=10,
-        read_timeout=60,
-    )
-    table = job.source_table
+def _connector_kwargs(job: SyncJob) -> dict[str, Any]:
+    return {
+        "host": job.source_host,
+        "port": job.source_port,
+        "database": job.source_database,
+        "username": job.source_username,
+        "password": decrypt_password(job.source_password_encrypted),
+    }
+
+
+def _cursor_rows(cursor: Any) -> list[dict[str, Any]]:
+    columns = [col[0] for col in cursor.description]
+    return [dict(zip(columns, row, strict=False)) for row in cursor.fetchall()]
+
+
+def _fetch_registry_cursor_rows(
+    job: SyncJob,
+    connector_type: str,
+    dialect_type: str,
+) -> list[dict[str, Any]]:
     try:
-        with conn.cursor() as cur:
-            if job.sync_mode == "incremental" and job.incremental_column:
-                inc = job.incremental_column
-                if job.last_watermark:
-                    cur.execute(
-                        f"SELECT * FROM `{table}` WHERE `{inc}` > %s "
-                        f"ORDER BY `{inc}` LIMIT %s",
-                        (job.last_watermark, INGESTION_MAX_ROWS),
-                    )
-                else:
-                    cur.execute(
-                        f"SELECT * FROM `{table}` WHERE `{inc}` IS NOT NULL "
-                        f"ORDER BY `{inc}` LIMIT %s",
-                        (INGESTION_MAX_ROWS,),
-                    )
-            else:
-                cur.execute(f"SELECT * FROM `{table}` LIMIT %s", (INGESTION_MAX_ROWS,))
-            return list(cur.fetchall())
+        connector = registry.get(connector_type)
+    except ConnectorNotFoundError as exc:
+        raise RuntimeError(f"未知连接器类型: {connector_type}") from exc
+    sql, params = build_sync_select(job, dialect_type)
+    conn = connector.open_connection(**_connector_kwargs(job))
+    try:
+        if connector_type == "clickhouse":
+            result = conn.query(sql, parameters=list(params)) if params else conn.query(sql)
+            if hasattr(result, "named_results"):
+                return list(result.named_results())
+            columns = result.column_names
+            return [dict(zip(columns, row, strict=False)) for row in result.result_rows]
+        if connector_type == "sqlite":
+            cur = conn.execute(sql.replace("%s", "?"), params)
+            if cur.description is None:
+                return []
+            columns = [col[0] for col in cur.description]
+            return [dict(zip(columns, row, strict=False)) for row in cur.fetchall()]
+        cursor = conn.cursor()
+        cursor.execute(sql, params)
+        return _cursor_rows(cursor)
     finally:
-        conn.close()
+        close = getattr(conn, "close", None)
+        if callable(close):
+            close()
+
+
+def _fetch_mysql_dialect_rows(job: SyncJob) -> list[dict[str, Any]]:
+    return _fetch_registry_cursor_rows(job, job.source_type, "mysql")
 
 
 def _fetch_postgresql_rows(job: SyncJob) -> list[dict[str, Any]]:
-    _validate_sync_table_names(job.source_table, job.target_table)
-    conn = psycopg.connect(
-        host=job.source_host,
-        port=job.source_port,
-        dbname=job.source_database,
-        user=job.source_username,
-        password=decrypt_password(job.source_password_encrypted),
-        connect_timeout=10,
-    )
-    table = job.source_table
-    try:
-        with conn.cursor(row_factory=dict_row) as cur:
-            if job.sync_mode == "incremental" and job.incremental_column:
-                inc = job.incremental_column
-                if job.last_watermark:
-                    cur.execute(
-                        f'SELECT * FROM "{table}" WHERE "{inc}" > %s '
-                        f'ORDER BY "{inc}" LIMIT %s',
-                        (job.last_watermark, INGESTION_MAX_ROWS),
-                    )
-                else:
-                    cur.execute(
-                        f'SELECT * FROM "{table}" WHERE "{inc}" IS NOT NULL '
-                        f'ORDER BY "{inc}" LIMIT %s',
-                        (INGESTION_MAX_ROWS,),
-                    )
-            else:
-                cur.execute(f'SELECT * FROM "{table}" LIMIT %s', (INGESTION_MAX_ROWS,))
-            rows = cur.fetchall()
-            return [dict(row) for row in rows]
-    finally:
-        conn.close()
+    return _fetch_registry_cursor_rows(job, job.source_type, "postgresql")
 
 
 def fetch_sql_rows(job: SyncJob, dialect: str) -> list[dict[str, Any]]:
-    if dialect == "mysql":
-        return _fetch_mysql_dialect_rows(job)
-    if dialect == "postgresql":
-        return _fetch_postgresql_rows(job)
-    raise RuntimeError(f"未实现的 SQL 方言拉数: {dialect}")
+    _validate_sync_table_names(job.source_table, job.target_table)
+    resolved = resolve_sql_dialect_type(job.source_type)
+    if dialect in ("mysql", "postgresql") and resolved == dialect:
+        return _fetch_registry_cursor_rows(job, job.source_type, dialect)
+    supported = {
+        "mysql",
+        "postgresql",
+        "clickhouse",
+        "oracle",
+        "sqlserver",
+        "sqlite",
+        "hive",
+        "trino",
+        "db2",
+        "tdengine",
+    }
+    if dialect not in supported:
+        raise RuntimeError(f"未实现的 SQL 方言拉数: {dialect}")
+    connector_type = job.source_type
+    return _fetch_registry_cursor_rows(job, connector_type, dialect)

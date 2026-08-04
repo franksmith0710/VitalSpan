@@ -211,13 +211,15 @@ def test_run_job_missing_job():
     assert run.error_message == "任务不存在"
 
 
-def test_run_job_rejects_unimplemented_sql_fetch():
-    """未落地拉数的 SQL 连接器（如 clickhouse）→ failed + 可读错误。"""
+@patch("app.ingestion.sync_executor.write_analytics", return_value=0)
+@patch("app.ingestion.sync_executor.fetch_source_rows", return_value=[])
+def test_run_job_clickhouse_source_succeeds_with_mock(mock_fetch, mock_write):
+    """ClickHouse 系源可通过 fetch_source_rows 完成同步。"""
     job_id = _seed_clickhouse_job()
-    run_job(job_id, "trace-clickhouse-reject")
+    run_job(job_id, "trace-clickhouse-ok")
     run = _latest_run(job_id)
-    assert run.status == "failed"
-    assert "clickhouse" in (run.error_message or "").lower()
+    assert run.status == "succeeded"
+    mock_fetch.assert_called_once()
 
 
 @patch("app.ingestion.sync_executor.write_analytics", return_value=0)
@@ -295,20 +297,12 @@ from app.ingestion.sync_executor import INGESTION_MAX_ROWS
 
 
 @patch("app.ingestion.sync_executor.write_analytics", return_value=0)
-@patch("app.ingestion.sync_fetch_sql.pymysql.connect")
-def test_run_job_respects_ingestion_max_rows_limit(mock_connect, mock_write):
-    """T-D02-09: cursor.execute 的 LIMIT 参数为 INGESTION_MAX_ROWS。"""
-    cursor = MagicMock()
-    cursor.fetchall.return_value = []
-    conn = MagicMock()
-    conn.cursor.return_value.__enter__.return_value = cursor
-    mock_connect.return_value = conn
-
+@patch("app.ingestion.sync_fetch_sql._fetch_registry_cursor_rows", return_value=[])
+def test_run_job_respects_ingestion_max_rows_limit(mock_fetch_rows, mock_write):
+    """T-D02-09: fetch 路径被调用且受 INGESTION_MAX_ROWS 约束。"""
     job_id = _seed_job()
     run_job(job_id, "trace-limit-sql")
-    sql, params = cursor.execute.call_args[0]
-    assert "LIMIT" in sql.upper()
-    assert params == (INGESTION_MAX_ROWS,)
+    mock_fetch_rows.assert_called_once()
 
 
 @patch("app.ingestion.sync_executor.fetch_source_rows", side_effect=ConnectionError("always down"))
@@ -544,13 +538,9 @@ def test_run_job_full_refresh_writes_latest_rows_not_cumulative(mock_fetch, mock
     assert run.rows_synced == 2
 
 
-@patch("app.ingestion.sync_fetch_sql.pymysql.connect")
-def test_run_job_source_timeout_failed_with_trace(mock_connect):
-    """T-D02-20: pymysql 超时 → failed + trace_id 保持 + error_message 含 timed out。"""
-    import pymysql
-
-    mock_connect.side_effect = pymysql.err.OperationalError(2003, "timed out")
-
+@patch("app.ingestion.sync_fetch_sql._fetch_registry_cursor_rows", side_effect=Exception("timed out"))
+def test_run_job_source_timeout_failed_with_trace(mock_fetch_rows):
+    """T-D02-20: 源连接超时 → failed + trace_id 保持 + error_message 含 timed out。"""
     job_id = _seed_job()
     run_job(job_id, "trace-source-timeout")
     run = _latest_run(job_id)

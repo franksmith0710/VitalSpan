@@ -14,10 +14,22 @@ CONNECTOR_SQL_DIALECT_ALIASES: dict[str, str] = {
     "gaussdb": "postgresql",
     "redshift": "postgresql",
     "timescaledb": "postgresql",
+    "dm": "oracle",
+    "impala": "hive",
+    "presto": "trino",
 }
 
 _DIRECT_SQL_DIALECTS = frozenset({
-    "mysql", "postgresql", "clickhouse", "sqlite", "sqlserver", "oracle",
+    "mysql",
+    "postgresql",
+    "clickhouse",
+    "sqlite",
+    "sqlserver",
+    "oracle",
+    "hive",
+    "trino",
+    "db2",
+    "tdengine",
 })
 # Phase 1 (DE/SS 对标): file/api 源已有 execute_native_query，接线即可查
 NATIVE_QUERY_CAPABLE = frozenset({
@@ -27,6 +39,7 @@ NATIVE_QUERY_CAPABLE = frozenset({
     "csv",
     "excel",
     "rest_api",
+    "influxdb",
 })
 # Native 执行器需传递 offset 的类型（非 search index 路径）
 NATIVE_OFFSET_TYPES = frozenset({"mongodb", "csv", "excel", "rest_api"})

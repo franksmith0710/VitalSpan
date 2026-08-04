@@ -29,6 +29,7 @@ type BuildStyleContextInput = {
     | "chartLabelStyle"
     | "chartTooltipStyle"
     | "surfaceKind"
+    | "tableColorStyle"
   >;
   shellLegend?: boolean;
   embedEdit?: boolean;
@@ -66,5 +67,6 @@ export function buildStyleContext(input: BuildStyleContextInput): ChartStyleCont
     shellLegend,
     embedEdit,
     widgetShellBg: input.widgetShellBg,
+    tableColorStyle: dashboardDefaults?.tableColorStyle,
   };
 }
