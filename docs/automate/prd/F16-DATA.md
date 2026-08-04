@@ -98,8 +98,9 @@
   - [x] 浏览器可创建任务并手动运行
   - [x] 可查看运行历史
   - [x] 表单支持引用数据源 / 内联连接双模式与全量/增量配置
-  - [x] UI 展示「同步后如何出图」消费引导（`SyncJobConsumeGuide`：登记分析库 → 创建 Dataset → 空白看板选 Dataset；无看板 SQL）
-  - [x] 同步成功 toast / 引导卡片提供「创建数据集」deep link（`buildDatasetCreatePath`）
+  - [x] UI 展示同步成功 **动作卡**（`SyncConsumeActionCard`：自动 prepare 分析库 → 一键 ensure-dataset → 创建看板；无看板 SQL）
+  - [x] `GET consume-hints` / `POST prepare-consume` / `POST ensure-dataset` API（`sync_consume.py`）
+  - [x] 列表最近成功任务展示消费状态标签（可出图 / 待建 Dataset / 待准备）
 - **代码锚点**：`fe/src/pages/admin/ingestion/`
 - **演化建议**：`ingestion.smoke.test.tsx` 35 项（T-ING-32~35 failed error_message、skeleton loading、401 无 success、run dialog pending 禁用）；二期 Playwright 真浏览器 L1
 
@@ -114,5 +115,6 @@
   - [x] DATA-SMOKE L1 用例通过（`tests/test_ingestion_e2e.py`）
   - [x] SRS §3.6、api/README §9、services/ingestion 状态已回写
   - [x] DATA-SMOKE L2：dataSourceId + SQL 出数（`tests/test_data_p1_smoke_l2.py`）
+  - [x] 同步消费一键链：`scripts/truth_verify_sync_consume.py` 覆盖 prepare-consume → ensure-dataset → execute
 - **代码锚点**：`tests/test_ingestion_e2e.py` · `tests/test_ingestion_l1_smoke.py` · `tests/test_doc_anchors_data.py` · `tests/test_data_p1_smoke_l2.py` · `docs/automate/plan.md` M1B
 - **演化建议**：`tests/test_ingestion_l1_smoke.py` T-L1-07~08 L1 编排 + <2.5s；Playwright E2E P1-SMOKE 真实 DB 浏览器验收

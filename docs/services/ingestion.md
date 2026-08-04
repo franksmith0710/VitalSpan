@@ -39,6 +39,7 @@
 | `ingestion.source_resolver` | 内联 vs 数据源引用解析与快照 | 已实现 |
 | `ingestion.sync_fetch` / `sync_write` | MySQL 拉取 + PG 全量/增量写入 | 已实现 |
 | `ingestion.sync_executor` | 同步编排（mysql 源，1 次重试） | 已实现 |
+| `ingestion.sync_consume` | 同步成功后消费链：prepare 分析库、ensure-dataset、状态解析 | 已实现 |
 | `ingestion.etl_rules` | 清洗规则引擎 | 已实现 |
 | `ingestion.scheduler` | APScheduler 定时触发 | 已实现 |
 | `GET/POST /api/v1/ingestion/sync-jobs` | 任务 API | 已实现 |

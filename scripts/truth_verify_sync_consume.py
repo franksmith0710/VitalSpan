@@ -217,20 +217,53 @@ def main() -> int:
         return 1
     print(json.dumps(ds_meta, ensure_ascii=False, indent=2))
 
-    print("\n=== consume-hints (optional) ===")
+    print("\n=== consume pipeline ===")
     code, jobs = http("GET", "/api/v1/ingestion/sync-jobs", token=token)
     hints_ok = False
+    prepare_ok = False
+    ensure_ok = False
+    consume_meta: dict = {}
     if code == 200 and isinstance(jobs, dict):
-        for job in jobs.get("items", []):
-            if job.get("target_table") == "orders_clean":
-                hcode, hints = http(
-                    "GET",
-                    f"/api/v1/ingestion/sync-jobs/{job['id']}/consume-hints",
-                    token=token,
-                )
-                print(f"hints status={hcode}", hints)
-                hints_ok = hcode == 200
-                break
+        target_job = next(
+            (j for j in jobs.get("items", []) if j.get("target_table") == "orders_clean"),
+            None,
+        )
+        if target_job:
+            job_id = target_job["id"]
+            pcode, prep = http(
+                "POST",
+                f"/api/v1/ingestion/sync-jobs/{job_id}/prepare-consume",
+                token=token,
+            )
+            prepare_ok = pcode == 200
+            print(f"prepare-consume status={pcode}", prep)
+
+            hcode, hints = http(
+                "GET",
+                f"/api/v1/ingestion/sync-jobs/{job_id}/consume-hints",
+                token=token,
+            )
+            hints_ok = hcode == 200
+            print(f"consume-hints status={hcode}", hints)
+
+            ecode, ensured = http(
+                "POST",
+                f"/api/v1/ingestion/sync-jobs/{job_id}/ensure-dataset",
+                token=token,
+            )
+            ensure_ok = ecode == 200
+            print(f"ensure-dataset status={ecode}", ensured)
+            consume_meta = {
+                "jobId": job_id,
+                "prepare_ok": prepare_ok,
+                "hints_ok": hints_ok,
+                "ensure_ok": ensure_ok,
+                "hints": hints if isinstance(hints, dict) else hints,
+            }
+        else:
+            print("skip consume pipeline: no orders_clean sync job")
+    else:
+        print("skip consume pipeline: list sync jobs failed", code)
 
     print("\n=== Dataset chain ===")
     dataset_ok, dataset_meta = verify_dataset_chain(token, ds_id, pg)
@@ -247,6 +280,9 @@ def main() -> int:
         "pg_columns": pg.get("columns"),
         "dataset_chain_ok": dataset_ok,
         "consume_hints_ok": hints_ok,
+        "consume_prepare_ok": prepare_ok,
+        "consume_ensure_ok": ensure_ok,
+        "consume_meta": consume_meta,
         "orders_clean_in_schema_browser": "orders_clean" in table_names,
     }
     print("\n=== SUMMARY ===")

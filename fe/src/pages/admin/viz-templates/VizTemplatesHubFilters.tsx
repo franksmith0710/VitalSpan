@@ -29,7 +29,7 @@ export function VizTemplatesHubFilters({
       <div className={HUB_FILTER_ROW_CLASS}>
         <span className={HUB_FILTER_LABEL_CLASS}>{VIZ_TEMPLATES_HUB.filterSurfaceLabel}</span>
         <div
-          role="tablist"
+          role="group"
           aria-label={VIZ_TEMPLATES_HUB.filterSurfaceAriaLabel}
           className={HUB_SEGMENTED_SHELL_CLASS}
         >
@@ -41,13 +41,12 @@ export function VizTemplatesHubFilters({
                 key={tab.key}
                 type="button"
                 size="sm"
-                role="tab"
-                aria-selected={active}
+                aria-pressed={active}
                 variant={active ? "primary" : "ghost"}
                 className={cn(HUB_SEGMENTED_BUTTON_CLASS, !active && "text-gray-600 dark:text-gray-400")}
                 onClick={() => onSurfaceKindChange(tab.key)}
               >
-                <Icon className="size-4" />
+                <Icon className="size-4" aria-hidden />
                 {tab.label}
               </Button>
             );
@@ -65,6 +64,7 @@ export function VizTemplatesHubFilters({
           <Button
             type="button"
             size="sm"
+            aria-pressed={categoryKey === null}
             variant={categoryKey === null ? "subtle" : "ghost"}
             className={HUB_SEGMENTED_BUTTON_CLASS}
             onClick={() => onCategoryChange(null)}
@@ -76,6 +76,7 @@ export function VizTemplatesHubFilters({
               key={cat.key}
               type="button"
               size="sm"
+              aria-pressed={categoryKey === cat.key}
               variant={categoryKey === cat.key ? "subtle" : "ghost"}
               className={HUB_SEGMENTED_BUTTON_CLASS}
               onClick={() => onCategoryChange(cat.key)}

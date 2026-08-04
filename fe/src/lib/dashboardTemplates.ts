@@ -50,6 +50,21 @@ export const TEMPLATE_CATEGORIES: { key: string; label: string }[] = [
   { key: "analytics", label: "分析" },
 ];
 
+const TEMPLATE_CATEGORY_KEYS = new Set(TEMPLATE_CATEGORIES.map((cat) => cat.key));
+
+export function parseVizTemplateHubSurfaceKind(
+  raw: string | null | undefined,
+): VizSurfaceKind {
+  return raw === "data-screen" ? "data-screen" : "dashboard";
+}
+
+export function parseVizTemplateHubCategoryKey(
+  raw: string | null | undefined,
+): string | null {
+  if (!raw || !TEMPLATE_CATEGORY_KEYS.has(raw)) return null;
+  return raw;
+}
+
 /** Hub / 模板选择器不展示的内置空白起步模板（列表页仍可「新建空白」） */
 export const HUB_HIDDEN_BUILTIN_TEMPLATE_KEYS = new Set([
   "builtin-screen-blank",

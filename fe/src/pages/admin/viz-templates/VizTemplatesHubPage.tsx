@@ -1,6 +1,6 @@
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useSearchParams } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { LayoutTemplate, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
@@ -23,6 +23,8 @@ import {
   fetchDashboardTemplates,
   filterTemplatesForHub,
   importTemplateEnvelope,
+  parseVizTemplateHubCategoryKey,
+  parseVizTemplateHubSurfaceKind,
   publishTemplate,
   type DashboardTemplateListItem,
   type VizLayoutEnvelope,
@@ -41,6 +43,14 @@ import {
 } from "@/components/dashboard/hubCardUi";
 import { cn } from "@/lib/utils";
 import { VizTemplatesHubFilters } from "./VizTemplatesHubFilters";
+
+function readHubFilters(search: string) {
+  const params = new URLSearchParams(search);
+  return {
+    surfaceKind: parseVizTemplateHubSurfaceKind(params.get("surfaceKind")),
+    categoryKey: parseVizTemplateHubCategoryKey(params.get("categoryKey")),
+  };
+}
 
 function TemplateCardSkeleton() {
   return (
@@ -61,6 +71,7 @@ function TemplateCardSkeleton() {
 
 export function VizTemplatesHubPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { user: authUser } = useAuth();
   const sessionUser = authUser
@@ -69,11 +80,40 @@ export function VizTemplatesHubPage() {
   const canManage = hasCapability(sessionUser, "dashboard:template.manage");
   const canEdit = hasCapability(sessionUser, "dashboard:edit");
 
-  const [searchParams, setSearchParams] = useSearchParams();
-  const surfaceKind = (searchParams.get("surfaceKind") as VizSurfaceKind | null) ?? "dashboard";
-  const [categoryKey, setCategoryKey] = useState<string | null>(null);
+  const [surfaceKind, setSurfaceKind] = useState(
+    () => readHubFilters(location.search).surfaceKind,
+  );
+  const [categoryKey, setCategoryKey] = useState(
+    () => readHubFilters(location.search).categoryKey,
+  );
   const [q, setQ] = useState("");
   const importRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const next = readHubFilters(location.search);
+    setSurfaceKind(next.surfaceKind);
+    setCategoryKey(next.categoryKey);
+  }, [location.search]);
+
+  const syncHubSearch = useCallback(
+    (patch: { surfaceKind?: VizSurfaceKind; categoryKey?: string | null }) => {
+      const params = new URLSearchParams(location.search);
+      if (patch.surfaceKind !== undefined) {
+        if (patch.surfaceKind === "dashboard") params.delete("surfaceKind");
+        else params.set("surfaceKind", patch.surfaceKind);
+      }
+      if (patch.categoryKey !== undefined) {
+        if (patch.categoryKey) params.set("categoryKey", patch.categoryKey);
+        else params.delete("categoryKey");
+      }
+      const search = params.toString();
+      navigate(
+        { pathname: location.pathname, search: search ? `?${search}` : "" },
+        { replace: true },
+      );
+    },
+    [location.pathname, location.search, navigate],
+  );
 
   /** 类型 + 分类联合筛选；政务与其他分类交互一致。 */
   const listSurfaceKind = surfaceKind;
@@ -144,13 +184,13 @@ export function VizTemplatesHubPage() {
   const items = filterTemplatesForHub(listQuery.data?.items ?? []);
 
   const handleSurfaceKindChange = (kind: VizSurfaceKind) => {
-    const next = new URLSearchParams(searchParams);
-    next.set("surfaceKind", kind);
-    setSearchParams(next, { replace: true });
+    setSurfaceKind(kind);
+    syncHubSearch({ surfaceKind: kind });
   };
 
   const handleCategoryChange = (key: string | null) => {
     setCategoryKey(key);
+    syncHubSearch({ categoryKey: key });
   };
 
   const renderCardGrid = (gridItems: DashboardTemplateListItem[], eagerCount = 0) => (

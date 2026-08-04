@@ -87,6 +87,9 @@ def run_job(job_id: uuid.UUID, trace_id: str, *, run_id: uuid.UUID | None = None
             error_message=None,
         )
         db.commit()
+        from app.ingestion.sync_consume import best_effort_prepare_after_sync
+
+        best_effort_prepare_after_sync(db)
     except Exception as exc:  # noqa: BLE001 — 记录用户可读摘要
         if attempt < 1:
             _update_run(db, run, retry_count=attempt + 1)

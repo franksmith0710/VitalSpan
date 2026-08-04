@@ -10,7 +10,12 @@ from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext, require_permission
 from app.core.config import get_settings
-from app.ingestion.analytics_datasource import resolve_analytics_datasource_id
+from app.ingestion.sync_consume import (
+    SyncConsumeError,
+    ensure_dataset_for_sync_job,
+    prepare_sync_consume,
+    resolve_consume_status,
+)
 from app.datasources.models import DataSource
 from app.ingestion.cron_validate import validate_schedule_cron
 from app.ingestion.models import (
@@ -35,6 +40,7 @@ router = APIRouter(prefix="/ingestion", tags=["ingestion"])
 
 PERM_READ = "ingestion:read"
 PERM_MANAGE = "ingestion:manage"
+PERM_DATASET_MANAGE = "dataset:manage"
 
 
 def _validate_incremental_fields(
@@ -174,6 +180,7 @@ class SyncJobSummary(BaseModel):
     schedule_cron: str | None
     source_data_source_id: uuid.UUID | None = None
     last_run: SyncJobLastRun | None = None
+    consume_status: SyncJobConsumeLabel | None = None
 
 
 class SyncJobDetail(SyncJobSummary):
@@ -183,12 +190,44 @@ class SyncJobDetail(SyncJobSummary):
     last_watermark: str | None = None
 
 
-class SyncJobConsumeHints(BaseModel):
+class SyncJobConsumeStatus(BaseModel):
     target_table: str = Field(alias="targetTable")
     suggested_dataset_id: str = Field(alias="suggestedDatasetId")
     analytics_datasource_id: uuid.UUID | None = Field(default=None, alias="analyticsDatasourceId")
+    analytics_ready: bool = Field(alias="analyticsReady")
+    dataset_id: str = Field(alias="datasetId")
+    dataset_exists: bool = Field(alias="datasetExists")
+    dataset_bound: bool = Field(alias="datasetBound")
+    next_action: Literal["prepare", "ensure_dataset", "open_dashboard"] = Field(alias="nextAction")
+    consume_label: Literal["ready", "pending_dataset", "pending_prepare"] = Field(alias="consumeLabel")
 
     model_config = {"populate_by_name": True}
+
+
+class SyncJobConsumeHints(SyncJobConsumeStatus):
+    """兼容旧字段名；与 ConsumePipelineStatus 同构。"""
+
+
+class SyncJobConsumePrepareOut(BaseModel):
+    analytics_datasource_id: uuid.UUID | None = Field(default=None, alias="analyticsDatasourceId")
+    analytics_ready: bool = Field(alias="analyticsReady")
+    created: bool
+
+    model_config = {"populate_by_name": True}
+
+
+class SyncJobEnsureDatasetOut(BaseModel):
+    dataset_id: str = Field(alias="datasetId")
+    bound_config_id: uuid.UUID = Field(alias="boundConfigId")
+    created: bool
+    bound: bool
+
+    model_config = {"populate_by_name": True}
+
+
+class SyncJobConsumeLabel(BaseModel):
+    label: Literal["ready", "pending_dataset", "pending_prepare"]
+    next_action: Literal["prepare", "ensure_dataset", "open_dashboard"]
 
 
 class SyncJobListResponse(BaseModel):
@@ -301,8 +340,33 @@ def _to_last_run(run: SyncRun | None) -> SyncJobLastRun | None:
     )
 
 
-def _to_summary(job: SyncJob, last_run: SyncRun | None, ds_labels: dict[uuid.UUID, str]) -> SyncJobSummary:
+def _status_to_hints(status) -> SyncJobConsumeHints:
+    return SyncJobConsumeHints(
+        target_table=status.target_table,
+        suggested_dataset_id=status.suggested_dataset_id,
+        analytics_datasource_id=status.analytics_datasource_id,
+        analytics_ready=status.analytics_ready,
+        dataset_id=status.dataset_id,
+        dataset_exists=status.dataset_exists,
+        dataset_bound=status.dataset_bound,
+        next_action=status.next_action,
+        consume_label=status.consume_label,
+    )
+
+
+def _to_summary(
+    job: SyncJob,
+    last_run: SyncRun | None,
+    ds_labels: dict[uuid.UUID, str],
+    consume_status=None,
+) -> SyncJobSummary:
     label = ds_labels.get(job.source_data_source_id) if job.source_data_source_id else None
+    consume_out = None
+    if consume_status is not None:
+        consume_out = SyncJobConsumeLabel(
+            label=consume_status.consume_label,
+            next_action=consume_status.next_action,
+        )
     return SyncJobSummary(
         id=job.id,
         name=job.name,
@@ -315,11 +379,17 @@ def _to_summary(job: SyncJob, last_run: SyncRun | None, ds_labels: dict[uuid.UUI
         schedule_cron=job.schedule_cron,
         source_data_source_id=job.source_data_source_id,
         last_run=_to_last_run(last_run),
+        consume_status=consume_out,
     )
 
 
-def _to_detail(job: SyncJob, last_run: SyncRun | None, ds_labels: dict[uuid.UUID, str]) -> SyncJobDetail:
-    summary = _to_summary(job, last_run, ds_labels)
+def _to_detail(
+    job: SyncJob,
+    last_run: SyncRun | None,
+    ds_labels: dict[uuid.UUID, str],
+    consume_status=None,
+) -> SyncJobDetail:
+    summary = _to_summary(job, last_run, ds_labels, consume_status)
     return SyncJobDetail(
         **summary.model_dump(),
         source=_to_source_out(job),
@@ -337,9 +407,14 @@ def list_sync_jobs(
     jobs = db.scalars(select(SyncJob).order_by(SyncJob.created_at.desc())).all()
     last_runs = _last_runs_by_job_id(db, [j.id for j in jobs])
     ds_labels = _datasource_labels(db, jobs)
-    return SyncJobListResponse(
-        items=[_to_summary(j, last_runs.get(j.id), ds_labels) for j in jobs],
-    )
+    items = []
+    for j in jobs:
+        consume = None
+        last = last_runs.get(j.id)
+        if last is not None and last.status == "succeeded":
+            consume = resolve_consume_status(db, j)
+        items.append(_to_summary(j, last, ds_labels, consume))
+    return SyncJobListResponse(items=items)
 
 
 @router.post("/sync-jobs", response_model=SyncJobDetail, status_code=status.HTTP_201_CREATED)
@@ -411,11 +486,63 @@ def get_sync_job_consume_hints(
             status_code=404,
             detail={"code": "NOT_FOUND", "message": "任务不存在", "detail": None},
         )
-    analytics_id = resolve_analytics_datasource_id(db)
-    return SyncJobConsumeHints(
-        target_table=job.target_table,
-        suggested_dataset_id=job.target_table,
-        analytics_datasource_id=analytics_id,
+    return _status_to_hints(resolve_consume_status(db, job))
+
+
+@router.post("/sync-jobs/{job_id}/prepare-consume", response_model=SyncJobConsumePrepareOut)
+def post_prepare_consume(
+    job_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
+    db: Annotated[Session, Depends(_db)],
+) -> SyncJobConsumePrepareOut:
+    job = db.get(SyncJob, job_id)
+    if job is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "NOT_FOUND", "message": "任务不存在", "detail": None},
+        )
+    result = prepare_sync_consume(db)
+    if not result.analytics_ready:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "ANALYTICS_DB_NOT_CONFIGURED",
+                "message": "托管分析库未配置或不可达",
+                "detail": None,
+            },
+        )
+    return SyncJobConsumePrepareOut(
+        analytics_datasource_id=result.analytics_datasource_id,
+        analytics_ready=result.analytics_ready,
+        created=result.created,
+    )
+
+
+@router.post("/sync-jobs/{job_id}/ensure-dataset", response_model=SyncJobEnsureDatasetOut)
+def post_ensure_dataset(
+    job_id: uuid.UUID,
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
+    _: Annotated[UserContext, Depends(require_permission(PERM_DATASET_MANAGE))],
+    db: Annotated[Session, Depends(_db)],
+) -> SyncJobEnsureDatasetOut:
+    job = db.get(SyncJob, job_id)
+    if job is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "NOT_FOUND", "message": "任务不存在", "detail": None},
+        )
+    try:
+        result = ensure_dataset_for_sync_job(db, job, actor)
+    except SyncConsumeError as exc:
+        raise HTTPException(
+            status_code=exc.status,
+            detail={"code": exc.code, "message": exc.message, "detail": None},
+        ) from exc
+    return SyncJobEnsureDatasetOut(
+        dataset_id=result.dataset_id,
+        bound_config_id=result.bound_config_id,
+        created=result.created,
+        bound=result.bound,
     )
 
 

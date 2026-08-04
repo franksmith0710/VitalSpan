@@ -858,3 +858,12 @@ def test_reconcile_stale_running_runs_marks_old_running_as_failed():
     assert "超时" in (stale_run.error_message or "")
     assert fresh_run.status == "running"
     db.close()
+
+
+@patch("app.ingestion.sync_executor.fetch_mysql_rows", return_value=[{"id": "1"}])
+@patch("app.ingestion.sync_executor.write_analytics", return_value=1)
+@patch("app.ingestion.sync_consume.best_effort_prepare_after_sync")
+def test_run_job_success_calls_auto_prepare(mock_prepare, mock_write, mock_fetch):
+    job_id = _seed_job()
+    run_job(job_id, "auto-prepare-trace")
+    mock_prepare.assert_called_once()

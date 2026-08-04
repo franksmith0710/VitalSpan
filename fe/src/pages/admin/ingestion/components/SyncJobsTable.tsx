@@ -22,6 +22,7 @@ import {
   syncModeLabel,
   type SyncJobSummary,
 } from "./sync-job-types";
+import { consumeLabelColor, consumeLabelText } from "@/lib/syncConsumeApi";
 
 type SyncJobsTableProps = {
   jobs: SyncJobSummary[];
@@ -53,12 +54,17 @@ function LastRunCell({ job }: { job: SyncJobSummary }) {
       {lastRun.status === "succeeded" && lastRun.rows_synced != null ? (
         <div className="text-theme-xs text-gray-500">{lastRun.rows_synced} 行</div>
       ) : null}
+      {lastRun.status === "succeeded" && job.consume_status ? (
+        <Badge color={consumeLabelColor(job.consume_status.label)} variant="light" size="sm">
+          {consumeLabelText(job.consume_status.label)}
+        </Badge>
+      ) : null}
       {lastRun.status === "succeeded" ? (
         <Link
           to={`/admin/ingestion/sync-jobs/${job.id}/history`}
           className="text-theme-xs text-brand-600 underline-offset-2 hover:underline dark:text-brand-400"
         >
-          查看出图步骤
+          一键出图
         </Link>
       ) : null}
       {lastRun.status === "failed" && lastRun.error_message ? (

@@ -15,7 +15,7 @@ import { Button, IconButton } from "@/components/ui/button";
 import { TruncateHint } from "@/components/ui/hint-tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
-import { SyncJobConsumeGuide } from "./components/SyncJobConsumeGuide";
+import { SyncConsumeActionCard } from "./components/SyncConsumeActionCard";
 
 const RUNS_FETCH_LIMIT = 100;
 
@@ -166,12 +166,15 @@ export function SyncJobHistoryPage() {
       ) : null}
 
       <ListPageSection>
-        {hasSucceededRun && targetTable ? (
+        {hasSucceededRun && targetTable && id ? (
           <div className="border-b border-gray-200 px-6 py-4 dark:border-gray-800">
-            <SyncJobConsumeGuide
+            <SyncConsumeActionCard
+              jobId={id}
               jobName={jobName ?? undefined}
               targetTable={targetTable}
               rowsSynced={latestSucceededRun?.rows_synced}
+              canManage={canManage}
+              onUpdated={() => void loadRuns()}
             />
           </div>
         ) : null}

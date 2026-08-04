@@ -11,6 +11,7 @@ vi.mock("@/lib/exportLayoutJson", () => ({
 }));
 
 import { downloadJsonFile } from "@/lib/exportLayoutJson";
+import { apiFetch } from "@/lib/api";
 
 vi.mock("@/context/auth-context", () => ({
   useAuth: () => ({
@@ -41,28 +42,37 @@ const mockExportEnvelope = {
   layout: { version: 1, widgets: [], globalFilters: [] },
 };
 
+const mockScreenGovItem = {
+  id: "tpl-screen-gov",
+  templateKey: "builtin-gov-smart-city",
+  name: "智慧城市运行监测",
+  description: "政务大屏",
+  categoryKey: "government",
+  surfaceKind: "data-screen" as const,
+  status: "published" as const,
+  thumbnailRef: null,
+  visibility: "builtin" as const,
+  contentRevision: 1,
+  updatedAt: new Date().toISOString(),
+  publishedAt: new Date().toISOString(),
+};
+
 vi.mock("@/lib/api", () => ({
   apiFetch: vi.fn(async (url: string, init?: RequestInit) => {
     if (url.startsWith("/api/v1/dashboard-templates?")) {
+      const params = new URL(url, "http://local").searchParams;
+      const surfaceKind = params.get("surfaceKind");
+      const categoryKey = params.get("categoryKey");
+      let items = [mockTemplateItem, mockScreenGovItem];
+      if (surfaceKind) {
+        items = items.filter((item) => item.surfaceKind === surfaceKind);
+      }
+      if (categoryKey) {
+        items = items.filter((item) => item.categoryKey === categoryKey);
+      }
       return {
-        items: [
-          mockTemplateItem,
-          {
-            id: "tpl-blank",
-            templateKey: "builtin-dash-blank",
-            name: "空白看板",
-            description: "12 列栅格画布，从零搭建",
-            categoryKey: "general",
-            surfaceKind: "dashboard",
-            status: "published",
-            thumbnailRef: null,
-            visibility: "builtin",
-            contentRevision: 1,
-            updatedAt: new Date().toISOString(),
-            publishedAt: new Date().toISOString(),
-          },
-        ],
-        total: 2,
+        items: items.filter((item) => item.templateKey !== "builtin-dash-blank"),
+        total: items.length,
         limit: 100,
         offset: 0,
       };
@@ -103,12 +113,12 @@ vi.mock("@/lib/api", () => ({
   }),
 }));
 
-function renderHub() {
+function renderHub(initialEntries = ["/admin/viz-templates"]) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
       <TooltipProvider delayDuration={0}>
-        <MemoryRouter>
+        <MemoryRouter initialEntries={initialEntries}>
           <VizTemplatesHubPage />
         </MemoryRouter>
       </TooltipProvider>
@@ -125,8 +135,14 @@ describe("VizTemplatesHubPage smoke", () => {
   it("renders hub title, tabs and template card", async () => {
     renderHub();
     expect(screen.getByRole("heading", { name: "可视化模板" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /仪表板/ })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /数据大屏/ })).toBeInTheDocument();
+    expect(within(hubFilters()).getByRole("button", { name: /仪表板/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(within(hubFilters()).getByRole("button", { name: /数据大屏/ })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
     expect(screen.getByRole("button", { name: /导入 JSON/ })).toBeInTheDocument();
     expect(await screen.findByText("双栏 KPI 分析")).toBeInTheDocument();
     expect(screen.queryByText("空白看板")).not.toBeInTheDocument();
@@ -163,14 +179,62 @@ describe("VizTemplatesHubPage smoke", () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     renderHub();
     await waitFor(() => {
-      expect(within(hubFilters()).getByRole("tab", { name: /仪表板/ })).toBeInTheDocument();
+      expect(within(hubFilters()).getByRole("button", { name: /仪表板/ })).toBeInTheDocument();
     });
     await user.click(within(hubFilters()).getByRole("button", { name: "政务" }));
     await waitFor(() => {
-      expect(within(hubFilters()).getByRole("button", { name: "政务" })).toHaveClass(/bg-brand-50/);
+      expect(within(hubFilters()).getByRole("button", { name: "政务" })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
     });
-    expect(within(hubFilters()).getByRole("tab", { name: /仪表板/ })).toBeInTheDocument();
-    expect(within(hubFilters()).getByRole("tab", { name: /数据大屏/ })).toBeInTheDocument();
+    expect(within(hubFilters()).getByRole("button", { name: /仪表板/ })).toBeInTheDocument();
+    expect(within(hubFilters()).getByRole("button", { name: /数据大屏/ })).toBeInTheDocument();
     expect(within(hubFilters()).queryByText("政务 · 大屏与看板")).not.toBeInTheDocument();
+  });
+
+  it("loads combined 政务 + 数据大屏 filters from URL", async () => {
+    renderHub(["/admin/viz-templates?categoryKey=government&surfaceKind=data-screen"]);
+    await waitFor(() => {
+      expect(within(hubFilters()).getByRole("button", { name: /数据大屏/ })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+      expect(within(hubFilters()).getByRole("button", { name: "政务" })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+    });
+    await waitFor(() => {
+      expect(vi.mocked(apiFetch).mock.calls.some(([url]) => {
+        const params = new URL(String(url), "http://local").searchParams;
+        return (
+          params.get("surfaceKind") === "data-screen" && params.get("categoryKey") === "government"
+        );
+      })).toBe(true);
+    });
+    expect(screen.getAllByTestId("viz-template-card-tpl-screen-gov").length).toBeGreaterThan(0);
+  });
+
+  it("preserves 政务 category when switching surface type", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    renderHub(["/admin/viz-templates?categoryKey=government"]);
+    await waitFor(() => {
+      expect(within(hubFilters()).getByRole("button", { name: "政务" })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+    });
+    await user.click(within(hubFilters()).getByRole("button", { name: /数据大屏/ }));
+    await waitFor(() => {
+      expect(within(hubFilters()).getByRole("button", { name: /数据大屏/ })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+      expect(within(hubFilters()).getByRole("button", { name: "政务" })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+    });
   });
 });

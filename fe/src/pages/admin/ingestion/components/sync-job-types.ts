@@ -6,6 +6,11 @@ export type SyncJobLastRun = {
   error_message: string | null;
 };
 
+export type SyncJobConsumeStatus = {
+  label: "ready" | "pending_dataset" | "pending_prepare";
+  next_action: "prepare" | "ensure_dataset" | "open_dashboard";
+};
+
 export type SyncJobSummary = {
   id: string;
   name: string;
@@ -18,6 +23,7 @@ export type SyncJobSummary = {
   enabled: boolean;
   schedule_cron: string | null;
   last_run?: SyncJobLastRun | null;
+  consume_status?: SyncJobConsumeStatus | null;
 };
 
 export type SyncJobListResponse = {

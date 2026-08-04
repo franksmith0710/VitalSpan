@@ -1,6 +1,6 @@
 import os
 import uuid
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 os.environ["DATABASE_URL"] = "sqlite+pysqlite:///file:ingestion_test?mode=memory&cache=shared&uri=true"
 os.environ.setdefault(
@@ -93,7 +93,48 @@ def test_sync_job_consume_hints(client: TestClient, auth_headers: dict, job_payl
     assert body["targetTable"] == "orders_clean"
     assert body["suggestedDatasetId"] == "orders_clean"
     assert "analyticsDatasourceId" in body
+    assert "analyticsReady" in body
+    assert "nextAction" in body
+    assert "consumeLabel" in body
 
+    client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+def test_prepare_consume_endpoint(client: TestClient, auth_headers: dict, job_payload: dict):
+    create = client.post("/api/v1/ingestion/sync-jobs", json=job_payload, headers=auth_headers)
+    job_id = create.json()["id"]
+    with patch("app.ingestion.sync_consume.ensure_analytics_datasource", return_value=uuid.uuid4()):
+        resp = client.post(
+            f"/api/v1/ingestion/sync-jobs/{job_id}/prepare-consume",
+            headers=auth_headers,
+        )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["analyticsReady"] is True
+    client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+def test_ensure_dataset_endpoint(client: TestClient, auth_headers: dict, job_payload: dict):
+    create = client.post("/api/v1/ingestion/sync-jobs", json=job_payload, headers=auth_headers)
+    job_id = create.json()["id"]
+    bound_id = uuid.uuid4()
+    with patch(
+        "app.ingestion.sync_consume.ensure_dataset_for_sync_job",
+        return_value=MagicMock(
+            dataset_id="orders_clean",
+            bound_config_id=bound_id,
+            created=True,
+            bound=True,
+        ),
+    ):
+        resp = client.post(
+            f"/api/v1/ingestion/sync-jobs/{job_id}/ensure-dataset",
+            headers=auth_headers,
+        )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["datasetId"] == "orders_clean"
+    assert body["bound"] is True
     client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
 
 

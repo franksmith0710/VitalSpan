@@ -13,7 +13,7 @@ import {
 import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { runBatchDelete } from "@/lib/runBatchDelete";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
-import { ListPagePagination, ListPageSection } from "@/components/layout/list-page-kit";
+import { ListPagePagination, ListPageSection, ListPageTableFrame } from "@/components/layout/list-page-kit";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,9 +28,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
-import { buildDatasetCreatePath } from "@/lib/syncConsumePaths";
+import { SyncConsumeActionCard } from "./components/SyncConsumeActionCard";
 import { SyncJobsEmptyState } from "./components/SyncJobsEmptyState";
-import { SyncJobConsumeGuide } from "./components/SyncJobConsumeGuide";
 import { SyncJobsMetrics } from "./components/SyncJobsMetrics";
 import { SyncJobsTable } from "./components/SyncJobsTable";
 import {
@@ -134,24 +133,7 @@ export function SyncJobsPage() {
               });
               toast.success(
                 `任务「${jobName}」同步成功${rows != null ? `，写入 ${rows} 行` : ""}`,
-                {
-                  duration: 8000,
-                  action: {
-                    label: "创建数据集",
-                    onClick: () => {
-                      if (!job?.target_table) {
-                        navigate("/admin/datasets/new");
-                        return;
-                      }
-                      navigate(
-                        buildDatasetCreatePath({
-                          targetTable: job.target_table,
-                          suggestedDatasetId: job.target_table,
-                        }),
-                      );
-                    },
-                  },
-                },
+                { duration: 8000 },
               );
             } else if (status === "failed") {
               stopPolling();
@@ -166,7 +148,7 @@ export function SyncJobsPage() {
         })();
       }, 2000);
     },
-    [navigate],
+    [loadJobs],
   );
 
   useEffect(() => {
@@ -306,71 +288,74 @@ export function SyncJobsPage() {
         <SyncJobsEmptyState />
       ) : (
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
-          <div className="shrink-0">
+          <div className="shrink-0 space-y-4">
             <SyncJobsMetrics stats={stats} />
-          </div>
-          {recentRunSuccess ? (
-            <div className="shrink-0">
-              <SyncJobConsumeGuide
+            {recentRunSuccess ? (
+              <SyncConsumeActionCard
+                jobId={recentRunSuccess.jobId}
                 jobName={recentRunSuccess.jobName}
                 targetTable={recentRunSuccess.targetTable}
                 rowsSynced={recentRunSuccess.rowsSynced}
+                canManage={canManage}
                 onDismiss={() => setRecentRunSuccess(null)}
+                onUpdated={() => void loadJobs({ silent: true })}
               />
-            </div>
-          ) : null}
-          <ListPageSection>
-            <SyncJobsToolbar
-              search={search}
-              onSearchChange={setSearch}
-              statusFilter={statusFilter}
-              onStatusFilterChange={setStatusFilter}
-              resultLabel={resultLabel}
-              trailing={
-                canManage ? (
-                  <ListPageBatchActions
-                    batchMode={batch.batchMode}
-                    onToggleBatchMode={batch.toggleBatchMode}
-                    selectedCount={selection.selectedCount}
-                    entityLabel="个任务"
-                    onClear={selection.clear}
-                    onDelete={() => setBatchDeleteOpen(true)}
-                  />
-                ) : null
-              }
-            />
-            {filteredJobs.length === 0 ? (
-              <div className="px-6 py-12 text-center text-theme-sm text-gray-500 dark:text-gray-400">
-                {search.trim()
-                  ? `未找到匹配「${search.trim()}」的任务`
-                  : "当前筛选条件下暂无任务"}
-              </div>
-            ) : (
-              <>
-                <div className="min-h-0 flex-1 overflow-hidden">
-                  <SyncJobsTable
-                    jobs={pagedJobs}
-                    canManage={canManage}
-                    runningId={runningId}
-                    pollingJobId={pollingJobId}
-                    onRun={setRunTarget}
-                    onDelete={setDeleteTarget}
-                    selectedIds={selection.selectedIds}
-                    onToggleSelect={batch.batchMode ? selection.toggle : undefined}
-                    onToggleSelectAll={batch.batchMode ? selection.toggleAll : undefined}
-                    allSelected={selection.allSelected}
-                    someSelected={selection.someSelected}
-                  />
+            ) : null}
+          </div>
+          <ListPageSection className="min-h-0 flex-1">
+              <SyncJobsToolbar
+                search={search}
+                onSearchChange={setSearch}
+                statusFilter={statusFilter}
+                onStatusFilterChange={setStatusFilter}
+                resultLabel={resultLabel}
+                trailing={
+                  canManage ? (
+                    <ListPageBatchActions
+                      batchMode={batch.batchMode}
+                      onToggleBatchMode={batch.toggleBatchMode}
+                      selectedCount={selection.selectedCount}
+                      entityLabel="个任务"
+                      onClear={selection.clear}
+                      onDelete={() => setBatchDeleteOpen(true)}
+                    />
+                  ) : null
+                }
+              />
+              {filteredJobs.length === 0 ? (
+                <div className="px-6 py-12 text-center text-theme-sm text-gray-500 dark:text-gray-400">
+                  {search.trim()
+                    ? `未找到匹配「${search.trim()}」的任务`
+                    : "当前筛选条件下暂无任务"}
                 </div>
-                <ListPagePagination
-                  current={pagination.page}
-                  pageSize={pagination.pageSize}
-                  total={filteredJobs.length}
-                  showSizeChanger
-                  onChange={pagination.onPageChange}
-                />
-              </>
-            )}
+              ) : (
+                <>
+                  <ListPageTableFrame className="px-0">
+                    <div className="overflow-x-only px-5 pb-5">
+                      <SyncJobsTable
+                        jobs={pagedJobs}
+                        canManage={canManage}
+                        runningId={runningId}
+                        pollingJobId={pollingJobId}
+                        onRun={setRunTarget}
+                        onDelete={setDeleteTarget}
+                        selectedIds={selection.selectedIds}
+                        onToggleSelect={batch.batchMode ? selection.toggle : undefined}
+                        onToggleSelectAll={batch.batchMode ? selection.toggleAll : undefined}
+                        allSelected={selection.allSelected}
+                        someSelected={selection.someSelected}
+                      />
+                    </div>
+                  </ListPageTableFrame>
+                  <ListPagePagination
+                    current={pagination.page}
+                    pageSize={pagination.pageSize}
+                    total={filteredJobs.length}
+                    showSizeChanger
+                    onChange={pagination.onPageChange}
+                  />
+                </>
+              )}
           </ListPageSection>
         </div>
       )}

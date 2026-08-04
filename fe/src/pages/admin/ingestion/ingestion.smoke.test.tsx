@@ -348,7 +348,7 @@ describe("ingestion admin smoke", () => {
     );
     await screen.findByText("demo");
     expect(screen.queryByText(/同步成功 · 下一步/)).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "查看出图步骤" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "一键出图" })).toBeInTheDocument();
   });
 
   it("SyncJobsEmptyState_shows_consume_step", async () => {
