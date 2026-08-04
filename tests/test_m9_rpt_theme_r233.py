@@ -17,7 +17,6 @@ from app.metadata.entity.schemas import EntityTypeCreate
 from app.metadata.physical import service as physical_service
 from app.metadata.physical.schemas import PhysicalTableRegisterIn
 from app.query.schemas import ExecuteResponse
-from app.reports.prefab import service as prefab_service
 from jwt_auth import AUTH
 
 _R233_SQLITE_URL = "sqlite+pysqlite:///file:m9_rpt_theme_r233?mode=memory&cache=shared&uri=true"

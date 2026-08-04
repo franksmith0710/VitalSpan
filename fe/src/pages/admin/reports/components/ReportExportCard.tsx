@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
+import { exportMagicMatches } from "@/lib/reportExportUtils";
 
 type ExportOut = {
   exportId: string;
@@ -86,6 +87,14 @@ export function ReportExportCard({
       setStatus(out.status);
       if (out.downloadUrl) {
         setDownloadUrl(out.downloadUrl);
+        try {
+          const blob = await fetch(out.downloadUrl).then((r) => r.arrayBuffer());
+          if (!exportMagicMatches(new Uint8Array(blob), format)) {
+            toast.warning("导出文件格式与所选格式不一致，请检查模板配置");
+          }
+        } catch {
+          /* download URL may be same-origin API; smoke tests mock without fetch */
+        }
         return;
       }
       if (out.status === "failed") return;

@@ -3,6 +3,7 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ReportExportCard } from "./ReportExportCard";
+import { decodeExportSample, exportMagicMatches } from "@/lib/reportExportUtils";
 
 const mockApiFetch = vi.fn();
 vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => mockApiFetch(...args) }));
@@ -29,5 +30,10 @@ describe("ReportExportCard smoke", () => {
     expect(mockApiFetch).toHaveBeenCalledWith(
       expect.stringContaining("/api/v1/reports/export?templateId=tpl-1"),
     );
+  });
+
+  it("validates export magic bytes for pdf", () => {
+    const bytes = decodeExportSample("", "pdf");
+    expect(exportMagicMatches(bytes, "pdf")).toBe(true);
   });
 });

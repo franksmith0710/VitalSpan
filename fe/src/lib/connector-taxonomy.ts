@@ -37,6 +37,8 @@ export type ConnectorTypeItem = {
   categoryLabel: string;
   queryCapable: boolean;
   queryMode: "sql" | "native" | null;
+  syncCapable: boolean;
+  syncFetchImplemented: boolean;
 };
 
 /** API 原始项（兼容 camelCase / snake_case；缺 displayGroup 时由 category 推导） */
@@ -54,6 +56,10 @@ export type RawConnectorTypeItem = {
   query_capable?: boolean;
   queryMode?: string | null;
   query_mode?: string | null;
+  syncCapable?: boolean;
+  sync_capable?: boolean;
+  syncFetchImplemented?: boolean;
+  sync_fetch_implemented?: boolean;
 };
 
 const CATEGORY_TO_DISPLAY_GROUP: Record<string, DisplayGroup> = {
@@ -89,6 +95,9 @@ export function normalizeConnectorTypeItem(raw: RawConnectorTypeItem): Connector
   const rawMode = raw.queryMode ?? raw.query_mode ?? null;
   const queryMode =
     rawMode === "sql" || rawMode === "native" ? rawMode : queryCapable ? "sql" : null;
+  const syncCapable = raw.syncCapable ?? raw.sync_capable ?? queryCapable;
+  const syncFetchImplemented =
+    raw.syncFetchImplemented ?? raw.sync_fetch_implemented ?? false;
   return {
     type: raw.type,
     displayName: raw.displayName ?? raw.display_name ?? raw.type,
@@ -99,6 +108,8 @@ export function normalizeConnectorTypeItem(raw: RawConnectorTypeItem): Connector
       raw.categoryLabel ?? raw.category_label ?? DISPLAY_GROUP_META[displayGroup].label,
     queryCapable,
     queryMode: queryCapable ? queryMode : null,
+    syncCapable,
+    syncFetchImplemented,
   };
 }
 

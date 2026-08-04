@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { mapApiError } from "@/lib/apiError";
 import { BatchImportPanel } from "./BatchImportPanel";
 import { ReportExportCard } from "./ReportExportCard";
+import { ReportMetricDatasetFields } from "./ReportMetricDatasetFields";
 import { SchedulePanel } from "./SchedulePanel";
 import { TemplateBlockEditor } from "./TemplateBlockEditor";
 import {
@@ -40,6 +41,8 @@ export function TemplateDetailPanel({ node, readOnly }: { node: CatalogNode; rea
   const [metricLabel, setMetricLabel] = useState("");
   const [metricKey, setMetricKey] = useState("");
   const [queryMode, setQueryMode] = useState<"sql" | "dataset">("sql");
+  const [datasetId, setDatasetId] = useState("");
+  const [boundConfigId, setBoundConfigId] = useState("");
   const [changeNote, setChangeNote] = useState("");
   const { saveExtension } = useReportTemplates(null);
   const extQuery = useCatalogExtension(node.id);
@@ -51,10 +54,25 @@ export function TemplateDetailPanel({ node, readOnly }: { node: CatalogNode; rea
       toast.error("请填写变更说明");
       return;
     }
-    const nextMetrics =
+    if (metricKey && metricLabel && queryMode === "dataset") {
+      if (!datasetId.trim() || !boundConfigId.trim()) {
+        toast.error("Dataset 模式须选择 Dataset 并完成查询绑定");
+        return;
+      }
+    }
+    const nextMetric =
       metricKey && metricLabel
-        ? [...metrics, { key: metricKey, label: metricLabel, visible: true, queryMode }]
-        : metrics;
+        ? {
+            key: metricKey,
+            label: metricLabel,
+            visible: true,
+            queryMode,
+            ...(queryMode === "dataset"
+              ? { datasetId: datasetId.trim(), boundConfigId: boundConfigId.trim() }
+              : {}),
+          }
+        : null;
+    const nextMetrics = nextMetric ? [...metrics, nextMetric] : metrics;
     saveExtension.mutate(
       {
         nodeId: node.id,
@@ -70,6 +88,8 @@ export function TemplateDetailPanel({ node, readOnly }: { node: CatalogNode; rea
           toast.success("扩展配置已保存");
           setMetricKey("");
           setMetricLabel("");
+          setDatasetId("");
+          setBoundConfigId("");
           setChangeNote("");
         },
         onError: (err) => toast.error(mapApiError(err)),
@@ -178,6 +198,14 @@ export function TemplateDetailPanel({ node, readOnly }: { node: CatalogNode; rea
                     </select>
                   </div>
                 </div>
+                {queryMode === "dataset" ? (
+                  <ReportMetricDatasetFields
+                    datasetId={datasetId}
+                    boundConfigId={boundConfigId}
+                    onDatasetIdChange={setDatasetId}
+                    onBoundConfigIdChange={setBoundConfigId}
+                  />
+                ) : null}
                 <div className="grid gap-2">
                   <Label htmlFor="change-note">变更说明</Label>
                   <Textarea id="change-note" value={changeNote} onChange={(e) => setChangeNote(e.target.value)} />

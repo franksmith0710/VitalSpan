@@ -5,8 +5,8 @@ import { PanelEmptyState, PanelEmptyStateSteps } from "@/components/ui/panel-emp
 const STEPS = [
   {
     step: 1,
-    title: "连接管理登记 MySQL",
-    description: "在连接管理登记业务 MySQL 源库连接。",
+    title: "连接管理登记业务源",
+    description: "在连接管理登记可查询的业务源连接（关系型 / 文件 / 文档库等）。",
     icon: Link2,
   },
   {
@@ -44,7 +44,7 @@ export function SyncJobsEmptyState() {
             >
               连接管理
             </Link>
-            登记 MySQL → 新建同步任务 → 运行 → 一键 Dataset 出图。
+            登记业务源连接 → 新建同步任务 → 运行 → 一键 Dataset 出图。
           </>
         }
         size="lg"

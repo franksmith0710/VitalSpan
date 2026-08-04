@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext
 from app.dashboard import service as dash_service
+from app.dashboard.surface_kind import layout_to_dict
 from app.dashboard.theme.acl import assert_theme_action
 from app.dashboard.theme.errors import ThemeAnalysisError
 from app.dashboard.theme.schemas import EntityThemeConfig
@@ -24,7 +25,7 @@ def _link_chart_views(db: Session, config: EntityThemeConfig) -> None:
     if config.ref_type != "dashboard":
         return
     dashboard = dash_service.get_dashboard(db, config.ref_id)
-    widgets = dashboard.layout_json.get("widgets", [])
+    widgets = layout_to_dict(dashboard.layout_json).get("widgets", [])
     widget_map = {str(w.get("id")): w for w in widgets if isinstance(w, dict)}
     dim_ids = {d.dimension_id for d in config.dimensions}
     bad: list[str] = []
@@ -149,7 +150,7 @@ def resolve_chart_bindings_for_execute(db: Session, ref_type: str, ref_id: uuid.
     if config.ref_type != "dashboard":
         return []
     dashboard = dash_service.get_dashboard(db, config.ref_id)
-    widgets = dashboard.layout_json.get("widgets", [])
+    widgets = layout_to_dict(dashboard.layout_json).get("widgets", [])
     widget_map = {str(w.get("id")): w for w in widgets if isinstance(w, dict)}
     resolved: list[dict] = []
     for binding in config.chart_view_bindings:

@@ -109,8 +109,13 @@ export const CONNECTOR_PICKER_SUBTITLES: Record<string, string> = {
 export function connectorPickerSubtitle(
   type: string,
   displayGroup: DisplayGroup,
-  queryCapable?: boolean,
+  options?: {
+    queryCapable?: boolean;
+    syncFetchImplemented?: boolean;
+  },
 ): string {
+  const queryCapable = options?.queryCapable;
+  const syncFetchImplemented = options?.syncFetchImplemented;
   const base = (() => {
     if (CONNECTOR_PICKER_SUBTITLES[type]) return CONNECTOR_PICKER_SUBTITLES[type];
     if (CONNECTOR_HINT_TEXT[type]) return CONNECTOR_HINT_TEXT[type];
@@ -127,7 +132,13 @@ export function connectorPickerSubtitle(
     return groupLine;
   })();
   if (queryCapable === false) {
-    return `${base} · 仅连接与 Schema（图表查询待支持）`;
+    return `${base} · 仅元数据（连接探测与 Schema 浏览）`;
+  }
+  if (queryCapable && syncFetchImplemented === false) {
+    return `${base} · 可查询；同步拉数待支持`;
+  }
+  if (queryCapable && syncFetchImplemented) {
+    return `${base} · 可查询与同步`;
   }
   return base;
 }

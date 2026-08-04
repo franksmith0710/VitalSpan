@@ -29,7 +29,7 @@ def _engine_error(exc: ReportEngineError) -> JSONResponse:
 def run_report_template(
     template_id: uuid.UUID,
     payload: RenderRunIn,
-    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> RenderRunOut | JSONResponse:
     try:
         return engine_service.run_template(template_id, payload, actor)

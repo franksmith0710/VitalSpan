@@ -57,7 +57,7 @@ def _seed_postgres_job() -> uuid.UUID:
     db = get_meta_session()
     job = SyncJob(
         name="postgres-job",
-        source_type="postgres",
+        source_type="postgresql",
         source_host="127.0.0.1",
         source_port=5432,
         source_database="pg_db",
@@ -65,6 +65,29 @@ def _seed_postgres_job() -> uuid.UUID:
         source_password_encrypted=encrypt_password("pg"),
         source_table="orders",
         target_table="orders_pg",
+        enabled=True,
+    )
+    db.add(job)
+    db.flush()
+    db.add(EtlRuleSet(job_id=job.id, rules=[]))
+    db.commit()
+    job_id = job.id
+    db.close()
+    return job_id
+
+
+def _seed_clickhouse_job() -> uuid.UUID:
+    db = get_meta_session()
+    job = SyncJob(
+        name="clickhouse-job",
+        source_type="clickhouse",
+        source_host="127.0.0.1",
+        source_port=8123,
+        source_database="default",
+        source_username="default",
+        source_password_encrypted=encrypt_password(""),
+        source_table="orders",
+        target_table="orders_ch",
         enabled=True,
     )
     db.add(job)
@@ -188,13 +211,24 @@ def test_run_job_missing_job():
     assert run.error_message == "任务不存在"
 
 
-def test_run_job_rejects_non_mysql_source():
-    """T-D02-04: source_type != mysql → failed + 可读错误。"""
-    job_id = _seed_postgres_job()
-    run_job(job_id, "trace-postgres-reject")
+def test_run_job_rejects_unimplemented_sql_fetch():
+    """未落地拉数的 SQL 连接器（如 clickhouse）→ failed + 可读错误。"""
+    job_id = _seed_clickhouse_job()
+    run_job(job_id, "trace-clickhouse-reject")
     run = _latest_run(job_id)
     assert run.status == "failed"
-    assert "mysql" in (run.error_message or "").lower()
+    assert "clickhouse" in (run.error_message or "").lower()
+
+
+@patch("app.ingestion.sync_executor.write_analytics", return_value=0)
+@patch("app.ingestion.sync_executor.fetch_source_rows", return_value=[])
+def test_run_job_postgresql_source_succeeds_with_mock(mock_fetch, mock_write):
+    """PostgreSQL 系源在拉数实现后可通过 fetch_source_rows 完成同步。"""
+    job_id = _seed_postgres_job()
+    run_job(job_id, "trace-postgres-ok")
+    run = _latest_run(job_id)
+    assert run.status == "succeeded"
+    mock_fetch.assert_called_once()
 
 
 @patch("app.ingestion.sync_executor.write_analytics", return_value=0)

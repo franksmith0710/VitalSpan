@@ -99,7 +99,7 @@ def upsert_binding(
 def run_binding(
     binding_key: str,
     payload: PrefabRunIn,
-    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> PrefabRunOut | JSONResponse:
     try:

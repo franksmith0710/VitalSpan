@@ -38,3 +38,29 @@ export function isMysqlSyncSource(type: string): boolean {
 export function isSyncSourceCapable(type: string): boolean {
   return SYNC_CAPABLE_TYPES.has(type);
 }
+
+/** 与 backend sync_source_capabilities.is_sync_fetch_implemented 对齐 */
+const SYNC_FETCH_IMPLEMENTED_TYPES = new Set([
+  "mysql",
+  "mariadb",
+  "tidb",
+  "starrocks",
+  "doris",
+  "oceanbase",
+  "gbase",
+  "postgresql",
+  "kingbase",
+  "gaussdb",
+  "redshift",
+  "timescaledb",
+  "mongodb",
+  "elasticsearch",
+  "opensearch",
+  "csv",
+  "excel",
+  "rest_api",
+]);
+
+export function isSyncFetchImplemented(type: string): boolean {
+  return SYNC_FETCH_IMPLEMENTED_TYPES.has(type);
+}

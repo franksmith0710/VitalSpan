@@ -210,7 +210,7 @@ def validate_theme_analysis(
 @router.put("/theme-analysis", response_model=None)
 def save_theme_analysis(
     payload: dict,
-    user: Annotated[UserContext, Depends(require_permission(PERM_THEME_MANAGE))],
+    user: Annotated[UserContext, Depends(require_permission(PERM_THEME_READ))],
     db: Annotated[Session, Depends(_db)],
 ):
     try:

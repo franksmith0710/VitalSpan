@@ -59,6 +59,7 @@ type SyncJobFormProps = {
   etlRulesHref?: string;
   datasources: DatasourceItem[];
   selectedDatasource?: DatasourceItem;
+  selectedSyncFetchReady?: boolean;
   legacyInlineSource?: LegacyInlineSource | null;
   fieldErrors: Record<string, string>;
   /** 其他任务已占用的同名 target_table（编辑时不含自身） */
@@ -136,6 +137,7 @@ export function SyncJobForm({
   etlRulesHref,
   datasources,
   selectedDatasource,
+  selectedSyncFetchReady = true,
   legacyInlineSource = null,
   fieldErrors,
   conflictingJobNames = [],
@@ -179,7 +181,7 @@ export function SyncJobForm({
 
       <FormSection
         title="业务源连接"
-        description="凭证仅在连接管理登记；同步任务引用已登记连接并指定源对象（表 / 集合 / 文件等）。写入端为托管分析库。"
+        description="凭证仅在连接管理登记；仅列出已支持同步拉数的业务源（连接管理中带「可作同步源」标记）。"
       >
         {legacyInlineSource ? (
           <Alert severity="warning">
@@ -191,7 +193,7 @@ export function SyncJobForm({
                 {legacyInlineSource.username}@{legacyInlineSource.host}:{legacyInlineSource.port}/
                 {legacyInlineSource.database}
               </span>
-              。请在下拉框选择连接管理中对应的 MySQL 连接后保存，以完成迁移。
+              。请在下拉框选择连接管理中对应的业务源连接后保存，以完成迁移。
             </AlertDescription>
           </Alert>
         ) : null}
@@ -204,13 +206,13 @@ export function SyncJobForm({
           >
             连接管理
           </Link>
-          登记可同步的数据源（关系型 / 文件 / 文档库等），再在此选择。引用时会快照凭证；源库改密后请重新保存任务。
+          登记可查询且已支持同步拉数的数据源，再在此选择。引用时会快照凭证；源库改密后请重新保存任务。
         </p>
 
         <div className="grid gap-4 rounded-xl border border-gray-200 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-white/[0.02]">
           {datasources.length === 0 ? (
             <Alert severity="warning">
-              <AlertTitle>尚无可用同步源连接</AlertTitle>
+              <AlertTitle>尚无已支持同步拉数的连接</AlertTitle>
               <AlertDescription className="text-theme-xs">
                 请先在
                 <Link
@@ -219,7 +221,7 @@ export function SyncJobForm({
                 >
                   连接管理
                 </Link>
-                登记可同步的数据源（与新建连接器目录中「可查询」类型一致），再返回创建同步任务。
+                登记带「可作同步源」标记的数据源（如 MySQL、PostgreSQL、CSV 等），再返回创建同步任务。
               </AlertDescription>
             </Alert>
           ) : (
@@ -242,6 +244,14 @@ export function SyncJobForm({
                   </SelectContent>
                 </Select>
               </div>
+              {selectedDatasource && !selectedSyncFetchReady ? (
+                <Alert severity="warning">
+                  <AlertTitle>当前连接暂不支持同步拉数</AlertTitle>
+                  <AlertDescription className="text-theme-xs">
+                    该连接器类型（{selectedDatasource.type}）可查询但同步拉数尚未实现。请改选带「可作同步源」标记的连接后再保存或运行。
+                  </AlertDescription>
+                </Alert>
+              ) : null}
               {selectedDatasource ? (
                 <p className="font-mono text-theme-xs text-gray-500 dark:text-gray-400">
                   {selectedDatasource.host}:{selectedDatasource.port}/{selectedDatasource.database}

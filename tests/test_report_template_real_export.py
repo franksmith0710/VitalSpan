@@ -59,6 +59,24 @@ def test_render_pdf_from_sections():
     assert data.startswith(b"%PDF")
 
 
+def test_render_excel_from_sections():
+    spec = {
+        "sections": [{"kind": "table", "columns": ["a"], "rows": [[1]], "metricKey": "m1"}],
+    }
+    data = render_document(spec, "excel", title="Test")
+    assert data[:2] == b"PK"
+    assert len(data) > 100
+
+
+def test_render_word_from_sections():
+    spec = {
+        "sections": [{"kind": "table", "columns": ["a"], "rows": [[1]], "metricKey": "m1"}],
+    }
+    data = render_document(spec, "word", title="Test")
+    assert data[:2] == b"PK"
+    assert len(data) > 100
+
+
 def test_export_template_bytes_with_mock_query(client: TestClient):
     tpl_key = f"tpl-{uuid.uuid4().hex[:8]}"
     client.put(

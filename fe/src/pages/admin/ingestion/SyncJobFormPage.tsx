@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { apiFetch } from "@/lib/api";
 import { getApiValidationFieldErrors, mapApiError } from "@/lib/apiError";
 import { hasCapability } from "@/lib/capabilities";
-import { isSyncSourceCapable } from "@/lib/datasourceRoles";
+import { isSyncFetchImplemented } from "@/lib/datasourceRoles";
 import { sessionUserFromMe } from "@/lib/session";
 import { useSyncJobRun, type SyncRunSuccess } from "@/hooks/useSyncJobRun";
 import {
@@ -98,7 +98,7 @@ export function SyncJobFormPage() {
   const [form, setForm] = useState<JobFormState>(newJobFormDefaults);
   const [legacyInlineSource, setLegacyInlineSource] = useState<LegacyInlineSource | null>(null);
   const [existingJobs, setExistingJobs] = useState<SyncJobSummary[]>([]);
-  const [datasources, setDatasources] = useState<DatasourceItem[]>([]);
+  const [allDatasources, setAllDatasources] = useState<DatasourceItem[]>([]);
   const [loading, setLoading] = useState(isEdit);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -135,10 +135,10 @@ export function SyncJobFormPage() {
           apiFetch<{ items: DatasourceItem[] }>("/api/v1/datasources"),
           apiFetch<{ items: SyncJobSummary[] }>("/api/v1/ingestion/sync-jobs"),
         ]);
-        const mysqlDs = dsData.items.filter((item) => isSyncSourceCapable(item.type));
-        setDatasources(mysqlDs);
+        setAllDatasources(dsData.items);
         setExistingJobs(jobsData.items);
         if (!id && !newJobInitializedRef.current) {
+          const syncReadyDs = dsData.items.filter((item) => isSyncFetchImplemented(item.type));
           const suggested = suggestSyncTargetTable(
             newJobFormDefaults.table,
             jobsData.items.map((job) => job.target_table),
@@ -146,14 +146,14 @@ export function SyncJobFormPage() {
           const nextForm: JobFormState = {
             ...newJobFormDefaults,
             target_table: suggested,
-            sourceDataSourceId: mysqlDs[0]?.id ?? "",
+            sourceDataSourceId: syncReadyDs[0]?.id ?? "",
           };
           setForm(nextForm);
           resetBaseline(nextForm);
           newJobInitializedRef.current = true;
         }
       } catch {
-        setDatasources([]);
+        setAllDatasources([]);
         setExistingJobs([]);
       }
     })();
@@ -230,17 +230,38 @@ export function SyncJobFormPage() {
     })();
   }, [id, resetBaseline]);
 
-  const selectedDatasource = useMemo(
-    () => datasources.find((item) => item.id === form.sourceDataSourceId),
-    [datasources, form.sourceDataSourceId],
+  const syncReadyDatasources = useMemo(
+    () => allDatasources.filter((item) => isSyncFetchImplemented(item.type)),
+    [allDatasources],
   );
+
+  const datasources = useMemo(() => {
+    if (!form.sourceDataSourceId) return syncReadyDatasources;
+    if (syncReadyDatasources.some((item) => item.id === form.sourceDataSourceId)) {
+      return syncReadyDatasources;
+    }
+    const legacy = allDatasources.find((item) => item.id === form.sourceDataSourceId);
+    return legacy ? [...syncReadyDatasources, legacy] : syncReadyDatasources;
+  }, [allDatasources, form.sourceDataSourceId, syncReadyDatasources]);
+
+  const selectedDatasource = useMemo(
+    () => allDatasources.find((item) => item.id === form.sourceDataSourceId),
+    [allDatasources, form.sourceDataSourceId],
+  );
+
+  const selectedSyncFetchReady = selectedDatasource
+    ? isSyncFetchImplemented(selectedDatasource.type)
+    : true;
 
   const conflictingJobs = useMemo(
     () => findJobsSharingTargetTable(existingJobs, form.target_table, isEdit ? id : undefined),
     [existingJobs, form.target_table, id, isEdit],
   );
 
-  const canSubmit = Boolean(form.sourceDataSourceId.trim()) && datasources.length > 0;
+  const canSubmit =
+    Boolean(form.sourceDataSourceId.trim())
+    && syncReadyDatasources.length > 0
+    && selectedSyncFetchReady;
 
   const applySuggestedTarget = (sourceTable: string) => {
     const suggested = suggestSyncTargetTable(
@@ -331,7 +352,8 @@ export function SyncJobFormPage() {
   const handleSubmit = async (event?: FormEvent): Promise<boolean> => {
     event?.preventDefault();
     if (!form.sourceDataSourceId.trim()) {
-      const message = "请选择业务源连接；若尚无可用连接，请先在连接管理登记可同步的数据源";
+      const message =
+        "请选择已支持同步拉数的业务源连接；若列表为空，请先在连接管理登记带「可作同步源」标记的连接";
       setError(message);
       toast.error(message);
       return false;
@@ -358,7 +380,7 @@ export function SyncJobFormPage() {
       return "先在连接管理登记业务源连接，再配置同步与目标表。";
     }
     if (datasources.length === 0) {
-      return "尚无可用同步源连接 · 请先在连接管理登记";
+      return "尚无已支持同步拉数的连接 · 请在连接管理登记带「可作同步源」标记的数据源";
     }
     if (isDirty) return "有未保存的更改 · 保存后生效";
     return "已保存 · 支持全量覆盖或增量 upsert 到托管分析库";
@@ -491,6 +513,7 @@ export function SyncJobFormPage() {
             etlRulesHref={isEdit && id ? `/admin/ingestion/sync-jobs/${id}/etl-rules` : undefined}
             datasources={datasources}
             selectedDatasource={selectedDatasource}
+            selectedSyncFetchReady={selectedSyncFetchReady}
             legacyInlineSource={legacyInlineSource}
             fieldErrors={fieldErrors}
             conflictingJobNames={conflictingJobs.map((job) => job.name)}

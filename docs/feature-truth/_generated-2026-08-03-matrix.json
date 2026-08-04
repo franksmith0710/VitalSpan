@@ -983,8 +983,8 @@
     {
       "surface": "S1",
       "entityId": "map",
-      "configTab": "advanced-out",
-      "gate": "OUT",
+      "configTab": "advanced",
+      "gate": "GATE",
       "sections": []
     },
     {
@@ -1009,8 +1009,8 @@
     {
       "surface": "S1",
       "entityId": "map-3d",
-      "configTab": "advanced-out",
-      "gate": "OUT",
+      "configTab": "advanced",
+      "gate": "GATE",
       "sections": []
     },
     {

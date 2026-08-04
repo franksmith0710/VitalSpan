@@ -58,7 +58,7 @@ import { runBatchDelete } from "@/lib/runBatchDelete";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { isProtectedDemoDatasource } from "@/lib/demoPackage";
-import { isAnalyticsDatasource, isSyncSourceCapable } from "@/lib/datasourceRoles";
+import { isAnalyticsDatasource, isSyncFetchImplemented, isSyncSourceCapable } from "@/lib/datasourceRoles";
 
 type DataSourceOut = {
   id: string;
@@ -390,15 +390,24 @@ export function DatasourceListPage() {
                           托管分析库
                         </Badge>
                       ) : null}
-                      {!isAnalyticsDatasource(row.code) && (typeById.get(row.type)?.queryCapable ?? isSyncSourceCapable(row.type)) ? (
+                      {!isAnalyticsDatasource(row.code)
+                      && !(typeById.get(row.type)?.queryCapable ?? false) ? (
+                        <Badge variant="light" color="warning" size="sm">
+                          仅元数据
+                        </Badge>
+                      ) : null}
+                      {!isAnalyticsDatasource(row.code)
+                      && (typeById.get(row.type)?.queryCapable ?? false)
+                      && (typeById.get(row.type)?.syncFetchImplemented ?? isSyncFetchImplemented(row.type)) ? (
                         <Badge variant="light" color="light" size="sm">
                           可作同步源
                         </Badge>
                       ) : null}
                       {!isAnalyticsDatasource(row.code)
-                      && !(typeById.get(row.type)?.queryCapable ?? isSyncSourceCapable(row.type)) ? (
+                      && (typeById.get(row.type)?.queryCapable ?? isSyncSourceCapable(row.type))
+                      && !(typeById.get(row.type)?.syncFetchImplemented ?? isSyncFetchImplemented(row.type)) ? (
                         <Badge variant="light" color="warning" size="sm">
-                          仅可直连 Dataset
+                          同步拉数待支持
                         </Badge>
                       ) : null}
                       {row.description?.trim() ? (
