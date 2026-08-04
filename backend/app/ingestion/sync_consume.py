@@ -216,6 +216,11 @@ def ensure_dataset_for_sync_job(
     if row is None:
         raise SyncConsumeError("META_DATASET_CREATE_FAILED", "Dataset 创建失败", 500)
 
+    if row.origin != "sync_job" or row.sync_job_id != job.id:
+        row.origin = "sync_job"
+        row.sync_job_id = job.id
+        db.commit()
+
     if row.bound_config_id is not None:
         return EnsureDatasetResult(
             dataset_id=dataset_id,

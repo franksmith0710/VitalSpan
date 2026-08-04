@@ -25,6 +25,7 @@ def _sqlite():
     from app.query.models import Base as QueryBase
     import app.auth.models  # noqa: F401
     import app.dashboard.models  # noqa: F401
+    import app.reports.models  # noqa: F401
 
     get_meta_engine.cache_clear()
     auth_engine.cache_clear()
@@ -225,3 +226,127 @@ def test_dashboard_execute_smtp_attaches_pdf(client: TestClient):
         assert len(attachments) == 1
         assert attachments[0].get_filename().endswith(".pdf")
         assert attachments[0].get_content().startswith(b"%PDF")
+
+
+def test_patch_draft_schedule_updates_cron(client: TestClient):
+    dash_id = _create_dashboard_with_widget(client, name="Patch Dash", description="patch")
+    sched = client.post(
+        "/api/v1/reports/schedules",
+        headers=AUTH,
+        json={
+            "sourceType": "dashboard",
+            "sourceId": dash_id,
+            "cron": "0 9 * * *",
+            "recipients": [{"type": "role", "value": "admin"}],
+        },
+    )
+    schedule_id = sched.json()["id"]
+    patch = client.patch(
+        f"/api/v1/reports/schedules/{schedule_id}",
+        headers=AUTH,
+        json={"cron": "0 10 * * *", "name": "Morning Report"},
+    )
+    assert patch.status_code == 200, patch.text
+    body = patch.json()
+    assert body["cron"] == "0 10 * * *"
+    assert body["name"] == "Morning Report"
+
+
+def test_patch_non_draft_schedule_rejected(client: TestClient):
+    dash_id = _create_dashboard_with_widget(client, name="Locked Dash", description="locked")
+    sched = client.post(
+        "/api/v1/reports/schedules",
+        headers=AUTH,
+        json={
+            "sourceType": "dashboard",
+            "sourceId": dash_id,
+            "cron": "0 9 * * *",
+            "recipients": [{"type": "role", "value": "admin"}],
+        },
+    )
+    schedule_id = sched.json()["id"]
+    client.post(
+        f"/api/v1/reports/schedules/{schedule_id}/transition",
+        headers=AUTH,
+        json={"action": "schedule"},
+    )
+    patch = client.patch(
+        f"/api/v1/reports/schedules/{schedule_id}",
+        headers=AUTH,
+        json={"cron": "0 11 * * *"},
+    )
+    assert patch.status_code == 400
+
+
+def test_empty_dashboard_export_rejected(client: TestClient):
+    dash = client.post(
+        "/api/v1/dashboards",
+        headers=AUTH,
+        json=_dash_with_widget("Empty Dash", "no widgets"),
+    )
+    dash_id = dash.json()["id"]
+    export = client.post(
+        f"/api/v1/dashboards/{dash_id}/export-jobs",
+        headers=AUTH,
+        json={"format": "pdf"},
+    )
+    assert export.status_code == 422
+    assert export.json()["code"] == "DASHBOARD_EXPORT_EMPTY"
+
+
+def test_execute_wecom_webhook_delivered(client: TestClient, monkeypatch):
+    monkeypatch.setenv("PUSH_WECOM_WEBHOOK", "https://example.com/wecom-hook")
+    get_settings.cache_clear()
+    dash_id = _create_dashboard_with_widget(client, name="WeCom Dash", description="wecom")
+    sched = client.post(
+        "/api/v1/reports/schedules",
+        headers=AUTH,
+        json={
+            "sourceType": "dashboard",
+            "sourceId": dash_id,
+            "cron": "0 9 * * *",
+            "recipients": [{"type": "role", "value": "admin"}],
+            "deliveryChannels": ["wecom"],
+        },
+    )
+    schedule_id = sched.json()["id"]
+    client.post(
+        f"/api/v1/reports/schedules/{schedule_id}/transition",
+        headers=AUTH,
+        json={"action": "schedule"},
+    )
+    with patch("app.reports.scheduler.channels.dispatch.httpx.Client") as client_cls:
+        resp_mock = client_cls.return_value.__enter__.return_value.post.return_value
+        resp_mock.raise_for_status = lambda: None
+        exec_resp = client.post(
+            f"/api/v1/reports/schedules/{schedule_id}/execute",
+            headers={**AUTH, "Idempotency-Key": "wecom-1", "X-Rpt-Semi-Real": "1"},
+        )
+    assert exec_resp.status_code == 200, exec_resp.text
+    body = exec_resp.json()
+    assert body["status"] == "semi_real_succeeded"
+    wecom_step = next(s for s in body["deliverySteps"] if s["channel"] == "wecom")
+    assert wecom_step["status"] == "delivered"
+
+
+def test_schedule_persists_with_db_store(client: TestClient, monkeypatch):
+    monkeypatch.setenv("RPT_SCHEDULE_STORE", "db")
+    get_settings.cache_clear()
+    dash_id = _create_dashboard_with_widget(client, name="DB Store Dash", description="db")
+    sched = client.post(
+        "/api/v1/reports/schedules",
+        headers=AUTH,
+        json={
+            "sourceType": "dashboard",
+            "sourceId": dash_id,
+            "cron": "0 9 * * *",
+            "recipients": [{"type": "role", "value": "admin"}],
+            "name": "Persisted Schedule",
+        },
+    )
+    assert sched.status_code == 201, sched.text
+    schedule_id = sched.json()["id"]
+    fetched = client.get(f"/api/v1/reports/schedules/{schedule_id}", headers=AUTH)
+    assert fetched.status_code == 200
+    assert fetched.json()["name"] == "Persisted Schedule"
+

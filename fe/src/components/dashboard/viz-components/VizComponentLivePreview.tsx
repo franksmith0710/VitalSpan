@@ -39,7 +39,7 @@ export function VizComponentLivePreview({
   const navSuspended = useAdminHeavyRenderSuspended();
   const containerRef = useRef<HTMLDivElement>(null);
   const { ref: viewRef, inView } = useInViewport<HTMLDivElement>({
-    enabled: lazy,
+    enabled: lazy && !navSuspended,
     rootMargin: "80px",
   });
   const { width, height } = useElementSize(containerRef);

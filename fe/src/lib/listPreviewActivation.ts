@@ -1,5 +1,5 @@
-/** 列表卡片 live 预览全局并发上限（仪表板/模板等共用） */
-export const MAX_LIST_PREVIEW_ACTIVATIONS = 1;
+/** 列表卡片 live 预览全局并发上限（仪表板/模板等共用；≈首屏一行网格） */
+export const MAX_LIST_PREVIEW_ACTIVATIONS = 6;
 
 let activeCount = 0;
 const waitQueue: Array<() => void> = [];

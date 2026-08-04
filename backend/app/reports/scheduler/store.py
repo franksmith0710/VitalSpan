@@ -263,6 +263,10 @@ def reset_schedules_for_tests() -> None:
     from app.reports.artifact_store import reset_artifact_store_for_tests
 
     reset_artifact_store_for_tests()
+    try:
+        DbScheduleStore().clear()
+    except Exception:
+        pass
 
 
 def try_acquire_tick_lock(schedule_id: uuid.UUID, tick_key: str) -> bool:

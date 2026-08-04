@@ -2,23 +2,24 @@
 
 from __future__ import annotations
 
-import secrets
-import time
-from dataclasses import dataclass
 from uuid import UUID
 
 from app.dashboard import service as dash_service
+from app.dashboard.export_persistence import (
+    EXPORT_TOKEN_TTL_SECONDS,
+    issue_export_token as _issue_export_token,
+    reset_export_persistence_for_tests,
+    validate_export_token,
+)
 
-EXPORT_TOKEN_TTL_SECONDS = 300
-
-
-@dataclass
-class _ExportTokenRecord:
-    dashboard_id: UUID
-    issued_at: float
-
-
-_store: dict[str, _ExportTokenRecord] = {}
+__all__ = [
+    "EXPORT_TOKEN_TTL_SECONDS",
+    "ExportTokenError",
+    "issue_export_token",
+    "require_export_token",
+    "resolve_export_actor_id",
+    "reset_export_tokens_for_tests",
+]
 
 
 class ExportTokenError(dash_service.DashboardError):
@@ -26,20 +27,16 @@ class ExportTokenError(dash_service.DashboardError):
 
 
 def issue_export_token(dashboard_id: UUID) -> str:
-    _purge_expired()
-    token = secrets.token_urlsafe(32)
-    _store[token] = _ExportTokenRecord(dashboard_id=dashboard_id, issued_at=time.time())
-    return token
+    return _issue_export_token(dashboard_id)
 
 
 def require_export_token(token: str, dashboard_id: UUID) -> None:
-    record = _store.get(token)
-    if record is None:
+    code = validate_export_token(token, dashboard_id)
+    if code == "DASH_EXPORT_TOKEN_INVALID":
         raise ExportTokenError("DASH_EXPORT_TOKEN_INVALID", "Export token invalid", 403)
-    if record.dashboard_id != dashboard_id:
+    if code == "DASH_EXPORT_TOKEN_MISMATCH":
         raise ExportTokenError("DASH_EXPORT_TOKEN_MISMATCH", "Export token mismatch", 403)
-    if time.time() - record.issued_at > EXPORT_TOKEN_TTL_SECONDS:
-        _store.pop(token, None)
+    if code == "DASH_EXPORT_TOKEN_EXPIRED":
         raise ExportTokenError("DASH_EXPORT_TOKEN_EXPIRED", "Export token expired", 403)
 
 
@@ -47,12 +44,5 @@ def resolve_export_actor_id() -> str:
     return "export-renderer"
 
 
-def _purge_expired() -> None:
-    now = time.time()
-    expired = [key for key, rec in _store.items() if now - rec.issued_at > EXPORT_TOKEN_TTL_SECONDS]
-    for key in expired:
-        _store.pop(key, None)
-
-
 def reset_export_tokens_for_tests() -> None:
-    _store.clear()
+    reset_export_persistence_for_tests()

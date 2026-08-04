@@ -69,7 +69,15 @@ export function DashboardListCardPreview({
   const loading = active && slotGranted && shouldFetch && layoutQuery.isLoading;
 
   useEffect(() => {
-    if (!active || slotGranted || eager || navSuspended) return undefined;
+    if (navSuspended) {
+      setSlotGranted((prev) => {
+        if (prev && !eager) return false;
+        return prev;
+      });
+      if (!eager) setActive(false);
+      return undefined;
+    }
+    if (!active || slotGranted || eager) return undefined;
     let cancelled = false;
     void requestListPreviewSlot().then(() => {
       if (!cancelled) setSlotGranted(true);
@@ -105,23 +113,24 @@ export function DashboardListCardPreview({
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry?.isIntersecting && !navSuspended) {
+        if (navSuspended) return;
+        if (entry?.isIntersecting) {
           setActive(true);
-          observer.disconnect();
+        } else {
+          setActive(false);
+          setSlotGranted(false);
         }
       },
       { rootMargin: "80px" },
     );
     observer.observe(el);
 
-    // 导航挂起结束后元素已在视口内，需主动同步一次
-  const syncVisible = () => {
+    const syncVisible = () => {
       if (navSuspended) return;
       const rect = el.getBoundingClientRect();
       const margin = 80;
       if (rect.bottom >= -margin && rect.top <= window.innerHeight + margin) {
         setActive(true);
-        observer.disconnect();
       }
     };
     syncVisible();

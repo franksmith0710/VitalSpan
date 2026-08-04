@@ -1,6 +1,11 @@
-import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DashboardLayoutV2 } from "@/components/dashboard/layoutUtils";
+import {
+  beginAdminNavTransition,
+  endAdminNavTransition,
+  resetAdminNavTransitionForTests,
+} from "@/lib/adminHeavyRenderSuspend";
 import { DashboardListCardPreview } from "./DashboardListCardPreview";
 
 vi.mock("./DashboardLayoutPreview", () => ({
@@ -45,6 +50,21 @@ const sampleLayout: DashboardLayoutV2 = {
 describe("DashboardListCardPreview", () => {
   afterEach(() => {
     cleanup();
+    resetAdminNavTransitionForTests();
+  });
+
+  beforeEach(() => {
+    Element.prototype.getBoundingClientRect = vi.fn(() => ({
+      width: 320,
+      height: 180,
+      top: 0,
+      left: 0,
+      right: 320,
+      bottom: 180,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    }));
   });
 
   it("shows empty icon when dashboard has no widgets", () => {
@@ -61,5 +81,18 @@ describe("DashboardListCardPreview", () => {
     render(<DashboardListCardPreview layoutJson={sampleLayout} eager />);
     expect(screen.getByTestId("dashboard-list-card-live-preview")).toBeInTheDocument();
     expect(screen.getByTestId("data-screen-presenter-mock")).toBeInTheDocument();
+  });
+
+  it("recovers live preview after nav suspend ends while in viewport", async () => {
+    beginAdminNavTransition();
+    const { rerender } = render(<DashboardListCardPreview layoutJson={sampleLayout} />);
+    expect(screen.queryByTestId("dashboard-list-card-live-preview")).toBeNull();
+
+    endAdminNavTransition();
+    rerender(<DashboardListCardPreview layoutJson={sampleLayout} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("dashboard-list-card-live-preview")).toBeInTheDocument();
+    });
   });
 });

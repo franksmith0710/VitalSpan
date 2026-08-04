@@ -82,7 +82,14 @@ export function TemplateCardPreview({
     !demoDatasourceId;
 
   useEffect(() => {
-    if (!active || slotGranted || eager || navSuspended) return undefined;
+    if (navSuspended) {
+      if (!eager) {
+        setActive(false);
+        setSlotGranted(false);
+      }
+      return undefined;
+    }
+    if (!active || slotGranted || eager) return undefined;
     let cancelled = false;
     void requestListPreviewSlot().then(() => {
       if (!cancelled) setSlotGranted(true);
@@ -118,9 +125,12 @@ export function TemplateCardPreview({
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry?.isIntersecting && !navSuspended) {
+        if (navSuspended) return;
+        if (entry?.isIntersecting) {
           setActive(true);
-          observer.disconnect();
+        } else {
+          setActive(false);
+          setSlotGranted(false);
         }
       },
       { rootMargin: "80px" },
@@ -133,7 +143,6 @@ export function TemplateCardPreview({
       const margin = 80;
       if (rect.bottom >= -margin && rect.top <= window.innerHeight + margin) {
         setActive(true);
-        observer.disconnect();
       }
     };
     syncVisible();

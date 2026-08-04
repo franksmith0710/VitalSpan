@@ -12,13 +12,19 @@ describe("listPreviewActivation", () => {
     resetListPreviewActivationForTests();
   });
 
-  it("grants one slot at a time by default", async () => {
-    await requestListPreviewSlot();
+  it("grants slots up to the concurrent limit", async () => {
+    const slots = Array.from({ length: MAX_LIST_PREVIEW_ACTIVATIONS }, () =>
+      requestListPreviewSlot(),
+    );
+    await Promise.all(slots);
     expect(getActiveListPreviewCountForTests()).toBe(MAX_LIST_PREVIEW_ACTIVATIONS);
   });
 
   it("queues additional requests until a slot is released", async () => {
-    await requestListPreviewSlot();
+    const slots = Array.from({ length: MAX_LIST_PREVIEW_ACTIVATIONS }, () =>
+      requestListPreviewSlot(),
+    );
+    await Promise.all(slots);
     const pending = requestListPreviewSlot();
     let resolved = false;
     void pending.then(() => {
