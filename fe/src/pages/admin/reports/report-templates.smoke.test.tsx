@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -16,6 +16,7 @@ const NODE_ID = "node-1";
 
 describe("report templates smoke", () => {
   beforeEach(() => {
+    mockApiFetch.mockReset();
     mockApiFetch.mockImplementation(async (path: string, opts?: { method?: string; body?: string }) => {
       if (path.startsWith("/api/v1/reports/catalog/nodes") && !path.includes("/extension")) {
         return {
@@ -39,7 +40,16 @@ describe("report templates smoke", () => {
         return { catalogNodeId: NODE_ID, metrics: [], filters: [] };
       }
       if (path.endsWith("/render-spec")) {
-        return { templateNodeId: NODE_ID, revision: 1, metrics: [], filters: [], renderVersion: "1" };
+        return {
+          templateNodeId: NODE_ID,
+          revision: 1,
+          metrics: [{ key: "amount", label: "金额", queryMode: "sql", expression: "SELECT 1" }],
+          filters: [],
+          renderVersion: "1.0",
+        };
+      }
+      if (path === "/api/v1/datasources?limit=200") {
+        return { items: [{ id: "ds-1", name: "Sample DB" }] };
       }
       if (path.includes("/run")) {
         return { status: "ready", renderSpec: { sections: [{ placeholder: true }] } };
@@ -81,7 +91,8 @@ describe("report templates smoke", () => {
     await waitFor(() => expect(screen.getByText("销售模板")).toBeInTheDocument());
     await userEvent.click(screen.getByRole("button", { name: "销售模板" }));
     await userEvent.click(screen.getByRole("tab", { name: "预览" }));
-    await waitFor(() => expect(screen.getByText(/"renderVersion"/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("渲染版本")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("金额")).toBeInTheDocument());
   });
 
   it("saves extension with toast on change note", async () => {
@@ -106,6 +117,46 @@ describe("report templates smoke", () => {
         expect.objectContaining({ method: "PUT" }),
       ),
     );
+  });
+
+  it("saves sql metric with expression in extension body", async () => {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <TooltipProvider delayDuration={0}>
+          <MemoryRouter>
+            <ReportTemplatesPage />
+          </MemoryRouter>
+        </TooltipProvider>
+      </QueryClientProvider>,
+    );
+    await waitFor(() => expect(screen.getByText("销售模板")).toBeInTheDocument());
+    await userEvent.click(screen.getByRole("button", { name: "销售模板" }));
+    await userEvent.click(screen.getByRole("tab", { name: "扩展配置" }));
+    fireEvent.change(screen.getByLabelText("指标键"), { target: { value: "revenue" } });
+    fireEvent.change(screen.getByLabelText("显示名"), { target: { value: "营收" } });
+    fireEvent.change(screen.getByLabelText("SQL 表达式"), {
+      target: { value: "SELECT SUM(amount) FROM orders" },
+    });
+    await userEvent.type(screen.getByLabelText("变更说明"), "添加 SQL 指标");
+    await userEvent.click(screen.getByRole("button", { name: "保存扩展配置" }));
+    await waitFor(() => {
+      const putCall = mockApiFetch.mock.calls.find(
+        ([path, opts]) => path.endsWith("/extension") && opts?.method === "PUT",
+      );
+      expect(putCall).toBeTruthy();
+      const body = JSON.parse((putCall?.[1] as { body: string }).body);
+      expect(body.metrics).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            key: "revenue",
+            label: "营收",
+            queryMode: "sql",
+            expression: "SELECT SUM(amount) FROM orders",
+          }),
+        ]),
+      );
+    });
   });
 });
 

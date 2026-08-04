@@ -57,7 +57,7 @@ export function ReportMetricDatasetFields({
   return (
     <div className="grid gap-4 sm:col-span-2">
       <div className="grid gap-2">
-        <Label htmlFor="metric-dataset">Dataset</Label>
+        <Label htmlFor="metric-dataset">数据集</Label>
         {listQuery.isLoading ? (
           <Skeleton className="h-11 w-full rounded-lg" />
         ) : (

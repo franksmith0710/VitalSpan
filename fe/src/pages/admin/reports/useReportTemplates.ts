@@ -29,6 +29,17 @@ export type TemplateDefinition = {
   exportHook?: { integrationPath: string; format: string; placeholder: boolean };
 };
 
+export type ExtensionMetric = {
+  key: string;
+  label: string;
+  visible?: boolean;
+  queryMode?: "sql" | "dataset";
+  expression?: string | null;
+  datasetId?: string | null;
+  boundConfigId?: string | null;
+  compareMode?: string;
+};
+
 export function useReportTemplates(parentId: string | null = null, templateKey: string | null = null) {
   const qc = useQueryClient();
   const nodesQuery = useQuery({
@@ -94,9 +105,10 @@ export function useCatalogExtension(nodeId: string | null) {
     queryFn: () =>
       apiFetch<{
         catalogNodeId: string;
-        metrics: Array<{ key: string; label: string; visible?: boolean }>;
+        metrics: ExtensionMetric[];
         filters: Array<{ key: string; operator: string }>;
         changeNote?: string | null;
+        defaultDataSourceId?: string | null;
       }>(`/api/v1/reports/catalog/nodes/${nodeId}/extension`),
     enabled: Boolean(nodeId),
     retry: false,

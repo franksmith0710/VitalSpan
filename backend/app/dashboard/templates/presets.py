@@ -9,6 +9,16 @@ import uuid
 from typing import Any
 
 from app.dashboard.templates.demo_datasource import TEMPLATE_DEMO_DATASOURCE_REF
+from app.dashboard.templates.presets_gov_assets import (
+    DASH_BLANK_BG,
+    DASH_DUAL_KPI_BG,
+    DASH_OPS_BG,
+    DASH_TRIPLE_BG,
+    SCREEN_COMMAND_BG,
+    SCREEN_GOV_BG,
+    SCREEN_SALES_GEO_BG,
+    SCREEN_TECH_BG,
+)
 from app.dashboard.templates.official_demo_sql import (
     SQL_DAILY_KPI,
     SQL_SALES_BY_CHANNEL,
@@ -235,6 +245,17 @@ def _materialize_dash_style(
     return style
 
 
+def _screen_chart(
+    *,
+    accent: str,
+    palette: list[str] | None = None,
+    **kwargs: Any,
+) -> dict[str, Any]:
+    chart_type = kwargs.get("chart_type", "bar")
+    de = _chart_de_style_for_accent(accent, chart_type=chart_type, palette=palette)
+    return _chart(de_style=de, **kwargs)
+
+
 def _chart_de_style_for_accent(
     accent: str,
     *,
@@ -335,12 +356,21 @@ def build_screen_blank_layout() -> dict[str, Any]:
         "canvas": {"width": 1920, "height": 1080},
         "widgets": [],
         "globalFilters": [],
-        "styleConfig": _screen_style(decor="gradient-radial"),
+        "styleConfig": _materialize_screen_style(
+            accent="#22d3ee",
+            canvas="#041016",
+            bg_image=SCREEN_COMMAND_BG,
+            palette_colors=["#22d3ee", "#38bdf8", "#6366f1", "#34d399", "#fbbf24", "#a78bfa"],
+        ),
     }
 
 
 def build_command_center_layout() -> dict[str, Any]:
-    left = _chart(
+    accent = "#22d3ee"
+    palette = ["#22d3ee", "#38bdf8", "#6366f1", "#34d399", "#fbbf24", "#a78bfa"]
+    left = _screen_chart(
+        accent=accent,
+        palette=palette,
         chart_type="bar",
         title="渠道销售",
         sql=SQL_SALES_BY_CHANNEL,
@@ -352,7 +382,9 @@ def build_command_center_layout() -> dict[str, Any]:
         height=380,
         order=2,
     )
-    center = _chart(
+    center = _screen_chart(
+        accent=accent,
+        palette=palette,
         chart_type="map",
         title="区域销售地图",
         sql=SQL_SALES_GEO_DRILL,
@@ -368,7 +400,9 @@ def build_command_center_layout() -> dict[str, Any]:
         height=520,
         order=3,
     )
-    right = _chart(
+    right = _screen_chart(
+        accent=accent,
+        palette=palette,
         chart_type="line",
         title="销售趋势",
         sql=SQL_SALES_TREND,
@@ -380,7 +414,9 @@ def build_command_center_layout() -> dict[str, Any]:
         height=380,
         order=4,
     )
-    bottom = _chart(
+    bottom = _screen_chart(
+        accent=accent,
+        palette=palette,
         chart_type="pie",
         title="省份占比",
         sql=SQL_SALES_BY_PROVINCE,
@@ -408,17 +444,21 @@ def build_command_center_layout() -> dict[str, Any]:
         "canvas": {"width": 1920, "height": 1080},
         "widgets": widgets,
         "globalFilters": [],
-        "styleConfig": _screen_style(
-            accent="#22d3ee",
-            canvas="#020617",
-            decor="gradient-radial",
-            bg_image="/template-assets/backgrounds/screen-dataease-aurora.svg",
+        "styleConfig": _materialize_screen_style(
+            accent=accent,
+            canvas="#041016",
+            bg_image=SCREEN_COMMAND_BG,
+            palette_colors=palette,
         ),
     }
 
 
 def build_tech_blue_layout() -> dict[str, Any]:
-    main = _chart(
+    accent = "#38bdf8"
+    palette = ["#38bdf8", "#22d3ee", "#6366f1", "#818cf8", "#34d399", "#f472b6"]
+    main = _screen_chart(
+        accent=accent,
+        palette=palette,
         chart_type="line",
         title="核心指标趋势",
         sql=SQL_SALES_TREND,
@@ -430,7 +470,9 @@ def build_tech_blue_layout() -> dict[str, Any]:
         height=780,
         order=2,
     )
-    kpi_left = _chart(
+    kpi_left = _screen_chart(
+        accent=accent,
+        palette=palette,
         chart_type="bar",
         title="渠道对比",
         sql=SQL_SALES_BY_CHANNEL,
@@ -442,7 +484,9 @@ def build_tech_blue_layout() -> dict[str, Any]:
         height=80,
         order=3,
     )
-    kpi_right = _chart(
+    kpi_right = _screen_chart(
+        accent=accent,
+        palette=palette,
         chart_type="pie",
         title="区域结构",
         sql=SQL_SALES_BY_PROVINCE,
@@ -458,25 +502,29 @@ def build_tech_blue_layout() -> dict[str, Any]:
         "version": 2,
         "canvas": {"width": 1920, "height": 1080},
         "widgets": [
-            _title_bar(x=480, y=20, width=960, height=80, order=0),
+            _title_bar(accent=accent, x=480, y=20, width=960, height=80, order=0),
             _clock(x=1680, y=28, width=200, height=56, order=1),
-            _border("border-5", x=80, y=120, width=1760, height=840, order=5),
+            _border("border-5", accent=accent, x=80, y=120, width=1760, height=840, order=5),
             main,
             kpi_left,
             kpi_right,
         ],
         "globalFilters": [],
-        "styleConfig": _screen_style(
-            accent="#38bdf8",
+        "styleConfig": _materialize_screen_style(
+            accent=accent,
             canvas="#0c1222",
-            decor="gradient-brand",
-            bg_image="/template-assets/backgrounds/screen-dataease-aurora.svg",
+            bg_image=SCREEN_TECH_BG,
+            palette_colors=palette,
         ),
     }
 
 
 def build_gov_minimal_layout() -> dict[str, Any]:
-    center_map = _chart(
+    accent = "#818cf8"
+    palette = ["#818cf8", "#6366f1", "#a78bfa", "#34d399", "#22d3ee", "#f472b6"]
+    center_map = _screen_chart(
+        accent=accent,
+        palette=palette,
         chart_type="map",
         title="全国销售分布",
         sql=SQL_SALES_GEO_DRILL,
@@ -492,7 +540,9 @@ def build_gov_minimal_layout() -> dict[str, Any]:
         height=640,
         order=2,
     )
-    left_kpi = _chart(
+    left_kpi = _screen_chart(
+        accent=accent,
+        palette=palette,
         chart_type="bar",
         title="重点城市",
         sql=SQL_TOP_CITIES,
@@ -504,7 +554,9 @@ def build_gov_minimal_layout() -> dict[str, Any]:
         height=300,
         order=3,
     )
-    right_kpi = _chart(
+    right_kpi = _screen_chart(
+        accent=accent,
+        palette=palette,
         chart_type="line",
         title="月度趋势",
         sql=SQL_SALES_TREND,
@@ -520,30 +572,20 @@ def build_gov_minimal_layout() -> dict[str, Any]:
         "version": 2,
         "canvas": {"width": 1920, "height": 1080},
         "widgets": [
-            _title_bar(x=460, y=40, width=1000, height=88, order=0),
+            _title_bar(accent=accent, x=460, y=40, width=1000, height=88, order=0),
             _clock(x=1680, y=48, width=200, height=56, order=1),
-            _border("border-2", x=340, y=176, width=1240, height=688, order=5),
+            _border("border-2", accent=accent, x=340, y=176, width=1240, height=688, order=5),
             left_kpi,
             center_map,
             right_kpi,
         ],
         "globalFilters": [],
-        "styleConfig": {
-            "surfaceKind": "data-screen",
-            "colorScheme": "dark",
-            "canvasBackground": "#0f172a",
-            "canvasBackgroundCustom": True,
-            "canvasDecorPresetId": "gradient-soft",
-            "themeAccent": "#6366f1",
-            "canvasBackgroundImage": "/template-assets/backgrounds/screen-gov-indigo.svg",
-            "widgetStyle": {
-                "background": "rgba(30, 41, 59, 0.85)",
-                "borderColor": "rgba(99, 102, 241, 0.4)",
-                "borderWidth": 1,
-                "borderEnabled": True,
-            },
-            "titleStyle": {"color": "#f8fafc"},
-        },
+        "styleConfig": _materialize_screen_style(
+            accent=accent,
+            canvas="#0f172a",
+            bg_image=SCREEN_GOV_BG,
+            palette_colors=palette,
+        ),
     }
 
 
@@ -552,7 +594,12 @@ def build_dash_blank_layout() -> dict[str, Any]:
         "version": 1,
         "widgets": [],
         "globalFilters": [],
-        "styleConfig": _dash_style(decor="dots"),
+        "styleConfig": _materialize_dash_style(
+            scheme="light",
+            accent="#465fff",
+            bg_image=DASH_BLANK_BG,
+            palette_colors=["#465fff", "#6282ff", "#3b82f6", "#64748b", "#94a3b8", "#cbd5e1"],
+        ),
     }
 
 
@@ -597,10 +644,12 @@ def build_dual_kpi_layout() -> dict[str, Any]:
         "version": 1,
         "widgets": [kpi, w1, w2],
         "globalFilters": [],
-        "styleConfig": _dash_style(
+        "styleConfig": _materialize_dash_style(
             accent="#465fff",
-            decor="gradient-radial",
+            scheme="light",
             canvas="#f8fafc",
+            bg_image=DASH_DUAL_KPI_BG,
+            palette_colors=["#465fff", "#6282ff", "#3b82f6", "#6366f1", "#64748b", "#94a3b8"],
         ),
     }
 
@@ -650,17 +699,23 @@ def build_triple_analysis_layout() -> dict[str, Any]:
         "version": 1,
         "widgets": [w_map, w_pie, w_table],
         "globalFilters": [],
-        "styleConfig": _dash_style(
+        "styleConfig": _materialize_dash_style(
             accent="#7c3aed",
-            decor="gradient-soft",
-            canvas="#ffffff",
+            scheme="light",
+            canvas="#faf5ff",
+            bg_image=DASH_TRIPLE_BG,
+            palette_colors=["#7c3aed", "#8b5cf6", "#6366f1", "#3b82f6", "#64748b", "#c4b5fd"],
         ),
     }
 
 
 def build_sales_geo_screen_layout() -> dict[str, Any]:
     """销售地理大屏：地图居中 + 两侧指标。"""
-    map_w = _chart(
+    accent = "#34d399"
+    palette = ["#34d399", "#10b981", "#6ee7b7", "#22d3ee", "#38bdf8", "#a78bfa"]
+    map_w = _screen_chart(
+        accent=accent,
+        palette=palette,
         chart_type="map",
         title="销售地理分布",
         sql=SQL_SALES_GEO_DRILL,
@@ -680,10 +735,12 @@ def build_sales_geo_screen_layout() -> dict[str, Any]:
         "version": 2,
         "canvas": {"width": 1920, "height": 1080},
         "widgets": [
-            _title_bar(x=480, y=24, width=960, height=72, order=0),
+            _title_bar(accent=accent, x=480, y=24, width=960, height=72, order=0),
             _clock(x=1680, y=32, width=200, height=56, order=1),
-            _border("border-7", x=440, y=112, width=1040, height=776, order=5),
-            _chart(
+            _border("border-7", accent=accent, x=440, y=112, width=1040, height=776, order=5),
+            _screen_chart(
+                accent=accent,
+                palette=palette,
                 chart_type="bar",
                 title="省份 TOP",
                 sql=SQL_SALES_BY_PROVINCE,
@@ -695,7 +752,9 @@ def build_sales_geo_screen_layout() -> dict[str, Any]:
                 height=340,
                 order=3,
             ),
-            _chart(
+            _screen_chart(
+                accent=accent,
+                palette=palette,
                 chart_type="line",
                 title="趋势",
                 sql=SQL_SALES_TREND,
@@ -708,7 +767,9 @@ def build_sales_geo_screen_layout() -> dict[str, Any]:
                 order=4,
             ),
             map_w,
-            _chart(
+            _screen_chart(
+                accent=accent,
+                palette=palette,
                 chart_type="pie",
                 title="渠道",
                 sql=SQL_SALES_BY_CHANNEL,
@@ -720,7 +781,9 @@ def build_sales_geo_screen_layout() -> dict[str, Any]:
                 height=340,
                 order=6,
             ),
-            _chart(
+            _screen_chart(
+                accent=accent,
+                palette=palette,
                 chart_type="bar",
                 title="城市 TOP10",
                 sql=SQL_TOP_CITIES,
@@ -734,11 +797,11 @@ def build_sales_geo_screen_layout() -> dict[str, Any]:
             ),
         ],
         "globalFilters": [],
-        "styleConfig": _screen_style(
-            accent="#34d399",
+        "styleConfig": _materialize_screen_style(
+            accent=accent,
             canvas="#041016",
-            decor="gradient-radial",
-            bg_image="/template-assets/backgrounds/screen-emerald-grid.svg",
+            bg_image=SCREEN_SALES_GEO_BG,
+            palette_colors=palette,
         ),
     }
 
@@ -802,10 +865,11 @@ def build_ops_dashboard_layout() -> dict[str, Any]:
             ),
         ],
         "globalFilters": [],
-        "styleConfig": _dash_style(
+        "styleConfig": _materialize_dash_style(
             scheme="light",
             accent="#0ea5e9",
-            decor="grid",
-            canvas="#f1f5f9",
+            canvas="#f0f9ff",
+            bg_image=DASH_OPS_BG,
+            palette_colors=["#0ea5e9", "#38bdf8", "#0284c7", "#6366f1", "#64748b", "#7dd3fc"],
         ),
     }

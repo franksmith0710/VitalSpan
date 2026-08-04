@@ -175,25 +175,20 @@ class RestApiConnector:
         if not isinstance(path, str) or not path.strip():
             raise QueryError("QUERY_NATIVE_INVALID_BODY", "body.path is required", 422)
         method = str(body.get("method", "GET")).upper()
-        resp = connection.request(method, path if path.startswith("/") else f"/{path}")
-        if resp.status_code == 401:
-            raise QueryError(REST_API_AUTH_FAILED, "Unauthorized", 401)
-        if not resp.is_success:
-            raise QueryError(REST_API_PROBE_FAILED, f"HTTP {resp.status_code}", 400)
-        payload = resp.json()
+        if method != "GET":
+            raise QueryError(REST_API_PROBE_FAILED, f"Unsupported method {method}", 400)
+        request_path = path if path.startswith("/") else f"/{path}"
+        base = str(getattr(connection, "base_url", ""))
+        if _is_local_vitalspan_base(base) and _is_sample_api_path(request_path):
+            payload = _fetch_sample_api_payload(request_path, connection.auth)
+        else:
+            resp = connection.request(method, request_path)
+            if resp.status_code == 401:
+                raise QueryError(REST_API_AUTH_FAILED, "Unauthorized", 401)
+            if not resp.is_success:
+                raise QueryError(REST_API_PROBE_FAILED, f"HTTP {resp.status_code}", 400)
+            payload = resp.json()
         json_path = body.get("jsonPath")
-        if json_path and isinstance(payload, dict):
-            payload = payload.get(json_path, [])
-        if isinstance(payload, dict):
-            columns = sorted(payload.keys())[:REST_API_MAX_COLUMNS]
-            rows = [[payload.get(c) for c in columns]]
-            return columns, rows, False
-        if isinstance(payload, list):
-            if not payload:
-                return [], [], False
-            if isinstance(payload[0], dict):
-                columns = sorted({k for item in payload[:limit] for k in item})[:REST_API_MAX_COLUMNS]
-                rows = [[item.get(c) for c in columns] for item in payload[offset : offset + limit + 1]]
-                truncated = len(rows) > limit
-                return columns, rows[:limit], truncated
-        return ["value"], [[json.dumps(payload)]], False
+        if isinstance(json_path, str):
+            return _payload_to_rows(payload, limit=limit, offset=offset, json_path=json_path)
+        return _payload_to_rows(payload, limit=limit, offset=offset, json_path=None)

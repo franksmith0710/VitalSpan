@@ -33,7 +33,7 @@ describe("templateLabels", () => {
 
   it("resolves builtin template thumbnails", () => {
     expect(resolveTemplateThumbnail("builtin-dash-blank", null)).toBe(
-      "/template-assets/thumbs/dash-blank.svg",
+      "/template-assets/packs/gov-enterprise-v1/thumbs/canvas-light-frost-dot-matrix.svg",
     );
     expect(resolveTemplateThumbnail("custom", "/custom.png")).toBe("/custom.png");
   });
