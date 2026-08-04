@@ -23,6 +23,10 @@ class ScheduleCreate(BaseModel):
     attachment_formats: list[Literal["pdf", "excel"]] = Field(
         default_factory=lambda: ["pdf"], alias="attachmentFormats",
     )
+    delivery_channels: list[Literal["email", "wecom", "dingtalk"]] = Field(
+        default_factory=lambda: ["email"], alias="deliveryChannels",
+    )
+    name: str | None = Field(default=None, max_length=120)
     cron: str = Field(min_length=1, max_length=64)
     timezone: str = Field(default="Asia/Shanghai", max_length=64)
 
@@ -42,15 +46,29 @@ class ScheduleTransitionIn(BaseModel):
     action: Literal["schedule", "pause", "resume", "cancel"]
 
 
+class ScheduleUpdate(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    name: str | None = Field(default=None, max_length=120)
+    cron: str | None = Field(default=None, min_length=1, max_length=64)
+    timezone: str | None = Field(default=None, max_length=64)
+    recipients: list[ScheduleRecipientIn] | None = None
+    attachment_formats: list[Literal["pdf", "excel"]] | None = Field(default=None, alias="attachmentFormats")
+    delivery_channels: list[Literal["email", "wecom", "dingtalk"]] | None = Field(
+        default=None, alias="deliveryChannels",
+    )
+
+
 class ScheduleStatusOut(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     id: uuid.UUID
+    name: str | None = None
     catalog_node_id: uuid.UUID | None = Field(default=None, alias="catalogNodeId")
     source_type: str = Field(default="template", alias="sourceType")
     source_id: uuid.UUID = Field(alias="sourceId")
     source_label: str | None = Field(default=None, alias="sourceLabel")
     recipients: list[ScheduleRecipientIn] = Field(default_factory=list)
     attachment_formats: list[str] = Field(default_factory=list, alias="attachmentFormats")
+    delivery_channels: list[str] = Field(default_factory=lambda: ["email"], alias="deliveryChannels")
     cron: str
     timezone: str
     status: str

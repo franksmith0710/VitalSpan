@@ -18,13 +18,17 @@ import { ScheduleDeliveryHealthAlert } from "./ScheduleDeliveryHealthAlert";
 import type { ScheduleRecipient } from "../useReportSchedules";
 import type { ScheduleWizardState } from "@/lib/scheduleCronWizard";
 
+export type DeliveryChannel = "email" | "wecom" | "dingtalk";
+export type AttachmentFormat = "pdf" | "excel";
+
 export type ScheduleFormValue = {
   wizard: ScheduleWizardState;
   cron: string;
   showAdvancedCron: boolean;
   timezone: string;
   recipients: ScheduleRecipient[];
-  attachmentFormats: ("pdf" | "excel")[];
+  attachmentFormats: AttachmentFormat[];
+  deliveryChannels: DeliveryChannel[];
 };
 
 export const DEFAULT_SCHEDULE_FORM: ScheduleFormValue = {
@@ -40,6 +44,7 @@ export const DEFAULT_SCHEDULE_FORM: ScheduleFormValue = {
   timezone: "Asia/Shanghai",
   recipients: DEFAULT_RECIPIENTS,
   attachmentFormats: ["pdf"],
+  deliveryChannels: ["email"],
 };
 
 export function resolveScheduleCron(form: ScheduleFormValue): string {
@@ -51,23 +56,40 @@ type ScheduleFormFieldsProps = {
   onChange: (next: ScheduleFormValue) => void;
   disabled?: boolean;
   showAttachments?: boolean;
+  showDeliveryChannels?: boolean;
   idPrefix?: string;
 };
+
+const ATTACHMENT_OPTIONS: { value: AttachmentFormat; label: string; hint: string }[] = [
+  { value: "pdf", label: "PDF 可视化快照", hint: "Playwright 截取画布像素，推荐" },
+  { value: "excel", label: "Excel 布局清单", hint: "组件列表 CSV，非图表渲染" },
+];
+
+const CHANNEL_OPTIONS: { value: DeliveryChannel; label: string }[] = [
+  { value: "email", label: "邮件" },
+  { value: "wecom", label: "企业微信" },
+  { value: "dingtalk", label: "钉钉" },
+];
 
 export function ScheduleFormFields({
   value,
   onChange,
   disabled,
   showAttachments = false,
+  showDeliveryChannels = false,
   idPrefix = "schedule-form",
 }: ScheduleFormFieldsProps) {
   const patch = (partial: Partial<ScheduleFormValue>) => onChange({ ...value, ...partial });
 
-  const toggleFormat = (format: "pdf" | "excel", checked: boolean) => {
+  const setAttachmentFormat = (format: AttachmentFormat) => {
+    patch({ attachmentFormats: [format] });
+  };
+
+  const toggleChannel = (channel: DeliveryChannel, checked: boolean) => {
     const next = checked
-      ? [...new Set([...value.attachmentFormats, format])]
-      : value.attachmentFormats.filter((f) => f !== format);
-    patch({ attachmentFormats: next.length ? next : ["pdf"] });
+      ? [...new Set([...value.deliveryChannels, channel])]
+      : value.deliveryChannels.filter((c) => c !== channel);
+    patch({ deliveryChannels: next.length ? next : ["email"] });
   };
 
   return (
@@ -109,27 +131,47 @@ export function ScheduleFormFields({
         {showAttachments ? (
           <div className="grid gap-2">
             <Label>附件格式</Label>
-            <div className="flex min-h-11 flex-wrap items-center gap-4">
-              <label className="flex items-center gap-2 text-theme-sm">
-                <Checkbox
-                  checked={value.attachmentFormats.includes("pdf")}
-                  disabled={disabled}
-                  onCheckedChange={(c) => toggleFormat("pdf", c === true)}
-                />
-                PDF
-              </label>
-              <label className="flex items-center gap-2 text-theme-sm">
-                <Checkbox
-                  checked={value.attachmentFormats.includes("excel")}
-                  disabled={disabled}
-                  onCheckedChange={(c) => toggleFormat("excel", c === true)}
-                />
-                Excel
-              </label>
+            <div className="space-y-2">
+              {ATTACHMENT_OPTIONS.map((opt) => (
+                <label key={opt.value} className="flex cursor-pointer items-start gap-2 text-theme-sm">
+                  <input
+                    type="radio"
+                    name={`${idPrefix}-format`}
+                    checked={value.attachmentFormats[0] === opt.value}
+                    disabled={disabled}
+                    onChange={() => setAttachmentFormat(opt.value)}
+                    className="mt-1"
+                  />
+                  <span>
+                    {opt.label}
+                    <span className="block text-theme-xs text-gray-500">{opt.hint}</span>
+                  </span>
+                </label>
+              ))}
             </div>
           </div>
         ) : null}
       </div>
+      {showDeliveryChannels ? (
+        <div className="grid gap-2">
+          <Label>投递方式</Label>
+          <div className="flex min-h-11 flex-wrap items-center gap-4">
+            {CHANNEL_OPTIONS.map((opt) => (
+              <label key={opt.value} className="flex items-center gap-2 text-theme-sm">
+                <Checkbox
+                  checked={value.deliveryChannels.includes(opt.value)}
+                  disabled={disabled}
+                  onCheckedChange={(c) => toggleChannel(opt.value, c === true)}
+                />
+                {opt.label}
+              </label>
+            ))}
+          </div>
+          <p className="text-theme-xs text-gray-500">
+            企微/钉钉发送摘要与下载引用；PDF 附件经邮件投递。
+          </p>
+        </div>
+      ) : null}
       <Button
         type="button"
         variant="ghost"

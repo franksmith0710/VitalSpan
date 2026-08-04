@@ -12,19 +12,26 @@ from app.dashboard import export_jobs as dashboard_export_jobs
 from app.dashboard import service as dash_service
 from app.datasources.models import get_meta_engine
 from app.reports.catalog.acl import register_artifact_owner
-from app.reports.extension import service as extension_service
 from app.reports.scheduler import acl as schedule_acl
 from app.reports.scheduler.delivery import dispatch_artifact
 from app.reports.scheduler.errors import ScheduleError
 from app.reports.scheduler.recipients import resolve_recipient_emails
 from app.reports.scheduler.schemas import ScheduleExecuteOut, ScheduleRecipientIn
 from app.reports.scheduler import service as scheduler_service
+from app.reports.scheduler.store import MemoryScheduleStore, get_schedule_store
 
+_EXECUTE_BUDGET_MS = 20
+_SEMI_BUDGET_MS = 35
+
+# Backward compat for tests that clear these directly
 _EXECUTION_LOG: dict[str, ScheduleExecuteOut] = {}
 _EXECUTION_BY_ID: dict[uuid.UUID, ScheduleExecuteOut] = {}
 _HISTORY: dict[uuid.UUID, list[dict]] = {}
-_EXECUTE_BUDGET_MS = 20
-_SEMI_BUDGET_MS = 35
+
+
+def _memory_store() -> MemoryScheduleStore | None:
+    store = get_schedule_store()
+    return store if isinstance(store, MemoryScheduleStore) else None
 
 
 def _append_history(
@@ -33,8 +40,7 @@ def _append_history(
     *,
     error_message: str | None = None,
 ) -> None:
-    bucket = _HISTORY.setdefault(schedule_id, [])
-    bucket.append({
+    entry = {
         "executionId": out.execution_id,
         "scheduleId": out.schedule_id,
         "status": out.status,
@@ -43,28 +49,35 @@ def _append_history(
         "executedAt": out.executed_at,
         "errorMessage": error_message or out.error_message,
         "parentExecutionId": out.parent_execution_id,
-    })
+    }
+    mem = _memory_store()
+    if mem is not None:
+        mem.append_execution(schedule_id, entry)
+    else:
+        store = get_schedule_store()
+        store.append_execution(schedule_id, entry, out.model_dump(by_alias=True))
+    _HISTORY.setdefault(schedule_id, []).append(entry)
 
 
 def list_recent_failed_executions(limit: int = 20) -> dict:
-    rows: list[dict] = []
-    for schedule_id, history in _HISTORY.items():
-        for entry in history:
-            status = entry.get("status", "")
-            if "failed" not in status and "degraded" not in status:
-                continue
-            rows.append({**entry, "scheduleId": schedule_id})
-    rows.sort(key=lambda r: r.get("executedAt", ""), reverse=True)
-    page = rows[:limit]
-    return {"items": page, "total": len(rows)}
+    mem = _memory_store()
+    rows: list[dict] = mem.list_all_executions() if mem else get_schedule_store().list_all_executions()
+    failed_rows: list[dict] = []
+    for entry in rows:
+        status = entry.get("status", "")
+        if "failed" not in status and "degraded" not in status:
+            continue
+        failed_rows.append(entry)
+    failed_rows.sort(key=lambda r: r.get("executedAt", ""), reverse=True)
+    return {"items": failed_rows[:limit], "total": len(failed_rows)}
 
 
 def list_executions(schedule_id: uuid.UUID, limit: int = 50, offset: int = 0) -> dict:
-    rows = sorted(
-        _HISTORY.get(schedule_id, []),
-        key=lambda r: r["executedAt"],
-        reverse=True,
-    )
+    mem = _memory_store()
+    if mem is not None:
+        rows = sorted(mem.list_executions(schedule_id), key=lambda r: r["executedAt"], reverse=True)
+    else:
+        rows = get_schedule_store().list_executions(schedule_id)
     return {"items": rows[offset : offset + limit], "total": len(rows)}
 
 
@@ -87,7 +100,6 @@ def mock_execute_schedule(
         executionId=execution_id,
         scheduleId=schedule_id,
         status="mock_succeeded",
-        # test:// only via X-Rpt-Execute-Mock — never customer-default mock://
         artifactRef=f"test://reports/{schedule_id}/{execution_id}",
         idempotencyKey=idempotency_key,
         executedAt=datetime.now(UTC).isoformat(),
@@ -96,6 +108,33 @@ def mock_execute_schedule(
     _EXECUTION_BY_ID[execution_id] = out
     _append_history(schedule_id, out)
     return out
+
+
+def _export_dashboard_attachments(
+    source_id: uuid.UUID,
+    formats: list[str],
+    actor: UserContext,
+) -> tuple[str, str | None, list[tuple[bytes, str, str]], str | None]:
+    attachments: list[tuple[bytes, str, str]] = []
+    artifact_kind: str | None = None
+    artifact_ref = ""
+    export_error: str | None = None
+    for fmt in formats:
+        try:
+            with Session(bind=get_meta_engine()) as db:
+                job = dashboard_export_jobs.submit_dashboard_export(db, source_id, fmt, actor)
+            if not artifact_ref:
+                artifact_ref = job.download_url or ""
+                artifact_kind = job.artifact_kind
+            job_id = dashboard_export_jobs.parse_export_job_id_from_download_url(job.download_url)
+            if job_id is not None:
+                attachment = dashboard_export_jobs.read_export_attachment(job_id)
+                if attachment is not None:
+                    attachments.append(attachment)
+        except dash_service.DashboardError as exc:
+            export_error = exc.message
+            break
+    return artifact_ref, artifact_kind, attachments, export_error
 
 
 def semi_real_execute_schedule(
@@ -117,40 +156,27 @@ def semi_real_execute_schedule(
     source_id = row.get("source_id") or row["catalog_node_id"]
     revision_snapshot = None
     if source_type == "template" and source_id is not None:
+        from app.reports.extension import service as extension_service
         try:
             ext = extension_service.get_extension(source_id)
-            revision_snapshot = {
-                "revision": ext.revision,
-                "metricCount": len(ext.metrics),
-            }
+            revision_snapshot = {"revision": ext.revision, "metricCount": len(ext.metrics)}
         except Exception:
             pass
     artifact_ref = f"semi://reports/{schedule_id}/{execution_id}"
     artifact_kind = "template_render"
     export_error: str | None = None
-    attachment_bytes: bytes | None = None
-    attachment_filename: str | None = None
-    attachment_mime: str | None = None
+    attachments: list[tuple[bytes, str, str]] = []
     if source_type in {"dashboard", "data_screen"} and source_id is not None:
-        fmt = (row.get("attachment_formats") or ["pdf"])[0]
-        try:
-            with Session(bind=get_meta_engine()) as db:
-                job = dashboard_export_jobs.submit_dashboard_export(db, source_id, fmt, actor)
-            artifact_kind = job.artifact_kind or "visual_snapshot"
-            artifact_ref = job.download_url or artifact_ref
-            job_id = dashboard_export_jobs.parse_export_job_id_from_download_url(job.download_url)
-            if job_id is not None:
-                attachment = dashboard_export_jobs.read_export_attachment(job_id)
-                if attachment is not None:
-                    attachment_bytes, attachment_mime, attachment_filename = attachment
-        except dash_service.DashboardError as exc:
-            export_error = exc.message
+        formats = row.get("attachment_formats") or ["pdf"]
+        artifact_ref, artifact_kind, attachments, export_error = _export_dashboard_attachments(
+            source_id, formats, actor,
+        )
     if export_error:
         out = ScheduleExecuteOut(
             executionId=execution_id,
             scheduleId=schedule_id,
             status="semi_real_failed",
-            artifactRef=artifact_ref,
+            artifactRef=artifact_ref or f"semi://reports/{schedule_id}/{execution_id}",
             artifactKind=None,
             idempotencyKey=idempotency_key,
             executedAt=datetime.now(UTC).isoformat(),
@@ -173,15 +199,20 @@ def semi_real_execute_schedule(
             )
         finally:
             session.close()
+    channels = row.get("delivery_channels") or ["email"]
+    att_bytes = attachments[0][0] if attachments else None
+    att_mime = attachments[0][1] if attachments else None
+    att_name = attachments[0][2] if attachments else None
     delivery = dispatch_artifact(
         artifact_ref,
-        ["email"],
+        channels,
         delivery_mock,
         recipient_emails=recipient_emails,
         artifact_kind=artifact_kind,
-        attachment_bytes=attachment_bytes,
-        attachment_filename=attachment_filename,
-        attachment_mime=attachment_mime,
+        attachment_bytes=att_bytes,
+        attachment_filename=att_name,
+        attachment_mime=att_mime,
+        attachments=attachments,
     )
     error_message: str | None = None
     if delivery_mock == "fail":

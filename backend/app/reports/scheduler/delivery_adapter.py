@@ -47,6 +47,7 @@ def _send_smtp(
     attachment_bytes: bytes | None = None,
     attachment_filename: str | None = None,
     attachment_mime: str | None = None,
+    attachments: list[tuple[bytes, str, str]] | None = None,
 ) -> dict:
     to_addrs = recipient_emails or [settings.rpt_smtp_from]
     subject, body_tpl = _ARTIFACT_EMAIL.get(
@@ -59,15 +60,13 @@ def _send_smtp(
     msg["To"] = ", ".join(to_addrs)
     body = body_tpl.format(ref=artifact_ref) if "{ref}" in body_tpl else body_tpl
     msg.set_content(body)
-    if attachment_bytes and attachment_filename:
-        maintype, _, subtype = (attachment_mime or "application/pdf").partition("/")
+    att_list = attachments or []
+    if not att_list and attachment_bytes and attachment_filename:
+        att_list = [(attachment_bytes, attachment_mime or "application/pdf", attachment_filename)]
+    for att_bytes, att_mime, att_name in att_list:
+        maintype, _, subtype = (att_mime or "application/pdf").partition("/")
         subtype = subtype or "octet-stream"
-        msg.add_attachment(
-            attachment_bytes,
-            maintype=maintype,
-            subtype=subtype,
-            filename=attachment_filename,
-        )
+        msg.add_attachment(att_bytes, maintype=maintype, subtype=subtype, filename=att_name)
     try:
         with smtplib.SMTP(settings.rpt_smtp_host, settings.rpt_smtp_port, timeout=5) as smtp:
             if settings.rpt_smtp_user and settings.rpt_smtp_password:

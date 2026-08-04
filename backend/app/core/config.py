@@ -47,6 +47,10 @@ class Settings(BaseSettings):
     fe_base_url: str = "http://127.0.0.1:5173"
     fe_base_path: str = ""
     rpt_export_fallback: bool = False
+    rpt_schedule_store: Literal["memory", "db"] = "memory"
+    artifact_storage_backend: Literal["memory", "fs"] = "fs"
+    artifact_storage_path: str = "./data/artifacts"
+    rpt_scheduler_enabled: bool = True
 
     _DEV_JWT_SM2_PRIVATE: ClassVar[str] = (
         "3DA75A807474C867E8E5C60B3E4E32DC8D319D4447B9594D394E6D3BD8778D1F"

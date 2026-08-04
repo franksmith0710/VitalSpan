@@ -5,7 +5,7 @@
 | 模块路径 | `backend/app/reports/` |
 | PRD | [F08-RPT](../automate/prd/F08-RPT.md) · RPT-001 ~ RPT-007 |
 | 里程碑 | M6 / M10 / M12 |
-| 状态 | **部分（G5 PDF live 已闭环 · SMTP 附件已实现 · MailHog 本地 optional · [真值 2026-08-03](../feature-truth/2026-08-03-report-center-g5-visual-pdf-truth-audit.md)）** |
+| 状态 | **部分 → ToB 完善（持久化 ORM · 多通道 · 多计划 UI · 2026-08-04）** |
 
 ## 职责
 

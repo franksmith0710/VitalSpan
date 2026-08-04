@@ -116,6 +116,21 @@ flowchart TB
 
 **代码锚点**：`backend/app/dashboard/export_render.py` · `export_token.py` · `fe/src/pages/export/DashboardExportSnapshotPage.tsx` · `docs/feature-design/2026-08-03-report-center-delivery-closure.md`
 
+### ADR-19 · 报表调度持久化与多通道投递（RPT-005 ToB）
+
+**背景**：调度/执行/导出 job 原进程内内存，重启丢失；投递仅 SMTP 单附件。
+
+**决策**：
+
+- ORM 表：`report_schedules` · `report_schedule_executions` · `dashboard_export_jobs` · `export_tokens` · `report_schedule_tick_locks`（Alembic `0032`）。
+- 存储切换：`RPT_SCHEDULE_STORE=memory|db`（默认 memory 单测；生产 `db`）。
+- 产物：`ARTIFACT_STORAGE_BACKEND=fs|memory`；`ARTIFACT_STORAGE_PATH` 本地卷。
+- 权限：新增 `dashboard:schedule`；看板 owner + ACL `owner_id` 可管理本人定时计划。
+- 投递：`delivery_channels` 支持 `email` · `wecom` · `dingtalk`；cron 分布式锁经 DB tick_key。
+- API：`PATCH /api/v1/reports/schedules/{id}`（仅 draft）。
+
+**代码锚点**：`backend/app/reports/models.py` · `scheduler/store.py` · `artifact_store.py` · `scheduler/channels/`
+
 ### ADR-14 · 组织组件库（DASH-010）
 
 - **引用**：`LayoutWidget.componentRef = { componentId, pinnedRevision?, detached? }`；运行时经 `resolveLayoutWidget` 合并 `payloadJson`

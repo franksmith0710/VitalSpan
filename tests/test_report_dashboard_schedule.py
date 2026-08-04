@@ -45,20 +45,56 @@ def _reset_schedules():
     from app.dashboard.export_jobs import reset_export_jobs_for_tests
     from app.dashboard.export_token import reset_export_tokens_for_tests
     from app.reports.scheduler import executor as scheduler_executor
+    from app.reports.scheduler.store import reset_schedules_for_tests
 
-    scheduler_service._schedules.clear()
+    reset_schedules_for_tests()
     scheduler_executor._EXECUTION_LOG.clear()
     scheduler_executor._EXECUTION_BY_ID.clear()
     scheduler_executor._HISTORY.clear()
     reset_export_jobs_for_tests()
     reset_export_tokens_for_tests()
     yield
-    scheduler_service._schedules.clear()
+    reset_schedules_for_tests()
     scheduler_executor._EXECUTION_LOG.clear()
     scheduler_executor._EXECUTION_BY_ID.clear()
     scheduler_executor._HISTORY.clear()
     reset_export_jobs_for_tests()
     reset_export_tokens_for_tests()
+
+
+def _dash_with_widget(name: str, description: str) -> dict:
+    return {"name": name, "description": description}
+
+
+def _layout_with_widget() -> dict:
+    return {
+        "version": 1,
+        "widgets": [{
+            "id": str(__import__("uuid").uuid4()),
+            "type": "text",
+            "title": "Placeholder",
+            "textConfig": {"content": "export probe"},
+            "colSpan": 6,
+            "rowSpan": 2,
+        }],
+    }
+
+
+def _create_dashboard_with_widget(client: TestClient, *, name: str, description: str) -> str:
+    dash = client.post(
+        "/api/v1/dashboards",
+        headers=AUTH,
+        json=_dash_with_widget(name, description),
+    )
+    assert dash.status_code == 201, dash.text
+    dash_id = dash.json()["id"]
+    layout = client.put(
+        f"/api/v1/dashboards/{dash_id}/layout",
+        headers=AUTH,
+        json={"layoutJson": _layout_with_widget()},
+    )
+    assert layout.status_code == 200, layout.text
+    return dash_id
 
 
 @pytest.fixture(autouse=True)
@@ -80,13 +116,7 @@ def client() -> TestClient:
 
 
 def test_create_dashboard_schedule(client: TestClient):
-    dash = client.post(
-        "/api/v1/dashboards",
-        headers=AUTH,
-        json={"name": "Scheduled Dash", "description": "g5"},
-    )
-    assert dash.status_code == 201
-    dash_id = dash.json()["id"]
+    dash_id = _create_dashboard_with_widget(client, name="Scheduled Dash", description="g5")
     resp = client.post(
         "/api/v1/reports/schedules",
         headers=AUTH,
@@ -104,12 +134,7 @@ def test_create_dashboard_schedule(client: TestClient):
 
 
 def test_list_schedules_by_source_id(client: TestClient):
-    dash = client.post(
-        "/api/v1/dashboards",
-        headers=AUTH,
-        json={"name": "Filter Dash", "description": "g5-list"},
-    )
-    dash_id = dash.json()["id"]
+    dash_id = _create_dashboard_with_widget(client, name="Filter Dash", description="g5-list")
     client.post(
         "/api/v1/reports/schedules",
         headers=AUTH,
@@ -138,13 +163,7 @@ def test_delivery_health_endpoint(client: TestClient):
 
 
 def test_dashboard_execute_records_visual_snapshot_artifact(client: TestClient):
-    dash = client.post(
-        "/api/v1/dashboards",
-        headers=AUTH,
-        json={"name": "Exec Dash", "description": "artifact-kind"},
-    )
-    assert dash.status_code == 201
-    dash_id = dash.json()["id"]
+    dash_id = _create_dashboard_with_widget(client, name="Exec Dash", description="artifact-kind")
     sched = client.post(
         "/api/v1/reports/schedules",
         headers=AUTH,
@@ -173,13 +192,7 @@ def test_dashboard_execute_records_visual_snapshot_artifact(client: TestClient):
 
 
 def test_dashboard_execute_smtp_attaches_pdf(client: TestClient):
-    dash = client.post(
-        "/api/v1/dashboards",
-        headers=AUTH,
-        json={"name": "Attach Dash", "description": "smtp-pdf"},
-    )
-    assert dash.status_code == 201
-    dash_id = dash.json()["id"]
+    dash_id = _create_dashboard_with_widget(client, name="Attach Dash", description="smtp-pdf")
     sched = client.post(
         "/api/v1/reports/schedules",
         headers=AUTH,

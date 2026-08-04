@@ -6,12 +6,14 @@ export type ScheduleRecipient = { type: "role" | "user" | "email"; value: string
 
 export type ReportScheduleRow = {
   id: string;
+  name?: string | null;
   catalogNodeId?: string | null;
   sourceType?: string;
   sourceId?: string;
   sourceLabel?: string | null;
   recipients?: ScheduleRecipient[];
   attachmentFormats?: string[];
+  deliveryChannels?: string[];
   cron: string;
   timezone: string;
   status: string;
@@ -86,6 +88,7 @@ export function useReportScheduleMutations(filter?: ReportScheduleListFilter) {
       timezone: string;
       recipients?: ScheduleRecipient[];
       attachmentFormats?: string[];
+      deliveryChannels?: string[];
     }) =>
       apiFetch<ReportScheduleRow>("/api/v1/reports/schedules", {
         method: "POST",
@@ -124,8 +127,18 @@ export function useReportScheduleMutations(filter?: ReportScheduleListFilter) {
     onSuccess: (_data, vars) => invalidate(vars.scheduleId),
   });
 
+  const updateSchedule = useMutation({
+    mutationFn: ({ id, body }: { id: string; body: Record<string, unknown> }) =>
+      apiFetch<ReportScheduleRow>(`/api/v1/reports/schedules/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      }),
+    onSuccess: (_data, vars) => invalidate(vars.id),
+  });
+
   return {
     createSchedule,
+    updateSchedule,
     transitionSchedule,
     executeSchedule,
     retryExecution,

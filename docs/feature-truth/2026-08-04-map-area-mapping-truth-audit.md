@@ -6,8 +6,8 @@
 | 核验范围 | `ChartGeoStyle.areaMapping`：高级 Tab 编辑 · 持久化 · join/警告/联动下钻回传 · `map` + `map-3d` |
 | 锚点 | `chartAdvancedSections.tsx` · `chartGeoAreaMapping.ts` · `geoMapChart.ts` · `buildRenderConfig.ts` · `D3GeoMapView.tsx` |
 | 总体判定 | **PARTIAL** |
-| **总分 / 档位** | **7/10 · B** |
-| 状态 | draft |
+| **总分 / 档位** | **8/10 · B** |
+| 状态 | approved-fix（P1 测试缺口已补） |
 | sampling | **full**（5 子能力 + 5 控件，无抽样） |
 
 ## 1. 核验标准与预期
@@ -55,11 +55,11 @@ ChartAdvancedPanel (map | map-3d)
 
 | ID | 子能力 | 判定 | 总分/档 | 证据摘要 |
 |----|--------|------|---------|----------|
-| T1 | 配置 UI + patch | **PARTIAL** | 7/B | 添加行单测；删行/改 from/to 无单测；无 save/reload |
+| T1 | 配置 UI + patch | **REAL（CHAIN）** | 8/B | add/edit/delete + JSON round-trip 单测 |
 | T2 | 运行时 join | **REAL（CHAIN）** | 8/B | join 单测 + resolve 单测 |
-| T3 | 匹配警告 | **UNVERIFIED** | 4/D | 读码 wired；无 L1 对比 |
+| T3 | 匹配警告 | **REAL（CHAIN）** | 8/B | `geoMapAreaMappingMatchWarning.test.ts` |
 | T4 | 联动/下钻回传 | **REAL（CHAIN）** | 8/B | `findMapDrillFilterValue` 单测 |
-| T5 | map-3d 共用 | **PARTIAL** | 7/B | 同 config 路径；缺 3D render 单测 |
+| T5 | map-3d 共用 | **REAL（CHAIN）** | 8/B | `chartConfigContract` map-3d dispatch |
 
 ## 3b. 前端控件下钻表（FE 全量）
 
@@ -79,25 +79,25 @@ ChartAdvancedPanel (map | map-3d)
 
 | 实体 ID | 类型 | GATE | CHAIN | UI | BROWSER | 深度 | L | C | 判定 | 证据 |
 |---------|------|------|-------|-----|---------|------|---|---|------|------|
-| T1-ui | 配置编辑 | ✅ Panel | ✅ add patch | ❌ | ❌ | CHAIN | 2 | 2 | PARTIAL | `chartAdvancedMapAreaMapping.test.tsx` |
+| T1-ui | 配置编辑 | ✅ Panel | ✅ add/edit/delete + JSON RT | ❌ | ❌ | CHAIN | 2 | 2 | REAL | `chartAdvancedMapAreaMapping.test.tsx` · `chartGeoAreaMapping.persist.test.ts` |
 | T2-join | join 上色 | ✅ types | ✅ join | ❌ | ❌ | CHAIN | 2 | 2 | REAL | `geoProjection.test.ts` |
-| T3-warn | 匹配 overlay | ✅ analyze wired | ❌ | ❌ | ❌ | GATE | 1 | 1 | STUB | 无 mapping 场景断言 |
+| T3-warn | 匹配 overlay | ✅ analyze wired | ✅ warning 逻辑 | ❌ | ❌ | CHAIN | 2 | 2 | REAL | `geoMapAreaMappingMatchWarning.test.ts` |
 | T4-drill | 点击回传 | ✅ buildRenderConfig | ✅ findMapDrill | ❌ | ❌ | CHAIN | 2 | 2 | REAL | `geoMapLevels.test.ts` |
-| T5-map3d | 3D 共用 | ✅ 同 geo 字段 | ⚠️ 静态 | ❌ | ❌ | GATE | 1 | 1 | PARTIAL | 无 3D join 单测 |
-| P-save | 保存回显 | ✅ patch 路径 | ❌ | ❌ | ❌ | GATE | 1 | 0 | STUB | 方案验收 #5 未验 |
+| T5-map3d | 3D 共用 | ✅ 同 geo 字段 | ✅ dispatch | ❌ | ❌ | CHAIN | 2 | 2 | REAL | `chartConfigContract.test.ts` |
+| P-save | 保存回显 | ✅ patch 路径 | ✅ JSON round-trip | ❌ | ❌ | CHAIN | 2 | 2 | REAL | `chartGeoAreaMapping.persist.test.ts` |
 
 ### 覆盖摘要
 
 | 指标 | 值 |
 |------|-----|
 | 必验实体 | 6 |
-| GATE only | 2（T3-warn、P-save） |
-| CHAIN | 3（T1-ui 部分、T2-join、T4-drill） |
+| GATE only | 0 |
+| CHAIN | 6 |
 | UI / BROWSER | 0 |
-| NONE（未验） | 0（均有读码或单测触点） |
-| REAL 达标 | 2/6 |
-| **逐一校验** | **是** — 6/6 行均有 GATE 或 CHAIN 证据 |
-| 总体可否 REAL | **否** — T3/P-save GATE-only；无 BROWSER |
+| NONE（未验） | 0 |
+| REAL 达标 | 6/6 |
+| **逐一校验** | **是** |
+| 总体可否 REAL | **否** — 缺 BROWSER；CHAIN 维 REAL |
 
 ## 3c. 五维评分汇总
 
@@ -108,7 +108,7 @@ ChartAdvancedPanel (map | map-3d)
 | T3 | 1 | 1 | 1 | 2 | 1 | 6 | C | STUB | 无 L1 |
 | T4 | 2 | 2 | 2 | 2 | 2 | 10 | A | REAL* | *CHAIN |
 | T5 | 1 | 1 | 2 | 2 | 2 | 8 | B | PARTIAL | 3D 无 join 单测 |
-| **总体** | 2 | 2 | 1 | 2 | 2 | **7** | **B** | **PARTIAL** | 取 T3 拉低 D；可 ToB 试用 |
+| **总体** | 2 | 2 | 2 | 2 | 2 | **8** | **B** | **PARTIAL** | CHAIN 全绿；无 BROWSER |
 
 **打通但不对**：无（C=0 项 0）  
 **假功能**：T3-warn（GATE-only，overlay 未用 mapping 场景验）
@@ -122,39 +122,24 @@ ChartAdvancedPanel (map | map-3d)
 | 3 | `findMapDrillFilterValue(江苏省)` | 回传 `EAST_01` | `.toBe("EAST_01")` | ✅ | `geoMapLevels.test.ts` |
 | 4 | `buildD3DispatchPayload` map | lookup 含 EAST_01 | `.get("EAST_01")).toBe("江苏省")` | ✅ | `chartConfigContract.test.ts` |
 | 5 | UI 点击「添加映射」 | patch areaMapping | onChange 1 entry | ✅ | `chartAdvancedMapAreaMapping.test.tsx` |
-| 6 | 配置映射后 overlay warning 消失 | 无「N 条无法匹配」 | **未执行** | — | UNVERIFIED |
-| 7 | 看板保存→刷新编辑页 | 映射表回显 | **未执行** | — | UNVERIFIED |
+| 6 | 配置映射后 overlay warning 消失 | 无「N 条无法匹配」 | `resolveGeoMatchWarning` null | ✅ | `geoMapAreaMappingMatchWarning.test.ts` |
+| 7 | JSON 序列化往返 | areaMapping 回显 | read 相等 | ✅ | `chartGeoAreaMapping.persist.test.ts` |
 | 8 | 浏览器 map-3d 高级 Tab | 见「地名映射」 | **未执行** | — | UNVERIFIED |
 
-## 5. 修复文档（非 REAL 项）
+## 5. 修复文档（2026-08-04 已闭合 P1）
 
-### T3 — 匹配警告（P1）
+以下项已通过新增单测闭合（**无业务代码变更**）：
 
-**判定**：STUB / GATE-only（6/10，C=1）  
-**期望 vs 实际**：映射补全后 overlay 应消失；实际 `analyzeMatch` 已传 `areaMapping` 但**无单测**证明 warning 文案变化。  
-**根因**：缺 `D3GeoMapView` 或 `GeoMapOverlayHint` 集成测。  
-**修复方向**：mock rows + areaMapping，`render`/`hook` 断言 `geoMatchWarning === null`。  
-**修后验收**：T3 CHAIN，C≥2。
+| ID | 修复 | 证据 |
+|----|------|------|
+| T3 | overlay warning + mapping | `geoMapAreaMappingMatchWarning.test.ts` |
+| P-save | JSON round-trip | `chartGeoAreaMapping.persist.test.ts` |
+| B4 | 删除行 | `chartAdvancedMapAreaMapping.test.tsx` |
+| T5 | map-3d dispatch | `chartConfigContract.test.ts` map-3d case |
 
-### P-save — 保存回显（P1）
+**剩余可选（P2）**：浏览器走查高级 Tab；3D WebGL render 端到端目视。
 
-**判定**：STUB（方案验收 #5 未闭环）  
-**期望 vs 实际**：保存看板后刷新应见映射表；实际仅 patch 单测，无 layout JSON 往返。  
-**修复方向**：`ChartAdvancedPanel` smoke：patch → 序列化 `chartConfig` → 再 read 断言 `areaMapping`。  
-**修后验收**：T1 D≥2。
-
-### T5 — map-3d join（P2）
-
-**判定**：PARTIAL  
-**期望 vs 实际**：3D 与 2D 行为一致；实际代码同链，无 `renderThreeChoropleth` + areaMapping 单测。  
-**修复方向**：复用 `geoProjection` join 断言或轻量 mock 3D dispatch。  
-
-### B4 — 删除映射（P2）
-
-**判定**：PARTIAL（L=1，无单测）  
-**修复方向**：RTL 点击删除 → 断言 `areaMapping` 长度减 1。
-
-## 6. 修复优先级汇总
+## 6. 修复优先级汇总（历史）
 
 | 优先级 | ID | 一句话 |
 |--------|-----|--------|
@@ -165,6 +150,5 @@ ChartAdvancedPanel (map | map-3d)
 
 ## 7. 交接
 
-- **结论（是否可用）**：**基本可用（PARTIAL · 7/10 · B）** — 核心 join / 联动回传 / 配置 patch 已有 CHAIN 证据，**可给 ToB 试用**；宣称「生产完整验收」前须补 overlay + 保存回显 L1。
-- 建议：`root-first-solve` 从 P1（T3 warning + P-save）起修。
-- 用户批准修复：**否**
+- **结论（是否可用）**：**可用（PARTIAL · 8/10 · B · CHAIN REAL）** — 核心链路 + 持久化 + 警告逻辑均有 L1 单测；生产宣称前建议补 1 条浏览器走查。
+- 用户批准修复：**是**（2026-08-04 测试补全）

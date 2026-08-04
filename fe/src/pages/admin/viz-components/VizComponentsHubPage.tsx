@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router";
 import { Boxes, Pencil, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { useVisibleCardIds } from "@/hooks/useVisibleCardIds";
 import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import {
   LIST_PAGE_CARD_GRID_CLASS,
@@ -167,11 +168,16 @@ export function VizComponentsHubPage() {
   const items = listQuery.data?.items ?? [];
   const total = listQuery.data?.total ?? 0;
   const itemIds = useMemo(() => items.map((item) => item.id), [items]);
+  const { visibleIds, registerVisibleCard } = useVisibleCardIds<string>();
+  const resolveIds = useMemo(() => {
+    const ids = itemIds.filter((id) => visibleIds.has(id));
+    return ids.length > 0 ? ids : itemIds.slice(0, 4);
+  }, [itemIds, visibleIds]);
 
   const resolveQuery = useQuery({
-    queryKey: queryKeys.vizComponents.resolve(itemIds),
-    queryFn: () => batchResolveVizComponents(itemIds),
-    enabled: itemIds.length > 0,
+    queryKey: queryKeys.vizComponents.resolve(resolveIds),
+    queryFn: () => batchResolveVizComponents(resolveIds),
+    enabled: resolveIds.length > 0,
   });
 
   const payloadById = useMemo(() => {
@@ -265,19 +271,24 @@ export function VizComponentsHubPage() {
           ) : (
             <div className={LIST_PAGE_CARD_GRID_CLASS}>
               {items.map((item) => (
-                <VizComponentCard
+                <div
                   key={item.id}
-                  item={item}
-                  payload={payloadById.get(item.id)}
-                  payloadLoading={resolveQuery.isLoading && !payloadById.has(item.id)}
-                  canManage={canManage}
-                  pending={pending}
-                  onInsert={() => setInsertTarget(item)}
-                  onViewReferences={() => setReferencesTarget(item)}
-                  onPublish={() => publishMutation.mutate(item.id)}
-                  onArchive={() => archiveMutation.mutate(item.id)}
-                  onDelete={() => deleteMutation.mutate(item.id)}
-                />
+                  data-visible-card-id={item.id}
+                  ref={(el) => registerVisibleCard(item.id, el)}
+                >
+                  <VizComponentCard
+                    item={item}
+                    payload={payloadById.get(item.id)}
+                    payloadLoading={resolveQuery.isLoading && !payloadById.has(item.id)}
+                    canManage={canManage}
+                    pending={pending}
+                    onInsert={() => setInsertTarget(item)}
+                    onViewReferences={() => setReferencesTarget(item)}
+                    onPublish={() => publishMutation.mutate(item.id)}
+                    onArchive={() => archiveMutation.mutate(item.id)}
+                    onDelete={() => deleteMutation.mutate(item.id)}
+                  />
+                </div>
               ))}
             </div>
           )}

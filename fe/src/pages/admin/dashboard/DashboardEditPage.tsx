@@ -2,11 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState, type SetStateAction 
 import { setChartAnimationSuppressed } from "@/components/charts/engine/d3/core/animate";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
-import { ChevronLeft, Redo2, Trash2, Undo2 } from "lucide-react";
+import { ChevronLeft, Clock, Redo2, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api";
 import { isDashboardNotFound, mapApiError } from "@/lib/apiError";
 import { DashboardShareDialog } from "@/components/dashboard/DashboardShareDialog";
+import { DashboardScheduleSheet } from "@/pages/admin/reports/components/DashboardScheduleSheet";
+import { useAuth } from "@/context/auth-context";
+import { matchesCapability, resolveEffectiveCapabilities } from "@/lib/capabilities";
 import {
   dataScreenListPath,
   dataScreenPreviewPath,
@@ -162,6 +165,10 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const canManageSchedule =
+    matchesCapability(resolveEffectiveCapabilities(user), "report:manage") ||
+    matchesCapability(resolveEffectiveCapabilities(user), "dashboard:schedule");
   const routeIsDataScreen = isDataScreenAdminPath(location.pathname);
 
   useEffect(() => {
@@ -221,6 +228,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [styleConfig, setStyleConfig] = useState<DashboardStyleConfig>({});
   const [shareOpen, setShareOpen] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
   const [reuseOpen, setReuseOpen] = useState(false);
   const [publishComponentOpen, setPublishComponentOpen] = useState(false);
   const [chartRailOpen, setChartRailOpen] = useState(true);
@@ -1075,6 +1083,16 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               <Button type="button" variant="outline" size="sm" onClick={() => setShareOpen(true)}>
                 分享
               </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setScheduleOpen(true)}
+                aria-label="定时推送"
+              >
+                <Clock className="size-4 sm:mr-1" aria-hidden />
+                <span className="hidden sm:inline">定时推送</span>
+              </Button>
             </>
           ) : (
             <Button asChild variant="outline" size="sm">
@@ -1658,6 +1676,16 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           dashboardId={id}
           isScreen={isDataScreenSurface}
           initialDetail={{ name, layoutJson: layout }}
+        />
+      ) : null}
+      {id && !missing ? (
+        <DashboardScheduleSheet
+          open={scheduleOpen}
+          onOpenChange={setScheduleOpen}
+          sourceId={id}
+          sourceType={isDataScreenSurface ? "data_screen" : "dashboard"}
+          sourceName={name || "未命名"}
+          readOnly={!canManageSchedule}
         />
       ) : null}
     </AdminPageShell>

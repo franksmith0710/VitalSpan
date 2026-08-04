@@ -17,6 +17,10 @@ import {
 } from "@/lib/templateDemoData";
 import { queryKeys } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";
+import {
+  releaseListPreviewSlot,
+  requestListPreviewSlot,
+} from "@/lib/listPreviewActivation";
 
 type TemplateCardPreviewProps = {
   templateId: string;
@@ -37,11 +41,12 @@ export function TemplateCardPreview({
 }: TemplateCardPreviewProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(eager);
+  const [slotGranted, setSlotGranted] = useState(eager);
 
   const detailQuery = useQuery({
     queryKey: queryKeys.dashboardTemplates.detail(templateId),
     queryFn: () => fetchTemplateDetail(templateId),
-    enabled: active,
+    enabled: active && slotGranted,
     staleTime: 60_000,
   });
 
@@ -51,7 +56,7 @@ export function TemplateCardPreview({
       apiFetch<{ items: { id: string; name: string; code: string; database?: string }[] }>(
         "/api/v1/datasources",
       ),
-    enabled: active,
+    enabled: active && slotGranted,
     staleTime: 120_000,
   });
 
@@ -73,6 +78,22 @@ export function TemplateCardPreview({
     Boolean(layout) &&
     layoutRequiresDemoCharts(layout!) &&
     !demoDatasourceId;
+
+  useEffect(() => {
+    if (!active || slotGranted || eager) return undefined;
+    let cancelled = false;
+    void requestListPreviewSlot().then(() => {
+      if (!cancelled) setSlotGranted(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [active, slotGranted, eager]);
+
+  useEffect(() => {
+    if (!slotGranted || eager) return undefined;
+    return () => releaseListPreviewSlot();
+  }, [slotGranted, eager]);
 
   useEffect(() => {
     if (!active) return undefined;
@@ -138,11 +159,11 @@ export function TemplateCardPreview({
       ref={hostRef}
       className={cn("h-full", className)}
       data-testid="template-card-preview"
-      data-live={active && !loading && layout ? "true" : "false"}
+      data-live={active && slotGranted && !loading && layout ? "true" : "false"}
       aria-hidden
     >
       <ComponentPreviewShell className="h-full">
-        {active && !loading && layout?.widgets?.length ? (
+        {active && slotGranted && !loading && layout?.widgets?.length ? (
           <TemplateLayoutLivePreview
             layout={layout}
             surfaceKind={surfaceKind}

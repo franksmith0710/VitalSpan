@@ -23,22 +23,28 @@ async function listCatalogChildren(parentId: string | null): Promise<ReportCatal
   return normalizeCatalogNodes(raw);
 }
 
-/** 递归收集目录下全部 template 节点（报表中心列表用）。 */
+/** 递归收集目录下全部 template 节点（报表中心列表用）；按层级并行 BFS，避免串行 walk。 */
 export async function fetchAllCatalogTemplates(): Promise<ReportCatalogNode[]> {
   const templates: ReportCatalogNode[] = [];
+  let frontier: (string | null)[] = [null];
 
-  async function walk(parentId: string | null) {
-    const nodes = await listCatalogChildren(parentId);
-    for (const node of nodes) {
-      if (node.nodeType === "template") {
-        templates.push(node);
-      } else {
-        await walk(node.id);
+  while (frontier.length > 0) {
+    const nodesByParent = await Promise.all(
+      frontier.map((parentId) => listCatalogChildren(parentId)),
+    );
+    const nextFrontier: string[] = [];
+    for (const nodes of nodesByParent) {
+      for (const node of nodes) {
+        if (node.nodeType === "template") {
+          templates.push(node);
+        } else {
+          nextFrontier.push(node.id);
+        }
       }
     }
+    frontier = nextFrontier;
   }
 
-  await walk(null);
   return templates.sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "zh-CN"));
 }
 

@@ -57,7 +57,7 @@ export function ScheduleHistoryTable({
             <TableHead className="px-3 py-2">状态</TableHead>
             <TableHead className="px-3 py-2">产物</TableHead>
             <TableHead className="px-3 py-2">执行时间</TableHead>
-            {!compact ? <TableHead className="px-3 py-2">错误信息</TableHead> : null}
+            <TableHead className="px-3 py-2">错误信息</TableHead>
             <TableHead className="w-16 px-3 py-2" />
           </TableRow>
         </TableHeader>
@@ -77,17 +77,17 @@ export function ScheduleHistoryTable({
               <TableCell className="px-3 py-2 text-gray-600 dark:text-gray-400">
                 {row.executedAt}
               </TableCell>
-              {!compact ? (
-                <TableCell className="max-w-[200px] px-3 py-2 text-gray-600 dark:text-gray-400">
-                  {row.errorMessage ? (
-                    <TruncateHint title={localizeApiMessage(row.errorMessage)}>
-                      <span className="line-clamp-2">{localizeApiMessage(row.errorMessage)}</span>
-                    </TruncateHint>
-                  ) : (
-                    "—"
-                  )}
-                </TableCell>
-              ) : null}
+              <TableCell className={`max-w-[120px] px-3 py-2 text-gray-600 dark:text-gray-400 ${compact ? "text-theme-xs" : ""}`}>
+                {row.errorMessage ? (
+                  <TruncateHint title={localizeApiMessage(row.errorMessage)}>
+                    <span className={compact ? "line-clamp-1" : "line-clamp-2"}>
+                      {localizeApiMessage(row.errorMessage)}
+                    </span>
+                  </TruncateHint>
+                ) : (
+                  "—"
+                )}
+              </TableCell>
               <TableCell className="px-3 py-2">
                 {!readOnly && canRetryExecution(row.status) && onRetry ? (
                   <Button

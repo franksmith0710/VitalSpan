@@ -24,5 +24,8 @@ export function scheduleRowToForm(schedule: ReportScheduleRow): ScheduleFormValu
     attachmentFormats: (schedule.attachmentFormats?.length
       ? schedule.attachmentFormats
       : ["pdf"]) as ScheduleFormValue["attachmentFormats"],
+    deliveryChannels: (schedule.deliveryChannels?.length
+      ? schedule.deliveryChannels
+      : ["email"]) as ScheduleFormValue["deliveryChannels"],
   };
 }

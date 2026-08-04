@@ -49,7 +49,9 @@ export function DashboardShareDialog({
   initialDetail,
 }: DashboardShareDialogProps) {
   const { user } = useAuth();
-  const canManageSchedule = matchesCapability(resolveEffectiveCapabilities(user), "report:manage");
+  const canManageSchedule =
+    matchesCapability(resolveEffectiveCapabilities(user), "report:manage") ||
+    matchesCapability(resolveEffectiveCapabilities(user), "dashboard:schedule");
   const [detail, setDetail] = useState<DashboardDetail | null>(
     initialDetail
       ? { id: dashboardId, name: initialDetail.name, layoutJson: initialDetail.layoutJson }

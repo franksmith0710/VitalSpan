@@ -15,9 +15,9 @@ import {
   ChartAdvancedJumpSection,
   ChartAdvancedMapBubbleSection,
   ChartAdvancedMapLinkageSection,
-  ChartAdvancedMapAreaMappingSection,
   ChartAdvancedMarkLinesSection,
 } from "./chartAdvancedSections";
+import { ChartAdvancedMapAreaMappingSection } from "./ChartGeoAreaMappingPanel";
 import { readChartDeStyle, readChartGeoStyle } from "@/lib/chartDeStyle";
 import { countEffectiveAreaMappings } from "@/lib/chartGeoAreaMapping";
 import { readChartLinkageConfig } from "@/lib/chartDeFeatures";

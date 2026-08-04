@@ -6,10 +6,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Header, Query, status
 from fastapi.responses import JSONResponse, Response
 
-from app.auth.deps import UserContext, require_permission
+from app.auth.deps import UserContext, require_any_permission, require_permission
 
 PERM_READ = "report:read"
 PERM_MANAGE = "report:manage"
+PERM_SCHEDULE = "dashboard:schedule"
 from app.reports.catalog.errors import ReportCatalogError
 from app.reports.catalog.schemas import CatalogNodeCreate, CatalogNodeMove, CatalogNodeOut, CatalogNodeUpdate
 from app.reports.catalog import service as catalog_service
@@ -25,7 +26,7 @@ from app.reports.batch.schemas import BatchCreateReportsIn, BatchExportJobIn
 from app.reports.batch import service as batch_service
 from app.reports.batch import export_jobs as batch_export_jobs
 from app.reports.scheduler.errors import ScheduleError
-from app.reports.scheduler.schemas import ScheduleCreate, ScheduleTransitionIn
+from app.reports.scheduler.schemas import ScheduleCreate, ScheduleTransitionIn, ScheduleUpdate
 from app.reports.scheduler import service as scheduler_service
 from app.reports.scheduler import executor as scheduler_executor
 from app.api.v1.reports.engine import router as engine_router
@@ -255,7 +256,7 @@ def move_catalog_node(
 @router.post("/schedules", status_code=status.HTTP_201_CREATED, response_model=None)
 def create_schedule(
     payload: ScheduleCreate,
-    user: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
+    user: Annotated[UserContext, Depends(require_any_permission(PERM_MANAGE, PERM_SCHEDULE))],
 ):
     try:
         return scheduler_service.create_schedule(payload, user)
@@ -305,11 +306,23 @@ def get_schedule(
         return _schedule_error(exc)
 
 
+@router.patch("/schedules/{schedule_id}", response_model=None)
+def update_schedule(
+    schedule_id: uuid.UUID,
+    payload: ScheduleUpdate,
+    user: Annotated[UserContext, Depends(require_any_permission(PERM_MANAGE, PERM_SCHEDULE))],
+):
+    try:
+        return scheduler_service.update_schedule(schedule_id, payload, user)
+    except ScheduleError as exc:
+        return _schedule_error(exc)
+
+
 @router.post("/schedules/{schedule_id}/transition", response_model=None)
 def transition_schedule(
     schedule_id: uuid.UUID,
     payload: ScheduleTransitionIn,
-    user: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
+    user: Annotated[UserContext, Depends(require_any_permission(PERM_MANAGE, PERM_SCHEDULE))],
 ):
     try:
         return scheduler_service.transition_schedule(schedule_id, payload.action, user)
@@ -358,7 +371,7 @@ def list_schedule_executions(
 @router.post("/schedules/executions/{execution_id}/retry", response_model=None)
 def retry_schedule_execution(
     execution_id: uuid.UUID,
-    user: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
+    user: Annotated[UserContext, Depends(require_any_permission(PERM_MANAGE, PERM_SCHEDULE))],
     idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
 ):
     try:
@@ -370,7 +383,7 @@ def retry_schedule_execution(
 @router.post("/schedules/{schedule_id}/execute", response_model=None)
 def execute_schedule(
     schedule_id: uuid.UUID,
-    user: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
+    user: Annotated[UserContext, Depends(require_any_permission(PERM_MANAGE, PERM_SCHEDULE))],
     idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
     delivery_mock: Annotated[str | None, Header(alias="X-Rpt-Delivery-Mock")] = None,
     _semi_real: Annotated[str | None, Header(alias="X-Rpt-Semi-Real")] = None,

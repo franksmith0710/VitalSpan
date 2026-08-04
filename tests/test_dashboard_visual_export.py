@@ -108,6 +108,24 @@ def test_submit_pdf_export_returns_visual_snapshot(
     )
     assert created.status_code == 201
     dash_id = created.json()["id"]
+    layout = client.put(
+        f"/api/v1/dashboards/{dash_id}/layout",
+        headers=auth_headers,
+        json={
+            "layoutJson": {
+                "version": 1,
+                "widgets": [{
+                    "id": str(uuid.uuid4()),
+                    "type": "text",
+                    "title": "T",
+                    "textConfig": {"content": "x"},
+                    "colSpan": 6,
+                    "rowSpan": 2,
+                }],
+            },
+        },
+    )
+    assert layout.status_code == 200, layout.text
 
     job = client.post(
         f"/api/v1/dashboards/{dash_id}/export-jobs",

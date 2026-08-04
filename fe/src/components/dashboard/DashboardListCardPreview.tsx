@@ -5,6 +5,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useDashboardListCardLayout } from "@/hooks/useDashboardListCardLayout";
 import { isDataScreenLayout } from "@/lib/dataScreenLayout";
+import {
+  releaseListPreviewSlot,
+  requestListPreviewSlot,
+} from "@/lib/listPreviewActivation";
 import { DashboardLayoutPreview } from "./DashboardLayoutPreview";
 import { DataScreenPresenter } from "./screen/DataScreenPresenter";
 import { prepareLayoutForListPreview } from "./stylePipeline";
@@ -48,15 +52,32 @@ export function DashboardListCardPreview({
   const hostRef = useRef<HTMLDivElement>(null);
   const hasFullLayout = layoutHasFullChartConfig(layoutJson);
   const [active, setActive] = useState(eager);
+  const [slotGranted, setSlotGranted] = useState(eager);
   const shouldFetch = Boolean(dashboardId && !hasFullLayout);
-  const layoutQuery = useDashboardListCardLayout(dashboardId, active && shouldFetch);
+  const layoutQuery = useDashboardListCardLayout(dashboardId, active && slotGranted && shouldFetch);
   const rawLayout = layoutQuery.data ?? layoutJson;
   const resolvedLayout = useMemo(
     () => (rawLayout ? prepareLayoutForListPreview(rawLayout) : undefined),
     [rawLayout],
   );
   const isScreen = isDataScreenLayout(resolvedLayout ?? layoutJson);
-  const loading = active && shouldFetch && layoutQuery.isLoading;
+  const loading = active && slotGranted && shouldFetch && layoutQuery.isLoading;
+
+  useEffect(() => {
+    if (!active || slotGranted || eager) return undefined;
+    let cancelled = false;
+    void requestListPreviewSlot().then(() => {
+      if (!cancelled) setSlotGranted(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [active, slotGranted, eager]);
+
+  useEffect(() => {
+    if (!slotGranted || eager) return undefined;
+    return () => releaseListPreviewSlot();
+  }, [slotGranted, eager]);
 
   useEffect(() => {
     if (!active) return undefined;
@@ -111,10 +132,10 @@ export function DashboardListCardPreview({
         className,
       )}
       data-testid="dashboard-list-card-preview"
-      data-live={active && !loading && resolvedLayout ? "true" : "false"}
+      data-live={active && slotGranted && !loading && resolvedLayout ? "true" : "false"}
       aria-hidden
     >
-      {active && !loading && resolvedLayout ? (
+      {active && slotGranted && !loading && resolvedLayout ? (
         <div className="h-full w-full" data-testid="dashboard-list-card-live-preview">
           {isScreen ? (
             <DataScreenPresenter

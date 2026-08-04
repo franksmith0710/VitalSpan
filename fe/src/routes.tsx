@@ -15,7 +15,6 @@ import { AccountProfilePage } from "@/pages/admin/account/AccountProfilePage";
 import { AccountThemePage } from "@/pages/admin/account/AccountThemePage";
 import { AccountLandingPage } from "@/pages/admin/account/AccountLandingPage";
 import { AccountSecurityPage } from "@/pages/admin/account/AccountSecurityPage";
-import { DashboardListPage } from "@/pages/admin/dashboard/DashboardListPage";
 import { LoginPage } from "@/pages/login/LoginPage";
 import { DatasourceListPage } from "@/pages/admin/datasources/DatasourceListPage";
 import { DatasourceFormPage } from "@/pages/admin/datasources/DatasourceFormPage";
@@ -38,16 +37,33 @@ import { GovernancePublishPage } from "@/pages/admin/governance/GovernancePublis
 import { withGovernanceHonesty } from "@/pages/admin/governance/GovernanceHonestyBanner";
 import { QueryServicesPage } from "@/pages/admin/services/QueryServicesPage";
 import { MetadataHubPage } from "@/pages/admin/metadata/MetadataHubPage";
-import { DatasetListPage } from "@/pages/admin/datasets/DatasetListPage";
 import { DatasetFormPage } from "@/pages/admin/datasets/DatasetFormPage";
 import { ReportSchedulesPage } from "@/pages/admin/reports/ReportSchedulesPage";
-import { ReportCenterPage } from "@/pages/admin/reports/ReportCenterPage";
 import { ReportViewPage } from "@/pages/admin/reports/ReportViewPage";
-import { DataScreenListPage } from "@/pages/admin/data-screens/DataScreenListPage";
 import { DataScreenViewRedirect } from "@/pages/admin/data-screens/DataScreenViewRedirect";
 import { ACCOUNT_LANDING_PATH } from "@/lib/workspace";
 import { withRouteSuspense } from "@/lib/routeLazy";
 
+const DashboardListPage = lazy(() =>
+  import("@/pages/admin/dashboard/DashboardListPage").then((m) => ({
+    default: m.DashboardListPage,
+  })),
+);
+const DataScreenListPage = lazy(() =>
+  import("@/pages/admin/data-screens/DataScreenListPage").then((m) => ({
+    default: m.DataScreenListPage,
+  })),
+);
+const DatasetListPage = lazy(() =>
+  import("@/pages/admin/datasets/DatasetListPage").then((m) => ({
+    default: m.DatasetListPage,
+  })),
+);
+const ReportCenterPage = lazy(() =>
+  import("@/pages/admin/reports/ReportCenterPage").then((m) => ({
+    default: m.ReportCenterPage,
+  })),
+);
 const DashboardEditPage = lazy(() =>
   import("@/pages/admin/dashboard/DashboardEditPage").then((m) => ({ default: m.DashboardEditPage })),
 );
@@ -129,7 +145,7 @@ export function AppRoutes() {
           <Route path="account/preferences" element={<Navigate to={ACCOUNT_LANDING_PATH} replace />} />
           <Route path="account/settings" element={<Navigate to={ACCOUNT_LANDING_PATH} replace />} />
           <Route path="account" element={<Navigate to="/admin/account/profile" replace />} />
-          <Route path="dashboards" element={<DashboardListPage />} />
+          <Route path="dashboards" element={<Lazy><DashboardListPage /></Lazy>} />
           <Route path="dashboards/:id/edit" element={<Lazy><DashboardEditPage mode="edit" /></Lazy>} />
           <Route
             path="dashboards/:id/share"
@@ -148,7 +164,7 @@ export function AppRoutes() {
               </RequireCapabilityName>
             }
           />
-          <Route path="data-screens" element={<DataScreenListPage />} />
+          <Route path="data-screens" element={<Lazy><DataScreenListPage /></Lazy>} />
           <Route path="data-screens/:id/edit" element={<Lazy><DashboardEditPage mode="edit" /></Lazy>} />
           <Route path="data-screens/:id/preview" element={<Lazy><DataScreenPreviewPage /></Lazy>} />
           <Route path="data-screens/:id" element={<DataScreenViewRedirect />} />
@@ -178,7 +194,7 @@ export function AppRoutes() {
           />
           <Route path="entities/overview" element={<RequireCapabilityName capability="theme:*"><EntityOverviewPage /></RequireCapabilityName>} />
           <Route path="reports" element={<RequireCapabilityName capability="report:read"><PrefabReportsPage /></RequireCapabilityName>} />
-          <Route path="reports/center" element={<RequireCapabilityName capability="report:read"><ReportCenterPage /></RequireCapabilityName>} />
+          <Route path="reports/center" element={<RequireCapabilityName capability="report:read"><Lazy><ReportCenterPage /></Lazy></RequireCapabilityName>} />
           <Route path="reports/view/:nodeId" element={<RequireCapabilityName capability="report:read"><ReportViewPage /></RequireCapabilityName>} />
           <Route path="reports/templates" element={<RequireCapabilityName capability="report:manage"><ReportTemplatesPage /></RequireCapabilityName>} />
           <Route path="reports/templates/:nodeId" element={<RequireCapabilityName capability="report:manage"><ReportTemplatesPage /></RequireCapabilityName>} />
@@ -207,7 +223,7 @@ export function AppRoutes() {
           <Route path="services" element={<RequireCapabilityName capability="governance:*">{withGovernanceHonesty(<QueryServicesPage />)}</RequireCapabilityName>} />
           <Route path="metadata" element={<RequireCapabilityName capability="metadata:*"><MetadataHubPage /></RequireCapabilityName>} />
           <Route path="metadata/glossary" element={<RequireCapabilityName capability="metadata:*"><MetadataHubPage /></RequireCapabilityName>} />
-          <Route path="datasets" element={<RequireCapabilityName capability="dataset:*"><DatasetListPage /></RequireCapabilityName>} />
+          <Route path="datasets" element={<RequireCapabilityName capability="dataset:*"><Lazy><DatasetListPage /></Lazy></RequireCapabilityName>} />
           <Route path="datasets/new" element={<RequireCapabilityName capability="dataset:*"><DatasetFormPage mode="create" /></RequireCapabilityName>} />
           <Route path="datasets/:id/edit" element={<RequireCapabilityName capability="dataset:*"><DatasetFormPage mode="edit" /></RequireCapabilityName>} />
           <Route path="me/views" element={<Navigate to={ACCOUNT_LANDING_PATH} replace />} />

@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from app.auth.deps import UserContext
+from app.core.config import get_settings
 from app.reports.scheduler import service as scheduler_service
 from app.reports.scheduler.executor import semi_real_execute_schedule
+from app.reports.scheduler.store import try_acquire_tick_lock
 
 _scheduler: BackgroundScheduler | None = None
 _SYSTEM_ACTOR = UserContext(id="schedule-system", username="schedule-system", roles=["admin"])
@@ -21,13 +24,21 @@ def get_report_scheduler() -> BackgroundScheduler:
 
 
 def _tick_execute(schedule_id: str) -> None:
+    settings = get_settings()
+    if not settings.rpt_scheduler_enabled:
+        return
     sid = uuid.UUID(schedule_id)
+    tick_key = f"{schedule_id}-{datetime.now(UTC).strftime('%Y%m%d%H%M')}"
+    if not try_acquire_tick_lock(sid, tick_key):
+        return
     key = f"cron-{schedule_id}-{uuid.uuid4().hex[:8]}"
     semi_real_execute_schedule(sid, key, _SYSTEM_ACTOR)
 
 
 def register_job_on_transition(schedule_id: uuid.UUID, row: dict) -> None:
     if row["status"] != "scheduled":
+        return
+    if not get_settings().rpt_scheduler_enabled:
         return
     scheduler = get_report_scheduler()
     scheduler.add_job(
@@ -48,6 +59,8 @@ def remove_job_on_cancel(schedule_id: uuid.UUID) -> None:
 
 
 def refresh_schedule_jobs() -> None:
+    if not get_settings().rpt_scheduler_enabled:
+        return
     scheduler = get_report_scheduler()
     for job in scheduler.get_jobs():
         scheduler.remove_job(job.id)

@@ -15,7 +15,8 @@ from app.reports.scheduler import acl as schedule_acl
 from app.reports.scheduler import jobs as schedule_jobs
 from app.reports.scheduler.errors import ScheduleError
 from app.reports.scheduler.recipients import validate_recipients_present
-from app.reports.scheduler.schemas import ScheduleCreate, ScheduleListOut, ScheduleStatusOut
+from app.reports.scheduler.schemas import ScheduleCreate, ScheduleListOut, ScheduleStatusOut, ScheduleUpdate
+from app.reports.scheduler.store import get_schedule_store
 
 _ALLOWED: dict[str, frozenset[str]] = {
     "draft": frozenset({"schedule"}),
@@ -29,7 +30,17 @@ _TRANSITIONS: dict[str, dict[str, str]] = {
     "paused": {"resume": "scheduled", "cancel": "cancelled"},
 }
 _CRON_PART = re.compile(r"^[\d*,\-/]+$")
-_schedules: dict[uuid.UUID, dict] = {}
+
+
+def _store():
+    return get_schedule_store()
+
+
+def _get_row(schedule_id: uuid.UUID) -> dict:
+    row = _store().get(schedule_id)
+    if row is None:
+        raise ScheduleError("RPT_SCHEDULE_NOT_FOUND", "Schedule not found", 404)
+    return row
 
 
 def _validate_cron(cron: str) -> None:
@@ -42,13 +53,6 @@ def _validate_cron(cron: str) -> None:
             val = int(part)
             if val < lo or val > hi:
                 raise ScheduleError("RPT_SCHEDULE_INVALID_CRON", "Cron field out of range", 422)
-
-
-def _get_row(schedule_id: uuid.UUID) -> dict:
-    row = _schedules.get(schedule_id)
-    if row is None:
-        raise ScheduleError("RPT_SCHEDULE_NOT_FOUND", "Schedule not found", 404)
-    return row
 
 
 def _source_label(row: dict) -> str | None:
@@ -73,12 +77,14 @@ def _out(row: dict) -> ScheduleStatusOut:
     recipients = row.get("recipients") or []
     return ScheduleStatusOut(
         id=row["id"],
+        name=row.get("name"),
         catalogNodeId=row.get("catalog_node_id"),
         sourceType=row.get("source_type", "template"),
         sourceId=row.get("source_id") or row["catalog_node_id"],
         sourceLabel=_source_label(row),
         recipients=recipients,
         attachmentFormats=row.get("attachment_formats") or ["pdf"],
+        deliveryChannels=row.get("delivery_channels") or ["email"],
         cron=row["cron"],
         timezone=row["timezone"],
         status=row["status"],
@@ -114,17 +120,45 @@ def create_schedule(payload: ScheduleCreate, actor: UserContext) -> ScheduleStat
     schedule_id = uuid.uuid4()
     row = {
         "id": schedule_id,
+        "name": payload.name,
         "catalog_node_id": payload.catalog_node_id,
         "source_type": payload.source_type,
         "source_id": payload.source_id,
         "recipients": recipients,
         "attachment_formats": list(payload.attachment_formats),
+        "delivery_channels": list(payload.delivery_channels),
         "cron": payload.cron,
         "timezone": payload.timezone,
         "status": "draft",
         "owner_id": actor.id,
     }
-    _schedules[schedule_id] = row
+    _store().save(row)
+    return _out(row)
+
+
+def update_schedule(
+    schedule_id: uuid.UUID,
+    payload: ScheduleUpdate,
+    actor: UserContext,
+) -> ScheduleStatusOut:
+    row = _get_row(schedule_id)
+    schedule_acl.assert_schedule_write(actor, row, "update")
+    if row["status"] != "draft":
+        raise ScheduleError("RPT_SCHEDULE_NOT_EDITABLE", "Only draft schedules can be edited", 400)
+    if payload.cron is not None:
+        _validate_cron(payload.cron)
+        row["cron"] = payload.cron
+    if payload.timezone is not None:
+        row["timezone"] = payload.timezone
+    if payload.recipients is not None:
+        row["recipients"] = [r.model_dump(by_alias=True) for r in payload.recipients]
+    if payload.attachment_formats is not None:
+        row["attachment_formats"] = list(payload.attachment_formats)
+    if payload.delivery_channels is not None:
+        row["delivery_channels"] = list(payload.delivery_channels)
+    if payload.name is not None:
+        row["name"] = payload.name
+    _store().save(row)
     return _out(row)
 
 
@@ -133,7 +167,7 @@ def get_schedule(schedule_id: uuid.UUID) -> ScheduleStatusOut:
 
 
 def iter_scheduled_rows() -> list[dict]:
-    return [row for row in _schedules.values() if row["status"] == "scheduled"]
+    return [row for row in _store().list_all() if row["status"] == "scheduled"]
 
 
 def list_schedules(
@@ -145,7 +179,7 @@ def list_schedules(
     limit: int = 50,
     offset: int = 0,
 ) -> ScheduleListOut:
-    rows = list(_schedules.values())
+    rows = _store().list_all()
     if catalog_node_id is not None:
         rows = [
             r for r in rows
@@ -179,6 +213,7 @@ def transition_schedule(schedule_id: uuid.UUID, action: str, actor: UserContext)
             row["recipients"] = [{"type": "role", "value": "admin"}]
         validate_recipients_present(row["recipients"])
     row["status"] = mapping[action]
+    _store().save(row)
     if row["status"] == "scheduled":
         schedule_jobs.register_job_on_transition(schedule_id, row)
     if action == "cancel":

@@ -223,7 +223,8 @@ def _seed_demo_template(actor: UserContext, ds_id: uuid.UUID | None) -> tuple[in
 
 
 def _seed_demo_schedule(node_id: uuid.UUID, actor: UserContext) -> int:
-    for row in scheduler_service._schedules.values():
+    from app.reports.scheduler.store import get_schedule_store
+    for row in get_schedule_store().list_all():
         if row.get("source_id") == node_id or row.get("catalog_node_id") == node_id:
             return 0
     sched = scheduler_service.create_schedule(

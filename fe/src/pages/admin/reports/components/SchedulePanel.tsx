@@ -18,6 +18,7 @@ import {
   ScheduleFormFields,
   type ScheduleFormValue,
 } from "./ScheduleFormFields";
+import { ScheduleActivationBanner } from "./ScheduleActivationBanner";
 import { ScheduleHistoryTable } from "./ScheduleHistoryTable";
 import type { ReportScheduleRow, ScheduleExecutionRow } from "../useReportSchedules";
 
@@ -32,6 +33,8 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
   const qc = useQueryClient();
   const [form, setForm] = useState<ScheduleFormValue>(DEFAULT_SCHEDULE_FORM);
   const [clonePending, setClonePending] = useState(false);
+  const [showActivationBanner, setShowActivationBanner] = useState(false);
+  const [pendingActivateId, setPendingActivateId] = useState<string | null>(null);
 
   const listQuery = useQuery({
     queryKey: ["reports", "schedules", catalogNodeId],
@@ -69,10 +72,15 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
           timezone: form.timezone,
           recipients: form.recipients.filter((r) => r.value.trim()),
           attachmentFormats: form.attachmentFormats,
+          deliveryChannels: form.deliveryChannels,
         }),
       }),
-    onSuccess: () => {
+    onSuccess: (created) => {
       toast.success("调度已创建");
+      if (created.allowedActions.includes("schedule")) {
+        setPendingActivateId(created.id);
+        setShowActivationBanner(true);
+      }
       invalidate();
     },
     onError: (err) => toast.error(mapApiError(err)),
@@ -167,6 +175,20 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
           <CardTitle className="text-title-sm">新建调度</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {showActivationBanner && pendingActivateId ? (
+            <ScheduleActivationBanner
+              onActivate={() =>
+                void transitionMutation
+                  .mutateAsync({ id: pendingActivateId, action: "schedule" })
+                  .then(() => {
+                    setShowActivationBanner(false);
+                    setPendingActivateId(null);
+                    toast.success("调度已激活");
+                  })
+              }
+              activating={transitionMutation.isPending}
+            />
+          ) : null}
           <ScheduleFormFields
             value={form}
             onChange={setForm}

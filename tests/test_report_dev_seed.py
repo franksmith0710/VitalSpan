@@ -48,12 +48,13 @@ def _reset_memory_stores():
     catalog_service._nodes.clear()
     template_service._store.clear()
     prefab_service._store.clear()
-    scheduler_service._schedules.clear()
+    from app.reports.scheduler.store import reset_schedules_for_tests
+    reset_schedules_for_tests()
     yield
     catalog_service._nodes.clear()
     template_service._store.clear()
     prefab_service._store.clear()
-    scheduler_service._schedules.clear()
+    reset_schedules_for_tests()
 
 
 @pytest.fixture

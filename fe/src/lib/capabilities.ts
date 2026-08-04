@@ -17,8 +17,8 @@ const BUILTIN_ROLE_CAPABILITIES: Record<SessionRole, readonly string[]> = {
     "metadata:*",
     "dataset:*",
   ],
-  /** analyst 仅消费报表；模板/调度需 report:manage（admin 的 report:* 覆盖） */
-  analyst: ["dashboard:edit", "dashboard:share", "report:read", "theme:*"],
+  /** analyst 可消费报表并管理本人看板定时推送 */
+  analyst: ["dashboard:edit", "dashboard:share", "dashboard:schedule", "report:read", "theme:*"],
   viewer: ["dashboard:read", "report:read"],
 };
 

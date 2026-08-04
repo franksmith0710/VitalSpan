@@ -16,7 +16,7 @@ from app.dashboard.export_jobs_schemas import DashboardExportJobOut
 from app.dashboard.export_layout import build_dashboard_excel_csv, build_dashboard_pdf
 from app.dashboard.export_render import render_dashboard_visual_pdf
 from app.dashboard.export_token import issue_export_token
-from app.dashboard.surface_kind import read_surface_kind_from_layout
+from app.dashboard.surface_kind import layout_to_dict, read_surface_kind_from_layout
 
 
 @dataclass
@@ -75,6 +75,11 @@ def _build_pdf_bytes(db: Session, dashboard_id: uuid.UUID, row) -> tuple[bytes, 
         raise
 
 
+def _count_widgets(layout: dict) -> int:
+    widgets = layout.get("widgets") or []
+    return len(widgets) if isinstance(widgets, list) else 0
+
+
 def submit_dashboard_export(
     db: Session,
     dashboard_id: uuid.UUID,
@@ -84,8 +89,15 @@ def submit_dashboard_export(
     if fmt not in {"pdf", "excel"}:
         raise dash_service.DashboardError("DASH_EXPORT_INVALID_FORMAT", "Invalid export format", 422)
     row = dash_service.get_dashboard(db, dashboard_id)
+    layout = layout_to_dict(row.layout_json)
+    settings = get_settings()
+    if _count_widgets(layout) == 0 and not (fmt == "excel" or settings.rpt_export_fallback):
+        raise dash_service.DashboardError(
+            "DASHBOARD_EXPORT_EMPTY",
+            "看板为空，无法导出。请先添加组件后再创建定时报告。",
+            422,
+        )
     job_id = uuid.uuid4()
-    layout = row.layout_json
     artifact_kind: str | None = None
     if fmt == "pdf":
         data, artifact_kind = _build_pdf_bytes(db, dashboard_id, row)
