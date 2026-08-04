@@ -26,6 +26,7 @@ from app.metadata.dataset.schemas import (
 )
 
 META_DATASET_CONFIG_TYPE_INVALID = "META_DATASET_CONFIG_TYPE_INVALID"
+META_DATASET_SYNC_BIND_LOCKED = "META_DATASET_SYNC_BIND_LOCKED"
 
 _FIELD_RE = re.compile(r"^[a-z][a-z0-9_]{1,63}$")
 _USER_DATASET_SCOPE: dict[str, str] = {}
@@ -294,6 +295,24 @@ def bind_query_config(dataset_id: str, config_id: uuid.UUID, user: UserContext) 
             raise DatasetError(
                 META_DATASET_CONFIG_TYPE_INVALID, "config must be dataset_query", 422,
             )
+        if row.origin == "sync_job":
+            if row.bound_config_id is not None and row.bound_config_id != config_id:
+                raise DatasetError(
+                    META_DATASET_SYNC_BIND_LOCKED,
+                    "同步产物 Dataset 绑定已锁定，不能改绑到其他连接",
+                    422,
+                )
+            from app.ingestion.analytics_datasource import resolve_analytics_datasource_id
+
+            analytics_id = resolve_analytics_datasource_id(session)
+            payload = record.payload if isinstance(record.payload, dict) else {}
+            bound_ds = payload.get("dataSourceId")
+            if analytics_id is None or str(bound_ds) != str(analytics_id):
+                raise DatasetError(
+                    META_DATASET_SYNC_BIND_LOCKED,
+                    "同步产物 Dataset 只能绑定托管分析库",
+                    422,
+                )
         row.bound_config_id = config_id
         session.flush()
         return _row_to_out(row)

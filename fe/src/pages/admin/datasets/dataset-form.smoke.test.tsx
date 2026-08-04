@@ -134,6 +134,6 @@ describe("Dataset form pages", () => {
     expect(await screen.findByDisplayValue("amt2")).toBeInTheDocument();
 
     await user.click(screen.getByRole("tab", { name: /绑定配置/ }));
-    expect(screen.getByText("绑定查询配置")).toBeInTheDocument();
+    expect(screen.getByText("出图查询绑定")).toBeInTheDocument();
   });
 });

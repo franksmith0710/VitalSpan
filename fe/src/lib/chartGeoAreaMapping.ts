@@ -45,6 +45,17 @@ export function readChartGeoAreaMappingLookup(
   return buildAreaMappingLookup(readChartGeoAreaMapping(deStyle));
 }
 
+/** 用于地图 contentKey，映射变更须触发重绘 */
+export function buildAreaMappingContentSig(
+  lookup?: ReadonlyMap<string, string> | null,
+): string {
+  if (!lookup?.size) return "";
+  return [...lookup.entries()]
+    .sort(([a], [b]) => a.localeCompare(b, "zh-CN"))
+    .map(([from, to]) => `${from}=>${to}`)
+    .join("|");
+}
+
 /** 对用户维度 raw 查表；非 string 或空 lookup 原样返回 */
 export function applyAreaMapping(
   raw: unknown,

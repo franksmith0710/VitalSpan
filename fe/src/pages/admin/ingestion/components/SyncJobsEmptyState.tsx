@@ -1,29 +1,30 @@
-import { BarChart3, History, RefreshCw, Settings2 } from "lucide-react";
+import { BarChart3, History, Link2, RefreshCw } from "lucide-react";
+import { Link } from "react-router";
 import { PanelEmptyState, PanelEmptyStateSteps } from "@/components/ui/panel-empty-state";
 
 const STEPS = [
   {
     step: 1,
-    title: "配置源库连接",
-    description: "填写 MySQL 源库地址、账号密码与待同步源表。",
-    icon: Settings2,
+    title: "连接管理登记 MySQL",
+    description: "在连接管理登记业务 MySQL 源库连接。",
+    icon: Link2,
   },
   {
     step: 2,
-    title: "设置目标与清洗",
-    description: "指定托管分析库目标表、定时计划与 ETL 列映射规则。",
+    title: "创建同步任务",
+    description: "引用已登记连接，指定源表与托管分析库目标表，可选 ETL 清洗。",
     icon: RefreshCw,
   },
   {
     step: 3,
     title: "运行并监控",
-    description: "手动或定时触发同步，在历史记录中查看执行结果。",
+    description: "在编辑页或列表手动/定时触发同步，在历史记录查看结果。",
     icon: History,
   },
   {
     step: 4,
-    title: "创建 Dataset 并出图",
-    description: "登记托管 PostgreSQL 分析库，创建 Dataset 选同步表，再在空白看板中选 Dataset 出图。",
+    title: "一键 Dataset 出图",
+    description: "同步成功后一键创建 Dataset 并绑定，再在仪表板中选 Dataset 出图。",
     icon: BarChart3,
   },
 ] as const;
@@ -34,7 +35,18 @@ export function SyncJobsEmptyState() {
       <PanelEmptyState
         icon={<RefreshCw className="size-7" aria-hidden />}
         title="暂无同步任务"
-        description="将业务源库数据同步到托管分析库，供仪表板与查询使用。点击右上角「新建任务」开始配置。"
+        description={
+          <>
+            推荐路径：
+            <Link
+              to="/admin/datasources"
+              className="text-brand-600 underline-offset-2 hover:underline dark:text-brand-400"
+            >
+              连接管理
+            </Link>
+            登记 MySQL → 新建同步任务 → 运行 → 一键 Dataset 出图。
+          </>
+        }
         size="lg"
         footer={
           <div className="border-t border-gray-200 px-6 pb-6 pt-2 dark:border-gray-800">

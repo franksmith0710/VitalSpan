@@ -210,6 +210,8 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
               datasetId={values.datasetId}
               tables={values.tables}
               boundConfigId={detailQuery.data?.boundConfigId}
+              origin={detailQuery.data?.origin ?? "manual"}
+              syncJobId={detailQuery.data?.syncJobId}
               onBound={() => void detailQuery.refetch()}
             />
           ) : null

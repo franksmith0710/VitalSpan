@@ -34,7 +34,7 @@ import { useGeoMapLevel, isGeoMapLevelReady } from "@/hooks/useGeoMapLevel";
 import { useChartVisualScale } from "@/hooks/useChartVisualScale";
 import { VIZ_WHEEL_ZOOM_SURFACE_ATTR } from "@/components/dashboard/pixelCanvas/pixelCanvasWheelScroll";
 import { readChartDeStyle, readChartGeoStyle, readChartGeo3dStyle } from "@/lib/chartDeStyle";
-import { readChartGeoAreaMappingLookup } from "@/lib/chartGeoAreaMapping";
+import { readChartGeoAreaMappingLookup, buildAreaMappingContentSig } from "@/lib/chartGeoAreaMapping";
 import {
   buildGeo3dStructureContentSig,
   buildGeo3dVisualContentSig,
@@ -123,6 +123,11 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   const areaMapping = useMemo(
     () => (chartConfig ? readChartGeoAreaMappingLookup(readChartDeStyle(chartConfig)) : undefined),
     [chartConfig],
+  );
+
+  const areaMappingSig = useMemo(
+    () => buildAreaMappingContentSig(areaMapping),
+    [areaMapping],
   );
 
   const spec = useMemo(() => chartViewModelToRenderSpec(viewModel), [viewModel]);
@@ -215,6 +220,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
         isDark: style.isDark,
         renderTier: props.geo3dRenderTier ?? "full",
         geo3dStyleSig: geoStyleStructureSig,
+        areaMappingSig,
       }),
     [
       viewModel.chartType,
@@ -227,6 +233,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       style.isDark,
       props.geo3dRenderTier,
       geoStyleStructureSig,
+      areaMappingSig,
     ],
   );
 

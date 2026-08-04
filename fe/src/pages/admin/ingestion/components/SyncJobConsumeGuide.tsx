@@ -85,42 +85,16 @@ export function SyncJobConsumeGuide({
                 <li className="flex items-start gap-1.5">
                   <Play className="mt-0.5 size-3.5 shrink-0 opacity-70" aria-hidden />
                   <span>
-                    在
-                    <Link
-                      to="/admin/ingestion/sync-jobs"
-                      className="text-brand-600 underline-offset-2 hover:underline dark:text-brand-400"
-                    >
-                      同步任务列表
-                    </Link>
-                    找到
-                    {jobName ? (
-                      <span className="font-medium text-gray-700 dark:text-gray-300">
-                        「{jobName}」
-                      </span>
-                    ) : (
-                      "本任务"
-                    )}
-                    ，点击 ▶ <strong className="font-semibold">手动运行</strong>
+                    在本页点击页顶 ▶ <strong className="font-semibold">立即运行</strong>
                     {runModeHint(syncMode)}
                   </span>
                 </li>
                 <li className="flex items-start gap-1.5">
                   <Layers className="mt-0.5 size-3.5 shrink-0 opacity-70" aria-hidden />
                   <span>
-                    运行成功后，列表或
-                    {historyPath ? (
-                      <Link
-                        to={historyPath}
-                        className="text-brand-600 underline-offset-2 hover:underline dark:text-brand-400"
-                      >
-                        运行历史
-                      </Link>
-                    ) : (
-                      "运行历史"
-                    )}
-                    页会出现动作卡，点击
+                    运行成功后，本页会出现动作卡，点击
                     <strong className="font-semibold">一键创建 Dataset 并绑定</strong>
-                    （系统会自动登记分析库，通常无需手填 5433）。
+                    （绑定锁定为托管分析库中的同步产出表）。
                   </span>
                 </li>
                 <li className="flex items-start gap-1.5">
@@ -133,14 +107,14 @@ export function SyncJobConsumeGuide({
                 </li>
               </ol>
               <div className="flex flex-wrap gap-2 pt-1">
-                <Button asChild variant="primary" size="sm">
-                  <Link to="/admin/ingestion/sync-jobs">去列表运行同步</Link>
-                </Button>
                 {historyPath ? (
                   <Button asChild variant="outline" size="sm">
-                    <Link to={historyPath}>运行历史 / 一键出图</Link>
+                    <Link to={historyPath}>运行历史</Link>
                   </Button>
                 ) : null}
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/admin/ingestion/sync-jobs">返回列表</Link>
+                </Button>
               </div>
               <details className="rounded-lg border border-gray-200 bg-gray-50/80 px-3 py-2 dark:border-gray-800 dark:bg-white/[0.02]">
                 <summary className="cursor-pointer text-theme-xs font-medium text-gray-600 dark:text-gray-400">

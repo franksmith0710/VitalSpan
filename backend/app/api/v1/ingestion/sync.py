@@ -399,6 +399,16 @@ def _to_detail(
     )
 
 
+def _detail_for_job(db: Session, job: SyncJob) -> SyncJobDetail:
+    last_runs = _last_runs_by_job_id(db, [job.id])
+    last = last_runs.get(job.id)
+    consume = None
+    if last is not None and last.status == "succeeded":
+        consume = resolve_consume_status(db, job)
+    ds_labels = _datasource_labels(db, [job])
+    return _to_detail(job, last, ds_labels, consume)
+
+
 @router.get("/sync-jobs", response_model=SyncJobListResponse)
 def list_sync_jobs(
     _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
@@ -454,8 +464,7 @@ def create_sync_job(
     db.commit()
     db.refresh(job)
     refresh_all_jobs()
-    ds_labels = _datasource_labels(db, [job])
-    return _to_detail(job, None, ds_labels)
+    return _detail_for_job(db, job)
 
 
 @router.get("/sync-jobs/{job_id}", response_model=SyncJobDetail)
@@ -470,8 +479,7 @@ def get_sync_job(
             status_code=404,
             detail={"code": "NOT_FOUND", "message": "任务不存在", "detail": None},
         )
-    ds_labels = _datasource_labels(db, [job])
-    return _to_detail(job, None, ds_labels)
+    return _detail_for_job(db, job)
 
 
 @router.get("/sync-jobs/{job_id}/consume-hints", response_model=SyncJobConsumeHints)
@@ -579,8 +587,7 @@ def update_sync_job(
     db.commit()
     db.refresh(job)
     refresh_all_jobs()
-    ds_labels = _datasource_labels(db, [job])
-    return _to_detail(job, None, ds_labels)
+    return _detail_for_job(db, job)
 
 
 @router.delete("/sync-jobs/{job_id}", status_code=status.HTTP_204_NO_CONTENT)

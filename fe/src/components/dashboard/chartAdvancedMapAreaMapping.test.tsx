@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChartInspectorProvider } from "./ChartInspectorProvider";
@@ -24,6 +24,7 @@ const mapWidget: LayoutWidget = {
   chartConfig: {
     ...defaultChartConfig("map"),
     dataSourceId: "ds-1",
+    configId: "cfg-1",
     dimensions: [{ field: "province" }],
     metrics: [{ field: "value" }],
   },
@@ -71,22 +72,31 @@ afterEach(() => {
 });
 
 describe("ChartAdvancedMapAreaMappingSection", () => {
-  it("persists areaMapping via patchChartDeStyleNested", async () => {
-    const user = userEvent.setup();
-    const onChange = renderSection(mapWidget);
-
-    await user.click(screen.getByRole("button", { name: "添加映射" }));
-    expect(onChange).toHaveBeenCalled();
-    const nextCfg = onChange.mock.calls[0]?.[0];
-    const entries = readChartDeStyle(nextCfg).geo?.areaMapping ?? [];
-    expect(entries).toHaveLength(1);
-    expect(entries[0]?.id).toBeTruthy();
+  it("shows province names in 图形 column on first page", () => {
+    renderSection(mapWidget);
+    expect(screen.getByText("安徽省")).toBeInTheDocument();
+    expect(screen.getByText("北京市")).toBeInTheDocument();
+    expect(screen.getByText("图形")).toBeInTheDocument();
+    expect(screen.getByText("属性")).toBeInTheDocument();
   });
 
-  it("updates from field in chartConfig", async () => {
+  it("auto-suggests areaMapping when data is ready and mapping is empty", async () => {
+    const onChange = renderSection(mapWidget);
+
+    await waitFor(() => {
+      expect(onChange).toHaveBeenCalled();
+    });
+    const lastCfg = onChange.mock.calls.at(-1)?.[0];
+    const entries = readChartDeStyle(lastCfg).geo?.areaMapping ?? [];
+    expect(entries.some((entry) => entry.from === "江苏省" && entry.to === "江苏省")).toBe(
+      true,
+    );
+  });
+
+  it("updates attribute field in chartConfig", async () => {
     const onChange = renderSection(mapWidgetWithMapping);
-    const fromInput = screen.getByDisplayValue("OLD");
-    fireEvent.change(fromInput, { target: { value: "EAST_01" } });
+    const attrInput = screen.getByLabelText("北京市 属性");
+    fireEvent.change(attrInput, { target: { value: "EAST_01" } });
 
     const lastCfg = onChange.mock.calls.at(-1)?.[0];
     expect(readChartDeStyle(lastCfg).geo?.areaMapping?.[0]?.from).toBe("EAST_01");
@@ -95,52 +105,41 @@ describe("ChartAdvancedMapAreaMappingSection", () => {
     ]);
   });
 
-  it("removes mapping row on delete", async () => {
+  it("clears mapping when attribute is emptied", async () => {
+    const onChange = renderSection(mapWidgetWithMapping);
+    const attrInput = screen.getByLabelText("北京市 属性");
+    fireEvent.change(attrInput, { target: { value: "" } });
+
+    const lastCfg = onChange.mock.calls.at(-1)?.[0];
+    expect(readChartDeStyle(lastCfg).geo?.areaMapping ?? []).toHaveLength(0);
+  });
+
+  it("re-syncs mappings from preview data", async () => {
     const user = userEvent.setup();
     const onChange = renderSection(mapWidgetWithMapping);
 
-    await user.click(screen.getByRole("button", { name: "删除映射" }));
-    const nextCfg = onChange.mock.calls.at(-1)?.[0];
-    expect(readChartDeStyle(nextCfg).geo?.areaMapping ?? []).toHaveLength(0);
+    await user.click(screen.getByRole("button", { name: "重新匹配" }));
+    const lastCfg = onChange.mock.calls.at(-1)?.[0];
+    const entries = readChartDeStyle(lastCfg).geo?.areaMapping ?? [];
+    expect(entries.some((entry) => entry.from === "江苏省" && entry.to === "江苏省")).toBe(
+      true,
+    );
   });
 
-  it("imports unmatched values from preview data", async () => {
-    const user = userEvent.setup();
-    const onChange = renderSection(mapWidget);
-
-    await user.click(screen.getByRole("button", { name: /导入未匹配/ }));
-    const nextCfg = onChange.mock.calls.at(-1)?.[0];
-    const entries = readChartDeStyle(nextCfg).geo?.areaMapping ?? [];
-    expect(entries.some((entry) => entry.from === "EAST_01")).toBe(true);
-  });
-
-  it("shows match status from preview data", () => {
+  it("shows match status from preview data", async () => {
     renderSection(mapWidget);
-    expect(screen.getByText(/已匹配 1\/2 条/)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/已匹配 1\/2 条/)).toBeInTheDocument();
+    });
     expect(screen.getByText(/1 个取值未匹配/)).toBeInTheDocument();
   });
 
-  it("persists map region via province select", async () => {
+  it("paginates province list", async () => {
     const user = userEvent.setup();
-    const onChange = renderSection({
-      ...mapWidget,
-      chartConfig: {
-        ...mapWidget.chartConfig!,
-        nativeBody: {
-          deStyle: {
-            geo: {
-              areaMapping: [{ id: "row-1", from: "EAST_01", to: "" }],
-            },
-          },
-        },
-      },
-    });
+    renderSection(mapWidget);
 
-    await user.click(screen.getByRole("combobox", { name: "地图区域" }));
-    const listbox = screen.getByRole("listbox");
-    await user.click(within(listbox).getByRole("option", { name: "江苏省" }));
-
-    const lastCfg = onChange.mock.calls.at(-1)?.[0];
-    expect(readChartDeStyle(lastCfg).geo?.areaMapping?.[0]?.to).toBe("江苏省");
+    expect(screen.getByRole("button", { name: "2" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "2" }));
+    expect(screen.queryByText("安徽省")).not.toBeInTheDocument();
   });
 });

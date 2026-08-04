@@ -1,3 +1,5 @@
+export type DatasetOrigin = "manual" | "sync_job";
+
 export type DatasetTable = { name: string; alias?: string | null };
 export type DatasetComputedField = { name: string; expression: string };
 
@@ -8,6 +10,8 @@ export type DatasetItem = {
   computedFields: DatasetComputedField[];
   allowedRoles: string[];
   boundConfigId?: string | null;
+  origin?: DatasetOrigin;
+  syncJobId?: string | null;
 };
 
 export type DatasetEditorValues = {

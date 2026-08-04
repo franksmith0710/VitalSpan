@@ -39,6 +39,27 @@ describe("buildGeoMapContentKey", () => {
     expect(national).not.toBe(drilled);
   });
 
+  it("areaMapping 变化时 key 不同", () => {
+    const base = {
+      chartType: "map",
+      mapId: "100000",
+      drillDepth: 0,
+      drillStack: [] as { field: string; value: string }[],
+      rowCount: 34,
+      regionField: "province",
+      rowsSample: [{ province: "安徽省" }],
+      depthVisual: "off",
+      isDark: false,
+      areaMappingSig: "EAST_01=>江苏省",
+    };
+    expect(
+      buildGeoMapContentKey({
+        ...base,
+        areaMappingSig: "EAST_01=>北京市",
+      }),
+    ).not.toBe(buildGeoMapContentKey(base));
+  });
+
   it("geo3d 样式签名变化时 key 不同", () => {
     const base = {
       chartType: "map-3d",

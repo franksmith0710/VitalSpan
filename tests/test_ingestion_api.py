@@ -338,6 +338,33 @@ def test_list_sync_jobs_includes_last_run(client, auth_headers, job_payload):
     client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
 
 
+def test_get_sync_job_includes_last_run(client, auth_headers, job_payload):
+    create = client.post("/api/v1/ingestion/sync-jobs", json=job_payload, headers=auth_headers)
+    job_id = create.json()["id"]
+    db = get_meta_session()
+    db.add(
+        SyncRun(
+            job_id=uuid.UUID(job_id),
+            status="succeeded",
+            trace_id="get-last-run",
+            started_at=datetime.now(timezone.utc),
+            finished_at=datetime.now(timezone.utc),
+            rows_synced=7,
+        )
+    )
+    db.commit()
+    db.close()
+
+    detail = client.get(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+    assert detail.status_code == 200
+    body = detail.json()
+    assert body["last_run"] is not None
+    assert body["last_run"]["status"] == "succeeded"
+    assert body["last_run"]["rows_synced"] == 7
+
+    client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
 def test_openapi_lists_ingestion_sync_job_routes(client):
     """T-D01-12: OpenAPI paths 含 sync-jobs CRUD、run、runs、etl-rules。"""
     paths = client.get("/openapi.json").json()["paths"]

@@ -1,28 +1,26 @@
-import { useMemo } from "react";
-import { Download, Plus, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { RefreshCw } from "lucide-react";
 import { analyzeGeoMapMatch } from "@/components/charts/engine/geo/geoMapChart";
 import { useChartExecute } from "@/components/charts/useChartExecute";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   patchChartDeStyleNested,
   readChartDeStyle,
   readChartGeoStyle,
-  type ChartGeoAreaMappingEntry,
 } from "@/lib/chartDeStyle";
-import { buildAreaMappingLookup } from "@/lib/chartGeoAreaMapping";
 import {
-  buildAreaMappingImportRows,
-  countImportableUnmatchedValues,
-  listUnmatchedGeoRegionValues,
-} from "@/lib/geoAreaMappingFromData";
+  buildAreaMappingLookup,
+  countEffectiveAreaMappings,
+} from "@/lib/chartGeoAreaMapping";
+import {
+  autoSuggestAreaMappingEntries,
+  buildGeoAreaMappingViewRows,
+  listDistinctRegionFieldValues,
+  mergeAreaMappingAttribute,
+  paginateMapRegions,
+} from "@/lib/geoAreaMappingTable";
+import { listUnmatchedGeoRegionValues } from "@/lib/geoAreaMappingFromData";
 import { isChartExecuteReady } from "@/lib/chartExecuteProbe";
 import { listOfflineProvinceNames } from "@/lib/geoMapLevels";
 import { cn } from "@/lib/utils";
@@ -31,123 +29,126 @@ import {
   INSPECTOR_CTRL,
   INSPECTOR_HINT,
   INSPECTOR_SECTION_GAP,
-  INSPECTOR_SELECT_TRIGGER,
   InspectorSubtleEmpty,
 } from "./inspectorCompact";
 
-const PROVINCE_NAMES = listOfflineProvinceNames();
-const UNSET_REGION = "__unset__";
+const MAP_REGIONS = listOfflineProvinceNames();
 
 function newMappingId(): string {
   return crypto.randomUUID();
 }
 
-function AreaMappingTableRow({
-  entry,
-  onChange,
-  onRemove,
+function MappingPagination({
+  page,
+  totalPages,
+  onPageChange,
 }: {
-  entry: ChartGeoAreaMappingEntry;
-  onChange: (next: ChartGeoAreaMappingEntry) => void;
-  onRemove: () => void;
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
 }) {
-  const listId = `geo-area-mapping-to-${entry.id}`;
-  const useProvinceSelect = !entry.to || PROVINCE_NAMES.includes(entry.to);
-
+  if (totalPages <= 1) return null;
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_28px] items-center gap-1.5 px-2 py-1">
-      <Input
-        className={cn(INSPECTOR_CTRL, "min-w-0")}
-        value={entry.from}
-        placeholder="业务取值"
-        aria-label="业务值"
-        onChange={(e) => onChange({ ...entry, from: e.target.value })}
-      />
-      {useProvinceSelect ? (
-        <Select
-          value={entry.to || UNSET_REGION}
-          onValueChange={(value) => {
-            if (value === UNSET_REGION) return;
-            onChange({ ...entry, to: value });
-          }}
+    <div className="flex items-center justify-center gap-1 px-2 py-1.5">
+      {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
+        <Button
+          key={pageNumber}
+          type="button"
+          variant={pageNumber === page ? "primary" : "outline"}
+          size="sm"
+          className="h-7 min-w-7 px-2 text-[10px]"
+          onClick={() => onPageChange(pageNumber)}
         >
-          <SelectTrigger className={INSPECTOR_SELECT_TRIGGER} aria-label="地图区域">
-            <SelectValue placeholder="选择省/市" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={UNSET_REGION} disabled>
-              选择省/市
-            </SelectItem>
-            {PROVINCE_NAMES.map((name) => (
-              <SelectItem key={name} value={name}>
-                {name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      ) : (
-        <Input
-          className={cn(INSPECTOR_CTRL, "min-w-0")}
-          list={listId}
-          value={entry.to}
-          placeholder="标准市/区名"
-          aria-label="地图区域"
-          onChange={(e) => onChange({ ...entry, to: e.target.value })}
-        />
-      )}
-      <datalist id={listId}>
-        {PROVINCE_NAMES.map((name) => (
-          <option key={name} value={name} />
-        ))}
-      </datalist>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="size-7 shrink-0 text-gray-400"
-        aria-label="删除映射"
-        onClick={onRemove}
-      >
-        <Trash2 className="size-3.5" />
-      </Button>
+          {pageNumber}
+        </Button>
+      ))}
     </div>
   );
 }
 
-/** 2D/3D 区域地图 · 高级「地名映射」（对标 DataEase MapMapping 表格交互） */
+/** 2D/3D 区域地图 · 高级「地名映射」（对标 DataEase：图形=地图区域，属性=业务取值） */
 export function ChartAdvancedMapAreaMappingSection() {
   const { cfg, onChange } = useChartInspector();
   const geo = readChartGeoStyle(readChartDeStyle(cfg));
   const entries = geo.areaMapping ?? [];
   const regionField = cfg.dimensions?.[0]?.field ?? "";
   const executeReady = isChartExecuteReady(cfg);
+  const [page, setPage] = useState(1);
+  const autoAppliedRef = useRef<string | null>(null);
 
   const { columns, rows, loading, error } = useChartExecute(cfg, { enabled: executeReady });
 
-  const patchEntries = (next: ChartGeoAreaMappingEntry[]) =>
+  const patchEntries = (next: typeof entries) =>
     onChange(patchChartDeStyleNested(cfg, "geo", { areaMapping: next }));
 
   const lookup = useMemo(() => buildAreaMappingLookup(entries), [entries]);
+
+  const distinctValues = useMemo(() => {
+    if (!regionField || !rows.length) return [];
+    return listDistinctRegionFieldValues(rows, columns, regionField);
+  }, [regionField, rows, columns]);
+
+  const { pageRegions, totalPages, safePage } = useMemo(
+    () => paginateMapRegions(MAP_REGIONS, page),
+    [page],
+  );
+
+  useEffect(() => {
+    if (safePage !== page) setPage(safePage);
+  }, [safePage, page]);
+
+  const viewRows = useMemo(
+    () =>
+      buildGeoAreaMappingViewRows(
+        pageRegions,
+        distinctValues,
+        entries,
+        regionField,
+        lookup,
+      ),
+    [pageRegions, distinctValues, entries, regionField, lookup],
+  );
 
   const matchStats = useMemo(() => {
     if (!regionField || !rows.length || columns.indexOf(regionField) < 0) return null;
     return analyzeGeoMapMatch(rows, columns, regionField, undefined, 0, lookup);
   }, [regionField, rows, columns, lookup]);
 
-  const importableCount = useMemo(() => {
-    if (!regionField || !rows.length || columns.indexOf(regionField) < 0) return 0;
-    return countImportableUnmatchedValues(rows, columns, regionField, entries);
-  }, [regionField, rows, columns, entries]);
-
-  const unmatchedUniqueCount = useMemo(() => {
-    if (!regionField || !rows.length || columns.indexOf(regionField) < 0) return 0;
-    return listUnmatchedGeoRegionValues(rows, columns, regionField, lookup).length;
+  const unmatchedValues = useMemo(() => {
+    if (!regionField || !rows.length) return [];
+    return listUnmatchedGeoRegionValues(rows, columns, regionField, lookup);
   }, [regionField, rows, columns, lookup]);
 
-  const handleImportUnmatched = () => {
-    if (!regionField || importableCount === 0) return;
-    const unmatched = listUnmatchedGeoRegionValues(rows, columns, regionField, lookup);
-    patchEntries(buildAreaMappingImportRows(entries, unmatched, newMappingId));
+  const autoKey = `${regionField}:${rows.length}:${distinctValues.join("\0")}`;
+
+  useEffect(() => {
+    if (!executeReady || loading || !regionField || rows.length === 0) return;
+    if (countEffectiveAreaMappings(entries) > 0) return;
+    if (autoAppliedRef.current === autoKey) return;
+
+    const suggested = autoSuggestAreaMappingEntries(
+      MAP_REGIONS,
+      distinctValues,
+      regionField,
+      entries,
+      newMappingId,
+    );
+    autoAppliedRef.current = autoKey;
+    if (suggested.length > 0) {
+      patchEntries(suggested);
+    }
+  }, [autoKey, executeReady, loading, regionField, rows.length, distinctValues, entries]);
+
+  const handleResyncFromData = () => {
+    if (!regionField || distinctValues.length === 0) return;
+    const suggested = autoSuggestAreaMappingEntries(
+      MAP_REGIONS,
+      distinctValues,
+      regionField,
+      [],
+      newMappingId,
+    );
+    patchEntries(suggested);
   };
 
   return (
@@ -159,16 +160,16 @@ export function ChartAdvancedMapAreaMappingSection() {
             : loading
               ? "正在加载预览数据…"
               : error
-                ? "预览数据不可用，仍可手动添加映射"
+                ? "预览数据不可用，仍可手动编辑映射"
                 : matchStats
                   ? matchStats.total > 0
                     ? (
                         <>
                           已匹配 {matchStats.matched}/{matchStats.total} 条
-                          {unmatchedUniqueCount > 0 ? (
+                          {unmatchedValues.length > 0 ? (
                             <span className="text-amber-600 dark:text-amber-500">
                               {" "}
-                              · {unmatchedUniqueCount} 个取值未匹配
+                              · {unmatchedValues.length} 个取值未匹配
                             </span>
                           ) : null}
                         </>
@@ -176,58 +177,71 @@ export function ChartAdvancedMapAreaMappingSection() {
                     : "当前数据为空"
                   : executeReady
                     ? "等待预览数据"
-                    : "配置数据源后可查看匹配状态"}
+                    : "配置数据源后可自动匹配"}
         </p>
         <Button
           type="button"
           variant="outline"
           size="sm"
           className="h-7 shrink-0 px-2 text-[10px]"
-          disabled={!regionField || loading || importableCount === 0}
-          onClick={handleImportUnmatched}
+          disabled={!regionField || loading || distinctValues.length === 0}
+          onClick={handleResyncFromData}
         >
-          <Download className="mr-1 size-3" aria-hidden />
-          导入未匹配{importableCount > 0 ? ` (${importableCount})` : ""}
+          <RefreshCw className="mr-1 size-3" aria-hidden />
+          重新匹配
         </Button>
       </div>
 
       <p className={INSPECTOR_HINT}>
-        将业务维度值映射为标准省/市名称后再与离线地图 join。省级请从下拉选择；下钻至市级后请手填 GeoJSON
-        标准名称。
+        对标 DataEase：左侧为离线地图标准区域（图形），右侧填写业务维度取值（属性）。配置数据后将自动按同名与
+        join 规则建议匹配。
       </p>
 
-      {entries.length === 0 ? (
-        <InspectorSubtleEmpty message="暂无映射。可手动添加，或从当前数据一键导入未匹配取值。" />
+      {!regionField ? (
+        <InspectorSubtleEmpty message="绑定地理维度并配置数据源后，将自动列出省级区域并尝试匹配。" />
       ) : (
         <div className="overflow-hidden rounded-md border border-gray-200 dark:border-gray-800">
-          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_28px] gap-1.5 border-b border-gray-200 bg-gray-50/90 px-2 py-1.5 text-[10px] font-medium text-gray-500 dark:border-gray-800 dark:bg-white/[0.04] dark:text-gray-400">
-            <span>数据值</span>
-            <span>地图区域</span>
-            <span className="sr-only">操作</span>
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-1.5 border-b border-gray-200 bg-gray-50/90 px-2 py-1.5 text-[10px] font-medium text-gray-500 dark:border-gray-800 dark:bg-white/[0.04] dark:text-gray-400">
+            <span>图形</span>
+            <span>属性</span>
           </div>
-          {entries.map((entry) => (
-            <AreaMappingTableRow
-              key={entry.id}
-              entry={entry}
-              onChange={(next) =>
-                patchEntries(entries.map((item) => (item.id === entry.id ? next : item)))
-              }
-              onRemove={() => patchEntries(entries.filter((item) => item.id !== entry.id))}
-            />
+          {viewRows.map((row) => (
+            <div
+              key={row.mapRegion}
+              className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] items-center gap-1.5 border-b border-gray-100 px-2 py-1 last:border-b-0 dark:border-gray-800/80"
+            >
+              <span className="truncate text-[11px] text-gray-700 dark:text-gray-300">
+                {row.mapRegion}
+              </span>
+              <Input
+                className={cn(INSPECTOR_CTRL, "min-w-0")}
+                value={row.dataValue}
+                placeholder="业务取值"
+                aria-label={`${row.mapRegion} 属性`}
+                onChange={(e) =>
+                  patchEntries(
+                    mergeAreaMappingAttribute(
+                      entries,
+                      row.mapRegion,
+                      e.target.value,
+                      newMappingId,
+                    ),
+                  )
+                }
+              />
+            </div>
           ))}
+          <MappingPagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
         </div>
       )}
 
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="h-8 w-full"
-        onClick={() => patchEntries([...entries, { id: newMappingId(), from: "", to: "" }])}
-      >
-        <Plus className="mr-1 size-3.5" aria-hidden />
-        添加映射
-      </Button>
+      {unmatchedValues.length > 0 ? (
+        <p className={INSPECTOR_HINT}>
+          未匹配取值：
+          {unmatchedValues.slice(0, 5).join("、")}
+          {unmatchedValues.length > 5 ? "…" : ""} — 在对应「图形」行的「属性」中填写即可。
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -58,6 +58,7 @@ import { runBatchDelete } from "@/lib/runBatchDelete";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { isProtectedDemoDatasource } from "@/lib/demoPackage";
+import { isAnalyticsDatasource, isMysqlSyncSource } from "@/lib/datasourceRoles";
 
 type DataSourceOut = {
   id: string;
@@ -382,6 +383,21 @@ export function DatasourceListPage() {
                       {isLocked ? (
                         <Badge variant="light" color="primary" size="sm">
                           官方示例数据
+                        </Badge>
+                      ) : null}
+                      {isAnalyticsDatasource(row.code) ? (
+                        <Badge variant="light" color="success" size="sm">
+                          托管分析库
+                        </Badge>
+                      ) : null}
+                      {!isAnalyticsDatasource(row.code) && isMysqlSyncSource(row.type) ? (
+                        <Badge variant="light" color="light" size="sm">
+                          可作同步源
+                        </Badge>
+                      ) : null}
+                      {!isAnalyticsDatasource(row.code) && !isMysqlSyncSource(row.type) ? (
+                        <Badge variant="light" color="warning" size="sm">
+                          仅可直连 Dataset
                         </Badge>
                       ) : null}
                       {row.description?.trim() ? (

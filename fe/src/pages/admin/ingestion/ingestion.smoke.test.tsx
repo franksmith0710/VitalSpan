@@ -237,7 +237,9 @@ describe("ingestion admin smoke", () => {
     fireEvent.click(await screen.findByRole("button", { name: "运行" }));
 
     expect(await screen.findByText(/同步成功 · 下一步出图/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "一键创建数据集并绑定" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: "一键创建数据集并绑定" }),
+    ).toBeInTheDocument();
   });
 
   it("SyncJobHistoryPage_shows_runs", async () => {
@@ -291,6 +293,7 @@ describe("ingestion admin smoke", () => {
       </MemoryRouter>,
     );
     await screen.findByLabelText("任务名称");
+    fireEvent.click(await screen.findByRole("button", { name: "手动填写（排障）" }));
     fireEvent.change(screen.getByLabelText("任务名称"), { target: { value: "e2e-smoke-job" } });
     fireEvent.click(screen.getByRole("button", { name: "创建" }));
     await waitFor(() => {
@@ -374,6 +377,7 @@ describe("ingestion admin smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
+    fireEvent.click(await screen.findByRole("button", { name: "手动填写（排障）" }));
     const targetInput = await screen.findByLabelText("目标表");
     fireEvent.change(targetInput, { target: { value: "orders_clean" } });
     fireEvent.change(screen.getByLabelText("任务名称"), { target: { value: "共表任务" } });
@@ -502,6 +506,7 @@ describe("ingestion admin smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
+    fireEvent.click(await screen.findByRole("button", { name: "手动填写（排障）" }));
     fireEvent.change(await screen.findByLabelText("目标表"), {
       target: { value: "orders_clean" },
     });
@@ -629,7 +634,7 @@ describe("ingestion admin smoke", () => {
       </MemoryRouter>,
     );
     expect(await screen.findByText("任务已创建 · 下一步请运行同步")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "去列表运行同步" })).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: "返回列表" }).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/一键创建 Dataset 并绑定/)).toBeInTheDocument();
     expect(screen.getByLabelText("目标表")).toHaveValue("orders_clean_4");
     const guideTitle = screen.getByText("任务已创建 · 下一步请运行同步");
@@ -637,6 +642,70 @@ describe("ingestion admin smoke", () => {
     expect(
       guideTitle.compareDocumentPosition(basicSection) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+  });
+
+  it("SyncJobFormPage_edit_shows_consume_card_when_last_run_succeeded", async () => {
+    setViewport(1400);
+    mockApiFetch.mockImplementation((url: string) => {
+      if (url === "/api/v1/datasources") {
+        return Promise.resolve({ items: [] });
+      }
+      if (url === "/api/v1/ingestion/sync-jobs") {
+        return Promise.resolve({ items: [] });
+      }
+      if (url === "/api/v1/ingestion/sync-jobs/job-success") {
+        return Promise.resolve({
+          name: "已跑通任务",
+          enabled: true,
+          sync_mode: "full",
+          primary_key: null,
+          incremental_column: null,
+          source_data_source_id: "ds-1",
+          source: {
+            type: "mysql",
+            host: "127.0.0.1",
+            port: 3307,
+            database: "sample_db",
+            username: "sample",
+            password: "",
+            table: "dirty_orders",
+          },
+          target_table: "orders_clean",
+          schedule_cron: null,
+          last_run: {
+            status: "succeeded",
+            started_at: "2026-08-04T02:00:00Z",
+            finished_at: "2026-08-04T02:00:01Z",
+            rows_synced: 42,
+            error_message: null,
+          },
+        });
+      }
+      if (typeof url === "string" && url.includes("/consume-hints")) {
+        return Promise.resolve({
+          targetTable: "orders_clean",
+          suggestedDatasetId: "orders_clean",
+          analyticsDatasourceId: "ds-1",
+          analyticsReady: true,
+          datasetId: "orders_clean",
+          datasetExists: false,
+          datasetBound: false,
+          nextAction: "ensure_dataset",
+          consumeLabel: "pending_dataset",
+        });
+      }
+      return Promise.resolve({});
+    });
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-success/edit"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs/:id/edit" element={<SyncJobFormPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText(/同步成功 · 下一步出图/)).toBeInTheDocument();
+    expect(screen.getByText(/本次 42 行/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "一键创建数据集并绑定" })).toBeInTheDocument();
   });
 
   it("SyncJobFormPage_datasource_mode_renders_select", async () => {
@@ -658,8 +727,7 @@ describe("ingestion admin smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
-    fireEvent.click(await screen.findByRole("button", { name: "使用已有 MySQL 连接" }));
-    expect(await screen.findByLabelText("MySQL 数据源")).toBeInTheDocument();
+    expect(await screen.findByLabelText("业务源连接")).toBeInTheDocument();
   });
 
   it("SyncJobFormPage_datasource_mode_submit_payload", async () => {
@@ -685,7 +753,7 @@ describe("ingestion admin smoke", () => {
       </MemoryRouter>,
     );
     fireEvent.click(await screen.findByRole("button", { name: "使用已有 MySQL 连接" }));
-    fireEvent.click(await screen.findByRole("combobox", { name: "MySQL 数据源" }));
+    fireEvent.click(await screen.findByRole("combobox", { name: "业务源连接" }));
     fireEvent.click(await screen.findByRole("option", { name: "Sample MySQL" }));
     fireEvent.change(screen.getByLabelText("任务名称"), { target: { value: "ds-ref-smoke" } });
     fireEvent.change(screen.getByLabelText("源表"), { target: { value: "dirty_orders" } });
@@ -768,7 +836,7 @@ describe("ingestion admin smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(await screen.findByText("创建 Dataset 并出图")).toBeInTheDocument();
+    expect(await screen.findByText("一键 Dataset 出图")).toBeInTheDocument();
   });
 
   it("SyncJobFormPage_blocks_submit_when_name_empty (T-ING-06)", async () => {
@@ -800,6 +868,7 @@ describe("ingestion admin smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
+    fireEvent.click(await screen.findByRole("button", { name: "手动填写（排障）" }));
     const passwordInput = await screen.findByLabelText(/^密码/);
     expect(passwordInput).toHaveAttribute("type", "password");
   });
@@ -1075,6 +1144,7 @@ describe("ingestion admin smoke", () => {
       </MemoryRouter>,
     );
     await screen.findByLabelText("任务名称");
+    fireEvent.click(await screen.findByRole("button", { name: "手动填写（排障）" }));
     fireEvent.change(screen.getByLabelText("任务名称"), { target: { value: "double-guard" } });
     const createBtn = screen.getAllByRole("button", { name: "创建" })[0];
     fireEvent.click(createBtn);
@@ -1175,6 +1245,7 @@ describe("ingestion admin smoke", () => {
       </MemoryRouter>,
     );
     await screen.findByLabelText("任务名称");
+    fireEvent.click(await screen.findByRole("button", { name: "手动填写（排障）" }));
     fireEvent.change(screen.getByLabelText("任务名称"), { target: { value: "bad-port" } });
     fireEvent.change(screen.getByLabelText("端口"), { target: { value: "0" } });
     fireEvent.click(screen.getAllByRole("button", { name: "创建" })[0]);
@@ -1209,6 +1280,7 @@ describe("ingestion admin smoke", () => {
       </MemoryRouter>,
     );
     await screen.findByLabelText("任务名称");
+    fireEvent.click(await screen.findByRole("button", { name: "手动填写（排障）" }));
     fireEvent.change(screen.getByLabelText("任务名称"), { target: { value: "bad-cron-job" } });
     fireEvent.change(screen.getByLabelText("定时 Cron（可选）"), {
       target: { value: "0 0 *0 *15 *" },

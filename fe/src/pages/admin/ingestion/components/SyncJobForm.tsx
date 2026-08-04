@@ -176,8 +176,8 @@ export function SyncJobForm({
       </FormSection>
 
       <FormSection
-        title="MySQL 源库"
-        description="业务 MySQL 源库连接：从已登记连接引用，或手动填写凭证。此处不是托管分析库（5433）。"
+        title="业务源库（MySQL）"
+        description="从连接管理选择已登记的 MySQL 业务源，或仅在排障时手动填写。当前同步仅支持 MySQL 源；写入端为托管分析库，不是此处配置的连接。"
       >
         <div className="grid gap-3">
           <Label>源连接方式</Label>
@@ -186,42 +186,71 @@ export function SyncJobForm({
             value={form.sourceMode}
             options={[
               { value: "datasource", label: "使用已有 MySQL 连接" },
-              { value: "inline", label: "手动填写连接" },
+              { value: "inline", label: "手动填写（排障）" },
             ]}
             onChange={(value) => onChange("sourceMode", value)}
           />
           {form.sourceMode === "datasource" ? (
             <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-              引用连接时会快照凭证；源库改密后请重新保存任务。
+              推荐路径：请先在
+              <Link
+                to="/admin/datasources"
+                className="text-brand-600 underline-offset-2 hover:underline dark:text-brand-400"
+              >
+                连接管理
+              </Link>
+              登记 MySQL 业务源。引用时会快照凭证；源库改密后请重新保存任务。
             </p>
-          ) : null}
+          ) : (
+            <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+              手动填写不会写入连接管理，仅用于本任务排障或快速试跑。
+            </p>
+          )}
         </div>
 
         {form.sourceMode === "datasource" ? (
           <div className="grid gap-4 rounded-xl border border-gray-200 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-white/[0.02]">
-            <div className="grid gap-2">
-              <Label htmlFor="datasource">MySQL 数据源</Label>
-              <Select
-                value={form.sourceDataSourceId || undefined}
-                onValueChange={(value) => onChange("sourceDataSourceId", value)}
-              >
-                <SelectTrigger id="datasource" className="h-11">
-                  <SelectValue placeholder="选择已登记的 MySQL 数据源" />
-                </SelectTrigger>
-                <SelectContent>
-                  {datasources.map((item) => (
-                    <SelectItem key={item.id} value={item.id}>
-                      {item.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {selectedDatasource ? (
-              <p className="font-mono text-theme-xs text-gray-500 dark:text-gray-400">
-                {selectedDatasource.host}:{selectedDatasource.port}/{selectedDatasource.database}
-              </p>
-            ) : null}
+            {datasources.length === 0 ? (
+              <Alert severity="warning">
+                <AlertTitle>尚无可用 MySQL 连接</AlertTitle>
+                <AlertDescription className="text-theme-xs">
+                  请先在
+                  <Link
+                    to="/admin/datasources/new"
+                    className="text-brand-600 underline-offset-2 hover:underline dark:text-brand-400"
+                  >
+                    连接管理
+                  </Link>
+                  登记 MySQL 业务源，或切换为「手动填写（排障）」。
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <>
+                <div className="grid gap-2">
+                  <Label htmlFor="datasource">业务源连接</Label>
+                  <Select
+                    value={form.sourceDataSourceId || undefined}
+                    onValueChange={(value) => onChange("sourceDataSourceId", value)}
+                  >
+                    <SelectTrigger id="datasource" className="h-11">
+                      <SelectValue placeholder="选择已登记的 MySQL 连接" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {datasources.map((item) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {item.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {selectedDatasource ? (
+                  <p className="font-mono text-theme-xs text-gray-500 dark:text-gray-400">
+                    {selectedDatasource.host}:{selectedDatasource.port}/{selectedDatasource.database}
+                  </p>
+                ) : null}
+              </>
+            )}
           </div>
         ) : (
           <div className="grid gap-4 rounded-xl border border-gray-200 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-white/[0.02]">
@@ -284,7 +313,10 @@ export function SyncJobForm({
         )}
       </FormSection>
 
-      <FormSection title="同步目标" description="源表从 MySQL 读取，目标表写入托管分析库。">
+      <FormSection
+        title="同步目标"
+        description="从业务源表读取，写入托管分析库中的目标表（同步产出）。"
+      >
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="grid gap-2">
             <Label htmlFor="table">源表</Label>
@@ -323,6 +355,13 @@ export function SyncJobForm({
         <p className="text-theme-xs text-gray-500 dark:text-gray-400">
           每个目标表对应一个 Dataset；多个任务写入同一目标表会共用 Dataset，且全量同步会互相覆盖分析库中的数据。
         </p>
+        <div className="rounded-lg border border-gray-200 bg-gray-50/80 px-3 py-2 text-theme-xs text-gray-600 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-300">
+          <span className="font-medium text-gray-700 dark:text-gray-200">写入位置：</span>
+          托管分析库（平台配置，本地示例
+          <span className="font-mono"> 127.0.0.1:5433/analytics</span>）。运行成功后可在本页或列表
+          <strong className="font-semibold"> 一键创建 Dataset </strong>
+          出图，无需手动登记分析库。
+        </div>
         {conflictingJobNames.length > 0 ? (
           <Alert severity="warning">
             <AlertTitle>目标表与已有任务重复</AlertTitle>
@@ -350,13 +389,6 @@ export function SyncJobForm({
             页点击「应用演示清洗模板」，在入湖时 cast amount 并过滤 deleted 行；Dataset 不负责洗数据。
           </p>
         ) : null}
-        <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-          目标库地址由平台环境变量{" "}
-          <span className="font-mono">ANALYTICS_DATABASE_URL</span> 决定（本地默认{" "}
-          <span className="font-mono">127.0.0.1:5433/analytics</span>
-          ）。同步成功后请登记该 PostgreSQL 为数据源，再创建 Dataset 选目标表；看板通过 Dataset
-          出图，无需在此写 SQL。
-        </p>
       </FormSection>
 
       <FormSection title="同步策略" description="全量每次覆盖目标表；增量按主键 upsert 并记录水位。">

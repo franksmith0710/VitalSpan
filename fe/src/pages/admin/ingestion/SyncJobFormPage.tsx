@@ -1,12 +1,16 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { ArrowLeft, Play, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/context/auth-context";
 import { AdminPageHeaderIcon, AdminPageShell } from "@/components/layout/admin-page-shell";
 import { ADMIN_PAGE_SURFACE_CLASS } from "@/components/layout/list-page-kit";
 import { cn } from "@/lib/utils";
 import { apiFetch } from "@/lib/api";
 import { getApiValidationFieldErrors, mapApiError } from "@/lib/apiError";
+import { hasCapability } from "@/lib/capabilities";
+import { sessionUserFromMe } from "@/lib/session";
+import { useSyncJobRun, type SyncRunSuccess } from "@/hooks/useSyncJobRun";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,11 +38,12 @@ import {
   type JobFormState,
   type SyncMode,
 } from "./components/SyncJobForm";
-import type { SyncJobSummary } from "./components/sync-job-types";
+import { SyncConsumeActionCard } from "./components/SyncConsumeActionCard";
+import type { SyncJobLastRun, SyncJobSummary } from "./components/sync-job-types";
 
-const emptyForm: JobFormState = {
+const newJobFormDefaults: JobFormState = {
   name: "",
-  sourceMode: "inline",
+  sourceMode: "datasource",
   sourceDataSourceId: "",
   host: "127.0.0.1",
   port: "3307",
@@ -100,12 +105,17 @@ function buildPayload(form: JobFormState) {
 export function SyncJobFormPage() {
   const { id } = useParams();
   const location = useLocation();
+  const { user } = useAuth();
+  const canManage = useMemo(
+    () => (user ? hasCapability(sessionUserFromMe(user), "ingestion:manage") : false),
+    [user],
+  );
   const isEdit = Boolean(id);
   const justCreated = Boolean(
     (location.state as { justCreated?: boolean } | null)?.justCreated,
   );
   const navigate = useNavigate();
-  const [form, setForm] = useState<JobFormState>(emptyForm);
+  const [form, setForm] = useState<JobFormState>(newJobFormDefaults);
   const [existingJobs, setExistingJobs] = useState<SyncJobSummary[]>([]);
   const [datasources, setDatasources] = useState<DatasourceItem[]>([]);
   const [loading, setLoading] = useState(isEdit);
@@ -113,10 +123,20 @@ export function SyncJobFormPage() {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [sharedTargetConfirmOpen, setSharedTargetConfirmOpen] = useState(false);
+  const [runConfirmOpen, setRunConfirmOpen] = useState(false);
+  const [recentRunSuccess, setRecentRunSuccess] = useState<SyncRunSuccess | null>(null);
+  const [consumeCardDismissed, setConsumeCardDismissed] = useState(false);
   const [bootstrapReady, setBootstrapReady] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const targetTableManualRef = useRef(false);
   const newJobInitializedRef = useRef(false);
+
+  const { runJob, runningId, pollingJobId, runError, clearRunError } = useSyncJobRun({
+    onSuccess: (payload) => {
+      setConsumeCardDismissed(false);
+      setRecentRunSuccess(payload);
+    },
+  });
 
   const { isDirty, isBaselineReady, resetBaseline, markSaved } = useFormDirtyState(
     form,
@@ -149,14 +169,18 @@ export function SyncJobFormPage() {
   useEffect(() => {
     if (isEdit || !bootstrapReady || newJobInitializedRef.current) return;
     const suggested = suggestSyncTargetTable(
-      emptyForm.table,
+      newJobFormDefaults.table,
       existingJobs.map((job) => job.target_table),
     );
-    const nextForm = { ...emptyForm, target_table: suggested };
+    const nextForm: JobFormState = {
+      ...newJobFormDefaults,
+      target_table: suggested,
+      sourceDataSourceId: datasources[0]?.id ?? "",
+    };
     setForm(nextForm);
     resetBaseline(nextForm);
     newJobInitializedRef.current = true;
-  }, [existingJobs, isEdit, bootstrapReady, resetBaseline]);
+  }, [datasources, existingJobs, isEdit, bootstrapReady, resetBaseline]);
 
   useEffect(() => {
     if (!id) {
@@ -185,6 +209,7 @@ export function SyncJobFormPage() {
           };
           target_table: string;
           schedule_cron: string | null;
+          last_run?: SyncJobLastRun | null;
         }>(`/api/v1/ingestion/sync-jobs/${id}`);
         const nextForm: JobFormState = {
           name: job.name,
@@ -206,6 +231,16 @@ export function SyncJobFormPage() {
         setForm(nextForm);
         resetBaseline(nextForm);
         targetTableManualRef.current = true;
+        if (job.last_run?.status === "succeeded") {
+          setRecentRunSuccess({
+            jobId: id,
+            jobName: job.name,
+            targetTable: job.target_table,
+            rowsSynced: job.last_run.rows_synced,
+          });
+        } else {
+          setRecentRunSuccess(null);
+        }
       } catch (err) {
         setError(mapApiError(err));
       } finally {
@@ -283,7 +318,7 @@ export function SyncJobFormPage() {
           body: JSON.stringify(payload),
         });
         toast.success("同步任务已创建", {
-          description: "请返回列表手动运行同步，成功后在一键出图动作卡绑定 Dataset。",
+          description: "可在此页立即运行同步，成功后一键创建 Dataset 出图。",
         });
         markSaved(form);
         navigate(`/admin/ingestion/sync-jobs/${created.id}/edit`, {
@@ -308,6 +343,12 @@ export function SyncJobFormPage() {
 
   const handleSubmit = async (event?: FormEvent): Promise<boolean> => {
     event?.preventDefault();
+    if (form.sourceMode === "datasource" && !form.sourceDataSourceId.trim()) {
+      const message = "请选择业务源连接，或切换为「手动填写（排障）」";
+      setError(message);
+      toast.error(message);
+      return false;
+    }
     if (conflictingJobs.length > 0) {
       setSharedTargetConfirmOpen(true);
       return false;
@@ -327,11 +368,34 @@ export function SyncJobFormPage() {
 
   const pageDescription = useMemo(() => {
     if (!isBaselineReady) {
-      return "配置 MySQL 源、目标表与同步方式；支持引用已登记数据源与增量 upsert。";
+      return "先在连接管理登记 MySQL 业务源，再配置同步与目标表；当前仅支持 MySQL 源。";
     }
     if (isDirty) return "有未保存的更改 · 保存后生效";
     return "已保存 · 支持全量覆盖或增量 upsert 到托管分析库";
   }, [isBaselineReady, isDirty]);
+
+  const sharedTargetJobNames = useMemo(() => {
+    if (!recentRunSuccess || !id || recentRunSuccess.jobId !== id) return [];
+    return existingJobs
+      .filter(
+        (job) => job.id !== id && job.target_table === recentRunSuccess.targetTable,
+      )
+      .map((job) => job.name);
+  }, [existingJobs, id, recentRunSuccess]);
+
+  const handleConfirmRun = useCallback(async () => {
+    if (!id || !form.name.trim()) return;
+    setRunConfirmOpen(false);
+    clearRunError();
+    await runJob({ id, name: form.name.trim() });
+  }, [clearRunError, form.name, id, runJob]);
+
+  const showConsumeCard =
+    isEdit &&
+    id &&
+    !consumeCardDismissed &&
+    recentRunSuccess?.jobId === id &&
+    recentRunSuccess.targetTable === form.target_table;
 
   if (loading) {
     return (
@@ -360,17 +424,34 @@ export function SyncJobFormPage() {
         </Button>
       }
       actions={
-        <Button
-          type="submit"
-          form={SYNC_JOB_FORM_ID}
-          variant="primary"
-          size="sm"
-          loading={submitting}
-          loadingText={isEdit ? "保存中…" : "创建中…"}
-          disabled={submitting || (isEdit && !isDirty)}
-        >
-          {isEdit ? "保存" : "创建"}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {isEdit && canManage && id ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={submitting || runningId === id || pollingJobId === id || isDirty}
+              loading={runningId === id || pollingJobId === id}
+              loadingText="运行中…"
+              title={isDirty ? "请先保存更改后再运行" : undefined}
+              onClick={() => setRunConfirmOpen(true)}
+            >
+              <Play className="size-4" aria-hidden />
+              立即运行
+            </Button>
+          ) : null}
+          <Button
+            type="submit"
+            form={SYNC_JOB_FORM_ID}
+            variant="primary"
+            size="sm"
+            loading={submitting}
+            loadingText={isEdit ? "保存中…" : "创建中…"}
+            disabled={submitting || (isEdit && !isDirty)}
+          >
+            {isEdit ? "保存" : "创建"}
+          </Button>
+        </div>
       }
     >
       <div
@@ -383,15 +464,30 @@ export function SyncJobFormPage() {
           ref={scrollRef}
           className="min-h-0 flex-1 overflow-y-auto custom-scrollbar px-6 py-6 lg:px-8 lg:py-8"
         >
-          {error ? (
+          {error || runError ? (
             <div className="mx-auto mb-6 w-full max-w-3xl shrink-0">
               <PageErrorBanner
-                message={error}
+                message={error ?? runError ?? ""}
                 autoHideMs={0}
                 onRetry={() => {
                   setError(null);
                   setFieldErrors({});
+                  clearRunError();
                 }}
+              />
+            </div>
+          ) : null}
+
+          {showConsumeCard ? (
+            <div className="mx-auto mb-6 w-full max-w-3xl shrink-0">
+              <SyncConsumeActionCard
+                jobId={id!}
+                jobName={form.name.trim() || undefined}
+                targetTable={recentRunSuccess!.targetTable}
+                rowsSynced={recentRunSuccess!.rowsSynced}
+                sharedTargetJobNames={sharedTargetJobNames}
+                canManage={canManage}
+                onDismiss={() => setConsumeCardDismissed(true)}
               />
             </div>
           ) : null}
@@ -420,6 +516,28 @@ export function SyncJobFormPage() {
         onDiscardLeave={confirmLeave}
         onSaveAndLeave={handleSaveAndLeave}
       />
+
+      <AlertDialog open={runConfirmOpen} onOpenChange={setRunConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认手动运行同步？</AlertDialogTitle>
+            <AlertDialogDescription>
+              {form.syncMode === "full"
+                ? "全量同步将清空并覆盖托管分析库中的目标表数据。"
+                : "将按增量策略拉取并 upsert 到托管分析库目标表。"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={runningId === id}>取消</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={runningId === id}
+              onClick={() => void handleConfirmRun()}
+            >
+              确认运行
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={sharedTargetConfirmOpen} onOpenChange={setSharedTargetConfirmOpen}>
         <AlertDialogContent>
