@@ -5,11 +5,19 @@ import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockApiFetch = vi.fn();
+const mockNavigate = vi.fn();
 vi.mock("@/lib/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/api")>();
   return {
     ...actual,
     apiFetch: (...args: unknown[]) => mockApiFetch(...args),
+  };
+});
+vi.mock("react-router", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("react-router")>();
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
   };
 });
 vi.mock("@/context/auth-context", () => ({
@@ -344,7 +352,9 @@ describe("CONN-023 REST API companion", () => {
     await selectType("API", "REST API");
     await user.type(screen.getByLabelText("名称"), "api-src");
     await user.type(screen.getByLabelText("标识"), "api-src-code");
+    await user.clear(screen.getByLabelText("Base URL"));
     await user.type(screen.getByLabelText("Base URL"), "https://api.example.com");
+    await user.clear(screen.getByLabelText("健康检查路径"));
     await user.type(screen.getByLabelText("健康检查路径"), "/health");
     await user.click(screen.getByRole("button", { name: "保存" }));
     await waitFor(() => expect(mockApiFetch).toHaveBeenCalledWith(
@@ -366,6 +376,52 @@ describe("CONN-023 REST API companion", () => {
     await selectType("API", "REST API");
     expect(screen.getByRole("heading", { name: "填写连接信息" })).toBeInTheDocument();
     expect(screen.getByLabelText("Base URL")).toBeInTheDocument();
+  });
+
+  it("T-CONN-023-FE-06: selecting rest_api prefills built-in sample API defaults", async () => {
+    renderForm();
+    await selectType("API", "REST API");
+    expect(screen.getByLabelText("Base URL")).toHaveValue("http://127.0.0.1:8000");
+    expect(screen.getByLabelText("健康检查路径")).toHaveValue("/sample-api/health");
+  });
+
+  it("T-CONN-023-FE-07: rejects identifier-like Base URL before save", async () => {
+    const user = userEvent.setup();
+    renderForm();
+    await selectType("API", "REST API");
+    await user.type(screen.getByLabelText("名称"), "bad-api");
+    await user.type(screen.getByLabelText("标识"), "bad-api-code");
+    await user.clear(screen.getByLabelText("Base URL"));
+    await user.type(screen.getByLabelText("Base URL"), "sample_rest_api");
+    await user.click(screen.getByRole("button", { name: "保存" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/不可填写连接标识/);
+    expect(mockApiFetch).not.toHaveBeenCalledWith(
+      "/api/v1/datasources",
+      expect.objectContaining({ method: "POST" }),
+    );
+  });
+
+  it("T-CONN-FE-SAVE-02: create success navigates to detail page for test", async () => {
+    mockNavigate.mockReset();
+    mockApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === "/api/v1/datasources/types") return MOCK_TYPES;
+      if (path === "/api/v1/datasources" && init?.method === "POST") {
+        return { id: "ds-new", ...JSON.parse(String(init.body)) };
+      }
+      throw new Error(`unexpected path ${path}`);
+    });
+    const user = userEvent.setup();
+    renderForm();
+    await selectType("API", "REST API");
+    await user.type(screen.getByLabelText("名称"), "样例 REST API");
+    await user.type(screen.getByLabelText("标识"), "sample_rest_api");
+    await user.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() =>
+      expect(mockNavigate).toHaveBeenCalledWith("/admin/datasources/ds-new", {
+        replace: true,
+        state: { justCreated: true },
+      }),
+    );
   });
 });
 

@@ -51,19 +51,11 @@ export function migrateChartConfigToDeAxes(config: ChartViewConfig): ChartViewCo
   }
 
   if (chartType === "table-normal") {
-    const legacyMap = getDeAxisLegacyMap(chartType);
-    const drillLegacy = legacyMap.find((m) => m.axisId === "drill" && m.index === 0)?.legacy;
-    const drillIndex = drillLegacy?.kind === "dimension" ? drillLegacy.index : -1;
-    const rawDims = config.dimensions?.map((d) => d.field?.trim()).filter(Boolean) ?? [];
-    const drillField =
-      drillIndex >= 0 && rawDims.length > drillIndex ? rawDims[drillIndex] : undefined;
-    const xFields =
-      drillIndex >= 0 ? rawDims.filter((_, i) => i !== drillIndex) : rawDims;
+    const dims = config.dimensions?.map((d) => d.field?.trim()).filter(Boolean) ?? [];
     const mets = config.metrics?.map((m) => m.field?.trim()).filter(Boolean) ?? [];
     const axes: ChartAxesConfig = {
-      xAxis: xFields.map((field) => ({ field })),
+      xAxis: dims.map((field) => ({ field })),
       yAxis: mets.map((field) => ({ field })),
-      ...(drillField ? { drill: [{ field: drillField }] } : {}),
     };
     return syncLegacyFieldsFromAxes({ ...config, axes });
   }

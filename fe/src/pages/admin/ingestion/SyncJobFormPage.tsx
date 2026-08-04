@@ -29,8 +29,11 @@ import { UnsavedLeaveDialog } from "@/components/ui/unsaved-leave-dialog";
 import { useFormDirtyState } from "@/hooks/use-form-dirty-state";
 import { useUnsavedLeaveGuard } from "@/hooks/use-unsaved-leave-guard";
 import {
+  defaultSyncSourceObject,
   findJobsSharingTargetTable,
   suggestSyncTargetTable,
+  syncSourceObjectLabel,
+  syncSourceObjectPlaceholder,
 } from "@/lib/suggestSyncTargetTable";
 import {
   SyncJobForm,
@@ -43,7 +46,7 @@ import {
 import { SyncConsumeActionCard } from "./components/SyncConsumeActionCard";
 import type { SyncJobLastRun, SyncJobSummary } from "./components/sync-job-types";
 
-const DEFAULT_SOURCE_TABLE = "dirty_orders";
+const DEFAULT_SOURCE_TABLE = defaultSyncSourceObject("mysql");
 
 const newJobFormDefaults: JobFormState = {
   name: "",
@@ -139,14 +142,17 @@ export function SyncJobFormPage() {
         setExistingJobs(jobsData.items);
         if (!id && !newJobInitializedRef.current) {
           const syncSourceDs = dsData.items.filter((item) => isSyncSourceCapable(item.type));
+          const firstDs = syncSourceDs[0];
+          const defaultTable = firstDs ? defaultSyncSourceObject(firstDs.type) : DEFAULT_SOURCE_TABLE;
           const suggested = suggestSyncTargetTable(
-            newJobFormDefaults.table,
+            defaultTable,
             jobsData.items.map((job) => job.target_table),
           );
           const nextForm: JobFormState = {
             ...newJobFormDefaults,
+            table: defaultTable,
             target_table: suggested,
-            sourceDataSourceId: syncSourceDs[0]?.id ?? "",
+            sourceDataSourceId: firstDs?.id ?? "",
           };
           setForm(nextForm);
           resetBaseline(nextForm);
@@ -279,6 +285,37 @@ export function SyncJobFormPage() {
     }
     if (key === "sourceDataSourceId") {
       setLegacyInlineSource(null);
+      const nextDs = allDatasources.find((item) => item.id === value);
+      if (typeof value === "string" && nextDs) {
+        setForm((prev) => {
+          const shouldResetSource =
+            !prev.table.trim() ||
+            prev.table === DEFAULT_SOURCE_TABLE ||
+            prev.table === defaultSyncSourceObject("rest_api") ||
+            prev.table === defaultSyncSourceObject("mysql");
+          if (!shouldResetSource) return { ...prev, sourceDataSourceId: value };
+          const nextTable = defaultSyncSourceObject(nextDs.type);
+          const suggested = suggestSyncTargetTable(
+            nextTable,
+            existingJobs.map((job) => job.target_table),
+          );
+          return {
+            ...prev,
+            sourceDataSourceId: value,
+            table: nextTable,
+            target_table: targetTableManualRef.current ? prev.target_table : suggested,
+          };
+        });
+        setFieldErrors((prev) => {
+          if (!prev.sourceDataSourceId && !prev.table && !prev.target_table) return prev;
+          const next = { ...prev };
+          delete next.sourceDataSourceId;
+          delete next.table;
+          delete next.target_table;
+          return next;
+        });
+        return;
+      }
     }
     setForm((prev) => ({ ...prev, [key]: value }));
     setFieldErrors((prev) => {

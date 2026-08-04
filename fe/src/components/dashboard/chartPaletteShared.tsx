@@ -365,11 +365,12 @@ export function ChartTableColorGridCell({
     <div className="min-w-0">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <HintTooltip label={swatchTitle}>
-            <button
-              type="button"
-              aria-label={`${label}取色器`}
-              aria-expanded={open}
+          <button
+            type="button"
+            aria-label={`${label}取色器`}
+            aria-expanded={open}
+            title={swatchTitle}
+            onMouseDown={(event) => event.preventDefault()}
             className={cn(
               "flex h-7 w-full min-w-0 items-center gap-1.5 rounded-md border bg-white px-1.5 text-left shadow-theme-xs transition-[border-color,box-shadow] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30 dark:bg-white/[0.03]",
               open
@@ -396,7 +397,6 @@ export function ChartTableColorGridCell({
               aria-hidden
             />
           </button>
-          </HintTooltip>
         </PopoverTrigger>
         <PopoverContent
           align="start"
@@ -413,12 +413,13 @@ export function ChartTableColorGridCell({
                 {items.map((item) => {
                   const selected = normalizeHexColor(localValue) === normalizeHexColor(item.color);
                   return (
-                    <HintTooltip key={item.color} label={item.label}>
-                      <button
-                        type="button"
-                        role="option"
-                        aria-selected={selected}
-                        aria-label={item.label}
+                    <button
+                      key={item.color}
+                      type="button"
+                      role="option"
+                      aria-selected={selected}
+                      aria-label={item.label}
+                      title={item.label}
                       className={cn(
                         "flex size-7 items-center justify-center rounded-md transition-colors",
                         "hover:bg-gray-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30",
@@ -428,9 +429,8 @@ export function ChartTableColorGridCell({
                       )}
                       onClick={() => scheduleCommit(item.color)}
                     >
-                        <ColorSwatchChip color={item.color} size="sm" selected={selected} />
-                      </button>
-                    </HintTooltip>
+                      <ColorSwatchChip color={item.color} size="sm" selected={selected} />
+                    </button>
                   );
                 })}
               </div>

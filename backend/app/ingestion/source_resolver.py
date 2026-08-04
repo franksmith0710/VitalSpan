@@ -13,7 +13,7 @@ from app.ingestion.models import (
     encrypt_password,
 )
 from app.ingestion.sync_source_capabilities import is_sync_source_capable
-from app.query.rls.guard import validate_identifier
+from app.ingestion.sync_source_table import SyncSourceTableError, validate_sync_source_table
 
 
 class SourceResolverError(Exception):
@@ -38,14 +38,17 @@ def _load_sync_datasource(db: Session, data_source_id: uuid.UUID) -> DataSource:
 
 
 def apply_datasource_snapshot(job: SyncJob, ds: DataSource, source_table: str) -> None:
-    validate_identifier(source_table)
+    try:
+        normalized_table = validate_sync_source_table(ds.type, source_table)
+    except SyncSourceTableError as exc:
+        raise SourceResolverError("VALIDATION_ERROR", str(exc)) from exc
     job.source_type = ds.type
     job.source_host = ds.host
     job.source_port = ds.port
     job.source_database = ds.database
     job.source_username = ds.username
     job.source_password_encrypted = ds.password_encrypted
-    job.source_table = source_table
+    job.source_table = normalized_table
     job.source_data_source_id = ds.id
 
 

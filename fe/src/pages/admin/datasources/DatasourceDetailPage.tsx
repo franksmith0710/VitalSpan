@@ -167,6 +167,7 @@ export function DatasourceDetailPage() {
       ) : null}
       <DatasourceDetailPanel
         dataSourceId={id}
+        sourceType={data.type}
         host={data.host}
         port={data.port}
         database={data.database}

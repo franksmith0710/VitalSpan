@@ -44,9 +44,11 @@ class RestApiConnector:
 
     def _client(self, **kwargs: Any) -> httpx.Client:
         base = _normalize_base_url(kwargs["host"], int(kwargs.get("port", 443)))
+        username = kwargs.get("username") or ""
+        password = kwargs.get("password") or ""
         auth = None
-        if kwargs.get("username") or kwargs.get("password"):
-            auth = (kwargs.get("username", ""), kwargs.get("password", ""))
+        if username and username not in ("none", "oauth2"):
+            auth = (username, password)
         timeout = float(kwargs.get("timeout_sec", 5.0))
         return httpx.Client(base_url=base, auth=auth, timeout=timeout, follow_redirects=True)
 

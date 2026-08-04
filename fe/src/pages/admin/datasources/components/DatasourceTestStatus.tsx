@@ -1,5 +1,5 @@
 import { AlertCircle, CheckCircle2 } from "lucide-react";
-import { localizeApiMessage } from "@/lib/apiError";
+import { localizeApiMessage, messageForErrorCode } from "@/lib/apiError";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -40,7 +40,8 @@ function parseTestFeedback(error: string | null, result: TestConnectionResult | 
   }
   const raw = error ?? result?.message ?? "";
   const code = result?.code ?? extractErrorCode(raw);
-  const message = localizeApiMessage(stripErrorCode(raw, code));
+  const codeMessage = messageForErrorCode(code);
+  const message = codeMessage ?? localizeApiMessage(stripErrorCode(raw, code));
   return { failed: true, code, message };
 }
 

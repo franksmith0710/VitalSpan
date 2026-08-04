@@ -853,6 +853,57 @@ def test_update_sync_job_datasource_roundtrip(client, auth_headers):
     client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
 
 
+def test_update_sync_job_rest_api_source_path(client, auth_headers):
+    """REST API 同步任务的 source_table 可为 /sample-api/orders 路径。"""
+    db = get_meta_session()
+    row = DataSource(
+        name="rest-api-ds",
+        code="rest_api_sync_test",
+        type="rest_api",
+        host="http://127.0.0.1:8000",
+        port=8000,
+        database="/sample-api/health",
+        username="none",
+        password_encrypted=encrypt_credential("-"),
+    )
+    db.add(row)
+    db.commit()
+    ds_id = row.id
+    db.close()
+
+    create = client.post(
+        "/api/v1/ingestion/sync-jobs",
+        json={
+            "name": "rest-api-job",
+            "source_mode": "datasource",
+            "source_data_source_id": str(ds_id),
+            "source_table": "dirty_orders",
+            "target_table": "orders_from_api",
+        },
+        headers=auth_headers,
+    )
+    assert create.status_code == 201, create.text
+    job_id = create.json()["id"]
+
+    updated = client.put(
+        f"/api/v1/ingestion/sync-jobs/{job_id}",
+        json={
+            "name": "rest-api-job",
+            "source_mode": "datasource",
+            "source_data_source_id": str(ds_id),
+            "source_table": "/sample-api/orders",
+            "target_table": "orders_from_api",
+            "enabled": True,
+            "sync_mode": "full",
+        },
+        headers=auth_headers,
+    )
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["source"]["table"] == "/sample-api/orders"
+
+    client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
 def test_create_job_datasource_not_found_404(client, auth_headers):
     payload = {
         "name": "bad-ds",

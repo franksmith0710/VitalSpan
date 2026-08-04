@@ -80,6 +80,11 @@ const CODE_MESSAGES: Record<string, string> = {
   DATASOURCE_NAME_CONFLICT: "数据源名称已存在，请更换名称",
   DATASOURCE_DEMO_PROTECTED: "官方示例数据连接不可修改或删除",
   DATASOURCE_TEST_INFLIGHT: "已有连接测试进行中，请稍候",
+  REST_API_PROBE_FAILED:
+    "无法访问 Base URL，请确认地址可解析且健康检查路径正确（本地样例：http://127.0.0.1:8000 + /sample-api/health）",
+  REST_API_INVALID_URL: "Base URL 格式无效，请填写完整地址（如 http://127.0.0.1:8000）",
+  REST_API_AUTH_FAILED: "REST API 认证失败，请检查 Basic/Bearer 凭据",
+  REST_API_TIMEOUT: "REST API 连接超时，请检查网络或服务是否启动",
 
   // 数据接入 / 同步任务
   ANALYTICS_DB_NOT_CONFIGURED:
@@ -209,6 +214,7 @@ const EXACT_MESSAGE_MAP: Record<string, string> = {
   "Data source name already exists": "数据源名称已存在",
   "Connection test already in progress": "已有连接测试进行中，请稍候",
   "Connection successful": "数据库连接正常",
+  "Unauthorized": "未授权：请检查 API 路径是否正确（样例用 /sample-api/orders），或是否需要 Basic/Bearer 认证",
   "Dataset not found": "Dataset 不存在",
   "Dataset already exists": "Dataset 已存在",
   "Group not found": "维度分组不存在",
@@ -245,6 +251,12 @@ function isLikelyEnglishUserMessage(text: string): boolean {
   const trimmed = text.trim();
   if (!trimmed || containsCjk(trimmed)) return false;
   return /[a-zA-Z]/.test(trimmed);
+}
+
+/** 按后端 error code 取用户可读文案（测连等场景）。 */
+export function messageForErrorCode(code: string | null | undefined): string | null {
+  if (!code) return null;
+  return CODE_MESSAGES[code] ?? null;
 }
 
 export function localizeApiMessage(message: string): string {

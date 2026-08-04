@@ -88,9 +88,9 @@ class SyncJobCreate(BaseModel):
     @field_validator("source_table")
     @classmethod
     def validate_source_table_field(cls, value: str | None) -> str | None:
-        if value is not None:
-            validate_identifier(value)
-        return value
+        if value is not None and not value.strip():
+            raise ValueError("须指定 source_table")
+        return value.strip() if value else value
 
     @model_validator(mode="after")
     def validate_modes(self) -> SyncJobCreate:
@@ -102,8 +102,7 @@ class SyncJobCreate(BaseModel):
         table = self.source_table or (self.source.table if self.source else None)
         if not table:
             raise ValueError("须指定 source_table")
-        validate_identifier(table)
-        object.__setattr__(self, "source_table", table)
+        object.__setattr__(self, "source_table", table.strip())
         return self
 
 
@@ -139,9 +138,9 @@ class SyncJobUpdate(BaseModel):
     @field_validator("source_table")
     @classmethod
     def validate_source_table_field(cls, value: str | None) -> str | None:
-        if value is not None:
-            validate_identifier(value)
-        return value
+        if value is not None and not value.strip():
+            raise ValueError("须指定 source_table")
+        return value.strip() if value else value
 
     @model_validator(mode="after")
     def validate_modes(self) -> SyncJobUpdate:
@@ -153,8 +152,7 @@ class SyncJobUpdate(BaseModel):
         table = self.source_table or (self.source.table if self.source else None)
         if not table:
             raise ValueError("须指定 source_table")
-        validate_identifier(table)
-        object.__setattr__(self, "source_table", table)
+        object.__setattr__(self, "source_table", table.strip())
         return self
 
 

@@ -34,6 +34,44 @@ export function hidePortField(type: string): boolean {
   return type === "excel" || type === "csv" || type === "rest_api";
 }
 
+export type ConnectionStat = { label: string; value: string };
+
+/** 详情页连接摘要：REST API / 文件源与关系型库字段语义不同。 */
+export function buildConnectionStats(
+  type: string,
+  host: string,
+  port: number,
+  database: string,
+  username: string,
+): ConnectionStat[] {
+  if (type === "rest_api") {
+    const baseUrl = /^https?:\/\//i.test(host) ? host : `${host}:${port}`;
+    const authLabel =
+      username === "none"
+        ? "无"
+        : username === "oauth2"
+          ? "OAuth2（预览）"
+          : username || "Basic / Bearer";
+    return [
+      { label: "Base URL", value: baseUrl },
+      { label: "健康检查路径", value: database || "/" },
+      { label: "认证", value: authLabel },
+    ];
+  }
+  if (type === "excel" || type === "csv") {
+    return [
+      { label: "文件路径 / URL", value: host },
+      { label: type === "excel" ? "Sheet 名" : "数据库", value: database || "—" },
+      { label: "用户名", value: username },
+    ];
+  }
+  return [
+    { label: "主机地址", value: `${host}:${port}` },
+    { label: "数据库", value: database },
+    { label: "用户名", value: username },
+  ];
+}
+
 export const CONNECTOR_FIELD_HINTS: Record<
   string,
   { port: string; databaseLabel: string; usernameLabel: string }

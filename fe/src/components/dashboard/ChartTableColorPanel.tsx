@@ -17,6 +17,7 @@ export function ChartTableColorPanel() {
     <ChartInspectorSection title="表格配色" data-testid="table-style-color">
       <ChartTableColorFields
         compact
+        wrapSection={false}
         tableStyle={tableStyle}
         onPatch={(patch) => onChange(patchChartDeTableStyle(cfg, patch))}
       />

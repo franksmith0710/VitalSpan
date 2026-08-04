@@ -17,6 +17,10 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import {
+  syncSourceObjectLabel,
+  syncSourceObjectPlaceholder,
+} from "@/lib/suggestSyncTargetTable";
 import { SyncJobConsumeGuide } from "./SyncJobConsumeGuide";
 import { CRON_PRESETS } from "./sync-job-types";
 import { DIRTY_ORDERS_DEMO_SOURCE_TABLE } from "../etlDemoTemplate";
@@ -254,18 +258,22 @@ export function SyncJobForm({
 
       <FormSection
         title="同步目标"
-        description="从业务源表读取，写入托管分析库中的目标表（同步产出）。"
+        description={
+          selectedDatasource?.type === "rest_api"
+            ? "从 REST API 路径拉取 JSON，写入托管分析库中的目标表（同步产出）。"
+            : "从业务源表读取，写入托管分析库中的目标表（同步产出）。"
+        }
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="grid gap-2">
-            <Label htmlFor="table">源对象</Label>
+            <Label htmlFor="table">{syncSourceObjectLabel(selectedDatasource?.type)}</Label>
             <Input
               id="table"
               value={form.table}
               onChange={(e) => onChange("table", e.target.value)}
               required
               className="h-11"
-              placeholder="dirty_orders"
+              placeholder={syncSourceObjectPlaceholder(selectedDatasource?.type)}
             />
           </div>
           <div className="grid gap-2">
@@ -311,6 +319,15 @@ export function SyncJobForm({
               <span className="font-mono"> {form.target_table}</span>。若需独立出图，请改用不同目标表名。
             </AlertDescription>
           </Alert>
+        ) : null}
+        {selectedDatasource?.type === "rest_api" ? (
+          <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+            REST API 同步将请求
+            <span className="font-mono"> Base URL + 路径</span>
+            。本地样例请填
+            <span className="font-mono"> /sample-api/orders</span>
+            （非连接标识或 MySQL 表名）。
+          </p>
         ) : null}
         {form.table.trim() === DIRTY_ORDERS_DEMO_SOURCE_TABLE ? (
           <p className="text-theme-xs text-gray-500 dark:text-gray-400">

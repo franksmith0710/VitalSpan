@@ -79,6 +79,9 @@ export const dwTableCell = "px-3 py-2 text-theme-sm tabular-nums";
 export const dwTableMeta =
   "text-theme-sm tabular-nums text-[var(--dashboard-text-muted,#667085)]";
 
+/** 分页栏内文案：继承容器 paginationFg / paginationFontSize，勿用 dwTableMeta */
+export const dwTablePaginationText = "tabular-nums text-inherit";
+
 export const dwMeta = "text-sm tabular-nums text-[var(--dashboard-text-muted,#667085)]";
 
 /** @deprecated 使用 pixelDragRailHeightPx(canvasScale) */

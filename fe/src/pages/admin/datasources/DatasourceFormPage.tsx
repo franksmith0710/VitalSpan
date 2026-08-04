@@ -31,6 +31,8 @@ import {
   buildRestApiPayload,
   defaultFileSourceCompanion,
   defaultRestApiCompanion,
+  sampleRestApiCompanionDefaults,
+  validateRestApiBaseUrl,
   type FileSourceCompanionState,
   type RestApiCompanionState,
 } from "./components/datasource-form-types";
@@ -230,6 +232,11 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
       const slice = { name: form.name, code: form.code, type: form.type, description: form.description };
       let payload: Record<string, unknown>;
       if (form.type === "rest_api") {
+        const urlError = validateRestApiBaseUrl(restApiCompanion.baseUrl);
+        if (urlError) {
+          setError(urlError);
+          return false;
+        }
         payload = buildRestApiPayload(slice, restApiCompanion, mode, form.password);
       } else if (form.type === "excel" || form.type === "csv") {
         payload = buildFileSourcePayload(slice, fileCompanion, mode, form.password);
@@ -261,10 +268,17 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
             });
 
       await queryClient.invalidateQueries({ queryKey: queryKeys.datasources.all });
-      toast.success(mode === "create" ? "数据源已创建" : "数据源已更新");
+      if (mode === "create") {
+        toast.success("数据源已创建，正在打开详情页，请点击「测试连接」验证");
+      } else {
+        toast.success("数据源已更新");
+      }
       markSaved(draftSnapshot);
       if (mode === "create") {
-        navigate(`/admin/datasources/${saved.id}/edit`, { replace: true });
+        navigate(`/admin/datasources/${saved.id}`, {
+          replace: true,
+          state: { justCreated: true },
+        });
       }
       return true;
     } catch (err) {
@@ -366,6 +380,9 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
                 onBackToCategory={() => setWizardStep("category")}
                 onSelectType={(type, port) => {
                   setForm((prev) => ({ ...prev, type, port }));
+                  if (type === "rest_api") {
+                    setRestApiCompanion(sampleRestApiCompanionDefaults());
+                  }
                   setWizardStep("form");
                 }}
               />

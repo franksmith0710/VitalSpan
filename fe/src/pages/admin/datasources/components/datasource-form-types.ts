@@ -18,11 +18,43 @@ export const defaultRestApiCompanion = (): RestApiCompanionState => ({
   connectTimeoutSec: 5,
 });
 
+/** 新建向导选 REST API 时的内置样例 API 默认值（本地后端 /sample-api）。 */
+export const sampleRestApiCompanionDefaults = (): RestApiCompanionState => ({
+  baseUrl: "http://127.0.0.1:8000",
+  authMode: "none",
+  username: "",
+  password: "",
+  healthPath: "/sample-api/health",
+  connectTimeoutSec: 5,
+});
+
 export function normalizeBaseUrl(raw: string): string {
   const trimmed = raw.trim();
   if (!trimmed) return "";
   if (/^https?:\/\//i.test(trimmed)) return trimmed;
   return `https://${trimmed}`;
+}
+
+/** 保存前校验：禁止把连接标识当成 Base URL。 */
+export function validateRestApiBaseUrl(baseUrl: string): string | null {
+  const normalized = normalizeBaseUrl(baseUrl);
+  if (!normalized) return "请填写 Base URL";
+  try {
+    const u = new URL(normalized);
+    const host = u.hostname.toLowerCase();
+    if (!host) return "Base URL 无效";
+    const looksLikeHost =
+      host === "localhost" ||
+      host === "127.0.0.1" ||
+      /^\d{1,3}(\.\d{1,3}){3}$/.test(host) ||
+      host.includes(".");
+    if (!looksLikeHost) {
+      return "Base URL 须为可访问的地址（如 http://127.0.0.1:8000），不可填写连接标识";
+    }
+    return null;
+  } catch {
+    return "Base URL 格式无效";
+  }
 }
 
 export function derivePortFromBaseUrl(baseUrl: string): number {

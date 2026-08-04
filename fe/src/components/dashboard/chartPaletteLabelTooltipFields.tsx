@@ -127,6 +127,8 @@ type ChartTableColorFieldsProps = {
   tableStyle: ChartDeTableStyle;
   onPatch: (patch: Partial<ChartDeTableStyle>) => void;
   compact?: boolean;
+  /** 外层已有「表格配色」折叠时设为 false，避免双层标题 */
+  wrapSection?: boolean;
 };
 
 /** 对标 DataEase：表格配色两列色块栅格 */
@@ -134,11 +136,12 @@ export function ChartTableColorFields({
   tableStyle,
   onPatch,
   compact = false,
+  wrapSection = true,
 }: ChartTableColorFieldsProps) {
   const swatches = WIDGET_BORDER_RECOMMENDED;
 
-  return (
-    <ChartPaletteNestedSection compact={compact} title="表格配色">
+  const fields = (
+    <>
       <div className="grid grid-cols-2 gap-x-2 gap-y-2 pt-0.5">
         <ChartTableColorGridCell
           label="表头/行背景"
@@ -208,7 +211,7 @@ export function ChartTableColorFields({
       </div>
       <div className="mt-1 space-y-0 border-t border-gray-100 pt-1 dark:border-white/[0.06]">
         <InspectorInlineColorRow
-          label="分页器"
+          label="分页器字色"
           allowClear
           swatches={TEXT_COLOR_RECOMMENDED}
           value={tableStyle.paginationFg ?? ""}
@@ -222,6 +225,14 @@ export function ChartTableColorFields({
           onChange={(paginationFontSize) => onPatch({ paginationFontSize })}
         />
       </div>
+    </>
+  );
+
+  if (!wrapSection) return fields;
+
+  return (
+    <ChartPaletteNestedSection compact={compact} title="表格配色">
+      {fields}
     </ChartPaletteNestedSection>
   );
 }

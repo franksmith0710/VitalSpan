@@ -32,6 +32,7 @@ export function RestApiConnectionFields({ value, onChange }: Props) {
           value={value.baseUrl}
           onChange={(e) => set("baseUrl", e.target.value)}
           onBlur={() => set("baseUrl", normalizeBaseUrl(value.baseUrl))}
+          placeholder="http://127.0.0.1:8000"
           required
         />
       </div>
@@ -99,6 +100,7 @@ export function RestApiConnectionFields({ value, onChange }: Props) {
           id="rest-health-path"
           value={value.healthPath}
           onChange={(e) => set("healthPath", e.target.value)}
+          placeholder="/sample-api/health"
           required
         />
       </div>

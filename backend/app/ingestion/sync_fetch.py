@@ -11,11 +11,12 @@ from app.ingestion.sync_source_capabilities import (
     resolve_sync_fetch_mode,
     sync_fetch_not_implemented_message,
 )
+from app.ingestion.sync_source_table import validate_sync_source_table
 from app.query.rls.guard import validate_identifier
 
 
-def validate_sync_table_names(source_table: str, target_table: str) -> None:
-    validate_identifier(source_table)
+def validate_sync_table_names(source_type: str, source_table: str, target_table: str) -> None:
+    validate_sync_source_table(source_type, source_table)
     validate_identifier(target_table)
 
 

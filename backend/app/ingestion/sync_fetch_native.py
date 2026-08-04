@@ -5,6 +5,7 @@ from typing import Any
 from app.datasources.credentials import CredentialDecryptError, decrypt_credential
 from app.datasources.registry import ConnectorNotFoundError, registry
 from app.ingestion.models import INGESTION_MAX_ROWS, SyncJob, decrypt_password
+from app.ingestion.sync_source_table import validate_sync_source_table
 from app.query.rls.guard import validate_identifier
 from app.query.schemas import QueryError
 
@@ -33,7 +34,7 @@ def _connector_kwargs(job: SyncJob) -> tuple[Any, dict[str, Any]]:
 
 
 def fetch_native_rows(job: SyncJob) -> list[dict[str, Any]]:
-    validate_identifier(job.source_table)
+    validate_sync_source_table(job.source_type, job.source_table)
     validate_identifier(job.target_table)
     connector, kwargs = _connector_kwargs(job)
     conn = connector.open_connection(**kwargs)

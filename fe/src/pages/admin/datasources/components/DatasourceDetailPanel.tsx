@@ -1,10 +1,12 @@
 import { SchemaBrowser } from "@/components/datasources/SchemaBrowser";
 import { ADMIN_PAGE_SURFACE_CLASS, ListPageSection } from "@/components/layout/list-page-kit";
 import { cn } from "@/lib/utils";
+import { buildConnectionStats } from "./datasource-form-constants";
 import { DatasourceTestStatus, type TestConnectionResult } from "./DatasourceTestStatus";
 
 type DatasourceDetailPanelProps = {
   dataSourceId: string;
+  sourceType: string;
   host: string;
   port: number;
   database: string;
@@ -14,13 +16,8 @@ type DatasourceDetailPanelProps = {
   testResult: TestConnectionResult | null;
 };
 
-const STAT_ITEMS = [
-  { key: "host", label: "主机地址" },
-  { key: "database", label: "数据库" },
-  { key: "username", label: "用户名" },
-] as const;
-
 function ConnectionSummary({
+  sourceType,
   host,
   port,
   database,
@@ -29,20 +26,16 @@ function ConnectionSummary({
   testError,
   testResult,
 }: Omit<DatasourceDetailPanelProps, "dataSourceId">) {
-  const statValues = {
-    host: `${host}:${port}`,
-    database,
-    username,
-  };
+  const stats = buildConnectionStats(sourceType, host, port, database, username);
 
   return (
     <div className={cn(ADMIN_PAGE_SURFACE_CLASS, "shrink-0 overflow-hidden")}>
       <div className="grid sm:grid-cols-3 sm:divide-x sm:divide-gray-100 dark:sm:divide-gray-800">
-        {STAT_ITEMS.map(({ key, label }) => (
-          <div key={key} className="px-4 py-3">
+        {stats.map(({ label, value }) => (
+          <div key={label} className="px-4 py-3">
             <p className="text-theme-xs text-gray-500 dark:text-gray-400">{label}</p>
             <p className="mt-0.5 font-mono text-theme-sm font-semibold break-all text-gray-800 dark:text-white/90">
-              {statValues[key]}
+              {value}
             </p>
           </div>
         ))}
@@ -64,6 +57,7 @@ function ConnectionSummary({
 
 export function DatasourceDetailPanel({
   dataSourceId,
+  sourceType,
   host,
   port,
   database,
@@ -75,6 +69,7 @@ export function DatasourceDetailPanel({
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
       <ConnectionSummary
+        sourceType={sourceType}
         host={host}
         port={port}
         database={database}

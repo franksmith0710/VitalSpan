@@ -2,6 +2,26 @@
 
 const DIRTY_ORDERS_SOURCE = "dirty_orders";
 const ORDERS_CLEAN_TARGET = "orders_clean";
+export const REST_API_SAMPLE_ORDERS_PATH = "/sample-api/orders";
+
+/** 按连接器类型给出新建任务的默认源对象。 */
+export function defaultSyncSourceObject(sourceType: string): string {
+  if (sourceType === "rest_api") return REST_API_SAMPLE_ORDERS_PATH;
+  return DIRTY_ORDERS_SOURCE;
+}
+
+/** 源对象字段标签（关系型表名 vs REST 路径等）。 */
+export function syncSourceObjectLabel(sourceType: string | undefined): string {
+  if (sourceType === "rest_api") return "API 路径";
+  if (sourceType === "mongodb") return "集合名";
+  if (sourceType === "elasticsearch" || sourceType === "opensearch") return "索引名";
+  return "源表";
+}
+
+export function syncSourceObjectPlaceholder(sourceType: string | undefined): string {
+  if (sourceType === "rest_api") return "/sample-api/orders";
+  return "dirty_orders";
+}
 
 function sanitizeTableToken(raw: string): string {
   const token = raw
@@ -19,6 +39,8 @@ function sanitizeTableToken(raw: string): string {
 export function baseTargetTableFromSource(sourceTable: string): string {
   const normalized = sourceTable.trim().toLowerCase();
   if (normalized === DIRTY_ORDERS_SOURCE) return ORDERS_CLEAN_TARGET;
+  if (normalized === REST_API_SAMPLE_ORDERS_PATH.toLowerCase()) return ORDERS_CLEAN_TARGET;
+  if (normalized.endsWith("/orders")) return ORDERS_CLEAN_TARGET;
   const base = sanitizeTableToken(sourceTable);
   if (base.endsWith("_clean")) return base;
   return `${base}_clean`;

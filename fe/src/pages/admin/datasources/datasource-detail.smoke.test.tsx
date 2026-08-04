@@ -118,6 +118,29 @@ describe("datasource detail schema browser", () => {
     expect(await screen.findByText(/不可修改或删除/)).toBeInTheDocument();
   });
 
+  it("T-DS-004-04: rest_api detail shows Base URL labels not host:port", async () => {
+    mockApiFetch.mockImplementation(async (path: string) => {
+      if (path.endsWith("/schemas")) return { items: [{ name: "api" }] };
+      return {
+        id: "ds-rest",
+        name: "样例 REST API",
+        code: "sample_rest_api",
+        type: "rest_api",
+        host: "http://127.0.0.1:8000",
+        port: 8000,
+        database: "/sample-api/health",
+        username: "none",
+      };
+    });
+    renderDetail("ds-rest");
+    expect(await screen.findByText("Base URL")).toBeInTheDocument();
+    expect(await screen.findByText("http://127.0.0.1:8000")).toBeInTheDocument();
+    expect(screen.getByText("健康检查路径")).toBeInTheDocument();
+    expect(screen.getByText("/sample-api/health")).toBeInTheDocument();
+    expect(screen.getByText("认证")).toBeInTheDocument();
+    expect(screen.getByText("无")).toBeInTheDocument();
+  });
+
   it("T-DS-004-03: successful test connection refetches schemas", async () => {
     let schemaCalls = 0;
     mockApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
