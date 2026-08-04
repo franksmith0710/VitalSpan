@@ -25,6 +25,7 @@ import { resolveGeoMapBubbleEffect } from "@/components/charts/engine/geo/geoMap
 import { mountGeoMapBubbleRippleLayer } from "@/components/charts/engine/geo/geoMapBubbleRippleLayer";
 import { mountGeoZoomControls } from "@/components/charts/engine/geo/geoZoomControls";
 import { createTooltipLayer, hideTooltip, showMergedTooltip } from "@/components/charts/engine/d3/core/tooltipLayer";
+import { resolveAxisFontSize } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { chartTransition, prefersReducedMotion } from "@/components/charts/engine/d3/core/animate";
 import type { D3GeoRenderConfig } from "@/components/charts/engine/d3/types";
 
@@ -59,7 +60,12 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
   const regionBorder = resolveGeoRegionBorder(geoStyle, isDark);
   const strokeWidth = resolveGeoRegionStrokeWidth(geoStyle, width);
   const regionLabelColor = resolveGeoRegionLabelColorHex(geoStyle, theme);
-  const regionLabelFontSize = resolveGeoRegionLabelFontSize(geoStyle);
+  const regionLabelFontSize = resolveGeoRegionLabelFontSize(geoStyle, {
+    chartWidth: width,
+    chartHeight: height,
+    visualScale: config.visualScale,
+    renderTier: config.renderTier,
+  });
 
   if (width <= 0 || height <= 0) {
     container.replaceChildren();
@@ -322,7 +328,7 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
       .append("text")
       .attr("y", legendH + 12)
       .attr("fill", theme.axisLabel)
-      .style("font-size", "10px")
+      .style("font-size", `${resolveAxisFontSize()}px`)
       .text(formatGeoTooltipValue(minVal, valueFormat));
     legendG
       .append("text")
@@ -330,7 +336,7 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
       .attr("y", legendH + 12)
       .attr("text-anchor", "end")
       .attr("fill", theme.axisLabel)
-      .style("font-size", "10px")
+      .style("font-size", `${resolveAxisFontSize()}px`)
       .text(formatGeoTooltipValue(maxVal, valueFormat));
   }
 

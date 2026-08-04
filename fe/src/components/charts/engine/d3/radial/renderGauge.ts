@@ -7,6 +7,7 @@ import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
 import { resolveGaugeValuePercent } from "@/lib/applyChartDeStyleBlocks";
+import { MIN_CHART_PRESENTATION_FONT_SIZE } from "@/components/charts/engine/d3/core/chartPresentationScale";
 import { DEFAULT_GAUGE_MAX, DEFAULT_GAUGE_MIN } from "@/lib/chartDeStyleBlocks";
 
 function gaugeAnglesFromOptions(options: Record<string, unknown>) {
@@ -177,7 +178,7 @@ export function renderD3GaugeChart(container: HTMLElement, config: D3RenderConfi
         .attr("dy", "0.35em")
         .attr("text-anchor", "middle")
         .attr("fill", resolveLabelFill(theme, labelColor))
-        .style("font-size", `${Math.max(10, labelFontSize - 2)}px`)
+        .style("font-size", `${Math.max(MIN_CHART_PRESENTATION_FONT_SIZE, Math.round(labelFontSize * 0.85))}px`)
         .style("font-weight", "500")
         .attr("opacity", 0.8)
         .text(formatChartValue(tickVal, valueFormat));
@@ -219,7 +220,7 @@ export function renderD3GaugeChart(container: HTMLElement, config: D3RenderConfi
     .attr("y", radius * 0.42)
     .attr("text-anchor", "middle")
     .attr("fill", resolveLabelFill(theme, labelColor))
-    .style("font-size", `${labelFontSize + 12}px`)
+    .style("font-size", `${Math.round(labelFontSize * 2)}px`)
     .style("font-weight", "700")
     .style("letter-spacing", "-0.02em")
     .text(centerText);

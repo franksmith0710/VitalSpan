@@ -75,14 +75,14 @@ function appendCenterLabels(
     text
       .attr("y", cy)
       .attr("dy", "0.35em")
-      .style("font-size", `${labelFontSize + 4}px`)
+      .style("font-size", `${Math.round(labelFontSize * 1.33)}px`)
       .text(lines[0]);
     return;
   }
 
-  const lineHeight = labelFontSize + 6;
+  const lineHeight = Math.round(labelFontSize * 1.5);
   const startY = cy - ((lines.length - 1) * lineHeight) / 2;
-  text.style("font-size", `${labelFontSize + 2}px`);
+  text.style("font-size", `${Math.round(labelFontSize * 1.17)}px`);
   lines.forEach((line, index) => {
     text
       .append("tspan")

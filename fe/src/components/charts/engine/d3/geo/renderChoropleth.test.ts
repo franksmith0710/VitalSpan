@@ -279,4 +279,33 @@ describe("renderD3ChoroplethChart", () => {
     dispose();
     document.body.removeChild(container);
   });
+
+  it("scales region label font size down in small thumbnail containers", () => {
+    const container = document.createElement("div");
+    container.style.width = "180px";
+    container.style.height = "140px";
+    document.body.appendChild(container);
+
+    const dispose = renderD3ChoroplethChart(container, {
+      width: 180,
+      height: 140,
+      rows: [["广东省", 320]],
+      columns: ["province", "value"],
+      regionField: "province",
+      metricField: "value",
+      theme: resolveD3Theme("light"),
+      showTooltip: false,
+      colors: ["#1653a9"],
+      renderTier: "thumbnail",
+      geoStyle: {
+        showRegionLabel: true,
+      },
+    });
+
+    const label = container.querySelector("text.region-label");
+    expect(label?.style.fontSize).toBe("6px");
+
+    dispose();
+    document.body.removeChild(container);
+  });
 });

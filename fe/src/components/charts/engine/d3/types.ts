@@ -52,7 +52,10 @@ export type D3RenderConfigBase = Pick<
   "width" | "height" | "colors" | "theme" | "showTooltip" | "valueFormat"
 > &
   D3PresentationConfig &
-  D3CartesianStyleExtras;
+  D3CartesianStyleExtras & {
+    visualScale?: number;
+    renderTier?: Geo3dRenderTier;
+  };
 
 export type D3CartesianDatum = Record<string, string | number>;
 
@@ -134,6 +137,8 @@ export type D3GeoRenderConfig = D3RenderConfigBase & {
   geoStyle?: D3GeoStyleProps;
   geo3dStyle?: ChartGeo3dStyle;
   renderTier?: Geo3dRenderTier;
+  /** 嵌入 canvas CSS scale，区域标签字号按视觉尺寸反算 */
+  visualScale?: number;
   /** WebGL 实例槽位 key（widgetId 等），用于全页实例上限 */
   instanceKey?: string;
   onPointClick?: (datum: { name: string; value: number; adcode?: number }) => void;

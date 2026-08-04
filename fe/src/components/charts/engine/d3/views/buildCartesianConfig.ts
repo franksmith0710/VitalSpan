@@ -3,6 +3,8 @@ import type { ChartEngineViewProps } from "@/components/charts/engine/types";
 import { getAntvThemeTokens } from "@/components/charts/engine/antv/theme";
 import type { D3CartesianRenderConfig, D3CartesianDatum } from "@/components/charts/engine/d3/types";
 import { buildD3PresentationProps } from "@/components/charts/engine/d3/core/presentation";
+import { scaleD3PresentationProps, type ChartPresentationPaintContext } from "@/components/charts/engine/d3/core/chartPresentationScale";
+import type { Geo3dRenderTier } from "@/components/charts/engine/three/geo3dRuntime";
 import { readChartConditionalRules, readChartMarkLines } from "@/lib/chartDeFeatures";
 import { resolveD3ChartColors } from "@/components/charts/engine/d3/views/resolveD3ChartColors";
 
@@ -16,6 +18,7 @@ export function buildCartesianRenderConfig(
   plan: ChartRenderPlan,
   chartWidth: number,
   chartHeight: number,
+  paintContext?: { visualScale?: number; renderTier?: Geo3dRenderTier },
 ): D3CartesianRenderConfig | null {
   if (plan.kind !== "d3" || plan.empty) return null;
   const { style, chartConfig, onInteraction, onJumpClick, isDark } = props;
@@ -49,7 +52,12 @@ export function buildCartesianRenderConfig(
     showTooltip: style.showTooltip,
     showLegend: !style.shellLegend && style.deStyle.legend?.show !== false && Boolean(seriesField),
     valueFormat: style.valueFormat,
-    ...buildD3PresentationProps(style),
+    ...scaleD3PresentationProps(buildD3PresentationProps(style), {
+      chartWidth,
+      chartHeight,
+      visualScale: paintContext?.visualScale,
+      renderTier: paintContext?.renderTier,
+    }),
     barWidthRatio: options.__barWidthRatio as number | undefined,
     barRadius: options.__barRadius as number | undefined,
     pointSize: options.__pointSize as number | undefined,

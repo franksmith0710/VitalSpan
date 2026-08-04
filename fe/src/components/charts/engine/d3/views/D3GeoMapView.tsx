@@ -6,6 +6,11 @@ import { embeddedSizeChanged, readChartPaintSize } from "@/components/charts/eng
 import { setChartAnimationSuppressed } from "@/components/charts/engine/d3/core/animate";
 import { setDepthVisual } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { disposeD3Renderer, runD3Renderer } from "@/components/charts/engine/d3/core/d3RendererSession";
+import {
+  beginPresentationPaint,
+  endPresentationPaint,
+  type ChartPresentationPaintContext,
+} from "@/components/charts/engine/d3/core/chartPresentationScale";
 import { renderD3Chart } from "@/components/charts/engine/d3/renderDispatch";
 import { buildD3DispatchPayload } from "@/components/charts/engine/d3/views/buildRenderConfig";
 import {
@@ -315,8 +320,20 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       const suppressAnim = mode === "live" || mode === "commit";
       setChartAnimationSuppressed(suppressAnim);
 
-      const payload = buildD3DispatchPayload(props, planWithGeo, chartWidth, chartHeight);
+      const presentationPaint: ChartPresentationPaintContext = {
+        chartWidth,
+        chartHeight,
+        visualScale,
+        renderTier: props.geo3dRenderTier,
+      };
+      beginPresentationPaint(presentationPaint);
+
+      const payload = buildD3DispatchPayload(props, planWithGeo, chartWidth, chartHeight, {
+        visualScale,
+        renderTier: props.geo3dRenderTier,
+      });
       if (!payload || payload.kind !== "geo") {
+        endPresentationPaint();
         if (mode !== "live") setChartAnimationSuppressed(false);
         return;
       }
@@ -325,10 +342,14 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       threeApiRef.current = null;
 
       const runD3 = () => {
-        runD3Renderer(el, () => renderD3Chart(el, planWithGeo, payload));
-        applyRenderMeta(null, null);
-        setRenderError(null);
-        if (mode !== "live") setChartAnimationSuppressed(false);
+        try {
+          runD3Renderer(el, () => renderD3Chart(el, planWithGeo, payload));
+          applyRenderMeta(null, null);
+          setRenderError(null);
+        } finally {
+          endPresentationPaint();
+          if (mode !== "live") setChartAnimationSuppressed(false);
+        }
       };
 
       if (!isThreeMap) {
@@ -339,6 +360,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
           .then((geo) => {
             if (gen !== renderGenRef.current) return;
             if (!geo?.features?.length) {
+              endPresentationPaint();
               setRenderError(geoAssetMissingMessage(mapIdToLoad));
               if (mode !== "live") setChartAnimationSuppressed(false);
               return;
@@ -346,12 +368,14 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
             try {
               runD3();
             } catch (err) {
+              endPresentationPaint();
               setRenderError(err instanceof Error ? err.message : "地图渲染失败");
               if (mode !== "live") setChartAnimationSuppressed(false);
             }
           })
           .catch((err) => {
             if (gen !== renderGenRef.current) return;
+            endPresentationPaint();
             setRenderError(err instanceof Error ? err.message : "地图资产加载失败");
             if (mode !== "live") setChartAnimationSuppressed(false);
           })

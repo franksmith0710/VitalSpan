@@ -57,6 +57,17 @@ export function getDepthVisual(): DepthVisualLevel {
   return depthVisual;
 }
 
+let axisFontSizeOverride: number | null = null;
+
+/** 缩略图/小尺寸绘制时临时覆盖轴标签字号（对标 setDepthVisual） */
+export function setAxisFontSize(px: number | null): void {
+  axisFontSizeOverride = px;
+}
+
+export function resolveAxisFontSize(): number {
+  return axisFontSizeOverride ?? VCDS.axis.fontSize;
+}
+
 export function motionDuration(kind: keyof typeof VCDS.motion): number {
   if (motionIntensity === "off") return 0;
   const base = VCDS.motion[kind];

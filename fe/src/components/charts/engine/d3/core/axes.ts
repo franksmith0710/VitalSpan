@@ -1,6 +1,6 @@
 import * as d3 from "d3";
 import type { AntvThemeTokens } from "@/components/charts/engine/antv/theme";
-import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
+import { VCDS, resolveAxisFontSize } from "@/components/charts/engine/d3/core/chartVisualTokens";
 
 /** 11px 轴标签下平均每字符占位（中文/数字混合估算） */
 const CHAR_PX = 6.5;
@@ -136,7 +136,7 @@ export function planNumericAxisTicks(
 }
 
 /** 类目 band 过窄时缩小轴标签字号，但不隐藏 */
-export function resolveBandAxisFontSize(bandHeight: number, base = VCDS.axis.fontSize): number {
+export function resolveBandAxisFontSize(bandHeight: number, base = resolveAxisFontSize()): number {
   if (bandHeight >= 13) return base;
   return Math.max(7, Math.min(base, Math.floor(bandHeight * 0.85)));
 }
@@ -169,7 +169,7 @@ export function resolveHorizontalCategoryAxisLayout(
 export function styleAxis(
   sel: d3.Selection<SVGGElement, unknown, null, undefined>,
   theme: AntvThemeTokens,
-  fontSize = VCDS.axis.fontSize,
+  fontSize = resolveAxisFontSize(),
 ) {
   sel
     .selectAll("text")

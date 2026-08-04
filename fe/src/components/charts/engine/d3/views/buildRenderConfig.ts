@@ -4,6 +4,8 @@ import { VS_REGIONS_MAP_ID } from "@/components/charts/engine/geo/geoConstants";
 import { findMapDrillFilterValue } from "@/lib/geoMapLevels";
 import type { ChartEngineViewProps } from "@/components/charts/engine/types";
 import type { D3DispatchPayload } from "@/components/charts/engine/d3/renderDispatch";
+import { scaleD3PresentationProps, type ChartPresentationPaintContext } from "@/components/charts/engine/d3/core/chartPresentationScale";
+import type { Geo3dRenderTier } from "@/components/charts/engine/three/geo3dRuntime";
 import { buildD3StyleProps } from "@/components/charts/engine/d3/views/buildStyleProps";
 import { extractDrillValue, buildCartesianRenderConfig } from "@/components/charts/engine/d3/views/buildCartesianConfig";
 import { readCartesianStyleFromPlanOptions, readCompareStyleFromPlanOptions } from "@/lib/applyChartDeStyleBlocks";
@@ -44,9 +46,18 @@ export function buildD3DispatchPayload(
   plan: ChartRenderPlan,
   chartWidth: number,
   chartHeight: number,
+  paintContext?: { visualScale?: number; renderTier?: Geo3dRenderTier },
 ): D3DispatchPayload | null {
   if (plan.kind !== "d3" || plan.empty) return null;
-  const styleProps = buildD3StyleProps(props, plan);
+  const visualScale = paintContext?.visualScale;
+  const renderTier = paintContext?.renderTier ?? props.geo3dRenderTier;
+  const paint: ChartPresentationPaintContext = {
+    chartWidth,
+    chartHeight,
+    visualScale,
+    renderTier,
+  };
+  const styleProps = scaleD3PresentationProps(buildD3StyleProps(props, plan), paint);
   const options = plan.options;
   const plotType = plan.plotType;
   const cartesianStyle = readCartesianStyleFromPlanOptions(options);
@@ -108,6 +119,7 @@ export function buildD3DispatchPayload(
         },
         geo3dStyle,
         renderTier,
+        visualScale: paintContext?.visualScale,
         instanceKey: props.instanceKey,
         colors: styleProps.colors,
         theme: styleProps.theme,
@@ -298,7 +310,13 @@ export function buildD3DispatchPayload(
 
   const cartesianTypes = new Set(["Line", "Column", "Bar"]);
   if (cartesianTypes.has(plotType)) {
-    const cartesian = buildCartesianRenderConfig(props, plan, chartWidth, chartHeight);
+    const cartesian = buildCartesianRenderConfig(
+      props,
+      plan,
+      chartWidth,
+      chartHeight,
+      paintContext,
+    );
     if (cartesian) return { kind: "cartesian", config: cartesian };
   }
 
@@ -307,6 +325,8 @@ export function buildD3DispatchPayload(
     config: {
       width: chartWidth,
       height: chartHeight,
+      visualScale,
+      renderTier,
       options,
       colors: styleProps.colors,
       theme: styleProps.theme,

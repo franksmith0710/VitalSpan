@@ -3,6 +3,7 @@ import { getDepthVisual } from "@/components/charts/engine/d3/core/depthEngine";
 import type { D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { themeFromConfig } from "@/components/charts/engine/d3/core/themeEngine";
 import { classifyDatasetField } from "@/components/dashboard/datasetFieldClassification";
+import { scaleChartPresentationFontSize } from "@/components/charts/engine/d3/core/chartPresentationScale";
 import { formatChartValue } from "@/lib/chartValueFormat";
 
 type KpiMetric = { field: string; label?: string | null };
@@ -152,7 +153,7 @@ function kpiAlignGrid(align: "left" | "center" | "right"): string {
 export function renderD3KpiChart(container: HTMLElement, config: D3RenderConfig): () => void {
   container.replaceChildren();
 
-  const { theme: rawTheme, valueFormat, options, colors } = config;
+  const { theme: rawTheme, valueFormat, options, colors, width = 320, height = 180, visualScale, renderTier } = config;
   const theme = themeFromConfig(rawTheme);
   const metrics = (options.metrics as KpiMetric[] | undefined) ?? [];
   const rows = (options.rows as unknown[][] | undefined) ?? [];
@@ -164,8 +165,17 @@ export function renderD3KpiChart(container: HTMLElement, config: D3RenderConfig)
   root.setAttribute("role", "group");
   root.setAttribute("aria-label", "指标卡");
   root.className = "vs-kpi-chart flex h-full min-h-0 flex-col overflow-hidden";
-  const kpiFontSize = clampFontSize(Number(options.__kpiFontSize ?? 40), 20, 80);
-  const labelFontSize = clampFontSize(Math.round(kpiFontSize * 0.38), 11, 24);
+  const kpiFontSize = clampFontSize(
+    scaleChartPresentationFontSize(Number(options.__kpiFontSize ?? 40), {
+      chartWidth: width,
+      chartHeight: height,
+      visualScale,
+      renderTier,
+    }),
+    14,
+    80,
+  );
+  const labelFontSize = clampFontSize(Math.round(kpiFontSize * 0.38), 8, 24);
   const kpiAlign = String(options.__kpiAlign ?? "center") as "left" | "center" | "right";
   const depthVisual = getDepthVisual();
   if (depthVisual === "enhanced") root.classList.add("vs-kpi-depth-enhanced");

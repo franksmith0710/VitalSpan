@@ -1,7 +1,7 @@
 import * as d3 from "d3";
 import { appendChartSvg } from "@/components/charts/engine/d3/core/sceneGraph";
 import { planCategoryAxisLayout, resolveHorizontalCategoryAxisLayout, applyRotatedCategoryLabels, formatAxisCategoryLabel, formatHorizontalBandAxisLabel, resolveBandAxisFontSize, styleAxis } from "@/components/charts/engine/d3/core/axes";
-import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
+import { VCDS, resolveAxisFontSize } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { applyCellBevel, applyDepthHoverLift, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { writeIncrementalSession } from "@/components/charts/engine/d3/core/incrementalRender";
@@ -74,12 +74,12 @@ export function renderD3HeatmapChart(container: HTMLElement, config: D3MatrixRen
   const colLabel = cross
     .append("text")
     .attr("fill", theme.axisLabel)
-    .attr("font-size", `${VCDS.axis.fontSize}px`)
+    .attr("font-size", `${resolveAxisFontSize()}px`)
     .attr("font-weight", 600);
   const rowLabel = cross
     .append("text")
     .attr("fill", theme.axisLabel)
-    .attr("font-size", `${VCDS.axis.fontSize}px`)
+    .attr("font-size", `${resolveAxisFontSize()}px`)
     .attr("font-weight", 600);
 
   g.append("g")

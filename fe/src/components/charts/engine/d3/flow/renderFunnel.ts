@@ -6,6 +6,7 @@ import { reserveLegendMargin } from "@/components/charts/engine/d3/core/d3Legend
 import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
 import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
+import { MIN_CHART_PRESENTATION_FONT_SIZE } from "@/components/charts/engine/d3/core/chartPresentationScale";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
 
@@ -164,7 +165,7 @@ export function renderD3FunnelChart(container: HTMLElement, config: D3RenderConf
         .attr("text-anchor", "start")
         .attr("dy", "0.35em")
         .attr("fill", theme.axisLabel)
-        .style("font-size", `${Math.max(10, labelFontSize - 1)}px`)
+        .style("font-size", `${Math.max(MIN_CHART_PRESENTATION_FONT_SIZE, Math.round(labelFontSize * 0.92))}px`)
         .style("pointer-events", "none")
         .text(
           formatChartValue(rate, valueFormat ? { ...valueFormat, unit: "%" } : { type: "percent" }),

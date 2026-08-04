@@ -2,10 +2,15 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChartEngineViewProps } from "@/components/charts/engine/types";
 import { buildChartRenderPlan } from "@/components/charts/engine/buildChartRenderPlan";
 import { applyChartStyleChain } from "@/components/charts/engine/applyChartStyleChain";
-import { embeddedSizeChanged } from "@/components/charts/engine/embeddedContainerSize";
+import { embeddedSizeChanged, readChartPaintSize } from "@/components/charts/engine/embeddedContainerSize";
 import { setChartAnimationSuppressed } from "@/components/charts/engine/d3/core/animate";
 import { setDepthVisual } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { disposeD3Renderer, runD3Renderer } from "@/components/charts/engine/d3/core/d3RendererSession";
+import {
+  beginPresentationPaint,
+  endPresentationPaint,
+  type ChartPresentationPaintContext,
+} from "@/components/charts/engine/d3/core/chartPresentationScale";
 import { renderD3Chart } from "@/components/charts/engine/d3/renderDispatch";
 import { buildD3DispatchPayload } from "@/components/charts/engine/d3/views/buildRenderConfig";
 import { d3ChartTestId } from "@/components/charts/engine/d3/views/d3TestId";
@@ -16,22 +21,12 @@ import {
 import { usePixelShapePlayer } from "@/components/dashboard/pixelCanvas/pixelShapePlayerContext";
 import { useElementSize } from "@/hooks/useElementSize";
 import { useEmbeddedChartLiveResize } from "@/hooks/useEmbeddedChartLiveResize";
+import { useChartVisualScale } from "@/hooks/useChartVisualScale";
 import { cn } from "@/lib/utils";
 
 type PaintMode = "data" | "live" | "commit";
 
 const LIVE_RESIZE_THROTTLE_MS = 100;
-
-function resolvePaintWidth(
-  el: HTMLElement,
-  width: number | string | undefined,
-  observedWidth: number,
-  height: number,
-): number {
-  const fromProp = typeof width === "number" ? width : 0;
-  const fromDom = el.clientWidth || observedWidth || fromProp;
-  return fromDom > 0 ? fromDom : Math.max(320, height);
-}
 
 function D3CanvasViewInner(props: ChartEngineViewProps) {
   const { viewModel, style, chartConfig, fill = false, height = 180, width, ariaLabel } = props;
@@ -47,6 +42,7 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
   );
 
   const playing = usePixelShapePlayer();
+  const visualScale = useChartVisualScale();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const lastMeasureRef = useRef({ width: 0, height: 0 });
   const liveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -70,15 +66,34 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
   const testId = d3ChartTestId(viewModel.chartType, plan.plotType);
   const mapEmptyOk = viewModel.chartType === "map" || viewModel.chartType === "map-3d";
 
+  const readPaintSize = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return null;
+    return readChartPaintSize(el, {
+      fill,
+      visualScale,
+      layoutFootprint: props.layoutFootprint,
+      width,
+      height,
+      observedWidth: size.width,
+    });
+  }, [fill, visualScale, props.layoutFootprint, width, height, size.width]);
+
   const measureAndRender = useCallback(
     (mode: PaintMode, force = false) => {
       const el = containerRef.current;
       if (!el || plan.kind !== "d3" || plan.empty) return;
       if (!mapEmptyOk && capped.length === 0) return;
 
-      const chartWidth = fill ? el.clientWidth : resolvePaintWidth(el, width, size.width ?? 0, height);
-      const chartHeight = fill ? el.clientHeight : height;
-      const next = { width: Math.round(chartWidth), height: Math.round(chartHeight) };
+      const paint = readPaintSize();
+      if (!paint) {
+        if ((mode === "commit" || mode === "live") && measureRetryRef.current < 2) {
+          measureRetryRef.current += 1;
+          requestAnimationFrame(() => measureAndRender(mode, force));
+        }
+        return;
+      }
+      const next = { width: Math.round(paint.width), height: Math.round(paint.height) };
       if (next.width <= 0 || next.height <= 0) {
         if ((mode === "commit" || mode === "live") && measureRetryRef.current < 2) {
           measureRetryRef.current += 1;
@@ -96,17 +111,28 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
       const suppressAnim = mode === "live" || mode === "commit";
       setChartAnimationSuppressed(suppressAnim);
       try {
-        const payload = buildD3DispatchPayload(props, plan, chartWidth, chartHeight);
+        const paint: ChartPresentationPaintContext = {
+          chartWidth: next.width,
+          chartHeight: next.height,
+          visualScale,
+          renderTier: props.geo3dRenderTier,
+        };
+        beginPresentationPaint(paint);
+        const payload = buildD3DispatchPayload(props, plan, next.width, next.height, {
+          visualScale,
+          renderTier: props.geo3dRenderTier,
+        });
         if (!payload) return;
         runD3Renderer(el, () => renderD3Chart(el, plan, payload));
         setRenderError(null);
       } catch (err) {
         setRenderError(err instanceof Error ? err.message : "图表渲染失败");
       } finally {
+        endPresentationPaint();
         if (mode !== "live") setChartAnimationSuppressed(false);
       }
     },
-    [plan, capped.length, fill, width, height, size.width, size.height, props, mapEmptyOk, style.depthVisual],
+    [plan, capped.length, readPaintSize, visualScale, props, mapEmptyOk, style.depthVisual],
   );
 
   const onLiveResize = useCallback(() => {
@@ -144,6 +170,11 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
     if (!props.layoutFootprint) return;
     measureAndRender("commit", true);
   }, [props.layoutFootprint?.width, props.layoutFootprint?.height, measureAndRender]);
+
+  useEffect(() => {
+    if (!fill || plan.empty || playing) return;
+    measureAndRender("commit", true);
+  }, [visualScale, fill, plan.empty, playing, measureAndRender]);
 
   useEffect(() => {
     return () => {
