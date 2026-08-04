@@ -7,6 +7,7 @@ import {
 } from "../dashboardCanvasMode";
 import {
   buildWidgetFilterParams,
+  type ChartLinkageRuntime,
   type Linkage,
 } from "../dashboardFilterUtils";
 import {
@@ -44,6 +45,11 @@ type DashboardCanvasWidgetRendererProps = {
   gridSize?: { w: number; h: number };
   linkage: Linkage;
   filterValues: Record<string, string>;
+  chartLinkage?: ChartLinkageRuntime | null;
+  onChartLinkageClick?: (
+    widgetId: string,
+    payload: { parameterKey: string; value: string },
+  ) => void;
   onFilterValueChange: (filterId: string, value: string) => void;
   onSelect: (widgetId: string, additive: boolean) => void;
   onNestedSelect?: (widgetId: string, additive: boolean) => void;
@@ -122,6 +128,8 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
   gridSize,
   linkage,
   filterValues,
+  chartLinkage = null,
+  onChartLinkageClick,
   onFilterValueChange,
   onSelect,
   onNestedSelect = onSelect,
@@ -162,9 +170,9 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
   const filterParameters = useMemo(
     () =>
       widget.type === "chart"
-        ? buildWidgetFilterParams(widget.id, linkage, filterValues)
+        ? buildWidgetFilterParams(widget.id, linkage, filterValues, chartLinkage)
         : undefined,
-    [widget.id, widget.type, linkage, filterValues],
+    [widget.id, widget.type, linkage, filterValues, chartLinkage],
   );
   const executeKey = useMemo(
     () => buildWidgetExecuteKey(filterParameters, chartRefreshKeys?.[widget.id] ?? 0),
@@ -275,6 +283,11 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
         onDelete={mode === "edit" ? onDelete : undefined}
         onTitleChange={handleTitleChange}
         onChartConfigChange={handleChartConfigChange}
+        onChartLinkageClick={
+          onChartLinkageClick
+            ? (payload) => onChartLinkageClick(widget.id, payload)
+            : undefined
+        }
         onTabsConfigChange={nested ? undefined : handleTabsConfigChange}
         onTabPaletteDrop={nested || mode !== "edit" ? undefined : handleTabPaletteDrop}
         onTextConfigChange={handleTextConfigChange}

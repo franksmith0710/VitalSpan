@@ -14,6 +14,19 @@ type Linkage = {
   refreshMode?: "eager" | "lazy";
 };
 
+/** 图表点击联动：源组件 → 参数键 → 目标组件 */
+export type ChartLinkageRule = {
+  sourceWidgetId: string;
+  targetWidgetIds: string[];
+  parameterKey: string;
+};
+
+export type ChartLinkageRuntime = {
+  /** parameterKey → 最近点击的区域维度值 */
+  params: Record<string, string>;
+  rules: ChartLinkageRule[];
+};
+
 const UNSAFE = /[;]|--|\/\*/;
 
 export function injectSqlParameters(sql: string, params: Record<string, string>): string {
@@ -31,12 +44,21 @@ export function buildWidgetFilterParams(
   widgetId: string,
   linkage: Linkage,
   filterValues: Record<string, string>,
+  chartLinkage?: ChartLinkageRuntime | null,
 ): Record<string, string> {
   const out: Record<string, string> = {};
   for (const rule of linkage.linkageRules) {
     if (!rule.targetWidgetIds.includes(widgetId)) continue;
     const value = filterValues[rule.sourceFilterId];
     if (value !== undefined && value !== "") out[rule.parameterKey] = value;
+  }
+  if (chartLinkage) {
+    for (const rule of chartLinkage.rules) {
+      if (rule.sourceWidgetId === widgetId) continue;
+      if (!rule.targetWidgetIds.includes(widgetId)) continue;
+      const value = chartLinkage.params[rule.parameterKey];
+      if (value !== undefined && value !== "") out[rule.parameterKey] = value;
+    }
   }
   return out;
 }

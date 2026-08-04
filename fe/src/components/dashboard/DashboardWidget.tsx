@@ -87,6 +87,7 @@ type DashboardWidgetProps = {
   onDelete?: (id: string) => void;
   onTitleChange: (id: string, title: string) => void;
   onChartConfigChange?: (id: string, config: ChartViewConfig) => void;
+  onChartLinkageClick?: (payload: { parameterKey: string; value: string }) => void;
   filterParameters?: Record<string, string>;
   executeKey?: string;
   filterValue?: string;
@@ -226,6 +227,7 @@ export function DashboardWidget({
   onDelete,
   onTitleChange,
   onChartConfigChange,
+  onChartLinkageClick,
   filterParameters,
   executeKey,
   filterValue,
@@ -433,6 +435,9 @@ export function DashboardWidget({
                 onChartConfigChange
                   ? (config) => onChartConfigChange(widget.id, config)
                   : undefined
+              }
+              onChartLinkageClick={
+                mode === "view" && onChartLinkageClick ? onChartLinkageClick : undefined
               }
             />
           </div>

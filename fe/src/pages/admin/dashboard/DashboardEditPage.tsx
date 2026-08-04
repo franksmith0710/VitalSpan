@@ -23,6 +23,7 @@ import {
   sanitizeLinkageForSave,
   type Linkage,
 } from "@/components/dashboard/dashboardFilterUtils";
+import { useChartLinkageState } from "@/components/dashboard/useChartLinkageState";
 import {
   appendWidgetToTabPane,
   coerceLayoutWidgets,
@@ -555,6 +556,8 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     [resolvedWidgets, linkage],
   );
 
+  const { chartLinkageRuntime, handleChartLinkageClick } = useChartLinkageState(resolvedWidgets);
+
   const widgetActionTarget = useMemo(
     () =>
       widgetActionDialog
@@ -572,8 +575,13 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
 
   const widgetActionFilterParams = useMemo(() => {
     if (!widgetActionTarget || widgetActionTarget.type !== "chart") return undefined;
-    return buildWidgetFilterParams(widgetActionTarget.id, effectiveLinkage, filterValues);
-  }, [widgetActionTarget, effectiveLinkage, filterValues]);
+    return buildWidgetFilterParams(
+      widgetActionTarget.id,
+      effectiveLinkage,
+      filterValues,
+      chartLinkageRuntime,
+    );
+  }, [widgetActionTarget, effectiveLinkage, filterValues, chartLinkageRuntime]);
 
   const widgetActionExecuteKey = useMemo(() => {
     if (!widgetActionTarget) return undefined;
@@ -1265,6 +1273,8 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               selectedIds={selectedIds}
               linkage={effectiveLinkage}
               filterValues={filterValues}
+              chartLinkage={chartLinkageRuntime}
+              onChartLinkageClick={handleChartLinkageClick}
               styleConfig={styleConfig}
               chartRefreshKeys={chartRefreshKeys}
               setWidgets={setWidgets}
@@ -1413,6 +1423,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 widget={inspectorWidget}
                 dashboardId={id}
                 dashboardStyle={styleConfig}
+                dashboardWidgets={widgets}
                 onTitleChange={(title) => {
                   if (!primarySelectedId) return;
                   setWidgets((prev) => resizeWidget(prev, primarySelectedId, { title }));
@@ -1550,6 +1561,8 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           selectedIds={selectedIds}
           linkage={effectiveLinkage}
           filterValues={filterValues}
+          chartLinkage={chartLinkageRuntime}
+          onChartLinkageClick={handleChartLinkageClick}
           styleConfig={styleConfig}
           setWidgets={setWidgets}
           setPixelLayout={setPixelLayout}

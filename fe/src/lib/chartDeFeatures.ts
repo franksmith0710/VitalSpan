@@ -30,18 +30,34 @@ export type ChartJumpConfig = {
   openInNewTab?: boolean;
 };
 
+/** 图表级联动（地图点击 → SQL 参数注入目标看板组件） */
+export type ChartLinkageConfig = {
+  enabled: boolean;
+  /** 注入 SQL `{{key}}` 占位符的参数键 */
+  parameterKey?: string;
+  /** 联动目标组件；空则联动看板上其余全部图表 */
+  targetWidgetIds?: string[];
+};
+
 export type ChartDeFeatures = {
   dataZoom?: boolean;
   showLabel?: boolean;
   markLines?: ChartMarkLine[];
   conditionalRules?: ChartConditionalRule[];
   jump?: ChartJumpConfig;
+  linkage?: ChartLinkageConfig;
 };
 
 const DEFAULT_JUMP: ChartJumpConfig = {
   enabled: false,
   mode: "url",
   openInNewTab: true,
+};
+
+const DEFAULT_LINKAGE: ChartLinkageConfig = {
+  enabled: false,
+  parameterKey: "region",
+  targetWidgetIds: [],
 };
 
 export function readChartDeFeatures(cfg: ChartViewConfig): ChartDeFeatures {
@@ -75,6 +91,15 @@ export function readChartConditionalRules(cfg: ChartViewConfig): ChartConditiona
 export function readChartJumpConfig(cfg: ChartViewConfig): ChartJumpConfig {
   const jump = readChartDeFeatures(cfg).jump;
   return { ...DEFAULT_JUMP, ...jump };
+}
+
+export function readChartLinkageConfig(cfg: ChartViewConfig): ChartLinkageConfig {
+  const linkage = readChartDeFeatures(cfg).linkage;
+  return { ...DEFAULT_LINKAGE, ...linkage };
+}
+
+export function chartLinkageIsConfigured(linkage: ChartLinkageConfig): boolean {
+  return linkage.enabled && Boolean(linkage.parameterKey?.trim());
 }
 
 export function chartJumpIsConfigured(jump: ChartJumpConfig): boolean {

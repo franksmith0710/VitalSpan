@@ -79,7 +79,9 @@ import { usePublishWidgetShellLegend } from "@/components/dashboard/pixelCanvas/
 import { supportsEmbeddedShellLegend } from "@/lib/chartInspectorCapabilities";
 import {
   chartJumpIsConfigured,
+  chartLinkageIsConfigured,
   readChartJumpConfig,
+  readChartLinkageConfig,
   resolveChartJumpHref,
 } from "@/lib/chartDeFeatures";
 
@@ -124,6 +126,8 @@ type ChartRendererProps = {
   mountGateStatus?: "queue" | "offscreen";
   onMountReady?: () => void;
   onChartConfigChange?: (config: ChartViewConfig) => void;
+  /** 地图图表联动：单击区域时上报维度值 */
+  onChartLinkageClick?: (payload: { parameterKey: string; value: string }) => void;
   geo3dRenderTier?: import("@/components/charts/engine/three/geo3dRuntime").Geo3dRenderTier;
   geo3dAnimationActive?: boolean;
 };
@@ -218,6 +222,7 @@ export const ChartRenderer = memo(function ChartRenderer({
   mountGateStatus,
   onMountReady,
   onChartConfigChange,
+  onChartLinkageClick,
   geo3dRenderTier,
   geo3dAnimationActive = true,
 }: ChartRendererProps) {
@@ -456,9 +461,16 @@ export const ChartRenderer = memo(function ChartRenderer({
   );
 
   const jumpConfig = useMemo(() => readChartJumpConfig(config), [config]);
+  const linkageConfig = useMemo(() => readChartLinkageConfig(config), [config]);
   const jumpHref = useMemo(() => resolveChartJumpHref(jumpConfig), [jumpConfig]);
   const jumpInteraction =
-    drillEnabled && !drillInteraction && chartJumpIsConfigured(jumpConfig);
+    drillEnabled && jumpConfig.enabled && chartJumpIsConfigured(jumpConfig);
+  const linkageInteraction =
+    drillEnabled &&
+    !jumpInteraction &&
+    chartLinkageIsConfigured(linkageConfig) &&
+    Boolean(onChartLinkageClick);
+  const activeDrillInteraction = drillInteraction && !jumpInteraction;
 
   const handleJumpClick = useCallback(() => {
     if (!jumpHref) return;
@@ -468,6 +480,15 @@ export const ChartRenderer = memo(function ChartRenderer({
     }
     window.location.assign(jumpHref);
   }, [jumpConfig.openInNewTab, jumpHref]);
+
+  const handleLinkageClick = useCallback(
+    (payload: { name: string; value: string }) => {
+      const parameterKey = linkageConfig.parameterKey?.trim();
+      if (!parameterKey || !onChartLinkageClick) return;
+      onChartLinkageClick({ parameterKey, value: payload.value || payload.name });
+    },
+    [linkageConfig.parameterKey, onChartLinkageClick],
+  );
 
   const renderModel = useMemo(
     () =>
@@ -672,8 +693,9 @@ export const ChartRenderer = memo(function ChartRenderer({
       chartConfig={localConfig}
       drillStack={effectiveDrillStack}
       drillClickField={drillClickField}
-      onInteraction={drillInteraction ? handleChartInteraction : undefined}
+      onInteraction={activeDrillInteraction ? handleChartInteraction : undefined}
       onJumpClick={jumpInteraction ? handleJumpClick : undefined}
+      onLinkageClick={linkageInteraction ? handleLinkageClick : undefined}
       onTableStylePatch={dashboardEditMode ? handleTableStylePatch : undefined}
       layoutFootprint={
         embedded && pixelSize && pixelSize.width > 0 && pixelSize.height > 0

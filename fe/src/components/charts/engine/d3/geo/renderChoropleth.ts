@@ -45,6 +45,7 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
     isDark = false,
     geoStyle = {},
     onPointClick,
+    onDrillClick,
     drillDepth = 0,
   } = config;
 
@@ -172,7 +173,7 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
     .attr("stroke", regionBorder.show ? regionBorder.colorCss : "none")
     .attr("stroke-width", regionBorder.show ? strokeWidth : 0)
     .attr("stroke-linejoin", "round")
-    .attr("cursor", onPointClick ? "pointer" : "default")
+    .attr("cursor", onPointClick || onDrillClick ? "pointer" : "default")
     .attr("opacity", prefersReducedMotion() ? 1 : 0);
 
   if (!prefersReducedMotion()) {
@@ -238,11 +239,26 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
     .on("mouseleave", () => {
       clearRegionHover();
       hideTooltip(tooltip);
-    })
-    .on("dblclick", (event, d) => {
-      event.stopPropagation();
-      onPointClick?.({ name: d.name, value: d.value, adcode: d.adcode });
     });
+
+  if (onPointClick && onDrillClick) {
+    regions.on("click", (event, d) => {
+      event.stopPropagation();
+      onPointClick({ name: d.name, value: d.value, adcode: d.adcode });
+    });
+  }
+
+  if (onDrillClick) {
+    regions.on("dblclick", (event, d) => {
+      event.stopPropagation();
+      onDrillClick({ name: d.name, value: d.value, adcode: d.adcode });
+    });
+  } else if (onPointClick) {
+    regions.on("dblclick", (event, d) => {
+      event.stopPropagation();
+      onPointClick({ name: d.name, value: d.value, adcode: d.adcode });
+    });
+  }
 
   mapLayer.on("mouseleave", () => {
     clearRegionHover();

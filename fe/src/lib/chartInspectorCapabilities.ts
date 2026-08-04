@@ -92,9 +92,10 @@ export function chartInspectorCapabilities(
     markLines: engineCaps.markLines,
     conditional: engineCaps.conditional,
     jump:
-      !isGeoMapChartType(chartType) &&
-      !isMatrixHeatmapChartType(chartType) &&
-      !isKpiType(chartType),
+      chartType === "map" ||
+      (!isGeoMapChartType(chartType) &&
+        !isMatrixHeatmapChartType(chartType) &&
+        !isKpiType(chartType)),
     timeRange: !isGeoMapChartType(chartType) && !isKpiType(chartType),
     legendPartial: isD3FeaturePartial(chartType, "legend"),
     conditionalPartial: isD3FeaturePartial(chartType, "conditional"),

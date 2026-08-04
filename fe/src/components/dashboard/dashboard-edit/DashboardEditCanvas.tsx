@@ -6,7 +6,7 @@ import {
   CHART_MOUNT_MAX_EDIT,
 } from "@/components/charts/ChartMountContext";
 import { drillStackRevision } from "@/components/charts/ChartDrillContext";
-import type { Linkage } from "../dashboardFilterUtils";
+import type { Linkage, ChartLinkageRuntime } from "../dashboardFilterUtils";
 import type { DashboardCanvasEditor } from "../dashboardCanvasMode";
 import { pixelWidgetToLayoutWidget } from "../dashboardCanvasMode";
 import { PixelCanvas, type PixelRect } from "../pixelCanvas";
@@ -57,6 +57,11 @@ type DashboardEditCanvasProps = {
   selectedIds: Set<string>;
   linkage: Linkage;
   filterValues: Record<string, string>;
+  chartLinkage?: ChartLinkageRuntime | null;
+  onChartLinkageClick?: (
+    widgetId: string,
+    payload: { parameterKey: string; value: string },
+  ) => void;
   styleConfig?: DashboardStyleConfig;
   chartRefreshKeys?: Record<string, number>;
   setWidgets: DashboardWidgetsSetter;
@@ -89,6 +94,8 @@ export function DashboardEditCanvas({
   selectedIds,
   linkage,
   filterValues,
+  chartLinkage = null,
+  onChartLinkageClick,
   styleConfig = {},
   chartRefreshKeys,
   setWidgets,
@@ -143,6 +150,8 @@ export function DashboardEditCanvas({
           nested={options?.nested}
           linkage={linkage}
           filterValues={filterValues}
+          chartLinkage={chartLinkage}
+          onChartLinkageClick={onChartLinkageClick}
           onFilterValueChange={onFilterValueChange}
           onSelect={onSelect}
           onNestedSelect={onNestedSelect}
@@ -164,6 +173,8 @@ export function DashboardEditCanvas({
       selectedIds,
       linkage,
       filterValues,
+      chartLinkage,
+      onChartLinkageClick,
       onFilterValueChange,
       onSelect,
       onNestedSelect,
@@ -187,7 +198,14 @@ export function DashboardEditCanvas({
 
   const widgetContentRevision = useCallback(
     (widget: PixelLayoutWidget) => {
-      const base = widgetFilterExecuteRevision(widget.id, linkage, filterValues, chartRefreshKeys);
+      const base = widgetFilterExecuteRevision(
+        widget.id,
+        linkage,
+        filterValues,
+        chartRefreshKeys,
+        0,
+        chartLinkage,
+      );
       if (widget.type === "chart" && widget.chartConfig && isGeoMapChartType(widget.chartConfig.chartType)) {
         const manualStack =
           readChartGeoStyle(readChartDeStyle(widget.chartConfig)).manualDrillStack ?? [];
@@ -203,7 +221,7 @@ export function DashboardEditCanvas({
       }
       return base;
     },
-    [linkage, filterValues, chartRefreshKeys],
+    [linkage, filterValues, chartRefreshKeys, chartLinkage],
   );
 
   if (mode === "view" || editor === "pixel-readonly") {
@@ -213,6 +231,8 @@ export function DashboardEditCanvas({
         styleConfig={effectiveStyle}
         linkage={linkage}
         filterValues={filterValues}
+        chartLinkage={chartLinkage}
+        onChartLinkageClick={mode === "view" ? onChartLinkageClick : undefined}
         onFilterValueChange={mode === "view" ? onFilterValueChange : undefined}
         className="h-full min-h-0 w-full"
       />

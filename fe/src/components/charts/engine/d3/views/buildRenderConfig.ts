@@ -114,7 +114,28 @@ export function buildD3DispatchPayload(
         showTooltip: styleProps.showTooltip,
         tooltipPresentation: styleProps.tooltipPresentation,
         valueFormat: styleProps.valueFormat,
-        onPointClick: props.onInteraction
+        onPointClick:
+          props.onJumpClick || props.onLinkageClick
+            ? (datum) => {
+                if (props.onJumpClick) {
+                  props.onJumpClick();
+                  return;
+                }
+                props.onLinkageClick?.({
+                  name: datum.name,
+                  value: String(
+                    findMapDrillFilterValue(
+                      datum.name,
+                      props.drillClickField ?? regionField,
+                      props.drillLookupRows ?? rows,
+                      columns,
+                      (options.knownRegionNames as string[] | undefined) ?? [],
+                    ) || datum.name,
+                  ),
+                });
+              }
+            : undefined,
+        onDrillClick: props.onInteraction
           ? (datum) => {
               const clickField = props.drillClickField ?? regionField;
               const lookupRows = props.drillLookupRows ?? rows;

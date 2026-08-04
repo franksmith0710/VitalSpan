@@ -3,8 +3,10 @@ import { DashboardGrid } from "./DashboardGrid";
 import { DashboardWidget } from "./DashboardWidget";
 import {
   buildWidgetFilterParams,
+  type ChartLinkageRuntime,
   type Linkage,
 } from "./dashboardFilterUtils";
+import { useChartLinkageState } from "./useChartLinkageState";
 import { pixelWidgetToLayoutWidget, type DashboardWidgetShell } from "./dashboardCanvasMode";
 import { PixelCanvas } from "./pixelCanvas";
 import {
@@ -38,6 +40,11 @@ type DashboardLayoutPreviewProps = {
   styleConfig?: DashboardStyleConfig;
   linkage?: Linkage | null;
   filterValues?: Record<string, string>;
+  chartLinkage?: ChartLinkageRuntime | null;
+  onChartLinkageClick?: (
+    widgetId: string,
+    payload: { parameterKey: string; value: string },
+  ) => void;
   onFilterValueChange?: (filterId: string, value: string) => void;
   scaleMode?: ScaleMode;
   /** 大屏投放：固定设计尺寸，由外层 CanvasScaleViewport 独占缩放 */
@@ -56,6 +63,8 @@ export function DashboardLayoutPreview({
   styleConfig: styleConfigOverride,
   linkage = null,
   filterValues = {},
+  chartLinkage: chartLinkageProp,
+  onChartLinkageClick: onChartLinkageClickProp,
   onFilterValueChange,
   scaleMode,
   fixedDesignViewport = false,
@@ -83,6 +92,11 @@ export function DashboardLayoutPreview({
     displayLayout.version === 1
       ? displayLayout.widgets
       : displayLayout.widgets.map(pixelWidgetToLayoutWidget);
+  const internalLinkage = useChartLinkageState(widgets);
+  const chartLinkage: ChartLinkageRuntime | null =
+    chartLinkageProp !== undefined ? chartLinkageProp : internalLinkage.chartLinkageRuntime;
+  const onChartLinkageClick =
+    onChartLinkageClickProp ?? internalLinkage.handleChartLinkageClick;
   const { componentMap } = useVizComponentMap(widgets);
   const styleRevision = widgetDashboardStyleFingerprint(styleConfig);
   const effectiveLinkage: Linkage = linkage ?? {
@@ -109,7 +123,12 @@ export function DashboardLayoutPreview({
           renderNestedWidget={renderNested}
           filterParameters={
             displayWidget.type === "chart"
-              ? buildWidgetFilterParams(displayWidget.id, effectiveLinkage, filterValues)
+              ? buildWidgetFilterParams(
+                  displayWidget.id,
+                  effectiveLinkage,
+                  filterValues,
+                  chartLinkage,
+                )
               : undefined
           }
           executeKey={widgetFilterExecuteRevision(
@@ -118,6 +137,7 @@ export function DashboardLayoutPreview({
             filterValues,
             undefined,
             globalChartRefreshKey,
+            chartLinkage,
           )}
           filterValue={
             displayWidget.filterConfig
@@ -125,6 +145,11 @@ export function DashboardLayoutPreview({
               : undefined
           }
           onFilterValueChange={onFilterValueChange}
+          onChartLinkageClick={
+            onChartLinkageClick
+              ? (payload) => onChartLinkageClick(displayWidget.id, payload)
+              : undefined
+          }
           onTitleChange={() => {}}
           dashboardStyle={widgetDashboardStyle}
           geo3dRenderTier={geo3dRenderTier}
@@ -142,6 +167,7 @@ export function DashboardLayoutPreview({
         filterValues,
         undefined,
         globalChartRefreshKey,
+        chartLinkage,
       );
 
     return (

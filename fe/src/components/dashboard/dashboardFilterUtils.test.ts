@@ -85,4 +85,17 @@ describe("dashboardFilterUtils", () => {
       { sourceFilterId: "f1", targetWidgetIds: ["c1"], parameterKey: "region" },
     ]);
   });
+
+  it("buildWidgetFilterParams merges chart linkage params for target widgets", () => {
+    const params = buildWidgetFilterParams(
+      "w2",
+      { filters: [], linkageRules: [] },
+      {},
+      {
+        params: { region: "广东省" },
+        rules: [{ sourceWidgetId: "w1", targetWidgetIds: ["w2"], parameterKey: "region" }],
+      },
+    );
+    expect(params).toEqual({ region: "广东省" });
+  });
 });

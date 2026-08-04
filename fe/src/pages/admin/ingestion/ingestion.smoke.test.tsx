@@ -419,6 +419,168 @@ describe("ingestion admin smoke", () => {
     expect(await screen.findAllByText("2 任务共表")).toHaveLength(2);
   });
 
+  it("SyncJobFormPage_source_table_updates_target_when_not_manual", async () => {
+    setViewport(1400);
+    mockNewJobFormBootstrap([], [
+      {
+        id: "job-existing",
+        name: "已有",
+        source_type: "mysql",
+        target_table: "sales_clean",
+        enabled: true,
+        schedule_cron: null,
+      },
+    ]);
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs/new" element={<SyncJobFormPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    const sourceInput = await screen.findByLabelText("源表");
+    await waitFor(() => {
+      expect(screen.getByLabelText("目标表")).toHaveValue("orders_clean");
+    });
+    fireEvent.change(sourceInput, { target: { value: "sales" } });
+    await waitFor(() => {
+      expect(screen.getByLabelText("目标表")).toHaveValue("sales_clean_2");
+    });
+  });
+
+  it("SyncJobFormPage_resuggest_target_table_button", async () => {
+    setViewport(1400);
+    mockNewJobFormBootstrap([], [
+      {
+        id: "job-existing",
+        name: "已有",
+        source_type: "mysql",
+        target_table: "orders_clean",
+        enabled: true,
+        schedule_cron: null,
+      },
+    ]);
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs/new" element={<SyncJobFormPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    const targetInput = await screen.findByLabelText("目标表");
+    await waitFor(() => {
+      expect(targetInput).toHaveValue("orders_clean_2");
+    });
+    fireEvent.change(targetInput, { target: { value: "manual_table" } });
+    fireEvent.click(screen.getByRole("button", { name: "按源表重新建议表名" }));
+    await waitFor(() => {
+      expect(targetInput).toHaveValue("orders_clean_2");
+    });
+    fireEvent.change(screen.getByLabelText("源表"), { target: { value: "sales" } });
+    await waitFor(() => {
+      expect(targetInput).toHaveValue("sales_clean");
+    });
+  });
+
+  it("SyncJobFormPage_shared_target_confirm_cancel_skips_post", async () => {
+    setViewport(1400);
+    mockNewJobFormBootstrap([], [
+      {
+        id: "job-existing",
+        name: "同步1",
+        source_type: "mysql",
+        target_table: "orders_clean",
+        enabled: true,
+        schedule_cron: null,
+      },
+    ]);
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs/new" element={<SyncJobFormPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    fireEvent.change(await screen.findByLabelText("目标表"), {
+      target: { value: "orders_clean" },
+    });
+    fireEvent.change(screen.getByLabelText("任务名称"), { target: { value: "cancel-test" } });
+    fireEvent.click(screen.getByRole("button", { name: "创建" }));
+    expect(await screen.findByText("目标表已被其他任务使用")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "取消" }));
+    await waitFor(() => {
+      expect(screen.queryByText("目标表已被其他任务使用")).not.toBeInTheDocument();
+    });
+    const postCalls = mockApiFetch.mock.calls.filter(
+      (c) => c[0] === "/api/v1/ingestion/sync-jobs" && c[1]?.method === "POST",
+    );
+    expect(postCalls).toHaveLength(0);
+  });
+
+  it("SyncJobFormPage_edit_excludes_self_from_shared_target_warning", async () => {
+    setViewport(1400);
+    mockApiFetch.mockImplementation((url: string) => {
+      if (url === "/api/v1/datasources") {
+        return Promise.resolve({ items: [] });
+      }
+      if (url === "/api/v1/ingestion/sync-jobs") {
+        return Promise.resolve({
+          items: [
+            {
+              id: "job-edit",
+              name: "自身任务",
+              source_type: "mysql",
+              target_table: "orders_clean",
+              enabled: true,
+              schedule_cron: null,
+            },
+            {
+              id: "job-sibling",
+              name: "兄弟任务",
+              source_type: "mysql",
+              target_table: "orders_clean",
+              enabled: true,
+              schedule_cron: null,
+            },
+          ],
+        });
+      }
+      if (url === "/api/v1/ingestion/sync-jobs/job-edit") {
+        return Promise.resolve({
+          name: "自身任务",
+          enabled: true,
+          sync_mode: "full",
+          primary_key: null,
+          incremental_column: null,
+          source_data_source_id: null,
+          source: {
+            type: "mysql",
+            host: "127.0.0.1",
+            port: 3307,
+            database: "sample_db",
+            username: "sample",
+            password: "",
+            table: "dirty_orders",
+          },
+          target_table: "orders_clean",
+          schedule_cron: null,
+        });
+      }
+      return Promise.resolve({});
+    });
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-edit/edit"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs/:id/edit" element={<SyncJobFormPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(await screen.findByLabelText("任务名称")).toHaveValue("自身任务");
+    expect(await screen.findByText("目标表与已有任务重复")).toBeInTheDocument();
+    expect(screen.getByText(/兄弟任务/)).toBeInTheDocument();
+    expect(screen.queryByText(/已有任务「自身任务」/)).not.toBeInTheDocument();
+  });
+
   it("SyncJobFormPage_datasource_mode_renders_select", async () => {
     setViewport(1400);
     mockNewJobFormBootstrap([

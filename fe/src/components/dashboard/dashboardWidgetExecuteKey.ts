@@ -1,4 +1,4 @@
-import { buildWidgetFilterParams, type Linkage } from "./dashboardFilterUtils";
+import { buildWidgetFilterParams, type ChartLinkageRuntime, type Linkage } from "./dashboardFilterUtils";
 
 /** 单组件图表查询刷新键：仅含本组件筛选参数，避免全局 filterValues 误伤 */
 export function buildWidgetExecuteKey(
@@ -14,8 +14,9 @@ export function widgetFilterExecuteRevision(
   filterValues: Record<string, string>,
   chartRefreshKeys?: Record<string, number>,
   globalChartRefreshKey = 0,
+  chartLinkage?: ChartLinkageRuntime | null,
 ): string {
-  const filters = buildWidgetFilterParams(widgetId, linkage, filterValues);
+  const filters = buildWidgetFilterParams(widgetId, linkage, filterValues, chartLinkage);
   const perWidget = chartRefreshKeys?.[widgetId] ?? 0;
   return buildWidgetExecuteKey(filters, perWidget + globalChartRefreshKey);
 }

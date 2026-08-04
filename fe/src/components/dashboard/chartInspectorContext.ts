@@ -11,6 +11,8 @@ export type ChartInspectorContextValue = ChartInspectorState & {
   onTitleChange?: (title: string) => void;
   /** 当前编辑中的看板 ID（跳转设置等） */
   dashboardId?: string;
+  /** 看板画布组件列表（地图联动目标选择） */
+  dashboardWidgets?: LayoutWidget[];
   /** 看板全局样式（组件级标题 show 继承 titleStyle.show） */
   dashboardStyle?: DashboardStyleConfig;
   /** 基于最新 chartConfig 合并 deStyle，避免滑块/连点 patch 覆盖未落盘的字段 */

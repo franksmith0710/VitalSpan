@@ -14,9 +14,11 @@ import {
   ChartAdvancedFeatureSettings,
   ChartAdvancedJumpSection,
   ChartAdvancedMapBubbleSection,
+  ChartAdvancedMapLinkageSection,
   ChartAdvancedMarkLinesSection,
 } from "./chartAdvancedSections";
 import { readChartDeStyle, readChartGeoStyle } from "@/lib/chartDeStyle";
+import { readChartLinkageConfig } from "@/lib/chartDeFeatures";
 
 type ChartAdvancedPanelProps = Record<string, never>;
 
@@ -29,6 +31,7 @@ export function ChartAdvancedPanel(_props: ChartAdvancedPanelProps) {
     const markLines = readChartMarkLines(cfg);
     const rules = readChartConditionalRules(cfg);
     const jump = readChartJumpConfig(cfg);
+    const mapLinkage = readChartLinkageConfig(cfg);
     const list = [];
 
     if (caps.dataZoom || caps.timeRange) {
@@ -70,6 +73,16 @@ export function ChartAdvancedPanel(_props: ChartAdvancedPanelProps) {
         defaultOpen: rules.length > 0,
         badge: rules.filter((rule) => rule.enabled).length,
         content: <ChartAdvancedConditionalSection />,
+      });
+    }
+
+    if (cfg.chartType === "map") {
+      list.push({
+        id: "map-linkage",
+        title: "联动设置",
+        defaultOpen: mapLinkage.enabled,
+        badge: mapLinkage.enabled ? "开" : undefined,
+        content: <ChartAdvancedMapLinkageSection />,
       });
     }
 

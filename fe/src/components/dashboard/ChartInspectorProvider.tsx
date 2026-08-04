@@ -17,6 +17,7 @@ type ChartInspectorProviderProps = {
   onTitleChange?: (title: string) => void;
   dashboardStyle?: DashboardStyleConfig;
   dashboardId?: string;
+  dashboardWidgets?: LayoutWidget[];
   children: ReactNode;
 };
 
@@ -26,6 +27,7 @@ export function ChartInspectorProvider({
   onTitleChange,
   dashboardStyle,
   dashboardId,
+  dashboardWidgets,
   children,
 }: ChartInspectorProviderProps) {
   const widgetRef = useRef(widget);
@@ -80,6 +82,7 @@ export function ChartInspectorProvider({
         onTitleChange,
         dashboardStyle,
         dashboardId,
+        dashboardWidgets,
         patchDeStyle,
         patchDeStyleNested,
         mutateChartConfig,

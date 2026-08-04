@@ -159,3 +159,145 @@ def test_ensure_dataset_for_sync_job_idempotent_when_bound(
     if row:
         db_session.delete(row)
     db_session.commit()
+
+
+def test_ensure_dataset_different_ids_for_different_target_tables(
+    db_session: Session,
+    admin_actor: UserContext,
+) -> None:
+    """两 job 不同 target_table → ensure 后 Dataset ID 分别等于各自 target_table。"""
+    ds_id = uuid.uuid4()
+    target_a = f"orders_clean_{uuid.uuid4().hex[:6]}"
+    target_b = f"orders_clean_{uuid.uuid4().hex[:6]}"
+    job_a = SyncJob(
+        name="job-a",
+        target_table=target_a,
+        schedule_cron=None,
+        enabled=True,
+        source_type="mysql",
+        source_host="127.0.0.1",
+        source_port=3307,
+        source_database="sample_db",
+        source_username="sample",
+        source_password_encrypted="x",
+        source_table="dirty_orders",
+    )
+    job_b = SyncJob(
+        name="job-b",
+        target_table=target_b,
+        schedule_cron=None,
+        enabled=True,
+        source_type="mysql",
+        source_host="127.0.0.1",
+        source_port=3307,
+        source_database="sample_db",
+        source_username="sample",
+        source_password_encrypted="x",
+        source_table="dirty_orders",
+    )
+    db_session.add(job_a)
+    db_session.add(job_b)
+    db_session.commit()
+
+    mock_columns = MagicMock()
+    mock_columns.items = [SimpleNamespace(name="id")]
+
+    with (
+        patch(
+            "app.ingestion.sync_consume.ensure_analytics_datasource",
+            return_value=ds_id,
+        ),
+        patch(
+            "app.ingestion.sync_consume.list_columns",
+            return_value=mock_columns,
+        ),
+    ):
+        result_a = ensure_dataset_for_sync_job(db_session, job_a, admin_actor)
+        result_b = ensure_dataset_for_sync_job(db_session, job_b, admin_actor)
+
+    assert result_a.dataset_id == target_a
+    assert result_b.dataset_id == target_b
+    assert result_a.dataset_id != result_b.dataset_id
+    row_a = db_session.get(DatasetRecord, target_a)
+    row_b = db_session.get(DatasetRecord, target_b)
+    assert row_a is not None
+    assert row_b is not None
+
+    db_session.delete(job_a)
+    db_session.delete(job_b)
+    if row_a:
+        db_session.delete(row_a)
+    if row_b:
+        db_session.delete(row_b)
+    db_session.commit()
+
+
+def test_ensure_dataset_different_ids_for_different_target_tables(
+    db_session: Session,
+    admin_actor: UserContext,
+) -> None:
+    """两 job 不同 target_table → ensure 后 Dataset ID 分别等于各自 target_table。"""
+    ds_id = uuid.uuid4()
+    target_a = f"orders_clean_{uuid.uuid4().hex[:6]}"
+    target_b = f"orders_clean_{uuid.uuid4().hex[:6]}"
+    job_a = SyncJob(
+        name="job-a",
+        target_table=target_a,
+        schedule_cron=None,
+        enabled=True,
+        source_type="mysql",
+        source_host="127.0.0.1",
+        source_port=3307,
+        source_database="sample_db",
+        source_username="sample",
+        source_password_encrypted="x",
+        source_table="dirty_orders",
+    )
+    job_b = SyncJob(
+        name="job-b",
+        target_table=target_b,
+        schedule_cron=None,
+        enabled=True,
+        source_type="mysql",
+        source_host="127.0.0.1",
+        source_port=3307,
+        source_database="sample_db",
+        source_username="sample",
+        source_password_encrypted="x",
+        source_table="dirty_orders",
+    )
+    db_session.add(job_a)
+    db_session.add(job_b)
+    db_session.commit()
+
+    mock_columns = MagicMock()
+    mock_columns.items = [SimpleNamespace(name="id")]
+
+    with (
+        patch(
+            "app.ingestion.sync_consume.ensure_analytics_datasource",
+            return_value=ds_id,
+        ),
+        patch(
+            "app.ingestion.sync_consume.list_columns",
+            return_value=mock_columns,
+        ),
+    ):
+        result_a = ensure_dataset_for_sync_job(db_session, job_a, admin_actor)
+        result_b = ensure_dataset_for_sync_job(db_session, job_b, admin_actor)
+
+    assert result_a.dataset_id == target_a
+    assert result_b.dataset_id == target_b
+    assert result_a.dataset_id != result_b.dataset_id
+    row_a = db_session.get(DatasetRecord, target_a)
+    row_b = db_session.get(DatasetRecord, target_b)
+    assert row_a is not None
+    assert row_b is not None
+
+    db_session.delete(job_a)
+    db_session.delete(job_b)
+    if row_a:
+        db_session.delete(row_a)
+    if row_b:
+        db_session.delete(row_b)
+    db_session.commit()

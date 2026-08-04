@@ -1,6 +1,7 @@
 import { Plus, Trash2 } from "lucide-react";
 import { TimeRangeConfig } from "@/components/charts/TimeRangeConfig";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -15,10 +16,12 @@ import {
   readChartConditionalRules,
   readChartDeFeatures,
   readChartJumpConfig,
+  readChartLinkageConfig,
   readChartMarkLines,
   type ChartConditionalOperator,
   type ChartConditionalRule,
   type ChartJumpConfig,
+  type ChartLinkageConfig,
   type ChartMarkLine,
 } from "@/lib/chartDeFeatures";
 import {
@@ -395,6 +398,85 @@ export function ChartAdvancedJumpSection() {
             checked={jump.openInNewTab !== false}
             onCheckedChange={(openInNewTab) => patchJump({ openInNewTab })}
           />
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+/** 2D 区域地图 · 高级「联动设置」（对标 DataEase 点击区域联动其他图） */
+export function ChartAdvancedMapLinkageSection() {
+  const { cfg, onChange, widget, dashboardWidgets = [] } = useChartInspector();
+  const linkage = readChartLinkageConfig(cfg);
+  const regionField = cfg.dimensions?.[0]?.field?.trim() || "region";
+
+  const patchLinkage = (patch: Partial<ChartLinkageConfig>) =>
+    onChange(patchChartDeFeatures(cfg, { linkage: { ...linkage, ...patch } }));
+
+  const chartTargets = dashboardWidgets.filter(
+    (item) => item.type === "chart" && item.id !== widget.id,
+  );
+
+  const toggleTarget = (widgetId: string, checked: boolean) => {
+    const current = linkage.targetWidgetIds ?? [];
+    patchLinkage({
+      targetWidgetIds: checked
+        ? [...current, widgetId]
+        : current.filter((id) => id !== widgetId),
+    });
+  };
+
+  return (
+    <div className={INSPECTOR_SECTION_GAP}>
+      <InspectorSwitchRow
+        label="启用联动"
+        checked={linkage.enabled}
+        onCheckedChange={(enabled) => patchLinkage({ enabled })}
+        hint={
+          linkage.enabled
+            ? "查看态单击区域将维度值注入目标图表 SQL 参数（与跳转互斥时跳转优先）"
+            : "启用后可在查看态点击地图区域联动其他图表"
+        }
+      />
+      {linkage.enabled ? (
+        <>
+          <InspectorFieldRow
+            label="参数键"
+            hint="对应 SQL 中 {{region}} 等占位符"
+          >
+            <Input
+              className={INSPECTOR_CTRL}
+              value={linkage.parameterKey ?? regionField}
+              onChange={(e) => patchLinkage({ parameterKey: e.target.value })}
+              placeholder={regionField}
+            />
+          </InspectorFieldRow>
+          <fieldset className="space-y-2">
+            <legend className="text-theme-xs font-medium text-gray-600 dark:text-gray-400">
+              目标图表
+            </legend>
+            <p className={INSPECTOR_HINT}>
+              未勾选时默认联动看板上其余全部图表；目标 SQL 须含对应占位符。
+            </p>
+            <div className="flex flex-wrap gap-3">
+              {chartTargets.length > 0 ? (
+                chartTargets.map((item) => (
+                  <label
+                    key={item.id}
+                    className="flex cursor-pointer items-center gap-2 text-theme-xs text-gray-700 dark:text-gray-300"
+                  >
+                    <Checkbox
+                      checked={(linkage.targetWidgetIds ?? []).includes(item.id)}
+                      onCheckedChange={(checked) => toggleTarget(item.id, checked === true)}
+                    />
+                    {item.title || item.id}
+                  </label>
+                ))
+              ) : (
+                <p className="text-theme-xs text-gray-400">画布上暂无其他图表组件。</p>
+              )}
+            </div>
+          </fieldset>
         </>
       ) : null}
     </div>

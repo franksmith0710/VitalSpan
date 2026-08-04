@@ -34,4 +34,8 @@ describe("chartInspectorCapabilities", () => {
     expect(chartHasAdvancedTab("map")).toBe(true);
     expect(chartHasAdvancedTab("map-3d")).toBe(false);
   });
+
+  it("enables jump for 2D map", () => {
+    expect(chartInspectorCapabilities("map").jump).toBe(true);
+  });
 });

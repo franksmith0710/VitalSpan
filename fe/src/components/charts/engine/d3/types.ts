@@ -137,6 +137,8 @@ export type D3GeoRenderConfig = D3RenderConfigBase & {
   /** WebGL 实例槽位 key（widgetId 等），用于全页实例上限 */
   instanceKey?: string;
   onPointClick?: (datum: { name: string; value: number; adcode?: number }) => void;
+  /** 地图双击下钻（与单击跳转/联动分离） */
+  onDrillClick?: (datum: { name: string; value: number; adcode?: number }) => void;
 };
 
 export type D3MatrixCell = { x: string; y: string; value: number };

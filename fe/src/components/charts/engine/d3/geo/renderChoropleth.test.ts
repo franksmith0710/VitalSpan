@@ -88,7 +88,39 @@ describe("renderD3ChoroplethChart", () => {
     document.body.removeChild(container);
   });
 
-  it("drills on double-click instead of single click", () => {
+  it("drills on double-click when onDrillClick is set", () => {
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const onDrillClick = vi.fn();
+    const onPointClick = vi.fn();
+
+    const dispose = renderD3ChoroplethChart(container, {
+      width: 400,
+      height: 320,
+      rows: [["广东省", 320]],
+      columns: ["province", "value"],
+      regionField: "province",
+      metricField: "value",
+      theme: resolveD3Theme("light"),
+      showTooltip: false,
+      colors: ["#1653a9"],
+      onPointClick,
+      onDrillClick,
+    });
+
+    const region = container.querySelector("path.region");
+    expect(region).toBeTruthy();
+    region?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(onPointClick).toHaveBeenCalledTimes(1);
+    expect(onDrillClick).not.toHaveBeenCalled();
+    region?.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+    expect(onDrillClick).toHaveBeenCalledTimes(1);
+
+    dispose();
+    document.body.removeChild(container);
+  });
+
+  it("drills on double-click instead of single click (legacy onPointClick only)", () => {
     const container = document.createElement("div");
     document.body.appendChild(container);
     const onPointClick = vi.fn();
