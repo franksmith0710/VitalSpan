@@ -10,6 +10,7 @@ import { buildD3StyleProps } from "@/components/charts/engine/d3/views/buildStyl
 import { extractDrillValue, buildCartesianRenderConfig } from "@/components/charts/engine/d3/views/buildCartesianConfig";
 import { readCartesianStyleFromPlanOptions, readCompareStyleFromPlanOptions } from "@/lib/applyChartDeStyleBlocks";
 import { readChartDeStyle, readChartGeoStyle, readChartGeo3dStyle } from "@/lib/chartDeStyle";
+import { readChartGeoAreaMappingLookup } from "@/lib/chartGeoAreaMapping";
 import {
   defaultGeo3dRenderTier,
   resolveTerrainTextureEnabled,
@@ -79,6 +80,7 @@ export function buildD3DispatchPayload(
     const columns = (options.columns as string[]) ?? [];
     const geoStyle = props.chartConfig ? readChartGeoStyle(readChartDeStyle(props.chartConfig)) : {};
     const deStyle = props.chartConfig ? readChartDeStyle(props.chartConfig) : {};
+    const areaMapping = readChartGeoAreaMappingLookup(deStyle);
     const isMap3d = props.viewModel.chartType === "map-3d";
     const geo3dStyleRaw = props.chartConfig ? readChartGeo3dStyle(readChartDeStyle(props.chartConfig)) : {};
     const renderTier = props.geo3dRenderTier ?? "full";
@@ -98,6 +100,7 @@ export function buildD3DispatchPayload(
         knownRegionNames: options.knownRegionNames as string[] | undefined,
         mapId: (options.mapId as string | undefined) ?? VS_REGIONS_MAP_ID,
         drillDepth: (options.drillDepth as number | undefined) ?? 0,
+        areaMapping,
         isDark: props.isDark ?? props.style.scheme === "dark",
         geoStyle: {
           roam: geoStyle.roam,
@@ -142,6 +145,7 @@ export function buildD3DispatchPayload(
                       props.drillLookupRows ?? rows,
                       columns,
                       (options.knownRegionNames as string[] | undefined) ?? [],
+                      areaMapping,
                     ) || datum.name,
                   ),
                 });
@@ -153,7 +157,14 @@ export function buildD3DispatchPayload(
               const lookupRows = props.drillLookupRows ?? rows;
               const known = (options.knownRegionNames as string[] | undefined) ?? [];
               const value = clickField
-                ? findMapDrillFilterValue(datum.name, clickField, lookupRows, columns, known)
+                ? findMapDrillFilterValue(
+                    datum.name,
+                    clickField,
+                    lookupRows,
+                    columns,
+                    known,
+                    areaMapping,
+                  )
                 : datum.name;
               props.onInteraction?.({ kind: "drill", value, label: datum.name });
             }

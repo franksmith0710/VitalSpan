@@ -32,7 +32,7 @@ describe("chartInspectorCapabilities", () => {
 
   it("shows advanced tab for 2D map bubble effect", () => {
     expect(chartHasAdvancedTab("map")).toBe(true);
-    expect(chartHasAdvancedTab("map-3d")).toBe(false);
+    expect(chartHasAdvancedTab("map-3d")).toBe(true);
   });
 
   it("enables jump for 2D map", () => {

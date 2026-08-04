@@ -1,5 +1,6 @@
 import type { ChartDrillFrame } from "@/lib/chartDrill";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import { applyAreaMapping } from "@/lib/chartGeoAreaMapping";
 import { getOfflineGeoMap, registerOfflineGeoMap } from "@/components/charts/engine/geo/OfflineGeoPort";
 import chinaProvincesGeo from "@/assets/geo/china-provinces.json";
 import {
@@ -377,6 +378,7 @@ export function findMapDrillFilterValue(
   rows: unknown[][],
   columns: string[],
   knownNames: string[],
+  areaMapping?: ReadonlyMap<string, string>,
 ): string {
   const colIdx = columns.indexOf(field);
   if (colIdx < 0) return clickedName;
@@ -385,7 +387,8 @@ export function findMapDrillFilterValue(
   for (const row of rows) {
     const raw = String(row[colIdx] ?? "");
     if (!raw) continue;
-    const resolved = resolveMapRegionNameAtLevel(raw, knownNames);
+    const mappedRaw = applyAreaMapping(raw, areaMapping);
+    const resolved = resolveMapRegionNameAtLevel(mappedRaw, knownNames);
     if (target.matched && resolved.matched && resolved.name === target.name) {
       return raw;
     }

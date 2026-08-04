@@ -10,9 +10,12 @@ import {
   resolveDemoMysqlRegionId,
   resolveEmbeddedGeoRoam,
   resolveMapRegionName,
+  resolveRegionMetricValue,
+  listVsRegionNames,
   VS_GEO_HEATMAP_PLACEHOLDER_FLAG,
   VS_GEO_MAP_PLACEHOLDER_FLAG,
 } from "./geoMapChart";
+import { buildAreaMappingLookup } from "./chartGeoAreaMapping";
 
 describe("resolveMapRegionName", () => {
   it("matches province names with administrative suffixes", () => {
@@ -25,6 +28,12 @@ describe("resolveMapRegionName", () => {
   it("resolves region codes and adcodes", () => {
     expect(resolveMapRegionName("BJ").name).toBe("北京市");
     expect(resolveMapRegionName("110000").name).toBe("北京市");
+  });
+
+  it("applies user areaMapping before built-in rules", () => {
+    const lookup = buildAreaMappingLookup([{ id: "1", from: "EAST_01", to: "江苏省" }]);
+    expect(resolveMapRegionName("EAST_01", undefined, lookup).name).toBe("江苏省");
+    expect(resolveMapRegionName("EAST_01", undefined, lookup).matched).toBe(true);
   });
 });
 
@@ -40,6 +49,34 @@ describe("analyzeGeoMapMatch", () => {
     );
     expect(stats.matched).toBe(0);
     expect(stats.unmatched.length).toBeGreaterThan(0);
+  });
+
+  it("counts rows matched via areaMapping", () => {
+    const lookup = buildAreaMappingLookup([{ id: "1", from: "EAST_01", to: "江苏省" }]);
+    const stats = analyzeGeoMapMatch(
+      [["EAST_01", 100]],
+      ["province", "value"],
+      "province",
+      undefined,
+      0,
+      lookup,
+    );
+    expect(stats.matched).toBe(1);
+  });
+});
+
+describe("resolveRegionMetricValue with areaMapping", () => {
+  it("maps business codes to province names", () => {
+    const lookup = buildAreaMappingLookup([{ id: "1", from: "EAST_01", to: "江苏省" }]);
+    const resolved = resolveRegionMetricValue(
+      "province",
+      "EAST_01",
+      listVsRegionNames(),
+      0,
+      lookup,
+    );
+    expect(resolved.name).toBe("江苏省");
+    expect(resolved.matched).toBe(true);
   });
 });
 

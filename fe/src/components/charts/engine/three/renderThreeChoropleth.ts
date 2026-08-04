@@ -226,6 +226,7 @@ export async function renderThreeChoroplethChart(
     onPointClick,
     renderTier = "full",
     instanceKey,
+    areaMapping,
   } = config;
 
   if (width <= 0 || height <= 0) {
@@ -263,6 +264,7 @@ export async function renderThreeChoroplethChart(
     resolvedMapId,
     knownRegionNames,
     drillDepth,
+    areaMapping,
   ).filter((f) => f.geometry != null);
 
   container.replaceChildren();
@@ -572,6 +574,7 @@ export async function renderThreeChoroplethChart(
               metricField,
               features,
               project,
+              areaMapping,
             )
           : [];
         pointEffects = applyGeo3dPointEffectsLayer({
@@ -1126,6 +1129,7 @@ export async function renderThreeChoroplethChart(
             metricField,
             features,
             project,
+            areaMapping,
           )
         : [];
       pointEffects?.dispose();

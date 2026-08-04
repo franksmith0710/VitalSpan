@@ -133,6 +133,7 @@ export type D3GeoRenderConfig = D3RenderConfigBase & {
   knownRegionNames?: string[];
   mapId?: string;
   drillDepth?: number;
+  areaMapping?: ReadonlyMap<string, string>;
   isDark?: boolean;
   geoStyle?: D3GeoStyleProps;
   geo3dStyle?: ChartGeo3dStyle;

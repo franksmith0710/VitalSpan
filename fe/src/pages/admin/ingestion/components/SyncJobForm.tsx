@@ -64,6 +64,8 @@ type SyncJobFormProps = {
   conflictingJobNames?: string[];
   /** 按当前源表重新建议唯一目标表名 */
   onSuggestTargetTable?: () => void;
+  jobId?: string;
+  justCreated?: boolean;
   formId?: string;
   onChange: <K extends keyof JobFormState>(key: K, value: JobFormState[K]) => void;
   onSubmit: (event?: FormEvent) => void;
@@ -136,6 +138,8 @@ export function SyncJobForm({
   fieldErrors,
   conflictingJobNames = [],
   onSuggestTargetTable,
+  jobId,
+  justCreated = false,
   formId = SYNC_JOB_FORM_ID,
   onChange,
   onSubmit,
@@ -146,6 +150,17 @@ export function SyncJobForm({
       className="mx-auto grid w-full max-w-3xl gap-6"
       onSubmit={(event) => onSubmit(event)}
     >
+      {isEdit && form.target_table ? (
+        <SyncJobConsumeGuide
+          jobId={jobId}
+          jobName={form.name.trim() || undefined}
+          targetTable={form.target_table}
+          syncMode={form.syncMode}
+          variant="how_to"
+          justCreated={justCreated}
+        />
+      ) : null}
+
       <FormSection title="基本信息" description="任务名称用于在列表与日志中识别此次同步。">
         <div className="grid gap-2">
           <Label htmlFor="name">任务名称</Label>
@@ -444,10 +459,6 @@ export function SyncJobForm({
           />
         </div>
       </FormSection>
-
-      {isEdit && form.target_table ? (
-        <SyncJobConsumeGuide targetTable={form.target_table} variant="how_to" />
-      ) : null}
     </form>
   );
 }

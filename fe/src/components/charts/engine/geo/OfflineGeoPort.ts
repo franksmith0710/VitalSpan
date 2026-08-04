@@ -107,6 +107,7 @@ function joinMapRows(
   mapId: string,
   knownRegionNames?: string[],
   drillDepth = 0,
+  areaMapping?: ReadonlyMap<string, string>,
 ): Array<{
   name: string;
   value: number;
@@ -130,7 +131,13 @@ function joinMapRows(
   if (ri >= 0 && mi >= 0) {
     const knownNames = knownRegionNames ?? listVsRegionNames();
     for (const row of rows) {
-      const resolved = resolveRegionMetricValue(regionField, row[ri], knownNames, drillDepth);
+      const resolved = resolveRegionMetricValue(
+        regionField,
+        row[ri],
+        knownNames,
+        drillDepth,
+        areaMapping,
+      );
       if (!resolved.name) continue;
       if (drillDepth > 0 && !resolved.matched) continue;
       const raw = Number(row[mi] ?? 0);
@@ -161,8 +168,18 @@ export function joinOfflineMapFeatures(
   mapId: string,
   knownRegionNames?: string[],
   drillDepth = 0,
+  areaMapping?: ReadonlyMap<string, string>,
 ): Array<{ name: string; value: number; adcode?: number; geometry: GeoJSON.Geometry | null; labelLngLat?: [number, number] }> {
-  return joinMapRows(rows, columns, regionField, metricField, mapId, knownRegionNames, drillDepth);
+  return joinMapRows(
+    rows,
+    columns,
+    regionField,
+    metricField,
+    mapId,
+    knownRegionNames,
+    drillDepth,
+    areaMapping,
+  );
 }
 
 export const offlineGeoEngine: GeoEnginePort = {
@@ -176,6 +193,8 @@ export const offlineGeoEngine: GeoEnginePort = {
       input.metricField,
       mapId,
       input.knownRegionNames,
+      input.drillDepth ?? 0,
+      input.areaMapping,
     );
     return {
       mapId,
@@ -213,8 +232,15 @@ export const offlineGeoEngine: GeoEnginePort = {
   isHeatmapPlaceholder(option: Record<string, unknown>) {
     return option.__vsGeoHeatmapPlaceholder === true;
   },
-  analyzeMatch(rows, columns, regionField, knownRegionNames, drillDepthOrRootLevel) {
-    return analyzeGeoMapMatch(rows, columns, regionField, knownRegionNames, drillDepthOrRootLevel);
+  analyzeMatch(rows, columns, regionField, knownRegionNames, drillDepthOrRootLevel, areaMapping) {
+    return analyzeGeoMapMatch(
+      rows,
+      columns,
+      regionField,
+      knownRegionNames,
+      drillDepthOrRootLevel,
+      areaMapping,
+    );
   },
   resolveEmbeddedRoam: resolveEmbeddedGeoRoam,
 };

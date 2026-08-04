@@ -29,6 +29,8 @@ export type GeoMapBuildInput = {
   valueFormat?: NumberFormatConfig;
   mapId?: string;
   knownRegionNames?: string[];
+  drillDepth?: number;
+  areaMapping?: ReadonlyMap<string, string>;
 };
 
 export type GeoHeatmapBuildInput = {
@@ -62,8 +64,9 @@ export type GeoEnginePort = {
     columns: string[],
     regionField: string,
     knownRegionNames?: string[],
-    rootLevel?: boolean,
-  ): { total: number; matched: number };
+    drillDepthOrRootLevel?: number | boolean,
+    areaMapping?: ReadonlyMap<string, string>,
+  ): { total: number; matched: number; unmatched?: string[] };
   resolveEmbeddedRoam(roam: boolean | undefined): boolean;
 };
 

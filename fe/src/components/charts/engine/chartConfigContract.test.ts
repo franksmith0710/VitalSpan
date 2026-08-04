@@ -432,4 +432,47 @@ describe("chart config contract L2", () => {
       expect(payload.config.colors[0]).toBe(pastelColors[0]);
     }
   });
+
+  it("map choropleth dispatch carries areaMapping lookup", () => {
+    const mapConfig: ChartViewConfig = {
+      chartType: "map",
+      dataSourceId: "ds",
+      mode: "sql",
+      sql: "select 1",
+      dimensions: [{ field: "province" }],
+      metrics: [{ field: "value" }],
+      nativeBody: {
+        deStyle: {
+          geo: {
+            areaMapping: [{ id: "m1", from: "EAST_01", to: "江苏省" }],
+          },
+        },
+      },
+    };
+    const vm = buildChartViewModel(mapConfig, {
+      columns: ["province", "value"],
+      rows: [["EAST_01", 100]],
+    });
+    const style = buildStyleContext({ config: mapConfig, chartColors: ["#1653a9"] });
+    const plan = applyChartStyleChain(buildChartRenderPlan(vm), style, mapConfig);
+    const planWithGeo = {
+      ...plan,
+      options: {
+        ...plan.options,
+        mapId: "vs-regions",
+        knownRegionNames: undefined,
+        drillDepth: 0,
+      },
+    };
+    const payload = buildD3DispatchPayload(
+      { viewModel: vm, style, chartConfig: mapConfig, isDark: false },
+      planWithGeo,
+      400,
+      300,
+    );
+    expect(payload?.kind).toBe("geo");
+    if (payload?.kind === "geo") {
+      expect(payload.config.areaMapping?.get("EAST_01")).toBe("江苏省");
+    }
+  });
 });

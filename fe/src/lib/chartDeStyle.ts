@@ -87,6 +87,14 @@ export type ChartRemarkStyle = {
   text?: string;
 };
 
+export type ChartGeoAreaMappingEntry = {
+  id: string;
+  /** 业务维度原始值 */
+  from: string;
+  /** 标准省/市/区县名称（须能匹配离线 GeoJSON properties.name） */
+  to: string;
+};
+
 export type ChartGeoStyle = {
   /** 对标 DE「地区」：离线中国省级底图（GEO-IRON-01 仅 china） */
   mapArea?: "china";
@@ -120,6 +128,8 @@ export type ChartGeoStyle = {
   regionLabelFontSize?: number;
   /** 行政区边线宽度倍率（相对自适应基准，0.5–3，默认 1） */
   regionBorderWidth?: number;
+  /** 高级 · 地名映射：业务值 → 标准地名（map / map-3d 共用） */
+  areaMapping?: ChartGeoAreaMappingEntry[];
 };
 
 export type ChartGeo3dStyle = {

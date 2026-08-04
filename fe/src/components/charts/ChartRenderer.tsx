@@ -15,6 +15,7 @@ import { migrateChartViewConfig } from "@/lib/migrateChartTypes";
 import { resolveChartColors, applyChartColorsOpacity } from "@/lib/chartPalette";
 import type { ColorScheme, DashboardStyleConfig, NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import { readChartDeStyle, readChartGeoStyle, readChartLegendVisible, readChartLegendPosition, readChartPaletteOpacity, patchChartDeStyleNested } from "@/lib/chartDeStyle";
+import { readChartGeoAreaMappingLookup } from "@/lib/chartGeoAreaMapping";
 import {
   readChartLegendIcon,
   readChartLegendIconSize,
@@ -517,10 +518,14 @@ export const ChartRenderer = memo(function ChartRenderer({
     if (!phase.renderReady) return DEFAULT_GEO_MAP_PLACEHOLDER_HINT;
     const regionField = localConfig.dimensions?.[0]?.field ?? "";
     if (regionField && (rows?.length ?? 0) > 0) {
+      const areaMapping = readChartGeoAreaMappingLookup(deStyle);
       const stats = activeGeoEngine.analyzeMatch(
         rows as unknown[][],
         columns,
         regionField,
+        undefined,
+        effectiveDrillStack.length,
+        areaMapping,
       );
       if (stats.total > 0 && stats.matched === 0) {
         return MAP_REGION_NAME_HINT;
@@ -531,7 +536,7 @@ export const ChartRenderer = memo(function ChartRenderer({
     }
     if (!loading && !error && (rows?.length ?? 0) === 0) return "暂无数据";
     return undefined;
-  }, [isMapChart, localConfig, loading, error, rows, columns, renderModel]);
+  }, [isMapChart, localConfig, loading, error, rows, columns, renderModel, deStyle, effectiveDrillStack.length]);
 
   const heatmapPlaceholderHint = useMemo(() => {
     if (!isHeatmapChart) return undefined;

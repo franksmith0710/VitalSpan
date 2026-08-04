@@ -19,6 +19,22 @@ describe("geoProjection", () => {
     expect(joined.every((f) => f.name.length > 0)).toBe(true);
   });
 
+  it("joins business region codes via areaMapping", () => {
+    const lookup = new Map([["EAST_01", "江苏省"]]);
+    const joined = joinOfflineMapFeatures(
+      [["EAST_01", 120]],
+      ["province", "value"],
+      "province",
+      "value",
+      "vs-regions",
+      undefined,
+      0,
+      lookup,
+    );
+    const jiangsu = joined.find((f) => f.name === "江苏省");
+    expect(jiangsu?.value).toBe(120);
+  });
+
   it("normalizes malformed province rings for d3 geoPath", () => {
     const named = chinaProvincesGeo.features.filter((f) => !isDecorativeGeoFeature(f.properties));
     const collection = {

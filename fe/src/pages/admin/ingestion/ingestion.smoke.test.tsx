@@ -300,6 +300,7 @@ describe("ingestion admin smoke", () => {
       );
       expect(mockNavigate).toHaveBeenCalledWith("/admin/ingestion/sync-jobs/new-job/edit", {
         replace: true,
+        state: { justCreated: true },
       });
     });
   });
@@ -579,6 +580,63 @@ describe("ingestion admin smoke", () => {
     expect(await screen.findByText("目标表与已有任务重复")).toBeInTheDocument();
     expect(screen.getByText(/兄弟任务/)).toBeInTheDocument();
     expect(screen.queryByText(/已有任务「自身任务」/)).not.toBeInTheDocument();
+  });
+
+  it("SyncJobFormPage_edit_shows_run_first_consume_guide_at_top", async () => {
+    setViewport(1400);
+    mockApiFetch.mockImplementation((url: string) => {
+      if (url === "/api/v1/datasources") {
+        return Promise.resolve({ items: [] });
+      }
+      if (url === "/api/v1/ingestion/sync-jobs") {
+        return Promise.resolve({ items: [] });
+      }
+      if (url === "/api/v1/ingestion/sync-jobs/job-guide") {
+        return Promise.resolve({
+          name: "演示同步",
+          enabled: true,
+          sync_mode: "full",
+          primary_key: null,
+          incremental_column: null,
+          source_data_source_id: null,
+          source: {
+            type: "mysql",
+            host: "127.0.0.1",
+            port: 3307,
+            database: "sample_db",
+            username: "sample",
+            password: "",
+            table: "dirty_orders",
+          },
+          target_table: "orders_clean_4",
+          schedule_cron: null,
+        });
+      }
+      return Promise.resolve({});
+    });
+    render(
+      <MemoryRouter
+        initialEntries={[
+          {
+            pathname: "/admin/ingestion/sync-jobs/job-guide/edit",
+            state: { justCreated: true },
+          },
+        ]}
+      >
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs/:id/edit" element={<SyncJobFormPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText("任务已创建 · 下一步请运行同步")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "去列表运行同步" })).toBeInTheDocument();
+    expect(screen.getByText(/一键创建 Dataset 并绑定/)).toBeInTheDocument();
+    expect(screen.getByLabelText("目标表")).toHaveValue("orders_clean_4");
+    const guideTitle = screen.getByText("任务已创建 · 下一步请运行同步");
+    const basicSection = screen.getByText("基本信息");
+    expect(
+      guideTitle.compareDocumentPosition(basicSection) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it("SyncJobFormPage_datasource_mode_renders_select", async () => {

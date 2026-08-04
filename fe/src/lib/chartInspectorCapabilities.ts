@@ -115,6 +115,7 @@ export function chartHasAdvancedTab(chartType: ChartViewConfig["chartType"]): bo
     caps.markLines ||
     caps.conditional ||
     caps.jump ||
-    chartType === "map"
+    chartType === "map" ||
+    chartType === "map-3d"
   );
 }

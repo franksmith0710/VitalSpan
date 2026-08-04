@@ -120,6 +120,7 @@ export function buildHeatBlobSamplesFromRowRegions(
   metricField: string,
   anchors: Map<string, [number, number]>,
   project: (coord: [number, number]) => [number, number] | null,
+  areaMapping?: ReadonlyMap<string, string>,
 ): HeatBlobRowBuildResult {
   const ri = columns.indexOf(regionField);
   const mi = columns.indexOf(metricField);
@@ -128,7 +129,7 @@ export function buildHeatBlobSamplesFromRowRegions(
   const rawSamples: HeatBlobSample[] = [];
   let unmatchedRows = 0;
   for (const row of rows) {
-    const lngLat = resolveRowRegionAnchorLngLat(regionField, row[ri], anchors);
+    const lngLat = resolveRowRegionAnchorLngLat(regionField, row[ri], anchors, areaMapping);
     if (!lngLat) {
       unmatchedRows += 1;
       continue;
@@ -160,6 +161,7 @@ export async function buildHeatBlobSamplesForMap(
   metricField: string,
   features: JoinedMapFeature[],
   project: (coord: [number, number]) => [number, number] | null,
+  areaMapping?: ReadonlyMap<string, string>,
 ): Promise<HeatBlobSample[]> {
   const fromCoordCols = buildHeatBlobSamplesFromRows(rows, columns, metricField, project);
   if (fromCoordCols) return fromCoordCols;
@@ -172,6 +174,7 @@ export async function buildHeatBlobSamplesForMap(
     metricField,
     anchors,
     project,
+    areaMapping,
   );
   warnUnmatchedHeatRows(unmatchedRows, rows.length);
   if (samples.length > 0) return samples;

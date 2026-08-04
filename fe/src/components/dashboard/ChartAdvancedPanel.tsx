@@ -15,9 +15,11 @@ import {
   ChartAdvancedJumpSection,
   ChartAdvancedMapBubbleSection,
   ChartAdvancedMapLinkageSection,
+  ChartAdvancedMapAreaMappingSection,
   ChartAdvancedMarkLinesSection,
 } from "./chartAdvancedSections";
 import { readChartDeStyle, readChartGeoStyle } from "@/lib/chartDeStyle";
+import { countEffectiveAreaMappings } from "@/lib/chartGeoAreaMapping";
 import { readChartLinkageConfig } from "@/lib/chartDeFeatures";
 
 type ChartAdvancedPanelProps = Record<string, never>;
@@ -73,6 +75,18 @@ export function ChartAdvancedPanel(_props: ChartAdvancedPanelProps) {
         defaultOpen: rules.length > 0,
         badge: rules.filter((rule) => rule.enabled).length,
         content: <ChartAdvancedConditionalSection />,
+      });
+    }
+
+    if (cfg.chartType === "map" || cfg.chartType === "map-3d") {
+      const geoForMapping = readChartGeoStyle(readChartDeStyle(cfg));
+      const mappingCount = countEffectiveAreaMappings(geoForMapping.areaMapping);
+      list.push({
+        id: "map-area-mapping",
+        title: "地名映射",
+        defaultOpen: mappingCount > 0,
+        badge: mappingCount > 0 ? mappingCount : undefined,
+        content: <ChartAdvancedMapAreaMappingSection />,
       });
     }
 

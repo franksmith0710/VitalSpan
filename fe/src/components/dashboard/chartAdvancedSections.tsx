@@ -40,7 +40,10 @@ import {
   readChartDeStyle,
   readChartGeoStyle,
   resolveEffectivePaletteId,
+  type ChartGeoAreaMappingEntry,
 } from "@/lib/chartDeStyle";
+import { readChartGeoAreaMapping } from "@/lib/chartGeoAreaMapping";
+import { listOfflineProvinceNames } from "@/lib/geoMapLevels";
 import { resolveChartColors } from "@/lib/chartPalette";
 import { useChartInspector } from "./chartInspectorContext";
 import { DeAttrSliderField } from "./deAttrSlider";
@@ -547,6 +550,99 @@ export function ChartAdvancedMapBubbleSection() {
           <p className={INSPECTOR_HINT}>在有数据的区域中心显示扩散水波；速率越高动画越快。</p>
         </>
       ) : null}
+    </div>
+  );
+}
+
+const PROVINCE_NAME_SUGGESTIONS = listOfflineProvinceNames();
+
+function AreaMappingRow({
+  entry,
+  onChange,
+  onRemove,
+}: {
+  entry: ChartGeoAreaMappingEntry;
+  onChange: (next: ChartGeoAreaMappingEntry) => void;
+  onRemove: () => void;
+}) {
+  const listId = `geo-area-mapping-to-${entry.id}`;
+  return (
+    <div className={INSPECTOR_NESTED_CARD}>
+      <div className="grid gap-2">
+        <InspectorFieldRow label="业务值" hint="数据维度中的原始取值">
+          <Input
+            className={INSPECTOR_CTRL}
+            value={entry.from}
+            placeholder="如 EAST_01"
+            onChange={(e) => onChange({ ...entry, from: e.target.value })}
+          />
+        </InspectorFieldRow>
+        <InspectorFieldRow label="标准地名" hint="须匹配离线 GeoJSON 省/市名称">
+          <Input
+            className={INSPECTOR_CTRL}
+            list={listId}
+            value={entry.to}
+            placeholder="如 江苏省"
+            onChange={(e) => onChange({ ...entry, to: e.target.value })}
+          />
+          <datalist id={listId}>
+            {PROVINCE_NAME_SUGGESTIONS.map((name) => (
+              <option key={name} value={name} />
+            ))}
+          </datalist>
+        </InspectorFieldRow>
+      </div>
+      <div className="mt-2 flex justify-end">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-7 shrink-0 text-gray-400"
+          aria-label="删除映射"
+          onClick={onRemove}
+        >
+          <Trash2 className="size-3.5" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/** 2D/3D 区域地图 · 高级「地名映射」（业务值 → 标准地名） */
+export function ChartAdvancedMapAreaMappingSection() {
+  const { cfg, onChange } = useChartInspector();
+  const geo = readChartGeoStyle(readChartDeStyle(cfg));
+  const entries = geo.areaMapping ?? [];
+
+  const patchEntries = (next: ChartGeoAreaMappingEntry[]) =>
+    onChange(patchChartDeStyleNested(cfg, "geo", { areaMapping: next }));
+
+  const updateEntry = (id: string, next: ChartGeoAreaMappingEntry) =>
+    patchEntries(entries.map((item) => (item.id === id ? next : item)));
+
+  const removeEntry = (id: string) => patchEntries(entries.filter((item) => item.id !== id));
+
+  const addEntry = () =>
+    patchEntries([...entries, { id: newId(), from: "", to: "" }]);
+
+  return (
+    <div className={INSPECTOR_SECTION_GAP}>
+      <p className={INSPECTOR_HINT}>
+        将业务维度值映射为标准省/市名称后再与离线地图 join。仍建议在 SQL 侧标准化；此处用于 legacy
+        数据兜底。下钻后「标准地名」须对应当前层级 GeoJSON 名称。
+      </p>
+      {entries.map((entry) => (
+        <AreaMappingRow
+          key={entry.id}
+          entry={entry}
+          onChange={(next) => updateEntry(entry.id, next)}
+          onRemove={() => removeEntry(entry.id)}
+        />
+      ))}
+      <Button type="button" variant="outline" size="sm" className="h-8 w-full" onClick={addEntry}>
+        <Plus className="mr-1 size-3.5" />
+        添加映射
+      </Button>
     </div>
   );
 }

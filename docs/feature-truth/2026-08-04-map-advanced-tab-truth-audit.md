@@ -58,7 +58,7 @@ ChartEditRail → ChartAdvancedPanel
 | T2 | 跳转设置 | **PARTIAL** | 7/B | 链路接线完整；无浏览器 L1；跳转 URL **不含**点击维度 |
 | T3 | 气泡动效 | **REAL（CHAIN）** | 8/B | render + styleSig 单测通过；缺 UI 滑块集成测 |
 | T4 | 配置持久化 | **PARTIAL** | 7/B | 写路径通；未验保存/刷新后回显（无 UI 测） |
-| T5 | DE 完整对标 | **STUB** | 2/F | **地名映射** 未实现 |
+| T5 | DE 完整对标 | **PARTIAL** | 7/B | **地名映射一期**：别名表 UI + join 链；自定义多省区域未做 |
 
 ## 3b. 前端控件下钻表（FE 全量）
 
@@ -94,7 +94,7 @@ ChartEditRail → ChartAdvancedPanel
 | T2-jump | 跳转 runtime | ✅ caps.jump(map) | ✅ render click split | ❌ | ❌ | CHAIN | 2 | 1 | PARTIAL | `renderChoropleth.test.ts` |
 | T3-bubble | 气泡动效 | ✅ Panel 挂载 | ✅ render + styleSig | ❌ | ❌ | CHAIN | 2 | 2 | REAL | vitest 34 passed |
 | T4-persist | 配置持久化 | ✅ patch 路径 | ❌ | ❌ | ❌ | GATE | 1 | 1 | STUB | 未验 save/reload |
-| T5-de-alias | 地名映射 | ❌ | ❌ | ❌ | ❌ | NONE | 0 | 0 | STUB | 未实现 |
+| T5-de-alias | 地名映射 | ✅ Panel 挂载 | ✅ join + drill 单测 | ❌ | ❌ | CHAIN | 2 | 2 | PARTIAL | `chartGeoAreaMapping.ts` · vitest |
 | P-export | 导出快照预览 | — | ❌ | ❌ | ❌ | NONE | 0 | 0 | BROKEN | 无 chartLinkage 接线 |
 | P-datascreen | 大屏 Presenter | — | ❌ | ❌ | ❌ | NONE | 0 | 0 | BROKEN | 同上 |
 
@@ -106,7 +106,7 @@ ChartEditRail → ChartAdvancedPanel
 | GATE only | 1（T4） |
 | CHAIN | 3（T1–T3 主路径） |
 | UI / BROWSER | 0 |
-| NONE / 断链 | 3（T5、P-export、P-datascreen） |
+| NONE / 断链 | 2（P-export、P-datascreen） |
 | REAL 达标 | 1/7（仅 T3-bubble CHAIN 维） |
 | **逐一校验** | **否** — 已验 4/7 有 L1；0 项 BROWSER；3 项 NONE/断链 |
 | 总体可否 REAL | **否** |
@@ -153,11 +153,12 @@ ChartEditRail → ChartAdvancedPanel
 **修复方向**：`resolveChartJumpHref(jump, context?)` 支持占位符；browser smoke 1 条。  
 **修后验收**：C≥2  
 
-### T5 — 地名映射（P2 · DE 差距）
+### T5 — 地名映射（P2 · DE 差距 · 一期已实现）
 
-**判定**：STUB  
-**根因**：无 `ChartGeoStyle.areaMapping` UI / `normalizeRegionName` 扩展配置  
-**修复方向**：高级 Tab 增「地名映射」表格编辑 + join 链读取  
+**判定**：PARTIAL 7/10（一期：业务值→标准地名别名表）  
+**已实现**：`ChartGeoStyle.areaMapping` · `ChartAdvancedMapAreaMappingSection` · `resolveRegionMetricValue` / `joinOfflineMapFeatures` / `findMapDrillFilterValue` · `map` + `map-3d` 共用  
+**仍未做（二期）**：自定义区域多省聚合（如「华东」）、与 CAT-003 目录打通、未匹配项一键导入  
+**代码锚点**：`fe/src/lib/chartGeoAreaMapping.ts` · `fe/src/components/dashboard/chartAdvancedSections.tsx` · `fe/src/lib/geoMapChart.test.ts`
 
 ### T4 — 配置持久化（P1）
 
@@ -171,7 +172,7 @@ ChartEditRail → ChartAdvancedPanel
 | P0 | T1 | 联动 runtime 扩展到 LayoutPreview/DataScreen + 1 条 E2E execute 断言 |
 | P1 | T2 | 跳转 browser smoke + 可选 URL 占位符 |
 | P1 | T4 | 保存/回显集成测 |
-| P2 | T5 | 地名映射（DE 完整对标） |
+| P2 | T5 | 地名映射二期（自定义多省区域） |
 | P2 | T3 | 气泡速率/环数 DOM 断言 |
 
 ## 7. 交接
@@ -188,7 +189,7 @@ ChartEditRail → ChartAdvancedPanel
 | 联动设置 | **有 UI + 主看板 view 可用**；导出/大屏/组件库 **不可用** |
 | 跳转设置 | **有 UI + 看板 view 单击可用**；URL 不带点击维度 |
 | 气泡动效 | **可用**（CHAIN 已验） |
-| 地名映射 | **未做** |
+| 地名映射 | **一期已实现**（别名表；无自定义多省） |
 | 下钻 vs 跳转优先级 | **已按 DE 文案实现**（单击跳转/联动，双击下钻） |
 
 **结论**：不是「全不能用」，也 **不能称功能完整 / REAL**。当前档位 **PARTIAL · 6/10 · C**——配置层基本可用，运行时在 **看板查看态主路径** 可试；要宣称生产可用需补 P0 E2E 与 preview 断链。

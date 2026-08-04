@@ -6,6 +6,7 @@ import {
   resolveDemoMysqlRegionByDrillDepth,
 } from "@/lib/demoMysqlRegions";
 import { formatChartValue } from "@/lib/chartValueFormat";
+import { applyAreaMapping } from "@/lib/chartGeoAreaMapping";
 import {
   DEFAULT_GEO_HEATMAP_PLACEHOLDER_HINT,
   DEFAULT_GEO_MAP_PLACEHOLDER_HINT,
@@ -227,9 +228,11 @@ function resolveAdcodeName(raw: string, adcodeMap: Map<number, string>): string 
 export function resolveMapRegionName(
   raw: unknown,
   knownNames = listVsRegionNames(),
+  areaMapping?: ReadonlyMap<string, string>,
 ): GeoMapRegionResolve {
+  const mappedRaw = applyAreaMapping(raw, areaMapping);
   const { adcodeToFullName: adcodeMap, shortToFullName: shortMap } = getProvinceIndex();
-  const trimmed = String(raw ?? "").trim();
+  const trimmed = String(mappedRaw ?? "").trim();
   if (!trimmed) return { name: "", matched: false };
 
   if (knownNames.includes(trimmed)) return { name: trimmed, matched: true };
@@ -263,8 +266,10 @@ export function resolveMapRegionName(
 export function resolveMapRegionNameAtLevel(
   raw: unknown,
   knownNames: string[],
+  areaMapping?: ReadonlyMap<string, string>,
 ): GeoMapRegionResolve {
-  const trimmed = String(raw ?? "").trim();
+  const mappedRaw = applyAreaMapping(raw, areaMapping);
+  const trimmed = String(mappedRaw ?? "").trim();
   if (!trimmed) return { name: "", matched: false };
   if (knownNames.includes(trimmed)) return { name: trimmed, matched: true };
 
@@ -291,6 +296,7 @@ export function analyzeGeoMapMatch(
   regionField: string,
   knownNames = listVsRegionNames(),
   drillDepthOrRootLevel: number | boolean = 0,
+  areaMapping?: ReadonlyMap<string, string>,
 ): GeoMapMatchStats {
   const drillDepth =
     typeof drillDepthOrRootLevel === "boolean"
@@ -303,7 +309,13 @@ export function analyzeGeoMapMatch(
   let matched = 0;
 
   for (const row of rows) {
-    const resolved = resolveRegionMetricValue(regionField, row[ri], knownNames, drillDepth);
+    const resolved = resolveRegionMetricValue(
+      regionField,
+      row[ri],
+      knownNames,
+      drillDepth,
+      areaMapping,
+    );
     if (resolved.matched) matched += 1;
     else if (resolved.name) unmatched.add(String(row[ri] ?? ""));
     else if (REGION_ID_FIELD_PATTERN.test(regionField) && isNumericRegionIdRaw(row[ri])) {
@@ -381,22 +393,24 @@ export function resolveRegionMetricValue(
   raw: unknown,
   knownNames: string[],
   drillDepth: number,
+  areaMapping?: ReadonlyMap<string, string>,
 ): GeoMapRegionResolve {
+  const mappedRaw = applyAreaMapping(raw, areaMapping);
   if (REGION_ID_FIELD_PATTERN.test(regionField)) {
-    const demo = resolveDemoMysqlRegionId(raw, drillDepth);
+    const demo = resolveDemoMysqlRegionId(mappedRaw, drillDepth);
     if (demo) {
       if (drillDepth === 0) return demo;
       const atLevel = resolveMapRegionNameAtLevel(demo.name, knownNames);
       return atLevel.matched ? atLevel : demo;
     }
-    if (isNumericRegionIdRaw(raw)) {
+    if (isNumericRegionIdRaw(mappedRaw)) {
       return { name: "", matched: false };
     }
   }
   if (drillDepth === 0) {
-    return resolveMapDimensionValue(regionField, raw, knownNames, drillDepth);
+    return resolveMapDimensionValue(regionField, mappedRaw, knownNames, drillDepth);
   }
-  return resolveMapRegionNameAtLevel(raw, knownNames);
+  return resolveMapRegionNameAtLevel(mappedRaw, knownNames);
 }
 
 function aggregateMapRegionData(
@@ -406,13 +420,20 @@ function aggregateMapRegionData(
   metricField: string,
   knownNames = listVsRegionNames(),
   drillDepth = 0,
+  areaMapping?: ReadonlyMap<string, string>,
 ): Array<{ name: string; value: number }> {
   const ri = columns.indexOf(regionField);
   const mi = columns.indexOf(metricField);
   const bucket = new Map<string, number>();
 
   for (const row of rows) {
-    const resolved = resolveRegionMetricValue(regionField, row[ri], knownNames, drillDepth);
+    const resolved = resolveRegionMetricValue(
+      regionField,
+      row[ri],
+      knownNames,
+      drillDepth,
+      areaMapping,
+    );
     if (!resolved.name) continue;
     if (drillDepth > 0 && !resolved.matched) continue;
     const raw = Number(row[mi] ?? 0);
@@ -449,6 +470,7 @@ export type GeoMapRowsInput = {
   valueFormat?: NumberFormatConfig;
   mapId?: string;
   knownRegionNames?: string[];
+  areaMapping?: ReadonlyMap<string, string>;
 };
 
 export function buildGeoMapEchartsOption(input: GeoMapRowsInput): Record<string, unknown> {
@@ -469,6 +491,7 @@ export function buildGeoMapEchartsOption(input: GeoMapRowsInput): Record<string,
     input.metricField,
     knownNames,
     drillDepth,
+    input.areaMapping,
   );
   const values = data.map((item) => item.value);
   const max = values.length ? Math.max(...values) : 1;

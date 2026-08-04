@@ -34,6 +34,7 @@ import { useGeoMapLevel, isGeoMapLevelReady } from "@/hooks/useGeoMapLevel";
 import { useChartVisualScale } from "@/hooks/useChartVisualScale";
 import { VIZ_WHEEL_ZOOM_SURFACE_ATTR } from "@/components/dashboard/pixelCanvas/pixelCanvasWheelScroll";
 import { readChartDeStyle, readChartGeoStyle, readChartGeo3dStyle } from "@/lib/chartDeStyle";
+import { readChartGeoAreaMappingLookup } from "@/lib/chartGeoAreaMapping";
 import {
   buildGeo3dStructureContentSig,
   buildGeo3dVisualContentSig,
@@ -119,6 +120,11 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     [plan, geoMapLevel.mapId, geoMapLevel.knownRegionNames, geoMapLevel.drillDepth],
   );
 
+  const areaMapping = useMemo(
+    () => (chartConfig ? readChartGeoAreaMappingLookup(readChartDeStyle(chartConfig)) : undefined),
+    [chartConfig],
+  );
+
   const spec = useMemo(() => chartViewModelToRenderSpec(viewModel), [viewModel]);
   const geoMatchStats = useMemo(() => {
     const regionField = spec.encoding.dimensions[0]?.field;
@@ -129,8 +135,9 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       regionField,
       geoMapLevel.knownRegionNames,
       geoMapLevel.drillDepth,
+      areaMapping,
     );
-  }, [spec, capped, columns, geoMapLevel]);
+  }, [spec, capped, columns, geoMapLevel, areaMapping]);
 
   const geoMatchWarning =
     geoMatchStats && geoMatchStats.total > 0 && geoMatchStats.matched < geoMatchStats.total

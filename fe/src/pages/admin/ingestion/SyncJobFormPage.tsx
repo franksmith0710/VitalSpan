@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { ArrowLeft, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageHeaderIcon, AdminPageShell } from "@/components/layout/admin-page-shell";
@@ -99,7 +99,11 @@ function buildPayload(form: JobFormState) {
 
 export function SyncJobFormPage() {
   const { id } = useParams();
+  const location = useLocation();
   const isEdit = Boolean(id);
+  const justCreated = Boolean(
+    (location.state as { justCreated?: boolean } | null)?.justCreated,
+  );
   const navigate = useNavigate();
   const [form, setForm] = useState<JobFormState>(emptyForm);
   const [existingJobs, setExistingJobs] = useState<SyncJobSummary[]>([]);
@@ -278,9 +282,14 @@ export function SyncJobFormPage() {
           method: "POST",
           body: JSON.stringify(payload),
         });
-        toast.success("同步任务已创建");
+        toast.success("同步任务已创建", {
+          description: "请返回列表手动运行同步，成功后在一键出图动作卡绑定 Dataset。",
+        });
         markSaved(form);
-        navigate(`/admin/ingestion/sync-jobs/${created.id}/edit`, { replace: true });
+        navigate(`/admin/ingestion/sync-jobs/${created.id}/edit`, {
+          replace: true,
+          state: { justCreated: true },
+        });
       }
       return true;
     } catch (err) {
@@ -390,6 +399,8 @@ export function SyncJobFormPage() {
           <SyncJobForm
             form={form}
             isEdit={isEdit}
+            jobId={id}
+            justCreated={justCreated}
             etlRulesHref={isEdit && id ? `/admin/ingestion/sync-jobs/${id}/etl-rules` : undefined}
             datasources={datasources}
             selectedDatasource={selectedDatasource}

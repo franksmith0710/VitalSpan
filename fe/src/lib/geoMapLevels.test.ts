@@ -179,4 +179,14 @@ describe("findMapDrillFilterValue", () => {
     const known = ["广东省", "北京市", "上海市"];
     expect(findMapDrillFilterValue("广东省", "province", rows, columns, known)).toBe("广东");
   });
+
+  it("returns original business value when areaMapping resolves row", () => {
+    const rows = [["EAST_01", 100]];
+    const columns = ["province", "total"];
+    const known = ["江苏省", "北京市"];
+    const lookup = new Map([["EAST_01", "江苏省"]]);
+    expect(
+      findMapDrillFilterValue("江苏省", "province", rows, columns, known, lookup),
+    ).toBe("EAST_01");
+  });
 });

@@ -1,6 +1,7 @@
 import chinaProvincesGeo from "@/assets/geo/china-provinces.json";
 import { getOfflineGeoMap } from "@/components/charts/engine/geo/OfflineGeoPort";
 import { resolveMapRegionNameAtLevel } from "@/components/charts/engine/geo/geoMapChart";
+import { applyAreaMapping } from "@/lib/chartGeoAreaMapping";
 import {
   ensureOfflineGeoMap,
   listBundledCityProvinceAdcodes,
@@ -135,12 +136,14 @@ export function resolveRowRegionAnchorLngLat(
   regionField: string,
   raw: unknown,
   anchors: Map<string, RegionAnchorLngLat>,
+  areaMapping?: ReadonlyMap<string, string>,
 ): RegionAnchorLngLat | null {
+  const mappedRaw = applyAreaMapping(raw, areaMapping);
   const candidates: string[] = [];
   if (REGION_ID_FIELD_PATTERN.test(regionField)) {
-    candidates.push(...listDemoMysqlRegionAncestorNames(raw));
+    candidates.push(...listDemoMysqlRegionAncestorNames(mappedRaw));
   } else {
-    const trimmed = String(raw ?? "").trim();
+    const trimmed = String(mappedRaw ?? "").trim();
     if (trimmed) candidates.push(trimmed);
   }
 
