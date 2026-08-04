@@ -15,15 +15,27 @@ export function resolveGeoRegionFillColorHex(geo: ChartGeoStyle, isDark: boolean
   return geoSurfaceColors(isDark).emptyFill;
 }
 
+/** 2D 地图样式签名：变更须触发 D3GeoMapView 全量重建（无 2D patch 路径） */
 export function buildGeoMapStyleContentSig(
   geo: ChartGeoStyle = {},
   extras: { paletteOpacity?: number; paletteId?: string } = {},
 ): string {
   return [
+    geo.roam !== false ? 1 : 0,
+    geo.showRegionLabel === true ? 1 : 0,
+    geo.visualMap !== false ? 1 : 0,
     geo.showRegionBorder !== false ? 1 : 0,
     geo.regionBorderColor?.toLowerCase() ?? "",
     geo.regionFillColor?.toLowerCase() ?? "",
+    geo.regionBorderWidth ?? "",
+    geo.regionLabelColor?.toLowerCase() ?? "",
+    geo.regionLabelFontSize ?? "",
     geo.showZoomControl ? 1 : 0,
+    geo.bubbleEffect ? 1 : 0,
+    geo.bubbleEffectType ?? "",
+    geo.bubbleEffectSpeed ?? "",
+    geo.bubbleEffectRingCount ?? "",
+    geo.bubbleEffectColor?.toLowerCase() ?? "",
     extras.paletteOpacity ?? "",
     extras.paletteId ?? "",
   ].join("|");

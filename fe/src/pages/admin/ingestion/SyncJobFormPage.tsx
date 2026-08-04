@@ -7,6 +7,16 @@ import { ADMIN_PAGE_SURFACE_CLASS } from "@/components/layout/list-page-kit";
 import { cn } from "@/lib/utils";
 import { apiFetch } from "@/lib/api";
 import { getApiValidationFieldErrors, mapApiError } from "@/lib/apiError";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
@@ -14,12 +24,17 @@ import { UnsavedLeaveDialog } from "@/components/ui/unsaved-leave-dialog";
 import { useFormDirtyState } from "@/hooks/use-form-dirty-state";
 import { useUnsavedLeaveGuard } from "@/hooks/use-unsaved-leave-guard";
 import {
+  findJobsSharingTargetTable,
+  suggestSyncTargetTable,
+} from "@/lib/suggestSyncTargetTable";
+import {
   SyncJobForm,
   SYNC_JOB_FORM_ID,
   type DatasourceItem,
   type JobFormState,
   type SyncMode,
 } from "./components/SyncJobForm";
+import type { SyncJobSummary } from "./components/sync-job-types";
 
 const emptyForm: JobFormState = {
   name: "",
@@ -31,7 +46,7 @@ const emptyForm: JobFormState = {
   username: "sample",
   password: "sample",
   table: "dirty_orders",
-  target_table: "orders_clean",
+  target_table: "",
   syncMode: "full",
   primaryKey: "id",
   incrementalColumn: "updated_at",
@@ -87,12 +102,17 @@ export function SyncJobFormPage() {
   const isEdit = Boolean(id);
   const navigate = useNavigate();
   const [form, setForm] = useState<JobFormState>(emptyForm);
+  const [existingJobs, setExistingJobs] = useState<SyncJobSummary[]>([]);
   const [datasources, setDatasources] = useState<DatasourceItem[]>([]);
   const [loading, setLoading] = useState(isEdit);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [sharedTargetConfirmOpen, setSharedTargetConfirmOpen] = useState(false);
+  const [bootstrapReady, setBootstrapReady] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const targetTableManualRef = useRef(false);
+  const newJobInitializedRef = useRef(false);
 
   const { isDirty, isBaselineReady, resetBaseline, markSaved } = useFormDirtyState(
     form,
@@ -107,17 +127,37 @@ export function SyncJobFormPage() {
   useEffect(() => {
     void (async () => {
       try {
-        const data = await apiFetch<{ items: DatasourceItem[] }>("/api/v1/datasources");
-        setDatasources(data.items.filter((item) => item.type === "mysql"));
+        const [dsData, jobsData] = await Promise.all([
+          apiFetch<{ items: DatasourceItem[] }>("/api/v1/datasources"),
+          apiFetch<{ items: SyncJobSummary[] }>("/api/v1/ingestion/sync-jobs"),
+        ]);
+        setDatasources(dsData.items.filter((item) => item.type === "mysql"));
+        setExistingJobs(jobsData.items);
       } catch {
         setDatasources([]);
+        setExistingJobs([]);
+      } finally {
+        setBootstrapReady(true);
       }
     })();
   }, []);
 
   useEffect(() => {
+    if (isEdit || !bootstrapReady || newJobInitializedRef.current) return;
+    const suggested = suggestSyncTargetTable(
+      emptyForm.table,
+      existingJobs.map((job) => job.target_table),
+    );
+    const nextForm = { ...emptyForm, target_table: suggested };
+    setForm(nextForm);
+    resetBaseline(nextForm);
+    newJobInitializedRef.current = true;
+  }, [existingJobs, isEdit, bootstrapReady, resetBaseline]);
+
+  useEffect(() => {
     if (!id) {
-      resetBaseline(emptyForm);
+      if (!newJobInitializedRef.current) return;
+      resetBaseline(form);
       return;
     }
     void (async () => {
@@ -161,6 +201,7 @@ export function SyncJobFormPage() {
         };
         setForm(nextForm);
         resetBaseline(nextForm);
+        targetTableManualRef.current = true;
       } catch (err) {
         setError(mapApiError(err));
       } finally {
@@ -174,7 +215,41 @@ export function SyncJobFormPage() {
     [datasources, form.sourceDataSourceId],
   );
 
+  const conflictingJobs = useMemo(
+    () => findJobsSharingTargetTable(existingJobs, form.target_table, isEdit ? id : undefined),
+    [existingJobs, form.target_table, id, isEdit],
+  );
+
+  const applySuggestedTarget = (sourceTable: string) => {
+    const suggested = suggestSyncTargetTable(
+      sourceTable,
+      existingJobs.map((job) => job.target_table),
+    );
+    setForm((prev) => ({ ...prev, target_table: suggested }));
+    targetTableManualRef.current = false;
+  };
+
   const update = <K extends keyof JobFormState>(key: K, value: JobFormState[K]) => {
+    if (key === "target_table") {
+      targetTableManualRef.current = true;
+    }
+    if (key === "table" && !targetTableManualRef.current && typeof value === "string") {
+      setForm((prev) => {
+        const suggested = suggestSyncTargetTable(
+          value,
+          existingJobs.map((job) => job.target_table),
+        );
+        return { ...prev, table: value, target_table: suggested };
+      });
+      setFieldErrors((prev) => {
+        if (!prev.table && !prev.target_table) return prev;
+        const next = { ...prev };
+        delete next.table;
+        delete next.target_table;
+        return next;
+      });
+      return;
+    }
     setForm((prev) => ({ ...prev, [key]: value }));
     setFieldErrors((prev) => {
       if (!prev[key as string]) return prev;
@@ -184,8 +259,7 @@ export function SyncJobFormPage() {
     });
   };
 
-  const handleSubmit = async (event?: FormEvent): Promise<boolean> => {
-    event?.preventDefault();
+  const submitPayload = async (): Promise<boolean> => {
     if (submitting) return false;
     setSubmitting(true);
     setError(null);
@@ -221,6 +295,20 @@ export function SyncJobFormPage() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleSubmit = async (event?: FormEvent): Promise<boolean> => {
+    event?.preventDefault();
+    if (conflictingJobs.length > 0) {
+      setSharedTargetConfirmOpen(true);
+      return false;
+    }
+    return submitPayload();
+  };
+
+  const handleConfirmSharedTarget = async () => {
+    setSharedTargetConfirmOpen(false);
+    await submitPayload();
   };
 
   const handleSaveAndLeave = async () => {
@@ -306,6 +394,8 @@ export function SyncJobFormPage() {
             datasources={datasources}
             selectedDatasource={selectedDatasource}
             fieldErrors={fieldErrors}
+            conflictingJobNames={conflictingJobs.map((job) => job.name)}
+            onSuggestTargetTable={() => applySuggestedTarget(form.table)}
             onChange={update}
             onSubmit={(event) => void handleSubmit(event)}
           />
@@ -319,6 +409,26 @@ export function SyncJobFormPage() {
         onDiscardLeave={confirmLeave}
         onSaveAndLeave={handleSaveAndLeave}
       />
+
+      <AlertDialog open={sharedTargetConfirmOpen} onOpenChange={setSharedTargetConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>目标表已被其他任务使用</AlertDialogTitle>
+            <AlertDialogDescription>
+              已有 {conflictingJobs.length} 个任务写入目标表
+              <span className="font-mono"> {form.target_table}</span>
+              （{conflictingJobs.map((job) => job.name).join("、")}），将共用 Dataset
+              <span className="font-mono"> {form.target_table}</span>；后跑的全量同步会覆盖分析库中的同表数据。确定继续保存？
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={submitting}>取消</AlertDialogCancel>
+            <AlertDialogAction disabled={submitting} onClick={() => void handleConfirmSharedTarget()}>
+              仍要保存
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminPageShell>
   );
 }

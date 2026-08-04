@@ -104,6 +104,22 @@ export type ChartGeoStyle = {
   regionFillColor?: string;
   /** 地图右下角缩放 +/- 按钮（2D 地图） */
   showZoomControl?: boolean;
+  /** 高级 · 气泡动效（2D 地图区域中心水波） */
+  bubbleEffect?: boolean;
+  /** 动效类型（当前仅水波） */
+  bubbleEffectType?: "ripple";
+  /** 动效速率倍率（对标 DE，默认 1.1） */
+  bubbleEffectSpeed?: number;
+  /** 水波环数（对标 DE，默认 4） */
+  bubbleEffectRingCount?: number;
+  /** 水波颜色（#rrggbb；未设置时用系列色/默认琥珀） */
+  bubbleEffectColor?: string;
+  /** 区域标签颜色（#rrggbb） */
+  regionLabelColor?: string;
+  /** 区域标签字号（px，默认 9） */
+  regionLabelFontSize?: number;
+  /** 行政区边线宽度倍率（相对自适应基准，0.5–3，默认 1） */
+  regionBorderWidth?: number;
 };
 
 export type ChartGeo3dStyle = {

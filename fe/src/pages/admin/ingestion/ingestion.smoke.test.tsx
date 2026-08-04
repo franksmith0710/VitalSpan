@@ -31,6 +31,15 @@ vi.mock("sonner", () => ({
   },
 }));
 
+function mockNewJobFormBootstrap(
+  datasources: unknown[] = [],
+  jobs: unknown[] = [],
+) {
+  return mockApiFetch
+    .mockResolvedValueOnce({ items: datasources })
+    .mockResolvedValueOnce({ items: jobs });
+}
+
 function render(ui: ReactElement) {
   return rtlRender(<TooltipProvider delayDuration={0}>{ui}</TooltipProvider>);
 }
@@ -164,6 +173,73 @@ describe("ingestion admin smoke", () => {
     });
   });
 
+  it("SyncJobsPage_shows_action_card_after_run_success", async () => {
+    setViewport(1400);
+    const baseJob = {
+      id: "job-1",
+      name: "demo",
+      source_type: "mysql",
+      target_table: "orders_clean",
+      enabled: true,
+      schedule_cron: null,
+      sync_mode: "full" as const,
+    };
+    let runSubmitted = false;
+    mockApiFetch.mockImplementation((url: string) => {
+      if (typeof url === "string" && url.endsWith("/run")) {
+        runSubmitted = true;
+        return Promise.resolve(undefined);
+      }
+      if (typeof url === "string" && url.includes("/consume-hints")) {
+        return Promise.resolve({
+          targetTable: "orders_clean",
+          suggestedDatasetId: "orders_clean",
+          analyticsDatasourceId: "ds-1",
+          analyticsReady: true,
+          datasetId: "orders_clean",
+          datasetExists: false,
+          datasetBound: false,
+          nextAction: "ensure_dataset",
+          consumeLabel: "pending_dataset",
+        });
+      }
+      if (typeof url === "string" && url.includes("/sync-jobs")) {
+        const succeeded = runSubmitted;
+        return Promise.resolve({
+          items: [
+            {
+              ...baseJob,
+              last_run: succeeded
+                ? {
+                    status: "succeeded",
+                    started_at: "2026-08-04T02:00:00Z",
+                    finished_at: "2026-08-04T02:00:01Z",
+                    rows_synced: 5,
+                    error_message: null,
+                  }
+                : null,
+            },
+          ],
+        });
+      }
+      return Promise.resolve({});
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs" element={<SyncJobsPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "手动运行同步" }));
+    fireEvent.click(await screen.findByRole("button", { name: "运行" }));
+
+    expect(await screen.findByText(/同步成功 · 下一步出图/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "一键创建数据集并绑定" })).toBeInTheDocument();
+  });
+
   it("SyncJobHistoryPage_shows_runs", async () => {
     setViewport(1400);
     mockSyncJobHistoryApi([
@@ -205,8 +281,7 @@ describe("ingestion admin smoke", () => {
 
   it("SyncJobFormPage_create_submit", async () => {
     setViewport(375);
-    mockApiFetch
-      .mockResolvedValueOnce({ items: [] })
+    mockNewJobFormBootstrap([], [])
       .mockResolvedValueOnce({ id: "new-job" });
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
@@ -229,20 +304,133 @@ describe("ingestion admin smoke", () => {
     });
   });
 
-  it("SyncJobFormPage_datasource_mode_renders_select", async () => {
+  it("SyncJobFormPage_suggests_unique_default_target_table", async () => {
+    setViewport(1400);
+    mockNewJobFormBootstrap([], [
+      {
+        id: "job-existing",
+        name: "已有任务",
+        source_type: "mysql",
+        target_table: "orders_clean",
+        enabled: true,
+        schedule_cron: null,
+      },
+    ]);
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs/new" element={<SyncJobFormPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    const targetInput = await screen.findByLabelText("目标表");
+    await waitFor(() => {
+      expect(targetInput).toHaveValue("orders_clean_2");
+    });
+  });
+
+  it("SyncJobFormPage_shows_shared_target_warning", async () => {
+    setViewport(1400);
+    mockNewJobFormBootstrap([], [
+      {
+        id: "job-existing",
+        name: "同步1",
+        source_type: "mysql",
+        target_table: "orders_clean",
+        enabled: true,
+        schedule_cron: null,
+      },
+    ]);
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs/new" element={<SyncJobFormPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    const targetInput = await screen.findByLabelText("目标表");
+    fireEvent.change(targetInput, { target: { value: "orders_clean" } });
+    expect(await screen.findByText("目标表与已有任务重复")).toBeInTheDocument();
+    expect(screen.getByText(/同步1/)).toBeInTheDocument();
+  });
+
+  it("SyncJobFormPage_shared_target_submit_requires_confirm", async () => {
+    setViewport(1400);
+    mockNewJobFormBootstrap([], [
+      {
+        id: "job-existing",
+        name: "同步1",
+        source_type: "mysql",
+        target_table: "orders_clean",
+        enabled: true,
+        schedule_cron: null,
+      },
+    ]).mockResolvedValueOnce({ id: "shared-job" });
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs/new" element={<SyncJobFormPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    const targetInput = await screen.findByLabelText("目标表");
+    fireEvent.change(targetInput, { target: { value: "orders_clean" } });
+    fireEvent.change(screen.getByLabelText("任务名称"), { target: { value: "共表任务" } });
+    fireEvent.click(screen.getByRole("button", { name: "创建" }));
+    expect(await screen.findByText("目标表已被其他任务使用")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "仍要保存" }));
+    await waitFor(() => {
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        "/api/v1/ingestion/sync-jobs",
+        expect.objectContaining({ method: "POST" }),
+      );
+    });
+  });
+
+  it("SyncJobsPage_shows_shared_target_badge", async () => {
     setViewport(1400);
     mockApiFetch.mockResolvedValueOnce({
       items: [
         {
-          id: "ds-1",
-          name: "Sample MySQL",
-          type: "mysql",
-          host: "127.0.0.1",
-          port: 3307,
-          database: "sample_db",
+          id: "job-a",
+          name: "任务 A",
+          source_type: "mysql",
+          target_table: "orders_clean",
+          enabled: true,
+          schedule_cron: null,
+        },
+        {
+          id: "job-b",
+          name: "任务 B",
+          source_type: "mysql",
+          target_table: "orders_clean",
+          enabled: true,
+          schedule_cron: null,
         },
       ],
     });
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs" element={<SyncJobsPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(await screen.findAllByText("2 任务共表")).toHaveLength(2);
+  });
+
+  it("SyncJobFormPage_datasource_mode_renders_select", async () => {
+    setViewport(1400);
+    mockNewJobFormBootstrap([
+      {
+        id: "ds-1",
+        name: "Sample MySQL",
+        type: "mysql",
+        host: "127.0.0.1",
+        port: 3307,
+        database: "sample_db",
+      },
+    ]);
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
         <Routes>
@@ -256,20 +444,19 @@ describe("ingestion admin smoke", () => {
 
   it("SyncJobFormPage_datasource_mode_submit_payload", async () => {
     setViewport(1400);
-    mockApiFetch
-      .mockResolvedValueOnce({
-        items: [
-          {
-            id: "ds-1",
-            name: "Sample MySQL",
-            type: "mysql",
-            host: "127.0.0.1",
-            port: 3307,
-            database: "sample_db",
-          },
-        ],
-      })
-      .mockResolvedValueOnce({ id: "new-ds-job" });
+    mockNewJobFormBootstrap(
+      [
+        {
+          id: "ds-1",
+          name: "Sample MySQL",
+          type: "mysql",
+          host: "127.0.0.1",
+          port: 3307,
+          database: "sample_db",
+        },
+      ],
+      [],
+    ).mockResolvedValueOnce({ id: "new-ds-job" });
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
         <Routes>
@@ -304,7 +491,7 @@ describe("ingestion admin smoke", () => {
 
   it("SyncJobFormPage_incremental_fields_conditional", async () => {
     setViewport(1400);
-    mockApiFetch.mockResolvedValueOnce({ items: [] });
+    mockNewJobFormBootstrap();
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
         <Routes>
@@ -366,7 +553,7 @@ describe("ingestion admin smoke", () => {
 
   it("SyncJobFormPage_blocks_submit_when_name_empty (T-ING-06)", async () => {
     setViewport(375);
-    mockApiFetch.mockResolvedValueOnce({ items: [] });
+    mockNewJobFormBootstrap();
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
         <Routes>
@@ -385,7 +572,7 @@ describe("ingestion admin smoke", () => {
 
   it("SyncJobFormPage_password_field_is_masked (T-ING-07)", async () => {
     setViewport(1400);
-    mockApiFetch.mockResolvedValueOnce({ items: [] });
+    mockNewJobFormBootstrap();
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
         <Routes>
@@ -658,8 +845,7 @@ describe("ingestion admin smoke", () => {
     const createPromise = new Promise<{ id: string }>((r) => {
       resolveCreate = () => r({ id: "new-job" });
     });
-    mockApiFetch
-      .mockResolvedValueOnce({ items: [] })
+    mockNewJobFormBootstrap([], [])
       .mockImplementationOnce(() => createPromise);
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
@@ -757,7 +943,7 @@ describe("ingestion admin smoke", () => {
 
   it("SyncJobFormPage_invalid_port_shows_error (T-ING-22)", async () => {
     setViewport(375);
-    mockApiFetch.mockRejectedValueOnce({
+    mockNewJobFormBootstrap([], []).mockRejectedValueOnce({
       message: "请求参数无效",
       status: 422,
     });
@@ -780,6 +966,9 @@ describe("ingestion admin smoke", () => {
     const { toast } = await import("sonner");
     mockApiFetch.mockImplementation((url: string, init?: { method?: string }) => {
       if (url === "/api/v1/datasources") {
+        return Promise.resolve({ items: [] });
+      }
+      if (url === "/api/v1/ingestion/sync-jobs" && !init?.method) {
         return Promise.resolve({ items: [] });
       }
       if (url === "/api/v1/ingestion/sync-jobs" && init?.method === "POST") {

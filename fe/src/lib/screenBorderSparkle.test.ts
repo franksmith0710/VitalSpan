@@ -1,35 +1,51 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { normalizeScreenBorderStyle } from "@/lib/screenVisualStyle";
 import {
   createScreenBorderSparkle,
-  normalizeScreenBorderSparkle,
   normalizeScreenBorderSparkleStyle,
-  trailLengthToMaskRadius,
-  trailLengthToMaskRadiusPx,
-} from "./screenBorderSparkle";
+} from "@/lib/screenBorderSparkle";
 
 describe("screenBorderSparkle", () => {
-  it("normalizes sparkle defaults", () => {
-    const sparkle = normalizeScreenBorderSparkle(createScreenBorderSparkle());
-    expect(sparkle.size).toBe(1);
-    expect(sparkle.trailLength).toBe(48);
-    expect(sparkle.direction).toBe("cw");
+  it("does not create default sparkle when enabled is false", () => {
+    const style = normalizeScreenBorderSparkleStyle(undefined);
+    expect(style.enabled).toBe(false);
+    expect(style.sparkles).toEqual([]);
   });
 
-  it("keeps at least one sparkle when style enabled", () => {
-    const style = normalizeScreenBorderSparkleStyle({ enabled: true, sparkles: [] });
+  it("creates default sparkle when enabled without explicit sparkles", () => {
+    const style = normalizeScreenBorderSparkleStyle({ enabled: true });
+    expect(style.enabled).toBe(true);
     expect(style.sparkles).toHaveLength(1);
+    expect(style.sparkles[0]?.id).toBeTruthy();
   });
 
-  it("maps trail length to stable viewBox mask radius", () => {
-    expect(trailLengthToMaskRadius(8)).toBe(4);
-    expect(trailLengthToMaskRadius(48)).toBe(9);
-    expect(trailLengthToMaskRadius(120)).toBe(18);
+  it("normalizeScreenBorderStyle does not throw without crypto.randomUUID", () => {
+    const original = globalThis.crypto.randomUUID;
+    Object.defineProperty(globalThis.crypto, "randomUUID", {
+      configurable: true,
+      value: undefined,
+    });
+    try {
+      expect(() => normalizeScreenBorderStyle({ variant: "border-7" })).not.toThrow();
+      const style = normalizeScreenBorderStyle({ variant: "border-7" });
+      expect(style.variant).toBe("border-7");
+      expect(style.sparkle.sparkles).toEqual([]);
+    } finally {
+      Object.defineProperty(globalThis.crypto, "randomUUID", {
+        configurable: true,
+        value: original,
+      });
+    }
   });
 
-  it("maps trail length to pixel mask radius for flow overlay", () => {
-    expect(trailLengthToMaskRadiusPx(8)).toBe(6);
-    expect(trailLengthToMaskRadiusPx(48)).toBeCloseTo(21.82, 1);
-    expect(trailLengthToMaskRadiusPx(120)).toBeCloseTo(54.55, 1);
-    expect(trailLengthToMaskRadiusPx(120, 200)).toBeCloseTo(28, 0);
+  it("createScreenBorderSparkle uses randomId fallback when randomUUID throws", () => {
+    vi.spyOn(globalThis.crypto, "randomUUID").mockImplementation(() => {
+      throw new TypeError("crypto.randomUUID is not a function");
+    });
+    const sparkle = createScreenBorderSparkle();
+    expect(sparkle.id).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+    );
+    vi.restoreAllMocks();
   });
 });

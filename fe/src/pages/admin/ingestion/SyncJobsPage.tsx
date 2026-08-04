@@ -106,6 +106,9 @@ export function SyncJobsPage() {
         window.clearInterval(pollTimerRef.current);
       }
       setPollingJobId(jobId);
+      const pollIntervalMs = 2000;
+      const pollMaxTicks = 30;
+      let ticks = 0;
       const stopPolling = () => {
         if (pollTimerRef.current !== null) {
           window.clearInterval(pollTimerRef.current);
@@ -113,43 +116,67 @@ export function SyncJobsPage() {
         }
         setPollingJobId((current) => (current === jobId ? null : current));
       };
-      let ticks = 0;
-      pollTimerRef.current = window.setInterval(() => {
+      const pollOnce = async () => {
         ticks += 1;
-        void (async () => {
-          try {
-            const data = await apiFetch<SyncJobListResponse>("/api/v1/ingestion/sync-jobs");
-            setJobs(data.items);
-            const job = data.items.find((item) => item.id === jobId);
-            const status = job?.last_run?.status;
-            if (status === "succeeded" && job) {
-              stopPolling();
-              const rows = job.last_run?.rows_synced;
-              setRecentRunSuccess({
-                jobId: job.id,
-                jobName: job.name,
-                targetTable: job.target_table,
-                rowsSynced: job.last_run?.rows_synced ?? null,
-              });
-              toast.success(
-                `任务「${jobName}」同步成功${rows != null ? `，写入 ${rows} 行` : ""}`,
-                { duration: 8000 },
-              );
-            } else if (status === "failed") {
-              stopPolling();
-              toast.error(`任务「${jobName}」同步失败，请查看运行历史`);
-            }
-          } catch {
-            /* 轮询失败忽略，下一轮重试 */
-          }
-          if (ticks >= 15) {
+        try {
+          const data = await apiFetch<SyncJobListResponse>("/api/v1/ingestion/sync-jobs");
+          setJobs(data.items);
+          const job = data.items.find((item) => item.id === jobId);
+          const status = job?.last_run?.status;
+          if (status === "succeeded" && job) {
             stopPolling();
+            const rows = job.last_run?.rows_synced;
+            setRecentRunSuccess({
+              jobId: job.id,
+              jobName: job.name,
+              targetTable: job.target_table,
+              rowsSynced: job.last_run?.rows_synced ?? null,
+            });
+            toast.success(
+              `任务「${jobName}」同步成功${rows != null ? `，写入 ${rows} 行` : ""}`,
+              { duration: 8000 },
+            );
+            return;
           }
-        })();
-      }, 2000);
+          if (status === "failed") {
+            stopPolling();
+            toast.error(`任务「${jobName}」同步失败，请查看运行历史`);
+            return;
+          }
+          if (ticks >= pollMaxTicks) {
+            stopPolling();
+            if (status === "running") {
+              toast.warning(`任务「${jobName}」仍在运行中，请稍后刷新或查看运行历史`, {
+                duration: 10_000,
+                action: {
+                  label: "查看历史",
+                  onClick: () => navigate(`/admin/ingestion/sync-jobs/${jobId}/history`),
+                },
+              });
+            }
+          }
+        } catch {
+          /* 轮询失败忽略，下一轮重试 */
+        }
+      };
+      void pollOnce();
+      pollTimerRef.current = window.setInterval(() => {
+        void pollOnce();
+      }, pollIntervalMs);
     },
-    [loadJobs],
+    [navigate],
   );
+
+  const sharedTargetJobNames = useMemo(() => {
+    if (!recentRunSuccess) return [];
+    return jobs
+      .filter(
+        (job) =>
+          job.id !== recentRunSuccess.jobId &&
+          job.target_table === recentRunSuccess.targetTable,
+      )
+      .map((job) => job.name);
+  }, [jobs, recentRunSuccess]);
 
   useEffect(() => {
     return () => {
@@ -296,6 +323,7 @@ export function SyncJobsPage() {
                 jobName={recentRunSuccess.jobName}
                 targetTable={recentRunSuccess.targetTable}
                 rowsSynced={recentRunSuccess.rowsSynced}
+                sharedTargetJobNames={sharedTargetJobNames}
                 canManage={canManage}
                 onDismiss={() => setRecentRunSuccess(null)}
                 onUpdated={() => void loadJobs({ silent: true })}

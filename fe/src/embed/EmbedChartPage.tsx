@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { ChartRenderer } from "@/components/charts/ChartRenderer";
+import { ChartDrillProvider } from "@/components/charts/ChartDrillContext";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import { isGeoMapChartType } from "@/lib/chartViewConfig";
 import { localizeApiMessage } from "@/lib/apiError";
 import { isEmbedPageAuthorized } from "./embedAccess";
 
@@ -107,7 +109,15 @@ export function EmbedChartPage() {
 
   return (
     <div className={`min-h-[240px] p-4 ${theme === "dark" ? "dark" : ""}`}>
-      <ChartRenderer config={config} title="嵌入图表" embedded />
+      <ChartDrillProvider>
+        <ChartRenderer
+          config={config}
+          title="嵌入图表"
+          embedded
+          widgetId={chartId}
+          drillEnabled={isGeoMapChartType(config.chartType)}
+        />
+      </ChartDrillProvider>
     </div>
   );
 }

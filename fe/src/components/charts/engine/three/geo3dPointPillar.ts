@@ -159,6 +159,27 @@ export function buildGeo3dPointPillar(
   };
 }
 
+export function patchGeo3dPointPillarVisual(
+  pillar: Geo3dPointPillar,
+  style: ResolvedPointEffectsStyle,
+): void {
+  const colorTop = new THREE.Color(style.pointPillarColorTop);
+  const colorBottom = new THREE.Color(style.pointPillarColorBottom);
+  const coreMat = pillar.group.children.find(
+    (child) => child instanceof THREE.Mesh && child.material instanceof THREE.ShaderMaterial,
+  );
+  if (coreMat instanceof THREE.Mesh && coreMat.material instanceof THREE.ShaderMaterial) {
+    coreMat.material.uniforms.uColor1.value.copy(colorTop);
+    coreMat.material.uniforms.uColor2.value.copy(colorBottom);
+    coreMat.material.uniforms.uOpacity.value = style.pointPillarOpacity;
+  }
+  const beamMat = pillar.beamMesh.material as THREE.MeshBasicMaterial;
+  beamMat.color.copy(colorBottom);
+  beamMat.opacity = 0.4 * style.pointPillarOpacity;
+  const ringMat = pillar.ringMesh.material as THREE.MeshBasicMaterial;
+  ringMat.opacity = style.pointPillarBaseRingOpacity;
+}
+
 export function resolvePillarHeight(
   valueT: number,
   unit: number,

@@ -289,7 +289,7 @@ export function ChartWordCloudShapeSection() {
   return (
     <ChartInspectorSection title="词云样式" data-testid="chart-wordcloud-shape">
       <div className={INSPECTOR_SECTION_GAP}>
-        <ChartDeSliderField label="最小字号" value={wordCloud.fontSizeMin} fallback={12} min={8} max={48} step={1} onChange={(fontSizeMin) => patch({ fontSizeMin })} />
+        <ChartDeSliderField label="最小字号" value={wordCloud.fontSizeMin} fallback={12} min={6} max={48} step={1} onChange={(fontSizeMin) => patch({ fontSizeMin })} />
         <ChartDeSliderField label="最大字号" value={wordCloud.fontSizeMax} fallback={48} min={16} max={96} step={1} onChange={(fontSizeMax) => patch({ fontSizeMax })} />
         <ChartDeSliderField label="间距" value={wordCloud.spacing} fallback={2} min={0} max={16} step={1} onChange={(spacing) => patch({ spacing })} />
       </div>
@@ -375,7 +375,7 @@ export function ChartTooltipStyleSection() {
           label="字号"
           value={tooltip.fontSize}
           fallback={dashboardStyle?.chartTooltipStyle?.fontSize ?? 12}
-          min={10}
+          min={6}
           max={20}
           step={1}
           onChange={(fontSize) => patchDeStyleNested("tooltip", { fontSize })}

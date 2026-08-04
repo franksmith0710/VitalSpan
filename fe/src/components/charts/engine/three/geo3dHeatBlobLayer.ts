@@ -39,6 +39,7 @@ void main() {
 
 export type Geo3dHeatBlobHandle = {
   mesh: THREE.Mesh;
+  patchVisual: (style: ResolvedPointEffectsStyle) => void;
   dispose: () => void;
 };
 
@@ -110,6 +111,10 @@ export function buildGeo3dHeatBlobLayer(
 
   return {
     mesh,
+    patchVisual(nextStyle: ResolvedPointEffectsStyle) {
+      material.uniforms.uColor.value.set(nextStyle.heatBlobColor);
+      material.uniforms.uOpacity.value = nextStyle.heatBlobOpacity;
+    },
     dispose() {
       mesh.geometry.dispose();
       material.dispose();

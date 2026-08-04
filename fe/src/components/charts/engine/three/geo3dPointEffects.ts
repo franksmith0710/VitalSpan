@@ -33,6 +33,7 @@ export type Geo3dPointEffectsHandle = {
   floatingLabels: Geo3dFloatingLabelsHandle | null;
   pillarHeights: Map<string, number>;
   update: (deltaSec: number, reducedMotion: boolean, camera?: THREE.Camera) => void;
+  patchVisual: (style: ResolvedPointEffectsStyle) => void;
   syncLabels: (
     camera: THREE.Camera,
     domElement: HTMLElement,
@@ -149,6 +150,11 @@ export function buildGeo3dPointEffects(input: BuildGeo3dPointEffectsInput): Geo3
     pillarHeights,
     update(deltaSec, reducedMotion, camera) {
       pillarLayer?.update(deltaSec, reducedMotion, camera);
+    },
+    patchVisual(nextStyle: ResolvedPointEffectsStyle) {
+      heatBlob?.patchVisual(nextStyle);
+      pillarLayer?.patchVisual(nextStyle);
+      floatingLabels?.applyStyle(nextStyle);
     },
     syncLabels(camera, canvas, chartContainer) {
       floatingLabels?.sync(camera, canvas, chartContainer, resolveAnchorWorld);

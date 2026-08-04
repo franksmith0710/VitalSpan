@@ -353,7 +353,7 @@ export function resolvePlatformEffectsStyle(
   };
 }
 
-export function buildPlatformEffectsContentSig(style: ChartGeo3dStyle, effectsOn: boolean): string {
+export function buildPlatformEffectsStructureSig(style: ChartGeo3dStyle, effectsOn: boolean): string {
   const layers = resolvePlatformLayerFlags(style, effectsOn);
   return [
     layers.highlight ? 1 : 0,
@@ -363,6 +363,15 @@ export function buildPlatformEffectsContentSig(style: ChartGeo3dStyle, effectsOn
     layers.glow ? 1 : 0,
     layers.pulse ? 1 : 0,
     layers.sweep ? 1 : 0,
+    clampSizeScale(style.platformSizeScale),
+    resolvePlatformGridStyle(style),
+    clampGridDensity(style.platformGridDensity),
+    clampRippleFrequency(style.platformRippleFrequency),
+  ].join(",");
+}
+
+export function buildPlatformEffectsVisualSig(style: ChartGeo3dStyle, effectsOn: boolean): string {
+  return [
     normalizeHex(style.platformHighlightColor) ?? "",
     normalizeHex(style.platformGridColor) ?? "",
     normalizeHex(style.platformRippleColor) ?? "",
@@ -376,13 +385,14 @@ export function buildPlatformEffectsContentSig(style: ChartGeo3dStyle, effectsOn
     clamp01(style.platformGlowOpacity, DEFAULT_PLATFORM_GLOW_OPACITY),
     clamp01(style.platformPulseOpacity, DEFAULT_PLATFORM_PULSE_OPACITY),
     clamp01(style.platformSweepOpacity, DEFAULT_PLATFORM_SWEEP_OPACITY),
-    clampSizeScale(style.platformSizeScale),
-    resolvePlatformGridStyle(style),
-    clampGridDensity(style.platformGridDensity),
     clampRippleSpeed(style.platformRippleSpeed),
-    clampRippleFrequency(style.platformRippleFrequency),
     clampEffectSpeed(style.platformRingSpeed, DEFAULT_PLATFORM_RING_SPEED),
     clampEffectSpeed(style.platformPulseSpeed, DEFAULT_PLATFORM_PULSE_SPEED),
     clampEffectSpeed(style.platformSweepSpeed, DEFAULT_PLATFORM_SWEEP_SPEED),
   ].join(",");
+}
+
+/** @deprecated 使用 structure + visual 拆分签名 */
+export function buildPlatformEffectsContentSig(style: ChartGeo3dStyle, effectsOn: boolean): string {
+  return `${buildPlatformEffectsStructureSig(style, effectsOn)},${buildPlatformEffectsVisualSig(style, effectsOn)}`;
 }

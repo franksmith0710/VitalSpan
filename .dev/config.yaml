@@ -85,35 +85,57 @@ environments:
 
   staging:
     kind: staging
-    label: 远端测试
-    browser_url: ""
-    api_url: ""
-    health_url: ""
+    label: 远端测试（192.168.10.22）
+    browser_url: http://192.168.10.22:8088/admin
+    api_url: http://192.168.10.22:8088
+    health_url: http://192.168.10.22:8088/health
     deploy:
-      location: ""
-      method: ""
-      region: ""
-      link: ""
+      location: 192.168.10.22
+      method: 直接部署（apt PG/MySQL + systemd + Nginx :8088）
+      region: 内网 lab
+      link: docs/material/deploy/2026-08-04-vitalspan-staging-deploy-log.md
+      ssh_host: ontomind@192.168.10.22
+      remote_root: /opt/apps/vitalspan
     logs:
       url: ""
-      query_hint: ""
+      query_hint: "ssh 后 journalctl -u vitalspan-backend -f"
     metrics_url: ""
     traces_url: ""
     network:
-      vpn_or_bastion: required
-      note: 待确认 VPN/跳板
+      vpn_or_bastion: none
+      note: 内网 192.168.10.0/24；:80 被 Apache 占用，VitalSpan 用 :8088
       kubectl_context: ""
-    connections: []
+    connections:
+      - name: platform-postgres
+        kind: db
+        host: 192.168.10.22
+        port: 5432
+        database: vitalspan
+        note: 宿主机原生 PostgreSQL
+      - name: analytics-postgres
+        kind: db
+        host: 192.168.10.22
+        port: 5432
+        database: analytics
+        note: 同实例第二库
+      - name: sample-mysql
+        kind: db
+        host: 192.168.10.22
+        port: 3306
+        database: sample_db
+        note: 宿主机原生 MySQL
     auth:
       strategy: form
       login_path: /login
       username: admin
-      password_env: STAGING_ADMIN_PASSWORD
+      password_env: VITALSPAN_DEV_ADMIN_PASSWORD
     walkthrough:
       enabled: true
       allow_writes: false
       allow_destructive: false
-    notes: 占位；部署 URL 确认后补 browser_url / deploy / logs
+    notes: |
+      部署日志：docs/material/deploy/2026-08-04-vitalspan-staging-deploy-log.md
+      看板 346 条；OpenStack 安全组需放行 8088/TCP（及可选 8000）。
 
   prod:
     kind: production

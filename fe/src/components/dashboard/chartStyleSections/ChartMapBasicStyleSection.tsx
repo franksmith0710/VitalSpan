@@ -1,10 +1,6 @@
 import { ChartPaletteConfigFields } from "@/components/dashboard/chartPaletteConfigFields";
 import { useChartInspector } from "@/components/dashboard/chartInspectorContext";
 import {
-  hasCustomGeoRegionBorderColor,
-  resolveGeoRegionBorderColorHex,
-} from "@/components/charts/engine/geo/geoRegionBorderStyle";
-import {
   hasCustomGeoRegionFillColor,
   resolveGeoRegionFillColorHex,
 } from "@/components/charts/engine/geo/geoRegionFillStyle";
@@ -18,7 +14,7 @@ import {
   InspectorSwitchRow,
 } from "@/components/dashboard/inspectorCompact";
 
-/** 2D 离线地图 · 基础样式（对标 DataEase：配色 / 不透明度 / 边线 / 区块填充 / 缩放按钮） */
+/** 2D 离线地图 · 基础样式（配色 / 不透明度 / 区块填充 / 缩放按钮；边线在「地图样式」） */
 export function ChartMapBasicStyleSection() {
   const { cfg, patchDeStyle, onChange, dashboardStyle } = useChartInspector();
   const deStyle = readChartDeStyle(cfg);
@@ -54,17 +50,6 @@ export function ChartMapBasicStyleSection() {
           }
           onOpacityChange={patchPaletteOpacity}
           onOpacityPreview={patchPaletteOpacity}
-        />
-        <InspectorInlineColorRow
-          label="地图边线"
-          value={resolveGeoRegionBorderColorHex(geo, isDarkTheme)}
-          fallbackValue={resolveGeoRegionBorderColorHex(
-            { ...geo, regionBorderColor: undefined },
-            isDarkTheme,
-          )}
-          allowClear={hasCustomGeoRegionBorderColor(geo)}
-          swatches={WIDGET_BORDER_RECOMMENDED}
-          onChange={(next) => patchGeo({ regionBorderColor: next })}
         />
         <InspectorInlineColorRow
           label="地图区块填充"

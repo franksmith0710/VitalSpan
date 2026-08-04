@@ -113,6 +113,7 @@ export function chartHasAdvancedTab(chartType: ChartViewConfig["chartType"]): bo
     caps.timeRange ||
     caps.markLines ||
     caps.conditional ||
-    caps.jump
+    caps.jump ||
+    chartType === "map"
   );
 }

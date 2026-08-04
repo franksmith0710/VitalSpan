@@ -4,6 +4,7 @@ import {
   HUB_SEGMENTED_BUTTON_CLASS,
   HUB_SEGMENTED_SHELL_CLASS,
 } from "@/components/dashboard/hubFilterUi";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -59,6 +60,10 @@ type SyncJobFormProps = {
   datasources: DatasourceItem[];
   selectedDatasource?: DatasourceItem;
   fieldErrors: Record<string, string>;
+  /** 其他任务已占用的同名 target_table（编辑时不含自身） */
+  conflictingJobNames?: string[];
+  /** 按当前源表重新建议唯一目标表名 */
+  onSuggestTargetTable?: () => void;
   formId?: string;
   onChange: <K extends keyof JobFormState>(key: K, value: JobFormState[K]) => void;
   onSubmit: (event?: FormEvent) => void;
@@ -129,6 +134,8 @@ export function SyncJobForm({
   datasources,
   selectedDatasource,
   fieldErrors,
+  conflictingJobNames = [],
+  onSuggestTargetTable,
   formId = SYNC_JOB_FORM_ID,
   onChange,
   onSubmit,
@@ -285,8 +292,33 @@ export function SyncJobForm({
               className="h-11"
               placeholder="orders_clean"
             />
+            {onSuggestTargetTable ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-fit"
+                onClick={onSuggestTargetTable}
+              >
+                按源表重新建议表名
+              </Button>
+            ) : null}
           </div>
         </div>
+        <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+          每个目标表对应一个 Dataset；多个任务写入同一目标表会共用 Dataset，且全量同步会互相覆盖分析库中的数据。
+        </p>
+        {conflictingJobNames.length > 0 ? (
+          <Alert severity="warning">
+            <AlertTitle>目标表与已有任务重复</AlertTitle>
+            <AlertDescription className="text-theme-xs text-warning-700 dark:text-warning-400">
+              已有任务「{conflictingJobNames.join("、")}」写入
+              <span className="font-mono"> {form.target_table}</span>
+              ，保存后将共用 Dataset
+              <span className="font-mono"> {form.target_table}</span>。若需独立出图，请改用不同目标表名。
+            </AlertDescription>
+          </Alert>
+        ) : null}
         {form.table.trim() === DIRTY_ORDERS_DEMO_SOURCE_TABLE ? (
           <p className="text-theme-xs text-gray-500 dark:text-gray-400">
             演示源表含脏数据（如 amount=not-a-number）。保存任务后，在{" "}

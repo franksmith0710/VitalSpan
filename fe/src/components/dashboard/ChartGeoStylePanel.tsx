@@ -1,8 +1,18 @@
+import { useCallback, useEffect, useRef } from "react";
 import {
   hasCustomGeoRegionBorderColor,
+  MAX_GEO_REGION_BORDER_WIDTH_SCALE,
+  MIN_GEO_REGION_BORDER_WIDTH_SCALE,
+  DEFAULT_GEO_REGION_BORDER_WIDTH_SCALE,
   resolveGeoRegionBorderColorHex,
   resolveGeoRegionBorderShow,
 } from "@/components/charts/engine/geo/geoRegionBorderStyle";
+import {
+  hasCustomGeoRegionLabelColor,
+  DEFAULT_GEO_REGION_LABEL_FONT_SIZE,
+  resolveGeoRegionLabelPanelColorHex,
+  resolveGeoRegionLabelFallbackHex,
+} from "@/components/charts/engine/geo/geoRegionLabelStyle";
 import {
   DEFAULT_SCENE_CLOUD_DENSITY,
   DEFAULT_SCENE_CLOUD_HEIGHT,
@@ -99,7 +109,8 @@ import {
   InspectorInlineColorRow,
   InspectorSwitchRow,
 } from "./inspectorCompact";
-import { WIDGET_BORDER_RECOMMENDED } from "./dashboardStyleConfig";
+import { WIDGET_BORDER_RECOMMENDED, TEXT_COLOR_RECOMMENDED } from "./dashboardStyleConfig";
+import { ChartPaletteFontSizeSelect } from "./chartPaletteShared";
 import {
   Select,
   SelectContent,
@@ -123,8 +134,49 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
   const geo3d = readChartGeo3dStyle(deStyle);
   const patchGeo = (patch: Parameters<typeof patchChartDeStyleNested>[2]) =>
     onChange(patchChartDeStyleNested(cfg, "geo", patch));
+  const patchGeoColorTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const patchGeoColor = useCallback(
+    (key: string, patch: Parameters<typeof patchChartDeStyleNested>[2]) => {
+      const timers = patchGeoColorTimersRef.current;
+      const pending = timers.get(key);
+      if (pending) window.clearTimeout(pending);
+      timers.set(
+        key,
+        window.setTimeout(() => {
+          timers.delete(key);
+          patchGeo(patch);
+        }, 200),
+      );
+    },
+    [cfg, onChange],
+  );
   const patchGeo3d = (patch: Parameters<typeof patchChartDeStyleNested>[2]) =>
     onChange(patchChartDeStyleNested(cfg, "geo3d", patch));
+  const patchGeo3dColorTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const patchGeo3dColor = useCallback(
+    (key: string, patch: Parameters<typeof patchChartDeStyleNested>[2]) => {
+      const timers = patchGeo3dColorTimersRef.current;
+      const pending = timers.get(key);
+      if (pending) window.clearTimeout(pending);
+      timers.set(
+        key,
+        window.setTimeout(() => {
+          timers.delete(key);
+          patchGeo3d(patch);
+        }, 200),
+      );
+    },
+    [cfg, onChange],
+  );
+  useEffect(
+    () => () => {
+      patchGeo3dColorTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+      patchGeo3dColorTimersRef.current.clear();
+      patchGeoColorTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+      patchGeoColorTimersRef.current.clear();
+    },
+    [],
+  );
   const isMap = chartType === "map" || chartType === "map-3d";
   const is3d = chartType === "map-3d";
   const showRegionBorder = resolveGeoRegionBorderShow(geo);
@@ -153,11 +205,31 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
           />
         ) : null}
         {isMap && chartType === "map" ? (
-          <InspectorSwitchRow
-            label="区域标签"
-            checked={geo.showRegionLabel === true}
-            onCheckedChange={(showRegionLabel) => patchGeo({ showRegionLabel })}
-          />
+          <>
+            <InspectorSwitchRow
+              label="区域标签"
+              checked={geo.showRegionLabel === true}
+              onCheckedChange={(showRegionLabel) => patchGeo({ showRegionLabel })}
+            />
+            {geo.showRegionLabel === true ? (
+              <>
+                <InspectorInlineColorRow
+                  label="字体颜色"
+                  value={resolveGeoRegionLabelPanelColorHex(geo, isDarkTheme)}
+                  fallbackValue={resolveGeoRegionLabelFallbackHex(isDarkTheme)}
+                  allowClear={hasCustomGeoRegionLabelColor(geo)}
+                  swatches={TEXT_COLOR_RECOMMENDED}
+                  onChange={(next) => patchGeoColor("regionLabelColor", { regionLabelColor: next })}
+                />
+                <ChartPaletteFontSizeSelect
+                  density="narrow"
+                  value={geo.regionLabelFontSize}
+                  fallback={DEFAULT_GEO_REGION_LABEL_FONT_SIZE}
+                  onChange={(regionLabelFontSize) => patchGeo({ regionLabelFontSize })}
+                />
+              </>
+            ) : null}
+          </>
         ) : null}
         {chartType === "heatmap" ? (
           <InspectorSwitchRow
@@ -191,12 +263,37 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                 )}
                 allowClear={hasCustomGeoRegionBorderColor(geo)}
                 swatches={WIDGET_BORDER_RECOMMENDED}
-                onChange={(next) => patchGeo({ regionBorderColor: next })}
+                onChange={(next) => patchGeoColor("regionBorderColor", { regionBorderColor: next })}
               />
+            ) : null}
+            {showRegionBorder && chartType === "map" ? (
+              <>
+                <InspectorInlineColorRow
+                  label="地图边线"
+                  value={resolveGeoRegionBorderColorHex(geo, isDarkTheme)}
+                  fallbackValue={resolveGeoRegionBorderColorHex(
+                    { ...geo, regionBorderColor: undefined },
+                    isDarkTheme,
+                  )}
+                  allowClear={hasCustomGeoRegionBorderColor(geo)}
+                  swatches={WIDGET_BORDER_RECOMMENDED}
+                  onChange={(next) => patchGeoColor("regionBorderColor", { regionBorderColor: next })}
+                />
+                <DeAttrSliderField
+                  label="边线宽度"
+                  compact
+                  value={geo.regionBorderWidth}
+                  fallback={DEFAULT_GEO_REGION_BORDER_WIDTH_SCALE}
+                  min={MIN_GEO_REGION_BORDER_WIDTH_SCALE}
+                  max={MAX_GEO_REGION_BORDER_WIDTH_SCALE}
+                  step={0.1}
+                  ariaLabel="地图边线宽度"
+                  onChange={(regionBorderWidth) => patchGeo({ regionBorderWidth })}
+                />
+              </>
             ) : null}
             <p className={INSPECTOR_HINT}>
               边界随下钻层级切换：全国显示省界，省级显示市界，市级显示区县界。
-              {chartType === "map" ? " 2D 地图边线颜色请在「基础样式」中调整。" : null}
             </p>
           </>
         ) : null}
@@ -249,7 +346,7 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
               )}
               allowClear={hasCustomGeo3dShellColor(geo3d)}
               swatches={WIDGET_BORDER_RECOMMENDED}
-              onChange={(next) => patchGeo3d({ shellColor: next })}
+              onChange={(next) => patchGeo3dColor("shellColor", { shellColor: next })}
             />
             <DeAttrSliderField
               label="底板不透明度"
@@ -345,7 +442,7 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                     )}
                     allowClear={hasCustomPlatformHighlightColor(geo3d)}
                     swatches={WIDGET_BORDER_RECOMMENDED}
-                    onChange={(next) => patchGeo3d({ platformHighlightColor: next })}
+                    onChange={(next) => patchGeo3dColor("platformHighlightColor", { platformHighlightColor: next })}
                   />
                 ) : null}
                 {platformRingsOn ? (
@@ -422,7 +519,7 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                       )}
                       allowClear={hasCustomPlatformGridColor(geo3d)}
                       swatches={WIDGET_BORDER_RECOMMENDED}
-                      onChange={(next) => patchGeo3d({ platformGridColor: next })}
+                      onChange={(next) => patchGeo3dColor("platformGridColor", { platformGridColor: next })}
                     />
                     <DeAttrSliderField
                       label="网格不透明度"
@@ -454,7 +551,7 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                       )}
                       allowClear={hasCustomPlatformRippleColor(geo3d)}
                       swatches={WIDGET_BORDER_RECOMMENDED}
-                      onChange={(next) => patchGeo3d({ platformRippleColor: next })}
+                      onChange={(next) => patchGeo3dColor("platformRippleColor", { platformRippleColor: next })}
                     />
                     <DeAttrSliderField
                       label="涟漪不透明度"
@@ -508,7 +605,7 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                       )}
                       allowClear={hasCustomPlatformGlowColor(geo3d)}
                       swatches={WIDGET_BORDER_RECOMMENDED}
-                      onChange={(next) => patchGeo3d({ platformGlowColor: next })}
+                      onChange={(next) => patchGeo3dColor("platformGlowColor", { platformGlowColor: next })}
                     />
                     <DeAttrSliderField
                       label="光晕不透明度"
@@ -540,7 +637,7 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                       )}
                       allowClear={hasCustomPlatformPulseColor(geo3d)}
                       swatches={WIDGET_BORDER_RECOMMENDED}
-                      onChange={(next) => patchGeo3d({ platformPulseColor: next })}
+                      onChange={(next) => patchGeo3dColor("platformPulseColor", { platformPulseColor: next })}
                     />
                     <DeAttrSliderField
                       label="脉冲不透明度"
@@ -583,7 +680,7 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                       )}
                       allowClear={hasCustomPlatformSweepColor(geo3d)}
                       swatches={WIDGET_BORDER_RECOMMENDED}
-                      onChange={(next) => patchGeo3d({ platformSweepColor: next })}
+                      onChange={(next) => patchGeo3dColor("platformSweepColor", { platformSweepColor: next })}
                     />
                     <DeAttrSliderField
                       label="扫光不透明度"
@@ -699,7 +796,7 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                       fallbackValue={DEFAULT_HEAT_BLOB_COLOR}
                       allowClear={hasCustomHeatBlobColor(geo3d)}
                       swatches={WIDGET_BORDER_RECOMMENDED}
-                      onChange={(next) => patchGeo3d({ heatBlobColor: next })}
+                      onChange={(next) => patchGeo3dColor("heatBlobColor", { heatBlobColor: next })}
                     />
                     <p className={INSPECTOR_HINT}>
                       贴地热力按数据行地区/经纬度落点（同位置自动求和）；光柱与浮动标签仍按当前地图层级行政区显示。
@@ -719,7 +816,7 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                       fallbackValue={DEFAULT_POINT_PILLAR_COLOR_TOP}
                       allowClear={hasCustomPointPillarColorTop(geo3d)}
                       swatches={WIDGET_BORDER_RECOMMENDED}
-                      onChange={(next) => patchGeo3d({ pointPillarColorTop: next })}
+                      onChange={(next) => patchGeo3dColor("pointPillarColorTop", { pointPillarColorTop: next })}
                     />
                     <InspectorInlineColorRow
                       label="光柱底色"
@@ -727,7 +824,7 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                       fallbackValue={DEFAULT_POINT_PILLAR_COLOR_BOTTOM}
                       allowClear={hasCustomPointPillarColorBottom(geo3d)}
                       swatches={WIDGET_BORDER_RECOMMENDED}
-                      onChange={(next) => patchGeo3d({ pointPillarColorBottom: next })}
+                      onChange={(next) => patchGeo3dColor("pointPillarColorBottom", { pointPillarColorBottom: next })}
                     />
                     <DeAttrSliderField
                       label="光柱不透明度"
@@ -797,15 +894,10 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                 />
                 {floatingLabelsOn ? (
                   <>
-                    <DeAttrSliderField
-                      label="标签字号"
-                      compact
+                    <ChartPaletteFontSizeSelect
+                      density="narrow"
                       value={geo3d.floatingLabelFontSize}
                       fallback={DEFAULT_FLOATING_LABEL_FONT_SIZE}
-                      min={10}
-                      max={22}
-                      step={1}
-                      ariaLabel="浮动标签字号"
                       onChange={(floatingLabelFontSize) => patchGeo3d({ floatingLabelFontSize })}
                     />
                     <InspectorInlineColorRow
@@ -814,7 +906,7 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                       fallbackValue={DEFAULT_FLOATING_LABEL_TEXT_COLOR}
                       allowClear={hasCustomFloatingLabelTextColor(geo3d)}
                       swatches={WIDGET_BORDER_RECOMMENDED}
-                      onChange={(next) => patchGeo3d({ floatingLabelTextColor: next })}
+                      onChange={(next) => patchGeo3dColor("floatingLabelTextColor", { floatingLabelTextColor: next })}
                     />
                     <InspectorInlineColorRow
                       label="标签背景色"
@@ -822,7 +914,7 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                       fallbackValue={DEFAULT_FLOATING_LABEL_BG_COLOR}
                       allowClear={hasCustomFloatingLabelBgColor(geo3d)}
                       swatches={WIDGET_BORDER_RECOMMENDED}
-                      onChange={(next) => patchGeo3d({ floatingLabelBgColor: next })}
+                      onChange={(next) => patchGeo3dColor("floatingLabelBgColor", { floatingLabelBgColor: next })}
                     />
                     <InspectorInlineColorRow
                       label="标签边框色"
@@ -830,7 +922,7 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                       fallbackValue={DEFAULT_FLOATING_LABEL_BORDER_COLOR}
                       allowClear={hasCustomFloatingLabelBorderColor(geo3d)}
                       swatches={WIDGET_BORDER_RECOMMENDED}
-                      onChange={(next) => patchGeo3d({ floatingLabelBorderColor: next })}
+                      onChange={(next) => patchGeo3dColor("floatingLabelBorderColor", { floatingLabelBorderColor: next })}
                     />
                     <DeAttrSliderField
                       label="标签偏移"

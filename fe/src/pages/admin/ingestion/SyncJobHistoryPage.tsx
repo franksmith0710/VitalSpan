@@ -16,6 +16,7 @@ import { TruncateHint } from "@/components/ui/hint-tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { SyncConsumeActionCard } from "./components/SyncConsumeActionCard";
+import { type SyncJobListResponse, type SyncJobSummary } from "./components/sync-job-types";
 
 const RUNS_FETCH_LIMIT = 100;
 
@@ -59,6 +60,7 @@ export function SyncJobHistoryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
+  const [sharedTargetJobNames, setSharedTargetJobNames] = useState<string[]>([]);
   const pagination = useListPagination();
 
   const loadRuns = useCallback(async () => {
@@ -85,6 +87,22 @@ export function SyncJobHistoryPage() {
   useEffect(() => {
     void loadRuns();
   }, [loadRuns]);
+
+  useEffect(() => {
+    if (!id || !targetTable) {
+      setSharedTargetJobNames([]);
+      return;
+    }
+    void apiFetch<SyncJobListResponse>("/api/v1/ingestion/sync-jobs")
+      .then((data) => {
+        setSharedTargetJobNames(
+          data.items
+            .filter((job) => job.id !== id && job.target_table === targetTable)
+            .map((job) => job.name),
+        );
+      })
+      .catch(() => setSharedTargetJobNames([]));
+  }, [id, targetTable]);
 
   const pagedRuns = useMemo(
     () => sliceListPage(runs, pagination.offset, pagination.pageSize),
@@ -173,6 +191,7 @@ export function SyncJobHistoryPage() {
               jobName={jobName ?? undefined}
               targetTable={targetTable}
               rowsSynced={latestSucceededRun?.rows_synced}
+              sharedTargetJobNames={sharedTargetJobNames}
               canManage={canManage}
               onUpdated={() => void loadRuns()}
             />

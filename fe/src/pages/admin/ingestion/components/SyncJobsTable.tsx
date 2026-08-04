@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { useMemo } from "react";
 import {
   CalendarClock,
   Hand,
@@ -93,6 +94,15 @@ export function SyncJobsTable({
   someSelected = false,
 }: SyncJobsTableProps) {
   const showSelection = Boolean(onToggleSelect) && canManage;
+  const targetTableCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const job of jobs) {
+      const key = job.target_table.trim().toLowerCase();
+      if (!key) continue;
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return counts;
+  }, [jobs]);
   return (
     <div className="overflow-x-only">
       <table className="min-w-[1024px] w-full text-left text-theme-sm">
@@ -151,8 +161,17 @@ export function SyncJobsTable({
                   {syncModeLabel(job.sync_mode)}
                 </Badge>
               </td>
-              <td className="px-4 py-3 font-mono text-theme-xs text-gray-600 dark:text-gray-300">
-                {job.target_table}
+              <td className="px-4 py-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-mono text-theme-xs text-gray-600 dark:text-gray-300">
+                    {job.target_table}
+                  </span>
+                  {(targetTableCounts.get(job.target_table.trim().toLowerCase()) ?? 0) > 1 ? (
+                    <Badge variant="light" color="warning" size="sm">
+                      {targetTableCounts.get(job.target_table.trim().toLowerCase())} 任务共表
+                    </Badge>
+                  ) : null}
+                </div>
               </td>
               <td className="px-4 py-3">
                 <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">

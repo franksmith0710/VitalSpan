@@ -8,11 +8,8 @@ export const CHART_LEGEND_ICON_SIZE_OPTIONS = [
   4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32,
 ] as const;
 
-/** 图例文本字号：8px 极小档 + 与轴标签/标题统一的 10–48 档位 */
-export const CHART_LEGEND_FONT_SIZE_OPTIONS: readonly number[] = [
-  8,
-  ...CHART_FONT_SIZE_OPTIONS,
-];
+/** 图例文本字号：与轴标签/标题统一的 6–48 档位 */
+export const CHART_LEGEND_FONT_SIZE_OPTIONS: readonly number[] = [...CHART_FONT_SIZE_OPTIONS];
 
 export const DEFAULT_CHART_LEGEND_ICON: ChartLegendIconShape = "triangle";
 export const DEFAULT_CHART_LEGEND_ICON_SIZE = 6;

@@ -29,7 +29,10 @@ import { useGeoMapLevel, isGeoMapLevelReady } from "@/hooks/useGeoMapLevel";
 import { useChartVisualScale } from "@/hooks/useChartVisualScale";
 import { VIZ_WHEEL_ZOOM_SURFACE_ATTR } from "@/components/dashboard/pixelCanvas/pixelCanvasWheelScroll";
 import { readChartDeStyle, readChartGeoStyle, readChartGeo3dStyle } from "@/lib/chartDeStyle";
-import { buildGeo3dStyleContentSig } from "@/components/charts/engine/three/geo3dVisualStyle";
+import {
+  buildGeo3dStructureContentSig,
+  buildGeo3dVisualContentSig,
+} from "@/components/charts/engine/three/geo3dStyleContentSig";
 import { buildGeoMapStyleContentSig } from "@/components/charts/engine/geo/geoRegionFillStyle";
 import { cn } from "@/lib/utils";
 
@@ -45,8 +48,13 @@ function geoAssetMissingMessage(mapId: string): string {
 }
 
 type ThreeMapApi = {
-  contentKey: string;
+  structureKey: string;
   resize: (width: number, height: number) => boolean;
+  patchGeo3dStyle?: (input: {
+    geo3dStyle?: ReturnType<typeof readChartGeo3dStyle>;
+    geoStyle?: ReturnType<typeof readChartGeoStyle>;
+    isDark?: boolean;
+  }) => boolean | Promise<boolean>;
 };
 
 function D3GeoMapViewInner(props: ChartEngineViewProps) {
@@ -135,6 +143,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   const renderGenRef = useRef(0);
   const threePendingGenRef = useRef(0);
   const threeApiRef = useRef<ThreeMapApi | null>(null);
+  const lastVisualSigRef = useRef("");
   const [renderError, setRenderError] = useState<string | null>(null);
   const [renderEngine, setRenderEngine] = useState<GeoMapRenderEngine | null>(null);
   const [fallbackReason, setFallbackReason] = useState<string | null>(null);
@@ -160,18 +169,26 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   );
 
   const regionField = spec.encoding.dimensions[0]?.field;
-  const geoStyleRenderSig = useMemo(() => {
+  const geoStyleStructureSig = useMemo(() => {
     if (!chartConfig) return "";
     const de = readChartDeStyle(chartConfig);
     const geo = readChartGeoStyle(de);
     if (isThreeMap) {
-      return buildGeo3dStyleContentSig(readChartGeo3dStyle(de), geo);
+      return buildGeo3dStructureContentSig(readChartGeo3dStyle(de), geo);
     }
     return buildGeoMapStyleContentSig(geo, {
       paletteOpacity: de.paletteOpacity,
       paletteId: de.paletteId,
     });
   }, [chartConfig, isThreeMap]);
+
+  const geoStyleVisualSig = useMemo(() => {
+    if (!chartConfig || !isThreeMap) return "";
+    const de = readChartDeStyle(chartConfig);
+    const geo = readChartGeoStyle(de);
+    return buildGeo3dVisualContentSig(readChartGeo3dStyle(de), geo);
+  }, [chartConfig, isThreeMap]);
+
   const contentKey = useMemo(
     () =>
       buildGeoMapContentKey({
@@ -185,7 +202,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
         depthVisual: style.depthVisual,
         isDark: style.isDark,
         renderTier: props.geo3dRenderTier ?? "full",
-        geo3dStyleSig: geoStyleRenderSig,
+        geo3dStyleSig: geoStyleStructureSig,
       }),
     [
       viewModel.chartType,
@@ -197,7 +214,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       style.depthVisual,
       style.isDark,
       props.geo3dRenderTier,
-      geoStyleRenderSig,
+      geoStyleStructureSig,
     ],
   );
 
@@ -247,7 +264,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     (mode: PaintMode): boolean => {
       if (!isThreeMap || threeLoading) return false;
       const api = threeApiRef.current;
-      if (!api || api.contentKey !== contentKey) return false;
+      if (!api || api.structureKey !== contentKey) return false;
       const paint = readPaintSize();
       if (!paint) return false;
       const next = { width: paint.width, height: paint.height };
@@ -274,7 +291,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
 
       if (
         isThreeMap &&
-        threeApiRef.current?.contentKey === contentKey &&
+        threeApiRef.current?.structureKey === contentKey &&
         (mode === "live" || mode === "commit")
       ) {
         tryThreeResize(mode);
@@ -283,7 +300,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
 
       if (
         isThreeMap &&
-        threeApiRef.current?.contentKey === contentKey &&
+        threeApiRef.current?.structureKey === contentKey &&
         !force &&
         embeddedSizeChanged(next, lastMeasureRef.current)
       ) {
@@ -348,7 +365,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       setThreeLoading(true);
       setMapAssetLoading(true);
       threePendingGenRef.current = gen;
-      const renderContentKey = contentKey;
+      const renderStructureKey = contentKey;
 
       const runThreeRender = async () => {
         const { renderThreeChoroplethChart } = await import(
@@ -374,9 +391,11 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
                 disposeFn = result.dispose;
                 if (result.engine === "three" && result.resize) {
                   threeApiRef.current = {
-                    contentKey: renderContentKey,
+                    structureKey: renderStructureKey,
                     resize: result.resize,
+                    patchGeo3dStyle: result.patchGeo3dStyle,
                   };
+                  lastVisualSigRef.current = geoStyleVisualSig;
                   const paint = readPaintSize();
                   if (paint && paint.width > 0 && paint.height > 0) {
                     result.resize(paint.width, paint.height);
@@ -421,6 +440,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       style.depthVisual,
       applyRenderMeta,
       clearThreePending,
+      geoStyleVisualSig,
     ],
   );
 
@@ -460,9 +480,23 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   useEffect(() => {
     if (geoMapLoading || !geoMapLevelReady) return;
     if (!fill && (size.width <= 0 || size.height <= 0)) return;
-    threeApiRef.current = null;
-    lastMeasureRef.current = { width: 0, height: 0 };
-    measureAndRenderRef.current("data", true);
+
+    const tier = props.geo3dRenderTier ?? "full";
+    const debounceMs = tier === "full" ? 0 : 300;
+
+    const runRebuild = () => {
+      threeApiRef.current = null;
+      lastMeasureRef.current = { width: 0, height: 0 };
+      measureAndRenderRef.current("data", true);
+    };
+
+    if (debounceMs <= 0) {
+      runRebuild();
+      return;
+    }
+
+    const timer = window.setTimeout(runRebuild, debounceMs);
+    return () => window.clearTimeout(timer);
   }, [
     contentKey,
     geoMapLoading,
@@ -472,6 +506,40 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     size.width,
     size.height,
     mapRetryToken,
+    props.geo3dRenderTier,
+  ]);
+
+  useEffect(() => {
+    if (!isThreeMap || !chartConfig || !geoStyleVisualSig) return;
+    if (geoStyleVisualSig === lastVisualSigRef.current) return;
+    const api = threeApiRef.current;
+    if (!api?.patchGeo3dStyle || threeLoading) return;
+    if (api.structureKey !== contentKey) return;
+
+    const de = readChartDeStyle(chartConfig);
+    const nextVisualSig = geoStyleVisualSig;
+    lastVisualSigRef.current = nextVisualSig;
+
+    void Promise.resolve(
+      api.patchGeo3dStyle({
+        geo3dStyle: readChartGeo3dStyle(de),
+        geoStyle: readChartGeoStyle(de),
+        isDark: style.isDark,
+      }),
+    ).then((ok) => {
+      if (ok === false) {
+        lastVisualSigRef.current = "";
+        threeApiRef.current = null;
+        measureAndRenderRef.current("data", true);
+      }
+    });
+  }, [
+    geoStyleVisualSig,
+    isThreeMap,
+    chartConfig,
+    contentKey,
+    threeLoading,
+    style.isDark,
   ]);
 
   useEffect(() => {

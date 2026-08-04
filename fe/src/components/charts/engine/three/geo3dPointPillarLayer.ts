@@ -2,6 +2,7 @@ import * as THREE from "three";
 import type { RegionPointSample } from "@/components/charts/engine/three/geo3dRegionCentroid";
 import {
   buildGeo3dPointPillar,
+  patchGeo3dPointPillarVisual,
   resolvePillarHeight,
   resolveVerticalBillboardYaw,
   type Geo3dPointPillar,
@@ -13,6 +14,7 @@ export type Geo3dPointPillarLayerHandle = {
   group: THREE.Group;
   pillars: Array<{ name: string; pillar: Geo3dPointPillar; baseZ: number }>;
   update: (deltaSec: number, reducedMotion: boolean, camera?: THREE.Camera) => void;
+  patchVisual: (style: ResolvedPointEffectsStyle) => void;
   dispose: () => void;
 };
 
@@ -28,10 +30,11 @@ export function buildGeo3dPointPillarLayer(
   group.name = "geo3d-point-pillars";
   const pillars: Geo3dPointPillarLayerHandle["pillars"] = [];
   const worldPos = new THREE.Vector3();
+  const runtimeStyle = { ...style };
 
   for (const sample of samples) {
-    const barHeight = resolvePillarHeight(sample.valueT, effectUnit, style);
-    const pillar = buildGeo3dPointPillar(barHeight, style, effectUnit);
+    const barHeight = resolvePillarHeight(sample.valueT, effectUnit, runtimeStyle);
+    const pillar = buildGeo3dPointPillar(barHeight, runtimeStyle, effectUnit);
     const anchor = resolveRegionCapAnchorLocal(meshes, sample.name, capTopZ, sample.adcode);
     if (!anchor) continue;
     pillar.group.position.set(anchor.x, anchor.y, capTopZ);
@@ -50,8 +53,14 @@ export function buildGeo3dPointPillarLayer(
           entry.pillar.beamMesh.rotation.z = resolveVerticalBillboardYaw(worldPos, camera);
         }
         if (deltaSec > 0 && !reducedMotion) {
-          entry.pillar.ringMesh.rotation.z += (deltaSec + 0.02) * style.pointPillarRingSpeed;
+          entry.pillar.ringMesh.rotation.z += (deltaSec + 0.02) * runtimeStyle.pointPillarRingSpeed;
         }
+      }
+    },
+    patchVisual(nextStyle: ResolvedPointEffectsStyle) {
+      runtimeStyle.pointPillarRingSpeed = nextStyle.pointPillarRingSpeed;
+      for (const entry of pillars) {
+        patchGeo3dPointPillarVisual(entry.pillar, nextStyle);
       }
     },
     dispose() {

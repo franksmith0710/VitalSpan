@@ -11,6 +11,7 @@ export type FloatingLabelEntry = {
 export type Geo3dFloatingLabelsHandle = {
   layer: HTMLDivElement;
   entries: FloatingLabelEntry[];
+  applyStyle: (style: ResolvedPointEffectsStyle) => void;
   sync: (
     camera: THREE.Camera,
     domElement: HTMLElement,
@@ -61,6 +62,16 @@ export function buildGeo3dFloatingLabels(
   return {
     layer,
     entries,
+    applyStyle(nextStyle: ResolvedPointEffectsStyle) {
+      for (const entry of entries) {
+        Object.assign(entry.el.style, {
+          fontSize: `${nextStyle.floatingLabelFontSize}px`,
+          color: nextStyle.floatingLabelTextColor,
+          background: nextStyle.floatingLabelBgColor,
+          border: `1px solid ${nextStyle.floatingLabelBorderColor}`,
+        });
+      }
+    },
     sync(camera, domElement, chartContainer, resolveAnchorWorld) {
       for (const entry of entries) {
         const world = resolveAnchorWorld(entry.name);

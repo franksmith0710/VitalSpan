@@ -1,4 +1,12 @@
+import type { ChartGeo3dStyle, ChartGeoStyle } from "@/lib/chartDeStyle";
+
 export type GeoMapRenderEngine = "three" | "d3-fallback";
+
+export type Geo3dStylePatchInput = {
+  geo3dStyle?: ChartGeo3dStyle;
+  geoStyle?: ChartGeoStyle;
+  isDark?: boolean;
+};
 
 export type GeoMapRenderResult = {
   dispose: () => void;
@@ -9,6 +17,8 @@ export type GeoMapRenderResult = {
   resize?: (width: number, height: number) => boolean;
   /** 暂停/恢复 Three rAF（编辑态未选中、屏外） */
   setAnimationActive?: (active: boolean) => void;
+  /** 增量更新 geo3d 样式；返回 false 表示需全量重建 */
+  patchGeo3dStyle?: (input: Geo3dStylePatchInput) => boolean | Promise<boolean>;
 };
 
 export const GEO_MAP_WEBGL_FALLBACK_BANNER =

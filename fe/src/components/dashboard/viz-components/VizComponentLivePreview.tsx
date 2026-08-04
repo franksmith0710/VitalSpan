@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { ChartRenderer } from "@/components/charts/ChartRenderer";
+import { ChartDrillProvider } from "@/components/charts/ChartDrillContext";
 import { WidgetChartLegendShell } from "@/components/charts/WidgetChartLegendShell";
 import { setChartAnimationSuppressed } from "@/components/charts/engine/d3/core/animate";
 import { FilterWidget } from "@/components/dashboard/FilterWidget";
@@ -11,6 +12,7 @@ import { VizComponentChartPreviewShell } from "@/components/dashboard/viz-compon
 import type { Geo3dRenderTier } from "@/components/charts/engine/three/geo3dRuntime";
 import { useElementSize } from "@/hooks/useElementSize";
 import { useInViewport } from "@/hooks/useInViewport";
+import { isGeoMapChartType, type ChartViewConfig } from "@/lib/chartViewConfig";
 import { cn } from "@/lib/utils";
 
 type VizComponentLivePreviewProps = {
@@ -21,6 +23,8 @@ type VizComponentLivePreviewProps = {
   geo3dRenderTier?: Geo3dRenderTier;
   /** 列表卡片缩略图：隐藏组件内标题栏 */
   compact?: boolean;
+  /** 地图下钻栈持久化（编辑页同步 manualDrillStack） */
+  onChartConfigChange?: (cfg: ChartViewConfig) => void;
 };
 
 export function VizComponentLivePreview({
@@ -29,6 +33,7 @@ export function VizComponentLivePreview({
   lazy = false,
   geo3dRenderTier,
   compact = false,
+  onChartConfigChange,
 }: VizComponentLivePreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { ref: viewRef, inView } = useInViewport<HTMLDivElement>({
@@ -51,6 +56,8 @@ export function VizComponentLivePreview({
 
   const chartWidth = Math.max(width, 120);
   const chartHeight = Math.max(height, 96);
+  const chartConfig = widget.type === "chart" ? widget.chartConfig : undefined;
+  const drillEnabled = Boolean(chartConfig && isGeoMapChartType(chartConfig.chartType));
 
   return (
     <div
@@ -66,17 +73,21 @@ export function VizComponentLivePreview({
         >
           <WidgetShellLegendProvider>
             <WidgetChartLegendShell>
-              <ChartRenderer
-                embedded
-                config={widget.chartConfig}
-                title={widget.title}
-                widgetId={widget.id}
-                queryEnabled={active}
-                renderEnabled={active}
-                dashboardEditMode
-                pixelSize={{ width: chartWidth, height: chartHeight }}
-                geo3dRenderTier={geo3dRenderTier}
-              />
+              <ChartDrillProvider>
+                <ChartRenderer
+                  embedded
+                  config={widget.chartConfig}
+                  title={widget.title}
+                  widgetId={widget.id}
+                  drillEnabled={drillEnabled}
+                  queryEnabled={active}
+                  renderEnabled={active}
+                  dashboardEditMode
+                  pixelSize={{ width: chartWidth, height: chartHeight }}
+                  geo3dRenderTier={geo3dRenderTier}
+                  onChartConfigChange={onChartConfigChange}
+                />
+              </ChartDrillProvider>
             </WidgetChartLegendShell>
           </WidgetShellLegendProvider>
         </VizComponentChartPreviewShell>

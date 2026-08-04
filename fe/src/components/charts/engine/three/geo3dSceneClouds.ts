@@ -24,6 +24,7 @@ export type Geo3dSceneCloudsHandle = {
   group: THREE.Group;
   /** @param deltaSec 帧间隔秒数；camera 用于贴片朝向与距离淡出 */
   update: (deltaSec: number, camera?: THREE.Camera) => void;
+  setSpeed: (speed: number) => void;
   dispose: () => void;
 };
 
@@ -48,7 +49,7 @@ export function buildGeo3dSceneCloudsWithOptions(
 
   const span = Math.max(layout.halfX, layout.halfZ, 4);
   const halfExtent = span * 1.25;
-  const driftRate = resolveDriftRate(options.speed, span);
+  const driftState = { rate: resolveDriftRate(options.speed, span) };
   const build = buildCloudClusterInstances(span, layout.maxY, options, layout.defaultDistance);
   const clusters: CloudClusterRuntime[] = build.clusters;
   group.add(build.instancedMesh);
@@ -60,8 +61,8 @@ export function buildGeo3dSceneCloudsWithOptions(
     update(deltaSec: number, camera?: THREE.Camera) {
       if (deltaSec > 0) {
         elapsed += deltaSec;
-        const dx = WIND_DIR.x * driftRate * deltaSec;
-        const dz = WIND_DIR.y * driftRate * deltaSec;
+        const dx = WIND_DIR.x * driftState.rate * deltaSec;
+        const dz = WIND_DIR.y * driftState.rate * deltaSec;
         for (const cluster of clusters) {
           const factor = cluster.speedFactor;
           cluster.centerX = wrapClusterAxis(cluster.centerX + dx * factor, halfExtent);
@@ -80,6 +81,9 @@ export function buildGeo3dSceneCloudsWithOptions(
           camera,
         );
       }
+    },
+    setSpeed(speed: number) {
+      driftState.rate = resolveDriftRate(speed, span);
     },
     dispose() {
       group.remove(build.instancedMesh);

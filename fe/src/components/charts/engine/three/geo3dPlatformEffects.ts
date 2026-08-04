@@ -31,6 +31,7 @@ export const GEO3D_PLATFORM_GROUP_NAME = "geo3d-platform-effects";
 export type Geo3dPlatformEffectsHandle = {
   group: THREE.Group;
   update: (deltaSec: number) => void;
+  patchVisual: (resolved: ResolvedPlatformEffectsStyle) => void;
   dispose: () => void;
 };
 
@@ -81,9 +82,12 @@ export function buildGeo3dPlatformEffects(
   const isSquare = gridStyle === "square";
 
   const meshes: DisposableMesh[] = [];
-  const shaderUniforms: PlatformShaderUniforms[] = [];
+  const shaderLayers: Array<{ kind: "glow" | "pulse" | "sweep"; uniforms: PlatformShaderUniforms }> = [];
   let ring1: RingMesh | null = null;
   let ring2: RingMesh | null = null;
+  let highlightMesh: RingMesh | null = null;
+  let gridMesh: RingMesh | null = null;
+  let rippleMesh: RingMesh | null = null;
   let textureRippleUniforms: PlatformRippleUniforms | null = null;
   let squareRippleUniforms: PlatformSquareRippleUniforms | null = null;
 
@@ -93,6 +97,7 @@ export function buildGeo3dPlatformEffects(
       createPlatformGridUniforms(colors.grid, gridOpacity, squareCells),
     );
     squareGrid.position.z = layerZ;
+    gridMesh = squareGrid;
     meshes.push(squareGrid);
   } else if (layers.grid) {
     const gridBase = new THREE.Mesh(
@@ -107,6 +112,7 @@ export function buildGeo3dPlatformEffects(
       }),
     );
     gridBase.position.z = layerZ;
+    gridMesh = gridBase;
     meshes.push(gridBase);
   }
 
@@ -121,6 +127,7 @@ export function buildGeo3dPlatformEffects(
     );
     const squareRipple = createPlatformSquareRippleMesh(gridSize, squareRippleUniforms);
     squareRipple.position.z = layerZ + span * 0.002;
+    rippleMesh = squareRipple;
     meshes.push(squareRipple);
   } else if (layers.ripple) {
     textureRippleUniforms = createPlatformRippleUniforms(colors.ripple, rippleSpeed, rippleFrequency);
@@ -137,6 +144,7 @@ export function buildGeo3dPlatformEffects(
     );
     rippleGrid.position.z = layerZ + span * 0.002;
     applyPlatformRippleShader(rippleGrid.material, textureRippleUniforms);
+    rippleMesh = rippleGrid;
     meshes.push(rippleGrid);
   }
 
@@ -144,7 +152,7 @@ export function buildGeo3dPlatformEffects(
     const glowUniforms = createPlatformShaderUniforms(colors.glow, glowOpacity);
     const glow = createPlatformGlowMesh(glowSize, glowUniforms);
     glow.position.z = ringZ;
-    shaderUniforms.push(glowUniforms);
+    shaderLayers.push({ kind: "glow", uniforms: glowUniforms });
     meshes.push(glow);
   }
 
@@ -152,7 +160,7 @@ export function buildGeo3dPlatformEffects(
     const pulseUniforms = createPlatformShaderUniforms(colors.pulse, pulseOpacity, pulseSpeed);
     const pulse = createPlatformPulseMesh(pulseSize, pulseUniforms);
     pulse.position.z = ringZ;
-    shaderUniforms.push(pulseUniforms);
+    shaderLayers.push({ kind: "pulse", uniforms: pulseUniforms });
     meshes.push(pulse);
   }
 
@@ -160,7 +168,7 @@ export function buildGeo3dPlatformEffects(
     const sweepUniforms = createPlatformShaderUniforms(colors.sweep, sweepOpacity, sweepSpeed);
     const sweep = createPlatformSweepMesh(sweepSize, sweepUniforms);
     sweep.position.z = ringZ + span * 0.005;
-    shaderUniforms.push(sweepUniforms);
+    shaderLayers.push({ kind: "sweep", uniforms: sweepUniforms });
     meshes.push(sweep);
   }
 
@@ -175,6 +183,7 @@ export function buildGeo3dPlatformEffects(
         depthWrite: false,
       }),
     );
+    highlightMesh = highlight;
     meshes.push(highlight);
   }
 
@@ -206,20 +215,71 @@ export function buildGeo3dPlatformEffects(
 
   group.add(...meshes);
 
+  const runtime = {
+    ringSpeed,
+    rippleSpeed,
+    pulseSpeed,
+    sweepSpeed,
+    rippleFrequency,
+  };
+
   return {
     group,
     update(deltaSec: number) {
       if (deltaSec <= 0) return;
-      if (ring1) ring1.rotation.z += 0.001 * ringSpeed;
-      if (ring2) ring2.rotation.z -= 0.004 * ringSpeed;
+      if (ring1) ring1.rotation.z += 0.001 * runtime.ringSpeed;
+      if (ring2) ring2.rotation.z -= 0.004 * runtime.ringSpeed;
       if (textureRippleUniforms) {
-        textureRippleUniforms.uTime.value += deltaSec * 5;
+        textureRippleUniforms.uTime.value += deltaSec * 5 * runtime.rippleSpeed;
       }
       if (squareRippleUniforms) {
-        squareRippleUniforms.uTime.value += deltaSec * 5;
+        squareRippleUniforms.uTime.value += deltaSec * 5 * runtime.rippleSpeed;
       }
-      for (const uniforms of shaderUniforms) {
-        tickPlatformShaderUniforms(uniforms, deltaSec);
+      for (const layer of shaderLayers) {
+        tickPlatformShaderUniforms(layer.uniforms, deltaSec);
+      }
+    },
+    patchVisual(next: ResolvedPlatformEffectsStyle) {
+      runtime.ringSpeed = next.ringSpeed;
+      runtime.rippleSpeed = next.rippleSpeed;
+      runtime.pulseSpeed = next.pulseSpeed;
+      runtime.sweepSpeed = next.sweepSpeed;
+      runtime.rippleFrequency = next.rippleFrequency;
+      if (ring1) {
+        ring1.material.color.set(next.colors.highlight);
+        ring1.material.opacity = next.ringOpacity[0];
+      }
+      if (ring2) {
+        ring2.material.color.set(next.colors.highlight);
+        ring2.material.opacity = next.ringOpacity[1];
+      }
+      if (highlightMesh) {
+        highlightMesh.material.color.set(next.colors.highlight);
+        highlightMesh.material.opacity = next.highlightOpacity;
+      }
+      if (gridMesh) {
+        gridMesh.material.color.set(next.colors.grid);
+        gridMesh.material.opacity = next.gridOpacity;
+      }
+      if (rippleMesh) {
+        rippleMesh.material.color.set(next.colors.ripple);
+        rippleMesh.material.opacity = next.rippleOpacity;
+      }
+      for (const layer of shaderLayers) {
+        const { uniforms } = layer;
+        if (layer.kind === "glow") {
+          uniforms.uColor.value.set(next.colors.glow);
+          uniforms.uOpacity.value = next.glowOpacity;
+          uniforms.uSpeed.value = next.pulseSpeed;
+        } else if (layer.kind === "pulse") {
+          uniforms.uColor.value.set(next.colors.pulse);
+          uniforms.uOpacity.value = next.pulseOpacity;
+          uniforms.uSpeed.value = next.pulseSpeed;
+        } else if (layer.kind === "sweep") {
+          uniforms.uColor.value.set(next.colors.sweep);
+          uniforms.uOpacity.value = next.sweepOpacity;
+          uniforms.uSpeed.value = next.sweepSpeed;
+        }
       }
     },
     dispose() {

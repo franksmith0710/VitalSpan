@@ -150,4 +150,101 @@ describe("renderD3ChoroplethChart", () => {
     dispose();
     document.body.removeChild(container);
   });
+
+  it("mounts bubble ripple layer when bubbleEffect is enabled", () => {
+    const container = document.createElement("div");
+    container.style.width = "400px";
+    container.style.height = "320px";
+    document.body.appendChild(container);
+
+    const dispose = renderD3ChoroplethChart(container, {
+      width: 400,
+      height: 320,
+      rows: [
+        ["广东省", 320],
+        ["浙江省", 280],
+      ],
+      columns: ["province", "value"],
+      regionField: "province",
+      metricField: "value",
+      theme: resolveD3Theme("light"),
+      showTooltip: false,
+      colors: ["#1653a9"],
+      geoStyle: {
+        bubbleEffect: true,
+        bubbleEffectSpeed: 1.1,
+        bubbleEffectRingCount: 4,
+      },
+    });
+
+    const layer = container.querySelector('[data-testid="geo-map-bubble-layer"]');
+    expect(layer).toBeTruthy();
+    expect(container.querySelectorAll(".bubble-point").length).toBe(2);
+    expect(container.querySelectorAll(".bubble-ring").length).toBeGreaterThan(0);
+
+    dispose();
+    document.body.removeChild(container);
+  });
+
+  it("applies custom bubble effect color", () => {
+    const container = document.createElement("div");
+    container.style.width = "400px";
+    container.style.height = "320px";
+    document.body.appendChild(container);
+
+    const dispose = renderD3ChoroplethChart(container, {
+      width: 400,
+      height: 320,
+      rows: [["广东省", 320]],
+      columns: ["province", "value"],
+      regionField: "province",
+      metricField: "value",
+      theme: resolveD3Theme("light"),
+      showTooltip: false,
+      colors: ["#1653a9"],
+      geoStyle: {
+        bubbleEffect: true,
+        bubbleEffectColor: "#00ff88",
+      },
+    });
+
+    const core = container.querySelector(".bubble-core");
+    expect(core?.getAttribute("fill")).toBe("#00ff88");
+    const ring = container.querySelector(".bubble-ring");
+    expect(ring?.getAttribute("stroke")).toBe("#00ff88");
+
+    dispose();
+    document.body.removeChild(container);
+  });
+
+  it("applies region label color and font size", () => {
+    const container = document.createElement("div");
+    container.style.width = "400px";
+    container.style.height = "320px";
+    document.body.appendChild(container);
+
+    const dispose = renderD3ChoroplethChart(container, {
+      width: 400,
+      height: 320,
+      rows: [["广东省", 320]],
+      columns: ["province", "value"],
+      regionField: "province",
+      metricField: "value",
+      theme: resolveD3Theme("light"),
+      showTooltip: false,
+      colors: ["#1653a9"],
+      geoStyle: {
+        showRegionLabel: true,
+        regionLabelColor: "#ff0000",
+        regionLabelFontSize: 14,
+      },
+    });
+
+    const label = container.querySelector("text.region-label");
+    expect(label?.getAttribute("fill")).toBe("#ff0000");
+    expect(label?.style.fontSize).toBe("14px");
+
+    dispose();
+    document.body.removeChild(container);
+  });
 });

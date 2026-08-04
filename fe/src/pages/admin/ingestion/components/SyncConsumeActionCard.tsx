@@ -17,6 +17,8 @@ type SyncConsumeActionCardProps = {
   jobName?: string;
   targetTable: string;
   rowsSynced?: number | null;
+  /** 其他写入同一 target_table 的任务名（用于共用 Dataset 提示） */
+  sharedTargetJobNames?: string[];
   canManage?: boolean;
   onDismiss?: () => void;
   onUpdated?: () => void;
@@ -28,6 +30,7 @@ export function SyncConsumeActionCard({
   jobName,
   targetTable,
   rowsSynced,
+  sharedTargetJobNames = [],
   canManage = false,
   onDismiss,
   onUpdated,
@@ -132,6 +135,16 @@ export function SyncConsumeActionCard({
             <span className="font-mono text-theme-xs"> {targetTable}</span>
             {rowsSynced != null ? `（本次 ${rowsSynced} 行）` : ""}。系统会自动登记分析库；你只需一键创建 Dataset 即可出图。
           </p>
+
+          {sharedTargetJobNames.length > 0 ? (
+            <p className="text-theme-xs text-warning-700 dark:text-warning-400">
+              还有 {sharedTargetJobNames.length} 个任务也写入
+              <span className="font-mono"> {targetTable}</span>
+              （{sharedTargetJobNames.slice(0, 3).join("、")}
+              {sharedTargetJobNames.length > 3 ? "…" : ""}），将共用 Dataset
+              <span className="font-mono"> {targetTable}</span>；后跑的全量同步会覆盖分析库数据。
+            </p>
+          ) : null}
 
           {error ? (
             <p className="text-theme-sm text-error-600 dark:text-error-400">{error}</p>

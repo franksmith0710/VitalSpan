@@ -1,9 +1,4 @@
 import type { ChartGeo3dStyle, ChartGeoStyle } from "@/lib/chartDeStyle";
-import {
-  DEFAULT_GEO3D_EXTRUDE_INTENSITY,
-  DEFAULT_GEO3D_SHELL_OPACITY,
-  resolveGeoVisualMapEnabled,
-} from "@/lib/chartDeStyle";
 import { DEFAULT_MAP_3D_CHART_DE_STYLE, GEO3D_SHARED_EFFECTS_DEFAULTS } from "@/lib/defaultMap3dChartDeStyle";
 import type { ThreeGeoOrbitLayout } from "@/components/charts/engine/three/threeGeoOrbit";
 import {
@@ -16,12 +11,8 @@ import {
   removeGeo3dPlatformEffects,
   type Geo3dPlatformEffectsHandle,
 } from "@/components/charts/engine/three/geo3dPlatformEffects";
+import { resolvePlatformEffectsStyle } from "@/components/charts/engine/three/geo3dPlatformStyle";
 import {
-  buildPlatformEffectsContentSig,
-  resolvePlatformEffectsStyle,
-} from "@/components/charts/engine/three/geo3dPlatformStyle";
-import {
-  buildPointEffectsContentSig,
   resolveGeo3dPointEffects,
   resolvePointEffectsStyle,
 } from "@/components/charts/engine/three/geo3dPointEffectsStyle";
@@ -32,11 +23,6 @@ import {
 } from "@/components/charts/engine/three/geo3dPointEffects";
 import type { JoinedMapFeature } from "@/components/charts/engine/three/geo3dRegionCentroid";
 import type { HeatBlobSample } from "@/components/charts/engine/three/geo3dHeatSamples";
-import {
-  resolveGeo3dSceneCloudDensity,
-  resolveGeo3dSceneCloudHeight,
-  resolveGeo3dSceneCloudSpeed,
-} from "@/components/charts/engine/three/geo3dSceneCloudStyle";
 import * as THREE from "three";
 
 /** 对标 sc-datav Demo0/1/2 的 3D 地图视觉预设 */
@@ -522,29 +508,4 @@ export function geo3dPresetDefaults(preset: Geo3dStylePreset): Partial<ChartGeo3
     terrainTexture: base.preferTerrainTexture,
     shellOpacity: base.defaultShellOpacity,
   };
-}
-
-export function buildGeo3dStyleContentSig(
-  style: ChartGeo3dStyle,
-  geoStyle: ChartGeoStyle = {},
-): string {
-  return [
-    resolveGeo3dStylePreset(style),
-    style.extrudeIntensity ?? DEFAULT_GEO3D_EXTRUDE_INTENSITY,
-    style.quality ?? "auto",
-    style.terrainTexture !== false ? 1 : 0,
-    resolveGeo3dSceneClouds(style) ? 1 : 0,
-    resolveGeo3dSceneCloudDensity(style),
-    resolveGeo3dSceneCloudSpeed(style),
-    resolveGeo3dSceneCloudHeight(style),
-    resolveGeo3dPlatformEffects(style) ? 1 : 0,
-    buildPlatformEffectsContentSig(style, resolveGeo3dPlatformEffects(style)),
-    resolveGeo3dPointEffects(style) ? 1 : 0,
-    buildPointEffectsContentSig(style, resolveGeo3dPointEffects(style)),
-    style.shellColor?.toLowerCase() ?? "",
-    resolveGeo3dShellOpacity(style),
-    geoStyle.showRegionBorder !== false ? 1 : 0,
-    geoStyle.regionBorderColor?.toLowerCase() ?? "",
-    resolveGeoVisualMapEnabled(geoStyle, "map-3d") ? 1 : 0,
-  ].join(",");
 }

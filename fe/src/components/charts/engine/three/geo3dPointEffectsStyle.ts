@@ -156,40 +156,65 @@ export function resolvePointEffectsStyle(
   };
 }
 
-export function buildPointEffectsContentSig(
+function resolvePointEffectsSigStyle(
   style: ChartGeo3dStyle,
   masterEnabled: boolean,
-): string {
-  const resolved = resolvePointEffectsStyle(
+): ResolvedPointEffectsStyle {
+  return resolvePointEffectsStyle(
     style,
     resolveGeo3dStylePreset(style),
     true,
     masterEnabled,
   );
+}
+
+export function buildPointEffectsStructureSig(
+  style: ChartGeo3dStyle,
+  masterEnabled: boolean,
+): string {
+  const resolved = resolvePointEffectsSigStyle(style, masterEnabled);
   if (!resolved.enabled) return "off";
   return [
     resolved.layers.heatBlob ? 1 : 0,
-    resolved.heatBlobOpacity,
     resolved.heatBlobRadius,
     resolved.heatBlobBlur,
     resolved.heatBlobLift,
+    resolved.layers.pointPillar ? 1 : 0,
+    resolved.pointPillarHeightScale,
+    resolved.pointPillarBaseRingScale,
+    resolved.layers.floatingLabels ? 1 : 0,
+    resolved.floatingLabelOffset,
+  ].join("|");
+}
+
+export function buildPointEffectsVisualSig(
+  style: ChartGeo3dStyle,
+  masterEnabled: boolean,
+): string {
+  const resolved = resolvePointEffectsSigStyle(style, masterEnabled);
+  if (!resolved.enabled) return "off";
+  return [
+    resolved.heatBlobOpacity,
     resolved.heatBlobColor,
     resolved.heatBlobDimChoropleth,
-    resolved.layers.pointPillar ? 1 : 0,
     resolved.pointPillarColorTop,
     resolved.pointPillarColorBottom,
     resolved.pointPillarOpacity,
-    resolved.pointPillarHeightScale,
     resolved.pointPillarBaseRingOpacity,
-    resolved.pointPillarBaseRingScale,
     resolved.pointPillarRingSpeed,
-    resolved.layers.floatingLabels ? 1 : 0,
     resolved.floatingLabelFontSize,
     resolved.floatingLabelTextColor,
     resolved.floatingLabelBgColor,
     resolved.floatingLabelBorderColor,
-    resolved.floatingLabelOffset,
   ].join("|");
+}
+
+/** @deprecated 使用 structure + visual 拆分签名 */
+export function buildPointEffectsContentSig(
+  style: ChartGeo3dStyle,
+  masterEnabled: boolean,
+): string {
+  return `${buildPointEffectsStructureSig(style, masterEnabled)}|${buildPointEffectsVisualSig(style, masterEnabled)}`;
 }
 
 export function hasCustomPointPillarColorTop(style: ChartGeo3dStyle): boolean {

@@ -5,6 +5,8 @@ import {
   resolveGeoRegionBorder,
   resolveGeoRegionBorderColorHex,
   resolveGeoRegionBorderShow,
+  resolveGeoRegionBorderWidthScale,
+  resolveGeoRegionStrokeWidth,
 } from "./geoRegionBorderStyle";
 
 describe("geoRegionBorderStyle", () => {
@@ -30,5 +32,12 @@ describe("geoRegionBorderStyle", () => {
     const colored = buildGeoRegionBorderContentSig({ regionBorderColor: "#112233" });
     expect(on).not.toBe(off);
     expect(on).not.toBe(colored);
+  });
+
+  it("scales stroke width by regionBorderWidth", () => {
+    expect(resolveGeoRegionBorderWidthScale({ regionBorderWidth: 5 })).toBe(3);
+    const base = resolveGeoRegionStrokeWidth({}, 400);
+    const wide = resolveGeoRegionStrokeWidth({ regionBorderWidth: 2 }, 400);
+    expect(wide).toBeGreaterThan(base);
   });
 });

@@ -1,14 +1,23 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { ChartDrillChrome } from "./ChartDrillChrome";
 
+function renderChrome(ui: React.ReactElement) {
+  return render(<TooltipProvider>{ui}</TooltipProvider>);
+}
+
 describe("ChartDrillChrome", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it("renders breadcrumb and handles navigation", () => {
     const onBack = vi.fn();
     const onReset = vi.fn();
     const onNavigate = vi.fn();
 
-    render(
+    renderChrome(
       <div className="dashboard-theme-scope" style={{ ["--dashboard-drill-level-0" as string]: "#465fff" }}>
         <ChartDrillChrome
           stack={[
@@ -37,14 +46,14 @@ describe("ChartDrillChrome", () => {
   });
 
   it("renders nothing when stack is empty", () => {
-    const { container } = render(
+    const { container } = renderChrome(
       <ChartDrillChrome stack={[]} onBack={vi.fn()} onReset={vi.fn()} onNavigate={vi.fn()} />,
     );
-    expect(container).toBeEmptyDOMElement();
+    expect(container.querySelector("[data-testid='chart-drill-chrome']")).toBeNull();
   });
 
   it("renders inline notice without extra banner row", () => {
-    render(
+    renderChrome(
       <div className="dashboard-theme-scope">
         <ChartDrillChrome
           stack={[{ field: "province", value: "北京" }]}

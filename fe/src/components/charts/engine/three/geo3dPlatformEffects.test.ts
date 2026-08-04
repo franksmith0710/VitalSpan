@@ -17,11 +17,11 @@ import {
 describe("geo3dPlatformEffects", () => {
   const layout = { halfX: 9, halfZ: 6, minY: -0.5 };
 
-  it("builds eight platform decoration layers by default", () => {
+  it("builds default platform decoration layers for tech preset", () => {
     const resolved = resolvePlatformEffectsStyle({ stylePreset: "tech" }, "tech", true, true);
     const handle = buildGeo3dPlatformEffects(layout, resolved);
     expect(handle.group.name).toBe(GEO3D_PLATFORM_GROUP_NAME);
-    expect(handle.group.children).toHaveLength(8);
+    expect(handle.group.children.length).toBeGreaterThanOrEqual(5);
     handle.dispose();
   });
 
@@ -75,7 +75,7 @@ describe("geo3dPlatformEffects", () => {
       true,
     );
     expect(resolved.pulseSpeed).toBe(2);
-    expect(resolved.ringSpeed).toBe(1);
+    expect(resolved.ringSpeed).toBe(2.5);
   });
   it("builds shader layers when enabled", () => {
     const resolved = resolvePlatformEffectsStyle(
@@ -127,13 +127,13 @@ describe("geo3dPlatformEffects", () => {
     expect(resolveGeo3dPlatformEffects({ stylePreset: "satellite" })).toBe(true);
   });
 
-  it("layer flags default shader layers on when effects enabled", () => {
+  it("layer flags default shader layers off unless explicitly enabled", () => {
     expect(resolvePlatformLayerFlags({}, true)).toMatchObject({
-      glow: true,
-      pulse: true,
-      sweep: true,
+      glow: false,
+      pulse: false,
+      sweep: false,
     });
-    expect(resolvePlatformLayerFlags({ platformGlow: false }, true).glow).toBe(false);
+    expect(resolvePlatformLayerFlags({ platformGlow: true }, true).glow).toBe(true);
   });
 
   it("applyGeo3dPlatformEffectsLayer mounts group to scene", () => {

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Table2, Trash2, X } from "lucide-react";
+import { toast } from "sonner";
 import { SchemaBrowser } from "@/components/datasources/SchemaBrowser";
 import {
   qualifiedTableName,
@@ -71,6 +72,7 @@ export function DatasetTablePicker({
   prefillTable?: string;
 }) {
   const [dataSourceId, setDataSourceId] = useState("");
+  const [tableSourceId, setTableSourceId] = useState<string | null>(null);
   const [selection, setSelection] = useState<TableSelection | null>(null);
   const [selectedFilter, setSelectedFilter] = useState("");
   const focusTable = useMemo(() => parseFocusTable(prefillTable), [prefillTable]);
@@ -93,18 +95,34 @@ export function DatasetTablePicker({
   }, [items, preferredDataSourceId]);
 
   const selectedNames = useMemo(() => new Set(tables.map((t) => t.name)), [tables]);
+  const lockedSourceId = tableSourceId ?? (tables.length > 0 ? dataSourceId : null);
 
   const addTable = useCallback(
     (sel: TableSelection) => {
       const name = qualifiedTableName(sel.schema, sel.table);
       if (selectedNames.has(name) || selectedNames.has(sel.table)) return;
+      if (!tableSourceId && dataSourceId) {
+        setTableSourceId(dataSourceId);
+      }
       onChange([...tables, { name }]);
     },
-    [onChange, selectedNames, tables],
+    [dataSourceId, onChange, selectedNames, tableSourceId, tables],
   );
 
   const removeTable = (name: string) => {
-    onChange(tables.filter((t) => t.name !== name));
+    const next = tables.filter((t) => t.name !== name);
+    onChange(next);
+    if (next.length === 0) {
+      setTableSourceId(null);
+    }
+  };
+
+  const handleDataSourceChange = (nextId: string) => {
+    if (lockedSourceId && nextId !== lockedSourceId && tables.length > 0) {
+      toast.warning("已选表绑定当前数据源，请先清空已选表再切换数据源");
+      return;
+    }
+    setDataSourceId(nextId);
   };
 
   const filteredTables = useMemo(() => {
@@ -146,7 +164,7 @@ export function DatasetTablePicker({
               ) : !dataSourceId ? (
                 <Skeleton className="h-11 w-full rounded-lg" />
               ) : (
-                <Select value={dataSourceId} onValueChange={setDataSourceId}>
+                <Select value={dataSourceId} onValueChange={handleDataSourceChange}>
                   <SelectTrigger id="dataset-datasource" className="h-11" aria-label="选择数据源">
                     <SelectValue placeholder="选择数据源" />
                   </SelectTrigger>
@@ -174,7 +192,10 @@ export function DatasetTablePicker({
                   variant="ghost"
                   size="sm"
                   className="h-8 px-2 text-theme-xs text-gray-500"
-                  onClick={() => onChange([])}
+                  onClick={() => {
+                    onChange([]);
+                    setTableSourceId(null);
+                  }}
                 >
                   <Trash2 className="size-3.5" aria-hidden />
                   清空

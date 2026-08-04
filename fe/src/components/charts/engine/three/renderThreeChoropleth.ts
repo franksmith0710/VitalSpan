@@ -68,9 +68,14 @@ import {
 } from "@/components/charts/engine/three/geoMapDoubleTap";
 import { resolveGeoRegionBorder } from "@/components/charts/engine/geo/geoRegionBorderStyle";
 import { prefersNativeReducedMotion } from "@/components/charts/engine/d3/core/animate";
-import { resolveGeo3dVisualStyle, applyGeo3dSceneClouds, applyGeo3dPlatformEffectsLayer, applyGeo3dPointEffectsLayer, hasCustomGeo3dShellColor, resolveGeo3dShellColorNumber, resolveGeo3dShellOpacity, resolveGeo3dPointEffects } from "@/components/charts/engine/three/geo3dVisualStyle";
+import { resolveGeo3dVisualStyle, applyGeo3dSceneClouds, applyGeo3dPlatformEffectsLayer, applyGeo3dPointEffectsLayer, hasCustomGeo3dShellColor, resolveGeo3dShellColorNumber, resolveGeo3dShellOpacity, resolveGeo3dPointEffects, resolveGeo3dPlatformEffects, resolveGeo3dSceneClouds, resolveGeo3dStylePreset } from "@/components/charts/engine/three/geo3dVisualStyle";
 import { buildHeatBlobSamplesForMap } from "@/components/charts/engine/three/geo3dHeatSamples";
 import { resolvePointEffectsStyle } from "@/components/charts/engine/three/geo3dPointEffectsStyle";
+import {
+  applyGeo3dVisualStylePatch,
+  compareGeo3dStyleUpdate,
+} from "@/components/charts/engine/three/geo3dStylePatch";
+import { buildGeo3dLayerStructureSigs } from "@/components/charts/engine/three/geo3dStyleContentSig";
 
 function noopDispose(): void {
   /* empty */
@@ -1095,10 +1100,142 @@ export async function renderThreeChoroplethChart(
 
     setWebGLSlotDispose(webglSlotKey, disposeImpl);
 
+    let currentGeo3dStyle = geo3dStyle;
+    let currentGeoStyle = geoStyle;
+    let currentIsDark = isDark;
+
+    const mountPointEffectsLayer = async (style: typeof geo3dStyle) => {
+      if (!enablePointEffects) {
+        pointEffects?.dispose();
+        pointEffects = null;
+        return;
+      }
+      const preset = resolveGeo3dStylePreset(style);
+      const peStyle = resolvePointEffectsStyle(
+        style,
+        preset,
+        currentIsDark,
+        resolveGeo3dPointEffects(style),
+      );
+      const heatActive = peStyle.enabled && peStyle.layers.heatBlob;
+      const heatBlobSamples = heatActive
+        ? await buildHeatBlobSamplesForMap(
+            rows,
+            columns,
+            regionField,
+            metricField,
+            features,
+            project,
+          )
+        : [];
+      pointEffects?.dispose();
+      pointEffects = applyGeo3dPointEffectsLayer({
+        container,
+        domElement: renderer.domElement,
+        mapGroup,
+        meshes,
+        heatBlobSamples,
+        features,
+        project,
+        projBounds,
+        minVal,
+        maxVal,
+        plateDepth,
+        terrainCap: Boolean(terrainPack?.colorMap),
+        layout: orbitLayout,
+        geo3dStyle: style,
+        isDark: currentIsDark,
+      });
+    };
+
+    const rebuildCloudLayer = () => {
+      sceneClouds?.dispose();
+      sceneClouds = null;
+      if (!resolveGeo3dSceneClouds(currentGeo3dStyle)) return;
+      try {
+        sceneClouds = applyGeo3dSceneClouds(
+          scene,
+          orbitLayout,
+          resolveGeo3dVisualStyle(currentGeo3dStyle, currentIsDark),
+          currentGeo3dStyle,
+        );
+      } catch (cloudErr) {
+        if (import.meta.env.DEV) {
+          console.warn("[map-3d] scene clouds rebuild failed", cloudErr);
+        }
+      }
+    };
+
+    const rebuildPlatformLayer = () => {
+      platformEffects?.dispose();
+      platformEffects = null;
+      if (!resolveGeo3dPlatformEffects(currentGeo3dStyle)) return;
+      try {
+        platformEffects = applyGeo3dPlatformEffectsLayer(
+          scene,
+          orbitLayout,
+          resolveGeo3dVisualStyle(currentGeo3dStyle, currentIsDark),
+          currentGeo3dStyle,
+          currentIsDark,
+        );
+      } catch (platformErr) {
+        if (import.meta.env.DEV) {
+          console.warn("[map-3d] platform effects rebuild failed", platformErr);
+        }
+      }
+    };
+
+    const patchGeo3dStyle = async (input: {
+      geo3dStyle?: typeof geo3dStyle;
+      geoStyle?: typeof geoStyle;
+      isDark?: boolean;
+    }): Promise<boolean> => {
+      const nextGeo3d = input.geo3dStyle ?? currentGeo3dStyle;
+      const nextGeo = input.geoStyle ?? currentGeoStyle;
+      const nextDark = input.isDark ?? currentIsDark;
+      const action = compareGeo3dStyleUpdate(
+        currentGeo3dStyle,
+        currentGeoStyle,
+        nextGeo3d,
+        nextGeo,
+      );
+      if (action === "full-rebuild") return false;
+
+      if (action === "noop") return true;
+
+      if (action === "layer-rebuilt") {
+        const prevLayers = buildGeo3dLayerStructureSigs(currentGeo3dStyle, currentGeoStyle);
+        const nextLayers = buildGeo3dLayerStructureSigs(nextGeo3d, nextGeo);
+        currentGeo3dStyle = nextGeo3d;
+        currentGeoStyle = nextGeo;
+        currentIsDark = nextDark;
+        if (prevLayers.cloud !== nextLayers.cloud) rebuildCloudLayer();
+        if (prevLayers.platform !== nextLayers.platform) rebuildPlatformLayer();
+        if (prevLayers.point !== nextLayers.point) {
+          await mountPointEffectsLayer(nextGeo3d);
+        }
+      } else {
+        currentGeo3dStyle = nextGeo3d;
+        currentGeoStyle = nextGeo;
+        currentIsDark = nextDark;
+      }
+
+      applyGeo3dVisualStylePatch(
+        { meshes, sceneClouds, platformEffects, pointEffects },
+        currentGeo3dStyle,
+        currentGeoStyle,
+        currentIsDark,
+      );
+      renderFrame();
+      if (hasSceneDecor()) resumeClouds();
+      return true;
+    };
+
     return {
       engine: "three",
       webglApi: webglProbe.api ?? "none",
       resize,
+      patchGeo3dStyle,
       setAnimationActive: () => {
         /* 云/点特效生命周期由 resumeClouds / dispose 管理 */
       },

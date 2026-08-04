@@ -29,4 +29,9 @@ describe("chartInspectorCapabilities", () => {
     expect(chartHasAdvancedTab("bar")).toBe(true);
     expect(chartHasAdvancedTab("pie")).toBe(true);
   });
+
+  it("shows advanced tab for 2D map bubble effect", () => {
+    expect(chartHasAdvancedTab("map")).toBe(true);
+    expect(chartHasAdvancedTab("map-3d")).toBe(false);
+  });
 });

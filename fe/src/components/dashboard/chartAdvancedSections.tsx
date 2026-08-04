@@ -21,8 +21,28 @@ import {
   type ChartJumpConfig,
   type ChartMarkLine,
 } from "@/lib/chartDeFeatures";
+import {
+  DEFAULT_GEO_MAP_BUBBLE_COLOR,
+  DEFAULT_GEO_MAP_BUBBLE_RING_COUNT,
+  DEFAULT_GEO_MAP_BUBBLE_SPEED,
+  MAX_GEO_MAP_BUBBLE_RING_COUNT,
+  MAX_GEO_MAP_BUBBLE_SPEED,
+  MIN_GEO_MAP_BUBBLE_RING_COUNT,
+  MIN_GEO_MAP_BUBBLE_SPEED,
+  hasCustomGeoMapBubbleEffectColor,
+  resolveGeoMapBubbleEffectPanelColor,
+} from "@/components/charts/engine/geo/geoMapBubbleEffectStyle";
+import {
+  patchChartDeStyleNested,
+  readChartDeStyle,
+  readChartGeoStyle,
+  resolveEffectivePaletteId,
+} from "@/lib/chartDeStyle";
+import { resolveChartColors } from "@/lib/chartPalette";
 import { useChartInspector } from "./chartInspectorContext";
+import { DeAttrSliderField } from "./deAttrSlider";
 import { DashboardPickerField } from "./DashboardPickerField";
+import { WIDGET_BORDER_RECOMMENDED } from "./dashboardStyleConfig";
 import {
   INSPECTOR_CTRL,
   INSPECTOR_HINT,
@@ -375,6 +395,74 @@ export function ChartAdvancedJumpSection() {
             checked={jump.openInNewTab !== false}
             onCheckedChange={(openInNewTab) => patchJump({ openInNewTab })}
           />
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+/** 2D 区域地图 · 高级「气泡动效」（对标 DataEase 水波 / 速率 / 环数） */
+export function ChartAdvancedMapBubbleSection() {
+  const { cfg, onChange, dashboardStyle } = useChartInspector();
+  const deStyle = readChartDeStyle(cfg);
+  const geo = readChartGeoStyle(deStyle);
+  const enabled = geo.bubbleEffect === true;
+  const paletteId = resolveEffectivePaletteId(cfg, dashboardStyle?.paletteId);
+  const accentColor = resolveChartColors(paletteId)[0];
+  const bubbleColorFallback = resolveGeoMapBubbleEffectPanelColor({}, { accentColor });
+
+  const patchGeo = (patch: Parameters<typeof patchChartDeStyleNested>[2]) =>
+    onChange(patchChartDeStyleNested(cfg, "geo", patch));
+
+  return (
+    <div className={INSPECTOR_SECTION_GAP}>
+      <InspectorSwitchRow
+        label="气泡动效"
+        checked={enabled}
+        onCheckedChange={(bubbleEffect) =>
+          patchGeo({
+            bubbleEffect,
+            ...(bubbleEffect ? { bubbleEffectType: geo.bubbleEffectType ?? "ripple" } : {}),
+          })
+        }
+        aria-label="气泡动效"
+      />
+      {enabled ? (
+        <>
+          <InspectorFieldRow label="动效类型">
+            <span className="text-theme-xs text-gray-600 dark:text-gray-300">水波</span>
+          </InspectorFieldRow>
+          <InspectorInlineColorRow
+            label="水波颜色"
+            value={resolveGeoMapBubbleEffectPanelColor(geo, { accentColor })}
+            fallbackValue={bubbleColorFallback}
+            allowClear={hasCustomGeoMapBubbleEffectColor(geo)}
+            swatches={WIDGET_BORDER_RECOMMENDED}
+            onChange={(next) => patchGeo({ bubbleEffectColor: next })}
+          />
+          <DeAttrSliderField
+            label="动效速率"
+            compact
+            value={geo.bubbleEffectSpeed}
+            fallback={DEFAULT_GEO_MAP_BUBBLE_SPEED}
+            min={MIN_GEO_MAP_BUBBLE_SPEED}
+            max={MAX_GEO_MAP_BUBBLE_SPEED}
+            step={0.1}
+            ariaLabel="动效速率"
+            onChange={(bubbleEffectSpeed) => patchGeo({ bubbleEffectSpeed })}
+          />
+          <DeAttrSliderField
+            label="水波环数"
+            compact
+            value={geo.bubbleEffectRingCount}
+            fallback={DEFAULT_GEO_MAP_BUBBLE_RING_COUNT}
+            min={MIN_GEO_MAP_BUBBLE_RING_COUNT}
+            max={MAX_GEO_MAP_BUBBLE_RING_COUNT}
+            step={0.1}
+            ariaLabel="水波环数"
+            onChange={(bubbleEffectRingCount) => patchGeo({ bubbleEffectRingCount })}
+          />
+          <p className={INSPECTOR_HINT}>在有数据的区域中心显示扩散水波；速率越高动画越快。</p>
         </>
       ) : null}
     </div>

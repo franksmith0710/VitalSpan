@@ -13,8 +13,10 @@ import {
   ChartAdvancedConditionalSection,
   ChartAdvancedFeatureSettings,
   ChartAdvancedJumpSection,
+  ChartAdvancedMapBubbleSection,
   ChartAdvancedMarkLinesSection,
 } from "./chartAdvancedSections";
+import { readChartDeStyle, readChartGeoStyle } from "@/lib/chartDeStyle";
 
 type ChartAdvancedPanelProps = Record<string, never>;
 
@@ -77,6 +79,17 @@ export function ChartAdvancedPanel(_props: ChartAdvancedPanelProps) {
         title: "跳转设置",
         defaultOpen: jump.enabled,
         content: <ChartAdvancedJumpSection />,
+      });
+    }
+
+    if (cfg.chartType === "map") {
+      const geo = readChartGeoStyle(readChartDeStyle(cfg));
+      list.push({
+        id: "map-bubble",
+        title: "气泡动效",
+        defaultOpen: geo.bubbleEffect === true,
+        badge: geo.bubbleEffect ? "开" : undefined,
+        content: <ChartAdvancedMapBubbleSection />,
       });
     }
 

@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import type { ChartGeoStyle } from "@/lib/chartDeStyle";
-import { geoSurfaceColors } from "@/components/charts/engine/geo/geoSurfaceColors";
+import { geoStrokeWidth, geoSurfaceColors } from "@/components/charts/engine/geo/geoSurfaceColors";
 import type { Geo3dStylePreset } from "@/components/charts/engine/three/geo3dVisualStyle";
 import { resolvePresetRegionBorderDefaults } from "@/components/charts/engine/three/geo3dVisualStyle";
 
@@ -36,6 +36,26 @@ function brightenHex(hex: string, amount: number): number {
 /** 当前地图层级下的行政区边界（全国→省界，省级→市界…） */
 export function resolveGeoRegionBorderShow(geo: ChartGeoStyle = {}): boolean {
   return geo.showRegionBorder !== false;
+}
+
+export const DEFAULT_GEO_REGION_BORDER_WIDTH_SCALE = 1;
+export const MIN_GEO_REGION_BORDER_WIDTH_SCALE = 0.5;
+export const MAX_GEO_REGION_BORDER_WIDTH_SCALE = 3;
+
+function clamp(n: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, n));
+}
+
+export function resolveGeoRegionBorderWidthScale(geo: ChartGeoStyle = {}): number {
+  return clamp(
+    geo.regionBorderWidth ?? DEFAULT_GEO_REGION_BORDER_WIDTH_SCALE,
+    MIN_GEO_REGION_BORDER_WIDTH_SCALE,
+    MAX_GEO_REGION_BORDER_WIDTH_SCALE,
+  );
+}
+
+export function resolveGeoRegionStrokeWidth(geo: ChartGeoStyle, chartWidth: number): number {
+  return geoStrokeWidth(chartWidth) * resolveGeoRegionBorderWidthScale(geo);
 }
 
 export function hasCustomGeoRegionBorderColor(geo: ChartGeoStyle = {}): boolean {
@@ -111,5 +131,6 @@ export function buildGeoRegionBorderContentSig(geo: ChartGeoStyle = {}): string 
   return [
     resolveGeoRegionBorderShow(geo) ? 1 : 0,
     geo.regionBorderColor?.toLowerCase() ?? "",
+    geo.regionBorderWidth ?? "",
   ].join(",");
 }

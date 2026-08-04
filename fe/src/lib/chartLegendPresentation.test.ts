@@ -20,7 +20,7 @@ describe("chartLegendPresentation", () => {
   it("exposes expanded legend icon and font size presets", () => {
     expect(CHART_LEGEND_ICON_SIZE_OPTIONS.at(-1)).toBe(32);
     expect(CHART_LEGEND_FONT_SIZE_OPTIONS.at(-1)).toBe(48);
-    expect(CHART_LEGEND_FONT_SIZE_OPTIONS[0]).toBe(8);
+    expect(CHART_LEGEND_FONT_SIZE_OPTIONS[0]).toBe(6);
   });
 
   it("infers vertical orient for left/right position", () => {

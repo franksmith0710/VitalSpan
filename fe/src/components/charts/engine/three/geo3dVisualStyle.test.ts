@@ -4,7 +4,6 @@ import { GEO3D_SCENE_CLOUDS_GROUP_NAME } from "./geo3dSceneClouds";
 import {
   applyGeo3dSceneClouds,
   applyGeo3dPlatformEffectsLayer,
-  buildGeo3dStyleContentSig,
   geo3dPresetDefaults,
   hasCustomGeo3dShellColor,
   resolveGeo3dPlatformEffects,
@@ -15,6 +14,11 @@ import {
   resolveGeo3dVisualStyle,
   resolvePresetRegionBorderDefaults,
 } from "./geo3dVisualStyle";
+import {
+  buildGeo3dStructureContentSig,
+  buildGeo3dStyleContentSig,
+  buildGeo3dVisualContentSig,
+} from "./geo3dStyleContentSig";
 
 describe("geo3dVisualStyle", () => {
   it("defaults to satellite preset", () => {
@@ -138,11 +142,17 @@ describe("geo3dVisualStyle", () => {
     const a = buildGeo3dStyleContentSig({ stylePreset: "satellite", shellOpacity: 1 });
     const b = buildGeo3dStyleContentSig({ stylePreset: "satellite", shellOpacity: 0.5 });
     expect(a).not.toBe(b);
+    const structureA = buildGeo3dStructureContentSig({ stylePreset: "satellite", shellOpacity: 1 });
+    const structureB = buildGeo3dStructureContentSig({ stylePreset: "satellite", shellOpacity: 0.5 });
+    expect(structureA).toBe(structureB);
+    const visualA = buildGeo3dVisualContentSig({ stylePreset: "satellite", shellOpacity: 1 });
+    const visualB = buildGeo3dVisualContentSig({ stylePreset: "satellite", shellOpacity: 0.5 });
+    expect(visualA).not.toBe(visualB);
   });
 
-  it("content sig changes when cloud tuning changes", () => {
-    const a = buildGeo3dStyleContentSig({ stylePreset: "tech", sceneCloudDensity: 0.4 });
-    const b = buildGeo3dStyleContentSig({ stylePreset: "tech", sceneCloudDensity: 0.9 });
+  it("structure sig changes when cloud density changes", () => {
+    const a = buildGeo3dStructureContentSig({ stylePreset: "tech", sceneCloudDensity: 0.4 });
+    const b = buildGeo3dStructureContentSig({ stylePreset: "tech", sceneCloudDensity: 0.9 });
     expect(a).not.toBe(b);
   });
 
@@ -171,16 +181,19 @@ describe("geo3dVisualStyle", () => {
     expect(on).not.toBe(off);
   });
 
-  it("content sig changes when platform color changes", () => {
-    const a = buildGeo3dStyleContentSig({
-      stylePreset: "tech",
+  it("visual sig changes when platform color changes without structure change", () => {
+    const base = {
+      stylePreset: "tech" as const,
       platformEffects: true,
-    });
-    const b = buildGeo3dStyleContentSig({
-      stylePreset: "tech",
-      platformEffects: true,
+    };
+    const visualA = buildGeo3dVisualContentSig(base);
+    const visualB = buildGeo3dVisualContentSig({
+      ...base,
       platformRippleColor: "#ff6600",
     });
-    expect(a).not.toBe(b);
+    expect(visualA).not.toBe(visualB);
+    expect(buildGeo3dStructureContentSig(base)).toBe(
+      buildGeo3dStructureContentSig({ ...base, platformRippleColor: "#ff6600" }),
+    );
   });
 });

@@ -1,4 +1,5 @@
 import { SCREEN_ACCENT } from "@/lib/screenTokens";
+import { randomId } from "@/lib/randomId";
 
 /** 流光高亮描边宽度（mask 裁切段，贴可见线） */
 export const BORDER_FLOW_GLOW_STROKE_PX = 1;
@@ -52,7 +53,7 @@ export function createScreenBorderSparkle(
   partial?: Partial<ScreenBorderSparkleConfig>,
 ): ScreenBorderSparkleConfig {
   return {
-    id: partial?.id ?? crypto.randomUUID(),
+    id: partial?.id ?? randomId(),
     color: partial?.color ?? DEFAULT_SCREEN_BORDER_SPARKLE.color,
     size: partial?.size ?? DEFAULT_SCREEN_BORDER_SPARKLE.size,
     speed: partial?.speed ?? DEFAULT_SCREEN_BORDER_SPARKLE.speed,
@@ -88,10 +89,17 @@ export function normalizeScreenBorderSparkleStyle(
 ): Required<ScreenBorderSparkleStyleConfig> & {
   sparkles: Required<ScreenBorderSparkleConfig>[];
 } {
+  const enabled = raw?.enabled ?? false;
   const sparkles = (raw?.sparkles ?? []).map((item) => normalizeScreenBorderSparkle(item));
+  const resolvedSparkles =
+    sparkles.length > 0
+      ? sparkles
+      : enabled
+        ? [normalizeScreenBorderSparkle(createScreenBorderSparkle())]
+        : [];
   return {
-    enabled: raw?.enabled ?? false,
-    sparkles: sparkles.length > 0 ? sparkles : [normalizeScreenBorderSparkle(createScreenBorderSparkle())],
+    enabled,
+    sparkles: resolvedSparkles,
   };
 }
 

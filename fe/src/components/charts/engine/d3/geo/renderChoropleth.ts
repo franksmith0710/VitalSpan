@@ -11,14 +11,21 @@ import {
   buildGeoSurfacePalette,
   colorForGeoHover,
   colorForGeoValue,
-  geoStrokeWidth,
   resolveGeoMapOpacity,
 } from "@/components/charts/engine/geo/geoSurfaceColors";
-import { resolveGeoRegionBorder } from "@/components/charts/engine/geo/geoRegionBorderStyle";
+import {
+  resolveGeoRegionBorder,
+  resolveGeoRegionStrokeWidth,
+} from "@/components/charts/engine/geo/geoRegionBorderStyle";
+import {
+  resolveGeoRegionLabelColorHex,
+  resolveGeoRegionLabelFontSize,
+} from "@/components/charts/engine/geo/geoRegionLabelStyle";
+import { resolveGeoMapBubbleEffect } from "@/components/charts/engine/geo/geoMapBubbleEffectStyle";
+import { mountGeoMapBubbleRippleLayer } from "@/components/charts/engine/geo/geoMapBubbleRippleLayer";
 import { mountGeoZoomControls } from "@/components/charts/engine/geo/geoZoomControls";
 import { createTooltipLayer, hideTooltip, showMergedTooltip } from "@/components/charts/engine/d3/core/tooltipLayer";
 import { chartTransition, prefersReducedMotion } from "@/components/charts/engine/d3/core/animate";
-import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import type { D3GeoRenderConfig } from "@/components/charts/engine/d3/types";
 
 export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRenderConfig): () => void {
@@ -49,7 +56,9 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
   const showRegionLabel = geoStyle.showRegionLabel === true;
   const showVisualMap = geoStyle.visualMap !== false;
   const regionBorder = resolveGeoRegionBorder(geoStyle, isDark);
-  const strokeWidth = geoStrokeWidth(width);
+  const strokeWidth = resolveGeoRegionStrokeWidth(geoStyle, width);
+  const regionLabelColor = resolveGeoRegionLabelColorHex(geoStyle, theme);
+  const regionLabelFontSize = resolveGeoRegionLabelFontSize(geoStyle);
 
   if (width <= 0 || height <= 0) {
     container.replaceChildren();
@@ -240,6 +249,17 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
     hideTooltip(tooltip);
   });
 
+  const bubbleEffect = resolveGeoMapBubbleEffect(geoStyle, {
+    accentColor: config.colors?.[0],
+  });
+  const detachBubbleLayer = mountGeoMapBubbleRippleLayer({
+    mapLayer,
+    features,
+    pathGen,
+    effect: bubbleEffect,
+    maxVal,
+  });
+
   if (showRegionLabel) {
     mapLayer
       .selectAll("text.region-label")
@@ -252,8 +272,8 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
       })
       .attr("text-anchor", "middle")
       .attr("dy", "0.35em")
-      .attr("fill", resolveLabelFill(theme))
-      .style("font-size", "9px")
+      .attr("fill", regionLabelColor)
+      .style("font-size", `${regionLabelFontSize}px`)
       .style("pointer-events", "none")
       .text((d) => d.name);
   }
@@ -345,6 +365,7 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
 
   return () => {
     detachZoom();
+    detachBubbleLayer();
     container.replaceChildren();
   };
 }

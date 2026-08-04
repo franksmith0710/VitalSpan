@@ -176,7 +176,12 @@ export function VizComponentEditPage() {
         <PageErrorBanner message="组件不存在或无权访问" />
       ) : (
         <VizComponentEditLayout
-          preview={<VizComponentLivePreview widget={widget} />}
+          preview={
+            <VizComponentLivePreview
+              widget={widget}
+              onChartConfigChange={(chartConfig) => patchWidget({ chartConfig })}
+            />
+          }
           rail={
             <ComponentEditRail
               componentId={component.id}
