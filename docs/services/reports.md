@@ -5,7 +5,7 @@
 | 模块路径 | `backend/app/reports/` |
 | PRD | [F08-RPT](../automate/prd/F08-RPT.md) · RPT-001 ~ RPT-007 |
 | 里程碑 | M6 / M10 / M12 |
-| 状态 | **部分 → ToB 完善（持久化 ORM · 多通道 · 多计划 UI · 2026-08-04）** |
+| 状态 | **P3-SMOKE 可签收（ORM 持久化 · RenderSpec 真导出 · Dataset 桥接 · 2026-08-04）** |
 
 ## 职责
 
@@ -18,12 +18,13 @@
 
 | In | Out |
 |----|-----|
-| `reports/catalog/` 模板树内存 registry + 循环/深度守卫 + M7 ACL | 通用查询引擎（→ `query`） |
-| `reports/scheduler/` 调度实例 FSM + cron 五段校验 + semi-real 执行（未配 SMTP 诚实失败） | APScheduler 生产执行器（远期） |
-| `reports/extension/` 模板节点扩展配置（metrics/filters CRUD） | 真实 PDF/Word 渲染、fe 展现 |
+| `reports/catalog/` 模板树 registry（memory \| db `RPT_METADATA_STORE`）+ 循环/深度守卫 + M7 ACL | 通用查询引擎（→ `query`） |
+| `reports/persistence/` catalog/extension/prefab/templates/integration_exports ORM + repo 抽象 | Jasper WYSIWYG 设计器 |
+| `reports/render/` RenderSpec → PDF/Excel/Word 真字节（reportlab/openpyxl/OOXML） | 在线地图/瓦片 |
+| `reports/scheduler/` 调度 FSM + semi-real 执行 + 模板/看板附件投递 | Celery 队列、飞书 webhook |
+| `reports/extension/` metrics/filters；metric 级 `queryMode=sql\|dataset` + `boundConfigId` | Dataset 建模 UI（→ `metadata/dataset`） |
 | `reports/batch/` 批量创建模板节点 + 幂等守卫 | 打印排版 UI（前端 `/admin/reports/*`） |
-| `reports/engine/` render run L1（`POST /reports/templates/{id}/run`） | 导出引擎异步任务（远期） |
-| | |
+| `reports/engine/` render run + `export_template_bytes` | 组合调度粒度枚举 |
 
 ## 依赖
 
@@ -68,7 +69,9 @@
 | `extension/service.py` | 模板节点扩展配置 CRUD（metrics/filters/revision） | RPT-006 | L1 已实现 r54 |
 | `batch/service.py` | 批量创建模板 + Idempotency-Key 守卫 | RPT-007 | L1 已实现 r54 |
 | `engine/service.py` | validate + `run_template`（M3-LITE：`dataSourceId` 驱动 `engine/execute`；无 ds placeholder 回归 r60） | RPT-001 | M3-LITE 已实现 r233 |
-| `engine/execute.py` | extension metrics → `query.execute_query`；`build_sections_from_extension` | RPT-001 | M3-LITE 已实现 r233 |
+| `engine/execute.py` | extension metrics → SQL `execute_query` **或** Dataset `execute_dataset_from_config` | RPT-001/006 | P3 已实现 |
+| `reports/persistence/` | `RPT_METADATA_STORE=memory\|db`；catalog/extension/prefab/templates 持久化 | RPT-006 | P3 已实现 |
+| `reports/render/` | `render_from_spec` → PDF/Excel/Word bytes | RPT-001/003 | P3 已实现 |
 | `engine/acl.py` | run 访问控制 + `set_user_engine_scope` enterprise 白名单 | RPT-001 | companion 已实现 r66 |
 | `engine/probe.py` | `probe_run_template_budget_ms` ≤50ms | RPT-001 | companion 已实现 r66 |
 | `prefab/service.py` | 预制报表绑定 validate/upsert/list（内存 store） | RPT-002 | L1 已实现 r62 |

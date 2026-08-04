@@ -110,6 +110,30 @@ def mock_execute_schedule(
     return out
 
 
+def _export_template_attachments(
+    source_id: uuid.UUID,
+    formats: list[str],
+    actor: UserContext,
+) -> tuple[str, str | None, list[tuple[bytes, str, str]], str | None]:
+    from app.reports.engine.service import export_template_bytes
+    from app.reports.render.render_from_spec import content_type_for
+
+    attachments: list[tuple[bytes, str, str]] = []
+    artifact_ref = f"semi://reports/template/{source_id}"
+    export_error: str | None = None
+    for fmt in formats:
+        try:
+            data = export_template_bytes(source_id, fmt, actor)
+            mime = content_type_for(fmt)
+            ext = "docx" if fmt == "word" else fmt
+            attachments.append((data, mime, f"report-{source_id}.{ext}"))
+        except Exception as exc:
+            export_error = str(exc)
+            break
+    kind = "template_render" if attachments else None
+    return artifact_ref, kind, attachments, export_error
+
+
 def _export_dashboard_attachments(
     source_id: uuid.UUID,
     formats: list[str],
@@ -169,6 +193,11 @@ def semi_real_execute_schedule(
     if source_type in {"dashboard", "data_screen"} and source_id is not None:
         formats = row.get("attachment_formats") or ["pdf"]
         artifact_ref, artifact_kind, attachments, export_error = _export_dashboard_attachments(
+            source_id, formats, actor,
+        )
+    elif source_type == "template" and source_id is not None:
+        formats = row.get("attachment_formats") or ["pdf"]
+        artifact_ref, artifact_kind, attachments, export_error = _export_template_attachments(
             source_id, formats, actor,
         )
     if export_error:

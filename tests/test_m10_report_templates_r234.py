@@ -50,17 +50,17 @@ def _sqlite():
     fastapi_app.dependency_overrides.clear()
 
 
+_VIEWER_USER_ID = "00000000-0000-0000-0000-000000000099"
+
+
 @pytest.fixture(autouse=True)
 def _reset_report_stores():
-    catalog_snapshot = dict(catalog_service._nodes)
-    template_snapshot = dict(template_service._store)
-    catalog_service._nodes.clear()
-    template_service._store.clear()
+    from app.reports.persistence.store import reset_metadata_for_tests
+
+    reset_metadata_for_tests()
     yield
-    catalog_service._nodes.clear()
-    catalog_service._nodes.update(catalog_snapshot)
-    template_service._store.clear()
-    template_service._store.update(template_snapshot)
+    reset_metadata_for_tests()
+    fastapi_app.dependency_overrides.clear()
 
 
 @pytest.fixture
@@ -136,12 +136,17 @@ def test_rpt003_05_viewer_delete_forbidden(client: TestClient):
     _put_template(client, "v_only")
 
     async def _viewer() -> UserContext:
-        return UserContext(id="v", username="v", roles=["viewer"])
+        return UserContext(id=_VIEWER_USER_ID, username="v", roles=["viewer"])
 
     fastapi_app.dependency_overrides[get_current_user] = _viewer
-    resp = client.delete("/api/v1/reports/templates/v_only", headers=jwt_auth_headers(user_id="v", username="viewer"))
-    fastapi_app.dependency_overrides.clear()
-    assert resp.status_code == 403
+    try:
+        resp = client.delete(
+            "/api/v1/reports/templates/v_only",
+            headers=jwt_auth_headers(user_id=_VIEWER_USER_ID, username="viewer"),
+        )
+        assert resp.status_code == 403
+    finally:
+        fastapi_app.dependency_overrides.clear()
 
 
 def test_rpt003_06_duplicate_block_422(client: TestClient):

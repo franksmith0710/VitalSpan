@@ -39,6 +39,7 @@ export function TemplateDetailPanel({ node, readOnly }: { node: CatalogNode; rea
   const [tab, setTab] = useState("basic");
   const [metricLabel, setMetricLabel] = useState("");
   const [metricKey, setMetricKey] = useState("");
+  const [queryMode, setQueryMode] = useState<"sql" | "dataset">("sql");
   const [changeNote, setChangeNote] = useState("");
   const { saveExtension } = useReportTemplates(null);
   const extQuery = useCatalogExtension(node.id);
@@ -51,7 +52,9 @@ export function TemplateDetailPanel({ node, readOnly }: { node: CatalogNode; rea
       return;
     }
     const nextMetrics =
-      metricKey && metricLabel ? [...metrics, { key: metricKey, label: metricLabel, visible: true }] : metrics;
+      metricKey && metricLabel
+        ? [...metrics, { key: metricKey, label: metricLabel, visible: true, queryMode }]
+        : metrics;
     saveExtension.mutate(
       {
         nodeId: node.id,
@@ -139,7 +142,14 @@ export function TemplateDetailPanel({ node, readOnly }: { node: CatalogNode; rea
                     className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3 text-theme-sm dark:border-gray-800"
                   >
                     <span className="font-medium text-gray-800 dark:text-white/90">{m.label}</span>
-                    <code className="text-theme-xs text-gray-500 dark:text-gray-400">{m.key}</code>
+                    <div className="flex items-center gap-2">
+                      {"queryMode" in m && m.queryMode === "dataset" ? (
+                        <Badge variant="light" color="info">
+                          Dataset
+                        </Badge>
+                      ) : null}
+                      <code className="text-theme-xs text-gray-500 dark:text-gray-400">{m.key}</code>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -154,6 +164,18 @@ export function TemplateDetailPanel({ node, readOnly }: { node: CatalogNode; rea
                   <div className="grid gap-2">
                     <Label htmlFor="metric-label">显示名</Label>
                     <Input id="metric-label" value={metricLabel} onChange={(e) => setMetricLabel(e.target.value)} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="query-mode">查数模式</Label>
+                    <select
+                      id="query-mode"
+                      className="h-10 rounded-lg border border-gray-200 bg-transparent px-3 text-theme-sm dark:border-gray-800"
+                      value={queryMode}
+                      onChange={(e) => setQueryMode(e.target.value as "sql" | "dataset")}
+                    >
+                      <option value="sql">SQL</option>
+                      <option value="dataset">Dataset</option>
+                    </select>
                   </div>
                 </div>
                 <div className="grid gap-2">

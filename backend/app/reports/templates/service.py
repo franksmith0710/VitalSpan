@@ -11,9 +11,11 @@ from app.reports.templates.schemas import (
     TemplateValidateOut,
 )
 
+from app.reports.persistence import template_repo, memory_stores
+
 _VALID_BLOCKS = frozenset({"sql", "table", "chart"})
 _VALID_CHART_TYPES = frozenset({"line", "bar", "pie"})
-_store: dict[str, dict] = {}
+_store = memory_stores.template_definitions  # test compat
 
 
 def _default_storage_ref(key: str, fmt: str) -> str:
@@ -91,20 +93,21 @@ def upsert_template_definition(
     if key != payload.template_key:
         raise TemplateDefError("RPT_TEMPLATE_KEY_MISMATCH", "path template_key mismatch", 422)
     item = _validate_definition(payload)
-    _store[key] = item.model_dump(by_alias=True, mode="json")
-    return _with_export_hook(_store[key])
+    template_repo.save_template(key, item.model_dump(by_alias=True, mode="json"))
+    return _with_export_hook(template_repo.get_template(key) or {})
 
 
 def get_template_definition(key: str, actor: UserContext) -> TemplateDefinitionOut:
     assert_template_read_access(actor, key)
-    if key not in _store:
+    raw = template_repo.get_template(key)
+    if raw is None:
         raise TemplateDefError("RPT_TEMPLATE_NOT_FOUND", f"templateKey not found: {key}", 404)
-    return _with_export_hook(_store[key])
+    return _with_export_hook(raw)
 
 
 def list_template_definitions(actor: UserContext, prefix: str | None = None) -> list[TemplateDefinitionOut]:
     assert_template_read_access(actor, "*")
-    items = [_with_export_hook(v) for v in _store.values()]
+    items = [_with_export_hook(v) for v in template_repo.all_templates().values()]
     if prefix:
         items = [i for i in items if i.template_key.startswith(prefix)]
     return sorted(items, key=lambda x: x.template_key)
@@ -112,10 +115,10 @@ def list_template_definitions(actor: UserContext, prefix: str | None = None) -> 
 
 def delete_template_definition(key: str, actor: UserContext) -> None:
     assert_template_write_access(actor, key)
-    if key not in _store:
+    if template_repo.get_template(key) is None:
         raise TemplateDefError("RPT_TEMPLATE_NOT_FOUND", f"templateKey not found: {key}", 404)
     from app.reports.catalog import service as catalog_service
 
     if catalog_service.count_nodes_by_template_key(key) > 0:
         raise TemplateDefError("RPT_TEMPLATE_IN_USE", "Template is referenced by catalog", 409)
-    del _store[key]
+    template_repo.delete_template(key)

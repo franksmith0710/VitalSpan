@@ -11,10 +11,7 @@ from app.auth.deps import UserContext, get_current_user
 from app.core.config import get_settings
 from app.main import app as fastapi_app
 from app.reports.batch import export_jobs as batch_export_jobs
-from app.reports.catalog import service as catalog_service
-from app.reports.prefab import service as prefab_service
 from app.reports.scheduler.delivery_adapter import deliver_artifact
-from app.reports.templates import service as template_service
 from jwt_auth import AUTH, jwt_auth_headers
 
 _SQLITE = "sqlite+pysqlite:///file:ff_rpt_e95d?mode=memory&cache=shared&uri=true"
@@ -53,23 +50,16 @@ def _sqlite():
 
 @pytest.fixture(autouse=True)
 def _reset_stores():
-    catalog_snapshot = dict(catalog_service._nodes)
-    template_snapshot = dict(template_service._store)
-    prefab_snapshot = dict(prefab_service._store)
+    from app.reports.persistence.store import reset_metadata_for_tests
+
+    reset_metadata_for_tests()
     jobs_snapshot = dict(batch_export_jobs._jobs)
-    catalog_service._nodes.clear()
-    template_service._store.clear()
-    prefab_service._store.clear()
     batch_export_jobs._jobs.clear()
     yield
-    catalog_service._nodes.clear()
-    catalog_service._nodes.update(catalog_snapshot)
-    template_service._store.clear()
-    template_service._store.update(template_snapshot)
-    prefab_service._store.clear()
-    prefab_service._store.update(prefab_snapshot)
+    reset_metadata_for_tests()
     batch_export_jobs._jobs.clear()
     batch_export_jobs._jobs.update(jobs_snapshot)
+    fastapi_app.dependency_overrides.clear()
 
 
 @pytest.fixture

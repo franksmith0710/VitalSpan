@@ -97,7 +97,9 @@
   - [x] render-spec 可见指标/修订历史/内存持久化快照（r55 companion：`build_extension_render_spec` + revisions + snapshot）
   - [x] batch compare 联动（r58 companion：batch yoy render-spec compareMetrics + `probe_render_spec_budget_ms` ≤50ms）
   - [x] M10 Admin 扩展配置 UI（r234：`TemplateDetailPanel` 扩展 Tab metrics/changeNote PUT + 预览 Tab render-spec JSON；folder 节点 extension 422 回归）
-  - [ ] 真实 DB 持久化与运行时渲染展现（companion · **演化建议 / 非阻塞**）
+  - [x] P3 DB 持久化（`RPT_METADATA_STORE=db` + migration 0034 + `persistence/store` repo 抽象；`test_report_metadata_db_store.py`）
+  - [x] P3 Dataset 桥接（metric `queryMode` + `datasetId`/`boundConfigId` → `execute_dataset_from_config`；FE SQL/Dataset 切换）
+  - [x] P3 RenderSpec 真导出（`reports/render/` PDF/Excel/Word；调度模板附件 + IF-03）
 - **代码锚点**：`backend/app/reports/extension/` · `fe/src/pages/admin/reports/components/TemplateDetailPanel.tsx` · `fe/src/pages/admin/reports/useReportTemplates.ts` · `tests/test_rpt_gov_meta_conn_r55.py` T-RPT-R55-01~08 · `tests/test_m10_report_templates_r234.py` T-RPT-R234-006-01~03
 - **演化建议**：r234 闭合 Admin 扩展配置与 render-spec 预览 UI；真实 DB 持久化与运行时渲染展现留 companion
 - **里程碑对齐**：M10 · 已完成 · 2026-07-07

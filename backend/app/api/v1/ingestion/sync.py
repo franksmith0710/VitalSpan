@@ -64,7 +64,7 @@ class SyncJobCreate(BaseModel):
     sync_mode: Literal["full", "incremental"] = "full"
     primary_key: str | None = None
     incremental_column: str | None = None
-    source_mode: Literal["inline", "datasource"] = "inline"
+    source_mode: Literal["inline", "datasource"] = "datasource"
     source_data_source_id: uuid.UUID | None = None
     source: SourceConnectionIn | None = None
     source_table: str | None = None
@@ -95,16 +95,15 @@ class SyncJobCreate(BaseModel):
     @model_validator(mode="after")
     def validate_modes(self) -> SyncJobCreate:
         _validate_incremental_fields(self.sync_mode, self.primary_key, self.incremental_column)
-        if self.source_mode == "datasource":
-            if self.source_data_source_id is None:
-                raise ValueError("数据源模式须指定 source_data_source_id")
-            table = self.source_table or (self.source.table if self.source else None)
-            if not table:
-                raise ValueError("须指定 source_table")
-            validate_identifier(table)
-            object.__setattr__(self, "source_table", table)
-        elif self.source is None:
-            raise ValueError("内联模式须指定 source")
+        if self.source_mode == "inline":
+            raise ValueError("内联模式已停用，请在连接管理登记 MySQL 后使用 datasource 模式")
+        if self.source_data_source_id is None:
+            raise ValueError("须指定 source_data_source_id")
+        table = self.source_table or (self.source.table if self.source else None)
+        if not table:
+            raise ValueError("须指定 source_table")
+        validate_identifier(table)
+        object.__setattr__(self, "source_table", table)
         return self
 
 
@@ -116,7 +115,7 @@ class SyncJobUpdate(BaseModel):
     sync_mode: Literal["full", "incremental"] = "full"
     primary_key: str | None = None
     incremental_column: str | None = None
-    source_mode: Literal["inline", "datasource"] = "inline"
+    source_mode: Literal["inline", "datasource"] = "datasource"
     source_data_source_id: uuid.UUID | None = None
     source: SourceConnectionUpdateIn | None = None
     source_table: str | None = None
@@ -147,16 +146,15 @@ class SyncJobUpdate(BaseModel):
     @model_validator(mode="after")
     def validate_modes(self) -> SyncJobUpdate:
         _validate_incremental_fields(self.sync_mode, self.primary_key, self.incremental_column)
-        if self.source_mode == "datasource":
-            if self.source_data_source_id is None:
-                raise ValueError("数据源模式须指定 source_data_source_id")
-            table = self.source_table or (self.source.table if self.source else None)
-            if not table:
-                raise ValueError("须指定 source_table")
-            validate_identifier(table)
-            object.__setattr__(self, "source_table", table)
-        elif self.source is None:
-            raise ValueError("内联模式须指定 source")
+        if self.source_mode == "inline":
+            raise ValueError("内联模式已停用，请在连接管理登记 MySQL 后使用 datasource 模式")
+        if self.source_data_source_id is None:
+            raise ValueError("须指定 source_data_source_id")
+        table = self.source_table or (self.source.table if self.source else None)
+        if not table:
+            raise ValueError("须指定 source_table")
+        validate_identifier(table)
+        object.__setattr__(self, "source_table", table)
         return self
 
 

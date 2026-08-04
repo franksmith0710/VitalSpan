@@ -2,9 +2,15 @@ from __future__ import annotations
 
 from typing import Any
 
-import pymysql
-
-from app.ingestion.models import INGESTION_MAX_ROWS, SyncJob, decrypt_password
+from app.ingestion.models import SyncJob
+from app.ingestion.sync_fetch_native import fetch_native_rows
+from app.ingestion.sync_fetch_sql import fetch_sql_rows
+from app.ingestion.sync_source_capabilities import (
+    is_sync_fetch_implemented,
+    resolve_sql_dialect_for_sync,
+    resolve_sync_fetch_mode,
+    sync_fetch_not_implemented_message,
+)
 from app.query.rls.guard import validate_identifier
 
 
@@ -33,37 +39,18 @@ def compute_next_watermark(job: SyncJob, rows: list[dict[str, Any]]) -> str | No
     return candidate if str(candidate) > str(job.last_watermark) else job.last_watermark
 
 
+def fetch_source_rows(job: SyncJob) -> list[dict[str, Any]]:
+    if not is_sync_fetch_implemented(job.source_type):
+        raise RuntimeError(sync_fetch_not_implemented_message(job.source_type))
+    mode = resolve_sync_fetch_mode(job.source_type)
+    if mode == "sql":
+        dialect = resolve_sql_dialect_for_sync(job.source_type)
+        return fetch_sql_rows(job, dialect)
+    if mode == "native":
+        return fetch_native_rows(job)
+    raise RuntimeError(sync_fetch_not_implemented_message(job.source_type))
+
+
+# 兼容旧导入：等同 fetch_source_rows
 def fetch_mysql_rows(job: SyncJob) -> list[dict[str, Any]]:
-    validate_sync_table_names(job.source_table, job.target_table)
-    conn = pymysql.connect(
-        host=job.source_host,
-        port=job.source_port,
-        user=job.source_username,
-        password=decrypt_password(job.source_password_encrypted),
-        database=job.source_database,
-        cursorclass=pymysql.cursors.DictCursor,
-        connect_timeout=10,
-        read_timeout=60,
-    )
-    table = job.source_table
-    try:
-        with conn.cursor() as cur:
-            if job.sync_mode == "incremental" and job.incremental_column:
-                inc = job.incremental_column
-                if job.last_watermark:
-                    cur.execute(
-                        f"SELECT * FROM `{table}` WHERE `{inc}` > %s "
-                        f"ORDER BY `{inc}` LIMIT %s",
-                        (job.last_watermark, INGESTION_MAX_ROWS),
-                    )
-                else:
-                    cur.execute(
-                        f"SELECT * FROM `{table}` WHERE `{inc}` IS NOT NULL "
-                        f"ORDER BY `{inc}` LIMIT %s",
-                        (INGESTION_MAX_ROWS,),
-                    )
-            else:
-                cur.execute(f"SELECT * FROM `{table}` LIMIT %s", (INGESTION_MAX_ROWS,))
-            return list(cur.fetchall())
-    finally:
-        conn.close()
+    return fetch_source_rows(job)

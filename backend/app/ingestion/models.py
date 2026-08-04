@@ -105,7 +105,7 @@ class SourceConnectionUpdateIn(BaseModel):
 
 
 class SourceConnectionOut(BaseModel):
-    type: Literal["mysql", "postgres"]
+    type: str
     host: str
     port: int
     database: str

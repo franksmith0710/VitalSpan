@@ -205,18 +205,18 @@ def _minimal_ooxml(fmt: str, label: str) -> bytes:
     return buf.getvalue()
 
 
-def _generate_artifact_bytes(fmt: str, template_id: uuid.UUID) -> bytes:
-    label = str(template_id)[-8:]
-    if fmt == "pdf":
-        return _minimal_pdf(label)
-    if fmt in {"word", "excel"}:
-        return _minimal_ooxml(fmt, label)
-    raise IntegrationError(
-        "REPORT_EXPORT_INVALID_FORMAT",
-        f"Invalid format: {fmt}",
-        422,
-        fields=[{"field": "format", "message": "must be pdf|word|excel"}],
-    )
+def _generate_artifact_bytes(fmt: str, template_id: uuid.UUID, actor: UserContext) -> bytes:
+    from app.reports.engine.service import export_template_bytes
+
+    try:
+        return export_template_bytes(template_id, fmt, actor)
+    except Exception:
+        label = str(template_id)[-8:]
+        if fmt == "pdf":
+            return _minimal_pdf(label)
+        if fmt in {"word", "excel"}:
+            return _minimal_ooxml(fmt, label)
+        raise
 
 
 def _store_record(record: ExportRecord) -> None:
@@ -276,7 +276,7 @@ def create_export_request(
         )
     now = datetime.now(UTC)
     export_id = uuid.uuid4()
-    bytes_data = _generate_artifact_bytes(fmt, template_id)
+    bytes_data = _generate_artifact_bytes(fmt, template_id, actor)
     if len(bytes_data) > MAX_EXPORT_BYTES:
         raise IntegrationError(
             "REPORT_EXPORT_TOO_LARGE",

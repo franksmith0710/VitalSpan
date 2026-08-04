@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import uuid
 
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 _KEY_PATTERN = r"^[a-z][a-z0-9_]{0,63}$"
 
@@ -14,6 +16,18 @@ class MetricAdjustment(BaseModel):
     expression: str | None = None
     visible: bool = True
     compare_mode: str = Field(default="none", alias="compareMode")
+    query_mode: Literal["sql", "dataset"] = Field(default="sql", alias="queryMode")
+    dataset_id: str | None = Field(default=None, alias="datasetId")
+    bound_config_id: uuid.UUID | None = Field(default=None, alias="boundConfigId")
+
+    @model_validator(mode="after")
+    def validate_query_mode(self) -> MetricAdjustment:
+        if self.query_mode == "dataset":
+            if not self.dataset_id or not self.bound_config_id:
+                raise ValueError("dataset mode requires datasetId and boundConfigId")
+        elif not self.expression and self.compare_mode in {"yoy", "mom"}:
+            pass
+        return self
 
 
 class FilterAdjustment(BaseModel):

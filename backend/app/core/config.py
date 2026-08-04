@@ -48,6 +48,7 @@ class Settings(BaseSettings):
     fe_base_path: str = ""
     rpt_export_fallback: bool = False
     rpt_schedule_store: Literal["memory", "db"] = "memory"
+    rpt_metadata_store: Literal["memory", "db"] = "memory"
     artifact_storage_backend: Literal["memory", "fs"] = "fs"
     artifact_storage_path: str = "./data/artifacts"
     rpt_scheduler_enabled: bool = True

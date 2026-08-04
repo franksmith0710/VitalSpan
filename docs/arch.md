@@ -131,6 +131,19 @@ flowchart TB
 
 **代码锚点**：`backend/app/reports/models.py` · `scheduler/store.py` · `artifact_store.py` · `scheduler/channels/`
 
+### ADR-20 · 报表元数据持久化与真导出（RPT P3-SMOKE）
+
+**背景**：catalog / extension / prefab / templates 原进程内 dict，重启丢失；IF-03 导出为最小占位 PDF。
+
+**决策**：
+
+- ORM 表：`report_catalog_nodes` · `report_catalog_owners` · `report_extension_configs` · `report_extension_revisions` · `report_prefab_bindings` · `report_template_definitions` · `report_integration_exports`（Alembic `0034`）。
+- 存储切换：`RPT_METADATA_STORE=memory|db`（默认 memory 单测；staging/production `db`）。
+- 真导出：`reports/render/` RenderSpec → PDF（reportlab）/ Excel（openpyxl）/ Word（OOXML）；IF-03 与模板调度走 `export_template_bytes`。
+- Dataset 桥接：extension metric 可选 `queryMode=dataset` + `datasetId` + `boundConfigId`，执行复用 `query/dataset/execute_config`。
+
+**代码锚点**：`backend/app/reports/persistence/` · `backend/app/reports/render/` · `backend/app/reports/engine/execute.py`
+
 ### ADR-14 · 组织组件库（DASH-010）
 
 - **引用**：`LayoutWidget.componentRef = { componentId, pinnedRevision?, detached? }`；运行时经 `resolveLayoutWidget` 合并 `payloadJson`

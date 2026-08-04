@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from app.datasources.dialects.base import DialectConnector
 from app.datasources.taxonomy import label_for_display_group, resolve_display_group
 from app.query.capabilities import is_query_capable, resolve_query_mode_for_connector
+from app.ingestion.sync_source_capabilities import is_sync_fetch_implemented, is_sync_source_capable
 
 
 class ConnectorNotFoundError(KeyError):
@@ -91,6 +92,7 @@ def export_type_catalog() -> list[dict]:
         group = resolve_display_group(item.category)
         query_capable = is_query_capable(item.type)
         query_mode = resolve_query_mode_for_connector(item.type)
+        sync_capable = is_sync_source_capable(item.type)
         result.append(
             {
                 "type": item.type,
@@ -101,6 +103,8 @@ def export_type_catalog() -> list[dict]:
                 "categoryLabel": label_for_display_group(group),
                 "queryCapable": query_capable,
                 "queryMode": query_mode,
+                "syncCapable": sync_capable,
+                "syncFetchImplemented": is_sync_fetch_implemented(item.type),
             }
         )
     return result

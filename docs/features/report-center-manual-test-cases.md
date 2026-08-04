@@ -375,6 +375,51 @@
 
 ---
 
+## 第九组：P3-SMOKE 真导出与 Dataset 桥接
+
+> **目标**：模板 RenderSpec 真字节导出 + extension metric Dataset 查数  
+> **PRD**：RPT-001/003/006 · P3 最终形态
+
+### Case 19 — 模板真导出 PDF/Excel/Word
+
+**前置**：
+
+- 已创建 catalog 模板节点（`templateKind=pdf|excel|word`）并完成 extension 配置（至少 1 条 SQL metric + 有效 `dataSourceId`）
+- admin 登录
+
+**操作步骤**：
+
+1. **全部报表** → 打开目标模板 → **运行**。
+2. 在导出区分别发起 **PDF / Excel / Word** 导出（或 IF-03 `GET /reports/export?templateId=…&format=…`）。
+3. 下载文件，检查文件头与内容。
+
+**预期**：
+
+- PDF 以 `%PDF` 开头，含表格数据行（非单 label 占位）。
+- Excel 为 PK zip（xlsx），含 section sheet。
+- Word 为 PK zip（docx），含表格段落。
+- `exportHook.placeholder=false`。
+
+### Case 20 — Dataset 模式报表运行
+
+**前置**：
+
+- 已创建 Dataset + bind-query-config（`boundConfigId`）
+- 模板 extension 中某 metric 设为 **Dataset** 模式（`queryMode=dataset`，填写 `datasetId` + `boundConfigId`）
+
+**操作步骤**：
+
+1. **报表模板** → 扩展配置 → 指标行切换 **Dataset** → 选择 Dataset 与绑定配置 → 保存。
+2. **全部报表** → 打开该模板 → **运行**（web 格式）。
+3. 查看运行结果表格列与行。
+
+**预期**：
+
+- 运行成功，`renderSpec.sections` 含 Dataset 查数返回的 columns/rows。
+- 切换回 SQL 模式后仍可用 `expression` 查数（存量兼容）。
+
+---
+
 ## 评分汇总
 
 | 组别 | 主题 | Case 数 | 通过 | 失败 | 阻塞 |

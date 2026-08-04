@@ -57,17 +57,20 @@ def r233_sqlite_env():
 
 @pytest.fixture(autouse=True)
 def clear_stores():
-    prefab_service._store.clear()
+    from app.reports.persistence.store import reset_metadata_for_tests
+
+    reset_metadata_for_tests()
     physical_service._store.clear()
     physical_service._ds_table_index.clear()
     entity_service._store.clear()
     entity_service._ref_counts.clear()
     yield
-    prefab_service._store.clear()
+    reset_metadata_for_tests()
     physical_service._store.clear()
     physical_service._ds_table_index.clear()
     entity_service._store.clear()
     entity_service._ref_counts.clear()
+    fastapi_app.dependency_overrides.clear()
 
 
 @pytest.fixture

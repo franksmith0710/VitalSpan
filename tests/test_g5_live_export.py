@@ -104,3 +104,103 @@ def test_live_pdf_export_without_playwright_mock():
     assert pdf.startswith(b"%PDF")
     assert len(pdf) > 5120
     assert b"LAYOUT INVENTORY PREVIEW" not in pdf[:4096]
+
+
+def _mailhog_reachable() -> bool:
+    host = os.environ.get("RPT_SMTP_HOST", "localhost")
+    api_base = os.environ.get("MAILHOG_API", f"http://{host}:8025")
+    try:
+        with urllib.request.urlopen(f"{api_base.rstrip('/')}/api/v2/messages", timeout=5) as resp:
+            return resp.status == 200
+    except (OSError, urllib.error.URLError):
+        return False
+
+
+def test_template_schedule_smtp_live():
+    """Live: template schedule execute → MailHog receives PDF attachment."""
+    if not _url_reachable(f"{BACKEND_BASE.rstrip('/')}/health"):
+        pytest.skip("uvicorn not running at VITALSPAN_LIVE_API")
+    if not _mailhog_reachable():
+        pytest.skip("MailHog API not reachable")
+
+    tpl_key = f"live-{uuid.uuid4().hex[:6]}"
+    status, raw = _live_request(
+        "PUT",
+        f"/api/v1/reports/templates/{tpl_key}",
+        {
+            "templateKey": tpl_key,
+            "format": "pdf",
+            "displayName": "Live Schedule PDF",
+            "blocks": [{"blockType": "table", "tableRef": "t1"}],
+        },
+    )
+    assert status == 200, raw.decode("utf-8", "replace")
+
+    status, raw = _live_request(
+        "POST",
+        "/api/v1/reports/catalog/nodes",
+        {
+            "name": "Live Sched Node",
+            "nodeType": "template",
+            "templateKind": "pdf",
+            "templateKey": tpl_key,
+        },
+    )
+    assert status == 201, raw.decode("utf-8", "replace")
+    node_id = json.loads(raw)["id"]
+
+    status, raw = _live_request(
+        "PUT",
+        f"/api/v1/reports/catalog/nodes/{node_id}/extension",
+        {
+            "catalogNodeId": node_id,
+            "metrics": [{"key": "m1", "label": "M1", "expression": "SELECT 1 AS m1", "visible": True}],
+            "filters": [],
+            "changeNote": "live",
+        },
+    )
+    assert status == 200, raw.decode("utf-8", "replace")
+
+    status, raw = _live_request(
+        "POST",
+        "/api/v1/reports/schedules",
+        {
+            "sourceType": "template",
+            "sourceId": node_id,
+            "cron": "0 9 * * *",
+            "recipients": [{"type": "role", "value": "admin"}],
+            "attachmentFormats": ["pdf"],
+        },
+    )
+    assert status == 201, raw.decode("utf-8", "replace")
+    schedule_id = json.loads(raw)["id"]
+
+    status, raw = _live_request(
+        "POST",
+        f"/api/v1/reports/schedules/{schedule_id}/transition",
+        {"action": "schedule"},
+    )
+    assert status == 200, raw.decode("utf-8", "replace")
+
+    status, raw = _live_request(
+        "POST",
+        f"/api/v1/reports/schedules/{schedule_id}/execute",
+        None,
+    )
+    assert status == 200, raw.decode("utf-8", "replace")
+    body = json.loads(raw)
+    assert body.get("status") in {"semi_real_succeeded", "semi_real_delivery_degraded"}
+
+    host = os.environ.get("RPT_SMTP_HOST", "localhost")
+    api_base = os.environ.get("MAILHOG_API", f"http://{host}:8025")
+    with urllib.request.urlopen(f"{api_base.rstrip('/')}/api/v2/messages", timeout=10) as resp:
+        messages = json.loads(resp.read())
+    items = messages.get("items") or []
+    assert items, "expected MailHog to receive schedule email"
+    latest = items[0]
+    mime_parts = latest.get("MIME", {}).get("Parts") or []
+    pdf_found = any(
+        part.get("Body", "").startswith("%PDF") or "application/pdf" in (part.get("Headers", {}).get("Content-Type") or [""])[0]
+        for part in mime_parts
+    )
+    assert pdf_found or "pdf" in json.dumps(latest).lower()

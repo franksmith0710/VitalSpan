@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { apiFetch } from "@/lib/api";
 import { getApiValidationFieldErrors, mapApiError } from "@/lib/apiError";
 import { hasCapability } from "@/lib/capabilities";
+import { isSyncSourceCapable } from "@/lib/datasourceRoles";
 import { sessionUserFromMe } from "@/lib/session";
 import { useSyncJobRun, type SyncRunSuccess } from "@/hooks/useSyncJobRun";
 import {
@@ -36,21 +37,18 @@ import {
   SYNC_JOB_FORM_ID,
   type DatasourceItem,
   type JobFormState,
+  type LegacyInlineSource,
   type SyncMode,
 } from "./components/SyncJobForm";
 import { SyncConsumeActionCard } from "./components/SyncConsumeActionCard";
 import type { SyncJobLastRun, SyncJobSummary } from "./components/sync-job-types";
 
+const DEFAULT_SOURCE_TABLE = "dirty_orders";
+
 const newJobFormDefaults: JobFormState = {
   name: "",
-  sourceMode: "datasource",
   sourceDataSourceId: "",
-  host: "127.0.0.1",
-  port: "3307",
-  database: "sample_db",
-  username: "sample",
-  password: "sample",
-  table: "dirty_orders",
+  table: DEFAULT_SOURCE_TABLE,
   target_table: "",
   syncMode: "full",
   primaryKey: "id",
@@ -60,7 +58,7 @@ const newJobFormDefaults: JobFormState = {
 };
 
 function serializeJobForm(form: JobFormState): string {
-  return JSON.stringify({ ...form, password: form.password || "" });
+  return JSON.stringify(form);
 }
 
 const syncJobPageIcon = (
@@ -70,7 +68,7 @@ const syncJobPageIcon = (
 );
 
 function buildPayload(form: JobFormState) {
-  const base = {
+  return {
     name: form.name,
     target_table: form.target_table,
     schedule_cron: form.schedule_cron || null,
@@ -78,27 +76,9 @@ function buildPayload(form: JobFormState) {
     sync_mode: form.syncMode,
     primary_key: form.syncMode === "incremental" ? form.primaryKey : null,
     incremental_column: form.syncMode === "incremental" ? form.incrementalColumn : null,
-  };
-  if (form.sourceMode === "datasource") {
-    return {
-      ...base,
-      source_mode: "datasource" as const,
-      source_data_source_id: form.sourceDataSourceId,
-      source_table: form.table,
-    };
-  }
-  return {
-    ...base,
-    source_mode: "inline" as const,
-    source: {
-      type: "mysql" as const,
-      host: form.host,
-      port: Number(form.port),
-      database: form.database,
-      username: form.username,
-      password: form.password || "",
-      table: form.table,
-    },
+    source_mode: "datasource" as const,
+    source_data_source_id: form.sourceDataSourceId,
+    source_table: form.table,
   };
 }
 
@@ -116,6 +96,7 @@ export function SyncJobFormPage() {
   );
   const navigate = useNavigate();
   const [form, setForm] = useState<JobFormState>(newJobFormDefaults);
+  const [legacyInlineSource, setLegacyInlineSource] = useState<LegacyInlineSource | null>(null);
   const [existingJobs, setExistingJobs] = useState<SyncJobSummary[]>([]);
   const [datasources, setDatasources] = useState<DatasourceItem[]>([]);
   const [loading, setLoading] = useState(isEdit);
@@ -126,7 +107,6 @@ export function SyncJobFormPage() {
   const [runConfirmOpen, setRunConfirmOpen] = useState(false);
   const [recentRunSuccess, setRecentRunSuccess] = useState<SyncRunSuccess | null>(null);
   const [consumeCardDismissed, setConsumeCardDismissed] = useState(false);
-  const [bootstrapReady, setBootstrapReady] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const targetTableManualRef = useRef(false);
   const newJobInitializedRef = useRef(false);
@@ -155,32 +135,29 @@ export function SyncJobFormPage() {
           apiFetch<{ items: DatasourceItem[] }>("/api/v1/datasources"),
           apiFetch<{ items: SyncJobSummary[] }>("/api/v1/ingestion/sync-jobs"),
         ]);
-        setDatasources(dsData.items.filter((item) => item.type === "mysql"));
+        const mysqlDs = dsData.items.filter((item) => isSyncSourceCapable(item.type));
+        setDatasources(mysqlDs);
         setExistingJobs(jobsData.items);
+        if (!id && !newJobInitializedRef.current) {
+          const suggested = suggestSyncTargetTable(
+            newJobFormDefaults.table,
+            jobsData.items.map((job) => job.target_table),
+          );
+          const nextForm: JobFormState = {
+            ...newJobFormDefaults,
+            target_table: suggested,
+            sourceDataSourceId: mysqlDs[0]?.id ?? "",
+          };
+          setForm(nextForm);
+          resetBaseline(nextForm);
+          newJobInitializedRef.current = true;
+        }
       } catch {
         setDatasources([]);
         setExistingJobs([]);
-      } finally {
-        setBootstrapReady(true);
       }
     })();
-  }, []);
-
-  useEffect(() => {
-    if (isEdit || !bootstrapReady || newJobInitializedRef.current) return;
-    const suggested = suggestSyncTargetTable(
-      newJobFormDefaults.table,
-      existingJobs.map((job) => job.target_table),
-    );
-    const nextForm: JobFormState = {
-      ...newJobFormDefaults,
-      target_table: suggested,
-      sourceDataSourceId: datasources[0]?.id ?? "",
-    };
-    setForm(nextForm);
-    resetBaseline(nextForm);
-    newJobInitializedRef.current = true;
-  }, [datasources, existingJobs, isEdit, bootstrapReady, resetBaseline]);
+  }, [id, resetBaseline]);
 
   useEffect(() => {
     if (!id) {
@@ -213,13 +190,7 @@ export function SyncJobFormPage() {
         }>(`/api/v1/ingestion/sync-jobs/${id}`);
         const nextForm: JobFormState = {
           name: job.name,
-          sourceMode: job.source_data_source_id ? "datasource" : "inline",
           sourceDataSourceId: job.source_data_source_id ?? "",
-          host: job.source.host,
-          port: String(job.source.port),
-          database: job.source.database,
-          username: job.source.username,
-          password: "",
           table: job.source.table,
           target_table: job.target_table,
           syncMode: job.sync_mode ?? "full",
@@ -231,6 +202,16 @@ export function SyncJobFormPage() {
         setForm(nextForm);
         resetBaseline(nextForm);
         targetTableManualRef.current = true;
+        setLegacyInlineSource(
+          job.source_data_source_id
+            ? null
+            : {
+                host: job.source.host,
+                port: job.source.port,
+                database: job.source.database,
+                username: job.source.username,
+              },
+        );
         if (job.last_run?.status === "succeeded") {
           setRecentRunSuccess({
             jobId: id,
@@ -258,6 +239,8 @@ export function SyncJobFormPage() {
     () => findJobsSharingTargetTable(existingJobs, form.target_table, isEdit ? id : undefined),
     [existingJobs, form.target_table, id, isEdit],
   );
+
+  const canSubmit = Boolean(form.sourceDataSourceId.trim()) && datasources.length > 0;
 
   const applySuggestedTarget = (sourceTable: string) => {
     const suggested = suggestSyncTargetTable(
@@ -289,6 +272,9 @@ export function SyncJobFormPage() {
       });
       return;
     }
+    if (key === "sourceDataSourceId") {
+      setLegacyInlineSource(null);
+    }
     setForm((prev) => ({ ...prev, [key]: value }));
     setFieldErrors((prev) => {
       if (!prev[key as string]) return prev;
@@ -312,6 +298,7 @@ export function SyncJobFormPage() {
         });
         toast.success("同步任务已更新");
         markSaved(form);
+        setLegacyInlineSource(null);
       } else {
         const created = await apiFetch<{ id: string }>("/api/v1/ingestion/sync-jobs", {
           method: "POST",
@@ -343,8 +330,8 @@ export function SyncJobFormPage() {
 
   const handleSubmit = async (event?: FormEvent): Promise<boolean> => {
     event?.preventDefault();
-    if (form.sourceMode === "datasource" && !form.sourceDataSourceId.trim()) {
-      const message = "请选择业务源连接，或切换为「手动填写（排障）」";
+    if (!form.sourceDataSourceId.trim()) {
+      const message = "请选择业务源连接；若尚无可用连接，请先在连接管理登记可同步的数据源";
       setError(message);
       toast.error(message);
       return false;
@@ -368,11 +355,14 @@ export function SyncJobFormPage() {
 
   const pageDescription = useMemo(() => {
     if (!isBaselineReady) {
-      return "先在连接管理登记 MySQL 业务源，再配置同步与目标表；当前仅支持 MySQL 源。";
+      return "先在连接管理登记业务源连接，再配置同步与目标表。";
+    }
+    if (datasources.length === 0) {
+      return "尚无可用同步源连接 · 请先在连接管理登记";
     }
     if (isDirty) return "有未保存的更改 · 保存后生效";
     return "已保存 · 支持全量覆盖或增量 upsert 到托管分析库";
-  }, [isBaselineReady, isDirty]);
+  }, [datasources.length, isBaselineReady, isDirty]);
 
   const sharedTargetJobNames = useMemo(() => {
     if (!recentRunSuccess || !id || recentRunSuccess.jobId !== id) return [];
@@ -447,7 +437,8 @@ export function SyncJobFormPage() {
             size="sm"
             loading={submitting}
             loadingText={isEdit ? "保存中…" : "创建中…"}
-            disabled={submitting || (isEdit && !isDirty)}
+            disabled={submitting || !canSubmit || (isEdit && !isDirty)}
+            title={!canSubmit ? "请先在连接管理登记可同步的数据源并选择业务源连接" : undefined}
           >
             {isEdit ? "保存" : "创建"}
           </Button>
@@ -500,6 +491,7 @@ export function SyncJobFormPage() {
             etlRulesHref={isEdit && id ? `/admin/ingestion/sync-jobs/${id}/etl-rules` : undefined}
             datasources={datasources}
             selectedDatasource={selectedDatasource}
+            legacyInlineSource={legacyInlineSource}
             fieldErrors={fieldErrors}
             conflictingJobNames={conflictingJobs.map((job) => job.name)}
             onSuggestTargetTable={() => applySuggestedTarget(form.table)}

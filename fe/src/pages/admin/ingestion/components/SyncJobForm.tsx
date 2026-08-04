@@ -23,7 +23,6 @@ import { DIRTY_ORDERS_DEMO_SOURCE_TABLE } from "../etlDemoTemplate";
 
 export const SYNC_JOB_FORM_ID = "sync-job-form";
 
-export type SourceMode = "inline" | "datasource";
 export type SyncMode = "full" | "incremental";
 
 export type DatasourceItem = {
@@ -35,15 +34,16 @@ export type DatasourceItem = {
   database: string;
 };
 
-export type JobFormState = {
-  name: string;
-  sourceMode: SourceMode;
-  sourceDataSourceId: string;
+export type LegacyInlineSource = {
   host: string;
-  port: string;
+  port: number;
   database: string;
   username: string;
-  password: string;
+};
+
+export type JobFormState = {
+  name: string;
+  sourceDataSourceId: string;
   table: string;
   target_table: string;
   syncMode: SyncMode;
@@ -59,6 +59,7 @@ type SyncJobFormProps = {
   etlRulesHref?: string;
   datasources: DatasourceItem[];
   selectedDatasource?: DatasourceItem;
+  legacyInlineSource?: LegacyInlineSource | null;
   fieldErrors: Record<string, string>;
   /** 其他任务已占用的同名 target_table（编辑时不含自身） */
   conflictingJobNames?: string[];
@@ -135,6 +136,7 @@ export function SyncJobForm({
   etlRulesHref,
   datasources,
   selectedDatasource,
+  legacyInlineSource = null,
   fieldErrors,
   conflictingJobNames = [],
   onSuggestTargetTable,
@@ -176,141 +178,78 @@ export function SyncJobForm({
       </FormSection>
 
       <FormSection
-        title="业务源库（MySQL）"
-        description="从连接管理选择已登记的 MySQL 业务源，或仅在排障时手动填写。当前同步仅支持 MySQL 源；写入端为托管分析库，不是此处配置的连接。"
+        title="业务源连接"
+        description="凭证仅在连接管理登记；同步任务引用已登记连接并指定源对象（表 / 集合 / 文件等）。写入端为托管分析库。"
       >
-        <div className="grid gap-3">
-          <Label>源连接方式</Label>
-          <SegmentedChoice
-            ariaLabel="源连接方式"
-            value={form.sourceMode}
-            options={[
-              { value: "datasource", label: "使用已有 MySQL 连接" },
-              { value: "inline", label: "手动填写（排障）" },
-            ]}
-            onChange={(value) => onChange("sourceMode", value)}
-          />
-          {form.sourceMode === "datasource" ? (
-            <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-              推荐路径：请先在
-              <Link
-                to="/admin/datasources"
-                className="text-brand-600 underline-offset-2 hover:underline dark:text-brand-400"
-              >
-                连接管理
-              </Link>
-              登记 MySQL 业务源。引用时会快照凭证；源库改密后请重新保存任务。
-            </p>
+        {legacyInlineSource ? (
+          <Alert severity="warning">
+            <AlertTitle>此任务仍使用旧版内联连接</AlertTitle>
+            <AlertDescription className="text-theme-xs">
+              旧快照：
+              <span className="font-mono">
+                {" "}
+                {legacyInlineSource.username}@{legacyInlineSource.host}:{legacyInlineSource.port}/
+                {legacyInlineSource.database}
+              </span>
+              。请在下拉框选择连接管理中对应的 MySQL 连接后保存，以完成迁移。
+            </AlertDescription>
+          </Alert>
+        ) : null}
+
+        <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+          请先在
+          <Link
+            to="/admin/datasources"
+            className="text-brand-600 underline-offset-2 hover:underline dark:text-brand-400"
+          >
+            连接管理
+          </Link>
+          登记可同步的数据源（关系型 / 文件 / 文档库等），再在此选择。引用时会快照凭证；源库改密后请重新保存任务。
+        </p>
+
+        <div className="grid gap-4 rounded-xl border border-gray-200 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-white/[0.02]">
+          {datasources.length === 0 ? (
+            <Alert severity="warning">
+              <AlertTitle>尚无可用同步源连接</AlertTitle>
+              <AlertDescription className="text-theme-xs">
+                请先在
+                <Link
+                  to="/admin/datasources/new"
+                  className="text-brand-600 underline-offset-2 hover:underline dark:text-brand-400"
+                >
+                  连接管理
+                </Link>
+                登记可同步的数据源（与新建连接器目录中「可查询」类型一致），再返回创建同步任务。
+              </AlertDescription>
+            </Alert>
           ) : (
-            <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-              手动填写不会写入连接管理，仅用于本任务排障或快速试跑。
-            </p>
+            <>
+              <div className="grid gap-2">
+                <Label htmlFor="datasource">业务源连接</Label>
+                <Select
+                  value={form.sourceDataSourceId || undefined}
+                  onValueChange={(value) => onChange("sourceDataSourceId", value)}
+                >
+                  <SelectTrigger id="datasource" className="h-11" aria-label="业务源连接">
+                    <SelectValue placeholder="选择已登记的业务源连接" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {datasources.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {selectedDatasource ? (
+                <p className="font-mono text-theme-xs text-gray-500 dark:text-gray-400">
+                  {selectedDatasource.host}:{selectedDatasource.port}/{selectedDatasource.database}
+                </p>
+              ) : null}
+            </>
           )}
         </div>
-
-        {form.sourceMode === "datasource" ? (
-          <div className="grid gap-4 rounded-xl border border-gray-200 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-white/[0.02]">
-            {datasources.length === 0 ? (
-              <Alert severity="warning">
-                <AlertTitle>尚无可用 MySQL 连接</AlertTitle>
-                <AlertDescription className="text-theme-xs">
-                  请先在
-                  <Link
-                    to="/admin/datasources/new"
-                    className="text-brand-600 underline-offset-2 hover:underline dark:text-brand-400"
-                  >
-                    连接管理
-                  </Link>
-                  登记 MySQL 业务源，或切换为「手动填写（排障）」。
-                </AlertDescription>
-              </Alert>
-            ) : (
-              <>
-                <div className="grid gap-2">
-                  <Label htmlFor="datasource">业务源连接</Label>
-                  <Select
-                    value={form.sourceDataSourceId || undefined}
-                    onValueChange={(value) => onChange("sourceDataSourceId", value)}
-                  >
-                    <SelectTrigger id="datasource" className="h-11">
-                      <SelectValue placeholder="选择已登记的 MySQL 连接" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {datasources.map((item) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          {item.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {selectedDatasource ? (
-                  <p className="font-mono text-theme-xs text-gray-500 dark:text-gray-400">
-                    {selectedDatasource.host}:{selectedDatasource.port}/{selectedDatasource.database}
-                  </p>
-                ) : null}
-              </>
-            )}
-          </div>
-        ) : (
-          <div className="grid gap-4 rounded-xl border border-gray-200 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-white/[0.02]">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="grid gap-2">
-                <Label htmlFor="host">主机</Label>
-                <Input
-                  id="host"
-                  value={form.host}
-                  onChange={(e) => onChange("host", e.target.value)}
-                  required
-                  className="h-11"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="port">端口</Label>
-                <Input
-                  id="port"
-                  value={form.port}
-                  onChange={(e) => onChange("port", e.target.value)}
-                  required
-                  className="h-11"
-                />
-              </div>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="database">数据库</Label>
-              <Input
-                id="database"
-                value={form.database}
-                onChange={(e) => onChange("database", e.target.value)}
-                required
-                className="h-11"
-              />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="grid gap-2">
-                <Label htmlFor="username">用户名</Label>
-                <Input
-                  id="username"
-                  value={form.username}
-                  onChange={(e) => onChange("username", e.target.value)}
-                  required
-                  className="h-11"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="password">密码{isEdit ? "（留空保持不变）" : ""}</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={form.password}
-                  onChange={(e) => onChange("password", e.target.value)}
-                  required={!isEdit}
-                  className="h-11"
-                />
-              </div>
-            </div>
-          </div>
-        )}
       </FormSection>
 
       <FormSection
@@ -319,7 +258,7 @@ export function SyncJobForm({
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="grid gap-2">
-            <Label htmlFor="table">源表</Label>
+            <Label htmlFor="table">源对象</Label>
             <Input
               id="table"
               value={form.table}
@@ -431,26 +370,22 @@ export function SyncJobForm({
                 required
                 className="h-11"
               />
-              <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-                整型或时间戳列；用于水位比较。
-              </p>
             </div>
           </div>
         ) : null}
       </FormSection>
 
-      <FormSection title="调度与状态" description="可选 Cron 定时执行；停用后仍可手动触发。">
+      <FormSection title="调度" description="留空表示仅手动运行；填写合法 Cron 且启用任务后按表达式自动执行。">
         <div className="grid gap-2">
           <Label htmlFor="schedule_cron">定时 Cron（可选）</Label>
           <Input
             id="schedule_cron"
-            placeholder="例：0 2 * * *（分 时 日 月 周）"
             value={form.schedule_cron}
-            fieldState={fieldErrors.schedule_cron ? "error" : "default"}
+            onChange={(e) => onChange("schedule_cron", e.target.value)}
+            className="h-11 font-mono"
+            placeholder="0 2 * * *"
             aria-invalid={Boolean(fieldErrors.schedule_cron)}
             aria-describedby={fieldErrors.schedule_cron ? "schedule_cron-error" : undefined}
-            onChange={(e) => onChange("schedule_cron", e.target.value)}
-            className="h-11"
           />
           {fieldErrors.schedule_cron ? (
             <p id="schedule_cron-error" className="text-theme-xs text-error-600 dark:text-error-400">
@@ -458,36 +393,35 @@ export function SyncJobForm({
             </p>
           ) : (
             <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-              五段式 Cron（分 时 日 月 周）；留空表示仅手动运行。
+              常用：
+              {CRON_PRESETS.map((preset) => (
+                <Button
+                  key={preset.value}
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  className="h-auto px-1 py-0 text-theme-xs"
+                  onClick={() => onChange("schedule_cron", preset.value)}
+                >
+                  {preset.label}
+                </Button>
+              ))}
             </p>
           )}
-          <div className="flex flex-wrap gap-2 pt-1">
-            {CRON_PRESETS.map((preset) => (
-              <Button
-                key={preset.value}
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => onChange("schedule_cron", preset.value)}
-              >
-                {preset.label}
-              </Button>
-            ))}
-          </div>
         </div>
-
         <div className="flex items-center justify-between gap-4 rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3 dark:border-gray-800 dark:bg-white/[0.02]">
-          <div className="min-w-0">
-            <Label htmlFor="enabled">启用任务</Label>
+          <div>
+            <Label htmlFor="enabled" className="text-theme-sm">
+              启用任务
+            </Label>
             <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-              停用后不会参与 Cron 调度，仍可手动运行。
+              关闭后不参与 Cron 调度，仍可手动运行。
             </p>
           </div>
           <Switch
             id="enabled"
             checked={form.enabled}
             onCheckedChange={(checked) => onChange("enabled", checked)}
-            className="shrink-0"
           />
         </div>
       </FormSection>

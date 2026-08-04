@@ -5,14 +5,15 @@ import uuid
 
 from app.auth.deps import UserContext
 from app.reports.catalog.errors import ReportCatalogError
+from app.reports.persistence import catalog_repo, memory_stores
 
-_NODE_OWNERS: dict[uuid.UUID, str] = {}
-_ARTIFACT_OWNERS: dict[str, str] = {}
+_NODE_OWNERS = memory_stores.catalog_owners  # test compat
+_ARTIFACT_OWNERS = memory_stores.artifact_owners
 _ACL_BUDGET_MS = 10
 
 
 def register_node_owner(node_id: uuid.UUID, actor_id: str) -> None:
-    _NODE_OWNERS[node_id] = actor_id
+    catalog_repo.register_owner(node_id, actor_id)
 
 
 def assert_catalog_action(actor: UserContext, action: str, node_id: uuid.UUID | None = None) -> None:
@@ -27,7 +28,7 @@ def assert_catalog_action(actor: UserContext, action: str, node_id: uuid.UUID | 
         return
     if node_id is None:
         raise ReportCatalogError("RPT_CATALOG_FORBIDDEN", "node required for write action", 403)
-    owner = _NODE_OWNERS.get(node_id)
+    owner = catalog_repo.get_owner(node_id)
     if action == "delete":
         if "owner" in roles and owner == actor.id:
             return
@@ -48,13 +49,13 @@ def probe_acl_budget_ms(actor: UserContext, action: str, node_id: uuid.UUID) -> 
 
 
 def register_artifact_owner(artifact_ref: str, actor_id: str) -> None:
-    _ARTIFACT_OWNERS[artifact_ref] = actor_id
+    memory_stores.artifact_owners[artifact_ref] = actor_id
 
 
 def assert_artifact_access(actor: UserContext, artifact_ref: str) -> None:
     if "admin" in set(actor.roles):
         return
-    owner = _ARTIFACT_OWNERS.get(artifact_ref)
+    owner = memory_stores.artifact_owners.get(artifact_ref)
     if owner is not None and owner == actor.id:
         return
     raise ReportCatalogError("RPT_ARTIFACT_FORBIDDEN", "artifact access denied", 403)

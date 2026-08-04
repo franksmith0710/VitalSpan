@@ -31,8 +31,17 @@ vi.mock("sonner", () => ({
   },
 }));
 
+const SAMPLE_MYSQL_DS = {
+  id: "ds-1",
+  name: "Sample MySQL",
+  type: "mysql",
+  host: "127.0.0.1",
+  port: 3307,
+  database: "sample_db",
+};
+
 function mockNewJobFormBootstrap(
-  datasources: unknown[] = [],
+  datasources: unknown[] = [SAMPLE_MYSQL_DS],
   jobs: unknown[] = [],
 ) {
   return mockApiFetch
@@ -283,7 +292,7 @@ describe("ingestion admin smoke", () => {
 
   it("SyncJobFormPage_create_submit", async () => {
     setViewport(375);
-    mockNewJobFormBootstrap([], [])
+    mockNewJobFormBootstrap()
       .mockResolvedValueOnce({ id: "new-job" });
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
@@ -293,7 +302,9 @@ describe("ingestion admin smoke", () => {
       </MemoryRouter>,
     );
     await screen.findByLabelText("任务名称");
-    fireEvent.click(await screen.findByRole("button", { name: "手动填写（排障）" }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "创建" })).not.toBeDisabled();
+    });
     fireEvent.change(screen.getByLabelText("任务名称"), { target: { value: "e2e-smoke-job" } });
     fireEvent.click(screen.getByRole("button", { name: "创建" }));
     await waitFor(() => {
@@ -360,7 +371,7 @@ describe("ingestion admin smoke", () => {
 
   it("SyncJobFormPage_shared_target_submit_requires_confirm", async () => {
     setViewport(1400);
-    mockNewJobFormBootstrap([], [
+    mockNewJobFormBootstrap([SAMPLE_MYSQL_DS], [
       {
         id: "job-existing",
         name: "同步1",
@@ -377,8 +388,10 @@ describe("ingestion admin smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
-    fireEvent.click(await screen.findByRole("button", { name: "手动填写（排障）" }));
     const targetInput = await screen.findByLabelText("目标表");
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "创建" })).not.toBeDisabled();
+    });
     fireEvent.change(targetInput, { target: { value: "orders_clean" } });
     fireEvent.change(screen.getByLabelText("任务名称"), { target: { value: "共表任务" } });
     fireEvent.click(screen.getByRole("button", { name: "创建" }));
@@ -443,7 +456,7 @@ describe("ingestion admin smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
-    const sourceInput = await screen.findByLabelText("源表");
+    const sourceInput = await screen.findByLabelText("源对象");
     await waitFor(() => {
       expect(screen.getByLabelText("目标表")).toHaveValue("orders_clean");
     });
@@ -481,7 +494,7 @@ describe("ingestion admin smoke", () => {
     await waitFor(() => {
       expect(targetInput).toHaveValue("orders_clean_2");
     });
-    fireEvent.change(screen.getByLabelText("源表"), { target: { value: "sales" } });
+    fireEvent.change(screen.getByLabelText("源对象"), { target: { value: "sales" } });
     await waitFor(() => {
       expect(targetInput).toHaveValue("sales_clean");
     });
@@ -489,7 +502,7 @@ describe("ingestion admin smoke", () => {
 
   it("SyncJobFormPage_shared_target_confirm_cancel_skips_post", async () => {
     setViewport(1400);
-    mockNewJobFormBootstrap([], [
+    mockNewJobFormBootstrap([SAMPLE_MYSQL_DS], [
       {
         id: "job-existing",
         name: "同步1",
@@ -506,7 +519,9 @@ describe("ingestion admin smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
-    fireEvent.click(await screen.findByRole("button", { name: "手动填写（排障）" }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "创建" })).not.toBeDisabled();
+    });
     fireEvent.change(await screen.findByLabelText("目标表"), {
       target: { value: "orders_clean" },
     });
@@ -708,6 +723,51 @@ describe("ingestion admin smoke", () => {
     expect(screen.getByRole("button", { name: "一键创建数据集并绑定" })).toBeInTheDocument();
   });
 
+  it("SyncJobFormPage_edit_shows_legacy_inline_migration_banner", async () => {
+    setViewport(1400);
+    mockApiFetch.mockImplementation((url: string) => {
+      if (url === "/api/v1/datasources") {
+        return Promise.resolve({
+          items: [SAMPLE_MYSQL_DS],
+        });
+      }
+      if (url === "/api/v1/ingestion/sync-jobs") {
+        return Promise.resolve({ items: [] });
+      }
+      if (url === "/api/v1/ingestion/sync-jobs/job-legacy") {
+        return Promise.resolve({
+          name: "旧内联任务",
+          enabled: true,
+          sync_mode: "full",
+          primary_key: null,
+          incremental_column: null,
+          source_data_source_id: null,
+          source: {
+            type: "mysql",
+            host: "127.0.0.1",
+            port: 3307,
+            database: "sample_db",
+            username: "sample",
+            password: "",
+            table: "dirty_orders",
+          },
+          target_table: "orders_clean",
+          schedule_cron: null,
+        });
+      }
+      return Promise.resolve({});
+    });
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-legacy/edit"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs/:id/edit" element={<SyncJobFormPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText("此任务仍使用旧版内联连接")).toBeInTheDocument();
+    expect(screen.getByText(/sample@127\.0\.0\.1:3307\/sample_db/)).toBeInTheDocument();
+  });
+
   it("SyncJobFormPage_datasource_mode_renders_select", async () => {
     setViewport(1400);
     mockNewJobFormBootstrap([
@@ -752,11 +812,10 @@ describe("ingestion admin smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
-    fireEvent.click(await screen.findByRole("button", { name: "使用已有 MySQL 连接" }));
     fireEvent.click(await screen.findByRole("combobox", { name: "业务源连接" }));
     fireEvent.click(await screen.findByRole("option", { name: "Sample MySQL" }));
     fireEvent.change(screen.getByLabelText("任务名称"), { target: { value: "ds-ref-smoke" } });
-    fireEvent.change(screen.getByLabelText("源表"), { target: { value: "dirty_orders" } });
+    fireEvent.change(screen.getByLabelText("源对象"), { target: { value: "dirty_orders" } });
     fireEvent.change(screen.getByLabelText("目标表"), { target: { value: "orders_from_ds" } });
     fireEvent.click(screen.getByRole("button", { name: "创建" }));
     await waitFor(() => {
@@ -858,7 +917,7 @@ describe("ingestion admin smoke", () => {
     expect(postCalls).toHaveLength(0);
   });
 
-  it("SyncJobFormPage_password_field_is_masked (T-ING-07)", async () => {
+  it("SyncJobFormPage_requires_datasource_connection (T-ING-07)", async () => {
     setViewport(1400);
     mockNewJobFormBootstrap();
     render(
@@ -868,9 +927,23 @@ describe("ingestion admin smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
-    fireEvent.click(await screen.findByRole("button", { name: "手动填写（排障）" }));
-    const passwordInput = await screen.findByLabelText(/^密码/);
-    expect(passwordInput).toHaveAttribute("type", "password");
+    expect(await screen.findByLabelText("业务源连接")).toBeInTheDocument();
+    expect(screen.queryByLabelText(/^密码/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("主机")).not.toBeInTheDocument();
+  });
+
+  it("SyncJobFormPage_blocks_create_without_datasource (T-ING-22)", async () => {
+    setViewport(375);
+    mockNewJobFormBootstrap([]);
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs/new" element={<SyncJobFormPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText("尚无可用同步源连接")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "创建" })).toBeDisabled();
   });
 
   it("EtlRulesPage_renders_default_rule_row_when_empty (T-ING-08)", async () => {
@@ -1134,7 +1207,7 @@ describe("ingestion admin smoke", () => {
     const createPromise = new Promise<{ id: string }>((r) => {
       resolveCreate = () => r({ id: "new-job" });
     });
-    mockNewJobFormBootstrap([], [])
+    mockNewJobFormBootstrap()
       .mockImplementationOnce(() => createPromise);
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
@@ -1144,7 +1217,9 @@ describe("ingestion admin smoke", () => {
       </MemoryRouter>,
     );
     await screen.findByLabelText("任务名称");
-    fireEvent.click(await screen.findByRole("button", { name: "手动填写（排障）" }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "创建" })).not.toBeDisabled();
+    });
     fireEvent.change(screen.getByLabelText("任务名称"), { target: { value: "double-guard" } });
     const createBtn = screen.getAllByRole("button", { name: "创建" })[0];
     fireEvent.click(createBtn);
@@ -1231,33 +1306,12 @@ describe("ingestion admin smoke", () => {
     expect(performance.now() - start).toBeLessThan(600);
   });
 
-  it("SyncJobFormPage_invalid_port_shows_error (T-ING-22)", async () => {
-    setViewport(375);
-    mockNewJobFormBootstrap([], []).mockRejectedValueOnce({
-      message: "请求参数无效",
-      status: 422,
-    });
-    render(
-      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
-        <Routes>
-          <Route path="/admin/ingestion/sync-jobs/new" element={<SyncJobFormPage />} />
-        </Routes>
-      </MemoryRouter>,
-    );
-    await screen.findByLabelText("任务名称");
-    fireEvent.click(await screen.findByRole("button", { name: "手动填写（排障）" }));
-    fireEvent.change(screen.getByLabelText("任务名称"), { target: { value: "bad-port" } });
-    fireEvent.change(screen.getByLabelText("端口"), { target: { value: "0" } });
-    fireEvent.click(screen.getAllByRole("button", { name: "创建" })[0]);
-    expect(await screen.findByText(/请求参数无效|操作失败/)).toBeInTheDocument();
-  });
-
   it("SyncJobFormPage_invalid_cron_shows_field_error_and_toast", async () => {
     setViewport(1400);
     const { toast } = await import("sonner");
     mockApiFetch.mockImplementation((url: string, init?: { method?: string }) => {
       if (url === "/api/v1/datasources") {
-        return Promise.resolve({ items: [] });
+        return Promise.resolve({ items: [SAMPLE_MYSQL_DS] });
       }
       if (url === "/api/v1/ingestion/sync-jobs" && !init?.method) {
         return Promise.resolve({ items: [] });
@@ -1280,7 +1334,9 @@ describe("ingestion admin smoke", () => {
       </MemoryRouter>,
     );
     await screen.findByLabelText("任务名称");
-    fireEvent.click(await screen.findByRole("button", { name: "手动填写（排障）" }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "创建" })).not.toBeDisabled();
+    });
     fireEvent.change(screen.getByLabelText("任务名称"), { target: { value: "bad-cron-job" } });
     fireEvent.change(screen.getByLabelText("定时 Cron（可选）"), {
       target: { value: "0 0 *0 *15 *" },

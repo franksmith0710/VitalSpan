@@ -21,6 +21,17 @@ _SUPPORTED_FORMATS = frozenset({"web", "html"})
 _EXPORT_KINDS = frozenset({"word", "excel", "pdf"})
 
 
+def _extension_needs_datasource(ext: Any) -> bool:
+    for metric in ext.metrics:
+        if not metric.visible:
+            continue
+        if metric.query_mode == "dataset" and metric.bound_config_id:
+            return True
+        if metric.expression or metric.key:
+            return True
+    return False
+
+
 def build_engine_render_spec(node: CatalogNodeOut, parameters: dict[str, Any], fmt: str) -> EngineRenderSpec:
     return EngineRenderSpec(
         templateNodeId=node.id,
@@ -83,19 +94,10 @@ def run_template(template_id: uuid.UUID, payload: RenderRunIn, actor: UserContex
     if node.node_type != "template":
         raise ReportEngineError("RPT_ENGINE_NOT_TEMPLATE", "Node is not a template", 422)
 
-    if node.template_kind in _EXPORT_KINDS and payload.format == node.template_kind:
-        _assert_extension_when_kind(node)
-        spec = build_engine_render_spec(node, parameters, payload.format)
-        export_hook = _build_export_hook(node)
-        return RenderRunOut(status="ready", renderSpec=spec, queryMeta=None, exportHook=export_hook)
+    if payload.format not in _SUPPORTED_FORMATS | _EXPORT_KINDS:
+        raise ReportEngineError("RPT_ENGINE_FORMAT_NOT_SUPPORTED", "Unsupported format", 422)
 
-    if payload.format == "pdf":
-        raise ReportEngineError(
-            "RPT_ENGINE_FORMAT_NOT_SUPPORTED",
-            "PDF render is not supported in L1",
-            422,
-        )
-    if payload.format not in _SUPPORTED_FORMATS:
+    if payload.format in _EXPORT_KINDS and node.template_kind not in _EXPORT_KINDS:
         raise ReportEngineError("RPT_ENGINE_FORMAT_NOT_SUPPORTED", "Unsupported format", 422)
 
     _assert_extension_when_kind(node)
@@ -110,6 +112,13 @@ def run_template(template_id: uuid.UUID, payload: RenderRunIn, actor: UserContex
 
     if ds_id is None and ext is not None and ext.default_data_source_id is not None:
         ds_id = ext.default_data_source_id
+
+    if ext is not None and ds_id is None and _extension_needs_datasource(ext):
+        raise ReportEngineError(
+            RPT_ENGINE_DATASOURCE_REQUIRED,
+            "dataSourceId is required when extension metrics are configured",
+            422,
+        )
 
     export_hook: ExportHookOut | None = None
     if node.template_kind in _EXPORT_KINDS:
@@ -134,3 +143,23 @@ def run_template(template_id: uuid.UUID, payload: RenderRunIn, actor: UserContex
         spec = build_engine_render_spec(node, parameters, payload.format)
 
     return RenderRunOut(status="ready", renderSpec=spec, queryMeta=query_meta, exportHook=export_hook)
+
+
+def export_template_bytes(
+    template_id: uuid.UUID,
+    fmt: str,
+    actor: UserContext,
+    *,
+    parameters: dict[str, Any] | None = None,
+) -> bytes:
+    from app.reports.render.render_from_spec import render_document
+
+    if fmt not in _EXPORT_KINDS:
+        raise ReportEngineError("RPT_ENGINE_FORMAT_NOT_SUPPORTED", "Unsupported export format", 422)
+    run_out = run_template(
+        template_id,
+        RenderRunIn(format=fmt, parameters=parameters or {}),  # type: ignore[arg-type]
+        actor,
+    )
+    node = catalog_service.get_node(template_id)
+    return render_document(run_out.render_spec.model_dump(by_alias=True), fmt, title=node.name)

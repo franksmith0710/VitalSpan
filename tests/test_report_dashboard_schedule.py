@@ -45,9 +45,11 @@ def _sqlite():
 def _reset_schedules():
     from app.dashboard.export_jobs import reset_export_jobs_for_tests
     from app.dashboard.export_token import reset_export_tokens_for_tests
+    from app.reports.persistence.store import reset_metadata_for_tests
     from app.reports.scheduler import executor as scheduler_executor
     from app.reports.scheduler.store import reset_schedules_for_tests
 
+    reset_metadata_for_tests()
     reset_schedules_for_tests()
     scheduler_executor._EXECUTION_LOG.clear()
     scheduler_executor._EXECUTION_BY_ID.clear()
@@ -55,6 +57,7 @@ def _reset_schedules():
     reset_export_jobs_for_tests()
     reset_export_tokens_for_tests()
     yield
+    reset_metadata_for_tests()
     reset_schedules_for_tests()
     scheduler_executor._EXECUTION_LOG.clear()
     scheduler_executor._EXECUTION_BY_ID.clear()
@@ -327,6 +330,86 @@ def test_execute_wecom_webhook_delivered(client: TestClient, monkeypatch):
     assert body["status"] == "semi_real_succeeded"
     wecom_step = next(s for s in body["deliverySteps"] if s["channel"] == "wecom")
     assert wecom_step["status"] == "delivered"
+
+
+def test_template_schedule_smtp_pdf_attachment(client: TestClient):
+    """Template schedule execute → SMTP PDF attachment (RenderSpec renderer)."""
+    import uuid
+
+    tpl_key = f"sched-{uuid.uuid4().hex[:8]}"
+    ds_id = str(uuid.uuid4())
+    client.put(
+        f"/api/v1/reports/templates/{tpl_key}",
+        headers=AUTH,
+        json={
+            "templateKey": tpl_key,
+            "format": "pdf",
+            "displayName": "Schedule PDF",
+            "blocks": [{"blockType": "table", "tableRef": "t1"}],
+        },
+    )
+    node_id = client.post(
+        "/api/v1/reports/catalog/nodes",
+        headers=AUTH,
+        json={
+            "name": "Sched Template",
+            "nodeType": "template",
+            "templateKind": "pdf",
+            "templateKey": tpl_key,
+        },
+    ).json()["id"]
+    client.put(
+        f"/api/v1/reports/catalog/nodes/{node_id}/extension",
+        headers=AUTH,
+        json={
+            "catalogNodeId": node_id,
+            "defaultDataSourceId": ds_id,
+            "metrics": [{"key": "m1", "label": "M1", "expression": "SELECT 1 AS m1", "visible": True}],
+            "filters": [],
+            "changeNote": "init",
+        },
+    )
+    sched = client.post(
+        "/api/v1/reports/schedules",
+        headers=AUTH,
+        json={
+            "sourceType": "template",
+            "sourceId": node_id,
+            "cron": "0 9 * * *",
+            "recipients": [{"type": "role", "value": "admin"}],
+            "attachmentFormats": ["pdf"],
+        },
+    )
+    assert sched.status_code == 201, sched.text
+    schedule_id = sched.json()["id"]
+    client.post(
+        f"/api/v1/reports/schedules/{schedule_id}/transition",
+        headers=AUTH,
+        json={"action": "schedule"},
+    )
+    with patch("app.reports.engine.execute.execute_query") as mock_q, patch(
+        "app.reports.scheduler.delivery_adapter.smtplib.SMTP",
+    ) as smtp_cls:
+        from app.query.schemas import ExecuteResponse
+
+        mock_q.return_value = ExecuteResponse(
+            columns=["m1"], rows=[[1]], rowCount=1, truncated=False, traceId="t",
+        )
+        smtp_instance = smtp_cls.return_value.__enter__.return_value
+        exec_resp = client.post(
+            f"/api/v1/reports/schedules/{schedule_id}/execute",
+            headers={**AUTH, "Idempotency-Key": "tpl-smtp-1", "X-Rpt-Semi-Real": "1"},
+        )
+        assert exec_resp.status_code == 200, exec_resp.text
+        body = exec_resp.json()
+        assert body.get("status") == "semi_real_succeeded"
+        assert body.get("artifactKind") == "template_render"
+        smtp_instance.send_message.assert_called_once()
+        msg = smtp_instance.send_message.call_args[0][0]
+        attachments = list(msg.iter_attachments())
+        assert len(attachments) == 1
+        assert attachments[0].get_filename().endswith(".pdf")
+        assert attachments[0].get_content().startswith(b"%PDF")
 
 
 def test_schedule_persists_with_db_store(client: TestClient, monkeypatch):

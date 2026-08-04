@@ -14,13 +14,16 @@ from app.reports.extension.compare import build_compare_slots
 from app.reports.extension.render import build_extension_render_spec
 from app.reports.extension.schemas import ExtensionConfigOut, ExtensionConfigUpsert
 
+from app.reports.persistence import extension_repo, memory_stores
+from app.reports.persistence.store import persistence_store_label
+
 _MAX_METRICS = 32
 _MAX_FILTERS = 32
 _VALID_OPERATORS = frozenset({"eq", "ne", "in", "between", "like"})
 _VALID_COMPARE = frozenset({"none", "yoy", "mom"})
 _KEY_RE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
-_store: dict[uuid.UUID, dict] = {}
-_audit_log: list[dict] = []
+_store = memory_stores.extension_configs  # test compat
+_audit_log = memory_stores.extension_audit
 
 
 def _assert_template_node(node_id: uuid.UUID) -> None:
@@ -48,7 +51,7 @@ def _validate_compare_metrics(metrics: list) -> None:
                 422,
                 fields={"fields": ["compareMode"]},
             )
-        if mode in {"yoy", "mom"} and not m.expression and not _KEY_RE.match(m.key):
+        if mode in {"yoy", "mom"} and getattr(m, "query_mode", "sql") == "sql" and not m.expression and not _KEY_RE.match(m.key):
             raise ReportExtensionError(
                 "RPT_EXT_INVALID_COMPARE",
                 "compare metric requires expression or valid key",
@@ -79,7 +82,7 @@ def upsert(node_id: uuid.UUID, payload: ExtensionConfigUpsert, actor: UserContex
     if payload.catalog_node_id != node_id:
         raise ReportExtensionError("RPT_EXT_NODE_NOT_FOUND", "catalogNodeId mismatch", 404)
     _validate_payload(payload)
-    prev = _store.get(node_id)
+    prev = extension_repo.get_config(node_id)
     revision = (prev["revision"] + 1) if prev else 1
     record = {
         "catalog_node_id": node_id,
@@ -89,17 +92,15 @@ def upsert(node_id: uuid.UUID, payload: ExtensionConfigUpsert, actor: UserContex
         "default_data_source_id": payload.default_data_source_id,
         "revision": revision,
     }
-    _store[node_id] = record
+    extension_repo.save_config(node_id, record)
     if payload.change_note:
-        _audit_log.append(
-            {"nodeId": str(node_id), "changeNote": payload.change_note, "updatedAt": datetime.now(UTC).isoformat()}
-        )
+        extension_repo.append_audit(node_id, payload.change_note, revision)
     return ExtensionConfigOut(revision=revision, **payload.model_dump())
 
 
 def get_extension(node_id: uuid.UUID) -> ExtensionConfigOut:
     _assert_template_node(node_id)
-    record = _store.get(node_id)
+    record = extension_repo.get_config(node_id)
     if record is None:
         raise ReportExtensionError("RPT_EXT_NODE_NOT_FOUND", "Extension config not found", 404)
     return ExtensionConfigOut(
@@ -115,50 +116,49 @@ def get_extension(node_id: uuid.UUID) -> ExtensionConfigOut:
 def delete_extension(node_id: uuid.UUID, actor: UserContext) -> None:
     assert_extension_action(actor, "delete")
     _assert_template_node(node_id)
-    if node_id not in _store:
+    if extension_repo.get_config(node_id) is None:
         raise ReportExtensionError("RPT_EXT_NODE_NOT_FOUND", "Extension config not found", 404)
-    del _store[node_id]
+    extension_repo.delete_config(node_id)
 
 
 def compare_preview(node_id: uuid.UUID, compare_mode: str, metric_keys: list[str] | None) -> dict:
     _assert_template_node(node_id)
-    record = _store.get(node_id) or {"metrics": []}
+    record = extension_repo.get_config(node_id) or {"metrics": []}
     slots = build_compare_slots(compare_mode, record.get("metrics", []), metric_keys)
     return {"slots": slots}
 
 
 def list_revision_history(node_id: uuid.UUID) -> list[dict]:
     _assert_template_node(node_id)
-    record = _store.get(node_id)
+    record = extension_repo.get_config(node_id)
     if record is None:
         raise ReportExtensionError("RPT_EXT_NODE_NOT_FOUND", "Extension config not found", 404)
-    entries = [e for e in _audit_log if e.get("nodeId") == str(node_id)]
+    entries = extension_repo.list_audit(node_id)
     if not entries:
         return [{
             "revision": record["revision"],
             "changeNote": None,
             "updatedAt": datetime.now(UTC).isoformat(),
         }]
-    return [
-        {"revision": record["revision"], "changeNote": e["changeNote"], "updatedAt": e["updatedAt"]}
-        for e in entries
-    ]
+    return entries
 
 
 def export_persistence_snapshot(node_id: uuid.UUID) -> dict:
-    record = _store[node_id]
+    record = extension_repo.get_config(node_id)
+    if record is None:
+        raise ReportExtensionError("RPT_EXT_NODE_NOT_FOUND", "Extension config not found", 404)
     return {
-        "store": "memory",
+        "store": persistence_store_label(),
         "revision": record["revision"],
         "metrics": record["metrics"],
         "filters": record["filters"],
-        "auditEntryCount": sum(1 for e in _audit_log if e.get("nodeId") == str(node_id)),
+        "auditEntryCount": len(extension_repo.list_audit(node_id)),
     }
 
 
 def get_render_spec(node_id: uuid.UUID) -> dict:
     _assert_template_node(node_id)
-    record = _store.get(node_id)
+    record = extension_repo.get_config(node_id)
     if record is None:
         raise ReportExtensionError("RPT_EXT_NODE_NOT_FOUND", "Extension config not found", 404)
     node = catalog_service.get_node(node_id)
@@ -174,6 +174,9 @@ def resolve_template_readiness(node_id: uuid.UUID) -> Literal["live", "demo"]:
         return "demo"
     if ext.default_data_source_id is not None:
         return "live"
+    for metric in ext.metrics:
+        if metric.query_mode == "dataset" and metric.bound_config_id:
+            return "live"
     return "demo"
 
 

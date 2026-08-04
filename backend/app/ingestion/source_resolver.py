@@ -12,6 +12,7 @@ from app.ingestion.models import (
     SyncJob,
     encrypt_password,
 )
+from app.ingestion.sync_source_capabilities import is_sync_source_capable
 from app.query.rls.guard import validate_identifier
 
 
@@ -23,14 +24,14 @@ class SourceResolverError(Exception):
         super().__init__(message)
 
 
-def _load_mysql_datasource(db: Session, data_source_id: uuid.UUID) -> DataSource:
+def _load_sync_datasource(db: Session, data_source_id: uuid.UUID) -> DataSource:
     row = db.get(DataSource, data_source_id)
     if row is None or row.deleted_at is not None:
         raise SourceResolverError("NOT_FOUND", "数据源不存在", status.HTTP_404_NOT_FOUND)
-    if row.type != "mysql":
+    if not is_sync_source_capable(row.type):
         raise SourceResolverError(
             "UNSUPPORTED_SOURCE_TYPE",
-            "同步任务 M1B 仅支持 MySQL 数据源",
+            f"连接器「{row.type}」不支持同步拉数，请选择可查询的 SQL / Native 数据源",
             status.HTTP_422_UNPROCESSABLE_ENTITY,
         )
     return row
@@ -38,7 +39,7 @@ def _load_mysql_datasource(db: Session, data_source_id: uuid.UUID) -> DataSource
 
 def apply_datasource_snapshot(job: SyncJob, ds: DataSource, source_table: str) -> None:
     validate_identifier(source_table)
-    job.source_type = "mysql"
+    job.source_type = ds.type
     job.source_host = ds.host
     job.source_port = ds.port
     job.source_database = ds.database
@@ -54,10 +55,10 @@ def apply_inline_source(
     *,
     preserve_password: bool = False,
 ) -> None:
-    if source.type != "mysql":
+    if not is_sync_source_capable(source.type):
         raise SourceResolverError(
             "UNSUPPORTED_SOURCE_TYPE",
-            "同步任务 M1B 仅支持 MySQL 源",
+            f"连接器「{source.type}」不支持同步拉数",
             status.HTTP_422_UNPROCESSABLE_ENTITY,
         )
     job.source_type = source.type
@@ -86,7 +87,7 @@ def resolve_and_apply_source(
             raise SourceResolverError("VALIDATION_ERROR", "数据源模式须指定 source_data_source_id")
         if not source_table:
             raise SourceResolverError("VALIDATION_ERROR", "须指定 source_table")
-        ds = _load_mysql_datasource(db, source_data_source_id)
+        ds = _load_sync_datasource(db, source_data_source_id)
         apply_datasource_snapshot(job, ds, source_table)
         return
 

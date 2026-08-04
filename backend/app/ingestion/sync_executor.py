@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.ingestion.etl_rules import apply_rules
 from app.ingestion.models import EtlRuleSet, SyncJob, SyncRun, get_meta_session
-from app.ingestion.sync_fetch import compute_next_watermark, fetch_mysql_rows, validate_sync_table_names
+from app.ingestion.sync_fetch import compute_next_watermark, fetch_source_rows, validate_sync_table_names
 from app.ingestion.sync_write import write_analytics
 
 __all__ = ["run_job", "reconcile_stale_running_runs", "validate_sync_table_names", "INGESTION_MAX_ROWS"]
@@ -39,7 +39,7 @@ def reconcile_stale_running_runs(*, max_age_seconds: int = 600) -> int:
             run.status = "failed"
             run.finished_at = now
             run.error_message = (
-                "运行超时或进程中断，已自动标记失败。请检查 MySQL 源库与分析库连通性后重试。"
+                "运行超时或进程中断，已自动标记失败。请检查业务源连接与分析库连通性后重试。"
             )
         db.commit()
         return len(runs)
@@ -70,9 +70,7 @@ def run_job(job_id: uuid.UUID, trace_id: str, *, run_id: uuid.UUID | None = None
     try:
         if not get_settings().analytics_database_url:
             raise RuntimeError("ANALYTICS_DB_NOT_CONFIGURED")
-        if job.source_type != "mysql":
-            raise RuntimeError("M1B 仅支持 mysql 源")
-        raw = fetch_mysql_rows(job)
+        raw = fetch_source_rows(job)
         cleaned = apply_rules(raw, rules)
         count = write_analytics(job, cleaned)
         next_watermark = compute_next_watermark(job, cleaned)

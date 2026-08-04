@@ -7,9 +7,10 @@ from app.auth.deps import UserContext
 from app.reports.catalog import acl
 from app.reports.catalog.errors import ReportCatalogError
 from app.reports.catalog.schemas import CatalogNodeCreate, CatalogNodeMove, CatalogNodeOut, CatalogNodeUpdate
+from app.reports.persistence import catalog_repo, memory_stores
 
 MAX_CATALOG_DEPTH = 8
-_nodes: dict[uuid.UUID, dict] = {}
+_nodes = memory_stores.catalog_nodes  # test compat alias
 
 
 @dataclass
@@ -21,6 +22,10 @@ class _Node:
     template_kind: str | None
     template_key: str | None
     sort_order: int
+
+
+def _all_nodes() -> dict[uuid.UUID, dict]:
+    return catalog_repo.all_nodes()
 
 
 def _to_out(node: _Node) -> CatalogNodeOut:
@@ -36,13 +41,14 @@ def _to_out(node: _Node) -> CatalogNodeOut:
 
 
 def _get(node_id: uuid.UUID) -> _Node:
-    raw = _nodes.get(node_id)
+    raw = catalog_repo.get_node(node_id)
     if raw is None:
         raise ReportCatalogError("RPT_CATALOG_NODE_NOT_FOUND", "Catalog node not found", 404)
     return _Node(**raw)
 
 
 def _depth(node_id: uuid.UUID | None) -> int:
+    nodes = _all_nodes()
     depth = 0
     current = node_id
     seen: set[uuid.UUID] = set()
@@ -53,7 +59,7 @@ def _depth(node_id: uuid.UUID | None) -> int:
         depth += 1
         if depth > MAX_CATALOG_DEPTH:
             break
-        raw = _nodes.get(current)
+        raw = nodes.get(current)
         if raw is None:
             break
         current = raw["parent_id"]
@@ -61,6 +67,7 @@ def _depth(node_id: uuid.UUID | None) -> int:
 
 
 def _subtree_height(node_id: uuid.UUID) -> int:
+    nodes = _all_nodes()
     height = 0
     frontier = [node_id]
     while frontier:
@@ -69,17 +76,18 @@ def _subtree_height(node_id: uuid.UUID) -> int:
             break
         next_level: list[uuid.UUID] = []
         for nid in frontier:
-            next_level.extend(child_id for child_id, raw in _nodes.items() if raw["parent_id"] == nid)
+            next_level.extend(child_id for child_id, raw in nodes.items() if raw["parent_id"] == nid)
         frontier = next_level
     return height
 
 
 def _collect_descendants(node_id: uuid.UUID) -> set[uuid.UUID]:
+    nodes = _all_nodes()
     out: set[uuid.UUID] = set()
     frontier = [node_id]
     while frontier:
         current = frontier.pop()
-        for child_id, raw in _nodes.items():
+        for child_id, raw in nodes.items():
             if raw["parent_id"] == current and child_id not in out:
                 out.add(child_id)
                 frontier.append(child_id)
@@ -120,7 +128,7 @@ def _validate_template_key(
             "templateKind does not match template format",
             422,
         )
-    for nid, raw in _nodes.items():
+    for nid, raw in _all_nodes().items():
         if exclude_id and nid == exclude_id:
             continue
         if raw.get("template_key") == payload.template_key:
@@ -132,12 +140,13 @@ def _validate_template_key(
 
 
 def count_nodes_by_template_key(template_key: str) -> int:
-    return sum(1 for raw in _nodes.values() if raw.get("template_key") == template_key)
+    return catalog_repo.count_by_template_key(template_key)
 
 
 def list_nodes(parent_id: uuid.UUID | None, actor: UserContext) -> list[CatalogNodeOut]:
     acl.assert_catalog_action(actor, "read")
-    items = [_get(nid) for nid in _nodes]
+    nodes = _all_nodes()
+    items = [_Node(**raw) for raw in nodes.values()]
     if parent_id is not None:
         items = [n for n in items if n.parent_id == parent_id]
     else:
@@ -147,12 +156,13 @@ def list_nodes(parent_id: uuid.UUID | None, actor: UserContext) -> list[CatalogN
 
 def create_node(payload: CatalogNodeCreate, actor: UserContext) -> CatalogNodeOut:
     acl.assert_catalog_action(actor, "create")
-    if payload.parent_id is not None and payload.parent_id not in _nodes:
+    nodes = _all_nodes()
+    if payload.parent_id is not None and payload.parent_id not in nodes:
         raise ReportCatalogError("RPT_CATALOG_PARENT_NOT_FOUND", "Parent node not found", 404)
     _assert_depth(payload.parent_id)
     _validate_template_key(payload, actor)
     node_id = uuid.uuid4()
-    _nodes[node_id] = {
+    row = {
         "id": node_id,
         "name": payload.name,
         "parent_id": payload.parent_id,
@@ -161,6 +171,7 @@ def create_node(payload: CatalogNodeCreate, actor: UserContext) -> CatalogNodeOu
         "template_key": payload.template_key,
         "sort_order": payload.sort_order,
     }
+    catalog_repo.save_node(row)
     acl.register_node_owner(node_id, actor.id)
     return _to_out(_get(node_id))
 
@@ -171,37 +182,45 @@ def get_node(node_id: uuid.UUID) -> CatalogNodeOut:
 
 def update_node(node_id: uuid.UUID, payload: CatalogNodeUpdate, actor: UserContext) -> CatalogNodeOut:
     acl.assert_catalog_action(actor, "update", node_id)
-    _get(node_id)
+    raw = catalog_repo.get_node(node_id)
+    if raw is None:
+        raise ReportCatalogError("RPT_CATALOG_NODE_NOT_FOUND", "Catalog node not found", 404)
     if payload.name is not None:
-        _nodes[node_id]["name"] = payload.name
+        raw["name"] = payload.name
     if payload.sort_order is not None:
-        _nodes[node_id]["sort_order"] = payload.sort_order
+        raw["sort_order"] = payload.sort_order
+    catalog_repo.save_node(raw)
     return _to_out(_get(node_id))
 
 
 def delete_node(node_id: uuid.UUID, actor: UserContext) -> None:
     acl.assert_catalog_action(actor, "delete", node_id)
     _get(node_id)
-    if any(raw["parent_id"] == node_id for raw in _nodes.values()):
+    nodes = _all_nodes()
+    if any(raw["parent_id"] == node_id for raw in nodes.values()):
         raise ReportCatalogError("RPT_CATALOG_HAS_CHILDREN", "Cannot delete node with children", 409)
-    del _nodes[node_id]
+    catalog_repo.delete_node(node_id)
 
 
 def move_node(node_id: uuid.UUID, payload: CatalogNodeMove, actor: UserContext) -> CatalogNodeOut:
     acl.assert_catalog_action(actor, "move", node_id)
-    _get(node_id)
+    raw = catalog_repo.get_node(node_id)
+    if raw is None:
+        raise ReportCatalogError("RPT_CATALOG_NODE_NOT_FOUND", "Catalog node not found", 404)
     parent_id = payload.parent_id
     if parent_id == node_id:
         raise ReportCatalogError("RPT_CATALOG_CYCLE", "Cannot move node under itself", 422)
+    nodes = _all_nodes()
     if parent_id is not None:
         if parent_id in _collect_descendants(node_id):
             raise ReportCatalogError("RPT_CATALOG_CYCLE", "Cannot move node under its descendant", 422)
-        if parent_id not in _nodes:
+        if parent_id not in nodes:
             raise ReportCatalogError("RPT_CATALOG_PARENT_NOT_FOUND", "Parent node not found", 404)
     _assert_depth(parent_id, node_id)
-    _nodes[node_id]["parent_id"] = parent_id
+    raw["parent_id"] = parent_id
+    catalog_repo.save_node(raw)
     return _to_out(_get(node_id))
 
 
 def node_exists(node_id: uuid.UUID) -> bool:
-    return node_id in _nodes
+    return catalog_repo.get_node(node_id) is not None

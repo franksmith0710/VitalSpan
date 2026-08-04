@@ -17,8 +17,10 @@ from app.reports.prefab.schemas import (
     PrefabBindingValidateOut,
 )
 
+from app.reports.persistence import prefab_repo, memory_stores
+
 _ENTITY_RE = re.compile(r"^[a-z][a-z0-9_]{1,63}$")
-_store: dict[str, dict] = {}
+_store = memory_stores.prefab_bindings  # test compat
 _USER_PREFAB_SCOPE: dict[str, str] = {}
 
 
@@ -99,7 +101,7 @@ def _validate_binding(payload: PrefabBindingIn) -> PrefabBindingIn:
 
 
 def list_prefab_bindings(user: UserContext | None = None) -> PrefabBindingListResponse:
-    items = list(_store.values())
+    items = list(prefab_repo.all_bindings().values())
     if user and "enterprise" in set(user.roles):
         prefix = _USER_PREFAB_SCOPE.get(user.id, "bind-cn")
         items = [i for i in items if str(i.get("bindingKey", "")).startswith(prefix)]
@@ -111,7 +113,7 @@ def list_prefab_bindings(user: UserContext | None = None) -> PrefabBindingListRe
 
 def get_prefab_binding(key: str, user: UserContext) -> PrefabBindingOut:
     _assert_prefab_scope(user, key)
-    stored = _store.get(key)
+    stored = prefab_repo.get_binding(key)
     if stored is None:
         raise PrefabError(RPT_PREFAB_NOT_FOUND, "Prefab binding not found", 404)
     return PrefabBindingOut.model_validate(stored)
@@ -128,5 +130,5 @@ def upsert_prefab_binding(key: str, payload: PrefabBindingIn, user: UserContext)
     if key != payload.binding_key:
         raise PrefabError("RPT_PREFAB_KEY_MISMATCH", "path binding_key mismatch", 422)
     item = _validate_binding(payload)
-    _store[key] = item.model_dump(by_alias=True, mode="json")
-    return PrefabBindingOut.model_validate(_store[key])
+    prefab_repo.save_binding(key, item.model_dump(by_alias=True, mode="json"))
+    return PrefabBindingOut.model_validate(prefab_repo.get_binding(key))
