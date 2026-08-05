@@ -17,14 +17,24 @@ export function classifyDatasetField(field: string): DatasetFieldKind {
   return "dimension";
 }
 
-export function groupDatasetFields(fields: string[]): {
+export function resolveFieldKind(
+  field: string,
+  overrides?: Record<string, DatasetFieldKind>,
+): DatasetFieldKind {
+  return overrides?.[field] ?? classifyDatasetField(field);
+}
+
+export function groupDatasetFields(
+  fields: string[],
+  overrides?: Record<string, DatasetFieldKind>,
+): {
   dimensions: string[];
   metrics: string[];
 } {
   const dimensions: string[] = [];
   const metrics: string[] = [];
   for (const field of fields) {
-    if (classifyDatasetField(field) === "metric") {
+    if (resolveFieldKind(field, overrides) === "metric") {
       metrics.push(field);
     } else {
       dimensions.push(field);
@@ -41,8 +51,11 @@ export function suggestDatasetBindColumns(columns: string[]): string[] {
   return picked.length > 0 ? picked : [...columns];
 }
 
-export function fieldDisplayKind(field: string): "date" | "text" | "number" {
-  const kind = classifyDatasetField(field);
+export function fieldDisplayKind(
+  field: string,
+  overrides?: Record<string, DatasetFieldKind>,
+): "date" | "text" | "number" {
+  const kind = resolveFieldKind(field, overrides);
   if (kind === "metric") return "number";
   if (/(?:^|_)(date|time|day|month|year|week)(?:$|_)/i.test(field)) return "date";
   return "text";

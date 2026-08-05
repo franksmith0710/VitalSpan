@@ -40,6 +40,7 @@ function ChartEditRailInner({
     datasetsEmpty,
     handleDatasetSelect,
     datasetBindingError,
+    columnKindOverrides,
     columns,
     columnsLoading,
     columnsReady,
@@ -78,6 +79,7 @@ function ChartEditRailInner({
             columns={columns}
             columnsLoading={columnsLoading}
             columnsReady={columnsReady}
+            columnKindOverrides={columnKindOverrides}
             onDatasetSelect={handleDatasetSelect}
             datasetBindingError={datasetBindingError}
             onFieldClick={(field) => assignField(field)}

@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.query.translator.schemas import TranslateConditions
 
@@ -79,6 +79,7 @@ class DatasetQueryConfigPayload(BaseModel):
     schema_name: str = Field(alias="schema")
     table: str
     columns: list[str] = Field(min_length=1)
+    column_kinds: dict[str, str] | None = Field(default=None, alias="columnKinds")
     conditions: TranslateConditions | None = None
     limit: int | None = Field(default=None, ge=1)
     offset: int = Field(default=0, ge=0)
@@ -89,3 +90,15 @@ class DatasetQueryConfigPayload(BaseModel):
         if any(c.strip() == "*" for c in cols):
             raise ValueError("wildcard * is not allowed")
         return cols
+
+    @model_validator(mode="after")
+    def validate_column_kinds(self) -> DatasetQueryConfigPayload:
+        if not self.column_kinds:
+            return self
+        allowed = {"dimension", "metric"}
+        for key, kind in self.column_kinds.items():
+            if key not in self.columns:
+                raise ValueError(f"columnKinds key {key!r} must be in columns")
+            if kind not in allowed:
+                raise ValueError(f"columnKinds[{key!r}] must be dimension or metric")
+        return self

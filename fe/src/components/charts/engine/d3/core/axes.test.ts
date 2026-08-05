@@ -35,8 +35,8 @@ describe("d3 core", () => {
     if (layout.rotateDeg) expect(layout.extraBottom).toBeGreaterThan(0);
   });
 
-  it("formatAxisCategoryLabel truncates long labels in tight slots", () => {
-    expect(formatAxisCategoryLabel("abcdefghijklmnop", 24, 0)).toMatch(/…$/);
+  it("formatAxisCategoryLabel hides labels that do not fit in slot", () => {
+    expect(formatAxisCategoryLabel("abcdefghijklmnop", 24, 0)).toBe("");
     expect(formatAxisCategoryLabel("短", 48, 0)).toBe("短");
   });
 
@@ -50,8 +50,8 @@ describe("d3 core", () => {
     expect(layout.rotateDeg).toBeLessThan(0);
   });
 
-  it("formatHorizontalBandAxisLabel truncates when width is limited", () => {
-    expect(formatHorizontalBandAxisLabel("2024年第一季度", 40)).toMatch(/…$/);
+  it("formatHorizontalBandAxisLabel hides labels when width is limited", () => {
+    expect(formatHorizontalBandAxisLabel("2024年第一季度", 40)).toBe("");
     expect(formatHorizontalBandAxisLabel("短", 80)).toBe("短");
   });
 

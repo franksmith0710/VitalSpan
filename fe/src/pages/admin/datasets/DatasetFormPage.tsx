@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Layers } from "lucide-react";
+import { ArrowLeft, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import { Button } from "@/components/ui/button";
@@ -11,9 +11,22 @@ import { useFormDirtyState } from "@/hooks/use-form-dirty-state";
 import { useUnsavedLeaveGuard } from "@/hooks/use-unsaved-leave-guard";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
+import {
+  fetchDatasetQueryConfig,
+  persistDatasetBind,
+} from "@/lib/datasetChartBinding";
 import { queryKeys } from "@/lib/queryKeys";
-import { DatasetBindPanel } from "./components/DatasetBindPanel";
-import { DatasetEditorForm } from "./DatasetEditorForm";
+import {
+  bindDraftFromBinding,
+  EMPTY_BIND_DRAFT,
+  seedBindDraftFromColumns,
+} from "./components/datasetFieldWorkbenchState";
+import {
+  canSubmitDataset,
+  DATASET_EDITOR_FORM_ID,
+  DatasetEditorForm,
+} from "./DatasetEditorForm";
+import { useDatasetTableColumns } from "./hooks/useDatasetTableColumns";
 import type { DatasetEditorValues, DatasetItem } from "./types";
 
 const datasetPageIcon = (
@@ -28,6 +41,7 @@ const EMPTY: DatasetEditorValues = {
   tables: [],
   computedFields: [],
   allowedRoles: ["analyst"],
+  bindDraft: EMPTY_BIND_DRAFT,
 };
 
 function normalizeValues(values: DatasetEditorValues): DatasetEditorValues {
@@ -40,6 +54,12 @@ function normalizeValues(values: DatasetEditorValues): DatasetEditorValues {
       name: f.name.trim(),
       expression: f.expression.trim(),
     })),
+    bindDraft: values.bindDraft
+      ? {
+          selectedColumns: [...values.bindDraft.selectedColumns],
+          columnKinds: { ...values.bindDraft.columnKinds },
+        }
+      : EMPTY_BIND_DRAFT,
   };
 }
 
@@ -64,6 +84,12 @@ function valuesFromSearchParams(searchParams: URLSearchParams): DatasetEditorVal
   };
 }
 
+function qualifiedTableFromBinding(schema?: string, table?: string): string {
+  if (!table) return "";
+  if (schema) return `${schema}.${table}`;
+  return table;
+}
+
 export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
@@ -77,6 +103,7 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
   const prefillTable = searchParams.get("targetTable")?.trim() || undefined;
   const [values, setValues] = useState<DatasetEditorValues>(createPrefill);
   const [isSaving, setIsSaving] = useState(false);
+  const bindSeedKeyRef = useRef("");
 
   const detailQuery = useQuery({
     queryKey: queryKeys.datasets.detail(id ?? ""),
@@ -86,6 +113,25 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
       if (err instanceof Error && err.message.includes("不存在")) return false;
       return count < 1;
     },
+  });
+
+  const boundConfigId = detailQuery.data?.boundConfigId;
+  const boundConfigQuery = useQuery({
+    queryKey: ["query-config", boundConfigId ?? ""],
+    queryFn: () => fetchDatasetQueryConfig(boundConfigId!),
+    enabled: mode === "edit" && Boolean(boundConfigId),
+  });
+
+  const primaryTableName = values.tables[0]?.name ?? "";
+  const dataSourceIdForColumns = values.tableSourceDataSourceId ?? preferredDataSourceId ?? "";
+  const { columnNames, columnsLoading } = useDatasetTableColumns(
+    dataSourceIdForColumns,
+    primaryTableName,
+  );
+
+  const dsQuery = useQuery({
+    queryKey: queryKeys.datasources.list(),
+    queryFn: () => apiFetch<{ items: Array<{ id: string; type?: string }> }>("/api/v1/datasources"),
   });
 
   const { isDirty, isBaselineReady, resetBaseline, markSaved } = useFormDirtyState(
@@ -101,7 +147,12 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
   useEffect(() => {
     if (mode === "create") {
       setValues(createPrefill);
-      resetBaseline(createPrefill);
+      if (!createPrefill.tables[0]?.name) {
+        resetBaseline(createPrefill);
+        bindSeedKeyRef.current = "create-empty";
+      } else {
+        bindSeedKeyRef.current = "";
+      }
       return;
     }
     if (!detailQuery.data) return;
@@ -113,10 +164,52 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
       computedFields: item.computedFields.map((c) => ({ ...c })),
       allowedRoles: [...item.allowedRoles],
       tableSourceDataSourceId: item.tableSourceDataSourceId ?? undefined,
+      bindDraft: EMPTY_BIND_DRAFT,
     };
     setValues(nextValues);
-    resetBaseline(nextValues);
+    if (!item.tables[0]?.name) {
+      resetBaseline(nextValues);
+      bindSeedKeyRef.current = "edit-no-table";
+    } else {
+      bindSeedKeyRef.current = "";
+    }
   }, [detailQuery.data, mode, resetBaseline, createPrefill]);
+
+  useEffect(() => {
+    if (!primaryTableName || columnsLoading) return;
+    if (mode === "edit" && boundConfigId && boundConfigQuery.isLoading) return;
+
+    const seedKey = `${mode}:${primaryTableName}:${boundConfigId ?? "none"}:${columnNames.join(",")}`;
+    if (bindSeedKeyRef.current === seedKey) return;
+    bindSeedKeyRef.current = seedKey;
+
+    const bound = boundConfigQuery.data;
+    let nextDraft = EMPTY_BIND_DRAFT;
+    if (bound?.columns?.length && boundConfigId) {
+      const boundTable = qualifiedTableFromBinding(bound.schema, bound.table);
+      if (!boundTable || boundTable === primaryTableName) {
+        nextDraft = bindDraftFromBinding(bound.columns, bound.columnKinds);
+      }
+    }
+    if (nextDraft.selectedColumns.length === 0 && columnNames.length > 0) {
+      nextDraft = seedBindDraftFromColumns(columnNames, null);
+    }
+
+    setValues((current) => {
+      const nextValues = { ...current, bindDraft: nextDraft };
+      resetBaseline(nextValues);
+      return nextValues;
+    });
+  }, [
+    boundConfigId,
+    boundConfigQuery.data,
+    boundConfigQuery.isLoading,
+    columnNames,
+    columnsLoading,
+    mode,
+    primaryTableName,
+    resetBaseline,
+  ]);
 
   const handleSave = async (): Promise<boolean> => {
     const body = normalizeValues(values);
@@ -132,11 +225,49 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
               method: "PUT",
               body: JSON.stringify(body),
             });
-      toast.success(mode === "create" ? "Dataset 已创建" : "Dataset 已更新");
+
+      const bindDraft = body.bindDraft;
+      const tableSourceId = body.tableSourceDataSourceId;
+      const primaryTable = body.tables[0]?.name;
+      if (
+        bindDraft &&
+        bindDraft.selectedColumns.length > 0 &&
+        tableSourceId &&
+        primaryTable
+      ) {
+        const connectorType =
+          dsQuery.data?.items.find((d) => d.id === tableSourceId)?.type ?? "postgresql";
+        try {
+          const configId = await persistDatasetBind({
+            datasetId: saved.datasetId,
+            boundConfigId: detailQuery.data?.boundConfigId ?? boundConfigId,
+            dataSourceId: tableSourceId,
+            connectorType,
+            tableName: primaryTable,
+            selectedColumns: bindDraft.selectedColumns,
+            columnKinds: bindDraft.columnKinds,
+          });
+          toast.success(
+            mode === "create"
+              ? `Dataset 已创建，出图字段已绑定（${bindDraft.selectedColumns.length} 列）`
+              : `Dataset 已保存，出图字段已更新（${bindDraft.selectedColumns.length} 列）`,
+          );
+          await queryClient.invalidateQueries({ queryKey: ["query-config", configId] });
+        } catch (bindErr) {
+          toast.error(
+            `Dataset 已保存，但出图字段绑定失败：${mapApiError(bindErr)}。请重试保存。`,
+          );
+        }
+      } else {
+        toast.success(mode === "create" ? "Dataset 已创建" : "Dataset 已更新");
+      }
+
       await queryClient.invalidateQueries({ queryKey: ["datasets"] });
       markSaved(body);
       if (mode === "create") {
         navigate(`/admin/datasets/${saved.datasetId}/edit`, { replace: true });
+      } else {
+        void detailQuery.refetch();
       }
       return true;
     } catch (err) {
@@ -158,6 +289,31 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
     return mode === "create" ? "填写完成后保存以创建 Dataset" : "已保存";
   }, [isBaselineReady, isDirty, mode]);
 
+  const canSubmit = canSubmitDataset(values);
+
+  const headerLeadingActions = (
+    <Button asChild variant="outline" size="sm">
+      <Link to="/admin/datasets">
+        <ArrowLeft className="size-4" aria-hidden />
+        返回列表
+      </Link>
+    </Button>
+  );
+
+  const headerActions = (
+    <Button
+      type="submit"
+      form={DATASET_EDITOR_FORM_ID}
+      variant="primary"
+      size="sm"
+      loading={isSaving}
+      loadingText="保存中…"
+      disabled={!canSubmit || isSaving || (mode === "edit" && !isDirty)}
+    >
+      {mode === "create" ? "创建 Dataset" : "保存"}
+    </Button>
+  );
+
   if (mode === "edit" && detailQuery.isLoading) {
     return (
       <AdminPageShell title="编辑数据集" layout="fill" icon={datasetPageIcon}>
@@ -172,11 +328,8 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
         title="编辑数据集"
         layout="fill"
         icon={datasetPageIcon}
-        actions={
-          <Button asChild variant="outline">
-            <Link to="/admin/datasets">返回列表</Link>
-          </Button>
-        }
+        leadingActions={headerLeadingActions}
+        actions={headerActions}
       >
         <p className="text-theme-sm text-gray-600 dark:text-gray-400">{mapApiError(detailQuery.error)}</p>
       </AdminPageShell>
@@ -189,19 +342,14 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
       layout="fill"
       icon={datasetPageIcon}
       description={pageDescription}
-      actions={
-        <Button asChild variant="outline">
-          <Link to="/admin/datasets">返回列表</Link>
-        </Button>
-      }
+      leadingActions={headerLeadingActions}
+      actions={headerActions}
     >
       <DatasetEditorForm
         mode={mode}
         values={values}
         onChange={setValues}
         onSubmit={() => void handleSave()}
-        isSaving={isSaving}
-        submitDisabled={mode === "edit" && !isDirty}
         origin={mode === "edit" ? (detailQuery.data?.origin ?? "manual") : "manual"}
         tablePickerPrefill={{
           preferredDataSourceId,
@@ -209,20 +357,10 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
           savedDataSourceId: values.tableSourceDataSourceId,
           onDataSourceIdChange: (tableSourceDataSourceId) =>
             setValues((current) => ({ ...current, tableSourceDataSourceId })),
+          boundConfigId: detailQuery.data?.boundConfigId,
+          syncJobId: detailQuery.data?.syncJobId,
+          onRefreshBinding: () => void detailQuery.refetch(),
         }}
-        bindPanel={
-          mode === "edit" && id ? (
-            <DatasetBindPanel
-              datasetId={values.datasetId}
-              tables={values.tables}
-              boundConfigId={detailQuery.data?.boundConfigId}
-              tableSourceDataSourceId={values.tableSourceDataSourceId}
-              origin={detailQuery.data?.origin ?? "manual"}
-              syncJobId={detailQuery.data?.syncJobId}
-              onBound={() => void detailQuery.refetch()}
-            />
-          ) : null
-        }
       />
       <UnsavedLeaveDialog
         open={leaveDialogOpen}

@@ -4,7 +4,6 @@ import { describe, expect, it, vi } from "vitest";
 import { CanvasEditToolbar } from "./CanvasEditToolbar";
 import { ScreenMorePicker } from "./screen/ScreenMorePicker";
 import { createPaletteWidget } from "./createLayoutWidget";
-import { isScreenTitleBarWidget } from "@/lib/screenVisualAssets";
 import {
   DASHBOARD_SCREEN_INSERT_DND_TYPE,
   readPaletteDragPayload,
@@ -62,7 +61,9 @@ describe("CanvasEditToolbar screen materials", () => {
     onInsert("screen-title-bar");
     expect(onInsert).toHaveBeenCalledWith("screen-title-bar");
     expect(widgets).toHaveLength(1);
-    expect(isScreenTitleBarWidget(widgets[0]!)).toBe(true);
+    expect(widgets[0]?.textConfig?.widgetStyle?.backgroundImage).toContain(
+      "borderless-decor-v1",
+    );
   });
 
   it("serializes screen insert drag payload", () => {

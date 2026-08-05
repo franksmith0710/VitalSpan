@@ -134,6 +134,8 @@ export function DashboardCanvasBackgroundPanel({
               <ImageSourceField
                 variant="rail"
                 showPreview
+                assetGallery
+                assetGalleryScope="canvas"
                 value={imageUrl}
                 onChange={(next) => commitImageUrl(next ?? "")}
               />

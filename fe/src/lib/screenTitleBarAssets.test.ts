@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   buildScreenTitleBarImagePath,
   inferScreenTitleBarPalette,
+  resolveLegacyTitleBarWidgetStyle,
   resolveScreenTitleBarImageUrl,
 } from "./screenTitleBarAssets";
+import { SCREEN_TITLE_BAR_MARKER } from "./screenVisualAssets";
 
 describe("screenTitleBarAssets", () => {
   it("builds pack image path from variant and palette", () => {
@@ -30,5 +32,20 @@ describe("screenTitleBarAssets", () => {
         accentColor: "#22d3ee",
       }),
     ).toContain("screen-header-de-circuit-sym-cyan.svg");
+  });
+
+  it("merges legacy title bar marker into widgetStyle background", () => {
+    const style = resolveLegacyTitleBarWidgetStyle({
+      type: "text",
+      textConfig: {
+        content: SCREEN_TITLE_BAR_MARKER,
+        variant: "plain",
+        screenStyle: {
+          titleBar: { variant: "de-trapezoid-wing", palette: "cyan" },
+        },
+      },
+    });
+    expect(style?.backgroundMode).toBe("image");
+    expect(style?.backgroundImage).toContain("screen-header-de-trapezoid-wing-cyan.svg");
   });
 });

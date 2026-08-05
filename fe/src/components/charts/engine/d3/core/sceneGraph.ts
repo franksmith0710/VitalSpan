@@ -22,10 +22,9 @@ import type { D3Theme } from "@/components/charts/engine/d3/core/themeEngine";
 import { formatChartValue } from "@/lib/chartValueFormat";
 import type { ChartAxisStyle } from "@/lib/chartDeStyleBlocks";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
-import { inferCompositeCategoryLevels } from "@/components/charts/engine/buildDatasetEncoding";
 import {
   drawHierarchicalCategoryAxis,
-  resolveHierarchicalAxisLayout,
+  planHierarchicalCategoryAxis,
 } from "@/components/charts/engine/d3/core/hierarchicalAxis";
 
 function numericTickValues(
@@ -130,24 +129,19 @@ export function resolveCategoryCartesianLayout(
 ): CategoryCartesianLayout {
   let margin = cartesianMargin(false, options?.marginOverrides);
   const provisionalInnerW = Math.max(0, width - margin.left - margin.right);
-  const levelCount =
-    options?.categoryLevelCount ?? inferCompositeCategoryLevels(categories);
-  const xLayout =
-    levelCount > 1
-      ? (() => {
-          const hier = resolveHierarchicalAxisLayout(levelCount);
-          return {
-            ticks: categories,
-            rotateDeg: 0,
-            slotSpan: provisionalInnerW / Math.max(1, categories.length),
-            extraBottom: hier.extraBottom,
-          };
-        })()
-      : planCategoryAxisLayout(
-          categories,
-          provisionalInnerW,
-          options?.axisStyle?.x?.labelRotate,
-        );
+  const hierPlan = planHierarchicalCategoryAxis(categories, provisionalInnerW);
+  const xLayout = hierPlan
+    ? {
+        ticks: categories,
+        rotateDeg: 0,
+        slotSpan: provisionalInnerW / Math.max(1, categories.length),
+        extraBottom: hierPlan.extraBottom,
+      }
+    : planCategoryAxisLayout(
+        categories,
+        provisionalInnerW,
+        options?.axisStyle?.x?.labelRotate,
+      );
   margin = {
     ...margin,
     bottom: margin.bottom + xLayout.extraBottom,
@@ -319,20 +313,20 @@ type BandAxesOptions = {
   categoryLevelCount?: number;
 };
 
-function resolveAxisLevelCount(categories: string[], explicit?: number): number {
-  return explicit ?? inferCompositeCategoryLevels(categories);
+function hierarchicalAxisNameY(innerH: number, hierPlan: ReturnType<typeof planHierarchicalCategoryAxis>, rotateDeg: number): number {
+  if (hierPlan) return innerH + hierPlan.activeLevels.length * 16 + 12;
+  return innerH + (rotateDeg ? 42 : 32);
 }
 
 export function drawCartesianBandAxes(opts: BandAxesOptions): { rotateX: number } {
-  const levelCount = resolveAxisLevelCount(opts.categories, opts.categoryLevelCount);
-  const xLayout =
-    levelCount > 1
-      ? {
-          ticks: opts.categories,
-          rotateDeg: 0,
-          slotSpan: opts.innerW / Math.max(1, opts.categories.length),
-        }
-      : planCategoryAxisLayout(opts.categories, opts.innerW, opts.axisStyle?.x?.labelRotate);
+  const hierPlan = planHierarchicalCategoryAxis(opts.categories, opts.innerW);
+  const xLayout = hierPlan
+    ? {
+        ticks: opts.categories,
+        rotateDeg: 0,
+        slotSpan: opts.innerW / Math.max(1, opts.categories.length),
+      }
+    : planCategoryAxisLayout(opts.categories, opts.innerW, opts.axisStyle?.x?.labelRotate);
 
   opts.g.selectAll("g.vs-axis-x, g.vs-axis-y, text.vs-axis-name, text.vs-axis-name-y").remove();
 
@@ -352,16 +346,16 @@ export function drawCartesianBandAxes(opts: BandAxesOptions): { rotateX: number 
   }
 
   if (opts.axisStyle?.x?.show !== false) {
-    if (levelCount > 1) {
+    if (hierPlan) {
       drawHierarchicalCategoryAxis({
         g: opts.g,
         xScale: opts.xScale,
         categories: opts.categories,
-        levelCount,
         innerH: opts.innerH,
         innerW: opts.innerW,
         theme: opts.theme,
         axisStyle: opts.axisStyle,
+        plan: hierPlan,
       });
     } else {
       opts.g
@@ -384,7 +378,7 @@ export function drawCartesianBandAxes(opts: BandAxesOptions): { rotateX: number 
         .append("text")
         .attr("class", "vs-axis-name")
         .attr("x", opts.innerW / 2)
-        .attr("y", opts.innerH + (levelCount > 1 ? levelCount * 16 + 20 : xLayout.rotateDeg ? 42 : 32))
+        .attr("y", hierarchicalAxisNameY(opts.innerH, hierPlan, xLayout.rotateDeg))
         .attr("fill", opts.theme.axisLabel)
         .attr("text-anchor", "middle")
         .style("font-size", "11px")
@@ -423,15 +417,14 @@ type AxesOptions = {
 };
 
 export function drawCartesianAxes(opts: AxesOptions): { rotateX: number } {
-  const levelCount = resolveAxisLevelCount(opts.categories, opts.categoryLevelCount);
-  const xLayout =
-    levelCount > 1
-      ? {
-          ticks: opts.categories,
-          rotateDeg: 0,
-          slotSpan: opts.innerW / Math.max(1, opts.categories.length),
-        }
-      : planCategoryAxisLayout(opts.categories, opts.innerW, opts.axisStyle?.x?.labelRotate);
+  const hierPlan = planHierarchicalCategoryAxis(opts.categories, opts.innerW);
+  const xLayout = hierPlan
+    ? {
+        ticks: opts.categories,
+        rotateDeg: 0,
+        slotSpan: opts.innerW / Math.max(1, opts.categories.length),
+      }
+    : planCategoryAxisLayout(opts.categories, opts.innerW, opts.axisStyle?.x?.labelRotate);
 
   opts.g.selectAll("g.vs-axis-x, g.vs-axis-y, text.vs-axis-name, text.vs-axis-name-y").remove();
 
@@ -451,16 +444,16 @@ export function drawCartesianAxes(opts: AxesOptions): { rotateX: number } {
   }
 
   if (opts.axisStyle?.x?.show !== false) {
-    if (levelCount > 1) {
+    if (hierPlan) {
       drawHierarchicalCategoryAxis({
         g: opts.g,
         xScale: opts.xScale,
         categories: opts.categories,
-        levelCount,
         innerH: opts.innerH,
         innerW: opts.innerW,
         theme: opts.theme,
         axisStyle: opts.axisStyle,
+        plan: hierPlan,
       });
     } else {
       opts.g
@@ -483,7 +476,7 @@ export function drawCartesianAxes(opts: AxesOptions): { rotateX: number } {
         .append("text")
         .attr("class", "vs-axis-name")
         .attr("x", opts.innerW / 2)
-        .attr("y", opts.innerH + (levelCount > 1 ? levelCount * 16 + 20 : xLayout.rotateDeg ? 42 : 32))
+        .attr("y", hierarchicalAxisNameY(opts.innerH, hierPlan, xLayout.rotateDeg))
         .attr("fill", opts.theme.axisLabel)
         .attr("text-anchor", "middle")
         .style("font-size", "11px")
@@ -680,15 +673,14 @@ type DualAxesOptions = {
 
 /** 双轴图：左/右数值轴 + 类目横轴 */
 export function drawDualAxesAxes(opts: DualAxesOptions): void {
-  const levelCount = resolveAxisLevelCount(opts.categories, opts.categoryLevelCount);
-  const xLayout =
-    levelCount > 1
-      ? {
-          ticks: opts.categories,
-          rotateDeg: 0,
-          slotSpan: opts.innerW / Math.max(1, opts.categories.length),
-        }
-      : planCategoryAxisLayout(opts.categories, opts.innerW, opts.axisStyle?.x?.labelRotate);
+  const hierPlan = planHierarchicalCategoryAxis(opts.categories, opts.innerW);
+  const xLayout = hierPlan
+    ? {
+        ticks: opts.categories,
+        rotateDeg: 0,
+        slotSpan: opts.innerW / Math.max(1, opts.categories.length),
+      }
+    : planCategoryAxisLayout(opts.categories, opts.innerW, opts.axisStyle?.x?.labelRotate);
 
   opts.g
     .selectAll("g.vs-axis-x, g.vs-axis-y, g.vs-axis-y-right, text.vs-axis-name, text.vs-axis-name-y")
@@ -723,16 +715,16 @@ export function drawDualAxesAxes(opts: DualAxesOptions): void {
   }
 
   if (opts.axisStyle?.x?.show !== false) {
-    if (levelCount > 1) {
+    if (hierPlan) {
       drawHierarchicalCategoryAxis({
         g: opts.g,
         xScale: opts.xScale,
         categories: opts.categories,
-        levelCount,
         innerH: opts.innerH,
         innerW: opts.innerW,
         theme: opts.theme,
         axisStyle: opts.axisStyle,
+        plan: hierPlan,
       });
     } else {
       opts.g
@@ -755,7 +747,7 @@ export function drawDualAxesAxes(opts: DualAxesOptions): void {
         .append("text")
         .attr("class", "vs-axis-name")
         .attr("x", opts.innerW / 2)
-        .attr("y", opts.innerH + (levelCount > 1 ? levelCount * 16 + 20 : xLayout.rotateDeg ? 42 : 32))
+        .attr("y", hierarchicalAxisNameY(opts.innerH, hierPlan, xLayout.rotateDeg))
         .attr("fill", opts.theme.axisLabel)
         .attr("text-anchor", "middle")
         .style("font-size", "11px")

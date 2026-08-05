@@ -31,6 +31,7 @@ import type {
 } from "./layoutUtils";
 import { mergeWidgetShellStyle } from "./dashboardStyleConfig";
 import { resolveWidgetEffectiveScheme } from "@/lib/chartSurfaceTheme";
+import { resolveLegacyTitleBarWidgetStyle } from "@/lib/screenTitleBarAssets";
 import { cn } from "@/lib/utils";
 
 export function readWidgetStyleBorder(ws: WidgetStyleConfig = {}): ChartBorderStyle {
@@ -62,7 +63,10 @@ export function mergeWidgetOverrideStyle(
   let override: WidgetStyleConfig | undefined;
   if (widget.type === "tabs") override = widget.tabsConfig?.widgetStyle;
   else if (widget.type === "media") override = widget.mediaConfig?.widgetStyle;
-  else if (widget.type === "text") override = widget.textConfig?.widgetStyle;
+  else if (widget.type === "text") {
+    override =
+      resolveLegacyTitleBarWidgetStyle(widget) ?? widget.textConfig?.widgetStyle;
+  }
 
   if (!dashboardWidgetStyle && !override) return undefined;
   return { ...(dashboardWidgetStyle ?? {}), ...(override ?? {}) };
@@ -94,9 +98,11 @@ export function gridWidgetShellClassName(
 export function WidgetShellBackgroundSection({
   value,
   onChange,
+  highlightUrls,
 }: {
   value: WidgetStyleConfig;
   onChange: (patch: Partial<WidgetStyleConfig>) => void;
+  highlightUrls?: string[];
 }) {
   const ws = value ?? {};
   const backgroundEnabled = ws.backgroundShow !== false;
@@ -120,6 +126,7 @@ export function WidgetShellBackgroundSection({
         showHeaderToggle={false}
         value={ws}
         onChange={onChange}
+        highlightUrls={highlightUrls}
         border={readWidgetStyleBorder(ws)}
         onBorderChange={(patch) => onChange(patchWidgetStyleBorder(ws, patch))}
       />
@@ -252,12 +259,14 @@ export function TextWidgetStylePanel({
   widgetStyle,
   onTitleChange,
   onWidgetStyleChange,
+  highlightUrls,
 }: {
   widget: LayoutWidget;
   characters: number;
   widgetStyle: WidgetStyleConfig;
   onTitleChange?: (title: string) => void;
   onWidgetStyleChange: (patch: Partial<WidgetStyleConfig>) => void;
+  highlightUrls?: string[];
 }) {
   return (
     <div className="flex flex-col gap-0" data-testid="text-widget-style-panel">
@@ -273,7 +282,11 @@ export function TextWidgetStylePanel({
           保存：点击外部或 Ctrl+Enter · 取消：Esc
         </p>
       </ChartInspectorSection>
-      <WidgetShellBackgroundSection value={widgetStyle} onChange={onWidgetStyleChange} />
+      <WidgetShellBackgroundSection
+        value={widgetStyle}
+        onChange={onWidgetStyleChange}
+        highlightUrls={highlightUrls}
+      />
     </div>
   );
 }

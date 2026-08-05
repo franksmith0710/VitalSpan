@@ -7,7 +7,6 @@ import {
   createScreenDateTimeWidget,
   createScreenIconWidget,
   createScreenShapeWidget,
-  createScreenTitleBarWidget,
   SCREEN_CLOCK_MARKER,
 } from "@/lib/screenVisualAssets";
 import type { LayoutWidget } from "@/components/dashboard/layoutUtils";
@@ -114,42 +113,6 @@ describe("ScreenVisualEditRail", () => {
     const lastCall = onTextConfigChange.mock.calls.at(-1)?.[0];
     expect(lastCall?.screenStyle?.border?.sparkle?.enabled).toBe(true);
     expect(lastCall?.screenStyle?.border?.sparkle?.sparkles?.length).toBeGreaterThanOrEqual(1);
-  });
-
-  it("updates title bar variant from style panel", async () => {
-    const user = userEvent.setup();
-    const onTextConfigChange = vi.fn();
-    const titleWidget = asTextWidget(createScreenTitleBarWidget([]));
-
-    render(
-      <ScreenVisualEditRail widget={titleWidget} onTextConfigChange={onTextConfigChange} />,
-    );
-
-    await user.click(screen.getByTestId("titlebar-variant-de-circuit-sym"));
-
-    const lastCall = onTextConfigChange.mock.calls.at(-1)?.[0];
-    expect(lastCall?.screenStyle?.titleBar?.variant).toBe("de-circuit-sym");
-  });
-
-  it("updates title bar side lines from style panel when simple variant", async () => {
-    const user = userEvent.setup();
-    const onTextConfigChange = vi.fn();
-    const titleWidget = asTextWidget({
-      ...createScreenTitleBarWidget([]),
-      textConfig: {
-        ...createScreenTitleBarWidget([]).textConfig!,
-        screenStyle: { titleBar: { variant: "simple", showSideLines: true } },
-      },
-    });
-
-    render(
-      <ScreenVisualEditRail widget={titleWidget} onTextConfigChange={onTextConfigChange} />,
-    );
-
-    await user.click(screen.getByRole("switch", { name: "显示两侧装饰线" }));
-
-    const lastCall = onTextConfigChange.mock.calls.at(-1)?.[0];
-    expect(lastCall?.screenStyle?.titleBar?.showSideLines).toBe(false);
   });
 
   it("updates datetime weekday visibility from style panel", async () => {

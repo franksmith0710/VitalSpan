@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +8,17 @@ import { cn } from "@/lib/utils";
 import { ComputedFieldsEditor } from "./ComputedFieldsEditor";
 import { DatasetTablePicker } from "./DatasetTablePicker";
 import type { DatasetEditorValues, DatasetOrigin } from "./types";
+
+export const DATASET_EDITOR_FORM_ID = "dataset-editor-form";
+
+export function canSubmitDataset(values: DatasetEditorValues): boolean {
+  return (
+    values.datasetId.trim().length > 0 &&
+    values.displayName.trim().length > 0 &&
+    values.tables.length > 0 &&
+    values.computedFields.every((f) => f.name.trim() && f.expression.trim())
+  );
+}
 
 function DatasetFormSection({
   title,
@@ -39,9 +49,6 @@ export function DatasetEditorForm({
   values,
   onChange,
   onSubmit,
-  isSaving,
-  submitDisabled = false,
-  bindPanel,
   tablePickerPrefill,
   origin = "manual",
 }: {
@@ -49,23 +56,17 @@ export function DatasetEditorForm({
   values: DatasetEditorValues;
   onChange: (next: DatasetEditorValues) => void;
   onSubmit: () => void;
-  isSaving: boolean;
-  submitDisabled?: boolean;
-  bindPanel?: ReactNode;
   tablePickerPrefill?: {
     preferredDataSourceId?: string;
     prefillTable?: string;
     savedDataSourceId?: string;
     onDataSourceIdChange?: (dataSourceId: string) => void;
+    boundConfigId?: string | null;
+    syncJobId?: string | null;
+    onRefreshBinding?: () => void;
   };
   origin?: DatasetOrigin;
 }) {
-  const canSubmit =
-    values.datasetId.trim().length > 0 &&
-    values.displayName.trim().length > 0 &&
-    values.tables.length > 0 &&
-    values.computedFields.every((f) => f.name.trim() && f.expression.trim());
-
   const tableTabLabel = `数据表${values.tables.length > 0 ? ` (${values.tables.length})` : ""}`;
   const computedTabLabel = `计算字段${values.computedFields.length > 0 ? ` (${values.computedFields.length})` : ""}`;
 
@@ -76,7 +77,7 @@ export function DatasetEditorForm({
           <>
             <CardTitle>Dataset 配置</CardTitle>
             <CardDescription>
-              从数据源选择物理表并定义计算字段，供报表与仪表板复用。
+              从数据源选择物理表、管理出图字段并定义计算字段，供报表与仪表板复用。
             </CardDescription>
           </>
         ) : (
@@ -101,6 +102,7 @@ export function DatasetEditorForm({
 
       <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
         <form
+          id={DATASET_EDITOR_FORM_ID}
           className="flex min-h-0 flex-1 flex-col"
           onSubmit={(e) => {
             e.preventDefault();
@@ -144,13 +146,12 @@ export function DatasetEditorForm({
               <TabsList variant="enclosed" size="sm" className="w-fit">
                 <TabsTrigger value="tables">{tableTabLabel}</TabsTrigger>
                 <TabsTrigger value="computed">{computedTabLabel}</TabsTrigger>
-                {bindPanel ? <TabsTrigger value="bind">绑定配置</TabsTrigger> : null}
               </TabsList>
             </div>
 
             <TabsContent
               value="tables"
-              className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden px-6 py-4 data-[state=inactive]:hidden"
+              className="mt-0 min-h-0 flex-1 overflow-y-auto px-6 py-4 data-[state=inactive]:hidden"
             >
               <DatasetTablePicker
                 tables={values.tables}
@@ -160,6 +161,11 @@ export function DatasetEditorForm({
                 savedDataSourceId={tablePickerPrefill?.savedDataSourceId}
                 onDataSourceIdChange={tablePickerPrefill?.onDataSourceIdChange}
                 origin={origin}
+                bindDraft={values.bindDraft}
+                onBindDraftChange={(bindDraft) => onChange({ ...values, bindDraft })}
+                boundConfigId={tablePickerPrefill?.boundConfigId}
+                syncJobId={tablePickerPrefill?.syncJobId}
+                onRefreshBinding={tablePickerPrefill?.onRefreshBinding}
               />
             </TabsContent>
 
@@ -177,28 +183,7 @@ export function DatasetEditorForm({
                 />
               </DatasetFormSection>
             </TabsContent>
-
-            {bindPanel ? (
-              <TabsContent
-                value="bind"
-                className="mt-0 min-h-0 flex-1 overflow-y-auto px-6 py-4 data-[state=inactive]:hidden"
-              >
-                {bindPanel}
-              </TabsContent>
-            ) : null}
           </Tabs>
-
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-3 border-t border-gray-100 bg-white px-6 py-3 dark:border-gray-800 dark:bg-gray-900/40">
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={!canSubmit || isSaving || submitDisabled}
-              loading={isSaving}
-              loadingText="保存中…"
-            >
-              {mode === "create" ? "创建 Dataset" : "保存"}
-            </Button>
-          </div>
         </form>
       </CardContent>
     </Card>

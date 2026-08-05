@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api";
+import type { DatasetFieldKind } from "@/components/dashboard/datasetFieldClassification";
 import { parseQualifiedTable } from "@/lib/datasetTableUtils";
 
 export type DatasetQueryConfigPayload = {
@@ -7,6 +8,7 @@ export type DatasetQueryConfigPayload = {
   schema: string;
   table: string;
   columns: string[];
+  columnKinds?: Record<string, DatasetFieldKind>;
   conditions: { logic: "AND"; conditions: [] };
   limit: number;
   offset: number;
@@ -24,9 +26,19 @@ export type DatasetChartBinding = {
   configId: string;
   dataSourceId?: string;
   columns?: string[];
+  columnKinds?: Record<string, DatasetFieldKind>;
   schema?: string;
   table?: string;
 };
+
+function parseColumnKinds(raw: unknown): Record<string, DatasetFieldKind> | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const out: Record<string, DatasetFieldKind> = {};
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (value === "dimension" || value === "metric") out[key] = value;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
 
 export function buildDatasetQueryPayload(params: {
   dataSourceId: string;
@@ -34,8 +46,9 @@ export function buildDatasetQueryPayload(params: {
   schema: string;
   table: string;
   columns: string[];
+  columnKinds?: Record<string, DatasetFieldKind>;
 }): DatasetQueryConfigPayload {
-  return {
+  const payload: DatasetQueryConfigPayload = {
     dataSourceId: params.dataSourceId,
     connectorType: params.connectorType,
     schema: params.schema,
@@ -45,6 +58,15 @@ export function buildDatasetQueryPayload(params: {
     limit: 1000,
     offset: 0,
   };
+  if (params.columnKinds && Object.keys(params.columnKinds).length > 0) {
+    const filtered: Record<string, DatasetFieldKind> = {};
+    for (const col of params.columns) {
+      const kind = params.columnKinds[col];
+      if (kind) filtered[col] = kind;
+    }
+    if (Object.keys(filtered).length > 0) payload.columnKinds = filtered;
+  }
+  return payload;
 }
 
 export async function fetchDatasetQueryConfig(configId: string): Promise<DatasetChartBinding> {
@@ -57,7 +79,8 @@ export async function fetchDatasetQueryConfig(configId: string): Promise<Dataset
     : [];
   const schema = typeof payload.schema === "string" ? payload.schema : undefined;
   const table = typeof payload.table === "string" ? payload.table : undefined;
-  return { configId: record.id, dataSourceId, columns, schema, table };
+  const columnKinds = parseColumnKinds(payload.columnKinds);
+  return { configId: record.id, dataSourceId, columns, columnKinds, schema, table };
 }
 
 export async function resolveDatasetChartBinding(configId: string): Promise<DatasetChartBinding> {
@@ -72,6 +95,7 @@ export async function saveAndBindDatasetQueryConfig(params: {
   connectorType: string;
   tableName: string;
   columns: string[];
+  columnKinds?: Record<string, DatasetFieldKind>;
 }): Promise<string> {
   const { schema, table } = parseQualifiedTable(params.tableName);
   const payload = buildDatasetQueryPayload({
@@ -80,6 +104,7 @@ export async function saveAndBindDatasetQueryConfig(params: {
     schema,
     table,
     columns: params.columns,
+    columnKinds: params.columnKinds,
   });
 
   let refType = "dataset";
@@ -121,6 +146,27 @@ export async function createAndBindDatasetQueryConfig(params: {
   connectorType: string;
   tableName: string;
   columns: string[];
+  columnKinds?: Record<string, DatasetFieldKind>;
 }): Promise<string> {
   return saveAndBindDatasetQueryConfig(params);
+}
+
+export async function persistDatasetBind(params: {
+  datasetId: string;
+  boundConfigId?: string | null;
+  dataSourceId: string;
+  connectorType: string;
+  tableName: string;
+  selectedColumns: string[];
+  columnKinds?: Record<string, DatasetFieldKind>;
+}): Promise<string> {
+  return saveAndBindDatasetQueryConfig({
+    datasetId: params.datasetId,
+    boundConfigId: params.boundConfigId,
+    dataSourceId: params.dataSourceId,
+    connectorType: params.connectorType,
+    tableName: params.tableName,
+    columns: params.selectedColumns,
+    columnKinds: params.columnKinds,
+  });
 }

@@ -108,7 +108,6 @@ export function isScreenVisualWidget(
   return (
     isScreenClockWidget(widget) ||
     isScreenBorderWidget(widget) ||
-    isScreenTitleBarWidget(widget) ||
     isScreenDateTimeWidget(widget) ||
     isScreenShapeWidget(widget) ||
     isScreenIconWidget(widget)
@@ -132,7 +131,7 @@ export function resolveScreenWidgetLayerLabel(
 ): string {
   if (isScreenClockWidget(widget)) return "素材 · 时钟";
   if (isScreenBorderWidget(widget)) return "素材 · 边框";
-  if (isScreenTitleBarWidget(widget)) return "素材 · 标题装饰";
+  if (isScreenTitleBarWidget(widget)) return widget.title || "标题条";
   if (isScreenDateTimeWidget(widget)) return "素材 · 日期时间";
   if (isScreenShapeWidget(widget)) return "素材 · 图形";
   if (isScreenIconWidget(widget)) return "素材 · 图标";
@@ -215,7 +214,7 @@ export function createScreenTitleBarWidget(
   return {
     id: widgetId,
     type: "text",
-    title: "标题装饰",
+    title: "标题条",
     colSpan: at?.colSpan ?? 12,
     rowSpan: at?.rowSpan ?? 1,
     order: maxOrder + 1,
@@ -223,13 +222,14 @@ export function createScreenTitleBarWidget(
     gridY: at?.gridY,
     textConfig: {
       ...defaultTextConfig(),
-      content: SCREEN_TITLE_BAR_MARKER,
+      content: "",
       variant: "plain",
-      screenStyle: {
-        titleBar: {
-          variant: "de-trapezoid-wing",
-          palette: "cyan",
-        },
+      widgetStyle: {
+        backgroundShow: true,
+        backgroundMode: "image",
+        backgroundImage:
+          "/template-assets/packs/borderless-decor-v1/items/decor-bow-deep-cyan.svg",
+        backgroundImageOpacity: 1,
       },
     },
   };

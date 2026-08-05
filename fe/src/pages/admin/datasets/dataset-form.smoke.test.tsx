@@ -1,8 +1,8 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 const mockApiFetch = vi.fn();
@@ -63,7 +63,7 @@ describe("Dataset form pages", () => {
   it("T1-FE-01: create page renders form with SchemaBrowser picker", async () => {
     mockApiFetch.mockImplementation(async (path: string) => {
       if (path.startsWith("/api/v1/datasources") && !path.includes("/schemas")) {
-        return { items: [{ id: "ds-1", name: "分析库", database: "public" }] };
+        return { items: [{ id: "ds-1", name: "分析库", database: "public", type: "postgresql" }] };
       }
       if (path.endsWith("/schemas")) return { items: [{ name: "public" }] };
       if (path.includes("/tables")) return { items: [{ name: "orders", type: "table" }] };
@@ -94,7 +94,7 @@ describe("Dataset form pages", () => {
     );
   });
 
-  it("T1-FE-03: edit page loads existing dataset", async () => {
+  it("T1-FE-03: edit page loads existing dataset with field workbench", async () => {
     mockApiFetch.mockImplementation(async (path: string) => {
       if (path === "/api/v1/datasets/ds-demo") {
         return {
@@ -108,12 +108,17 @@ describe("Dataset form pages", () => {
         };
       }
       if (path.startsWith("/api/v1/datasources") && !path.includes("/schemas")) {
-        return { items: [{ id: "ds-1", name: "分析库", database: "public" }] };
+        return { items: [{ id: "ds-1", name: "分析库", database: "public", type: "postgresql" }] };
       }
       if (path.endsWith("/schemas")) return { items: [{ name: "public" }] };
       if (path.includes("/tables")) return { items: [{ name: "orders", type: "table" }] };
       if (path.includes("/columns")) {
-        return { items: [{ name: "amount", dataType: "numeric", nullable: true }] };
+        return {
+          items: [
+            { name: "id", dataType: "integer", nullable: false },
+            { name: "amount", dataType: "numeric", nullable: true },
+          ],
+        };
       }
       return {};
     });
@@ -129,16 +134,15 @@ describe("Dataset form pages", () => {
     expect(await screen.findByRole("heading", { name: "编辑数据集" })).toBeInTheDocument();
     expect(await screen.findByTestId("schema-browser")).toBeInTheDocument();
     expect(screen.getAllByText("public.orders").length).toBeGreaterThan(0);
+    expect(await screen.findByText("字段工作台")).toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: /绑定配置/ })).not.toBeInTheDocument();
 
     const user = userEvent.setup();
     await user.click(screen.getByRole("tab", { name: /计算字段/ }));
     expect(await screen.findByDisplayValue("amt2")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("tab", { name: /绑定配置/ }));
-    expect(screen.getByText("出图查询绑定")).toBeInTheDocument();
   });
 
-  it("T1-FE-04: sync dataset bind panel resolves analytics and enables re-bind", async () => {
+  it("T1-FE-04: sync dataset shows merged field workbench without bind tab", async () => {
     mockApiFetch.mockImplementation(async (path: string) => {
       if (path === "/api/v1/datasets/orders_clean_3") {
         return {
@@ -163,6 +167,7 @@ describe("Dataset form pages", () => {
             schema: "public",
             table: "orders_clean_3",
             columns: ["id", "amount", "region", "product_name"],
+            columnKinds: { amount: "metric", region: "dimension" },
           },
         };
       }
@@ -191,8 +196,6 @@ describe("Dataset form pages", () => {
             { name: "amount" },
             { name: "region" },
             { name: "product_name" },
-            { name: "status" },
-            { name: "updated_at" },
           ],
         };
       }
@@ -208,10 +211,11 @@ describe("Dataset form pages", () => {
     );
 
     expect(await screen.findByRole("heading", { name: "编辑数据集" })).toBeInTheDocument();
-    expect(await screen.findByRole("tab", { name: /绑定配置/ })).toBeInTheDocument();
-    const user = userEvent.setup();
-    await user.click(screen.getByRole("tab", { name: /绑定配置/ }));
-    expect(await screen.findByRole("button", { name: "重新绑定" })).toBeEnabled();
+    expect(await screen.findByText("字段工作台")).toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: /绑定配置/ })).not.toBeInTheDocument();
+    expect(screen.getByText("同步产物")).toBeInTheDocument();
+    expect(screen.getByText("已绑定")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "刷新绑定（自动识别）" })).toBeInTheDocument();
     expect(screen.queryByText("加载中…")).not.toBeInTheDocument();
   });
 });

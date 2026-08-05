@@ -14,7 +14,7 @@ from app.dashboard.templates.presets_gov_assets import (
     SCREEN_GOV_BG,
     SCREEN_SALES_GEO_BG,
     SCREEN_TECH_BG,
-    screen_header,
+    borderless_decor,
 )
 from app.dashboard.templates.presets_de_dash import (
     DE_BLUE,
@@ -42,7 +42,6 @@ from app.dashboard.templates.official_demo_sql import (
 
 SCREEN_BORDER_MARKER = "__vs_screen_border__"
 SCREEN_CLOCK_MARKER = "__vs_screen_clock__"
-SCREEN_TITLE_BAR_MARKER = "__vs_screen_title_bar__"
 
 DECOR_GRADIENT_DARK: dict[str, str] = {
     "gradient-soft": "linear-gradient(160deg, #0f172a 0%, #1e293b 48%, #172554 100%)",
@@ -158,6 +157,16 @@ def _clock(
     }
 
 
+_TITLE_VARIANT_TO_BORDERLESS: dict[str, str] = {
+    "de-trapezoid-wing": "decor-twin-swoosh",
+    "de-circuit-sym": "decor-wave-soft",
+    "de-cloud-center": "decor-glow-streak",
+    "de-glow-plaque": "decor-arc-swoosh",
+    "de-glow-plate": "decor-arc-swoosh",
+    "simple": "decor-arc-top",
+}
+
+
 def _title_bar(
     accent: str | None = None,
     *,
@@ -165,28 +174,30 @@ def _title_bar(
     screen_style: dict[str, Any] | None = None,
     **geo: Any,
 ) -> dict[str, Any]:
+    """大屏顶栏：普通富文本 + widgetStyle 背景图（对标 DataEase 组件背景）。"""
     wid = _wid()
-    text_config: dict[str, Any] = {
-        "content": SCREEN_TITLE_BAR_MARKER,
-        "variant": "plain",
-    }
     merged_style = dict(screen_style or {})
     title_bar = dict(merged_style.get("titleBar") or {})
     if accent:
-        title_bar["accentColor"] = accent
-    title_bar.setdefault("variant", variant)
+        title_bar.setdefault("accentColor", accent)
+    resolved_variant = str(title_bar.get("variant") or variant)
     palette = str(title_bar.get("palette") or _title_bar_palette(accent))
-    title_bar["palette"] = palette
-    if variant != "simple":
-        title_bar.setdefault("backgroundImage", screen_header(variant, palette))
-    merged_style["titleBar"] = title_bar
-    if merged_style:
-        text_config["screenStyle"] = merged_style
+    decor_style = _TITLE_VARIANT_TO_BORDERLESS.get(resolved_variant, "decor-bow-deep")
+    bg_url = borderless_decor(decor_style, palette)
     return {
         "id": wid,
         "type": "text",
-        "title": "标题装饰",
-        "textConfig": text_config,
+        "title": "数据大屏标题",
+        "textConfig": {
+            "content": "",
+            "variant": "plain",
+            "widgetStyle": {
+                "backgroundShow": True,
+                "backgroundMode": "image",
+                "backgroundImage": bg_url,
+                "backgroundImageOpacity": 1,
+            },
+        },
         **geo,
     }
 

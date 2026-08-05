@@ -1,7 +1,6 @@
 import { Switch } from "@/components/ui/switch";
 import { ColorField } from "@/components/ui/color-field";
 import { ImageSourceField } from "./imageSourceField";
-import { BorderlessDecorGallery } from "./BorderlessDecorGallery";
 import type { WidgetStyleConfig } from "./dashboardStyleConfig";
 import { SURFACE_COLOR_RECOMMENDED, WIDGET_BORDER_RECOMMENDED } from "./dashboardStyleConfig";
 import {
@@ -64,6 +63,7 @@ type ChartBackgroundDeModeFieldsProps = {
   /** chart：装饰边框 SVG；dashboard 全局：仅底图 + 独立线区块 */
   borderTab?: "decorative" | "line" | "imageOnly";
   density?: WidgetSurfaceStyleDensity;
+  highlightUrls?: string[];
 };
 
 function DeAttrToggleRowCompact({
@@ -240,6 +240,7 @@ export function ChartBackgroundDeModeFields({
   disabled = false,
   borderTab = "decorative",
   density = "narrow",
+  highlightUrls,
 }: ChartBackgroundDeModeFieldsProps) {
   const useLineBorder = borderTab === "line";
   const imageOnly = borderTab === "imageOnly";
@@ -270,13 +271,12 @@ export function ChartBackgroundDeModeFields({
         <ImageSourceField
           variant="rail"
           showPreview
+          assetGallery
+          assetGalleryScope="all"
+          highlightUrls={highlightUrls}
           inputClassName={INSPECTOR_CTRL}
           value={value.backgroundImage ?? ""}
           onChange={(backgroundImage) => onChange(patchWidgetBackgroundImageUpload(value, backgroundImage))}
-        />
-        <BorderlessDecorGallery
-          value={value.backgroundImage}
-          onSelect={(url) => onChange(patchWidgetBackgroundImageUpload(value, url))}
         />
       </div>
     );
@@ -339,15 +339,14 @@ export function ChartBackgroundDeModeFields({
           <ImageSourceField
             variant="rail"
             showPreview
+            assetGallery
+            assetGalleryScope="all"
+            highlightUrls={highlightUrls}
             inputClassName={INSPECTOR_CTRL}
             value={value.backgroundImage ?? ""}
             onChange={(backgroundImage) =>
               onChange(patchWidgetBackgroundImageUpload(value, backgroundImage))
             }
-          />
-          <BorderlessDecorGallery
-            value={value.backgroundImage}
-            onSelect={(url) => onChange(patchWidgetBackgroundImageUpload(value, url))}
           />
         </div>
       ) : useLineBorder ? (
@@ -441,6 +440,7 @@ type ChartBackgroundStyleFieldsProps = {
   scope?: "chart" | "dashboard";
   density?: WidgetSurfaceStyleDensity;
   surfaceKind?: SurfaceKind;
+  highlightUrls?: string[];
 };
 
 /** DataEase 样式 Tab · 背景区块（看板 widgetStyle 或单图 deStyle.background + 线框） */
@@ -453,6 +453,7 @@ export function ChartBackgroundStyleFields({
   scope = "chart",
   density = "narrow",
   surfaceKind,
+  highlightUrls,
 }: ChartBackgroundStyleFieldsProps) {
   const ws = value;
   const showBackground = ws.backgroundShow !== false;
@@ -473,6 +474,7 @@ export function ChartBackgroundStyleFields({
         onChange={onChange}
         disabled={!showBackground}
         density={density}
+        highlightUrls={highlightUrls}
       />
 
       {showBackground ? (

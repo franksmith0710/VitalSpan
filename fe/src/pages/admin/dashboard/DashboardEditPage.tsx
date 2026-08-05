@@ -110,6 +110,7 @@ import { TextEditRail } from "@/components/dashboard/TextEditRail";
 import { ScreenVisualEditRail } from "@/components/dashboard/screen/ScreenVisualEditRail";
 import { DataScreenConfigExtras } from "@/components/dashboard/screen/DataScreenConfigExtras";
 import { isScreenVisualWidget } from "@/lib/screenVisualAssets";
+import { collectDashboardImageUrls } from "@/lib/collectDashboardImageUrls";
 import {
   clampDataScreenCanvasSize,
 } from "@/lib/surfacePreset";
@@ -227,6 +228,10 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const [savedLinkageSnapshot, setSavedLinkageSnapshot] = useState<string | null>(null);
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [styleConfig, setStyleConfig] = useState<DashboardStyleConfig>({});
+  const dashboardImageUrls = useMemo(
+    () => collectDashboardImageUrls(widgets, styleConfig),
+    [widgets, styleConfig],
+  );
   const [shareOpen, setShareOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [reuseOpen, setReuseOpen] = useState(false);
@@ -1369,6 +1374,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 {vizComponentHeader}
               <TextEditRail
                 className="min-h-0 flex-1"
+                highlightUrls={dashboardImageUrls}
                 widget={
                   inspectorWidget as typeof inspectorWidget & { textConfig: TextWidgetConfig }
                 }

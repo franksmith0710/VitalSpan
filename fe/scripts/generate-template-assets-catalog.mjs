@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "../public/template-assets");
 const OUT = path.join(ROOT, "catalog.html");
+const CATALOG_JSON = path.resolve(__dirname, "../src/lib/templateAssetsCatalog.generated.json");
 
 const PALETTE_HEX = {
   cyan: "#22d3ee",
@@ -47,6 +48,23 @@ function toRel(publicPath) {
   return publicPath.replace(/^\/template-assets\//, "").replace(/^\//, "");
 }
 
+function toPublicUrl(relOrAbs) {
+  if (!relOrAbs) return "";
+  if (relOrAbs.startsWith("/template-assets/")) return relOrAbs;
+  if (relOrAbs.startsWith("/")) return relOrAbs;
+  return `/template-assets/${toRel(relOrAbs)}`;
+}
+
+function finalizeCatalogItem(item) {
+  const url =
+    item.url ||
+    (item.bg ? toPublicUrl(item.bg) : "") ||
+    (item.path ? toPublicUrl(item.path) : "") ||
+    toPublicUrl(item.src);
+  const thumbUrl = item.thumbUrl || toPublicUrl(item.src) || url;
+  return { ...item, url, thumbUrl };
+}
+
 function readJson(rel) {
   return JSON.parse(fs.readFileSync(path.join(ROOT, rel), "utf8"));
 }
@@ -83,6 +101,7 @@ function collectItems() {
       pattern: row.pattern || row.style || "",
       motif: row.motif || "",
       src: toRel(row.path),
+      url: row.path,
       label: row.id,
     });
     if (row.category.startsWith("canvas-")) {
@@ -111,6 +130,8 @@ function collectItems() {
       pattern: row.layout,
       src: toRel(row.thumb),
       bg: toRel(row.background),
+      url: row.background,
+      thumbUrl: row.thumb,
       label: row.slug,
     });
   }
@@ -122,6 +143,7 @@ function collectItems() {
       palette: row.theme,
       pattern: row.variant,
       src: toRel(row.background),
+      url: row.background,
       label: row.slug,
     });
   }
@@ -140,6 +162,7 @@ function collectItems() {
         palette: row.palette,
         pattern: row.style,
         src: toRel(row.path),
+        url: row.path,
         label: row.id,
       });
     }
@@ -372,6 +395,23 @@ function buildHtml(items) {
 </html>`;
 }
 
-const items = collectItems();
+const items = collectItems().map(finalizeCatalogItem);
 fs.writeFileSync(OUT, buildHtml(items), "utf8");
 console.log(`Wrote catalog.html with ${items.length} items -> ${OUT}`);
+
+const catalogPayload = {
+  generatedAt: new Date().toISOString(),
+  total: items.length,
+  items: items.map(({ id, pack, category, palette, pattern, label, url, thumbUrl }) => ({
+    id,
+    pack,
+    category,
+    palette: palette || "",
+    pattern: pattern || "",
+    label,
+    url,
+    thumbUrl: thumbUrl || url,
+  })),
+};
+fs.writeFileSync(CATALOG_JSON, `${JSON.stringify(catalogPayload, null, 2)}\n`, "utf8");
+console.log(`Wrote catalog JSON -> ${CATALOG_JSON}`);

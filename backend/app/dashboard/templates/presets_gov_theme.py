@@ -26,7 +26,6 @@ from app.dashboard.templates.presets_gov_assets import (
     ECO_MONITOR_BG,
     EMERGENCY_BG,
     SMART_CITY_BG,
-    screen_header,
 )
 
 WidgetVariant = Literal["glass", "elevated", "ribbon", "float", "minimal"]
@@ -40,19 +39,6 @@ _TITLE_LIGHT = "#1e293b"
 _TITLE_DARK = "#f1f5f9"
 _LABEL_LIGHT = "#64748b"
 _LABEL_DARK = "#94a3b8"
-
-_TITLE_ACCENT_PALETTE: dict[str, str] = {
-    "#22d3ee": "cyan",
-    "#38bdf8": "royal",
-    "#f87171": "magenta",
-    "#34d399": "emerald",
-    "#a78bfa": "violet",
-    "#4f46e5": "indigo",
-}
-
-
-def _gov_title_palette(accent: str) -> str:
-    return _TITLE_ACCENT_PALETTE.get(accent.lower(), "cobalt")
 
 
 @dataclass(frozen=True)
@@ -252,18 +238,7 @@ def _apply_gov_style(
 def build_gov_screen_chrome_style(theme: GovScreenTheme) -> dict[str, Any]:
     dark = theme.scheme == "dark"
     if dark:
-        variant = "de-trapezoid-wing"
-        palette = _gov_title_palette(theme.accent)
         return {
-            "titleBar": {
-                "accentColor": theme.accent,
-                "titleColor": _TITLE_DARK,
-                "showSideLines": True,
-                "variant": variant,
-                "fontSize": 20,
-                "palette": palette,
-                "backgroundImage": screen_header(variant, palette),
-            },
             "clock": {
                 "color": theme.accent,
                 "fontSize": 15,
@@ -272,11 +247,6 @@ def build_gov_screen_chrome_style(theme: GovScreenTheme) -> dict[str, Any]:
             },
         }
     return {
-        "titleBar": {
-            "accentColor": f"{theme.accent}55",
-            "titleColor": _TITLE_LIGHT,
-            "showSideLines": False,
-        },
         "clock": {
             "color": _SLATE_500,
             "fontSize": 14,

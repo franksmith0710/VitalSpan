@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { IconButton } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { queryKeys } from "@/lib/queryKeys";
+import type { DatasetFieldKind } from "./datasetFieldClassification";
 import { DatasetFieldGroups } from "./DatasetFieldGroups";
 import { DatasetSelector } from "./DatasetSelector";
 import { RailFoldIcon } from "./RailFoldTab";
@@ -24,6 +25,7 @@ type DatasetPickerPanelProps = {
   columns: string[];
   columnsLoading: boolean;
   columnsReady: boolean;
+  columnKindOverrides?: Record<string, DatasetFieldKind>;
   datasetBindingError?: string | null;
   onDatasetSelect: (datasetId: string) => void;
   onFieldClick?: (fieldName: string) => void;
@@ -42,6 +44,7 @@ export function DatasetPickerPanel({
   columns,
   columnsLoading,
   columnsReady,
+  columnKindOverrides,
   onDatasetSelect,
   datasetBindingError,
   onFieldClick,
@@ -117,6 +120,7 @@ export function DatasetPickerPanel({
           columnsLoading={columnsLoading}
           columnsReady={columnsReady}
           datasetSelected={fieldsReady}
+          columnKindOverrides={columnKindOverrides}
           onFieldClick={onFieldClick}
           onRefresh={onRefreshFields}
         />

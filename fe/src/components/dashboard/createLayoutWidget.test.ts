@@ -1,16 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { createPaletteWidget } from "./createLayoutWidget";
-import {
-  isScreenTitleBarWidget,
-  SCREEN_TITLE_BAR_MARKER,
-} from "@/lib/screenVisualAssets";
 
 describe("createPaletteWidget screen-title-bar", () => {
-  it("creates title bar widget for toolbar insert integration", () => {
+  it("creates text widget with borderless decor background", () => {
     const widget = createPaletteWidget("screen-title-bar", []);
     expect(widget.type).toBe("text");
-    expect(widget.title).toBe("标题装饰");
-    expect(widget.textConfig?.content).toBe(SCREEN_TITLE_BAR_MARKER);
-    expect(isScreenTitleBarWidget(widget)).toBe(true);
+    expect(widget.title).toBe("标题条");
+    expect(widget.textConfig?.content).toBe("");
+    expect(widget.textConfig?.widgetStyle?.backgroundMode).toBe("image");
+    expect(widget.textConfig?.widgetStyle?.backgroundImage).toContain(
+      "/template-assets/packs/borderless-decor-v1/items/",
+    );
   });
 });

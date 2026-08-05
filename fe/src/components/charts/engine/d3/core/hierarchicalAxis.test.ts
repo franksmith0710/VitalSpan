@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import { CARTESIAN_CATEGORY_KEY_SEP, formatCategoryCellValue } from "@/components/charts/engine/buildDatasetEncoding";
 import {
   buildCategoryLevelSegments,
+  planHierarchicalCategoryAxis,
+  resolveActiveCategoryLevels,
+  resolveFinestLevelForThinning,
   resolveHierarchicalAxisLayout,
   splitCompositeCategoryParts,
 } from "@/components/charts/engine/d3/core/hierarchicalAxis";
@@ -40,7 +43,43 @@ describe("hierarchical category axis", () => {
     ]);
   });
 
-  it("resolveHierarchicalAxisLayout reserves bottom space per level", () => {
+  it("resolveActiveCategoryLevels skips all-empty dimension rows", () => {
+    const sparse = [
+      `云南省${CARTESIAN_CATEGORY_KEY_SEP}null${CARTESIAN_CATEGORY_KEY_SEP}null`,
+      `江苏省${CARTESIAN_CATEGORY_KEY_SEP}null${CARTESIAN_CATEGORY_KEY_SEP}null`,
+    ];
+    expect(resolveActiveCategoryLevels(sparse, 3)).toEqual([0]);
+  });
+
+  it("resolveFinestLevelForThinning picks point-level dimension", () => {
+    const productCategory = [
+      `无线鼠标${CARTESIAN_CATEGORY_KEY_SEP}外设配件`,
+      `机械键盘${CARTESIAN_CATEGORY_KEY_SEP}外设配件`,
+      `27寸显示器${CARTESIAN_CATEGORY_KEY_SEP}显示设备`,
+    ];
+    const active = resolveActiveCategoryLevels(productCategory, 2);
+    expect(resolveFinestLevelForThinning(productCategory, 2, active)).toBe(0);
+  });
+
+  it("planHierarchicalCategoryAxis returns null when only one active level", () => {
+    const sparse = [
+      `云南省${CARTESIAN_CATEGORY_KEY_SEP}null`,
+      `江苏省${CARTESIAN_CATEGORY_KEY_SEP}null`,
+    ];
+    expect(planHierarchicalCategoryAxis(sparse, 480)).toBeNull();
+  });
+
+  it("planHierarchicalCategoryAxis thins finest-level ticks when categories are dense", () => {
+    const dense = Array.from({ length: 24 }, (_, i) =>
+      `产品${i}${CARTESIAN_CATEGORY_KEY_SEP}类目${Math.floor(i / 4)}`,
+    );
+    const plan = planHierarchicalCategoryAxis(dense, 320);
+    expect(plan).not.toBeNull();
+    expect(plan!.visibleCategories.length).toBeLessThan(dense.length);
+    expect(plan!.activeLevels.length).toBe(2);
+  });
+
+  it("resolveHierarchicalAxisLayout reserves bottom space per active level", () => {
     expect(resolveHierarchicalAxisLayout(3).extraBottom).toBeGreaterThan(resolveHierarchicalAxisLayout(1).extraBottom);
   });
 });

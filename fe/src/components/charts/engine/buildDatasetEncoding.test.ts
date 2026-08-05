@@ -3,6 +3,7 @@ import {
   buildCartesianCategorySeries,
   compositeCategoryKey,
   formatCompositeCategoryDisplay,
+  inferEffectiveCategoryLevels,
   resolveCartesianAxisFields,
 } from "./buildDatasetEncoding";
 import type { RenderSpec } from "./types";
@@ -61,5 +62,10 @@ describe("buildCartesianCategorySeries multi category", () => {
   it("formatCompositeCategoryDisplay joins internal keys for axis/tooltip", () => {
     const key = compositeCategoryKey(ROWS[0]!, COLUMNS, ["region", "month"]);
     expect(formatCompositeCategoryDisplay(key)).toBe("华东 / 2025-01");
+  });
+
+  it("inferEffectiveCategoryLevels ignores trailing empty dimensions", () => {
+    const key = `华东${"\u0001"}${"\u0001"}null`;
+    expect(inferEffectiveCategoryLevels([key, "华北"])).toBe(1);
   });
 });

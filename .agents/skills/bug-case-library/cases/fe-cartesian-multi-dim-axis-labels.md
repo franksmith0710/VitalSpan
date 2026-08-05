@@ -19,8 +19,11 @@
 
 - `formatCompositeCategoryDisplay`：内部 key → 单行 `A / B / C`（tooltip）
 - **分层轴**：`hierarchicalAxis.ts` 多维度分行 + 同级合并（对标 DataEase）
+- **有效层级**：`inferEffectiveCategoryLevels` / `resolveActiveCategoryLevels` 跳过全空维，不再渲染 `null` 占位行
+- **叶级抽稀**：`planHierarchicalCategoryAxis` 对最细粒度层应用 `pickCategoryTicks`，父级仍合并展示
+- **叶级旋转**：密集时最细层自动倾斜并预留 bottom 边距
 - `formatCategoryCellValue`：`null` 不再渲染为字面量
-- `sceneGraph.ts` 多维度时走 `drawHierarchicalCategoryAxis`
+- `sceneGraph.ts` 折线/柱/面积/双轴统一走 `planHierarchicalCategoryAxis`
 
 ## 验证
 

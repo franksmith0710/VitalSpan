@@ -1,4 +1,8 @@
+import type { WidgetStyleConfig } from "@/components/dashboard/dashboardStyleConfig";
+import type { LayoutWidget } from "@/components/dashboard/layoutUtils";
+import { isScreenTitleBarWidget } from "@/lib/screenVisualAssets";
 import type { ScreenTitleBarStyleConfig, ScreenTitleBarVariant } from "@/lib/screenVisualStyle";
+import { normalizeScreenTitleBarStyle } from "@/lib/screenVisualStyle";
 
 export const GOV_SCREEN_HEADER_PACK = "/template-assets/packs/gov-enterprise-v1/screen-headers";
 
@@ -74,4 +78,23 @@ export function resolveScreenTitleBarImageUrl(
   if (variant === "simple") return "";
   const palette = style.palette ?? inferScreenTitleBarPalette(style.accentColor);
   return buildScreenTitleBarImagePath(variant, palette);
+}
+
+/** 旧版标题装饰 marker 组件：将 screenStyle.titleBar 背景合并进 widgetStyle 以走通用背景渲染 */
+export function resolveLegacyTitleBarWidgetStyle(
+  widget: Pick<LayoutWidget, "type" | "textConfig">,
+): WidgetStyleConfig | undefined {
+  if (!isScreenTitleBarWidget(widget)) return widget.textConfig?.widgetStyle;
+  const ws = widget.textConfig?.widgetStyle ?? {};
+  if (ws.backgroundImage?.trim() && ws.backgroundShow !== false) return ws;
+  const titleBar = normalizeScreenTitleBarStyle(widget.textConfig?.screenStyle?.titleBar);
+  const imageUrl = resolveScreenTitleBarImageUrl(titleBar);
+  if (!imageUrl) return ws;
+  return {
+    ...ws,
+    backgroundShow: ws.backgroundShow ?? true,
+    backgroundMode: ws.backgroundMode ?? "image",
+    backgroundImage: imageUrl,
+    backgroundImageOpacity: ws.backgroundImageOpacity ?? 1,
+  };
 }

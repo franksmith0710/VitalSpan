@@ -17,7 +17,6 @@ import type {
   ScreenBorderStyleConfig,
   ScreenClockStyleConfig,
   ScreenDateTimeStyleConfig,
-  ScreenTitleBarStyleConfig,
   ScreenVisualStyleConfig,
 } from "@/lib/screenVisualStyle";
 import {
@@ -26,15 +25,7 @@ import {
   normalizeScreenBorderStyle,
   normalizeScreenClockStyle,
   normalizeScreenDateTimeStyle,
-  normalizeScreenTitleBarStyle,
 } from "@/lib/screenVisualStyle";
-import { cn } from "@/lib/utils";
-import {
-  SCREEN_TITLE_BAR_PALETTES,
-  SCREEN_TITLE_BAR_VARIANTS,
-  buildScreenTitleBarImagePath,
-  resolveScreenTitleBarImageUrl,
-} from "@/lib/screenTitleBarAssets";
 import { ScreenBorderSparkleStylePanel } from "./ScreenBorderSparkleStylePanel";
 import { ScreenBorderVariantPicker } from "./ScreenBorderVariantPicker";
 
@@ -174,94 +165,6 @@ export function ScreenBorderStylePanel({
         accentFallback={style.accentColor}
         onChange={(sparkle) => patch({ sparkle })}
       />
-    </ChartInspectorSection>
-  );
-}
-
-export function ScreenTitleBarStylePanel({
-  value,
-  onChange,
-}: ScreenStylePanelProps<ScreenTitleBarStyleConfig>) {
-  const style = normalizeScreenTitleBarStyle(value);
-  const patch = (partial: Partial<ScreenTitleBarStyleConfig>) => onChange({ ...style, ...partial });
-  const isSimple = style.variant === "simple";
-  const previewUrl = resolveScreenTitleBarImageUrl(style);
-  const activePalette = style.palette || "cyan";
-
-  return (
-    <ChartInspectorSection title="标题装饰" defaultOpen data-testid="screen-titlebar-style-panel">
-      <div className="grid grid-cols-2 gap-2">
-        {SCREEN_TITLE_BAR_VARIANTS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            data-testid={`titlebar-variant-${item.id}`}
-            className={cn(
-              "rounded-md border px-2 py-1.5 text-xs transition-colors",
-              style.variant === item.id
-                ? "border-primary bg-primary/10 text-foreground"
-                : "border-border text-muted-foreground hover:border-primary/40",
-            )}
-            onClick={() => patch({ variant: item.id, backgroundImage: "" })}
-          >
-            {item.label}
-          </button>
-        ))}
-        <button
-          type="button"
-          data-testid="titlebar-variant-simple"
-          className={cn(
-            "col-span-2 rounded-md border px-2 py-1.5 text-xs transition-colors",
-            isSimple
-              ? "border-primary bg-primary/10 text-foreground"
-              : "border-border text-muted-foreground hover:border-primary/40",
-          )}
-          onClick={() => patch({ variant: "simple", backgroundImage: "" })}
-        >
-          简约渐变线（无图片）
-        </button>
-      </div>
-      {!isSimple ? (
-        <>
-          <p className="text-theme-xs text-gray-500 dark:text-gray-400">装饰图片色系</p>
-          <div className="grid grid-cols-5 gap-1.5">
-            {SCREEN_TITLE_BAR_PALETTES.map((palette) => {
-              const thumb = buildScreenTitleBarImagePath(style.variant, palette);
-              return (
-                <button
-                  key={palette}
-                  type="button"
-                  data-testid={`titlebar-palette-${palette}`}
-                  title={palette}
-                  className={cn(
-                    "overflow-hidden rounded border bg-[#0b0f14] transition-colors",
-                    activePalette === palette
-                      ? "border-primary ring-1 ring-primary/40"
-                      : "border-border hover:border-primary/30",
-                  )}
-                  onClick={() => patch({ palette, backgroundImage: "" })}
-                >
-                  <img src={thumb} alt="" className="h-7 w-full object-cover object-center" />
-                </button>
-              );
-            })}
-          </div>
-          {previewUrl ? (
-            <div className="overflow-hidden rounded-lg border border-border bg-[#0b0f14]">
-              <img src={previewUrl} alt="" className="h-12 w-full object-cover object-center" />
-            </div>
-          ) : null}
-        </>
-      ) : null}
-      <ScreenColorField label="标题颜色" kind="text" value={style.titleColor} onChange={(titleColor) => patch({ titleColor })} />
-      <ScreenColorField label="装饰线颜色" value={style.accentColor} onChange={(accentColor) => patch({ accentColor })} />
-      {isSimple ? (
-        <InspectorSwitchRow
-          label="显示两侧装饰线"
-          checked={style.showSideLines}
-          onCheckedChange={(showSideLines) => patch({ showSideLines })}
-        />
-      ) : null}
     </ChartInspectorSection>
   );
 }

@@ -15,7 +15,6 @@ import {
   SCREEN_CLOCK_MARKER,
   SCREEN_ICON_MARKER,
   SCREEN_SHAPE_MARKER,
-  SCREEN_TITLE_BAR_MARKER,
 } from "./screenVisualAssets";
 
 describe("screenVisualAssets", () => {
@@ -47,13 +46,13 @@ describe("screenVisualAssets", () => {
     expect(isScreenIconWidget(icon)).toBe(true);
   });
 
-  it("C1: creates title bar widget with marker content", () => {
+  it("C1: creates title strip as text with decor background", () => {
     const widget = createScreenTitleBarWidget([]);
     expect(widget.type).toBe("text");
-    expect(widget.title).toBe("标题装饰");
-    expect(widget.textConfig?.content).toBe(SCREEN_TITLE_BAR_MARKER);
-    expect(isScreenTitleBarWidget(widget)).toBe(true);
-    expect(resolveScreenWidgetLayerLabel(widget)).toBe("素材 · 标题装饰");
+    expect(widget.title).toBe("标题条");
+    expect(widget.textConfig?.widgetStyle?.backgroundImage).toContain("borderless-decor-v1");
+    expect(isScreenTitleBarWidget(widget)).toBe(false);
+    expect(resolveScreenWidgetLayerLabel(widget)).toBe("标题条");
   });
 
   it("resolves layer labels for screen assets", () => {

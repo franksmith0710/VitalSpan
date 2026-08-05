@@ -12,6 +12,7 @@ export type TextEditRailProps = {
   onConfigChange?: (config: TextWidgetConfig) => void;
   onDelete?: () => void;
   onRailCollapse?: () => void;
+  highlightUrls?: string[];
   className?: string;
 };
 
@@ -21,6 +22,7 @@ export function TextEditRail({
   onConfigChange,
   onDelete,
   onRailCollapse,
+  highlightUrls,
   className,
 }: TextEditRailProps) {
   const textConfig = widget.textConfig;
@@ -46,6 +48,7 @@ export function TextEditRail({
           widget={widget}
           characters={characters}
           widgetStyle={textConfig.widgetStyle ?? {}}
+          highlightUrls={highlightUrls}
           onTitleChange={onTitleChange}
           onWidgetStyleChange={(patch) =>
             onConfigChange?.({

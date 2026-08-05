@@ -26,7 +26,9 @@ import {
 } from "@/lib/datasourceRoles";
 import { queryKeys } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";
-import type { DatasetOrigin, DatasetTable } from "./types";
+import { DatasetFieldWorkbench } from "./components/DatasetFieldWorkbench";
+import { useDatasetTableColumns } from "./hooks/useDatasetTableColumns";
+import type { DatasetBindDraft, DatasetOrigin, DatasetTable } from "./types";
 
 type DsItem = {
   id: string;
@@ -61,6 +63,11 @@ export function DatasetTablePicker({
   savedDataSourceId,
   onDataSourceIdChange,
   origin = "manual",
+  bindDraft,
+  onBindDraftChange,
+  boundConfigId,
+  syncJobId,
+  onRefreshBinding,
 }: {
   tables: DatasetTable[];
   onChange: (next: DatasetTable[]) => void;
@@ -69,6 +76,11 @@ export function DatasetTablePicker({
   savedDataSourceId?: string;
   onDataSourceIdChange?: (dataSourceId: string) => void;
   origin?: DatasetOrigin;
+  bindDraft?: DatasetBindDraft;
+  onBindDraftChange?: (next: DatasetBindDraft) => void;
+  boundConfigId?: string | null;
+  syncJobId?: string | null;
+  onRefreshBinding?: () => void;
 }) {
   const isSyncOrigin = origin === "sync_job";
   const readOnlyTables = isSyncOrigin && tables.length > 0;
@@ -139,6 +151,13 @@ export function DatasetTablePicker({
     return tables.filter((t) => t.name.toLowerCase().includes(q));
   }, [selectedFilter, tables]);
 
+  const primaryTableName = tables[0]?.name ?? "";
+  const effectiveDataSourceId = tableSourceId ?? (dataSourceId || savedDataSourceId || "");
+  const { columnNames, columnsLoading } = useDatasetTableColumns(
+    effectiveDataSourceId,
+    primaryTableName,
+  );
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Enter" || event.repeat || isEditableTarget(event.target)) return;
@@ -151,10 +170,10 @@ export function DatasetTablePicker({
   }, [addTable, selection]);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3">
+    <div className="grid gap-3">
       <div
         className={cn(
-          "grid min-h-0 flex-1 overflow-hidden rounded-xl border border-gray-200 bg-white",
+          "grid h-[min(400px,42vh)] min-h-[280px] shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-white",
           "dark:border-gray-800 dark:bg-white/[0.02]",
           "grid-cols-1 lg:grid-cols-[minmax(240px,280px)_minmax(0,1fr)]",
         )}
@@ -292,6 +311,21 @@ export function DatasetTablePicker({
           )}
         </div>
       </div>
+      {primaryTableName && bindDraft && onBindDraftChange ? (
+        <DatasetFieldWorkbench
+          dataSourceId={effectiveDataSourceId}
+          connectorType={selectedDs?.type || "postgresql"}
+          tableName={primaryTableName}
+          columnNames={columnNames}
+          columnsLoading={columnsLoading}
+          bindDraft={bindDraft}
+          onBindDraftChange={onBindDraftChange}
+          boundConfigId={boundConfigId}
+          origin={origin}
+          syncJobId={syncJobId}
+          onRefreshBinding={onRefreshBinding}
+        />
+      ) : null}
       <p className="shrink-0 text-theme-xs text-gray-500 dark:text-gray-400">
         提示：表树中 <span className="font-medium text-gray-700 dark:text-gray-300">双击</span> 或点{" "}
         <span className="font-medium text-gray-700 dark:text-gray-300">+</span> 快速添加；选中表后按{" "}

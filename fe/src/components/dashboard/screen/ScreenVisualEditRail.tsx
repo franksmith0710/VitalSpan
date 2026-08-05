@@ -6,7 +6,6 @@ import {
   isScreenDateTimeWidget,
   isScreenIconWidget,
   isScreenShapeWidget,
-  isScreenTitleBarWidget,
 } from "@/lib/screenVisualAssets";
 import { WidgetInspectorDelete } from "@/components/dashboard/widget-inspector-delete";
 import { WidgetRailPanelHeader } from "@/components/dashboard/widgetRailChrome";
@@ -20,7 +19,6 @@ import {
   ScreenBorderStylePanel,
   ScreenClockStylePanel,
   ScreenDateTimeStylePanel,
-  ScreenTitleBarStylePanel,
 } from "./ScreenVisualStylePanels";
 
 export type ScreenVisualEditRailProps = {
@@ -42,7 +40,6 @@ export function ScreenVisualEditRail({
 }: ScreenVisualEditRailProps) {
   const isClock = isScreenClockWidget(widget);
   const isBorder = isScreenBorderWidget(widget);
-  const isTitleBar = isScreenTitleBarWidget(widget);
   const isDateTime = isScreenDateTimeWidget(widget);
   const isShape = isScreenShapeWidget(widget);
   const isIcon = isScreenIconWidget(widget);
@@ -50,19 +47,17 @@ export function ScreenVisualEditRail({
     ? "时钟"
     : isBorder
       ? "边框"
-      : isTitleBar
-        ? "标题装饰"
-        : isDateTime
-          ? "日期时间"
-          : isShape
-            ? "图形"
-            : isIcon
-              ? "图标"
-              : "素材";
+      : isDateTime
+        ? "日期时间"
+        : isShape
+          ? "图形"
+          : isIcon
+            ? "图标"
+            : "素材";
   const screenStyle = widget.textConfig.screenStyle ?? {};
 
   const patchStyle = (
-    key: "clock" | "datetime" | "border" | "titleBar" | "shape" | "icon",
+    key: "clock" | "datetime" | "border" | "shape" | "icon",
     partial: object,
   ) => {
     onTextConfigChange?.({
@@ -102,11 +97,6 @@ export function ScreenVisualEditRail({
             <ScreenBorderStylePanel
               value={screenStyle.border}
               onChange={(border) => patchStyle("border", border)}
-            />
-          ) : isTitleBar ? (
-            <ScreenTitleBarStylePanel
-              value={screenStyle.titleBar}
-              onChange={(titleBar) => patchStyle("titleBar", titleBar)}
             />
           ) : isShape ? (
             <ScreenShapeStylePanel

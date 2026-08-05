@@ -4,6 +4,13 @@ from __future__ import annotations
 
 PACK = "/template-assets/packs/gov-enterprise-v1"
 DE_PACK = "/template-assets/packs/de-dashboard-v1"
+BORDERLESS_DECOR_PACK = "/template-assets/packs/borderless-decor-v1/items"
+
+_BORDERLESS_PALETTE_FALLBACK: dict[str, str] = {
+    "royal": "cobalt",
+    "indigo": "violet",
+    "teal": "cyan",
+}
 
 
 def bg_light(name: str) -> str:
@@ -20,6 +27,12 @@ def thumb(name: str) -> str:
 
 def screen_header(style: str, color: str) -> str:
     return f"{PACK}/screen-headers/screen-header-{style}-{color}.svg"
+
+
+def borderless_decor(style: str, palette: str) -> str:
+    """无边框装饰 SVG（对标 DataEase 组件背景图，非专用标题组件）。"""
+    color = _BORDERLESS_PALETTE_FALLBACK.get(palette, palette)
+    return f"{BORDERLESS_DECOR_PACK}/{style}-{color}.svg"
 
 
 def de_bg(slug: str) -> str:

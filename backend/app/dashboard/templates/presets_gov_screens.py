@@ -63,6 +63,7 @@ def _l3_chrome(theme: GovScreenTheme) -> list[dict[str, Any]]:
     chrome_style = build_gov_screen_chrome_style(theme)
     return [
         _title_bar(
+            accent=theme.accent,
             screen_style=chrome_style,
             x=0,
             y=0,

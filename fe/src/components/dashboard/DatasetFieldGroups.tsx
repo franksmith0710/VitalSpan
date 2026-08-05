@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SearchField } from "@/components/ui/search-field";
 import { cn } from "@/lib/utils";
 import { FIELD_DRAG_MIME } from "@/lib/chartFieldDrag";
+import type { DatasetFieldKind } from "./datasetFieldClassification";
 import {
   fieldDisplayKind,
   groupDatasetFields,
@@ -14,13 +15,20 @@ type DatasetFieldGroupsProps = {
   columnsLoading: boolean;
   columnsReady: boolean;
   datasetSelected: boolean;
+  columnKindOverrides?: Record<string, DatasetFieldKind>;
   onFieldClick?: (fieldName: string) => void;
   onRefresh?: () => void;
   className?: string;
 };
 
-function FieldIcon({ field }: { field: string }) {
-  const kind = fieldDisplayKind(field);
+function FieldIcon({
+  field,
+  columnKindOverrides,
+}: {
+  field: string;
+  columnKindOverrides?: Record<string, DatasetFieldKind>;
+}) {
+  const kind = fieldDisplayKind(field, columnKindOverrides);
   if (kind === "date") {
     return <Calendar className="size-3.5 text-brand-500" aria-hidden />;
   }
@@ -32,9 +40,11 @@ function FieldIcon({ field }: { field: string }) {
 
 function FieldRow({
   field,
+  columnKindOverrides,
   onFieldClick,
 }: {
   field: string;
+  columnKindOverrides?: Record<string, DatasetFieldKind>;
   onFieldClick?: (fieldName: string) => void;
 }) {
   return (
@@ -51,7 +61,7 @@ function FieldRow({
       >
         <GripVertical className="size-3.5 shrink-0 text-gray-300 dark:text-gray-600" aria-hidden />
         <span className="flex size-5 shrink-0 items-center justify-center rounded bg-gray-100 dark:bg-white/5">
-          <FieldIcon field={field} />
+          <FieldIcon field={field} columnKindOverrides={columnKindOverrides} />
         </span>
         <span className="min-w-0 flex-1 truncate text-theme-xs text-gray-800 dark:text-white/90">
           {field}
@@ -65,11 +75,13 @@ function FieldRow({
 function FieldSection({
   title,
   fields,
+  columnKindOverrides,
   onFieldClick,
   showDivider,
 }: {
   title: string;
   fields: string[];
+  columnKindOverrides?: Record<string, DatasetFieldKind>;
   onFieldClick?: (fieldName: string) => void;
   showDivider?: boolean;
 }) {
@@ -79,7 +91,12 @@ function FieldSection({
       {fields.length > 0 ? (
         <ul className="space-y-0.5" aria-label={title}>
           {fields.map((field) => (
-            <FieldRow key={field} field={field} onFieldClick={onFieldClick} />
+            <FieldRow
+              key={field}
+              field={field}
+              columnKindOverrides={columnKindOverrides}
+              onFieldClick={onFieldClick}
+            />
           ))}
         </ul>
       ) : (
@@ -94,6 +111,7 @@ export function DatasetFieldGroups({
   columnsLoading,
   columnsReady,
   datasetSelected,
+  columnKindOverrides,
   onFieldClick,
   onRefresh,
   className,
@@ -106,7 +124,7 @@ export function DatasetFieldGroups({
     return columns.filter((column) => column.toLowerCase().includes(q));
   }, [columns, search]);
 
-  const { dimensions, metrics } = groupDatasetFields(filteredColumns);
+  const { dimensions, metrics } = groupDatasetFields(filteredColumns, columnKindOverrides);
 
   return (
     <div className={cn("flex min-w-0 flex-col", className)}>
@@ -152,8 +170,8 @@ export function DatasetFieldGroups({
           </div>
         ) : (
           <div className="space-y-3">
-            <FieldSection title="维度" fields={dimensions} onFieldClick={onFieldClick} />
-            <FieldSection title="指标" fields={metrics} onFieldClick={onFieldClick} showDivider />
+            <FieldSection title="维度" fields={dimensions} columnKindOverrides={columnKindOverrides} onFieldClick={onFieldClick} />
+            <FieldSection title="指标" fields={metrics} columnKindOverrides={columnKindOverrides} onFieldClick={onFieldClick} showDivider />
           </div>
         )}
       </div>

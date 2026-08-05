@@ -26,15 +26,36 @@ export function pickCategoryTicks(categories: string[], innerSpan: number, minPx
   return categories.filter((_, index) => index % step === 0 || index === categories.length - 1);
 }
 
-function truncateLabel(text: string, maxChars: number): string {
-  if (text.length <= maxChars) return text;
-  if (maxChars <= 1) return text.slice(0, 1);
-  return `${text.slice(0, maxChars - 1)}…`;
-}
-
 function maxCharsForSlot(slotSpan: number, rotateDeg = 0): number {
   const charPx = rotateDeg ? CHAR_PX * 0.75 : CHAR_PX;
   return Math.max(2, Math.floor(slotSpan / charPx));
+}
+
+/** 类目轴完整展示文案（不截断） */
+export function axisCategoryDisplayText(label: string): string {
+  return formatCompositeCategoryDisplay(label);
+}
+
+/** 槽位是否可容纳完整标签（对标 DataEase：放不下则隐藏，不用省略号） */
+export function axisLabelFitsSlot(text: string, slotSpan: number, rotateDeg = 0): boolean {
+  if (!text) return false;
+  return text.length <= maxCharsForSlot(slotSpan, rotateDeg);
+}
+
+/** 按标签宽度抬高抽稀间距，避免展示不完整文案 */
+export function pickCategoryTicksForLabels(
+  categories: string[],
+  innerSpan: number,
+  labelFor: (category: string) => string,
+  minPx = 48,
+): string[] {
+  let effectiveMin = minPx;
+  for (const category of categories) {
+    const label = labelFor(category).trim();
+    if (!label) continue;
+    effectiveMin = Math.max(effectiveMin, estimateAxisLabelWidth(label.length) + 10);
+  }
+  return pickCategoryTicks(categories, innerSpan, effectiveMin);
 }
 
 export function resolveCategoryLabelRotate(
@@ -60,16 +81,18 @@ export function resolveRotatedAxisExtraSpan(rotateDeg: number): number {
   return rotateDeg <= -40 ? 24 : 16;
 }
 
-/** 对标 DataEase：槽位不足时截断类目名（含多维度复合标签） */
+/** 对标 DataEase：槽位足够时展示完整类目名，不足则隐藏（不截断为省略号） */
 export function formatAxisCategoryLabel(label: string, slotSpan = 48, rotateDeg = 0): string {
-  const display = formatCompositeCategoryDisplay(label);
-  return truncateLabel(display, maxCharsForSlot(slotSpan, rotateDeg));
+  const display = axisCategoryDisplayText(label);
+  if (!axisLabelFitsSlot(display, slotSpan, rotateDeg)) return "";
+  return display;
 }
 
-/** 横向柱图 / 热力图行轴：按可用宽度截断 */
+/** 横向柱图 / 热力图行轴：宽度不足时隐藏 */
 export function formatHorizontalBandAxisLabel(label: string, maxWidthPx = 120): string {
-  const display = formatCompositeCategoryDisplay(label);
-  return truncateLabel(display, maxCharsForSlot(maxWidthPx, 0));
+  const display = axisCategoryDisplayText(label);
+  if (!axisLabelFitsSlot(display, maxWidthPx, 0)) return "";
+  return display;
 }
 
 export function planCategoryAxisLayout(
@@ -78,9 +101,14 @@ export function planCategoryAxisLayout(
   explicitRotate?: number,
   minPx = 48,
 ): CategoryAxisLayout {
-  const ticks = pickCategoryTicks(categories, innerSpan, minPx);
+  const ticks = pickCategoryTicksForLabels(
+    categories,
+    innerSpan,
+    (category) => axisCategoryDisplayText(String(category)),
+    minPx,
+  );
   const slotSpan = innerSpan / Math.max(1, ticks.length);
-  const displayTicks = ticks.map((tick) => formatCompositeCategoryDisplay(String(tick)));
+  const displayTicks = ticks.map((tick) => axisCategoryDisplayText(String(tick)));
   const rotateDeg = resolveCategoryLabelRotate(displayTicks, innerSpan, explicitRotate);
   return {
     ticks,

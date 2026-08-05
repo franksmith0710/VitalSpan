@@ -4,6 +4,7 @@ import { apiFetch } from "@/lib/api";
 import { activeFieldRefs, reconcileChartFields } from "@/lib/chartConfigState";
 import { isChartExecuteReady, suggestChartFields } from "@/lib/chartExecuteProbe";
 import { resolveDatasetChartBinding } from "@/lib/datasetChartBinding";
+import type { DatasetFieldKind } from "@/components/dashboard/datasetFieldClassification";
 import { queryKeys } from "@/lib/queryKeys";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { fetchChartTypeCatalog, type ChartTypeCatalogItem } from "@/lib/chartRegistry";
@@ -44,6 +45,9 @@ export function useChartInspectorState(
   const [activeSlot, setActiveSlot] = useState<SlotTarget | null>(null);
   const [fieldAssignError, setFieldAssignError] = useState<string | null>(null);
   const [datasetBindingError, setDatasetBindingError] = useState<string | null>(null);
+  const [columnKindOverrides, setColumnKindOverrides] = useState<
+    Record<string, DatasetFieldKind> | undefined
+  >(undefined);
 
   useEffect(() => {
     fetchChartTypeCatalog().then(setCatalog).catch(() => setCatalog([]));
@@ -88,15 +92,19 @@ export function useChartInspectorState(
         try {
           const binding = await resolveDatasetChartBinding(boundId);
           if (binding.dataSourceId) dataSourceId = binding.dataSourceId;
+          setColumnKindOverrides(binding.columnKinds);
           setDatasetBindingError(null);
         } catch {
+          setColumnKindOverrides(undefined);
           setDatasetBindingError("数据集绑定解析失败，请检查数据集配置或改用手写 SQL");
         }
       } else if (isDemoPackageDataset(datasetId, ds?.displayName)) {
+        setColumnKindOverrides(undefined);
         setDatasetBindingError(
           "官方示例 Dataset 查询配置尚未就绪，请重启后端或运行 python scripts/seed-demo-package.py",
         );
       } else {
+        setColumnKindOverrides(undefined);
         setDatasetBindingError("该 Dataset 尚未绑定查询配置，请先在数据集管理中绑定");
       }
 
@@ -143,8 +151,10 @@ export function useChartInspectorState(
       try {
         const binding = await resolveDatasetChartBinding(boundId);
         if (binding.dataSourceId) dataSourceId = binding.dataSourceId;
+        setColumnKindOverrides(binding.columnKinds);
         setDatasetBindingError(null);
       } catch {
+        setColumnKindOverrides(undefined);
         setDatasetBindingError("数据集绑定解析失败，请检查数据集配置或改用手写 SQL");
       }
       if (cancelled) return;
@@ -237,5 +247,6 @@ export function useChartInspectorState(
     clearFieldAssignError: () => setFieldAssignError(null),
     datasetBindingError,
     clearDatasetBindingError: () => setDatasetBindingError(null),
+    columnKindOverrides,
   };
 }

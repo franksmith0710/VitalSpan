@@ -35,6 +35,18 @@ describe("buildDatasetQueryPayload", () => {
     expect(payload.columns).toEqual(["id", "amount"]);
     expect(payload.conditions.logic).toBe("AND");
   });
+
+  it("includes columnKinds filtered to selected columns", () => {
+    const payload = buildDatasetQueryPayload({
+      dataSourceId: "ds-1",
+      connectorType: "mysql",
+      schema: "demo",
+      table: "orders",
+      columns: ["id", "amount"],
+      columnKinds: { id: "dimension", amount: "metric", extra: "dimension" },
+    });
+    expect(payload.columnKinds).toEqual({ id: "dimension", amount: "metric" });
+  });
 });
 
 describe("resolveDatasetChartBinding", () => {
@@ -51,6 +63,7 @@ describe("resolveDatasetChartBinding", () => {
       configId: "cfg-1",
       dataSourceId: "ds-mysql",
       columns: [],
+      columnKinds: undefined,
       schema: undefined,
       table: undefined,
     });

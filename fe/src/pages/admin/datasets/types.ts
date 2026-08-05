@@ -1,7 +1,13 @@
 export type DatasetOrigin = "manual" | "sync_job";
+export type DatasetFieldKind = "dimension" | "metric";
 
 export type DatasetTable = { name: string; alias?: string | null };
 export type DatasetComputedField = { name: string; expression: string };
+
+export type DatasetBindDraft = {
+  selectedColumns: string[];
+  columnKinds: Record<string, DatasetFieldKind>;
+};
 
 export type DatasetItem = {
   datasetId: string;
@@ -22,4 +28,5 @@ export type DatasetEditorValues = {
   computedFields: DatasetComputedField[];
   allowedRoles: string[];
   tableSourceDataSourceId?: string;
+  bindDraft?: DatasetBindDraft;
 };

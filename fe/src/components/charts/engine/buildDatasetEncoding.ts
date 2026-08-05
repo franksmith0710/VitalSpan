@@ -24,7 +24,7 @@ export function formatCategoryCellValue(raw: unknown): string {
   return text;
 }
 
-/** 从复合类目标签推断维度层数 */
+/** 从复合类目标签推断结构层数（含空维占位） */
 export function inferCompositeCategoryLevels(categories: string[]): number {
   let levels = 1;
   for (const category of categories) {
@@ -32,6 +32,22 @@ export function inferCompositeCategoryLevels(categories: string[]): number {
     levels = Math.max(levels, category.split(CARTESIAN_CATEGORY_KEY_SEP).length);
   }
   return levels;
+}
+
+/** 有效维度层数：至少一层存在非空标签（对标 DataEase，忽略全空维） */
+export function inferEffectiveCategoryLevels(categories: string[]): number {
+  let maxLevel = 1;
+  for (const category of categories) {
+    const parts = category.includes(CARTESIAN_CATEGORY_KEY_SEP)
+      ? category.split(CARTESIAN_CATEGORY_KEY_SEP)
+      : [category];
+    for (let i = 0; i < parts.length; i += 1) {
+      if (formatCategoryCellValue(parts[i])) {
+        maxLevel = Math.max(maxLevel, i + 1);
+      }
+    }
+  }
+  return maxLevel;
 }
 
 export function resolveCartesianAxisFields(encoding: RenderSpec["encoding"]): {

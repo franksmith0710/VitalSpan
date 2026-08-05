@@ -10,6 +10,8 @@ import {
   readImageFileAsDataUrl,
 } from "./imageSourceUtils";
 import { localizeApiMessage } from "@/lib/apiError";
+import { TemplateAssetImageGallery } from "./TemplateAssetImageGallery";
+import type { TemplateAssetGalleryScope } from "@/lib/templateAssetCatalog";
 import { ImagePreviewCard, ImageUploadDropZone, RailDivider } from "./imageSourceFieldRail";
 
 export type ImageSourceFieldProps = {
@@ -23,6 +25,10 @@ export type ImageSourceFieldProps = {
   allowClear?: boolean;
   /** inline：输入框 + 按钮横排；rail：432px 配置栏纵向紧凑布局 */
   variant?: "inline" | "rail";
+  /** rail 布局下展示内置素材图库（默认开启） */
+  assetGallery?: boolean;
+  assetGalleryScope?: TemplateAssetGalleryScope;
+  highlightUrls?: string[];
 };
 
 function useImageSourceFieldState(
@@ -122,6 +128,9 @@ export function ImageSourceField({
   pickerLabel = "选择图片",
   allowClear = true,
   variant = "inline",
+  assetGallery = true,
+  assetGalleryScope = "all",
+  highlightUrls,
 }: ImageSourceFieldProps) {
   const inputId = useId();
   const {
@@ -178,6 +187,22 @@ export function ImageSourceField({
             }}
           />
         </div>
+
+        {assetGallery ? (
+          <>
+            <RailDivider />
+            <TemplateAssetImageGallery
+              value={value}
+              scope={assetGalleryScope}
+              highlightUrls={highlightUrls}
+              onSelect={(url) => {
+                setError(null);
+                setLocalName(null);
+                onChange(url);
+              }}
+            />
+          </>
+        ) : null}
 
         <RailDivider />
 

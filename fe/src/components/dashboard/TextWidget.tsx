@@ -12,8 +12,8 @@ import { ScreenClockDisplay } from "./screen/ScreenClockDisplay";
 import { ScreenDateTimeDisplay } from "./screen/ScreenDateTimeDisplay";
 import { ScreenIconDisplay } from "./screen/ScreenIconDisplay";
 import { ScreenShapeDisplay } from "./screen/ScreenShapeDisplay";
-import { ScreenTitleBarDisplay } from "./screen/ScreenTitleBarDisplay";
 import type { LayoutWidget, TextWidgetConfig, DashboardStyleConfig } from "./layoutUtils";
+import { normalizeScreenTitleBarStyle } from "@/lib/screenVisualStyle";
 import { gridWidgetShellClassName, resolveGridWidgetShell } from "./widgetRailStyleSections";
 import {
   isScreenBorderWidget,
@@ -62,6 +62,9 @@ export function TextWidget({
   const screenIcon = isScreenIconWidget(widget);
   const screenVisual = isScreenVisualWidget(widget);
   const screenStyle = widget.textConfig.screenStyle;
+  const legacyTitleBarStyle = screenTitleBar
+    ? normalizeScreenTitleBarStyle(screenStyle?.titleBar)
+    : null;
 
   const beginEditing = () => {
     if (mode !== "edit" || screenVisual) return;
@@ -175,11 +178,17 @@ export function TextWidget({
           <ScreenClockDisplay styleConfig={screenStyle?.clock} />
         ) : screenBorder ? (
           <ScreenBorderDisplay className="absolute inset-0" styleConfig={screenStyle?.border} />
-        ) : screenTitleBar ? (
-          <ScreenTitleBarDisplay
-            title={widget.title || "数据大屏标题"}
-            styleConfig={screenStyle?.titleBar}
-          />
+        ) : screenTitleBar && legacyTitleBarStyle ? (
+          <div
+            data-screen-title-bar-legacy
+            className="flex h-full items-center justify-center px-6 text-center font-semibold tracking-wide"
+            style={{
+              color: legacyTitleBarStyle.titleColor,
+              fontSize: legacyTitleBarStyle.fontSize,
+            }}
+          >
+            {widget.title || "数据大屏标题"}
+          </div>
         ) : screenDateTime ? (
           <ScreenDateTimeDisplay styleConfig={screenStyle?.datetime} />
         ) : screenShape ? (
