@@ -701,6 +701,30 @@ def get_etl_rules(
     return EtlRulesResponse(rules=rules.rules)
 
 
+@router.post("/sync-jobs/{job_id}/etl-rules/auto-align", response_model=EtlRulesResponse)
+def auto_align_etl_rules(
+    job_id: uuid.UUID,
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
+    db: Annotated[Session, Depends(_db)],
+) -> EtlRulesResponse:
+    job = db.get(SyncJob, job_id)
+    if job is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "NOT_FOUND", "message": "任务不存在", "detail": None},
+        )
+    rules_row = db.scalar(select(EtlRuleSet).where(EtlRuleSet.job_id == job_id))
+    if rules_row is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "NOT_FOUND", "message": "任务不存在", "detail": None},
+        )
+    aligned = resolve_initial_etl_rules(db, job, actor)
+    rules_row.rules = aligned
+    db.commit()
+    return EtlRulesResponse(rules=aligned)
+
+
 @router.put("/sync-jobs/{job_id}/etl-rules", response_model=EtlRulesResponse)
 def put_etl_rules(
     job_id: uuid.UUID,

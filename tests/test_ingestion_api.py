@@ -474,6 +474,48 @@ def test_create_job_seeds_etl_rules_from_source_columns(
     client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
 
 
+def test_auto_align_etl_rules_regenerates_from_columns(
+    client: TestClient,
+    auth_headers: dict,
+    mysql_datasource_id: uuid.UUID,
+) -> None:
+    from app.datasources.schemas import ColumnItemOut, ColumnListResponse
+
+    columns = ColumnListResponse(
+        items=[
+            ColumnItemOut(name="amount", data_type="varchar", nullable=True),
+            ColumnItemOut(name="status", data_type="varchar", nullable=True),
+        ],
+    )
+    target_table = f"auto_align_{uuid.uuid4().hex[:8]}"
+    payload = {
+        "name": "auto-align-job",
+        "source_mode": "datasource",
+        "source_data_source_id": str(mysql_datasource_id),
+        "source_table": "metrics",
+        "target_table": target_table,
+        "schedule_cron": None,
+    }
+    with patch("app.ingestion.etl_seed.list_columns", return_value=ColumnListResponse(items=[])):
+        create = client.post("/api/v1/ingestion/sync-jobs", json=payload, headers=auth_headers)
+    assert create.status_code == 201, create.text
+    job_id = create.json()["id"]
+    with patch("app.ingestion.etl_seed.list_columns", return_value=columns):
+        aligned = client.post(
+            f"/api/v1/ingestion/sync-jobs/{job_id}/etl-rules/auto-align",
+            headers=auth_headers,
+        )
+    assert aligned.status_code == 200, aligned.text
+    body = aligned.json()["rules"]
+    assert {"type": "cast_type", "column": "amount", "to": "float"} in body
+    assert {
+        "type": "filter_rows",
+        "column": "status",
+        "op": "ne",
+        "value": "deleted",
+    } in body
+
+
 def test_update_job_reseeds_etl_when_source_changes_and_rules_empty(
     client: TestClient,
     auth_headers: dict,
@@ -763,6 +805,7 @@ INGESTION_OPENAPI_PATHS = {
     "/api/v1/ingestion/sync-jobs/{job_id}/run": {"post"},
     "/api/v1/ingestion/sync-jobs/{job_id}/runs": {"get"},
     "/api/v1/ingestion/sync-jobs/{job_id}/etl-rules": {"get", "put"},
+    "/api/v1/ingestion/sync-jobs/{job_id}/etl-rules/auto-align": {"post"},
 }
 
 

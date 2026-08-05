@@ -153,10 +153,22 @@ def test_cast_type_unknown_to_falls_back_to_str():
     assert apply_rules(rows, rules)[0]["amount"] == "42"
 
 
-def test_empty_rules_chain_preserves_rows():
-    """T-ETL-11: rules: [] 不改变行集。"""
+def test_empty_rules_chain_preserves_rows_without_profile_triggers():
+    """无 status/字符串列时，空规则链 + 默认 profile 不改变简单数值行。"""
     rows = [{"a": 1}, {"a": 2}]
     assert apply_rules(rows, []) == [{"a": 1}, {"a": 2}]
+
+
+def test_auto_profile_filters_deleted_status_with_empty_rules():
+    rows = [{"status": "active"}, {"status": "deleted"}]
+    assert len(apply_rules(rows, [])) == 1
+
+
+def test_auto_profile_coerces_numeric_strings_with_empty_rules():
+    rows = [{"amount": "12.5"}, {"amount": "3"}]
+    result = apply_rules(rows, [])
+    assert result[0]["amount"] == 12.5
+    assert result[1]["amount"] == 3.0
 
 
 import time
@@ -252,10 +264,10 @@ def test_apply_rules_oversized_column_name_does_not_crash():
 
 
 def test_numeric_rule_type_ignored():
-    """T-ETL-23: 规则 type 为数字 → apply_rules 不抛，行集不变。"""
+    """T-ETL-23: 规则 type 为数字 → apply_rules 不抛；无效规则忽略，默认 profile 仍生效。"""
     rows = [{"amount": "1"}]
     rules = [{"type": 123}]
-    assert apply_rules(rows, rules) == [{"amount": "1"}]
+    assert apply_rules(rows, rules) == [{"amount": 1}]
 
 
 def test_cast_type_missing_column_raises_keyerror():

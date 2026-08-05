@@ -10,6 +10,7 @@ import { EtlRulesPage } from "./EtlRulesPage";
 import { SyncJobFormPage } from "./SyncJobFormPage";
 import { SyncJobHistoryPage } from "./SyncJobHistoryPage";
 import { SyncJobsPage } from "./SyncJobsPage";
+import { suggestEtlRulesFromColumns } from "./etlRuleSuggest";
 
 const mockNavigate = vi.fn();
 const mockApiFetch = vi.fn();
@@ -142,6 +143,7 @@ function mockEtlRulesApi(
     loadError?: Error;
     columns?: string[];
     sourceDataSourceId?: string;
+    autoAlignRules?: unknown[];
   },
 ) {
   const database = "sample_db";
@@ -153,6 +155,17 @@ function mockEtlRulesApi(
     const metadata = mockSyncMetadataResponse(url, database, columns);
     if (metadata) return metadata;
     if (typeof url === "string" && url.includes("/etl-rules")) {
+      if (init?.method === "POST" && url.includes("auto-align")) {
+        const aligned =
+          handlers?.autoAlignRules ??
+          suggestEtlRulesFromColumns(
+            columns.map((name) => ({
+              name,
+              dataType: name === "amount" || name === "status" ? "varchar" : "int",
+            })),
+          );
+        return Promise.resolve({ rules: aligned });
+      }
       if (init?.method === "PUT") {
         return handlers?.onPut ? handlers.onPut() : Promise.resolve({ rules });
       }
@@ -450,7 +463,7 @@ describe("ingestion admin smoke", () => {
     fireEvent.click(await screen.findByRole("button", { name: "手动运行同步" }));
     fireEvent.click(await screen.findByRole("button", { name: "运行" }));
 
-    expect(await screen.findByText(/未识别到需清洗项，数据已原样入湖/)).toBeInTheDocument();
+    expect(await screen.findByText(/未识别到额外规则，同步时仍会自动清洗/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "手动添加规则" })).toHaveAttribute(
       "href",
       "/admin/ingestion/sync-jobs/job-2/etl-rules",
@@ -1157,7 +1170,7 @@ describe("ingestion admin smoke", () => {
 
   it("EtlRulesPage_renders_default_rule_row_when_empty (T-ING-08)", async () => {
     setViewport(1400);
-    mockEtlRulesApi([]);
+    mockEtlRulesApi([], "orders", { autoAlignRules: [] });
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/etl-rules"]}>
         <Routes>
@@ -1169,7 +1182,7 @@ describe("ingestion admin smoke", () => {
       </MemoryRouter>,
     );
     expect(await screen.findByRole("button", { name: /保存规则/ })).toBeInTheDocument();
-    expect(screen.getByText("尚无清洗规则")).toBeInTheDocument();
+    expect(screen.getByText("暂无额外规则")).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "一键对齐全部列" }).length).toBeGreaterThan(0);
   });
 
@@ -1192,15 +1205,9 @@ describe("ingestion admin smoke", () => {
     await waitFor(() => {
       expect(screen.getAllByRole("button", { name: "一键对齐全部列" }).length).toBeGreaterThan(0);
     });
-    const alignButtons = screen.getAllByRole("button", { name: "一键对齐全部列" });
     await waitFor(() => {
-      expect(alignButtons[0]).toBeEnabled();
+      expect(screen.getAllByText("类型转换").length).toBeGreaterThan(0);
     });
-    fireEvent.click(alignButtons[0]);
-    await waitFor(() => {
-      expect(screen.getAllByRole("combobox", { name: "列名" }).length).toBeGreaterThan(0);
-    });
-    expect(screen.getAllByText("类型转换").length).toBeGreaterThan(0);
   });
 
   it("SyncJobHistoryPage_empty_state (T-ING-09)", async () => {

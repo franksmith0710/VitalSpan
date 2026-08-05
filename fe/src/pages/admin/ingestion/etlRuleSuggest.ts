@@ -92,7 +92,7 @@ export function suggestEtlRulesFromColumns(columns: EtlColumnMeta[]): EtlRuleDra
 }
 
 export function summarizeEtlRules(rules: EtlRuleDraft[]): string {
-  if (rules.length === 0) return "无清洗规则（原样入湖）";
+  if (rules.length === 0) return "无额外规则（同步时默认自动清洗）";
   const parts: string[] = [];
   for (const rule of rules) {
     if (rule.type === "rename_column" && rule.from && rule.to) {

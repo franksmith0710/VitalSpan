@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 import { Settings2 } from "lucide-react";
 import { toast } from "sonner";
@@ -22,7 +22,7 @@ import {
 import { EtlRulesEditor } from "./components/EtlRulesEditor";
 import { type EtlRule } from "./components/EtlRuleCard";
 import { useSyncJobSourceColumns } from "./hooks/useSyncJobSourceColumns";
-import { suggestEtlRulesFromColumns, summarizeEtlRules } from "./etlRuleSuggest";
+import { summarizeEtlRules } from "./etlRuleSuggest";
 
 const etlRulesPageIcon = (
   <AdminPageHeaderIcon>
@@ -89,9 +89,52 @@ export function EtlRulesPage() {
     }
   }, [id, resetBaseline]);
 
+  const autoAlignAttemptedRef = useRef(false);
+
+  const runAutoAlign = useCallback(
+    async (options?: { silent?: boolean }) => {
+      if (!id) return null;
+      try {
+        const data = await apiFetch<{ rules: EtlRule[] }>(
+          `/api/v1/ingestion/sync-jobs/${id}/etl-rules/auto-align`,
+          { method: "POST" },
+        );
+        setRules(data.rules);
+        resetBaseline(data.rules);
+        setError(null);
+        setFieldErrors(false);
+        if (!options?.silent) {
+          if (data.rules.length > 0) {
+            toast.success(`已扫描全部列并生成 ${data.rules.length} 条规则`);
+          } else {
+            toast.info("未生成额外规则；同步时仍会执行默认自动清洗");
+          }
+        }
+        return data.rules;
+      } catch (err) {
+        if (!options?.silent) {
+          setError(mapApiError(err));
+        }
+        return null;
+      }
+    },
+    [id, resetBaseline],
+  );
+
   useEffect(() => {
     void loadRules();
   }, [loadRules]);
+
+  useEffect(() => {
+    if (loading || !isBaselineReady || autoAlignAttemptedRef.current || !id) return;
+    if (rules.length > 0) {
+      autoAlignAttemptedRef.current = true;
+      return;
+    }
+    if (!columnsReady) return;
+    autoAlignAttemptedRef.current = true;
+    void runAutoAlign({ silent: true });
+  }, [columnsReady, id, isBaselineReady, loading, rules.length, runAutoAlign]);
 
   const updateRule = (index: number, key: string, value: string) => {
     setRules((prev) =>
@@ -157,7 +200,7 @@ export function EtlRulesPage() {
   };
 
   const applyAutoSuggestedRules = () => {
-    if (columns.length === 0) {
+    if (!columnsReady || columns.length === 0) {
       toast.warning("未能加载源表列信息，请确认同步任务已选业务源连接与源表");
       return;
     }
@@ -167,18 +210,7 @@ export function EtlRulesPage() {
     if (hasExistingRules && !window.confirm("一键对齐将覆盖当前规则，是否继续？")) {
       return;
     }
-    const suggested = suggestEtlRulesFromColumns(columns);
-    if (suggested.length === 0) {
-      setRules([]);
-      setError(null);
-      setFieldErrors(false);
-      toast.info("未识别到需要清洗的规则，源表列看起来已较规范");
-      return;
-    }
-    setRules(suggested);
-    setError(null);
-    setFieldErrors(false);
-    toast.success(`已为 ${suggested.length} 列生成对齐规则，确认后请保存`);
+    void runAutoAlign();
   };
 
   const pageDescription = useMemo(() => {

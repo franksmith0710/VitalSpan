@@ -328,7 +328,7 @@ export function SyncConsumeActionCard({
               <Sparkles className="size-3" aria-hidden />
               {(hints.etlRulesCount ?? 0) > 0
                 ? `已应用 ${hints.etlRulesCount} 条清洗规则`
-                : "未识别到需清洗项，数据已原样入湖"}
+                : "未识别到额外规则，同步时仍会自动清洗"}
             </Badge>
             <Link
               to={`/admin/ingestion/sync-jobs/${jobId}/etl-rules`}

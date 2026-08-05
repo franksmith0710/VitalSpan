@@ -51,7 +51,7 @@ describe("suggestEtlRulesFromColumns", () => {
 
 describe("summarizeEtlRules", () => {
   it("returns empty summary", () => {
-    expect(summarizeEtlRules([])).toBe("无清洗规则（原样入湖）");
+    expect(summarizeEtlRules([])).toBe("无额外规则（同步时默认自动清洗）");
   });
 
   it("summarizes mixed rules", () => {

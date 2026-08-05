@@ -5,6 +5,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+_NUMERIC_COERCE_MIN_RATE = 0.8
+
 
 def _cast_value(value: Any, to: str) -> Any:
     if value is None or (isinstance(value, float) and np.isnan(value)):
@@ -100,10 +102,47 @@ def _apply_filter(df: pd.DataFrame, rule: dict[str, Any]) -> pd.DataFrame:
     return pd.DataFrame(kept) if kept else pd.DataFrame(columns=df.columns)
 
 
+def apply_auto_profile_df(
+    df: pd.DataFrame,
+    rules: list[dict[str, Any]] | None = None,
+) -> pd.DataFrame:
+    """Pandas 式默认清洗：同步阶段始终执行，无需手工逐条配置规则。"""
+    if df.empty:
+        return df
+    df = df.copy()
+    for col in df.columns:
+        series = df[col]
+        if pd.api.types.is_object_dtype(series) or pd.api.types.is_string_dtype(series):
+            df[col] = series.map(lambda v: v.strip() if isinstance(v, str) else v)
+    if "status" in df.columns:
+        df = df[df["status"] != "deleted"]
+    cast_columns = {
+        rule["column"]
+        for rule in (rules or [])
+        if rule.get("type") == "cast_type" and rule.get("column")
+    }
+    for col in list(df.columns):
+        if col in cast_columns:
+            continue
+        series = df[col]
+        if pd.api.types.is_numeric_dtype(series):
+            continue
+        if not (pd.api.types.is_object_dtype(series) or pd.api.types.is_string_dtype(series)):
+            continue
+        coerced = pd.to_numeric(series, errors="coerce")
+        non_empty = series.notna() & (series.astype(str).str.strip() != "")
+        if non_empty.sum() == 0:
+            continue
+        if coerced.notna().sum() / non_empty.sum() >= _NUMERIC_COERCE_MIN_RATE:
+            df[col] = coerced
+    return df
+
+
 def apply_rules(rows: list[dict[str, Any]], rules: list[dict[str, Any]]) -> list[dict[str, Any]]:
     if not rows:
         return []
     df = pd.DataFrame(rows)
+    df = apply_auto_profile_df(df, rules)
     for rule in rules:
         rtype = rule.get("type")
         if rtype == "rename_column":

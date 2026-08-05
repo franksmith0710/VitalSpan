@@ -60,7 +60,7 @@ export function computePieLayout(
   let margin = base;
   if (outsideLabels) {
     const innerW0 = Math.max(0, width - base.left - base.right);
-    const extra = Math.min(72, Math.max(40, innerW0 * 0.14));
+    const extra = Math.min(96, Math.max(48, innerW0 * 0.18));
     margin = { ...margin, left: margin.left + extra, right: margin.right + extra };
   }
   if (showLegend) {

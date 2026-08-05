@@ -54,11 +54,29 @@ function resolveInnerFrac(value: unknown): number {
   return 0;
 }
 
+function resolveSliceOuterRadius(
+  d: d3.PieArcDatum<D3Datum>,
+  opts: {
+    isRose: boolean;
+    outerR: number;
+    innerR: number;
+    maxValue: number;
+    angleField: string;
+  },
+): number {
+  if (!opts.isRose) return opts.outerR;
+  const v = Number(d.data[opts.angleField] ?? 0);
+  return opts.innerR + ((opts.outerR - opts.innerR) * v) / (opts.maxValue || 1);
+}
+
 function drawPieLabels(
   arcs: d3.Selection<SVGGElement, d3.PieArcDatum<D3Datum>, SVGGElement, unknown>,
   opts: {
     labelArc: d3.Arc<d3.PieArcDatum<D3Datum>, d3.PieArcDatum<D3Datum>>;
     outerR: number;
+    innerR: number;
+    isRose: boolean;
+    maxValue: number;
     colorField: string;
     angleField: string;
     labelOpts: PieLabelRenderOptions;
@@ -66,6 +84,7 @@ function drawPieLabels(
     valueFormat: D3RenderConfig["valueFormat"];
     labelFontSize: number;
     labelColor: string | undefined;
+    labelBounds: { ymin: number; ymax: number };
     theme: D3RenderConfig["theme"];
     sliceColor: (row: D3Datum) => string;
   },
@@ -92,6 +111,14 @@ function drawPieLabels(
           midAngle,
           sliceAngle: d.endAngle - d.startAngle,
           text,
+          priority: Number((d.data as Record<string, unknown>)[opts.angleField] ?? 0),
+          connectR: resolveSliceOuterRadius(d, {
+            isRose: opts.isRose,
+            outerR: opts.outerR,
+            innerR: opts.innerR,
+            maxValue: opts.maxValue,
+            angleField: opts.angleField,
+          }),
         };
       })
       .filter((row): row is NonNullable<typeof row> => row != null);
@@ -100,7 +127,7 @@ function drawPieLabels(
       candidates,
       opts.outerR,
       opts.labelFontSize,
-      pieOutsideLabelBounds(opts.outerR),
+      opts.labelBounds,
     );
 
     arcs.each(function (d) {
@@ -329,9 +356,14 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
     .on("click", (_event, d) => onPointClick?.(d.data));
 
   if (showLabel) {
+    const innerH = Math.max(0, height - layout.margin.top - layout.margin.bottom);
+    const labelHalfH = Math.min(outerR * 1.42, innerH / 2 - 4);
     drawPieLabels(arcs, {
       labelArc,
       outerR,
+      innerR,
+      isRose,
+      maxValue,
       colorField,
       angleField,
       labelOpts,
@@ -339,6 +371,7 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
       valueFormat,
       labelFontSize,
       labelColor,
+      labelBounds: pieOutsideLabelBounds(outerR, labelHalfH),
       theme,
       sliceColor: (row) =>
         colorScale(String(row[colorField] ?? "")) ?? colors[0] ?? "#465fff",

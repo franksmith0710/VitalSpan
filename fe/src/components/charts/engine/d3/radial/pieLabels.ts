@@ -68,7 +68,7 @@ export function formatPieTooltipValue(
   return `${indicator} (${pct.toFixed(percentDecimals)}%)`;
 }
 
-/** 外置标签：径向段 + 水平段（对标 DE / ECharts labelLine） */
+/** 外置标签几何（沿扇区角度径向分布，对标扇形图） */
 export type PieOutsideLabelGeometry = {
   x0: number;
   y0: number;
@@ -77,43 +77,69 @@ export type PieOutsideLabelGeometry = {
   x2: number;
   textX: number;
   textY: number;
-  anchor: "start" | "end";
+  anchor: "start" | "end" | "middle";
   isRight: boolean;
 };
 
 export function pieOutsideLabelPolyline(geo: PieOutsideLabelGeometry): string {
-  const { x0, y0, x1, y1, x2, textY } = geo;
-  if (Math.abs(y1 - textY) < 0.5) {
-    return `${x0},${y0} ${x1},${y1} ${x2},${y1}`;
+  return `${geo.x0},${geo.y0} ${geo.x1},${geo.y1} ${geo.textX},${geo.textY}`;
+}
+
+function outsideLabelRadialOut(outerR: number, fontSize: number): number {
+  return Math.max(14, outerR * 0.12, fontSize * 0.85);
+}
+
+function estimateLabelPixelWidth(text: string, fontSize: number): number {
+  let width = 0;
+  for (const ch of text) {
+    const code = ch.codePointAt(0) ?? 0;
+    width += code > 0xff ? fontSize : fontSize * 0.58;
   }
-  return `${x0},${y0} ${x1},${y1} ${x2},${y1} ${x2},${textY}`;
+  return width + OUTSIDE_LABEL_TEXT_GAP;
 }
 
 export function pieOutsideLabelGeometry(
   midAngle: number,
   outerR: number,
-  radialLen?: number,
+  fontSize: number,
+  connectR?: number,
+  text = "",
+  radialExtra = 0,
 ): PieOutsideLabelGeometry {
-  const rLen = radialLen ?? Math.max(5, outerR * 0.04);
+  const edgeR = connectR ?? outerR;
+  const radialOut = outsideLabelRadialOut(outerR, fontSize);
   const cos = Math.cos(midAngle - Math.PI / 2);
   const sin = Math.sin(midAngle - Math.PI / 2);
   const isRight = cos >= 0;
-  const x0 = cos * outerR;
-  const y0 = sin * outerR;
-  const x1 = cos * (outerR + rLen);
-  const y1 = sin * (outerR + rLen);
-  const stub = outsideLabelColumnStub(outerR);
-  const x2 = isRight ? x1 + stub : x1 - stub;
-  const textX = isRight ? x2 + OUTSIDE_LABEL_TEXT_GAP : x2 - OUTSIDE_LABEL_TEXT_GAP;
+  const absCos = Math.abs(cos);
+  const anchor: "start" | "end" | "middle" =
+    absCos > 0.25 ? (isRight ? "start" : "end") : "middle";
+  const labelR = Math.max(edgeR + 4, outerR + radialOut) + radialExtra;
+  const x0 = cos * edgeR;
+  const y0 = sin * edgeR;
+  const elbowX = cos * labelR;
+  const elbowY = sin * labelR;
+  const textW = text ? estimateLabelPixelWidth(text, fontSize) : fontSize * 2;
+  let textX = elbowX;
+  let textY = elbowY;
+  if (anchor === "start") {
+    textX = elbowX + OUTSIDE_LABEL_TEXT_GAP;
+  } else if (anchor === "end") {
+    textX = elbowX - OUTSIDE_LABEL_TEXT_GAP;
+  } else if (sin > 0.35) {
+    textY = elbowY + textW * 0.35;
+  } else if (sin < -0.35) {
+    textY = elbowY - textW * 0.35;
+  }
   return {
     x0,
     y0,
-    x1,
-    y1,
-    x2,
+    x1: elbowX,
+    y1: elbowY,
+    x2: textX,
     textX,
-    textY: y1,
-    anchor: isRight ? "start" : "end",
+    textY,
+    anchor,
     isRight,
   };
 }
@@ -123,6 +149,10 @@ export type PieOutsideLabelCandidate = {
   midAngle: number;
   sliceAngle: number;
   text: string;
+  /** 扇区外缘半径（玫瑰图随数值变化；普通饼图为 outerR） */
+  connectR?: number;
+  /** 数值越大越优先保留（玫瑰图等大扇区等角时按指标） */
+  priority?: number;
 };
 
 export type PieOutsideLabelPlaced = {
@@ -131,99 +161,214 @@ export type PieOutsideLabelPlaced = {
   points: string;
   textX: number;
   textY: number;
-  anchor: "start" | "end";
+  anchor: "start" | "end" | "middle";
 };
 
 const MIN_SLICE_ANGLE_RAD = 0.035;
 const OUTSIDE_LABEL_TEXT_GAP = 3;
 
-function outsideLabelColumnStub(outerR: number): number {
-  return Math.max(8, outerR * 0.045);
+export function outsideLabelRowGap(fontSize: number): number {
+  return Math.max(fontSize + 8, Math.round(fontSize * 1.4));
 }
 
-/** 同侧标签共用垂直引线列，水平段对齐（对标 DE / ECharts labelLine） */
-function alignOutsideLabelColumns(items: { geo: PieOutsideLabelGeometry }[], outerR: number): void {
-  const stub = outsideLabelColumnStub(outerR);
-  const right = items.filter((i) => i.geo.isRight);
-  const left = items.filter((i) => !i.geo.isRight);
+type LabelBBox = { left: number; right: number; top: number; bottom: number };
 
-  if (right.length > 0) {
-    const columnX = Math.max(...right.map((i) => i.geo.x1)) + stub;
-    for (const item of right) {
-      item.geo.x2 = columnX;
-      item.geo.textX = columnX + OUTSIDE_LABEL_TEXT_GAP;
-      item.geo.anchor = "start";
-    }
+function labelTextBBox(
+  geo: PieOutsideLabelGeometry,
+  text: string,
+  fontSize: number,
+): LabelBBox {
+  const w = estimateLabelPixelWidth(text, fontSize);
+  const h = fontSize + 4;
+  const cy = geo.textY;
+  if (geo.anchor === "start") {
+    return { left: geo.textX, right: geo.textX + w, top: cy - h / 2, bottom: cy + h / 2 };
   }
-  if (left.length > 0) {
-    const columnX = Math.min(...left.map((i) => i.geo.x1)) - stub;
-    for (const item of left) {
-      item.geo.x2 = columnX;
-      item.geo.textX = columnX - OUTSIDE_LABEL_TEXT_GAP;
-      item.geo.anchor = "end";
-    }
+  if (geo.anchor === "end") {
+    return { left: geo.textX - w, right: geo.textX, top: cy - h / 2, bottom: cy + h / 2 };
   }
+  return { left: geo.textX - w / 2, right: geo.textX + w / 2, top: cy - h / 2, bottom: cy + h / 2 };
 }
 
-function layoutHalf(
-  items: { geo: PieOutsideLabelGeometry }[],
-  bound: number,
-  gap: number,
-  mode: "up" | "down",
-): number {
-  if (items.length === 0) return 0;
-  items.sort((a, b) => a.geo.textY - b.geo.textY);
-  if (mode === "down") {
-    for (let i = 1; i < items.length; i++) {
-      const minY = items[i - 1].geo.textY + gap;
-      if (items[i].geo.textY < minY) items[i].geo.textY = minY;
-    }
-    const overflow = items[items.length - 1].geo.textY - bound;
-    return overflow > 0 ? overflow : 0;
-  }
-  for (let i = items.length - 2; i >= 0; i--) {
-    const maxY = items[i + 1].geo.textY - gap;
-    if (items[i].geo.textY > maxY) items[i].geo.textY = maxY;
-  }
-  const overflow = bound - items[0].geo.textY;
-  return overflow > 0 ? overflow : 0;
-}
-
-function layoutSide(
-  side: { geo: PieOutsideLabelGeometry }[],
-  ymin: number,
-  ymax: number,
-  gap: number,
-): number {
-  const top = side.filter((i) => i.geo.textY < 0);
-  const bottom = side.filter((i) => i.geo.textY >= 0);
-  return Math.max(
-    layoutHalf(top, ymin, gap, "up"),
-    layoutHalf(bottom, ymax, gap, "down"),
+function boxesOverlap(a: LabelBBox, b: LabelBBox, pad = 2): boolean {
+  return (
+    a.left < b.right + pad &&
+    a.right > b.left - pad &&
+    a.top < b.bottom + pad &&
+    a.bottom > b.top - pad
   );
 }
 
-/** 外置标签防碰撞：左右分侧垂直堆叠 + 空间不足时隐藏最小扇区 */
+type LayoutItem = {
+  key: string;
+  sliceAngle: number;
+  midAngle: number;
+  text: string;
+  connectR: number;
+  priority: number;
+  visible: boolean;
+  radialExtra: number;
+  geo: PieOutsideLabelGeometry;
+};
+
+function rebuildItemGeo(item: LayoutItem, outerR: number, fontSize: number): void {
+  item.geo = pieOutsideLabelGeometry(
+    item.midAngle,
+    outerR,
+    fontSize,
+    item.connectR,
+    item.text,
+    item.radialExtra,
+  );
+}
+
+function segmentSegmentsCross(
+  ax0: number,
+  ay0: number,
+  ax1: number,
+  ay1: number,
+  bx0: number,
+  by0: number,
+  bx1: number,
+  by1: number,
+): boolean {
+  const d = (ax1 - ax0) * (by1 - by0) - (ay1 - ay0) * (bx1 - bx0);
+  if (Math.abs(d) < 1e-9) return false;
+  const t = ((bx0 - ax0) * (by1 - by0) - (by0 - ay0) * (bx1 - bx0)) / d;
+  const u = ((bx0 - ax0) * (ay1 - ay0) - (by0 - ay0) * (ax1 - ax0)) / d;
+  const eps = 1e-5;
+  return t > eps && t < 1 - eps && u > eps && u < 1 - eps;
+}
+
+function leaderSegments(geo: PieOutsideLabelGeometry): [number, number, number, number][] {
+  const segs: [number, number, number, number][] = [
+    [geo.x0, geo.y0, geo.x1, geo.y1],
+  ];
+  if (Math.hypot(geo.textX - geo.x1, geo.textY - geo.y1) > 0.5) {
+    segs.push([geo.x1, geo.y1, geo.textX, geo.textY]);
+  }
+  return segs;
+}
+
+function leaderLinesCross(a: PieOutsideLabelGeometry, b: PieOutsideLabelGeometry): boolean {
+  const aSegs = leaderSegments(a);
+  const bSegs = leaderSegments(b);
+  for (const [ax0, ay0, ax1, ay1] of aSegs) {
+    for (const [bx0, by0, bx1, by1] of bSegs) {
+      if (segmentSegmentsCross(ax0, ay0, ax1, ay1, bx0, by0, bx1, by1)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function itemConflicts(
+  item: LayoutItem,
+  placed: LayoutItem[],
+  fontSize: number,
+): boolean {
+  const box = labelTextBBox(item.geo, item.text, fontSize);
+  for (const other of placed) {
+    if (boxesOverlap(box, labelTextBBox(other.geo, other.text, fontSize))) {
+      return true;
+    }
+    if (leaderLinesCross(item.geo, other.geo)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function resolvePieLabelSide(midAngle: number): "right" | "left" | "pole" {
+  const cos = Math.cos(midAngle - Math.PI / 2);
+  const sin = Math.sin(midAngle - Math.PI / 2);
+  const absCos = Math.abs(cos);
+  const absSin = Math.abs(sin);
+  if (absCos > 0.65 || absCos > absSin) {
+    return cos >= 0 ? "right" : "left";
+  }
+  return "pole";
+}
+
+/** 分侧按角度排序，仅径向拉长 + 引线不相交 */
+function layoutSideWithoutCrossing(
+  sideItems: LayoutItem[],
+  outerR: number,
+  fontSize: number,
+): void {
+  const sorted = [...sideItems].sort((a, b) => a.midAngle - b.midAngle);
+  const radialOut = outsideLabelRadialOut(outerR, fontSize);
+  const maxExtra = radialOut * 6;
+  const radialStep = Math.max(2, fontSize * 0.3);
+  const placed: LayoutItem[] = [];
+
+  for (const item of sorted) {
+    item.visible = true;
+    let extra = placed.length > 0 ? placed[placed.length - 1].radialExtra : 0;
+
+    for (let attempt = 0; attempt < 200; attempt++) {
+      item.radialExtra = extra;
+      rebuildItemGeo(item, outerR, fontSize);
+      if (!itemConflicts(item, placed, fontSize)) break;
+      extra += radialStep;
+      if (extra > maxExtra) {
+        item.visible = false;
+        break;
+      }
+    }
+    if (item.visible) placed.push(item);
+  }
+}
+
+function avoidOutsideLabelOverlap(items: LayoutItem[], outerR: number, fontSize: number): void {
+  const groups: Record<"right" | "left" | "pole", LayoutItem[]> = {
+    right: [],
+    left: [],
+    pole: [],
+  };
+  for (const item of items) {
+    groups[resolvePieLabelSide(item.midAngle)].push(item);
+  }
+
+  for (const group of Object.values(groups)) {
+    layoutSideWithoutCrossing(group, outerR, fontSize);
+  }
+
+  const visible = () => items.filter((i) => i.visible);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    const vis = visible();
+    for (let i = 0; i < vis.length; i++) {
+      for (let j = i + 1; j < vis.length; j++) {
+        const a = vis[i];
+        const b = vis[j];
+        const overlap = boxesOverlap(
+          labelTextBBox(a.geo, a.text, fontSize),
+          labelTextBBox(b.geo, b.text, fontSize),
+        );
+        const cross = leaderLinesCross(a.geo, b.geo);
+        if (overlap || cross) {
+          const loser = a.priority >= b.priority ? b : a;
+          loser.visible = false;
+          changed = true;
+        }
+      }
+    }
+  }
+}
+
+/** 外置标签：沿扇区角度径向分布 + 2D 防碰撞（对标扇形图 / ECharts avoidLabelOverlap） */
 export function layoutPieOutsideLabels(
   candidates: PieOutsideLabelCandidate[],
   outerR: number,
   fontSize: number,
-  bounds: { ymin: number; ymax: number },
+  _bounds: { ymin: number; ymax: number },
 ): Map<string, PieOutsideLabelPlaced> {
-  const gap = Math.max(fontSize * 1.15, 12);
-  const { ymin, ymax } = bounds;
   const result = new Map<string, PieOutsideLabelPlaced>();
 
-  type Item = {
-    key: string;
-    sliceAngle: number;
-    midAngle: number;
-    text: string;
-    visible: boolean;
-    geo: PieOutsideLabelGeometry;
-  };
-
-  const items: Item[] = [];
+  const items: LayoutItem[] = [];
   for (const c of candidates) {
     if (c.sliceAngle < MIN_SLICE_ANGLE_RAD) {
       result.set(c.key, {
@@ -236,51 +381,21 @@ export function layoutPieOutsideLabels(
       });
       continue;
     }
+    const connectR = c.connectR ?? outerR;
     items.push({
       key: c.key,
       sliceAngle: c.sliceAngle,
       midAngle: c.midAngle,
       text: c.text,
+      connectR,
+      priority: c.priority ?? c.sliceAngle,
       visible: true,
-      geo: pieOutsideLabelGeometry(c.midAngle, outerR),
+      radialExtra: 0,
+      geo: pieOutsideLabelGeometry(c.midAngle, outerR, fontSize, connectR, c.text),
     });
   }
 
-  const resetYs = () => {
-    for (const item of items) {
-      const fresh = pieOutsideLabelGeometry(item.midAngle, outerR);
-      item.geo.textY = fresh.textY;
-    }
-  };
-
-  const fitVisible = () => {
-    const visible = items.filter((i) => i.visible);
-    return Math.max(
-      layoutSide(visible.filter((i) => i.geo.isRight), ymin, ymax, gap),
-      layoutSide(visible.filter((i) => !i.geo.isRight), ymin, ymax, gap),
-    );
-  };
-
-  resetYs();
-  let guard = items.length + 4;
-  while (guard > 0) {
-    const overflow = fitVisible();
-    if (overflow <= 0) break;
-    guard -= 1;
-    const hide = items
-      .filter((i) => i.visible)
-      .sort((a, b) => a.sliceAngle - b.sliceAngle)[0];
-    if (!hide) break;
-    hide.visible = false;
-    resetYs();
-  }
-
-  if (guard <= 0) {
-    resetYs();
-    fitVisible();
-  }
-
-  alignOutsideLabelColumns(items.filter((i) => i.visible), outerR);
+  avoidOutsideLabelOverlap(items, outerR, fontSize);
 
   for (const item of items) {
     if (!item.visible) {
@@ -306,8 +421,8 @@ export function layoutPieOutsideLabels(
   return result;
 }
 
-export function pieOutsideLabelBounds(outerR: number): { ymin: number; ymax: number } {
-  const ymax = outerR * 1.42;
+export function pieOutsideLabelBounds(outerR: number, halfHeight?: number): { ymin: number; ymax: number } {
+  const ymax = halfHeight ?? outerR * 1.42;
   return { ymin: -ymax, ymax };
 }
 

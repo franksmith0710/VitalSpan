@@ -75,9 +75,11 @@ export function EtlRulesEditor({
       <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar px-5 py-5 lg:px-8 lg:py-6">
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-5">
           <Alert severity="info" appearance="subtle" className="rounded-xl">
-            <AlertTitle className="text-theme-sm">创建任务时已自动生成默认规则</AlertTitle>
+            <AlertTitle className="text-theme-sm">同步时自动清洗，无需逐条手配</AlertTitle>
             <AlertDescription className="text-theme-xs leading-relaxed">
-              点「一键对齐全部列」可扫描源表每一列，批量生成重命名、类型转换与空值填充；也可手动添加或微调单条规则。
+              类似 Pandas 整列处理：运行同步时会自动去空格、推断数值、过滤 deleted、填充备注空值。
+              本页规则用于<strong className="font-medium text-gray-700 dark:text-gray-300">覆盖或补充</strong>
+              默认行为；打开页面时会自动扫描全部列并保存。
             </AlertDescription>
           </Alert>
 
@@ -149,8 +151,8 @@ export function EtlRulesEditor({
           {rules.length === 0 ? (
             <ListGhostEmptyState
               icon={<Wand2 className="size-6 text-brand-500" aria-hidden />}
-              title="尚无清洗规则"
-              description="源表列已就绪时，建议先点「一键对齐全部列」自动生成；也可手动添加单条规则。"
+              title="暂无额外规则"
+              description="同步运行时会自动执行默认清洗。若需显式记录重命名/类型转换，可点「一键对齐全部列」或手动添加。"
               density="compact"
               action={
                 <Button
