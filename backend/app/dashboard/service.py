@@ -93,12 +93,22 @@ def _to_list_item(row: Dashboard) -> DashboardListItemOut:
 
 
 def _to_out(row: Dashboard) -> DashboardOut:
+    from pydantic import ValidationError
+
+    try:
+        layout = DashboardLayout.model_validate(row.layout_json)
+    except ValidationError as exc:
+        first = exc.errors()[0] if exc.errors() else {}
+        loc = ".".join(str(p) for p in first.get("loc", ()))
+        hint = str(first.get("msg", "Invalid layout JSON"))
+        message = f"{hint} ({loc})" if loc else hint
+        raise DashboardError("DASH_INVALID_LAYOUT", message, 422) from exc
     return DashboardOut(
         id=row.id,
         name=row.name,
         slug=row.slug,
         description=row.description,
-        layout_json=DashboardLayout.model_validate(row.layout_json),
+        layout_json=layout,
         created_by=row.created_by,
         created_at=row.created_at,
         updated_at=row.updated_at,

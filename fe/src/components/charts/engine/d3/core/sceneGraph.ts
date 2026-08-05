@@ -1,6 +1,7 @@
 import * as d3 from "d3";
 import {
   applyRotatedCategoryLabels,
+  axisCategoryDisplayText,
   formatAxisCategoryLabel,
   formatHorizontalBandAxisLabel,
   planCategoryAxisLayout,
@@ -330,7 +331,13 @@ export function drawCartesianBandAxes(opts: BandAxesOptions): { rotateX: number 
         rotateDeg: 0,
         slotSpan: opts.innerW / Math.max(1, opts.categories.length),
       }
-    : planCategoryAxisLayout(opts.categories, opts.innerW, opts.axisStyle?.x?.labelRotate);
+    : planCategoryAxisLayout(
+        opts.categories,
+        opts.innerW,
+        opts.axisStyle?.x?.labelRotate,
+        48,
+        opts.xScale.bandwidth(),
+      );
 
   opts.g.selectAll("g.vs-axis-x, g.vs-axis-y, text.vs-axis-name, text.vs-axis-name-y").remove();
 
@@ -370,7 +377,7 @@ export function drawCartesianBandAxes(opts: BandAxesOptions): { rotateX: number 
           d3
             .axisBottom(opts.xScale)
             .tickValues(xLayout.ticks)
-            .tickFormat((d) => formatAxisCategoryLabel(String(d), xLayout.slotSpan, xLayout.rotateDeg)),
+            .tickFormat((d) => axisCategoryDisplayText(String(d))),
         )
         .call(styleAxis, opts.theme, resolveAxisFontSize(), opts.axisStyle?.x)
         .call((sel) => applyRotatedCategoryLabels(sel, xLayout.rotateDeg));
@@ -470,7 +477,7 @@ export function drawCartesianAxes(opts: AxesOptions): { rotateX: number } {
           d3
             .axisBottom(opts.xScale)
             .tickValues(xLayout.ticks)
-            .tickFormat((d) => formatAxisCategoryLabel(String(d), xLayout.slotSpan, xLayout.rotateDeg)),
+            .tickFormat((d) => axisCategoryDisplayText(String(d))),
         )
         .call(styleAxis, opts.theme, resolveAxisFontSize(), opts.axisStyle?.x)
         .call((sel) => applyRotatedCategoryLabels(sel, xLayout.rotateDeg));
@@ -743,7 +750,7 @@ export function drawDualAxesAxes(opts: DualAxesOptions): void {
           d3
             .axisBottom(opts.xScale)
             .tickValues(xLayout.ticks)
-            .tickFormat((d) => formatAxisCategoryLabel(String(d), xLayout.slotSpan, xLayout.rotateDeg)),
+            .tickFormat((d) => axisCategoryDisplayText(String(d))),
         )
         .call(styleAxis, opts.theme, resolveAxisFontSize(), opts.axisStyle?.x)
         .call((sel) => applyRotatedCategoryLabels(sel, xLayout.rotateDeg));

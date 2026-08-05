@@ -7,17 +7,15 @@ import {
 } from "@/components/charts/engine/buildDatasetEncoding";
 import {
   axisCategoryDisplayText,
-  axisLabelFitsSlot,
   estimateAxisLabelWidth,
-  filterTickIndicesByLabelSpacing,
-  pickCategoryTickIndices,
+  estimateCategoryBandCenterPx,
+  pickCategoryTickIndicesByPixel,
 } from "@/components/charts/engine/d3/core/axes";
 import { resolveAxisFontSize } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import type { ChartAxisStyle } from "@/lib/chartDeStyleBlocks";
 
 const ROW_HEIGHT = 16;
-/** 对标 DataEase：底行只展示部分刻度，保证间距 */
-const THINNING_TICK_MIN_PX = 72;
+
 type HierarchicalAxisPlanOptions = {
   /** 类别轴字段数下限（axes.xAxis），避免仅首维有值时层数被低估 */
   structuralLevelCount?: number;
@@ -131,44 +129,83 @@ export function pickCategoryBoundaryIndices(
 }
 
 const LABEL_GAP_PX = 12;
+/** 宽屏略增密度（对标 DataEase：约每 56px 一标） */
+const THINNING_TARGET_PX = 56;
 
-function indexToSpanPx(index: number, count: number, innerSpan: number): number {
-  if (count <= 1) return innerSpan / 2;
-  return (index / (count - 1)) * innerSpan;
+function defaultBandIndexToPx(count: number, innerW: number): (index: number) => number {
+  return (index: number) => estimateCategoryBandCenterPx(index, count, innerW);
+}
+
+function widestLabelWidthAtIndex(
+  categories: string[],
+  index: number,
+  structuralLevelCount: number,
+  activeLevels: number[],
+): number {
+  const parts = splitCompositeCategoryParts(categories[index]!, structuralLevelCount);
+  let maxW = 0;
+  for (const level of activeLevels) {
+    const label = axisCategoryDisplayText(parts[level] ?? "").trim();
+    if (label) maxW = Math.max(maxW, estimateAxisLabelWidth(label.length));
+  }
+  return maxW;
+}
+
+/** 按索引同步抽稀：间距容纳各层最宽标签，同索引各层同显同隐 */
+export function pickSynchronizedVisibleIndices(
+  categories: string[],
+  innerW: number,
+  structuralLevelCount: number,
+  activeLevels: number[],
+  indexToPx?: (index: number) => number,
+): number[] {
+  const count = categories.length;
+  if (count === 0 || innerW <= 0) return [];
+
+  const toPx = indexToPx ?? defaultBandIndexToPx(count, innerW);
+  const labelWidthAt = (idx: number) =>
+    widestLabelWidthAtIndex(categories, idx, structuralLevelCount, activeLevels);
+
+  const maxLabelW = Math.max(0, ...categories.map((_, i) => labelWidthAt(i)));
+  const minPx = Math.max(THINNING_TARGET_PX, maxLabelW + LABEL_GAP_PX);
+
+  const baseIndices = pickCategoryTickIndicesByPixel(count, innerW, minPx, toPx);
+  const kept: number[] = [];
+
+  for (const idx of baseIndices) {
+    const labelW = labelWidthAt(idx);
+    if (labelW <= 0) continue;
+    const pos = toPx(idx);
+    const prev = kept[kept.length - 1];
+    if (prev != null) {
+      const prevPos = toPx(prev);
+      const prevW = labelWidthAt(prev);
+      const minDist = (prevW + labelW) / 2 + LABEL_GAP_PX;
+      if (pos - prevPos < minDist) continue;
+    }
+    kept.push(idx);
+  }
+
+  if (kept.length > 0) return kept;
+  const fallback = baseIndices.find((idx) => labelWidthAt(idx) > 0);
+  return fallback != null ? [fallback] : count > 0 ? [0] : [];
 }
 
 function pickThinningVisibleCategories(
   categories: string[],
   innerW: number,
   structuralLevelCount: number,
-  thinningLevel: number,
-  coarseLevel: number,
+  activeLevels: number[],
+  indexToPx?: (index: number) => number,
 ): string[] {
-  const labelFor = (category: string) =>
-    splitCompositeCategoryParts(category, structuralLevelCount)[thinningLevel] ?? "";
-
-  const baseIndices = pickCategoryTickIndices(categories.length, innerW, THINNING_TICK_MIN_PX);
-  const keptSet = new Set(
-    filterTickIndicesByLabelSpacing(categories, baseIndices, innerW, labelFor, LABEL_GAP_PX),
+  const indices = pickSynchronizedVisibleIndices(
+    categories,
+    innerW,
+    structuralLevelCount,
+    activeLevels,
+    indexToPx,
   );
-
-  const boundaries = pickCategoryBoundaryIndices(categories, coarseLevel, structuralLevelCount);
-  for (const idx of boundaries) {
-    if (keptSet.has(idx)) continue;
-    const category = categories[idx]!;
-    const label = labelFor(category).trim();
-    if (!label) continue;
-    const labelW = estimateAxisLabelWidth(label.length);
-    const pos = indexToSpanPx(idx, categories.length, innerW);
-    const tooClose = [...keptSet].some((ki) => {
-      const gap = Math.abs(indexToSpanPx(ki, categories.length, innerW) - pos);
-      return gap < labelW + LABEL_GAP_PX;
-    });
-    if (!tooClose && axisLabelFitsSlot(label, labelW + LABEL_GAP_PX, 0)) keptSet.add(idx);
-  }
-
-  if (keptSet.size === 0) return categories.length > 0 ? [categories[0]!] : [];
-  return [...keptSet].sort((a, b) => a - b).map((index) => categories[index]!);
+  return indices.map((index) => categories[index]!);
 }
 
 /** 对标 DataEase：分层轴底行抽稀、全层水平标签（不旋转进绘图区） */
@@ -188,13 +225,11 @@ export function planHierarchicalCategoryAxis(
   if (activeLevels.length <= 1) return null;
 
   const thinningLevel = resolveFinestLevelForThinning(activeLevels);
-  const coarseLevel = activeLevels[0]!;
   const visibleCategories = pickThinningVisibleCategories(
     orderedCategories,
     innerW,
     structuralLevelCount,
-    thinningLevel,
-    coarseLevel,
+    activeLevels,
   );
 
   return {
@@ -209,60 +244,30 @@ export function planHierarchicalCategoryAxis(
 
 type CategoryScale = d3.ScalePoint<string> | d3.ScaleBand<string>;
 
-function segmentSpanPx(
+function bandCenterPx(
   xScale: CategoryScale,
-  categories: string[],
-  start: number,
-  end: number,
-  innerW: number,
+  category: string,
+  bandWidth?: number,
 ): number {
-  if (categories.length === 0) return innerW;
-  const first = xScale(categories[start]!);
-  const last = xScale(categories[end]!);
-  if (first == null || last == null) return innerW / categories.length;
-  if ("bandwidth" in xScale && typeof xScale.bandwidth === "function") {
-    return Math.abs(last - first) + xScale.bandwidth();
-  }
-  const step = categories.length > 1 ? innerW / (categories.length - 1) : innerW;
-  return Math.abs(last - first) + step * 0.85;
+  const x = xScale(category);
+  if (x == null) return 0;
+  const bw =
+    bandWidth ??
+    ("bandwidth" in xScale && typeof xScale.bandwidth === "function" ? xScale.bandwidth() : 0);
+  return x + bw / 2;
 }
 
-function segmentCenterPx(
+function bandEdgePx(
   xScale: CategoryScale,
-  categories: string[],
-  start: number,
-  end: number,
-): number {
-  const first = xScale(categories[start]!);
-  const last = xScale(categories[end]!);
-  if (first == null || last == null) return 0;
-  if ("bandwidth" in xScale && typeof xScale.bandwidth === "function") {
-    return first + (last - first + xScale.bandwidth()) / 2;
-  }
-  return (first + last) / 2;
-}
-
-function shouldDrawSegmentLabel(
-  segment: CategoryAxisSegment,
-  level: number,
-  thinningLevel: number,
-  visibleSet: Set<string>,
-  categories: string[],
-  levelBoundaryIndices: Set<number>,
-): boolean {
-  if (!segment.label) return false;
-
-  if (level === thinningLevel) {
-    const anchor = categories[segment.start]!;
-    return visibleSet.has(anchor);
-  }
-
-  const display = axisCategoryDisplayText(segment.label);
-  if (!display) return false;
-
-  // 非叶级：合并段 + 该层边界刻度（对标 DataEase 分层轴）
-  if (segment.end > segment.start) return true;
-  return levelBoundaryIndices.has(segment.start);
+  category: string,
+  bandWidth?: number,
+): { left: number; right: number } {
+  const x = xScale(category);
+  if (x == null) return { left: 0, right: 0 };
+  const bw =
+    bandWidth ??
+    ("bandwidth" in xScale && typeof xScale.bandwidth === "function" ? xScale.bandwidth() : 0);
+  return { left: x, right: x + bw };
 }
 
 type DrawHierarchicalCategoryAxisOptions = {
@@ -285,16 +290,27 @@ export function drawHierarchicalCategoryAxis(opts: DrawHierarchicalCategoryAxisO
 
   // 必须与 band/point scale domain 顺序一致（柱位序），禁止再 sort 打乱索引
   const categories = [...opts.xScale.domain()];
-  const { structuralLevelCount, activeLevels, thinningLevel } = plan;
-  const coarseLevel = activeLevels[0]!;
-  const visibleCategories = pickThinningVisibleCategories(
+  const { structuralLevelCount, activeLevels } = plan;
+  const bandWidth =
+    "bandwidth" in opts.xScale && typeof opts.xScale.bandwidth === "function"
+      ? opts.xScale.bandwidth()
+      : undefined;
+  const indexToPx = (index: number) => {
+    const key = categories[index];
+    if (!key) return estimateCategoryBandCenterPx(index, categories.length, opts.innerW, bandWidth);
+    const x = opts.xScale(key);
+    if (x == null) {
+      return estimateCategoryBandCenterPx(index, categories.length, opts.innerW, bandWidth);
+    }
+    return x + (bandWidth ?? 0) / 2;
+  };
+  const visibleIndices = pickSynchronizedVisibleIndices(
     categories,
     opts.innerW,
     structuralLevelCount,
-    thinningLevel,
-    coarseLevel,
+    activeLevels,
+    indexToPx,
   );
-  const visibleSet = new Set(visibleCategories);
   const fontSize = resolveAxisFontSize();
   const stroke = opts.axisStyle?.x?.lineColor ?? opts.theme.axisLine;
   const strokeWidth = opts.axisStyle?.x?.lineWidth ?? 1;
@@ -312,31 +328,16 @@ export function drawHierarchicalCategoryAxis(opts: DrawHierarchicalCategoryAxisO
 
   activeLevels.forEach((level, rowIdx) => {
     const rowY = opts.innerH + (rowIdx + 1) * ROW_HEIGHT - 4;
-    const segments = buildCategoryLevelSegments(categories, level, structuralLevelCount);
-    const levelBoundaries = new Set(
-      pickCategoryBoundaryIndices(categories, level, structuralLevelCount),
-    );
 
-    for (const segment of segments) {
-      if (
-        !shouldDrawSegmentLabel(
-          segment,
-          level,
-          thinningLevel,
-          visibleSet,
-          categories,
-          levelBoundaries,
-        )
-      ) {
-        continue;
-      }
-
-      const display = axisCategoryDisplayText(segment.label);
+    for (const idx of visibleIndices) {
+      const category = categories[idx]!;
+      const partLabel = splitCompositeCategoryParts(category, structuralLevelCount)[level] ?? "";
+      const display = axisCategoryDisplayText(partLabel);
       if (!display) continue;
 
       axisRoot
         .append("text")
-        .attr("x", segmentCenterPx(opts.xScale, categories, segment.start, segment.end))
+        .attr("x", bandCenterPx(opts.xScale, category, bandWidth))
         .attr("y", rowY)
         .attr("text-anchor", "middle")
         .attr("fill", opts.theme.axisLabel)
@@ -347,34 +348,15 @@ export function drawHierarchicalCategoryAxis(opts: DrawHierarchicalCategoryAxisO
 
     const nextRowIdx = rowIdx + 1;
     if (nextRowIdx < activeLevels.length) {
-      for (const segment of segments) {
-        const slotSpan = segmentSpanPx(
-          opts.xScale,
-          categories,
-          segment.start,
-          segment.end,
-          opts.innerW,
-        );
-        if (
-          !shouldDrawSegmentLabel(
-            segment,
-            level,
-            thinningLevel,
-            visibleSet,
-            categories,
-            levelBoundaries,
-          )
-        ) {
-          continue;
-        }
-        const x = segmentCenterPx(opts.xScale, categories, segment.start, segment.end);
-        const half = slotSpan / 2;
-        const nextRowY = opts.innerH + (nextRowIdx + 1) * ROW_HEIGHT - 4;
+      const nextRowY = opts.innerH + (nextRowIdx + 1) * ROW_HEIGHT - 4;
+      for (const idx of visibleIndices) {
+        const category = categories[idx]!;
+        const edges = bandEdgePx(opts.xScale, category, bandWidth);
         axisRoot
           .append("line")
           .attr("class", "tick")
-          .attr("x1", x - half)
-          .attr("x2", x - half)
+          .attr("x1", edges.left)
+          .attr("x2", edges.left)
           .attr("y1", rowY + 2)
           .attr("y2", nextRowY + 2)
           .attr("stroke", stroke)
@@ -383,8 +365,8 @@ export function drawHierarchicalCategoryAxis(opts: DrawHierarchicalCategoryAxisO
         axisRoot
           .append("line")
           .attr("class", "tick")
-          .attr("x1", x + half)
-          .attr("x2", x + half)
+          .attr("x1", edges.right)
+          .attr("x2", edges.right)
           .attr("y1", rowY + 2)
           .attr("y2", nextRowY + 2)
           .attr("stroke", stroke)

@@ -12,7 +12,7 @@ TemplateVisibility = Literal["builtin", "org", "private"]
 
 
 class DashboardTemplateOut(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
 
     id: uuid.UUID
     template_key: str = Field(alias="templateKey")
@@ -34,7 +34,7 @@ class DashboardTemplateOut(BaseModel):
 
 
 class DashboardTemplateListItem(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
 
     id: uuid.UUID
     template_key: str = Field(alias="templateKey")

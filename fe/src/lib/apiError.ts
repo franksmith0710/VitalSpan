@@ -42,6 +42,7 @@ const CODE_MESSAGES: Record<string, string> = {
 
   // 看板 / 视图
   DASH_NOT_FOUND: "看板不存在或已被删除",
+  DASH_FORBIDDEN: "无权访问该看板",
   DASH_INVALID_LAYOUT: "看板布局校验失败，请检查组件配置",
   DASH_TEMPLATE_DEMO_DS_MISSING: "请先在数据连接中配置 sample_db 演示数据源",
   DASH_TEMPLATE_BUILTIN_READONLY: "内置模板不可修改，请导入或发布为新模板",
@@ -211,6 +212,7 @@ const EXACT_MESSAGE_MAP: Record<string, string> = {
   "Resource not visible for current roles": "当前角色不可见该资源",
   "Missing or invalid bearer token": "登录凭证无效，请重新登录",
   "Not authenticated": "未登录，请先登录",
+  "Internal Server Error": "后端服务异常，请查看 uvicorn 终端日志",
   "Dashboard not found": "看板不存在或已被删除",
   "Data source not found": "数据源不存在",
   "Data source is referenced by grants": "数据源仍被授权引用，无法删除",
@@ -297,7 +299,7 @@ const PYDANTIC_MESSAGE_MAP: Array<[RegExp, string]> = [
   [/less than or equal to 1/i, "数值不能超过 1（配色不透明度请使用 0–1，勿填百分比）"],
   [/greater than or equal to 900/i, "画布高度不能低于 900"],
   [/valid UUID/i, "ID 格式无效，请检查关联组件引用"],
-  [/extra inputs are not permitted/i, "包含后端不接受的字段"],
+  [/extra inputs are not permitted/i, "布局包含后端不接受的字段，请刷新页面后重试"],
   [/version 2 widgets must not use fields: colSpan/i, "像素布局不能携带栅格字段 colSpan，请刷新后重试"],
   [/x \+ width must not exceed/i, "组件超出画布宽度，请调整位置或尺寸"],
   [/y \+ height must not exceed/i, "组件超出画布高度，请调整位置或尺寸"],
@@ -383,6 +385,9 @@ export function mapApiError(err: unknown): string {
     if (/failed to fetch|networkerror|load failed/i.test(coded.message)) {
       return "无法连接服务器，请确认后端已启动（uvicorn :8000）且数据库可访问";
     }
+  }
+  if (err instanceof Error && err.message.trim()) {
+    return localizeApiMessage(err.message);
   }
   return GENERIC_FAILURE;
 }

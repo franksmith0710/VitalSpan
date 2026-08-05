@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
+import { normalizeDashboardDetail } from "@/lib/resolveDashboardLayoutJson";
 
 type DashboardDetail = {
   layoutJson: DashboardLayout;
@@ -13,7 +14,7 @@ export function useDashboardListCardLayout(
 ) {
   return useQuery({
     queryKey: ["dashboard-list-preview", dashboardId],
-    queryFn: () => apiFetch<DashboardDetail>(`/api/v1/dashboards/${dashboardId}`),
+    queryFn: async () => normalizeDashboardDetail(await apiFetch(`/api/v1/dashboards/${dashboardId}`)),
     enabled: Boolean(dashboardId && enabled),
     staleTime: 5 * 60 * 1000,
     select: (data) => data.layoutJson,

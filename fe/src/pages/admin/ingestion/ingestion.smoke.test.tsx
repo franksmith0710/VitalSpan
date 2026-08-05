@@ -1,4 +1,6 @@
 import { cleanup, fireEvent, render as rtlRender, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactElement } from "react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import * as ReactRouter from "react-router";
@@ -40,17 +42,62 @@ const SAMPLE_MYSQL_DS = {
   database: "sample_db",
 };
 
+function mockSyncMetadataResponse(
+  url: string,
+  database = "sample_db",
+  tables: string[] = ["dirty_orders", "sales"],
+) {
+  if (url.endsWith("/schemas")) {
+    return Promise.resolve({ items: [{ name: database }] });
+  }
+  if (url.includes("/tables")) {
+    return Promise.resolve({
+      items: tables.map((name) => ({ name, type: "table" })),
+    });
+  }
+  return null;
+}
+
 function mockNewJobFormBootstrap(
   datasources: unknown[] = [SAMPLE_MYSQL_DS],
   jobs: unknown[] = [],
+  tables: string[] = ["dirty_orders", "sales"],
+  options?: { postResponse?: unknown; postHandler?: () => Promise<unknown> },
 ) {
-  return mockApiFetch
-    .mockResolvedValueOnce({ items: datasources })
-    .mockResolvedValueOnce({ items: jobs });
+  const database = (datasources[0] as typeof SAMPLE_MYSQL_DS | undefined)?.database ?? "sample_db";
+  mockApiFetch.mockImplementation((url: string, init?: { method?: string }) => {
+    if (url === "/api/v1/ingestion/sync-jobs" && init?.method === "POST") {
+      if (options?.postHandler) return options.postHandler();
+      return Promise.resolve(options?.postResponse ?? { id: "new-job" });
+    }
+    const metadata = mockSyncMetadataResponse(url, database, tables);
+    if (metadata) return metadata;
+    if (url === "/api/v1/datasources") {
+      return Promise.resolve({ items: datasources });
+    }
+    if (url === "/api/v1/ingestion/sync-jobs") {
+      return Promise.resolve({ items: jobs });
+    }
+    return Promise.reject(new Error(`unexpected apiFetch: ${url}`));
+  });
+}
+
+async function selectSourceTable(name: string) {
+  const user = userEvent.setup();
+  await waitFor(() => {
+    expect(screen.getByRole("combobox", { name: "源表" })).toBeInTheDocument();
+  });
+  await user.click(screen.getByRole("combobox", { name: "源表" }));
+  await user.click(await screen.findByRole("option", { name }));
 }
 
 function render(ui: ReactElement) {
-  return rtlRender(<TooltipProvider delayDuration={0}>{ui}</TooltipProvider>);
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return rtlRender(
+    <QueryClientProvider client={qc}>
+      <TooltipProvider delayDuration={0}>{ui}</TooltipProvider>
+    </QueryClientProvider>,
+  );
 }
 
 function setViewport(width: number) {
@@ -292,8 +339,7 @@ describe("ingestion admin smoke", () => {
 
   it("SyncJobFormPage_create_submit", async () => {
     setViewport(375);
-    mockNewJobFormBootstrap()
-      .mockResolvedValueOnce({ id: "new-job" });
+    mockNewJobFormBootstrap();
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
         <Routes>
@@ -454,11 +500,10 @@ describe("ingestion admin smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
-    const sourceInput = await screen.findByLabelText("源表");
     await waitFor(() => {
       expect(screen.getByLabelText("目标表")).toHaveValue("orders_clean");
     });
-    fireEvent.change(sourceInput, { target: { value: "sales" } });
+    await selectSourceTable("sales");
     await waitFor(() => {
       expect(screen.getByLabelText("目标表")).toHaveValue("sales_clean_2");
     });
@@ -492,7 +537,7 @@ describe("ingestion admin smoke", () => {
     await waitFor(() => {
       expect(targetInput).toHaveValue("orders_clean_2");
     });
-    fireEvent.change(screen.getByLabelText("源表"), { target: { value: "sales" } });
+    await selectSourceTable("sales");
     await waitFor(() => {
       expect(targetInput).toHaveValue("sales_clean");
     });
@@ -798,7 +843,9 @@ describe("ingestion admin smoke", () => {
         },
       ],
       [],
-    ).mockResolvedValueOnce({ id: "new-ds-job" });
+      ["dirty_orders", "sales"],
+      { postResponse: { id: "new-ds-job" } },
+    );
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
         <Routes>
@@ -809,7 +856,9 @@ describe("ingestion admin smoke", () => {
     fireEvent.click(await screen.findByRole("combobox", { name: "业务源连接" }));
     fireEvent.click(await screen.findByRole("option", { name: "Sample MySQL" }));
     fireEvent.change(screen.getByLabelText("任务名称"), { target: { value: "ds-ref-smoke" } });
-    fireEvent.change(screen.getByLabelText("源表"), { target: { value: "dirty_orders" } });
+    await waitFor(() => {
+      expect(screen.getByRole("combobox", { name: "源表" })).toHaveTextContent("dirty_orders");
+    });
     fireEvent.change(screen.getByLabelText("目标表"), { target: { value: "orders_from_ds" } });
     fireEvent.click(screen.getByRole("button", { name: "创建" }));
     await waitFor(() => {
@@ -1207,8 +1256,9 @@ describe("ingestion admin smoke", () => {
     const createPromise = new Promise<{ id: string }>((r) => {
       resolveCreate = () => r({ id: "new-job" });
     });
-    mockNewJobFormBootstrap()
-      .mockImplementationOnce(() => createPromise);
+    mockNewJobFormBootstrap([SAMPLE_MYSQL_DS], [], ["dirty_orders", "sales"], {
+      postHandler: () => createPromise,
+    });
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
         <Routes>

@@ -5,6 +5,8 @@ import { VCDS, resolveAxisFontSize } from "@/components/charts/engine/d3/core/ch
 
 /** 11px 轴标签下平均每字符占位（中文/数字混合估算） */
 const CHAR_PX = 6.5;
+const CATEGORY_LABEL_GAP_PX = 12;
+const CATEGORY_THINNING_MIN_PX = 48;
 
 export type CategoryAxisLayout = {
   ticks: string[];
@@ -35,6 +37,176 @@ function indexToSpanPx(index: number, count: number, innerSpan: number): number 
   return (index / (count - 1)) * innerSpan;
 }
 
+/** band 柱图类目中心像素（无 scale 时估算，padding≈0.1） */
+export function estimateCategoryBandCenterPx(
+  index: number,
+  count: number,
+  innerSpan: number,
+  bandWidth?: number,
+): number {
+  if (count <= 0) return 0;
+  if (count === 1) return innerSpan / 2;
+  if (bandWidth != null && bandWidth > 0) {
+    const step = (innerSpan - bandWidth) / (count - 1);
+    return index * step + bandWidth / 2;
+  }
+  const step = innerSpan / count;
+  return index * step + step * 0.4;
+}
+
+/** 像素空间均匀取点再吸附索引（band 轴防索引舍入右端扎堆） */
+export function pickCategoryTickIndicesByPixel(
+  count: number,
+  innerSpan: number,
+  minPx: number,
+  indexToPx: (index: number) => number,
+): number[] {
+  if (count <= 0 || innerSpan <= 0) return [];
+  const maxTicks = Math.max(2, Math.floor(innerSpan / minPx));
+  if (count <= maxTicks) return Array.from({ length: count }, (_, i) => i);
+
+  const indices: number[] = [];
+  const firstPx = indexToPx(0);
+  const lastPx = indexToPx(count - 1);
+  const spanPx = lastPx - firstPx;
+
+  for (let k = 0; k < maxTicks; k += 1) {
+    const targetPx =
+      maxTicks <= 1
+        ? (firstPx + lastPx) / 2
+        : firstPx + (k / (maxTicks - 1)) * spanPx;
+    let bestIdx = 0;
+    let bestDist = Infinity;
+    for (let i = 0; i < count; i += 1) {
+      if (indices.includes(i)) continue;
+      const dist = Math.abs(indexToPx(i) - targetPx);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestIdx = i;
+      }
+    }
+    indices.push(bestIdx);
+  }
+  return [...new Set(indices)].sort((a, b) => a - b);
+}
+
+function horizontalLabelWidthPx(label: string, rotateDeg: number): number {
+  const charPx = rotateDeg ? CHAR_PX * 0.75 : CHAR_PX;
+  return label.length * charPx;
+}
+
+function labelWidthAtIndex(
+  categories: string[],
+  idx: number,
+  labelFor: (category: string) => string,
+  rotateDeg: number,
+): number {
+  const label = labelFor(categories[idx]!).trim();
+  if (!label) return 0;
+  return horizontalLabelWidthPx(label, rotateDeg);
+}
+
+function filterCategoryTickIndicesByOverlap(
+  categories: string[],
+  indices: number[],
+  labelFor: (category: string) => string,
+  rotateDeg: number,
+  minGapPx: number,
+  toPx: (index: number) => number,
+): number[] {
+  const kept: number[] = [];
+  for (const idx of indices) {
+    const labelW = labelWidthAtIndex(categories, idx, labelFor, rotateDeg);
+    if (labelW <= 0) continue;
+    const pos = toPx(idx);
+    const prev = kept[kept.length - 1];
+    if (prev != null) {
+      const prevPos = toPx(prev);
+      const prevW = labelWidthAtIndex(categories, prev, labelFor, rotateDeg);
+      if (pos - prevPos < (prevW + labelW) / 2 + minGapPx) continue;
+    }
+    kept.push(idx);
+  }
+  if (kept.length > 0) return kept;
+  const fallback = indices.find((idx) => labelWidthAtIndex(categories, idx, labelFor, rotateDeg) > 0);
+  return fallback != null ? [fallback] : indices.length > 0 ? [indices[0]!] : [];
+}
+
+/** 对标 DataEase：首尾必留，冲突时去掉中间刻度 */
+function ensureCategoryAxisEndpointIndices(
+  indices: number[],
+  count: number,
+  categories: string[],
+  labelFor: (category: string) => string,
+  rotateDeg: number,
+  minGapPx: number,
+  toPx: (index: number) => number,
+): number[] {
+  if (count <= 0) return indices;
+  const widthAt = (idx: number) => labelWidthAtIndex(categories, idx, labelFor, rotateDeg);
+
+  const pruneAgainst = (anchorIdx: number, kept: number[]): number[] => {
+    const anchorPos = toPx(anchorIdx);
+    const anchorW = widthAt(anchorIdx);
+    return kept.filter((idx) => {
+      if (idx === anchorIdx) return true;
+      const minDist = (widthAt(idx) + anchorW) / 2 + minGapPx;
+      return Math.abs(anchorPos - toPx(idx)) >= minDist;
+    });
+  };
+
+  let kept = [...indices];
+  if (widthAt(0) > 0) {
+    kept = pruneAgainst(0, [...new Set([...kept, 0])].sort((a, b) => a - b));
+  }
+  const lastIdx = count - 1;
+  if (lastIdx > 0 && widthAt(lastIdx) > 0) {
+    kept = pruneAgainst(lastIdx, [...new Set([...kept, lastIdx])].sort((a, b) => a - b));
+  }
+  return kept.sort((a, b) => a - b);
+}
+
+/** band 轴像素均匀抽稀 + 旋转感知防重叠 + 首尾必留 */
+export function pickCategoryTickIndicesForLabels(
+  categories: string[],
+  innerSpan: number,
+  labelFor: (category: string) => string,
+  minPx = CATEGORY_THINNING_MIN_PX,
+  rotateDeg = 0,
+  indexToPx?: (index: number) => number,
+): number[] {
+  const count = categories.length;
+  if (count === 0 || innerSpan <= 0) return [];
+
+  const toPx =
+    indexToPx ?? ((idx: number) => estimateCategoryBandCenterPx(idx, count, innerSpan));
+
+  const maxLabelW = Math.max(
+    0,
+    ...categories.map((_, i) => labelWidthAtIndex(categories, i, labelFor, rotateDeg)),
+  );
+  const effectiveMinPx = Math.max(minPx, maxLabelW + CATEGORY_LABEL_GAP_PX);
+
+  const baseIndices = pickCategoryTickIndicesByPixel(count, innerSpan, effectiveMinPx, toPx);
+  const filtered = filterCategoryTickIndicesByOverlap(
+    categories,
+    baseIndices,
+    labelFor,
+    rotateDeg,
+    CATEGORY_LABEL_GAP_PX,
+    toPx,
+  );
+  return ensureCategoryAxisEndpointIndices(
+    filtered,
+    count,
+    categories,
+    labelFor,
+    rotateDeg,
+    CATEGORY_LABEL_GAP_PX,
+    toPx,
+  );
+}
+
 /** 在均匀抽稀结果上按标签宽度过滤，保证相邻标签像素间距 */
 export function filterTickIndicesByLabelSpacing(
   categories: string[],
@@ -42,8 +214,12 @@ export function filterTickIndicesByLabelSpacing(
   innerSpan: number,
   labelFor: (category: string) => string,
   minGapPx = 10,
+  indexToPx?: (index: number) => number,
 ): number[] {
   if (indices.length === 0 || categories.length === 0) return indices;
+  const toPx =
+    indexToPx ??
+    ((idx: number) => indexToSpanPx(idx, categories.length, innerSpan));
   const kept: number[] = [];
 
   for (const idx of indices) {
@@ -53,13 +229,14 @@ export function filterTickIndicesByLabelSpacing(
     if (!label) continue;
 
     const labelW = estimateAxisLabelWidth(label.length);
-    const pos = indexToSpanPx(idx, categories.length, innerSpan);
+    const pos = toPx(idx);
     const prev = kept[kept.length - 1];
     if (prev != null) {
-      const prevPos = indexToSpanPx(prev, categories.length, innerSpan);
+      const prevPos = toPx(prev);
       if (pos - prevPos < labelW + minGapPx) continue;
     }
-    const slot = kept.length > 0 ? pos - indexToSpanPx(kept[0]!, categories.length, innerSpan) : innerSpan;
+    const slot =
+      kept.length > 0 ? pos - toPx(kept[0]!) : innerSpan;
     if (!axisLabelFitsSlot(label, Math.max(slot, labelW + minGapPx), 0)) continue;
     kept.push(idx);
   }
@@ -96,14 +273,22 @@ export function pickCategoryTicksForLabels(
   categories: string[],
   innerSpan: number,
   labelFor: (category: string) => string,
-  minPx = 48,
+  minPx = CATEGORY_THINNING_MIN_PX,
+  rotateDeg = 0,
+  indexToPx?: (index: number) => number,
 ): string[] {
-  const indices = pickCategoryTickIndices(categories.length, innerSpan, minPx);
-  const kept = filterTickIndicesByLabelSpacing(categories, indices, innerSpan, labelFor);
-  if (kept.length === 0) {
+  const indices = pickCategoryTickIndicesForLabels(
+    categories,
+    innerSpan,
+    labelFor,
+    minPx,
+    rotateDeg,
+    indexToPx,
+  );
+  if (indices.length === 0) {
     return categories.length > 0 ? [categories[0]!] : [];
   }
-  return kept.map((index) => categories[index]!);
+  return indices.map((index) => categories[index]!);
 }
 
 export function resolveCategoryLabelRotate(
@@ -147,17 +332,24 @@ export function planCategoryAxisLayout(
   categories: string[],
   innerSpan: number,
   explicitRotate?: number,
-  minPx = 48,
+  minPx = CATEGORY_THINNING_MIN_PX,
+  bandWidth?: number,
 ): CategoryAxisLayout {
-  const ticks = pickCategoryTicksForLabels(
+  const count = categories.length;
+  const indexToPx = (idx: number) =>
+    estimateCategoryBandCenterPx(idx, count, innerSpan, bandWidth);
+  const allLabels = categories.map((category) => axisCategoryDisplayText(String(category)));
+  const rotateDeg = resolveCategoryLabelRotate(allLabels, innerSpan, explicitRotate);
+  const tickIndices = pickCategoryTickIndicesForLabels(
     categories,
     innerSpan,
     (category) => axisCategoryDisplayText(String(category)),
     minPx,
+    rotateDeg,
+    indexToPx,
   );
-  const slotSpan = innerSpan / Math.max(1, ticks.length);
-  const displayTicks = ticks.map((tick) => axisCategoryDisplayText(String(tick)));
-  const rotateDeg = resolveCategoryLabelRotate(displayTicks, innerSpan, explicitRotate);
+  const ticks = tickIndices.map((index) => categories[index]!);
+  const slotSpan = innerSpan / Math.max(1, tickIndices.length);
   return {
     ticks,
     rotateDeg,

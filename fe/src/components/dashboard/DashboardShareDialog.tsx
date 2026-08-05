@@ -12,6 +12,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
+import { normalizeDashboardDetail } from "@/lib/resolveDashboardLayoutJson";
 import { isDataScreenLayout } from "@/lib/dataScreenLayout";
 import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
@@ -64,7 +65,9 @@ export function DashboardShareDialog({
     setLoading(true);
     setError(null);
     try {
-      const data = await apiFetch<DashboardDetail>(`/api/v1/dashboards/${dashboardId}`);
+      const data = normalizeDashboardDetail(
+        await apiFetch<DashboardDetail>(`/api/v1/dashboards/${dashboardId}`),
+      );
       setDetail(data);
     } catch (err) {
       setError(mapApiError(err));

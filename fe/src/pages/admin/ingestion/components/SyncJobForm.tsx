@@ -22,6 +22,7 @@ import {
   syncSourceObjectPlaceholder,
 } from "@/lib/suggestSyncTargetTable";
 import { SyncJobConsumeGuide } from "./SyncJobConsumeGuide";
+import { SyncSourceTableSelect } from "./SyncSourceTableSelect";
 import { CRON_PRESETS } from "./sync-job-types";
 import { DIRTY_ORDERS_DEMO_SOURCE_TABLE } from "../etlDemoTemplate";
 
@@ -265,17 +266,16 @@ export function SyncJobForm({
         }
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="grid gap-2">
-            <Label htmlFor="table">{syncSourceObjectLabel(selectedDatasource?.type)}</Label>
-            <Input
-              id="table"
-              value={form.table}
-              onChange={(e) => onChange("table", e.target.value)}
-              required
-              className="h-11"
-              placeholder={syncSourceObjectPlaceholder(selectedDatasource?.type)}
-            />
-          </div>
+          <SyncSourceTableSelect
+            id="table"
+            label={syncSourceObjectLabel(selectedDatasource?.type)}
+            placeholder={syncSourceObjectPlaceholder(selectedDatasource?.type)}
+            dataSourceId={form.sourceDataSourceId}
+            sourceType={selectedDatasource?.type}
+            database={selectedDatasource?.database}
+            value={form.table}
+            onChange={(value) => onChange("table", value)}
+          />
           <div className="grid gap-2">
             <Label htmlFor="target_table">目标表</Label>
             <Input

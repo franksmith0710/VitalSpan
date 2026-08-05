@@ -56,6 +56,7 @@ class TextWidgetConfig(BaseModel):
     dimension_field: str | None = Field(default=None, alias="dimensionField", max_length=128)
     metric_field: str | None = Field(default=None, alias="metricField", max_length=128)
     screen_style: dict[str, Any] | None = Field(default=None, alias="screenStyle")
+    widget_style: WidgetStyleConfig | None = Field(default=None, alias="widgetStyle")
 
 
 class MediaWidgetConfig(BaseModel):
@@ -64,6 +65,7 @@ class MediaWidgetConfig(BaseModel):
     url: str = Field(default="", max_length=2048)
     alt: str = Field(default="", max_length=256)
     fit: MediaFit = "contain"
+    widget_style: WidgetStyleConfig | None = Field(default=None, alias="widgetStyle")
 
 
 class TabPaneConfig(BaseModel):
@@ -78,6 +80,7 @@ class TabsWidgetConfig(BaseModel):
     tabs_id: str = Field(alias="tabsId", min_length=1, max_length=64)
     panes: list[TabPaneConfig] = Field(min_length=1, max_length=8)
     active_pane_id: str = Field(alias="activePaneId", min_length=1, max_length=64)
+    widget_style: WidgetStyleConfig | None = Field(default=None, alias="widgetStyle")
 
 
 class WidgetStyleConfig(BaseModel):
@@ -96,6 +99,12 @@ class WidgetStyleConfig(BaseModel):
     opacity: float | None = Field(default=None, ge=0, le=1)
     background_image_opacity: float | None = Field(
         default=None, alias="backgroundImageOpacity", ge=0, le=1
+    )
+    background_image_fit: Literal[
+        "stretch", "contain", "cover", "widthFit", "heightFit", "original"
+    ] | None = Field(default=None, alias="backgroundImageFit")
+    background_image_position: str | None = Field(
+        default=None, alias="backgroundImagePosition", max_length=32
     )
     backdrop_blur: float | None = Field(default=None, alias="backdropBlur", ge=0, le=64)
     border_radius: int | None = Field(default=None, alias="borderRadius", ge=0, le=48)
@@ -585,7 +594,7 @@ class DashboardLayoutUpdate(BaseModel):
 
 
 class DashboardOut(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, from_attributes=True)
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True, from_attributes=True)
     id: uuid.UUID
     name: str
     slug: str
@@ -597,7 +606,7 @@ class DashboardOut(BaseModel):
 
 
 class DashboardPreviewSummary(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
     version: int
     canvas: dict[str, Any] | None = None
     widgets: list[dict[str, Any]]
@@ -605,7 +614,7 @@ class DashboardPreviewSummary(BaseModel):
 
 
 class DashboardListItemOut(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, from_attributes=True)
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True, from_attributes=True)
     id: uuid.UUID
     name: str
     slug: str

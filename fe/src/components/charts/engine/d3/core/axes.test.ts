@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   formatAxisCategoryLabel,
   formatHorizontalBandAxisLabel,
+  estimateCategoryBandCenterPx,
   pickCategoryTickIndices,
+  pickCategoryTickIndicesByPixel,
+  pickCategoryTickIndicesForLabels,
   pickCategoryTicks,
   planCategoryAxisLayout,
   resolveBandAxisFontSize,
@@ -25,12 +28,73 @@ describe("d3 core", () => {
     gaps.forEach((gap) => expect(gap).toBeGreaterThanOrEqual(Math.floor(avgGap * 0.6)));
   });
 
+  it("pickCategoryTickIndicesByPixel spreads ticks on band centers", () => {
+    const count = 40;
+    const innerW = 800;
+    const step = innerW / count;
+    const bw = step * 0.8;
+    const indexToPx = (i: number) => estimateCategoryBandCenterPx(i, count, innerW, bw);
+    const indices = pickCategoryTickIndicesByPixel(count, innerW, 56, indexToPx);
+    const positions = indices.map(indexToPx);
+    expect(positions[0]).toBeLessThan(innerW * 0.15);
+    expect(positions[positions.length - 1]).toBeGreaterThan(innerW * 0.85);
+    const gaps = positions.slice(1).map((p, i) => p - positions[i]!);
+    const avgGap = gaps.reduce((sum, g) => sum + g, 0) / gaps.length;
+    gaps.forEach((gap) => expect(gap).toBeGreaterThan(avgGap * 0.35));
+  });
+
   it("pickCategoryTicks thins labels when viewport is narrow", () => {
     const cats = Array.from({ length: 20 }, (_, i) => `c${i}`);
     const thinned = pickCategoryTicks(cats, 80);
     expect(thinned.length).toBeLessThan(cats.length);
     expect(thinned[0]).toBe("c0");
     expect(thinned[thinned.length - 1]).toBe("c19");
+  });
+
+  it("pickCategoryTickIndicesForLabels keeps endpoints and spans band centers", () => {
+    const provinces = [
+      "云南省",
+      "河北省",
+      "江苏省",
+      "广东省",
+      "北京市",
+      "上海市",
+      "山东省",
+      "浙江省",
+      "四川省",
+      "湖北省",
+      "河南省",
+      "湖南省",
+      "福建省",
+      "安徽省",
+      "江西省",
+      "辽宁省",
+      "黑龙江省",
+      "吉林省",
+      "陕西省",
+      "甘肃省",
+      "贵州省",
+      "海南省",
+      "天津市",
+      "重庆市",
+      "广西壮族自治区",
+    ];
+    const innerW = 900;
+    const count = provinces.length;
+    const bw = innerW / count * 0.8;
+    const toPx = (i: number) => estimateCategoryBandCenterPx(i, count, innerW, bw);
+    const indices = pickCategoryTickIndicesForLabels(
+      provinces,
+      innerW,
+      (c) => String(c),
+      48,
+      -45,
+      toPx,
+    );
+    expect(indices).toContain(0);
+    expect(indices).toContain(count - 1);
+    const positions = indices.map(toPx);
+    expect(positions[positions.length - 1]).toBeGreaterThan(innerW * 0.85);
   });
 
   it("resolveCategoryLabelRotate rotates when slots are tight", () => {

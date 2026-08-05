@@ -3,6 +3,7 @@ import { useDocumentFullscreen } from "@/hooks/useDocumentFullscreen";
 import { useParams } from "react-router";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
+import { normalizeDashboardDetail } from "@/lib/resolveDashboardLayoutJson";
 import { dataScreenEditPath } from "@/lib/dataScreenLayout";
 import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
 import { DataScreenPresenter } from "@/components/dashboard/screen/DataScreenPresenter";
@@ -32,7 +33,9 @@ export function DataScreenPreviewPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiFetch<DashboardDetail>(`/api/v1/dashboards/${id}`);
+      const data = normalizeDashboardDetail(
+        await apiFetch<DashboardDetail>(`/api/v1/dashboards/${id}`),
+      );
       setDetail(data);
     } catch (err) {
       setError(mapApiError(err));

@@ -12,6 +12,7 @@ import {
 } from "@/lib/templateEditSession";
 import { TEMPLATE_EDIT_SESSION } from "@/components/dashboard/templates/templateLabels";
 import { isDashboardNotFound, mapApiError } from "@/lib/apiError";
+import { resolveDashboardLayoutJson } from "@/lib/resolveDashboardLayoutJson";
 import { DashboardShareDialog } from "@/components/dashboard/DashboardShareDialog";
 import { DashboardScheduleSheet } from "@/pages/admin/reports/components/DashboardScheduleSheet";
 import { useAuth } from "@/context/auth-context";
@@ -356,15 +357,16 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       setName(data.name);
       nameRef.current = data.name;
       setSavedName(data.name);
+      const layoutJson = resolveDashboardLayoutJson(data);
       const source =
-        data.layoutJson.version === 1
+        layoutJson.version === 1
           ? {
-              ...data.layoutJson,
+              ...layoutJson,
               widgets: normalizeWidgetLayout(
-                sortWidgets(coerceLayoutWidgets(data.layoutJson.widgets ?? [])),
+                sortWidgets(coerceLayoutWidgets(layoutJson.widgets ?? [])),
               ),
             }
-          : data.layoutJson;
+          : layoutJson;
       const prepared = prepareDashboardLayout(
         source,
         mode === "edit" ? pixelEnabled : false,
@@ -1227,7 +1229,9 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       }
       description={
         mode === "edit"
-          ? !canSave
+          ? error
+            ? "加载失败，请查看下方错误说明"
+            : !canSave
             ? "像素布局只读 · 当前回退开关禁止修改与保存"
             : isDirty
               ? "有未保存的更改 · 保存后生效"

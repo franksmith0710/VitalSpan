@@ -103,6 +103,44 @@ def test_style_config_preserves_fe_dashboard_fields() -> None:
     assert dumped["themeVariants"]["light"]["dialogStyle"]["fontColor"] == "#111"
 
 
+def test_text_widget_style_roundtrip_preserves_background_fit() -> None:
+    from app.dashboard.schemas import DashboardLayout
+
+    layout = {
+        "version": 2,
+        "canvas": {"width": 1920, "height": 1080},
+        "widgets": [
+            {
+                "id": "00000000-0000-4000-8000-000000000099",
+                "type": "text",
+                "title": "顶栏",
+                "x": 0,
+                "y": 0,
+                "width": 400,
+                "height": 80,
+                "order": 0,
+                "textConfig": {
+                    "content": "",
+                    "variant": "plain",
+                    "widgetStyle": {
+                        "backgroundImage": "/template-assets/packs/borderless-decor-v1/items/decor-bow-deep.svg",
+                        "backgroundImageFit": "widthFit",
+                        "backgroundImagePosition": "top center",
+                    },
+                },
+            }
+        ],
+        "globalFilters": [],
+        "styleConfig": {"surfaceKind": "data-screen"},
+    }
+    validated = validate_layout_dict(layout)
+    ws = validated["widgets"][0]["textConfig"]["widgetStyle"]
+    assert ws["backgroundImageFit"] == "widthFit"
+    assert ws["backgroundImagePosition"] == "top center"
+    roundtrip = DashboardLayout.model_validate(validated).model_dump(by_alias=True, mode="json")
+    assert roundtrip["widgets"][0]["textConfig"]["widgetStyle"]["backgroundImageFit"] == "widthFit"
+
+
 def test_validate_layout_dict_keeps_rich_style_config() -> None:
     layout = {
         "version": 2,

@@ -3,6 +3,7 @@ import { CARTESIAN_CATEGORY_KEY_SEP, formatCategoryCellValue, sortCompositeCateg
 import {
   buildCategoryLevelSegments,
   pickCategoryBoundaryIndices,
+  pickSynchronizedVisibleIndices,
   planHierarchicalCategoryAxis,
   resolveActiveCategoryLevels,
   resolveFinestLevelForThinning,
@@ -70,7 +71,7 @@ describe("hierarchical category axis", () => {
     expect(planHierarchicalCategoryAxis(sparse, 480)).toBeNull();
   });
 
-  it("planHierarchicalCategoryAxis thins finest-level ticks when categories are dense", () => {
+  it("planHierarchicalCategoryAxis thins synchronized indices when categories are dense", () => {
     const dense = Array.from({ length: 24 }, (_, i) =>
       `产品${i}${CARTESIAN_CATEGORY_KEY_SEP}类目${Math.floor(i / 4)}`,
     );
@@ -78,6 +79,22 @@ describe("hierarchical category axis", () => {
     expect(plan).not.toBeNull();
     expect(plan!.visibleCategories.length).toBeLessThan(dense.length);
     expect(plan!.activeLevels.length).toBe(2);
+  });
+
+  it("pickSynchronizedVisibleIndices spaces ticks by widest multi-level label", () => {
+    const SEP = CARTESIAN_CATEGORY_KEY_SEP;
+    const keys = Array.from({ length: 20 }, (_, i) =>
+      `2025-01-${String(i + 1).padStart(2, "0")}${SEP}甘肃省${SEP}超长产品名称示例${SEP}外设配件`,
+    );
+    const active = resolveActiveCategoryLevels(keys, 4);
+    const innerW = 480;
+    const indices = pickSynchronizedVisibleIndices(keys, innerW, 4, active);
+    expect(indices.length).toBeGreaterThan(0);
+    expect(indices.length).toBeLessThan(keys.length);
+    const toPx = (i: number) => (i / (keys.length - 1)) * innerW;
+    for (let j = 1; j < indices.length; j += 1) {
+      expect(toPx(indices[j]!) - toPx(indices[j - 1]!)).toBeGreaterThan(40);
+    }
   });
 
   it("pickCategoryBoundaryIndices marks coarse-level group starts", () => {
@@ -89,13 +106,14 @@ describe("hierarchical category axis", () => {
     expect(pickCategoryBoundaryIndices(keys, 0, 2)).toEqual([0, 2]);
   });
 
-  it("planHierarchicalCategoryAxis keeps coarse boundaries in visible ticks", () => {
+  it("pickSynchronizedVisibleIndices keeps first and last when width allows", () => {
     const keys = Array.from({ length: 12 }, (_, i) =>
       `${i < 6 ? "企业直销" : "电商平台"}${CARTESIAN_CATEGORY_KEY_SEP}2025-01-${String((i % 6) + 1).padStart(2, "0")}`,
     );
-    const plan = planHierarchicalCategoryAxis(keys, 480);
-    expect(plan).not.toBeNull();
-    expect(plan!.visibleCategories.some((c) => c.startsWith("电商平台"))).toBe(true);
+    const active = resolveActiveCategoryLevels(keys, 2);
+    const indices = pickSynchronizedVisibleIndices(keys, 960, 2, active);
+    expect(indices).toContain(0);
+    expect(indices).toContain(keys.length - 1);
   });
 
   it("resolveHierarchicalAxisLayout reserves bottom space per active level", () => {
