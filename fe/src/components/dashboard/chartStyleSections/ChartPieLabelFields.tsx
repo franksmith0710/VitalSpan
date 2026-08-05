@@ -25,8 +25,10 @@ type ChartPieLabelFieldsProps = {
 
 /** 饼图标签：内外位置 + 维度/指标/占比（对标 DataEase） */
 export function ChartPieLabelFields({ label, patchLabel }: ChartPieLabelFieldsProps) {
+  const isOutside = label?.position === "outside";
   const showIndicator = label?.showIndicator !== false;
-  const showPercent = label?.showPercent === true;
+  const showDimension = label?.showDimension ?? isOutside;
+  const showPercent = label?.showPercent ?? isOutside;
   const percentDecimals = label?.percentDecimals ?? label?.ratioDecimals ?? 2;
 
   return (
@@ -49,7 +51,7 @@ export function ChartPieLabelFields({ label, patchLabel }: ChartPieLabelFieldsPr
       </ChartDeAttrField>
       <label className="flex items-center gap-2 border-b border-gray-100 py-2 text-[11px] text-gray-600 dark:border-white/[0.06] dark:text-gray-300">
         <Checkbox
-          checked={label?.showDimension === true}
+          checked={showDimension}
           onCheckedChange={(checked) => patchLabel({ showDimension: checked === true })}
         />
         维度
@@ -115,12 +117,7 @@ export function ChartPieLabelFields({ label, patchLabel }: ChartPieLabelFieldsPr
         </ChartDeAttrField>
       ) : null}
       <p className={INSPECTOR_HINT}>
-        示例：
-        {formatMetricValue(1234567.89, {
-          type: label?.formatType ?? "auto",
-          decimals: 2,
-          thousandSeparator: label?.thousandSeparator !== false,
-        })}
+        外置示例：吉林省 14,998 (6.28%)
       </p>
     </>
   );

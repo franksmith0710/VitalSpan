@@ -22,6 +22,7 @@ export function computePieLayout(
   showLegend: boolean,
   legendLayout?: D3LegendLayout,
   legendItems: D3LegendItem[] = [],
+  outsideLabels = false,
 ): PieLayout {
   const base = { ...PIE_PAD };
   const position = legendLayout?.position ?? "bottom";
@@ -57,6 +58,11 @@ export function computePieLayout(
   }
 
   let margin = base;
+  if (outsideLabels) {
+    const innerW0 = Math.max(0, width - base.left - base.right);
+    const extra = Math.min(72, Math.max(40, innerW0 * 0.14));
+    margin = { ...margin, left: margin.left + extra, right: margin.right + extra };
+  }
   if (showLegend) {
     margin = reserveLegendMargin(margin, width, height, legendLayout, legendItems);
   }

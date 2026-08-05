@@ -919,6 +919,7 @@ describe("ingestion admin smoke", () => {
     expect(await screen.findByText(/同步成功 · 下一步出图/)).toBeInTheDocument();
     expect(screen.getByText(/本次 42 行/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "一键创建数据集并绑定" })).toBeInTheDocument();
+    expect(screen.queryByText("下一步：运行同步并出图")).not.toBeInTheDocument();
   });
 
   it("SyncJobFormPage_edit_shows_legacy_inline_migration_banner", async () => {
@@ -1167,9 +1168,9 @@ describe("ingestion admin smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(await screen.findByRole("button", { name: /保存/ })).toBeInTheDocument();
-    expect(screen.getByText("规则类型")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "重新识别并覆盖" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /保存规则/ })).toBeInTheDocument();
+    expect(screen.getByText("尚无清洗规则")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "一键对齐全部列" }).length).toBeGreaterThan(0);
   });
 
   it("EtlRulesPage_auto_suggest_rules_from_source_columns", async () => {
@@ -1188,11 +1189,14 @@ describe("ingestion admin smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(await screen.findByRole("button", { name: "重新识别并覆盖" })).toBeInTheDocument();
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "重新识别并覆盖" })).toBeEnabled();
+      expect(screen.getAllByRole("button", { name: "一键对齐全部列" }).length).toBeGreaterThan(0);
     });
-    fireEvent.click(screen.getByRole("button", { name: "重新识别并覆盖" }));
+    const alignButtons = screen.getAllByRole("button", { name: "一键对齐全部列" });
+    await waitFor(() => {
+      expect(alignButtons[0]).toBeEnabled();
+    });
+    fireEvent.click(alignButtons[0]);
     await waitFor(() => {
       expect(screen.getAllByRole("combobox", { name: "列名" }).length).toBeGreaterThan(0);
     });

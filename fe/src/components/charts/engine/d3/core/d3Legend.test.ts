@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import * as d3 from "d3";
 import {
   estimateLegendBlockSize,
+  estimateLegendLabelWidth,
   layoutD3InlineLegend,
   packHorizontalLegendRows,
   reserveLegendMargin,
@@ -26,6 +27,24 @@ describe("packHorizontalLegendRows", () => {
   it("wraps items when a single row cannot fit", () => {
     const rows = packHorizontalLegendRows(makeItems(12), 180, 11, 10);
     expect(rows.length).toBeGreaterThan(1);
+  });
+
+  it("wraps before long province names collide on the same row", () => {
+    const items: D3LegendItem[] = [
+      { label: "广西壮族自治区", color: "#465fff" },
+      { label: "辽宁省", color: "#12b76a" },
+      { label: "北京市", color: "#f79009" },
+      { label: "上海市", color: "#8a5cff" },
+      { label: "天津市", color: "#00c1d4" },
+    ];
+    const fontSize = 11;
+    const iconSize = 10;
+    const firstW = iconSize + 4 + estimateLegendLabelWidth(items[0].label, fontSize) + 6;
+    const secondW = iconSize + 4 + estimateLegendLabelWidth(items[1].label, fontSize) + 6;
+    const innerW = firstW + 8 + secondW - 4;
+    const rows = packHorizontalLegendRows(items, innerW, fontSize, iconSize);
+    expect(rows[0]).toHaveLength(1);
+    expect(rows[1]?.[0]?.label).toBe("辽宁省");
   });
 });
 
@@ -111,5 +130,41 @@ describe("layoutD3InlineLegend", () => {
       transforms.map((value) => Number(value.match(/translate\([^,]+,([^)]+)\)/)?.[1] ?? 0)),
     );
     expect(ys.size).toBeGreaterThan(1);
+  });
+
+  it("keeps long Chinese labels from overlapping neighbors on one row", () => {
+    const container = document.createElement("div");
+    const root = d3.select(container).append("svg").attr("width", 520).attr("height", 120);
+    const items: D3LegendItem[] = [
+      { label: "广西壮族自治区", color: "#465fff" },
+      { label: "辽宁省", color: "#12b76a" },
+      { label: "北京市", color: "#f79009" },
+    ];
+    const margin = { top: 8, right: 8, bottom: 8, left: 8 };
+
+    layoutD3InlineLegend(root, items, {
+      width: 520,
+      height: 120,
+      margin,
+      theme,
+      layout: { position: "bottom" },
+      fontSize: 11,
+    });
+
+    const itemGroups = Array.from(container.querySelectorAll<SVGGElement>("g.vs-legend > g"));
+    const boxes = itemGroups.map((node) => {
+      const transform = node.getAttribute("transform") ?? "";
+      const x = Number(transform.match(/translate\(([^,]+),/)?.[1] ?? 0);
+      const y = Number(transform.match(/translate\([^,]+,([^)]+)\)/)?.[1] ?? 0);
+      const text = node.querySelector("text");
+      const textLen = text?.textContent?.length ?? 0;
+      const width = 10 + 4 + estimateLegendLabelWidth(text?.textContent ?? "", 11) + 6;
+      return { x, y, width };
+    });
+
+    const row = boxes.filter((b) => b.y === boxes[0]?.y);
+    for (let i = 1; i < row.length; i++) {
+      expect(row[i].x).toBeGreaterThanOrEqual(row[i - 1].x + row[i - 1].width - 1);
+    }
   });
 });

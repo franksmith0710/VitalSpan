@@ -39,6 +39,26 @@ const LEGEND_GAP = 6;
 const LEGEND_ITEM_GAP = 8;
 const LEGEND_FALLBACK_ROW_H = 22;
 const LEGEND_FALLBACK_COL_W = 80;
+const LEGEND_TEXT_PAD = 6;
+
+function isWideLegendChar(code: number): boolean {
+  return (
+    code > 0xFF ||
+    (code >= 0x4E00 && code <= 0x9FFF) ||
+    (code >= 0x3400 && code <= 0x4DBF) ||
+    (code >= 0x3000 && code <= 0x303F)
+  );
+}
+
+/** 估算图例文案宽度（中文按整字宽，避免「广西壮族自治区」压到下一项） */
+export function estimateLegendLabelWidth(label: string, fontSize: number): number {
+  let width = 0;
+  for (const ch of label) {
+    const code = ch.codePointAt(0) ?? 0;
+    width += isWideLegendChar(code) ? fontSize : fontSize * 0.58;
+  }
+  return width;
+}
 
 function resolveMarker(
   item: D3LegendItem,
@@ -59,7 +79,8 @@ function resolveMarker(
 
 function itemLabelWidth(item: D3LegendItem, fontSize: number, iconSize: number): number {
   const iconW = item.marker === "line" ? (item.markerWidth ?? 14) : iconSize;
-  return item.label.length * fontSize * 0.62 + iconW + 16;
+  const textW = estimateLegendLabelWidth(item.label, fontSize);
+  return iconW + 4 + textW + LEGEND_TEXT_PAD;
 }
 
 function legendRowHeight(fontSize: number, iconSize: number): number {

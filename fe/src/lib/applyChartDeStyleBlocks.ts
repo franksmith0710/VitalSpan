@@ -202,10 +202,12 @@ export function applyChartDeStyleBlocksToPlan(
 
   if (plan.plotType === "Pie" && deStyle.label) {
     const label = deStyle.label;
-    options.__pieLabelPosition = label.position ?? "inside";
-    options.__pieShowDimension = label.showDimension === true;
+    const position = label.position ?? "inside";
+    const outside = position === "outside";
+    options.__pieLabelPosition = position;
+    options.__pieShowDimension = label.showDimension ?? outside;
     options.__pieShowIndicator = label.showIndicator !== false;
-    options.__pieShowPercent = label.showPercent === true;
+    options.__pieShowPercent = label.showPercent ?? outside;
     options.__piePercentDecimals = label.percentDecimals ?? label.ratioDecimals ?? 2;
   }
 

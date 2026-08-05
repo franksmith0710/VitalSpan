@@ -6,19 +6,32 @@ import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
-import { formatChartValue } from "@/lib/chartValueFormat";
 import { DEFAULT_PIE_OUTER_RADIUS_PERCENT } from "@/lib/chartDeStyleBlocks";
 import { renderConfiguredInlineLegend, type D3LegendItem } from "@/components/charts/engine/d3/core/d3Legend";
 import { computePieLayout, PIE_RADIUS_FRAC_DEFAULT } from "./pieLayout";
 import {
   formatPieSliceLabel,
+  formatPieTooltipValue,
+  layoutPieOutsideLabels,
+  pieArcLayoutKey,
+  pieOutsideLabelBounds,
   resolvePieLabelRenderOptions,
   type PieLabelRenderOptions,
 } from "./pieLabels";
 
 const HOVER_EXPAND = VCDS.pie.hoverOffset;
-const OUTSIDE_LABEL_GAP = 14;
-const OUTSIDE_LEADER_GAP = 4;
+
+function resolveOutsideLabelHalo(theme: D3RenderConfig["theme"]): string {
+  const label = theme.axisLabel.toLowerCase();
+  if (label.startsWith("#") && label.length >= 7) {
+    const r = parseInt(label.slice(1, 3), 16);
+    const g = parseInt(label.slice(3, 5), 16);
+    const b = parseInt(label.slice(5, 7), 16);
+    const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return lum > 0.62 ? "rgba(0,0,0,0.45)" : "rgba(255,255,255,0.88)";
+  }
+  return "rgba(255,255,255,0.88)";
+}
 
 function resolvePiePadAngleRad(padAngleDeg: number | undefined): number {
   if (padAngleDeg == null || padAngleDeg <= 0) return 0;
@@ -54,9 +67,71 @@ function drawPieLabels(
     labelFontSize: number;
     labelColor: string | undefined;
     theme: D3RenderConfig["theme"];
+    sliceColor: (row: D3Datum) => string;
   },
 ): void {
   const fill = resolveLabelFill(opts.theme, opts.labelColor);
+  const labelHalo = resolveOutsideLabelHalo(opts.theme);
+
+  if (opts.labelOpts.position === "outside") {
+    const candidates = arcs
+      .data()
+      .map((d) => {
+        const text = formatPieSliceLabel(
+          d.data as Record<string, unknown>,
+          opts.colorField,
+          opts.angleField,
+          opts.total,
+          opts.labelOpts,
+          opts.valueFormat,
+        );
+        if (!text) return null;
+        const midAngle = d.startAngle + (d.endAngle - d.startAngle) / 2;
+        return {
+          key: pieArcLayoutKey(d.startAngle, d.endAngle),
+          midAngle,
+          sliceAngle: d.endAngle - d.startAngle,
+          text,
+        };
+      })
+      .filter((row): row is NonNullable<typeof row> => row != null);
+
+    const placed = layoutPieOutsideLabels(
+      candidates,
+      opts.outerR,
+      opts.labelFontSize,
+      pieOutsideLabelBounds(opts.outerR),
+    );
+
+    arcs.each(function (d) {
+      const layout = placed.get(pieArcLayoutKey(d.startAngle, d.endAngle));
+      if (!layout?.visible) return;
+
+      const group = d3.select(this);
+      const sliceFill = opts.sliceColor(d.data);
+      group
+        .append("polyline")
+        .attr("points", layout.points)
+        .attr("fill", "none")
+        .attr("stroke", sliceFill)
+        .attr("stroke-width", 1)
+        .attr("opacity", 0.9);
+      group
+        .append("text")
+        .attr("transform", `translate(${layout.textX},${layout.textY})`)
+        .attr("text-anchor", layout.anchor)
+        .attr("dy", "0.35em")
+        .attr("fill", fill)
+        .style("font-size", `${opts.labelFontSize}px`)
+        .style("paint-order", "stroke fill")
+        .style("stroke", labelHalo)
+        .style("stroke-width", "3px")
+        .style("stroke-linejoin", "round")
+        .text(layout.text);
+    });
+    return;
+  }
+
   arcs.each(function (d) {
     const text = formatPieSliceLabel(
       d.data as Record<string, unknown>,
@@ -69,35 +144,6 @@ function drawPieLabels(
     if (!text) return;
 
     const group = d3.select(this);
-    if (opts.labelOpts.position === "outside") {
-      const midAngle = d.startAngle + (d.endAngle - d.startAngle) / 2;
-      const cos = Math.cos(midAngle - Math.PI / 2);
-      const sin = Math.sin(midAngle - Math.PI / 2);
-      const anchor = cos >= 0 ? "start" : "end";
-      const lineR = opts.outerR + OUTSIDE_LEADER_GAP;
-      const labelR = opts.outerR + OUTSIDE_LABEL_GAP;
-      const xEdge = cos * lineR;
-      const yEdge = sin * lineR;
-      const xLabel = cos * labelR;
-      const yLabel = sin * labelR;
-      group
-        .append("polyline")
-        .attr("points", `${cos * opts.outerR},${sin * opts.outerR} ${xEdge},${yEdge} ${xLabel},${yLabel}`)
-        .attr("fill", "none")
-        .attr("stroke", fill)
-        .attr("stroke-width", 1)
-        .attr("opacity", 0.75);
-      group
-        .append("text")
-        .attr("transform", `translate(${xLabel},${yLabel})`)
-        .attr("text-anchor", anchor)
-        .attr("dy", "0.35em")
-        .attr("fill", fill)
-        .style("font-size", `${opts.labelFontSize}px`)
-        .text(text);
-      return;
-    }
-
     group
       .append("text")
       .attr("transform", `translate(${opts.labelArc.centroid(d)})`)
@@ -147,7 +193,14 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
     color: colorScale(String(row[colorField] ?? "")) ?? colors[0] ?? "#465fff",
   }));
 
-  const layout = computePieLayout(width, height, showLegend, legendLayout, legendItems);
+  const layout = computePieLayout(
+    width,
+    height,
+    showLegend,
+    legendLayout,
+    legendItems,
+    options.__pieLabelPosition === "outside",
+  );
   const legendFontSize = legendLayout?.fontSize ?? 11;
   const outerPercent = Number(options.__outerRadiusPercent ?? DEFAULT_PIE_OUTER_RADIUS_PERCENT);
   const outerR =
@@ -195,6 +248,14 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
     .padAngle(padAngleRad);
 
   const arc = createArc();
+  const total = d3.sum(data, (row) => Number(row[angleField] ?? 0));
+  const labelOpts: PieLabelRenderOptions = resolvePieLabelRenderOptions({
+    position: options.__pieLabelPosition === "outside" ? "outside" : "inside",
+    showDimension: options.__pieShowDimension,
+    showIndicator: options.__pieShowIndicator,
+    showPercent: options.__pieShowPercent,
+    percentDecimals: Number(options.__piePercentDecimals ?? 2),
+  });
 
   const tooltip = showTooltip ? createTooltip(container, theme, tooltipPresentation) : null;
   const arcs = g.selectAll<SVGGElement, d3.PieArcDatum<D3Datum>>("g.slice").data(pie(data)).join("g").attr("class", "slice");
@@ -239,8 +300,17 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
         .style("opacity", "1")
         .html(
           tooltipHtml(String(d.data[colorField] ?? ""), [
-            { name: "", color, value: d.data[angleField] },
-          ], valueFormat),
+            {
+              name: angleField,
+              color,
+              value: formatPieTooltipValue(
+                d.data[angleField],
+                total,
+                valueFormat,
+                labelOpts.percentDecimals,
+              ),
+            },
+          ]),
         );
     })
     .on("mousemove", (event) => {
@@ -257,14 +327,6 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
     .on("click", (_event, d) => onPointClick?.(d.data));
 
   if (showLabel) {
-    const labelOpts = resolvePieLabelRenderOptions({
-      position: options.__pieLabelPosition as "inside" | "outside" | undefined,
-      showDimension: options.__pieShowDimension as boolean | undefined,
-      showIndicator: options.__pieShowIndicator as boolean | undefined,
-      showPercent: options.__pieShowPercent as boolean | undefined,
-      percentDecimals: options.__piePercentDecimals as number | undefined,
-    });
-    const total = d3.sum(data, (row) => Number(row[angleField] ?? 0));
     drawPieLabels(arcs, {
       labelArc,
       outerR,
@@ -276,6 +338,8 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
       labelFontSize,
       labelColor,
       theme,
+      sliceColor: (row) =>
+        colorScale(String(row[colorField] ?? "")) ?? colors[0] ?? "#465fff",
     });
   }
 

@@ -530,6 +530,7 @@ export function SyncJobFormPage() {
             isEdit={isEdit}
             jobId={id}
             justCreated={justCreated}
+            hideConsumeGuide={showConsumeCard}
             etlRulesHref={isEdit && id ? `/admin/ingestion/sync-jobs/${id}/etl-rules` : undefined}
             datasources={datasources}
             selectedDatasource={selectedDatasource}

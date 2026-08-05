@@ -51,12 +51,12 @@ export function EtlColumnField({
         {columnNames.length > 0 ? (
           <Button
             type="button"
-            variant="link"
+            variant="ghost"
             size="sm"
-            className="h-auto px-0 py-0 text-theme-xs"
+            className="h-7 px-2 text-theme-xs text-gray-500 hover:text-brand-600"
             onClick={() => setManual((prev) => !prev)}
           >
-            {manual ? "从列表选择" : "手动输入"}
+            {manual ? "切换为下拉" : "切换为手填"}
           </Button>
         ) : null}
       </div>

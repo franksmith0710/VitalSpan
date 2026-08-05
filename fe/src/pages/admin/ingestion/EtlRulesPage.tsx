@@ -1,51 +1,26 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
-import { Plus, Settings2, Trash2 } from "lucide-react";
+import { Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageHeaderIcon, AdminPageShell } from "@/components/layout/admin-page-shell";
 import { ADMIN_PAGE_SURFACE_CLASS } from "@/components/layout/list-page-kit";
-import { cn } from "@/lib/utils";
-import {
-  ListPageBatchActions,
-  ListRowCheckbox,
-  useListBatchMode,
-} from "@/components/layout/list-batch-delete";
+import { useListBatchMode } from "@/components/layout/list-batch-delete";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { useFormDirtyState } from "@/hooks/use-form-dirty-state";
 import { useUnsavedLeaveGuard } from "@/hooks/use-unsaved-leave-guard";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
-import { Button, IconButton } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { UnsavedLeaveDialog } from "@/components/ui/unsaved-leave-dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-type EtlRule = {
-  type: string;
-  [key: string]: string;
-};
-
-const RULE_TYPES = [
-  { value: "rename_column", label: "列重命名" },
-  { value: "cast_type", label: "类型转换" },
-  { value: "fill_null", label: "空值填充" },
-  { value: "filter_rows", label: "行过滤" },
-];
-
+import { cn } from "@/lib/utils";
 import {
   DIRTY_ORDERS_DEMO_ETL_RULES,
   DIRTY_ORDERS_DEMO_SOURCE_TABLE,
 } from "./etlDemoTemplate";
-import { EtlColumnField } from "./components/EtlColumnField";
+import { EtlRulesEditor } from "./components/EtlRulesEditor";
+import { type EtlRule } from "./components/EtlRuleCard";
 import { useSyncJobSourceColumns } from "./hooks/useSyncJobSourceColumns";
 import { suggestEtlRulesFromColumns, summarizeEtlRules } from "./etlRuleSuggest";
 
@@ -105,9 +80,8 @@ export function EtlRulesPage() {
       const rulesData = await apiFetch<{ rules: EtlRule[] }>(
         `/api/v1/ingestion/sync-jobs/${id}/etl-rules`,
       );
-      const nextRules = rulesData.rules.length > 0 ? rulesData.rules : [emptyRule()];
-      setRules(nextRules);
-      resetBaseline(nextRules);
+      setRules(rulesData.rules);
+      resetBaseline(rulesData.rules);
     } catch (err) {
       setError(mapApiError(err));
     } finally {
@@ -127,14 +101,6 @@ export function EtlRulesPage() {
 
   const changeRuleType = (index: number, type: string) => {
     setRules((prev) => prev.map((rule, i) => (i === index ? emptyRule(type) : rule)));
-  };
-
-  const addRule = () => {
-    setRules((prev) => [...prev, emptyRule()]);
-  };
-
-  const removeRule = (index: number) => {
-    setRules((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSave = async (): Promise<boolean> => {
@@ -198,10 +164,7 @@ export function EtlRulesPage() {
     const hasExistingRules = rules.some((rule) =>
       Object.entries(rule).some(([key, value]) => key !== "type" && Boolean(value?.trim())),
     );
-    if (
-      hasExistingRules &&
-      !window.confirm("重新识别将覆盖当前规则，是否继续？")
-    ) {
+    if (hasExistingRules && !window.confirm("一键对齐将覆盖当前规则，是否继续？")) {
       return;
     }
     const suggested = suggestEtlRulesFromColumns(columns);
@@ -215,11 +178,8 @@ export function EtlRulesPage() {
     setRules(suggested);
     setError(null);
     setFieldErrors(false);
-    toast.success(`已生成 ${suggested.length} 条建议规则，确认后请保存`);
+    toast.success(`已为 ${suggested.length} 列生成对齐规则，确认后请保存`);
   };
-
-  const showDemoTemplate =
-    sourceTable?.trim().toLowerCase() === DIRTY_ORDERS_DEMO_SOURCE_TABLE;
 
   const pageDescription = useMemo(() => {
     if (!isBaselineReady) return "加载清洗规则中…";
@@ -247,230 +207,41 @@ export function EtlRulesPage() {
         </Button>
       }
     >
-      <div
-        className={cn(
-          ADMIN_PAGE_SURFACE_CLASS,
-          "flex min-h-0 flex-1 flex-col overflow-hidden",
-        )}
-      >
-        <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar px-6 py-6 lg:px-8 lg:py-8">
-          {error ? (
-            <div className="mb-4 shrink-0">
-              <PageErrorBanner message={error} onRetry={() => void loadRules()} />
-            </div>
-          ) : null}
-
-          <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50/80 px-4 py-3 text-theme-xs text-gray-600 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-300">
-            创建任务时已根据源表自动生成默认清洗规则；可按需修改后保存。
-            {hasDataSource ? (
-              <>
-                {" "}
-                列名可从源表下拉选择，也可手动输入。
-                {columnsLoading ? " 正在加载列信息…" : null}
-                {columnsReady ? ` 已加载 ${columnNames.length} 列。` : null}
-                {!columnsReady && !columnsLoading && hasDataSource
-                  ? " 未能读取源表列信息，已按原样入湖处理。"
-                  : null}
-              </>
-            ) : (
-              " 当前任务未绑定业务源连接，列名请手动输入。"
-            )}
+      <div className={cn(ADMIN_PAGE_SURFACE_CLASS, "flex min-h-0 flex-1 flex-col overflow-hidden")}>
+        {error ? (
+          <div className="shrink-0 border-b border-gray-100 px-5 py-4 dark:border-gray-800 lg:px-8">
+            <PageErrorBanner message={error} onRetry={() => void loadRules()} />
           </div>
+        ) : null}
 
-          {showDemoTemplate ? (
-            <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-brand-200 bg-brand-50/60 px-4 py-3 dark:border-brand-500/30 dark:bg-brand-500/10">
-              <p className="flex-1 text-theme-xs text-gray-600 dark:text-gray-300">
-                源表为 <span className="font-mono">{DIRTY_ORDERS_DEMO_SOURCE_TABLE}</span>
-                ：可一键应用演示模板（amount cast→float，过滤 status=deleted）。
-              </p>
-              <Button type="button" variant="outline" size="sm" onClick={applyDirtyOrdersDemoTemplate}>
-                应用演示清洗模板
-              </Button>
-            </div>
-          ) : null}
-
-          <ListPageBatchActions
-            batchMode={batch.batchMode}
-            onToggleBatchMode={batch.toggleBatchMode}
-            selectedCount={selection.selectedCount}
-            entityLabel="条规则"
-            onClear={selection.clear}
-            onDelete={removeSelectedRules}
-          />
-
-          <div className="mt-4 space-y-4">
-        {rules.map((rule, index) => (
-          <div
-            key={index}
-            className="space-y-3 rounded-lg border border-gray-100 p-4 dark:border-gray-800"
-          >
-            <div className="flex items-center justify-between gap-3">
-              {batch.batchMode ? (
-                <ListRowCheckbox
-                  checked={selection.isSelected(String(index))}
-                  onCheckedChange={() => selection.toggle(String(index))}
-                  ariaLabel={`选择规则 ${index + 1}`}
-                />
-              ) : null}
-              <div className="flex-1 space-y-2">
-                <Label>规则类型</Label>
-                <Select value={rule.type} onValueChange={(v) => changeRuleType(index, v)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {RULE_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>
-                        {t.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <IconButton
-                type="button"
-                variant="ghost"
-                size="sm"
-                aria-label="删除规则"
-                onClick={() => removeRule(index)}
-              >
-                <Trash2 className="size-4" />
-              </IconButton>
-            </div>
-
-            {rule.type === "rename_column" ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                <EtlColumnField
-                  label="源列名"
-                  value={rule.from ?? ""}
-                  columnNames={columnNames}
-                  placeholder="product_name"
-                  invalid={fieldErrors && !rule.from?.trim()}
-                  onChange={(value) => updateRule(index, "from", value)}
-                />
-                <div className="space-y-2">
-                  <Label>目标列名</Label>
-                  <Input
-                    value={rule.to ?? ""}
-                    placeholder="product"
-                    aria-invalid={fieldErrors && !rule.to?.trim() ? true : undefined}
-                    onChange={(e) => updateRule(index, "to", e.target.value)}
-                  />
-                </div>
-              </div>
-            ) : null}
-
-            {rule.type === "cast_type" ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                <EtlColumnField
-                  label="列名"
-                  value={rule.column ?? ""}
-                  columnNames={columnNames}
-                  placeholder="amount"
-                  invalid={fieldErrors && !rule.column?.trim()}
-                  onChange={(value) => updateRule(index, "column", value)}
-                />
-                <div className="space-y-2">
-                  <Label>目标类型</Label>
-                  <Select value={rule.to ?? "float"} onValueChange={(v) => updateRule(index, "to", v)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="float">float</SelectItem>
-                      <SelectItem value="integer">integer</SelectItem>
-                      <SelectItem value="boolean">boolean</SelectItem>
-                      <SelectItem value="string">string</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            ) : null}
-
-            {rule.type === "fill_null" ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                <EtlColumnField
-                  label="列名"
-                  value={rule.column ?? ""}
-                  columnNames={columnNames}
-                  placeholder="note"
-                  invalid={fieldErrors && !rule.column?.trim()}
-                  onChange={(value) => updateRule(index, "column", value)}
-                />
-                <div className="space-y-2">
-                  <Label>填充值</Label>
-                  <Input
-                    value={rule.value ?? ""}
-                    placeholder="无备注"
-                    onChange={(e) => updateRule(index, "value", e.target.value)}
-                  />
-                </div>
-              </div>
-            ) : null}
-
-            {rule.type === "filter_rows" ? (
-              <div className="grid gap-3 sm:grid-cols-3">
-                <EtlColumnField
-                  label="列名"
-                  value={rule.column ?? ""}
-                  columnNames={columnNames}
-                  placeholder="status"
-                  invalid={fieldErrors && !rule.column?.trim()}
-                  onChange={(value) => updateRule(index, "column", value)}
-                />
-                <div className="space-y-2">
-                  <Label>操作符</Label>
-                  <Select value={rule.op ?? "ne"} onValueChange={(v) => updateRule(index, "op", v)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="eq">等于</SelectItem>
-                      <SelectItem value="ne">不等于</SelectItem>
-                      <SelectItem value="is_null">为空</SelectItem>
-                      <SelectItem value="is_not_null">非空</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>比较值</Label>
-                  <Input
-                    value={rule.value ?? ""}
-                    placeholder="deleted"
-                    onChange={(e) => updateRule(index, "value", e.target.value)}
-                  />
-                </div>
-              </div>
-            ) : null}
-          </div>
-        ))}
-
-        <div className="flex flex-wrap gap-3">
-          <Button type="button" variant="outline" onClick={addRule}>
-            <Plus className="size-4" />
-            添加规则
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={!hasDataSource}
-            onClick={applyAutoSuggestedRules}
-          >
-            重新识别并覆盖
-          </Button>
-          <Button
-            type="button"
-            variant="primary"
-            loading={saving}
-            disabled={!isDirty}
-            onClick={() => void handleSave()}
-          >
-            保存规则
-          </Button>
-        </div>
-          </div>
-        </div>
+        <EtlRulesEditor
+          rules={rules}
+          columnNames={columnNames}
+          columnsLoading={columnsLoading}
+          columnsReady={columnsReady}
+          hasDataSource={hasDataSource}
+          fieldErrors={fieldErrors}
+          isDirty={isDirty}
+          saving={saving}
+          batchMode={batch.batchMode}
+          selectedCount={selection.selectedCount}
+          showDemoTemplate={sourceTable?.trim().toLowerCase() === DIRTY_ORDERS_DEMO_SOURCE_TABLE}
+          demoSourceTable={DIRTY_ORDERS_DEMO_SOURCE_TABLE}
+          onToggleBatchMode={batch.toggleBatchMode}
+          onClearSelection={selection.clear}
+          onRemoveSelected={removeSelectedRules}
+          onAddRule={() => setRules((prev) => [...prev, emptyRule()])}
+          onAutoAlign={applyAutoSuggestedRules}
+          onApplyDemoTemplate={applyDirtyOrdersDemoTemplate}
+          onSave={() => void handleSave()}
+          onRemoveRule={(index) => setRules((prev) => prev.filter((_, i) => i !== index))}
+          onTypeChange={changeRuleType}
+          onFieldChange={updateRule}
+          isSelected={(index) => selection.isSelected(String(index))}
+          onToggleSelect={(index) => selection.toggle(String(index))}
+        />
       </div>
+
       <UnsavedLeaveDialog
         open={leaveDialogOpen}
         saving={saving}

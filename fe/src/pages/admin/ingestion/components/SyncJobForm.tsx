@@ -72,6 +72,8 @@ type SyncJobFormProps = {
   onSuggestTargetTable?: () => void;
   jobId?: string;
   justCreated?: boolean;
+  /** 编辑页已展示同步成功动作卡时，隐藏重复的 how_to 引导 */
+  hideConsumeGuide?: boolean;
   formId?: string;
   onChange: <K extends keyof JobFormState>(key: K, value: JobFormState[K]) => void;
   onSubmit: (event?: FormEvent) => void;
@@ -147,6 +149,7 @@ export function SyncJobForm({
   onSuggestTargetTable,
   jobId,
   justCreated = false,
+  hideConsumeGuide = false,
   formId = SYNC_JOB_FORM_ID,
   onChange,
   onSubmit,
@@ -157,7 +160,7 @@ export function SyncJobForm({
       className="mx-auto grid w-full max-w-3xl gap-6"
       onSubmit={(event) => onSubmit(event)}
     >
-      {isEdit && form.target_table ? (
+      {isEdit && form.target_table && !hideConsumeGuide ? (
         <SyncJobConsumeGuide
           jobId={jobId}
           jobName={form.name.trim() || undefined}

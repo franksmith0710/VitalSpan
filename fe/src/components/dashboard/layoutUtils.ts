@@ -6,6 +6,7 @@ import { DEFAULT_CHART_LEGEND_STYLE, readChartDeStyle } from "@/lib/chartDeStyle
 import { DEFAULT_TABLE_COLUMN_WIDTH_MODE } from "@/lib/chartDeTableStyle";
 import { isTableLikeChartType } from "@/lib/chartTableInspector";
 import { DEFAULT_MAP_3D_CHART_DE_STYLE } from "@/lib/defaultMap3dChartDeStyle";
+import { buildDefaultPieDeStyle, isPieChartType } from "@/lib/defaultPieChartDeStyle";
 import type { ScreenVisualStyleConfig } from "@/lib/screenVisualStyle";
 import type { DashboardLayoutV2, LayoutWidget, PixelLayoutWidget } from "./dashboardLayoutContracts";
 import type { WidgetStyleConfig } from "./dashboardStyleConfig";
@@ -755,6 +756,22 @@ export function defaultChartConfig(type: ChartType): ChartViewConfig {
       },
     };
   };
+  const withPieDefaultDeStyle = (cfg: ChartViewConfig): ChartViewConfig => {
+    if (!isPieChartType(type)) return cfg;
+    const pieDefaults = buildDefaultPieDeStyle(type);
+    const prev = readChartDeStyle(cfg);
+    return {
+      ...cfg,
+      nativeBody: {
+        ...cfg.nativeBody,
+        deStyle: {
+          ...prev,
+          pie: { ...pieDefaults.pie },
+          label: { ...pieDefaults.label },
+        },
+      },
+    };
+  };
   if (type === "table") {
     return withTableColumnWidthDefault({
       chartType: "table",
@@ -785,11 +802,13 @@ export function defaultChartConfig(type: ChartType): ChartViewConfig {
     });
   }
   return withTableColumnWidthDefault(
-    withLegendDefault({
-      chartType: type,
-      ...base,
-      dimensions: [],
-      metrics: [],
-    }),
+    withLegendDefault(
+      withPieDefaultDeStyle({
+        chartType: type,
+        ...base,
+        dimensions: [],
+        metrics: [],
+      }),
+    ),
   );
 }

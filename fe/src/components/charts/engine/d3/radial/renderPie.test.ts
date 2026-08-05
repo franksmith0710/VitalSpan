@@ -162,4 +162,34 @@ describe("renderD3PieChart", () => {
     }
     cleanup();
   });
+
+  it("renders outside dimension labels with leader lines", () => {
+    const container = document.createElement("div");
+    const cleanup = renderD3PieChart(container, {
+      width: 320,
+      height: 240,
+      colors: ["#465fff", "#12b76a"],
+      theme: getAntvThemeTokens("light"),
+      showLabel: true,
+      showTooltip: false,
+      showLegend: false,
+      labelFontSize: 11,
+      options: {
+        data: [
+          { type: "华东", value: 60 },
+          { type: "华北", value: 40 },
+        ],
+        angleField: "value",
+        colorField: "type",
+        __pieLabelPosition: "outside",
+        __pieShowPercent: true,
+        __piePercentDecimals: 1,
+      },
+    });
+
+    expect(container.querySelectorAll("polyline").length).toBeGreaterThan(0);
+    expect(container.textContent).toContain("华东");
+    expect(container.textContent).toMatch(/60\.0%/);
+    cleanup();
+  });
 });
