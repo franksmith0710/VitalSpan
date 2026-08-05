@@ -9,6 +9,7 @@ import { ThemeToggleButton } from "@/components/layout/theme-toggle";
 import { useAuth } from "@/context/auth-context";
 import { ThemeProvider } from "@/context/theme-context";
 import { ApiRequestError, fetchWithTimeout } from "@/lib/api";
+import { setAuthToken } from "@/lib/auth-token";
 import { mapApiError } from "@/lib/apiError";
 import { resolveApiBaseUrl } from "@/lib/appBasePath";
 import { resolveDefaultDashboardPath } from "@/lib/defaultViewResolve";

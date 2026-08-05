@@ -1,4 +1,3 @@
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -7,7 +6,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { TEXT_COLOR_RECOMMENDED } from "@/components/dashboard/dashboardStyleConfig";
+import { ChartPaletteDeParityFields } from "../chartPaletteDeParityFields";
 import { useChartInspector } from "../ChartInspectorContext";
 import {
   ChartInspectorSection,
@@ -22,14 +23,17 @@ import { ChartDeSegmentField } from "../chartInspectorDeFields";
 import { ChartDeSliderField } from "../deAttrSlider";
 import {
   DEFAULT_PIE_INNER_RADIUS_PERCENT,
+  DEFAULT_PIE_MERGE_TOP_N,
   patchChartDeStyleNested,
   PIE_INNER_RADIUS_MAX,
   PIE_INNER_RADIUS_MIN,
   readChartDeStyle,
   resolveChartTooltipDisplayBackground,
   resolveChartTooltipDisplayColor,
+  resolveEffectivePaletteId,
 } from "@/lib/chartDeStyle";
 import { DEFAULT_LIQUID_SIZE, DEFAULT_PIE_OUTER_RADIUS_PERCENT } from "@/lib/chartDeStyleBlocks";
+import { resolveChartSeriesColorItems, supportsChartSeriesColorEditing } from "@/lib/chartSeriesColor";
 
 function patchBlock<K extends "pie" | "gauge" | "liquid" | "kpi" | "funnel" | "sankey" | "graph" | "radar" | "wordCloud" | "treemap" | "circlePacking">(
   cfg: Parameters<typeof patchChartDeStyleNested>[0],
@@ -40,26 +44,93 @@ function patchBlock<K extends "pie" | "gauge" | "liquid" | "kpi" | "funnel" | "s
 }
 
 export function ChartPieShapeSection() {
-  const { cfg, mutateChartConfig } = useChartInspector();
-  const pie = readChartDeStyle(cfg).pie ?? {};
+  const { cfg, patchDeStyle, mutateChartConfig, dashboardStyle } = useChartInspector();
+  const deStyle = readChartDeStyle(cfg);
+  const pie = deStyle.pie ?? {};
+  const mergeOthers = pie.mergeOthers === true;
+  const isDonut =
+    cfg.chartType === "pie-donut" || cfg.chartType === "pie-donut-rose";
   const patch = (p: Record<string, unknown>) =>
     mutateChartConfig((c) => patchChartDeStyleNested(c, "pie", p));
 
+  const seriesColorItems = supportsChartSeriesColorEditing(cfg.chartType)
+    ? resolveChartSeriesColorItems(
+        cfg,
+        resolveEffectivePaletteId(cfg, dashboardStyle?.paletteId),
+        deStyle.seriesColor,
+      )
+    : [];
+
+  const patchPaletteOpacity = (opacityPercent: number) =>
+    patchDeStyle({ paletteOpacity: opacityPercent / 100 });
+
   return (
-    <ChartInspectorSection title="饼图样式" data-testid="chart-pie-shape">
+    <ChartInspectorSection title="基础样式" data-testid="chart-pie-shape">
       <div className={INSPECTOR_SECTION_GAP}>
-        <ChartDeSliderField
-          label="内径 %"
-          value={pie.innerRadiusPercent}
-          fallback={DEFAULT_PIE_INNER_RADIUS_PERCENT}
-          min={PIE_INNER_RADIUS_MIN}
-          max={PIE_INNER_RADIUS_MAX}
-          step={1}
-          unit="%"
-          onChange={(innerRadiusPercent) => patch({ innerRadiusPercent })}
+        <ChartPaletteDeParityFields
+          dense
+          opacitySliderLayout="stacked"
+          showInherit
+          dashboardPaletteId={dashboardStyle?.paletteId}
+          dashboardPaletteColors={dashboardStyle?.paletteColors}
+          paletteId={deStyle.paletteId}
+          seriesColor={seriesColorItems.length > 0 ? seriesColorItems : undefined}
+          paletteOpacity={deStyle.paletteOpacity}
+          showLabelToggle={false}
+          showTooltipToggle={false}
+          showGradientToggle={false}
+          showDepthToggle={false}
+          showOpacity
+          onPaletteChange={(paletteId) => {
+            patchDeStyle({
+              paletteId,
+              seriesColor: undefined,
+              ...(paletteId === undefined ? { paletteOpacity: undefined } : {}),
+            });
+          }}
+          onSeriesColorsChange={(items) =>
+            patchDeStyle({ seriesColor: items.length > 0 ? [...items] : undefined })
+          }
+          onOpacityChange={patchPaletteOpacity}
+          onOpacityPreview={patchPaletteOpacity}
         />
+        <div className="border-b border-gray-100 py-2 dark:border-white/[0.06]">
+          <label className="flex items-start gap-2 text-[11px] text-gray-600 dark:text-gray-300">
+            <Checkbox
+              checked={mergeOthers}
+              onCheckedChange={(checked) =>
+                patch({
+                  mergeOthers: checked === true,
+                  ...(checked === true && pie.topN == null
+                    ? { topN: DEFAULT_PIE_MERGE_TOP_N }
+                    : {}),
+                })
+              }
+              aria-label="合并数据"
+            />
+            <span>
+              <span className="font-medium">合并数据</span>
+              <span className="mt-0.5 block text-[10px] text-gray-500 dark:text-gray-400">
+                显示 Top N，其余合并为一项
+              </span>
+            </span>
+          </label>
+          {mergeOthers ? (
+            <div className="mt-2 pl-6">
+              <ChartDeSliderField
+                label="显示 Top"
+                value={pie.topN}
+                fallback={DEFAULT_PIE_MERGE_TOP_N}
+                min={3}
+                max={50}
+                step={1}
+                onChange={(topN) => patch({ topN })}
+              />
+            </div>
+          ) : null}
+        </div>
         <ChartDeSliderField
-          label="外径 %"
+          label="外径"
           value={pie.outerRadiusPercent}
           fallback={DEFAULT_PIE_OUTER_RADIUS_PERCENT}
           min={40}
@@ -68,6 +139,18 @@ export function ChartPieShapeSection() {
           unit="%"
           onChange={(outerRadiusPercent) => patch({ outerRadiusPercent })}
         />
+        {isDonut ? (
+          <ChartDeSliderField
+            label="内径"
+            value={pie.innerRadiusPercent}
+            fallback={DEFAULT_PIE_INNER_RADIUS_PERCENT}
+            min={PIE_INNER_RADIUS_MIN}
+            max={PIE_INNER_RADIUS_MAX}
+            step={1}
+            unit="%"
+            onChange={(innerRadiusPercent) => patch({ innerRadiusPercent })}
+          />
+        ) : null}
         <ChartDeSliderField
           label="扇区间距"
           value={pie.padAngle}

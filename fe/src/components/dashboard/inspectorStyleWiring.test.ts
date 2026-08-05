@@ -38,9 +38,9 @@ describe("inspector style wiring registry", () => {
     expect(sections).not.toContain("palette");
   });
 
-  it("pie hides series gradient and palette opacity gates", () => {
+  it("pie enables palette opacity and hides series gradient", () => {
     expect(supportsSeriesGradientToggle("pie")).toBe(false);
-    expect(supportsPaletteOpacity("pie")).toBe(false);
+    expect(supportsPaletteOpacity("pie")).toBe(true);
   });
 
   it("map-3d style sections exclude palette", () => {

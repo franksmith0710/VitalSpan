@@ -5,6 +5,7 @@ import pytest
 
 from app.auth.deps import UserContext
 from app.datasources.schemas import ColumnItemOut, ColumnListResponse
+from app.datasources.service import DataSourceError
 from app.ingestion.etl_seed import resolve_initial_etl_rules, resolve_source_schema_table
 from app.ingestion.models import SyncJob
 
@@ -80,3 +81,27 @@ def test_resolve_initial_etl_rules_from_columns() -> None:
     with patch("app.ingestion.etl_seed.list_columns", return_value=columns):
         rules = resolve_initial_etl_rules(db, job, actor)
     assert rules == [{"type": "rename_column", "from": "product_name", "to": "product"}]
+
+
+def test_resolve_initial_etl_rules_propagates_metadata_error() -> None:
+    ds_id = uuid.uuid4()
+    job = SyncJob(
+        name="t",
+        source_type="mysql",
+        source_host="h",
+        source_port=3306,
+        source_database="sample_db",
+        source_username="u",
+        source_password_encrypted="p",
+        source_table="sales",
+        target_table="sales_clean",
+        source_data_source_id=ds_id,
+    )
+    actor = UserContext(id=str(uuid.uuid4()), roles=["admin"], username="admin")
+    db = MagicMock()
+    with patch(
+        "app.ingestion.etl_seed.list_columns",
+        side_effect=DataSourceError("DS_CONN_FAILED", "connection refused"),
+    ):
+        with pytest.raises(DataSourceError, match="connection refused"):
+            resolve_initial_etl_rules(db, job, actor)

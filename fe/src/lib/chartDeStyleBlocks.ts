@@ -27,7 +27,9 @@ export type ChartPieShapeStyle = {
   innerRadiusPercent?: number;
   outerRadiusPercent?: number;
   padAngle?: number;
+  mergeOthers?: boolean;
   topN?: number;
+  otherLabel?: string;
 };
 
 export type ChartGaugeStyle = {
@@ -123,7 +125,7 @@ export type ChartStockLineStyle = {
 export const DEFAULT_CARTESIAN_BAR_WIDTH_RATIO = 0.55;
 export const DEFAULT_CARTESIAN_POINT_SIZE = 4;
 export const DEFAULT_CARTESIAN_LINE_WIDTH = 2.5;
-export const DEFAULT_PIE_OUTER_RADIUS_PERCENT = 70;
+export const DEFAULT_PIE_OUTER_RADIUS_PERCENT = 77;
 export const DEFAULT_GAUGE_MIN = 0;
 export const DEFAULT_GAUGE_MAX = 100;
 export const DEFAULT_LIQUID_SIZE = 80;

@@ -17,6 +17,7 @@ function mockTemplate(
     status: "published",
     thumbnailRef: null,
     visibility: "builtin",
+    ownerUserId: null,
     contentRevision: 1,
     updatedAt: new Date().toISOString(),
     publishedAt: new Date().toISOString(),

@@ -12,6 +12,7 @@ import {
 } from "@/lib/templateEditSession";
 import { TEMPLATE_EDIT_SESSION } from "@/components/dashboard/templates/templateLabels";
 import { isDashboardNotFound, mapApiError } from "@/lib/apiError";
+import { apiFetch, ApiRequestError } from "@/lib/api";
 import { resolveDashboardLayoutJson } from "@/lib/resolveDashboardLayoutJson";
 import { DashboardShareDialog } from "@/components/dashboard/DashboardShareDialog";
 import { DashboardScheduleSheet } from "@/pages/admin/reports/components/DashboardScheduleSheet";
@@ -164,6 +165,23 @@ type DashboardEditPageProps = {
   mode: "edit" | "view";
 };
 
+function isLinkageNotConfigured(err: unknown): boolean {
+  if (err instanceof ApiRequestError) {
+    return err.code === "DASH_FILTER_NOT_FOUND" || err.code === "NOT_FOUND";
+  }
+  return false;
+}
+
+async function fetchDashboardLinkage(dashboardId: string): Promise<Linkage | null> {
+  try {
+    return await apiFetch<Linkage>(`/api/v1/dashboards/${dashboardId}/global-filters`);
+  } catch (err) {
+    if (isLinkageNotConfigured(err)) return null;
+    toast.warning(`全局筛选联动加载失败：${mapApiError(err)}`);
+    return null;
+  }
+}
+
 function linkageSnapshot(widgets: LayoutWidget[], linkage: Linkage | null): string {
   return JSON.stringify(mergeLayoutFilterLinkage(widgets, linkage));
 }
@@ -233,6 +251,8 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const [error, setError] = useState<string | null>(null);
   /** 看板已在服务端删除/不存在：禁止继续编辑僵尸页 */
   const [missing, setMissing] = useState(false);
+  /** 非 404 的加载失败：禁止在空画布上编辑 */
+  const [loadFailed, setLoadFailed] = useState(false);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [linkage, setLinkage] = useState<Linkage | null>(null);
   const {
@@ -343,6 +363,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     const generation = ++loadGenerationRef.current;
     setLoading(true);
     setError(null);
+    setLoadFailed(false);
     if (opts?.force) {
       hydratedRef.current = false;
       setSavedFingerprint(null);
@@ -351,7 +372,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     try {
       const [data, loadedLinkage] = await Promise.all([
         apiFetch<DashboardDetail>(`/api/v1/dashboards/${id}`),
-        apiFetch<Linkage>(`/api/v1/dashboards/${id}/global-filters`).catch(() => null),
+        fetchDashboardLinkage(id),
       ]);
       if (generation !== loadGenerationRef.current) return;
       if (!opts?.force && hydratedRef.current && isDirtyRef.current) {
@@ -421,10 +442,16 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       if (generation !== loadGenerationRef.current) return;
       if (isDashboardNotFound(err)) {
         setMissing(true);
+        setLoadFailed(false);
         resetLayout({ version: 1, widgets: [], globalFilters: [] });
         setSavedFingerprint(JSON.stringify({ version: 1, widgets: [], globalFilters: [] }));
         setError(mapApiError(err));
       } else {
+        setLoadFailed(true);
+        setMissing(false);
+        resetLayout({ version: 1, widgets: [], globalFilters: [] });
+        setSavedFingerprint(null);
+        setSavedLinkageSnapshot(null);
         setError(mapApiError(err));
       }
     } finally {
@@ -1095,7 +1122,6 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           toast.error(
             `${TEMPLATE_EDIT_SESSION.templateSyncFailed}：${mapApiError(templateErr)}`,
           );
-          toast.success("看板已保存");
         }
       } else {
         toast.success("看板已保存");
@@ -1163,7 +1189,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         </>
       ) : null}
 
-      {mode === "edit" && canSave && !missing ? (
+      {mode === "edit" && canSave && !missing && !loadFailed ? (
         <>
           <span
             className="hidden h-5 w-px shrink-0 bg-gray-200 dark:bg-gray-700 sm:block"
@@ -1259,8 +1285,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           message={error}
           onDismiss={() => setError(null)}
           onRetry={() => {
-            if (error.includes("数据源")) setError(null);
-            else void load({ force: true });
+            void load({ force: true });
           }}
         />
       ) : null}
@@ -1285,7 +1310,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         />
       ) : null}
 
-      {mode === "edit" && canSave ? (
+      {mode === "edit" && canSave && !loadFailed ? (
         <>
         <ChartDrillProvider>
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">

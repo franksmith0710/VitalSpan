@@ -37,6 +37,8 @@ export type ChartPaletteDeParityFieldsProps = {
   dashboardPaletteId?: string;
   dashboardPaletteColors?: readonly string[];
   dense?: boolean;
+  /** 不透明度滑块布局 */
+  opacitySliderLayout?: "stacked" | "inline";
   showLabelToggle?: boolean;
   showTooltipToggle?: boolean;
   showGradientToggle?: boolean;
@@ -75,6 +77,7 @@ export function ChartPaletteDeParityFields({
   dashboardPaletteId,
   dashboardPaletteColors,
   dense = false,
+  opacitySliderLayout,
   showLabelToggle = true,
   showTooltipToggle = true,
   showGradientToggle = true,
@@ -219,6 +222,7 @@ export function ChartPaletteDeParityFields({
           showInherit={showInherit}
           inheritPreviewColors={inheritPreviewColors}
           dense
+          opacitySliderLayout={opacitySliderLayout}
           onPaletteChange={onPaletteChange}
           onSeriesColorsChange={onSeriesColorsChange}
           onOpacityChange={showOpacity ? onOpacityChange : undefined}

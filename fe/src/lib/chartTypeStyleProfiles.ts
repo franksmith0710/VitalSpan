@@ -42,7 +42,8 @@ const QUADRANT_STYLE: ChartStyleSectionId[] = [
 
 const PIE_STYLE: ChartStyleSectionId[] = [
   "pieShape",
-  ...SHELL,
+  "background",
+  "title",
   "remark",
   "legend",
   "label",

@@ -1,5 +1,6 @@
 import type { ChartDeStyle } from "@/lib/chartDeStyle";
 import type { ChartRenderPlan } from "@/components/charts/engine/buildChartRenderPlan";
+import { applyPieMergeTopN } from "@/components/charts/engine/antv/spec/encodePie";
 import {
   DEFAULT_CARTESIAN_BAR_WIDTH_RATIO,
   DEFAULT_CARTESIAN_LINE_WIDTH,
@@ -191,7 +192,25 @@ export function applyChartDeStyleBlocksToPlan(
       options.__outerRadiusPercent = pie.outerRadiusPercent;
     }
     if (pie.padAngle != null) options.__padAngle = pie.padAngle;
-    if (pie.topN != null) options.__pieTopN = pie.topN;
+    if (pie.mergeOthers && pie.topN != null && Array.isArray(options.data)) {
+      options.data = applyPieMergeTopN(options.data as { type: string; value: number }[], {
+        topN: pie.topN,
+        otherLabel: pie.otherLabel,
+      });
+    }
+  }
+
+  if (plan.plotType === "Pie" && deStyle.label) {
+    const label = deStyle.label;
+    options.__pieLabelPosition = label.position ?? "inside";
+    options.__pieShowDimension = label.showDimension === true;
+    options.__pieShowIndicator = label.showIndicator !== false;
+    options.__pieShowPercent = label.showPercent === true;
+    options.__piePercentDecimals = label.percentDecimals ?? label.ratioDecimals ?? 2;
+  }
+
+  if (deStyle.paletteOpacity != null && plan.plotType === "Pie") {
+    options.__fillOpacity = deStyle.paletteOpacity;
   }
 
   if (plan.plotType === "Gauge" && blocks.gauge) {

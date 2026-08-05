@@ -57,6 +57,16 @@ export type ChartLabelStyle = {
   show?: boolean;
   fontSize?: number;
   color?: string;
+  /** 饼图等：标签相对扇区位置（对标 DE 内/外） */
+  position?: "inside" | "outside";
+  /** 饼图：显示维度名 */
+  showDimension?: boolean;
+  /** 饼图：显示指标值（对标 DE「指标」） */
+  showIndicator?: boolean;
+  /** 饼图：显示占比（对标 DE「占比」） */
+  showPercent?: boolean;
+  /** 饼图占比小数位 */
+  percentDecimals?: number;
   formatType?: NumberFormatConfig["type"];
   thousandSeparator?: boolean;
   decimals?: number;
@@ -250,15 +260,22 @@ export const DEFAULT_GEO3D_SHELL_OPACITY = 1;
 
 /** 饼图/环形图样式（对标 DE attr-style · 基础样式） */
 export type ChartPieStyle = {
-  /** 环形内径，占容器短边百分比 */
+  /** 环形内径，占外径百分比 */
   innerRadiusPercent?: number;
   outerRadiusPercent?: number;
   padAngle?: number;
+  /** 合并小项为「其他」 */
+  mergeOthers?: boolean;
+  /** 合并前保留的 Top N */
   topN?: number;
+  /** 合并项名称 */
+  otherLabel?: string;
 };
 
 export const DEFAULT_PIE_INNER_RADIUS_PERCENT = 40;
-export const DEFAULT_PIE_OUTER_RADIUS_PERCENT = 70;
+export const DEFAULT_PIE_OUTER_RADIUS_PERCENT = 77;
+export const DEFAULT_PIE_MERGE_TOP_N = 35;
+export const DEFAULT_PIE_OTHER_LABEL = "其他";
 export const PIE_INNER_RADIUS_MIN = 0;
 export const PIE_INNER_RADIUS_MAX = 65;
 

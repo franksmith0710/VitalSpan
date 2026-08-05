@@ -18,6 +18,7 @@ function mockItem(
     status: "draft",
     thumbnailRef: null,
     visibility: "org",
+    ownerUserId: "user-owner",
     contentRevision: 3,
     updatedAt: new Date().toISOString(),
     publishedAt: null,
@@ -44,15 +45,24 @@ describe("templateEditSession", () => {
     ).toBe(true);
   });
 
-  it("marks org/private templates as writable", () => {
-    expect(buildTemplateEditSyncState(mockItem({ visibility: "org" }), false).writable).toBe(true);
-    expect(buildTemplateEditSyncState(mockItem({ visibility: "private" }), false).writable).toBe(
-      true,
+  it("marks org/private templates writable only for owner or managers", () => {
+    expect(
+      buildTemplateEditSyncState(mockItem({ visibility: "org" }), false, "user-owner").writable,
+    ).toBe(true);
+    expect(buildTemplateEditSyncState(mockItem({ visibility: "org" }), false, "other").writable).toBe(
+      false,
     );
+    expect(
+      buildTemplateEditSyncState(mockItem({ visibility: "private" }), false, "user-owner")
+        .writable,
+    ).toBe(true);
+    expect(
+      buildTemplateEditSyncState(mockItem({ visibility: "org" }), true, "other").writable,
+    ).toBe(true);
   });
 
   it("reads navigate state payload", () => {
-    const payload = buildTemplateEditSyncState(mockItem(), true);
+    const payload = buildTemplateEditSyncState(mockItem(), true, "user-owner");
     expect(readTemplateEditSyncState(payload)).toEqual(payload);
     expect(readTemplateEditSyncState({ templateId: "x" })).toBeNull();
   });

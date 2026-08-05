@@ -109,7 +109,7 @@ def prepare_sync_consume(db: Session) -> PrepareResult:
 
 def _etl_rules_configured(db: Session, job_id: uuid.UUID) -> bool:
     rules_row = db.scalar(select(EtlRuleSet).where(EtlRuleSet.job_id == job_id))
-    return rules_row is not None
+    return bool(rules_row and rules_row.rules)
 
 
 def _etl_rules_count(db: Session, job_id: uuid.UUID) -> int:

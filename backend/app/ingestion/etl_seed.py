@@ -7,7 +7,6 @@ import uuid
 from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext
-from app.datasources.service import DataSourceError
 from app.datasources.metadata.service import list_columns
 from app.ingestion.etl_suggest import EtlColumnMeta, suggest_etl_rules_from_columns
 from app.ingestion.etl_templates import default_etl_rules_for_source
@@ -40,10 +39,7 @@ def resolve_initial_etl_rules(
     if not table:
         return []
 
-    try:
-        resp = list_columns(db, list(actor.roles), uuid.UUID(str(data_source_id)), schema, table)
-    except DataSourceError:
-        return []
+    resp = list_columns(db, list(actor.roles), uuid.UUID(str(data_source_id)), schema, table)
 
     columns: list[EtlColumnMeta] = [
         {"name": col.name, "dataType": col.data_type} for col in resp.items

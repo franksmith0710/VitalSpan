@@ -54,6 +54,7 @@ import { chartTypeHasTooltipSection } from "@/lib/chartStyleCartesianFields";
 import { ChartInspectorSection, INSPECTOR_HINT, INSPECTOR_SELECT, INSPECTOR_SWITCH_SIZE, InspectorInlineColorRow } from "../inspectorCompact";
 import { DeTitleStyleToolbar } from "../deTitleStyleToolbar";
 import { ChartLiquidLabelFields } from "./ChartLiquidLabelFields";
+import { ChartPieLabelFields } from "./ChartPieLabelFields";
 
 export function ChartPaletteStyleSection() {
   const { cfg, patchDeStyle, patchDeStyleNested, mutateChartConfig, dashboardStyle } = useChartInspector();
@@ -286,6 +287,7 @@ export function ChartLabelStyleSection() {
     patchDeStyleNested("label", patch);
   const isKpi = cfg.chartType === "kpi";
   const isLiquid = cfg.chartType === "liquid";
+  const isPie = cfg.chartType === "pie" || cfg.chartType.startsWith("pie-");
 
   return (
     <ChartInspectorSection
@@ -333,6 +335,8 @@ export function ChartLabelStyleSection() {
           patchLabel={patchLabel}
           patchLiquid={(patch) => patchDeStyleNested("liquid", patch)}
         />
+      ) : isPie ? (
+        <ChartPieLabelFields label={deStyle.label} patchLabel={patchLabel} />
       ) : caps.labelFormat ? (
         <>
           <ChartDeAttrField label="格式类型">

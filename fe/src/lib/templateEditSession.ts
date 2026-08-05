@@ -11,8 +11,13 @@ export type TemplateEditSyncState = {
 export function buildTemplateEditSyncState(
   item: DashboardTemplateListItem,
   canManageTemplates: boolean,
+  currentUserId?: string | null,
 ): TemplateEditSyncState {
-  const writable = item.visibility !== "builtin" || canManageTemplates;
+  const isOwner = Boolean(
+    currentUserId && item.ownerUserId && item.ownerUserId === currentUserId,
+  );
+  const writable =
+    item.visibility === "builtin" ? canManageTemplates : canManageTemplates || isOwner;
   return {
     templateId: item.id,
     templateName: item.name,
@@ -23,19 +28,19 @@ export function buildTemplateEditSyncState(
 
 export function readTemplateEditSyncState(state: unknown): TemplateEditSyncState | null {
   if (!state || typeof state !== "object") return null;
-  const raw = state as Partial<TemplateEditSyncState>;
+  const record = state as Record<string, unknown>;
   if (
-    typeof raw.templateId === "string" &&
-    typeof raw.templateName === "string" &&
-    typeof raw.contentRevision === "number" &&
-    typeof raw.writable === "boolean"
+    typeof record.templateId !== "string" ||
+    typeof record.templateName !== "string" ||
+    typeof record.contentRevision !== "number" ||
+    typeof record.writable !== "boolean"
   ) {
-    return {
-      templateId: raw.templateId,
-      templateName: raw.templateName,
-      contentRevision: raw.contentRevision,
-      writable: raw.writable,
-    };
+    return null;
   }
-  return null;
+  return {
+    templateId: record.templateId,
+    templateName: record.templateName,
+    contentRevision: record.contentRevision,
+    writable: record.writable,
+  };
 }

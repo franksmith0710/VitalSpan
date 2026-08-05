@@ -92,4 +92,74 @@ describe("renderD3PieChart", () => {
     expect(new Set(paths).size).toBe(2);
     cleanup();
   });
+
+  it("honors __outerRadiusPercent over plan radius", () => {
+    const baseOptions = {
+      data: [
+        { type: "A", value: 60 },
+        { type: "B", value: 40 },
+      ],
+      angleField: "value",
+      colorField: "type",
+      radius: 0.92,
+    };
+
+    const renderWithPercent = (percent: number) => {
+      const container = document.createElement("div");
+      const cleanup = renderD3PieChart(container, {
+        width: 320,
+        height: 240,
+        colors: ["#465fff", "#12b76a"],
+        theme: getAntvThemeTokens("light"),
+        showLabel: false,
+        showTooltip: false,
+        showLegend: false,
+        labelFontSize: 11,
+        options: { ...baseOptions, __outerRadiusPercent: percent },
+      });
+      const maxR = [...container.querySelectorAll("path")]
+        .map((node) => node.getAttribute("d") ?? "")
+        .flatMap((d) => (d.match(/[\d.]+/g) ?? []).map(Number))
+        .reduce((max, n) => Math.max(max, n), 0);
+      cleanup();
+      return maxR;
+    };
+
+    const small = renderWithPercent(45);
+    const large = renderWithPercent(80);
+    expect(small).toBeGreaterThan(0);
+    expect(large).toBeGreaterThan(small);
+  });
+
+  it("uses zero pad angle and no slice stroke when spacing is 0", () => {
+    const container = document.createElement("div");
+    const cleanup = renderD3PieChart(container, {
+      width: 320,
+      height: 240,
+      colors: ["#465fff", "#12b76a", "#f79009"],
+      theme: getAntvThemeTokens("light"),
+      showLabel: false,
+      showTooltip: false,
+      showLegend: false,
+      labelFontSize: 11,
+      options: {
+        data: [
+          { type: "A", value: 40 },
+          { type: "B", value: 35 },
+          { type: "C", value: 25 },
+        ],
+        angleField: "value",
+        colorField: "type",
+        __padAngle: 0,
+      },
+    });
+
+    const slices = container.querySelectorAll("g.slice > path");
+    expect(slices.length).toBe(3);
+    for (const node of slices) {
+      expect(node.getAttribute("stroke")).toBe("none");
+      expect(node.getAttribute("stroke-width")).toBe("0");
+    }
+    cleanup();
+  });
 });

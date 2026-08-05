@@ -19,6 +19,8 @@ type ChartPaletteConfigFieldsProps = {
   inheritPreviewColors?: readonly string[];
   /** 216px 图表栏等窄容器 */
   dense?: boolean;
+  /** 不透明度滑块布局；饼图基础样式等窄栏建议 stacked 全宽 */
+  opacitySliderLayout?: "stacked" | "inline";
   className?: string;
 };
 
@@ -35,10 +37,12 @@ export function ChartPaletteConfigFields({
   showInherit = false,
   inheritPreviewColors,
   dense = false,
+  opacitySliderLayout,
   className,
 }: ChartPaletteConfigFieldsProps) {
   const pickerValue = showInherit ? paletteId : paletteId ?? "default";
   const inheritActive = showInherit && resolvePaletteId(paletteId) == null;
+  const sliderLayout = opacitySliderLayout ?? (dense ? "inline" : "stacked");
 
   return (
     <div className={cn("space-y-2.5", className)}>
@@ -56,7 +60,7 @@ export function ChartPaletteConfigFields({
         <div className="space-y-1">
           <ChartDeSliderField
             label="配色不透明度"
-            layout={dense ? "inline" : "stacked"}
+            layout={sliderLayout}
             disabled={inheritActive}
             value={
               paletteOpacity != null ? Math.round(paletteOpacity * 100) : undefined

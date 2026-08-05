@@ -51,9 +51,17 @@ export function supportsDepthVisualToggle(chartType: ChartType): boolean {
   return DEPTH_VISUAL_CHART_TYPES.has(chartType);
 }
 
-/** paletteOpacity 仅 2D choropleth map 渲染消费 */
+/** paletteOpacity：2D 地图 + 饼图系列填充 */
+const PALETTE_OPACITY_CHART_TYPES = new Set<ChartType>([
+  "map",
+  "pie",
+  "pie-donut",
+  "pie-rose",
+  "pie-donut-rose",
+]);
+
 export function supportsPaletteOpacity(chartType: ChartType): boolean {
-  return chartType === "map";
+  return PALETTE_OPACITY_CHART_TYPES.has(chartType);
 }
 
 export function supportsSeriesGradientToggle(chartType: ChartType): boolean {

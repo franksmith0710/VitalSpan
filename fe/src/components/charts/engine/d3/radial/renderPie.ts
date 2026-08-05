@@ -7,11 +7,23 @@ import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentatio
 import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
+import { DEFAULT_PIE_OUTER_RADIUS_PERCENT } from "@/lib/chartDeStyleBlocks";
 import { renderConfiguredInlineLegend, type D3LegendItem } from "@/components/charts/engine/d3/core/d3Legend";
 import { computePieLayout, PIE_RADIUS_FRAC_DEFAULT } from "./pieLayout";
+import {
+  formatPieSliceLabel,
+  resolvePieLabelRenderOptions,
+  type PieLabelRenderOptions,
+} from "./pieLabels";
 
-const PIE_PAD = VCDS.pie.padAngle;
 const HOVER_EXPAND = VCDS.pie.hoverOffset;
+const OUTSIDE_LABEL_GAP = 14;
+const OUTSIDE_LEADER_GAP = 4;
+
+function resolvePiePadAngleRad(padAngleDeg: number | undefined): number {
+  if (padAngleDeg == null || padAngleDeg <= 0) return 0;
+  return (padAngleDeg * Math.PI) / 180;
+}
 
 function fractionRadius(value: unknown, base: number, fallback = PIE_RADIUS_FRAC_DEFAULT): number {
   if (typeof value === "number") return value * base;
@@ -27,6 +39,74 @@ function resolveInnerFrac(value: unknown): number {
     return parseFloat(value) / 100;
   }
   return 0;
+}
+
+function drawPieLabels(
+  arcs: d3.Selection<SVGGElement, d3.PieArcDatum<D3Datum>, SVGGElement, unknown>,
+  opts: {
+    labelArc: d3.Arc<d3.PieArcDatum<D3Datum>, d3.PieArcDatum<D3Datum>>;
+    outerR: number;
+    colorField: string;
+    angleField: string;
+    labelOpts: PieLabelRenderOptions;
+    total: number;
+    valueFormat: D3RenderConfig["valueFormat"];
+    labelFontSize: number;
+    labelColor: string | undefined;
+    theme: D3RenderConfig["theme"];
+  },
+): void {
+  const fill = resolveLabelFill(opts.theme, opts.labelColor);
+  arcs.each(function (d) {
+    const text = formatPieSliceLabel(
+      d.data as Record<string, unknown>,
+      opts.colorField,
+      opts.angleField,
+      opts.total,
+      opts.labelOpts,
+      opts.valueFormat,
+    );
+    if (!text) return;
+
+    const group = d3.select(this);
+    if (opts.labelOpts.position === "outside") {
+      const midAngle = d.startAngle + (d.endAngle - d.startAngle) / 2;
+      const cos = Math.cos(midAngle - Math.PI / 2);
+      const sin = Math.sin(midAngle - Math.PI / 2);
+      const anchor = cos >= 0 ? "start" : "end";
+      const lineR = opts.outerR + OUTSIDE_LEADER_GAP;
+      const labelR = opts.outerR + OUTSIDE_LABEL_GAP;
+      const xEdge = cos * lineR;
+      const yEdge = sin * lineR;
+      const xLabel = cos * labelR;
+      const yLabel = sin * labelR;
+      group
+        .append("polyline")
+        .attr("points", `${cos * opts.outerR},${sin * opts.outerR} ${xEdge},${yEdge} ${xLabel},${yLabel}`)
+        .attr("fill", "none")
+        .attr("stroke", fill)
+        .attr("stroke-width", 1)
+        .attr("opacity", 0.75);
+      group
+        .append("text")
+        .attr("transform", `translate(${xLabel},${yLabel})`)
+        .attr("text-anchor", anchor)
+        .attr("dy", "0.35em")
+        .attr("fill", fill)
+        .style("font-size", `${opts.labelFontSize}px`)
+        .text(text);
+      return;
+    }
+
+    group
+      .append("text")
+      .attr("transform", `translate(${opts.labelArc.centroid(d)})`)
+      .attr("text-anchor", "middle")
+      .attr("dy", "0.35em")
+      .attr("fill", fill)
+      .style("font-size", `${opts.labelFontSize}px`)
+      .text(text);
+  });
 }
 
 export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig): () => void {
@@ -69,9 +149,16 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
 
   const layout = computePieLayout(width, height, showLegend, legendLayout, legendItems);
   const legendFontSize = legendLayout?.fontSize ?? 11;
-  const outerPercent = Number(options.__outerRadiusPercent ?? 70);
-  const outerR = fractionRadius(options.radius, layout.maxR, outerPercent / 100);
-  const padAngle = Number(options.__padAngle ?? PIE_PAD);
+  const outerPercent = Number(options.__outerRadiusPercent ?? DEFAULT_PIE_OUTER_RADIUS_PERCENT);
+  const outerR =
+    options.__outerRadiusPercent != null
+      ? layout.maxR * (outerPercent / 100)
+      : fractionRadius(options.radius, layout.maxR, outerPercent / 100);
+  const padAngleRad = resolvePiePadAngleRad(
+    options.__padAngle != null ? Number(options.__padAngle) : undefined,
+  );
+  const sliceStroke = padAngleRad > 0;
+  const fillOpacity = Math.min(1, Math.max(0, Number(options.__fillOpacity ?? 1)));
   const innerFrac = resolveInnerFrac(options.innerRadius);
   const innerR = outerR * innerFrac;
   const maxValue = d3.max(data, (d) => Number(d[angleField] ?? 0)) ?? 1;
@@ -105,7 +192,7 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
     .pie<D3Datum>()
     .value((d) => (isRose ? 1 : Number(d[angleField] ?? 0)))
     .sort(null)
-    .padAngle(padAngle > 0 ? (padAngle * Math.PI) / 180 : PIE_PAD);
+    .padAngle(padAngleRad);
 
   const arc = createArc();
 
@@ -124,8 +211,9 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
       const base = colorScale(String(d.data[colorField] ?? "")) ?? colors[0] ?? "#465fff";
       return resolveDatumColor(Number(d.data[angleField] ?? 0), base, conditionalRules);
     })
-    .attr("stroke", "#fff")
-    .attr("stroke-width", VCDS.pie.strokeWidth)
+    .attr("fill-opacity", fillOpacity)
+    .attr("stroke", sliceStroke ? "#fff" : "none")
+    .attr("stroke-width", sliceStroke ? VCDS.pie.strokeWidth : 0)
     .attr("cursor", onPointClick ? "pointer" : "default")
     .attr("d", arc)
     .each(function (d) {
@@ -169,14 +257,26 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
     .on("click", (_event, d) => onPointClick?.(d.data));
 
   if (showLabel) {
-    arcs
-      .append("text")
-      .attr("transform", (d) => `translate(${labelArc.centroid(d)})`)
-      .attr("text-anchor", "middle")
-      .attr("dy", "0.35em")
-      .attr("fill", resolveLabelFill(theme, labelColor))
-      .style("font-size", `${labelFontSize}px`)
-      .text((d) => formatChartValue(d.data[angleField], valueFormat));
+    const labelOpts = resolvePieLabelRenderOptions({
+      position: options.__pieLabelPosition as "inside" | "outside" | undefined,
+      showDimension: options.__pieShowDimension as boolean | undefined,
+      showIndicator: options.__pieShowIndicator as boolean | undefined,
+      showPercent: options.__pieShowPercent as boolean | undefined,
+      percentDecimals: options.__piePercentDecimals as number | undefined,
+    });
+    const total = d3.sum(data, (row) => Number(row[angleField] ?? 0));
+    drawPieLabels(arcs, {
+      labelArc,
+      outerR,
+      colorField,
+      angleField,
+      labelOpts,
+      total,
+      valueFormat,
+      labelFontSize,
+      labelColor,
+      theme,
+    });
   }
 
   if (showLegend) {

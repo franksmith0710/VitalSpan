@@ -159,7 +159,7 @@ export function VizTemplatesHubPage() {
       createFromTemplate(item.id, `${item.name}（编辑）`),
     onSuccess: (created, item) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.dashboards.all });
-      const templateEditSync = buildTemplateEditSyncState(item, canManage);
+      const templateEditSync = buildTemplateEditSyncState(item, canManage, authUser?.id);
       if (item.surfaceKind === "data-screen") {
         navigate(dataScreenEditPath(created.id), { state: { templateEditSync } });
       } else {

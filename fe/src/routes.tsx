@@ -146,7 +146,14 @@ export function AppRoutes() {
           <Route path="account/settings" element={<Navigate to={ACCOUNT_LANDING_PATH} replace />} />
           <Route path="account" element={<Navigate to="/admin/account/profile" replace />} />
           <Route path="dashboards" element={<Lazy><DashboardListPage /></Lazy>} />
-          <Route path="dashboards/:id/edit" element={<Lazy><DashboardEditPage mode="edit" /></Lazy>} />
+          <Route
+            path="dashboards/:id/edit"
+            element={
+              <RequireCapabilityName capability="dashboard:edit">
+                <Lazy><DashboardEditPage mode="edit" /></Lazy>
+              </RequireCapabilityName>
+            }
+          />
           <Route
             path="dashboards/:id/share"
             element={
@@ -165,7 +172,14 @@ export function AppRoutes() {
             }
           />
           <Route path="data-screens" element={<Lazy><DataScreenListPage /></Lazy>} />
-          <Route path="data-screens/:id/edit" element={<Lazy><DashboardEditPage mode="edit" /></Lazy>} />
+          <Route
+            path="data-screens/:id/edit"
+            element={
+              <RequireCapabilityName capability="dashboard:edit">
+                <Lazy><DashboardEditPage mode="edit" /></Lazy>
+              </RequireCapabilityName>
+            }
+          />
           <Route path="data-screens/:id/preview" element={<Lazy><DataScreenPreviewPage /></Lazy>} />
           <Route path="data-screens/:id" element={<DataScreenViewRedirect />} />
           <Route

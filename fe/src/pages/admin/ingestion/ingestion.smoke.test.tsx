@@ -313,6 +313,150 @@ describe("ingestion admin smoke", () => {
     ).toBeInTheDocument();
   });
 
+  it("SyncJobsPage_consume_card_shows_etl_rules_count", async () => {
+    setViewport(1400);
+    const baseJob = {
+      id: "job-1",
+      name: "demo",
+      source_type: "mysql",
+      target_table: "orders_clean",
+      enabled: true,
+      schedule_cron: null,
+      sync_mode: "full" as const,
+    };
+    let runSubmitted = false;
+    mockApiFetch.mockImplementation((url: string) => {
+      if (typeof url === "string" && url.endsWith("/run")) {
+        runSubmitted = true;
+        return Promise.resolve(undefined);
+      }
+      if (typeof url === "string" && url.includes("/consume-hints")) {
+        return Promise.resolve({
+          targetTable: "orders_clean",
+          suggestedDatasetId: "orders_clean",
+          analyticsDatasourceId: "ds-1",
+          analyticsReady: true,
+          datasetId: "orders_clean",
+          datasetExists: false,
+          datasetBound: false,
+          nextAction: "ensure_dataset",
+          consumeLabel: "pending_dataset",
+          etlRulesConfigured: true,
+          etlRulesCount: 3,
+        });
+      }
+      if (typeof url === "string" && url.includes("/sync-jobs")) {
+        const succeeded = runSubmitted;
+        return Promise.resolve({
+          items: [
+            {
+              ...baseJob,
+              last_run: succeeded
+                ? {
+                    status: "succeeded",
+                    started_at: "2026-08-04T02:00:00Z",
+                    finished_at: "2026-08-04T02:00:01Z",
+                    rows_synced: 5,
+                    error_message: null,
+                  }
+                : null,
+            },
+          ],
+        });
+      }
+      return Promise.resolve({});
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs" element={<SyncJobsPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "手动运行同步" }));
+    fireEvent.click(await screen.findByRole("button", { name: "运行" }));
+
+    expect(await screen.findByText(/已应用 3 条清洗规则/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "查看或调整" })).toHaveAttribute(
+      "href",
+      "/admin/ingestion/sync-jobs/job-1/etl-rules",
+    );
+  });
+
+  it("SyncJobsPage_consume_card_shows_pass_through_when_no_etl_rules", async () => {
+    setViewport(1400);
+    const baseJob = {
+      id: "job-2",
+      name: "plain",
+      source_type: "mysql",
+      target_table: "plain_clean",
+      enabled: true,
+      schedule_cron: null,
+      sync_mode: "full" as const,
+    };
+    let runSubmitted = false;
+    mockApiFetch.mockImplementation((url: string) => {
+      if (typeof url === "string" && url.endsWith("/run")) {
+        runSubmitted = true;
+        return Promise.resolve(undefined);
+      }
+      if (typeof url === "string" && url.includes("/consume-hints")) {
+        return Promise.resolve({
+          targetTable: "plain_clean",
+          suggestedDatasetId: "plain_clean",
+          analyticsDatasourceId: "ds-1",
+          analyticsReady: true,
+          datasetId: "plain_clean",
+          datasetExists: false,
+          datasetBound: false,
+          nextAction: "ensure_dataset",
+          consumeLabel: "pending_dataset",
+          etlRulesConfigured: true,
+          etlRulesCount: 0,
+        });
+      }
+      if (typeof url === "string" && url.includes("/sync-jobs")) {
+        const succeeded = runSubmitted;
+        return Promise.resolve({
+          items: [
+            {
+              ...baseJob,
+              last_run: succeeded
+                ? {
+                    status: "succeeded",
+                    started_at: "2026-08-04T02:00:00Z",
+                    finished_at: "2026-08-04T02:00:01Z",
+                    rows_synced: 2,
+                    error_message: null,
+                  }
+                : null,
+            },
+          ],
+        });
+      }
+      return Promise.resolve({});
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs" element={<SyncJobsPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "手动运行同步" }));
+    fireEvent.click(await screen.findByRole("button", { name: "运行" }));
+
+    expect(await screen.findByText(/未识别到需清洗项，数据已原样入湖/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "手动添加规则" })).toHaveAttribute(
+      "href",
+      "/admin/ingestion/sync-jobs/job-2/etl-rules",
+    );
+  });
+
   it("SyncJobHistoryPage_shows_runs", async () => {
     setViewport(1400);
     mockSyncJobHistoryApi([

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { IconButton } from "@/components/ui/button";
 
 function sliderPercent(value: number, min: number, max: number): number {
   if (max <= min) return 0;
@@ -438,6 +440,81 @@ export function ChartDeSliderField({
         }}
         onChange={onChange}
       />
+    </div>
+  );
+}
+
+export type ChartDeStepperFieldProps = {
+  label: string;
+  value: number | undefined;
+  fallback?: number;
+  min: number;
+  max: number;
+  step?: number;
+  ariaLabel?: string;
+  className?: string;
+  disabled?: boolean;
+  onChange: (value: number) => void;
+};
+
+/** 图表样式栏：标签 + −/+ 步进按钮（对标 DE 数值步进） */
+export function ChartDeStepperField({
+  label,
+  value,
+  fallback = 0,
+  min,
+  max,
+  step = 1,
+  ariaLabel,
+  className,
+  disabled = false,
+  onChange,
+}: ChartDeStepperFieldProps) {
+  const resolved = clampValue(value ?? fallback, min, max);
+
+  const bump = (delta: number) => {
+    onChange(clampValue(resolved + delta, min, max));
+  };
+
+  return (
+    <div
+      className={cn(
+        "grid min-w-0 grid-cols-[7rem_minmax(0,1fr)] items-center gap-x-2.5 border-b border-gray-100 py-2 last:border-b-0 dark:border-white/[0.06]",
+        disabled && "opacity-60",
+        className,
+      )}
+    >
+      <span className="text-[11px] font-medium text-gray-600 dark:text-gray-300">{label}</span>
+      <div className="flex items-center justify-end gap-1">
+        <IconButton
+          type="button"
+          variant="outline"
+          size="sm"
+          className="size-7"
+          disabled={disabled || resolved <= min}
+          aria-label={`减少${ariaLabel ?? label}`}
+          onClick={() => bump(-step)}
+        >
+          <Minus className="size-3.5" aria-hidden />
+        </IconButton>
+        <span
+          className="min-w-[2.5rem] text-center text-[11px] tabular-nums text-gray-700 dark:text-gray-300"
+          aria-live="polite"
+        >
+          {resolved}
+        </span>
+        <IconButton
+          type="button"
+          variant="outline"
+          size="sm"
+          className="size-7"
+          disabled={disabled || resolved >= max}
+          aria-label={`增加${ariaLabel ?? label}`}
+          onClick={() => bump(step)}
+        >
+          <Plus className="size-3.5" aria-hidden />
+        </IconButton>
+      </div>
     </div>
   );
 }

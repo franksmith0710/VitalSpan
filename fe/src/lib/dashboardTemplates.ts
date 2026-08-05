@@ -13,6 +13,7 @@ export type DashboardTemplateListItem = {
   status: "draft" | "published" | "archived";
   thumbnailRef: string | null;
   visibility: "builtin" | "org" | "private";
+  ownerUserId: string | null;
   contentRevision: number;
   updatedAt: string;
   publishedAt: string | null;

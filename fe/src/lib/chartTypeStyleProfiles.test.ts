@@ -86,6 +86,12 @@ describe("chartTypeStyleProfiles", () => {
     expect(chartStyleSectionsFromProfile("map-3d")).not.toContain("palette");
   });
 
+  it("pie folds palette into pieShape basic section", () => {
+    const sections = chartStyleSectionsFromProfile("pie");
+    expect(sections[0]).toBe("pieShape");
+    expect(sections).not.toContain("palette");
+  });
+
   it("treemap and circle-packing expose new shape sections", () => {
     expect(chartStyleSectionsFromProfile("treemap")).toContain("treemapShape");
     expect(chartStyleSectionsFromProfile("circle-packing")).toContain("circlePackingShape");
