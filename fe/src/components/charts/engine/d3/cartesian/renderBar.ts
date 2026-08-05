@@ -20,6 +20,7 @@ import { attachBandCategoryInteraction } from "@/components/charts/engine/d3/car
 import { renderD3HorizontalBarChart } from "@/components/charts/engine/d3/cartesian/renderBarHorizontal";
 import type { D3CartesianRenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue, mergePercentValueFormat } from "@/lib/chartValueFormat";
+import { formatCartesianDatumLabel, sumCartesianLabelTotal } from "@/components/charts/engine/d3/core/cartesianDataLabel";
 import { resolveBarBandPadding, resolveCartesianPointSize } from "@/lib/applyChartDeStyleBlocks";
 
 const BAR_RX = VCDS.bar.rx;
@@ -72,6 +73,7 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
     markLines = [],
     conditionalRules = [],
     labelColor,
+    labelContent,
     seriesGradient = false,
     tooltipPresentation,
     onPointClick,
@@ -261,6 +263,7 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
   }
 
   if (showLabel) {
+    const labelTotal = sumCartesianLabelTotal(normalized);
     plot
       .selectAll("text.bar-label")
       .data(normalized)
@@ -271,7 +274,15 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
       .attr("text-anchor", "middle")
       .attr("fill", resolveLabelFill(theme, labelColor))
       .style("font-size", `${labelFontSize}px`)
-      .text((d) => formatChartValue(d.__value__, valueFormat));
+      .text((d) =>
+        formatCartesianDatumLabel(d, {
+          hasMultiSeries,
+          labelContent,
+          valueFormat,
+          isPercent,
+          total: labelTotal,
+        }),
+      );
   }
 
   if (showLegend && hasMultiSeries) {

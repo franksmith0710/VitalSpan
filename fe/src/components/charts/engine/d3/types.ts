@@ -4,6 +4,7 @@ import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleCo
 import type { ChartGeoStyle, ChartGeo3dStyle } from "@/lib/chartDeStyle";
 import type { Geo3dRenderTier } from "@/components/charts/engine/three/geo3dRuntime";
 import type { D3LegendPresentation, D3TooltipPresentation } from "@/components/charts/engine/d3/core/presentation";
+import type { DataLabelContentOptions } from "@/lib/chartDataLabelFormat";
 
 export type D3Datum = Record<string, unknown>;
 
@@ -38,6 +39,7 @@ export type D3RenderConfig<TOptions extends Record<string, unknown> = Record<str
   showLegend: boolean;
   labelFontSize: number;
   labelColor?: string;
+  labelContent?: DataLabelContentOptions;
   seriesGradient?: boolean;
   tooltipPresentation?: D3TooltipPresentation;
   valueFormat?: NumberFormatConfig;
@@ -81,6 +83,7 @@ export type D3CartesianRenderConfig = {
   showLegend: boolean;
   labelFontSize: number;
   labelColor?: string;
+  labelContent?: DataLabelContentOptions;
   seriesGradient?: boolean;
   tooltipPresentation?: D3TooltipPresentation;
   valueFormat?: NumberFormatConfig;

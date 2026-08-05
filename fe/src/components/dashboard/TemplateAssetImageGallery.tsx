@@ -1,10 +1,10 @@
 import { useMemo, useState, type ReactNode } from "react";
 import {
   filterTemplateAssetsByScope,
+  galleryPreviewUrl,
   listTemplateAssetCategories,
-  TEMPLATE_ASSET_CATALOG,
   TEMPLATE_ASSET_CATEGORY_LABELS,
-  type TemplateAssetGalleryScope,
+  type TemplateAssetCatalogItem,
 } from "@/lib/templateAssetCatalog";
 import { cn } from "@/lib/utils";
 
@@ -123,7 +123,7 @@ function AssetThumbGrid({
   maxHeightClass,
   emptyLabel,
 }: {
-  items: typeof TEMPLATE_ASSET_CATALOG;
+  items: TemplateAssetCatalogItem[];
   activeUrl?: string;
   onSelect: (url: string) => void;
   columns: number;
@@ -164,7 +164,7 @@ function AssetThumbGrid({
               onClick={() => onSelect(item.url)}
             >
               <img
-                src={item.thumbUrl || item.url}
+                src={galleryPreviewUrl(item)}
                 alt=""
                 className="h-9 w-full object-contain object-center"
                 loading="lazy"

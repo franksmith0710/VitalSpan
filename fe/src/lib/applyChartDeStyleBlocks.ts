@@ -217,6 +217,15 @@ export function applyChartDeStyleBlocksToPlan(
     options.__pieShowIndicator = label.showIndicator !== false;
     options.__pieShowPercent = label.showPercent ?? outside;
     options.__piePercentDecimals = label.percentDecimals ?? label.ratioDecimals ?? 2;
+    options.__pieShowAll = label.showAll === true;
+  }
+
+  if (deStyle.label && plan.plotType !== "Pie" && plan.plotType !== "Liquid") {
+    const label = deStyle.label;
+    options.__labelShowDimension = label.showDimension === true;
+    options.__labelShowIndicator = label.showIndicator !== false;
+    options.__labelShowPercent = label.showPercent === true;
+    options.__labelPercentDecimals = label.percentDecimals ?? label.ratioDecimals ?? 2;
   }
 
   if (deStyle.paletteOpacity != null && plan.plotType === "Pie") {

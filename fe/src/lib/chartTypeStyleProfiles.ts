@@ -101,7 +101,7 @@ const PROFILE_BY_TYPE: Record<string, ChartStyleSectionId[]> = {
 
   scatter: CARTESIAN_CORE,
   quadrant: QUADRANT_STYLE,
-  funnel: [...SHELL, "legend", "funnelShape"],
+  funnel: [...SHELL, "legend", "label", "funnelShape"],
   sankey: [...MINIMAL, "sankeyShape"],
   "circle-packing": [...MINIMAL, "label", "circlePackingShape"],
   "multi-scatter": CARTESIAN_CORE,

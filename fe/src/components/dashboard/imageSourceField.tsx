@@ -10,6 +10,7 @@ import {
   readImageFileAsDataUrl,
 } from "./imageSourceUtils";
 import { localizeApiMessage } from "@/lib/apiError";
+import { findTemplateAssetByUrl, galleryPreviewUrl } from "@/lib/templateAssetCatalog";
 import { TemplateAssetImageGallery } from "./TemplateAssetImageGallery";
 import type { TemplateAssetGalleryScope } from "@/lib/templateAssetCatalog";
 import { ImagePreviewCard, ImageUploadDropZone, RailDivider } from "./imageSourceFieldRail";
@@ -154,14 +155,18 @@ export function ImageSourceField({
       ? "粘贴图片 HTTPS 链接"
       : placeholder;
 
-  const showRailPreview = hasPreview && (showPreview || isLocal);
+  const showRailPreview = hasPreview;
 
   if (variant === "rail") {
+    const catalogAsset = findTemplateAssetByUrl(previewUrl);
     const previewCaption = isLocal
       ? (localName ?? "本地图片")
-      : previewUrl.length > 48
-        ? `${previewUrl.slice(0, 48)}…`
-        : previewUrl;
+      : catalogAsset
+        ? catalogAsset.label
+        : previewUrl.length > 48
+          ? `${previewUrl.slice(0, 48)}…`
+          : previewUrl;
+    const displayPreviewUrl = catalogAsset ? galleryPreviewUrl(catalogAsset) : previewUrl;
 
     return (
       <div className={cn("space-y-2", className)}>
@@ -188,6 +193,20 @@ export function ImageSourceField({
           />
         </div>
 
+        {showRailPreview ? (
+          <div className="space-y-1">
+            <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400">正在使用</p>
+            <ImagePreviewCard
+              previewUrl={displayPreviewUrl}
+              caption={previewCaption}
+              onReplace={openFilePicker}
+              onClear={allowClear ? clearValue : undefined}
+              allowClear={allowClear}
+              objectFit="contain"
+            />
+          </div>
+        ) : null}
+
         {assetGallery ? (
           <>
             <RailDivider />
@@ -204,23 +223,16 @@ export function ImageSourceField({
           </>
         ) : null}
 
-        <RailDivider />
-
-        {showRailPreview ? (
-          <ImagePreviewCard
-            previewUrl={previewUrl}
-            caption={previewCaption}
-            onReplace={openFilePicker}
-            onClear={allowClear ? clearValue : undefined}
-            allowClear={allowClear}
-          />
-        ) : (
-          <ImageUploadDropZone
-            onOpen={openFilePicker}
-            onFile={(file) => void processFile(file)}
-            hasError={Boolean(error)}
-          />
-        )}
+        {!showRailPreview ? (
+          <>
+            <RailDivider />
+            <ImageUploadDropZone
+              onOpen={openFilePicker}
+              onFile={(file) => void processFile(file)}
+              hasError={Boolean(error)}
+            />
+          </>
+        ) : null}
 
         <HiddenFileInput fileRef={fileRef} pickerLabel={pickerLabel} onChange={handleFilePick} />
         {error ? <FieldError error={error} /> : null}

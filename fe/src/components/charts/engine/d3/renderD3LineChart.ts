@@ -30,6 +30,7 @@ import { highlightCategoryDots, resolveSeriesAnchorY } from "@/components/charts
 import type { D3CartesianDatum, D3CartesianRenderConfig } from "@/components/charts/engine/d3/types";
 import { normalizeCategoryAxisDomain } from "@/components/charts/engine/buildDatasetEncoding";
 import { resolveCartesianLineWidth, resolveCartesianPointSize } from "@/lib/applyChartDeStyleBlocks";
+import { formatCartesianDatumLabel, sumCartesianLabelTotal } from "@/components/charts/engine/d3/core/cartesianDataLabel";
 
 export type { D3CartesianDatum as D3LineDatum, D3CartesianRenderConfig as D3LineRenderConfig } from "@/components/charts/engine/d3/types";
 
@@ -59,6 +60,7 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
     markLines = [],
     conditionalRules = [],
     labelColor,
+    labelContent,
     seriesGradient = false,
     tooltipPresentation,
     onPointClick,
@@ -203,6 +205,7 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
     if (onPointClick) dots.on("click", (_event, datum) => onPointClick(datum));
 
     if (showLabel) {
+      const labelTotal = sumCartesianLabelTotal(normalized);
       plot
         .selectAll<SVGTextElement, D3CartesianDatum>(`text.label-${seriesIndex}`)
         .data(points)
@@ -212,7 +215,14 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
         .attr("text-anchor", "middle")
         .attr("fill", resolveLabelFill(theme, labelColor))
         .style("font-size", `${labelFontSize}px`)
-        .text((d) => formatChartValue(d.__value__, valueFormat));
+        .text((d) =>
+          formatCartesianDatumLabel(d, {
+            hasMultiSeries: !singleSeries,
+            labelContent,
+            valueFormat,
+            total: labelTotal,
+          }),
+        );
     }
   });
 

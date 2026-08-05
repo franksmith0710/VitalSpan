@@ -20,35 +20,46 @@ export const TEMPLATE_ASSET_CATEGORY_LABELS: Record<string, string> = {
   "screen-header": "顶栏条",
   "canvas-dark": "大屏深色",
   "canvas-light": "大屏浅色",
-  "canvas-thumb": "画布预览",
-  "dashboard-template": "仪表板",
-  "dashboard-variant": "仪表板变体",
   "screen-bg": "背景图",
-  thumb: "缩略图",
 };
 
-const CANVAS_CATEGORIES = new Set([
-  "canvas-dark",
-  "canvas-light",
+/** 图库不展示：缩略图、废弃仪表板线框、变体预览等 */
+export const GALLERY_EXCLUDED_CATEGORIES = new Set([
+  "thumb",
   "canvas-thumb",
   "dashboard-template",
   "dashboard-variant",
-  "screen-bg",
-  "thumb",
 ]);
 
+const CANVAS_CATEGORIES = new Set(["canvas-dark", "canvas-light", "screen-bg"]);
+
 const WIDGET_CATEGORIES = new Set(["borderless-decor", "screen-header"]);
+
+export function isGalleryEligibleAsset(item: TemplateAssetCatalogItem): boolean {
+  return !GALLERY_EXCLUDED_CATEGORIES.has(item.category);
+}
+
+/** 图库格子预览：优先真实背景图，不用 /thumbs/ 线框缩略图 */
+export function galleryPreviewUrl(item: TemplateAssetCatalogItem): string {
+  const thumb = item.thumbUrl?.trim() ?? "";
+  if (thumb && !thumb.includes("/thumbs/")) return thumb;
+  return item.url;
+}
+
+function applyGalleryExclusions(items: TemplateAssetCatalogItem[]): TemplateAssetCatalogItem[] {
+  return items.filter(isGalleryEligibleAsset);
+}
 
 export function listTemplateAssetCategories(
   items: TemplateAssetCatalogItem[] = TEMPLATE_ASSET_CATALOG,
 ): string[] {
-  return [...new Set(items.map((item) => item.category))].sort((a, b) => {
+  const eligible = applyGalleryExclusions(items);
+  return [...new Set(eligible.map((item) => item.category))].sort((a, b) => {
     const order = [
       "borderless-decor",
       "screen-header",
       "canvas-dark",
       "canvas-light",
-      "dashboard-template",
       "screen-bg",
     ];
     return (order.indexOf(a) === -1 ? 99 : order.indexOf(a)) -
@@ -60,11 +71,12 @@ export function filterTemplateAssetsByScope(
   scope: TemplateAssetGalleryScope,
   items: TemplateAssetCatalogItem[] = TEMPLATE_ASSET_CATALOG,
 ): TemplateAssetCatalogItem[] {
-  if (scope === "all") return items;
+  const eligible = applyGalleryExclusions(items);
+  if (scope === "all") return eligible;
   if (scope === "canvas") {
-    return items.filter((item) => CANVAS_CATEGORIES.has(item.category));
+    return eligible.filter((item) => CANVAS_CATEGORIES.has(item.category));
   }
-  return items.filter(
+  return eligible.filter(
     (item) =>
       WIDGET_CATEGORIES.has(item.category) ||
       item.category.startsWith("canvas-") ||
@@ -80,4 +92,13 @@ export function groupTemplateAssetsByCategory(items: TemplateAssetCatalogItem[])
     map.set(item.category, list);
   }
   return map;
+}
+
+export function findTemplateAssetByUrl(
+  url: string,
+  items: TemplateAssetCatalogItem[] = TEMPLATE_ASSET_CATALOG,
+): TemplateAssetCatalogItem | undefined {
+  const normalized = url.trim();
+  if (!normalized) return undefined;
+  return items.find((item) => item.url === normalized || item.thumbUrl === normalized);
 }

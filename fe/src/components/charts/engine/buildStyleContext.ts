@@ -13,6 +13,7 @@ import {
 } from "@/lib/chartDeStyle";
 import { readChartDeFeatures } from "@/lib/chartDeFeatures";
 import { resolveChartValueFormat } from "@/lib/chartValueFormat";
+import { resolveDataLabelContentFromDeStyle } from "@/lib/chartDataLabelFormat";
 import type { ChartStyleContext } from "@/components/charts/engine/types";
 import type { ColorScheme } from "@/components/dashboard/dashboardStyleConfig";
 
@@ -62,6 +63,7 @@ export function buildStyleContext(input: BuildStyleContextInput): ChartStyleCont
     depthVisual,
     dataZoom,
     valueFormat,
+    labelContent: resolveDataLabelContentFromDeStyle(deStyle.label),
     labelPresentation: resolveChartLabelPresentation(config, dashboardDefaults),
     tooltipPresentation: resolveChartTooltipPresentation(config, dashboardDefaults),
     shellLegend,

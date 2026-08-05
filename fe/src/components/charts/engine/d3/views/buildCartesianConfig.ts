@@ -52,6 +52,7 @@ export function buildCartesianRenderConfig(
     showTooltip: style.showTooltip,
     showLegend: !style.shellLegend && style.deStyle.legend?.show !== false && Boolean(seriesField),
     valueFormat: style.valueFormat,
+    labelContent: style.labelContent,
     ...scaleD3PresentationProps(buildD3PresentationProps(style), {
       chartWidth,
       chartHeight,

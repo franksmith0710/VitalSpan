@@ -5,7 +5,7 @@ import type { ChartDeStyle } from "@/lib/chartDeStyle";
 import type { ChartFieldRef, ChartViewConfig } from "@/lib/chartViewConfig";
 import type { ChartAxesConfig } from "@/lib/chartDeAxis";
 import type { ColorScheme, NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
-import type { ChartLegendItem } from "@/lib/chartLegendItems";
+import type { DataLabelContentOptions } from "@/lib/chartDataLabelFormat";
 
 import type { Geo3dRenderTier } from "@/components/charts/engine/three/geo3dRuntime";
 
@@ -43,6 +43,7 @@ export type ChartStyleContext = {
   depthVisual: "off" | "standard" | "enhanced";
   dataZoom: boolean;
   valueFormat?: NumberFormatConfig;
+  labelContent: DataLabelContentOptions;
   labelPresentation: { fontSize: number; color?: string };
   tooltipPresentation: { fontSize: number; color?: string; background?: string };
   shellLegend: boolean;

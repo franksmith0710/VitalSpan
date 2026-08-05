@@ -321,7 +321,12 @@ function layoutSideWithoutCrossing(
   }
 }
 
-function avoidOutsideLabelOverlap(items: LayoutItem[], outerR: number, fontSize: number): void {
+function avoidOutsideLabelOverlap(
+  items: LayoutItem[],
+  outerR: number,
+  fontSize: number,
+  showAll = false,
+): void {
   const groups: Record<"right" | "left" | "pole", LayoutItem[]> = {
     right: [],
     left: [],
@@ -336,23 +341,25 @@ function avoidOutsideLabelOverlap(items: LayoutItem[], outerR: number, fontSize:
   }
 
   const visible = () => items.filter((i) => i.visible);
-  let changed = true;
-  while (changed) {
-    changed = false;
-    const vis = visible();
-    for (let i = 0; i < vis.length; i++) {
-      for (let j = i + 1; j < vis.length; j++) {
-        const a = vis[i];
-        const b = vis[j];
-        const overlap = boxesOverlap(
-          labelTextBBox(a.geo, a.text, fontSize),
-          labelTextBBox(b.geo, b.text, fontSize),
-        );
-        const cross = leaderLinesCross(a.geo, b.geo);
-        if (overlap || cross) {
-          const loser = a.priority >= b.priority ? b : a;
-          loser.visible = false;
-          changed = true;
+  if (!showAll) {
+    let changed = true;
+    while (changed) {
+      changed = false;
+      const vis = visible();
+      for (let i = 0; i < vis.length; i++) {
+        for (let j = i + 1; j < vis.length; j++) {
+          const a = vis[i];
+          const b = vis[j];
+          const overlap = boxesOverlap(
+            labelTextBBox(a.geo, a.text, fontSize),
+            labelTextBBox(b.geo, b.text, fontSize),
+          );
+          const cross = leaderLinesCross(a.geo, b.geo);
+          if (overlap || cross) {
+            const loser = a.priority >= b.priority ? b : a;
+            loser.visible = false;
+            changed = true;
+          }
         }
       }
     }
@@ -365,6 +372,7 @@ export function layoutPieOutsideLabels(
   outerR: number,
   fontSize: number,
   _bounds: { ymin: number; ymax: number },
+  showAll = false,
 ): Map<string, PieOutsideLabelPlaced> {
   const result = new Map<string, PieOutsideLabelPlaced>();
 
@@ -395,7 +403,7 @@ export function layoutPieOutsideLabels(
     });
   }
 
-  avoidOutsideLabelOverlap(items, outerR, fontSize);
+  avoidOutsideLabelOverlap(items, outerR, fontSize, showAll);
 
   for (const item of items) {
     if (!item.visible) {

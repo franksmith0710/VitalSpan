@@ -85,6 +85,7 @@ function drawPieLabels(
     labelFontSize: number;
     labelColor: string | undefined;
     labelBounds: { ymin: number; ymax: number };
+    showAll?: boolean;
     theme: D3RenderConfig["theme"];
     sliceColor: (row: D3Datum) => string;
   },
@@ -128,6 +129,7 @@ function drawPieLabels(
       opts.outerR,
       opts.labelFontSize,
       opts.labelBounds,
+      opts.showAll === true,
     );
 
     arcs.each(function (d) {
@@ -372,6 +374,7 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
       labelFontSize,
       labelColor,
       labelBounds: pieOutsideLabelBounds(outerR, labelHalfH),
+      showAll: options.__pieShowAll === true,
       theme,
       sliceColor: (row) =>
         colorScale(String(row[colorField] ?? "")) ?? colors[0] ?? "#465fff",

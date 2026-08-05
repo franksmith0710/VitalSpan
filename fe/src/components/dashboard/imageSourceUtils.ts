@@ -9,9 +9,16 @@ export function isDataImageUrl(value: string): boolean {
   return value.trim().startsWith("data:image/");
 }
 
+/** 应用内静态资源路径（内置素材等） */
+export function isAppImagePath(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed.startsWith("/")) return false;
+  return /\.(svg|png|jpe?g|gif|webp)(\?|#|$)/i.test(trimmed);
+}
+
 export function isImageSourceValue(value: string): boolean {
   const trimmed = value.trim();
-  return isHttpImageUrl(trimmed) || isDataImageUrl(trimmed);
+  return isHttpImageUrl(trimmed) || isDataImageUrl(trimmed) || isAppImagePath(trimmed);
 }
 
 /** CSS background-image：避免重复 url() 包裹，data URL 用引号防止解析失败 */

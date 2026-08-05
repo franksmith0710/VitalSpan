@@ -90,6 +90,10 @@ export type ChartLabelStyle = {
   showRatio?: boolean;
   /** 水波图占比保留小数位 */
   ratioDecimals?: number;
+  /** 全量显示外置标签（饼图/玫瑰图，允许重叠） */
+  showAll?: boolean;
+  /** 数量单位语言（对标 DE） */
+  unitLanguage?: "zh" | "en";
 };
 
 export type ChartBorderStyle = {

@@ -9,6 +9,7 @@ import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core
 import { MIN_CHART_PRESENTATION_FONT_SIZE } from "@/components/charts/engine/d3/core/chartPresentationScale";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
+import { formatSimpleDataLabel } from "@/components/charts/engine/d3/core/cartesianDataLabel";
 
 type FunnelRow = { stage: string; number: number };
 
@@ -37,6 +38,7 @@ export function renderD3FunnelChart(container: HTMLElement, config: D3RenderConf
     showLegend,
     labelFontSize,
     valueFormat,
+    labelContent,
     conditionalRules = [],
     legendLayout,
     onPointClick,
@@ -54,6 +56,7 @@ export function renderD3FunnelChart(container: HTMLElement, config: D3RenderConf
   const data: FunnelRow[] = raw
     .map((row) => ({ stage: String(row[xField] ?? ""), number: Number(row[yField] ?? 0) }))
     .sort((a, b) => b.number - a.number);
+  const funnelTotal = d3.sum(data, (row) => row.number);
 
   if (width <= 0 || height <= 0 || data.length === 0) return () => undefined;
 
@@ -153,7 +156,9 @@ export function renderD3FunnelChart(container: HTMLElement, config: D3RenderConf
         .attr("fill", theme.legendText)
         .style("font-size", `${labelFontSize}px`)
         .style("pointer-events", "none")
-        .text(`${row.stage} · ${formatChartValue(row.number, valueFormat)}`);
+        .text(
+          formatSimpleDataLabel(row.stage, row.number, funnelTotal, labelContent, valueFormat),
+        );
     }
 
     if (showConversion && index < data.length - 1) {

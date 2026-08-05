@@ -12,17 +12,17 @@ export function resolveChartValueFormat(
   if (chartType === "liquid") {
     return resolveLiquidMetricFormat(deLabel, dashboardFormat);
   }
-  if (!deLabel?.formatType && deLabel?.thousandSeparator === undefined && deLabel?.decimals == null && !deLabel?.unit && !dashboardFormat) {
+  if (!deLabel?.formatType && deLabel?.thousandSeparator === undefined && deLabel?.decimals == null && !deLabel?.unit && !deLabel?.metricUnit && !dashboardFormat) {
     return { type: "auto", thousandSeparator: true };
   }
   return {
     type: deLabel?.formatType ?? dashboardFormat?.type ?? "auto",
-    decimals: deLabel?.decimals ?? dashboardFormat?.decimals,
-    unit: deLabel?.unit ?? dashboardFormat?.unit,
+    decimals: deLabel?.metricDecimals ?? deLabel?.decimals ?? dashboardFormat?.decimals,
+    unit: deLabel?.metricUnit ?? deLabel?.unit ?? dashboardFormat?.unit,
     thousandSeparator:
-      deLabel?.thousandSeparator !== undefined
-        ? deLabel.thousandSeparator
-        : dashboardFormat?.thousandSeparator,
+      deLabel?.metricThousandSeparator ??
+      deLabel?.thousandSeparator ??
+      dashboardFormat?.thousandSeparator,
   };
 }
 

@@ -74,6 +74,7 @@ function baseStyle(overrides: Partial<ChartStyleContext> = {}): ChartStyleContex
     showTooltip: true,
     seriesGradient: false,
     dataZoom: false,
+    labelContent: { showIndicator: true },
     labelPresentation: { fontSize: 12 },
     tooltipPresentation: { fontSize: 12 },
     shellLegend: false,

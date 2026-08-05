@@ -6,10 +6,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { TEXT_COLOR_RECOMMENDED } from "@/components/dashboard/dashboardStyleConfig";
-import { formatMetricValue } from "../dashboardStyleConfig";
 import { ChartBackgroundStyleFields } from "../chartStyleFields";
 import { ChartDeAttrField, CHART_DE_INPUT } from "../chartInspectorDeFields";
 import { ChartPaletteFontSizeSelect } from "../chartPaletteShared";
@@ -55,6 +53,7 @@ import { ChartInspectorSection, INSPECTOR_HINT, INSPECTOR_SELECT, INSPECTOR_SWIT
 import { DeTitleStyleToolbar } from "../deTitleStyleToolbar";
 import { ChartLiquidLabelFields } from "./ChartLiquidLabelFields";
 import { ChartPieLabelFields } from "./ChartPieLabelFields";
+import { ChartDeLabelContentFields } from "./ChartDeLabelContentFields";
 
 export function ChartPaletteStyleSection() {
   const { cfg, patchDeStyle, patchDeStyleNested, mutateChartConfig, dashboardStyle } = useChartInspector();
@@ -337,42 +336,15 @@ export function ChartLabelStyleSection() {
         />
       ) : isPie ? (
         <ChartPieLabelFields label={deStyle.label} patchLabel={patchLabel} />
-      ) : caps.labelFormat ? (
-        <>
-          <ChartDeAttrField label="格式类型">
-            <Select
-              value={deStyle.label?.formatType ?? "auto"}
-              onValueChange={(formatType) =>
-                patchLabel({ formatType: formatType as "auto" | "number" | "percent" | "currency" })
-              }
-            >
-              <SelectTrigger className={INSPECTOR_SELECT}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="auto">自动</SelectItem>
-                <SelectItem value="number">数值</SelectItem>
-                <SelectItem value="percent">百分比</SelectItem>
-                <SelectItem value="currency">货币</SelectItem>
-              </SelectContent>
-            </Select>
-          </ChartDeAttrField>
-          <label className="flex items-center gap-2 border-b border-gray-100 py-2 text-[11px] text-gray-600 last:border-b-0 dark:border-white/[0.06] dark:text-gray-300">
-            <Checkbox
-              checked={deStyle.label?.thousandSeparator !== false}
-              onCheckedChange={(checked) => patchLabel({ thousandSeparator: checked === true })}
-            />
-            千分符
-          </label>
-          <p className="px-0 py-1 text-[10px] text-gray-400">
-            示例：
-            {formatMetricValue(1234567.89, {
-              type: deStyle.label?.formatType ?? "auto",
-              decimals: 2,
-              thousandSeparator: deStyle.label?.thousandSeparator !== false,
-            })}
-          </p>
-        </>
+      ) : isKpi ? (
+        <ChartDeLabelContentFields
+          label={deStyle.label}
+          patchLabel={patchLabel}
+          showDimensionOption={false}
+          showPercentOption={false}
+        />
+      ) : caps.label ? (
+        <ChartDeLabelContentFields label={deStyle.label} patchLabel={patchLabel} />
       ) : null}
     </ChartInspectorSection>
   );

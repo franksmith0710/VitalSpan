@@ -3,7 +3,7 @@ import { getAntvThemeTokens } from "@/components/charts/engine/antv/theme";
 import type { ChartEngineViewProps } from "@/components/charts/engine/types";
 import { buildD3PresentationProps } from "@/components/charts/engine/d3/core/presentation";
 import { readChartConditionalRules, readChartMarkLines } from "@/lib/chartDeFeatures";
-import { resolveD3ChartColors } from "@/components/charts/engine/d3/views/resolveD3ChartColors";
+import { resolveDataLabelContentFromDeStyle } from "@/lib/chartDataLabelFormat";
 
 export function buildD3StyleProps(props: ChartEngineViewProps, plan: ChartRenderPlan) {
   const { style, chartConfig, isDark } = props;
@@ -26,6 +26,7 @@ export function buildD3StyleProps(props: ChartEngineViewProps, plan: ChartRender
     showTooltip: style.showTooltip,
     showLegend: !style.shellLegend && style.deStyle.legend?.show !== false,
     valueFormat: style.valueFormat,
+    labelContent: style.labelContent ?? resolveDataLabelContentFromDeStyle(style.deStyle.label),
     conditionalRules,
     markLines,
     ...buildD3PresentationProps(style),

@@ -11,6 +11,9 @@ describe("imageSourceUtils", () => {
     expect(isHttpImageUrl("https://cdn.example/a.png")).toBe(true);
     expect(isDataImageUrl("data:image/png;base64,abc")).toBe(true);
     expect(isImageSourceValue("data:image/png;base64,abc")).toBe(true);
+    expect(isImageSourceValue("/template-assets/packs/de-dashboard-v1/backgrounds/gov-grid.svg")).toBe(
+      true,
+    );
     expect(isHttpImageUrl("data:image/png;base64,abc")).toBe(false);
   });
 

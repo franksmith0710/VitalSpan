@@ -88,6 +88,7 @@ type ImagePreviewCardProps = {
   onReplace: () => void;
   onClear?: () => void;
   allowClear?: boolean;
+  objectFit?: "cover" | "contain";
 };
 
 export function ImagePreviewCard({
@@ -96,15 +97,19 @@ export function ImagePreviewCard({
   onReplace,
   onClear,
   allowClear = true,
+  objectFit = "cover",
 }: ImagePreviewCardProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900/50">
-      <div className="relative h-24 w-full overflow-hidden bg-gray-100 dark:bg-gray-900">
+      <div className="relative h-28 w-full overflow-hidden bg-[repeating-conic-gradient(#e5e7eb_0%_25%,#f8fafc_0%_50%)] bg-[length:10px_10px] dark:bg-[repeating-conic-gradient(#1f2937_0%_25%,#111827_0%_50%)]">
         <img
           key={previewUrl}
           src={previewUrl}
           alt=""
-          className="h-full w-full object-cover object-center"
+          className={cn(
+            "h-full w-full",
+            objectFit === "contain" ? "object-contain object-center" : "object-cover object-center",
+          )}
           role="img"
           aria-label="图片预览"
         />
