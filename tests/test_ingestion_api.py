@@ -426,6 +426,54 @@ def test_create_rest_api_job_seeds_default_etl_rules(client, auth_headers):
     client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
 
 
+def test_create_job_seeds_etl_rules_from_source_columns(
+    client: TestClient,
+    auth_headers: dict,
+    mysql_datasource_id: uuid.UUID,
+) -> None:
+    from app.datasources.schemas import ColumnItemOut, ColumnListResponse
+
+    columns = ColumnListResponse(
+        items=[
+            ColumnItemOut(name="product_name", data_type="varchar", nullable=True),
+            ColumnItemOut(name="amount", data_type="varchar", nullable=True),
+            ColumnItemOut(name="status", data_type="varchar", nullable=True),
+        ],
+    )
+    target_table = f"sales_clean_{uuid.uuid4().hex[:8]}"
+    payload = {
+        "name": "auto-etl-job",
+        "source_mode": "datasource",
+        "source_data_source_id": str(mysql_datasource_id),
+        "source_table": "sales_orders",
+        "target_table": target_table,
+        "schedule_cron": None,
+    }
+    with patch("app.ingestion.etl_seed.list_columns", return_value=columns):
+        create = client.post("/api/v1/ingestion/sync-jobs", json=payload, headers=auth_headers)
+    assert create.status_code == 201, create.text
+    job_id = create.json()["id"]
+    rules = client.get(f"/api/v1/ingestion/sync-jobs/{job_id}/etl-rules", headers=auth_headers)
+    assert rules.status_code == 200
+    body = rules.json()["rules"]
+    assert {"type": "rename_column", "from": "product_name", "to": "product"} in body
+    assert {"type": "cast_type", "column": "amount", "to": "float"} in body
+    assert {
+        "type": "filter_rows",
+        "column": "status",
+        "op": "ne",
+        "value": "deleted",
+    } in body
+    hints = client.get(
+        f"/api/v1/ingestion/sync-jobs/{job_id}/consume-hints",
+        headers=auth_headers,
+    )
+    assert hints.status_code == 200
+    assert hints.json()["etlRulesConfigured"] is True
+    assert hints.json()["etlRulesCount"] == len(body)
+    client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
 def test_create_job_invalid_cron_422(client, auth_headers, job_payload):
     bad = {**job_payload, "schedule_cron": "not-a-cron"}
     response = client.post("/api/v1/ingestion/sync-jobs", json=bad, headers=auth_headers)

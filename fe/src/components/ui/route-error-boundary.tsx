@@ -3,8 +3,23 @@ import { Link, useLocation } from "react-router";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { getAppBasePath } from "@/lib/appBasePath";
 import { mapApiError } from "@/lib/apiError";
 import { WORKSPACE_HOME_PATH } from "@/lib/workspace";
+
+function isStaleDynamicImportError(error: Error): boolean {
+  return /Failed to fetch dynamically imported module/i.test(error.message);
+}
+
+function formatRouteErrorMessage(error: Error): string {
+  if (!import.meta.env.DEV) return mapApiError(error);
+  if (isStaleDynamicImportError(error)) {
+    const base = getAppBasePath();
+    const baseHint = base ? `请确认地址以 ${base}/ 开头，` : "";
+    return `${error.message}。开发环境常见原因：Vite 重启或修改 .env 后浏览器缓存了旧模块。${baseHint}请使用「刷新页面」或 Ctrl+Shift+R 强制刷新。`;
+  }
+  return error.message || mapApiError(error);
+}
 
 type BoundaryState = { error: Error | null };
 
@@ -29,6 +44,11 @@ class RouteErrorBoundaryClass extends Component<
   }
 
   private handleRetry = () => {
+    const { error } = this.state;
+    if (error && isStaleDynamicImportError(error)) {
+      window.location.reload();
+      return;
+    }
     this.setState({ error: null });
   };
 
@@ -53,13 +73,11 @@ class RouteErrorBoundaryClass extends Component<
               {isApp ? "应用加载失败" : "页面加载失败"}
             </p>
             <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-              {import.meta.env.DEV && error.message
-                ? error.message
-                : mapApiError(error)}
+              {formatRouteErrorMessage(error)}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
               <Button type="button" variant="outline" size="sm" onClick={this.handleRetry}>
-                重试
+                {isStaleDynamicImportError(error) ? "刷新页面" : "重试"}
               </Button>
               {!isApp ? (
                 <Button type="button" variant="ghost" size="sm" asChild>

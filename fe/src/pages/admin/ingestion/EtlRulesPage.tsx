@@ -47,10 +47,7 @@ import {
 } from "./etlDemoTemplate";
 import { EtlColumnField } from "./components/EtlColumnField";
 import { useSyncJobSourceColumns } from "./hooks/useSyncJobSourceColumns";
-import { suggestEtlRulesFromColumns } from "./etlRuleSuggest";
-
-const PLACEHOLDER_HINT =
-  "推荐链：product_name→product、amount→float、note 填「无备注」、过滤 status≠deleted";
+import { suggestEtlRulesFromColumns, summarizeEtlRules } from "./etlRuleSuggest";
 
 const etlRulesPageIcon = (
   <AdminPageHeaderIcon>
@@ -198,9 +195,21 @@ export function EtlRulesPage() {
       toast.warning("未能加载源表列信息，请确认同步任务已选业务源连接与源表");
       return;
     }
+    const hasExistingRules = rules.some((rule) =>
+      Object.entries(rule).some(([key, value]) => key !== "type" && Boolean(value?.trim())),
+    );
+    if (
+      hasExistingRules &&
+      !window.confirm("重新识别将覆盖当前规则，是否继续？")
+    ) {
+      return;
+    }
     const suggested = suggestEtlRulesFromColumns(columns);
     if (suggested.length === 0) {
-      toast.info("未识别到需要清洗的规则，源表列类型看起来已较规范");
+      setRules([]);
+      setError(null);
+      setFieldErrors(false);
+      toast.info("未识别到需要清洗的规则，源表列看起来已较规范");
       return;
     }
     setRules(suggested);
@@ -213,10 +222,10 @@ export function EtlRulesPage() {
     sourceTable?.trim().toLowerCase() === DIRTY_ORDERS_DEMO_SOURCE_TABLE;
 
   const pageDescription = useMemo(() => {
-    if (!isBaselineReady) return PLACEHOLDER_HINT;
+    if (!isBaselineReady) return "加载清洗规则中…";
     if (isDirty) return "有未保存的更改 · 保存后生效";
-    return `已保存 · ${PLACEHOLDER_HINT}`;
-  }, [isBaselineReady, isDirty]);
+    return `已保存 · ${summarizeEtlRules(rules)}`;
+  }, [isBaselineReady, isDirty, rules]);
 
   if (loading) {
     return (
@@ -252,13 +261,16 @@ export function EtlRulesPage() {
           ) : null}
 
           <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50/80 px-4 py-3 text-theme-xs text-gray-600 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-300">
-            清洗规则<strong className="font-semibold">可选</strong>：源数据本身规范时可跳过本页直接同步。
+            创建任务时已根据源表自动生成默认清洗规则；可按需修改后保存。
             {hasDataSource ? (
               <>
                 {" "}
                 列名可从源表下拉选择，也可手动输入。
                 {columnsLoading ? " 正在加载列信息…" : null}
                 {columnsReady ? ` 已加载 ${columnNames.length} 列。` : null}
+                {!columnsReady && !columnsLoading && hasDataSource
+                  ? " 未能读取源表列信息，已按原样入湖处理。"
+                  : null}
               </>
             ) : (
               " 当前任务未绑定业务源连接，列名请手动输入。"
@@ -444,7 +456,7 @@ export function EtlRulesPage() {
             disabled={!hasDataSource}
             onClick={applyAutoSuggestedRules}
           >
-            自动识别规则
+            重新识别并覆盖
           </Button>
           <Button
             type="button"

@@ -164,15 +164,29 @@ export function SyncConsumeActionCard({
             </p>
           ) : null}
 
-          {hints && hints.etlRulesConfigured === false ? (
-            <p className="text-theme-xs text-warning-700 dark:text-warning-400">
-              尚未配置清洗规则，同步数据将原样写入分析库。
-              <Link
-                to={`/admin/ingestion/sync-jobs/${jobId}/etl-rules`}
-                className="ml-1 text-brand-600 underline-offset-2 hover:underline dark:text-brand-400"
-              >
-                去配置清洗规则
-              </Link>
+          {hints && hints.etlRulesConfigured !== false ? (
+            <p className="text-theme-xs text-gray-600 dark:text-gray-300">
+              {(hints.etlRulesCount ?? 0) > 0 ? (
+                <>
+                  已应用 {hints.etlRulesCount} 条清洗规则。
+                  <Link
+                    to={`/admin/ingestion/sync-jobs/${jobId}/etl-rules`}
+                    className="ml-1 text-brand-600 underline-offset-2 hover:underline dark:text-brand-400"
+                  >
+                    查看或调整
+                  </Link>
+                </>
+              ) : (
+                <>
+                  未识别到需清洗项，数据已原样入湖。
+                  <Link
+                    to={`/admin/ingestion/sync-jobs/${jobId}/etl-rules`}
+                    className="ml-1 text-brand-600 underline-offset-2 hover:underline dark:text-brand-400"
+                  >
+                    手动添加规则
+                  </Link>
+                </>
+              )}
             </p>
           ) : null}
 

@@ -23,7 +23,7 @@ from app.ingestion.target_table_guard import (
     assert_target_table_not_busy,
     assert_unique_target_table,
 )
-from app.ingestion.etl_templates import default_etl_rules_for_source
+from app.ingestion.etl_seed import resolve_initial_etl_rules
 from app.datasources.models import DataSource
 from app.ingestion.cron_validate import validate_schedule_cron
 from app.ingestion.models import (
@@ -205,6 +205,7 @@ class SyncJobConsumeStatus(BaseModel):
     next_action: Literal["prepare", "ensure_dataset", "open_dashboard"] = Field(alias="nextAction")
     consume_label: Literal["ready", "pending_dataset", "pending_prepare"] = Field(alias="consumeLabel")
     etl_rules_configured: bool = Field(default=False, alias="etlRulesConfigured")
+    etl_rules_count: int = Field(default=0, alias="etlRulesCount")
 
     model_config = {"populate_by_name": True}
 
@@ -367,6 +368,7 @@ def _status_to_hints(status) -> SyncJobConsumeHints:
         next_action=status.next_action,
         consume_label=status.consume_label,
         etl_rules_configured=status.etl_rules_configured,
+        etl_rules_count=status.etl_rules_count,
     )
 
 
@@ -446,7 +448,7 @@ def list_sync_jobs(
 @router.post("/sync-jobs", response_model=SyncJobDetail, status_code=status.HTTP_201_CREATED)
 def create_sync_job(
     payload: SyncJobCreate,
-    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> SyncJobDetail:
     job = SyncJob(
@@ -487,7 +489,7 @@ def create_sync_job(
         ) from exc
     db.add(job)
     db.flush()
-    default_rules = default_etl_rules_for_source(job.source_type, job.source_table)
+    default_rules = resolve_initial_etl_rules(db, job, actor)
     db.add(EtlRuleSet(job_id=job.id, rules=default_rules))
     db.commit()
     db.refresh(job)
@@ -615,7 +617,7 @@ def post_refresh_dataset_binding(
 def update_sync_job(
     job_id: uuid.UUID,
     payload: SyncJobUpdate,
-    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> SyncJobDetail:
     job = db.get(SyncJob, job_id)
@@ -624,6 +626,8 @@ def update_sync_job(
             status_code=404,
             detail={"code": "NOT_FOUND", "message": "任务不存在", "detail": None},
         )
+    prev_source_id = job.source_data_source_id
+    prev_source_table = job.source_table
     job.name = payload.name
     job.target_table = payload.target_table
     job.schedule_cron = payload.schedule_cron
@@ -652,6 +656,13 @@ def update_sync_job(
                 "detail": {"targetTable": exc.target_table, "jobNames": exc.job_names},
             },
         ) from exc
+    source_changed = (
+        prev_source_id != job.source_data_source_id or prev_source_table != job.source_table
+    )
+    if source_changed:
+        rules_row = db.scalar(select(EtlRuleSet).where(EtlRuleSet.job_id == job_id))
+        if rules_row is not None and not rules_row.rules:
+            rules_row.rules = resolve_initial_etl_rules(db, job, actor)
     db.commit()
     db.refresh(job)
     refresh_all_jobs()

@@ -17,6 +17,6 @@ def test_build_export_snapshot_url_root_path() -> None:
 
 def test_build_export_snapshot_url_with_base_path() -> None:
     dash_id = uuid.uuid4()
-    settings = SimpleNamespace(fe_base_url="http://localhost:5173", fe_base_path="sc-datav")
+    settings = SimpleNamespace(fe_base_url="http://localhost:5173", fe_base_path="my-app")
     url = build_export_snapshot_url(dash_id, token="tok", surface="data_screen", settings=settings)
-    assert url == f"http://localhost:5173/sc-datav/export/data-screen/{dash_id}?token=tok"
+    assert url == f"http://localhost:5173/my-app/export/data-screen/{dash_id}?token=tok"

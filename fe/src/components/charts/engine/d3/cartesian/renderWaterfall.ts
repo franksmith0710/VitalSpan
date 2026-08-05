@@ -164,10 +164,7 @@ export function renderD3WaterfallChart(container: HTMLElement, config: D3Waterfa
   renderConfiguredInlineLegend(
     root,
     showLegend,
-    [
-      { label: "增加", color: posColor },
-      { label: "减少", color: negColor },
-    ],
+    legendItems,
     { width, height, margin, theme, layout: legendLayout, fontSize: legendLayout?.fontSize },
   );
 

@@ -60,6 +60,7 @@ class ConsumePipelineStatus:
     next_action: NextAction
     consume_label: ConsumeLabel
     etl_rules_configured: bool = False
+    etl_rules_count: int = 0
 
 
 @dataclass(frozen=True)
@@ -108,7 +109,14 @@ def prepare_sync_consume(db: Session) -> PrepareResult:
 
 def _etl_rules_configured(db: Session, job_id: uuid.UUID) -> bool:
     rules_row = db.scalar(select(EtlRuleSet).where(EtlRuleSet.job_id == job_id))
-    return bool(rules_row and rules_row.rules)
+    return rules_row is not None
+
+
+def _etl_rules_count(db: Session, job_id: uuid.UUID) -> int:
+    rules_row = db.scalar(select(EtlRuleSet).where(EtlRuleSet.job_id == job_id))
+    if rules_row is None:
+        return 0
+    return len(rules_row.rules or [])
 
 
 def resolve_consume_status(db: Session, job: SyncJob) -> ConsumePipelineStatus:
@@ -141,6 +149,7 @@ def resolve_consume_status(db: Session, job: SyncJob) -> ConsumePipelineStatus:
         next_action=next_action,
         consume_label=consume_label,
         etl_rules_configured=_etl_rules_configured(db, job.id),
+        etl_rules_count=_etl_rules_count(db, job.id),
     )
 
 

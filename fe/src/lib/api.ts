@@ -231,5 +231,18 @@ export async function apiFetch<T>(
   if (response.status === 204) {
     return undefined as T;
   }
-  return (await response.json()) as T;
+  const text = await response.text();
+  if (!text.trim()) {
+    return undefined as T;
+  }
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new ApiRequestError(
+      /did you mean to visit/i.test(text) || text.trimStart().startsWith("<")
+        ? "API 请求路径与前端 base 不一致，请确认 VITE_FE_BASE_PATH 与访问地址一致，或重启 pnpm dev"
+        : `API 返回非 JSON（${response.status}）`,
+      "HTTP_ERROR",
+    );
+  }
 }

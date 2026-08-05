@@ -14,6 +14,7 @@ export type SyncJobConsumeHints = {
   nextAction: ConsumeNextAction;
   consumeLabel: ConsumeLabel;
   etlRulesConfigured?: boolean;
+  etlRulesCount?: number;
 };
 
 export type SyncJobConsumeStatus = {

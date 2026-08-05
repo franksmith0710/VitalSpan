@@ -1,9 +1,12 @@
 /** Vite `base` / React Router basename helpers (export & embed path detection). */
 
-export function getAppBasePath(): string {
-  const raw = import.meta.env.BASE_URL ?? "/";
+function normalizeBasePath(raw: string): string {
   if (raw === "/") return "";
   return raw.endsWith("/") ? raw.slice(0, -1) : raw;
+}
+
+export function getAppBasePath(): string {
+  return normalizeBasePath(import.meta.env.BASE_URL ?? "/");
 }
 
 /** dev / 同源部署时 API 前缀；显式 `VITE_API_BASE_URL` 优先 */

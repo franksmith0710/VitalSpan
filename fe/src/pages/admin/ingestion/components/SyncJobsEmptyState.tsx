@@ -12,7 +12,7 @@ const STEPS = [
   {
     step: 2,
     title: "创建同步任务",
-    description: "引用已登记连接，指定源表与托管分析库目标表，可选 ETL 清洗。",
+    description: "引用已登记连接，指定源表与目标表；创建时自动生成默认清洗规则。",
     icon: RefreshCw,
   },
   {

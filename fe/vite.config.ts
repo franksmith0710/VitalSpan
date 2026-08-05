@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => {
   const apiProxyTarget = env.VITE_DEV_API_PROXY || "http://localhost:8000";
   const feBaseSegment = (env.VITE_FE_BASE_PATH || env.FE_BASE_PATH || "").replace(/^\/+|\/+$/g, "");
   const base = feBaseSegment ? `/${feBaseSegment}/` : "/";
-  const proxyBaseSegments = [...new Set([feBaseSegment, "sc-datav"].filter(Boolean))];
+  const proxyBaseSegments = feBaseSegment ? [feBaseSegment] : [];
 
   const proxy: Record<string, { target: string; changeOrigin: boolean; rewrite?: (path: string) => string }> = {
     "/api": {

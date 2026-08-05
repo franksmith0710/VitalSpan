@@ -1025,7 +1025,7 @@ describe("ingestion admin smoke", () => {
     );
     expect(await screen.findByRole("button", { name: /保存/ })).toBeInTheDocument();
     expect(screen.getByText("规则类型")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "自动识别规则" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "重新识别并覆盖" })).toBeInTheDocument();
   });
 
   it("EtlRulesPage_auto_suggest_rules_from_source_columns", async () => {
@@ -1044,11 +1044,11 @@ describe("ingestion admin smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(await screen.findByRole("button", { name: "自动识别规则" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "重新识别并覆盖" })).toBeInTheDocument();
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "自动识别规则" })).toBeEnabled();
+      expect(screen.getByRole("button", { name: "重新识别并覆盖" })).toBeEnabled();
     });
-    fireEvent.click(screen.getByRole("button", { name: "自动识别规则" }));
+    fireEvent.click(screen.getByRole("button", { name: "重新识别并覆盖" }));
     await waitFor(() => {
       expect(screen.getAllByRole("combobox", { name: "列名" }).length).toBeGreaterThan(0);
     });

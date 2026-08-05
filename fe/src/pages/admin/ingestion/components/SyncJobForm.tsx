@@ -341,7 +341,7 @@ export function SyncJobForm({
             ) : (
               "清洗规则"
             )}{" "}
-            页点击「应用演示清洗模板」，在入湖时 cast amount 并过滤 deleted 行；Dataset 不负责洗数据。
+            页查看或调整默认清洗规则（创建任务时已自动配置 cast amount 与过滤 deleted 行）；Dataset 不负责洗数据。
           </p>
         ) : null}
       </FormSection>

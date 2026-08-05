@@ -64,4 +64,33 @@ describe("RouteErrorBoundary", () => {
 
     consoleError.mockRestore();
   });
+
+  it("guides dev stale dynamic import failures to full reload", () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const reload = vi.fn();
+    vi.stubGlobal("location", { ...window.location, reload });
+
+    function LazyFail() {
+      throw new Error(
+        "Failed to fetch dynamically imported module: http://localhost:5174/src/pages/foo.tsx",
+      );
+    }
+
+    render(
+      <MemoryRouter initialEntries={["/lazy"]}>
+        <RouteErrorBoundary>
+          <Routes>
+            <Route path="/lazy" element={<LazyFail />} />
+          </Routes>
+        </RouteErrorBoundary>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent("强制刷新");
+    fireEvent.click(screen.getByRole("button", { name: "刷新页面" }));
+    expect(reload).toHaveBeenCalled();
+
+    vi.unstubAllGlobals();
+    consoleError.mockRestore();
+  });
 });
