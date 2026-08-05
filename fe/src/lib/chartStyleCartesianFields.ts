@@ -15,7 +15,7 @@ export function resolveCartesianShapeFields(chartType: ChartType): string[] | un
     return ["barWidthRatio", "barRadius"];
   }
   if (chartType === "line" || chartType.startsWith("area")) {
-    return ["lineSmooth", "pointSize", "areaOpacity"];
+    return ["lineSmooth", "lineWidth", "pointSize", "areaOpacity"];
   }
   if (chartType === "scatter" || chartType === "quadrant" || chartType === "multi-scatter") {
     return ["pointSize"];

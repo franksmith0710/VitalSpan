@@ -2,6 +2,7 @@ import type { ChartDeStyle } from "@/lib/chartDeStyle";
 import type { ChartRenderPlan } from "@/components/charts/engine/buildChartRenderPlan";
 import {
   DEFAULT_CARTESIAN_BAR_WIDTH_RATIO,
+  DEFAULT_CARTESIAN_LINE_WIDTH,
   DEFAULT_CARTESIAN_POINT_SIZE,
   DEFAULT_GAUGE_MAX,
   DEFAULT_GAUGE_MIN,
@@ -45,6 +46,7 @@ export function readCompareStyleFromPlanOptions(
 export type PlanCartesianStyle = {
   barWidthRatio?: number;
   barRadius?: number;
+  lineWidth?: number;
   pointSize?: number;
   areaOpacity?: number;
   smooth?: boolean;
@@ -79,6 +81,7 @@ export function readCartesianStyleFromPlanOptions(
   return {
     barWidthRatio: options.__barWidthRatio as number | undefined,
     barRadius: options.__barRadius as number | undefined,
+    lineWidth: options.__lineWidth as number | undefined,
     pointSize: options.__pointSize as number | undefined,
     areaOpacity: options.__areaOpacity as number | undefined,
     smooth: options.smooth != null ? Boolean(options.smooth) : undefined,
@@ -170,6 +173,7 @@ export function applyChartDeStyleBlocksToPlan(
     const c = blocks.cartesian;
     if (c.barWidthRatio != null) options.__barWidthRatio = c.barWidthRatio;
     if (c.barRadius != null) options.__barRadius = c.barRadius;
+    if (c.lineWidth != null) options.__lineWidth = c.lineWidth;
     if (c.pointSize != null) options.__pointSize = c.pointSize;
     if (c.areaOpacity != null) options.__areaOpacity = c.areaOpacity;
   }
@@ -312,6 +316,10 @@ export function resolveBarBandPadding(barWidthRatio?: number): number {
 
 export function resolveCartesianPointSize(pointSize?: number): number {
   return pointSize ?? DEFAULT_CARTESIAN_POINT_SIZE;
+}
+
+export function resolveCartesianLineWidth(lineWidth?: number): number {
+  return lineWidth ?? DEFAULT_CARTESIAN_LINE_WIDTH;
 }
 
 export function resolveGaugeAngles(deStyle: ChartDeStyle): {

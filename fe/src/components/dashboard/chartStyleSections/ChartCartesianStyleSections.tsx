@@ -6,7 +6,7 @@ import { ChartDeSliderField } from "../deAttrSlider";
 import { patchChartDeStyleNested, readChartDeStyle } from "@/lib/chartDeStyle";
 import { resolveChartTypeStyleProfile } from "@/lib/chartTypeStyleProfiles";
 import { resolveCartesianShapeFields } from "@/lib/chartStyleCartesianFields";
-import { DEFAULT_CARTESIAN_BAR_WIDTH_RATIO, DEFAULT_CARTESIAN_POINT_SIZE } from "@/lib/chartDeStyleBlocks";
+import { DEFAULT_CARTESIAN_BAR_WIDTH_RATIO, DEFAULT_CARTESIAN_LINE_WIDTH, DEFAULT_CARTESIAN_POINT_SIZE } from "@/lib/chartDeStyleBlocks";
 
 export function ChartAxisStyleSection() {
   const { cfg, mutateChartConfig } = useChartInspector();
@@ -103,6 +103,17 @@ export function ChartCartesianShapeSection() {
             label="平滑曲线"
             checked={cartesian.lineSmooth === true}
             onCheckedChange={patchLineSmooth}
+          />
+        ) : null}
+        {fields.includes("lineWidth") ? (
+          <ChartDeSliderField
+            label="线宽"
+            value={cartesian.lineWidth}
+            fallback={DEFAULT_CARTESIAN_LINE_WIDTH}
+            min={1}
+            max={6}
+            step={0.5}
+            onChange={(lineWidth) => patch({ lineWidth })}
           />
         ) : null}
         {fields.includes("pointSize") ? (

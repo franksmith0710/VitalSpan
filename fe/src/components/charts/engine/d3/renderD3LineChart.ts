@@ -29,7 +29,7 @@ import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentatio
 import { highlightCategoryDots } from "@/components/charts/engine/d3/cartesian/renderCartesianBase";
 import type { D3CartesianDatum, D3CartesianRenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
-import { resolveCartesianPointSize } from "@/lib/applyChartDeStyleBlocks";
+import { resolveCartesianLineWidth, resolveCartesianPointSize } from "@/lib/applyChartDeStyleBlocks";
 
 export type { D3CartesianDatum as D3LineDatum, D3CartesianRenderConfig as D3LineRenderConfig } from "@/components/charts/engine/d3/types";
 
@@ -67,10 +67,15 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
     pointSize,
     axisStyle,
     areaOpacity,
+    area,
+    lineWidth,
   } = config;
 
   const dotRadius = resolveCartesianPointSize(pointSize);
-  const areaFillOpacity = areaOpacity ?? 0.12;
+  const strokeWidth = resolveCartesianLineWidth(lineWidth);
+  const showAreaFill =
+    Boolean(area) || seriesGradient || (areaOpacity != null && areaOpacity > 0);
+  const areaFillOpacity = areaOpacity ?? (Boolean(area) ? 0.12 : 0);
 
   const theme = themeFromConfig(rawTheme);
   const normalized = normalizeCartesianData(data, xField, yField, seriesField);
@@ -142,19 +147,23 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
       (a, b) => categories.indexOf(String(a.__category__)) - categories.indexOf(String(b.__category__)),
     );
 
-    plot
-      .append("path")
-      .datum(points)
-      .attr("fill", seriesGradient ? `url(#${gradId})` : color)
-      .attr("fill-opacity", seriesGradient ? 0.95 : areaFillOpacity)
-      .attr("d", areaGen);
+    if (showAreaFill) {
+      plot
+        .append("path")
+        .datum(points)
+        .attr("class", "line-area-fill")
+        .attr("fill", seriesGradient ? `url(#${gradId})` : color)
+        .attr("fill-opacity", seriesGradient ? 0.95 : areaFillOpacity)
+        .attr("d", areaGen);
+    }
 
     const linePath = plot
       .append("path")
       .datum(points)
       .attr("fill", "none")
       .attr("stroke", color)
-      .attr("stroke-width", VCDS.line.width)
+      .attr("stroke-width", strokeWidth)
+      .attr("stroke-opacity", 1)
       .attr("stroke-linecap", VCDS.line.cap)
       .attr("stroke-linejoin", VCDS.line.join)
       .attr("d", lineGen);
@@ -261,8 +270,9 @@ function renderHorizontalLineFallback(
   colorScale: d3.ScaleOrdinal<string, string>,
 ): () => void {
   container.replaceChildren();
-  const { width, height, colors, theme: rawTheme, smooth, showTooltip, valueFormat, onPointClick } = config;
+  const { width, height, colors, theme: rawTheme, smooth, showTooltip, valueFormat, onPointClick, tooltipPresentation, lineWidth } = config;
   const theme = themeFromConfig(rawTheme);
+  const strokeWidth = resolveCartesianLineWidth(lineWidth);
   const scene = buildCartesianScene({ container, width, height, showLegend: false });
   const maxVal = d3.max(normalized, (d) => Number(d.__value__)) ?? 0;
   const xScale = d3.scalePoint<string>().domain(categories).range([0, scene.innerH]).padding(0.5);
@@ -275,7 +285,7 @@ function renderHorizontalLineFallback(
       .datum(series.points)
       .attr("fill", "none")
       .attr("stroke", color)
-      .attr("stroke-width", VCDS.line.width)
+      .attr("stroke-width", strokeWidth)
       .attr("d", lineGen);
     applyPathDepthShadow(scene.defs, linePath, color, `hline-${i}`);
   });

@@ -531,7 +531,10 @@ export function buildPlanForType(chartType: string, vm: ChartViewModel): ChartRe
 
   switch (chartType) {
     case "line":
-      return linePlan(spec, vm, capped, columns, { smooth: vm.styleVariant === "smooth" });
+      return linePlan(spec, vm, capped, columns, {
+        smooth: vm.styleVariant === "smooth",
+        area: vm.styleVariant === "area",
+      });
     case "area":
       return linePlan(spec, vm, capped, columns, { area: true });
     case "area-stack":

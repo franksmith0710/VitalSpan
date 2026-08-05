@@ -21,6 +21,7 @@ export type D3PresentationConfig = {
 export type D3CartesianStyleExtras = {
   barWidthRatio?: number;
   barRadius?: number;
+  lineWidth?: number;
   pointSize?: number;
   areaOpacity?: number;
   smooth?: boolean;

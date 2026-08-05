@@ -60,6 +60,7 @@ export function buildCartesianRenderConfig(
     }),
     barWidthRatio: options.__barWidthRatio as number | undefined,
     barRadius: options.__barRadius as number | undefined,
+    lineWidth: options.__lineWidth as number | undefined,
     pointSize: options.__pointSize as number | undefined,
     areaOpacity: options.__areaOpacity as number | undefined,
     axisStyle: options.__axisStyle as D3CartesianRenderConfig["axisStyle"],

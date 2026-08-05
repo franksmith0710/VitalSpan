@@ -38,6 +38,27 @@ describe("chartDeAxis catalog", () => {
     expect(ySlots.every((s) => s.fieldType === "metric")).toBe(true);
   });
 
+  it("line uses DataEase cartesian trend slots with multi-metric yAxis", () => {
+    const slots = getDeAxisBlueprint("line");
+    expect(slots.map((s) => s.label)).toEqual([
+      "类别轴 / 维度",
+      "子类别 / 维度",
+      "值轴 / 指标",
+      "钻取 / 维度",
+    ]);
+    expect(slots[2]).toMatchObject({
+      axisId: "yAxis",
+      fieldType: "metric",
+      uiMode: "multi",
+    });
+    expect(deriveFieldRuleFromDeCatalog("line")).toEqual({
+      minDimensions: 1,
+      maxDimensions: 3,
+      minMetrics: 1,
+      maxMetrics: 8,
+    });
+  });
+
   it("table-normal uses multi dimension and metric containers like DataEase", () => {
     const slots = getDeAxisBlueprint("table-normal");
     expect(slots.map((s) => s.label)).toEqual([

@@ -117,8 +117,8 @@ const PROFILE_BY_TYPE: Record<string, ChartStyleSectionId[]> = {
 
 const CARTESIAN_SHAPE_FIELDS: Record<string, string[]> = {
   bar: ["barWidthRatio", "barRadius"],
-  line: ["lineSmooth", "pointSize", "areaOpacity"],
-  area: ["lineSmooth", "pointSize", "areaOpacity"],
+  line: ["lineSmooth", "lineWidth", "pointSize", "areaOpacity"],
+  area: ["lineSmooth", "lineWidth", "pointSize", "areaOpacity"],
   waterfall: ["barRadius"],
   "stock-line": [],
 };
