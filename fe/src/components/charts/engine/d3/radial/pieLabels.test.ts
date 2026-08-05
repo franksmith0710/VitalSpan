@@ -58,6 +58,25 @@ describe("pieLabels", () => {
     expect(text).toMatch(/\(6\.28%\)/);
   });
 
+  it("aligns right-side labels to a shared column", () => {
+    const outerR = 80;
+    const candidates = [
+      { key: "a", midAngle: 0.3, sliceAngle: 0.1, text: "A" },
+      { key: "b", midAngle: 0.5, sliceAngle: 0.1, text: "B" },
+      { key: "c", midAngle: 0.7, sliceAngle: 0.1, text: "C" },
+    ];
+    const placed = layoutPieOutsideLabels(
+      candidates,
+      outerR,
+      11,
+      pieOutsideLabelBounds(outerR),
+    );
+    const textXs = candidates
+      .map((c) => placed.get(c.key)?.textX)
+      .filter((x): x is number => x != null);
+    expect(new Set(textXs).size).toBe(1);
+  });
+
   it("separates stacked outside labels on the same side", () => {
     const outerR = 80;
     const bounds = pieOutsideLabelBounds(outerR);

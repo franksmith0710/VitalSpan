@@ -81,35 +81,47 @@ export function EtlRulesEditor({
             </AlertDescription>
           </Alert>
 
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="light" color="primary" size="sm" startIcon={<Sparkles className="size-3.5" aria-hidden />}>
-                {rules.length} 条规则
-              </Badge>
-              <Badge variant="light" color="light" size="sm" startIcon={<Columns3 className="size-3.5" aria-hidden />}>
-                {columnHint}
-              </Badge>
-              {isDirty ? (
-                <Badge variant="light" color="warning" size="sm">
-                  未保存
+          <div className="rounded-xl border border-gray-200 bg-gray-50/40 p-4 dark:border-gray-800 dark:bg-white/[0.02]">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge
+                  variant="light"
+                  color="primary"
+                  size="sm"
+                  startIcon={<Sparkles className="size-3.5" aria-hidden />}
+                >
+                  {rules.length} 条规则
                 </Badge>
-              ) : null}
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                type="button"
-                variant="primary"
-                size="sm"
-                disabled={!hasDataSource || columnsLoading}
-                onClick={onAutoAlign}
-              >
-                <Wand2 className="size-4" aria-hidden />
-                一键对齐全部列
-              </Button>
-              <Button type="button" variant="outline" size="sm" onClick={onAddRule}>
-                <Plus className="size-4" aria-hidden />
-                添加规则
-              </Button>
+                <Badge
+                  variant="light"
+                  color="light"
+                  size="sm"
+                  startIcon={<Columns3 className="size-3.5" aria-hidden />}
+                >
+                  {columnHint}
+                </Badge>
+                {isDirty ? (
+                  <Badge variant="light" color="warning" size="sm">
+                    未保存
+                  </Badge>
+                ) : null}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  disabled={!hasDataSource || columnsLoading}
+                  onClick={onAutoAlign}
+                >
+                  <Wand2 className="size-4" aria-hidden />
+                  一键对齐全部列
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={onAddRule}>
+                  <Plus className="size-4" aria-hidden />
+                  添加规则
+                </Button>
+              </div>
             </div>
           </div>
 

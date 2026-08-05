@@ -1,5 +1,4 @@
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   CONNECTOR_FIELD_HINTS,
   connectorHintId,
@@ -7,6 +6,7 @@ import {
   hostFieldLabel,
   type FormState,
 } from "./datasource-form-constants";
+import { CONNECTION_CONTROL_CLASS, ConnectionFormField } from "./ConnectionFormField";
 
 type Props = {
   form: FormState;
@@ -16,67 +16,70 @@ type Props = {
 
 export function GenericConnectionFields({ form, mode, onFieldChange }: Props) {
   const hintId = connectorHintId(form.type);
+  const databaseLabel = CONNECTOR_FIELD_HINTS[form.type]?.databaseLabel ?? "数据库";
+  const usernameLabel = CONNECTOR_FIELD_HINTS[form.type]?.usernameLabel ?? "用户名";
 
   return (
-    <>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="grid gap-2">
-          <Label htmlFor="host">{hostFieldLabel(form.type)}</Label>
+    <div className="grid gap-x-5 gap-y-4 sm:grid-cols-2">
+      <ConnectionFormField label={hostFieldLabel(form.type)} htmlFor="host">
+        <Input
+          id="host"
+          className={CONNECTION_CONTROL_CLASS}
+          value={form.host}
+          onChange={(e) => onFieldChange("host", e.target.value)}
+          required
+        />
+      </ConnectionFormField>
+      {hidePortField(form.type) ? null : (
+        <ConnectionFormField label="端口" htmlFor="port">
           <Input
-            id="host"
-            value={form.host}
-            onChange={(e) => onFieldChange("host", e.target.value)}
+            id="port"
+            type="number"
+            className={CONNECTION_CONTROL_CLASS}
+            value={form.port}
+            onChange={(e) => onFieldChange("port", e.target.value)}
             required
-            className="h-11"
           />
-        </div>
-        {hidePortField(form.type) ? null : (
-          <div className="grid gap-2">
-            <Label htmlFor="port">端口</Label>
-            <Input
-              id="port"
-              type="number"
-              value={form.port}
-              onChange={(e) => onFieldChange("port", e.target.value)}
-              required
-              className="h-11"
-            />
-          </div>
-        )}
-      </div>
-      <div className="grid gap-2">
-        <Label htmlFor="database">{CONNECTOR_FIELD_HINTS[form.type]?.databaseLabel ?? "数据库"}</Label>
+        </ConnectionFormField>
+      )}
+      <ConnectionFormField
+        label={databaseLabel}
+        htmlFor="database"
+        className={hidePortField(form.type) ? "sm:col-span-2" : undefined}
+      >
         <Input
           id="database"
+          className={CONNECTION_CONTROL_CLASS}
           value={form.database}
           onChange={(e) => onFieldChange("database", e.target.value)}
           required
-          className="h-11"
           aria-describedby={hintId}
         />
-      </div>
-      <div className="grid gap-2">
-        <Label htmlFor="username">{CONNECTOR_FIELD_HINTS[form.type]?.usernameLabel ?? "用户名"}</Label>
+      </ConnectionFormField>
+      <ConnectionFormField label={usernameLabel} htmlFor="username">
         <Input
           id="username"
+          className={CONNECTION_CONTROL_CLASS}
           value={form.username}
           onChange={(e) => onFieldChange("username", e.target.value)}
           required
-          className="h-11"
         />
-      </div>
-      <div className="grid gap-2">
-        <Label htmlFor="password">{mode === "edit" ? "密码（留空不修改）" : "密码"}</Label>
+      </ConnectionFormField>
+      <ConnectionFormField
+        label={mode === "edit" ? "密码（留空不修改）" : "密码"}
+        htmlFor="password"
+        hint={mode === "edit" ? "留空表示继续使用已保存的凭证。" : undefined}
+      >
         <Input
           id="password"
           type="password"
+          className={CONNECTION_CONTROL_CLASS}
           value={form.password}
           onChange={(e) => onFieldChange("password", e.target.value)}
           required={mode === "create"}
-          className="h-11"
           autoComplete={mode === "create" ? "new-password" : "current-password"}
         />
-      </div>
-    </>
+      </ConnectionFormField>
+    </div>
   );
 }

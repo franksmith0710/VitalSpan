@@ -211,8 +211,7 @@ function piePlan(
   variant: "default" | "donut" | "rose" | "donut-rose",
 ): ChartRenderPlan {
   const data = encodePieRows(spec, rows, columns);
-  const innerRadius =
-    variant === "donut" || variant === "donut-rose" ? 0.5 : variant === "rose" ? 0.2 : 0;
+  const innerRadius = variant === "donut" || variant === "donut-rose" ? 0.5 : 0;
   return d3Plan("Pie", {
     data,
     angleField: "value",

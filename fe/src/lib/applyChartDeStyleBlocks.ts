@@ -15,6 +15,8 @@ import {
 } from "@/lib/chartDeStyleBlocks";
 import { aggregateQuotaMetric } from "@/lib/quotaMetricAggregate";
 import { resolveLiquidMetricFormat } from "@/lib/liquidLabelFormat";
+import type { ChartType } from "@/lib/chartViewConfig";
+import { isPieRoseOnlyChartType, shouldApplyPieInnerRadius } from "@/lib/defaultPieChartDeStyle";
 
 export type PlanCompareStyle = {
   trackOpacity?: number;
@@ -164,7 +166,7 @@ function readBlocks(deStyle: ChartDeStyle): ChartDeStyleBlocks {
 export function applyChartDeStyleBlocksToPlan(
   plan: ChartRenderPlan,
   deStyle: ChartDeStyle,
-  opts?: { styleVariant?: string },
+  opts?: { styleVariant?: string; chartType?: ChartType },
 ): ChartRenderPlan {
   if (plan.kind !== "d3") return plan;
   const blocks = readBlocks(deStyle);
@@ -185,8 +187,14 @@ export function applyChartDeStyleBlocksToPlan(
 
   if (plan.plotType === "Pie" && deStyle.pie) {
     const pie = deStyle.pie;
-    if (pie.innerRadiusPercent != null && pie.innerRadiusPercent > 0) {
+    if (
+      pie.innerRadiusPercent != null &&
+      pie.innerRadiusPercent > 0 &&
+      shouldApplyPieInnerRadius(opts?.chartType, opts?.styleVariant)
+    ) {
       options.innerRadius = pie.innerRadiusPercent / 100;
+    } else if (isPieRoseOnlyChartType(opts?.chartType, opts?.styleVariant)) {
+      options.innerRadius = 0;
     }
     if (pie.outerRadiusPercent != null) {
       options.__outerRadiusPercent = pie.outerRadiusPercent;

@@ -12,9 +12,13 @@ export function applyChartStyleChain(
   style: ChartStyleContext,
   chartConfig?: ChartViewConfig,
 ): ChartRenderPlan {
-  let next = applyD3Style(plan, style);
+  let next = applyD3Style(plan, style, {
+    chartType: chartConfig?.chartType,
+    styleVariant: chartConfig?.styleVariant,
+  });
   next = applyChartDeStyleBlocksToPlan(next, style.deStyle, {
     styleVariant: chartConfig?.styleVariant,
+    chartType: chartConfig?.chartType,
   });
 
   if (!chartConfig) return next;

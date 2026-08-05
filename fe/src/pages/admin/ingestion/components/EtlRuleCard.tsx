@@ -3,7 +3,6 @@ import { ListRowCheckbox } from "@/components/layout/list-batch-delete";
 import { Badge } from "@/components/ui/badge";
 import { IconButton } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -13,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { EtlColumnField } from "./EtlColumnField";
+import { EtlFormField } from "./EtlFormField";
 
 export type EtlRule = {
   type: string;
@@ -32,6 +32,8 @@ const TYPE_BADGE_COLOR: Record<string, "primary" | "info" | "warning" | "success
   fill_null: "warning",
   filter_rows: "success",
 };
+
+const CONTROL_CLASS = "h-11";
 
 type EtlRuleCardProps = {
   rule: EtlRule;
@@ -64,12 +66,12 @@ export function EtlRuleCard({
   return (
     <article
       className={cn(
-        "rounded-xl border border-gray-200 bg-white shadow-theme-xs transition-colors",
+        "overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs transition-colors",
         "dark:border-gray-800 dark:bg-white/[0.02]",
         batchMode && selected && "border-brand-300 ring-2 ring-brand-500/20 dark:border-brand-500/40",
       )}
     >
-      <header className="flex flex-wrap items-center gap-3 border-b border-gray-100 px-4 py-3 dark:border-gray-800">
+      <header className="flex items-center gap-3 border-b border-gray-100 bg-gray-50/60 px-4 py-3 dark:border-gray-800 dark:bg-white/[0.02]">
         {batchMode ? (
           <ListRowCheckbox
             checked={selected}
@@ -77,15 +79,15 @@ export function EtlRuleCard({
             ariaLabel={`选择规则 ${index + 1}`}
           />
         ) : null}
-        <Badge variant="light" color="light" size="sm" className="font-mono">
+        <Badge variant="light" color="light" size="sm" className="shrink-0 font-mono tabular-nums">
           #{index + 1}
         </Badge>
-        <Badge variant="light" color={badgeColor} size="sm">
+        <Badge variant="light" color={badgeColor} size="sm" className="shrink-0">
           {typeMeta?.label ?? rule.type}
         </Badge>
-        <div className="min-w-[160px] flex-1 sm:max-w-xs">
+        <div className="min-w-0 flex-1 sm:max-w-[200px]">
           <Select value={rule.type} onValueChange={onTypeChange}>
-            <SelectTrigger aria-label="规则类型" className="h-9">
+            <SelectTrigger aria-label="规则类型" className="h-9 bg-white dark:bg-gray-900">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -102,14 +104,14 @@ export function EtlRuleCard({
           variant="ghost"
           size="sm"
           aria-label="删除规则"
-          className="ml-auto text-gray-400 hover:text-error-500"
+          className="ml-auto shrink-0 text-gray-400 hover:text-error-500"
           onClick={onRemove}
         >
           <Trash2 className="size-4" />
         </IconButton>
       </header>
 
-      <div className="grid gap-4 px-4 py-4 sm:grid-cols-2">
+      <div className="grid gap-x-5 gap-y-4 px-4 py-4 sm:grid-cols-2">
         {rule.type === "rename_column" ? (
           <>
             <EtlColumnField
@@ -120,15 +122,16 @@ export function EtlRuleCard({
               invalid={fieldErrors && !rule.from?.trim()}
               onChange={(value) => onFieldChange("from", value)}
             />
-            <div className="space-y-2">
-              <Label>目标列名</Label>
+            <EtlFormField label="目标列名" htmlFor={`etl-rename-to-${index}`}>
               <Input
+                id={`etl-rename-to-${index}`}
+                className={CONTROL_CLASS}
                 value={rule.to ?? ""}
                 placeholder="product"
                 aria-invalid={fieldErrors && !rule.to?.trim() ? true : undefined}
                 onChange={(e) => onFieldChange("to", e.target.value)}
               />
-            </div>
+            </EtlFormField>
           </>
         ) : null}
 
@@ -142,10 +145,9 @@ export function EtlRuleCard({
               invalid={fieldErrors && !rule.column?.trim()}
               onChange={(value) => onFieldChange("column", value)}
             />
-            <div className="space-y-2">
-              <Label>目标类型</Label>
+            <EtlFormField label="目标类型" htmlFor={`etl-cast-to-${index}`}>
               <Select value={rule.to ?? "float"} onValueChange={(v) => onFieldChange("to", v)}>
-                <SelectTrigger>
+                <SelectTrigger id={`etl-cast-to-${index}`} className={CONTROL_CLASS}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -155,7 +157,7 @@ export function EtlRuleCard({
                   <SelectItem value="string">string</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </EtlFormField>
           </>
         ) : null}
 
@@ -169,14 +171,15 @@ export function EtlRuleCard({
               invalid={fieldErrors && !rule.column?.trim()}
               onChange={(value) => onFieldChange("column", value)}
             />
-            <div className="space-y-2">
-              <Label>填充值</Label>
+            <EtlFormField label="填充值" htmlFor={`etl-fill-value-${index}`}>
               <Input
+                id={`etl-fill-value-${index}`}
+                className={CONTROL_CLASS}
                 value={rule.value ?? ""}
                 placeholder="无备注"
                 onChange={(e) => onFieldChange("value", e.target.value)}
               />
-            </div>
+            </EtlFormField>
           </>
         ) : null}
 
@@ -190,10 +193,9 @@ export function EtlRuleCard({
               invalid={fieldErrors && !rule.column?.trim()}
               onChange={(value) => onFieldChange("column", value)}
             />
-            <div className="space-y-2">
-              <Label>操作符</Label>
+            <EtlFormField label="操作符" htmlFor={`etl-filter-op-${index}`}>
               <Select value={rule.op ?? "ne"} onValueChange={(v) => onFieldChange("op", v)}>
-                <SelectTrigger>
+                <SelectTrigger id={`etl-filter-op-${index}`} className={CONTROL_CLASS}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -203,15 +205,21 @@ export function EtlRuleCard({
                   <SelectItem value="is_not_null">非空</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-2 sm:col-span-2 sm:max-w-md">
-              <Label>比较值</Label>
+            </EtlFormField>
+            <EtlFormField
+              label="比较值"
+              htmlFor={`etl-filter-value-${index}`}
+              className="sm:col-span-2 sm:max-w-md"
+            >
               <Input
+                id={`etl-filter-value-${index}`}
+                className={CONTROL_CLASS}
                 value={rule.value ?? ""}
                 placeholder="deleted"
+                disabled={rule.op === "is_null" || rule.op === "is_not_null"}
                 onChange={(e) => onFieldChange("value", e.target.value)}
               />
-            </div>
+            </EtlFormField>
           </>
         ) : null}
       </div>

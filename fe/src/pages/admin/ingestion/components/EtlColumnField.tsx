@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -9,6 +8,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { EtlFormField } from "./EtlFormField";
+
+const CONTROL_CLASS = "h-11";
 
 export function EtlColumnField({
   label,
@@ -43,25 +45,30 @@ export function EtlColumnField({
 
   const options =
     trimmed && !columnNames.includes(trimmed) ? [trimmed, ...columnNames] : columnNames;
+  const fieldId = `etl-column-${label}`;
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between gap-2">
-        <Label>{label}</Label>
-        {columnNames.length > 0 ? (
+    <EtlFormField
+      label={label}
+      htmlFor={fieldId}
+      action={
+        columnNames.length > 0 ? (
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            className="h-7 px-2 text-theme-xs text-gray-500 hover:text-brand-600"
+            className="h-7 px-2 text-theme-xs text-gray-500 hover:text-brand-600 dark:text-gray-400 dark:hover:text-brand-400"
             onClick={() => setManual((prev) => !prev)}
           >
             {manual ? "切换为下拉" : "切换为手填"}
           </Button>
-        ) : null}
-      </div>
+        ) : undefined
+      }
+    >
       {manual || columnNames.length === 0 ? (
         <Input
+          id={fieldId}
+          className={CONTROL_CLASS}
           value={value}
           placeholder={placeholder}
           aria-invalid={invalid || undefined}
@@ -69,7 +76,12 @@ export function EtlColumnField({
         />
       ) : (
         <Select value={value || undefined} onValueChange={onChange}>
-          <SelectTrigger aria-label={label} aria-invalid={invalid || undefined}>
+          <SelectTrigger
+            id={fieldId}
+            aria-label={label}
+            aria-invalid={invalid || undefined}
+            className={CONTROL_CLASS}
+          >
             <SelectValue placeholder={placeholder ?? "选择列"} />
           </SelectTrigger>
           <SelectContent>
@@ -81,6 +93,6 @@ export function EtlColumnField({
           </SelectContent>
         </Select>
       )}
-    </div>
+    </EtlFormField>
   );
 }

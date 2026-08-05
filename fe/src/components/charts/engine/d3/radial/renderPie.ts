@@ -118,9 +118,11 @@ function drawPieLabels(
         .attr("opacity", 0.9);
       group
         .append("text")
-        .attr("transform", `translate(${layout.textX},${layout.textY})`)
+        .attr("x", layout.textX)
+        .attr("y", layout.textY)
         .attr("text-anchor", layout.anchor)
-        .attr("dy", "0.35em")
+        .attr("dy", "0")
+        .style("dominant-baseline", "central")
         .attr("fill", fill)
         .style("font-size", `${opts.labelFontSize}px`)
         .style("paint-order", "stroke fill")

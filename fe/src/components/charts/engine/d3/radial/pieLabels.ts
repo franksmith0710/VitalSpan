@@ -93,10 +93,8 @@ export function pieOutsideLabelGeometry(
   midAngle: number,
   outerR: number,
   radialLen?: number,
-  horizontalLen?: number,
 ): PieOutsideLabelGeometry {
-  const rLen = radialLen ?? Math.max(6, outerR * 0.055);
-  const hLen = horizontalLen ?? Math.max(14, outerR * 0.14);
+  const rLen = radialLen ?? Math.max(5, outerR * 0.04);
   const cos = Math.cos(midAngle - Math.PI / 2);
   const sin = Math.sin(midAngle - Math.PI / 2);
   const isRight = cos >= 0;
@@ -104,8 +102,9 @@ export function pieOutsideLabelGeometry(
   const y0 = sin * outerR;
   const x1 = cos * (outerR + rLen);
   const y1 = sin * (outerR + rLen);
-  const x2 = x1 + (isRight ? hLen : -hLen);
-  const textX = x2 + (isRight ? 2 : -2);
+  const stub = outsideLabelColumnStub(outerR);
+  const x2 = isRight ? x1 + stub : x1 - stub;
+  const textX = isRight ? x2 + OUTSIDE_LABEL_TEXT_GAP : x2 - OUTSIDE_LABEL_TEXT_GAP;
   return {
     x0,
     y0,
@@ -136,6 +135,35 @@ export type PieOutsideLabelPlaced = {
 };
 
 const MIN_SLICE_ANGLE_RAD = 0.035;
+const OUTSIDE_LABEL_TEXT_GAP = 3;
+
+function outsideLabelColumnStub(outerR: number): number {
+  return Math.max(8, outerR * 0.045);
+}
+
+/** 同侧标签共用垂直引线列，水平段对齐（对标 DE / ECharts labelLine） */
+function alignOutsideLabelColumns(items: { geo: PieOutsideLabelGeometry }[], outerR: number): void {
+  const stub = outsideLabelColumnStub(outerR);
+  const right = items.filter((i) => i.geo.isRight);
+  const left = items.filter((i) => !i.geo.isRight);
+
+  if (right.length > 0) {
+    const columnX = Math.max(...right.map((i) => i.geo.x1)) + stub;
+    for (const item of right) {
+      item.geo.x2 = columnX;
+      item.geo.textX = columnX + OUTSIDE_LABEL_TEXT_GAP;
+      item.geo.anchor = "start";
+    }
+  }
+  if (left.length > 0) {
+    const columnX = Math.min(...left.map((i) => i.geo.x1)) - stub;
+    for (const item of left) {
+      item.geo.x2 = columnX;
+      item.geo.textX = columnX - OUTSIDE_LABEL_TEXT_GAP;
+      item.geo.anchor = "end";
+    }
+  }
+}
 
 function layoutHalf(
   items: { geo: PieOutsideLabelGeometry }[],
@@ -251,6 +279,8 @@ export function layoutPieOutsideLabels(
     resetYs();
     fitVisible();
   }
+
+  alignOutsideLabelColumns(items.filter((i) => i.visible), outerR);
 
   for (const item of items) {
     if (!item.visible) {

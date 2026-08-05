@@ -692,7 +692,7 @@ describe("ingestion admin smoke", () => {
       expect(targetInput).toHaveValue("orders_clean_2");
     });
     fireEvent.change(targetInput, { target: { value: "manual_table" } });
-    fireEvent.click(screen.getByRole("button", { name: "按源表重新建议表名" }));
+    fireEvent.click(screen.getByRole("button", { name: "重新建议" }));
     await waitFor(() => {
       expect(targetInput).toHaveValue("orders_clean_2");
     });
@@ -963,7 +963,7 @@ describe("ingestion admin smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(await screen.findByText("此任务仍使用旧版内联连接")).toBeInTheDocument();
+    expect(await screen.findByText("仍使用旧版内联连接")).toBeInTheDocument();
     expect(screen.getByText(/sample@127\.0\.0\.1:3307\/sample_db/)).toBeInTheDocument();
   });
 
@@ -1151,7 +1151,7 @@ describe("ingestion admin smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(await screen.findByText("尚无可用同步源连接")).toBeInTheDocument();
+    expect(await screen.findByText("尚无可用连接")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "创建" })).toBeDisabled();
   });
 

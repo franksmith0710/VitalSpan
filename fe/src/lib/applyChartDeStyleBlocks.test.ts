@@ -80,6 +80,24 @@ describe("applyChartDeStyleBlocksToPlan", () => {
     expect(plan.options.__bulletTargetLineWidth).toBe(3);
     expect(plan.options.__stockBodyWidthRatio).toBe(0.75);
   });
+
+  it("does not apply pie inner radius to rose charts", () => {
+    const plan = applyChartDeStyleBlocksToPlan(
+      { kind: "d3", plotType: "Pie", empty: false, options: { innerRadius: 0 } },
+      { pie: { innerRadiusPercent: 40 } },
+      { chartType: "pie-rose" },
+    );
+    expect(plan.options.innerRadius).toBe(0);
+  });
+
+  it("applies pie inner radius to donut-rose charts", () => {
+    const plan = applyChartDeStyleBlocksToPlan(
+      { kind: "d3", plotType: "Pie", empty: false, options: { innerRadius: 0.5 } },
+      { pie: { innerRadiusPercent: 40 } },
+      { chartType: "pie-donut-rose" },
+    );
+    expect(plan.options.innerRadius).toBe(0.4);
+  });
 });
 
 describe("resolveCartesianLineSmooth", () => {

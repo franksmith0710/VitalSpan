@@ -2,9 +2,15 @@ import type { ChartRenderPlan } from "@/components/charts/engine/buildChartRende
 import type { ChartStyleContext } from "@/components/charts/engine/types";
 import { resolveD3Theme } from "@/components/charts/engine/d3/core/themeEngine";
 import { readChartPieStyle } from "@/lib/chartDeStyle";
+import type { ChartType } from "@/lib/chartViewConfig";
+import { isPieRoseOnlyChartType, shouldApplyPieInnerRadius } from "@/lib/defaultPieChartDeStyle";
 
 /** D3 渲染计划样式映射（配色、图例开关等） */
-export function applyD3Style(plan: ChartRenderPlan, ctx: ChartStyleContext): ChartRenderPlan {
+export function applyD3Style(
+  plan: ChartRenderPlan,
+  ctx: ChartStyleContext,
+  opts?: { chartType?: ChartType; styleVariant?: string },
+): ChartRenderPlan {
   if (plan.kind !== "d3") return plan;
   const options = { ...plan.options };
   const tokens = resolveD3Theme(ctx.scheme, ctx.chartColors[0]);
@@ -15,8 +21,14 @@ export function applyD3Style(plan: ChartRenderPlan, ctx: ChartStyleContext): Cha
 
   if (plan.plotType === "Pie") {
     const pieStyle = readChartPieStyle(ctx.deStyle);
-    if (pieStyle.innerRadiusPercent != null && pieStyle.innerRadiusPercent > 0) {
+    if (
+      pieStyle.innerRadiusPercent != null &&
+      pieStyle.innerRadiusPercent > 0 &&
+      shouldApplyPieInnerRadius(opts?.chartType, opts?.styleVariant)
+    ) {
       options.innerRadius = pieStyle.innerRadiusPercent / 100;
+    } else if (isPieRoseOnlyChartType(opts?.chartType, opts?.styleVariant)) {
+      options.innerRadius = 0;
     }
   }
 

@@ -19,6 +19,14 @@ import type { ChartSeriesColorItem } from "@/lib/chartSeriesColor";
 import { resolvePaletteId } from "@/lib/chartPalette";
 import type { ChartDrillFrame } from "@/lib/chartDrill";
 import type { ChartDeStyleBlocks } from "@/lib/chartDeStyleBlocks";
+export {
+  DEFAULT_PIE_INNER_RADIUS_PERCENT,
+  DEFAULT_PIE_MERGE_TOP_N,
+  DEFAULT_PIE_OTHER_LABEL,
+  DEFAULT_PIE_OUTER_RADIUS_PERCENT,
+  PIE_INNER_RADIUS_MAX,
+  PIE_INNER_RADIUS_MIN,
+} from "@/lib/chartDeStyleBlocks";
 import { stripChartTableColorOverrides } from "@/lib/chartDeTableStyle";
 
 export type { ChartSeriesColorItem } from "@/lib/chartSeriesColor";
@@ -271,13 +279,6 @@ export type ChartPieStyle = {
   /** 合并项名称 */
   otherLabel?: string;
 };
-
-export const DEFAULT_PIE_INNER_RADIUS_PERCENT = 40;
-export const DEFAULT_PIE_OUTER_RADIUS_PERCENT = 77;
-export const DEFAULT_PIE_MERGE_TOP_N = 35;
-export const DEFAULT_PIE_OTHER_LABEL = "其他";
-export const PIE_INNER_RADIUS_MIN = 0;
-export const PIE_INNER_RADIUS_MAX = 65;
 
 export type ChartTooltipStyle = {
   show?: boolean;

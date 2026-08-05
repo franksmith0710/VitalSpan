@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -13,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
+import { SYNC_CONTROL_CLASS, SyncFormField } from "./SyncFormField";
 import {
   resolveSyncSourceSchema,
   supportsSyncSourceTablePicker,
@@ -22,6 +22,7 @@ type SyncSourceTableSelectProps = {
   id?: string;
   label: string;
   placeholder?: string;
+  hint?: string;
   dataSourceId: string;
   sourceType?: string;
   database?: string;
@@ -45,18 +46,16 @@ function ManualSourceTableInput({
   hint?: string;
 }) {
   return (
-    <div className="grid gap-2">
-      <Label htmlFor={id}>{label}</Label>
+    <SyncFormField label={label} htmlFor={id} hint={hint}>
       <Input
         id={id}
+        className={SYNC_CONTROL_CLASS}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required
-        className="h-11"
         placeholder={placeholder}
       />
-      {hint ? <p className="text-theme-xs text-gray-500 dark:text-gray-400">{hint}</p> : null}
-    </div>
+    </SyncFormField>
   );
 }
 
@@ -64,6 +63,7 @@ export function SyncSourceTableSelect({
   id = "table",
   label,
   placeholder,
+  hint,
   dataSourceId,
   sourceType,
   database,
@@ -115,6 +115,7 @@ export function SyncSourceTableSelect({
         placeholder={placeholder}
         value={value}
         onChange={onChange}
+        hint={hint}
       />
     );
   }
@@ -138,11 +139,9 @@ export function SyncSourceTableSelect({
 
   if (metadataLoading) {
     return (
-      <div className="grid gap-2">
-        <Label htmlFor={id}>{label}</Label>
-        <Skeleton className="h-11 w-full rounded-lg" />
-        <p className="text-theme-xs text-gray-400">加载表列表…</p>
-      </div>
+      <SyncFormField label={label} htmlFor={id} hint="加载表列表…">
+        <Skeleton className={SYNC_CONTROL_CLASS} />
+      </SyncFormField>
     );
   }
 
@@ -158,18 +157,21 @@ export function SyncSourceTableSelect({
           metadataError
             ? `无法加载表列表（${mapApiError(schemasQuery.error ?? tablesQuery.error)}），请手动输入。`
             : schema
-              ? `Schema ${schema} 下暂无可用表，请手动输入表名。`
-              : "暂无 Schema，请手动输入表名。"
+              ? `Schema ${schema} 下暂无可用表，请手动输入。`
+              : "暂无 Schema，请手动输入。"
         }
       />
     );
   }
 
   return (
-    <div className="grid gap-2">
-      <Label htmlFor={id}>{label}</Label>
+    <SyncFormField
+      label={label}
+      htmlFor={id}
+      hint={schema ? `Schema：${schema}` : hint}
+    >
       <Select value={value || undefined} onValueChange={onChange}>
-        <SelectTrigger id={id} className="h-11" aria-label={label}>
+        <SelectTrigger id={id} className={SYNC_CONTROL_CLASS} aria-label={label}>
           <SelectValue placeholder={placeholder ?? "选择源表"} />
         </SelectTrigger>
         <SelectContent>
@@ -180,11 +182,6 @@ export function SyncSourceTableSelect({
           ))}
         </SelectContent>
       </Select>
-      {schema ? (
-        <p className="font-mono text-theme-xs text-gray-500 dark:text-gray-400">
-          库/Schema：<span>{schema}</span>
-        </p>
-      ) : null}
-    </div>
+    </SyncFormField>
   );
 }

@@ -4,10 +4,31 @@ import {
   DEFAULT_PIE_INNER_RADIUS_PERCENT,
   DEFAULT_PIE_MERGE_TOP_N,
   DEFAULT_PIE_OUTER_RADIUS_PERCENT,
-} from "@/lib/chartDeStyle";
+} from "@/lib/chartDeStyleBlocks";
 
 export function isPieChartType(type: ChartType): boolean {
   return type === "pie" || type.startsWith("pie-");
+}
+
+export function isPieDonutChartType(type: ChartType): boolean {
+  return type === "pie-donut" || type === "pie-donut-rose";
+}
+
+export function shouldApplyPieInnerRadius(
+  chartType?: ChartType,
+  styleVariant?: string,
+): boolean {
+  if (!chartType) return false;
+  if (isPieDonutChartType(chartType)) return true;
+  return chartType === "pie" && styleVariant === "donut";
+}
+
+export function isPieRoseOnlyChartType(
+  chartType?: ChartType,
+  styleVariant?: string,
+): boolean {
+  if (chartType === "pie-rose") return true;
+  return chartType === "pie" && styleVariant === "rose";
 }
 
 /**
@@ -33,7 +54,7 @@ export const DEFAULT_PIE_CHART_DE_STYLE: Pick<ChartDeStyle, "pie" | "label"> = {
 };
 
 export function buildDefaultPieDeStyle(type: ChartType): Pick<ChartDeStyle, "pie" | "label"> {
-  const isDonut = type === "pie-donut" || type === "pie-donut-rose";
+  const isDonut = isPieDonutChartType(type);
   if (!isDonut) return DEFAULT_PIE_CHART_DE_STYLE;
   return {
     ...DEFAULT_PIE_CHART_DE_STYLE,
