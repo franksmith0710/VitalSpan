@@ -33,6 +33,14 @@ export function groupDatasetFields(fields: string[]): {
   return { dimensions, metrics };
 }
 
+/** 绑定出图配置时的默认列：按维/指标分类，避免把全部物理列一股脑写入。 */
+export function suggestDatasetBindColumns(columns: string[]): string[] {
+  if (columns.length === 0) return [];
+  const { dimensions, metrics } = groupDatasetFields(columns);
+  const picked = [...new Set([...dimensions, ...metrics])];
+  return picked.length > 0 ? picked : [...columns];
+}
+
 export function fieldDisplayKind(field: string): "date" | "text" | "number" {
   const kind = classifyDatasetField(field);
   if (kind === "metric") return "number";

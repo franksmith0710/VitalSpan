@@ -1,7 +1,12 @@
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useChartInspector } from "../ChartInspectorContext";
-import { ChartInspectorSection, InspectorSwitchRow, INSPECTOR_SECTION_GAP } from "../inspectorCompact";
+import {
+  ChartInspectorSection,
+  InspectorSwitchRow,
+  INSPECTOR_SECTION_GAP,
+  InspectorInlineColorRow,
+} from "../inspectorCompact";
 import { ChartDeSliderField } from "../deAttrSlider";
 import { patchChartDeStyleNested, readChartDeStyle } from "@/lib/chartDeStyle";
 import { resolveChartTypeStyleProfile } from "@/lib/chartTypeStyleProfiles";
@@ -39,6 +44,22 @@ export function ChartAxisStyleSection() {
                 placeholder={side === "x" ? "类别轴" : "数值轴"}
               />
             </div>
+            <div className="mt-2">
+              <InspectorInlineColorRow
+                label="轴线颜色"
+                value={axis[side]?.lineColor ?? "#cbd5e1"}
+                onChange={(lineColor) => patchAxis(side, { lineColor })}
+              />
+            </div>
+            <ChartDeSliderField
+              label="轴线宽度"
+              value={axis[side]?.lineWidth}
+              fallback={1}
+              min={0.5}
+              max={4}
+              step={0.5}
+              onChange={(lineWidth) => patchAxis(side, { lineWidth })}
+            />
           </div>
         ))}
       </div>

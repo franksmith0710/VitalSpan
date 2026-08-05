@@ -19,6 +19,7 @@ class DatasetRecord(Base):
     tables: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     computed_fields: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     allowed_roles: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    table_source_datasource_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True)
     bound_config_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True)
     origin: Mapped[str] = mapped_column(String(16), nullable=False, default="manual", server_default="manual")
     sync_job_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True)

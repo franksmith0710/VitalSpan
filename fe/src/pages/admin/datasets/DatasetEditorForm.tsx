@@ -54,6 +54,8 @@ export function DatasetEditorForm({
   tablePickerPrefill?: {
     preferredDataSourceId?: string;
     prefillTable?: string;
+    savedDataSourceId?: string;
+    onDataSourceIdChange?: (dataSourceId: string) => void;
   };
 }) {
   const canSubmit =
@@ -153,6 +155,8 @@ export function DatasetEditorForm({
                 onChange={(tables) => onChange({ ...values, tables })}
                 preferredDataSourceId={tablePickerPrefill?.preferredDataSourceId}
                 prefillTable={tablePickerPrefill?.prefillTable}
+                savedDataSourceId={tablePickerPrefill?.savedDataSourceId}
+                onDataSourceIdChange={tablePickerPrefill?.onDataSourceIdChange}
               />
             </TabsContent>
 

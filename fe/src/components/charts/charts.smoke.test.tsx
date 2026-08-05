@@ -39,6 +39,7 @@ const tableConfig: ChartViewConfig = {
   dataSourceId: "00000000-0000-4000-8000-000000000001",
   mode: "sql",
   sql: "SELECT 1 AS id",
+  axes: { xAxis: [{ field: "id" }] },
 };
 
 describe("ChartRenderer smoke", () => {

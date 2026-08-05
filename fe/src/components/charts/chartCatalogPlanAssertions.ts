@@ -95,6 +95,11 @@ export function assertPlanMatchesFixture(item: ChartCatalogSmokeCase, plan: Char
   if (type === "map" || type === "map-3d") {
     expect(plan.options.rows).toEqual(item.rows);
     expect(plan.options.columns).toEqual(item.columns);
+    expect(item.dimensions[0]?.field).toBeTruthy();
+    const metricField = item.metrics[0]?.field;
+    if (metricField) {
+      expect(item.columns).toContain(metricField);
+    }
     return;
   }
 
@@ -188,6 +193,17 @@ export function assertPlanMatchesFixture(item: ChartCatalogSmokeCase, plan: Char
     const yField = plan.options.yField as string;
     expect(data[0]![xField]).toBeDefined();
     expect(data[0]![yField]).toBeDefined();
+    if (type === "percentage-bar-stack" || type === "percentage-bar-stack-horizontal") {
+      expect((plan.options as { isStack?: boolean }).isStack ?? plan.options.isStack).toBe(true);
+    }
+    if (
+      type === "area-stack" ||
+      type === "bar-stack" ||
+      type === "bar-stack-horizontal" ||
+      type === "bar-group-stack"
+    ) {
+      expect(plan.options.seriesField ?? plan.options.columnSeriesField).toBeTruthy();
+    }
     return;
   }
 
@@ -218,9 +234,38 @@ export function assertPlanMatchesFixture(item: ChartCatalogSmokeCase, plan: Char
     type === "stock-line" ||
     type === "bidirectional-bar"
   ) {
-    const data = plan.options.data as unknown[];
+    const data = plan.options.data as Array<Record<string, unknown>>;
     expect(Array.isArray(data)).toBe(true);
     expect(data.length).toBeGreaterThan(0);
+    if (type === "stock-line") {
+      const row = data[0]!;
+      const [openF, closeF, lowF, highF] = item.metrics.map((m) => m.field);
+      expect(Number(row[openF!])).toBe(Number(item.rows[0]![colIndex(item.columns, openF!)]));
+      expect(Number(row[closeF!])).toBe(Number(item.rows[0]![colIndex(item.columns, closeF!)]));
+      expect(Number(row[lowF!])).toBe(Number(item.rows[0]![colIndex(item.columns, lowF!)]));
+      expect(Number(row[highF!])).toBe(Number(item.rows[0]![colIndex(item.columns, highF!)]));
+    }
+    if (type === "bullet-graph") {
+      const row = data[0]!;
+      const [actual, target, range] = item.metrics.map((m) => m.field);
+      expect(Number(row.actual ?? row[actual!])).toBe(Number(item.rows[0]![colIndex(item.columns, actual!)]));
+      expect(Number(row.target ?? row[target!])).toBe(Number(item.rows[0]![colIndex(item.columns, target!)]));
+      if (range) {
+        expect(Number(row.rangeMax ?? row[range])).toBe(Number(item.rows[0]![colIndex(item.columns, range)]));
+      }
+    }
+    if (type === "bar-range") {
+      const row = data[0]!;
+      const [startF, endF] = item.metrics.map((m) => m.field);
+      expect(row[startF!]).toBeDefined();
+      expect(row[endF!]).toBeDefined();
+    }
+    if (type === "bidirectional-bar") {
+      const row = data[0]!;
+      const [leftF, rightF] = item.metrics.map((m) => m.field);
+      expect(row[leftF!]).toBeDefined();
+      expect(row[rightF!]).toBeDefined();
+    }
     return;
   }
 

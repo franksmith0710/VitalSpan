@@ -21,6 +21,9 @@ type QueryConfigRecord = {
 export type DatasetChartBinding = {
   configId: string;
   dataSourceId?: string;
+  columns?: string[];
+  schema?: string;
+  table?: string;
 };
 
 export function buildDatasetQueryPayload(params: {
@@ -42,12 +45,21 @@ export function buildDatasetQueryPayload(params: {
   };
 }
 
-export async function resolveDatasetChartBinding(configId: string): Promise<DatasetChartBinding> {
+export async function fetchDatasetQueryConfig(configId: string): Promise<DatasetChartBinding> {
   const record = await apiFetch<QueryConfigRecord>(`/api/v1/query/configs/${configId}`);
   const payload = record.payload ?? {};
   const dataSourceId =
     typeof payload.dataSourceId === "string" ? payload.dataSourceId : undefined;
-  return { configId: record.id, dataSourceId };
+  const columns = Array.isArray(payload.columns)
+    ? payload.columns.filter((c): c is string => typeof c === "string" && c.trim().length > 0)
+    : [];
+  const schema = typeof payload.schema === "string" ? payload.schema : undefined;
+  const table = typeof payload.table === "string" ? payload.table : undefined;
+  return { configId: record.id, dataSourceId, columns, schema, table };
+}
+
+export async function resolveDatasetChartBinding(configId: string): Promise<DatasetChartBinding> {
+  return fetchDatasetQueryConfig(configId);
 }
 
 export async function createAndBindDatasetQueryConfig(params: {

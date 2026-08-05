@@ -35,6 +35,7 @@ function normalizeValues(values: DatasetEditorValues): DatasetEditorValues {
     ...values,
     datasetId: values.datasetId.trim(),
     displayName: values.displayName.trim(),
+    tableSourceDataSourceId: values.tableSourceDataSourceId?.trim() || undefined,
     computedFields: values.computedFields.map((f) => ({
       name: f.name.trim(),
       expression: f.expression.trim(),
@@ -111,6 +112,7 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
       tables: item.tables.map((t) => ({ ...t })),
       computedFields: item.computedFields.map((c) => ({ ...c })),
       allowedRoles: [...item.allowedRoles],
+      tableSourceDataSourceId: item.tableSourceDataSourceId ?? undefined,
     };
     setValues(nextValues);
     resetBaseline(nextValues);
@@ -203,6 +205,9 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
         tablePickerPrefill={{
           preferredDataSourceId,
           prefillTable,
+          savedDataSourceId: values.tableSourceDataSourceId,
+          onDataSourceIdChange: (tableSourceDataSourceId) =>
+            setValues((current) => ({ ...current, tableSourceDataSourceId })),
         }}
         bindPanel={
           mode === "edit" && id ? (
@@ -210,6 +215,7 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
               datasetId={values.datasetId}
               tables={values.tables}
               boundConfigId={detailQuery.data?.boundConfigId}
+              tableSourceDataSourceId={values.tableSourceDataSourceId}
               origin={detailQuery.data?.origin ?? "manual"}
               syncJobId={detailQuery.data?.syncJobId}
               onBound={() => void detailQuery.refetch()}

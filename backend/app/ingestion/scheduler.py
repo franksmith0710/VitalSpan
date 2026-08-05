@@ -44,7 +44,7 @@ def refresh_all_jobs() -> None:
         db.close()
 
 
-def register_stale_run_reconcile(*, interval_minutes: int = 5, max_age_seconds: int = 300) -> None:
+def register_stale_run_reconcile(*, interval_minutes: int = 1, max_age_seconds: int = 90) -> None:
     """周期清理僵死 running 同步记录（进程中断或源/分析库挂起）。"""
     scheduler = get_scheduler()
     scheduler.add_job(

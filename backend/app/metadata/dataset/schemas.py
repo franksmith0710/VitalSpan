@@ -27,6 +27,7 @@ class DatasetItemIn(BaseModel):
     tables: list[DatasetTableDef] = Field(default_factory=list, max_length=32)
     computed_fields: list[DatasetComputedField] = Field(default_factory=list, alias="computedFields", max_length=64)
     allowed_roles: list[str] = Field(default_factory=lambda: ["analyst"], alias="allowedRoles")
+    table_source_datasource_id: uuid.UUID | None = Field(default=None, alias="tableSourceDataSourceId")
 
     @field_validator("dataset_id")
     @classmethod
@@ -43,6 +44,7 @@ class DatasetItemOut(BaseModel):
     tables: list[DatasetTableDef]
     computed_fields: list[DatasetComputedField] = Field(alias="computedFields")
     allowed_roles: list[str] = Field(alias="allowedRoles")
+    table_source_datasource_id: uuid.UUID | None = Field(default=None, alias="tableSourceDataSourceId")
     bound_config_id: uuid.UUID | None = Field(default=None, alias="boundConfigId")
     origin: str = Field(default="manual")
     sync_job_id: uuid.UUID | None = Field(default=None, alias="syncJobId")

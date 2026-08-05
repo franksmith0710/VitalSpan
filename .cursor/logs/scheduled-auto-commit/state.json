@@ -1,6 +1,5 @@
 ﻿{
-    "lastCommit":  "fc23e932",
-    "lastRun":  "2026-08-05T101744",
-    "tickCount":  43,
-    "lastStatus":  "committed"
+    "status":  "running",
+    "startedAt":  "2026-08-05T10:48:49+08:00",
+    "runId":  "2026-08-05T104849"
 }

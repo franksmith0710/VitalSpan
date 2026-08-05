@@ -81,6 +81,7 @@ def _row_to_out(row: DatasetRecord) -> DatasetItemOut:
         "tables": row.tables or [],
         "computedFields": row.computed_fields or [],
         "allowedRoles": list(row.allowed_roles or []),
+        "tableSourceDataSourceId": row.table_source_datasource_id,
         "boundConfigId": row.bound_config_id,
         "origin": row.origin or "manual",
         "syncJobId": row.sync_job_id,
@@ -164,6 +165,7 @@ def create_dataset(payload: DatasetItemIn, user: UserContext) -> DatasetItemOut:
             tables=_dump_tables(payload),
             computed_fields=_dump_computed(payload),
             allowed_roles=list(payload.allowed_roles),
+            table_source_datasource_id=payload.table_source_datasource_id,
             bound_config_id=None,
         )
         session.add(row)
@@ -258,6 +260,7 @@ def update_dataset(dataset_id: str, payload: DatasetItemIn, user: UserContext) -
         row.tables = _dump_tables(payload)
         row.computed_fields = _dump_computed(payload)
         row.allowed_roles = list(payload.allowed_roles)
+        row.table_source_datasource_id = payload.table_source_datasource_id
         session.flush()
         return _row_to_out(row)
 

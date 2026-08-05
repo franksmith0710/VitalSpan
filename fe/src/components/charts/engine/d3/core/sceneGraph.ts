@@ -314,7 +314,7 @@ export function drawCartesianBandAxes(opts: BandAxesOptions): { rotateX: number 
           )
           .tickFormat((d) => formatChartValue(d, opts.valueFormat)),
       )
-      .call(styleAxis, opts.theme);
+      .call(styleAxis, opts.theme, resolveAxisFontSize(), opts.axisStyle?.y);
   }
 
   if (opts.axisStyle?.x?.show !== false) {
@@ -328,8 +328,7 @@ export function drawCartesianBandAxes(opts: BandAxesOptions): { rotateX: number 
           .tickValues(xLayout.ticks)
           .tickFormat((d) => formatAxisCategoryLabel(String(d), xLayout.slotSpan, xLayout.rotateDeg)),
       )
-      .call(styleAxis, opts.theme)
-      .call((sel) => applyRotatedCategoryLabels(sel, xLayout.rotateDeg));
+      .call(styleAxis, opts.theme, resolveAxisFontSize(), opts.axisStyle?.x)
 
     const xName = opts.axisStyle?.x?.name?.trim();
     if (xName) {
@@ -391,7 +390,7 @@ export function drawCartesianAxes(opts: AxesOptions): { rotateX: number } {
           )
           .tickFormat((d) => formatChartValue(d, opts.valueFormat)),
       )
-      .call(styleAxis, opts.theme);
+      .call(styleAxis, opts.theme, resolveAxisFontSize(), opts.axisStyle?.y);
   }
 
   if (opts.axisStyle?.x?.show !== false) {
@@ -405,8 +404,7 @@ export function drawCartesianAxes(opts: AxesOptions): { rotateX: number } {
           .tickValues(xLayout.ticks)
           .tickFormat((d) => formatAxisCategoryLabel(String(d), xLayout.slotSpan, xLayout.rotateDeg)),
       )
-      .call(styleAxis, opts.theme)
-      .call((sel) => applyRotatedCategoryLabels(sel, xLayout.rotateDeg));
+      .call(styleAxis, opts.theme, resolveAxisFontSize(), opts.axisStyle?.x)
 
     const xName = opts.axisStyle?.x?.name?.trim();
     if (xName) {
@@ -490,7 +488,7 @@ export function drawCartesianHorizontalBandAxes(opts: HorizontalBandAxesOptions)
             opts.xTickFormat ? opts.xTickFormat(d) : formatChartValue(d, opts.valueFormat),
           ),
       )
-      .call(styleAxis, opts.theme);
+      .call(styleAxis, opts.theme, resolveAxisFontSize(), opts.axisStyle?.x);
 
     const xName = opts.axisStyle?.x?.name?.trim();
     if (xName) {
@@ -548,7 +546,7 @@ export function drawLinearCartesianAxes(opts: LinearAxesOptions): void {
           )
           .tickFormat((d) => formatChartValue(d, opts.valueFormat)),
       )
-      .call(styleAxis, opts.theme);
+      .call(styleAxis, opts.theme, resolveAxisFontSize(), opts.axisStyle?.y);
   }
 
   if (opts.axisStyle?.x?.show !== false) {
@@ -564,7 +562,7 @@ export function drawLinearCartesianAxes(opts: LinearAxesOptions): void {
           )
           .tickFormat((d) => formatChartValue(d, opts.valueFormat)),
       )
-      .call(styleAxis, opts.theme);
+      .call(styleAxis, opts.theme, resolveAxisFontSize(), opts.axisStyle?.x);
 
     const xName = opts.axisStyle?.x?.name?.trim();
     if (xName) {
@@ -628,7 +626,7 @@ export function drawDualAxesAxes(opts: DualAxesOptions): void {
           )
           .tickFormat((d) => formatChartValue(d, opts.valueFormat)),
       )
-      .call(styleAxis, opts.theme);
+      .call(styleAxis, opts.theme, resolveAxisFontSize(), opts.axisStyle?.y);
     opts.g
       .append("g")
       .attr("class", "vs-axis-y-right")
@@ -641,7 +639,7 @@ export function drawDualAxesAxes(opts: DualAxesOptions): void {
           )
           .tickFormat((d) => formatChartValue(d, opts.valueFormat)),
       )
-      .call(styleAxis, opts.theme);
+      .call(styleAxis, opts.theme, resolveAxisFontSize(), opts.axisStyle?.y);
   }
 
   if (opts.axisStyle?.x?.show !== false) {
@@ -655,8 +653,7 @@ export function drawDualAxesAxes(opts: DualAxesOptions): void {
           .tickValues(xLayout.ticks)
           .tickFormat((d) => formatAxisCategoryLabel(String(d), xLayout.slotSpan, xLayout.rotateDeg)),
       )
-      .call(styleAxis, opts.theme)
-      .call((sel) => applyRotatedCategoryLabels(sel, xLayout.rotateDeg));
+      .call(styleAxis, opts.theme, resolveAxisFontSize(), opts.axisStyle?.x)
 
     const xName = opts.axisStyle?.x?.name?.trim();
     if (xName) {
@@ -732,7 +729,7 @@ export function drawBidirectionalBandAxes(opts: BidirectionalAxesOptions): void 
           )
           .tickFormat((d) => formatChartValue(d, opts.valueFormat)),
       )
-      .call(styleAxis, opts.theme);
+      .call(styleAxis, opts.theme, resolveAxisFontSize(), opts.axisStyle?.x);
 
     const xName = opts.axisStyle?.x?.name?.trim();
     if (xName) {

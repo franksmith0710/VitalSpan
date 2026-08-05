@@ -10,6 +10,7 @@ from app.core.config import get_settings
 from app.ingestion.models import SyncJob
 
 _ANALYTICS_STATEMENT_TIMEOUT_MS = 60_000
+_ANALYTICS_LOCK_TIMEOUT_MS = 30_000
 
 
 @lru_cache
@@ -30,6 +31,7 @@ def _begin_analytics_write():
     engine = get_analytics_engine()
     conn = engine.connect()
     tx = conn.begin()
+    conn.execute(text(f"SET LOCAL lock_timeout = '{_ANALYTICS_LOCK_TIMEOUT_MS}'"))
     conn.execute(text(f"SET LOCAL statement_timeout = '{_ANALYTICS_STATEMENT_TIMEOUT_MS}'"))
     return conn, tx
 
@@ -48,8 +50,8 @@ def write_analytics_full(job: SyncJob, rows: list[dict[str, Any]]) -> int:
     )
     conn, tx = _begin_analytics_write()
     try:
-        conn.execute(text(f'CREATE TABLE IF NOT EXISTS "{job.target_table}" ({col_defs})'))
-        conn.execute(text(f'TRUNCATE TABLE "{job.target_table}"'))
+        conn.execute(text(f'DROP TABLE IF EXISTS "{job.target_table}"'))
+        conn.execute(text(f'CREATE TABLE "{job.target_table}" ({col_defs})'))
         for row in rows:
             conn.execute(insert_sql, row)
         tx.commit()

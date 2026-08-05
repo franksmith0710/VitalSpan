@@ -47,7 +47,8 @@ function resolvePreferredDataSourceId(items: DsItem[], preferred?: string): stri
       d.database === "analytics",
   );
   if (analytics) return analytics.id;
-  return items[0]?.id ?? "";
+  if (items.length === 1) return items[0].id;
+  return "";
 }
 
 function parseFocusTable(prefillTable?: string): { schema: string; table: string } | undefined {
@@ -65,11 +66,15 @@ export function DatasetTablePicker({
   onChange,
   preferredDataSourceId,
   prefillTable,
+  savedDataSourceId,
+  onDataSourceIdChange,
 }: {
   tables: DatasetTable[];
   onChange: (next: DatasetTable[]) => void;
   preferredDataSourceId?: string;
   prefillTable?: string;
+  savedDataSourceId?: string;
+  onDataSourceIdChange?: (dataSourceId: string) => void;
 }) {
   const [dataSourceId, setDataSourceId] = useState("");
   const [tableSourceId, setTableSourceId] = useState<string | null>(null);
@@ -87,12 +92,12 @@ export function DatasetTablePicker({
 
   useEffect(() => {
     if (items.length === 0) return;
+    const saved = savedDataSourceId || preferredDataSourceId;
     setDataSourceId((current) => {
-      // 保留用户手动切换；仅在未选或当前项已失效时应用预填/分析库默认
       if (current && items.some((d) => d.id === current)) return current;
-      return resolvePreferredDataSourceId(items, preferredDataSourceId);
+      return resolvePreferredDataSourceId(items, saved);
     });
-  }, [items, preferredDataSourceId]);
+  }, [items, preferredDataSourceId, savedDataSourceId]);
 
   const selectedNames = useMemo(() => new Set(tables.map((t) => t.name)), [tables]);
   const lockedSourceId = tableSourceId ?? (tables.length > 0 ? dataSourceId : null);
@@ -103,10 +108,11 @@ export function DatasetTablePicker({
       if (selectedNames.has(name) || selectedNames.has(sel.table)) return;
       if (!tableSourceId && dataSourceId) {
         setTableSourceId(dataSourceId);
+        onDataSourceIdChange?.(dataSourceId);
       }
       onChange([...tables, { name }]);
     },
-    [dataSourceId, onChange, selectedNames, tableSourceId, tables],
+    [dataSourceId, onChange, onDataSourceIdChange, selectedNames, tableSourceId, tables],
   );
 
   const removeTable = (name: string) => {
@@ -123,6 +129,7 @@ export function DatasetTablePicker({
       return;
     }
     setDataSourceId(nextId);
+    onDataSourceIdChange?.(nextId);
   };
 
   const filteredTables = useMemo(() => {

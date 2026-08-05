@@ -14,6 +14,7 @@ import {
   CHART_CATALOG_SMOKE_CASES,
   smokeCaseToConfig,
 } from "./chartCatalogSmokeFixtures";
+import { FIELD_RULE_MAX_WAIVERS } from "./chartCatalogFieldRuleWaivers";
 
 const ACTIVE_TYPES = BUILTIN_PLUGIN_DEFS.filter((d) => !d.deprecated).map((d) => d.type);
 
@@ -127,6 +128,24 @@ describe("chart catalog L3 FIELD", () => {
       const deRule = deriveFieldRuleFromDeCatalog(type);
       expect(deRule.minDimensions, type).toBe(rule.minDimensions);
       expect(deRule.minMetrics, type).toBe(rule.minMetrics);
+    }
+  });
+
+  it("T-VIZ-R32-014: DE catalog max field rules align with backend or signed waiver", () => {
+    for (const type of ACTIVE_TYPES) {
+      const rule = BACKEND_CATALOG_FIELD_RULES[type]!;
+      const deRule = deriveFieldRuleFromDeCatalog(type);
+      const waiver = FIELD_RULE_MAX_WAIVERS[type];
+      if (waiver?.maxDimensions !== undefined) {
+        expect(deRule.maxDimensions, `${type} maxD waiver`).toBe(waiver.maxDimensions);
+      } else {
+        expect(deRule.maxDimensions, type).toBe(rule.maxDimensions);
+      }
+      if (waiver?.maxMetrics !== undefined) {
+        expect(deRule.maxMetrics, `${type} maxM waiver`).toBe(waiver.maxMetrics);
+      } else {
+        expect(deRule.maxMetrics, type).toBe(rule.maxMetrics);
+      }
     }
   });
 

@@ -170,14 +170,17 @@ export function styleAxis(
   sel: d3.Selection<SVGGElement, unknown, null, undefined>,
   theme: AntvThemeTokens,
   fontSize = resolveAxisFontSize(),
+  sideStyle?: { lineColor?: string; lineWidth?: number },
 ) {
   sel
     .selectAll("text")
     .attr("fill", theme.axisLabel)
     .style("font-size", `${fontSize}px`)
     .style("font-family", "inherit");
-  sel.select(".domain").attr("stroke", theme.axisLine);
-  sel.selectAll(".tick line").attr("stroke", theme.axisLine);
+  const stroke = sideStyle?.lineColor ?? theme.axisLine;
+  const strokeWidth = sideStyle?.lineWidth ?? 1;
+  sel.select(".domain").attr("stroke", stroke).attr("stroke-width", strokeWidth);
+  sel.selectAll(".tick line").attr("stroke", stroke).attr("stroke-width", strokeWidth);
 }
 
 export function applyRotatedCategoryLabels(

@@ -2,9 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Table2 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  groupDatasetFields,
+  suggestDatasetBindColumns,
+} from "@/components/dashboard/datasetFieldClassification";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -16,7 +21,10 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
-import { createAndBindDatasetQueryConfig } from "@/lib/datasetChartBinding";
+import {
+  createAndBindDatasetQueryConfig,
+  fetchDatasetQueryConfig,
+} from "@/lib/datasetChartBinding";
 import { ANALYTICS_DATASOURCE_CODE, isAnalyticsDatasource } from "@/lib/datasourceRoles";
 import { parseQualifiedTable } from "@/lib/datasetTableUtils";
 import { queryKeys } from "@/lib/queryKeys";
@@ -24,10 +32,17 @@ import type { DatasetOrigin, DatasetTable } from "../types";
 
 type DsItem = { id: string; name: string; code: string; type: string };
 
+function qualifiedTableFromBinding(schema?: string, table?: string): string {
+  if (!table) return "";
+  if (schema) return `${schema}.${table}`;
+  return table;
+}
+
 export function DatasetBindPanel({
   datasetId,
   tables,
   boundConfigId,
+  tableSourceDataSourceId,
   origin = "manual",
   syncJobId,
   onBound,
@@ -35,6 +50,7 @@ export function DatasetBindPanel({
   datasetId: string;
   tables: DatasetTable[];
   boundConfigId?: string | null;
+  tableSourceDataSourceId?: string;
   origin?: DatasetOrigin;
   syncJobId?: string | null;
   onBound: () => void;
@@ -42,11 +58,19 @@ export function DatasetBindPanel({
   const isSyncOrigin = origin === "sync_job";
   const [dataSourceId, setDataSourceId] = useState("");
   const [tableName, setTableName] = useState("");
+  const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [binding, setBinding] = useState(false);
+  const [columnPickKey, setColumnPickKey] = useState("");
 
   const dsQuery = useQuery({
     queryKey: queryKeys.datasources.list(),
     queryFn: () => apiFetch<{ items: DsItem[] }>("/api/v1/datasources"),
+  });
+
+  const boundConfigQuery = useQuery({
+    queryKey: ["query-config", boundConfigId ?? ""],
+    queryFn: () => fetchDatasetQueryConfig(boundConfigId!),
+    enabled: Boolean(boundConfigId),
   });
 
   const allItems = dsQuery.data?.items ?? [];
@@ -60,16 +84,39 @@ export function DatasetBindPanel({
   const parsed = tableName ? parseQualifiedTable(tableName) : null;
 
   useEffect(() => {
-    if (dataSourceId) return;
-    const preferred = selectableItems.find((item) => isAnalyticsDatasource(item.code));
-    const fallback = selectableItems[0];
-    if (preferred) setDataSourceId(preferred.id);
-    else if (fallback) setDataSourceId(fallback.id);
-  }, [dataSourceId, selectableItems]);
+    if (boundConfigQuery.data?.dataSourceId) {
+      setDataSourceId(boundConfigQuery.data.dataSourceId);
+    } else if (!dataSourceId) {
+      const saved =
+        tableSourceDataSourceId &&
+        selectableItems.some((item) => item.id === tableSourceDataSourceId)
+          ? tableSourceDataSourceId
+          : undefined;
+      const preferred = selectableItems.find((item) => isAnalyticsDatasource(item.code));
+      const fallback = saved ?? preferred?.id ?? selectableItems[0]?.id;
+      if (fallback) setDataSourceId(fallback);
+    }
+  }, [
+    boundConfigQuery.data?.dataSourceId,
+    dataSourceId,
+    selectableItems,
+    tableSourceDataSourceId,
+  ]);
 
   useEffect(() => {
+    if (boundConfigQuery.data) {
+      const boundTable = qualifiedTableFromBinding(
+        boundConfigQuery.data.schema,
+        boundConfigQuery.data.table,
+      );
+      if (boundTable) setTableName(boundTable);
+      if (boundConfigQuery.data.columns?.length) {
+        setSelectedColumns(boundConfigQuery.data.columns);
+      }
+      return;
+    }
     if (!tableName && tables[0]) setTableName(tables[0].name);
-  }, [tableName, tables]);
+  }, [boundConfigQuery.data, tableName, tables]);
 
   const columnsQuery = useQuery({
     queryKey: queryKeys.datasources.columns(
@@ -89,8 +136,53 @@ export function DatasetBindPanel({
     [columnsQuery.data?.items],
   );
 
+  const activeColumnPickKey = `${dataSourceId}:${tableName}`;
+
+  useEffect(() => {
+    if (columnPickKey === activeColumnPickKey) return;
+    setColumnPickKey(activeColumnPickKey);
+    if (boundConfigQuery.data?.columns?.length && boundConfigId) {
+      const boundTable = qualifiedTableFromBinding(
+        boundConfigQuery.data.schema,
+        boundConfigQuery.data.table,
+      );
+      if (boundTable === tableName) {
+        setSelectedColumns(boundConfigQuery.data.columns);
+        return;
+      }
+    }
+    setSelectedColumns([]);
+  }, [
+    activeColumnPickKey,
+    boundConfigId,
+    boundConfigQuery.data,
+    columnPickKey,
+    tableName,
+  ]);
+
+  useEffect(() => {
+    if (columnNames.length === 0 || selectedColumns.length > 0) return;
+    setSelectedColumns(suggestDatasetBindColumns(columnNames));
+  }, [columnNames, selectedColumns.length]);
+
+  const toggleColumn = (name: string, checked: boolean) => {
+    setSelectedColumns((current) => {
+      if (checked) return current.includes(name) ? current : [...current, name];
+      return current.filter((c) => c !== name);
+    });
+  };
+
+  const handleAutoColumns = () => {
+    if (columnNames.length === 0) return;
+    setSelectedColumns(suggestDatasetBindColumns(columnNames));
+  };
+
+  const handleSelectAllColumns = () => {
+    setSelectedColumns([...columnNames]);
+  };
+
   const handleBind = async () => {
-    if (!selectedDs || !tableName || columnNames.length === 0) return;
+    if (!selectedDs || !tableName || selectedColumns.length === 0) return;
     setBinding(true);
     try {
       await createAndBindDatasetQueryConfig({
@@ -98,7 +190,7 @@ export function DatasetBindPanel({
         dataSourceId: selectedDs.id,
         connectorType: selectedDs.type,
         tableName,
-        columns: columnNames,
+        columns: selectedColumns,
       });
       toast.success("查询配置已绑定");
       onBound();
@@ -134,7 +226,7 @@ export function DatasetBindPanel({
         <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
           {isSyncOrigin
             ? "此 Dataset 承接同步任务写入的托管分析库表；出图查询绑定锁定为分析库连接，与同步读端不同。"
-            : "将 Dataset 主表映射为查询配置，仪表板选此 Dataset 即可出图（P0：单表）。"}
+            : "将 Dataset 主表映射为查询配置；字段可自动识别，也可手动勾选。"}
         </p>
       </div>
 
@@ -225,25 +317,58 @@ export function DatasetBindPanel({
             </div>
 
             <div className="grid gap-2">
-              <div className="flex items-center gap-2">
-                <Table2 className="size-4 text-gray-400" aria-hidden />
-                <Label>字段预览</Label>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Table2 className="size-4 text-gray-400" aria-hidden />
+                  <Label>绑定字段</Label>
+                  <Badge variant="light" color="light" size="sm">
+                    已选 {selectedColumns.length}/{columnNames.length || "—"}
+                  </Badge>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={handleAutoColumns} disabled={columnNames.length === 0}>
+                    自动识别
+                  </Button>
+                  <Button type="button" variant="outline" size="sm" onClick={handleSelectAllColumns} disabled={columnNames.length === 0}>
+                    全选
+                  </Button>
+                </div>
               </div>
-              {columnsQuery.isLoading ? (
-                <Skeleton className="h-16 w-full rounded-lg" />
+              {columnsQuery.isLoading || boundConfigQuery.isLoading ? (
+                <Skeleton className="h-24 w-full rounded-lg" />
               ) : columnNames.length > 0 ? (
-                <div className="max-h-32 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50/50 p-3 dark:border-gray-800 dark:bg-white/[0.02]">
-                  <div className="flex flex-wrap gap-1.5">
-                    {columnNames.map((col) => (
-                      <Badge key={col} variant="light" color="light" size="sm">
-                        {col}
-                      </Badge>
-                    ))}
-                  </div>
+                <div className="max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50/50 p-3 dark:border-gray-800 dark:bg-white/[0.02]">
+                  <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {columnNames.map((col) => {
+                      const kind = groupDatasetFields([col]);
+                      const badge =
+                        kind.metrics.length > 0 ? (
+                          <Badge variant="light" color="success" size="sm">
+                            指标
+                          </Badge>
+                        ) : (
+                          <Badge variant="light" color="primary" size="sm">
+                            维度
+                          </Badge>
+                        );
+                      return (
+                        <li key={col}>
+                          <label className="flex cursor-pointer items-center gap-2 rounded-md px-1 py-0.5 hover:bg-white/80 dark:hover:bg-white/5">
+                            <Checkbox
+                              checked={selectedColumns.includes(col)}
+                              onCheckedChange={(checked) => toggleColumn(col, checked === true)}
+                            />
+                            <span className="min-w-0 flex-1 truncate font-mono text-theme-xs">{col}</span>
+                            {badge}
+                          </label>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 </div>
               ) : (
                 <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-                  选择连接与主表后加载列信息。
+                  选择连接与主表后加载列信息，可自动识别或手动勾选。
                 </p>
               )}
             </div>
@@ -252,7 +377,7 @@ export function DatasetBindPanel({
               <Button
                 type="button"
                 variant="primary"
-                disabled={!selectedDs || !tableName || columnNames.length === 0 || binding}
+                disabled={!selectedDs || !tableName || selectedColumns.length === 0 || binding}
                 loading={binding}
                 loadingText="绑定中…"
                 onClick={() => void handleBind()}

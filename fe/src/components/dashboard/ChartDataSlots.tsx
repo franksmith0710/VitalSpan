@@ -43,7 +43,7 @@ export function ChartDataSlots({ hideMapHint = false }: { hideMapHint?: boolean 
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" data-testid={`chart-data-slots-${cfg.chartType}`}>
       {fieldAssignError ? (
         <p className="rounded-md border border-error-200 bg-error-50 px-2 py-1.5 text-[10px] leading-snug text-error-700 dark:border-error-200/30 dark:bg-error-500/10 dark:text-error-400">
           {fieldAssignError}

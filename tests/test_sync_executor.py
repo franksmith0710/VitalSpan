@@ -781,7 +781,7 @@ def test_incremental_zero_rows_still_succeeds(mock_fetch, mock_write):
 
 
 def test_write_analytics_routes_full_to_truncate():
-    """T-INC-03: write_analytics 全量模式调用 TRUNCATE 路径。"""
+    """T-INC-03: write_analytics 全量模式调用 write_analytics_full 路径。"""
     from app.ingestion.sync_write import write_analytics
 
     job = SyncJob(

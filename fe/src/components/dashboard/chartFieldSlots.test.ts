@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
+import "@/components/charts/engine/plugins/index";
+import { BUILTIN_PLUGIN_DEFS } from "@/components/charts/engine/plugins/metadata";
+import { getDeAxisBlueprint } from "@/lib/chartDeAxis";
 import { chartDataSlotBlueprint, chartFieldSlotHints, chartRenderRequiredCounts } from "@/components/dashboard/chartFieldSlots";
+
+const ACTIVE_TYPES = BUILTIN_PLUGIN_DEFS.filter((d) => !d.deprecated).map((d) => d.type);
 
 describe("chartFieldSlots", () => {
   it("T-INSP-DE-01: bar chart uses category/value axis labels", () => {
@@ -159,4 +164,12 @@ describe("chartFieldSlots", () => {
     ]);
     expect(chartDataSlotBlueprint("table-info")[0]?.uiMode).toBe("multi");
   });
+
+  it.each(ACTIVE_TYPES.map((t) => [t] as const))(
+    "T-INSP-DE-golden %s: slot label array matches catalog",
+    (chartType) => {
+      const expected = getDeAxisBlueprint(chartType).map((s) => s.label);
+      expect(chartDataSlotBlueprint(chartType).map((s) => s.label)).toEqual(expected);
+    },
+  );
 });

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
-import { reconcileChartFields } from "@/lib/chartConfigState";
-import { isChartExecuteReady } from "@/lib/chartExecuteProbe";
+import { activeFieldRefs, reconcileChartFields } from "@/lib/chartConfigState";
+import { isChartExecuteReady, suggestChartFields } from "@/lib/chartExecuteProbe";
 import { resolveDatasetChartBinding } from "@/lib/datasetChartBinding";
 import { queryKeys } from "@/lib/queryKeys";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
@@ -39,6 +39,7 @@ export function useChartInspectorState(
   const cfg = widget.chartConfig ?? defaultChartConfig("table");
   const { columns, loading: columnsLoading, ready: columnsReady, refreshColumns } = useInspectorColumns(cfg);
   const bindingSyncRef = useRef<string | null>(null);
+  const autoFieldsRef = useRef<string | null>(null);
   const [catalog, setCatalog] = useState<ChartTypeCatalogItem[]>([]);
   const [activeSlot, setActiveSlot] = useState<SlotTarget | null>(null);
   const [fieldAssignError, setFieldAssignError] = useState<string | null>(null);
@@ -175,6 +176,20 @@ export function useChartInspectorState(
     // 仅在列集合变化时剔除无效字段，避免拖入字段时被立即清掉
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [columnsKey]);
+
+  useEffect(() => {
+    if (!columns.length) return;
+    const current = readChartConfig();
+    const hasFields =
+      activeFieldRefs(current.dimensions).length > 0 ||
+      activeFieldRefs(current.metrics).length > 0;
+    if (hasFields) return;
+    const autoKey = `${current.chartType}:${columnsKey}`;
+    if (autoFieldsRef.current === autoKey) return;
+    autoFieldsRef.current = autoKey;
+    const suggested = suggestChartFields(columns, current.chartType);
+    emitChange({ ...current, ...suggested });
+  }, [columns, columnsKey, emitChange, readChartConfig]);
 
   const assignField = useCallback(
     (fieldName: string, target?: SlotTarget) => {

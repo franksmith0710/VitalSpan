@@ -5,6 +5,7 @@ import type { ChartFilterRef, ChartTimeRangeRef, ChartViewConfig } from "@/lib/c
 export const CHART_EXECUTE_MAX_CONCURRENCY = 3;
 import type { ChartType } from "@/lib/chartViewConfig";
 import { injectSqlParameters } from "@/components/dashboard/dashboardFilterUtils";
+import { groupDatasetFields } from "@/components/dashboard/datasetFieldClassification";
 
 export type ChartExecuteResult = {
   columns: string[];
@@ -283,14 +284,18 @@ export async function fetchChartExecuteResult(
 
 export function suggestChartFields(columns: string[], chartType: ChartType) {
   if (columns.length === 0) return { dimensions: [], metrics: [] };
+  const { dimensions, metrics } = groupDatasetFields(columns);
   if (chartType === "table") {
+    const dimFields = dimensions.length > 0 ? dimensions : columns;
     return {
-      dimensions: columns.slice(0, 3).map((field) => ({ field })),
-      metrics: [],
+      dimensions: dimFields.slice(0, 6).map((field) => ({ field })),
+      metrics: metrics.slice(0, 3).map((field) => ({ field })),
     };
   }
+  const dimension = dimensions[0] ?? columns[0];
+  const metric = metrics[0] ?? columns.find((col) => col !== dimension);
   return {
-    dimensions: [{ field: columns[0] }],
-    metrics: columns[1] ? [{ field: columns[1] }] : [],
+    dimensions: dimension ? [{ field: dimension }] : [],
+    metrics: metric ? [{ field: metric }] : [],
   };
 }

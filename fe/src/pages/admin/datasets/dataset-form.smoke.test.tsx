@@ -103,6 +103,7 @@ describe("Dataset form pages", () => {
           tables: [{ name: "public.orders" }],
           computedFields: [{ name: "amt2", expression: "amount * 2" }],
           allowedRoles: ["analyst"],
+          tableSourceDataSourceId: "ds-1",
           boundConfigId: null,
         };
       }
