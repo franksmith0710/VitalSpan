@@ -29,6 +29,9 @@ export function SchemaBrowser({
   embedded = false,
   defaultDatabase,
   focusTable,
+  mode = "browse",
+  currentTableName,
+  onPickTable,
   onSelectionChange,
   toolbarActions,
   addedTableNames,
@@ -39,11 +42,14 @@ export function SchemaBrowser({
   embedded?: boolean;
   defaultDatabase?: string;
   focusTable?: { schema: string; table: string };
+  mode?: "browse" | "datasetPick";
+  currentTableName?: string;
+  onPickTable?: (selection: TableSelection) => void;
   onSelectionChange?: (selection: TableSelection | null) => void;
   toolbarActions?: ReactNode;
-  /** Dataset 选表：已加入的表名集合 */
+  /** Dataset 选表：已加入的表名集合（browse 模式遗留） */
   addedTableNames?: ReadonlySet<string>;
-  /** Dataset 选表：点击/双击添加 */
+  /** Dataset 选表：点击/双击添加（browse 模式遗留） */
   onAddTable?: (selection: TableSelection) => void;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -186,6 +192,8 @@ export function SchemaBrowser({
     );
   }
 
+  const isDatasetPick = mode === "datasetPick";
+
   const toolbar = (
     <div
       className={cn(
@@ -213,7 +221,7 @@ export function SchemaBrowser({
           </Label>
         </div>
         {toolbarActions}
-        {onAddTable ? (
+        {!isDatasetPick && onAddTable ? (
           <p className="hidden text-theme-xs text-gray-500 lg:block dark:text-gray-400">
             双击表名或点 <span className="font-medium text-gray-700 dark:text-gray-300">+</span> 添加
           </p>
@@ -230,8 +238,9 @@ export function SchemaBrowser({
   const splitView = (
     <div
       className={cn(
-        "grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[minmax(260px,320px)_1fr]",
-        !embedded && "min-h-[420px]",
+        "grid min-h-0 flex-1 overflow-hidden",
+        isDatasetPick ? "grid-cols-1" : "lg:grid-cols-[minmax(260px,320px)_1fr]",
+        !embedded && !isDatasetPick && "min-h-[420px]",
       )}
       data-testid="schema-browser-split"
     >
@@ -244,18 +253,23 @@ export function SchemaBrowser({
         searchQuery={searchQuery}
         expandedSchemas={expandedSchemas}
         selection={selection}
+        mode={mode}
+        currentTableName={currentTableName}
         onToggleSchema={handleToggleSchema}
         onSelectTable={handleSelectTable}
         onTablesLoaded={handleTablesLoaded}
+        onPickTable={onPickTable}
         addedTableNames={addedTableNames}
-        onAddTable={onAddTable}
+        onAddTable={isDatasetPick ? undefined : onAddTable}
       />
-      <TableColumnsPanel
-        dataSourceId={dataSourceId}
-        selection={selection}
-        addedTableNames={addedTableNames}
-        onAddTable={onAddTable}
-      />
+      {!isDatasetPick ? (
+        <TableColumnsPanel
+          dataSourceId={dataSourceId}
+          selection={selection}
+          addedTableNames={addedTableNames}
+          onAddTable={onAddTable}
+        />
+      ) : null}
     </div>
   );
 

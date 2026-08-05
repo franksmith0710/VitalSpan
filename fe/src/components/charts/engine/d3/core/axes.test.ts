@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatAxisCategoryLabel,
   formatHorizontalBandAxisLabel,
+  pickCategoryTickIndices,
   pickCategoryTicks,
   planCategoryAxisLayout,
   resolveBandAxisFontSize,
@@ -14,6 +15,16 @@ import { nearestCategory } from "@/components/charts/engine/d3/core/interaction"
 import * as d3 from "d3";
 
 describe("d3 core", () => {
+  it("pickCategoryTickIndices spaces ticks evenly across span", () => {
+    const indices = pickCategoryTickIndices(24, 480, 72);
+    expect(indices[0]).toBe(0);
+    expect(indices[indices.length - 1]).toBe(23);
+    expect(indices.length).toBeGreaterThan(2);
+    const gaps = indices.slice(1).map((value, i) => value - indices[i]!);
+    const avgGap = gaps.reduce((sum, gap) => sum + gap, 0) / gaps.length;
+    gaps.forEach((gap) => expect(gap).toBeGreaterThanOrEqual(Math.floor(avgGap * 0.6)));
+  });
+
   it("pickCategoryTicks thins labels when viewport is narrow", () => {
     const cats = Array.from({ length: 20 }, (_, i) => `c${i}`);
     const thinned = pickCategoryTicks(cats, 80);

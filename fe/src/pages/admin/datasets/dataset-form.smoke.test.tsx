@@ -17,7 +17,9 @@ vi.mock("@/context/auth-context", () => ({
   }),
   AuthProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
-vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock("sonner", () => ({
+  toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() },
+}));
 
 import { DatasetFormPage } from "./DatasetFormPage";
 import { DatasetListPage } from "./DatasetListPage";
@@ -77,6 +79,8 @@ describe("Dataset form pages", () => {
     expect(await screen.findByRole("heading", { name: "新建 Dataset" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "返回列表" })).toHaveAttribute("href", "/admin/datasets");
     expect(await screen.findByLabelText("选择数据源")).toBeInTheDocument();
+    expect(await screen.findByText("当前数据表")).toBeInTheDocument();
+    expect(screen.queryByText("已选表")).not.toBeInTheDocument();
     expect(await screen.findByTestId("schema-browser")).toBeInTheDocument();
     expect(screen.queryByLabelText(/计算字段 JSON/)).not.toBeInTheDocument();
     await waitFor(() =>
@@ -132,6 +136,8 @@ describe("Dataset form pages", () => {
     );
 
     expect(await screen.findByRole("heading", { name: "编辑数据集" })).toBeInTheDocument();
+    expect(await screen.findByText("当前数据表")).toBeInTheDocument();
+    expect(screen.queryByText("已选表")).not.toBeInTheDocument();
     expect(await screen.findByTestId("schema-browser")).toBeInTheDocument();
     expect(screen.getAllByText("public.orders").length).toBeGreaterThan(0);
     expect(await screen.findByText("字段工作台")).toBeInTheDocument();
@@ -211,6 +217,8 @@ describe("Dataset form pages", () => {
     );
 
     expect(await screen.findByRole("heading", { name: "编辑数据集" })).toBeInTheDocument();
+    expect(await screen.findByText("当前数据表")).toBeInTheDocument();
+    expect(screen.queryByText("已选表")).not.toBeInTheDocument();
     expect(await screen.findByText("字段工作台")).toBeInTheDocument();
     expect(screen.queryByRole("tab", { name: /绑定配置/ })).not.toBeInTheDocument();
     expect(screen.getByText("同步产物")).toBeInTheDocument();

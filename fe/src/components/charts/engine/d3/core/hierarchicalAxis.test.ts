@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { CARTESIAN_CATEGORY_KEY_SEP, formatCategoryCellValue } from "@/components/charts/engine/buildDatasetEncoding";
 import {
   buildCategoryLevelSegments,
+  pickCategoryBoundaryIndices,
   planHierarchicalCategoryAxis,
   resolveActiveCategoryLevels,
   resolveFinestLevelForThinning,
@@ -77,6 +78,24 @@ describe("hierarchical category axis", () => {
     expect(plan).not.toBeNull();
     expect(plan!.visibleCategories.length).toBeLessThan(dense.length);
     expect(plan!.activeLevels.length).toBe(2);
+  });
+
+  it("pickCategoryBoundaryIndices marks coarse-level group starts", () => {
+    const keys = [
+      `企业直销${CARTESIAN_CATEGORY_KEY_SEP}2025-01-01`,
+      `企业直销${CARTESIAN_CATEGORY_KEY_SEP}2025-01-02`,
+      `电商平台${CARTESIAN_CATEGORY_KEY_SEP}2025-01-03`,
+    ];
+    expect(pickCategoryBoundaryIndices(keys, 0, 2)).toEqual([0, 2]);
+  });
+
+  it("planHierarchicalCategoryAxis keeps coarse boundaries in visible ticks", () => {
+    const keys = Array.from({ length: 12 }, (_, i) =>
+      `${i < 6 ? "企业直销" : "电商平台"}${CARTESIAN_CATEGORY_KEY_SEP}2025-01-${String((i % 6) + 1).padStart(2, "0")}`,
+    );
+    const plan = planHierarchicalCategoryAxis(keys, 480);
+    expect(plan).not.toBeNull();
+    expect(plan!.visibleCategories.some((c) => c.startsWith("电商平台"))).toBe(true);
   });
 
   it("resolveHierarchicalAxisLayout reserves bottom space per active level", () => {

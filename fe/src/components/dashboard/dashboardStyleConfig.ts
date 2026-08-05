@@ -1,5 +1,9 @@
 import type { CSSProperties } from "react";
 import type { ChartDeTableStyle } from "@/lib/chartDeTableStyle";
+import type {
+  WidgetBackgroundImageFit,
+  WidgetBackgroundImagePosition,
+} from "@/lib/widgetBackgroundImageFit";
 import { buildWidgetBackgroundPresentation } from "@/lib/widgetStylePresentation";
 import type { DashboardThemeVariants } from "./dashboardThemeVariants";
 import { getDashboardThemeTokens } from "./dashboardThemeTokens";
@@ -58,6 +62,10 @@ export type WidgetStyleConfig = {
   opacity?: number;
   /** 底图不透明度（0–1）；未设时默认 1，不继承 opacity */
   backgroundImageOpacity?: number;
+  /** 底图适应方式；未设时 stretch（100% 100%，兼容存量） */
+  backgroundImageFit?: WidgetBackgroundImageFit;
+  /** 底图对齐（widthFit/contain/cover 等时生效） */
+  backgroundImagePosition?: WidgetBackgroundImagePosition;
   backdropBlur?: number;
   borderRadius?: number;
   borderRadiusTopLeft?: number;

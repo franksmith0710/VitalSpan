@@ -9,6 +9,7 @@ import { TruncateHint } from "@/components/ui/hint-tooltip";
 import { cn } from "@/lib/utils";
 import {
   filterTables,
+  isCurrentTable,
   isTableAdded,
   mapMetadataError,
   matchesSearch,
@@ -23,9 +24,12 @@ type SchemaGroupProps = {
   isDefault: boolean;
   searchQuery: string;
   selection: TableSelection | null;
+  mode?: "browse" | "datasetPick";
+  currentTableName?: string;
   onToggle: () => void;
   onSelectTable: (schema: string, table: TableMeta) => void;
   onTablesLoaded?: (schema: string, tables: TableMeta[]) => void;
+  onPickTable?: (selection: TableSelection) => void;
   addedTableNames?: ReadonlySet<string>;
   onAddTable?: (selection: TableSelection) => void;
 };
@@ -37,9 +41,12 @@ function SchemaGroup({
   isDefault,
   searchQuery,
   selection,
+  mode = "browse",
+  currentTableName,
   onToggle,
   onSelectTable,
   onTablesLoaded,
+  onPickTable,
   addedTableNames,
   onAddTable,
 }: SchemaGroupProps) {
@@ -107,27 +114,35 @@ function SchemaGroup({
             const added = addedTableNames
               ? isTableAdded({ schema, table: table.name }, addedTableNames)
               : false;
+            const isCurrent = isCurrentTable({ schema, table: table.name }, currentTableName);
             const pickable = Boolean(onAddTable);
+            const isDatasetPick = mode === "datasetPick";
+            const handleTableClick = () => {
+              onSelectTable(schema, table);
+              if (isDatasetPick && onPickTable) {
+                onPickTable({ schema, table: table.name, type: table.type });
+              }
+            };
             return (
               <div
                 key={table.name}
                 className={cn(
                   "group flex w-full items-center gap-1 rounded-lg pr-1 transition-colors",
-                  active
+                  active || isCurrent
                     ? "bg-brand-50 dark:bg-brand-500/15"
                     : "hover:bg-white dark:hover:bg-white/5",
                 )}
               >
                 <button
                   type="button"
-                  onClick={() => onSelectTable(schema, table)}
+                  onClick={handleTableClick}
                   onDoubleClick={() => {
-                    if (!pickable || added) return;
+                    if (isDatasetPick || !pickable || added) return;
                     onAddTable?.({ schema, table: table.name, type: table.type });
                   }}
                   className={cn(
                     "flex min-w-0 flex-1 items-center gap-2 px-3 py-2 text-left text-theme-sm transition-colors",
-                    active
+                    active || isCurrent
                       ? "font-medium text-brand-700 dark:text-brand-400"
                       : "text-gray-700 dark:text-gray-300",
                   )}
@@ -137,7 +152,16 @@ function SchemaGroup({
                     {table.name}
                   </TruncateHint>
                 </button>
-                {pickable ? (
+                {isDatasetPick && isCurrent ? (
+                  <span
+                    className="mr-2 flex size-7 shrink-0 items-center justify-center text-success-600 dark:text-success-400"
+                    aria-label="当前数据表"
+                    title="当前数据表"
+                  >
+                    <Check className="size-3.5" aria-hidden />
+                  </span>
+                ) : null}
+                {!isDatasetPick && pickable ? (
                   added ? (
                     <span
                       className="mr-2 flex size-7 shrink-0 items-center justify-center text-success-600 dark:text-success-400"
@@ -178,9 +202,12 @@ type SchemaTreePanelProps = {
   searchQuery: string;
   expandedSchemas: Record<string, boolean>;
   selection: TableSelection | null;
+  mode?: "browse" | "datasetPick";
+  currentTableName?: string;
   onToggleSchema: (schema: string) => void;
   onSelectTable: (schema: string, table: TableMeta) => void;
   onTablesLoaded: (schema: string, tables: TableMeta[]) => void;
+  onPickTable?: (selection: TableSelection) => void;
   addedTableNames?: ReadonlySet<string>;
   onAddTable?: (selection: TableSelection) => void;
 };
@@ -194,9 +221,12 @@ export function SchemaTreePanel({
   searchQuery,
   expandedSchemas,
   selection,
+  mode = "browse",
+  currentTableName,
   onToggleSchema,
   onSelectTable,
   onTablesLoaded,
+  onPickTable,
   addedTableNames,
   onAddTable,
 }: SchemaTreePanelProps) {
@@ -205,7 +235,12 @@ export function SchemaTreePanel({
     : systemSchemas.filter((s) => matchesSearch(s, searchQuery));
 
   return (
-    <div className="flex min-h-0 flex-col overflow-hidden border-r border-gray-200 bg-gray-50/60 dark:border-gray-800 dark:bg-white/[0.02]">
+    <div
+      className={cn(
+        "flex min-h-0 flex-col overflow-hidden bg-gray-50/60 dark:bg-white/[0.02]",
+        mode === "browse" && "border-r border-gray-200 dark:border-gray-800",
+      )}
+    >
       <div className="shrink-0 border-b border-gray-200 px-4 py-3 dark:border-gray-800">
         <p className="text-theme-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
           Schema / 表
@@ -227,9 +262,12 @@ export function SchemaTreePanel({
                 isDefault={schema === defaultDatabase}
                 searchQuery={searchQuery}
                 selection={selection}
+                mode={mode}
+                currentTableName={currentTableName}
                 onToggle={() => onToggleSchema(schema)}
                 onSelectTable={onSelectTable}
                 onTablesLoaded={onTablesLoaded}
+                onPickTable={onPickTable}
                 addedTableNames={addedTableNames}
                 onAddTable={onAddTable}
               />
@@ -246,9 +284,12 @@ export function SchemaTreePanel({
                     isDefault={false}
                     searchQuery={searchQuery}
                     selection={selection}
+                    mode={mode}
+                    currentTableName={currentTableName}
                     onToggle={() => onToggleSchema(schema)}
                     onSelectTable={onSelectTable}
                     onTablesLoaded={onTablesLoaded}
+                    onPickTable={onPickTable}
                     addedTableNames={addedTableNames}
                     onAddTable={onAddTable}
                   />

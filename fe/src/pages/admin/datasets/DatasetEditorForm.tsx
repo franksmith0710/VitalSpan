@@ -64,10 +64,11 @@ export function DatasetEditorForm({
     boundConfigId?: string | null;
     syncJobId?: string | null;
     onRefreshBinding?: () => void;
+    onTableChange?: () => void;
   };
   origin?: DatasetOrigin;
 }) {
-  const tableTabLabel = `数据表${values.tables.length > 0 ? ` (${values.tables.length})` : ""}`;
+  const tableTabLabel = "数据表";
   const computedTabLabel = `计算字段${values.computedFields.length > 0 ? ` (${values.computedFields.length})` : ""}`;
 
   return (
@@ -166,6 +167,7 @@ export function DatasetEditorForm({
                 boundConfigId={tablePickerPrefill?.boundConfigId}
                 syncJobId={tablePickerPrefill?.syncJobId}
                 onRefreshBinding={tablePickerPrefill?.onRefreshBinding}
+                onTableChange={tablePickerPrefill?.onTableChange}
               />
             </TabsContent>
 

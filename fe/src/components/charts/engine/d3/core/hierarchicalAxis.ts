@@ -1,4 +1,3 @@
-import * as d3 from "d3";
 import type { AntvThemeTokens } from "@/components/charts/engine/antv/theme";
 import {
   CARTESIAN_CATEGORY_KEY_SEP,
@@ -8,7 +7,9 @@ import {
 import {
   axisCategoryDisplayText,
   axisLabelFitsSlot,
-  pickCategoryTicksForLabels,
+  estimateAxisLabelWidth,
+  filterTickIndicesByLabelSpacing,
+  pickCategoryTickIndices,
 } from "@/components/charts/engine/d3/core/axes";
 import { resolveAxisFontSize } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import type { ChartAxisStyle } from "@/lib/chartDeStyleBlocks";
@@ -120,6 +121,65 @@ export type HierarchicalAxisPlan = {
   extraBottom: number;
 };
 
+/** 粗粒度层边界索引（分组切换点，用于底行刻度对齐） */
+export function pickCategoryBoundaryIndices(
+  categories: string[],
+  level: number,
+  structuralLevelCount: number,
+): number[] {
+  if (categories.length === 0) return [];
+  const indices = new Set<number>([0, categories.length - 1]);
+  for (let i = 1; i < categories.length; i += 1) {
+    const prev = categories[i - 1]!.split(CARTESIAN_CATEGORY_KEY_SEP);
+    const curr = categories[i]!.split(CARTESIAN_CATEGORY_KEY_SEP);
+    const prevPart = formatCategoryCellValue(prev[level] ?? "");
+    const currPart = formatCategoryCellValue(curr[level] ?? "");
+    if (prevPart !== currPart) indices.add(i);
+  }
+  return [...indices].sort((a, b) => a - b);
+}
+
+const LABEL_GAP_PX = 12;
+
+function indexToSpanPx(index: number, count: number, innerSpan: number): number {
+  if (count <= 1) return innerSpan / 2;
+  return (index / (count - 1)) * innerSpan;
+}
+
+function pickThinningVisibleCategories(
+  categories: string[],
+  innerW: number,
+  structuralLevelCount: number,
+  thinningLevel: number,
+  coarseLevel: number,
+): string[] {
+  const labelFor = (category: string) =>
+    splitCompositeCategoryParts(category, structuralLevelCount)[thinningLevel] ?? "";
+
+  const baseIndices = pickCategoryTickIndices(categories.length, innerW, THINNING_TICK_MIN_PX);
+  const keptSet = new Set(
+    filterTickIndicesByLabelSpacing(categories, baseIndices, innerW, labelFor, LABEL_GAP_PX),
+  );
+
+  const boundaries = pickCategoryBoundaryIndices(categories, coarseLevel, structuralLevelCount);
+  for (const idx of boundaries) {
+    if (keptSet.has(idx)) continue;
+    const category = categories[idx]!;
+    const label = labelFor(category).trim();
+    if (!label) continue;
+    const labelW = estimateAxisLabelWidth(label.length);
+    const pos = indexToSpanPx(idx, categories.length, innerW);
+    const tooClose = [...keptSet].some((ki) => {
+      const gap = Math.abs(indexToSpanPx(ki, categories.length, innerW) - pos);
+      return gap < labelW + LABEL_GAP_PX;
+    });
+    if (!tooClose && axisLabelFitsSlot(label, labelW + LABEL_GAP_PX, 0)) keptSet.add(idx);
+  }
+
+  if (keptSet.size === 0) return categories.length > 0 ? [categories[0]!] : [];
+  return [...keptSet].sort((a, b) => a - b).map((index) => categories[index]!);
+}
+
 /** 对标 DataEase：分层轴底行抽稀、全层水平标签（不旋转进绘图区） */
 export function planHierarchicalCategoryAxis(
   categories: string[],
@@ -132,11 +192,13 @@ export function planHierarchicalCategoryAxis(
   if (activeLevels.length <= 1) return null;
 
   const thinningLevel = resolveFinestLevelForThinning(categories, structuralLevelCount, activeLevels);
-  const visibleCategories = pickCategoryTicksForLabels(
+  const coarseLevel = activeLevels[0]!;
+  const visibleCategories = pickThinningVisibleCategories(
     categories,
     innerW,
-    (category) => splitCompositeCategoryParts(category, structuralLevelCount)[thinningLevel] ?? "",
-    THINNING_TICK_MIN_PX,
+    structuralLevelCount,
+    thinningLevel,
+    coarseLevel,
   );
 
   return {
@@ -198,10 +260,15 @@ function shouldDrawSegmentLabel(
     return visibleSet.has(anchor);
   }
 
+  const display = axisCategoryDisplayText(segment.label);
+  if (!display) return false;
+
+  // 粗粒度合并分组：段宽足够容纳完整文案才展示（防重叠）
   if (segment.end > segment.start) {
-    return axisLabelFitsSlot(axisCategoryDisplayText(segment.label), slotSpan, 0);
+    return slotSpan >= estimateAxisLabelWidth(display.length) + LABEL_GAP_PX;
   }
-  return slotSpan >= PARENT_LABEL_MIN_PX && axisLabelFitsSlot(axisCategoryDisplayText(segment.label), slotSpan, 0);
+
+  return slotSpan >= PARENT_LABEL_MIN_PX && axisLabelFitsSlot(display, slotSpan, 0);
 }
 
 type DrawHierarchicalCategoryAxisOptions = {

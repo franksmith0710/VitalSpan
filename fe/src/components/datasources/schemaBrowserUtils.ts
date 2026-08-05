@@ -32,6 +32,15 @@ export function isTableAdded(
   return addedNames.has(qualified) || addedNames.has(selection.table);
 }
 
+export function isCurrentTable(
+  selection: Pick<TableSelection, "schema" | "table">,
+  currentTableName?: string,
+): boolean {
+  if (!currentTableName?.trim()) return false;
+  const qualified = qualifiedTableName(selection.schema, selection.table);
+  return currentTableName === qualified || currentTableName === selection.table;
+}
+
 export function buildSelectSql(schema: string, table: string): string {
   return `SELECT * FROM ${qualifiedTableName(schema, table)} LIMIT 100`;
 }

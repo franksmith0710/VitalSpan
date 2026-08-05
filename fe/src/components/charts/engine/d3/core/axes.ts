@@ -17,13 +17,62 @@ export function estimateAxisLabelWidth(charCount: number): number {
   return charCount * CHAR_PX;
 }
 
+/** 均匀索引抽稀（对标 DataEase：首尾必留、中间等距） */
+export function pickCategoryTickIndices(count: number, innerSpan: number, minPx = 48): number[] {
+  if (count <= 0 || innerSpan <= 0) return [];
+  const maxTicks = Math.max(2, Math.floor(innerSpan / minPx));
+  if (count <= maxTicks) return Array.from({ length: count }, (_, i) => i);
+
+  const indices: number[] = [];
+  for (let i = 0; i < maxTicks; i += 1) {
+    indices.push(Math.round((i * (count - 1)) / (maxTicks - 1)));
+  }
+  return [...new Set(indices)].sort((a, b) => a - b);
+}
+
+function indexToSpanPx(index: number, count: number, innerSpan: number): number {
+  if (count <= 1) return innerSpan;
+  return (index / (count - 1)) * innerSpan;
+}
+
+/** 在均匀抽稀结果上按标签宽度过滤，保证相邻标签像素间距 */
+export function filterTickIndicesByLabelSpacing(
+  categories: string[],
+  indices: number[],
+  innerSpan: number,
+  labelFor: (category: string) => string,
+  minGapPx = 10,
+): number[] {
+  if (indices.length === 0 || categories.length === 0) return indices;
+  const kept: number[] = [];
+
+  for (const idx of indices) {
+    const category = categories[idx];
+    if (!category) continue;
+    const label = labelFor(category).trim();
+    if (!label) continue;
+
+    const labelW = estimateAxisLabelWidth(label.length);
+    const pos = indexToSpanPx(idx, categories.length, innerSpan);
+    const prev = kept[kept.length - 1];
+    if (prev != null) {
+      const prevPos = indexToSpanPx(prev, categories.length, innerSpan);
+      if (pos - prevPos < labelW + minGapPx) continue;
+    }
+    const slot = kept.length > 0 ? pos - indexToSpanPx(kept[0]!, categories.length, innerSpan) : innerSpan;
+    if (!axisLabelFitsSlot(label, Math.max(slot, labelW + minGapPx), 0)) continue;
+    kept.push(idx);
+  }
+
+  if (kept.length > 0) return kept;
+  return indices.length > 0 ? [indices[0]!] : [];
+}
+
 /** 对标 DataEase：视口内抽稀轴刻度，不缩小绘图区 */
 export function pickCategoryTicks(categories: string[], innerSpan: number, minPx = 48): string[] {
   if (innerSpan <= 0 || categories.length === 0) return categories;
-  const maxTicks = Math.max(2, Math.floor(innerSpan / minPx));
-  if (categories.length <= maxTicks) return categories;
-  const step = Math.ceil(categories.length / maxTicks);
-  return categories.filter((_, index) => index % step === 0 || index === categories.length - 1);
+  const indices = pickCategoryTickIndices(categories.length, innerSpan, minPx);
+  return indices.map((index) => categories[index]!);
 }
 
 function maxCharsForSlot(slotSpan: number, rotateDeg = 0): number {
@@ -42,20 +91,19 @@ export function axisLabelFitsSlot(text: string, slotSpan: number, rotateDeg = 0)
   return text.length <= maxCharsForSlot(slotSpan, rotateDeg);
 }
 
-/** 按标签宽度抬高抽稀间距，避免展示不完整文案 */
+/** 按标签宽度过滤抽稀结果（均匀间距 + 像素防重叠） */
 export function pickCategoryTicksForLabels(
   categories: string[],
   innerSpan: number,
   labelFor: (category: string) => string,
   minPx = 48,
 ): string[] {
-  let effectiveMin = minPx;
-  for (const category of categories) {
-    const label = labelFor(category).trim();
-    if (!label) continue;
-    effectiveMin = Math.max(effectiveMin, estimateAxisLabelWidth(label.length) + 10);
+  const indices = pickCategoryTickIndices(categories.length, innerSpan, minPx);
+  const kept = filterTickIndicesByLabelSpacing(categories, indices, innerSpan, labelFor);
+  if (kept.length === 0) {
+    return categories.length > 0 ? [categories[0]!] : [];
   }
-  return pickCategoryTicks(categories, innerSpan, effectiveMin);
+  return kept.map((index) => categories[index]!);
 }
 
 export function resolveCategoryLabelRotate(

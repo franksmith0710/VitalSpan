@@ -21,6 +21,7 @@ import {
   EMPTY_BIND_DRAFT,
   seedBindDraftFromColumns,
 } from "./components/datasetFieldWorkbenchState";
+import { loadPrimaryOnly, normalizeTablesSingle } from "./datasetTableSelection";
 import {
   canSubmitDataset,
   DATASET_EDITOR_FORM_ID,
@@ -49,6 +50,7 @@ function normalizeValues(values: DatasetEditorValues): DatasetEditorValues {
     ...values,
     datasetId: values.datasetId.trim(),
     displayName: values.displayName.trim(),
+    tables: normalizeTablesSingle(values.tables),
     tableSourceDataSourceId: values.tableSourceDataSourceId?.trim() || undefined,
     computedFields: values.computedFields.map((f) => ({
       name: f.name.trim(),
@@ -157,10 +159,14 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
     }
     if (!detailQuery.data) return;
     const item = detailQuery.data;
+    const tables = loadPrimaryOnly(item.tables);
+    if (item.tables.length > 1 && tables[0]?.name) {
+      toast.info(`已切换为单表模式，仅保留主表 ${tables[0].name}`);
+    }
     const nextValues: DatasetEditorValues = {
       datasetId: item.datasetId,
       displayName: item.displayName,
-      tables: item.tables.map((t) => ({ ...t })),
+      tables,
       computedFields: item.computedFields.map((c) => ({ ...c })),
       allowedRoles: [...item.allowedRoles],
       tableSourceDataSourceId: item.tableSourceDataSourceId ?? undefined,
@@ -360,6 +366,9 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
           boundConfigId: detailQuery.data?.boundConfigId,
           syncJobId: detailQuery.data?.syncJobId,
           onRefreshBinding: () => void detailQuery.refetch(),
+          onTableChange: () => {
+            bindSeedKeyRef.current = "";
+          },
         }}
       />
       <UnsavedLeaveDialog

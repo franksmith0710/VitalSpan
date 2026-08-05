@@ -7,6 +7,7 @@ import {
   resolveBoxRadius,
 } from "@/components/dashboard/dashboardStyleConfig";
 import { formatWidgetBackgroundImageCss } from "@/components/dashboard/imageSourceUtils";
+import { resolveWidgetBackgroundImageLayerStyle } from "@/lib/widgetBackgroundImageFit";
 import { resolveChartFrameOverlayLayer } from "@/lib/chartFrameBorderPresets";
 import {
   applyBackgroundOpacityOnly,
@@ -73,9 +74,7 @@ export function buildWidgetBackgroundPresentation(
       const blurStyle = blurPx > 0 ? buildWidgetImageBlurStyle(blurPx) : null;
       imageLayer = {
         backgroundImage: imageUrl,
-        backgroundSize: "100% 100%",
-        backgroundRepeat: "no-repeat",
-        backgroundPosition: "center",
+        ...resolveWidgetBackgroundImageLayerStyle(bg),
         borderRadius: radius,
         transform: blurStyle?.transform ? `translateZ(0) ${blurStyle.transform}` : "translateZ(0)",
         backfaceVisibility: "hidden",

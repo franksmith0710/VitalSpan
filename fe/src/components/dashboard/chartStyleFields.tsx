@@ -22,6 +22,8 @@ import {
   type WidgetSurfaceStyleDensity,
 } from "./widgetSurfaceStyleFields";
 import type { SurfaceKind } from "@/lib/surfacePreset";
+import { inferDefaultBackgroundImageFitForUrl } from "@/lib/widgetBackgroundImageFit";
+import { WidgetBackgroundImageFitFields } from "./WidgetBackgroundImageFitFields";
 
 type BackgroundPatch = Partial<WidgetStyleConfig>;
 
@@ -30,6 +32,7 @@ function patchWidgetBackgroundImageUpload(
   backgroundImage: string | undefined,
 ): BackgroundPatch {
   const trimmed = backgroundImage?.trim();
+  const fitDefaults = trimmed ? inferDefaultBackgroundImageFitForUrl(trimmed) : null;
   return {
     backgroundImage: trimmed || undefined,
     backgroundShow: true,
@@ -37,7 +40,46 @@ function patchWidgetBackgroundImageUpload(
     framePresetId: undefined,
     frameColor: undefined,
     ...(trimmed && value.backgroundImageOpacity == null ? { backgroundImageOpacity: 1 } : {}),
+    ...(fitDefaults
+      ? {
+          backgroundImageFit: fitDefaults.backgroundImageFit,
+          backgroundImagePosition: fitDefaults.backgroundImagePosition,
+        }
+      : trimmed
+        ? {}
+        : {
+            backgroundImageFit: undefined,
+            backgroundImagePosition: undefined,
+          }),
   };
+}
+
+function WidgetBackgroundImageSection({
+  value,
+  onChange,
+  highlightUrls,
+}: {
+  value: WidgetStyleConfig;
+  onChange: (patch: BackgroundPatch) => void;
+  highlightUrls?: string[];
+}) {
+  return (
+    <div className="space-y-2">
+      <ImageSourceField
+        variant="rail"
+        showPreview
+        assetGallery
+        assetGalleryScope="all"
+        highlightUrls={highlightUrls}
+        inputClassName={INSPECTOR_CTRL}
+        value={value.backgroundImage ?? ""}
+        onChange={(backgroundImage) =>
+          onChange(patchWidgetBackgroundImageUpload(value, backgroundImage))
+        }
+      />
+      <WidgetBackgroundImageFitFields value={value} onChange={onChange} />
+    </div>
+  );
 }
 
 const LINE_BORDER_STYLES = [
