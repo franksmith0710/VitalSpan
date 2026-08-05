@@ -4,7 +4,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { ChevronLeft, Clock, Redo2, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
-import { apiFetch } from "@/lib/api";
+import { queryKeys } from "@/lib/queryKeys";
+import { updateTemplate } from "@/lib/dashboardTemplates";
+import {
+  readTemplateEditSyncState,
+  type TemplateEditSyncState,
+} from "@/lib/templateEditSession";
+import { TEMPLATE_EDIT_SESSION } from "@/components/dashboard/templates/templateLabels";
 import { isDashboardNotFound, mapApiError } from "@/lib/apiError";
 import { DashboardShareDialog } from "@/components/dashboard/DashboardShareDialog";
 import { DashboardScheduleSheet } from "@/pages/admin/reports/components/DashboardScheduleSheet";
@@ -171,6 +177,19 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     matchesCapability(resolveEffectiveCapabilities(user), "report:manage") ||
     matchesCapability(resolveEffectiveCapabilities(user), "dashboard:schedule");
   const routeIsDataScreen = isDataScreenAdminPath(location.pathname);
+  const initialTemplateEditSync = useMemo(
+    () => readTemplateEditSyncState(location.state),
+    [location.state],
+  );
+  const [templateEditSync, setTemplateEditSync] = useState<TemplateEditSyncState | null>(
+    initialTemplateEditSync,
+  );
+  const templateEditSyncRef = useRef(templateEditSync);
+  templateEditSyncRef.current = templateEditSync;
+
+  useEffect(() => {
+    setTemplateEditSync(initialTemplateEditSync);
+  }, [initialTemplateEditSync]);
 
   useEffect(() => {
     if (mode !== "edit") return undefined;
@@ -1043,7 +1062,30 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       }
 
       setSavedLinkageSnapshot(linkageSnapshot(saveSnapshot.widgets, nextLinkage));
-      toast.success("看板已保存");
+
+      const activeTemplateSync = templateEditSyncRef.current;
+      if (activeTemplateSync?.writable) {
+        try {
+          const updatedTemplate = await updateTemplate(activeTemplateSync.templateId, {
+            layoutJson: normalizedLayout as unknown as Record<string, unknown>,
+            contentRevision: activeTemplateSync.contentRevision,
+          });
+          const nextTemplateSync: TemplateEditSyncState = {
+            ...activeTemplateSync,
+            contentRevision: updatedTemplate.contentRevision,
+          };
+          setTemplateEditSync(nextTemplateSync);
+          void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardTemplates.all });
+          toast.success(TEMPLATE_EDIT_SESSION.savedWithTemplate(activeTemplateSync.templateName));
+        } catch (templateErr) {
+          toast.error(
+            `${TEMPLATE_EDIT_SESSION.templateSyncFailed}：${mapApiError(templateErr)}`,
+          );
+          toast.success("看板已保存");
+        }
+      } else {
+        toast.success("看板已保存");
+      }
       return true;
     } catch (err) {
       if (isDashboardNotFound(err)) {
@@ -1203,6 +1245,17 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
             else void load({ force: true });
           }}
         />
+      ) : null}
+
+      {mode === "edit" && templateEditSync ? (
+        <div
+          className="mb-3 rounded-lg border border-brand-200 bg-brand-50/80 px-4 py-2.5 text-theme-xs text-brand-800 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-200"
+          data-testid="template-edit-sync-banner"
+        >
+          {templateEditSync.writable
+            ? TEMPLATE_EDIT_SESSION.writableHint(templateEditSync.templateName)
+            : TEMPLATE_EDIT_SESSION.builtinReadOnlyHint}
+        </div>
       ) : null}
 
       {id && mode !== "edit" ? (

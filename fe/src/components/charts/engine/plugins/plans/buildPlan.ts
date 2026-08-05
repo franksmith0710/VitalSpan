@@ -4,6 +4,7 @@ import {
   ADVANCED_CHART_ROW_CAP,
   capRows,
   colIndex,
+  resolveCartesianAxisFields,
 } from "@/components/charts/engine/buildDatasetEncoding";
 import {
   barRangePlan,
@@ -222,6 +223,13 @@ function piePlan(
   });
 }
 
+function cartesianCategoryLevelCount(
+  spec: ReturnType<typeof chartViewModelToRenderSpec>,
+): number | undefined {
+  const { categoryFields } = resolveCartesianAxisFields(spec.encoding);
+  return categoryFields.length > 1 ? categoryFields.length : undefined;
+}
+
 function columnPlan(
   spec: ReturnType<typeof chartViewModelToRenderSpec>,
   rows: unknown[][],
@@ -231,6 +239,7 @@ function columnPlan(
   const enc = encodeCartesianRows(spec, rows, columns, "bar");
   const horizontal = opts.horizontal ?? false;
   const plotType = horizontal ? "Bar" : "Column";
+  const categoryLevelCount = cartesianCategoryLevelCount(spec);
   return d3Plan(plotType, {
     data: enc.data,
     xField: enc.xField,
@@ -240,6 +249,7 @@ function columnPlan(
     isGroup: opts.group ?? false,
     isPercent: opts.percent ?? false,
     isHorizontal: horizontal,
+    ...(categoryLevelCount ? { categoryLevelCount } : {}),
   });
 }
 
@@ -252,6 +262,7 @@ function linePlan(
 ): ChartRenderPlan {
   const enc = encodeCartesianRows(spec, rows, columns, "line");
   const isHorizontal = enc.isHorizontal;
+  const categoryLevelCount = cartesianCategoryLevelCount(spec);
   return d3Plan(isHorizontal ? "Bar" : "Line", {
     data: enc.data,
     xField: enc.xField,
@@ -261,6 +272,7 @@ function linePlan(
     area: opts.area ? {} : undefined,
     isStack: opts.stack ?? false,
     isHorizontal,
+    ...(categoryLevelCount ? { categoryLevelCount } : {}),
   });
 }
 
@@ -272,6 +284,7 @@ function dualAxesPlan(
 ): ChartRenderPlan {
   const metrics = spec.encoding.metrics.map((m) => m.field).filter(Boolean);
   const catSpec = trimSpecToCategoryAxis(spec);
+  const categoryLevelCount = cartesianCategoryLevelCount(spec);
 
   if (mode === "dual-line") {
     const axes = spec.encoding.axes ?? {};
@@ -309,6 +322,7 @@ function dualAxesPlan(
       yField: [lineEnc.yField, lineEnc2.yField],
       lineLabels: [leftMetric, rightMetric],
       geometryOptions: [{ geometry: "line" }, { geometry: "line" }],
+      ...(categoryLevelCount ? { categoryLevelCount } : {}),
     });
   }
 
@@ -336,6 +350,7 @@ function dualAxesPlan(
       { geometry: "line" },
       { geometry: "column", isGroup: mode === "group", isStack: mode === "stack" },
     ],
+    ...(categoryLevelCount ? { categoryLevelCount } : {}),
   });
 }
 

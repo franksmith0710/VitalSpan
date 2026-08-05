@@ -129,7 +129,9 @@ export function resolveCategoryCartesianLayout(
 ): CategoryCartesianLayout {
   let margin = cartesianMargin(false, options?.marginOverrides);
   const provisionalInnerW = Math.max(0, width - margin.left - margin.right);
-  const hierPlan = planHierarchicalCategoryAxis(categories, provisionalInnerW);
+  const hierPlan = planHierarchicalCategoryAxis(categories, provisionalInnerW, {
+    structuralLevelCount: options?.categoryLevelCount,
+  });
   const xLayout = hierPlan
     ? {
         ticks: categories,
@@ -319,7 +321,9 @@ function hierarchicalAxisNameY(innerH: number, hierPlan: ReturnType<typeof planH
 }
 
 export function drawCartesianBandAxes(opts: BandAxesOptions): { rotateX: number } {
-  const hierPlan = planHierarchicalCategoryAxis(opts.categories, opts.innerW);
+  const hierPlan = planHierarchicalCategoryAxis(opts.categories, opts.innerW, {
+    structuralLevelCount: opts.categoryLevelCount,
+  });
   const xLayout = hierPlan
     ? {
         ticks: opts.categories,
@@ -417,7 +421,9 @@ type AxesOptions = {
 };
 
 export function drawCartesianAxes(opts: AxesOptions): { rotateX: number } {
-  const hierPlan = planHierarchicalCategoryAxis(opts.categories, opts.innerW);
+  const hierPlan = planHierarchicalCategoryAxis(opts.categories, opts.innerW, {
+    structuralLevelCount: opts.categoryLevelCount,
+  });
   const xLayout = hierPlan
     ? {
         ticks: opts.categories,
@@ -673,7 +679,9 @@ type DualAxesOptions = {
 
 /** 双轴图：左/右数值轴 + 类目横轴 */
 export function drawDualAxesAxes(opts: DualAxesOptions): void {
-  const hierPlan = planHierarchicalCategoryAxis(opts.categories, opts.innerW);
+  const hierPlan = planHierarchicalCategoryAxis(opts.categories, opts.innerW, {
+    structuralLevelCount: opts.categoryLevelCount,
+  });
   const xLayout = hierPlan
     ? {
         ticks: opts.categories,

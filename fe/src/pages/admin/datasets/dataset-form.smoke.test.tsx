@@ -43,6 +43,11 @@ function renderCreateForm() {
   );
 }
 
+function expectSelectedCount(selected: number, total: number) {
+  const label = `已选 ${selected}/${total}`;
+  expect(screen.getByTestId("bind-selected-count")).toHaveTextContent(label);
+}
+
 function renderList() {
   return renderWithProviders(
     <MemoryRouter initialEntries={["/admin/datasets"]}>
@@ -138,9 +143,9 @@ describe("Dataset form pages", () => {
     expect(await screen.findByRole("heading", { name: "编辑数据集" })).toBeInTheDocument();
     expect(await screen.findByText("当前数据表")).toBeInTheDocument();
     expect(screen.queryByText("已选表")).not.toBeInTheDocument();
-    expect(await screen.findByTestId("schema-browser")).toBeInTheDocument();
-    expect(screen.getAllByText("public.orders").length).toBeGreaterThan(0);
     expect(await screen.findByText("字段工作台")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "更换" })).toBeInTheDocument();
+    expect(screen.getAllByText("public.orders").length).toBeGreaterThan(0);
     expect(screen.queryByRole("tab", { name: /绑定配置/ })).not.toBeInTheDocument();
 
     const user = userEvent.setup();
@@ -222,8 +227,71 @@ describe("Dataset form pages", () => {
     expect(await screen.findByText("字段工作台")).toBeInTheDocument();
     expect(screen.queryByRole("tab", { name: /绑定配置/ })).not.toBeInTheDocument();
     expect(screen.getByText("同步产物")).toBeInTheDocument();
-    expect(screen.getByText("已绑定")).toBeInTheDocument();
+    expect(await screen.findByText("已绑定")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId("bind-selected-count").textContent).toContain("已选 4/");
+    });
     expect(screen.getByRole("button", { name: "刷新绑定（自动识别）" })).toBeInTheDocument();
     expect(screen.queryByText("加载中…")).not.toBeInTheDocument();
+  });
+
+  it("T1-FE-05: bound columns are checked when tableSourceDataSourceId is missing", async () => {
+    mockApiFetch.mockImplementation(async (path: string) => {
+      if (path === "/api/v1/datasets/gov_budget") {
+        return {
+          datasetId: "gov_budget",
+          displayName: "my",
+          tables: [{ name: "sample_db.gov_budget_items" }],
+          computedFields: [],
+          allowedRoles: ["analyst"],
+          tableSourceDataSourceId: null,
+          boundConfigId: "cfg-gov",
+        };
+      }
+      if (path === "/api/v1/query/configs/cfg-gov") {
+        return {
+          id: "cfg-gov",
+          configType: "dataset_query",
+          payload: {
+            dataSourceId: "ds-mysql",
+            connectorType: "mysql",
+            schema: "sample_db",
+            table: "gov_budget_items",
+            columns: ["id", "fiscal_year", "category", "budget_amount", "spent_amount"],
+            columnKinds: { budget_amount: "metric", spent_amount: "metric" },
+          },
+        };
+      }
+      if (path.startsWith("/api/v1/datasources") && !path.includes("/schemas")) {
+        return {
+          items: [{ id: "ds-mysql", name: "样例 MySQL-2", database: "sample_db", type: "mysql" }],
+        };
+      }
+      if (path.includes("/columns")) {
+        return {
+          items: [
+            { name: "id" },
+            { name: "fiscal_year" },
+            { name: "category" },
+            { name: "budget_amount" },
+            { name: "spent_amount" },
+          ],
+        };
+      }
+      return {};
+    });
+
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/admin/datasets/gov_budget/edit"]}>
+        <Routes>
+          <Route path="/admin/datasets/:id/edit" element={<DatasetFormPage mode="edit" />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("字段工作台")).toBeInTheDocument();
+    await waitFor(() => expectSelectedCount(5, 5));
+    await waitFor(() => expect(screen.getByRole("checkbox", { name: "id" })).toBeChecked());
+    expect(screen.getByRole("checkbox", { name: "budget_amount" })).toBeChecked();
   });
 });

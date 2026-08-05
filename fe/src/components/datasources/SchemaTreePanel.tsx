@@ -148,8 +148,11 @@ function SchemaGroup({
                   )}
                 >
                   <Table2 className="size-3.5 shrink-0 opacity-70" aria-hidden />
-                  <TruncateHint title={table.name} className="min-w-0 flex-1">
-                    {table.name}
+                  <TruncateHint
+                    title={isDatasetPick ? `${schema}.${table.name}` : table.name}
+                    className="min-w-0 flex-1"
+                  >
+                    {isDatasetPick ? `${schema}.${table.name}` : table.name}
                   </TruncateHint>
                 </button>
                 {isDatasetPick && isCurrent ? (
@@ -241,11 +244,13 @@ export function SchemaTreePanel({
         mode === "browse" && "border-r border-gray-200 dark:border-gray-800",
       )}
     >
-      <div className="shrink-0 border-b border-gray-200 px-4 py-3 dark:border-gray-800">
-        <p className="text-theme-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
-          Schema / 表
-        </p>
-      </div>
+      {mode !== "datasetPick" ? (
+        <div className="shrink-0 border-b border-gray-200 px-4 py-3 dark:border-gray-800">
+          <p className="text-theme-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
+            Schema / 表
+          </p>
+        </div>
+      ) : null}
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
         {userSchemas.length === 0 && visibleSystem.length === 0 ? (
           <p className="px-2 py-8 text-center text-theme-sm text-gray-500 dark:text-gray-400">

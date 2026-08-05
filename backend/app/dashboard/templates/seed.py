@@ -237,6 +237,9 @@ def _builtin_template_specs() -> list[dict[str, Any]]:
     ]
 
 
+BUILTIN_SEED_CONTENT_REVISION = 24
+
+
 def seed_builtin_dashboard_templates(db: Session) -> int:
     upserted = 0
     for spec in _builtin_template_specs():
@@ -257,18 +260,23 @@ def seed_builtin_dashboard_templates(db: Session) -> int:
                 layout_json=spec["layout_json"],
                 thumbnail_ref=spec.get("thumbnail_ref"),
                 visibility="builtin",
-                content_revision=23,
+                content_revision=BUILTIN_SEED_CONTENT_REVISION,
             )
             db.add(row)
             upserted += 1
         else:
-            existing.name = spec["name"]
-            existing.description = spec["description"]
-            existing.category_key = spec["category_key"]
-            existing.layout_json = spec["layout_json"]
-            existing.thumbnail_ref = spec.get("thumbnail_ref")
+            user_customized = existing.content_revision > BUILTIN_SEED_CONTENT_REVISION
+            if not user_customized:
+                existing.name = spec["name"]
+                existing.description = spec["description"]
+                existing.category_key = spec["category_key"]
+                existing.layout_json = spec["layout_json"]
+                existing.thumbnail_ref = spec.get("thumbnail_ref")
+                existing.content_revision = max(
+                    existing.content_revision,
+                    BUILTIN_SEED_CONTENT_REVISION,
+                )
             existing.status = "published"
             existing.visibility = "builtin"
-            existing.content_revision = max(existing.content_revision, 23)
     db.commit()
     return upserted

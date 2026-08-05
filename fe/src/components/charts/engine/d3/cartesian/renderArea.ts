@@ -9,6 +9,7 @@ import {
   drawCartesianAxes,
   drawHorizontalGrid,
 } from "@/components/charts/engine/d3/core/sceneGraph";
+import { normalizeCategoryAxisDomain } from "@/components/charts/engine/buildDatasetEncoding";
 import { groupSeries, normalizeCartesianData, resolveDatumColor, resolveSeriesKeys, seriesDataKey } from "@/components/charts/engine/d3/core/series";
 import { themeFromConfig } from "@/components/charts/engine/d3/core/themeEngine";
 import { createTooltipLayer } from "@/components/charts/engine/d3/core/tooltipLayer";
@@ -51,6 +52,7 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
     dataZoom = false,
     axisStyle,
     areaOpacity,
+    categoryLevelCount,
   } = config;
 
   const stackFillOpacity = areaOpacity ?? 0.35;
@@ -58,7 +60,10 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
 
   const theme = themeFromConfig(rawTheme);
   const normalized = normalizeCartesianData(data, xField, yField, seriesField);
-  const categories = [...new Set(normalized.map((d) => String(d.__category__ ?? "")))];
+  const { categories, structuralLevelCount } = normalizeCategoryAxisDomain(
+    normalized.map((d) => String(d.__category__ ?? "")),
+    categoryLevelCount,
+  );
   const seriesGroups = groupSeries(normalized, seriesField);
   const seriesNames = seriesGroups.map((s) => s.name);
   const hasMultiSeries = seriesNames.length > 1 && Boolean(seriesField);
@@ -81,6 +86,7 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
     incremental,
     categories,
     axisStyle,
+    categoryLevelCount: structuralLevelCount,
   });
   const { root, defs, g, plot, margin, innerW, innerH } = scene;
 
@@ -101,7 +107,18 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
   const curve = smooth ? d3.curveMonotoneX : d3.curveLinear;
 
   drawHorizontalGrid(plot, { yScale: y, innerW, theme });
-  drawCartesianAxes({ g, xScale: x, yScale: y, categories, innerW, innerH, theme, valueFormat, axisStyle });
+  drawCartesianAxes({
+    g,
+    xScale: x,
+    yScale: y,
+    categories,
+    innerW,
+    innerH,
+    theme,
+    valueFormat,
+    axisStyle,
+    categoryLevelCount: structuralLevelCount,
+  });
 
   plot.selectAll("*").remove();
   drawHorizontalMarkLines(plot, markLines, y, innerW);

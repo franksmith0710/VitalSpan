@@ -177,6 +177,7 @@ export function updateTemplate(
     name?: string;
     description?: string | null;
     categoryKey?: string;
+    layoutJson?: Record<string, unknown>;
     contentRevision: number;
   },
 ) {
@@ -186,6 +187,7 @@ export function updateTemplate(
       ...(input.name !== undefined ? { name: input.name } : {}),
       ...(input.description !== undefined ? { description: input.description } : {}),
       ...(input.categoryKey !== undefined ? { categoryKey: input.categoryKey } : {}),
+      ...(input.layoutJson !== undefined ? { layoutJson: input.layoutJson } : {}),
       contentRevision: input.contentRevision,
     }),
   });

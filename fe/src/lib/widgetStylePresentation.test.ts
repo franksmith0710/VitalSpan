@@ -44,6 +44,7 @@ describe("buildWidgetBackgroundPresentation", () => {
     );
     expect(presentation.surface.backgroundColor).toBe("transparent");
     expect(presentation.backgroundLayer?.backgroundImage).toContain('url("https://example.com/bg.png")');
+    expect(presentation.backgroundLayer?.backgroundSize).toBe("100% 100%");
   });
 
   it("creates image layer when backgroundImage coexists with framePresetId and no explicit mode", () => {
@@ -84,5 +85,21 @@ describe("buildWidgetBackgroundPresentation", () => {
       "light",
     );
     expect(presentation.backgroundLayer?.opacity).toBe(0.5);
+  });
+
+  it("uses widthFit layer style for decor backgrounds", () => {
+    const presentation = buildWidgetBackgroundPresentation(
+      {
+        backgroundShow: true,
+        backgroundMode: "image",
+        backgroundImage:
+          "/template-assets/packs/borderless-decor-v1/items/decor-bow-deep-cyan.svg",
+        backgroundImageFit: "widthFit",
+        backgroundImagePosition: "top center",
+      },
+      "light",
+    );
+    expect(presentation.backgroundLayer?.backgroundSize).toBe("100% auto");
+    expect(presentation.backgroundLayer?.backgroundPosition).toBe("top center");
   });
 });

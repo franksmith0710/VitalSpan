@@ -5,6 +5,7 @@ import {
   formatCompositeCategoryDisplay,
   inferEffectiveCategoryLevels,
   resolveCartesianAxisFields,
+  sortCompositeCategoryKeys,
 } from "./buildDatasetEncoding";
 import type { RenderSpec } from "./types";
 
@@ -67,5 +68,20 @@ describe("buildCartesianCategorySeries multi category", () => {
   it("inferEffectiveCategoryLevels ignores trailing empty dimensions", () => {
     const key = `华东${"\u0001"}${"\u0001"}null`;
     expect(inferEffectiveCategoryLevels([key, "华北"])).toBe(1);
+  });
+
+  it("sortCompositeCategoryKeys orders by dimension hierarchy", () => {
+    const SEP = "\u0001";
+    const keys = [
+      `2025-07-08${SEP}江苏省${SEP}机械键盘${SEP}外设配件`,
+      `2025-05-22${SEP}甘肃省${SEP}无线鼠标${SEP}外设配件`,
+      `2025-05-22${SEP}甘肃省${SEP}机械键盘${SEP}显示设备`,
+      `2025-07-08${SEP}甘肃省${SEP}无线鼠标${SEP}外设配件`,
+    ];
+    const sorted = sortCompositeCategoryKeys(keys);
+    expect(sorted[0]?.startsWith("2025-05-22")).toBe(true);
+    expect(sorted.every((k) => k.startsWith("2025-05-22") || k.startsWith("2025-07-08"))).toBe(true);
+    const may22 = sorted.filter((k) => k.startsWith("2025-05-22"));
+    expect(may22.every((k) => k.includes("甘肃省"))).toBe(true);
   });
 });

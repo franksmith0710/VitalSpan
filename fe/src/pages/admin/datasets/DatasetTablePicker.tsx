@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Table2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Table2 } from "lucide-react";
 import { toast } from "sonner";
 import { SchemaBrowser } from "@/components/datasources/SchemaBrowser";
 import {
   qualifiedTableName,
   type TableSelection,
 } from "@/components/datasources/schemaBrowserUtils";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -47,6 +48,15 @@ function parseFocusTable(prefillTable?: string): { schema: string; table: string
   return { schema: "public", table: raw };
 }
 
+function parseTableFocus(tableName: string): { schema: string; table: string } | undefined {
+  if (!tableName.trim()) return undefined;
+  if (tableName.includes(".")) {
+    const [schema, table] = tableName.split(".", 2);
+    if (schema && table) return { schema, table };
+  }
+  return { schema: "public", table: tableName };
+}
+
 export function DatasetTablePicker({
   tables,
   onChange,
@@ -74,13 +84,17 @@ export function DatasetTablePicker({
   boundConfigId?: string | null;
   syncJobId?: string | null;
   onRefreshBinding?: () => void;
-  /** 换表后通知 FormPage 重置 bind seed */
   onTableChange?: () => void;
 }) {
   const isSyncOrigin = origin === "sync_job";
   const readOnlyTables = isSyncOrigin && tables.length > 0;
   const [dataSourceId, setDataSourceId] = useState("");
-  const focusTable = useMemo(() => parseFocusTable(prefillTable), [prefillTable]);
+  const primaryTableName = tables[0]?.name ?? "";
+  const [schemaExpanded, setSchemaExpanded] = useState(() => !primaryTableName);
+  const focusTable = useMemo(
+    () => parseTableFocus(primaryTableName) ?? parseFocusTable(prefillTable),
+    [prefillTable, primaryTableName],
+  );
 
   const dsQuery = useQuery({
     queryKey: queryKeys.datasources.list(),
@@ -103,7 +117,17 @@ export function DatasetTablePicker({
     });
   }, [selectableItems, preferredDataSourceId, savedDataSourceId]);
 
-  const primaryTableName = tables[0]?.name ?? "";
+  useEffect(() => {
+    if (!dataSourceId || !onDataSourceIdChange || savedDataSourceId) return;
+    if (primaryTableName) {
+      onDataSourceIdChange(dataSourceId);
+    }
+  }, [dataSourceId, onDataSourceIdChange, primaryTableName, savedDataSourceId]);
+
+  useEffect(() => {
+    setSchemaExpanded(!primaryTableName);
+  }, [primaryTableName]);
+
   const effectiveDataSourceId = dataSourceId || savedDataSourceId || "";
   const { columnNames, columnsLoading } = useDatasetTableColumns(
     effectiveDataSourceId,
@@ -119,6 +143,7 @@ export function DatasetTablePicker({
         onDataSourceIdChange?.(dataSourceId);
       }
       onTableChange?.();
+      setSchemaExpanded(false);
     },
     [dataSourceId, onChange, onDataSourceIdChange, onTableChange, primaryTableName],
   );
@@ -142,18 +167,23 @@ export function DatasetTablePicker({
   const handleDataSourceChange = (nextId: string) => {
     if (readOnlyTables || isSyncOrigin) return;
     if (primaryTableName && nextId !== effectiveDataSourceId) {
-      toast.warning("已选数据表绑定当前数据源，请先切换数据表再更换数据源");
-      return;
+      const ok = window.confirm("切换数据源将清空当前数据表，是否继续？");
+      if (!ok) return;
+      onChange([]);
+      onTableChange?.();
+      setSchemaExpanded(true);
     }
     setDataSourceId(nextId);
     onDataSourceIdChange?.(nextId);
   };
 
+  const showSchemaPicker = !primaryTableName || schemaExpanded;
+
   return (
-    <div className="grid gap-3">
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
       <div
         className={cn(
-          "flex flex-wrap items-end gap-4 rounded-xl border border-gray-200 bg-white px-4 py-3",
+          "flex shrink-0 flex-wrap items-end gap-4 rounded-xl border border-gray-200 bg-white px-4 py-3",
           "dark:border-gray-800 dark:bg-white/[0.02]",
         )}
       >
@@ -197,65 +227,96 @@ export function DatasetTablePicker({
         <div className="grid min-w-0 flex-1 gap-1.5">
           <span className="text-theme-xs text-gray-600 dark:text-gray-400">当前数据表</span>
           {primaryTableName ? (
-            <p className="flex h-11 items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 dark:border-gray-800 dark:bg-white/[0.02]">
-              <Table2 className="size-4 shrink-0 text-gray-400" aria-hidden />
-              <span className="truncate font-mono text-theme-sm text-gray-800 dark:text-gray-200">
-                {primaryTableName}
-              </span>
-            </p>
+            <div className="flex h-11 items-center gap-2">
+              <p className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 dark:border-gray-800 dark:bg-white/[0.02]">
+                <Table2 className="size-4 shrink-0 text-gray-400" aria-hidden />
+                <span className="truncate font-mono text-theme-sm text-gray-800 dark:text-gray-200">
+                  {primaryTableName}
+                </span>
+              </p>
+              {!readOnlyTables ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0"
+                  aria-expanded={schemaExpanded}
+                  onClick={() => setSchemaExpanded((open) => !open)}
+                >
+                  {schemaExpanded ? (
+                    <>
+                      <ChevronUp className="size-3.5" aria-hidden />
+                      收起
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="size-3.5" aria-hidden />
+                      更换
+                    </>
+                  )}
+                </Button>
+              ) : null}
+            </div>
           ) : (
             <p className="flex h-11 items-center rounded-lg border border-dashed border-gray-200 px-3 text-theme-xs text-gray-500 dark:border-gray-700 dark:text-gray-400">
-              请在下方 Schema 树选择数据表
+              请在下方 Schema 树单击表名
             </p>
           )}
         </div>
       </div>
 
       {isSyncOrigin ? (
-        <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+        <p className="shrink-0 text-theme-xs text-gray-500 dark:text-gray-400">
           同步产物固定写入托管分析库；此处仅浏览同步目标表结构，不能改选业务源连接。
         </p>
       ) : null}
 
-      <div
-        className={cn(
-          "h-[min(360px,38vh)] min-h-[260px] shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-white",
-          "dark:border-gray-800 dark:bg-white/[0.02]",
-        )}
-      >
-        {dataSourceId ? (
-          <SchemaBrowser
-            key={dataSourceId}
-            dataSourceId={dataSourceId}
-            mode="datasetPick"
-            currentTableName={primaryTableName}
-            onPickTable={readOnlyTables ? undefined : handlePickTable}
-            embedded
-            defaultDatabase={selectedDs?.database}
-            focusTable={focusTable}
-            className="h-full min-h-0"
-          />
-        ) : (
-          <div className="flex h-full min-h-[260px] items-center justify-center px-6 text-center">
-            <p className="text-theme-xs text-gray-500 dark:text-gray-400">请先选择数据源。</p>
-          </div>
-        )}
-      </div>
+      {showSchemaPicker ? (
+        <div
+          className={cn(
+            "shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-white",
+            "dark:border-gray-800 dark:bg-white/[0.02]",
+            primaryTableName
+              ? "h-[min(240px,28vh)] min-h-[200px]"
+              : "h-[min(320px,36vh)] min-h-[240px]",
+          )}
+        >
+          {dataSourceId ? (
+            <SchemaBrowser
+              key={dataSourceId}
+              dataSourceId={dataSourceId}
+              mode="datasetPick"
+              currentTableName={primaryTableName}
+              onPickTable={readOnlyTables ? undefined : handlePickTable}
+              embedded
+              defaultDatabase={selectedDs?.database}
+              focusTable={focusTable}
+              className="h-full min-h-0"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center px-6 text-center">
+              <p className="text-theme-xs text-gray-500 dark:text-gray-400">请先选择数据源。</p>
+            </div>
+          )}
+        </div>
+      ) : null}
 
       {primaryTableName && bindDraft && onBindDraftChange ? (
-        <DatasetFieldWorkbench
-          dataSourceId={effectiveDataSourceId}
-          connectorType={selectedDs?.type || "postgresql"}
-          tableName={primaryTableName}
-          columnNames={columnNames}
-          columnsLoading={columnsLoading}
-          bindDraft={bindDraft}
-          onBindDraftChange={onBindDraftChange}
-          boundConfigId={boundConfigId}
-          origin={origin}
-          syncJobId={syncJobId}
-          onRefreshBinding={onRefreshBinding}
-        />
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <DatasetFieldWorkbench
+            dataSourceId={effectiveDataSourceId}
+            connectorType={selectedDs?.type || "postgresql"}
+            tableName={primaryTableName}
+            columnNames={columnNames}
+            columnsLoading={columnsLoading}
+            bindDraft={bindDraft}
+            onBindDraftChange={onBindDraftChange}
+            boundConfigId={boundConfigId}
+            origin={origin}
+            syncJobId={syncJobId}
+            onRefreshBinding={onRefreshBinding}
+          />
+        </div>
       ) : null}
     </div>
   );

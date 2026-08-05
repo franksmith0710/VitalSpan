@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CARTESIAN_CATEGORY_KEY_SEP, formatCategoryCellValue } from "@/components/charts/engine/buildDatasetEncoding";
+import { CARTESIAN_CATEGORY_KEY_SEP, formatCategoryCellValue, sortCompositeCategoryKeys } from "@/components/charts/engine/buildDatasetEncoding";
 import {
   buildCategoryLevelSegments,
   pickCategoryBoundaryIndices,
@@ -52,14 +52,14 @@ describe("hierarchical category axis", () => {
     expect(resolveActiveCategoryLevels(sparse, 3)).toEqual([0]);
   });
 
-  it("resolveFinestLevelForThinning picks point-level dimension", () => {
+  it("resolveFinestLevelForThinning picks finest structural level", () => {
     const productCategory = [
       `无线鼠标${CARTESIAN_CATEGORY_KEY_SEP}外设配件`,
       `机械键盘${CARTESIAN_CATEGORY_KEY_SEP}外设配件`,
       `27寸显示器${CARTESIAN_CATEGORY_KEY_SEP}显示设备`,
     ];
     const active = resolveActiveCategoryLevels(productCategory, 2);
-    expect(resolveFinestLevelForThinning(productCategory, 2, active)).toBe(0);
+    expect(resolveFinestLevelForThinning(active)).toBe(1);
   });
 
   it("planHierarchicalCategoryAxis returns null when only one active level", () => {
@@ -100,5 +100,27 @@ describe("hierarchical category axis", () => {
 
   it("resolveHierarchicalAxisLayout reserves bottom space per active level", () => {
     expect(resolveHierarchicalAxisLayout(3).extraBottom).toBeGreaterThan(resolveHierarchicalAxisLayout(1).extraBottom);
+  });
+
+  it("planHierarchicalCategoryAxis shows four active levels when data is sorted by hierarchy", () => {
+    const SEP = CARTESIAN_CATEGORY_KEY_SEP;
+    const unsorted = [
+      `2025-07-08${SEP}甘肃省${SEP}无线鼠标${SEP}外设配件`,
+      `2025-05-22${SEP}江苏省${SEP}机械键盘${SEP}显示设备`,
+      `2025-05-22${SEP}甘肃省${SEP}无线鼠标${SEP}外设配件`,
+      `2025-07-08${SEP}江苏省${SEP}机械键盘${SEP}外设配件`,
+      `2025-05-22${SEP}甘肃省${SEP}机械键盘${SEP}显示设备`,
+      `2025-07-08${SEP}甘肃省${SEP}机械键盘${SEP}外设配件`,
+    ];
+    const plan = planHierarchicalCategoryAxis(unsorted, 640, { structuralLevelCount: 4 });
+    expect(plan).not.toBeNull();
+    expect(plan!.activeLevels).toEqual([0, 1, 2, 3]);
+    expect(plan!.structuralLevelCount).toBe(4);
+    const dateSegments = buildCategoryLevelSegments(
+      sortCompositeCategoryKeys(unsorted, 4),
+      0,
+      4,
+    );
+    expect(dateSegments.some((segment) => segment.end > segment.start)).toBe(true);
   });
 });

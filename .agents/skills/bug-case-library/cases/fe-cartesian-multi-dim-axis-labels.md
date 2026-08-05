@@ -21,7 +21,8 @@
 - **分层轴**：`hierarchicalAxis.ts` 多维度分行 + 同级合并（对标 DataEase）
 - **有效层级**：`inferEffectiveCategoryLevels` / `resolveActiveCategoryLevels` 跳过全空维，不再渲染 `null` 占位行
 - **叶级抽稀**：`planHierarchicalCategoryAxis` 对最细粒度层应用 `pickCategoryTicks`，父级仍合并展示
-- **叶级旋转**：密集时最细层自动倾斜并预留 bottom 边距
+- **层级排序**：`sortCompositeCategoryKeys` 按维度字段顺序排序，父级分段才能合并成多层轴
+- **父级标签**：合并分段优先展示（不再因段宽不足整段隐藏）
 - `formatCategoryCellValue`：`null` 不再渲染为字面量
 - `sceneGraph.ts` 折线/柱/面积/双轴统一走 `planHierarchicalCategoryAxis`
 

@@ -152,7 +152,7 @@ export function DatasetEditorForm({
 
             <TabsContent
               value="tables"
-              className="mt-0 min-h-0 flex-1 overflow-y-auto px-6 py-4 data-[state=inactive]:hidden"
+              className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden px-6 py-4 data-[state=inactive]:hidden"
             >
               <DatasetTablePicker
                 tables={values.tables}

@@ -29,6 +29,8 @@ import {
 } from "./DatasetEditorForm";
 import { useDatasetTableColumns } from "./hooks/useDatasetTableColumns";
 import type { DatasetEditorValues, DatasetItem } from "./types";
+import { resolveAnalyticsDatasourceId } from "@/lib/datasourceRoles";
+import { tablesMatchForBind } from "@/lib/datasetTableUtils";
 
 const datasetPageIcon = (
   <AdminPageHeaderIcon>
@@ -86,10 +88,12 @@ function valuesFromSearchParams(searchParams: URLSearchParams): DatasetEditorVal
   };
 }
 
-function qualifiedTableFromBinding(schema?: string, table?: string): string {
-  if (!table) return "";
-  if (schema) return `${schema}.${table}`;
-  return table;
+function shouldSeedFromBoundConfig(
+  primaryTableName: string,
+  bound: { columns?: string[]; schema?: string; table?: string } | undefined,
+): boolean {
+  if (!bound?.columns?.length) return false;
+  return tablesMatchForBind(primaryTableName, bound.schema, bound.table);
 }
 
 export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
@@ -106,10 +110,27 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
   const [values, setValues] = useState<DatasetEditorValues>(createPrefill);
   const [isSaving, setIsSaving] = useState(false);
   const bindSeedKeyRef = useRef("");
+  const detailHydratedIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    detailHydratedIdRef.current = null;
+    bindSeedKeyRef.current = "";
+  }, [id]);
 
   const detailQuery = useQuery({
-    queryKey: queryKeys.datasets.detail(id ?? ""),
-    queryFn: () => apiFetch<DatasetItem>(`/api/v1/datasets/${id}`),
+    queryKey: [...queryKeys.datasets.detail(id ?? ""), "with-bind"],
+    queryFn: async () => {
+      const item = await apiFetch<DatasetItem>(`/api/v1/datasets/${id}`);
+      let bindDraft = EMPTY_BIND_DRAFT;
+      const primaryTable = loadPrimaryOnly(item.tables)[0]?.name ?? "";
+      if (item.boundConfigId && primaryTable) {
+        const bound = await fetchDatasetQueryConfig(item.boundConfigId);
+        if (shouldSeedFromBoundConfig(primaryTable, bound)) {
+          bindDraft = bindDraftFromBinding(bound.columns ?? [], bound.columnKinds);
+        }
+      }
+      return { item, bindDraft };
+    },
     enabled: mode === "edit" && Boolean(id),
     retry: (count, err) => {
       if (err instanceof Error && err.message.includes("不存在")) return false;
@@ -117,24 +138,25 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
     },
   });
 
-  const boundConfigId = detailQuery.data?.boundConfigId;
-  const boundConfigQuery = useQuery({
-    queryKey: ["query-config", boundConfigId ?? ""],
-    queryFn: () => fetchDatasetQueryConfig(boundConfigId!),
-    enabled: mode === "edit" && Boolean(boundConfigId),
-  });
+  const datasetItem = detailQuery.data?.item;
+  const boundConfigId = datasetItem?.boundConfigId;
 
   const primaryTableName = values.tables[0]?.name ?? "";
-  const dataSourceIdForColumns = values.tableSourceDataSourceId ?? preferredDataSourceId ?? "";
-  const { columnNames, columnsLoading } = useDatasetTableColumns(
-    dataSourceIdForColumns,
-    primaryTableName,
-  );
-
   const dsQuery = useQuery({
     queryKey: queryKeys.datasources.list(),
     queryFn: () => apiFetch<{ items: Array<{ id: string; type?: string }> }>("/api/v1/datasources"),
   });
+  const effectiveDataSourceIdForColumns = useMemo(() => {
+    if (values.tableSourceDataSourceId) return values.tableSourceDataSourceId;
+    if (preferredDataSourceId) return preferredDataSourceId;
+    const items = dsQuery.data?.items ?? [];
+    if (items.length === 0) return "";
+    return resolveAnalyticsDatasourceId(items, undefined);
+  }, [dsQuery.data?.items, preferredDataSourceId, values.tableSourceDataSourceId]);
+  const { columnNames, columnsLoading } = useDatasetTableColumns(
+    effectiveDataSourceIdForColumns,
+    primaryTableName,
+  );
 
   const { isDirty, isBaselineReady, resetBaseline, markSaved } = useFormDirtyState(
     values,
@@ -158,7 +180,9 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
       return;
     }
     if (!detailQuery.data) return;
-    const item = detailQuery.data;
+    const { item, bindDraft: loadedBindDraft } = detailQuery.data;
+    if (detailHydratedIdRef.current === item.datasetId) return;
+    detailHydratedIdRef.current = item.datasetId;
     const tables = loadPrimaryOnly(item.tables);
     if (item.tables.length > 1 && tables[0]?.name) {
       toast.info(`已切换为单表模式，仅保留主表 ${tables[0].name}`);
@@ -170,52 +194,33 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
       computedFields: item.computedFields.map((c) => ({ ...c })),
       allowedRoles: [...item.allowedRoles],
       tableSourceDataSourceId: item.tableSourceDataSourceId ?? undefined,
-      bindDraft: EMPTY_BIND_DRAFT,
+      bindDraft: loadedBindDraft,
     };
     setValues(nextValues);
+    bindSeedKeyRef.current = loadedBindDraft.selectedColumns.length
+      ? `bound:${item.datasetId}`
+      : "";
+    resetBaseline(nextValues);
     if (!item.tables[0]?.name) {
-      resetBaseline(nextValues);
       bindSeedKeyRef.current = "edit-no-table";
-    } else {
-      bindSeedKeyRef.current = "";
     }
   }, [detailQuery.data, mode, resetBaseline, createPrefill]);
 
   useEffect(() => {
-    if (!primaryTableName || columnsLoading) return;
-    if (mode === "edit" && boundConfigId && boundConfigQuery.isLoading) return;
+    if (!primaryTableName || columnsLoading || columnNames.length === 0) return;
+    if (values.bindDraft.selectedColumns.length > 0) return;
 
-    const seedKey = `${mode}:${primaryTableName}:${boundConfigId ?? "none"}:${columnNames.join(",")}`;
-    if (bindSeedKeyRef.current === seedKey) return;
+    const seedKey = `cols:${primaryTableName}:${columnNames.join(",")}`;
+    if (bindSeedKeyRef.current === seedKey || bindSeedKeyRef.current.startsWith("bound:")) return;
+
     bindSeedKeyRef.current = seedKey;
-
-    const bound = boundConfigQuery.data;
-    let nextDraft = EMPTY_BIND_DRAFT;
-    if (bound?.columns?.length && boundConfigId) {
-      const boundTable = qualifiedTableFromBinding(bound.schema, bound.table);
-      if (!boundTable || boundTable === primaryTableName) {
-        nextDraft = bindDraftFromBinding(bound.columns, bound.columnKinds);
-      }
-    }
-    if (nextDraft.selectedColumns.length === 0 && columnNames.length > 0) {
-      nextDraft = seedBindDraftFromColumns(columnNames, null);
-    }
-
+    const nextDraft = seedBindDraftFromColumns(columnNames, null);
     setValues((current) => {
       const nextValues = { ...current, bindDraft: nextDraft };
       resetBaseline(nextValues);
       return nextValues;
     });
-  }, [
-    boundConfigId,
-    boundConfigQuery.data,
-    boundConfigQuery.isLoading,
-    columnNames,
-    columnsLoading,
-    mode,
-    primaryTableName,
-    resetBaseline,
-  ]);
+  }, [columnNames, columnsLoading, primaryTableName, resetBaseline, values.bindDraft.selectedColumns.length]);
 
   const handleSave = async (): Promise<boolean> => {
     const body = normalizeValues(values);
@@ -246,7 +251,7 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
         try {
           const configId = await persistDatasetBind({
             datasetId: saved.datasetId,
-            boundConfigId: detailQuery.data?.boundConfigId ?? boundConfigId,
+            boundConfigId: datasetItem?.boundConfigId ?? boundConfigId,
             dataSourceId: tableSourceId,
             connectorType,
             tableName: primaryTable,
@@ -356,18 +361,19 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
         values={values}
         onChange={setValues}
         onSubmit={() => void handleSave()}
-        origin={mode === "edit" ? (detailQuery.data?.origin ?? "manual") : "manual"}
+        origin={mode === "edit" ? (datasetItem?.origin ?? "manual") : "manual"}
         tablePickerPrefill={{
           preferredDataSourceId,
           prefillTable,
           savedDataSourceId: values.tableSourceDataSourceId,
           onDataSourceIdChange: (tableSourceDataSourceId) =>
             setValues((current) => ({ ...current, tableSourceDataSourceId })),
-          boundConfigId: detailQuery.data?.boundConfigId,
-          syncJobId: detailQuery.data?.syncJobId,
+          boundConfigId: datasetItem?.boundConfigId,
+          syncJobId: datasetItem?.syncJobId,
           onRefreshBinding: () => void detailQuery.refetch(),
           onTableChange: () => {
             bindSeedKeyRef.current = "";
+            setValues((current) => ({ ...current, bindDraft: EMPTY_BIND_DRAFT }));
           },
         }}
       />

@@ -3,6 +3,7 @@ import {
   CARTESIAN_CATEGORY_KEY_SEP,
   formatCategoryCellValue,
   inferCompositeCategoryLevels,
+  sortCompositeCategoryKeys,
 } from "@/components/charts/engine/buildDatasetEncoding";
 import {
   axisCategoryDisplayText,
@@ -17,7 +18,10 @@ import type { ChartAxisStyle } from "@/lib/chartDeStyleBlocks";
 const ROW_HEIGHT = 16;
 /** 对标 DataEase：底行只展示部分刻度，保证间距 */
 const THINNING_TICK_MIN_PX = 72;
-const PARENT_LABEL_MIN_PX = 56;
+type HierarchicalAxisPlanOptions = {
+  /** 类别轴字段数下限（axes.xAxis），避免仅首维有值时层数被低估 */
+  structuralLevelCount?: number;
+};
 
 export type HierarchicalAxisLayout = {
   levelCount: number;
@@ -94,28 +98,15 @@ export function resolveActiveCategoryLevels(
   return active.length > 0 ? active : [0];
 }
 
-/** 最细粒度层（每点一段的层）用于底行抽稀 */
-export function resolveFinestLevelForThinning(
-  categories: string[],
-  structuralLevelCount: number,
-  activeLevels: number[],
-): number {
-  let finest = activeLevels[activeLevels.length - 1]!;
-  let maxPointSegments = 0;
-  for (const level of activeLevels) {
-    const segments = buildCategoryLevelSegments(categories, level, structuralLevelCount);
-    const pointLike = segments.filter((segment) => segment.end === segment.start).length;
-    if (pointLike > maxPointSegments) {
-      maxPointSegments = pointLike;
-      finest = level;
-    }
-  }
-  return finest;
+/** 叶级（最细维度）用于底行抽稀 */
+export function resolveFinestLevelForThinning(activeLevels: number[]): number {
+  return activeLevels[activeLevels.length - 1] ?? 0;
 }
 
 export type HierarchicalAxisPlan = {
   structuralLevelCount: number;
   activeLevels: number[];
+  orderedCategories: string[];
   visibleCategories: string[];
   thinningLevel: number;
   extraBottom: number;
@@ -184,17 +175,22 @@ function pickThinningVisibleCategories(
 export function planHierarchicalCategoryAxis(
   categories: string[],
   innerW: number,
+  options?: HierarchicalAxisPlanOptions,
 ): HierarchicalAxisPlan | null {
   if (categories.length === 0 || innerW <= 0) return null;
 
-  const structuralLevelCount = inferCompositeCategoryLevels(categories);
-  const activeLevels = resolveActiveCategoryLevels(categories, structuralLevelCount);
+  const structuralLevelCount = Math.max(
+    inferCompositeCategoryLevels(categories),
+    options?.structuralLevelCount ?? 1,
+  );
+  const orderedCategories = sortCompositeCategoryKeys(categories, structuralLevelCount);
+  const activeLevels = resolveActiveCategoryLevels(orderedCategories, structuralLevelCount);
   if (activeLevels.length <= 1) return null;
 
-  const thinningLevel = resolveFinestLevelForThinning(categories, structuralLevelCount, activeLevels);
+  const thinningLevel = resolveFinestLevelForThinning(activeLevels);
   const coarseLevel = activeLevels[0]!;
   const visibleCategories = pickThinningVisibleCategories(
-    categories,
+    orderedCategories,
     innerW,
     structuralLevelCount,
     thinningLevel,
@@ -204,6 +200,7 @@ export function planHierarchicalCategoryAxis(
   return {
     structuralLevelCount,
     activeLevels,
+    orderedCategories,
     visibleCategories,
     thinningLevel,
     extraBottom: resolveHierarchicalAxisLayout(activeLevels.length).extraBottom,
@@ -249,9 +246,10 @@ function shouldDrawSegmentLabel(
   segment: CategoryAxisSegment,
   level: number,
   thinningLevel: number,
+  coarseLevel: number,
   visibleSet: Set<string>,
   categories: string[],
-  slotSpan: number,
+  boundaryIndices: Set<number>,
 ): boolean {
   if (!segment.label) return false;
 
@@ -263,12 +261,10 @@ function shouldDrawSegmentLabel(
   const display = axisCategoryDisplayText(segment.label);
   if (!display) return false;
 
-  // 粗粒度合并分组：段宽足够容纳完整文案才展示（防重叠）
-  if (segment.end > segment.start) {
-    return slotSpan >= estimateAxisLabelWidth(display.length) + LABEL_GAP_PX;
-  }
-
-  return slotSpan >= PARENT_LABEL_MIN_PX && axisLabelFitsSlot(display, slotSpan, 0);
+  // 非叶级：合并段标题 + 粗粒度层边界单点（避免父级整行空白）
+  if (segment.end > segment.start) return true;
+  if (level === coarseLevel && boundaryIndices.has(segment.start)) return true;
+  return false;
 }
 
 type DrawHierarchicalCategoryAxisOptions = {
@@ -289,8 +285,21 @@ export function drawHierarchicalCategoryAxis(opts: DrawHierarchicalCategoryAxisO
   const plan = opts.plan ?? planHierarchicalCategoryAxis(opts.categories, opts.innerW);
   if (!plan) return;
 
-  const { structuralLevelCount, activeLevels, visibleCategories, thinningLevel } = plan;
+  // 必须与 band/point scale domain 顺序一致（柱位序），禁止再 sort 打乱索引
+  const categories = [...opts.xScale.domain()];
+  const { structuralLevelCount, activeLevels, thinningLevel } = plan;
+  const coarseLevel = activeLevels[0]!;
+  const visibleCategories = pickThinningVisibleCategories(
+    categories,
+    opts.innerW,
+    structuralLevelCount,
+    thinningLevel,
+    coarseLevel,
+  );
   const visibleSet = new Set(visibleCategories);
+  const coarseBoundaries = new Set(
+    pickCategoryBoundaryIndices(categories, coarseLevel, structuralLevelCount),
+  );
   const fontSize = resolveAxisFontSize();
   const stroke = opts.axisStyle?.x?.lineColor ?? opts.theme.axisLine;
   const strokeWidth = opts.axisStyle?.x?.lineWidth ?? 1;
@@ -308,18 +317,26 @@ export function drawHierarchicalCategoryAxis(opts: DrawHierarchicalCategoryAxisO
 
   activeLevels.forEach((level, rowIdx) => {
     const rowY = opts.innerH + (rowIdx + 1) * ROW_HEIGHT - 4;
-    const segments = buildCategoryLevelSegments(opts.categories, level, structuralLevelCount);
+    const segments = buildCategoryLevelSegments(categories, level, structuralLevelCount);
 
     for (const segment of segments) {
       const slotSpan = segmentSpanPx(
         opts.xScale,
-        opts.categories,
+        categories,
         segment.start,
         segment.end,
         opts.innerW,
       );
       if (
-        !shouldDrawSegmentLabel(segment, level, thinningLevel, visibleSet, opts.categories, slotSpan)
+        !shouldDrawSegmentLabel(
+          segment,
+          level,
+          thinningLevel,
+          coarseLevel,
+          visibleSet,
+          categories,
+          coarseBoundaries,
+        )
       ) {
         continue;
       }
@@ -329,7 +346,7 @@ export function drawHierarchicalCategoryAxis(opts: DrawHierarchicalCategoryAxisO
 
       axisRoot
         .append("text")
-        .attr("x", segmentCenterPx(opts.xScale, opts.categories, segment.start, segment.end))
+        .attr("x", segmentCenterPx(opts.xScale, categories, segment.start, segment.end))
         .attr("y", rowY)
         .attr("text-anchor", "middle")
         .attr("fill", opts.theme.axisLabel)
@@ -343,17 +360,17 @@ export function drawHierarchicalCategoryAxis(opts: DrawHierarchicalCategoryAxisO
       for (const segment of segments) {
         const slotSpan = segmentSpanPx(
           opts.xScale,
-          opts.categories,
+          categories,
           segment.start,
           segment.end,
           opts.innerW,
         );
         if (
-          !shouldDrawSegmentLabel(segment, level, thinningLevel, visibleSet, opts.categories, slotSpan)
+          !shouldDrawSegmentLabel(segment, level, thinningLevel, visibleSet, categories, slotSpan)
         ) {
           continue;
         }
-        const x = segmentCenterPx(opts.xScale, opts.categories, segment.start, segment.end);
+        const x = segmentCenterPx(opts.xScale, categories, segment.start, segment.end);
         const half = slotSpan / 2;
         const nextRowY = opts.innerH + (nextRowIdx + 1) * ROW_HEIGHT - 4;
         axisRoot

@@ -230,6 +230,8 @@ export function createScreenTitleBarWidget(
         backgroundImage:
           "/template-assets/packs/borderless-decor-v1/items/decor-bow-deep-cyan.svg",
         backgroundImageOpacity: 1,
+        backgroundImageFit: "widthFit",
+        backgroundImagePosition: "top center",
       },
     },
   };

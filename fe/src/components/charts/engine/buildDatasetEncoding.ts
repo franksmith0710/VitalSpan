@@ -34,6 +34,47 @@ export function inferCompositeCategoryLevels(categories: string[]): number {
   return levels;
 }
 
+/** 多维度类目按轴字段顺序排序，保证分层轴父级可合并成段 */
+export function sortCompositeCategoryKeys(
+  categories: string[],
+  structuralLevelCount?: number,
+): string[] {
+  const levelCount = structuralLevelCount ?? inferCompositeCategoryLevels(categories);
+  if (levelCount <= 1 || categories.length <= 1) return categories;
+
+  const partAt = (key: string, level: number): string => {
+    const parts = key.includes(CARTESIAN_CATEGORY_KEY_SEP)
+      ? key.split(CARTESIAN_CATEGORY_KEY_SEP)
+      : [key];
+    return formatCategoryCellValue(parts[level] ?? "");
+  };
+
+  return [...categories].sort((a, b) => {
+    for (let level = 0; level < levelCount; level += 1) {
+      const cmp = partAt(a, level).localeCompare(partAt(b, level), undefined, { numeric: true });
+      if (cmp !== 0) return cmp;
+    }
+    return 0;
+  });
+}
+
+/** 类目轴域：去重 + 按维度层级排序（与分层轴分段一致） */
+export function normalizeCategoryAxisDomain(
+  categories: string[],
+  structuralLevelCount?: number,
+): { categories: string[]; structuralLevelCount: number } {
+  const unique = [...new Set(categories.map((c) => String(c)))];
+  const inferred = inferCompositeCategoryLevels(unique);
+  const levelCount = Math.max(inferred, structuralLevelCount ?? 1);
+  if (levelCount <= 1) {
+    return { categories: unique, structuralLevelCount: 1 };
+  }
+  return {
+    categories: sortCompositeCategoryKeys(unique, levelCount),
+    structuralLevelCount: levelCount,
+  };
+}
+
 /** 有效维度层数：至少一层存在非空标签（对标 DataEase，忽略全空维） */
 export function inferEffectiveCategoryLevels(categories: string[]): number {
   let maxLevel = 1;
@@ -153,8 +194,9 @@ export function buildCartesianCategorySeries(
   }
   const d1i = subDim ? safeColIndex(columns, subDim) : null;
 
-  const xData = uniqueOrdered(
-    rows.map((r) => compositeCategoryKey(r, columns, categoryFields)),
+  const xData = sortCompositeCategoryKeys(
+    uniqueOrdered(rows.map((r) => compositeCategoryKey(r, columns, categoryFields))),
+    categoryFields.length > 1 ? categoryFields.length : undefined,
   );
 
   const sumAt = (xKey: string, sub: string | null, metric: string) => {

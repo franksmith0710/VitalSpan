@@ -94,9 +94,8 @@ export type D3CartesianRenderConfig = {
   pointSize?: number;
   areaOpacity?: number;
   axisStyle?: import("@/lib/chartDeStyleBlocks").ChartAxisStyle;
+  categoryLevelCount?: number;
 };
-
-/** @deprecated 使用 D3CartesianDatum */
 export type D3LineDatum = D3CartesianDatum;
 
 export type D3GeoFeature = {
@@ -181,6 +180,7 @@ export type D3DualAxesRenderConfig = D3RenderConfigBase & {
   barRadius?: number;
   axisStyle?: import("@/lib/chartDeStyleBlocks").ChartAxisStyle;
   smooth?: boolean;
+  categoryLevelCount?: number;
 };
 
 export type D3WaterfallDatum = { type: string; value: number };

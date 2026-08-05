@@ -243,6 +243,7 @@ export function buildD3DispatchPayload(
         conditionalRules: styleProps.conditionalRules,
         legendLayout: styleProps.legendLayout,
         ...cartesianStyle,
+        categoryLevelCount: options.categoryLevelCount as number | undefined,
         onPointClick: onDatumClick(props, xField),
       },
     };

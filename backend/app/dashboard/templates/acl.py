@@ -59,6 +59,8 @@ def assert_template_read(actor: UserContext, row: DashboardTemplate) -> None:
 
 def assert_template_write(actor: UserContext, row: DashboardTemplate) -> None:
     if row.visibility == "builtin":
+        if can_manage_templates(actor):
+            return
         raise DashboardTemplateError("DASH_TEMPLATE_BUILTIN_READONLY", "Builtin templates are read-only", 403)
     actor_id = _actor_uuid(actor)
     if row.owner_user_id and str(row.owner_user_id) == actor_id:

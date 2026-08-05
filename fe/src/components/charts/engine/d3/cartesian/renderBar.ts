@@ -13,6 +13,7 @@ import {
   drawHorizontalGrid,
 } from "@/components/charts/engine/d3/core/sceneGraph";
 import { groupSeries, normalizeCartesianData, resolveDatumColor, resolveSeriesKeys, seriesDataKey } from "@/components/charts/engine/d3/core/series";
+import { normalizeCategoryAxisDomain } from "@/components/charts/engine/buildDatasetEncoding";
 import { themeFromConfig } from "@/components/charts/engine/d3/core/themeEngine";
 import { createTooltipLayer } from "@/components/charts/engine/d3/core/tooltipLayer";
 import { attachBandCategoryInteraction } from "@/components/charts/engine/d3/cartesian/renderCartesianBase";
@@ -79,11 +80,15 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
     barWidthRatio,
     barRadius,
     axisStyle,
+    categoryLevelCount,
   } = config;
 
   const theme = themeFromConfig(rawTheme);
   const normalized = normalizeCartesianData(data, xField, yField, seriesField);
-  const categories = [...new Set(normalized.map((d) => String(d.__category__ ?? "")))];
+  const { categories, structuralLevelCount } = normalizeCategoryAxisDomain(
+    normalized.map((d) => String(d.__category__ ?? "")),
+    categoryLevelCount,
+  );
   const seriesGroups = groupSeries(normalized, seriesField);
   const seriesNames = seriesGroups.map((s) => s.name);
   const hasMultiSeries = seriesNames.length > 1 && Boolean(seriesField);
@@ -107,6 +112,7 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
     incremental,
     categories,
     axisStyle,
+    categoryLevelCount: structuralLevelCount,
   });
   const { root, defs, g, plot, innerW, innerH, margin } = scene;
   const keys = resolveSeriesKeys(seriesNames);
@@ -139,7 +145,18 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
   const barRx = barRadius ?? BAR_RX;
 
   drawHorizontalGrid(plot, { yScale: y, innerW, theme });
-  drawCartesianBandAxes({ g, xScale: x, yScale: y, categories, innerW, innerH, theme, valueFormat, axisStyle });
+  drawCartesianBandAxes({
+    g,
+    xScale: x,
+    yScale: y,
+    categories,
+    innerW,
+    innerH,
+    theme,
+    valueFormat,
+    axisStyle,
+    categoryLevelCount: structuralLevelCount,
+  });
 
   plot.selectAll("*").remove();
 

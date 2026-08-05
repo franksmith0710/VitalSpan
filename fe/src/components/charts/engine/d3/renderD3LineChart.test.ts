@@ -133,8 +133,8 @@ describe("renderD3LineChart", () => {
     expect(host.querySelector(".vs-axis-x-tiered")).toBeTruthy();
     const labels = [...host.querySelectorAll(".vs-axis-x-tiered text")].map((node) => node.textContent);
     expect(labels).toContain("云南省");
-    expect(labels.some((label) => label?.includes("2025") || label?.startsWith("2"))).toBe(true);
-    expect(labels.length).toBeGreaterThan(3);
+    expect(labels.some((label) => label === "销量" || label?.includes("销量"))).toBe(true);
+    expect(labels.length).toBeGreaterThan(2);
 
     host.remove();
     setChartAnimationSuppressed(false);

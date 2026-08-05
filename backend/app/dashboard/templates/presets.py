@@ -196,6 +196,8 @@ def _title_bar(
                 "backgroundMode": "image",
                 "backgroundImage": bg_url,
                 "backgroundImageOpacity": 1,
+                "backgroundImageFit": "widthFit",
+                "backgroundImagePosition": "top center",
             },
         },
         **geo,

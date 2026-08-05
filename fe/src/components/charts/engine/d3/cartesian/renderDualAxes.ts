@@ -15,15 +15,19 @@ import {
   resolveDualAxesColumnMax,
 } from "@/components/charts/engine/d3/cartesian/renderDualAxesColumn";
 import type { D3CartesianDatum, D3DualAxesRenderConfig } from "@/components/charts/engine/d3/types";
-import { formatChartValue } from "@/lib/chartValueFormat";
+import { normalizeCategoryAxisDomain } from "@/components/charts/engine/buildDatasetEncoding";
 
 function normalizeDataset(
   data: D3CartesianDatum[],
   xField: string,
   yField: string,
+  categoryLevelCount?: number,
 ): { categories: string[]; points: D3CartesianDatum[] } {
   const normalized = normalizeCartesianData(data, xField, yField);
-  const categories = [...new Set(normalized.map((d) => String(d.__category__ ?? "")))];
+  const { categories } = normalizeCategoryAxisDomain(
+    normalized.map((d) => String(d.__category__ ?? "")),
+    categoryLevelCount,
+  );
   return { categories, points: normalized };
 }
 
@@ -117,13 +121,17 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
     barRadius,
     axisStyle,
     smooth: styleSmooth,
+    categoryLevelCount,
   } = config;
   const lineLabels = config.lineLabels;
   const dualLine = geometryOptions[0].geometry === "line" && geometryOptions[1].geometry === "line";
 
-  const lineSet = normalizeDataset(lineData, xField, lineYField);
-  const columnSet = normalizeDataset(columnData, xField, columnYField);
-  const categories = [...new Set([...lineSet.categories, ...columnSet.categories])];
+  const lineSet = normalizeDataset(lineData, xField, lineYField, categoryLevelCount);
+  const columnSet = normalizeDataset(columnData, xField, columnYField, categoryLevelCount);
+  const { categories, structuralLevelCount } = normalizeCategoryAxisDomain(
+    [...new Set([...lineSet.categories, ...columnSet.categories])],
+    categoryLevelCount,
+  );
   if (categories.length === 0) return () => undefined;
 
   const lineSmooth =
@@ -150,6 +158,7 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
     legendLayout,
     legendItems,
     axisStyle,
+    categoryLevelCount: structuralLevelCount,
     marginOverrides: { right: 56 },
   });
 
@@ -180,6 +189,7 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
     theme,
     valueFormat,
     axisStyle,
+    categoryLevelCount: structuralLevelCount,
   });
 
   const linePoints = [...lineSet.points].sort(

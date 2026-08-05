@@ -26,6 +26,15 @@ export const VIZ_TEMPLATES_HUB = {
   invalidJson: "无法解析 JSON 文件",
 } as const;
 
+export const TEMPLATE_EDIT_SESSION = {
+  builtinReadOnlyHint:
+    "内置模板仅管理员可修改；当前保存仅作用于临时看板副本。",
+  writableHint: (name: string) =>
+    `保存将同步更新模板「${name}」的布局（模板市场预览与「使用模板」均生效）。`,
+  savedWithTemplate: (name: string) => `看板与模板「${name}」布局已保存`,
+  templateSyncFailed: "看板已保存，但模板布局同步失败",
+} as const;
+
 export const TEMPLATE_ACTIONS = {
   use: "使用模板",
   preview: "预览",
@@ -42,12 +51,13 @@ export const TEMPLATE_ACTIONS = {
   exportSection: "导出",
 } as const;
 
-/** 内置模板只读；组织/私有模板可改元数据 */
+/** 内置模板仅管理员可改元数据 */
 export function canEditTemplateMeta(
   item: DashboardTemplateListItem,
   canManage: boolean,
 ): boolean {
-  return canManage && item.visibility !== "builtin";
+  void item;
+  return canManage;
 }
 
 export const GOV_SECTION_LABELS = {

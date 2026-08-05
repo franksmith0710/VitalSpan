@@ -9,7 +9,7 @@ import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentatio
 import { groupSeries, normalizeCartesianData, resolveDatumColor, resolveSeriesKeys, seriesDataKey } from "@/components/charts/engine/d3/core/series";
 import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3CartesianRenderConfig } from "@/components/charts/engine/d3/types";
-import { formatChartValue } from "@/lib/chartValueFormat";
+import { normalizeCategoryAxisDomain } from "@/components/charts/engine/buildDatasetEncoding";
 import { resolveBarBandPadding } from "@/lib/applyChartDeStyleBlocks";
 
 const BAR_RX = 4;
@@ -81,12 +81,16 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
     barWidthRatio,
     barRadius,
     axisStyle,
+    categoryLevelCount,
   } = config;
 
   const barRx = barRadius ?? BAR_RX;
 
   const normalized = normalizeCartesianData(data, xField, yField, seriesField);
-  const categories = [...new Set(normalized.map((d) => String(d.__category__ ?? "")))];
+  const { categories } = normalizeCategoryAxisDomain(
+    normalized.map((d) => String(d.__category__ ?? "")),
+    categoryLevelCount,
+  );
   const seriesGroups = groupSeries(normalized, seriesField);
   const seriesNames = seriesGroups.map((s) => s.name);
   const hasMultiSeries = seriesNames.length > 1 && Boolean(seriesField);

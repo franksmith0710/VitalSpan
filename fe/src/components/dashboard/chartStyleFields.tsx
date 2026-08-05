@@ -309,18 +309,11 @@ export function ChartBackgroundDeModeFields({
 
   if (imageOnly) {
     return (
-      <div className="space-y-2">
-        <ImageSourceField
-          variant="rail"
-          showPreview
-          assetGallery
-          assetGalleryScope="all"
-          highlightUrls={highlightUrls}
-          inputClassName={INSPECTOR_CTRL}
-          value={value.backgroundImage ?? ""}
-          onChange={(backgroundImage) => onChange(patchWidgetBackgroundImageUpload(value, backgroundImage))}
-        />
-      </div>
+      <WidgetBackgroundImageSection
+        value={value}
+        onChange={onChange}
+        highlightUrls={highlightUrls}
+      />
     );
   }
 
@@ -377,20 +370,11 @@ export function ChartBackgroundDeModeFields({
         ) : null}
       </div>
       {mode === "image" ? (
-        <div className="space-y-2">
-          <ImageSourceField
-            variant="rail"
-            showPreview
-            assetGallery
-            assetGalleryScope="all"
-            highlightUrls={highlightUrls}
-            inputClassName={INSPECTOR_CTRL}
-            value={value.backgroundImage ?? ""}
-            onChange={(backgroundImage) =>
-              onChange(patchWidgetBackgroundImageUpload(value, backgroundImage))
-            }
-          />
-        </div>
+        <WidgetBackgroundImageSection
+          value={value}
+          onChange={onChange}
+          highlightUrls={highlightUrls}
+        />
       ) : useLineBorder ? (
         <WidgetStyleLineBorderControls value={value} onChange={onChange} showToggle={false} density="narrow" />
       ) : (

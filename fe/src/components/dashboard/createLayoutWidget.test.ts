@@ -11,5 +11,7 @@ describe("createPaletteWidget screen-title-bar", () => {
     expect(widget.textConfig?.widgetStyle?.backgroundImage).toContain(
       "/template-assets/packs/borderless-decor-v1/items/",
     );
+    expect(widget.textConfig?.widgetStyle?.backgroundImageFit).toBe("widthFit");
+    expect(widget.textConfig?.widgetStyle?.backgroundImagePosition).toBe("top center");
   });
 });

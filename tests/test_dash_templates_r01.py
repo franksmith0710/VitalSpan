@@ -179,6 +179,31 @@ def test_publish_requires_manage(client: TestClient, auth_headers: dict, db_sess
     assert publish.json()["status"] == "published"
 
 
+def test_builtin_template_layout_update_for_admin(
+    client: TestClient,
+    auth_headers: dict,
+    db_session,
+) -> None:
+    from app.dashboard.templates.seed import seed_builtin_dashboard_templates
+
+    seed_builtin_dashboard_templates(db_session)
+    listed = client.get("/api/v1/dashboard-templates?visibility=builtin", headers=auth_headers).json()
+    template = listed["items"][0]
+    layout = {
+        "version": 1,
+        "widgets": [],
+        "globalFilters": [],
+        "styleConfig": {"surfaceKind": template["surfaceKind"]},
+    }
+    res = client.put(
+        f"/api/v1/dashboard-templates/{template['id']}",
+        headers=auth_headers,
+        json={"layoutJson": layout, "contentRevision": template["contentRevision"]},
+    )
+    assert res.status_code == 200
+    assert res.json()["contentRevision"] == template["contentRevision"] + 1
+
+
 def test_builtin_template_delete_forbidden(client: TestClient, auth_headers: dict, db_session) -> None:
     from app.dashboard.templates.seed import seed_builtin_dashboard_templates
 

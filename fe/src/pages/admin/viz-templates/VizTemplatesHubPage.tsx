@@ -35,6 +35,7 @@ import { hasCapability } from "@/lib/capabilities";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
 import { dataScreenEditPath } from "@/lib/dataScreenLayout";
+import { buildTemplateEditSyncState } from "@/lib/templateEditSession";
 import { useAuth } from "@/context/auth-context";
 import { sessionUserFromMe } from "@/lib/session";
 import {
@@ -158,10 +159,11 @@ export function VizTemplatesHubPage() {
       createFromTemplate(item.id, `${item.name}（编辑）`),
     onSuccess: (created, item) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.dashboards.all });
+      const templateEditSync = buildTemplateEditSyncState(item, canManage);
       if (item.surfaceKind === "data-screen") {
-        navigate(dataScreenEditPath(created.id));
+        navigate(dataScreenEditPath(created.id), { state: { templateEditSync } });
       } else {
-        navigate(`/admin/dashboards/${created.id}/edit`);
+        navigate(`/admin/dashboards/${created.id}/edit`, { state: { templateEditSync } });
       }
     },
     onError: (err) => toast.error(mapApiError(err)),

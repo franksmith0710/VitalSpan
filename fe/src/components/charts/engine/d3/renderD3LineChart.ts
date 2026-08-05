@@ -28,7 +28,7 @@ import { writeIncrementalSession } from "@/components/charts/engine/d3/core/incr
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { highlightCategoryDots, resolveSeriesAnchorY } from "@/components/charts/engine/d3/cartesian/renderCartesianBase";
 import type { D3CartesianDatum, D3CartesianRenderConfig } from "@/components/charts/engine/d3/types";
-import { formatChartValue } from "@/lib/chartValueFormat";
+import { normalizeCategoryAxisDomain } from "@/components/charts/engine/buildDatasetEncoding";
 import { resolveCartesianLineWidth, resolveCartesianPointSize } from "@/lib/applyChartDeStyleBlocks";
 
 export type { D3CartesianDatum as D3LineDatum, D3CartesianRenderConfig as D3LineRenderConfig } from "@/components/charts/engine/d3/types";
@@ -69,6 +69,7 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
     areaOpacity,
     area,
     lineWidth,
+    categoryLevelCount,
   } = config;
 
   const dotRadius = resolveCartesianPointSize(pointSize);
@@ -79,7 +80,10 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
 
   const theme = themeFromConfig(rawTheme);
   const normalized = normalizeCartesianData(data, xField, yField, seriesField);
-  const categories = [...new Set(normalized.map((d) => String(d.__category__ ?? "")))];
+  const { categories, structuralLevelCount } = normalizeCategoryAxisDomain(
+    normalized.map((d) => String(d.__category__ ?? "")),
+    categoryLevelCount,
+  );
   const seriesGroups = groupSeries(normalized, seriesField);
   const colorScale = d3.scaleOrdinal<string>().domain(seriesGroups.map((s) => s.name)).range(colors);
   const singleSeries = seriesGroups.length === 1;
@@ -107,6 +111,7 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
     incremental,
     categories,
     axisStyle,
+    categoryLevelCount: structuralLevelCount,
   });
   const { root, defs, g, plot, innerW, innerH } = scene;
 
@@ -115,7 +120,18 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
   const yScale = d3.scaleLinear().domain([0, maxVal]).nice().range([innerH, 0]);
 
   drawHorizontalGrid(plot, { yScale, innerW, theme });
-  drawCartesianAxes({ g, xScale, yScale, categories, innerW, innerH, theme, valueFormat, axisStyle });
+  drawCartesianAxes({
+    g,
+    xScale,
+    yScale,
+    categories,
+    innerW,
+    innerH,
+    theme,
+    valueFormat,
+    axisStyle,
+    categoryLevelCount: structuralLevelCount,
+  });
 
   plot.selectAll("*").remove();
 

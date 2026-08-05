@@ -61,8 +61,12 @@ export function DatasetFieldWorkbench({
   const isSyncOrigin = origin === "sync_job";
   const parsed = parseQualifiedTable(tableName);
   const [refreshing, setRefreshing] = useState(false);
+  const allColumnNames = useMemo(() => {
+    const merged = new Set([...columnNames, ...bindDraft.selectedColumns]);
+    return [...merged];
+  }, [bindDraft.selectedColumns, columnNames]);
   const previewColumns =
-    bindDraft.selectedColumns.length > 0 ? bindDraft.selectedColumns : columnNames;
+    bindDraft.selectedColumns.length > 0 ? bindDraft.selectedColumns : allColumnNames;
 
   const previewQuery = useQuery({
     queryKey: ["dataset-preview", dataSourceId, parsed.schema, parsed.table, previewColumns.join(",")],
@@ -74,18 +78,18 @@ export function DatasetFieldWorkbench({
         columns: bindDraft.selectedColumns.length > 0 ? bindDraft.selectedColumns : undefined,
         limit: 20,
       }),
-    enabled: Boolean(dataSourceId && parsed.table && columnNames.length > 0),
+    enabled: Boolean(dataSourceId && parsed.table && allColumnNames.length > 0),
   });
 
   const { dimensions, metrics } = useMemo(() => {
     const dims: string[] = [];
     const mets: string[] = [];
-    for (const col of columnNames) {
+    for (const col of allColumnNames) {
       if (resolveKindForField(col, bindDraft) === "metric") mets.push(col);
       else dims.push(col);
     }
     return { dimensions: dims, metrics: mets };
-  }, [bindDraft, columnNames]);
+  }, [allColumnNames, bindDraft]);
 
   const handleRefreshSync = async () => {
     if (!syncJobId) return;
@@ -110,7 +114,7 @@ export function DatasetFieldWorkbench({
   if (!tableName) return null;
 
   return (
-    <section className="grid gap-3 rounded-xl border border-gray-200 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-white/[0.02]">
+    <section className="flex min-h-[320px] flex-col gap-3 rounded-xl border border-gray-200 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-white/[0.02]">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <Table2 className="size-4 text-gray-400" aria-hidden />
@@ -130,8 +134,8 @@ export function DatasetFieldWorkbench({
             </Badge>
           ) : null}
         </div>
-        <Badge variant="light" color="light" size="sm">
-          已选 {bindDraft.selectedColumns.length}/{columnNames.length || "—"}
+        <Badge variant="light" color="light" size="sm" data-testid="bind-selected-count">
+          已选 {bindDraft.selectedColumns.length}/{allColumnNames.length || "—"}
         </Badge>
       </div>
 
@@ -154,7 +158,7 @@ export function DatasetFieldWorkbench({
         </p>
       )}
 
-      <Tabs defaultValue="fields" className="grid gap-3">
+      <Tabs defaultValue="fields" className="flex min-h-0 flex-1 flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <TabsList variant="enclosed" size="sm">
             <TabsTrigger value="fields">字段管理</TabsTrigger>
@@ -195,7 +199,7 @@ export function DatasetFieldWorkbench({
           </div>
         </div>
 
-        <TabsContent value="fields" className="mt-0 grid gap-3 data-[state=inactive]:hidden">
+        <TabsContent value="fields" className="mt-0 min-h-0 flex-1 overflow-y-auto data-[state=inactive]:hidden">
           {columnsLoading ? (
             <Skeleton className="h-32 w-full rounded-lg" />
           ) : columnNames.length === 0 ? (
@@ -208,13 +212,14 @@ export function DatasetFieldWorkbench({
               ].map(({ title, fields }) => (
                 <div key={title} className="grid gap-2">
                   <Label className="text-theme-xs text-gray-600 dark:text-gray-400">{title}</Label>
-                  <ul className="max-h-40 space-y-1 overflow-y-auto rounded-lg border border-gray-200 bg-white p-2 dark:border-gray-800 dark:bg-white/[0.02]">
+                  <ul className="max-h-none space-y-1 overflow-y-auto rounded-lg border border-gray-200 bg-white p-2 dark:border-gray-800 dark:bg-white/[0.02] lg:max-h-56">
                     {fields.length === 0 ? (
                       <li className="px-2 py-1 text-theme-xs text-gray-400">无</li>
                     ) : (
                       fields.map((col) => (
                         <li key={col} className="flex items-center gap-2 rounded-md px-1 py-0.5 hover:bg-gray-50 dark:hover:bg-white/5">
                           <Checkbox
+                            aria-label={col}
                             checked={bindDraft.selectedColumns.includes(col)}
                             onCheckedChange={(checked) =>
                               onBindDraftChange(toggleColumnInDraft(bindDraft, col, checked === true))
@@ -241,11 +246,11 @@ export function DatasetFieldWorkbench({
           )}
         </TabsContent>
 
-        <TabsContent value="preview" className="mt-0 data-[state=inactive]:hidden">
+        <TabsContent value="preview" className="mt-0 min-h-0 flex-1 overflow-y-auto data-[state=inactive]:hidden">
           {previewQuery.isLoading ? (
             <Skeleton className="h-32 w-full rounded-lg" />
           ) : previewQuery.data?.columns.length ? (
-            <div className="custom-scrollbar max-h-48 overflow-auto rounded-lg border border-gray-200 dark:border-gray-800">
+            <div className="custom-scrollbar max-h-none min-h-[160px] overflow-auto rounded-lg border border-gray-200 dark:border-gray-800 lg:max-h-64">
               <table className="w-full min-w-max text-left text-theme-xs">
                 <thead className="sticky top-0 bg-gray-100 dark:bg-gray-900">
                   <tr>

@@ -64,6 +64,7 @@ export function buildCartesianRenderConfig(
     pointSize: options.__pointSize as number | undefined,
     areaOpacity: options.__areaOpacity as number | undefined,
     axisStyle: options.__axisStyle as D3CartesianRenderConfig["axisStyle"],
+    categoryLevelCount: options.categoryLevelCount as number | undefined,
     markLines: chartConfig ? readChartMarkLines(chartConfig) : markLinesFromPlan ?? style.deFeatures?.markLines,
     conditionalRules:
       chartConfig ? readChartConditionalRules(chartConfig) : conditionalFromPlan ?? style.deFeatures?.conditionalRules,

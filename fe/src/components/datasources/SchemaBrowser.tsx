@@ -90,13 +90,16 @@ export function SchemaBrowser({
     if (!schemaNames.length || initRef.current) return;
     const preferred =
       (focusTable?.schema && schemaNames.includes(focusTable.schema) && focusTable.schema) ||
+      (currentTableName?.includes(".") &&
+        schemaNames.includes(currentTableName.split(".", 2)[0]) &&
+        currentTableName.split(".", 2)[0]) ||
       (defaultDatabase && schemaNames.includes(defaultDatabase) && defaultDatabase) ||
       userSchemas[0] ||
       schemaNames[0];
     if (preferred) {
       setExpandedSchemas((s) => ({ ...s, [preferred]: true }));
     }
-  }, [defaultDatabase, focusTable?.schema, schemaNames, userSchemas]);
+  }, [currentTableName, defaultDatabase, focusTable?.schema, schemaNames, userSchemas]);
 
   useEffect(() => {
     onSelectionChange?.(selection);
@@ -221,6 +224,11 @@ export function SchemaBrowser({
           </Label>
         </div>
         {toolbarActions}
+        {isDatasetPick && onPickTable ? (
+          <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+            单击表名设为当前数据表
+          </p>
+        ) : null}
         {!isDatasetPick && onAddTable ? (
           <p className="hidden text-theme-xs text-gray-500 lg:block dark:text-gray-400">
             双击表名或点 <span className="font-medium text-gray-700 dark:text-gray-300">+</span> 添加

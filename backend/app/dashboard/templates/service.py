@@ -321,6 +321,8 @@ def delete_template(db: Session, template_id: uuid.UUID, actor: UserContext) -> 
     row = db.scalar(select(DashboardTemplate).where(DashboardTemplate.id == template_id))
     if row is None:
         raise DashboardTemplateError("DASH_TEMPLATE_NOT_FOUND", "Template not found", 404)
+    if row.visibility == "builtin":
+        raise DashboardTemplateError("DASH_TEMPLATE_BUILTIN_READONLY", "Builtin templates are read-only", 403)
     assert_template_write(actor, row)
     db.delete(row)
     db.commit()
