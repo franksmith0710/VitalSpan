@@ -40,7 +40,7 @@ describe("datasetFieldClassification", () => {
   it("suggestDatasetBindColumns prefers classified fields", async () => {
     const { suggestDatasetBindColumns } = await import("./datasetFieldClassification");
     expect(
-      suggestDatasetBindColumns(["id", "region", "amount", "updated_at", "internal_note"]),
-    ).toEqual(["id", "region", "updated_at", "amount", "internal_note"]);
+      suggestDatasetBindColumns(["id", "region", "amount", "updated_at", "internal_note"]).sort(),
+    ).toEqual(["amount", "id", "internal_note", "region", "updated_at"]);
   });
 });

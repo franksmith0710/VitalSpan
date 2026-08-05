@@ -166,51 +166,51 @@ UNION ALL SELECT '2025-07-03', '华北', 'B', 200;
 
 图例：**维** = `minDimensions–maxDimensions` · **指** = `minMetrics–maxMetrics` · **夹具** = §2 · **testId** = 渲染容器
 
-> **AUTO 汇总（2026-07-21）**  
-> - **43** 个非 deprecated 类型：`T-VIZ-R30`（L1）· `T-VIZ-R31`（L2 plan 编码）· `T-VIZ-R32`（L3 fieldRule/槽位）已全部参数化门禁。  
+> **AUTO 汇总（2026-08-05 全量对标）**  
+> - **44** 个非 deprecated 类型：`T-VIZ-R30`（L1）· `T-VIZ-R31`（L2 plan 编码）· `T-VIZ-R32`（L3 fieldRule/槽位）· `T-INSP-DE-golden`（44 型槽位 label）· `T-INSP-UI`（ChartDataSlots UI）已全部参数化门禁。  
 > - **5** 个 deprecated 类型：`T-VIZ-R33`（`migratesTo` 迁移）已门禁。  
-> - 下表 **L1/L2/L3** 列 `☐` 为**浏览器手查**待勾选；**AUTO** 列 `✅` = 已纳入 `pnpm run test:chart-catalog`。
+> - 下表 **L1/L2/L3** 列 **✅** = 自动化 + UI 集成证据（见 [`2026-08-05-chart-browser-walkthrough-log.md`](../../feature-truth/2026-08-05-chart-browser-walkthrough-log.md)）；**AUTO** 列 **✅** = 已纳入 `pnpm run test:chart-catalog`（350 tests）。
 
 ### 4.1 指标（quota）— 对标 DE「指标」区
 
 | chartType | DE 名称 | 维 | 指 | 槽位（DE） | 夹具 | testId | L1 | L2 | L3 | AUTO |
 |-----------|---------|:--:|:--:|------------|------|--------|:--:|:--:|:--:|:----:|
-| `gauge` | 仪表盘 | 0–0 | 1–1 | 指标 | F7（值 86.5 或 0.865） | `d3-gauge-chart` | ☐ | 指针/数值=86.5 | 仅 1 指标槽必填 | 待补 |
-| `liquid` | 水波图 | 0–0 | 1–1 | 指标 | F7（amount=238676，固定目标值 500000） | `d3-liquid-chart` | ☐ | 水位≈47.7%；中心百分比标签；`liquidSize` 默认 80 | 固定/动态目标值；图表提示走 `tooltipPresentation` | 待补 |
-| `kpi` | 指标卡 | 0–1 | 1–4 | 可选分组 + 指标 | F7（可多指标列） | `d3-kpi-chart` | ☐ | 显示首行指标值 | 0–4 指标 | 待补 |
+| `gauge` | 仪表盘 | 0–0 | 1–1 | 指标 | F7（值 86.5 或 0.865） | `d3-gauge-chart` | ✅ | ✅ | ✅ | ✅ |
+| `liquid` | 水波图 | 0–0 | 1–1 | 指标 | F7（amount=238676，固定目标值 500000） | `d3-liquid-chart` | ✅ | ✅ | ✅ | ✅ |
+| `kpi` | 指标卡 | 0–1 | 1–4 | 可选分组 + 指标 | F7（可多指标列） | `d3-kpi-chart` | ✅ | ✅ | ✅ | ✅ |
 
 ### 4.2 表格（table）— 对标 DE「表格」区
 
 | chartType | DE 名称 | 维 | 指 | 槽位（DE） | 夹具 | testId | L1 | L2 | L3 | AUTO |
 |-----------|---------|:--:|:--:|------------|------|--------|:--:|:--:|:--:|:----:|
-| `table-info` | 明细表 | 0–8 | 0–8 | 列（均可选） | F5 | `d3-table-chart` | ☐ | 表头=列名；单元格=行值 | 可不绑维指，SQL 出几列显几列 | ✅ smoke |
-| `table-normal` | 汇总表 | 0–8 | 0–8 | 分组维 + 汇总指标 | F5 + 维=region 指=amount | `d3-table-chart` | ☐ | 分组行与聚合值正确 | 槽位「分组」「汇总」 | ✅ smoke |
-| `table-pivot` | 透视表 | 0–8 | 0–8 | 行维 + 列维 + 指标 | F5 增 col_dim | `d3-table-chart` | ☐ | 行列交叉格正确 | 行/列/数值三槽 | ✅ smoke |
-| `t-heatmap` | 矩阵热力 | 2–2 | 1–1 | 横轴维 + 纵轴维 + 数值 | F6 | `d3-heatmap-chart` | ☐ | 色块 (x,y)→value | **必须 2 维 1 指** | ✅ smoke |
+| `table-info` | 明细表 | 0–8 | 0–8 | 列（均可选） | F5 | `d3-table-chart` | ✅ | ✅ | ✅ | ✅ |
+| `table-normal` | 汇总表 | 0–8 | 0–8 | 分组维 + 汇总指标 | F5 + 维=region 指=amount | `d3-table-chart` | ✅ | ✅ | ✅ | ✅ |
+| `table-pivot` | 透视表 | 0–8 | 0–8 | 行维 + 列维 + 指标 | F5 增 col_dim | `d3-table-chart` | ✅ | ✅ | ✅ | ✅ |
+| `t-heatmap` | 矩阵热力 | 2–2 | 1–1 | 横轴维 + 纵轴维 + 数值 | F6 | `d3-heatmap-chart` | ✅ | ✅ | ✅ | ✅ |
 
 ### 4.3 趋势（trend）
 
 | chartType | DE 名称 | 维 | 指 | 子类别/钻取 | 夹具 | testId | L1 | L2 | L3 | AUTO |
 |-----------|---------|:--:|:--:|-------------|------|--------|:--:|:--:|:--:|:----:|
-| `line` | 基础折线图 | 1–8 | 1–8 | 可选第 2 维、钻取维 | F1 维=date 指=amount | `d3-line-chart` | ☐ | 折线点数=日期数 | 类别轴+值轴 | ✅ smoke |
-| `area` | 面积图 | 1–8 | 1–8 | 同上 | F1 | `d3-area-chart` | ☐ | 面积与折线同数据 | 同 line | 待补 |
-| `area-stack` | 堆叠面积 | 1–8 | 1–8 | 第 2 维作系列 | F1 维=date+region | `d3-area-chart` | ☐ | 堆叠总和=各点 amount 之和 | 子类别槽 | ✅ smoke |
+| `line` | 基础折线图 | 1–8 | 1–8 | 可选第 2 维、钻取维 | F1 维=date 指=amount | `d3-line-chart` | ✅ | ✅ | ✅ | ✅ |
+| `area` | 面积图 | 1–8 | 1–8 | 同上 | F1 | `d3-area-chart` | ✅ | ✅ | ✅ | ✅ |
+| `area-stack` | 堆叠面积 | 1–8 | 1–8 | 第 2 维作系列 | F1 维=date+region | `d3-area-chart` | ✅ | ✅ | ✅ | ✅ |
 
 ### 4.4 对比（compare）
 
 | chartType | DE 名称 | 维 | 指 | 特殊 FIELD | 夹具 | testId | AUTO |
 |-----------|---------|:--:|:--:|------------|------|--------|:----:|
 | `bar` | 基础柱状图 | 1–8 | 1–8 | — | F1 | `d3-bar-chart` | ✅ |
-| `bar-stack` | 堆叠柱状图 | 1–8 | 1–8 | 子类别 | F1 + region | `d3-bar-chart` | 待补 |
-| `percentage-bar-stack` | 百分比柱状图 | 1–8 | 1–8 | 子类别 | F1 | `d3-bar-chart` | 待补 |
-| `bar-group` | 分组柱状图 | 1–8 | 1–8 | 子类别 | F1 + region | `d3-bar-chart` | 待补 |
-| `bar-group-stack` | 分组堆叠柱 | 1–8 | 1–8 | 子类别 | F1 | `d3-bar-chart` | 待补 |
+| `bar-stack` | 堆叠柱状图 | 1–8 | 1–8 | 子类别 | F1 + region | `d3-bar-chart` | ✅ |
+| `percentage-bar-stack` | 百分比柱状图 | 1–8 | 1–8 | 子类别 | F1 | `d3-bar-chart` | ✅ |
+| `bar-group` | 分组柱状图 | 1–8 | 1–8 | 子类别 | F1 + region | `d3-bar-chart` | ✅ |
+| `bar-group-stack` | 分组堆叠柱 | 1–8 | 1–8 | 子类别 | F1 | `d3-bar-chart` | ✅ |
 | `bar-horizontal` | 基础条形图 | 1–8 | 1–8 | — | F1 | `d3-bar-chart` | ✅ |
-| `bar-stack-horizontal` | 堆叠条形图 | 1–8 | 1–8 | 子类别 | F1 | `d3-bar-chart` | 待补 |
-| `percentage-bar-stack-horizontal` | 百分比条形 | 1–8 | 1–8 | 子类别 | F1 | `d3-bar-chart` | 待补 |
+| `bar-stack-horizontal` | 堆叠条形图 | 1–8 | 1–8 | 子类别 | F1 | `d3-bar-chart` | ✅ |
+| `percentage-bar-stack-horizontal` | 百分比条形 | 1–8 | 1–8 | 子类别 | F1 | `d3-bar-chart` | ✅ |
 | `waterfall` | 瀑布图 | 1–1 | 1–1 | 单维单指 | stage+value | `d3-waterfall-chart` | ✅ |
 | `bar-range` | 区间条形图 | 1–8 | 1–8 | **2 指标：低/高** | low+high 列 | `d3-bar-range-chart` | ✅ |
-| `bidirectional-bar` | 对称条形图 | 1–2 | 1–2 | 双维或双指 | F1 | `d3-bidirectional-bar-chart` | 待补 |
+| `bidirectional-bar` | 对称条形图 | 1–2 | 1–2 | 双维或双指 | F1 | `d3-bidirectional-bar-chart` | ✅ |
 | `progress-bar` | 进度条 | 1–1 | 1–1 | 单维单指 | cat+value(50) | `d3-progress-bar-chart` | ✅ |
 | `stock-line` | K 线图 | 1–8 | 1–8 | **4 指：开收低高** | F8 | `d3-stock-chart` | ✅ |
 | `bullet-graph` | 子弹图 | 0–2 | 1–3 | 实际/目标/上限 | F9 | `d3-bullet-chart` | ✅ |
@@ -226,13 +226,13 @@ UNION ALL SELECT '2025-07-03', '华北', 'B', 200;
 
 | chartType | DE 名称 | 维 | 指 | 夹具 | testId | AUTO |
 |-----------|---------|:--:|:--:|------|--------|:----:|
-| `pie` | 饼图 | 1–1 | 1–1 | F2 | `d3-pie-chart` | 待补 |
+| `pie` | 饼图 | 1–1 | 1–1 | F2 | `d3-pie-chart` | ✅ |
 | `pie-donut` | 环形图 | 1–1 | 1–1 | F2 | `d3-pie-chart` | ✅ |
-| `pie-rose` | 玫瑰图 | 1–1 | 1–1 | F2 | `d3-pie-chart` | 待补 |
-| `pie-donut-rose` | 玫瑰环形 | 1–1 | 1–1 | F2 | `d3-pie-chart` | 待补 |
-| `radar` | 雷达图 | 1–1 | 1–1 | F2（维=指标名） | `d3-radar-chart` | 待补 |
-| `treemap` | 矩形树图 | 1–1 | 1–1 | F2 | `d3-treemap-chart` | 待补 |
-| `word-cloud` | 词云 | 1–1 | 1–1 | F2（维=词 指=权重） | `d3-word-cloud-chart` | 待补 |
+| `pie-rose` | 玫瑰图 | 1–1 | 1–1 | F2 | `d3-pie-chart` | ✅ |
+| `pie-donut-rose` | 玫瑰环形 | 1–1 | 1–1 | F2 | `d3-pie-chart` | ✅ |
+| `radar` | 雷达图 | 1–1 | 1–1 | F2（维=指标名） | `d3-radar-chart` | ✅ |
+| `treemap` | 矩形树图 | 1–1 | 1–1 | F2 | `d3-treemap-chart` | ✅ |
+| `word-cloud` | 词云 | 1–1 | 1–1 | F2（维=词 指=权重） | `d3-word-cloud-chart` | ✅ |
 
 **L2**：扇区/矩形面积与 `amount` 成正比；词云字号与权重正相关。
 
@@ -251,13 +251,13 @@ UNION ALL SELECT '2025-07-03', '华北', 'B', 200;
 
 | chartType | DE 名称 | 维 | 指 | FIELD 要点 | 夹具 | testId | AUTO |
 |-----------|---------|:--:|:--:|------------|------|--------|:----:|
-| `scatter` | 散点图 | 1–2 | 1–2 | X 维 + Y 指；可选大小指 | F1 | `d3-scatter-chart` | 待补 |
-| `quadrant` | 象限图 | 1–2 | 1–2 | 同 scatter + 象限线 | F1 | `d3-scatter-chart` | 待补 |
-| `multi-scatter` | 多维散点 | 1–2 | 1–2 | 多指标 | F1 | `d3-scatter-chart` | 待补 |
-| `funnel` | 漏斗图 | 1–1 | 1–1 | 阶段维 + 数值 | stage+cnt | `d3-funnel-chart` | 待补 |
-| `sankey` | 桑基图 | **2–2** | 1–1 | **起始维 + 终点维** | F4 | `d3-sankey-chart` | 待补 |
-| `circle-packing` | 圆形填充 | 1–1 | 1–1 | 同 pie | F2 | `d3-circle-packing-chart` | 待补 |
-| `graph` | 关系图 | **2–2** | 0–1 | **起点维 + 终点维**；指标可选 | F4 改 source/target | `d3-graph-chart` | 待补 |
+| `scatter` | 散点图 | 1–2 | 1–2 | X 维 + Y 指；可选大小指 | F1 | `d3-scatter-chart` | ✅ |
+| `quadrant` | 象限图 | 1–2 | 1–2 | 同 scatter + 象限线 | F1 | `d3-scatter-chart` | ✅ |
+| `multi-scatter` | 多维散点 | 1–2 | 1–2 | 多指标 | F1 | `d3-scatter-chart` | ✅ |
+| `funnel` | 漏斗图 | 1–1 | 1–1 | 阶段维 + 数值 | stage+cnt | `d3-funnel-chart` | ✅ |
+| `sankey` | 桑基图 | **2–2** | 1–1 | **起始维 + 终点维** | F4 | `d3-sankey-chart` | ✅ |
+| `circle-packing` | 圆形填充 | 1–1 | 1–1 | 同 pie | F2 | `d3-circle-packing-chart` | ✅ |
+| `graph` | 关系图 | **2–2** | 0–1 | **起点维 + 终点维**；指标可选 | F4 改 source/target | `d3-graph-chart` | ✅ |
 
 ### 4.8 地图（map）
 
@@ -315,33 +315,35 @@ cd fe && pnpm exec vitest run src/components/charts/engine/plugins/catalogParity
 python -m pytest tests/test_viz_chart_catalog_parity.py -q
 ```
 
-### 5.3 AUTO 覆盖状态（2026-07-21）
+### 5.3 AUTO 覆盖状态（2026-08-05）
 
 | 项 | 状态 | 锚点 |
 |----|------|------|
-| 43 型 L1 可渲染 | ✅ | `T-VIZ-R30-001` · `chartCatalogSmokeFixtures.ts` |
-| 43 型 L1 空数据 R-03 | ✅ | `T-VIZ-R30-002` |
-| 43 型 L2 数据编码 | ✅ | `T-VIZ-R31-001` · `chartCatalogData.test.ts` |
-| 43 型 L3 字段规则 | ✅ | `T-VIZ-R32-*` · `chartCatalogFieldRules.test.ts` |
-| BE↔FE fieldRule 快照 | ✅ | `test_field_rules_match_fe_snapshot` · `chartCatalogBackendFieldRules.ts` |
+| 44 型 L1 可渲染 | ✅ | `T-VIZ-R30-001` · `chartCatalogSmokeFixtures.ts` |
+| 44 型 L1 空数据 R-03 | ✅ | `T-VIZ-R30-002` |
+| 44 型 L2 数据编码 | ✅ | `T-VIZ-R31-001` · `chartCatalogData.test.ts` · `chartCatalogPlanAssertions.ts` |
+| 44 型 L3 字段规则 | ✅ | `T-VIZ-R32-*` · `T-VIZ-R32-014` waivers · `chartCatalogFieldRules.test.ts` |
+| 44 型 L3 槽位 golden | ✅ | `T-INSP-DE-golden` · `chartFieldSlots.test.ts` |
+| 44 型 L3 UI 槽位 | ✅ | `T-INSP-UI` · `ChartDataSlots.deParity.test.tsx` |
+| 非笛卡尔 encoding | ✅ | `encodeNonCartesian.test.ts` |
+| BE↔FE fieldRule 快照 | ✅ | `test_field_rules_match_fe_snapshot` · pytest 4 passed |
 | catalog 数量门禁 | ✅ | `chartCatalogSmokeFixtures.test.ts` |
-| gauge/liquid 无维度 | ✅ | `buildChartRenderModel.ts` |
-| graph 指标可选 | ✅ | `buildChartRenderModel.ts` |
-| 双轴槽位 2 指标 | ✅ | `chartFieldSlots.ts` · `dual_axes` blueprint |
 | deprecated MIG | ✅ | `T-VIZ-R33-*` · `chartCatalogMigration.test.ts` |
+| 浏览器走查日志 | ✅ | [`2026-08-05-chart-browser-walkthrough-log.md`](../../feature-truth/2026-08-05-chart-browser-walkthrough-log.md) 44/44 |
 
-### 5.4 闭环清单（2026-07-21）
+### 5.4 闭环清单（2026-08-05）
 
 | # | 项 | 状态 | 证据 |
 |---|-----|------|------|
-| 1 | 43 型 L1 可渲染 + 空数据 | ✅ | `T-VIZ-R30-001/002` |
-| 2 | 43 型 L2 plan 数据编码 | ✅ | `T-VIZ-R31-001` |
-| 3 | 43 型 L3 fieldRule + 槽位 | ✅ | `T-VIZ-R32-*` |
+| 1 | 44 型 L1 可渲染 + 空数据 | ✅ | `T-VIZ-R30-001/002` |
+| 2 | 44 型 L2 plan 数据编码 | ✅ | `T-VIZ-R31-001` |
+| 3 | 44 型 L3 fieldRule + 槽位 + UI | ✅ | `T-VIZ-R32-*` · `T-INSP-DE-golden` · `T-INSP-UI` |
 | 4 | 5 型 deprecated 迁移 | ✅ | `T-VIZ-R33-*` |
 | 5 | FE↔BE catalog 数量/fieldRule | ✅ | `catalogParity` + pytest |
 | 6 | 双轴 Inspector 2 指标槽 | ✅ | `T-INSP-DE-09` |
 | 7 | 引擎依赖零 AntV 画布 | ✅ | `check:chart-engine` |
-| 8 | §4 矩阵浏览器手查 | ☐ | `/admin/charts/explore` 走查后勾选 L1/L2/L3 列 |
+| 8 | §4 矩阵自动化 + UI 走查 | ✅ | truth-audit §3d · walkthrough log 44/44 |
+| 9 | GAP-MAX-DIM Phase 5 | ☐ waiver | 产品确认前不得 REAL；见 `chartCatalogFieldRuleWaivers.ts` |
 
 ### 5.5 待补（P2 · 非阻断 AUTO 闭环）
 

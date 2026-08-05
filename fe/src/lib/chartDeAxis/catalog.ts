@@ -2,7 +2,7 @@
  * DataEase v2 最新 stable axisConfig 快照（真理源）
  * 对标：dataease/dataease core-frontend panel/charts
  */
-import { cartesianTrendAxes, deAxis, expandAxisSpecs, MULTI_DIM_OPTS, MULTI_MET_OPTS } from "./builders";
+import { cartesianTrendAxes, deAxis, DE_MULTI_FIELD_LIMIT, expandAxisSpecs, MULTI_DIM_OPTS, MULTI_MET_OPTS } from "./builders";
 import type { DeAxisSlot, DeAxisSpec } from "./types";
 
 type ChartAxisEntry = {
@@ -334,7 +334,7 @@ const DE_AXIS_CATALOG: Record<string, ChartAxisEntry> = {
   ),
   "chart-mix": entry(
     [
-      deAxis.xDim(),
+      deAxis.xDim("类别轴 / 维度", MULTI_DIM_OPTS),
       deAxis.xExt(),
       deAxis.yMet("左值轴 / 柱指标", MULTI_MET_OPTS),
       deAxis.yExt("右值轴 / 线指标", MULTI_MET_OPTS),
@@ -440,11 +440,11 @@ DE_AXIS_CATALOG["multi-scatter"] = entry(
 
 DE_AXIS_CATALOG["chart-mix-dual-line"] = entry(
   [
-    deAxis.xDim(),
+    deAxis.xDim("类别轴 / 维度", MULTI_DIM_OPTS),
     deAxis.xExt(),
-    deAxis.yMet("左值轴 / 线指标"),
+    deAxis.yMet("左值轴 / 线指标", MULTI_MET_OPTS),
     { id: "extBubble", label: "右子类别 / 维度", fieldType: "dimension", limit: 1, required: false },
-    deAxis.yExt("右值轴 / 线指标", { required: false }),
+    deAxis.yExt("右值轴 / 线指标", { ...MULTI_MET_OPTS, required: false }),
     deAxis.drill(),
   ],
   [
@@ -523,6 +523,16 @@ export function deriveFieldRuleFromDeCatalog(chartType: string): {
       if (spec.required && spec.fieldType === "dimension") minD += spec.limit;
       if (spec.required && spec.fieldType === "metric") minM += spec.limit;
     }
+  }
+  const hasMultiCategory =
+    !chartType.startsWith("table-") &&
+    specs.some(
+      (s) => s.id === "xAxis" && s.uiMode === "multi" && s.fieldType === "dimension",
+    );
+  if (hasMultiCategory) {
+    maxD = DE_MULTI_FIELD_LIMIT;
+    maxM = Math.min(maxM, DE_MULTI_FIELD_LIMIT);
+    if (minD < 1) minD = 1;
   }
   return { minDimensions: minD, maxDimensions: maxD, minMetrics: minM, maxMetrics: maxM };
 }

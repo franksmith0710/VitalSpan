@@ -46,14 +46,14 @@ describe("chartDeAxis catalog", () => {
       "值轴 / 指标",
       "钻取 / 维度",
     ]);
-    expect(slots[2]).toMatchObject({
-      axisId: "yAxis",
-      fieldType: "metric",
+    expect(slots[0]).toMatchObject({
+      axisId: "xAxis",
+      fieldType: "dimension",
       uiMode: "multi",
     });
     expect(deriveFieldRuleFromDeCatalog("line")).toEqual({
       minDimensions: 1,
-      maxDimensions: 3,
+      maxDimensions: 8,
       minMetrics: 1,
       maxMetrics: 8,
     });

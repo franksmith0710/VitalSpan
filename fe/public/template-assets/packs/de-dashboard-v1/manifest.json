@@ -1,0 +1,69 @@
+{
+  "packId": "de-dashboard-v1",
+  "publicPrefix": "/template-assets/packs/de-dashboard-v1",
+  "assets": [
+    {
+      "slug": "dash-blank",
+      "theme": "blue",
+      "layout": "blank",
+      "background": "/template-assets/packs/de-dashboard-v1/backgrounds/dash-blank.svg",
+      "thumb": "/template-assets/packs/de-dashboard-v1/thumbs/dash-blank.svg"
+    },
+    {
+      "slug": "dash-dual-kpi",
+      "theme": "blue",
+      "layout": "kpi-dual",
+      "background": "/template-assets/packs/de-dashboard-v1/backgrounds/dash-dual-kpi.svg",
+      "thumb": "/template-assets/packs/de-dashboard-v1/thumbs/dash-dual-kpi.svg"
+    },
+    {
+      "slug": "dash-triple",
+      "theme": "violet",
+      "layout": "triple",
+      "background": "/template-assets/packs/de-dashboard-v1/backgrounds/dash-triple.svg",
+      "thumb": "/template-assets/packs/de-dashboard-v1/thumbs/dash-triple.svg"
+    },
+    {
+      "slug": "dash-ops",
+      "theme": "teal",
+      "layout": "ops",
+      "background": "/template-assets/packs/de-dashboard-v1/backgrounds/dash-ops.svg",
+      "thumb": "/template-assets/packs/de-dashboard-v1/thumbs/dash-ops.svg"
+    },
+    {
+      "slug": "gov-efficiency",
+      "theme": "blue",
+      "layout": "kpi-dual",
+      "background": "/template-assets/packs/de-dashboard-v1/backgrounds/gov-efficiency.svg",
+      "thumb": "/template-assets/packs/de-dashboard-v1/thumbs/gov-efficiency.svg"
+    },
+    {
+      "slug": "gov-satisfaction",
+      "theme": "violet",
+      "layout": "triple",
+      "background": "/template-assets/packs/de-dashboard-v1/backgrounds/gov-satisfaction.svg",
+      "thumb": "/template-assets/packs/de-dashboard-v1/thumbs/gov-satisfaction.svg"
+    },
+    {
+      "slug": "gov-finance",
+      "theme": "green",
+      "layout": "ops",
+      "background": "/template-assets/packs/de-dashboard-v1/backgrounds/gov-finance.svg",
+      "thumb": "/template-assets/packs/de-dashboard-v1/thumbs/gov-finance.svg"
+    },
+    {
+      "slug": "gov-investment",
+      "theme": "indigo",
+      "layout": "geo-bar",
+      "background": "/template-assets/packs/de-dashboard-v1/backgrounds/gov-investment.svg",
+      "thumb": "/template-assets/packs/de-dashboard-v1/thumbs/gov-investment.svg"
+    },
+    {
+      "slug": "gov-grid",
+      "theme": "slate",
+      "layout": "grid-ops",
+      "background": "/template-assets/packs/de-dashboard-v1/backgrounds/gov-grid.svg",
+      "thumb": "/template-assets/packs/de-dashboard-v1/thumbs/gov-grid.svg"
+    }
+  ]
+}

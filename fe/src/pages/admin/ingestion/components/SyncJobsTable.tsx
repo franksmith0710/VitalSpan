@@ -1,9 +1,12 @@
 import { Link } from "react-router";
 import { useMemo } from "react";
 import {
+  BarChart3,
   CalendarClock,
+  Database,
   Hand,
   History,
+  Layers,
   Pencil,
   Play,
   RefreshCw,
@@ -17,13 +20,18 @@ import { HintTooltip, TruncateHint } from "@/components/ui/hint-tooltip";
 import { cn } from "@/lib/utils";
 import { localizeApiMessage } from "@/lib/apiError";
 import {
+  consumeActionAriaLabel,
+  consumeActionHref,
+  consumeLabelColor,
+  consumeLabelText,
+} from "@/lib/syncConsumeApi";
+import {
   lastRunBadgeColor,
   lastRunStatusLabel,
   sourceSummaryLabel,
   syncModeLabel,
   type SyncJobSummary,
 } from "./sync-job-types";
-import { consumeLabelColor, consumeLabelText } from "@/lib/syncConsumeApi";
 
 type SyncJobsTableProps = {
   jobs: SyncJobSummary[];
@@ -55,19 +63,6 @@ function LastRunCell({ job }: { job: SyncJobSummary }) {
       {lastRun.status === "succeeded" && lastRun.rows_synced != null ? (
         <div className="text-theme-xs text-gray-500">{lastRun.rows_synced} 行</div>
       ) : null}
-      {lastRun.status === "succeeded" && job.consume_status ? (
-        <Badge color={consumeLabelColor(job.consume_status.label)} variant="light" size="sm">
-          {consumeLabelText(job.consume_status.label)}
-        </Badge>
-      ) : null}
-      {lastRun.status === "succeeded" ? (
-        <Link
-          to={`/admin/ingestion/sync-jobs/${job.id}/history`}
-          className="text-theme-xs text-brand-600 underline-offset-2 hover:underline dark:text-brand-400"
-        >
-          一键出图
-        </Link>
-      ) : null}
       {lastRun.status === "failed" && lastRun.error_message ? (
         <TruncateHint
           title={localizeApiMessage(lastRun.error_message)}
@@ -77,6 +72,58 @@ function LastRunCell({ job }: { job: SyncJobSummary }) {
         </TruncateHint>
       ) : null}
     </div>
+  );
+}
+
+function ConsumeReadyCell({ job }: { job: SyncJobSummary }) {
+  const lastRun = job.last_run;
+  if (!lastRun || lastRun.status !== "succeeded") {
+    return <span className="text-theme-xs text-gray-400">—</span>;
+  }
+  if (!job.consume_status) {
+    return <span className="text-theme-xs text-gray-400">—</span>;
+  }
+  return (
+    <Badge color={consumeLabelColor(job.consume_status.label)} variant="light" size="sm">
+      {consumeLabelText(job.consume_status.label)}
+    </Badge>
+  );
+}
+
+function ConsumeActionButton({ job, canManage }: { job: SyncJobSummary; canManage: boolean }) {
+  const lastRun = job.last_run;
+  const consume = job.consume_status;
+  if (!lastRun || lastRun.status !== "succeeded" || !consume) {
+    return null;
+  }
+
+  const label = consumeActionAriaLabel(consume.next_action);
+  const href = consumeActionHref(job.id, consume.next_action);
+  const Icon =
+    consume.next_action === "open_dashboard"
+      ? BarChart3
+      : consume.next_action === "ensure_dataset"
+        ? Layers
+        : Database;
+
+  if (consume.next_action === "prepare" && !canManage) {
+    return (
+      <HintTooltip label="分析库尚未就绪，请联系管理员">
+        <span className="inline-flex size-8 items-center justify-center text-gray-300 dark:text-gray-600">
+          <Database className="size-4" aria-hidden />
+        </span>
+      </HintTooltip>
+    );
+  }
+
+  return (
+    <HintTooltip label={label}>
+      <IconButton asChild variant="ghost" size="sm" aria-label={label}>
+        <Link to={href}>
+          <Icon className="size-4" />
+        </Link>
+      </IconButton>
+    </HintTooltip>
   );
 }
 
@@ -105,7 +152,7 @@ export function SyncJobsTable({
   }, [jobs]);
   return (
     <div className="overflow-x-only">
-      <table className="min-w-[1024px] w-full text-left text-theme-sm">
+      <table className="min-w-[1080px] w-full text-left text-theme-sm">
         <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
           <tr>
             {showSelection ? (
@@ -125,6 +172,7 @@ export function SyncJobsTable({
             <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">定时调度</th>
             <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Cron 开关</th>
             <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">最近运行</th>
+            <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">出图就绪</th>
             <th className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-400">操作</th>
           </tr>
         </thead>
@@ -197,7 +245,11 @@ export function SyncJobsTable({
                 <LastRunCell job={job} />
               </td>
               <td className="px-4 py-3">
+                <ConsumeReadyCell job={job} />
+              </td>
+              <td className="px-4 py-3">
                 <div className="flex items-center justify-end gap-0.5">
+                  <ConsumeActionButton job={job} canManage={canManage} />
                   {canManage ? (
                     <>
                       {(() => {

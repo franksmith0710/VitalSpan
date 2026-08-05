@@ -58,10 +58,10 @@ export const deAxis = {
     axis("xAxis", label, "both", opts),
 };
 
-/** 笛卡尔默认：类别 + 子类别 + 值轴（可多指标）+ 钻取 */
+/** 笛卡尔默认：类别（可多字段 1–8）+ 子类别 + 值轴（可多指标）+ 钻取 */
 export function cartesianTrendAxes(subLabel = "子类别 / 维度"): DeAxisSpec[] {
   return [
-    deAxis.xDim(),
+    deAxis.xDim("类别轴 / 维度", MULTI_DIM_OPTS),
     deAxis.xExt(subLabel),
     deAxis.yMet("值轴 / 指标", MULTI_MET_OPTS),
     deAxis.drill(),

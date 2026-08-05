@@ -20,6 +20,7 @@ from app.dashboard.templates.presets_gov_assets import (
     INVESTMENT_THUMB,
     SATISFACTION_THUMB,
     SMART_CITY_THUMB,
+    de_thumb,
 )
 from app.dashboard.templates.presets_official_gallery import build_official_component_gallery_layout
 
@@ -81,7 +82,7 @@ def _gov_template_specs() -> list[dict[str, Any]]:
             "id": uuid.UUID("00000000-0000-4000-8001-000000000206"),
             "template_key": "builtin-gov-efficiency",
             "name": "政务效能分析看板",
-            "description": "点阵云纹底图 · KPI 条 + 部门效能 · 官方示例数据",
+            "description": "浅灰 #f0f2f5 画布 · 顶行 KPI/仪表 + 柱线双图 · 官方示例数据",
             "category_key": "government",
             "surface_kind": "dashboard",
             "thumbnail_ref": EFFICIENCY_THUMB,
@@ -91,7 +92,7 @@ def _gov_template_specs() -> list[dict[str, Any]]:
             "id": uuid.UUID("00000000-0000-4000-8001-000000000207"),
             "template_key": "builtin-gov-satisfaction",
             "name": "公共服务满意度",
-            "description": "薰衣草水印底图 · 浮层卡片 · 事件占比 · 官方示例数据",
+            "description": "DataEase 风三栏 · 地图 + 饼图 + 明细表 · 官方示例数据",
             "category_key": "government",
             "surface_kind": "dashboard",
             "thumbnail_ref": SATISFACTION_THUMB,
@@ -101,7 +102,7 @@ def _gov_template_specs() -> list[dict[str, Any]]:
             "id": uuid.UUID("00000000-0000-4000-8001-000000000208"),
             "template_key": "builtin-gov-finance",
             "name": "财政收支概览",
-            "description": "薄荷折角底图 · 顶色条卡片 · 财政支出执行 · 官方示例数据",
+            "description": "DataEase 风运营布局 · KPI + 地图 + 趋势 + 预算表 · 官方示例数据",
             "category_key": "government",
             "surface_kind": "dashboard",
             "thumbnail_ref": FINANCE_THUMB,
@@ -111,7 +112,7 @@ def _gov_template_specs() -> list[dict[str, Any]]:
             "id": uuid.UUID("00000000-0000-4000-8001-000000000209"),
             "template_key": "builtin-gov-investment",
             "name": "招商引资分析",
-            "description": "纸纹顶栏带底图 · 区域产业地图 · 投资柱图 · 官方示例数据",
+            "description": "DataEase 风招商看板 · 地图主视觉 + 产业柱图 · 官方示例数据",
             "category_key": "government",
             "surface_kind": "dashboard",
             "thumbnail_ref": INVESTMENT_THUMB,
@@ -121,7 +122,7 @@ def _gov_template_specs() -> list[dict[str, Any]]:
             "id": uuid.UUID("00000000-0000-4000-8001-000000000210"),
             "template_key": "builtin-gov-grid",
             "name": "基层网格化管理",
-            "description": "象牙点阵底图 · 虚线边框卡片 · 网格事件表 · 官方示例数据",
+            "description": "DataEase 风网格看板 · 台账表 + 地图 + 分类柱图 · 官方示例数据",
             "category_key": "government",
             "surface_kind": "dashboard",
             "thumbnail_ref": GRID_THUMB,
@@ -186,40 +187,40 @@ def _builtin_template_specs() -> list[dict[str, Any]]:
             "id": uuid.UUID("00000000-0000-4000-8001-000000000101"),
             "template_key": "builtin-dash-blank",
             "name": "空白看板",
-            "description": "点阵装饰浅色画布，12 列栅格从零搭建",
+            "description": "DataEase 风浅灰画布，12 列栅格从零搭建",
             "category_key": "general",
             "surface_kind": "dashboard",
-            "thumbnail_ref": "/template-assets/thumbs/dash-blank.svg",
+            "thumbnail_ref": de_thumb("dash-blank"),
             "layout_json": presets.build_dash_blank_layout(),
         },
         {
             "id": uuid.UUID("00000000-0000-4000-8001-000000000102"),
             "template_key": "builtin-dash-dual-kpi",
             "name": "双栏 KPI 分析",
-            "description": "霜白浮层卡片底图 · KPI 条 + 渠道/趋势双栏",
+            "description": "DataEase 风 · KPI 条 + 渠道柱图 / 销售折线双栏",
             "category_key": "analytics",
             "surface_kind": "dashboard",
-            "thumbnail_ref": "/template-assets/thumbs/dash-dual-kpi.svg",
+            "thumbnail_ref": de_thumb("dash-dual-kpi"),
             "layout_json": presets.build_dual_kpi_layout(),
         },
         {
             "id": uuid.UUID("00000000-0000-4000-8001-000000000103"),
             "template_key": "builtin-dash-triple-analysis",
             "name": "三栏多维分析",
-            "description": "薰衣草丝带底图 · 地图 + 饼图 + 明细表三栏",
+            "description": "DataEase 风三栏 · 地图 + 饼图 + TOP 明细表",
             "category_key": "analytics",
             "surface_kind": "dashboard",
-            "thumbnail_ref": "/template-assets/thumbs/dash-triple-analysis.svg",
+            "thumbnail_ref": de_thumb("dash-triple"),
             "layout_json": presets.build_triple_analysis_layout(),
         },
         {
             "id": uuid.UUID("00000000-0000-4000-8001-000000000104"),
             "template_key": "builtin-dash-ops",
             "name": "运营分析看板",
-            "description": "云纹水印底图 · KPI + 地图热力 + 走势 + TOP 表",
+            "description": "DataEase 风运营看板 · KPI + 地图热力 + 走势 + TOP 表",
             "category_key": "monitoring",
             "surface_kind": "dashboard",
-            "thumbnail_ref": "/template-assets/thumbs/dash-ops.svg",
+            "thumbnail_ref": de_thumb("dash-ops"),
             "layout_json": presets.build_ops_dashboard_layout(),
         },
         {
@@ -256,7 +257,7 @@ def seed_builtin_dashboard_templates(db: Session) -> int:
                 layout_json=spec["layout_json"],
                 thumbnail_ref=spec.get("thumbnail_ref"),
                 visibility="builtin",
-                content_revision=16,
+                content_revision=17,
             )
             db.add(row)
             upserted += 1
@@ -268,6 +269,6 @@ def seed_builtin_dashboard_templates(db: Session) -> int:
             existing.thumbnail_ref = spec.get("thumbnail_ref")
             existing.status = "published"
             existing.visibility = "builtin"
-            existing.content_revision = max(existing.content_revision, 16)
+            existing.content_revision = max(existing.content_revision, 17)
     db.commit()
     return upserted

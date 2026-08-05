@@ -52,3 +52,20 @@ export function consumeLabelColor(label: ConsumeLabel): "success" | "warning" | 
   if (label === "pending_dataset") return "warning";
   return "light";
 }
+
+export function consumeActionAriaLabel(nextAction: ConsumeNextAction): string {
+  if (nextAction === "open_dashboard") return "一键出图";
+  if (nextAction === "ensure_dataset") return "去建 Dataset";
+  return "准备出图环境";
+}
+
+export function consumeActionHref(
+  jobId: string,
+  nextAction: ConsumeNextAction,
+  datasetId?: string | null,
+): string {
+  if (nextAction === "open_dashboard") {
+    return datasetId ? `/admin/datasets/${datasetId}/edit` : "/admin/dashboards";
+  }
+  return `/admin/ingestion/sync-jobs/${jobId}/history`;
+}

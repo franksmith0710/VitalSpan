@@ -1,6 +1,39 @@
 import type { ChartFieldRef } from "@/lib/chartViewConfig";
 import type { RenderSpec } from "@/components/charts/engine/types";
+import type { ChartAxesConfig } from "@/lib/chartDeAxis";
 import { DE_AREA_FILL_OPACITY } from "@/components/charts/engine/presentationConstants";
+
+export const CARTESIAN_CATEGORY_KEY_SEP = "\u0001";
+
+export function resolveCartesianAxisFields(encoding: RenderSpec["encoding"]): {
+  categoryFields: string[];
+  subDim?: string;
+} {
+  const axes: ChartAxesConfig = encoding.axes ?? {};
+  const categoryFields = (axes.xAxis ?? [])
+    .map((ref) => ref.field?.trim())
+    .filter((field): field is string => Boolean(field));
+  const subDim = axes.xAxisExt?.[0]?.field?.trim() || undefined;
+
+  if (categoryFields.length > 0) {
+    return { categoryFields, subDim };
+  }
+
+  const dims = encoding.dimensions.map((d) => d.field?.trim()).filter(Boolean) as string[];
+  return {
+    categoryFields: dims.length > 0 ? [dims[0]!] : [],
+    subDim: dims[1],
+  };
+}
+
+export function compositeCategoryKey(row: unknown[], columns: string[], fields: string[]): string {
+  return fields
+    .map((field) => {
+      const idx = columns.indexOf(field);
+      return idx >= 0 ? String(row[idx] ?? "") : "";
+    })
+    .join(CARTESIAN_CATEGORY_KEY_SEP);
+}
 
 export const ADVANCED_CHART_ROW_CAP = 500;
 export const GRAPH_NODE_CAP = 200;
@@ -61,25 +94,30 @@ export function buildCartesianCategorySeries(
   seriesType: "line" | "bar",
   stylePatch?: (styleVariant: string) => Record<string, unknown>,
 ): CartesianSeriesBuild {
-  const dim = spec.encoding.dimensions[0]?.field ?? "";
-  const subDim = spec.encoding.dimensions[1]?.field;
+  const { categoryFields, subDim } = resolveCartesianAxisFields(spec.encoding);
   const metrics = spec.encoding.metrics.map((m: ChartFieldRef) => m.field).filter(Boolean);
   const isHorizontal = spec.styleVariant === "horizontal";
-  const d0i = safeColIndex(columns, dim);
-  const d1i = subDim ? safeColIndex(columns, subDim) : null;
 
-  if (d0i === null || metrics.length === 0) {
+  if (categoryFields.length === 0 || metrics.length === 0) {
     return { xData: [], series: [], isHorizontal };
   }
 
-  const xData = uniqueOrdered(rows.map((r) => String(r[d0i] ?? "")));
+  const categoryIdx = categoryFields.map((f) => safeColIndex(columns, f));
+  if (categoryIdx.some((i) => i === null)) {
+    return { xData: [], series: [], isHorizontal };
+  }
+  const d1i = subDim ? safeColIndex(columns, subDim) : null;
 
-  const sumAt = (x: string, sub: string | null, metric: string) => {
+  const xData = uniqueOrdered(
+    rows.map((r) => compositeCategoryKey(r, columns, categoryFields)),
+  );
+
+  const sumAt = (xKey: string, sub: string | null, metric: string) => {
     const mi = safeColIndex(columns, metric);
     if (mi === null) return 0;
     let sum = 0;
     for (const row of rows) {
-      if (String(row[d0i] ?? "") !== x) continue;
+      if (compositeCategoryKey(row, columns, categoryFields) !== xKey) continue;
       if (sub !== null && d1i !== null && String(row[d1i] ?? "") !== sub) continue;
       sum += Number(row[mi] ?? 0);
     }

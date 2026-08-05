@@ -6,16 +6,25 @@ from dataclasses import dataclass
 from typing import Any, Literal
 
 from app.dashboard.templates.presets import _materialize_dash_style
+from app.dashboard.templates.presets_de_dash import (
+    DE_BLUE,
+    DE_CANVAS,
+    DE_GREEN,
+    DE_PALETTE_DEFAULT,
+    DE_PALETTE_GREEN,
+    DE_PALETTE_INDIGO,
+    DE_PALETTE_SLATE,
+    DE_PALETTE_VIOLET,
+    DE_PURPLE,
+    DE_SLATE,
+    build_de_chart_de_style,
+    build_de_dash_style,
+)
 from app.dashboard.templates.presets_gov_assets import (
     COMMUNITY_BG,
     DIGITAL_COCKPIT_BG,
     ECO_MONITOR_BG,
-    EFFICIENCY_BG,
     EMERGENCY_BG,
-    FINANCE_BG,
-    GRID_BG,
-    INVESTMENT_BG,
-    SATISFACTION_BG,
     SMART_CITY_BG,
 )
 
@@ -47,7 +56,7 @@ class GovDashTheme:
     accent: str
     scheme: Literal["light", "dark"]
     canvas: str
-    bg_image: str
+    bg_slug: str
     palette: tuple[str, ...]
     widget_variant: WidgetVariant = "elevated"
 
@@ -94,46 +103,41 @@ THEME_COMMUNITY = GovScreenTheme(
     widget_variant="float",
 )
 
-# —— 看板 ——
+# —— 看板（DataEase 浅灰 + 白卡片）——
 THEME_EFFICIENCY = GovDashTheme(
-    accent=_BRAND,
+    accent=DE_BLUE,
     scheme="light",
-    canvas="#f1f5f9",
-    bg_image=EFFICIENCY_BG,
-    palette=(_BRAND, "#6282ff", "#3b82f6", _SLATE_600, _SLATE_500, _SLATE_400),
-    widget_variant="elevated",
+    canvas=DE_CANVAS,
+    bg_slug="gov-efficiency",
+    palette=DE_PALETTE_DEFAULT,
 )
 THEME_SATISFACTION = GovDashTheme(
-    accent="#7c3aed",
+    accent=DE_PURPLE,
     scheme="light",
-    canvas="#faf5ff",
-    bg_image=SATISFACTION_BG,
-    palette=("#7c3aed", "#8b5cf6", "#a78bfa", _BRAND, _SLATE_500, "#ddd6fe"),
-    widget_variant="float",
+    canvas=DE_CANVAS,
+    bg_slug="gov-satisfaction",
+    palette=DE_PALETTE_VIOLET,
 )
 THEME_FINANCE = GovDashTheme(
-    accent="#047857",
+    accent=DE_GREEN,
     scheme="light",
-    canvas="#ecfdf5",
-    bg_image=FINANCE_BG,
-    palette=("#047857", "#059669", "#10b981", _BRAND, _SLATE_500, "#6ee7b7"),
-    widget_variant="ribbon",
+    canvas=DE_CANVAS,
+    bg_slug="gov-finance",
+    palette=DE_PALETTE_GREEN,
 )
 THEME_INVESTMENT = GovDashTheme(
-    accent="#4f46e5",
+    accent="#597ef7",
     scheme="light",
-    canvas="#f8fafc",
-    bg_image=INVESTMENT_BG,
-    palette=("#4f46e5", "#6366f1", "#3b82f6", _SLATE_600, _SLATE_500, "#a5b4fc"),
-    widget_variant="elevated",
+    canvas=DE_CANVAS,
+    bg_slug="gov-investment",
+    palette=DE_PALETTE_INDIGO,
 )
 THEME_GRID = GovDashTheme(
-    accent="#475569",
+    accent=DE_SLATE,
     scheme="light",
-    canvas="#f8fafc",
-    bg_image=GRID_BG,
-    palette=(_SLATE_600, _SLATE_500, _BRAND, "#3b82f6", _SLATE_400, "#cbd5e1"),
-    widget_variant="minimal",
+    canvas=DE_CANVAS,
+    bg_slug="gov-grid",
+    palette=DE_PALETTE_SLATE,
 )
 
 
@@ -275,20 +279,24 @@ def build_gov_screen_style(theme: GovScreenTheme) -> dict[str, Any]:
 
 
 def build_gov_dash_style(theme: GovDashTheme) -> dict[str, Any]:
-    style = _materialize_dash_style(
-        scheme=theme.scheme,
+    return build_de_dash_style(
         accent=theme.accent,
-        decor=None,
-        bg_image=theme.bg_image,
-        palette_colors=list(theme.palette),
+        bg_slug=theme.bg_slug,
+        palette=theme.palette,
+        canvas=theme.canvas,
     )
-    return _apply_gov_style(style, theme=theme, surface_kind="dashboard")
 
 
 def build_gov_chart_de_style(
     theme: GovScreenTheme | GovDashTheme,
     chart_type: str,
 ) -> dict[str, Any]:
+    if isinstance(theme, GovDashTheme):
+        return build_de_chart_de_style(
+            accent=theme.accent,
+            chart_type=chart_type,
+            palette=theme.palette,
+        )
     colors = list(theme.palette)
     accent = theme.accent
     dark = theme.scheme == "dark"

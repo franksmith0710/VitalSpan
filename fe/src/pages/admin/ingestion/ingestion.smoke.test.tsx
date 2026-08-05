@@ -870,6 +870,10 @@ describe("ingestion admin smoke", () => {
             rows_synced: 5,
             error_message: null,
           },
+          consume_status: {
+            label: "pending_dataset",
+            next_action: "ensure_dataset",
+          },
         },
       ],
     });
@@ -882,7 +886,9 @@ describe("ingestion admin smoke", () => {
     );
     await screen.findByText("demo");
     expect(screen.queryByText(/同步成功 · 下一步/)).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "一键出图" })).toBeInTheDocument();
+    expect(screen.getByText("待建 Dataset")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "去建 Dataset" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "一键出图" })).not.toBeInTheDocument();
   });
 
   it("SyncJobsEmptyState_shows_consume_step", async () => {

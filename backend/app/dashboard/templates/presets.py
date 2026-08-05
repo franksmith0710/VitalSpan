@@ -10,14 +10,19 @@ from typing import Any
 
 from app.dashboard.templates.demo_datasource import TEMPLATE_DEMO_DATASOURCE_REF
 from app.dashboard.templates.presets_gov_assets import (
-    DASH_BLANK_BG,
-    DASH_DUAL_KPI_BG,
-    DASH_OPS_BG,
-    DASH_TRIPLE_BG,
     SCREEN_COMMAND_BG,
     SCREEN_GOV_BG,
     SCREEN_SALES_GEO_BG,
     SCREEN_TECH_BG,
+)
+from app.dashboard.templates.presets_de_dash import (
+    DE_BLUE,
+    DE_CANVAS,
+    DE_PALETTE_DEFAULT,
+    DE_PALETTE_TEAL,
+    DE_PALETTE_VIOLET,
+    build_de_chart_de_style,
+    build_de_dash_style,
 )
 from app.dashboard.templates.official_demo_sql import (
     SQL_DAILY_KPI,
@@ -589,53 +594,72 @@ def build_gov_minimal_layout() -> dict[str, Any]:
     }
 
 
+def _dash_chart_de(
+    *,
+    accent: str = DE_BLUE,
+    palette: tuple[str, ...] = DE_PALETTE_DEFAULT,
+    chart_type: str,
+    **kwargs: Any,
+) -> dict[str, Any]:
+    de = build_de_chart_de_style(accent=accent, chart_type=chart_type, palette=palette)
+    return _chart(de_style=de, chart_type=chart_type, **kwargs)
+
+
 def build_dash_blank_layout() -> dict[str, Any]:
     return {
         "version": 1,
         "widgets": [],
         "globalFilters": [],
-        "styleConfig": _materialize_dash_style(
-            scheme="light",
-            accent="#465fff",
-            bg_image=DASH_BLANK_BG,
-            palette_colors=["#465fff", "#6282ff", "#3b82f6", "#64748b", "#94a3b8", "#cbd5e1"],
+        "styleConfig": build_de_dash_style(
+            accent=DE_BLUE,
+            bg_slug="dash-blank",
+            palette=DE_PALETTE_DEFAULT,
+            canvas=DE_CANVAS,
         ),
     }
 
 
 def build_dual_kpi_layout() -> dict[str, Any]:
-    w1 = _chart(
+    palette = DE_PALETTE_DEFAULT
+    accent = DE_BLUE
+    w1 = _dash_chart_de(
+        accent=accent,
+        palette=palette,
         chart_type="bar",
         title="渠道销售对比",
         sql=SQL_SALES_BY_CHANNEL,
         dimensions=[{"field": "渠道"}],
         metrics=[{"field": "销售额"}],
         colSpan=6,
-        rowSpan=5,
+        rowSpan=4,
         gridX=0,
-        gridY=1,
-        order=1,
+        gridY=2,
+        order=3,
     )
-    w2 = _chart(
+    w2 = _dash_chart_de(
+        accent=accent,
+        palette=palette,
         chart_type="line",
         title="销售趋势",
         sql=SQL_SALES_TREND,
         dimensions=[{"field": "日期"}],
         metrics=[{"field": "销售额"}],
         colSpan=6,
-        rowSpan=5,
+        rowSpan=4,
         gridX=6,
-        gridY=1,
-        order=2,
+        gridY=2,
+        order=4,
     )
-    kpi = _chart(
+    kpi = _dash_chart_de(
+        accent=accent,
+        palette=palette,
         chart_type="kpi",
         title="核心 KPI",
         sql=SQL_DAILY_KPI,
         dimensions=[{"field": "指标"}],
         metrics=[{"field": "数值"}],
         colSpan=12,
-        rowSpan=1,
+        rowSpan=2,
         gridX=0,
         gridY=0,
         order=0,
@@ -644,20 +668,23 @@ def build_dual_kpi_layout() -> dict[str, Any]:
         "version": 1,
         "widgets": [kpi, w1, w2],
         "globalFilters": [],
-        "styleConfig": _materialize_dash_style(
-            accent="#465fff",
-            scheme="light",
-            canvas="#f8fafc",
-            bg_image=DASH_DUAL_KPI_BG,
-            palette_colors=["#465fff", "#6282ff", "#3b82f6", "#6366f1", "#64748b", "#94a3b8"],
+        "styleConfig": build_de_dash_style(
+            accent=accent,
+            bg_slug="dash-dual-kpi",
+            palette=palette,
+            canvas=DE_CANVAS,
         ),
     }
 
 
 def build_triple_analysis_layout() -> dict[str, Any]:
-    w_map = _chart(
+    palette = DE_PALETTE_VIOLET
+    accent = "#722ed1"
+    w_map = _dash_chart_de(
+        accent=accent,
+        palette=palette,
         chart_type="map",
-        title="区域分布",
+        title="区域销售分布",
         sql=SQL_SALES_GEO_DRILL,
         dimensions=[
             {"field": "省份"},
@@ -671,7 +698,9 @@ def build_triple_analysis_layout() -> dict[str, Any]:
         gridY=0,
         order=0,
     )
-    w_pie = _chart(
+    w_pie = _dash_chart_de(
+        accent=accent,
+        palette=palette,
         chart_type="pie",
         title="渠道结构",
         sql=SQL_SALES_BY_CHANNEL,
@@ -683,7 +712,9 @@ def build_triple_analysis_layout() -> dict[str, Any]:
         gridY=0,
         order=1,
     )
-    w_table = _chart(
+    w_table = _dash_chart_de(
+        accent=accent,
+        palette=palette,
         chart_type="table-info",
         title="城市 TOP10",
         sql=SQL_TOP_CITIES,
@@ -699,12 +730,11 @@ def build_triple_analysis_layout() -> dict[str, Any]:
         "version": 1,
         "widgets": [w_map, w_pie, w_table],
         "globalFilters": [],
-        "styleConfig": _materialize_dash_style(
-            accent="#7c3aed",
-            scheme="light",
-            canvas="#faf5ff",
-            bg_image=DASH_TRIPLE_BG,
-            palette_colors=["#7c3aed", "#8b5cf6", "#6366f1", "#3b82f6", "#64748b", "#c4b5fd"],
+        "styleConfig": build_de_dash_style(
+            accent=accent,
+            bg_slug="dash-triple",
+            palette=palette,
+            canvas=DE_CANVAS,
         ),
     }
 
@@ -807,25 +837,31 @@ def build_sales_geo_screen_layout() -> dict[str, Any]:
 
 
 def build_ops_dashboard_layout() -> dict[str, Any]:
-    """运营分析看板：地图 + 趋势 + 明细表。"""
+    """运营分析看板：对标 DE — KPI + 地图 + 趋势 + 明细。"""
+    palette = DE_PALETTE_TEAL
+    accent = "#13c2c2"
     return {
         "version": 1,
         "widgets": [
-            _chart(
+            _dash_chart_de(
+                accent=accent,
+                palette=palette,
                 chart_type="kpi",
                 title="运营 KPI",
                 sql=SQL_DAILY_KPI,
                 dimensions=[{"field": "指标"}],
                 metrics=[{"field": "数值"}],
                 colSpan=12,
-                rowSpan=1,
+                rowSpan=2,
                 gridX=0,
                 gridY=0,
                 order=0,
             ),
-            _chart(
+            _dash_chart_de(
+                accent=accent,
+                palette=palette,
                 chart_type="map",
-                title="区域热力",
+                title="区域销售热力",
                 sql=SQL_SALES_GEO_DRILL,
                 dimensions=[
                     {"field": "省份"},
@@ -834,26 +870,30 @@ def build_ops_dashboard_layout() -> dict[str, Any]:
                 ],
                 metrics=[{"field": "销售额"}],
                 colSpan=7,
-                rowSpan=5,
+                rowSpan=4,
                 gridX=0,
-                gridY=1,
+                gridY=2,
                 order=1,
             ),
-            _chart(
+            _dash_chart_de(
+                accent=accent,
+                palette=palette,
                 chart_type="line",
                 title="销售走势",
                 sql=SQL_SALES_TREND,
                 dimensions=[{"field": "日期"}],
                 metrics=[{"field": "销售额"}],
                 colSpan=5,
-                rowSpan=3,
+                rowSpan=2,
                 gridX=7,
-                gridY=1,
+                gridY=2,
                 order=2,
             ),
-            _chart(
+            _dash_chart_de(
+                accent=accent,
+                palette=palette,
                 chart_type="table-info",
-                title="城市明细",
+                title="城市 TOP 明细",
                 sql=SQL_TOP_CITIES,
                 dimensions=[{"field": "城市"}],
                 metrics=[{"field": "销售额"}],
@@ -865,11 +905,10 @@ def build_ops_dashboard_layout() -> dict[str, Any]:
             ),
         ],
         "globalFilters": [],
-        "styleConfig": _materialize_dash_style(
-            scheme="light",
-            accent="#0ea5e9",
-            canvas="#f0f9ff",
-            bg_image=DASH_OPS_BG,
-            palette_colors=["#0ea5e9", "#38bdf8", "#0284c7", "#6366f1", "#64748b", "#7dd3fc"],
+        "styleConfig": build_de_dash_style(
+            accent=accent,
+            bg_slug="dash-ops",
+            palette=palette,
+            canvas=DE_CANVAS,
         ),
     }

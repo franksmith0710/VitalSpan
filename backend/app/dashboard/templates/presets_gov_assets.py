@@ -1,8 +1,9 @@
-"""gov-enterprise-v1 政企素材包路径（对应 fe/public/template-assets/packs/）。"""
+"""gov-enterprise-v1 + de-dashboard-v1 模板素材包路径。"""
 
 from __future__ import annotations
 
 PACK = "/template-assets/packs/gov-enterprise-v1"
+DE_PACK = "/template-assets/packs/de-dashboard-v1"
 
 
 def bg_light(name: str) -> str:
@@ -15,6 +16,14 @@ def bg_dark(name: str) -> str:
 
 def thumb(name: str) -> str:
     return f"{PACK}/thumbs/{name}.svg"
+
+
+def de_bg(slug: str) -> str:
+    return f"{DE_PACK}/backgrounds/{slug}.svg"
+
+
+def de_thumb(slug: str) -> str:
+    return f"{DE_PACK}/thumbs/{slug}.svg"
 
 
 # —— 数据大屏：每套独立底图纹理 ——
@@ -33,21 +42,21 @@ ECO_MONITOR_THUMB = thumb("canvas-light-mint-ribbon")
 COMMUNITY_BG = bg_light("canvas-light-lavender-card-float")
 COMMUNITY_THUMB = thumb("canvas-light-lavender-card-float")
 
-# —— 仪表板：浅色卡片浮层 / 水印 / 点阵 ——
-EFFICIENCY_BG = bg_light("canvas-light-cloud-dot-matrix")
-EFFICIENCY_THUMB = thumb("canvas-light-cloud-dot-matrix")
+# —— 仪表板：DataEase 风格 de-dashboard-v1 包 ——
+EFFICIENCY_BG = de_bg("gov-efficiency")
+EFFICIENCY_THUMB = de_thumb("gov-efficiency")
 
-SATISFACTION_BG = bg_light("canvas-light-lavender-watermark")
-SATISFACTION_THUMB = thumb("canvas-light-lavender-watermark")
+SATISFACTION_BG = de_bg("gov-satisfaction")
+SATISFACTION_THUMB = de_thumb("gov-satisfaction")
 
-FINANCE_BG = bg_light("canvas-light-mint-corner-fold")
-FINANCE_THUMB = thumb("canvas-light-mint-corner-fold")
+FINANCE_BG = de_bg("gov-finance")
+FINANCE_THUMB = de_thumb("gov-finance")
 
-INVESTMENT_BG = bg_light("canvas-light-paper-header-band")
-INVESTMENT_THUMB = thumb("canvas-light-paper-header-band")
+INVESTMENT_BG = de_bg("gov-investment")
+INVESTMENT_THUMB = de_thumb("gov-investment")
 
-GRID_BG = bg_light("canvas-light-ivory-dot-matrix")
-GRID_THUMB = thumb("canvas-light-ivory-dot-matrix")
+GRID_BG = de_bg("gov-grid")
+GRID_THUMB = de_thumb("gov-grid")
 
 # —— 通用内置大屏 / 看板（presets.py 引用）——
 SCREEN_COMMAND_BG = bg_dark("canvas-dark-cyan-aurora")
@@ -55,7 +64,7 @@ SCREEN_TECH_BG = bg_dark("canvas-dark-royal-hud-scan")
 SCREEN_GOV_BG = bg_dark("canvas-dark-indigo-honeycomb")
 SCREEN_SALES_GEO_BG = bg_dark("canvas-dark-emerald-aurora")
 
-DASH_DUAL_KPI_BG = bg_light("canvas-light-frost-card-float")
-DASH_TRIPLE_BG = bg_light("canvas-light-lavender-ribbon")
-DASH_OPS_BG = bg_light("canvas-light-cloud-watermark")
-DASH_BLANK_BG = bg_light("canvas-light-frost-dot-matrix")
+DASH_DUAL_KPI_BG = de_bg("dash-dual-kpi")
+DASH_TRIPLE_BG = de_bg("dash-triple")
+DASH_OPS_BG = de_bg("dash-ops")
+DASH_BLANK_BG = de_bg("dash-blank")
