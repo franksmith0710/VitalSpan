@@ -2,6 +2,8 @@ import * as d3 from "d3";
 import {
   applyRotatedCategoryLabels,
   axisCategoryDisplayText,
+  drawCategoryBandAxisBottom,
+  drawCategoryBandAxisLeft,
   formatAxisCategoryLabel,
   formatHorizontalBandAxisLabel,
   planCategoryAxisLayout,
@@ -373,14 +375,17 @@ export function drawCartesianBandAxes(opts: BandAxesOptions): { rotateX: number 
         .append("g")
         .attr("class", "vs-axis-x")
         .attr("transform", `translate(0,${opts.innerH})`)
-        .call(
-          d3
-            .axisBottom(opts.xScale)
-            .tickValues(xLayout.ticks)
-            .tickFormat((d) => axisCategoryDisplayText(String(d))),
-        )
-        .call(styleAxis, opts.theme, resolveAxisFontSize(), opts.axisStyle?.x)
-        .call((sel) => applyRotatedCategoryLabels(sel, xLayout.rotateDeg));
+        .call((sel) =>
+          drawCategoryBandAxisBottom(
+            sel,
+            opts.xScale,
+            opts.innerW,
+            xLayout.ticks,
+            xLayout.rotateDeg,
+            opts.theme,
+            opts.axisStyle?.x,
+          ),
+        );
     }
 
     const xName = opts.axisStyle?.x?.name?.trim();
@@ -539,13 +544,18 @@ export function drawCartesianHorizontalBandAxes(opts: HorizontalBandAxesOptions)
     opts.g
       .append("g")
       .attr("class", "vs-axis-y")
-      .call(
-        d3
-          .axisLeft(opts.yScale)
-          .tickValues(yLayout.ticks)
-          .tickFormat((d) => formatHorizontalBandAxisLabel(String(d), yLayout.labelMaxWidth)),
-      )
-      .call(styleAxis, opts.theme, yAxisFontSize);
+      .call((sel) =>
+        drawCategoryBandAxisLeft(
+          sel,
+          opts.yScale,
+          opts.innerH,
+          yLayout.ticks,
+          yLayout.labelMaxWidth,
+          opts.theme,
+          yAxisFontSize,
+          opts.axisStyle?.y,
+        ),
+      );
   }
 
   if (opts.axisStyle?.x?.show !== false) {
@@ -808,13 +818,18 @@ export function drawBidirectionalBandAxes(opts: BidirectionalAxesOptions): void 
     opts.g
       .append("g")
       .attr("class", "vs-axis-y")
-      .call(
-        d3
-          .axisLeft(opts.yScale)
-          .tickValues(yLayout.ticks)
-          .tickFormat((d) => formatHorizontalBandAxisLabel(String(d), yLayout.labelMaxWidth)),
-      )
-      .call(styleAxis, opts.theme, yAxisFontSize);
+      .call((sel) =>
+        drawCategoryBandAxisLeft(
+          sel,
+          opts.yScale,
+          opts.innerH,
+          yLayout.ticks,
+          yLayout.labelMaxWidth,
+          opts.theme,
+          yAxisFontSize,
+          opts.axisStyle?.y,
+        ),
+      );
   }
 
   if (opts.axisStyle?.x?.show !== false) {

@@ -3,10 +3,12 @@ import {
   formatAxisCategoryLabel,
   formatHorizontalBandAxisLabel,
   estimateCategoryBandCenterPx,
+  drawCategoryBandAxisBottom,
   pickCategoryTickIndices,
   pickCategoryTickIndicesByPixel,
   pickCategoryTickIndicesForLabels,
   pickCategoryTicks,
+  pickUniformOverlapAwareTickIndices,
   planCategoryAxisLayout,
   resolveBandAxisFontSize,
   resolveCategoryLabelRotate,
@@ -95,6 +97,69 @@ describe("d3 core", () => {
     expect(indices).toContain(count - 1);
     const positions = indices.map(toPx);
     expect(positions[positions.length - 1]).toBeGreaterThan(innerW * 0.85);
+  });
+
+  it("pickUniformOverlapAwareTickIndices shows all when labels do not overlap", () => {
+    const provinces = Array.from({ length: 25 }, (_, i) => `省${i}`);
+    const innerW = 900;
+    const count = provinces.length;
+    const bw = (innerW / count) * 0.8;
+    const toPx = (i: number) => estimateCategoryBandCenterPx(i, count, innerW, bw);
+    const indices = pickUniformOverlapAwareTickIndices(
+      count,
+      provinces,
+      (c) => String(c),
+      -45,
+      12,
+      toPx,
+    );
+    expect(indices.length).toBe(count);
+  });
+
+  it("pickUniformOverlapAwareTickIndices thins uniformly when overlap required", () => {
+    const provinces = Array.from({ length: 25 }, (_, i) => `省${i}`);
+    const innerW = 320;
+    const count = provinces.length;
+    const toPx = (i: number) => estimateCategoryBandCenterPx(i, count, innerW);
+    const indices = pickUniformOverlapAwareTickIndices(
+      count,
+      provinces,
+      (c) => String(c),
+      -45,
+      12,
+      toPx,
+    );
+    expect(indices.length).toBeLessThan(count);
+    expect(indices[0]).toBe(0);
+    expect(indices[indices.length - 1]).toBe(count - 1);
+    const gaps = indices.slice(1).map((v, i) => v - indices[i]!);
+    const avgGap = gaps.reduce((s, g) => s + g, 0) / gaps.length;
+    gaps.forEach((gap) => expect(gap).toBeGreaterThanOrEqual(Math.floor(avgGap * 0.5)));
+  });
+
+  it("drawCategoryBandAxisBottom anchors labels at band centers", () => {
+    const categories = ["河北省", "江苏省", "广东省"];
+    const innerW = 300;
+    const x = d3.scaleBand<string>().domain(categories).range([0, innerW]).padding(0.2);
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    const svg = d3.select(host).append("svg").attr("width", innerW).attr("height", 60);
+    const g = svg.append("g");
+    drawCategoryBandAxisBottom(g, x, innerW, categories, -45, {
+      axisLine: "#999",
+      axisLabel: "#333",
+      gridLine: "#eee",
+      accent: "#465fff",
+    });
+    const texts = [...host.querySelectorAll(".vs-axis-x text")];
+    expect(texts.length).toBe(3);
+    const bw = x.bandwidth();
+    texts.forEach((node, i) => {
+      const cx = Number(node.getAttribute("x"));
+      const expected = (x(categories[i]!) ?? 0) + bw / 2;
+      expect(cx).toBeCloseTo(expected, 1);
+    });
+    host.remove();
   });
 
   it("resolveCategoryLabelRotate rotates when slots are tight", () => {

@@ -6,6 +6,14 @@ export function getAppBasePath(): string {
   return raw.endsWith("/") ? raw.slice(0, -1) : raw;
 }
 
+/** dev / 同源部署时 API 前缀；显式 `VITE_API_BASE_URL` 优先 */
+export function resolveApiBaseUrl(): string {
+  const explicit = import.meta.env.VITE_API_BASE_URL;
+  if (explicit) return explicit;
+  if (import.meta.env.DEV) return getAppBasePath();
+  return getAppBasePath() || "http://localhost:8000";
+}
+
 export function stripAppBase(pathname: string): string {
   const base = getAppBasePath();
   if (!base) return pathname;

@@ -45,6 +45,9 @@ import {
   DIRTY_ORDERS_DEMO_ETL_RULES,
   DIRTY_ORDERS_DEMO_SOURCE_TABLE,
 } from "./etlDemoTemplate";
+import { EtlColumnField } from "./components/EtlColumnField";
+import { useSyncJobSourceColumns } from "./hooks/useSyncJobSourceColumns";
+import { suggestEtlRulesFromColumns } from "./etlRuleSuggest";
 
 const PLACEHOLDER_HINT =
   "推荐链：product_name→product、amount→float、note 填「无备注」、过滤 status≠deleted";
@@ -69,7 +72,8 @@ function serializeRules(rules: EtlRule[]): string {
 export function EtlRulesPage() {
   const { id } = useParams();
   const [rules, setRules] = useState<EtlRule[]>([]);
-  const [sourceTable, setSourceTable] = useState<string | null>(null);
+  const { sourceTable, columnNames, columns, columnsLoading, columnsReady, hasDataSource } =
+    useSyncJobSourceColumns(id);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -101,13 +105,12 @@ export function EtlRulesPage() {
     setError(null);
     setFieldErrors(false);
     try {
-      const [rulesData, jobData] = await Promise.all([
-        apiFetch<{ rules: EtlRule[] }>(`/api/v1/ingestion/sync-jobs/${id}/etl-rules`),
-        apiFetch<{ source?: { table?: string } }>(`/api/v1/ingestion/sync-jobs/${id}`),
-      ]);
-      setSourceTable(jobData.source?.table ?? null);
-      setRules(rulesData.rules.length > 0 ? rulesData.rules : [emptyRule()]);
-      resetBaseline(rulesData.rules.length > 0 ? rulesData.rules : [emptyRule()]);
+      const rulesData = await apiFetch<{ rules: EtlRule[] }>(
+        `/api/v1/ingestion/sync-jobs/${id}/etl-rules`,
+      );
+      const nextRules = rulesData.rules.length > 0 ? rulesData.rules : [emptyRule()];
+      setRules(nextRules);
+      resetBaseline(nextRules);
     } catch (err) {
       setError(mapApiError(err));
     } finally {
@@ -190,6 +193,22 @@ export function EtlRulesPage() {
     setFieldErrors(false);
   };
 
+  const applyAutoSuggestedRules = () => {
+    if (columns.length === 0) {
+      toast.warning("未能加载源表列信息，请确认同步任务已选业务源连接与源表");
+      return;
+    }
+    const suggested = suggestEtlRulesFromColumns(columns);
+    if (suggested.length === 0) {
+      toast.info("未识别到需要清洗的规则，源表列类型看起来已较规范");
+      return;
+    }
+    setRules(suggested);
+    setError(null);
+    setFieldErrors(false);
+    toast.success(`已生成 ${suggested.length} 条建议规则，确认后请保存`);
+  };
+
   const showDemoTemplate =
     sourceTable?.trim().toLowerCase() === DIRTY_ORDERS_DEMO_SOURCE_TABLE;
 
@@ -231,6 +250,20 @@ export function EtlRulesPage() {
               <PageErrorBanner message={error} onRetry={() => void loadRules()} />
             </div>
           ) : null}
+
+          <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50/80 px-4 py-3 text-theme-xs text-gray-600 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-300">
+            清洗规则<strong className="font-semibold">可选</strong>：源数据本身规范时可跳过本页直接同步。
+            {hasDataSource ? (
+              <>
+                {" "}
+                列名可从源表下拉选择，也可手动输入。
+                {columnsLoading ? " 正在加载列信息…" : null}
+                {columnsReady ? ` 已加载 ${columnNames.length} 列。` : null}
+              </>
+            ) : (
+              " 当前任务未绑定业务源连接，列名请手动输入。"
+            )}
+          </div>
 
           {showDemoTemplate ? (
             <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-brand-200 bg-brand-50/60 px-4 py-3 dark:border-brand-500/30 dark:bg-brand-500/10">
@@ -295,15 +328,14 @@ export function EtlRulesPage() {
 
             {rule.type === "rename_column" ? (
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>源列名</Label>
-                  <Input
-                    value={rule.from ?? ""}
-                    placeholder="product_name"
-                    aria-invalid={fieldErrors && !rule.from?.trim() ? true : undefined}
-                    onChange={(e) => updateRule(index, "from", e.target.value)}
-                  />
-                </div>
+                <EtlColumnField
+                  label="源列名"
+                  value={rule.from ?? ""}
+                  columnNames={columnNames}
+                  placeholder="product_name"
+                  invalid={fieldErrors && !rule.from?.trim()}
+                  onChange={(value) => updateRule(index, "from", value)}
+                />
                 <div className="space-y-2">
                   <Label>目标列名</Label>
                   <Input
@@ -318,15 +350,14 @@ export function EtlRulesPage() {
 
             {rule.type === "cast_type" ? (
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>列名</Label>
-                  <Input
-                    value={rule.column ?? ""}
-                    placeholder="amount"
-                    aria-invalid={fieldErrors && !rule.column?.trim() ? true : undefined}
-                    onChange={(e) => updateRule(index, "column", e.target.value)}
-                  />
-                </div>
+                <EtlColumnField
+                  label="列名"
+                  value={rule.column ?? ""}
+                  columnNames={columnNames}
+                  placeholder="amount"
+                  invalid={fieldErrors && !rule.column?.trim()}
+                  onChange={(value) => updateRule(index, "column", value)}
+                />
                 <div className="space-y-2">
                   <Label>目标类型</Label>
                   <Select value={rule.to ?? "float"} onValueChange={(v) => updateRule(index, "to", v)}>
@@ -346,15 +377,14 @@ export function EtlRulesPage() {
 
             {rule.type === "fill_null" ? (
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>列名</Label>
-                  <Input
-                    value={rule.column ?? ""}
-                    placeholder="note"
-                    aria-invalid={fieldErrors && !rule.column?.trim() ? true : undefined}
-                    onChange={(e) => updateRule(index, "column", e.target.value)}
-                  />
-                </div>
+                <EtlColumnField
+                  label="列名"
+                  value={rule.column ?? ""}
+                  columnNames={columnNames}
+                  placeholder="note"
+                  invalid={fieldErrors && !rule.column?.trim()}
+                  onChange={(value) => updateRule(index, "column", value)}
+                />
                 <div className="space-y-2">
                   <Label>填充值</Label>
                   <Input
@@ -368,15 +398,14 @@ export function EtlRulesPage() {
 
             {rule.type === "filter_rows" ? (
               <div className="grid gap-3 sm:grid-cols-3">
-                <div className="space-y-2">
-                  <Label>列名</Label>
-                  <Input
-                    value={rule.column ?? ""}
-                    placeholder="status"
-                    aria-invalid={fieldErrors && !rule.column?.trim() ? true : undefined}
-                    onChange={(e) => updateRule(index, "column", e.target.value)}
-                  />
-                </div>
+                <EtlColumnField
+                  label="列名"
+                  value={rule.column ?? ""}
+                  columnNames={columnNames}
+                  placeholder="status"
+                  invalid={fieldErrors && !rule.column?.trim()}
+                  onChange={(value) => updateRule(index, "column", value)}
+                />
                 <div className="space-y-2">
                   <Label>操作符</Label>
                   <Select value={rule.op ?? "ne"} onValueChange={(v) => updateRule(index, "op", v)}>
@@ -408,6 +437,14 @@ export function EtlRulesPage() {
           <Button type="button" variant="outline" onClick={addRule}>
             <Plus className="size-4" />
             添加规则
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!hasDataSource}
+            onClick={applyAutoSuggestedRules}
+          >
+            自动识别规则
           </Button>
           <Button
             type="button"

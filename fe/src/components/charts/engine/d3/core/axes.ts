@@ -106,67 +106,71 @@ function labelWidthAtIndex(
   return horizontalLabelWidthPx(label, rotateDeg);
 }
 
-function filterCategoryTickIndicesByOverlap(
-  categories: string[],
-  indices: number[],
-  labelFor: (category: string) => string,
-  rotateDeg: number,
-  minGapPx: number,
-  toPx: (index: number) => number,
-): number[] {
-  const kept: number[] = [];
-  for (const idx of indices) {
-    const labelW = labelWidthAtIndex(categories, idx, labelFor, rotateDeg);
-    if (labelW <= 0) continue;
-    const pos = toPx(idx);
-    const prev = kept[kept.length - 1];
-    if (prev != null) {
-      const prevPos = toPx(prev);
-      const prevW = labelWidthAtIndex(categories, prev, labelFor, rotateDeg);
-      if (pos - prevPos < (prevW + labelW) / 2 + minGapPx) continue;
-    }
-    kept.push(idx);
+/** 均匀索引步进（首尾必留、中间等距） */
+function pickUniformCategoryTickIndices(count: number, maxTicks: number): number[] {
+  if (count <= 0 || maxTicks <= 0) return [];
+  if (count <= maxTicks) return Array.from({ length: count }, (_, i) => i);
+  const indices: number[] = [];
+  for (let k = 0; k < maxTicks; k += 1) {
+    indices.push(Math.round((k * (count - 1)) / (maxTicks - 1)));
   }
-  if (kept.length > 0) return kept;
-  const fallback = indices.find((idx) => labelWidthAtIndex(categories, idx, labelFor, rotateDeg) > 0);
-  return fallback != null ? [fallback] : indices.length > 0 ? [indices[0]!] : [];
+  return [...new Set(indices)].sort((a, b) => a - b);
 }
 
-/** 对标 DataEase：首尾必留，冲突时去掉中间刻度 */
-function ensureCategoryAxisEndpointIndices(
+function tickIndicesHaveNoOverlap(
   indices: number[],
+  minGapPx: number,
+  toPx: (index: number) => number,
+  widthAt: (idx: number) => number,
+): boolean {
+  for (let j = 1; j < indices.length; j += 1) {
+    const prev = indices[j - 1]!;
+    const curr = indices[j]!;
+    const prevW = widthAt(prev);
+    const currW = widthAt(curr);
+    if (prevW <= 0 && currW <= 0) continue;
+    const minDist = (prevW + currW) / 2 + minGapPx;
+    if (toPx(curr) - toPx(prev) < minDist) return false;
+  }
+  return true;
+}
+
+/**
+ * 对标 DataEase：能全显则全显；必须抽稀时均匀等距取点，且相邻不重叠。
+ * @param labelWidthAt 可选自定义宽度（分层轴各层最宽标签）
+ */
+export function pickUniformOverlapAwareTickIndices(
   count: number,
   categories: string[],
   labelFor: (category: string) => string,
   rotateDeg: number,
   minGapPx: number,
   toPx: (index: number) => number,
+  labelWidthAt?: (idx: number) => number,
 ): number[] {
-  if (count <= 0) return indices;
-  const widthAt = (idx: number) => labelWidthAtIndex(categories, idx, labelFor, rotateDeg);
+  if (count <= 0) return [];
 
-  const pruneAgainst = (anchorIdx: number, kept: number[]): number[] => {
-    const anchorPos = toPx(anchorIdx);
-    const anchorW = widthAt(anchorIdx);
-    return kept.filter((idx) => {
-      if (idx === anchorIdx) return true;
-      const minDist = (widthAt(idx) + anchorW) / 2 + minGapPx;
-      return Math.abs(anchorPos - toPx(idx)) >= minDist;
-    });
-  };
+  const widthAt =
+    labelWidthAt ?? ((idx: number) => labelWidthAtIndex(categories, idx, labelFor, rotateDeg));
+  const withLabel = Array.from({ length: count }, (_, i) => i).filter((i) => widthAt(i) > 0);
+  if (withLabel.length === 0) return [0];
 
-  let kept = [...indices];
-  if (widthAt(0) > 0) {
-    kept = pruneAgainst(0, [...new Set([...kept, 0])].sort((a, b) => a - b));
+  const allIndices = Array.from({ length: count }, (_, i) => i);
+  if (tickIndicesHaveNoOverlap(allIndices, minGapPx, toPx, widthAt)) {
+    return withLabel;
   }
-  const lastIdx = count - 1;
-  if (lastIdx > 0 && widthAt(lastIdx) > 0) {
-    kept = pruneAgainst(lastIdx, [...new Set([...kept, lastIdx])].sort((a, b) => a - b));
+
+  for (let targetCount = count; targetCount >= 2; targetCount -= 1) {
+    const indices = pickUniformCategoryTickIndices(count, targetCount);
+    if (tickIndicesHaveNoOverlap(indices, minGapPx, toPx, widthAt)) {
+      return indices.filter((i) => widthAt(i) > 0);
+    }
   }
-  return kept.sort((a, b) => a - b);
+
+  return [withLabel[0]!];
 }
 
-/** band 轴像素均匀抽稀 + 旋转感知防重叠 + 首尾必留 */
+/** band 轴：全显优先，否则均匀抽稀 */
 export function pickCategoryTickIndicesForLabels(
   categories: string[],
   innerSpan: number,
@@ -181,23 +185,7 @@ export function pickCategoryTickIndicesForLabels(
   const toPx =
     indexToPx ?? ((idx: number) => estimateCategoryBandCenterPx(idx, count, innerSpan));
 
-  const maxLabelW = Math.max(
-    0,
-    ...categories.map((_, i) => labelWidthAtIndex(categories, i, labelFor, rotateDeg)),
-  );
-  const effectiveMinPx = Math.max(minPx, maxLabelW + CATEGORY_LABEL_GAP_PX);
-
-  const baseIndices = pickCategoryTickIndicesByPixel(count, innerSpan, effectiveMinPx, toPx);
-  const filtered = filterCategoryTickIndicesByOverlap(
-    categories,
-    baseIndices,
-    labelFor,
-    rotateDeg,
-    CATEGORY_LABEL_GAP_PX,
-    toPx,
-  );
-  return ensureCategoryAxisEndpointIndices(
-    filtered,
+  return pickUniformOverlapAwareTickIndices(
     count,
     categories,
     labelFor,
@@ -430,7 +418,17 @@ export function resolveHorizontalCategoryAxisLayout(
   }
 
   const bandHeight = innerH / categories.length;
-  const ticks = pickCategoryTicks(categories, innerH, minPx);
+  const indexToPx = (idx: number) =>
+    estimateCategoryBandCenterPx(idx, categories.length, innerH);
+  const tickIndices = pickCategoryTickIndicesForLabels(
+    categories,
+    innerH,
+    (category) => axisCategoryDisplayText(String(category)),
+    minPx,
+    0,
+    indexToPx,
+  );
+  const ticks = tickIndices.map((index) => categories[index]!);
   const maxLabelChars = categories.reduce(
     (max, cat) => Math.max(max, formatCompositeCategoryDisplay(String(cat)).length),
     0,
@@ -465,8 +463,134 @@ export function applyRotatedCategoryLabels(
   if (!rotateDeg) return;
   sel
     .selectAll("text")
-    .attr("transform", `rotate(${rotateDeg})`)
+    .attr("transform", function () {
+      const x = Number(d3.select(this).attr("x") ?? 0);
+      const y = Number(d3.select(this).attr("y") ?? 0);
+      return `rotate(${rotateDeg}, ${x}, ${y})`;
+    })
     .style("text-anchor", "end")
-    .attr("dx", "-0.4em")
+    .attr("dx", "-0.2em")
     .attr("dy", "0.15em");
+}
+
+type CategoryBandAxisSideStyle = { lineColor?: string; lineWidth?: number };
+
+/** 对标 DataEase：类目标签锚定在 band 中心，而非 d3 axis 默认左缘 */
+export function drawCategoryBandAxisBottom(
+  g: d3.Selection<SVGGElement, unknown, null, undefined>,
+  xScale: d3.ScaleBand<string>,
+  innerW: number,
+  ticks: string[],
+  rotateDeg: number,
+  theme: AntvThemeTokens,
+  sideStyle?: CategoryBandAxisSideStyle,
+): void {
+  const bw = xScale.bandwidth();
+  const stroke = sideStyle?.lineColor ?? theme.axisLine;
+  const strokeWidth = sideStyle?.lineWidth ?? 1;
+  const fontSize = resolveAxisFontSize();
+  const axisRoot = g.append("g").attr("class", "vs-axis-x");
+
+  axisRoot
+    .append("line")
+    .attr("class", "domain")
+    .attr("x1", 0)
+    .attr("x2", innerW)
+    .attr("y1", 0)
+    .attr("y2", 0)
+    .attr("stroke", stroke)
+    .attr("stroke-width", strokeWidth);
+
+  for (const tick of ticks) {
+    const bandX = xScale(tick);
+    if (bandX == null) continue;
+    const cx = bandX + bw / 2;
+    const label = axisCategoryDisplayText(String(tick));
+    if (!label) continue;
+
+    axisRoot
+      .append("line")
+      .attr("class", "tick")
+      .attr("x1", cx)
+      .attr("x2", cx)
+      .attr("y1", 0)
+      .attr("y2", 6)
+      .attr("stroke", stroke)
+      .attr("stroke-width", strokeWidth);
+
+    const text = axisRoot
+      .append("text")
+      .attr("x", cx)
+      .attr("y", 9)
+      .attr("fill", theme.axisLabel)
+      .style("font-size", `${fontSize}px`)
+      .style("font-family", "inherit")
+      .text(label);
+
+    if (rotateDeg) {
+      text
+        .attr("transform", `rotate(${rotateDeg}, ${cx}, 9)`)
+        .style("text-anchor", "end")
+        .attr("dx", "-0.2em")
+        .attr("dy", "0.15em");
+    } else {
+      text.attr("text-anchor", "middle");
+    }
+  }
+}
+
+/** 横向柱图：Y 轴类目标签锚定在 band 中心 */
+export function drawCategoryBandAxisLeft(
+  g: d3.Selection<SVGGElement, unknown, null, undefined>,
+  yScale: d3.ScaleBand<string>,
+  innerH: number,
+  ticks: string[],
+  labelMaxWidth: number,
+  theme: AntvThemeTokens,
+  fontSize = resolveBandAxisFontSize(innerH / Math.max(1, yScale.domain().length)),
+  sideStyle?: CategoryBandAxisSideStyle,
+): void {
+  const bh = yScale.bandwidth();
+  const stroke = sideStyle?.lineColor ?? theme.axisLine;
+  const strokeWidth = sideStyle?.lineWidth ?? 1;
+  const axisRoot = g.append("g").attr("class", "vs-axis-y");
+
+  axisRoot
+    .append("line")
+    .attr("class", "domain")
+    .attr("x1", 0)
+    .attr("x2", 0)
+    .attr("y1", 0)
+    .attr("y2", innerH)
+    .attr("stroke", stroke)
+    .attr("stroke-width", strokeWidth);
+
+  for (const tick of ticks) {
+    const bandY = yScale(tick);
+    if (bandY == null) continue;
+    const cy = bandY + bh / 2;
+    const label = formatHorizontalBandAxisLabel(String(tick), labelMaxWidth);
+    if (!label) continue;
+
+    axisRoot
+      .append("line")
+      .attr("class", "tick")
+      .attr("x1", -6)
+      .attr("x2", 0)
+      .attr("y1", cy)
+      .attr("y2", cy)
+      .attr("stroke", stroke)
+      .attr("stroke-width", strokeWidth);
+
+    axisRoot
+      .append("text")
+      .attr("x", -8)
+      .attr("y", cy)
+      .attr("dy", "0.32em")
+      .attr("text-anchor", "end")
+      .attr("fill", theme.axisLabel)
+      .style("font-size", `${fontSize}px`)
+      .style("font-family", "inherit")
+      .text(label);
+  }
 }

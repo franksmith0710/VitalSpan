@@ -33,6 +33,19 @@ export function formatChartValue(
   return formatMetricValue(raw, format);
 }
 
+/** 百分比堆叠/柱图：Y 轴或 X 轴刻度强制 percent 格式 */
+export function mergePercentValueFormat(
+  format: NumberFormatConfig | undefined,
+  isPercent: boolean,
+): NumberFormatConfig | undefined {
+  if (!isPercent) return format;
+  return {
+    ...format,
+    type: "percent",
+    decimals: format?.decimals ?? 0,
+  };
+}
+
 export function echartsTooltipValueFormatter(format: NumberFormatConfig | undefined) {
   return (params: unknown) => {
     if (params == null) return "";

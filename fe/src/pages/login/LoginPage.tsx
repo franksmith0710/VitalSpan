@@ -10,7 +10,7 @@ import { useAuth } from "@/context/auth-context";
 import { ThemeProvider } from "@/context/theme-context";
 import { ApiRequestError, fetchWithTimeout } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
-import { setAuthToken } from "@/lib/auth-token";
+import { resolveApiBaseUrl } from "@/lib/appBasePath";
 import { resolveDefaultDashboardPath } from "@/lib/defaultViewResolve";
 import { cn } from "@/lib/utils";
 
@@ -40,9 +40,7 @@ function LoginFormPanel() {
     setError(null);
     setSubmitting(true);
     try {
-      const API_BASE =
-        import.meta.env.VITE_API_BASE_URL ??
-        (import.meta.env.DEV ? "" : "http://localhost:8000");
+      const API_BASE = resolveApiBaseUrl();
       const response = await fetchWithTimeout(`${API_BASE}/api/v1/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

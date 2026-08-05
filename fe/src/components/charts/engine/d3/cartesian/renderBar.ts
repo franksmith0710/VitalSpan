@@ -19,7 +19,7 @@ import { createTooltipLayer } from "@/components/charts/engine/d3/core/tooltipLa
 import { attachBandCategoryInteraction } from "@/components/charts/engine/d3/cartesian/renderCartesianBase";
 import { renderD3HorizontalBarChart } from "@/components/charts/engine/d3/cartesian/renderBarHorizontal";
 import type { D3CartesianRenderConfig } from "@/components/charts/engine/d3/types";
-import { formatChartValue } from "@/lib/chartValueFormat";
+import { formatChartValue, mergePercentValueFormat } from "@/lib/chartValueFormat";
 import { resolveBarBandPadding, resolveCartesianPointSize } from "@/lib/applyChartDeStyleBlocks";
 
 const BAR_RX = VCDS.bar.rx;
@@ -143,6 +143,7 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
   const y = d3.scaleLinear().domain([0, maxVal]).nice().range([innerH, 0]);
   const xSub = useGrouped ? d3.scaleBand<string>().domain(keys).range([0, x.bandwidth()]).padding(0.12) : null;
   const barRx = barRadius ?? BAR_RX;
+  const axisValueFormat = mergePercentValueFormat(valueFormat, isPercent);
 
   drawHorizontalGrid(plot, { yScale: y, innerW, theme });
   drawCartesianBandAxes({
@@ -153,7 +154,7 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
     innerW,
     innerH,
     theme,
-    valueFormat,
+    valueFormat: axisValueFormat,
     axisStyle,
     categoryLevelCount: structuralLevelCount,
   });

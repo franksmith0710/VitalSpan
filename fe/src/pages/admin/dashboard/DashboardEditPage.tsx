@@ -341,9 +341,13 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const load = useCallback(async (opts?: { force?: boolean }) => {
     if (!id) return;
     const generation = ++loadGenerationRef.current;
-    const firstLoad = !hydratedRef.current;
-    if (firstLoad) setLoading(true);
+    setLoading(true);
     setError(null);
+    if (opts?.force) {
+      hydratedRef.current = false;
+      setSavedFingerprint(null);
+      setSavedLinkageSnapshot(null);
+    }
     try {
       const [data, loadedLinkage] = await Promise.all([
         apiFetch<DashboardDetail>(`/api/v1/dashboards/${id}`),
@@ -424,13 +428,21 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         setError(mapApiError(err));
       }
     } finally {
-      if (generation === loadGenerationRef.current && firstLoad) setLoading(false);
+      if (generation === loadGenerationRef.current) {
+        setLoading(false);
+      }
     }
   }, [id, resetLayout, clearSelection, mode, pixelEnabled]);
 
+  const loadRef = useRef(load);
+  loadRef.current = load;
+
   useEffect(() => {
     hydratedRef.current = false;
-    void load({ force: true });
+    void loadRef.current({ force: true });
+    return () => {
+      loadGenerationRef.current += 1;
+    };
   }, [id, mode]);
 
   useEffect(() => {
@@ -1231,7 +1243,9 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         mode === "edit"
           ? error
             ? "加载失败，请查看下方错误说明"
-            : !canSave
+            : loading || savedFingerprint === null
+              ? "加载看板布局中…"
+              : !canSave
             ? "像素布局只读 · 当前回退开关禁止修改与保存"
             : isDirty
               ? "有未保存的更改 · 保存后生效"

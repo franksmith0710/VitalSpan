@@ -1,4 +1,5 @@
 import { apiFetch, ApiRequestError } from "@/lib/api";
+import { resolveApiBaseUrl } from "@/lib/appBasePath";
 import { getAuthToken, setAuthToken } from "@/lib/auth-token";
 import { resolveDefaultLandingPath } from "@/lib/defaultViewResolve";
 import type { SessionRole } from "@/lib/session";
@@ -15,9 +16,7 @@ type UserRolesResponse = { items: { id: string; code: string; name: string }[] }
 
 export type DevSwitchableUser = UserOut & { roles: SessionRole[] };
 
-const API_BASE =
-  import.meta.env.VITE_API_BASE_URL ??
-  (import.meta.env.DEV ? "" : "http://localhost:8000");
+const API_BASE = resolveApiBaseUrl();
 
 /** 开发演示账号共用密码，与 backend `VITALSPAN_DEV_ADMIN_PASSWORD` 对齐 */
 const DEV_USER_PASSWORD =

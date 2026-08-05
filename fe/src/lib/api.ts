@@ -1,4 +1,4 @@
-import { matchExportDashboardId } from "@/lib/appBasePath";
+import { matchExportDashboardId, resolveApiBaseUrl } from "@/lib/appBasePath";
 import { clearAuthToken, getAuthToken } from "@/lib/auth-token";
 import {
   getExportAuthHeaders,
@@ -83,9 +83,7 @@ type ApiErrorBody = {
   fields?: Array<{ field: string; message: string }>;
 };
 
-const API_BASE =
-  import.meta.env.VITE_API_BASE_URL ??
-  (import.meta.env.DEV ? "" : "http://localhost:8000");
+const API_BASE = resolveApiBaseUrl();
 
 export const API_FETCH_TIMEOUT_MS = 30_000;
 
@@ -133,6 +131,12 @@ async function parseErrorBody(response: Response): Promise<ApiErrorBody | null> 
       return {
         message: "后端服务内部错误，请重启 uvicorn 并查看终端日志",
         code: "INTERNAL_SERVER_ERROR",
+      };
+    }
+    if (/did you mean to visit/i.test(trimmed) || trimmed.startsWith("<")) {
+      return {
+        message: "API 请求路径与前端 base 不一致，请确认 dev 代理或 VITE_FE_BASE_PATH 配置",
+        code: "HTTP_ERROR",
       };
     }
     return { message: trimmed.slice(0, 200), code: "HTTP_ERROR" };

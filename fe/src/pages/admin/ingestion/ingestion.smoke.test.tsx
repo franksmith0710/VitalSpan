@@ -55,6 +55,11 @@ function mockSyncMetadataResponse(
       items: tables.map((name) => ({ name, type: "table" })),
     });
   }
+  if (url.includes("/columns")) {
+    return Promise.resolve({
+      items: tables.map((name) => ({ name, dataType: "varchar" })),
+    });
+  }
   return null;
 }
 
@@ -135,12 +140,18 @@ function mockEtlRulesApi(
   handlers?: {
     onPut?: () => Promise<unknown>;
     loadError?: Error;
+    columns?: string[];
+    sourceDataSourceId?: string;
   },
 ) {
+  const database = "sample_db";
+  const columns = handlers?.columns ?? ["id", "amount", "status", "product_name"];
   mockApiFetch.mockImplementation((url: string, init?: { method?: string }) => {
     if (handlers?.loadError) {
       return Promise.reject(handlers.loadError);
     }
+    const metadata = mockSyncMetadataResponse(url, database, columns);
+    if (metadata) return metadata;
     if (typeof url === "string" && url.includes("/etl-rules")) {
       if (init?.method === "PUT") {
         return handlers?.onPut ? handlers.onPut() : Promise.resolve({ rules });
@@ -148,7 +159,11 @@ function mockEtlRulesApi(
       return Promise.resolve({ rules });
     }
     if (typeof url === "string" && /\/sync-jobs\/[^/]+$/.test(url)) {
-      return Promise.resolve({ source: { table: sourceTable } });
+      return Promise.resolve({
+        source: { table: sourceTable, database, type: "mysql" },
+        source_data_source_id: handlers?.sourceDataSourceId ?? "ds-1",
+        source_type: "mysql",
+      });
     }
     return Promise.reject(new Error(`unexpected apiFetch: ${url}`));
   });
@@ -1010,6 +1025,34 @@ describe("ingestion admin smoke", () => {
     );
     expect(await screen.findByRole("button", { name: /保存/ })).toBeInTheDocument();
     expect(screen.getByText("规则类型")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "自动识别规则" })).toBeInTheDocument();
+  });
+
+  it("EtlRulesPage_auto_suggest_rules_from_source_columns", async () => {
+    setViewport(1400);
+    mockEtlRulesApi([], "dirty_orders", {
+      columns: ["id", "amount", "status"],
+      sourceDataSourceId: "ds-1",
+    });
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/etl-rules"]}>
+        <Routes>
+          <Route
+            path="/admin/ingestion/sync-jobs/:id/etl-rules"
+            element={<EtlRulesPage />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(await screen.findByRole("button", { name: "自动识别规则" })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "自动识别规则" })).toBeEnabled();
+    });
+    fireEvent.click(screen.getByRole("button", { name: "自动识别规则" }));
+    await waitFor(() => {
+      expect(screen.getAllByRole("combobox", { name: "列名" }).length).toBeGreaterThan(0);
+    });
+    expect(screen.getAllByText("类型转换").length).toBeGreaterThan(0);
   });
 
   it("SyncJobHistoryPage_empty_state (T-ING-09)", async () => {
@@ -1452,7 +1495,9 @@ describe("ingestion admin smoke", () => {
 
   it("EtlRulesPage_empty_column_sets_aria_invalid (T-ING-25)", async () => {
     setViewport(1400);
-    mockEtlRulesApi([{ type: "rename_column", from: "", to: "product" }]);
+    mockEtlRulesApi([{ type: "rename_column", from: "", to: "product" }], "orders", {
+      columns: ["product_name", "amount"],
+    });
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/etl-rules"]}>
         <Routes>
@@ -1467,8 +1512,9 @@ describe("ingestion admin smoke", () => {
     markEtlRulesDirty();
     fireEvent.click(saveBtn);
     await screen.findByText(/请填写完整的列重命名规则/);
-    const fromInput = screen.getByPlaceholderText("product_name");
-    expect(fromInput).toHaveAttribute("aria-invalid", "true");
+    await waitFor(() => {
+      expect(screen.getByRole("combobox", { name: "源列名" })).toHaveAttribute("aria-invalid", "true");
+    });
   });
 
   it("SyncJobHistoryPage_error_banner_has_role_alert (T-ING-26)", async () => {

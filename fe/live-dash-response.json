@@ -1,0 +1,514 @@
+﻿{
+    "id":  "4bc251e4-4971-4bc0-8fa7-2ec3af3f445f",
+    "name":  "è¿è¥åæçæ¿ï¼ç¼è¾ï¼",
+    "slug":  "è¿è¥åæçæ¿ç¼è¾-1785913765790",
+    "description":  null,
+    "layoutJson":  {
+                       "version":  1,
+                       "widgets":  [
+                                       {
+                                           "id":  "604feeb5-ba3c-4469-9420-d83dff6e2c41",
+                                           "type":  "chart",
+                                           "title":  "è¿è¥ KPI",
+                                           "colSpan":  12,
+                                           "rowSpan":  2,
+                                           "gridX":  0,
+                                           "gridY":  0,
+                                           "order":  0,
+                                           "hidden":  null,
+                                           "locked":  null,
+                                           "chartRef":  null,
+                                           "parentTabsId":  null,
+                                           "tabPaneId":  null,
+                                           "chartConfig":  {
+                                                               "chartType":  "kpi",
+                                                               "styleVariant":  "default",
+                                                               "dataSourceId":  "00e7438c-33ac-4239-88a5-af28ecdece19",
+                                                               "bindingId":  null,
+                                                               "chartId":  "604feeb5-ba3c-4469-9420-d83dff6e2c41",
+                                                               "mode":  "sql",
+                                                               "sql":  "SELECT metric_name AS ææ , AVG(value) AS æ°å¼\nFROM daily_kpi\nWHERE stat_date \u003e= \u00272025-01-01\u0027\nGROUP BY metric_name",
+                                                               "schema":  null,
+                                                               "table":  null,
+                                                               "configId":  null,
+                                                               "datasetId":  null,
+                                                               "nativeBody":  {
+                                                                                  "deStyle":  {
+                                                                                                  "seriesGradient":  false,
+                                                                                                  "label":  {
+                                                                                                                "show":  false,
+                                                                                                                "color":  "#8c8c8c",
+                                                                                                                "fontSize":  12
+                                                                                                            },
+                                                                                                  "legend":  {
+                                                                                                                 "show":  false,
+                                                                                                                 "color":  "#8c8c8c",
+                                                                                                                 "fontSize":  12
+                                                                                                             },
+                                                                                                  "border":  {
+                                                                                                                 "show":  false,
+                                                                                                                 "color":  "#f0f0f0",
+                                                                                                                 "width":  0,
+                                                                                                                 "radius":  0
+                                                                                                             },
+                                                                                                  "title":  {
+                                                                                                                "color":  "#262626",
+                                                                                                                "fontSize":  14,
+                                                                                                                "fontWeight":  600,
+                                                                                                                "show":  false
+                                                                                                            },
+                                                                                                  "paletteId":  "custom",
+                                                                                                  "seriesColor":  [
+                                                                                                                      {
+                                                                                                                          "name":  "series-0",
+                                                                                                                          "color":  "#13c2c2"
+                                                                                                                      },
+                                                                                                                      {
+                                                                                                                          "name":  "series-1",
+                                                                                                                          "color":  "#1890ff"
+                                                                                                                      },
+                                                                                                                      {
+                                                                                                                          "name":  "series-2",
+                                                                                                                          "color":  "#52c41a"
+                                                                                                                      },
+                                                                                                                      {
+                                                                                                                          "name":  "series-3",
+                                                                                                                          "color":  "#36cfc9"
+                                                                                                                      },
+                                                                                                                      {
+                                                                                                                          "name":  "series-4",
+                                                                                                                          "color":  "#5cdbd3"
+                                                                                                                      },
+                                                                                                                      {
+                                                                                                                          "name":  "series-5",
+                                                                                                                          "color":  "#87e8de"
+                                                                                                                      }
+                                                                                                                  ]
+                                                                                              }
+                                                                              },
+                                                               "index":  null,
+                                                               "dimensions":  [
+                                                                                  {
+                                                                                      "field":  "ææ ",
+                                                                                      "label":  null
+                                                                                  }
+                                                                              ],
+                                                               "metrics":  [
+                                                                               {
+                                                                                   "field":  "æ°å¼",
+                                                                                   "label":  null
+                                                                               }
+                                                                           ],
+                                                               "axes":  null,
+                                                               "filters":  [
+
+                                                                           ],
+                                                               "timeRange":  null
+                                                           },
+                                           "filterConfig":  null,
+                                           "textConfig":  null,
+                                           "mediaConfig":  null,
+                                           "tabsConfig":  null,
+                                           "componentRef":  null
+                                       },
+                                       {
+                                           "id":  "fb5a632b-fec2-443b-95a1-2d3dc76c278f",
+                                           "type":  "chart",
+                                           "title":  "åºåéå®ç­å",
+                                           "colSpan":  7,
+                                           "rowSpan":  6,
+                                           "gridX":  0,
+                                           "gridY":  2,
+                                           "order":  1,
+                                           "hidden":  null,
+                                           "locked":  null,
+                                           "chartRef":  null,
+                                           "parentTabsId":  null,
+                                           "tabPaneId":  null,
+                                           "chartConfig":  {
+                                                               "chartType":  "map",
+                                                               "styleVariant":  "default",
+                                                               "dataSourceId":  "00e7438c-33ac-4239-88a5-af28ecdece19",
+                                                               "bindingId":  null,
+                                                               "chartId":  "fb5a632b-fec2-443b-95a1-2d3dc76c278f",
+                                                               "mode":  "sql",
+                                                               "sql":  "SELECT province AS çä»½, city AS åå¸, district AS åºå¿, SUM(amount) AS éå®é¢\nFROM de_sales_wide\nGROUP BY province, city, district",
+                                                               "schema":  null,
+                                                               "table":  null,
+                                                               "configId":  null,
+                                                               "datasetId":  null,
+                                                               "nativeBody":  {
+                                                                                  "deStyle":  {
+                                                                                                  "seriesGradient":  false,
+                                                                                                  "label":  {
+                                                                                                                "show":  true,
+                                                                                                                "color":  "#8c8c8c",
+                                                                                                                "fontSize":  12
+                                                                                                            },
+                                                                                                  "legend":  {
+                                                                                                                 "show":  true,
+                                                                                                                 "color":  "#8c8c8c",
+                                                                                                                 "fontSize":  12
+                                                                                                             },
+                                                                                                  "border":  {
+                                                                                                                 "show":  false,
+                                                                                                                 "color":  "#f0f0f0",
+                                                                                                                 "width":  0,
+                                                                                                                 "radius":  0
+                                                                                                             },
+                                                                                                  "title":  {
+                                                                                                                "color":  "#262626",
+                                                                                                                "fontSize":  14,
+                                                                                                                "fontWeight":  600,
+                                                                                                                "show":  false
+                                                                                                            },
+                                                                                                  "geo":  {
+                                                                                                              "mapArea":  "china",
+                                                                                                              "visualMap":  true,
+                                                                                                              "areaColor":  "#13c2c222",
+                                                                                                              "borderColor":  "#13c2c299",
+                                                                                                              "emphasisColor":  "#13c2c244"
+                                                                                                          }
+                                                                                              }
+                                                                              },
+                                                               "index":  null,
+                                                               "dimensions":  [
+                                                                                  {
+                                                                                      "field":  "çä»½",
+                                                                                      "label":  null
+                                                                                  },
+                                                                                  {
+                                                                                      "field":  "åå¸",
+                                                                                      "label":  null
+                                                                                  },
+                                                                                  {
+                                                                                      "field":  "åºå¿",
+                                                                                      "label":  null
+                                                                                  }
+                                                                              ],
+                                                               "metrics":  [
+                                                                               {
+                                                                                   "field":  "éå®é¢",
+                                                                                   "label":  null
+                                                                               }
+                                                                           ],
+                                                               "axes":  null,
+                                                               "filters":  [
+
+                                                                           ],
+                                                               "timeRange":  null
+                                                           },
+                                           "filterConfig":  null,
+                                           "textConfig":  null,
+                                           "mediaConfig":  null,
+                                           "tabsConfig":  null,
+                                           "componentRef":  null
+                                       },
+                                       {
+                                           "id":  "57f622b1-7b94-4058-9592-53ad964b44a4",
+                                           "type":  "chart",
+                                           "title":  "éå®èµ°å¿",
+                                           "colSpan":  5,
+                                           "rowSpan":  3,
+                                           "gridX":  7,
+                                           "gridY":  2,
+                                           "order":  2,
+                                           "hidden":  null,
+                                           "locked":  null,
+                                           "chartRef":  null,
+                                           "parentTabsId":  null,
+                                           "tabPaneId":  null,
+                                           "chartConfig":  {
+                                                               "chartType":  "line",
+                                                               "styleVariant":  "default",
+                                                               "dataSourceId":  "00e7438c-33ac-4239-88a5-af28ecdece19",
+                                                               "bindingId":  null,
+                                                               "chartId":  "57f622b1-7b94-4058-9592-53ad964b44a4",
+                                                               "mode":  "sql",
+                                                               "sql":  "SELECT sale_date AS æ¥æ, SUM(amount) AS éå®é¢\nFROM de_sales_wide\nGROUP BY sale_date\nORDER BY æ¥æ",
+                                                               "schema":  null,
+                                                               "table":  null,
+                                                               "configId":  null,
+                                                               "datasetId":  null,
+                                                               "nativeBody":  {
+                                                                                  "deStyle":  {
+                                                                                                  "seriesGradient":  false,
+                                                                                                  "label":  {
+                                                                                                                "show":  true,
+                                                                                                                "color":  "#8c8c8c",
+                                                                                                                "fontSize":  12
+                                                                                                            },
+                                                                                                  "legend":  {
+                                                                                                                 "show":  true,
+                                                                                                                 "color":  "#8c8c8c",
+                                                                                                                 "fontSize":  12
+                                                                                                             },
+                                                                                                  "border":  {
+                                                                                                                 "show":  false,
+                                                                                                                 "color":  "#f0f0f0",
+                                                                                                                 "width":  0,
+                                                                                                                 "radius":  0
+                                                                                                             },
+                                                                                                  "title":  {
+                                                                                                                "color":  "#262626",
+                                                                                                                "fontSize":  14,
+                                                                                                                "fontWeight":  600,
+                                                                                                                "show":  false
+                                                                                                            },
+                                                                                                  "paletteId":  "custom",
+                                                                                                  "seriesColor":  [
+                                                                                                                      {
+                                                                                                                          "name":  "series-0",
+                                                                                                                          "color":  "#13c2c2"
+                                                                                                                      },
+                                                                                                                      {
+                                                                                                                          "name":  "series-1",
+                                                                                                                          "color":  "#1890ff"
+                                                                                                                      },
+                                                                                                                      {
+                                                                                                                          "name":  "series-2",
+                                                                                                                          "color":  "#52c41a"
+                                                                                                                      },
+                                                                                                                      {
+                                                                                                                          "name":  "series-3",
+                                                                                                                          "color":  "#36cfc9"
+                                                                                                                      },
+                                                                                                                      {
+                                                                                                                          "name":  "series-4",
+                                                                                                                          "color":  "#5cdbd3"
+                                                                                                                      },
+                                                                                                                      {
+                                                                                                                          "name":  "series-5",
+                                                                                                                          "color":  "#87e8de"
+                                                                                                                      }
+                                                                                                                  ]
+                                                                                              }
+                                                                              },
+                                                               "index":  null,
+                                                               "dimensions":  [
+                                                                                  {
+                                                                                      "field":  "æ¥æ",
+                                                                                      "label":  null
+                                                                                  }
+                                                                              ],
+                                                               "metrics":  [
+                                                                               {
+                                                                                   "field":  "éå®é¢",
+                                                                                   "label":  null
+                                                                               }
+                                                                           ],
+                                                               "axes":  null,
+                                                               "filters":  [
+
+                                                                           ],
+                                                               "timeRange":  null
+                                                           },
+                                           "filterConfig":  null,
+                                           "textConfig":  null,
+                                           "mediaConfig":  null,
+                                           "tabsConfig":  null,
+                                           "componentRef":  null
+                                       },
+                                       {
+                                           "id":  "07597ee5-d588-45f0-9917-dada51173722",
+                                           "type":  "chart",
+                                           "title":  "åå¸ TOP æç»",
+                                           "colSpan":  5,
+                                           "rowSpan":  3,
+                                           "gridX":  7,
+                                           "gridY":  5,
+                                           "order":  3,
+                                           "hidden":  null,
+                                           "locked":  null,
+                                           "chartRef":  null,
+                                           "parentTabsId":  null,
+                                           "tabPaneId":  null,
+                                           "chartConfig":  {
+                                                               "chartType":  "table-info",
+                                                               "styleVariant":  "default",
+                                                               "dataSourceId":  "00e7438c-33ac-4239-88a5-af28ecdece19",
+                                                               "bindingId":  null,
+                                                               "chartId":  "07597ee5-d588-45f0-9917-dada51173722",
+                                                               "mode":  "sql",
+                                                               "sql":  "SELECT city AS åå¸, SUM(amount) AS éå®é¢\nFROM de_sales_wide\nGROUP BY city\nORDER BY éå®é¢ DESC\nLIMIT 10",
+                                                               "schema":  null,
+                                                               "table":  null,
+                                                               "configId":  null,
+                                                               "datasetId":  null,
+                                                               "nativeBody":  {
+                                                                                  "deStyle":  {
+                                                                                                  "seriesGradient":  false,
+                                                                                                  "label":  {
+                                                                                                                "show":  true,
+                                                                                                                "color":  "#8c8c8c",
+                                                                                                                "fontSize":  12
+                                                                                                            },
+                                                                                                  "legend":  {
+                                                                                                                 "show":  false,
+                                                                                                                 "color":  "#8c8c8c",
+                                                                                                                 "fontSize":  12
+                                                                                                             },
+                                                                                                  "border":  {
+                                                                                                                 "show":  false,
+                                                                                                                 "color":  "#f0f0f0",
+                                                                                                                 "width":  0,
+                                                                                                                 "radius":  0
+                                                                                                             },
+                                                                                                  "title":  {
+                                                                                                                "color":  "#262626",
+                                                                                                                "fontSize":  14,
+                                                                                                                "fontWeight":  600,
+                                                                                                                "show":  false
+                                                                                                            },
+                                                                                                  "paletteId":  "custom",
+                                                                                                  "seriesColor":  [
+                                                                                                                      {
+                                                                                                                          "name":  "series-0",
+                                                                                                                          "color":  "#13c2c2"
+                                                                                                                      },
+                                                                                                                      {
+                                                                                                                          "name":  "series-1",
+                                                                                                                          "color":  "#1890ff"
+                                                                                                                      },
+                                                                                                                      {
+                                                                                                                          "name":  "series-2",
+                                                                                                                          "color":  "#52c41a"
+                                                                                                                      },
+                                                                                                                      {
+                                                                                                                          "name":  "series-3",
+                                                                                                                          "color":  "#36cfc9"
+                                                                                                                      },
+                                                                                                                      {
+                                                                                                                          "name":  "series-4",
+                                                                                                                          "color":  "#5cdbd3"
+                                                                                                                      },
+                                                                                                                      {
+                                                                                                                          "name":  "series-5",
+                                                                                                                          "color":  "#87e8de"
+                                                                                                                      }
+                                                                                                                  ]
+                                                                                              }
+                                                                              },
+                                                               "index":  null,
+                                                               "dimensions":  [
+                                                                                  {
+                                                                                      "field":  "åå¸",
+                                                                                      "label":  null
+                                                                                  }
+                                                                              ],
+                                                               "metrics":  [
+                                                                               {
+                                                                                   "field":  "éå®é¢",
+                                                                                   "label":  null
+                                                                               }
+                                                                           ],
+                                                               "axes":  null,
+                                                               "filters":  [
+
+                                                                           ],
+                                                               "timeRange":  null
+                                                           },
+                                           "filterConfig":  null,
+                                           "textConfig":  null,
+                                           "mediaConfig":  null,
+                                           "tabsConfig":  null,
+                                           "componentRef":  null
+                                       }
+                                   ],
+                       "globalFilters":  [
+
+                                         ],
+                       "styleConfig":  {
+                                           "widgetGap":  4,
+                                           "canvasBackground":  "#f0f2f5",
+                                           "colorScheme":  "light",
+                                           "themeAccent":  "#13c2c2",
+                                           "fontFamily":  null,
+                                           "gapPreset":  "sm",
+                                           "pixelGutter":  2,
+                                           "scaleMode":  null,
+                                           "canvasBackgroundImage":  "/template-assets/packs/de-dashboard-v1/backgrounds/dash-ops.svg",
+                                           "canvasBackgroundCustom":  true,
+                                           "canvasDecorPresetId":  "none",
+                                           "refreshIntervalSec":  null,
+                                           "defaultQueryLimit":  null,
+                                           "widgetStyle":  {
+                                                               "background":  "#ffffff",
+                                                               "backgroundImage":  null,
+                                                               "backgroundShow":  true,
+                                                               "backgroundMode":  null,
+                                                               "framePresetId":  null,
+                                                               "frameColor":  null,
+                                                               "frameOpacity":  null,
+                                                               "opacity":  1.0,
+                                                               "backgroundImageOpacity":  null,
+                                                               "backgroundImageFit":  null,
+                                                               "backgroundImagePosition":  null,
+                                                               "backdropBlur":  null,
+                                                               "borderRadius":  4,
+                                                               "borderRadiusTopLeft":  null,
+                                                               "borderRadiusTopRight":  null,
+                                                               "borderRadiusBottomLeft":  null,
+                                                               "borderRadiusBottomRight":  null,
+                                                               "radiusMode":  null,
+                                                               "padding":  16,
+                                                               "paddingTop":  null,
+                                                               "paddingRight":  null,
+                                                               "paddingBottom":  null,
+                                                               "paddingLeft":  null,
+                                                               "paddingMode":  null,
+                                                               "borderColor":  "#f0f0f0",
+                                                               "borderWidth":  1,
+                                                               "borderStyle":  "solid",
+                                                               "borderEnabled":  true
+                                                           },
+                                           "paletteId":  "custom",
+                                           "paletteColors":  [
+                                                                 "#13c2c2",
+                                                                 "#1890ff",
+                                                                 "#52c41a",
+                                                                 "#36cfc9",
+                                                                 "#5cdbd3",
+                                                                 "#87e8de"
+                                                             ],
+                                           "paletteOpacity":  null,
+                                           "seriesGradient":  false,
+                                           "depthVisual":  null,
+                                           "chartLabelShow":  null,
+                                           "chartLabelStyle":  {
+                                                                   "fontSize":  null,
+                                                                   "color":  "#8c8c8c"
+                                                               },
+                                           "tooltipShow":  null,
+                                           "chartTooltipStyle":  null,
+                                           "tableColorStyle":  null,
+                                           "titleStyle":  {
+                                                              "show":  true,
+                                                              "fontSize":  14,
+                                                              "color":  "#262626",
+                                                              "fontWeight":  600,
+                                                              "fontStyle":  null,
+                                                              "align":  null,
+                                                              "letterSpacing":  null,
+                                                              "shadow":  false
+                                                          },
+                                           "filterChromeStyle":  {
+                                                                     "titlePosition":  null,
+                                                                     "titleColor":  "#8c8c8c"
+                                                                 },
+                                           "filterControlStyle":  null,
+                                           "numberFormat":  null,
+                                           "actionIconColor":  null,
+                                           "drillLevelColors":  null,
+                                           "dialogStyle":  null,
+                                           "chrome":  null,
+                                           "themeVariants":  null,
+                                           "surfaceKind":  "dashboard",
+                                           "screenPlaylist":  null
+                                       },
+                       "demoPackage":  null
+                   },
+    "createdBy":  "d944c834-3db6-4db1-ae7d-1d74365b0d91",
+    "createdAt":  "2026-08-05T15:09:25.789411+08:00",
+    "updatedAt":  "2026-08-05T15:09:25.795338+08:00"
+}

@@ -9,7 +9,7 @@ import {
   axisCategoryDisplayText,
   estimateAxisLabelWidth,
   estimateCategoryBandCenterPx,
-  pickCategoryTickIndicesByPixel,
+  pickUniformOverlapAwareTickIndices,
 } from "@/components/charts/engine/d3/core/axes";
 import { resolveAxisFontSize } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import type { ChartAxisStyle } from "@/lib/chartDeStyleBlocks";
@@ -129,8 +129,6 @@ export function pickCategoryBoundaryIndices(
 }
 
 const LABEL_GAP_PX = 12;
-/** 宽屏略增密度（对标 DataEase：约每 56px 一标） */
-const THINNING_TARGET_PX = 56;
 
 function defaultBandIndexToPx(count: number, innerW: number): (index: number) => number {
   return (index: number) => estimateCategoryBandCenterPx(index, count, innerW);
@@ -166,29 +164,15 @@ export function pickSynchronizedVisibleIndices(
   const labelWidthAt = (idx: number) =>
     widestLabelWidthAtIndex(categories, idx, structuralLevelCount, activeLevels);
 
-  const maxLabelW = Math.max(0, ...categories.map((_, i) => labelWidthAt(i)));
-  const minPx = Math.max(THINNING_TARGET_PX, maxLabelW + LABEL_GAP_PX);
-
-  const baseIndices = pickCategoryTickIndicesByPixel(count, innerW, minPx, toPx);
-  const kept: number[] = [];
-
-  for (const idx of baseIndices) {
-    const labelW = labelWidthAt(idx);
-    if (labelW <= 0) continue;
-    const pos = toPx(idx);
-    const prev = kept[kept.length - 1];
-    if (prev != null) {
-      const prevPos = toPx(prev);
-      const prevW = labelWidthAt(prev);
-      const minDist = (prevW + labelW) / 2 + LABEL_GAP_PX;
-      if (pos - prevPos < minDist) continue;
-    }
-    kept.push(idx);
-  }
-
-  if (kept.length > 0) return kept;
-  const fallback = baseIndices.find((idx) => labelWidthAt(idx) > 0);
-  return fallback != null ? [fallback] : count > 0 ? [0] : [];
+  return pickUniformOverlapAwareTickIndices(
+    count,
+    categories,
+    () => "",
+    0,
+    LABEL_GAP_PX,
+    toPx,
+    labelWidthAt,
+  );
 }
 
 function pickThinningVisibleCategories(

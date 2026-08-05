@@ -11,6 +11,7 @@ import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/t
 import type { D3CartesianRenderConfig } from "@/components/charts/engine/d3/types";
 import { normalizeCategoryAxisDomain } from "@/components/charts/engine/buildDatasetEncoding";
 import { resolveBarBandPadding } from "@/lib/applyChartDeStyleBlocks";
+import { formatChartValue, mergePercentValueFormat } from "@/lib/chartValueFormat";
 
 const BAR_RX = 4;
 
@@ -137,7 +138,19 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
   drawVerticalMarkLines(plot, markLines, x, innerH);
   const tooltip = showTooltip ? createTooltip(container, theme, tooltipPresentation) : null;
 
-  drawCartesianHorizontalBandAxes({ g, xScale: x, yScale: y, innerW, innerH, theme, valueFormat, axisStyle });
+  drawCartesianHorizontalBandAxes({
+    g,
+    xScale: x,
+    yScale: y,
+    innerW,
+    innerH,
+    theme,
+    valueFormat: mergePercentValueFormat(valueFormat, isPercent),
+    axisStyle,
+    xTickFormat: isPercent
+      ? (d) => formatChartValue(d, mergePercentValueFormat(valueFormat, true))
+      : undefined,
+  });
 
   if (isStack) {
     const stack = d3.stack<WideRow>().keys(keys);

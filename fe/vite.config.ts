@@ -7,8 +7,26 @@ import { defineConfig, loadEnv } from "vite";
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, __dirname, "");
   const apiProxyTarget = env.VITE_DEV_API_PROXY || "http://localhost:8000";
+  const feBaseSegment = (env.VITE_FE_BASE_PATH || env.FE_BASE_PATH || "").replace(/^\/+|\/+$/g, "");
+  const base = feBaseSegment ? `/${feBaseSegment}/` : "/";
+  const proxyBaseSegments = [...new Set([feBaseSegment, "sc-datav"].filter(Boolean))];
+
+  const proxy: Record<string, { target: string; changeOrigin: boolean; rewrite?: (path: string) => string }> = {
+    "/api": {
+      target: apiProxyTarget,
+      changeOrigin: true,
+    },
+  };
+  for (const segment of proxyBaseSegments) {
+    proxy[`/${segment}/api`] = {
+      target: apiProxyTarget,
+      changeOrigin: true,
+      rewrite: (path) => path.replace(new RegExp(`^/${segment}`), ""),
+    };
+  }
 
   return {
+    base,
     plugins: [react(), tailwindcss()],
     cacheDir: path.resolve(__dirname, "node_modules/.vite"),
     resolve: {
@@ -18,12 +36,7 @@ export default defineConfig(({ mode }) => {
       dedupe: ["three"],
     },
     server: {
-      proxy: {
-        "/api": {
-          target: apiProxyTarget,
-          changeOrigin: true,
-        },
-      },
+      proxy,
     },
     build: {
       outDir: "dist",

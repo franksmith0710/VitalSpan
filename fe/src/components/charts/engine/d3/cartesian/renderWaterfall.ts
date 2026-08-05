@@ -46,6 +46,8 @@ export function renderD3WaterfallChart(container: HTMLElement, config: D3Waterfa
   } = config;
 
   const barRx = barRadius ?? BAR_RX;
+  const posColor = colors[0] ?? "#465fff";
+  const negColor = colors[1] ?? "#f04438";
 
   const segments = buildSegments(data);
   const categories = segments.map((d) => d.type);
@@ -64,8 +66,6 @@ export function renderD3WaterfallChart(container: HTMLElement, config: D3Waterfa
 
   const x = d3.scaleBand<string>().domain(categories).range([0, innerW]).padding(resolveBarBandPadding(barWidthRatio));
   const y = d3.scaleLinear().domain([yMin, yMax]).nice().range([innerH, 0]);
-  const posColor = colors[0] ?? "#465fff";
-  const negColor = colors[1] ?? "#f04438";
 
   const root = appendChartSvg(container, width, height);
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
