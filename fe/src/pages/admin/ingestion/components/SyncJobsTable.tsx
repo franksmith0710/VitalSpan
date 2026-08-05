@@ -216,7 +216,7 @@ export function SyncJobsTable({
                   </span>
                   {(targetTableCounts.get(job.target_table.trim().toLowerCase()) ?? 0) > 1 ? (
                     <Badge variant="light" color="warning" size="sm">
-                      {targetTableCounts.get(job.target_table.trim().toLowerCase())} 任务共表
+                      {targetTableCounts.get(job.target_table.trim().toLowerCase())} 历史共表
                     </Badge>
                   ) : null}
                 </div>

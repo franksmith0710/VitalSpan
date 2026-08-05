@@ -20,7 +20,17 @@ const THEMES = {
   violet: { accent: "#722ed1", accent2: "#eb2f96", bg: "#f0f2f5", bgTo: "#f3eef8", glow: "#722ed1" },
   teal: { accent: "#13c2c2", accent2: "#1890ff", bg: "#f0f2f5", bgTo: "#ecf6f6", glow: "#13c2c2" },
   slate: { accent: "#595959", accent2: "#1890ff", bg: "#f0f2f5", bgTo: "#ececec", glow: "#8c8c8c" },
+  orange: { accent: "#fa8c16", accent2: "#fa541c", bg: "#f0f2f5", bgTo: "#fff7e6", glow: "#fa8c16" },
+  rose: { accent: "#eb2f96", accent2: "#f759ab", bg: "#f0f2f5", bgTo: "#fff0f6", glow: "#eb2f96" },
+  amber: { accent: "#faad14", accent2: "#d48806", bg: "#f0f2f5", bgTo: "#fffbe6", glow: "#faad14" },
+  cyan: { accent: "#13c2c2", accent2: "#36cfc9", bg: "#f0f2f5", bgTo: "#e6fffb", glow: "#13c2c2" },
+  navy: { accent: "#1d39c4", accent2: "#597ef7", bg: "#f0f2f5", bgTo: "#f0f5ff", glow: "#1d39c4" },
+  lime: { accent: "#a0d911", accent2: "#52c41a", bg: "#f0f2f5", bgTo: "#fcffe6", glow: "#a0d911" },
+  coral: { accent: "#ff4d4f", accent2: "#ff7875", bg: "#f0f2f5", bgTo: "#fff1f0", glow: "#ff4d4f" },
+  gold: { accent: "#d48806", accent2: "#faad14", bg: "#f0f2f5", bgTo: "#fffbe6", glow: "#d48806" },
 };
+
+const BG_VARIANTS = ["dots", "stripes", "mesh", "band"];
 
 function svgHeader(w, h) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid slice">`;
@@ -32,9 +42,24 @@ function shadowFilter(id) {
   </filter>`;
 }
 
-/** 画布底图：仅浅灰渐变 + 顶栏光晕，不放假卡片（避免与真实组件叠影） */
-function buildCanvasBg(theme, id) {
+/** 画布底图：浅灰渐变 + 顶栏光晕；variant 扩展不同纹理 */
+function buildCanvasBg(theme, id, variant = "default") {
   const t = THEMES[theme];
+  let variantLayer = "";
+  if (variant === "stripes") {
+    variantLayer = `<pattern id="${id}-stripes" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+      <line x1="0" y1="0" x2="0" y2="24" stroke="${t.accent}" stroke-width="1" opacity="0.05"/>
+    </pattern>
+    <rect width="1920" height="1080" fill="url(#${id}-stripes)"/>`;
+  } else if (variant === "mesh") {
+    variantLayer = `<radialGradient id="${id}-mesh" cx="80%" cy="20%" r="60%">
+      <stop stop-color="${t.accent2}" stop-opacity="0.08"/><stop offset="1" stop-opacity="0"/>
+    </radialGradient>
+    <rect width="1920" height="1080" fill="url(#${id}-mesh)"/>`;
+  } else if (variant === "band") {
+    variantLayer = `<rect y="0" width="1920" height="56" fill="${t.accent}" opacity="0.06"/>
+    <line x1="0" y1="56" x2="1920" y2="56" stroke="${t.accent}" stroke-width="1" opacity="0.2"/>`;
+  }
   return `${svgHeader(1920, 1080)}
   <defs>
     <linearGradient id="${id}-bg" x1="0" y1="0" x2="0" y2="1">
@@ -51,7 +76,7 @@ function buildCanvasBg(theme, id) {
   </defs>
   <rect width="1920" height="1080" fill="url(#${id}-bg)"/>
   <rect width="1920" height="1080" fill="url(#${id}-glow)"/>
-  <rect width="1920" height="1080" fill="url(#${id}-dots)"/>
+  ${variant === "dots" || variant === "default" ? `<rect width="1920" height="1080" fill="url(#${id}-dots)"/>` : variantLayer}
   <rect width="1920" height="3" fill="${t.accent}" opacity="0.35"/>
 </svg>`;
 }
@@ -217,7 +242,12 @@ function write(rel, content) {
 }
 
 ensureDir(PACK_ROOT);
-const manifest = { packId: "de-dashboard-v1", publicPrefix: PUBLIC_PREFIX, assets: [] };
+const manifest = {
+  packId: "de-dashboard-v1",
+  publicPrefix: PUBLIC_PREFIX,
+  assets: [],
+  variants: [],
+};
 
 for (const spec of SPECS) {
   const bgPath = `backgrounds/${spec.slug}.svg`;
@@ -231,6 +261,20 @@ for (const spec of SPECS) {
     background: `${PUBLIC_PREFIX}/${bgPath}`,
     thumb: `${PUBLIC_PREFIX}/${thumbPath}`,
   });
+}
+
+for (const theme of Object.keys(THEMES)) {
+  for (const variant of BG_VARIANTS) {
+    const slug = `canvas-${theme}-${variant}`;
+    const bgPath = `backgrounds/variants/${slug}.svg`;
+    write(bgPath, buildCanvasBg(theme, slug, variant));
+    manifest.variants.push({
+      slug,
+      theme,
+      variant,
+      background: `${PUBLIC_PREFIX}/${bgPath}`,
+    });
+  }
 }
 
 write(
@@ -249,4 +293,6 @@ cd fe && npm run generate:de-dashboard-assets
 `,
 );
 
-console.log(`Generated ${SPECS.length * 2} files in ${PACK_ROOT}`);
+console.log(
+  `Generated ${SPECS.length * 2 + Object.keys(THEMES).length * BG_VARIANTS.length} files in ${PACK_ROOT}`,
+);

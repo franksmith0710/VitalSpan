@@ -295,7 +295,7 @@ def test_put_etl_rules_roundtrip(client, auth_headers, job_payload):
 
 from datetime import datetime, timezone
 
-from app.ingestion.models import SyncRun, get_meta_session
+from app.ingestion.models import SyncJob, SyncRun, get_meta_session
 
 
 def test_update_sync_job_put_roundtrip(client, auth_headers, job_payload):
@@ -350,6 +350,79 @@ def test_trigger_run_conflict_when_running_exists_409(client, auth_headers, job_
         )
     assert response.status_code == 409
     assert response.json()["detail"]["code"] == "RUN_ALREADY_IN_PROGRESS"
+    client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+def test_trigger_run_target_table_busy_409(client, auth_headers, job_payload, mysql_datasource_id):
+    """另一任务正在写同一 target_table → POST run 409 SYNC_TARGET_TABLE_BUSY。"""
+    first = client.post("/api/v1/ingestion/sync-jobs", json=job_payload, headers=auth_headers)
+    assert first.status_code == 201, first.text
+    second_payload = {
+        **job_payload,
+        "name": "job-b-other",
+        "target_table": f"orders_clean_{uuid.uuid4().hex[:6]}",
+    }
+    second = client.post("/api/v1/ingestion/sync-jobs", json=second_payload, headers=auth_headers)
+    assert second.status_code == 201, second.text
+    shared_table = job_payload["target_table"]
+    db = get_meta_session()
+    job_b = db.get(SyncJob, uuid.UUID(second.json()["id"]))
+    assert job_b is not None
+    job_b.target_table = shared_table
+    db.add(
+        SyncRun(
+            job_id=job_b.id,
+            status="running",
+            trace_id="busy-other",
+            started_at=datetime.now(timezone.utc),
+        )
+    )
+    db.commit()
+    db.close()
+    with patch("app.api.v1.ingestion.sync.get_settings") as mock_get:
+        mock_get.return_value.analytics_database_url = "postgresql+psycopg://u:p@localhost:5433/a"
+        response = client.post(
+            f"/api/v1/ingestion/sync-jobs/{first.json()['id']}/run",
+            headers=auth_headers,
+        )
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "SYNC_TARGET_TABLE_BUSY"
+    client.delete(f"/api/v1/ingestion/sync-jobs/{first.json()['id']}", headers=auth_headers)
+    client.delete(f"/api/v1/ingestion/sync-jobs/{second.json()['id']}", headers=auth_headers)
+
+
+def test_create_rest_api_job_seeds_default_etl_rules(client, auth_headers):
+    ds_suffix = uuid.uuid4().hex[:8]
+    db = get_meta_session()
+    row = DataSource(
+        name=f"rest-ds-{ds_suffix}",
+        code=f"rest_ds_{ds_suffix}",
+        type="rest_api",
+        host="http://127.0.0.1:8000",
+        port=8000,
+        database="",
+        username="",
+        password_encrypted=encrypt_credential(""),
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    ds_id = row.id
+    db.close()
+    payload = {
+        "name": "rest-orders",
+        "source_mode": "datasource",
+        "source_data_source_id": str(ds_id),
+        "source_table": "/sample-api/orders",
+        "target_table": f"orders_clean_{ds_suffix}",
+        "schedule_cron": None,
+    }
+    create = client.post("/api/v1/ingestion/sync-jobs", json=payload, headers=auth_headers)
+    assert create.status_code == 201, create.text
+    job_id = create.json()["id"]
+    rules = client.get(f"/api/v1/ingestion/sync-jobs/{job_id}/etl-rules", headers=auth_headers)
+    assert rules.status_code == 200
+    assert len(rules.json()["rules"]) >= 1
     client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
 
 

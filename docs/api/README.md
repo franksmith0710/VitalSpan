@@ -440,6 +440,7 @@ redoc: /redoc
 | GET | `/api/v1/ingestion/sync-jobs/{id}/consume-hints` | 消费管道状态（分析库/Dataset/下一步动作） | 内部 | M1B | DATA-003 | 已实现 | `backend/app/ingestion/sync_consume.py` |
 | POST | `/api/v1/ingestion/sync-jobs/{id}/prepare-consume` | 幂等登记托管分析库数据源 | 内部 | M1B | DATA-003 | 已实现 | `backend/app/ingestion/sync_consume.py` |
 | POST | `/api/v1/ingestion/sync-jobs/{id}/ensure-dataset` | 一键创建 Dataset 并绑定 query config | 内部 | M1B | DATA-003 | 已实现 | `backend/app/ingestion/sync_consume.py` |
+| POST | `/api/v1/ingestion/sync-jobs/{id}/refresh-dataset-binding` | 刷新同步产物 Dataset 显示名与出图绑定列 | 内部 | M1B | DATA-003 | 已实现 | `backend/app/ingestion/sync_consume.py` |
 
 ### SyncJobCreate（POST/PUT 请求体）
 

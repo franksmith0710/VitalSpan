@@ -22,6 +22,11 @@ import type { D3Theme } from "@/components/charts/engine/d3/core/themeEngine";
 import { formatChartValue } from "@/lib/chartValueFormat";
 import type { ChartAxisStyle } from "@/lib/chartDeStyleBlocks";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
+import { inferCompositeCategoryLevels } from "@/components/charts/engine/buildDatasetEncoding";
+import {
+  drawHierarchicalCategoryAxis,
+  resolveHierarchicalAxisLayout,
+} from "@/components/charts/engine/d3/core/hierarchicalAxis";
 
 function numericTickValues(
   scale: d3.ScaleLinear<number, number>,
@@ -75,6 +80,7 @@ type BuildCartesianSceneOptions = {
   incremental?: boolean;
   /** 用于小组件下预估横轴旋转并加大 bottom 边距 */
   categories?: string[];
+  categoryLevelCount?: number;
   axisStyle?: ChartAxisStyle;
 };
 
@@ -119,15 +125,29 @@ export function resolveCategoryCartesianLayout(
     legendItems?: D3LegendItem[];
     axisStyle?: ChartAxisStyle;
     marginOverrides?: Partial<ReturnType<typeof cartesianMargin>>;
+    categoryLevelCount?: number;
   },
 ): CategoryCartesianLayout {
   let margin = cartesianMargin(false, options?.marginOverrides);
   const provisionalInnerW = Math.max(0, width - margin.left - margin.right);
-  const xLayout = planCategoryAxisLayout(
-    categories,
-    provisionalInnerW,
-    options?.axisStyle?.x?.labelRotate,
-  );
+  const levelCount =
+    options?.categoryLevelCount ?? inferCompositeCategoryLevels(categories);
+  const xLayout =
+    levelCount > 1
+      ? (() => {
+          const hier = resolveHierarchicalAxisLayout(levelCount);
+          return {
+            ticks: categories,
+            rotateDeg: 0,
+            slotSpan: provisionalInnerW / Math.max(1, categories.length),
+            extraBottom: hier.extraBottom,
+          };
+        })()
+      : planCategoryAxisLayout(
+          categories,
+          provisionalInnerW,
+          options?.axisStyle?.x?.labelRotate,
+        );
   margin = {
     ...margin,
     bottom: margin.bottom + xLayout.extraBottom,
@@ -184,6 +204,7 @@ export function buildCartesianScene(opts: BuildCartesianSceneOptions): Cartesian
           legendLayout: opts.legendLayout,
           legendItems: opts.legendItems,
           axisStyle: opts.axisStyle,
+          categoryLevelCount: opts.categoryLevelCount,
         })
       : (() => {
           let baseMargin = cartesianMargin(false);
@@ -295,10 +316,23 @@ type BandAxesOptions = {
   theme: D3Theme;
   valueFormat?: NumberFormatConfig;
   axisStyle?: ChartAxisStyle;
+  categoryLevelCount?: number;
 };
 
+function resolveAxisLevelCount(categories: string[], explicit?: number): number {
+  return explicit ?? inferCompositeCategoryLevels(categories);
+}
+
 export function drawCartesianBandAxes(opts: BandAxesOptions): { rotateX: number } {
-  const xLayout = planCategoryAxisLayout(opts.categories, opts.innerW, opts.axisStyle?.x?.labelRotate);
+  const levelCount = resolveAxisLevelCount(opts.categories, opts.categoryLevelCount);
+  const xLayout =
+    levelCount > 1
+      ? {
+          ticks: opts.categories,
+          rotateDeg: 0,
+          slotSpan: opts.innerW / Math.max(1, opts.categories.length),
+        }
+      : planCategoryAxisLayout(opts.categories, opts.innerW, opts.axisStyle?.x?.labelRotate);
 
   opts.g.selectAll("g.vs-axis-x, g.vs-axis-y, text.vs-axis-name, text.vs-axis-name-y").remove();
 
@@ -318,17 +352,31 @@ export function drawCartesianBandAxes(opts: BandAxesOptions): { rotateX: number 
   }
 
   if (opts.axisStyle?.x?.show !== false) {
-    opts.g
-      .append("g")
-      .attr("class", "vs-axis-x")
-      .attr("transform", `translate(0,${opts.innerH})`)
-      .call(
-        d3
-          .axisBottom(opts.xScale)
-          .tickValues(xLayout.ticks)
-          .tickFormat((d) => formatAxisCategoryLabel(String(d), xLayout.slotSpan, xLayout.rotateDeg)),
-      )
-      .call(styleAxis, opts.theme, resolveAxisFontSize(), opts.axisStyle?.x)
+    if (levelCount > 1) {
+      drawHierarchicalCategoryAxis({
+        g: opts.g,
+        xScale: opts.xScale,
+        categories: opts.categories,
+        levelCount,
+        innerH: opts.innerH,
+        innerW: opts.innerW,
+        theme: opts.theme,
+        axisStyle: opts.axisStyle,
+      });
+    } else {
+      opts.g
+        .append("g")
+        .attr("class", "vs-axis-x")
+        .attr("transform", `translate(0,${opts.innerH})`)
+        .call(
+          d3
+            .axisBottom(opts.xScale)
+            .tickValues(xLayout.ticks)
+            .tickFormat((d) => formatAxisCategoryLabel(String(d), xLayout.slotSpan, xLayout.rotateDeg)),
+        )
+        .call(styleAxis, opts.theme, resolveAxisFontSize(), opts.axisStyle?.x)
+        .call((sel) => applyRotatedCategoryLabels(sel, xLayout.rotateDeg));
+    }
 
     const xName = opts.axisStyle?.x?.name?.trim();
     if (xName) {
@@ -336,7 +384,7 @@ export function drawCartesianBandAxes(opts: BandAxesOptions): { rotateX: number 
         .append("text")
         .attr("class", "vs-axis-name")
         .attr("x", opts.innerW / 2)
-        .attr("y", opts.innerH + (xLayout.rotateDeg ? 42 : 32))
+        .attr("y", opts.innerH + (levelCount > 1 ? levelCount * 16 + 20 : xLayout.rotateDeg ? 42 : 32))
         .attr("fill", opts.theme.axisLabel)
         .attr("text-anchor", "middle")
         .style("font-size", "11px")
@@ -371,10 +419,19 @@ type AxesOptions = {
   theme: D3Theme;
   valueFormat?: NumberFormatConfig;
   axisStyle?: ChartAxisStyle;
+  categoryLevelCount?: number;
 };
 
 export function drawCartesianAxes(opts: AxesOptions): { rotateX: number } {
-  const xLayout = planCategoryAxisLayout(opts.categories, opts.innerW, opts.axisStyle?.x?.labelRotate);
+  const levelCount = resolveAxisLevelCount(opts.categories, opts.categoryLevelCount);
+  const xLayout =
+    levelCount > 1
+      ? {
+          ticks: opts.categories,
+          rotateDeg: 0,
+          slotSpan: opts.innerW / Math.max(1, opts.categories.length),
+        }
+      : planCategoryAxisLayout(opts.categories, opts.innerW, opts.axisStyle?.x?.labelRotate);
 
   opts.g.selectAll("g.vs-axis-x, g.vs-axis-y, text.vs-axis-name, text.vs-axis-name-y").remove();
 
@@ -394,17 +451,31 @@ export function drawCartesianAxes(opts: AxesOptions): { rotateX: number } {
   }
 
   if (opts.axisStyle?.x?.show !== false) {
-    opts.g
-      .append("g")
-      .attr("class", "vs-axis-x")
-      .attr("transform", `translate(0,${opts.innerH})`)
-      .call(
-        d3
-          .axisBottom(opts.xScale)
-          .tickValues(xLayout.ticks)
-          .tickFormat((d) => formatAxisCategoryLabel(String(d), xLayout.slotSpan, xLayout.rotateDeg)),
-      )
-      .call(styleAxis, opts.theme, resolveAxisFontSize(), opts.axisStyle?.x)
+    if (levelCount > 1) {
+      drawHierarchicalCategoryAxis({
+        g: opts.g,
+        xScale: opts.xScale,
+        categories: opts.categories,
+        levelCount,
+        innerH: opts.innerH,
+        innerW: opts.innerW,
+        theme: opts.theme,
+        axisStyle: opts.axisStyle,
+      });
+    } else {
+      opts.g
+        .append("g")
+        .attr("class", "vs-axis-x")
+        .attr("transform", `translate(0,${opts.innerH})`)
+        .call(
+          d3
+            .axisBottom(opts.xScale)
+            .tickValues(xLayout.ticks)
+            .tickFormat((d) => formatAxisCategoryLabel(String(d), xLayout.slotSpan, xLayout.rotateDeg)),
+        )
+        .call(styleAxis, opts.theme, resolveAxisFontSize(), opts.axisStyle?.x)
+        .call((sel) => applyRotatedCategoryLabels(sel, xLayout.rotateDeg));
+    }
 
     const xName = opts.axisStyle?.x?.name?.trim();
     if (xName) {
@@ -412,7 +483,7 @@ export function drawCartesianAxes(opts: AxesOptions): { rotateX: number } {
         .append("text")
         .attr("class", "vs-axis-name")
         .attr("x", opts.innerW / 2)
-        .attr("y", opts.innerH + (xLayout.rotateDeg ? 42 : 32))
+        .attr("y", opts.innerH + (levelCount > 1 ? levelCount * 16 + 20 : xLayout.rotateDeg ? 42 : 32))
         .attr("fill", opts.theme.axisLabel)
         .attr("text-anchor", "middle")
         .style("font-size", "11px")
@@ -604,11 +675,20 @@ type DualAxesOptions = {
   theme: D3Theme;
   valueFormat?: NumberFormatConfig;
   axisStyle?: ChartAxisStyle;
+  categoryLevelCount?: number;
 };
 
 /** 双轴图：左/右数值轴 + 类目横轴 */
 export function drawDualAxesAxes(opts: DualAxesOptions): void {
-  const xLayout = planCategoryAxisLayout(opts.categories, opts.innerW, opts.axisStyle?.x?.labelRotate);
+  const levelCount = resolveAxisLevelCount(opts.categories, opts.categoryLevelCount);
+  const xLayout =
+    levelCount > 1
+      ? {
+          ticks: opts.categories,
+          rotateDeg: 0,
+          slotSpan: opts.innerW / Math.max(1, opts.categories.length),
+        }
+      : planCategoryAxisLayout(opts.categories, opts.innerW, opts.axisStyle?.x?.labelRotate);
 
   opts.g
     .selectAll("g.vs-axis-x, g.vs-axis-y, g.vs-axis-y-right, text.vs-axis-name, text.vs-axis-name-y")
@@ -643,17 +723,31 @@ export function drawDualAxesAxes(opts: DualAxesOptions): void {
   }
 
   if (opts.axisStyle?.x?.show !== false) {
-    opts.g
-      .append("g")
-      .attr("class", "vs-axis-x")
-      .attr("transform", `translate(0,${opts.innerH})`)
-      .call(
-        d3
-          .axisBottom(opts.xScale)
-          .tickValues(xLayout.ticks)
-          .tickFormat((d) => formatAxisCategoryLabel(String(d), xLayout.slotSpan, xLayout.rotateDeg)),
-      )
-      .call(styleAxis, opts.theme, resolveAxisFontSize(), opts.axisStyle?.x)
+    if (levelCount > 1) {
+      drawHierarchicalCategoryAxis({
+        g: opts.g,
+        xScale: opts.xScale,
+        categories: opts.categories,
+        levelCount,
+        innerH: opts.innerH,
+        innerW: opts.innerW,
+        theme: opts.theme,
+        axisStyle: opts.axisStyle,
+      });
+    } else {
+      opts.g
+        .append("g")
+        .attr("class", "vs-axis-x")
+        .attr("transform", `translate(0,${opts.innerH})`)
+        .call(
+          d3
+            .axisBottom(opts.xScale)
+            .tickValues(xLayout.ticks)
+            .tickFormat((d) => formatAxisCategoryLabel(String(d), xLayout.slotSpan, xLayout.rotateDeg)),
+        )
+        .call(styleAxis, opts.theme, resolveAxisFontSize(), opts.axisStyle?.x)
+        .call((sel) => applyRotatedCategoryLabels(sel, xLayout.rotateDeg));
+    }
 
     const xName = opts.axisStyle?.x?.name?.trim();
     if (xName) {
@@ -661,7 +755,7 @@ export function drawDualAxesAxes(opts: DualAxesOptions): void {
         .append("text")
         .attr("class", "vs-axis-name")
         .attr("x", opts.innerW / 2)
-        .attr("y", opts.innerH + (xLayout.rotateDeg ? 42 : 32))
+        .attr("y", opts.innerH + (levelCount > 1 ? levelCount * 16 + 20 : xLayout.rotateDeg ? 42 : 32))
         .attr("fill", opts.theme.axisLabel)
         .attr("text-anchor", "middle")
         .style("font-size", "11px")

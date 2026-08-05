@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { inferCompositeCategoryLevels } from "@/components/charts/engine/buildDatasetEncoding";
 import { renderD3LineChart } from "@/components/charts/engine/d3/renderD3LineChart";
 import { setChartAnimationSuppressed } from "@/components/charts/engine/d3/core/animate";
 import { getAntvThemeTokens } from "@/components/charts/engine/antv/theme";
@@ -94,6 +95,46 @@ describe("renderD3LineChart", () => {
 
     const stroke = host.querySelector("path[stroke]");
     expect(stroke?.getAttribute("stroke-width")).toBe("4");
+
+    host.remove();
+    setChartAnimationSuppressed(false);
+  });
+
+  it("renders tiered x-axis groups for multi-dimension categories", () => {
+    setChartAnimationSuppressed(true);
+    const host = document.createElement("div");
+    host.style.width = "480px";
+    host.style.height = "240px";
+    document.body.appendChild(host);
+
+    const categories = [
+      "云南省\u00012025-01\u0001销量",
+      "云南省\u00012025-02\u0001销量",
+      "江苏省\u00012025-01\u0001销量",
+    ];
+    const data = categories.flatMap((cat) => [
+      { __category__: cat, __value__: 10, __series__: "amount" },
+      { __category__: cat, __value__: 8, __series__: "total_amount" },
+    ]);
+
+    expect(inferCompositeCategoryLevels(categories)).toBe(3);
+
+    renderD3LineChart(host, {
+      width: 480,
+      height: 240,
+      data,
+      xField: "__category__",
+      yField: "__value__",
+      seriesField: "__series__",
+      colors: ["#3b82f6", "#22c55e"],
+      theme,
+    });
+
+    expect(host.querySelector(".vs-axis-x-tiered")).toBeTruthy();
+    const labels = [...host.querySelectorAll(".vs-axis-x-tiered text")].map((node) => node.textContent);
+    expect(labels).toContain("云南省");
+    expect(labels.some((label) => label?.includes("2025") || label?.startsWith("2"))).toBe(true);
+    expect(labels.length).toBeGreaterThan(3);
 
     host.remove();
     setChartAnimationSuppressed(false);

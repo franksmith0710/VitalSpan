@@ -305,8 +305,8 @@ describe("patchChartLabelStyle", () => {
 });
 
 describe("readChartShowLabel", () => {
-  it("defaults to true when unset", () => {
-    expect(readChartShowLabel(baseCfg)).toBe(true);
+  it("defaults to false when unset", () => {
+    expect(readChartShowLabel(baseCfg)).toBe(false);
   });
 
   it("prefers explicit label.show over deFeatures.showLabel", () => {

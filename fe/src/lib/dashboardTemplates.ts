@@ -170,3 +170,23 @@ export function createTemplateFromDashboard(input: {
     body: JSON.stringify(input),
   });
 }
+
+export function updateTemplate(
+  templateId: string,
+  input: {
+    name?: string;
+    description?: string | null;
+    categoryKey?: string;
+    contentRevision: number;
+  },
+) {
+  return apiFetch<DashboardTemplateDetail>(`/api/v1/dashboard-templates/${templateId}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      ...(input.name !== undefined ? { name: input.name } : {}),
+      ...(input.description !== undefined ? { description: input.description } : {}),
+      ...(input.categoryKey !== undefined ? { categoryKey: input.categoryKey } : {}),
+      contentRevision: input.contentRevision,
+    }),
+  });
+}

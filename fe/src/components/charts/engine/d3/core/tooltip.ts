@@ -2,6 +2,7 @@
 import type { AntvThemeTokens } from "@/components/charts/engine/antv/theme";
 import type { D3TooltipPresentation } from "@/components/charts/engine/d3/core/presentation";
 import { formatChartValue } from "@/lib/chartValueFormat";
+import { formatCompositeCategoryDisplay } from "@/components/charts/engine/buildDatasetEncoding";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 
 function applyTooltipPresentation(
@@ -52,5 +53,5 @@ export function tooltipHtml(
         `<strong>${formatChartValue(row.value, valueFormat)}</strong></div>`,
     )
     .join("");
-  return `<div style="font-weight:600;margin-bottom:2px">${category}</div>${items}`;
+  return `<div style="font-weight:600;margin-bottom:2px">${formatCompositeCategoryDisplay(category)}</div>${items}`;
 }

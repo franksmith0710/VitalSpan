@@ -86,7 +86,8 @@ describe("ChartStylePanel", () => {
 
     const backgroundSwitch = screen.getByRole("switch", { name: "启用背景" });
     expect(backgroundSwitch).toBeChecked();
-    // enabled=true 时区块自动展开，无需再点标题
+    expect(screen.getByRole("button", { name: "背景" })).toHaveAttribute("aria-expanded", "false");
+    await user.click(screen.getByRole("button", { name: "背景" }));
     expect(screen.getByRole("button", { name: "背景" })).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByRole("button", { name: "图片" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "装饰边框" })).toBeInTheDocument();
@@ -180,7 +181,7 @@ describe("ChartStylePanel", () => {
     );
 
     expect(screen.getByRole("button", { name: /明细表（旧） · 基础样式/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "图表配色" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "表格配色" })).toBeInTheDocument();
     expect(screen.queryByRole("switch", { name: "背景" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "备注" })).not.toBeInTheDocument();
   });

@@ -1,5 +1,6 @@
 import * as d3 from "d3";
 import type { AntvThemeTokens } from "@/components/charts/engine/antv/theme";
+import { formatCompositeCategoryDisplay } from "@/components/charts/engine/buildDatasetEncoding";
 import { VCDS, resolveAxisFontSize } from "@/components/charts/engine/d3/core/chartVisualTokens";
 
 /** 11px 轴标签下平均每字符占位（中文/数字混合估算） */
@@ -59,14 +60,16 @@ export function resolveRotatedAxisExtraSpan(rotateDeg: number): number {
   return rotateDeg <= -40 ? 24 : 16;
 }
 
-/** 对标 DataEase：槽位不足时截断类目名 */
+/** 对标 DataEase：槽位不足时截断类目名（含多维度复合标签） */
 export function formatAxisCategoryLabel(label: string, slotSpan = 48, rotateDeg = 0): string {
-  return truncateLabel(String(label), maxCharsForSlot(slotSpan, rotateDeg));
+  const display = formatCompositeCategoryDisplay(label);
+  return truncateLabel(display, maxCharsForSlot(slotSpan, rotateDeg));
 }
 
 /** 横向柱图 / 热力图行轴：按可用宽度截断 */
 export function formatHorizontalBandAxisLabel(label: string, maxWidthPx = 120): string {
-  return truncateLabel(String(label), maxCharsForSlot(maxWidthPx, 0));
+  const display = formatCompositeCategoryDisplay(label);
+  return truncateLabel(display, maxCharsForSlot(maxWidthPx, 0));
 }
 
 export function planCategoryAxisLayout(
@@ -77,7 +80,8 @@ export function planCategoryAxisLayout(
 ): CategoryAxisLayout {
   const ticks = pickCategoryTicks(categories, innerSpan, minPx);
   const slotSpan = innerSpan / Math.max(1, ticks.length);
-  const rotateDeg = resolveCategoryLabelRotate(ticks, innerSpan, explicitRotate);
+  const displayTicks = ticks.map((tick) => formatCompositeCategoryDisplay(String(tick)));
+  const rotateDeg = resolveCategoryLabelRotate(displayTicks, innerSpan, explicitRotate);
   return {
     ticks,
     rotateDeg,
@@ -159,7 +163,10 @@ export function resolveHorizontalCategoryAxisLayout(
 
   const bandHeight = innerH / categories.length;
   const ticks = pickCategoryTicks(categories, innerH, minPx);
-  const maxLabelChars = categories.reduce((max, cat) => Math.max(max, String(cat).length), 0);
+  const maxLabelChars = categories.reduce(
+    (max, cat) => Math.max(max, formatCompositeCategoryDisplay(String(cat)).length),
+    0,
+  );
   const labelMaxWidth = estimateAxisLabelWidth(maxLabelChars);
   const leftMargin = Math.max(52, labelMaxWidth + 18);
 

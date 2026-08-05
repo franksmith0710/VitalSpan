@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="300c0000-base" x1="0" y1="0" x2="1920" y2="1080">
+      <stop stop-color="#fff7ed"/>
+      <stop offset="1" stop-color="#ffedd5"/>
+    </linearGradient>
+    <radialGradient id="300c0000-glow" cx="50%" cy="24%" r="45%">
+      <stop stop-color="#fb923c" stop-opacity="0.04"/>
+      <stop offset="1" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#300c0000-base)"/>
+  <rect width="1920" height="1080" fill="url(#300c0000-glow)"/>
+  <rect x="80" y="120" width="420" height="260" rx="6" fill="white" fill-opacity="0.55" stroke="#ea580c" stroke-width="0.8" opacity="0.9"/>
+  <polygon points="104,130 106.3511410091699,136.7639320225002 113.51056516295154,136.9098300562505 107.80422606518061,141.2360679774998 109.87785252292473,148.0901699437495 104,144 98.12214747707527,148.0901699437495 100.19577393481939,141.2360679774998 94.48943483704846,136.90983005625054 101.6488589908301,136.7639320225002" fill="none" stroke="#ea580c" stroke-width="1" opacity="0.4"/>
+  <rect x="1420" y="120" width="420" height="260" rx="6" fill="white" fill-opacity="0.55" stroke="#ea580c" stroke-width="0.8" opacity="0.9"/>
+  <polygon points="1444,130 1446.3511410091699,136.7639320225002 1453.5105651629515,136.9098300562505 1447.8042260651805,141.2360679774998 1449.8778525229247,148.0901699437495 1444,144 1438.1221474770753,148.0901699437495 1440.1957739348195,141.2360679774998 1434.4894348370485,136.90983005625054 1441.6488589908301,136.7639320225002" fill="none" stroke="#ea580c" stroke-width="1" opacity="0.4"/>
+  <rect x="80" y="420" width="1760" height="280" rx="6" fill="white" fill-opacity="0.55" stroke="#ea580c" stroke-width="0.8" opacity="0.9"/>
+  <polygon points="104,430 106.3511410091699,436.7639320225002 113.51056516295154,436.90983005625054 107.80422606518061,441.2360679774998 109.87785252292473,448.09016994374946 104,444 98.12214747707527,448.09016994374946 100.19577393481939,441.2360679774998 94.48943483704846,436.90983005625054 101.6488589908301,436.7639320225002" fill="none" stroke="#ea580c" stroke-width="1" opacity="0.4"/>
+</svg>

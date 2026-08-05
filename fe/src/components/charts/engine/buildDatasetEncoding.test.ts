@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildCartesianCategorySeries,
   compositeCategoryKey,
+  formatCompositeCategoryDisplay,
   resolveCartesianAxisFields,
 } from "./buildDatasetEncoding";
 import type { RenderSpec } from "./types";
@@ -55,5 +56,10 @@ describe("buildCartesianCategorySeries multi category", () => {
     const built = buildCartesianCategorySeries(spec, ROWS, COLUMNS, "line");
     expect(built.xData.sort()).toEqual(["华东", "华北"]);
     expect(built.series.map((s) => s.name).sort()).toEqual(["2025-01", "2025-02"]);
+  });
+
+  it("formatCompositeCategoryDisplay joins internal keys for axis/tooltip", () => {
+    const key = compositeCategoryKey(ROWS[0]!, COLUMNS, ["region", "month"]);
+    expect(formatCompositeCategoryDisplay(key)).toBe("华东 / 2025-01");
   });
 });

@@ -40,6 +40,16 @@ describe("d3 core", () => {
     expect(formatAxisCategoryLabel("短", 48, 0)).toBe("短");
   });
 
+  it("formatAxisCategoryLabel renders multi-dimension composite keys readably", () => {
+    expect(formatAxisCategoryLabel("华东\u00012025-01", 80, 0)).toBe("华东 / 2025-01");
+  });
+
+  it("planCategoryAxisLayout rotates when composite labels are long", () => {
+    const cats = Array.from({ length: 8 }, (_, i) => `产品${i + 1}\u0001类目${i + 1}\u00012025-01-0${i + 1}`);
+    const layout = planCategoryAxisLayout(cats, 160);
+    expect(layout.rotateDeg).toBeLessThan(0);
+  });
+
   it("formatHorizontalBandAxisLabel truncates when width is limited", () => {
     expect(formatHorizontalBandAxisLabel("2024年第一季度", 40)).toMatch(/…$/);
     expect(formatHorizontalBandAxisLabel("短", 80)).toBe("短");

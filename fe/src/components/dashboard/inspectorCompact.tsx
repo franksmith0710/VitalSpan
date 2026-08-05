@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -30,16 +30,9 @@ export const INSPECTOR_SWITCH_SIZE = "sm" as const;
 export const INSPECTOR_NESTED_CARD =
   "space-y-2 rounded-md border border-gray-200 bg-gray-50/70 p-2 dark:border-gray-800 dark:bg-white/[0.03]";
 
-/** 标题行 Switch 与折叠态联动：开 → 展开，关 → 收起 */
-export function useInspectorSectionOpen(defaultOpen: boolean, enabled?: boolean) {
-  const [open, setOpen] = useState(enabled ?? defaultOpen);
-
-  useEffect(() => {
-    if (enabled !== undefined) {
-      setOpen(enabled);
-    }
-  }, [enabled]);
-
+/** 样式栏折叠态：默认收起；与标题行 Switch 独立（对标 DE 开关开仍折叠） */
+export function useInspectorSectionOpen(defaultOpen: boolean) {
+  const [open, setOpen] = useState(defaultOpen);
   return [open, setOpen] as const;
 }
 
@@ -131,7 +124,7 @@ export function ChartInspectorSection({
   children,
   action,
   defaultOpen = false,
-  enabled,
+  enabled: _enabled,
   className,
   "data-testid": testId,
 }: {
@@ -139,12 +132,12 @@ export function ChartInspectorSection({
   children?: ReactNode;
   action?: ReactNode;
   defaultOpen?: boolean;
-  /** 与标题行 Switch 同步：开 → 展开，关 → 收起 */
+  /** @deprecated 开关与折叠独立，不再联动展开 */
   enabled?: boolean;
   className?: string;
   "data-testid"?: string;
 }) {
-  const [open, setOpen] = useInspectorSectionOpen(defaultOpen, enabled);
+  const [open, setOpen] = useInspectorSectionOpen(defaultOpen);
 
   return (
     <Collapsible

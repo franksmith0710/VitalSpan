@@ -16,6 +16,7 @@ import { SearchField } from "@/components/ui/search-field";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PanelEmptyState } from "@/components/ui/panel-empty-state";
 import { VizTemplateCard } from "@/components/dashboard/templates/VizTemplateCard";
+import { TemplateSettingsDialog } from "@/components/dashboard/templates/TemplateSettingsDialog";
 import { VIZ_TEMPLATES_HUB } from "@/components/dashboard/templates/templateLabels";
 import {
   archiveTemplate,
@@ -88,6 +89,7 @@ export function VizTemplatesHubPage() {
   );
   const [q, setQ] = useState("");
   const importRef = useRef<HTMLInputElement>(null);
+  const [settingsItem, setSettingsItem] = useState<DashboardTemplateListItem | null>(null);
 
   useEffect(() => {
     const next = readHubFilters(location.search);
@@ -151,6 +153,20 @@ export function VizTemplatesHubPage() {
     onError: (err) => toast.error(mapApiError(err)),
   });
 
+  const editLayoutMutation = useMutation({
+    mutationFn: (item: DashboardTemplateListItem) =>
+      createFromTemplate(item.id, `${item.name}（编辑）`),
+    onSuccess: (created, item) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboards.all });
+      if (item.surfaceKind === "data-screen") {
+        navigate(dataScreenEditPath(created.id));
+      } else {
+        navigate(`/admin/dashboards/${created.id}/edit`);
+      }
+    },
+    onError: (err) => toast.error(mapApiError(err)),
+  });
+
   const publishMutation = useMutation({
     mutationFn: publishTemplate,
     onSuccess: () => {
@@ -179,7 +195,10 @@ export function VizTemplatesHubPage() {
   });
 
   const pending =
-    useMutation_.isPending || publishMutation.isPending || archiveMutation.isPending;
+    useMutation_.isPending ||
+    editLayoutMutation.isPending ||
+    publishMutation.isPending ||
+    archiveMutation.isPending;
 
   const items = filterTemplatesForHub(listQuery.data?.items ?? []);
 
@@ -200,9 +219,12 @@ export function VizTemplatesHubPage() {
           key={item.id}
           item={item}
           canManage={canManage}
+          canEdit={canEdit}
           pending={pending}
           previewEager={index < eagerCount}
           onUse={() => useMutation_.mutate(item)}
+          onEditLayout={() => editLayoutMutation.mutate(item)}
+          onOpenSettings={() => setSettingsItem(item)}
           onPublish={() => publishMutation.mutate(item.id)}
           onArchive={() => archiveMutation.mutate(item.id)}
         />
@@ -315,6 +337,16 @@ export function VizTemplatesHubPage() {
           )}
         </ListPageTableFrame>
       </ListPageSection>
+
+      <TemplateSettingsDialog
+        open={Boolean(settingsItem)}
+        onOpenChange={(open) => {
+          if (!open) setSettingsItem(null);
+        }}
+        item={settingsItem}
+        onSaved={invalidate}
+        onEditLayout={(item) => editLayoutMutation.mutate(item)}
+      />
     </AdminPageShell>
   );
 }

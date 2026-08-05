@@ -174,7 +174,7 @@ describe("SyncConsumeActionCard", () => {
     renderCard({ sharedTargetJobNames: ["同步1", "demo-orders"] });
 
     await screen.findByRole("button", { name: "一键创建数据集并绑定" });
-    expect(screen.getByText(/还有 2 个任务也写入/)).toBeInTheDocument();
-    expect(screen.getByText(/共用 Dataset/)).toBeInTheDocument();
+    expect(screen.getByText(/2 个历史任务也写入/)).toBeInTheDocument();
+    expect(screen.getByText(/新建任务已禁止共表/)).toBeInTheDocument();
   });
 });

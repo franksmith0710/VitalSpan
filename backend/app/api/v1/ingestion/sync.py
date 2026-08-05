@@ -14,9 +14,16 @@ from app.ingestion.sync_consume import (
     SyncConsumeError,
     ensure_dataset_for_sync_job,
     prepare_sync_consume,
+    refresh_dataset_binding_for_sync_job,
     resolve_consume_status,
 )
-from app.ingestion.target_table_guard import TargetTableConflictError, assert_unique_target_table
+from app.ingestion.target_table_guard import (
+    TargetTableConflictError,
+    TargetTableBusyError,
+    assert_target_table_not_busy,
+    assert_unique_target_table,
+)
+from app.ingestion.etl_templates import default_etl_rules_for_source
 from app.datasources.models import DataSource
 from app.ingestion.cron_validate import validate_schedule_cron
 from app.ingestion.models import (
@@ -197,6 +204,7 @@ class SyncJobConsumeStatus(BaseModel):
     dataset_bound: bool = Field(alias="datasetBound")
     next_action: Literal["prepare", "ensure_dataset", "open_dashboard"] = Field(alias="nextAction")
     consume_label: Literal["ready", "pending_dataset", "pending_prepare"] = Field(alias="consumeLabel")
+    etl_rules_configured: bool = Field(default=False, alias="etlRulesConfigured")
 
     model_config = {"populate_by_name": True}
 
@@ -218,6 +226,16 @@ class SyncJobEnsureDatasetOut(BaseModel):
     bound_config_id: uuid.UUID = Field(alias="boundConfigId")
     created: bool
     bound: bool
+
+    model_config = {"populate_by_name": True}
+
+
+class SyncJobRefreshDatasetOut(BaseModel):
+    dataset_id: str = Field(alias="datasetId")
+    bound_config_id: uuid.UUID = Field(alias="boundConfigId")
+    display_name: str = Field(alias="displayName")
+    columns: list[str]
+    refreshed: bool
 
     model_config = {"populate_by_name": True}
 
@@ -348,6 +366,7 @@ def _status_to_hints(status) -> SyncJobConsumeHints:
         dataset_bound=status.dataset_bound,
         next_action=status.next_action,
         consume_label=status.consume_label,
+        etl_rules_configured=status.etl_rules_configured,
     )
 
 
@@ -468,7 +487,8 @@ def create_sync_job(
         ) from exc
     db.add(job)
     db.flush()
-    db.add(EtlRuleSet(job_id=job.id, rules=[]))
+    default_rules = default_etl_rules_for_source(job.source_type, job.source_table)
+    db.add(EtlRuleSet(job_id=job.id, rules=default_rules))
     db.commit()
     db.refresh(job)
     refresh_all_jobs()
@@ -559,6 +579,35 @@ def post_ensure_dataset(
         bound_config_id=result.bound_config_id,
         created=result.created,
         bound=result.bound,
+    )
+
+
+@router.post("/sync-jobs/{job_id}/refresh-dataset-binding", response_model=SyncJobRefreshDatasetOut)
+def post_refresh_dataset_binding(
+    job_id: uuid.UUID,
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
+    _: Annotated[UserContext, Depends(require_permission(PERM_DATASET_MANAGE))],
+    db: Annotated[Session, Depends(_db)],
+) -> SyncJobRefreshDatasetOut:
+    job = db.get(SyncJob, job_id)
+    if job is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "NOT_FOUND", "message": "任务不存在", "detail": None},
+        )
+    try:
+        result = refresh_dataset_binding_for_sync_job(db, job, actor)
+    except SyncConsumeError as exc:
+        raise HTTPException(
+            status_code=exc.status,
+            detail={"code": exc.code, "message": exc.message, "detail": None},
+        ) from exc
+    return SyncJobRefreshDatasetOut(
+        dataset_id=result.dataset_id,
+        bound_config_id=result.bound_config_id,
+        display_name=result.display_name,
+        columns=result.columns,
+        refreshed=result.refreshed,
     )
 
 
@@ -696,6 +745,17 @@ def trigger_run(
                 "detail": None,
             },
         )
+    try:
+        assert_target_table_not_busy(db, job.target_table, exclude_job_id=job_id)
+    except TargetTableBusyError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "SYNC_TARGET_TABLE_BUSY",
+                "message": str(exc),
+                "detail": {"targetTable": exc.target_table, "jobNames": exc.job_names},
+            },
+        ) from exc
     trace_id = request.headers.get("X-Trace-Id", str(uuid.uuid4()))
     run = SyncRun(job_id=job_id, status="running", trace_id=trace_id)
     db.add(run)

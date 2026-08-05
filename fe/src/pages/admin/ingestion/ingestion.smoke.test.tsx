@@ -432,7 +432,7 @@ describe("ingestion admin smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(await screen.findAllByText("2 任务共表")).toHaveLength(2);
+    expect(await screen.findAllByText("2 历史共表")).toHaveLength(2);
   });
 
   it("SyncJobFormPage_source_table_updates_target_when_not_manual", async () => {

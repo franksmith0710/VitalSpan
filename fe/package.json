@@ -18,7 +18,9 @@
     "fetch:terrain-sat": "node scripts/fetch-terrain-satellite.mjs",
     "build:geo-terrain": "node scripts/build-china-terrain-assets.mjs",
     "generate:gov-assets": "node scripts/generate-gov-template-assets.mjs",
-    "generate:de-dashboard-assets": "node scripts/generate-de-dashboard-assets.mjs"
+    "generate:de-dashboard-assets": "node scripts/generate-de-dashboard-assets.mjs",
+    "generate:template-assets": "npm run generate:gov-assets && npm run generate:de-dashboard-assets",
+    "sync:template-assets": "node scripts/sync-template-assets.mjs"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.18",

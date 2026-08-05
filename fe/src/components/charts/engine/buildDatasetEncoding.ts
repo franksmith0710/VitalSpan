@@ -5,6 +5,35 @@ import { DE_AREA_FILL_OPACITY } from "@/components/charts/engine/presentationCon
 
 export const CARTESIAN_CATEGORY_KEY_SEP = "\u0001";
 
+/** 将内部复合类目标签转为可读展示文案（单维或 tooltip 单行） */
+export function formatCompositeCategoryDisplay(key: string): string {
+  const text = String(key);
+  if (!text.includes(CARTESIAN_CATEGORY_KEY_SEP)) return formatCategoryCellValue(text);
+  return text
+    .split(CARTESIAN_CATEGORY_KEY_SEP)
+    .map(formatCategoryCellValue)
+    .filter((part) => part.length > 0)
+    .join(" / ");
+}
+
+/** 单元格原始值 → 轴标签文案（空/null 不展示） */
+export function formatCategoryCellValue(raw: unknown): string {
+  if (raw == null || raw === "") return "";
+  const text = String(raw).trim();
+  if (!text || text === "null" || text === "undefined") return "";
+  return text;
+}
+
+/** 从复合类目标签推断维度层数 */
+export function inferCompositeCategoryLevels(categories: string[]): number {
+  let levels = 1;
+  for (const category of categories) {
+    if (!category.includes(CARTESIAN_CATEGORY_KEY_SEP)) continue;
+    levels = Math.max(levels, category.split(CARTESIAN_CATEGORY_KEY_SEP).length);
+  }
+  return levels;
+}
+
 export function resolveCartesianAxisFields(encoding: RenderSpec["encoding"]): {
   categoryFields: string[];
   subDim?: string;
@@ -30,7 +59,7 @@ export function compositeCategoryKey(row: unknown[], columns: string[], fields: 
   return fields
     .map((field) => {
       const idx = columns.indexOf(field);
-      return idx >= 0 ? String(row[idx] ?? "") : "";
+      return idx >= 0 ? formatCategoryCellValue(row[idx]) : "";
     })
     .join(CARTESIAN_CATEGORY_KEY_SEP);
 }

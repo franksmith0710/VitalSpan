@@ -9,6 +9,7 @@ import {
   ensureSyncDataset,
   fetchConsumeHints,
   prepareSyncConsume,
+  refreshSyncDatasetBinding,
   type SyncJobConsumeHints,
 } from "@/lib/syncConsumeApi";
 
@@ -40,6 +41,7 @@ export function SyncConsumeActionCard({
   const [loading, setLoading] = useState(true);
   const [preparing, setPreparing] = useState(false);
   const [ensuring, setEnsuring] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refreshHints = useCallback(async () => {
@@ -105,9 +107,26 @@ export function SyncConsumeActionCard({
     }
   };
 
+  const handleRefreshBinding = async () => {
+    setRefreshing(true);
+    setError(null);
+    try {
+      const result = await refreshSyncDatasetBinding(jobId);
+      await refreshHints();
+      onUpdated?.();
+      toast.success(`已刷新 Dataset「${result.displayName}」绑定列（${result.columns.length} 列）`);
+    } catch (err) {
+      const message = mapApiError(err);
+      setError(message);
+      toast.error(message);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const title = jobName ? `任务「${jobName}」同步成功 · 下一步出图` : "同步成功 · 下一步出图";
 
-  const busy = loading || preparing || ensuring;
+  const busy = loading || preparing || ensuring || refreshing;
 
   return (
     <Alert variant="info" className={className}>
@@ -138,11 +157,22 @@ export function SyncConsumeActionCard({
 
           {sharedTargetJobNames.length > 0 ? (
             <p className="text-theme-xs text-warning-700 dark:text-warning-400">
-              还有 {sharedTargetJobNames.length} 个任务也写入
+              检测到 {sharedTargetJobNames.length} 个历史任务也写入
               <span className="font-mono"> {targetTable}</span>
               （{sharedTargetJobNames.slice(0, 3).join("、")}
-              {sharedTargetJobNames.length > 3 ? "…" : ""}），将共用 Dataset
-              <span className="font-mono"> {targetTable}</span>；后跑的全量同步会覆盖分析库数据。
+              {sharedTargetJobNames.length > 3 ? "…" : ""}）。新建任务已禁止共表；建议迁移到独立目标表名。
+            </p>
+          ) : null}
+
+          {hints && hints.etlRulesConfigured === false ? (
+            <p className="text-theme-xs text-warning-700 dark:text-warning-400">
+              尚未配置清洗规则，同步数据将原样写入分析库。
+              <Link
+                to={`/admin/ingestion/sync-jobs/${jobId}/etl-rules`}
+                className="ml-1 text-brand-600 underline-offset-2 hover:underline dark:text-brand-400"
+              >
+                去配置清洗规则
+              </Link>
             </p>
           ) : null}
 
@@ -183,6 +213,18 @@ export function SyncConsumeActionCard({
                   查看数据集
                 </Link>
               </Button>
+              {canManage ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={busy}
+                  loading={refreshing}
+                  onClick={() => void handleRefreshBinding()}
+                >
+                  刷新绑定列
+                </Button>
+              ) : null}
             </div>
           ) : null}
 

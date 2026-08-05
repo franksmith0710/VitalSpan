@@ -7,6 +7,7 @@ import uuid
 from dataclasses import dataclass
 from typing import Literal
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext
@@ -17,7 +18,7 @@ from app.ingestion.analytics_datasource import (
     ensure_analytics_datasource,
     resolve_analytics_datasource_id,
 )
-from app.ingestion.models import SyncJob
+from app.ingestion.models import SyncJob, EtlRuleSet
 from app.metadata.dataset.models import DatasetRecord
 from app.metadata.dataset.schemas import DatasetItemIn, DatasetTableDef
 from app.metadata.dataset import service as dataset_service
@@ -58,6 +59,7 @@ class ConsumePipelineStatus:
     dataset_bound: bool
     next_action: NextAction
     consume_label: ConsumeLabel
+    etl_rules_configured: bool = False
 
 
 @dataclass(frozen=True)
@@ -66,6 +68,15 @@ class EnsureDatasetResult:
     bound_config_id: uuid.UUID
     created: bool
     bound: bool
+
+
+@dataclass(frozen=True)
+class RefreshDatasetBindingResult:
+    dataset_id: str
+    bound_config_id: uuid.UUID
+    display_name: str
+    columns: list[str]
+    refreshed: bool
 
 
 def _stable_ref_id(dataset_id: str) -> uuid.UUID:
@@ -93,6 +104,11 @@ def prepare_sync_consume(db: Session) -> PrepareResult:
         analytics_ready=ds_id is not None,
         created=created,
     )
+
+
+def _etl_rules_configured(db: Session, job_id: uuid.UUID) -> bool:
+    rules_row = db.scalar(select(EtlRuleSet).where(EtlRuleSet.job_id == job_id))
+    return bool(rules_row and rules_row.rules)
 
 
 def resolve_consume_status(db: Session, job: SyncJob) -> ConsumePipelineStatus:
@@ -124,6 +140,7 @@ def resolve_consume_status(db: Session, job: SyncJob) -> ConsumePipelineStatus:
         dataset_bound=dataset_bound,
         next_action=next_action,
         consume_label=consume_label,
+        etl_rules_configured=_etl_rules_configured(db, job.id),
     )
 
 
@@ -266,6 +283,75 @@ def ensure_dataset_for_sync_job(
         bound_config_id=bound_id,
         created=created,
         bound=True,
+    )
+
+
+def refresh_dataset_binding_for_sync_job(
+    db: Session,
+    job: SyncJob,
+    actor: UserContext,
+) -> RefreshDatasetBindingResult:
+    """刷新同步产物 Dataset 显示名与出图绑定列（自动识别，幂等可重复）。"""
+    prep = prepare_sync_consume(db)
+    if not prep.analytics_ready or prep.analytics_datasource_id is None:
+        raise SyncConsumeError(
+            "ANALYTICS_DB_NOT_CONFIGURED",
+            "托管分析库未配置或不可达，请先配置 ANALYTICS_DATABASE_URL 并确保分析库可连接",
+            503,
+        )
+
+    dataset_id = _dataset_id_for_job(job)
+    schema = "public"
+    table = job.target_table
+    qualified = f"{schema}.{table}"
+    ds_id = prep.analytics_datasource_id
+
+    row = db.get(DatasetRecord, dataset_id)
+    if row is None:
+        raise SyncConsumeError(
+            "META_DATASET_NOT_FOUND",
+            "Dataset 不存在，请先一键创建 Dataset",
+            422,
+        )
+
+    display_name = _sync_dataset_display_name(job)
+    row.display_name = display_name
+    row.table_source_datasource_id = ds_id
+    if row.origin != "sync_job" or row.sync_job_id != job.id:
+        row.origin = "sync_job"
+        row.sync_job_id = job.id
+    db.commit()
+
+    all_columns = _list_table_columns(db, actor, ds_id, schema, table)
+    if not all_columns:
+        raise SyncConsumeError(
+            "SYNC_CONSUME_NO_COLUMNS",
+            f"目标表 {qualified} 无可用列，请确认同步已成功写入分析库",
+            422,
+        )
+    bind_columns = suggest_bind_columns(all_columns)
+    bound_id = _bind_dataset_query(
+        db,
+        dataset_id=dataset_id,
+        data_source_id=ds_id,
+        schema=schema,
+        table=table,
+        columns=bind_columns,
+        actor=actor,
+    )
+    logger.info(
+        "sync_consume_dataset_refreshed job=%s dataset=%s bound=%s columns=%s",
+        job.id,
+        dataset_id,
+        bound_id,
+        len(bind_columns),
+    )
+    return RefreshDatasetBindingResult(
+        dataset_id=dataset_id,
+        bound_config_id=bound_id,
+        display_name=display_name,
+        columns=bind_columns,
+        refreshed=True,
     )
 
 

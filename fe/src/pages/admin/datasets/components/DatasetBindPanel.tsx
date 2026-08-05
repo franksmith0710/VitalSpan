@@ -27,6 +27,7 @@ import {
 } from "@/lib/datasetChartBinding";
 import { ANALYTICS_DATASOURCE_CODE, isAnalyticsDatasource } from "@/lib/datasourceRoles";
 import { parseQualifiedTable } from "@/lib/datasetTableUtils";
+import { refreshSyncDatasetBinding } from "@/lib/syncConsumeApi";
 import { queryKeys } from "@/lib/queryKeys";
 import type { DatasetOrigin, DatasetTable } from "../types";
 
@@ -60,6 +61,7 @@ export function DatasetBindPanel({
   const [tableName, setTableName] = useState("");
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [binding, setBinding] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [columnPickKey, setColumnPickKey] = useState("");
 
   const dsQuery = useQuery({
@@ -198,6 +200,21 @@ export function DatasetBindPanel({
       toast.error(mapApiError(err));
     } finally {
       setBinding(false);
+    }
+  };
+
+  const handleRefreshSyncBinding = async () => {
+    if (!syncJobId) return;
+    setRefreshing(true);
+    try {
+      const result = await refreshSyncDatasetBinding(syncJobId);
+      setSelectedColumns(result.columns);
+      toast.success(`已刷新绑定列（${result.columns.length} 列）`);
+      onBound();
+    } catch (err) {
+      toast.error(mapApiError(err));
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -369,11 +386,23 @@ export function DatasetBindPanel({
           ) : null}
         </div>
 
-        <div className="flex justify-end">
+        <div className="flex flex-wrap justify-end gap-2">
+          {isSyncOrigin && syncJobId && boundConfigId ? (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={refreshing || binding}
+              loading={refreshing}
+              loadingText="刷新中…"
+              onClick={() => void handleRefreshSyncBinding()}
+            >
+              刷新绑定（自动识别）
+            </Button>
+          ) : null}
           <Button
             type="button"
             variant="primary"
-            disabled={!selectedDs || !tableName || selectedColumns.length === 0 || binding}
+            disabled={!selectedDs || !tableName || selectedColumns.length === 0 || binding || refreshing}
             loading={binding}
             loadingText="绑定中…"
             onClick={() => void handleBind()}

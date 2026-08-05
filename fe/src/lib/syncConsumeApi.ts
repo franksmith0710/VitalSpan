@@ -13,6 +13,7 @@ export type SyncJobConsumeHints = {
   datasetBound: boolean;
   nextAction: ConsumeNextAction;
   consumeLabel: ConsumeLabel;
+  etlRulesConfigured?: boolean;
 };
 
 export type SyncJobConsumeStatus = {
@@ -39,6 +40,18 @@ export async function ensureSyncDataset(jobId: string): Promise<{
   bound: boolean;
 }> {
   return apiFetch(`/api/v1/ingestion/sync-jobs/${jobId}/ensure-dataset`, { method: "POST" });
+}
+
+export async function refreshSyncDatasetBinding(jobId: string): Promise<{
+  datasetId: string;
+  boundConfigId: string;
+  displayName: string;
+  columns: string[];
+  refreshed: boolean;
+}> {
+  return apiFetch(`/api/v1/ingestion/sync-jobs/${jobId}/refresh-dataset-binding`, {
+    method: "POST",
+  });
 }
 
 export function consumeLabelText(label: ConsumeLabel): string {

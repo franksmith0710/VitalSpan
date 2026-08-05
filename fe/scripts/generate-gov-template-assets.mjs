@@ -27,6 +27,11 @@ const DARK_PALETTES = {
   slate: { baseFrom: "#0f1419", baseTo: "#334155", accent: "#94a3b8", glow: "#64748b", glowOpacity: 0.12, motif: "grid-dot" },
   teal: { baseFrom: "#042f2e", baseTo: "#115e59", accent: "#2dd4bf", glow: "#14b8a6", glowOpacity: 0.15, motif: "wave" },
   violet: { baseFrom: "#1a0a2e", baseTo: "#4c1d95", accent: "#a78bfa", glow: "#8b5cf6", glowOpacity: 0.14, motif: "chevron" },
+  gold: { baseFrom: "#1a1408", baseTo: "#713f12", accent: "#fbbf24", glow: "#d97706", glowOpacity: 0.16, motif: "star" },
+  bronze: { baseFrom: "#1a1008", baseTo: "#57534e", accent: "#d6a06a", glow: "#a16207", glowOpacity: 0.14, motif: "shield" },
+  cobalt: { baseFrom: "#081018", baseTo: "#1e3a8a", accent: "#3b82f6", glow: "#60a5fa", glowOpacity: 0.16, motif: "orbit" },
+  magenta: { baseFrom: "#1a0514", baseTo: "#831843", accent: "#f472b6", glow: "#ec4899", glowOpacity: 0.14, motif: "chevron" },
+  lime: { baseFrom: "#0a1408", baseTo: "#365314", accent: "#a3e635", glow: "#84cc16", glowOpacity: 0.13, motif: "leaf" },
 };
 
 const LIGHT_PALETTES = {
@@ -37,18 +42,66 @@ const LIGHT_PALETTES = {
   mint: { base: "#f8fafc", accent: "#047857", cardTint: "#f0fdf4", accentLight: "#10b981", motif: "leaf" },
   lavender: { base: "#fafafa", accent: "#6d28d9", cardTint: "#f5f3ff", accentLight: "#8b5cf6", motif: "star" },
   rose: { base: "#fafafa", accent: "#be123c", cardTint: "#fff1f2", accentLight: "#fb7185", motif: "shield" },
+  sand: { base: "#faf8f5", accent: "#b45309", cardTint: "#f5f0e8", accentLight: "#d97706", motif: "diamond" },
+  sky: { base: "#f0f9ff", accent: "#0284c7", cardTint: "#e0f2fe", accentLight: "#38bdf8", motif: "hex" },
+  peach: { base: "#fff7ed", accent: "#ea580c", cardTint: "#ffedd5", accentLight: "#fb923c", motif: "star" },
+  sage: { base: "#f6f7f4", accent: "#4d7c0f", cardTint: "#ecfccb", accentLight: "#65a30d", motif: "leaf" },
+  coral: { base: "#fff5f5", accent: "#e11d48", cardTint: "#ffe4e6", accentLight: "#fb7185", motif: "shield" },
 };
 
 /** 深色 canvas 保留供选用；内置模板已切换浅色 clean-header */
-const DARK_PATTERNS = ["command", "aurora", "honeycomb", "circuit", "hud-scan", "topbar-icons"];
+const DARK_PATTERNS = [
+  "command",
+  "aurora",
+  "honeycomb",
+  "circuit",
+  "hud-scan",
+  "topbar-icons",
+  "gradient-mesh",
+  "radial-pulse",
+];
 /** 浅色 pattern；clean-header 为政务模板默认（顶栏线 + 无装饰） */
-const LIGHT_PATTERNS = ["clean-header", "header-band", "card-float", "watermark", "corner-fold", "dot-matrix", "ribbon"];
+const LIGHT_PATTERNS = [
+  "clean-header",
+  "header-band",
+  "card-float",
+  "watermark",
+  "corner-fold",
+  "dot-matrix",
+  "ribbon",
+  "side-accent",
+];
 
 const PANEL_STYLES = ["de-frame", "hud-bracket", "badge-header", "tech-rail"];
-const PANEL_COLORS = ["cyan", "indigo", "emerald", "amber", "crimson", "royal"];
+const PANEL_COLORS = [
+  "cyan",
+  "indigo",
+  "emerald",
+  "amber",
+  "crimson",
+  "royal",
+  "slate",
+  "teal",
+  "violet",
+  "gold",
+  "bronze",
+  "cobalt",
+  "magenta",
+];
 
 const TITLE_STYLES = ["diamond-flank", "shield-badge", "hex-nodes"];
-const TITLE_COLORS = ["cyan", "indigo", "emerald", "amber", "royal"];
+const TITLE_COLORS = [
+  "cyan",
+  "indigo",
+  "emerald",
+  "amber",
+  "royal",
+  "teal",
+  "violet",
+  "gold",
+  "cobalt",
+  "magenta",
+];
 
 // ---------------------------------------------------------------------------
 // Deterministic IDs (stable across regenerations)
@@ -303,7 +356,6 @@ function darkPatternBody(pattern, palette, accent, w, h, id) {
   ${sideRails(w, h, accent, 0.25)}`,
       };
     case "topbar-icons":
-    default:
       return {
         extraDefs: "",
         body: `${headerBar(w, accent, palette, id, true)}
@@ -311,6 +363,30 @@ function darkPatternBody(pattern, palette, accent, w, h, id) {
   <rect x="60" y="100" width="${w - 120}" height="${h - 160}" fill="none" stroke="${accent}" stroke-width="0.5" opacity="0.15" rx="2"/>
   ${renderMotif(motif, w / 2, h * 0.52, 60, accent, 0.1)}
   ${Array.from({ length: 3 }, (_, i) => renderMotif(["hex", "diamond", "shield"][i], 80 + i * 40, h - 60, 12, accent, 0.3)).join("\n  ")}`,
+      };
+    case "gradient-mesh":
+      return {
+        extraDefs: `<radialGradient id="${pid}" cx="28%" cy="18%" r="55%"><stop stop-color="${accent}" stop-opacity="0.18"/><stop offset="1" stop-opacity="0"/></radialGradient>
+  <radialGradient id="${pid}b" cx="78%" cy="82%" r="50%"><stop stop-color="${palette.glow}" stop-opacity="0.14"/><stop offset="1" stop-opacity="0"/></radialGradient>`,
+        body: `<rect width="${w}" height="${h}" fill="url(#${pid})"/>
+  <rect width="${w}" height="${h}" fill="url(#${pid}b)"/>
+  ${cornerBrackets(24, 24, w - 48, h - 48, accent, 48, 2, 0.45)}
+  ${auroraWaves(w, h, accent, palette.glow)}`,
+      };
+    case "radial-pulse":
+      return {
+        extraDefs: "",
+        body: `${scanRing(w / 2, h * 0.48, 160, accent)}
+  ${scanRing(w / 2, h * 0.48, 260, accent)}
+  ${scanRing(w / 2, h * 0.48, 360, accent)}
+  ${cornerBrackets(20, 20, w - 40, h - 40, accent, 40, 1.5, 0.4)}
+  ${renderMotif(motif, w / 2, h * 0.48, 72, accent, 0.1)}`,
+      };
+    default:
+      return {
+        extraDefs: "",
+        body: `${headerBar(w, accent, palette, id, true)}
+  ${cornerBrackets(40, 88, w - 80, h - 128, accent, 32, 1.5, 0.4)}`,
       };
   }
 }
@@ -358,12 +434,23 @@ function lightPatternBody(pattern, palette, accent, w, h, id) {
   ${renderMotif(motif, w / 2, h * 0.35, 50, accent, 0.06)}`,
       };
     case "ribbon":
-    default:
       return {
         extraDefs: `<linearGradient id="${pid}" x1="0" y1="0" x2="${w}" y2="0"><stop offset="0%" stop-color="${accent}" stop-opacity="0"/><stop offset="50%" stop-color="${accent}" stop-opacity="0.06"/><stop offset="100%" stop-color="${accent}" stop-opacity="0"/></linearGradient>`,
         body: `<rect y="${h * 0.12}" width="${w}" height="48" fill="url(#${pid})"/>
   <rect y="${h * 0.72}" width="${w}" height="32" fill="url(#${pid})" opacity="0.7"/>
   ${Array.from({ length: 4 }, (_, i) => iconDiamond(200 + i * 400, h * 0.12 + 24, 8, accent, 0.25)).join("\n  ")}`,
+      };
+    case "side-accent":
+      return {
+        extraDefs: `<linearGradient id="${pid}" x1="0" y1="0" x2="1" y2="0"><stop stop-color="${accent}" stop-opacity="0.14"/><stop offset="0.12" stop-opacity="0"/></linearGradient>`,
+        body: `<rect width="10" height="${h}" fill="url(#${pid})"/>
+  <line x1="10" y1="0" x2="10" y2="${h}" stroke="${accent}" stroke-width="1" opacity="0.22"/>
+  <rect x="24" y="64" width="${w - 48}" height="3" fill="${accent}" opacity="0.08" rx="1.5"/>`,
+      };
+    default:
+      return {
+        extraDefs: "",
+        body: `<line x1="24" y1="56" x2="${w - 24}" y2="56" stroke="${accent}" stroke-width="1" opacity="0.12"/>`,
       };
   }
 }
@@ -637,7 +724,7 @@ function generate() {
 
   const manifest = {
     id: PACK_ID,
-    version: 3,
+    version: 4,
     generatedAt,
     total: items.length,
     categories,
@@ -697,7 +784,7 @@ cd fe && npm run generate:gov-assets
 
 function verify(manifest) {
   const errors = [];
-  if (manifest.total < 100) errors.push(`total ${manifest.total} < 100`);
+  if (manifest.total < 200) errors.push(`total ${manifest.total} < 200`);
   for (const [cat, meta] of Object.entries(manifest.categories)) {
     const actual = manifest.items.filter((i) => i.category === cat).length;
     if (actual !== meta.count) errors.push(`${cat}: expected ${meta.count}, got ${actual}`);

@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { Archive, Download, MoreHorizontal } from "lucide-react";
+import { Archive, Download, MoreHorizontal, Pencil, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Button, IconButton } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import {
   statusLabel,
   surfaceLabel,
   TEMPLATE_ACTIONS,
+  canEditTemplateMeta,
   visibilityLabel,
 } from "@/components/dashboard/templates/templateLabels";
 import {
@@ -43,7 +44,10 @@ import {
 type VizTemplateCardProps = {
   item: DashboardTemplateListItem;
   canManage: boolean;
+  canEdit: boolean;
   onUse: () => void;
+  onEditLayout: () => void;
+  onOpenSettings: () => void;
   onPublish: () => void;
   onArchive: () => void;
   pending: boolean;
@@ -59,7 +63,10 @@ function sanitizeFilename(name: string): string {
 export function VizTemplateCard({
   item,
   canManage,
+  canEdit,
   onUse,
+  onEditLayout,
+  onOpenSettings,
   onPublish,
   onArchive,
   pending,
@@ -71,6 +78,11 @@ export function VizTemplateCard({
   const showPublish = canManage && item.status === "draft";
   const showArchive =
     canManage && item.status === "published" && item.visibility !== "builtin";
+  const showSettings = canEditTemplateMeta(item, canManage);
+  const editLayoutTitle =
+    item.visibility === "builtin"
+      ? "基于内置模板创建副本并在编辑器中调整布局"
+      : "在可视化编辑器中调整布局";
   const metaParts = [
     categoryLabel(item.categoryKey),
     visibilityLabel(item.visibility),
@@ -109,6 +121,19 @@ export function VizTemplateCard({
           <Button type="button" variant="primary" size="sm" disabled={pending} onClick={onUse}>
             {TEMPLATE_ACTIONS.use}
           </Button>
+          {canEdit ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className={HUB_CARD_PREVIEW_HOVER_OUTLINE_BTN_CLASS}
+              disabled={pending}
+              title={editLayoutTitle}
+              onClick={onEditLayout}
+            >
+              {TEMPLATE_ACTIONS.edit}
+            </Button>
+          ) : null}
           <Button
             type="button"
             variant="outline"
@@ -153,6 +178,19 @@ export function VizTemplateCard({
                 </IconButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-[10rem]">
+                {canEdit ? (
+                  <DropdownMenuItem disabled={pending} onClick={onEditLayout}>
+                    <Pencil className="size-4" aria-hidden />
+                    {TEMPLATE_ACTIONS.editLayout}
+                  </DropdownMenuItem>
+                ) : null}
+                {showSettings ? (
+                  <DropdownMenuItem disabled={pending} onClick={onOpenSettings}>
+                    <Settings2 className="size-4" aria-hidden />
+                    {TEMPLATE_ACTIONS.templateSettings}
+                  </DropdownMenuItem>
+                ) : null}
+                {canEdit || showSettings ? <DropdownMenuSeparator /> : null}
                 <DropdownMenuItem disabled={exporting} onClick={handleExport}>
                   <Download className="size-4" aria-hidden />
                   {TEMPLATE_ACTIONS.export}

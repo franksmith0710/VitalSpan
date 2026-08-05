@@ -148,6 +148,7 @@ describe("VizTemplatesHubPage smoke", () => {
     expect(screen.queryByText("空白看板")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "预览" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "使用模板" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "编辑" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "双栏 KPI 分析 更多操作" })).toBeInTheDocument();
   });
 

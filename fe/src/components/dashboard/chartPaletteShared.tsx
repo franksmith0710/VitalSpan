@@ -166,7 +166,7 @@ type ChartPaletteNestedSectionProps = {
   defaultOpen?: boolean;
   action?: ReactNode;
   compact?: boolean;
-  /** 与标题行 Switch 同步：开 → 展开，关 → 收起 */
+  /** @deprecated 开关与折叠独立，不再联动展开 */
   enabled?: boolean;
 };
 
@@ -177,9 +177,8 @@ export function ChartPaletteNestedSection({
   defaultOpen = false,
   action,
   compact = false,
-  enabled,
 }: ChartPaletteNestedSectionProps) {
-  const [open, setOpen] = useInspectorSectionOpen(defaultOpen, enabled);
+  const [open, setOpen] = useInspectorSectionOpen(defaultOpen);
 
   return (
     <Collapsible

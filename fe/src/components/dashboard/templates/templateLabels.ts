@@ -29,6 +29,9 @@ export const VIZ_TEMPLATES_HUB = {
 export const TEMPLATE_ACTIONS = {
   use: "使用模板",
   preview: "预览",
+  edit: "编辑",
+  editLayout: "编辑布局",
+  templateSettings: "模板设置",
   export: "导出",
   publish: "发布",
   archive: "下架",
@@ -38,6 +41,14 @@ export const TEMPLATE_ACTIONS = {
   templateSection: "模板",
   exportSection: "导出",
 } as const;
+
+/** 内置模板只读；组织/私有模板可改元数据 */
+export function canEditTemplateMeta(
+  item: DashboardTemplateListItem,
+  canManage: boolean,
+): boolean {
+  return canManage && item.visibility !== "builtin";
+}
 
 export const GOV_SECTION_LABELS = {
   dataScreen: "数据大屏",
