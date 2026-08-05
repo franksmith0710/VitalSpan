@@ -1884,7 +1884,7 @@
       "category": "chart",
       "styleSections": "axis → cartesianShape → background → palette → title → remark → legend → label → tooltip",
       "inspectorCaps": "legend, label, dataZoom, markLines, conditional, remark",
-      "d3Matrix": "legend:partial; label:wired; dataZoom:wired; markLines:wired; conditional:wired",
+      "d3Matrix": "legend:wired; label:wired; dataZoom:wired; markLines:wired; conditional:wired",
       "paletteOpacity": "hidden",
       "seriesGradient": "wired",
       "knownGaps": "legend partial，主系列覆盖待确认; paletteOpacity UI 已门控隐藏",

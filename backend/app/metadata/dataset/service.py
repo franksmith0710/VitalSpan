@@ -289,6 +289,23 @@ def bind_query_config(dataset_id: str, config_id: uuid.UUID, user: UserContext) 
     _assert_dataset_write_access(user, dataset_id)
     from app.query.config_store.service import get_config_by_id
 
+    def _qualified_table(schema: str | None, table: str | None) -> str:
+        if not table:
+            return ""
+        if schema:
+            return f"{schema}.{table}"
+        return table
+
+    def _expected_sync_table(row: DatasetRecord) -> str | None:
+        if not row.tables:
+            return None
+        first = row.tables[0]
+        if isinstance(first, dict):
+            name = first.get("name")
+            return str(name) if name else None
+        name = getattr(first, "name", None)
+        return str(name) if name else None
+
     def _op(session: Session) -> DatasetItemOut:
         row = session.get(DatasetRecord, dataset_id)
         if row is None:
@@ -299,12 +316,6 @@ def bind_query_config(dataset_id: str, config_id: uuid.UUID, user: UserContext) 
                 META_DATASET_CONFIG_TYPE_INVALID, "config must be dataset_query", 422,
             )
         if row.origin == "sync_job":
-            if row.bound_config_id is not None and row.bound_config_id != config_id:
-                raise DatasetError(
-                    META_DATASET_SYNC_BIND_LOCKED,
-                    "同步产物 Dataset 绑定已锁定，不能改绑到其他连接",
-                    422,
-                )
             from app.ingestion.analytics_datasource import resolve_analytics_datasource_id
 
             analytics_id = resolve_analytics_datasource_id(session)
@@ -316,6 +327,18 @@ def bind_query_config(dataset_id: str, config_id: uuid.UUID, user: UserContext) 
                     "同步产物 Dataset 只能绑定托管分析库",
                     422,
                 )
+            expected_table = _expected_sync_table(row)
+            new_schema = str(payload.get("schema") or "public")
+            new_table = str(payload.get("table") or "")
+            new_qualified = _qualified_table(new_schema, new_table)
+            if expected_table and new_qualified != expected_table:
+                bare = new_table or new_qualified
+                if expected_table != bare and not expected_table.endswith(f".{bare}"):
+                    raise DatasetError(
+                        META_DATASET_SYNC_BIND_LOCKED,
+                        "同步产物 Dataset 不能改绑到其他表",
+                        422,
+                    )
         row.bound_config_id = config_id
         session.flush()
         return _row_to_out(row)

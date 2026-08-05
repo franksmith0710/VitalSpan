@@ -84,7 +84,12 @@ def test_ensure_dataset_for_sync_job_creates_and_binds(
     db_session.commit()
 
     mock_columns = MagicMock()
-    mock_columns.items = [SimpleNamespace(name="id"), SimpleNamespace(name="amount")]
+    mock_columns.items = [
+        SimpleNamespace(name="id"),
+        SimpleNamespace(name="amount"),
+        SimpleNamespace(name="product_name"),
+        SimpleNamespace(name="internal_flag"),
+    ]
 
     with (
         patch(
@@ -105,6 +110,17 @@ def test_ensure_dataset_for_sync_job_creates_and_binds(
     row = db_session.get(DatasetRecord, dataset_id)
     assert row is not None
     assert row.bound_config_id == result.bound_config_id
+    assert row.display_name == "同步：truth-job"
+    assert row.table_source_datasource_id == ds_id
+
+    from app.query.config_store.service import get_config_by_id
+
+    bound = get_config_by_id(db_session, result.bound_config_id)
+    payload = bound.payload if isinstance(bound.payload, dict) else {}
+    bound_columns = payload.get("columns", [])
+    assert "amount" in bound_columns
+    assert "product_name" in bound_columns
+    assert bound_columns  # suggest_bind_columns, not empty
 
     db_session.delete(job)
     if row:

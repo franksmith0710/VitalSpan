@@ -20,17 +20,28 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
+import { isAnalyticsDatasource } from "@/lib/datasourceRoles";
 import { queryKeys } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";
-import type { DatasetTable } from "./types";
+import type { DatasetOrigin, DatasetTable } from "./types";
 
 type DsItem = {
   id: string;
   name: string;
+  code?: string;
   database?: string;
   type?: string;
   port?: number;
 };
+
+function filterDatasourcesForOrigin(items: DsItem[], origin: DatasetOrigin): DsItem[] {
+  if (origin !== "sync_job") return items;
+  const analytics = items.filter((item) => isAnalyticsDatasource(item.code));
+  if (analytics.length > 0) return analytics;
+  return items.filter(
+    (item) => item.type === "postgresql" || item.type === "postgres",
+  );
+}
 
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -68,6 +79,7 @@ export function DatasetTablePicker({
   prefillTable,
   savedDataSourceId,
   onDataSourceIdChange,
+  origin = "manual",
 }: {
   tables: DatasetTable[];
   onChange: (next: DatasetTable[]) => void;
@@ -75,7 +87,10 @@ export function DatasetTablePicker({
   prefillTable?: string;
   savedDataSourceId?: string;
   onDataSourceIdChange?: (dataSourceId: string) => void;
+  origin?: DatasetOrigin;
 }) {
+  const isSyncOrigin = origin === "sync_job";
+  const readOnlyTables = isSyncOrigin && tables.length > 0;
   const [dataSourceId, setDataSourceId] = useState("");
   const [tableSourceId, setTableSourceId] = useState<string | null>(null);
   const [selection, setSelection] = useState<TableSelection | null>(null);
@@ -88,16 +103,20 @@ export function DatasetTablePicker({
   });
 
   const items = dsQuery.data?.items ?? [];
-  const selectedDs = items.find((d) => d.id === dataSourceId);
+  const selectableItems = useMemo(
+    () => filterDatasourcesForOrigin(items, origin),
+    [items, origin],
+  );
+  const selectedDs = selectableItems.find((d) => d.id === dataSourceId);
 
   useEffect(() => {
-    if (items.length === 0) return;
+    if (selectableItems.length === 0) return;
     const saved = savedDataSourceId || preferredDataSourceId;
     setDataSourceId((current) => {
-      if (current && items.some((d) => d.id === current)) return current;
-      return resolvePreferredDataSourceId(items, saved);
+      if (current && selectableItems.some((d) => d.id === current)) return current;
+      return resolvePreferredDataSourceId(selectableItems, saved);
     });
-  }, [items, preferredDataSourceId, savedDataSourceId]);
+  }, [selectableItems, preferredDataSourceId, savedDataSourceId]);
 
   const selectedNames = useMemo(() => new Set(tables.map((t) => t.name)), [tables]);
   const lockedSourceId = tableSourceId ?? (tables.length > 0 ? dataSourceId : null);
@@ -124,6 +143,7 @@ export function DatasetTablePicker({
   };
 
   const handleDataSourceChange = (nextId: string) => {
+    if (readOnlyTables) return;
     if (lockedSourceId && nextId !== lockedSourceId && tables.length > 0) {
       toast.warning("已选表绑定当前数据源，请先清空已选表再切换数据源");
       return;
@@ -162,21 +182,32 @@ export function DatasetTablePicker({
           <div className="shrink-0 space-y-3 border-b border-gray-100 px-3 py-3 dark:border-gray-800">
             <div className="grid gap-1.5">
               <Label htmlFor="dataset-datasource" className="text-theme-xs text-gray-600 dark:text-gray-400">
-                数据源
+                {isSyncOrigin ? "同步产出库（托管分析库）" : "数据源"}
               </Label>
               {dsQuery.isLoading ? (
                 <Skeleton className="h-11 w-full rounded-lg" />
-              ) : items.length === 0 ? (
-                <p className="text-theme-xs text-gray-500">暂无可用数据源，请先在「数据源」中创建。</p>
+              ) : selectableItems.length === 0 ? (
+                <p className="text-theme-xs text-gray-500">
+                  {isSyncOrigin
+                    ? "未登记托管分析库，请先完成同步或配置 ANALYTICS_DATABASE_URL。"
+                    : "暂无可用数据源，请先在「数据源」中创建。"}
+                </p>
               ) : !dataSourceId ? (
                 <Skeleton className="h-11 w-full rounded-lg" />
+              ) : readOnlyTables || isSyncOrigin ? (
+                <p
+                  id="dataset-datasource"
+                  className="flex h-11 items-center rounded-lg border border-gray-200 bg-gray-50 px-3 text-theme-sm dark:border-gray-800 dark:bg-white/[0.02]"
+                >
+                  {selectedDs?.name ?? "托管分析库"}
+                </p>
               ) : (
                 <Select value={dataSourceId} onValueChange={handleDataSourceChange}>
                   <SelectTrigger id="dataset-datasource" className="h-11" aria-label="选择数据源">
                     <SelectValue placeholder="选择数据源" />
                   </SelectTrigger>
                   <SelectContent>
-                    {items.map((d) => (
+                    {selectableItems.map((d) => (
                       <SelectItem key={d.id} value={d.id}>
                         {d.name}
                       </SelectItem>
@@ -185,6 +216,11 @@ export function DatasetTablePicker({
                 </Select>
               )}
             </div>
+            {isSyncOrigin ? (
+              <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+                同步产物固定写入托管分析库；此处仅浏览同步目标表结构，不能改选业务源连接。
+              </p>
+            ) : null}
             <div className="flex items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2">
                 <Table2 className="size-4 shrink-0 text-gray-400" aria-hidden />
@@ -193,7 +229,7 @@ export function DatasetTablePicker({
                   {tables.length}
                 </Badge>
               </div>
-              {tables.length > 0 ? (
+              {tables.length > 0 && !readOnlyTables ? (
                 <Button
                   type="button"
                   variant="ghost"
@@ -223,7 +259,9 @@ export function DatasetTablePicker({
           <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-2">
             {tables.length === 0 ? (
               <p className="px-2 py-8 text-center text-theme-xs leading-relaxed text-gray-400 dark:text-gray-500">
-                右侧浏览 Schema，双击表名或点字段面板的「加入 Dataset」
+                {isSyncOrigin
+                  ? "同步产物表由同步任务自动登记，保存后在此查看。"
+                  : "右侧浏览 Schema，双击表名或点字段面板的「加入 Dataset」"}
               </p>
             ) : filteredTables.length === 0 ? (
               <p className="px-2 py-6 text-center text-theme-xs text-gray-400">无匹配表</p>
@@ -235,14 +273,16 @@ export function DatasetTablePicker({
                       <span className="min-w-0 flex-1 truncate px-2 py-1.5 font-mono text-theme-xs text-gray-700 dark:text-gray-300">
                         {t.name}
                       </span>
-                      <button
-                        type="button"
-                        className="mr-1 shrink-0 rounded-md p-1 text-gray-400 opacity-0 transition-opacity hover:bg-gray-100 hover:text-gray-700 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/20 dark:hover:bg-white/10 dark:hover:text-gray-200"
-                        aria-label={`移除 ${t.name}`}
-                        onClick={() => removeTable(t.name)}
-                      >
-                        <X className="size-3.5" />
-                      </button>
+                      {!readOnlyTables ? (
+                        <button
+                          type="button"
+                          className="mr-1 shrink-0 rounded-md p-1 text-gray-400 opacity-0 transition-opacity hover:bg-gray-100 hover:text-gray-700 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/20 dark:hover:bg-white/10 dark:hover:text-gray-200"
+                          aria-label={`移除 ${t.name}`}
+                          onClick={() => removeTable(t.name)}
+                        >
+                          <X className="size-3.5" />
+                        </button>
+                      ) : null}
                     </div>
                   </li>
                 ))}
@@ -262,7 +302,7 @@ export function DatasetTablePicker({
               className="h-full min-h-0"
               onSelectionChange={setSelection}
               addedTableNames={selectedNames}
-              onAddTable={addTable}
+              onAddTable={readOnlyTables ? undefined : addTable}
             />
           ) : (
             <div className="flex h-full min-h-[280px] items-center justify-center px-6 text-center">

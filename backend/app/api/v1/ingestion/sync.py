@@ -16,6 +16,7 @@ from app.ingestion.sync_consume import (
     prepare_sync_consume,
     resolve_consume_status,
 )
+from app.ingestion.target_table_guard import TargetTableConflictError, assert_unique_target_table
 from app.datasources.models import DataSource
 from app.ingestion.cron_validate import validate_schedule_cron
 from app.ingestion.models import (
@@ -454,6 +455,17 @@ def create_sync_job(
         )
     except SourceResolverError as exc:
         raise http_exception_from_resolver(exc) from exc
+    try:
+        assert_unique_target_table(db, payload.target_table)
+    except TargetTableConflictError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "SYNC_TARGET_TABLE_CONFLICT",
+                "message": str(exc),
+                "detail": {"targetTable": exc.target_table, "jobNames": exc.job_names},
+            },
+        ) from exc
     db.add(job)
     db.flush()
     db.add(EtlRuleSet(job_id=job.id, rules=[]))
@@ -580,6 +592,17 @@ def update_sync_job(
         )
     except SourceResolverError as exc:
         raise http_exception_from_resolver(exc) from exc
+    try:
+        assert_unique_target_table(db, payload.target_table, exclude_job_id=job_id)
+    except TargetTableConflictError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "SYNC_TARGET_TABLE_CONFLICT",
+                "message": str(exc),
+                "detail": {"targetTable": exc.target_table, "jobNames": exc.job_names},
+            },
+        ) from exc
     db.commit()
     db.refresh(job)
     refresh_all_jobs()

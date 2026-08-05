@@ -63,7 +63,7 @@
 | chart-mix | axis → cartesianShape → background → palette → title → remark → legend → label → tooltip | legend, label, dataZoom, markLines, conditional, remark | legend:wired; label:wired; dataZoom:wired; markLines:wired; conditional:partial | hidden | wired | paletteOpacity UI 已门控隐藏 | p0-fixed |
 | chart-mix-group | axis → cartesianShape → background → palette → title → remark → legend → label → tooltip | legend, label, dataZoom, markLines, conditional, remark | legend:wired; label:wired; dataZoom:wired; markLines:wired; conditional:partial | hidden | wired | paletteOpacity UI 已门控隐藏 | p0-fixed |
 | chart-mix-stack | axis → cartesianShape → background → palette → title → remark → legend → label → tooltip | legend, label, dataZoom, markLines, conditional, remark | legend:wired; label:wired; dataZoom:wired; markLines:wired; conditional:partial | hidden | wired | paletteOpacity UI 已门控隐藏 | p0-fixed |
-| chart-mix-dual-line | axis → cartesianShape → background → palette → title → remark → legend → label → tooltip | legend, label, dataZoom, markLines, conditional, remark | legend:partial; label:wired; dataZoom:wired; markLines:wired; conditional:wired | hidden | wired | legend partial，主系列覆盖待确认; paletteOpacity UI 已门控隐藏 | p1-backlog |
+| chart-mix-dual-line | axis → cartesianShape → background → palette → title → remark → legend → label → tooltip | legend, label, dataZoom, markLines, conditional, remark | legend:wired; label:wired; dataZoom:wired; markLines:wired; conditional:wired | hidden | wired | legend partial，主系列覆盖待确认; paletteOpacity UI 已门控隐藏 | p1-backlog |
 ## B. 非图表 Widget（4）
 
 | widget | Inspector 字段 | 消费点 | D3 matrix | paletteOpacity | seriesGradient | knownGaps | status |

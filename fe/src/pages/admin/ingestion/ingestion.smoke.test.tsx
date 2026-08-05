@@ -365,11 +365,11 @@ describe("ingestion admin smoke", () => {
     );
     const targetInput = await screen.findByLabelText("目标表");
     fireEvent.change(targetInput, { target: { value: "orders_clean" } });
-    expect(await screen.findByText("目标表与已有任务重复")).toBeInTheDocument();
+    expect(await screen.findByText("目标表已被占用")).toBeInTheDocument();
     expect(screen.getByText(/同步1/)).toBeInTheDocument();
   });
 
-  it("SyncJobFormPage_shared_target_submit_requires_confirm", async () => {
+  it("SyncJobFormPage_shared_target_submit_blocked", async () => {
     setViewport(1400);
     mockNewJobFormBootstrap([SAMPLE_MYSQL_DS], [
       {
@@ -380,7 +380,7 @@ describe("ingestion admin smoke", () => {
         enabled: true,
         schedule_cron: null,
       },
-    ]).mockResolvedValueOnce({ id: "shared-job" });
+    ]);
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
         <Routes>
@@ -395,14 +395,12 @@ describe("ingestion admin smoke", () => {
     fireEvent.change(targetInput, { target: { value: "orders_clean" } });
     fireEvent.change(screen.getByLabelText("任务名称"), { target: { value: "共表任务" } });
     fireEvent.click(screen.getByRole("button", { name: "创建" }));
-    expect(await screen.findByText("目标表已被其他任务使用")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "仍要保存" }));
-    await waitFor(() => {
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        "/api/v1/ingestion/sync-jobs",
-        expect.objectContaining({ method: "POST" }),
-      );
-    });
+    expect(await screen.findByText("目标表已被占用")).toBeInTheDocument();
+    expect(
+      mockApiFetch.mock.calls.some(
+        (c) => typeof c[0] === "string" && c[0].includes("/sync-jobs") && c[1]?.method === "POST",
+      ),
+    ).toBe(false);
   });
 
   it("SyncJobsPage_shows_shared_target_badge", async () => {
@@ -439,7 +437,7 @@ describe("ingestion admin smoke", () => {
 
   it("SyncJobFormPage_source_table_updates_target_when_not_manual", async () => {
     setViewport(1400);
-    mockNewJobFormBootstrap([], [
+    mockNewJobFormBootstrap([SAMPLE_MYSQL_DS], [
       {
         id: "job-existing",
         name: "已有",
@@ -456,7 +454,7 @@ describe("ingestion admin smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
-    const sourceInput = await screen.findByLabelText("源对象");
+    const sourceInput = await screen.findByLabelText("源表");
     await waitFor(() => {
       expect(screen.getByLabelText("目标表")).toHaveValue("orders_clean");
     });
@@ -468,7 +466,7 @@ describe("ingestion admin smoke", () => {
 
   it("SyncJobFormPage_resuggest_target_table_button", async () => {
     setViewport(1400);
-    mockNewJobFormBootstrap([], [
+    mockNewJobFormBootstrap([SAMPLE_MYSQL_DS], [
       {
         id: "job-existing",
         name: "已有",
@@ -494,13 +492,13 @@ describe("ingestion admin smoke", () => {
     await waitFor(() => {
       expect(targetInput).toHaveValue("orders_clean_2");
     });
-    fireEvent.change(screen.getByLabelText("源对象"), { target: { value: "sales" } });
+    fireEvent.change(screen.getByLabelText("源表"), { target: { value: "sales" } });
     await waitFor(() => {
       expect(targetInput).toHaveValue("sales_clean");
     });
   });
 
-  it("SyncJobFormPage_shared_target_confirm_cancel_skips_post", async () => {
+  it("SyncJobFormPage_shared_target_error_blocks_post", async () => {
     setViewport(1400);
     mockNewJobFormBootstrap([SAMPLE_MYSQL_DS], [
       {
@@ -527,11 +525,7 @@ describe("ingestion admin smoke", () => {
     });
     fireEvent.change(screen.getByLabelText("任务名称"), { target: { value: "cancel-test" } });
     fireEvent.click(screen.getByRole("button", { name: "创建" }));
-    expect(await screen.findByText("目标表已被其他任务使用")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "取消" }));
-    await waitFor(() => {
-      expect(screen.queryByText("目标表已被其他任务使用")).not.toBeInTheDocument();
-    });
+    expect(await screen.findByText("目标表已被占用")).toBeInTheDocument();
     const postCalls = mockApiFetch.mock.calls.filter(
       (c) => c[0] === "/api/v1/ingestion/sync-jobs" && c[1]?.method === "POST",
     );
@@ -597,7 +591,7 @@ describe("ingestion admin smoke", () => {
       </MemoryRouter>,
     );
     expect(await screen.findByLabelText("任务名称")).toHaveValue("自身任务");
-    expect(await screen.findByText("目标表与已有任务重复")).toBeInTheDocument();
+    expect(await screen.findByText("目标表已被占用")).toBeInTheDocument();
     expect(screen.getByText(/兄弟任务/)).toBeInTheDocument();
     expect(screen.queryByText(/已有任务「自身任务」/)).not.toBeInTheDocument();
   });
@@ -815,7 +809,7 @@ describe("ingestion admin smoke", () => {
     fireEvent.click(await screen.findByRole("combobox", { name: "业务源连接" }));
     fireEvent.click(await screen.findByRole("option", { name: "Sample MySQL" }));
     fireEvent.change(screen.getByLabelText("任务名称"), { target: { value: "ds-ref-smoke" } });
-    fireEvent.change(screen.getByLabelText("源对象"), { target: { value: "dirty_orders" } });
+    fireEvent.change(screen.getByLabelText("源表"), { target: { value: "dirty_orders" } });
     fireEvent.change(screen.getByLabelText("目标表"), { target: { value: "orders_from_ds" } });
     fireEvent.click(screen.getByRole("button", { name: "创建" }));
     await waitFor(() => {

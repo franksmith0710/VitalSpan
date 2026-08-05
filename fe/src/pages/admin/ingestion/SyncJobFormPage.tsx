@@ -106,7 +106,6 @@ export function SyncJobFormPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [sharedTargetConfirmOpen, setSharedTargetConfirmOpen] = useState(false);
   const [runConfirmOpen, setRunConfirmOpen] = useState(false);
   const [recentRunSuccess, setRecentRunSuccess] = useState<SyncRunSuccess | null>(null);
   const [consumeCardDismissed, setConsumeCardDismissed] = useState(false);
@@ -379,15 +378,16 @@ export function SyncJobFormPage() {
       return false;
     }
     if (conflictingJobs.length > 0) {
-      setSharedTargetConfirmOpen(true);
+      const message = `目标表 ${form.target_table} 已被任务「${conflictingJobs.map((job) => job.name).join("、")}」使用，请改用其他目标表名`;
+      setError(message);
+      setFieldErrors({ target_table: message });
+      toast.error(message);
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = 0;
+      }
       return false;
     }
     return submitPayload();
-  };
-
-  const handleConfirmSharedTarget = async () => {
-    setSharedTargetConfirmOpen(false);
-    await submitPayload();
   };
 
   const handleSaveAndLeave = async () => {
@@ -568,26 +568,6 @@ export function SyncJobFormPage() {
               onClick={() => void handleConfirmRun()}
             >
               确认运行
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={sharedTargetConfirmOpen} onOpenChange={setSharedTargetConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>目标表已被其他任务使用</AlertDialogTitle>
-            <AlertDialogDescription>
-              已有 {conflictingJobs.length} 个任务写入目标表
-              <span className="font-mono"> {form.target_table}</span>
-              （{conflictingJobs.map((job) => job.name).join("、")}），将共用 Dataset
-              <span className="font-mono"> {form.target_table}</span>；后跑的全量同步会覆盖分析库中的同表数据。确定继续保存？
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={submitting}>取消</AlertDialogCancel>
-            <AlertDialogAction disabled={submitting} onClick={() => void handleConfirmSharedTarget()}>
-              仍要保存
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

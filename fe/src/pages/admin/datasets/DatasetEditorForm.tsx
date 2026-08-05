@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { ComputedFieldsEditor } from "./ComputedFieldsEditor";
 import { DatasetTablePicker } from "./DatasetTablePicker";
-import type { DatasetEditorValues } from "./types";
+import type { DatasetEditorValues, DatasetOrigin } from "./types";
 
 function DatasetFormSection({
   title,
@@ -43,6 +43,7 @@ export function DatasetEditorForm({
   submitDisabled = false,
   bindPanel,
   tablePickerPrefill,
+  origin = "manual",
 }: {
   mode: "create" | "edit";
   values: DatasetEditorValues;
@@ -57,6 +58,7 @@ export function DatasetEditorForm({
     savedDataSourceId?: string;
     onDataSourceIdChange?: (dataSourceId: string) => void;
   };
+  origin?: DatasetOrigin;
 }) {
   const canSubmit =
     values.datasetId.trim().length > 0 &&
@@ -157,6 +159,7 @@ export function DatasetEditorForm({
                 prefillTable={tablePickerPrefill?.prefillTable}
                 savedDataSourceId={tablePickerPrefill?.savedDataSourceId}
                 onDataSourceIdChange={tablePickerPrefill?.onDataSourceIdChange}
+                origin={origin}
               />
             </TabsContent>
 

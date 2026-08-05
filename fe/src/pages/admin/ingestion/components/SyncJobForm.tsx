@@ -300,7 +300,7 @@ export function SyncJobForm({
           </div>
         </div>
         <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-          每个目标表对应一个 Dataset；多个任务写入同一目标表会共用 Dataset，且全量同步会互相覆盖分析库中的数据。
+          每个目标表仅允许一个同步任务；全量同步会覆盖分析库中的目标表数据。
         </p>
         <div className="rounded-lg border border-gray-200 bg-gray-50/80 px-3 py-2 text-theme-xs text-gray-600 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-300">
           <span className="font-medium text-gray-700 dark:text-gray-200">写入位置：</span>
@@ -310,13 +310,12 @@ export function SyncJobForm({
           出图，无需手动登记分析库。
         </div>
         {conflictingJobNames.length > 0 ? (
-          <Alert severity="warning">
-            <AlertTitle>目标表与已有任务重复</AlertTitle>
-            <AlertDescription className="text-theme-xs text-warning-700 dark:text-warning-400">
-              已有任务「{conflictingJobNames.join("、")}」写入
+          <Alert severity="error">
+            <AlertTitle>目标表已被占用</AlertTitle>
+            <AlertDescription className="text-theme-xs">
+              已有任务「{conflictingJobNames.join("、")}」使用
               <span className="font-mono"> {form.target_table}</span>
-              ，保存后将共用 Dataset
-              <span className="font-mono"> {form.target_table}</span>。若需独立出图，请改用不同目标表名。
+              。请改用不同目标表名（可使用「按源表重新建议表名」）。
             </AlertDescription>
           </Alert>
         ) : null}

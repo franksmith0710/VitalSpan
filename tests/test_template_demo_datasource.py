@@ -10,6 +10,7 @@ from app.dashboard.templates.demo_datasource import (
     repair_legacy_template_layout,
 )
 from app.dashboard.templates import presets
+from app.dashboard.templates import presets_gov
 from app.dashboard.service import validate_layout
 
 
@@ -87,6 +88,11 @@ def test_builtin_preset_layouts_avoid_deprecated_chart_types() -> None:
         presets.build_dual_kpi_layout,
         presets.build_triple_analysis_layout,
         presets.build_ops_dashboard_layout,
+        presets_gov.build_gov_efficiency_dashboard,
+        presets_gov.build_gov_satisfaction_dashboard,
+        presets_gov.build_gov_finance_dashboard,
+        presets_gov.build_gov_investment_dashboard,
+        presets_gov.build_gov_grid_dashboard,
     ]
     for builder in builders:
         layout = builder()
@@ -98,6 +104,11 @@ def test_builtin_preset_layouts_avoid_deprecated_chart_types() -> None:
 
 
 def test_builtin_preset_layout_validates_after_demo_bind() -> None:
-    layout = presets.build_triple_analysis_layout()
-    bound = bind_template_demo_datasources(layout, uuid.uuid4())
-    validate_layout(bound)
+    builders = [
+        presets.build_triple_analysis_layout,
+        presets_gov.build_gov_efficiency_dashboard,
+        presets_gov.build_gov_finance_dashboard,
+    ]
+    for builder in builders:
+        bound = bind_template_demo_datasources(builder(), uuid.uuid4())
+        validate_layout(bound)

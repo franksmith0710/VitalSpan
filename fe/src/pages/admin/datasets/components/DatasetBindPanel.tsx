@@ -128,7 +128,7 @@ export function DatasetBindPanel({
       apiFetch<{ items: Array<{ name: string }> }>(
         `/api/v1/datasources/${dataSourceId}/columns?schema=${encodeURIComponent(parsed!.schema)}&table=${encodeURIComponent(parsed!.table)}`,
       ),
-    enabled: Boolean(dataSourceId && parsed?.table && !(isSyncOrigin && boundConfigId)),
+    enabled: Boolean(dataSourceId && parsed?.table),
   });
 
   const columnNames = useMemo(
@@ -253,140 +253,134 @@ export function DatasetBindPanel({
           </p>
         ) : null}
 
-        {isSyncOrigin && boundConfigId ? (
-          <div className="grid gap-3 rounded-xl border border-gray-200 bg-gray-50/50 p-4 text-theme-sm dark:border-gray-800 dark:bg-white/[0.02]">
-            <p>
-              <span className="text-gray-500 dark:text-gray-400">出图查询连接：</span>
-              <span className="font-medium text-gray-800 dark:text-gray-100">
-                {selectedDs?.name ?? "托管分析库"}
-              </span>
-            </p>
-            <p>
-              <span className="text-gray-500 dark:text-gray-400">主表：</span>
-              <span className="font-mono text-theme-xs">{tableName || tables[0]?.name}</span>
-            </p>
-            <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-              同步产物绑定已锁定。若需查询其他库表，请新建「手动 Dataset」。
-            </p>
+        {boundConfigId ? (
+          <p className="font-mono text-theme-xs text-gray-500 dark:text-gray-400">
+            配置 ID：{boundConfigId.slice(0, 8)}…
+          </p>
+        ) : null}
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-2">
+            <Label htmlFor="bind-ds">{isSyncOrigin ? "出图查询连接（托管分析库）" : "出图查询连接"}</Label>
+            {isSyncOrigin ? (
+              <p className="flex h-11 items-center rounded-lg border border-gray-200 bg-gray-50 px-3 text-theme-sm dark:border-gray-800 dark:bg-white/[0.02]">
+                {selectedDs?.name ?? "加载中…"}
+              </p>
+            ) : (
+              <Select value={dataSourceId || undefined} onValueChange={setDataSourceId}>
+                <SelectTrigger id="bind-ds" className="h-11">
+                  <SelectValue placeholder={dsQuery.isLoading ? "加载中…" : "选择连接"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {selectableItems.map((ds) => (
+                    <SelectItem key={ds.id} value={ds.id}>
+                      {ds.name} ({ds.code})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
-        ) : (
-          <>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="grid gap-2">
-                <Label htmlFor="bind-ds">{isSyncOrigin ? "出图查询连接（托管分析库）" : "出图查询连接"}</Label>
-                {isSyncOrigin ? (
-                  <p className="flex h-11 items-center rounded-lg border border-gray-200 bg-gray-50 px-3 text-theme-sm dark:border-gray-800 dark:bg-white/[0.02]">
-                    {selectedDs?.name ?? "加载中…"}
-                  </p>
-                ) : (
-                  <Select value={dataSourceId || undefined} onValueChange={setDataSourceId}>
-                    <SelectTrigger id="bind-ds" className="h-11">
-                      <SelectValue placeholder={dsQuery.isLoading ? "加载中…" : "选择连接"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {selectableItems.map((ds) => (
-                        <SelectItem key={ds.id} value={ds.id}>
-                          {ds.name} ({ds.code})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="bind-table">主表</Label>
-                {isSyncOrigin ? (
-                  <p className="flex h-11 items-center rounded-lg border border-gray-200 bg-gray-50 px-3 font-mono text-theme-xs dark:border-gray-800 dark:bg-white/[0.02]">
-                    {tableName || tables[0]?.name}
-                  </p>
-                ) : (
-                  <Select value={tableName || undefined} onValueChange={setTableName}>
-                    <SelectTrigger id="bind-table" className="h-11">
-                      <SelectValue placeholder="选择 Dataset 中的表" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tables.map((t) => (
-                        <SelectItem key={t.name} value={t.name}>
-                          {t.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-            </div>
-
-            <div className="grid gap-2">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <Table2 className="size-4 text-gray-400" aria-hidden />
-                  <Label>绑定字段</Label>
-                  <Badge variant="light" color="light" size="sm">
-                    已选 {selectedColumns.length}/{columnNames.length || "—"}
-                  </Badge>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button type="button" variant="outline" size="sm" onClick={handleAutoColumns} disabled={columnNames.length === 0}>
-                    自动识别
-                  </Button>
-                  <Button type="button" variant="outline" size="sm" onClick={handleSelectAllColumns} disabled={columnNames.length === 0}>
-                    全选
-                  </Button>
-                </div>
-              </div>
-              {columnsQuery.isLoading || boundConfigQuery.isLoading ? (
-                <Skeleton className="h-24 w-full rounded-lg" />
-              ) : columnNames.length > 0 ? (
-                <div className="max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50/50 p-3 dark:border-gray-800 dark:bg-white/[0.02]">
-                  <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    {columnNames.map((col) => {
-                      const kind = groupDatasetFields([col]);
-                      const badge =
-                        kind.metrics.length > 0 ? (
-                          <Badge variant="light" color="success" size="sm">
-                            指标
-                          </Badge>
-                        ) : (
-                          <Badge variant="light" color="primary" size="sm">
-                            维度
-                          </Badge>
-                        );
-                      return (
-                        <li key={col}>
-                          <label className="flex cursor-pointer items-center gap-2 rounded-md px-1 py-0.5 hover:bg-white/80 dark:hover:bg-white/5">
-                            <Checkbox
-                              checked={selectedColumns.includes(col)}
-                              onCheckedChange={(checked) => toggleColumn(col, checked === true)}
-                            />
-                            <span className="min-w-0 flex-1 truncate font-mono text-theme-xs">{col}</span>
-                            {badge}
-                          </label>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              ) : (
-                <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-                  选择连接与主表后加载列信息，可自动识别或手动勾选。
-                </p>
-              )}
-            </div>
-
-            <div className="flex justify-end">
-              <Button
-                type="button"
-                variant="primary"
-                disabled={!selectedDs || !tableName || selectedColumns.length === 0 || binding}
-                loading={binding}
-                loadingText="绑定中…"
-                onClick={() => void handleBind()}
+          <div className="grid gap-2">
+            <Label htmlFor="bind-table">主表</Label>
+            {isSyncOrigin ? (
+              <p
+                id="bind-table"
+                className="flex h-11 items-center rounded-lg border border-gray-200 bg-gray-50 px-3 font-mono text-theme-xs dark:border-gray-800 dark:bg-white/[0.02]"
               >
-                {boundConfigId ? "重新绑定" : "绑定并预览"}
+                {tableName || tables[0]?.name}
+              </p>
+            ) : (
+              <Select value={tableName || undefined} onValueChange={setTableName}>
+                <SelectTrigger id="bind-table" className="h-11">
+                  <SelectValue placeholder="选择 Dataset 中的表" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tables.map((t) => (
+                    <SelectItem key={t.name} value={t.name}>
+                      {t.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+        </div>
+
+        <div className="grid gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Table2 className="size-4 text-gray-400" aria-hidden />
+              <Label>绑定字段</Label>
+              <Badge variant="light" color="light" size="sm">
+                已选 {selectedColumns.length}/{columnNames.length || "—"}
+              </Badge>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={handleAutoColumns} disabled={columnNames.length === 0}>
+                自动识别
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={handleSelectAllColumns} disabled={columnNames.length === 0}>
+                全选
               </Button>
             </div>
-          </>
-        )}
+          </div>
+          {columnsQuery.isLoading || boundConfigQuery.isLoading ? (
+            <Skeleton className="h-24 w-full rounded-lg" />
+          ) : columnNames.length > 0 ? (
+            <div className="max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50/50 p-3 dark:border-gray-800 dark:bg-white/[0.02]">
+              <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {columnNames.map((col) => {
+                  const kind = groupDatasetFields([col]);
+                  const badge =
+                    kind.metrics.length > 0 ? (
+                      <Badge variant="light" color="success" size="sm">
+                        指标
+                      </Badge>
+                    ) : (
+                      <Badge variant="light" color="primary" size="sm">
+                        维度
+                      </Badge>
+                    );
+                  return (
+                    <li key={col}>
+                      <label className="flex cursor-pointer items-center gap-2 rounded-md px-1 py-0.5 hover:bg-white/80 dark:hover:bg-white/5">
+                        <Checkbox
+                          checked={selectedColumns.includes(col)}
+                          onCheckedChange={(checked) => toggleColumn(col, checked === true)}
+                        />
+                        <span className="min-w-0 flex-1 truncate font-mono text-theme-xs">{col}</span>
+                        {badge}
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ) : (
+            <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+              选择连接与主表后加载列信息，可自动识别或手动勾选。
+            </p>
+          )}
+          {isSyncOrigin && boundConfigId ? (
+            <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+              连接与主表已锁定；可调整绑定字段后点「重新绑定」更新出图列。
+            </p>
+          ) : null}
+        </div>
+
+        <div className="flex justify-end">
+          <Button
+            type="button"
+            variant="primary"
+            disabled={!selectedDs || !tableName || selectedColumns.length === 0 || binding}
+            loading={binding}
+            loadingText="绑定中…"
+            onClick={() => void handleBind()}
+          >
+            {boundConfigId ? "重新绑定" : "绑定并预览"}
+          </Button>
+        </div>
       </div>
     </section>
   );

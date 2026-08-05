@@ -21,6 +21,7 @@ from app.ingestion.models import SyncJob
 from app.metadata.dataset.models import DatasetRecord
 from app.metadata.dataset.schemas import DatasetItemIn, DatasetTableDef
 from app.metadata.dataset import service as dataset_service
+from app.metadata.dataset.suggest_bind_columns import suggest_bind_columns
 from app.metadata.dataset.errors import DatasetError
 from app.query.config_store.schemas import ConfigUpsert
 from app.query.config_store.service import upsert_config
@@ -73,6 +74,11 @@ def _stable_ref_id(dataset_id: str) -> uuid.UUID:
 
 def _dataset_id_for_job(job: SyncJob) -> str:
     return job.target_table
+
+
+def _sync_dataset_display_name(job: SyncJob) -> str:
+    name = job.name.strip()
+    return f"同步：{name}" if name else job.target_table
 
 
 def prepare_sync_consume(db: Session) -> PrepareResult:
@@ -202,8 +208,9 @@ def ensure_dataset_for_sync_job(
             dataset_service.create_dataset(
                 DatasetItemIn(
                     dataset_id=dataset_id,
-                    display_name=dataset_id,
+                    display_name=_sync_dataset_display_name(job),
                     tables=[DatasetTableDef(name=qualified)],
+                    table_source_datasource_id=ds_id,
                 ),
                 actor,
             )
@@ -229,13 +236,14 @@ def ensure_dataset_for_sync_job(
             bound=False,
         )
 
-    columns = _list_table_columns(db, actor, ds_id, schema, table)
-    if not columns:
+    all_columns = _list_table_columns(db, actor, ds_id, schema, table)
+    if not all_columns:
         raise SyncConsumeError(
             "SYNC_CONSUME_NO_COLUMNS",
             f"目标表 {qualified} 无可用列，请确认同步已成功写入分析库",
             422,
         )
+    bind_columns = suggest_bind_columns(all_columns)
 
     bound_id = _bind_dataset_query(
         db,
@@ -243,7 +251,7 @@ def ensure_dataset_for_sync_job(
         data_source_id=ds_id,
         schema=schema,
         table=table,
-        columns=columns,
+        columns=bind_columns,
         actor=actor,
     )
     logger.info(

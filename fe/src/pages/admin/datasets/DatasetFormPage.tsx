@@ -202,6 +202,7 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
         onSubmit={() => void handleSave()}
         isSaving={isSaving}
         submitDisabled={mode === "edit" && !isDirty}
+        origin={mode === "edit" ? (detailQuery.data?.origin ?? "manual") : "manual"}
         tablePickerPrefill={{
           preferredDataSourceId,
           prefillTable,

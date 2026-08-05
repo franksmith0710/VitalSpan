@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { TemplateLayoutLivePreview } from "@/components/dashboard/templates/TemplateLayoutLivePreview";
+import { TemplateStaticThumbnailPreview } from "@/components/dashboard/templates/TemplateStaticThumbnailPreview";
 import { prepareLayoutForListPreview } from "@/components/dashboard/stylePipeline";
 import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
 import {
@@ -28,6 +29,7 @@ import {
 import { queryKeys } from "@/lib/queryKeys";
 import {
   categoryLabel,
+  resolveTemplateThumbnail,
   surfaceLabel,
   visibilityLabel,
 } from "@/components/dashboard/templates/templateLabels";
@@ -67,14 +69,21 @@ export function TemplatePreviewDialog({ open, onOpenChange, item }: TemplatePrev
   }, [detailQuery.data, datasourcesQuery.data]);
 
   const loading = detailQuery.isLoading || datasourcesQuery.isLoading;
+  const demoDatasourceId = resolveTemplateDemoDatasourceId(datasourcesQuery.data?.items ?? []);
   const demoDatasourceMissing =
     !loading &&
     Boolean(layout) &&
     layoutRequiresDemoCharts(layout!) &&
-    !resolveTemplateDemoDatasourceId(datasourcesQuery.data?.items ?? []);
+    !demoDatasourceId;
 
   const isScreen = item?.surfaceKind === "data-screen";
   const colorScheme = layout?.styleConfig?.colorScheme ?? "light";
+  const thumbnailSrc = item
+    ? resolveTemplateThumbnail(item.templateKey, item.thumbnailRef)
+    : null;
+  /** 有演示库时优先 live 出图；仅缺数据源时回退静态示意图 */
+  const useStaticDashboardPreview =
+    !isScreen && Boolean(thumbnailSrc) && demoDatasourceMissing;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -126,15 +135,17 @@ export function TemplatePreviewDialog({ open, onOpenChange, item }: TemplatePrev
           }
           data-dashboard-color-scheme={isScreen ? "dark" : colorScheme}
         >
-          {loading ? (
+          {loading && !useStaticDashboardPreview ? (
             <Skeleton className="min-h-[420px] w-full rounded-lg" />
-          ) : detailQuery.isError ? (
+          ) : detailQuery.isError && !useStaticDashboardPreview ? (
             <div className="flex min-h-[420px] items-center justify-center p-6">
               <PageErrorBanner
                 message={mapApiError(detailQuery.error)}
                 onRetry={() => void detailQuery.refetch()}
               />
             </div>
+          ) : useStaticDashboardPreview && thumbnailSrc ? (
+            <TemplateStaticThumbnailPreview src={thumbnailSrc} />
           ) : layout ? (
             <TemplateLayoutLivePreview
               layout={layout}

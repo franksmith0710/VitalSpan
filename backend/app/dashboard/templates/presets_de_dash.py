@@ -49,7 +49,7 @@ def build_de_dash_style(
     bg_slug: str,
     palette: tuple[str, ...] = DE_PALETTE_DEFAULT,
     canvas: str = DE_CANVAS,
-    gap: Literal["sm", "md", "lg"] = "md",
+    gap: Literal["sm", "md", "lg"] = "sm",
 ) -> dict[str, Any]:
     return {
         "surfaceKind": "dashboard",

@@ -118,6 +118,18 @@ def test_sync_jobs_crud_roundtrip(client: TestClient, auth_headers: dict, job_pa
     assert delete.status_code == 204
 
 
+def test_sync_job_duplicate_target_table_rejected(
+    client: TestClient, auth_headers: dict, job_payload: dict,
+):
+    first = client.post("/api/v1/ingestion/sync-jobs", json=job_payload, headers=auth_headers)
+    assert first.status_code == 201, first.text
+    dup_payload = {**job_payload, "name": "another-job"}
+    dup = client.post("/api/v1/ingestion/sync-jobs", json=dup_payload, headers=auth_headers)
+    assert dup.status_code == 409, dup.text
+    assert dup.json()["detail"]["code"] == "SYNC_TARGET_TABLE_CONFLICT"
+    client.delete(f"/api/v1/ingestion/sync-jobs/{first.json()['id']}", headers=auth_headers)
+
+
 def test_sync_job_consume_hints(client: TestClient, auth_headers: dict, job_payload: dict):
     create = client.post("/api/v1/ingestion/sync-jobs", json=job_payload, headers=auth_headers)
     assert create.status_code == 201, create.text

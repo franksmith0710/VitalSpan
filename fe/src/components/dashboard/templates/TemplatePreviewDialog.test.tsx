@@ -1,6 +1,6 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { TemplatePreviewDialog } from "./TemplatePreviewDialog";
 
 vi.mock("@/components/dashboard/DashboardLayoutPreview", () => ({
@@ -57,14 +57,20 @@ vi.mock("@/lib/dashboardTemplates", async (importOriginal) => {
 });
 
 vi.mock("@/lib/api", () => ({
-  apiFetch: vi.fn(async () => ({ items: [{ id: "ds-1", name: "sample_db", code: "sample_db" }] })),
+  apiFetch: vi.fn(async () => ({
+    items: [{ id: "ds-1", name: "官方演示库", code: "demo", database: "sample_db" }],
+  })),
 }));
+
+afterEach(() => {
+  cleanup();
+});
 
 function renderDialog(open = true) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const item = {
     id: "tpl-1",
-    templateKey: "builtin-dash-dual-kpi",
+    templateKey: "custom-no-thumb",
     name: "双栏 KPI",
     description: "测试描述",
     categoryKey: "analytics",
@@ -84,7 +90,7 @@ function renderDialog(open = true) {
 }
 
 describe("TemplatePreviewDialog", () => {
-  it("loads template and renders live preview in dialog", async () => {
+  it("loads template and renders live preview in dialog when no thumbnail", async () => {
     renderDialog();
     const dialog = screen.getByTestId("template-preview-dialog");
     expect(dialog).toBeInTheDocument();
@@ -97,5 +103,62 @@ describe("TemplatePreviewDialog", () => {
       "data-preview-variant",
       "dialog",
     );
+  });
+
+  it("falls back to static thumbnail when demo datasource is missing", async () => {
+    const { apiFetch } = await import("@/lib/api");
+    vi.mocked(apiFetch).mockResolvedValueOnce({ items: [] });
+
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const item = {
+      id: "tpl-1",
+      templateKey: "builtin-dash-ops",
+      name: "运营分析看板",
+      description: "测试",
+      categoryKey: "monitoring",
+      surfaceKind: "dashboard" as const,
+      status: "published" as const,
+      thumbnailRef: "/template-assets/packs/de-dashboard-v1/thumbs/dash-ops.svg",
+      visibility: "builtin" as const,
+      contentRevision: 1,
+      updatedAt: new Date().toISOString(),
+      publishedAt: new Date().toISOString(),
+    };
+    render(
+      <QueryClientProvider client={client}>
+        <TemplatePreviewDialog open onOpenChange={() => {}} item={item} />
+      </QueryClientProvider>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId("template-static-thumbnail-preview")).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId("template-layout-live-preview")).not.toBeInTheDocument();
+  });
+
+  it("renders live preview with demo datasource even when thumbnail exists", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const item = {
+      id: "tpl-1",
+      templateKey: "builtin-dash-ops",
+      name: "运营分析看板",
+      description: "测试",
+      categoryKey: "monitoring",
+      surfaceKind: "dashboard" as const,
+      status: "published" as const,
+      thumbnailRef: "/template-assets/packs/de-dashboard-v1/thumbs/dash-ops.svg",
+      visibility: "builtin" as const,
+      contentRevision: 1,
+      updatedAt: new Date().toISOString(),
+      publishedAt: new Date().toISOString(),
+    };
+    render(
+      <QueryClientProvider client={client}>
+        <TemplatePreviewDialog open onOpenChange={() => {}} item={item} />
+      </QueryClientProvider>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId("template-layout-live-preview")).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId("template-static-thumbnail-preview")).not.toBeInTheDocument();
   });
 });

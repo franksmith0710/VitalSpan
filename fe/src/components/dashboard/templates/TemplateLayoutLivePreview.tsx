@@ -4,7 +4,7 @@ import type { Geo3dRenderTier } from "@/components/charts/engine/three/geo3dRunt
 import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
 import type { DashboardTemplateListItem } from "@/lib/dashboardTemplates";
 import { TemplateGridFitPreview } from "@/components/dashboard/templates/TemplateGridFitPreview";
-import { estimateV1GridCanvasHeight } from "@/components/dashboard/templates/templateGridFitScale";
+import type { TemplateGridFitMode } from "@/components/dashboard/templates/templateGridFitScale";
 import { cn } from "@/lib/utils";
 
 type TemplateLayoutLivePreviewProps = {
@@ -52,31 +52,16 @@ export function TemplateLayoutLivePreview({
           className="pointer-events-none h-full min-h-0 select-none"
         />
       ) : layout.version === 1 ? (
-        variant === "dialog" ? (
-          <div
-            className="pointer-events-none relative z-[1] min-h-0 w-full select-none"
-            style={{ minHeight: Math.max(420, estimateV1GridCanvasHeight(layout.widgets)) }}
-          >
-            <DashboardLayoutPreview
-              layout={layout}
-              styleConfig={layout.styleConfig}
-              scaleMode="component"
-              geo3dRenderTier={effectiveTier}
-              mountMaxConcurrent={8}
-              className="h-full min-h-0 w-full"
-            />
-          </div>
-        ) : (
-          <TemplateGridFitPreview layout={layout} fitMode={gridFitMode}>
-            <DashboardLayoutPreview
-              layout={layout}
-              scaleMode="component"
-              geo3dRenderTier={effectiveTier}
-              mountMaxConcurrent={8}
-              className="pointer-events-none min-h-0 select-none"
-            />
-          </TemplateGridFitPreview>
-        )
+        <TemplateGridFitPreview layout={layout} fitMode={gridFitMode}>
+          <DashboardLayoutPreview
+            layout={layout}
+            styleConfig={layout.styleConfig}
+            scaleMode="component"
+            geo3dRenderTier={effectiveTier}
+            mountMaxConcurrent={8}
+            className="pointer-events-none min-h-0 w-full select-none"
+          />
+        </TemplateGridFitPreview>
       ) : (
         <DashboardLayoutPreview
           layout={layout}

@@ -24,6 +24,12 @@ from app.dashboard.templates.presets_de_dash import (
     build_de_chart_de_style,
     build_de_dash_style,
 )
+from app.dashboard.templates.presets_dash_grids import (
+    CHART_ROW,
+    CHART_ROW_SM,
+    KPI_ROW,
+    grid_place,
+)
 from app.dashboard.templates.official_demo_sql import (
     SQL_DAILY_KPI,
     SQL_SALES_BY_CHANNEL,
@@ -620,53 +626,49 @@ def build_dash_blank_layout() -> dict[str, Any]:
 
 
 def build_dual_kpi_layout() -> dict[str, Any]:
+    """双栏 KPI 条 + 柱线对比（官方 sample_db 销售演示）。"""
     palette = DE_PALETTE_DEFAULT
     accent = DE_BLUE
-    w1 = _dash_chart_de(
-        accent=accent,
-        palette=palette,
-        chart_type="bar",
-        title="渠道销售对比",
-        sql=SQL_SALES_BY_CHANNEL,
-        dimensions=[{"field": "渠道"}],
-        metrics=[{"field": "销售额"}],
-        colSpan=6,
-        rowSpan=5,
-        gridX=0,
-        gridY=3,
-        order=3,
-    )
-    w2 = _dash_chart_de(
-        accent=accent,
-        palette=palette,
-        chart_type="line",
-        title="销售趋势",
-        sql=SQL_SALES_TREND,
-        dimensions=[{"field": "日期"}],
-        metrics=[{"field": "销售额"}],
-        colSpan=6,
-        rowSpan=5,
-        gridX=6,
-        gridY=3,
-        order=4,
-    )
-    kpi = _dash_chart_de(
-        accent=accent,
-        palette=palette,
-        chart_type="kpi",
-        title="核心 KPI",
-        sql=SQL_DAILY_KPI,
-        dimensions=[{"field": "指标"}],
-        metrics=[{"field": "数值"}],
-        colSpan=12,
-        rowSpan=3,
-        gridX=0,
-        gridY=0,
-        order=0,
-    )
     return {
         "version": 1,
-        "widgets": [kpi, w1, w2],
+        "widgets": [
+            grid_place(
+                _dash_chart_de(
+                    accent=accent,
+                    palette=palette,
+                    chart_type="kpi",
+                    title="核心 KPI",
+                    sql=SQL_DAILY_KPI,
+                    dimensions=[{"field": "指标"}],
+                    metrics=[{"field": "数值"}],
+                ),
+                x=0, y=0, w=12, h=KPI_ROW, order=0,
+            ),
+            grid_place(
+                _dash_chart_de(
+                    accent=accent,
+                    palette=palette,
+                    chart_type="bar",
+                    title="渠道销售对比",
+                    sql=SQL_SALES_BY_CHANNEL,
+                    dimensions=[{"field": "渠道"}],
+                    metrics=[{"field": "销售额"}],
+                ),
+                x=0, y=KPI_ROW, w=6, h=CHART_ROW, order=1,
+            ),
+            grid_place(
+                _dash_chart_de(
+                    accent=accent,
+                    palette=palette,
+                    chart_type="line",
+                    title="销售趋势",
+                    sql=SQL_SALES_TREND,
+                    dimensions=[{"field": "日期"}],
+                    metrics=[{"field": "销售额"}],
+                ),
+                x=6, y=KPI_ROW, w=6, h=CHART_ROW, order=2,
+            ),
+        ],
         "globalFilters": [],
         "styleConfig": build_de_dash_style(
             accent=accent,
@@ -678,57 +680,53 @@ def build_dual_kpi_layout() -> dict[str, Any]:
 
 
 def build_triple_analysis_layout() -> dict[str, Any]:
+    """三栏：地图 + 饼图 + 明细表（官方 sample_db）。"""
     palette = DE_PALETTE_VIOLET
     accent = "#722ed1"
-    w_map = _dash_chart_de(
-        accent=accent,
-        palette=palette,
-        chart_type="map",
-        title="区域销售分布",
-        sql=SQL_SALES_GEO_DRILL,
-        dimensions=[
-            {"field": "省份"},
-            {"field": "城市"},
-            {"field": "区县"},
-        ],
-        metrics=[{"field": "销售额"}],
-        colSpan=5,
-        rowSpan=6,
-        gridX=0,
-        gridY=0,
-        order=0,
-    )
-    w_pie = _dash_chart_de(
-        accent=accent,
-        palette=palette,
-        chart_type="pie",
-        title="渠道结构",
-        sql=SQL_SALES_BY_CHANNEL,
-        dimensions=[{"field": "渠道"}],
-        metrics=[{"field": "销售额"}],
-        colSpan=4,
-        rowSpan=6,
-        gridX=5,
-        gridY=0,
-        order=1,
-    )
-    w_table = _dash_chart_de(
-        accent=accent,
-        palette=palette,
-        chart_type="table-info",
-        title="城市 TOP10",
-        sql=SQL_TOP_CITIES,
-        dimensions=[{"field": "城市"}],
-        metrics=[{"field": "销售额"}],
-        colSpan=3,
-        rowSpan=6,
-        gridX=9,
-        gridY=0,
-        order=2,
-    )
     return {
         "version": 1,
-        "widgets": [w_map, w_pie, w_table],
+        "widgets": [
+            grid_place(
+                _dash_chart_de(
+                    accent=accent,
+                    palette=palette,
+                    chart_type="map",
+                    title="区域销售分布",
+                    sql=SQL_SALES_GEO_DRILL,
+                    dimensions=[
+                        {"field": "省份"},
+                        {"field": "城市"},
+                        {"field": "区县"},
+                    ],
+                    metrics=[{"field": "销售额"}],
+                ),
+                x=0, y=0, w=5, h=CHART_ROW, order=0,
+            ),
+            grid_place(
+                _dash_chart_de(
+                    accent=accent,
+                    palette=palette,
+                    chart_type="pie",
+                    title="渠道结构",
+                    sql=SQL_SALES_BY_CHANNEL,
+                    dimensions=[{"field": "渠道"}],
+                    metrics=[{"field": "销售额"}],
+                ),
+                x=5, y=0, w=4, h=CHART_ROW, order=1,
+            ),
+            grid_place(
+                _dash_chart_de(
+                    accent=accent,
+                    palette=palette,
+                    chart_type="table-info",
+                    title="城市 TOP10",
+                    sql=SQL_TOP_CITIES,
+                    dimensions=[{"field": "城市"}],
+                    metrics=[{"field": "销售额"}],
+                ),
+                x=9, y=0, w=3, h=CHART_ROW, order=2,
+            ),
+        ],
         "globalFilters": [],
         "styleConfig": build_de_dash_style(
             accent=accent,
@@ -837,71 +835,64 @@ def build_sales_geo_screen_layout() -> dict[str, Any]:
 
 
 def build_ops_dashboard_layout() -> dict[str, Any]:
-    """运营分析看板：对标 DE — KPI + 地图 + 趋势 + 明细。"""
+    """运营分析看板：KPI 条 + 地图/趋势/明细（官方 sample_db）。"""
     palette = DE_PALETTE_TEAL
     accent = "#13c2c2"
+    body_row = KPI_ROW
     return {
         "version": 1,
         "widgets": [
-            _dash_chart_de(
-                accent=accent,
-                palette=palette,
-                chart_type="kpi",
-                title="运营 KPI",
-                sql=SQL_DAILY_KPI,
-                dimensions=[{"field": "指标"}],
-                metrics=[{"field": "数值"}],
-                colSpan=12,
-                rowSpan=3,
-                gridX=0,
-                gridY=0,
-                order=0,
+            grid_place(
+                _dash_chart_de(
+                    accent=accent,
+                    palette=palette,
+                    chart_type="kpi",
+                    title="运营 KPI",
+                    sql=SQL_DAILY_KPI,
+                    dimensions=[{"field": "指标"}],
+                    metrics=[{"field": "数值"}],
+                ),
+                x=0, y=0, w=12, h=KPI_ROW, order=0,
             ),
-            _dash_chart_de(
-                accent=accent,
-                palette=palette,
-                chart_type="map",
-                title="区域销售热力",
-                sql=SQL_SALES_GEO_DRILL,
-                dimensions=[
-                    {"field": "省份"},
-                    {"field": "城市"},
-                    {"field": "区县"},
-                ],
-                metrics=[{"field": "销售额"}],
-                colSpan=7,
-                rowSpan=6,
-                gridX=0,
-                gridY=3,
-                order=1,
+            grid_place(
+                _dash_chart_de(
+                    accent=accent,
+                    palette=palette,
+                    chart_type="map",
+                    title="区域销售热力",
+                    sql=SQL_SALES_GEO_DRILL,
+                    dimensions=[
+                        {"field": "省份"},
+                        {"field": "城市"},
+                        {"field": "区县"},
+                    ],
+                    metrics=[{"field": "销售额"}],
+                ),
+                x=0, y=body_row, w=7, h=CHART_ROW, order=1,
             ),
-            _dash_chart_de(
-                accent=accent,
-                palette=palette,
-                chart_type="line",
-                title="销售走势",
-                sql=SQL_SALES_TREND,
-                dimensions=[{"field": "日期"}],
-                metrics=[{"field": "销售额"}],
-                colSpan=5,
-                rowSpan=3,
-                gridX=7,
-                gridY=3,
-                order=2,
+            grid_place(
+                _dash_chart_de(
+                    accent=accent,
+                    palette=palette,
+                    chart_type="line",
+                    title="销售走势",
+                    sql=SQL_SALES_TREND,
+                    dimensions=[{"field": "日期"}],
+                    metrics=[{"field": "销售额"}],
+                ),
+                x=7, y=body_row, w=5, h=CHART_ROW_SM, order=2,
             ),
-            _dash_chart_de(
-                accent=accent,
-                palette=palette,
-                chart_type="table-info",
-                title="城市 TOP 明细",
-                sql=SQL_TOP_CITIES,
-                dimensions=[{"field": "城市"}],
-                metrics=[{"field": "销售额"}],
-                colSpan=5,
-                rowSpan=3,
-                gridX=7,
-                gridY=6,
-                order=3,
+            grid_place(
+                _dash_chart_de(
+                    accent=accent,
+                    palette=palette,
+                    chart_type="table-info",
+                    title="城市 TOP 明细",
+                    sql=SQL_TOP_CITIES,
+                    dimensions=[{"field": "城市"}],
+                    metrics=[{"field": "销售额"}],
+                ),
+                x=7, y=body_row + CHART_ROW_SM, w=5, h=CHART_ROW_SM, order=3,
             ),
         ],
         "globalFilters": [],
