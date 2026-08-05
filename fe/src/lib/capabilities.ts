@@ -17,8 +17,15 @@ const BUILTIN_ROLE_CAPABILITIES: Record<SessionRole, readonly string[]> = {
     "metadata:*",
     "dataset:*",
   ],
-  /** analyst 可消费报表并管理本人看板定时推送 */
-  analyst: ["dashboard:edit", "dashboard:share", "dashboard:schedule", "report:read", "theme:*"],
+  /** analyst 可消费报表、管理本人看板定时推送，并维护组织可视化模板 */
+  analyst: [
+    "dashboard:edit",
+    "dashboard:share",
+    "dashboard:schedule",
+    "dashboard:template.manage",
+    "report:read",
+    "theme:*",
+  ],
   viewer: ["dashboard:read", "report:read"],
 };
 
