@@ -294,4 +294,70 @@ describe("Dataset form pages", () => {
     await waitFor(() => expect(screen.getByRole("checkbox", { name: "id" })).toBeChecked());
     expect(screen.getByRole("checkbox", { name: "budget_amount" })).toBeChecked();
   });
+
+  it("T1-FE-06: shows bound fields before column metadata finishes loading", async () => {
+    const columnsDeferred = new Promise<{ items: Array<{ name: string }> }>(() => {
+      /* never resolves — simulates slow columns API */
+    });
+
+    mockApiFetch.mockImplementation(async (path: string) => {
+      if (path === "/api/v1/datasets/slow_cols") {
+        return {
+          datasetId: "slow_cols",
+          displayName: "同步：样例 REST API",
+          origin: "sync_job",
+          syncJobId: "cc2cccb0-0000-4000-8000-000000000001",
+          tables: [{ name: "api.endpoints" }],
+          computedFields: [],
+          allowedRoles: ["analyst"],
+          tableSourceDataSourceId: "ds-analytics",
+          boundConfigId: "cfg-slow",
+        };
+      }
+      if (path === "/api/v1/query/configs/cfg-slow") {
+        return {
+          id: "cfg-slow",
+          configType: "dataset_query",
+          payload: {
+            dataSourceId: "ds-analytics",
+            connectorType: "postgresql",
+            schema: "api",
+            table: "endpoints",
+            columns: ["id", "method", "path", "status", "latency_ms", "created_at"],
+            columnKinds: { latency_ms: "metric" },
+          },
+        };
+      }
+      if (path.startsWith("/api/v1/datasources") && !path.includes("/schemas")) {
+        return {
+          items: [
+            {
+              id: "ds-analytics",
+              name: "托管分析库",
+              code: "analytics",
+              type: "postgresql",
+              database: "analytics",
+            },
+          ],
+        };
+      }
+      if (path.includes("/columns")) {
+        return columnsDeferred;
+      }
+      return {};
+    });
+
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/admin/datasets/slow_cols/edit"]}>
+        <Routes>
+          <Route path="/admin/datasets/:id/edit" element={<DatasetFormPage mode="edit" />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("字段工作台")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("checkbox", { name: "id" })).toBeChecked());
+    expect(screen.queryByText("加载列信息中…")).not.toBeInTheDocument();
+    expect(screen.getByTestId("bind-selected-count").textContent).toContain("已选 6/");
+  });
 });

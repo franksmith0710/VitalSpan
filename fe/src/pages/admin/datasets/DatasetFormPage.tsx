@@ -30,7 +30,7 @@ import {
 import { useDatasetTableColumns } from "./hooks/useDatasetTableColumns";
 import type { DatasetEditorValues, DatasetItem } from "./types";
 import { resolveAnalyticsDatasourceId } from "@/lib/datasourceRoles";
-import { tablesMatchForBind } from "@/lib/datasetTableUtils";
+import { tablesMatchForBind, parseQualifiedTable } from "@/lib/datasetTableUtils";
 
 const datasetPageIcon = (
   <AdminPageHeaderIcon>
@@ -121,13 +121,31 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
     queryKey: [...queryKeys.datasets.detail(id ?? ""), "with-bind"],
     queryFn: async () => {
       const item = await apiFetch<DatasetItem>(`/api/v1/datasets/${id}`);
-      let bindDraft = EMPTY_BIND_DRAFT;
       const primaryTable = loadPrimaryOnly(item.tables)[0]?.name ?? "";
-      if (item.boundConfigId && primaryTable) {
-        const bound = await fetchDatasetQueryConfig(item.boundConfigId);
-        if (shouldSeedFromBoundConfig(primaryTable, bound)) {
-          bindDraft = bindDraftFromBinding(bound.columns ?? [], bound.columnKinds);
-        }
+      const parsed = primaryTable ? parseQualifiedTable(primaryTable) : null;
+      const dsId = item.tableSourceDataSourceId?.trim() || preferredDataSourceId;
+
+      const columnsPrefetch =
+        dsId && parsed?.table
+          ? queryClient.prefetchQuery({
+              queryKey: queryKeys.datasources.columns(dsId, parsed.schema, parsed.table),
+              queryFn: () =>
+                apiFetch<{ items: Array<{ name: string }> }>(
+                  `/api/v1/datasources/${dsId}/columns?schema=${encodeURIComponent(parsed.schema)}&table=${encodeURIComponent(parsed.table)}`,
+                ),
+            })
+          : null;
+
+      const bound =
+        item.boundConfigId && primaryTable
+          ? await fetchDatasetQueryConfig(item.boundConfigId)
+          : undefined;
+
+      void columnsPrefetch;
+
+      let bindDraft = EMPTY_BIND_DRAFT;
+      if (bound && shouldSeedFromBoundConfig(primaryTable, bound)) {
+        bindDraft = bindDraftFromBinding(bound.columns ?? [], bound.columnKinds);
       }
       return { item, bindDraft };
     },

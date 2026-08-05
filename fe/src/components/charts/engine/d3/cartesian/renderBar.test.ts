@@ -11,12 +11,24 @@ function compositeKey(date: string, province: string, product: string, category:
   return [date, province, product, category].join(SEP);
 }
 
+function tieredAxisLabels(host: ParentNode): string[] {
+  return [...host.querySelectorAll(".vs-axis-x-tiered text")].map((node) => node.textContent ?? "");
+}
+
+function tieredAxisRowYs(host: ParentNode): number[] {
+  return [...new Set(
+    [...host.querySelectorAll(".vs-axis-x-tiered text")].map((node) =>
+      Number(node.getAttribute("y") ?? 0),
+    ),
+  )].sort((a, b) => a - b);
+}
+
 describe("renderD3BarChart multi-dimension axis", () => {
-  it("renders tiered x-axis rows for four category dimensions", () => {
+  it("renders four tiered rows with merged parents and thinned leaf labels", () => {
     setChartAnimationSuppressed(true);
     const host = document.createElement("div");
     host.style.width = "640px";
-    host.style.height = "280px";
+    host.style.height = "320px";
     document.body.appendChild(host);
 
     const provinces = ["上海市", "广东省", "四川省"];
@@ -25,7 +37,7 @@ describe("renderD3BarChart multi-dimension axis", () => {
     const dates = ["2025-06-08", "2025-07-01"];
 
     const keys: string[] = [];
-    for (let i = 0; i < 18; i += 1) {
+    for (let i = 0; i < 24; i += 1) {
       keys.push(
         compositeKey(
           dates[i % dates.length],
@@ -40,7 +52,7 @@ describe("renderD3BarChart multi-dimension axis", () => {
 
     renderD3BarChart(host, {
       width: 640,
-      height: 280,
+      height: 320,
       data,
       xField: "__category__",
       yField: "__value__",
@@ -53,11 +65,15 @@ describe("renderD3BarChart multi-dimension axis", () => {
       categoryLevelCount: 4,
     });
 
-    const tiered = host.querySelector(".vs-axis-x-tiered");
-    expect(tiered).toBeTruthy();
-    const labels = [...host.querySelectorAll(".vs-axis-x-tiered text")].map((node) => node.textContent);
-    expect(labels.some((label) => label?.includes("2025"))).toBe(true);
-    expect(labels.length).toBeGreaterThan(4);
+    expect(host.querySelector(".vs-axis-x-tiered")).toBeTruthy();
+
+    const labels = tieredAxisLabels(host);
+    const rowYs = tieredAxisRowYs(host);
+
+    expect(labels.some((label) => label.includes("2025"))).toBe(true);
+    expect(labels.some((label) => label.includes("显示设备") || label.includes("外设配件"))).toBe(true);
+    expect(rowYs.length).toBeGreaterThanOrEqual(3);
+    expect(labels.filter((label) => label.includes("广东省")).length).toBeLessThan(keys.length);
 
     host.remove();
     setChartAnimationSuppressed(false);

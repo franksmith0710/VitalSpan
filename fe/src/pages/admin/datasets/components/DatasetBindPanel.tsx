@@ -89,7 +89,7 @@ export function DatasetBindPanel({
     return allItems.find((d) => d.id === dataSourceId) ?? selectableItems.find((d) => d.id === dataSourceId);
   }, [allItems, dataSourceId, selectableItems]);
 
-  const { columnNames, columnsLoading } = useDatasetTableColumns(dataSourceId, primaryTableName);
+  const { columnNames, columnsLoading, columnsError } = useDatasetTableColumns(dataSourceId, primaryTableName);
 
   useEffect(() => {
     if (!primaryTableName || columnsLoading) return;
@@ -157,6 +157,7 @@ export function DatasetBindPanel({
         tableName={primaryTableName}
         columnNames={columnNames}
         columnsLoading={columnsLoading}
+        columnsError={columnsError}
         bindDraft={bindDraft}
         onBindDraftChange={setBindDraft}
         boundConfigId={boundConfigId}

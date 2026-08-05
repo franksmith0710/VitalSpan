@@ -129,7 +129,7 @@ export function DatasetTablePicker({
   }, [primaryTableName]);
 
   const effectiveDataSourceId = dataSourceId || savedDataSourceId || "";
-  const { columnNames, columnsLoading } = useDatasetTableColumns(
+  const { columnNames, columnsLoading, columnsError } = useDatasetTableColumns(
     effectiveDataSourceId,
     primaryTableName,
   );
@@ -309,6 +309,7 @@ export function DatasetTablePicker({
             tableName={primaryTableName}
             columnNames={columnNames}
             columnsLoading={columnsLoading}
+            columnsError={columnsError}
             bindDraft={bindDraft}
             onBindDraftChange={onBindDraftChange}
             boundConfigId={boundConfigId}

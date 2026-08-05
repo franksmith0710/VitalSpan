@@ -17,6 +17,7 @@ export function useDatasetTableColumns(dataSourceId: string, tableName: string) 
         `/api/v1/datasources/${dataSourceId}/columns?schema=${encodeURIComponent(parsed.schema)}&table=${encodeURIComponent(parsed.table)}`,
       ),
     enabled: Boolean(dataSourceId && parsed.table),
+    staleTime: 60_000,
   });
 
   const columnNames = useMemo(
@@ -26,7 +27,8 @@ export function useDatasetTableColumns(dataSourceId: string, tableName: string) 
 
   return {
     columnNames,
-    columnsLoading: columnsQuery.isLoading,
+    columnsLoading: columnsQuery.isLoading && columnNames.length === 0,
+    columnsError: columnsQuery.isError ? columnsQuery.error : null,
     parsed,
   };
 }

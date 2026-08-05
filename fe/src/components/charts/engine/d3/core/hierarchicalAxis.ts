@@ -246,10 +246,9 @@ function shouldDrawSegmentLabel(
   segment: CategoryAxisSegment,
   level: number,
   thinningLevel: number,
-  coarseLevel: number,
   visibleSet: Set<string>,
   categories: string[],
-  boundaryIndices: Set<number>,
+  levelBoundaryIndices: Set<number>,
 ): boolean {
   if (!segment.label) return false;
 
@@ -261,10 +260,9 @@ function shouldDrawSegmentLabel(
   const display = axisCategoryDisplayText(segment.label);
   if (!display) return false;
 
-  // 非叶级：合并段标题 + 粗粒度层边界单点（避免父级整行空白）
+  // 非叶级：合并段 + 该层边界刻度（对标 DataEase 分层轴）
   if (segment.end > segment.start) return true;
-  if (level === coarseLevel && boundaryIndices.has(segment.start)) return true;
-  return false;
+  return levelBoundaryIndices.has(segment.start);
 }
 
 type DrawHierarchicalCategoryAxisOptions = {
@@ -297,9 +295,6 @@ export function drawHierarchicalCategoryAxis(opts: DrawHierarchicalCategoryAxisO
     coarseLevel,
   );
   const visibleSet = new Set(visibleCategories);
-  const coarseBoundaries = new Set(
-    pickCategoryBoundaryIndices(categories, coarseLevel, structuralLevelCount),
-  );
   const fontSize = resolveAxisFontSize();
   const stroke = opts.axisStyle?.x?.lineColor ?? opts.theme.axisLine;
   const strokeWidth = opts.axisStyle?.x?.lineWidth ?? 1;
@@ -318,24 +313,19 @@ export function drawHierarchicalCategoryAxis(opts: DrawHierarchicalCategoryAxisO
   activeLevels.forEach((level, rowIdx) => {
     const rowY = opts.innerH + (rowIdx + 1) * ROW_HEIGHT - 4;
     const segments = buildCategoryLevelSegments(categories, level, structuralLevelCount);
+    const levelBoundaries = new Set(
+      pickCategoryBoundaryIndices(categories, level, structuralLevelCount),
+    );
 
     for (const segment of segments) {
-      const slotSpan = segmentSpanPx(
-        opts.xScale,
-        categories,
-        segment.start,
-        segment.end,
-        opts.innerW,
-      );
       if (
         !shouldDrawSegmentLabel(
           segment,
           level,
           thinningLevel,
-          coarseLevel,
           visibleSet,
           categories,
-          coarseBoundaries,
+          levelBoundaries,
         )
       ) {
         continue;
@@ -366,7 +356,14 @@ export function drawHierarchicalCategoryAxis(opts: DrawHierarchicalCategoryAxisO
           opts.innerW,
         );
         if (
-          !shouldDrawSegmentLabel(segment, level, thinningLevel, visibleSet, categories, slotSpan)
+          !shouldDrawSegmentLabel(
+            segment,
+            level,
+            thinningLevel,
+            visibleSet,
+            categories,
+            levelBoundaries,
+          )
         ) {
           continue;
         }

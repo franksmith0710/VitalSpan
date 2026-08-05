@@ -39,6 +39,7 @@ export function DatasetFieldWorkbench({
   tableName,
   columnNames,
   columnsLoading,
+  columnsError,
   bindDraft,
   onBindDraftChange,
   boundConfigId,
@@ -51,6 +52,7 @@ export function DatasetFieldWorkbench({
   tableName: string;
   columnNames: string[];
   columnsLoading: boolean;
+  columnsError?: unknown;
   bindDraft: DatasetBindDraft;
   onBindDraftChange: (next: DatasetBindDraft) => void;
   boundConfigId?: string | null;
@@ -113,6 +115,10 @@ export function DatasetFieldWorkbench({
 
   if (!tableName) return null;
 
+  const canShowFields = allColumnNames.length > 0;
+  const metadataPending = columnsLoading && columnNames.length === 0;
+  const actionColumns = columnNames.length > 0 ? columnNames : allColumnNames;
+
   return (
     <section className="flex min-h-[320px] flex-col gap-3 rounded-xl border border-gray-200 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-white/[0.02]">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -169,8 +175,8 @@ export function DatasetFieldWorkbench({
               type="button"
               variant="outline"
               size="sm"
-              disabled={columnNames.length === 0}
-              onClick={() => onBindDraftChange(autoIdentifyDraft(columnNames))}
+              disabled={actionColumns.length === 0}
+              onClick={() => onBindDraftChange(autoIdentifyDraft(actionColumns))}
             >
               自动识别
             </Button>
@@ -178,8 +184,8 @@ export function DatasetFieldWorkbench({
               type="button"
               variant="outline"
               size="sm"
-              disabled={columnNames.length === 0}
-              onClick={() => onBindDraftChange(selectAllDraft(columnNames))}
+              disabled={actionColumns.length === 0}
+              onClick={() => onBindDraftChange(selectAllDraft(actionColumns))}
             >
               全选
             </Button>
@@ -200,12 +206,23 @@ export function DatasetFieldWorkbench({
         </div>
 
         <TabsContent value="fields" className="mt-0 min-h-0 flex-1 overflow-y-auto data-[state=inactive]:hidden">
-          {columnsLoading ? (
+          {metadataPending && !canShowFields ? (
             <Skeleton className="h-32 w-full rounded-lg" />
-          ) : columnNames.length === 0 ? (
-            <p className="text-theme-xs text-gray-500">加载列信息中…</p>
+          ) : !canShowFields ? (
+            <p className="text-theme-xs text-gray-500">
+              {columnsError ? "列元数据加载失败，请检查数据源连接后重试。" : "暂无字段，请先选择数据表。"}
+            </p>
           ) : (
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid gap-3">
+              {metadataPending ? (
+                <p className="text-theme-xs text-gray-400">表结构加载中，先展示已绑定字段…</p>
+              ) : null}
+              {columnsError && columnNames.length === 0 ? (
+                <p className="text-theme-xs text-warning-600 dark:text-warning-400">
+                  列元数据暂不可用，当前仅展示已绑定字段。
+                </p>
+              ) : null}
+              <div className="grid gap-4 lg:grid-cols-2">
               {[
                 { title: "维度", fields: dimensions },
                 { title: "指标", fields: metrics },
@@ -242,6 +259,7 @@ export function DatasetFieldWorkbench({
                   </ul>
                 </div>
               ))}
+              </div>
             </div>
           )}
         </TabsContent>
