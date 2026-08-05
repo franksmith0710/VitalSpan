@@ -51,6 +51,23 @@ function buildDualAxesLegendItems(params: {
     { label: lineName, color: lineColor, marker: "line", markerWidth: 14, markerHeight: 3 },
   ];
   if (dualLine) {
+    if (columnSeriesField) {
+      const names = [
+        ...new Set(columnData.map((row) => String(row[columnSeriesField] ?? "")).filter(Boolean)),
+      ];
+      if (names.length > 1) {
+        for (const [index, name] of names.entries()) {
+          items.push({
+            label: name,
+            color: colors[(index + 1) % colors.length] ?? columnColor,
+            marker: "line",
+            markerWidth: 14,
+            markerHeight: 3,
+          });
+        }
+        return items;
+      }
+    }
     items.push({ label: colName, color: columnColor, marker: "line", markerWidth: 14, markerHeight: 3 });
     return items;
   }

@@ -74,27 +74,27 @@ def build_gov_efficiency_dashboard() -> dict[str, Any]:
         _gov_dash_chart(
             theme=theme, chart_type="gauge", title="综合满意度",
             query=sql.SQL_GOV_GAUGE_SAT,
-            colSpan=3, rowSpan=2, gridX=0, gridY=0, order=0,
+            colSpan=3, rowSpan=3, gridX=0, gridY=0, order=0,
         ),
         _gov_dash_chart(
             theme=theme, chart_type="gauge", title="水质达标率",
             query=sql.SQL_GOV_GAUGE_WATER,
-            colSpan=3, rowSpan=2, gridX=3, gridY=0, order=1,
+            colSpan=3, rowSpan=3, gridX=3, gridY=0, order=1,
         ),
         _gov_dash_chart(
             theme=theme, chart_type="kpi", title="核心指标",
             query=sql.SQL_GOV_KPI, dimensions=[{"field": "指标"}], metrics=[{"field": "数值"}],
-            colSpan=6, rowSpan=2, gridX=6, gridY=0, order=2,
+            colSpan=6, rowSpan=3, gridX=6, gridY=0, order=2,
         ),
         _gov_dash_chart(
             theme=theme, chart_type="bar", title="部门满意度",
             query=sql.SQL_GOV_DEPT_SAT, dimensions=[{"field": "部门"}], metrics=[{"field": "满意度"}],
-            colSpan=7, rowSpan=4, gridX=0, gridY=2, order=3,
+            colSpan=7, rowSpan=5, gridX=0, gridY=3, order=3,
         ),
         _gov_dash_chart(
             theme=theme, chart_type="line", title="满意度趋势",
             query=sql.SQL_GOV_SAT_TREND, dimensions=[{"field": "日期"}], metrics=[{"field": "满意度"}],
-            colSpan=5, rowSpan=4, gridX=7, gridY=2, order=4,
+            colSpan=5, rowSpan=5, gridX=7, gridY=3, order=4,
         ),
     ])
 
@@ -131,30 +131,30 @@ def build_gov_finance_dashboard() -> dict[str, Any]:
         _gov_dash_chart(
             theme=theme, chart_type="kpi", title="财政 KPI",
             query=sql.SQL_GOV_KPI, dimensions=[{"field": "指标"}], metrics=[{"field": "数值"}],
-            colSpan=12, rowSpan=1, gridX=0, gridY=0, order=0,
+            colSpan=12, rowSpan=3, gridX=0, gridY=0, order=0,
         ),
         _gov_dash_chart(
             theme=theme, chart_type="map", title="区域支出热力",
             query=sql.SQL_GOV_REGION,
             dimensions=[{"field": "省份"}, {"field": "城市"}, {"field": "区县"}],
             metrics=[{"field": "服务量"}],
-            colSpan=7, rowSpan=4, gridX=0, gridY=1, order=1,
+            colSpan=7, rowSpan=6, gridX=0, gridY=3, order=1,
         ),
         _gov_dash_chart(
             theme=theme, chart_type="line", title="支出趋势参考",
             query=sql.SQL_GOV_SAT_TREND, dimensions=[{"field": "日期"}], metrics=[{"field": "满意度"}],
-            colSpan=5, rowSpan=2, gridX=7, gridY=1, order=2,
+            colSpan=5, rowSpan=3, gridX=7, gridY=3, order=2,
         ),
         _gov_dash_chart(
             theme=theme, chart_type="table-info", title="预算执行对比",
             query=sql.SQL_GOV_BUDGET_COMPARE, dimensions=[{"field": "类别"}],
             metrics=[{"field": "预算"}, {"field": "已支出"}],
-            colSpan=5, rowSpan=2, gridX=7, gridY=3, order=3,
+            colSpan=5, rowSpan=3, gridX=7, gridY=6, order=3,
         ),
         _gov_dash_chart(
             theme=theme, chart_type="bar", title="分类支出执行",
             query=sql.SQL_GOV_BUDGET, dimensions=[{"field": "类别"}], metrics=[{"field": "支出金额"}],
-            colSpan=12, rowSpan=2, gridX=0, gridY=5, order=4,
+            colSpan=12, rowSpan=3, gridX=0, gridY=9, order=4,
         ),
     ])
 

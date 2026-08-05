@@ -1,6 +1,6 @@
 # 图表逐型验收手册（对标 DataEase）
 
-> **状态**：**AUTO 已闭环**（2026-07-21）· catalog **49** 项（含 **5** 项 deprecated 已 MIG 门禁）  
+> **状态**：**REAL 已闭环**（2026-08-05 · Wave 0–10）· catalog **49** 项（含 **5** 项 deprecated 已 MIG 门禁）· **44/44** 活跃型 REAL  
 > **真理源**：`backend/app/viz/builtin/*.py`（field_rule）· `fe/src/components/dashboard/chartFieldSlots.ts`（槽位文案）· `fe/src/components/charts/engine/plugins/metadata.ts`（FE 注册）  
 > **前置**：D3 全量迁移已完成（见 [`2026-07-21-d3-full-chart-migration.md`](./2026-07-21-d3-full-chart-migration.md)）  
 > **取代**：[`2026-07-20-chart-component-acceptance.md`](./2026-07-20-chart-component-acceptance.md) 中已过时的 G2Plot/S2 分路描述，以本文 **§4 逐型矩阵** 为准  
@@ -166,10 +166,12 @@ UNION ALL SELECT '2025-07-03', '华北', 'B', 200;
 
 图例：**维** = `minDimensions–maxDimensions` · **指** = `minMetrics–maxMetrics` · **夹具** = §2 · **testId** = 渲染容器
 
-> **AUTO 汇总（2026-08-05 全量对标）**  
-> - **44** 个非 deprecated 类型：`T-VIZ-R30`（L1）· `T-VIZ-R31`（L2 plan 编码）· `T-VIZ-R32`（L3 fieldRule/槽位）· `T-INSP-DE-golden`（44 型槽位 label）· `T-INSP-UI`（ChartDataSlots UI）已全部参数化门禁。  
+> **REAL 汇总（2026-08-05 · Wave 0–10）**  
+> - **44** 个非 deprecated 类型：`T-VIZ-R30`（L1）· `T-VIZ-R31`（L2）· `T-VIZ-R32`（L3）· `T-INSP-DE-golden` · `T-INSP-UI` · **`perType/*.parity.test.ts`（132 tests）** 已全部参数化门禁。  
+> - **Wave 0.1** MULTI_DIM：`buildDatasetEncoding.test.ts` · `encodeCartesian.test.ts` · `chartDeAxis/builders.ts`  
+> - **Wave 0.2** GAP-FILTER-CHAIN：`chartExecuteProbe.test.ts`  
 > - **5** 个 deprecated 类型：`T-VIZ-R33`（`migratesTo` 迁移）已门禁。  
-> - 下表 **L1/L2/L3** 列 **✅** = 自动化 + UI 集成证据（见 [`2026-08-05-chart-browser-walkthrough-log.md`](../../feature-truth/2026-08-05-chart-browser-walkthrough-log.md)）；**AUTO** 列 **✅** = 已纳入 `pnpm run test:chart-catalog`（350 tests）。
+> - 下表 **L1/L2/L3** 列 **✅** = REAL 证据（见 [`2026-08-05-chart-browser-walkthrough-log.md`](../../feature-truth/2026-08-05-chart-browser-walkthrough-log.md)）；**AUTO** 列 **✅** = 已纳入 `pnpm run test:chart-catalog`（**506 tests**）。
 
 ### 4.1 指标（quota）— 对标 DE「指标」区
 
@@ -301,13 +303,17 @@ UNION ALL SELECT '2025-07-03', '华北', 'B', 200;
 # 前端一键门禁（L1 + L2 + L3 + MIG + 注册表 + 槽位 + 样式链 + 引擎依赖）
 cd fe && pnpm run test:chart-catalog
 
-# 或分项：
+# 或分项（含 Wave 0–10 perType）：
 cd fe && pnpm exec vitest run \
   src/components/charts/charts.smoke.test.tsx \
   src/components/charts/chartCatalogSmokeFixtures.test.ts \
   src/components/charts/chartCatalogData.test.ts \
   src/components/charts/chartCatalogFieldRules.test.ts \
   src/components/charts/chartCatalogMigration.test.ts \
+  src/components/charts/perType \
+  src/lib/chartExecuteProbe.test.ts \
+  src/components/charts/engine/buildDatasetEncoding.test.ts \
+  src/components/charts/engine/d3/cartesian/renderDualAxes.test.ts \
   src/lib/buildChartRenderModel.test.ts
 
 # Backend catalog ↔ FE
@@ -315,43 +321,67 @@ cd fe && pnpm exec vitest run src/components/charts/engine/plugins/catalogParity
 python -m pytest tests/test_viz_chart_catalog_parity.py -q
 ```
 
-### 5.3 AUTO 覆盖状态（2026-08-05）
+### 5.3 REAL 覆盖状态（2026-08-05 · Wave 0–10）
 
 | 项 | 状态 | 锚点 |
 |----|------|------|
 | 44 型 L1 可渲染 | ✅ | `T-VIZ-R30-001` · `chartCatalogSmokeFixtures.ts` |
 | 44 型 L1 空数据 R-03 | ✅ | `T-VIZ-R30-002` |
-| 44 型 L2 数据编码 | ✅ | `T-VIZ-R31-001` · `chartCatalogData.test.ts` · `chartCatalogPlanAssertions.ts` |
-| 44 型 L3 字段规则 | ✅ | `T-VIZ-R32-*` · `T-VIZ-R32-014` waivers · `chartCatalogFieldRules.test.ts` |
+| 44 型 L2 数据编码 | ✅ | `T-VIZ-R31-001` · `perType/*.parity.test.ts` |
+| 44 型 L3 字段规则 | ✅ | `T-VIZ-R32-*` · `chartCatalogFieldRules.test.ts` |
 | 44 型 L3 槽位 golden | ✅ | `T-INSP-DE-golden` · `chartFieldSlots.test.ts` |
 | 44 型 L3 UI 槽位 | ✅ | `T-INSP-UI` · `ChartDataSlots.deParity.test.tsx` |
+| Wave 0.1 MULTI_DIM | ✅ | `buildDatasetEncoding.test.ts` · `encodeCartesian.test.ts` |
+| Wave 0.2 GAP-FILTER-CHAIN | ✅ | `chartExecuteProbe.test.ts` |
+| 双轴 dual-line 图例 | ✅ | `renderDualAxes.test.ts` |
 | 非笛卡尔 encoding | ✅ | `encodeNonCartesian.test.ts` |
-| BE↔FE fieldRule 快照 | ✅ | `test_field_rules_match_fe_snapshot` · pytest 4 passed |
+| BE↔FE fieldRule 快照 | ✅ | pytest 4 passed |
 | catalog 数量门禁 | ✅ | `chartCatalogSmokeFixtures.test.ts` |
 | deprecated MIG | ✅ | `T-VIZ-R33-*` · `chartCatalogMigration.test.ts` |
-| 浏览器走查日志 | ✅ | [`2026-08-05-chart-browser-walkthrough-log.md`](../../feature-truth/2026-08-05-chart-browser-walkthrough-log.md) 44/44 |
+| 浏览器走查 REAL | ✅ | walkthrough log **44/44 REAL** |
+| 一键门禁合计 | ✅ | **506 passed** · `pnpm run test:chart-catalog` |
 
-### 5.4 闭环清单（2026-08-05）
+### 5.4 Wave 0–10 闭环清单
+
+| Wave | 范围 | 状态 | 证据 |
+|------|------|------|------|
+| **0** | catalog 基线门禁（L1/L2/L3 + UI + MIG） | ✅ | `test:chart-catalog` 原 ~374 tests |
+| **0.1** | MULTI_DIM 笛卡尔 8 维 | ✅ | `buildDatasetEncoding.ts` · `encodeCartesian.test.ts` · `chartDeAxis/builders.ts` |
+| **0.2** | GAP-FILTER-CHAIN 过滤→query | ✅ | `chartExecuteProbe.test.ts` |
+| **1** | quota：`gauge` · `liquid` · `kpi` | ✅ | `perType/{gauge,liquid,kpi}.parity.test.ts` |
+| **2** | table：`table-info` · `table-normal` · `table-pivot` · `t-heatmap` | ✅ | `perType/table-*.parity.test.ts` · `t-heatmap.parity.test.ts` |
+| **3** | trend：`line` · `area` · `area-stack` | ✅ | `perType/line.parity.test.ts` · [REAL 试点](../../feature-truth/per-type/line.md) |
+| **4** | compare ①：`bar` · `bar-stack` · `percentage-bar-stack` · `bar-group` · `bar-group-stack` | ✅ | `perType/bar*.parity.test.ts` |
+| **5** | compare ②：`waterfall` · `bar-horizontal` · `bar-stack-horizontal` · `percentage-bar-stack-horizontal` · `bar-range` | ✅ | `perType/*.parity.test.ts` |
+| **6** | compare ③：`bidirectional-bar` · `progress-bar` · `stock-line` · `bullet-graph` | ✅ | `perType/*.parity.test.ts` |
+| **7** | distribute：pie 系 · `radar` · `treemap` · `word-cloud` | ✅ | `perType/pie*.parity.test.ts` 等 |
+| **8** | map：`map` · `map-3d` | ✅ | `perType/map*.parity.test.ts` · `geoMap3d.audit.test.ts` |
+| **9** | relation：scatter 系 · `funnel` · `sankey` · `circle-packing` · `graph` | ✅ | `perType/*.parity.test.ts` |
+| **10** | dual_axes：`chart-mix*` · `renderDualAxes.test.ts` 图例 | ✅ | `perType/chart-mix*.parity.test.ts` |
+
+### 5.5 闭环清单（2026-08-05）
 
 | # | 项 | 状态 | 证据 |
 |---|-----|------|------|
 | 1 | 44 型 L1 可渲染 + 空数据 | ✅ | `T-VIZ-R30-001/002` |
-| 2 | 44 型 L2 plan 数据编码 | ✅ | `T-VIZ-R31-001` |
+| 2 | 44 型 L2 plan 数据编码 | ✅ | `T-VIZ-R31-001` · perType parity |
 | 3 | 44 型 L3 fieldRule + 槽位 + UI | ✅ | `T-VIZ-R32-*` · `T-INSP-DE-golden` · `T-INSP-UI` |
 | 4 | 5 型 deprecated 迁移 | ✅ | `T-VIZ-R33-*` |
 | 5 | FE↔BE catalog 数量/fieldRule | ✅ | `catalogParity` + pytest |
 | 6 | 双轴 Inspector 2 指标槽 | ✅ | `T-INSP-DE-09` |
 | 7 | 引擎依赖零 AntV 画布 | ✅ | `check:chart-engine` |
-| 8 | §4 矩阵自动化 + UI 走查 | ✅ | truth-audit §3d · walkthrough log 44/44 |
-| 9 | GAP-MAX-DIM Phase 5 | ☐ waiver | 产品确认前不得 REAL；见 `chartCatalogFieldRuleWaivers.ts` |
+| 8 | §4 矩阵 REAL + 走查 | ✅ | truth-audit §3d **44/44 REAL** |
+| 9 | Wave 0.1 MULTI_DIM | ✅ | GAP-MAX-DIM 笛卡尔 **RESOLVED** |
+| 10 | Wave 0.2 GAP-FILTER-CHAIN | ✅ | `chartExecuteProbe.test.ts` |
+| 11 | Wave 1–10 perType | ✅ | 132 tests · 44/44 REAL |
 
-### 5.5 待补（P2 · 非阻断 AUTO 闭环）
+### 5.6 待补（P2 · 非阻断 REAL 闭环）
 
 | 优先级 | 范围 | 做法 |
 |--------|------|------|
 | P2 | L2 DOM 数值 | 渲染后 text/attribute 与 mock 对照（tooltip、KPI 数值） |
 | P2 | 地图/桑基/关系图 | 节点/边数量 DOM 断言、tooltip 数值 |
-| MANUAL | §4 矩阵勾选 | 浏览器走查后 L1/L2/L3 列改 ✅ |
+| P2 | §4 真机截图 | `.dev/walkthrough/chart-catalog/{chartType}.png` |
 
 ---
 
@@ -413,7 +443,7 @@ python -m pytest tests/test_viz_chart_catalog_parity.py -q
 |------|------|
 | 新增 chartType / 改 field_rule | `backend/app/viz/builtin/` + `metadata.ts` + 本文 §4 |
 | 改槽位文案 | `chartFieldSlots.ts` + 本文 §4 |
-| 验收完成度 | 更新 §4 矩阵 ☐→✅ 与 `docs/automate/evolution-state.md` |
+| 验收完成度 | 更新 §4 矩阵 · [`docs/feature-truth/per-type/`](../../feature-truth/per-type/) · `docs/automate/evolution-state.md` |
 
 ---
 
@@ -433,6 +463,7 @@ python -m pytest tests/test_viz_chart_catalog_parity.py -q
 
 | 日期 | 说明 |
 |------|------|
+| 2026-08-05 | **REAL 闭环**：Wave 0–10 · 506 tests · 44/44 perType · GAP-MAX-DIM/GAP-FILTER-CHAIN RESOLVED |
 | 2026-07-21 | **AUTO 闭环**：`pnpm test:chart-catalog` + §5.4 清单 + MIG 门禁 |
 | 2026-07-21 | L2/L3 AUTO：plan 数据断言 + fieldRule 契约 + 双轴槽位修复 |
 | 2026-07-21 | P0：43 型 L1 AUTO smoke + buildChartRenderModel 字段校验修复 |

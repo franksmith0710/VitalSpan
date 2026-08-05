@@ -101,7 +101,7 @@ def build_de_chart_de_style(
             "width": 0,
             "radius": 0,
         },
-        "title": {"color": DE_TITLE, "fontSize": 14, "fontWeight": 600},
+        "title": {"color": DE_TITLE, "fontSize": 14, "fontWeight": 600, "show": False},
     }
     if chart_type == "map":
         de_style["geo"] = {

@@ -10,7 +10,7 @@ import {
   styleAxis,
   type CategoryAxisLayout,
 } from "@/components/charts/engine/d3/core/axes";
-import { VCDS, getDepthVisual } from "@/components/charts/engine/d3/core/chartVisualTokens";
+import { VCDS, getDepthVisual, resolveAxisFontSize } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { depthExtrudePx } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import {

@@ -50,4 +50,31 @@ describe("encodeCartesianRows", () => {
     expect(enc.data).toHaveLength(2);
     expect(enc.data.map((d) => d.__category__)).toEqual(["2025-01-05", "2025-02-15"]);
   });
+
+  it("composites multiple xAxis fields into category keys (MULTI_DIM)", () => {
+    const enc = encodeCartesianRows(
+      {
+        chartType: "line",
+        styleVariant: "default",
+        encoding: {
+          dimensions: [{ field: "region_name" }, { field: "sale_date" }],
+          metrics: [{ field: "amount" }],
+          axes: {
+            xAxis: [{ field: "region_name" }, { field: "sale_date" }],
+          },
+        },
+      },
+      ROWS,
+      COLUMNS,
+      "line",
+    );
+
+    expect(enc.seriesField).toBeUndefined();
+    expect(enc.data.map((d) => d.__category__)).toEqual([
+      "华东\u00012025-01-05",
+      "华北\u00012025-01-05",
+      "华东\u00012025-02-15",
+      "华北\u00012025-02-15",
+    ]);
+  });
 });

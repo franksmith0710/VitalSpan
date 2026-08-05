@@ -41,7 +41,7 @@ const D3_WIRING_BY_TYPE: Record<string, D3InspectorFeatureMatrix> = {
   "chart-mix": { ...WIRED, conditional: "partial" },
   "chart-mix-group": { ...WIRED, conditional: "partial" },
   "chart-mix-stack": { ...WIRED, conditional: "partial" },
-  "chart-mix-dual-line": { ...PARTIAL_LEGEND, conditional: "wired" },
+  "chart-mix-dual-line": { ...WIRED, conditional: "wired" },
   scatter: WIRED,
   quadrant: WIRED,
   "multi-scatter": WIRED,

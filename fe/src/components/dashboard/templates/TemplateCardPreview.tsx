@@ -28,8 +28,10 @@ type TemplateCardPreviewProps = {
   surfaceKind: DashboardTemplateListItem["surfaceKind"];
   className?: string;
   eager?: boolean;
-  /** 静态缩略图：live 预览加载前展示，避免灰块空壳 */
+  /** 静态缩略图：Hub 卡片对标 DataEase，默认有图则只展示缩略图 */
   thumbnailSrc?: string | null;
+  /** 强制 live 布局预览（忽略 thumbnailSrc） */
+  livePreview?: boolean;
 };
 
 /** 模板卡片预览区：纯布局/live 缩略图，元信息由 VizTemplateCard 正文展示。 */
@@ -39,11 +41,13 @@ export function TemplateCardPreview({
   className,
   eager = false,
   thumbnailSrc = null,
+  livePreview,
 }: TemplateCardPreviewProps) {
   const navSuspended = useAdminHeavyRenderSuspended();
   const hostRef = useRef<HTMLDivElement>(null);
-  const [active, setActive] = useState(eager);
-  const [slotGranted, setSlotGranted] = useState(eager);
+  const useStaticThumb = Boolean(thumbnailSrc?.trim()) && livePreview !== true;
+  const [active, setActive] = useState(eager && !useStaticThumb);
+  const [slotGranted, setSlotGranted] = useState(eager && !useStaticThumb);
 
   const detailQuery = useQuery({
     queryKey: queryKeys.dashboardTemplates.detail(templateId),
@@ -164,6 +168,20 @@ export function TemplateCardPreview({
   ) : (
     <Skeleton className="h-full w-full rounded-none" />
   );
+
+  if (useStaticThumb && thumbnailSrc) {
+    return (
+      <div
+        ref={hostRef}
+        className={cn("h-full", className)}
+        data-testid="template-card-preview"
+        data-live="false"
+        aria-hidden
+      >
+        <ComponentPreviewShell className="h-full">{thumbnailFallback}</ComponentPreviewShell>
+      </div>
+    );
+  }
 
   if (navSuspended) {
     return (

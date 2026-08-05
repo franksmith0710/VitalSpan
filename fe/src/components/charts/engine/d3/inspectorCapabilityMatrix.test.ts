@@ -50,6 +50,6 @@ describe("inspectorCapabilityMatrix", () => {
     expect(mix.conditionalPartial).toBe(true);
 
     const dual = chartInspectorCapabilities("chart-mix-dual-line");
-    expect(dual.legendPartial).toBe(true);
+    expect(dual.legendPartial).toBe(false);
   });
 });
