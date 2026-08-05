@@ -137,4 +137,81 @@ describe("Dataset form pages", () => {
     await user.click(screen.getByRole("tab", { name: /绑定配置/ }));
     expect(screen.getByText("出图查询绑定")).toBeInTheDocument();
   });
+
+  it("T1-FE-04: sync dataset bind panel resolves analytics and enables re-bind", async () => {
+    mockApiFetch.mockImplementation(async (path: string) => {
+      if (path === "/api/v1/datasets/orders_clean_3") {
+        return {
+          datasetId: "orders_clean_3",
+          displayName: "同步：rest REST API2323",
+          origin: "sync_job",
+          syncJobId: "38da8834-0000-4000-8000-000000000001",
+          tables: [{ name: "public.orders_clean_3" }],
+          computedFields: [],
+          allowedRoles: ["analyst"],
+          tableSourceDataSourceId: "ds-analytics",
+          boundConfigId: "cfg-bound",
+        };
+      }
+      if (path === "/api/v1/query/configs/cfg-bound") {
+        return {
+          id: "cfg-bound",
+          configType: "dataset_query",
+          payload: {
+            dataSourceId: "ds-analytics",
+            connectorType: "postgresql",
+            schema: "public",
+            table: "orders_clean_3",
+            columns: ["id", "amount", "region", "product_name"],
+          },
+        };
+      }
+      if (path.startsWith("/api/v1/datasources") && !path.includes("/schemas")) {
+        return {
+          items: [
+            {
+              id: "ds-analytics",
+              name: "托管分析库",
+              code: "analytics",
+              type: "postgresql",
+              port: 5433,
+              database: "analytics",
+            },
+          ],
+        };
+      }
+      if (path.endsWith("/schemas")) return { items: [{ name: "public" }] };
+      if (path.includes("/tables")) {
+        return { items: [{ name: "orders_clean_3", type: "table" }] };
+      }
+      if (path.includes("/columns")) {
+        return {
+          items: [
+            { name: "id" },
+            { name: "amount" },
+            { name: "region" },
+            { name: "product_name" },
+            { name: "status" },
+            { name: "updated_at" },
+          ],
+        };
+      }
+      return {};
+    });
+
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/admin/datasets/orders_clean_3/edit"]}>
+        <Routes>
+          <Route path="/admin/datasets/:id/edit" element={<DatasetFormPage mode="edit" />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole("heading", { name: "编辑数据集" })).toBeInTheDocument();
+    expect(await screen.findByRole("tab", { name: /绑定配置/ })).toBeInTheDocument();
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("tab", { name: /绑定配置/ }));
+    expect(await screen.findByRole("button", { name: "重新绑定" })).toBeEnabled();
+    expect(screen.queryByText("加载中…")).not.toBeInTheDocument();
+  });
 });

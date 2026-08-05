@@ -19,7 +19,9 @@
     "build:geo-terrain": "node scripts/build-china-terrain-assets.mjs",
     "generate:gov-assets": "node scripts/generate-gov-template-assets.mjs",
     "generate:de-dashboard-assets": "node scripts/generate-de-dashboard-assets.mjs",
-    "generate:template-assets": "npm run generate:gov-assets && npm run generate:de-dashboard-assets",
+    "generate:borderless-decor": "node scripts/generate-borderless-decor-assets.mjs",
+    "generate:template-assets": "npm run generate:gov-assets && npm run generate:de-dashboard-assets && npm run generate:borderless-decor && npm run generate:template-catalog",
+    "generate:template-catalog": "node scripts/generate-template-assets-catalog.mjs",
     "sync:template-assets": "node scripts/sync-template-assets.mjs"
   },
   "dependencies": {

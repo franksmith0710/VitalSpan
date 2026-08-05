@@ -53,10 +53,23 @@ export type ScreenIconStyleConfig = {
   size?: number;
 };
 
+export type ScreenTitleBarVariant =
+  | "simple"
+  | "de-trapezoid-wing"
+  | "de-circuit-sym"
+  | "de-glow-plaque";
+
 export type ScreenTitleBarStyleConfig = {
   accentColor?: string;
   titleColor?: string;
   showSideLines?: boolean;
+  /** DE 大屏顶栏样式；默认梯形+电路翼 */
+  variant?: ScreenTitleBarVariant;
+  fontSize?: number;
+  /** 顶栏装饰图片（对标 DataEase）；未设时由 variant + palette 解析 */
+  backgroundImage?: string;
+  /** 素材色系，对应 screen-header-{variant}-{palette}.svg */
+  palette?: string;
 };
 
 export type ScreenVisualStyleConfig = {
@@ -107,6 +120,10 @@ export const DEFAULT_SCREEN_TITLE_BAR_STYLE: Required<ScreenTitleBarStyleConfig>
   accentColor: SCREEN_ACCENT,
   titleColor: SCREEN_TITLE_COLOR,
   showSideLines: true,
+  variant: "de-trapezoid-wing",
+  fontSize: 20,
+  backgroundImage: "",
+  palette: "cyan",
 };
 
 export function normalizeScreenClockStyle(
@@ -176,6 +193,10 @@ export function normalizeScreenTitleBarStyle(
     accentColor: raw?.accentColor ?? DEFAULT_SCREEN_TITLE_BAR_STYLE.accentColor,
     titleColor: raw?.titleColor ?? DEFAULT_SCREEN_TITLE_BAR_STYLE.titleColor,
     showSideLines: raw?.showSideLines ?? DEFAULT_SCREEN_TITLE_BAR_STYLE.showSideLines,
+    variant: raw?.variant ?? DEFAULT_SCREEN_TITLE_BAR_STYLE.variant,
+    fontSize: raw?.fontSize ?? DEFAULT_SCREEN_TITLE_BAR_STYLE.fontSize,
+    backgroundImage: raw?.backgroundImage ?? DEFAULT_SCREEN_TITLE_BAR_STYLE.backgroundImage,
+    palette: raw?.palette ?? DEFAULT_SCREEN_TITLE_BAR_STYLE.palette,
   };
 }
 

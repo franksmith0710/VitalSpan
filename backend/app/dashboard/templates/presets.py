@@ -14,6 +14,7 @@ from app.dashboard.templates.presets_gov_assets import (
     SCREEN_GOV_BG,
     SCREEN_SALES_GEO_BG,
     SCREEN_TECH_BG,
+    screen_header,
 )
 from app.dashboard.templates.presets_de_dash import (
     DE_BLUE,
@@ -58,6 +59,25 @@ DECOR_GRADIENT_LIGHT: dict[str, str] = {
         "radial-gradient(ellipse 90% 70% at 50% -10%, #e0e7ff 0%, #f8fafc 50%, #ffffff 100%)"
     ),
 }
+
+_TITLE_ACCENT_PALETTE: dict[str, str] = {
+    "#22d3ee": "cyan",
+    "#38bdf8": "royal",
+    "#60a5fa": "royal",
+    "#3b82f6": "cobalt",
+    "#6366f1": "indigo",
+    "#818cf8": "indigo",
+    "#34d399": "emerald",
+    "#f87171": "magenta",
+    "#a78bfa": "violet",
+    "#2dd4bf": "teal",
+}
+
+
+def _title_bar_palette(accent: str | None) -> str:
+    if not accent:
+        return "cobalt"
+    return _TITLE_ACCENT_PALETTE.get(accent.lower(), "cobalt")
 
 
 def _wid() -> str:
@@ -141,6 +161,7 @@ def _clock(
 def _title_bar(
     accent: str | None = None,
     *,
+    variant: str = "de-trapezoid-wing",
     screen_style: dict[str, Any] | None = None,
     **geo: Any,
 ) -> dict[str, Any]:
@@ -150,10 +171,15 @@ def _title_bar(
         "variant": "plain",
     }
     merged_style = dict(screen_style or {})
+    title_bar = dict(merged_style.get("titleBar") or {})
     if accent:
-        title_bar = dict(merged_style.get("titleBar") or {})
         title_bar["accentColor"] = accent
-        merged_style["titleBar"] = title_bar
+    title_bar.setdefault("variant", variant)
+    palette = str(title_bar.get("palette") or _title_bar_palette(accent))
+    title_bar["palette"] = palette
+    if variant != "simple":
+        title_bar.setdefault("backgroundImage", screen_header(variant, palette))
+    merged_style["titleBar"] = title_bar
     if merged_style:
         text_config["screenStyle"] = merged_style
     return {
@@ -440,7 +466,7 @@ def build_command_center_layout() -> dict[str, Any]:
         order=5,
     )
     widgets = [
-        _title_bar(x=560, y=16, width=800, height=72, order=0),
+        _title_bar(x=0, y=0, width=1920, height=100, order=0),
         _clock(x=1680, y=24, width=200, height=56, order=1),
         _border("border-3", x=32, y=104, width=552, height=420, order=6),
         _border("border-3", x=584, y=104, width=752, height=560, order=7),
@@ -513,7 +539,7 @@ def build_tech_blue_layout() -> dict[str, Any]:
         "version": 2,
         "canvas": {"width": 1920, "height": 1080},
         "widgets": [
-            _title_bar(accent=accent, x=480, y=20, width=960, height=80, order=0),
+            _title_bar(accent=accent, x=0, y=0, width=1920, height=100, order=0),
             _clock(x=1680, y=28, width=200, height=56, order=1),
             _border("border-5", accent=accent, x=80, y=120, width=1760, height=840, order=5),
             main,
@@ -583,7 +609,7 @@ def build_gov_minimal_layout() -> dict[str, Any]:
         "version": 2,
         "canvas": {"width": 1920, "height": 1080},
         "widgets": [
-            _title_bar(accent=accent, x=460, y=40, width=1000, height=88, order=0),
+            _title_bar(accent=accent, x=0, y=0, width=1920, height=100, order=0),
             _clock(x=1680, y=48, width=200, height=56, order=1),
             _border("border-2", accent=accent, x=340, y=176, width=1240, height=688, order=5),
             left_kpi,
@@ -763,7 +789,7 @@ def build_sales_geo_screen_layout() -> dict[str, Any]:
         "version": 2,
         "canvas": {"width": 1920, "height": 1080},
         "widgets": [
-            _title_bar(accent=accent, x=480, y=24, width=960, height=72, order=0),
+            _title_bar(accent=accent, x=0, y=0, width=1920, height=100, order=0),
             _clock(x=1680, y=32, width=200, height=56, order=1),
             _border("border-7", accent=accent, x=440, y=112, width=1040, height=776, order=5),
             _screen_chart(

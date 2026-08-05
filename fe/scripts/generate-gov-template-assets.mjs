@@ -59,6 +59,10 @@ const DARK_PATTERNS = [
   "topbar-icons",
   "gradient-mesh",
   "radial-pulse",
+  /** 对标 DataEase 工作台大屏：梯形顶栏 + 电路翼 */
+  "de-platform-header",
+  "de-circuit-wing",
+  "de-cloud-center",
 ];
 /** 浅色 pattern；clean-header 为政务模板默认（顶栏线 + 无装饰） */
 const LIGHT_PATTERNS = [
@@ -90,6 +94,8 @@ const PANEL_COLORS = [
 ];
 
 const TITLE_STYLES = ["diamond-flank", "shield-badge", "hex-nodes"];
+/** 全宽大屏顶栏（对标 DE workbranch 模板顶栏背景） */
+const SCREEN_HEADER_STYLES = ["de-trapezoid-wing", "de-circuit-sym", "de-glow-plaque"];
 const TITLE_COLORS = [
   "cyan",
   "indigo",
@@ -209,6 +215,129 @@ function headerBar(w, accent, palette, id, withIcons = true) {
   <line x1="0" y1="72" x2="${w}" y2="72" stroke="${accent}" stroke-width="1" opacity="0.35"/>
   <line x1="48" y1="72" x2="${w - 48}" y2="72" stroke="${accent}" stroke-width="2" opacity="0.15"/>
   ${icons}`;
+}
+
+/** DataEase 大屏顶栏：霓虹发光滤镜 */
+function deSciFiGlowDefs(filterId) {
+  return `<filter id="${filterId}" x="-30%" y="-80%" width="160%" height="260%">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="2.2" result="blur"/>
+    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>`;
+}
+
+/** 电路翼装饰（单侧）；side=left 时 originX 为靠中心起点，向右绘制 */
+function circuitWingDecor(originX, cy, accent, filterId, side) {
+  const dir = side === "left" ? -1 : 1;
+  const o = originX;
+  const x = (dx) => o + dir * dx;
+  const hatch = Array.from({ length: 5 }, (_, i) => {
+    const hx = x(18 + i * 7);
+    const hy = cy - 22 + i * 5;
+    return `<line x1="${hx}" y1="${hy}" x2="${hx + dir * 10}" y2="${hy + 8}" stroke="${accent}" stroke-width="0.7" opacity="0.45"/>`;
+  }).join("\n    ");
+  return `<g filter="url(#${filterId})" stroke="${accent}" fill="none" stroke-linecap="square">
+    <path d="M${x(0)} ${cy} H${x(118)} V${cy - 18} H${x(210)}" stroke-width="1.3" opacity="0.9"/>
+    <path d="M${x(28)} ${cy + 12} H${x(150)} V${cy + 30} H${x(240)}" stroke-width="1.1" opacity="0.75"/>
+    <path d="M${x(64)} ${cy - 8} H${x(178)}" stroke-width="1" stroke-dasharray="5 4" opacity="0.55"/>
+    <path d="M${x(96)} ${cy + 22} H${x(190)} V${cy + 8}" stroke-width="0.9" opacity="0.65"/>
+    <circle cx="${x(210)}" cy="${cy - 18}" r="2.8" fill="${accent}" stroke="none" opacity="0.95"/>
+    <circle cx="${x(240)}" cy="${cy + 30}" r="2.2" fill="${accent}" stroke="none" opacity="0.85"/>
+    <circle cx="${x(118)}" cy="${cy}" r="2" fill="${accent}" stroke="none" opacity="0.7"/>
+    <rect x="${Math.min(x(82), x(96))}" y="${cy - 5}" width="14" height="5" fill="${accent}" opacity="0.55" stroke="none"/>
+    <rect x="${Math.min(x(130), x(144))}" y="${cy + 16}" width="10" height="4" fill="${accent}" opacity="0.4" stroke="none"/>
+    ${hatch}
+  </g>`;
+}
+
+/** 梯形标题牌（云平台组织资源大屏风格） */
+function trapezoidTitlePlaque(w, accent, filterId, yTop = 10, plateW = 500, plateH = 74) {
+  const cx = w / 2;
+  const taper = 42;
+  const x0 = cx - plateW / 2;
+  const x1 = cx + plateW / 2;
+  const y0 = yTop;
+  const y1 = yTop + plateH;
+  const leftHatch = Array.from({ length: 6 }, (_, i) =>
+    `<line x1="${x0 + taper - i * 5}" y1="${y0 + i * 6}" x2="${x0 + taper - i * 5 - 9}" y2="${y0 + i * 6 + 10}" stroke="${accent}" stroke-width="0.75" opacity="0.5"/>`,
+  ).join("\n    ");
+  const rightHatch = Array.from({ length: 6 }, (_, i) =>
+    `<line x1="${x1 - taper + i * 5}" y1="${y0 + i * 6}" x2="${x1 - taper + i * 5 + 9}" y2="${y0 + i * 6 + 10}" stroke="${accent}" stroke-width="0.75" opacity="0.5"/>`,
+  ).join("\n    ");
+  return `<g filter="url(#${filterId})">
+    <polygon points="${x0 + taper},${y0} ${x1 - taper},${y0} ${x1},${y1} ${x0},${y1}"
+      fill="${accent}" fill-opacity="0.09" stroke="${accent}" stroke-width="1.8"/>
+    ${leftHatch}
+    ${rightHatch}
+    <line x1="${cx - 28}" y1="${y1 - 5}" x2="${cx + 28}" y2="${y1 - 5}" stroke="#ffffff" stroke-width="2.2" opacity="0.92"/>
+    <line x1="${cx - 12}" y1="${y1 - 5}" x2="${cx + 12}" y2="${y1 - 5}" stroke="${accent}" stroke-width="1" opacity="0.9"/>
+  </g>`;
+}
+
+/** 云数据中心风格：平行四边形侧饰 + 底边发光线 */
+function cloudCenterTitlePlaque(w, accent, filterId, yTop = 14, plateW = 460, plateH = 68) {
+  const cx = w / 2;
+  const x0 = cx - plateW / 2;
+  const x1 = cx + plateW / 2;
+  const y0 = yTop;
+  const y1 = yTop + plateH;
+  const skew = 18;
+  return `<g filter="url(#${filterId})">
+    <polygon points="${x0 + 24},${y0} ${x1 - 24},${y0} ${x1 - 8},${y1} ${x0 + 8},${y1}"
+      fill="${accent}" fill-opacity="0.07" stroke="${accent}" stroke-width="1.5"/>
+    <polygon points="${x0 - 6},${y0 + 18} ${x0 + skew},${y0 + 8} ${x0 + skew + 8},${y0 + 32} ${x0 + 2},${y0 + 42}"
+      fill="${accent}" fill-opacity="0.22" stroke="${accent}" stroke-width="0.8" opacity="0.85"/>
+    <polygon points="${x1 + 6},${y0 + 18} ${x1 - skew},${y0 + 8} ${x1 - skew - 8},${y0 + 32} ${x1 - 2},${y0 + 42}"
+      fill="${accent}" fill-opacity="0.22" stroke="${accent}" stroke-width="0.8" opacity="0.85"/>
+    <line x1="${cx - 220}" y1="${y1 - 2}" x2="${cx + 220}" y2="${y1 - 2}" stroke="${accent}" stroke-width="3.2" opacity="0.95"/>
+    <line x1="${cx - 180}" y1="${y1 - 2}" x2="${cx + 180}" y2="${y1 - 2}" stroke="#ffffff" stroke-width="1" opacity="0.35"/>
+  </g>`;
+}
+
+/** 简约发光标题牌 */
+function glowPlaqueSimple(w, accent, filterId, yTop = 16, plateW = 420, plateH = 62) {
+  const cx = w / 2;
+  const x0 = cx - plateW / 2;
+  const x1 = cx + plateW / 2;
+  const y0 = yTop;
+  const y1 = yTop + plateH;
+  return `<g filter="url(#${filterId})">
+    <rect x="${x0}" y="${y0}" width="${plateW}" height="${plateH}" fill="${accent}" fill-opacity="0.08" stroke="${accent}" stroke-width="1.4"/>
+    <line x1="${x0 + 12}" y1="${y1}" x2="${x1 - 12}" y2="${y1}" stroke="${accent}" stroke-width="2.5" opacity="0.85"/>
+    <line x1="${cx - 80}" y1="${y0 + 6}" x2="${cx + 80}" y2="${y0 + 6}" stroke="${accent}" stroke-width="0.8" opacity="0.35"/>
+  </g>`;
+}
+
+/** 对标 DataEase workbranch 大屏顶栏（梯形 + 双侧电路翼） */
+function deSciFiHeaderBand(w, accent, palette, filterId, variant = "de-trapezoid-wing", headerH = 100) {
+  const cy = headerH * 0.52;
+  const wingGap = 248;
+  const plaqueVariant = variant.replace(/^de-/, "");
+  let plaque = trapezoidTitlePlaque(w, accent, filterId);
+  if (plaqueVariant === "circuit-sym") plaque = cloudCenterTitlePlaque(w, accent, filterId);
+  if (plaqueVariant === "glow-plaque") plaque = glowPlaqueSimple(w, accent, filterId);
+
+  return `<defs>
+    ${deSciFiGlowDefs(filterId)}
+    <linearGradient id="${filterId}-hdr-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="${accent}" stop-opacity="0.16"/>
+      <stop offset="0.55" stop-color="${palette.baseTo}" stop-opacity="0.08"/>
+      <stop offset="1" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="${w}" height="${headerH}" fill="url(#${filterId}-hdr-bg)"/>
+  <line x1="0" y1="${headerH - 1}" x2="${w}" y2="${headerH - 1}" stroke="${accent}" stroke-width="1" opacity="0.4"/>
+  <line x1="48" y1="${headerH - 1}" x2="${w - 48}" y2="${headerH - 1}" stroke="${accent}" stroke-width="2.5" opacity="0.12"/>
+  ${circuitWingDecor(w / 2 - wingGap, cy, accent, filterId, "left")}
+  ${circuitWingDecor(w / 2 + wingGap, cy, accent, filterId, "right")}
+  ${plaque}
+  ${renderMotif(palette.motif, w / 2, cy, 6, accent, 0.2)}`;
+}
+
+function deScreenContentFrame(w, h, accent, headerH = 100) {
+  return `${cornerBrackets(20, headerH + 16, w - 40, h - headerH - 36, accent, 56, 2, 0.5)}
+  ${sideRails(w, h, accent, 0.22)}
+  <rect x="48" y="${headerH + 28}" width="${w - 96}" height="${h - headerH - 76}" fill="none" stroke="${accent}" stroke-width="0.6" opacity="0.12" rx="2"/>
+  <line x1="48" y1="${headerH + 120}" x2="${w - 48}" y2="${headerH + 120}" stroke="${accent}" stroke-width="0.5" opacity="0.08"/>`;
 }
 
 function sideRails(w, h, accent, opacity = 0.2) {
@@ -382,6 +511,30 @@ function darkPatternBody(pattern, palette, accent, w, h, id) {
   ${cornerBrackets(20, 20, w - 40, h - 40, accent, 40, 1.5, 0.4)}
   ${renderMotif(motif, w / 2, h * 0.48, 72, accent, 0.1)}`,
       };
+    case "de-platform-header":
+      return {
+        extraDefs: deSciFiGlowDefs(`${id}-de`),
+        body: `${deSciFiHeaderBand(w, accent, palette, `${id}-de`, "de-trapezoid-wing", 100)}
+  ${deScreenContentFrame(w, h, accent, 100)}
+  ${circuitNetwork(w, h, accent, 14)}
+  ${renderMotif(motif, w / 2, h * 0.55, 90, accent, 0.08)}`,
+      };
+    case "de-circuit-wing":
+      return {
+        extraDefs: deSciFiGlowDefs(`${id}-de`),
+        body: `${deSciFiHeaderBand(w, accent, palette, `${id}-de`, "de-trapezoid-wing", 104)}
+  ${deScreenContentFrame(w, h, accent, 104)}
+  ${circuitNetwork(w, h, accent, 26)}
+  ${Array.from({ length: 3 }, (_, i) => renderMotif(motif, 180 + i * 520, h * 0.38, 20, accent, 0.22)).join("\n  ")}`,
+      };
+    case "de-cloud-center":
+      return {
+        extraDefs: deSciFiGlowDefs(`${id}-de`),
+        body: `${deSciFiHeaderBand(w, accent, palette, `${id}-de`, "de-circuit-sym", 100)}
+  ${deScreenContentFrame(w, h, accent, 100)}
+  ${auroraWaves(w, h, accent, palette.glow)}
+  ${renderMotif(motif, w / 2, h * 0.62, 64, accent, 0.1)}`,
+      };
     default:
       return {
         extraDefs: "",
@@ -547,6 +700,18 @@ function buildPanelSvg(style, colorKey, w = 800, h = 480) {
 </svg>`;
 }
 
+function buildScreenHeaderSvg(style, colorKey, w = 1920, h = 100) {
+  const palette = DARK_PALETTES[colorKey];
+  const accent = palette.accent;
+  const bg = palette.baseFrom;
+  const filterId = stableId(`screen-header-${style}-${colorKey}`);
+  const band = deSciFiHeaderBand(w, accent, palette, filterId, style, h);
+  return `${svgHeader(w, h, "none meet")}
+  <rect width="${w}" height="${h}" fill="${bg}" fill-opacity="0.92"/>
+  ${band}
+</svg>`;
+}
+
 function buildTitleStripSvg(style, colorKey, w = 720, h = 64) {
   const palette = DARK_PALETTES[colorKey];
   const accent = palette.accent;
@@ -619,7 +784,7 @@ function writeFile(relPath, content) {
 }
 
 function cleanOutputDirs() {
-  const subdirs = ["backgrounds/dark", "backgrounds/light", "panels", "title-strips", "thumbs"];
+  const subdirs = ["backgrounds/dark", "backgrounds/light", "panels", "title-strips", "screen-headers", "thumbs"];
   for (const sub of subdirs) {
     const full = path.join(PACK_ROOT, sub);
     if (fs.existsSync(full)) {
@@ -709,6 +874,24 @@ function generate() {
     }
   }
 
+  for (const style of SCREEN_HEADER_STYLES) {
+    for (const color of TITLE_COLORS) {
+      const id = `screen-header-${style}-${color}`;
+      const rel = `screen-headers/${id}.svg`;
+      const svg = buildScreenHeaderSvg(style, color);
+      writeFile(rel, svg);
+      items.push({
+        id,
+        category: "screen-header",
+        path: `${PUBLIC_PREFIX}/${rel.replace(/\\/g, "/")}`,
+        palette: color,
+        style,
+        motif: DARK_PALETTES[color].motif,
+        tags: ["screen-header", "de-style", style],
+      });
+    }
+  }
+
   for (const item of items.filter((i) => i.category.startsWith("canvas-"))) {
     const rel = item.path.replace(PUBLIC_PREFIX + "/", "");
     const svg = fs.readFileSync(path.join(PACK_ROOT, rel), "utf8");
@@ -720,11 +903,12 @@ function generate() {
     "canvas-light": { count: items.filter((i) => i.category === "canvas-light").length, defaultSize: [1920, 1080] },
     "component-panel": { count: items.filter((i) => i.category === "component-panel").length, defaultSize: [800, 480] },
     "title-strip": { count: items.filter((i) => i.category === "title-strip").length, defaultSize: [720, 64] },
+    "screen-header": { count: items.filter((i) => i.category === "screen-header").length, defaultSize: [1920, 100] },
   };
 
   const manifest = {
     id: PACK_ID,
-    version: 4,
+    version: 5,
     generatedAt,
     total: items.length,
     categories,
@@ -745,10 +929,13 @@ function generate() {
 | canvas-light | ${categories["canvas-light"].count} | 1920×1080 | 看板/报表浅色背景 |
 | component-panel | ${categories["component-panel"].count} | 800×480 | 组件卡片底图（可拉伸） |
 | title-strip | ${categories["title-strip"].count} | 720×64 | 标题装饰条 |
+| screen-header | ${categories["screen-header"].count} | 1920×100 | 大屏顶栏（DE 梯形+电路翼） |
 | **合计** | **${items.length}** | | |
 
-## 视觉特性（v3）
+## 视觉特性（v5）
 
+- **screen-header / de-platform-header**：对标 DataEase workbranch 大屏顶栏——梯形标题牌、双侧电路翼、霓虹发光
+- 深色 canvas 新增 \`de-platform-header\` / \`de-circuit-wing\` / \`de-cloud-center\` 整屏背景
 - 政务模板默认 **clean-header**：浅灰底 + 顶栏细线，无图标/纹理
 - 浅色 **pattern**：clean-header / header-band / card-float / watermark / corner-fold / dot-matrix / ribbon
 - 深色 canvas 仍保留供选用，内置模板已切换为浅色
@@ -759,6 +946,7 @@ function generate() {
 - \`canvas-light-{palette}-{pattern}.svg\`
 - \`panel-{style}-{color}.svg\`
 - \`title-{style}-{color}.svg\`
+- \`screen-header-{style}-{color}.svg\`
 
 ## 引用方式
 

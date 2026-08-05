@@ -80,9 +80,14 @@ describe("ChartStylePanel", () => {
     expect(screen.getByRole("button", { name: "配色方案" })).toBeInTheDocument();
     expect(screen.queryByTestId("chart-palette-inline-menu-panel")).not.toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "渐变颜色" })).toBeInTheDocument();
-    expect(screen.getByRole("switch", { name: "显示图表标签" })).toBeInTheDocument();
-    expect(screen.getByRole("switch", { name: "显示图表提示" })).toBeInTheDocument();
+    expect(screen.queryByRole("switch", { name: "显示图表标签" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("switch", { name: "显示图表提示" })).not.toBeInTheDocument();
     expect(screen.queryByTestId("chart-palette-inline-menu-panel")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "标签" }));
+    expect(screen.getByRole("switch", { name: "显示数据标签" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "提示" }));
+    expect(screen.getByRole("switch", { name: "显示提示" })).toBeInTheDocument();
 
     const backgroundSwitch = screen.getByRole("switch", { name: "启用背景" });
     expect(backgroundSwitch).toBeChecked();

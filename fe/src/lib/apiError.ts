@@ -128,6 +128,7 @@ const CODE_MESSAGES: Record<string, string> = {
   META_DATASET_INVALID_FIELD: "计算字段填写不正确",
   META_DATASET_INVALID_EXPRESSION: "计算字段表达式无效",
   META_DATASET_CONFIG_TYPE_INVALID: "只能绑定 dataset_query 类型的查询配置",
+  META_DATASET_SYNC_BIND_LOCKED: "同步产物只能绑定托管分析库中的同步产出表",
   META_DATASET_FORBIDDEN: "没有权限操作此 Dataset",
   META_DATASET_ID_MISMATCH: "Dataset ID 与路径不一致",
   META_TERM_NOT_FOUND: "术语不存在",

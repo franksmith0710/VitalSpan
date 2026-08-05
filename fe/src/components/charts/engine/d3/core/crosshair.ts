@@ -10,7 +10,7 @@ export type CrosshairLayer = {
   vLine: d3.Selection<SVGLineElement, unknown, null, undefined>;
   hLine: d3.Selection<SVGLineElement, unknown, null, undefined>;
   dot: d3.Selection<SVGCircleElement, unknown, null, undefined>;
-  show: (cx: number, cy: number, dotColor: string) => void;
+  show: (cx: number, cy: number, dotColor: string, immediate?: boolean) => void;
   hide: () => void;
 };
 
@@ -22,6 +22,7 @@ type CreateCrosshairOptions = {
 };
 
 export function createCrosshair({ plot, innerW, innerH, theme }: CreateCrosshairOptions): CrosshairLayer {
+  let active = false;
   const group = plot.append("g").attr("class", "vs-crosshair").style("opacity", 0).style("pointer-events", "none");
 
   const vLine = group
@@ -46,26 +47,32 @@ export function createCrosshair({ plot, innerW, innerH, theme }: CreateCrosshair
     .attr("stroke", "#fff")
     .attr("stroke-width", 2);
 
-  const dur = motionDuration("hover");
-
   return {
     group,
     vLine,
     hLine,
     dot,
-    show(cx, cy, dotColor) {
-      group.style("opacity", 1);
-      if (prefersReducedMotion()) {
-        vLine.attr("x1", cx).attr("x2", cx);
-        hLine.attr("y1", cy).attr("y2", cy);
-        dot.attr("cx", cx).attr("cy", cy).attr("fill", dotColor);
+    show(cx: number, cy: number, dotColor: string, immediate = false) {
+      const snap = immediate || !active || prefersReducedMotion();
+      active = true;
+      group.style("opacity", 1).raise();
+      vLine.interrupt();
+      hLine.interrupt();
+      dot.interrupt();
+      if (!snap) {
+        const dur = motionDuration("crosshair");
+        const ease = d3.easeCubicOut;
+        vLine.transition().duration(dur).ease(ease).attr("x1", cx).attr("x2", cx);
+        hLine.transition().duration(dur).ease(ease).attr("y1", cy).attr("y2", cy);
+        dot.transition().duration(dur).ease(ease).attr("cx", cx).attr("cy", cy).attr("fill", dotColor);
         return;
       }
-      vLine.transition().duration(dur).attr("x1", cx).attr("x2", cx);
-      hLine.transition().duration(dur).attr("y1", cy).attr("y2", cy);
-      dot.transition().duration(dur).attr("cx", cx).attr("cy", cy).attr("fill", dotColor);
+      vLine.attr("x1", cx).attr("x2", cx);
+      hLine.attr("y1", cy).attr("y2", cy);
+      dot.attr("cx", cx).attr("cy", cy).attr("fill", dotColor);
     },
     hide() {
+      active = false;
       group.style("opacity", 0);
     },
   };
@@ -114,8 +121,6 @@ export function attachBandCrosshairHover(opts: BandCrosshairHoverOptions): void 
     .on("mousemove", function (event) {
       const [mx, my] = d3.pointer(event);
       const category = pickBandCategory(mx, opts.categories, opts.xScale);
-      const cx = (opts.xScale(category) ?? 0) + opts.xScale.bandwidth() / 2;
-      opts.crosshair.show(cx, my, opts.crosshair.dot.attr("fill") ?? "#465fff");
       opts.onCategory(category, mx, my, event);
     })
     .on("mouseleave", () => {
@@ -138,8 +143,6 @@ export function attachCrosshairHover(opts: CrosshairHoverOptions): void {
     .on("mousemove", function (event) {
       const [mx, my] = d3.pointer(event);
       const category = nearestCategory(mx, opts.categories, opts.xScale);
-      const cx = opts.xScale(category) ?? mx;
-      opts.crosshair.show(cx, my, opts.crosshair.dot.attr("fill") ?? "#465fff");
       opts.onCategory(category, mx, my, event);
     })
     .on("mouseleave", () => {

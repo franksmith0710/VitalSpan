@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Table2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -22,16 +22,21 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import {
-  createAndBindDatasetQueryConfig,
   fetchDatasetQueryConfig,
+  saveAndBindDatasetQueryConfig,
 } from "@/lib/datasetChartBinding";
-import { ANALYTICS_DATASOURCE_CODE, isAnalyticsDatasource } from "@/lib/datasourceRoles";
+import {
+  ANALYTICS_DATASOURCE_CODE,
+  ANALYTICS_DATASOURCE_NAME,
+  filterSyncJobBindDatasources,
+  resolveAnalyticsDatasourceId,
+} from "@/lib/datasourceRoles";
 import { parseQualifiedTable } from "@/lib/datasetTableUtils";
 import { refreshSyncDatasetBinding } from "@/lib/syncConsumeApi";
 import { queryKeys } from "@/lib/queryKeys";
 import type { DatasetOrigin, DatasetTable } from "../types";
 
-type DsItem = { id: string; name: string; code: string; type: string };
+type DsItem = { id: string; name: string; code?: string; type: string; port?: number; database?: string };
 
 function qualifiedTableFromBinding(schema?: string, table?: string): string {
   if (!table) return "";
@@ -57,12 +62,15 @@ export function DatasetBindPanel({
   onBound: () => void;
 }) {
   const isSyncOrigin = origin === "sync_job";
+  const queryClient = useQueryClient();
   const [dataSourceId, setDataSourceId] = useState("");
   const [tableName, setTableName] = useState("");
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [binding, setBinding] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [columnPickKey, setColumnPickKey] = useState("");
+  const columnsTouchedRef = useRef(false);
+  const primaryTableName = tables[0]?.name ?? "";
 
   const dsQuery = useQuery({
     queryKey: queryKeys.datasources.list(),
@@ -76,31 +84,48 @@ export function DatasetBindPanel({
   });
 
   const allItems = dsQuery.data?.items ?? [];
-  const selectableItems = useMemo(() => {
-    if (!isSyncOrigin) return allItems;
-    const analytics = allItems.filter((item) => isAnalyticsDatasource(item.code));
-    return analytics.length > 0 ? analytics : allItems.filter((item) => item.type === "postgres");
-  }, [allItems, isSyncOrigin]);
+  const selectableItems = useMemo(
+    () => (isSyncOrigin ? filterSyncJobBindDatasources(allItems) : allItems),
+    [allItems, isSyncOrigin],
+  );
 
-  const selectedDs = selectableItems.find((d) => d.id === dataSourceId);
+  const activeDs = useMemo(() => {
+    const fromAll = allItems.find((d) => d.id === dataSourceId);
+    if (fromAll) return fromAll;
+    const fromSelectable = selectableItems.find((d) => d.id === dataSourceId);
+    if (fromSelectable) return fromSelectable;
+    if (isSyncOrigin && dataSourceId) {
+      return {
+        id: dataSourceId,
+        name: ANALYTICS_DATASOURCE_NAME,
+        type: "postgresql",
+      } satisfies DsItem;
+    }
+    return selectableItems[0];
+  }, [allItems, dataSourceId, isSyncOrigin, selectableItems]);
+
   const parsed = tableName ? parseQualifiedTable(tableName) : null;
 
   useEffect(() => {
-    if (boundConfigQuery.data?.dataSourceId) {
-      setDataSourceId(boundConfigQuery.data.dataSourceId);
-    } else if (!dataSourceId) {
-      const saved =
-        tableSourceDataSourceId &&
-        selectableItems.some((item) => item.id === tableSourceDataSourceId)
-          ? tableSourceDataSourceId
-          : undefined;
-      const preferred = selectableItems.find((item) => isAnalyticsDatasource(item.code));
-      const fallback = saved ?? preferred?.id ?? selectableItems[0]?.id;
-      if (fallback) setDataSourceId(fallback);
-    }
+    if (dsQuery.isLoading) return;
+    const candidates = selectableItems.length > 0 ? selectableItems : allItems;
+    if (candidates.length === 0 && !boundConfigQuery.data?.dataSourceId) return;
+
+    setDataSourceId((current) => {
+      if (current && (allItems.some((d) => d.id === current) || (isSyncOrigin && current))) {
+        return current;
+      }
+      const boundId = boundConfigQuery.data?.dataSourceId;
+      if (boundId) return boundId;
+      const preferred = tableSourceDataSourceId ?? undefined;
+      const resolved = resolveAnalyticsDatasourceId(candidates, preferred);
+      return resolved || current;
+    });
   }, [
+    allItems,
     boundConfigQuery.data?.dataSourceId,
-    dataSourceId,
+    dsQuery.isLoading,
+    isSyncOrigin,
     selectableItems,
     tableSourceDataSourceId,
   ]);
@@ -112,13 +137,15 @@ export function DatasetBindPanel({
         boundConfigQuery.data.table,
       );
       if (boundTable) setTableName(boundTable);
-      if (boundConfigQuery.data.columns?.length) {
-        setSelectedColumns(boundConfigQuery.data.columns);
-      }
       return;
     }
-    if (!tableName && tables[0]) setTableName(tables[0].name);
-  }, [boundConfigQuery.data, tableName, tables]);
+    if (!tableName && primaryTableName) setTableName(primaryTableName);
+  }, [
+    boundConfigQuery.data?.schema,
+    boundConfigQuery.data?.table,
+    primaryTableName,
+    tableName,
+  ]);
 
   const columnsQuery = useQuery({
     queryKey: queryKeys.datasources.columns(
@@ -141,33 +168,47 @@ export function DatasetBindPanel({
   const activeColumnPickKey = `${dataSourceId}:${tableName}`;
 
   useEffect(() => {
+    columnsTouchedRef.current = false;
+    setColumnPickKey("");
+  }, [activeColumnPickKey]);
+
+  useEffect(() => {
+    if (binding || refreshing || columnsTouchedRef.current) return;
     if (columnPickKey === activeColumnPickKey) return;
+    if (boundConfigId && boundConfigQuery.isLoading) return;
+
     setColumnPickKey(activeColumnPickKey);
+
     if (boundConfigQuery.data?.columns?.length && boundConfigId) {
       const boundTable = qualifiedTableFromBinding(
         boundConfigQuery.data.schema,
         boundConfigQuery.data.table,
       );
-      if (boundTable === tableName) {
+      if (!boundTable || boundTable === tableName) {
         setSelectedColumns(boundConfigQuery.data.columns);
         return;
       }
     }
-    setSelectedColumns([]);
+
+    if (columnNames.length > 0) {
+      setSelectedColumns(suggestDatasetBindColumns(columnNames));
+    } else {
+      setSelectedColumns([]);
+    }
   }, [
     activeColumnPickKey,
     boundConfigId,
     boundConfigQuery.data,
+    boundConfigQuery.isLoading,
+    columnNames,
     columnPickKey,
     tableName,
+    binding,
+    refreshing,
   ]);
 
-  useEffect(() => {
-    if (columnNames.length === 0 || selectedColumns.length > 0) return;
-    setSelectedColumns(suggestDatasetBindColumns(columnNames));
-  }, [columnNames, selectedColumns.length]);
-
   const toggleColumn = (name: string, checked: boolean) => {
+    columnsTouchedRef.current = true;
     setSelectedColumns((current) => {
       if (checked) return current.includes(name) ? current : [...current, name];
       return current.filter((c) => c !== name);
@@ -176,25 +217,38 @@ export function DatasetBindPanel({
 
   const handleAutoColumns = () => {
     if (columnNames.length === 0) return;
+    columnsTouchedRef.current = true;
     setSelectedColumns(suggestDatasetBindColumns(columnNames));
   };
 
   const handleSelectAllColumns = () => {
+    columnsTouchedRef.current = true;
     setSelectedColumns([...columnNames]);
   };
 
   const handleBind = async () => {
-    if (!selectedDs || !tableName || selectedColumns.length === 0) return;
+    if (!activeDs || !tableName || selectedColumns.length === 0) {
+      toast.error("请选择至少一个绑定字段");
+      return;
+    }
     setBinding(true);
     try {
-      await createAndBindDatasetQueryConfig({
+      await saveAndBindDatasetQueryConfig({
         datasetId,
-        dataSourceId: selectedDs.id,
-        connectorType: selectedDs.type,
+        boundConfigId,
+        dataSourceId: activeDs.id,
+        connectorType: activeDs.type || "postgresql",
         tableName,
         columns: selectedColumns,
       });
-      toast.success("查询配置已绑定");
+      await queryClient.invalidateQueries({ queryKey: ["query-config"] });
+      columnsTouchedRef.current = false;
+      setColumnPickKey("");
+      toast.success(
+        boundConfigId
+          ? `已更新出图绑定（${selectedColumns.length} 列）`
+          : "查询配置已绑定",
+      );
       onBound();
     } catch (err) {
       toast.error(mapApiError(err));
@@ -208,6 +262,8 @@ export function DatasetBindPanel({
     setRefreshing(true);
     try {
       const result = await refreshSyncDatasetBinding(syncJobId);
+      columnsTouchedRef.current = false;
+      setColumnPickKey("");
       setSelectedColumns(result.columns);
       toast.success(`已刷新绑定列（${result.columns.length} 列）`);
       onBound();
@@ -270,18 +326,14 @@ export function DatasetBindPanel({
           </p>
         ) : null}
 
-        {boundConfigId ? (
-          <p className="font-mono text-theme-xs text-gray-500 dark:text-gray-400">
-            配置 ID：{boundConfigId.slice(0, 8)}…
-          </p>
-        ) : null}
-
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="grid gap-2">
             <Label htmlFor="bind-ds">{isSyncOrigin ? "出图查询连接（托管分析库）" : "出图查询连接"}</Label>
             {isSyncOrigin ? (
               <p className="flex h-11 items-center rounded-lg border border-gray-200 bg-gray-50 px-3 text-theme-sm dark:border-gray-800 dark:bg-white/[0.02]">
-                {selectedDs?.name ?? "加载中…"}
+                {dsQuery.isLoading
+                  ? "加载中…"
+                  : (activeDs?.name ?? ANALYTICS_DATASOURCE_NAME)}
               </p>
             ) : (
               <Select value={dataSourceId || undefined} onValueChange={setDataSourceId}>
@@ -402,7 +454,7 @@ export function DatasetBindPanel({
           <Button
             type="button"
             variant="primary"
-            disabled={!selectedDs || !tableName || selectedColumns.length === 0 || binding || refreshing}
+            disabled={!activeDs || !tableName || selectedColumns.length === 0 || binding || refreshing}
             loading={binding}
             loadingText="绑定中…"
             onClick={() => void handleBind()}

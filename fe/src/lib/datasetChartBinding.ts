@@ -15,6 +15,8 @@ export type DatasetQueryConfigPayload = {
 type QueryConfigRecord = {
   id: string;
   configType: string;
+  refType?: string;
+  refId?: string;
   payload: DatasetQueryConfigPayload & Record<string, unknown>;
 };
 
@@ -62,6 +64,57 @@ export async function resolveDatasetChartBinding(configId: string): Promise<Data
   return fetchDatasetQueryConfig(configId);
 }
 
+/** 新建或原地更新 dataset_query；已有 boundConfigId 时复用 ref 以避免孤儿配置。 */
+export async function saveAndBindDatasetQueryConfig(params: {
+  datasetId: string;
+  boundConfigId?: string | null;
+  dataSourceId: string;
+  connectorType: string;
+  tableName: string;
+  columns: string[];
+}): Promise<string> {
+  const { schema, table } = parseQualifiedTable(params.tableName);
+  const payload = buildDatasetQueryPayload({
+    dataSourceId: params.dataSourceId,
+    connectorType: params.connectorType,
+    schema,
+    table,
+    columns: params.columns,
+  });
+
+  let refType = "dataset";
+  let refId = crypto.randomUUID();
+
+  if (params.boundConfigId) {
+    const existing = await apiFetch<QueryConfigRecord>(
+      `/api/v1/query/configs/${params.boundConfigId}`,
+    );
+    refType = existing.refType ?? "dataset";
+    refId = existing.refId ?? refId;
+  }
+
+  const cfg = await apiFetch<{ id: string }>("/api/v1/query/configs", {
+    method: "PUT",
+    body: JSON.stringify({
+      configType: "dataset_query",
+      schemaVersion: "1.0",
+      refType,
+      refId,
+      payload,
+    }),
+  });
+
+  if (!params.boundConfigId || cfg.id !== params.boundConfigId) {
+    await apiFetch(`/api/v1/datasets/${params.datasetId}/bind-query-config`, {
+      method: "POST",
+      body: JSON.stringify({ configId: cfg.id }),
+    });
+  }
+
+  return cfg.id;
+}
+
+/** @deprecated 使用 saveAndBindDatasetQueryConfig */
 export async function createAndBindDatasetQueryConfig(params: {
   datasetId: string;
   dataSourceId: string;
@@ -69,26 +122,5 @@ export async function createAndBindDatasetQueryConfig(params: {
   tableName: string;
   columns: string[];
 }): Promise<string> {
-  const { schema, table } = parseQualifiedTable(params.tableName);
-  const cfg = await apiFetch<{ id: string }>("/api/v1/query/configs", {
-    method: "PUT",
-    body: JSON.stringify({
-      configType: "dataset_query",
-      schemaVersion: "1.0",
-      refType: "dataset",
-      refId: crypto.randomUUID(),
-      payload: buildDatasetQueryPayload({
-        dataSourceId: params.dataSourceId,
-        connectorType: params.connectorType,
-        schema,
-        table,
-        columns: params.columns,
-      }),
-    }),
-  });
-  await apiFetch(`/api/v1/datasets/${params.datasetId}/bind-query-config`, {
-    method: "POST",
-    body: JSON.stringify({ configId: cfg.id }),
-  });
-  return cfg.id;
+  return saveAndBindDatasetQueryConfig(params);
 }

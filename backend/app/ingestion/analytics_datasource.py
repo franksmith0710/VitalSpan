@@ -73,6 +73,20 @@ def can_connect_analytics_pg(conn: AnalyticsPgConnection | None = None) -> bool:
         return False
 
 
+def is_managed_analytics_datasource(db: Session, ds_id: uuid.UUID) -> bool:
+    """托管分析库：code=analytics 或 5433/analytics 的 PG。"""
+    row = db.get(DataSource, ds_id)
+    if row is None or row.deleted_at is not None:
+        return False
+    if row.code == OFFICIAL_ANALYTICS_DATASOURCE_CODE:
+        return True
+    return (
+        row.type in ("postgresql", "postgres")
+        and row.port == 5433
+        and row.database == "analytics"
+    )
+
+
 def resolve_analytics_datasource_id(db: Session) -> uuid.UUID | None:
     """查找已登记的托管分析库（5433/analytics PostgreSQL）。"""
     rows = db.scalars(

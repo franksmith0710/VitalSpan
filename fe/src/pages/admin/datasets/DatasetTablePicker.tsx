@@ -20,7 +20,10 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
-import { isAnalyticsDatasource } from "@/lib/datasourceRoles";
+import {
+  filterSyncJobBindDatasources,
+  resolveAnalyticsDatasourceId,
+} from "@/lib/datasourceRoles";
 import { queryKeys } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";
 import type { DatasetOrigin, DatasetTable } from "./types";
@@ -34,32 +37,10 @@ type DsItem = {
   port?: number;
 };
 
-function filterDatasourcesForOrigin(items: DsItem[], origin: DatasetOrigin): DsItem[] {
-  if (origin !== "sync_job") return items;
-  const analytics = items.filter((item) => isAnalyticsDatasource(item.code));
-  if (analytics.length > 0) return analytics;
-  return items.filter(
-    (item) => item.type === "postgresql" || item.type === "postgres",
-  );
-}
-
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   const tag = target.tagName;
   return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.isContentEditable;
-}
-
-function resolvePreferredDataSourceId(items: DsItem[], preferred?: string): string {
-  if (preferred && items.some((d) => d.id === preferred)) return preferred;
-  const analytics = items.find(
-    (d) =>
-      (d.type === "postgresql" || d.type === "postgres") &&
-      d.port === 5433 &&
-      d.database === "analytics",
-  );
-  if (analytics) return analytics.id;
-  if (items.length === 1) return items[0].id;
-  return "";
 }
 
 function parseFocusTable(prefillTable?: string): { schema: string; table: string } | undefined {
@@ -104,7 +85,7 @@ export function DatasetTablePicker({
 
   const items = dsQuery.data?.items ?? [];
   const selectableItems = useMemo(
-    () => filterDatasourcesForOrigin(items, origin),
+    () => (origin === "sync_job" ? filterSyncJobBindDatasources(items) : items),
     [items, origin],
   );
   const selectedDs = selectableItems.find((d) => d.id === dataSourceId);
@@ -114,7 +95,7 @@ export function DatasetTablePicker({
     const saved = savedDataSourceId || preferredDataSourceId;
     setDataSourceId((current) => {
       if (current && selectableItems.some((d) => d.id === current)) return current;
-      return resolvePreferredDataSourceId(selectableItems, saved);
+      return resolveAnalyticsDatasourceId(selectableItems, saved);
     });
   }, [selectableItems, preferredDataSourceId, savedDataSourceId]);
 

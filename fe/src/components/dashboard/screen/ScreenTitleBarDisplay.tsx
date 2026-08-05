@@ -1,5 +1,6 @@
 import type { ScreenTitleBarStyleConfig } from "@/lib/screenVisualStyle";
 import { normalizeScreenTitleBarStyle } from "@/lib/screenVisualStyle";
+import { resolveScreenTitleBarImageUrl } from "@/lib/screenTitleBarAssets";
 import { cn } from "@/lib/utils";
 
 export type ScreenTitleBarDisplayProps = {
@@ -8,7 +9,7 @@ export type ScreenTitleBarDisplayProps = {
   styleConfig?: ScreenTitleBarStyleConfig;
 };
 
-/** 对标 DataEase 顶部标题装饰条：居中标题 + 两侧渐变线 */
+/** 对标 DataEase：顶栏装饰为图片素材，标题文字叠在图片上方 */
 export function ScreenTitleBarDisplay({
   title = "数据大屏标题",
   className,
@@ -16,6 +17,38 @@ export function ScreenTitleBarDisplay({
 }: ScreenTitleBarDisplayProps) {
   const style = normalizeScreenTitleBarStyle(styleConfig);
   const accent = style.accentColor;
+  const imageUrl = resolveScreenTitleBarImageUrl(style);
+
+  if (imageUrl) {
+    return (
+      <div
+        className={cn("pointer-events-none relative size-full min-h-0 overflow-hidden", className)}
+        data-screen-title-bar
+        data-screen-title-bar-mode="image"
+        aria-hidden
+      >
+        <img
+          src={imageUrl}
+          alt=""
+          className="absolute inset-0 size-full object-fill"
+          draggable={false}
+          decoding="async"
+        />
+        <div className="relative z-10 flex size-full items-center justify-center px-16">
+          <span
+            className="max-w-[min(52%,42rem)] truncate text-center font-semibold tracking-[0.14em]"
+            style={{
+              color: style.titleColor,
+              fontSize: style.fontSize,
+              textShadow: `0 0 12px ${accent}66, 0 1px 3px rgba(0,0,0,0.45)`,
+            }}
+          >
+            {title}
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -24,6 +57,7 @@ export function ScreenTitleBarDisplay({
         className,
       )}
       data-screen-title-bar
+      data-screen-title-bar-mode="simple"
       aria-hidden
     >
       {style.showSideLines ? (
@@ -37,9 +71,10 @@ export function ScreenTitleBarDisplay({
         <span className="min-w-0 flex-1" />
       )}
       <span
-        className="shrink-0 text-center text-lg font-semibold tracking-[0.12em]"
+        className="shrink-0 text-center font-semibold tracking-[0.12em]"
         style={{
           color: style.titleColor,
+          fontSize: style.fontSize,
           textShadow: "0 1px 2px rgba(15, 23, 42, 0.35)",
         }}
       >

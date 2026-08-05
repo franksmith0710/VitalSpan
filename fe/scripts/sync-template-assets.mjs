@@ -44,10 +44,20 @@ if (!fs.existsSync(SOURCE)) {
 
 copyDir(SOURCE, TARGET);
 const total = countFiles(TARGET);
-const svgCount = countFiles(path.join(TARGET, "packs"));
+
+// 确保单页图库在镜像目录根目录
+const catalogSrc = path.join(SOURCE, "catalog.html");
+const catalogDest = path.join(TARGET, "catalog.html");
+if (fs.existsSync(catalogSrc)) {
+  fs.copyFileSync(catalogSrc, catalogDest);
+}
+
 console.log(`Synced ${SOURCE}`);
 console.log(`     -> ${TARGET}`);
-console.log(`Total files: ${total} (packs subtree: ${svgCount}+)`);
+console.log(`Total files: ${total} (packs subtree: ${countFiles(path.join(TARGET, "packs"))}+)`);
+if (fs.existsSync(catalogDest)) {
+  console.log(`Open catalog: ${catalogDest}`);
+}
 
 if (total < 200) {
   console.warn(`Warning: only ${total} files in mirror; run generate:gov-assets && generate:de-dashboard-assets first.`);

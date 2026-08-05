@@ -1,4 +1,38 @@
 export const ANALYTICS_DATASOURCE_CODE = "analytics";
+export const ANALYTICS_DATASOURCE_NAME = "托管分析库";
+
+export type DatasourceListItem = {
+  id: string;
+  name: string;
+  code?: string;
+  type?: string;
+  port?: number;
+  database?: string;
+};
+
+/** sync 产物出图绑定：优先 code=analytics，否则 5433/analytics 的 PG。 */
+export function filterSyncJobBindDatasources(items: DatasourceListItem[]): DatasourceListItem[] {
+  const analytics = items.filter((item) => isAnalyticsDatasource(item.code ?? ""));
+  if (analytics.length > 0) return analytics;
+  return items.filter((item) => item.type === "postgresql" || item.type === "postgres");
+}
+
+export function resolveAnalyticsDatasourceId(
+  items: DatasourceListItem[],
+  preferred?: string,
+): string {
+  if (preferred && items.some((d) => d.id === preferred)) return preferred;
+  const byCode = items.find((d) => isAnalyticsDatasource(d.code ?? ""));
+  if (byCode) return byCode.id;
+  const byConn = items.find(
+    (d) =>
+      (d.type === "postgresql" || d.type === "postgres") &&
+      d.port === 5433 &&
+      d.database === "analytics",
+  );
+  if (byConn) return byConn.id;
+  return items[0]?.id ?? "";
+}
 
 /** 与后端 is_query_capable / is_sync_fetch_implemented 对齐：全部可查询连接器 */
 const SYNC_CAPABLE_TYPES = new Set([

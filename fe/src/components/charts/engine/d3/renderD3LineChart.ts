@@ -26,7 +26,7 @@ import {
 } from "@/components/charts/engine/d3/core/tooltipLayer";
 import { writeIncrementalSession } from "@/components/charts/engine/d3/core/incrementalRender";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
-import { highlightCategoryDots } from "@/components/charts/engine/d3/cartesian/renderCartesianBase";
+import { highlightCategoryDots, resolveSeriesAnchorY } from "@/components/charts/engine/d3/cartesian/renderCartesianBase";
 import type { D3CartesianDatum, D3CartesianRenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
 import { resolveCartesianLineWidth, resolveCartesianPointSize } from "@/lib/applyChartDeStyleBlocks";
@@ -210,18 +210,26 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
     categories,
     xScale,
     crosshair,
-    onCategory: (category, _mx, my, event) => {
+    onCategory: (category, _mx, _my, event) => {
       const cx = xScale(category) ?? 0;
       const rows = seriesGroups.map((series) => {
         const point = series.points.find((p) => String(p.__category__) === category);
         const color = colorScale(series.name) ?? colors[0] ?? theme.accent;
         return { name: series.name, color, value: point?.__value__ ?? 0 };
       });
-      const anchor = rows[0];
-      const cy = anchor ? yScale(Number(anchor.value)) : my;
+      const cy = resolveSeriesAnchorY(rows, yScale);
       crosshair.show(cx, cy, primaryColor);
       highlightCategoryDots(dotLayers, category);
-      showMergedTooltip(tooltip, container, event, category, rows, valueFormat, width);
+      showMergedTooltip(
+        tooltip,
+        container,
+        event,
+        category,
+        rows,
+        valueFormat,
+        width,
+        { x: scene.margin.left + cx, y: scene.margin.top + cy },
+      );
     },
     onLeave: () => {
       highlightCategoryDots(dotLayers, null);

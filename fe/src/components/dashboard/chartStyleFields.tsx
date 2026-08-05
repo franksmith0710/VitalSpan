@@ -1,6 +1,7 @@
 import { Switch } from "@/components/ui/switch";
 import { ColorField } from "@/components/ui/color-field";
 import { ImageSourceField } from "./imageSourceField";
+import { BorderlessDecorGallery } from "./BorderlessDecorGallery";
 import type { WidgetStyleConfig } from "./dashboardStyleConfig";
 import { SURFACE_COLOR_RECOMMENDED, WIDGET_BORDER_RECOMMENDED } from "./dashboardStyleConfig";
 import {
@@ -265,13 +266,19 @@ export function ChartBackgroundDeModeFields({
 
   if (imageOnly) {
     return (
-      <ImageSourceField
-        variant="rail"
-        showPreview
-        inputClassName={INSPECTOR_CTRL}
-        value={value.backgroundImage ?? ""}
-        onChange={(backgroundImage) => onChange(patchWidgetBackgroundImageUpload(value, backgroundImage))}
-      />
+      <div className="space-y-2">
+        <ImageSourceField
+          variant="rail"
+          showPreview
+          inputClassName={INSPECTOR_CTRL}
+          value={value.backgroundImage ?? ""}
+          onChange={(backgroundImage) => onChange(patchWidgetBackgroundImageUpload(value, backgroundImage))}
+        />
+        <BorderlessDecorGallery
+          value={value.backgroundImage}
+          onSelect={(url) => onChange(patchWidgetBackgroundImageUpload(value, url))}
+        />
+      </div>
     );
   }
 
@@ -328,15 +335,21 @@ export function ChartBackgroundDeModeFields({
         ) : null}
       </div>
       {mode === "image" ? (
-        <ImageSourceField
-          variant="rail"
-          showPreview
-          inputClassName={INSPECTOR_CTRL}
-          value={value.backgroundImage ?? ""}
-          onChange={(backgroundImage) =>
-            onChange(patchWidgetBackgroundImageUpload(value, backgroundImage))
-          }
-        />
+        <div className="space-y-2">
+          <ImageSourceField
+            variant="rail"
+            showPreview
+            inputClassName={INSPECTOR_CTRL}
+            value={value.backgroundImage ?? ""}
+            onChange={(backgroundImage) =>
+              onChange(patchWidgetBackgroundImageUpload(value, backgroundImage))
+            }
+          />
+          <BorderlessDecorGallery
+            value={value.backgroundImage}
+            onSelect={(url) => onChange(patchWidgetBackgroundImageUpload(value, url))}
+          />
+        </div>
       ) : useLineBorder ? (
         <WidgetStyleLineBorderControls value={value} onChange={onChange} showToggle={false} density="narrow" />
       ) : (

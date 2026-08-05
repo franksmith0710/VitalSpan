@@ -225,9 +225,11 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
       width,
       categories,
       xScale: x,
+      yScale: y,
       crosshair,
       tooltip,
       valueFormat,
+      margin,
       buildRows: (cat) =>
         seriesGroups.map((s) => {
           const pt = s.points.find((p) => String(p.__category__) === cat);

@@ -10,6 +10,7 @@ export const VCDS = {
   motion: {
     enter: 720,
     hover: 120,
+    crosshair: 200,
     dataUpdate: 480,
     stagger: 40,
   },

@@ -316,12 +316,25 @@ def bind_query_config(dataset_id: str, config_id: uuid.UUID, user: UserContext) 
                 META_DATASET_CONFIG_TYPE_INVALID, "config must be dataset_query", 422,
             )
         if row.origin == "sync_job":
-            from app.ingestion.analytics_datasource import resolve_analytics_datasource_id
+            from app.ingestion.analytics_datasource import is_managed_analytics_datasource
 
-            analytics_id = resolve_analytics_datasource_id(session)
             payload = record.payload if isinstance(record.payload, dict) else {}
             bound_ds = payload.get("dataSourceId")
-            if analytics_id is None or str(bound_ds) != str(analytics_id):
+            if not bound_ds:
+                raise DatasetError(
+                    META_DATASET_SYNC_BIND_LOCKED,
+                    "同步产物 Dataset 只能绑定托管分析库",
+                    422,
+                )
+            try:
+                bound_uuid = uuid.UUID(str(bound_ds))
+            except ValueError as exc:
+                raise DatasetError(
+                    META_DATASET_SYNC_BIND_LOCKED,
+                    "同步产物 Dataset 只能绑定托管分析库",
+                    422,
+                ) from exc
+            if not is_managed_analytics_datasource(session, bound_uuid):
                 raise DatasetError(
                     META_DATASET_SYNC_BIND_LOCKED,
                     "同步产物 Dataset 只能绑定托管分析库",

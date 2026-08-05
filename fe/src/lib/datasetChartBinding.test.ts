@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import {
   buildDatasetQueryPayload,
-  createAndBindDatasetQueryConfig,
+  saveAndBindDatasetQueryConfig,
   resolveDatasetChartBinding,
 } from "./datasetChartBinding";
 import { parseQualifiedTable } from "./datasetTableUtils";
@@ -47,23 +47,29 @@ describe("resolveDatasetChartBinding", () => {
       payload: { dataSourceId: "ds-mysql" },
     });
     const binding = await resolveDatasetChartBinding("cfg-1");
-    expect(binding).toEqual({ configId: "cfg-1", dataSourceId: "ds-mysql" });
+    expect(binding).toEqual({
+      configId: "cfg-1",
+      dataSourceId: "ds-mysql",
+      columns: [],
+      schema: undefined,
+      table: undefined,
+    });
     expect(mockApiFetch).toHaveBeenCalledWith("/api/v1/query/configs/cfg-1");
   });
 });
 
-describe("createAndBindDatasetQueryConfig", () => {
+describe("saveAndBindDatasetQueryConfig", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
     vi.stubGlobal("crypto", { randomUUID: () => "00000000-0000-4000-8000-000000000001" });
   });
 
-  it("PUT config then POST bind", async () => {
+  it("PUT config then POST bind for first bind", async () => {
     mockApiFetch
       .mockResolvedValueOnce({ id: "cfg-new" })
       .mockResolvedValueOnce({ boundConfigId: "cfg-new" });
 
-    const id = await createAndBindDatasetQueryConfig({
+    const id = await saveAndBindDatasetQueryConfig({
       datasetId: "ds-demo",
       dataSourceId: "ds-1",
       connectorType: "mysql",
@@ -81,6 +87,38 @@ describe("createAndBindDatasetQueryConfig", () => {
       2,
       "/api/v1/datasets/ds-demo/bind-query-config",
       expect.objectContaining({ method: "POST" }),
+    );
+  });
+
+  it("reuses ref on re-bind and skips POST when config id unchanged", async () => {
+    mockApiFetch
+      .mockResolvedValueOnce({
+        id: "cfg-bound",
+        configType: "dataset_query",
+        refType: "dataset",
+        refId: "11111111-1111-4111-8111-111111111111",
+        payload: {},
+      })
+      .mockResolvedValueOnce({ id: "cfg-bound" });
+
+    const id = await saveAndBindDatasetQueryConfig({
+      datasetId: "orders_clean_3",
+      boundConfigId: "cfg-bound",
+      dataSourceId: "ds-analytics",
+      connectorType: "postgresql",
+      tableName: "public.orders_clean_3",
+      columns: ["id", "amount"],
+    });
+
+    expect(id).toBe("cfg-bound");
+    expect(mockApiFetch).toHaveBeenCalledTimes(2);
+    expect(mockApiFetch).toHaveBeenNthCalledWith(
+      2,
+      "/api/v1/query/configs",
+      expect.objectContaining({
+        method: "PUT",
+        body: expect.stringContaining('"refType":"dataset"'),
+      }),
     );
   });
 });

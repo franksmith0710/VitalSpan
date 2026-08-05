@@ -225,6 +225,12 @@ export function createScreenTitleBarWidget(
       ...defaultTextConfig(),
       content: SCREEN_TITLE_BAR_MARKER,
       variant: "plain",
+      screenStyle: {
+        titleBar: {
+          variant: "de-trapezoid-wing",
+          palette: "cyan",
+        },
+      },
     },
   };
 }

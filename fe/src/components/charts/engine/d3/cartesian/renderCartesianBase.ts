@@ -43,6 +43,17 @@ export function applySeriesDimming(
 
 type SeriesTooltipRow = { name: string; color: string; value: unknown };
 
+export function resolveSeriesAnchorY(
+  rows: SeriesTooltipRow[],
+  yScale: d3.ScaleLinear<number, number>,
+): number {
+  const values = rows
+    .map((row) => Number(row.value))
+    .filter((value) => Number.isFinite(value));
+  const anchorValue = values.length > 0 ? Math.max(...values) : 0;
+  return yScale(anchorValue);
+}
+
 export function attachPointCategoryInteraction(opts: {
   container: HTMLElement;
   plot: d3.Selection<SVGGElement, unknown, null, undefined>;
@@ -51,9 +62,11 @@ export function attachPointCategoryInteraction(opts: {
   width: number;
   categories: string[];
   xScale: d3.ScalePoint<string>;
+  yScale: d3.ScaleLinear<number, number>;
   crosshair: CrosshairLayer;
   tooltip: TooltipLayer | null;
   valueFormat?: NumberFormatConfig;
+  margin?: { left: number; top: number };
   buildRows: (category: string) => SeriesTooltipRow[];
 }): void {
   attachCrosshairHover({
@@ -64,10 +77,21 @@ export function attachPointCategoryInteraction(opts: {
     xScale: opts.xScale,
     crosshair: opts.crosshair,
     onCategory(category, _mx, _my, event) {
+      const cx = opts.xScale(category) ?? 0;
       const rows = opts.buildRows(category);
       const color = rows[0]?.color ?? "#465fff";
-      opts.crosshair.dot.attr("fill", color);
-      showMergedTooltip(opts.tooltip, opts.container, event, category, rows, opts.valueFormat, opts.width);
+      const cy = resolveSeriesAnchorY(rows, opts.yScale);
+      opts.crosshair.show(cx, cy, color);
+      showMergedTooltip(
+        opts.tooltip,
+        opts.container,
+        event,
+        category,
+        rows,
+        opts.valueFormat,
+        opts.width,
+        opts.margin ? { x: opts.margin.left + cx, y: opts.margin.top + cy } : undefined,
+      );
     },
     onLeave: () => hideTooltip(opts.tooltip),
   });
@@ -81,9 +105,11 @@ export function attachBandCategoryInteraction(opts: {
   width: number;
   categories: string[];
   xScale: d3.ScaleBand<string>;
+  yScale: d3.ScaleLinear<number, number>;
   crosshair: CrosshairLayer;
   tooltip: TooltipLayer | null;
   valueFormat?: NumberFormatConfig;
+  margin?: { left: number; top: number };
   buildRows: (category: string) => SeriesTooltipRow[];
 }): void {
   attachBandCrosshairHover({
@@ -94,10 +120,21 @@ export function attachBandCategoryInteraction(opts: {
     xScale: opts.xScale,
     crosshair: opts.crosshair,
     onCategory(category, _mx, _my, event) {
+      const cx = (opts.xScale(category) ?? 0) + opts.xScale.bandwidth() / 2;
       const rows = opts.buildRows(category);
       const color = rows[0]?.color ?? "#465fff";
-      opts.crosshair.dot.attr("fill", color);
-      showMergedTooltip(opts.tooltip, opts.container, event, category, rows, opts.valueFormat, opts.width);
+      const cy = resolveSeriesAnchorY(rows, opts.yScale);
+      opts.crosshair.show(cx, cy, color);
+      showMergedTooltip(
+        opts.tooltip,
+        opts.container,
+        event,
+        category,
+        rows,
+        opts.valueFormat,
+        opts.width,
+        opts.margin ? { x: opts.margin.left + cx, y: opts.margin.top + cy } : undefined,
+      );
     },
     onLeave: () => hideTooltip(opts.tooltip),
   });

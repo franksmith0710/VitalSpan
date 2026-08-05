@@ -64,10 +64,10 @@ def _l3_chrome(theme: GovScreenTheme) -> list[dict[str, Any]]:
     return [
         _title_bar(
             screen_style=chrome_style,
-            x=460,
-            y=24,
-            width=1000,
-            height=72,
+            x=0,
+            y=0,
+            width=1920,
+            height=100,
             order=0,
         ),
         _clock(

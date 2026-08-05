@@ -49,6 +49,7 @@ import {
 } from "@/lib/chartSeriesColor";
 import { mergeChartTableStyle, patchChartDeTableStyle, readChartDeTableStyle } from "@/lib/chartDeTableStyle";
 import { isTableLikeChartType, tableStyleSectionsForType } from "@/lib/chartTableInspector";
+import { chartStyleSectionsForType } from "@/lib/chartStyleSectionRegistry";
 import { chartTypeHasTooltipSection } from "@/lib/chartStyleCartesianFields";
 import { ChartInspectorSection, INSPECTOR_HINT, INSPECTOR_SELECT, INSPECTOR_SWITCH_SIZE, InspectorInlineColorRow } from "../inspectorCompact";
 import { DeTitleStyleToolbar } from "../deTitleStyleToolbar";
@@ -60,7 +61,13 @@ export function ChartPaletteStyleSection() {
   const caps = chartInspectorCapabilities(cfg.chartType);
   const isTableLike = isTableLikeChartType(cfg.chartType);
   const tableColorInOwnSection = tableStyleSectionsForType(cfg.chartType).includes("tableColor");
-  const tooltipInOwnSection = chartTypeHasTooltipSection(cfg.chartType);
+  const sections = chartStyleSectionsForType(cfg.chartType);
+  const labelInOwnSection = sections.includes("label");
+  const tooltipInOwnSection = sections.includes("tooltip");
+  const tooltipInPalette =
+    chartTypeHasTooltipSection(cfg.chartType) &&
+    cfg.chartType !== "t-heatmap" &&
+    !tooltipInOwnSection;
   const labelPresentation = resolveChartLabelPresentation(cfg, dashboardStyle);
   const tooltipPresentation = resolveChartTooltipPresentation(cfg, dashboardStyle);
 
@@ -101,8 +108,8 @@ export function ChartPaletteStyleSection() {
         labelColorFallback={resolveChartLabelDisplayColor(cfg, dashboardStyle)}
         tooltipColorFallback={resolveChartTooltipDisplayColor(cfg, dashboardStyle)}
         tooltipBackgroundFallback={resolveChartTooltipDisplayBackground(cfg, dashboardStyle)}
-        showLabelToggle={caps.label}
-        showTooltipToggle={!isTableLike && tooltipInOwnSection && cfg.chartType !== "t-heatmap"}
+        showLabelToggle={caps.label && !labelInOwnSection}
+        showTooltipToggle={!isTableLike && tooltipInPalette}
         showOpacity={supportsPaletteOpacity(cfg.chartType)}
         showGradientToggle={supportsSeriesGradientToggle(cfg.chartType)}
         showDepthToggle={supportsDepthVisualToggle(cfg.chartType)}

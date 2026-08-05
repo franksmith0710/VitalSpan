@@ -33,7 +33,7 @@ export function createTooltip(
     .style("border", `1px solid ${theme.axisLine}`)
     .style("box-shadow", "0 8px 24px rgba(16,24,40,0.14)")
     .style("backdrop-filter", "blur(6px)")
-    .style("transition", "opacity 120ms ease")
+    .style("transition", "opacity 120ms ease, left 200ms cubic-bezier(0.33, 1, 0.68, 1), top 200ms cubic-bezier(0.33, 1, 0.68, 1)")
     .style("z-index", "10");
   applyTooltipPresentation(layer, theme, presentation);
   return layer;
