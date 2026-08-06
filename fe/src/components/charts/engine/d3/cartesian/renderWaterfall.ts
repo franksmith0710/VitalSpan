@@ -5,6 +5,7 @@ import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3WaterfallDatum, D3WaterfallRenderConfig } from "@/components/charts/engine/d3/types";
+import { formatSimpleDataLabel } from "@/components/charts/engine/d3/core/cartesianDataLabel";
 import { formatChartValue } from "@/lib/chartValueFormat";
 import { resolveBarBandPadding } from "@/lib/applyChartDeStyleBlocks";
 
@@ -39,6 +40,7 @@ export function renderD3WaterfallChart(container: HTMLElement, config: D3Waterfa
     showLegend = true,
     legendLayout,
     valueFormat,
+    labelContent,
     onPointClick,
     barWidthRatio,
     barRadius,
@@ -148,6 +150,7 @@ export function renderD3WaterfallChart(container: HTMLElement, config: D3Waterfa
   }
 
   if (showLabel) {
+    const labelTotal = d3.sum(segments, (d) => Math.abs(d.value));
     plot
       .selectAll("text.wf-label")
       .data(segments)
@@ -158,7 +161,9 @@ export function renderD3WaterfallChart(container: HTMLElement, config: D3Waterfa
       .attr("text-anchor", "middle")
       .attr("fill", resolveLabelFill(theme, labelColor))
       .style("font-size", `${labelFontSize}px`)
-      .text((d) => formatChartValue(d.value, valueFormat));
+      .text((d) =>
+        formatSimpleDataLabel(d.type, d.value, labelTotal, labelContent, valueFormat),
+      );
   }
 
   renderConfiguredInlineLegend(

@@ -11,6 +11,7 @@ import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 import { createTooltipLayer, showMergedTooltip, hideTooltip } from "@/components/charts/engine/d3/core/tooltipLayer";
 import { themeFromConfig } from "@/components/charts/engine/d3/core/themeEngine";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
+import { formatSimpleDataLabel } from "@/components/charts/engine/d3/core/cartesianDataLabel";
 import { formatChartValue } from "@/lib/chartValueFormat";
 import { resolveCartesianPointSize } from "@/lib/applyChartDeStyleBlocks";
 
@@ -27,6 +28,7 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
     showTooltip,
     labelFontSize,
     labelColor,
+    labelContent,
     tooltipPresentation,
     valueFormat,
     options,
@@ -214,6 +216,7 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
   }
 
   if (showLabel && !useCanvas) {
+    const labelTotal = d3.sum(data, (d) => Number(d[yField]) || 0);
     plot
       .selectAll<SVGTextElement, ScatterDatum>("text.scatter-label")
       .data(svgData)
@@ -224,8 +227,8 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
       .attr("fill", resolveLabelFill(theme, labelColor))
       .style("font-size", "10px")
       .text((d) => {
-        if (colorField) return String(d[colorField] ?? "");
-        return `${formatChartValue(d[xField], valueFormat)}, ${formatChartValue(d[yField], valueFormat)}`;
+        const dimension = colorField ? String(d[colorField] ?? "") : String(d[xField] ?? "");
+        return formatSimpleDataLabel(dimension, d[yField], labelTotal, labelContent, valueFormat);
       });
   }
 

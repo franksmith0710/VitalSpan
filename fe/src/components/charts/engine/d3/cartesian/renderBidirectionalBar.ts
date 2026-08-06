@@ -6,6 +6,7 @@ import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
 import type { D3BidirectionalBarRenderConfig } from "@/components/charts/engine/d3/types";
+import { formatSimpleDataLabel } from "@/components/charts/engine/d3/core/cartesianDataLabel";
 import { formatChartValue } from "@/lib/chartValueFormat";
 import { resolveBarBandPadding } from "@/lib/applyChartDeStyleBlocks";
 
@@ -31,6 +32,7 @@ export function renderD3BidirectionalBarChart(
     showLegend = true,
     legendLayout,
     valueFormat,
+    labelContent,
     onPointClick,
     barWidthRatio,
     barRadius,
@@ -149,6 +151,8 @@ export function renderD3BidirectionalBarChart(
   );
 
   if (showLabel) {
+    const leftTotal = d3.sum(data, (d) => Math.abs(d.left));
+    const rightTotal = d3.sum(data, (d) => Math.abs(d.right));
     const barLabelFs = resolveBarLabelFontSize(y.bandwidth(), labelFontSize);
     plot
       .selectAll("text.left-label")
@@ -161,7 +165,9 @@ export function renderD3BidirectionalBarChart(
       .attr("text-anchor", "end")
       .attr("fill", resolveLabelFill(theme, labelColor))
       .style("font-size", `${barLabelFs}px`)
-      .text((d) => formatChartValue(d.left, valueFormat));
+      .text((d) =>
+        formatSimpleDataLabel(d.type, d.left, leftTotal, labelContent, valueFormat),
+      );
     plot
       .selectAll("text.right-label")
       .data(data)
@@ -173,7 +179,9 @@ export function renderD3BidirectionalBarChart(
       .attr("text-anchor", "start")
       .attr("fill", resolveLabelFill(theme, labelColor))
       .style("font-size", `${barLabelFs}px`)
-      .text((d) => formatChartValue(d.right, valueFormat));
+      .text((d) =>
+        formatSimpleDataLabel(d.type, d.right, rightTotal, labelContent, valueFormat),
+      );
   }
 
   return () => container.replaceChildren();

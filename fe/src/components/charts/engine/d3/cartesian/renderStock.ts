@@ -4,13 +4,14 @@ import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentatio
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import { resolveEffectiveDepth, shadeColor } from "@/components/charts/engine/d3/core/depthEngine";
 import type { D3StockRenderConfig } from "@/components/charts/engine/d3/types";
+import { formatSimpleDataLabel } from "@/components/charts/engine/d3/core/cartesianDataLabel";
 import { formatChartValue } from "@/lib/chartValueFormat";
 
 export function renderD3StockChart(container: HTMLElement, config: D3StockRenderConfig): () => void {
   container.replaceChildren();
   if (config.width <= 0 || config.height <= 0 || config.data.length === 0) return () => undefined;
 
-  const { width, height, data, colors, theme, showTooltip, showLabel, labelFontSize, labelColor, valueFormat, onPointClick, axisStyle, bodyWidthRatio = 0.6 } = config;
+  const { width, height, data, colors, theme, showTooltip, showLabel, labelFontSize, labelColor, labelContent, valueFormat, onPointClick, axisStyle, bodyWidthRatio = 0.6 } = config;
 
   const categories = data.map((d) => d.type);
   const yMin = d3.min(data, (d) => d.low) ?? 0;
@@ -25,6 +26,7 @@ export function renderD3StockChart(container: HTMLElement, config: D3StockRender
   const y = d3.scaleLinear().domain([yMin, yMax]).nice().range([innerH, 0]);
   const bodyW = Math.max(4, x.bandwidth() * bodyWidthRatio);
   const depthOn = resolveEffectiveDepth() !== "off";
+  const labelTotal = d3.sum(data, (d) => d.close);
 
   const root = appendChartSvg(container, width, height);
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
@@ -97,7 +99,9 @@ export function renderD3StockChart(container: HTMLElement, config: D3StockRender
         .attr("fill", resolveLabelFill(theme, labelColor))
         .style("font-size", `${labelFontSize}px`)
         .style("pointer-events", "none")
-        .text(formatChartValue(d.close, valueFormat));
+        .text(
+          formatSimpleDataLabel(d.type, d.close, labelTotal, labelContent, valueFormat),
+        );
     }
   }
 

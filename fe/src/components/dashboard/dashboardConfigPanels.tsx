@@ -74,7 +74,11 @@ export function DashboardStyleSections({
       </DashboardConfigSection>
 
       <DashboardConfigSection title="仪表板背景" data-testid="dashboard-canvas-background">
-        <DashboardCanvasBackgroundPanel styleConfig={styleConfig} patchStyle={patchStyle} />
+        <DashboardCanvasBackgroundPanel
+          styleConfig={styleConfig}
+          patchStyle={patchStyle}
+          isPixelLayout={isPixelLayout}
+        />
       </DashboardConfigSection>
     </>
   );

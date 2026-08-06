@@ -80,7 +80,18 @@ export function chartInspectorCapabilities(
     chartType === "gauge" ||
     chartType === "scatter" ||
     chartType === "multi-scatter" ||
-    chartType === "quadrant";
+    chartType === "quadrant" ||
+    chartType === "waterfall" ||
+    chartType === "funnel" ||
+    chartType === "graph" ||
+    chartType === "radar" ||
+    chartType === "treemap" ||
+    chartType === "circle-packing" ||
+    chartType === "bar-range" ||
+    chartType === "bidirectional-bar" ||
+    chartType === "progress-bar" ||
+    chartType === "stock-line" ||
+    chartType === "bullet-graph";
 
   return {
     ...base,

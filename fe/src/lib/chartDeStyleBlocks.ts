@@ -134,6 +134,9 @@ export const PIE_INNER_RADIUS_MAX = 65;
 export const DEFAULT_GAUGE_MIN = 0;
 export const DEFAULT_GAUGE_MAX = 100;
 export const DEFAULT_LIQUID_SIZE = 80;
+export const DEFAULT_TREEMAP_PADDING_INNER = 0;
+export const DEFAULT_TREEMAP_PADDING_OUTER = 4;
+export const DEFAULT_TREEMAP_CELL_RADIUS = 0;
 
 export type ChartDeStyleBlocks = {
   axis?: ChartAxisStyle;

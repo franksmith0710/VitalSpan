@@ -11,13 +11,14 @@ export type TemplateAssetCatalogItem = {
   thumbUrl: string;
 };
 
-export type TemplateAssetGalleryScope = "widget" | "canvas" | "all";
+export type TemplateAssetGalleryScope = "widget" | "canvas" | "screen" | "all";
 
 export const TEMPLATE_ASSET_CATALOG = catalog.items as TemplateAssetCatalogItem[];
 
 export const TEMPLATE_ASSET_CATEGORY_LABELS: Record<string, string> = {
   "borderless-decor": "无边框装饰",
-  "screen-header": "顶栏条",
+  "screen-header": "顶栏整图",
+  "title-strip": "顶部装饰",
   "canvas-dark": "大屏深色",
   "canvas-light": "大屏浅色",
   "screen-bg": "背景图",
@@ -33,7 +34,11 @@ export const GALLERY_EXCLUDED_CATEGORIES = new Set([
 
 const CANVAS_CATEGORIES = new Set(["canvas-dark", "canvas-light", "screen-bg"]);
 
-const WIDGET_CATEGORIES = new Set(["borderless-decor", "screen-header"]);
+const TOP_DECOR_CATEGORIES = new Set(["title-strip", "screen-header"]);
+
+const SCREEN_GALLERY_CATEGORIES = new Set([...CANVAS_CATEGORIES, ...TOP_DECOR_CATEGORIES]);
+
+const WIDGET_CATEGORIES = new Set(["borderless-decor", "screen-header", "title-strip"]);
 
 export function isGalleryEligibleAsset(item: TemplateAssetCatalogItem): boolean {
   return !GALLERY_EXCLUDED_CATEGORIES.has(item.category);
@@ -56,8 +61,9 @@ export function listTemplateAssetCategories(
   const eligible = applyGalleryExclusions(items);
   return [...new Set(eligible.map((item) => item.category))].sort((a, b) => {
     const order = [
-      "borderless-decor",
+      "title-strip",
       "screen-header",
+      "borderless-decor",
       "canvas-dark",
       "canvas-light",
       "screen-bg",
@@ -75,6 +81,9 @@ export function filterTemplateAssetsByScope(
   if (scope === "all") return eligible;
   if (scope === "canvas") {
     return eligible.filter((item) => CANVAS_CATEGORIES.has(item.category));
+  }
+  if (scope === "screen") {
+    return eligible.filter((item) => SCREEN_GALLERY_CATEGORIES.has(item.category));
   }
   return eligible.filter(
     (item) =>

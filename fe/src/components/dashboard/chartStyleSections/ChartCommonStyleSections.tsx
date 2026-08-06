@@ -343,7 +343,7 @@ export function ChartLabelStyleSection() {
           showDimensionOption={false}
           showPercentOption={false}
         />
-      ) : caps.label ? (
+      ) : caps.label || caps.labelFormat ? (
         <ChartDeLabelContentFields label={deStyle.label} patchLabel={patchLabel} />
       ) : null}
     </ChartInspectorSection>

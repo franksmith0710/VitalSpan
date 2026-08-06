@@ -16,6 +16,7 @@ import {
 } from "@/components/charts/engine/d3/cartesian/renderDualAxesColumn";
 import type { D3CartesianDatum, D3DualAxesRenderConfig } from "@/components/charts/engine/d3/types";
 import { normalizeCategoryAxisDomain } from "@/components/charts/engine/buildDatasetEncoding";
+import { formatCartesianDatumLabel, sumCartesianLabelTotal } from "@/components/charts/engine/d3/core/cartesianDataLabel";
 
 function normalizeDataset(
   data: D3CartesianDatum[],
@@ -109,6 +110,7 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
     showLabel = false,
     labelFontSize = 12,
     labelColor,
+    labelContent,
     seriesGradient = false,
     tooltipPresentation,
     valueFormat,
@@ -287,6 +289,7 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
     .on("click", (_event, d) => onPointClick?.(d));
 
   if (showLabel) {
+    const lineLabelTotal = sumCartesianLabelTotal(linePoints);
     plot
       .selectAll("text.dual-line-label")
       .data(linePoints)
@@ -297,10 +300,19 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
       .attr("text-anchor", "middle")
       .attr("fill", resolveLabelFill(theme, labelColor))
       .style("font-size", `${labelFontSize}px`)
-      .text((d) => formatChartValue(d.__value__, valueFormat));
+      .text((d) =>
+        formatCartesianDatumLabel(d, {
+          hasMultiSeries: false,
+          labelContent,
+          valueFormat,
+          total: lineLabelTotal,
+        }),
+      );
 
     if (!dualLine) {
       const colPoints = normalizeCartesianData(columnData, xField, columnYField, columnSeriesField);
+      const colLabelTotal = sumCartesianLabelTotal(colPoints);
+      const hasColSeries = Boolean(columnSeriesField);
       plot
         .selectAll("text.dual-col-label")
         .data(colPoints)
@@ -311,7 +323,14 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
         .attr("text-anchor", "middle")
         .attr("fill", resolveLabelFill(theme, labelColor))
         .style("font-size", `${labelFontSize}px`)
-        .text((d) => formatChartValue(d.__value__, valueFormat));
+        .text((d) =>
+          formatCartesianDatumLabel(d, {
+            hasMultiSeries: hasColSeries,
+            labelContent,
+            valueFormat,
+            total: colLabelTotal,
+          }),
+        );
     }
   }
 

@@ -18,7 +18,7 @@ import { applyPathDepthShadow } from "@/components/charts/engine/d3/core/depthEn
 import { attachPointCategoryInteraction } from "@/components/charts/engine/d3/cartesian/renderCartesianBase";
 import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
 import type { D3CartesianRenderConfig } from "@/components/charts/engine/d3/types";
-import { formatChartValue } from "@/lib/chartValueFormat";
+import { formatCartesianDatumLabel, sumCartesianLabelTotal } from "@/components/charts/engine/d3/core/cartesianDataLabel";
 
 type WideRow = Record<string, string | number>;
 
@@ -46,6 +46,7 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
     markLines = [],
     conditionalRules = [],
     labelColor,
+    labelContent,
     seriesGradient = false,
     tooltipPresentation,
     onPointClick,
@@ -53,6 +54,7 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
     axisStyle,
     areaOpacity,
     categoryLevelCount,
+    isPercent,
   } = config;
 
   const stackFillOpacity = areaOpacity ?? 0.35;
@@ -184,6 +186,7 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
       applyPathDepthShadow(defs, topLine, strokeColor, `area-top-${i}`);
 
       if (showLabel) {
+        const labelTotal = sumCartesianLabelTotal(points);
         plot
           .selectAll(`text.area-label-${i}`)
           .data(points)
@@ -194,7 +197,15 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
           .attr("text-anchor", "middle")
           .attr("fill", resolveLabelFill(theme, labelColor))
           .style("font-size", `${labelFontSize ?? 12}px`)
-          .text((d) => formatChartValue(d.__value__, valueFormat));
+          .text((d) =>
+            formatCartesianDatumLabel(d, {
+              hasMultiSeries,
+              labelContent,
+              valueFormat,
+              isPercent,
+              total: labelTotal,
+            }),
+          );
       }
     }
   }

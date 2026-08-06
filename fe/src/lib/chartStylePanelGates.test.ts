@@ -24,6 +24,11 @@ describe("chartStylePanelGates", () => {
     expect(filterStyleSectionsForChart("kpi", ["label", "palette"])).toEqual(["label", "palette"]);
   });
 
+  it("keeps label section for funnel and treemap", () => {
+    expect(filterStyleSectionsForChart("funnel", ["legend", "label", "funnelShape"])).toContain("label");
+    expect(filterStyleSectionsForChart("treemap", ["remark", "label", "treemapShape"])).toContain("label");
+  });
+
   it("depth visual only for supported cartesian types", () => {
     expect(supportsDepthVisualToggle("bar")).toBe(true);
     expect(supportsDepthVisualToggle("line")).toBe(false);

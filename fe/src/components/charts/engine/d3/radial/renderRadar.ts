@@ -4,6 +4,7 @@ import { resolveEffectiveDepth, shadeColor } from "@/components/charts/engine/d3
 import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
+import { formatSimpleDataLabel } from "@/components/charts/engine/d3/core/cartesianDataLabel";
 import { computeRadarLayout } from "./radarLayout";
 
 export function renderD3RadarChart(container: HTMLElement, config: D3RenderConfig): () => void {
@@ -17,6 +18,7 @@ export function renderD3RadarChart(container: HTMLElement, config: D3RenderConfi
     showLabel,
     showTooltip,
     labelFontSize,
+    labelContent,
     valueFormat,
     conditionalRules = [],
     onPointClick,
@@ -157,6 +159,29 @@ export function renderD3RadarChart(container: HTMLElement, config: D3RenderConfi
 
   if (!prefersReducedMotion()) {
     dots.attr("r", 0).transition().duration(480).delay((_d, i) => i * 40).attr("r", 4);
+  }
+
+  if (showLabel) {
+    g
+      .selectAll<SVGTextElement, D3Datum>("text.radar-value-label")
+      .data(data)
+      .join("text")
+      .attr("class", "radar-value-label")
+      .attr("text-anchor", "middle")
+      .attr("dy", "-0.6em")
+      .attr("fill", theme.axisLabel)
+      .style("font-size", `${labelFontSize}px`)
+      .attr("x", (_d, i) => points[i]![0])
+      .attr("y", (_d, i) => points[i]![1])
+      .text((d) =>
+        formatSimpleDataLabel(
+          String(d[xField] ?? ""),
+          d[yField],
+          maxValue,
+          labelContent,
+          valueFormat,
+        ),
+      );
   }
 
   return () => container.replaceChildren();

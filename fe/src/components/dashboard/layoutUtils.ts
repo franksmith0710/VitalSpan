@@ -7,6 +7,7 @@ import { DEFAULT_TABLE_COLUMN_WIDTH_MODE } from "@/lib/chartDeTableStyle";
 import { isTableLikeChartType } from "@/lib/chartTableInspector";
 import { DEFAULT_MAP_3D_CHART_DE_STYLE } from "@/lib/defaultMap3dChartDeStyle";
 import { buildDefaultPieDeStyle, isPieChartType } from "@/lib/defaultPieChartDeStyle";
+import { buildDefaultTreemapDeStyle } from "@/lib/defaultTreemapChartDeStyle";
 import type { ScreenVisualStyleConfig } from "@/lib/screenVisualStyle";
 import type { DashboardLayoutV2, LayoutWidget, PixelLayoutWidget } from "./dashboardLayoutContracts";
 import type { WidgetStyleConfig } from "./dashboardStyleConfig";
@@ -772,6 +773,22 @@ export function defaultChartConfig(type: ChartType): ChartViewConfig {
       },
     };
   };
+  const withTreemapDefaultDeStyle = (cfg: ChartViewConfig): ChartViewConfig => {
+    if (type !== "treemap") return cfg;
+    const treemapDefaults = buildDefaultTreemapDeStyle();
+    const prev = readChartDeStyle(cfg);
+    return {
+      ...cfg,
+      nativeBody: {
+        ...cfg.nativeBody,
+        deStyle: {
+          ...prev,
+          treemap: { ...treemapDefaults.treemap },
+          label: { ...treemapDefaults.label },
+        },
+      },
+    };
+  };
   if (type === "table") {
     return withTableColumnWidthDefault({
       chartType: "table",
@@ -803,12 +820,14 @@ export function defaultChartConfig(type: ChartType): ChartViewConfig {
   }
   return withTableColumnWidthDefault(
     withLegendDefault(
-      withPieDefaultDeStyle({
-        chartType: type,
-        ...base,
-        dimensions: [],
-        metrics: [],
-      }),
+      withTreemapDefaultDeStyle(
+        withPieDefaultDeStyle({
+          chartType: type,
+          ...base,
+          dimensions: [],
+          metrics: [],
+        }),
+      ),
     ),
   );
 }

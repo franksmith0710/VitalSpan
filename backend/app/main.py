@@ -32,6 +32,7 @@ def _warm_meta_database() -> None:
     from app.ingestion.analytics_datasource import ensure_analytics_datasource
     from app.dashboard.templates.seed import seed_builtin_dashboard_templates
     from app.dashboard.demo_instances.seed import seed_demo_instances
+    from app.dashboard.workspace_instances.seed import seed_workspace_instances
     from app.datasources.dev_credential_repair import repair_dev_datasource_credentials
 
     session = get_meta_session()
@@ -57,13 +58,21 @@ def _warm_meta_database() -> None:
                 logger.info("dashboard_template_seed_ok inserted=%s", inserted)
         except Exception:
             logger.warning("dashboard_template_seed_failed", exc_info=True)
-        if settings.ensure_official_demo_datasource:
+        if settings.ensure_official_demo_datasource and settings.ensure_demo_instances:
             try:
                 demo_inserted = seed_demo_instances(session)
                 if demo_inserted:
                     logger.info("demo_instances_seed_ok inserted=%s", demo_inserted)
             except Exception:
                 logger.warning("demo_instances_seed_failed", exc_info=True)
+        if settings.ensure_workspace_instances:
+            try:
+                workspace_inserted = seed_workspace_instances(session)
+                if workspace_inserted:
+                    logger.info("workspace_instances_seed_ok inserted=%s", workspace_inserted)
+            except Exception:
+                logger.warning("workspace_instances_seed_failed", exc_info=True)
+        if settings.ensure_official_demo_datasource:
             try:
                 from app.metadata.dataset.demo_seed import seed_demo_datasets
 

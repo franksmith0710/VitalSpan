@@ -228,8 +228,7 @@ export function createScreenTitleBarWidget(
         backgroundShow: true,
         backgroundMode: "image",
         backgroundImage:
-          "/template-assets/packs/borderless-decor-v1/items/decor-bow-deep-cyan.svg",
-        backgroundImageOpacity: 1,
+          "/template-assets/packs/gov-enterprise-v1/title-strips/title-diamond-flank-cyan.svg",
         backgroundImageFit: "widthFit",
         backgroundImagePosition: "top center",
       },

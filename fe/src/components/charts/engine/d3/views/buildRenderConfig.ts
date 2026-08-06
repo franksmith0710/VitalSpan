@@ -239,6 +239,7 @@ export function buildD3DispatchPayload(
         showTooltip: styleProps.showTooltip,
         showLegend: styleProps.showLegend,
         valueFormat: styleProps.valueFormat,
+        labelContent: styleProps.labelContent,
         markLines: styleProps.markLines,
         conditionalRules: styleProps.conditionalRules,
         legendLayout: styleProps.legendLayout,
@@ -265,6 +266,7 @@ export function buildD3DispatchPayload(
         legendLayout: styleProps.legendLayout,
         ...presentation,
         valueFormat: styleProps.valueFormat,
+        labelContent: styleProps.labelContent,
         ...cartesianStyle,
         onPointClick: props.onInteraction
           ? (datum) => props.onInteraction?.({ kind: "drill", value: datum.type, label: datum.type })
@@ -289,6 +291,7 @@ export function buildD3DispatchPayload(
         legendLayout: styleProps.legendLayout,
         ...presentation,
         valueFormat: styleProps.valueFormat,
+        labelContent: styleProps.labelContent,
         ...cartesianStyle,
       },
     };

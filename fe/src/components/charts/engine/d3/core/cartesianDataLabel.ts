@@ -2,6 +2,7 @@ import * as d3 from "d3";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import {
   formatDataLabelText,
+  formatDataLabelLines,
   type DataLabelContentOptions,
 } from "@/lib/chartDataLabelFormat";
 import type { D3CartesianDatum } from "@/components/charts/engine/d3/types";
@@ -19,6 +20,24 @@ export function formatSimpleDataLabel(
   isPercentChart = false,
 ): string {
   return formatDataLabelText(
+    dimension,
+    indicator,
+    total,
+    labelContent ?? { showIndicator: true },
+    valueFormat,
+    isPercentChart,
+  );
+}
+
+export function formatSimpleDataLabelLines(
+  dimension: string,
+  indicator: unknown,
+  total: number,
+  labelContent?: DataLabelContentOptions,
+  valueFormat?: NumberFormatConfig,
+  isPercentChart = false,
+): string[] {
+  return formatDataLabelLines(
     dimension,
     indicator,
     total,

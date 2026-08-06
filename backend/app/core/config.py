@@ -42,6 +42,8 @@ class Settings(BaseSettings):
     vitalspan_data_dir: str = "./data"
     dev_report_seed: bool = False
     ensure_official_demo_datasource: bool = True
+    ensure_demo_instances: bool = False
+    ensure_workspace_instances: bool = True
     ensure_analytics_datasource: bool = False
     sample_mysql_url: str | None = None
     fe_base_url: str = "http://127.0.0.1:5173"

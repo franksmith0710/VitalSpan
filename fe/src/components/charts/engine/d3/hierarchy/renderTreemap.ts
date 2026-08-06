@@ -4,6 +4,11 @@ import { motionDuration } from "@/components/charts/engine/d3/core/chartVisualTo
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
+import { formatSimpleDataLabelLines } from "@/components/charts/engine/d3/core/cartesianDataLabel";
+import {
+  appendMultilineSvgLabel,
+  multilineLabelMinHeight,
+} from "@/components/charts/engine/d3/core/multilineLabel";
 import { formatChartValue } from "@/lib/chartValueFormat";
 import {
   TREEMAP_CELL_HOVER_STROKE_WIDTH,
@@ -42,6 +47,7 @@ export function renderD3TreemapChart(container: HTMLElement, config: D3RenderCon
     conditionalRules = [],
     depthVisual,
     labelFontSize = 11,
+    labelContent,
   } = config;
   const depthLevel = resolveEffectiveDepth(depthVisual);
   const data = (options.data as TreemapDatum[]) ?? [];
@@ -55,14 +61,19 @@ export function renderD3TreemapChart(container: HTMLElement, config: D3RenderCon
   const paddingInner = Number(options.__treemapPaddingInner ?? 2);
   const paddingOuter = Number(options.__treemapPaddingOuter ?? 4);
   const cellRadius = Number(options.__treemapCellRadius ?? 3);
+  const gaplessInner = paddingInner <= 0;
+  const cellStroke =
+    gaplessInner ? "none" : theme.background === "transparent" ? "#fff" : theme.background;
+  const cellStrokeWidth = gaplessInner ? 0 : TREEMAP_CELL_STROKE_WIDTH;
 
   d3.treemap<TreeNode>()
     .size([width, height])
     .paddingInner(paddingInner)
     .paddingOuter(paddingOuter)
-    .round(true)(root);
+    .round(!gaplessInner)(root);
 
   const leaves = root.leaves() as d3.HierarchyRectangularNode<TreeNode>[];
+  const labelTotal = d3.sum(leaves, (d) => d.value ?? 0);
   const colorScale = d3
     .scaleOrdinal<string>()
     .domain(leaves.map((d) => d.data.name))
@@ -96,10 +107,10 @@ export function renderD3TreemapChart(container: HTMLElement, config: D3RenderCon
         : base;
     })
     .attr("opacity", 0.92)
-    .attr("stroke", theme.background === "transparent" ? "#fff" : theme.background)
-    .attr("stroke-width", TREEMAP_CELL_STROKE_WIDTH)
+    .attr("stroke", cellStroke)
+    .attr("stroke-width", cellStrokeWidth)
     .each(function () {
-      applyCellBevel(d3.select(this), depthLevel);
+      if (!gaplessInner) applyCellBevel(d3.select(this), depthLevel);
     });
 
   cells
@@ -116,8 +127,14 @@ export function renderD3TreemapChart(container: HTMLElement, config: D3RenderCon
         .select("rect")
         .transition()
         .duration(motionDuration("hover"))
-        .attr("opacity", 1)
-        .attr("stroke-width", TREEMAP_CELL_HOVER_STROKE_WIDTH);
+        .attr("opacity", 1);
+      if (!gaplessInner) {
+        cell
+          .select("rect")
+          .transition()
+          .duration(motionDuration("hover"))
+          .attr("stroke-width", TREEMAP_CELL_HOVER_STROKE_WIDTH);
+      }
       if (!tooltip) return;
       tooltip
         .style("opacity", "1")
@@ -146,25 +163,39 @@ export function renderD3TreemapChart(container: HTMLElement, config: D3RenderCon
         .select("rect")
         .transition()
         .duration(motionDuration("hover"))
-        .attr("opacity", 0.92)
-        .attr("stroke-width", TREEMAP_CELL_STROKE_WIDTH);
+        .attr("opacity", 0.92);
+      if (!gaplessInner) {
+        cell
+          .select("rect")
+          .transition()
+          .duration(motionDuration("hover"))
+          .attr("stroke-width", TREEMAP_CELL_STROKE_WIDTH);
+      }
       tooltip?.style("opacity", "0");
     })
     .on("click", (_event, d) => onPointClick?.({ name: d.data.name, value: d.value ?? 0 } as D3Datum));
 
   if (showLabel) {
-    cells
-      .append("text")
-      .attr("x", 6)
-      .attr("y", 14)
-      .attr("fill", "#fff")
-      .style("font-size", `${labelFontSize}px`)
-      .style("pointer-events", "none")
-      .text((d) => {
-        const w = d.x1 - d.x0;
-        const h = d.y1 - d.y0;
-        return w > 36 && h > 18 ? d.data.name : "";
+    cells.each(function (d) {
+      const w = d.x1 - d.x0;
+      const h = d.y1 - d.y0;
+      const lines = formatSimpleDataLabelLines(
+        d.data.name,
+        d.value ?? 0,
+        labelTotal,
+        labelContent,
+        valueFormat,
+      );
+      if (lines.length === 0 || w <= 36) return;
+      const minH = multilineLabelMinHeight(lines.length, labelFontSize);
+      if (h < minH) return;
+      appendMultilineSvgLabel(d3.select(this), lines, {
+        x: 6,
+        y: 4,
+        fontSize: labelFontSize,
+        fill: "#fff",
       });
+    });
   }
 
   return () => container.replaceChildren();

@@ -3,6 +3,7 @@ import { appendChartSvg, drawCartesianHorizontalBandAxes, resolveHorizontalCateg
 import { paintHorizontalBar } from "@/components/charts/engine/d3/core/depthEngine";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3BarRangeRenderConfig } from "@/components/charts/engine/d3/types";
+import { formatSimpleDataLabel } from "@/components/charts/engine/d3/core/cartesianDataLabel";
 import { resolveBarBandPadding } from "@/lib/applyChartDeStyleBlocks";
 import { formatChartValue } from "@/lib/chartValueFormat";
 
@@ -21,6 +22,7 @@ export function renderD3BarRangeChart(container: HTMLElement, config: D3BarRange
     showTooltip,
     showLabel,
     labelFontSize = 11,
+    labelContent,
     valueFormat,
     onPointClick,
     barWidthRatio,
@@ -84,6 +86,7 @@ export function renderD3BarRangeChart(container: HTMLElement, config: D3BarRange
   }
 
   if (showLabel) {
+    const labelTotal = d3.sum(data, (d) => Math.max(d.low, d.high));
     plot
       .selectAll("text.range-label")
       .data(data)
@@ -94,7 +97,9 @@ export function renderD3BarRangeChart(container: HTMLElement, config: D3BarRange
       .attr("dy", "0.32em")
       .attr("fill", theme.axisLabel)
       .style("font-size", `${labelFontSize}px`)
-      .text((d) => `${formatChartValue(d.low, valueFormat)} �?${formatChartValue(d.high, valueFormat)}`);
+      .text((d) =>
+        formatSimpleDataLabel(d.type, d.high, labelTotal, labelContent, valueFormat),
+      );
   }
 
   return () => container.replaceChildren();

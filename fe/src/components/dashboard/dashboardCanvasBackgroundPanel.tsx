@@ -25,11 +25,14 @@ type PatchFn = (patch: DashboardStylePatch) => void;
 type DashboardCanvasBackgroundPanelProps = {
   styleConfig: DashboardStyleConfig;
   patchStyle: PatchFn;
+  /** 数据大屏像素画布：素材库含顶部装饰与顶栏整图 */
+  isPixelLayout?: boolean;
 };
 
 export function DashboardCanvasBackgroundPanel({
   styleConfig,
   patchStyle,
+  isPixelLayout = false,
 }: DashboardCanvasBackgroundPanelProps) {
   const hasCustomImage = Boolean(styleConfig.canvasBackgroundImage?.trim());
   const [customImageEnabled, setCustomImageEnabled] = useState(
@@ -135,7 +138,7 @@ export function DashboardCanvasBackgroundPanel({
                 variant="rail"
                 showPreview
                 assetGallery
-                assetGalleryScope="canvas"
+                assetGalleryScope={isPixelLayout ? "screen" : "canvas"}
                 value={imageUrl}
                 onChange={(next) => commitImageUrl(next ?? "")}
               />

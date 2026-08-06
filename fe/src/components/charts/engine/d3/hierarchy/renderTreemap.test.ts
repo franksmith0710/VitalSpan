@@ -32,4 +32,68 @@ describe("renderD3TreemapChart", () => {
     expect(label?.getAttribute("style")).toContain("font-size: 16px");
     cleanup();
   });
+
+  it("renders multidimensional labels on separate tspans", () => {
+    const container = document.createElement("div");
+    const cleanup = renderD3TreemapChart(container, {
+      width: 320,
+      height: 240,
+      colors: ["#465fff"],
+      theme: getAntvThemeTokens("light"),
+      showLabel: true,
+      showTooltip: false,
+      showLegend: false,
+      labelFontSize: 12,
+      labelContent: {
+        showDimension: true,
+        showIndicator: true,
+        showPercent: true,
+        percentDecimals: 2,
+      },
+      valueFormat: { type: "auto", thousandSeparator: true },
+      options: {
+        data: [{ name: "2025-01-20", value: 22497 }],
+        __treemapPaddingInner: 0,
+        __treemapPaddingOuter: 4,
+        __treemapCellRadius: 0,
+      },
+    });
+
+    const tspans = container.querySelectorAll("tspan");
+    expect(tspans.length).toBe(3);
+    expect(tspans[0]?.textContent).toBe("2025-01-20");
+    expect(tspans[1]?.textContent).toContain("22,497");
+    expect(tspans[2]?.textContent).toMatch(/%$/);
+    cleanup();
+  });
+
+  it("removes cell stroke when inner padding is zero", () => {
+    const container = document.createElement("div");
+    const cleanup = renderD3TreemapChart(container, {
+      width: 320,
+      height: 240,
+      colors: ["#465fff", "#12b76a"],
+      theme: getAntvThemeTokens("light"),
+      showLabel: false,
+      showTooltip: false,
+      showLegend: false,
+      labelFontSize: 12,
+      depthVisual: "enhanced",
+      options: {
+        data: [
+          { name: "A", value: 50 },
+          { name: "B", value: 50 },
+        ],
+        __treemapPaddingInner: 0,
+        __treemapPaddingOuter: 4,
+        __treemapCellRadius: 0,
+      },
+    });
+
+    const rects = container.querySelectorAll("rect");
+    for (const rect of rects) {
+      expect(rect.getAttribute("stroke-width")).toBe("0");
+    }
+    cleanup();
+  });
 });

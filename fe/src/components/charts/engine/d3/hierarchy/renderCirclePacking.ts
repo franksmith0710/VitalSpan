@@ -2,6 +2,8 @@ import * as d3 from "d3";
 import { resolveEffectiveDepth, type DepthVisualLevel } from "@/components/charts/engine/d3/core/depthEngine";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
+import { formatSimpleDataLabelLines } from "@/components/charts/engine/d3/core/cartesianDataLabel";
+import { setMultilineSvgLabel } from "@/components/charts/engine/d3/core/multilineLabel";
 import { formatChartValue } from "@/lib/chartValueFormat";
 import {
   blurPackNode,
@@ -92,10 +94,12 @@ function packLeaves(
 
 export function renderD3CirclePackingChart(container: HTMLElement, config: D3RenderConfig): () => void {
   container.replaceChildren();
-  const { width, height, colors, theme, showLabel, showTooltip, valueFormat, options, onPointClick, depthVisual, labelFontSize = 11 } =
+  const { width, height, colors, theme, showLabel, showTooltip, valueFormat, labelContent, options, onPointClick, depthVisual, labelFontSize = 11 } =
     config;
   const depthLevel = resolveEffectiveDepth(depthVisual);
   const data = (options.data as PackDatum[]) ?? [];
+  const labelTotal = d3.sum(data, (d) => d.value ?? 0);
+  const valueByName = new Map(data.map((d) => [d.name, d.value ?? 0]));
   const layoutPadding = Number(options.__circlePackingPadding ?? PACK_LAYOUT_PADDING_DEFAULT);
   const labelMinRadius = Number(options.__circlePackingLabelMinRadius ?? 18);
   if (width <= 0 || height <= 0 || data.length === 0) return () => undefined;
@@ -151,18 +155,47 @@ export function renderD3CirclePackingChart(container: HTMLElement, config: D3Ren
     ? groups
         .append("text")
         .attr("text-anchor", "middle")
-        .attr("dy", "0.35em")
+        .attr("x", 0)
+        .attr("y", 0)
         .attr("fill", "#fff")
         .style("pointer-events", "none")
-        .text((d) => (packNodeRadius(d) > labelMinRadius ? d.name : ""))
     : null;
+
+  const refreshPackNodeLabel = (
+    labelSel: d3.Selection<SVGTextElement, PackPhysicsNode, SVGGElement, unknown>,
+    node: PackPhysicsNode,
+  ) => {
+    const r = packNodeRadius(node);
+    if (r <= labelMinRadius) {
+      labelSel.selectAll("tspan").remove();
+      labelSel.text("");
+      return;
+    }
+    const fs = Math.min(labelFontSize + 3, Math.max(9, r / 3));
+    const lines = formatSimpleDataLabelLines(
+      node.name,
+      valueByName.get(node.name) ?? 0,
+      labelTotal,
+      labelContent,
+      valueFormat,
+    );
+    const maxLines = Math.max(1, Math.floor((r * 2) / Math.round(fs * 1.25)));
+    labelSel.style("font-size", `${fs}px`);
+    setMultilineSvgLabel(labelSel, lines.slice(0, maxLines), {
+      fontSize: fs,
+      anchor: "middle",
+      x: 0,
+      centerBlock: true,
+    });
+  };
 
   const updateVisual = () => {
     groups.attr("transform", (d) => `translate(${d.x ?? d.targetX},${d.y ?? d.targetY})`);
     groups.select("circle").attr("r", (d) => packNodeRadius(d));
     if (labels) {
-      labels.style("font-size", (d) => `${Math.min(labelFontSize + 3, Math.max(9, packNodeRadius(d) / 3))}px`);
-      labels.text((d) => (packNodeRadius(d) > labelMinRadius ? d.name : ""));
+      labels.each(function (d) {
+        refreshPackNodeLabel(d3.select(this), d);
+      });
     }
   };
 
@@ -281,6 +314,7 @@ export function renderD3CirclePackingChart(container: HTMLElement, config: D3Ren
     });
 
   simulation.on("tick", updateVisual);
+  updateVisual();
 
   simulation.on("end", () => {
     if (hovered) return;

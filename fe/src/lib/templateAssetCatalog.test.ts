@@ -19,6 +19,14 @@ describe("templateAssetCatalog", () => {
     expect(canvas.some((item) => item.category === "dashboard-template")).toBe(false);
     expect(canvas.some((item) => item.category === "dashboard-variant")).toBe(false);
     expect(canvas.some((item) => item.category === "canvas-dark")).toBe(true);
+    expect(canvas.some((item) => item.category === "title-strip")).toBe(false);
+  });
+
+  it("includes top decoration assets in screen gallery scope", () => {
+    const screen = filterTemplateAssetsByScope("screen");
+    expect(screen.some((item) => item.category === "title-strip")).toBe(true);
+    expect(screen.some((item) => item.category === "screen-header")).toBe(true);
+    expect(screen.some((item) => item.category === "canvas-dark")).toBe(true);
   });
 
   it("uses full background url when thumb is under /thumbs/", () => {

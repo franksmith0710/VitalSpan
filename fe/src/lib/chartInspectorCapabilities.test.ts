@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { chartHasAdvancedTab, chartInspectorCapabilities, supportsEmbeddedShellLegend } from "./chartInspectorCapabilities";
+import { filterStyleSectionsForChart } from "./chartStylePanelGates";
 
 describe("chartInspectorCapabilities", () => {
   it("disables legend for table", () => {
@@ -37,5 +38,12 @@ describe("chartInspectorCapabilities", () => {
 
   it("enables jump for 2D map", () => {
     expect(chartInspectorCapabilities("map").jump).toBe(true);
+  });
+
+  it("enables label format for funnel and graph", () => {
+    expect(chartInspectorCapabilities("funnel").labelFormat).toBe(true);
+    expect(chartInspectorCapabilities("graph").labelFormat).toBe(true);
+    expect(filterStyleSectionsForChart("funnel", ["label", "legend"])).toContain("label");
+    expect(filterStyleSectionsForChart("graph", ["label", "graphShape"])).toContain("label");
   });
 });

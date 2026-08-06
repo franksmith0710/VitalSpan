@@ -65,3 +65,37 @@ export function formatDataLabelText(
   if (percentText) text = text ? `${text} (${percentText})` : percentText;
   return text;
 }
+
+/** 多维标签分行：维度 / 指标 / 占比各占一行（对标饼图内标签） */
+export function formatDataLabelLines(
+  dimension: string,
+  indicator: unknown,
+  total: number,
+  opts: DataLabelContentOptions,
+  valueFormat: NumberFormatConfig | undefined,
+  isPercentChart = false,
+): string[] {
+  const showDimension = opts.showDimension === true;
+  const showIndicator = opts.showIndicator !== false;
+  const showPercent = opts.showPercent === true;
+
+  const lines: string[] = [];
+  if (showDimension && dimension.trim()) lines.push(dimension.trim());
+
+  if (showIndicator) {
+    const fmt =
+      isPercentChart && !showPercent
+        ? mergePercentValueFormat(valueFormat, true)
+        : valueFormat;
+    const indicatorText = formatChartValue(indicator, fmt);
+    if (indicatorText) lines.push(indicatorText);
+  }
+
+  if (showPercent) {
+    const n = Number(indicator ?? 0);
+    const pct = isPercentChart ? n * 100 : total > 0 ? (n / total) * 100 : 0;
+    lines.push(`${pct.toFixed(opts.percentDecimals ?? 2)}%`);
+  }
+
+  return lines;
+}

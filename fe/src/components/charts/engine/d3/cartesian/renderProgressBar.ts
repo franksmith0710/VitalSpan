@@ -3,6 +3,7 @@ import { appendChartSvg, drawCartesianHorizontalBandAxes, resolveHorizontalCateg
 import { paintHorizontalBar } from "@/components/charts/engine/d3/core/depthEngine";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3ProgressBarRenderConfig } from "@/components/charts/engine/d3/types";
+import { formatSimpleDataLabel } from "@/components/charts/engine/d3/core/cartesianDataLabel";
 import { resolveBarBandPadding } from "@/lib/applyChartDeStyleBlocks";
 import { formatChartValue } from "@/lib/chartValueFormat";
 
@@ -24,6 +25,7 @@ export function renderD3ProgressBarChart(
     showTooltip,
     showLabel,
     labelFontSize = 11,
+    labelContent,
     valueFormat,
     onPointClick,
     barWidthRatio,
@@ -120,10 +122,9 @@ export function renderD3ProgressBarChart(
       .attr("dy", "0.32em")
       .attr("fill", theme.axisLabel)
       .style("font-size", `${labelFontSize}px`)
-      .text((d) => {
-        const pct = d.max > 0 ? (d.value / d.max) * 100 : 0;
-        return `${pct.toFixed(0)}%`;
-      });
+      .text((d) =>
+        formatSimpleDataLabel(d.type, d.value, d.max, labelContent, valueFormat),
+      );
   }
 
   return () => container.replaceChildren();

@@ -5,6 +5,7 @@ import { radialMargin } from "@/components/charts/engine/d3/core/margin";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3RenderConfig } from "@/components/charts/engine/d3/types";
+import { formatSimpleDataLabel } from "@/components/charts/engine/d3/core/cartesianDataLabel";
 import { formatChartValue } from "@/lib/chartValueFormat";
 import { resolveGaugeValuePercent } from "@/lib/applyChartDeStyleBlocks";
 import { MIN_CHART_PRESENTATION_FONT_SIZE } from "@/components/charts/engine/d3/core/chartPresentationScale";
@@ -62,6 +63,7 @@ export function renderD3GaugeChart(container: HTMLElement, config: D3RenderConfi
     labelFontSize,
     tooltipPresentation,
     valueFormat,
+    labelContent,
     options,
   } = config;
   const rawValue = Number(options.rawValue ?? NaN);
@@ -211,9 +213,14 @@ export function renderD3GaugeChart(container: HTMLElement, config: D3RenderConfi
   const statistic = options.statistic as { content?: { formatter?: () => string } } | undefined;
   const centerText =
     statistic?.content?.formatter?.() ??
-    (usePercent
-      ? formatChartValue(percent * 100, valueFormat ? { ...valueFormat, unit: "%" } : { type: "percent" })
-      : formatChartValue(rawValue, valueFormat));
+    formatSimpleDataLabel(
+      "",
+      usePercent ? percent : rawValue,
+      usePercent ? 1 : gaugeMax,
+      labelContent,
+      valueFormat,
+      usePercent,
+    );
 
   // 仪表中心读数是主信息：始终展示（标签开关控制刻度数字）
   g.append("text")

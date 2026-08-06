@@ -3,6 +3,7 @@ import { appendChartSvg, drawCartesianHorizontalBandAxes, resolveHorizontalCateg
 import { paintHorizontalBar } from "@/components/charts/engine/d3/core/depthEngine";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3BulletRenderConfig } from "@/components/charts/engine/d3/types";
+import { formatSimpleDataLabel } from "@/components/charts/engine/d3/core/cartesianDataLabel";
 import { resolveBarBandPadding } from "@/lib/applyChartDeStyleBlocks";
 import { formatChartValue } from "@/lib/chartValueFormat";
 
@@ -21,6 +22,7 @@ export function renderD3BulletChart(container: HTMLElement, config: D3BulletRend
     showTooltip,
     showLabel,
     labelFontSize = 11,
+    labelContent,
     valueFormat,
     onPointClick,
     barWidthRatio,
@@ -40,6 +42,7 @@ export function renderD3BulletChart(container: HTMLElement, config: D3BulletRend
   const y = d3.scaleBand<string>().domain(categories).range([0, innerH]).padding(resolveBarBandPadding(barWidthRatio));
   const x = d3.scaleLinear().domain([0, maxRange]).nice().range([0, innerW]);
   const barH = Math.max(8, y.bandwidth() * 0.55);
+  const labelTotal = d3.sum(data, (d) => d.actual);
 
   const root = appendChartSvg(container, width, height);
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
@@ -119,7 +122,9 @@ export function renderD3BulletChart(container: HTMLElement, config: D3BulletRend
         .attr("dy", "0.32em")
         .attr("fill", theme.axisLabel)
         .style("font-size", `${labelFontSize}px`)
-        .text(formatChartValue(d.actual, valueFormat));
+        .text(
+          formatSimpleDataLabel(d.type, d.actual, labelTotal, labelContent, valueFormat),
+        );
     }
   }
 
