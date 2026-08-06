@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import type { CSSProperties } from "react";
 import { TruncateHint } from "@/components/ui/hint-tooltip";
 import { cn } from "@/lib/utils";
 import type { TableSortState } from "@/components/charts/engine/d3/table/tableClientSort";
@@ -14,6 +15,7 @@ type SortableHeaderCellProps = {
   sticky?: "lead" | "first" | false;
   className?: string;
   resizable?: boolean;
+  cellStyle?: React.CSSProperties;
   onSort: (field: string) => void;
   onColumnResize?: (event: React.PointerEvent<HTMLDivElement>) => void;
   onColumnAutoFit?: (field: string) => void;
@@ -34,6 +36,7 @@ export function SortableHeaderCell({
   sticky = false,
   className,
   resizable = false,
+  cellStyle,
   onSort,
   onColumnResize,
   onColumnAutoFit,
@@ -50,7 +53,7 @@ export function SortableHeaderCell({
 
   const baseClass = cn(
     "vs-table-th group/th relative border-b border-[var(--dashboard-table-border,#f2f4f7)]",
-    "bg-[var(--dashboard-table-header-bg,#f9fafb)] text-[var(--dashboard-table-header-fg,#667085)]",
+    "bg-[var(--dashboard-table-header-bg)] text-[var(--dashboard-table-header-fg,#667085)]",
     "text-[length:var(--dashboard-table-header-font-size,12px)] font-semibold tracking-wide",
     columnAlignClass(align),
     sticky && "vs-table-sticky-col",
@@ -78,7 +81,7 @@ export function SortableHeaderCell({
 
   if (!sortable) {
     return (
-      <th scope="col" data-sticky={sticky || undefined} className={baseClass}>
+      <th scope="col" data-sticky={sticky || undefined} className={baseClass} style={cellStyle}>
         <div className="flex items-center gap-1.5">{content}</div>
         {resize}
       </th>
@@ -86,7 +89,7 @@ export function SortableHeaderCell({
   }
 
   return (
-    <th scope="col" data-sticky={sticky || undefined} className={baseClass}>
+    <th scope="col" data-sticky={sticky || undefined} className={baseClass} style={cellStyle}>
       <button
         type="button"
         className={cn(

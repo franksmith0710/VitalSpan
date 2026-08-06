@@ -8,6 +8,7 @@ import { getDashboardThemeTokens } from "@/components/dashboard/dashboardThemeTo
 import type { ChartDeTableStyle } from "./chartDeTableStyle";
 import { DEFAULT_TABLE_ZEBRA_BG, resolveTableZebraBg } from "./chartDeTableStyle";
 import { DASHBOARD_SCROLL_CSS_VARS } from "./dashboardScrollTokens";
+import { softenTableChromeBg } from "./tableColorAlpha";
 
 /** 看板滚动条令牌（浅/深主题统一，对标 DE 白色半透明） */
 const SCROLL_VARS = DASHBOARD_SCROLL_CSS_VARS;
@@ -39,9 +40,17 @@ export function resolveTableThemeVars(
 ): Record<string, string> {
   const scheme = resolveEffectiveChartScheme(context.colorScheme, context.widgetShellBg);
   const tokens = getDashboardThemeTokens(scheme);
+  const softenChrome = !tableStyle.bodyBg?.trim();
+
+  const resolveSoftenedHeader = (): string => {
+    if (tableStyle.headerBg) return tableStyle.headerBg;
+    return softenChrome ? softenTableChromeBg(tokens.tableHeaderBg) : tokens.tableHeaderBg;
+  };
+
+  const headerBg = resolveSoftenedHeader();
 
   const vars: Record<string, string> = {
-    "--dashboard-table-header-bg": tableStyle.headerBg ?? tokens.tableHeaderBg,
+    "--dashboard-table-header-bg": headerBg,
     "--dashboard-table-header-fg": tableStyle.headerFg ?? tokens.tableHeaderFg,
     "--dashboard-table-header-active-fg": tokens.textPrimary,
     "--dashboard-table-body-fg": tableStyle.bodyFg ?? tokens.tableBodyFg,
@@ -51,12 +60,18 @@ export function resolveTableThemeVars(
     "--dashboard-table-index-bg":
       scheme === "dark" ? "rgba(255, 255, 255, 0.04)" : "rgba(148, 163, 184, 0.08)",
     "--dashboard-table-index-fg": tokens.textMuted,
-    "--dashboard-table-footer-bg": tableStyle.headerBg ?? tokens.tableHeaderBg,
-    "--dashboard-table-header-font-size": "12px",
+    "--dashboard-table-footer-bg": headerBg,
+    "--dashboard-table-header-font-size":
+      tableStyle.headerFontSize != null ? `${tableStyle.headerFontSize}px` : "12px",
     ...SCROLL_VARS,
   };
 
-  if (tableStyle.bodyBg) vars["--dashboard-table-body-bg"] = tableStyle.bodyBg;
+  if (tableStyle.bodyBg) {
+    vars["--dashboard-table-body-bg"] = tableStyle.bodyBg;
+  } else if (softenChrome) {
+    vars["--dashboard-table-body-bg"] = softenTableChromeBg(tokens.tableHeaderBg);
+  }
+
   const zebraBg = resolveTableZebraBg(tableStyle);
   if (zebraBg) {
     vars["--dashboard-table-zebra-bg"] = zebraBg;
@@ -64,12 +79,21 @@ export function resolveTableThemeVars(
     vars["--dashboard-table-zebra-bg"] =
       scheme === "dark" ? "rgba(255, 255, 255, 0.04)" : DEFAULT_TABLE_ZEBRA_BG;
   }
-  if (tableStyle.columnBg) vars["--dashboard-table-column-bg"] = tableStyle.columnBg;
+
+  if (tableStyle.columnBg) {
+    vars["--dashboard-table-column-bg"] = tableStyle.columnBg;
+  } else if (softenChrome) {
+    vars["--dashboard-table-column-bg"] = softenTableChromeBg(tokens.tableHeaderBg);
+  }
+
   if (tableStyle.cornerBg) vars["--dashboard-table-corner-bg"] = tableStyle.cornerBg;
   if (tableStyle.emptyHintFg) vars["--dashboard-table-empty-fg"] = tableStyle.emptyHintFg;
   if (tableStyle.paginationFg) vars["--dashboard-table-pagination-fg"] = tableStyle.paginationFg;
   if (tableStyle.paginationFontSize != null) {
     vars["--dashboard-table-pagination-font-size"] = `${tableStyle.paginationFontSize}px`;
+  }
+  if (tableStyle.bodyFontSize != null) {
+    vars["--dashboard-table-body-font-size"] = `${tableStyle.bodyFontSize}px`;
   }
   if (tableStyle.summaryBg) vars["--dashboard-table-summary-bg"] = tableStyle.summaryBg;
   if (tableStyle.summaryFg) vars["--dashboard-table-summary-fg"] = tableStyle.summaryFg;

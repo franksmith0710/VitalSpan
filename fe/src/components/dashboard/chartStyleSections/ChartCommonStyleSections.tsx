@@ -47,6 +47,7 @@ import {
   supportsChartSeriesColorEditing,
 } from "@/lib/chartSeriesColor";
 import { mergeChartTableStyle, patchChartDeTableStyle, readChartDeTableStyle } from "@/lib/chartDeTableStyle";
+import { resolveWidgetEffectiveScheme } from "@/lib/chartSurfaceTheme";
 import { isTableLikeChartType, tableStyleSectionsForType } from "@/lib/chartTableInspector";
 import { chartStyleSectionsForType } from "@/lib/chartStyleSectionRegistry";
 import { chartTypeHasTooltipSection } from "@/lib/chartStyleCartesianFields";
@@ -71,6 +72,7 @@ export function ChartPaletteStyleSection() {
     !tooltipInOwnSection;
   const labelPresentation = resolveChartLabelPresentation(cfg, dashboardStyle);
   const tooltipPresentation = resolveChartTooltipPresentation(cfg, dashboardStyle);
+  const tableScheme = resolveWidgetEffectiveScheme(dashboardStyle);
 
   const patchPaletteOpacity = (opacityPercent: number) =>
     patchDeStyle({ paletteOpacity: opacityPercent / 100 });
@@ -141,6 +143,7 @@ export function ChartPaletteStyleSection() {
               tableStyle={mergeChartTableStyle(
                 readChartDeTableStyle(cfg),
                 dashboardStyle?.tableColorStyle,
+                tableScheme,
               )}
               onPatch={(patch) =>
                 mutateChartConfig((current) => patchChartDeTableStyle(current, patch))

@@ -777,6 +777,7 @@ export const ChartRenderer = memo(function ChartRenderer({
       const tableStyle = mergeChartTableStyle(
         readChartDeTableStyle(localConfig),
         dashboardColorDefaults?.tableColorStyle,
+        resolvedScheme,
       );
       const tableThemeVars = resolveTableThemeVars(tableStyle, {
         colorScheme: resolvedScheme,

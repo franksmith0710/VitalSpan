@@ -432,7 +432,7 @@ html.dark {
   padding-right: 20px;
 }
 
-.pixel-canvas-host[data-pixel-canvas-mode="edit"]:not([data-pixel-canvas-design-locked="true"]) {
+.pixel-canvas-host[data-pixel-canvas-mode="edit"] {
   --pixel-canvas-chrome-scale: max(var(--pixel-canvas-scale), 0.5);
 }
 
@@ -798,7 +798,7 @@ html.admin-fill-lock #root {
 }
 
 .dashboard-theme-scope .dashboard-chart-table thead {
-  background-color: var(--dashboard-table-header-bg, #f9fafb);
+  background-color: var(--dashboard-table-header-bg, transparent);
   backdrop-filter: blur(6px);
 }
 

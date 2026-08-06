@@ -36,7 +36,7 @@ export function TablePaginationBar({
   if (paginationVariant === "compact") {
     return (
       <div
-        className="flex shrink-0 items-center justify-between gap-2 border-t border-[var(--dashboard-table-border,#f2f4f7)] bg-[var(--dashboard-table-footer-bg,var(--dashboard-table-header-bg,#f9fafb))] px-2.5 py-1.5 text-[var(--dashboard-table-pagination-fg,inherit)]"
+        className="flex shrink-0 items-center justify-between gap-2 border-t border-[var(--dashboard-table-border,#f2f4f7)] bg-[var(--dashboard-table-footer-bg,var(--dashboard-table-header-bg))] px-2.5 py-1.5 text-[var(--dashboard-table-pagination-fg,inherit)]"
         style={barStyle}
         data-testid="table-pagination-compact"
       >
@@ -79,7 +79,7 @@ export function TablePaginationBar({
 
   return (
     <div
-      className="flex shrink-0 flex-wrap items-center gap-1.5 border-t border-[var(--dashboard-table-border,#f2f4f7)] bg-[var(--dashboard-table-footer-bg,var(--dashboard-table-header-bg,#f9fafb))] px-2.5 py-1.5 text-[var(--dashboard-table-pagination-fg,inherit)]"
+      className="flex shrink-0 flex-wrap items-center gap-1.5 border-t border-[var(--dashboard-table-border,#f2f4f7)] bg-[var(--dashboard-table-footer-bg,var(--dashboard-table-header-bg))] px-2.5 py-1.5 text-[var(--dashboard-table-pagination-fg,inherit)]"
       style={barStyle}
       data-testid="table-pagination-normal"
     >

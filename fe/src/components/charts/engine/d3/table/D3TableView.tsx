@@ -44,8 +44,9 @@ function D3TableViewInner(props: ChartEngineViewProps) {
       mergeChartTableStyle(
         readChartDeTableStyle(chartConfig ?? { chartType: viewModel.chartType }),
         style.tableColorStyle,
+        style.scheme,
       ),
-    [chartConfig, style.tableColorStyle, viewModel.chartType],
+    [chartConfig, style.tableColorStyle, style.scheme, viewModel.chartType],
   );
 
   const allRows = useMemo(

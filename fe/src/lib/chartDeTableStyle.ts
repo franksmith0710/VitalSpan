@@ -1,4 +1,6 @@
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import type { ColorScheme } from "@/components/dashboard/dashboardStyleConfig";
+import { resolveTablePaletteStyle } from "@/lib/chartTablePalette";
 
 export type TablePaginationMode = "page" | "scroll";
 export type TablePaginationVariant = "compact" | "normal";
@@ -7,14 +9,20 @@ export type TableColumnWidthMode = "auto" | "fixed" | "custom";
 export type ChartDeTableStyle = {
   /** 0–100，组件整体不透明度 */
   opacity?: number;
+  /** 表格配色预设 id（与图表 palette 同名） */
+  tablePaletteId?: string;
   /** 表头背景（对标 DE 表格配色） */
   headerBg?: string;
   /** 表头文字色 */
   headerFg?: string;
+  /** 表头字号（px） */
+  headerFontSize?: number;
   /** 单元格背景 */
   bodyBg?: string;
   /** 单元格文字色 */
   bodyFg?: string;
+  /** 单元格字号（px） */
+  bodyFontSize?: number;
   /** 汇总行背景 */
   summaryBg?: string;
   /** 汇总行文字色 */
@@ -84,13 +92,17 @@ export function resolveEffectiveTableZebraBg(
   return typeof fromTheme === "string" && fromTheme.trim() ? fromTheme : undefined;
 }
 
-/** 组件 deTableStyle 覆盖看板默认表格配色 */
+/** 组件 deTableStyle 覆盖看板默认表格配色；优先级：预设 < 看板默认 < 组件 override */
 export function mergeChartTableStyle(
   chartStyle: ChartDeTableStyle,
   dashboardDefaults?: ChartDeTableStyle,
+  scheme: ColorScheme = "light",
 ): ChartDeTableStyle {
-  if (!dashboardDefaults || Object.keys(dashboardDefaults).length === 0) return chartStyle;
-  return { ...dashboardDefaults, ...chartStyle };
+  const paletteId = chartStyle.tablePaletteId ?? dashboardDefaults?.tablePaletteId;
+  const preset = paletteId ? resolveTablePaletteStyle(paletteId, scheme) : {};
+  const merged = { ...preset, ...(dashboardDefaults ?? {}), ...chartStyle };
+  if (paletteId) merged.tablePaletteId = paletteId;
+  return merged;
 }
 
 export function readDashboardTableColorDefaults(
@@ -154,6 +166,31 @@ export function patchChartDeTableStyle(
       deTableStyle: { ...prev, ...patch },
     },
   };
+}
+
+/** 切换表格配色预设：写入 id 并清除逐字段颜色 override（保留字号/分页等结构字段） */
+export function patchChartDeTablePalette(
+  cfg: ChartViewConfig,
+  paletteId: string | undefined,
+  _scheme: ColorScheme = "light",
+): ChartViewConfig {
+  const prev = readChartDeTableStyle(cfg);
+  const next: ChartDeTableStyle = { ...prev };
+  for (const key of TABLE_COLOR_FIELD_KEYS) {
+    delete next[key];
+  }
+  if (paletteId) {
+    next.tablePaletteId = paletteId;
+  } else {
+    delete next.tablePaletteId;
+  }
+  const nativeBody = { ...cfg.nativeBody };
+  if (Object.keys(next).length > 0) {
+    nativeBody.deTableStyle = next;
+  } else {
+    delete nativeBody.deTableStyle;
+  }
+  return { ...cfg, nativeBody };
 }
 
 /** 切换列宽模式时清理互斥配置，避免「面板选了自适应但拖拽像素仍生效」 */

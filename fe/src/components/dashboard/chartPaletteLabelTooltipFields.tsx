@@ -208,6 +208,22 @@ export function ChartTableColorFields({
         />
       </div>
       <div className="mt-1 space-y-0 border-t border-gray-100 pt-1 dark:border-white/[0.06]">
+        <ChartPaletteFontSizeSelect
+          density="wide"
+          className="border-b-0 py-0"
+          label="表头字号"
+          value={tableStyle.headerFontSize}
+          fallback={12}
+          onChange={(headerFontSize) => onPatch({ headerFontSize })}
+        />
+        <ChartPaletteFontSizeSelect
+          density="wide"
+          className="border-b-0 py-0"
+          label="表格字号"
+          value={tableStyle.bodyFontSize}
+          fallback={15}
+          onChange={(bodyFontSize) => onPatch({ bodyFontSize })}
+        />
         <InspectorInlineColorRow
           label="分页器字色"
           allowClear
@@ -218,6 +234,7 @@ export function ChartTableColorFields({
         <ChartPaletteFontSizeSelect
           density="wide"
           className="border-b-0 py-0"
+          label="分页器字号"
           value={tableStyle.paginationFontSize}
           fallback={14}
           onChange={(paginationFontSize) => onPatch({ paginationFontSize })}

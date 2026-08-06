@@ -281,6 +281,10 @@ export function VitalSpanTable({
   const virtualOffset = virtual.active ? virtual.start : 0;
 
   const cellClass = bodyCellClass(wordWrap);
+  const headerFontStyle =
+    tableStyle.headerFontSize != null ? { fontSize: `${tableStyle.headerFontSize}px` } : undefined;
+  const bodyFontStyle =
+    tableStyle.bodyFontSize != null ? { fontSize: `${tableStyle.bodyFontSize}px` } : undefined;
   const rowStyle = applyRowHeight
     ? { height: resolvedRowHeightPx, maxHeight: resolvedRowHeightPx }
     : undefined;
@@ -397,6 +401,7 @@ export function VitalSpanTable({
                   sticky={freezeLead ? "lead" : false}
                   resizable={layoutInteractive}
                   className={cn(cellClass)}
+                  cellStyle={headerFontStyle}
                   onSort={toggleSort}
                   onColumnResize={startSeriesResize}
                   onColumnAutoFit={layoutInteractive ? autoFitColumn : undefined}
@@ -418,6 +423,7 @@ export function VitalSpanTable({
                     sticky={sticky}
                     resizable={layoutInteractive}
                     className={cn(cellClass, columnWidthPlan.contentScroll && "min-w-[5.5rem]")}
+                    cellStyle={headerFontStyle}
                     onSort={toggleSort}
                     onColumnResize={(event) => startColumnResize(c, event)}
                     onColumnAutoFit={layoutInteractive ? autoFitColumn : undefined}
@@ -454,7 +460,7 @@ export function VitalSpanTable({
                       columnAlignClass("center"),
                       freezeLead && "vs-table-sticky-col vs-table-sticky-lead",
                     )}
-                    style={rowStyle}
+                    style={{ ...rowStyle, ...bodyFontStyle }}
                   >
                     {seriesOffset + virtualOffset + i + 1}
                   </td>
@@ -480,7 +486,7 @@ export function VitalSpanTable({
                         sticky === "first" && "vs-table-sticky-col vs-table-sticky-first",
                         drillable && "vs-table-drillable",
                       )}
-                      style={rowStyle}
+                      style={{ ...rowStyle, ...bodyFontStyle }}
                       onClick={
                         drillable
                           ? (event) => {

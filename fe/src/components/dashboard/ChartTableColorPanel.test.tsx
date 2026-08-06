@@ -55,7 +55,10 @@ describe("ChartTableColorPanel", () => {
     expect(screen.getByText("表头字体")).toBeInTheDocument();
     expect(screen.getByText("表格背景")).toBeInTheDocument();
     expect(screen.getByText("表格字体")).toBeInTheDocument();
-    expect(screen.getByText("分页器")).toBeInTheDocument();
+    expect(screen.getByText("配色方案")).toBeInTheDocument();
+    expect(screen.getByText("表头字号")).toBeInTheDocument();
+    expect(screen.getByText("表格字号")).toBeInTheDocument();
+    expect(screen.getByText("分页器字号")).toBeInTheDocument();
   });
 
   it("opens color picker popover on grid cell click", () => {

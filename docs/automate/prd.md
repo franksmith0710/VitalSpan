@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.122
+version: 1.2.123
 last_updated: 2026-08-06
 truth_source: true
 evolution_hub: true
