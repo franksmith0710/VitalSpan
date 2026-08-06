@@ -12,9 +12,17 @@ import {
   type ChartViewConfig,
 } from "@/lib/chartViewConfig";
 import { migrateChartViewConfig } from "@/lib/migrateChartTypes";
-import { resolveChartColors, applyChartColorsOpacity } from "@/lib/chartPalette";
+import { applyChartColorsOpacity } from "@/lib/chartPalette";
+import {
+  readChartDeStyle,
+  readChartGeoStyle,
+  readChartLegendVisible,
+  readChartLegendPosition,
+  readChartPaletteOpacity,
+  patchChartDeStyleNested,
+  resolveEffectivePaletteColors,
+} from "@/lib/chartDeStyle";
 import type { ColorScheme, DashboardStyleConfig, NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
-import { readChartDeStyle, readChartGeoStyle, readChartLegendVisible, readChartLegendPosition, readChartPaletteOpacity, patchChartDeStyleNested } from "@/lib/chartDeStyle";
 import { readChartGeoAreaMappingLookup } from "@/lib/chartGeoAreaMapping";
 import {
   readChartLegendIcon,
@@ -504,12 +512,10 @@ export const ChartRenderer = memo(function ChartRenderer({
   );
   const deStyle = useMemo(() => readChartDeStyle(localConfig), [localConfig]);
   const chartColors = useMemo(() => {
-    const base = deStyle.paletteId
-      ? resolveChartColors(deStyle.paletteId)
-      : resolveChartColors(paletteId, paletteColors);
+    const base = resolveEffectivePaletteColors(localConfig, paletteId, paletteColors);
     const opacity = readChartPaletteOpacity(localConfig, dashboardColorDefaults);
     return applyChartColorsOpacity(base, opacity);
-  }, [deStyle.paletteId, localConfig, dashboardColorDefaults, paletteId, paletteColors]);
+  }, [localConfig, dashboardColorDefaults, paletteId, paletteColors]);
   const valueFormat = useMemo(
     () => resolveChartValueFormat(deStyle.label, numberFormat, localConfig.chartType),
     [deStyle.label, numberFormat, localConfig.chartType],
@@ -633,8 +639,9 @@ export const ChartRenderer = memo(function ChartRenderer({
   ]);
 
 
-  const suppressInlineLegend = shellLegendEligible && shellLegendVisible;
-  const useShellLegendLayout = suppressInlineLegend && shellLegendItems.length > 0;
+  const suppressInlineLegend =
+    shellLegendEligible && shellLegendVisible && shellLegendItems.length > 0;
+  const useShellLegendLayout = suppressInlineLegend;
   const shellLegendPosition = readChartLegendPosition(deStyle);
 
   const shellLegendState = useMemo(

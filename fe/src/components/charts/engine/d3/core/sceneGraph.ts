@@ -798,7 +798,9 @@ export function drawDualAxesAxes(opts: DualAxesOptions): void {
 type BidirectionalAxesOptions = {
   g: d3.Selection<SVGGElement, unknown, null, undefined>;
   yScale: d3.ScaleBand<string>;
-  xScale: d3.ScaleLinear<number, number>;
+  xLeftScale: d3.ScaleLinear<number, number>;
+  xRightScale: d3.ScaleLinear<number, number>;
+  centerX: number;
   innerW: number;
   innerH: number;
   theme: D3Theme;
@@ -806,46 +808,67 @@ type BidirectionalAxesOptions = {
   axisStyle?: ChartAxisStyle;
 };
 
-/** 双向柱图：类目纵轴 + 底部数值轴 */
+/** 双向柱图：中轴类目 + 左右独立数值轴（对标 DataEase G2Plot BidirectionalBar） */
 export function drawBidirectionalBandAxes(opts: BidirectionalAxesOptions): void {
-  opts.g.selectAll("g.vs-axis-x, g.vs-axis-y, text.vs-axis-name, text.vs-axis-name-y").remove();
+  opts.g.selectAll(
+    "g.vs-axis-x-left, g.vs-axis-x-right, g.vs-axis-y, text.vs-axis-y-center, text.vs-axis-name, text.vs-axis-name-y",
+  ).remove();
 
   const categories = opts.yScale.domain();
   const yLayout = resolveHorizontalCategoryAxisLayout(categories, opts.innerH);
   const yAxisFontSize = resolveBandAxisFontSize(yLayout.bandHeight);
+  const labelMaxWidth = Math.min(opts.centerX, opts.innerW - opts.centerX) * 1.75;
 
   if (opts.axisStyle?.y?.show !== false) {
-    opts.g
-      .append("g")
-      .attr("class", "vs-axis-y")
-      .call((sel) =>
-        drawCategoryBandAxisLeft(
-          sel,
-          opts.yScale,
-          opts.innerH,
-          yLayout.ticks,
-          yLayout.labelMaxWidth,
-          opts.theme,
-          yAxisFontSize,
-          opts.axisStyle?.y,
-        ),
-      );
+    const centerLabels = opts.g.append("g").attr("class", "vs-axis-y-center");
+    for (const tick of yLayout.ticks) {
+      const label = formatHorizontalBandAxisLabel(String(tick), labelMaxWidth);
+      if (!label) continue;
+      centerLabels
+        .append("text")
+        .attr("x", opts.centerX)
+        .attr("y", (opts.yScale(tick) ?? 0) + opts.yScale.bandwidth() / 2)
+        .attr("dy", "0.32em")
+        .attr("text-anchor", "middle")
+        .attr("fill", opts.theme.axisLabel)
+        .style("font-size", `${yAxisFontSize}px`)
+        .text(label);
+    }
   }
 
   if (opts.axisStyle?.x?.show !== false) {
+    const axisFontSize = resolveAxisFontSize();
     opts.g
       .append("g")
-      .attr("class", "vs-axis-x")
+      .attr("class", "vs-axis-x-left")
       .attr("transform", `translate(0,${opts.innerH})`)
       .call(
         d3
-          .axisBottom(opts.xScale)
+          .axisBottom(opts.xLeftScale)
           .tickValues(
-            numericTickValues(opts.xScale, opts.innerW, (d) => formatChartValue(d, opts.valueFormat)),
+            numericTickValues(opts.xLeftScale, opts.centerX, (d) => formatChartValue(d, opts.valueFormat)),
           )
           .tickFormat((d) => formatChartValue(d, opts.valueFormat)),
       )
-      .call(styleAxis, opts.theme, resolveAxisFontSize(), opts.axisStyle?.x);
+      .call(styleAxis, opts.theme, axisFontSize, opts.axisStyle?.x);
+
+    opts.g
+      .append("g")
+      .attr("class", "vs-axis-x-right")
+      .attr("transform", `translate(0,${opts.innerH})`)
+      .call(
+        d3
+          .axisBottom(opts.xRightScale)
+          .tickValues(
+            numericTickValues(
+              opts.xRightScale,
+              opts.innerW - opts.centerX,
+              (d) => formatChartValue(d, opts.valueFormat),
+            ),
+          )
+          .tickFormat((d) => formatChartValue(d, opts.valueFormat)),
+      )
+      .call(styleAxis, opts.theme, axisFontSize, opts.axisStyle?.x);
 
     const xName = opts.axisStyle?.x?.name?.trim();
     if (xName) {
@@ -866,9 +889,8 @@ export function drawBidirectionalBandAxes(opts: BidirectionalAxesOptions): void 
     opts.g
       .append("text")
       .attr("class", "vs-axis-name-y")
-      .attr("transform", "rotate(-90)")
-      .attr("x", -opts.innerH / 2)
-      .attr("y", -44)
+      .attr("x", opts.centerX)
+      .attr("y", -8)
       .attr("fill", opts.theme.axisLabel)
       .attr("text-anchor", "middle")
       .style("font-size", "11px")

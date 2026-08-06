@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   resolveChartPresentationVisualScale,
   scaleChartPresentationFontSize,
+  applyHubThumbnailStyleOverrides,
 } from "@/components/charts/engine/d3/core/chartPresentationScale";
 
 describe("chartPresentationScale", () => {
@@ -29,7 +30,26 @@ describe("chartPresentationScale", () => {
         chartHeight: 190,
         renderTier: "thumbnail",
       }),
-    ).toBe(11);
+    ).toBe(8);
+  });
+
+  it("scales font size down for hub card thumbnail span", () => {
+    expect(
+      scaleChartPresentationFontSize(24, {
+        chartWidth: 120,
+        chartHeight: 96,
+        renderTier: "thumbnail",
+      }),
+    ).toBe(6);
+  });
+
+  it("disables legend and data labels for hub thumbnail tier", () => {
+    const styled = applyHubThumbnailStyleOverrides({ showLegend: true, showLabel: true }, "thumbnail");
+    expect(styled.showLegend).toBe(false);
+    expect(styled.showLabel).toBe(false);
+    const full = applyHubThumbnailStyleOverrides({ showLegend: true, showLabel: true }, "full");
+    expect(full.showLegend).toBe(true);
+    expect(full.showLabel).toBe(true);
   });
 
   it("inflates paint-space fonts when canvas uses visualScale", () => {

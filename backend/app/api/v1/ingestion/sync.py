@@ -76,6 +76,7 @@ class SyncJobCreate(BaseModel):
     source_data_source_id: uuid.UUID | None = None
     source: SourceConnectionIn | None = None
     source_table: str | None = None
+    source_schema: str | None = None
 
     @field_validator("schedule_cron")
     @classmethod
@@ -99,6 +100,14 @@ class SyncJobCreate(BaseModel):
         if value is not None and not value.strip():
             raise ValueError("须指定 source_table")
         return value.strip() if value else value
+
+    @field_validator("source_schema")
+    @classmethod
+    def validate_source_schema_field(cls, value: str | None) -> str | None:
+        if value is None or not value.strip():
+            return None
+        validate_identifier(value.strip())
+        return value.strip()
 
     @model_validator(mode="after")
     def validate_modes(self) -> SyncJobCreate:
@@ -126,6 +135,7 @@ class SyncJobUpdate(BaseModel):
     source_data_source_id: uuid.UUID | None = None
     source: SourceConnectionUpdateIn | None = None
     source_table: str | None = None
+    source_schema: str | None = None
 
     @field_validator("schedule_cron")
     @classmethod
@@ -149,6 +159,14 @@ class SyncJobUpdate(BaseModel):
         if value is not None and not value.strip():
             raise ValueError("须指定 source_table")
         return value.strip() if value else value
+
+    @field_validator("source_schema")
+    @classmethod
+    def validate_source_schema_field(cls, value: str | None) -> str | None:
+        if value is None or not value.strip():
+            return None
+        validate_identifier(value.strip())
+        return value.strip()
 
     @model_validator(mode="after")
     def validate_modes(self) -> SyncJobUpdate:
@@ -299,6 +317,7 @@ def _to_source_out(job: SyncJob) -> SourceConnectionOut:
         host=job.source_host,
         port=job.source_port,
         database=job.source_database,
+        source_schema=job.source_schema,
         username=job.source_username,
         table=job.source_table,
     )
@@ -473,6 +492,7 @@ def create_sync_job(
             source_table=_resolve_source_table(payload),
             source_data_source_id=payload.source_data_source_id,
             inline_source=payload.source,
+            source_schema=payload.source_schema,
         )
     except SourceResolverError as exc:
         raise http_exception_from_resolver(exc) from exc
@@ -628,6 +648,7 @@ def update_sync_job(
         )
     prev_source_id = job.source_data_source_id
     prev_source_table = job.source_table
+    prev_source_schema = job.source_schema
     job.name = payload.name
     job.target_table = payload.target_table
     job.schedule_cron = payload.schedule_cron
@@ -641,6 +662,7 @@ def update_sync_job(
             source_table=_resolve_source_table(payload),
             source_data_source_id=payload.source_data_source_id,
             inline_source=payload.source,
+            source_schema=payload.source_schema,
             preserve_password=True,
         )
     except SourceResolverError as exc:
@@ -657,7 +679,9 @@ def update_sync_job(
             },
         ) from exc
     source_changed = (
-        prev_source_id != job.source_data_source_id or prev_source_table != job.source_table
+        prev_source_id != job.source_data_source_id
+        or prev_source_table != job.source_table
+        or prev_source_schema != job.source_schema
     )
     if source_changed:
         rules_row = db.scalar(select(EtlRuleSet).where(EtlRuleSet.job_id == job_id))

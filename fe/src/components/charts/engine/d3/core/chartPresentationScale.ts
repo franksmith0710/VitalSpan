@@ -9,7 +9,7 @@ import { setAxisFontSize } from "@/components/charts/engine/d3/core/chartVisualT
 /** 看板/编辑页常规嵌入时的视觉跨度基准 */
 export const CHART_PRESENTATION_REFERENCE_SPAN = 320;
 /** 列表 Hub 卡片缩略图对标编辑预览区的典型跨度 */
-export const CHART_THUMBNAIL_REFERENCE_SPAN = 420;
+export const CHART_THUMBNAIL_REFERENCE_SPAN = 560;
 export const MIN_CHART_PRESENTATION_FONT_SIZE = 6;
 
 export type ChartPresentationPaintContext = {
@@ -43,8 +43,10 @@ export function resolveChartPresentationVisualScale(
   const span = resolveChartPresentationSpan(chartWidth, chartHeight) * safeScale;
   const reference =
     renderTier === "thumbnail" ? CHART_THUMBNAIL_REFERENCE_SPAN : CHART_PRESENTATION_REFERENCE_SPAN;
+  const ratio = span / reference;
+  const floor = renderTier === "thumbnail" ? 0.14 : 0.35;
   if (span >= reference) return 1;
-  return Math.max(0.35, span / reference);
+  return Math.max(floor, ratio);
 }
 
 /** 按视觉目标反算 SVG/HTML 绘制坐标系字号（像素画布高分辨率绘制 + CSS 缩小时需放大 paint 字号） */
@@ -116,4 +118,12 @@ export function beginPresentationPaint(paint: ChartPresentationPaintContext): vo
 
 export function endPresentationPaint(): void {
   setAxisFontSize(null);
+}
+
+/** Hub 卡片缩略图：仅保留图形轮廓，关闭图例与数据标签避免挤占预览区 */
+export function applyHubThumbnailStyleOverrides<
+  T extends { showLegend?: boolean; showLabel?: boolean },
+>(style: T, renderTier?: Geo3dRenderTier): T {
+  if (renderTier !== "thumbnail") return style;
+  return { ...style, showLegend: false, showLabel: false };
 }

@@ -1,6 +1,8 @@
 import type { ChartFieldRef } from "@/lib/chartViewConfig";
 import type { RenderSpec } from "@/components/charts/engine/types";
 import type { ChartAxesConfig } from "@/lib/chartDeAxis";
+import { fieldFromAxisOrLegacy, normalizeCartesianSubField, resolveDualAxesMetrics } from "@/lib/chartAxisPlanFields";
+import { getChartPlugin } from "@/components/charts/engine/plugins/registry";
 import { DE_AREA_FILL_OPACITY } from "@/components/charts/engine/presentationConstants";
 
 export const CARTESIAN_CATEGORY_KEY_SEP = "\u0001";
@@ -67,7 +69,8 @@ export function normalizeCategoryAxisDomain(
   const inferred = inferCompositeCategoryLevels(unique);
   const levelCount = Math.max(inferred, structuralLevelCount ?? 1);
   if (levelCount <= 1) {
-    return { categories: unique, structuralLevelCount: 1 };
+    const sorted = [...unique].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    return { categories: sorted, structuralLevelCount: 1 };
   }
   return {
     categories: sortCompositeCategoryKeys(unique, levelCount),
@@ -99,16 +102,20 @@ export function resolveCartesianAxisFields(encoding: RenderSpec["encoding"]): {
   const categoryFields = (axes.xAxis ?? [])
     .map((ref) => ref.field?.trim())
     .filter((field): field is string => Boolean(field));
-  const subDim = axes.xAxisExt?.[0]?.field?.trim() || undefined;
+  const rawSub =
+    axes.xAxisExt?.[0]?.field?.trim() || axes.extStack?.[0]?.field?.trim() || undefined;
 
   if (categoryFields.length > 0) {
-    return { categoryFields, subDim };
+    return {
+      categoryFields,
+      subDim: normalizeCartesianSubField(categoryFields[0]!, rawSub),
+    };
   }
 
   const dims = encoding.dimensions.map((d) => d.field?.trim()).filter(Boolean) as string[];
   return {
     categoryFields: dims.length > 0 ? [dims[0]!] : [],
-    subDim: dims[1],
+    subDim: normalizeCartesianSubField(dims[0] ?? "", dims[1]),
   };
 }
 
@@ -253,6 +260,63 @@ export function buildCartesianCategorySeries(
   return { xData, series, isHorizontal };
 }
 
+function usesShellCartesianLegend(chartType: string): boolean {
+  const plugin = getChartPlugin(chartType);
+  if (plugin) {
+    return (
+      plugin.paletteCategory === "trend" ||
+      plugin.paletteCategory === "compare" ||
+      plugin.paletteCategory === "dual_axes"
+    );
+  }
+  return chartType === "line" || chartType === "bar" || chartType === "timeline";
+}
+
+function cartesianSeriesTypeForLegend(chartType: string): "line" | "bar" {
+  const plugin = getChartPlugin(chartType);
+  return plugin?.paletteCategory === "compare" ? "bar" : "line";
+}
+
+function resolveCartesianShellLegendNames(
+  spec: Pick<RenderSpec, "encoding" | "styleVariant">,
+  rows: unknown[][],
+  columns: string[],
+  seriesType: "line" | "bar",
+): string[] {
+  const { series } = buildCartesianCategorySeries(spec, rows, columns, seriesType);
+  return series.map((s) => String(s.name ?? "")).filter(Boolean);
+}
+
+function resolveDualAxesShellLegendNames(
+  spec: Pick<RenderSpec, "chartType" | "encoding" | "styleVariant">,
+  rows: unknown[][],
+  columns: string[],
+): string[] {
+  const { columnMetric, lineMetric } = resolveDualAxesMetrics(spec as RenderSpec);
+
+  if (spec.chartType === "chart-mix-dual-line") {
+    const extBubble = spec.encoding.axes?.extBubble?.[0]?.field?.trim();
+    if (extBubble) {
+      const idx = safeColIndex(columns, extBubble);
+      if (idx !== null) {
+        const subs = uniqueOrdered(rows.map((r) => String(r[idx] ?? "")).filter(Boolean));
+        if (subs.length > 1) return [columnMetric, ...subs].filter(Boolean);
+      }
+    }
+    const names = [columnMetric, lineMetric].filter(Boolean);
+    return names.length > 0 ? names : [columnMetric].filter(Boolean);
+  }
+
+  const barNames = resolveCartesianShellLegendNames(spec, rows, columns, "bar");
+  if (!lineMetric) {
+    return barNames.length > 0 ? barNames : [columnMetric].filter(Boolean);
+  }
+  if (barNames.length > 1) {
+    return [...barNames, lineMetric].filter(Boolean);
+  }
+  return [columnMetric, lineMetric].filter((name, index, all) => name && all.indexOf(name) === index);
+}
+
 export function resolveSeriesLegendNames(
   spec: Pick<RenderSpec, "chartType" | "encoding" | "styleVariant">,
   rows: unknown[][],
@@ -270,14 +334,16 @@ export function resolveSeriesLegendNames(
     if (di === null) return [];
     return uniqueOrdered(rows.map((r) => String(r[di] ?? "")).filter(Boolean));
   }
-  if (chartType === "line" || chartType === "bar") {
-    const { series } = buildCartesianCategorySeries(
+  if (chartType.startsWith("chart-mix")) {
+    return resolveDualAxesShellLegendNames(spec, rows, columns);
+  }
+  if (usesShellCartesianLegend(chartType)) {
+    return resolveCartesianShellLegendNames(
       spec,
       rows,
       columns,
-      chartType === "line" ? "line" : "bar",
+      cartesianSeriesTypeForLegend(chartType),
     );
-    return series.map((s) => String(s.name ?? "")).filter(Boolean);
   }
   if (chartType === "timeline") {
     const metric = encoding.metrics[0]?.field;

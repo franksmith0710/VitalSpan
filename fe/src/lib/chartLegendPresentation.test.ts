@@ -52,5 +52,6 @@ describe("chartLegendPresentation", () => {
     expect(resolveLegendPositionFromAlign("left", "middle")).toBe("left");
     expect(resolveLegendPositionFromAlign("right", "middle")).toBe("right");
     expect(resolveLegendPositionFromAlign("center", "top")).toBe("top");
+    expect(resolveLegendPositionFromAlign("right", "bottom")).toBe("bottom");
   });
 });

@@ -18,7 +18,7 @@ describe("TablePaginationBar", () => {
     );
 
     const bar = screen.getByTestId("table-pagination-compact");
-    expect(bar).toHaveStyle({ fontSize: "20px", color: "rgb(255, 0, 0)" });
+    expect(bar).toHaveStyle({ fontSize: "calc(20px / var(--pixel-canvas-chrome-scale, 1))", color: "rgb(255, 0, 0)" });
 
     const countLabel = container.querySelector("span");
     expect(countLabel?.textContent).toContain("共 100 条");

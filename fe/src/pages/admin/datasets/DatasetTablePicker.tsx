@@ -22,9 +22,11 @@ import {
   filterSyncJobBindDatasources,
   resolveAnalyticsDatasourceId,
 } from "@/lib/datasourceRoles";
+import { formatSyncDatasourceDisplay } from "@/lib/formatDatasourceDisplay";
 import { queryKeys } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";
 import { DatasetFieldWorkbench } from "./components/DatasetFieldWorkbench";
+import { DatasetQualifiedTableReadout, SyncOutputConnectionReadout, SYNC_HEADER_LABEL_BLOCK_CLASS } from "./components/SyncOutputConnectionReadout";
 import { setPrimaryTable } from "./datasetTableSelection";
 import { useDatasetTableColumns } from "./hooks/useDatasetTableColumns";
 import type { DatasetBindDraft, DatasetOrigin, DatasetTable } from "./types";
@@ -35,6 +37,7 @@ type DsItem = {
   code?: string;
   database?: string;
   type?: string;
+  host?: string;
   port?: number;
 };
 
@@ -107,6 +110,12 @@ export function DatasetTablePicker({
     [items, origin],
   );
   const selectedDs = selectableItems.find((d) => d.id === dataSourceId);
+  const syncDatasourceDisplay = useMemo(
+    () => (selectedDs ? formatSyncDatasourceDisplay(selectedDs) : null),
+    [selectedDs],
+  );
+
+  const syncHeaderGrid = isSyncOrigin && Boolean(dataSourceId) && selectableItems.length > 0;
 
   useEffect(() => {
     if (selectableItems.length === 0) return;
@@ -183,14 +192,26 @@ export function DatasetTablePicker({
     <div className="flex min-h-0 flex-1 flex-col gap-3">
       <div
         className={cn(
-          "flex shrink-0 flex-wrap items-end gap-4 rounded-xl border border-gray-200 bg-white px-4 py-3",
-          "dark:border-gray-800 dark:bg-white/[0.02]",
+          "shrink-0 rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]",
+          syncHeaderGrid
+            ? "grid grid-cols-1 items-stretch gap-4 px-4 py-4 md:grid-cols-2 md:gap-6"
+            : "flex flex-wrap items-end gap-4 px-4 py-3",
         )}
       >
-        <div className="grid min-w-[200px] flex-1 gap-1.5 sm:max-w-xs">
-          <Label htmlFor="dataset-datasource" className="text-theme-xs text-gray-600 dark:text-gray-400">
-            {isSyncOrigin ? "同步产出库（托管分析库）" : "数据源"}
-          </Label>
+        <div
+          className={cn(
+            "flex min-w-0 flex-col gap-2",
+            !syncHeaderGrid && "grid min-w-[200px] flex-1 gap-1.5 sm:max-w-xs",
+          )}
+        >
+          <div className={syncHeaderGrid ? SYNC_HEADER_LABEL_BLOCK_CLASS : "grid gap-0.5"}>
+            <Label htmlFor="dataset-datasource" className="text-theme-xs text-gray-600 dark:text-gray-400">
+              {isSyncOrigin ? "同步产出库" : "数据源"}
+            </Label>
+            {isSyncOrigin ? (
+              <p className="text-theme-xs text-gray-400 dark:text-gray-500">托管分析库连接（只读）</p>
+            ) : null}
+          </div>
           {dsQuery.isLoading ? (
             <Skeleton className="h-11 w-full rounded-lg" />
           ) : selectableItems.length === 0 ? (
@@ -202,12 +223,17 @@ export function DatasetTablePicker({
           ) : !dataSourceId ? (
             <Skeleton className="h-11 w-full rounded-lg" />
           ) : readOnlyTables || isSyncOrigin ? (
-            <p
-              id="dataset-datasource"
-              className="flex h-11 items-center rounded-lg border border-gray-200 bg-gray-50 px-3 text-theme-sm dark:border-gray-800 dark:bg-white/[0.02]"
-            >
-              {selectedDs?.name ?? "托管分析库"}
-            </p>
+            selectedDs ? (
+              <SyncOutputConnectionReadout
+                id="dataset-datasource"
+                data-testid="sync-output-datasource"
+                datasource={selectedDs}
+                tall={syncHeaderGrid}
+                className="min-h-0 flex-1"
+              />
+            ) : (
+              <Skeleton className="h-11 w-full rounded-lg" />
+            )
           ) : (
             <Select value={dataSourceId} onValueChange={handleDataSourceChange}>
               <SelectTrigger id="dataset-datasource" className="h-11" aria-label="选择数据源">
@@ -224,16 +250,29 @@ export function DatasetTablePicker({
           )}
         </div>
 
-        <div className="grid min-w-0 flex-1 gap-1.5">
-          <span className="text-theme-xs text-gray-600 dark:text-gray-400">当前数据表</span>
+        <div className={cn("flex min-w-0 flex-col gap-2", !syncHeaderGrid && "grid gap-1.5")}>
+          <div className={syncHeaderGrid ? SYNC_HEADER_LABEL_BLOCK_CLASS : undefined}>
+            <span className="text-theme-xs text-gray-600 dark:text-gray-400">当前数据表</span>
+            {syncHeaderGrid ? (
+              <p className="text-theme-xs text-gray-400 dark:text-gray-500">同步写入的目标表（只读）</p>
+            ) : null}
+          </div>
           {primaryTableName ? (
-            <div className="flex h-11 items-center gap-2">
-              <p className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 dark:border-gray-800 dark:bg-white/[0.02]">
-                <Table2 className="size-4 shrink-0 text-gray-400" aria-hidden />
-                <span className="truncate font-mono text-theme-sm text-gray-800 dark:text-gray-200">
-                  {primaryTableName}
-                </span>
-              </p>
+            <div className={cn("flex min-w-0 gap-2", syncHeaderGrid ? "min-h-0 flex-1" : "h-11 items-center")}>
+              {syncHeaderGrid ? (
+                <DatasetQualifiedTableReadout
+                  tableName={primaryTableName}
+                  tall
+                  className="min-h-0 flex-1"
+                />
+              ) : (
+                <p className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 dark:border-gray-800 dark:bg-white/[0.02]">
+                  <Table2 className="size-4 shrink-0 text-gray-400" aria-hidden />
+                  <span className="truncate font-mono text-theme-sm text-gray-800 dark:text-gray-200">
+                    {primaryTableName}
+                  </span>
+                </p>
+              )}
               {!readOnlyTables ? (
                 <Button
                   type="button"
@@ -315,6 +354,8 @@ export function DatasetTablePicker({
             boundConfigId={boundConfigId}
             origin={origin}
             syncJobId={syncJobId}
+            syncDataSourceName={syncDatasourceDisplay?.name}
+            syncDataSourceEndpoint={syncDatasourceDisplay?.endpoint}
             onRefreshBinding={onRefreshBinding}
           />
         </div>

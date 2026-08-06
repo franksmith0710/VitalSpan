@@ -1,4 +1,5 @@
 import catalog from "./templateAssetsCatalog.generated.json";
+import { resolvePublicAssetUrl } from "./appBasePath";
 
 export type TemplateAssetCatalogItem = {
   id: string;
@@ -11,7 +12,10 @@ export type TemplateAssetCatalogItem = {
   thumbUrl: string;
 };
 
-export type TemplateAssetGalleryScope = "widget" | "canvas" | "screen" | "all";
+export type TemplateAssetGalleryScope = "background" | "widget" | "canvas" | "screen" | "all";
+
+/** 组件底图 / 看板背景等图片选择器统一使用的 scope */
+export const BACKGROUND_IMAGE_GALLERY_SCOPE: TemplateAssetGalleryScope = "background";
 
 export const TEMPLATE_ASSET_CATALOG = catalog.items as TemplateAssetCatalogItem[];
 
@@ -19,6 +23,7 @@ export const TEMPLATE_ASSET_CATEGORY_LABELS: Record<string, string> = {
   "borderless-decor": "无边框装饰",
   "screen-header": "顶栏整图",
   "title-strip": "顶部装饰",
+  "component-panel": "组件面板",
   "canvas-dark": "大屏深色",
   "canvas-light": "大屏浅色",
   "screen-bg": "背景图",
@@ -30,25 +35,59 @@ export const GALLERY_EXCLUDED_CATEGORIES = new Set([
   "canvas-thumb",
   "dashboard-template",
   "dashboard-variant",
+  "top-decor-clear",
 ]);
 
 const CANVAS_CATEGORIES = new Set(["canvas-dark", "canvas-light", "screen-bg"]);
 
-const TOP_DECOR_CATEGORIES = new Set(["title-strip", "screen-header"]);
+const WIDGET_CATEGORIES = new Set([
+  "borderless-decor",
+  "screen-header",
+  "title-strip",
+  "component-panel",
+]);
 
-const SCREEN_GALLERY_CATEGORIES = new Set([...CANVAS_CATEGORIES, ...TOP_DECOR_CATEGORIES]);
-
-const WIDGET_CATEGORIES = new Set(["borderless-decor", "screen-header", "title-strip"]);
+/** 底图图库：组件装饰 + 大屏/看板背景（各入口共用，避免分类不一致） */
+const BACKGROUND_IMAGE_CATEGORIES = new Set([...WIDGET_CATEGORIES, ...CANVAS_CATEGORIES]);
 
 export function isGalleryEligibleAsset(item: TemplateAssetCatalogItem): boolean {
   return !GALLERY_EXCLUDED_CATEGORIES.has(item.category);
 }
 
-/** 图库格子预览：优先真实背景图，不用 /thumbs/ 线框缩略图 */
-export function galleryPreviewUrl(item: TemplateAssetCatalogItem): string {
+/** @deprecated 使用 resolvePublicAssetUrl；保留别名避免大范围重命名 */
+export function resolveTemplateAssetUrl(url: string): string {
+  return resolvePublicAssetUrl(url);
+}
+
+/** 图库格子预览：canvas/screen-bg 用 packs/thumbs；其余用 thumbUrl 或全图 url */
+export function galleryPreviewRawPath(item: TemplateAssetCatalogItem): string {
   const thumb = item.thumbUrl?.trim() ?? "";
-  if (thumb && !thumb.includes("/thumbs/")) return thumb;
-  return item.url;
+  const url = item.url?.trim() ?? "";
+  if (item.category === "canvas-thumb") return url || thumb;
+  if (
+    (item.category === "canvas-dark" ||
+      item.category === "canvas-light" ||
+      item.category === "screen-bg") &&
+    item.id
+  ) {
+    return `/template-assets/packs/gov-enterprise-v1/thumbs/${item.id}.svg`;
+  }
+  if (thumb.includes("/thumbs/")) return thumb;
+  if (thumb && thumb !== url) return thumb;
+  return url || thumb;
+}
+
+/** img onError 回退链：全图 url（始终可用） */
+export function galleryPreviewFallbackUrl(item: TemplateAssetCatalogItem): string {
+  return resolveTemplateAssetUrl(item.url?.trim() ?? "");
+}
+
+export function galleryPreviewUrl(item: TemplateAssetCatalogItem): string {
+  return resolveTemplateAssetUrl(galleryPreviewRawPath(item));
+}
+
+export function isWideTransparentGalleryCategory(_category: string): boolean {
+  return false;
 }
 
 function applyGalleryExclusions(items: TemplateAssetCatalogItem[]): TemplateAssetCatalogItem[] {
@@ -64,6 +103,7 @@ export function listTemplateAssetCategories(
       "title-strip",
       "screen-header",
       "borderless-decor",
+      "component-panel",
       "canvas-dark",
       "canvas-light",
       "screen-bg",
@@ -82,15 +122,10 @@ export function filterTemplateAssetsByScope(
   if (scope === "canvas") {
     return eligible.filter((item) => CANVAS_CATEGORIES.has(item.category));
   }
-  if (scope === "screen") {
-    return eligible.filter((item) => SCREEN_GALLERY_CATEGORIES.has(item.category));
+  if (scope === "background" || scope === "widget" || scope === "screen") {
+    return eligible.filter((item) => BACKGROUND_IMAGE_CATEGORIES.has(item.category));
   }
-  return eligible.filter(
-    (item) =>
-      WIDGET_CATEGORIES.has(item.category) ||
-      item.category.startsWith("canvas-") ||
-      item.category === "screen-bg",
-  );
+  return [];
 }
 
 export function groupTemplateAssetsByCategory(items: TemplateAssetCatalogItem[]) {

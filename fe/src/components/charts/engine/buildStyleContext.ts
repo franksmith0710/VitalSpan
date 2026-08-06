@@ -4,6 +4,7 @@ import {
   readChartDeStyle,
   readChartDataZoom,
   readChartDepthVisual,
+  readChartPaletteOpacity,
   readChartSeriesGradient,
   readChartShowLabel,
   readChartTooltipShow,
@@ -36,6 +37,8 @@ type BuildStyleContextInput = {
   embedEdit?: boolean;
   numberFormat?: NumberFormatConfig;
   widgetShellBg?: string;
+  /** 组件壳层不透明度 0–1，表格 chrome 与透明底对齐 */
+  widgetShellOpacity?: number;
   dashboardPaletteId?: string;
 };
 
@@ -49,12 +52,14 @@ export function buildStyleContext(input: BuildStyleContextInput): ChartStyleCont
   const depthVisual = readChartDepthVisual(config, dashboardDefaults);
   const dataZoom = readChartDataZoom(config);
   const valueFormat = resolveChartValueFormat(deStyle.label, input.numberFormat, config.chartType);
+  const paletteOpacity = readChartPaletteOpacity(config, dashboardDefaults);
 
   return {
     scheme,
     deStyle,
     deFeatures: readChartDeFeatures(config),
     effectivePaletteId: resolveEffectivePaletteId(config, input.dashboardPaletteId),
+    paletteOpacity,
     chartColors,
     dataScreenSurface: dashboardDefaults?.surfaceKind === "data-screen",
     showLabel,
@@ -69,6 +74,7 @@ export function buildStyleContext(input: BuildStyleContextInput): ChartStyleCont
     shellLegend,
     embedEdit,
     widgetShellBg: input.widgetShellBg,
+    widgetShellOpacity: input.widgetShellOpacity,
     tableColorStyle: dashboardDefaults?.tableColorStyle,
   };
 }

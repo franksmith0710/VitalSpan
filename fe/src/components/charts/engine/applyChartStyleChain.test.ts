@@ -79,6 +79,27 @@ describe("applyChartStyleChain", () => {
     expect(next.options.color).toEqual(["#84adff"]);
   });
 
+  it("uses component custom palette colors for series defaults", () => {
+    const config: ChartViewConfig = {
+      ...barConfig,
+      nativeBody: {
+        deStyle: {
+          paletteId: "default",
+          paletteColors: ["#111111", "#222222"],
+        },
+      },
+    };
+    const style: ChartStyleContext = {
+      ...baseStyle,
+      deFeatures: {},
+      deStyle: config.nativeBody!.deStyle!,
+      effectivePaletteId: "default",
+      chartColors: ["#111111", "#222222"],
+    };
+    const next = applyChartStyleChain(basePlan, style, config);
+    expect(next.options.color).toEqual(["#111111"]);
+  });
+
   it("ignores disabled conditional rules for palette injection", () => {
     const style: ChartStyleContext = {
       ...baseStyle,

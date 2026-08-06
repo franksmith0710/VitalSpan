@@ -1,7 +1,7 @@
 import type { ChartRenderPlan } from "@/components/charts/engine/buildChartRenderPlan";
 import type { ChartStyleContext } from "@/components/charts/engine/types";
 import { readChartDeStyle } from "@/lib/chartDeStyle";
-import { resolveChartSeriesColorItems } from "@/lib/chartSeriesColor";
+import { resolveChartSeriesColorItems, resolveSeriesPaletteColors } from "@/lib/chartSeriesColor";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 
 function hasActiveConditionalRules(style: ChartStyleContext): boolean {
@@ -16,12 +16,16 @@ export function resolveD3ChartColors(
 ): string[] {
   const optionColors = Array.isArray(plan.options.color) ? (plan.options.color as string[]) : [];
   const paletteId = style.effectivePaletteId ?? style.deStyle.paletteId;
+  const seriesPaletteColors = chartConfig
+    ? resolveSeriesPaletteColors(chartConfig, style.chartColors)
+    : undefined;
   const paletteItems =
     chartConfig && !hasActiveConditionalRules(style)
       ? resolveChartSeriesColorItems(
           chartConfig,
           paletteId,
           readChartDeStyle(chartConfig).seriesColor ?? style.deStyle.seriesColor,
+          seriesPaletteColors,
         )
       : [];
 

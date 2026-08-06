@@ -16,7 +16,7 @@ import { apiFetch } from "@/lib/api";
 import { matchesCapability, resolveEffectiveCapabilities } from "@/lib/capabilities";
 import { resolveDefaultReportTemplateNodeId } from "@/lib/defaultViewResolve";
 import { mapApiError } from "@/lib/apiError";
-import { fetchAllCatalogTemplates, filterCatalogTemplates } from "@/lib/reportCatalogUtils";
+import { fetchAllCatalogNodes, fetchAllCatalogTemplates, filterCatalogTemplates } from "@/lib/reportCatalogUtils";
 import { queryKeys } from "@/lib/queryKeys";
 import type { TemplateReadiness } from "@/lib/reportTemplateReadiness";
 import {
@@ -59,6 +59,10 @@ export function ReportCenterPage() {
   const templatesQuery = useQuery({
     queryKey: ["reports", "center", "templates"],
     queryFn: fetchAllCatalogTemplates,
+  });
+  const allNodesQuery = useQuery({
+    queryKey: queryKeys.reports.catalogAllNodes,
+    queryFn: fetchAllCatalogNodes,
   });
 
   const prefabQuery = useQuery({
@@ -117,8 +121,8 @@ export function ReportCenterPage() {
   const isEmpty = !isLoading && filteredTemplates.length === 0;
 
   const templateRows = useMemo(
-    () => buildReportCenterTemplateRows(filteredTemplates, readinessByNodeId),
-    [filteredTemplates, readinessByNodeId],
+    () => buildReportCenterTemplateRows(filteredTemplates, readinessByNodeId, allNodesQuery.data ?? []),
+    [filteredTemplates, readinessByNodeId, allNodesQuery.data],
   );
 
   const headerActions = (

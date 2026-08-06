@@ -75,7 +75,7 @@ describe("buildPlanForType quota charts", () => {
 });
 
 describe("buildPlanForType scatter encoding", () => {
-  it("maps category dimension to x index and value metric to y", () => {
+  it("maps category dimension to category x and value metric to y", () => {
     const plan = buildPlanForType("scatter", {
       chartType: "scatter",
       styleVariant: "default",
@@ -95,9 +95,11 @@ describe("buildPlanForType scatter encoding", () => {
       source: {},
     });
     expect(plan.options.colorField).toBe("series");
-    const data = plan.options.data as Array<{ x: number; y: number; series: string }>;
-    expect(data[0]).toMatchObject({ x: 0, y: 20, series: "A" });
-    expect(data[1]).toMatchObject({ x: 1, y: 25, series: "B" });
-    expect(data[2]).toMatchObject({ x: 2, y: 18, series: "C" });
+    expect(plan.options.xAxisMode).toBe("category");
+    expect(plan.options.xCategories).toEqual(["A", "B", "C"]);
+    const data = plan.options.data as Array<{ x: string; y: number; series: string }>;
+    expect(data[0]).toMatchObject({ x: "A", y: 20, series: "A" });
+    expect(data[1]).toMatchObject({ x: "B", y: 25, series: "B" });
+    expect(data[2]).toMatchObject({ x: "C", y: 18, series: "C" });
   });
 });

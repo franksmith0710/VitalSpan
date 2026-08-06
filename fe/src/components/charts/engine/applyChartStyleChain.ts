@@ -2,7 +2,7 @@ import type { ChartRenderPlan } from "@/components/charts/engine/buildChartRende
 import { applyD3Style } from "@/components/charts/engine/d3/applyD3Style";
 import type { ChartStyleContext } from "@/components/charts/engine/types";
 import { hasActiveConditionalRules } from "@/components/charts/engine/d3/views/resolveD3ChartColors";
-import { resolveChartSeriesColorItems } from "@/lib/chartSeriesColor";
+import { resolveChartSeriesColorItems, resolveSeriesPaletteColors } from "@/lib/chartSeriesColor";
 import { readChartDeStyle } from "@/lib/chartDeStyle";
 import { applyChartDeStyleBlocksToPlan } from "@/lib/applyChartDeStyleBlocks";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
@@ -24,10 +24,12 @@ export function applyChartStyleChain(
   if (!chartConfig) return next;
 
   const paletteId = style.effectivePaletteId ?? style.deStyle.paletteId;
+  const seriesPaletteColors = resolveSeriesPaletteColors(chartConfig, style.chartColors);
   const items = resolveChartSeriesColorItems(
     chartConfig,
     paletteId,
     readChartDeStyle(chartConfig).seriesColor ?? style.deStyle.seriesColor,
+    seriesPaletteColors,
   );
   if (items.length && !hasActiveConditionalRules(style)) {
     next = { ...next, options: { ...next.options, color: items.map((item) => item.color) } };

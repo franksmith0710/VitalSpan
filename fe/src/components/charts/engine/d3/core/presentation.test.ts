@@ -28,7 +28,14 @@ describe("presentation", () => {
       seriesGradient: true,
       depthVisual: "standard",
       tooltipPresentation: { fontSize: 13, color: "#00ff00", background: "#111111" },
-      legendLayout: { position: "bottom", orient: "horizontal" },
+      legendLayout: {
+        position: "bottom",
+        orient: "horizontal",
+        icon: "triangle",
+        iconSize: 6,
+        hAlign: "center",
+        vAlign: "bottom",
+      },
     });
   });
 

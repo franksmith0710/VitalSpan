@@ -210,27 +210,27 @@ export function renderD3GaugeChart(container: HTMLElement, config: D3RenderConfi
   g.append("circle").attr("r", radius * 0.07).attr("fill", activeColor).attr("opacity", 0.18);
   g.append("circle").attr("r", radius * 0.045).attr("fill", pointerColor);
 
-  const statistic = options.statistic as { content?: { formatter?: () => string } } | undefined;
-  const centerText =
-    statistic?.content?.formatter?.() ??
-    formatSimpleDataLabel(
-      "",
-      usePercent ? percent : rawValue,
-      usePercent ? 1 : gaugeMax,
-      labelContent,
-      valueFormat,
-      usePercent,
-    );
+  const dimensionLabel = String(options.dimensionLabel ?? "").trim();
+  const centerText = formatSimpleDataLabel(
+    dimensionLabel,
+    usePercent ? percent : rawValue,
+    usePercent ? 1 : gaugeMax,
+    labelContent,
+    valueFormat,
+    usePercent,
+  );
 
-  // 仪表中心读数是主信息：始终展示（标签开关控制刻度数字）
-  g.append("text")
-    .attr("y", radius * 0.42)
-    .attr("text-anchor", "middle")
-    .attr("fill", resolveLabelFill(theme, labelColor))
-    .style("font-size", `${Math.round(labelFontSize * 2)}px`)
-    .style("font-weight", "700")
-    .style("letter-spacing", "-0.02em")
-    .text(centerText);
+  // 仪表中心读数是主信息：始终展示（标签开关仅控制刻度数字）
+  if (centerText) {
+    g.append("text")
+      .attr("y", radius * 0.42)
+      .attr("text-anchor", "middle")
+      .attr("fill", resolveLabelFill(theme, labelColor))
+      .style("font-size", `${Math.round(labelFontSize * 2)}px`)
+      .style("font-weight", "700")
+      .style("letter-spacing", "-0.02em")
+      .text(centerText);
+  }
 
   if (showTooltip) {
     const tip = createTooltip(container, theme, tooltipPresentation);

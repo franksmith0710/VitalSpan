@@ -3,12 +3,14 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BatchImportPanel } from "./BatchImportPanel";
+import { CatalogNodeMetaPanel } from "./CatalogNodeMetaPanel";
 import { ReportExportCard } from "./ReportExportCard";
 import { ReportExtensionPreview } from "./ReportExtensionPreview";
 import { ReportMetricExtensionForm } from "./ReportMetricExtensionForm";
 import { SchedulePanel } from "./SchedulePanel";
 import { TemplateBlockEditor } from "./TemplateBlockEditor";
 import { type CatalogNode, useCatalogExtension, useExtensionRenderSpec } from "../useReportTemplates";
+import type { ReportCatalogNode } from "@/lib/reportCatalogUtils";
 
 const KIND_LABELS: Record<NonNullable<CatalogNode["templateKind"]>, string> = {
   word: "Word",
@@ -25,7 +27,17 @@ function BasicInfoRow({ label, children }: { label: string; children: ReactNode 
   );
 }
 
-export function TemplateDetailPanel({ node, readOnly }: { node: CatalogNode; readOnly: boolean }) {
+export function TemplateDetailPanel({
+  node,
+  allNodes,
+  readOnly,
+  onDeleted,
+}: {
+  node: CatalogNode;
+  allNodes: ReportCatalogNode[];
+  readOnly: boolean;
+  onDeleted?: () => void;
+}) {
   const [tab, setTab] = useState("basic");
   const extQuery = useCatalogExtension(node.id);
   const renderQuery = useExtensionRenderSpec(node.id, tab === "preview");
@@ -58,6 +70,12 @@ export function TemplateDetailPanel({ node, readOnly }: { node: CatalogNode; rea
           </TabsList>
 
           <TabsContent value="basic" className="mt-6 space-y-6">
+            <CatalogNodeMetaPanel
+              node={node}
+              allNodes={allNodes}
+              readOnly={readOnly}
+              onDeleted={onDeleted}
+            />
             <dl className="grid gap-4 rounded-xl border border-gray-200 p-5 dark:border-gray-800">
               <BasicInfoRow label="节点类型">报表模板</BasicInfoRow>
               <BasicInfoRow label="模板格式">

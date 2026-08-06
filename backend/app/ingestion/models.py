@@ -31,6 +31,7 @@ class SyncJob(Base):
     source_username: Mapped[str] = mapped_column(String(128), nullable=False)
     source_password_encrypted: Mapped[str] = mapped_column(Text, nullable=False)
     source_table: Mapped[str] = mapped_column(String(128), nullable=False)
+    source_schema: Mapped[str | None] = mapped_column(String(128), nullable=True)
     target_table: Mapped[str] = mapped_column(String(128), nullable=False)
     schedule_cron: Mapped[str | None] = mapped_column(String(64), nullable=True)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
@@ -109,9 +110,12 @@ class SourceConnectionOut(BaseModel):
     host: str
     port: int
     database: str
+    source_schema: str | None = Field(default=None, serialization_alias="schema")
     username: str
     password: str = "***"
     table: str
+
+    model_config = {"populate_by_name": True}
 
 
 def encrypt_password(plain: str) -> str:

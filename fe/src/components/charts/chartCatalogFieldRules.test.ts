@@ -101,12 +101,11 @@ describe("chart catalog L3 FIELD", () => {
     expect(model.kind).toBe("ready");
   });
 
-  it("T-VIZ-R32-009: dual-axis types require at least two metrics in rule (except dual-line)", () => {
-    for (const type of ["chart-mix", "chart-mix-group", "chart-mix-stack"]) {
+  it("T-VIZ-R32-009: dual-axis types allow single metric (bar-only or line-only)", () => {
+    for (const type of ["chart-mix", "chart-mix-group", "chart-mix-stack", "chart-mix-dual-line"]) {
       const rule = BACKEND_CATALOG_FIELD_RULES[type]!;
-      expect(rule.minMetrics).toBeGreaterThanOrEqual(2);
+      expect(rule.minMetrics).toBe(1);
     }
-    expect(BACKEND_CATALOG_FIELD_RULES["chart-mix-dual-line"]!.minMetrics).toBe(1);
   });
 
   it("T-VIZ-R32-010: sanitize slot capacity respects backend max", () => {

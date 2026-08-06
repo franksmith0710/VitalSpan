@@ -17,6 +17,8 @@ import { encodePieRows } from "@/components/charts/engine/antv/spec/encodePie";
 import { PIE_RADIUS_FRAC_DEFAULT } from "@/components/charts/engine/d3/radial/pieLayout";
 import type { ChartViewModel, RenderSpec } from "@/components/charts/engine/types";
 import { aggregateQuotaMetric } from "@/lib/quotaMetricAggregate";
+import { getDeAxisLegacyMap } from "@/lib/chartDeAxis";
+import { fieldFromAxisOrLegacy, normalizeCartesianSubField, optionalAxisField, resolveDualAxesMetrics } from "@/lib/chartAxisPlanFields";
 
 export function emptyPlan(plotType = "Line", error?: string): ChartRenderPlan {
   return { kind: "d3", plotType, options: { data: [] }, empty: true, error };
@@ -52,6 +54,70 @@ function trimSpecToCategoryAxis(spec: RenderSpec): RenderSpec {
   };
 }
 
+/** 为 encodeCartesianRows 注入子类别（写入 xAxisExt / dimensions[1]） */
+function injectSubCategory(spec: RenderSpec, subField: string | undefined): RenderSpec {
+  const categoryField =
+    fieldFromAxisOrLegacy(spec, "xAxis", 0, "dimension", 0) ||
+    spec.encoding.dimensions[0]?.field?.trim() ||
+    "";
+  const sub = normalizeCartesianSubField(categoryField, subField);
+  const axes = { ...spec.encoding.axes };
+  if (!sub) {
+    axes.xAxisExt = [];
+    axes.extStack = [];
+    return {
+      ...spec,
+      encoding: {
+        ...spec.encoding,
+        dimensions: spec.encoding.dimensions.slice(0, 1),
+        axes,
+      },
+    };
+  }
+  const categoryDim = spec.encoding.dimensions[0];
+  const dimensions = categoryDim ? [categoryDim, { field: sub }] : [{ field: sub }];
+  return {
+    ...spec,
+    encoding: {
+      ...spec.encoding,
+      dimensions,
+      axes: {
+        ...axes,
+        xAxisExt: [{ field: sub }],
+      },
+    },
+  };
+}
+
+function dualAxesBarSubField(
+  spec: RenderSpec,
+  mode: "default" | "group" | "stack",
+): string {
+  if (mode === "group") {
+    return fieldFromAxisOrLegacy(spec, "xAxisExt", 0, "dimension", 1);
+  }
+  if (mode === "stack") {
+    const category = fieldFromAxisOrLegacy(spec, "xAxis", 0, "dimension", 0);
+    const stack = fieldFromAxisOrLegacy(spec, "extStack", 0, "dimension", 1);
+    return normalizeCartesianSubField(category, stack) ?? "";
+  }
+  return "";
+}
+
+function dualAxesLineSubField(
+  spec: RenderSpec,
+  axisId: "extBubble" | "xAxisExt",
+): string {
+  const legacyMap = getDeAxisLegacyMap(spec.chartType ?? "");
+  const mapped = legacyMap.find((entry) => entry.axisId === axisId && entry.index === 0);
+  if (mapped?.legacy) {
+    const { kind, index } = mapped.legacy;
+    return optionalAxisField(spec, axisId, 0, kind, index);
+  }
+  const legacyIndex = axisId === "xAxisExt" ? 1 : 1;
+  return optionalAxisField(spec, axisId, 0, "dimension", legacyIndex);
+}
+
 /** 仪表盘/水波图：0~1 原样；1~100 视为百分比；更大数值满弧展示原值 */
 function resolveQuotaPercent(value: number): { percent: number; rawValue: number } {
   if (!Number.isFinite(value)) return { percent: 0, rawValue: 0 };
@@ -64,15 +130,19 @@ function aggregateQuotaMetricLocal(rows: unknown[][], columns: string[], metricF
   return aggregateQuotaMetric(rows, columns, metricField);
 }
 
-function gaugePlan(rows: unknown[][], columns: string[], metricField: string): ChartRenderPlan {
+function gaugePlan(
+  rows: unknown[][],
+  columns: string[],
+  metricField: string,
+  metricLabel?: string | null,
+): ChartRenderPlan {
   const value = aggregateQuotaMetricLocal(rows, columns, metricField);
   const { percent, rawValue } = resolveQuotaPercent(value);
+  const dimensionLabel = metricLabel?.trim() || metricField;
   return d3Plan("Gauge", {
     percent,
     rawValue,
-    range: { color: ["#465fff", "#e4e7ec"] },
-    indicator: { pointer: { style: { stroke: "#465fff" } } },
-    statistic: { content: { formatter: () => `${rawValue}` } },
+    dimensionLabel,
   });
 }
 
@@ -190,18 +260,32 @@ function heatmapMatrixPlan(
   rows: unknown[][],
   columns: string[],
 ): ChartRenderPlan {
-  const x = spec.encoding.dimensions[0]?.field ?? "";
-  const y = spec.encoding.dimensions[1]?.field ?? "";
-  const m = spec.encoding.metrics[0]?.field ?? "";
+  const x = fieldFromAxisOrLegacy(spec, "xAxis", 0, "dimension", 0);
+  const y = fieldFromAxisOrLegacy(spec, "xAxisExt", 0, "dimension", 1);
+  const m = fieldFromAxisOrLegacy(spec, "yAxis", 0, "metric", 0);
   const xi = colIndex(columns, x);
   const yi = colIndex(columns, y);
   const mi = colIndex(columns, m);
-  const data = rows.map((r) => ({
-    x: String(r[xi] ?? ""),
-    y: String(r[yi] ?? ""),
-    value: Number(r[mi] ?? 0),
-  }));
-  return d3Plan("Heatmap", { data, xField: "x", yField: "y", colorField: "value" });
+  if (xi < 0 || yi < 0 || mi < 0) {
+    return errorPlan("热力图缺少横轴、纵轴或指标列", "Heatmap");
+  }
+
+  const cellBucket = new Map<string, { x: string; y: string; value: number }>();
+  for (const r of rows) {
+    const xKey = String(r[xi] ?? "");
+    const yKey = String(r[yi] ?? "");
+    const raw = Number(r[mi] ?? 0);
+    const value = Number.isFinite(raw) ? raw : 0;
+    const key = `${xKey}\0${yKey}`;
+    const cur = cellBucket.get(key);
+    if (cur) {
+      cur.value += value;
+    } else {
+      cellBucket.set(key, { x: xKey, y: yKey, value });
+    }
+  }
+
+  return d3Plan("Heatmap", { data: [...cellBucket.values()], xField: "x", yField: "y", colorField: "value" });
 }
 
 function piePlan(
@@ -281,86 +365,129 @@ function dualAxesPlan(
   columns: string[],
   mode: "default" | "group" | "stack" | "dual-line",
 ): ChartRenderPlan {
-  const metrics = spec.encoding.metrics.map((m) => m.field).filter(Boolean);
-  const catSpec = trimSpecToCategoryAxis(spec);
   const categoryLevelCount = cartesianCategoryLevelCount(spec);
+  const { columnMetric, lineMetric } = resolveDualAxesMetrics(spec);
+  if (!columnMetric && !lineMetric) {
+    return errorPlan("柱线组合图至少配置左柱或右线之一", "DualAxes");
+  }
+
+  const columnGeom = {
+    geometry: "column" as const,
+    isGroup: mode === "group",
+    isStack: mode === "stack",
+  };
+  const lineGeom = { geometry: "line" as const };
 
   if (mode === "dual-line") {
-    const axes = spec.encoding.axes ?? {};
-    const leftMetric = metrics[0] ?? "";
-    const rightMetric = metrics[1] ?? metrics[0] ?? "";
-    const rightSeriesDim = axes.extBubble?.[0]?.field?.trim() ?? "";
-    const lineEnc = encodeCartesianRows(
-      specWithMetrics(catSpec, [leftMetric]),
+    const leftSub = dualAxesLineSubField(spec, "xAxisExt");
+    const rightSub = dualAxesLineSubField(spec, "extBubble");
+    const leftEnc = columnMetric
+      ? encodeCartesianRows(
+          injectSubCategory(
+            specWithMetrics(trimSpecToCategoryAxis(spec), [columnMetric]),
+            leftSub,
+          ),
+          rows,
+          columns,
+          "line",
+        )
+      : null;
+    const rightEnc = lineMetric
+      ? encodeCartesianRows(
+          injectSubCategory(
+            specWithMetrics(trimSpecToCategoryAxis(spec), [lineMetric]),
+            rightSub,
+          ),
+          rows,
+          columns,
+          "line",
+        )
+      : null;
+    const fallbackEnc = leftEnc ?? rightEnc!;
+    const lineLabels = [columnMetric, lineMetric].filter(Boolean);
+    return d3Plan("DualAxes", {
+      data: [leftEnc?.data ?? [], rightEnc?.data ?? []],
+      xField: fallbackEnc.xField,
+      yField: [leftEnc?.yField ?? fallbackEnc.yField, rightEnc?.yField ?? fallbackEnc.yField],
+      lineLabels,
+      leftLineSeriesField: leftEnc?.seriesField,
+      lineSeriesField: rightEnc?.seriesField,
+      geometryOptions: [lineGeom, lineGeom],
+      ...(categoryLevelCount ? { categoryLevelCount } : {}),
+    });
+  }
+
+  const barSub = dualAxesBarSubField(spec, mode);
+  const lineSub = dualAxesLineSubField(spec, "extBubble");
+
+  if (columnMetric && !lineMetric) {
+    const barEnc = encodeCartesianRows(
+      injectSubCategory(specWithMetrics(trimSpecToCategoryAxis(spec), [columnMetric]), barSub),
       rows,
       columns,
-      "line",
+      "bar",
     );
-    const rightSpec = rightSeriesDim
-      ? {
-          ...catSpec,
-          encoding: {
-            ...catSpec.encoding,
-            dimensions: [
-              ...catSpec.encoding.dimensions.slice(0, 1),
-              { field: rightSeriesDim },
-              ...catSpec.encoding.dimensions.slice(2),
-            ],
-          },
-        }
-      : catSpec;
-    const lineEnc2 = encodeCartesianRows(
-      specWithMetrics(rightSpec, [rightMetric]),
+    return d3Plan("DualAxes", {
+      data: [barEnc.data, []],
+      xField: barEnc.xField,
+      yField: [barEnc.yField, barEnc.yField],
+      lineLabels: [columnMetric],
+      columnSeriesField: barEnc.seriesField,
+      geometryOptions: [columnGeom, lineGeom],
+      ...(categoryLevelCount ? { categoryLevelCount } : {}),
+    });
+  }
+
+  if (!columnMetric && lineMetric) {
+    const lineEnc = encodeCartesianRows(
+      injectSubCategory(specWithMetrics(trimSpecToCategoryAxis(spec), [lineMetric]), lineSub),
       rows,
       columns,
       "line",
     );
     return d3Plan("DualAxes", {
-      data: [lineEnc.data, lineEnc2.data],
+      data: [[], lineEnc.data],
       xField: lineEnc.xField,
-      yField: [lineEnc.yField, lineEnc2.yField],
-      lineLabels: [leftMetric, rightMetric],
-      geometryOptions: [{ geometry: "line" }, { geometry: "line" }],
+      yField: [lineEnc.yField, lineEnc.yField],
+      lineLabels: [lineMetric],
+      lineSeriesField: lineEnc.seriesField,
+      geometryOptions: [columnGeom, lineGeom],
       ...(categoryLevelCount ? { categoryLevelCount } : {}),
     });
   }
 
-  const columnMetric = metrics[0] ?? "";
-  const lineMetric = metrics[1] ?? metrics[0] ?? "";
-  const lineEnc = encodeCartesianRows(
-    specWithMetrics(catSpec, [lineMetric]),
-    rows,
-    columns,
-    "line",
-  );
   const barEnc = encodeCartesianRows(
-    specWithMetrics(spec, [columnMetric]),
+    injectSubCategory(specWithMetrics(trimSpecToCategoryAxis(spec), [columnMetric]), barSub),
     rows,
     columns,
     "bar",
   );
+  const lineEnc = encodeCartesianRows(
+    injectSubCategory(specWithMetrics(trimSpecToCategoryAxis(spec), [lineMetric]), lineSub),
+    rows,
+    columns,
+    "line",
+  );
   return d3Plan("DualAxes", {
-    data: [lineEnc.data, barEnc.data],
-    xField: lineEnc.xField,
-    yField: [lineEnc.yField, barEnc.yField],
-    lineLabels: [lineMetric, columnMetric],
+    data: [barEnc.data, lineEnc.data],
+    xField: barEnc.xField,
+    yField: [barEnc.yField, lineEnc.yField],
+    lineLabels: [columnMetric, lineMetric],
     columnSeriesField: barEnc.seriesField,
-    geometryOptions: [
-      { geometry: "line" },
-      { geometry: "column", isGroup: mode === "group", isStack: mode === "stack" },
-    ],
+    lineSeriesField: lineEnc.seriesField,
+    geometryOptions: [columnGeom, lineGeom],
     ...(categoryLevelCount ? { categoryLevelCount } : {}),
   });
 }
 
-function bidirectionalBarPlan(
+export function bidirectionalBarPlan(
   spec: ReturnType<typeof chartViewModelToRenderSpec>,
   rows: unknown[][],
   columns: string[],
 ): ChartRenderPlan {
-  const dim = spec.encoding.dimensions[0]?.field ?? "";
-  const leftField = spec.encoding.metrics[0]?.field ?? "";
-  const rightField = spec.encoding.metrics[1]?.field ?? leftField;
+  const dim = fieldFromAxisOrLegacy(spec, "xAxis", 0, "dimension", 0);
+  const leftField = fieldFromAxisOrLegacy(spec, "yAxis", 0, "metric", 0);
+  const rightField = fieldFromAxisOrLegacy(spec, "yAxisExt", 0, "metric", 1) || leftField;
   const di = colIndex(columns, dim);
   const li = colIndex(columns, leftField);
   const ri = colIndex(columns, rightField);
@@ -406,13 +533,12 @@ function basicScatterPlan(
   if (di < 0 || yi < 0) return errorPlan("散点图缺少维度或指标列", "Scatter");
 
   const categories = [...new Set(rows.map((r) => String(r[di] ?? "")))];
-  const xIndex = new Map(categories.map((c, i) => [c, i]));
   const bi = bubbleField ? colIndex(columns, bubbleField) : -1;
 
   const data = rows.map((r) => {
     const category = String(r[di] ?? "");
     return {
-      x: xIndex.get(category) ?? 0,
+      x: category,
       y: Number(r[yi] ?? 0),
       series: category,
       ...(bi >= 0 ? { size: Number(r[bi] ?? 0) } : {}),
@@ -425,6 +551,8 @@ function basicScatterPlan(
     yField: "y",
     colorField: "series",
     sizeField: bi >= 0 ? "size" : undefined,
+    xAxisMode: "category",
+    xCategories: categories,
   });
 }
 
@@ -517,12 +645,17 @@ function multiScatterPlan(
     ...(bi >= 0 ? { size: Number(r[bi] ?? 0) } : {}),
   }));
 
+  const xCategories = xIsNumeric
+    ? undefined
+    : [...new Set(data.map((d) => String(d.x)))];
+
   return d3Plan("Scatter", {
     data,
     xField: "x",
     yField: "y",
     colorField: "series",
     sizeField: bi >= 0 ? "size" : undefined,
+    ...(xCategories ? { xAxisMode: "category", xCategories } : {}),
   });
 }
 
@@ -586,7 +719,8 @@ export function buildPlanForType(chartType: string, vm: ChartViewModel): ChartRe
     case "pie-donut-rose":
       return piePlan(spec, capped, columns, "donut-rose");
     case "gauge":
-      return gaugePlan(capped, columns, spec.encoding.metrics[0]?.field ?? "");
+      const gaugeMetric = spec.encoding.metrics[0];
+      return gaugePlan(capped, columns, gaugeMetric?.field ?? "", gaugeMetric?.label);
     case "liquid":
       return liquidPlan(capped, columns, spec.encoding.metrics[0]?.field ?? "");
     case "kpi":

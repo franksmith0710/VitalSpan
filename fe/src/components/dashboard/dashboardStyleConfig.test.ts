@@ -147,6 +147,7 @@ describe("dashboardStyleConfig theme vs background", () => {
       backgroundImage: 'url("https://example.com/bg.png")',
       backgroundSize: "cover",
       backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
     });
   });
 

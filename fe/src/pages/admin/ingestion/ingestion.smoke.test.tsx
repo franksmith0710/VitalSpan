@@ -1858,6 +1858,35 @@ describe("ingestion admin smoke", () => {
     expect(await screen.findByText("连接失败")).toBeInTheDocument();
   });
 
+  it("SyncJobHistoryPage_localizes_pg_relation_missing_error", async () => {
+    setViewport(1400);
+    mockSyncJobHistoryApi([
+      {
+        id: "run-fail-pg",
+        status: "failed",
+        started_at: "2026-07-03T10:00:00Z",
+        finished_at: "2026-07-03T10:00:02Z",
+        rows_synced: null,
+        error_message: 'relation "ops_tsdb.cache_inval_extension" does not exist',
+        trace_id: "trace-fail-pg",
+        retry_count: 1,
+      },
+    ]);
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/history"]}>
+        <Routes>
+          <Route
+            path="/admin/ingestion/sync-jobs/:id/history"
+            element={<SyncJobHistoryPage />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(
+      await screen.findByText("源表不存在，请检查 Schema 与表名是否正确"),
+    ).toBeInTheDocument();
+  });
+
   it("SyncJobsPage_list_shows_skeleton_while_loading (T-ING-33)", async () => {
     setViewport(1400);
     let resolveList: (value: { items: unknown[] }) => void;

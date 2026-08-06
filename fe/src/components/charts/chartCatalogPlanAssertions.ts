@@ -167,20 +167,20 @@ export function assertPlanMatchesFixture(item: ChartCatalogSmokeCase, plan: Char
     if (type === "chart-mix-dual-line") {
       expect(lineLabels).toEqual([colMetric, lineMetric]);
     } else {
-      expect(lineLabels).toEqual([lineMetric, colMetric]);
+      expect(lineLabels).toEqual([colMetric, lineMetric]);
     }
 
     if (type === "chart-mix-stack") {
       expect(plan.options.columnSeriesField).toBe("__series__");
-      const colGeom = (plan.options.geometryOptions as [{ geometry: string }, { isStack?: boolean }])[1];
+      const colGeom = (plan.options.geometryOptions as [{ geometry: string }, { isStack?: boolean }])[0];
       expect(colGeom?.isStack).toBe(true);
-      const barData = series[1] as Array<Record<string, unknown>>;
+      const barData = series[0] as Array<Record<string, unknown>>;
       const stackNames = new Set(barData.map((r) => r.__series__));
       expect(stackNames.size).toBeGreaterThan(1);
     }
     if (type === "chart-mix-group") {
       expect(plan.options.columnSeriesField).toBe("__series__");
-      const colGeom = (plan.options.geometryOptions as [{ geometry: string }, { isGroup?: boolean }])[1];
+      const colGeom = (plan.options.geometryOptions as [{ geometry: string; isGroup?: boolean }, unknown])[0];
       expect(colGeom?.isGroup).toBe(true);
     }
     return;

@@ -14,6 +14,38 @@ function trimField(ref: ChartFieldRef | undefined): string {
   return ref?.field?.trim() ?? "";
 }
 
+function axisHasField(axes: ChartAxesConfig, axisId: DeAxisId): boolean {
+  return (axes[axisId] ?? []).some((ref) => trimField(ref));
+}
+
+/** 旧版组合图误将右轴子类别放在 xAxisExt，迁移到 DE 正确槽位 */
+export function remapMixAxisSlots(config: ChartViewConfig): ChartViewConfig {
+  const chartType = config.chartType;
+  if (
+    chartType !== "chart-mix" &&
+    chartType !== "combo" &&
+    chartType !== "chart-mix-group" &&
+    chartType !== "chart-mix-stack" &&
+    chartType !== "chart-mix-dual-line"
+  ) {
+    return config;
+  }
+  const axes: ChartAxesConfig = { ...(config.axes ?? {}) };
+  if (chartType === "chart-mix" || chartType === "combo") {
+    if (axisHasField(axes, "xAxisExt") && !axisHasField(axes, "extBubble")) {
+      axes.extBubble = [...(axes.xAxisExt ?? [])];
+      axes.xAxisExt = [];
+    }
+  }
+  if (chartType === "chart-mix-stack") {
+    if (axisHasField(axes, "xAxisExt") && !axisHasField(axes, "extStack")) {
+      axes.extStack = [...(axes.xAxisExt ?? [])];
+      axes.xAxisExt = [];
+    }
+  }
+  return { ...config, axes };
+}
+
 function axisField(axes: ChartAxesConfig, axisId: DeAxisId, index: number): string {
   return trimField(axes[axisId]?.[index]);
 }
@@ -35,7 +67,7 @@ function setAxisField(
 /** 旧 dimensions/metrics → DE 命名轴 */
 export function migrateChartConfigToDeAxes(config: ChartViewConfig): ChartViewConfig {
   if (config.axes && Object.keys(config.axes).length > 0) {
-    return syncLegacyFieldsFromAxes(config);
+    return syncLegacyFieldsFromAxes(remapMixAxisSlots(config));
   }
   const chartType = config.chartType;
 
@@ -75,7 +107,7 @@ export function migrateChartConfigToDeAxes(config: ChartViewConfig): ChartViewCo
     axes[map.axisId]![map.index] = { field: src.trim() };
   }
 
-  return syncLegacyFieldsFromAxes({ ...config, axes });
+  return syncLegacyFieldsFromAxes(remapMixAxisSlots({ ...config, axes }));
 }
 
 function syncTableBothAxesToLegacy(
@@ -295,6 +327,18 @@ export function deAxisRenderReady(config: ChartViewConfig): boolean {
   if (chartType === "multi-scatter") {
     const hasX = Boolean(firstAxisField(encoding, "xAxis", 0));
     if (!hasX) return false;
+  }
+
+  if (
+    chartType === "combo" ||
+    chartType === "chart-mix" ||
+    chartType === "chart-mix-group" ||
+    chartType === "chart-mix-stack" ||
+    chartType === "chart-mix-dual-line"
+  ) {
+    const hasColumn = Boolean(axisField(encoding.axes, "yAxis", 0));
+    const hasLine = Boolean(axisField(encoding.axes, "yAxisExt", 0));
+    if (!hasColumn && !hasLine) return false;
   }
 
   return true;

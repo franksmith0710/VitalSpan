@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import { scaleChartPresentationFontSize } from "@/components/charts/engine/d3/core/chartPresentationScale";
 import { applyCellBevel, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
@@ -98,12 +99,28 @@ function positionTooltip(
 
 export function renderD3WordCloudChart(container: HTMLElement, config: D3RenderConfig): () => void {
   container.replaceChildren();
-  const { width, height, colors, theme, showTooltip, valueFormat, options, onPointClick, depthVisual } = config;
+  const {
+    width,
+    height,
+    colors,
+    theme,
+    showTooltip,
+    valueFormat,
+    options,
+    onPointClick,
+    depthVisual,
+    visualScale,
+    renderTier,
+  } = config;
   const depthLevel = resolveEffectiveDepth(depthVisual);
   const data = (options.data as WordDatum[]) ?? [];
-  const fontMin = Number(options.__wordCloudFontMin ?? 12);
-  const fontMax = Number(options.__wordCloudFontMax ?? Math.min(48, width / 8));
-  const spacing = Number(options.__wordCloudSpacing ?? 2);
+  const paint = { chartWidth: width, chartHeight: height, visualScale, renderTier };
+  const scaleFont = (size: number) => scaleChartPresentationFontSize(size, paint);
+  const fontMin = scaleFont(Number(options.__wordCloudFontMin ?? 12));
+  const fontMax = scaleFont(
+    Number(options.__wordCloudFontMax ?? Math.min(48, width / 8)),
+  );
+  const spacing = scaleFont(Number(options.__wordCloudSpacing ?? 2));
   if (width <= 0 || height <= 0 || data.length === 0) return () => undefined;
 
   const svg = d3

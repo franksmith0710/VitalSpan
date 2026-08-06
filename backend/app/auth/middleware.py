@@ -14,6 +14,7 @@ from app.auth.models import AuthUser, get_meta_session
 from app.auth.permissions import resolve_user_permissions
 from app.auth.users import service as user_service
 from app.core.config import Settings, get_settings
+from app.core.template_assets import is_template_assets_path
 from app.core.logging import trace_id_var
 
 PUBLIC_PATHS_BASE: frozenset[str] = frozenset({
@@ -151,6 +152,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         path = request.url.path
         if path in _public_paths_for(self.settings) or path.startswith("/docs"):
+            return await call_next(request)
+        if is_template_assets_path(path, self.settings):
             return await call_next(request)
         if path.startswith("/sample-api"):
             return await call_next(request)

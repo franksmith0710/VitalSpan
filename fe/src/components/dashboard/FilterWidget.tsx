@@ -18,7 +18,11 @@ import { WidgetInlineTitle } from "./WidgetInlineTitle";
 import type { DashboardWidgetShell } from "./dashboardCanvasMode";
 import type { FilterWidgetConfig, LayoutWidget, DashboardStyleConfig } from "./layoutUtils";
 import { mergeTitleStyle } from "./dashboardStyleConfig";
-import { gridWidgetShellClassName, resolveGridWidgetShell } from "./widgetRailStyleSections";
+import {
+  gridWidgetShellClassName,
+  GridWidgetShellFrame,
+  resolveGridWidgetShell,
+} from "./widgetRailStyleSections";
 
 type FilterWidgetProps = {
   widget: LayoutWidget & { filterConfig: FilterWidgetConfig };
@@ -147,9 +151,10 @@ export function FilterWidget({
   }
 
   return (
-    <div
+    <GridWidgetShellFrame
+      shell={shellStyle}
+      widgetId={widget.id}
       className={gridWidgetShellClassName(showGridChrome, Boolean(selected), shellStyle.className)}
-      style={showGridChrome ? shellStyle.style : undefined}
     >
       {showGridChrome && mode === "edit" ? (
         <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 bg-gray-50/90 px-2 py-1.5 dark:border-gray-800 dark:bg-white/[0.04]">
@@ -208,6 +213,6 @@ export function FilterWidget({
       ) : null}
       {filterBody}
       {deleteDialog}
-    </div>
+    </GridWidgetShellFrame>
   );
 }

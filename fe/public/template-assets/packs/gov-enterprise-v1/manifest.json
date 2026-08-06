@@ -1,8 +1,8 @@
 {
   "id": "gov-enterprise-v1",
-  "version": 5,
-  "generatedAt": "2026-08-05",
-  "total": 362,
+  "version": 6,
+  "generatedAt": "2026-08-06",
+  "total": 480,
   "categories": {
     "canvas-dark": {
       "count": 154,
@@ -12,7 +12,7 @@
       ]
     },
     "canvas-light": {
-      "count": 96,
+      "count": 154,
       "defaultSize": [
         1920,
         1080
@@ -34,6 +34,13 @@
     },
     "screen-header": {
       "count": 30,
+      "defaultSize": [
+        1920,
+        100
+      ]
+    },
+    "top-decor-clear": {
+      "count": 60,
       "defaultSize": [
         1920,
         100
@@ -2198,1347 +2205,2159 @@
       ]
     },
     {
-      "id": "canvas-light-ivory-clean-header",
+      "id": "canvas-light-cyan-command",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-ivory-clean-header.svg",
-      "palette": "ivory",
-      "pattern": "clean-header",
-      "motif": "diamond",
-      "tags": [
-        "light",
-        "report",
-        "clean-header",
-        "diamond"
-      ]
-    },
-    {
-      "id": "canvas-light-ivory-header-band",
-      "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-ivory-header-band.svg",
-      "palette": "ivory",
-      "pattern": "header-band",
-      "motif": "diamond",
-      "tags": [
-        "light",
-        "report",
-        "header-band",
-        "diamond"
-      ]
-    },
-    {
-      "id": "canvas-light-ivory-card-float",
-      "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-ivory-card-float.svg",
-      "palette": "ivory",
-      "pattern": "card-float",
-      "motif": "diamond",
-      "tags": [
-        "light",
-        "report",
-        "card-float",
-        "diamond"
-      ]
-    },
-    {
-      "id": "canvas-light-ivory-watermark",
-      "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-ivory-watermark.svg",
-      "palette": "ivory",
-      "pattern": "watermark",
-      "motif": "diamond",
-      "tags": [
-        "light",
-        "report",
-        "watermark",
-        "diamond"
-      ]
-    },
-    {
-      "id": "canvas-light-ivory-corner-fold",
-      "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-ivory-corner-fold.svg",
-      "palette": "ivory",
-      "pattern": "corner-fold",
-      "motif": "diamond",
-      "tags": [
-        "light",
-        "report",
-        "corner-fold",
-        "diamond"
-      ]
-    },
-    {
-      "id": "canvas-light-ivory-dot-matrix",
-      "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-ivory-dot-matrix.svg",
-      "palette": "ivory",
-      "pattern": "dot-matrix",
-      "motif": "diamond",
-      "tags": [
-        "light",
-        "report",
-        "dot-matrix",
-        "diamond"
-      ]
-    },
-    {
-      "id": "canvas-light-ivory-ribbon",
-      "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-ivory-ribbon.svg",
-      "palette": "ivory",
-      "pattern": "ribbon",
-      "motif": "diamond",
-      "tags": [
-        "light",
-        "report",
-        "ribbon",
-        "diamond"
-      ]
-    },
-    {
-      "id": "canvas-light-ivory-side-accent",
-      "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-ivory-side-accent.svg",
-      "palette": "ivory",
-      "pattern": "side-accent",
-      "motif": "diamond",
-      "tags": [
-        "light",
-        "report",
-        "side-accent",
-        "diamond"
-      ]
-    },
-    {
-      "id": "canvas-light-cloud-clean-header",
-      "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cloud-clean-header.svg",
-      "palette": "cloud",
-      "pattern": "clean-header",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cyan-command.svg",
+      "palette": "cyan",
+      "pattern": "command",
       "motif": "hex",
       "tags": [
         "light",
         "report",
-        "clean-header",
+        "command",
         "hex"
       ]
     },
     {
-      "id": "canvas-light-cloud-header-band",
+      "id": "canvas-light-cyan-aurora",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cloud-header-band.svg",
-      "palette": "cloud",
-      "pattern": "header-band",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cyan-aurora.svg",
+      "palette": "cyan",
+      "pattern": "aurora",
       "motif": "hex",
       "tags": [
         "light",
         "report",
-        "header-band",
+        "aurora",
         "hex"
       ]
     },
     {
-      "id": "canvas-light-cloud-card-float",
+      "id": "canvas-light-cyan-honeycomb",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cloud-card-float.svg",
-      "palette": "cloud",
-      "pattern": "card-float",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cyan-honeycomb.svg",
+      "palette": "cyan",
+      "pattern": "honeycomb",
       "motif": "hex",
       "tags": [
         "light",
         "report",
-        "card-float",
+        "honeycomb",
         "hex"
       ]
     },
     {
-      "id": "canvas-light-cloud-watermark",
+      "id": "canvas-light-cyan-circuit",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cloud-watermark.svg",
-      "palette": "cloud",
-      "pattern": "watermark",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cyan-circuit.svg",
+      "palette": "cyan",
+      "pattern": "circuit",
       "motif": "hex",
       "tags": [
         "light",
         "report",
-        "watermark",
+        "circuit",
         "hex"
       ]
     },
     {
-      "id": "canvas-light-cloud-corner-fold",
+      "id": "canvas-light-cyan-hud-scan",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cloud-corner-fold.svg",
-      "palette": "cloud",
-      "pattern": "corner-fold",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cyan-hud-scan.svg",
+      "palette": "cyan",
+      "pattern": "hud-scan",
       "motif": "hex",
       "tags": [
         "light",
         "report",
-        "corner-fold",
+        "hud-scan",
         "hex"
       ]
     },
     {
-      "id": "canvas-light-cloud-dot-matrix",
+      "id": "canvas-light-cyan-topbar-icons",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cloud-dot-matrix.svg",
-      "palette": "cloud",
-      "pattern": "dot-matrix",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cyan-topbar-icons.svg",
+      "palette": "cyan",
+      "pattern": "topbar-icons",
       "motif": "hex",
       "tags": [
         "light",
         "report",
-        "dot-matrix",
+        "topbar-icons",
         "hex"
       ]
     },
     {
-      "id": "canvas-light-cloud-ribbon",
+      "id": "canvas-light-cyan-gradient-mesh",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cloud-ribbon.svg",
-      "palette": "cloud",
-      "pattern": "ribbon",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cyan-gradient-mesh.svg",
+      "palette": "cyan",
+      "pattern": "gradient-mesh",
       "motif": "hex",
       "tags": [
         "light",
         "report",
-        "ribbon",
+        "gradient-mesh",
         "hex"
       ]
     },
     {
-      "id": "canvas-light-cloud-side-accent",
+      "id": "canvas-light-cyan-radial-pulse",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cloud-side-accent.svg",
-      "palette": "cloud",
-      "pattern": "side-accent",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cyan-radial-pulse.svg",
+      "palette": "cyan",
+      "pattern": "radial-pulse",
       "motif": "hex",
       "tags": [
         "light",
         "report",
-        "side-accent",
+        "radial-pulse",
         "hex"
       ]
     },
     {
-      "id": "canvas-light-paper-clean-header",
+      "id": "canvas-light-cyan-de-platform-header",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-paper-clean-header.svg",
-      "palette": "paper",
-      "pattern": "clean-header",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cyan-de-platform-header.svg",
+      "palette": "cyan",
+      "pattern": "de-platform-header",
+      "motif": "hex",
+      "tags": [
+        "light",
+        "report",
+        "de-platform-header",
+        "hex"
+      ]
+    },
+    {
+      "id": "canvas-light-cyan-de-circuit-wing",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cyan-de-circuit-wing.svg",
+      "palette": "cyan",
+      "pattern": "de-circuit-wing",
+      "motif": "hex",
+      "tags": [
+        "light",
+        "report",
+        "de-circuit-wing",
+        "hex"
+      ]
+    },
+    {
+      "id": "canvas-light-cyan-de-cloud-center",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cyan-de-cloud-center.svg",
+      "palette": "cyan",
+      "pattern": "de-cloud-center",
+      "motif": "hex",
+      "tags": [
+        "light",
+        "report",
+        "de-cloud-center",
+        "hex"
+      ]
+    },
+    {
+      "id": "canvas-light-indigo-command",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-indigo-command.svg",
+      "palette": "indigo",
+      "pattern": "command",
+      "motif": "diamond",
+      "tags": [
+        "light",
+        "report",
+        "command",
+        "diamond"
+      ]
+    },
+    {
+      "id": "canvas-light-indigo-aurora",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-indigo-aurora.svg",
+      "palette": "indigo",
+      "pattern": "aurora",
+      "motif": "diamond",
+      "tags": [
+        "light",
+        "report",
+        "aurora",
+        "diamond"
+      ]
+    },
+    {
+      "id": "canvas-light-indigo-honeycomb",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-indigo-honeycomb.svg",
+      "palette": "indigo",
+      "pattern": "honeycomb",
+      "motif": "diamond",
+      "tags": [
+        "light",
+        "report",
+        "honeycomb",
+        "diamond"
+      ]
+    },
+    {
+      "id": "canvas-light-indigo-circuit",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-indigo-circuit.svg",
+      "palette": "indigo",
+      "pattern": "circuit",
+      "motif": "diamond",
+      "tags": [
+        "light",
+        "report",
+        "circuit",
+        "diamond"
+      ]
+    },
+    {
+      "id": "canvas-light-indigo-hud-scan",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-indigo-hud-scan.svg",
+      "palette": "indigo",
+      "pattern": "hud-scan",
+      "motif": "diamond",
+      "tags": [
+        "light",
+        "report",
+        "hud-scan",
+        "diamond"
+      ]
+    },
+    {
+      "id": "canvas-light-indigo-topbar-icons",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-indigo-topbar-icons.svg",
+      "palette": "indigo",
+      "pattern": "topbar-icons",
+      "motif": "diamond",
+      "tags": [
+        "light",
+        "report",
+        "topbar-icons",
+        "diamond"
+      ]
+    },
+    {
+      "id": "canvas-light-indigo-gradient-mesh",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-indigo-gradient-mesh.svg",
+      "palette": "indigo",
+      "pattern": "gradient-mesh",
+      "motif": "diamond",
+      "tags": [
+        "light",
+        "report",
+        "gradient-mesh",
+        "diamond"
+      ]
+    },
+    {
+      "id": "canvas-light-indigo-radial-pulse",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-indigo-radial-pulse.svg",
+      "palette": "indigo",
+      "pattern": "radial-pulse",
+      "motif": "diamond",
+      "tags": [
+        "light",
+        "report",
+        "radial-pulse",
+        "diamond"
+      ]
+    },
+    {
+      "id": "canvas-light-indigo-de-platform-header",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-indigo-de-platform-header.svg",
+      "palette": "indigo",
+      "pattern": "de-platform-header",
+      "motif": "diamond",
+      "tags": [
+        "light",
+        "report",
+        "de-platform-header",
+        "diamond"
+      ]
+    },
+    {
+      "id": "canvas-light-indigo-de-circuit-wing",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-indigo-de-circuit-wing.svg",
+      "palette": "indigo",
+      "pattern": "de-circuit-wing",
+      "motif": "diamond",
+      "tags": [
+        "light",
+        "report",
+        "de-circuit-wing",
+        "diamond"
+      ]
+    },
+    {
+      "id": "canvas-light-indigo-de-cloud-center",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-indigo-de-cloud-center.svg",
+      "palette": "indigo",
+      "pattern": "de-cloud-center",
+      "motif": "diamond",
+      "tags": [
+        "light",
+        "report",
+        "de-cloud-center",
+        "diamond"
+      ]
+    },
+    {
+      "id": "canvas-light-emerald-command",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-emerald-command.svg",
+      "palette": "emerald",
+      "pattern": "command",
+      "motif": "leaf",
+      "tags": [
+        "light",
+        "report",
+        "command",
+        "leaf"
+      ]
+    },
+    {
+      "id": "canvas-light-emerald-aurora",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-emerald-aurora.svg",
+      "palette": "emerald",
+      "pattern": "aurora",
+      "motif": "leaf",
+      "tags": [
+        "light",
+        "report",
+        "aurora",
+        "leaf"
+      ]
+    },
+    {
+      "id": "canvas-light-emerald-honeycomb",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-emerald-honeycomb.svg",
+      "palette": "emerald",
+      "pattern": "honeycomb",
+      "motif": "leaf",
+      "tags": [
+        "light",
+        "report",
+        "honeycomb",
+        "leaf"
+      ]
+    },
+    {
+      "id": "canvas-light-emerald-circuit",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-emerald-circuit.svg",
+      "palette": "emerald",
+      "pattern": "circuit",
+      "motif": "leaf",
+      "tags": [
+        "light",
+        "report",
+        "circuit",
+        "leaf"
+      ]
+    },
+    {
+      "id": "canvas-light-emerald-hud-scan",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-emerald-hud-scan.svg",
+      "palette": "emerald",
+      "pattern": "hud-scan",
+      "motif": "leaf",
+      "tags": [
+        "light",
+        "report",
+        "hud-scan",
+        "leaf"
+      ]
+    },
+    {
+      "id": "canvas-light-emerald-topbar-icons",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-emerald-topbar-icons.svg",
+      "palette": "emerald",
+      "pattern": "topbar-icons",
+      "motif": "leaf",
+      "tags": [
+        "light",
+        "report",
+        "topbar-icons",
+        "leaf"
+      ]
+    },
+    {
+      "id": "canvas-light-emerald-gradient-mesh",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-emerald-gradient-mesh.svg",
+      "palette": "emerald",
+      "pattern": "gradient-mesh",
+      "motif": "leaf",
+      "tags": [
+        "light",
+        "report",
+        "gradient-mesh",
+        "leaf"
+      ]
+    },
+    {
+      "id": "canvas-light-emerald-radial-pulse",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-emerald-radial-pulse.svg",
+      "palette": "emerald",
+      "pattern": "radial-pulse",
+      "motif": "leaf",
+      "tags": [
+        "light",
+        "report",
+        "radial-pulse",
+        "leaf"
+      ]
+    },
+    {
+      "id": "canvas-light-emerald-de-platform-header",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-emerald-de-platform-header.svg",
+      "palette": "emerald",
+      "pattern": "de-platform-header",
+      "motif": "leaf",
+      "tags": [
+        "light",
+        "report",
+        "de-platform-header",
+        "leaf"
+      ]
+    },
+    {
+      "id": "canvas-light-emerald-de-circuit-wing",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-emerald-de-circuit-wing.svg",
+      "palette": "emerald",
+      "pattern": "de-circuit-wing",
+      "motif": "leaf",
+      "tags": [
+        "light",
+        "report",
+        "de-circuit-wing",
+        "leaf"
+      ]
+    },
+    {
+      "id": "canvas-light-emerald-de-cloud-center",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-emerald-de-cloud-center.svg",
+      "palette": "emerald",
+      "pattern": "de-cloud-center",
+      "motif": "leaf",
+      "tags": [
+        "light",
+        "report",
+        "de-cloud-center",
+        "leaf"
+      ]
+    },
+    {
+      "id": "canvas-light-amber-command",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-amber-command.svg",
+      "palette": "amber",
+      "pattern": "command",
+      "motif": "star",
+      "tags": [
+        "light",
+        "report",
+        "command",
+        "star"
+      ]
+    },
+    {
+      "id": "canvas-light-amber-aurora",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-amber-aurora.svg",
+      "palette": "amber",
+      "pattern": "aurora",
+      "motif": "star",
+      "tags": [
+        "light",
+        "report",
+        "aurora",
+        "star"
+      ]
+    },
+    {
+      "id": "canvas-light-amber-honeycomb",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-amber-honeycomb.svg",
+      "palette": "amber",
+      "pattern": "honeycomb",
+      "motif": "star",
+      "tags": [
+        "light",
+        "report",
+        "honeycomb",
+        "star"
+      ]
+    },
+    {
+      "id": "canvas-light-amber-circuit",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-amber-circuit.svg",
+      "palette": "amber",
+      "pattern": "circuit",
+      "motif": "star",
+      "tags": [
+        "light",
+        "report",
+        "circuit",
+        "star"
+      ]
+    },
+    {
+      "id": "canvas-light-amber-hud-scan",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-amber-hud-scan.svg",
+      "palette": "amber",
+      "pattern": "hud-scan",
+      "motif": "star",
+      "tags": [
+        "light",
+        "report",
+        "hud-scan",
+        "star"
+      ]
+    },
+    {
+      "id": "canvas-light-amber-topbar-icons",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-amber-topbar-icons.svg",
+      "palette": "amber",
+      "pattern": "topbar-icons",
+      "motif": "star",
+      "tags": [
+        "light",
+        "report",
+        "topbar-icons",
+        "star"
+      ]
+    },
+    {
+      "id": "canvas-light-amber-gradient-mesh",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-amber-gradient-mesh.svg",
+      "palette": "amber",
+      "pattern": "gradient-mesh",
+      "motif": "star",
+      "tags": [
+        "light",
+        "report",
+        "gradient-mesh",
+        "star"
+      ]
+    },
+    {
+      "id": "canvas-light-amber-radial-pulse",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-amber-radial-pulse.svg",
+      "palette": "amber",
+      "pattern": "radial-pulse",
+      "motif": "star",
+      "tags": [
+        "light",
+        "report",
+        "radial-pulse",
+        "star"
+      ]
+    },
+    {
+      "id": "canvas-light-amber-de-platform-header",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-amber-de-platform-header.svg",
+      "palette": "amber",
+      "pattern": "de-platform-header",
+      "motif": "star",
+      "tags": [
+        "light",
+        "report",
+        "de-platform-header",
+        "star"
+      ]
+    },
+    {
+      "id": "canvas-light-amber-de-circuit-wing",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-amber-de-circuit-wing.svg",
+      "palette": "amber",
+      "pattern": "de-circuit-wing",
+      "motif": "star",
+      "tags": [
+        "light",
+        "report",
+        "de-circuit-wing",
+        "star"
+      ]
+    },
+    {
+      "id": "canvas-light-amber-de-cloud-center",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-amber-de-cloud-center.svg",
+      "palette": "amber",
+      "pattern": "de-cloud-center",
+      "motif": "star",
+      "tags": [
+        "light",
+        "report",
+        "de-cloud-center",
+        "star"
+      ]
+    },
+    {
+      "id": "canvas-light-crimson-command",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-crimson-command.svg",
+      "palette": "crimson",
+      "pattern": "command",
       "motif": "shield",
       "tags": [
         "light",
         "report",
-        "clean-header",
+        "command",
         "shield"
       ]
     },
     {
-      "id": "canvas-light-paper-header-band",
+      "id": "canvas-light-crimson-aurora",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-paper-header-band.svg",
-      "palette": "paper",
-      "pattern": "header-band",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-crimson-aurora.svg",
+      "palette": "crimson",
+      "pattern": "aurora",
       "motif": "shield",
       "tags": [
         "light",
         "report",
-        "header-band",
+        "aurora",
         "shield"
       ]
     },
     {
-      "id": "canvas-light-paper-card-float",
+      "id": "canvas-light-crimson-honeycomb",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-paper-card-float.svg",
-      "palette": "paper",
-      "pattern": "card-float",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-crimson-honeycomb.svg",
+      "palette": "crimson",
+      "pattern": "honeycomb",
       "motif": "shield",
       "tags": [
         "light",
         "report",
-        "card-float",
+        "honeycomb",
         "shield"
       ]
     },
     {
-      "id": "canvas-light-paper-watermark",
+      "id": "canvas-light-crimson-circuit",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-paper-watermark.svg",
-      "palette": "paper",
-      "pattern": "watermark",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-crimson-circuit.svg",
+      "palette": "crimson",
+      "pattern": "circuit",
       "motif": "shield",
       "tags": [
         "light",
         "report",
-        "watermark",
+        "circuit",
         "shield"
       ]
     },
     {
-      "id": "canvas-light-paper-corner-fold",
+      "id": "canvas-light-crimson-hud-scan",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-paper-corner-fold.svg",
-      "palette": "paper",
-      "pattern": "corner-fold",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-crimson-hud-scan.svg",
+      "palette": "crimson",
+      "pattern": "hud-scan",
       "motif": "shield",
       "tags": [
         "light",
         "report",
-        "corner-fold",
+        "hud-scan",
         "shield"
       ]
     },
     {
-      "id": "canvas-light-paper-dot-matrix",
+      "id": "canvas-light-crimson-topbar-icons",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-paper-dot-matrix.svg",
-      "palette": "paper",
-      "pattern": "dot-matrix",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-crimson-topbar-icons.svg",
+      "palette": "crimson",
+      "pattern": "topbar-icons",
       "motif": "shield",
       "tags": [
         "light",
         "report",
-        "dot-matrix",
+        "topbar-icons",
         "shield"
       ]
     },
     {
-      "id": "canvas-light-paper-ribbon",
+      "id": "canvas-light-crimson-gradient-mesh",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-paper-ribbon.svg",
-      "palette": "paper",
-      "pattern": "ribbon",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-crimson-gradient-mesh.svg",
+      "palette": "crimson",
+      "pattern": "gradient-mesh",
       "motif": "shield",
       "tags": [
         "light",
         "report",
-        "ribbon",
+        "gradient-mesh",
         "shield"
       ]
     },
     {
-      "id": "canvas-light-paper-side-accent",
+      "id": "canvas-light-crimson-radial-pulse",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-paper-side-accent.svg",
-      "palette": "paper",
-      "pattern": "side-accent",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-crimson-radial-pulse.svg",
+      "palette": "crimson",
+      "pattern": "radial-pulse",
       "motif": "shield",
       "tags": [
         "light",
         "report",
-        "side-accent",
+        "radial-pulse",
         "shield"
       ]
     },
     {
-      "id": "canvas-light-frost-clean-header",
+      "id": "canvas-light-crimson-de-platform-header",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-frost-clean-header.svg",
-      "palette": "frost",
-      "pattern": "clean-header",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-crimson-de-platform-header.svg",
+      "palette": "crimson",
+      "pattern": "de-platform-header",
+      "motif": "shield",
+      "tags": [
+        "light",
+        "report",
+        "de-platform-header",
+        "shield"
+      ]
+    },
+    {
+      "id": "canvas-light-crimson-de-circuit-wing",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-crimson-de-circuit-wing.svg",
+      "palette": "crimson",
+      "pattern": "de-circuit-wing",
+      "motif": "shield",
+      "tags": [
+        "light",
+        "report",
+        "de-circuit-wing",
+        "shield"
+      ]
+    },
+    {
+      "id": "canvas-light-crimson-de-cloud-center",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-crimson-de-cloud-center.svg",
+      "palette": "crimson",
+      "pattern": "de-cloud-center",
+      "motif": "shield",
+      "tags": [
+        "light",
+        "report",
+        "de-cloud-center",
+        "shield"
+      ]
+    },
+    {
+      "id": "canvas-light-royal-command",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-royal-command.svg",
+      "palette": "royal",
+      "pattern": "command",
       "motif": "orbit",
       "tags": [
         "light",
         "report",
-        "clean-header",
+        "command",
         "orbit"
       ]
     },
     {
-      "id": "canvas-light-frost-header-band",
+      "id": "canvas-light-royal-aurora",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-frost-header-band.svg",
-      "palette": "frost",
-      "pattern": "header-band",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-royal-aurora.svg",
+      "palette": "royal",
+      "pattern": "aurora",
       "motif": "orbit",
       "tags": [
         "light",
         "report",
-        "header-band",
+        "aurora",
         "orbit"
       ]
     },
     {
-      "id": "canvas-light-frost-card-float",
+      "id": "canvas-light-royal-honeycomb",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-frost-card-float.svg",
-      "palette": "frost",
-      "pattern": "card-float",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-royal-honeycomb.svg",
+      "palette": "royal",
+      "pattern": "honeycomb",
       "motif": "orbit",
       "tags": [
         "light",
         "report",
-        "card-float",
+        "honeycomb",
         "orbit"
       ]
     },
     {
-      "id": "canvas-light-frost-watermark",
+      "id": "canvas-light-royal-circuit",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-frost-watermark.svg",
-      "palette": "frost",
-      "pattern": "watermark",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-royal-circuit.svg",
+      "palette": "royal",
+      "pattern": "circuit",
       "motif": "orbit",
       "tags": [
         "light",
         "report",
-        "watermark",
+        "circuit",
         "orbit"
       ]
     },
     {
-      "id": "canvas-light-frost-corner-fold",
+      "id": "canvas-light-royal-hud-scan",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-frost-corner-fold.svg",
-      "palette": "frost",
-      "pattern": "corner-fold",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-royal-hud-scan.svg",
+      "palette": "royal",
+      "pattern": "hud-scan",
       "motif": "orbit",
       "tags": [
         "light",
         "report",
-        "corner-fold",
+        "hud-scan",
         "orbit"
       ]
     },
     {
-      "id": "canvas-light-frost-dot-matrix",
+      "id": "canvas-light-royal-topbar-icons",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-frost-dot-matrix.svg",
-      "palette": "frost",
-      "pattern": "dot-matrix",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-royal-topbar-icons.svg",
+      "palette": "royal",
+      "pattern": "topbar-icons",
       "motif": "orbit",
       "tags": [
         "light",
         "report",
-        "dot-matrix",
+        "topbar-icons",
         "orbit"
       ]
     },
     {
-      "id": "canvas-light-frost-ribbon",
+      "id": "canvas-light-royal-gradient-mesh",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-frost-ribbon.svg",
-      "palette": "frost",
-      "pattern": "ribbon",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-royal-gradient-mesh.svg",
+      "palette": "royal",
+      "pattern": "gradient-mesh",
       "motif": "orbit",
       "tags": [
         "light",
         "report",
-        "ribbon",
+        "gradient-mesh",
         "orbit"
       ]
     },
     {
-      "id": "canvas-light-frost-side-accent",
+      "id": "canvas-light-royal-radial-pulse",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-frost-side-accent.svg",
-      "palette": "frost",
-      "pattern": "side-accent",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-royal-radial-pulse.svg",
+      "palette": "royal",
+      "pattern": "radial-pulse",
       "motif": "orbit",
       "tags": [
         "light",
         "report",
-        "side-accent",
+        "radial-pulse",
         "orbit"
       ]
     },
     {
-      "id": "canvas-light-mint-clean-header",
+      "id": "canvas-light-royal-de-platform-header",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-mint-clean-header.svg",
-      "palette": "mint",
-      "pattern": "clean-header",
-      "motif": "leaf",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-royal-de-platform-header.svg",
+      "palette": "royal",
+      "pattern": "de-platform-header",
+      "motif": "orbit",
       "tags": [
         "light",
         "report",
-        "clean-header",
-        "leaf"
+        "de-platform-header",
+        "orbit"
       ]
     },
     {
-      "id": "canvas-light-mint-header-band",
+      "id": "canvas-light-royal-de-circuit-wing",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-mint-header-band.svg",
-      "palette": "mint",
-      "pattern": "header-band",
-      "motif": "leaf",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-royal-de-circuit-wing.svg",
+      "palette": "royal",
+      "pattern": "de-circuit-wing",
+      "motif": "orbit",
       "tags": [
         "light",
         "report",
-        "header-band",
-        "leaf"
+        "de-circuit-wing",
+        "orbit"
       ]
     },
     {
-      "id": "canvas-light-mint-card-float",
+      "id": "canvas-light-royal-de-cloud-center",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-mint-card-float.svg",
-      "palette": "mint",
-      "pattern": "card-float",
-      "motif": "leaf",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-royal-de-cloud-center.svg",
+      "palette": "royal",
+      "pattern": "de-cloud-center",
+      "motif": "orbit",
       "tags": [
         "light",
         "report",
-        "card-float",
-        "leaf"
+        "de-cloud-center",
+        "orbit"
       ]
     },
     {
-      "id": "canvas-light-mint-watermark",
+      "id": "canvas-light-slate-command",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-mint-watermark.svg",
-      "palette": "mint",
-      "pattern": "watermark",
-      "motif": "leaf",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-slate-command.svg",
+      "palette": "slate",
+      "pattern": "command",
+      "motif": "grid-dot",
       "tags": [
         "light",
         "report",
-        "watermark",
-        "leaf"
+        "command",
+        "grid-dot"
       ]
     },
     {
-      "id": "canvas-light-mint-corner-fold",
+      "id": "canvas-light-slate-aurora",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-mint-corner-fold.svg",
-      "palette": "mint",
-      "pattern": "corner-fold",
-      "motif": "leaf",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-slate-aurora.svg",
+      "palette": "slate",
+      "pattern": "aurora",
+      "motif": "grid-dot",
       "tags": [
         "light",
         "report",
-        "corner-fold",
-        "leaf"
+        "aurora",
+        "grid-dot"
       ]
     },
     {
-      "id": "canvas-light-mint-dot-matrix",
+      "id": "canvas-light-slate-honeycomb",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-mint-dot-matrix.svg",
-      "palette": "mint",
-      "pattern": "dot-matrix",
-      "motif": "leaf",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-slate-honeycomb.svg",
+      "palette": "slate",
+      "pattern": "honeycomb",
+      "motif": "grid-dot",
       "tags": [
         "light",
         "report",
-        "dot-matrix",
-        "leaf"
+        "honeycomb",
+        "grid-dot"
       ]
     },
     {
-      "id": "canvas-light-mint-ribbon",
+      "id": "canvas-light-slate-circuit",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-mint-ribbon.svg",
-      "palette": "mint",
-      "pattern": "ribbon",
-      "motif": "leaf",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-slate-circuit.svg",
+      "palette": "slate",
+      "pattern": "circuit",
+      "motif": "grid-dot",
       "tags": [
         "light",
         "report",
-        "ribbon",
-        "leaf"
+        "circuit",
+        "grid-dot"
       ]
     },
     {
-      "id": "canvas-light-mint-side-accent",
+      "id": "canvas-light-slate-hud-scan",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-mint-side-accent.svg",
-      "palette": "mint",
-      "pattern": "side-accent",
-      "motif": "leaf",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-slate-hud-scan.svg",
+      "palette": "slate",
+      "pattern": "hud-scan",
+      "motif": "grid-dot",
       "tags": [
         "light",
         "report",
-        "side-accent",
-        "leaf"
+        "hud-scan",
+        "grid-dot"
       ]
     },
     {
-      "id": "canvas-light-lavender-clean-header",
+      "id": "canvas-light-slate-topbar-icons",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-lavender-clean-header.svg",
-      "palette": "lavender",
-      "pattern": "clean-header",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-slate-topbar-icons.svg",
+      "palette": "slate",
+      "pattern": "topbar-icons",
+      "motif": "grid-dot",
+      "tags": [
+        "light",
+        "report",
+        "topbar-icons",
+        "grid-dot"
+      ]
+    },
+    {
+      "id": "canvas-light-slate-gradient-mesh",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-slate-gradient-mesh.svg",
+      "palette": "slate",
+      "pattern": "gradient-mesh",
+      "motif": "grid-dot",
+      "tags": [
+        "light",
+        "report",
+        "gradient-mesh",
+        "grid-dot"
+      ]
+    },
+    {
+      "id": "canvas-light-slate-radial-pulse",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-slate-radial-pulse.svg",
+      "palette": "slate",
+      "pattern": "radial-pulse",
+      "motif": "grid-dot",
+      "tags": [
+        "light",
+        "report",
+        "radial-pulse",
+        "grid-dot"
+      ]
+    },
+    {
+      "id": "canvas-light-slate-de-platform-header",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-slate-de-platform-header.svg",
+      "palette": "slate",
+      "pattern": "de-platform-header",
+      "motif": "grid-dot",
+      "tags": [
+        "light",
+        "report",
+        "de-platform-header",
+        "grid-dot"
+      ]
+    },
+    {
+      "id": "canvas-light-slate-de-circuit-wing",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-slate-de-circuit-wing.svg",
+      "palette": "slate",
+      "pattern": "de-circuit-wing",
+      "motif": "grid-dot",
+      "tags": [
+        "light",
+        "report",
+        "de-circuit-wing",
+        "grid-dot"
+      ]
+    },
+    {
+      "id": "canvas-light-slate-de-cloud-center",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-slate-de-cloud-center.svg",
+      "palette": "slate",
+      "pattern": "de-cloud-center",
+      "motif": "grid-dot",
+      "tags": [
+        "light",
+        "report",
+        "de-cloud-center",
+        "grid-dot"
+      ]
+    },
+    {
+      "id": "canvas-light-teal-command",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-teal-command.svg",
+      "palette": "teal",
+      "pattern": "command",
+      "motif": "wave",
+      "tags": [
+        "light",
+        "report",
+        "command",
+        "wave"
+      ]
+    },
+    {
+      "id": "canvas-light-teal-aurora",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-teal-aurora.svg",
+      "palette": "teal",
+      "pattern": "aurora",
+      "motif": "wave",
+      "tags": [
+        "light",
+        "report",
+        "aurora",
+        "wave"
+      ]
+    },
+    {
+      "id": "canvas-light-teal-honeycomb",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-teal-honeycomb.svg",
+      "palette": "teal",
+      "pattern": "honeycomb",
+      "motif": "wave",
+      "tags": [
+        "light",
+        "report",
+        "honeycomb",
+        "wave"
+      ]
+    },
+    {
+      "id": "canvas-light-teal-circuit",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-teal-circuit.svg",
+      "palette": "teal",
+      "pattern": "circuit",
+      "motif": "wave",
+      "tags": [
+        "light",
+        "report",
+        "circuit",
+        "wave"
+      ]
+    },
+    {
+      "id": "canvas-light-teal-hud-scan",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-teal-hud-scan.svg",
+      "palette": "teal",
+      "pattern": "hud-scan",
+      "motif": "wave",
+      "tags": [
+        "light",
+        "report",
+        "hud-scan",
+        "wave"
+      ]
+    },
+    {
+      "id": "canvas-light-teal-topbar-icons",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-teal-topbar-icons.svg",
+      "palette": "teal",
+      "pattern": "topbar-icons",
+      "motif": "wave",
+      "tags": [
+        "light",
+        "report",
+        "topbar-icons",
+        "wave"
+      ]
+    },
+    {
+      "id": "canvas-light-teal-gradient-mesh",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-teal-gradient-mesh.svg",
+      "palette": "teal",
+      "pattern": "gradient-mesh",
+      "motif": "wave",
+      "tags": [
+        "light",
+        "report",
+        "gradient-mesh",
+        "wave"
+      ]
+    },
+    {
+      "id": "canvas-light-teal-radial-pulse",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-teal-radial-pulse.svg",
+      "palette": "teal",
+      "pattern": "radial-pulse",
+      "motif": "wave",
+      "tags": [
+        "light",
+        "report",
+        "radial-pulse",
+        "wave"
+      ]
+    },
+    {
+      "id": "canvas-light-teal-de-platform-header",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-teal-de-platform-header.svg",
+      "palette": "teal",
+      "pattern": "de-platform-header",
+      "motif": "wave",
+      "tags": [
+        "light",
+        "report",
+        "de-platform-header",
+        "wave"
+      ]
+    },
+    {
+      "id": "canvas-light-teal-de-circuit-wing",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-teal-de-circuit-wing.svg",
+      "palette": "teal",
+      "pattern": "de-circuit-wing",
+      "motif": "wave",
+      "tags": [
+        "light",
+        "report",
+        "de-circuit-wing",
+        "wave"
+      ]
+    },
+    {
+      "id": "canvas-light-teal-de-cloud-center",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-teal-de-cloud-center.svg",
+      "palette": "teal",
+      "pattern": "de-cloud-center",
+      "motif": "wave",
+      "tags": [
+        "light",
+        "report",
+        "de-cloud-center",
+        "wave"
+      ]
+    },
+    {
+      "id": "canvas-light-violet-command",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-violet-command.svg",
+      "palette": "violet",
+      "pattern": "command",
+      "motif": "chevron",
+      "tags": [
+        "light",
+        "report",
+        "command",
+        "chevron"
+      ]
+    },
+    {
+      "id": "canvas-light-violet-aurora",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-violet-aurora.svg",
+      "palette": "violet",
+      "pattern": "aurora",
+      "motif": "chevron",
+      "tags": [
+        "light",
+        "report",
+        "aurora",
+        "chevron"
+      ]
+    },
+    {
+      "id": "canvas-light-violet-honeycomb",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-violet-honeycomb.svg",
+      "palette": "violet",
+      "pattern": "honeycomb",
+      "motif": "chevron",
+      "tags": [
+        "light",
+        "report",
+        "honeycomb",
+        "chevron"
+      ]
+    },
+    {
+      "id": "canvas-light-violet-circuit",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-violet-circuit.svg",
+      "palette": "violet",
+      "pattern": "circuit",
+      "motif": "chevron",
+      "tags": [
+        "light",
+        "report",
+        "circuit",
+        "chevron"
+      ]
+    },
+    {
+      "id": "canvas-light-violet-hud-scan",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-violet-hud-scan.svg",
+      "palette": "violet",
+      "pattern": "hud-scan",
+      "motif": "chevron",
+      "tags": [
+        "light",
+        "report",
+        "hud-scan",
+        "chevron"
+      ]
+    },
+    {
+      "id": "canvas-light-violet-topbar-icons",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-violet-topbar-icons.svg",
+      "palette": "violet",
+      "pattern": "topbar-icons",
+      "motif": "chevron",
+      "tags": [
+        "light",
+        "report",
+        "topbar-icons",
+        "chevron"
+      ]
+    },
+    {
+      "id": "canvas-light-violet-gradient-mesh",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-violet-gradient-mesh.svg",
+      "palette": "violet",
+      "pattern": "gradient-mesh",
+      "motif": "chevron",
+      "tags": [
+        "light",
+        "report",
+        "gradient-mesh",
+        "chevron"
+      ]
+    },
+    {
+      "id": "canvas-light-violet-radial-pulse",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-violet-radial-pulse.svg",
+      "palette": "violet",
+      "pattern": "radial-pulse",
+      "motif": "chevron",
+      "tags": [
+        "light",
+        "report",
+        "radial-pulse",
+        "chevron"
+      ]
+    },
+    {
+      "id": "canvas-light-violet-de-platform-header",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-violet-de-platform-header.svg",
+      "palette": "violet",
+      "pattern": "de-platform-header",
+      "motif": "chevron",
+      "tags": [
+        "light",
+        "report",
+        "de-platform-header",
+        "chevron"
+      ]
+    },
+    {
+      "id": "canvas-light-violet-de-circuit-wing",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-violet-de-circuit-wing.svg",
+      "palette": "violet",
+      "pattern": "de-circuit-wing",
+      "motif": "chevron",
+      "tags": [
+        "light",
+        "report",
+        "de-circuit-wing",
+        "chevron"
+      ]
+    },
+    {
+      "id": "canvas-light-violet-de-cloud-center",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-violet-de-cloud-center.svg",
+      "palette": "violet",
+      "pattern": "de-cloud-center",
+      "motif": "chevron",
+      "tags": [
+        "light",
+        "report",
+        "de-cloud-center",
+        "chevron"
+      ]
+    },
+    {
+      "id": "canvas-light-gold-command",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-gold-command.svg",
+      "palette": "gold",
+      "pattern": "command",
       "motif": "star",
       "tags": [
         "light",
         "report",
-        "clean-header",
+        "command",
         "star"
       ]
     },
     {
-      "id": "canvas-light-lavender-header-band",
+      "id": "canvas-light-gold-aurora",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-lavender-header-band.svg",
-      "palette": "lavender",
-      "pattern": "header-band",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-gold-aurora.svg",
+      "palette": "gold",
+      "pattern": "aurora",
       "motif": "star",
       "tags": [
         "light",
         "report",
-        "header-band",
+        "aurora",
         "star"
       ]
     },
     {
-      "id": "canvas-light-lavender-card-float",
+      "id": "canvas-light-gold-honeycomb",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-lavender-card-float.svg",
-      "palette": "lavender",
-      "pattern": "card-float",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-gold-honeycomb.svg",
+      "palette": "gold",
+      "pattern": "honeycomb",
       "motif": "star",
       "tags": [
         "light",
         "report",
-        "card-float",
+        "honeycomb",
         "star"
       ]
     },
     {
-      "id": "canvas-light-lavender-watermark",
+      "id": "canvas-light-gold-circuit",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-lavender-watermark.svg",
-      "palette": "lavender",
-      "pattern": "watermark",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-gold-circuit.svg",
+      "palette": "gold",
+      "pattern": "circuit",
       "motif": "star",
       "tags": [
         "light",
         "report",
-        "watermark",
+        "circuit",
         "star"
       ]
     },
     {
-      "id": "canvas-light-lavender-corner-fold",
+      "id": "canvas-light-gold-hud-scan",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-lavender-corner-fold.svg",
-      "palette": "lavender",
-      "pattern": "corner-fold",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-gold-hud-scan.svg",
+      "palette": "gold",
+      "pattern": "hud-scan",
       "motif": "star",
       "tags": [
         "light",
         "report",
-        "corner-fold",
+        "hud-scan",
         "star"
       ]
     },
     {
-      "id": "canvas-light-lavender-dot-matrix",
+      "id": "canvas-light-gold-topbar-icons",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-lavender-dot-matrix.svg",
-      "palette": "lavender",
-      "pattern": "dot-matrix",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-gold-topbar-icons.svg",
+      "palette": "gold",
+      "pattern": "topbar-icons",
       "motif": "star",
       "tags": [
         "light",
         "report",
-        "dot-matrix",
+        "topbar-icons",
         "star"
       ]
     },
     {
-      "id": "canvas-light-lavender-ribbon",
+      "id": "canvas-light-gold-gradient-mesh",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-lavender-ribbon.svg",
-      "palette": "lavender",
-      "pattern": "ribbon",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-gold-gradient-mesh.svg",
+      "palette": "gold",
+      "pattern": "gradient-mesh",
       "motif": "star",
       "tags": [
         "light",
         "report",
-        "ribbon",
+        "gradient-mesh",
         "star"
       ]
     },
     {
-      "id": "canvas-light-lavender-side-accent",
+      "id": "canvas-light-gold-radial-pulse",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-lavender-side-accent.svg",
-      "palette": "lavender",
-      "pattern": "side-accent",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-gold-radial-pulse.svg",
+      "palette": "gold",
+      "pattern": "radial-pulse",
       "motif": "star",
       "tags": [
         "light",
         "report",
-        "side-accent",
+        "radial-pulse",
         "star"
       ]
     },
     {
-      "id": "canvas-light-rose-clean-header",
+      "id": "canvas-light-gold-de-platform-header",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-rose-clean-header.svg",
-      "palette": "rose",
-      "pattern": "clean-header",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-gold-de-platform-header.svg",
+      "palette": "gold",
+      "pattern": "de-platform-header",
+      "motif": "star",
+      "tags": [
+        "light",
+        "report",
+        "de-platform-header",
+        "star"
+      ]
+    },
+    {
+      "id": "canvas-light-gold-de-circuit-wing",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-gold-de-circuit-wing.svg",
+      "palette": "gold",
+      "pattern": "de-circuit-wing",
+      "motif": "star",
+      "tags": [
+        "light",
+        "report",
+        "de-circuit-wing",
+        "star"
+      ]
+    },
+    {
+      "id": "canvas-light-gold-de-cloud-center",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-gold-de-cloud-center.svg",
+      "palette": "gold",
+      "pattern": "de-cloud-center",
+      "motif": "star",
+      "tags": [
+        "light",
+        "report",
+        "de-cloud-center",
+        "star"
+      ]
+    },
+    {
+      "id": "canvas-light-bronze-command",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-bronze-command.svg",
+      "palette": "bronze",
+      "pattern": "command",
       "motif": "shield",
       "tags": [
         "light",
         "report",
-        "clean-header",
+        "command",
         "shield"
       ]
     },
     {
-      "id": "canvas-light-rose-header-band",
+      "id": "canvas-light-bronze-aurora",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-rose-header-band.svg",
-      "palette": "rose",
-      "pattern": "header-band",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-bronze-aurora.svg",
+      "palette": "bronze",
+      "pattern": "aurora",
       "motif": "shield",
       "tags": [
         "light",
         "report",
-        "header-band",
+        "aurora",
         "shield"
       ]
     },
     {
-      "id": "canvas-light-rose-card-float",
+      "id": "canvas-light-bronze-honeycomb",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-rose-card-float.svg",
-      "palette": "rose",
-      "pattern": "card-float",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-bronze-honeycomb.svg",
+      "palette": "bronze",
+      "pattern": "honeycomb",
       "motif": "shield",
       "tags": [
         "light",
         "report",
-        "card-float",
+        "honeycomb",
         "shield"
       ]
     },
     {
-      "id": "canvas-light-rose-watermark",
+      "id": "canvas-light-bronze-circuit",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-rose-watermark.svg",
-      "palette": "rose",
-      "pattern": "watermark",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-bronze-circuit.svg",
+      "palette": "bronze",
+      "pattern": "circuit",
       "motif": "shield",
       "tags": [
         "light",
         "report",
-        "watermark",
+        "circuit",
         "shield"
       ]
     },
     {
-      "id": "canvas-light-rose-corner-fold",
+      "id": "canvas-light-bronze-hud-scan",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-rose-corner-fold.svg",
-      "palette": "rose",
-      "pattern": "corner-fold",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-bronze-hud-scan.svg",
+      "palette": "bronze",
+      "pattern": "hud-scan",
       "motif": "shield",
       "tags": [
         "light",
         "report",
-        "corner-fold",
+        "hud-scan",
         "shield"
       ]
     },
     {
-      "id": "canvas-light-rose-dot-matrix",
+      "id": "canvas-light-bronze-topbar-icons",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-rose-dot-matrix.svg",
-      "palette": "rose",
-      "pattern": "dot-matrix",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-bronze-topbar-icons.svg",
+      "palette": "bronze",
+      "pattern": "topbar-icons",
       "motif": "shield",
       "tags": [
         "light",
         "report",
-        "dot-matrix",
+        "topbar-icons",
         "shield"
       ]
     },
     {
-      "id": "canvas-light-rose-ribbon",
+      "id": "canvas-light-bronze-gradient-mesh",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-rose-ribbon.svg",
-      "palette": "rose",
-      "pattern": "ribbon",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-bronze-gradient-mesh.svg",
+      "palette": "bronze",
+      "pattern": "gradient-mesh",
       "motif": "shield",
       "tags": [
         "light",
         "report",
-        "ribbon",
+        "gradient-mesh",
         "shield"
       ]
     },
     {
-      "id": "canvas-light-rose-side-accent",
+      "id": "canvas-light-bronze-radial-pulse",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-rose-side-accent.svg",
-      "palette": "rose",
-      "pattern": "side-accent",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-bronze-radial-pulse.svg",
+      "palette": "bronze",
+      "pattern": "radial-pulse",
       "motif": "shield",
       "tags": [
         "light",
         "report",
-        "side-accent",
+        "radial-pulse",
         "shield"
       ]
     },
     {
-      "id": "canvas-light-sand-clean-header",
+      "id": "canvas-light-bronze-de-platform-header",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-sand-clean-header.svg",
-      "palette": "sand",
-      "pattern": "clean-header",
-      "motif": "diamond",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-bronze-de-platform-header.svg",
+      "palette": "bronze",
+      "pattern": "de-platform-header",
+      "motif": "shield",
       "tags": [
         "light",
         "report",
-        "clean-header",
-        "diamond"
+        "de-platform-header",
+        "shield"
       ]
     },
     {
-      "id": "canvas-light-sand-header-band",
+      "id": "canvas-light-bronze-de-circuit-wing",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-sand-header-band.svg",
-      "palette": "sand",
-      "pattern": "header-band",
-      "motif": "diamond",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-bronze-de-circuit-wing.svg",
+      "palette": "bronze",
+      "pattern": "de-circuit-wing",
+      "motif": "shield",
       "tags": [
         "light",
         "report",
-        "header-band",
-        "diamond"
+        "de-circuit-wing",
+        "shield"
       ]
     },
     {
-      "id": "canvas-light-sand-card-float",
+      "id": "canvas-light-bronze-de-cloud-center",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-sand-card-float.svg",
-      "palette": "sand",
-      "pattern": "card-float",
-      "motif": "diamond",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-bronze-de-cloud-center.svg",
+      "palette": "bronze",
+      "pattern": "de-cloud-center",
+      "motif": "shield",
       "tags": [
         "light",
         "report",
-        "card-float",
-        "diamond"
+        "de-cloud-center",
+        "shield"
       ]
     },
     {
-      "id": "canvas-light-sand-watermark",
+      "id": "canvas-light-cobalt-command",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-sand-watermark.svg",
-      "palette": "sand",
-      "pattern": "watermark",
-      "motif": "diamond",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cobalt-command.svg",
+      "palette": "cobalt",
+      "pattern": "command",
+      "motif": "orbit",
       "tags": [
         "light",
         "report",
-        "watermark",
-        "diamond"
+        "command",
+        "orbit"
       ]
     },
     {
-      "id": "canvas-light-sand-corner-fold",
+      "id": "canvas-light-cobalt-aurora",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-sand-corner-fold.svg",
-      "palette": "sand",
-      "pattern": "corner-fold",
-      "motif": "diamond",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cobalt-aurora.svg",
+      "palette": "cobalt",
+      "pattern": "aurora",
+      "motif": "orbit",
       "tags": [
         "light",
         "report",
-        "corner-fold",
-        "diamond"
+        "aurora",
+        "orbit"
       ]
     },
     {
-      "id": "canvas-light-sand-dot-matrix",
+      "id": "canvas-light-cobalt-honeycomb",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-sand-dot-matrix.svg",
-      "palette": "sand",
-      "pattern": "dot-matrix",
-      "motif": "diamond",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cobalt-honeycomb.svg",
+      "palette": "cobalt",
+      "pattern": "honeycomb",
+      "motif": "orbit",
       "tags": [
         "light",
         "report",
-        "dot-matrix",
-        "diamond"
+        "honeycomb",
+        "orbit"
       ]
     },
     {
-      "id": "canvas-light-sand-ribbon",
+      "id": "canvas-light-cobalt-circuit",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-sand-ribbon.svg",
-      "palette": "sand",
-      "pattern": "ribbon",
-      "motif": "diamond",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cobalt-circuit.svg",
+      "palette": "cobalt",
+      "pattern": "circuit",
+      "motif": "orbit",
       "tags": [
         "light",
         "report",
-        "ribbon",
-        "diamond"
+        "circuit",
+        "orbit"
       ]
     },
     {
-      "id": "canvas-light-sand-side-accent",
+      "id": "canvas-light-cobalt-hud-scan",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-sand-side-accent.svg",
-      "palette": "sand",
-      "pattern": "side-accent",
-      "motif": "diamond",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cobalt-hud-scan.svg",
+      "palette": "cobalt",
+      "pattern": "hud-scan",
+      "motif": "orbit",
       "tags": [
         "light",
         "report",
-        "side-accent",
-        "diamond"
+        "hud-scan",
+        "orbit"
       ]
     },
     {
-      "id": "canvas-light-sky-clean-header",
+      "id": "canvas-light-cobalt-topbar-icons",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-sky-clean-header.svg",
-      "palette": "sky",
-      "pattern": "clean-header",
-      "motif": "hex",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cobalt-topbar-icons.svg",
+      "palette": "cobalt",
+      "pattern": "topbar-icons",
+      "motif": "orbit",
       "tags": [
         "light",
         "report",
-        "clean-header",
-        "hex"
+        "topbar-icons",
+        "orbit"
       ]
     },
     {
-      "id": "canvas-light-sky-header-band",
+      "id": "canvas-light-cobalt-gradient-mesh",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-sky-header-band.svg",
-      "palette": "sky",
-      "pattern": "header-band",
-      "motif": "hex",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cobalt-gradient-mesh.svg",
+      "palette": "cobalt",
+      "pattern": "gradient-mesh",
+      "motif": "orbit",
       "tags": [
         "light",
         "report",
-        "header-band",
-        "hex"
+        "gradient-mesh",
+        "orbit"
       ]
     },
     {
-      "id": "canvas-light-sky-card-float",
+      "id": "canvas-light-cobalt-radial-pulse",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-sky-card-float.svg",
-      "palette": "sky",
-      "pattern": "card-float",
-      "motif": "hex",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cobalt-radial-pulse.svg",
+      "palette": "cobalt",
+      "pattern": "radial-pulse",
+      "motif": "orbit",
       "tags": [
         "light",
         "report",
-        "card-float",
-        "hex"
+        "radial-pulse",
+        "orbit"
       ]
     },
     {
-      "id": "canvas-light-sky-watermark",
+      "id": "canvas-light-cobalt-de-platform-header",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-sky-watermark.svg",
-      "palette": "sky",
-      "pattern": "watermark",
-      "motif": "hex",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cobalt-de-platform-header.svg",
+      "palette": "cobalt",
+      "pattern": "de-platform-header",
+      "motif": "orbit",
       "tags": [
         "light",
         "report",
-        "watermark",
-        "hex"
+        "de-platform-header",
+        "orbit"
       ]
     },
     {
-      "id": "canvas-light-sky-corner-fold",
+      "id": "canvas-light-cobalt-de-circuit-wing",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-sky-corner-fold.svg",
-      "palette": "sky",
-      "pattern": "corner-fold",
-      "motif": "hex",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cobalt-de-circuit-wing.svg",
+      "palette": "cobalt",
+      "pattern": "de-circuit-wing",
+      "motif": "orbit",
       "tags": [
         "light",
         "report",
-        "corner-fold",
-        "hex"
+        "de-circuit-wing",
+        "orbit"
       ]
     },
     {
-      "id": "canvas-light-sky-dot-matrix",
+      "id": "canvas-light-cobalt-de-cloud-center",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-sky-dot-matrix.svg",
-      "palette": "sky",
-      "pattern": "dot-matrix",
-      "motif": "hex",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-cobalt-de-cloud-center.svg",
+      "palette": "cobalt",
+      "pattern": "de-cloud-center",
+      "motif": "orbit",
       "tags": [
         "light",
         "report",
-        "dot-matrix",
-        "hex"
+        "de-cloud-center",
+        "orbit"
       ]
     },
     {
-      "id": "canvas-light-sky-ribbon",
+      "id": "canvas-light-magenta-command",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-sky-ribbon.svg",
-      "palette": "sky",
-      "pattern": "ribbon",
-      "motif": "hex",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-magenta-command.svg",
+      "palette": "magenta",
+      "pattern": "command",
+      "motif": "chevron",
       "tags": [
         "light",
         "report",
-        "ribbon",
-        "hex"
+        "command",
+        "chevron"
       ]
     },
     {
-      "id": "canvas-light-sky-side-accent",
+      "id": "canvas-light-magenta-aurora",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-sky-side-accent.svg",
-      "palette": "sky",
-      "pattern": "side-accent",
-      "motif": "hex",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-magenta-aurora.svg",
+      "palette": "magenta",
+      "pattern": "aurora",
+      "motif": "chevron",
       "tags": [
         "light",
         "report",
-        "side-accent",
-        "hex"
+        "aurora",
+        "chevron"
       ]
     },
     {
-      "id": "canvas-light-peach-clean-header",
+      "id": "canvas-light-magenta-honeycomb",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-peach-clean-header.svg",
-      "palette": "peach",
-      "pattern": "clean-header",
-      "motif": "star",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-magenta-honeycomb.svg",
+      "palette": "magenta",
+      "pattern": "honeycomb",
+      "motif": "chevron",
       "tags": [
         "light",
         "report",
-        "clean-header",
-        "star"
+        "honeycomb",
+        "chevron"
       ]
     },
     {
-      "id": "canvas-light-peach-header-band",
+      "id": "canvas-light-magenta-circuit",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-peach-header-band.svg",
-      "palette": "peach",
-      "pattern": "header-band",
-      "motif": "star",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-magenta-circuit.svg",
+      "palette": "magenta",
+      "pattern": "circuit",
+      "motif": "chevron",
       "tags": [
         "light",
         "report",
-        "header-band",
-        "star"
+        "circuit",
+        "chevron"
       ]
     },
     {
-      "id": "canvas-light-peach-card-float",
+      "id": "canvas-light-magenta-hud-scan",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-peach-card-float.svg",
-      "palette": "peach",
-      "pattern": "card-float",
-      "motif": "star",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-magenta-hud-scan.svg",
+      "palette": "magenta",
+      "pattern": "hud-scan",
+      "motif": "chevron",
       "tags": [
         "light",
         "report",
-        "card-float",
-        "star"
+        "hud-scan",
+        "chevron"
       ]
     },
     {
-      "id": "canvas-light-peach-watermark",
+      "id": "canvas-light-magenta-topbar-icons",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-peach-watermark.svg",
-      "palette": "peach",
-      "pattern": "watermark",
-      "motif": "star",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-magenta-topbar-icons.svg",
+      "palette": "magenta",
+      "pattern": "topbar-icons",
+      "motif": "chevron",
       "tags": [
         "light",
         "report",
-        "watermark",
-        "star"
+        "topbar-icons",
+        "chevron"
       ]
     },
     {
-      "id": "canvas-light-peach-corner-fold",
+      "id": "canvas-light-magenta-gradient-mesh",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-peach-corner-fold.svg",
-      "palette": "peach",
-      "pattern": "corner-fold",
-      "motif": "star",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-magenta-gradient-mesh.svg",
+      "palette": "magenta",
+      "pattern": "gradient-mesh",
+      "motif": "chevron",
       "tags": [
         "light",
         "report",
-        "corner-fold",
-        "star"
+        "gradient-mesh",
+        "chevron"
       ]
     },
     {
-      "id": "canvas-light-peach-dot-matrix",
+      "id": "canvas-light-magenta-radial-pulse",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-peach-dot-matrix.svg",
-      "palette": "peach",
-      "pattern": "dot-matrix",
-      "motif": "star",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-magenta-radial-pulse.svg",
+      "palette": "magenta",
+      "pattern": "radial-pulse",
+      "motif": "chevron",
       "tags": [
         "light",
         "report",
-        "dot-matrix",
-        "star"
+        "radial-pulse",
+        "chevron"
       ]
     },
     {
-      "id": "canvas-light-peach-ribbon",
+      "id": "canvas-light-magenta-de-platform-header",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-peach-ribbon.svg",
-      "palette": "peach",
-      "pattern": "ribbon",
-      "motif": "star",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-magenta-de-platform-header.svg",
+      "palette": "magenta",
+      "pattern": "de-platform-header",
+      "motif": "chevron",
       "tags": [
         "light",
         "report",
-        "ribbon",
-        "star"
+        "de-platform-header",
+        "chevron"
       ]
     },
     {
-      "id": "canvas-light-peach-side-accent",
+      "id": "canvas-light-magenta-de-circuit-wing",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-peach-side-accent.svg",
-      "palette": "peach",
-      "pattern": "side-accent",
-      "motif": "star",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-magenta-de-circuit-wing.svg",
+      "palette": "magenta",
+      "pattern": "de-circuit-wing",
+      "motif": "chevron",
       "tags": [
         "light",
         "report",
-        "side-accent",
-        "star"
+        "de-circuit-wing",
+        "chevron"
       ]
     },
     {
-      "id": "canvas-light-sage-clean-header",
+      "id": "canvas-light-magenta-de-cloud-center",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-sage-clean-header.svg",
-      "palette": "sage",
-      "pattern": "clean-header",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-magenta-de-cloud-center.svg",
+      "palette": "magenta",
+      "pattern": "de-cloud-center",
+      "motif": "chevron",
+      "tags": [
+        "light",
+        "report",
+        "de-cloud-center",
+        "chevron"
+      ]
+    },
+    {
+      "id": "canvas-light-lime-command",
+      "category": "canvas-light",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-lime-command.svg",
+      "palette": "lime",
+      "pattern": "command",
       "motif": "leaf",
       "tags": [
         "light",
         "report",
-        "clean-header",
+        "command",
         "leaf"
       ]
     },
     {
-      "id": "canvas-light-sage-header-band",
+      "id": "canvas-light-lime-aurora",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-sage-header-band.svg",
-      "palette": "sage",
-      "pattern": "header-band",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-lime-aurora.svg",
+      "palette": "lime",
+      "pattern": "aurora",
       "motif": "leaf",
       "tags": [
         "light",
         "report",
-        "header-band",
+        "aurora",
         "leaf"
       ]
     },
     {
-      "id": "canvas-light-sage-card-float",
+      "id": "canvas-light-lime-honeycomb",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-sage-card-float.svg",
-      "palette": "sage",
-      "pattern": "card-float",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-lime-honeycomb.svg",
+      "palette": "lime",
+      "pattern": "honeycomb",
       "motif": "leaf",
       "tags": [
         "light",
         "report",
-        "card-float",
+        "honeycomb",
         "leaf"
       ]
     },
     {
-      "id": "canvas-light-sage-watermark",
+      "id": "canvas-light-lime-circuit",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-sage-watermark.svg",
-      "palette": "sage",
-      "pattern": "watermark",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-lime-circuit.svg",
+      "palette": "lime",
+      "pattern": "circuit",
       "motif": "leaf",
       "tags": [
         "light",
         "report",
-        "watermark",
+        "circuit",
         "leaf"
       ]
     },
     {
-      "id": "canvas-light-sage-corner-fold",
+      "id": "canvas-light-lime-hud-scan",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-sage-corner-fold.svg",
-      "palette": "sage",
-      "pattern": "corner-fold",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-lime-hud-scan.svg",
+      "palette": "lime",
+      "pattern": "hud-scan",
       "motif": "leaf",
       "tags": [
         "light",
         "report",
-        "corner-fold",
+        "hud-scan",
         "leaf"
       ]
     },
     {
-      "id": "canvas-light-sage-dot-matrix",
+      "id": "canvas-light-lime-topbar-icons",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-sage-dot-matrix.svg",
-      "palette": "sage",
-      "pattern": "dot-matrix",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-lime-topbar-icons.svg",
+      "palette": "lime",
+      "pattern": "topbar-icons",
       "motif": "leaf",
       "tags": [
         "light",
         "report",
-        "dot-matrix",
+        "topbar-icons",
         "leaf"
       ]
     },
     {
-      "id": "canvas-light-sage-ribbon",
+      "id": "canvas-light-lime-gradient-mesh",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-sage-ribbon.svg",
-      "palette": "sage",
-      "pattern": "ribbon",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-lime-gradient-mesh.svg",
+      "palette": "lime",
+      "pattern": "gradient-mesh",
       "motif": "leaf",
       "tags": [
         "light",
         "report",
-        "ribbon",
+        "gradient-mesh",
         "leaf"
       ]
     },
     {
-      "id": "canvas-light-sage-side-accent",
+      "id": "canvas-light-lime-radial-pulse",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-sage-side-accent.svg",
-      "palette": "sage",
-      "pattern": "side-accent",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-lime-radial-pulse.svg",
+      "palette": "lime",
+      "pattern": "radial-pulse",
       "motif": "leaf",
       "tags": [
         "light",
         "report",
-        "side-accent",
+        "radial-pulse",
         "leaf"
       ]
     },
     {
-      "id": "canvas-light-coral-clean-header",
+      "id": "canvas-light-lime-de-platform-header",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-coral-clean-header.svg",
-      "palette": "coral",
-      "pattern": "clean-header",
-      "motif": "shield",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-lime-de-platform-header.svg",
+      "palette": "lime",
+      "pattern": "de-platform-header",
+      "motif": "leaf",
       "tags": [
         "light",
         "report",
-        "clean-header",
-        "shield"
+        "de-platform-header",
+        "leaf"
       ]
     },
     {
-      "id": "canvas-light-coral-header-band",
+      "id": "canvas-light-lime-de-circuit-wing",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-coral-header-band.svg",
-      "palette": "coral",
-      "pattern": "header-band",
-      "motif": "shield",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-lime-de-circuit-wing.svg",
+      "palette": "lime",
+      "pattern": "de-circuit-wing",
+      "motif": "leaf",
       "tags": [
         "light",
         "report",
-        "header-band",
-        "shield"
+        "de-circuit-wing",
+        "leaf"
       ]
     },
     {
-      "id": "canvas-light-coral-card-float",
+      "id": "canvas-light-lime-de-cloud-center",
       "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-coral-card-float.svg",
-      "palette": "coral",
-      "pattern": "card-float",
-      "motif": "shield",
+      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-lime-de-cloud-center.svg",
+      "palette": "lime",
+      "pattern": "de-cloud-center",
+      "motif": "leaf",
       "tags": [
         "light",
         "report",
-        "card-float",
-        "shield"
-      ]
-    },
-    {
-      "id": "canvas-light-coral-watermark",
-      "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-coral-watermark.svg",
-      "palette": "coral",
-      "pattern": "watermark",
-      "motif": "shield",
-      "tags": [
-        "light",
-        "report",
-        "watermark",
-        "shield"
-      ]
-    },
-    {
-      "id": "canvas-light-coral-corner-fold",
-      "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-coral-corner-fold.svg",
-      "palette": "coral",
-      "pattern": "corner-fold",
-      "motif": "shield",
-      "tags": [
-        "light",
-        "report",
-        "corner-fold",
-        "shield"
-      ]
-    },
-    {
-      "id": "canvas-light-coral-dot-matrix",
-      "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-coral-dot-matrix.svg",
-      "palette": "coral",
-      "pattern": "dot-matrix",
-      "motif": "shield",
-      "tags": [
-        "light",
-        "report",
-        "dot-matrix",
-        "shield"
-      ]
-    },
-    {
-      "id": "canvas-light-coral-ribbon",
-      "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-coral-ribbon.svg",
-      "palette": "coral",
-      "pattern": "ribbon",
-      "motif": "shield",
-      "tags": [
-        "light",
-        "report",
-        "ribbon",
-        "shield"
-      ]
-    },
-    {
-      "id": "canvas-light-coral-side-accent",
-      "category": "canvas-light",
-      "path": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-coral-side-accent.svg",
-      "palette": "coral",
-      "pattern": "side-accent",
-      "motif": "shield",
-      "tags": [
-        "light",
-        "report",
-        "side-accent",
-        "shield"
+        "de-cloud-center",
+        "leaf"
       ]
     },
     {
@@ -4231,6 +5050,20 @@
       ]
     },
     {
+      "id": "title-clear-diamond-flank-cyan",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-diamond-flank-cyan.svg",
+      "palette": "cyan",
+      "style": "diamond-flank",
+      "motif": "hex",
+      "tags": [
+        "title",
+        "header",
+        "diamond-flank",
+        "transparent"
+      ]
+    },
+    {
       "id": "title-diamond-flank-indigo",
       "category": "title-strip",
       "path": "/template-assets/packs/gov-enterprise-v1/title-strips/title-diamond-flank-indigo.svg",
@@ -4241,6 +5074,20 @@
         "title",
         "header",
         "diamond-flank"
+      ]
+    },
+    {
+      "id": "title-clear-diamond-flank-indigo",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-diamond-flank-indigo.svg",
+      "palette": "indigo",
+      "style": "diamond-flank",
+      "motif": "diamond",
+      "tags": [
+        "title",
+        "header",
+        "diamond-flank",
+        "transparent"
       ]
     },
     {
@@ -4257,6 +5104,20 @@
       ]
     },
     {
+      "id": "title-clear-diamond-flank-emerald",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-diamond-flank-emerald.svg",
+      "palette": "emerald",
+      "style": "diamond-flank",
+      "motif": "leaf",
+      "tags": [
+        "title",
+        "header",
+        "diamond-flank",
+        "transparent"
+      ]
+    },
+    {
       "id": "title-diamond-flank-amber",
       "category": "title-strip",
       "path": "/template-assets/packs/gov-enterprise-v1/title-strips/title-diamond-flank-amber.svg",
@@ -4267,6 +5128,20 @@
         "title",
         "header",
         "diamond-flank"
+      ]
+    },
+    {
+      "id": "title-clear-diamond-flank-amber",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-diamond-flank-amber.svg",
+      "palette": "amber",
+      "style": "diamond-flank",
+      "motif": "star",
+      "tags": [
+        "title",
+        "header",
+        "diamond-flank",
+        "transparent"
       ]
     },
     {
@@ -4283,6 +5158,20 @@
       ]
     },
     {
+      "id": "title-clear-diamond-flank-royal",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-diamond-flank-royal.svg",
+      "palette": "royal",
+      "style": "diamond-flank",
+      "motif": "orbit",
+      "tags": [
+        "title",
+        "header",
+        "diamond-flank",
+        "transparent"
+      ]
+    },
+    {
       "id": "title-diamond-flank-teal",
       "category": "title-strip",
       "path": "/template-assets/packs/gov-enterprise-v1/title-strips/title-diamond-flank-teal.svg",
@@ -4293,6 +5182,20 @@
         "title",
         "header",
         "diamond-flank"
+      ]
+    },
+    {
+      "id": "title-clear-diamond-flank-teal",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-diamond-flank-teal.svg",
+      "palette": "teal",
+      "style": "diamond-flank",
+      "motif": "wave",
+      "tags": [
+        "title",
+        "header",
+        "diamond-flank",
+        "transparent"
       ]
     },
     {
@@ -4309,6 +5212,20 @@
       ]
     },
     {
+      "id": "title-clear-diamond-flank-violet",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-diamond-flank-violet.svg",
+      "palette": "violet",
+      "style": "diamond-flank",
+      "motif": "chevron",
+      "tags": [
+        "title",
+        "header",
+        "diamond-flank",
+        "transparent"
+      ]
+    },
+    {
       "id": "title-diamond-flank-gold",
       "category": "title-strip",
       "path": "/template-assets/packs/gov-enterprise-v1/title-strips/title-diamond-flank-gold.svg",
@@ -4319,6 +5236,20 @@
         "title",
         "header",
         "diamond-flank"
+      ]
+    },
+    {
+      "id": "title-clear-diamond-flank-gold",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-diamond-flank-gold.svg",
+      "palette": "gold",
+      "style": "diamond-flank",
+      "motif": "star",
+      "tags": [
+        "title",
+        "header",
+        "diamond-flank",
+        "transparent"
       ]
     },
     {
@@ -4335,6 +5266,20 @@
       ]
     },
     {
+      "id": "title-clear-diamond-flank-cobalt",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-diamond-flank-cobalt.svg",
+      "palette": "cobalt",
+      "style": "diamond-flank",
+      "motif": "orbit",
+      "tags": [
+        "title",
+        "header",
+        "diamond-flank",
+        "transparent"
+      ]
+    },
+    {
       "id": "title-diamond-flank-magenta",
       "category": "title-strip",
       "path": "/template-assets/packs/gov-enterprise-v1/title-strips/title-diamond-flank-magenta.svg",
@@ -4345,6 +5290,20 @@
         "title",
         "header",
         "diamond-flank"
+      ]
+    },
+    {
+      "id": "title-clear-diamond-flank-magenta",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-diamond-flank-magenta.svg",
+      "palette": "magenta",
+      "style": "diamond-flank",
+      "motif": "chevron",
+      "tags": [
+        "title",
+        "header",
+        "diamond-flank",
+        "transparent"
       ]
     },
     {
@@ -4361,6 +5320,20 @@
       ]
     },
     {
+      "id": "title-clear-shield-badge-cyan",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-shield-badge-cyan.svg",
+      "palette": "cyan",
+      "style": "shield-badge",
+      "motif": "hex",
+      "tags": [
+        "title",
+        "header",
+        "shield-badge",
+        "transparent"
+      ]
+    },
+    {
       "id": "title-shield-badge-indigo",
       "category": "title-strip",
       "path": "/template-assets/packs/gov-enterprise-v1/title-strips/title-shield-badge-indigo.svg",
@@ -4371,6 +5344,20 @@
         "title",
         "header",
         "shield-badge"
+      ]
+    },
+    {
+      "id": "title-clear-shield-badge-indigo",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-shield-badge-indigo.svg",
+      "palette": "indigo",
+      "style": "shield-badge",
+      "motif": "diamond",
+      "tags": [
+        "title",
+        "header",
+        "shield-badge",
+        "transparent"
       ]
     },
     {
@@ -4387,6 +5374,20 @@
       ]
     },
     {
+      "id": "title-clear-shield-badge-emerald",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-shield-badge-emerald.svg",
+      "palette": "emerald",
+      "style": "shield-badge",
+      "motif": "leaf",
+      "tags": [
+        "title",
+        "header",
+        "shield-badge",
+        "transparent"
+      ]
+    },
+    {
       "id": "title-shield-badge-amber",
       "category": "title-strip",
       "path": "/template-assets/packs/gov-enterprise-v1/title-strips/title-shield-badge-amber.svg",
@@ -4397,6 +5398,20 @@
         "title",
         "header",
         "shield-badge"
+      ]
+    },
+    {
+      "id": "title-clear-shield-badge-amber",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-shield-badge-amber.svg",
+      "palette": "amber",
+      "style": "shield-badge",
+      "motif": "star",
+      "tags": [
+        "title",
+        "header",
+        "shield-badge",
+        "transparent"
       ]
     },
     {
@@ -4413,6 +5428,20 @@
       ]
     },
     {
+      "id": "title-clear-shield-badge-royal",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-shield-badge-royal.svg",
+      "palette": "royal",
+      "style": "shield-badge",
+      "motif": "orbit",
+      "tags": [
+        "title",
+        "header",
+        "shield-badge",
+        "transparent"
+      ]
+    },
+    {
       "id": "title-shield-badge-teal",
       "category": "title-strip",
       "path": "/template-assets/packs/gov-enterprise-v1/title-strips/title-shield-badge-teal.svg",
@@ -4423,6 +5452,20 @@
         "title",
         "header",
         "shield-badge"
+      ]
+    },
+    {
+      "id": "title-clear-shield-badge-teal",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-shield-badge-teal.svg",
+      "palette": "teal",
+      "style": "shield-badge",
+      "motif": "wave",
+      "tags": [
+        "title",
+        "header",
+        "shield-badge",
+        "transparent"
       ]
     },
     {
@@ -4439,6 +5482,20 @@
       ]
     },
     {
+      "id": "title-clear-shield-badge-violet",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-shield-badge-violet.svg",
+      "palette": "violet",
+      "style": "shield-badge",
+      "motif": "chevron",
+      "tags": [
+        "title",
+        "header",
+        "shield-badge",
+        "transparent"
+      ]
+    },
+    {
       "id": "title-shield-badge-gold",
       "category": "title-strip",
       "path": "/template-assets/packs/gov-enterprise-v1/title-strips/title-shield-badge-gold.svg",
@@ -4449,6 +5506,20 @@
         "title",
         "header",
         "shield-badge"
+      ]
+    },
+    {
+      "id": "title-clear-shield-badge-gold",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-shield-badge-gold.svg",
+      "palette": "gold",
+      "style": "shield-badge",
+      "motif": "star",
+      "tags": [
+        "title",
+        "header",
+        "shield-badge",
+        "transparent"
       ]
     },
     {
@@ -4465,6 +5536,20 @@
       ]
     },
     {
+      "id": "title-clear-shield-badge-cobalt",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-shield-badge-cobalt.svg",
+      "palette": "cobalt",
+      "style": "shield-badge",
+      "motif": "orbit",
+      "tags": [
+        "title",
+        "header",
+        "shield-badge",
+        "transparent"
+      ]
+    },
+    {
       "id": "title-shield-badge-magenta",
       "category": "title-strip",
       "path": "/template-assets/packs/gov-enterprise-v1/title-strips/title-shield-badge-magenta.svg",
@@ -4475,6 +5560,20 @@
         "title",
         "header",
         "shield-badge"
+      ]
+    },
+    {
+      "id": "title-clear-shield-badge-magenta",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-shield-badge-magenta.svg",
+      "palette": "magenta",
+      "style": "shield-badge",
+      "motif": "chevron",
+      "tags": [
+        "title",
+        "header",
+        "shield-badge",
+        "transparent"
       ]
     },
     {
@@ -4491,6 +5590,20 @@
       ]
     },
     {
+      "id": "title-clear-hex-nodes-cyan",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-hex-nodes-cyan.svg",
+      "palette": "cyan",
+      "style": "hex-nodes",
+      "motif": "hex",
+      "tags": [
+        "title",
+        "header",
+        "hex-nodes",
+        "transparent"
+      ]
+    },
+    {
       "id": "title-hex-nodes-indigo",
       "category": "title-strip",
       "path": "/template-assets/packs/gov-enterprise-v1/title-strips/title-hex-nodes-indigo.svg",
@@ -4501,6 +5614,20 @@
         "title",
         "header",
         "hex-nodes"
+      ]
+    },
+    {
+      "id": "title-clear-hex-nodes-indigo",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-hex-nodes-indigo.svg",
+      "palette": "indigo",
+      "style": "hex-nodes",
+      "motif": "diamond",
+      "tags": [
+        "title",
+        "header",
+        "hex-nodes",
+        "transparent"
       ]
     },
     {
@@ -4517,6 +5644,20 @@
       ]
     },
     {
+      "id": "title-clear-hex-nodes-emerald",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-hex-nodes-emerald.svg",
+      "palette": "emerald",
+      "style": "hex-nodes",
+      "motif": "leaf",
+      "tags": [
+        "title",
+        "header",
+        "hex-nodes",
+        "transparent"
+      ]
+    },
+    {
       "id": "title-hex-nodes-amber",
       "category": "title-strip",
       "path": "/template-assets/packs/gov-enterprise-v1/title-strips/title-hex-nodes-amber.svg",
@@ -4527,6 +5668,20 @@
         "title",
         "header",
         "hex-nodes"
+      ]
+    },
+    {
+      "id": "title-clear-hex-nodes-amber",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-hex-nodes-amber.svg",
+      "palette": "amber",
+      "style": "hex-nodes",
+      "motif": "star",
+      "tags": [
+        "title",
+        "header",
+        "hex-nodes",
+        "transparent"
       ]
     },
     {
@@ -4543,6 +5698,20 @@
       ]
     },
     {
+      "id": "title-clear-hex-nodes-royal",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-hex-nodes-royal.svg",
+      "palette": "royal",
+      "style": "hex-nodes",
+      "motif": "orbit",
+      "tags": [
+        "title",
+        "header",
+        "hex-nodes",
+        "transparent"
+      ]
+    },
+    {
       "id": "title-hex-nodes-teal",
       "category": "title-strip",
       "path": "/template-assets/packs/gov-enterprise-v1/title-strips/title-hex-nodes-teal.svg",
@@ -4553,6 +5722,20 @@
         "title",
         "header",
         "hex-nodes"
+      ]
+    },
+    {
+      "id": "title-clear-hex-nodes-teal",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-hex-nodes-teal.svg",
+      "palette": "teal",
+      "style": "hex-nodes",
+      "motif": "wave",
+      "tags": [
+        "title",
+        "header",
+        "hex-nodes",
+        "transparent"
       ]
     },
     {
@@ -4569,6 +5752,20 @@
       ]
     },
     {
+      "id": "title-clear-hex-nodes-violet",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-hex-nodes-violet.svg",
+      "palette": "violet",
+      "style": "hex-nodes",
+      "motif": "chevron",
+      "tags": [
+        "title",
+        "header",
+        "hex-nodes",
+        "transparent"
+      ]
+    },
+    {
       "id": "title-hex-nodes-gold",
       "category": "title-strip",
       "path": "/template-assets/packs/gov-enterprise-v1/title-strips/title-hex-nodes-gold.svg",
@@ -4579,6 +5776,20 @@
         "title",
         "header",
         "hex-nodes"
+      ]
+    },
+    {
+      "id": "title-clear-hex-nodes-gold",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-hex-nodes-gold.svg",
+      "palette": "gold",
+      "style": "hex-nodes",
+      "motif": "star",
+      "tags": [
+        "title",
+        "header",
+        "hex-nodes",
+        "transparent"
       ]
     },
     {
@@ -4595,6 +5806,20 @@
       ]
     },
     {
+      "id": "title-clear-hex-nodes-cobalt",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-hex-nodes-cobalt.svg",
+      "palette": "cobalt",
+      "style": "hex-nodes",
+      "motif": "orbit",
+      "tags": [
+        "title",
+        "header",
+        "hex-nodes",
+        "transparent"
+      ]
+    },
+    {
       "id": "title-hex-nodes-magenta",
       "category": "title-strip",
       "path": "/template-assets/packs/gov-enterprise-v1/title-strips/title-hex-nodes-magenta.svg",
@@ -4605,6 +5830,20 @@
         "title",
         "header",
         "hex-nodes"
+      ]
+    },
+    {
+      "id": "title-clear-hex-nodes-magenta",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-hex-nodes-magenta.svg",
+      "palette": "magenta",
+      "style": "hex-nodes",
+      "motif": "chevron",
+      "tags": [
+        "title",
+        "header",
+        "hex-nodes",
+        "transparent"
       ]
     },
     {
@@ -4621,6 +5860,20 @@
       ]
     },
     {
+      "id": "screen-header-clear-de-trapezoid-wing-cyan",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-trapezoid-wing-cyan.svg",
+      "palette": "cyan",
+      "style": "de-trapezoid-wing",
+      "motif": "hex",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-trapezoid-wing",
+        "transparent"
+      ]
+    },
+    {
       "id": "screen-header-de-trapezoid-wing-indigo",
       "category": "screen-header",
       "path": "/template-assets/packs/gov-enterprise-v1/screen-headers/screen-header-de-trapezoid-wing-indigo.svg",
@@ -4631,6 +5884,20 @@
         "screen-header",
         "de-style",
         "de-trapezoid-wing"
+      ]
+    },
+    {
+      "id": "screen-header-clear-de-trapezoid-wing-indigo",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-trapezoid-wing-indigo.svg",
+      "palette": "indigo",
+      "style": "de-trapezoid-wing",
+      "motif": "diamond",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-trapezoid-wing",
+        "transparent"
       ]
     },
     {
@@ -4647,6 +5914,20 @@
       ]
     },
     {
+      "id": "screen-header-clear-de-trapezoid-wing-emerald",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-trapezoid-wing-emerald.svg",
+      "palette": "emerald",
+      "style": "de-trapezoid-wing",
+      "motif": "leaf",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-trapezoid-wing",
+        "transparent"
+      ]
+    },
+    {
       "id": "screen-header-de-trapezoid-wing-amber",
       "category": "screen-header",
       "path": "/template-assets/packs/gov-enterprise-v1/screen-headers/screen-header-de-trapezoid-wing-amber.svg",
@@ -4657,6 +5938,20 @@
         "screen-header",
         "de-style",
         "de-trapezoid-wing"
+      ]
+    },
+    {
+      "id": "screen-header-clear-de-trapezoid-wing-amber",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-trapezoid-wing-amber.svg",
+      "palette": "amber",
+      "style": "de-trapezoid-wing",
+      "motif": "star",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-trapezoid-wing",
+        "transparent"
       ]
     },
     {
@@ -4673,6 +5968,20 @@
       ]
     },
     {
+      "id": "screen-header-clear-de-trapezoid-wing-royal",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-trapezoid-wing-royal.svg",
+      "palette": "royal",
+      "style": "de-trapezoid-wing",
+      "motif": "orbit",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-trapezoid-wing",
+        "transparent"
+      ]
+    },
+    {
       "id": "screen-header-de-trapezoid-wing-teal",
       "category": "screen-header",
       "path": "/template-assets/packs/gov-enterprise-v1/screen-headers/screen-header-de-trapezoid-wing-teal.svg",
@@ -4683,6 +5992,20 @@
         "screen-header",
         "de-style",
         "de-trapezoid-wing"
+      ]
+    },
+    {
+      "id": "screen-header-clear-de-trapezoid-wing-teal",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-trapezoid-wing-teal.svg",
+      "palette": "teal",
+      "style": "de-trapezoid-wing",
+      "motif": "wave",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-trapezoid-wing",
+        "transparent"
       ]
     },
     {
@@ -4699,6 +6022,20 @@
       ]
     },
     {
+      "id": "screen-header-clear-de-trapezoid-wing-violet",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-trapezoid-wing-violet.svg",
+      "palette": "violet",
+      "style": "de-trapezoid-wing",
+      "motif": "chevron",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-trapezoid-wing",
+        "transparent"
+      ]
+    },
+    {
       "id": "screen-header-de-trapezoid-wing-gold",
       "category": "screen-header",
       "path": "/template-assets/packs/gov-enterprise-v1/screen-headers/screen-header-de-trapezoid-wing-gold.svg",
@@ -4709,6 +6046,20 @@
         "screen-header",
         "de-style",
         "de-trapezoid-wing"
+      ]
+    },
+    {
+      "id": "screen-header-clear-de-trapezoid-wing-gold",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-trapezoid-wing-gold.svg",
+      "palette": "gold",
+      "style": "de-trapezoid-wing",
+      "motif": "star",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-trapezoid-wing",
+        "transparent"
       ]
     },
     {
@@ -4725,6 +6076,20 @@
       ]
     },
     {
+      "id": "screen-header-clear-de-trapezoid-wing-cobalt",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-trapezoid-wing-cobalt.svg",
+      "palette": "cobalt",
+      "style": "de-trapezoid-wing",
+      "motif": "orbit",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-trapezoid-wing",
+        "transparent"
+      ]
+    },
+    {
       "id": "screen-header-de-trapezoid-wing-magenta",
       "category": "screen-header",
       "path": "/template-assets/packs/gov-enterprise-v1/screen-headers/screen-header-de-trapezoid-wing-magenta.svg",
@@ -4735,6 +6100,20 @@
         "screen-header",
         "de-style",
         "de-trapezoid-wing"
+      ]
+    },
+    {
+      "id": "screen-header-clear-de-trapezoid-wing-magenta",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-trapezoid-wing-magenta.svg",
+      "palette": "magenta",
+      "style": "de-trapezoid-wing",
+      "motif": "chevron",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-trapezoid-wing",
+        "transparent"
       ]
     },
     {
@@ -4751,6 +6130,20 @@
       ]
     },
     {
+      "id": "screen-header-clear-de-circuit-sym-cyan",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-circuit-sym-cyan.svg",
+      "palette": "cyan",
+      "style": "de-circuit-sym",
+      "motif": "hex",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-circuit-sym",
+        "transparent"
+      ]
+    },
+    {
       "id": "screen-header-de-circuit-sym-indigo",
       "category": "screen-header",
       "path": "/template-assets/packs/gov-enterprise-v1/screen-headers/screen-header-de-circuit-sym-indigo.svg",
@@ -4761,6 +6154,20 @@
         "screen-header",
         "de-style",
         "de-circuit-sym"
+      ]
+    },
+    {
+      "id": "screen-header-clear-de-circuit-sym-indigo",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-circuit-sym-indigo.svg",
+      "palette": "indigo",
+      "style": "de-circuit-sym",
+      "motif": "diamond",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-circuit-sym",
+        "transparent"
       ]
     },
     {
@@ -4777,6 +6184,20 @@
       ]
     },
     {
+      "id": "screen-header-clear-de-circuit-sym-emerald",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-circuit-sym-emerald.svg",
+      "palette": "emerald",
+      "style": "de-circuit-sym",
+      "motif": "leaf",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-circuit-sym",
+        "transparent"
+      ]
+    },
+    {
       "id": "screen-header-de-circuit-sym-amber",
       "category": "screen-header",
       "path": "/template-assets/packs/gov-enterprise-v1/screen-headers/screen-header-de-circuit-sym-amber.svg",
@@ -4787,6 +6208,20 @@
         "screen-header",
         "de-style",
         "de-circuit-sym"
+      ]
+    },
+    {
+      "id": "screen-header-clear-de-circuit-sym-amber",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-circuit-sym-amber.svg",
+      "palette": "amber",
+      "style": "de-circuit-sym",
+      "motif": "star",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-circuit-sym",
+        "transparent"
       ]
     },
     {
@@ -4803,6 +6238,20 @@
       ]
     },
     {
+      "id": "screen-header-clear-de-circuit-sym-royal",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-circuit-sym-royal.svg",
+      "palette": "royal",
+      "style": "de-circuit-sym",
+      "motif": "orbit",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-circuit-sym",
+        "transparent"
+      ]
+    },
+    {
       "id": "screen-header-de-circuit-sym-teal",
       "category": "screen-header",
       "path": "/template-assets/packs/gov-enterprise-v1/screen-headers/screen-header-de-circuit-sym-teal.svg",
@@ -4813,6 +6262,20 @@
         "screen-header",
         "de-style",
         "de-circuit-sym"
+      ]
+    },
+    {
+      "id": "screen-header-clear-de-circuit-sym-teal",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-circuit-sym-teal.svg",
+      "palette": "teal",
+      "style": "de-circuit-sym",
+      "motif": "wave",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-circuit-sym",
+        "transparent"
       ]
     },
     {
@@ -4829,6 +6292,20 @@
       ]
     },
     {
+      "id": "screen-header-clear-de-circuit-sym-violet",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-circuit-sym-violet.svg",
+      "palette": "violet",
+      "style": "de-circuit-sym",
+      "motif": "chevron",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-circuit-sym",
+        "transparent"
+      ]
+    },
+    {
       "id": "screen-header-de-circuit-sym-gold",
       "category": "screen-header",
       "path": "/template-assets/packs/gov-enterprise-v1/screen-headers/screen-header-de-circuit-sym-gold.svg",
@@ -4839,6 +6316,20 @@
         "screen-header",
         "de-style",
         "de-circuit-sym"
+      ]
+    },
+    {
+      "id": "screen-header-clear-de-circuit-sym-gold",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-circuit-sym-gold.svg",
+      "palette": "gold",
+      "style": "de-circuit-sym",
+      "motif": "star",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-circuit-sym",
+        "transparent"
       ]
     },
     {
@@ -4855,6 +6346,20 @@
       ]
     },
     {
+      "id": "screen-header-clear-de-circuit-sym-cobalt",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-circuit-sym-cobalt.svg",
+      "palette": "cobalt",
+      "style": "de-circuit-sym",
+      "motif": "orbit",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-circuit-sym",
+        "transparent"
+      ]
+    },
+    {
       "id": "screen-header-de-circuit-sym-magenta",
       "category": "screen-header",
       "path": "/template-assets/packs/gov-enterprise-v1/screen-headers/screen-header-de-circuit-sym-magenta.svg",
@@ -4865,6 +6370,20 @@
         "screen-header",
         "de-style",
         "de-circuit-sym"
+      ]
+    },
+    {
+      "id": "screen-header-clear-de-circuit-sym-magenta",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-circuit-sym-magenta.svg",
+      "palette": "magenta",
+      "style": "de-circuit-sym",
+      "motif": "chevron",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-circuit-sym",
+        "transparent"
       ]
     },
     {
@@ -4881,6 +6400,20 @@
       ]
     },
     {
+      "id": "screen-header-clear-de-glow-plaque-cyan",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-glow-plaque-cyan.svg",
+      "palette": "cyan",
+      "style": "de-glow-plaque",
+      "motif": "hex",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-glow-plaque",
+        "transparent"
+      ]
+    },
+    {
       "id": "screen-header-de-glow-plaque-indigo",
       "category": "screen-header",
       "path": "/template-assets/packs/gov-enterprise-v1/screen-headers/screen-header-de-glow-plaque-indigo.svg",
@@ -4891,6 +6424,20 @@
         "screen-header",
         "de-style",
         "de-glow-plaque"
+      ]
+    },
+    {
+      "id": "screen-header-clear-de-glow-plaque-indigo",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-glow-plaque-indigo.svg",
+      "palette": "indigo",
+      "style": "de-glow-plaque",
+      "motif": "diamond",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-glow-plaque",
+        "transparent"
       ]
     },
     {
@@ -4907,6 +6454,20 @@
       ]
     },
     {
+      "id": "screen-header-clear-de-glow-plaque-emerald",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-glow-plaque-emerald.svg",
+      "palette": "emerald",
+      "style": "de-glow-plaque",
+      "motif": "leaf",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-glow-plaque",
+        "transparent"
+      ]
+    },
+    {
       "id": "screen-header-de-glow-plaque-amber",
       "category": "screen-header",
       "path": "/template-assets/packs/gov-enterprise-v1/screen-headers/screen-header-de-glow-plaque-amber.svg",
@@ -4917,6 +6478,20 @@
         "screen-header",
         "de-style",
         "de-glow-plaque"
+      ]
+    },
+    {
+      "id": "screen-header-clear-de-glow-plaque-amber",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-glow-plaque-amber.svg",
+      "palette": "amber",
+      "style": "de-glow-plaque",
+      "motif": "star",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-glow-plaque",
+        "transparent"
       ]
     },
     {
@@ -4933,6 +6508,20 @@
       ]
     },
     {
+      "id": "screen-header-clear-de-glow-plaque-royal",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-glow-plaque-royal.svg",
+      "palette": "royal",
+      "style": "de-glow-plaque",
+      "motif": "orbit",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-glow-plaque",
+        "transparent"
+      ]
+    },
+    {
       "id": "screen-header-de-glow-plaque-teal",
       "category": "screen-header",
       "path": "/template-assets/packs/gov-enterprise-v1/screen-headers/screen-header-de-glow-plaque-teal.svg",
@@ -4943,6 +6532,20 @@
         "screen-header",
         "de-style",
         "de-glow-plaque"
+      ]
+    },
+    {
+      "id": "screen-header-clear-de-glow-plaque-teal",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-glow-plaque-teal.svg",
+      "palette": "teal",
+      "style": "de-glow-plaque",
+      "motif": "wave",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-glow-plaque",
+        "transparent"
       ]
     },
     {
@@ -4959,6 +6562,20 @@
       ]
     },
     {
+      "id": "screen-header-clear-de-glow-plaque-violet",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-glow-plaque-violet.svg",
+      "palette": "violet",
+      "style": "de-glow-plaque",
+      "motif": "chevron",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-glow-plaque",
+        "transparent"
+      ]
+    },
+    {
       "id": "screen-header-de-glow-plaque-gold",
       "category": "screen-header",
       "path": "/template-assets/packs/gov-enterprise-v1/screen-headers/screen-header-de-glow-plaque-gold.svg",
@@ -4969,6 +6586,20 @@
         "screen-header",
         "de-style",
         "de-glow-plaque"
+      ]
+    },
+    {
+      "id": "screen-header-clear-de-glow-plaque-gold",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-glow-plaque-gold.svg",
+      "palette": "gold",
+      "style": "de-glow-plaque",
+      "motif": "star",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-glow-plaque",
+        "transparent"
       ]
     },
     {
@@ -4985,6 +6616,20 @@
       ]
     },
     {
+      "id": "screen-header-clear-de-glow-plaque-cobalt",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-glow-plaque-cobalt.svg",
+      "palette": "cobalt",
+      "style": "de-glow-plaque",
+      "motif": "orbit",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-glow-plaque",
+        "transparent"
+      ]
+    },
+    {
       "id": "screen-header-de-glow-plaque-magenta",
       "category": "screen-header",
       "path": "/template-assets/packs/gov-enterprise-v1/screen-headers/screen-header-de-glow-plaque-magenta.svg",
@@ -4995,6 +6640,20 @@
         "screen-header",
         "de-style",
         "de-glow-plaque"
+      ]
+    },
+    {
+      "id": "screen-header-clear-de-glow-plaque-magenta",
+      "category": "top-decor-clear",
+      "path": "/template-assets/packs/gov-enterprise-v1/top-decor-clear/screen-header-clear-de-glow-plaque-magenta.svg",
+      "palette": "magenta",
+      "style": "de-glow-plaque",
+      "motif": "chevron",
+      "tags": [
+        "screen-header",
+        "de-style",
+        "de-glow-plaque",
+        "transparent"
       ]
     }
   ]

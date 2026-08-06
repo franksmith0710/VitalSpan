@@ -15,8 +15,10 @@ import {
 import { getDashboardThemeTokens, isOppositeThemeTitleColor } from "@/components/dashboard/dashboardThemeTokens";
 import type { WidgetBackgroundPresentation } from "@/lib/widgetSurfaceBackground";
 import { buildWidgetBackgroundPresentation } from "@/lib/widgetStylePresentation";
+import { parseWidgetBackgroundImageUrl } from "@/components/dashboard/imageSourceUtils";
+import { isDecorativeWidgetBackgroundUrl } from "@/lib/widgetBackgroundImageFit";
 import type { ChartSeriesColorItem } from "@/lib/chartSeriesColor";
-import { resolvePaletteId } from "@/lib/chartPalette";
+import { resolveChartColors, resolvePaletteId } from "@/lib/chartPalette";
 import type { ChartDrillFrame } from "@/lib/chartDrill";
 import type { ChartDeStyleBlocks } from "@/lib/chartDeStyleBlocks";
 export {
@@ -54,11 +56,15 @@ export type ChartLegendIconShape =
   | "triangle"
   | "diamond";
 
-/** 看板内嵌图例默认：开启 + 底部 */
-export const DEFAULT_CHART_LEGEND_STYLE: Required<Pick<ChartLegendStyle, "show" | "position">> &
+/** 看板内嵌图例默认：开启 + 底部居中 */
+export const DEFAULT_CHART_LEGEND_STYLE: Required<
+  Pick<ChartLegendStyle, "show" | "position" | "hAlign" | "vAlign">
+> &
   ChartLegendStyle = {
   show: true,
   position: "bottom",
+  hAlign: "center",
+  vAlign: "bottom",
 };
 
 export type ChartLabelStyle = {
@@ -293,6 +299,8 @@ export type ChartTooltipStyle = {
 
 export type ChartDeStyle = {
   paletteId?: string;
+  /** 自定义色板序列（对标 DE 自定义配色；优先于 paletteId 预设） */
+  paletteColors?: string[];
   paletteOpacity?: number;
   /** 系列渐变填充（对标 DE「渐变颜色」） */
   seriesGradient?: boolean;
@@ -352,6 +360,50 @@ export function resolveEffectivePaletteId(
   return undefined;
 }
 
+/** 组件 override → 看板默认；自定义色优先于预设模板 */
+export function resolveEffectivePaletteColors(
+  cfg: ChartViewConfig,
+  dashboardPaletteId?: string,
+  dashboardPaletteColors?: readonly string[],
+): string[] {
+  const de = readChartDeStyle(cfg);
+  if (de.paletteId != null) {
+    return resolveChartColors(resolvePaletteId(de.paletteId), de.paletteColors);
+  }
+  return resolveChartColors(
+    dashboardPaletteId,
+    dashboardPaletteColors?.length ? [...dashboardPaletteColors] : undefined,
+  );
+}
+
+/** 合并图表配色 patch（继承时清除 override 字段） */
+export function patchChartPaletteDeStyle(
+  cfg: ChartViewConfig,
+  paletteId: string | undefined,
+  colors: readonly string[],
+): ChartViewConfig {
+  const prev = readChartDeStyle(cfg);
+  const nextDe: ChartDeStyle = { ...prev };
+  delete nextDe.seriesColor;
+
+  if (paletteId == null) {
+    delete nextDe.paletteId;
+    delete nextDe.paletteColors;
+    delete nextDe.paletteOpacity;
+  } else {
+    nextDe.paletteId = paletteId;
+    nextDe.paletteColors = [...colors];
+  }
+
+  return {
+    ...cfg,
+    nativeBody: {
+      ...cfg.nativeBody,
+      deStyle: nextDe,
+    },
+  };
+}
+
 /** 默认显示；组件 deStyle.title.show > 看板 titleStyle.show */
 export function readChartTitleVisible(
   cfg: ChartViewConfig | undefined,
@@ -372,11 +424,34 @@ export function readChartLegendVisible(
   return deStyle.legend?.show !== false;
 }
 
-/** 图例位置：未配置时默认底部 */
+/** 由 hAlign/vAlign 推导分区位置（与 chartLegendPresentation 一致，避免 position 字段陈旧） */
+function reconcileLegendPositionFromAlign(
+  legend: ChartLegendStyle,
+): NonNullable<ChartLegendStyle["position"]> {
+  const storedPos = legend.position;
+  if (legend.hAlign == null && legend.vAlign == null) {
+    return storedPos ?? DEFAULT_CHART_LEGEND_STYLE.position;
+  }
+  const h =
+    legend.hAlign ??
+    (storedPos === "left" ? "left" : storedPos === "right" ? "right" : "center");
+  const v =
+    legend.vAlign ??
+    (storedPos === "top" ? "top" : storedPos === "bottom" ? "bottom" : "middle");
+  if (v === "top") return "top";
+  if (v === "bottom") return "bottom";
+  if (h === "left") return "left";
+  if (h === "right") return "right";
+  return storedPos ?? DEFAULT_CHART_LEGEND_STYLE.position;
+}
+
+/** 图例位置：未配置时默认底部；hAlign/vAlign 与 position 不一致时以对齐推导为准 */
 export function readChartLegendPosition(
   deStyle: ChartDeStyle,
 ): NonNullable<ChartLegendStyle["position"]> {
-  return deStyle.legend?.position ?? DEFAULT_CHART_LEGEND_STYLE.position;
+  const legend = deStyle.legend;
+  if (!legend) return DEFAULT_CHART_LEGEND_STYLE.position;
+  return reconcileLegendPositionFromAlign(legend);
 }
 
 export function mergeChartTitleStyle(
@@ -520,6 +595,7 @@ export function stripChartPaletteOverrides(cfg: ChartViewConfig): ChartViewConfi
       tooltip.background !== undefined);
   const hasPaletteFields =
     de.paletteId != null ||
+    (de.paletteColors != null && de.paletteColors.length > 0) ||
     de.paletteOpacity != null ||
     de.seriesGradient != null ||
     de.depthVisual != null ||
@@ -530,6 +606,7 @@ export function stripChartPaletteOverrides(cfg: ChartViewConfig): ChartViewConfi
 
   const nextDe: ChartDeStyle = { ...de };
   delete nextDe.paletteId;
+  delete nextDe.paletteColors;
   delete nextDe.paletteOpacity;
   delete nextDe.seriesGradient;
   delete nextDe.depthVisual;
@@ -941,10 +1018,22 @@ export function mergeShapeInnerPresentation(shell: {
     shell.outer.backgroundLayer?.backgroundImage ||
       shell.innerBackgroundLayer?.backgroundImage,
   );
+  const decorBackgroundUrl = [
+    shell.outer.backgroundLayer?.backgroundImage,
+    shell.innerBackgroundLayer?.backgroundImage,
+  ]
+    .map((value) =>
+      parseWidgetBackgroundImageUrl(typeof value === "string" ? value : undefined),
+    )
+    .find((url) => isDecorativeWidgetBackgroundUrl(url ?? undefined));
   if (!hasShellBackground && !usesBackdropGlass && !usesBackgroundImageLayer) {
     shellStyle.backgroundColor = "var(--dashboard-widget-surface)";
-  } else if ((usesBackdropGlass || usesBackgroundImageLayer) && !hasShellBackground) {
+  } else if (
+    (usesBackdropGlass || usesBackgroundImageLayer) &&
+    (!hasShellBackground || Boolean(decorBackgroundUrl))
+  ) {
     shellStyle.backgroundColor = "transparent";
+    delete shellStyle.background;
   }
 
   const contentStyle: CSSProperties = { ...shell.inner };

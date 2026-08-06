@@ -50,7 +50,7 @@ describe("screenVisualAssets", () => {
     const widget = createScreenTitleBarWidget([]);
     expect(widget.type).toBe("text");
     expect(widget.title).toBe("标题条");
-    expect(widget.textConfig?.widgetStyle?.backgroundImage).toContain("title-strips");
+    expect(widget.textConfig?.widgetStyle?.backgroundImage).toContain("top-decor-clear");
     expect(isScreenTitleBarWidget(widget)).toBe(false);
     expect(resolveScreenWidgetLayerLabel(widget)).toBe("标题条");
   });

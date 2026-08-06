@@ -3,27 +3,21 @@
 from __future__ import annotations
 
 from app.ingestion.models import INGESTION_MAX_ROWS, SyncJob
+from app.ingestion.sync_table_ref import resolve_sync_schema_and_table
 from app.query.dialects import get_sql_dialect
 from app.query.dialects.base import SqlDialect
 from app.query.rls.guard import validate_identifier
 
 
 def qualify_sync_table(dialect: SqlDialect, job: SyncJob) -> str:
-    table = job.source_table
-    db = job.source_database or "default"
+    schema, table = resolve_sync_schema_and_table(job)
     dt = dialect.connector_type
     if dt == "sqlite":
         return dialect.quote_identifier(table)
     if dt == "trino":
-        validate_identifier(db)
-        return f'"{db}"."default".{dialect.quote_identifier(table)}'
-    if dt == "oracle":
-        schema = db or job.source_username
-        return dialect.qualify_table(schema, table)
-    if dt == "sqlserver":
-        schema = db or "dbo"
-        return dialect.qualify_table(schema, table)
-    return dialect.qualify_table(db, table)
+        validate_identifier(schema)
+        return f'"{schema}"."default".{dialect.quote_identifier(table)}'
+    return dialect.qualify_table(schema, table)
 
 
 def build_sync_select(job: SyncJob, dialect_type: str) -> tuple[str, tuple[object, ...]]:

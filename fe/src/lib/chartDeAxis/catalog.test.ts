@@ -117,9 +117,28 @@ describe("chartDeAxis catalog", () => {
   });
 
   it("chart-mix-dual-line includes extBubble dimension slot", () => {
-    const bubble = getDeAxisBlueprint("chart-mix-dual-line").find((s) => s.axisId === "extBubble");
+    const slots = getDeAxisBlueprint("chart-mix-dual-line");
+    expect(slots.map((s) => s.label)).toEqual([
+      "类别轴 / 维度",
+      "左子类别 / 维度",
+      "左值轴 / 线指标",
+      "右子类别 / 维度",
+      "右值轴 / 线指标",
+      "钻取 / 维度",
+    ]);
+    const bubble = slots.find((s) => s.axisId === "extBubble");
     expect(bubble?.label).toBe("右子类别 / 维度");
     expect(bubble?.fieldType).toBe("dimension");
+  });
+
+  it("chart-mix matches DataEase dual-axis slots (右子类别 on extBubble)", () => {
+    expect(getDeAxisBlueprint("chart-mix").map((s) => s.label)).toEqual([
+      "类别轴 / 维度",
+      "左值轴 / 柱指标",
+      "右子类别 / 维度",
+      "右值轴 / 线指标",
+      "钻取 / 维度",
+    ]);
   });
 
   it("DE parity matrix: every catalog entry has valid field types", () => {

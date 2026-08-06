@@ -5,6 +5,7 @@ from fastapi import FastAPI, Request
 from sqlalchemy import text
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.staticfiles import StaticFiles
 
 from app.api.v1 import api_v1_router
 from app.sample_api.router import router as sample_api_router
@@ -13,6 +14,7 @@ from app.auth.middleware import AuthMiddleware
 from app.core.config import get_settings
 from app.core.logging import configure_logging
 from app.core.nfr.runtime_guard import assert_runtime_compliant
+from app.core.template_assets import resolve_template_assets_dir, template_assets_mount_path
 from app.core.middleware import TraceIdMiddleware
 from app.core.middleware.https_audit_guard import HttpsAuditGuardMiddleware
 from app.reports.scheduler.jobs import get_report_scheduler, refresh_schedule_jobs
@@ -171,6 +173,19 @@ def health() -> dict[str, str]:
 
 app.include_router(sample_api_router)
 app.include_router(api_v1_router, prefix="/api/v1")
+
+
+def _mount_template_assets() -> None:
+    assets_dir = resolve_template_assets_dir()
+    if assets_dir is None:
+        logger.warning("template_assets_dir_missing")
+        return
+    mount_path = template_assets_mount_path(settings)
+    app.mount(mount_path, StaticFiles(directory=str(assets_dir)), name="template-assets")
+    logger.info("template_assets_mounted path=%s dir=%s", mount_path, assets_dir)
+
+
+_mount_template_assets()
 
 
 def _openapi() -> dict:

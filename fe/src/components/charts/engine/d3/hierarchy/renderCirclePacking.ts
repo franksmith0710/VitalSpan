@@ -4,6 +4,7 @@ import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { formatSimpleDataLabelLines } from "@/components/charts/engine/d3/core/cartesianDataLabel";
 import { setMultilineSvgLabel } from "@/components/charts/engine/d3/core/multilineLabel";
+import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { formatChartValue } from "@/lib/chartValueFormat";
 import {
   blurPackNode,
@@ -17,7 +18,7 @@ import {
   packNodeRadius,
   pickPackNodeAt,
   resolvePackEdgeInset,
-  resolvePackPlotCircle,
+  resolveScaledPackPlotCircle,
   stepPackMotionFrame,
   type PackPhysicsNode,
 } from "@/components/charts/engine/d3/hierarchy/circlePackingPhysics";
@@ -27,6 +28,30 @@ type TreeNode = { name: string; value?: number; children?: TreeNode[] };
 
 const PACK_PLOT_PAD = 4;
 const PACK_LAYOUT_PADDING_DEFAULT = 0;
+const PACK_LABEL_MIN_RADIUS_DEFAULT = 10;
+
+function resolveEffectivePackLabelMinRadius(
+  nodes: PackPhysicsNode[],
+  configured: number,
+  labelFontSize: number,
+): number {
+  if (nodes.length === 0) return configured;
+  const radii = nodes.map((n) => n.baseR);
+  const avgR = radii.reduce((sum, r) => sum + r, 0) / radii.length;
+  const adaptive = Math.max(labelFontSize * 0.75, avgR * 0.72);
+  return Math.min(configured, adaptive);
+}
+
+function resolvePackNodeLabelFontSize(radius: number, labelFontSize: number): number {
+  return Math.min(labelFontSize + 3, Math.max(labelFontSize, radius / 3.2));
+}
+
+function truncatePackLabelLine(text: string, diameter: number, fontSize: number): string {
+  const maxChars = Math.max(2, Math.floor((diameter * 0.82) / (fontSize * 0.52)));
+  const trimmed = text.trim();
+  if (trimmed.length <= maxChars) return trimmed;
+  return maxChars <= 2 ? trimmed.slice(0, maxChars) : `${trimmed.slice(0, maxChars - 1)}…`;
+}
 
 function positionTooltip(
   tooltip: d3.Selection<HTMLDivElement, unknown, null, undefined>,
@@ -52,18 +77,37 @@ function appendPackPlotChrome(
   innerW: number,
   innerH: number,
   theme: D3RenderConfig["theme"],
+  opts: {
+    showOuterRing?: boolean;
+    backgroundColor?: string;
+    plotRadiusScale?: number;
+  },
 ): string {
-  const { cx, cy, radius } = resolvePackPlotCircle(innerW, innerH);
+  const { cx, cy, radius } = resolveScaledPackPlotCircle(innerW, innerH, opts.plotRadiusScale ?? 1);
 
-  root
-    .append("circle")
-    .attr("class", "pack-plot-frame")
-    .attr("cx", cx)
-    .attr("cy", cy)
-    .attr("r", radius)
-    .attr("fill", "none")
-    .attr("stroke", theme.axisLabel)
-    .attr("stroke-opacity", 0.55);
+  if (opts.backgroundColor) {
+    const parsed = d3.color(opts.backgroundColor);
+    root
+      .append("circle")
+      .attr("class", "pack-plot-bg")
+      .attr("cx", cx)
+      .attr("cy", cy)
+      .attr("r", radius)
+      .attr("fill", parsed?.formatRgb() ?? opts.backgroundColor)
+      .attr("stroke", "none");
+  }
+
+  if (opts.showOuterRing !== false) {
+    root
+      .append("circle")
+      .attr("class", "pack-plot-frame")
+      .attr("cx", cx)
+      .attr("cy", cy)
+      .attr("r", radius)
+      .attr("fill", "none")
+      .attr("stroke", theme.axisLabel)
+      .attr("stroke-opacity", 0.55);
+  }
 
   const clipId = `vs-pack-clip-${Math.random().toString(36).slice(2, 9)}`;
   root
@@ -94,14 +138,34 @@ function packLeaves(
 
 export function renderD3CirclePackingChart(container: HTMLElement, config: D3RenderConfig): () => void {
   container.replaceChildren();
-  const { width, height, colors, theme, showLabel, showTooltip, valueFormat, labelContent, options, onPointClick, depthVisual, labelFontSize = 11 } =
-    config;
+  const {
+    width,
+    height,
+    colors,
+    theme,
+    showLabel,
+    showTooltip,
+    valueFormat,
+    labelContent,
+    options,
+    onPointClick,
+    depthVisual,
+    labelFontSize = 11,
+    labelColor,
+    renderTier,
+  } = config;
   const depthLevel = resolveEffectiveDepth(depthVisual);
   const data = (options.data as PackDatum[]) ?? [];
   const labelTotal = d3.sum(data, (d) => d.value ?? 0);
   const valueByName = new Map(data.map((d) => [d.name, d.value ?? 0]));
   const layoutPadding = Number(options.__circlePackingPadding ?? PACK_LAYOUT_PADDING_DEFAULT);
-  const labelMinRadius = Number(options.__circlePackingLabelMinRadius ?? 18);
+  const labelMinRadiusBase = Number(options.__circlePackingLabelMinRadius ?? PACK_LABEL_MIN_RADIUS_DEFAULT);
+  const labelMinRadius =
+    renderTier === "thumbnail" ? labelMinRadiusBase * 1.6 : labelMinRadiusBase;
+  const sizePercent = Number(options.__circlePackingSizePercent ?? 100) / 100;
+  const showOuterRing = options.__circlePackingShowOuterRing !== false;
+  const backgroundColor = options.__circlePackingBackgroundColor as string | undefined;
+  const plotRadiusScale = sizePercent;
   if (width <= 0 || height <= 0 || data.length === 0) return () => undefined;
 
   const innerW = Math.max(0, width - PACK_PLOT_PAD * 2);
@@ -114,7 +178,7 @@ export function renderD3CirclePackingChart(container: HTMLElement, config: D3Ren
   const avgR =
     rawLayout.length > 0 ? rawLayout.reduce((sum, d) => sum + d.r, 0) / rawLayout.length : maxR;
   const edgeMargin = resolvePackEdgeInset(avgR, strokeWidth);
-  const layout = fitPackLayoutToPlot(rawLayout, innerW, innerH, edgeMargin);
+  const layout = fitPackLayoutToPlot(rawLayout, innerW, innerH, edgeMargin, sizePercent);
 
   const colorScale = d3
     .scaleOrdinal<string>()
@@ -122,7 +186,13 @@ export function renderD3CirclePackingChart(container: HTMLElement, config: D3Ren
     .range(colors);
 
   const physicsNodes = createPackPhysicsNodes(layout);
-  const simulation = createPackPhysicsSimulation(physicsNodes, innerW, innerH, strokeWidth);
+  const effectiveLabelMinRadius = resolveEffectivePackLabelMinRadius(
+    physicsNodes,
+    labelMinRadius,
+    labelFontSize,
+  );
+  const labelFill = resolveLabelFill(theme, labelColor);
+  const simulation = createPackPhysicsSimulation(physicsNodes, innerW, innerH, strokeWidth, plotRadiusScale);
   simulation.alpha(0);
   simulation.alphaTarget(0);
 
@@ -140,7 +210,11 @@ export function renderD3CirclePackingChart(container: HTMLElement, config: D3Ren
     .style("touch-action", "none");
 
   const plot = svg.append("g").attr("transform", `translate(${PACK_PLOT_PAD},${PACK_PLOT_PAD})`);
-  const clipId = appendPackPlotChrome(plot, innerW, innerH, theme);
+  const clipId = appendPackPlotChrome(plot, innerW, innerH, theme, {
+    showOuterRing,
+    backgroundColor,
+    plotRadiusScale,
+  });
   const layer = plot.append("g").attr("clip-path", `url(#${clipId})`);
 
   const tooltip = showTooltip ? createTooltip(container, theme, config.tooltipPresentation) : null;
@@ -151,13 +225,35 @@ export function renderD3CirclePackingChart(container: HTMLElement, config: D3Ren
     .attr("class", "pack-node")
     .attr("transform", (d) => `translate(${d.x ?? d.targetX},${d.y ?? d.targetY})`);
 
+  groups
+    .append("circle")
+    .attr("r", (d) => packNodeRadius(d))
+    .attr("fill", (d) => colorScale(d.name) ?? colors[0] ?? "#465fff")
+    .attr("opacity", 0.92)
+    .attr("stroke", (d) => packCircleStroke(colorScale(d.name) ?? colors[0] ?? "#465fff", depthLevel))
+    .attr("stroke-opacity", 0.92)
+    .attr("stroke-width", strokeWidth)
+    .style("paint-order", depthLevel === "off" ? undefined : "stroke fill")
+    .style("cursor", "default")
+    .style("pointer-events", "all")
+    .on("pointerdown", (event, d) => {
+      event.stopPropagation();
+      beginHover(d);
+    })
+    .on("click", (event, d) => {
+      event.stopPropagation();
+      const packedNode = packed.find((item) => item.data.name === d.name);
+      onPointClick?.({ name: d.name, value: packedNode?.value ?? 0 } as D3Datum);
+    });
+
   const labels = showLabel
     ? groups
         .append("text")
         .attr("text-anchor", "middle")
         .attr("x", 0)
         .attr("y", 0)
-        .attr("fill", "#fff")
+        .attr("fill", labelFill)
+        .attr("fill-opacity", 1)
         .style("pointer-events", "none")
     : null;
 
@@ -166,12 +262,12 @@ export function renderD3CirclePackingChart(container: HTMLElement, config: D3Ren
     node: PackPhysicsNode,
   ) => {
     const r = packNodeRadius(node);
-    if (r <= labelMinRadius) {
+    if (r <= effectiveLabelMinRadius) {
       labelSel.selectAll("tspan").remove();
       labelSel.text("");
       return;
     }
-    const fs = Math.min(labelFontSize + 3, Math.max(9, r / 3));
+    const fs = resolvePackNodeLabelFontSize(r, labelFontSize);
     const lines = formatSimpleDataLabelLines(
       node.name,
       valueByName.get(node.name) ?? 0,
@@ -179,9 +275,11 @@ export function renderD3CirclePackingChart(container: HTMLElement, config: D3Ren
       labelContent,
       valueFormat,
     );
+    const diameter = r * 2;
+    const fittedLines = lines.map((line) => truncatePackLabelLine(line, diameter, fs));
     const maxLines = Math.max(1, Math.floor((r * 2) / Math.round(fs * 1.25)));
-    labelSel.style("font-size", `${fs}px`);
-    setMultilineSvgLabel(labelSel, lines.slice(0, maxLines), {
+    labelSel.style("font-size", `${fs}px`).attr("fill", labelFill).attr("fill-opacity", 1);
+    setMultilineSvgLabel(labelSel, fittedLines.slice(0, maxLines), {
       fontSize: fs,
       anchor: "middle",
       x: 0,
@@ -196,6 +294,7 @@ export function renderD3CirclePackingChart(container: HTMLElement, config: D3Ren
       labels.each(function (d) {
         refreshPackNodeLabel(d3.select(this), d);
       });
+      labels.raise();
     }
   };
 
@@ -214,6 +313,7 @@ export function renderD3CirclePackingChart(container: HTMLElement, config: D3Ren
       width: innerW,
       height: innerH,
       strokeWidth,
+      plotRadiusScale,
       interaction: hovered ? "hover" : "idle",
       dt,
     });
@@ -284,27 +384,6 @@ export function renderD3CirclePackingChart(container: HTMLElement, config: D3Ren
     }
   };
 
-  groups
-    .append("circle")
-    .attr("r", (d) => packNodeRadius(d))
-    .attr("fill", (d) => colorScale(d.name) ?? colors[0] ?? "#465fff")
-    .attr("opacity", 0.92)
-    .attr("stroke", (d) => packCircleStroke(colorScale(d.name) ?? colors[0] ?? "#465fff", depthLevel))
-    .attr("stroke-opacity", 0.92)
-    .attr("stroke-width", strokeWidth)
-    .style("paint-order", depthLevel === "off" ? undefined : "stroke fill")
-    .style("cursor", "default")
-    .style("pointer-events", "all")
-    .on("pointerdown", (event, d) => {
-      event.stopPropagation();
-      beginHover(d);
-    })
-    .on("click", (event, d) => {
-      event.stopPropagation();
-      const packedNode = packed.find((item) => item.data.name === d.name);
-      onPointClick?.({ name: d.name, value: packedNode?.value ?? 0 } as D3Datum);
-    });
-
   layer
     .style("pointer-events", "all")
     .on("pointermove", handlePointerMove)
@@ -324,7 +403,7 @@ export function renderD3CirclePackingChart(container: HTMLElement, config: D3Ren
       node.vx = 0;
       node.vy = 0;
     }
-    enforcePackBounds(physicsNodes, innerW, innerH, strokeWidth);
+    enforcePackBounds(physicsNodes, innerW, innerH, strokeWidth, plotRadiusScale);
     updateVisual();
   });
 

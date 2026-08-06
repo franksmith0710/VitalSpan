@@ -68,6 +68,7 @@
         "palette",
         "title",
         "label",
+        "tooltip",
         "gaugeShape"
       ]
     },
@@ -95,6 +96,7 @@
         "palette",
         "title",
         "label",
+        "tooltip",
         "liquidShape"
       ]
     },
@@ -628,7 +630,8 @@
         "palette",
         "title",
         "remark",
-        "label"
+        "label",
+        "tooltip"
       ]
     },
     {
@@ -689,7 +692,8 @@
         "palette",
         "title",
         "remark",
-        "label"
+        "label",
+        "tooltip"
       ]
     },
     {
@@ -718,7 +722,8 @@
         "palette",
         "title",
         "remark",
-        "label"
+        "label",
+        "tooltip"
       ]
     },
     {
@@ -748,7 +753,8 @@
         "palette",
         "title",
         "remark",
-        "label"
+        "label",
+        "tooltip"
       ]
     },
     {
@@ -773,7 +779,6 @@
       "sections": [
         "pieShape",
         "background",
-        "palette",
         "title",
         "remark",
         "legend",
@@ -803,7 +808,6 @@
       "sections": [
         "pieShape",
         "background",
-        "palette",
         "title",
         "remark",
         "legend",
@@ -833,7 +837,6 @@
       "sections": [
         "pieShape",
         "background",
-        "palette",
         "title",
         "remark",
         "legend",
@@ -863,7 +866,6 @@
       "sections": [
         "pieShape",
         "background",
-        "palette",
         "title",
         "remark",
         "legend",
@@ -896,6 +898,7 @@
         "title",
         "remark",
         "label",
+        "tooltip",
         "radarShape"
       ]
     },
@@ -924,6 +927,7 @@
         "title",
         "remark",
         "label",
+        "tooltip",
         "treemapShape"
       ]
     },
@@ -950,7 +954,8 @@
         "background",
         "palette",
         "title",
-        "wordCloudShape"
+        "wordCloudShape",
+        "tooltip"
       ]
     },
     {
@@ -977,7 +982,8 @@
         "mapBasic",
         "title",
         "geo",
-        "remark"
+        "remark",
+        "tooltip"
       ]
     },
     {
@@ -1003,7 +1009,8 @@
         "background",
         "title",
         "geo",
-        "remark"
+        "remark",
+        "tooltip"
       ]
     },
     {
@@ -1093,6 +1100,8 @@
         "palette",
         "title",
         "legend",
+        "label",
+        "tooltip",
         "funnelShape"
       ]
     },
@@ -1119,7 +1128,8 @@
         "background",
         "palette",
         "title",
-        "sankeyShape"
+        "sankeyShape",
+        "tooltip"
       ]
     },
     {
@@ -1146,6 +1156,7 @@
         "palette",
         "title",
         "label",
+        "tooltip",
         "circlePackingShape"
       ]
     },
@@ -1205,6 +1216,7 @@
         "palette",
         "title",
         "label",
+        "tooltip",
         "graphShape"
       ]
     },
@@ -1344,24 +1356,24 @@
     {
       "id": "gauge",
       "category": "chart",
-      "styleSections": "variantBasic → background → palette → title → label → gaugeShape",
+      "styleSections": "variantBasic → background → palette → title → label → tooltip → gaugeShape",
       "inspectorCaps": "label, remark",
       "d3Matrix": "legend:missing; label:wired; dataZoom:missing; markLines:missing; conditional:missing",
       "paletteOpacity": "hidden",
       "seriesGradient": "hidden",
       "knownGaps": "paletteOpacity UI 已门控隐藏",
-      "status": "ok"
+      "status": "p0-fixed"
     },
     {
       "id": "liquid",
       "category": "chart",
-      "styleSections": "background → palette → title → label → liquidShape",
+      "styleSections": "background → palette → title → label → tooltip → liquidShape",
       "inspectorCaps": "label, remark",
       "d3Matrix": "legend:missing; label:wired; dataZoom:missing; markLines:missing; conditional:missing",
       "paletteOpacity": "hidden",
       "seriesGradient": "hidden",
       "knownGaps": "paletteOpacity UI 已门控隐藏",
-      "status": "ok"
+      "status": "p0-fixed"
     },
     {
       "id": "kpi",
@@ -1579,13 +1591,13 @@
     {
       "id": "bar-range",
       "category": "chart",
-      "styleSections": "axis → cartesianShape → background → palette → title → remark → label",
+      "styleSections": "axis → cartesianShape → background → palette → title → remark → label → tooltip",
       "inspectorCaps": "label, remark",
       "d3Matrix": "legend:missing; label:wired; dataZoom:missing; markLines:missing; conditional:missing",
       "paletteOpacity": "hidden",
       "seriesGradient": "hidden",
       "knownGaps": "paletteOpacity UI 已门控隐藏",
-      "status": "ok"
+      "status": "p0-fixed"
     },
     {
       "id": "bidirectional-bar",
@@ -1601,18 +1613,18 @@
     {
       "id": "progress-bar",
       "category": "chart",
-      "styleSections": "axis → cartesianShape → progressBarShape → background → palette → title → remark → label",
+      "styleSections": "axis → cartesianShape → progressBarShape → background → palette → title → remark → label → tooltip",
       "inspectorCaps": "label, remark",
       "d3Matrix": "legend:missing; label:wired; dataZoom:missing; markLines:missing; conditional:missing",
       "paletteOpacity": "hidden",
       "seriesGradient": "hidden",
       "knownGaps": "paletteOpacity UI 已门控隐藏",
-      "status": "ok"
+      "status": "p0-fixed"
     },
     {
       "id": "stock-line",
       "category": "chart",
-      "styleSections": "axis → stockLineShape → background → palette → title → remark → label",
+      "styleSections": "axis → stockLineShape → background → palette → title → remark → label → tooltip",
       "inspectorCaps": "label, remark",
       "d3Matrix": "legend:missing; label:wired; dataZoom:missing; markLines:missing; conditional:missing",
       "paletteOpacity": "hidden",
@@ -1623,97 +1635,97 @@
     {
       "id": "bullet-graph",
       "category": "chart",
-      "styleSections": "axis → cartesianShape → bulletShape → background → palette → title → remark → label",
+      "styleSections": "axis → cartesianShape → bulletShape → background → palette → title → remark → label → tooltip",
       "inspectorCaps": "label, remark",
       "d3Matrix": "legend:missing; label:wired; dataZoom:missing; markLines:missing; conditional:missing",
       "paletteOpacity": "hidden",
       "seriesGradient": "hidden",
       "knownGaps": "paletteOpacity UI 已门控隐藏",
-      "status": "ok"
+      "status": "p0-fixed"
     },
     {
       "id": "pie",
       "category": "chart",
-      "styleSections": "pieShape → background → palette → title → remark → legend → label → tooltip",
+      "styleSections": "pieShape → background → title → remark → legend → label → tooltip",
       "inspectorCaps": "legend, label, conditional, remark",
       "d3Matrix": "legend:wired; label:wired; dataZoom:missing; markLines:missing; conditional:wired",
-      "paletteOpacity": "hidden",
+      "paletteOpacity": "n/a",
       "seriesGradient": "hidden",
-      "knownGaps": "seriesGradient 未接线（P0 已隐藏 UI）; paletteOpacity UI 已门控隐藏",
+      "knownGaps": "seriesGradient 未接线（P0 已隐藏 UI）",
       "status": "p1-backlog"
     },
     {
       "id": "pie-donut",
       "category": "chart",
-      "styleSections": "pieShape → background → palette → title → remark → legend → label → tooltip",
+      "styleSections": "pieShape → background → title → remark → legend → label → tooltip",
       "inspectorCaps": "legend, label, conditional, remark",
       "d3Matrix": "legend:wired; label:wired; dataZoom:missing; markLines:missing; conditional:wired",
-      "paletteOpacity": "hidden",
+      "paletteOpacity": "n/a",
       "seriesGradient": "hidden",
-      "knownGaps": "paletteOpacity UI 已门控隐藏",
+      "knownGaps": "—",
       "status": "p0-fixed"
     },
     {
       "id": "pie-rose",
       "category": "chart",
-      "styleSections": "pieShape → background → palette → title → remark → legend → label → tooltip",
+      "styleSections": "pieShape → background → title → remark → legend → label → tooltip",
       "inspectorCaps": "legend, label, conditional, remark",
       "d3Matrix": "legend:wired; label:wired; dataZoom:missing; markLines:missing; conditional:wired",
-      "paletteOpacity": "hidden",
+      "paletteOpacity": "n/a",
       "seriesGradient": "hidden",
-      "knownGaps": "paletteOpacity UI 已门控隐藏",
+      "knownGaps": "—",
       "status": "p0-fixed"
     },
     {
       "id": "pie-donut-rose",
       "category": "chart",
-      "styleSections": "pieShape → background → palette → title → remark → legend → label → tooltip",
+      "styleSections": "pieShape → background → title → remark → legend → label → tooltip",
       "inspectorCaps": "legend, label, conditional, remark",
       "d3Matrix": "legend:wired; label:wired; dataZoom:missing; markLines:missing; conditional:wired",
+      "paletteOpacity": "n/a",
+      "seriesGradient": "hidden",
+      "knownGaps": "—",
+      "status": "p0-fixed"
+    },
+    {
+      "id": "radar",
+      "category": "chart",
+      "styleSections": "background → palette → title → remark → label → tooltip → radarShape",
+      "inspectorCaps": "label, conditional, remark",
+      "d3Matrix": "legend:missing; label:wired; dataZoom:missing; markLines:missing; conditional:wired",
       "paletteOpacity": "hidden",
       "seriesGradient": "hidden",
       "knownGaps": "paletteOpacity UI 已门控隐藏",
       "status": "p0-fixed"
     },
     {
-      "id": "radar",
-      "category": "chart",
-      "styleSections": "background → palette → title → remark → label → radarShape",
-      "inspectorCaps": "label, conditional, remark",
-      "d3Matrix": "legend:missing; label:wired; dataZoom:missing; markLines:missing; conditional:wired",
-      "paletteOpacity": "hidden",
-      "seriesGradient": "hidden",
-      "knownGaps": "paletteOpacity UI 已门控隐藏",
-      "status": "ok"
-    },
-    {
       "id": "treemap",
       "category": "chart",
-      "styleSections": "background → palette → title → remark → label → treemapShape",
+      "styleSections": "background → palette → title → remark → label → tooltip → treemapShape",
       "inspectorCaps": "label, conditional, remark",
       "d3Matrix": "legend:missing; label:wired; dataZoom:missing; markLines:missing; conditional:wired",
       "paletteOpacity": "hidden",
       "seriesGradient": "hidden",
       "knownGaps": "paletteOpacity UI 已门控隐藏",
-      "status": "ok"
+      "status": "p0-fixed"
     },
     {
       "id": "word-cloud",
       "category": "chart",
-      "styleSections": "background → palette → title → wordCloudShape",
+      "styleSections": "background → palette → title → wordCloudShape → tooltip",
       "inspectorCaps": "remark",
       "d3Matrix": "legend:missing; label:missing; dataZoom:missing; markLines:missing; conditional:missing",
       "paletteOpacity": "hidden",
       "seriesGradient": "hidden",
       "knownGaps": "paletteOpacity UI 已门控隐藏",
-      "status": "ok"
+      "status": "p0-fixed"
     },
     {
       "id": "wordCloud",
       "category": "chart",
       "deprecated": true,
       "migratesTo": "word-cloud",
-      "styleSections": "background → palette → title → wordCloudShape",
+      "styleSections": "background → palette → title → wordCloudShape → tooltip",
       "inspectorCaps": "remark",
       "d3Matrix": "legend:missing; label:missing; dataZoom:missing; markLines:missing; conditional:missing",
       "paletteOpacity": "hidden",
@@ -1724,7 +1736,7 @@
     {
       "id": "map",
       "category": "chart",
-      "styleSections": "background → mapBasic → title → geo → remark",
+      "styleSections": "background → mapBasic → title → geo → remark → tooltip",
       "inspectorCaps": "label, remark",
       "d3Matrix": "legend:missing; label:wired; dataZoom:missing; markLines:missing; conditional:missing",
       "paletteOpacity": "wired",
@@ -1735,26 +1747,26 @@
     {
       "id": "map-3d",
       "category": "chart",
-      "styleSections": "background → title → geo → remark",
+      "styleSections": "background → title → geo → remark → tooltip",
       "inspectorCaps": "label, remark",
       "d3Matrix": "legend:missing; label:missing; dataZoom:missing; markLines:missing; conditional:missing",
       "paletteOpacity": "hidden",
       "seriesGradient": "hidden",
       "knownGaps": "—",
-      "status": "ok"
+      "status": "p0-fixed"
     },
     {
       "id": "heatmap",
       "category": "chart",
       "deprecated": true,
       "migratesTo": "t-heatmap",
-      "styleSections": "background → palette → title",
+      "styleSections": "background → palette → title → tooltip",
       "inspectorCaps": "label, remark",
       "d3Matrix": "plugin-default",
       "paletteOpacity": "hidden",
       "seriesGradient": "hidden",
       "knownGaps": "deprecated→t-heatmap; paletteOpacity UI 已门控隐藏",
-      "status": "ok"
+      "status": "p0-fixed"
     },
     {
       "id": "scatter",
@@ -1781,7 +1793,7 @@
     {
       "id": "funnel",
       "category": "chart",
-      "styleSections": "background → palette → title → legend → funnelShape",
+      "styleSections": "background → palette → title → legend → label → tooltip → funnelShape",
       "inspectorCaps": "legend, label, conditional, remark",
       "d3Matrix": "legend:wired; label:wired; dataZoom:missing; markLines:missing; conditional:wired",
       "paletteOpacity": "hidden",
@@ -1792,7 +1804,7 @@
     {
       "id": "sankey",
       "category": "chart",
-      "styleSections": "background → palette → title → sankeyShape",
+      "styleSections": "background → palette → title → sankeyShape → tooltip",
       "inspectorCaps": "remark",
       "d3Matrix": "legend:missing; label:missing; dataZoom:missing; markLines:missing; conditional:missing",
       "paletteOpacity": "hidden",
@@ -1803,13 +1815,13 @@
     {
       "id": "circle-packing",
       "category": "chart",
-      "styleSections": "background → palette → title → label → circlePackingShape",
+      "styleSections": "background → palette → title → label → tooltip → circlePackingShape",
       "inspectorCaps": "label, remark",
       "d3Matrix": "legend:missing; label:wired; dataZoom:missing; markLines:missing; conditional:missing",
       "paletteOpacity": "hidden",
       "seriesGradient": "hidden",
       "knownGaps": "paletteOpacity UI 已门控隐藏",
-      "status": "ok"
+      "status": "p0-fixed"
     },
     {
       "id": "multi-scatter",
@@ -1825,7 +1837,7 @@
     {
       "id": "graph",
       "category": "chart",
-      "styleSections": "variantBasic → background → palette → title → label → graphShape",
+      "styleSections": "variantBasic → background → palette → title → label → tooltip → graphShape",
       "inspectorCaps": "label, remark",
       "d3Matrix": "legend:missing; label:wired; dataZoom:missing; markLines:missing; conditional:missing",
       "paletteOpacity": "hidden",

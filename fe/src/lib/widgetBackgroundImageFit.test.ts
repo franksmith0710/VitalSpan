@@ -14,12 +14,27 @@ describe("widgetBackgroundImageFit", () => {
     });
   });
 
-  it("maps widthFit to 100% auto and top center default", () => {
+  it("maps widthFit to 100% auto and center default", () => {
     expect(
       resolveWidgetBackgroundImageLayerStyle({ backgroundImageFit: "widthFit" }),
     ).toEqual({
       backgroundSize: "100% auto",
-      backgroundPosition: "center top",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
+    });
+  });
+
+  it("keeps decor contain as contain layer style", () => {
+    expect(
+      resolveWidgetBackgroundImageLayerStyle({
+        backgroundImage:
+          "/template-assets/packs/borderless-decor-v1/items/decor-arc-top-orange.svg",
+        backgroundImageFit: "contain",
+        backgroundImagePosition: "top center",
+      }),
+    ).toEqual({
+      backgroundSize: "contain",
+      backgroundPosition: "top center",
       backgroundRepeat: "no-repeat",
     });
   });
@@ -36,14 +51,14 @@ describe("widgetBackgroundImageFit", () => {
     });
   });
 
-  it("infers widthFit for borderless decor and screen headers", () => {
+  it("infers widthFit center for borderless decor and screen headers", () => {
     expect(
       inferDefaultBackgroundImageFitForUrl(
         "/template-assets/packs/borderless-decor-v1/items/decor-bow-deep-cyan.svg",
       ),
     ).toEqual({
       backgroundImageFit: "widthFit",
-      backgroundImagePosition: "top center",
+      backgroundImagePosition: "center",
     });
     expect(
       inferDefaultBackgroundImageFitForUrl(
@@ -51,7 +66,7 @@ describe("widgetBackgroundImageFit", () => {
       ),
     ).toEqual({
       backgroundImageFit: "widthFit",
-      backgroundImagePosition: "top center",
+      backgroundImagePosition: "center",
     });
     expect(inferDefaultBackgroundImageFitForUrl("https://example.com/bg.png")).toBeNull();
   });

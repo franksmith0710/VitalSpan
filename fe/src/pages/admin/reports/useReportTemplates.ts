@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
-import { normalizeCatalogNodes } from "@/lib/reportCatalogUtils";
+import { invalidateCatalogQueries } from "@/lib/catalogQueryInvalidation";
+import { fetchAllCatalogNodes, normalizeCatalogNodes } from "@/lib/reportCatalogUtils";
+import { provisionCatalogTemplate, type TemplateKind } from "@/lib/reportCatalogProvision";
 import { queryKeys } from "@/lib/queryKeys";
 
 export type CatalogNode = {
@@ -59,7 +61,28 @@ export function useReportTemplates(parentId: string | null = null, templateKey: 
         method: "POST",
         body: JSON.stringify(body),
       }),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["reports", "catalogNodes"] }),
+    onSuccess: () => invalidateCatalogQueries(qc),
+  });
+
+  const createTemplateNode = useMutation({
+    mutationFn: (input: { name: string; parentId: string | null; templateKind: TemplateKind }) =>
+      provisionCatalogTemplate(input),
+    onSuccess: () => invalidateCatalogQueries(qc),
+  });
+
+  const updateNode = useMutation({
+    mutationFn: ({ id, body }: { id: string; body: { name?: string } }) =>
+      apiFetch<CatalogNode>(`/api/v1/reports/catalog/nodes/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      }),
+    onSuccess: () => invalidateCatalogQueries(qc),
+  });
+
+  const deleteNode = useMutation({
+    mutationFn: (id: string) =>
+      apiFetch<void>(`/api/v1/reports/catalog/nodes/${id}`, { method: "DELETE" }),
+    onSuccess: () => invalidateCatalogQueries(qc),
   });
 
   const moveNode = useMutation({
@@ -68,7 +91,7 @@ export function useReportTemplates(parentId: string | null = null, templateKey: 
         method: "POST",
         body: JSON.stringify({ parentId: pid }),
       }),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["reports", "catalogNodes"] }),
+    onSuccess: () => invalidateCatalogQueries(qc),
   });
 
   const saveExtension = useMutation({
@@ -96,7 +119,26 @@ export function useReportTemplates(parentId: string | null = null, templateKey: 
     onSuccess: (_d, v) => void qc.invalidateQueries({ queryKey: queryKeys.reports.template(v.templateKey) }),
   });
 
-  return { nodesQuery, createNode, moveNode, saveExtension, templateQuery, saveTemplate };
+  return {
+    nodesQuery,
+    createNode,
+    createTemplateNode,
+    updateNode,
+    deleteNode,
+    moveNode,
+    saveExtension,
+    templateQuery,
+    saveTemplate,
+  };
+}
+
+export function useCatalogNode(nodeId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.reports.catalogNode(nodeId ?? ""),
+    queryFn: () => apiFetch<CatalogNode>(`/api/v1/reports/catalog/nodes/${nodeId}`),
+    enabled: Boolean(nodeId),
+    retry: false,
+  });
 }
 
 export function useCatalogExtension(nodeId: string | null) {
@@ -112,6 +154,14 @@ export function useCatalogExtension(nodeId: string | null) {
       }>(`/api/v1/reports/catalog/nodes/${nodeId}/extension`),
     enabled: Boolean(nodeId),
     retry: false,
+  });
+}
+
+export function useAllCatalogNodes(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.reports.catalogAllNodes,
+    queryFn: fetchAllCatalogNodes,
+    enabled,
   });
 }
 

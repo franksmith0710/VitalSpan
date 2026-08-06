@@ -189,6 +189,11 @@ const CODE_MESSAGES: Record<string, string> = {
   RPT_PREFAB_FORBIDDEN: "无权操作预制报表绑定",
   RPT_PREFAB_ENTITY_NOT_READY: "实体物理表尚未就绪，无法运行预制分析",
   RPT_EXT_FORBIDDEN: "无权修改报表扩展",
+  RPT_CATALOG_HAS_CHILDREN: "请先删除文件夹内的子项",
+  RPT_CATALOG_FORBIDDEN: "无权操作报表目录",
+  RPT_CATALOG_NODE_NOT_FOUND: "目录节点不存在",
+  RPT_CATALOG_MAX_DEPTH: "目录层级过深（最多 8 层）",
+  RPT_CATALOG_CYCLE: "不能将节点移动到自身或其子目录下",
   AUDIT_FORBIDDEN: "无权查询审计日志",
   CONFIG_NOT_FOUND: "查询配置不存在",
 };
@@ -234,6 +239,7 @@ const EXACT_MESSAGE_MAP: Record<string, string> = {
 };
 
 const MESSAGE_PREFIX_MAP: Array<[RegExp, string]> = [
+  [/^relation ".*" does not exist/i, "源表不存在，请检查 Schema 与表名是否正确"],
   [/^templateKey not found:/i, "报表模板不存在"],
   [/^tableFqn not found:/i, "物理表不存在"],
   [/^Dimension not found:/i, "维度不存在"],

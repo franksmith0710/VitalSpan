@@ -452,6 +452,7 @@ redoc: /redoc
 | source | SourceConnection | inline 时 ✓ | 见下表 |
 | source_data_source_id | uuid | datasource 时 ✓ | 已登记 MySQL 数据源 |
 | source_table | string | datasource 时 ✓ | 源表名 |
+| source_schema | string | — | PostgreSQL/TimescaleDB 等 PG 系源 schema；`database` 为库名，**不**作 schema。未传时 PG 系默认 `public` |
 | sync_mode | `full` \| `incremental` | — | 默认 `full` |
 | primary_key | string | 增量时 ✓ | 单列主键 |
 | incremental_column | string | 增量时 ✓ | 水位列 |
@@ -501,6 +502,7 @@ redoc: /redoc
   "source_mode": "datasource",
   "source_data_source_id": "550e8400-e29b-41d4-a716-446655440000",
   "source_table": "dirty_orders",
+  "source_schema": "public",
   "target_table": "orders_clean",
   "sync_mode": "incremental",
   "primary_key": "id",

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import {
@@ -26,6 +26,8 @@ type SyncSourceTableSelectProps = {
   dataSourceId: string;
   sourceType?: string;
   database?: string;
+  sourceSchema: string;
+  onSourceSchemaChange: (value: string) => void;
   value: string;
   onChange: (value: string) => void;
 };
@@ -67,6 +69,8 @@ export function SyncSourceTableSelect({
   dataSourceId,
   sourceType,
   database,
+  sourceSchema,
+  onSourceSchemaChange,
   value,
   onChange,
 }: SyncSourceTableSelectProps) {
@@ -82,11 +86,27 @@ export function SyncSourceTableSelect({
     staleTime: 60_000,
   });
 
-  const schema = useMemo(() => {
+  const resolvedSchema = useMemo(() => {
     if (!pickerEnabled) return "";
+    if (sourceSchema.trim()) return sourceSchema.trim();
     const names = (schemasQuery.data?.items ?? []).map((item) => item.name);
-    return resolveSyncSourceSchema(names, database);
-  }, [database, pickerEnabled, schemasQuery.data?.items]);
+    return resolveSyncSourceSchema(names, database, sourceType);
+  }, [database, pickerEnabled, schemasQuery.data?.items, sourceSchema, sourceType]);
+
+  useEffect(() => {
+    if (!pickerEnabled || !resolvedSchema || resolvedSchema === sourceSchema.trim()) return;
+    if (!sourceSchema.trim() && schemasQuery.isSuccess) {
+      onSourceSchemaChange(resolvedSchema);
+    }
+  }, [
+    onSourceSchemaChange,
+    pickerEnabled,
+    resolvedSchema,
+    schemasQuery.isSuccess,
+    sourceSchema,
+  ]);
+
+  const schema = resolvedSchema;
 
   const tablesQuery = useQuery({
     queryKey: queryKeys.datasources.tables(dataSourceId, schema),

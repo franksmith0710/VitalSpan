@@ -88,6 +88,7 @@ type ImagePreviewCardProps = {
   onReplace: () => void;
   onClear?: () => void;
   allowClear?: boolean;
+  showReplace?: boolean;
   objectFit?: "cover" | "contain";
 };
 
@@ -97,6 +98,7 @@ export function ImagePreviewCard({
   onReplace,
   onClear,
   allowClear = true,
+  showReplace = true,
   objectFit = "cover",
 }: ImagePreviewCardProps) {
   return (
@@ -118,16 +120,18 @@ export function ImagePreviewCard({
         <p className="min-w-0 flex-1 truncate text-[10px] text-gray-500 dark:text-gray-400">
           {caption ?? "已设置图片"}
         </p>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-7 shrink-0 gap-1 px-2 text-[10px]"
-          onClick={onReplace}
-        >
-          <ImagePlus className="size-3" aria-hidden />
-          替换
-        </Button>
+        {showReplace ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-7 shrink-0 gap-1 px-2 text-[10px]"
+            onClick={onReplace}
+          >
+            <ImagePlus className="size-3" aria-hidden />
+            替换
+          </Button>
+        ) : null}
         {allowClear && onClear ? (
           <Button
             type="button"

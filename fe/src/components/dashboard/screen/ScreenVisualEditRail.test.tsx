@@ -29,6 +29,42 @@ describe("ScreenVisualEditRail", () => {
     expect(screen.getByTestId("border-variant-select")).toBeInTheDocument();
   });
 
+  it("renders widget shell background section for clock", () => {
+    const clockWidget = asTextWidget({
+      id: "clock-1",
+      type: "text",
+      title: "时钟",
+      colSpan: 6,
+      rowSpan: 1,
+      order: 0,
+      textConfig: { content: SCREEN_CLOCK_MARKER, variant: "plain" },
+    });
+    render(<ScreenVisualEditRail widget={clockWidget} />);
+    expect(screen.getByRole("button", { name: "背景" })).toBeInTheDocument();
+  });
+
+  it("updates widget shell background from style panel", async () => {
+    const user = userEvent.setup();
+    const onTextConfigChange = vi.fn();
+    const clockWidget = asTextWidget({
+      id: "clock-1",
+      type: "text",
+      title: "时钟",
+      colSpan: 6,
+      rowSpan: 1,
+      order: 0,
+      textConfig: { content: SCREEN_CLOCK_MARKER, variant: "plain" },
+    });
+
+    render(
+      <ScreenVisualEditRail widget={clockWidget} onTextConfigChange={onTextConfigChange} />,
+    );
+
+    await user.click(screen.getByRole("switch", { name: "启用背景" }));
+    const lastCall = onTextConfigChange.mock.calls.at(-1)?.[0];
+    expect(lastCall?.widgetStyle?.backgroundShow).toBe(false);
+  });
+
   it("updates clock style from style panel", async () => {
     const user = userEvent.setup();
     const onTextConfigChange = vi.fn();

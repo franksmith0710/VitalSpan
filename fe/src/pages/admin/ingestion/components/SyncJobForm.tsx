@@ -58,6 +58,7 @@ export type LegacyInlineSource = {
 export type JobFormState = {
   name: string;
   sourceDataSourceId: string;
+  sourceSchema: string;
   table: string;
   target_table: string;
   syncMode: SyncMode;
@@ -277,6 +278,8 @@ export function SyncJobForm({
             dataSourceId={form.sourceDataSourceId}
             sourceType={selectedDatasource?.type}
             database={selectedDatasource?.database}
+            sourceSchema={form.sourceSchema}
+            onSourceSchemaChange={(value) => onChange("sourceSchema", value)}
             value={form.table}
             onChange={(value) => onChange("table", value)}
           />

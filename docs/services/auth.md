@@ -44,7 +44,7 @@
 | 符号 | 说明 | PRD | 状态 |
 |------|------|-----|------|
 | `AuthMiddleware` | ASGI 中间件；`main.py` 注册 | BOOT-003 | M1 骨架 |
-| `PUBLIC_PATHS` | `/health`、`/docs`、`/redoc`、`/openapi.json` 豁免 | BOOT-003 | M1 骨架 |
+| `PUBLIC_PATHS` | `/health`、`/docs`、`/redoc`、`/openapi.json` 豁免；`/template-assets` 前缀为内置素材静态资源（免鉴权） | BOOT-003 | M1 骨架 |
 | `get_current_user` | `auth/deps.py`；handler 依赖注入 | BOOT-003 | M1 骨架 |
 | `GET /api/v1/me` | `api/v1/me.py`；`get_current_user` 注入 `UserContext` | BOOT-003 | M1 骨架 |
 | `profile/service.py` | 资料更新与 `change_password` 域逻辑 | 实现追溯 | 已实现 |

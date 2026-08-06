@@ -4,8 +4,7 @@ import { Switch } from "@/components/ui/switch";
 import { DeAttrField, DeAttrForm } from "./dashboardInspectorUi";
 import { INSPECTOR_SWITCH_SIZE } from "./inspectorCompact";
 import { ColorField } from "@/components/ui/color-field";
-import { ImageSourceField } from "./imageSourceField";
-import { isImageSourceValue } from "./imageSourceUtils";
+import { WidgetBackgroundImagePicker } from "./WidgetBackgroundImagePicker";
 import {
   CANVAS_BG_RECOMMENDED,
   SURFACE_COLOR_RECOMMENDED,
@@ -25,14 +24,13 @@ type PatchFn = (patch: DashboardStylePatch) => void;
 type DashboardCanvasBackgroundPanelProps = {
   styleConfig: DashboardStyleConfig;
   patchStyle: PatchFn;
-  /** 数据大屏像素画布：素材库含顶部装饰与顶栏整图 */
+  /** @deprecated 素材库已与组件底图统一，不再按布局区分 */
   isPixelLayout?: boolean;
 };
 
 export function DashboardCanvasBackgroundPanel({
   styleConfig,
   patchStyle,
-  isPixelLayout = false,
 }: DashboardCanvasBackgroundPanelProps) {
   const hasCustomImage = Boolean(styleConfig.canvasBackgroundImage?.trim());
   const [customImageEnabled, setCustomImageEnabled] = useState(
@@ -45,8 +43,6 @@ export function DashboardCanvasBackgroundPanel({
       ? styleConfig.canvasBackground.trim()
       : undefined;
   const imageUrl = styleConfig.canvasBackgroundImage ?? "";
-  const previewUrl = imageUrl.trim();
-  const imageInvalid = previewUrl.length > 0 && !isImageSourceValue(previewUrl);
 
   const commitImageUrl = (next: string) => {
     const trimmed = next.trim();
@@ -54,6 +50,12 @@ export function DashboardCanvasBackgroundPanel({
       canvasBackgroundImage: trimmed || undefined,
       canvasBackgroundCustom: Boolean(trimmed),
       canvasDecorPresetId: trimmed ? "custom" : undefined,
+      ...(trimmed
+        ? {}
+        : {
+            canvasBackgroundImageFit: undefined,
+            canvasBackgroundImagePosition: undefined,
+          }),
     });
   };
 
@@ -133,21 +135,29 @@ export function DashboardCanvasBackgroundPanel({
             />
           </div>
           {customImageEnabled ? (
-            <>
-              <ImageSourceField
-                variant="rail"
-                showPreview
-                assetGallery
-                assetGalleryScope={isPixelLayout ? "screen" : "canvas"}
-                value={imageUrl}
-                onChange={(next) => commitImageUrl(next ?? "")}
-              />
-              {imageInvalid ? (
-                <p className="text-theme-xs text-error-600 dark:text-error-400" role="alert">
-                  请输入有效的图片链接，或选择本地图片文件
-                </p>
-              ) : null}
-            </>
+            <WidgetBackgroundImagePicker
+              value={{
+                backgroundImage: imageUrl,
+                backgroundImageFit: styleConfig.canvasBackgroundImageFit,
+                backgroundImagePosition: styleConfig.canvasBackgroundImagePosition,
+              }}
+              onChange={(patch) => {
+                if ("backgroundImage" in patch) {
+                  commitImageUrl(patch.backgroundImage ?? "");
+                  return;
+                }
+                const fitPatch: DashboardStylePatch = {};
+                if ("backgroundImageFit" in patch) {
+                  fitPatch.canvasBackgroundImageFit = patch.backgroundImageFit;
+                }
+                if ("backgroundImagePosition" in patch) {
+                  fitPatch.canvasBackgroundImagePosition = patch.backgroundImagePosition;
+                }
+                if (Object.keys(fitPatch).length > 0) {
+                  patchStyle(fitPatch);
+                }
+              }}
+            />
           ) : null}
         </div>
       </DeAttrField>

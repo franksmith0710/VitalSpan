@@ -33,6 +33,44 @@ import { mergeWidgetShellStyle } from "./dashboardStyleConfig";
 import { resolveWidgetEffectiveScheme } from "@/lib/chartSurfaceTheme";
 import { resolveLegacyTitleBarWidgetStyle } from "@/lib/screenTitleBarAssets";
 import { cn } from "@/lib/utils";
+import type { ReactNode } from "react";
+import type { ShapePresentationLayers } from "@/lib/chartDeStyle";
+import {
+  WidgetShellBackgroundLayers,
+  WidgetShellFrameLayers,
+} from "./WidgetShellPresentationLayers";
+
+export function toWidgetShellLayers(
+  shell: ReturnType<typeof mergeWidgetShellStyle>,
+): ShapePresentationLayers {
+  return {
+    style: {},
+    backgroundLayers: [shell.backgroundLayer],
+    frameLayers: [shell.frameLayer ?? null],
+  };
+}
+
+/** 栅格看板组件外壳：底色 + 底图/装饰图层 + 装饰边框 */
+export function GridWidgetShellFrame({
+  shell,
+  widgetId,
+  className,
+  children,
+}: {
+  shell: ReturnType<typeof mergeWidgetShellStyle>;
+  widgetId: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  const layers = toWidgetShellLayers(shell);
+  return (
+    <div className={cn("relative flex h-full min-h-0 flex-col", className)} style={shell.style}>
+      <WidgetShellBackgroundLayers layers={layers} prefix={`grid-${widgetId}`} />
+      <div className="relative z-[1] flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>
+      <WidgetShellFrameLayers layers={layers} prefix={`grid-${widgetId}`} zClassName="z-[2]" />
+    </div>
+  );
+}
 
 export function readWidgetStyleBorder(ws: WidgetStyleConfig = {}): ChartBorderStyle {
   return {

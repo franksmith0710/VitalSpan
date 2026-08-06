@@ -207,6 +207,22 @@ function resolveRowOffsetX(
   return 0;
 }
 
+function defaultLegendHAlign(
+  position: NonNullable<D3LegendLayout["position"]>,
+): NonNullable<D3LegendLayout["hAlign"]> {
+  if (position === "left") return "left";
+  if (position === "right") return "right";
+  return "center";
+}
+
+function defaultLegendVAlign(
+  position: NonNullable<D3LegendLayout["position"]>,
+): NonNullable<D3LegendLayout["vAlign"]> {
+  if (position === "top") return "top";
+  if (position === "bottom") return "bottom";
+  return "middle";
+}
+
 function legendOrigin(
   opts: LayoutOpts,
   items: D3LegendItem[],
@@ -214,8 +230,8 @@ function legendOrigin(
   iconSize: number,
 ): { x: number; y: number } {
   const position = opts.layout?.position ?? "bottom";
-  const hAlign = opts.layout?.hAlign ?? "left";
-  const vAlign = opts.layout?.vAlign ?? "top";
+  const hAlign = opts.layout?.hAlign ?? defaultLegendHAlign(position);
+  const vAlign = opts.layout?.vAlign ?? defaultLegendVAlign(position);
   const { width, height, margin } = opts;
   const size = estimateLegendBlockSize(items, opts.layout, width, height, margin);
   const innerW = Math.max(0, width - margin.left - margin.right);
@@ -332,7 +348,8 @@ export function layoutD3InlineLegend(
   const fontSize = opts.layout?.fontSize ?? opts.fontSize ?? 11;
   const textColor = opts.layout?.color ?? opts.theme.legendText;
   const defaultIconSize = opts.layout?.iconSize ?? 10;
-  const hAlign = opts.layout?.hAlign ?? "left";
+  const position = opts.layout?.position ?? "bottom";
+  const hAlign = opts.layout?.hAlign ?? defaultLegendHAlign(position);
   const innerW = Math.max(0, opts.width - opts.margin.left - opts.margin.right);
   const rowH = legendRowHeight(fontSize, defaultIconSize);
   const { x, y } = legendOrigin(opts, items, fontSize, defaultIconSize);

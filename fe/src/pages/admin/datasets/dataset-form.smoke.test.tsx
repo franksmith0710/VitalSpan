@@ -190,6 +190,7 @@ describe("Dataset form pages", () => {
               name: "托管分析库",
               code: "analytics",
               type: "postgresql",
+              host: "127.0.0.1",
               port: 5433,
               database: "analytics",
             },
@@ -228,6 +229,10 @@ describe("Dataset form pages", () => {
     expect(screen.queryByRole("tab", { name: /绑定配置/ })).not.toBeInTheDocument();
     expect(screen.getByText("同步产物")).toBeInTheDocument();
     expect(await screen.findByText("已绑定")).toBeInTheDocument();
+    expect(screen.getByTestId("sync-output-datasource")).toHaveTextContent("托管分析库");
+    expect(screen.getByTestId("sync-output-datasource")).toHaveTextContent("127.0.0.1:5433 / analytics");
+    expect(screen.getByTestId("sync-output-datasource")).toHaveTextContent("analytics");
+    expect(screen.getByText(/图表将查询表/)).toHaveTextContent("public.orders_clean_3");
     await waitFor(() => {
       expect(screen.getByTestId("bind-selected-count").textContent).toContain("已选 4/");
     });
@@ -336,6 +341,8 @@ describe("Dataset form pages", () => {
               name: "托管分析库",
               code: "analytics",
               type: "postgresql",
+              host: "127.0.0.1",
+              port: 5433,
               database: "analytics",
             },
           ],

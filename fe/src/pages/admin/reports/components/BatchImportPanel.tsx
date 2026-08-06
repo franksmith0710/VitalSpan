@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
@@ -16,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { apiFetch } from "@/lib/api";
+import { invalidateCatalogQueries } from "@/lib/catalogQueryInvalidation";
 import { mapApiError } from "@/lib/apiError";
 
 type BatchItem = {
@@ -39,6 +40,7 @@ const SAMPLE_JSON = JSON.stringify(
 );
 
 export function BatchImportPanel({ readOnly }: { readOnly: boolean }) {
+  const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [parseError, setParseError] = useState<string | null>(null);
   const [items, setItems] = useState<BatchItem[]>([]);
@@ -53,6 +55,7 @@ export function BatchImportPanel({ readOnly }: { readOnly: boolean }) {
       }),
     onSuccess: (data) => {
       setResult(data);
+      invalidateCatalogQueries(qc);
       toast.success(`成功导入 ${data.createdNodeIds.length} 项`);
     },
     onError: (err) => {

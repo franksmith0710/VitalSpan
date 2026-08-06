@@ -26,6 +26,7 @@ import {
   readChartShowLabel,
   readChartTitleVisible,
   resolveEffectivePaletteId,
+  patchChartPaletteDeStyle,
   resolveChartLabelPresentation,
   resolveChartTooltipPresentation,
   resolveChartLabelDisplayColor,
@@ -79,6 +80,7 @@ export function ChartPaletteStyleSection() {
         cfg,
         resolveEffectivePaletteId(cfg, dashboardStyle?.paletteId),
         deStyle.seriesColor,
+        deStyle.paletteId != null ? deStyle.paletteColors : dashboardStyle?.paletteColors,
       )
     : [];
 
@@ -90,6 +92,7 @@ export function ChartPaletteStyleSection() {
         dashboardPaletteId={dashboardStyle?.paletteId}
         dashboardPaletteColors={dashboardStyle?.paletteColors}
         paletteId={deStyle.paletteId}
+        paletteColors={deStyle.paletteColors}
         seriesColor={seriesColorItems.length > 0 ? seriesColorItems : undefined}
         paletteOpacity={deStyle.paletteOpacity}
         seriesGradient={deStyle.seriesGradient ?? false}
@@ -113,15 +116,9 @@ export function ChartPaletteStyleSection() {
         showOpacity={supportsPaletteOpacity(cfg.chartType)}
         showGradientToggle={supportsSeriesGradientToggle(cfg.chartType)}
         showDepthToggle={supportsDepthVisualToggle(cfg.chartType)}
-        onPaletteChange={(paletteId) => {
-          patchDeStyle({
-            paletteId,
-            seriesColor: undefined,
-            ...(paletteId === undefined
-              ? { paletteOpacity: undefined }
-              : {}),
-          });
-        }}
+        onPaletteChange={(paletteId, colors) =>
+          mutateChartConfig((current) => patchChartPaletteDeStyle(current, paletteId, colors))
+        }
         onSeriesColorsChange={(items) =>
           patchDeStyle({ seriesColor: items.length > 0 ? [...items] : undefined })
         }

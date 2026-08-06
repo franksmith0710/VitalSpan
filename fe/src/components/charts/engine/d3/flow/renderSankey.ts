@@ -79,7 +79,7 @@ function linkPath(
 export function renderD3SankeyChart(container: HTMLElement, config: D3RenderConfig): () => void {
   container.replaceChildren();
 
-  const { width, height, colors, theme, showTooltip, valueFormat, options, depthVisual } = config;
+  const { width, height, colors, theme, showTooltip, valueFormat, options, depthVisual, labelFontSize } = config;
   const depthLevel = resolveEffectiveDepth(depthVisual);
   const defaultLinkOpacity = depthLevel === "enhanced" ? 0.38 : depthLevel === "standard" ? 0.32 : 0.28;
   const sourceField = String(options.sourceField ?? "source");
@@ -172,7 +172,7 @@ export function renderD3SankeyChart(container: HTMLElement, config: D3RenderConf
     .attr("text-anchor", (d) => (d.depth === 0 ? "end" : "start"))
     .attr("dy", "0.35em")
     .attr("fill", theme.axisLabel)
-    .style("font-size", "11px")
+    .style("font-size", `${labelFontSize}px`)
     .text((d) => d.id);
 
   return () => container.replaceChildren();

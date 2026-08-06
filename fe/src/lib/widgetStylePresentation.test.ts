@@ -101,5 +101,21 @@ describe("buildWidgetBackgroundPresentation", () => {
     );
     expect(presentation.backgroundLayer?.backgroundSize).toBe("100% auto");
     expect(presentation.backgroundLayer?.backgroundPosition).toBe("top center");
+    expect(presentation.backgroundLayer?.widgetBackgroundFit).toBe("widthFit");
+  });
+
+  it("attaches fit metadata for regular photo backgrounds", () => {
+    const presentation = buildWidgetBackgroundPresentation(
+      {
+        backgroundShow: true,
+        backgroundMode: "image",
+        backgroundImage: "https://example.com/bg.png",
+        backgroundImageFit: "contain",
+        backgroundImagePosition: "bottom right",
+      },
+      "light",
+    );
+    expect(presentation.backgroundLayer?.widgetBackgroundFit).toBe("contain");
+    expect(presentation.backgroundLayer?.widgetBackgroundPosition).toBe("bottom right");
   });
 });

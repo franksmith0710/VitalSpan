@@ -14,7 +14,7 @@ import { ScreenIconDisplay } from "./screen/ScreenIconDisplay";
 import { ScreenShapeDisplay } from "./screen/ScreenShapeDisplay";
 import type { LayoutWidget, TextWidgetConfig, DashboardStyleConfig } from "./layoutUtils";
 import { normalizeScreenTitleBarStyle } from "@/lib/screenVisualStyle";
-import { gridWidgetShellClassName, resolveGridWidgetShell } from "./widgetRailStyleSections";
+import { gridWidgetShellClassName, GridWidgetShellFrame, resolveGridWidgetShell } from "./widgetRailStyleSections";
 import {
   isScreenBorderWidget,
   isScreenClockWidget,
@@ -91,11 +91,9 @@ export function TextWidget({
     <div
       ref={widgetRef}
       className={cn(
-        gridWidgetShellClassName(showGridChrome, Boolean(selected && !isEditing)),
-        showGridChrome && isEditing && "ring-2 ring-brand-500/50 border-brand-400 dark:border-brand-500/60",
         nested && inShapeShell && mode === "edit" && "pl-7",
       )}
-      style={showGridChrome ? gridShell.style : undefined}
+      style={undefined}
     >
       {showGridChrome && mode === "edit" && !isEditing ? (
         <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 bg-gray-50/90 px-2 py-1.5 dark:border-gray-800 dark:bg-white/[0.04]">
@@ -225,6 +223,21 @@ export function TextWidget({
         ) : null}
         {content}
       </div>
+    );
+  }
+
+  if (showGridChrome) {
+    return (
+      <GridWidgetShellFrame
+        shell={gridShell}
+        widgetId={widget.id}
+        className={cn(
+          gridWidgetShellClassName(true, Boolean(selected && !isEditing)),
+          isEditing && "ring-2 ring-brand-500/50 border-brand-400 dark:border-brand-500/60",
+        )}
+      >
+        {content}
+      </GridWidgetShellFrame>
     );
   }
 

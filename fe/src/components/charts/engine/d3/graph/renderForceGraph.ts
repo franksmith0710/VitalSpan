@@ -24,7 +24,8 @@ function positionTooltip(
 
 export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfig): () => void {
   container.replaceChildren();
-  const { width, height, colors, theme, showLabel, showTooltip, options, onPointClick, depthVisual } = config;
+  const { width, height, colors, theme, showLabel, showTooltip, options, onPointClick, depthVisual, labelFontSize } =
+    config;
   const depthLevel = resolveEffectiveDepth(depthVisual);
   const nodesInput = (options.nodes as GraphNodeInput[]) ?? [];
   const edgesInput = (options.edges as GraphEdgeInput[]) ?? [];
@@ -119,7 +120,7 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
       .attr("dy", 22)
       .attr("text-anchor", "middle")
       .attr("fill", theme.axisLabel)
-      .style("font-size", "10px")
+      .style("font-size", `${labelFontSize}px`)
       .style("pointer-events", "none")
       .text((d) => d.label);
   }

@@ -42,6 +42,12 @@ describe("mapApiError", () => {
     expect(mapApiError(new Error("Something went wrong"))).toBe("操作失败，请稍后重试");
   });
 
+  it("maps postgres relation missing to readable Chinese", () => {
+    expect(
+      localizeApiMessage('relation "ops_tsdb.cache_inval_extension" does not exist'),
+    ).toBe("源表不存在，请检查 Schema 与表名是否正确");
+  });
+
   it("preserves Chinese messages", () => {
     expect(mapApiError(new Error("查询失败"))).toBe("查询失败");
   });

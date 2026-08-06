@@ -46,6 +46,22 @@ export function resolvePackPlotCircle(width: number, height: number, inset = 0) 
   return { cx, cy, radius };
 }
 
+export function resolvePackPlotRadiusScale(sizePercent = 1): number {
+  return Math.max(0.35, Math.min(1, sizePercent));
+}
+
+/** 整体大小缩放后的绘图区圆（外圈 / 裁剪 / 物理边界一致） */
+export function resolveScaledPackPlotCircle(
+  width: number,
+  height: number,
+  sizePercent = 1,
+  inset = 0,
+) {
+  const { cx, cy, radius } = resolvePackPlotCircle(width, height, inset);
+  const scale = resolvePackPlotRadiusScale(sizePercent);
+  return { cx, cy, radius: radius * scale };
+}
+
 export type PackPhysicsNode = d3.SimulationNodeDatum & {
   name: string;
   targetX: number;
@@ -89,6 +105,7 @@ export function fitPackLayoutToPlot(
   plotW: number,
   plotH: number,
   margin: number,
+  sizePercent = 1,
 ): Array<{ name: string; x: number; y: number; r: number }> {
   if (items.length === 0) return [];
 
@@ -105,7 +122,8 @@ export function fitPackLayoutToPlot(
 
   const bboxW = Math.max(maxX - minX, 1);
   const bboxH = Math.max(maxY - minY, 1);
-  const usable = Math.max(1, Math.min(plotW, plotH) - margin * 2);
+  const sizeScale = Math.max(0.35, Math.min(1, sizePercent));
+  const usable = Math.max(1, Math.min(plotW, plotH) - margin * 2) * sizeScale;
   const scale = usable / Math.max(bboxW, bboxH);
   const cx = (minX + maxX) / 2;
   const cy = (minY + maxY) / 2;
@@ -262,6 +280,7 @@ export type PackMotionFrameOptions = {
   height: number;
   strokeWidth: number;
   interaction: PackInteractionLevel;
+  plotRadiusScale?: number;
   dt?: number;
 };
 
@@ -415,6 +434,7 @@ function softEnforcePackBounds(
   width: number,
   height: number,
   strokeWidth: number,
+  plotRadiusScale = 1,
 ): void {
   for (const node of nodes) {
     if (isPackNodeFixed(node)) {
@@ -422,7 +442,7 @@ function softEnforcePackBounds(
       if (node.fy != null) node.y = node.fy;
       continue;
     }
-    clampPackNodeToBounds(node, width, height, strokeWidth);
+    clampPackNodeToBounds(node, width, height, strokeWidth, plotRadiusScale);
   }
 }
 
@@ -439,7 +459,13 @@ export function stepPackMotionFrame(
   }
   integratePackVelocities(nodes, dt);
   clampPackNodeDriftAll(nodes);
-  softEnforcePackBounds(nodes, options.width, options.height, options.strokeWidth);
+  softEnforcePackBounds(
+    nodes,
+    options.width,
+    options.height,
+    options.strokeWidth,
+    options.plotRadiusScale ?? 1,
+  );
   restoreFixedPackNodes(nodes);
 }
 
@@ -475,9 +501,10 @@ export function clampPackNodeToBounds(
   width: number,
   height: number,
   strokeWidth: number,
+  plotRadiusScale = 1,
 ): void {
   const r = packNodeVisualRadius(node, strokeWidth);
-  const { cx, cy, radius: plotRadius } = resolvePackPlotCircle(width, height);
+  const { cx, cy, radius: plotRadius } = resolveScaledPackPlotCircle(width, height, plotRadiusScale);
   const maxDist = Math.max(0, plotRadius - r);
   let x = node.x ?? node.targetX;
   let y = node.y ?? node.targetY;
@@ -506,8 +533,9 @@ export function createPackBoundaryForce(
   width: number,
   height: number,
   strokeWidth: number,
+  plotRadiusScale = 1,
 ): d3.Force<PackPhysicsNode, undefined> {
-  const { cx, cy, radius: plotRadius } = resolvePackPlotCircle(width, height);
+  const { cx, cy, radius: plotRadius } = resolveScaledPackPlotCircle(width, height, plotRadiusScale);
   let nodes: PackPhysicsNode[] = [];
 
   function force(alpha: number) {
@@ -541,8 +569,9 @@ export function enforcePackBounds(
   width: number,
   height: number,
   strokeWidth: number,
+  plotRadiusScale = 1,
 ): void {
-  for (const node of nodes) clampPackNodeToBounds(node, width, height, strokeWidth);
+  for (const node of nodes) clampPackNodeToBounds(node, width, height, strokeWidth, plotRadiusScale);
 }
 
 export function createPackPhysicsNodes(
@@ -636,6 +665,7 @@ export function createPackPhysicsSimulation(
   width: number,
   height: number,
   strokeWidth: number,
+  plotRadiusScale = 1,
 ): PackPhysicsSimulation {
   let interaction: PackInteractionLevel = "idle";
 
@@ -656,13 +686,13 @@ export function createPackPhysicsSimulation(
         .strength(0.92)
         .iterations(8),
     )
-    .force("bounds", createPackBoundaryForce(width, height, strokeWidth))
+    .force("bounds", createPackBoundaryForce(width, height, strokeWidth, plotRadiusScale))
     .velocityDecay(0.28)
     .alphaDecay(0.014)
     .alphaMin(0.001) as PackPhysicsSimulation;
 
   simulation.on("tick", () => {
-    enforcePackBounds(nodes, width, height, strokeWidth);
+    enforcePackBounds(nodes, width, height, strokeWidth, plotRadiusScale);
   });
 
   simulation.setInteraction = (level: PackInteractionLevel) => {
@@ -687,7 +717,7 @@ export function createPackPhysicsSimulation(
         .strength(0.92)
         .iterations(8),
     );
-    simulation.force("bounds", createPackBoundaryForce(width, height, strokeWidth));
+    simulation.force("bounds", createPackBoundaryForce(width, height, strokeWidth, plotRadiusScale));
     simulation.alpha(0.72).alphaTarget(0.3).restart();
   };
 

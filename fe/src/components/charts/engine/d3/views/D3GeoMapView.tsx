@@ -196,8 +196,10 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     return buildGeoMapStyleContentSig(geo, {
       paletteOpacity: de.paletteOpacity,
       paletteId: de.paletteId,
+      paletteColors: de.paletteColors,
+      chartColors: style.chartColors,
     });
-  }, [chartConfig, isThreeMap]);
+  }, [chartConfig, isThreeMap, style.chartColors]);
 
   const geoStyleVisualSig = useMemo(() => {
     if (!chartConfig || !isThreeMap) return "";

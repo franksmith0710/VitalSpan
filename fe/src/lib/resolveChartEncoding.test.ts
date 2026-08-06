@@ -3,6 +3,7 @@ import {
   appendAxisField,
   deAxisRenderReady,
   migrateChartConfigToDeAxes,
+  remapMixAxisSlots,
   removeAxisFieldAt,
   resolveChartEncoding,
   writeAxisField,
@@ -101,5 +102,20 @@ describe("resolveChartEncoding", () => {
     expect(config.dimensions?.[2]?.field).toBe("district");
     expect(config.axes?.drill?.[0]?.field).toBe("city");
     expect(config.axes?.drill?.[1]?.field).toBe("district");
+  });
+
+  it("remapMixAxisSlots moves legacy chart-mix sub dim from xAxisExt to extBubble", () => {
+    const config: ChartViewConfig = {
+      chartType: "chart-mix",
+      axes: {
+        xAxis: [{ field: "sale_date" }],
+        xAxisExt: [{ field: "region" }],
+        yAxis: [{ field: "amount" }],
+        yAxisExt: [{ field: "amount2" }],
+      },
+    };
+    const next = remapMixAxisSlots(config);
+    expect(next.axes?.xAxisExt).toEqual([]);
+    expect(next.axes?.extBubble?.[0]?.field).toBe("region");
   });
 });

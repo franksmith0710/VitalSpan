@@ -25,7 +25,7 @@ def test_resolve_source_schema_table_qualified() -> None:
     assert resolve_source_schema_table(job) == ("sample_db", "sales")
 
 
-def test_resolve_source_schema_table_unqualified() -> None:
+def test_resolve_source_schema_table_unqualified_mysql() -> None:
     job = SyncJob(
         name="t",
         source_type="mysql",
@@ -38,6 +38,21 @@ def test_resolve_source_schema_table_unqualified() -> None:
         target_table="sales_clean",
     )
     assert resolve_source_schema_table(job) == ("sample_db", "sales")
+
+
+def test_resolve_source_schema_table_unqualified_postgresql() -> None:
+    job = SyncJob(
+        name="t",
+        source_type="timescaledb",
+        source_host="h",
+        source_port=5434,
+        source_database="ops_tsdb",
+        source_username="u",
+        source_password_encrypted="p",
+        source_table="service_metrics",
+        target_table="service_metrics_clean",
+    )
+    assert resolve_source_schema_table(job) == ("public", "service_metrics")
 
 
 def test_resolve_initial_etl_rules_prefers_demo_template() -> None:

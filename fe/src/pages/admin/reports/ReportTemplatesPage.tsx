@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router";
 import { FilePlus, FolderOpen, FolderPlus, MousePointerClick } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/auth-context";
@@ -15,44 +15,152 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { mapApiError } from "@/lib/apiError";
+import type { TemplateKind } from "@/lib/reportCatalogProvision";
+import { catalogAncestorFolderIds, catalogNodePath } from "@/lib/reportCatalogUtils";
 import { cn } from "@/lib/utils";
+import { CatalogFolderPanel } from "./components/CatalogFolderPanel";
 import { CatalogTreeNode } from "./components/CatalogTreeNode";
 import { ListGhostEmptyState } from "@/components/ui/panel-empty-state";
 import { TemplateDetailPanel } from "./components/TemplateDetailPanel";
-import { useReportTemplates } from "./useReportTemplates";
+import { type CatalogNode, useAllCatalogNodes, useReportTemplates } from "./useReportTemplates";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
+
+const FORMAT_OPTIONS: { id: TemplateKind; label: string }[] = [
+  { id: "word", label: "Word" },
+  { id: "excel", label: "Excel" },
+  { id: "pdf", label: "PDF" },
+];
 
 export function ReportTemplatesPage() {
   const { nodeId } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [selectedId, setSelectedId] = useState<string | null>(nodeId ?? null);
-  const { nodesQuery, createNode } = useReportTemplates(null);
+  const [selectedOverride, setSelectedOverride] = useState<CatalogNode | null>(null);
+  const [createFormat, setCreateFormat] = useState<TemplateKind>("word");
+  const { nodesQuery, createNode, createTemplateNode, deleteNode, moveNode } = useReportTemplates(null);
+  const allNodesQuery = useAllCatalogNodes();
   const readOnly = user?.roles?.length === 1 && user.roles[0] === "viewer";
   const nodes = nodesQuery.data?.items ?? [];
-  const selected = nodes.find((n) => n.id === selectedId) ?? null;
+  const allNodes = allNodesQuery.data ?? [];
+  const selected = useMemo(() => {
+    if (selectedOverride?.id === selectedId) return selectedOverride;
+    return allNodes.find((n) => n.id === selectedId) ?? nodes.find((n) => n.id === selectedId) ?? null;
+  }, [allNodes, nodes, selectedId, selectedOverride]);
+  const createParentId = selected?.nodeType === "folder" ? selected.id : null;
+
+  const expandFolderIds = useMemo(() => {
+    const set = new Set<string>();
+    if (selectedId) {
+      for (const id of catalogAncestorFolderIds(selectedId, allNodes)) set.add(id);
+    }
+    if (createParentId) set.add(createParentId);
+    return set;
+  }, [selectedId, allNodes, createParentId]);
 
   useEffect(() => {
     if (nodeId) setSelectedId(nodeId);
   }, [nodeId]);
 
-  const handleCreate = (nodeType: "folder" | "template") => {
+  const handleSelect = useCallback(
+    (id: string | null) => {
+      setSelectedId(id);
+      setSelectedOverride(null);
+      if (id) navigate(`/admin/reports/templates/${id}`, { replace: true });
+      else navigate("/admin/reports/templates", { replace: true });
+    },
+    [navigate],
+  );
+
+  const handleCreateFolder = (parentId: string | null = createParentId) => {
     createNode.mutate(
       {
-        name: nodeType === "folder" ? "新建文件夹" : "新建模板",
-        nodeType,
-        templateKind: nodeType === "template" ? "word" : undefined,
+        name: "新建文件夹",
+        nodeType: "folder",
+        parentId,
       },
-      { onError: (err) => toast.error(mapApiError(err)) },
+      {
+        onSuccess: (created) => {
+          setSelectedOverride(created);
+          handleSelect(created.id);
+          toast.success(parentId ? "已在文件夹内创建" : "已在根目录创建");
+        },
+        onError: (err) => toast.error(mapApiError(err)),
+      },
     );
   };
 
+  const handleCreateTemplate = (parentId: string | null = createParentId) => {
+    createTemplateNode.mutate(
+      { name: "新建模板", parentId, templateKind: createFormat },
+      {
+        onSuccess: (created) => {
+          setSelectedOverride(created);
+          handleSelect(created.id);
+          toast.success(parentId ? "模板已创建到当前文件夹" : "模板已创建到根目录");
+        },
+        onError: (err) => toast.error(mapApiError(err)),
+      },
+    );
+  };
+
+  const handleMove = (id: string, parentId: string | null) => {
+    moveNode.mutate(
+      { id, parentId },
+      {
+        onSuccess: (moved) => {
+          if (selectedId === id) setSelectedOverride(moved);
+          toast.success("已移动");
+        },
+        onError: (err) => toast.error(mapApiError(err)),
+      },
+    );
+  };
+
+  const handleDelete = (id: string) => {
+    const target = allNodes.find((n) => n.id === id) ?? nodes.find((n) => n.id === id);
+    const label = target?.name ?? "节点";
+    if (
+      !window.confirm(
+        `确定删除「${label}」？${target?.nodeType === "folder" ? "（须为空文件夹）" : ""}`,
+      )
+    ) {
+      return;
+    }
+    deleteNode.mutate(id, {
+      onSuccess: () => {
+        if (selectedId === id) handleSelect(null);
+        toast.success("已删除");
+      },
+      onError: (err) => toast.error(mapApiError(err)),
+    });
+  };
+
+  const createHint = createParentId
+    ? `将在「${selected?.name ?? "当前文件夹"}」内创建`
+    : "将在根目录创建";
+  const isCreating = createNode.isPending || createTemplateNode.isPending;
+
   const createActions = !readOnly ? (
     <>
-      <Button type="button" variant="outline" onClick={() => handleCreate("folder")}>
+      <span className="hidden text-theme-xs text-gray-500 dark:text-gray-400 lg:inline">{createHint}</span>
+      <Select value={createFormat} onValueChange={(v) => setCreateFormat(v as TemplateKind)}>
+        <SelectTrigger className="h-10 w-[108px]" aria-label="新建模板格式">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {FORMAT_OPTIONS.map((opt) => (
+            <SelectItem key={opt.id} value={opt.id}>
+              {opt.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Button type="button" variant="outline" disabled={isCreating} onClick={() => handleCreateFolder()}>
         <FolderPlus className="size-4" aria-hidden />
         新建文件夹
       </Button>
-      <Button type="button" variant="primary" onClick={() => handleCreate("template")}>
+      <Button type="button" variant="primary" disabled={isCreating} onClick={() => handleCreateTemplate()}>
         <FilePlus className="size-4" aria-hidden />
         新建模板
       </Button>
@@ -84,36 +192,59 @@ export function ReportTemplatesPage() {
             key={node.id}
             node={node}
             selectedId={selectedId}
-            onSelect={setSelectedId}
+            onSelect={handleSelect}
+            allNodes={allNodes}
+            readOnly={readOnly}
+            onMove={handleMove}
+            onDelete={handleDelete}
+            expandFolderIds={expandFolderIds}
           />
         ))}
       </div>
     </ScrollArea>
   );
 
-  const detailBody =
-    selected && selected.nodeType === "template" ? (
-      <TemplateDetailPanel node={selected} readOnly={readOnly} />
-    ) : (
-      <ListGhostEmptyState
-        layout="table"
-        density="compact"
-        rows={3}
-        headingId="templates-detail-empty"
-        icon={<MousePointerClick className="size-8" aria-hidden />}
-        title={selectedId ? "请选择模板节点" : "从目录选择模板"}
-        description={
-          selectedId
-            ? "当前选中的是文件夹，请展开目录并选择具体模板查看配置。"
-            : "在左侧目录中选择 Word、Excel 或 PDF 模板，查看扩展配置、预览与调度。"
-        }
-      />
-    );
+  const detailBody = selected?.nodeType === "template" ? (
+    <TemplateDetailPanel
+      node={selected}
+      allNodes={allNodes}
+      readOnly={readOnly}
+      onDeleted={() => handleSelect(null)}
+    />
+  ) : selected?.nodeType === "folder" ? (
+    <CatalogFolderPanel
+      node={selected}
+      allNodes={allNodes}
+      readOnly={readOnly}
+      isCreating={isCreating}
+      onCreate={(nodeType) =>
+        nodeType === "folder" ? handleCreateFolder(selected.id) : handleCreateTemplate(selected.id)
+      }
+      onSelectChild={handleSelect}
+      onDeleted={() => handleSelect(null)}
+    />
+  ) : (
+    <ListGhostEmptyState
+      layout="table"
+      density="compact"
+      rows={3}
+      headingId="templates-detail-empty"
+      icon={<MousePointerClick className="size-8" aria-hidden />}
+      title={selectedId ? "节点不存在或已删除" : "从目录选择模板"}
+      description={
+        selectedId
+          ? "请从左侧目录重新选择，或刷新页面。"
+          : "在左侧目录中选择 Word、Excel 或 PDF 模板，或选中文件夹后在此创建子项。"
+      }
+    />
+  );
+
+  const mobileOptions = allNodes.length > 0 ? allNodes : nodes;
 
   return (
     <AdminPageShell
       title="报表模板"
-      description="管理 Word、Excel、PDF 报表模板与目录结构。"
+      description="管理目录结构、模板格式与扩展配置。选中文件夹后新建，或通过节点菜单移动/删除。"
       actions={nodes.length > 0 ? createActions : null}
     >
       {nodesQuery.isError ? (
@@ -121,15 +252,15 @@ export function ReportTemplatesPage() {
       ) : null}
 
       <div className="mb-4 lg:hidden">
-        <Select value={selectedId ?? "__none__"} onValueChange={(v) => setSelectedId(v === "__none__" ? null : v)}>
+        <Select value={selectedId ?? "__none__"} onValueChange={(v) => handleSelect(v === "__none__" ? null : v)}>
           <SelectTrigger aria-label="选择目录节点" className="h-11">
             <SelectValue placeholder="选择节点" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="__none__">选择节点…</SelectItem>
-            {nodes.map((n) => (
+            {mobileOptions.map((n) => (
               <SelectItem key={n.id} value={n.id}>
-                {n.name}
+                {allNodes.length > 0 ? catalogNodePath(n, allNodes) : n.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -152,6 +283,9 @@ export function ReportTemplatesPage() {
                 <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
                   {nodes.length > 0 ? `${nodes.length} 个根节点` : "按文件夹组织报表"}
                 </p>
+                {!readOnly ? (
+                  <p className="mt-1 text-theme-xs text-brand-600 dark:text-brand-400">{createHint}</p>
+                ) : null}
               </div>
               <div className="flex min-h-0 flex-1 flex-col p-3">{catalogBody}</div>
             </aside>

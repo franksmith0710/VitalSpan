@@ -17,6 +17,45 @@ const theme = {
   accent: "#465fff",
 } as const;
 
+describe("renderD3DualAxesChart column+line DE parity", () => {
+  it("renders column bars and line path for province quantity amount", () => {
+    const container = document.createElement("div");
+    Object.defineProperty(container, "clientWidth", { value: 480, configurable: true });
+    Object.defineProperty(container, "clientHeight", { value: 320, configurable: true });
+
+    renderD3DualAxesChart(container, {
+      width: 480,
+      height: 320,
+      data: [
+        [
+          { __category__: "华东", __value__: 100 },
+          { __category__: "华北", __value__: 200 },
+          { __category__: "华南", __value__: 150 },
+        ],
+        [
+          { __category__: "华东", __value__: 10000 },
+          { __category__: "华北", __value__: 15000 },
+          { __category__: "华南", __value__: 12000 },
+        ],
+      ],
+      xField: "__category__",
+      yField: ["__value__", "__value__"],
+      geometryOptions: [{ geometry: "column" }, { geometry: "line" }],
+      colors: ["#465fff", "#12b76a"],
+      theme,
+      showLegend: true,
+      lineLabels: ["quantity", "amount"],
+    });
+
+    expect(container.querySelectorAll("g.dual-col").length).toBe(3);
+    expect(container.querySelectorAll("path").length).toBeGreaterThanOrEqual(1);
+    const labels = Array.from(container.querySelectorAll("g.vs-legend text")).map((n) =>
+      n.textContent?.trim(),
+    );
+    expect(labels).toEqual(["quantity", "amount"]);
+  });
+});
+
 describe("renderD3DualAxesChart dual-line legend", () => {
   it("renders left and right line metric names in legend", () => {
     const container = document.createElement("div");
@@ -85,6 +124,45 @@ describe("renderD3DualAxesChart dual-line legend", () => {
     expect(labels).toContain("华北");
   });
 
+  it("renders multiple line paths for column+line with lineSeriesField", () => {
+    const container = document.createElement("div");
+    Object.defineProperty(container, "clientWidth", { value: 480, configurable: true });
+    Object.defineProperty(container, "clientHeight", { value: 320, configurable: true });
+
+    renderD3DualAxesChart(container, {
+      width: 480,
+      height: 320,
+      data: [
+        [
+          { __category__: "2025-07-01", __value__: 100 },
+          { __category__: "2025-07-02", __value__: 200 },
+        ],
+        [
+          { __category__: "2025-07-01", __value__: 80, __series__: "华东" },
+          { __category__: "2025-07-01", __value__: 60, __series__: "华北" },
+          { __category__: "2025-07-02", __value__: 120, __series__: "华东" },
+          { __category__: "2025-07-02", __value__: 90, __series__: "华北" },
+        ],
+      ],
+      xField: "__category__",
+      yField: ["__value__", "__value__"],
+      geometryOptions: [{ geometry: "column", isStack: true }, { geometry: "line" }],
+      columnSeriesField: undefined,
+      lineSeriesField: "__series__",
+      colors: ["#465fff", "#12b76a", "#f79009"],
+      theme,
+      showLegend: true,
+      lineLabels: ["amount", "quantity"],
+    });
+
+    expect(container.querySelectorAll("path").length).toBeGreaterThanOrEqual(2);
+    const labels = Array.from(container.querySelectorAll("g.vs-legend text")).map((n) =>
+      n.textContent?.trim(),
+    );
+    expect(labels).toContain("华东");
+    expect(labels).toContain("华北");
+  });
+
   it("renders tiered x-axis for multi-part category keys", () => {
     const container = document.createElement("div");
     Object.defineProperty(container, "clientWidth", { value: 480, configurable: true });
@@ -106,11 +184,11 @@ describe("renderD3DualAxesChart dual-line legend", () => {
       ],
       xField: "__category__",
       yField: ["__value__", "__value__"],
-      geometryOptions: [{ geometry: "line" }, { geometry: "column" }],
+      geometryOptions: [{ geometry: "column" }, { geometry: "line" }],
       colors: ["#465fff", "#12b76a"],
       theme,
       showLegend: false,
-      lineLabels: ["线", "柱"],
+      lineLabels: ["柱", "线"],
       categoryLevelCount: 4,
     });
 

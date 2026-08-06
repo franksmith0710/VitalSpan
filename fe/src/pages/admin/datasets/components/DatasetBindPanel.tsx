@@ -11,6 +11,7 @@ import {
   filterSyncJobBindDatasources,
   resolveAnalyticsDatasourceId,
 } from "@/lib/datasourceRoles";
+import { formatSyncDatasourceDisplay } from "@/lib/formatDatasourceDisplay";
 import { queryKeys } from "@/lib/queryKeys";
 import { apiFetch } from "@/lib/api";
 import type { DatasetBindDraft, DatasetOrigin, DatasetTable } from "../types";
@@ -22,7 +23,15 @@ import {
 } from "./datasetFieldWorkbenchState";
 import { DatasetFieldWorkbench } from "./DatasetFieldWorkbench";
 
-type DsItem = { id: string; name: string; code?: string; type: string; port?: number; database?: string };
+type DsItem = {
+  id: string;
+  name: string;
+  code?: string;
+  type: string;
+  host?: string;
+  port?: number;
+  database?: string;
+};
 
 function qualifiedTableFromBinding(schema?: string, table?: string): string {
   if (!table) return "";
@@ -88,6 +97,11 @@ export function DatasetBindPanel({
   const activeDs = useMemo(() => {
     return allItems.find((d) => d.id === dataSourceId) ?? selectableItems.find((d) => d.id === dataSourceId);
   }, [allItems, dataSourceId, selectableItems]);
+
+  const syncDatasourceDisplay = useMemo(
+    () => (activeDs ? formatSyncDatasourceDisplay(activeDs) : null),
+    [activeDs],
+  );
 
   const { columnNames, columnsLoading, columnsError } = useDatasetTableColumns(dataSourceId, primaryTableName);
 
@@ -163,6 +177,8 @@ export function DatasetBindPanel({
         boundConfigId={boundConfigId}
         origin={origin}
         syncJobId={syncJobId}
+        syncDataSourceName={syncDatasourceDisplay?.name}
+        syncDataSourceEndpoint={syncDatasourceDisplay?.endpoint}
         onRefreshBinding={onBound}
       />
       <div className="flex justify-end">

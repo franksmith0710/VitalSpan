@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import { TEXT_COLOR_RECOMMENDED } from "@/components/dashboard/dashboardStyleConfig";
+import { TEXT_COLOR_RECOMMENDED, WIDGET_BORDER_RECOMMENDED } from "@/components/dashboard/dashboardStyleConfig";
 import { ChartPaletteDeParityFields } from "../chartPaletteDeParityFields";
 import { useChartInspector } from "../ChartInspectorContext";
 import {
@@ -31,13 +31,18 @@ import {
   resolveChartTooltipDisplayBackground,
   resolveChartTooltipDisplayColor,
   resolveEffectivePaletteId,
+  patchChartPaletteDeStyle,
 } from "@/lib/chartDeStyle";
 import {
+  DEFAULT_CIRCLE_PACKING_SIZE_PERCENT,
   DEFAULT_LIQUID_SIZE,
   DEFAULT_PIE_OUTER_RADIUS_PERCENT,
+  DEFAULT_RADAR_RADIUS_PERCENT,
   DEFAULT_TREEMAP_CELL_RADIUS,
   DEFAULT_TREEMAP_PADDING_INNER,
   DEFAULT_TREEMAP_PADDING_OUTER,
+  RADAR_RADIUS_PERCENT_MAX,
+  RADAR_RADIUS_PERCENT_MIN,
 } from "@/lib/chartDeStyleBlocks";
 import { resolveChartSeriesColorItems, supportsChartSeriesColorEditing } from "@/lib/chartSeriesColor";
 
@@ -64,6 +69,7 @@ export function ChartPieShapeSection() {
         cfg,
         resolveEffectivePaletteId(cfg, dashboardStyle?.paletteId),
         deStyle.seriesColor,
+        deStyle.paletteId != null ? deStyle.paletteColors : dashboardStyle?.paletteColors,
       )
     : [];
 
@@ -80,6 +86,7 @@ export function ChartPieShapeSection() {
           dashboardPaletteId={dashboardStyle?.paletteId}
           dashboardPaletteColors={dashboardStyle?.paletteColors}
           paletteId={deStyle.paletteId}
+          paletteColors={deStyle.paletteColors}
           seriesColor={seriesColorItems.length > 0 ? seriesColorItems : undefined}
           paletteOpacity={deStyle.paletteOpacity}
           showLabelToggle={false}
@@ -87,13 +94,9 @@ export function ChartPieShapeSection() {
           showGradientToggle={false}
           showDepthToggle={false}
           showOpacity
-          onPaletteChange={(paletteId) => {
-            patchDeStyle({
-              paletteId,
-              seriesColor: undefined,
-              ...(paletteId === undefined ? { paletteOpacity: undefined } : {}),
-            });
-          }}
+          onPaletteChange={(paletteId, colors) =>
+            mutateChartConfig((current) => patchChartPaletteDeStyle(current, paletteId, colors))
+          }
           onSeriesColorsChange={(items) =>
             patchDeStyle({ seriesColor: items.length > 0 ? [...items] : undefined })
           }
@@ -377,6 +380,16 @@ export function ChartRadarShapeSection() {
           checked={radar.showSymbol === true}
           onCheckedChange={(showSymbol) => patch({ showSymbol })}
         />
+        <ChartDeSliderField
+          label="半径 %"
+          value={radar.radiusPercent}
+          fallback={DEFAULT_RADAR_RADIUS_PERCENT}
+          min={RADAR_RADIUS_PERCENT_MIN}
+          max={RADAR_RADIUS_PERCENT_MAX}
+          step={1}
+          unit="%"
+          onChange={(radiusPercent) => patch({ radiusPercent })}
+        />
         <div className="border-t border-gray-100 pt-2 dark:border-white/[0.06]">
           <p className="mb-1.5 text-[11px] font-medium text-gray-600 dark:text-gray-300">坐标轴</p>
           <InspectorSwitchRow
@@ -461,8 +474,30 @@ export function ChartCirclePackingShapeSection() {
   return (
     <ChartInspectorSection title="圆形填充样式" data-testid="chart-circle-packing-shape">
       <div className={INSPECTOR_SECTION_GAP}>
+        <InspectorInlineColorRow
+          label="内部填充色"
+          allowClear
+          swatches={WIDGET_BORDER_RECOMMENDED}
+          value={circlePacking.backgroundColor ?? ""}
+          onChange={(backgroundColor) => patch({ backgroundColor })}
+        />
+        <ChartDeSliderField
+          label="整体大小"
+          value={circlePacking.sizePercent}
+          fallback={DEFAULT_CIRCLE_PACKING_SIZE_PERCENT}
+          min={40}
+          max={100}
+          step={1}
+          unit="%"
+          onChange={(sizePercent) => patch({ sizePercent })}
+        />
+        <InspectorSwitchRow
+          label="显示外圈"
+          checked={circlePacking.showOuterRing !== false}
+          onCheckedChange={(showOuterRing) => patch({ showOuterRing })}
+        />
         <ChartDeSliderField label="布局间距" value={circlePacking.layoutPadding} fallback={0} min={0} max={16} step={1} onChange={(layoutPadding) => patch({ layoutPadding })} />
-        <ChartDeSliderField label="标签最小半径" value={circlePacking.labelMinRadius} fallback={18} min={8} max={48} step={1} onChange={(labelMinRadius) => patch({ labelMinRadius })} />
+        <ChartDeSliderField label="标签最小半径" value={circlePacking.labelMinRadius} fallback={10} min={8} max={48} step={1} onChange={(labelMinRadius) => patch({ labelMinRadius })} />
       </div>
     </ChartInspectorSection>
   );

@@ -14,7 +14,11 @@ import {
   renderDualAxesColumnBars,
   resolveDualAxesColumnMax,
 } from "@/components/charts/engine/d3/cartesian/renderDualAxesColumn";
-import type { D3CartesianDatum, D3DualAxesRenderConfig } from "@/components/charts/engine/d3/types";
+import type {
+  D3CartesianDatum,
+  D3DualAxesGeometryOption,
+  D3DualAxesRenderConfig,
+} from "@/components/charts/engine/d3/types";
 import { normalizeCategoryAxisDomain } from "@/components/charts/engine/buildDatasetEncoding";
 import { formatCartesianDatumLabel, sumCartesianLabelTotal } from "@/components/charts/engine/d3/core/cartesianDataLabel";
 
@@ -33,62 +37,130 @@ function normalizeDataset(
 }
 
 function buildDualAxesLegendItems(params: {
-  dualLine: boolean;
-  lineName: string;
-  colName: string;
-  lineColor: string;
-  columnColor: string;
+  leftGeom: D3DualAxesGeometryOption;
+  rightGeom: D3DualAxesGeometryOption;
+  leftLabel: string;
+  rightLabel: string;
+  leftColor: string;
+  rightColor: string;
   columnSeriesField?: string;
-  columnData: D3CartesianDatum[];
+  leftData: D3CartesianDatum[];
+  rightData: D3CartesianDatum[];
   colors: string[];
 }): D3LegendItem[] {
   const {
-    dualLine,
-    lineName,
-    colName,
-    lineColor,
-    columnColor,
+    leftGeom,
+    rightGeom,
+    leftLabel,
+    rightLabel,
+    leftColor,
+    rightColor,
     columnSeriesField,
-    columnData,
+    leftData,
+    rightData,
     colors,
   } = params;
-  const items: D3LegendItem[] = [
-    { label: lineName, color: lineColor, marker: "line", markerWidth: 14, markerHeight: 3 },
-  ];
-  if (dualLine) {
+  const items: D3LegendItem[] = [];
+  const dualLine = leftGeom.geometry === "line" && rightGeom.geometry === "line";
+
+  const pushLine = (label: string, color: string) => {
+    items.push({ label, color, marker: "line", markerWidth: 14, markerHeight: 3 });
+  };
+
+  const pushColumnLegend = (
+    data: D3CartesianDatum[],
+    fallbackLabel: string,
+    fallbackColor: string,
+    colorOffset = 0,
+  ) => {
     if (columnSeriesField) {
-      const names = [
-        ...new Set(columnData.map((row) => String(row[columnSeriesField] ?? "")).filter(Boolean)),
-      ];
+      const names = [...new Set(data.map((row) => String(row[columnSeriesField] ?? "")).filter(Boolean))];
       if (names.length > 1) {
         for (const [index, name] of names.entries()) {
           items.push({
             label: name,
-            color: colors[(index + 1) % colors.length] ?? columnColor,
-            marker: "line",
-            markerWidth: 14,
-            markerHeight: 3,
+            color: colors[(index + colorOffset) % colors.length] ?? fallbackColor,
           });
+        }
+        return;
+      }
+    }
+    items.push({ label: fallbackLabel, color: fallbackColor });
+  };
+
+  if (leftGeom.geometry === "line") {
+    pushLine(leftLabel, leftColor);
+  } else {
+    pushColumnLegend(leftData, leftLabel, leftColor, 0);
+  }
+
+  if (rightGeom.geometry === "line") {
+    if (dualLine && columnSeriesField) {
+      const names = [...new Set(rightData.map((row) => String(row[columnSeriesField] ?? "")).filter(Boolean))];
+      if (names.length > 1) {
+        for (const [index, name] of names.entries()) {
+          pushLine(name, colors[(index + 1) % colors.length] ?? rightColor);
         }
         return items;
       }
     }
-    items.push({ label: colName, color: columnColor, marker: "line", markerWidth: 14, markerHeight: 3 });
-    return items;
+    pushLine(rightLabel, rightColor);
+  } else {
+    pushColumnLegend(rightData, rightLabel, rightColor, 1);
   }
-  if (columnSeriesField) {
-    const names = [
-      ...new Set(columnData.map((row) => String(row[columnSeriesField] ?? "")).filter(Boolean)),
-    ];
-    if (names.length > 1) {
-      for (const [index, name] of names.entries()) {
-        items.push({ label: name, color: colors[index % colors.length] ?? columnColor });
-      }
-      return items;
-    }
-  }
-  items.push({ label: colName, color: columnColor });
+
   return items;
+}
+
+function renderDualAxesLineSeries(params: {
+  plot: d3.Selection<SVGGElement, unknown, null, undefined>;
+  defs: d3.Selection<SVGDefsElement, unknown, null, undefined>;
+  points: D3CartesianDatum[];
+  categories: string[];
+  x: d3.ScalePoint<string>;
+  yScale: d3.ScaleLinear<number, number>;
+  color: string;
+  smooth?: boolean;
+  shadowId: string;
+  dotClass: string;
+  conditionalRules?: D3DualAxesRenderConfig["conditionalRules"];
+  onPointClick?: D3DualAxesRenderConfig["onPointClick"];
+}): void {
+  const sorted = [...params.points].sort(
+    (a, b) => params.categories.indexOf(String(a.__category__)) - params.categories.indexOf(String(b.__category__)),
+  );
+  const curve = params.smooth ? d3.curveMonotoneX : d3.curveLinear;
+  const lineGen = d3
+    .line<D3CartesianDatum>()
+    .x((d) => params.x(String(d.__category__)) ?? 0)
+    .y((d) => params.yScale(Number(d.__value__)))
+    .curve(curve);
+  const linePath = params.plot
+    .append("path")
+    .datum(sorted)
+    .attr("fill", "none")
+    .attr("stroke", params.color)
+    .attr("stroke-width", 2.5)
+    .attr("stroke-linecap", "round")
+    .attr("d", lineGen);
+  applyPathDepthShadow(params.defs, linePath, params.color, params.shadowId);
+  animateStrokePath(linePath);
+
+  params.plot
+    .selectAll(`circle.${params.dotClass}`)
+    .data(sorted)
+    .join("circle")
+    .attr("class", params.dotClass)
+    .attr("r", 3)
+    .attr("fill", (d) =>
+      resolveDatumColor(Number(d.__value__), params.color, params.conditionalRules ?? []),
+    )
+    .attr("stroke", "#fff")
+    .attr("stroke-width", 1.5)
+    .attr("cx", (d) => params.x(String(d.__category__)) ?? 0)
+    .attr("cy", (d) => params.yScale(Number(d.__value__)))
+    .attr("cursor", params.onPointClick ? "pointer" : "default")
+    .on("click", (_event, d) => params.onPointClick?.(d));
 }
 
 export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxesRenderConfig): () => void {
@@ -98,9 +170,9 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
   const {
     width,
     height,
-    data: [lineData, columnData],
+    data: [leftData, rightData],
     xField,
-    yField: [lineYField, columnYField],
+    yField: [leftYField, rightYField],
     geometryOptions,
     columnSeriesField,
     colors,
@@ -126,32 +198,39 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
     categoryLevelCount,
   } = config;
   const lineLabels = config.lineLabels;
-  const dualLine = geometryOptions[0].geometry === "line" && geometryOptions[1].geometry === "line";
+  const leftGeom = geometryOptions[0];
+  const rightGeom = geometryOptions[1];
+  const dualLine = leftGeom.geometry === "line" && rightGeom.geometry === "line";
 
-  const lineSet = normalizeDataset(lineData, xField, lineYField, categoryLevelCount);
-  const columnSet = normalizeDataset(columnData, xField, columnYField, categoryLevelCount);
+  const leftSet = normalizeDataset(leftData, xField, leftYField, categoryLevelCount);
+  const rightSet = normalizeDataset(rightData, xField, rightYField, categoryLevelCount);
   const { categories, structuralLevelCount } = normalizeCategoryAxisDomain(
-    [...new Set([...lineSet.categories, ...columnSet.categories])],
+    [...new Set([...leftSet.categories, ...rightSet.categories])],
     categoryLevelCount,
   );
   if (categories.length === 0) return () => undefined;
 
-  const lineSmooth =
-    geometryOptions[0].geometry === "line" && (geometryOptions[0].smooth ?? styleSmooth);
-  const columnOpts = geometryOptions[1].geometry === "column" ? geometryOptions[1] : { geometry: "column" as const };
+  const leftSmooth = leftGeom.geometry === "line" && (leftGeom.smooth ?? styleSmooth);
+  const rightSmooth = rightGeom.geometry === "line" && (rightGeom.smooth ?? styleSmooth);
+  const leftColumnOpts =
+    leftGeom.geometry === "column" ? leftGeom : { geometry: "column" as const };
+  const rightColumnOpts =
+    rightGeom.geometry === "column" ? rightGeom : { geometry: "column" as const };
 
-  const lineColor = colors[0] ?? "#465fff";
-  const columnColor = colors[1] ?? "#12b76a";
-  const lineName = lineLabels?.[0] ?? "线";
-  const colName = lineLabels?.[1] ?? (dualLine ? "线2" : "柱");
+  const leftColor = colors[0] ?? "#465fff";
+  const rightColor = colors[1] ?? "#12b76a";
+  const leftLabel = lineLabels?.[0] ?? (leftGeom.geometry === "column" ? "柱" : "左");
+  const rightLabel = lineLabels?.[1] ?? (rightGeom.geometry === "column" ? "柱" : dualLine ? "右" : "线");
   const legendItems = buildDualAxesLegendItems({
-    dualLine,
-    lineName,
-    colName,
-    lineColor,
-    columnColor,
+    leftGeom,
+    rightGeom,
+    leftLabel,
+    rightLabel,
+    leftColor,
+    rightColor,
     columnSeriesField,
-    columnData,
+    leftData,
+    rightData,
     colors,
   });
 
@@ -165,13 +244,30 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
   });
 
   const x = d3.scalePoint<string>().domain(categories).range([0, innerW]).padding(0.5);
-  const lineMax = d3.max(lineSet.points, (d) => Number(d.__value__)) ?? 0;
-  const columnMax = dualLine
-    ? (d3.max(columnSet.points, (d) => Number(d.__value__)) ?? 0)
-    : resolveDualAxesColumnMax(columnData, xField, columnYField, columnSeriesField, columnOpts);
-  const yLeft = d3.scaleLinear().domain([0, lineMax]).nice().range([innerH, 0]);
-  const yRight = d3.scaleLinear().domain([0, columnMax]).nice().range([innerH, 0]);
-  const curve = lineSmooth ? d3.curveMonotoneX : d3.curveLinear;
+  const leftMax =
+    leftGeom.geometry === "column"
+      ? resolveDualAxesColumnMax(
+          leftData,
+          xField,
+          leftYField,
+          leftGeom.isGroup || leftGeom.isStack ? columnSeriesField : undefined,
+          leftColumnOpts,
+        )
+      : (d3.max(leftSet.points, (d) => Number(d.__value__)) ?? 0);
+  const rightMax =
+    rightGeom.geometry === "column"
+      ? resolveDualAxesColumnMax(
+          rightData,
+          xField,
+          rightYField,
+          rightGeom.isGroup || rightGeom.isStack ? columnSeriesField : undefined,
+          rightColumnOpts,
+        )
+      : dualLine
+        ? (d3.max(rightSet.points, (d) => Number(d.__value__)) ?? 0)
+        : (d3.max(rightSet.points, (d) => Number(d.__value__)) ?? 0);
+  const yLeft = d3.scaleLinear().domain([0, leftMax]).nice().range([innerH, 0]);
+  const yRight = d3.scaleLinear().domain([0, rightMax]).nice().range([innerH, 0]);
 
   const root = appendChartSvg(container, width, height);
   const defs = root.append("defs");
@@ -194,76 +290,22 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
     categoryLevelCount: structuralLevelCount,
   });
 
-  const linePoints = [...lineSet.points].sort(
-    (a, b) => categories.indexOf(String(a.__category__)) - categories.indexOf(String(b.__category__)),
-  );
-  const lineGen = d3
-    .line<D3CartesianDatum>()
-    .x((d) => x(String(d.__category__)) ?? 0)
-    .y((d) => yLeft(Number(d.__value__)))
-    .curve(curve);
-  const linePath = plot
-    .append("path")
-    .datum(linePoints)
-    .attr("fill", "none")
-    .attr("stroke", lineColor)
-    .attr("stroke-width", 2.5)
-    .attr("stroke-linecap", "round")
-    .attr("d", lineGen);
-  applyPathDepthShadow(defs, linePath, lineColor, "dual-line-0");
-  animateStrokePath(linePath);
-
-  let columnLegendItems: Array<{ label: string; color: string; w: number; h: number }> = [];
-
-  if (dualLine) {
-    const linePoints2 = [...columnSet.points].sort(
-      (a, b) => categories.indexOf(String(a.__category__)) - categories.indexOf(String(b.__category__)),
-    );
-    const lineGen2 = d3
-      .line<D3CartesianDatum>()
-      .x((d) => x(String(d.__category__)) ?? 0)
-      .y((d) => yRight(Number(d.__value__)))
-      .curve(curve);
-    const linePath2 = plot
-      .append("path")
-      .datum(linePoints2)
-      .attr("fill", "none")
-      .attr("stroke", columnColor)
-      .attr("stroke-width", 2.5)
-      .attr("stroke-linecap", "round")
-      .attr("d", lineGen2);
-    applyPathDepthShadow(defs, linePath2, columnColor, "dual-line-1");
-    animateStrokePath(linePath2);
-
-    plot
-      .selectAll("circle.dual-line-dot-2")
-      .data(linePoints2)
-      .join("circle")
-      .attr("class", "dual-line-dot-2")
-      .attr("r", 3)
-      .attr("fill", (d) => resolveDatumColor(Number(d.__value__), columnColor, conditionalRules ?? []))
-      .attr("stroke", "#fff")
-      .attr("stroke-width", 1.5)
-      .attr("cx", (d) => x(String(d.__category__)) ?? 0)
-      .attr("cy", (d) => yRight(Number(d.__value__)))
-      .attr("cursor", onPointClick ? "pointer" : "default")
-      .on("click", (_event, d) => onPointClick?.(d));
-  } else {
-    const columnResult = renderDualAxesColumnBars({
+  if (leftGeom.geometry === "column") {
+    renderDualAxesColumnBars({
       plot,
       defs,
-      columnData,
+      columnData: leftData,
       xField,
-      columnYField,
+      columnYField: leftYField,
       columnSeriesField,
       categories,
       x,
-      yRight,
+      yRight: yLeft,
       innerH,
       innerW,
-      columnOpts,
+      columnOpts: leftColumnOpts,
       colors,
-      fallbackColor: columnColor,
+      fallbackColor: leftColor,
       theme,
       seriesGradient,
       conditionalRules,
@@ -271,46 +313,108 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
       barWidthRatio,
       barRadius,
     });
-    columnLegendItems = columnResult.legendItems;
+  } else if (leftGeom.geometry === "line") {
+    renderDualAxesLineSeries({
+      plot,
+      defs,
+      points: leftSet.points,
+      categories,
+      x,
+      yScale: yLeft,
+      color: leftColor,
+      smooth: leftSmooth,
+      shadowId: "dual-line-left",
+      dotClass: "dual-line-dot",
+      conditionalRules,
+      onPointClick,
+    });
   }
 
-  plot
-    .selectAll("circle.dual-line-dot")
-    .data(linePoints)
-    .join("circle")
-    .attr("class", "dual-line-dot")
-    .attr("r", 3)
-    .attr("fill", (d) => resolveDatumColor(Number(d.__value__), lineColor, conditionalRules ?? []))
-    .attr("stroke", "#fff")
-    .attr("stroke-width", 1.5)
-    .attr("cx", (d) => x(String(d.__category__)) ?? 0)
-    .attr("cy", (d) => yLeft(Number(d.__value__)))
-    .attr("cursor", onPointClick ? "pointer" : "default")
-    .on("click", (_event, d) => onPointClick?.(d));
+  if (rightGeom.geometry === "column") {
+    renderDualAxesColumnBars({
+      plot,
+      defs,
+      columnData: rightData,
+      xField,
+      columnYField: rightYField,
+      columnSeriesField,
+      categories,
+      x,
+      yRight,
+      innerH,
+      innerW,
+      columnOpts: rightColumnOpts,
+      colors: colors.slice(1).concat(colors),
+      fallbackColor: rightColor,
+      theme,
+      seriesGradient,
+      conditionalRules,
+      onPointClick,
+      barWidthRatio,
+      barRadius,
+    });
+  } else if (rightGeom.geometry === "line") {
+    renderDualAxesLineSeries({
+      plot,
+      defs,
+      points: rightSet.points,
+      categories,
+      x,
+      yScale: yRight,
+      color: rightColor,
+      smooth: rightSmooth,
+      shadowId: dualLine ? "dual-line-right" : "dual-line-1",
+      dotClass: dualLine ? "dual-line-dot-2" : "dual-line-dot-right",
+      conditionalRules,
+      onPointClick,
+    });
+  }
 
   if (showLabel) {
-    const lineLabelTotal = sumCartesianLabelTotal(linePoints);
-    plot
-      .selectAll("text.dual-line-label")
-      .data(linePoints)
-      .join("text")
-      .attr("class", "dual-line-label")
-      .attr("x", (d) => x(String(d.__category__)) ?? 0)
-      .attr("y", (d) => yLeft(Number(d.__value__)) - 8)
-      .attr("text-anchor", "middle")
-      .attr("fill", resolveLabelFill(theme, labelColor))
-      .style("font-size", `${labelFontSize}px`)
-      .text((d) =>
-        formatCartesianDatumLabel(d, {
-          hasMultiSeries: false,
-          labelContent,
-          valueFormat,
-          total: lineLabelTotal,
-        }),
-      );
+    if (leftGeom.geometry === "line") {
+      const leftLabelTotal = sumCartesianLabelTotal(leftSet.points);
+      plot
+        .selectAll("text.dual-line-label-left")
+        .data(leftSet.points)
+        .join("text")
+        .attr("class", "dual-line-label-left")
+        .attr("x", (d) => x(String(d.__category__)) ?? 0)
+        .attr("y", (d) => yLeft(Number(d.__value__)) - 8)
+        .attr("text-anchor", "middle")
+        .attr("fill", resolveLabelFill(theme, labelColor))
+        .style("font-size", `${labelFontSize}px`)
+        .text((d) =>
+          formatCartesianDatumLabel(d, {
+            hasMultiSeries: false,
+            labelContent,
+            valueFormat,
+            total: leftLabelTotal,
+          }),
+        );
+    }
 
-    if (!dualLine) {
-      const colPoints = normalizeCartesianData(columnData, xField, columnYField, columnSeriesField);
+    if (rightGeom.geometry === "line") {
+      const rightLabelTotal = sumCartesianLabelTotal(rightSet.points);
+      plot
+        .selectAll("text.dual-line-label-right")
+        .data(rightSet.points)
+        .join("text")
+        .attr("class", "dual-line-label-right")
+        .attr("x", (d) => x(String(d.__category__)) ?? 0)
+        .attr("y", (d) => yRight(Number(d.__value__)) - 8)
+        .attr("text-anchor", "middle")
+        .attr("fill", resolveLabelFill(theme, labelColor))
+        .style("font-size", `${labelFontSize}px`)
+        .text((d) =>
+          formatCartesianDatumLabel(d, {
+            hasMultiSeries: Boolean(columnSeriesField && dualLine),
+            labelContent,
+            valueFormat,
+            total: rightLabelTotal,
+          }),
+        );
+    } else if (rightGeom.geometry === "column") {
+      const colPoints = normalizeCartesianData(rightData, xField, rightYField, columnSeriesField);
       const colLabelTotal = sumCartesianLabelTotal(colPoints);
       const hasColSeries = Boolean(columnSeriesField);
       plot
@@ -354,33 +458,43 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
             best = cat;
           }
         }
-        const linePt = lineSet.points.find((p) => String(p.__category__) === best);
-        const lineName = lineLabels?.[0] ?? "线";
-        const colName = lineLabels?.[1] ?? (dualLine ? "线2" : "柱");
-        const rows = dualLine
-          ? [
-              { name: lineName, color: lineColor, value: linePt?.__value__ ?? 0 },
-              {
-                name: colName,
-                color: columnColor,
-                value: columnSet.points.find((p) => String(p.__category__) === best)?.__value__ ?? 0,
-              },
-            ]
-          : [
-              { name: lineName, color: lineColor, value: linePt?.__value__ ?? 0 },
-              ...columnTooltipRows(
-                columnData,
-                xField,
-                columnYField,
-                columnSeriesField,
-                best,
-                colors,
-                columnColor,
-              ).map((r) => ({ ...r, name: r.name === "柱" ? colName : r.name })),
-            ];
-        tooltip
-          ?.style("opacity", "1")
-          .html(tooltipHtml(best, rows, valueFormat));
+        const rows: Array<{ name: string; color: string; value: number }> = [];
+
+        if (leftGeom.geometry === "line") {
+          const pt = leftSet.points.find((p) => String(p.__category__) === best);
+          rows.push({ name: leftLabel, color: leftColor, value: Number(pt?.__value__ ?? 0) });
+        } else if (leftGeom.geometry === "column") {
+          rows.push(
+            ...columnTooltipRows(
+              leftData,
+              xField,
+              leftYField,
+              columnSeriesField,
+              best,
+              colors,
+              leftColor,
+            ).map((r) => ({ ...r, name: r.name === "柱" ? leftLabel : r.name })),
+          );
+        }
+
+        if (rightGeom.geometry === "line") {
+          const pt = rightSet.points.find((p) => String(p.__category__) === best);
+          rows.push({ name: rightLabel, color: rightColor, value: Number(pt?.__value__ ?? 0) });
+        } else if (rightGeom.geometry === "column") {
+          rows.push(
+            ...columnTooltipRows(
+              rightData,
+              xField,
+              rightYField,
+              columnSeriesField,
+              best,
+              colors.slice(1).concat(colors),
+              rightColor,
+            ).map((r) => ({ ...r, name: r.name === "柱" ? rightLabel : r.name })),
+          );
+        }
+
+        tooltip?.style("opacity", "1").html(tooltipHtml(best, rows, valueFormat));
         const rect = container.getBoundingClientRect();
         tooltip
           ?.style("left", `${Math.min(event.clientX - rect.left + 12, width - 160)}px`)

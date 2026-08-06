@@ -96,4 +96,9 @@ describe("chartTypeStyleProfiles", () => {
     expect(chartStyleSectionsFromProfile("treemap")).toContain("treemapShape");
     expect(chartStyleSectionsFromProfile("circle-packing")).toContain("circlePackingShape");
   });
+
+  it("types without tooltip in profile get a top-level tooltip section", () => {
+    expect(chartStyleSectionsFromProfile("circle-packing")).toContain("tooltip");
+    expect(chartStyleSectionsFromProfile("gauge")).toContain("tooltip");
+  });
 });

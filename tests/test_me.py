@@ -63,6 +63,26 @@ def test_public_paths_accessible_without_token(client, path):
     assert response.status_code == 200
 
 
+def test_template_assets_accessible_without_token(client):
+    """内置素材为公开静态资源，同源部署时不得被 AuthMiddleware 拦截。"""
+    response = client.get(
+        "/template-assets/packs/gov-enterprise-v1/title-strips/title-diamond-flank-cyan.svg",
+    )
+    assert response.status_code == 200
+    assert "image/svg+xml" in response.headers.get("content-type", "")
+    assert b"<svg" in response.content
+
+
+def test_template_assets_canvas_light_accessible_without_token(client):
+    """图库大屏浅色缩略图须可访问（优先 fe/public，避免 stale dist 404）。"""
+    response = client.get(
+        "/template-assets/packs/gov-enterprise-v1/thumbs/canvas-light-lime-honeycomb.svg",
+    )
+    assert response.status_code == 200
+    assert "image/svg+xml" in response.headers.get("content-type", "")
+    assert b"<svg" in response.content
+
+
 def test_me_jwt_valid_in_production(client, admin_auth_headers, monkeypatch):
     """T-ME-08: production 环境 JWT 仍有效（SM2 密钥一致）。"""
     from app.auth.middleware import AuthMiddleware

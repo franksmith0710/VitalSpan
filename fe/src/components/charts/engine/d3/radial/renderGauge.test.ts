@@ -43,4 +43,53 @@ describe("renderD3GaugeChart", () => {
     const texts = [...el.querySelectorAll("text")].map((n) => n.textContent);
     expect(texts.some((t) => t?.includes("72"))).toBe(true);
   });
+
+  it("prefers palette colors over plan default range colors", () => {
+    const el = document.createElement("div");
+    renderD3GaugeChart(
+      el,
+      baseConfig({
+        colors: ["#f97316", "#fecaca"],
+        options: {
+          rawValue: 72,
+          percent: 0.72,
+          __gaugeMin: 0,
+          __gaugeMax: 100,
+          range: { color: ["#465fff", "#e4e7ec"] },
+        },
+      }),
+    );
+    const fills = [...el.querySelectorAll("stop")].map((n) => n.getAttribute("stop-color"));
+    expect(fills.some((c) => c?.toLowerCase().includes("f97316"))).toBe(true);
+    const hub = el.querySelectorAll("circle")[1];
+    expect(hub?.getAttribute("fill")).toMatch(/f97316/i);
+  });
+
+  it("applies label content and value format on center readout", () => {
+    const el = document.createElement("div");
+    renderD3GaugeChart(
+      el,
+      baseConfig({
+        options: {
+          rawValue: 238670,
+          percent: 1,
+          dimensionLabel: "综合满意度",
+          __gaugeMin: 0,
+          __gaugeMax: 100,
+          __gaugeSplitNumber: 5,
+        },
+        labelContent: {
+          showDimension: true,
+          showIndicator: true,
+          showPercent: false,
+        },
+        valueFormat: { type: "auto", decimals: 2, thousandSeparator: true },
+      }),
+    );
+    const center = [...el.querySelectorAll("text")]
+      .map((n) => n.textContent ?? "")
+      .find((t) => t.includes("238"));
+    expect(center).toContain("综合满意度");
+    expect(center).toMatch(/238,670\.00/);
+  });
 });

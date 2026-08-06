@@ -11,14 +11,11 @@ from app.datasources.metadata.service import list_columns
 from app.ingestion.etl_suggest import EtlColumnMeta, suggest_etl_rules_from_columns
 from app.ingestion.etl_templates import default_etl_rules_for_source
 from app.ingestion.models import SyncJob
+from app.ingestion.sync_table_ref import resolve_sync_schema_and_table
 
 
 def resolve_source_schema_table(job: SyncJob) -> tuple[str, str]:
-    raw_table = (job.source_table or "").strip()
-    if "." in raw_table:
-        schema, table = raw_table.split(".", 1)
-        return schema.strip(), table.strip()
-    return (job.source_database or "").strip(), raw_table
+    return resolve_sync_schema_and_table(job)
 
 
 def resolve_initial_etl_rules(

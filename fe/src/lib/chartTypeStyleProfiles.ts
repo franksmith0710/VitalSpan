@@ -133,6 +133,12 @@ export function resolveChartTypeStyleProfile(chartType: ChartType): ChartTypeSty
   let base = PROFILE_BY_TYPE[chartType] ?? CARTESIAN_CORE;
   if (!chartTypeHasTooltipSection(chartType)) {
     base = base.filter((id) => id !== "tooltip");
+  } else if (!base.includes("tooltip")) {
+    const labelIdx = base.indexOf("label");
+    base =
+      labelIdx >= 0
+        ? [...base.slice(0, labelIdx + 1), "tooltip", ...base.slice(labelIdx + 1)]
+        : [...base, "tooltip"];
   }
   const sections = VARIANT_BASIC_TYPES.has(chartType) ? ["variantBasic", ...base] : base;
   const cartesianFields =

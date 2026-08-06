@@ -57,9 +57,9 @@ export const BACKEND_CATALOG_FIELD_RULES: Record<string, BackendFieldRule> = {
   "circle-packing": { minDimensions: 1, maxDimensions: 1, minMetrics: 1, maxMetrics: 1 },
   "multi-scatter": { minDimensions: 1, maxDimensions: 2, minMetrics: 2, maxMetrics: 4 },
   graph: { minDimensions: 2, maxDimensions: 2, minMetrics: 0, maxMetrics: 1 },
-  combo: { minDimensions: 1, maxDimensions: 8, minMetrics: 2, maxMetrics: 8 },
-  "chart-mix": { minDimensions: 1, maxDimensions: 8, minMetrics: 2, maxMetrics: 8 },
-  "chart-mix-group": { minDimensions: 1, maxDimensions: 8, minMetrics: 2, maxMetrics: 8 },
-  "chart-mix-stack": { minDimensions: 1, maxDimensions: 8, minMetrics: 2, maxMetrics: 8 },
+  combo: { minDimensions: 1, maxDimensions: 8, minMetrics: 1, maxMetrics: 8 },
+  "chart-mix": { minDimensions: 1, maxDimensions: 8, minMetrics: 1, maxMetrics: 8 },
+  "chart-mix-group": { minDimensions: 1, maxDimensions: 8, minMetrics: 1, maxMetrics: 8 },
+  "chart-mix-stack": { minDimensions: 1, maxDimensions: 8, minMetrics: 1, maxMetrics: 8 },
   "chart-mix-dual-line": { minDimensions: 1, maxDimensions: 8, minMetrics: 1, maxMetrics: 8 },
 };

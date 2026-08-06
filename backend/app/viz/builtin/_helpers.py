@@ -16,7 +16,7 @@ KPI_RULE = FieldRule(0, 1, 1, 1)
 GAUGE_RULE = FieldRule(0, 0, 1, 1)
 MAP_RULE = FieldRule(1, 3, 1, 1)
 HEATMAP_MATRIX = FieldRule(2, 2, 1, 1)
-COMBO_RULE = FieldRule(1, 8, 2, 8)
+COMBO_RULE = FieldRule(1, 8, 1, 8, note="左柱或右线至少 1 个指标")
 DUAL_LINE_RULE = FieldRule(1, 8, 1, 8)
 
 

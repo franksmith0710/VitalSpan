@@ -8,8 +8,20 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "../public/template-assets");
+const GALLERY_ROOT = path.join(ROOT, "gallery");
 const OUT = path.join(ROOT, "catalog.html");
 const CATALOG_JSON = path.resolve(__dirname, "../src/lib/templateAssetsCatalog.generated.json");
+
+/** 图库 UI 展示用缩略图分类（统一写入 gallery/{category}/） */
+const GALLERY_CATEGORIES = new Set([
+  "borderless-decor",
+  "screen-header",
+  "title-strip",
+  "component-panel",
+  "canvas-dark",
+  "canvas-light",
+  "screen-bg",
+]);
 
 const PALETTE_HEX = {
   cyan: "#22d3ee",
@@ -55,14 +67,101 @@ function toPublicUrl(relOrAbs) {
   return `/template-assets/${toRel(relOrAbs)}`;
 }
 
+function syncLegacyScreenBackgrounds() {
+  const srcDir = path.join(ROOT, "backgrounds");
+  const destDir = path.join(ROOT, "packs/gov-enterprise-v1/backgrounds/legacy");
+  if (!fs.existsSync(srcDir)) return;
+  fs.mkdirSync(destDir, { recursive: true });
+  for (const file of fs.readdirSync(srcDir)) {
+    if (!file.endsWith(".svg")) continue;
+    fs.copyFileSync(path.join(srcDir, file), path.join(destDir, file));
+  }
+}
+
+function buildThumbSvg(svgContent, tw = 320, th = 180) {
+  const viewMatch = svgContent.match(/viewBox="0 0 (\d+) (\d+)"/);
+  const vw = viewMatch ? Number(viewMatch[1]) : 1920;
+  const vh = viewMatch ? Number(viewMatch[2]) : 1080;
+  const inner = svgContent.replace(/^<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "");
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${tw}" height="${th}" viewBox="0 0 ${tw} ${th}" preserveAspectRatio="xMidYMid slice">
+  <g transform="scale(${tw / vw} ${th / vh})">
+  ${inner}
+  </g>
+</svg>`;
+}
+
+function ensureScreenBgThumb(item) {
+  if (item.category !== "screen-bg" || !item.src) return null;
+  const srcPath = path.join(ROOT, item.src);
+  if (!fs.existsSync(srcPath)) return null;
+  const thumbRel = `packs/gov-enterprise-v1/thumbs/${item.id}.svg`;
+  const thumbPath = path.join(ROOT, thumbRel);
+  const svg = fs.readFileSync(srcPath, "utf8");
+  fs.mkdirSync(path.dirname(thumbPath), { recursive: true });
+  fs.writeFileSync(thumbPath, buildThumbSvg(svg), "utf8");
+  return toPublicUrl(thumbRel);
+}
+
+function resolveItemSrcPath(item) {
+  const rel = item.src || toRel(item.url || item.bg || item.path || "");
+  if (!rel) return null;
+  const srcPath = path.join(ROOT, rel);
+  return fs.existsSync(srcPath) ? srcPath : null;
+}
+
+function resolvePackThumbPath(item) {
+  if (!item.id) return null;
+  const thumbRel = `packs/gov-enterprise-v1/thumbs/${item.id}.svg`;
+  const thumbPath = path.join(ROOT, thumbRel);
+  return fs.existsSync(thumbPath) ? thumbPath : null;
+}
+
+/** 写入 gallery/{category}/{id}.svg，供图库格子统一预览 */
+function ensureGalleryThumb(item) {
+  if (!GALLERY_CATEGORIES.has(item.category) || !item.id) return null;
+  const destRel = `gallery/${item.category}/${item.id}.svg`;
+  const destPath = path.join(ROOT, destRel);
+  const packThumb = resolvePackThumbPath(item);
+  const srcPath = packThumb || resolveItemSrcPath(item);
+  if (!srcPath) return null;
+
+  fs.mkdirSync(path.dirname(destPath), { recursive: true });
+  const svg = fs.readFileSync(srcPath, "utf8");
+  const isPrebuiltThumb =
+    packThumb != null ||
+    item.category === "canvas-dark" ||
+    item.category === "canvas-light" ||
+    item.category === "screen-bg";
+  fs.writeFileSync(destPath, isPrebuiltThumb ? svg : buildThumbSvg(svg), "utf8");
+  return toPublicUrl(destRel);
+}
+
 function finalizeCatalogItem(item) {
   const url =
     item.url ||
     (item.bg ? toPublicUrl(item.bg) : "") ||
     (item.path ? toPublicUrl(item.path) : "") ||
     toPublicUrl(item.src);
-  const thumbUrl = item.thumbUrl || toPublicUrl(item.src) || url;
-  return { ...item, url, thumbUrl };
+  let thumbUrl = item.thumbUrl || toPublicUrl(item.src) || url;
+  if (item.category === "top-decor-clear" && item.pack === "gov-enterprise-v1") {
+    const thumbRel = `packs/gov-enterprise-v1/thumbs/${item.id}.svg`;
+    if (fs.existsSync(path.join(ROOT, thumbRel))) {
+      thumbUrl = toPublicUrl(thumbRel);
+    }
+  }
+  if (item.category === "screen-bg") {
+    const generated = ensureScreenBgThumb(item);
+    if (generated) thumbUrl = generated;
+  }
+  if (item.category === "canvas-dark" || item.category === "canvas-light") {
+    const thumbRel = `packs/gov-enterprise-v1/thumbs/${item.id}.svg`;
+    if (fs.existsSync(path.join(ROOT, thumbRel))) {
+      thumbUrl = toPublicUrl(thumbRel);
+    }
+  }
+  // gallery/ 仅作分类归档；运行时 thumbUrl 走 packs/thumbs 或全图 url
+  ensureGalleryThumb(item);
+  return { ...item, url, thumbUrl, label: item.label || item.id };
 }
 
 function readJson(rel) {
@@ -90,6 +189,7 @@ function scanSvgs(dir, pack, category) {
 
 function collectItems() {
   const items = [];
+  syncLegacyScreenBackgrounds();
 
   const gov = readJson("packs/gov-enterprise-v1/manifest.json");
   for (const row of gov.items) {
@@ -148,7 +248,9 @@ function collectItems() {
     });
   }
 
-  items.push(...scanSvgs("backgrounds", "legacy", "screen-bg"));
+  items.push(
+    ...scanSvgs("packs/gov-enterprise-v1/backgrounds/legacy", "gov-enterprise-v1", "screen-bg"),
+  );
   items.push(...scanSvgs("thumbs", "legacy", "thumb"));
 
   const borderlessPath = "packs/borderless-decor-v1/manifest.json";
@@ -310,6 +412,7 @@ function buildHtml(items) {
       'canvas-light': '浅色看板背景',
       'component-panel': '组件面板',
       'title-strip': '标题装饰条',
+      'top-decor-clear': '透明顶部装饰',
       'borderless-decor': '无边框装饰图',
       'dashboard-template': '仪表板模板',
       'dashboard-variant': '仪表板色系变体',

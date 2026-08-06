@@ -18,6 +18,12 @@ export const MULTI_MET_OPTS: AxisOpts = {
   showAggregation: true,
 };
 
+/** 双轴组合图：左/右值轴各 1 个指标（对标 DE limit: 1） */
+export const MIX_SINGLE_MET_OPTS: AxisOpts = {
+  limit: 1,
+  showAggregation: true,
+};
+
 function axis(
   id: DeAxisId,
   label: string,
@@ -50,6 +56,22 @@ export const deAxis = {
     axis("yAxisExt", label, "metric", { showAggregation: true, ...opts }),
   bubble: (label = "气泡大小 / 指标", opts: AxisOpts = {}) =>
     axis("extBubble", label, "metric", { required: false, showAggregation: true, ...opts }),
+  /** 组合图右轴子类别（DE extBubble 存维度） */
+  rightSubDim: (label = "右子类别 / 维度", opts: AxisOpts = {}) =>
+    axis("extBubble", label, "dimension", {
+      required: false,
+      showAggregation: false,
+      limit: 1,
+      ...opts,
+    }),
+  /** 组合图左轴子类别（双线组合 xAxisExt） */
+  leftSubDim: (label = "左子类别 / 维度", opts: AxisOpts = {}) =>
+    axis("xAxisExt", label, "dimension", { required: false, limit: 1, ...opts }),
+  /** 分组柱线组合：柱侧子类别（DE chart_group → 中文「子类别」） */
+  mixGroupSubDim: (label = "子类别 / 维度", opts: AxisOpts = {}) =>
+    axis("xAxisExt", label, "dimension", { required: false, limit: 1, ...opts }),
+  stackItem: (label = "堆叠项 / 维度", opts: AxisOpts = {}) =>
+    axis("extStack", label, "dimension", { required: false, limit: 1, ...opts }),
   color: (label = "颜色 / 维度", opts: AxisOpts = {}) =>
     axis("extColor", label, "dimension", opts),
   drill: (label = "钻取 / 维度", opts: AxisOpts = {}) =>

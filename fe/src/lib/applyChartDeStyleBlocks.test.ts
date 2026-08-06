@@ -47,7 +47,13 @@ describe("applyChartDeStyleBlocksToPlan", () => {
     const deStyle: ChartDeStyle = {
       sankey: { nodeWidth: 16, nodeGap: 12, linkOpacity: 0.6 },
       treemap: { paddingInner: 5, paddingOuter: 7, cellRadius: 4 },
-      circlePacking: { layoutPadding: 3, labelMinRadius: 22 },
+      circlePacking: {
+        layoutPadding: 3,
+        labelMinRadius: 22,
+        backgroundColor: "#f1f5f9",
+        sizePercent: 80,
+        showOuterRing: false,
+      },
     };
     const plan = applyChartDeStyleBlocksToPlan(
       { kind: "d3", plotType: "Sankey", empty: false, options: {} },
@@ -61,6 +67,9 @@ describe("applyChartDeStyleBlocksToPlan", () => {
     expect(plan.options.__treemapCellRadius).toBe(4);
     expect(plan.options.__circlePackingPadding).toBe(3);
     expect(plan.options.__circlePackingLabelMinRadius).toBe(22);
+    expect(plan.options.__circlePackingBackgroundColor).toBe("#f1f5f9");
+    expect(plan.options.__circlePackingSizePercent).toBe(80);
+    expect(plan.options.__circlePackingShowOuterRing).toBe(false);
   });
 
   it("maps quadrant and compare shape blocks to plan options", () => {

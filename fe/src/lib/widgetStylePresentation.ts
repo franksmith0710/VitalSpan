@@ -8,6 +8,12 @@ import {
 } from "@/components/dashboard/dashboardStyleConfig";
 import { formatWidgetBackgroundImageCss } from "@/components/dashboard/imageSourceUtils";
 import { resolveWidgetBackgroundImageLayerStyle } from "@/lib/widgetBackgroundImageFit";
+import {
+  defaultPositionForFit,
+  effectiveDecorBackgroundFit,
+  isDecorativeWidgetBackgroundUrl,
+} from "@/lib/widgetBackgroundImageFit";
+import type { WidgetBackgroundImageLayerStyle } from "@/lib/widgetDecorBackground";
 import { resolveChartFrameOverlayLayer } from "@/lib/chartFrameBorderPresets";
 import {
   applyBackgroundOpacityOnly,
@@ -34,7 +40,7 @@ export function buildWidgetBackgroundPresentation(
   const style: CSSProperties = {};
   const radius = resolveBoxRadius(bg);
   let frameLayer: CSSProperties | null = null;
-  let imageLayer: CSSProperties | null = null;
+  let imageLayer: WidgetBackgroundImageLayerStyle | null = null;
 
   const coerced = coerceWidgetSurfaceBackground(bg.background, colorScheme);
   const useThemeDefault =
@@ -70,12 +76,19 @@ export function buildWidgetBackgroundPresentation(
       frameLayer = resolveChartFrameOverlayLayer(bg.framePresetId, bg.frameColor, radius);
     } else if (mode !== "border" && bg.backgroundImage) {
       const imageUrl = formatWidgetBackgroundImageCss(bg.backgroundImage);
+      const isDecor = isDecorativeWidgetBackgroundUrl(bg.backgroundImage);
+      const fit = isDecor
+        ? effectiveDecorBackgroundFit(bg.backgroundImageFit)
+        : (bg.backgroundImageFit ?? "stretch");
+      const position = bg.backgroundImagePosition ?? defaultPositionForFit(fit);
       const blurPx = bg.backdropBlur ?? 0;
       const blurStyle = blurPx > 0 ? buildWidgetImageBlurStyle(blurPx) : null;
       imageLayer = {
         backgroundImage: imageUrl,
         ...resolveWidgetBackgroundImageLayerStyle(bg),
-        borderRadius: radius,
+        widgetBackgroundFit: fit,
+        widgetBackgroundPosition: position,
+        ...(isDecor ? {} : { borderRadius: radius }),
         transform: blurStyle?.transform ? `translateZ(0) ${blurStyle.transform}` : "translateZ(0)",
         backfaceVisibility: "hidden",
         ...(blurStyle

@@ -334,7 +334,7 @@ function glowPlaqueSimple(w, accent, filterId, yTop = 16, plateW = 420, plateH =
 }
 
 /** 对标 DataEase workbranch 大屏顶栏（梯形 + 双侧电路翼） */
-function deSciFiHeaderBand(w, accent, palette, filterId, variant = "de-trapezoid-wing", headerH = 100) {
+function deSciFiHeaderBand(w, accent, palette, filterId, variant = "de-trapezoid-wing", headerH = 100, { transparent = false } = {}) {
   const cy = headerH * 0.52;
   const wingGap = 248;
   const plaqueVariant = variant.replace(/^de-/, "");
@@ -342,15 +342,25 @@ function deSciFiHeaderBand(w, accent, palette, filterId, variant = "de-trapezoid
   if (plaqueVariant === "circuit-sym") plaque = cloudCenterTitlePlaque(w, accent, filterId);
   if (plaqueVariant === "glow-plaque") plaque = glowPlaqueSimple(w, accent, filterId);
 
+  const hdrBgStops = transparent
+    ? `<stop stop-color="${accent}" stop-opacity="0.1"/>
+      <stop offset="0.55" stop-color="${palette.baseTo}" stop-opacity="0.04"/>
+      <stop offset="1" stop-opacity="0"/>`
+    : `<stop stop-color="${accent}" stop-opacity="0.16"/>
+      <stop offset="0.55" stop-color="${palette.baseTo}" stop-opacity="0.08"/>
+      <stop offset="1" stop-opacity="0"/>`;
+
+  const hdrBgRect = transparent
+    ? ""
+    : `<rect width="${w}" height="${headerH}" fill="url(#${filterId}-hdr-bg)"/>`;
+
   return `<defs>
     ${deSciFiGlowDefs(filterId)}
     <linearGradient id="${filterId}-hdr-bg" x1="0" y1="0" x2="0" y2="1">
-      <stop stop-color="${accent}" stop-opacity="0.16"/>
-      <stop offset="0.55" stop-color="${palette.baseTo}" stop-opacity="0.08"/>
-      <stop offset="1" stop-opacity="0"/>
+      ${hdrBgStops}
     </linearGradient>
   </defs>
-  <rect width="${w}" height="${headerH}" fill="url(#${filterId}-hdr-bg)"/>
+  ${hdrBgRect}
   <line x1="0" y1="${headerH - 1}" x2="${w}" y2="${headerH - 1}" stroke="${accent}" stroke-width="1" opacity="0.4"/>
   <line x1="48" y1="${headerH - 1}" x2="${w - 48}" y2="${headerH - 1}" stroke="${accent}" stroke-width="2.5" opacity="0.12"/>
   ${circuitWingDecor(w / 2 - wingGap, cy, accent, filterId, "left")}
@@ -600,70 +610,6 @@ function darkPatternBody(pattern, palette, accent, w, h, id) {
   }
 }
 
-function lightPatternBody(pattern, palette, accent, w, h, id) {
-  const pid = `${id}-pat`;
-  const motif = palette.motif;
-  switch (pattern) {
-    case "clean-header":
-      return {
-        extraDefs: `<linearGradient id="${pid}" x1="0" y1="0" x2="0" y2="1"><stop stop-color="${accent}" stop-opacity="0.05"/><stop offset="1" stop-opacity="0"/></linearGradient>`,
-        body: `<rect width="${w}" height="56" fill="url(#${pid})"/>
-  <line x1="24" y1="56" x2="${w - 24}" y2="56" stroke="${accent}" stroke-width="1" opacity="0.12"/>`,
-      };
-    case "header-band":
-      return {
-        extraDefs: `<linearGradient id="${pid}" x1="0" y1="0" x2="0" y2="1"><stop stop-color="${accent}" stop-opacity="0.06"/><stop offset="1" stop-opacity="0"/></linearGradient>`,
-        body: `<rect width="${w}" height="72" fill="url(#${pid})"/>
-  <line x1="32" y1="72" x2="${w - 32}" y2="72" stroke="${accent}" stroke-width="1" opacity="0.15"/>`,
-      };
-    case "card-float":
-      return {
-        extraDefs: "",
-        body: `${[{ x: 80, y: 120, cw: 420, ch: 260 }, { x: w - 500, y: 120, cw: 420, ch: 260 }, { x: 80, y: 420, cw: w - 160, ch: 280 }].map((c) =>
-          `<rect x="${c.x}" y="${c.y}" width="${c.cw}" height="${c.ch}" rx="6" fill="white" fill-opacity="0.55" stroke="${accent}" stroke-width="0.8" opacity="0.9"/>
-  ${renderMotif(motif, c.x + 24, c.y + 20, 10, accent, 0.4)}`).join("\n  ")}`,
-      };
-    case "watermark":
-      return {
-        extraDefs: "",
-        body: `${renderMotif(motif, w / 2, h / 2, 200, accent, 0.04)}
-  ${Array.from({ length: 6 }, (_, i) => renderMotif(motif, 160 + (i % 3) * 520, 180 + Math.floor(i / 3) * 360, 40, accent, 0.03)).join("\n  ")}`,
-      };
-    case "corner-fold":
-      return {
-        extraDefs: "",
-        body: `${[[32, 32, 1], [w - 32, 32, -1], [32, h - 32, 1], [w - 32, h - 32, -1]].map(([cx, cy, dir]) =>
-          `<path d="M${cx} ${cy} L${cx + 40 * dir} ${cy} L${cx} ${cy + 40}" fill="none" stroke="${accent}" stroke-width="1.5" opacity="0.2"/>`).join("\n  ")}
-  ${cornerBrackets(48, 48, w - 96, h - 96, accent, 28, 1, 0.25)}`,
-      };
-    case "dot-matrix":
-      return {
-        extraDefs: `<pattern id="${pid}" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="12" cy="12" r="1.2" fill="${accent}" opacity="0.1"/></pattern>`,
-        body: `<rect width="${w}" height="${h}" fill="url(#${pid})"/>
-  ${renderMotif(motif, w / 2, h * 0.35, 50, accent, 0.06)}`,
-      };
-    case "ribbon":
-      return {
-        extraDefs: `<linearGradient id="${pid}" x1="0" y1="0" x2="${w}" y2="0"><stop offset="0%" stop-color="${accent}" stop-opacity="0"/><stop offset="50%" stop-color="${accent}" stop-opacity="0.06"/><stop offset="100%" stop-color="${accent}" stop-opacity="0"/></linearGradient>`,
-        body: `<rect y="${h * 0.12}" width="${w}" height="48" fill="url(#${pid})"/>
-  <rect y="${h * 0.72}" width="${w}" height="32" fill="url(#${pid})" opacity="0.7"/>
-  ${Array.from({ length: 4 }, (_, i) => iconDiamond(200 + i * 400, h * 0.12 + 24, 8, accent, 0.25)).join("\n  ")}`,
-      };
-    case "side-accent":
-      return {
-        extraDefs: `<linearGradient id="${pid}" x1="0" y1="0" x2="1" y2="0"><stop stop-color="${accent}" stop-opacity="0.14"/><stop offset="0.12" stop-opacity="0"/></linearGradient>`,
-        body: `<rect width="10" height="${h}" fill="url(#${pid})"/>
-  <line x1="10" y1="0" x2="10" y2="${h}" stroke="${accent}" stroke-width="1" opacity="0.22"/>
-  <rect x="24" y="64" width="${w - 48}" height="3" fill="${accent}" opacity="0.08" rx="1.5"/>`,
-      };
-    default:
-      return {
-        extraDefs: "",
-        body: `<line x1="24" y1="56" x2="${w - 24}" y2="56" stroke="${accent}" stroke-width="1" opacity="0.12"/>`,
-      };
-  }
-}
-
 function buildCanvasSvg(palette, pattern, mode, paletteName, w = 1920, h = 1080) {
   const seed = `${mode}-${paletteName}-${pattern}`;
   if (mode === "dark") {
@@ -757,28 +703,34 @@ function buildPanelSvg(style, colorKey, w = 800, h = 480) {
 </svg>`;
 }
 
-function buildScreenHeaderSvg(style, colorKey, w = 1920, h = 100) {
+function buildScreenHeaderSvg(style, colorKey, w = 1920, h = 100, { transparent = false } = {}) {
   const palette = DARK_PALETTES[colorKey];
   const accent = palette.accent;
   const bg = palette.baseFrom;
-  const filterId = stableId(`screen-header-${style}-${colorKey}`);
-  const band = deSciFiHeaderBand(w, accent, palette, filterId, style, h);
+  const filterId = stableId(`screen-header-${style}-${colorKey}${transparent ? "-clear" : ""}`);
+  const band = deSciFiHeaderBand(w, accent, palette, filterId, style, h, { transparent });
+  const opaqueBg = transparent
+    ? ""
+    : `<rect width="${w}" height="${h}" fill="${bg}" fill-opacity="0.92"/>`;
   return `${svgHeader(w, h, "none meet")}
-  <rect width="${w}" height="${h}" fill="${bg}" fill-opacity="0.92"/>
+  ${opaqueBg}
   ${band}
 </svg>`;
 }
 
-function buildTitleStripSvg(style, colorKey, w = 720, h = 64) {
+function buildTitleStripSvg(style, colorKey, w = 720, h = 64, { transparent = false } = {}) {
   const palette = DARK_PALETTES[colorKey];
   const accent = palette.accent;
   const bg = palette.baseFrom;
   const motif = palette.motif;
+  const opaqueBg = transparent
+    ? ""
+    : `<rect width="${w}" height="${h}" fill="${bg}" fill-opacity="0.82"/>`;
 
   let body = "";
   switch (style) {
     case "diamond-flank":
-      body = `<rect width="${w}" height="${h}" fill="${bg}" fill-opacity="0.82"/>
+      body = `${opaqueBg}
   <defs>
     <linearGradient id="fade-l" x1="0" y1="0" x2="1" y2="0"><stop stop-color="${accent}" stop-opacity="0"/><stop offset="1" stop-color="${accent}" stop-opacity="0.55"/></linearGradient>
     <linearGradient id="fade-r" x1="1" y1="0" x2="0" y2="0"><stop stop-color="${accent}" stop-opacity="0"/><stop offset="1" stop-color="${accent}" stop-opacity="0.55"/></linearGradient>
@@ -791,7 +743,7 @@ function buildTitleStripSvg(style, colorKey, w = 720, h = 64) {
   ${renderMotif(motif, w / 2, h / 2, 8, accent, 0.45)}`;
       break;
     case "shield-badge":
-      body = `<rect width="${w}" height="${h}" fill="${bg}" fill-opacity="0.82"/>
+      body = `${opaqueBg}
   ${iconShield(32, h / 2, 18, accent, 0.6)}
   <rect x="56" y="8" width="4" height="${h - 16}" fill="${accent}" opacity="0.5"/>
   <line x1="72" y1="${h / 2}" x2="${w - 24}" y2="${h / 2}" stroke="${accent}" stroke-width="1" opacity="0.35"/>
@@ -799,7 +751,7 @@ function buildTitleStripSvg(style, colorKey, w = 720, h = 64) {
       break;
     case "hex-nodes":
     default:
-      body = `<rect width="${w}" height="${h}" fill="${bg}" fill-opacity="0.82"/>
+      body = `${opaqueBg}
   ${iconHex(28, h / 2, 14, accent, 0.5)}
   ${iconHex(w - 28, h / 2, 14, accent, 0.5)}
   ${iconChevron(w / 2 - 120, h / 2, 10, accent, 0.4)}
@@ -813,12 +765,16 @@ function buildTitleStripSvg(style, colorKey, w = 720, h = 64) {
   return `${svgHeader(w, h, "none meet")}${body}</svg>`;
 }
 
-function buildThumbSvg(svgContent, tw = 320, th = 180) {
+function buildThumbSvg(svgContent, tw = 320, th = 180, { darkBackdrop = false } = {}) {
   const viewMatch = svgContent.match(/viewBox="0 0 (\d+) (\d+)"/);
   const vw = viewMatch ? Number(viewMatch[1]) : 1920;
   const vh = viewMatch ? Number(viewMatch[2]) : 1080;
   const inner = svgContent.replace(/^<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "");
+  const backdrop = darkBackdrop
+    ? `<rect width="${tw}" height="${th}" fill="#0f172a"/>`
+    : "";
   return `${svgHeader(tw, th)}
+  ${backdrop}
   <g transform="scale(${tw / vw} ${th / vh})">
   ${inner}
   </g>
@@ -841,7 +797,7 @@ function writeFile(relPath, content) {
 }
 
 function cleanOutputDirs() {
-  const subdirs = ["backgrounds/dark", "backgrounds/light", "panels", "title-strips", "screen-headers", "thumbs"];
+  const subdirs = ["backgrounds/dark", "backgrounds/light", "panels", "title-strips", "screen-headers", "top-decor-clear", "thumbs"];
   for (const sub of subdirs) {
     const full = path.join(PACK_ROOT, sub);
     if (fs.existsSync(full)) {
@@ -928,6 +884,20 @@ function generate() {
         motif: DARK_PALETTES[color].motif,
         tags: ["title", "header", style],
       });
+
+      const idClear = `title-clear-${style}-${color}`;
+      const relClear = `top-decor-clear/${idClear}.svg`;
+      const svgClear = buildTitleStripSvg(style, color, 720, 64, { transparent: true });
+      writeFile(relClear, svgClear);
+      items.push({
+        id: idClear,
+        category: "top-decor-clear",
+        path: `${PUBLIC_PREFIX}/${relClear.replace(/\\/g, "/")}`,
+        palette: color,
+        style,
+        motif: DARK_PALETTES[color].motif,
+        tags: ["title", "header", style, "transparent"],
+      });
     }
   }
 
@@ -946,6 +916,20 @@ function generate() {
         motif: DARK_PALETTES[color].motif,
         tags: ["screen-header", "de-style", style],
       });
+
+      const idClear = `screen-header-clear-${style}-${color}`;
+      const relClear = `top-decor-clear/${idClear}.svg`;
+      const svgClear = buildScreenHeaderSvg(style, color, 1920, 100, { transparent: true });
+      writeFile(relClear, svgClear);
+      items.push({
+        id: idClear,
+        category: "top-decor-clear",
+        path: `${PUBLIC_PREFIX}/${relClear.replace(/\\/g, "/")}`,
+        palette: color,
+        style,
+        motif: DARK_PALETTES[color].motif,
+        tags: ["screen-header", "de-style", style, "transparent"],
+      });
     }
   }
 
@@ -955,17 +939,29 @@ function generate() {
     writeFile(`thumbs/${item.id}.svg`, buildThumbSvg(svg));
   }
 
+  for (const item of items.filter((i) => i.category === "top-decor-clear")) {
+    const rel = item.path.replace(PUBLIC_PREFIX + "/", "");
+    const svg = fs.readFileSync(path.join(PACK_ROOT, rel), "utf8");
+    const viewMatch = svg.match(/viewBox="0 0 (\d+) (\d+)"/);
+    const vw = viewMatch ? Number(viewMatch[1]) : 720;
+    const vh = viewMatch ? Number(viewMatch[2]) : 64;
+    const tw = 320;
+    const th = Math.max(72, Math.round((tw * vh) / vw));
+    writeFile(`thumbs/${item.id}.svg`, buildThumbSvg(svg, tw, th, { darkBackdrop: true }));
+  }
+
   const categories = {
     "canvas-dark": { count: items.filter((i) => i.category === "canvas-dark").length, defaultSize: [1920, 1080] },
     "canvas-light": { count: items.filter((i) => i.category === "canvas-light").length, defaultSize: [1920, 1080] },
     "component-panel": { count: items.filter((i) => i.category === "component-panel").length, defaultSize: [800, 480] },
     "title-strip": { count: items.filter((i) => i.category === "title-strip").length, defaultSize: [720, 64] },
     "screen-header": { count: items.filter((i) => i.category === "screen-header").length, defaultSize: [1920, 100] },
+    "top-decor-clear": { count: items.filter((i) => i.category === "top-decor-clear").length, defaultSize: [1920, 100] },
   };
 
   const manifest = {
     id: PACK_ID,
-    version: 5,
+    version: 6,
     generatedAt,
     total: items.length,
     categories,
@@ -985,8 +981,9 @@ function generate() {
 | canvas-dark | ${categories["canvas-dark"].count} | 1920×1080 | 数据大屏整体背景 |
 | canvas-light | ${categories["canvas-light"].count} | 1920×1080 | 看板/报表浅色背景 |
 | component-panel | ${categories["component-panel"].count} | 800×480 | 组件卡片底图（可拉伸） |
-| title-strip | ${categories["title-strip"].count} | 720×64 | 标题装饰条 |
+| title-strip | ${categories["title-strip"].count} | 720×64 | 标题装饰条（半透明底） |
 | screen-header | ${categories["screen-header"].count} | 1920×100 | 大屏顶栏（DE 梯形+电路翼） |
+| top-decor-clear | ${categories["top-decor-clear"].count} | 720×64 / 1920×100 | **透明底**顶部装饰（叠加大屏画布） |
 | **合计** | **${items.length}** | | |
 
 ## 视觉特性（v5）

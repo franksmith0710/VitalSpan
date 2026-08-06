@@ -116,4 +116,26 @@ describe("D3TableView table color wiring", () => {
     const host = container.querySelector(".embedded-chart-table-host") as HTMLElement;
     expect(host.style.getPropertyValue("--dashboard-table-header-bg")).toBe("#ff0000");
   });
+
+  it("applies deTableStyle font sizes to host vars and cell inline styles", () => {
+    const { container } = renderTable(
+      tableProps({
+        chartConfig: {
+          chartType: "table-info",
+          mode: "sql",
+          dataSourceId: "ds",
+          dimensions: [{ field: "region" }],
+          metrics: [{ field: "amount", aggregation: "sum" }],
+          nativeBody: { deTableStyle: { headerFontSize: 9, bodyFontSize: 7 } },
+        },
+      }),
+    );
+    const host = container.querySelector(".embedded-chart-table-host") as HTMLElement;
+    expect(host.style.getPropertyValue("--dashboard-table-header-font-size")).toBe("9px");
+    expect(host.style.getPropertyValue("--dashboard-table-body-font-size")).toBe("7px");
+    const th = container.querySelector("thead th") as HTMLElement;
+    const td = container.querySelector("tbody td.vs-table-td") as HTMLElement;
+    expect(th.style.fontSize).toContain("9px");
+    expect(td.style.fontSize).toContain("7px");
+  });
 });

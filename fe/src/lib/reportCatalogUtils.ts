@@ -48,6 +48,96 @@ export async function fetchAllCatalogTemplates(): Promise<ReportCatalogNode[]> {
   return templates.sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "zh-CN"));
 }
 
+/** 递归收集目录下全部节点（模板页移动、移动端选择用）。 */
+export async function fetchAllCatalogNodes(): Promise<ReportCatalogNode[]> {
+  const nodes: ReportCatalogNode[] = [];
+  let frontier: (string | null)[] = [null];
+
+  while (frontier.length > 0) {
+    const nodesByParent = await Promise.all(
+      frontier.map((parentId) => listCatalogChildren(parentId)),
+    );
+    const nextFrontier: string[] = [];
+    for (const children of nodesByParent) {
+      for (const node of children) {
+        nodes.push(node);
+        if (node.nodeType === "folder") nextFrontier.push(node.id);
+      }
+    }
+    frontier = nextFrontier;
+  }
+
+  return nodes.sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "zh-CN"));
+}
+
+export function catalogNodePath(
+  node: ReportCatalogNode,
+  allNodes: ReportCatalogNode[],
+): string {
+  const byId = new Map(allNodes.map((n) => [n.id, n]));
+  const parts = [node.name];
+  let cur = node.parentId;
+  while (cur) {
+    const parent = byId.get(cur);
+    if (!parent) break;
+    parts.unshift(parent.name);
+    cur = parent.parentId;
+  }
+  return parts.join(" / ");
+}
+
+export function isCatalogDescendant(
+  ancestorId: string,
+  nodeId: string | null,
+  allNodes: ReportCatalogNode[],
+): boolean {
+  if (!nodeId) return false;
+  const byId = new Map(allNodes.map((n) => [n.id, n]));
+  let cur: string | null = nodeId;
+  while (cur) {
+    if (cur === ancestorId) return true;
+    cur = byId.get(cur)?.parentId ?? null;
+  }
+  return false;
+}
+
+export type CatalogMoveTarget = { id: string | null; label: string };
+
+export function catalogAncestorFolderIds(
+  nodeId: string | null,
+  allNodes: ReportCatalogNode[],
+): string[] {
+  if (!nodeId) return [];
+  const byId = new Map(allNodes.map((n) => [n.id, n]));
+  const ids: string[] = [];
+  let cur = byId.get(nodeId)?.parentId ?? null;
+  while (cur) {
+    ids.push(cur);
+    cur = byId.get(cur)?.parentId ?? null;
+  }
+  return ids;
+}
+
+export function buildCatalogMoveTargets(
+  nodeId: string,
+  allNodes: ReportCatalogNode[],
+): CatalogMoveTarget[] {
+  const node = allNodes.find((n) => n.id === nodeId);
+  if (!node) return [{ id: null, label: "根目录" }];
+  const currentParentId = node.parentId ?? null;
+  const targets: CatalogMoveTarget[] = [];
+  if (currentParentId !== null) {
+    targets.push({ id: null, label: "根目录" });
+  }
+  for (const folder of allNodes.filter((n) => n.nodeType === "folder")) {
+    if (folder.id === nodeId) continue;
+    if (isCatalogDescendant(nodeId, folder.id, allNodes)) continue;
+    if (folder.id === currentParentId) continue;
+    targets.push({ id: folder.id, label: catalogNodePath(folder, allNodes) });
+  }
+  return targets;
+}
+
 export function filterCatalogTemplates(
   templates: ReportCatalogNode[],
   query: string,

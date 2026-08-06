@@ -30,3 +30,30 @@ def test_qualify_sync_table_trino():
     dialect = get_sql_dialect("trino")
     ref = qualify_sync_table(dialect, _job(source_database="hive", source_table="orders"))
     assert ref == '"hive"."default"."orders"'
+
+
+def test_qualify_sync_table_postgresql_uses_schema_not_database():
+    dialect = get_sql_dialect("postgresql")
+    ref = qualify_sync_table(
+        dialect,
+        _job(
+            source_type="timescaledb",
+            source_database="ops_tsdb",
+            source_schema="public",
+            source_table="service_metrics",
+        ),
+    )
+    assert ref == '"public"."service_metrics"'
+
+
+def test_qualify_sync_table_postgresql_defaults_public():
+    dialect = get_sql_dialect("postgresql")
+    ref = qualify_sync_table(
+        dialect,
+        _job(
+            source_type="timescaledb",
+            source_database="ops_tsdb",
+            source_table="service_metrics",
+        ),
+    )
+    assert ref == '"public"."service_metrics"'

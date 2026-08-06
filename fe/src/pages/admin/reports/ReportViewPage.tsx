@@ -11,6 +11,7 @@ import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { matchesCapability, resolveEffectiveCapabilities } from "@/lib/capabilities";
+import { queryKeys } from "@/lib/queryKeys";
 import { useAuth } from "@/context/auth-context";
 import type { ReportCatalogNode } from "@/lib/reportCatalogUtils";
 import { ReportExportCard } from "./components/ReportExportCard";
@@ -38,7 +39,7 @@ export function ReportViewPage() {
   const canManage = matchesCapability(caps, "report:manage");
 
   const nodeQuery = useQuery({
-    queryKey: ["reports", "catalog-node", nodeId],
+    queryKey: queryKeys.reports.catalogNode(nodeId ?? ""),
     queryFn: () => apiFetch<ReportCatalogNode>(`/api/v1/reports/catalog/nodes/${nodeId}`),
     enabled: Boolean(nodeId),
   });

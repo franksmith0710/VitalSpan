@@ -1223,6 +1223,8 @@ def test_create_job_hive_datasource_201(client, auth_headers):
 
 
 def test_create_job_postgresql_datasource_201(client, auth_headers):
+    from app.datasources.schemas import ColumnListResponse
+
     db = get_meta_session()
     row = DataSource(
         name="pg-ds",
@@ -1246,11 +1248,60 @@ def test_create_job_postgresql_datasource_201(client, auth_headers):
         "source_table": "orders",
         "target_table": "orders_pg",
     }
-    response = client.post("/api/v1/ingestion/sync-jobs", json=payload, headers=auth_headers)
+    with patch("app.ingestion.etl_seed.list_columns", return_value=ColumnListResponse(items=[])):
+        response = client.post("/api/v1/ingestion/sync-jobs", json=payload, headers=auth_headers)
     assert response.status_code == 201, response.text
     body = response.json()
     assert body["source_data_source_id"] == str(ds_id)
     assert body["source"]["type"] == "postgresql"
+    client.delete(f"/api/v1/ingestion/sync-jobs/{body['id']}", headers=auth_headers)
+
+
+def test_create_job_postgresql_with_source_schema_roundtrip(client, auth_headers):
+    from app.datasources.schemas import ColumnListResponse
+
+    db = get_meta_session()
+    row = DataSource(
+        name="ts-ds",
+        code="ts_sync",
+        type="timescaledb",
+        host="127.0.0.1",
+        port=5434,
+        database="ops_tsdb",
+        username="u",
+        password_encrypted=encrypt_credential("p"),
+    )
+    db.add(row)
+    db.commit()
+    ds_id = row.id
+    db.close()
+
+    target_table = f"ts_metrics_{uuid.uuid4().hex[:8]}"
+    payload = {
+        "name": "ts-ref",
+        "source_mode": "datasource",
+        "source_data_source_id": str(ds_id),
+        "source_table": "service_metrics",
+        "source_schema": "public",
+        "target_table": target_table,
+    }
+    with patch("app.ingestion.etl_seed.list_columns", return_value=ColumnListResponse(items=[])):
+        create = client.post("/api/v1/ingestion/sync-jobs", json=payload, headers=auth_headers)
+    assert create.status_code == 201, create.text
+    body = create.json()
+    assert body["source"]["schema"] == "public"
+    assert body["source"]["database"] == "ops_tsdb"
+    assert body["source"]["table"] == "service_metrics"
+
+    updated = {**payload, "name": "ts-ref-updated", "source_schema": "public"}
+    with patch("app.ingestion.etl_seed.list_columns", return_value=ColumnListResponse(items=[])):
+        put = client.put(
+            f"/api/v1/ingestion/sync-jobs/{body['id']}",
+            json=updated,
+            headers=auth_headers,
+        )
+    assert put.status_code == 200, put.text
+    assert put.json()["source"]["schema"] == "public"
     client.delete(f"/api/v1/ingestion/sync-jobs/{body['id']}", headers=auth_headers)
 
 

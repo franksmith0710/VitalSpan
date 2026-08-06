@@ -51,6 +51,7 @@ const DEFAULT_SOURCE_TABLE = defaultSyncSourceObject("mysql");
 const newJobFormDefaults: JobFormState = {
   name: "",
   sourceDataSourceId: "",
+  sourceSchema: "",
   table: DEFAULT_SOURCE_TABLE,
   target_table: "",
   syncMode: "full",
@@ -82,6 +83,7 @@ function buildPayload(form: JobFormState) {
     source_mode: "datasource" as const,
     source_data_source_id: form.sourceDataSourceId,
     source_table: form.table,
+    source_schema: form.sourceSchema.trim() || null,
   };
 }
 
@@ -152,6 +154,7 @@ export function SyncJobFormPage() {
             table: defaultTable,
             target_table: suggested,
             sourceDataSourceId: firstDs?.id ?? "",
+            sourceSchema: "",
           };
           setForm(nextForm);
           resetBaseline(nextForm);
@@ -185,6 +188,7 @@ export function SyncJobFormPage() {
             host: string;
             port: number;
             database: string;
+            schema?: string | null;
             username: string;
             password: string;
             table: string;
@@ -196,6 +200,7 @@ export function SyncJobFormPage() {
         const nextForm: JobFormState = {
           name: job.name,
           sourceDataSourceId: job.source_data_source_id ?? "",
+          sourceSchema: job.source.schema ?? "",
           table: job.source.table,
           target_table: job.target_table,
           syncMode: job.sync_mode ?? "full",
@@ -292,7 +297,9 @@ export function SyncJobFormPage() {
             prev.table === DEFAULT_SOURCE_TABLE ||
             prev.table === defaultSyncSourceObject("rest_api") ||
             prev.table === defaultSyncSourceObject("mysql");
-          if (!shouldResetSource) return { ...prev, sourceDataSourceId: value };
+          if (!shouldResetSource) {
+            return { ...prev, sourceDataSourceId: value, sourceSchema: "" };
+          }
           const nextTable = defaultSyncSourceObject(nextDs.type);
           const suggested = suggestSyncTargetTable(
             nextTable,
@@ -301,6 +308,7 @@ export function SyncJobFormPage() {
           return {
             ...prev,
             sourceDataSourceId: value,
+            sourceSchema: "",
             table: nextTable,
             target_table: targetTableManualRef.current ? prev.target_table : suggested,
           };
@@ -315,6 +323,14 @@ export function SyncJobFormPage() {
         });
         return;
       }
+      setForm((prev) => ({ ...prev, sourceDataSourceId: value, sourceSchema: "" }));
+      setFieldErrors((prev) => {
+        if (!prev.sourceDataSourceId) return prev;
+        const next = { ...prev };
+        delete next.sourceDataSourceId;
+        return next;
+      });
+      return;
     }
     setForm((prev) => ({ ...prev, [key]: value }));
     setFieldErrors((prev) => {

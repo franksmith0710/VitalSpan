@@ -9,6 +9,22 @@ export function getAppBasePath(): string {
   return normalizeBasePath(import.meta.env.BASE_URL ?? "/");
 }
 
+/**
+ * 解析 `public/` 静态资源 URL（template-assets、geo 等）。
+ * 仅使用 Vite `BASE_URL`，与 API 基址无关；对已带 base 前缀的路径幂等。
+ */
+export function resolvePublicAssetUrl(url: string): string {
+  const trimmed = url.trim();
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith("data:")) return trimmed;
+  const base = getAppBasePath();
+  const normalized = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+  if (base && (normalized === base || normalized.startsWith(`${base}/`))) {
+    return normalized;
+  }
+  return `${base}${normalized}`;
+}
+
 /** dev / 同源部署时 API 前缀；显式 `VITE_API_BASE_URL` 优先（含空串表示同源相对路径） */
 export function resolveApiBaseUrl(): string {
   const env = import.meta.env as ImportMetaEnv & { VITE_API_BASE_URL?: string };

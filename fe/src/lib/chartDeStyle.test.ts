@@ -25,6 +25,9 @@ import {
   syncChartWidgetsForDashboardTitleStyle,
   mergeShapeInnerPresentation,
   widgetStyleToContentCss,
+  resolveEffectivePaletteColors,
+  patchChartPaletteDeStyle,
+  readChartDeStyle,
 } from "./chartDeStyle";
 import { mergeWidgetShellStyle } from "@/components/dashboard/dashboardStyleConfig";
 
@@ -140,6 +143,15 @@ describe("readChartLegendPosition", () => {
     expect(readChartLegendPosition({})).toBe("bottom");
     expect(readChartLegendPosition({ legend: { show: true } })).toBe("bottom");
     expect(readChartLegendPosition({ legend: { position: "left" } })).toBe("left");
+  });
+
+  it("reconciles stale position from hAlign/vAlign", () => {
+    expect(
+      readChartLegendPosition({ legend: { position: "bottom", hAlign: "right", vAlign: "middle" } }),
+    ).toBe("right");
+    expect(
+      readChartLegendPosition({ legend: { position: "bottom", hAlign: "right", vAlign: "bottom" } }),
+    ).toBe("bottom");
   });
 });
 
@@ -474,5 +486,56 @@ describe("resolveEffectiveWidgetShellConfig", () => {
     expect(border.show).toBe(true);
     expect(border.color).toBe("#ff0000");
     expect(border.width).toBe(2);
+  });
+});
+
+describe("chart palette overrides", () => {
+  it("resolveEffectivePaletteColors prefers component custom colors", () => {
+    const cfg: ChartViewConfig = {
+      ...baseCfg,
+      nativeBody: {
+        deStyle: {
+          paletteId: "default",
+          paletteColors: ["#000000", "#ffffff"],
+        },
+      },
+    };
+    expect(resolveEffectivePaletteColors(cfg, "clarity", ["#111111"])).toEqual([
+      "#000000",
+      "#ffffff",
+    ]);
+  });
+
+  it("resolveEffectivePaletteColors falls back to dashboard palette", () => {
+    expect(
+      resolveEffectivePaletteColors(baseCfg, "default", ["#123456", "#abcdef"]),
+    ).toEqual(["#123456", "#abcdef"]);
+  });
+
+  it("patchChartPaletteDeStyle stores custom colors and clears on inherit", () => {
+    const withCustom = patchChartPaletteDeStyle(baseCfg, "default", ["#ff0000", "#00ff00"]);
+    expect(readChartDeStyle(withCustom).paletteColors).toEqual(["#ff0000", "#00ff00"]);
+
+    const inherited = patchChartPaletteDeStyle(withCustom, undefined, []);
+    const de = readChartDeStyle(inherited);
+    expect(de.paletteId).toBeUndefined();
+    expect(de.paletteColors).toBeUndefined();
+    expect(de.seriesColor).toBeUndefined();
+  });
+
+  it("stripChartPaletteOverrides removes custom palette colors", () => {
+    const cfg: ChartViewConfig = {
+      ...baseCfg,
+      nativeBody: {
+        deStyle: {
+          paletteId: "default",
+          paletteColors: ["#ff0000"],
+        },
+      },
+    };
+    const stripped = stripChartPaletteOverrides(cfg);
+    const de = readChartDeStyle(stripped);
+    expect(de.paletteId).toBeUndefined();
+    expect(de.paletteColors).toBeUndefined();
   });
 });

@@ -1,6 +1,5 @@
 import { Switch } from "@/components/ui/switch";
 import { ColorField } from "@/components/ui/color-field";
-import { ImageSourceField } from "./imageSourceField";
 import type { WidgetStyleConfig } from "./dashboardStyleConfig";
 import { SURFACE_COLOR_RECOMMENDED, WIDGET_BORDER_RECOMMENDED } from "./dashboardStyleConfig";
 import {
@@ -22,37 +21,9 @@ import {
   type WidgetSurfaceStyleDensity,
 } from "./widgetSurfaceStyleFields";
 import type { SurfaceKind } from "@/lib/surfacePreset";
-import { inferDefaultBackgroundImageFitForUrl } from "@/lib/widgetBackgroundImageFit";
-import { WidgetBackgroundImageFitFields } from "./WidgetBackgroundImageFitFields";
+import { WidgetBackgroundImagePicker } from "./WidgetBackgroundImagePicker";
 
 type BackgroundPatch = Partial<WidgetStyleConfig>;
-
-function patchWidgetBackgroundImageUpload(
-  value: WidgetStyleConfig,
-  backgroundImage: string | undefined,
-): BackgroundPatch {
-  const trimmed = backgroundImage?.trim();
-  const fitDefaults = trimmed ? inferDefaultBackgroundImageFitForUrl(trimmed) : null;
-  return {
-    backgroundImage: trimmed || undefined,
-    backgroundShow: true,
-    backgroundMode: "image",
-    framePresetId: undefined,
-    frameColor: undefined,
-    ...(trimmed && value.backgroundImageOpacity == null ? { backgroundImageOpacity: 1 } : {}),
-    ...(fitDefaults
-      ? {
-          backgroundImageFit: fitDefaults.backgroundImageFit,
-          backgroundImagePosition: fitDefaults.backgroundImagePosition,
-        }
-      : trimmed
-        ? {}
-        : {
-            backgroundImageFit: undefined,
-            backgroundImagePosition: undefined,
-          }),
-  };
-}
 
 function WidgetBackgroundImageSection({
   value,
@@ -64,21 +35,11 @@ function WidgetBackgroundImageSection({
   highlightUrls?: string[];
 }) {
   return (
-    <div className="space-y-2">
-      <ImageSourceField
-        variant="rail"
-        showPreview
-        assetGallery
-        assetGalleryScope="all"
-        highlightUrls={highlightUrls}
-        inputClassName={INSPECTOR_CTRL}
-        value={value.backgroundImage ?? ""}
-        onChange={(backgroundImage) =>
-          onChange(patchWidgetBackgroundImageUpload(value, backgroundImage))
-        }
-      />
-      <WidgetBackgroundImageFitFields value={value} onChange={onChange} />
-    </div>
+    <WidgetBackgroundImagePicker
+      value={value}
+      onChange={onChange}
+      highlightUrls={highlightUrls}
+    />
   );
 }
 

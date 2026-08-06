@@ -30,6 +30,15 @@ export function formatWidgetBackgroundImageCss(value: string): string {
   return `url("${escaped}")`;
 }
 
+/** 从 CSS `url("...")` 或裸路径解析图片地址 */
+export function parseWidgetBackgroundImageUrl(value: string | undefined): string | null {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+  const match = trimmed.match(/^url\(\s*["']?(.+?)["']?\s*\)$/i);
+  if (match) return match[1].replace(/\\"/g, '"');
+  return trimmed;
+}
+
 export async function readImageFileAsDataUrl(
   file: File,
   maxBytes = MAX_IMAGE_SOURCE_BYTES,

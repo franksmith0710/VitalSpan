@@ -39,9 +39,8 @@ import {
   patchChartDeStyleNested,
   readChartDeStyle,
   readChartGeoStyle,
-  resolveEffectivePaletteId,
+  resolveEffectivePaletteColors,
 } from "@/lib/chartDeStyle";
-import { resolveChartColors } from "@/lib/chartPalette";
 import { useChartInspector } from "./chartInspectorContext";
 import { DeAttrSliderField } from "./deAttrSlider";
 import { DashboardPickerField } from "./DashboardPickerField";
@@ -489,8 +488,11 @@ export function ChartAdvancedMapBubbleSection() {
   const deStyle = readChartDeStyle(cfg);
   const geo = readChartGeoStyle(deStyle);
   const enabled = geo.bubbleEffect === true;
-  const paletteId = resolveEffectivePaletteId(cfg, dashboardStyle?.paletteId);
-  const accentColor = resolveChartColors(paletteId)[0];
+  const accentColor = resolveEffectivePaletteColors(
+    cfg,
+    dashboardStyle?.paletteId,
+    dashboardStyle?.paletteColors,
+  )[0];
   const bubbleColorFallback = resolveGeoMapBubbleEffectPanelColor({}, { accentColor });
 
   const patchGeo = (patch: Parameters<typeof patchChartDeStyleNested>[2]) =>

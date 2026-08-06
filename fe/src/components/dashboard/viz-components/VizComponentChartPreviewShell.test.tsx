@@ -82,8 +82,9 @@ describe("VizComponentChartPreviewShell", () => {
     );
 
     const bg = document.querySelector('[data-testid="viz-chart-shell-bg-0"]') as HTMLElement | null;
-    expect(bg?.style.backgroundImage).toContain("data:image/svg+xml");
-    expect(bg?.style.backgroundSize).toBe("100% 100%");
+    const img = bg?.querySelector("img");
+    expect(img?.getAttribute("src")).toContain("data:image/svg+xml");
+    expect(img?.style.objectFit).toBe("fill");
   });
 
   it("hides title bar in compact list-card mode", () => {

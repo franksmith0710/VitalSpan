@@ -1,10 +1,10 @@
-import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useChartInspector } from "../ChartInspectorContext";
 import {
   ChartInspectorSection,
   INSPECTOR_SECTION_GAP,
   INSPECTOR_SWITCH_SIZE,
+  InspectorInlineColorRow,
   InspectorSwitchRow,
 } from "../inspectorCompact";
 import { ChartDeSliderField } from "../deAttrSlider";
@@ -19,15 +19,12 @@ export function ChartQuadrantShapeSection() {
   return (
     <ChartInspectorSection title="象限样式" data-testid="chart-quadrant-shape">
       <div className={INSPECTOR_SECTION_GAP}>
-        <div className="border-b border-gray-100 py-2 dark:border-white/[0.06]">
-          <p className="mb-1.5 text-[11px] font-medium text-gray-600 dark:text-gray-300">分割线颜色</p>
-          <Input
-            className="h-8 text-xs"
-            value={quadrant.lineColor ?? "#64748b"}
-            onChange={(e) => patch({ lineColor: e.target.value })}
-            aria-label="象限分割线颜色"
-          />
-        </div>
+        <InspectorInlineColorRow
+          label="分割线颜色"
+          value={quadrant.lineColor ?? ""}
+          fallbackValue="#64748b"
+          onChange={(lineColor) => patch({ lineColor })}
+        />
         <ChartDeSliderField label="线宽" value={quadrant.lineWidth} fallback={1.5} min={1} max={4} step={0.5} onChange={(lineWidth) => patch({ lineWidth })} />
         <InspectorSwitchRow
           label="象限区域底色"

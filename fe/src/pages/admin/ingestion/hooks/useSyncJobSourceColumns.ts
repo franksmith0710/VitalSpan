@@ -12,6 +12,7 @@ type SyncJobSourceMeta = {
   source?: {
     table?: string;
     database?: string;
+    schema?: string | null;
     type?: string;
   };
 };
@@ -22,6 +23,10 @@ function resolveSourceTableParts(job: SyncJobSourceMeta | undefined) {
   if (rawTable.includes(".")) {
     const parsed = parseQualifiedTable(rawTable);
     return { schema: parsed.schema, table: parsed.table };
+  }
+  const explicitSchema = job?.source?.schema?.trim();
+  if (explicitSchema) {
+    return { schema: explicitSchema, table: rawTable };
   }
   return {
     schema: job?.source?.database?.trim() ?? "",
@@ -56,8 +61,18 @@ export function useSyncJobSourceColumns(jobId: string | undefined) {
   const schema = useMemo(() => {
     if (parsedSchema) return parsedSchema;
     const names = (schemasQuery.data?.items ?? []).map((item) => item.name);
-    return resolveSyncSourceSchema(names, jobQuery.data?.source?.database);
-  }, [jobQuery.data?.source?.database, parsedSchema, schemasQuery.data?.items]);
+    return resolveSyncSourceSchema(
+      names,
+      jobQuery.data?.source?.database,
+      jobQuery.data?.source?.type ?? jobQuery.data?.source_type,
+    );
+  }, [
+    jobQuery.data?.source?.database,
+    jobQuery.data?.source?.type,
+    jobQuery.data?.source_type,
+    parsedSchema,
+    schemasQuery.data?.items,
+  ]);
 
   const columnsQuery = useQuery({
     queryKey: queryKeys.datasources.columns(dataSourceId, schema, table),

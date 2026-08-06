@@ -4,6 +4,7 @@ import type {
   WidgetBackgroundImageFit,
   WidgetBackgroundImagePosition,
 } from "@/lib/widgetBackgroundImageFit";
+import { resolveWidgetBackgroundImageLayerStyle } from "@/lib/widgetBackgroundImageFit";
 import { buildWidgetBackgroundPresentation } from "@/lib/widgetStylePresentation";
 import type { DashboardThemeVariants } from "./dashboardThemeVariants";
 import { getDashboardThemeTokens } from "./dashboardThemeTokens";
@@ -162,6 +163,9 @@ export type DashboardStyleConfig = {
   scaleMode?: ScaleMode;
   canvasBackground?: string;
   canvasBackgroundImage?: string;
+  /** 画布自定义底图适应方式；默认 cover */
+  canvasBackgroundImageFit?: WidgetBackgroundImageFit;
+  canvasBackgroundImagePosition?: WidgetBackgroundImagePosition;
   /** §5.3「仪表板背景」显式设置；未设置时 §5.1 主题卡片使用标准底色 */
   canvasBackgroundCustom?: boolean;
   /** 背景装饰预设 id（点阵/网格/渐变等） */
@@ -727,6 +731,8 @@ function resolveDecorImageStyle(
   image: string,
   scheme: ColorScheme = "light",
   presetId?: string,
+  fit?: WidgetBackgroundImageFit,
+  position?: WidgetBackgroundImagePosition,
 ): Pick<
   CSSProperties,
   "backgroundImage" | "backgroundSize" | "backgroundRepeat" | "backgroundPosition"
@@ -739,8 +745,10 @@ function resolveDecorImageStyle(
   }
   return {
     backgroundImage: `url("${image}")`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
+    ...resolveWidgetBackgroundImageLayerStyle({
+      backgroundImageFit: fit ?? "cover",
+      backgroundImagePosition: position,
+    }),
   };
 }
 
@@ -897,6 +905,8 @@ export function canvasBackgroundStyle(config: DashboardStyleConfig): CSSProperti
       backgroundImage,
       scheme,
       config.canvasDecorPresetId,
+      config.canvasBackgroundImageFit,
+      config.canvasBackgroundImagePosition,
     );
     if (customSolid && isCssGradient(customSolid)) {
       const imageLayer = decorLayers.backgroundImage ?? `url("${backgroundImage}")`;

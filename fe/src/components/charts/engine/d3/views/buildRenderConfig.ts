@@ -4,7 +4,11 @@ import { VS_REGIONS_MAP_ID } from "@/components/charts/engine/geo/geoConstants";
 import { findMapDrillFilterValue } from "@/lib/geoMapLevels";
 import type { ChartEngineViewProps } from "@/components/charts/engine/types";
 import type { D3DispatchPayload } from "@/components/charts/engine/d3/renderDispatch";
-import { scaleD3PresentationProps, type ChartPresentationPaintContext } from "@/components/charts/engine/d3/core/chartPresentationScale";
+import {
+  scaleD3PresentationProps,
+  applyHubThumbnailStyleOverrides,
+  type ChartPresentationPaintContext,
+} from "@/components/charts/engine/d3/core/chartPresentationScale";
 import type { Geo3dRenderTier } from "@/components/charts/engine/three/geo3dRuntime";
 import { buildD3StyleProps } from "@/components/charts/engine/d3/views/buildStyleProps";
 import { extractDrillValue, buildCartesianRenderConfig } from "@/components/charts/engine/d3/views/buildCartesianConfig";
@@ -58,7 +62,10 @@ export function buildD3DispatchPayload(
     visualScale,
     renderTier,
   };
-  const styleProps = scaleD3PresentationProps(buildD3StyleProps(props, plan), paint);
+  const styleProps = applyHubThumbnailStyleOverrides(
+    scaleD3PresentationProps(buildD3StyleProps(props, plan), paint),
+    renderTier,
+  );
   const options = plan.options;
   const plotType = plan.plotType;
   const cartesianStyle = readCartesianStyleFromPlanOptions(options);
@@ -110,7 +117,7 @@ export function buildD3DispatchPayload(
           regionBorderColor: geoStyle.regionBorderColor,
           regionFillColor: geoStyle.regionFillColor,
           showZoomControl: geoStyle.showZoomControl,
-          mapOpacity: deStyle.paletteOpacity,
+          mapOpacity: props.style.paletteOpacity ?? deStyle.paletteOpacity,
           bubbleEffect: geoStyle.bubbleEffect,
           bubbleEffectType: geoStyle.bubbleEffectType,
           bubbleEffectSpeed: geoStyle.bubbleEffectSpeed,
@@ -177,6 +184,7 @@ export function buildD3DispatchPayload(
   if (plotType === "Heatmap") {
     const data = (options.data as D3MatrixCell[]) ?? [];
     const geoStyle = props.chartConfig ? readChartGeoStyle(readChartDeStyle(props.chartConfig)) : {};
+    const isThumbnail = renderTier === "thumbnail";
     return {
       kind: "matrix",
       config: {
@@ -189,9 +197,13 @@ export function buildD3DispatchPayload(
         tooltipPresentation: styleProps.tooltipPresentation,
         valueFormat: styleProps.valueFormat,
         conditionalRules: styleProps.conditionalRules,
-        showCellLabel: geoStyle.showCellLabel === true,
-        showVisualMap: geoStyle.visualMap !== false,
+        showCellLabel: geoStyle.showCellLabel === true && !isThumbnail,
+        showVisualMap: geoStyle.visualMap !== false && !isThumbnail,
+        labelFontSize: styleProps.labelFontSize,
+        labelColor: styleProps.labelColor,
         depthVisual: styleProps.depthVisual,
+        visualScale,
+        renderTier,
         onPointClick:
           props.onInteraction || props.onJumpClick
             ? (datum) => {
@@ -245,6 +257,8 @@ export function buildD3DispatchPayload(
         legendLayout: styleProps.legendLayout,
         ...cartesianStyle,
         categoryLevelCount: options.categoryLevelCount as number | undefined,
+        visualScale,
+        renderTier,
         onPointClick: onDatumClick(props, xField),
       },
     };

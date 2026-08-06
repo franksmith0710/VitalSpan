@@ -17,4 +17,13 @@ describe("buildGeoMapStyleContentSig", () => {
     const on = buildGeoMapStyleContentSig({ showZoomControl: true });
     expect(off).not.toBe(on);
   });
+
+  it("changes when custom palette colors change", () => {
+    const base = buildGeoMapStyleContentSig({}, { paletteId: "default", chartColors: ["#465fff"] });
+    const custom = buildGeoMapStyleContentSig(
+      {},
+      { paletteId: "default", paletteColors: ["#ff0000"], chartColors: ["#ff0000"] },
+    );
+    expect(base).not.toBe(custom);
+  });
 });

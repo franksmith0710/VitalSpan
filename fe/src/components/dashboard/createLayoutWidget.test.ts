@@ -9,9 +9,9 @@ describe("createPaletteWidget screen-title-bar", () => {
     expect(widget.textConfig?.content).toBe("");
     expect(widget.textConfig?.widgetStyle?.backgroundMode).toBe("image");
     expect(widget.textConfig?.widgetStyle?.backgroundImage).toContain(
-      "/template-assets/packs/borderless-decor-v1/items/",
+      "/template-assets/packs/gov-enterprise-v1/top-decor-clear/",
     );
     expect(widget.textConfig?.widgetStyle?.backgroundImageFit).toBe("widthFit");
-    expect(widget.textConfig?.widgetStyle?.backgroundImagePosition).toBe("top center");
+    expect(widget.textConfig?.widgetStyle?.backgroundImagePosition).toBe("center");
   });
 });

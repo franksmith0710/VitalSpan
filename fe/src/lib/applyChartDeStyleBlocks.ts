@@ -289,6 +289,7 @@ export function applyChartDeStyleBlocksToPlan(
     if (r.axisLineColor) options.__radarAxisLineColor = r.axisLineColor;
     if (r.axisLineWidth != null) options.__radarAxisLineWidth = r.axisLineWidth;
     if (r.splitNumber != null) options.__radarSplitNumber = r.splitNumber;
+    if (r.radiusPercent != null) options.__radarRadiusPercent = r.radiusPercent;
   }
 
   if (blocks.wordCloud) {
@@ -309,6 +310,9 @@ export function applyChartDeStyleBlocksToPlan(
     const c = blocks.circlePacking;
     if (c.layoutPadding != null) options.__circlePackingPadding = c.layoutPadding;
     if (c.labelMinRadius != null) options.__circlePackingLabelMinRadius = c.labelMinRadius;
+    if (c.backgroundColor) options.__circlePackingBackgroundColor = c.backgroundColor;
+    if (c.sizePercent != null) options.__circlePackingSizePercent = c.sizePercent;
+    if (c.showOuterRing != null) options.__circlePackingShowOuterRing = c.showOuterRing;
   }
 
   if (blocks.quadrant) {

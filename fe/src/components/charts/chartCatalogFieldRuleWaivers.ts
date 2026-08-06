@@ -58,4 +58,29 @@ export const FIELD_RULE_MAX_WAIVERS: Record<string, FieldRuleMaxWaiver> = {
     gapId: "GAP-MAX-DIM",
     reason: "color dim slot only; backend maxD=2",
   },
+  combo: {
+    maxMetrics: 2,
+    gapId: "GAP-MAX-DIM",
+    reason: "左柱+右线各 1 槽；backend metrics 数组 max=8",
+  },
+  "chart-mix": {
+    maxMetrics: 2,
+    gapId: "GAP-MAX-DIM",
+    reason: "左柱+右线各 1 槽；backend metrics 数组 max=8",
+  },
+  "chart-mix-group": {
+    maxMetrics: 2,
+    gapId: "GAP-MAX-DIM",
+    reason: "左柱+右线各 1 槽；backend metrics 数组 max=8",
+  },
+  "chart-mix-stack": {
+    maxMetrics: 2,
+    gapId: "GAP-MAX-DIM",
+    reason: "左柱+右线各 1 槽；backend metrics 数组 max=8",
+  },
+  "chart-mix-dual-line": {
+    maxMetrics: 2,
+    gapId: "GAP-MAX-DIM",
+    reason: "左线+右线各 1 槽；backend metrics 数组 max=8",
+  },
 };

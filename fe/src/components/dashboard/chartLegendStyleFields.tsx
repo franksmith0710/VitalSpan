@@ -27,7 +27,7 @@ import {
   resolveLegendPositionFromAlign,
 } from "@/lib/chartLegendPresentation";
 import { resolveChartFontSizeOptions } from "@/lib/chartFontSizes";
-import type { ChartDeStyle } from "@/lib/chartDeStyle";
+import { readChartLegendPosition, type ChartDeStyle } from "@/lib/chartDeStyle";
 import type { ChartType } from "@/lib/chartViewConfig";
 import type { LegendEditorMode } from "@/lib/chartStylePanelGates";
 import { cn } from "@/lib/utils";
@@ -66,7 +66,6 @@ type ChartLegendDeParityFieldsProps = {
 
 /** 对标 DataEase attr-style · 图例：图标 / 文本 / 方向 / 位置 */
 export function ChartLegendDeParityFields({
-  chartType,
   deStyle,
   editorMode = "shell",
   onPatch,
@@ -82,21 +81,21 @@ export function ChartLegendDeParityFields({
   );
   const hAlign = readChartLegendHAlign(deStyle);
   const vAlign = readChartLegendVAlign(deStyle);
-  const position = resolveLegendPositionFromAlign(hAlign, vAlign);
+  const position = readChartLegendPosition(deStyle);
   const isSidePosition = position === "left" || position === "right";
-  const pieFamily = chartType === "pie" || chartType?.startsWith("pie-");
-  const showLayoutControls = editorMode === "shell" || !pieFamily;
+  const showLayoutControls = editorMode !== "none";
 
   const patchAlign = (nextH: typeof hAlign, nextV: typeof vAlign) => {
     const nextPosition = resolveLegendPositionFromAlign(nextH, nextV);
-    onPatch({
+    const patch: Partial<NonNullable<ChartDeStyle["legend"]>> = {
       hAlign: nextH,
       vAlign: nextV,
       position: nextPosition,
-      ...(nextPosition === "left" || nextPosition === "right"
-        ? { orient: "vertical" as const }
-        : {}),
-    });
+    };
+    if (nextPosition === "left" || nextPosition === "right") {
+      patch.orient = "vertical";
+    }
+    onPatch(patch);
   };
 
   return (

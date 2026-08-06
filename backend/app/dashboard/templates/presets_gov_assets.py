@@ -47,17 +47,17 @@ def de_thumb(slug: str) -> str:
 SMART_CITY_BG = bg_dark("canvas-dark-cyan-de-platform-header")
 SMART_CITY_THUMB = thumb("canvas-dark-cyan-de-platform-header")
 
-DIGITAL_COCKPIT_BG = bg_light("canvas-light-paper-watermark")
-DIGITAL_COCKPIT_THUMB = thumb("canvas-light-paper-watermark")
+DIGITAL_COCKPIT_BG = bg_light("canvas-light-indigo-de-cloud-center")
+DIGITAL_COCKPIT_THUMB = thumb("canvas-light-indigo-de-cloud-center")
 
 EMERGENCY_BG = bg_dark("canvas-dark-crimson-de-circuit-wing")
 EMERGENCY_THUMB = thumb("canvas-dark-crimson-de-circuit-wing")
 
-ECO_MONITOR_BG = bg_light("canvas-light-mint-ribbon")
-ECO_MONITOR_THUMB = thumb("canvas-light-mint-ribbon")
+ECO_MONITOR_BG = bg_light("canvas-light-emerald-gradient-mesh")
+ECO_MONITOR_THUMB = thumb("canvas-light-emerald-gradient-mesh")
 
-COMMUNITY_BG = bg_light("canvas-light-lavender-card-float")
-COMMUNITY_THUMB = thumb("canvas-light-lavender-card-float")
+COMMUNITY_BG = bg_light("canvas-light-violet-de-platform-header")
+COMMUNITY_THUMB = thumb("canvas-light-violet-de-platform-header")
 
 # —— 仪表板：DataEase 风格 de-dashboard-v1 包 ——
 EFFICIENCY_BG = de_bg("gov-efficiency")

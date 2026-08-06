@@ -14,7 +14,6 @@ import { IconButton } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { mergeChartTitleStyle, readChartRemark, readChartTitleVisible, resolveChartContentShellStyle, mergeShapeInnerPresentation, resolveWidgetShellStyle } from "@/lib/chartDeStyle";
 import type { DashboardCanvas, PixelLayoutWidget } from "../layoutUtils";
-import type { DashboardStyleConfig } from "../dashboardStyleConfig";
 import { mergeTitleStyle } from "../dashboardStyleConfig";
 import { resolveWidgetEffectiveScheme } from "@/lib/chartSurfaceTheme";
 import { shapeTitlePresentationStyle } from "../dashboardWidgetTypography";
@@ -54,6 +53,7 @@ import {
 } from "./pixelShapeLiveResize";
 import { isScreenBorderWidget } from "@/lib/screenVisualAssets";
 import { applyScreenBorderShellPresentation } from "../screen/screenBorderWidgetChrome";
+import { WidgetShellBackgroundLayers } from "../WidgetShellPresentationLayers";
 import { pixelRectsNearlyEqual } from "./pixelRectEqual";
 import { shouldApplyPropsRectToDisplay } from "./pixelShapePropsSync";
 
@@ -263,19 +263,12 @@ function PixelShapeInnerChrome({
     </EmbeddedChartLegendShell>
   );
 
+  const overflowClass = "overflow-hidden";
+
   return (
     <>
-      {innerShell.backgroundLayers.map((layer, index) =>
-        layer ? (
-          <div
-            key={`shell-bg-${index}`}
-            className="pointer-events-none absolute inset-0 z-0"
-            style={layer}
-            aria-hidden
-          />
-        ) : null,
-      )}
-      <div className="relative z-[1] flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <WidgetShellBackgroundLayers layers={innerShell} prefix={`pixel-shell-${widget.id}`} />
+      <div className={cn("relative z-[1] flex min-h-0 min-w-0 flex-1 flex-col", overflowClass)}>
         <WidgetShapeChrome
           title={widget.title}
           titleStyle={shapeTitlePresentationStyle(titleStyle, scale)}
@@ -292,20 +285,14 @@ function PixelShapeInnerChrome({
         />
         <div
           ref={contentRef}
-          className="pixel-shape-content relative z-[1] flex min-h-0 min-w-0 w-full flex-1 flex-col overflow-hidden"
+          className={cn(
+            "pixel-shape-content relative z-[1] flex min-h-0 min-w-0 w-full flex-1 flex-col",
+            overflowClass,
+          )}
           style={contentShell.style}
         >
-          {contentShell.backgroundLayers.map((layer, index) =>
-            layer ? (
-              <div
-                key={`content-bg-${index}`}
-                className="pointer-events-none absolute inset-0 z-0"
-                style={layer}
-                aria-hidden
-              />
-            ) : null,
-          )}
-          <div className="relative z-[1] flex min-h-0 min-w-0 w-full flex-1 flex-col overflow-hidden">
+          <WidgetShellBackgroundLayers layers={contentShell} prefix={`pixel-content-${widget.id}`} />
+          <div className={cn("relative z-[1] flex min-h-0 min-w-0 w-full flex-1 flex-col", overflowClass)}>
             {chartBody}
           </div>
           {contentShell.frameLayers.map((layer, index) =>

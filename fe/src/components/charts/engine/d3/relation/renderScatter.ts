@@ -2,9 +2,9 @@ import { VCDS, motionDuration } from "@/components/charts/engine/d3/core/chartVi
 import { ensureDepthShadowFilter, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
 import * as d3 from "d3";
 import { renderScatterCanvasLayer } from "@/components/charts/engine/d3/core/canvasScatterLayer";
-import { drawLinearCartesianAxes, appendChartSvg } from "@/components/charts/engine/d3/core/sceneGraph";
+import { drawCartesianBandAxes, drawLinearCartesianAxes, appendChartSvg } from "@/components/charts/engine/d3/core/sceneGraph";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
-import { drawScatterMarkLines } from "@/components/charts/engine/d3/core/markLines";
+import { drawHorizontalMarkLines, drawScatterMarkLines } from "@/components/charts/engine/d3/core/markLines";
 import { resolveRenderMode, sampleIndices } from "@/components/charts/engine/d3/core/perfRouter";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
@@ -12,10 +12,22 @@ import { createTooltipLayer, showMergedTooltip, hideTooltip } from "@/components
 import { themeFromConfig } from "@/components/charts/engine/d3/core/themeEngine";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { formatSimpleDataLabel } from "@/components/charts/engine/d3/core/cartesianDataLabel";
-import { formatChartValue } from "@/lib/chartValueFormat";
+import { buildScatterCategoryXLayout } from "@/components/charts/engine/d3/relation/scatterCategoryX";
 import { resolveCartesianPointSize } from "@/lib/applyChartDeStyleBlocks";
 
 type ScatterDatum = Record<string, string | number>;
+
+function resolveScatterX(
+  d: ScatterDatum,
+  dataIndex: number,
+  xField: string,
+  categoryMode: boolean,
+  xScale: d3.ScaleLinear<number, number>,
+  xPositions: number[] | null,
+): number {
+  if (categoryMode && xPositions) return xPositions[dataIndex] ?? 0;
+  return xScale(Number(d[xField]));
+}
 
 export function renderD3ScatterChart(container: HTMLElement, config: D3RenderConfig): () => void {
   container.replaceChildren();
@@ -57,12 +69,24 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
     renderMode === "svg-full" ? data.length : VCDS.perf.svgSampleMaxPoints;
   const svgIndices =
     renderMode === "svg-full" ? data.map((_, i) => i) : sampleIndices(data.length, maxSvgPoints);
-  const svgData = svgIndices.map((i) => data[i]);
+  const svgEntries = svgIndices.map((i) => ({ row: data[i]!, index: i }));
 
-  const xExtent = d3.extent(data, (d) => Number(d[xField])) as [number, number];
+  const xCategories = (options.xCategories as string[] | undefined) ?? [];
+  const categoryMode = options.xAxisMode === "category" && xCategories.length > 0;
+  const categoryLayout = categoryMode
+    ? buildScatterCategoryXLayout(data, xField, xCategories, innerW)
+    : null;
+
   const yExtent = d3.extent(data, (d) => Number(d[yField])) as [number, number];
-  const xScale = d3.scaleLinear().domain(xExtent).nice().range([0, innerW]);
   const yScale = d3.scaleLinear().domain(yExtent).nice().range([innerH, 0]);
+  const xScale = categoryMode
+    ? d3.scaleLinear().domain([0, innerW]).range([0, innerW])
+    : d3
+        .scaleLinear()
+        .domain(d3.extent(data, (d) => Number(d[xField])) as [number, number])
+        .nice()
+        .range([0, innerW]);
+  const xPositions = categoryLayout?.xPositions ?? null;
 
   const seriesNames = colorField
     ? [...new Set(data.map((d) => String(d[colorField] ?? "")))]
@@ -90,18 +114,37 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
     .call((sel) => sel.select(".domain").remove())
     .call((sel) => sel.selectAll(".tick line").attr("stroke", theme.gridLine).attr("stroke-opacity", 0.9));
 
-  drawLinearCartesianAxes({
-    g,
-    xScale,
-    yScale,
-    innerW,
-    innerH,
-    theme,
-    valueFormat,
-    axisStyle: axisStyle ?? (options.__axisStyle as typeof axisStyle),
-  });
+  const resolvedAxisStyle = axisStyle ?? (options.__axisStyle as typeof axisStyle);
+  if (categoryMode && categoryLayout) {
+    drawCartesianBandAxes({
+      g,
+      xScale: categoryLayout.xBand,
+      yScale,
+      categories: xCategories,
+      innerW,
+      innerH,
+      theme,
+      valueFormat,
+      axisStyle: resolvedAxisStyle,
+    });
+  } else {
+    drawLinearCartesianAxes({
+      g,
+      xScale,
+      yScale,
+      innerW,
+      innerH,
+      theme,
+      valueFormat,
+      axisStyle: resolvedAxisStyle,
+    });
+  }
 
-  drawScatterMarkLines(plot, markLines, xScale, yScale, innerW, innerH);
+  if (categoryMode) {
+    drawHorizontalMarkLines(plot, markLines, yScale, innerW);
+  } else {
+    drawScatterMarkLines(plot, markLines, xScale, yScale, innerW, innerH);
+  }
 
   const scatterShadowId =
     !useCanvas && depthLevel !== "off"
@@ -110,7 +153,7 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
 
   let removeCanvas = () => undefined;
   if (useCanvas) {
-    const canvasPoints = data.map((d) => {
+    const canvasPoints = data.map((d, i) => {
       const key = colorField ? String(d[colorField] ?? "") : "value";
       const base = colorScale(key) ?? colors[0] ?? theme.accent;
       const fill =
@@ -118,7 +161,7 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
           ? resolveDatumColor(Number(d[yField]), base, conditionalRules)
           : base;
       return {
-        x: xScale(Number(d[xField])),
+        x: resolveScatterX(d, i, xField, categoryMode, xScale, xPositions),
         y: yScale(Number(d[yField])),
         color: fill,
       };
@@ -128,14 +171,17 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
 
   const tooltip = showTooltip ? createTooltipLayer(container, theme, tooltipPresentation) : null;
   plot
-    .selectAll<SVGCircleElement, ScatterDatum>("circle.point")
-    .data(svgData)
+    .selectAll<SVGCircleElement, { row: ScatterDatum; index: number }>("circle.point")
+    .data(svgEntries)
     .join("circle")
     .attr("class", "point")
     .attr("r", useCanvas ? dotRadius : dotRadius + 1.5)
-    .attr("cx", (d) => xScale(Number(d[xField])))
-    .attr("cy", (d) => yScale(Number(d[yField])))
-    .attr("fill", (d) => {
+    .attr("cx", (entry) =>
+      resolveScatterX(entry.row, entry.index, xField, categoryMode, xScale, xPositions),
+    )
+    .attr("cy", (entry) => yScale(Number(entry.row[yField])))
+    .attr("fill", (entry) => {
+      const d = entry.row;
       const key = colorField ? String(d[colorField] ?? "") : "value";
       const base = colorScale(key) ?? colors[0] ?? theme.accent;
       return conditionalRules.length > 0
@@ -156,8 +202,9 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
       d3.select(this).transition().duration(motionDuration("hover")).attr("r", dotRadius + 1.5).attr("opacity", 0.9);
       hideTooltip(tooltip);
     })
-    .on("mousemove", (event, d) => {
+    .on("mousemove", (event, entry) => {
       if (!tooltip) return;
+      const d = entry.row;
       const series = colorField ? String(d[colorField] ?? "") : "";
       const color = colorScale(series || "value") ?? colors[0] ?? theme.accent;
       const title = series || `${xField} / ${yField}`;
@@ -174,7 +221,7 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
         width,
       );
     })
-    .on("click", (_event, d) => onPointClick?.(d as D3Datum));
+    .on("click", (_event, entry) => onPointClick?.(entry.row as D3Datum));
 
   if (useCanvas && showTooltip) {
     plot
@@ -187,13 +234,16 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
         const [mx, my] = d3.pointer(event);
         let best: ScatterDatum | null = null;
         let bestDist = Infinity;
-        for (const d of data) {
-          const dx = xScale(Number(d[xField])) - mx;
+        let bestIndex = 0;
+        for (let i = 0; i < data.length; i++) {
+          const d = data[i]!;
+          const dx = resolveScatterX(d, i, xField, categoryMode, xScale, xPositions) - mx;
           const dy = yScale(Number(d[yField])) - my;
           const dist = dx * dx + dy * dy;
           if (dist < bestDist) {
             bestDist = dist;
             best = d;
+            bestIndex = i;
           }
         }
         if (!best || !tooltip) return;
@@ -218,15 +268,18 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
   if (showLabel && !useCanvas) {
     const labelTotal = d3.sum(data, (d) => Number(d[yField]) || 0);
     plot
-      .selectAll<SVGTextElement, ScatterDatum>("text.scatter-label")
-      .data(svgData)
+      .selectAll<SVGTextElement, { row: ScatterDatum; index: number }>("text.scatter-label")
+      .data(svgEntries)
       .join("text")
       .attr("class", "scatter-label")
-      .attr("x", (d) => xScale(Number(d[xField])) + 6)
-      .attr("y", (d) => yScale(Number(d[yField])) - 6)
+      .attr("x", (entry) =>
+        resolveScatterX(entry.row, entry.index, xField, categoryMode, xScale, xPositions) + 6,
+      )
+      .attr("y", (entry) => yScale(Number(entry.row[yField])) - 6)
       .attr("fill", resolveLabelFill(theme, labelColor))
-      .style("font-size", "10px")
-      .text((d) => {
+      .style("font-size", `${labelFontSize}px`)
+      .text((entry) => {
+        const d = entry.row;
         const dimension = colorField ? String(d[colorField] ?? "") : String(d[xField] ?? "");
         return formatSimpleDataLabel(dimension, d[yField], labelTotal, labelContent, valueFormat);
       });

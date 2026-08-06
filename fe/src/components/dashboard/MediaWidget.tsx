@@ -9,7 +9,7 @@ import type { DashboardWidgetShell } from "./dashboardCanvasMode";
 import { WidgetInlineTitle } from "./WidgetInlineTitle";
 import type { LayoutWidget, MediaWidgetConfig, DashboardStyleConfig } from "./layoutUtils";
 import { mediaAlignToObjectPosition, normalizeMediaConfig } from "./layoutUtils";
-import { gridWidgetShellClassName, resolveGridWidgetShell } from "./widgetRailStyleSections";
+import { gridWidgetShellClassName, GridWidgetShellFrame, resolveGridWidgetShell } from "./widgetRailStyleSections";
 
 type MediaWidgetProps = {
   widget: LayoutWidget & { mediaConfig: MediaWidgetConfig };
@@ -140,9 +140,10 @@ export function MediaWidget({
   }
 
   return (
-    <div
+    <GridWidgetShellFrame
+      shell={gridShell}
+      widgetId={widget.id}
       className={gridWidgetShellClassName(showGridChrome, Boolean(selected))}
-      style={showGridChrome ? gridShell.style : undefined}
     >
       {showGridChrome && mode === "edit" ? (
         <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 bg-gray-50/90 px-2 py-1.5 dark:border-gray-800 dark:bg-white/[0.04]">
@@ -185,6 +186,6 @@ export function MediaWidget({
         </div>
       ) : null}
       {body}
-    </div>
+    </GridWidgetShellFrame>
   );
 }

@@ -1,4 +1,6 @@
 import type { ShapePresentationLayers } from "@/lib/chartDeStyle";
+import { shouldUseWidgetBackgroundImageLayer } from "@/lib/widgetDecorBackground";
+import { WidgetDecorBackgroundLayer } from "./WidgetDecorBackgroundLayer";
 
 type LayerStackProps = {
   layers: ShapePresentationLayers;
@@ -6,8 +8,18 @@ type LayerStackProps = {
 };
 
 export function WidgetShellBackgroundLayers({ layers, prefix }: LayerStackProps) {
-  return layers.backgroundLayers.map((layer, index) =>
-    layer ? (
+  return layers.backgroundLayers.map((layer, index) => {
+    if (!layer) return null;
+    if (shouldUseWidgetBackgroundImageLayer(layer)) {
+      return (
+        <WidgetDecorBackgroundLayer
+          key={`${prefix}-bg-${index}`}
+          layer={layer}
+          testId={`${prefix}-bg-${index}`}
+        />
+      );
+    }
+    return (
       <div
         key={`${prefix}-bg-${index}`}
         data-testid={`${prefix}-bg-${index}`}
@@ -15,8 +27,8 @@ export function WidgetShellBackgroundLayers({ layers, prefix }: LayerStackProps)
         style={layer}
         aria-hidden
       />
-    ) : null,
-  );
+    );
+  });
 }
 
 export function WidgetShellFrameLayers({

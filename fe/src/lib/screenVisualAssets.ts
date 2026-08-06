@@ -228,9 +228,9 @@ export function createScreenTitleBarWidget(
         backgroundShow: true,
         backgroundMode: "image",
         backgroundImage:
-          "/template-assets/packs/gov-enterprise-v1/title-strips/title-diamond-flank-cyan.svg",
+          "/template-assets/packs/gov-enterprise-v1/top-decor-clear/title-clear-diamond-flank-cyan.svg",
         backgroundImageFit: "widthFit",
-        backgroundImagePosition: "top center",
+        backgroundImagePosition: "center",
       },
     },
   };

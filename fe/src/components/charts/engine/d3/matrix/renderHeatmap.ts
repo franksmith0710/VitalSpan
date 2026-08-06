@@ -14,6 +14,40 @@ import { formatChartValue } from "@/lib/chartValueFormat";
 
 const CELL_RX = VCDS.bar.rx;
 
+/** 连续色带：对标 DataEase visualMap，用配色盘前两色作渐变端点 */
+function heatmapVisualMapStops(colors: string[], isDark: boolean): string[] {
+  const high = colors[0] ?? "#465fff";
+  const mid = colors[1] ?? high;
+  return isDark ? ["#0c4a6e", mid, high] : ["#e0f2fe", mid, high];
+}
+
+function heatmapColorScale(
+  colors: string[],
+  minVal: number,
+  maxVal: number,
+  isDark: boolean,
+): d3.ScaleSequential<string> {
+  const stops = heatmapVisualMapStops(colors, isDark);
+  const domainMin = minVal;
+  const domainMax = maxVal === minVal ? minVal + 1 : maxVal;
+  return d3
+    .scaleSequential()
+    .domain([domainMin, domainMax])
+    .interpolator(d3.piecewise(d3.interpolateRgb, stops));
+}
+
+const HUB_THUMBNAIL_CATEGORY_MIN_PX = 72;
+
+function resolveHeatmapCellLabelFontSize(
+  labelFontSize: number,
+  cellW: number,
+  cellH: number,
+): number | null {
+  const cap = Math.floor(Math.min(cellW, cellH) * 0.72);
+  if (cap < 6) return null;
+  return Math.min(labelFontSize, cap);
+}
+
 export function renderD3HeatmapChart(container: HTMLElement, config: D3MatrixRenderConfig): () => void {
   container.replaceChildren();
   if (config.width <= 0 || config.height <= 0 || config.data.length === 0) return () => undefined;
@@ -32,18 +66,35 @@ export function renderD3HeatmapChart(container: HTMLElement, config: D3MatrixRen
     depthVisual,
     showCellLabel = false,
     showVisualMap = true,
+    labelFontSize = 11,
+    renderTier,
   } = config;
 
+  const isThumbnail = renderTier === "thumbnail";
+  const categoryThinPx = isThumbnail ? HUB_THUMBNAIL_CATEGORY_MIN_PX : undefined;
+  const effectiveShowCellLabel = showCellLabel && !isThumbnail;
+  const effectiveShowVisualMap = showVisualMap && !isThumbnail;
+
   const theme = themeFromConfig(rawTheme);
+  const isDark = theme.scheme === "dark";
   const depthLevel = resolveEffectiveDepth(depthVisual);
   const xCategories = [...new Set(data.map((d) => d.x))];
   const yCategories = [...new Set(data.map((d) => d.y))];
   const baseMargin = cartesianMargin(false);
   const provisionalInnerH = Math.max(0, height - baseMargin.top - baseMargin.bottom);
-  const ySideLayout = resolveHorizontalCategoryAxisLayout(yCategories, provisionalInnerH);
+  const ySideLayout = resolveHorizontalCategoryAxisLayout(
+    yCategories,
+    provisionalInnerH,
+    categoryThinPx ?? 28,
+  );
   let margin = cartesianMargin(false, { left: Math.max(baseMargin.left, ySideLayout.leftMargin) });
   const innerW = Math.max(0, width - margin.left - margin.right);
-  const xLayout = planCategoryAxisLayout(xCategories, innerW);
+  const xLayout = planCategoryAxisLayout(
+    xCategories,
+    innerW,
+    undefined,
+    categoryThinPx,
+  );
   margin = { ...margin, bottom: margin.bottom + xLayout.extraBottom };
   const plotInnerH = Math.max(0, height - margin.top - margin.bottom);
 
@@ -51,9 +102,7 @@ export function renderD3HeatmapChart(container: HTMLElement, config: D3MatrixRen
   const maxVal = d3.max(values) ?? 0;
   const minVal = d3.min(values) ?? 0;
   const baseColor = colors[0] ?? theme.accent;
-  const colorScale = d3
-    .scaleSequential(d3.interpolateRgb("#f2f4f7", baseColor))
-    .domain(minVal === maxVal ? [0, maxVal || 1] : [minVal, maxVal]);
+  const colorScale = heatmapColorScale(colors, minVal, maxVal, isDark);
 
   const x = d3.scaleBand<string>().domain(xCategories).range([0, innerW]).padding(0.06);
   const y = d3.scaleBand<string>().domain(yCategories).range([0, plotInnerH]).padding(0.06);
@@ -161,22 +210,27 @@ export function renderD3HeatmapChart(container: HTMLElement, config: D3MatrixRen
     })
     .on("click", (_event, d) => onPointClick?.(d));
 
-  if (showCellLabel) {
-    g.selectAll("text.cell-label")
-      .data(data)
-      .join("text")
-      .attr("class", "cell-label")
-      .attr("x", (d) => (x(d.x) ?? 0) + x.bandwidth() / 2)
-      .attr("y", (d) => (y(d.y) ?? 0) + y.bandwidth() / 2)
-      .attr("text-anchor", "middle")
-      .attr("dominant-baseline", "middle")
-      .attr("fill", resolveLabelFill(theme))
-      .style("font-size", "10px")
-      .style("pointer-events", "none")
-      .text((d) => formatChartValue(d.value, valueFormat));
+  if (effectiveShowCellLabel) {
+    const cellW = x.bandwidth();
+    const cellH = y.bandwidth();
+    const cellLabelFontSize = resolveHeatmapCellLabelFontSize(labelFontSize, cellW, cellH);
+    if (cellLabelFontSize != null) {
+      g.selectAll("text.cell-label")
+        .data(data)
+        .join("text")
+        .attr("class", "cell-label")
+        .attr("x", (d) => (x(d.x) ?? 0) + cellW / 2)
+        .attr("y", (d) => (y(d.y) ?? 0) + cellH / 2)
+        .attr("text-anchor", "middle")
+        .attr("dominant-baseline", "middle")
+        .attr("fill", resolveLabelFill(theme))
+        .style("font-size", `${cellLabelFontSize}px`)
+        .style("pointer-events", "none")
+        .text((d) => formatChartValue(d.value, valueFormat));
+    }
   }
 
-  if (showVisualMap) {
+  if (effectiveShowVisualMap) {
     const legendW = 10;
     const legendH = Math.min(plotInnerH, 120);
     const legendX = innerW + 12;
@@ -197,14 +251,14 @@ export function renderD3HeatmapChart(container: HTMLElement, config: D3MatrixRen
       .attr("x", legendW + 4)
       .attr("y", legendH)
       .attr("fill", theme.axisLabel)
-      .style("font-size", "9px")
+      .style("font-size", `${Math.max(6, labelFontSize - 1)}px`)
       .text(formatChartValue(maxVal, valueFormat));
     legendG
       .append("text")
       .attr("x", legendW + 4)
       .attr("y", 8)
       .attr("fill", theme.axisLabel)
-      .style("font-size", "9px")
+      .style("font-size", `${Math.max(6, labelFontSize - 1)}px`)
       .text(formatChartValue(minVal, valueFormat));
   }
 

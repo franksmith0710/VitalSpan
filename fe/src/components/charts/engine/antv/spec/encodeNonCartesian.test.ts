@@ -93,7 +93,7 @@ describe("non-cartesian encoding (L3→L2)", () => {
         [{ field: "amount" }, { field: "amount2" }],
       ),
     );
-    expect(plan.options.lineLabels).toEqual(["amount2", "amount"]);
+    expect(plan.options.lineLabels).toEqual(["amount", "amount2"]);
     const series = plan.options.data as unknown[];
     expect(series).toHaveLength(2);
   });

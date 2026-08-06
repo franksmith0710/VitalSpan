@@ -4,6 +4,7 @@ import { FileBarChart, FileSpreadsheet, FileText, Play } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { ReportCatalogNode } from "@/lib/reportCatalogUtils";
+import { catalogNodePath } from "@/lib/reportCatalogUtils";
 import {
   isLiveTemplateReadiness,
   localizeTemplateReadiness,
@@ -53,6 +54,7 @@ function ReadinessBadge({ readiness }: { readiness?: TemplateReadiness }) {
 export function buildReportCenterTemplateRows(
   items: ReportCatalogNode[],
   readinessByNodeId: Map<string, TemplateReadiness>,
+  allNodes: ReportCatalogNode[] = [],
 ): ReactNode[][] {
   return items.map((node) => [
     <div key="name" className="min-w-0">
@@ -62,6 +64,9 @@ export function buildReportCenterTemplateRows(
       >
         {node.name}
       </Link>
+      {allNodes.length > 0 && node.parentId ? (
+        <p className="mt-0.5 truncate text-[11px] text-gray-400">{catalogNodePath(node, allNodes)}</p>
+      ) : null}
       {node.templateKey ? (
         <p className="mt-0.5 truncate font-mono text-[11px] text-gray-400">{node.templateKey}</p>
       ) : null}

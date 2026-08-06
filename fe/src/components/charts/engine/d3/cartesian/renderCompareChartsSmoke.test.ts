@@ -48,6 +48,27 @@ describe("compare chart render smoke", () => {
     cleanup();
   });
 
+  it("bidirectional bar draws center categories and dual value axes", () => {
+    const host = document.createElement("div");
+    const cleanup = renderD3BidirectionalBarChart(host, {
+      ...size,
+      data: [{ type: "A", left: 80, right: 50000 }],
+      colors: ["#465fff", "#12b76a"],
+      theme,
+      showLegend: false,
+      showLabel: false,
+      showTooltip: false,
+    });
+    expect(host.querySelector("g.vs-axis-y-center text")).toBeTruthy();
+    expect(host.querySelectorAll("g.left-bar rect").length).toBe(1);
+    expect(host.querySelectorAll("g.right-bar rect").length).toBe(1);
+    expect(host.querySelector("g.vs-axis-x-left")).toBeTruthy();
+    expect(host.querySelector("g.vs-axis-x-right")).toBeTruthy();
+    const leftX = Number(host.querySelector("g.left-bar rect")?.getAttribute("x") ?? 999);
+    expect(leftX).toBeLessThan(40);
+    cleanup();
+  });
+
   it("stock chart renders", () => {
     const host = document.createElement("div");
     const cleanup = renderD3StockChart(host, {

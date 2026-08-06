@@ -1,10 +1,13 @@
 import { useMemo, useState, type ReactNode } from "react";
 import {
   filterTemplateAssetsByScope,
+  galleryPreviewFallbackUrl,
   galleryPreviewUrl,
+  isWideTransparentGalleryCategory,
   listTemplateAssetCategories,
   TEMPLATE_ASSET_CATEGORY_LABELS,
   type TemplateAssetCatalogItem,
+  type TemplateAssetGalleryScope,
 } from "@/lib/templateAssetCatalog";
 import { cn } from "@/lib/utils";
 
@@ -115,6 +118,36 @@ function CategoryChip({
   );
 }
 
+function GalleryThumb({
+  item,
+  wideTransparent,
+}: {
+  item: TemplateAssetCatalogItem;
+  wideTransparent: boolean;
+}) {
+  const primary = galleryPreviewUrl(item);
+  const fallback = galleryPreviewFallbackUrl(item);
+  return (
+    <img
+      src={primary}
+      alt=""
+      className={cn(
+        "w-full object-center",
+        wideTransparent ? "h-11 object-contain" : "h-9 object-contain",
+      )}
+      loading="lazy"
+      draggable={false}
+      onError={(event) => {
+        const img = event.currentTarget;
+        if (!fallback || img.dataset.fallbackTried === "1") return;
+        img.dataset.fallbackTried = "1";
+        if (img.src === fallback || img.getAttribute("src") === fallback) return;
+        img.src = fallback;
+      }}
+    />
+  );
+}
+
 function AssetThumbGrid({
   items,
   activeUrl,
@@ -149,6 +182,7 @@ function AssetThumbGrid({
       >
         {items.map((item) => {
           const active = normalizeUrl(activeUrl ?? "") === normalizeUrl(item.url);
+          const wideTransparent = isWideTransparentGalleryCategory(item.category);
           return (
             <button
               key={`${item.pack}:${item.category}:${item.id}`}
@@ -156,19 +190,19 @@ function AssetThumbGrid({
               title={item.label}
               data-testid={`template-asset-${item.id}`}
               className={cn(
-                "overflow-hidden rounded border bg-[repeating-conic-gradient(#e5e7eb_0%_25%,#f8fafc_0%_50%)] bg-[length:8px_8px] dark:bg-[repeating-conic-gradient(#1f2937_0%_25%,#111827_0%_50%)]",
+                "overflow-hidden rounded border",
+                wideTransparent
+                  ? "bg-slate-900"
+                  : "bg-[repeating-conic-gradient(#e5e7eb_0%_25%,#f8fafc_0%_50%)] bg-[length:8px_8px] dark:bg-[repeating-conic-gradient(#1f2937_0%_25%,#111827_0%_50%)]",
                 active
                   ? "border-brand-500 ring-2 ring-brand-500/30"
                   : "border-gray-200 hover:border-brand-400/60 dark:border-gray-600",
               )}
               onClick={() => onSelect(item.url)}
             >
-              <img
-                src={galleryPreviewUrl(item)}
-                alt=""
-                className="h-9 w-full object-contain object-center"
-                loading="lazy"
-                draggable={false}
+              <GalleryThumb
+                item={item}
+                wideTransparent={wideTransparent}
               />
             </button>
           );

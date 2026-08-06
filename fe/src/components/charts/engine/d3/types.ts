@@ -47,6 +47,8 @@ export type D3RenderConfig<TOptions extends Record<string, unknown> = Record<str
   onPointClick?: (datum: D3Datum) => void;
   markLines?: ChartMarkLine[];
   legendLayout?: import("@/components/charts/engine/d3/core/d3Legend").D3LegendLayout;
+  visualScale?: number;
+  renderTier?: Geo3dRenderTier;
   options: TOptions;
 };
 

@@ -73,6 +73,8 @@ export const queryKeys = {
     prefabRun: (bindingKey: string) => ["reports", "prefabRun", bindingKey] as const,
     catalogNodes: (parentId?: string | null) =>
       ["reports", "catalogNodes", parentId ?? "root"] as const,
+    catalogAllNodes: ["reports", "catalogAllNodes"] as const,
+    catalogNode: (nodeId: string) => ["reports", "catalog-node", nodeId] as const,
     template: (key: string) => ["reports", "template", key] as const,
     extension: (nodeId: string) => ["reports", "extension", nodeId] as const,
     renderSpec: (nodeId: string) => ["reports", "renderSpec", nodeId] as const,

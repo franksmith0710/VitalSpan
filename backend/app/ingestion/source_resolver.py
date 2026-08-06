@@ -14,6 +14,7 @@ from app.ingestion.models import (
 )
 from app.ingestion.sync_source_capabilities import is_sync_source_capable
 from app.ingestion.sync_source_table import SyncSourceTableError, validate_sync_source_table
+from app.query.rls.guard import validate_identifier
 
 
 class SourceResolverError(Exception):
@@ -37,11 +38,25 @@ def _load_sync_datasource(db: Session, data_source_id: uuid.UUID) -> DataSource:
     return row
 
 
-def apply_datasource_snapshot(job: SyncJob, ds: DataSource, source_table: str) -> None:
+def apply_datasource_snapshot(
+    job: SyncJob,
+    ds: DataSource,
+    source_table: str,
+    *,
+    source_schema: str | None = None,
+) -> None:
     try:
         normalized_table = validate_sync_source_table(ds.type, source_table)
     except SyncSourceTableError as exc:
         raise SourceResolverError("VALIDATION_ERROR", str(exc)) from exc
+    if source_schema is not None and source_schema.strip():
+        try:
+            validate_identifier(source_schema.strip())
+        except Exception as exc:
+            raise SourceResolverError("VALIDATION_ERROR", "source_schema 格式无效") from exc
+        job.source_schema = source_schema.strip()
+    else:
+        job.source_schema = None
     job.source_type = ds.type
     job.source_host = ds.host
     job.source_port = ds.port
@@ -83,6 +98,7 @@ def resolve_and_apply_source(
     source_table: str | None,
     source_data_source_id: uuid.UUID | None,
     inline_source: SourceConnectionIn | SourceConnectionUpdateIn | None,
+    source_schema: str | None = None,
     preserve_password: bool = False,
 ) -> None:
     if source_mode == "datasource":
@@ -91,12 +107,13 @@ def resolve_and_apply_source(
         if not source_table:
             raise SourceResolverError("VALIDATION_ERROR", "须指定 source_table")
         ds = _load_sync_datasource(db, source_data_source_id)
-        apply_datasource_snapshot(job, ds, source_table)
+        apply_datasource_snapshot(job, ds, source_table, source_schema=source_schema)
         return
 
     if inline_source is None:
         raise SourceResolverError("VALIDATION_ERROR", "内联模式须指定 source")
     apply_inline_source(job, inline_source, preserve_password=preserve_password)
+    job.source_schema = None
 
 
 def http_exception_from_resolver(exc: SourceResolverError) -> HTTPException:

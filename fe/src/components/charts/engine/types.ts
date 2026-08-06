@@ -35,6 +35,8 @@ export type ChartStyleContext = {
   deFeatures: ChartDeFeatures;
   /** 组件 override 与看板默认合并后的调色板 id */
   effectivePaletteId?: string;
+  /** 合并后的配色不透明度 0–1（地图填充 / 饼图等） */
+  paletteOpacity?: number;
   chartColors: string[];
   dataScreenSurface: boolean;
   showLabel: boolean;

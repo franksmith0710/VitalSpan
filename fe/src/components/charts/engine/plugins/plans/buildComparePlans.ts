@@ -69,8 +69,8 @@ export function progressBarPlan(
   rows: unknown[][],
   columns: string[],
 ): ChartRenderPlan {
-  const targetField = spec.encoding.metrics[0]?.field ?? "";
-  const currentField = spec.encoding.metrics[1]?.field ?? "";
+  const targetField = fieldFromAxisOrLegacy(spec, "yAxis", 0, "metric", 0);
+  const currentField = fieldFromAxisOrLegacy(spec, "yAxisExt", 0, "metric", 1);
   const ti = colIndex(columns, targetField);
   const ci = colIndex(columns, currentField);
   if (ti < 0 || ci < 0) return errorPlan("进度条缺少目标值或实际值指标列", "ProgressBar");
@@ -101,10 +101,9 @@ export function bulletGraphPlan(
   rows: unknown[][],
   columns: string[],
 ): ChartRenderPlan {
-  const metrics = spec.encoding.metrics.map((m) => m.field).filter(Boolean);
-  const actualField = metrics[0] ?? "";
-  const targetField = metrics[1] ?? metrics[0] ?? "";
-  const rangeField = metrics[2];
+  const actualField = fieldFromAxisOrLegacy(spec, "yAxis", 0, "metric", 0);
+  const targetField = fieldFromAxisOrLegacy(spec, "yAxisExt", 0, "metric", 1) || actualField;
+  const rangeField = fieldFromAxisOrLegacy(spec, "extBubble", 0, "metric", 2);
   const ai = colIndex(columns, actualField);
   const ti = colIndex(columns, targetField);
   const ri = rangeField ? colIndex(columns, rangeField) : -1;

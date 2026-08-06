@@ -6,6 +6,7 @@ export type DatasourceListItem = {
   name: string;
   code?: string;
   type?: string;
+  host?: string;
   port?: number;
   database?: string;
 };

@@ -119,6 +119,79 @@ describe("report templates smoke", () => {
     );
   });
 
+  it("creates template inside selected folder", async () => {
+    const FOLDER_ID = "folder-1";
+    mockApiFetch.mockImplementation(async (path: string, opts?: { method?: string; body?: string }) => {
+      if (path.startsWith("/api/v1/reports/templates/") && opts?.method === "PUT") {
+        return JSON.parse(opts.body ?? "{}");
+      }
+      if (path === "/api/v1/reports/catalog/nodes" && opts?.method === "POST") {
+        const body = JSON.parse(opts.body ?? "{}");
+        expect(body.parentId).toBe(FOLDER_ID);
+        return {
+          id: "child-1",
+          name: "新建模板",
+          parentId: FOLDER_ID,
+          nodeType: "template",
+          templateKind: body.templateKind ?? "word",
+          templateKey: body.templateKey ?? "tpl_test1234",
+          sortOrder: 0,
+        };
+      }
+      if (path.startsWith("/api/v1/reports/catalog/nodes") && !path.includes("/extension")) {
+        if (path.includes("parentId=")) {
+          return {
+            items: [
+              {
+                id: "child-1",
+                name: "演示销售报表",
+                parentId: FOLDER_ID,
+                nodeType: "template",
+                templateKind: "pdf",
+                templateKey: "dev_demo_report",
+                sortOrder: 0,
+              },
+            ],
+          };
+        }
+        return {
+          items: [
+            {
+              id: FOLDER_ID,
+              name: "演示报表",
+              parentId: null,
+              nodeType: "folder",
+              templateKind: null,
+              templateKey: null,
+              sortOrder: 0,
+            },
+          ],
+        };
+      }
+      if (path.endsWith("/extension")) return { catalogNodeId: "child-1", metrics: [], filters: [] };
+      return { items: [] };
+    });
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <TooltipProvider delayDuration={0}>
+          <MemoryRouter>
+            <ReportTemplatesPage />
+          </MemoryRouter>
+        </TooltipProvider>
+      </QueryClientProvider>,
+    );
+    await waitFor(() => expect(screen.getByText("演示报表")).toBeInTheDocument());
+    await userEvent.click(screen.getByRole("button", { name: "演示报表" }));
+    await userEvent.click(screen.getByRole("button", { name: "在此新建模板" }));
+    await waitFor(() =>
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        "/api/v1/reports/catalog/nodes",
+        expect.objectContaining({ method: "POST" }),
+      ),
+    );
+  });
+
   it("saves sql metric with expression in extension body", async () => {
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(

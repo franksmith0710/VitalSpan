@@ -3,6 +3,7 @@ import {
   applyChartSeriesColorOverrides,
   chartSeriesColorCustomized,
   resolveChartSeriesColorItems,
+  resolveSeriesPaletteColors,
 } from "./chartSeriesColor";
 import type { ChartViewConfig } from "./chartViewConfig";
 
@@ -40,5 +41,33 @@ describe("chartSeriesColor", () => {
   it("inherits dashboard palette when component palette is unset", () => {
     const items = resolveChartSeriesColorItems(barCfg, "pastel");
     expect(items[0]?.color).toBe("#84adff");
+  });
+
+  it("prefers component custom palette colors for series defaults", () => {
+    const cfg: ChartViewConfig = {
+      ...barCfg,
+      nativeBody: {
+        deStyle: {
+          paletteId: "default",
+          paletteColors: ["#111111", "#222222"],
+        },
+      },
+    };
+    const items = resolveChartSeriesColorItems(cfg, "default", undefined, ["#111111", "#222222"]);
+    expect(items[0]?.color).toBe("#111111");
+  });
+
+  it("resolveSeriesPaletteColors prefers deStyle custom colors", () => {
+    const cfg: ChartViewConfig = {
+      ...barCfg,
+      nativeBody: {
+        deStyle: {
+          paletteId: "default",
+          paletteColors: ["#abcdef"],
+        },
+      },
+    };
+    expect(resolveSeriesPaletteColors(cfg, ["#465fff"])).toEqual(["#abcdef"]);
+    expect(resolveSeriesPaletteColors(barCfg, ["#465fff"])).toEqual(["#465fff"]);
   });
 });

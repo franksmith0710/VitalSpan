@@ -89,7 +89,13 @@ export type ChartRadarStyle = {
   axisLineColor?: string;
   axisLineWidth?: number;
   splitNumber?: number;
+  /** 雷达半径占可用区域比例（对标 DataEase 半径） */
+  radiusPercent?: number;
 };
+
+export const DEFAULT_RADAR_RADIUS_PERCENT = 65;
+export const RADAR_RADIUS_PERCENT_MIN = 30;
+export const RADAR_RADIUS_PERCENT_MAX = 92;
 
 export type ChartWordCloudStyle = {
   fontSizeMin?: number;
@@ -106,7 +112,15 @@ export type ChartTreemapStyle = {
 export type ChartCirclePackingStyle = {
   layoutPadding?: number;
   labelMinRadius?: number;
+  /** 外圆内部填充色 */
+  backgroundColor?: string;
+  /** 整体大小（相对绘图区直径，%） */
+  sizePercent?: number;
+  /** 是否显示外圈描边 */
+  showOuterRing?: boolean;
 };
+
+export const DEFAULT_CIRCLE_PACKING_SIZE_PERCENT = 100;
 
 export type ChartQuadrantStyle = {
   lineColor?: string;

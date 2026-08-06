@@ -11,7 +11,6 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { mapApiError } from "@/lib/apiError";
-import { ANALYTICS_DATASOURCE_CODE } from "@/lib/datasourceRoles";
 import { fetchTablePreview } from "@/lib/datasetTablePreview";
 import { parseQualifiedTable } from "@/lib/datasetTableUtils";
 import { refreshSyncDatasetBinding } from "@/lib/syncConsumeApi";
@@ -45,6 +44,8 @@ export function DatasetFieldWorkbench({
   boundConfigId,
   origin = "manual",
   syncJobId,
+  syncDataSourceName,
+  syncDataSourceEndpoint,
   onRefreshBinding,
 }: {
   dataSourceId: string;
@@ -58,6 +59,8 @@ export function DatasetFieldWorkbench({
   boundConfigId?: string | null;
   origin?: DatasetOrigin;
   syncJobId?: string | null;
+  syncDataSourceName?: string;
+  syncDataSourceEndpoint?: string;
   onRefreshBinding?: () => void;
 }) {
   const isSyncOrigin = origin === "sync_job";
@@ -154,8 +157,19 @@ export function DatasetFieldWorkbench({
                 同步任务 ID：<span className="font-mono"> {syncJobId.slice(0, 8)}…</span>。
               </>
             ) : null}
-            图表将查询托管分析库（code
-            <span className="font-mono"> {ANALYTICS_DATASOURCE_CODE}</span>）中的同步产出表；保存 Dataset 后出图字段生效。
+            图表将查询表
+            <span className="font-mono"> {tableName}</span>
+            {syncDataSourceName ? (
+              <>
+                ，经数据连接「{syncDataSourceName}」
+                {syncDataSourceEndpoint ? (
+                  <>
+                    （<span className="font-mono">{syncDataSourceEndpoint}</span>）
+                  </>
+                ) : null}
+              </>
+            ) : null}
+            ；保存 Dataset 后出图字段生效。
           </AlertDescription>
         </Alert>
       ) : (
@@ -222,14 +236,14 @@ export function DatasetFieldWorkbench({
                   列元数据暂不可用，当前仅展示已绑定字段。
                 </p>
               ) : null}
-              <div className="grid gap-4 lg:grid-cols-2">
+              <div className="grid gap-4 lg:grid-cols-2 lg:items-stretch">
               {[
                 { title: "维度", fields: dimensions },
                 { title: "指标", fields: metrics },
               ].map(({ title, fields }) => (
-                <div key={title} className="grid gap-2">
+                <div key={title} className="grid min-h-0 grid-rows-[auto_1fr] gap-2">
                   <Label className="text-theme-xs text-gray-600 dark:text-gray-400">{title}</Label>
-                  <ul className="max-h-none space-y-1 overflow-y-auto rounded-lg border border-gray-200 bg-white p-2 dark:border-gray-800 dark:bg-white/[0.02] lg:max-h-56">
+                  <ul className="min-h-56 space-y-1 overflow-y-auto rounded-lg border border-gray-200 bg-white p-2 dark:border-gray-800 dark:bg-white/[0.02] lg:min-h-0 lg:h-full">
                     {fields.length === 0 ? (
                       <li className="px-2 py-1 text-theme-xs text-gray-400">无</li>
                     ) : (

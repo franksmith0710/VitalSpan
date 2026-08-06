@@ -5,7 +5,12 @@ import {
   resolveGeoRegionFillColorHex,
 } from "@/components/charts/engine/geo/geoRegionFillStyle";
 import { resolveInheritPreviewColors } from "@/lib/chartPalette";
-import { patchChartDeStyleNested, readChartDeStyle, readChartGeoStyle } from "@/lib/chartDeStyle";
+import {
+  patchChartDeStyleNested,
+  patchChartPaletteDeStyle,
+  readChartDeStyle,
+  readChartGeoStyle,
+} from "@/lib/chartDeStyle";
 import { WIDGET_BORDER_RECOMMENDED } from "@/components/dashboard/dashboardStyleConfig";
 import {
   ChartInspectorSection,
@@ -39,14 +44,11 @@ export function ChartMapBasicStyleSection() {
           dense
           showInherit
           paletteId={deStyle.paletteId}
+          paletteColors={deStyle.paletteColors}
           paletteOpacity={deStyle.paletteOpacity}
           inheritPreviewColors={inheritPreviewColors}
-          onPaletteChange={(paletteId) =>
-            patchDeStyle({
-              paletteId,
-              seriesColor: undefined,
-              ...(paletteId === undefined ? { paletteOpacity: undefined } : {}),
-            })
+          onPaletteChange={(paletteId, colors) =>
+            onChange(patchChartPaletteDeStyle(cfg, paletteId, colors))
           }
           onOpacityChange={patchPaletteOpacity}
           onOpacityPreview={patchPaletteOpacity}

@@ -70,4 +70,50 @@ describe("renderD3WordCloudChart", () => {
     expect(largeFonts.length).toBeGreaterThan(0);
     expect(Math.max(...largeFonts)).toBeGreaterThan(Math.max(...smallFonts));
   });
+
+  it("scales word sizes down for thumbnail hub previews", () => {
+    const data = [
+      { word: "alpha", weight: 100 },
+      { word: "beta", weight: 50 },
+      { word: "gamma", weight: 25 },
+    ];
+    const base = {
+      height: 96,
+      colors: ["#465fff", "#12b76a", "#f79009"],
+      theme: getAntvThemeTokens("light"),
+      showLabel: false,
+      showTooltip: false,
+      showLegend: false,
+      labelFontSize: 11,
+      options: {
+        data,
+        __wordCloudFontMin: 12,
+        __wordCloudFontMax: 36,
+      },
+    };
+
+    const full = document.createElement("div");
+    const cleanupFull = renderD3WordCloudChart(full, { ...base, width: 320 });
+    const fullMax = Math.max(
+      ...[...full.querySelectorAll("text.word")].map((node) =>
+        Number.parseFloat(node.getAttribute("style")?.match(/font-size:\s*([\d.]+)px/)?.[1] ?? "0"),
+      ),
+    );
+    cleanupFull();
+
+    const thumb = document.createElement("div");
+    const cleanupThumb = renderD3WordCloudChart(thumb, {
+      ...base,
+      width: 120,
+      renderTier: "thumbnail",
+    });
+    const thumbMax = Math.max(
+      ...[...thumb.querySelectorAll("text.word")].map((node) =>
+        Number.parseFloat(node.getAttribute("style")?.match(/font-size:\s*([\d.]+)px/)?.[1] ?? "0"),
+      ),
+    );
+    cleanupThumb();
+
+    expect(fullMax).toBeGreaterThan(thumbMax);
+  });
 });

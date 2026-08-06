@@ -18,7 +18,13 @@ export function resolveGeoRegionFillColorHex(geo: ChartGeoStyle, isDark: boolean
 /** 2D 地图样式签名：变更须触发 D3GeoMapView 全量重建（无 2D patch 路径） */
 export function buildGeoMapStyleContentSig(
   geo: ChartGeoStyle = {},
-  extras: { paletteOpacity?: number; paletteId?: string } = {},
+  extras: {
+    paletteOpacity?: number;
+    paletteId?: string;
+    paletteColors?: readonly string[];
+    /** 已解析的图表配色（继承看板时含看板自定义色） */
+    chartColors?: readonly string[];
+  } = {},
 ): string {
   return [
     geo.roam !== false ? 1 : 0,
@@ -38,5 +44,7 @@ export function buildGeoMapStyleContentSig(
     geo.bubbleEffectColor?.toLowerCase() ?? "",
     extras.paletteOpacity ?? "",
     extras.paletteId ?? "",
+    extras.paletteColors?.join(",") ?? "",
+    extras.chartColors?.join(",") ?? "",
   ].join("|");
 }

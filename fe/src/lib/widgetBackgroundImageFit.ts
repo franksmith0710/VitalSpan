@@ -84,12 +84,14 @@ function resolveBackgroundSize(fit: WidgetBackgroundImageFit | undefined): strin
   }
 }
 
-function defaultPositionForFit(fit: WidgetBackgroundImageFit | undefined): string {
+export function defaultPositionForFit(
+  fit: WidgetBackgroundImageFit | undefined,
+): WidgetBackgroundImagePosition {
   switch (fit ?? "stretch") {
     case "widthFit":
-      return "center top";
+      return "center";
     case "heightFit":
-      return "left center";
+      return "center";
     case "stretch":
       return "center";
     default:
@@ -97,28 +99,85 @@ function defaultPositionForFit(fit: WidgetBackgroundImageFit | undefined): strin
   }
 }
 
-/** 内置顶栏/无边框装饰图：按宽等比 + 顶对齐（对标 DE） */
+export function isDecorativeWidgetBackgroundUrl(url: string | undefined): boolean {
+  const trimmed = url?.trim();
+  if (!trimmed) return false;
+  return (
+    trimmed.includes("/borderless-decor-v1/") ||
+    trimmed.includes("/screen-headers/") ||
+    trimmed.includes("/top-decor-clear/") ||
+    trimmed.includes("/title-strips/")
+  );
+}
+
+/** 内置顶栏/无边框装饰图：按宽铺满 + 居中（随组件缩放） */
 export function inferDefaultBackgroundImageFitForUrl(url: string): {
   backgroundImageFit: WidgetBackgroundImageFit;
   backgroundImagePosition: WidgetBackgroundImagePosition;
 } | null {
   const trimmed = url.trim();
   if (!trimmed) return null;
-  if (
-    trimmed.includes("/borderless-decor-v1/") ||
-    trimmed.includes("/screen-headers/")
-  ) {
+  if (isDecorativeWidgetBackgroundUrl(trimmed)) {
     return {
       backgroundImageFit: "widthFit",
-      backgroundImagePosition: "top center",
+      backgroundImagePosition: "center",
     };
   }
   return null;
 }
 
-export function resolveWidgetBackgroundImageLayerStyle(
-  bg: Pick<WidgetStyleConfig, "backgroundImageFit" | "backgroundImagePosition">,
+/** 装饰图未配置适应方式时的默认：按宽等比 */
+export function effectiveDecorBackgroundFit(
+  fit: WidgetBackgroundImageFit | undefined,
+): WidgetBackgroundImageFit {
+  return fit ?? "widthFit";
+}
+
+export function resolveDecorBackgroundLayerStyle(
+  bg: Pick<
+    WidgetStyleConfig,
+    "backgroundImage" | "backgroundImageFit" | "backgroundImagePosition"
+  >,
 ): Pick<CSSProperties, "backgroundSize" | "backgroundPosition" | "backgroundRepeat"> {
+  const fit = bg.backgroundImageFit ?? "widthFit";
+  const position = bg.backgroundImagePosition ?? defaultPositionForFit(fit);
+  return {
+    backgroundSize: resolveBackgroundSize(fit),
+    backgroundPosition: position,
+    backgroundRepeat: "no-repeat",
+  };
+}
+
+export function inferFitFromBackgroundSize(
+  size: string | undefined,
+): WidgetBackgroundImageFit {
+  switch (size) {
+    case "contain":
+      return "contain";
+    case "cover":
+      return "cover";
+    case "100% auto":
+      return "widthFit";
+    case "auto 100%":
+      return "heightFit";
+    case "auto":
+      return "original";
+    case "100% 100%":
+      return "stretch";
+    default:
+      return "stretch";
+  }
+}
+
+export function resolveWidgetBackgroundImageLayerStyle(
+  bg: Pick<
+    WidgetStyleConfig,
+    "backgroundImage" | "backgroundImageFit" | "backgroundImagePosition"
+  >,
+): Pick<CSSProperties, "backgroundSize" | "backgroundPosition" | "backgroundRepeat"> {
+  if (isDecorativeWidgetBackgroundUrl(bg.backgroundImage)) {
+    return resolveDecorBackgroundLayerStyle(bg);
+  }
   const fit = bg.backgroundImageFit ?? "stretch";
   const position =
     bg.backgroundImagePosition ??

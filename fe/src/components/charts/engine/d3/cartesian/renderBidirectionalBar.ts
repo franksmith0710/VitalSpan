@@ -44,7 +44,6 @@ export function renderD3BidirectionalBarChart(
   const categories = data.map((d) => d.type);
   const maxLeft = d3.max(data, (d) => Math.abs(d.left)) ?? 0;
   const maxRight = d3.max(data, (d) => Math.abs(d.right)) ?? 0;
-  const maxVal = Math.max(maxLeft, maxRight, 1);
   const leftColor = colors[0] ?? "#465fff";
   const rightColor = colors[1] ?? "#12b76a";
   const bidirectionalLegendItems = [
@@ -55,13 +54,13 @@ export function renderD3BidirectionalBarChart(
     showLegend,
     legendLayout,
     legendItems: bidirectionalLegendItems,
-    marginOverrides: { left: 72, right: 72 },
+    marginOverrides: { left: 28, right: 28 },
   });
   const centerX = innerW / 2;
 
   const y = d3.scaleBand<string>().domain(categories).range([0, innerH]).padding(resolveBarBandPadding(barWidthRatio));
-  const xLeft = d3.scaleLinear().domain([0, maxVal]).range([centerX, 0]);
-  const xRight = d3.scaleLinear().domain([0, maxVal]).range([centerX, innerW]);
+  const xLeft = d3.scaleLinear().domain([0, Math.max(maxLeft, 1)]).range([centerX, 0]);
+  const xRight = d3.scaleLinear().domain([0, Math.max(maxRight, 1)]).range([centerX, innerW]);
 
   const root = appendChartSvg(container, width, height);
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
@@ -71,7 +70,9 @@ export function renderD3BidirectionalBarChart(
   drawBidirectionalBandAxes({
     g,
     yScale: y,
-    xScale: xRight,
+    xLeftScale: xLeft,
+    xRightScale: xRight,
+    centerX,
     innerW,
     innerH,
     theme,

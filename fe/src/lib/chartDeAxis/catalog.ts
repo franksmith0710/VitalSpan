@@ -2,7 +2,7 @@
  * DataEase v2 最新 stable axisConfig 快照（真理源）
  * 对标：dataease/dataease core-frontend panel/charts
  */
-import { cartesianTrendAxes, deAxis, DE_MULTI_FIELD_LIMIT, expandAxisSpecs, MULTI_DIM_OPTS, MULTI_MET_OPTS } from "./builders";
+import { cartesianTrendAxes, deAxis, DE_MULTI_FIELD_LIMIT, expandAxisSpecs, MULTI_DIM_OPTS, MULTI_MET_OPTS, MIX_SINGLE_MET_OPTS } from "./builders";
 import type { DeAxisSlot, DeAxisSpec } from "./types";
 
 type ChartAxisEntry = {
@@ -325,66 +325,82 @@ const DE_AXIS_CATALOG: Record<string, ChartAxisEntry> = {
 
   // dual_axes
   combo: entry(
-    [deAxis.xDim(), deAxis.yMet("柱指标", MULTI_MET_OPTS), deAxis.yExt("线指标", MULTI_MET_OPTS)],
+    [
+      deAxis.xDim("类别轴 / 维度", MULTI_DIM_OPTS),
+      deAxis.yMet("左值轴 / 柱指标", { ...MIX_SINGLE_MET_OPTS, required: false }),
+      deAxis.rightSubDim(),
+      deAxis.yExt("右值轴 / 线指标", { ...MIX_SINGLE_MET_OPTS, required: false }),
+      deAxis.drill(),
+    ],
     [
       { axisId: "xAxis", index: 0, legacy: { kind: "dimension", index: 0 } },
       { axisId: "yAxis", index: 0, legacy: { kind: "metric", index: 0 } },
+      { axisId: "extBubble", index: 0, legacy: { kind: "dimension", index: 1 } },
       { axisId: "yAxisExt", index: 0, legacy: { kind: "metric", index: 1 } },
+      { axisId: "drill", index: 0, legacy: { kind: "dimension", index: 2 } },
     ],
   ),
   "chart-mix": entry(
     [
       deAxis.xDim("类别轴 / 维度", MULTI_DIM_OPTS),
-      deAxis.xExt(),
-      deAxis.yMet("左值轴 / 柱指标", MULTI_MET_OPTS),
-      deAxis.yExt("右值轴 / 线指标", MULTI_MET_OPTS),
+      deAxis.yMet("左值轴 / 柱指标", { ...MIX_SINGLE_MET_OPTS, required: false }),
+      deAxis.rightSubDim(),
+      deAxis.yExt("右值轴 / 线指标", { ...MIX_SINGLE_MET_OPTS, required: false }),
       deAxis.drill(),
     ],
     [
       { axisId: "xAxis", index: 0, legacy: { kind: "dimension", index: 0 } },
-      { axisId: "xAxisExt", index: 0, legacy: { kind: "dimension", index: 1 } },
       { axisId: "yAxis", index: 0, legacy: { kind: "metric", index: 0 } },
+      { axisId: "extBubble", index: 0, legacy: { kind: "dimension", index: 1 } },
       { axisId: "yAxisExt", index: 0, legacy: { kind: "metric", index: 1 } },
       { axisId: "drill", index: 0, legacy: { kind: "dimension", index: 2 } },
     ],
   ),
   "chart-mix-group": entry(
-    cartesianTrendAxes("分组项 / 维度")
-      .slice(0, 3)
-      .concat(deAxis.yExt("右值轴 / 线指标", MULTI_MET_OPTS), deAxis.drill()),
+    [
+      deAxis.xDim("类别轴 / 维度", MULTI_DIM_OPTS),
+      deAxis.mixGroupSubDim(),
+      deAxis.yMet("左值轴 / 柱指标", { ...MIX_SINGLE_MET_OPTS, required: false }),
+      deAxis.rightSubDim(),
+      deAxis.yExt("右值轴 / 线指标", { ...MIX_SINGLE_MET_OPTS, required: false }),
+      deAxis.drill(),
+    ],
     [
       { axisId: "xAxis", index: 0, legacy: { kind: "dimension", index: 0 } },
-      { axisId: "xAxisExt", index: 0, legacy: { kind: "dimension", index: 1 } },
       { axisId: "yAxis", index: 0, legacy: { kind: "metric", index: 0 } },
+      { axisId: "extBubble", index: 0, legacy: { kind: "dimension", index: 2 } },
       { axisId: "yAxisExt", index: 0, legacy: { kind: "metric", index: 1 } },
-      { axisId: "drill", index: 0, legacy: { kind: "dimension", index: 2 } },
+      { axisId: "xAxisExt", index: 0, legacy: { kind: "dimension", index: 1 } },
+      { axisId: "drill", index: 0, legacy: { kind: "dimension", index: 3 } },
     ],
   ),
   "chart-mix-stack": entry(
-    cartesianTrendAxes("堆叠项 / 维度")
-      .slice(0, 3)
-      .concat(deAxis.yExt("右值轴 / 线指标", MULTI_MET_OPTS), deAxis.drill()),
+    [
+      deAxis.xDim("类别轴 / 维度", MULTI_DIM_OPTS),
+      deAxis.stackItem(),
+      deAxis.yMet("左值轴 / 柱指标", { ...MIX_SINGLE_MET_OPTS, required: false }),
+      deAxis.rightSubDim(),
+      deAxis.yExt("右值轴 / 线指标", { ...MIX_SINGLE_MET_OPTS, required: false }),
+      deAxis.drill(),
+    ],
     [
       { axisId: "xAxis", index: 0, legacy: { kind: "dimension", index: 0 } },
-      { axisId: "xAxisExt", index: 0, legacy: { kind: "dimension", index: 1 } },
       { axisId: "yAxis", index: 0, legacy: { kind: "metric", index: 0 } },
+      { axisId: "extBubble", index: 0, legacy: { kind: "dimension", index: 2 } },
       { axisId: "yAxisExt", index: 0, legacy: { kind: "metric", index: 1 } },
-      { axisId: "drill", index: 0, legacy: { kind: "dimension", index: 2 } },
+      { axisId: "extStack", index: 0, legacy: { kind: "dimension", index: 1 } },
+      { axisId: "drill", index: 0, legacy: { kind: "dimension", index: 3 } },
     ],
   ),
   "chart-mix-dual-line": entry(
     [
-      deAxis.xDim(),
-      deAxis.xExt(),
-      deAxis.yMet("左值轴 / 线指标", MULTI_MET_OPTS),
-      deAxis.bubble("右子类别 / 维度", { fieldType: "dimension" as never, showAggregation: false }),
-      deAxis.yExt("右值轴 / 线指标", { ...MULTI_MET_OPTS, required: false }),
+      deAxis.xDim("类别轴 / 维度", MULTI_DIM_OPTS),
+      deAxis.leftSubDim(),
+      deAxis.yMet("左值轴 / 线指标", { ...MIX_SINGLE_MET_OPTS, required: false }),
+      deAxis.rightSubDim(),
+      deAxis.yExt("右值轴 / 线指标", { ...MIX_SINGLE_MET_OPTS, required: false }),
       deAxis.drill(),
-    ].map((s) =>
-      s.id === "extBubble" && (s as DeAxisSpec).fieldType === ("dimension" as never)
-        ? { ...s, fieldType: "dimension" as const, showAggregation: false }
-        : s,
-    ) as DeAxisSpec[],
+    ],
     [
       { axisId: "xAxis", index: 0, legacy: { kind: "dimension", index: 0 } },
       { axisId: "xAxisExt", index: 0, legacy: { kind: "dimension", index: 1 } },
@@ -435,25 +451,6 @@ DE_AXIS_CATALOG["multi-scatter"] = entry(
     { axisId: "yAxis", index: 0, legacy: { kind: "metric", index: 0 } },
     { axisId: "yAxisExt", index: 0, legacy: { kind: "metric", index: 2 } },
     { axisId: "extBubble", index: 0, legacy: { kind: "metric", index: 3 } },
-  ],
-);
-
-DE_AXIS_CATALOG["chart-mix-dual-line"] = entry(
-  [
-    deAxis.xDim("类别轴 / 维度", MULTI_DIM_OPTS),
-    deAxis.xExt(),
-    deAxis.yMet("左值轴 / 线指标", MULTI_MET_OPTS),
-    { id: "extBubble", label: "右子类别 / 维度", fieldType: "dimension", limit: 1, required: false },
-    deAxis.yExt("右值轴 / 线指标", { ...MULTI_MET_OPTS, required: false }),
-    deAxis.drill(),
-  ],
-  [
-    { axisId: "xAxis", index: 0, legacy: { kind: "dimension", index: 0 } },
-    { axisId: "xAxisExt", index: 0, legacy: { kind: "dimension", index: 1 } },
-    { axisId: "yAxis", index: 0, legacy: { kind: "metric", index: 0 } },
-    { axisId: "extBubble", index: 0, legacy: { kind: "dimension", index: 2 } },
-    { axisId: "yAxisExt", index: 0, legacy: { kind: "metric", index: 1 } },
-    { axisId: "drill", index: 0, legacy: { kind: "dimension", index: 3 } },
   ],
 );
 
@@ -533,6 +530,15 @@ export function deriveFieldRuleFromDeCatalog(chartType: string): {
     maxD = DE_MULTI_FIELD_LIMIT;
     maxM = Math.min(maxM, DE_MULTI_FIELD_LIMIT);
     if (minD < 1) minD = 1;
+  }
+  const dualAxesCombo =
+    chartType === "combo" ||
+    chartType === "chart-mix" ||
+    chartType === "chart-mix-group" ||
+    chartType === "chart-mix-stack" ||
+    chartType === "chart-mix-dual-line";
+  if (dualAxesCombo) {
+    minM = Math.max(minM, 1);
   }
   return { minDimensions: minD, maxDimensions: maxD, minMetrics: minM, maxMetrics: maxM };
 }

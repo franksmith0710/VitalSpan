@@ -4,22 +4,20 @@ import { resolveEffectiveDepth, shadeColor } from "@/components/charts/engine/d3
 import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
-import { formatSimpleDataLabel } from "@/components/charts/engine/d3/core/cartesianDataLabel";
-import type { DataLabelContentOptions } from "@/lib/chartDataLabelFormat";
-import { computeRadarLayout } from "./radarLayout";
-
-function radarAxisLabelLayout(
-  angle: number,
-  labelR: number,
-): { x: number; y: number; anchor: "start" | "end" | "middle"; dx: number; dy: string } {
-  const cos = Math.cos(angle);
-  const sin = Math.sin(angle);
-  const x = cos * labelR;
-  const y = sin * labelR;
-  if (cos > 0.3) return { x, y, anchor: "start", dx: 6, dy: "0.35em" };
-  if (cos < -0.3) return { x, y, anchor: "end", dx: -6, dy: "0.35em" };
-  return { x, y, anchor: "middle", dx: 0, dy: sin > 0 ? "0.9em" : "-0.45em" };
-}
+import {
+  DEFAULT_RADAR_RADIUS_PERCENT,
+  RADAR_RADIUS_PERCENT_MAX,
+  RADAR_RADIUS_PERCENT_MIN,
+} from "@/lib/chartDeStyleBlocks";
+import { computeRadarLayout, estimateRadarAxisLabelPad } from "./radarLayout";
+import {
+  buildRadarPointLabelText,
+  layoutRadarAxisLabelIndices,
+  layoutRadarPointLabelKeys,
+  radarAxisLabelBboxes,
+  radarAxisLabelLayout,
+  radarPointLabelOutwardOffset,
+} from "./radarLabels";
 
 export function renderD3RadarChart(container: HTMLElement, config: D3RenderConfig): () => void {
   container.replaceChildren();
@@ -51,12 +49,14 @@ export function renderD3RadarChart(container: HTMLElement, config: D3RenderConfi
   const axisLabelColor = String(options.__radarAxisLabelColor ?? theme.axisLabel);
   const axisLineWidth = Number(options.__radarAxisLineWidth ?? 1);
   const splitNumber = Math.max(2, Math.min(10, Number(options.__radarSplitNumber ?? 5)));
+  const radarRadiusPercent = Number(options.__radarRadiusPercent ?? DEFAULT_RADAR_RADIUS_PERCENT);
 
   if (width <= 0 || height <= 0 || data.length === 0) return () => undefined;
 
-  const needsLabelMargin = showLabel || showAxisName;
-  const layout = computeRadarLayout(width, height, false, needsLabelMargin);
-  const { cx, cy, radius } = layout;
+  const axisTexts = data.map((row) => String(row[xField] ?? ""));
+  const labelPad = estimateRadarAxisLabelPad(axisTexts, labelFontSize, showAxisName, showLabel);
+  const layout = computeRadarLayout(width, height, false, labelPad, radarRadiusPercent);
+  const { cx, cy, radius, axisLabelGap } = layout;
   const maxValue = d3.max(data, (d) => Number(d[yField] ?? 0)) ?? 1;
   const baseColor = colors[0] ?? "#465fff";
   const depthOn = resolveEffectiveDepth() !== "off";
@@ -70,6 +70,15 @@ export function renderD3RadarChart(container: HTMLElement, config: D3RenderConfi
 
   const g = root.append("g").attr("transform", `translate(${cx},${cy})`);
   const angleStep = (Math.PI * 2) / data.length;
+  const angles = data.map((_, i) => i * angleStep - Math.PI / 2);
+  const labelR = radius + axisLabelGap;
+
+  const axisVisibleIndices = showAxisName
+    ? layoutRadarAxisLabelIndices(axisTexts, angles, labelR, labelFontSize)
+    : [];
+  const axisOccupied = showAxisName
+    ? radarAxisLabelBboxes(axisVisibleIndices, axisTexts, angles, labelR, labelFontSize)
+    : [];
 
   for (let level = 1; level <= splitNumber; level += 1) {
     const r = (radius * level) / splitNumber;
@@ -82,7 +91,7 @@ export function renderD3RadarChart(container: HTMLElement, config: D3RenderConfi
         .attr("stroke-opacity", 0.85);
     } else {
       const ring = d3.range(data.length).map((i) => {
-        const angle = i * angleStep - Math.PI / 2;
+        const angle = angles[i]!;
         return [Math.cos(angle) * r, Math.sin(angle) * r] as [number, number];
       });
       ring.push(ring[0]!);
@@ -96,7 +105,7 @@ export function renderD3RadarChart(container: HTMLElement, config: D3RenderConfi
   }
 
   data.forEach((row, i) => {
-    const angle = i * angleStep - Math.PI / 2;
+    const angle = angles[i]!;
     g.append("line")
       .attr("x1", 0)
       .attr("y1", 0)
@@ -106,8 +115,7 @@ export function renderD3RadarChart(container: HTMLElement, config: D3RenderConfi
       .attr("stroke-width", axisLineWidth)
       .attr("stroke-opacity", 0.85);
 
-    if (showAxisName) {
-      const labelR = radius + 16;
+    if (showAxisName && axisVisibleIndices.includes(i)) {
       const labelLayout = radarAxisLabelLayout(angle, labelR);
       g.append("text")
         .attr("x", labelLayout.x)
@@ -124,7 +132,7 @@ export function renderD3RadarChart(container: HTMLElement, config: D3RenderConfi
   const points: [number, number][] = data.map((row, i) => {
     const v = Number(row[yField] ?? 0);
     const r = (v / (maxValue || 1)) * radius;
-    const angle = i * angleStep - Math.PI / 2;
+    const angle = angles[i]!;
     return [Math.cos(angle) * r, Math.sin(angle) * r];
   });
   points.push(points[0]!);
@@ -217,9 +225,22 @@ export function renderD3RadarChart(container: HTMLElement, config: D3RenderConfi
   }
 
   if (showLabel) {
-    const pointLabelContent: DataLabelContentOptions = showAxisName
-      ? { ...labelContent, showDimension: false }
-      : labelContent ?? { showIndicator: true };
+    const pointItems = data.map((row, i) => ({
+      key: String(i),
+      text: buildRadarPointLabelText(
+        row as Record<string, unknown>,
+        xField,
+        yField,
+        maxValue,
+        labelContent,
+        valueFormat,
+      ),
+      px: points[i]![0],
+      py: points[i]![1],
+      angle: angles[i]!,
+      priority: Number(row[yField] ?? 0),
+    }));
+    const pointVisible = layoutRadarPointLabelKeys(pointItems, labelFontSize, axisOccupied, radius);
 
     g
       .selectAll<SVGTextElement, D3Datum>("text.radar-value-label")
@@ -227,24 +248,25 @@ export function renderD3RadarChart(container: HTMLElement, config: D3RenderConfi
       .join("text")
       .attr("class", "radar-value-label")
       .attr("text-anchor", "middle")
-      .attr("dy", "-0.55em")
       .attr("fill", axisLabelColor)
       .style("font-size", `${labelFontSize}px`)
       .style("paint-order", "stroke fill")
       .style("stroke", theme.plotSurface ?? "#fff")
       .style("stroke-width", "3px")
       .style("stroke-linejoin", "round")
-      .attr("x", (_d, i) => points[i]![0])
-      .attr("y", (_d, i) => points[i]![1])
-      .text((d) =>
-        formatSimpleDataLabel(
-          String(d[xField] ?? ""),
-          d[yField],
-          maxValue,
-          pointLabelContent,
-          valueFormat,
-        ),
-      );
+      .attr("x", (_d, i) => {
+        const cos = Math.cos(angles[i]!);
+        const dist = Math.hypot(points[i]![0], points[i]![1]);
+        return points[i]![0] + cos * radarPointLabelOutwardOffset(dist, radius, labelFontSize);
+      })
+      .attr("y", (_d, i) => {
+        const sin = Math.sin(angles[i]!);
+        const dist = Math.hypot(points[i]![0], points[i]![1]);
+        return points[i]![1] + sin * radarPointLabelOutwardOffset(dist, radius, labelFontSize);
+      })
+      .attr("dy", "-0.55em")
+      .style("visibility", (_d, i) => (pointVisible.has(String(i)) ? "visible" : "hidden"))
+      .text((_d, i) => pointItems[i]!.text);
   }
 
   return () => container.replaceChildren();
