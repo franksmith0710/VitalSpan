@@ -1,5 +1,9 @@
 ﻿{
-    "status":  "running",
-    "startedAt":  "2026-08-07T03:21:26+08:00",
-    "lastRun":  "2026-08-07T032148"
+    "tickCount":  68,
+    "lastRun":  "2026-08-07T032148",
+    "loopPid":  4388,
+    "lastStatus":  "committed",
+    "loopInterval":  "30m",
+    "lastCommit":  "ca8340df",
+    "status":  "idle"
 }
