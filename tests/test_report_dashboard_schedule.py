@@ -176,6 +176,8 @@ def test_export_health_endpoint(client: TestClient):
 def test_probe_export_render_health_import_error(monkeypatch):
     import builtins
 
+    from app.dashboard.export_render import probe_export_render_health, reset_export_render_health_cache_for_tests
+
     real_import = builtins.__import__
 
     def _block_playwright(name, *args, **kwargs):
@@ -184,11 +186,50 @@ def test_probe_export_render_health_import_error(monkeypatch):
         return real_import(name, *args, **kwargs)
 
     monkeypatch.setattr(builtins, "__import__", _block_playwright)
-    from app.dashboard.export_render import probe_export_render_health
-
-    result = probe_export_render_health()
+    reset_export_render_health_cache_for_tests()
+    result = probe_export_render_health(force_refresh=True)
     assert result["status"] == "unavailable"
     assert "Playwright" in (result.get("error") or "")
+
+
+def test_probe_export_render_health_fe_unreachable(monkeypatch):
+    from app.dashboard.export_render import probe_export_render_health, reset_export_render_health_cache_for_tests
+
+    monkeypatch.setattr(
+        "app.dashboard.export_render._fe_reachable",
+        lambda: (False, "前端导出服务不可达（http://127.0.0.1:5173/）：connection refused"),
+    )
+    reset_export_render_health_cache_for_tests()
+    result = probe_export_render_health(force_refresh=True)
+    assert result["status"] == "unavailable"
+    assert "不可达" in (result.get("error") or "")
+
+
+def test_probe_export_render_health_chromium_missing(monkeypatch):
+    from playwright.sync_api import Error as PlaywrightError
+
+    from app.dashboard.export_render import probe_export_render_health, reset_export_render_health_cache_for_tests
+
+    class _BrokenChromium:
+        def launch(self, **_kwargs):
+            raise PlaywrightError("Executable doesn't exist at /missing/chromium")
+
+    class _FakePlaywright:
+        chromium = _BrokenChromium()
+
+    class _FakeContext:
+        def __enter__(self):
+            return _FakePlaywright()
+
+        def __exit__(self, *_args):
+            return False
+
+    monkeypatch.setattr("app.dashboard.export_render._fe_reachable", lambda: (True, None))
+    monkeypatch.setattr("playwright.sync_api.sync_playwright", lambda: _FakeContext())
+    reset_export_render_health_cache_for_tests()
+    result = probe_export_render_health(force_refresh=True)
+    assert result["status"] == "unavailable"
+    assert "Chromium" in (result.get("error") or "")
 
 
 def test_dashboard_execute_records_visual_snapshot_artifact(client: TestClient):

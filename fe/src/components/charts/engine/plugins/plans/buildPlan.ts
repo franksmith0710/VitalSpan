@@ -34,13 +34,29 @@ export function d3Plan(plotType: string, options: Record<string, unknown>): Char
 
 function specWithMetrics(spec: RenderSpec, metricFields: string[]): RenderSpec {
   const allowed = new Set(metricFields.filter(Boolean));
+  const seen = new Set<string>();
   return {
     ...spec,
     encoding: {
       ...spec.encoding,
-      metrics: spec.encoding.metrics.filter((m) => allowed.has(m.field)),
+      metrics: spec.encoding.metrics.filter((m) => {
+        if (!allowed.has(m.field)) return false;
+        if (seen.has(m.field)) return false;
+        seen.add(m.field);
+        return true;
+      }),
     },
   };
+}
+
+function resolveMetricLabel(spec: RenderSpec, field: string): string {
+  if (!field) return field;
+  const fromYAxis = spec.encoding.axes?.yAxis?.find((m) => m.field === field);
+  if (fromYAxis?.label?.trim()) return fromYAxis.label.trim();
+  const fromYExt = spec.encoding.axes?.yAxisExt?.find((m) => m.field === field);
+  if (fromYExt?.label?.trim()) return fromYExt.label.trim();
+  const fromMetrics = spec.encoding.metrics.find((m) => m.field === field);
+  return fromMetrics?.label?.trim() || field;
 }
 
 /** 双轴线侧仅类别轴聚合，不拆分子类别维 */
@@ -94,11 +110,11 @@ function dualAxesBarSubField(
   mode: "default" | "group" | "stack",
 ): string {
   if (mode === "group") {
-    return fieldFromAxisOrLegacy(spec, "xAxisExt", 0, "dimension", 1);
+    return optionalAxisField(spec, "xAxisExt", 0, "dimension", 1);
   }
   if (mode === "stack") {
     const category = fieldFromAxisOrLegacy(spec, "xAxis", 0, "dimension", 0);
-    const stack = fieldFromAxisOrLegacy(spec, "extStack", 0, "dimension", 1);
+    const stack = optionalAxisField(spec, "extStack", 0, "dimension", 1);
     return normalizeCartesianSubField(category, stack) ?? "";
   }
   return "";
@@ -404,7 +420,9 @@ function dualAxesPlan(
         )
       : null;
     const fallbackEnc = leftEnc ?? rightEnc!;
-    const lineLabels = [columnMetric, lineMetric].filter(Boolean);
+    const lineLabels = [columnMetric, lineMetric]
+      .filter(Boolean)
+      .map((field) => resolveMetricLabel(spec, field));
     return d3Plan("DualAxes", {
       data: [leftEnc?.data ?? [], rightEnc?.data ?? []],
       xField: fallbackEnc.xField,
@@ -431,7 +449,7 @@ function dualAxesPlan(
       data: [barEnc.data, []],
       xField: barEnc.xField,
       yField: [barEnc.yField, barEnc.yField],
-      lineLabels: [columnMetric],
+      lineLabels: [resolveMetricLabel(spec, columnMetric)],
       columnSeriesField: barEnc.seriesField,
       geometryOptions: [columnGeom, lineGeom],
       ...(categoryLevelCount ? { categoryLevelCount } : {}),
@@ -449,7 +467,7 @@ function dualAxesPlan(
       data: [[], lineEnc.data],
       xField: lineEnc.xField,
       yField: [lineEnc.yField, lineEnc.yField],
-      lineLabels: [lineMetric],
+      lineLabels: [resolveMetricLabel(spec, lineMetric)],
       lineSeriesField: lineEnc.seriesField,
       geometryOptions: [columnGeom, lineGeom],
       ...(categoryLevelCount ? { categoryLevelCount } : {}),
@@ -472,7 +490,7 @@ function dualAxesPlan(
     data: [barEnc.data, lineEnc.data],
     xField: barEnc.xField,
     yField: [barEnc.yField, lineEnc.yField],
-    lineLabels: [columnMetric, lineMetric],
+    lineLabels: [columnMetric, lineMetric].map((field) => resolveMetricLabel(spec, field)),
     columnSeriesField: barEnc.seriesField,
     lineSeriesField: lineEnc.seriesField,
     geometryOptions: [columnGeom, lineGeom],

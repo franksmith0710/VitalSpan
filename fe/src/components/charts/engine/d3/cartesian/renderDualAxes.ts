@@ -1,7 +1,7 @@
 import * as d3 from "d3";
 import { animateStrokePath } from "@/components/charts/engine/d3/core/animate";
 import { appendChartSvg, drawDualAxesAxes, resolveCategoryCartesianLayout } from "@/components/charts/engine/d3/core/sceneGraph";
-import { normalizeCartesianData } from "@/components/charts/engine/d3/core/series";
+import { normalizeCartesianData, groupSeries } from "@/components/charts/engine/d3/core/series";
 import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
 import { drawHorizontalMarkLines } from "@/components/charts/engine/d3/core/markLines";
 import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
@@ -13,6 +13,7 @@ import {
   columnTooltipRows,
   renderDualAxesColumnBars,
   resolveDualAxesColumnMax,
+  seriesColorAt,
 } from "@/components/charts/engine/d3/cartesian/renderDualAxesColumn";
 import type {
   D3CartesianDatum,
@@ -44,6 +45,8 @@ function buildDualAxesLegendItems(params: {
   leftColor: string;
   rightColor: string;
   columnSeriesField?: string;
+  lineSeriesField?: string;
+  leftLineSeriesField?: string;
   leftData: D3CartesianDatum[];
   rightData: D3CartesianDatum[];
   colors: string[];
@@ -56,6 +59,8 @@ function buildDualAxesLegendItems(params: {
     leftColor,
     rightColor,
     columnSeriesField,
+    lineSeriesField,
+    leftLineSeriesField,
     leftData,
     rightData,
     colors,
@@ -65,6 +70,25 @@ function buildDualAxesLegendItems(params: {
 
   const pushLine = (label: string, color: string) => {
     items.push({ label, color, marker: "line", markerWidth: 14, markerHeight: 3 });
+  };
+
+  const pushLineSeriesLegend = (
+    data: D3CartesianDatum[],
+    seriesField: string | undefined,
+    fallbackLabel: string,
+    fallbackColor: string,
+    colorOffset: number,
+  ) => {
+    if (seriesField) {
+      const names = [...new Set(data.map((row) => String(row[seriesField] ?? "")).filter(Boolean))];
+      if (names.length > 1) {
+        for (const [index, name] of names.entries()) {
+          pushLine(name, seriesColorAt(colors, colorOffset + index, fallbackColor));
+        }
+        return;
+      }
+    }
+    pushLine(fallbackLabel, fallbackColor);
   };
 
   const pushColumnLegend = (
@@ -79,7 +103,7 @@ function buildDualAxesLegendItems(params: {
         for (const [index, name] of names.entries()) {
           items.push({
             label: name,
-            color: colors[(index + colorOffset) % colors.length] ?? fallbackColor,
+            color: seriesColorAt(colors, colorOffset + index, fallbackColor),
           });
         }
         return;
@@ -89,22 +113,19 @@ function buildDualAxesLegendItems(params: {
   };
 
   if (leftGeom.geometry === "line") {
-    pushLine(leftLabel, leftColor);
+    pushLineSeriesLegend(leftData, leftLineSeriesField, leftLabel, leftColor, 0);
   } else {
     pushColumnLegend(leftData, leftLabel, leftColor, 0);
   }
 
   if (rightGeom.geometry === "line") {
-    if (dualLine && columnSeriesField) {
-      const names = [...new Set(rightData.map((row) => String(row[columnSeriesField] ?? "")).filter(Boolean))];
-      if (names.length > 1) {
-        for (const [index, name] of names.entries()) {
-          pushLine(name, colors[(index + 1) % colors.length] ?? rightColor);
-        }
-        return items;
-      }
-    }
-    pushLine(rightLabel, rightColor);
+    pushLineSeriesLegend(
+      rightData,
+      lineSeriesField ?? (dualLine ? columnSeriesField : undefined),
+      rightLabel,
+      rightColor,
+      1,
+    );
   } else {
     pushColumnLegend(rightData, rightLabel, rightColor, 1);
   }
@@ -163,6 +184,93 @@ function renderDualAxesLineSeries(params: {
     .on("click", (_event, d) => params.onPointClick?.(d));
 }
 
+function renderDualAxesLineLayers(params: {
+  plot: d3.Selection<SVGGElement, unknown, null, undefined>;
+  defs: d3.Selection<SVGDefsElement, unknown, null, undefined>;
+  data: D3CartesianDatum[];
+  xField: string;
+  yField: string;
+  seriesField?: string;
+  categories: string[];
+  x: d3.ScalePoint<string>;
+  yScale: d3.ScaleLinear<number, number>;
+  colors: string[];
+  colorOffset: number;
+  fallbackColor: string;
+  smooth?: boolean;
+  shadowPrefix: string;
+  dotClassPrefix: string;
+  conditionalRules?: D3DualAxesRenderConfig["conditionalRules"];
+  onPointClick?: D3DualAxesRenderConfig["onPointClick"];
+}): void {
+  const normalized = normalizeCartesianData(params.data, params.xField, params.yField, params.seriesField);
+  const groups = groupSeries(normalized, params.seriesField);
+  const hasMulti = groups.length > 1 && Boolean(params.seriesField);
+
+  if (!hasMulti) {
+    renderDualAxesLineSeries({
+      plot: params.plot,
+      defs: params.defs,
+      points: normalized,
+      categories: params.categories,
+      x: params.x,
+      yScale: params.yScale,
+      color: params.fallbackColor,
+      smooth: params.smooth,
+      shadowId: `${params.shadowPrefix}-0`,
+      dotClass: params.dotClassPrefix,
+      conditionalRules: params.conditionalRules,
+      onPointClick: params.onPointClick,
+    });
+    return;
+  }
+
+  groups.forEach((group, index) => {
+    const color = seriesColorAt(params.colors, params.colorOffset + index, params.fallbackColor);
+    renderDualAxesLineSeries({
+      plot: params.plot,
+      defs: params.defs,
+      points: group.points,
+      categories: params.categories,
+      x: params.x,
+      yScale: params.yScale,
+      color,
+      smooth: params.smooth,
+      shadowId: `${params.shadowPrefix}-${index}`,
+      dotClass: `${params.dotClassPrefix}-${index}`,
+      conditionalRules: params.conditionalRules,
+      onPointClick: params.onPointClick,
+    });
+  });
+}
+
+function lineTooltipRows(
+  data: D3CartesianDatum[],
+  xField: string,
+  yField: string,
+  seriesField: string | undefined,
+  category: string,
+  colors: string[],
+  fallbackLabel: string,
+  fallbackColor: string,
+  colorOffset: number,
+): Array<{ name: string; color: string; value: number }> {
+  const normalized = normalizeCartesianData(data, xField, yField, seriesField);
+  const groups = groupSeries(normalized, seriesField);
+  if (groups.length > 1 && seriesField) {
+    return groups.map((group, index) => {
+      const pt = group.points.find((p) => String(p.__category__) === category);
+      return {
+        name: group.name || fallbackLabel,
+        color: seriesColorAt(colors, colorOffset + index, fallbackColor),
+        value: Number(pt?.__value__ ?? 0),
+      };
+    });
+  }
+  const pt = normalized.find((p) => String(p.__category__) === category);
+  return [{ name: fallbackLabel, color: fallbackColor, value: Number(pt?.__value__ ?? 0) }];
+}
+
 export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxesRenderConfig): () => void {
   container.replaceChildren();
   if (config.width <= 0 || config.height <= 0) return () => undefined;
@@ -175,6 +283,8 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
     yField: [leftYField, rightYField],
     geometryOptions,
     columnSeriesField,
+    lineSeriesField,
+    leftLineSeriesField,
     colors,
     theme,
     showTooltip,
@@ -229,6 +339,8 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
     leftColor,
     rightColor,
     columnSeriesField,
+    lineSeriesField,
+    leftLineSeriesField,
     leftData,
     rightData,
     colors,
@@ -263,9 +375,7 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
           rightGeom.isGroup || rightGeom.isStack ? columnSeriesField : undefined,
           rightColumnOpts,
         )
-      : dualLine
-        ? (d3.max(rightSet.points, (d) => Number(d.__value__)) ?? 0)
-        : (d3.max(rightSet.points, (d) => Number(d.__value__)) ?? 0);
+      : (d3.max(rightSet.points, (d) => Number(d.__value__)) ?? 0);
   const yLeft = d3.scaleLinear().domain([0, leftMax]).nice().range([innerH, 0]);
   const yRight = d3.scaleLinear().domain([0, rightMax]).nice().range([innerH, 0]);
 
@@ -305,6 +415,7 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
       innerW,
       columnOpts: leftColumnOpts,
       colors,
+      colorOffset: 0,
       fallbackColor: leftColor,
       theme,
       seriesGradient,
@@ -314,17 +425,22 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
       barRadius,
     });
   } else if (leftGeom.geometry === "line") {
-    renderDualAxesLineSeries({
+    renderDualAxesLineLayers({
       plot,
       defs,
-      points: leftSet.points,
+      data: leftData,
+      xField,
+      yField: leftYField,
+      seriesField: leftLineSeriesField,
       categories,
       x,
       yScale: yLeft,
-      color: leftColor,
+      colors,
+      colorOffset: 0,
+      fallbackColor: leftColor,
       smooth: leftSmooth,
-      shadowId: "dual-line-left",
-      dotClass: "dual-line-dot",
+      shadowPrefix: "dual-line-left",
+      dotClassPrefix: "dual-line-dot",
       conditionalRules,
       onPointClick,
     });
@@ -344,7 +460,8 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
       innerH,
       innerW,
       columnOpts: rightColumnOpts,
-      colors: colors.slice(1).concat(colors),
+      colors,
+      colorOffset: 1,
       fallbackColor: rightColor,
       theme,
       seriesGradient,
@@ -354,17 +471,22 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
       barRadius,
     });
   } else if (rightGeom.geometry === "line") {
-    renderDualAxesLineSeries({
+    renderDualAxesLineLayers({
       plot,
       defs,
-      points: rightSet.points,
+      data: rightData,
+      xField,
+      yField: rightYField,
+      seriesField: lineSeriesField,
       categories,
       x,
       yScale: yRight,
-      color: rightColor,
+      colors,
+      colorOffset: 1,
+      fallbackColor: rightColor,
       smooth: rightSmooth,
-      shadowId: dualLine ? "dual-line-right" : "dual-line-1",
-      dotClass: dualLine ? "dual-line-dot-2" : "dual-line-dot-right",
+      shadowPrefix: dualLine ? "dual-line-right" : "dual-line-1",
+      dotClassPrefix: dualLine ? "dual-line-dot-2" : "dual-line-dot-right",
       conditionalRules,
       onPointClick,
     });
@@ -385,10 +507,32 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
         .style("font-size", `${labelFontSize}px`)
         .text((d) =>
           formatCartesianDatumLabel(d, {
-            hasMultiSeries: false,
+            hasMultiSeries: Boolean(leftLineSeriesField),
             labelContent,
             valueFormat,
             total: leftLabelTotal,
+          }),
+        );
+    } else if (leftGeom.geometry === "column") {
+      const colPoints = normalizeCartesianData(leftData, xField, leftYField, columnSeriesField);
+      const colLabelTotal = sumCartesianLabelTotal(colPoints);
+      const hasColSeries = Boolean(columnSeriesField);
+      plot
+        .selectAll("text.dual-col-label-left")
+        .data(colPoints)
+        .join("text")
+        .attr("class", "dual-col-label-left")
+        .attr("x", (d) => x(String(d.__category__)) ?? 0)
+        .attr("y", (d) => yLeft(Number(d.__value__)) - 4)
+        .attr("text-anchor", "middle")
+        .attr("fill", resolveLabelFill(theme, labelColor))
+        .style("font-size", `${labelFontSize}px`)
+        .text((d) =>
+          formatCartesianDatumLabel(d, {
+            hasMultiSeries: hasColSeries,
+            labelContent,
+            valueFormat,
+            total: colLabelTotal,
           }),
         );
     }
@@ -407,7 +551,7 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
         .style("font-size", `${labelFontSize}px`)
         .text((d) =>
           formatCartesianDatumLabel(d, {
-            hasMultiSeries: Boolean(columnSeriesField && dualLine),
+            hasMultiSeries: Boolean(lineSeriesField),
             labelContent,
             valueFormat,
             total: rightLabelTotal,
@@ -461,8 +605,19 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
         const rows: Array<{ name: string; color: string; value: number }> = [];
 
         if (leftGeom.geometry === "line") {
-          const pt = leftSet.points.find((p) => String(p.__category__) === best);
-          rows.push({ name: leftLabel, color: leftColor, value: Number(pt?.__value__ ?? 0) });
+          rows.push(
+            ...lineTooltipRows(
+              leftData,
+              xField,
+              leftYField,
+              leftLineSeriesField,
+              best,
+              colors,
+              leftLabel,
+              leftColor,
+              0,
+            ),
+          );
         } else if (leftGeom.geometry === "column") {
           rows.push(
             ...columnTooltipRows(
@@ -473,13 +628,25 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
               best,
               colors,
               leftColor,
+              0,
             ).map((r) => ({ ...r, name: r.name === "柱" ? leftLabel : r.name })),
           );
         }
 
         if (rightGeom.geometry === "line") {
-          const pt = rightSet.points.find((p) => String(p.__category__) === best);
-          rows.push({ name: rightLabel, color: rightColor, value: Number(pt?.__value__ ?? 0) });
+          rows.push(
+            ...lineTooltipRows(
+              rightData,
+              xField,
+              rightYField,
+              lineSeriesField,
+              best,
+              colors,
+              rightLabel,
+              rightColor,
+              1,
+            ),
+          );
         } else if (rightGeom.geometry === "column") {
           rows.push(
             ...columnTooltipRows(
@@ -488,8 +655,9 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
               rightYField,
               columnSeriesField,
               best,
-              colors.slice(1).concat(colors),
+              colors,
               rightColor,
+              1,
             ).map((r) => ({ ...r, name: r.name === "柱" ? rightLabel : r.name })),
           );
         }

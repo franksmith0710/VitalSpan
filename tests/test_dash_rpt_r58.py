@@ -67,7 +67,7 @@ def client() -> TestClient:
 @pytest.fixture
 def viewer_user() -> Generator[None, None, None]:
     async def _override() -> UserContext:
-        return UserContext(id="viewer-r58", username="viewer", roles=["viewer"])
+        return UserContext(id="00000000-0000-4000-8000-000000000058", username="viewer", roles=["viewer"])
 
     fastapi_app.dependency_overrides[get_current_user] = _override
     yield
@@ -77,7 +77,7 @@ def viewer_user() -> Generator[None, None, None]:
 @pytest.fixture
 def editor_user() -> Generator[None, None, None]:
     async def _override() -> UserContext:
-        return UserContext(id="editor-r58", username="editor", roles=["editor"])
+        return UserContext(id="00000000-0000-4000-8000-000000000059", username="editor", roles=["editor"])
 
     fastapi_app.dependency_overrides[get_current_user] = _override
     yield
@@ -335,7 +335,7 @@ def test_dash_r58_theme_viewer_put_forbidden(client):
     }
 
     async def _override() -> UserContext:
-        return UserContext(id="viewer-r58", username="viewer", roles=["viewer"])
+        return UserContext(id="00000000-0000-4000-8000-000000000058", username="viewer", roles=["viewer"])
 
     fastapi_app.dependency_overrides[get_current_user] = _override
     resp = client.put("/api/v1/dashboards/theme-analysis", headers=AUTH, json=payload)
@@ -358,7 +358,7 @@ def test_dash_r58_theme_editor_put_allowed(client):
     }
 
     async def _override() -> UserContext:
-        return UserContext(id="editor-r58", username="editor", roles=["editor"])
+        return UserContext(id="00000000-0000-4000-8000-000000000059", username="editor", roles=["editor"])
 
     fastapi_app.dependency_overrides[get_current_user] = _override
     resp = client.put("/api/v1/dashboards/theme-analysis", headers=AUTH, json=payload)
@@ -373,7 +373,7 @@ def test_dash_r58_theme_viewer_get_allowed(client):
     _save_theme_config(client, dash_id, widget_id=wid)
 
     async def _override() -> UserContext:
-        return UserContext(id="viewer-r58", username="viewer", roles=["viewer"])
+        return UserContext(id="00000000-0000-4000-8000-000000000058", username="viewer", roles=["viewer"])
 
     fastapi_app.dependency_overrides[get_current_user] = _override
     resp = client.get(
@@ -483,7 +483,7 @@ def test_rpt_r58_extension_viewer_put_forbidden(client):
     node_id = _create_template_node(client)
 
     async def _override() -> UserContext:
-        return UserContext(id="viewer-r58", username="viewer", roles=["viewer"])
+        return UserContext(id="00000000-0000-4000-8000-000000000058", username="viewer", roles=["viewer"])
 
     fastapi_app.dependency_overrides[get_current_user] = _override
     resp = client.put(
@@ -506,7 +506,7 @@ def test_rpt_r58_extension_viewer_render_spec_read_ok(client):
     )
 
     async def _override() -> UserContext:
-        return UserContext(id="viewer-r58", username="viewer", roles=["viewer"])
+        return UserContext(id="00000000-0000-4000-8000-000000000058", username="viewer", roles=["viewer"])
 
     fastapi_app.dependency_overrides[get_current_user] = _override
     resp = client.get(f"/api/v1/reports/catalog/nodes/{node_id}/extension/render-spec", headers=AUTH)
@@ -519,7 +519,7 @@ def test_rpt_r58_extension_editor_put_allowed(client):
     node_id = _create_template_node(client)
 
     async def _override() -> UserContext:
-        return UserContext(id="editor-r58", username="editor", roles=["editor"])
+        return UserContext(id="00000000-0000-4000-8000-000000000059", username="editor", roles=["editor"])
 
     fastapi_app.dependency_overrides[get_current_user] = _override
     resp = client.put(
@@ -595,7 +595,7 @@ def test_rpt_r58_probe_semi_real_under_budget(client):
     )
     sid = sched.json()["id"]
     client.post(f"/api/v1/reports/schedules/{sid}/transition", headers=AUTH, json={"action": "schedule"})
-    actor = UserContext(id="admin", username="admin", roles=["admin"])
+    actor = UserContext(id="00000000-0000-4000-8000-000000000001", username="admin", roles=["admin"])
     elapsed = probe_semi_real_execute_budget_ms(uuid.UUID(sid), f"probe-{uuid.uuid4().hex}", actor)
     assert elapsed <= 35.0
 
@@ -637,7 +637,7 @@ def test_rpt_r58_artifact_viewer_other_forbidden(client):
     eid = body["executionId"]
 
     async def _override() -> UserContext:
-        return UserContext(id="viewer-r58", username="viewer", roles=["viewer"])
+        return UserContext(id="00000000-0000-4000-8000-000000000058", username="viewer", roles=["viewer"])
 
     fastapi_app.dependency_overrides[get_current_user] = _override
     resp = client.get(f"/api/v1/reports/schedules/executions/{eid}/artifact", headers=AUTH)

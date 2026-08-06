@@ -59,20 +59,20 @@ const FALLBACK_FIELD_RULES: Record<string, ChartFieldRule> = {
   "chart-mix": {
     minDimensions: 1,
     maxDimensions: 8,
-    minMetrics: 2,
+    minMetrics: 1,
     maxMetrics: 8,
-    note: "双轴图至少 2 个指标",
+    note: "双轴图左柱或右线至少 1 个指标",
   },
   "chart-mix-group": {
     minDimensions: 1,
     maxDimensions: 8,
-    minMetrics: 2,
+    minMetrics: 1,
     maxMetrics: 8,
   },
   "chart-mix-stack": {
     minDimensions: 1,
     maxDimensions: 8,
-    minMetrics: 2,
+    minMetrics: 1,
     maxMetrics: 8,
   },
   "chart-mix-dual-line": {

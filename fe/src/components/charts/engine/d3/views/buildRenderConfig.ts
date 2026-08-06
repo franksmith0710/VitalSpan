@@ -240,6 +240,8 @@ export function buildD3DispatchPayload(
         ],
         lineLabels: options.lineLabels as [string, string] | undefined,
         columnSeriesField: options.columnSeriesField as string | undefined,
+        lineSeriesField: options.lineSeriesField as string | undefined,
+        leftLineSeriesField: options.leftLineSeriesField as string | undefined,
         showLabel: styleProps.showLabel,
         labelFontSize: styleProps.labelFontSize,
         labelColor: styleProps.labelColor,

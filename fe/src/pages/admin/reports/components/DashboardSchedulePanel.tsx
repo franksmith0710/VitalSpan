@@ -76,7 +76,8 @@ export function DashboardSchedulePanel({
 
   useEffect(() => {
     if (selected && draftSelected) {
-      setForm(scheduleRowToForm(selected));
+      const next = scheduleRowToForm(selected);
+      setForm({ ...next, attachmentFormats: ["pdf"] });
     }
   }, [selected?.id, draftSelected, selected]);
 
@@ -84,7 +85,7 @@ export function DashboardSchedulePanel({
   const precheck = useSchedulePrecheckItems({
     sourceLabel: sourceName,
     widgetCount,
-    requireVisualExport: form.attachmentFormats[0] !== "excel",
+    requireVisualExport: true,
   });
   const canCreate = canCreateDashboardSchedule({
     widgetCount,
@@ -97,6 +98,14 @@ export function DashboardSchedulePanel({
     transitionSchedule.isPending ||
     executeSchedule.isPending ||
     clonePending;
+
+  const deliveryWarning =
+    precheck.items.find((item) => item.id === "delivery" && !item.ok)?.detail ?? null;
+
+  const confirmDeliveryIfNeeded = () => {
+    if (!form.deliveryChannels.includes("email") || !deliveryWarning) return true;
+    return window.confirm(`${deliveryWarning}\n\n仍要继续吗？激活或执行后邮件可能投递失败。`);
+  };
 
   const handleCreate = async () => {
     if (!isScheduleFormSubmittable(form)) {
@@ -115,7 +124,7 @@ export function DashboardSchedulePanel({
         cron: resolveScheduleCron(form),
         timezone: form.timezone,
         recipients: form.recipients.filter((r) => r.value.trim()),
-        attachmentFormats: form.attachmentFormats,
+        attachmentFormats: ["pdf"],
         deliveryChannels: form.deliveryChannels,
       });
       setShowCreate(false);
@@ -139,7 +148,7 @@ export function DashboardSchedulePanel({
           cron: resolveScheduleCron(form),
           timezone: form.timezone,
           recipients: form.recipients.filter((r) => r.value.trim()),
-          attachmentFormats: form.attachmentFormats,
+          attachmentFormats: ["pdf"],
           deliveryChannels: form.deliveryChannels,
         },
       });
@@ -150,6 +159,7 @@ export function DashboardSchedulePanel({
   };
 
   const handleActivate = async (scheduleId: string) => {
+    if (!confirmDeliveryIfNeeded()) return;
     try {
       await transitionSchedule.mutateAsync({ id: scheduleId, action: "schedule" });
       setShowActivationBanner(false);
@@ -168,7 +178,7 @@ export function DashboardSchedulePanel({
       if (schedule.allowedActions.includes("cancel")) {
         await transitionSchedule.mutateAsync({ id: schedule.id, action: "cancel" });
       }
-      setForm(cloned);
+      setForm({ ...cloned, attachmentFormats: ["pdf"] });
       setShowCreate(true);
       setSelectedId(null);
       toast.success("已复制配置，请编辑后创建新定时报告");
@@ -180,6 +190,7 @@ export function DashboardSchedulePanel({
   };
 
   const handleTestSend = async (scheduleId: string) => {
+    if (!confirmDeliveryIfNeeded()) return;
     try {
       await executeSchedule.mutateAsync(scheduleId);
       toast.success("已触发试发，请查收邮箱");
@@ -214,6 +225,7 @@ export function DashboardSchedulePanel({
           onActivate={() => void handleActivate(pendingActivateId)}
           activating={transitionSchedule.isPending}
           disabled={readOnly}
+          deliveryWarning={deliveryWarning}
         />
       ) : null}
       {schedules.length > 0 ? (
@@ -245,7 +257,6 @@ export function DashboardSchedulePanel({
             <SchedulePrecheckPanel
               sourceLabel={sourceName}
               widgetCount={widgetCount}
-              requireVisualExport={form.attachmentFormats[0] !== "excel"}
             />
           ) : null}
           <ScheduleFormFields
@@ -253,6 +264,7 @@ export function DashboardSchedulePanel({
             onChange={setForm}
             disabled={readOnly}
             showAttachments
+            attachmentFormatMode="pdf-only"
             showDeliveryChannels
             idPrefix="dash-schedule"
           />
@@ -284,6 +296,7 @@ export function DashboardSchedulePanel({
                   onChange={setForm}
                   disabled={readOnly}
                   showAttachments
+                  attachmentFormatMode="pdf-only"
                   showDeliveryChannels
                   idPrefix="dash-schedule-edit"
                 />
@@ -333,12 +346,15 @@ export function DashboardSchedulePanel({
                   variant={action === "schedule" || action === "resume" ? "primary" : "outline"}
                   size="sm"
                   disabled={readOnly || transitionSchedule.isPending}
-                  onClick={() =>
+                  onClick={() => {
+                    if ((action === "schedule" || action === "resume") && !confirmDeliveryIfNeeded()) {
+                      return;
+                    }
                     void transitionSchedule
                       .mutateAsync({ id: selected.id, action })
                       .then(() => toast.success("状态已更新"))
-                      .catch((err) => toast.error(mapApiError(err)))
-                  }
+                      .catch((err) => toast.error(mapApiError(err)));
+                  }}
                 >
                   {SCHEDULE_ACTION_LABELS[action] ?? action}
                 </Button>

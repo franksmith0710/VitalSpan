@@ -57,6 +57,8 @@ type ScheduleFormFieldsProps = {
   onChange: (next: ScheduleFormValue) => void;
   disabled?: boolean;
   showAttachments?: boolean;
+  /** dashboard/data-screen main path: fixed visual PDF, no Excel inventory */
+  attachmentFormatMode?: "select" | "pdf-only";
   showDeliveryChannels?: boolean;
   idPrefix?: string;
 };
@@ -77,6 +79,7 @@ export function ScheduleFormFields({
   onChange,
   disabled,
   showAttachments = false,
+  attachmentFormatMode = "select",
   showDeliveryChannels = false,
   idPrefix = "schedule-form",
 }: ScheduleFormFieldsProps) {
@@ -137,24 +140,33 @@ export function ScheduleFormFields({
         {showAttachments ? (
           <div className="grid gap-2">
             <Label>附件格式</Label>
-            <div className="space-y-2">
-              {ATTACHMENT_OPTIONS.map((opt) => (
-                <label key={opt.value} className="flex cursor-pointer items-start gap-2 text-theme-sm">
-                  <input
-                    type="radio"
-                    name={`${idPrefix}-format`}
-                    checked={value.attachmentFormats[0] === opt.value}
-                    disabled={disabled}
-                    onChange={() => setAttachmentFormat(opt.value)}
-                    className="mt-1"
-                  />
-                  <span>
-                    {opt.label}
-                    <span className="block text-theme-xs text-gray-500">{opt.hint}</span>
-                  </span>
-                </label>
-              ))}
-            </div>
+            {attachmentFormatMode === "pdf-only" ? (
+              <p className="rounded-lg border border-gray-200 bg-gray-50/80 px-3 py-2 text-theme-sm text-gray-700 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-300">
+                PDF 可视化快照
+                <span className="mt-0.5 block text-theme-xs text-gray-500">
+                  Playwright 截取画布像素；看板/大屏定时报告主路径仅支持 PDF。
+                </span>
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {ATTACHMENT_OPTIONS.map((opt) => (
+                  <label key={opt.value} className="flex cursor-pointer items-start gap-2 text-theme-sm">
+                    <input
+                      type="radio"
+                      name={`${idPrefix}-format`}
+                      checked={value.attachmentFormats[0] === opt.value}
+                      disabled={disabled}
+                      onChange={() => setAttachmentFormat(opt.value)}
+                      className="mt-1"
+                    />
+                    <span>
+                      {opt.label}
+                      <span className="block text-theme-xs text-gray-500">{opt.hint}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
         ) : null}
       </div>

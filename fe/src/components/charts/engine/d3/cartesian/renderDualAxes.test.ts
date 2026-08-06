@@ -109,7 +109,7 @@ describe("renderD3DualAxesChart dual-line legend", () => {
       xField: "__category__",
       yField: ["__value__", "__value__"],
       geometryOptions: [{ geometry: "line" }, { geometry: "line" }],
-      columnSeriesField: "__series__",
+      lineSeriesField: "__series__",
       colors: ["#465fff", "#12b76a", "#f79009"],
       theme,
       showLegend: true,
@@ -161,6 +161,47 @@ describe("renderD3DualAxesChart dual-line legend", () => {
     );
     expect(labels).toContain("华东");
     expect(labels).toContain("华北");
+  });
+
+  it("aligns grouped column legend colors with series palette order", () => {
+    const container = document.createElement("div");
+    Object.defineProperty(container, "clientWidth", { value: 480, configurable: true });
+    Object.defineProperty(container, "clientHeight", { value: 320, configurable: true });
+
+    renderD3DualAxesChart(container, {
+      width: 480,
+      height: 320,
+      data: [
+        [
+          { __category__: "A", __value__: 10, __series__: "华东" },
+          { __category__: "A", __value__: 20, __series__: "华北" },
+          { __category__: "B", __value__: 15, __series__: "华东" },
+          { __category__: "B", __value__: 25, __series__: "华北" },
+        ],
+        [
+          { __category__: "A", __value__: 100 },
+          { __category__: "B", __value__: 200 },
+        ],
+      ],
+      xField: "__category__",
+      yField: ["__value__", "__value__"],
+      geometryOptions: [{ geometry: "column", isGroup: true }, { geometry: "line" }],
+      columnSeriesField: "__series__",
+      colors: ["#465fff", "#12b76a", "#f79009"],
+      theme,
+      showLegend: true,
+      lineLabels: ["quantity", "amount"],
+    });
+
+    expect(container.querySelectorAll('[class*="dual-group-"]').length).toBeGreaterThan(0);
+
+    const legendEntries = Array.from(container.querySelectorAll("g.vs-legend > g")).map((node) => ({
+      label: node.querySelector("text")?.textContent?.trim() ?? "",
+      color: node.querySelector("rect")?.getAttribute("fill") ?? "",
+    }));
+    expect(legendEntries.find((entry) => entry.label === "华东")?.color).toBe("#465fff");
+    expect(legendEntries.find((entry) => entry.label === "华北")?.color).toBe("#12b76a");
+    expect(legendEntries.find((entry) => entry.label === "amount")?.color).toBe("#12b76a");
   });
 
   it("renders tiered x-axis for multi-part category keys", () => {

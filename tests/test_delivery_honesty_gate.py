@@ -45,10 +45,14 @@ def test_honesty_gate_filter_controls_are_real() -> None:
 
 
 def test_honesty_gate_share_page_reads_layout_json() -> None:
-    """P0-01: Share page must read API layoutJson, not layout."""
-    share = (_ROOT / "fe" / "src" / "pages" / "admin" / "dashboard" / "DashboardSharePage.tsx").read_text(
+    """P0-01: Share dialog must read API layoutJson via normalizeDashboardDetail."""
+    share_dialog = (_ROOT / "fe" / "src" / "components" / "dashboard" / "DashboardShareDialog.tsx").read_text(
         encoding="utf-8",
     )
-    assert "layoutJson" in share
-    assert "detail?.layout?.widgets" not in share
-    assert "detail?.layoutJson?.widgets" in share
+    share_page = (_ROOT / "fe" / "src" / "pages" / "admin" / "dashboard" / "DashboardSharePage.tsx").read_text(
+        encoding="utf-8",
+    )
+    assert "DashboardShareDialog" in share_page
+    assert "layoutJson" in share_dialog
+    assert "normalizeDashboardDetail" in share_dialog
+    assert "detail?.layout?.widgets" not in share_dialog

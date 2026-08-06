@@ -36,6 +36,8 @@ export default defineConfig(({ mode }) => {
       dedupe: ["three"],
     },
     server: {
+      // Align with backend FE_BASE_URL default (127.0.0.1) for Playwright PDF export.
+      host: "127.0.0.1",
       proxy,
     },
     build: {

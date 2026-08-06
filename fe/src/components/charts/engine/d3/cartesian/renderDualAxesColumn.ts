@@ -68,6 +68,12 @@ export function resolveDualAxesColumnMax(
   return d3.max(normalized, (d) => Number(d.__value__)) ?? 0;
 }
 
+function seriesColorAt(colors: string[], index: number, fallback: string): string {
+  return colors[index % colors.length] ?? fallback;
+}
+
+export { seriesColorAt };
+
 export function renderDualAxesColumnBars(params: {
   plot: d3.Selection<SVGGElement, unknown, null, undefined>;
   defs?: d3.Selection<SVGDefsElement, unknown, null, undefined>;
@@ -82,6 +88,8 @@ export function renderDualAxesColumnBars(params: {
   innerW: number;
   columnOpts: ColumnOpts;
   colors: string[];
+  /** 系列配色起始索引（左柱 0、右柱 1，与图例/tooltip 一致） */
+  colorOffset?: number;
   fallbackColor: string;
   theme: AntvThemeTokens;
   seriesGradient?: boolean;
@@ -111,6 +119,7 @@ export function renderDualAxesColumnBars(params: {
     onPointClick,
     barWidthRatio,
     barRadius,
+    colorOffset = 0,
   } = params;
 
   const barRx = barRadius ?? BAR_RX;
@@ -121,7 +130,10 @@ export function renderDualAxesColumnBars(params: {
   const hasMultiSeries = seriesNames.length > 1 && Boolean(columnSeriesField);
   const useGrouped = hasMultiSeries && (columnOpts.isGroup || !columnOpts.isStack);
   const keys = resolveSeriesKeys(seriesNames);
-  const colorScale = d3.scaleOrdinal<string>().domain(seriesNames).range(colors.slice(1).concat(colors));
+  const colorScale = d3
+    .scaleOrdinal<string>()
+    .domain(seriesNames)
+    .range(seriesNames.map((_, index) => seriesColorAt(colors, colorOffset + index, fallbackColor)));
 
   const wideRows: WideRow[] = categories.map((cat) => {
     const row: WideRow = { __category__: cat };
@@ -232,11 +244,15 @@ export function columnTooltipRows(
   category: string,
   colors: string[],
   fallbackColor: string,
+  colorOffset = 0,
 ): Array<{ name: string; color: string; value: number }> {
   const normalized = normalizeCartesianData(columnData, xField, columnYField, columnSeriesField);
   const groups = groupSeries(normalized, columnSeriesField);
   if (groups.length > 1 && columnSeriesField) {
-    const colorScale = d3.scaleOrdinal<string>().domain(groups.map((g) => g.name)).range(colors.slice(1).concat(colors));
+    const colorScale = d3
+      .scaleOrdinal<string>()
+      .domain(groups.map((g) => g.name))
+      .range(groups.map((_, index) => seriesColorAt(colors, colorOffset + index, fallbackColor)));
     return groups.map((s) => {
       const pt = s.points.find((p) => String(p.__category__) === category);
       return {

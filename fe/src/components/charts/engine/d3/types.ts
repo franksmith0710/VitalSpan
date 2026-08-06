@@ -174,6 +174,10 @@ export type D3DualAxesRenderConfig = D3RenderConfigBase & {
   lineLabels?: [string, string];
   /** 柱侧子类别/堆叠系列字段（来自 encodeCartesianRows） */
   columnSeriesField?: string;
+  /** 右线侧子类别系列字段（extBubble → encodeCartesianRows seriesField） */
+  lineSeriesField?: string;
+  /** 左线侧子类别系列字段（dual-line 时 xAxisExt → seriesField） */
+  leftLineSeriesField?: string;
   labelContent?: DataLabelContentOptions;
   showLabel?: boolean;
   labelFontSize?: number;

@@ -139,8 +139,7 @@ export function ChartFieldMultiSlot({
         {filled ? (
           fields.map((field, index) => {
             const isMetric = classifyDatasetField(field) === "metric";
-            const suffix =
-              showAggregation && isMetric ? "求和" : !isMetric ? "计数" : undefined;
+            const suffix = showAggregation && isMetric ? "求和" : undefined;
             return (
               <span
                 key={`${field}-${index}`}

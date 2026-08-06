@@ -259,4 +259,24 @@ describe("buildPlanForType dual axes DE slot mapping", () => {
     expect(plan.options.lineSeriesField).toBeUndefined();
     expect(plan.options.columnSeriesField).toBeUndefined();
   });
+
+  it("ignores empty xAxisExt in group mode and does not fall back to drill dim", () => {
+    const plan = buildPlanForType(
+      "chart-mix-group",
+      dualVm(
+        "chart-mix-group",
+        rows,
+        columns,
+        {
+          xAxis: [{ field: "sale_date" }],
+          yAxis: [{ field: "amount" }],
+          yAxisExt: [{ field: "amount2" }],
+          drill: [{ field: "region" }],
+        },
+        [{ field: "sale_date" }, { field: "region" }],
+        [{ field: "amount" }, { field: "amount2" }],
+      ),
+    );
+    expect(plan.options.columnSeriesField).toBeUndefined();
+  });
 });

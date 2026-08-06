@@ -56,7 +56,7 @@ def client() -> TestClient:
 @pytest.fixture
 def viewer_user() -> Generator[None, None, None]:
     async def _override() -> UserContext:
-        return UserContext(id="viewer-r238", username="viewer", roles=["viewer"])
+        return UserContext(id="00000000-0000-4000-8000-000002380001", username="viewer", roles=["viewer"])
 
     fastapi_app.dependency_overrides[get_current_user] = _override
     yield
@@ -66,7 +66,7 @@ def viewer_user() -> Generator[None, None, None]:
 @pytest.fixture
 def enterprise_user() -> Generator[None, None, None]:
     async def _override() -> UserContext:
-        return UserContext(id="enterprise-r238", username="ent", roles=["enterprise"])
+        return UserContext(id="00000000-0000-4000-8000-000002380002", username="ent", roles=["enterprise"])
 
     fastapi_app.dependency_overrides[get_current_user] = _override
     yield
@@ -160,7 +160,7 @@ def test_rpt_r238_005_viewer_transition_forbidden(client):
     sid = sched.json()["id"]
 
     async def _override() -> UserContext:
-        return UserContext(id="viewer-r238", username="viewer", roles=["viewer"])
+        return UserContext(id="00000000-0000-4000-8000-000002380001", username="viewer", roles=["viewer"])
 
     fastapi_app.dependency_overrides[get_current_user] = _override
     try:
@@ -407,10 +407,10 @@ def test_cat_r238_enterprise_viewer_forbidden(client, enterprise_user):
     """T-CAT-R238-007-02: enterprise viewer cross workno → 403."""
     from app.governance.catalog.cat07 import service as cat07_service
 
-    cat07_service.set_user_workno_scope("enterprise-r238", "EMP1001")
+    cat07_service.set_user_workno_scope("00000000-0000-4000-8000-000002380002", "EMP1001")
     resp = client.get(
         "/api/v1/workno/behavior",
-        headers=jwt_auth_headers(user_id="enterprise-r238", username="ent"),
+        headers=jwt_auth_headers(user_id="00000000-0000-4000-8000-000002380002", username="ent"),
         params={"workno": "EMP2002"},
     )
     assert resp.status_code == 403
