@@ -22,7 +22,7 @@ import type { WidgetStyleConfig } from "./dashboardStyleConfig";
 type BackgroundPatch = Partial<WidgetStyleConfig>;
 
 export function patchWidgetBackgroundImageSelection(
-  value: WidgetStyleConfig,
+  value: WidgetStyleConfig | undefined,
   backgroundImage: string | undefined,
 ): BackgroundPatch {
   const trimmed = backgroundImage?.trim();
@@ -33,7 +33,7 @@ export function patchWidgetBackgroundImageSelection(
     backgroundMode: "image",
     framePresetId: undefined,
     frameColor: undefined,
-    ...(trimmed && value.backgroundImageOpacity == null ? { backgroundImageOpacity: 1 } : {}),
+    ...(trimmed && value?.backgroundImageOpacity == null ? { backgroundImageOpacity: 1 } : {}),
     ...(fitDefaults
       ? {
           backgroundImageFit: fitDefaults.backgroundImageFit,
@@ -74,7 +74,7 @@ export function WidgetBackgroundImagePicker({
   showFitFields?: boolean;
   allowCustomUpload?: boolean;
 }) {
-  const imageUrl = value.backgroundImage ?? "";
+  const imageUrl = value?.backgroundImage ?? "";
   const preview = resolveBackgroundImagePreview(imageUrl);
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);

@@ -15,6 +15,8 @@ TextVariant = Literal["markdown", "plain", "html"]
 MediaFit = Literal["contain", "cover", "fill"]
 MediaWidgetKind = Literal["image", "webpage"]
 WidgetType = Literal["chart", "filter", "text", "media", "tabs"]
+# 本地上传以 data URL 写入 layoutJson；与 FE MAX_IMAGE_SOURCE_BYTES(2MB) 对齐（base64≈4/3 + 头）
+IMAGE_DATA_URL_MAX_LENGTH = 3_145_728
 CANVAS_WIDTH = 1440
 DATA_SCREEN_CANVAS_WIDTH = 1920
 MIN_CANVAS_HEIGHT = 900
@@ -62,7 +64,7 @@ class TextWidgetConfig(BaseModel):
 class MediaWidgetConfig(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     kind: MediaWidgetKind = "image"
-    url: str = Field(default="", max_length=2048)
+    url: str = Field(default="", max_length=IMAGE_DATA_URL_MAX_LENGTH)
     alt: str = Field(default="", max_length=256)
     fit: MediaFit = "contain"
     widget_style: WidgetStyleConfig | None = Field(default=None, alias="widgetStyle")
@@ -88,7 +90,9 @@ class WidgetStyleConfig(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
     background: str | None = Field(default=None, max_length=512)
-    background_image: str | None = Field(default=None, alias="backgroundImage", max_length=2048)
+    background_image: str | None = Field(
+        default=None, alias="backgroundImage", max_length=IMAGE_DATA_URL_MAX_LENGTH
+    )
     background_show: bool | None = Field(default=None, alias="backgroundShow")
     background_mode: Literal["image", "frame", "border"] | None = Field(
         default=None, alias="backgroundMode"
@@ -262,7 +266,7 @@ class ThemeVariantFields(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     canvas_background: str | None = Field(default=None, alias="canvasBackground", max_length=512)
     canvas_background_image: str | None = Field(
-        default=None, alias="canvasBackgroundImage", max_length=2048
+        default=None, alias="canvasBackgroundImage", max_length=IMAGE_DATA_URL_MAX_LENGTH
     )
     canvas_background_custom: bool | None = Field(default=None, alias="canvasBackgroundCustom")
     canvas_decor_preset_id: str | None = Field(
@@ -304,7 +308,7 @@ class DashboardStyleConfig(BaseModel):
     pixel_gutter: int | None = Field(default=None, alias="pixelGutter", ge=0, le=24)
     scale_mode: Literal["canvas", "component"] | None = Field(default=None, alias="scaleMode")
     canvas_background_image: str | None = Field(
-        default=None, alias="canvasBackgroundImage", max_length=2048
+        default=None, alias="canvasBackgroundImage", max_length=IMAGE_DATA_URL_MAX_LENGTH
     )
     canvas_background_custom: bool | None = Field(default=None, alias="canvasBackgroundCustom")
     canvas_decor_preset_id: str | None = Field(

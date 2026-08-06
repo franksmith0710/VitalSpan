@@ -305,6 +305,8 @@ function asCodedError(err: unknown): CodedError | null {
 const PYDANTIC_MESSAGE_MAP: Array<[RegExp, string]> = [
   [/less than or equal to 1/i, "数值不能超过 1（配色不透明度请使用 0–1，勿填百分比）"],
   [/greater than or equal to 900/i, "画布高度不能低于 900"],
+  [/at most 2048|String should have at most 2048/i, "图片数据过大，请使用更小的图片或压缩后再上传"],
+  [/at most 3145728|String should have at most 3145728/i, "图片数据过大，请压缩后再上传（建议小于 2MB）"],
   [/valid UUID/i, "ID 格式无效，请检查关联组件引用"],
   [/extra inputs are not permitted/i, "布局包含后端不接受的字段，请刷新页面后重试"],
   [/version 2 widgets must not use fields: colSpan/i, "像素布局不能携带栅格字段 colSpan，请刷新后重试"],
@@ -320,6 +322,10 @@ const VALIDATION_FIELD_LABELS: Record<string, string> = {
   primary_key: "主键字段",
   incremental_column: "增量字段",
   source_data_source_id: "数据源",
+  "styleConfig.canvasBackgroundImage": "自定义背景图",
+  canvasBackgroundImage: "自定义背景图",
+  "styleConfig.widgetStyle.backgroundImage": "组件背景图",
+  "widgetStyle.backgroundImage": "组件背景图",
 };
 
 function normalizeValidationField(field: string): string {

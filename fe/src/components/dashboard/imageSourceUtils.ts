@@ -1,5 +1,7 @@
 export const IMAGE_SOURCE_ACCEPT = "image/jpeg,image/png,image/gif,image/svg+xml,image/webp";
 export const MAX_IMAGE_SOURCE_BYTES = 2 * 1024 * 1024;
+/** 与后端 IMAGE_DATA_URL_MAX_LENGTH 对齐（2MB 文件 base64 膨胀 + data URL 头） */
+export const MAX_IMAGE_DATA_URL_CHARS = 3_145_728;
 
 export function isHttpImageUrl(value: string): boolean {
   return /^https?:\/\/.+/i.test(value.trim());
@@ -51,7 +53,14 @@ export async function readImageFileAsDataUrl(
   }
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
+    reader.onload = () => {
+      const dataUrl = String(reader.result);
+      if (dataUrl.length > MAX_IMAGE_DATA_URL_CHARS) {
+        reject(new Error("图片编码后过大，请压缩后再上传（建议小于 2MB）"));
+        return;
+      }
+      resolve(dataUrl);
+    };
     reader.onerror = () => reject(new Error("读取图片失败"));
     reader.readAsDataURL(file);
   });

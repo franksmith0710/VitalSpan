@@ -27,12 +27,12 @@ export function collectDashboardImageUrls(
     if (widget.type === "media") {
       pushImageUrl(urls, widget.mediaConfig?.url);
       const ws = widget.mediaConfig?.widgetStyle;
-      if (ws?.backgroundShow !== false) pushImageUrl(urls, ws.backgroundImage);
+      if (ws && ws.backgroundShow !== false) pushImageUrl(urls, ws.backgroundImage);
       continue;
     }
     if (widget.type === "tabs") {
       const ws = widget.tabsConfig?.widgetStyle;
-      if (ws?.backgroundShow !== false) pushImageUrl(urls, ws.backgroundImage);
+      if (ws && ws.backgroundShow !== false) pushImageUrl(urls, ws.backgroundImage);
     }
   }
 

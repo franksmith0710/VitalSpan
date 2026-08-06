@@ -20,7 +20,7 @@ export function WidgetBackgroundImageFitFields({
   value,
   onChange,
 }: WidgetBackgroundImageFitFieldsProps) {
-  if (!value.backgroundImage?.trim()) return null;
+  if (!value?.backgroundImage?.trim()) return null;
 
   const isDecor = isDecorativeWidgetBackgroundUrl(value.backgroundImage);
   const fitDefaults = inferDefaultBackgroundImageFitForUrl(value.backgroundImage ?? "");

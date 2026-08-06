@@ -43,7 +43,7 @@ export function WidgetSurfaceAppearanceFields({
 
   const shellOpacityFallback = resolveWidgetShellOpacityFallback(surfaceKind);
   const hasBackgroundImage =
-    Boolean(value.backgroundImage?.trim()) || value.backgroundMode === "image";
+    Boolean(value?.backgroundImage?.trim()) || value?.backgroundMode === "image";
 
   const Slider =
     density === "narrow"

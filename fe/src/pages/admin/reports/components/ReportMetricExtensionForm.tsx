@@ -21,11 +21,12 @@ import { ReportMetricDatasetFields } from "./ReportMetricDatasetFields";
 import { type ExtensionMetric, useReportTemplates } from "../useReportTemplates";
 
 type DatasourceItem = { id: string; name: string };
+type QueryMode = "sql" | "dataset";
 
 const EMPTY_FORM = {
   metricKey: "",
   metricLabel: "",
-  queryMode: "sql" as const,
+  queryMode: "dataset" as QueryMode,
   expression: "",
   datasetId: "",
   boundConfigId: "",
@@ -49,11 +50,19 @@ function formFromMetric(metric: ExtensionMetric) {
   return {
     metricKey: metric.key,
     metricLabel: metric.label,
-    queryMode: metric.queryMode === "dataset" ? ("dataset" as const) : ("sql" as const),
+    queryMode: (metric.queryMode === "sql" ? "sql" : "dataset") as QueryMode,
     expression: metric.expression ?? "",
     datasetId: metric.datasetId ?? "",
     boundConfigId: metric.boundConfigId ?? "",
   };
+}
+
+function metricsNeedDataSource(metrics: ExtensionMetric[]) {
+  return metrics.some((m) => {
+    if (!m.visible && m.visible !== undefined) return false;
+    if (m.queryMode === "dataset") return Boolean(m.boundConfigId || m.datasetId);
+    return Boolean(m.expression?.trim() || m.key);
+  });
 }
 
 export function ReportMetricExtensionForm({
@@ -80,9 +89,10 @@ export function ReportMetricExtensionForm({
 
   const dsQuery = useQuery({
     queryKey: ["reports", "datasources", "picker"],
-    queryFn: () => apiFetch<{ items: DatasourceItem[] }>("/api/v1/datasources?limit=200"),
+    queryFn: () => apiFetch<{ items: DatasourceItem[] }>("/api/v1/datasources?limit=100"),
     enabled: !readOnly,
   });
+  const dsItems = dsQuery.data?.items ?? [];
 
   useEffect(() => {
     setDraftMetrics(metrics);
@@ -97,7 +107,7 @@ export function ReportMetricExtensionForm({
   const validateFormMetric = (metric: ExtensionMetric) => {
     if (metric.queryMode === "dataset") {
       if (!metric.datasetId || !metric.boundConfigId) {
-        toast.error("数据集模式须选择数据集并完成查询绑定");
+        toast.error("数据集模式须选择数据集，并完成查询绑定（或选已绑定的数据集）");
         return false;
       }
     } else if (!metric.expression?.trim()) {
@@ -151,6 +161,10 @@ export function ReportMetricExtensionForm({
         nextMetrics.push(pending);
       }
     }
+    if (metricsNeedDataSource(nextMetrics) && !defaultDsId.trim()) {
+      toast.error("请选择运行数据源（数据集也需要，用于执行查询）");
+      return;
+    }
     saveExtension.mutate(
       {
         nodeId,
@@ -179,7 +193,7 @@ export function ReportMetricExtensionForm({
     <div className="space-y-4">
       {draftMetrics.length === 0 ? (
         <p className="rounded-xl border border-dashed border-gray-200 px-4 py-8 text-center text-theme-sm text-gray-500 dark:border-gray-800 dark:text-gray-400">
-          暂无扩展指标，可在下方添加。
+          暂无扩展指标。推荐：查数模式选「数据集」，再选已绑定的 Dataset。
         </p>
       ) : (
         <ul className="space-y-2">
@@ -236,6 +250,7 @@ export function ReportMetricExtensionForm({
                 id="metric-key"
                 value={form.metricKey}
                 disabled={Boolean(editingKey)}
+                placeholder="如 revenue"
                 onChange={(e) => setForm((f) => ({ ...f, metricKey: e.target.value }))}
               />
             </div>
@@ -244,6 +259,7 @@ export function ReportMetricExtensionForm({
               <Input
                 id="metric-label"
                 value={form.metricLabel}
+                placeholder="如 营收"
                 onChange={(e) => setForm((f) => ({ ...f, metricLabel: e.target.value }))}
               />
             </div>
@@ -251,34 +267,55 @@ export function ReportMetricExtensionForm({
               <Label htmlFor="query-mode">查数模式</Label>
               <Select
                 value={form.queryMode}
-                onValueChange={(v) => setForm((f) => ({ ...f, queryMode: v as "sql" | "dataset" }))}
+                onValueChange={(v) =>
+                  setForm((f) => ({
+                    ...f,
+                    queryMode: v as QueryMode,
+                    expression: v === "dataset" ? "" : f.expression,
+                    datasetId: v === "sql" ? "" : f.datasetId,
+                    boundConfigId: v === "sql" ? "" : f.boundConfigId,
+                  }))
+                }
               >
                 <SelectTrigger id="query-mode" className="h-11">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="dataset">数据集（推荐）</SelectItem>
                   <SelectItem value="sql">SQL 查询</SelectItem>
-                  <SelectItem value="dataset">数据集</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="default-ds">默认数据源</Label>
+              <Label htmlFor="default-ds">运行数据源</Label>
               {dsQuery.isLoading ? (
                 <Skeleton className="h-11 w-full rounded-lg" />
+              ) : dsQuery.isError ? (
+                <p className="rounded-lg border border-error-200 bg-error-50 px-3 py-2 text-theme-xs text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400">
+                  数据源加载失败：{mapApiError(dsQuery.error)}
+                </p>
               ) : (
                 <Select value={defaultDsId || undefined} onValueChange={setDefaultDsId}>
                   <SelectTrigger id="default-ds" className="h-11">
-                    <SelectValue placeholder="选择 SQL 默认数据源（可选）" />
+                    <SelectValue placeholder="必选：运行报表用的数据连接" />
                   </SelectTrigger>
                   <SelectContent>
-                    {(dsQuery.data?.items ?? []).map((ds) => (
+                    {dsItems.map((ds) => (
                       <SelectItem key={ds.id} value={ds.id}>
                         {ds.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+              )}
+              {!dsQuery.isLoading && !dsQuery.isError && dsItems.length === 0 ? (
+                <p className="text-theme-xs text-amber-700 dark:text-amber-400">
+                  暂无数据源。请先到「数据连接」创建连接。
+                </p>
+              ) : (
+                <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+                  数据集模式也要选：需与 Dataset 绑定的库一致（如「示例数据」）。
+                </p>
               )}
             </div>
           </div>
@@ -297,8 +334,13 @@ export function ReportMetricExtensionForm({
             <ReportMetricDatasetFields
               datasetId={form.datasetId}
               boundConfigId={form.boundConfigId}
-              onDatasetIdChange={(id) => setForm((f) => ({ ...f, datasetId: id }))}
+              onDatasetIdChange={(id) =>
+                setForm((f) => ({ ...f, datasetId: id, boundConfigId: "" }))
+              }
               onBoundConfigIdChange={(id) => setForm((f) => ({ ...f, boundConfigId: id }))}
+              onSuggestedDataSourceId={(id) => {
+                if (id && !defaultDsId) setDefaultDsId(id);
+              }}
             />
           )}
           <div className="flex flex-wrap gap-2">
@@ -316,6 +358,7 @@ export function ReportMetricExtensionForm({
             <Textarea
               id="change-note"
               value={changeNote}
+              placeholder="必填，如：改用数据集"
               onChange={(e) => setChangeNote(e.target.value)}
             />
           </div>
