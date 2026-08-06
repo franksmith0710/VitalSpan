@@ -82,7 +82,13 @@ export type ChartGraphStyle = {
 export type ChartRadarStyle = {
   shape?: "polygon" | "circle";
   areaOpacity?: number;
+  showArea?: boolean;
   showAxisName?: boolean;
+  showSymbol?: boolean;
+  axisLabelColor?: string;
+  axisLineColor?: string;
+  axisLineWidth?: number;
+  splitNumber?: number;
 };
 
 export type ChartWordCloudStyle = {

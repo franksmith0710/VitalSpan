@@ -11,6 +11,6 @@ describe("computeRadarLayout", () => {
 
   it("fills height on square containers", () => {
     const layout = computeRadarLayout(200, 200, false, true);
-    expect(layout.radius).toBeGreaterThan(70);
+    expect(layout.radius).toBeGreaterThan(65);
   });
 });

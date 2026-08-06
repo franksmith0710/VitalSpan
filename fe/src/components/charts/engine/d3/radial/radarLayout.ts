@@ -22,7 +22,7 @@ export function computeRadarLayout(
   const innerW0 = Math.max(0, width - base.left - base.right);
   const innerH0 = Math.max(0, height - base.top - base.bottom);
   const wide = innerW0 > innerH0 * 1.35;
-  const labelPad = showLabel ? 14 : 4;
+  const labelPad = showLabel ? 18 : 4;
 
   if (showLegend && wide) {
     const legendW = Math.min(72, Math.max(56, innerW0 * 0.22));

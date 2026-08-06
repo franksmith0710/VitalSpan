@@ -16,6 +16,11 @@ import {
   treemapCellBaseTransform,
   treemapCellHoverTransform,
 } from "./treemapCellTransform";
+import {
+  DEFAULT_TREEMAP_CELL_RADIUS,
+  DEFAULT_TREEMAP_PADDING_INNER,
+  DEFAULT_TREEMAP_PADDING_OUTER,
+} from "@/lib/chartDeStyleBlocks";
 
 type TreemapDatum = { name: string; value: number };
 type TreeNode = { name: string; value?: number; children?: TreeNode[] };
@@ -58,9 +63,9 @@ export function renderD3TreemapChart(container: HTMLElement, config: D3RenderCon
     .sum((d) => d.value ?? 0)
     .sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
 
-  const paddingInner = Number(options.__treemapPaddingInner ?? 2);
-  const paddingOuter = Number(options.__treemapPaddingOuter ?? 4);
-  const cellRadius = Number(options.__treemapCellRadius ?? 3);
+  const paddingInner = Number(options.__treemapPaddingInner ?? DEFAULT_TREEMAP_PADDING_INNER);
+  const paddingOuter = Number(options.__treemapPaddingOuter ?? DEFAULT_TREEMAP_PADDING_OUTER);
+  const cellRadius = Number(options.__treemapCellRadius ?? DEFAULT_TREEMAP_CELL_RADIUS);
   const gaplessInner = paddingInner <= 0;
   const cellStroke =
     gaplessInner ? "none" : theme.background === "transparent" ? "#fff" : theme.background;

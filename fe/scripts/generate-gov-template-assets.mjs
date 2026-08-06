@@ -34,23 +34,59 @@ const DARK_PALETTES = {
   lime: { baseFrom: "#0a1408", baseTo: "#365314", accent: "#a3e635", glow: "#84cc16", glowOpacity: 0.13, motif: "leaf" },
 };
 
-const LIGHT_PALETTES = {
-  ivory: { base: "#fafafa", accent: "#334155", cardTint: "#f4f4f5", accentLight: "#64748b", motif: "diamond" },
-  cloud: { base: "#f8fafc", accent: "#2563eb", cardTint: "#f1f5f9", accentLight: "#3b82f6", motif: "hex" },
-  paper: { base: "#fafafa", accent: "#4f46e5", cardTint: "#f4f4f5", accentLight: "#6366f1", motif: "shield" },
-  frost: { base: "#f8fafc", accent: "#0369a1", cardTint: "#f0f9ff", accentLight: "#0ea5e9", motif: "orbit" },
-  mint: { base: "#f8fafc", accent: "#047857", cardTint: "#f0fdf4", accentLight: "#10b981", motif: "leaf" },
-  lavender: { base: "#fafafa", accent: "#6d28d9", cardTint: "#f5f3ff", accentLight: "#8b5cf6", motif: "star" },
-  rose: { base: "#fafafa", accent: "#be123c", cardTint: "#fff1f2", accentLight: "#fb7185", motif: "shield" },
-  sand: { base: "#faf8f5", accent: "#b45309", cardTint: "#f5f0e8", accentLight: "#d97706", motif: "diamond" },
-  sky: { base: "#f0f9ff", accent: "#0284c7", cardTint: "#e0f2fe", accentLight: "#38bdf8", motif: "hex" },
-  peach: { base: "#fff7ed", accent: "#ea580c", cardTint: "#ffedd5", accentLight: "#fb923c", motif: "star" },
-  sage: { base: "#f6f7f4", accent: "#4d7c0f", cardTint: "#ecfccb", accentLight: "#65a30d", motif: "leaf" },
-  coral: { base: "#fff5f5", accent: "#e11d48", cardTint: "#ffe4e6", accentLight: "#fb7185", motif: "shield" },
-};
+function parseHex(hex) {
+  const h = hex.replace("#", "");
+  return {
+    r: parseInt(h.slice(0, 2), 16),
+    g: parseInt(h.slice(2, 4), 16),
+    b: parseInt(h.slice(4, 6), 16),
+  };
+}
 
-/** 深色 canvas 保留供选用；内置模板已切换浅色 clean-header */
-const DARK_PATTERNS = [
+function rgbToHex(r, g, b) {
+  return `#${[r, g, b]
+    .map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0"))
+    .join("")}`;
+}
+
+function mixHex(a, b, t) {
+  const A = parseHex(a);
+  const B = parseHex(b);
+  return rgbToHex(A.r + (B.r - A.r) * t, A.g + (B.g - A.g) * t, A.b + (B.b - A.b) * t);
+}
+
+function lighten(hex, amount) {
+  return mixHex(hex, "#ffffff", amount);
+}
+
+/** 由深色 palette 推导浅色：保留同色系 + 深→浅四段过渡 */
+function deriveLightPalette(dark) {
+  const baseFrom = lighten(dark.baseFrom, 0.9);
+  const baseMid = lighten(mixHex(dark.baseFrom, dark.baseTo, 0.45), 0.68);
+  const cardTint = lighten(mixHex(dark.baseTo, dark.accent, 0.18), 0.74);
+  const baseTo = lighten(mixHex(dark.baseTo, dark.accent, 0.32), 0.52);
+  return {
+    motif: dark.motif,
+    baseFrom,
+    baseMid,
+    baseTo,
+    base: baseFrom,
+    cardTint,
+    accent: dark.accent,
+    accentDeep: mixHex(dark.baseTo, dark.accent, 0.62),
+    accentMuted: mixHex(dark.baseFrom, dark.accent, 0.42),
+    accentLight: dark.glow,
+    glow: dark.glow,
+    glowOpacity: Math.min(dark.glowOpacity * 2.6, 0.32),
+  };
+}
+
+const LIGHT_PALETTES = Object.fromEntries(
+  Object.entries(DARK_PALETTES).map(([key, dark]) => [key, deriveLightPalette(dark)]),
+);
+
+/** 深浅色共用同一套画布图案（浅色走同一 pattern 引擎 + 更高对比度） */
+const CANVAS_PATTERNS = [
   "command",
   "aurora",
   "honeycomb",
@@ -64,17 +100,7 @@ const DARK_PATTERNS = [
   "de-circuit-wing",
   "de-cloud-center",
 ];
-/** 浅色 pattern；clean-header 为政务模板默认（顶栏线 + 无装饰） */
-const LIGHT_PATTERNS = [
-  "clean-header",
-  "header-band",
-  "card-float",
-  "watermark",
-  "corner-fold",
-  "dot-matrix",
-  "ribbon",
-  "side-accent",
-];
+const DARK_PATTERNS = CANVAS_PATTERNS;
 
 const PANEL_STYLES = ["de-frame", "hud-bracket", "badge-header", "tech-rail"];
 const PANEL_COLORS = [
@@ -420,17 +446,47 @@ function defsBaseLight(palette, w, h, seed) {
     id,
     defs: `<defs>
     <linearGradient id="${id}-base" x1="0" y1="0" x2="${w}" y2="${h}">
-      <stop stop-color="${palette.base}"/>
-      <stop offset="1" stop-color="${palette.cardTint}"/>
+      <stop stop-color="${palette.baseFrom}"/>
+      <stop offset="0.32" stop-color="${palette.baseMid}"/>
+      <stop offset="0.68" stop-color="${palette.cardTint}"/>
+      <stop offset="1" stop-color="${palette.baseTo}"/>
     </linearGradient>
-    <radialGradient id="${id}-glow" cx="50%" cy="24%" r="45%">
-      <stop stop-color="${palette.accentLight}" stop-opacity="0.04"/>
+    <radialGradient id="${id}-glowL" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(${w * 0.18} ${h * 0.22}) scale(${w * 0.38})">
+      <stop stop-color="${palette.glow}" stop-opacity="${palette.glowOpacity}"/>
+      <stop offset="0.55" stop-color="${palette.accentMuted}" stop-opacity="${palette.glowOpacity * 0.65}"/>
+      <stop offset="1" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="${id}-glowR" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(${w * 0.82} ${h * 0.72}) scale(${w * 0.32})">
+      <stop stop-color="${palette.accent}" stop-opacity="${palette.glowOpacity * 0.85}"/>
       <stop offset="1" stop-opacity="0"/>
     </radialGradient>
   </defs>`,
     baseFill: `url(#${id}-base)`,
-    glow: `url(#${id}-glow)`,
+    glowL: `url(#${id}-glowL)`,
+    glowR: `url(#${id}-glowR)`,
     accent: palette.accent,
+  };
+}
+
+function scaleLightSvgOpacities(svg) {
+  const scale = (value) => {
+    const n = Number(value);
+    if (Number.isNaN(n)) return value;
+    const boosted = n < 0.12 ? n * 2.8 : n < 0.28 ? n * 2.1 : n < 0.5 ? n * 1.55 : n * 1.2;
+    return Math.min(boosted, 0.9).toFixed(2);
+  };
+  return svg
+    .replace(/opacity="([0-9.]+)"/g, (_, v) => `opacity="${scale(v)}"`)
+    .replace(/stop-opacity="([0-9.]+)"/g, (_, v) => `stop-opacity="${scale(v)}"`)
+    .replace(/fill-opacity="([0-9.]+)"/g, (_, v) => `fill-opacity="${scale(v)}"`);
+}
+
+function patternBody(pattern, palette, accent, w, h, id, { light = false } = {}) {
+  const layer = darkPatternBody(pattern, palette, accent, w, h, id);
+  if (!light) return layer;
+  return {
+    extraDefs: layer.extraDefs ? scaleLightSvgOpacities(layer.extraDefs) : layer.extraDefs,
+    body: scaleLightSvgOpacities(layer.body),
   };
 }
 
@@ -612,7 +668,7 @@ function buildCanvasSvg(palette, pattern, mode, paletteName, w = 1920, h = 1080)
   const seed = `${mode}-${paletteName}-${pattern}`;
   if (mode === "dark") {
     const base = defsBaseDark(palette, w, h, seed);
-    const layer = darkPatternBody(pattern, palette, base.accent, w, h, base.id);
+    const layer = patternBody(pattern, palette, base.accent, w, h, base.id);
     const defs = layer.extraDefs
       ? base.defs.replace("</defs>", `${layer.extraDefs}\n  </defs>`)
       : base.defs;
@@ -625,14 +681,15 @@ function buildCanvasSvg(palette, pattern, mode, paletteName, w = 1920, h = 1080)
 </svg>`;
   }
   const base = defsBaseLight(palette, w, h, seed);
-  const layer = lightPatternBody(pattern, palette, base.accent, w, h, base.id);
+  const layer = patternBody(pattern, palette, base.accent, w, h, base.id, { light: true });
   const defs = layer.extraDefs
     ? base.defs.replace("</defs>", `${layer.extraDefs}\n  </defs>`)
     : base.defs;
   return `${svgHeader(w, h)}
   ${defs}
   <rect width="${w}" height="${h}" fill="${base.baseFill}"/>
-  <rect width="${w}" height="${h}" fill="${base.glow}"/>
+  <rect width="${w}" height="${h}" fill="${base.glowL}"/>
+  <rect width="${w}" height="${h}" fill="${base.glowR}"/>
   ${layer.body}
 </svg>`;
 }
@@ -821,7 +878,7 @@ function generate() {
   }
 
   for (const [paletteName, palette] of Object.entries(LIGHT_PALETTES)) {
-    for (const pattern of LIGHT_PATTERNS) {
+    for (const pattern of CANVAS_PATTERNS) {
       const id = `canvas-light-${paletteName}-${pattern}`;
       const rel = `backgrounds/light/${id}.svg`;
       const svg = buildCanvasSvg(palette, pattern, "light", paletteName);

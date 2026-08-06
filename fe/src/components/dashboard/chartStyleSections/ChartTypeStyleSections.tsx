@@ -32,7 +32,13 @@ import {
   resolveChartTooltipDisplayColor,
   resolveEffectivePaletteId,
 } from "@/lib/chartDeStyle";
-import { DEFAULT_LIQUID_SIZE, DEFAULT_PIE_OUTER_RADIUS_PERCENT } from "@/lib/chartDeStyleBlocks";
+import {
+  DEFAULT_LIQUID_SIZE,
+  DEFAULT_PIE_OUTER_RADIUS_PERCENT,
+  DEFAULT_TREEMAP_CELL_RADIUS,
+  DEFAULT_TREEMAP_PADDING_INNER,
+  DEFAULT_TREEMAP_PADDING_OUTER,
+} from "@/lib/chartDeStyleBlocks";
 import { resolveChartSeriesColorItems, supportsChartSeriesColorEditing } from "@/lib/chartSeriesColor";
 
 function patchBlock<K extends "pie" | "gauge" | "liquid" | "kpi" | "funnel" | "sankey" | "graph" | "radar" | "wordCloud" | "treemap" | "circlePacking">(
@@ -340,7 +346,7 @@ export function ChartRadarShapeSection() {
         <div className="border-b border-gray-100 py-2 dark:border-white/[0.06]">
           <p className="mb-1.5 text-[11px] font-medium text-gray-600 dark:text-gray-300">形状</p>
           <Select
-            value={radar.shape ?? "polygon"}
+            value={radar.shape ?? "circle"}
             onValueChange={(shape) => patch({ shape })}
           >
             <SelectTrigger className={INSPECTOR_SELECT} aria-label="雷达图形状">
@@ -353,11 +359,60 @@ export function ChartRadarShapeSection() {
           </Select>
         </div>
         <InspectorSwitchRow
-          label="显示轴名称"
-          checked={radar.showAxisName !== false}
-          onCheckedChange={(showAxisName) => patch({ showAxisName })}
+          label="启用面积"
+          checked={radar.showArea !== false}
+          onCheckedChange={(showArea) => patch({ showArea })}
         />
-        <ChartDeSliderField label="区域透明度" value={radar.areaOpacity} fallback={0.25} min={0.05} max={0.8} step={0.05} onChange={(areaOpacity) => patch({ areaOpacity })} />
+        <ChartDeSliderField
+          label="区域透明度"
+          value={radar.areaOpacity}
+          fallback={0.25}
+          min={0.05}
+          max={0.8}
+          step={0.05}
+          onChange={(areaOpacity) => patch({ areaOpacity })}
+        />
+        <InspectorSwitchRow
+          label="辅助点"
+          checked={radar.showSymbol === true}
+          onCheckedChange={(showSymbol) => patch({ showSymbol })}
+        />
+        <div className="border-t border-gray-100 pt-2 dark:border-white/[0.06]">
+          <p className="mb-1.5 text-[11px] font-medium text-gray-600 dark:text-gray-300">坐标轴</p>
+          <InspectorSwitchRow
+            label="显示名称"
+            checked={radar.showAxisName !== false}
+            onCheckedChange={(showAxisName) => patch({ showAxisName })}
+          />
+          <InspectorInlineColorRow
+            label="轴名称颜色"
+            value={radar.axisLabelColor ?? "#94a3b8"}
+            onChange={(axisLabelColor) => patch({ axisLabelColor })}
+          />
+          <InspectorInlineColorRow
+            label="轴线颜色"
+            value={radar.axisLineColor ?? "#cbd5e1"}
+            onChange={(axisLineColor) => patch({ axisLineColor })}
+          />
+          <ChartDeSliderField
+            label="轴线宽度"
+            value={radar.axisLineWidth}
+            fallback={1}
+            min={0.5}
+            max={3}
+            step={0.5}
+            onChange={(axisLineWidth) => patch({ axisLineWidth })}
+          />
+          <ChartDeSliderField
+            label="分割段数"
+            value={radar.splitNumber}
+            fallback={5}
+            min={2}
+            max={10}
+            step={1}
+            onChange={(splitNumber) => patch({ splitNumber })}
+          />
+        </div>
       </div>
     </ChartInspectorSection>
   );
@@ -389,9 +444,9 @@ export function ChartTreemapShapeSection() {
   return (
     <ChartInspectorSection title="矩形树图样式" data-testid="chart-treemap-shape">
       <div className={INSPECTOR_SECTION_GAP}>
-        <ChartDeSliderField label="内间距" value={treemap.paddingInner} fallback={2} min={0} max={24} step={1} onChange={(paddingInner) => patch({ paddingInner })} />
-        <ChartDeSliderField label="外间距" value={treemap.paddingOuter} fallback={4} min={0} max={24} step={1} onChange={(paddingOuter) => patch({ paddingOuter })} />
-        <ChartDeSliderField label="圆角" value={treemap.cellRadius} fallback={3} min={0} max={12} step={1} onChange={(cellRadius) => patch({ cellRadius })} />
+        <ChartDeSliderField label="内间距" value={treemap.paddingInner} fallback={DEFAULT_TREEMAP_PADDING_INNER} min={0} max={24} step={1} onChange={(paddingInner) => patch({ paddingInner })} />
+        <ChartDeSliderField label="外间距" value={treemap.paddingOuter} fallback={DEFAULT_TREEMAP_PADDING_OUTER} min={0} max={24} step={1} onChange={(paddingOuter) => patch({ paddingOuter })} />
+        <ChartDeSliderField label="圆角" value={treemap.cellRadius} fallback={DEFAULT_TREEMAP_CELL_RADIUS} min={0} max={12} step={1} onChange={(cellRadius) => patch({ cellRadius })} />
       </div>
     </ChartInspectorSection>
   );

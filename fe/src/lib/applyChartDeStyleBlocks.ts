@@ -282,7 +282,13 @@ export function applyChartDeStyleBlocksToPlan(
     const r = blocks.radar;
     if (r.shape) options.__radarShape = r.shape;
     if (r.areaOpacity != null) options.__radarAreaOpacity = r.areaOpacity;
+    if (r.showArea != null) options.__radarShowArea = r.showArea;
     if (r.showAxisName != null) options.__radarShowAxisName = r.showAxisName;
+    if (r.showSymbol != null) options.__radarShowSymbol = r.showSymbol;
+    if (r.axisLabelColor) options.__radarAxisLabelColor = r.axisLabelColor;
+    if (r.axisLineColor) options.__radarAxisLineColor = r.axisLineColor;
+    if (r.axisLineWidth != null) options.__radarAxisLineWidth = r.axisLineWidth;
+    if (r.splitNumber != null) options.__radarSplitNumber = r.splitNumber;
   }
 
   if (blocks.wordCloud) {

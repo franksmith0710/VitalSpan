@@ -132,8 +132,103 @@ describe("pieLabels", () => {
     const outerR = 80;
     const connectR = 24;
     const midAngle = 2.1;
-    const geo = pieOutsideLabelGeometry(midAngle, outerR, 11, connectR, "标签");
+    const geo = pieOutsideLabelGeometry(midAngle, outerR, 11, connectR);
     const cross = geo.x1 * geo.y0 - geo.y1 * geo.x0;
     expect(Math.abs(cross)).toBeLessThan(0.01);
+  });
+
+  it("aligns same-side labels to a shared margin column", () => {
+    const outerR = 60;
+    const sliceAngle = 2 * Math.PI / 12;
+    const candidates = Array.from({ length: 12 }, (_, i) => ({
+      key: String(i),
+      midAngle: sliceAngle * i + sliceAngle / 2,
+      sliceAngle,
+      text: `标签${i}`,
+    }));
+    const placed = layoutPieOutsideLabels(candidates, outerR, 11, { ymin: -90, ymax: 90 }, true);
+    const rightXs = candidates
+      .filter((c) => Math.cos(c.midAngle - Math.PI / 2) >= 0)
+      .map((c) => placed.get(c.key)?.textX)
+      .filter((x): x is number => x != null);
+    const leftXs = candidates
+      .filter((c) => Math.cos(c.midAngle - Math.PI / 2) < 0)
+      .map((c) => placed.get(c.key)?.textX)
+      .filter((x): x is number => x != null);
+    expect(new Set(rightXs).size).toBe(1);
+    expect(new Set(leftXs).size).toBe(1);
+  });
+
+  it("avoids intersecting leader lines among visible labels", () => {
+    const outerR = 60;
+    const sliceAngle = 2 * Math.PI / 20;
+    const candidates = Array.from({ length: 20 }, (_, i) => ({
+      key: String(i),
+      midAngle: sliceAngle * i + sliceAngle / 2,
+      sliceAngle,
+      text: `2025-01-${String(i + 1).padStart(2, "0")} 1,000 (5%)`,
+    }));
+    const placed = layoutPieOutsideLabels(candidates, outerR, 11, { ymin: -90, ymax: 90 }, true);
+    const visible = candidates
+      .map((c) => placed.get(c.key))
+      .filter((p) => p?.visible);
+    const parseSegs = (points: string): [number, number, number, number][] => {
+      const nums = points.split(/[\s,]+/).map(Number);
+      const segs: [number, number, number, number][] = [];
+      for (let i = 0; i < nums.length - 2; i += 2) {
+        segs.push([nums[i], nums[i + 1], nums[i + 2], nums[i + 3]]);
+      }
+      return segs;
+    };
+    const cross = (
+      ax0: number,
+      ay0: number,
+      ax1: number,
+      ay1: number,
+      bx0: number,
+      by0: number,
+      bx1: number,
+      by1: number,
+    ): boolean => {
+      const d = (ax1 - ax0) * (by1 - by0) - (ay1 - ay0) * (bx1 - bx0);
+      if (Math.abs(d) < 1e-9) return false;
+      const t = ((bx0 - ax0) * (by1 - by0) - (by0 - ay0) * (bx1 - bx0)) / d;
+      const u = ((bx0 - ax0) * (ay1 - ay0) - (by0 - ay0) * (ax1 - ax0)) / d;
+      return t > 1e-5 && t < 1 - 1e-5 && u > 1e-5 && u < 1 - 1e-5;
+    };
+    for (let i = 0; i < visible.length; i += 1) {
+      for (let j = i + 1; j < visible.length; j += 1) {
+        const aSegs = parseSegs(visible[i]!.points);
+        const bSegs = parseSegs(visible[j]!.points);
+        for (const [ax0, ay0, ax1, ay1] of aSegs) {
+          for (const [bx0, by0, bx1, by1] of bSegs) {
+            expect(cross(ax0, ay0, ax1, ay1, bx0, by0, bx1, by1)).toBe(false);
+          }
+        }
+      }
+    }
+  });
+
+  it("avoids coincident horizontal leader segments on the same side", () => {
+    const outerR = 60;
+    const sliceAngle = 2 * Math.PI / 24;
+    const candidates = Array.from({ length: 24 }, (_, i) => ({
+      key: String(i),
+      midAngle: sliceAngle * i + sliceAngle / 2,
+      sliceAngle,
+      text: `省${i} 1,000 (4%)`,
+    }));
+    const placed = layoutPieOutsideLabels(candidates, outerR, 11, { ymin: -100, ymax: 100 }, true);
+    const visible = candidates
+      .map((c) => placed.get(c.key))
+      .filter((p) => p?.visible && p.points);
+    const horizontals: string[] = [];
+    for (const p of visible) {
+      const nums = p!.points.split(/[\s,]+/).map(Number);
+      if (nums.length >= 6) {
+        horizontals.push(`${nums[2]},${nums[3]},${nums[4]},${nums[5]}`);
+      }
+    }
+    expect(new Set(horizontals).size).toBe(horizontals.length);
   });
 });
