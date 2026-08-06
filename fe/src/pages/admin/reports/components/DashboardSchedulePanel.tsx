@@ -5,6 +5,16 @@ import { Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { mapApiError } from "@/lib/apiError";
 import { summarizeRecipients } from "@/lib/scheduleSourceMeta";
@@ -31,6 +41,19 @@ import { ScheduleHistoryTable } from "./ScheduleHistoryTable";
 import { ScheduleActivationBanner } from "./ScheduleActivationBanner";
 import { SchedulePrecheckPanel, useSchedulePrecheckItems, canCreateDashboardSchedule } from "./SchedulePrecheckPanel";
 import { Badge } from "@/components/ui/badge";
+
+type ConfirmState =
+  | { kind: "delivery"; onConfirm: () => void }
+  | { kind: "clone"; schedule: ReportScheduleRow }
+  | { kind: "action"; action: string; scheduleId: string }
+  | null;
+
+const ACTION_SUCCESS_MESSAGES: Record<string, string> = {
+  schedule: "定时报告已激活，将按配置时间发送",
+  pause: "定时报告已暂停",
+  resume: "定时报告已恢复",
+  cancel: "定时报告已取消",
+};
 
 type DashboardSchedulePanelProps = {
   sourceId: string;
@@ -73,6 +96,7 @@ export function DashboardSchedulePanel({
   const [showActivationBanner, setShowActivationBanner] = useState(false);
   const [pendingActivateId, setPendingActivateId] = useState<string | null>(null);
   const [clonePending, setClonePending] = useState(false);
+  const [confirmState, setConfirmState] = useState<ConfirmState>(null);
 
   useEffect(() => {
     if (selected && draftSelected) {
@@ -102,9 +126,17 @@ export function DashboardSchedulePanel({
   const deliveryWarning =
     precheck.items.find((item) => item.id === "delivery" && !item.ok)?.detail ?? null;
 
-  const confirmDeliveryIfNeeded = () => {
-    if (!form.deliveryChannels.includes("email") || !deliveryWarning) return true;
-    return window.confirm(`${deliveryWarning}\n\n仍要继续吗？激活或执行后邮件可能投递失败。`);
+  const createBlockedReason = !canCreate
+    ? precheck.items.find((item) => item.blocking && !item.ok)?.detail ??
+      (!isScheduleFormSubmittable(form) ? "请配置至少一位有效接收人" : "前置检查未通过")
+    : null;
+
+  const requestDeliveryConfirm = (onConfirm: () => void) => {
+    if (!form.deliveryChannels.includes("email") || !deliveryWarning) {
+      onConfirm();
+      return;
+    }
+    setConfirmState({ kind: "delivery", onConfirm });
   };
 
   const handleCreate = async () => {
@@ -159,12 +191,11 @@ export function DashboardSchedulePanel({
   };
 
   const handleActivate = async (scheduleId: string) => {
-    if (!confirmDeliveryIfNeeded()) return;
     try {
       await transitionSchedule.mutateAsync({ id: scheduleId, action: "schedule" });
       setShowActivationBanner(false);
       setPendingActivateId(null);
-      toast.success("定时报告已激活，将按配置时间发送");
+      toast.success(ACTION_SUCCESS_MESSAGES.schedule);
     } catch (err) {
       toast.error(mapApiError(err));
     }
@@ -190,7 +221,6 @@ export function DashboardSchedulePanel({
   };
 
   const handleTestSend = async (scheduleId: string) => {
-    if (!confirmDeliveryIfNeeded()) return;
     try {
       await executeSchedule.mutateAsync(scheduleId);
       toast.success("已触发试发，请查收邮箱");
@@ -222,7 +252,7 @@ export function DashboardSchedulePanel({
       ) : null}
       {showActivationBanner && pendingActivateId ? (
         <ScheduleActivationBanner
-          onActivate={() => void handleActivate(pendingActivateId)}
+          onActivate={() => requestDeliveryConfirm(() => void handleActivate(pendingActivateId))}
           activating={transitionSchedule.isPending}
           disabled={readOnly}
           deliveryWarning={deliveryWarning}
@@ -266,22 +296,28 @@ export function DashboardSchedulePanel({
             showAttachments
             attachmentFormatMode="pdf-only"
             showDeliveryChannels
+            hideStandaloneHealthAlerts
             idPrefix="dash-schedule"
           />
           {!readOnly ? (
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="primary"
-                disabled={isPending || !canCreate}
-                onClick={() => void handleCreate()}
-              >
-                {createSchedule.isPending ? "创建中…" : "创建定时报告"}
-              </Button>
-              {schedules.length > 0 ? (
-                <Button type="button" variant="ghost" onClick={() => setShowCreate(false)}>
-                  取消
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="primary"
+                  disabled={isPending || !canCreate}
+                  onClick={() => void handleCreate()}
+                >
+                  {createSchedule.isPending ? "创建中…" : "创建定时报告"}
                 </Button>
+                {schedules.length > 0 ? (
+                  <Button type="button" variant="ghost" onClick={() => setShowCreate(false)}>
+                    取消
+                  </Button>
+                ) : null}
+              </div>
+              {createBlockedReason ? (
+                <p className="text-theme-xs text-amber-600 dark:text-amber-400">{createBlockedReason}</p>
               ) : null}
             </div>
           ) : null}
@@ -298,6 +334,7 @@ export function DashboardSchedulePanel({
                   showAttachments
                   attachmentFormatMode="pdf-only"
                   showDeliveryChannels
+                  hideStandaloneHealthAlerts
                   idPrefix="dash-schedule-edit"
                 />
                 {!readOnly ? (
@@ -334,7 +371,7 @@ export function DashboardSchedulePanel({
                   variant="outline"
                   size="sm"
                   disabled={isPending}
-                  onClick={() => void handleCloneConfig(selected)}
+                  onClick={() => setConfirmState({ kind: "clone", schedule: selected })}
                 >
                   {clonePending ? "处理中…" : "复制配置新建"}
                 </Button>
@@ -347,12 +384,22 @@ export function DashboardSchedulePanel({
                   size="sm"
                   disabled={readOnly || transitionSchedule.isPending}
                   onClick={() => {
-                    if ((action === "schedule" || action === "resume") && !confirmDeliveryIfNeeded()) {
+                    if (action === "cancel" || action === "pause") {
+                      setConfirmState({ kind: "action", action, scheduleId: selected.id });
+                      return;
+                    }
+                    if (action === "schedule" || action === "resume") {
+                      requestDeliveryConfirm(() =>
+                        void transitionSchedule
+                          .mutateAsync({ id: selected.id, action })
+                          .then(() => toast.success(ACTION_SUCCESS_MESSAGES[action] ?? "状态已更新"))
+                          .catch((err) => toast.error(mapApiError(err))),
+                      );
                       return;
                     }
                     void transitionSchedule
                       .mutateAsync({ id: selected.id, action })
-                      .then(() => toast.success("状态已更新"))
+                      .then(() => toast.success(ACTION_SUCCESS_MESSAGES[action] ?? "状态已更新"))
                       .catch((err) => toast.error(mapApiError(err)));
                   }}
                 >
@@ -360,31 +407,15 @@ export function DashboardSchedulePanel({
                 </Button>
               ))}
               {!readOnly && selected.status === "scheduled" ? (
-                <>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={executeSchedule.isPending}
-                    onClick={() => void handleTestSend(selected.id)}
-                  >
-                    {executeSchedule.isPending ? "发送中…" : "试发邮件"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={executeSchedule.isPending}
-                    onClick={() =>
-                      void executeSchedule
-                        .mutateAsync(selected.id)
-                        .then(() => toast.success("已触发执行"))
-                        .catch((err) => toast.error(mapApiError(err)))
-                    }
-                  >
-                    立即执行
-                  </Button>
-                </>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={executeSchedule.isPending}
+                  onClick={() => requestDeliveryConfirm(() => void handleTestSend(selected.id))}
+                >
+                  {executeSchedule.isPending ? "试发中…" : "立即试发"}
+                </Button>
               ) : null}
             </div>
           </div>
@@ -396,6 +427,9 @@ export function DashboardSchedulePanel({
                 compact
                 readOnly={readOnly}
                 retryPending={retryExecution.isPending}
+                retryPendingExecutionId={
+                  retryExecution.isPending ? retryExecution.variables?.executionId : undefined
+                }
                 onRetry={(executionId) =>
                   void retryExecution
                     .mutateAsync({ executionId, scheduleId: selected.id })
@@ -410,8 +444,101 @@ export function DashboardSchedulePanel({
     </div>
   );
 
+  const confirmDialogs = (
+    <>
+      <AlertDialog
+        open={confirmState?.kind === "delivery"}
+        onOpenChange={(open) => !open && setConfirmState(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>邮件投递可能失败</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deliveryWarning}
+              {" "}
+              仍要继续吗？激活或试发后邮件可能无法送达。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const action = confirmState?.kind === "delivery" ? confirmState.onConfirm : null;
+                setConfirmState(null);
+                action?.();
+              }}
+            >
+              仍要继续
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmState?.kind === "clone"} onOpenChange={(open) => !open && setConfirmState(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>复制配置新建？</AlertDialogTitle>
+            <AlertDialogDescription>
+              将取消当前定时报告并复制其配置到新建表单。原报告停止后需重新激活新报告。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const schedule = confirmState?.kind === "clone" ? confirmState.schedule : null;
+                setConfirmState(null);
+                if (schedule) void handleCloneConfig(schedule);
+              }}
+            >
+              继续复制
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmState?.kind === "action"} onOpenChange={(open) => !open && setConfirmState(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmState?.kind === "action" && confirmState.action === "cancel"
+                ? "取消定时报告？"
+                : "暂停定时报告？"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmState?.kind === "action" && confirmState.action === "cancel"
+                ? "取消后该报告将不再执行，需重新创建才能恢复。"
+                : "暂停后将停止按计划执行，可随时恢复。"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>返回</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmState?.kind !== "action") return;
+                const { action, scheduleId } = confirmState;
+                setConfirmState(null);
+                void transitionSchedule
+                  .mutateAsync({ id: scheduleId, action })
+                  .then(() => toast.success(ACTION_SUCCESS_MESSAGES[action] ?? "状态已更新"))
+                  .catch((err) => toast.error(mapApiError(err)));
+              }}
+            >
+              确认
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+
   if (embedded) {
-    return inner;
+    return (
+      <>
+        {inner}
+        {confirmDialogs}
+      </>
+    );
   }
 
   return (
@@ -428,7 +555,10 @@ export function DashboardSchedulePanel({
           </Link>
         </CardDescription>
       </CardHeader>
-      <CardContent>{inner}</CardContent>
+      <CardContent>
+        {inner}
+        {confirmDialogs}
+      </CardContent>
     </Card>
   );
 }

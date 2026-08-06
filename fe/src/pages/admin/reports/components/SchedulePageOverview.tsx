@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router";
 import { CalendarClock, LayoutTemplate, Monitor } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { dashboardsListForScheduleCreate } from "@/lib/scheduleSourceMeta";
 
 type ScheduleStat = {
   label: string;
@@ -81,7 +82,7 @@ export function SchedulePageOverview({ stats }: SchedulePageOverviewProps) {
     <div className="grid shrink-0 gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
       <div className="grid gap-3 sm:grid-cols-3">
         <ScheduleStatCard label="全部定时报告" value={stats.total} hint="看板/大屏 + 文档模板" />
-        <ScheduleStatCard label="运行中" value={stats.active} hint="已激活并按 cron 执行" />
+        <ScheduleStatCard label="已调度" value={stats.active} hint="已激活并按 cron 执行" />
         <ScheduleStatCard label="已暂停 / 取消" value={stats.inactive} hint="暂停、草稿或已取消" />
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -89,7 +90,7 @@ export function SchedulePageOverview({ stats }: SchedulePageOverviewProps) {
           primary
           title="从看板/大屏创建"
           description="分享页底部配置定时 PDF（推荐主路径）"
-          to="/admin/dashboards"
+          to={dashboardsListForScheduleCreate()}
           icon={<Monitor className="size-5" aria-hidden />}
         />
         <CreateEntryCard

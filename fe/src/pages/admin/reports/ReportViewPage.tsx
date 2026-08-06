@@ -120,7 +120,10 @@ export function ReportViewPage() {
           </div>
 
           {runMutation.isError ? (
-            <PageErrorBanner message={mapApiError(runMutation.error)} />
+            <PageErrorBanner
+              message={mapApiError(runMutation.error)}
+              onRetry={() => runMutation.mutate()}
+            />
           ) : null}
 
           {section ? (
@@ -138,9 +141,9 @@ export function ReportViewPage() {
                 ) : section.columns && section.rows ? (
                   <ReportResultTable columns={section.columns} rows={section.rows} />
                 ) : (
-                  <pre className="overflow-x-auto rounded-lg bg-gray-50 p-3 text-theme-xs dark:bg-white/[0.04]">
-                    {JSON.stringify(section, null, 2)}
-                  </pre>
+                  <p className="text-theme-sm text-gray-500">
+                    报表已运行，但当前格式暂不支持在此预览。请尝试导出或联系管理员。
+                  </p>
                 )}
               </CardContent>
             </Card>

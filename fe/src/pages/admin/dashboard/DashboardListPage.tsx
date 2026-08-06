@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router";
-import { Eye, LayoutDashboard, LayoutGrid, LayoutList, LayoutTemplate, Pencil, Plus, Share2, Trash2 } from "lucide-react";
+import { Link, useNavigate, useSearchParams } from "react-router";
+import { Eye, LayoutDashboard, LayoutGrid, LayoutList, LayoutTemplate, Pencil, Plus, Share2, Trash2, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 import {
   BatchDeleteDialog,
@@ -53,6 +53,8 @@ import { useAuth } from "@/context/auth-context";
 import { buildDashboardsListUrl } from "@/lib/dashboardsListQuery";
 import { createFromTemplate, type DashboardTemplateListItem } from "@/lib/dashboardTemplates";
 import { isDemoPackageDashboard } from "@/lib/demoPackage";
+import { SCHEDULE_CREATE_INTENT } from "@/lib/scheduleSourceMeta";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 type DashboardListResponse = {
   items: DashboardListItem[];
@@ -119,6 +121,8 @@ function ViewModeToggle({
 
 export function DashboardListPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const scheduleCreateIntent = searchParams.get("intent") === SCHEDULE_CREATE_INTENT;
   const queryClient = useQueryClient();
   const { user: authUser } = useAuth();
   const sessionUser = authUser
@@ -255,6 +259,15 @@ export function DashboardListPage() {
       }
     >
       <ListPageSection>
+        {scheduleCreateIntent ? (
+          <Alert className="mb-4">
+            <CalendarClock className="size-4" aria-hidden />
+            <AlertTitle>创建定时报告</AlertTitle>
+            <AlertDescription>
+              请选择目标看板，点击行尾「分享」按钮，在分享页底部配置定时 PDF 报告。
+            </AlertDescription>
+          </Alert>
+        ) : null}
         {canEdit ? (
           <ListPageToolbar
             actions={

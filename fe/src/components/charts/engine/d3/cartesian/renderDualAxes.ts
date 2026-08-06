@@ -440,7 +440,7 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
       fallbackColor: leftColor,
       smooth: leftSmooth,
       shadowPrefix: "dual-line-left",
-      dotClassPrefix: "dual-line-dot",
+      dotClassPrefix: "dual-line-dot-l",
       conditionalRules,
       onPointClick,
     });
@@ -486,7 +486,7 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
       fallbackColor: rightColor,
       smooth: rightSmooth,
       shadowPrefix: dualLine ? "dual-line-right" : "dual-line-1",
-      dotClassPrefix: dualLine ? "dual-line-dot-2" : "dual-line-dot-right",
+      dotClassPrefix: "dual-line-dot-r",
       conditionalRules,
       onPointClick,
     });

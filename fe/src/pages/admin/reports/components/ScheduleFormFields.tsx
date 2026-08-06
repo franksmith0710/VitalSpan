@@ -60,11 +60,13 @@ type ScheduleFormFieldsProps = {
   /** dashboard/data-screen main path: fixed visual PDF, no Excel inventory */
   attachmentFormatMode?: "select" | "pdf-only";
   showDeliveryChannels?: boolean;
+  /** 与 SchedulePrecheckPanel 同屏时隐藏独立健康 Alert，避免重复 */
+  hideStandaloneHealthAlerts?: boolean;
   idPrefix?: string;
 };
 
 const ATTACHMENT_OPTIONS: { value: AttachmentFormat; label: string; hint: string }[] = [
-  { value: "pdf", label: "PDF 可视化快照", hint: "Playwright 截取画布像素，推荐" },
+  { value: "pdf", label: "PDF 可视化快照", hint: "截取画布生成 PDF，推荐" },
   { value: "excel", label: "Excel 布局清单", hint: "组件列表 CSV，非图表渲染" },
 ];
 
@@ -81,6 +83,7 @@ export function ScheduleFormFields({
   showAttachments = false,
   attachmentFormatMode = "select",
   showDeliveryChannels = false,
+  hideStandaloneHealthAlerts = false,
   idPrefix = "schedule-form",
 }: ScheduleFormFieldsProps) {
   const patch = (partial: Partial<ScheduleFormValue>) => onChange({ ...value, ...partial });
@@ -98,7 +101,7 @@ export function ScheduleFormFields({
 
   return (
     <div className="space-y-4">
-      {!disabled ? (
+      {!disabled && !hideStandaloneHealthAlerts ? (
         <>
           <ScheduleDeliveryHealthAlert />
           <ScheduleExportHealthAlert />
@@ -144,7 +147,7 @@ export function ScheduleFormFields({
               <p className="rounded-lg border border-gray-200 bg-gray-50/80 px-3 py-2 text-theme-sm text-gray-700 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-300">
                 PDF 可视化快照
                 <span className="mt-0.5 block text-theme-xs text-gray-500">
-                  Playwright 截取画布像素；看板/大屏定时报告主路径仅支持 PDF。
+                  截取画布生成 PDF；看板/大屏定时报告主路径仅支持 PDF。
                 </span>
               </p>
             ) : (

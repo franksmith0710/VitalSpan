@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarClock, LayoutTemplate, Monitor, Search } from "lucide-react";
@@ -17,7 +17,9 @@ import { mapApiError } from "@/lib/apiError";
 import { describeCron } from "@/lib/scheduleCronWizard";
 import { fetchAllCatalogTemplates } from "@/lib/reportCatalogUtils";
 import {
+  dashboardsListForScheduleCreate,
   filterSchedulesByTab,
+  parseScheduleTabParam,
   summarizeRecipients,
   type ScheduleTabFilter,
 } from "@/lib/scheduleSourceMeta";
@@ -72,7 +74,7 @@ function emptyAction(tab: ScheduleTabFilter, hasSearch: boolean) {
   if (tab === "dashboard") {
     return (
       <Button type="button" variant="primary" size="sm" asChild>
-        <Link to="/admin/dashboards">
+        <Link to={dashboardsListForScheduleCreate()}>
           <Monitor className="size-3.5" aria-hidden />
           前往看板列表
         </Link>
@@ -82,7 +84,7 @@ function emptyAction(tab: ScheduleTabFilter, hasSearch: boolean) {
   return (
     <div className="flex flex-wrap justify-center gap-2">
       <Button type="button" variant="primary" size="sm" asChild>
-        <Link to="/admin/dashboards">从看板创建</Link>
+        <Link to={dashboardsListForScheduleCreate()}>从看板创建</Link>
       </Button>
       <Button type="button" variant="outline" size="sm" asChild>
         <Link to="/admin/reports/templates">从文档模板创建</Link>
@@ -114,10 +116,15 @@ function summarizeStats(items: { status?: string }[]) {
 
 export function ReportSchedulesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const tab = (searchParams.get("tab") as ScheduleTabFilter) || "dashboard";
+  const tab = parseScheduleTabParam(searchParams.get("tab"));
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const readOnly = false;
+
+  useEffect(() => {
+    const expand = searchParams.get("expand");
+    if (expand) setExpandedId(expand);
+  }, [searchParams]);
 
   const schedulesQuery = useReportSchedulesList();
   const { retryExecution } = useReportScheduleMutations();
@@ -145,12 +152,9 @@ export function ReportSchedulesPage() {
   const isLoading = schedulesQuery.isLoading;
 
   const setTab = (next: ScheduleTabFilter) => {
-    if (next === "all") {
-      searchParams.delete("tab");
-    } else {
-      searchParams.set("tab", next);
-    }
-    setSearchParams(searchParams, { replace: true });
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("tab", next);
+    setSearchParams(nextParams, { replace: true });
   };
 
   return (
@@ -175,6 +179,7 @@ export function ReportSchedulesPage() {
 
       {!isLoading ? (
         <ScheduleRecentFailuresPanel
+          schedules={allItems}
           onSelectSchedule={(id) => setExpandedId(id)}
           onRetry={(executionId, scheduleId) =>
             void retryExecution
@@ -182,6 +187,9 @@ export function ReportSchedulesPage() {
               .then(() => setExpandedId(scheduleId))
           }
           retryPending={retryExecution.isPending}
+          retryPendingExecutionId={
+            retryExecution.isPending ? retryExecution.variables?.executionId : undefined
+          }
         />
       ) : null}
 

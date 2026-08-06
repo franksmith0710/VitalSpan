@@ -162,13 +162,14 @@ export function DashboardShareDialog({
             )
           ) : null}
 
-          {!loading && detail ? (
+          {!loading && detail && widgets.length > 0 ? (
             <DashboardSchedulePanel
               sourceId={dashboardId}
               sourceType={isScreen ? "data_screen" : "dashboard"}
               sourceName={detail.name}
               widgetCount={widgets.length}
               readOnly={!canManageSchedule}
+              embedded
             />
           ) : null}
         </div>

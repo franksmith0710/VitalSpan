@@ -37,8 +37,14 @@ export function PrefabReportsPage() {
   const bindingFromUrl = searchParams.get(PREFAB_BINDING_QUERY);
   const autoRanBindingRef = useRef<string | null>(null);
   const [search, setSearch] = useState("");
+  const [selectedBindingKey, setSelectedBindingKey] = useState<string | null>(null);
+  const lastRunBindingRef = useRef<string | null>(null);
 
   const bindings = bindingsQuery.data?.items ?? [];
+  const editingBinding = useMemo(() => {
+    const key = selectedBindingKey ?? bindings[0]?.bindingKey ?? null;
+    return bindings.find((b) => b.bindingKey === key) ?? null;
+  }, [bindings, selectedBindingKey]);
   const filteredBindings = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return bindings;
@@ -70,6 +76,12 @@ export function PrefabReportsPage() {
   const { mutate: runBinding, isPending: isRunning } = runMutation;
 
   useEffect(() => {
+    if (bindings.length > 0 && !selectedBindingKey) {
+      setSelectedBindingKey(bindings[0].bindingKey);
+    }
+  }, [bindings, selectedBindingKey]);
+
+  useEffect(() => {
     autoRanBindingRef.current = null;
   }, [bindingFromUrl]);
 
@@ -78,6 +90,7 @@ export function PrefabReportsPage() {
     if (!bindings.some((b) => b.bindingKey === bindingFromUrl)) return;
     if (autoRanBindingRef.current === bindingFromUrl) return;
     autoRanBindingRef.current = bindingFromUrl;
+    lastRunBindingRef.current = bindingFromUrl;
     runBinding(bindingFromUrl);
   }, [bindingFromUrl, bindings, bindingsQuery.isLoading, isRunning, runBinding]);
 
@@ -107,7 +120,7 @@ export function PrefabReportsPage() {
               title="实体数据尚未就绪"
               description={
                 canManage
-                  ? "当前实体类型尚无物理表，无法运行预制分析。请在元数据中注册实体表，或在开发环境设置 DEV_REPORT_SEED=1 后重启后端以写入演示数据。"
+                  ? "当前实体类型尚无物理表，无法运行预制分析。请在元数据中注册实体表，或联系管理员启用演示数据。"
                   : "当前实体类型的物理表尚未配置，请联系管理员完成元数据注册或启用演示数据。"
               }
               variant="framed"
@@ -116,7 +129,14 @@ export function PrefabReportsPage() {
           ) : null}
 
           {runMutation.isError && !runForbidden && !runEntityNotReady ? (
-            <PageErrorBanner message={mapApiError(runMutation.error)} onRetry={() => runMutation.reset()} />
+            <PageErrorBanner
+              message={mapApiError(runMutation.error)}
+              onRetry={() => {
+                const key = lastRunBindingRef.current ?? bindingFromUrl;
+                if (key) runMutation.mutate(key);
+                else runMutation.reset();
+              }}
+            />
           ) : null}
 
           {runMutation.isPending ? <Skeleton className="h-[200px] w-full rounded-xl" /> : null}
@@ -200,7 +220,12 @@ export function PrefabReportsPage() {
                 <PrefabBindingsTable
                   bindings={filteredBindings}
                   runningKey={runningKey}
-                  onRun={(key) => runMutation.mutate(key)}
+                  selectedKey={editingBinding?.bindingKey ?? null}
+                  onSelect={setSelectedBindingKey}
+                  onRun={(key) => {
+                    lastRunBindingRef.current = key;
+                    runMutation.mutate(key);
+                  }}
                 />
               )}
             </ListPageTableFrame>
@@ -220,7 +245,7 @@ export function PrefabReportsPage() {
                   <CardDescription>修改后将影响 Hub 与运行时的分析模型。</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <PrefabBindingForm binding={bindings[0] ?? null} />
+                  <PrefabBindingForm binding={editingBinding} />
                 </CardContent>
               </Card>
             </section>

@@ -24,7 +24,7 @@ export function ScheduleExportHealthAlert({ className }: { className?: string })
       <AlertTitle>PDF 导出服务不可用</AlertTitle>
       <AlertDescription>
         {health.error ??
-          "Playwright/Chromium 未就绪，看板定时报告无法生成可视化 PDF。请安装 playwright 与 Chromium 后重试。"}
+          "PDF 导出服务不可用，看板定时报告无法生成可视化 PDF。请联系管理员检查导出服务。"}
         调度仍可创建，但激活后执行将失败。
       </AlertDescription>
     </Alert>

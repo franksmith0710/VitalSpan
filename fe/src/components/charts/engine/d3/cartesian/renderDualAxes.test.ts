@@ -13,8 +13,11 @@ import { renderD3DualAxesChart } from "./renderDualAxes";
 const theme = {
   legendText: "#333",
   axisLabel: "#666",
+  axisLine: "#ddd",
   gridLine: "#eee",
-  accent: "#465fff",
+  tooltipBg: "#fff",
+  tooltipText: "#333",
+  background: "#fff",
 } as const;
 
 describe("renderD3DualAxesChart column+line DE parity", () => {
@@ -43,6 +46,7 @@ describe("renderD3DualAxesChart column+line DE parity", () => {
       geometryOptions: [{ geometry: "column" }, { geometry: "line" }],
       colors: ["#465fff", "#12b76a"],
       theme,
+      showTooltip: false,
       showLegend: true,
       lineLabels: ["quantity", "amount"],
     });
@@ -80,6 +84,7 @@ describe("renderD3DualAxesChart dual-line legend", () => {
       geometryOptions: [{ geometry: "line" }, { geometry: "line" }],
       colors: ["#465fff", "#12b76a"],
       theme,
+      showTooltip: false,
       showLegend: true,
       lineLabels: ["左线", "右线"],
     });
@@ -112,6 +117,7 @@ describe("renderD3DualAxesChart dual-line legend", () => {
       lineSeriesField: "__series__",
       colors: ["#465fff", "#12b76a", "#f79009"],
       theme,
+      showTooltip: false,
       showLegend: true,
       lineLabels: ["左线", "右线"],
     });
@@ -151,6 +157,7 @@ describe("renderD3DualAxesChart dual-line legend", () => {
       lineSeriesField: "__series__",
       colors: ["#465fff", "#12b76a", "#f79009"],
       theme,
+      showTooltip: false,
       showLegend: true,
       lineLabels: ["amount", "quantity"],
     });
@@ -189,6 +196,7 @@ describe("renderD3DualAxesChart dual-line legend", () => {
       columnSeriesField: "__series__",
       colors: ["#465fff", "#12b76a", "#f79009"],
       theme,
+      showTooltip: false,
       showLegend: true,
       lineLabels: ["quantity", "amount"],
     });
@@ -228,6 +236,7 @@ describe("renderD3DualAxesChart dual-line legend", () => {
       geometryOptions: [{ geometry: "column" }, { geometry: "line" }],
       colors: ["#465fff", "#12b76a"],
       theme,
+      showTooltip: false,
       showLegend: false,
       lineLabels: ["柱", "线"],
       categoryLevelCount: 4,

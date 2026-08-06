@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { ChevronDown, ChevronRight, FileBarChart, LayoutTemplate, Search } from "lucide-react";
 import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import {
@@ -45,6 +45,7 @@ const KIND_FILTERS: { id: TemplateKindFilter; label: string }[] = [
 ];
 
 export function ReportCenterPage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const caps = resolveEffectiveCapabilities(user);
   const [search, setSearch] = useState("");
@@ -155,14 +156,17 @@ export function ReportCenterPage() {
           canManage={canManage}
         />
 
-        {!schedulesQuery.isLoading ? (
-          <ScheduleRecentFailuresPanel
-            onRetry={(executionId, scheduleId) =>
-              void retryExecution.mutateAsync({ executionId, scheduleId })
-            }
-            retryPending={retryExecution.isPending}
-          />
-        ) : null}
+        <ScheduleRecentFailuresPanel
+          schedules={schedulesQuery.data?.items ?? []}
+          onSelectSchedule={(id) => navigate(`/admin/reports/schedules?tab=all&expand=${id}`)}
+          onRetry={(executionId, scheduleId) =>
+            void retryExecution.mutateAsync({ executionId, scheduleId })
+          }
+          retryPending={retryExecution.isPending}
+          retryPendingExecutionId={
+            retryExecution.isPending ? retryExecution.variables?.executionId : undefined
+          }
+        />
 
         <div className="rounded-2xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
           <button
@@ -252,6 +256,19 @@ export function ReportCenterPage() {
                         description: hasFilters
                           ? "请调整搜索词或格式筛选。"
                           : "管理员可在「文档模板」中维护固定版式报表目录。",
+                        action: hasFilters ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSearch("");
+                              setKindFilter("all");
+                            }}
+                          >
+                            清除筛选
+                          </Button>
+                        ) : undefined,
                       }}
                     />
                   </ListPageTableFrame>

@@ -2,17 +2,36 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { apiFetch } from "@/lib/api";
-import { localizeApiMessage } from "@/lib/apiError";
-import { localizeExecutionStatus, type ScheduleExecutionRow } from "../useReportSchedules";
+import { formatDateTime } from "@/lib/formatDateTime";
+import { localizeApiMessage, mapApiError } from "@/lib/apiError";
+import {
+  localizeExecutionStatus,
+  type ReportScheduleRow,
+  type ScheduleExecutionRow,
+} from "../useReportSchedules";
 
 type Props = {
+  schedules?: ReportScheduleRow[];
   onSelectSchedule?: (scheduleId: string) => void;
   onRetry?: (executionId: string, scheduleId: string) => void;
   retryPending?: boolean;
+  retryPendingExecutionId?: string;
 };
 
-export function ScheduleRecentFailuresPanel({ onSelectSchedule, onRetry, retryPending }: Props) {
+function resolveSourceLabel(row: ScheduleExecutionRow, schedules?: ReportScheduleRow[]): string | null {
+  const fromSchedule = schedules?.find((s) => s.id === row.scheduleId);
+  return fromSchedule?.sourceLabel ?? fromSchedule?.name ?? null;
+}
+
+export function ScheduleRecentFailuresPanel({
+  schedules,
+  onSelectSchedule,
+  onRetry,
+  retryPending,
+  retryPendingExecutionId,
+}: Props) {
   const failuresQuery = useQuery({
     queryKey: ["reports", "schedules", "recent-failures"],
     queryFn: () =>
@@ -21,8 +40,19 @@ export function ScheduleRecentFailuresPanel({ onSelectSchedule, onRetry, retryPe
       ),
   });
 
+  if (failuresQuery.isLoading) return null;
+
+  if (failuresQuery.isError) {
+    return (
+      <PageErrorBanner
+        message={mapApiError(failuresQuery.error)}
+        onRetry={() => void failuresQuery.refetch()}
+      />
+    );
+  }
+
   const items = failuresQuery.data?.items ?? [];
-  if (failuresQuery.isLoading || items.length === 0) return null;
+  if (items.length === 0) return null;
 
   return (
     <Card className="border-amber-200 bg-amber-50/30 dark:border-amber-500/30 dark:bg-amber-500/5">
@@ -33,40 +63,47 @@ export function ScheduleRecentFailuresPanel({ onSelectSchedule, onRetry, retryPe
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
-        {items.map((row) => (
-          <div
-            key={row.executionId}
-            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-100 bg-white/80 px-3 py-2 text-theme-xs dark:border-amber-500/20 dark:bg-white/[0.03]"
-          >
-            <div className="min-w-0 flex-1">
-              <p className="font-medium text-gray-800 dark:text-white/90">
-                {localizeExecutionStatus(row.status)}
-                <span className="ml-2 font-normal text-gray-500">{row.executedAt}</span>
-              </p>
-              {row.errorMessage ? (
-                <p className="mt-0.5 line-clamp-2 text-gray-500">{localizeApiMessage(row.errorMessage)}</p>
-              ) : null}
+        {items.map((row) => {
+          const sourceLabel = resolveSourceLabel(row, schedules);
+          const isRetrying = retryPending && retryPendingExecutionId === row.executionId;
+          return (
+            <div
+              key={row.executionId}
+              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-100 bg-white/80 px-3 py-2 text-theme-xs dark:border-amber-500/20 dark:bg-white/[0.03]"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-gray-800 dark:text-white/90">
+                  {localizeExecutionStatus(row.status)}
+                  <span className="ml-2 font-normal text-gray-500">{formatDateTime(row.executedAt)}</span>
+                </p>
+                {sourceLabel ? (
+                  <p className="mt-0.5 text-gray-600 dark:text-gray-400">来源：{sourceLabel}</p>
+                ) : null}
+                {row.errorMessage ? (
+                  <p className="mt-0.5 line-clamp-2 text-gray-500">{localizeApiMessage(row.errorMessage)}</p>
+                ) : null}
+              </div>
+              <div className="flex shrink-0 gap-2">
+                {onSelectSchedule ? (
+                  <Button type="button" variant="outline" size="sm" onClick={() => onSelectSchedule(row.scheduleId)}>
+                    查看调度
+                  </Button>
+                ) : null}
+                {onRetry ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isRetrying}
+                    onClick={() => onRetry(row.executionId, row.scheduleId)}
+                  >
+                    {isRetrying ? "重试中…" : "重试"}
+                  </Button>
+                ) : null}
+              </div>
             </div>
-            <div className="flex shrink-0 gap-2">
-              {onSelectSchedule ? (
-                <Button type="button" variant="outline" size="sm" onClick={() => onSelectSchedule(row.scheduleId)}>
-                  查看调度
-                </Button>
-              ) : null}
-              {onRetry ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={retryPending}
-                  onClick={() => onRetry(row.executionId, row.scheduleId)}
-                >
-                  重试
-                </Button>
-              ) : null}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </CardContent>
     </Card>
   );

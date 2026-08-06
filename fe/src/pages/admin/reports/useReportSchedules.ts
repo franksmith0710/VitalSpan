@@ -150,7 +150,7 @@ export const SCHEDULE_ACTION_LABELS: Record<string, string> = {
   schedule: "激活",
   pause: "暂停",
   resume: "恢复",
-  cancel: "取消",
+  cancel: "取消调度",
 };
 
 export const SCHEDULE_STATUS_LABELS: Record<string, string> = {
@@ -164,9 +164,9 @@ export const EXECUTION_STATUS_LABELS: Record<string, string> = {
   pending: "进行中",
   succeeded: "成功",
   failed: "失败",
-  semi_real_succeeded: "执行成功",
-  semi_real_failed: "执行失败",
-  semi_real_delivery_degraded: "已生成（投递降级）",
+  semi_real_succeeded: "成功",
+  semi_real_failed: "失败",
+  semi_real_delivery_degraded: "已生成未投递",
 };
 
 export function localizeScheduleStatus(status: string): string {

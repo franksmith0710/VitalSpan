@@ -25,6 +25,16 @@ import { TemplateDetailPanel } from "./components/TemplateDetailPanel";
 import { type CatalogNode, useAllCatalogNodes, useReportTemplates } from "./useReportTemplates";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const FORMAT_OPTIONS: { id: TemplateKind; label: string }[] = [
   { id: "word", label: "Word" },
@@ -39,6 +49,7 @@ export function ReportTemplatesPage() {
   const [selectedId, setSelectedId] = useState<string | null>(nodeId ?? null);
   const [selectedOverride, setSelectedOverride] = useState<CatalogNode | null>(null);
   const [createFormat, setCreateFormat] = useState<TemplateKind>("word");
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const { nodesQuery, createNode, createTemplateNode, deleteNode, moveNode } = useReportTemplates(null);
   const allNodesQuery = useAllCatalogNodes();
   const readOnly = user?.roles?.length === 1 && user.roles[0] === "viewer";
@@ -119,23 +130,26 @@ export function ReportTemplatesPage() {
   };
 
   const handleDelete = (id: string) => {
-    const target = allNodes.find((n) => n.id === id) ?? nodes.find((n) => n.id === id);
-    const label = target?.name ?? "节点";
-    if (
-      !window.confirm(
-        `确定删除「${label}」？${target?.nodeType === "folder" ? "（须为空文件夹）" : ""}`,
-      )
-    ) {
-      return;
-    }
+    setDeleteTargetId(id);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteTargetId) return;
+    const id = deleteTargetId;
     deleteNode.mutate(id, {
       onSuccess: () => {
         if (selectedId === id) handleSelect(null);
+        setDeleteTargetId(null);
         toast.success("已删除");
       },
       onError: (err) => toast.error(mapApiError(err)),
     });
   };
+
+  const deleteTarget =
+    deleteTargetId != null
+      ? allNodes.find((n) => n.id === deleteTargetId) ?? nodes.find((n) => n.id === deleteTargetId) ?? null
+      : null;
 
   const createHint = createParentId
     ? `将在「${selected?.name ?? "当前文件夹"}」内创建`
@@ -302,6 +316,24 @@ export function ReportTemplatesPage() {
           </div>
         )}
       </div>
+
+      <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTargetId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除？</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定删除「{deleteTarget?.name ?? "节点"}」？
+              {deleteTarget?.nodeType === "folder" ? "（须为空文件夹）" : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteNode.isPending}>取消</AlertDialogCancel>
+            <AlertDialogAction disabled={deleteNode.isPending} onClick={confirmDelete}>
+              {deleteNode.isPending ? "删除中…" : "删除"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminPageShell>
   );
 }

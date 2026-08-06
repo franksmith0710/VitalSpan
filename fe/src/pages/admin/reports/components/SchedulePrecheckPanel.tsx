@@ -74,8 +74,8 @@ export function useSchedulePrecheckItems(input: {
     detail:
       delivery?.error ??
       (deliveryOk
-        ? "SMTP 通道可用，激活后可正常投递。"
-        : "SMTP 未配置或不可达；激活后执行可能投递失败。"),
+        ? "邮件服务可用，激活后可正常投递。"
+        : "邮件服务未配置或不可达；激活后执行可能投递失败，请联系管理员。"),
     blocking: false,
   });
 
@@ -89,8 +89,8 @@ export function useSchedulePrecheckItems(input: {
       detail:
         exportHealth?.error ??
         (exportOk
-          ? "Playwright 渲染就绪，将生成可视化 PDF 快照。"
-          : "Playwright/Chromium 不可用，无法生成 PDF。"),
+          ? "PDF 导出服务就绪，将生成可视化快照。"
+          : "PDF 导出服务不可用，无法生成可视化 PDF，请联系管理员。"),
       blocking: !exportOk,
     });
   }

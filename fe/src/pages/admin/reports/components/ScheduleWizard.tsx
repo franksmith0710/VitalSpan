@@ -35,6 +35,11 @@ export function ScheduleWizard({
 }: ScheduleWizardProps) {
   const preview = describeCron(cron ?? cronFromWizard(value));
 
+  const clampHour = (raw: number) => Math.min(23, Math.max(0, Number.isFinite(raw) ? raw : 0));
+  const clampMinute = (raw: number) => Math.min(59, Math.max(0, Number.isFinite(raw) ? raw : 0));
+  const hourInvalid = value.hour < 0 || value.hour > 23;
+  const minuteInvalid = value.minute < 0 || value.minute > 59;
+
   return (
     <div className="space-y-4">
       <div className="grid gap-2 sm:grid-cols-2">
@@ -68,8 +73,9 @@ export function ScheduleWizard({
               className="h-11"
               value={value.hour}
               disabled={disabled}
-              onChange={(e) => onChange({ ...value, hour: Number(e.target.value) })}
+              onChange={(e) => onChange({ ...value, hour: clampHour(Number(e.target.value)) })}
               aria-label="小时"
+              aria-invalid={hourInvalid}
             />
             <Input
               id={`${idPrefix}-minute`}
@@ -79,10 +85,14 @@ export function ScheduleWizard({
               className="h-11"
               value={value.minute}
               disabled={disabled}
-              onChange={(e) => onChange({ ...value, minute: Number(e.target.value) })}
+              onChange={(e) => onChange({ ...value, minute: clampMinute(Number(e.target.value)) })}
               aria-label="分钟"
+              aria-invalid={minuteInvalid}
             />
           </div>
+          {hourInvalid || minuteInvalid ? (
+            <p className="text-theme-xs text-error-500">小时须为 0–23，分钟须为 0–59</p>
+          ) : null}
         </div>
       </div>
       {value.frequency === "weekly" ? (

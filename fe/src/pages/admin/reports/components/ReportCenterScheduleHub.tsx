@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { describeCron } from "@/lib/scheduleCronWizard";
 import {
+  dashboardsListForScheduleCreate,
   filterSchedulesByTab,
   localizeSourceType,
   summarizeRecipients,
@@ -126,7 +127,7 @@ export function ReportCenterScheduleHub({ schedules, loading, canManage }: Props
     <div className="space-y-4">
       <div className="flex min-w-0 flex-wrap items-center gap-2">
         <Metric label="定时报告" value={schedules.length} hint="看板/大屏 + 模板" />
-        <Metric label="运行中" value={active} />
+        <Metric label="已调度" value={active} />
         <Metric label="看板/大屏" value={dashboardSchedules.length} hint="主路径" />
         {failedRecent > 0 ? <Metric label="已暂停" value={failedRecent} /> : null}
         {canManage ? (
@@ -144,24 +145,28 @@ export function ReportCenterScheduleHub({ schedules, loading, canManage }: Props
           primary
           title="从看板/大屏创建"
           description="在分享页配置定时 PDF 报告（推荐主路径）"
-          to="/admin/dashboards"
+          to={dashboardsListForScheduleCreate()}
           icon={<Monitor className="size-5" aria-hidden />}
         />
-        <CreateEntryCard
-          title="文档模板调度"
-          description="固定版式文档报表（后续能力，非默认路径）"
-          to="/admin/reports/templates"
-          icon={<LayoutTemplate className="size-5" aria-hidden />}
-        />
+        {canManage ? (
+          <CreateEntryCard
+            title="文档模板调度"
+            description="固定版式文档报表（后续能力，非默认路径）"
+            to="/admin/reports/templates"
+            icon={<LayoutTemplate className="size-5" aria-hidden />}
+          />
+        ) : null}
       </div>
 
       {dashboardSchedules.length > 0 ? (
         <div>
           <div className="mb-2 flex items-center justify-between gap-2">
             <p className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">我的看板定时报告</p>
-            <Button type="button" variant="ghost" size="sm" asChild>
-              <Link to="/admin/reports/schedules?tab=dashboard">查看全部</Link>
-            </Button>
+            {canManage ? (
+              <Button type="button" variant="ghost" size="sm" asChild>
+                <Link to="/admin/reports/schedules?tab=dashboard">查看全部</Link>
+              </Button>
+            ) : null}
           </div>
           <ul className="space-y-1.5">
             {dashboardSchedules.slice(0, 5).map((schedule) => (
@@ -170,9 +175,17 @@ export function ReportCenterScheduleHub({ schedules, loading, canManage }: Props
           </ul>
         </div>
       ) : (
-        <p className="rounded-xl border border-dashed border-gray-200 px-4 py-6 text-center text-theme-sm text-gray-500 dark:border-gray-800 dark:text-gray-400">
-          暂无看板/大屏定时报告。打开看板 → 分享 → 创建定时报告。
-        </p>
+        <div className="rounded-xl border border-dashed border-gray-200 px-4 py-6 text-center dark:border-gray-800">
+          <p className="text-theme-sm text-gray-500 dark:text-gray-400">
+            暂无看板/大屏定时报告。打开看板 → 分享 → 创建定时报告。
+          </p>
+          <Button type="button" variant="primary" size="sm" className="mt-3" asChild>
+            <Link to={dashboardsListForScheduleCreate()}>
+              <Monitor className="size-3.5" aria-hidden />
+              从看板创建
+            </Link>
+          </Button>
+        </div>
       )}
     </div>
   );

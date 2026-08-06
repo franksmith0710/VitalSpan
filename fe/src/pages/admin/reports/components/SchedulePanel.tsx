@@ -1,12 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
-import { parseCronToWizard } from "@/lib/scheduleCronWizard";
 import { summarizeRecipients } from "@/lib/scheduleSourceMeta";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { pickActiveSchedule, scheduleRowToForm } from "../scheduleFormUtils";
@@ -20,13 +29,23 @@ import {
 } from "./ScheduleFormFields";
 import { ScheduleActivationBanner } from "./ScheduleActivationBanner";
 import { ScheduleHistoryTable } from "./ScheduleHistoryTable";
-import type { ReportScheduleRow, ScheduleExecutionRow } from "../useReportSchedules";
+import {
+  localizeScheduleStatus,
+  SCHEDULE_ACTION_LABELS,
+  type ReportScheduleRow,
+  type ScheduleExecutionRow,
+} from "../useReportSchedules";
 
-const ACTION_LABELS: Record<string, string> = {
-  schedule: "激活调度",
-  pause: "暂停",
-  resume: "恢复",
-  cancel: "取消调度",
+type ConfirmState =
+  | { kind: "clone" }
+  | { kind: "action"; action: string }
+  | null;
+
+const ACTION_SUCCESS_MESSAGES: Record<string, string> = {
+  schedule: "调度已激活",
+  pause: "调度已暂停",
+  resume: "调度已恢复",
+  cancel: "调度已取消",
 };
 
 export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: string; readOnly: boolean }) {
@@ -35,6 +54,7 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
   const [clonePending, setClonePending] = useState(false);
   const [showActivationBanner, setShowActivationBanner] = useState(false);
   const [pendingActivateId, setPendingActivateId] = useState<string | null>(null);
+  const [confirmState, setConfirmState] = useState<ConfirmState>(null);
 
   const listQuery = useQuery({
     queryKey: ["reports", "schedules", catalogNodeId],
@@ -45,6 +65,13 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
   });
 
   const schedule = pickActiveSchedule(listQuery.data?.items ?? []);
+  const draftSelected = schedule?.status === "draft";
+
+  useEffect(() => {
+    if (schedule && draftSelected) {
+      setForm(scheduleRowToForm(schedule));
+    }
+  }, [schedule?.id, draftSelected, schedule]);
 
   const historyQuery = useQuery({
     queryKey: ["reports", "schedule-executions", schedule?.id],
@@ -86,14 +113,33 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
     onError: (err) => toast.error(mapApiError(err)),
   });
 
+  const updateMutation = useMutation({
+    mutationFn: () =>
+      apiFetch<ReportScheduleRow>(`/api/v1/reports/schedules/${schedule!.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          cron: resolveScheduleCron(form),
+          timezone: form.timezone,
+          recipients: form.recipients.filter((r) => r.value.trim()),
+          attachmentFormats: form.attachmentFormats,
+          deliveryChannels: form.deliveryChannels,
+        }),
+      }),
+    onSuccess: () => {
+      toast.success("草稿已保存");
+      invalidate();
+    },
+    onError: (err) => toast.error(mapApiError(err)),
+  });
+
   const transitionMutation = useMutation({
     mutationFn: ({ id, action }: { id: string; action: string }) =>
       apiFetch<ReportScheduleRow>(`/api/v1/reports/schedules/${id}/transition`, {
         method: "POST",
         body: JSON.stringify({ action }),
       }),
-    onSuccess: () => {
-      toast.success("调度状态已更新");
+    onSuccess: (_data, vars) => {
+      toast.success(ACTION_SUCCESS_MESSAGES[vars.action] ?? "状态已更新");
       invalidate();
     },
     onError: (err) => toast.error(mapApiError(err)),
@@ -109,7 +155,7 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
         },
       }),
     onSuccess: () => {
-      toast.success("已触发执行");
+      toast.success("已触发试发，请查收邮箱");
       invalidate();
     },
     onError: (err) => toast.error(mapApiError(err)),
@@ -136,7 +182,12 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
     createMutation.mutate();
   };
 
-  const handleCloneConfig = async () => {
+  const handleSaveDraft = () => {
+    if (!schedule || schedule.status !== "draft") return;
+    updateMutation.mutate();
+  };
+
+  const runCloneConfig = async () => {
     if (!schedule || readOnly) return;
     setClonePending(true);
     try {
@@ -152,6 +203,27 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
       setClonePending(false);
     }
   };
+
+  const runTransition = (action: string) => {
+    if (!schedule) return;
+    void transitionMutation.mutateAsync({ id: schedule.id, action });
+  };
+
+  const activationBanner =
+    showActivationBanner && pendingActivateId ? (
+      <ScheduleActivationBanner
+        onActivate={() =>
+          void transitionMutation
+            .mutateAsync({ id: pendingActivateId, action: "schedule" })
+            .then(() => {
+              setShowActivationBanner(false);
+              setPendingActivateId(null);
+              toast.success("调度已激活");
+            })
+        }
+        activating={transitionMutation.isPending}
+      />
+    ) : null;
 
   if (listQuery.isError) {
     return (
@@ -175,20 +247,7 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
           <CardTitle className="text-title-sm">新建调度</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {showActivationBanner && pendingActivateId ? (
-            <ScheduleActivationBanner
-              onActivate={() =>
-                void transitionMutation
-                  .mutateAsync({ id: pendingActivateId, action: "schedule" })
-                  .then(() => {
-                    setShowActivationBanner(false);
-                    setPendingActivateId(null);
-                    toast.success("调度已激活");
-                  })
-              }
-              activating={transitionMutation.isPending}
-            />
-          ) : null}
+          {activationBanner}
           <ScheduleFormFields
             value={form}
             onChange={setForm}
@@ -211,100 +270,169 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
     );
   }
 
-  const displayForm: ScheduleFormValue = {
-    ...form,
-    wizard: parseCronToWizard(schedule.cron) ?? DEFAULT_SCHEDULE_FORM.wizard,
-    cron: schedule.cron,
-    timezone: schedule.timezone,
-    attachmentFormats: (schedule.attachmentFormats?.length
-      ? schedule.attachmentFormats
-      : form.attachmentFormats) as ScheduleFormValue["attachmentFormats"],
-    recipients: schedule.recipients?.length
-      ? schedule.recipients.map((r) => ({
-          type: r.type as ScheduleFormValue["recipients"][0]["type"],
-          value: r.value,
-        }))
-      : form.recipients,
-  };
-
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-title-sm">调度配置</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <ScheduleFormFields
-            value={displayForm}
-            onChange={setForm}
-            disabled={readOnly || schedule.status !== "draft"}
-            showAttachments
-            idPrefix="template-schedule-edit"
-          />
-          {schedule.status !== "draft" && !readOnly ? (
-            <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-              调度已激活后无法直接修改配置。可「复制配置新建」，或先「取消调度」后重建。
-            </p>
-          ) : null}
-          <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-            {describeCron(schedule.cron)} · 接收人：{summarizeRecipients(schedule.recipients)}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {schedule.status !== "draft" && !readOnly ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={clonePending || transitionMutation.isPending}
-                onClick={() => void handleCloneConfig()}
-              >
-                {clonePending ? "处理中…" : "复制配置新建"}
-              </Button>
-            ) : null}
-            {schedule.allowedActions.map((action) => (
-              <Button
-                key={action}
-                type="button"
-                variant={action === "schedule" || action === "resume" ? "primary" : "outline"}
-                size="sm"
-                disabled={readOnly || transitionMutation.isPending}
-                onClick={() => transitionMutation.mutate({ id: schedule.id, action })}
-              >
-                {ACTION_LABELS[action] ?? action}
-              </Button>
-            ))}
-            {!readOnly && schedule.status === "scheduled" ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={executeMutation.isPending}
-                onClick={() => executeMutation.mutate(schedule.id)}
-                aria-label="手动执行报表调度"
-              >
-                {executeMutation.isPending ? "执行中…" : "立即执行"}
-              </Button>
-            ) : null}
-          </div>
-        </CardContent>
-      </Card>
+    <>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-title-sm">调度配置</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {activationBanner}
+            {draftSelected ? (
+              <>
+                <ScheduleFormFields
+                  value={form}
+                  onChange={setForm}
+                  disabled={readOnly}
+                  showAttachments
+                  idPrefix="template-schedule-edit"
+                />
+                {!readOnly ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={updateMutation.isPending}
+                    onClick={handleSaveDraft}
+                  >
+                    {updateMutation.isPending ? "保存中…" : "保存草稿"}
+                  </Button>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <p className="text-theme-sm text-gray-600 dark:text-gray-400">
+                  {describeCron(schedule.cron)} · {localizeScheduleStatus(schedule.status)}
+                </p>
+                <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+                  接收人：{summarizeRecipients(schedule.recipients)}
+                </p>
+                {!readOnly ? (
+                  <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+                    调度已激活后无法直接修改配置。可「复制配置新建」，或先「取消调度」后重建。
+                  </p>
+                ) : null}
+              </>
+            )}
+            <div className="flex flex-wrap gap-2">
+              {schedule.status !== "draft" && !readOnly ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={clonePending || transitionMutation.isPending}
+                  onClick={() => setConfirmState({ kind: "clone" })}
+                >
+                  {clonePending ? "处理中…" : "复制配置新建"}
+                </Button>
+              ) : null}
+              {schedule.allowedActions.map((action) => (
+                <Button
+                  key={action}
+                  type="button"
+                  variant={action === "schedule" || action === "resume" ? "primary" : "outline"}
+                  size="sm"
+                  disabled={readOnly || transitionMutation.isPending}
+                  onClick={() => {
+                    if (action === "cancel" || action === "pause") {
+                      setConfirmState({ kind: "action", action });
+                      return;
+                    }
+                    runTransition(action);
+                  }}
+                >
+                  {SCHEDULE_ACTION_LABELS[action] ?? action}
+                </Button>
+              ))}
+              {!readOnly && schedule.status === "scheduled" ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={executeMutation.isPending}
+                  onClick={() => executeMutation.mutate(schedule.id)}
+                  aria-label="立即试发定时报告"
+                >
+                  {executeMutation.isPending ? "试发中…" : "立即试发"}
+                </Button>
+              ) : null}
+            </div>
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-title-sm">执行历史</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {historyQuery.isLoading ? <Skeleton className="h-32 w-full" /> : null}
-          {!historyQuery.isLoading ? (
-            <ScheduleHistoryTable
-              rows={historyQuery.data?.items ?? []}
-              readOnly={readOnly}
-              retryPending={retryMutation.isPending}
-              onRetry={(executionId) => retryMutation.mutate(executionId)}
-            />
-          ) : null}
-        </CardContent>
-      </Card>
-    </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-title-sm">执行历史</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {historyQuery.isLoading ? <Skeleton className="h-32 w-full" /> : null}
+            {!historyQuery.isLoading ? (
+              <ScheduleHistoryTable
+                rows={historyQuery.data?.items ?? []}
+                readOnly={readOnly}
+                retryPending={retryMutation.isPending}
+                retryPendingExecutionId={retryMutation.variables}
+                onRetry={(executionId) => retryMutation.mutate(executionId)}
+              />
+            ) : null}
+          </CardContent>
+        </Card>
+      </div>
+
+      <AlertDialog open={confirmState?.kind === "clone"} onOpenChange={(open) => !open && setConfirmState(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>复制配置新建？</AlertDialogTitle>
+            <AlertDialogDescription>
+              将取消当前调度并复制其配置到新建表单。原调度停止后需重新激活新调度。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setConfirmState(null);
+                void runCloneConfig();
+              }}
+            >
+              继续复制
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={confirmState?.kind === "action"}
+        onOpenChange={(open) => !open && setConfirmState(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmState?.kind === "action" && confirmState.action === "cancel"
+                ? "取消调度？"
+                : "暂停调度？"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmState?.kind === "action" && confirmState.action === "cancel"
+                ? "取消后该调度将不再执行，需重新创建才能恢复。"
+                : "暂停后将停止按计划执行，可随时恢复。"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>返回</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const action = confirmState?.kind === "action" ? confirmState.action : null;
+                setConfirmState(null);
+                if (action) runTransition(action);
+              }}
+            >
+              确认
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

@@ -2,6 +2,7 @@ import { Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TruncateHint } from "@/components/ui/hint-tooltip";
+import { cn } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -26,10 +27,18 @@ function analysisLabel(type: string): string {
 type PrefabBindingsTableProps = {
   bindings: PrefabBinding[];
   runningKey: string | null;
+  selectedKey?: string | null;
+  onSelect?: (bindingKey: string) => void;
   onRun: (bindingKey: string) => void;
 };
 
-export function PrefabBindingsTable({ bindings, runningKey, onRun }: PrefabBindingsTableProps) {
+export function PrefabBindingsTable({
+  bindings,
+  runningKey,
+  selectedKey,
+  onSelect,
+  onRun,
+}: PrefabBindingsTableProps) {
   return (
     <div className="overflow-x-only">
       <Table className="min-w-[640px] text-theme-sm">
@@ -44,8 +53,17 @@ export function PrefabBindingsTable({ bindings, runningKey, onRun }: PrefabBindi
         <TableBody>
           {bindings.map((binding) => {
             const isRunning = runningKey === binding.bindingKey;
+            const isSelected = selectedKey === binding.bindingKey;
             return (
-              <TableRow key={binding.bindingKey} className="border-gray-100 dark:border-gray-800">
+              <TableRow
+                key={binding.bindingKey}
+                className={cn(
+                  "border-gray-100 dark:border-gray-800",
+                  onSelect ? "cursor-pointer hover:bg-gray-50/80 dark:hover:bg-white/[0.02]" : undefined,
+                  isSelected ? "bg-brand-50/40 dark:bg-brand-500/5" : undefined,
+                )}
+                onClick={onSelect ? () => onSelect(binding.bindingKey) : undefined}
+              >
                 <TableCell className="px-4 py-3">
                   <TruncateHint
                     title={binding.displayName}
@@ -72,7 +90,10 @@ export function PrefabBindingsTable({ bindings, runningKey, onRun }: PrefabBindi
                     variant={isRunning ? "outline" : "primary"}
                     disabled={isRunning}
                     aria-label={`运行报表 ${binding.displayName}`}
-                    onClick={() => onRun(binding.bindingKey)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onRun(binding.bindingKey);
+                    }}
                   >
                     <Play className="size-3.5" aria-hidden />
                     {isRunning ? "运行中…" : "运行"}

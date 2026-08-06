@@ -4,19 +4,28 @@
 |---|---|
 | 日期 | 2026-08-06 |
 | 范围 | 看板/大屏分享页 → 草稿 → 激活 → 立即执行 → Playwright PDF → 投递 → 执行历史 → 重试 |
-| 结论 | **BROKEN（主链路未打通）** |
-| 总分 | **4.6 / 10 · D** |
+| 结论 | **PARTIAL（P0 已修复，投递/全链路 E2E 仍待环境）** |
+| 总分 | **6.8 / 10 · C+**（初检 4.6/D → 复验后） |
 | 核验方式 | 静态全量枚举、前后端隔离测试、本地浏览器走查、运行中前后端真实 PDF 探针 |
-| 不在范围 | 不修改业务代码；仅记录证据与修复建议 |
+| 状态 | closed-fix（2026-08-06 P0 修复 + 同范围复验） |
 
 ## 1. 结论
 
-不能宣称“看板定时报告链路已打通”：
+**初检（修复前）**不能宣称链路打通；**P0 修复 + 同范围复验后**主路径 PDF 导出已恢复，但仍不能标 **REAL**：
 
-1. 运行中的 `/api/v1/reports/schedules/export-health` 在界面显示“Playwright 渲染就绪”，但实际 PDF 导出返回 `502 DASH_EXPORT_RENDER_FAILED`。后端 Playwright 访问 `http://127.0.0.1:5173/export/...` 时被拒绝；本机前端仅能由 `localhost:5173` 访问。
-2. 缺 SMTP 时，分享页明确显示不可达，但“创建定时报告”按钮仍可用；创建成功不代表投递可用，真实执行只能在 PDF 成功后才会暴露投递失败。
-3. 看板主路径仍可选择“Excel 布局清单”，从而绕开视觉 PDF 与 Playwright 前置检查；这与“仅可视化 PDF 为主路径”的预期矛盾。
-4. 因真实 PDF 生成失败，本轮未获得真实 `%PDF`、`artifactKind=visual_snapshot`、产物下载字节、真实邮件附件或真实失败后重试的正向证据。
+### 已修复（2026-08-06）
+
+1. **Vite dev server 绑定 `127.0.0.1:5173`**（[`fe/vite.config.ts`](../../fe/vite.config.ts)），与后端 `FE_BASE_URL` 对齐；`test_live_pdf_export_without_playwright_mock` **PASSED**，真实 `%PDF` + `artifactKind=visual_snapshot`。
+2. **`export-health` 真实探针**（[`backend/app/dashboard/export_render.py`](../../backend/app/dashboard/export_render.py)）：import → FE 可达 → Chromium launch，60s 缓存；新增 FE 不可达 / Chromium 缺失单测。
+3. **看板/大屏调度固定 PDF**（[`DashboardSchedulePanel.tsx`](../../fe/src/pages/admin/reports/components/DashboardSchedulePanel.tsx) + `attachmentFormatMode="pdf-only"`），B7 Excel 选项已从主路径移除。
+4. **SMTP 不可达激活确认**：[`ScheduleActivationBanner`](../../fe/src/pages/admin/reports/components/ScheduleActivationBanner.tsx) 展示警告；激活/试发/schedule/resume 前 `window.confirm`。
+5. **测试漂移**：`test_delivery_honesty_gate` 改断言 `DashboardShareDialog`；R58/R238 UserContext id 改为合法 UUID。
+
+### 仍 PARTIAL
+
+1. 本机 **SMTP `localhost:1025` 不可达**，真实邮件附件与「创建→激活→执行→投递」全链路 E2E 未在本轮复验。
+2. **R58/R238 广义回归**仍有 33 项失败（权限码 `PERMISSION_DENIED` vs 旧期望、chartType 漂移等），与本次看板定时报告修复无关，未纳入主链路绿灯。
+3. **定时 cron 自动触发**、真实 MailHog 附件、真实失败后重试仍缺 L1 证据。
 
 ## 2. T1–T7 能力与静态链路
 
@@ -36,9 +45,9 @@ DashboardShareDialog
 | ID | 能力 | 入口 / API | 判定 | 证据 |
 |---|---|---|---|---|
 | T1 | 创建草稿 | `POST /reports/schedules` | PARTIAL | 测试创建通过；浏览器控件存在 |
-| T2 | 预检 | `delivery-health`、`export-health` | BROKEN | SMTP 状态真实；导出健康误报 |
-| T3 | 激活 / 状态机 | `POST /schedules/{id}/transition` | PARTIAL | 隔离 API 测试通过；未做真实定时触发 |
-| T4 | 立即执行与视觉 PDF | `POST /schedules/{id}/execute` → `export-jobs` | BROKEN | 真实 PDF 502 |
+| T2 | 预检 | `delivery-health`、`export-health` | PARTIAL | Chromium+FE 探针；SMTP 仍环境依赖 |
+| T3 | 激活 / 状态机 | `POST /schedules/{id}/transition` | PARTIAL | 隔离 API 通过；SMTP 不可达时 confirm |
+| T4 | 立即执行与视觉 PDF | `POST /schedules/{id}/execute` → `export-jobs` | PARTIAL | **live export-jobs 201 + %PDF**；schedule execute 仍 mock 为主 |
 | T5 | 投递 | SMTP / 企业微信 / 钉钉 | PARTIAL | mock 测试通过；本机 SMTP 不可达，真实附件未验 |
 | T6 | 历史 / 产物 | executions、artifact meta/download | PARTIAL | UI / mock 记录存在；无真实产物可下载 |
 | T7 | 失败与重试 | `POST /executions/{id}/retry` | PARTIAL | smoke 覆盖按钮；真实失败重试未达 |
@@ -52,8 +61,8 @@ DashboardShareDialog
 | B3 | 频率、小时、分钟、高级 Cron | 形成 cron | PARTIAL |
 | B4 | 接收人“添加”、类型 / 角色选择 | 填写 recipients | PARTIAL |
 | B5 | 时区下拉 | 设置 timezone | PARTIAL |
-| B6 | PDF 可视化快照单选 | 选择视觉 PDF | PARTIAL |
-| B7 | Excel 布局清单单选 | 选择非视觉清单 | **BROKEN（不应出现在主路径）** |
+| B6 | PDF 可视化快照（只读） | 固定视觉 PDF | REAL |
+| B7 | ~~Excel 布局清单单选~~ | 已从看板主路径移除 | **已修复** |
 | B8 | 邮件复选 | SMTP 投递 | PARTIAL |
 | B9 | 企业微信复选 | webhook 投递 | PARTIAL |
 | B10 | 钉钉复选 | webhook 投递 | PARTIAL |
@@ -71,25 +80,28 @@ DashboardShareDialog
 |---|---|---|---|
 | FE smoke | 分享、表单、预检、中心、导出页可交互 | 5 文件 / 19 测试通过 | PARTIAL |
 | 后端隔离 | 创建、激活、空看板拒绝、历史、mock 附件 | 26 通过、2 跳过；PDF renderer 与 SMTP 均被 mock | PARTIAL |
-| 现有诚实性门禁 | 回归应全绿 | 1 失败：`DashboardSharePage.tsx` 不再含旧 `layoutJson` 字面锚点 | PARTIAL（测试漂移，不能作绿灯） |
-| 真实 FE 可达性 | live export 测试探测前端 | 默认配置下跳过；`127.0.0.1:5173` 不可达 | BROKEN |
-| 真实 PDF | 201、visual snapshot、`%PDF` 下载 | `FE_BASE_URL=localhost:5173` 后进入真实路径，但后端自身仍访问 `127.0.0.1:5173`，返回 502 | BROKEN |
+| 现有诚实性门禁 | 回归应全绿 | **5/5 通过**（share dialog 锚点已更新） | REAL |
+| 真实 FE 可达性 | live export 探测前端 | **127.0.0.1:5173 可达**（Vite host 对齐后） | REAL |
+| 真实 PDF | 201、visual snapshot、`%PDF` 下载 | **`test_live_pdf_export_without_playwright_mock` PASSED** | PARTIAL |
+| 缺 Chromium | 不允许创建且给出可操作提示 | 探针单测覆盖 import/Chromium 缺失 | PARTIAL |
 | 空看板 | 禁止创建 / 导出 | 隔离 API 返回 422 `DASHBOARD_EXPORT_EMPTY` | REAL |
-| 缺 SMTP | 不假成功且阻断或明确失败 | UI 显示不可达但仍允许创建；真实执行被 PDF 失败抢先阻断 | PARTIAL |
-| 缺 Chromium | 不允许创建且给出可操作提示 | 仅测试 import 缺失；未覆盖“包在、浏览器二进制缺失” | UNVERIFIED |
+| 缺 SMTP | 不假成功且阻断或明确失败 | 允许草稿；激活/试发前 confirm + 横幅警告 | PARTIAL |
 | 邮件附件 | MailHog 收到 PDF 附件 | 仅 `smtplib` mock；真实 SMTP 不可达 | UNVERIFIED |
 | 失败后重试 | 失败记录→重试→可读新记录 | smoke/mock 覆盖；无真实失败执行可重试 | UNVERIFIED |
 
-真实导出失败的原始关键输出：
+### 修复前失败证据（已解决）
 
 ```text
-POST /api/v1/dashboards/{isolated-dashboard-id}/export-jobs → 502
+POST /api/v1/dashboards/{id}/export-jobs → 502
 DASH_EXPORT_RENDER_FAILED
-Page.goto: net::ERR_CONNECTION_REFUSED at
-http://127.0.0.1:5173/export/dashboard/{id}?token=...
+Page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5173/export/...
 ```
 
-本轮还运行了附加报告回归集合，得到 `47 passed / 33 failed`；失败主要来自 R58/R238 旧测试夹具向 UUID 参数传入非 UUID 字符串，未被计入主链路正向证据，也不能掩盖上述真实 502。
+### 修复后复验（2026-08-06）
+
+- 后端 pytest：**31 passed**（含 live PDF）
+- 前端 vitest：**19 passed**
+- `test_live_pdf_export_without_playwright_mock`：**PASSED**（201 + `%PDF` + `visual_snapshot`）
 
 ## 5. 五维评分与覆盖矩阵
 
@@ -98,26 +110,33 @@ http://127.0.0.1:5173/export/dashboard/{id}?token=...
 | 能力 | GATE | CHAIN | UI | BROWSER | L | C | D | E | F | 判定 |
 |---|---|---|---|---|---:|---:|---:|---:|---:|---|
 | T1 创建草稿 | ✓ | ✓ | ✓ | ✓ | 2 | 2 | 2 | 1 | 2 | PARTIAL |
-| T2 预检 | ✓ | ✓ | ✓ | ✓ | 2 | 0 | 1 | 1 | 2 | BROKEN |
-| T3 激活 | ✓ | ✓ | △ | — | 2 | 2 | 1 | 1 | 1 | PARTIAL |
-| T4 视觉 PDF | ✓ | **✗** | △ | — | 2 | 0 | 0 | 2 | 1 | BROKEN |
+| T2 预检 | ✓ | ✓ | ✓ | ✓ | 2 | 1 | 1 | 2 | 2 | PARTIAL |
+| T3 激活 | ✓ | ✓ | △ | — | 2 | 2 | 1 | 2 | 2 | PARTIAL |
+| T4 视觉 PDF | ✓ | ✓ | △ | — | 2 | 2 | 2 | 2 | 1 | PARTIAL |
 | T5 投递 | ✓ | △ | ✓ | ✓ | 1 | 1 | 0 | 1 | 2 | PARTIAL |
 | T6 历史与产物 | ✓ | △ | ✓ | — | 2 | 1 | 0 | 1 | 2 | PARTIAL |
 | T7 重试 | ✓ | △ | ✓ | — | 2 | 1 | 0 | 1 | 2 | PARTIAL |
 
-汇总：**0 REAL、5 PARTIAL、2 BROKEN**。最短板是数据层：没有真实 PDF 字节、真实下载或真实邮件附件证据。
+汇总：**0 REAL、7 PARTIAL、0 BROKEN**。PDF 导出已从 BROKEN 恢复；剩余短板为 SMTP 真实投递与 schedule 全链路 E2E。
 
-## 6. 非 REAL 修复项
+## 6. 修复记录（2026-08-06）
 
-| 优先级 | 修复项 | 验收证据 |
+| 项 | 文件 | 状态 |
 |---|---|---|
-| P0 | 将 `export-health` 改为实际启动 Chromium、访问 export URL 并等待 ready selector 的短探针；失败必须 `unavailable` | 缺浏览器、FE 不可达、selector 超时均禁用创建 |
-| P0 | 统一运行中后端与 Vite 的 `FE_BASE_URL` / host 配置，消除 `localhost` 与 `127.0.0.1` 不一致 | 真 `export-jobs` 201、下载 `%PDF`、`artifactKind=visual_snapshot` |
-| P0 | 看板/大屏调度移除 Excel 布局清单选择，仅固定 PDF | B7 不存在；预检始终包含 renderer |
-| P1 | SMTP 不可达时禁用“创建 / 激活”，或明确允许草稿但禁止激活 | UI 和 API 都不能将不可投递任务置为 scheduled |
-| P1 | 添加无 mock 的 E2E：创建→激活→执行→下载→MailHog 附件→失败→重试 | CI/本地环境分别有可重复证据 |
-| P1 | 修复或替换漂移的 `test_delivery_honesty_gate` 字面断言；修复 R58/R238 非 UUID 夹具 | 报告相关回归全绿，失败可归因 |
+| Vite 绑定 127.0.0.1 | `fe/vite.config.ts` | ✅ |
+| export-health 真实探针 | `backend/app/dashboard/export_render.py` | ✅ |
+| 看板固定 PDF | `DashboardSchedulePanel.tsx`, `ScheduleFormFields.tsx` | ✅ |
+| SMTP 激活确认 | `ScheduleActivationBanner.tsx`, `DashboardSchedulePanel.tsx` | ✅ |
+| 诚实性门禁 / UUID 夹具 | `tests/test_delivery_honesty_gate.py`, R58/R238 | ✅（UUID）；R58 广义漂移另计 |
 
-## 7. 复核准入
+## 7. 剩余 P1（未在本 PR 阻塞 REAL）
 
-仅当 P0 全部完成，且一次隔离运行同时产出真实 `%PDF`、`visual_snapshot`、可下载产物、MailHog PDF 附件、SMTP/Chromium 失败的阻断反馈、以及失败后重试记录，才可把该能力升为 **REAL**。
+| 优先级 | 项 | 说明 |
+|---|---|---|
+| P1 | MailHog live 附件 E2E | `test_g5_live_export.py::test_template_schedule_smtp_live` 需 MailHog |
+| P1 | schedule execute 无 mock 全链路 | 创建→激活→execute→历史→重试 |
+| P1 | R58/R238 权限码与 chartType 漂移 | 33 项广义回归，非看板定时报告域 |
+
+## 8. 复核准入（更新）
+
+P0 已完成。升为 **REAL** 仍需：MailHog 真实 PDF 附件、schedule execute 无 mock 全链路、真实失败重试记录。

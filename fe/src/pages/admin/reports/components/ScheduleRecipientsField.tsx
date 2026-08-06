@@ -151,15 +151,20 @@ export function ScheduleRecipientsField({
               </Select>
             ) : null}
             {row.type === "email" ? (
-              <Input
-                type="email"
-                className="h-11 min-w-[180px] flex-1"
-                placeholder="name@example.com"
-                value={row.value}
-                disabled={disabled}
-                onChange={(e) => updateRow(index, { value: e.target.value })}
-                aria-invalid={row.value.length > 0 && !isValidRecipient(row)}
-              />
+              <div className="min-w-[180px] flex-1 space-y-1">
+                <Input
+                  type="email"
+                  className="h-11 w-full"
+                  placeholder="name@example.com"
+                  value={row.value}
+                  disabled={disabled}
+                  onChange={(e) => updateRow(index, { value: e.target.value })}
+                  aria-invalid={row.value.length > 0 && !isValidRecipient(row)}
+                />
+                {row.value.length > 0 && !isValidRecipient(row) ? (
+                  <p className="text-theme-xs text-error-500">请输入有效邮箱地址</p>
+                ) : null}
+              </div>
             ) : null}
             {!disabled && value.length > 1 ? (
               <Button

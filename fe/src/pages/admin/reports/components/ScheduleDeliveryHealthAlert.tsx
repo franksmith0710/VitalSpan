@@ -26,7 +26,7 @@ export function ScheduleDeliveryHealthAlert({ className }: { className?: string 
       <AlertTitle>邮件投递通道不可用</AlertTitle>
       <AlertDescription>
         {health.error ??
-          `无法连接 SMTP ${health.host ?? ""}:${health.port ?? ""}。本地开发请启动 MailHog（1025）或配置 RPT_SMTP_* 环境变量。`}
+          "邮件服务未配置或不可达。请联系管理员配置邮件服务后再激活定时报告。"}
         调度仍可创建，但激活后执行可能投递失败。
       </AlertDescription>
     </Alert>

@@ -52,7 +52,19 @@ export function formatAttachmentLabels(formats?: string[]): string {
   return formats.map((f) => f.toUpperCase()).join(" / ");
 }
 
+export const SCHEDULE_CREATE_INTENT = "schedule";
+
+/** 看板列表页带创建定时报告引导 intent */
+export function dashboardsListForScheduleCreate(): string {
+  return `/admin/dashboards?intent=${SCHEDULE_CREATE_INTENT}`;
+}
+
 export type ScheduleTabFilter = "all" | "template" | "dashboard";
+
+export function parseScheduleTabParam(raw: string | null): ScheduleTabFilter {
+  if (raw === "all" || raw === "template" || raw === "dashboard") return raw;
+  return "dashboard";
+}
 
 export function filterSchedulesByTab<T extends { sourceType?: string }>(
   items: T[],
