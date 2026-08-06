@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api";
+import { useListPagination } from "@/lib/list-pagination";
 import { queryKeys } from "@/lib/queryKeys";
 import { mapGrantError } from "./grantErrors";
 import {
@@ -80,6 +81,13 @@ export function useGrantsPage() {
     });
   }, [grantsQuery.data?.items, roleFilter, search, typeFilter]);
 
+  const pagination = useListPagination(undefined, [search, roleFilter, typeFilter]);
+
+  const paginatedItems = useMemo(() => {
+    const start = pagination.offset;
+    return filteredItems.slice(start, start + pagination.pageSize);
+  }, [filteredItems, pagination.offset, pagination.pageSize]);
+
   const createMutation = useMutation({
     mutationFn: (body: GrantCreateValues) =>
       apiFetch<ResourceGrantOut>("/api/v1/resource-grants", {
@@ -153,6 +161,8 @@ export function useGrantsPage() {
     rolesQuery,
     roleNameById,
     filteredItems,
+    paginatedItems,
+    pagination,
     createMutation,
     deleteMutation,
     submitCreate,

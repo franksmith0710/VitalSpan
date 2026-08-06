@@ -157,4 +157,30 @@ describe("GrantsPage smoke", () => {
       expect(deletePaths.some((p) => p.includes(GRANT_ID))).toBe(true),
     );
   });
+
+  it("T-AUTH-004-FE-05: shows pagination when filtered grants exceed page size", async () => {
+    const manyGrants = Array.from({ length: 25 }, (_, i) => ({
+      id: `grant-${i}`,
+      roleId: ROLE_ID,
+      resourceType: "dashboard",
+      resourceId: `res-${String(i).padStart(4, "0")}`,
+    }));
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      if (path.startsWith("/api/v1/roles")) {
+        return {
+          items: [{ id: ROLE_ID, code: "analyst", name: "分析师", description: null, isActive: true }],
+          total: 1,
+        };
+      }
+      if (path.startsWith("/api/v1/resource-grants")) {
+        return { items: manyGrants };
+      }
+      return {};
+    });
+    renderGrants();
+    expect(await screen.findByRole("navigation", { name: "分页" })).toBeInTheDocument();
+    expect(screen.getByText("res-0000")).toBeInTheDocument();
+    expect(screen.queryByText("res-0020")).not.toBeInTheDocument();
+  });
 });

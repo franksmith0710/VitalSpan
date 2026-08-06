@@ -88,6 +88,41 @@ describe("AdminLayout smoke", () => {
     ).toBeGreaterThanOrEqual(1);
   });
 
+  it("T-FE-SMFB-04: admin workspace shows header 系统管理 link", () => {
+    setDesktopViewport(1600);
+    render(
+      <MemoryRouter initialEntries={["/admin/dashboards"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="dashboards" element={<div>dashboards</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("link", { name: "系统管理" })).toHaveAttribute("href", "/admin/system");
+  });
+
+  it("T-FE-SMFB-05: viewer does not show header 系统管理 link", () => {
+    mockUseAuth.mockImplementation(() => ({
+      user: { id: "2", username: "viewer", roles: ["viewer"] as const },
+      isLoading: false,
+      isAuthenticated: true,
+      logout: vi.fn(),
+      refresh: vi.fn(async () => {}),
+    }));
+    setDesktopViewport(1600);
+    render(
+      <MemoryRouter initialEntries={["/admin/dashboards"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="dashboards" element={<div>dashboards</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.queryByRole("link", { name: "系统管理" })).not.toBeInTheDocument();
+  });
+
   it("renders mobile menu button with accessible label (T-FE-10)", () => {
     render(
       <MemoryRouter initialEntries={["/admin"]}>
@@ -524,6 +559,7 @@ describe("AdminLayout smoke", () => {
     expect(screen.getByRole("heading", { name: "后台管理" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "配置向导" })).toHaveAttribute("href", "/admin/system");
     expect(screen.queryByRole("heading", { name: "数据" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "系统管理" })).not.toBeInTheDocument();
   });
 
   it("T-FE-SMFB-01: system admin sidebar has 资源授权 link", async () => {

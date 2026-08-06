@@ -66,6 +66,10 @@ export function RlsAdminPage() {
   const [dimOpen, setDimOpen] = useState(false);
   const [dimCode, setDimCode] = useState("");
   const [dimName, setDimName] = useState("");
+  const [editDim, setEditDim] = useState<DimensionTypeOut | null>(null);
+  const [editDimName, setEditDimName] = useState("");
+  const [editDimDesc, setEditDimDesc] = useState("");
+  const [deleteDim, setDeleteDim] = useState<DimensionTypeOut | null>(null);
   const [groupOpen, setGroupOpen] = useState(false);
   const [groupDimId, setGroupDimId] = useState("");
   const [groupCode, setGroupCode] = useState("");
@@ -156,6 +160,30 @@ export function RlsAdminPage() {
       setDimOpen(false);
       setDimCode("");
       setDimName("");
+      await qc.invalidateQueries({ queryKey: ["rls", "dimensions"] });
+    },
+    onError: (err) => toast.error(mapApiError(err)),
+  });
+
+  const updateDim = useMutation({
+    mutationFn: (body: { id: string; name: string; description: string | null }) =>
+      apiFetch(`/api/v1/rls/dimensions/${body.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ name: body.name, description: body.description }),
+      }),
+    onSuccess: async () => {
+      toast.success("维度类型已更新");
+      setEditDim(null);
+      await qc.invalidateQueries({ queryKey: ["rls", "dimensions"] });
+    },
+    onError: (err) => toast.error(mapApiError(err)),
+  });
+
+  const removeDim = useMutation({
+    mutationFn: (id: string) => apiFetch(`/api/v1/rls/dimensions/${id}`, { method: "DELETE" }),
+    onSuccess: async () => {
+      toast.success("维度类型已删除");
+      setDeleteDim(null);
       await qc.invalidateQueries({ queryKey: ["rls", "dimensions"] });
     },
     onError: (err) => toast.error(mapApiError(err)),
@@ -310,7 +338,8 @@ export function RlsAdminPage() {
                 <DataTable
                   loading={dimensionsQuery.isLoading}
                   empty={!dimensionsQuery.isLoading && dimensionItems.length === 0}
-                  headers={["名称", "编码", "值类型", "组织维度"]}
+                  lastColumnAlign="right"
+                  headers={["名称", "编码", "值类型", "组织维度", "操作"]}
                   rows={dimensionItems.map((d) => [
                     <span key="n" className="font-medium text-gray-800 dark:text-white/90">
                       {d.name}
@@ -329,6 +358,30 @@ export function RlsAdminPage() {
                     ) : (
                       "否"
                     ),
+                    <RowActions key="a">
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label="编辑维度类型"
+                        onClick={() => {
+                          setEditDim(d);
+                          setEditDimName(d.name);
+                          setEditDimDesc(d.description ?? "");
+                        }}
+                      >
+                        <Pencil className="size-4" />
+                      </IconButton>
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label="删除维度类型"
+                        onClick={() => setDeleteDim(d)}
+                      >
+                        <Trash2 className="size-4" />
+                      </IconButton>
+                    </RowActions>,
                   ])}
                 />
               </ListPageTableFrame>
@@ -508,6 +561,94 @@ export function RlsAdminPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog
+        open={Boolean(editDim)}
+        onOpenChange={(open) => {
+          if (!open) setEditDim(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>编辑维度类型</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <Label>编码</Label>
+              <Input value={editDim?.code ?? ""} readOnly disabled />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-dim-name">名称</Label>
+              <Input
+                id="edit-dim-name"
+                value={editDimName}
+                onChange={(e) => setEditDimName(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-dim-desc">描述</Label>
+              <Textarea
+                id="edit-dim-desc"
+                value={editDimDesc}
+                onChange={(e) => setEditDimDesc(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setEditDim(null)}>
+              取消
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              disabled={!editDim || !editDimName.trim() || updateDim.isPending}
+              onClick={() =>
+                editDim &&
+                updateDim.mutate({
+                  id: editDim.id,
+                  name: editDimName.trim(),
+                  description: editDimDesc.trim() || null,
+                })
+              }
+            >
+              保存
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={Boolean(deleteDim)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteDim(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>删除维度类型？</AlertDialogTitle>
+            <AlertDialogDescription>
+              将删除「{deleteDim?.name}」。若仍被分组或角色绑定引用，操作会失败。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel asChild>
+              <Button type="button" variant="outline">
+                取消
+              </Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button
+                type="button"
+                variant="primary"
+                disabled={removeDim.isPending}
+                onClick={() => deleteDim && removeDim.mutate(deleteDim.id)}
+              >
+                删除
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={groupOpen} onOpenChange={setGroupOpen}>
         <DialogContent>

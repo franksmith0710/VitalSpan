@@ -10,6 +10,7 @@ import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AdminNavPerfTracker } from "@/components/layout/AdminNavPerfTracker";
 import { AppHeader } from "@/components/layout/app-header";
 import { Backdrop } from "@/components/layout/backdrop";
+import { SystemAdminHeaderButton } from "@/components/layout/system-admin-header-button";
 import { ThemeToggleButton } from "@/components/layout/theme-toggle";
 import { UserDropdown } from "@/components/layout/user-dropdown";
 import { VitalSpanLogo } from "@/components/layout/vitalspan-logo";
@@ -100,6 +101,7 @@ function AdminLayoutContent() {
           logo={<VitalSpanLogo linked={false} />}
           actions={
             <>
+              <SystemAdminHeaderButton />
               <ThemeToggleButton />
               <UserDropdown />
             </>
