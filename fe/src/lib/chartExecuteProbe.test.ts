@@ -20,6 +20,14 @@ const apiFetchMock = vi.fn(async () => ({
 
 vi.mock("@/lib/api", () => ({
   apiFetch: (...args: unknown[]) => apiFetchMock(...args),
+  resolveQueryExecutePath: () =>
+    typeof window !== "undefined" && window.location.pathname.startsWith("/export/")
+      ? "/api/v1/dashboards/export-query/execute"
+      : "/api/v1/query/execute",
+  resolveDatasetExecutePath: () =>
+    typeof window !== "undefined" && window.location.pathname.startsWith("/export/")
+      ? "/api/v1/dashboards/export-query/dataset/execute"
+      : "/api/v1/query/dataset/execute",
 }));
 
 describe("chartExecuteProbe shared execute", () => {
@@ -150,5 +158,26 @@ describe("chartExecuteProbe shared execute", () => {
       expect(allRows.length).toBe(3);
       expect(filteredRows.length).toBe(1);
     });
+  });
+
+  it("uses export dataset execute path on snapshot pages", async () => {
+    vi.stubGlobal("location", {
+      pathname: "/export/dashboard/d1",
+      search: "?token=export-token",
+      href: "http://localhost:5173/export/dashboard/d1?token=export-token",
+    });
+    const config = {
+      ...defaultChartConfig("table"),
+      mode: "dataset" as const,
+      dataSourceId: "ds-1",
+      configId: "cfg-1",
+    };
+
+    await fetchChartExecuteResult(config);
+
+    expect(apiFetchMock).toHaveBeenCalledWith(
+      "/api/v1/dashboards/export-query/dataset/execute",
+      expect.objectContaining({ method: "POST" }),
+    );
   });
 });

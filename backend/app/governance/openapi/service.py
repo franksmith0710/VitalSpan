@@ -6,6 +6,7 @@ import uuid
 
 from sqlalchemy.orm import Session
 
+from app.datasources.models import get_meta_session
 from app.governance.catalog import service as catalog_service
 from app.governance.openapi.errors import OpenApiMappingError
 from app.governance.openapi.schemas import (
@@ -14,18 +15,48 @@ from app.governance.openapi.schemas import (
     OpenApiMappingOut,
     OpenApiMappingValidateOut,
 )
+from app.governance.persistence import gov_repo
 from app.governance.publish import service as publish_service
 from app.metadata.entity import service as entity_service
 from app.metadata.entity.errors import EntityTypeError
-
-_store: dict[uuid.UUID, dict] = {}
-_operation_ids: set[str] = set()
 
 SUPPORTED_API_VERSIONS = frozenset({"v1"})
 _OPERATION_ID_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9_]{0,127}$")
 _PATH_RE = re.compile(r"^/api/v1/[a-z0-9/_-]+$")
 probe_openapi_validate_budget_ms: int = 50
 _REDACT_KEYS = frozenset({"password", "secret", "token", "credential"})
+
+
+class _StoreCompat:
+    def clear(self) -> None:
+        session = get_meta_session()
+        try:
+            gov_repo.clear_openapi(session)
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+
+_store = _StoreCompat()
+
+
+class _OperationIdsCompat:
+    """Test compat: operation IDs tracked in gov_openapi_mappings."""
+
+    def clear(self) -> None:
+        session = get_meta_session()
+        try:
+            gov_repo.clear_openapi(session)
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+
+_operation_ids = _OperationIdsCompat()
 
 
 def redact_openapi_fields(schema: dict) -> dict:
@@ -134,62 +165,7 @@ def validate_mapping(payload: OpenApiMappingCreate) -> OpenApiMappingValidateOut
     return OpenApiMappingValidateOut(valid=True, api_version=payload.api_version, warnings=[])
 
 
-def register_mapping(db: Session, payload: OpenApiMappingCreate) -> OpenApiMappingOut:
-    if payload.catalog_entry_id is None:
-        raise OpenApiMappingError("GOV_OPENAPI_MAP_NOT_FOUND", "catalogEntryId required", 422)
-    validate_mapping(payload)
-    status = publish_service.get_publish_status(db, payload.catalog_entry_id)
-    if status.status != "published":
-        raise OpenApiMappingError(
-            "GOV_OPENAPI_MAP_ENTRY_NOT_PUBLISHED",
-            "Catalog entry must be published",
-            422,
-        )
-    if payload.operation_id in _operation_ids:
-        raise OpenApiMappingError("GOV_OPENAPI_MAP_DUPLICATE", "operationId already registered", 409)
-    mapping_id = uuid.uuid4()
-    record = {
-        "id": mapping_id,
-        "catalogEntryId": str(payload.catalog_entry_id),
-        "httpMethod": payload.http_method,
-        "path": payload.path,
-        "operationId": payload.operation_id,
-        "entityTypeRef": payload.entity_type_ref,
-        "apiVersion": payload.api_version,
-        "active": True,
-    }
-    _store[mapping_id] = record
-    _operation_ids.add(payload.operation_id)
-    if payload.entity_type_ref:
-        entity_service.increment_reference(payload.entity_type_ref)
-    return get_mapping(mapping_id)
-
-
-def list_mappings(catalog_entry_id: uuid.UUID | None = None) -> OpenApiMappingListOut:
-    items = list(_store.values())
-    if catalog_entry_id is not None:
-        cid = str(catalog_entry_id)
-        items = [r for r in items if r.get("catalogEntryId") == cid]
-    out = [
-        OpenApiMappingOut(
-            id=r["id"],
-            catalog_entry_id=uuid.UUID(r["catalogEntryId"]) if r.get("catalogEntryId") else None,
-            http_method=r["httpMethod"],
-            path=r["path"],
-            operation_id=r["operationId"],
-            entity_type_ref=r.get("entityTypeRef"),
-            api_version=r.get("apiVersion", "v1"),
-            active=r["active"],
-        )
-        for r in items
-    ]
-    return OpenApiMappingListOut(items=out)
-
-
-def get_mapping(mapping_id: uuid.UUID) -> OpenApiMappingOut:
-    record = _store.get(mapping_id)
-    if record is None:
-        raise OpenApiMappingError("GOV_OPENAPI_MAP_NOT_FOUND", "Mapping not found", 404)
+def _record_to_out(record: dict) -> OpenApiMappingOut:
     return OpenApiMappingOut(
         id=record["id"],
         catalog_entry_id=uuid.UUID(record["catalogEntryId"]),
@@ -202,29 +178,84 @@ def get_mapping(mapping_id: uuid.UUID) -> OpenApiMappingOut:
     )
 
 
-def deactivate_mapping(mapping_id: uuid.UUID) -> OpenApiMappingOut:
-    record = _store.get(mapping_id)
-    if record is None:
-        raise OpenApiMappingError("GOV_OPENAPI_MAP_NOT_FOUND", "Mapping not found", 404)
-    if not record["active"]:
+def register_mapping(db: Session, payload: OpenApiMappingCreate) -> OpenApiMappingOut:
+    if payload.catalog_entry_id is None:
+        raise OpenApiMappingError("GOV_OPENAPI_MAP_NOT_FOUND", "catalogEntryId required", 422)
+    validate_mapping(payload)
+    status = publish_service.get_publish_status(db, payload.catalog_entry_id)
+    if status.status != "published":
         raise OpenApiMappingError(
-            "GOV_OPENAPI_MAP_ALREADY_INACTIVE",
-            "Mapping already inactive",
-            409,
+            "GOV_OPENAPI_MAP_ENTRY_NOT_PUBLISHED",
+            "Catalog entry must be published",
+            422,
         )
-    record["active"] = False
-    entity_ref = record.get("entityTypeRef")
-    if entity_ref:
-        entity_service.decrement_reference(entity_ref)
+    if gov_repo.operation_id_exists(db, payload.operation_id):
+        raise OpenApiMappingError("GOV_OPENAPI_MAP_DUPLICATE", "operationId already registered", 409)
+    mapping_id = uuid.uuid4()
+    record = {
+        "id": mapping_id,
+        "catalogEntryId": str(payload.catalog_entry_id),
+        "httpMethod": payload.http_method,
+        "path": payload.path,
+        "operationId": payload.operation_id,
+        "entityTypeRef": payload.entity_type_ref,
+        "apiVersion": payload.api_version,
+        "active": True,
+    }
+    gov_repo.create_openapi_mapping(db, record)
+    if payload.entity_type_ref:
+        entity_service.increment_reference(payload.entity_type_ref)
     return get_mapping(mapping_id)
 
 
-def release_entity_refs_for_catalog(catalog_entry_id: uuid.UUID) -> None:
-    cid = str(catalog_entry_id)
-    for mapping_id, record in list(_store.items()):
-        if record.get("catalogEntryId") != cid or not record.get("active"):
-            continue
-        record["active"] = False
+def list_mappings(catalog_entry_id: uuid.UUID | None = None) -> OpenApiMappingListOut:
+    session = get_meta_session()
+    try:
+        items = gov_repo.list_openapi_mappings(session, catalog_entry_id)
+        return OpenApiMappingListOut(items=[_record_to_out(r) for r in items])
+    finally:
+        session.close()
+
+
+def get_mapping(mapping_id: uuid.UUID) -> OpenApiMappingOut:
+    session = get_meta_session()
+    try:
+        record = gov_repo.get_openapi_mapping(session, mapping_id)
+        if record is None:
+            raise OpenApiMappingError("GOV_OPENAPI_MAP_NOT_FOUND", "Mapping not found", 404)
+        return _record_to_out(record)
+    finally:
+        session.close()
+
+
+def deactivate_mapping(mapping_id: uuid.UUID) -> OpenApiMappingOut:
+    session = get_meta_session()
+    try:
+        record = gov_repo.get_openapi_mapping(session, mapping_id)
+        if record is None:
+            raise OpenApiMappingError("GOV_OPENAPI_MAP_NOT_FOUND", "Mapping not found", 404)
+        if not record["active"]:
+            raise OpenApiMappingError(
+                "GOV_OPENAPI_MAP_ALREADY_INACTIVE",
+                "Mapping already inactive",
+                409,
+            )
+        updated = gov_repo.deactivate_openapi_mapping(session, mapping_id)
         entity_ref = record.get("entityTypeRef")
         if entity_ref:
             entity_service.decrement_reference(entity_ref)
+        return _record_to_out(updated or record)
+    finally:
+        session.close()
+
+
+def release_entity_refs_for_catalog(catalog_entry_id: uuid.UUID) -> None:
+    session = get_meta_session()
+    try:
+        deactivated = gov_repo.deactivate_openapi_for_catalog(session, catalog_entry_id)
+        for record in deactivated:
+            entity_ref = record.get("entityTypeRef")
+            if entity_ref:
+                entity_service.decrement_reference(entity_ref)
+    finally:
+        session.close()

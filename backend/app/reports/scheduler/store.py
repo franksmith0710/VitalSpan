@@ -37,6 +37,22 @@ def _schedule_to_row(model: ReportSchedule) -> dict:
     }
 
 
+def _execution_to_dict(m: ReportScheduleExecution) -> dict:
+    return {
+        "executionId": m.id,
+        "scheduleId": m.schedule_id,
+        "status": m.status,
+        "artifactRef": m.artifact_ref,
+        "artifactKind": m.artifact_kind,
+        "executedAt": m.executed_at.isoformat() if m.executed_at else "",
+        "errorMessage": m.error_message,
+        "parentExecutionId": m.parent_execution_id,
+        "idempotencyKey": m.idempotency_key or "",
+        "deliverySteps": m.delivery_steps or [],
+        "revisionSnapshot": m.revision_snapshot,
+    }
+
+
 class ScheduleStore(ABC):
     @abstractmethod
     def get(self, schedule_id: uuid.UUID) -> dict | None: ...
@@ -160,6 +176,19 @@ class DbScheduleStore(ScheduleStore):
 
     def append_execution(self, schedule_id: uuid.UUID, entry: dict, out_data: dict | None = None) -> None:
         with Session(bind=get_meta_engine()) as db:
+            existing = db.get(ReportScheduleExecution, entry["executionId"])
+            if existing is not None:
+                existing.status = entry["status"]
+                existing.artifact_ref = entry["artifactRef"]
+                existing.artifact_kind = entry.get("artifactKind")
+                existing.error_message = entry.get("errorMessage")
+                existing.parent_execution_id = entry.get("parentExecutionId")
+                if out_data:
+                    existing.delivery_steps = out_data.get("deliverySteps")
+                    existing.idempotency_key = out_data.get("idempotencyKey")
+                    existing.revision_snapshot = out_data.get("revisionSnapshot")
+                db.commit()
+                return
             db.add(ReportScheduleExecution(
                 id=entry["executionId"],
                 schedule_id=schedule_id,
@@ -195,50 +224,49 @@ class DbScheduleStore(ScheduleStore):
     def get_execution(self, execution_id: uuid.UUID) -> dict | None:
         with Session(bind=get_meta_engine()) as db:
             m = db.get(ReportScheduleExecution, execution_id)
-            if m is None:
-                return None
-            return {
-                "executionId": m.id,
-                "scheduleId": m.schedule_id,
-                "status": m.status,
-                "artifactRef": m.artifact_ref,
-                "artifactKind": m.artifact_kind,
-                "executedAt": m.executed_at.isoformat() if m.executed_at else "",
-                "errorMessage": m.error_message,
-                "parentExecutionId": m.parent_execution_id,
-            }
+            return _execution_to_dict(m) if m else None
 
     def list_all_executions(self) -> list[dict]:
         with Session(bind=get_meta_engine()) as db:
             models = db.scalars(select(ReportScheduleExecution)).all()
-            return [{
-                "executionId": m.id,
-                "scheduleId": m.schedule_id,
-                "status": m.status,
-                "artifactRef": m.artifact_ref,
-                "artifactKind": m.artifact_kind,
-                "executedAt": m.executed_at.isoformat() if m.executed_at else "",
-                "errorMessage": m.error_message,
-                "parentExecutionId": m.parent_execution_id,
-            } for m in models]
+            return [_execution_to_dict(m) for m in models]
 
     def cache_idempotency(self, key: str, out: dict) -> None:
-        del key, out
+        with Session(bind=get_meta_engine()) as db:
+            existing = db.scalar(
+                select(ReportScheduleExecution).where(ReportScheduleExecution.idempotency_key == key),
+            )
+            if existing is not None:
+                return
+            exec_id = out.get("executionId")
+            schedule_id = out.get("scheduleId")
+            if exec_id is None or schedule_id is None:
+                return
+            row = db.get(ReportScheduleExecution, exec_id)
+            if row is not None:
+                row.idempotency_key = key
+                db.commit()
+                return
+            db.add(ReportScheduleExecution(
+                id=exec_id,
+                schedule_id=schedule_id,
+                status=out.get("status", ""),
+                artifact_ref=out.get("artifactRef", ""),
+                artifact_kind=out.get("artifactKind"),
+                error_message=out.get("errorMessage"),
+                delivery_steps=out.get("deliverySteps"),
+                idempotency_key=key,
+                parent_execution_id=out.get("parentExecutionId"),
+                revision_snapshot=out.get("revisionSnapshot"),
+            ))
+            db.commit()
 
     def get_idempotency(self, key: str) -> dict | None:
-        del key
         with Session(bind=get_meta_engine()) as db:
             m = db.scalar(
                 select(ReportScheduleExecution).where(ReportScheduleExecution.idempotency_key == key),
             )
-            if m is None:
-                return None
-            return {
-                "executionId": m.id,
-                "scheduleId": m.schedule_id,
-                "status": m.status,
-                "artifactRef": m.artifact_ref,
-            }
+            return _execution_to_dict(m) if m else None
 
 
 _memory_store = MemoryScheduleStore()

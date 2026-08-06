@@ -74,6 +74,84 @@ export function useDesignerWorkspace() {
       ),
   });
 
+  const conditionsQuery = useQuery({
+    queryKey: queryKeys.designer.conditions(designerItemId),
+    queryFn: () =>
+      apiFetch<{ logic: "AND" | "OR"; conditions: ConditionRow[] }>(
+        `/api/v1/designer/conditions?refId=${designerItemId}`,
+      ),
+    retry: false,
+  });
+
+  const computeRulesQuery = useQuery({
+    queryKey: queryKeys.designer.computeRules(designerItemId),
+    queryFn: () =>
+      apiFetch<{ rules: ComputeRuleRow[] }>(
+        `/api/v1/designer/compute-rules?refId=${designerItemId}`,
+      ),
+    retry: false,
+  });
+
+  const outputFieldsQuery = useQuery({
+    queryKey: queryKeys.designer.outputFields(designerItemId),
+    queryFn: () =>
+      apiFetch<{ fields: OutputFieldRow[]; aggregates?: AggregateRow[] }>(
+        `/api/v1/designer/output-fields?refId=${designerItemId}`,
+      ),
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (!conditionsQuery.data) return;
+    setLogic(conditionsQuery.data.logic ?? "AND");
+    setConditions(conditionsQuery.data.conditions ?? []);
+    setConditionsSaved(true);
+  }, [conditionsQuery.data]);
+
+  useEffect(() => {
+    if (!computeRulesQuery.data) return;
+    setRules(computeRulesQuery.data.rules ?? EMPTY_RULES);
+    setRulesSaved(true);
+  }, [computeRulesQuery.data]);
+
+  useEffect(() => {
+    if (!outputFieldsQuery.data) return;
+    setOutputFields(outputFieldsQuery.data.fields ?? EMPTY_OUTPUT);
+    setAggregates(outputFieldsQuery.data.aggregates ?? EMPTY_AGG);
+    setOutputSaved(true);
+  }, [outputFieldsQuery.data]);
+
+  const setConditionsDirty = useCallback((next: ConditionRow[] | ((prev: ConditionRow[]) => ConditionRow[])) => {
+    setConditions(next);
+    setConditionsSaved(false);
+  }, []);
+
+  const setRulesDirty = useCallback((next: ComputeRuleRow[] | ((prev: ComputeRuleRow[]) => ComputeRuleRow[])) => {
+    setRules(next);
+    setRulesSaved(false);
+  }, []);
+
+  const setOutputFieldsDirty = useCallback(
+    (next: OutputFieldRow[] | ((prev: OutputFieldRow[]) => OutputFieldRow[])) => {
+      setOutputFields(next);
+      setOutputSaved(false);
+    },
+    [],
+  );
+
+  const setAggregatesDirty = useCallback(
+    (next: AggregateRow[] | ((prev: AggregateRow[]) => AggregateRow[])) => {
+      setAggregates(next);
+      setOutputSaved(false);
+    },
+    [],
+  );
+
+  const setLogicDirty = useCallback((next: "AND" | "OR") => {
+    setLogic(next);
+    setConditionsSaved(false);
+  }, []);
+
   const designMode = designModeQuery.data?.mode ?? "visual";
 
   const setModeMutation = useMutation({
@@ -268,19 +346,22 @@ export function useDesignerWorkspace() {
     setDesignMode,
     designModePending: setModeMutation.isPending,
     editorSql,
-    setEditorSql,
+    setEditorSql: (next: string) => {
+      setEditorSql(next);
+      setSqlModeSaved(false);
+    },
     sqlModeSaved,
     setSqlModeSaved,
     logic,
-    setLogic,
+    setLogic: setLogicDirty,
     conditions,
-    setConditions,
+    setConditions: setConditionsDirty,
     rules,
-    setRules,
+    setRules: setRulesDirty,
     outputFields,
-    setOutputFields,
+    setOutputFields: setOutputFieldsDirty,
     aggregates,
-    setAggregates,
+    setAggregates: setAggregatesDirty,
     fieldOptions,
     glossaryOptions,
     fieldErrors,

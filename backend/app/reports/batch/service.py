@@ -5,6 +5,8 @@ import json
 import uuid
 
 from app.auth.deps import UserContext
+from app.datasources.models import get_meta_session
+from app.integration import idempotency_repo
 from app.reports.batch.schemas import BatchCreateReportsIn, BatchCreateReportsOut, BatchReportItem
 from app.reports.catalog import service as catalog_service
 from app.reports.catalog.errors import ReportCatalogError
@@ -14,10 +16,39 @@ from app.reports.extension import service as extension_service
 from app.reports.extension.schemas import ExtensionConfigUpsert
 
 _ITEM_LIMIT = 50
-_idempotency_store: dict[str, dict] = {}
+_idempotency_store: dict[str, dict] = {}  # test compat when metadata store is memory
 _BATCH_BUDGET_MS = 200
 probe_batch_create_budget_ms: int = _BATCH_BUDGET_MS
 _BATCH_ACTOR = UserContext(id="batch-system", username="batch", roles=["admin"])
+
+
+def _idempotency_cache_key(idempotency_key: str) -> str:
+    return f"report-batch:{idempotency_key}"
+
+
+def _get_idempotency_record(idempotency_key: str) -> dict | None:
+    from app.core.config import get_settings
+
+    if get_settings().rpt_metadata_store != "db":
+        return _idempotency_store.get(idempotency_key)
+    session = get_meta_session()
+    try:
+        return idempotency_repo.get_cached(session, _idempotency_cache_key(idempotency_key))
+    finally:
+        session.close()
+
+
+def _put_idempotency_record(idempotency_key: str, record: dict) -> None:
+    from app.core.config import get_settings
+
+    if get_settings().rpt_metadata_store != "db":
+        _idempotency_store[idempotency_key] = record
+        return
+    session = get_meta_session()
+    try:
+        idempotency_repo.put_cached(session, _idempotency_cache_key(idempotency_key), record)
+    finally:
+        session.close()
 
 
 def _body_fingerprint(payload: BatchCreateReportsIn) -> str:
@@ -72,7 +103,7 @@ def batch_create(payload: BatchCreateReportsIn, idempotency_key: str | None) -> 
         )
     fingerprint = _body_fingerprint(payload)
     if idempotency_key:
-        cached = _idempotency_store.get(idempotency_key)
+        cached = _get_idempotency_record(idempotency_key)
         if cached is not None:
             if cached["fingerprint"] != fingerprint:
                 raise ReportBatchError(
@@ -115,10 +146,13 @@ def batch_create(payload: BatchCreateReportsIn, idempotency_key: str | None) -> 
         rolled_back_count=0,
     )
     if idempotency_key:
-        _idempotency_store[idempotency_key] = {
-            "fingerprint": fingerprint,
-            "result": result.model_dump(mode="json"),
-        }
+        _put_idempotency_record(
+            idempotency_key,
+            {
+                "fingerprint": fingerprint,
+                "result": result.model_dump(mode="json"),
+            },
+        )
     return result
 
 

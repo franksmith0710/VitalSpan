@@ -4,9 +4,13 @@ import {
   apiFetch,
   getAuthHeaders,
   isEmbedShareContext,
+  isHeadlessAuthContext,
   registerUnauthorizedHandler,
   resetUnauthorizedHandler,
+  resolveDatasetExecutePath,
+  resolveQueryExecutePath,
 } from "@/lib/api";
+import { isExportSnapshotContext } from "@/lib/exportSnapshot";
 import { getAuthToken, setAuthToken } from "@/lib/auth-token";
 
 const TOKEN = "existing-token";
@@ -286,5 +290,44 @@ describe("embed share auth", () => {
     expect(getAuthToken()).toBe("stale-jwt");
     expect(onUnauthorized).not.toHaveBeenCalled();
     expect(error.code).toBe("EMBED_TOKEN_INVALID");
+  });
+});
+
+describe("export snapshot auth", () => {
+  const exportLocation = {
+    pathname: "/export/dashboard/d1",
+    search: "?token=export-public-token",
+    href: "http://localhost:5173/export/dashboard/d1?token=export-public-token",
+  };
+
+  it("prefers export token headers on export snapshot URLs", () => {
+    vi.stubGlobal("location", exportLocation);
+    setAuthToken("stale-jwt");
+    expect(getAuthHeaders()).toEqual({
+      "X-Export-Token": "export-public-token",
+      "X-Export-Dashboard-Id": "d1",
+    });
+    expect(isExportSnapshotContext()).toBe(true);
+    expect(isHeadlessAuthContext()).toBe(true);
+  });
+
+  it("does not redirect to login on 401 when export token is present", async () => {
+    vi.stubGlobal("location", exportLocation);
+    setAuthToken("stale-jwt");
+    const onUnauthorized = vi.fn();
+    registerUnauthorizedHandler(onUnauthorized);
+    mockJson({ message: "Invalid export token", code: "EXPORT_TOKEN_INVALID" }, 401);
+
+    const error = await expectApiError(apiFetch("/api/v1/dashboards/export-query/execute"));
+
+    expect(getAuthToken()).toBe("stale-jwt");
+    expect(onUnauthorized).not.toHaveBeenCalled();
+    expect(error.code).toBe("EXPORT_TOKEN_INVALID");
+  });
+
+  it("resolves dataset execute to export-query path on snapshot pages", async () => {
+    vi.stubGlobal("location", exportLocation);
+    expect(resolveDatasetExecutePath()).toBe("/api/v1/dashboards/export-query/dataset/execute");
+    expect(resolveQueryExecutePath()).toBe("/api/v1/dashboards/export-query/execute");
   });
 });

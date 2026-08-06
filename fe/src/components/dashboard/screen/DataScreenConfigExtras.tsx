@@ -13,6 +13,7 @@ import {
 } from "@/components/dashboard/dashboardInspectorUi";
 import { ChartInspectorSection, INSPECTOR_HINT } from "@/components/dashboard/inspectorCompact";
 import { exportDataScreenTemplate } from "@/lib/dataScreenTemplates";
+import { registerDebouncedDraftFlusher } from "@/lib/debouncedDraftFlush";
 import { PublishTemplateDialog } from "@/components/dashboard/templates/PublishTemplateDialog";
 import { downloadJsonFile, downloadLayoutJson } from "@/lib/exportLayoutJson";
 import { DATA_SCREEN_CANVAS_BOUNDS, DATA_SCREEN_CANVAS_PRESETS } from "@/lib/surfacePreset";
@@ -109,6 +110,11 @@ function CanvasSizeInput({
     setDraft(String(value));
     lastAppliedRef.current = value;
   }, [value]);
+
+  useEffect(
+    () => registerDebouncedDraftFlusher(flushDraft),
+    [value, min, max, draft],
+  );
 
   useEffect(
     () => () => {

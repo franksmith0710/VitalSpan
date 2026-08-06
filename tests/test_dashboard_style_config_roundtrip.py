@@ -141,6 +141,21 @@ def test_text_widget_style_roundtrip_preserves_background_fit() -> None:
     assert roundtrip["widgets"][0]["textConfig"]["widgetStyle"]["backgroundImageFit"] == "widthFit"
 
 
+def test_canvas_background_image_fit_roundtrip() -> None:
+    cfg = DashboardStyleConfig.model_validate(
+        {
+            "canvasBackgroundImage": "data:image/png;base64,iVBORw0KGgo=",
+            "canvasBackgroundImageFit": "widthFit",
+            "canvasBackgroundImagePosition": "top center",
+            "canvasBackgroundCustom": True,
+        }
+    )
+    dumped = cfg.model_dump(by_alias=True, exclude_none=True)
+    assert dumped["canvasBackgroundImageFit"] == "widthFit"
+    assert dumped["canvasBackgroundImagePosition"] == "top center"
+    assert dumped["canvasBackgroundCustom"] is True
+
+
 def test_validate_layout_dict_keeps_rich_style_config() -> None:
     layout = {
         "version": 2,

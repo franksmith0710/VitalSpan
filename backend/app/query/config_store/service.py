@@ -63,6 +63,8 @@ def upsert_config(
     session: Session,
     payload: ConfigUpsert,
     owner_id: uuid.UUID | None = None,
+    *,
+    auto_commit: bool = True,
 ) -> QueryConfigRecord:
     _validate_upsert(payload)
     ref_type = payload.ref_type or DEFAULT_REF_TYPE
@@ -95,8 +97,11 @@ def upsert_config(
         existing.revision += 1
         if owner_id is not None:
             existing.owner_id = owner_id
-        session.commit()
-        session.refresh(existing)
+        if auto_commit:
+            session.commit()
+            session.refresh(existing)
+        else:
+            session.flush()
         return existing
     if payload.expected_revision is not None and payload.expected_revision != 0:
         raise ConfigError(
@@ -115,8 +120,11 @@ def upsert_config(
         revision=1,
     )
     session.add(record)
-    session.commit()
-    session.refresh(record)
+    if auto_commit:
+        session.commit()
+        session.refresh(record)
+    else:
+        session.flush()
     return record
 
 

@@ -176,10 +176,19 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
     let nextRestApi = restApiCompanion;
     let nextFile = fileCompanion;
     if (ds.type === "rest_api") {
+      const restAuthMode =
+        ds.connectionOptions?.restAuthMode ??
+        (ds.username === "none"
+          ? "none"
+          : ds.username === "oauth2"
+            ? "oauth2"
+            : ds.username === "bearer"
+              ? "bearer"
+              : "basic");
       nextRestApi = {
         baseUrl: ds.host,
-        authMode: ds.username === "none" ? "none" : ds.username === "oauth2" ? "oauth2" : "basic",
-        username: ds.username === "none" || ds.username === "oauth2" ? "" : ds.username,
+        authMode: restAuthMode,
+        username: restAuthMode === "basic" ? ds.username : "",
         password: "",
         healthPath: ds.database || "/",
         connectTimeoutSec: ds.connectionOptions?.connectTimeoutSec ?? 5,

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+import uuid
 
 from app.auth.deps import UserContext
+from app.datasources.models import get_meta_session
+from app.governance.catalog import gov_config_store
 from app.governance.catalog.cat05.errors import CAT05_FORBIDDEN, Cat05Error
 from app.governance.catalog.cat05.schemas import (
     TicketStatsItemIn,
@@ -13,8 +15,26 @@ from app.governance.catalog.cat05.schemas import (
 )
 
 _VALID_STATUS = frozenset({"open", "closed", "pending"})
-_store: dict[str, dict] = {}
+_CONFIG_TYPE = "gov_ticket_stats"
+_REF_TYPE = "ticket_stats"
 _USER_TICKET_SCOPE: dict[str, str] = {}
+
+
+class _StoreCompat:
+    def clear(self) -> None:
+        session = get_meta_session()
+        try:
+            gov_config_store.clear_type(session, _CONFIG_TYPE)
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+
+_store = _StoreCompat()
+
+
 def set_user_ticket_scope(user_id: str, category_key: str) -> None:
     _USER_TICKET_SCOPE[user_id] = category_key
 
@@ -64,24 +84,41 @@ def create_ticket_item(payload: TicketStatsItemIn, user: UserContext) -> TicketS
     item = _validate_payload(payload)
     key = item.ticket_category_key
     _assert_ticket_access(user, key, write=True)
-    if key in _store:
-        raise Cat05Error("CAT05_KEY_CONFLICT", f"ticketCategoryKey already exists: {key}", 409)
-    _store[key] = item.model_dump(by_alias=True, mode="json")
-    return TicketStatsItemOut.model_validate(_store[key])
+    session = get_meta_session()
+    try:
+        if gov_config_store.get_json(session, config_type=_CONFIG_TYPE, ref_type=_REF_TYPE, key=key):
+            raise Cat05Error("CAT05_KEY_CONFLICT", f"ticketCategoryKey already exists: {key}", 409)
+        data = item.model_dump(by_alias=True, mode="json")
+        gov_config_store.upsert_json(
+            session, config_type=_CONFIG_TYPE, ref_type=_REF_TYPE, key=key, payload=data
+        )
+        return TicketStatsItemOut.model_validate(data)
+    finally:
+        session.close()
 
 
 def list_ticket_items(limit: int, offset: int) -> TicketStatsListResponse:
-    items = list(_store.values())
-    page = items[offset : offset + limit]
-    return TicketStatsListResponse(
-        items=[TicketStatsItemOut.model_validate(i) for i in page],
-        total=len(items),
-    )
+    session = get_meta_session()
+    try:
+        items = gov_config_store.list_json(session, config_type=_CONFIG_TYPE)
+        page = items[offset : offset + limit]
+        return TicketStatsListResponse(
+            items=[TicketStatsItemOut.model_validate(i) for i in page],
+            total=len(items),
+        )
+    finally:
+        session.close()
 
 
 def get_ticket_stats(key: str, user: UserContext) -> TicketStatsProbeOut:
-    if key not in _store:
-        raise Cat05Error("CAT05_NOT_FOUND", f"ticketCategoryKey not found: {key}", 404)
+    from datetime import UTC, datetime
+
+    session = get_meta_session()
+    try:
+        if not gov_config_store.get_json(session, config_type=_CONFIG_TYPE, ref_type=_REF_TYPE, key=key):
+            raise Cat05Error("CAT05_NOT_FOUND", f"ticketCategoryKey not found: {key}", 404)
+    finally:
+        session.close()
     _assert_ticket_access(user, key, write=False)
     return TicketStatsProbeOut(open=12, closed=3, pending=5, sampled_at=datetime.now(UTC))
 

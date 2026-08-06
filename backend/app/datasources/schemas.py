@@ -20,6 +20,9 @@ class ConnectionOptions(BaseModel):
     connect_timeout_sec: float = Field(default=5.0, ge=1.0, le=30.0, alias="connectTimeoutSec")
     read_timeout_sec: float | None = Field(default=None, alias="readTimeoutSec")
     pool_size: int = Field(default=2, ge=1, le=10, alias="poolSize")
+    rest_auth_mode: Literal["none", "basic", "bearer", "oauth2"] | None = Field(
+        default=None, alias="restAuthMode"
+    )
 
     model_config = {"populate_by_name": True}
 

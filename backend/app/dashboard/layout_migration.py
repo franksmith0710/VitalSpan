@@ -49,11 +49,12 @@ def migrate_v1_to_v2(
             raw.pop(field, None)
         widgets.append(raw)
         lowest_edge = max(lowest_edge, raw["y"] + raw["height"])
-    return DashboardLayout.model_validate(
-        {
-            "version": 2,
-            "canvas": {"width": target_canvas.width, "height": lowest_edge},
-            "widgets": widgets,
-            "globalFilters": source.global_filters,
-        }
-    )
+    migrated: dict[str, Any] = {
+        "version": 2,
+        "canvas": {"width": target_canvas.width, "height": lowest_edge},
+        "widgets": widgets,
+        "globalFilters": source.global_filters,
+    }
+    if source.style_config is not None:
+        migrated["styleConfig"] = source.style_config.model_dump(by_alias=True, exclude_none=True)
+    return DashboardLayout.model_validate(migrated)

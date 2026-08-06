@@ -6,11 +6,11 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext
+from app.auth.models import AuthRole
 from app.dashboard.service import get_dashboard, DashboardError
 from app.reports.catalog import service as catalog_service
 from app.reports.catalog.errors import ReportCatalogError
 from app.views.schemas import ViewError
-from app.views import store
 from app.views import role_defaults_repo
 
 _USER_ROLE_DEFAULT_SCOPE: dict[str, str] = {}
@@ -20,11 +20,24 @@ def set_user_role_default_scope(user_id: str, role_prefix: str) -> None:
     _USER_ROLE_DEFAULT_SCOPE[user_id] = role_prefix
 
 
-def _normalize_role_key(role_id: str) -> str:
+def _resolve_role_storage_key(db: Session | None, role_id: str) -> str:
+    """Normalize role id/code to canonical UUID string for persistence."""
     try:
         return str(uuid.UUID(role_id))
     except ValueError:
+        pass
+    if db is None:
         return role_id
+    row = db.query(AuthRole).filter(AuthRole.code == role_id).first()
+    if row is None:
+        row = db.query(AuthRole).filter(AuthRole.id == role_id).first()
+    if row is not None:
+        return str(row.id)
+    return role_id
+
+
+def _normalize_role_key(role_id: str) -> str:
+    return _resolve_role_storage_key(None, role_id)
 
 
 def _assert_admin(actor: UserContext) -> None:
@@ -41,11 +54,15 @@ def _assert_read_scope(actor: UserContext, role_id: str) -> None:
 
 
 def _load_role_defaults(db: Session | None, role_key: str) -> dict[str, Any] | None:
-    if db is not None:
-        stored = role_defaults_repo.get_role_defaults(db, role_key)
-        if stored is not None:
-            return stored
-    return store.get_role_defaults(role_key)
+    if db is None:
+        return None
+    canonical = _resolve_role_storage_key(db, role_key)
+    stored = role_defaults_repo.get_role_defaults(db, canonical)
+    if stored is not None:
+        return stored
+    if canonical != role_key:
+        return role_defaults_repo.get_role_defaults(db, role_key)
+    return None
 
 
 def _detect_inherit_cycle(db: Session | None, role_id: str, inherit_from: str | None) -> None:
@@ -90,8 +107,7 @@ def _validate_refs(db: Session, payload: dict[str, Any]) -> None:
 def get_defaults(role_id: str, actor: UserContext | None = None, db: Session | None = None) -> dict[str, Any]:
     if actor is not None:
         _assert_read_scope(actor, role_id)
-    key = _normalize_role_key(role_id)
-    stored = _load_role_defaults(db, key)
+    stored = _load_role_defaults(db, role_id)
     if stored is None:
         return {"dashboardId": None, "reportTemplateNodeId": None, "maxWidgetCount": 24}
     return {
@@ -121,7 +137,7 @@ def put_defaults(db: Session, role_id: str, payload: dict[str, Any], actor: User
     max_widgets = int(payload.get("maxWidgetCount", 24))
     _assert_widget_bounds(max_widgets)
     inherit = payload.get("inheritFromRoleId")
-    key = _normalize_role_key(role_id)
+    key = _resolve_role_storage_key(db, role_id)
     _detect_inherit_cycle(db, key, inherit)
     body = {
         "dashboardId": payload.get("dashboardId"),
@@ -131,7 +147,6 @@ def put_defaults(db: Session, role_id: str, payload: dict[str, Any], actor: User
     }
     _validate_refs(db, body)
     saved = role_defaults_repo.set_role_defaults(db, key, body)
-    store.set_role_defaults(key, saved)
     return saved
 
 
@@ -161,8 +176,11 @@ def _resolve_role_chain(
 
 
 def resolve_inherited_defaults(db: Session | None, role_codes: list[str]) -> dict[str, Any]:
+    if db is None:
+        return {"dashboardId": None, "reportTemplateNodeId": None, "maxWidgetCount": 24}
     for code in role_codes:
-        resolved = _resolve_role_chain(db, code)
+        key = _resolve_role_storage_key(db, code)
+        resolved = _resolve_role_chain(db, key)
         if resolved is not None:
             return {
                 "dashboardId": resolved.get("dashboardId"),

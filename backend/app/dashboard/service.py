@@ -275,6 +275,8 @@ def update_layout(
     db: Session,
     dashboard_id: uuid.UUID,
     layout_json: dict[str, Any] | DashboardLayout,
+    *,
+    auto_commit: bool = True,
 ) -> DashboardOut:
     row = db.scalar(_active(select(Dashboard).where(Dashboard.id == dashboard_id)))
     if row is None:
@@ -324,9 +326,59 @@ def update_layout(
         raise DashboardError("DASH_INVALID_LAYOUT", "Invalid layout JSON", 422) from exc
     row.layout_json = validated
     row.surface_kind = sync_surface_kind_column(validated)
-    db.commit()
-    db.refresh(row)
+    if auto_commit:
+        db.commit()
+        db.refresh(row)
+    else:
+        db.flush()
     return _to_out(row)
+
+
+def save_editor_state(
+    db: Session,
+    dashboard_id: uuid.UUID,
+    *,
+    name: str | None,
+    layout_json: dict[str, Any] | DashboardLayout,
+    global_filters,
+    actor: UserContext,
+):
+    from app.dashboard.editor_save_schemas import DashboardEditorSaveOut
+    from app.dashboard.global_filters import service as global_filter_service
+
+    existing = get_dashboard(db, dashboard_id)
+    assert_dashboard_access(actor, existing.created_by)
+    try:
+        dash_out = update_layout(db, dashboard_id, layout_json, auto_commit=False)
+        if name is not None:
+            trimmed = name.strip()
+            if trimmed and trimmed != existing.name:
+                row = db.scalar(_active(select(Dashboard).where(Dashboard.id == dashboard_id)))
+                if row is not None:
+                    row.name = trimmed
+                    dash_out = _to_out(row)
+        linkage_out = None
+        if global_filters is not None:
+            if global_filters.dashboard_id != dashboard_id:
+                raise DashboardError(
+                    "DASH_FILTER_ID_MISMATCH",
+                    "dashboardId mismatch",
+                    422,
+                )
+            linkage_out = global_filter_service.save_linkage(
+                db,
+                global_filters,
+                actor,
+                auto_commit=False,
+            )
+        db.commit()
+        dash_out = get_dashboard(db, dashboard_id)
+        if global_filters is not None:
+            linkage_out = global_filter_service.get_linkage(db, dashboard_id, actor)
+        return DashboardEditorSaveOut(dashboard=dash_out, global_filters=linkage_out)
+    except Exception:
+        db.rollback()
+        raise
 
 
 def save_dashboard_thumbnail(

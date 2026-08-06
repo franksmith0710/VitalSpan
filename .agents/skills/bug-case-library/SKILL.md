@@ -89,6 +89,8 @@ cases/<域>-<简短主题>.md
 | CASE-2026-08-06-003 | [fe-hub-card-preview-not-wysiwyg.md](./cases/fe-hub-card-preview-not-wysiwyg.md) | 缩略图, 卡片预览, 标题字号巨大, chrome-scale 补偿, presentationMode fill, 拉伸, geo3d thumbnail 降级, 卫星地形 |
 | CASE-2026-08-06-004 | [fe-table-style-tests-unwired.md](./cases/fe-table-style-tests-unwired.md) | 表格样式, table-info, 透明度, 表头分页, headerFontSize, tablePaletteId, 快速配色, 测试未接线 |
 | CASE-2026-08-07-001 | [fe-richtext-blank-line-collapse.md](./cases/fe-richtext-blank-line-collapse.md) | 富文本, 换行, 空行, TipTap, ProseMirror-trailingBreak, stripEditorArtifacts |
+| CASE-2026-08-07-002 | [fe-export-snapshot-401-login-redirect.md](./cases/fe-export-snapshot-401-login-redirect.md) | 导出, PDF, data-export-ready, 401, 登录页, export-query, dataset/execute |
+| CASE-2026-08-07-002 | [fe-text-widget-commit-drops-widget-style.md](./cases/fe-text-widget-commit-drops-widget-style.md) | 富文本, 组件背景图, widgetStyle, commit, textConfig, 切走切回消失 |
 
 ## 维护规则
 

@@ -58,6 +58,8 @@ describe("ChartTableStylePanel", () => {
     expect(screen.getByText("滚动条颜色")).toBeInTheDocument();
     expect(screen.getByText("分页模式")).toBeInTheDocument();
     expect(screen.getByText("列宽调整")).toBeInTheDocument();
+    expect(screen.getByText("行高")).toBeInTheDocument();
+    expect(screen.getByRole("slider", { name: "表格行高" })).toBeInTheDocument();
     expect(screen.getByText("自动换行")).toBeInTheDocument();
     expect(screen.getByText("显示汇总行")).toBeInTheDocument();
     expect(screen.getByText("显示鼠标悬浮样式")).toBeInTheDocument();

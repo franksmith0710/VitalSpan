@@ -62,7 +62,7 @@ export function persistDashboardLayout(
   const style = hydrateDashboardStyle(liveStyle);
   let layoutForSave = layout;
   if (layout.version === 2) {
-    layoutForSave = sanitizePixelLayoutGeometry(layoutForSave, style);
+    layoutForSave = sanitizePixelLayoutGeometry(layoutForSave, style, { packOverlaps: false });
   }
   return buildDashboardLayoutForSave(layoutForSave, style);
 }
@@ -72,7 +72,7 @@ export function preparePixelLayoutForDisplay(
   layout: DashboardLayoutV2,
   style?: DashboardStyleConfig | null,
 ): DashboardLayoutV2 {
-  return sanitizePixelLayoutGeometry(layout, style);
+  return sanitizePixelLayoutGeometry(layout, style, { packOverlaps: false });
 }
 
 export function persistDashboardFingerprint(

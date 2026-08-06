@@ -132,7 +132,8 @@ import { VizComponentInspectorHeader } from "@/components/dashboard/VizComponent
 import { useVizComponentMap } from "@/hooks/useVizComponentMap";
 import { useVizComponentInspectorActions } from "@/hooks/useVizComponentInspectorActions";
 import { resolveLayoutWidget, resolveLayoutWidgets } from "@/lib/resolveVizComponent";
-import { flushLinkedLocalOverridesToLibrary } from "@/lib/vizComponentEdit";
+import { awaitLinkedComponentWrites, flushLinkedLocalOverridesToLibrary } from "@/lib/vizComponentEdit";
+import { flushDebouncedDrafts } from "@/lib/debouncedDraftFlush";
 import { isPublishableWidgetType } from "@/lib/vizComponentEdit";
 import { fetchVizComponent } from "@/lib/vizComponents";
 import { WidgetEnlargeDialog } from "@/components/dashboard/widget-actions/WidgetEnlargeDialog";
@@ -1014,6 +1015,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     if (active instanceof HTMLElement && active !== document.body) {
       active.blur();
     }
+    flushDebouncedDrafts();
 
     const currentLayout = layoutRef.current;
     const currentStyle = ensureDataScreenStyleConfig(
@@ -1028,6 +1030,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     try {
       // 关联组件若画布侧留下了本地 config，先推库再 strip，避免「保存成功但配置丢失」
       try {
+        await awaitLinkedComponentWrites();
         await flushLinkedLocalOverridesToLibrary(widgetsRef.current, componentMap);
       } catch (syncErr) {
         toast.error(mapApiError(syncErr));
@@ -1045,22 +1048,30 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           ? normalizedLayout.widgets
           : normalizedLayout.widgets.map(pixelWidgetToLayoutWidget);
       const trimmedName = currentName.trim() || "未命名看板";
+      const mergedLinkage = sanitizeLinkageForSave(
+        normalized,
+        mergeLayoutFilterLinkage(normalized, currentLinkage),
+      );
 
-      if (trimmedName !== savedName) {
-        await apiFetch(`/api/v1/dashboards/${id}`, {
-          method: "PUT",
-          body: JSON.stringify({ name: trimmedName }),
-        });
-        applyName(trimmedName);
-        setSavedName(trimmedName);
-      }
-
-      await apiFetch(`/api/v1/dashboards/${id}/layout`, {
+      const editorSave = await apiFetch<{
+        dashboard: { name: string };
+        globalFilters?: Linkage;
+      }>(`/api/v1/dashboards/${id}/editor-save`, {
         method: "PUT",
         body: JSON.stringify({
+          name: trimmedName,
           layoutJson: normalizedLayout,
+          globalFilters: {
+            dashboardId: id,
+            filters: mergedLinkage.filters,
+            linkageRules: mergedLinkage.linkageRules,
+            refreshMode: mergedLinkage.refreshMode ?? "eager",
+          },
         }),
       });
+
+      applyName(editorSave.dashboard.name);
+      setSavedName(editorSave.dashboard.name);
 
       const savedStyle = hydrateDashboardStyle(normalizedLayout.styleConfig);
       const layoutForEditor = layoutForEditorAfterPersist(normalizedLayout, savedStyle);
@@ -1074,34 +1085,8 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       );
       setSavedFingerprint(saveSnapshot.fingerprint);
 
-      const mergedLinkage = sanitizeLinkageForSave(
-        normalized,
-        mergeLayoutFilterLinkage(normalized, currentLinkage),
-      );
-      let nextLinkage = currentLinkage;
-      if (mergedLinkage.filters.length > 0) {
-        try {
-          nextLinkage = await apiFetch<Linkage>(
-            `/api/v1/dashboards/${id}/global-filters`,
-            {
-              method: "PUT",
-              body: JSON.stringify({
-                dashboardId: id,
-                filters: mergedLinkage.filters,
-                linkageRules: mergedLinkage.linkageRules,
-                refreshMode: mergedLinkage.refreshMode ?? "eager",
-              }),
-            },
-          );
-          applyLinkage(nextLinkage);
-        } catch (filterErr) {
-          toast.error(`布局已保存，但筛选联动保存失败：${mapApiError(filterErr)}`);
-          setSavedLinkageSnapshot(linkageSnapshot(saveSnapshot.widgets, currentLinkage));
-          toast.success("看板布局已保存");
-          return true;
-        }
-      }
-
+      const nextLinkage = editorSave.globalFilters ?? currentLinkage;
+      applyLinkage(nextLinkage);
       setSavedLinkageSnapshot(linkageSnapshot(saveSnapshot.widgets, nextLinkage));
 
       const activeTemplateSync = templateEditSyncRef.current;

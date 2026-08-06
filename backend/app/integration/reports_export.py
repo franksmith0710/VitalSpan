@@ -3,7 +3,6 @@ from __future__ import annotations
 import io
 import uuid
 import zipfile
-from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -11,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.auth.deps import UserContext
 from app.core.logging import trace_id_var
 from app.integration.errors import IntegrationError
+from app.reports.persistence.integration_export_repo import IntegrationExportRecord, get_export, save_export
 
 MAX_EXPORT_BYTES = 5_242_880
 EXPORT_TTL_SEC = 3600
@@ -38,22 +38,6 @@ class ReportExportOut(BaseModel):
     expires_at: str | None = Field(default=None, alias="expiresAt")
     requested_at: str = Field(alias="requestedAt")
     trace_id: str = Field(alias="traceId")
-
-
-@dataclass
-class ExportRecord:
-    export_id: uuid.UUID
-    template_id: uuid.UUID
-    fmt: str
-    status: str
-    bytes_data: bytes | None
-    content_type: str | None
-    expires_at: datetime
-    requested_at: datetime
-    trace_id: str
-
-
-_EXPORT_STORE: dict[uuid.UUID, ExportRecord] = {}
 
 
 def _template_export_allowed(template_id: uuid.UUID) -> bool:
@@ -219,10 +203,6 @@ def _generate_artifact_bytes(fmt: str, template_id: uuid.UUID, actor: UserContex
         raise
 
 
-def _store_record(record: ExportRecord) -> None:
-    _EXPORT_STORE[record.export_id] = record
-
-
 def create_export_request(
     actor: UserContext,
     *,
@@ -285,7 +265,7 @@ def create_export_request(
             trace_id=trace,
         )
     expires_at = now + timedelta(seconds=EXPORT_TTL_SEC)
-    record = ExportRecord(
+    record = IntegrationExportRecord(
         export_id=export_id,
         template_id=template_id,
         fmt=fmt,
@@ -296,7 +276,7 @@ def create_export_request(
         requested_at=now,
         trace_id=trace,
     )
-    _store_record(record)
+    save_export(record)
     return ReportExportOut(
         export_id=export_id,
         template_id=template_id,
@@ -310,7 +290,7 @@ def create_export_request(
 
 
 def get_export_status(export_id: uuid.UUID) -> ReportExportOut:
-    record = _EXPORT_STORE.get(export_id)
+    record = get_export(export_id)
     if record is None:
         raise IntegrationError("REPORT_EXPORT_NOT_FOUND", "Export not found", 404)
     return ReportExportOut(
@@ -330,7 +310,7 @@ def get_export_status(export_id: uuid.UUID) -> ReportExportOut:
 
 
 def get_export_file(export_id: uuid.UUID) -> tuple[bytes, str, str]:
-    record = _EXPORT_STORE.get(export_id)
+    record = get_export(export_id)
     if record is None or record.status != "ready" or not record.bytes_data:
         raise IntegrationError("REPORT_EXPORT_NOT_FOUND", "Export not found", 404)
     if datetime.now(UTC) > record.expires_at:

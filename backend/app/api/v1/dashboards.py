@@ -15,6 +15,7 @@ PERM_EDIT = "dashboard:edit"
 PERM_THEME_READ = "theme:read"
 PERM_THEME_MANAGE = "theme:manage"
 from app.dashboard import service as dash_service
+from app.dashboard.editor_save_schemas import DashboardEditorSaveIn
 from app.dashboard.schemas import DashboardCreate, DashboardLayoutUpdate, DashboardUpdate
 from app.dashboard.templates.errors import DashboardTemplateError
 from app.dashboard.templates.schemas import DashboardFromTemplateIn
@@ -28,7 +29,12 @@ from app.dashboard.global_filters.errors import GlobalFilterError
 from app.dashboard.global_filters.schemas import GlobalFilterLinkageItem, GlobalFilterLinkageOut
 from app.dashboard.global_filters import service as global_filter_service
 from app.dashboard.export_jobs_schemas import DashboardExportJobIn
-from app.dashboard.export_snapshot import execute_export_query, get_export_layout
+from app.dashboard.export_snapshot import (
+    execute_export_dataset_query,
+    execute_export_query,
+    get_export_layout,
+)
+from app.query.dataset.schemas import DatasetExecuteRequest
 from app.query.schemas import ExecuteRequest
 from app.datasources.models import get_meta_session
 
@@ -386,6 +392,30 @@ def update_layout(
         return _error_response(exc)
 
 
+@router.put("/{dashboard_id}/editor-save", response_model=None)
+def save_dashboard_editor_state(
+    dashboard_id: uuid.UUID,
+    payload: DashboardEditorSaveIn,
+    user: Annotated[UserContext, Depends(require_permission(PERM_EDIT))],
+    db: Annotated[Session, Depends(_db)],
+):
+    from app.dashboard.global_filters.errors import GlobalFilterError
+
+    try:
+        return dash_service.save_editor_state(
+            db,
+            dashboard_id,
+            name=payload.name,
+            layout_json=payload.layout_json,
+            global_filters=payload.global_filters,
+            actor=user,
+        )
+    except dash_service.DashboardError as exc:
+        return _error_response(exc)
+    except GlobalFilterError as exc:
+        return _filter_error(exc)
+
+
 @router.put("/{dashboard_id}/thumbnail")
 async def upload_dashboard_thumbnail(
     dashboard_id: uuid.UUID,
@@ -494,6 +524,31 @@ def post_dashboard_export_query(
     try:
         dashboard_id = uuid.UUID(dash_raw)
         return execute_export_query(db, dashboard_id, token, payload)
+    except ValueError:
+        return JSONResponse(
+            status_code=422,
+            content={"code": "VALIDATION_ERROR", "message": "Invalid dashboard id", "detail": None},
+        )
+    except dash_service.DashboardError as exc:
+        return _error_response(exc)
+
+
+@router.post("/export-query/dataset/execute")
+def post_dashboard_export_dataset_query(
+    payload: DatasetExecuteRequest,
+    request: Request,
+    db: Annotated[Session, Depends(_db)] = None,
+):
+    token = request.headers.get("X-Export-Token", "").strip()
+    dash_raw = request.headers.get("X-Export-Dashboard-Id", "").strip()
+    if not token or not dash_raw:
+        return JSONResponse(
+            status_code=401,
+            content={"code": "UNAUTHORIZED", "message": "Missing export token", "detail": None},
+        )
+    try:
+        dashboard_id = uuid.UUID(dash_raw)
+        return execute_export_dataset_query(db, dashboard_id, token, payload)
     except ValueError:
         return JSONResponse(
             status_code=422,

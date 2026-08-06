@@ -5,8 +5,8 @@
 > **真理源**：行为需求见 [SRS §6](../srs/全生命周期系统需求规格说明书.md#6-接口需求)；功能项见 [PRD API-001~007](../automate/prd/F13-API.md)。
 
 ```yaml
-version: 1.0.7
-last_updated: 2026-07-20
+version: 1.0.8
+last_updated: 2026-08-07
 api_prefix: /api/v1
 openapi_docs: /docs
 redoc: /redoc
@@ -202,7 +202,7 @@ redoc: /redoc
 | GET/POST | `/api/v1/dashboards` | Dashboard 列表/创建；列表返回 `layoutJson`+`previewSummary`+`widgetCount`+`surfaceKind`+`thumbnailUrl`；可选 `surfaceKind` 过滤；SQL 分页 | 内部 | 一期 | DASH-001 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | PUT/GET | `/api/v1/dashboards/{id}/thumbnail` | 列表缩略图上传/读取（保存时客户端截图 webp/png） | 内部 | 一期 | DASH-001 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | GET/PUT/DELETE | `/api/v1/dashboards/{id}` | Dashboard CRUD | 内部 | 一期 | DASH-001 | 已实现 | `backend/app/api/v1/dashboards.py` |
-| PUT | `/api/v1/dashboards/{id}/layout` | 双版本布局：v1 `colSpan/rowSpan/gridX/gridY`；v2 `canvas` + `x/y/width/height`（仪表板默认 `1440×≥900`；`styleConfig.surfaceKind=data-screen` 时默认 **`1920×1080`**）；`styleConfig.surfaceKind` 写入 layout 区分仪表板/数据大屏；禁止跨版本字段混用；422 码：`VIEW_LAYOUT_BOUNDS` / `DASH_INVALID_LAYOUT` / `DASH_DUPLICATE_WIDGET` / `DASH_MISSING_CHART_CONFIG` / `DASH_CHART_ID_MISMATCH` | 内部 | 一期 | DASH-002 | 已实现 | `backend/app/api/v1/dashboards.py` |
+| PUT | `/api/v1/dashboards/{id}/layout` | 双版本布局：v1 `colSpan/rowSpan/gridX/gridY`；v2 `canvas` + `x/y/width/height`（仪表板默认 `1440×≥900`；`styleConfig.surfaceKind=data-screen` 时默认 **`1920×1080`**）；`styleConfig.surfaceKind` 写入 layout 区分仪表板/数据大屏；`styleConfig.canvasBackgroundImageFit` / `canvasBackgroundImagePosition` 与 FE `WidgetBackgroundImageFit` 对齐持久化；禁止跨版本字段混用；422 码：`VIEW_LAYOUT_BOUNDS` / `DASH_INVALID_LAYOUT` / `DASH_DUPLICATE_WIDGET` / `DASH_MISSING_CHART_CONFIG` / `DASH_CHART_ID_MISMATCH` | 内部 | 一期 | DASH-002 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | POST | `/api/v1/dashboards/theme-analysis/execute-plan` | 主题分析 execute-plan 四步链（`theme-plan-v1`；yoy/mom compareWindow） | 内部 | 一期 | DASH-006 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | POST | `/api/v1/dashboards/theme-analysis/validate` | 实体主题分析 config 校验（`DASH_THEME_*`） | 内部 | 一期 | DASH-006 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | PUT/GET | `/api/v1/dashboards/theme-analysis` | 实体主题分析 config 持久化/读取（`config_type=entity_theme`） | 内部 | 一期 | DASH-006 | 已实现 | `backend/app/api/v1/dashboards.py` |
@@ -214,6 +214,9 @@ redoc: /redoc
 | PUT/GET | `/api/v1/dashboards/{id}/global-filters` | 全局筛选联动 save/get（`config_type=global_filter_linkage`；含 `affectedWidgetCount`） | 内部 | 一期 | DASH-004 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | POST | `/api/v1/dashboards/{dashboard_id}/widgets/{widget_id}/execute` | M8 DASH-004 BE filter execute（linkage 合并 + SQL 参数注入） | 内部 | 一期 | DASH-004 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | POST | `/api/v1/dashboards/from-template` | 从可视化模板原子创建 Dashboard + layout（`templateId`） | 内部 | 一期 | DASH-009 | 已实现 | `backend/app/api/v1/dashboards.py` |
+| GET | `/api/v1/dashboards/{id}/export-layout` | 无头导出页布局（`?token=`；export token 免 Bearer） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/dashboards.py` · `backend/app/dashboard/export_snapshot.py` |
+| POST | `/api/v1/dashboards/export-query/execute` | 导出快照 SQL/table/native 查询代理（`X-Export-Token` + `X-Export-Dashboard-Id`） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/dashboards.py` · `backend/app/dashboard/export_snapshot.py` |
+| POST | `/api/v1/dashboards/export-query/dataset/execute` | 导出快照 Dataset 查询代理（同上 headers；避免 dataset/execute 401 踢登录） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/dashboards.py` · `backend/app/dashboard/export_snapshot.py` |
 | GET | `/api/v1/demo-package/status` | 官方演示包就绪状态（sample_db 迁移 / demo 源 / 示例实例） | 内部 | 一期 | DASH-009 | 已实现 | `backend/app/api/v1/demo_package.py` |
 | GET/POST | `/api/v1/dashboard-templates` | 可视化模板列表/创建草稿 | 内部 | 一期 | DASH-009 | 已实现 | `backend/app/api/v1/dashboard_templates.py` |
 | GET/PUT/DELETE | `/api/v1/dashboard-templates/{id}` | 模板详情/更新/删除（builtin 只读） | 内部 | 一期 | DASH-009 | 已实现 | `backend/app/api/v1/dashboard_templates.py` |
@@ -571,6 +574,7 @@ redoc: /redoc
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.0.8 | 2026-08-07 | 导出快照：登记 `export-layout` / `export-query/execute` / `export-query/dataset/execute`（RPT-005 无头 PDF） |
 | 1.0.7 | 2026-07-20 | 修复 §8 用户视图表行 228 列错位；大屏 layoutJson 扩展字段见 §5 Dashboard |
 | 1.0.6 | 2026-07-17 | `surfaceKind=data-screen` 画布尺寸 800–7680；Tab parked 子组件 0×0 校验放宽 |
 | 1.0.5 | 2026-07-13 | Dashboard `layoutJson` 请求/响应 DTO 改为 `DashboardLayout`（v1 栅格 + v2 像素）；OpenAPI 可见 `version`/`canvas`/像素字段 |

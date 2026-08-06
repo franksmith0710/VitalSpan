@@ -232,6 +232,58 @@ def test_export_query_accepts_valid_token(client: TestClient, auth_headers: dict
     assert resp.json()["rowCount"] == 1
 
 
+def test_export_dataset_query_requires_token(client: TestClient) -> None:
+    resp = client.post(
+        "/api/v1/dashboards/export-query/dataset/execute",
+        json={
+            "dataSourceId": str(uuid.uuid4()),
+            "configId": str(uuid.uuid4()),
+            "limit": 10,
+        },
+    )
+    assert resp.status_code == 401
+
+
+def test_export_dataset_query_accepts_valid_token(
+    client: TestClient, auth_headers: dict, monkeypatch
+) -> None:
+    from app.query.dataset.schemas import DatasetExecuteResponse
+
+    created = client.post(
+        "/api/v1/dashboards",
+        headers=auth_headers,
+        json={"name": f"Export Dataset {uuid.uuid4().hex[:6]}"},
+    )
+    dash_id = created.json()["id"]
+    token = issue_export_token(uuid.UUID(dash_id))
+    cfg_id = uuid.uuid4()
+    ds_id = uuid.uuid4()
+
+    def _fake_dataset(_db, _actor, _payload):
+        return DatasetExecuteResponse(
+            configId=cfg_id,
+            configRevision=1,
+            columns=["x"],
+            rows=[[1]],
+            rowCount=1,
+            truncated=False,
+            traceId="t",
+        )
+
+    monkeypatch.setattr(
+        "app.dashboard.export_snapshot.execute_dataset_from_config",
+        _fake_dataset,
+    )
+
+    resp = client.post(
+        "/api/v1/dashboards/export-query/dataset/execute",
+        headers={"X-Export-Token": token, "X-Export-Dashboard-Id": dash_id},
+        json={"dataSourceId": str(ds_id), "configId": str(cfg_id), "limit": 10},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["rowCount"] == 1
+
+
 def test_pdf_export_fallback_when_env_set(
     client: TestClient,
     auth_headers: dict,

@@ -18,9 +18,11 @@ import {
   DEFAULT_TABLE_PAGE_SIZE,
   DEFAULT_TABLE_COLUMN_WIDTH_MODE,
 } from "@/lib/chartDeTableStyle";
+import { TABLE_DEFAULT_ROW_PX, TABLE_MIN_ROW_PX } from "@/components/charts/engine/d3/table/tableLayoutConstants";
 import { tableInspectorProfile } from "@/lib/chartTableInspector";
 
 const PAGE_SIZE_OPTIONS = [20, 50, 100] as const;
+const TABLE_MAX_ROW_PX = 120;
 
 /** DataEase 表格 · 样式 Tab「基础样式」（按 table-info / normal / pivot 差异化） */
 export function ChartTableStylePanel() {
@@ -137,8 +139,19 @@ export function ChartTableStylePanel() {
         {profile.showColumnWidth ? (
           <>
             <p className="px-1 pb-2 text-[10px] leading-snug text-gray-400 dark:text-gray-500">
-              列宽模式立即生效；编辑看板时可在表头拖拽列宽/行高，松手自动保存。
+              列宽与行高可在下方调节；编辑看板时也可在表头拖拽列宽/行高，松手自动保存。
             </p>
+            <ChartDeSliderField
+              label="行高"
+              value={tableStyle.rowHeightPx}
+              fallback={TABLE_DEFAULT_ROW_PX}
+              min={TABLE_MIN_ROW_PX}
+              max={TABLE_MAX_ROW_PX}
+              step={1}
+              unit="px"
+              ariaLabel="表格行高"
+              onChange={(rowHeightPx) => patch({ rowHeightPx })}
+            />
             <ChartDeSegmentField
               label="列宽调整"
               value={columnWidthMode}

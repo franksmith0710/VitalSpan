@@ -18,7 +18,9 @@ _SQLITE = "sqlite+pysqlite:///file:rpt_dataset_bridge?mode=memory&cache=shared&u
 @pytest.fixture(scope="module", autouse=True)
 def _sqlite():
     prev = os.environ.get("DATABASE_URL")
+    prev_meta = os.environ.get("RPT_METADATA_STORE")
     os.environ["DATABASE_URL"] = _SQLITE
+    os.environ["RPT_METADATA_STORE"] = "memory"
     get_settings.cache_clear()
     from app.auth.models import Base as AuthBase, get_meta_engine as auth_engine
     from app.datasources.models import Base, get_meta_engine
@@ -37,6 +39,10 @@ def _sqlite():
     QueryBase.metadata.create_all(engine)
     yield
     os.environ["DATABASE_URL"] = prev if prev else os.environ.pop("DATABASE_URL", None)
+    if prev_meta is None:
+        os.environ.pop("RPT_METADATA_STORE", None)
+    else:
+        os.environ["RPT_METADATA_STORE"] = prev_meta
     get_settings.cache_clear()
     get_meta_engine.cache_clear()
     auth_engine.cache_clear()

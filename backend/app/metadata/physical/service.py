@@ -3,9 +3,15 @@ from __future__ import annotations
 import re
 import time
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
+from typing import TypeVar
+
+from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext
+from app.datasources.models import get_meta_session
+from app.metadata.physical import physical_repo
 from app.metadata.physical.errors import (
     META_PHYSICAL_DS_TABLE_CONFLICT,
     META_PHYSICAL_FORBIDDEN,
@@ -29,27 +35,44 @@ from app.metadata.physical import gov_refs as physical_gov_refs
 
 _FQN_RE = re.compile(r"^[a-z][a-z0-9_]{0,62}\.[a-z][a-z0-9_]{1,63}$")
 _COLUMN_NAME_RE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
-_store: dict[str, dict] = {}
-_ds_table_index: dict[tuple[str, str, str], str] = {}
 probe_physical_budget_ms_limit = 50
+T = TypeVar("T")
 
 
-def _ds_key(data_source_id, schema: str, table: str) -> tuple[str, str, str]:
-    return (str(data_source_id).lower(), schema.lower(), table.lower())
+class _StoreCompat:
+    def clear(self) -> None:
+        session = get_meta_session()
+        try:
+            physical_repo.clear_all(session)
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
 
 
-def _remove_ds_index(record: dict) -> None:
-    schema = record.get("sourceSchema")
-    table = record.get("sourceTable")
-    ds_id = record.get("dataSourceId")
-    if schema and table and ds_id:
-        _ds_table_index.pop(_ds_key(ds_id, schema, table), None)
+_store = _StoreCompat()
 
 
-@dataclass(frozen=True)
-class PhysicalProbeResult:
-    elapsed_ms: float
-    ok: bool
+class _DsTableIndexCompat:
+    """Test compat: DS index enforced by DB unique constraint."""
+
+    def clear(self) -> None:
+        pass
+
+
+_ds_table_index = _DsTableIndexCompat()
+
+
+def _with_session(fn: Callable[[Session], T]) -> T:
+    session = get_meta_session()
+    try:
+        return fn(session)
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 
 def _assert_physical_write_access(user: UserContext) -> None:
@@ -82,6 +105,12 @@ def _validate_register(payload: PhysicalTableRegisterIn) -> PhysicalTableRegiste
     return payload
 
 
+@dataclass(frozen=True)
+class PhysicalProbeResult:
+    elapsed_ms: float
+    ok: bool
+
+
 def validate_physical_table(payload: PhysicalTableRegisterIn) -> PhysicalTableValidateOut:
     item = _validate_register(payload)
     return PhysicalTableValidateOut(valid=True, table_fqn=item.table_fqn, column_count=len(item.columns))
@@ -90,28 +119,41 @@ def validate_physical_table(payload: PhysicalTableRegisterIn) -> PhysicalTableVa
 def register_physical_table(payload: PhysicalTableRegisterIn, user: UserContext) -> PhysicalTableOut:
     _assert_physical_write_access(user)
     item = _validate_register(payload)
-    if item.table_fqn in _store:
-        raise PhysicalTableError("META_PHYSICAL_CONFLICT", f"tableFqn already exists: {item.table_fqn}", 409)
-    _store[item.table_fqn] = item.model_dump(by_alias=True, mode="json")
-    return PhysicalTableOut.model_validate(_store[item.table_fqn])
+
+    def _run(session: Session) -> PhysicalTableOut:
+        if physical_repo.get(session, item.table_fqn) is not None:
+            raise PhysicalTableError(
+                "META_PHYSICAL_CONFLICT", f"tableFqn already exists: {item.table_fqn}", 409
+            )
+        record = item.model_dump(by_alias=True, mode="json")
+        physical_repo.create(session, record)
+        return PhysicalTableOut.model_validate(record)
+
+    return _with_session(_run)
 
 
 def get_physical_table(fqn: str) -> PhysicalTableOut:
-    if fqn not in _store:
-        raise PhysicalTableError("META_PHYSICAL_NOT_FOUND", f"tableFqn not found: {fqn}", 404)
-    return PhysicalTableOut.model_validate(_store[fqn])
+    def _run(session: Session) -> PhysicalTableOut:
+        record = physical_repo.get(session, fqn)
+        if record is None:
+            raise PhysicalTableError("META_PHYSICAL_NOT_FOUND", f"tableFqn not found: {fqn}", 404)
+        return PhysicalTableOut.model_validate(record)
+
+    return _with_session(_run)
 
 
 def get_physical_lineage(fqn: str) -> dict:
-    if fqn not in _store:
-        raise PhysicalTableError("META_PHYSICAL_NOT_FOUND", f"tableFqn not found: {fqn}", 404)
+    get_physical_table(fqn)
     return physical_gov_refs.lineage_stub(fqn)
 
 
 def bind_entity_type_code(fqn: str, type_code: str) -> None:
-    if fqn not in _store:
-        raise PhysicalTableError("META_PHYSICAL_NOT_FOUND", f"tableFqn not found: {fqn}", 404)
-    _store[fqn]["entityTypeCode"] = type_code
+    def _run(session: Session) -> None:
+        if physical_repo.get(session, fqn) is None:
+            raise PhysicalTableError("META_PHYSICAL_NOT_FOUND", f"tableFqn not found: {fqn}", 404)
+        physical_repo.bind_entity_type(session, fqn, type_code)
+
+    _with_session(_run)
 
 
 def _normalize_fqn(schema: str, table: str, explicit: str | None) -> str:
@@ -147,8 +189,8 @@ def register_from_schema(
             raise PhysicalTableError("DATASOURCE_NOT_FOUND", exc.message, 404) from exc
         raise PhysicalTableError(exc.code, exc.message, exc.status) from exc
     table_fqn = _normalize_fqn(payload.schema_name, payload.table, payload.table_fqn)
-    ds_key = _ds_key(payload.data_source_id, payload.schema_name, payload.table)
-    if ds_key in _ds_table_index:
+    ds_id = uuid.UUID(str(payload.data_source_id))
+    if physical_repo.exists_ds_table(session, ds_id, payload.schema_name, payload.table):
         raise PhysicalTableError(
             META_PHYSICAL_DS_TABLE_CONFLICT,
             "dataSourceId+schema+table already registered",
@@ -164,13 +206,18 @@ def register_from_schema(
             for c in columns_resp.items
         ],
     )
-    register_physical_table(register_in, user)
+    item = _validate_register(register_in)
+    if physical_repo.get(session, table_fqn) is not None:
+        raise PhysicalTableError(
+            "META_PHYSICAL_CONFLICT", f"tableFqn already exists: {table_fqn}", 409
+        )
+    record = item.model_dump(by_alias=True, mode="json")
+    record["sourceSchema"] = payload.schema_name
+    record["sourceTable"] = payload.table
+    physical_repo.create(session, record)
     if payload.entity_type_code:
         entity_service.increment_reference(payload.entity_type_code)
-    _store[table_fqn]["sourceSchema"] = payload.schema_name
-    _store[table_fqn]["sourceTable"] = payload.table
-    _ds_table_index[ds_key] = table_fqn
-    return PhysicalTableOut.model_validate(_store[table_fqn])
+    return PhysicalTableOut.model_validate(record)
 
 
 def list_physical_tables(
@@ -178,14 +225,15 @@ def list_physical_tables(
     offset: int = 0,
     entity_type_code: str | None = None,
 ) -> PhysicalTableListResponse:
-    items = list(_store.values())
-    if entity_type_code:
-        items = [i for i in items if i.get("entityTypeCode") == entity_type_code]
-    page = items[offset : offset + limit]
-    return PhysicalTableListResponse(
-        items=[PhysicalTableOut.model_validate(i) for i in page],
-        total=len(items),
-    )
+    def _run(session: Session) -> PhysicalTableListResponse:
+        items = physical_repo.list_all(session, entity_type_code)
+        page = items[offset : offset + limit]
+        return PhysicalTableListResponse(
+            items=[PhysicalTableOut.model_validate(i) for i in page],
+            total=len(items),
+        )
+
+    return _with_session(_run)
 
 
 def probe_validate_physical_budget_ms() -> PhysicalProbeResult:
@@ -211,44 +259,50 @@ def probe_list_physical_tables_budget_ms() -> PhysicalProbeResult:
 
 def update_physical_table(fqn: str, payload: PhysicalTableUpdateIn, user: UserContext) -> PhysicalTableOut:
     _assert_physical_write_access(user)
-    if fqn not in _store:
-        raise PhysicalTableError("META_PHYSICAL_NOT_FOUND", f"tableFqn not found: {fqn}", 404)
-    record = _store[fqn]
-    if payload.display_name is not None:
-        record["displayName"] = payload.display_name
-    if payload.entity_type_code is not None:
-        old_type = record.get("entityTypeCode")
-        new_type = payload.entity_type_code or None
-        if new_type:
-            try:
-                entity_service.get_entity_type(new_type)
-            except EntityTypeError as exc:
-                if exc.code == "META_ENTITY_TYPE_NOT_FOUND":
-                    raise PhysicalTableError("META_ENTITY_TYPE_NOT_FOUND", exc.message, 422) from exc
-                raise
-        if old_type and old_type != new_type:
-            entity_service.decrement_reference(old_type)
-        if new_type and new_type != old_type:
-            entity_service.increment_reference(new_type)
-        record["entityTypeCode"] = new_type
-        if new_type:
-            bind_entity_type_code(fqn, new_type)
-    return PhysicalTableOut.model_validate(record)
+
+    def _run(session: Session) -> PhysicalTableOut:
+        record = physical_repo.get(session, fqn)
+        if record is None:
+            raise PhysicalTableError("META_PHYSICAL_NOT_FOUND", f"tableFqn not found: {fqn}", 404)
+        if payload.display_name is not None:
+            record["displayName"] = payload.display_name
+        if payload.entity_type_code is not None:
+            old_type = record.get("entityTypeCode")
+            new_type = payload.entity_type_code or None
+            if new_type:
+                try:
+                    entity_service.get_entity_type(new_type)
+                except EntityTypeError as exc:
+                    if exc.code == "META_ENTITY_TYPE_NOT_FOUND":
+                        raise PhysicalTableError("META_ENTITY_TYPE_NOT_FOUND", exc.message, 422) from exc
+                    raise
+            if old_type and old_type != new_type:
+                entity_service.decrement_reference(old_type)
+            if new_type and new_type != old_type:
+                entity_service.increment_reference(new_type)
+            record["entityTypeCode"] = new_type
+        updated = physical_repo.update_record(session, fqn, record)
+        return PhysicalTableOut.model_validate(updated)
+
+    return _with_session(_run)
 
 
 def delete_physical_table(fqn: str, user: UserContext) -> None:
     _assert_physical_write_access(user)
-    if fqn not in _store:
-        raise PhysicalTableError("META_PHYSICAL_NOT_FOUND", f"tableFqn not found: {fqn}", 404)
-    if physical_gov_refs.catalog_ref_count(fqn) > 0:
-        raise PhysicalTableError(
-            META_PHYSICAL_GOV_IN_USE,
-            "Physical table referenced by GOV catalog entries",
-            409,
-        )
-    record = _store[fqn]
-    type_code = record.get("entityTypeCode")
-    if type_code:
-        entity_service.decrement_reference(type_code)
-    _remove_ds_index(record)
-    del _store[fqn]
+
+    def _run(session: Session) -> None:
+        record = physical_repo.get(session, fqn)
+        if record is None:
+            raise PhysicalTableError("META_PHYSICAL_NOT_FOUND", f"tableFqn not found: {fqn}", 404)
+        if physical_gov_refs.catalog_ref_count(fqn) > 0:
+            raise PhysicalTableError(
+                META_PHYSICAL_GOV_IN_USE,
+                "Physical table referenced by GOV catalog entries",
+                409,
+            )
+        type_code = record.get("entityTypeCode")
+        if type_code:
+            entity_service.decrement_reference(type_code)
+        physical_repo.remove(session, fqn)
+
+    _with_session(_run)

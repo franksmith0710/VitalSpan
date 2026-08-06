@@ -12,9 +12,9 @@ from app.core.logging import trace_id_var
 from app.governance.catalog import service as catalog_service
 from app.governance.catalog.schemas import CatalogEntryOut
 from app.integration import bus_register
+from app.integration import idempotency_repo
 from app.integration.errors import IntegrationError
 
-_IDEMPOTENCY_STORE: dict[str, QueryServiceExecuteOut] = {}
 logger = logging.getLogger(__name__)
 
 
@@ -272,11 +272,11 @@ def execute_published_service(
     idempotency_key: str | None = None,
 ) -> QueryServiceExecuteOut:
     _assert_service_invoke(actor)
-    if idempotency_key:
-        cache_key = f"{service_id}:{idempotency_key}"
-        cached = _IDEMPOTENCY_STORE.get(cache_key)
+    cache_key = f"{service_id}:{idempotency_key}" if idempotency_key else None
+    if cache_key:
+        cached = idempotency_repo.get_cached(db, cache_key)
         if cached is not None:
-            return cached
+            return QueryServiceExecuteOut.model_validate(cached)
     try:
         entry = catalog_service.get_entry(db, service_id)
     except catalog_service.CatalogError:
@@ -293,8 +293,8 @@ def execute_published_service(
             trace_id=trace,
         )
     result = _dispatch_service_execute(db, actor, service, parameters)
-    if idempotency_key:
-        _IDEMPOTENCY_STORE[f"{service_id}:{idempotency_key}"] = result
+    if cache_key:
+        idempotency_repo.put_cached(db, cache_key, result.model_dump(by_alias=True, mode="json"))
     return result
 
 

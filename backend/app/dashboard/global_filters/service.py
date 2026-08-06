@@ -152,7 +152,13 @@ def validate_linkage(session: Session, item: GlobalFilterLinkageItem) -> GlobalF
     return _validate_linkage(session, item)
 
 
-def save_linkage(session: Session, item: GlobalFilterLinkageItem, actor: UserContext) -> GlobalFilterLinkageOut:
+def save_linkage(
+    session: Session,
+    item: GlobalFilterLinkageItem,
+    actor: UserContext,
+    *,
+    auto_commit: bool = True,
+) -> GlobalFilterLinkageOut:
     _assert_write_access(actor)
     _validate_linkage(session, item)
     dashboard = dash_service.get_dashboard(session, item.dashboard_id)
@@ -172,8 +178,12 @@ def save_linkage(session: Session, item: GlobalFilterLinkageItem, actor: UserCon
             payload=item.model_dump(by_alias=True, mode="json"),
         ),
         owner_id=owner_id,
+        auto_commit=auto_commit,
     )
-    return get_linkage(session, item.dashboard_id, actor)
+    if auto_commit:
+        return get_linkage(session, item.dashboard_id, actor)
+    affected = sum(len(r.target_widget_ids) for r in item.linkage_rules)
+    return GlobalFilterLinkageOut(**item.model_dump(), affected_widget_count=affected)
 
 
 def get_linkage(session: Session, dashboard_id: uuid.UUID, actor: UserContext) -> GlobalFilterLinkageOut:

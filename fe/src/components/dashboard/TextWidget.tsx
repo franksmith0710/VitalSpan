@@ -74,6 +74,7 @@ export function TextWidget({
 
   const commit = (nextHtml: string) => {
     onTextConfigChange?.(widget.id, {
+      ...widget.textConfig,
       content: isRichTextEmpty(nextHtml) ? "" : nextHtml,
       variant: "html",
     });

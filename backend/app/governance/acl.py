@@ -10,14 +10,13 @@ from app.auth.deps import UserContext
 from app.auth.resources.service import check_resource_access
 from app.auth.rls.hooks import get_query_rls_fragment
 from app.auth.rls.predicate import resolve_user_org_node_ids
+from app.governance.persistence import gov_repo
 
 logger = logging.getLogger(__name__)
 
-_PUBLISH_SUBMITTERS: dict[uuid.UUID, str] = {}
 
-
-def record_publish_submitter(entry_id: uuid.UUID, actor_id: str) -> None:
-    _PUBLISH_SUBMITTERS[entry_id] = actor_id
+def record_publish_submitter(db: Session, entry_id: uuid.UUID, actor_id: str) -> None:
+    gov_repo.record_publish_submitter(db, entry_id, actor_id)
 
 
 class GovAclError(Exception):
@@ -122,7 +121,7 @@ def assert_publish_action(
     if needed not in actor.roles:
         raise GovAclError("GOV_ACL_FORBIDDEN", f"{action} requires {needed} or admin", 403)
     if action == "approve" and "publisher" in actor.roles:
-        submitter_id = _PUBLISH_SUBMITTERS.get(entry_id)
+        submitter_id = gov_repo.get_publish_submitter(session, entry_id)
         if submitter_id and submitter_id == actor.id and "admin" not in actor.roles:
             raise GovAclError(
                 "GOV_ACL_SELF_APPROVE_FORBIDDEN",

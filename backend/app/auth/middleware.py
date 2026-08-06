@@ -118,6 +118,10 @@ def _is_public_export_route(path: str, request: Request) -> bool:
         token = request.headers.get("X-Export-Token", "").strip()
         dash_id = request.headers.get("X-Export-Dashboard-Id", "").strip()
         return bool(token and dash_id)
+    if path == "/api/v1/dashboards/export-query/dataset/execute":
+        token = request.headers.get("X-Export-Token", "").strip()
+        dash_id = request.headers.get("X-Export-Dashboard-Id", "").strip()
+        return bool(token and dash_id)
     return False
 
 

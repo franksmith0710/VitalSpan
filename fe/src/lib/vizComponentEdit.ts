@@ -1,13 +1,16 @@
 import type { DashboardWidgetBase } from "@/components/dashboard/dashboardLayoutContracts";
 import type { LayoutWidget } from "@/components/dashboard/layoutUtils";
 import type { VizComponentMap } from "@/lib/resolveVizComponent";
-import type { VizComponentDetail } from "@/lib/vizComponents";
 import {
   extractWidgetPayload,
   isLinkedComponentRef,
   updateVizComponent,
+  type VizComponentDetail,
   type VizComponentPayload,
 } from "@/lib/vizComponents";
+import { queueLinkedComponentPush } from "@/lib/linkedComponentSaveQueue";
+
+export { awaitLinkedComponentWrites } from "@/lib/linkedComponentSaveQueue";
 
 export async function pushWidgetPayloadToLibrary(
   widget: LayoutWidget,
@@ -26,6 +29,14 @@ export async function pushWidgetPayloadToLibrary(
   });
   componentMap.set(component.id, updated);
   return updated;
+}
+
+export function enqueueWidgetPayloadToLibrary(
+  widget: LayoutWidget,
+  componentMap: VizComponentMap,
+  payload: VizComponentPayload,
+): Promise<unknown> {
+  return queueLinkedComponentPush(widget, componentMap, payload);
 }
 
 export async function syncResolvedWidgetToLibrary(

@@ -107,8 +107,21 @@ class RestApiConnector:
         base = _normalize_base_url(kwargs["host"], int(kwargs.get("port", 443)))
         username = kwargs.get("username") or ""
         password = kwargs.get("password") or ""
+        connection_options = kwargs.get("connection_options") or {}
+        rest_auth_mode = connection_options.get("restAuthMode") or connection_options.get(
+            "rest_auth_mode"
+        )
+        if rest_auth_mode == "bearer" or username == "bearer":
+            headers = {"Authorization": f"Bearer {password}"} if password else None
+            timeout = float(kwargs.get("timeout_sec", 5.0))
+            return httpx.Client(
+                base_url=base,
+                headers=headers,
+                timeout=timeout,
+                follow_redirects=True,
+            )
         auth = None
-        if username and username not in ("none", "oauth2"):
+        if username and username not in ("none", "oauth2", "bearer"):
             auth = (username, password)
         timeout = float(kwargs.get("timeout_sec", 5.0))
         return httpx.Client(base_url=base, auth=auth, timeout=timeout, follow_redirects=True)

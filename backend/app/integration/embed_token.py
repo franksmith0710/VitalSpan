@@ -8,11 +8,10 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.auth.deps import UserContext
+from app.datasources.models import get_meta_session
+from app.integration import embed_token_repo
 from app.integration.errors import IntegrationError
 from app.viz.embed import _ORIGIN_RE
-
-_TOKEN_STORE: dict[str, dict] = {}
-
 
 ShareMode = Literal["embed", "public"]
 
@@ -113,21 +112,25 @@ def issue_embed_token(
     expires_at = datetime.now(UTC) + timedelta(seconds=payload.expires_in_sec)
     container_id = f"embed-{token[:8]}"
     api_base = "/api/v1"
-    _TOKEN_STORE[token] = {
-        "expires_at": expires_at,
+    meta = {
         "container_id": container_id,
         "theme": payload.theme,
         "api_base": api_base,
         "allowed_origins": list(payload.allowed_origins),
         "share_mode": payload.share_mode,
-        "chart_id": payload.chart_id,
-        "dashboard_id": payload.dashboard_id,
+        "chart_id": str(payload.chart_id) if payload.chart_id else None,
+        "dashboard_id": str(payload.dashboard_id) if payload.dashboard_id else None,
         "actor_id": actor.id,
         "actor_username": actor.username,
         "actor_roles": list(actor.roles),
         "actor_permissions": list(actor.permissions),
         "actor_is_root": actor.is_root,
     }
+    session = get_meta_session()
+    try:
+        embed_token_repo.save_token(session, token, expires_at, meta)
+    finally:
+        session.close()
     share_qs = "&shareMode=public" if payload.share_mode == "public" else ""
     if payload.chart_id is not None:
         embed_path = f"/embed/chart/{payload.chart_id}?token={token}{share_qs}"
@@ -149,16 +152,23 @@ def issue_embed_token(
 
 
 def require_token_meta(token: str) -> dict:
-    row = _TOKEN_STORE.get(token)
-    if row is None:
-        raise IntegrationError("EMBED_TOKEN_INVALID", "Invalid embed token", 404)
-    if datetime.now(UTC) > row["expires_at"]:
-        raise IntegrationError("EMBED_TOKEN_EXPIRED", "Embed token expired", 404)
-    return row
+    session = get_meta_session()
+    try:
+        row = embed_token_repo.get_token(session, token)
+        if row is None:
+            raise IntegrationError("EMBED_TOKEN_INVALID", "Invalid embed token", 404)
+        _exp, meta = row
+        if datetime.now(UTC) > meta["expires_at"]:
+            raise IntegrationError("EMBED_TOKEN_EXPIRED", "Embed token expired", 404)
+        return meta
+    finally:
+        session.close()
 
 
 def resolve_embed_actor(token: str) -> UserContext:
     row = require_token_meta(token)
+    chart_id = row.get("chart_id")
+    dash_id = row.get("dashboard_id")
     return UserContext(
         id=str(row["actor_id"]),
         username=str(row.get("actor_username") or ""),
@@ -171,6 +181,8 @@ def resolve_embed_actor(token: str) -> UserContext:
 def resolve_sdk_params(token: str, origin_header: str | None = None) -> dict:
     row = require_token_meta(token)
     assert_embed_origin(row, origin_header)
+    chart_raw = row.get("chart_id")
+    dash_raw = row.get("dashboard_id")
     return {
         "containerId": row["container_id"],
         "theme": row["theme"],
@@ -178,13 +190,13 @@ def resolve_sdk_params(token: str, origin_header: str | None = None) -> dict:
         "token": token,
         "shareMode": row.get("share_mode") or "embed",
         **(
-            {"targetType": "chart", "targetId": str(row["chart_id"])}
-            if row.get("chart_id") is not None
+            {"targetType": "chart", "targetId": chart_raw}
+            if chart_raw
             else {}
         ),
         **(
-            {"targetType": "dashboard", "targetId": str(row["dashboard_id"])}
-            if row.get("dashboard_id") is not None
+            {"targetType": "dashboard", "targetId": dash_raw}
+            if dash_raw
             else {}
         ),
     }

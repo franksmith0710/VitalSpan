@@ -68,10 +68,7 @@ export function sanitizePixelLayoutGeometry(
     : compactPixelLayoutWhenZeroGap(layout, gapConfig).layout;
   prepared = repairPixelLayoutTabState(prepared);
   const hasOverlap = layoutsOverlap(prepared, 0);
-  const shouldPack =
-    !isDataScreen &&
-    hasOverlap &&
-    (options?.packOverlaps === true || options?.packOverlaps !== false);
+  const shouldPack = !isDataScreen && hasOverlap && options?.packOverlaps === true;
   if (shouldPack) {
     prepared = packPixelLayoutSeamless(prepared);
   }

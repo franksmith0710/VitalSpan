@@ -33,11 +33,13 @@ export function isEmbedShareContext(): boolean {
 }
 
 export function getAuthHeaders(): Record<string, string> {
-  const embedToken = getEmbedTokenFromLocation();
-  if (embedToken) return { "X-Embed-Token": embedToken };
   if (isExportSnapshotContext()) {
     const dashboardId = matchExportDashboardId();
     if (dashboardId) return getExportAuthHeaders(dashboardId);
+  }
+  if (isEmbedShareContext()) {
+    const embedToken = getEmbedTokenFromLocation();
+    if (embedToken) return { "X-Embed-Token": embedToken };
   }
   const token = getAuthToken();
   if (token) return { Authorization: `Bearer ${token}` };
@@ -49,6 +51,18 @@ export function resolveQueryExecutePath(): string {
   return getEmbedTokenFromLocation()
     ? "/api/v1/embed/query/execute"
     : "/api/v1/query/execute";
+}
+
+export function resolveDatasetExecutePath(): string {
+  if (isExportSnapshotContext()) {
+    return "/api/v1/dashboards/export-query/dataset/execute";
+  }
+  return "/api/v1/query/dataset/execute";
+}
+
+/** Embed / 导出快照页：401 不得清会话并踢登录，否则无头渲染会丢 `data-export-ready` */
+export function isHeadlessAuthContext(): boolean {
+  return isEmbedShareContext() || isExportSnapshotContext();
 }
 
 export class ApiRequestError extends Error {
@@ -216,13 +230,21 @@ export async function apiFetch<T>(
     if (preservesSession) {
       throw toApiRequestError(body);
     }
-    if (!isEmbedShareContext()) {
+    if (!isHeadlessAuthContext()) {
       clearAuthToken();
       onUnauthorized?.();
     }
     throw new ApiRequestError(
-      isEmbedShareContext() ? (body?.message ?? "嵌入令牌无效或已过期") : "登录已过期，请重新登录",
-      isEmbedShareContext() ? body?.code ?? "EMBED_UNAUTHORIZED" : "UNAUTHORIZED",
+      isEmbedShareContext()
+        ? (body?.message ?? "嵌入令牌无效或已过期")
+        : isExportSnapshotContext()
+          ? (body?.message ?? "导出令牌无效或已过期")
+          : "登录已过期，请重新登录",
+      isEmbedShareContext()
+        ? body?.code ?? "EMBED_UNAUTHORIZED"
+        : isExportSnapshotContext()
+          ? body?.code ?? "EXPORT_UNAUTHORIZED"
+          : "UNAUTHORIZED",
     );
   }
   if (!response.ok) {

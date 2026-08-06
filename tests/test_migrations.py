@@ -15,6 +15,8 @@ from sqlalchemy.exc import OperationalError
 from app.core.config import Settings, get_settings
 from crypto_test_env import settings_kwargs
 
+from migration_utils import single_head as alembic_head
+
 KNOWN_URL = "postgresql+psycopg://mock:mock@localhost:5432/mock"
 
 
@@ -230,58 +232,17 @@ def test_migrations_offline_run_migrations_called(monkeypatch):
 
 
 def test_revision_directory_single_head_chain():
-    """T-MIG-15: versions/*.py revision 唯一、单链、head 为 0012。"""
-    versions_dir = (
-        Path(__file__).resolve().parents[1] / "backend" / "migrations" / "versions"
-    )
-    revisions: dict[str, str | None] = {}
-    for path in sorted(versions_dir.glob("*.py")):
-        if path.name.startswith("__"):
-            continue
-        module = importlib.import_module(f"migrations.versions.{path.stem}")
-        revisions[module.revision] = module.down_revision
+    """T-MIG-15: versions/*.py revision 唯一、单链、head 与仓库一致。"""
+    from migration_utils import revision_graph, single_head
 
-    assert set(revisions.keys()) == {
-        "0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008", "0009",
-        "0010", "0011", "0012", "0013", "0014", "0015", "0016", "0017", "0018",
-        "0019", "0020", "0021", "0022", "0023", "0024", "0025", "0026", "0027",
-        "0028", "0029", "0030",
-    }
+    revisions = revision_graph()
     assert len(revisions) == len(set(revisions.keys()))
     assert revisions["0001"] is None
     assert revisions["0002"] == "0001"
-    assert revisions["0003"] == "0002"
-    assert revisions["0004"] == "0003"
-    assert revisions["0005"] == "0004"
-    assert revisions["0006"] == "0005"
-    assert revisions["0007"] == "0006"
-    assert revisions["0008"] == "0007"
-    assert revisions["0009"] == "0008"
-    assert revisions["0010"] == "0009"
-    assert revisions["0011"] == "0010"
-    assert revisions["0012"] == "0011"
-    assert revisions["0013"] == "0012"
-    assert revisions["0014"] == "0013"
-    assert revisions["0015"] == "0014"
-    assert revisions["0016"] == "0015"
-    assert revisions["0017"] == "0016"
-    assert revisions["0018"] == "0017"
-    assert revisions["0019"] == "0018"
-    assert revisions["0020"] == "0019"
-    assert revisions["0021"] == "0020"
-    assert revisions["0022"] == "0021"
-    assert revisions["0023"] == "0022"
-    assert revisions["0024"] == "0023"
-    assert revisions["0025"] == "0024"
-    assert revisions["0026"] == "0025"
-    assert revisions["0027"] == "0026"
-    assert revisions["0028"] == "0027"
-    assert revisions["0029"] == "0028"
-    assert revisions["0030"] == "0029"
-
+    assert single_head() in revisions
     referred_down = {d for d in revisions.values() if d}
     heads = [rev for rev in revisions if rev not in referred_down]
-    assert heads == ["0030"]
+    assert heads == [single_head()]
 
 
 def test_migrations_online_path_connects_and_runs(monkeypatch):
@@ -500,7 +461,7 @@ def test_alembic_heads_single_head():
         timeout=60,
     )
     assert result.returncode == 0, result.stderr
-    assert "0030" in result.stdout
+    assert alembic_head() in result.stdout
 
 
 def test_migrations_online_uses_null_pool(monkeypatch):
@@ -609,7 +570,7 @@ def test_revision_chain_no_orphans_head_0003():
 
     referred_down = {d for d in revisions.values() if d}
     heads = [rev for rev in revisions if rev not in referred_down]
-    assert heads == ["0030"]
+    assert heads == [alembic_head()]
 
 
 def test_revision_chain_head_is_0013():
@@ -623,7 +584,7 @@ def test_revision_chain_head_is_0013():
         revisions[module.revision] = module.down_revision
 
     heads = [rev for rev, down in revisions.items() if not any(d == rev for d in revisions.values())]
-    assert heads == ["0030"]
+    assert heads == [alembic_head()]
 
     mod = importlib.import_module("migrations.versions.0013_dashboards")
     assert mod.down_revision == "0012"
@@ -669,7 +630,7 @@ def test_revision_chain_head_0012_down_revision():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert "0030" in heads
+    assert alembic_head() in heads
     assert revisions["0012"] == "0011"
 
 
@@ -698,7 +659,7 @@ def test_revision_chain_head_0012_down_revision_t_mig38():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert "0030" in heads
+    assert alembic_head() in heads
     assert revisions["0012"] == "0011"
 
 
@@ -726,7 +687,7 @@ def test_revision_chain_head_0012_down_revision_t_mig40():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert "0030" in heads
+    assert alembic_head() in heads
     assert revisions["0012"] == "0011"
 
 
@@ -740,7 +701,7 @@ def test_revision_chain_head_0013_down_revision_t_mig41():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert heads == ["0030"]
+    assert heads == [alembic_head()]
     assert revisions["0013"] == "0012"
 
 
@@ -814,7 +775,7 @@ def test_revision_chain_head_0014_down_revision_t_mig43():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert heads == ["0030"]
+    assert heads == [alembic_head()]
     assert revisions["0014"] == "0013"
 
 
@@ -826,7 +787,7 @@ def test_revision_chain_head_0015_down_revision_t_mig45():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert heads == ["0030"]
+    assert heads == [alembic_head()]
     assert revisions["0015"] == "0014"
 
 
@@ -838,7 +799,7 @@ def test_revision_chain_head_0016_down_revision_t_mig46():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert heads == ["0030"]
+    assert heads == [alembic_head()]
     assert revisions["0016"] == "0015"
     assert revisions["0017"] == "0016"
     assert revisions["0018"] == "0017"

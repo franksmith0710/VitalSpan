@@ -69,4 +69,46 @@ describe("TextWidget inline editing", () => {
     expect(screen.queryByLabelText("拖动以移动组件")).toBeNull();
     expect(within(screen.getByTestId("text-widget-content")).getByText("旧内容")).toBeVisible();
   });
+
+  it("preserves widgetStyle and screenStyle when committing from outside click", async () => {
+    const user = userEvent.setup();
+    const onTextConfigChange = vi.fn();
+    const dataUrl = "data:image/png;base64,iVBORw0KGgo=";
+    const styledWidget = {
+      ...widget,
+      textConfig: {
+        content: "<p>旧内容</p>",
+        variant: "html" as const,
+        widgetStyle: {
+          backgroundImage: dataUrl,
+          backgroundImageFit: "stretch" as const,
+        },
+        screenStyle: {
+          border: { presetId: "tech-ring" },
+        },
+      },
+    } satisfies LayoutWidget & { textConfig: TextWidgetConfig };
+
+    render(
+      <TextWidget
+        widget={styledWidget}
+        mode="edit"
+        shell="shape"
+        onTextConfigChange={onTextConfigChange}
+      />,
+    );
+
+    await user.dblClick(screen.getByTestId("text-widget-content"));
+    await screen.findByRole("textbox", { name: "富文本内容" });
+
+    document.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+
+    expect(onTextConfigChange).toHaveBeenCalledOnce();
+    const committed = onTextConfigChange.mock.calls[0]?.[1];
+    expect(committed?.widgetStyle?.backgroundImage).toBe(dataUrl);
+    expect(committed?.widgetStyle?.backgroundImageFit).toBe("stretch");
+    expect(committed?.screenStyle).toEqual({ border: { presetId: "tech-ring" } });
+    expect(committed?.content).toBe("<p>旧内容</p>");
+    expect(committed?.variant).toBe("html");
+  });
 });

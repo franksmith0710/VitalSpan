@@ -93,7 +93,7 @@ export function buildRestApiPayload(
     username = companion.username;
     password = companion.password;
   } else if (companion.authMode === "bearer") {
-    username = "";
+    username = "bearer";
     password = companion.password;
   } else if (companion.authMode === "none") {
     username = "none";
@@ -111,7 +111,10 @@ export function buildRestApiPayload(
     database,
     username,
     description: form.description || null,
-    connectionOptions: { connectTimeoutSec: companion.connectTimeoutSec },
+    connectionOptions: {
+      connectTimeoutSec: companion.connectTimeoutSec,
+      restAuthMode: companion.authMode,
+    },
   };
   if (mode === "create") {
     payload.code = form.code;

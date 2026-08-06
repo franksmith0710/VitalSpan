@@ -593,12 +593,14 @@ export function stripChartPaletteOverrides(cfg: ChartViewConfig): ChartViewConfi
       tooltip.fontSize !== undefined ||
       tooltip.color !== undefined ||
       tooltip.background !== undefined);
+  const hasSeriesColor = Boolean(de.seriesColor?.length);
   const hasPaletteFields =
     de.paletteId != null ||
     (de.paletteColors != null && de.paletteColors.length > 0) ||
     de.paletteOpacity != null ||
     de.seriesGradient != null ||
     de.depthVisual != null ||
+    hasSeriesColor ||
     hasLabelPaletteFields ||
     hasTooltipFields ||
     hasShowLabelFeature;
@@ -610,6 +612,9 @@ export function stripChartPaletteOverrides(cfg: ChartViewConfig): ChartViewConfi
   delete nextDe.paletteOpacity;
   delete nextDe.seriesGradient;
   delete nextDe.depthVisual;
+  if (hasSeriesColor) {
+    delete nextDe.seriesColor;
+  }
 
   if (label) {
     const nextLabel: ChartLabelStyle = { ...label };

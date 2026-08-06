@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from app.auth.deps import UserContext
+from app.datasources.models import get_meta_session
+from app.governance.catalog import gov_config_store
 from app.governance.catalog.cat02.errors import (
     CAT02_DUPLICATE_DIMENSION,
     CAT02_DUPLICATE_METRIC,
@@ -21,8 +23,24 @@ from app.governance.catalog.cat02.schemas import (
 )
 
 _VALID_FN = frozenset({"sum", "avg", "count"})
-_store: dict[str, dict] = {}
+_CONFIG_TYPE = "gov_aggregate_template"
+_REF_TYPE = "aggregate_template"
 _USER_AGGREGATE_SCOPE: dict[str, str] = {}
+
+
+class _StoreCompat:
+    def clear(self) -> None:
+        session = get_meta_session()
+        try:
+            gov_config_store.clear_type(session, _CONFIG_TYPE)
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+
+_store = _StoreCompat()
 
 
 def set_user_aggregate_scope(user_id: str, key_prefix: str) -> None:
@@ -66,24 +84,35 @@ def create_aggregate_template(payload: AggregateTemplateIn, user: UserContext) -
     item = _validate_payload(payload)
     _assert_aggregate_write_access(user, item.aggregate_key)
     key = item.aggregate_key
-    if key in _store:
-        raise Cat02Error(CAT02_KEY_CONFLICT, f"aggregateKey already exists: {key}", 409)
-    _store[key] = item.model_dump(by_alias=True, mode="json")
-    return AggregateTemplateOut.model_validate(_store[key])
+    session = get_meta_session()
+    try:
+        if gov_config_store.get_json(session, config_type=_CONFIG_TYPE, ref_type=_REF_TYPE, key=key):
+            raise Cat02Error(CAT02_KEY_CONFLICT, f"aggregateKey already exists: {key}", 409)
+        data = item.model_dump(by_alias=True, mode="json")
+        gov_config_store.upsert_json(
+            session, config_type=_CONFIG_TYPE, ref_type=_REF_TYPE, key=key, payload=data
+        )
+        return AggregateTemplateOut.model_validate(data)
+    finally:
+        session.close()
 
 
 def list_aggregate_templates(
     limit: int, offset: int, user: UserContext | None = None,
 ) -> AggregateTemplateListResponse:
-    items = list(_store.values())
-    if user is not None and "enterprise" in set(user.roles) and "admin" not in set(user.roles):
-        prefix = _USER_AGGREGATE_SCOPE.get(user.id, "AGG")
-        items = [i for i in items if str(i.get("aggregateKey", "")).startswith(prefix)]
-    page = items[offset : offset + limit]
-    return AggregateTemplateListResponse(
-        items=[AggregateTemplateOut.model_validate(i) for i in page],
-        total=len(items),
-    )
+    session = get_meta_session()
+    try:
+        items = gov_config_store.list_json(session, config_type=_CONFIG_TYPE)
+        if user is not None and "enterprise" in set(user.roles) and "admin" not in set(user.roles):
+            prefix = _USER_AGGREGATE_SCOPE.get(user.id, "AGG")
+            items = [i for i in items if str(i.get("aggregateKey", "")).startswith(prefix)]
+        page = items[offset : offset + limit]
+        return AggregateTemplateListResponse(
+            items=[AggregateTemplateOut.model_validate(i) for i in page],
+            total=len(items),
+        )
+    finally:
+        session.close()
 
 
 def get_user_aggregate_scope_prefix(user_id: str) -> str:
@@ -91,21 +120,33 @@ def get_user_aggregate_scope_prefix(user_id: str) -> str:
 
 
 def get_aggregate_template(aggregate_key: str) -> AggregateTemplateOut:
-    row = _store.get(aggregate_key)
-    if row is None:
-        raise Cat02Error(CAT02_NOT_FOUND, f"aggregateKey not found: {aggregate_key}", 404)
-    return AggregateTemplateOut.model_validate(row)
+    session = get_meta_session()
+    try:
+        row = gov_config_store.get_json(
+            session, config_type=_CONFIG_TYPE, ref_type=_REF_TYPE, key=aggregate_key
+        )
+        if row is None:
+            raise Cat02Error(CAT02_NOT_FOUND, f"aggregateKey not found: {aggregate_key}", 404)
+        return AggregateTemplateOut.model_validate(row)
+    finally:
+        session.close()
 
 
 def get_aggregate_attribution(aggregate_key: str) -> AggregateAttributionOut:
-    row = _store.get(aggregate_key)
-    if row is None:
-        raise Cat02Error(CAT02_NOT_FOUND, f"aggregateKey not found: {aggregate_key}", 404)
-    return AggregateAttributionOut(
-        aggregateKey=row["aggregateKey"],
-        attributionLabel=row["attributionLabel"],
-        dimensions=row["dimensions"],
-        metrics=row["metrics"],
-        aggregationFn=row["aggregationFn"],
-        pocReady=True,
-    )
+    session = get_meta_session()
+    try:
+        row = gov_config_store.get_json(
+            session, config_type=_CONFIG_TYPE, ref_type=_REF_TYPE, key=aggregate_key
+        )
+        if row is None:
+            raise Cat02Error(CAT02_NOT_FOUND, f"aggregateKey not found: {aggregate_key}", 404)
+        return AggregateAttributionOut(
+            aggregateKey=row["aggregateKey"],
+            attributionLabel=row["attributionLabel"],
+            dimensions=row["dimensions"],
+            metrics=row["metrics"],
+            aggregationFn=row["aggregationFn"],
+            pocReady=True,
+        )
+    finally:
+        session.close()

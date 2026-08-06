@@ -824,6 +824,8 @@ export function chartPaletteDefaultsFingerprint(
 ): string {
   if (!config) return "";
   return JSON.stringify({
+    paletteId: config.paletteId,
+    paletteColors: config.paletteColors,
     paletteOpacity: config.paletteOpacity,
     seriesGradient: config.seriesGradient,
     depthVisual: config.depthVisual,
@@ -841,6 +843,8 @@ export function pickChartPaletteDefaults(
   config?: DashboardStyleConfig,
 ): Pick<
   DashboardStyleConfig,
+  | "paletteId"
+  | "paletteColors"
   | "paletteOpacity"
   | "seriesGradient"
   | "depthVisual"
@@ -853,6 +857,10 @@ export function pickChartPaletteDefaults(
 > | undefined {
   if (!config) return undefined;
   return {
+    paletteId: config.paletteId,
+    paletteColors: config.paletteColors
+      ? [...config.paletteColors]
+      : undefined,
     paletteOpacity: config.paletteOpacity,
     seriesGradient: config.seriesGradient,
     depthVisual: config.depthVisual,

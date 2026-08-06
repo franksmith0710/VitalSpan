@@ -49,8 +49,8 @@ class Settings(BaseSettings):
     fe_base_url: str = "http://127.0.0.1:5173"
     fe_base_path: str = ""
     rpt_export_fallback: bool = False
-    rpt_schedule_store: Literal["memory", "db"] = "memory"
-    rpt_metadata_store: Literal["memory", "db"] = "memory"
+    rpt_schedule_store: Literal["memory", "db"] = "db"
+    rpt_metadata_store: Literal["memory", "db"] = "db"
     artifact_storage_backend: Literal["memory", "fs"] = "fs"
     artifact_storage_path: str = "./data/artifacts"
     rpt_scheduler_enabled: bool = True
@@ -200,6 +200,10 @@ class Settings(BaseSettings):
             raise ValueError("生产环境 RPT_SMTP_HOST 不能为空")
         if not self.rpt_smtp_from.strip():
             raise ValueError("生产环境 RPT_SMTP_FROM 不能为空")
+        if self.rpt_schedule_store == "memory":
+            raise ValueError("生产环境 RPT_SCHEDULE_STORE 不能为 memory")
+        if self.rpt_metadata_store == "memory":
+            raise ValueError("生产环境 RPT_METADATA_STORE 不能为 memory")
         return self
 
     @computed_field  # type: ignore[prop-decorator]

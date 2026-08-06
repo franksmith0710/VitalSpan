@@ -171,8 +171,8 @@ export function DesignerPage() {
           <SelectContent>
             <SelectItem value="__none__">不关联数据集</SelectItem>
             {(datasetsQuery.data?.items ?? []).map((ds) => (
-              <SelectItem key={ds.id} value={ds.id}>
-                {ds.name}
+              <SelectItem key={ds.datasetId} value={ds.datasetId}>
+                {ds.displayName}
               </SelectItem>
             ))}
           </SelectContent>

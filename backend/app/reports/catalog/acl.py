@@ -3,8 +3,14 @@ from __future__ import annotations
 import time
 import uuid
 
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
 from app.auth.deps import UserContext
+from app.core.config import get_settings
+from app.datasources.models import get_meta_engine
 from app.reports.catalog.errors import ReportCatalogError
+from app.reports.models import ReportSchedule, ReportScheduleExecution
 from app.reports.persistence import catalog_repo, memory_stores
 
 _NODE_OWNERS = memory_stores.catalog_owners  # test compat
@@ -14,6 +20,24 @@ _ACL_BUDGET_MS = 10
 
 def register_node_owner(node_id: uuid.UUID, actor_id: str) -> None:
     catalog_repo.register_owner(node_id, actor_id)
+
+
+def _get_artifact_owner(artifact_ref: str) -> str | None:
+    owner = memory_stores.artifact_owners.get(artifact_ref)
+    if owner is not None:
+        return owner
+    if get_settings().rpt_schedule_store != "db":
+        return None
+    with Session(bind=get_meta_engine()) as db:
+        execution = db.scalar(
+            select(ReportScheduleExecution)
+            .where(ReportScheduleExecution.artifact_ref == artifact_ref)
+            .limit(1),
+        )
+        if execution is None:
+            return None
+        schedule = db.get(ReportSchedule, execution.schedule_id)
+        return schedule.owner_id if schedule else None
 
 
 def assert_catalog_action(actor: UserContext, action: str, node_id: uuid.UUID | None = None) -> None:
@@ -49,13 +73,15 @@ def probe_acl_budget_ms(actor: UserContext, action: str, node_id: uuid.UUID) -> 
 
 
 def register_artifact_owner(artifact_ref: str, actor_id: str) -> None:
+    if get_settings().rpt_schedule_store == "db":
+        return
     memory_stores.artifact_owners[artifact_ref] = actor_id
 
 
 def assert_artifact_access(actor: UserContext, artifact_ref: str) -> None:
     if "admin" in set(actor.roles):
         return
-    owner = memory_stores.artifact_owners.get(artifact_ref)
+    owner = _get_artifact_owner(artifact_ref)
     if owner is not None and owner == actor.id:
         return
     raise ReportCatalogError("RPT_ARTIFACT_FORBIDDEN", "artifact access denied", 403)

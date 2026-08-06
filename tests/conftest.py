@@ -342,6 +342,18 @@ def _refresh_jwt_auth_module_constant():
 
 
 @pytest.fixture(autouse=True)
+def _ensure_report_meta_tables():
+    """Ensure report ORM tables exist when rpt_*_store defaults to db."""
+    from app.datasources.models import Base, get_meta_engine
+    import app.reports.models  # noqa: F401
+    import app.reports.persistence.models  # noqa: F401
+
+    engine = get_meta_engine()
+    Base.metadata.create_all(engine)
+    yield
+
+
+@pytest.fixture(autouse=True)
 def _clear_view_user_overrides():
     """Each test starts without persisted user view overrides."""
     from app.datasources.models import Base, get_meta_engine
@@ -511,10 +523,48 @@ def m11_compose_env():
     }
 
 
+@pytest.fixture(scope="session")
+def alembic_meta_sqlite_url(tmp_path_factory: pytest.TempPathFactory) -> str:
+    """File-backed sqlite migrated with Alembic head for persistence round-trip tests."""
+    import subprocess
+    import sys
+    from crypto_test_env import TEST_JWT_SM2_PRIVATE, TEST_JWT_SM2_PUBLIC, TEST_SM4_KEY
+
+    db_path = tmp_path_factory.mktemp("alembic-meta") / "meta.db"
+    url = f"sqlite+pysqlite:///{db_path.as_posix()}"
+    backend_root = Path(__file__).resolve().parents[1] / "backend"
+    env = os.environ.copy()
+    env["DATABASE_URL"] = url
+    env.setdefault("JWT_SM2_PRIVATE_KEY", TEST_JWT_SM2_PRIVATE)
+    env.setdefault("JWT_SM2_PUBLIC_KEY", TEST_JWT_SM2_PUBLIC)
+    env.setdefault("CREDENTIAL_SM4_KEY", TEST_SM4_KEY)
+    env.setdefault("VITALSPAN_ENV", "development")
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head"],
+        cwd=backend_root,
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr or result.stdout
+    return url
+
+
 @pytest.fixture
-def analytics_sqlite() -> str:
-    """In-memory sqlite URL for mock L1 analytics (no compose)."""
-    return "sqlite+pysqlite:///:memory:"
+def alembic_meta_engine(alembic_meta_sqlite_url: str, monkeypatch: pytest.MonkeyPatch):
+    """Bind app meta engine to Alembic-initialized sqlite for one test."""
+    previous = os.environ.get("DATABASE_URL")
+    monkeypatch.setenv("DATABASE_URL", alembic_meta_sqlite_url)
+    _clear_meta_engine_caches()
+    from app.datasources.models import get_meta_engine
+
+    engine = get_meta_engine()
+    yield engine
+    if previous is None:
+        monkeypatch.delenv("DATABASE_URL", raising=False)
+    else:
+        monkeypatch.setenv("DATABASE_URL", previous)
+    _clear_meta_engine_caches()
 
 
 @pytest.fixture

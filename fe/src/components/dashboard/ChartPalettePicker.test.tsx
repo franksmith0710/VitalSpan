@@ -11,7 +11,9 @@ describe("ChartPalettePicker", () => {
     const onChange = vi.fn();
     render(<ChartPalettePicker showInherit value={undefined} onChange={onChange} />);
 
-    expect(screen.getByRole("combobox", { name: "配色方案" })).toBeInTheDocument();
+    const trigger = screen.getByRole("combobox", { name: "配色方案" });
+    expect(trigger).toBeInTheDocument();
+    expect(trigger.querySelector("[aria-hidden]")).toBeTruthy();
     expect(screen.getByText("默认")).toBeInTheDocument();
 
     await user.click(screen.getByRole("combobox", { name: "配色方案" }));

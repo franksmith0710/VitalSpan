@@ -101,7 +101,12 @@ export function mergeLayoutFilterLinkage(widgets: LayoutWidget[], linkage: Linka
     }
   }
 
-  return { ...base, filters, linkageRules };
+  const liveFilterIds = new Set(filterWidgets.map((fw) => fw.filterConfig.filterId));
+  const prunedFilters = filters.filter((f) => liveFilterIds.has(f.filterId));
+  const prunedFilterIds = new Set(prunedFilters.map((f) => f.filterId));
+  const prunedRules = linkageRules.filter((rule) => prunedFilterIds.has(rule.sourceFilterId));
+
+  return { ...base, filters: prunedFilters, linkageRules: prunedRules };
 }
 
 /** 保存前剔除已删除 widget 的联动目标，避免 global-filters PUT 422 */

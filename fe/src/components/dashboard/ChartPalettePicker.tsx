@@ -22,6 +22,7 @@ import {
   ChartPaletteColorSwatch,
   ChartPaletteSeriesColorRow,
   ChartPaletteSwatchStrip,
+  PALETTE_SWATCH_STRIP_WIDTH,
 } from "./chartPaletteShared";
 import {
   ChartPaletteCurrentDisplay,
@@ -246,7 +247,19 @@ export function ChartPalettePicker({
               className={cn(wideSelectTriggerClass, "min-w-0 flex-1 shadow-none")}
               aria-label="配色方案"
             >
-              <SelectValue placeholder="配色方案">{activeLabel}</SelectValue>
+              <span className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+                <span className="shrink-0" style={{ width: PALETTE_SWATCH_STRIP_WIDTH }}>
+                  <ChartPaletteSwatchStrip
+                    colors={activeColors}
+                    inherit={effectiveInheritActive}
+                    inheritPreviewColors={inheritPreviewColors}
+                    className="rounded-[2px]"
+                  />
+                </span>
+                <SelectValue placeholder="配色方案">
+                  <span className="min-w-0 flex-1 truncate text-left">{activeLabel}</span>
+                </SelectValue>
+              </span>
             </SelectTrigger>
             <SelectContent
               position="popper"

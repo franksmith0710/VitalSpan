@@ -538,4 +538,18 @@ describe("chart palette overrides", () => {
     expect(de.paletteId).toBeUndefined();
     expect(de.paletteColors).toBeUndefined();
   });
+
+  it("stripChartPaletteOverrides removes per-series colors", () => {
+    const cfg: ChartViewConfig = {
+      ...baseCfg,
+      nativeBody: {
+        deStyle: {
+          seriesColor: [{ id: "amount", name: "amount", color: "#ff0000" }],
+        },
+      },
+    };
+    const stripped = stripChartPaletteOverrides(cfg);
+    const de = readChartDeStyle(stripped);
+    expect(de.seriesColor).toBeUndefined();
+  });
 });

@@ -18,6 +18,7 @@ from app.reports.scheduler.errors import ScheduleError
 from app.reports.scheduler.recipients import resolve_recipient_emails
 from app.reports.scheduler.schemas import ScheduleExecuteOut, ScheduleRecipientIn
 from app.reports.scheduler import service as scheduler_service
+from app.core.config import get_settings
 from app.reports.scheduler.store import MemoryScheduleStore, get_schedule_store
 
 _EXECUTE_BUDGET_MS = 20
@@ -32,6 +33,59 @@ _HISTORY: dict[uuid.UUID, list[dict]] = {}
 def _memory_store() -> MemoryScheduleStore | None:
     store = get_schedule_store()
     return store if isinstance(store, MemoryScheduleStore) else None
+
+
+def _execution_row_to_out(row: dict) -> ScheduleExecuteOut:
+    return ScheduleExecuteOut(
+        executionId=row["executionId"],
+        scheduleId=row["scheduleId"],
+        status=row["status"],
+        artifactRef=row["artifactRef"],
+        artifactKind=row.get("artifactKind"),
+        idempotencyKey=row.get("idempotencyKey") or "",
+        executedAt=row.get("executedAt") or datetime.now(UTC).isoformat(),
+        deliverySteps=row.get("deliverySteps") or [],
+        revisionSnapshot=row.get("revisionSnapshot"),
+        errorMessage=row.get("errorMessage"),
+        parentExecutionId=row.get("parentExecutionId"),
+    )
+
+
+def _get_cached_execution(idempotency_key: str) -> ScheduleExecuteOut | None:
+    mem = _memory_store()
+    if mem is not None:
+        row = mem.get_idempotency(idempotency_key)
+        return _execution_row_to_out(row) if row else None
+    row = get_schedule_store().get_idempotency(idempotency_key)
+    if row is not None:
+        return _execution_row_to_out(row)
+    return _EXECUTION_LOG.get(idempotency_key)
+
+
+def _remember_execution(out: ScheduleExecuteOut) -> None:
+    payload = out.model_dump(by_alias=True)
+    mem = _memory_store()
+    if mem is not None:
+        mem.cache_idempotency(out.idempotency_key, payload)
+    else:
+        get_schedule_store().cache_idempotency(out.idempotency_key, payload)
+    if get_settings().rpt_schedule_store == "memory":
+        _EXECUTION_LOG[out.idempotency_key] = out
+        _EXECUTION_BY_ID[out.execution_id] = out
+
+
+def _get_execution_out(execution_id: uuid.UUID) -> ScheduleExecuteOut | None:
+    mem = _memory_store()
+    if mem is not None:
+        cached = _EXECUTION_BY_ID.get(execution_id)
+        if cached is not None:
+            return cached
+        row = mem.get_execution(execution_id)
+        return _execution_row_to_out(row) if row else None
+    row = get_schedule_store().get_execution(execution_id)
+    if row is not None:
+        return _execution_row_to_out(row)
+    return _EXECUTION_BY_ID.get(execution_id)
 
 
 def _append_history(
@@ -89,7 +143,7 @@ def mock_execute_schedule(
     del actor
     if not idempotency_key:
         raise ScheduleError("RPT_SCHEDULE_EXECUTE_INVALID", "Idempotency-Key required", 422)
-    cached = _EXECUTION_LOG.get(idempotency_key)
+    cached = _get_cached_execution(idempotency_key)
     if cached is not None:
         return cached
     row = scheduler_service._get_row(schedule_id)
@@ -104,8 +158,7 @@ def mock_execute_schedule(
         idempotencyKey=idempotency_key,
         executedAt=datetime.now(UTC).isoformat(),
     )
-    _EXECUTION_LOG[idempotency_key] = out
-    _EXECUTION_BY_ID[execution_id] = out
+    _remember_execution(out)
     _append_history(schedule_id, out)
     return out
 
@@ -169,7 +222,7 @@ def semi_real_execute_schedule(
 ) -> ScheduleExecuteOut:
     if not idempotency_key:
         raise ScheduleError("RPT_SCHEDULE_EXECUTE_INVALID", "Idempotency-Key required", 422)
-    cached = _EXECUTION_LOG.get(idempotency_key)
+    cached = _get_cached_execution(idempotency_key)
     if cached is not None:
         return cached
     row = scheduler_service._get_row(schedule_id)
@@ -213,8 +266,7 @@ def semi_real_execute_schedule(
             revisionSnapshot=revision_snapshot,
             errorMessage=export_error,
         )
-        _EXECUTION_LOG[idempotency_key] = out
-        _EXECUTION_BY_ID[execution_id] = out
+        _remember_execution(out)
         _append_history(schedule_id, out, error_message=export_error)
         return out
     recipient_emails: list[str] | None = None
@@ -271,8 +323,7 @@ def semi_real_execute_schedule(
         errorMessage=error_message,
     )
     register_artifact_owner(artifact_ref, actor.id)
-    _EXECUTION_LOG[idempotency_key] = out
-    _EXECUTION_BY_ID[execution_id] = out
+    _remember_execution(out)
     _append_history(schedule_id, out, error_message=error_message)
     return out
 
@@ -282,7 +333,7 @@ def retry_execution(
     idempotency_key: str,
     actor: UserContext,
 ) -> ScheduleExecuteOut:
-    out = _EXECUTION_BY_ID.get(execution_id)
+    out = _get_execution_out(execution_id)
     if out is None:
         raise ScheduleError("RPT_SCHEDULE_EXECUTION_NOT_FOUND", "Execution not found", 404)
     if "degraded" not in out.status and "failed" not in out.status:
@@ -291,14 +342,13 @@ def retry_execution(
     schedule_acl.assert_schedule_write(actor, scheduler_service._get_row(schedule_id), "retry")
     new_out = semi_real_execute_schedule(schedule_id, idempotency_key, actor)
     new_out = new_out.model_copy(update={"parent_execution_id": execution_id})
-    _EXECUTION_BY_ID[new_out.execution_id] = new_out
-    _EXECUTION_LOG[idempotency_key] = new_out
+    _remember_execution(new_out)
     _append_history(schedule_id, new_out)
     return new_out
 
 
 def get_execution_artifact_meta(execution_id: uuid.UUID) -> dict:
-    out = _EXECUTION_BY_ID.get(execution_id)
+    out = _get_execution_out(execution_id)
     if out is None:
         from app.reports.catalog.errors import ReportCatalogError
         raise ReportCatalogError("RPT_ARTIFACT_NOT_FOUND", "Execution artifact not found", 404)

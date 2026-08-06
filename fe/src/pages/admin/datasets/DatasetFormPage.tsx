@@ -67,6 +67,13 @@ function normalizeValues(values: DatasetEditorValues): DatasetEditorValues {
   };
 }
 
+/** API 写入体：剥离 FE-only bindDraft，避免后端静默丢弃或 422。 */
+function toDatasetApiPayload(values: DatasetEditorValues): Omit<DatasetEditorValues, "bindDraft"> {
+  const normalized = normalizeValues(values);
+  const { bindDraft: _bindDraft, ...payload } = normalized;
+  return payload;
+}
+
 function serializeDatasetValues(values: DatasetEditorValues): string {
   return JSON.stringify(normalizeValues(values));
 }
@@ -242,17 +249,18 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
 
   const handleSave = async (): Promise<boolean> => {
     const body = normalizeValues(values);
+    const apiPayload = toDatasetApiPayload(values);
     setIsSaving(true);
     try {
       const saved =
         mode === "create"
           ? await apiFetch<DatasetItem>("/api/v1/datasets", {
               method: "POST",
-              body: JSON.stringify(body),
+              body: JSON.stringify(apiPayload),
             })
           : await apiFetch<DatasetItem>(`/api/v1/datasets/${body.datasetId}`, {
               method: "PUT",
-              body: JSON.stringify(body),
+              body: JSON.stringify(apiPayload),
             });
 
       const bindDraft = body.bindDraft;
@@ -286,6 +294,7 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
           toast.error(
             `Dataset 已保存，但出图字段绑定失败：${mapApiError(bindErr)}。请重试保存。`,
           );
+          return false;
         }
       } else {
         toast.success(mode === "create" ? "Dataset 已创建" : "Dataset 已更新");

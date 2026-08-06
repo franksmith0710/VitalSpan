@@ -265,6 +265,12 @@ class ThemeVariantFields(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
     canvas_background: str | None = Field(default=None, alias="canvasBackground", max_length=512)
+    canvas_background_image_fit: Literal[
+        "stretch", "contain", "cover", "widthFit", "heightFit", "original"
+    ] | None = Field(default=None, alias="canvasBackgroundImageFit")
+    canvas_background_image_position: str | None = Field(
+        default=None, alias="canvasBackgroundImagePosition", max_length=32
+    )
     canvas_background_image: str | None = Field(
         default=None, alias="canvasBackgroundImage", max_length=IMAGE_DATA_URL_MAX_LENGTH
     )
@@ -309,6 +315,12 @@ class DashboardStyleConfig(BaseModel):
     scale_mode: Literal["canvas", "component"] | None = Field(default=None, alias="scaleMode")
     canvas_background_image: str | None = Field(
         default=None, alias="canvasBackgroundImage", max_length=IMAGE_DATA_URL_MAX_LENGTH
+    )
+    canvas_background_image_fit: Literal[
+        "stretch", "contain", "cover", "widthFit", "heightFit", "original"
+    ] | None = Field(default=None, alias="canvasBackgroundImageFit")
+    canvas_background_image_position: str | None = Field(
+        default=None, alias="canvasBackgroundImagePosition", max_length=32
     )
     canvas_background_custom: bool | None = Field(default=None, alias="canvasBackgroundCustom")
     canvas_decor_preset_id: str | None = Field(

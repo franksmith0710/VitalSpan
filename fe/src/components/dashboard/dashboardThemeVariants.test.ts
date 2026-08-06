@@ -285,6 +285,7 @@ describe("dashboardThemeVariants", () => {
                 background: { padding: 4 },
                 paletteId: "ocean",
                 paletteOpacity: 0.8,
+                seriesColor: [{ id: "amount", name: "amount", color: "#ff0000" }],
               },
             },
           },

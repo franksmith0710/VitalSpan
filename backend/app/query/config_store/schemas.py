@@ -24,6 +24,10 @@ ALLOWED_CONFIG_TYPES = frozenset({
     "publish_version_history",
     "global_filter_linkage",
     "dataset_query",
+    "gov_lifecycle_template",
+    "gov_aggregate_template",
+    "gov_ticket_stats",
+    "gov_production_stats",
 })
 ALLOWED_SCHEMA_VERSIONS = frozenset({"1.0"})
 DEFAULT_REF_TYPE = "design_draft"

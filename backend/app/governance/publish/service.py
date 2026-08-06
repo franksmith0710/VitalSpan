@@ -60,7 +60,7 @@ def submit_entry(
     db.commit()
     db.refresh(row)
     if actor is not None:
-        record_publish_submitter(entry_id, actor.id)
+        record_publish_submitter(db, entry_id, actor.id)
     emit_publish_notification(entry_id, "submitted")
     return PublishActionOut(id=row.id, status=row.status)
 
