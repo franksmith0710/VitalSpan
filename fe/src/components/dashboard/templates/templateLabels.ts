@@ -114,15 +114,8 @@ export function templatePreviewAspectRatio(_surfaceKind: VizSurfaceKind): string
 
 /** 内置模板缩略图（public 静态资源） */
 export const BUILTIN_TEMPLATE_THUMBS: Record<string, string> = {
-  "builtin-screen-blank": "/template-assets/thumbs/screen-blank.svg",
-  "builtin-screen-command-center": "/template-assets/packs/gov-enterprise-v1/thumbs/canvas-dark-cyan-aurora.svg",
-  "builtin-screen-tech-blue": "/template-assets/packs/gov-enterprise-v1/thumbs/canvas-dark-royal-hud-scan.svg",
-  "builtin-screen-gov-minimal": "/template-assets/packs/gov-enterprise-v1/thumbs/canvas-dark-indigo-honeycomb.svg",
-  "builtin-screen-sales-geo": "/template-assets/packs/gov-enterprise-v1/thumbs/canvas-dark-emerald-aurora.svg",
-  "builtin-dash-blank": "/template-assets/packs/de-dashboard-v1/thumbs/dash-blank.svg",
-  "builtin-dash-dual-kpi": "/template-assets/packs/de-dashboard-v1/thumbs/dash-dual-kpi.svg",
-  "builtin-dash-triple-analysis": "/template-assets/packs/de-dashboard-v1/thumbs/dash-triple.svg",
-  "builtin-dash-ops": "/template-assets/packs/de-dashboard-v1/thumbs/dash-ops.svg",
+  "builtin-gov-industrial-park":
+    "/template-assets/packs/gov-enterprise-v1/thumbs/canvas-dark-emerald-de-platform-header.svg",
   "builtin-gov-smart-city": "/template-assets/packs/gov-enterprise-v1/thumbs/canvas-dark-cyan-hud-scan.svg",
   "builtin-gov-digital-cockpit": "/template-assets/packs/gov-enterprise-v1/thumbs/canvas-light-indigo-de-cloud-center.svg",
   "builtin-gov-emergency-command": "/template-assets/packs/gov-enterprise-v1/thumbs/canvas-dark-crimson-command.svg",

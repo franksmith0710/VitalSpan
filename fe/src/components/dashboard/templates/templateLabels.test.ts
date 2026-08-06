@@ -32,8 +32,8 @@ describe("templateLabels", () => {
   });
 
   it("resolves builtin template thumbnails", () => {
-    expect(resolveTemplateThumbnail("builtin-dash-blank", null)).toBe(
-      "/template-assets/packs/de-dashboard-v1/thumbs/dash-blank.svg",
+    expect(resolveTemplateThumbnail("builtin-gov-efficiency", null)).toBe(
+      "/template-assets/packs/de-dashboard-v1/thumbs/gov-efficiency.svg",
     );
     expect(resolveTemplateThumbnail("custom", "/custom.png")).toBe("/custom.png");
   });

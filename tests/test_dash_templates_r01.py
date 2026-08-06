@@ -28,6 +28,7 @@ def dash_tmpl_sqlite_env():
     Base.metadata.create_all(engine)
     from app.dashboard.templates.models import DashboardTemplate  # noqa: F401
     from app.dashboard.models import Dashboard  # noqa: F401
+    from app.datasources.models import DataSource  # noqa: F401
 
     Base.metadata.create_all(engine)
     with engine.begin() as conn:
@@ -51,6 +52,7 @@ def db_session():
         session.rollback()
         session.execute(text("DELETE FROM dashboard_templates"))
         session.execute(text("DELETE FROM dashboards"))
+        session.execute(text("DELETE FROM data_sources"))
         session.commit()
     finally:
         session.close()
@@ -68,12 +70,27 @@ def test_list_builtin_templates(client: TestClient, auth_headers: dict, db_sessi
     body = res.json()
     assert body["total"] >= 4
     names = {item["name"] for item in body["items"]}
-    assert "空白大屏" in names
+    assert "工业园区数据监控中心" in names
 
 
 def test_from_template_creates_dashboard(client: TestClient, auth_headers: dict, db_session) -> None:
     from app.dashboard.templates.seed import seed_builtin_dashboard_templates
+    from app.datasources.models import DataSource
 
+    db_session.add(
+        DataSource(
+            id=uuid.uuid4(),
+            name="示例数据",
+            code="demo",
+            type="mysql",
+            host="127.0.0.1",
+            port=3307,
+            database="sample_db",
+            username="sample",
+            password_encrypted="enc",
+        ),
+    )
+    db_session.commit()
     seed_builtin_dashboard_templates(db_session)
     listed = client.get(
         "/api/v1/dashboard-templates?surfaceKind=dashboard",

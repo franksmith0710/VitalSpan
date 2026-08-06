@@ -1,0 +1,615 @@
+{
+  "name": "政务效能分析看板",
+  "slug": "workspace-gov-efficiency",
+  "surfaceKind": null,
+  "layoutJson": {
+    "version": 1,
+    "widgets": [
+      {
+        "id": "b80ba1ae-0bee-498a-85eb-313c5f617e8a",
+        "type": "chart",
+        "title": "综合满意度",
+        "colSpan": 3,
+        "rowSpan": 3,
+        "gridX": 0,
+        "gridY": 0,
+        "order": 0,
+        "hidden": null,
+        "locked": null,
+        "chartRef": null,
+        "parentTabsId": null,
+        "tabPaneId": null,
+        "chartConfig": {
+          "chartType": "gauge",
+          "styleVariant": "default",
+          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "bindingId": null,
+          "chartId": "b80ba1ae-0bee-498a-85eb-313c5f617e8a",
+          "mode": "sql",
+          "sql": "SELECT ROUND(AVG(value), 1) AS 指数\nFROM gov_service_metrics\nWHERE metric_code = 'satisfaction'",
+          "schema": null,
+          "table": null,
+          "configId": null,
+          "datasetId": null,
+          "nativeBody": {
+            "deStyle": {
+              "seriesGradient": false,
+              "label": {
+                "show": false,
+                "color": "#8c8c8c",
+                "fontSize": 12
+              },
+              "legend": {
+                "show": false,
+                "color": "#8c8c8c",
+                "fontSize": 12
+              },
+              "border": {
+                "show": false,
+                "color": "#f0f0f0",
+                "width": 0,
+                "radius": 0
+              },
+              "title": {
+                "color": "#262626",
+                "fontSize": 14,
+                "fontWeight": 600,
+                "show": false
+              },
+              "paletteId": "custom",
+              "seriesColor": [
+                {
+                  "name": "series-0",
+                  "color": "#1890ff"
+                },
+                {
+                  "name": "series-1",
+                  "color": "#13c2c2"
+                },
+                {
+                  "name": "series-2",
+                  "color": "#52c41a"
+                },
+                {
+                  "name": "series-3",
+                  "color": "#faad14"
+                },
+                {
+                  "name": "series-4",
+                  "color": "#f5222d"
+                },
+                {
+                  "name": "series-5",
+                  "color": "#722ed1"
+                }
+              ],
+              "gauge": {
+                "axisColor": "#d9d9d9",
+                "pointerColor": "#1890ff"
+              }
+            }
+          },
+          "index": null,
+          "dimensions": [],
+          "metrics": [
+            {
+              "field": "指数",
+              "label": null
+            }
+          ],
+          "axes": null,
+          "filters": [],
+          "timeRange": null
+        },
+        "filterConfig": null,
+        "textConfig": null,
+        "mediaConfig": null,
+        "tabsConfig": null,
+        "componentRef": null
+      },
+      {
+        "id": "26a6e75b-12b7-4d28-8d5e-376ccbd56a25",
+        "type": "chart",
+        "title": "水质达标率",
+        "colSpan": 3,
+        "rowSpan": 3,
+        "gridX": 3,
+        "gridY": 0,
+        "order": 1,
+        "hidden": null,
+        "locked": null,
+        "chartRef": null,
+        "parentTabsId": null,
+        "tabPaneId": null,
+        "chartConfig": {
+          "chartType": "gauge",
+          "styleVariant": "default",
+          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "bindingId": null,
+          "chartId": "26a6e75b-12b7-4d28-8d5e-376ccbd56a25",
+          "mode": "sql",
+          "sql": "SELECT ROUND(AVG(index_value), 1) AS 指数\nFROM gov_eco_monitor\nWHERE index_code = 'water'\n  AND monitor_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)",
+          "schema": null,
+          "table": null,
+          "configId": null,
+          "datasetId": null,
+          "nativeBody": {
+            "deStyle": {
+              "seriesGradient": false,
+              "label": {
+                "show": false,
+                "color": "#8c8c8c",
+                "fontSize": 12
+              },
+              "legend": {
+                "show": false,
+                "color": "#8c8c8c",
+                "fontSize": 12
+              },
+              "border": {
+                "show": false,
+                "color": "#f0f0f0",
+                "width": 0,
+                "radius": 0
+              },
+              "title": {
+                "color": "#262626",
+                "fontSize": 14,
+                "fontWeight": 600,
+                "show": false
+              },
+              "paletteId": "custom",
+              "seriesColor": [
+                {
+                  "name": "series-0",
+                  "color": "#1890ff"
+                },
+                {
+                  "name": "series-1",
+                  "color": "#13c2c2"
+                },
+                {
+                  "name": "series-2",
+                  "color": "#52c41a"
+                },
+                {
+                  "name": "series-3",
+                  "color": "#faad14"
+                },
+                {
+                  "name": "series-4",
+                  "color": "#f5222d"
+                },
+                {
+                  "name": "series-5",
+                  "color": "#722ed1"
+                }
+              ],
+              "gauge": {
+                "axisColor": "#d9d9d9",
+                "pointerColor": "#1890ff"
+              }
+            }
+          },
+          "index": null,
+          "dimensions": [],
+          "metrics": [
+            {
+              "field": "指数",
+              "label": null
+            }
+          ],
+          "axes": null,
+          "filters": [],
+          "timeRange": null
+        },
+        "filterConfig": null,
+        "textConfig": null,
+        "mediaConfig": null,
+        "tabsConfig": null,
+        "componentRef": null
+      },
+      {
+        "id": "ad5c9e4a-6f2b-47d0-9f4b-6b16d92c6301",
+        "type": "chart",
+        "title": "政务核心指标",
+        "colSpan": 6,
+        "rowSpan": 3,
+        "gridX": 6,
+        "gridY": 0,
+        "order": 2,
+        "hidden": null,
+        "locked": null,
+        "chartRef": null,
+        "parentTabsId": null,
+        "tabPaneId": null,
+        "chartConfig": {
+          "chartType": "kpi",
+          "styleVariant": "default",
+          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "bindingId": null,
+          "chartId": "ad5c9e4a-6f2b-47d0-9f4b-6b16d92c6301",
+          "mode": "sql",
+          "sql": "SELECT metric_name AS 指标, AVG(value) AS 数值\nFROM gov_service_metrics\nWHERE metric_code IN ('cases_handled', 'online_rate', 'response_time')\n  AND stat_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)\nGROUP BY metric_name",
+          "schema": null,
+          "table": null,
+          "configId": null,
+          "datasetId": null,
+          "nativeBody": {
+            "deStyle": {
+              "seriesGradient": false,
+              "label": {
+                "show": false,
+                "color": "#8c8c8c",
+                "fontSize": 12
+              },
+              "legend": {
+                "show": false,
+                "color": "#8c8c8c",
+                "fontSize": 12
+              },
+              "border": {
+                "show": false,
+                "color": "#f0f0f0",
+                "width": 0,
+                "radius": 0
+              },
+              "title": {
+                "color": "#262626",
+                "fontSize": 14,
+                "fontWeight": 600,
+                "show": false
+              },
+              "paletteId": "custom",
+              "seriesColor": [
+                {
+                  "name": "series-0",
+                  "color": "#1890ff"
+                },
+                {
+                  "name": "series-1",
+                  "color": "#13c2c2"
+                },
+                {
+                  "name": "series-2",
+                  "color": "#52c41a"
+                },
+                {
+                  "name": "series-3",
+                  "color": "#faad14"
+                },
+                {
+                  "name": "series-4",
+                  "color": "#f5222d"
+                },
+                {
+                  "name": "series-5",
+                  "color": "#722ed1"
+                }
+              ]
+            }
+          },
+          "index": null,
+          "dimensions": [
+            {
+              "field": "指标",
+              "label": null
+            }
+          ],
+          "metrics": [
+            {
+              "field": "数值",
+              "label": null
+            }
+          ],
+          "axes": null,
+          "filters": [],
+          "timeRange": null
+        },
+        "filterConfig": null,
+        "textConfig": null,
+        "mediaConfig": null,
+        "tabsConfig": null,
+        "componentRef": null
+      },
+      {
+        "id": "86dc34a3-1eb6-49c0-90f3-8eb4465f9ad9",
+        "type": "chart",
+        "title": "部门满意度",
+        "colSpan": 7,
+        "rowSpan": 6,
+        "gridX": 0,
+        "gridY": 3,
+        "order": 3,
+        "hidden": null,
+        "locked": null,
+        "chartRef": null,
+        "parentTabsId": null,
+        "tabPaneId": null,
+        "chartConfig": {
+          "chartType": "bar",
+          "styleVariant": "default",
+          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "bindingId": null,
+          "chartId": "86dc34a3-1eb6-49c0-90f3-8eb4465f9ad9",
+          "mode": "sql",
+          "sql": "SELECT department AS 部门, AVG(value) AS 满意度\nFROM gov_service_metrics\nWHERE metric_code = 'satisfaction'\nGROUP BY department\nORDER BY 满意度 DESC",
+          "schema": null,
+          "table": null,
+          "configId": null,
+          "datasetId": null,
+          "nativeBody": {
+            "deStyle": {
+              "seriesGradient": false,
+              "label": {
+                "show": true,
+                "color": "#8c8c8c",
+                "fontSize": 12
+              },
+              "legend": {
+                "show": true,
+                "color": "#8c8c8c",
+                "fontSize": 12
+              },
+              "border": {
+                "show": false,
+                "color": "#f0f0f0",
+                "width": 0,
+                "radius": 0
+              },
+              "title": {
+                "color": "#262626",
+                "fontSize": 14,
+                "fontWeight": 600,
+                "show": false
+              },
+              "paletteId": "custom",
+              "seriesColor": [
+                {
+                  "name": "series-0",
+                  "color": "#1890ff"
+                },
+                {
+                  "name": "series-1",
+                  "color": "#13c2c2"
+                },
+                {
+                  "name": "series-2",
+                  "color": "#52c41a"
+                },
+                {
+                  "name": "series-3",
+                  "color": "#faad14"
+                },
+                {
+                  "name": "series-4",
+                  "color": "#f5222d"
+                },
+                {
+                  "name": "series-5",
+                  "color": "#722ed1"
+                }
+              ]
+            }
+          },
+          "index": null,
+          "dimensions": [
+            {
+              "field": "部门",
+              "label": null
+            }
+          ],
+          "metrics": [
+            {
+              "field": "满意度",
+              "label": null
+            }
+          ],
+          "axes": null,
+          "filters": [],
+          "timeRange": null
+        },
+        "filterConfig": null,
+        "textConfig": null,
+        "mediaConfig": null,
+        "tabsConfig": null,
+        "componentRef": null
+      },
+      {
+        "id": "7038e9af-15eb-4b53-8636-72a0b6a22289",
+        "type": "chart",
+        "title": "满意度趋势",
+        "colSpan": 5,
+        "rowSpan": 6,
+        "gridX": 7,
+        "gridY": 3,
+        "order": 4,
+        "hidden": null,
+        "locked": null,
+        "chartRef": null,
+        "parentTabsId": null,
+        "tabPaneId": null,
+        "chartConfig": {
+          "chartType": "line",
+          "styleVariant": "default",
+          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "bindingId": null,
+          "chartId": "7038e9af-15eb-4b53-8636-72a0b6a22289",
+          "mode": "sql",
+          "sql": "SELECT stat_date AS 日期, AVG(value) AS 满意度\nFROM gov_service_metrics\nWHERE metric_code = 'satisfaction'\nGROUP BY stat_date\nORDER BY 日期",
+          "schema": null,
+          "table": null,
+          "configId": null,
+          "datasetId": null,
+          "nativeBody": {
+            "deStyle": {
+              "seriesGradient": false,
+              "label": {
+                "show": true,
+                "color": "#8c8c8c",
+                "fontSize": 12
+              },
+              "legend": {
+                "show": true,
+                "color": "#8c8c8c",
+                "fontSize": 12
+              },
+              "border": {
+                "show": false,
+                "color": "#f0f0f0",
+                "width": 0,
+                "radius": 0
+              },
+              "title": {
+                "color": "#262626",
+                "fontSize": 14,
+                "fontWeight": 600,
+                "show": false
+              },
+              "paletteId": "custom",
+              "seriesColor": [
+                {
+                  "name": "series-0",
+                  "color": "#1890ff"
+                },
+                {
+                  "name": "series-1",
+                  "color": "#13c2c2"
+                },
+                {
+                  "name": "series-2",
+                  "color": "#52c41a"
+                },
+                {
+                  "name": "series-3",
+                  "color": "#faad14"
+                },
+                {
+                  "name": "series-4",
+                  "color": "#f5222d"
+                },
+                {
+                  "name": "series-5",
+                  "color": "#722ed1"
+                }
+              ]
+            }
+          },
+          "index": null,
+          "dimensions": [
+            {
+              "field": "日期",
+              "label": null
+            }
+          ],
+          "metrics": [
+            {
+              "field": "满意度",
+              "label": null
+            }
+          ],
+          "axes": null,
+          "filters": [],
+          "timeRange": null
+        },
+        "filterConfig": null,
+        "textConfig": null,
+        "mediaConfig": null,
+        "tabsConfig": null,
+        "componentRef": null
+      }
+    ],
+    "globalFilters": [],
+    "styleConfig": {
+      "widgetGap": 4,
+      "canvasBackground": "#f0f2f5",
+      "colorScheme": "light",
+      "themeAccent": "#1890ff",
+      "fontFamily": null,
+      "gapPreset": "sm",
+      "pixelGutter": 2,
+      "scaleMode": null,
+      "canvasBackgroundImage": "/template-assets/packs/de-dashboard-v1/backgrounds/gov-efficiency.svg",
+      "canvasBackgroundImageFit": null,
+      "canvasBackgroundImagePosition": null,
+      "canvasBackgroundCustom": true,
+      "canvasDecorPresetId": "none",
+      "refreshIntervalSec": null,
+      "defaultQueryLimit": null,
+      "widgetStyle": {
+        "background": "#ffffff",
+        "backgroundImage": null,
+        "backgroundShow": true,
+        "backgroundMode": null,
+        "framePresetId": null,
+        "frameColor": null,
+        "frameOpacity": null,
+        "opacity": 1.0,
+        "backgroundImageOpacity": null,
+        "backgroundImageFit": null,
+        "backgroundImagePosition": null,
+        "backdropBlur": null,
+        "borderRadius": 4,
+        "borderRadiusTopLeft": null,
+        "borderRadiusTopRight": null,
+        "borderRadiusBottomLeft": null,
+        "borderRadiusBottomRight": null,
+        "radiusMode": null,
+        "padding": 16,
+        "paddingTop": null,
+        "paddingRight": null,
+        "paddingBottom": null,
+        "paddingLeft": null,
+        "paddingMode": null,
+        "borderColor": "#f0f0f0",
+        "borderWidth": 1,
+        "borderStyle": "solid",
+        "borderEnabled": true
+      },
+      "paletteId": "custom",
+      "paletteColors": [
+        "#1890ff",
+        "#13c2c2",
+        "#52c41a",
+        "#faad14",
+        "#f5222d",
+        "#722ed1"
+      ],
+      "paletteOpacity": null,
+      "seriesGradient": false,
+      "depthVisual": null,
+      "chartLabelShow": null,
+      "chartLabelStyle": {
+        "fontSize": null,
+        "color": "#8c8c8c"
+      },
+      "tooltipShow": null,
+      "chartTooltipStyle": null,
+      "tableColorStyle": null,
+      "titleStyle": {
+        "show": true,
+        "fontSize": 14,
+        "color": "#262626",
+        "fontWeight": 600,
+        "fontStyle": null,
+        "align": null,
+        "letterSpacing": null,
+        "shadow": false
+      },
+      "filterChromeStyle": {
+        "titlePosition": null,
+        "titleColor": "#8c8c8c"
+      },
+      "filterControlStyle": null,
+      "numberFormat": null,
+      "actionIconColor": null,
+      "drillLevelColors": null,
+      "dialogStyle": null,
+      "chrome": null,
+      "themeVariants": null,
+      "surfaceKind": "dashboard",
+      "screenPlaylist": null
+    },
+    "demoPackage": null
+  }
+}

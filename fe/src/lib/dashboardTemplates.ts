@@ -66,12 +66,8 @@ export function parseVizTemplateHubCategoryKey(
   return raw;
 }
 
-/** Hub / 模板选择器不展示的内置空白起步模板（列表页仍可「新建空白」） */
-export const HUB_HIDDEN_BUILTIN_TEMPLATE_KEYS = new Set([
-  "builtin-screen-blank",
-  "builtin-dash-blank",
-  "builtin-viz-component-gallery",
-]);
+/** Hub / 模板选择器不展示的内置模板（当前无隐藏项） */
+export const HUB_HIDDEN_BUILTIN_TEMPLATE_KEYS = new Set<string>();
 
 export function filterTemplatesForHub(
   items: DashboardTemplateListItem[],

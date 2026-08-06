@@ -1,0 +1,403 @@
+{
+  "name": "基层网格化管理",
+  "slug": "workspace-gov-grid",
+  "surfaceKind": null,
+  "layoutJson": {
+    "version": 1,
+    "widgets": [
+      {
+        "id": "1f963036-006f-41c4-9de7-d0cc002d46d6",
+        "type": "chart",
+        "title": "网格事件台账",
+        "colSpan": 4,
+        "rowSpan": 6,
+        "gridX": 0,
+        "gridY": 0,
+        "order": 0,
+        "hidden": null,
+        "locked": null,
+        "chartRef": null,
+        "parentTabsId": null,
+        "tabPaneId": null,
+        "chartConfig": {
+          "chartType": "table-info",
+          "styleVariant": "default",
+          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "bindingId": null,
+          "chartId": "1f963036-006f-41c4-9de7-d0cc002d46d6",
+          "mode": "sql",
+          "sql": "SELECT grid_name AS 网格, event_count AS 事件数, resolved_count AS 已办结\nFROM gov_grid_stats\nORDER BY 事件数 DESC\nLIMIT 10",
+          "schema": null,
+          "table": null,
+          "configId": null,
+          "datasetId": null,
+          "nativeBody": {
+            "deStyle": {
+              "seriesGradient": false,
+              "label": {
+                "show": true,
+                "color": "#8c8c8c",
+                "fontSize": 12
+              },
+              "legend": {
+                "show": false,
+                "color": "#8c8c8c",
+                "fontSize": 12
+              },
+              "border": {
+                "show": false,
+                "color": "#f0f0f0",
+                "width": 0,
+                "radius": 0
+              },
+              "title": {
+                "color": "#262626",
+                "fontSize": 14,
+                "fontWeight": 600,
+                "show": false
+              },
+              "paletteId": "custom",
+              "seriesColor": [
+                {
+                  "name": "series-0",
+                  "color": "#595959"
+                },
+                {
+                  "name": "series-1",
+                  "color": "#1890ff"
+                },
+                {
+                  "name": "series-2",
+                  "color": "#8c8c8c"
+                },
+                {
+                  "name": "series-3",
+                  "color": "#bfbfbf"
+                },
+                {
+                  "name": "series-4",
+                  "color": "#595959"
+                },
+                {
+                  "name": "series-5",
+                  "color": "#d9d9d9"
+                }
+              ]
+            }
+          },
+          "index": null,
+          "dimensions": [
+            {
+              "field": "网格",
+              "label": null
+            }
+          ],
+          "metrics": [
+            {
+              "field": "事件数",
+              "label": null
+            },
+            {
+              "field": "已办结",
+              "label": null
+            }
+          ],
+          "axes": null,
+          "filters": [],
+          "timeRange": null
+        },
+        "filterConfig": null,
+        "textConfig": null,
+        "mediaConfig": null,
+        "tabsConfig": null,
+        "componentRef": null
+      },
+      {
+        "id": "5658adc9-3564-46d8-9cb8-817e0770ff94",
+        "type": "chart",
+        "title": "区域事件热力",
+        "colSpan": 5,
+        "rowSpan": 6,
+        "gridX": 4,
+        "gridY": 0,
+        "order": 1,
+        "hidden": null,
+        "locked": null,
+        "chartRef": null,
+        "parentTabsId": null,
+        "tabPaneId": null,
+        "chartConfig": {
+          "chartType": "map",
+          "styleVariant": "default",
+          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "bindingId": null,
+          "chartId": "5658adc9-3564-46d8-9cb8-817e0770ff94",
+          "mode": "sql",
+          "sql": "SELECT province AS 省份, city AS 城市, district AS 区县, SUM(service_volume) AS 服务量\nFROM v_gov_region_service\nGROUP BY province, city, district",
+          "schema": null,
+          "table": null,
+          "configId": null,
+          "datasetId": null,
+          "nativeBody": {
+            "deStyle": {
+              "seriesGradient": false,
+              "label": {
+                "show": true,
+                "color": "#8c8c8c",
+                "fontSize": 12
+              },
+              "legend": {
+                "show": true,
+                "color": "#8c8c8c",
+                "fontSize": 12
+              },
+              "border": {
+                "show": false,
+                "color": "#f0f0f0",
+                "width": 0,
+                "radius": 0
+              },
+              "title": {
+                "color": "#262626",
+                "fontSize": 14,
+                "fontWeight": 600,
+                "show": false
+              },
+              "geo": {
+                "mapArea": "china",
+                "visualMap": true,
+                "areaColor": "#59595922",
+                "borderColor": "#59595999",
+                "emphasisColor": "#59595944"
+              }
+            }
+          },
+          "index": null,
+          "dimensions": [
+            {
+              "field": "省份",
+              "label": null
+            },
+            {
+              "field": "城市",
+              "label": null
+            },
+            {
+              "field": "区县",
+              "label": null
+            }
+          ],
+          "metrics": [
+            {
+              "field": "服务量",
+              "label": null
+            }
+          ],
+          "axes": null,
+          "filters": [],
+          "timeRange": null
+        },
+        "filterConfig": null,
+        "textConfig": null,
+        "mediaConfig": null,
+        "tabsConfig": null,
+        "componentRef": null
+      },
+      {
+        "id": "612a390e-e778-48c9-a940-efa10ff3bb96",
+        "type": "chart",
+        "title": "事件类型分布",
+        "colSpan": 3,
+        "rowSpan": 6,
+        "gridX": 9,
+        "gridY": 0,
+        "order": 2,
+        "hidden": null,
+        "locked": null,
+        "chartRef": null,
+        "parentTabsId": null,
+        "tabPaneId": null,
+        "chartConfig": {
+          "chartType": "bar",
+          "styleVariant": "default",
+          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "bindingId": null,
+          "chartId": "612a390e-e778-48c9-a940-efa10ff3bb96",
+          "mode": "sql",
+          "sql": "SELECT incident_type AS 事件类型, SUM(count) AS 数量\nFROM gov_incidents\nGROUP BY incident_type\nORDER BY 数量 DESC",
+          "schema": null,
+          "table": null,
+          "configId": null,
+          "datasetId": null,
+          "nativeBody": {
+            "deStyle": {
+              "seriesGradient": false,
+              "label": {
+                "show": true,
+                "color": "#8c8c8c",
+                "fontSize": 12
+              },
+              "legend": {
+                "show": true,
+                "color": "#8c8c8c",
+                "fontSize": 12
+              },
+              "border": {
+                "show": false,
+                "color": "#f0f0f0",
+                "width": 0,
+                "radius": 0
+              },
+              "title": {
+                "color": "#262626",
+                "fontSize": 14,
+                "fontWeight": 600,
+                "show": false
+              },
+              "paletteId": "custom",
+              "seriesColor": [
+                {
+                  "name": "series-0",
+                  "color": "#595959"
+                },
+                {
+                  "name": "series-1",
+                  "color": "#1890ff"
+                },
+                {
+                  "name": "series-2",
+                  "color": "#8c8c8c"
+                },
+                {
+                  "name": "series-3",
+                  "color": "#bfbfbf"
+                },
+                {
+                  "name": "series-4",
+                  "color": "#595959"
+                },
+                {
+                  "name": "series-5",
+                  "color": "#d9d9d9"
+                }
+              ]
+            }
+          },
+          "index": null,
+          "dimensions": [
+            {
+              "field": "事件类型",
+              "label": null
+            }
+          ],
+          "metrics": [
+            {
+              "field": "数量",
+              "label": null
+            }
+          ],
+          "axes": null,
+          "filters": [],
+          "timeRange": null
+        },
+        "filterConfig": null,
+        "textConfig": null,
+        "mediaConfig": null,
+        "tabsConfig": null,
+        "componentRef": null
+      }
+    ],
+    "globalFilters": [],
+    "styleConfig": {
+      "widgetGap": 4,
+      "canvasBackground": "#f0f2f5",
+      "colorScheme": "light",
+      "themeAccent": "#595959",
+      "fontFamily": null,
+      "gapPreset": "sm",
+      "pixelGutter": 2,
+      "scaleMode": null,
+      "canvasBackgroundImage": "/template-assets/packs/de-dashboard-v1/backgrounds/gov-grid.svg",
+      "canvasBackgroundImageFit": null,
+      "canvasBackgroundImagePosition": null,
+      "canvasBackgroundCustom": true,
+      "canvasDecorPresetId": "none",
+      "refreshIntervalSec": null,
+      "defaultQueryLimit": null,
+      "widgetStyle": {
+        "background": "#ffffff",
+        "backgroundImage": null,
+        "backgroundShow": true,
+        "backgroundMode": null,
+        "framePresetId": null,
+        "frameColor": null,
+        "frameOpacity": null,
+        "opacity": 1.0,
+        "backgroundImageOpacity": null,
+        "backgroundImageFit": null,
+        "backgroundImagePosition": null,
+        "backdropBlur": null,
+        "borderRadius": 4,
+        "borderRadiusTopLeft": null,
+        "borderRadiusTopRight": null,
+        "borderRadiusBottomLeft": null,
+        "borderRadiusBottomRight": null,
+        "radiusMode": null,
+        "padding": 16,
+        "paddingTop": null,
+        "paddingRight": null,
+        "paddingBottom": null,
+        "paddingLeft": null,
+        "paddingMode": null,
+        "borderColor": "#f0f0f0",
+        "borderWidth": 1,
+        "borderStyle": "solid",
+        "borderEnabled": true
+      },
+      "paletteId": "custom",
+      "paletteColors": [
+        "#595959",
+        "#1890ff",
+        "#8c8c8c",
+        "#bfbfbf",
+        "#595959",
+        "#d9d9d9"
+      ],
+      "paletteOpacity": null,
+      "seriesGradient": false,
+      "depthVisual": null,
+      "chartLabelShow": null,
+      "chartLabelStyle": {
+        "fontSize": null,
+        "color": "#8c8c8c"
+      },
+      "tooltipShow": null,
+      "chartTooltipStyle": null,
+      "tableColorStyle": null,
+      "titleStyle": {
+        "show": true,
+        "fontSize": 14,
+        "color": "#262626",
+        "fontWeight": 600,
+        "fontStyle": null,
+        "align": null,
+        "letterSpacing": null,
+        "shadow": false
+      },
+      "filterChromeStyle": {
+        "titlePosition": null,
+        "titleColor": "#8c8c8c"
+      },
+      "filterControlStyle": null,
+      "numberFormat": null,
+      "actionIconColor": null,
+      "drillLevelColors": null,
+      "dialogStyle": null,
+      "chrome": null,
+      "themeVariants": null,
+      "surfaceKind": "dashboard",
+      "screenPlaylist": null
+    },
+    "demoPackage": null
+  }
+}

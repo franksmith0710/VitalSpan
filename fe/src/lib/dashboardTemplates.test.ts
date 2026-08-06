@@ -26,15 +26,12 @@ function mockTemplate(
 }
 
 describe("filterTemplatesForHub", () => {
-  it("removes builtin blank screen and dashboard templates", () => {
+  it("returns all templates when no hidden keys are configured", () => {
     const items = [
-      mockTemplate({ templateKey: "builtin-screen-blank", name: "空白大屏", surfaceKind: "data-screen" }),
-      mockTemplate({ templateKey: "builtin-dash-blank", name: "空白看板" }),
-      mockTemplate({ templateKey: "builtin-viz-component-gallery", name: "官方组件验收大屏", surfaceKind: "data-screen" }),
-      mockTemplate({ templateKey: "builtin-dash-dual-kpi", name: "双栏 KPI 分析" }),
+      mockTemplate({ templateKey: "builtin-gov-industrial-park", name: "工业园区数据监控中心", surfaceKind: "data-screen" }),
+      mockTemplate({ templateKey: "builtin-gov-efficiency", name: "政务效能分析看板" }),
     ];
-    const filtered = filterTemplatesForHub(items);
-    expect(filtered.map((item) => item.templateKey)).toEqual(["builtin-dash-dual-kpi"]);
+    expect(filterTemplatesForHub(items)).toEqual(items);
   });
 
   it("keeps non-blank templates unchanged", () => {

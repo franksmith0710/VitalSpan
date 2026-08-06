@@ -21,10 +21,10 @@ vi.mock("@/context/auth-context", () => ({
 
 const mockTemplateItem = {
   id: "tpl-1",
-  templateKey: "builtin-dash-dual-kpi",
-  name: "双栏 KPI 分析",
-  description: "KPI 条 + 渠道柱图 / 趋势折线，演示库即开即用",
-  categoryKey: "analytics",
+  templateKey: "builtin-gov-efficiency",
+  name: "政务效能分析看板",
+  description: "浅灰画布 · 顶行 KPI/仪表 + 柱线双图",
+  categoryKey: "government",
   surfaceKind: "dashboard" as const,
   status: "published" as const,
   thumbnailRef: null,
@@ -38,7 +38,7 @@ const mockExportEnvelope = {
   templateVersion: 1,
   kind: "viz-layout",
   surfaceKind: "dashboard",
-  name: "双栏 KPI 分析",
+  name: "政务效能分析看板",
   layout: { version: 1, widgets: [], globalFilters: [] },
 };
 
@@ -71,7 +71,7 @@ vi.mock("@/lib/api", () => ({
         items = items.filter((item) => item.categoryKey === categoryKey);
       }
       return {
-        items: items.filter((item) => item.templateKey !== "builtin-dash-blank"),
+        items,
         total: items.length,
         limit: 100,
         offset: 0,
@@ -144,12 +144,12 @@ describe("VizTemplatesHubPage smoke", () => {
       "false",
     );
     expect(screen.getByRole("button", { name: /导入 JSON/ })).toBeInTheDocument();
-    expect(await screen.findByText("双栏 KPI 分析")).toBeInTheDocument();
+    expect(await screen.findByText("政务效能分析看板")).toBeInTheDocument();
     expect(screen.queryByText("空白看板")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "预览" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "使用模板" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "编辑" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "双栏 KPI 分析 更多操作" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "政务效能分析看板 更多操作" })).toBeInTheDocument();
   });
 
   it("exports template json from card menu", async () => {
@@ -158,12 +158,12 @@ describe("VizTemplatesHubPage smoke", () => {
     downloadMock.mockClear();
     renderHub();
     const [card] = await screen.findAllByTestId("viz-template-card-tpl-1");
-    await user.click(within(card).getByRole("button", { name: "双栏 KPI 分析 更多操作" }));
+    await user.click(within(card).getByRole("button", { name: "政务效能分析看板 更多操作" }));
     await user.click(await screen.findByRole("menuitem", { name: "导出" }));
     await waitFor(() => {
       expect(downloadMock).toHaveBeenCalledWith(
         mockExportEnvelope,
-        "双栏-KPI-分析-template.json",
+        "政务效能分析看板-template.json",
       );
     });
   });
