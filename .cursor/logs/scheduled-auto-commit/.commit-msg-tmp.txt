@@ -1,38 +1,22 @@
-wip: [fe,backend,scripts,docs] 41f (+989/-63) @ 2026-08-06 10:20 +0800
+wip: [f] 13f (+620/-233) @ 2026-08-06 10:49 +0800
 
 Areas:
-  fe/          34 files (+540/-62)
-  backend/     5 files (+200/-1)
-  scripts/     1 files (+56/-0)
-  docs/        1 files (+193/-0)
+  fe/          13 files (+620/-233)
 
 Changed (up to 25):
-M  backend/app/core/config.py
-A  backend/app/dashboard/workspace_instances/__init__.py
-A  backend/app/dashboard/workspace_instances/seed.py
-M  backend/app/main.py
-A  backend/tests/test_workspace_instances_seed.py
-A  docs/feature-truth/2026-08-06-de-label-panel-truth-audit.md
-M  fe/src/components/charts/engine/d3/cartesian/renderArea.ts
-M  fe/src/components/charts/engine/d3/cartesian/renderBarRange.ts
-M  fe/src/components/charts/engine/d3/cartesian/renderBidirectionalBar.ts
-M  fe/src/components/charts/engine/d3/cartesian/renderBullet.ts
-M  fe/src/components/charts/engine/d3/cartesian/renderDualAxes.ts
-M  fe/src/components/charts/engine/d3/cartesian/renderProgressBar.ts
-M  fe/src/components/charts/engine/d3/cartesian/renderStock.ts
-M  fe/src/components/charts/engine/d3/cartesian/renderWaterfall.ts
-M  fe/src/components/charts/engine/d3/core/cartesianDataLabel.ts
-A  fe/src/components/charts/engine/d3/core/multilineLabel.ts
-M  fe/src/components/charts/engine/d3/hierarchy/renderCirclePacking.ts
-M  fe/src/components/charts/engine/d3/hierarchy/renderTreemap.test.ts
+M  fe/scripts/generate-gov-template-assets.mjs
 M  fe/src/components/charts/engine/d3/hierarchy/renderTreemap.ts
-M  fe/src/components/charts/engine/d3/radial/renderGauge.ts
+M  fe/src/components/charts/engine/d3/radial/pieLabels.test.ts
+M  fe/src/components/charts/engine/d3/radial/pieLabels.ts
+M  fe/src/components/charts/engine/d3/radial/radarLayout.test.ts
+M  fe/src/components/charts/engine/d3/radial/radarLayout.ts
 M  fe/src/components/charts/engine/d3/radial/renderRadar.ts
-M  fe/src/components/charts/engine/d3/relation/renderScatter.ts
-M  fe/src/components/charts/engine/d3/types.ts
-M  fe/src/components/charts/engine/d3/views/buildRenderConfig.ts
-M  fe/src/components/charts/engine/d3/views/buildStyleProps.ts
-... and 16 more
+M  fe/src/components/dashboard/chartStyleSections/ChartTypeStyleSections.tsx
+M  fe/src/components/dashboard/layoutUtils.ts
+M  fe/src/lib/applyChartDeStyleBlocks.ts
+M  fe/src/lib/chartDeStyleBlocks.ts
+A  fe/src/lib/defaultRadarChartDeStyle.ts
+A  fe/src/lib/defaultTreemapChartDeStyle.test.ts
 
-stat: 41 files changed, 989 insertions(+), 63 deletions(-)
+stat: 13 files changed, 620 insertions(+), 233 deletions(-)
 branch: dev | scheduled-auto-commit
