@@ -182,7 +182,7 @@ export function DashboardListCardPreview({
           {isScreen ? (
             <DataScreenPresenter
               layout={resolvedLayout!}
-              presentationMode="fill"
+              presentationMode="fit"
               geo3dRenderTier="thumbnail"
               className="pointer-events-none h-full min-h-0 select-none"
             />

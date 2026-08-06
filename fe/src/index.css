@@ -408,10 +408,11 @@ html.dark {
   line-height: 1.375rem;
 }
 
-/* 像素画布：按 --pixel-canvas-chrome-scale 反比补偿，缩放后屏幕字号稳定 */
+/* 像素画布壳层字号：浏览/预览/播放/缩略图按 1 走（与内容一起等比缩小，WYSIWYG），
+   编辑态按 --pixel-canvas-chrome-scale 反比补偿，保证缩小画布时标题可读 */
 .pixel-canvas-host {
   --pixel-canvas-scale: 1;
-  --pixel-canvas-chrome-scale: var(--pixel-canvas-scale);
+  --pixel-canvas-chrome-scale: 1;
   --dw-screen-body: 1rem;
   --dw-screen-caption: 0.875rem;
   --dw-screen-table: 0.9375rem;
@@ -431,7 +432,7 @@ html.dark {
   padding-right: 20px;
 }
 
-.pixel-canvas-host[data-pixel-canvas-mode="edit"] {
+.pixel-canvas-host[data-pixel-canvas-mode="edit"]:not([data-pixel-canvas-design-locked="true"]) {
   --pixel-canvas-chrome-scale: max(var(--pixel-canvas-scale), 0.5);
 }
 

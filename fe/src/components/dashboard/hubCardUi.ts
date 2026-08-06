@@ -1,7 +1,10 @@
 import type { CSSProperties } from "react";
 
-/** 看板 / 大屏 / 模板 / 组件库 Hub 卡片统一预览比例 */
+/** 看板 / 模板 / 组件库 Hub 卡片统一预览比例 */
 export const HUB_CARD_ASPECT_RATIO = "16 / 10";
+
+/** 数据大屏预览比例：与 1920×1080 设计画布一致，等比缩放后无留白无变形 */
+export const HUB_CARD_SCREEN_ASPECT_RATIO = "16 / 9";
 
 /** @deprecated 使用 HUB_CARD_ASPECT_RATIO */
 export const DASHBOARD_LIST_CARD_ASPECT_RATIO = HUB_CARD_ASPECT_RATIO;
@@ -33,8 +36,13 @@ export const HUB_CARD_BODY_MORE_TRIGGER_CLASS = "shrink-0";
 export const HUB_CARD_BODY_ACTION_RAIL_CLASS =
   "flex min-h-[2.75rem] shrink-0 flex-col items-end justify-between gap-0.5 self-stretch py-px";
 
-export function hubCardPreviewFrameStyle(): CSSProperties {
-  return { aspectRatio: HUB_CARD_ASPECT_RATIO };
+export function hubCardPreviewFrameStyle(
+  surfaceKind?: "dashboard" | "data-screen",
+): CSSProperties {
+  return {
+    aspectRatio:
+      surfaceKind === "data-screen" ? HUB_CARD_SCREEN_ASPECT_RATIO : HUB_CARD_ASPECT_RATIO,
+  };
 }
 
 export const HUB_CARD_SKELETON_PREVIEW_CLASS = "aspect-[16/10] animate-pulse bg-gray-100 dark:bg-white/[0.04]";

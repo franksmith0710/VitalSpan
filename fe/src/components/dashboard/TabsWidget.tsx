@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { isPaletteDragEvent, readPaletteDragPayload, type PaletteDragPayload } from "@/lib/dashboardDnd";
 import { usePaletteDragActive } from "./pixelCanvas/paletteDragContext";
 import { useTabPaletteDropTarget } from "./pixelCanvas/tabPaletteDropTargetContext";
-import { usePixelCanvasScale } from "./pixelCanvas/PixelCanvasScaleContext";
+import { usePixelChromeScale } from "./pixelCanvas/PixelCanvasScaleContext";
 import type { DashboardWidgetShell } from "./dashboardCanvasMode";
 import { WidgetInlineTitle } from "./WidgetInlineTitle";
 import type { LayoutWidget, TabsWidgetConfig, DashboardStyleConfig } from "./layoutUtils";
@@ -121,7 +121,7 @@ export function TabsWidget({
   const cfgRef = useRef(cfg);
   cfgRef.current = cfg;
   const head = cfg.headStyle ?? {};
-  const canvasScale = usePixelCanvasScale();
+  const chromeScale = usePixelChromeScale();
   const isShape = shell === "shape";
   const gridShell = resolveGridWidgetShell(widget, dashboardStyle);
   const paletteDragActive = usePaletteDragActive();
@@ -150,7 +150,7 @@ export function TabsWidget({
   }, [cfg.carousel?.enabled, cfg.carousel?.intervalSec, cfg.panes.length, mode, onTabsConfigChange]);
 
   const tabLabelStyle: CSSProperties = isShape
-    ? shapeTitlePresentationStyle({ fontSize: head.fontSize ?? DEFAULT_TAB_FONT_PX }, canvasScale)
+    ? shapeTitlePresentationStyle({ fontSize: head.fontSize ?? DEFAULT_TAB_FONT_PX }, chromeScale)
     : { fontSize: head.fontSize ?? DEFAULT_TAB_FONT_PX };
 
   const setActivePane = (paneId: string) => {

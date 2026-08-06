@@ -287,7 +287,6 @@ export async function renderThreeChoroplethChart(
     drillDepth,
     featureCount: features.length,
     shortSide: Math.min(width, height),
-    renderTier: renderTier as Geo3dRenderTier,
   });
   if (!shouldRenderGeo3d(quality)) {
     return d3Fallback(container, config, "quality-degraded");

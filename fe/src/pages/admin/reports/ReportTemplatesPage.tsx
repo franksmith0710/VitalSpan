@@ -262,7 +262,7 @@ export function ReportTemplatesPage() {
       description="固定版式文档报表（Word/Excel/PDF 套版填数），后续能力；当前默认定时报告请从看板/大屏分享页创建。"
       actions={nodes.length > 0 ? createActions : null}
     >
-      <Alert variant="default" className="mb-4 border-brand-200 bg-brand-50/40 dark:border-brand-500/30 dark:bg-brand-500/5">
+      <Alert severity="info" className="mb-4 border-brand-200 bg-brand-50/40 dark:border-brand-500/30 dark:bg-brand-500/5">
         <Info className="size-4" aria-hidden />
         <AlertTitle>后续能力 · 非当前主路径</AlertTitle>
         <AlertDescription>

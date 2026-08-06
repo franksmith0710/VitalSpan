@@ -107,7 +107,10 @@ export function VizTemplateCard({
 
   return (
     <article className={HUB_CARD_SHELL_CLASS} data-testid={`viz-template-card-${item.id}`}>
-      <div className={HUB_CARD_PREVIEW_FRAME_CLASS} style={hubCardPreviewFrameStyle()}>
+      <div
+        className={HUB_CARD_PREVIEW_FRAME_CLASS}
+        style={hubCardPreviewFrameStyle(item.surfaceKind)}
+      >
         <div className={HUB_CARD_PREVIEW_CONTENT_CLASS}>
           <TemplateCardPreview
             templateId={item.id}

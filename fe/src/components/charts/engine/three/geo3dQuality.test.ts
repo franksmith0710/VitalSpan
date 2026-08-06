@@ -67,15 +67,14 @@ describe("resolveGeo3dQuality", () => {
     ).toBe("low");
   });
 
-  it("returns low for thumbnail render tier", () => {
+  it("keeps 3D for list thumbnails so cards match the real screen", () => {
     expect(
       resolveGeo3dQuality({
         drillDepth: 0,
         featureCount: 10,
         shortSide: 800,
-        renderTier: "thumbnail",
       }),
-    ).toBe("low");
+    ).toBe("high");
   });
 
   it("respects forced low at national depth", () => {

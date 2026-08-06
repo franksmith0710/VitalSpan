@@ -183,6 +183,6 @@ describe("PrefabReportsPage smoke", () => {
     renderPage();
     await user.click(await screen.findByRole("button", { name: "运行报表 实体生命周期分布" }));
     expect(await screen.findByText("实体数据尚未就绪")).toBeInTheDocument();
-    expect(screen.getByText(/DEV_REPORT_SEED=1/)).toBeInTheDocument();
+    expect(screen.getByText(/联系管理员启用演示数据/)).toBeInTheDocument();
   });
 });

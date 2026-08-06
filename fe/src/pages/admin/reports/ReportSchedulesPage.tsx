@@ -204,6 +204,7 @@ export function ReportSchedulesPage() {
                     type="button"
                     size="sm"
                     variant={tab === option.id ? "primary" : "outline"}
+                    aria-pressed={tab === option.id}
                     onClick={() => setTab(option.id)}
                   >
                     {option.label}

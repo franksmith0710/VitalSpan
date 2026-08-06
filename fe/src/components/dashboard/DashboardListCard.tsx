@@ -98,7 +98,10 @@ export function DashboardListCard({
 
   return (
     <article className={cn(HUB_CARD_SHELL_CLASS, className)}>
-      <div className={HUB_CARD_PREVIEW_FRAME_CLASS} style={hubCardPreviewFrameStyle()}>
+      <div
+        className={HUB_CARD_PREVIEW_FRAME_CLASS}
+        style={hubCardPreviewFrameStyle(isScreen ? "data-screen" : "dashboard")}
+      >
         {onToggleSelect ? (
           <div className="absolute left-2 top-2 z-20 rounded-md bg-white/90 p-0.5 shadow-sm dark:bg-gray-900/90">
             <ListRowCheckbox

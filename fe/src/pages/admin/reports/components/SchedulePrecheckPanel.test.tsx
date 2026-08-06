@@ -32,8 +32,8 @@ describe("SchedulePrecheckPanel", () => {
   it("shows all checks passed when dependencies ready", async () => {
     renderPanel();
     expect(await screen.findByText("创建前检查")).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByText(/Playwright 渲染就绪/)).toBeInTheDocument());
-    expect(screen.getByText(/SMTP 通道可用/)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/PDF 导出服务就绪/)).toBeInTheDocument());
+    expect(screen.getByText(/邮件服务可用/)).toBeInTheDocument();
   });
 
   it("warns when widget count is zero", async () => {

@@ -46,12 +46,14 @@ export function resetWebGLSlotsForTests(): void {
   activeWebglSlots.clear();
 }
 
-/** 列表缩略图不加载地形；仅「卫星实景」预设可启用离线卫星贴图 */
+/**
+ * 仅「卫星实景」预设可启用离线卫星贴图。缩略图同样加载，
+ * 否则列表卡片会渲染出无贴图的白色地块，与真实大屏观感割裂。
+ */
 export function resolveTerrainTextureEnabled(
-  tier: Geo3dRenderTier,
+  _tier: Geo3dRenderTier,
   geo3dStyle: ChartGeo3dStyle,
 ): boolean {
-  if (tier === "thumbnail") return false;
   if (resolveGeo3dStylePreset(geo3dStyle) !== "satellite") return false;
   return geo3dStyle.terrainTexture !== false;
 }

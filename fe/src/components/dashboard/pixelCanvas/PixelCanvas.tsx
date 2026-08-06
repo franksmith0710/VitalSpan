@@ -998,6 +998,7 @@ export function PixelCanvas({
       data-testid="pixel-canvas-host"
       data-pixel-canvas-mode={mode}
       data-pixel-canvas-scale={scale}
+      data-pixel-canvas-design-locked={designViewportLocked ? "true" : undefined}
       data-pixel-canvas-scroll-x={scrollX ? "true" : undefined}
       data-pixel-canvas-playing={playingWidgetId ?? undefined}
       style={{
@@ -1024,7 +1025,11 @@ export function PixelCanvas({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <PixelCanvasScaleProvider scale={scale}>
+        <PixelCanvasScaleProvider
+          scale={scale}
+          designViewportLocked={designViewportLocked}
+          mode={mode}
+        >
         <PixelCanvasInteractionProvider
           interaction={playingWidgetId ? { widgetId: playingWidgetId } : null}
         >

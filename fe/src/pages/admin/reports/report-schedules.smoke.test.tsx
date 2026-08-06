@@ -103,9 +103,27 @@ describe("ReportSchedulesPage smoke", () => {
 
   it("shows create entry links prioritizing dashboard", async () => {
     renderPage();
-    expect(await screen.findByRole("link", { name: /从看板\/大屏创建/ })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: /从看板\/大屏创建/ })).toHaveAttribute(
+      "href",
+      "/admin/dashboards?intent=schedule",
+    );
     expect(screen.getByRole("link", { name: /从文档模板创建/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "看板/大屏" })).toBeInTheDocument();
+  });
+
+  it("honors tab=all query param", async () => {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <TooltipProvider delayDuration={0}>
+          <MemoryRouter initialEntries={["/admin/reports/schedules?tab=all"]}>
+            <ReportSchedulesPage />
+          </MemoryRouter>
+        </TooltipProvider>
+      </QueryClientProvider>,
+    );
+    await screen.findByText("销售月报");
+    expect(screen.getByRole("button", { name: "全部" })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("expands history and shows retry", async () => {

@@ -82,6 +82,10 @@ describe("ReportCenterPage smoke", () => {
     expect(await screen.findByText("报表中心")).toBeInTheDocument();
     expect(await screen.findByText("销售看板")).toBeInTheDocument();
     expect(screen.getByText("从看板/大屏创建")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /从看板\/大屏创建/i }).closest("a")).toHaveAttribute(
+      "href",
+      "/admin/dashboards?intent=schedule",
+    );
   });
 
   it("shows admin overview shortcuts", async () => {

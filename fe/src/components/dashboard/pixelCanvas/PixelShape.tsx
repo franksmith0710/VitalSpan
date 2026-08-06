@@ -48,6 +48,7 @@ import {
 } from "./widgetShellLegendContext";
 import { usePixelShapeDocumentDrag } from "./usePixelShapeDocumentDrag";
 import { usePaletteDragActive } from "./paletteDragContext";
+import { usePixelChromeScale } from "./PixelCanvasScaleContext";
 import {
   dispatchPixelShapeLiveResize,
 } from "./pixelShapeLiveResize";
@@ -241,6 +242,7 @@ function PixelShapeInnerChrome({
   contentRef,
   children,
 }: PixelShapeInnerChromeProps) {
+  const chromeScale = usePixelChromeScale();
   const legendCtx = useWidgetShellLegend();
   const legend = legendCtx?.state;
   // 始终使用同一壳层结构，避免图例从空→有时在 Shell/裸 children 间切换导致 ChartRenderer 卸载重挂、execute 死循环
@@ -271,7 +273,7 @@ function PixelShapeInnerChrome({
       <div className={cn("relative z-[1] flex min-h-0 min-w-0 flex-1 flex-col", overflowClass)}>
         <WidgetShapeChrome
           title={widget.title}
-          titleStyle={shapeTitlePresentationStyle(titleStyle, scale)}
+          titleStyle={shapeTitlePresentationStyle(titleStyle, chromeScale)}
           showTitle={showTitle}
           remark={remark}
           mode={mode}

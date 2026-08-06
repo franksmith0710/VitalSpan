@@ -1,4 +1,3 @@
-import type { Geo3dRenderTier } from "./geo3dRuntime";
 import { GEO3D_THREE_MIN_SHORT_SIDE } from "./geo3dRuntime";
 
 export type Geo3dQualityLevel = "high" | "medium" | "low";
@@ -11,21 +10,21 @@ export const GEO3D_FEATURE_DEGRADE_THRESHOLD = 80;
 /** 短边低于此像素时 auto 模式不用 high */
 export const GEO3D_HIGH_MIN_SHORT_SIDE = 320;
 
+/**
+ * 缩略图不再单独降级：列表卡片与真实大屏走同一套判定，
+ * 并发上限由 GEO3D_MAX_WEBGL_INSTANCES 的槽位机制兜底回退 2D。
+ */
 export type ResolveGeo3dQualityInput = {
   quality?: Geo3dQualitySetting;
   drillDepth: number;
   featureCount: number;
   shortSide: number;
-  renderTier?: Geo3dRenderTier;
 };
 
 export function resolveGeo3dQuality(input: ResolveGeo3dQualityInput): Geo3dQualityLevel {
   const forced = input.quality;
   if (forced && forced !== "auto") {
     return forced;
-  }
-  if (input.renderTier === "thumbnail") {
-    return "low";
   }
   if (input.drillDepth >= 2 || input.featureCount > GEO3D_FEATURE_DEGRADE_THRESHOLD) {
     return "low";

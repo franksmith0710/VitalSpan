@@ -49,7 +49,7 @@ import {
 import { isWidgetConfigReady } from "./createLayoutWidget";
 import type { Geo3dRenderTier } from "@/components/charts/engine/three/geo3dRuntime";
 import { pixelDragRailHeightPx, pixelViewTitleHeightPx, dwCaption } from "./dashboardWidgetTypography";
-import { usePixelCanvasScale } from "./pixelCanvas/PixelCanvasScaleContext";
+import { usePixelChromeScale } from "./pixelCanvas/PixelCanvasScaleContext";
 import { widgetChartIcon, WIDGET_CHART_LABELS } from "./widgetIcons";
 import { resolveLayoutWidget, type VizComponentMap } from "@/lib/resolveVizComponent";
 import { isLinkedComponentRef } from "@/lib/vizComponents";
@@ -245,7 +245,7 @@ export function DashboardWidget({
   componentMap,
 }: DashboardWidgetProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const canvasScale = usePixelCanvasScale();
+  const chromeScale = usePixelChromeScale();
   const resolvedWidget = useMemo(
     () => (componentMap ? resolveLayoutWidget(widget, componentMap) : widget),
     [widget, componentMap],
@@ -356,9 +356,9 @@ export function DashboardWidget({
       : `${sizeW}×${sizeH}`;
   const shapeContentChromePx =
     inShapeShell && mode === "edit" && selected
-      ? pixelDragRailHeightPx(canvasScale)
+      ? pixelDragRailHeightPx(chromeScale)
       : inShapeShell && mode === "view" && readChartTitleVisible(resolvedWidget.chartConfig, dashboardStyle?.titleStyle)
-        ? pixelViewTitleHeightPx(canvasScale)
+        ? pixelViewTitleHeightPx(chromeScale)
         : 0;
   const effectiveScheme = resolveWidgetEffectiveScheme(dashboardStyle);
   const shellResolved = resolvedWidget.chartConfig

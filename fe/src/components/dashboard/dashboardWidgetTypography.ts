@@ -13,6 +13,21 @@ export const PIXEL_SCREEN_RAIL_HEIGHT_PX = 32;
 /** 预览态 shape 壳层标题栏屏幕高度（px） */
 export const PIXEL_SCREEN_TITLE_HEIGHT_PX = 36;
 
+/**
+ * 壳层（标题字号、标题栏高度、页签字号）的补偿基数，与 CSS
+ * `--pixel-canvas-chrome-scale` 同一套语义：
+ * - 编辑态反比补偿，缩小画布时标题与操作条仍可读可点；
+ * - 浏览/预览/播放/缩略图一律返回 1，壳层随内容等比缩小，保证 WYSIWYG。
+ */
+export function resolveShapeTitleCanvasScale(
+  canvasScale: number,
+  designViewportLocked: boolean,
+  mode: "edit" | "view" = "view",
+): number {
+  if (designViewportLocked || mode !== "edit") return 1;
+  return canvasScale > 0 ? canvasScale : 1;
+}
+
 /** 像素画布拖动手柄逻辑高度（随 scale 反比放大，保证缩放后屏幕高度稳定） */
 export function pixelDragRailHeightPx(canvasScale: number): number {
   const scale = canvasScale > 0 ? canvasScale : 1;
