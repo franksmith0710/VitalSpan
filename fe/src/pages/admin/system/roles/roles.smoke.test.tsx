@@ -114,4 +114,91 @@ describe("RoleListPage smoke", () => {
       ).toBe(true);
     });
   });
+
+  it("T-AUTH-001-05: edit role triggers PUT", async () => {
+    const ROLE_ID = "00000000-0000-4000-8000-000000000099";
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      const init = args[1] as RequestInit | undefined;
+      if (path === `/api/v1/roles/${ROLE_ID}/default-views`) {
+        return { dashboardId: null, reportTemplateNodeId: null };
+      }
+      if (path === `/api/v1/roles/${ROLE_ID}` && init?.method === "PUT") {
+        return {
+          id: ROLE_ID,
+          code: "analyst",
+          name: "高级分析师",
+          description: null,
+          isActive: true,
+        };
+      }
+      if (path.startsWith("/api/v1/roles")) {
+        return {
+          items: [
+            {
+              id: ROLE_ID,
+              code: "analyst",
+              name: "分析师",
+              description: null,
+              isActive: true,
+            },
+          ],
+          total: 1,
+        };
+      }
+      if (path.startsWith("/api/v1/dashboards")) return { items: [] };
+      return {};
+    });
+    renderRoles();
+    await userEvent.click(await screen.findByRole("button", { name: "编辑" }));
+    const nameInput = await screen.findByLabelText("显示名");
+    await userEvent.clear(nameInput);
+    await userEvent.type(nameInput, "高级分析师");
+    await userEvent.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => {
+      const putCall = mockApiFetch.mock.calls.find(
+        (c) => c[0] === `/api/v1/roles/${ROLE_ID}` && (c[1] as RequestInit)?.method === "PUT",
+      );
+      expect(putCall).toBeTruthy();
+      const body = JSON.parse(String((putCall![1] as RequestInit).body));
+      expect(body.name).toBe("高级分析师");
+    });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("T-AUTH-001-06: delete role triggers DELETE", async () => {
+    const ROLE_ID = "00000000-0000-4000-8000-000000000099";
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      const init = args[1] as RequestInit | undefined;
+      if (path === `/api/v1/roles/${ROLE_ID}` && init?.method === "DELETE") {
+        return {};
+      }
+      if (path.startsWith("/api/v1/roles")) {
+        return {
+          items: [
+            {
+              id: ROLE_ID,
+              code: "analyst",
+              name: "分析师",
+              description: null,
+              isActive: true,
+            },
+          ],
+          total: 1,
+        };
+      }
+      if (path.startsWith("/api/v1/dashboards")) return { items: [] };
+      return {};
+    });
+    renderRoles();
+    await userEvent.click(await screen.findByRole("button", { name: "删除" }));
+    await userEvent.click(await screen.findByRole("button", { name: "删除" }));
+    await waitFor(() => {
+      const delCall = mockApiFetch.mock.calls.find(
+        (c) => c[0] === `/api/v1/roles/${ROLE_ID}` && (c[1] as RequestInit)?.method === "DELETE",
+      );
+      expect(delCall).toBeTruthy();
+    });
+  });
 });

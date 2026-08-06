@@ -74,10 +74,10 @@
 | B-4 | P1 | 否 | 否 | **verified** | r3 再评确认 | `UserManageSheet` 组织+改密 | `users.smoke.test.tsx` 5 passed | — | 2026-07-31 |
 | B-5 | P1 | 否 | 否 | **verified** | r3 再评确认 | 组织编辑/删除 | `orgs.smoke.test.tsx` 3 passed | — | 2026-07-31 |
 | B-6 | P1 | 否 | 否 | **verified** | r3 修复 | `roles.py` + `RoleListPage.tsx` 服务端 `is_active` 筛选 | `roles.smoke.test.tsx` T-AUTH-001-04 | — | 2026-07-31 |
-| B-7 | P1 | 否 | 否 | **partial** | r3 再评 | 向导+导航已落地；入口/模板仍缺 | `system-admin.smoke.test.tsx` | — | 2026-07-31 |
-| B-8 | P2 | 否 | 否 | open | — | — | — | — | 2026-07-31 |
-| B-9 | P2 | 否 | 否 | open | — | — | — | — | 2026-07-31 |
-| B-10 | P2 | 否 | 是 | open | — | — | — | ui-ux-reviewer | 2026-07-31 |
+| B-7 | P1 | 否 | 否 | **partial** | r3 收口 | 顶栏「系统管理」入口；岗位模板仍缺 | `AdminLayout.smoke.test.tsx` T-FE-SMFB-04/05 | — | 2026-08-07 |
+| B-8 | P2 | 否 | 否 | **verified** | r3 收口 | `RlsAdminPage` 维度类型编辑/删除 | `rls.smoke.test.tsx` T-RLS-02/03 | — | 2026-08-07 |
+| B-9 | P2 | 否 | 否 | **verified** | r3 收口 | `RoleProfileFormFields` 基本信息/登录默认页分组 | `roles.smoke.test.tsx` 回归 | — | 2026-08-07 |
+| B-10 | P2 | 否 | 是 | **verified** | r3 收口 | `GrantsPage` 对齐 list-page-kit + 客户端分页 | `grants.smoke.test.tsx` T-AUTH-004-FE-05 | — | 2026-08-07 |
 | B-11 | P1 | 否 | 否 | **verified** | r3 再评确认 | `CreateUserDialog` | `users.smoke.test.tsx` T-AUTH-003-03 | — | 2026-07-31 |
 | B-12 | P1 | 否 | 否 | **verified** | r3 修复 | `UserAccountStatusPanel.tsx` 停用/启用/解锁 | `users.smoke.test.tsx` T-AUTH-003-06 | — | 2026-07-31 |
 
@@ -126,6 +126,7 @@
 ## 下一步
 
 - [x] 报告已落盘 `docs/material/product-reviewer/2026-07-31-system-admin-r3.md`
-- [ ] P1：B-12 用户停用/解锁 UI → B-6 角色筛选
+- [x] P1：B-12 用户停用/解锁 UI · B-6 角色筛选
+- [x] r3 收口：B-8/B-9/B-10；B-7 顶栏入口（模板仍 open）
+- [ ] 可选：B-7 岗位角色模板一键导入
 - [ ] 可选真机 `scenario-playbook`：首租户从向导走到授权报表
-- [ ] 可选 ui-ux-reviewer：B-10 授权页布局

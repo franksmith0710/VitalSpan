@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/context/auth-context";
 import { apiFetch } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";
@@ -58,13 +59,15 @@ function StepCard({ step, index }: { step: SetupStep; index: number }) {
 }
 
 export function SystemAdminHomePage() {
+  const { user: authUser } = useAuth();
   const orgsQuery = useQuery({
     queryKey: queryKeys.orgs.all,
     queryFn: () => apiFetch<{ items: unknown[] }>("/api/v1/orgs"),
   });
   const usersQuery = useQuery({
-    queryKey: queryKeys.users.list({ limit: 1, offset: 0 }),
-    queryFn: () => apiFetch<{ total: number }>("/api/v1/users?limit=1&offset=0"),
+    queryKey: queryKeys.users.list({ limit: 500, offset: 0 }),
+    queryFn: () =>
+      apiFetch<{ items: { id: string }[]; total: number }>("/api/v1/users?limit=500&offset=0"),
   });
   const rolesQuery = useQuery({
     queryKey: queryKeys.roles.list({ limit: 500, offset: 0 }),
@@ -86,6 +89,9 @@ export function SystemAdminHomePage() {
 
   const orgCount = orgsQuery.data?.items.length ?? 0;
   const userTotal = usersQuery.data?.total ?? 0;
+  const businessUserCount = (usersQuery.data?.items ?? []).filter(
+    (u) => u.id !== authUser?.id,
+  ).length;
   const roles = rolesQuery.data?.items ?? [];
   const businessRoleCount = roles.filter((r) => !r.isRoot).length;
   const grantCount = grantsQuery.data?.items.length ?? 0;
@@ -110,7 +116,7 @@ export function SystemAdminHomePage() {
       title: "开通用户账号",
       summary: "创建业务人员账号，绑定岗位角色与所属组织，交付初始密码。",
       href: "/admin/system/users",
-      done: userTotal > 1,
+      done: businessUserCount > 0,
     },
     {
       id: "grants",

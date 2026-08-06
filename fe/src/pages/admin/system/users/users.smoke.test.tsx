@@ -237,4 +237,36 @@ describe("UserListPage smoke", () => {
     expect(await screen.findByRole("button", { name: "重新启用" })).toBeInTheDocument();
     expect(screen.getByText("已停用")).toBeInTheDocument();
   });
+
+  it("T-AUTH-003-07: unlock user triggers POST /users/{id}/unlock", async () => {
+    const lockedUntil = new Date(Date.now() + 60_000).toISOString();
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      const init = args[1] as RequestInit | undefined;
+      if (path === `/api/v1/users/${USER_A}/unlock` && init?.method === "POST") {
+        return { id: USER_A, username: "alice", isActive: true, lockedUntil: null };
+      }
+      if (path === `/api/v1/users/${USER_A}/org`) {
+        throw new ApiRequestError("User has no org assignment", "USER_ORG_NOT_SET", 404);
+      }
+      if (path.startsWith("/api/v1/orgs")) {
+        return { items: [] };
+      }
+      if (path.startsWith("/api/v1/users") && !path.includes("/roles")) {
+        return listUsersResponse({ lockedUntil });
+      }
+      return { items: [] };
+    });
+    renderUsers();
+    await userEvent.click(await screen.findByRole("button", { name: "管理" }));
+    await userEvent.click(await screen.findByRole("tab", { name: "组织与安全" }));
+    await userEvent.click(screen.getByRole("button", { name: "解除锁定" }));
+    await waitFor(() => {
+      const postCall = mockApiFetch.mock.calls.find(
+        (c) => c[0] === `/api/v1/users/${USER_A}/unlock` && (c[1] as RequestInit)?.method === "POST",
+      );
+      expect(postCall).toBeTruthy();
+    });
+    expect(await screen.findByText("正常")).toBeInTheDocument();
+  });
 });

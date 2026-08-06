@@ -76,4 +76,46 @@ describe("SystemAdminHomePage smoke", () => {
     const link = await screen.findByRole("link", { name: /建立组织架构/ });
     expect(link).toHaveAttribute("href", "/admin/system/orgs");
   });
+
+  it("marks users step incomplete when only current admin exists", async () => {
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      if (path === "/api/v1/orgs") return { items: [{ id: "o1", name: "总部" }] };
+      if (path.startsWith("/api/v1/users")) {
+        return { total: 1, items: [{ id: "1", username: "admin" }] };
+      }
+      if (path.startsWith("/api/v1/roles")) {
+        return { items: [{ id: "r1", isRoot: true }], total: 1 };
+      }
+      if (path.startsWith("/api/v1/resource-grants")) return { items: [] };
+      return {};
+    });
+    renderHome();
+    const usersStep = await screen.findByRole("link", { name: /开通用户账号/ });
+    expect(usersStep).toHaveTextContent("去配置");
+  });
+
+  it("marks users step complete when another user exists", async () => {
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      if (path === "/api/v1/orgs") return { items: [{ id: "o1", name: "总部" }] };
+      if (path.startsWith("/api/v1/users")) {
+        return {
+          total: 2,
+          items: [
+            { id: "1", username: "admin" },
+            { id: "2", username: "alice" },
+          ],
+        };
+      }
+      if (path.startsWith("/api/v1/roles")) {
+        return { items: [{ id: "r1", isRoot: true }], total: 1 };
+      }
+      if (path.startsWith("/api/v1/resource-grants")) return { items: [] };
+      return {};
+    });
+    renderHome();
+    const usersStep = await screen.findByRole("link", { name: /开通用户账号/ });
+    expect(usersStep).toHaveTextContent("查看或调整");
+  });
 });

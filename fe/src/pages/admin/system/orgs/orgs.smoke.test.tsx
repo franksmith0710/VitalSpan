@@ -97,4 +97,31 @@ describe("OrgTreePage smoke", () => {
       expect(delCall).toBeTruthy();
     });
   });
+
+  it("create org triggers POST", async () => {
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      const init = args[1] as RequestInit | undefined;
+      if (path === "/api/v1/orgs" && init?.method === "POST") {
+        return { id: "org-new", parent_id: null, name: "华东区", path: "/east", level: 0 };
+      }
+      if (path === "/api/v1/orgs") {
+        return { items: [] };
+      }
+      return {};
+    });
+    renderOrgs();
+    await userEvent.click(await screen.findByRole("button", { name: "新建组织" }));
+    await userEvent.type(screen.getByLabelText("名称"), "华东区");
+    await userEvent.click(screen.getByRole("button", { name: "创建" }));
+    await waitFor(() => {
+      const postCall = mockApiFetch.mock.calls.find(
+        (c) => c[0] === "/api/v1/orgs" && (c[1] as RequestInit)?.method === "POST",
+      );
+      expect(postCall).toBeTruthy();
+      const body = JSON.parse(String((postCall![1] as RequestInit).body));
+      expect(body.name).toBe("华东区");
+      expect(body.parent_id).toBeNull();
+    });
+  });
 });

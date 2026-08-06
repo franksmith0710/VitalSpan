@@ -65,4 +65,48 @@ describe("RlsRoleBindingPanel", () => {
     const checkbox = await screen.findByRole("checkbox", { name: "绑定 华东" });
     expect(checkbox).toBeChecked();
   });
+
+  it("save binding sends PUT with updated groupIds", async () => {
+    const user = userEvent.setup();
+    render(
+      wrap(
+        <RlsRoleBindingPanel
+          groups={[
+            {
+              id: GROUP_ID,
+              dimension_type_id: "dim-1",
+              code: "east",
+              name: "华东",
+              parent_id: null,
+            },
+            {
+              id: "grp-2",
+              dimension_type_id: "dim-1",
+              code: "west",
+              name: "华西",
+              parent_id: null,
+            },
+          ]}
+          groupsLoading={false}
+        />,
+      ),
+    );
+
+    await user.click(screen.getByLabelText("选择角色"));
+    await user.click(await screen.findByRole("option", { name: /分析师/ }));
+    const west = await screen.findByRole("checkbox", { name: "绑定 华西" });
+    await user.click(west);
+    await user.click(screen.getByRole("button", { name: "保存绑定" }));
+
+    await waitFor(() => {
+      const putCall = mockApiFetch.mock.calls.find(
+        (c) =>
+          c[0] === `/api/v1/roles/${ROLE_ID}/dimension-groups` &&
+          (c[1] as RequestInit)?.method === "PUT",
+      );
+      expect(putCall).toBeTruthy();
+      const body = JSON.parse(String((putCall![1] as RequestInit).body));
+      expect(body.groupIds).toEqual(expect.arrayContaining([GROUP_ID, "grp-2"]));
+    });
+  });
 });

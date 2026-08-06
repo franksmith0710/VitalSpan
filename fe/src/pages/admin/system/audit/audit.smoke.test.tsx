@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -37,13 +37,29 @@ describe("AuditLogPage smoke", () => {
   afterEach(() => {
     cleanup();
     mockApiFetch.mockReset();
+    vi.useRealTimers();
   });
 
-  it("exposes time range filters", async () => {
+  it("exposes date range filters", async () => {
     mockApiFetch.mockResolvedValue({ items: [], total: 0 });
     renderAuditPage();
-    expect(await screen.findByLabelText("筛选起始时间")).toBeInTheDocument();
-    expect(screen.getByLabelText("筛选结束时间")).toBeInTheDocument();
+    expect(await screen.findByLabelText("筛选起始日期")).toBeInTheDocument();
+    expect(screen.getByLabelText("筛选结束日期")).toBeInTheDocument();
+  });
+
+  it("action search debounces into audit events query", async () => {
+    mockApiFetch.mockResolvedValue({ items: [], total: 0 });
+    const user = userEvent.setup();
+    renderAuditPage();
+    await user.type(await screen.findByLabelText("搜索操作"), "user.disable");
+    await waitFor(
+      () => {
+        expect(
+          mockApiFetch.mock.calls.some((c) => String(c[0]).includes("action=user.disable")),
+        ).toBe(true);
+      },
+      { timeout: 2000 },
+    );
   });
 
   it("renders readable audit rows", async () => {

@@ -183,4 +183,36 @@ describe("GrantsPage smoke", () => {
     expect(screen.getByText("res-0000")).toBeInTheDocument();
     expect(screen.queryByText("res-0020")).not.toBeInTheDocument();
   });
+
+  it("T-AUTH-004-FE-06: role filter hides grants for other roles", async () => {
+    const ROLE_B = "44444444-4444-4444-8444-444444444444";
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      if (path.startsWith("/api/v1/roles")) {
+        return {
+          items: [
+            { id: ROLE_ID, code: "analyst", name: "分析师", description: null, isActive: true },
+            { id: ROLE_B, code: "viewer", name: "查看者", description: null, isActive: true },
+          ],
+          total: 2,
+        };
+      }
+      if (path.startsWith("/api/v1/resource-grants")) {
+        return {
+          items: [
+            { id: GRANT_ID, roleId: ROLE_ID, resourceType: "dashboard", resourceId: RES_ID },
+            { id: "grant-b", roleId: ROLE_B, resourceType: "dashboard", resourceId: "res-viewer" },
+          ],
+        };
+      }
+      return {};
+    });
+    renderGrants();
+    expect(await screen.findByText(RES_ID)).toBeInTheDocument();
+    expect(screen.getByText("res-viewer")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("combobox", { name: "筛选角色" }));
+    await userEvent.click(await screen.findByRole("option", { name: "分析师" }));
+    expect(await screen.findByText(RES_ID)).toBeInTheDocument();
+    expect(screen.queryByText("res-viewer")).not.toBeInTheDocument();
+  });
 });
