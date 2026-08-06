@@ -34,6 +34,7 @@
   - [x] **Phase 2.5 Wave C/D companion**（2026-07-29）：标题装饰条、21:9 画布预设、模板导出 round-trip（见 `docs/feature-design/2026-07-29-data-screen-wave-cd-gap-fill.md`）
   - [x] **Phase 2.6 编辑视口 companion**（2026-07-29）：`useDataScreenViewportState`、标尺十字线、Ctrl+滚轮指针锚点缩放（见 `plans/2026-07-20-data-screen-edit-viewport-de.md`）
   - [x] **保存 WYSIWYG companion**（2026-07-29）：数据大屏跳过 `compactPixelLayoutWhenZeroGap`（[BUG-14](../../bugs/BUG-14_data-screen-save-gap-compaction_2026-07-29.md)）
+  - [x] **缩略图 WYSIWYG companion**（2026-08-06）：Hub / 列表卡片与真实播放一致——壳层字号补偿仅编辑态生效（`resolveShapeTitleCanvasScale` · `usePixelChromeScale` · `data-pixel-canvas-design-locked`）；大屏卡片改 `presentationMode="fit"` + 16:9 卡框（`hubCardPreviewFrameStyle`）；3D 地图缩略图保留 WebGL 与卫星地形（去 `renderTier` 硬降级）（case `fe-hub-card-preview-not-wysiwyg.md`）
   - [x] **Master gap-fill 真理源**（2026-07-29）：`docs/feature-design/2026-07-29-data-screen-master-gap-fill.md`
   - [ ] BUG-2 最终真实浏览器 Pointer QA：拖移、八向缩放、保存并刷新后位置/尺寸保持（手测表见 [project master §6.1](../../feature-design/2026-07-29-vitalspan-project-master-gap-fill.md) · 大屏路径见 [data-screen master §3 MT-BUG2-DS-*](../../feature-design/2026-07-29-data-screen-master-gap-fill.md) · 已登记 · 待发版抽测）
   - [x] **M-DEPTH F-B**：layout widget 类型扩展 `filter`（兼容旧 layout round-trip；后端 schema + FE `layoutUtils`）（完成于 2026-07-29 · 代码实扫回写）
