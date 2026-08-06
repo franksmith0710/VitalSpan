@@ -238,7 +238,7 @@ redoc: /redoc
 | DashboardLayout v2 | `canvas` | 仪表板 `{width: 1440, height: int >= 900}`；数据大屏 `styleConfig.surfaceKind=data-screen` 时 `{width: 800–7680, height: 600–4320}` | 持久化规范坐标空间；每个组件矩形必须完整位于 canvas 内 |
 
 | GET/PUT | `/api/v1/roles/{id}/default-views` | 角色默认视图模板 | 内部 | 二期 | VIEW-002 | 已实现 | `backend/app/api/v1/views.py` |
-| GET/POST | `/api/v1/users/me/views` | 用户个人视图 | 内部 | 三期 | VIEW-003 | 已实现 | `backend/app/api/v1/views.py` |
+| GET/POST | `/api/v1/users/me/views` | 用户个人视图（持久化 `view_user_overrides` 表） | 内部 | 三期 | VIEW-003 | 已实现 | `backend/app/api/v1/views.py` · `backend/app/views/user_override_repo.py` |
 | GET | `/api/v1/users/me/views/{view_id}` | 用户视图覆盖按 id 读取 | 内部 | 三期 | VIEW-003 | 已实现 | `backend/app/api/v1/views.py` |
 | PUT | `/api/v1/users/me/views/{id}` | 用户视图覆盖更新 | 内部 | 三期 | VIEW-003 | 已实现 | `backend/app/api/v1/views.py` |
 | DELETE | `/api/v1/users/me/views/{id}` | 用户视图覆盖删除 | 内部 | 三期 | VIEW-003 | 已实现 | `backend/app/api/v1/views.py` |

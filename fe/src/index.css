@@ -1378,6 +1378,11 @@ html.admin-fill-lock #root {
   margin: 0;
 }
 
+/* 空段落保高：防止漏网的 <p></p> 折叠（正常路径已写成 <p><br></p>） */
+.rich-main-class p:empty::before {
+  content: "\00a0";
+}
+
 .rich-main-class [style*="font-size"] {
   line-height: 1.4;
 }

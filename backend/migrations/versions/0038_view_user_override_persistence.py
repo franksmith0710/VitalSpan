@@ -11,6 +11,8 @@ from typing import Sequence, Union
 import sqlalchemy as sa
 from alembic import op
 
+from migrations.dialect_ops import bool_false_default, now_server_default
+
 revision: str = "0038"
 down_revision: Union[str, None] = "0037"
 branch_labels: Union[str, Sequence[str], None] = None
@@ -18,6 +20,9 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    bind = op.get_bind()
+    bool_false = bool_false_default(bind)
+    now_default = now_server_default(bind)
     op.create_table(
         "view_user_overrides",
         sa.Column("id", sa.Uuid(), nullable=False),
@@ -26,12 +31,12 @@ def upgrade() -> None:
         sa.Column("dashboard_id", sa.Uuid(), nullable=False),
         sa.Column("layout_json", sa.JSON(), nullable=False),
         sa.Column("classification_scope", sa.String(length=32), nullable=True),
-        sa.Column("inherited_from_role", sa.Boolean(), nullable=False, server_default=sa.text("0")),
-        sa.Column("is_default", sa.Boolean(), nullable=False, server_default=sa.text("0")),
+        sa.Column("inherited_from_role", sa.Boolean(), nullable=False, server_default=bool_false),
+        sa.Column("is_default", sa.Boolean(), nullable=False, server_default=bool_false),
         sa.Column(
             "updated_at",
             sa.DateTime(timezone=True),
-            server_default=sa.text("CURRENT_TIMESTAMP"),
+            server_default=now_default,
             nullable=False,
         ),
         sa.PrimaryKeyConstraint("id"),

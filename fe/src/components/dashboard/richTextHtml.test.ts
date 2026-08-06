@@ -50,4 +50,27 @@ describe("richTextHtml", () => {
       expect(isRichTextEmpty(html)).toBe(true);
     },
   );
+
+  it("preserves blank lines from TipTap empty paragraphs", () => {
+    const fromEditor =
+      '<p><br class="ProseMirror-trailingBreak"></p>' +
+      '<p><br class="ProseMirror-trailingBreak"></p>' +
+      '<p><span style="color: rgb(0, 255, 255)">当月金额</span></p>';
+    const result = sanitizeRichTextHtml(fromEditor);
+    expect(result.startsWith("<p><br></p><p><br></p>")).toBe(true);
+    expect(result).toContain("当月金额");
+    expect(result).not.toContain("ProseMirror-trailingBreak");
+  });
+
+  it("keeps soft breaks inside a paragraph", () => {
+    const result = sanitizeRichTextHtml("<p>第一行<br>第二行</p>");
+    expect(result).toBe("<p>第一行<br>第二行</p>");
+  });
+
+  it("strips trailingBreak after content without collapsing the paragraph", () => {
+    const result = sanitizeRichTextHtml(
+      '<p>正文<br class="ProseMirror-trailingBreak"></p>',
+    );
+    expect(result).toBe("<p>正文</p>");
+  });
 });

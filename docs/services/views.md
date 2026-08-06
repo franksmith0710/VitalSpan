@@ -5,7 +5,7 @@
 | 模块路径 | `backend/app/views/` |
 | PRD | [F09-VIEW](../automate/prd/F09-VIEW.md) · VIEW-001 ~ VIEW-003 |
 | 里程碑 | FR-VIEW |
-| 状态 | **L1 kickoff (r60)** |
+| 状态 | **L1 kickoff (r60)** · 用户覆盖 DB 持久化（0038） |
 
 ## 职责
 
@@ -14,15 +14,16 @@
 - 为后续角色默认视图与用户覆盖（VIEW-002/003）奠基
 - `role_template.py` 角色默认视图 CRUD（GET/PUT `/roles/{id}/default-views`）
 - `user_override.py` 用户覆盖 save/list + bounds/M7 stub（GET/POST `/users/me/views`）
+- `user_override_repo.py` + `view_user_overrides` 表持久化用户个人视图
 
 ## 边界
 
 | In | Out |
 |----|-----|
 | DashboardView 序列化、layout 校验、chart 引用检查 | 壳层渲染（前端 `fe/`） |
-| `role_template.py` 角色默认视图 CRUD；`user_override.py` 用户覆盖 + bounds/M7 stub | ORM 持久化、Admin UI |
-| `store.py` 进程内 role default + user override 内存 store | |
-| | Dashboard CRUD 持久化（→ `dashboard`） |
+| `role_template.py` 角色默认视图 CRUD；`user_override.py` 用户覆盖 + bounds/M7 stub | Admin UI（→ `fe/` 个人中心） |
+| `role_defaults_repo.py` + `view_role_defaults` 表；`user_override_repo.py` + `view_user_overrides` 表 | |
+| `store.py` 进程内 role default 内存缓存（写穿 DB 后同步） | Dashboard CRUD 持久化（→ `dashboard`） |
 
 ## 依赖
 
@@ -38,6 +39,7 @@
 | `POST /api/v1/views/validate` | HTTP 校验入口 | VIEW-001 | 已实现 |
 | `role_template.py` | get/put/resolve 角色默认视图（dashboard + reportTemplateNodeId） | VIEW-002 | M10 已实现 r234 |
 | `user_override.py` | list/create + bounds 守卫 | VIEW-003 | L1 已实现 r60 |
+| `user_override_repo.py` | `view_user_overrides` ORM 持久化 | VIEW-003 | 已实现 0038 |
 | `GET/PUT /api/v1/roles/{id}/default-views` | 角色默认视图 CRUD | VIEW-002 | L1 已实现 r60 |
 | `GET/POST /api/v1/users/me/views` | 用户个人视图覆盖 | VIEW-003 | L1 已实现 r60 |
 | `GET /api/v1/users/me/views/{view_id}` | 用户视图按 id 读取 | VIEW-003 | r63 已实现 |

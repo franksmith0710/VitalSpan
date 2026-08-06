@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext
 from app.dashboard.service import DashboardError, get_dashboard
-from app.views import store
+from app.views import user_override_repo
 from app.views.role_template import resolve_defaults_for_roles
 from app.views.schemas import ViewError
 from app.views.validate import validate_dashboard_view
@@ -22,22 +22,22 @@ def _normalize_item(item: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
-def _migrate_legacy_defaults(user_id: str) -> None:
-    bucket = store.list_user_overrides(user_id)
+def _migrate_legacy_defaults(db: Session, user_id: str) -> None:
+    bucket = user_override_repo.list_user_overrides(db, user_id)
     if not bucket:
         return
     if any(bool(item.get("isDefault")) for item in bucket):
         return
     legacy = next((item for item in bucket if item.get("name") == _LEGACY_DEFAULT_VIEW_NAME), None)
     if legacy is not None:
-        store.apply_default_flag(user_id, legacy.get("id"))
+        user_override_repo.apply_default_flag(db, user_id, legacy.get("id"))
         return
     if len(bucket) == 1:
-        store.apply_default_flag(user_id, bucket[0].get("id"))
+        user_override_repo.apply_default_flag(db, user_id, bucket[0].get("id"))
 
 
-def _apply_default_flag(user_id: str, view_id: str | None) -> None:
-    store.apply_default_flag(user_id, view_id)
+def _apply_default_flag(db: Session, user_id: str, view_id: str | None) -> None:
+    user_override_repo.apply_default_flag(db, user_id, view_id)
 
 
 def _read_is_default(payload: dict[str, Any]) -> bool | None:
@@ -55,18 +55,20 @@ def _widget_count(layout: dict[str, Any]) -> int:
 
 
 def list_overrides(user_id: str, db: Session | None = None, role_codes: list[str] | None = None) -> dict[str, Any]:
-    if db is not None and role_codes is not None:
+    if db is None:
+        raise ValueError("db session required")
+    if role_codes is not None:
         from app.views.onboarding import apply_first_login_inherit
 
         apply_first_login_inherit(db, user_id, role_codes)
-    _migrate_legacy_defaults(user_id)
-    items = [_normalize_item(item) for item in store.list_user_overrides(user_id)]
+    _migrate_legacy_defaults(db, user_id)
+    items = [_normalize_item(item) for item in user_override_repo.list_user_overrides(db, user_id)]
     return {"items": items}
 
 
-def get_override(user_id: str, view_id: str) -> dict[str, Any]:
-    _migrate_legacy_defaults(user_id)
-    for item in store.list_user_overrides(user_id):
+def get_override(db: Session, user_id: str, view_id: str) -> dict[str, Any]:
+    _migrate_legacy_defaults(db, user_id)
+    for item in user_override_repo.list_user_overrides(db, user_id):
         if item.get("id") == view_id:
             return _normalize_item(item)
     raise ViewError("VIEW_OVERRIDE_NOT_FOUND", "View override not found", 404)
@@ -76,13 +78,13 @@ def create_override(db: Session, actor: UserContext, payload: dict[str, Any]) ->
     name = payload.get("name")
     user_id = actor.id
     is_default = _read_is_default(payload)
-    if not name and not store.list_user_overrides(user_id):
+    if not name and not user_override_repo.list_user_overrides(db, user_id):
         name = _LEGACY_DEFAULT_VIEW_NAME
         if is_default is None:
             is_default = True
     if not name:
         name = payload["name"]
-    for existing in store.list_user_overrides(user_id):
+    for existing in user_override_repo.list_user_overrides(db, user_id):
         if existing.get("name") == name:
             raise ViewError("VIEW_OVERRIDE_CONFLICT", "View name already exists", 409)
 
@@ -123,17 +125,17 @@ def create_override(db: Session, actor: UserContext, payload: dict[str, Any]) ->
         "classificationScope": scope,
         "isDefault": bool(is_default),
     }
-    created = store.add_user_override(user_id, item)
+    created = user_override_repo.add_user_override(db, user_id, item)
     if is_default:
-        _apply_default_flag(user_id, view_id)
-        created = get_override(user_id, view_id)
+        _apply_default_flag(db, user_id, view_id)
+        created = get_override(db, user_id, view_id)
     return _normalize_item(created)
 
 
 def _validate_override_payload(db: Session, actor: UserContext, payload: dict[str, Any], *, exclude_id: str | None = None) -> None:
     name = payload.get("name")
     if name:
-        for existing in store.list_user_overrides(actor.id):
+        for existing in user_override_repo.list_user_overrides(db, actor.id):
             if existing.get("id") == exclude_id:
                 continue
             if existing.get("name") == name:
@@ -161,7 +163,7 @@ def _validate_override_payload(db: Session, actor: UserContext, payload: dict[st
 
 
 def update_override(db: Session, actor: UserContext, view_id: str, payload: dict[str, Any]) -> dict[str, Any]:
-    existing = get_override(actor.id, view_id)
+    existing = get_override(db, actor.id, view_id)
     merged = {**existing, **payload, "id": view_id}
     _validate_override_payload(db, actor, merged, exclude_id=view_id)
     view_payload = {
@@ -184,16 +186,16 @@ def update_override(db: Session, actor: UserContext, view_id: str, payload: dict
     if is_default is not None:
         patch["isDefault"] = is_default
         if is_default:
-            _apply_default_flag(actor.id, view_id)
+            _apply_default_flag(db, actor.id, view_id)
     try:
-        updated = store.update_user_override(actor.id, view_id, patch)
+        updated = user_override_repo.update_user_override(db, actor.id, view_id, patch)
         return _normalize_item(updated)
     except KeyError:
         raise ViewError("VIEW_OVERRIDE_NOT_FOUND", "View override not found", 404) from None
 
 
-def delete_override(actor: UserContext, view_id: str) -> None:
+def delete_override(db: Session, actor: UserContext, view_id: str) -> None:
     try:
-        store.remove_user_override(actor.id, view_id)
+        user_override_repo.remove_user_override(db, actor.id, view_id)
     except KeyError:
         raise ViewError("VIEW_OVERRIDE_NOT_FOUND", "View override not found", 404) from None

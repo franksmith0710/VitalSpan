@@ -7,7 +7,8 @@ from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext
 from app.dashboard.service import DashboardError, get_dashboard
-from app.views import store
+from app.dashboard.surface_kind import layout_to_dict
+from app.views import user_override_repo
 from app.views.role_template import resolve_inherited_defaults
 from app.views.validate import validate_dashboard_view
 
@@ -18,7 +19,7 @@ def apply_first_login_inherit(
     role_codes: list[str],
 ) -> dict[str, Any] | None:
     """Create a user override from role default on first access when user has no views."""
-    if store.list_user_overrides(user_id):
+    if user_override_repo.list_user_overrides(db, user_id):
         return None
     defaults = resolve_inherited_defaults(db, role_codes)
     dash_id = defaults.get("dashboardId")
@@ -30,7 +31,7 @@ def apply_first_login_inherit(
         if exc.code == "DASH_NOT_FOUND":
             return None
         raise
-    layout = dashboard.layout_json
+    layout = layout_to_dict(dashboard.layout_json)
     payload = {
         "name": "默认",
         "dashboardId": str(dash_id),
@@ -53,7 +54,7 @@ def apply_first_login_inherit(
         "inheritedFromRole": True,
         "isDefault": True,
     }
-    store.add_user_override(user_id, item)
+    user_override_repo.add_user_override(db, user_id, item)
     return item
 
 

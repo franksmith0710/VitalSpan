@@ -52,18 +52,18 @@ def ff_track_e_sqlite_env():
 @pytest.fixture(autouse=True)
 def _reset_view_stores():
     from app.auth.models import get_meta_engine
-    from app.views import role_defaults_repo
+    from app.views import role_defaults_repo, user_override_repo
     from sqlalchemy.orm import Session
 
     store.clear_role_defaults()
-    store.clear_user_overrides()
     with Session(get_meta_engine()) as session:
         role_defaults_repo.clear_role_defaults(session)
+        user_override_repo.clear_user_overrides(session)
     yield
     store.clear_role_defaults()
-    store.clear_user_overrides()
     with Session(get_meta_engine()) as session:
         role_defaults_repo.clear_role_defaults(session)
+        user_override_repo.clear_user_overrides(session)
 
 
 @pytest.fixture

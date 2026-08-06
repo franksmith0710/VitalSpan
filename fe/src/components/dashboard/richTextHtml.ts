@@ -126,10 +126,16 @@ export function sanitizeRichTextHtml(html: string): string {
   return stripEditorArtifacts(doc.body.innerHTML);
 }
 
+/**
+ * TipTap 空段落地为 `<p><br class="ProseMirror-trailingBreak"></p>`。
+ * 去掉编辑器标记后须保留 `<p><br></p>`，否则空 `<p></p>` 在 margin:0 下高度为 0，换行丢失。
+ */
 function stripEditorArtifacts(html: string): string {
-  return html
-    .replace(/<br class="ProseMirror-trailingBreak"\s*\/?>/gi, "")
-    .replace(/<br\s*\/?>\s*<\/p>/gi, "</p>");
+  const withoutMarkers = html.replace(
+    /<br class="ProseMirror-trailingBreak"\s*\/?>/gi,
+    "",
+  );
+  return withoutMarkers.replace(/<p(\s[^>]*)?>\s*<\/p>/gi, "<p$1><br></p>");
 }
 
 export function isRichTextEmpty(html: string): boolean {

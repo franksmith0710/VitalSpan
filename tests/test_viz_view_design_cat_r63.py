@@ -30,6 +30,7 @@ def r63_sqlite_env():
     import app.governance.catalog.models  # noqa: F401
     import app.query.config_store.models  # noqa: F401
     import app.query.models  # noqa: F401
+    import app.views.models  # noqa: F401
 
     get_meta_engine.cache_clear()
     auth_engine.cache_clear()

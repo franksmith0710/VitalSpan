@@ -342,6 +342,22 @@ def _refresh_jwt_auth_module_constant():
 
 
 @pytest.fixture(autouse=True)
+def _clear_view_user_overrides():
+    """Each test starts without persisted user view overrides."""
+    from app.datasources.models import Base, get_meta_engine
+    import app.views.models  # noqa: F401
+    from app.views import user_override_repo
+
+    engine = get_meta_engine()
+    Base.metadata.create_all(engine)
+    with Session(engine) as session:
+        user_override_repo.clear_user_overrides(session)
+    yield
+    with Session(engine) as session:
+        user_override_repo.clear_user_overrides(session)
+
+
+@pytest.fixture(autouse=True)
 def _reapply_sqlite_meta_when_no_postgres():
     """Other test modules may restore postgres DATABASE_URL on teardown."""
     if _meta_postgres_available():

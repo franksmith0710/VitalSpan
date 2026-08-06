@@ -30,6 +30,7 @@ def r238_sqlite_env():
     import app.governance.catalog.models  # noqa: F401
     import app.query.config_store.models  # noqa: F401
     import app.query.models  # noqa: F401
+    import app.views.models  # noqa: F401
 
     get_meta_engine.cache_clear()
     auth_engine.cache_clear()
@@ -347,15 +348,24 @@ def test_view_r238_set_default_preserves_name(client):
     assert defaults[0]["name"] == "备份视图"
 
 
-def test_view_r238_store_helpers():
-    """T-VIEW-R238-003-02: store update/remove helpers."""
-    from app.views import store
+def test_view_r238_repo_helpers():
+    """T-VIEW-R238-003-02: repo update/remove helpers."""
+    from app.auth.models import get_meta_engine
+    from app.views import user_override_repo
+    from sqlalchemy.orm import Session
 
-    store.add_user_override("u1", {"id": "v1", "name": "默认", "dashboardId": "d1", "layout": {}})
-    store.update_user_override("u1", "v1", {"name": "备份"})
-    assert store.list_user_overrides("u1")[0]["name"] == "备份"
-    store.remove_user_override("u1", "v1")
-    assert store.list_user_overrides("u1") == []
+    view_id = str(uuid.uuid4())
+    dash_id = str(uuid.uuid4())
+    with Session(get_meta_engine()) as db:
+        user_override_repo.add_user_override(
+            db,
+            "u1",
+            {"id": view_id, "name": "默认", "dashboardId": dash_id, "layout": {}},
+        )
+        user_override_repo.update_user_override(db, "u1", view_id, {"name": "备份"})
+        assert user_override_repo.list_user_overrides(db, "u1")[0]["name"] == "备份"
+        user_override_repo.remove_user_override(db, "u1", view_id)
+        assert user_override_repo.list_user_overrides(db, "u1") == []
 
 
 # --- NFR-006 ---

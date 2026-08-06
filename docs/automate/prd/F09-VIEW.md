@@ -49,9 +49,10 @@
   - [x] M-FE-3 FE 默认视图：登录后按角色 `default-views` 重定向（`defaultViewResolve.ts` + `LoginPage`/`AdminHomePage`；`defaultViewResolve.test.ts`）
   - [x] 用户覆盖优先于角色默认（r207：`fetchUserOverridePath` + `resolveDefaultDashboardPath`；vitest 边缘 + Playwright E2E 6/6）
   - [x] Playwright E2E：登录 → 默认 Dashboard（role default / user override / mobile viewport；`fe/e2e/login-default-dashboard.spec.ts`）
-  - [x] 用户视图 PUT/DELETE CRUD（r238：`PUT/DELETE /api/v1/users/me/views/{id}` + `store.py` helpers）
+  - [x] 用户视图 PUT/DELETE CRUD（r238：`PUT/DELETE /api/v1/users/me/views/{id}` + `user_override_repo.py` helpers）
   - [x] 个人设置 UI（r238：`UserViewsSection` + `AccountSettingsPage` 集成；`UserViewsSection.smoke.test.tsx`）
+  - [x] 用户覆盖 DB 持久化（`view_user_overrides` 表 + Alembic `0038`；重启后配置保留；`tests/test_view_user_override_persistence.py`）
   - [ ] 完整 M7 RLS/ACL 端到端（M7 远期；无 org 绑定与发布后 RLS 联动）
-- **代码锚点**：`backend/app/views/user_override.py` · `backend/app/views/probe.py` · `backend/app/views/store.py` · `backend/app/api/v1/views.py` · `fe/src/pages/admin/account/components/UserViewsSection.tsx` · `fe/src/lib/defaultViewResolve.ts` · `fe/e2e/login-default-dashboard.spec.ts` · `tests/test_m12_batch1_r238.py` T-VIEW-R238-* · `tests/test_viz_view_design_cat_r63.py` T-VIEW-R63-003-01~06 · `fe/src/lib/defaultViewResolve.test.ts`
-- **演化建议**：r238 闭合 FR-VIEW-4 用户级覆盖 CRUD 与个人设置 UI，与 M-FE-3 默认视图链合并验收；M7 全链路 RLS 与 DB 持久化留 companion
+- **代码锚点**：`backend/app/views/user_override.py` · `backend/app/views/user_override_repo.py` · `backend/app/views/models.py`（`ViewUserOverride`）· `backend/app/views/probe.py` · `backend/migrations/versions/0038_view_user_override_persistence.py` · `backend/app/api/v1/views.py` · `fe/src/pages/admin/account/components/UserViewsSection.tsx` · `fe/src/lib/defaultViewResolve.ts` · `fe/e2e/login-default-dashboard.spec.ts` · `tests/test_view_user_override_persistence.py` · `tests/test_m12_batch1_r238.py` T-VIEW-R238-* · `tests/test_viz_view_design_cat_r63.py` T-VIEW-R63-003-01~06 · `fe/src/lib/defaultViewResolve.test.ts`
+- **演化建议**：M7 全链路 RLS 与 org 绑定留 companion；首登继承写入 DB 后，管理员改角色默认对已有个人的用户需手动删除覆盖才回落
 - **里程碑对齐**：M12 · 已完成 · 2026-07-07

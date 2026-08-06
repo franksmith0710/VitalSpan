@@ -102,9 +102,13 @@ class UserViewOverrideIn(BaseModel):
 
 
 @user_views_router.get("/me/views/{view_id}", response_model=None)
-def get_my_view(view_id: str, actor: Annotated[UserContext, Depends(get_current_user)]):
+def get_my_view(
+    view_id: str,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_views_db)],
+):
     try:
-        return get_override(actor.id, view_id)
+        return get_override(db, actor.id, view_id)
     except ViewError as exc:
         return _error_response(exc)
 
@@ -146,9 +150,10 @@ def update_my_view(
 def delete_my_view(
     view_id: str,
     actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_views_db)],
 ):
     try:
-        delete_override(actor, view_id)
+        delete_override(db, actor, view_id)
         return None
     except ViewError as exc:
         return _error_response(exc)
