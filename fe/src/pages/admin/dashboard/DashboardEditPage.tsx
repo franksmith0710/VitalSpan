@@ -1107,6 +1107,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           toast.error(
             `${TEMPLATE_EDIT_SESSION.templateSyncFailed}：${mapApiError(templateErr)}`,
           );
+          return false;
         }
       } else {
         toast.success("看板已保存");

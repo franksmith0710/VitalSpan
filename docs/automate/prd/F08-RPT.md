@@ -115,6 +115,7 @@
   - [x] 幂等守卫（Idempotency-Key + 原子回滚）
   - [x] 部分失败结构化 detail + rolledBackCount（r55 companion）
   - [x] 产物访问守卫（r58 companion：`GET .../executions/{id}/artifact` owner 可读/viewer 他人 403；batch 10 项 `probe_batch_budget_ms` ≤200ms）
+  - [x] artifact owner DB 持久化（`report_artifact_owners` · Alembic `0040` · `tests/test_persistence_roundtrip.py`）
   - [x] 重复命名 422 + failures 索引（r238：`batch/service.py` duplicate name + `failures` 字段）
   - [x] 管理员批量导入 UI（r238：`BatchImportPanel` + `TemplateDetailPanel` 批量 Tab；`BatchImportPanel.smoke.test.tsx`）
   - [x] 异步导出链（companion r-e95d：`POST /batch/export` + `GET /jobs/{id}` 轮询 + download）

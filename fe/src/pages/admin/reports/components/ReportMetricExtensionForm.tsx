@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -15,6 +15,9 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { UnsavedLeaveDialog } from "@/components/ui/unsaved-leave-dialog";
+import { useFormDirtyState } from "@/hooks/use-form-dirty-state";
+import { useUnsavedLeaveGuard } from "@/hooks/use-unsaved-leave-guard";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { ReportMetricDatasetFields } from "./ReportMetricDatasetFields";
@@ -65,6 +68,15 @@ function metricsNeedDataSource(metrics: ExtensionMetric[]) {
   });
 }
 
+type DraftSnapshot = {
+  metrics: ExtensionMetric[];
+  defaultDataSourceId: string;
+};
+
+function serializeDraft(value: DraftSnapshot): string {
+  return JSON.stringify(value);
+}
+
 export function ReportMetricExtensionForm({
   nodeId,
   readOnly,
@@ -86,6 +98,21 @@ export function ReportMetricExtensionForm({
   const [form, setForm] = useState(EMPTY_FORM);
   const [changeNote, setChangeNote] = useState("");
   const { saveExtension } = useReportTemplates(null);
+  const draftSnapshot = useMemo(
+    (): DraftSnapshot => ({
+      metrics: draftMetrics,
+      defaultDataSourceId: defaultDsId,
+    }),
+    [draftMetrics, defaultDsId],
+  );
+  const { isDirty, isBaselineReady, resetBaseline, markSaved } = useFormDirtyState(
+    draftSnapshot,
+    serializeDraft,
+  );
+  const leaveGuardEnabled = !readOnly && isBaselineReady && isDirty;
+  const { leaveDialogOpen, confirmLeave, cancelLeave } = useUnsavedLeaveGuard({
+    enabled: leaveGuardEnabled,
+  });
 
   const dsQuery = useQuery({
     queryKey: ["reports", "datasources", "picker"],
@@ -97,7 +124,11 @@ export function ReportMetricExtensionForm({
   useEffect(() => {
     setDraftMetrics(metrics);
     setDefaultDsId(defaultDataSourceId ?? "");
-  }, [metrics, defaultDataSourceId]);
+    resetBaseline({
+      metrics,
+      defaultDataSourceId: defaultDataSourceId ?? "",
+    });
+  }, [metrics, defaultDataSourceId, resetBaseline]);
 
   const resetForm = () => {
     setForm(EMPTY_FORM);
@@ -146,15 +177,15 @@ export function ReportMetricExtensionForm({
     setForm(formFromMetric(metric));
   };
 
-  const handleSave = () => {
+  const handleSave = async (): Promise<boolean> => {
     if (!changeNote.trim()) {
       toast.error("请填写变更说明");
-      return;
+      return false;
     }
     let nextMetrics = [...draftMetrics];
     const pending = buildMetricFromForm(form);
     if (pending) {
-      if (!validateFormMetric(pending)) return;
+      if (!validateFormMetric(pending)) return false;
       if (editingKey) {
         nextMetrics = nextMetrics.map((m) => (m.key === editingKey ? pending : m));
       } else if (!nextMetrics.some((m) => m.key === pending.key)) {
@@ -163,10 +194,10 @@ export function ReportMetricExtensionForm({
     }
     if (metricsNeedDataSource(nextMetrics) && !defaultDsId.trim()) {
       toast.error("请选择运行数据源（数据集也需要，用于执行查询）");
-      return;
+      return false;
     }
-    saveExtension.mutate(
-      {
+    try {
+      await saveExtension.mutateAsync({
         nodeId,
         body: {
           catalogNodeId: nodeId,
@@ -175,16 +206,25 @@ export function ReportMetricExtensionForm({
           changeNote: changeNote.trim(),
           ...(defaultDsId.trim() ? { defaultDataSourceId: defaultDsId.trim() } : {}),
         },
-      },
-      {
-        onSuccess: () => {
-          toast.success("扩展配置已保存");
-          resetForm();
-          setChangeNote("");
-        },
-        onError: (err) => toast.error(mapApiError(err)),
-      },
-    );
+      });
+      toast.success("扩展配置已保存");
+      resetForm();
+      setChangeNote("");
+      markSaved({
+        metrics: nextMetrics,
+        defaultDataSourceId: defaultDsId,
+      });
+      setDraftMetrics(nextMetrics);
+      return true;
+    } catch (err) {
+      toast.error(mapApiError(err));
+      return false;
+    }
+  };
+
+  const handleSaveAndLeave = async () => {
+    const ok = await handleSave();
+    if (ok) confirmLeave();
   };
 
   if (isLoading) return <Skeleton className="h-20 w-full rounded-xl" />;
@@ -362,11 +402,24 @@ export function ReportMetricExtensionForm({
               onChange={(e) => setChangeNote(e.target.value)}
             />
           </div>
-          <Button type="button" variant="primary" disabled={saveExtension.isPending} onClick={handleSave}>
+          <Button
+            type="button"
+            variant="primary"
+            disabled={saveExtension.isPending || !isDirty}
+            onClick={() => void handleSave()}
+          >
             {saveExtension.isPending ? "保存中…" : "保存扩展配置"}
           </Button>
         </div>
       ) : null}
+      <UnsavedLeaveDialog
+        open={leaveDialogOpen}
+        saving={saveExtension.isPending}
+        entityLabel="报表扩展配置"
+        onStay={cancelLeave}
+        onDiscardLeave={confirmLeave}
+        onSaveAndLeave={handleSaveAndLeave}
+      />
     </div>
   );
 }

@@ -105,8 +105,8 @@
 - **DASH-006**：`dashboard/theme/execute.py` — `build_theme_execute_plan` 四步（config_load → bindings_resolve → granularity_window → geo_check）；yoy/mom `compareWindow`；`dashboard/theme/acl.py` — `assert_theme_action`（viewer 禁写 `DASH_THEME_FORBIDDEN`）
 - **RPT-004**：`extension/compare.py` — `build_compare_slots`；`POST .../extension/compare-preview`；render-spec `compareMetrics` + `compareVersion=1.0`；`extension/acl.py` — `RPT_EXT_FORBIDDEN`
 - **RPT-005**：`scheduler/delivery.py` — `dispatch_artifact`；未配 SMTP / `rpt_delivery_mode=mock` 且无 `X-Rpt-Delivery-Mock` → `unconfigured`（禁止静默 delivered）；显式 header 才 mock；`semi_real_execute_schedule` 默认客户路径；`X-Rpt-Execute-Mock: 1` 保留 probe `mock_execute_schedule`（`test://` 产物，非 `mock://`）
-- **RPT-001/003**：模板 `storageRef` 使用 `storage://templates/...`（禁止 `mock://`）；导出生成最小合法 PDF/OOXML
-- **RPT-007**：`catalog/acl.assert_artifact_access` + `register_artifact_owner`；`GET .../executions/{id}/artifact`（`RPT_ARTIFACT_FORBIDDEN`）
+- **RPT-001/003**：模板 `storageRef` 使用 `storage://templates/...`（禁止 `mock://`）；内置 seed 模板导出最小合法 PDF/OOXML（显式路径，非渲染失败 fallback）
+- **RPT-007**：`catalog/acl.assert_artifact_access` + `register_artifact_owner`（`report_artifact_owners` · Alembic `0040` + 调度 execution 推导）；`GET .../executions/{id}/artifact`（`RPT_ARTIFACT_FORBIDDEN`）
 - **RPT-006/007**：batch 带 `compareMode` extension → render-spec 联动；`timed_batch_create_budget_ms` <200ms 回归
 
 ### r57 companion 质量推分（RPT-004/005）

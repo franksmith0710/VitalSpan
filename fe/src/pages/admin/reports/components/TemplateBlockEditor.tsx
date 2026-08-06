@@ -7,6 +7,8 @@ import {
   useListBatchMode,
 } from "@/components/layout/list-batch-delete";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
+import { useFormDirtyState } from "@/hooks/use-form-dirty-state";
+import { useUnsavedLeaveGuard } from "@/hooks/use-unsaved-leave-guard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { UnsavedLeaveDialog } from "@/components/ui/unsaved-leave-dialog";
 import { mapApiError } from "@/lib/apiError";
 import { type TemplateBlock, useReportTemplates } from "../useReportTemplates";
 
@@ -32,23 +35,42 @@ function emptyBlock(): TemplateBlock {
   return { blockType: "sql", queryRef: "SELECT 1" };
 }
 
+function serializeBlocks(blocks: TemplateBlock[]): string {
+  return JSON.stringify(blocks);
+}
+
 export function TemplateBlockEditor({ templateKey, format, displayName, readOnly = false }: Props) {
   const { templateQuery, saveTemplate } = useReportTemplates(null, templateKey);
   const [blocks, setBlocks] = useState<TemplateBlock[]>([]);
   const rowIds = useMemo(() => blocks.map((_, index) => String(index)), [blocks]);
   const selection = useListRowSelection(rowIds);
   const batch = useListBatchMode(selection.clear);
+  const { isDirty, isBaselineReady, resetBaseline, markSaved } = useFormDirtyState(
+    blocks,
+    serializeBlocks,
+  );
+  const leaveGuardEnabled = !readOnly && isBaselineReady && isDirty;
+  const { leaveDialogOpen, confirmLeave, cancelLeave } = useUnsavedLeaveGuard({
+    enabled: leaveGuardEnabled,
+  });
 
   useEffect(() => {
-    if (templateQuery.data?.blocks) setBlocks(templateQuery.data.blocks);
-  }, [templateQuery.data?.blocks]);
+    if (templateQuery.data?.blocks) {
+      setBlocks(templateQuery.data.blocks);
+      resetBaseline(templateQuery.data.blocks);
+    }
+  }, [templateQuery.data?.blocks, resetBaseline]);
 
-  const persist = (next: TemplateBlock[]) => {
-    setBlocks(next);
+  const saveBlocks = (next: TemplateBlock[], onSuccess?: () => void) => {
     saveTemplate.mutate(
       { templateKey, body: { templateKey, format, displayName, blocks: next } },
       {
-        onSuccess: () => toast.success("模板块已保存"),
+        onSuccess: () => {
+          markSaved(next);
+          setBlocks(next);
+          toast.success("模板块已保存");
+          onSuccess?.();
+        },
         onError: (err) => toast.error(mapApiError(err)),
       },
     );
@@ -59,7 +81,7 @@ export function TemplateBlockEditor({ templateKey, format, displayName, readOnly
     const target = index + direction;
     if (target < 0 || target >= next.length) return;
     [next[index], next[target]] = [next[target], next[index]];
-    persist(next);
+    setBlocks(next);
   };
 
   const patchBlock = (index: number, patch: Partial<TemplateBlock>) => {
@@ -71,7 +93,7 @@ export function TemplateBlockEditor({ templateKey, format, displayName, readOnly
       toast.error("至少保留一个块");
       return;
     }
-    persist(blocks.filter((_, i) => i !== index));
+    setBlocks(blocks.filter((_, i) => i !== index));
   };
 
   const removeSelected = () => {
@@ -81,13 +103,17 @@ export function TemplateBlockEditor({ templateKey, format, displayName, readOnly
       toast.error("至少保留一个块");
       return;
     }
-    persist(next);
+    setBlocks(next);
     selection.clear();
   };
 
-  const addBlock = () => persist([...blocks, emptyBlock()]);
+  const addBlock = () => setBlocks([...blocks, emptyBlock()]);
 
-  const handleSave = () => persist(blocks);
+  const handleSave = () => saveBlocks(blocks);
+
+  const handleSaveAndLeave = () => {
+    saveBlocks(blocks, () => confirmLeave());
+  };
 
   if (templateQuery.isLoading) {
     return <p className="text-theme-sm text-gray-500">加载模板块…</p>;
@@ -99,7 +125,16 @@ export function TemplateBlockEditor({ templateKey, format, displayName, readOnly
         暂无模板定义，点击下方创建默认块。
         {!readOnly ? (
           <div className="mt-4">
-            <Button type="button" size="sm" variant="primary" onClick={() => persist([emptyBlock()])}>
+            <Button
+              type="button"
+              size="sm"
+              variant="primary"
+              onClick={() => {
+                const next = [emptyBlock()];
+                setBlocks(next);
+                resetBaseline([]);
+              }}
+            >
               初始化模板块
             </Button>
           </div>
@@ -195,7 +230,7 @@ export function TemplateBlockEditor({ templateKey, format, displayName, readOnly
                 onValueChange={(v) => patchBlock(index, { chartType: v as TemplateBlock["chartType"] })}
                 disabled={readOnly}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-[120px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -214,11 +249,25 @@ export function TemplateBlockEditor({ templateKey, format, displayName, readOnly
             <Plus className="size-4" aria-hidden />
             添加块
           </Button>
-          <Button type="button" size="sm" variant="primary" disabled={saveTemplate.isPending} onClick={handleSave}>
+          <Button
+            type="button"
+            size="sm"
+            variant="primary"
+            disabled={saveTemplate.isPending || !isDirty}
+            onClick={handleSave}
+          >
             {saveTemplate.isPending ? "保存中…" : "保存模板块"}
           </Button>
         </div>
       ) : null}
+      <UnsavedLeaveDialog
+        open={leaveDialogOpen}
+        saving={saveTemplate.isPending}
+        entityLabel="模板块"
+        onStay={cancelLeave}
+        onDiscardLeave={confirmLeave}
+        onSaveAndLeave={handleSaveAndLeave}
+      />
     </div>
   );
 }

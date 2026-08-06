@@ -33,6 +33,7 @@
   - [x] **Phase 2.5 Wave B 编辑深化 companion**（2026-07-29）：图层锁定、Tab 预览轮播、布局 JSON 导出、图表 PNG 导出、图层 Panel Tab 子项——Vitest 验收闭合（见 `docs/feature-design/2026-07-29-data-screen-wave-b-gap-fill.md`）
   - [x] **Phase 2.5 Wave C/D companion**（2026-07-29）：标题装饰条、21:9 画布预设、模板导出 round-trip（见 `docs/feature-design/2026-07-29-data-screen-wave-cd-gap-fill.md`）
   - [x] **Phase 2.6 编辑视口 companion**（2026-07-29）：`useDataScreenViewportState`、标尺十字线、Ctrl+滚轮指针锚点缩放（见 `plans/2026-07-20-data-screen-edit-viewport-de.md`）
+  - [x] **持久化加固 companion**：`PUT /api/v1/dashboards/{id}/editor-save` 原子保存 layout+联动；编辑页未保存离开守卫；模板 sync 失败保持 dirty（`tests/test_persistence_roundtrip.py` · `tests/test_persistence_contract.py`）
   - [x] **保存 WYSIWYG companion**（2026-07-29）：数据大屏跳过 `compactPixelLayoutWhenZeroGap`（[BUG-14](../../bugs/BUG-14_data-screen-save-gap-compaction_2026-07-29.md)）
   - [x] **缩略图 WYSIWYG companion**（2026-08-06）：Hub / 列表卡片与真实播放一致——壳层字号补偿仅编辑态生效（`resolveShapeTitleCanvasScale` · `usePixelChromeScale` · `data-pixel-canvas-design-locked`）；大屏卡片改 `presentationMode="fit"` + 16:9 卡框（`hubCardPreviewFrameStyle`）；3D 地图缩略图保留 WebGL 与卫星地形（去 `renderTier` 硬降级）（case `fe-hub-card-preview-not-wysiwyg.md`）
   - [x] **Master gap-fill 真理源**（2026-07-29）：`docs/feature-design/2026-07-29-data-screen-master-gap-fill.md`
@@ -99,6 +100,7 @@
   - [x] 同比环比计算链（r58 companion：`POST /api/v1/dashboards/theme-analysis/execute-plan` 四步链 + yoy/mom `compareWindow`；`probe_theme_execute_plan_budget_ms` ≤35ms）
   - [x] 维度钻取查询 + FE 配置/分析双 Tab（r233：`POST .../theme-analysis/query` + M8 physical table 解析；`ThemeAnalysisPage` + vitest smoke 4/4）
   - [x] GIS 分布与行政区划下钻（F-F companion：`ThemeGeoMapPanel` + province click drill · `theme-analysis.smoke.test.tsx` geo map）
+  - [x] 编辑页未保存离开守卫（`useThemeAnalysis.isConfigDirty` + `ThemeAnalysisPage` + `UnsavedLeaveDialog`）
 - **代码锚点**：`backend/app/dashboard/theme/query.py` · `backend/app/dashboard/theme/execute.py` · `backend/app/api/v1/dashboards.py` · `fe/src/pages/admin/themes/ThemeAnalysisPage.tsx` · `fe/src/pages/admin/themes/ThemeGeoMapPanel.tsx` · `fe/src/pages/admin/themes/useThemeAnalysis.ts` · `tests/test_dash_rpt_r58.py` T-DASH-R58-006-01~12 · `tests/test_m9_rpt_theme_r233.py` T-R233-DASH-006-01~06 · `fe/src/pages/admin/themes/theme-analysis.smoke.test.tsx`
 - **演化建议**：r233 闭合主题维度钻取 query 链路与 FE 配置/分析页；GIS 地图渲染与行政区划下钻已闭合
 - **里程碑对齐**：M9 · 已完成 · 2026-07-06

@@ -11,7 +11,7 @@
 
 - IF-01 总线注册适配编排（`bus_register` → catalog + `governance/bus/adapter`；发布自动注册）
 - IF-02 已发布查询服务列表/详情/OpenAPI 片段/执行（`query_services`；参数校验、幂等、publish）
-- IF-03 报表导出同步生成与下载（`reports_export`；DB `report_integration_exports` + FS 产物）
+- IF-03 报表导出同步生成与下载（`reports_export`；DB `report_integration_exports` + FS 产物；**真实模板渲染失败 → 502 `REPORT_EXPORT_GENERATION_FAILED`**，禁止 silent minimal 产物假成功；内置 seed 模板仍走显式 minimal 合法 PDF/OOXML）
 - IF-04 门户嵌入 token 签发与 SDK 参数解析（`embed_token` + `embed_tokens` 表 TTL；过期码、resolve origin 守卫）
 - 统一 `IntegrationError` 错误域
 

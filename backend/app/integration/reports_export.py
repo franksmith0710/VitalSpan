@@ -189,18 +189,37 @@ def _minimal_ooxml(fmt: str, label: str) -> bytes:
     return buf.getvalue()
 
 
+def _seed_artifact_bytes(fmt: str, template_id: uuid.UUID) -> bytes:
+    """Built-in integration seed templates — explicit minimal valid artifacts, not error fallback."""
+    label = str(template_id)[-8:]
+    if fmt == "pdf":
+        return _minimal_pdf(label)
+    if fmt in {"word", "excel"}:
+        return _minimal_ooxml(fmt, label)
+    raise IntegrationError(
+        "REPORT_EXPORT_INVALID_FORMAT",
+        f"Invalid format: {fmt}",
+        422,
+        fields=[{"field": "format", "message": "must be pdf|word|excel"}],
+    )
+
+
 def _generate_artifact_bytes(fmt: str, template_id: uuid.UUID, actor: UserContext) -> bytes:
+    if template_id in SEED_TEMPLATE_IDS:
+        return _seed_artifact_bytes(fmt, template_id)
+
     from app.reports.engine.service import export_template_bytes
 
+    trace = trace_id_var.get() or uuid.uuid4().hex
     try:
         return export_template_bytes(template_id, fmt, actor)
-    except Exception:
-        label = str(template_id)[-8:]
-        if fmt == "pdf":
-            return _minimal_pdf(label)
-        if fmt in {"word", "excel"}:
-            return _minimal_ooxml(fmt, label)
-        raise
+    except Exception as exc:
+        raise IntegrationError(
+            "REPORT_EXPORT_GENERATION_FAILED",
+            "Report generation failed",
+            502,
+            trace_id=trace,
+        ) from exc
 
 
 def create_export_request(

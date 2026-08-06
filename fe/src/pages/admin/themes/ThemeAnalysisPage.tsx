@@ -17,6 +17,8 @@ import { mapApiError } from "@/lib/apiError";
 import { useThemeAnalysis } from "./useThemeAnalysis";
 import { ThemeGeoMapPanel } from "./ThemeGeoMapPanel";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
+import { UnsavedLeaveDialog } from "@/components/ui/unsaved-leave-dialog";
+import { useUnsavedLeaveGuard } from "@/hooks/use-unsaved-leave-guard";
 
 const DIMENSION_OPTIONS = ["region", "status", "category"] as const;
 
@@ -70,8 +72,14 @@ export function ThemeAnalysisPage() {
     setDraftGranularity,
     toggleDimensionDraft,
     saveMutation,
+    isConfigDirty,
     granularities,
   } = useThemeAnalysis();
+
+  const leaveGuardEnabled = canWrite && isConfigDirty;
+  const { leaveDialogOpen, confirmLeave, cancelLeave } = useUnsavedLeaveGuard({
+    enabled: leaveGuardEnabled,
+  });
 
   const needsDashboardPicker = !routeDashboardId || routeDashboardId === "default";
   const hasConfig = Boolean(configQuery.data);
@@ -84,9 +92,16 @@ export function ThemeAnalysisPage() {
     try {
       await saveMutation.mutateAsync();
       toast.success("主题配置已保存");
+      return true;
     } catch (err) {
       toast.error(mapApiError(err));
+      return false;
     }
+  };
+
+  const handleSaveAndLeave = async () => {
+    const ok = await handleSave();
+    if (ok) confirmLeave();
   };
 
   return (
@@ -168,7 +183,11 @@ export function ThemeAnalysisPage() {
                 </div>
               </div>
 
-              <Button type="button" disabled={!canWrite || saveMutation.isPending} onClick={() => void handleSave()}>
+              <Button
+                type="button"
+                disabled={!canWrite || !isConfigDirty || saveMutation.isPending}
+                onClick={() => void handleSave()}
+              >
                 {saveMutation.isPending ? "保存中…" : "保存"}
               </Button>
             </CardContent>
@@ -292,6 +311,14 @@ export function ThemeAnalysisPage() {
           )}
         </TabsContent>
       </Tabs>
+      <UnsavedLeaveDialog
+        open={leaveDialogOpen}
+        saving={saveMutation.isPending}
+        entityLabel="主题配置"
+        onStay={cancelLeave}
+        onDiscardLeave={confirmLeave}
+        onSaveAndLeave={handleSaveAndLeave}
+      />
     </AdminPageShell>
   );
 }

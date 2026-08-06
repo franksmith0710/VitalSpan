@@ -131,6 +131,27 @@ export function useThemeAnalysis() {
     }
   }, [configQuery.data, activeDimensionId]);
 
+  const configSnapshot = useMemo(() => {
+    if (!configQuery.data) return null;
+    return JSON.stringify({
+      entityType: configQuery.data.entityType,
+      timeGranularity: configQuery.data.timeGranularity,
+      dimensions: configQuery.data.dimensions,
+    });
+  }, [configQuery.data]);
+
+  const draftSnapshot = useMemo(
+    () =>
+      JSON.stringify({
+        entityType: draftEntityType,
+        timeGranularity: draftGranularity,
+        dimensions: draftDimensions,
+      }),
+    [draftEntityType, draftGranularity, draftDimensions],
+  );
+
+  const isConfigDirty = configSnapshot !== null && draftSnapshot !== configSnapshot;
+
   const saveMutation = useMutation({
     mutationFn: () =>
       apiFetch<ThemeConfig>("/api/v1/dashboards/theme-analysis", {
@@ -185,6 +206,7 @@ export function useThemeAnalysis() {
     setDraftEntityType,
     toggleDimensionDraft,
     saveMutation,
+    isConfigDirty,
     granularities: GRANULARITIES,
   };
 }

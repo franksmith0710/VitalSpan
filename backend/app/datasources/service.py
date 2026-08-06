@@ -175,6 +175,7 @@ def _run_test(
         ssl_mode=opts.ssl_mode,
         connect_timeout_sec=opts.connect_timeout_sec,
         read_timeout_sec=opts.read_timeout_sec,
+        connection_options=_connection_options_to_json(opts),
     )
     trace = trace_id_var.get() or ""
     out = TestConnectionOut.from_result(result, trace_id=trace)

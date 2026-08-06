@@ -322,9 +322,9 @@ def semi_real_execute_schedule(
         revisionSnapshot=revision_snapshot,
         errorMessage=error_message,
     )
-    register_artifact_owner(artifact_ref, actor.id)
     _remember_execution(out)
     _append_history(schedule_id, out, error_message=error_message)
+    register_artifact_owner(artifact_ref, actor.id)
     return out
 
 

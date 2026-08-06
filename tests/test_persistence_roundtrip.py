@@ -151,3 +151,17 @@ def test_embed_token_survives_new_session(alembic_meta_engine):
     assert row is not None
     _exp, stored = row
     assert stored["container_id"] == "embed-x"
+
+
+def test_artifact_owner_survives_engine_cache_clear(alembic_meta_engine, monkeypatch):
+    from app.datasources.models import get_meta_engine
+    from app.reports.persistence import artifact_repo
+
+    monkeypatch.setenv("RPT_METADATA_STORE", "db")
+    from app.core.config import get_settings
+
+    get_settings.cache_clear()
+
+    artifact_repo.register_owner("semi://reports/persist/1", "owner-persist")
+    get_meta_engine.cache_clear()
+    assert artifact_repo.get_owner("semi://reports/persist/1") == "owner-persist"

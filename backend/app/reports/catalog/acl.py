@@ -11,7 +11,7 @@ from app.core.config import get_settings
 from app.datasources.models import get_meta_engine
 from app.reports.catalog.errors import ReportCatalogError
 from app.reports.models import ReportSchedule, ReportScheduleExecution
-from app.reports.persistence import catalog_repo, memory_stores
+from app.reports.persistence import artifact_repo, catalog_repo, memory_stores
 
 _NODE_OWNERS = memory_stores.catalog_owners  # test compat
 _ARTIFACT_OWNERS = memory_stores.artifact_owners
@@ -23,7 +23,7 @@ def register_node_owner(node_id: uuid.UUID, actor_id: str) -> None:
 
 
 def _get_artifact_owner(artifact_ref: str) -> str | None:
-    owner = memory_stores.artifact_owners.get(artifact_ref)
+    owner = artifact_repo.get_owner(artifact_ref)
     if owner is not None:
         return owner
     if get_settings().rpt_schedule_store != "db":
@@ -73,9 +73,7 @@ def probe_acl_budget_ms(actor: UserContext, action: str, node_id: uuid.UUID) -> 
 
 
 def register_artifact_owner(artifact_ref: str, actor_id: str) -> None:
-    if get_settings().rpt_schedule_store == "db":
-        return
-    memory_stores.artifact_owners[artifact_ref] = actor_id
+    artifact_repo.register_owner(artifact_ref, actor_id)
 
 
 def assert_artifact_access(actor: UserContext, artifact_ref: str) -> None:

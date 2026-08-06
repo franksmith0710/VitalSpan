@@ -30,6 +30,13 @@ class ReportCatalogOwner(Base):
     owner_id: Mapped[str] = mapped_column(String(64), nullable=False)
 
 
+class ReportArtifactOwner(Base):
+    __tablename__ = "report_artifact_owners"
+
+    artifact_ref: Mapped[str] = mapped_column(String(512), primary_key=True)
+    owner_id: Mapped[str] = mapped_column(String(64), nullable=False)
+
+
 class ReportExtensionConfig(Base):
     __tablename__ = "report_extension_configs"
 

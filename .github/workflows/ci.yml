@@ -50,7 +50,7 @@ jobs:
         run: pip install -e "backend/.[dev,connectors-ext]"
       - name: Alembic persistence gate
         run: |
-          python -m pytest tests/test_persistence_contract.py tests/test_persistence_roundtrip.py tests/test_migrations.py::test_revision_directory_single_head_chain tests/test_migrations.py::test_alembic_heads_single_head -v
+          python -m pytest tests/test_persistence_contract.py tests/test_persistence_roundtrip.py tests/test_entity_physical_persistence.py tests/test_migrations.py::test_revision_directory_single_head_chain tests/test_migrations.py::test_alembic_heads_single_head -v
 
   frontend:
     runs-on: ubuntu-latest
