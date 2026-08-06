@@ -435,6 +435,7 @@ redoc: /redoc
 | GET/POST | `/api/v1/ingestion/sync-jobs` | 同步任务列表与创建 | 内部 | M1B | DATA-001 | 已实现 | `backend/app/api/v1/ingestion/sync.py` |
 | GET/PUT/DELETE | `/api/v1/ingestion/sync-jobs/{id}` | 同步任务详情、更新与删除 | 内部 | M1B | DATA-001 | 已实现 | `backend/app/api/v1/ingestion/sync.py` |
 | POST | `/api/v1/ingestion/sync-jobs/{id}/run` | 手动触发同步 | 内部 | M1B | DATA-002 | 已实现 | `backend/app/ingestion/sync_executor.py` |
+| POST | `/api/v1/ingestion/sync-jobs/{id}/cancel` | 停止当前运行中的同步（协作式：阶段边界生效） | 内部 | M1B | DATA-002 | 已实现 | `backend/app/ingestion/sync_cancel.py` |
 | GET | `/api/v1/ingestion/sync-jobs/{id}/runs` | 运行历史 | 内部 | M1B | DATA-002 | 已实现 | `backend/app/api/v1/ingestion/sync.py` |
 | GET/PUT | `/api/v1/ingestion/sync-jobs/{id}/etl-rules` | 清洗规则配置 | 内部 | M1B | ETL-001 | 已实现 | `backend/app/ingestion/etl_rules.py` |
 | GET | `/api/v1/ingestion/sync-jobs/{id}/consume-hints` | 消费管道状态（分析库/Dataset/下一步动作） | 内部 | M1B | DATA-003 | 已实现 | `backend/app/ingestion/sync_consume.py` |
@@ -518,10 +519,22 @@ redoc: /redoc
 { "run_id": "550e8400-e29b-41d4-a716-446655440000", "status": "running" }
 ```
 
-并发冲突（已有 `status=running` 的运行记录）返回 **409**：
+并发冲突（已有 `status=running` 或 `cancelling` 的运行记录）返回 **409**：
 
 ```json
 { "code": "RUN_ALREADY_IN_PROGRESS", "message": "该任务正在运行中", "detail": null }
+```
+
+**POST `/api/v1/ingestion/sync-jobs/{id}/cancel`**（200）：将当前运行标记为 `cancelling`，执行器在拉数/清洗/写入阶段边界停止并落账 `cancelled`。若写入已开始则仍会完成并以 `succeeded` 落账。
+
+```json
+{ "run_id": "550e8400-e29b-41d4-a716-446655440000", "status": "cancelling" }
+```
+
+无进行中运行时返回 **409**：
+
+```json
+{ "code": "RUN_NOT_IN_PROGRESS", "message": "当前没有正在运行的同步可停止", "detail": null }
 ```
 
 **GET `/api/v1/ingestion/sync-jobs/{id}/runs`**（200）：

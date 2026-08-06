@@ -1969,4 +1969,51 @@ describe("ingestion admin smoke", () => {
     expect(cancelBtn).toBeDisabled();
     resolveRun!();
   });
+
+  it("SyncJobsPage_stop_button_cancels_running_job", async () => {
+    setViewport(1400);
+    mockApiFetch.mockImplementation((url: string, init?: RequestInit) => {
+      if (typeof url === "string" && url.endsWith("/cancel") && init?.method === "POST") {
+        return Promise.resolve({ run_id: "run-1", status: "cancelling" });
+      }
+      if (typeof url === "string" && url.includes("/sync-jobs") && !url.includes("/cancel")) {
+        return Promise.resolve({
+          items: [
+            {
+              id: "job-running",
+              name: "running-demo",
+              source_type: "mysql",
+              target_table: "t1",
+              enabled: true,
+              schedule_cron: null,
+              last_run: {
+                status: "running",
+                started_at: "2026-08-06T10:00:00Z",
+                finished_at: null,
+                rows_synced: null,
+                error_message: null,
+              },
+            },
+          ],
+        });
+      }
+      return Promise.resolve({ items: [] });
+    });
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs" element={<SyncJobsPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    const stopBtn = await screen.findByRole("button", { name: "停止同步" });
+    expect(screen.queryByRole("button", { name: "手动运行同步" })).not.toBeInTheDocument();
+    fireEvent.click(stopBtn);
+    await waitFor(() => {
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        "/api/v1/ingestion/sync-jobs/job-running/cancel",
+        { method: "POST" },
+      );
+    });
+  });
 });

@@ -94,6 +94,7 @@ const CODE_MESSAGES: Record<string, string> = {
   ANALYTICS_DB_NOT_CONFIGURED:
     "托管分析库未配置。请在 backend/.env 设置 ANALYTICS_DATABASE_URL，并启动 docker-compose 中的分析库服务后重试。",
   RUN_ALREADY_IN_PROGRESS: "该任务正在运行中，请稍后在运行历史中查看结果",
+  RUN_NOT_IN_PROGRESS: "当前没有正在运行的同步可停止",
   INVALID_CRON: "Cron 表达式格式无效，请使用五段式如 0 2 * * *",
   TEST_IN_PROGRESS: "已有连接测试进行中，请稍候",
   UNKNOWN_CONNECTOR_TYPE: "不支持的连接器类型",

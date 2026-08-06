@@ -11,6 +11,7 @@ import {
   Play,
   RefreshCw,
   Settings2,
+  Square,
   Trash2,
 } from "lucide-react";
 import { ListHeaderCheckbox, ListRowCheckbox, listTableSelectCellClass, listTableSelectHeadClass } from "@/components/layout/list-batch-delete";
@@ -26,6 +27,7 @@ import {
   consumeLabelText,
 } from "@/lib/syncConsumeApi";
 import {
+  isSyncRunActive,
   lastRunBadgeColor,
   lastRunStatusLabel,
   sourceSummaryLabel,
@@ -38,7 +40,9 @@ type SyncJobsTableProps = {
   canManage: boolean;
   runningId: string | null;
   pollingJobId?: string | null;
+  cancellingId?: string | null;
   onRun: (job: SyncJobSummary) => void;
+  onCancel: (job: SyncJobSummary) => void;
   onDelete: (job: SyncJobSummary) => void;
   selectedIds?: Set<string>;
   onToggleSelect?: (id: string) => void;
@@ -132,7 +136,9 @@ export function SyncJobsTable({
   canManage,
   runningId,
   pollingJobId = null,
+  cancellingId = null,
   onRun,
+  onCancel,
   onDelete,
   selectedIds,
   onToggleSelect,
@@ -254,21 +260,35 @@ export function SyncJobsTable({
                     <>
                       {(() => {
                         const runInProgress =
-                          job.last_run?.status === "running" ||
+                          isSyncRunActive(job.last_run?.status) ||
                           runningId === job.id ||
                           pollingJobId === job.id;
-                        const runTip = runInProgress
-                          ? "同步进行中，完成后自动更新；当前不支持暂停或取消"
-                          : "手动运行同步（全量将覆盖目标表）";
+                        const stopping = cancellingId === job.id || job.last_run?.status === "cancelling";
+                        if (runInProgress) {
+                          return (
+                            <HintTooltip label={stopping ? "正在停止同步…" : "停止当前同步（阶段边界生效）"}>
+                              <IconButton
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-error-500 hover:text-error-600 dark:text-error-400"
+                                aria-label="停止同步"
+                                disabled={stopping}
+                                loading={stopping}
+                                onClick={() => onCancel(job)}
+                              >
+                                <Square className="size-3.5 fill-current" />
+                              </IconButton>
+                            </HintTooltip>
+                          );
+                        }
                         return (
-                          <HintTooltip label={runTip}>
+                          <HintTooltip label="手动运行同步（全量将覆盖目标表）">
                             <IconButton
                               type="button"
                               variant="ghost"
                               size="sm"
                               aria-label="手动运行同步"
-                              disabled={runInProgress}
-                              loading={runInProgress}
                               onClick={() => onRun(job)}
                             >
                               <Play className="size-4" />

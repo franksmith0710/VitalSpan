@@ -41,6 +41,7 @@ from app.ingestion.source_resolver import (
     http_exception_from_resolver,
     resolve_and_apply_source,
 )
+from app.ingestion.sync_cancel import find_active_run, request_cancel_run
 from app.ingestion.sync_executor import run_job
 from app.query.rls.guard import validate_identifier
 
@@ -790,12 +791,7 @@ def trigger_run(
             status_code=404,
             detail={"code": "NOT_FOUND", "message": "任务不存在", "detail": None},
         )
-    existing_running = db.scalar(
-        select(SyncRun.id)
-        .where(SyncRun.job_id == job_id, SyncRun.status == "running")
-        .limit(1)
-    )
-    if existing_running is not None:
+    if find_active_run(db, job_id) is not None:
         raise HTTPException(
             status_code=409,
             detail={
@@ -822,6 +818,32 @@ def trigger_run(
     db.refresh(run)
     background_tasks.add_task(run_job, job_id, trace_id, run_id=run.id)
     return RunAccepted(run_id=run.id, status="running")
+
+
+@router.post("/sync-jobs/{job_id}/cancel", response_model=RunAccepted)
+def cancel_run(
+    job_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
+    db: Annotated[Session, Depends(_db)],
+) -> RunAccepted:
+    job = db.get(SyncJob, job_id)
+    if job is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "NOT_FOUND", "message": "任务不存在", "detail": None},
+        )
+    active = find_active_run(db, job_id)
+    if active is None:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "RUN_NOT_IN_PROGRESS",
+                "message": "当前没有正在运行的同步可停止",
+                "detail": None,
+            },
+        )
+    updated = request_cancel_run(db, active)
+    return RunAccepted(run_id=updated.id, status=updated.status)
 
 
 @router.get("/sync-jobs/{job_id}/runs", response_model=SyncRunListResponse)

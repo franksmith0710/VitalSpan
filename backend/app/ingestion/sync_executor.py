@@ -10,6 +10,11 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.ingestion.etl_rules import apply_rules
 from app.ingestion.models import EtlRuleSet, SyncJob, SyncRun, get_meta_session
+from app.ingestion.sync_cancel import (
+    SyncCancelled,
+    finalize_cancelled,
+    raise_if_cancel_requested,
+)
 from app.ingestion.sync_fetch import compute_next_watermark, fetch_source_rows, validate_sync_table_names
 from app.ingestion.sync_write import write_analytics
 
@@ -25,12 +30,15 @@ def _update_run(db: Session, run: SyncRun, **fields: Any) -> None:
 
 
 def reconcile_stale_running_runs(*, max_age_seconds: int = 600) -> int:
-    """将超时仍停留在 running 的记录标为失败（进程中断或源库连接挂起）。"""
+    """将超时仍停留在 running/cancelling 的记录标为失败（进程中断或源库连接挂起）。"""
     db = get_meta_session()
     try:
         cutoff = datetime.now(timezone.utc) - timedelta(seconds=max_age_seconds)
         runs = db.scalars(
-            select(SyncRun).where(SyncRun.status == "running", SyncRun.started_at < cutoff),
+            select(SyncRun).where(
+                SyncRun.status.in_(("running", "cancelling")),
+                SyncRun.started_at < cutoff,
+            ),
         ).all()
         if not runs:
             return 0
@@ -68,14 +76,18 @@ def run_job(job_id: uuid.UUID, trace_id: str, *, run_id: uuid.UUID | None = None
     rules_row = db.scalar(select(EtlRuleSet).where(EtlRuleSet.job_id == job_id))
     rules = rules_row.rules if rules_row else []
     try:
+        raise_if_cancel_requested(db, run)
         if not get_settings().analytics_database_url:
             raise RuntimeError("ANALYTICS_DB_NOT_CONFIGURED")
         raw = fetch_source_rows(job)
+        raise_if_cancel_requested(db, run)
         cleaned = apply_rules(raw, rules)
+        raise_if_cancel_requested(db, run)
         count = write_analytics(job, cleaned)
         next_watermark = compute_next_watermark(job, cleaned)
         if next_watermark is not None:
             job.last_watermark = next_watermark
+        # 写入已完成后即使收到停止请求，也按成功落账（避免全量半成品）
         _update_run(
             db,
             run,
@@ -88,7 +100,13 @@ def run_job(job_id: uuid.UUID, trace_id: str, *, run_id: uuid.UUID | None = None
         from app.ingestion.sync_consume import best_effort_prepare_after_sync
 
         best_effort_prepare_after_sync(db)
+    except SyncCancelled:
+        finalize_cancelled(db, run)
     except Exception as exc:  # noqa: BLE001 — 记录用户可读摘要
+        db.refresh(run)
+        if run.status in {"cancelling", "cancelled"}:
+            finalize_cancelled(db, run)
+            return run_id
         if attempt < 1:
             _update_run(db, run, retry_count=attempt + 1)
             db.close()

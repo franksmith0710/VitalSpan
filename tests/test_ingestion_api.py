@@ -680,10 +680,37 @@ def test_openapi_lists_ingestion_sync_job_routes(client):
     for fragment in (
         "/ingestion/sync-jobs",
         "/ingestion/sync-jobs/{job_id}/run",
+        "/ingestion/sync-jobs/{job_id}/cancel",
         "/ingestion/sync-jobs/{job_id}/runs",
         "/ingestion/sync-jobs/{job_id}/etl-rules",
     ):
         assert any(fragment in p for p in paths), fragment
+
+
+@patch("app.api.v1.ingestion.sync.run_job")
+def test_cancel_run_marks_cancelling(mock_run_job, client, auth_headers, job_payload):
+    mock_run_job.return_value = None
+    create = client.post("/api/v1/ingestion/sync-jobs", json=job_payload, headers=auth_headers)
+    job_id = create.json()["id"]
+    with patch("app.api.v1.ingestion.sync.get_settings") as mock_get:
+        mock_get.return_value.analytics_database_url = "postgresql+psycopg://u:p@localhost:5433/a"
+        run_resp = client.post(f"/api/v1/ingestion/sync-jobs/{job_id}/run", headers=auth_headers)
+        assert run_resp.status_code == 202
+        cancel_resp = client.post(f"/api/v1/ingestion/sync-jobs/{job_id}/cancel", headers=auth_headers)
+    assert cancel_resp.status_code == 200
+    body = cancel_resp.json()
+    assert body["status"] == "cancelling"
+    assert body["run_id"] == run_resp.json()["run_id"]
+    client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+def test_cancel_run_when_idle_409(client, auth_headers, job_payload):
+    create = client.post("/api/v1/ingestion/sync-jobs", json=job_payload, headers=auth_headers)
+    job_id = create.json()["id"]
+    cancel_resp = client.post(f"/api/v1/ingestion/sync-jobs/{job_id}/cancel", headers=auth_headers)
+    assert cancel_resp.status_code == 409
+    assert cancel_resp.json()["detail"]["code"] == "RUN_NOT_IN_PROGRESS"
+    client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
 
 
 @patch("app.api.v1.ingestion.sync.run_job")
@@ -803,6 +830,7 @@ INGESTION_OPENAPI_PATHS = {
     "/api/v1/ingestion/sync-jobs": {"get", "post"},
     "/api/v1/ingestion/sync-jobs/{job_id}": {"get", "put", "delete"},
     "/api/v1/ingestion/sync-jobs/{job_id}/run": {"post"},
+    "/api/v1/ingestion/sync-jobs/{job_id}/cancel": {"post"},
     "/api/v1/ingestion/sync-jobs/{job_id}/runs": {"get"},
     "/api/v1/ingestion/sync-jobs/{job_id}/etl-rules": {"get", "put"},
     "/api/v1/ingestion/sync-jobs/{job_id}/etl-rules/auto-align": {"post"},

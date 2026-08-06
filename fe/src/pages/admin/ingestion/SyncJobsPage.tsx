@@ -36,9 +36,10 @@ import {
   SyncJobsToolbar,
   type SyncJobStatusFilter,
 } from "./components/SyncJobsToolbar";
-import { type SyncJobListResponse, type SyncJobSummary } from "./components/sync-job-types";
+import { type SyncJobListResponse, type SyncJobSummary, isSyncRunActive } from "./components/sync-job-types";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { sliceListPage, useListPagination } from "@/lib/list-pagination";
+import { cn } from "@/lib/utils";
 
 type RecentRunSuccess = {
   jobId: string;
@@ -75,6 +76,7 @@ export function SyncJobsPage() {
   const [statusFilter, setStatusFilter] = useState<SyncJobStatusFilter>("all");
   const [runningId, setRunningId] = useState<string | null>(null);
   const [pollingJobId, setPollingJobId] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [runTarget, setRunTarget] = useState<SyncJobSummary | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SyncJobSummary | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -143,9 +145,14 @@ export function SyncJobsPage() {
             toast.error(`任务「${jobName}」同步失败，请查看运行历史`);
             return;
           }
+          if (status === "cancelled") {
+            stopPolling();
+            toast.message(`任务「${jobName}」已停止`);
+            return;
+          }
           if (ticks >= pollMaxTicks) {
             stopPolling();
-            if (status === "running") {
+            if (isSyncRunActive(status)) {
               toast.warning(`任务「${jobName}」仍在运行中，请稍后刷新或查看运行历史`, {
                 duration: 10_000,
                 action: {
@@ -247,6 +254,24 @@ export function SyncJobsPage() {
     }
   };
 
+  const handleCancel = async (job: SyncJobSummary) => {
+    setCancellingId(job.id);
+    try {
+      await apiFetch(`/api/v1/ingestion/sync-jobs/${job.id}/cancel`, { method: "POST" });
+      toast.message(`已请求停止「${job.name}」`, {
+        description: "将在当前阶段结束后停止，不会中断正在进行的库写入。",
+      });
+      void loadJobs({ silent: true });
+      if (pollingJobId !== job.id) {
+        startRunPolling(job.id, job.name);
+      }
+    } catch (err) {
+      setError(mapApiError(err));
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
   const handleDelete = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
@@ -315,7 +340,13 @@ export function SyncJobsPage() {
         <SyncJobsEmptyState />
       ) : (
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
-          <div className="shrink-0 space-y-4">
+          <div
+            className={cn(
+              "shrink-0 space-y-4",
+              // 出图引导卡较高时限制高度并内滚，保证下方列表+分页始终有位且分页贴底
+              recentRunSuccess && "max-h-[min(42vh,22rem)] overflow-y-auto custom-scrollbar",
+            )}
+          >
             <SyncJobsMetrics stats={stats} />
             {recentRunSuccess ? (
               <SyncConsumeActionCard
@@ -351,7 +382,7 @@ export function SyncJobsPage() {
                 }
               />
               {filteredJobs.length === 0 ? (
-                <div className="px-6 py-12 text-center text-theme-sm text-gray-500 dark:text-gray-400">
+                <div className="min-h-0 flex-1 px-6 py-12 text-center text-theme-sm text-gray-500 dark:text-gray-400">
                   {search.trim()
                     ? `未找到匹配「${search.trim()}」的任务`
                     : "当前筛选条件下暂无任务"}
@@ -365,7 +396,9 @@ export function SyncJobsPage() {
                         canManage={canManage}
                         runningId={runningId}
                         pollingJobId={pollingJobId}
+                        cancellingId={cancellingId}
                         onRun={setRunTarget}
+                        onCancel={(job) => void handleCancel(job)}
                         onDelete={setDeleteTarget}
                         selectedIds={selection.selectedIds}
                         onToggleSelect={batch.batchMode ? selection.toggle : undefined}

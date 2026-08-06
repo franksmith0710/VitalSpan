@@ -74,7 +74,7 @@ def find_running_jobs_on_target_table(
     jobs = db.scalars(
         select(SyncJob)
         .join(SyncRun, SyncRun.job_id == SyncJob.id)
-        .where(SyncRun.status == "running")
+        .where(SyncRun.status.in_(("running", "cancelling")))
         .distinct(),
     ).all()
     return [

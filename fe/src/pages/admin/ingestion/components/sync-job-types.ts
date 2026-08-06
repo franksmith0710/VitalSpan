@@ -58,14 +58,21 @@ export function lastRunStatusLabel(status: string) {
   if (status === "succeeded") return "成功";
   if (status === "failed") return "失败";
   if (status === "running") return "运行中";
+  if (status === "cancelling") return "停止中";
+  if (status === "cancelled") return "已停止";
   return status;
 }
 
 export function lastRunBadgeColor(status: string): "success" | "error" | "warning" | "light" {
   if (status === "succeeded") return "success";
   if (status === "failed") return "error";
-  if (status === "running") return "warning";
+  if (status === "running" || status === "cancelling") return "warning";
+  if (status === "cancelled") return "light";
   return "light";
+}
+
+export function isSyncRunActive(status: string | undefined | null) {
+  return status === "running" || status === "cancelling";
 }
 
 export const CRON_PRESETS = [

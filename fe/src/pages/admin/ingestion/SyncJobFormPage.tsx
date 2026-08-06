@@ -1,6 +1,6 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
-import { ArrowLeft, Play, RefreshCw } from "lucide-react";
+import { ArrowLeft, Play, RefreshCw, Square } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/auth-context";
 import { AdminPageHeaderIcon, AdminPageShell } from "@/components/layout/admin-page-shell";
@@ -115,7 +115,7 @@ export function SyncJobFormPage() {
   const targetTableManualRef = useRef(false);
   const newJobInitializedRef = useRef(false);
 
-  const { runJob, runningId, pollingJobId, runError, clearRunError } = useSyncJobRun({
+  const { runJob, cancelJob, runningId, pollingJobId, cancellingId, runError, clearRunError } = useSyncJobRun({
     onSuccess: (payload) => {
       setConsumeCardDismissed(false);
       setRecentRunSuccess(payload);
@@ -474,19 +474,33 @@ export function SyncJobFormPage() {
       actions={
         <div className="flex flex-wrap items-center gap-2">
           {isEdit && canManage && id ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={submitting || runningId === id || pollingJobId === id || isDirty}
-              loading={runningId === id || pollingJobId === id}
-              loadingText="运行中…"
-              title={isDirty ? "请先保存更改后再运行" : undefined}
-              onClick={() => setRunConfirmOpen(true)}
-            >
-              <Play className="size-4" aria-hidden />
-              立即运行
-            </Button>
+            runningId === id || pollingJobId === id ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-error-600 hover:text-error-700"
+                disabled={cancellingId === id}
+                loading={cancellingId === id}
+                loadingText="停止中…"
+                onClick={() => void cancelJob({ id, name: form.name || "同步任务" })}
+              >
+                <Square className="size-3.5 fill-current" aria-hidden />
+                停止同步
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={submitting || isDirty}
+                title={isDirty ? "请先保存更改后再运行" : undefined}
+                onClick={() => setRunConfirmOpen(true)}
+              >
+                <Play className="size-4" aria-hidden />
+                立即运行
+              </Button>
+            )
           ) : null}
           <Button
             type="submit"

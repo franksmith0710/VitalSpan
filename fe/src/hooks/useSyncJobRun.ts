@@ -3,7 +3,10 @@ import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
-import type { SyncJobListResponse } from "@/pages/admin/ingestion/components/sync-job-types";
+import {
+  isSyncRunActive,
+  type SyncJobListResponse,
+} from "@/pages/admin/ingestion/components/sync-job-types";
 
 export type SyncRunSuccess = {
   jobId: string;
@@ -23,6 +26,7 @@ export function useSyncJobRun(options: UseSyncJobRunOptions = {}) {
   const pollTimerRef = useRef<number | null>(null);
   const [runningId, setRunningId] = useState<string | null>(null);
   const [pollingJobId, setPollingJobId] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [runError, setRunError] = useState<string | null>(null);
 
   const stopPolling = useCallback(() => {
@@ -76,9 +80,14 @@ export function useSyncJobRun(options: UseSyncJobRunOptions = {}) {
             toast.error(`任务「${jobName}」同步失败，请查看运行历史`);
             return;
           }
+          if (status === "cancelled") {
+            finishPolling();
+            toast.message(`任务「${jobName}」已停止`);
+            return;
+          }
           if (ticks >= pollMaxTicks) {
             finishPolling();
-            if (status === "running") {
+            if (isSyncRunActive(status)) {
               toast.warning(`任务「${jobName}」仍在运行中，请稍后刷新或查看运行历史`, {
                 duration: 10_000,
                 action: {
@@ -99,6 +108,30 @@ export function useSyncJobRun(options: UseSyncJobRunOptions = {}) {
       }, pollIntervalMs);
     },
     [navigate, stopPolling],
+  );
+
+  const cancelJob = useCallback(
+    async (job: { id: string; name: string }) => {
+      setCancellingId(job.id);
+      try {
+        await apiFetch(`/api/v1/ingestion/sync-jobs/${job.id}/cancel`, { method: "POST" });
+        toast.message(`已请求停止「${job.name}」`, {
+          description: "将在当前阶段结束后停止。",
+        });
+        if (pollingJobId !== job.id) {
+          startRunPolling(job.id, job.name);
+        }
+        return true;
+      } catch (err) {
+        const message = mapApiError(err);
+        setRunError(message);
+        toast.error(message);
+        return false;
+      } finally {
+        setCancellingId(null);
+      }
+    },
+    [pollingJobId, startRunPolling],
   );
 
   const runJob = useCallback(
@@ -129,8 +162,10 @@ export function useSyncJobRun(options: UseSyncJobRunOptions = {}) {
 
   return {
     runJob,
+    cancelJob,
     runningId,
     pollingJobId,
+    cancellingId,
     runError,
     clearRunError: () => setRunError(null),
   };
