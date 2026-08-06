@@ -31,17 +31,39 @@ describe("ReportSchedulesPage smoke", () => {
       if (path.includes("/schedules/delivery-health")) {
         return { status: "reachable", host: "localhost", port: 1025, error: null };
       }
+      if (path.includes("/schedules/export-health")) {
+        return { status: "available", error: null };
+      }
       if (path.includes("/executions/recent-failures")) {
         return { items: [], total: 0 };
       }
-      if (path === "/api/v1/reports/schedules") {
+      if (path.match(/\/schedules\/[^/]+\/executions$/) || path.includes("/retry")) {
+        if (path.includes("/retry") && init?.method === "POST") {
+          return { executionId: "ex-2", status: "pending" };
+        }
+        return {
+          items: [
+            {
+              executionId: "ex-1",
+              scheduleId,
+              status: "semi_real_failed",
+              artifactRef: "semi://x",
+              executedAt: "2026-07-07T00:00:00Z",
+              errorMessage: "邮件投递不可用",
+            },
+          ],
+          total: 1,
+        };
+      }
+      if (path.startsWith("/api/v1/reports/schedules")) {
         return {
           items: [
             {
               id: scheduleId,
               catalogNodeId: nodeId,
-              sourceType: "template",
-              sourceId: nodeId,
+              sourceType: "dashboard",
+              sourceId: "d1",
+              sourceLabel: "销售月报",
               cron: "0 8 * * *",
               timezone: "Asia/Shanghai",
               status: "scheduled",
@@ -66,24 +88,6 @@ describe("ReportSchedulesPage smoke", () => {
           },
         ];
       }
-      if (path.includes("/executions")) {
-        return {
-          items: [
-            {
-              executionId: "ex-1",
-              scheduleId,
-              status: "semi_real_failed",
-              artifactRef: "semi://x",
-              executedAt: "2026-07-07T00:00:00Z",
-              errorMessage: "邮件投递不可用",
-            },
-          ],
-          total: 1,
-        };
-      }
-      if (path.includes("/retry") && init?.method === "POST") {
-        return { executionId: "ex-2", status: "pending" };
-      }
       return {};
     });
   });
@@ -93,14 +97,14 @@ describe("ReportSchedulesPage smoke", () => {
     renderPage();
     expect(await screen.findByText("销售月报")).toBeInTheDocument();
     expect(screen.getByText("每天 08:00")).toBeInTheDocument();
-    expect(screen.getAllByText("模板").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("看板").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/角色:管理员/)).toBeInTheDocument();
   });
 
-  it("shows create entry links and tab filters", async () => {
+  it("shows create entry links prioritizing dashboard", async () => {
     renderPage();
-    expect(await screen.findByRole("link", { name: /从模板创建/ })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /从看板创建/ })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: /从看板\/大屏创建/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /从文档模板创建/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "看板/大屏" })).toBeInTheDocument();
   });
 
@@ -109,7 +113,7 @@ describe("ReportSchedulesPage smoke", () => {
     renderPage();
     await screen.findByText("销售月报");
     await user.click(screen.getByRole("button", { name: "销售月报" }));
-    expect(await screen.findByText("重试")).toBeInTheDocument();
-    expect(screen.getByText("邮件投递不可用")).toBeInTheDocument();
+    expect(await screen.findByText("邮件投递不可用", {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "重试" })).toBeInTheDocument();
   });
 });

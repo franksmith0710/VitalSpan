@@ -81,9 +81,10 @@
   - [x] 真实 SMTP 投递（companion r-e95d：固定 SMTP + MailHog 兼容适配器；测试 mock 仅 header）
   - [x] **M-DEPTH F-C**：调度执行历史 / 重试 UI 增强（接 `GET .../executions` + `POST .../retry`；失败可读、可重试）（完成于 2026-07-29 · `SchedulePanel.tsx` · `SchedulePanel.smoke.test.tsx`）
   - [x] **G5 看板/大屏可视化 PDF**（2026-08-03：`export_render.py` Playwright + FE `/export/*?token=`；`artifactKind=visual_snapshot`；`tests/test_dashboard_visual_export.py`）
+  - [x] **IA 收敛 · 看板定时报告主路径**（2026-08-06：`ReportCenterPage` 定时报告 Hub；`DashboardSchedulePanel` + `SchedulePrecheckPanel` 前置检查；`GET .../export-health`；文档模板降级为后续能力）
   - [ ] 组合调度粒度枚举（companion · **演化建议 / 非阻塞**）
-- **代码锚点**：`backend/app/reports/scheduler/service.py` · `backend/app/reports/scheduler/jobs.py` · `backend/app/reports/scheduler/executor.py` · `backend/app/reports/scheduler/delivery_adapter.py` · `backend/app/dashboard/export_render.py` · `fe/src/pages/export/DashboardExportSnapshotPage.tsx` · `fe/src/pages/admin/reports/components/SchedulePanel.tsx` · `backend/app/api/v1/reports/__init__.py` · `tests/test_ff_rpt_companion_e95d.py` · `tests/test_dashboard_visual_export.py` · `tests/test_report_dashboard_schedule.py` · `tests/test_m12_batch1_r238.py` T-RPT-R238-005-* · `tests/test_dash_rpt_query_nfr_r53.py` T-RPT-R53-005-01~08 · `tests/test_dash_rpt_query_nfr_r57.py` T-RPT-R57-005-01~07 · `tests/test_dash_rpt_r58.py` T-RPT-R58-005-01~07
-- **演化建议**：G5 可视化 PDF 已交付；组合调度粒度留远期
+- **代码锚点**：`backend/app/reports/scheduler/service.py` · `backend/app/reports/scheduler/jobs.py` · `backend/app/reports/scheduler/executor.py` · `backend/app/reports/scheduler/delivery_adapter.py` · `backend/app/dashboard/export_render.py` · `fe/src/pages/export/DashboardExportSnapshotPage.tsx` · `fe/src/pages/admin/reports/ReportCenterPage.tsx` · `fe/src/pages/admin/reports/components/DashboardSchedulePanel.tsx` · `fe/src/pages/admin/reports/components/SchedulePrecheckPanel.tsx` · `backend/app/api/v1/reports/__init__.py` · `tests/test_ff_rpt_companion_e95d.py` · `tests/test_dashboard_visual_export.py` · `tests/test_report_dashboard_schedule.py` · `tests/test_m12_batch1_r238.py` T-RPT-R238-005-* · `tests/test_dash_rpt_query_nfr_r53.py` T-RPT-R53-005-01~08 · `tests/test_dash_rpt_query_nfr_r57.py` T-RPT-R57-005-01~07 · `tests/test_dash_rpt_r58.py` T-RPT-R58-005-01~07
+- **演化建议**：当前主线为看板/大屏可视化 PDF 定时报告；文档模板 Office 套版填数为后续能力；组合调度粒度留远期
 - **里程碑对齐**：M12 · 已完成 · 2026-07-07；**M-DEPTH F-C · 已闭合 · 2026-07-29**
 ### [RPT-006] 报表扩展配置 FR-6.3
 

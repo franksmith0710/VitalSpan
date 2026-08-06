@@ -166,6 +166,31 @@ def test_delivery_health_endpoint(client: TestClient):
     assert body["status"] in {"reachable", "unreachable", "unconfigured"}
 
 
+def test_export_health_endpoint(client: TestClient):
+    resp = client.get("/api/v1/reports/schedules/export-health", headers=AUTH)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["status"] in {"available", "unavailable"}
+
+
+def test_probe_export_render_health_import_error(monkeypatch):
+    import builtins
+
+    real_import = builtins.__import__
+
+    def _block_playwright(name, *args, **kwargs):
+        if name == "playwright.sync_api" or name.startswith("playwright"):
+            raise ImportError("blocked for test")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", _block_playwright)
+    from app.dashboard.export_render import probe_export_render_health
+
+    result = probe_export_render_health()
+    assert result["status"] == "unavailable"
+    assert "Playwright" in (result.get("error") or "")
+
+
 def test_dashboard_execute_records_visual_snapshot_artifact(client: TestClient):
     dash_id = _create_dashboard_with_widget(client, name="Exec Dash", description="artifact-kind")
     sched = client.post(

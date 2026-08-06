@@ -29,12 +29,14 @@ import { isLayoutInventoryArtifact } from "@/lib/scheduleArtifactMeta";
 import { ScheduleArtifactNotice } from "./ScheduleArtifactNotice";
 import { ScheduleHistoryTable } from "./ScheduleHistoryTable";
 import { ScheduleActivationBanner } from "./ScheduleActivationBanner";
+import { SchedulePrecheckPanel, useSchedulePrecheckItems, canCreateDashboardSchedule } from "./SchedulePrecheckPanel";
 import { Badge } from "@/components/ui/badge";
 
 type DashboardSchedulePanelProps = {
   sourceId: string;
   sourceType: "dashboard" | "data_screen";
   sourceName: string;
+  widgetCount?: number;
   readOnly?: boolean;
   embedded?: boolean;
 };
@@ -43,6 +45,7 @@ export function DashboardSchedulePanel({
   sourceId,
   sourceType,
   sourceName,
+  widgetCount,
   readOnly = false,
   embedded = false,
 }: DashboardSchedulePanelProps) {
@@ -78,6 +81,16 @@ export function DashboardSchedulePanel({
   }, [selected?.id, draftSelected, selected]);
 
   const label = sourceType === "data_screen" ? "大屏" : "看板";
+  const precheck = useSchedulePrecheckItems({
+    sourceLabel: sourceName,
+    widgetCount,
+    requireVisualExport: form.attachmentFormats[0] !== "excel",
+  });
+  const canCreate = canCreateDashboardSchedule({
+    widgetCount,
+    exportStatus: precheck.items.find((i) => i.id === "export")?.ok ? "available" : "unavailable",
+    loading: precheck.loading,
+  }) && isScheduleFormSubmittable(form);
   const isPending =
     createSchedule.isPending ||
     updateSchedule.isPending ||
@@ -88,6 +101,11 @@ export function DashboardSchedulePanel({
   const handleCreate = async () => {
     if (!isScheduleFormSubmittable(form)) {
       toast.error("请配置至少一位有效接收人");
+      return;
+    }
+    if (!canCreate) {
+      const blocked = precheck.items.find((item) => item.blocking && !item.ok);
+      toast.error(blocked?.detail ?? "前置检查未通过，请修复后再创建");
       return;
     }
     try {
@@ -223,6 +241,13 @@ export function DashboardSchedulePanel({
       ) : null}
       {showCreate || schedules.length === 0 ? (
         <>
+          {!readOnly ? (
+            <SchedulePrecheckPanel
+              sourceLabel={sourceName}
+              widgetCount={widgetCount}
+              requireVisualExport={form.attachmentFormats[0] !== "excel"}
+            />
+          ) : null}
           <ScheduleFormFields
             value={form}
             onChange={setForm}
@@ -236,7 +261,7 @@ export function DashboardSchedulePanel({
               <Button
                 type="button"
                 variant="primary"
-                disabled={isPending || !isScheduleFormSubmittable(form)}
+                disabled={isPending || !canCreate}
                 onClick={() => void handleCreate()}
               >
                 {createSchedule.isPending ? "创建中…" : "创建定时报告"}
@@ -381,9 +406,9 @@ export function DashboardSchedulePanel({
           定时报告
         </CardTitle>
         <CardDescription>
-          为「{sourceName}」{label}按日/周/月生成可视化 PDF 快照并邮件投递。
+          主路径：为「{sourceName}」{label}定时生成可视化 PDF 并投递。复用看板已保存的查询与筛选。
           <Link to="/admin/reports/schedules?tab=dashboard" className="ml-1 text-brand-500 hover:underline">
-            查看全部调度
+            查看全部定时报告
           </Link>
         </CardDescription>
       </CardHeader>

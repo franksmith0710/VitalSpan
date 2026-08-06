@@ -28,22 +28,32 @@ function CreateEntryCard({
   description,
   to,
   icon,
+  primary,
 }: {
   title: string;
   description: string;
   to: string;
   icon: ReactNode;
+  primary?: boolean;
 }) {
   return (
     <Link
       to={to}
       className={cn(
-        "group flex items-start gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-theme-xs transition-colors",
-        "hover:border-brand-200 hover:bg-brand-50/40 dark:border-gray-800 dark:bg-white/[0.02]",
-        "dark:hover:border-brand-500/30 dark:hover:bg-brand-500/5",
+        "group flex items-start gap-3 rounded-xl border p-4 shadow-theme-xs transition-colors",
+        primary
+          ? "border-brand-200 bg-brand-50/40 hover:bg-brand-50/70 dark:border-brand-500/30 dark:bg-brand-500/5"
+          : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-800 dark:bg-white/[0.02]",
       )}
     >
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400">
+      <span
+        className={cn(
+          "flex size-9 shrink-0 items-center justify-center rounded-lg",
+          primary
+            ? "bg-brand-100 text-brand-600 dark:bg-brand-500/20 dark:text-brand-400"
+            : "bg-gray-100 text-gray-600 dark:bg-white/[0.06] dark:text-gray-400",
+        )}
+      >
         {icon}
       </span>
       <span className="min-w-0">
@@ -70,22 +80,23 @@ export function SchedulePageOverview({ stats }: SchedulePageOverviewProps) {
   return (
     <div className="grid shrink-0 gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
       <div className="grid gap-3 sm:grid-cols-3">
-        <ScheduleStatCard label="全部调度" value={stats.total} hint="模板 + 看板/大屏" />
-        <ScheduleStatCard label="运行中" value={stats.active} hint="已调度或执行中" />
+        <ScheduleStatCard label="全部定时报告" value={stats.total} hint="看板/大屏 + 文档模板" />
+        <ScheduleStatCard label="运行中" value={stats.active} hint="已激活并按 cron 执行" />
         <ScheduleStatCard label="已暂停 / 取消" value={stats.inactive} hint="暂停、草稿或已取消" />
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <CreateEntryCard
-          title="从模板创建"
-          description="在报表模板详情页配置定时投递"
-          to="/admin/reports/templates"
-          icon={<LayoutTemplate className="size-5" aria-hidden />}
-        />
-        <CreateEntryCard
-          title="从看板创建"
-          description="在看板分享页底部添加定时报告"
+          primary
+          title="从看板/大屏创建"
+          description="分享页底部配置定时 PDF（推荐主路径）"
           to="/admin/dashboards"
           icon={<Monitor className="size-5" aria-hidden />}
+        />
+        <CreateEntryCard
+          title="从文档模板创建"
+          description="固定版式文档报表（后续能力）"
+          to="/admin/reports/templates"
+          icon={<LayoutTemplate className="size-5" aria-hidden />}
         />
       </div>
     </div>

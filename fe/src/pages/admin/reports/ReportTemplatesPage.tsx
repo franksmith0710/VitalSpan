@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { FilePlus, FolderOpen, FolderPlus, MousePointerClick } from "lucide-react";
+import { FilePlus, FolderOpen, FolderPlus, Info, MousePointerClick } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/auth-context";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
@@ -24,6 +24,7 @@ import { ListGhostEmptyState } from "@/components/ui/panel-empty-state";
 import { TemplateDetailPanel } from "./components/TemplateDetailPanel";
 import { type CatalogNode, useAllCatalogNodes, useReportTemplates } from "./useReportTemplates";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const FORMAT_OPTIONS: { id: TemplateKind; label: string }[] = [
   { id: "word", label: "Word" },
@@ -243,10 +244,17 @@ export function ReportTemplatesPage() {
 
   return (
     <AdminPageShell
-      title="报表模板"
-      description="管理目录结构、模板格式与扩展配置。选中文件夹后新建，或通过节点菜单移动/删除。"
+      title="文档模板"
+      description="固定版式文档报表（Word/Excel/PDF 套版填数），后续能力；当前默认定时报告请从看板/大屏分享页创建。"
       actions={nodes.length > 0 ? createActions : null}
     >
+      <Alert variant="default" className="mb-4 border-brand-200 bg-brand-50/40 dark:border-brand-500/30 dark:bg-brand-500/5">
+        <Info className="size-4" aria-hidden />
+        <AlertTitle>后续能力 · 非当前主路径</AlertTitle>
+        <AlertDescription>
+          当前报表主线为看板/大屏可视化 PDF 定时报告。本文档模板树保留管理与历史数据，不承担默认定时投递工作流。
+        </AlertDescription>
+      </Alert>
       {nodesQuery.isError ? (
         <PageErrorBanner message={mapApiError(nodesQuery.error)} onRetry={() => void nodesQuery.refetch()} />
       ) : null}

@@ -113,8 +113,8 @@ export function DashboardShareDialog({
               <DialogTitle className="text-title-sm">{title}</DialogTitle>
               <DialogDescription className="text-theme-sm leading-relaxed">
                 {isScreen
-                  ? "生成公开链接与 iframe 嵌入地址。"
-                  : "为看板生成公开链接与组件嵌入地址。"}
+                  ? "生成公开链接与 iframe 嵌入地址；可在下方创建定时 PDF 报告。"
+                  : "生成公开链接与组件嵌入地址；可在下方创建定时 PDF 报告（推荐主路径）。"}
               </DialogDescription>
             </div>
           </div>
@@ -167,6 +167,7 @@ export function DashboardShareDialog({
               sourceId={dashboardId}
               sourceType={isScreen ? "data_screen" : "dashboard"}
               sourceName={detail.name}
+              widgetCount={widgets.length}
               readOnly={!canManageSchedule}
             />
           ) : null}

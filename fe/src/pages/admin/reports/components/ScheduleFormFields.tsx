@@ -15,6 +15,7 @@ import {
   ScheduleRecipientsField,
 } from "./ScheduleRecipientsField";
 import { ScheduleDeliveryHealthAlert } from "./ScheduleDeliveryHealthAlert";
+import { ScheduleExportHealthAlert } from "./ScheduleExportHealthAlert";
 import type { ScheduleRecipient } from "../useReportSchedules";
 import type { ScheduleWizardState } from "@/lib/scheduleCronWizard";
 
@@ -94,7 +95,12 @@ export function ScheduleFormFields({
 
   return (
     <div className="space-y-4">
-      {!disabled ? <ScheduleDeliveryHealthAlert /> : null}
+      {!disabled ? (
+        <>
+          <ScheduleDeliveryHealthAlert />
+          <ScheduleExportHealthAlert />
+        </>
+      ) : null}
       <ScheduleWizard
         value={value.wizard}
         onChange={(wizard) => {

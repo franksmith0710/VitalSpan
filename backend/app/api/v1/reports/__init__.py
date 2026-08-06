@@ -275,6 +275,15 @@ def schedule_delivery_health(
     return probe_smtp_health()
 
 
+@router.get("/schedules/export-health", response_model=None)
+def schedule_export_health(
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+):
+    from app.dashboard.export_render import probe_export_render_health
+
+    return probe_export_render_health()
+
+
 @router.get("/schedules/executions/recent-failures", response_model=None)
 def list_recent_schedule_failures(
     user: Annotated[UserContext, Depends(require_permission(PERM_READ))],

@@ -31,32 +31,33 @@
 - `core`、`auth`、`query`
 - `reports/catalog` → `reports/scheduler`（`catalogNodeId` 引用）
 
-## 前端消费 IA（报表中心）
+## 前端消费 IA（报表中心 · 2026-08 收敛）
 
-侧栏 **「报表中心」** 为「报表」分组的一级父项（可展开）；落地 Hub 页为子菜单 **「全部报表」** → `/admin/reports/center`（`fe/src/pages/admin/reports/ReportCenterPage.tsx`）。职责：**报表消费聚合** —— 展示当前用户可访问的 catalog 模板节点，并提供到预制分析、模板管理、调度的快捷入口；与仪表板/数据大屏（交互画布）不同，本域输出为 **模板树 + 报表引擎** 的文档型/固定版式报表（RPT-001~007）。
+**产品主线（当前默认）**：看板/数据大屏 → 分享页「创建定时报告」→ Playwright 可视化 PDF（`dashboard/export_render.py`）→ SMTP/消息投递 → 执行记录与重试。
 
-| 子入口（nav-manifest） | 路由 | 权限 | PRD | 说明 |
-|------------------------|------|------|-----|------|
-| 全部报表 | `/admin/reports/center` | `report:read` | RPT-004/001 | Hub：快捷卡片 + 授权模板网格 → `view/:nodeId` 运行/导出 |
-| 预制报表 | `/admin/reports` | `report:read` | RPT-002 | 内置 entity×analysis 绑定浏览与运行（FR-3.1） |
-| 报表模板 | `/admin/reports/templates` | `report:manage` | RPT-003/004/006 | 模板树 master-detail、扩展配置 |
-| 报表调度 | `/admin/reports/schedules` | `report:manage` | RPT-005 | cron FSM、执行历史与重试（FR-3.2） |
+**后续能力（非默认路径）**：文档模板树（Word/Excel 套版填数）+ RenderSpec 引擎；保留管理与历史数据，不承担默认定时投递承诺。
 
-- **analyst / viewer**：Hub + 预制报表（消费侧）
-- **admin**：另含模板管理、调度管理（生产侧）
+侧栏 **「报表中心」** 为「报表」分组一级父项；Hub 页 `/admin/reports/center`（`ReportCenterPage.tsx`）职责：**定时报告运维聚合**（我的看板调度、近期失败、重试入口）+ 折叠的文档模板区 + 预制分析。
 
-壳层路由与布局模式见 [ui/layout.md](../ui/layout.md) §3、§5。
+| 子入口（nav-manifest） | 路由 | 权限 | 说明 |
+|------------------------|------|------|------|
+| 报表中心 | `/admin/reports/center` | `report:read` | Hub：定时报告概览、失败重试、文档模板（折叠） |
+| 定时报告 | `/admin/reports/schedules` | `report:manage` | 全量调度列表、执行历史、重试（admin） |
+| 预制报表 | `/admin/reports` | `report:read` | 内置 entity×analysis 绑定（FR-3.1） |
+| 文档模板 | `/admin/reports/templates` | `report:manage` | 固定版式模板树（后续能力） |
+
+- **创建主路径**：看板/大屏编辑 → 分享 → `DashboardSchedulePanel`（前置检查：组件非空、Playwright、SMTP）
+- **analyst**：Hub + 预制报表；可通过 `dashboard:schedule` 在看板分享页创建定时报告
+- **admin**：另含定时报告全量管理、文档模板管理
 
 ### DataEase 对标（IA，非菜单名 1:1）
 
-对标 DataEase **「报表」产品线** 的整体分组与 **浏览 → 运行 → 导出/投递** 消费路径（归档计划 `docs/automate/plans/archive/2026-07-17-reports-de-ia-complete.md`）。
-
 | VitalSpan 入口 | 近似 DataEase 能力 |
 |----------------|-------------------|
-| 报表中心 / 全部报表 | 报表列表 / 我的报表 / 报表查看（授权后打开、运行） |
-| 预制报表 | 内置/主题分析类固定报表（VitalSpan 政企扩展 FR-3.1，DE 无完全同名项） |
-| 报表模板 | 报表模板管理（Word/Excel/PDF、目录树、扩展指标） |
-| 报表调度 | 定时报告 / 报表调度（cron、执行历史、重试） |
+| 报表中心 + 看板分享定时报告 | X-Pack 定时报告 / 可视化快照投递 |
+| 预制报表 | 内置分析类固定报表（政企扩展） |
+| 文档模板 | 报表模板管理（后续 Office 套版） |
+| 定时报告（schedules） | 定时报告运维 / 执行历史 |
 
 ## 主要类型 / 入口
 
@@ -78,7 +79,9 @@
 | `prefab/run.py` | binding → analysisType SQL → `engine/execute`；`RPT_PREFAB_RUN_FORBIDDEN` | RPT-002 | M3-LITE 已实现 r233 |
 | `prefab/seed.py` | 内置 lifecycle/distribution binding 幂等 upsert | RPT-002 | M3-LITE 已实现 r233 |
 | **FE** | `fe/src/pages/admin/reports/PrefabReportsPage.tsx` + `usePrefabReports.ts`（列表/运行/空态 vitest） | RPT-002 | M3-LITE 已实现 r233 |
-| **FE** | `fe/src/pages/admin/reports/ReportCenterPage.tsx` + `reportCatalogUtils.ts`（Hub 授权模板网格） | RPT-004/001 | 已实现（2026-07-17 IA） |
+| **FE** | `fe/src/pages/admin/reports/ReportCenterPage.tsx` + `ReportCenterScheduleHub.tsx`（定时报告 Hub · 2026-08 收敛） | RPT-005 | 已实现 |
+| **FE** | `fe/src/pages/admin/reports/components/DashboardSchedulePanel.tsx` + `SchedulePrecheckPanel.tsx`（看板分享页创建 + 前置检查） | RPT-005 | 已实现 |
+| **FE** | `fe/src/pages/export/DashboardExportSnapshotPage.tsx` + `export_render.py`（Playwright PDF 快照） | RPT-005 | G5 · 2026-08-03 |
 | **FE** | `fe/src/pages/admin/reports/ReportViewPage.tsx`（模板运行 + 导出） | RPT-001 | 已实现（2026-07-17 IA） |
 | **FE** | `fe/src/pages/admin/reports/ReportSchedulesPage.tsx` + `SchedulePanel.tsx` + `SchedulePanel.smoke.test.tsx`（调度列表/历史/重试） | RPT-005 | M-DEPTH F-C · 2026-07-29 |
 | `templates/acl.py` | viewer 禁写 + enterprise scope（`set_user_template_scope`） | RPT-003 | companion 已实现 r67 |

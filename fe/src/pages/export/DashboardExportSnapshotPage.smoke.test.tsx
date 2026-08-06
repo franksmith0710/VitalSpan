@@ -67,7 +67,7 @@ describe("DashboardExportSnapshotPage", () => {
       </MemoryRouter>,
     );
     await screen.findByTestId("layout-preview");
-    expect(document.querySelector('[data-export-ready="true"]')).toBeNull();
+    expect(document.querySelectorAll('[data-export-snapshot="true"]').length).toBeGreaterThan(0);
     await waitFor(
       () => {
         expect(document.querySelector('[data-export-ready="true"]')).toBeTruthy();

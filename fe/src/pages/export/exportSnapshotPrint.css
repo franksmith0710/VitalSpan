@@ -1,0 +1,29 @@
+/* Playwright PDF capture: header + canvas print styles */
+.export-snapshot-root {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.export-snapshot-header {
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+.export-snapshot-body {
+  break-inside: auto;
+}
+
+@media print {
+  .export-snapshot-root {
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  .export-snapshot-body {
+    page-break-inside: auto;
+  }
+
+  .export-snapshot-body > * {
+    page-break-inside: avoid;
+  }
+}

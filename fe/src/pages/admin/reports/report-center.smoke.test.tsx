@@ -15,10 +15,6 @@ vi.mock("@/context/auth-context", () => ({
   }),
 }));
 
-vi.mock("@/lib/defaultViewResolve", () => ({
-  resolveDefaultReportTemplateNodeId: vi.fn().mockResolvedValue(null),
-}));
-
 function renderPage() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
@@ -35,6 +31,28 @@ function renderPage() {
 describe("ReportCenterPage smoke", () => {
   beforeEach(() => {
     mockApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path.startsWith("/api/v1/reports/schedules")) {
+        return {
+          items: [
+            {
+              id: "sched-1",
+              sourceType: "dashboard",
+              sourceId: "d1",
+              sourceLabel: "销售看板",
+              cron: "0 8 * * *",
+              timezone: "Asia/Shanghai",
+              status: "scheduled",
+              allowedActions: ["pause"],
+              recipients: [{ type: "email", value: "ops@example.com" }],
+              attachmentFormats: ["pdf"],
+            },
+          ],
+          total: 1,
+        };
+      }
+      if (path.includes("/executions/recent-failures")) {
+        return { items: [], total: 0 };
+      }
       if (path === "/api/v1/reports/catalog/templates/readiness" && init?.method === "POST") {
         return { items: [{ nodeId: "tpl-1", readiness: "demo" }] };
       }
@@ -59,25 +77,31 @@ describe("ReportCenterPage smoke", () => {
   });
   afterEach(() => cleanup());
 
-  it("renders hub title and template card", async () => {
+  it("renders schedule-first hub title and dashboard schedule", async () => {
     renderPage();
-    expect(await screen.findByText("全部报表")).toBeInTheDocument();
-    expect(await screen.findByText("月报模板")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "运行" })).toHaveAttribute("href", "/admin/reports/view/tpl-1");
+    expect(await screen.findByText("报表中心")).toBeInTheDocument();
+    expect(await screen.findByText("销售看板")).toBeInTheDocument();
+    expect(screen.getByText("从看板/大屏创建")).toBeInTheDocument();
   });
 
   it("shows admin overview shortcuts", async () => {
     renderPage();
-    await waitFor(() => expect(screen.getByText("定时调度")).toBeInTheDocument());
-    expect(screen.getByRole("link", { name: /管理模板/ })).toHaveAttribute("href", "/admin/reports/templates");
-    expect(screen.getByRole("link", { name: /定时调度/ })).toHaveAttribute("href", "/admin/reports/schedules");
+    expect(await screen.findByText("销售看板")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "定时报告" })).toHaveAttribute("href", "/admin/reports/schedules");
+    expect(screen.getByRole("link", { name: "文档模板" })).toHaveAttribute("href", "/admin/reports/templates");
+    expect(screen.getByRole("link", { name: "管理全部定时报告" })).toHaveAttribute(
+      "href",
+      "/admin/reports/schedules?tab=dashboard",
+    );
   });
 
-  it("filters templates by search query", async () => {
+  it("expands document templates section on click", async () => {
+    const user = userEvent.setup();
     renderPage();
+    expect(await screen.findByText("文档模板（后续能力）")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /文档模板（后续能力）/ }));
     expect(await screen.findByText("月报模板")).toBeInTheDocument();
-    await userEvent.type(screen.getByLabelText("搜索报表"), "不存在");
-    expect(screen.getByText("无匹配报表")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "运行" })).toHaveAttribute("href", "/admin/reports/view/tpl-1");
   });
 
   it("lists prefab bindings section", async () => {
@@ -92,18 +116,15 @@ describe("ReportCenterPage smoke", () => {
     expect(screen.getByRole("link", { name: "运行 预制A" })).toHaveAttribute("href", "/admin/reports?binding=k1");
   });
 
-  it("shows compact empty hint when no authorized templates", async () => {
+  it("shows empty dashboard schedule hint when none exist", async () => {
     mockApiFetch.mockImplementation(async (path: string) => {
-      if (path === "/api/v1/reports/catalog/templates/readiness") {
-        return { items: [] };
-      }
+      if (path.startsWith("/api/v1/reports/schedules")) return { items: [], total: 0 };
+      if (path.includes("/executions/recent-failures")) return { items: [], total: 0 };
       if (path === "/api/v1/reports/prefab/bindings") return { items: [], total: 0 };
       if (path.startsWith("/api/v1/reports/catalog/nodes")) return [];
       return { items: [], total: 0 };
     });
     renderPage();
-    expect(await screen.findByText("暂无授权报表")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "浏览预制报表" })).toBeInTheDocument();
-    expect(screen.queryByLabelText("搜索报表")).not.toBeInTheDocument();
+    expect(await screen.findByText(/暂无看板\/大屏定时报告/)).toBeInTheDocument();
   });
 });

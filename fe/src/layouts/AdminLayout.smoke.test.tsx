@@ -424,8 +424,8 @@ describe("AdminLayout smoke", () => {
     await user.click(reportTrigger);
 
     expect(screen.getByRole("link", { name: "预制报表" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "报表模板" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "报表调度" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "文档模板" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "定时报告" })).toBeInTheDocument();
   });
 
   it("T-FE-SMFA-05: hover expands collapsed nav group without click", async () => {

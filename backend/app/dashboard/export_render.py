@@ -11,7 +11,21 @@ from app.dashboard.export_fe_url import build_export_snapshot_url
 
 logger = logging.getLogger(__name__)
 
+PLAYWRIGHT_INSTALL_HINT = "pip install playwright && playwright install chromium"
+
 CAPTURE_SELECTOR = '[data-export-ready="true"]'
+
+
+def probe_export_render_health() -> dict:
+    """Lightweight Playwright availability probe for schedule pre-check UI."""
+    try:
+        from playwright.sync_api import sync_playwright  # noqa: F401
+    except ImportError:
+        return {
+            "status": "unavailable",
+            "error": f"Playwright 未安装；请 {PLAYWRIGHT_INSTALL_HINT}",
+        }
+    return {"status": "available", "error": None}
 SETTLE_MS = 1500
 NAV_TIMEOUT_MS = 30_000
 

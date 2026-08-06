@@ -34,9 +34,9 @@ import {
 import { useReportScheduleMutations } from "./useReportSchedules";
 
 const TAB_OPTIONS: { id: ScheduleTabFilter; label: string }[] = [
-  { id: "all", label: "全部" },
-  { id: "template", label: "模板" },
   { id: "dashboard", label: "看板/大屏" },
+  { id: "all", label: "全部" },
+  { id: "template", label: "文档模板" },
 ];
 
 function emptyTitle(tab: ScheduleTabFilter, hasSearch: boolean): string {
@@ -49,22 +49,22 @@ function emptyTitle(tab: ScheduleTabFilter, hasSearch: boolean): string {
 function emptyDescription(tab: ScheduleTabFilter, hasSearch: boolean): string {
   if (hasSearch) return "请调整搜索词，或切换上方分类筛选。";
   if (tab === "template") {
-    return "在「报表模板」详情页的调度 Tab 中创建定时生成与投递。";
+    return "在「文档模板」详情页的调度 Tab 中创建（后续能力）。";
   }
   if (tab === "dashboard") {
-    return "进入看板或大屏幕列表，在分享页底部配置「定时报告」。";
+    return "进入看板或数据大屏，在分享页创建「定时报告」。";
   }
-  return "可从报表模板详情页或看板分享页创建定时报告。";
+  return "推荐从看板/大屏分享页创建可视化 PDF 定时报告。";
 }
 
 function emptyAction(tab: ScheduleTabFilter, hasSearch: boolean) {
   if (hasSearch) return undefined;
   if (tab === "template") {
     return (
-      <Button type="button" variant="primary" size="sm" asChild>
+      <Button type="button" variant="outline" size="sm" asChild>
         <Link to="/admin/reports/templates">
           <LayoutTemplate className="size-3.5" aria-hidden />
-          前往报表模板
+          前往文档模板
         </Link>
       </Button>
     );
@@ -82,10 +82,10 @@ function emptyAction(tab: ScheduleTabFilter, hasSearch: boolean) {
   return (
     <div className="flex flex-wrap justify-center gap-2">
       <Button type="button" variant="primary" size="sm" asChild>
-        <Link to="/admin/reports/templates">从模板创建</Link>
+        <Link to="/admin/dashboards">从看板创建</Link>
       </Button>
       <Button type="button" variant="outline" size="sm" asChild>
-        <Link to="/admin/dashboards">从看板创建</Link>
+        <Link to="/admin/reports/templates">从文档模板创建</Link>
       </Button>
     </div>
   );
@@ -114,7 +114,7 @@ function summarizeStats(items: { status?: string }[]) {
 
 export function ReportSchedulesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const tab = (searchParams.get("tab") as ScheduleTabFilter) || "all";
+  const tab = (searchParams.get("tab") as ScheduleTabFilter) || "dashboard";
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const readOnly = false;
@@ -156,13 +156,13 @@ export function ReportSchedulesPage() {
   return (
     <AdminPageShell
       layout="list"
-      title="报表调度"
+      title="定时报告"
       icon={
         <AdminPageHeaderIcon>
           <CalendarClock className="size-6" aria-hidden />
         </AdminPageHeaderIcon>
       }
-      description="统一管理模板与看板/大屏的定时生成、投递与执行历史。"
+      description="管理看板/大屏可视化 PDF 定时投递、执行历史与失败重试。"
     >
       {schedulesQuery.isError ? (
         <PageErrorBanner
