@@ -201,12 +201,17 @@ describe("dashboardStyleConfig theme vs background", () => {
       titleStyle: { fontSize: 14 },
     });
     expect(pickChartPaletteDefaults(widgetStyle)).toEqual({
+      paletteId: "tech",
+      paletteColors: undefined,
       paletteOpacity: 0.75,
       seriesGradient: true,
+      depthVisual: undefined,
       chartLabelShow: true,
+      tooltipShow: undefined,
       chartLabelStyle: { fontSize: 14, color: "#ff00ff" },
       chartTooltipStyle: { background: "#112233", fontSize: 13 },
       tableColorStyle: { headerBg: "#001122" },
+      surfaceKind: undefined,
     });
     expect(widgetDashboardStyleFingerprint({ colorScheme: "dark", canvasBackground: "#a" })).toBe(
       widgetDashboardStyleFingerprint({ colorScheme: "dark", canvasBackground: "#b" }),

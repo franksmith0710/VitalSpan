@@ -21,6 +21,14 @@ describe("ChartPalettePicker", () => {
     expect(onChange).toHaveBeenCalledWith("pastel", expect.any(Array));
   });
 
+  it("renders wide select trigger swatch for active preset", () => {
+    render(<ChartPalettePicker value="default" onChange={vi.fn()} />);
+
+    const trigger = screen.getByRole("combobox", { name: "配色方案" });
+    expect(trigger).toHaveTextContent("品牌");
+    expect(trigger.querySelector("[aria-hidden]")).toBeTruthy();
+  });
+
   it("renders series color rows for bar chart metrics", async () => {
     const user = userEvent.setup();
     render(

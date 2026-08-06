@@ -11,8 +11,8 @@
 
 - IF-01 总线注册适配编排（`bus_register` → catalog + `governance/bus/adapter`；发布自动注册）
 - IF-02 已发布查询服务列表/详情/OpenAPI 片段/执行（`query_services`；参数校验、幂等、publish）
-- IF-03 报表导出同步生成与下载（`reports_export`；mock 文件 + `_EXPORT_STORE`）
-- IF-04 门户嵌入 token 签发与 SDK 参数解析（`embed_token`；过期码、resolve origin 守卫）
+- IF-03 报表导出同步生成与下载（`reports_export`；DB `report_integration_exports` + FS 产物）
+- IF-04 门户嵌入 token 签发与 SDK 参数解析（`embed_token` + `embed_tokens` 表 TTL；过期码、resolve origin 守卫）
 - 统一 `IntegrationError` 错误域
 
 ## 边界
@@ -22,7 +22,8 @@
 | catalog 已发布条目、bus adapter、seed 报表模板、embed origin 校验 | 真实总线 HTTP 对接（→ GOV-007+） |
 | viz.embed `_ORIGIN_RE` 复用 | 真实 Word/PDF/Excel 渲染引擎与对象存储（→ `reports`） |
 | `governance.catalog.publish_entry` draft→published | 前端 SDK 与 iframe 页面（→ `fe/`） |
-| OpenAPI v2 文档面（无真实 `/api/v2/*` 路由） | 生产级 embed/export 持久化（内存 store companion） |
+| OpenAPI v2 文档面（无真实 `/api/v2/*` 路由） | 前端 SDK 与 iframe 页面（→ `fe/`） |
+| `integration_idempotency_records` 查询执行幂等 | 真实总线 HTTP 对接（→ GOV-007+） |
 
 ## 依赖
 

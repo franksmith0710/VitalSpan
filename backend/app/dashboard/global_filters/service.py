@@ -41,12 +41,14 @@ def _assert_enterprise_scope(actor: UserContext, dashboard_id: uuid.UUID) -> Non
         raise GlobalFilterError("DASH_FILTER_FORBIDDEN", "enterprise user out of dashboard scope", 403)
 
 
-def _validate_filter_bindings(filters: list) -> None:
+def _validate_filter_bindings(filters: list, session: Session | None = None) -> None:
     from app.datasources.models import get_meta_session
     from app.metadata.dimensions import service as dimension_service
     from app.metadata.dimensions.schemas import DimensionError
 
-    session = get_meta_session()
+    owns_session = session is None
+    if session is None:
+        session = get_meta_session()
     try:
         dimension_service.ensure_legacy_probe_dimensions(session)
         for f in filters:
@@ -68,7 +70,8 @@ def _validate_filter_bindings(filters: list) -> None:
                     [{"field": "dimensionRef", "message": f"unknown: {f.dimension_ref}"}],
                 ) from exc
     finally:
-        session.close()
+        if owns_session:
+            session.close()
 
 
 def _validate_linkage_rules(rules: list) -> None:
@@ -110,7 +113,7 @@ def _widget_ids(session: Session, dashboard_id: uuid.UUID) -> set[str]:
 
 
 def _validate_linkage(session: Session, item: GlobalFilterLinkageItem) -> GlobalFilterLinkageItem:
-    _validate_filter_bindings(item.filters)
+    _validate_filter_bindings(item.filters, session)
     _validate_linkage_rules(item.linkage_rules)
     try:
         dash_service.get_dashboard(session, item.dashboard_id)
@@ -118,15 +121,8 @@ def _validate_linkage(session: Session, item: GlobalFilterLinkageItem) -> Global
         if exc.code == "DASH_NOT_FOUND":
             raise GlobalFilterError("DASH_FILTER_DASHBOARD_NOT_FOUND", "Dashboard not found", 404) from exc
         raise
-    if not item.filters:
-        raise GlobalFilterError(
-            "DASH_FILTER_EMPTY_FILTERS",
-            "At least one filter is required",
-            422,
-            [{"field": "filters", "message": "must not be empty"}],
-        )
     filter_ids = [f.filter_id for f in item.filters]
-    if len(filter_ids) != len(set(filter_ids)):
+    if item.filters and len(filter_ids) != len(set(filter_ids)):
         raise GlobalFilterError("DASH_FILTER_DUPLICATE_ID", "Duplicate filterId", 422)
     known_filters = set(filter_ids)
     widget_ids = _widget_ids(session, item.dashboard_id)

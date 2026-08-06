@@ -13,6 +13,7 @@
 - **表面分化**：同表 `dashboards`，经 `layoutJson.styleConfig.surfaceKind` 区分仪表板（`dashboard`）与数据大屏（`data-screen`）；列表 API `?surfaceKind=` 过滤
 - 布局保存时校验内嵌 `chartConfig`（`ChartViewConfig`）
 - Dashboard 列表、生命周期与布局持久化用例
+- **事务型编辑保存**：`PUT .../editor-save` 一次提交 name + layoutJson + globalFilters（失败整体回滚；允许空 filters 清空联动）
 - v1 栅格 / v2 像素布局的版本校验、边界校验与确定性迁移
 
 ## 边界

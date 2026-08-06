@@ -123,7 +123,7 @@ flowchart TB
 **决策**：
 
 - ORM 表：`report_schedules` · `report_schedule_executions` · `dashboard_export_jobs` · `export_tokens` · `report_schedule_tick_locks`（Alembic `0032`）。
-- 存储切换：`RPT_SCHEDULE_STORE=memory|db`（默认 memory 单测；生产 `db`）。
+- 存储切换：`RPT_SCHEDULE_STORE=memory|db`（**默认 `db`**；`memory` 仅测试显式注入；production/staging 启动时拒绝 `memory`）。
 - 产物：`ARTIFACT_STORAGE_BACKEND=fs|memory`；`ARTIFACT_STORAGE_PATH` 本地卷。
 - 权限：新增 `dashboard:schedule`；看板 owner + ACL `owner_id` 可管理本人定时计划。
 - 投递：`delivery_channels` 支持 `email` · `wecom` · `dingtalk`；cron 分布式锁经 DB tick_key。
@@ -138,7 +138,7 @@ flowchart TB
 **决策**：
 
 - ORM 表：`report_catalog_nodes` · `report_catalog_owners` · `report_extension_configs` · `report_extension_revisions` · `report_prefab_bindings` · `report_template_definitions` · `report_integration_exports`（Alembic `0034`）。
-- 存储切换：`RPT_METADATA_STORE=memory|db`（默认 memory 单测；staging/production `db`）。
+- 存储切换：`RPT_METADATA_STORE=memory|db`（**默认 `db`**；`memory` 仅测试显式注入；production/staging 拒绝 `memory`）。
 - 真导出：`reports/render/` RenderSpec → PDF（reportlab）/ Excel（openpyxl）/ Word（OOXML）；IF-03 与模板调度走 `export_template_bytes`。
 - Dataset 桥接：extension metric 可选 `queryMode=dataset` + `datasetId` + `boundConfigId`，执行复用 `query/dataset/execute_config`。
 

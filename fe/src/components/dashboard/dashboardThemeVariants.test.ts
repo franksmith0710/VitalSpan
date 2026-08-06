@@ -302,6 +302,7 @@ describe("dashboardThemeVariants", () => {
     expect(de?.background).toBeUndefined();
     expect(de?.paletteId).toBeUndefined();
     expect(de?.paletteOpacity).toBeUndefined();
+    expect(de?.seriesColor).toBeUndefined();
   });
 
   it("resetDashboardColorsToActiveThemeBundle resets dashboard and chart color overrides", () => {

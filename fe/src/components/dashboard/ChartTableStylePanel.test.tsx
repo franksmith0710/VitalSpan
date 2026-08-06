@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChartTableStylePanel } from "./ChartTableStylePanel";
@@ -103,6 +103,34 @@ describe("ChartTableStylePanel", () => {
             columnWidths: undefined,
             columnWidthsPx: undefined,
           }),
+        }),
+      }),
+    );
+  });
+
+  it("row height slider patches deTableStyle.rowHeightPx", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <ChartInspectorProvider widget={tableWidget} onChange={onChange}>
+          <ChartTableStylePanel />
+        </ChartInspectorProvider>
+      </QueryClientProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: /明细表（旧） · 基础样式/ }));
+
+    const slider = screen.getByRole("slider", { name: "表格行高" });
+    fireEvent.pointerDown(slider);
+    fireEvent.change(slider, { target: { value: "48" } });
+    fireEvent.pointerUp(slider);
+
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        nativeBody: expect.objectContaining({
+          deTableStyle: expect.objectContaining({ rowHeightPx: 48 }),
         }),
       }),
     );

@@ -71,7 +71,7 @@
 | `batch/service.py` | 批量创建模板 + Idempotency-Key 守卫 | RPT-007 | L1 已实现 r54 |
 | `engine/service.py` | validate + `run_template`（M3-LITE：`dataSourceId` 驱动 `engine/execute`；无 ds placeholder 回归 r60） | RPT-001 | M3-LITE 已实现 r233 |
 | `engine/execute.py` | extension metrics → SQL `execute_query` **或** Dataset `execute_dataset_from_config` | RPT-001/006 | P3 已实现 |
-| `reports/persistence/` | `RPT_METADATA_STORE=memory\|db`；catalog/extension/prefab/templates 持久化 | RPT-006 | P3 已实现 |
+| `reports/persistence/` | `RPT_METADATA_STORE=memory\|db`（**默认 db**）；catalog/extension/prefab/templates 持久化 | RPT-006 | P3 已实现 |
 | `reports/render/` | `render_from_spec` → PDF/Excel/Word bytes | RPT-001/003 | P3 已实现 |
 | `engine/acl.py` | run 访问控制 + `set_user_engine_scope` enterprise 白名单 | RPT-001 | companion 已实现 r66 |
 | `engine/probe.py` | `probe_run_template_budget_ms` ≤50ms | RPT-001 | companion 已实现 r66 |

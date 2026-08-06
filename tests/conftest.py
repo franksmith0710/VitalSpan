@@ -347,6 +347,9 @@ def _ensure_report_meta_tables():
     from app.datasources.models import Base, get_meta_engine
     import app.reports.models  # noqa: F401
     import app.reports.persistence.models  # noqa: F401
+    import app.integration.models  # noqa: F401
+    import app.metadata.entity.models  # noqa: F401
+    import app.metadata.physical.models  # noqa: F401
 
     engine = get_meta_engine()
     Base.metadata.create_all(engine)

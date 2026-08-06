@@ -25,6 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
+import { useUnsavedLeaveGuard } from "@/hooks/use-unsaved-leave-guard";
 import { queryKeys } from "@/lib/queryKeys";
 import {
   ComputeRulesPanel,
@@ -70,6 +71,10 @@ export function DesignerPage() {
   const datasetsQuery = useQuery({
     queryKey: queryKeys.datasets.list(),
     queryFn: () => apiFetch<{ items: Array<{ id: string; name: string }> }>("/api/v1/datasets"),
+  });
+
+  const { leaveDialogOpen, confirmLeave, cancelLeave } = useUnsavedLeaveGuard({
+    enabled: !ws.allBlocksSaved,
   });
 
   const handleSubmit = async () => {
@@ -299,6 +304,24 @@ export function DesignerPage() {
             </Button>
             <Button type="button" variant="primary" asChild>
               <Link to="/admin/governance/tickets">查看工单</Link>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={leaveDialogOpen} onOpenChange={(open) => !open && cancelLeave()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>有未保存的更改</DialogTitle>
+            <DialogDescription>
+              设计器中有未保存的条件、规则或输出字段，离开将丢失这些更改。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={cancelLeave}>
+              继续编辑
+            </Button>
+            <Button type="button" variant="destructive" onClick={confirmLeave}>
+              放弃更改并离开
             </Button>
           </DialogFooter>
         </DialogContent>
