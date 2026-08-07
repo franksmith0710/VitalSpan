@@ -6,38 +6,9 @@ import {
   DialogHeader,
   DialogContent,
 } from "@/components/ui/dialog";
+import { guardDialogDismiss } from "@/lib/dialogNestedDismissGuard";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-
-/** Radix Select/Popover 经 Portal 挂到 Dialog 外；须阻止 outside 事件误关弹层 */
-function isDialogNestedPortaledLayer(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false;
-  return Boolean(
-    target.closest('[data-slot="select-content"]') ||
-      target.closest("[data-radix-select-content]") ||
-      target.closest('[role="menu"]') ||
-      target.closest("[data-radix-menu-content]") ||
-      target.closest("[data-radix-popper-content-wrapper]"),
-  );
-}
-
-function isAnySelectDropdownOpen(): boolean {
-  return Boolean(
-    document.querySelector('[data-slot="select-content"][data-state="open"]') ||
-      document.querySelector('[role="menu"][data-state="open"]'),
-  );
-}
-
-function isAdminFormDialogDismissBlocked(_event: Event): boolean {
-  if (isAnySelectDropdownOpen()) return true;
-  return isDialogNestedPortaledLayer(_event.target);
-}
-
-function guardAdminFormDialogDismiss(event: Event) {
-  if (isAdminFormDialogDismissBlocked(event)) {
-    event.preventDefault();
-  }
-}
 
 const AdminFormDialogPortalContext = React.createContext<HTMLElement | null>(null);
 
@@ -81,15 +52,15 @@ function AdminFormDialogContent({
         className,
       )}
       onPointerDownOutside={(event) => {
-        guardAdminFormDialogDismiss(event);
+        guardDialogDismiss(event);
         onPointerDownOutside?.(event);
       }}
       onInteractOutside={(event) => {
-        guardAdminFormDialogDismiss(event);
+        guardDialogDismiss(event);
         onInteractOutside?.(event);
       }}
       onFocusOutside={(event) => {
-        guardAdminFormDialogDismiss(event);
+        guardDialogDismiss(event);
         onFocusOutside?.(event);
       }}
       {...props}

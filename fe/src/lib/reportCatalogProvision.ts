@@ -1,10 +1,11 @@
 import { apiFetch } from "@/lib/api";
+import { randomId } from "@/lib/randomId";
 import type { CatalogNode, TemplateBlock } from "@/pages/admin/reports/useReportTemplates";
 
 export type TemplateKind = "word" | "excel" | "pdf";
 
 export function generateCatalogTemplateKey(): string {
-  return `tpl_${crypto.randomUUID().replace(/-/g, "").slice(0, 10)}`;
+  return `tpl_${randomId().replace(/-/g, "").slice(0, 10)}`;
 }
 
 export async function provisionCatalogTemplate(input: {

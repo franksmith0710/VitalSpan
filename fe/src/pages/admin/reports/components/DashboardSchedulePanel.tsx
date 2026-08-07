@@ -62,6 +62,8 @@ type DashboardSchedulePanelProps = {
   widgetCount?: number;
   readOnly?: boolean;
   embedded?: boolean;
+  /** 嵌入弹窗打开时为 true，触发预检刷新 */
+  precheckActive?: boolean;
 };
 
 export function DashboardSchedulePanel({
@@ -71,6 +73,7 @@ export function DashboardSchedulePanel({
   widgetCount,
   readOnly = false,
   embedded = false,
+  precheckActive = false,
 }: DashboardSchedulePanelProps) {
   const filter = { sourceId, sourceType };
   const listQuery = useReportSchedulesList(filter);
@@ -287,6 +290,7 @@ export function DashboardSchedulePanel({
             <SchedulePrecheckPanel
               sourceLabel={sourceName}
               widgetCount={widgetCount}
+              active={precheckActive}
             />
           ) : null}
           <ScheduleFormFields

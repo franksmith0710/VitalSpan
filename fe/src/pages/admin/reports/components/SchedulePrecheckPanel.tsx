@@ -1,8 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, CircleAlert } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { CheckCircle2, CircleAlert, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { useScheduleExportHealth } from "./ScheduleExportHealthAlert";
+import {
+  SCHEDULE_DELIVERY_HEALTH_KEY,
+  SCHEDULE_EXPORT_HEALTH_KEY,
+  useScheduleExportHealth,
+} from "./ScheduleExportHealthAlert";
 
 type DeliveryHealth = {
   status: "reachable" | "unreachable" | "unconfigured";
@@ -14,6 +20,7 @@ type PrecheckItem = {
   label: string;
   ok: boolean;
   detail: string;
+  fixHint?: string;
   blocking?: boolean;
 };
 
@@ -22,9 +29,32 @@ type SchedulePrecheckPanelProps = {
   widgetCount?: number;
   requireVisualExport?: boolean;
   className?: string;
+  /** 弹窗打开时触发一次强制刷新 */
+  active?: boolean;
 };
 
+function precheckFixHint(item: PrecheckItem): string | undefined {
+  if (item.ok) return undefined;
+  const detail = item.detail.toLowerCase();
+  if (item.id === "delivery") {
+    if (detail.includes("1025") || detail.includes("smtp")) {
+      return "本地修复：docker compose up -d mailhog；或 python .tmp/run_local_mailhog.py";
+    }
+    return "请配置 RPT_SMTP_HOST / RPT_SMTP_PORT / RPT_SMTP_FROM（见 backend/.env.example）";
+  }
+  if (item.id === "export") {
+    if (detail.includes("playwright") || detail.includes("chromium")) {
+      return "本地修复：cd backend && pip install -e \".[export-render]\" && playwright install chromium";
+    }
+    if (detail.includes("5173") || detail.includes("前端")) {
+      return "请确认 fe 已启动（pnpm dev），且 FE_BASE_URL 与访问地址一致";
+    }
+  }
+  return undefined;
+}
+
 function PrecheckRow({ item }: { item: PrecheckItem }) {
+  const fixHint = item.fixHint ?? precheckFixHint(item);
   return (
     <li className="flex items-start gap-2 text-theme-xs">
       {item.ok ? (
@@ -35,6 +65,9 @@ function PrecheckRow({ item }: { item: PrecheckItem }) {
       <span className="min-w-0">
         <span className="font-medium text-gray-800 dark:text-white/90">{item.label}</span>
         <span className="mt-0.5 block text-gray-500 dark:text-gray-400">{item.detail}</span>
+        {fixHint ? (
+          <span className="mt-1 block text-gray-600 dark:text-gray-300">{fixHint}</span>
+        ) : null}
       </span>
     </li>
   );
@@ -44,14 +77,40 @@ export function useSchedulePrecheckItems(input: {
   sourceLabel: string;
   widgetCount?: number;
   requireVisualExport?: boolean;
-}): { items: PrecheckItem[]; blocking: boolean; loading: boolean } {
+  forceRefresh?: boolean;
+}): {
+  items: PrecheckItem[];
+  blocking: boolean;
+  loading: boolean;
+  refetch: () => Promise<void>;
+} {
   const deliveryQuery = useQuery({
-    queryKey: ["reports", "schedules", "delivery-health"],
+    queryKey: SCHEDULE_DELIVERY_HEALTH_KEY,
     queryFn: () => apiFetch<DeliveryHealth>("/api/v1/reports/schedules/delivery-health"),
-    staleTime: 60_000,
+    staleTime: 30_000,
   });
-  const exportQuery = useScheduleExportHealth();
+  const exportQuery = useScheduleExportHealth({ forceRefresh: input.forceRefresh });
+  const queryClient = useQueryClient();
   const loading = deliveryQuery.isLoading || exportQuery.isLoading;
+
+  const refetch = useCallback(async () => {
+    await Promise.all([
+      queryClient.fetchQuery({
+        queryKey: SCHEDULE_DELIVERY_HEALTH_KEY,
+        queryFn: () => apiFetch<DeliveryHealth>("/api/v1/reports/schedules/delivery-health"),
+        staleTime: 0,
+      }),
+      queryClient.fetchQuery({
+        queryKey: [...SCHEDULE_EXPORT_HEALTH_KEY, "force"],
+        queryFn: () =>
+          apiFetch<{ status: string; error?: string | null }>(
+            "/api/v1/reports/schedules/export-health?forceRefresh=1",
+          ),
+        staleTime: 0,
+      }),
+    ]);
+    await queryClient.invalidateQueries({ queryKey: SCHEDULE_EXPORT_HEALTH_KEY });
+  }, [queryClient]);
 
   const items: PrecheckItem[] = [];
   const widgetOk = input.widgetCount === undefined || input.widgetCount > 0;
@@ -96,7 +155,7 @@ export function useSchedulePrecheckItems(input: {
   }
 
   const blocking = items.some((item) => item.blocking && !item.ok);
-  return { items, blocking, loading };
+  return { items, blocking, loading, refetch };
 }
 
 export function SchedulePrecheckPanel({
@@ -104,12 +163,26 @@ export function SchedulePrecheckPanel({
   widgetCount,
   requireVisualExport = true,
   className,
+  active = true,
 }: SchedulePrecheckPanelProps) {
-  const { items, loading } = useSchedulePrecheckItems({
+  const [manualRefresh, setManualRefresh] = useState(false);
+  const { items, loading, refetch } = useSchedulePrecheckItems({
     sourceLabel,
     widgetCount,
     requireVisualExport,
+    forceRefresh: manualRefresh,
   });
+
+  useEffect(() => {
+    if (!active) return;
+    void refetch();
+  }, [active, refetch]);
+
+  const handleRefresh = async () => {
+    setManualRefresh(true);
+    await refetch();
+    setManualRefresh(false);
+  };
 
   return (
     <div
@@ -118,10 +191,25 @@ export function SchedulePrecheckPanel({
         className,
       )}
     >
-      <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">创建前检查</p>
-      <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
-        定时报告复用当前看板已保存的查询与筛选，无需在此重复配置数据集。
-      </p>
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">创建前检查</p>
+          <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
+            定时报告复用当前看板已保存的查询与筛选，无需在此重复配置数据集。
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="shrink-0"
+          disabled={loading}
+          onClick={() => void handleRefresh()}
+        >
+          <RefreshCw className={cn("size-3.5", loading ? "animate-spin" : "")} aria-hidden />
+          重新检查
+        </Button>
+      </div>
       {loading ? (
         <p className="mt-3 text-theme-xs text-gray-400">检查中…</p>
       ) : (

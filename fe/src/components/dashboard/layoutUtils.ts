@@ -1,4 +1,5 @@
 import type { ChartViewConfig, ChartType } from "@/lib/chartViewConfig";
+import { randomId } from "@/lib/randomId";
 import { migrateChartViewConfig } from "@/lib/migrateChartTypes";
 import { resolveChartWidgetTitle } from "@/lib/chartTypeDisplayNames";
 import { chartInspectorCapabilities } from "@/lib/chartInspectorCapabilities";
@@ -189,9 +190,9 @@ export function defaultTextConfig(): TextWidgetConfig {
 }
 
 export function defaultTabsConfig(tabsId: string): TabsWidgetConfig {
-  const paneA = crypto.randomUUID();
-  const paneB = crypto.randomUUID();
-  const paneC = crypto.randomUUID();
+  const paneA = randomId();
+  const paneB = randomId();
+  const paneC = randomId();
   return {
     tabsId,
     panes: [

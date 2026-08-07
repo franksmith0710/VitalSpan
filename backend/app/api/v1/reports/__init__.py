@@ -278,10 +278,11 @@ def schedule_delivery_health(
 @router.get("/schedules/export-health", response_model=None)
 def schedule_export_health(
     _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    force_refresh: bool = Query(default=False, alias="forceRefresh"),
 ):
     from app.dashboard.export_render import probe_export_render_health
 
-    return probe_export_render_health()
+    return probe_export_render_health(force_refresh=force_refresh)
 
 
 @router.get("/schedules/executions/recent-failures", response_model=None)

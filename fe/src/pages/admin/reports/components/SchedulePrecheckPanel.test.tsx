@@ -36,8 +36,23 @@ describe("SchedulePrecheckPanel", () => {
     expect(screen.getByText(/邮件服务可用/)).toBeInTheDocument();
   });
 
-  it("warns when widget count is zero", async () => {
-    renderPanel({ widgetCount: 0 });
-    expect(await screen.findByText(/暂无组件/)).toBeInTheDocument();
+  it("shows refresh control", async () => {
+    renderPanel();
+    expect(await screen.findByRole("button", { name: /重新检查/ })).toBeInTheDocument();
+  });
+
+  it("warns when export health unavailable", async () => {
+    mockApiFetch.mockImplementation(async (path: string) => {
+      if (path.includes("delivery-health")) {
+        return { status: "reachable", host: "localhost", port: 1025, error: null };
+      }
+      if (path.includes("export-health")) {
+        return { status: "unavailable", error: "Playwright 未安装" };
+      }
+      return {};
+    });
+    renderPanel();
+    expect(await screen.findByText(/Playwright 未安装/)).toBeInTheDocument();
+    expect(screen.getByText(/pip install/)).toBeInTheDocument();
   });
 });

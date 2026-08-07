@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api";
+import { randomId } from "@/lib/randomId";
 import type { DatasetFieldKind } from "@/components/dashboard/datasetFieldClassification";
 import { parseQualifiedTable } from "@/lib/datasetTableUtils";
 
@@ -108,7 +109,7 @@ export async function saveAndBindDatasetQueryConfig(params: {
   });
 
   let refType = "dataset";
-  let refId = crypto.randomUUID();
+  let refId = randomId();
 
   if (params.boundConfigId) {
     const existing = await apiFetch<QueryConfigRecord>(

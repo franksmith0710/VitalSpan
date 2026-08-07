@@ -35,7 +35,7 @@ function TabsPaneEmptyState({ mode, dragHint }: { mode: "edit" | "view"; dragHin
   if (mode === "view") {
     return (
       <div className="flex flex-1 flex-col items-center justify-center py-8 text-center">
-        <p className="text-theme-xs text-gray-400 dark:text-gray-500">此页签暂无内容</p>
+        <p className="text-theme-xs text-gray-400 dark:text-gray-500">此页签暂无内�?/p>
       </div>
     );
   }
@@ -54,9 +54,9 @@ function TabsPaneEmptyState({ mode, dragHint }: { mode: "edit" | "view"; dragHin
           <LayoutGrid className="tabs-widget-empty-icon-svg" aria-hidden />
         </span>
         <div className="space-y-1 text-center">
-          <p className="text-theme-sm font-medium text-gray-700 dark:text-gray-200">拖入或插入组件</p>
+          <p className="text-theme-sm font-medium text-gray-700 dark:text-gray-200">拖入或插入组�?/p>
           <p className="text-theme-xs leading-relaxed text-gray-400 dark:text-gray-500">
-            先点选目标页签，再从左侧工具栏添加图表、筛选器等
+            先点选目标页签，再从左侧工具栏添加图表、筛选器�?
           </p>
         </div>
       </div>
@@ -96,9 +96,9 @@ function TabsPaletteDropOverlay({
         <LayoutGrid className="tabs-widget-drop-icon-svg" aria-hidden />
       </span>
       <p className="text-theme-sm font-medium text-brand-600 dark:text-brand-400">
-        释放以加入「{activePaneTitle}」
+        释放以加入「{activePaneTitle}�?
       </p>
-      <p className="text-theme-xs text-gray-500 dark:text-gray-400">可先切换页签再拖入</p>
+      <p className="text-theme-xs text-gray-500 dark:text-gray-400">可先切换页签再拖�?/p>
     </div>
   );
 }
@@ -165,7 +165,7 @@ export function TabsWidget({
 
   const addPane = () => {
     if (cfg.panes.length >= MAX_PANES) return;
-    const id = crypto.randomUUID();
+    const id = randomId();
     onTabsConfigChange?.({
       ...cfg,
       panes: [...cfg.panes, { id, title: `页签 ${cfg.panes.length + 1}`, childWidgetIds: [] }],
@@ -230,7 +230,7 @@ export function TabsWidget({
           <div
             className="dashboard-drag-handle flex shrink-0 cursor-grab items-center active:cursor-grabbing"
             role="group"
-            aria-label="拖动以移动组件"
+            aria-label="拖动以移动组�?
           >
             <GripVertical className="size-4 shrink-0 text-gray-300 dark:text-gray-600" aria-hidden />
           </div>
@@ -372,7 +372,7 @@ export function TabsWidget({
               aria-hidden
             >
               <p className="text-theme-xs font-medium text-brand-600 dark:text-brand-400">
-                释放以加入「{activePane?.title ?? "当前页签"}」
+                释放以加入「{activePane?.title ?? "当前页签"}�?
               </p>
             </div>
           ) : null}

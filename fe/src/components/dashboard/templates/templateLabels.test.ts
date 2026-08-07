@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   categoryLabel,
+  canDeleteTemplate,
   resolveTemplateThumbnail,
   statusLabel,
   surfaceLabel,
@@ -36,5 +37,27 @@ describe("templateLabels", () => {
       "/template-assets/packs/de-dashboard-v1/thumbs/gov-efficiency.svg",
     );
     expect(resolveTemplateThumbnail("custom", "/custom.png")).toBe("/custom.png");
+  });
+
+  it("allows delete for non-builtin templates when user can manage", () => {
+    const item = {
+      id: "tpl-1",
+      templateKey: "custom-map",
+      name: "大屏地图",
+      description: null,
+      categoryKey: "general",
+      surfaceKind: "data-screen" as const,
+      status: "archived" as const,
+      thumbnailRef: null,
+      visibility: "org" as const,
+      ownerUserId: "user-1",
+      contentRevision: 1,
+      updatedAt: new Date().toISOString(),
+      publishedAt: null,
+    };
+    expect(canDeleteTemplate(item, true)).toBe(true);
+    expect(canDeleteTemplate(item, false, "user-1")).toBe(true);
+    expect(canDeleteTemplate(item, false, "user-2")).toBe(false);
+    expect(canDeleteTemplate({ ...item, visibility: "builtin" }, true)).toBe(false);
   });
 });

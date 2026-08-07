@@ -8,12 +8,16 @@ type ExportHealth = {
   error?: string | null;
 };
 
+export const SCHEDULE_EXPORT_HEALTH_KEY = ["reports", "schedules", "export-health"] as const;
+export const SCHEDULE_DELIVERY_HEALTH_KEY = ["reports", "schedules", "delivery-health"] as const;
+
+function fetchExportHealth(forceRefresh = false): Promise<ExportHealth> {
+  const qs = forceRefresh ? "?forceRefresh=1" : "";
+  return apiFetch<ExportHealth>(`/api/v1/reports/schedules/export-health${qs}`);
+}
+
 export function ScheduleExportHealthAlert({ className }: { className?: string }) {
-  const healthQuery = useQuery({
-    queryKey: ["reports", "schedules", "export-health"],
-    queryFn: () => apiFetch<ExportHealth>("/api/v1/reports/schedules/export-health"),
-    staleTime: 60_000,
-  });
+  const healthQuery = useScheduleExportHealth();
 
   const health = healthQuery.data;
   if (!health || health.status === "available") return null;
@@ -31,10 +35,12 @@ export function ScheduleExportHealthAlert({ className }: { className?: string })
   );
 }
 
-export function useScheduleExportHealth() {
+export function useScheduleExportHealth(options?: { forceRefresh?: boolean; enabled?: boolean }) {
+  const forceRefresh = options?.forceRefresh ?? false;
   return useQuery({
-    queryKey: ["reports", "schedules", "export-health"],
-    queryFn: () => apiFetch<ExportHealth>("/api/v1/reports/schedules/export-health"),
-    staleTime: 60_000,
+    queryKey: [...SCHEDULE_EXPORT_HEALTH_KEY, forceRefresh ? "force" : "default"],
+    queryFn: () => fetchExportHealth(forceRefresh),
+    staleTime: forceRefresh ? 0 : 30_000,
+    enabled: options?.enabled ?? true,
   });
 }

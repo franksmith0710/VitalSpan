@@ -1,7 +1,6 @@
 import { Check, ChevronDown } from "lucide-react";
 import {
   ChartPaletteSwatchStrip,
-  PALETTE_SWATCH_STRIP_WIDTH,
   type ChartPaletteSwatchStripProps,
 } from "./chartPaletteShared";
 import { cn } from "@/lib/utils";
@@ -126,23 +125,21 @@ export function ChartPaletteCurrentDisplay({
 }: ChartPaletteCurrentDisplayProps) {
   const content = (
     <>
-      <span className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-        <span className="shrink-0" style={{ width: PALETTE_SWATCH_STRIP_WIDTH }}>
-          <ChartPaletteSwatchStrip
-            colors={activeColors}
-            inherit={inheritActive}
-            inheritPreviewColors={inheritPreviewColors}
-            className="rounded-[2px]"
-          />
-        </span>
-        <span className="min-w-0 flex-1 truncate text-theme-xs font-medium text-gray-800 dark:text-gray-200">
+      <span className="flex min-w-0 flex-1 flex-col gap-1 overflow-hidden">
+        <ChartPaletteSwatchStrip
+          colors={activeColors}
+          inherit={inheritActive}
+          inheritPreviewColors={inheritPreviewColors}
+          className="w-full rounded-[2px]"
+        />
+        <span className="min-w-0 truncate text-theme-xs font-medium leading-tight text-gray-800 dark:text-gray-200">
           {activeLabel}
         </span>
       </span>
       {onMenuToggle ? (
         <ChevronDown
           className={cn(
-            "size-3.5 shrink-0 text-gray-400 transition-transform dark:text-gray-500",
+            "size-3.5 shrink-0 self-center text-gray-400 transition-transform dark:text-gray-500",
             menuOpen && "rotate-180",
           )}
           aria-hidden
@@ -161,6 +158,7 @@ export function ChartPaletteCurrentDisplay({
         className={cn(
           triggerClass,
           "flex min-w-0 flex-1 cursor-pointer items-center justify-between gap-2 text-left",
+          "h-auto min-h-8 py-1",
         )}
         onClick={(event) => {
           event.stopPropagation();
@@ -178,6 +176,7 @@ export function ChartPaletteCurrentDisplay({
       className={cn(
         triggerClass,
         "pointer-events-none flex min-w-0 flex-1 items-center justify-between gap-2 text-left",
+        "h-auto min-h-8 py-1",
       )}
     >
       {content}

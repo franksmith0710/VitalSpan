@@ -4,6 +4,7 @@ import {
   type LayoutWidget,
 } from "@/components/dashboard/layoutUtils";
 import { formatScreenWeekday } from "@/lib/screenTokens";
+import { randomId } from "@/lib/randomId";
 import type {
   ScreenBorderVariant,
   ScreenShapeKind,
@@ -159,7 +160,7 @@ export function createScreenClockWidget(
   widgets: LayoutWidget[],
   at?: { gridX: number; gridY: number; colSpan?: number; rowSpan?: number },
 ): LayoutWidget {
-  const widgetId = crypto.randomUUID();
+  const widgetId = randomId();
   const maxOrder = widgets.reduce((m, w) => Math.max(m, w.order), -1);
   return {
     id: widgetId,
@@ -183,7 +184,7 @@ export function createScreenBorderWidget(
   at?: { gridX: number; gridY: number; colSpan?: number; rowSpan?: number },
   variant: string = "border-1",
 ): LayoutWidget {
-  const widgetId = crypto.randomUUID();
+  const widgetId = randomId();
   const maxOrder = widgets.reduce((m, w) => Math.max(m, w.order), -1);
   return {
     id: widgetId,
@@ -209,7 +210,7 @@ export function createScreenTitleBarWidget(
   widgets: LayoutWidget[],
   at?: { gridX: number; gridY: number; colSpan?: number; rowSpan?: number },
 ): LayoutWidget {
-  const widgetId = crypto.randomUUID();
+  const widgetId = randomId();
   const maxOrder = widgets.reduce((m, w) => Math.max(m, w.order), -1);
   return {
     id: widgetId,
@@ -240,7 +241,7 @@ export function createScreenDateTimeWidget(
   widgets: LayoutWidget[],
   at?: { gridX: number; gridY: number; colSpan?: number; rowSpan?: number },
 ): LayoutWidget {
-  const widgetId = crypto.randomUUID();
+  const widgetId = randomId();
   const maxOrder = widgets.reduce((m, w) => Math.max(m, w.order), -1);
   return {
     id: widgetId,
@@ -263,7 +264,7 @@ export function createScreenWebpageWidget(
   widgets: LayoutWidget[],
   at?: { gridX: number; gridY: number; colSpan?: number; rowSpan?: number },
 ): LayoutWidget {
-  const widgetId = crypto.randomUUID();
+  const widgetId = randomId();
   const maxOrder = widgets.reduce((m, w) => Math.max(m, w.order), -1);
   return {
     id: widgetId,
@@ -289,7 +290,7 @@ export function createScreenShapeWidget(
   at?: { gridX: number; gridY: number; colSpan?: number; rowSpan?: number },
   shape: string = "rect",
 ): LayoutWidget {
-  const widgetId = crypto.randomUUID();
+  const widgetId = randomId();
   const maxOrder = widgets.reduce((m, w) => Math.max(m, w.order), -1);
   const shapeKind = shape as ScreenShapeKind;
   const label = shapeKind === "rect" ? "矩形" : shapeKind === "triangle" ? "三角形" : "圆形";
@@ -318,7 +319,7 @@ export function createScreenIconWidget(
   at?: { gridX: number; gridY: number; colSpan?: number; rowSpan?: number },
   icon: string = "star",
 ): LayoutWidget {
-  const widgetId = crypto.randomUUID();
+  const widgetId = randomId();
   const maxOrder = widgets.reduce((m, w) => Math.max(m, w.order), -1);
   return {
     id: widgetId,

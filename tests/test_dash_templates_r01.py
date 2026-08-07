@@ -232,6 +232,29 @@ def test_builtin_template_delete_forbidden(client: TestClient, auth_headers: dic
     assert res.json()["code"] == "DASH_TEMPLATE_BUILTIN_READONLY"
 
 
+def test_delete_custom_template(client: TestClient, auth_headers: dict, db_session) -> None:
+    create = client.post(
+        "/api/v1/dashboard-templates",
+        headers=auth_headers,
+        json={
+            "name": "待删除模板",
+            "surfaceKind": "dashboard",
+            "layoutJson": {
+                "version": 1,
+                "widgets": [],
+                "globalFilters": [],
+                "styleConfig": {"surfaceKind": "dashboard"},
+            },
+        },
+    )
+    assert create.status_code == 201
+    template_id = create.json()["id"]
+    res = client.delete(f"/api/v1/dashboard-templates/{template_id}", headers=auth_headers)
+    assert res.status_code == 204
+    detail = client.get(f"/api/v1/dashboard-templates/{template_id}", headers=auth_headers)
+    assert detail.status_code == 404
+
+
 def test_legacy_data_screen_envelope_import(client: TestClient, auth_headers: dict) -> None:
     res = client.post(
         "/api/v1/dashboard-templates/import",

@@ -20,10 +20,13 @@ export const VIZ_TEMPLATES_HUB = {
   emptyDescription: "当前筛选条件下没有可用模板，可尝试切换分类或导入 JSON 创建。",
   toastPublished: "模板已发布",
   toastArchived: "模板已下架",
+  toastDeleted: "模板已删除",
   toastImported: "模板导入成功",
   toastExportFailed: "导出失败",
   toastExported: "模板 JSON 已下载",
   invalidJson: "无法解析 JSON 文件",
+  deleteTitle: "删除模板",
+  deleteDescription: (name: string) => `确定删除「${name}」？删除后无法恢复。`,
 } as const;
 
 export const TEMPLATE_EDIT_SESSION = {
@@ -44,6 +47,7 @@ export const TEMPLATE_ACTIONS = {
   export: "导出",
   publish: "发布",
   archive: "下架",
+  delete: "删除",
   exportTemplate: "导出模板",
   publishAsTemplate: "发布为模板",
   layoutJson: "布局 JSON",
@@ -58,6 +62,17 @@ export function canEditTemplateMeta(
 ): boolean {
   void item;
   return canManage;
+}
+
+/** 非内置模板：管理员或创建者可删除 */
+export function canDeleteTemplate(
+  item: DashboardTemplateListItem,
+  canManage: boolean,
+  currentUserId?: string | null,
+): boolean {
+  if (item.visibility === "builtin") return false;
+  if (canManage) return true;
+  return Boolean(currentUserId && item.ownerUserId && item.ownerUserId === currentUserId);
 }
 
 export const GOV_SECTION_LABELS = {

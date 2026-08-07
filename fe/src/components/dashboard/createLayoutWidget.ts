@@ -1,6 +1,7 @@
 import type { ChartType } from "@/lib/chartViewConfig";
 import { getChartTypeDisplayName } from "@/lib/chartRegistry";
 import { isWidgetConfigReady } from "@/lib/chartConfigState";
+import { randomId } from "@/lib/randomId";
 import {
   DEFAULT_WIDGET_COLSPAN,
   DEFAULT_WIDGET_ROWSPAN,
@@ -71,7 +72,7 @@ export function createLayoutWidget(
   widgets: LayoutWidget[],
   at?: { gridX: number; gridY: number; colSpan?: number; rowSpan?: number },
 ): LayoutWidget {
-  const widgetId = crypto.randomUUID();
+  const widgetId = randomId();
   const maxOrder = widgets.reduce((m, w) => Math.max(m, w.order), -1);
   return {
     id: widgetId,
@@ -91,7 +92,7 @@ export function createFilterWidget(
   at?: { gridX: number; gridY: number; colSpan?: number; rowSpan?: number },
   controlType: FilterControlType = "text",
 ): LayoutWidget {
-  const widgetId = crypto.randomUUID();
+  const widgetId = randomId();
   const maxOrder = widgets.reduce((m, w) => Math.max(m, w.order), -1);
   const baseConfig = defaultFilterConfig(widgetId);
   return {
@@ -115,7 +116,7 @@ export function createTextWidget(
   widgets: LayoutWidget[],
   at?: { gridX: number; gridY: number; colSpan?: number; rowSpan?: number },
 ): LayoutWidget {
-  const widgetId = crypto.randomUUID();
+  const widgetId = randomId();
   const maxOrder = widgets.reduce((m, w) => Math.max(m, w.order), -1);
   return {
     id: widgetId,
@@ -134,7 +135,7 @@ export function createMediaWidget(
   widgets: LayoutWidget[],
   at?: { gridX: number; gridY: number; colSpan?: number; rowSpan?: number },
 ): LayoutWidget {
-  const widgetId = crypto.randomUUID();
+  const widgetId = randomId();
   const maxOrder = widgets.reduce((m, w) => Math.max(m, w.order), -1);
   return {
     id: widgetId,
@@ -153,7 +154,7 @@ export function createTabsWidget(
   widgets: LayoutWidget[],
   at?: { gridX: number; gridY: number; colSpan?: number; rowSpan?: number },
 ): LayoutWidget {
-  const widgetId = crypto.randomUUID();
+  const widgetId = randomId();
   const maxOrder = widgets.reduce((m, w) => Math.max(m, w.order), -1);
   return {
     id: widgetId,
@@ -200,7 +201,7 @@ export function createLinkedLayoutWidget(
   widgets: LayoutWidget[],
   at?: { gridX: number; gridY: number; colSpan?: number; rowSpan?: number },
 ): LayoutWidget {
-  const widgetId = crypto.randomUUID();
+  const widgetId = randomId();
   const maxOrder = widgets.reduce((m, w) => Math.max(m, w.order), -1);
   return {
     id: widgetId,

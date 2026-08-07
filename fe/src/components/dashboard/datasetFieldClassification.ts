@@ -2,7 +2,7 @@ export type DatasetFieldKind = "dimension" | "metric";
 
 /** 可聚合的数值型业务度量（对标 DataEase 指标） */
 const METRIC_PATTERN =
-  /(?:^|_)(amount|amt|count|cnt|qty|quantity|price|total|sum|avg|rate|score|记录数)(?:$|_)/i;
+  /(?:^|_)(amount|amt|count|cnt|qty|quantity|price|total|sum|avg|rate|score|value|values|记录数)(?:$|_)/i;
 
 /** 时间、地域、名称、标识类维度 */
 const DIMENSION_PATTERN =

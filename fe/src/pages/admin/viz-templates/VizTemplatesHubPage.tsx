@@ -12,15 +12,29 @@ import {
   PageErrorBanner,
 } from "@/components/layout/list-page-kit";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { SearchField } from "@/components/ui/search-field";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PanelEmptyState } from "@/components/ui/panel-empty-state";
 import { VizTemplateCard } from "@/components/dashboard/templates/VizTemplateCard";
 import { TemplateSettingsDialog } from "@/components/dashboard/templates/TemplateSettingsDialog";
-import { VIZ_TEMPLATES_HUB } from "@/components/dashboard/templates/templateLabels";
+import {
+  canDeleteTemplate,
+  VIZ_TEMPLATES_HUB,
+} from "@/components/dashboard/templates/templateLabels";
 import {
   archiveTemplate,
   createFromTemplate,
+  deleteTemplate,
   fetchDashboardTemplates,
   filterTemplatesForHub,
   importTemplateEnvelope,
@@ -91,6 +105,7 @@ export function VizTemplatesHubPage() {
   const [q, setQ] = useState("");
   const importRef = useRef<HTMLInputElement>(null);
   const [settingsItem, setSettingsItem] = useState<DashboardTemplateListItem | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DashboardTemplateListItem | null>(null);
 
   useEffect(() => {
     const next = readHubFilters(location.search);
@@ -187,6 +202,16 @@ export function VizTemplatesHubPage() {
     onError: (err) => toast.error(mapApiError(err)),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: deleteTemplate,
+    onSuccess: () => {
+      toast.success(VIZ_TEMPLATES_HUB.toastDeleted);
+      setDeleteTarget(null);
+      invalidate();
+    },
+    onError: (err) => toast.error(mapApiError(err)),
+  });
+
   const importMutation = useMutation({
     mutationFn: (envelope: VizLayoutEnvelope) => importTemplateEnvelope(envelope),
     onSuccess: () => {
@@ -200,7 +225,8 @@ export function VizTemplatesHubPage() {
     useMutation_.isPending ||
     editLayoutMutation.isPending ||
     publishMutation.isPending ||
-    archiveMutation.isPending;
+    archiveMutation.isPending ||
+    deleteMutation.isPending;
 
   const items = filterTemplatesForHub(listQuery.data?.items ?? []);
 
@@ -229,6 +255,8 @@ export function VizTemplatesHubPage() {
           onOpenSettings={() => setSettingsItem(item)}
           onPublish={() => publishMutation.mutate(item.id)}
           onArchive={() => archiveMutation.mutate(item.id)}
+          onDelete={() => setDeleteTarget(item)}
+          canDelete={canDeleteTemplate(item, canManage, authUser?.id)}
         />
       ))}
     </div>
@@ -349,6 +377,26 @@ export function VizTemplatesHubPage() {
         onSaved={invalidate}
         onEditLayout={(item) => editLayoutMutation.mutate(item)}
       />
+
+      <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{VIZ_TEMPLATES_HUB.deleteTitle}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget ? VIZ_TEMPLATES_HUB.deleteDescription(deleteTarget.name) : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>取消</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteMutation.isPending}
+              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+            >
+              {deleteMutation.isPending ? "删除中…" : "删除"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminPageShell>
   );
 }

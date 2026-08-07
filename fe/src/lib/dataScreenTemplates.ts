@@ -1,4 +1,5 @@
 import type { DashboardLayoutV2, PixelLayoutWidget } from "@/components/dashboard/layoutUtils";
+import { randomId } from "@/lib/randomId";
 import { defaultChartConfig } from "@/components/dashboard/layoutUtils";
 import { buildDashboardLayoutForSave } from "@/components/dashboard/dashboardCanvasMode";
 import { bootstrapDashboardStyleConfig } from "@/components/dashboard/dashboardThemeVariants";
@@ -41,7 +42,7 @@ export const DATA_SCREEN_TEMPLATE_CATALOG: DataScreenTemplateMeta[] = [
 ];
 
 function widgetId(): string {
-  return crypto.randomUUID();
+  return randomId();
 }
 
 function screenTitleHtml(text: string): string {

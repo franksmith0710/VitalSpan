@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { Archive, Download, MoreHorizontal, Pencil, Settings2 } from "lucide-react";
+import { Archive, Download, MoreHorizontal, Pencil, Settings2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Button, IconButton } from "@/components/ui/button";
@@ -50,6 +50,8 @@ type VizTemplateCardProps = {
   onOpenSettings: () => void;
   onPublish: () => void;
   onArchive: () => void;
+  onDelete: () => void;
+  canDelete: boolean;
   pending: boolean;
   /** 首屏卡片 eager 加载 live 预览，减少灰块空壳感 */
   previewEager?: boolean;
@@ -69,6 +71,8 @@ export function VizTemplateCard({
   onOpenSettings,
   onPublish,
   onArchive,
+  onDelete,
+  canDelete,
   pending,
   previewEager = false,
 }: VizTemplateCardProps) {
@@ -209,6 +213,19 @@ export function VizTemplateCard({
                     <DropdownMenuItem disabled={pending} onClick={onArchive}>
                       <Archive className="size-4" aria-hidden />
                       {TEMPLATE_ACTIONS.archive}
+                    </DropdownMenuItem>
+                  </>
+                ) : null}
+                {canDelete ? (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      disabled={pending}
+                      className="text-error-600 focus:text-error-600 dark:text-error-400"
+                      onClick={onDelete}
+                    >
+                      <Trash2 className="size-4" aria-hidden />
+                      {TEMPLATE_ACTIONS.delete}
                     </DropdownMenuItem>
                   </>
                 ) : null}

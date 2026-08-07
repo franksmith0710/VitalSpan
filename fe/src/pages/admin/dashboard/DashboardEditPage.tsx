@@ -1773,6 +1773,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           sourceId={id}
           sourceType={isDataScreenSurface ? "data_screen" : "dashboard"}
           sourceName={name || "未命名"}
+          widgetCount={layout.widgets?.length ?? 0}
           readOnly={!canManageSchedule}
         />
       ) : null}

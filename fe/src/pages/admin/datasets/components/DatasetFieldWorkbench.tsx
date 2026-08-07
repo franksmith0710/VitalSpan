@@ -133,8 +133,8 @@ export function DatasetFieldWorkbench({
               已绑定
             </Badge>
           ) : (
-            <Badge variant="light" color="warning" size="sm">
-              未绑定
+            <Badge variant="light" color="light" size="sm">
+              保存后绑定
             </Badge>
           )}
           {isSyncOrigin ? (

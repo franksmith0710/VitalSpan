@@ -1,8 +1,9 @@
 import type { LayoutWidget } from "./layoutUtils";
+import { randomId } from "@/lib/randomId";
 
 /** 深拷贝 widget 并生成新 ID，用于跨看板复用 */
 export function cloneLayoutWidget(source: LayoutWidget, widgets: LayoutWidget[]): LayoutWidget {
-  const newId = crypto.randomUUID();
+  const newId = randomId();
   const maxOrder = widgets.reduce((m, w) => Math.max(m, w.order), -1);
   const base: LayoutWidget = {
     ...structuredClone(source),
@@ -37,7 +38,7 @@ export function cloneLayoutWidget(source: LayoutWidget, widgets: LayoutWidget[])
   if (source.type === "tabs" && source.tabsConfig) {
     const panes = source.tabsConfig.panes.map((pane) => ({
       ...pane,
-      id: crypto.randomUUID(),
+      id: randomId(),
       childWidgetIds: [],
     }));
     return {

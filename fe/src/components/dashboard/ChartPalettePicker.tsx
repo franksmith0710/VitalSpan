@@ -22,7 +22,6 @@ import {
   ChartPaletteColorSwatch,
   ChartPaletteSeriesColorRow,
   ChartPaletteSwatchStrip,
-  PALETTE_SWATCH_STRIP_WIDTH,
 } from "./chartPaletteShared";
 import {
   ChartPaletteCurrentDisplay,
@@ -183,7 +182,10 @@ export function ChartPalettePicker({
     setCustomOpen((open) => !open);
   };
 
-  const wideSelectTriggerClass = cn(DE_SELECT, "h-7 px-2.5 text-[12px]");
+  const wideSelectTriggerClass = cn(
+    DE_SELECT,
+    "h-auto min-h-8 px-2.5 py-1 text-[12px] [&>span]:line-clamp-none",
+  );
   const settingsBtnClass = dense ? "size-8" : "size-7";
 
   const settingsButton = (
@@ -247,17 +249,17 @@ export function ChartPalettePicker({
               className={cn(wideSelectTriggerClass, "min-w-0 flex-1 shadow-none")}
               aria-label="配色方案"
             >
-              <span className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-                <span className="shrink-0" style={{ width: PALETTE_SWATCH_STRIP_WIDTH }}>
-                  <ChartPaletteSwatchStrip
-                    colors={activeColors}
-                    inherit={effectiveInheritActive}
-                    inheritPreviewColors={inheritPreviewColors}
-                    className="rounded-[2px]"
-                  />
-                </span>
+              <span className="flex min-w-0 flex-1 flex-col gap-1 overflow-hidden">
+                <ChartPaletteSwatchStrip
+                  colors={activeColors}
+                  inherit={effectiveInheritActive}
+                  inheritPreviewColors={inheritPreviewColors}
+                  className="w-full rounded-[2px]"
+                />
                 <SelectValue placeholder="配色方案">
-                  <span className="min-w-0 flex-1 truncate text-left">{activeLabel}</span>
+                  <span className="min-w-0 truncate text-left text-[11px] leading-tight">
+                    {activeLabel}
+                  </span>
                 </SelectValue>
               </span>
             </SelectTrigger>

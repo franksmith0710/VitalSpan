@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import type { Dispatch, ReactNode, SetStateAction } from "react";
+import { useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,17 +8,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { ComputedFieldsEditor } from "./ComputedFieldsEditor";
 import { DatasetTablePicker } from "./DatasetTablePicker";
-import type { DatasetEditorValues, DatasetOrigin } from "./types";
+import type { DatasetComputedField, DatasetEditorValues, DatasetOrigin } from "./types";
 
 export const DATASET_EDITOR_FORM_ID = "dataset-editor-form";
 
-export function canSubmitDataset(values: DatasetEditorValues): boolean {
-  return (
-    values.datasetId.trim().length > 0 &&
-    values.displayName.trim().length > 0 &&
-    values.tables.length > 0 &&
-    values.computedFields.every((f) => f.name.trim() && f.expression.trim())
+function activeComputedFields(fields: DatasetComputedField[]): DatasetComputedField[] {
+  return fields.filter((field) => field.name.trim() || field.expression.trim());
+}
+
+export function datasetSubmitBlockers(values: DatasetEditorValues): string[] {
+  const blockers: string[] = [];
+  if (!values.datasetId.trim()) blockers.push("填写 Dataset ID");
+  if (!values.displayName.trim()) blockers.push("填写显示名");
+  if (!values.tables[0]?.name?.trim()) blockers.push("在 Schema 树中选择数据表");
+  const incomplete = activeComputedFields(values.computedFields).filter(
+    (field) => !field.name.trim() || !field.expression.trim(),
   );
+  if (incomplete.length > 0) blockers.push("补全计算字段的名称与表达式，或删除空行");
+  return blockers;
+}
+
+export function canSubmitDataset(values: DatasetEditorValues): boolean {
+  return datasetSubmitBlockers(values).length === 0;
 }
 
 function DatasetFormSection({
@@ -54,7 +66,7 @@ export function DatasetEditorForm({
 }: {
   mode: "create" | "edit";
   values: DatasetEditorValues;
-  onChange: (next: DatasetEditorValues) => void;
+  onChange: Dispatch<SetStateAction<DatasetEditorValues>>;
   onSubmit: () => void;
   tablePickerPrefill?: {
     preferredDataSourceId?: string;
@@ -68,6 +80,10 @@ export function DatasetEditorForm({
   };
   origin?: DatasetOrigin;
 }) {
+  const patch = useCallback(
+    (update: SetStateAction<DatasetEditorValues>) => onChange(update),
+    [onChange],
+  );
   const tableTabLabel = "数据表";
   const computedTabLabel = `计算字段${values.computedFields.length > 0 ? ` (${values.computedFields.length})` : ""}`;
 
@@ -90,7 +106,7 @@ export function DatasetEditorForm({
               <Input
                 id="edit-name"
                 value={values.displayName}
-                onChange={(e) => onChange({ ...values, displayName: e.target.value })}
+                onChange={(e) => patch((current) => ({ ...current, displayName: e.target.value }))}
                 className="h-11"
               />
             </div>
@@ -122,7 +138,7 @@ export function DatasetEditorForm({
                     <Input
                       id="ds-id"
                       value={values.datasetId}
-                      onChange={(e) => onChange({ ...values, datasetId: e.target.value })}
+                      onChange={(e) => patch((current) => ({ ...current, datasetId: e.target.value }))}
                       placeholder="ds-orders"
                       className="h-11 font-mono"
                     />
@@ -132,7 +148,7 @@ export function DatasetEditorForm({
                     <Input
                       id="ds-name"
                       value={values.displayName}
-                      onChange={(e) => onChange({ ...values, displayName: e.target.value })}
+                      onChange={(e) => patch((current) => ({ ...current, displayName: e.target.value }))}
                       placeholder="订单分析集"
                       className="h-11"
                     />
@@ -156,14 +172,14 @@ export function DatasetEditorForm({
             >
               <DatasetTablePicker
                 tables={values.tables}
-                onChange={(tables) => onChange({ ...values, tables })}
+                onChange={(tables) => patch((current) => ({ ...current, tables }))}
                 preferredDataSourceId={tablePickerPrefill?.preferredDataSourceId}
                 prefillTable={tablePickerPrefill?.prefillTable}
                 savedDataSourceId={tablePickerPrefill?.savedDataSourceId}
                 onDataSourceIdChange={tablePickerPrefill?.onDataSourceIdChange}
                 origin={origin}
                 bindDraft={values.bindDraft}
-                onBindDraftChange={(bindDraft) => onChange({ ...values, bindDraft })}
+                onBindDraftChange={(bindDraft) => patch((current) => ({ ...current, bindDraft }))}
                 boundConfigId={tablePickerPrefill?.boundConfigId}
                 syncJobId={tablePickerPrefill?.syncJobId}
                 onRefreshBinding={tablePickerPrefill?.onRefreshBinding}
@@ -181,7 +197,7 @@ export function DatasetEditorForm({
               >
                 <ComputedFieldsEditor
                   fields={values.computedFields}
-                  onChange={(computedFields) => onChange({ ...values, computedFields })}
+                  onChange={(computedFields) => patch((current) => ({ ...current, computedFields }))}
                 />
               </DatasetFormSection>
             </TabsContent>

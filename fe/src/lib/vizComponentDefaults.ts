@@ -6,6 +6,7 @@ import {
 } from "@/components/dashboard/layoutUtils";
 import { getChartTypeDisplayName } from "@/lib/chartRegistry";
 import type { ChartType } from "@/lib/chartViewConfig";
+import { randomId } from "@/lib/randomId";
 import type { VizComponentPayload, VizWidgetType } from "./vizComponents";
 
 export type VizComponentDefaultsOptions = {
@@ -16,7 +17,7 @@ export function defaultVizComponentPayload(
   widgetType: VizWidgetType,
   options?: VizComponentDefaultsOptions,
 ): VizComponentPayload {
-  const seedId = crypto.randomUUID();
+  const seedId = randomId();
   switch (widgetType) {
     case "chart":
       return {

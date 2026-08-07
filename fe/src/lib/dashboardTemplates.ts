@@ -143,6 +143,12 @@ export function archiveTemplate(templateId: string) {
   });
 }
 
+export function deleteTemplate(templateId: string) {
+  return apiFetch<void>(`/api/v1/dashboard-templates/${templateId}`, {
+    method: "DELETE",
+  });
+}
+
 export function importTemplateEnvelope(envelope: VizLayoutEnvelope) {
   return apiFetch<DashboardTemplateDetail>("/api/v1/dashboard-templates/import", {
     method: "POST",

@@ -26,6 +26,7 @@ import {
   canSubmitDataset,
   DATASET_EDITOR_FORM_ID,
   DatasetEditorForm,
+  datasetSubmitBlockers,
 } from "./DatasetEditorForm";
 import { useDatasetTableColumns } from "./hooks/useDatasetTableColumns";
 import type { DatasetEditorValues, DatasetItem } from "./types";
@@ -54,10 +55,12 @@ function normalizeValues(values: DatasetEditorValues): DatasetEditorValues {
     displayName: values.displayName.trim(),
     tables: normalizeTablesSingle(values.tables),
     tableSourceDataSourceId: values.tableSourceDataSourceId?.trim() || undefined,
-    computedFields: values.computedFields.map((f) => ({
-      name: f.name.trim(),
-      expression: f.expression.trim(),
-    })),
+    computedFields: values.computedFields
+      .filter((field) => field.name.trim() || field.expression.trim())
+      .map((f) => ({
+        name: f.name.trim(),
+        expression: f.expression.trim(),
+      })),
     bindDraft: values.bindDraft
       ? {
           selectedColumns: [...values.bindDraft.selectedColumns],
@@ -328,6 +331,7 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
   }, [isBaselineReady, isDirty, mode]);
 
   const canSubmit = canSubmitDataset(values);
+  const submitBlockers = datasetSubmitBlockers(values);
 
   const headerLeadingActions = (
     <Button asChild variant="outline" size="sm">
@@ -347,6 +351,11 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
       loading={isSaving}
       loadingText="保存中…"
       disabled={!canSubmit || isSaving || (mode === "edit" && !isDirty)}
+      title={
+        !canSubmit && submitBlockers.length > 0
+          ? `还需：${submitBlockers.join("；")}`
+          : undefined
+      }
     >
       {mode === "create" ? "创建 Dataset" : "保存"}
     </Button>

@@ -5,6 +5,8 @@ import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
 
+import { randomId } from "@/lib/randomId";
+
 const SESSION_KEY = "vitalspan.designerItemId";
 
 export type ConditionRow = {
@@ -40,7 +42,7 @@ export type AggregateRow = {
 function loadDesignerItemId(): string {
   const stored = sessionStorage.getItem(SESSION_KEY);
   if (stored) return stored;
-  const id = crypto.randomUUID();
+  const id = randomId();
   sessionStorage.setItem(SESSION_KEY, id);
   return id;
 }
