@@ -7,6 +7,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Clock3 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   WEEKDAY_LABELS,
   cronFromWizard,
@@ -22,6 +24,8 @@ type ScheduleWizardProps = {
   cron?: string;
   onCronChange?: (cron: string) => void;
   idPrefix?: string;
+  /** 弹窗内：预览改为高亮条 */
+  embedded?: boolean;
 };
 
 export function ScheduleWizard({
@@ -32,6 +36,7 @@ export function ScheduleWizard({
   cron,
   onCronChange,
   idPrefix = "schedule-wizard",
+  embedded = false,
 }: ScheduleWizardProps) {
   const preview = describeCron(cron ?? cronFromWizard(value));
 
@@ -131,7 +136,24 @@ export function ScheduleWizard({
           />
         </div>
       ) : null}
-      <p className="text-theme-xs text-gray-500 dark:text-gray-400">预览：{preview}</p>
+      <div
+        className={cn(
+          embedded
+            ? "flex items-center gap-2 rounded-lg border border-brand-200/80 bg-brand-50/70 px-3 py-2 dark:border-brand-500/25 dark:bg-brand-500/10"
+            : "",
+        )}
+      >
+        {embedded ? <Clock3 className="size-3.5 shrink-0 text-brand-600 dark:text-brand-400" aria-hidden /> : null}
+        <p
+          className={cn(
+            embedded
+              ? "text-theme-xs font-medium text-brand-700 dark:text-brand-300"
+              : "text-theme-xs text-gray-500 dark:text-gray-400",
+          )}
+        >
+          {embedded ? `将按「${preview}」执行` : `预览：${preview}`}
+        </p>
+      </div>
       {showAdvancedCron && onCronChange ? (
         <div className="grid gap-2">
           <Label htmlFor={`${idPrefix}-cron-advanced`}>高级 Cron</Label>

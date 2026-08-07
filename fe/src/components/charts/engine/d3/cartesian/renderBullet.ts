@@ -6,6 +6,7 @@ import type { D3BulletRenderConfig } from "@/components/charts/engine/d3/types";
 import { formatSimpleDataLabel } from "@/components/charts/engine/d3/core/cartesianDataLabel";
 import { resolveBarBandPadding } from "@/lib/applyChartDeStyleBlocks";
 import { formatChartValue } from "@/lib/chartValueFormat";
+import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 
 const BAR_RX = 3;
 
@@ -30,6 +31,7 @@ export function renderD3BulletChart(container: HTMLElement, config: D3BulletRend
     axisStyle,
     targetLineWidth = 2,
     rangeOpacity = 0.55,
+    conditionalRules = [],
   } = config;
 
   const barRx = barRadius ?? BAR_RX;
@@ -79,7 +81,11 @@ export function renderD3BulletChart(container: HTMLElement, config: D3BulletRend
       .each(function () {
         const cell = d3.select(this);
         const w = x(d.actual);
-        paintHorizontalBar({ plot: cell, x: 0, y: 0, width: w, height: barH, color: measureColor, rx: barRx });
+        const measureFill =
+          conditionalRules.length > 0
+            ? resolveDatumColor(d.actual, measureColor, conditionalRules)
+            : measureColor;
+        paintHorizontalBar({ plot: cell, x: 0, y: 0, width: w, height: barH, color: measureFill, rx: barRx });
       })
       .on("click", () => onPointClick?.(d));
 

@@ -6,6 +6,7 @@ import type { D3BarRangeRenderConfig } from "@/components/charts/engine/d3/types
 import { formatSimpleDataLabel } from "@/components/charts/engine/d3/core/cartesianDataLabel";
 import { resolveBarBandPadding } from "@/lib/applyChartDeStyleBlocks";
 import { formatChartValue } from "@/lib/chartValueFormat";
+import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 
 const BAR_RX = 4;
 
@@ -28,6 +29,7 @@ export function renderD3BarRangeChart(container: HTMLElement, config: D3BarRange
     barWidthRatio,
     barRadius,
     axisStyle,
+    conditionalRules = [],
   } = config;
 
   const barRx = barRadius ?? BAR_RX;
@@ -59,7 +61,11 @@ export function renderD3BarRangeChart(container: HTMLElement, config: D3BarRange
       cell.selectAll("*").remove();
       const x0 = x(Math.min(d.low, d.high));
       const w = Math.max(0, Math.abs(x(d.high) - x(d.low)));
-      paintHorizontalBar({ plot: cell, x: x0, y: 0, width: w, height: y.bandwidth(), color: rangeColor, rx: barRx });
+      const barColor =
+        conditionalRules.length > 0
+          ? resolveDatumColor(d.high, rangeColor, conditionalRules)
+          : rangeColor;
+      paintHorizontalBar({ plot: cell, x: x0, y: 0, width: w, height: y.bandwidth(), color: barColor, rx: barRx });
       cell.attr("opacity", 0.85);
     })
     .on("click", (_e, d) => onPointClick?.(d));

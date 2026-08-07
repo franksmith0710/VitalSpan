@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
-import { Clock } from "lucide-react";
+import { Clock, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -40,7 +40,11 @@ import { ScheduleArtifactNotice } from "./ScheduleArtifactNotice";
 import { ScheduleHistoryTable } from "./ScheduleHistoryTable";
 import { ScheduleActivationBanner } from "./ScheduleActivationBanner";
 import { SchedulePrecheckPanel, useSchedulePrecheckItems, canCreateDashboardSchedule } from "./SchedulePrecheckPanel";
-import { Badge } from "@/components/ui/badge";
+import {
+  ScheduleActionBar,
+  ScheduleFormSection,
+  ScheduleSwitcher,
+} from "./scheduleDialogUi";
 
 type ConfirmState =
   | { kind: "delivery"; onConfirm: () => void }
@@ -245,8 +249,16 @@ export function DashboardSchedulePanel({
   const history = historyQuery.data?.items ?? [];
   const showLegacyNotice = history.some((row) => isLayoutInventoryArtifact(row.artifactKind));
 
+  const formFieldProps = {
+    showAttachments: true as const,
+    attachmentFormatMode: "pdf-only" as const,
+    hideStandaloneHealthAlerts: true as const,
+    embeddedLayout: embedded,
+    showDeliveryChannels: !embedded,
+  };
+
   const inner = (
-    <div className="space-y-4">
+    <div className={embedded ? "space-y-5" : "space-y-4"}>
       <ScheduleArtifactNotice show={showLegacyNotice} />
       {readOnly ? (
         <p className="text-theme-sm text-gray-500">
@@ -262,7 +274,7 @@ export function DashboardSchedulePanel({
         />
       ) : null}
       {schedules.length > 0 ? (
-        <div className="flex flex-wrap gap-2">
+        <div className={embedded ? "flex flex-wrap gap-2 border-b border-gray-100 pb-4 dark:border-white/[0.06]" : "flex flex-wrap gap-2"}>
           {schedules.map((s) => (
             <Button
               key={s.id}
@@ -297,14 +309,11 @@ export function DashboardSchedulePanel({
             value={form}
             onChange={setForm}
             disabled={readOnly}
-            showAttachments
-            attachmentFormatMode="pdf-only"
-            showDeliveryChannels
-            hideStandaloneHealthAlerts
+            {...formFieldProps}
             idPrefix="dash-schedule"
           />
           {!readOnly ? (
-            <div className="space-y-2">
+            <div className={embedded ? "flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4 dark:border-white/[0.06]" : "space-y-2"}>
               <div className="flex flex-wrap gap-2">
                 <Button
                   type="button"
@@ -335,10 +344,7 @@ export function DashboardSchedulePanel({
                   value={form}
                   onChange={setForm}
                   disabled={readOnly}
-                  showAttachments
-                  attachmentFormatMode="pdf-only"
-                  showDeliveryChannels
-                  hideStandaloneHealthAlerts
+                  {...formFieldProps}
                   idPrefix="dash-schedule-edit"
                 />
                 {!readOnly ? (

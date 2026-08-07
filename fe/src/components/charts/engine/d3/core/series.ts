@@ -44,3 +44,37 @@ export function resolveDatumColor(
   const matched = active.find((rule) => matchConditionalRule(value, rule));
   return matched?.color ?? baseColor;
 }
+
+export function hasActiveConditionalRules(rules: ChartConditionalRule[]): boolean {
+  return rules.some((rule) => rule.enabled && Number.isFinite(rule.value));
+}
+
+/** 折线按相邻点度量分段着色（条件样式） */
+export function paintConditionalLineSegments(params: {
+  plot: d3.Selection<SVGGElement, unknown, null, undefined>;
+  points: D3CartesianDatum[];
+  lineGen: d3.Line<D3CartesianDatum>;
+  baseColor: string;
+  conditionalRules: ChartConditionalRule[];
+  strokeWidth?: number;
+  strokeLinecap?: string;
+  strokeOpacity?: number;
+}): void {
+  const { points, lineGen, baseColor, conditionalRules } = params;
+  if (!hasActiveConditionalRules(conditionalRules) || points.length < 2) return;
+  const strokeWidth = params.strokeWidth ?? 2;
+  for (let i = 0; i < points.length - 1; i += 1) {
+    const segment = [points[i], points[i + 1]];
+    const value = Number(points[i + 1].__value__);
+    const color = resolveDatumColor(value, baseColor, conditionalRules);
+    params.plot
+      .append("path")
+      .datum(segment)
+      .attr("fill", "none")
+      .attr("stroke", color)
+      .attr("stroke-width", strokeWidth)
+      .attr("stroke-opacity", params.strokeOpacity ?? 1)
+      .attr("stroke-linecap", params.strokeLinecap ?? "round")
+      .attr("d", lineGen);
+  }
+}

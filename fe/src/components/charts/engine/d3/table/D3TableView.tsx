@@ -12,6 +12,7 @@ import {
 import { tableInspectorProfile } from "@/lib/chartTableInspector";
 import { resolveTableThemeVars } from "@/lib/chartSurfaceTheme";
 import { cn } from "@/lib/utils";
+import { jumpContextFromLabel } from "@/lib/chartJump";
 
 const TABLE_TYPES = new Set(["table-info", "table-normal", "table-pivot"]);
 
@@ -89,7 +90,7 @@ function D3TableViewInner(props: ChartEngineViewProps) {
 
   const handleDrillCellClick = (field: string, value: string) => {
     if (onJumpClick) {
-      onJumpClick();
+      onJumpClick(jumpContextFromLabel(value));
       return;
     }
     if (!onInteraction) return;

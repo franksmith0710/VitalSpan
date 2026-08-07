@@ -123,7 +123,7 @@ describe("applyChartStyleChain", () => {
         cartesian: { barWidthRatio: 0.72, barRadius: 6, lineSmooth: true, pointSize: 6, areaOpacity: 0.4 },
         axis: { x: { name: "类目" }, y: { show: true, name: "数值" } },
         liquid: { max: 500000, outlineWidth: 2, waveColor: "#12b76a", size: 80 },
-        radar: { shape: "circle", areaOpacity: 0.3, showAxisName: false },
+        radar: { shape: "circle", areaOpacity: 0.3, showAxisName: false, radiusPercent: 80 },
         wordCloud: { fontSizeMin: 10, fontSizeMax: 36, spacing: 4 },
         sankey: { nodeWidth: 14, nodeGap: 9, linkOpacity: 0.55 },
         graph: { layout: "dagre", edgeLength: 96, repulsion: 180 },
@@ -162,6 +162,7 @@ describe("applyChartStyleChain", () => {
     expect(radarNext.options.__radarShape).toBe("circle");
     expect(radarNext.options.__radarAreaOpacity).toBe(0.3);
     expect(radarNext.options.__radarShowAxisName).toBe(false);
+    expect(radarNext.options.__radarRadiusPercent).toBe(80);
 
     const wordPlan: ChartRenderPlan = { kind: "d3", plotType: "WordCloud", empty: false, options: {} };
     const wordNext = applyChartStyleChain(wordPlan, style);

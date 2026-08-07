@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { PanelEmptyState } from "@/components/ui/panel-empty-state";
 import { TruncateHint } from "@/components/ui/hint-tooltip";
 import {
   Dialog,
@@ -51,9 +53,16 @@ export function ScheduleHistoryTable({
 
   if (rows.length === 0) {
     return (
-      <p className={`text-center text-theme-sm text-gray-500 ${compact ? "py-4" : "py-6"}`}>
-        暂无执行记录
-      </p>
+      <PanelEmptyState
+        layout="inline"
+        size="sm"
+        variant="framed"
+        tone="neutral"
+        icon={<History className="size-5" aria-hidden />}
+        title="暂无执行记录"
+        description="激活定时任务或点击「立即试发」后，投递记录将显示于此。"
+        className={compact ? "min-h-[140px]" : "min-h-[180px]"}
+      />
     );
   }
 

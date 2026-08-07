@@ -6,6 +6,7 @@ import type { D3ProgressBarRenderConfig } from "@/components/charts/engine/d3/ty
 import { formatSimpleDataLabel } from "@/components/charts/engine/d3/core/cartesianDataLabel";
 import { resolveBarBandPadding } from "@/lib/applyChartDeStyleBlocks";
 import { formatChartValue } from "@/lib/chartValueFormat";
+import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 
 const BAR_RX = 6;
 
@@ -32,6 +33,7 @@ export function renderD3ProgressBarChart(
     barRadius,
     axisStyle,
     trackOpacity = 0.35,
+    conditionalRules = [],
   } = config;
 
   const barRx = barRadius ?? BAR_RX;
@@ -85,7 +87,11 @@ export function renderD3ProgressBarChart(
       cell.selectAll("*").remove();
       const ratio = d.max > 0 ? d.value / d.max : 0;
       const w = x(Math.min(1, Math.max(0, ratio)));
-      paintHorizontalBar({ plot: cell, x: 0, y: 0, width: w, height: y.bandwidth(), color: fillColor, rx: barRx });
+      const barColor =
+        conditionalRules.length > 0
+          ? resolveDatumColor(d.value, fillColor, conditionalRules)
+          : fillColor;
+      paintHorizontalBar({ plot: cell, x: 0, y: 0, width: w, height: y.bandwidth(), color: barColor, rx: barRx });
     })
     .on("click", (_e, d) => onPointClick?.(d));
 

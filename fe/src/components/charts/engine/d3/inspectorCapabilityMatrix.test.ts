@@ -47,7 +47,7 @@ describe("inspectorCapabilityMatrix", () => {
     const mix = chartInspectorCapabilities("chart-mix");
     expect(mix.dataZoom).toBe(true);
     expect(mix.label).toBe(true);
-    expect(mix.conditionalPartial).toBe(true);
+    expect(mix.conditionalPartial).toBe(false);
 
     const dual = chartInspectorCapabilities("chart-mix-dual-line");
     expect(dual.legendPartial).toBe(false);

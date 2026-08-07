@@ -1,4 +1,5 @@
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import { buildChartJumpHref, type ChartJumpClickContext } from "@/lib/chartJump";
 
 export type ChartMarkLine = {
   id: string;
@@ -28,6 +29,8 @@ export type ChartJumpConfig = {
   url?: string;
   dashboardId?: string;
   openInNewTab?: boolean;
+  /** 注入目标看板 SQL `{{key}}` 与 URL `vs_p_{key}` */
+  parameterKey?: string;
 };
 
 /** 图表级联动（地图点击 → SQL 参数注入目标看板组件） */
@@ -261,14 +264,10 @@ export function applyChartAdvancedFeaturesToEchartsOption(
   return next;
 }
 
-export function resolveChartJumpHref(jump: ChartJumpConfig): string | null {
-  if (!chartJumpIsConfigured(jump)) return null;
-  if (jump.mode === "dashboard") {
-    const id = jump.dashboardId?.trim();
-    return id ? `/admin/dashboards/${encodeURIComponent(id)}` : null;
-  }
-  const url = jump.url?.trim();
-  if (!url) return null;
-  if (/^https?:\/\//i.test(url) || url.startsWith("/")) return url;
-  return `https://${url}`;
+export function resolveChartJumpHref(
+  jump: ChartJumpConfig,
+  context?: ChartJumpClickContext,
+  cfg?: ChartViewConfig,
+): string | null {
+  return buildChartJumpHref(jump, context, cfg);
 }

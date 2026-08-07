@@ -19,6 +19,10 @@ import {
   defaultGeo3dRenderTier,
   resolveTerrainTextureEnabled,
 } from "@/components/charts/engine/three/geo3dRuntime";
+import {
+  jumpContextFromCartesianDatum,
+  jumpContextFromLabel,
+} from "@/lib/chartJump";
 import type {
   D3BarRangeDatum,
   D3BidirectionalBarDatum,
@@ -38,7 +42,7 @@ function onDatumClick(
   if (!onInteraction && !onJumpClick) return undefined;
   return (datum) => {
     if (onJumpClick) {
-      onJumpClick();
+      onJumpClick(jumpContextFromCartesianDatum(datum));
       return;
     }
     const value = extractDrillValue(datum, xField);
@@ -140,7 +144,7 @@ export function buildD3DispatchPayload(
           props.onJumpClick || props.onLinkageClick
             ? (datum) => {
                 if (props.onJumpClick) {
-                  props.onJumpClick();
+                  props.onJumpClick(jumpContextFromLabel(datum.name));
                   return;
                 }
                 props.onLinkageClick?.({
@@ -208,7 +212,7 @@ export function buildD3DispatchPayload(
           props.onInteraction || props.onJumpClick
             ? (datum) => {
                 if (props.onJumpClick) {
-                  props.onJumpClick();
+                  props.onJumpClick(jumpContextFromLabel(datum.x, datum.value));
                   return;
                 }
                 props.onInteraction?.({
@@ -284,9 +288,17 @@ export function buildD3DispatchPayload(
         valueFormat: styleProps.valueFormat,
         labelContent: styleProps.labelContent,
         ...cartesianStyle,
-        onPointClick: props.onInteraction
-          ? (datum) => props.onInteraction?.({ kind: "drill", value: datum.type, label: datum.type })
-          : undefined,
+        conditionalRules: styleProps.conditionalRules,
+        onPointClick:
+          props.onInteraction || props.onJumpClick
+            ? (datum) => {
+                if (props.onJumpClick) {
+                  props.onJumpClick(jumpContextFromLabel(datum.type, datum.value));
+                  return;
+                }
+                props.onInteraction?.({ kind: "drill", value: datum.type, label: datum.type });
+              }
+            : undefined,
       },
     };
   }
@@ -309,6 +321,7 @@ export function buildD3DispatchPayload(
         valueFormat: styleProps.valueFormat,
         labelContent: styleProps.labelContent,
         ...cartesianStyle,
+        conditionalRules: styleProps.conditionalRules,
       },
     };
   }
@@ -329,10 +342,25 @@ export function buildD3DispatchPayload(
       valueFormat: styleProps.valueFormat,
       ...cartesianStyle,
       ...compareStyle,
-      onPointClick: props.onInteraction
-        ? (datum: { type: string }) =>
-            props.onInteraction?.({ kind: "drill", value: datum.type, label: datum.type })
-        : undefined,
+      conditionalRules: styleProps.conditionalRules,
+      onPointClick:
+        props.onInteraction || props.onJumpClick
+          ? (datum: { type: string; value?: number; progress?: number; target?: number }) => {
+              const metric =
+                typeof datum.value === "number"
+                  ? datum.value
+                  : typeof datum.progress === "number"
+                    ? datum.progress
+                    : typeof datum.target === "number"
+                      ? datum.target
+                      : undefined;
+              if (props.onJumpClick) {
+                props.onJumpClick(jumpContextFromLabel(datum.type, metric));
+                return;
+              }
+              props.onInteraction?.({ kind: "drill", value: datum.type, label: datum.type });
+            }
+          : undefined,
     };
     if (plotType === "BarRange") return { kind: "barRange", config: base as never };
     if (plotType === "ProgressBar") return { kind: "progressBar", config: base as never };
@@ -373,12 +401,19 @@ export function buildD3DispatchPayload(
       legendLayout: styleProps.legendLayout,
       ...cartesianStyle,
       ...compareStyle,
-      onPointClick: props.onInteraction
-        ? (datum) => {
-            const label = String(datum.type ?? datum.stage ?? datum.name ?? datum.word ?? "");
-            if (label) props.onInteraction?.({ kind: "drill", value: label, label });
-          }
-        : undefined,
+      onPointClick:
+        props.onInteraction || props.onJumpClick
+          ? (datum) => {
+              const label = String(datum.type ?? datum.stage ?? datum.name ?? datum.word ?? "");
+              if (!label) return;
+              const numeric = typeof datum.value === "number" ? datum.value : undefined;
+              if (props.onJumpClick) {
+                props.onJumpClick(jumpContextFromLabel(label, numeric));
+                return;
+              }
+              props.onInteraction?.({ kind: "drill", value: label, label });
+            }
+          : undefined,
     },
   };
 }

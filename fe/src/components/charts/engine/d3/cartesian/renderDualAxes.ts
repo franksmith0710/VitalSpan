@@ -1,12 +1,17 @@
 import * as d3 from "d3";
 import { animateStrokePath } from "@/components/charts/engine/d3/core/animate";
 import { appendChartSvg, drawDualAxesAxes, resolveCategoryCartesianLayout } from "@/components/charts/engine/d3/core/sceneGraph";
-import { normalizeCartesianData, groupSeries } from "@/components/charts/engine/d3/core/series";
+import {
+  groupSeries,
+  hasActiveConditionalRules,
+  normalizeCartesianData,
+  paintConditionalLineSegments,
+  resolveDatumColor,
+} from "@/components/charts/engine/d3/core/series";
 import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
 import { drawHorizontalMarkLines } from "@/components/charts/engine/d3/core/markLines";
 import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
 import { renderConfiguredInlineLegend, type D3LegendItem } from "@/components/charts/engine/d3/core/d3Legend";
-import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { applyPathDepthShadow } from "@/components/charts/engine/d3/core/depthEngine";
 import {
@@ -157,16 +162,29 @@ function renderDualAxesLineSeries(params: {
     .x((d) => params.x(String(d.__category__)) ?? 0)
     .y((d) => params.yScale(Number(d.__value__)))
     .curve(curve);
-  const linePath = params.plot
-    .append("path")
-    .datum(sorted)
-    .attr("fill", "none")
-    .attr("stroke", params.color)
-    .attr("stroke-width", 2.5)
-    .attr("stroke-linecap", "round")
-    .attr("d", lineGen);
-  applyPathDepthShadow(params.defs, linePath, params.color, params.shadowId, params.depthVisual);
-  animateStrokePath(linePath);
+  const conditionalRules = params.conditionalRules ?? [];
+  if (hasActiveConditionalRules(conditionalRules) && sorted.length >= 2) {
+    paintConditionalLineSegments({
+      plot: params.plot,
+      points: sorted,
+      lineGen,
+      baseColor: params.color,
+      conditionalRules,
+      strokeWidth: 2.5,
+      strokeLinecap: "round",
+    });
+  } else {
+    const linePath = params.plot
+      .append("path")
+      .datum(sorted)
+      .attr("fill", "none")
+      .attr("stroke", params.color)
+      .attr("stroke-width", 2.5)
+      .attr("stroke-linecap", "round")
+      .attr("d", lineGen);
+    applyPathDepthShadow(params.defs, linePath, params.color, params.shadowId, params.depthVisual);
+    animateStrokePath(linePath);
+  }
 
   params.plot
     .selectAll(`circle.${params.dotClass}`)

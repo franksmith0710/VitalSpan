@@ -14,6 +14,12 @@ export { nearestCategory } from "@/components/charts/engine/d3/core/interaction"
 export { ensureGradientDef } from "@/components/charts/engine/d3/core/gradient";
 export { animateStrokePath, animateBarHeight, prefersReducedMotion, chartTransition } from "@/components/charts/engine/d3/core/animate";
 export { buildLineGenerator, buildAreaGenerator } from "@/components/charts/engine/d3/cartesian/geometry";
-export { groupSeries, normalizeCartesianData, resolveDatumColor } from "@/components/charts/engine/d3/core/series";
+export {
+  groupSeries,
+  hasActiveConditionalRules,
+  normalizeCartesianData,
+  paintConditionalLineSegments,
+  resolveDatumColor,
+} from "@/components/charts/engine/d3/core/series";
 export { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
 export { cartesianMargin } from "@/components/charts/engine/d3/core/margin";

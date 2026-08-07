@@ -393,6 +393,17 @@ export function ChartAdvancedJumpSection() {
               />
             </InspectorFieldRow>
           )}
+          <InspectorFieldRow
+            label="参数键"
+            hint="点击维度写入 URL：?vs_p_{参数键}=值；目标看板筛选器/联动按此键接收"
+          >
+            <Input
+              className={INSPECTOR_CTRL}
+              value={jump.parameterKey ?? cfg.dimensions?.[0]?.field ?? ""}
+              onChange={(e) => patchJump({ parameterKey: e.target.value })}
+              placeholder={cfg.dimensions?.[0]?.field?.trim() || "category"}
+            />
+          </InspectorFieldRow>
           <InspectorSwitchRow
             label="新标签页打开"
             checked={jump.openInNewTab !== false}

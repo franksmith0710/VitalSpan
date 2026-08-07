@@ -9,6 +9,7 @@ import type { D3BidirectionalBarRenderConfig } from "@/components/charts/engine/
 import { formatSimpleDataLabel } from "@/components/charts/engine/d3/core/cartesianDataLabel";
 import { formatChartValue } from "@/lib/chartValueFormat";
 import { resolveBarBandPadding } from "@/lib/applyChartDeStyleBlocks";
+import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 
 const BAR_RX = 4;
 
@@ -37,6 +38,7 @@ export function renderD3BidirectionalBarChart(
     barWidthRatio,
     barRadius,
     axisStyle,
+    conditionalRules = [],
   } = config;
 
   const barRx = barRadius ?? BAR_RX;
@@ -101,7 +103,11 @@ export function renderD3BidirectionalBarChart(
       cell.selectAll("*").remove();
       const x1 = xLeft(Math.abs(d.left));
       const w = centerX - x1;
-      paintHorizontalBar({ plot: cell, x: x1, y: 0, width: w, height: y.bandwidth(), color: leftColor, rx: barRx });
+      const leftFill =
+        conditionalRules.length > 0
+          ? resolveDatumColor(d.left, leftColor, conditionalRules)
+          : leftColor;
+      paintHorizontalBar({ plot: cell, x: x1, y: 0, width: w, height: y.bandwidth(), color: leftFill, rx: barRx });
     })
     .on("click", (_event, d) => onPointClick?.(d));
 
@@ -116,7 +122,11 @@ export function renderD3BidirectionalBarChart(
       const cell = d3.select(this) as d3.Selection<SVGGElement, unknown, null, undefined>;
       cell.selectAll("*").remove();
       const w = xRight(Math.abs(d.right)) - centerX;
-      paintHorizontalBar({ plot: cell, x: centerX, y: 0, width: w, height: y.bandwidth(), color: rightColor, rx: barRx });
+      const rightFill =
+        conditionalRules.length > 0
+          ? resolveDatumColor(d.right, rightColor, conditionalRules)
+          : rightColor;
+      paintHorizontalBar({ plot: cell, x: centerX, y: 0, width: w, height: y.bandwidth(), color: rightFill, rx: barRx });
     })
     .on("click", (_event, d) => onPointClick?.(d));
 

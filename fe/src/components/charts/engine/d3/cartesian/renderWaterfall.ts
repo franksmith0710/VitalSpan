@@ -8,6 +8,7 @@ import type { D3WaterfallDatum, D3WaterfallRenderConfig } from "@/components/cha
 import { formatSimpleDataLabel } from "@/components/charts/engine/d3/core/cartesianDataLabel";
 import { formatChartValue } from "@/lib/chartValueFormat";
 import { resolveBarBandPadding } from "@/lib/applyChartDeStyleBlocks";
+import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 
 const BAR_RX = 4;
 
@@ -45,6 +46,7 @@ export function renderD3WaterfallChart(container: HTMLElement, config: D3Waterfa
     barWidthRatio,
     barRadius,
     axisStyle,
+    conditionalRules = [],
   } = config;
 
   const barRx = barRadius ?? BAR_RX;
@@ -100,13 +102,18 @@ export function renderD3WaterfallChart(container: HTMLElement, config: D3Waterfa
       const yTop = y(Math.max(d.start, d.end));
       const yBottom = y(Math.min(d.start, d.end));
       const h = Math.max(0, yBottom - yTop);
+      const baseBarColor = d.value >= 0 ? posColor : negColor;
+      const barColor =
+        conditionalRules.length > 0
+          ? resolveDatumColor(d.value, baseBarColor, conditionalRules)
+          : baseBarColor;
       paintVerticalBar({
         plot: cell,
         x: 0,
         y1: yTop,
         height: h,
         width: x.bandwidth(),
-        color: d.value >= 0 ? posColor : negColor,
+        color: barColor,
         rx: barRx,
       });
     })

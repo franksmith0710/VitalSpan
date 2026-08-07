@@ -4,8 +4,11 @@ import type { LayoutWidget } from "./layoutUtils";
 import { collectChartLinkageRules } from "@/lib/chartLinkageRules";
 
 /** 看板级地图联动运行时：单击区域 → 写入 SQL 参数 → 目标图 refresh */
-export function useChartLinkageState(widgets: LayoutWidget[]) {
-  const [params, setParams] = useState<Record<string, string>>({});
+export function useChartLinkageState(
+  widgets: LayoutWidget[],
+  initialParams?: Record<string, string>,
+) {
+  const [params, setParams] = useState<Record<string, string>>(() => ({ ...initialParams }));
 
   const chartLinkageRuntime = useMemo((): ChartLinkageRuntime => ({
     params,

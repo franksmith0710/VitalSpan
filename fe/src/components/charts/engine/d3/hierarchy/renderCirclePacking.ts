@@ -6,6 +6,7 @@ import { formatSimpleDataLabelLines } from "@/components/charts/engine/d3/core/c
 import { setMultilineSvgLabel } from "@/components/charts/engine/d3/core/multilineLabel";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { formatChartValue } from "@/lib/chartValueFormat";
+import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 import {
   blurPackNode,
   createPackPhysicsNodes,
@@ -153,6 +154,7 @@ export function renderD3CirclePackingChart(container: HTMLElement, config: D3Ren
     labelFontSize = 11,
     labelColor,
     renderTier,
+    conditionalRules = [],
   } = config;
   const depthLevel = resolveEffectiveDepth(depthVisual);
   const data = (options.data as PackDatum[]) ?? [];
@@ -228,7 +230,13 @@ export function renderD3CirclePackingChart(container: HTMLElement, config: D3Ren
   groups
     .append("circle")
     .attr("r", (d) => packNodeRadius(d))
-    .attr("fill", (d) => colorScale(d.name) ?? colors[0] ?? "#465fff")
+    .attr("fill", (d) => {
+      const base = colorScale(d.name) ?? colors[0] ?? "#465fff";
+      const value = valueByName.get(d.name) ?? 0;
+      return conditionalRules.length > 0
+        ? resolveDatumColor(value, base, conditionalRules)
+        : base;
+    })
     .attr("opacity", 0.92)
     .attr("stroke", (d) => packCircleStroke(colorScale(d.name) ?? colors[0] ?? "#465fff", depthLevel))
     .attr("stroke-opacity", 0.92)

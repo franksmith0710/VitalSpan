@@ -36,6 +36,10 @@ import {
 } from "@/components/dashboard/dashboardFilterUtils";
 import { useChartLinkageState } from "@/components/dashboard/useChartLinkageState";
 import {
+  applyChartJumpParamsToDashboard,
+  parseChartJumpSearchParams,
+} from "@/lib/chartJump";
+import {
   appendWidgetToTabPane,
   coerceLayoutWidgets,
   isTabPaneChild,
@@ -437,7 +441,14 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
             }
           }
         }
-        return next;
+        const jumpParams = parseChartJumpSearchParams(location.search);
+        if (Object.keys(jumpParams).length === 0) return next;
+        return applyChartJumpParamsToDashboard(
+          jumpParams,
+          prepared.layout.widgets as LayoutWidget[],
+          loadedLinkage,
+          next,
+        ).filterValues;
       });
     } catch (err) {
       if (generation !== loadGenerationRef.current) return;
@@ -630,7 +641,15 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     [resolvedWidgets, linkage],
   );
 
-  const { chartLinkageRuntime, handleChartLinkageClick } = useChartLinkageState(resolvedWidgets);
+  const initialJumpParams = useMemo(
+    () => parseChartJumpSearchParams(location.search),
+    [location.search],
+  );
+
+  const { chartLinkageRuntime, handleChartLinkageClick } = useChartLinkageState(
+    resolvedWidgets,
+    initialJumpParams,
+  );
 
   const widgetActionTarget = useMemo(
     () =>

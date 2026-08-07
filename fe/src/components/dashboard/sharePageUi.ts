@@ -58,6 +58,14 @@ export const SHARE_DIALOG_HEADER_CLASS =
 export const SHARE_DIALOG_BODY_CLASS =
   "custom-scrollbar max-h-[min(78vh,720px)] overflow-y-auto overflow-x-hidden px-6 py-3 pb-6";
 
+/** 定时推送弹窗：宽于默认 Dialog，便于双栏表单与执行历史 */
+export const SCHEDULE_DIALOG_CONTENT_CLASS = "gap-0 overflow-hidden p-0 sm:max-w-4xl";
+
+export const SCHEDULE_DIALOG_HEADER_CLASS = SHARE_DIALOG_HEADER_CLASS;
+
+export const SCHEDULE_DIALOG_BODY_CLASS =
+  "custom-scrollbar max-h-[min(82vh,780px)] overflow-y-auto overflow-x-hidden px-6 py-5 pb-6";
+
 /** 与 `DatasourceDetailPage` DetailSkeleton 同高 */
 export const SHARE_PAGE_SKELETON_CLASS = "h-[520px] w-full rounded-xl";
 

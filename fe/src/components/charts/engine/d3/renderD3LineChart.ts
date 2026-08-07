@@ -5,7 +5,9 @@ import {
   buildLineGenerator,
   ensureGradientDef,
   groupSeries,
+  hasActiveConditionalRules,
   normalizeCartesianData,
+  paintConditionalLineSegments,
   resolveDatumColor,
 } from "@/components/charts/engine/d3/d3LineVisual";
 import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
@@ -185,8 +187,22 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
       .attr("stroke-linecap", VCDS.line.cap)
       .attr("stroke-linejoin", VCDS.line.join)
       .attr("d", lineGen);
-    applyPathDepthShadow(defs, linePath, color, `line-${seriesIndex}`, config.depthVisual);
-    animateStrokePath(linePath);
+    if (hasActiveConditionalRules(conditionalRules)) {
+      linePath.remove();
+      paintConditionalLineSegments({
+        plot,
+        points,
+        lineGen,
+        baseColor: color,
+        conditionalRules,
+        strokeWidth,
+        strokeLinecap: VCDS.line.cap,
+        strokeOpacity: 1,
+      });
+    } else {
+      applyPathDepthShadow(defs, linePath, color, `line-${seriesIndex}`, config.depthVisual);
+      animateStrokePath(linePath);
+    }
 
     const dots = plot
       .selectAll<SVGCircleElement, D3CartesianDatum>(`circle.series-${seriesIndex}`)

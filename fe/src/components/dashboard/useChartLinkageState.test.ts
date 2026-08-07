@@ -61,6 +61,21 @@ describe("useChartLinkageState", () => {
     expect(injected).toEqual({ region: "广东省" });
   });
 
+  it("initialParams seed linkage runtime", () => {
+    const widgets = [mapWidget("map-1"), barWidget("bar-1")];
+    const { result } = renderHook(() =>
+      useChartLinkageState(widgets, { region: "北京市" }),
+    );
+
+    const injected = buildWidgetFilterParams(
+      "bar-1",
+      { filters: [], linkageRules: [] },
+      {},
+      result.current.chartLinkageRuntime,
+    );
+    expect(injected).toEqual({ region: "北京市" });
+  });
+
   it("resetChartLinkageParams clears injected filters", () => {
     const widgets = [mapWidget("map-1"), barWidget("bar-1")];
     const { result } = renderHook(() => useChartLinkageState(widgets));

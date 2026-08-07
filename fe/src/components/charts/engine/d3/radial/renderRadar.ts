@@ -9,7 +9,7 @@ import {
   RADAR_RADIUS_PERCENT_MAX,
   RADAR_RADIUS_PERCENT_MIN,
 } from "@/lib/chartDeStyleBlocks";
-import { computeRadarLayout, estimateRadarAxisLabelPad } from "./radarLayout";
+import { computeRadarLayout } from "./radarLayout";
 import {
   buildRadarPointLabelText,
   layoutRadarAxisLabelIndices,
@@ -54,8 +54,7 @@ export function renderD3RadarChart(container: HTMLElement, config: D3RenderConfi
   if (width <= 0 || height <= 0 || data.length === 0) return () => undefined;
 
   const axisTexts = data.map((row) => String(row[xField] ?? ""));
-  const labelPad = estimateRadarAxisLabelPad(axisTexts, labelFontSize, showAxisName, showLabel);
-  const layout = computeRadarLayout(width, height, false, labelPad, radarRadiusPercent);
+  const layout = computeRadarLayout(width, height, false, radarRadiusPercent);
   const { cx, cy, radius, axisLabelGap } = layout;
   const maxValue = d3.max(data, (d) => Number(d[yField] ?? 0)) ?? 1;
   const baseColor = colors[0] ?? "#465fff";

@@ -58,6 +58,7 @@ export type D3RenderConfigBase = Pick<
 > &
   D3PresentationConfig &
   D3CartesianStyleExtras & {
+    conditionalRules?: ChartConditionalRule[];
     visualScale?: number;
     renderTier?: Geo3dRenderTier;
   };

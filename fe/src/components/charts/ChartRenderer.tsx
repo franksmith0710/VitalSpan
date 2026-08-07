@@ -491,7 +491,6 @@ export const ChartRenderer = memo(function ChartRenderer({
 
   const jumpConfig = useMemo(() => readChartJumpConfig(config), [config]);
   const linkageConfig = useMemo(() => readChartLinkageConfig(config), [config]);
-  const jumpHref = useMemo(() => resolveChartJumpHref(jumpConfig), [jumpConfig]);
   const jumpInteraction =
     drillEnabled && jumpConfig.enabled && chartJumpIsConfigured(jumpConfig);
   const linkageInteraction =
@@ -501,14 +500,18 @@ export const ChartRenderer = memo(function ChartRenderer({
     Boolean(onChartLinkageClick);
   const activeDrillInteraction = drillInteraction && !jumpInteraction;
 
-  const handleJumpClick = useCallback(() => {
-    if (!jumpHref) return;
-    if (jumpConfig.openInNewTab !== false) {
-      window.open(jumpHref, "_blank", "noopener,noreferrer");
-      return;
-    }
-    window.location.assign(jumpHref);
-  }, [jumpConfig.openInNewTab, jumpHref]);
+  const handleJumpClick = useCallback(
+    (context: import("@/lib/chartJump").ChartJumpClickContext) => {
+      const href = resolveChartJumpHref(jumpConfig, context, config);
+      if (!href) return;
+      if (jumpConfig.openInNewTab !== false) {
+        window.open(href, "_blank", "noopener,noreferrer");
+        return;
+      }
+      window.location.assign(href);
+    },
+    [config, jumpConfig],
+  );
 
   const handleLinkageClick = useCallback(
     (payload: { name: string; value: string }) => {

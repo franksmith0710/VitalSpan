@@ -6,12 +6,13 @@ import { resolveEffectiveDepth, shadeColor } from "@/components/charts/engine/d3
 import type { D3StockRenderConfig } from "@/components/charts/engine/d3/types";
 import { formatSimpleDataLabel } from "@/components/charts/engine/d3/core/cartesianDataLabel";
 import { formatChartValue } from "@/lib/chartValueFormat";
+import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 
 export function renderD3StockChart(container: HTMLElement, config: D3StockRenderConfig): () => void {
   container.replaceChildren();
   if (config.width <= 0 || config.height <= 0 || config.data.length === 0) return () => undefined;
 
-  const { width, height, data, colors, theme, showTooltip, showLabel, labelFontSize, labelColor, labelContent, valueFormat, onPointClick, axisStyle, bodyWidthRatio = 0.6 } = config;
+  const { width, height, data, colors, theme, showTooltip, showLabel, labelFontSize, labelColor, labelContent, valueFormat, onPointClick, axisStyle, bodyWidthRatio = 0.6, conditionalRules = [] } = config;
 
   const categories = data.map((d) => d.type);
   const yMin = d3.min(data, (d) => d.low) ?? 0;
@@ -38,7 +39,11 @@ export function renderD3StockChart(container: HTMLElement, config: D3StockRender
   for (const d of data) {
     const cx = (x(d.type) ?? 0) + x.bandwidth() / 2;
     const up = d.close >= d.open;
-    const color = up ? upColor : downColor;
+    const baseColor = up ? upColor : downColor;
+    const color =
+      conditionalRules.length > 0
+        ? resolveDatumColor(d.close, baseColor, conditionalRules)
+        : baseColor;
     const bodyTop = y(Math.max(d.open, d.close));
     const bodyBottom = y(Math.min(d.open, d.close));
     const bodyH = Math.max(1, bodyBottom - bodyTop);

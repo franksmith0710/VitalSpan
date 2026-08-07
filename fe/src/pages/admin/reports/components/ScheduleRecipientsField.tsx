@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { apiFetch } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import type { ScheduleRecipient } from "../useReportSchedules";
 
 const ROLE_OPTIONS = [
@@ -37,6 +38,7 @@ type ScheduleRecipientsFieldProps = {
   onChange: (next: ScheduleRecipient[]) => void;
   disabled?: boolean;
   idPrefix?: string;
+  embedded?: boolean;
 };
 
 export function ScheduleRecipientsField({
@@ -44,6 +46,7 @@ export function ScheduleRecipientsField({
   onChange,
   disabled,
   idPrefix = "schedule-recipient",
+  embedded = false,
 }: ScheduleRecipientsFieldProps) {
   const [userFilter, setUserFilter] = useState("");
   const usersQuery = useQuery({
@@ -92,9 +95,15 @@ export function ScheduleRecipientsField({
           aria-label="搜索用户"
         />
       ) : null}
-      <div className="space-y-2">
+      <div className={cn("space-y-2", embedded ? "rounded-lg border border-gray-100 bg-gray-50/40 p-3 dark:border-gray-800 dark:bg-white/[0.02]" : "")}>
         {value.map((row, index) => (
-          <div key={index} className="flex flex-wrap items-start gap-2">
+          <div
+            key={index}
+            className={cn(
+              "flex flex-wrap items-start gap-2",
+              embedded ? "rounded-lg border border-gray-200/80 bg-white p-2 dark:border-gray-800 dark:bg-gray-900/40" : "",
+            )}
+          >
             <Select
               value={row.type}
               onValueChange={(type) =>

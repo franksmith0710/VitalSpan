@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { Clock } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -7,6 +8,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  SCHEDULE_DIALOG_BODY_CLASS,
+  SCHEDULE_DIALOG_CONTENT_CLASS,
+  SCHEDULE_DIALOG_HEADER_CLASS,
+} from "@/components/dashboard/sharePageUi";
 import { DashboardSchedulePanel } from "./DashboardSchedulePanel";
 import {
   SCHEDULE_DELIVERY_HEALTH_KEY,
@@ -43,22 +49,31 @@ export function DashboardScheduleSheet({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>定时推送</DialogTitle>
-          <DialogDescription>
-            为「{sourceName}」{label}配置定时 PDF 邮件推送
-          </DialogDescription>
+      <DialogContent className={SCHEDULE_DIALOG_CONTENT_CLASS}>
+        <DialogHeader className={SCHEDULE_DIALOG_HEADER_CLASS}>
+          <div className="flex items-start gap-3.5 pr-8">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-500 dark:bg-brand-500/10 dark:text-brand-400">
+              <Clock className="size-5" aria-hidden />
+            </span>
+            <div className="min-w-0 space-y-1.5">
+              <DialogTitle className="text-title-sm">定时推送</DialogTitle>
+              <DialogDescription className="text-theme-sm leading-relaxed">
+                为「{sourceName}」{label}配置定时 PDF 邮件推送；复用已保存的查询与筛选，无需重复选数据源。
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
-        <DashboardSchedulePanel
-          sourceId={sourceId}
-          sourceType={sourceType}
-          sourceName={sourceName}
-          widgetCount={widgetCount}
-          readOnly={readOnly}
-          embedded
-          precheckActive={open}
-        />
+        <div className={SCHEDULE_DIALOG_BODY_CLASS}>
+          <DashboardSchedulePanel
+            sourceId={sourceId}
+            sourceType={sourceType}
+            sourceName={sourceName}
+            widgetCount={widgetCount}
+            readOnly={readOnly}
+            embedded
+            precheckActive={open}
+          />
+        </div>
       </DialogContent>
     </Dialog>
   );
