@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import inspect
 import json
 import logging
 import threading
@@ -151,6 +152,36 @@ def _acquire_test_slot(key: str) -> None:
         _test_inflight[key] = now + _INFLIGHT_TTL_SEC
 
 
+def _build_test_connection_kwargs(
+    connector,
+    *,
+    host: str,
+    port: int,
+    database: str,
+    username: str,
+    password: str,
+    options: ConnectionOptions | None = None,
+) -> dict:
+    opts = options or ConnectionOptions()
+    kwargs = {
+        "host": host,
+        "port": port,
+        "database": database,
+        "username": username,
+        "password": password,
+        "timeout_sec": opts.connect_timeout_sec,
+        "charset": opts.charset,
+        "collation": opts.collation,
+        "ssl_mode": opts.ssl_mode,
+        "connect_timeout_sec": opts.connect_timeout_sec,
+        "read_timeout_sec": opts.read_timeout_sec,
+    }
+    params = inspect.signature(connector.test_connection).parameters
+    if any(p.kind == inspect.Parameter.VAR_KEYWORD for p in params.values()) or "connection_options" in params:
+        kwargs["connection_options"] = _connection_options_to_json(opts)
+    return kwargs
+
+
 def _run_test(
     connector,
     *,
@@ -162,20 +193,16 @@ def _run_test(
     options: ConnectionOptions | None = None,
     data_source_id: uuid.UUID | None = None,
 ) -> TestConnectionOut:
-    opts = options or ConnectionOptions()
     result = connector.test_connection(
-        host=host,
-        port=port,
-        database=database,
-        username=username,
-        password=password,
-        timeout_sec=opts.connect_timeout_sec,
-        charset=opts.charset,
-        collation=opts.collation,
-        ssl_mode=opts.ssl_mode,
-        connect_timeout_sec=opts.connect_timeout_sec,
-        read_timeout_sec=opts.read_timeout_sec,
-        connection_options=_connection_options_to_json(opts),
+        **_build_test_connection_kwargs(
+            connector,
+            host=host,
+            port=port,
+            database=database,
+            username=username,
+            password=password,
+            options=options,
+        )
     )
     trace = trace_id_var.get() or ""
     out = TestConnectionOut.from_result(result, trace_id=trace)
