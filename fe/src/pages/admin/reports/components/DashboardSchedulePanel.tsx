@@ -258,7 +258,7 @@ export function DashboardSchedulePanel({
   };
 
   const inner = (
-    <div className={embedded ? "space-y-5" : "space-y-4"}>
+    <div className={embedded ? "space-y-4" : "space-y-4"}>
       <ScheduleArtifactNotice show={showLegacyNotice} />
       {readOnly ? (
         <p className="text-theme-sm text-gray-500">
@@ -274,27 +274,34 @@ export function DashboardSchedulePanel({
         />
       ) : null}
       {schedules.length > 0 ? (
-        <div className={embedded ? "flex flex-wrap gap-2 border-b border-gray-100 pb-4 dark:border-white/[0.06]" : "flex flex-wrap gap-2"}>
-          {schedules.map((s) => (
-            <Button
-              key={s.id}
-              type="button"
-              variant={selected?.id === s.id ? "primary" : "outline"}
-              size="sm"
-              onClick={() => setSelectedId(s.id)}
-            >
-              {s.name || describeCron(s.cron)}
-              <Badge variant="outline" className="ml-1 text-[10px]">
-                {localizeScheduleStatus(s.status)}
-              </Badge>
-            </Button>
-          ))}
-          {!readOnly ? (
-            <Button type="button" variant="ghost" size="sm" onClick={() => setShowCreate(true)}>
-              + 新建
-            </Button>
-          ) : null}
-        </div>
+        embedded ? (
+          <ScheduleSwitcher
+            schedules={schedules}
+            selectedId={selected?.id ?? null}
+            onSelect={setSelectedId}
+            onCreate={() => setShowCreate(true)}
+            readOnly={readOnly}
+          />
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {schedules.map((s) => (
+              <Button
+                key={s.id}
+                type="button"
+                variant={selected?.id === s.id ? "primary" : "outline"}
+                size="sm"
+                onClick={() => setSelectedId(s.id)}
+              >
+                {s.name || describeCron(s.cron)} · {localizeScheduleStatus(s.status)}
+              </Button>
+            ))}
+            {!readOnly ? (
+              <Button type="button" variant="ghost" size="sm" onClick={() => setShowCreate(true)}>
+                + 新建
+              </Button>
+            ) : null}
+          </div>
+        )
       ) : null}
       {showCreate || schedules.length === 0 ? (
         <>
@@ -313,8 +320,10 @@ export function DashboardSchedulePanel({
             idPrefix="dash-schedule"
           />
           {!readOnly ? (
-            <div className={embedded ? "flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4 dark:border-white/[0.06]" : "space-y-2"}>
-              <div className="flex flex-wrap gap-2">
+            embedded ? (
+              <ScheduleActionBar
+                hint={createBlockedReason ?? "配置完成后创建草稿，再激活即可按计划投递。"}
+              >
                 <Button
                   type="button"
                   variant="primary"
@@ -324,18 +333,170 @@ export function DashboardSchedulePanel({
                   {createSchedule.isPending ? "创建中…" : "创建定时报告"}
                 </Button>
                 {schedules.length > 0 ? (
-                  <Button type="button" variant="ghost" onClick={() => setShowCreate(false)}>
+                  <Button type="button" variant="outline" onClick={() => setShowCreate(false)}>
                     取消
                   </Button>
                 ) : null}
+              </ScheduleActionBar>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="primary"
+                    disabled={isPending || !canCreate}
+                    onClick={() => void handleCreate()}
+                  >
+                    {createSchedule.isPending ? "创建中…" : "创建定时报告"}
+                  </Button>
+                  {schedules.length > 0 ? (
+                    <Button type="button" variant="ghost" onClick={() => setShowCreate(false)}>
+                      取消
+                    </Button>
+                  ) : null}
+                </div>
+                {createBlockedReason ? (
+                  <p className="text-theme-xs text-amber-600 dark:text-amber-400">{createBlockedReason}</p>
+                ) : null}
               </div>
-              {createBlockedReason ? (
-                <p className="text-theme-xs text-amber-600 dark:text-amber-400">{createBlockedReason}</p>
-              ) : null}
-            </div>
+            )
           ) : null}
         </>
       ) : selected ? (
+        embedded ? (
+          <div className="space-y-4">
+            {draftSelected ? (
+              <ScheduleFormFields
+                value={form}
+                onChange={setForm}
+                disabled={readOnly}
+                {...formFieldProps}
+                idPrefix="dash-schedule-edit"
+              />
+            ) : (
+              <ScheduleFormSection title="当前配置" description="已激活的定时任务仅支持复制或取消后重建" icon={Clock}>
+                <dl className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <dt className="text-theme-xs text-gray-500 dark:text-gray-400">执行计划</dt>
+                    <dd className="mt-1 text-theme-sm font-medium text-gray-900 dark:text-white">
+                      {describeCron(selected.cron)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-theme-xs text-gray-500 dark:text-gray-400">状态</dt>
+                    <dd className="mt-1 text-theme-sm font-medium text-gray-900 dark:text-white">
+                      {localizeScheduleStatus(selected.status)}
+                    </dd>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <dt className="text-theme-xs text-gray-500 dark:text-gray-400">接收人</dt>
+                    <dd className="mt-1 text-theme-sm text-gray-700 dark:text-gray-300">
+                      {summarizeRecipients(selected.recipients)}
+                    </dd>
+                  </div>
+                </dl>
+              </ScheduleFormSection>
+            )}
+            {!readOnly ? (
+              <ScheduleActionBar
+                hint={
+                  draftSelected
+                    ? "保存草稿后可激活；激活后将按配置时间自动生成并投递 PDF。"
+                    : "已激活任务无法直接修改配置，可复制后新建。"
+                }
+              >
+                {draftSelected ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isPending}
+                    onClick={() => void handleSaveDraft()}
+                  >
+                    {updateSchedule.isPending ? "保存中…" : "保存草稿"}
+                  </Button>
+                ) : null}
+                {selected.status !== "draft" && !readOnly ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isPending}
+                    onClick={() => setConfirmState({ kind: "clone", schedule: selected })}
+                  >
+                    {clonePending ? "处理中…" : "复制配置新建"}
+                  </Button>
+                ) : null}
+                {selected.allowedActions.map((action) => (
+                  <Button
+                    key={action}
+                    type="button"
+                    variant={action === "schedule" || action === "resume" ? "primary" : "outline"}
+                    size="sm"
+                    disabled={readOnly || transitionSchedule.isPending}
+                    onClick={() => {
+                      if (action === "cancel" || action === "pause") {
+                        setConfirmState({ kind: "action", action, scheduleId: selected.id });
+                        return;
+                      }
+                      if (action === "schedule" || action === "resume") {
+                        requestDeliveryConfirm(() =>
+                          void transitionSchedule
+                            .mutateAsync({ id: selected.id, action })
+                            .then(() => toast.success(ACTION_SUCCESS_MESSAGES[action] ?? "状态已更新"))
+                            .catch((err) => toast.error(mapApiError(err))),
+                        );
+                        return;
+                      }
+                      void transitionSchedule
+                        .mutateAsync({ id: selected.id, action })
+                        .then(() => toast.success(ACTION_SUCCESS_MESSAGES[action] ?? "状态已更新"))
+                        .catch((err) => toast.error(mapApiError(err)));
+                    }}
+                  >
+                    {SCHEDULE_ACTION_LABELS[action] ?? action}
+                  </Button>
+                ))}
+                {!readOnly && selected.status === "scheduled" ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={executeSchedule.isPending}
+                    onClick={() => requestDeliveryConfirm(() => void handleTestSend(selected.id))}
+                  >
+                    {executeSchedule.isPending ? "试发中…" : "立即试发"}
+                  </Button>
+                ) : null}
+              </ScheduleActionBar>
+            ) : null}
+            <ScheduleFormSection
+              title="执行历史"
+              description="最近投递记录与失败重试"
+              icon={History}
+            >
+              {historyQuery.isLoading ? <Skeleton className="h-24 w-full rounded-lg" /> : null}
+              {!historyQuery.isLoading ? (
+                <ScheduleHistoryTable
+                  rows={history}
+                  compact
+                  embedded
+                  readOnly={readOnly}
+                  retryPending={retryExecution.isPending}
+                  retryPendingExecutionId={
+                    retryExecution.isPending ? retryExecution.variables?.executionId : undefined
+                  }
+                  onRetry={(executionId) =>
+                    void retryExecution
+                      .mutateAsync({ executionId, scheduleId: selected.id })
+                      .then(() => toast.success("已提交重试"))
+                      .catch((err) => toast.error(mapApiError(err)))
+                  }
+                />
+              ) : null}
+            </ScheduleFormSection>
+          </div>
+        ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="space-y-3">
             {draftSelected ? (
@@ -450,6 +611,7 @@ export function DashboardSchedulePanel({
             ) : null}
           </div>
         </div>
+        )
       ) : null}
     </div>
   );

@@ -71,12 +71,12 @@ type ScheduleSwitcherProps = {
   readOnly?: boolean;
 };
 
-function statusBadgeVariant(status: string): "success" | "warning" | "error" | "outline" {
+function statusBadgeColor(status: string): "primary" | "success" | "warning" | "error" {
   const tone = scheduleStatusColor(status);
   if (tone === "success") return "success";
   if (tone === "warning") return "warning";
   if (tone === "error") return "error";
-  return "outline";
+  return "primary";
 }
 
 export function ScheduleSwitcher({
@@ -102,7 +102,9 @@ export function ScheduleSwitcher({
             >
               <span className="truncate">{schedule.name || describeCron(schedule.cron)}</span>
               <Badge
-                variant={statusBadgeVariant(schedule.status)}
+                variant="light"
+                color={statusBadgeColor(schedule.status)}
+                size="sm"
                 className="shrink-0 px-1.5 py-0 text-[10px] font-medium"
               >
                 {localizeScheduleStatus(schedule.status)}

@@ -76,15 +76,24 @@ export function ScheduleRecipientsField({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <Label>接收人</Label>
-        {!disabled ? (
+      {!embedded ? (
+        <div className="flex items-center justify-between gap-2">
+          <Label>接收人</Label>
+          {!disabled ? (
+            <Button type="button" variant="outline" size="sm" onClick={addRow}>
+              <Plus className="size-3.5" aria-hidden />
+              添加
+            </Button>
+          ) : null}
+        </div>
+      ) : !disabled ? (
+        <div className="flex justify-end">
           <Button type="button" variant="outline" size="sm" onClick={addRow}>
             <Plus className="size-3.5" aria-hidden />
-            添加
+            添加接收人
           </Button>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
       {hasUserRow ? (
         <Input
           value={userFilter}

@@ -64,7 +64,7 @@ export const SCHEDULE_DIALOG_CONTENT_CLASS = "gap-0 overflow-hidden p-0 sm:max-w
 export const SCHEDULE_DIALOG_HEADER_CLASS = SHARE_DIALOG_HEADER_CLASS;
 
 export const SCHEDULE_DIALOG_BODY_CLASS =
-  "custom-scrollbar max-h-[min(82vh,780px)] overflow-y-auto overflow-x-hidden px-6 py-5 pb-6";
+  "custom-scrollbar max-h-[min(82vh,780px)] overflow-y-auto overflow-x-hidden bg-gray-50/40 px-6 py-4 pb-6 dark:bg-gray-950/20";
 
 /** 与 `DatasourceDetailPage` DetailSkeleton 同高 */
 export const SHARE_PAGE_SKELETON_CLASS = "h-[520px] w-full rounded-xl";
