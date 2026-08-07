@@ -59,6 +59,20 @@ def test_render_pdf_from_sections():
     assert data.startswith(b"%PDF")
 
 
+def test_render_pdf_with_cjk_cells():
+    spec = {
+        "sections": [{
+            "kind": "table",
+            "columns": ["province", "amount"],
+            "rows": [["上海市", 12197], ["广东省", 37657]],
+            "metricKey": "demo",
+        }],
+    }
+    data = render_document(spec, "pdf", title="模板1")
+    assert data.startswith(b"%PDF")
+    assert len(data) > 512
+
+
 def test_render_excel_from_sections():
     spec = {
         "sections": [{"kind": "table", "columns": ["a"], "rows": [[1]], "metricKey": "m1"}],
