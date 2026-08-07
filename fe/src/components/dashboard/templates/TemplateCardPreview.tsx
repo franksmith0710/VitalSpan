@@ -28,13 +28,13 @@ type TemplateCardPreviewProps = {
   surfaceKind: DashboardTemplateListItem["surfaceKind"];
   className?: string;
   eager?: boolean;
-  /** 静态缩略图：Hub 卡片对标 DataEase，默认有图则只展示缩略图 */
+  /** 静态缩略图：仅作加载占位或缺演示库时的回退 */
   thumbnailSrc?: string | null;
-  /** 强制 live 布局预览（忽略 thumbnailSrc） */
+  /** 强制 live 布局预览（缺演示库时也不回退静态图） */
   livePreview?: boolean;
 };
 
-/** 模板卡片预览区：纯布局/live 缩略图，元信息由 VizTemplateCard 正文展示。 */
+/** 模板卡片预览区：优先渲染真实布局，元信息由 VizTemplateCard 正文展示。 */
 export function TemplateCardPreview({
   templateId,
   surfaceKind,
@@ -45,9 +45,8 @@ export function TemplateCardPreview({
 }: TemplateCardPreviewProps) {
   const navSuspended = useAdminHeavyRenderSuspended();
   const hostRef = useRef<HTMLDivElement>(null);
-  const useStaticThumb = Boolean(thumbnailSrc?.trim()) && livePreview !== true;
-  const [active, setActive] = useState(eager && !useStaticThumb);
-  const [slotGranted, setSlotGranted] = useState(eager && !useStaticThumb);
+  const [active, setActive] = useState(eager);
+  const [slotGranted, setSlotGranted] = useState(eager);
 
   const detailQuery = useQuery({
     queryKey: queryKeys.dashboardTemplates.detail(templateId),
@@ -84,6 +83,12 @@ export function TemplateCardPreview({
     Boolean(layout) &&
     layoutRequiresDemoCharts(layout!) &&
     !demoDatasourceId;
+  /** 有演示库时优先 live 出图；仅仪表板缺数据源时回退静态示意图 */
+  const useStaticFallback =
+    livePreview !== true &&
+    !isScreen &&
+    Boolean(thumbnailSrc?.trim()) &&
+    demoDatasourceMissing;
 
   useEffect(() => {
     if (navSuspended) {
@@ -169,7 +174,7 @@ export function TemplateCardPreview({
     <Skeleton className="h-full w-full rounded-none" />
   );
 
-  if (useStaticThumb && thumbnailSrc) {
+  if (navSuspended) {
     return (
       <div
         ref={hostRef}
@@ -183,7 +188,7 @@ export function TemplateCardPreview({
     );
   }
 
-  if (navSuspended) {
+  if (useStaticFallback && thumbnailSrc) {
     return (
       <div
         ref={hostRef}

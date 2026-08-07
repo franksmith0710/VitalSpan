@@ -68,7 +68,9 @@ vi.mock("@/lib/dashboardTemplates", async (importOriginal) => {
 });
 
 vi.mock("@/lib/api", () => ({
-  apiFetch: vi.fn(async () => ({ items: [] })),
+  apiFetch: vi.fn(async () => ({
+    items: [{ id: "ds-1", name: "官方演示库", code: "demo", database: "sample_db" }],
+  })),
 }));
 
 afterEach(cleanup);
@@ -99,12 +101,47 @@ describe("TemplateCardPreview", () => {
   });
 
   it("flags missing demo datasource for templates that require charts", async () => {
-    renderPreview();
+    const { apiFetch } = await import("@/lib/api");
+    vi.mocked(apiFetch).mockResolvedValueOnce({ items: [] });
+
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <div style={{ width: 320, height: 200 }}>
+          <TemplateCardPreview
+            templateId="tpl-1"
+            surfaceKind="dashboard"
+            thumbnailSrc="/template-assets/packs/de-dashboard-v1/thumbs/gov-efficiency.svg"
+            eager
+            className="h-full"
+          />
+        </div>
+      </QueryClientProvider>,
+    );
     await waitFor(() => {
-      expect(screen.getByTestId("template-layout-live-preview")).toHaveAttribute(
-        "data-demo-missing",
-        "true",
-      );
+      expect(screen.getByTestId("template-card-preview")).toHaveAttribute("data-live", "false");
     });
+    expect(screen.queryByTestId("template-layout-live-preview")).not.toBeInTheDocument();
+  });
+
+  it("renders live preview when thumbnail exists and demo datasource is available", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <div style={{ width: 320, height: 200 }}>
+          <TemplateCardPreview
+            templateId="tpl-1"
+            surfaceKind="dashboard"
+            thumbnailSrc="/template-assets/packs/de-dashboard-v1/thumbs/gov-efficiency.svg"
+            eager
+            className="h-full"
+          />
+        </div>
+      </QueryClientProvider>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId("template-card-preview")).toHaveAttribute("data-live", "true");
+    });
+    expect(screen.getByTestId("template-layout-live-preview")).toBeInTheDocument();
   });
 });
