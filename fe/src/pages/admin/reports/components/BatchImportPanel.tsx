@@ -45,6 +45,7 @@ export function BatchImportPanel({ readOnly }: { readOnly: boolean }) {
   const [parseError, setParseError] = useState<string | null>(null);
   const [items, setItems] = useState<BatchItem[]>([]);
   const [result, setResult] = useState<BatchResult | null>(null);
+  const [step, setStep] = useState<"upload" | "preview" | "result">("upload");
 
   const importMutation = useMutation({
     mutationFn: (body: { items: BatchItem[] }) =>
@@ -55,6 +56,7 @@ export function BatchImportPanel({ readOnly }: { readOnly: boolean }) {
       }),
     onSuccess: (data) => {
       setResult(data);
+      setStep("result");
       invalidateCatalogQueries(qc);
       toast.success(`成功导入 ${data.createdNodeIds.length} 项`);
     },
@@ -77,6 +79,7 @@ export function BatchImportPanel({ readOnly }: { readOnly: boolean }) {
         return;
       }
       setItems(parsed.items as BatchItem[]);
+      setStep("preview");
     } catch {
       setParseError("无法解析 JSON 文件，请检查格式");
       setItems([]);
@@ -99,7 +102,9 @@ export function BatchImportPanel({ readOnly }: { readOnly: boolean }) {
     <TemplateTabShell>
       <TemplatePanelSection
         title="批量导入报表"
-        description="上传符合规范的 JSON 文件，一次性创建多个报表模板节点。"
+        description={`步骤 ${step === "upload" ? "1" : step === "preview" ? "2" : "3"}/3：${
+          step === "upload" ? "上传 JSON" : step === "preview" ? "预览并确认" : "导入结果"
+        }`}
         icon={Upload}
         footer={
           <div className="flex flex-wrap gap-2">
@@ -111,8 +116,13 @@ export function BatchImportPanel({ readOnly }: { readOnly: boolean }) {
               onClick={() => importMutation.mutate({ items })}
             >
               <Upload className="size-4" aria-hidden />
-              {importMutation.isPending ? "导入中…" : "开始导入"}
+              {importMutation.isPending ? "导入中…" : step === "preview" ? "确认导入" : "开始导入"}
             </Button>
+            {step === "result" && result ? (
+              <Button type="button" variant="outline" className="h-11" onClick={() => setStep("upload")}>
+                继续导入
+              </Button>
+            ) : null}
             <Button type="button" variant="outline" className="h-11" onClick={downloadSample}>
               <FileJson className="size-4" aria-hidden />
               下载 JSON 样例

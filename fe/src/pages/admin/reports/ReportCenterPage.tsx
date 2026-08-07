@@ -20,7 +20,13 @@ import {
   readPinnedPrefabKeys,
   sortPrefabsByPin,
   togglePinnedPrefabKey,
+  writePinnedPrefabKeys,
 } from "@/lib/reportCenterPrefs";
+import {
+  toggleFavorite,
+  useReportCenterPreferenceMutations,
+  useReportCenterPreferences,
+} from "./useReportCenterPrefs";
 import { useAuth } from "@/context/auth-context";
 import {
   ReportCenterHeaderActions,
@@ -55,6 +61,8 @@ export function ReportCenterPage() {
   const [kindFilter, setKindFilter] = useState<TemplateKindFilter>("all");
   const [pinnedPrefabs, setPinnedPrefabs] = useState<string[]>(() => readPinnedPrefabKeys());
   const [templatesOpen, setTemplatesOpen] = useState(false);
+  const centerPrefsQuery = useReportCenterPreferences();
+  const { saveFavorites } = useReportCenterPreferenceMutations();
 
   const schedulesQuery = useReportSchedulesList();
   const { retryExecution } = useReportScheduleMutations();
@@ -98,11 +106,15 @@ export function ReportCenterPage() {
     return map;
   }, [readinessQuery.data]);
 
-  const prefabItems = prefabQuery.data?.items ?? [];
-  const sortedPrefabItems = useMemo(
-    () => sortPrefabsByPin(prefabItems, pinnedPrefabs),
-    [prefabItems, pinnedPrefabs],
+  const serverPinnedPrefabs = useMemo(
+    () =>
+      (centerPrefsQuery.data?.favorites ?? [])
+        .filter((f) => f.resourceType === "prefab")
+        .map((f) => f.resourceId),
+    [centerPrefsQuery.data],
   );
+  const effectivePinned = serverPinnedPrefabs.length > 0 ? serverPinnedPrefabs : pinnedPrefabs;
+  const recentViews = centerPrefsQuery.data?.recent ?? [];
   const filteredTemplates = useMemo(
     () => filterCatalogTemplates(templates, search, kindFilter),
     [templates, search, kindFilter],
@@ -117,6 +129,24 @@ export function ReportCenterPage() {
     () => buildReportCenterTemplateRows(filteredTemplates, readinessByNodeId, allNodesQuery.data ?? []),
     [filteredTemplates, readinessByNodeId, allNodesQuery.data],
   );
+
+  const prefabItems = prefabQuery.data?.items ?? [];
+  const sortedPrefabItems = useMemo(
+    () => sortPrefabsByPin(prefabItems, effectivePinned),
+    [prefabItems, effectivePinned],
+  );
+
+  const handleTogglePin = (key: string) => {
+    const favorites = centerPrefsQuery.data?.favorites ?? effectivePinned.map((id) => ({
+      resourceType: "prefab",
+      resourceId: id,
+    }));
+    const next = toggleFavorite(favorites, "prefab", key);
+    const prefabIds = next.filter((f) => f.resourceType === "prefab").map((f) => f.resourceId);
+    setPinnedPrefabs(prefabIds);
+    writePinnedPrefabKeys(prefabIds);
+    void saveFavorites.mutateAsync(next);
+  };
 
   const headerActions = (
     <div className="flex flex-wrap items-center gap-2">
@@ -148,7 +178,7 @@ export function ReportCenterPage() {
           <FileBarChart className="size-6" aria-hidden />
         </AdminPageHeaderIcon>
       }
-      description="管理看板/大屏定时 PDF 报告，查看执行记录与失败重试。文档型模板为后续固定版式能力。"
+      description="统一工作台：定时报告、预制分析、文档模板与最近访问。"
       actions={headerActions}
     >
       {schedulesQuery.isError ? (
@@ -178,6 +208,20 @@ export function ReportCenterPage() {
             }
           />
 
+          {recentViews.length > 0 ? (
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
+              <p className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">最近访问</p>
+              <ul className="mt-3 space-y-2">
+                {recentViews.slice(0, 8).map((item) => (
+                  <li key={`${item.resourceType}-${item.resourceId}`} className="text-theme-xs text-gray-600 dark:text-gray-400">
+                    {item.resourceLabel || item.resourceId}
+                    <span className="ml-2 text-gray-400">{item.resourceType}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
           <button
             type="button"
@@ -195,7 +239,7 @@ export function ReportCenterPage() {
                   文档模板
                 </span>
                 <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-white/[0.06] dark:text-gray-400">
-                  后续能力
+                  文档模板
                 </span>
               </span>
               <span className="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
@@ -323,8 +367,8 @@ export function ReportCenterPage() {
             </div>
             <ReportCenterPrefabPanel
               items={sortedPrefabItems}
-              pinnedKeys={pinnedPrefabs}
-              onTogglePin={(key) => setPinnedPrefabs(togglePinnedPrefabKey(key))}
+              pinnedKeys={effectivePinned}
+              onTogglePin={handleTogglePin}
             />
           </div>
         ) : null}

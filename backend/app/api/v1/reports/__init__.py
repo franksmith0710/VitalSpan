@@ -32,6 +32,7 @@ from app.reports.scheduler import executor as scheduler_executor
 from app.api.v1.reports.engine import router as engine_router
 from app.api.v1.reports.prefab import router as prefab_router
 from app.api.v1.reports.templates import router as templates_router
+from app.api.v1.reports.center import router as center_router
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -430,6 +431,59 @@ def get_execution_artifact(
     except ReportCatalogError as exc:
         return _catalog_error(exc)
 
+
+@router.get("/schedules/executions/{execution_id}/artifact/download", response_model=None)
+def download_execution_artifact(
+    execution_id: uuid.UUID,
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+):
+    from app.reports.catalog.acl import assert_artifact_access
+
+    try:
+        meta = scheduler_executor.get_execution_artifact_meta(execution_id)
+        assert_artifact_access(user, meta["artifactRef"])
+        data, mime, filename = scheduler_executor.get_execution_artifact_download(execution_id)
+        return Response(
+            content=data,
+            media_type=mime,
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+    except ReportCatalogError as exc:
+        return _catalog_error(exc)
+
+
+@router.post("/catalog/nodes/{node_id}/duplicate", response_model=None)
+def duplicate_catalog_node(
+    node_id: uuid.UUID,
+    user: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
+    name: str | None = Query(default=None),
+    parent_id: uuid.UUID | None = Query(default=None, alias="parentId"),
+):
+    from app.reports import service as report_service
+
+    try:
+        return report_service.duplicate_catalog_node(
+            node_id, name=name, parent_id=parent_id, actor=user,
+        )
+    except ReportCatalogError as exc:
+        return _catalog_error(exc)
+
+
+@router.post("/schedules/{schedule_id}/revise", response_model=None)
+def revise_schedule(
+    schedule_id: uuid.UUID,
+    payload: ScheduleUpdate,
+    user: Annotated[UserContext, Depends(require_any_permission(PERM_MANAGE, PERM_SCHEDULE))],
+):
+    from app.reports import service as report_service
+
+    try:
+        return report_service.revise_schedule(schedule_id, payload, user)
+    except ScheduleError as exc:
+        return _schedule_error(exc)
+
+
+router.include_router(center_router)
 router.include_router(engine_router)
 router.include_router(prefab_router)
 router.include_router(templates_router)

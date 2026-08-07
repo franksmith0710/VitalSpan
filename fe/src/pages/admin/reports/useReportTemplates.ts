@@ -180,6 +180,44 @@ export function useAllCatalogNodes(enabled = true) {
   });
 }
 
+export function useExtensionRevisions(nodeId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.reports.extensionRevisions(nodeId ?? ""),
+    queryFn: () =>
+      apiFetch<{ items: Array<{ revision: number; changeNote?: string | null; updatedAt?: string }>; total: number }>(
+        `/api/v1/reports/catalog/nodes/${nodeId}/extension/revisions`,
+      ),
+    enabled: Boolean(nodeId),
+  });
+}
+
+export function useTemplateVersions(templateKey: string | null) {
+  return useQuery({
+    queryKey: queryKeys.reports.templateVersions(templateKey ?? ""),
+    queryFn: () =>
+      apiFetch<{ items: Array<{ version: number; changeNote?: string | null; createdAt?: string }>; total: number }>(
+        `/api/v1/reports/templates/${templateKey}/versions`,
+      ),
+    enabled: Boolean(templateKey),
+  });
+}
+
+export function useDuplicateCatalogNode() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ nodeId, name, parentId }: { nodeId: string; name?: string; parentId?: string | null }) => {
+      const params = new URLSearchParams();
+      if (name) params.set("name", name);
+      if (parentId) params.set("parentId", parentId);
+      const q = params.toString();
+      return apiFetch<CatalogNode>(`/api/v1/reports/catalog/nodes/${nodeId}/duplicate${q ? `?${q}` : ""}`, {
+        method: "POST",
+      });
+    },
+    onSuccess: () => invalidateCatalogQueries(qc),
+  });
+}
+
 export function useExtensionRenderSpec(nodeId: string | null, enabled: boolean) {
   return useQuery({
     queryKey: queryKeys.reports.renderSpec(nodeId ?? ""),

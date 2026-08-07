@@ -100,6 +100,40 @@ def _execute_metric(
     return execute_section(db, user, data_source_id, sql)
 
 
+def build_sections_from_template_blocks(template_key: str) -> list[dict[str, Any]]:
+    from app.reports.persistence import template_repo
+
+    raw = template_repo.get_template(template_key)
+    if raw is None:
+        return []
+    sections: list[dict[str, Any]] = []
+    for block in raw.get("blocks", []):
+        block_type = block.get("blockType") or block.get("block_type")
+        if block_type == "sql":
+            sections.append({
+                "kind": "text",
+                "title": block.get("title") or "SQL",
+                "text": block.get("queryRef") or block.get("query_ref") or "",
+                "placeholder": False,
+            })
+        elif block_type == "table":
+            sections.append({
+                "kind": "table",
+                "title": block.get("title") or block.get("tableRef") or block.get("table_ref") or "Table",
+                "columns": ["value"],
+                "rows": [[block.get("tableRef") or block.get("table_ref") or ""]],
+                "placeholder": False,
+            })
+        elif block_type == "chart":
+            sections.append({
+                "kind": "chart",
+                "title": block.get("title") or "Chart",
+                "chartType": block.get("chartType") or block.get("chart_type") or "bar",
+                "placeholder": False,
+            })
+    return sections
+
+
 def build_sections_from_extension(
     db: Session,
     user: UserContext,

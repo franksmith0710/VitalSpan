@@ -5,7 +5,7 @@
 | 模块路径 | `backend/app/reports/` |
 | PRD | [F08-RPT](../automate/prd/F08-RPT.md) · RPT-001 ~ RPT-007 |
 | 里程碑 | M6 / M10 / M12 |
-| 状态 | **P3-SMOKE 可签收（ORM 持久化 · RenderSpec 真导出 · Dataset 桥接 · 2026-08-04）** |
+| 状态 | **最终形态（ReportService · Job Queue · RenderSpec · 2026-08-07）** |
 
 ## 职责
 
@@ -90,7 +90,10 @@
 | `catalog/probe.py` | `probe_list_catalog_budget_ms` ≤50ms | RPT-004 | M10 已实现 r234 |
 | `catalog/service.py` | `templateKey` 存在性/唯一性/kind 校验；`count_nodes_by_template_key` | RPT-004 | M10 已实现 r234 |
 | **FE** | `fe/src/pages/admin/reports/ReportTemplatesPage.tsx` + `useReportTemplates.ts`（master-detail 树/扩展/预览） | RPT-004/006 | M10 已实现 r234 |
-| `ReportService` | 模板 CRUD | RPT-001~003 | 待建 |
+| `ReportService` | 统一 use-case 编排（run/duplicate/publish/revise/batch） | RPT-001~007 | 已实现 |
+| `reports/jobs/` | DB lease job queue + batch export worker | RPT-007 | 已实现 |
+| `reports/center_prefs.py` | 收藏/最近访问服务端持久化 | RPT-002/IA | 已实现 |
+| `reports/contract.py` | 统一状态模型与 RenderSpec 契约（ADR-09） | RPT-001 | 已实现 |
 
 ## 关联 API
 

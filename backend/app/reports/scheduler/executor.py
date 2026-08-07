@@ -11,6 +11,7 @@ from app.auth.models import get_meta_session
 from app.dashboard import export_jobs as dashboard_export_jobs
 from app.dashboard import service as dash_service
 from app.datasources.models import get_meta_engine
+from app.reports.artifact_store import artifact_storage_key, get_artifact_store
 from app.reports.catalog.acl import register_artifact_owner
 from app.reports.scheduler import acl as schedule_acl
 from app.reports.scheduler.delivery import dispatch_artifact
@@ -189,6 +190,43 @@ def mock_execute_schedule(
     return out
 
 
+def _persist_execution_artifact(
+    execution_id: uuid.UUID,
+    attachments: list[tuple[bytes, str, str]],
+    *,
+    artifact_kind: str | None,
+) -> tuple[str, str | None]:
+    if not attachments:
+        return f"semi://reports/{execution_id}", None
+    data, mime, filename = attachments[0]
+    ext = filename.rsplit(".", 1)[-1] if "." in filename else "bin"
+    storage_key = artifact_storage_key("schedule-execution", execution_id, ext)
+    get_artifact_store().put(storage_key, data, mime)
+    artifact_ref = f"storage://{storage_key}"
+    return artifact_ref, storage_key
+
+
+def _record_delivery_attempts(execution_id: uuid.UUID, steps: list[dict]) -> None:
+    try:
+        from sqlalchemy.orm import Session
+
+        from app.datasources.models import get_meta_engine
+        from app.reports.models import ReportDeliveryAttempt
+
+        with Session(bind=get_meta_engine()) as db:
+            for step in steps:
+                db.add(ReportDeliveryAttempt(
+                    execution_id=execution_id,
+                    channel=step.get("channel", "unknown"),
+                    status=step.get("status", "unknown"),
+                    response_summary=step.get("response"),
+                    error_message=step.get("error"),
+                ))
+            db.commit()
+    except Exception:
+        pass
+
+
 def _export_template_attachments(
     source_id: uuid.UUID,
     formats: list[str],
@@ -279,6 +317,10 @@ def semi_real_execute_schedule(
         artifact_ref, artifact_kind, attachments, export_error = _export_template_attachments(
             source_id, formats, actor,
         )
+    if not export_error and attachments:
+        artifact_ref, _storage_key = _persist_execution_artifact(
+            execution_id, attachments, artifact_kind=artifact_kind,
+        )
     if export_error:
         out = ScheduleExecuteOut(
             executionId=execution_id,
@@ -350,6 +392,7 @@ def semi_real_execute_schedule(
     )
     _remember_execution(out)
     _append_history(schedule_id, out, error_message=error_message)
+    _record_delivery_attempts(execution_id, delivery["deliverySteps"])
     register_artifact_owner(artifact_ref, actor.id)
     return out
 
@@ -378,12 +421,32 @@ def get_execution_artifact_meta(execution_id: uuid.UUID) -> dict:
     if out is None:
         from app.reports.catalog.errors import ReportCatalogError
         raise ReportCatalogError("RPT_ARTIFACT_NOT_FOUND", "Execution artifact not found", 404)
+    download_url = None
+    if out.artifact_ref.startswith("storage://"):
+        download_url = f"/api/v1/reports/schedules/executions/{execution_id}/artifact/download"
     return {
         "executionId": str(out.execution_id),
         "artifactRef": out.artifact_ref,
+        "artifactKind": out.artifact_kind,
         "status": out.status,
         "executedAt": out.executed_at,
+        "downloadUrl": download_url,
     }
+
+
+def get_execution_artifact_download(execution_id: uuid.UUID) -> tuple[bytes, str, str]:
+    out = _get_execution_out(execution_id)
+    if out is None or not out.artifact_ref.startswith("storage://"):
+        from app.reports.catalog.errors import ReportCatalogError
+        raise ReportCatalogError("RPT_ARTIFACT_NOT_FOUND", "Execution artifact not found", 404)
+    storage_key = out.artifact_ref.removeprefix("storage://")
+    data = get_artifact_store().get(storage_key)
+    if data is None:
+        from app.reports.catalog.errors import ReportCatalogError
+        raise ReportCatalogError("RPT_ARTIFACT_NOT_FOUND", "Execution artifact not found", 404)
+    ext = storage_key.rsplit(".", 1)[-1]
+    mime = "application/pdf" if ext == "pdf" else "application/octet-stream"
+    return data, mime, f"schedule-{execution_id}.{ext}"
 
 
 def probe_mock_execute_budget_ms(schedule_id: uuid.UUID, key: str, actor: UserContext) -> float:

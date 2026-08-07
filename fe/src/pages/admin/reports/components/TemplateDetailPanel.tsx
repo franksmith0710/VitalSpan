@@ -25,7 +25,7 @@ import {
   TemplatePanelSection,
   TemplateTabShell,
 } from "./templatePanelUi";
-import { type CatalogNode, useCatalogExtension, useExtensionRenderSpec } from "../useReportTemplates";
+import { type CatalogNode, useCatalogExtension, useExtensionRenderSpec, useExtensionRevisions } from "../useReportTemplates";
 import type { ReportCatalogNode } from "@/lib/reportCatalogUtils";
 
 const KIND_LABELS: Record<NonNullable<CatalogNode["templateKind"]>, string> = {
@@ -57,6 +57,7 @@ export function TemplateDetailPanel({
   const [tab, setTab] = useState("basic");
   const tabByNodeRef = useRef<Record<string, string>>({});
   const extQuery = useCatalogExtension(node.id);
+  const revisionsQuery = useExtensionRevisions(node.id);
   const renderQuery = useExtensionRenderSpec(node.id, tab === "preview");
   const extensionData =
     extQuery.data && String(extQuery.data.catalogNodeId) === String(node.id) ? extQuery.data : null;
@@ -190,6 +191,19 @@ export function TemplateDetailPanel({
                     defaultDataSourceId={extensionData?.defaultDataSourceId}
                     isLoading={extensionLoading}
                   />
+                  {(revisionsQuery.data?.items.length ?? 0) > 0 ? (
+                    <div className="mt-6 space-y-2 rounded-xl border border-gray-200 p-4 dark:border-gray-800">
+                      <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">修订历史</p>
+                      <ul className="space-y-1 text-theme-xs text-gray-600 dark:text-gray-400">
+                        {revisionsQuery.data?.items.map((rev) => (
+                          <li key={rev.revision}>
+                            v{rev.revision}
+                            {rev.changeNote ? ` · ${rev.changeNote}` : ""}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
                 </TemplatePanelSection>
               </TemplateTabShell>
             </TabsContent>

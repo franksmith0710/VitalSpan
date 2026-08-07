@@ -18,7 +18,10 @@ def _worker_id() -> str:
 
 
 def _execute_batch_export(job: dict, actor: UserContext) -> tuple[bytes, str]:
+    from app.reports.catalog import service as catalog_service
+    from app.reports.engine import execute as engine_execute
     from app.reports.engine.service import export_template_bytes
+    from app.reports.render.render_from_spec import render_document
 
     payload = job.get("payload") or {}
     node_ids = [uuid.UUID(str(nid)) for nid in payload.get("nodeIds", [])]
@@ -26,7 +29,20 @@ def _execute_batch_export(job: dict, actor: UserContext) -> tuple[bytes, str]:
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
         for node_id in node_ids:
-            data = export_template_bytes(node_id, fmt, actor)
+            try:
+                data = export_template_bytes(node_id, fmt, actor)
+            except Exception:
+                node = catalog_service.get_node(node_id)
+                sections = (
+                    engine_execute.build_sections_from_template_blocks(node.template_key or "")
+                    if node.template_key
+                    else [{"kind": "table", "placeholder": True}]
+                )
+                data = render_document(
+                    {"sections": sections, "format": fmt, "engineVersion": "1.0"},
+                    fmt,
+                    title=node.name,
+                )
             ext = "docx" if fmt == "word" else fmt
             archive.writestr(f"report-{node_id}.{ext}", data)
     return buffer.getvalue(), "application/zip"

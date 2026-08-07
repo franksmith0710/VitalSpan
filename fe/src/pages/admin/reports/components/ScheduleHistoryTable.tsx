@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { History } from "lucide-react";
+import { Download, History } from "lucide-react";
+import { fetchAuthenticatedBlob } from "@/lib/apiUpload";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PanelEmptyState } from "@/components/ui/panel-empty-state";
@@ -50,6 +51,24 @@ export function ScheduleHistoryTable({
   embedded = false,
 }: ScheduleHistoryTableProps) {
   const [detailRow, setDetailRow] = useState<ScheduleExecutionRow | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const handleDownload = async (executionId: string) => {
+    setDownloadingId(executionId);
+    try {
+      const blob = await fetchAuthenticatedBlob(
+        `/api/v1/reports/schedules/executions/${executionId}/artifact/download`,
+      );
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `schedule-${executionId}.pdf`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   if (rows.length === 0) {
     return (
@@ -117,6 +136,19 @@ export function ScheduleHistoryTable({
                   </TableCell>
                   <TableCell className="px-3 py-2">
                     <div className="flex flex-wrap gap-1">
+                      {row.artifactRef?.startsWith("storage://") ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-2 text-theme-xs"
+                          disabled={downloadingId === row.executionId}
+                          onClick={() => void handleDownload(row.executionId)}
+                        >
+                          <Download className="size-3.5" aria-hidden />
+                          {downloadingId === row.executionId ? "下载中…" : "下载"}
+                        </Button>
+                      ) : null}
                       {hasError ? (
                         <Button
                           type="button"

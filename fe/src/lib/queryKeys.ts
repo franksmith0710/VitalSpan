@@ -78,6 +78,9 @@ export const queryKeys = {
     template: (key: string) => ["reports", "template", key] as const,
     extension: (nodeId: string) => ["reports", "extension", nodeId] as const,
     renderSpec: (nodeId: string) => ["reports", "renderSpec", nodeId] as const,
+    centerPreferences: ["reports", "centerPreferences"] as const,
+    extensionRevisions: (nodeId: string) => ["reports", "extensionRevisions", nodeId] as const,
+    templateVersions: (key: string) => ["reports", "templateVersions", key] as const,
   },
   themes: {
     config: (refType: string, refId: string) => ["themes", "config", refType, refId] as const,

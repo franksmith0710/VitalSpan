@@ -12,7 +12,7 @@ PERM_READ = "report:read"
 PERM_MANAGE = "report:manage"
 from app.reports.engine.errors import ReportEngineError
 from app.reports.engine.schemas import RenderRunIn, RenderRunOut
-from app.reports.engine import service as engine_service
+from app.reports import service as report_service
 
 router = APIRouter(tags=["reports"])
 
@@ -32,6 +32,6 @@ def run_report_template(
     actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> RenderRunOut | JSONResponse:
     try:
-        return engine_service.run_template(template_id, payload, actor)
+        return report_service.run_template(template_id, payload, actor)
     except ReportEngineError as exc:
         return _engine_error(exc)

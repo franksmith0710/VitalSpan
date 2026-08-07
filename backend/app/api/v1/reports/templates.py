@@ -72,6 +72,30 @@ def upsert_template(
         return _template_error(exc)
 
 
+@router.get("/{template_key}/versions", response_model=None)
+def list_template_versions(
+    template_key: str,
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+):
+    from app.reports.templates import versions as template_versions
+
+    return template_versions.list_versions(template_key)
+
+
+@router.post("/{template_key}/publish", response_model=None)
+def publish_template(
+    template_key: str,
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
+    change_note: str | None = Query(default=None, alias="changeNote"),
+):
+    from app.reports import service as report_service
+
+    try:
+        return report_service.publish_template(template_key, actor, change_note=change_note)
+    except TemplateDefError as exc:
+        return _template_error(exc)
+
+
 @router.get("/{template_key}", response_model=TemplateDefinitionOut)
 def get_template(
     template_key: str,

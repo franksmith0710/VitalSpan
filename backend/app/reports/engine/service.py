@@ -130,6 +130,9 @@ def run_template(template_id: uuid.UUID, payload: RenderRunIn, actor: UserContex
             sections, elapsed = engine_execute.build_sections_from_extension(
                 db, actor, ext, ds_id, parameters,
             )
+        if node.template_key:
+            block_sections = engine_execute.build_sections_from_template_blocks(node.template_key)
+            sections = block_sections + sections
         spec = EngineRenderSpec(
             templateNodeId=node.id,
             engineVersion="1.0",
@@ -139,6 +142,16 @@ def run_template(template_id: uuid.UUID, payload: RenderRunIn, actor: UserContex
             renderedAt=datetime.now(UTC),
         )
         query_meta = QueryMeta(sectionCount=len(sections), elapsedMs=round(elapsed, 2))
+    elif node.template_key:
+        block_sections = engine_execute.build_sections_from_template_blocks(node.template_key)
+        spec = EngineRenderSpec(
+            templateNodeId=node.id,
+            engineVersion="1.0",
+            format=payload.format,
+            sections=block_sections or [{"kind": "table", "placeholder": True}],
+            parameters=parameters,
+            renderedAt=datetime.now(UTC),
+        )
     else:
         spec = build_engine_render_spec(node, parameters, payload.format)
 
