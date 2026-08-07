@@ -12,7 +12,7 @@ from app.reports.catalog import service as catalog_service
 from app.reports.catalog.schemas import CatalogNodeOut
 from app.reports.engine import acl as engine_acl
 from app.reports.engine import execute as engine_execute
-from app.reports.engine.errors import RPT_ENGINE_DATASOURCE_REQUIRED, RPT_ENGINE_INVALID_PARAMETER, ReportEngineError
+from app.reports.engine.errors import RPT_ENGINE_INVALID_PARAMETER, ReportEngineError
 from app.reports.engine.schemas import EngineRenderSpec, ExportHookOut, QueryMeta, RenderRunIn, RenderRunOut
 from app.reports.errors import ReportExtensionError
 from app.reports.extension import service as extension_service
@@ -113,13 +113,6 @@ def run_template(template_id: uuid.UUID, payload: RenderRunIn, actor: UserContex
     if ds_id is None and ext is not None and ext.default_data_source_id is not None:
         ds_id = ext.default_data_source_id
 
-    if ext is not None and ds_id is None and _extension_needs_datasource(ext):
-        raise ReportEngineError(
-            RPT_ENGINE_DATASOURCE_REQUIRED,
-            "dataSourceId is required when extension metrics are configured",
-            422,
-        )
-
     export_hook: ExportHookOut | None = None
     if node.template_kind in _EXPORT_KINDS:
         export_hook = _build_export_hook(node)
@@ -132,7 +125,8 @@ def run_template(template_id: uuid.UUID, payload: RenderRunIn, actor: UserContex
             )
         if node.template_key:
             block_sections = engine_execute.build_sections_from_template_blocks(node.template_key)
-            sections = block_sections + sections
+            if block_sections:
+                sections = block_sections + sections
         spec = EngineRenderSpec(
             templateNodeId=node.id,
             engineVersion="1.0",
@@ -142,6 +136,8 @@ def run_template(template_id: uuid.UUID, payload: RenderRunIn, actor: UserContex
             renderedAt=datetime.now(UTC),
         )
         query_meta = QueryMeta(sectionCount=len(sections), elapsedMs=round(elapsed, 2))
+    elif has_extension and ext is not None and _extension_needs_datasource(ext):
+        spec = build_engine_render_spec(node, parameters, payload.format)
     elif node.template_key:
         block_sections = engine_execute.build_sections_from_template_blocks(node.template_key)
         spec = EngineRenderSpec(

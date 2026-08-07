@@ -41,7 +41,7 @@ describe("BatchImportPanel smoke", () => {
     Object.defineProperty(file, "text", { value: async () => payload });
     await user.upload(input, file);
     expect(await screen.findByText("批量节点 A")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "开始导入" }));
+    await user.click(screen.getByRole("button", { name: "确认导入" }));
     expect(await screen.findByText(/成功创建 1 项/)).toBeInTheDocument();
     expect(mockApiFetch).toHaveBeenCalledWith(
       "/api/v1/reports/batch",

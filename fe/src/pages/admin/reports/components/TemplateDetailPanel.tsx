@@ -191,11 +191,11 @@ export function TemplateDetailPanel({
                     defaultDataSourceId={extensionData?.defaultDataSourceId}
                     isLoading={extensionLoading}
                   />
-                  {(revisionsQuery.data?.items.length ?? 0) > 0 ? (
+                  {(revisionsQuery.data?.items?.length ?? 0) > 0 ? (
                     <div className="mt-6 space-y-2 rounded-xl border border-gray-200 p-4 dark:border-gray-800">
                       <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">修订历史</p>
                       <ul className="space-y-1 text-theme-xs text-gray-600 dark:text-gray-400">
-                        {revisionsQuery.data?.items.map((rev) => (
+                        {revisionsQuery.data?.items?.map((rev) => (
                           <li key={rev.revision}>
                             v{rev.revision}
                             {rev.changeNote ? ` · ${rev.changeNote}` : ""}

@@ -124,7 +124,18 @@ def test_schedule_with_recipients_and_source_fields(client: TestClient):
     assert body["recipients"][0]["value"] == "admin"
 
 
-def test_dashboard_export_job(client: TestClient):
+def test_dashboard_export_job(client: TestClient, monkeypatch):
+    from app.core.config import get_settings
+    from app.dashboard import service as dash_service
+
+    monkeypatch.setenv("RPT_EXPORT_FALLBACK", "1")
+    get_settings.cache_clear()
+
+    def _fail_render(*_args, **_kwargs):
+        raise dash_service.DashboardError("DASH_EXPORT_RENDER_FAILED", "render failed", 502)
+
+    monkeypatch.setattr("app.dashboard.export_jobs.render_dashboard_visual_pdf", _fail_render)
+
     import uuid as _uuid
 
     dash = client.post(

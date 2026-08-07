@@ -117,11 +117,14 @@ def build_sections_from_template_blocks(template_key: str) -> list[dict[str, Any
                 "placeholder": False,
             })
         elif block_type == "table":
+            # tableRef binds extension metrics; extension rendering owns the section.
+            if block.get("tableRef") or block.get("table_ref"):
+                continue
             sections.append({
                 "kind": "table",
-                "title": block.get("title") or block.get("tableRef") or block.get("table_ref") or "Table",
+                "title": block.get("title") or "Table",
                 "columns": ["value"],
-                "rows": [[block.get("tableRef") or block.get("table_ref") or ""]],
+                "rows": [[block.get("title") or ""]],
                 "placeholder": False,
             })
         elif block_type == "chart":

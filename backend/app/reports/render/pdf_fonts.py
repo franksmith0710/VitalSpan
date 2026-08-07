@@ -63,3 +63,7 @@ def resolve_report_pdf_font_name() -> str:
     if cid:
         return cid
     return "Helvetica"
+
+
+def reset_report_pdf_font_cache_for_tests() -> None:
+    resolve_report_pdf_font_name.cache_clear()
