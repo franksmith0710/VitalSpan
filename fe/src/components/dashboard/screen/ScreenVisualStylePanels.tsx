@@ -15,21 +15,19 @@ import {
 } from "@/components/dashboard/inspectorCompact";
 import type {
   ScreenBorderStyleConfig,
-  ScreenClockStyleConfig,
   ScreenDateTimeStyleConfig,
   ScreenVisualStyleConfig,
 } from "@/lib/screenVisualStyle";
 import {
-  DEFAULT_SCREEN_CLOCK_STYLE,
   DEFAULT_SCREEN_DATETIME_STYLE,
   normalizeScreenBorderStyle,
-  normalizeScreenClockStyle,
   normalizeScreenDateTimeStyle,
 } from "@/lib/screenVisualStyle";
 import { ScreenBorderSparkleStylePanel } from "./ScreenBorderSparkleStylePanel";
 import { ScreenBorderVariantPicker } from "./ScreenBorderVariantPicker";
+import { ScreenClockStylePanel } from "./ScreenClockStylePanel";
 
-/** 时钟/时间行：在图表标准档位上扩展大屏标题级字号 */
+/** 时间行：在图表标准档位上扩展大屏标题级字号 */
 const SCREEN_LARGE_FONT_SIZE_OPTIONS = [...CHART_FONT_SIZE_OPTIONS, 56, 64, 72] as const;
 
 type ScreenStylePanelProps<T> = {
@@ -59,37 +57,7 @@ export function ScreenColorField({
   );
 }
 
-export function ScreenClockStylePanel({
-  value,
-  onChange,
-}: ScreenStylePanelProps<ScreenClockStyleConfig>) {
-  const style = normalizeScreenClockStyle(value);
-  const patch = (partial: Partial<ScreenClockStyleConfig>) => onChange({ ...style, ...partial });
-
-  return (
-    <ChartInspectorSection title="时钟" defaultOpen data-testid="screen-clock-style-panel">
-      <ChartPaletteFontSizeSelect
-        label="字号"
-        density="narrow"
-        value={style.fontSize}
-        fallback={DEFAULT_SCREEN_CLOCK_STYLE.fontSize}
-        options={SCREEN_LARGE_FONT_SIZE_OPTIONS}
-        onChange={(fontSize) => patch({ fontSize })}
-      />
-      <ScreenColorField label="文字颜色" kind="text" value={style.color} onChange={(color) => patch({ color })} />
-      <InspectorSwitchRow
-        label="显示星期"
-        checked={style.showWeekday}
-        onCheckedChange={(showWeekday) => patch({ showWeekday })}
-      />
-      <InspectorSwitchRow
-        label="显示秒"
-        checked={style.showSeconds}
-        onCheckedChange={(showSeconds) => patch({ showSeconds })}
-      />
-    </ChartInspectorSection>
-  );
-}
+export { ScreenClockStylePanel } from "./ScreenClockStylePanel";
 
 export function ScreenDateTimeStylePanel({
   value,

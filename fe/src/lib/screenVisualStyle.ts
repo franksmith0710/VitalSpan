@@ -4,11 +4,32 @@ import { normalizeScreenBorderSparkleStyle } from "@/lib/screenBorderSparkle";
 
 export type { ScreenBorderSparkleConfig, ScreenBorderSparkleStyleConfig } from "@/lib/screenBorderSparkle";
 
+export type ScreenClockDateFormat =
+  | "YYYY-MM-DD"
+  | "YYYY/MM/DD"
+  | "YYYY年MM月DD日"
+  | "MM-DD";
+
+export type ScreenClockLayout = "stacked" | "inline";
+
+export type ScreenClockAlign = "left" | "center" | "right";
+
 export type ScreenClockStyleConfig = {
   fontSize?: number;
   color?: string;
   showWeekday?: boolean;
   showSeconds?: boolean;
+  weekdayFontSize?: number;
+  weekdayColor?: string;
+  showDate?: boolean;
+  dateFormat?: ScreenClockDateFormat;
+  use12Hour?: boolean;
+  fontFamily?: string;
+  fontWeight?: number;
+  fontStyle?: "normal" | "italic";
+  align?: ScreenClockAlign;
+  letterSpacing?: number;
+  layout?: ScreenClockLayout;
 };
 
 export type ScreenDateTimeStyleConfig = {
@@ -86,6 +107,17 @@ export const DEFAULT_SCREEN_CLOCK_STYLE: Required<ScreenClockStyleConfig> = {
   color: "#e0f2fe",
   showWeekday: true,
   showSeconds: true,
+  weekdayFontSize: 12,
+  weekdayColor: "#e0f2fe",
+  showDate: true,
+  dateFormat: "YYYY-MM-DD",
+  use12Hour: false,
+  fontFamily: "",
+  fontWeight: 400,
+  fontStyle: "normal",
+  align: "center",
+  letterSpacing: 0,
+  layout: "stacked",
 };
 
 export const DEFAULT_SCREEN_DATETIME_STYLE: Required<ScreenDateTimeStyleConfig> = {
@@ -134,6 +166,17 @@ export function normalizeScreenClockStyle(
     color: raw?.color ?? DEFAULT_SCREEN_CLOCK_STYLE.color,
     showWeekday: raw?.showWeekday ?? DEFAULT_SCREEN_CLOCK_STYLE.showWeekday,
     showSeconds: raw?.showSeconds ?? DEFAULT_SCREEN_CLOCK_STYLE.showSeconds,
+    weekdayFontSize: raw?.weekdayFontSize ?? DEFAULT_SCREEN_CLOCK_STYLE.weekdayFontSize,
+    weekdayColor: raw?.weekdayColor ?? raw?.color ?? DEFAULT_SCREEN_CLOCK_STYLE.weekdayColor,
+    showDate: raw?.showDate ?? DEFAULT_SCREEN_CLOCK_STYLE.showDate,
+    dateFormat: raw?.dateFormat ?? DEFAULT_SCREEN_CLOCK_STYLE.dateFormat,
+    use12Hour: raw?.use12Hour ?? DEFAULT_SCREEN_CLOCK_STYLE.use12Hour,
+    fontFamily: raw?.fontFamily ?? DEFAULT_SCREEN_CLOCK_STYLE.fontFamily,
+    fontWeight: raw?.fontWeight ?? DEFAULT_SCREEN_CLOCK_STYLE.fontWeight,
+    fontStyle: raw?.fontStyle ?? DEFAULT_SCREEN_CLOCK_STYLE.fontStyle,
+    align: raw?.align ?? DEFAULT_SCREEN_CLOCK_STYLE.align,
+    letterSpacing: raw?.letterSpacing ?? DEFAULT_SCREEN_CLOCK_STYLE.letterSpacing,
+    layout: raw?.layout ?? DEFAULT_SCREEN_CLOCK_STYLE.layout,
   };
 }
 

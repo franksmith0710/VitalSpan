@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  DEFAULT_SCREEN_CLOCK_STYLE,
   normalizeScreenClockStyle,
   normalizeScreenDateTimeStyle,
   normalizeScreenIconStyle,
@@ -9,8 +8,10 @@ import {
 } from "./screenVisualStyle";
 
 describe("screenVisualStyle", () => {
-  it("applies clock defaults when style is missing", () => {
-    expect(normalizeScreenClockStyle()).toEqual(DEFAULT_SCREEN_CLOCK_STYLE);
+  it("merges partial clock style", () => {
+    expect(normalizeScreenClockStyle({ fontSize: 24, use12Hour: true }).fontSize).toBe(24);
+    expect(normalizeScreenClockStyle({ fontSize: 24, use12Hour: true }).use12Hour).toBe(true);
+    expect(normalizeScreenClockStyle({ fontSize: 24 }).showDate).toBe(true);
   });
 
   it("merges partial datetime style", () => {

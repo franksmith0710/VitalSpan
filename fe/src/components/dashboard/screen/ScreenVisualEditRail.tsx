@@ -9,7 +9,7 @@ import {
 } from "@/lib/screenVisualAssets";
 import { WidgetInspectorDelete } from "@/components/dashboard/widget-inspector-delete";
 import { WidgetRailPanelHeader } from "@/components/dashboard/widgetRailChrome";
-import { WidgetComponentNameSection } from "@/components/dashboard/widgetRailStyleSections";
+import { WidgetComponentNameSection, WidgetShellBackgroundSection } from "@/components/dashboard/widgetRailStyleSections";
 import {
   ScreenIconStylePanel,
   ScreenShapeStylePanel,
@@ -81,6 +81,16 @@ export function ScreenVisualEditRail({
             widgetId={widget.id}
             title={widget.title}
             onTitleChange={onTitleChange}
+          />
+
+          <WidgetShellBackgroundSection
+            value={widget.textConfig.widgetStyle ?? {}}
+            onChange={(patch) =>
+              onTextConfigChange?.({
+                ...widget.textConfig,
+                widgetStyle: { ...widget.textConfig.widgetStyle, ...patch },
+              })
+            }
           />
 
           {isClock ? (

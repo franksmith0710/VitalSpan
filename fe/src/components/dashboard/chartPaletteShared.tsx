@@ -279,7 +279,7 @@ export function ChartPaletteFontSizeSelect({
       <Select value={String(resolved)} onValueChange={(v) => onChange(Number(v))}>
         <SelectTrigger
           className={cn(density === "narrow" ? INSPECTOR_SELECT : DE_SELECT, "h-8 w-[5rem] shrink-0")}
-          aria-label="字体大小"
+          aria-label={label}
         >
           <SelectValue />
         </SelectTrigger>
