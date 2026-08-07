@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   getActiveListPreviewCountForTests,
+  ListPreviewSlotResetError,
+  releaseAllListPreviewSlots,
   releaseListPreviewSlot,
   requestListPreviewSlot,
   resetListPreviewActivationForTests,
@@ -35,5 +37,14 @@ describe("listPreviewActivation", () => {
     releaseListPreviewSlot();
     await pending;
     expect(resolved).toBe(true);
+  });
+
+  it("rejects queued waiters when navigation clears all slots", async () => {
+    await Promise.all(
+      Array.from({ length: MAX_LIST_PREVIEW_ACTIVATIONS }, () => requestListPreviewSlot()),
+    );
+    const pending = requestListPreviewSlot();
+    releaseAllListPreviewSlots();
+    await expect(pending).rejects.toBeInstanceOf(ListPreviewSlotResetError);
   });
 });

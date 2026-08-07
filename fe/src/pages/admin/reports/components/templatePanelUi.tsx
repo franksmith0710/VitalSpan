@@ -78,9 +78,19 @@ export function TemplateField({
 }) {
   return (
     <div className={cn("grid gap-2", className)}>
-      <Label htmlFor={id}>{label}</Label>
-      {children}
-      {hint ? <p className="text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">{hint}</p> : null}
+      <Label htmlFor={id} className="min-h-5 leading-5">
+        {label}
+      </Label>
+      <div className="min-h-11">{children}</div>
+      <p
+        className={cn(
+          "min-h-[1.125rem] text-theme-xs leading-[1.125rem] text-gray-500 dark:text-gray-400",
+          !hint && "invisible",
+        )}
+        aria-hidden={!hint}
+      >
+        {hint ?? "\u00a0"}
+      </p>
     </div>
   );
 }

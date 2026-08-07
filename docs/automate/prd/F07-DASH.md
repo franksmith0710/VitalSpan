@@ -36,6 +36,7 @@
   - [x] **持久化加固 companion**：`PUT /api/v1/dashboards/{id}/editor-save` 原子保存 layout+联动；编辑页未保存离开守卫；模板 sync 失败保持 dirty（`tests/test_persistence_roundtrip.py` · `tests/test_persistence_contract.py`）
   - [x] **保存 WYSIWYG companion**（2026-07-29）：数据大屏跳过 `compactPixelLayoutWhenZeroGap`（[BUG-14](../../bugs/BUG-14_data-screen-save-gap-compaction_2026-07-29.md)）
   - [x] **缩略图 WYSIWYG companion**（2026-08-06）：Hub / 列表卡片与真实播放一致——壳层字号补偿仅编辑态生效（`resolveShapeTitleCanvasScale` · `usePixelChromeScale` · `data-pixel-canvas-design-locked`）；大屏卡片改 `presentationMode="fit"` + 16:9 卡框（`hubCardPreviewFrameStyle`）；3D 地图缩略图保留 WebGL 与卫星地形（去 `renderTier` 硬降级）（case `fe-hub-card-preview-not-wysiwyg.md`）
+  - [x] **列表静态缩略图优先**（2026-08-07）：看板/大屏列表优先展示 `thumbnailUrl`（保存时客户端截图上传）；无图时线框兜底 + 视口内有限 live（≤3 并发）；有图时 hover 才 live（`HubCardDashboardThumbnail` · `queueDashboardThumbnailUpload`）
   - [x] **Master gap-fill 真理源**（2026-07-29）：`docs/feature-design/2026-07-29-data-screen-master-gap-fill.md`
   - [ ] BUG-2 最终真实浏览器 Pointer QA：拖移、八向缩放、保存并刷新后位置/尺寸保持（手测表见 [project master §6.1](../../feature-design/2026-07-29-vitalspan-project-master-gap-fill.md) · 大屏路径见 [data-screen master §3 MT-BUG2-DS-*](../../feature-design/2026-07-29-data-screen-master-gap-fill.md) · 已登记 · 待发版抽测）
   - [x] **M-DEPTH F-B**：layout widget 类型扩展 `filter`（兼容旧 layout round-trip；后端 schema + FE `layoutUtils`）（完成于 2026-07-29 · 代码实扫回写）

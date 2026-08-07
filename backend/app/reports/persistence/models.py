@@ -70,6 +70,20 @@ class ReportTemplateDefinition(Base):
 
     template_key: Mapped[str] = mapped_column(String(64), primary_key=True)
     payload: Mapped[dict] = mapped_column(JSON, nullable=False)
+    lifecycle: Mapped[str] = mapped_column(String(16), nullable=False, default="draft")
+    published_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+
+class ReportTemplateVersion(Base):
+    __tablename__ = "report_template_versions"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    template_key: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    payload: Mapped[dict] = mapped_column(JSON, nullable=False)
+    change_note: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    created_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class ReportIntegrationExport(Base):

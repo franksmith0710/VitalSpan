@@ -87,8 +87,8 @@ describe("PrefabReportsPage smoke", () => {
 
   it("renders binding list from API", async () => {
     renderPage();
-    expect(await screen.findByText("实体生命周期分布")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "运行报表 实体生命周期分布" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "运行报表 实体生命周期分布" })).toBeInTheDocument();
+    expect(screen.getAllByText("实体生命周期分布").length).toBeGreaterThan(0);
   });
 
   it("shows empty state when total=0", async () => {
@@ -115,7 +115,7 @@ describe("PrefabReportsPage smoke", () => {
 
   it("auto-runs binding from hub deep-link query", async () => {
     renderPage("/admin/reports?binding=prefab-entity-lifecycle");
-    expect(await screen.findByText("实体生命周期分布")).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "运行报表 实体生命周期分布" })).toBeInTheDocument();
     await waitFor(() => {
       expect(mockApiFetch).toHaveBeenCalledWith(
         "/api/v1/reports/prefab/bindings/prefab-entity-lifecycle/run",

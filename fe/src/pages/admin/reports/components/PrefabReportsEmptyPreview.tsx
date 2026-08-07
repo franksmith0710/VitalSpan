@@ -1,9 +1,7 @@
-import { Link } from "react-router";
 import { BarChart3, Settings2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PanelEmptyStateSteps, ListGhostEmptyState } from "@/components/ui/panel-empty-state";
 import { PrefabBindingForm } from "./PrefabBindingForm";
+import { TemplatePanelSection } from "./templatePanelUi";
 
 type PrefabReportsEmptyPreviewProps = {
   isAdmin?: boolean;
@@ -51,13 +49,6 @@ export function PrefabReportsEmptyPreview({ isAdmin }: PrefabReportsEmptyPreview
           : "系统预置的分析报表尚未配置，请联系管理员添加实体与分析类型绑定。"
       }
       headingId="prefab-empty-title"
-      action={
-        !isAdmin ? (
-          <Button type="button" variant="primary" size="sm" asChild>
-            <Link to="/admin/reports/center">返回全部报表</Link>
-          </Button>
-        ) : undefined
-      }
     />
   );
 }
@@ -81,15 +72,13 @@ export function PrefabReportsAdminOnboarding() {
         <PanelEmptyStateSteps steps={ADMIN_STEPS} />
       </section>
 
-      <Card className="shadow-theme-xs">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-theme-sm font-semibold">绑定配置</CardTitle>
-          <CardDescription>填写标识、实体与分析维度，保存后即可运行预制分析。</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <PrefabBindingForm />
-        </CardContent>
-      </Card>
+      <TemplatePanelSection
+        title="绑定配置"
+        description="填写标识、实体与分析维度，保存后即可运行预制分析。"
+        icon={Settings2}
+      >
+        <PrefabBindingForm />
+      </TemplatePanelSection>
     </div>
   );
 }

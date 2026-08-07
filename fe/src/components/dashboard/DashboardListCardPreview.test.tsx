@@ -1,6 +1,7 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DashboardLayoutV2 } from "@/components/dashboard/layoutUtils";
+import { fetchAuthenticatedBlob } from "@/lib/apiUpload";
 import {
   beginAdminNavTransition,
   endAdminNavTransition,
@@ -22,6 +23,10 @@ vi.mock("@/hooks/useDashboardListCardLayout", () => ({
     isLoading: false,
     isFetching: false,
   }),
+}));
+
+vi.mock("@/lib/apiUpload", () => ({
+  fetchAuthenticatedBlob: vi.fn(),
 }));
 
 const sampleLayout: DashboardLayoutV2 = {
@@ -51,9 +56,18 @@ describe("DashboardListCardPreview", () => {
   afterEach(() => {
     cleanup();
     resetAdminNavTransitionForTests();
+    vi.unstubAllGlobals();
   });
 
   beforeEach(() => {
+    vi.mocked(fetchAuthenticatedBlob).mockResolvedValue(new Blob(["x"], { type: "image/png" }));
+    vi.stubGlobal(
+      "URL",
+      Object.assign(globalThis.URL, {
+        createObjectURL: vi.fn(() => "blob:mock-thumb"),
+        revokeObjectURL: vi.fn(),
+      }),
+    );
     Element.prototype.getBoundingClientRect = vi.fn(() => ({
       width: 320,
       height: 180,
@@ -81,6 +95,37 @@ describe("DashboardListCardPreview", () => {
     render(<DashboardListCardPreview layoutJson={sampleLayout} eager />);
     expect(screen.getByTestId("dashboard-list-card-live-preview")).toBeInTheDocument();
     expect(screen.getByTestId("data-screen-presenter-mock")).toBeInTheDocument();
+  });
+
+  it("shows wireframe fallback without thumbnail instead of skeleton", () => {
+    render(<DashboardListCardPreview layoutJson={sampleLayout} />);
+    expect(screen.getByTestId("dashboard-preview-thumb")).toBeInTheDocument();
+    expect(screen.queryByTestId("dashboard-list-card-preview-skeleton")).toBeNull();
+    expect(screen.queryByTestId("dashboard-list-card-live-preview")).toBeNull();
+  });
+
+  it("shows static thumbnail without live preview until frame hover", async () => {
+    const { rerender } = render(
+      <DashboardListCardPreview
+        layoutJson={sampleLayout}
+        thumbnailUrl="/api/v1/dashboards/d1/thumbnail?v=1"
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId("hub-card-dashboard-thumbnail")).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId("dashboard-list-card-live-preview")).toBeNull();
+
+    rerender(
+      <DashboardListCardPreview
+        layoutJson={sampleLayout}
+        thumbnailUrl="/api/v1/dashboards/d1/thumbnail?v=1"
+        frameHovered
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId("dashboard-list-card-live-preview")).toBeInTheDocument();
+    });
   });
 
   it("recovers live preview after nav suspend ends while in viewport", async () => {

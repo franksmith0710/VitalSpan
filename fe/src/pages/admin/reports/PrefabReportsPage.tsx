@@ -2,29 +2,28 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useAuth } from "@/context/auth-context";
 import { matchesCapability, resolveEffectiveCapabilities } from "@/lib/capabilities";
-import { ArrowLeft, Database, Lock, Search } from "lucide-react";
+import { ArrowLeft, BarChart3 } from "lucide-react";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
-import {
-  ListPageSection,
-  ListPageTableFrame,
-  ListPageToolbar,
-  PageErrorBanner,
-} from "@/components/layout/list-page-kit";
+import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { mapApiError } from "@/lib/apiError";
-import { ApiRequestError } from "@/lib/api";
-import { PanelEmptyState } from "@/components/ui/panel-empty-state";
+import { cn } from "@/lib/utils";
 import {
   PrefabReportsAdminOnboarding,
   PrefabReportsEmptyPreview,
 } from "./components/PrefabReportsEmptyPreview";
-import { PrefabBindingForm } from "./components/PrefabBindingForm";
-import { PrefabBindingsTable } from "./components/PrefabBindingsTable";
-import { ReportExportCard } from "./components/ReportExportCard";
-import { ReportResultTable } from "./components/ReportResultTable";
+import { PrefabBindingsList, PrefabBindingsListEmpty } from "./components/PrefabBindingsList";
+import { PrefabReportDetailPanel } from "./components/PrefabReportDetailPanel";
 import { usePrefabReports } from "./usePrefabReports";
 import { PREFAB_BINDING_QUERY } from "./reportRoutes";
 
@@ -55,23 +54,8 @@ export function PrefabReportsPage() {
         binding.entityTypeCode.toLowerCase().includes(q),
     );
   }, [bindings, search]);
-  const section = runMutation.data?.renderSpec.sections[0];
   const runningKey = runMutation.isPending ? runMutation.variables : null;
-  const runForbidden =
-    runMutation.isError &&
-    runMutation.error instanceof ApiRequestError &&
-    runMutation.error.code === "RPT_PREFAB_RUN_FORBIDDEN";
-  const runEntityNotReady =
-    runMutation.isError &&
-    runMutation.error instanceof ApiRequestError &&
-    runMutation.error.code === "RPT_PREFAB_ENTITY_NOT_READY";
   const isEmpty = !bindingsQuery.isLoading && bindings.length === 0;
-  const showRunPanel =
-    runMutation.isPending ||
-    Boolean(section) ||
-    runForbidden ||
-    runEntityNotReady ||
-    (runMutation.isError && !runForbidden && !runEntityNotReady);
 
   const { mutate: runBinding, isPending: isRunning } = runMutation;
 
@@ -90,80 +74,41 @@ export function PrefabReportsPage() {
     if (!bindings.some((b) => b.bindingKey === bindingFromUrl)) return;
     if (autoRanBindingRef.current === bindingFromUrl) return;
     autoRanBindingRef.current = bindingFromUrl;
+    setSelectedBindingKey(bindingFromUrl);
     lastRunBindingRef.current = bindingFromUrl;
     runBinding(bindingFromUrl);
   }, [bindingFromUrl, bindings, bindingsQuery.isLoading, isRunning, runBinding]);
 
-  const runResultSection = showRunPanel ? (
-    <section className="space-y-3">
-      <div>
-        <h2 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">运行结果</h2>
-        <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
-          {runMutation.isPending ? "正在拉取分析数据…" : "当前预制分析的数据预览与导出。"}
-        </p>
-      </div>
-      <Card className="shadow-theme-xs">
-        <CardContent className="space-y-4 py-5">
-          {runForbidden ? (
-            <PanelEmptyState
-              icon={<Lock className="size-7" aria-hidden />}
-              title="无权运行预制报表"
-              description="当前账号没有运行该报表的权限，请联系管理员调整角色或绑定范围。"
-              variant="framed"
-              size="sm"
-            />
-          ) : null}
+  const handleRun = (key: string) => {
+    lastRunBindingRef.current = key;
+    setSelectedBindingKey(key);
+    runMutation.mutate(key);
+  };
 
-          {runEntityNotReady ? (
-            <PanelEmptyState
-              icon={<Database className="size-7" aria-hidden />}
-              title="实体数据尚未就绪"
-              description={
-                canManage
-                  ? "当前实体类型尚无物理表，无法运行预制分析。请在元数据中注册实体表，或联系管理员启用演示数据。"
-                  : "当前实体类型的物理表尚未配置，请联系管理员完成元数据注册或启用演示数据。"
-              }
-              variant="framed"
-              size="sm"
-            />
-          ) : null}
-
-          {runMutation.isError && !runForbidden && !runEntityNotReady ? (
-            <PageErrorBanner
-              message={mapApiError(runMutation.error)}
-              onRetry={() => {
-                const key = lastRunBindingRef.current ?? bindingFromUrl;
-                if (key) runMutation.mutate(key);
-                else runMutation.reset();
-              }}
-            />
-          ) : null}
-
-          {runMutation.isPending ? <Skeleton className="h-[200px] w-full rounded-xl" /> : null}
-
-          {section ? (
-            <div className="space-y-4">
-              <div className="min-h-[200px] overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
-                <ReportResultTable columns={section.columns} rows={section.rows} />
-              </div>
-              {canManage ? (
-                <div className="border-t border-gray-100 pt-4 dark:border-gray-800">
-                  <ReportExportCard embedded showTemplateIdField disabled={!section} />
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
-    </section>
-  ) : null;
+  const listBody = bindingsQuery.isLoading ? (
+    <div className="space-y-2">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <Skeleton key={i} className="h-[72px] w-full rounded-xl" />
+      ))}
+    </div>
+  ) : filteredBindings.length === 0 ? (
+    <PrefabBindingsListEmpty />
+  ) : (
+    <PrefabBindingsList
+      bindings={filteredBindings}
+      runningKey={runningKey}
+      selectedKey={editingBinding?.bindingKey ?? null}
+      onSelect={setSelectedBindingKey}
+      onRun={handleRun}
+    />
+  );
 
   return (
     <AdminPageShell
       title="预制分析报表"
-      description="浏览并运行系统预置的分析报表。"
+      description="浏览并运行系统预置的分析报表，支持实体生命周期、分布等标准模型。"
       actions={
-        <Button type="button" variant="outline" size="sm" asChild>
+        <Button type="button" variant="outline" size="sm" className="h-10" asChild>
           <Link to="/admin/reports/center">
             <ArrowLeft className="size-4" aria-hidden />
             返回全部报表
@@ -178,80 +123,85 @@ export function PrefabReportsPage() {
         />
       ) : null}
 
-      {bindingsQuery.isLoading ? (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-28 w-full rounded-xl" />
-          ))}
-        </div>
-      ) : isEmpty ? (
-        <>
-          {canManage ? <PrefabReportsAdminOnboarding /> : <PrefabReportsEmptyPreview />}
-        </>
+      {isEmpty ? (
+        canManage ? <PrefabReportsAdminOnboarding /> : <PrefabReportsEmptyPreview />
       ) : (
         <>
-          <ListPageSection>
-            <ListPageToolbar
-              filters={
-                <>
-                  <Input
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder="搜索报表名称或分析类型…"
-                    className="h-11 w-full sm:max-w-md"
-                    aria-label="搜索预制报表"
-                  />
-                  <span className="text-theme-xs text-gray-500 dark:text-gray-400">
-                    共 {bindings.length} 条 · 筛选 {filteredBindings.length} 条
-                  </span>
-                </>
-              }
+          <div className="mb-4 space-y-3 lg:hidden">
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="搜索名称、类型或实体…"
+              className="h-11"
+              aria-label="搜索预制报表"
             />
-            <ListPageTableFrame>
-              {filteredBindings.length === 0 ? (
-                <PanelEmptyState
-                  icon={<Search className="size-7" aria-hidden />}
-                  title="无匹配报表"
-                  description="请调整搜索词后重试。"
-                  variant="framed"
-                  size="sm"
-                />
-              ) : (
-                <PrefabBindingsTable
-                  bindings={filteredBindings}
+            <Select
+              value={editingBinding?.bindingKey ?? "__none__"}
+              onValueChange={(v) => setSelectedBindingKey(v === "__none__" ? null : v)}
+            >
+              <SelectTrigger aria-label="选择预制报表" className="h-11">
+                <SelectValue placeholder="选择预制报表…" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">选择预制报表…</SelectItem>
+                {bindings.map((b) => (
+                  <SelectItem key={b.bindingKey} value={b.bindingKey}>
+                    {b.displayName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div
+            className={cn(
+              "overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-sm",
+              "dark:border-gray-800 dark:bg-white/[0.03]",
+            )}
+          >
+            <div className="grid min-h-[560px] lg:grid-cols-[minmax(280px,340px)_1fr]">
+              <aside className="hidden flex-col border-b border-gray-200 lg:flex lg:border-b-0 lg:border-r dark:border-gray-800">
+                <div className="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
+                  <div className="flex items-start gap-3">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600 ring-1 ring-brand-200/80 dark:bg-brand-500/15 dark:text-brand-400 dark:ring-brand-500/25">
+                      <BarChart3 className="size-4" aria-hidden />
+                    </span>
+                    <div className="min-w-0">
+                      <h2 className="text-theme-sm font-semibold text-gray-900 dark:text-white">预制报表</h2>
+                      <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                        共 {bindings.length} 条
+                        {search.trim() ? ` · 筛选 ${filteredBindings.length} 条` : null}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <Input
+                      value={search}
+                      onChange={(event) => setSearch(event.target.value)}
+                      placeholder="搜索名称、类型或实体…"
+                      className="h-11"
+                      aria-label="搜索预制报表"
+                    />
+                  </div>
+                </div>
+                <ScrollArea className="min-h-0 flex-1 p-3">
+                  {listBody}
+                </ScrollArea>
+              </aside>
+
+              <section className="flex min-h-[280px] flex-col">
+                <PrefabReportDetailPanel
+                  binding={editingBinding}
+                  canManage={canManage}
                   runningKey={runningKey}
-                  selectedKey={editingBinding?.bindingKey ?? null}
-                  onSelect={setSelectedBindingKey}
-                  onRun={(key) => {
-                    lastRunBindingRef.current = key;
-                    runMutation.mutate(key);
-                  }}
+                  onRun={handleRun}
+                  runMutation={runMutation}
+                  lastRunBindingRef={lastRunBindingRef}
+                  bindingFromUrl={bindingFromUrl}
                 />
-              )}
-            </ListPageTableFrame>
-          </ListPageSection>
-
-          {canManage ? (
-            <section className="space-y-3">
-              <div>
-                <h2 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">预制绑定配置</h2>
-                <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                  维护实体类型、分析模型与维度映射。
-                </p>
-              </div>
-              <Card className="shadow-theme-xs">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-theme-sm font-semibold">编辑绑定</CardTitle>
-                  <CardDescription>修改后将影响 Hub 与运行时的分析模型。</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <PrefabBindingForm binding={editingBinding} />
-                </CardContent>
-              </Card>
-            </section>
-          ) : null}
-
-          {runResultSection}
+              </section>
+            </div>
+          </div>
         </>
       )}
     </AdminPageShell>

@@ -2,7 +2,10 @@ import { LayoutDashboard } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CHART_MOUNT_MAX_VIEW } from "@/components/charts/ChartMountContext";
 import { setChartAnimationSuppressed } from "@/components/charts/engine/d3/core/animate";
-import { MAX_LIST_PREVIEW_ACTIVATIONS } from "@/lib/listPreviewActivation";
+import {
+  ListPreviewSlotResetError,
+  MAX_LIST_PREVIEW_ACTIVATIONS,
+} from "@/lib/listPreviewActivation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useAdminHeavyRenderSuspended } from "@/hooks/useAdminHeavyRenderSuspended";
@@ -12,6 +15,8 @@ import {
   releaseListPreviewSlot,
   requestListPreviewSlot,
 } from "@/lib/listPreviewActivation";
+import { DashboardPreviewThumb } from "./DashboardPreviewThumb";
+import { HubCardDashboardThumbnail } from "./HubCardDashboardThumbnail";
 import { DashboardLayoutPreview } from "./DashboardLayoutPreview";
 import { DataScreenPresenter } from "./screen/DataScreenPresenter";
 import { prepareLayoutForListPreview } from "./stylePipeline";
@@ -21,6 +26,9 @@ import type { DashboardLayout } from "./layoutUtils";
 type DashboardListCardPreviewProps = {
   dashboardId?: string;
   layoutJson?: DashboardLayout;
+  thumbnailUrl?: string | null;
+  /** 父级预览框 hover（用于有静态缩略图时按需 live） */
+  frameHovered?: boolean;
   className?: string;
   /** 测试用：跳过后台懒加载，直接挂载真实预览 */
   eager?: boolean;
@@ -43,24 +51,27 @@ function layoutHasFullChartConfig(layout?: DashboardLayout): boolean {
 }
 
 /**
- * 看板列表卡片真实预览：列表 API 含完整 layoutJson 时直接渲染；
- * 仅 previewSummary 时进入视口后补拉详情。投放路径与预览页 DataScreenPresenter 一致。
+ * 看板列表卡片预览：优先静态缩略图；无图时视口内 live；有图时仅 hover live。
  */
 export function DashboardListCardPreview({
   dashboardId,
   layoutJson,
+  thumbnailUrl,
+  frameHovered = false,
   className,
   eager = false,
 }: DashboardListCardPreviewProps) {
   const navSuspended = useAdminHeavyRenderSuspended();
   const hostRef = useRef<HTMLDivElement>(null);
+  const hasThumbnail = Boolean(thumbnailUrl?.trim());
   const hasFullLayout = layoutHasFullChartConfig(layoutJson);
   const [active, setActive] = useState(eager);
   const [slotGranted, setSlotGranted] = useState(eager);
   const shouldFetch = Boolean(dashboardId && !hasFullLayout);
+  const liveEligible = eager || (hasThumbnail ? frameHovered && active : active);
   const layoutQuery = useDashboardListCardLayout(
     dashboardId,
-    active && slotGranted && shouldFetch && !navSuspended,
+    liveEligible && slotGranted && shouldFetch && !navSuspended,
   );
   const rawLayout = layoutQuery.data ?? layoutJson;
   const resolvedLayout = useMemo(
@@ -68,7 +79,7 @@ export function DashboardListCardPreview({
     [rawLayout],
   );
   const isScreen = isDataScreenLayout(resolvedLayout ?? layoutJson);
-  const loading = active && slotGranted && shouldFetch && layoutQuery.isLoading;
+  const loading = liveEligible && slotGranted && shouldFetch && layoutQuery.isLoading;
 
   useEffect(() => {
     if (navSuspended) {
@@ -79,15 +90,20 @@ export function DashboardListCardPreview({
       if (!eager) setActive(false);
       return undefined;
     }
-    if (!active || slotGranted || eager) return undefined;
+    if (!liveEligible || slotGranted || eager) return undefined;
     let cancelled = false;
-    void requestListPreviewSlot().then(() => {
-      if (!cancelled) setSlotGranted(true);
-    });
+    void requestListPreviewSlot()
+      .then(() => {
+        if (!cancelled) setSlotGranted(true);
+      })
+      .catch((err) => {
+        if (cancelled || err instanceof ListPreviewSlotResetError) return;
+        console.warn("[list-preview] slot request failed", err);
+      });
     return () => {
       cancelled = true;
     };
-  }, [active, slotGranted, eager, navSuspended]);
+  }, [liveEligible, slotGranted, eager, navSuspended]);
 
   useEffect(() => {
     if (!slotGranted || eager) return undefined;
@@ -95,10 +111,10 @@ export function DashboardListCardPreview({
   }, [slotGranted, eager]);
 
   useEffect(() => {
-    if (!active || navSuspended) return undefined;
+    if (!liveEligible || navSuspended) return undefined;
     setChartAnimationSuppressed(true);
     return () => setChartAnimationSuppressed(false);
-  }, [active, navSuspended]);
+  }, [liveEligible, navSuspended]);
 
   useEffect(() => {
     if (eager) {
@@ -164,7 +180,9 @@ export function DashboardListCardPreview({
   }
 
   const showLive =
-    !navSuspended && active && slotGranted && !loading && Boolean(resolvedLayout);
+    !navSuspended && liveEligible && slotGranted && !loading && Boolean(resolvedLayout);
+
+  const wireframeLayout = resolvedLayout ?? layoutJson;
 
   return (
     <div
@@ -172,15 +190,25 @@ export function DashboardListCardPreview({
       className={cn(
         "dashboard-canvas-surface dashboard-list-card-preview relative h-full overflow-hidden",
         isScreen ? "bg-slate-950" : "bg-white dark:bg-gray-900/60",
-        !navSuspended && "transition-[filter,transform] duration-300 group-hover:scale-[1.02] group-hover:blur-[2px]",
+        !navSuspended &&
+          !hasThumbnail &&
+          "transition-[filter,transform] duration-300 group-hover:scale-[1.02] group-hover:blur-[2px]",
         className,
       )}
       data-testid="dashboard-list-card-preview"
       data-live={showLive ? "true" : "false"}
+      data-has-thumbnail={hasThumbnail ? "true" : "false"}
       aria-hidden
     >
+      {hasThumbnail && thumbnailUrl ? (
+        <HubCardDashboardThumbnail
+          thumbnailUrl={thumbnailUrl}
+          isDataScreen={isScreen}
+          className="absolute inset-0"
+        />
+      ) : null}
       {showLive ? (
-        <div className="h-full w-full" data-testid="dashboard-list-card-live-preview">
+        <div className="absolute inset-0 h-full w-full" data-testid="dashboard-list-card-live-preview">
           {isScreen ? (
             <DataScreenPresenter
               layout={resolvedLayout!}
@@ -209,6 +237,15 @@ export function DashboardListCardPreview({
             />
           )}
         </div>
+      ) : hasThumbnail ? null : loading ? (
+        <Skeleton className="h-full w-full rounded-none" data-testid="dashboard-list-card-preview-skeleton" />
+      ) : wireframeLayout ? (
+        <DashboardPreviewThumb
+          layoutJson={wireframeLayout}
+          embedded
+          isDataScreen={isScreen}
+          className="h-full"
+        />
       ) : (
         <Skeleton className="h-full w-full rounded-none" />
       )}
