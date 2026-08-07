@@ -17,6 +17,7 @@ type ComponentPayloadPreviewProps = {
   widgetType: VizWidgetType;
   payload?: VizComponentPayload;
   payloadLoading?: boolean;
+  previewPaused?: boolean;
   className?: string;
 };
 
@@ -50,6 +51,7 @@ export function ComponentPayloadPreview({
   widgetType,
   payload,
   payloadLoading = false,
+  previewPaused = false,
   className,
 }: ComponentPayloadPreviewProps) {
   const safeType = normalizeWidgetType(widgetType);
@@ -71,7 +73,13 @@ export function ComponentPayloadPreview({
       {payloadLoading ? (
         <Skeleton className="h-full w-full rounded-none" />
       ) : widget ? (
-        <VizComponentLivePreview widget={widget} lazy geo3dRenderTier="thumbnail" compact />
+        <VizComponentLivePreview
+          widget={widget}
+          lazy
+          paused={previewPaused}
+          geo3dRenderTier="thumbnail"
+          compact
+        />
       ) : (
         <MockPreview widgetType={safeType} />
       )}

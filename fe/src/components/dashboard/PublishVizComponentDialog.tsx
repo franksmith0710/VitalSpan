@@ -20,14 +20,17 @@ import {
   AdminFormField,
 } from "@/components/layout/admin-form-dialog";
 import { mapApiError } from "@/lib/apiError";
+import { isChartExecuteReady } from "@/lib/chartExecuteProbe";
 import { readSurfaceKind } from "@/lib/dataScreenLayout";
 import {
   createVizComponent,
   extractWidgetPayload,
+  normalizePayloadForPortableDemo,
   publishVizComponent,
   VIZ_COMPONENT_CATEGORIES,
   type VizSurfaceKind,
 } from "@/lib/vizComponents";
+import { TEMPLATE_DEMO_DATASOURCE_REF } from "@/lib/templateDemoData";
 import { queryKeys } from "@/lib/queryKeys";
 import type { LayoutWidget } from "./layoutUtils";
 import type { DashboardStyleConfig } from "./dashboardStyleConfig";
@@ -63,7 +66,19 @@ export function PublishVizComponentDialog({
     mutationFn: async () => {
       if (!widget || widget.type === "tabs") throw new Error("unsupported widget");
       const resolved = componentMap ? resolveLayoutWidget(widget, componentMap) : widget;
-      const payload = extractWidgetPayload(resolved);
+      const payload = normalizePayloadForPortableDemo(extractWidgetPayload(resolved));
+      if (widget.type === "chart" && payload.chartConfig) {
+        const checkConfig = {
+          ...payload.chartConfig,
+          dataSourceId:
+            payload.chartConfig.dataSourceId || TEMPLATE_DEMO_DATASOURCE_REF,
+        };
+        if (!isChartExecuteReady(checkConfig)) {
+          toast.warning("未配置数据源或 SQL，发布后复用可能无数据", {
+            description: "纯样式组件仍可发布；图表请补全查询配置。",
+          });
+        }
+      }
       const created = await createVizComponent({
         name: name.trim() || widget.title,
         description: description.trim() || undefined,

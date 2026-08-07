@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -39,8 +39,26 @@ export function TemplateDetailPanel({
   onDeleted?: () => void;
 }) {
   const [tab, setTab] = useState("basic");
+  const tabByNodeRef = useRef<Record<string, string>>({});
   const extQuery = useCatalogExtension(node.id);
   const renderQuery = useExtensionRenderSpec(node.id, tab === "preview");
+  const extensionData =
+    extQuery.data && extQuery.data.catalogNodeId === node.id ? extQuery.data : null;
+  const previewData =
+    renderQuery.data && String(renderQuery.data.templateNodeId ?? "") === node.id
+      ? renderQuery.data
+      : null;
+
+  useEffect(() => {
+    const saved = tabByNodeRef.current[node.id];
+    if (saved) setTab(saved);
+    else setTab("basic");
+  }, [node.id]);
+
+  const handleTabChange = (value: string) => {
+    tabByNodeRef.current[node.id] = value;
+    setTab(value);
+  };
 
   return (
     <div className="flex h-full flex-col">
@@ -59,7 +77,7 @@ export function TemplateDetailPanel({
       </div>
 
       <div className="flex-1 p-6 pt-4">
-        <Tabs value={tab} onValueChange={setTab}>
+        <Tabs value={tab} onValueChange={handleTabChange}>
           <TabsList className="w-full justify-start overflow-x-only">
             <TabsTrigger value="basic">基本信息</TabsTrigger>
             <TabsTrigger value="blocks">模板块</TabsTrigger>
@@ -83,7 +101,11 @@ export function TemplateDetailPanel({
               </BasicInfoRow>
               <BasicInfoRow label="模板键">{node.templateKey ?? "—"}</BasicInfoRow>
             </dl>
-            <ReportExportCard defaultTemplateId={node.id} />
+            <ReportExportCard
+              defaultTemplateId={node.id}
+              disabled={!extensionData}
+              disabledHint="请先在「扩展配置」Tab 添加指标、选择运行数据源并保存后再导出。"
+            />
           </TabsContent>
 
           <TabsContent value="blocks" className="mt-6">
@@ -103,21 +125,23 @@ export function TemplateDetailPanel({
             <ReportMetricExtensionForm
               nodeId={node.id}
               readOnly={readOnly}
-              metrics={extQuery.data?.metrics ?? []}
-              filters={extQuery.data?.filters ?? []}
-              defaultDataSourceId={extQuery.data?.defaultDataSourceId}
-              isLoading={extQuery.isLoading}
+              metrics={extensionData?.metrics ?? []}
+              filters={extensionData?.filters ?? []}
+              defaultDataSourceId={extensionData?.defaultDataSourceId}
+              isLoading={extQuery.isLoading && !extensionData}
             />
           </TabsContent>
 
           <TabsContent value="preview" className="mt-6">
-            {renderQuery.isLoading ? <Skeleton className="h-48 w-full rounded-xl" /> : null}
-            {renderQuery.isError ? (
+            {renderQuery.isLoading && !previewData ? (
+              <Skeleton className="h-48 w-full rounded-xl" />
+            ) : null}
+            {renderQuery.isError && !previewData ? (
               <p className="rounded-xl border border-dashed border-gray-200 px-4 py-10 text-center text-theme-sm text-gray-500 dark:border-gray-800 dark:text-gray-400">
-                暂无渲染规格，请先在扩展配置中保存指标。
+                暂无渲染规格。请先在「扩展配置」中添加指标、保存后再预览（当前为指标配置预览，非 Word 文档渲染）。
               </p>
             ) : null}
-            {renderQuery.data ? <ReportExtensionPreview data={renderQuery.data} /> : null}
+            {previewData ? <ReportExtensionPreview data={previewData} /> : null}
           </TabsContent>
 
           <TabsContent value="schedule" className="mt-6">

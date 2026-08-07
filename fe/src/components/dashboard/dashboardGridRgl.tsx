@@ -35,10 +35,10 @@ export type DashboardRglCanvasProps = {
   droppingItem?: LayoutItem;
   isDroppable?: boolean;
   onLayoutChange?: (layout: Layout) => void;
-  onDragStart?: () => void;
+  onDragStart?: (widgetId: string) => void;
   onDrag?: (layout: Layout) => void;
   onDragStop?: (layout: Layout) => void;
-  onResizeStart?: () => void;
+  onResizeStart?: (widgetId: string) => void;
   onResize?: (layout: Layout) => void;
   onResizeStop?: (layout: Layout) => void;
   onDrop?: (layout: Layout, item: LayoutItem | undefined, e: Event) => void;
@@ -91,10 +91,18 @@ export function DashboardRglCanvas({
         draggableCancel={editable ? ".dashboard-no-drag" : undefined}
         useCSSTransforms
         onLayoutChange={onLayoutChange}
-        onDragStart={editable ? onDragStart : undefined}
+        onDragStart={
+          editable
+            ? (_layout, _oldItem, newItem) => onDragStart?.(newItem.i)
+            : undefined
+        }
         onDrag={editable ? (nextLayout) => onDrag?.(nextLayout) : undefined}
         onDragStop={editable ? (nextLayout) => onDragStop?.(nextLayout) : undefined}
-        onResizeStart={editable ? onResizeStart : undefined}
+        onResizeStart={
+          editable
+            ? (_layout, _oldItem, newItem) => onResizeStart?.(newItem.i)
+            : undefined
+        }
         onResize={editable ? (nextLayout) => onResize?.(nextLayout) : undefined}
         onResizeStop={editable ? (nextLayout) => onResizeStop?.(nextLayout) : undefined}
         onDrop={onDrop}

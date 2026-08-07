@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { LayoutDashboard } from "lucide-react";
@@ -18,9 +18,12 @@ import {
   AdminFormDialogFooter,
   AdminFormDialogHeader,
   AdminFormField,
+  useAdminFormDialogPortalContainer,
 } from "@/components/layout/admin-form-dialog";
-import { apiFetch } from "@/lib/api";
-import { buildDashboardsListUrl } from "@/lib/dashboardsListQuery";
+import { setChartAnimationSuppressed } from "@/components/charts/engine/d3/core/animate";
+import { releaseAllListPreviewSlots } from "@/lib/listPreviewActivation";
+import { beginAdminNavTransition } from "@/lib/adminHeavyRenderSuspend";
+import { apiFetch } from "@/lib/api";import { buildDashboardsListUrl } from "@/lib/dashboardsListQuery";
 import { queryKeys } from "@/lib/queryKeys";
 import type { VizComponentListItem } from "@/lib/vizComponents";
 import type { DashboardSurfaceKind } from "@/lib/dataScreenLayout";
@@ -54,9 +57,19 @@ export function InsertVizComponentDialog({
   component,
 }: InsertVizComponentDialogProps) {
   const navigate = useNavigate();
+  const selectPortal = useAdminFormDialogPortalContainer();
   const [dashboardId, setDashboardId] = useState("");
   const surfaceKind = component ? resolveSurfaceKind(component) : "dashboard";
   const surfaceLabel = surfaceKind === "data-screen" ? "大屏" : "看板";
+
+  useEffect(() => {
+    if (!open) return undefined;
+    setChartAnimationSuppressed(true);
+    releaseAllListPreviewSlots();
+    return () => {
+      setChartAnimationSuppressed(false);
+    };
+  }, [open]);
 
   const listQuery = useQuery({
     queryKey: queryKeys.dashboards.list({ limit: 100, offset: 0, surfaceKind }),
@@ -71,6 +84,7 @@ export function InsertVizComponentDialog({
 
   const handleConfirm = () => {
     if (!component || !dashboardId) return;
+    beginAdminNavTransition();
     navigate(editPathFor(surfaceKind, dashboardId, component.id));
     onOpenChange(false);
     setDashboardId("");
@@ -96,7 +110,7 @@ export function InsertVizComponentDialog({
               <SelectTrigger>
                 <SelectValue placeholder={listQuery.isLoading ? "加载中…" : `选择${surfaceLabel}`} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent container={selectPortal}>
                 {dashboards.map((item) => (
                   <SelectItem key={item.id} value={item.id}>
                     {item.name}

@@ -208,11 +208,20 @@ def _generate_artifact_bytes(fmt: str, template_id: uuid.UUID, actor: UserContex
     if template_id in SEED_TEMPLATE_IDS:
         return _seed_artifact_bytes(fmt, template_id)
 
+    from app.reports.engine.errors import ReportEngineError
     from app.reports.engine.service import export_template_bytes
 
     trace = trace_id_var.get() or uuid.uuid4().hex
     try:
         return export_template_bytes(template_id, fmt, actor)
+    except ReportEngineError as exc:
+        raise IntegrationError(
+            exc.code,
+            exc.message,
+            exc.status,
+            fields=exc.fields or None,
+            trace_id=trace,
+        ) from exc
     except Exception as exc:
         raise IntegrationError(
             "REPORT_EXPORT_GENERATION_FAILED",

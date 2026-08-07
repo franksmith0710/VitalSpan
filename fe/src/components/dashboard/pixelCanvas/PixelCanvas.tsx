@@ -211,7 +211,8 @@ export function PixelCanvas({
   const [paletteDragOver, setPaletteDragOver] = useState(false);
   const [paletteDragPoint, setPaletteDragPoint] = useState<PixelPoint | null>(null);
   const [paletteDragPayload, setPaletteDragPayload] = useState<PaletteDragPayload | null>(null);
-  const [shapeDragWidget, setShapeDragWidget] = useState<PixelLayoutWidget | null>(null);
+  const [collisionPreviewActive, setCollisionPreviewActive] = useState(false);
+  const collisionPreviewActiveRef = useRef(false);
   const [paletteReflowPreviewActive, setPaletteReflowPreviewActive] = useState(false);
   const shapeDragWidgetRef = useRef<PixelLayoutWidget | null>(null);
   const paletteDragActive = usePaletteDragActive();
@@ -298,7 +299,7 @@ export function PixelCanvas({
   }, [activeTabDropId, onTabInsertIntentChange, paletteDragActive, tabHosts]);
 
   const shapeTabDropTargetId = useMemo(() => {
-    const dragWidget = shapeDragWidget ?? shapeDragWidgetRef.current;
+    const dragWidget = shapeDragWidgetRef.current;
     if (!dragWidget || dragWidget.type === "tabs") return null;
     return (
       resolveTabHostForWidgetDrop(activeLayout, widgetRect(dragWidget), {
@@ -306,9 +307,9 @@ export function PixelCanvas({
         dropBufferPx: TAB_PALETTE_DROP_BUFFER_PX,
       })?.id ?? null
     );
-  }, [activeLayout, shapeDragWidget, tabInsertIntent, playingWidgetId]);
+  }, [activeLayout, tabInsertIntent, playingWidgetId, collisionPreviewActive]);
 
-  const isDraggingTabHost = (shapeDragWidget ?? shapeDragWidgetRef.current)?.type === "tabs";
+  const isDraggingTabHost = shapeDragWidgetRef.current?.type === "tabs";
 
   const activeTabDropTargetId = isDraggingTabHost
     ? null
@@ -318,8 +319,8 @@ export function PixelCanvas({
     mode === "edit" &&
     tabHosts.length > 0 &&
     !isDraggingTabHost &&
-    (paletteDragActive || Boolean(shapeDragWidget) || Boolean(playingWidgetId)) &&
-    Boolean(onTabPaletteDrop || shapeDragWidget || shapeDragWidgetRef.current);
+    (paletteDragActive || collisionPreviewActive || Boolean(playingWidgetId)) &&
+    Boolean(onTabPaletteDrop || shapeDragWidgetRef.current);
 
   const reportTabHover = useCallback(
     (tabsWidgetId: string) => {
@@ -514,6 +515,19 @@ export function PixelCanvas({
     [],
   );
 
+  const beginCollisionPreview = useCallback(() => {
+    if (collisionPreviewActiveRef.current) return;
+    collisionPreviewActiveRef.current = true;
+    setCollisionPreviewActive(true);
+  }, []);
+
+  const endCollisionPreview = useCallback(() => {
+    if (!collisionPreviewActiveRef.current) return;
+    collisionPreviewActiveRef.current = false;
+    setCollisionPreviewActive(false);
+    shapeDragWidgetRef.current = null;
+  }, []);
+
   const clearPreviewChrome = useCallback(
     (snapshot?: DashboardLayoutV2) => {
       // 大屏 designViewportLocked：stage/content 尺寸由 React style 固定；
@@ -591,11 +605,11 @@ export function PixelCanvas({
       previewThrottleRef.current = Date.now();
       pendingPreviewRef.current = null;
       const boundedWidget = clampWidgetToViewCanvas(widget);
+      shapeDragWidgetRef.current = boundedWidget;
       if (allowWidgetOverlap) {
-        shapeDragWidgetRef.current = boundedWidget;
         return;
       }
-      setShapeDragWidget(boundedWidget);
+      beginCollisionPreview();
       const nextLayout = resolveActiveAt(boundedWidget);
       const positions = new Map(
         getTopLevelPixelWidgets(nextLayout.widgets).map(
@@ -605,7 +619,7 @@ export function PixelCanvas({
       previewRegistryRef.current.applyAll(positions);
       syncPreviewStageMetrics(nextLayout);
     },
-    [activeLayout, allowWidgetOverlap, clampWidgetToViewCanvas, resolveActiveAt, syncPreviewStageMetrics],
+    [activeLayout, allowWidgetOverlap, beginCollisionPreview, clampWidgetToViewCanvas, resolveActiveAt, syncPreviewStageMetrics],
   );
 
   const handlePreview = useCallback(
@@ -786,8 +800,7 @@ export function PixelCanvas({
         onLayoutChange(absorbed);
         clearPreviewChrome(absorbed);
         syncShapeGeometryFromLayout(absorbed);
-        shapeDragWidgetRef.current = null;
-        setShapeDragWidget(null);
+        endCollisionPreview();
         setPlayingWidgetId(null);
         refreshCanvasMetrics();
         notifyGeometryCommitted();
@@ -799,8 +812,7 @@ export function PixelCanvas({
       onLayoutChange(nextLayout);
       clearPreviewChrome(nextLayout);
       syncShapeGeometryFromLayout(nextLayout);
-      shapeDragWidgetRef.current = null;
-      setShapeDragWidget(null);
+      endCollisionPreview();
       setPlayingWidgetId(null);
       refreshCanvasMetrics();
       notifyGeometryCommitted();
@@ -809,6 +821,7 @@ export function PixelCanvas({
       activeLayout,
       clampWidgetToViewCanvas,
       clearPreviewChrome,
+      endCollisionPreview,
       notifyGeometryCommitted,
       onLayoutChange,
       onSelect,
@@ -825,14 +838,20 @@ export function PixelCanvas({
       previewTimerRef.current = null;
     }
     pendingPreviewRef.current = null;
-    shapeDragWidgetRef.current = null;
-    setShapeDragWidget(null);
+    endCollisionPreview();
     clearPreviewChrome();
     syncShapeGeometryFromLayout(activeLayout);
     setPlayingWidgetId(null);
     refreshCanvasMetrics();
     notifyGeometryCommitted();
-  }, [activeLayout, clearPreviewChrome, notifyGeometryCommitted, refreshCanvasMetrics, syncShapeGeometryFromLayout]);
+  }, [
+    activeLayout,
+    clearPreviewChrome,
+    endCollisionPreview,
+    notifyGeometryCommitted,
+    refreshCanvasMetrics,
+    syncShapeGeometryFromLayout,
+  ]);
 
   const handleDragAutoScroll = useCallback(
     (event: PointerEvent) => {
@@ -1035,7 +1054,7 @@ export function PixelCanvas({
         >
         <TabPaletteDropTargetProvider
           targetTabsId={
-            !isDraggingTabHost && (paletteDragActive || shapeDragWidget || playingWidgetId)
+            !isDraggingTabHost && (paletteDragActive || collisionPreviewActive || playingWidgetId)
               ? activeTabDropTargetId
               : null
           }
@@ -1111,7 +1130,7 @@ export function PixelCanvas({
                 allowBottomGrowth={!fixedCanvasBounds}
                 suppressResizePreview={allowWidgetOverlap}
                 layoutStyleDeferred={Boolean(
-                  (shapeDragWidget || paletteReflowPreviewActive) && !allowWidgetOverlap,
+                  (collisionPreviewActive || paletteReflowPreviewActive) && !allowWidgetOverlap,
                 )}
                 allowStackCycleSelect={allowWidgetOverlap}
                 onCycleStackSelect={allowWidgetOverlap ? handleCycleStackSelect : undefined}

@@ -1,54 +1,70 @@
 import { describe, expect, it } from "vitest";
-import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
+import type { DashboardLayoutV1 } from "@/components/dashboard/layoutUtils";
 import {
-  bindTemplateDemoDatasource,
-  resolveTemplateDemoDatasourceId,
+  normalizeChartConfigForPortableDemo,
+  normalizeLayoutForTemplateExport,
   TEMPLATE_DEMO_DATASOURCE_REF,
 } from "./templateDemoData";
 
-const layout: DashboardLayout = {
-  version: 1,
-  widgets: [
-    {
-      id: "w1",
-      type: "chart",
-      title: "销售",
-      colSpan: 6,
-      rowSpan: 4,
-      order: 0,
-      chartConfig: {
-        chartId: "w1",
+const envUuid = "550e8400-e29b-41d4-a716-446655440000";
+
+describe("templateDemoData", () => {
+  it("normalizes empty or env UUID dataSourceId to demo ref", () => {
+    expect(
+      normalizeChartConfigForPortableDemo({
+        chartId: "c1",
         chartType: "bar",
         mode: "sql",
         sql: "SELECT 1",
-        dataSourceId: TEMPLATE_DEMO_DATASOURCE_REF,
-        dimensions: [],
-        metrics: [],
-      },
-    },
-  ],
-  globalFilters: [],
-};
+        dataSourceId: envUuid,
+      }).dataSourceId,
+    ).toBe(TEMPLATE_DEMO_DATASOURCE_REF);
 
-describe("templateDemoData", () => {
-  it("binds demo datasource ref to real id", () => {
-    const bound = bindTemplateDemoDatasource(layout, "ds-sample");
-    expect(bound.widgets[0]?.chartConfig?.dataSourceId).toBe("ds-sample");
+    expect(
+      normalizeChartConfigForPortableDemo({
+        chartId: "c1",
+        chartType: "bar",
+        mode: "sql",
+        sql: "SELECT 1",
+      }).dataSourceId,
+    ).toBe(TEMPLATE_DEMO_DATASOURCE_REF);
   });
 
-  it("resolves demo code before other sample heuristics", () => {
-    const id = resolveTemplateDemoDatasourceId([
-      { id: "1", name: "演示 MySQL", code: "demo-mysql", database: "sample_db" },
-      { id: "2", name: "示例数据", code: "demo", database: "sample_db" },
-    ]);
-    expect(id).toBe("2");
+  it("preserves bindingId charts without forcing demo ref", () => {
+    expect(
+      normalizeChartConfigForPortableDemo({
+        chartId: "c1",
+        chartType: "bar",
+        bindingId: "b1",
+        dataSourceId: envUuid,
+      }).dataSourceId,
+    ).toBe(envUuid);
   });
 
-  it("resolves sample_db datasource from list", () => {
-    const id = resolveTemplateDemoDatasourceId([
-      { id: "other", name: "prod", code: "prod", database: "analytics" },
-      { id: "ds-sample", name: "Sample MySQL", code: "sample-mysql-dev", database: "sample_db" },
-    ]);
-    expect(id).toBe("ds-sample");
+  it("normalizes layout widgets on export", () => {
+    const layout: DashboardLayoutV1 = {
+      version: 1,
+      widgets: [
+        {
+          id: "w1",
+          type: "chart",
+          title: "销售",
+          order: 0,
+          colSpan: 6,
+          rowSpan: 4,
+          chartConfig: {
+            chartId: "w1",
+            chartType: "bar",
+            mode: "sql",
+            sql: "SELECT 1",
+            dataSourceId: envUuid,
+          },
+        },
+      ],
+      globalFilters: [],
+    };
+    const exported = normalizeLayoutForTemplateExport(layout);
+    expect(exported.widgets[0].chartConfig?.dataSourceId).toBe(TEMPLATE_DEMO_DATASOURCE_REF);
+    expect(exported.widgets[0].chartConfig?.sql).toBe("SELECT 1");
   });
 });

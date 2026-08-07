@@ -28,6 +28,7 @@ from app.dashboard.templates.demo_datasource import (
 )
 from app.dashboard.templates.layout_utils import regenerate_widget_ids, sanitize_layout_for_template
 from app.dashboard.templates.models import DashboardTemplate
+from app.dashboard.templates.presets_exported import prepare_exported_layout
 from app.dashboard.templates.schemas import (
     DashboardFromTemplateIn,
     DashboardTemplateCreateIn,
@@ -351,6 +352,7 @@ def import_envelope(
     actor: UserContext,
 ) -> DashboardTemplateOut:
     layout, surface, name = _parse_envelope(payload)
+    layout = prepare_exported_layout(layout)
     create_in = DashboardTemplateCreateIn(
         name=name,
         description=payload.description,
@@ -374,7 +376,7 @@ def export_envelope(db: Session, template_id: uuid.UUID, actor: UserContext) -> 
         "name": row.name,
         "description": row.description,
         "categoryKey": row.category_key,
-        "layout": repair_legacy_template_layout(sanitize_layout_for_template(row.layout_json)),
+        "layout": prepare_exported_layout(row.layout_json),
     }
 
 

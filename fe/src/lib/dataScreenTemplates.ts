@@ -9,6 +9,7 @@ import {
   SCREEN_BORDER_MARKER,
   SCREEN_CLOCK_MARKER,
 } from "@/lib/screenVisualAssets";
+import { normalizeLayoutForTemplateExport } from "@/lib/templateDemoData";
 
 export type DataScreenTemplateId = "blank" | "tech-blue" | "gov-minimal" | "command-center";
 
@@ -326,6 +327,6 @@ export function exportDataScreenTemplate(
     kind: "viz-layout",
     surfaceKind: "data-screen",
     name: name.trim() || "未命名大屏",
-    layout: cleanLayout,
+    layout: normalizeLayoutForTemplateExport(cleanLayout),
   };
 }

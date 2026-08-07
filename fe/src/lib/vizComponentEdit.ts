@@ -1,13 +1,17 @@
 import type { DashboardWidgetBase } from "@/components/dashboard/dashboardLayoutContracts";
 import type { LayoutWidget } from "@/components/dashboard/layoutUtils";
 import type { VizComponentMap } from "@/lib/resolveVizComponent";
+import { buildComponentMap, resolveLayoutWidget } from "@/lib/resolveVizComponent";
 import {
+  batchResolveVizComponents,
+  collectComponentIds,
   extractWidgetPayload,
   isLinkedComponentRef,
   updateVizComponent,
   type VizComponentDetail,
   type VizComponentPayload,
 } from "@/lib/vizComponents";
+import { normalizeChartConfigForPortableDemo } from "@/lib/templateDemoData";
 import { queueLinkedComponentPush } from "@/lib/linkedComponentSaveQueue";
 
 export { awaitLinkedComponentWrites } from "@/lib/linkedComponentSaveQueue";
@@ -59,8 +63,34 @@ export async function flushLinkedLocalOverridesToLibrary(
       (widget.type === "text" && Boolean(widget.textConfig)) ||
       (widget.type === "media" && Boolean(widget.mediaConfig));
     if (!hasLocalPayload) continue;
-    await pushWidgetPayloadToLibrary(widget, componentMap, extractWidgetPayload(widget));
+    const resolved = resolveLayoutWidget(widget, componentMap);
+    await pushWidgetPayloadToLibrary(widget, componentMap, extractWidgetPayload(resolved));
   }
+}
+
+/** 跨看板复制：linked 组件先 resolve 再 inline 快照（含演示 dataSourceId） */
+export function prepareWidgetInlineSnapshot(widget: LayoutWidget): LayoutWidget {
+  const { componentRef: _removed, ...rest } = widget;
+  if (rest.type === "chart" && rest.chartConfig) {
+    return {
+      ...rest,
+      chartConfig: normalizeChartConfigForPortableDemo(rest.chartConfig),
+    } as LayoutWidget;
+  }
+  return rest as LayoutWidget;
+}
+
+export async function resolveWidgetForCrossDashboardCopy(
+  widget: LayoutWidget,
+): Promise<LayoutWidget> {
+  if (!isLinkedComponentRef(widget.componentRef)) {
+    return prepareWidgetInlineSnapshot(widget);
+  }
+  const ids = collectComponentIds([widget]);
+  if (ids.length === 0) return prepareWidgetInlineSnapshot(widget);
+  const { items } = await batchResolveVizComponents(ids);
+  const map = buildComponentMap(items);
+  return prepareWidgetInlineSnapshot(resolveLayoutWidget(widget, map));
 }
 
 export function relinkWidgetToComponent(

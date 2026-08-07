@@ -177,6 +177,13 @@ export function ReportMetricExtensionForm({
     setForm(formFromMetric(metric));
   };
 
+  const pendingMetric = buildMetricFromForm(form);
+  const hasPendingForm = pendingMetric !== null;
+  const canSave =
+    !readOnly &&
+    (isDirty || hasPendingForm || changeNote.trim().length > 0) &&
+    !saveExtension.isPending;
+
   const handleSave = async (): Promise<boolean> => {
     if (!changeNote.trim()) {
       toast.error("请填写变更说明");
@@ -233,7 +240,7 @@ export function ReportMetricExtensionForm({
     <div className="space-y-4">
       {draftMetrics.length === 0 ? (
         <p className="rounded-xl border border-dashed border-gray-200 px-4 py-8 text-center text-theme-sm text-gray-500 dark:border-gray-800 dark:text-gray-400">
-          暂无扩展指标。推荐：查数模式选「数据集」，再选已绑定的 Dataset。
+          暂无扩展指标。请填写下方表单 → 点「添加到列表」→ 选运行数据源 → 填变更说明 →「保存扩展配置」；保存后可在「预览」查看。
         </p>
       ) : (
         <ul className="space-y-2">
@@ -405,7 +412,7 @@ export function ReportMetricExtensionForm({
           <Button
             type="button"
             variant="primary"
-            disabled={saveExtension.isPending || !isDirty}
+            disabled={!canSave}
             onClick={() => void handleSave()}
           >
             {saveExtension.isPending ? "保存中…" : "保存扩展配置"}

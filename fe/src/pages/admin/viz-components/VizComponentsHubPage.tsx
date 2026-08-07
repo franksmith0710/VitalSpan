@@ -108,6 +108,7 @@ export function VizComponentsHubPage() {
   const [q, setQ] = useState("");
   const [insertTarget, setInsertTarget] = useState<VizComponentListItem | null>(null);
   const [referencesTarget, setReferencesTarget] = useState<VizComponentListItem | null>(null);
+  const previewPaused = Boolean(insertTarget || referencesTarget);
   const pagination = useListPagination(20, [surfaceTab, widgetFilter, q]);
 
   const listQuery = useQuery({
@@ -270,6 +271,7 @@ export function VizComponentsHubPage() {
                   item={item}
                     payload={payloadById.get(item.id)}
                     payloadLoading={resolveQuery.isLoading && !payloadById.has(item.id)}
+                    previewPaused={previewPaused}
                     canManage={canManage}
                     pending={pending}
                     onInsert={() => setInsertTarget(item)}

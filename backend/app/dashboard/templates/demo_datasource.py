@@ -223,17 +223,6 @@ def repair_legacy_template_layout(layout: dict[str, Any]) -> dict[str, Any]:
         style.pop("gap", None)
         style.pop("padding", None)
 
-    widgets = cloned.get("widgets")
-    if not isinstance(widgets, list):
-        return cloned
-    for widget in widgets:
-        if not isinstance(widget, dict) or widget.get("type") != "chart":
-            continue
-        chart_cfg = widget.get("chartConfig")
-        if not isinstance(chart_cfg, dict):
-            continue
-        if chart_cfg.get("dataSourceId") == TEMPLATE_DEMO_DATASOURCE_REF:
-            chart_cfg.pop("dataSourceId", None)
     return migrate_layout_chart_configs(cloned)
 
 

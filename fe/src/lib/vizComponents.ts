@@ -1,6 +1,10 @@
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { sanitizeChartFieldsForValidate } from "@/lib/chartFieldRules";
 import { apiFetch } from "@/lib/api";
+import {
+  normalizeChartConfigForPortableDemo,
+  TEMPLATE_DEMO_DATASOURCE_REF,
+} from "@/lib/templateDemoData";
 import type {
   DashboardWidgetBase,
   VizComponentRef,
@@ -229,6 +233,17 @@ export function extractWidgetPayload(widget: DashboardWidgetBase): VizComponentP
       throw new Error(`Widget type ${widget.type} cannot be published`);
   }
 }
+
+/** 发布/跨看板复制：chart 绑定归一化为演示占位符（保留 SQL） */
+export function normalizePayloadForPortableDemo(payload: VizComponentPayload): VizComponentPayload {
+  if (!payload.chartConfig) return payload;
+  return {
+    ...payload,
+    chartConfig: normalizeChartConfigForPortableDemo(payload.chartConfig),
+  };
+}
+
+export { TEMPLATE_DEMO_DATASOURCE_REF };
 
 export function isLinkedComponentRef(ref?: VizComponentRef): ref is VizComponentRef {
   return Boolean(ref?.componentId && !ref.detached);

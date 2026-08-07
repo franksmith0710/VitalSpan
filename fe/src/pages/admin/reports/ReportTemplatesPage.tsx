@@ -78,8 +78,11 @@ export function ReportTemplatesPage() {
     (id: string | null) => {
       setSelectedId(id);
       setSelectedOverride(null);
-      if (id) navigate(`/admin/reports/templates/${id}`, { replace: true });
-      else navigate("/admin/reports/templates", { replace: true });
+      if (id) {
+        navigate(`/admin/reports/templates/${id}`, { replace: true, preventScrollReset: true });
+      } else {
+        navigate("/admin/reports/templates", { replace: true, preventScrollReset: true });
+      }
     },
     [navigate],
   );
@@ -209,6 +212,7 @@ export function ReportTemplatesPage() {
             selectedId={selectedId}
             onSelect={handleSelect}
             allNodes={allNodes}
+            allNodesLoaded={allNodesQuery.isSuccess}
             readOnly={readOnly}
             onMove={handleMove}
             onDelete={handleDelete}

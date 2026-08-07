@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import { invalidateCatalogQueries } from "@/lib/catalogQueryInvalidation";
 import { fetchAllCatalogNodes, normalizeCatalogNodes } from "@/lib/reportCatalogUtils";
@@ -100,7 +100,10 @@ export function useReportTemplates(parentId: string | null = null, templateKey: 
         method: "PUT",
         body: JSON.stringify(body),
       }),
-    onSuccess: (_d, v) => void qc.invalidateQueries({ queryKey: queryKeys.reports.extension(v.nodeId) }),
+    onSuccess: (_d, v) => {
+      void qc.invalidateQueries({ queryKey: queryKeys.reports.extension(v.nodeId) });
+      void qc.invalidateQueries({ queryKey: queryKeys.reports.renderSpec(v.nodeId) });
+    },
   });
 
   const templateQuery = useQuery({
@@ -154,6 +157,7 @@ export function useCatalogExtension(nodeId: string | null) {
       }>(`/api/v1/reports/catalog/nodes/${nodeId}/extension`),
     enabled: Boolean(nodeId),
     retry: false,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -173,5 +177,6 @@ export function useExtensionRenderSpec(nodeId: string | null, enabled: boolean) 
         `/api/v1/reports/catalog/nodes/${nodeId}/extension/render-spec`,
       ),
     enabled: Boolean(nodeId) && enabled,
+    placeholderData: keepPreviousData,
   });
 }

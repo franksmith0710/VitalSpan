@@ -195,6 +195,13 @@ const CODE_MESSAGES: Record<string, string> = {
   RPT_CATALOG_NODE_NOT_FOUND: "目录节点不存在",
   RPT_CATALOG_MAX_DEPTH: "目录层级过深（最多 8 层）",
   RPT_CATALOG_CYCLE: "不能将节点移动到自身或其子目录下",
+  RPT_ENGINE_INCOMPLETE_TEMPLATE: "请先在「扩展配置」中添加指标并保存后再导出",
+  RPT_ENGINE_DATASOURCE_REQUIRED: "导出需要运行数据源，请在扩展配置中选择数据连接",
+  RPT_ENGINE_FORMAT_NOT_SUPPORTED: "导出格式与模板类型不匹配",
+  RPT_ENGINE_TEMPLATE_NOT_FOUND: "报表模板不存在",
+  REPORT_EXPORT_GENERATION_FAILED: "报表生成失败，请检查扩展配置与数据源",
+  REPORT_TEMPLATE_NOT_FOUND: "报表模板不存在",
+  REPORT_EXPORT_INVALID_FORMAT: "导出格式无效，请选择 PDF / Word / Excel",
   AUDIT_FORBIDDEN: "无权查询审计日志",
   CONFIG_NOT_FOUND: "查询配置不存在",
 };

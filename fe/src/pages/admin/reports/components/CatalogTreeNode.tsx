@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronRight, FileSpreadsheet, FileText, FileType2, Folder, MoreHorizontal, Trash2 } from "lucide-react";
 import {
   Collapsible,
@@ -101,6 +101,7 @@ export function CatalogTreeNode({
   selectedId,
   onSelect,
   allNodes,
+  allNodesLoaded = false,
   readOnly,
   onMove,
   onDelete,
@@ -111,6 +112,7 @@ export function CatalogTreeNode({
   selectedId: string | null;
   onSelect: (id: string) => void;
   allNodes: ReportCatalogNode[];
+  allNodesLoaded?: boolean;
   readOnly: boolean;
   onMove: (nodeId: string, parentId: string | null) => void;
   onDelete: (nodeId: string) => void;
@@ -120,8 +122,16 @@ export function CatalogTreeNode({
   const shouldExpand = expandFolderIds.has(node.id);
   const [open, setOpen] = useState(depth < 1 || shouldExpand);
   const isFolder = node.nodeType === "folder";
-  const { nodesQuery } = useReportTemplates(isFolder && open ? node.id : null);
-  const children = nodesQuery.data?.items ?? [];
+  const childrenFromAll = useMemo(
+    () =>
+      allNodes
+        .filter((n) => n.parentId === node.id)
+        .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "zh-CN")),
+    [allNodes, node.id],
+  );
+  const useFlatCatalog = allNodesLoaded && allNodes.length > 0;
+  const { nodesQuery } = useReportTemplates(isFolder && open && !useFlatCatalog ? node.id : null);
+  const children = useFlatCatalog ? childrenFromAll : (nodesQuery.data?.items ?? []);
   const selected = selectedId === node.id;
   const indent = { paddingLeft: `${depth * 14 + 6}px` };
 
@@ -181,7 +191,9 @@ export function CatalogTreeNode({
         />
       </div>
       <CollapsibleContent className="space-y-0.5">
-        {nodesQuery.isLoading ? <Skeleton className="mx-3 my-1 h-8 w-[calc(100%-1.5rem)] rounded-lg" /> : null}
+        {nodesQuery.isLoading && !useFlatCatalog ? (
+          <Skeleton className="mx-3 my-1 h-8 w-[calc(100%-1.5rem)] rounded-lg" />
+        ) : null}
         {children.map((child) => (
           <CatalogTreeNode
             key={child.id}
@@ -189,6 +201,7 @@ export function CatalogTreeNode({
             selectedId={selectedId}
             onSelect={onSelect}
             allNodes={allNodes}
+            allNodesLoaded={allNodesLoaded}
             readOnly={readOnly}
             onMove={onMove}
             onDelete={onDelete}

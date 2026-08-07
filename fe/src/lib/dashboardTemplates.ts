@@ -1,5 +1,6 @@
 import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
 import { apiFetch } from "@/lib/api";
+import { normalizeLayoutForTemplateExport } from "@/lib/templateDemoData";
 
 export type VizSurfaceKind = "dashboard" | "data-screen";
 
@@ -120,7 +121,7 @@ export function buildVizLayoutEnvelope(
     kind: "viz-layout",
     surfaceKind,
     name: trimmed,
-    layout: layout as unknown as Record<string, unknown>,
+    layout: normalizeLayoutForTemplateExport(layout) as unknown as Record<string, unknown>,
   };
 }
 

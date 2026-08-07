@@ -91,7 +91,7 @@ export function DashboardGrid({
   const topLevelRef = useRef(topLevel);
   const layoutKeyRef = useRef(derivedLayoutKey);
   const [paletteDragOver, setPaletteDragOver] = useState(false);
-  const [gridPlaying, setGridPlaying] = useState(false);
+  const [gridPlayingWidgetId, setGridPlayingWidgetId] = useState<string | null>(null);
   const viewLayout = useMemo(() => normalizeGridLayout(derivedLayout), [derivedLayout]);
   sortedRef.current = sorted;
   topLevelRef.current = topLevel;
@@ -128,7 +128,7 @@ export function DashboardGrid({
   const finishInteraction = useCallback((next: Layout, snap = false) => {
     persistLayout(next, snap);
     interactingRef.current = false;
-    setGridPlaying(false);
+    setGridPlayingWidgetId(null);
   }, [persistLayout]);
 
   const handleDropDragOver = useCallback((e: React.DragEvent) => {
@@ -206,7 +206,7 @@ export function DashboardGrid({
           />
         ) : null}
         {isEmpty ? <DashboardCanvasEmpty dragActive={paletteDragOver} /> : null}
-        <DashboardGridPlayerProvider playing={gridPlaying}>
+        <DashboardGridPlayerProvider playingWidgetId={gridPlayingWidgetId}>
         <DashboardRglCanvas
           className={cn("layout relative z-[1]", isEmpty && "dashboard-grid-empty")}
           style={isEmpty ? { minHeight: EMPTY_CANVAS_MIN_HEIGHT } : undefined}
@@ -217,14 +217,14 @@ export function DashboardGrid({
           droppingItem={droppingItem}
           onDropDragOver={handleDropDragOver}
           onDrop={handleDrop}
-          onDragStart={() => {
+          onDragStart={(widgetId) => {
             interactingRef.current = true;
-            setGridPlaying(true);
+            setGridPlayingWidgetId(widgetId);
           }}
           onDragStop={(nextLayout) => finishInteraction(nextLayout, true)}
-          onResizeStart={() => {
+          onResizeStart={(widgetId) => {
             interactingRef.current = true;
-            setGridPlaying(true);
+            setGridPlayingWidgetId(widgetId);
           }}
           onResizeStop={(nextLayout) => finishInteraction(nextLayout, true)}
           onLayoutChange={(next) => {

@@ -149,7 +149,7 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
 }: DashboardCanvasWidgetRendererProps) {
   const widget = asLayoutWidget(sourceWidget);
   const isShapePlaying = usePixelShapePlayer();
-  const isGridPlaying = useDashboardGridPlayer();
+  const isGridPlaying = useDashboardGridPlayer(widget.id);
   const hasPixelFootprint =
     "width" in sourceWidget &&
     !nested &&

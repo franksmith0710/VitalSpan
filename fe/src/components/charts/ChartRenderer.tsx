@@ -315,7 +315,7 @@ export const ChartRenderer = memo(function ChartRenderer({
     ? `${executeKey ?? "chart"}:drill:${drillRevision}`
     : executeKey;
   const isShapePlaying = usePixelShapePlayer();
-  const isGridPlaying = useDashboardGridPlayer();
+  const isGridPlaying = useDashboardGridPlayer(widgetId);
   const suspendLiveResize = suspendLiveResizeProp || isShapePlaying || isGridPlaying;
   const { ref: bodyRef, size: bodySize, remeasure: remeasureBody } = useElementSize<HTMLDivElement>({
     enabled: embedded,

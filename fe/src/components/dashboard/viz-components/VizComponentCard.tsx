@@ -35,6 +35,7 @@ type VizComponentCardProps = {
   item: VizComponentListItem;
   payload?: VizComponentPayload;
   payloadLoading?: boolean;
+  previewPaused?: boolean;
   canManage: boolean;
   pending?: boolean;
   onInsert: () => void;
@@ -48,6 +49,7 @@ export function VizComponentCard({
   item,
   payload,
   payloadLoading = false,
+  previewPaused = false,
   canManage,
   pending = false,
   onInsert,
@@ -98,6 +100,7 @@ export function VizComponentCard({
             widgetType={item.widgetType}
             payload={payload}
             payloadLoading={payloadLoading}
+            previewPaused={previewPaused}
             className="h-full"
           />
         </div>

@@ -5,6 +5,47 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { VizReuseDialog } from "./VizReuseDialog";
 import type { DashboardLayoutV1, DashboardLayoutV2 } from "./layoutUtils";
+import { TEMPLATE_DEMO_DATASOURCE_REF } from "@/lib/templateDemoData";
+
+vi.mock("@/lib/vizComponents", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/vizComponents")>();
+  return {
+    ...actual,
+    batchResolveVizComponents: vi.fn(async () => ({
+      items: [
+        {
+          id: "comp-1",
+          componentKey: "comp-1",
+          name: "库内柱状图",
+          description: null,
+          categoryKey: "general",
+          widgetType: "chart",
+          surfaceKinds: ["dashboard"],
+          status: "published",
+          thumbnailRef: null,
+          tags: [],
+          visibility: "org",
+          contentRevision: 1,
+          updatedAt: "",
+          publishedAt: null,
+          ownerUserId: null,
+          orgScope: null,
+          createdAt: "",
+          payloadJson: {
+            chartConfig: {
+              chartId: "placeholder",
+              chartType: "bar",
+              mode: "sql",
+              sql: "SELECT amount FROM orders",
+              dataSourceId: "550e8400-e29b-41d4-a716-446655440000",
+            },
+          },
+        },
+      ],
+    })),
+    fetchVizComponents: vi.fn(async () => ({ items: [], total: 0, limit: 50, offset: 0 })),
+  };
+});
 
 vi.mock("@/lib/api", () => ({
   apiFetch: vi.fn(),
@@ -129,5 +170,50 @@ describe("VizReuseDialog", () => {
       height: 280,
       title: "V2 文本",
     });
+  });
+
+  it("copies linked chart as inline snapshot with demo dataSourceId", async () => {
+    const user = userEvent.setup();
+    const onInsert = vi.fn();
+    const linkedLayout: DashboardLayoutV1 = {
+      version: 1,
+      widgets: [
+        {
+          id: "w-linked",
+          type: "chart",
+          title: "引用图表",
+          order: 0,
+          colSpan: 6,
+          rowSpan: 4,
+          componentRef: { componentId: "comp-1" },
+        },
+      ],
+      globalFilters: [],
+    };
+    vi.mocked(apiFetch).mockImplementation(async (path: string) => {
+      if (path.includes("/viz-components")) {
+        return { items: [], total: 0, limit: 50, offset: 0 };
+      }
+      if (path.includes("?limit=")) {
+        return { items: [{ id: "src-linked", name: "来源看板" }] };
+      }
+      return { layoutJson: linkedLayout };
+    });
+
+    renderDialog(onInsert);
+    await user.click(screen.getByRole("button", { name: "从其他看板" }));
+    const [dashboardSelect] = screen.getAllByRole("combobox");
+    await user.click(dashboardSelect);
+    await user.click(await screen.findByRole("option", { name: "来源看板" }));
+    const [, widgetSelect] = screen.getAllByRole("combobox");
+    await user.click(widgetSelect);
+    await user.click(await screen.findByRole("option", { name: "引用图表 (chart)" }));
+    await user.click(screen.getByRole("button", { name: "插入副本" }));
+
+    expect(onInsert).toHaveBeenCalledTimes(1);
+    const inserted = onInsert.mock.calls[0][0];
+    expect(inserted.componentRef).toBeUndefined();
+    expect(inserted.chartConfig?.sql).toBe("SELECT amount FROM orders");
+    expect(inserted.chartConfig?.dataSourceId).toBe(TEMPLATE_DEMO_DATASOURCE_REF);
   });
 });

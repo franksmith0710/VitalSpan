@@ -21,6 +21,8 @@ type VizComponentLivePreviewProps = {
   className?: string;
   /** 列表卡片等场景：进视口后再挂载图表 */
   lazy?: boolean;
+  /** 弹层打开等场景：暂停 live 查数/渲染，避免 blur 叠多层 canvas 卡死 */
+  paused?: boolean;
   geo3dRenderTier?: Geo3dRenderTier;
   /** 列表卡片缩略图：隐藏组件内标题栏 */
   compact?: boolean;
@@ -32,6 +34,7 @@ export function VizComponentLivePreview({
   widget,
   className,
   lazy = false,
+  paused = false,
   geo3dRenderTier,
   compact = false,
   onChartConfigChange,
@@ -39,11 +42,11 @@ export function VizComponentLivePreview({
   const navSuspended = useAdminHeavyRenderSuspended();
   const containerRef = useRef<HTMLDivElement>(null);
   const { ref: viewRef, inView } = useInViewport<HTMLDivElement>({
-    enabled: lazy && !navSuspended,
+    enabled: lazy && !navSuspended && !paused,
     rootMargin: "80px",
   });
   const { width, height } = useElementSize(containerRef);
-  const active = !navSuspended && (!lazy || inView);
+  const active = !navSuspended && !paused && (!lazy || inView);
 
   const setContainerRef = (node: HTMLDivElement | null) => {
     containerRef.current = node;

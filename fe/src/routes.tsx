@@ -210,8 +210,7 @@ export function AppRoutes() {
           <Route path="reports" element={<RequireCapabilityName capability="report:read"><PrefabReportsPage /></RequireCapabilityName>} />
           <Route path="reports/center" element={<RequireCapabilityName capability="report:read"><Lazy><ReportCenterPage /></Lazy></RequireCapabilityName>} />
           <Route path="reports/view/:nodeId" element={<RequireCapabilityName capability="report:read"><ReportViewPage /></RequireCapabilityName>} />
-          <Route path="reports/templates" element={<RequireCapabilityName capability="report:manage"><ReportTemplatesPage /></RequireCapabilityName>} />
-          <Route path="reports/templates/:nodeId" element={<RequireCapabilityName capability="report:manage"><ReportTemplatesPage /></RequireCapabilityName>} />
+          <Route path="reports/templates/:nodeId?" element={<RequireCapabilityName capability="report:manage"><ReportTemplatesPage /></RequireCapabilityName>} />
           <Route path="reports/schedules" element={<RequireCapabilityName capability="report:manage"><ReportSchedulesPage /></RequireCapabilityName>} />
           <Route
             path="charts/explore"

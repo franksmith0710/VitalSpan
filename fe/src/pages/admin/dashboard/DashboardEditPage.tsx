@@ -1608,6 +1608,9 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           styleConfig={styleConfig}
           targetPixelWidgets={layout.version === 2 ? layout.widgets : undefined}
           onInsertCloned={appendClonedWidget}
+          onAfterLibraryInsert={() => {
+            void refetchComponents();
+          }}
         />
         <PublishVizComponentDialog
           open={publishComponentOpen}

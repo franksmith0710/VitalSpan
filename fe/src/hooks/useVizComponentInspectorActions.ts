@@ -71,7 +71,7 @@ export function useVizComponentInspectorActions({
       if (isLinkedComponentRef(selectedWidget.componentRef)) {
         try {
           await pushWidgetPayloadToLibrary(selectedWidget, componentMap, payload);
-          await refetchComponents();
+          void refetchComponents();
         } catch (err) {
           toast.error(mapApiError(err));
         }

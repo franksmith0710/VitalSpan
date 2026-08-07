@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Boxes, LayoutDashboard } from "lucide-react";
 import {
@@ -36,6 +36,7 @@ import {
 import { cloneLayoutWidget } from "./cloneLayoutWidget";
 import { clonePixelLayoutWidget } from "./pixelCanvas/createPixelWidget";
 import { createLinkedLayoutWidget } from "./createLayoutWidget";
+import { resolveWidgetForCrossDashboardCopy } from "@/lib/vizComponentEdit";
 import {
   fetchVizComponents,
   type VizComponentListItem,
@@ -52,6 +53,7 @@ type VizReuseDialogProps = {
   styleConfig?: DashboardStyleConfig;
   targetPixelWidgets?: PixelLayoutWidget[];
   onInsertCloned: (widget: LayoutWidget, sourcePixel?: PixelLayoutWidget) => void;
+  onAfterLibraryInsert?: () => void;
 };
 
 function LibraryTab({
@@ -188,22 +190,50 @@ function DashboardCopyTab({
 
   const reusable = sourceWidgets.filter((w) => !w.parentTabsId && w.type !== "tabs");
   const dashboards = (listData?.items ?? []).filter((d) => d.id !== currentDashboardId);
+  const [copying, setCopying] = useState(false);
 
-  const handleConfirm = () => {
-    if (sourceLayout?.version === 2) {
-      const sourcePixel = sourceLayout.widgets.find((w) => w.id === widgetId);
-      if (!sourcePixel) return;
-      const clonedPixel = clonePixelLayoutWidget(sourcePixel, targetPixelWidgets ?? []);
-      onInsertCloned(pixelWidgetToLayoutWidget(clonedPixel), clonedPixel);
-    } else {
-      const source = sourceWidgets.find((w) => w.id === widgetId);
-      if (!source) return;
-      onInsertCloned(cloneLayoutWidget(source, widgets));
+  const handleConfirm = async () => {
+    setCopying(true);
+    try {
+      if (sourceLayout?.version === 2) {
+        const sourcePixel = sourceLayout.widgets.find((w) => w.id === widgetId);
+        if (!sourcePixel) return;
+        const resolved = await resolveWidgetForCrossDashboardCopy(
+          pixelWidgetToLayoutWidget(sourcePixel),
+        );
+        const inlinePixel: PixelLayoutWidget = {
+          ...sourcePixel,
+          componentRef: undefined,
+          ...(resolved.type === "chart" && resolved.chartConfig
+            ? { chartConfig: resolved.chartConfig }
+            : {}),
+          ...(resolved.type === "filter" && resolved.filterConfig
+            ? { filterConfig: resolved.filterConfig }
+            : {}),
+          ...(resolved.type === "text" && resolved.textConfig
+            ? { textConfig: resolved.textConfig }
+            : {}),
+          ...(resolved.type === "media" && resolved.mediaConfig
+            ? { mediaConfig: resolved.mediaConfig }
+            : {}),
+        };
+        const clonedPixel = clonePixelLayoutWidget(inlinePixel, targetPixelWidgets ?? []);
+        onInsertCloned(pixelWidgetToLayoutWidget(clonedPixel), clonedPixel);
+      } else {
+        const source = sourceWidgets.find((w) => w.id === widgetId);
+        if (!source) return;
+        const resolved = await resolveWidgetForCrossDashboardCopy(source);
+        onInsertCloned(cloneLayoutWidget(resolved, widgets));
+      }
+      toast.info("已插入副本", {
+        description: "可在右侧配置栏将组件发布到组织库，便于跨看板复用。",
+      });
+      onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "复制失败");
+    } finally {
+      setCopying(false);
     }
-    toast.info("已插入副本", {
-      description: "可在右侧配置栏将组件发布到组织库，便于跨看板复用。",
-    });
-    onClose();
   };
 
   return (
@@ -242,8 +272,8 @@ function DashboardCopyTab({
         <Button type="button" variant="outline" onClick={onClose}>
           取消
         </Button>
-        <Button type="button" disabled={!widgetId} onClick={handleConfirm}>
-          插入副本
+        <Button type="button" disabled={!widgetId || copying} onClick={() => void handleConfirm()}>
+          {copying ? "复制中…" : "插入副本"}
         </Button>
       </DialogFooter>
     </div>
@@ -258,7 +288,9 @@ export function VizReuseDialog({
   styleConfig,
   targetPixelWidgets,
   onInsertCloned,
+  onAfterLibraryInsert,
 }: VizReuseDialogProps) {
+  const queryClient = useQueryClient();
   const [tab, setTab] = useState<"library" | "dashboard">("library");
 
   useEffect(() => {
@@ -268,6 +300,8 @@ export function VizReuseDialog({
   const handleLibraryPick = (component: VizComponentListItem) => {
     const linked = createLinkedLayoutWidget(component, widgets);
     onInsertCloned(linked);
+    void queryClient.invalidateQueries({ queryKey: queryKeys.vizComponents.all });
+    onAfterLibraryInsert?.();
     onOpenChange(false);
   };
 

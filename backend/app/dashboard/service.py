@@ -122,6 +122,9 @@ def _validate_layout_business(parsed: DashboardLayout) -> None:
         if wid in seen:
             raise DashboardError("DASH_DUPLICATE_WIDGET", "组件 ID 重复", 422)
         seen.add(wid)
+        # ADR-14：已链接组件库引用时 layout 只存 componentRef，配置在 viz-components
+        if widget._is_linked_component():
+            continue
         if widget.type == "chart":
             if widget.chart_config is None:
                 raise DashboardError("DASH_MISSING_CHART_CONFIG", "图表组件缺少 chartConfig", 422)

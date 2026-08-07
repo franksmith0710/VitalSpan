@@ -49,6 +49,23 @@ describe("dataScreenTemplates", () => {
     expect(imported.styleConfig?.surfaceKind).toBe("data-screen");
   });
 
+  it("export normalizes chart dataSourceId to demo ref", () => {
+    const layout = buildDataScreenLayoutFromTemplate("blank");
+    const chart = layout.widgets.find((w) => w.type === "chart");
+    if (!chart || chart.type !== "chart" || !chart.chartConfig) {
+      throw new Error("expected chart widget in blank template");
+    }
+    chart.chartConfig = {
+      ...chart.chartConfig,
+      mode: "sql",
+      sql: "SELECT 1",
+      dataSourceId: "550e8400-e29b-41d4-a716-446655440000",
+    };
+    const exported = exportDataScreenTemplate(layout, "演示");
+    const exportedChart = exported.layout.widgets.find((w) => w.type === "chart");
+    expect(exportedChart?.chartConfig?.dataSourceId).toBe("__demo:sample_db__");
+  });
+
   it("strips legacy grid fields from v2 widgets on import", () => {
     const imported = parseImportedDataScreenLayout({
       version: 2,

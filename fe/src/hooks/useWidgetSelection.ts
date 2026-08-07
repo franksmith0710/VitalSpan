@@ -11,6 +11,7 @@ export function useWidgetSelection() {
         else next.add(widgetId);
         return next;
       }
+      if (prev.size === 1 && prev.has(widgetId)) return prev;
       return new Set([widgetId]);
     });
   }, []);
