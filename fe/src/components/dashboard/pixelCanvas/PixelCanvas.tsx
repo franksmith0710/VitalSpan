@@ -72,6 +72,7 @@ import { PixelShape } from "./PixelShape";
 import type { PixelWidgetActions } from "./PixelShapeActionRail";
 import { PixelMarkLineOverlay } from "./PixelMarkLineOverlay";
 import { PixelCanvasInteractionProvider } from "./PixelCanvasInteractionContext";
+import { ChartMountInteractionBridge } from "@/components/charts/ChartMountInteractionBridge";
 import { markLineGuidesEqual } from "./markLineGuidesEqual";
 import type { MarkLineGuide } from "./pixelMarkLine";
 import { PixelWidgetSlot } from "./PixelWidgetSlot";
@@ -1052,6 +1053,7 @@ export function PixelCanvas({
         <PixelCanvasInteractionProvider
           interaction={playingWidgetId ? { widgetId: playingWidgetId } : null}
         >
+        <ChartMountInteractionBridge frozen={Boolean(playingWidgetId)} />
         <TabPaletteDropTargetProvider
           targetTabsId={
             !isDraggingTabHost && (paletteDragActive || collisionPreviewActive || playingWidgetId)

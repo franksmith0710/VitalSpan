@@ -12,12 +12,15 @@ function isStaleDynamicImportError(error: Error): boolean {
 }
 
 function formatRouteErrorMessage(error: Error): string {
-  if (!import.meta.env.DEV) return mapApiError(error);
   if (isStaleDynamicImportError(error)) {
-    const base = getAppBasePath();
-    const baseHint = base ? `请确认地址以 ${base}/ 开头，` : "";
-    return `${error.message}。开发环境常见原因：Vite 重启或修改 .env 后浏览器缓存了旧模块。${baseHint}请使用「刷新页面」或 Ctrl+Shift+R 强制刷新。`;
+    if (import.meta.env.DEV) {
+      const base = getAppBasePath();
+      const baseHint = base ? `请确认地址以 ${base}/ 开头，` : "";
+      return `${error.message}。开发环境常见原因：Vite 重启或修改 .env 后浏览器缓存了旧模块。${baseHint}请使用「刷新页面」或 Ctrl+Shift+R 强制刷新。`;
+    }
+    return "页面脚本版本已更新，浏览器仍在使用旧缓存。请点击「刷新页面」或按 Ctrl+Shift+R 强制刷新后再试。";
   }
+  if (!import.meta.env.DEV) return mapApiError(error);
   return error.message || mapApiError(error);
 }
 

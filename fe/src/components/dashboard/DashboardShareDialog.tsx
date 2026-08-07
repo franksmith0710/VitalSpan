@@ -19,9 +19,6 @@ import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { PanelEmptyState } from "@/components/ui/panel-empty-state";
 import { Button } from "@/components/ui/button";
 import { SHARE_DIALOG_BODY_CLASS, SHARE_DIALOG_CONTENT_CLASS, SHARE_DIALOG_HEADER_CLASS } from "@/components/dashboard/sharePageUi";
-import { DashboardSchedulePanel } from "@/pages/admin/reports/components/DashboardSchedulePanel";
-import { useAuth } from "@/context/auth-context";
-import { matchesCapability, resolveEffectiveCapabilities } from "@/lib/capabilities";
 
 type DashboardDetail = {
   id: string;
@@ -49,10 +46,6 @@ export function DashboardShareDialog({
   isScreen: isScreenProp,
   initialDetail,
 }: DashboardShareDialogProps) {
-  const { user } = useAuth();
-  const canManageSchedule =
-    matchesCapability(resolveEffectiveCapabilities(user), "report:manage") ||
-    matchesCapability(resolveEffectiveCapabilities(user), "dashboard:schedule");
   const [detail, setDetail] = useState<DashboardDetail | null>(
     initialDetail
       ? { id: dashboardId, name: initialDetail.name, layoutJson: initialDetail.layoutJson }
@@ -113,8 +106,8 @@ export function DashboardShareDialog({
               <DialogTitle className="text-title-sm">{title}</DialogTitle>
               <DialogDescription className="text-theme-sm leading-relaxed">
                 {isScreen
-                  ? "生成公开链接与 iframe 嵌入地址；可在下方创建定时 PDF 报告。"
-                  : "生成公开链接与组件嵌入地址；可在下方创建定时 PDF 报告（推荐主路径）。"}
+                  ? "生成公开链接与 iframe 嵌入地址。定时 PDF 请在看板/大屏编辑页使用「定时推送」。"
+                  : "生成公开链接与组件嵌入地址。定时 PDF 请在看板编辑页使用「定时推送」。"}
               </DialogDescription>
             </div>
           </div>
@@ -160,17 +153,6 @@ export function DashboardShareDialog({
                 widgets={widgets}
               />
             )
-          ) : null}
-
-          {!loading && detail && widgets.length > 0 ? (
-            <DashboardSchedulePanel
-              sourceId={dashboardId}
-              sourceType={isScreen ? "data_screen" : "dashboard"}
-              sourceName={detail.name}
-              widgetCount={widgets.length}
-              readOnly={!canManageSchedule}
-              embedded
-            />
           ) : null}
         </div>
       </DialogContent>

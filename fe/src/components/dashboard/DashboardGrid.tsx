@@ -23,6 +23,7 @@ import { getTopLevelWidgets, sortWidgets } from "./layoutUtils";
 import { gridLayoutToWidgets, widgetsToGridLayout } from "./gridLayoutAdapter";
 import { normalizeGridLayout } from "./gridSnapUtils";
 import { DashboardGridPlayerProvider } from "./dashboardGridPlayerContext";
+import { ChartMountInteractionBridge } from "@/components/charts/ChartMountInteractionBridge";
 
 const EMPTY_CANVAS_MIN_HEIGHT = 480;
 
@@ -207,6 +208,7 @@ export function DashboardGrid({
         ) : null}
         {isEmpty ? <DashboardCanvasEmpty dragActive={paletteDragOver} /> : null}
         <DashboardGridPlayerProvider playingWidgetId={gridPlayingWidgetId}>
+        <ChartMountInteractionBridge frozen={Boolean(gridPlayingWidgetId)} />
         <DashboardRglCanvas
           className={cn("layout relative z-[1]", isEmpty && "dashboard-grid-empty")}
           style={isEmpty ? { minHeight: EMPTY_CANVAS_MIN_HEIGHT } : undefined}

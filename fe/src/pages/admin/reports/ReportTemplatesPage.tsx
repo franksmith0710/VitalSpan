@@ -279,7 +279,7 @@ export function ReportTemplatesPage() {
   return (
     <AdminPageShell
       title="文档模板"
-      description="固定版式文档报表（Word/Excel/PDF 套版填数），后续能力；当前默认定时报告请从看板/大屏分享页创建。"
+      description="固定版式文档报表（Word/Excel/PDF 套版填数），后续能力；看板/大屏定时 PDF 请从编辑页「定时推送」创建。"
       actions={nodes.length > 0 ? createActions : null}
     >
       <Alert severity="info" className="mb-4 border-brand-200 bg-brand-50/40 dark:border-brand-500/30 dark:bg-brand-500/5">

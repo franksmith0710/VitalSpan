@@ -133,7 +133,8 @@ def _is_public_embed_route(path: str, request: Request) -> bool:
     if path == "/api/v1/embed/dashboard-layout" and request.query_params.get("token"):
         return True
     if path in {"/api/v1/embed/query/execute", "/api/v1/embed/dataset/execute"}:
-        return bool(request.headers.get("X-Embed-Token", "").strip())
+        # 由 embed handler 校验 X-Embed-Token；勿在中间件层要求 Bearer，否则匿名分享误报 JWT 过期。
+        return True
     return False
 
 

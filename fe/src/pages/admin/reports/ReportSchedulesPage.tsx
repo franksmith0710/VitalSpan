@@ -54,9 +54,9 @@ function emptyDescription(tab: ScheduleTabFilter, hasSearch: boolean): string {
     return "在「文档模板」详情页的调度 Tab 中创建（后续能力）。";
   }
   if (tab === "dashboard") {
-    return "进入看板或数据大屏，在分享页创建「定时报告」。";
+    return "进入看板或数据大屏编辑页，点击「定时推送」创建定时报告。";
   }
-  return "推荐从看板/大屏分享页创建可视化 PDF 定时报告。";
+  return "推荐从看板/大屏编辑页「定时推送」创建可视化 PDF 定时报告。";
 }
 
 function emptyAction(tab: ScheduleTabFilter, hasSearch: boolean) {

@@ -1,4 +1,4 @@
-import { dashboardSharePath } from "@/lib/dataScreenLayout";
+import { dataScreenEditPath } from "@/lib/dataScreenLayout";
 import type { ReportScheduleRow } from "@/pages/admin/reports/useReportSchedules";
 
 export function localizeSourceType(sourceType?: string): string {
@@ -19,10 +19,10 @@ export function scheduleSourceHref(schedule: Pick<ReportScheduleRow, "sourceType
   const id = schedule.sourceId ?? schedule.catalogNodeId;
   if (!id) return "/admin/reports/schedules";
   if (schedule.sourceType === "data_screen") {
-    return dashboardSharePath(id, true);
+    return dataScreenEditPath(id);
   }
   if (schedule.sourceType === "dashboard") {
-    return dashboardSharePath(id, false);
+    return `/admin/dashboards/${id}/edit`;
   }
   return `/admin/reports/templates/${id}`;
 }

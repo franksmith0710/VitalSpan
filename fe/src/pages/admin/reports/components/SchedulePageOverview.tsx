@@ -91,7 +91,7 @@ export function SchedulePageOverview({ stats }: SchedulePageOverviewProps) {
         <CreateEntryCard
           primary
           title="从看板/大屏创建"
-          description="分享页底部配置定时 PDF（推荐主路径）"
+          description="编辑页「定时推送」配置 PDF（推荐主路径）"
           to={dashboardsListForScheduleCreate()}
           icon={<Monitor className="size-5" aria-hidden />}
         />

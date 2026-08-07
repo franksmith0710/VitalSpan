@@ -138,7 +138,7 @@ export function ReportCenterQuickAside({ schedules, loading, canManage }: HubPro
           <CreateEntryCard
             primary
             title="从看板/大屏创建"
-            description="分享页配置定时 PDF（推荐）"
+            description="编辑页「定时推送」配置 PDF（推荐）"
             to={dashboardsListForScheduleCreate()}
             icon={<Monitor className="size-5" aria-hidden />}
           />
@@ -206,7 +206,7 @@ export function ReportCenterScheduleList({ schedules, loading, canManage }: HubP
             暂无看板/大屏定时报告
           </p>
           <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
-            打开看板 → 分享 → 创建定时报告
+            打开看板/大屏编辑页 → 定时推送
           </p>
           <Button type="button" variant="primary" size="sm" className="mt-4" asChild>
             <Link to={dashboardsListForScheduleCreate()}>

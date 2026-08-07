@@ -467,6 +467,11 @@ export function PixelShape({
     syncOuterStyle(next);
   }, [widget.x, widget.y, widget.width, widget.height]);
 
+  useLayoutEffect(() => {
+    if (!layoutStyleDeferred) return;
+    syncOuterStyle(displayRef.current);
+  }, [layoutStyleDeferred]);
+
   useEffect(
     () => () => {
       if (moveFrameRef.current !== null) {

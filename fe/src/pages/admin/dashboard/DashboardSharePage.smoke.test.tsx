@@ -221,49 +221,39 @@ describe("DashboardSharePage", () => {
     expect(screen.getAllByRole("button", { name: "生成公开链接" }).length).toBeGreaterThanOrEqual(1);
   });
 
-  it("G5: shows dashboard schedule panel on share dialog", async () => {
-    mockApiFetch.mockImplementation((url: string) => {
-      if (typeof url === "string" && url.includes("/reports/schedules")) {
-        return Promise.resolve({ items: [], total: 0 });
-      }
-      if (typeof url === "string" && url.includes("/users")) {
-        return Promise.resolve({ items: [{ id: "u1", username: "admin" }], total: 1 });
-      }
-      return Promise.resolve({
-        id: "d4",
-        name: "调度看板",
-        layoutJson: {
-          version: 1,
-          widgets: [
-            {
-              id: "w4",
-              type: "chart",
-              title: "指标",
-              colSpan: 6,
-              rowSpan: 2,
-              order: 0,
-              chartConfig: {
-                chartType: "bar",
-                chartId: "w4",
-                dataSourceId: "00000000-0000-4000-8000-000000000010",
-                mode: "sql",
-                sql: "SELECT 1",
-              },
+  it("G5: share dialog does not embed schedule panel", async () => {
+    mockShareApi({
+      id: "d4",
+      name: "调度看板",
+      layoutJson: {
+        version: 1,
+        widgets: [
+          {
+            id: "w4",
+            type: "chart",
+            title: "指标",
+            colSpan: 6,
+            rowSpan: 2,
+            order: 0,
+            chartConfig: {
+              chartType: "bar",
+              chartId: "w4",
+              dataSourceId: "00000000-0000-4000-8000-000000000010",
+              mode: "sql",
+              sql: "SELECT 1",
             },
-          ],
-          globalFilters: [],
-        },
-      });
+          },
+        ],
+        globalFilters: [],
+      },
     });
 
     renderSharePage("/admin/dashboards/d4/share", "/admin/dashboards/:id/share");
 
     await waitFor(() => {
-      expect(screen.getByText("定时报告")).toBeInTheDocument();
+      expect(screen.getByText("调度看板 · 分享")).toBeInTheDocument();
     });
-    expect(screen.getByRole("button", { name: "创建定时报告" })).toBeInTheDocument();
-    expect(mockApiFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/api/v1/reports/schedules?sourceId=d4"),
-    );
+    expect(screen.queryByRole("button", { name: "创建定时报告" })).not.toBeInTheDocument();
+    expect(screen.queryByText("创建前检查")).not.toBeInTheDocument();
   });
 });

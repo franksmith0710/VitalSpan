@@ -264,7 +264,7 @@ export function DashboardListPage() {
             <CalendarClock className="size-4" aria-hidden />
             <AlertTitle>创建定时报告</AlertTitle>
             <AlertDescription>
-              请选择目标看板，点击行尾「分享」按钮，在分享页底部配置定时 PDF 报告。
+              请打开目标看板编辑页，点击工具栏「定时推送」配置 PDF 定时报告。
             </AlertDescription>
           </Alert>
         ) : null}

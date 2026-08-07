@@ -57,4 +57,26 @@ describe("ChartMountScheduler", () => {
     scheduler.register("stuck", 1, true);
     await expect(scheduler.waitForInViewSettled(80)).rejects.toThrow(/timeout/);
   });
+
+  it("keeps ready widgets rendered while interaction is frozen even if offscreen", () => {
+    const scheduler = new ChartMountScheduler(1);
+    scheduler.register("ready", 1, true);
+    scheduler.markReady("ready");
+    const release = scheduler.acquireInteractionFreeze();
+    scheduler.register("ready", 1, false);
+    expect(scheduler.getGate("ready")).toEqual({ canQuery: true, canRender: true });
+    release();
+    expect(scheduler.getGate("ready")).toEqual({ canQuery: false, canRender: false });
+  });
+
+  it("restores offscreen pause after interaction freeze ends", () => {
+    const scheduler = new ChartMountScheduler(2);
+    scheduler.register("a", 1, true);
+    scheduler.markReady("a");
+    const release = scheduler.acquireInteractionFreeze();
+    scheduler.register("a", 1, false);
+    expect(scheduler.getGate("a").canRender).toBe(true);
+    release();
+    expect(scheduler.getGate("a")).toEqual({ canQuery: false, canRender: false });
+  });
 });

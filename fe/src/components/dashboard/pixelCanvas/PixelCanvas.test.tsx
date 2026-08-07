@@ -133,6 +133,8 @@ describe("PixelCanvas", () => {
     });
     await flushPixelPointerFrames();
 
+    expect(blockerShape.style.width).not.toBe("");
+    expect(blockerShape.style.height).not.toBe("");
     expect(blockerShape).not.toHaveStyle({ top: "280px" });
     fireEvent.pointerUp(shape, { pointerId: 3, clientX: 0, clientY: 120 });
 

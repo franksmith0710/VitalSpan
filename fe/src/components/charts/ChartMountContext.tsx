@@ -43,6 +43,10 @@ export function ChartMountProvider({ children, maxConcurrent }: ChartMountProvid
   );
 }
 
+export function useChartMountScheduler(): ChartMountScheduler | null {
+  return useContext(ChartMountContext);
+}
+
 type ChartMountGateOptions = {
   priority?: number;
   inView?: boolean;

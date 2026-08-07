@@ -13,9 +13,32 @@ export class ChartMountScheduler {
   private mounting = new Set<string>();
   private entries = new Map<string, MountEntry>();
   private listeners = new Set<() => void>();
+  private interactionFreezeCount = 0;
+  private interactionFrozen = false;
 
   constructor(maxConcurrent: number) {
     this.maxConcurrent = Math.max(1, maxConcurrent);
+  }
+
+  /** 拖拽/缩放会话期间冻结已 ready 图表，避免 inView 抖动卸载兄弟组件 */
+  acquireInteractionFreeze(): () => void {
+    this.interactionFreezeCount += 1;
+    this.syncInteractionFrozen();
+    return () => {
+      this.interactionFreezeCount = Math.max(0, this.interactionFreezeCount - 1);
+      this.syncInteractionFrozen();
+    };
+  }
+
+  isInteractionFrozen(): boolean {
+    return this.interactionFrozen;
+  }
+
+  private syncInteractionFrozen(): void {
+    const next = this.interactionFreezeCount > 0;
+    if (next === this.interactionFrozen) return;
+    this.interactionFrozen = next;
+    this.notify();
   }
 
   setMaxConcurrent(maxConcurrent: number): void {
@@ -68,7 +91,13 @@ export class ChartMountScheduler {
 
   getGate(widgetId: string): { canQuery: boolean; canRender: boolean } {
     const entry = this.entries.get(widgetId);
-    if (!entry || !entry.inView) {
+    if (!entry) {
+      return { canQuery: false, canRender: false };
+    }
+    if (this.interactionFrozen && entry.state === "ready") {
+      return { canQuery: true, canRender: true };
+    }
+    if (!entry.inView) {
       return { canQuery: false, canRender: false };
     }
     if (entry.state === "ready" || entry.state === "mounting") {
