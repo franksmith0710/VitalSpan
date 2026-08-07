@@ -6,6 +6,10 @@ import {
   endAdminNavTransition,
   resetAdminNavTransitionForTests,
 } from "@/lib/adminHeavyRenderSuspend";
+import {
+  MAX_LIST_PREVIEW_ACTIVATIONS,
+  resetListPreviewActivationForTests,
+} from "@/lib/listPreviewActivation";
 import { DashboardListCardPreview } from "./DashboardListCardPreview";
 
 const dataScreenPresenterSpy = vi.fn();
@@ -63,6 +67,7 @@ describe("DashboardListCardPreview", () => {
   afterEach(() => {
     cleanup();
     resetAdminNavTransitionForTests();
+    resetListPreviewActivationForTests();
     dataScreenPresenterSpy.mockClear();
   });
 
@@ -121,5 +126,63 @@ describe("DashboardListCardPreview", () => {
       expect(screen.getByTestId("dashboard-list-card-live-preview")).toBeInTheDocument();
     });
     expect(dataScreenPresenterSpy.mock.calls.at(-1)?.[0]?.previewProfile).toBe("card");
+  });
+
+  it("grants live preview when many cards are visible in viewport", async () => {
+    const cards = Array.from({ length: MAX_LIST_PREVIEW_ACTIVATIONS }, (_, index) => (
+      <DashboardListCardPreview
+        key={`dash-${index}`}
+        dashboardId={`dash-${index}`}
+        layoutJson={sampleLayout}
+      />
+    ));
+    render(<div>{cards}</div>);
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId("dashboard-list-card-live-preview").length).toBe(
+        MAX_LIST_PREVIEW_ACTIVATIONS,
+      );
+    });
+  });
+
+  it("unmounts live preview when card scrolls out of viewport", async () => {
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        private readonly callback: IntersectionObserverCallback;
+        constructor(callback: IntersectionObserverCallback) {
+          this.callback = callback;
+        }
+        observe() {
+          this.callback(
+            [{ isIntersecting: false, intersectionRatio: 0 } as IntersectionObserverEntry],
+            this as unknown as IntersectionObserver,
+          );
+        }
+        disconnect() {}
+      },
+    );
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: 768 });
+    Element.prototype.getBoundingClientRect = vi.fn(() => ({
+      width: 320,
+      height: 180,
+      top: 2000,
+      left: 0,
+      right: 320,
+      bottom: 2180,
+      x: 0,
+      y: 2000,
+      toJSON: () => ({}),
+    }));
+
+    render(<DashboardListCardPreview dashboardId="off-screen" layoutJson={sampleLayout} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("dashboard-list-card-preview")).toHaveAttribute(
+        "data-live",
+        "false",
+      );
+    });
+    expect(screen.queryByTestId("dashboard-list-card-live-preview")).toBeNull();
   });
 });

@@ -1,5 +1,5 @@
 import { LayoutDashboard } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { CHART_MOUNT_MAX_VIEW } from "@/components/charts/ChartMountContext";
 import { setChartAnimationSuppressed } from "@/components/charts/engine/d3/core/animate";
 import {
@@ -14,6 +14,8 @@ import { isDataScreenLayout } from "@/lib/dataScreenLayout";
 import {
   releaseListPreviewSlot,
   requestListPreviewSlot,
+  unregisterListPreviewWaiter,
+  updateListPreviewPriority,
 } from "@/lib/listPreviewActivation";
 import { DashboardLayoutPreview } from "./DashboardLayoutPreview";
 import { DataScreenPresenter } from "./screen/DataScreenPresenter";
@@ -56,9 +58,12 @@ export function DashboardListCardPreview({
 }: DashboardListCardPreviewProps) {
   const navSuspended = useAdminHeavyRenderSuspended();
   const hostRef = useRef<HTMLDivElement>(null);
+  const instanceId = useId();
+  const previewKey = dashboardId ?? `layout-preview-${instanceId}`;
   const hasFullLayout = layoutHasFullChartConfig(layoutJson);
   const [active, setActive] = useState(eager);
   const [slotGranted, setSlotGranted] = useState(eager);
+  const [intersectionPriority, setIntersectionPriority] = useState(eager ? 1 : 0);
   const shouldFetch = Boolean(dashboardId && !hasFullLayout);
   const liveEligible = eager || active;
   const layoutQuery = useDashboardListCardLayout(
@@ -79,12 +84,15 @@ export function DashboardListCardPreview({
         if (prev && !eager) return false;
         return prev;
       });
-      if (!eager) setActive(false);
+      if (!eager) {
+        setActive(false);
+        unregisterListPreviewWaiter(previewKey);
+      }
       return undefined;
     }
     if (!liveEligible || slotGranted || eager) return undefined;
     let cancelled = false;
-    void requestListPreviewSlot()
+    void requestListPreviewSlot({ key: previewKey, priority: intersectionPriority })
       .then(() => {
         if (!cancelled) setSlotGranted(true);
       })
@@ -94,13 +102,21 @@ export function DashboardListCardPreview({
       });
     return () => {
       cancelled = true;
+      unregisterListPreviewWaiter(previewKey);
     };
-  }, [liveEligible, slotGranted, eager, navSuspended]);
+  }, [
+    liveEligible,
+    slotGranted,
+    eager,
+    navSuspended,
+    previewKey,
+    intersectionPriority,
+  ]);
 
   useEffect(() => {
     if (!slotGranted || eager) return undefined;
-    return () => releaseListPreviewSlot();
-  }, [slotGranted, eager]);
+    return () => releaseListPreviewSlot(previewKey);
+  }, [slotGranted, eager, previewKey]);
 
   useEffect(() => {
     if (!liveEligible || navSuspended) return undefined;
@@ -111,6 +127,7 @@ export function DashboardListCardPreview({
   useEffect(() => {
     if (eager) {
       setActive(true);
+      setIntersectionPriority(1);
       return undefined;
     }
     const el = hostRef.current;
@@ -118,17 +135,26 @@ export function DashboardListCardPreview({
 
     if (typeof IntersectionObserver === "undefined") {
       setActive(true);
+      setIntersectionPriority(1);
       return undefined;
     }
+
+    const leaveViewport = () => {
+      setActive(false);
+      setSlotGranted(false);
+      unregisterListPreviewWaiter(previewKey);
+    };
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (navSuspended) return;
         if (entry?.isIntersecting) {
+          const ratio = entry.intersectionRatio;
           setActive(true);
+          setIntersectionPriority(ratio);
+          updateListPreviewPriority(previewKey, ratio);
         } else {
-          setActive(false);
-          setSlotGranted(false);
+          leaveViewport();
         }
       },
       { rootMargin: "80px" },
@@ -141,6 +167,8 @@ export function DashboardListCardPreview({
       const margin = 80;
       if (rect.bottom >= -margin && rect.top <= window.innerHeight + margin) {
         setActive(true);
+        setIntersectionPriority(1);
+        updateListPreviewPriority(previewKey, 1);
       }
     };
     syncVisible();
@@ -148,8 +176,11 @@ export function DashboardListCardPreview({
       requestAnimationFrame(syncVisible);
     }
 
-    return () => observer.disconnect();
-  }, [eager, dashboardId, navSuspended]);
+    return () => {
+      observer.disconnect();
+      unregisterListPreviewWaiter(previewKey);
+    };
+  }, [eager, dashboardId, navSuspended, previewKey]);
 
   const hasWidgets =
     Boolean(resolvedLayout?.widgets?.length) || Boolean(layoutJson?.widgets?.length);

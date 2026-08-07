@@ -19,8 +19,11 @@ import { queryKeys } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";
 import { useAdminHeavyRenderSuspended } from "@/hooks/useAdminHeavyRenderSuspended";
 import {
+  ListPreviewSlotResetError,
   releaseListPreviewSlot,
   requestListPreviewSlot,
+  unregisterListPreviewWaiter,
+  updateListPreviewPriority,
 } from "@/lib/listPreviewActivation";
 
 type TemplateCardPreviewProps = {
@@ -45,8 +48,10 @@ export function TemplateCardPreview({
 }: TemplateCardPreviewProps) {
   const navSuspended = useAdminHeavyRenderSuspended();
   const hostRef = useRef<HTMLDivElement>(null);
+  const previewKey = `template-${templateId}`;
   const [active, setActive] = useState(eager);
   const [slotGranted, setSlotGranted] = useState(eager);
+  const [intersectionPriority, setIntersectionPriority] = useState(eager ? 1 : 0);
 
   const detailQuery = useQuery({
     queryKey: queryKeys.dashboardTemplates.detail(templateId),
@@ -95,23 +100,30 @@ export function TemplateCardPreview({
       if (!eager) {
         setActive(false);
         setSlotGranted(false);
+        unregisterListPreviewWaiter(previewKey);
       }
       return undefined;
     }
     if (!active || slotGranted || eager) return undefined;
     let cancelled = false;
-    void requestListPreviewSlot().then(() => {
-      if (!cancelled) setSlotGranted(true);
-    });
+    void requestListPreviewSlot({ key: previewKey, priority: intersectionPriority })
+      .then(() => {
+        if (!cancelled) setSlotGranted(true);
+      })
+      .catch((err) => {
+        if (cancelled || err instanceof ListPreviewSlotResetError) return;
+        console.warn("[list-preview] slot request failed", err);
+      });
     return () => {
       cancelled = true;
+      unregisterListPreviewWaiter(previewKey);
     };
-  }, [active, slotGranted, eager]);
+  }, [active, slotGranted, eager, navSuspended, previewKey, intersectionPriority]);
 
   useEffect(() => {
     if (!slotGranted || eager) return undefined;
-    return () => releaseListPreviewSlot();
-  }, [slotGranted, eager]);
+    return () => releaseListPreviewSlot(previewKey);
+  }, [slotGranted, eager, previewKey]);
 
   useEffect(() => {
     if (!active || navSuspended) return undefined;
@@ -122,6 +134,7 @@ export function TemplateCardPreview({
   useEffect(() => {
     if (eager) {
       setActive(true);
+      setIntersectionPriority(1);
       return undefined;
     }
     const el = hostRef.current;
@@ -129,17 +142,26 @@ export function TemplateCardPreview({
 
     if (typeof IntersectionObserver === "undefined") {
       setActive(true);
+      setIntersectionPriority(1);
       return undefined;
     }
+
+    const leaveViewport = () => {
+      setActive(false);
+      setSlotGranted(false);
+      unregisterListPreviewWaiter(previewKey);
+    };
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (navSuspended) return;
         if (entry?.isIntersecting) {
+          const ratio = entry.intersectionRatio;
           setActive(true);
+          setIntersectionPriority(ratio);
+          updateListPreviewPriority(previewKey, ratio);
         } else {
-          setActive(false);
-          setSlotGranted(false);
+          leaveViewport();
         }
       },
       { rootMargin: "80px" },
@@ -152,6 +174,8 @@ export function TemplateCardPreview({
       const margin = 80;
       if (rect.bottom >= -margin && rect.top <= window.innerHeight + margin) {
         setActive(true);
+        setIntersectionPriority(1);
+        updateListPreviewPriority(previewKey, 1);
       }
     };
     syncVisible();
@@ -159,8 +183,11 @@ export function TemplateCardPreview({
       requestAnimationFrame(syncVisible);
     }
 
-    return () => observer.disconnect();
-  }, [eager, templateId, navSuspended]);
+    return () => {
+      observer.disconnect();
+      unregisterListPreviewWaiter(previewKey);
+    };
+  }, [eager, templateId, navSuspended, previewKey]);
 
   const thumbnailFallback = thumbnailSrc ? (
     <img
