@@ -93,6 +93,7 @@ export function TextWidget({
       ref={widgetRef}
       className={cn(
         nested && inShapeShell && mode === "edit" && "pl-7",
+        mode === "edit" && "group/text-widget",
       )}
       style={undefined}
     >
@@ -194,16 +195,16 @@ export function TextWidget({
           <ScreenShapeDisplay styleConfig={screenStyle?.shape} />
         ) : screenIcon ? (
           <ScreenIconDisplay styleConfig={screenStyle?.icon} />
-        ) : isRichTextEmpty(html) ? (
+        ) : isRichTextEmpty(html) && mode === "edit" ? (
           <p
             className={cn(
-              "flex h-full items-center justify-center text-gray-400",
+              "hidden h-full items-center justify-center text-gray-400 group-hover/text-widget:flex",
               inShapeShell ? "px-2 text-theme-xs" : "p-3 text-theme-sm",
             )}
           >
             双击编辑文字
           </p>
-        ) : (
+        ) : isRichTextEmpty(html) ? null : (
           <div
             className={cn(
               "rich-main-class text-gray-700 dark:text-gray-300",

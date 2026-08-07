@@ -39,14 +39,28 @@ describe("TextWidget inline editing", () => {
     await screen.findByRole("textbox", { name: "富文本内容" });
   });
 
-  it("shows a non-persistent placeholder for empty content", () => {
+  it("shows placeholder on hover only for empty content in edit mode", async () => {
+    const user = userEvent.setup();
     render(
       <TextWidget
         widget={{ ...widget, textConfig: { content: "", variant: "html" } }}
         mode="edit"
       />,
     );
-    expect(screen.getByText("双击编辑文字")).toBeVisible();
+    const placeholder = screen.getByText("双击编辑文字");
+    expect(placeholder).toHaveClass("hidden");
+    await user.hover(screen.getByTestId("text-widget-content"));
+    expect(placeholder).toHaveClass("group-hover/text-widget:flex");
+  });
+
+  it("hides empty placeholder in view mode", () => {
+    render(
+      <TextWidget
+        widget={{ ...widget, textConfig: { content: "", variant: "html" } }}
+        mode="view"
+      />,
+    );
+    expect(screen.queryByText("双击编辑文字")).toBeNull();
   });
 
   it("never creates an editor in view mode", () => {
