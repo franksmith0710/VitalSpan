@@ -20,10 +20,13 @@ import { useFormDirtyState } from "@/hooks/use-form-dirty-state";
 import { useUnsavedLeaveGuard } from "@/hooks/use-unsaved-leave-guard";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
+import {
+  ANALYTICS_DATASOURCE_NAME,
+  resolveAnalyticsDatasourceId,
+  type DatasourceListItem,
+} from "@/lib/datasourceRoles";
 import { ReportMetricDatasetFields } from "./ReportMetricDatasetFields";
 import { type ExtensionMetric, useReportTemplates } from "../useReportTemplates";
-
-type DatasourceItem = { id: string; name: string };
 type QueryMode = "sql" | "dataset";
 
 const EMPTY_FORM = {
@@ -116,7 +119,7 @@ export function ReportMetricExtensionForm({
 
   const dsQuery = useQuery({
     queryKey: ["reports", "datasources", "picker"],
-    queryFn: () => apiFetch<{ items: DatasourceItem[] }>("/api/v1/datasources?limit=100"),
+    queryFn: () => apiFetch<{ items: DatasourceListItem[] }>("/api/v1/datasources?limit=100"),
     enabled: !readOnly,
   });
   const dsItems = dsQuery.data?.items ?? [];
@@ -129,6 +132,13 @@ export function ReportMetricExtensionForm({
       defaultDataSourceId: defaultDataSourceId ?? "",
     });
   }, [metrics, defaultDataSourceId, resetBaseline]);
+
+  useEffect(() => {
+    if (readOnly || dsItems.length === 0 || defaultDataSourceId) return;
+    const analyticsId = resolveAnalyticsDatasourceId(dsItems);
+    if (!analyticsId) return;
+    setDefaultDsId((current) => current || analyticsId);
+  }, [dsItems, defaultDataSourceId, readOnly]);
 
   const resetForm = () => {
     setForm(EMPTY_FORM);
@@ -361,7 +371,7 @@ export function ReportMetricExtensionForm({
                 </p>
               ) : (
                 <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-                  数据集模式也要选：需与 Dataset 绑定的库一致（如「示例数据」）。
+                  同步 Dataset 默认使用「{ANALYTICS_DATASOURCE_NAME}」；选数据集后会自动对齐绑定库。
                 </p>
               )}
             </div>
@@ -386,7 +396,7 @@ export function ReportMetricExtensionForm({
               }
               onBoundConfigIdChange={(id) => setForm((f) => ({ ...f, boundConfigId: id }))}
               onSuggestedDataSourceId={(id) => {
-                if (id && !defaultDsId) setDefaultDsId(id);
+                if (id) setDefaultDsId(id);
               }}
             />
           )}

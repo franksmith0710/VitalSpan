@@ -49,7 +49,20 @@ describe("report templates smoke", () => {
         };
       }
       if (path.startsWith("/api/v1/datasources")) {
-        return { items: [{ id: "ds-1", name: "Sample DB" }] };
+        return {
+          items: [
+            { id: "ds-demo", name: "示例数据", code: "demo", type: "mysql" },
+            {
+              id: "ds-analytics",
+              name: "托管分析库",
+              code: "analytics",
+              type: "postgresql",
+              host: "127.0.0.1",
+              port: 5433,
+              database: "analytics",
+            },
+          ],
+        };
       }
       if (path.startsWith("/api/v1/datasets")) {
         return {
@@ -226,7 +239,7 @@ describe("report templates smoke", () => {
       target: { value: "SELECT SUM(amount) FROM orders" },
     });
     await user.click(screen.getByLabelText("运行数据源"));
-    await user.click(await screen.findByRole("option", { name: "Sample DB" }));
+    await user.click(await screen.findByRole("option", { name: "示例数据" }));
     await user.type(screen.getByLabelText("变更说明"), "添加 SQL 指标");
     await user.click(screen.getByRole("button", { name: "保存扩展配置" }));
     await waitFor(() => {
@@ -235,7 +248,7 @@ describe("report templates smoke", () => {
       );
       expect(putCall).toBeTruthy();
       const body = JSON.parse((putCall?.[1] as { body: string }).body);
-      expect(body.defaultDataSourceId).toBe("ds-1");
+      expect(body.defaultDataSourceId).toBe("ds-demo");
       expect(body.metrics).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
@@ -247,6 +260,26 @@ describe("report templates smoke", () => {
         ]),
       );
     });
+  });
+
+  it("defaults runtime datasource to managed analytics when extension is new", async () => {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const user = userEvent.setup();
+    render(
+      <QueryClientProvider client={qc}>
+        <TooltipProvider delayDuration={0}>
+          <MemoryRouter>
+            <ReportTemplatesPage />
+          </MemoryRouter>
+        </TooltipProvider>
+      </QueryClientProvider>,
+    );
+    await waitFor(() => expect(screen.getByText("销售模板")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "销售模板" }));
+    await user.click(screen.getByRole("tab", { name: "扩展配置" }));
+    await waitFor(() =>
+      expect(screen.getByLabelText("运行数据源")).toHaveTextContent("托管分析库"),
+    );
   });
 });
 

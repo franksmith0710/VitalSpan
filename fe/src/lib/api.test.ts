@@ -154,6 +154,20 @@ describe("apiFetch 401 classification", () => {
     expect(error.code).toBe("UNAUTHORIZED");
   });
 
+  it("maps 413 payload too large to PAYLOAD_TOO_LARGE", async () => {
+    setAuthToken(TOKEN);
+    mockJson({ detail: "Request Entity Too Large" }, 413);
+
+    const error = await expectApiError(
+      apiFetch("/api/v1/dashboards/dash-1/editor-save", { method: "PUT", body: "{}" }),
+    );
+
+    expect(error).toMatchObject({
+      code: "PAYLOAD_TOO_LARGE",
+    });
+    expect(error.message).toContain("背景图");
+  });
+
   it("maps FastAPI string detail to a readable error", async () => {
     setAuthToken(TOKEN);
     mockJson({ detail: "column surface_kind does not exist" }, 500);

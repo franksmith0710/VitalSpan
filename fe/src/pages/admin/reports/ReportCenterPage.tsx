@@ -1,11 +1,10 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router";
-import { ChevronDown, ChevronRight, FileBarChart, LayoutTemplate, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, FileBarChart, LayoutTemplate, Search, CalendarClock } from "lucide-react";
 import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import {
   DataTable,
-  ListPageSection,
   ListPageTableFrame,
   PageErrorBanner,
 } from "@/components/layout/list-page-kit";
@@ -23,7 +22,11 @@ import {
   togglePinnedPrefabKey,
 } from "@/lib/reportCenterPrefs";
 import { useAuth } from "@/context/auth-context";
-import { ReportCenterHeaderActions, ReportCenterScheduleHub } from "./components/ReportCenterScheduleHub";
+import {
+  ReportCenterHeaderActions,
+  ReportCenterQuickAside,
+  ReportCenterScheduleList,
+} from "./components/ReportCenterScheduleHub";
 import { ReportCenterPrefabPanel } from "./components/ReportCenterPrefabPanel";
 import { buildReportCenterTemplateRows } from "./components/ReportCenterTemplateTable";
 import { ScheduleRecentFailuresPanel } from "./components/ScheduleRecentFailuresPanel";
@@ -119,20 +122,26 @@ export function ReportCenterPage() {
     <div className="flex flex-wrap items-center gap-2">
       <ReportCenterHeaderActions canManage={canManage} />
       {canManage ? (
-        <Button type="button" variant="ghost" size="sm" asChild>
-          <Link to="/admin/reports/templates">
-            <LayoutTemplate className="size-4" aria-hidden />
-            文档模板
-          </Link>
-        </Button>
+        <>
+          <Button type="button" variant="outline" size="sm" asChild>
+            <Link to="/admin/reports/schedules">
+              <CalendarClock className="size-4" aria-hidden />
+              定时报告
+            </Link>
+          </Button>
+          <Button type="button" variant="ghost" size="sm" asChild>
+            <Link to="/admin/reports/templates">
+              <LayoutTemplate className="size-4" aria-hidden />
+              文档模板
+            </Link>
+          </Button>
+        </>
       ) : null}
     </div>
   );
 
   return (
     <AdminPageShell
-      layout="list"
-      className="gap-2 md:gap-2"
       title="报表中心"
       icon={
         <AdminPageHeaderIcon>
@@ -149,48 +158,60 @@ export function ReportCenterPage() {
         />
       ) : null}
 
-      <ListPageSection className="min-h-0 flex-1 space-y-4">
-        <ReportCenterScheduleHub
-          schedules={schedulesQuery.data?.items ?? []}
-          loading={schedulesQuery.isLoading}
-          canManage={canManage}
-        />
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="order-2 min-w-0 space-y-6 xl:order-1">
+          <ReportCenterScheduleList
+            schedules={schedulesQuery.data?.items ?? []}
+            loading={schedulesQuery.isLoading}
+            canManage={canManage}
+          />
 
-        <ScheduleRecentFailuresPanel
-          schedules={schedulesQuery.data?.items ?? []}
-          onSelectSchedule={(id) => navigate(`/admin/reports/schedules?tab=all&expand=${id}`)}
-          onRetry={(executionId, scheduleId) =>
-            void retryExecution.mutateAsync({ executionId, scheduleId })
-          }
-          retryPending={retryExecution.isPending}
-          retryPendingExecutionId={
-            retryExecution.isPending ? retryExecution.variables?.executionId : undefined
-          }
-        />
+          <ScheduleRecentFailuresPanel
+            schedules={schedulesQuery.data?.items ?? []}
+            onSelectSchedule={(id) => navigate(`/admin/reports/schedules?tab=all&expand=${id}`)}
+            onRetry={(executionId, scheduleId) =>
+              void retryExecution.mutateAsync({ executionId, scheduleId })
+            }
+            retryPending={retryExecution.isPending}
+            retryPendingExecutionId={
+              retryExecution.isPending ? retryExecution.variables?.executionId : undefined
+            }
+          />
 
-        <div className="rounded-2xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-4 py-3 text-left"
+            data-testid="report-center-templates-toggle"
+            className="flex w-full items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-gray-50/80 dark:hover:bg-white/[0.02]"
             onClick={() => setTemplatesOpen((v) => !v)}
             aria-expanded={templatesOpen}
           >
-            {templatesOpen ? (
-              <ChevronDown className="size-4 text-gray-400" aria-hidden />
-            ) : (
-              <ChevronRight className="size-4 text-gray-400" aria-hidden />
-            )}
-            <div className="min-w-0 flex-1">
-              <p className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">
-                文档模板（后续能力）
-              </p>
-              <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-600 dark:bg-white/[0.06] dark:text-gray-400">
+              <LayoutTemplate className="size-5" aria-hidden />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex flex-wrap items-center gap-2">
+                <span className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">
+                  文档模板
+                </span>
+                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-white/[0.06] dark:text-gray-400">
+                  后续能力
+                </span>
+              </span>
+              <span className="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
                 Word/Excel 固定版式报表，非当前默认定时报告主路径。
-              </p>
-            </div>
+              </span>
+            </span>
             {hasTemplates ? (
-              <span className="text-theme-xs tabular-nums text-gray-400">{templates.length} 个</span>
+              <span className="shrink-0 rounded-lg bg-gray-50 px-2.5 py-1 text-theme-xs tabular-nums text-gray-600 dark:bg-white/[0.04] dark:text-gray-400">
+                {templates.length} 个
+              </span>
             ) : null}
+            {templatesOpen ? (
+              <ChevronDown className="size-4 shrink-0 text-gray-400" aria-hidden />
+            ) : (
+              <ChevronRight className="size-4 shrink-0 text-gray-400" aria-hidden />
+            )}
           </button>
 
           {templatesOpen ? (
@@ -283,16 +304,21 @@ export function ReportCenterPage() {
         </div>
 
         {!prefabQuery.isLoading && prefabItems.length > 0 ? (
-          <div className="shrink-0 rounded-2xl border border-gray-200 px-4 py-3 dark:border-gray-800">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <p
-                className="text-theme-sm font-semibold text-gray-800 dark:text-white/90"
-                data-testid="report-center-prefab-heading"
-              >
-                预制分析
-              </p>
-              <Button type="button" variant="ghost" size="sm" asChild>
-                <Link to="/admin/reports">全部</Link>
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p
+                  className="text-theme-sm font-semibold text-gray-800 dark:text-white/90"
+                  data-testid="report-center-prefab-heading"
+                >
+                  预制分析
+                </p>
+                <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                  一键运行常用分析模板，可固定到列表顶部。
+                </p>
+              </div>
+              <Button type="button" variant="outline" size="sm" className="shrink-0" asChild>
+                <Link to="/admin/reports">查看全部</Link>
               </Button>
             </div>
             <ReportCenterPrefabPanel
@@ -302,7 +328,16 @@ export function ReportCenterPage() {
             />
           </div>
         ) : null}
-      </ListPageSection>
+        </div>
+
+        <div className="order-1 min-w-0 xl:order-2 xl:sticky xl:top-0 xl:self-start">
+          <ReportCenterQuickAside
+            schedules={schedulesQuery.data?.items ?? []}
+            loading={schedulesQuery.isLoading}
+            canManage={canManage}
+          />
+        </div>
+      </div>
     </AdminPageShell>
   );
 }

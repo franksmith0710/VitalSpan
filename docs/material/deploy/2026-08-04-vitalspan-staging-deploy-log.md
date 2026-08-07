@@ -100,11 +100,11 @@ cd fe && pnpm vite build
 python .tmp\deploy_finalize.py  # 上传 fe/dist
 ```
 
-Nginx 监听 **8088**（:80 被 Apache2 + conf.d/nex.conf、ark.conf 占用）：
+Nginx 监听 **8088**（:80 被 Apache2 + conf.d/nex.conf、ark.conf 占用）。站点配置真源：**`deploy/nginx/vitalspan.conf`**（含 `client_max_body_size 8m`，支持看板内嵌背景图保存）。
 
 ```bash
 sudo mv /etc/nginx/conf.d/*.conf /etc/nginx/conf.d/*.conf.disabled  # 逐个禁用
-sudo cp /tmp/vitalspan-nginx.conf /etc/nginx/sites-available/vitalspan
+sudo cp deploy/nginx/vitalspan.conf /etc/nginx/sites-available/vitalspan
 sudo ln -sf /etc/nginx/sites-available/vitalspan /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl restart nginx
 ```
@@ -138,6 +138,7 @@ sudo nginx -t && sudo systemctl restart nginx
 | 8 | sample 用户导入 DEFINER 报错 | root 经 debian.cnf 导入 |
 | 9 | 登录报「操作失败」 | 生产 build 默认 API 指向 `localhost:8000`；用 `fe/.env.production.local` 设 `VITE_API_BASE_URL=` 后重建并上传 dist |
 | 10 | 「边框装饰」无法渲染（HTTP 非 localhost） | `normalizeScreenBorderSparkleStyle` 在 `enabled=false` 时仍调 `crypto.randomUUID()`；非安全上下文抛错 → 改用 `fe/src/lib/randomId.ts` + 跳过预生成 sparkle |
+| 11 | 看板保存「请求失败」/ Nginx 413 | 自定义背景 base64 使 `editor-save` 体 >1MB；Nginx 默认 `client_max_body_size 1m` 拦截 → 仓库 `deploy/nginx/vitalspan.conf` 设 **8m**；前端 `PAYLOAD_TOO_LARGE` 友好提示 |
 
 ---
 

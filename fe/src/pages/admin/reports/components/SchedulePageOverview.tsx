@@ -10,21 +10,23 @@ type ScheduleStat = {
   hint?: string;
 };
 
-function ScheduleStatCard({ label, value, hint }: ScheduleStat) {
+export function ScheduleStatCard({ label, value, hint }: ScheduleStat) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+    <div className="min-w-0 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
       <p className="text-theme-xs text-gray-500 dark:text-gray-400">{label}</p>
       <p className="mt-1 text-title-sm font-semibold tabular-nums text-gray-900 dark:text-white">
         {value}
       </p>
       {hint ? (
-        <p className="mt-0.5 truncate text-[11px] text-gray-400 dark:text-gray-500">{hint}</p>
+        <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-gray-400 dark:text-gray-500">
+          {hint}
+        </p>
       ) : null}
     </div>
   );
 }
 
-function CreateEntryCard({
+export function CreateEntryCard({
   title,
   description,
   to,
@@ -41,7 +43,7 @@ function CreateEntryCard({
     <Link
       to={to}
       className={cn(
-        "group flex items-start gap-3 rounded-xl border p-4 shadow-theme-xs transition-colors",
+        "group flex min-w-0 items-start gap-3 rounded-xl border p-4 shadow-theme-xs transition-colors",
         primary
           ? "border-brand-200 bg-brand-50/40 hover:bg-brand-50/70 dark:border-brand-500/30 dark:bg-brand-500/5"
           : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-800 dark:bg-white/[0.02]",
@@ -57,11 +59,11 @@ function CreateEntryCard({
       >
         {icon}
       </span>
-      <span className="min-w-0">
+      <span className="min-w-0 flex-1">
         <span className="block text-theme-sm font-semibold text-gray-800 dark:text-white/90">
           {title}
         </span>
-        <span className="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
+        <span className="mt-0.5 block line-clamp-2 text-theme-xs leading-snug text-gray-500 dark:text-gray-400">
           {description}
         </span>
       </span>

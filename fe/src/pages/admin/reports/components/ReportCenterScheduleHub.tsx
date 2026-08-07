@@ -1,6 +1,5 @@
-import type { ReactNode } from "react";
 import { Link } from "react-router";
-import { CalendarClock, Monitor, LayoutTemplate } from "lucide-react";
+import { CalendarClock, ChevronRight, Monitor, LayoutTemplate } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -17,169 +16,199 @@ import {
   type ReportScheduleRow,
 } from "../useReportSchedules";
 import { Badge } from "@/components/ui/badge";
+import { CreateEntryCard, ScheduleStatCard } from "./SchedulePageOverview";
 
-function Metric({
-  label,
-  value,
-  hint,
+function ScheduleMiniRow({
+  schedule,
+  canManage,
 }: {
-  label: string;
-  value: number | string;
-  hint?: string;
+  schedule: ReportScheduleRow;
+  canManage?: boolean;
 }) {
-  return (
-    <div className="min-w-[5.5rem] rounded-md bg-gray-50/90 px-2.5 py-1.5 dark:bg-white/[0.03]">
-      <p className="text-[11px] text-gray-500">{label}</p>
-      <p className="text-theme-sm font-semibold tabular-nums text-gray-900 dark:text-white">{value}</p>
-      {hint ? <p className="truncate text-[10px] text-gray-400">{hint}</p> : null}
-    </div>
-  );
-}
-
-function CreateEntryCard({
-  title,
-  description,
-  to,
-  icon,
-  primary,
-}: {
-  title: string;
-  description: string;
-  to: string;
-  icon: ReactNode;
-  primary?: boolean;
-}) {
-  return (
-    <Link
-      to={to}
-      className={cn(
-        "group flex items-start gap-3 rounded-xl border p-4 shadow-theme-xs transition-colors",
-        primary
-          ? "border-brand-200 bg-brand-50/40 hover:bg-brand-50/70 dark:border-brand-500/30 dark:bg-brand-500/5"
-          : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-800 dark:bg-white/[0.02]",
-      )}
-    >
-      <span
-        className={cn(
-          "flex size-9 shrink-0 items-center justify-center rounded-lg",
-          primary
-            ? "bg-brand-100 text-brand-600 dark:bg-brand-500/20 dark:text-brand-400"
-            : "bg-gray-100 text-gray-600 dark:bg-white/[0.06] dark:text-gray-400",
-        )}
-      >
-        {icon}
-      </span>
-      <span className="min-w-0">
-        <span className="block text-theme-sm font-semibold text-gray-800 dark:text-white/90">{title}</span>
-        <span className="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">{description}</span>
-      </span>
-    </Link>
-  );
-}
-
-function ScheduleMiniRow({ schedule }: { schedule: ReportScheduleRow }) {
   const label =
     schedule.sourceLabel ??
     (schedule.sourceType === "dashboard" || schedule.sourceType === "data_screen"
       ? `${localizeSourceType(schedule.sourceType)} ${schedule.sourceId?.slice(0, 8) ?? ""}`
       : "模板调度");
 
-  return (
-    <li className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gray-100 px-3 py-2 dark:border-gray-800">
-      <div className="min-w-0">
+  const rowClassName = cn(
+    "group flex min-w-0 items-center gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3 transition-colors dark:border-gray-800 dark:bg-white/[0.02]",
+    canManage &&
+      "hover:border-brand-200 hover:bg-brand-50/30 dark:hover:border-brand-500/30 dark:hover:bg-brand-500/5",
+  );
+
+  const inner = (
+    <>
+      <div className="min-w-0 flex-1">
         <p className="truncate text-theme-sm font-medium text-gray-800 dark:text-white/90">{label}</p>
-        <p className="text-theme-xs text-gray-500">
+        <p className="mt-0.5 line-clamp-1 text-theme-xs text-gray-500 dark:text-gray-400">
           {describeCron(schedule.cron)} · {summarizeRecipients(schedule.recipients)}
         </p>
       </div>
-      <Badge variant="light" color={scheduleStatusColor(schedule.status)} size="sm">
+      <Badge variant="light" color={scheduleStatusColor(schedule.status)} size="sm" className="shrink-0">
         {localizeScheduleStatus(schedule.status)}
       </Badge>
+      {canManage ? (
+        <ChevronRight
+          className="size-4 shrink-0 text-gray-300 transition-colors group-hover:text-brand-500 dark:text-gray-600"
+          aria-hidden
+        />
+      ) : null}
+    </>
+  );
+
+  if (canManage) {
+    return (
+      <li className="min-w-0">
+        <Link
+          to={`/admin/reports/schedules?tab=all&expand=${schedule.id}`}
+          className={rowClassName}
+        >
+          {inner}
+        </Link>
+      </li>
+    );
+  }
+
+  return (
+    <li className={cn(rowClassName, "min-w-0")}>
+      {inner}
     </li>
   );
 }
 
-type Props = {
+type HubProps = {
   schedules: ReportScheduleRow[];
   loading?: boolean;
   canManage?: boolean;
 };
 
-/** 报表中心主区：定时报告运维入口 */
-export function ReportCenterScheduleHub({ schedules, loading, canManage }: Props) {
+function cardShell(className?: string) {
+  return cn(
+    "overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]",
+    className,
+  );
+}
+
+/** 右侧：指标 + 快捷创建 */
+export function ReportCenterQuickAside({ schedules, loading, canManage }: HubProps) {
   const dashboardSchedules = filterSchedulesByTab(schedules, "dashboard");
   const active = schedules.filter((s) => s.status === "scheduled").length;
-  const failedRecent = schedules.filter((s) => s.status === "paused").length;
+  const paused = schedules.filter((s) => s.status === "paused").length;
 
   if (loading) {
     return (
-      <div className="space-y-3">
-        <Skeleton className="h-12 w-full max-w-xl rounded-md" />
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Skeleton className="h-20 rounded-xl" />
-          <Skeleton className="h-20 rounded-xl" />
+      <aside className="space-y-4">
+        <div className={cardShell("p-5")}>
+          <Skeleton className="mb-3 h-5 w-24" />
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-[72px] w-full rounded-xl" />
+            ))}
+          </div>
+        </div>
+        <div className={cardShell("p-5")}>
+          <Skeleton className="mb-3 h-5 w-20" />
+          <div className="space-y-3">
+            <Skeleton className="h-20 w-full rounded-xl" />
+            <Skeleton className="h-20 w-full rounded-xl" />
+          </div>
+        </div>
+      </aside>
+    );
+  }
+
+  return (
+    <aside className="space-y-4">
+      <div className={cardShell("p-5")}>
+        <h2 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">运行概览</h2>
+        <div className="mt-3 grid gap-3">
+          <ScheduleStatCard label="定时报告" value={schedules.length} hint="看板/大屏 + 模板" />
+          <ScheduleStatCard label="已调度" value={active} hint="按 cron 自动执行" />
+          <ScheduleStatCard label="看板/大屏" value={dashboardSchedules.length} hint="推荐主路径" />
+          {paused > 0 ? (
+            <ScheduleStatCard label="已暂停" value={paused} hint="需人工恢复" />
+          ) : null}
+        </div>
+      </div>
+
+      <div className={cardShell("p-5")}>
+        <h2 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">快捷创建</h2>
+        <div className="mt-3 grid gap-3">
+          <CreateEntryCard
+            primary
+            title="从看板/大屏创建"
+            description="分享页配置定时 PDF（推荐）"
+            to={dashboardsListForScheduleCreate()}
+            icon={<Monitor className="size-5" aria-hidden />}
+          />
+          {canManage ? (
+            <CreateEntryCard
+              title="文档模板调度"
+              description="固定版式文档（后续能力）"
+              to="/admin/reports/templates"
+              icon={<LayoutTemplate className="size-5" aria-hidden />}
+            />
+          ) : null}
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+/** 左侧：看板定时报告列表 */
+export function ReportCenterScheduleList({ schedules, loading, canManage }: HubProps) {
+  const dashboardSchedules = filterSchedulesByTab(schedules, "dashboard");
+
+  if (loading) {
+    return (
+      <div className={cardShell("p-5")}>
+        <Skeleton className="mb-4 h-5 w-40" />
+        <div className="space-y-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-xl" />
+          ))}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex min-w-0 flex-wrap items-center gap-2">
-        <Metric label="定时报告" value={schedules.length} hint="看板/大屏 + 模板" />
-        <Metric label="已调度" value={active} />
-        <Metric label="看板/大屏" value={dashboardSchedules.length} hint="主路径" />
-        {failedRecent > 0 ? <Metric label="已暂停" value={failedRecent} /> : null}
-        {canManage ? (
-          <Button type="button" variant="primary" size="sm" className="ml-auto h-8" asChild>
-            <Link to="/admin/reports/schedules?tab=dashboard">
-              <CalendarClock className="size-3.5" aria-hidden />
-              管理全部定时报告
-            </Link>
+    <div className={cardShell("p-5")}>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0">
+          <h2 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">
+            我的看板定时报告
+          </h2>
+          <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
+            最近创建的看板/大屏 PDF 定时任务
+          </p>
+        </div>
+        {canManage && dashboardSchedules.length > 0 ? (
+          <Button type="button" variant="ghost" size="sm" className="shrink-0" asChild>
+            <Link to="/admin/reports/schedules?tab=dashboard">查看全部</Link>
           </Button>
         ) : null}
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <CreateEntryCard
-          primary
-          title="从看板/大屏创建"
-          description="在分享页配置定时 PDF 报告（推荐主路径）"
-          to={dashboardsListForScheduleCreate()}
-          icon={<Monitor className="size-5" aria-hidden />}
-        />
-        {canManage ? (
-          <CreateEntryCard
-            title="文档模板调度"
-            description="固定版式文档报表（后续能力，非默认路径）"
-            to="/admin/reports/templates"
-            icon={<LayoutTemplate className="size-5" aria-hidden />}
-          />
-        ) : null}
-      </div>
-
       {dashboardSchedules.length > 0 ? (
-        <div>
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <p className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">我的看板定时报告</p>
-            {canManage ? (
-              <Button type="button" variant="ghost" size="sm" asChild>
-                <Link to="/admin/reports/schedules?tab=dashboard">查看全部</Link>
-              </Button>
-            ) : null}
-          </div>
-          <ul className="space-y-1.5">
-            {dashboardSchedules.slice(0, 5).map((schedule) => (
-              <ScheduleMiniRow key={schedule.id} schedule={schedule} />
-            ))}
-          </ul>
-        </div>
+        <ul className="space-y-2">
+          {dashboardSchedules.slice(0, 8).map((schedule) => (
+            <ScheduleMiniRow key={schedule.id} schedule={schedule} canManage={canManage} />
+          ))}
+        </ul>
       ) : (
-        <div className="rounded-xl border border-dashed border-gray-200 px-4 py-6 text-center dark:border-gray-800">
-          <p className="text-theme-sm text-gray-500 dark:text-gray-400">
-            暂无看板/大屏定时报告。打开看板 → 分享 → 创建定时报告。
+        <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/40 px-4 py-10 text-center dark:border-gray-800 dark:bg-white/[0.02]">
+          <div className="mx-auto flex size-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+            <Monitor className="size-5" aria-hidden />
+          </div>
+          <p className="mt-3 text-theme-sm font-medium text-gray-800 dark:text-white/90">
+            暂无看板/大屏定时报告
           </p>
-          <Button type="button" variant="primary" size="sm" className="mt-3" asChild>
+          <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
+            打开看板 → 分享 → 创建定时报告
+          </p>
+          <Button type="button" variant="primary" size="sm" className="mt-4" asChild>
             <Link to={dashboardsListForScheduleCreate()}>
               <Monitor className="size-3.5" aria-hidden />
               从看板创建
@@ -191,24 +220,34 @@ export function ReportCenterScheduleHub({ schedules, loading, canManage }: Props
   );
 }
 
+/** @deprecated 兼容旧引用，请用 ReportCenterScheduleList + ReportCenterQuickAside */
+export function ReportCenterScheduleHub(props: HubProps) {
+  return (
+    <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_280px]">
+      <ReportCenterScheduleList {...props} />
+      <ReportCenterQuickAside {...props} />
+    </div>
+  );
+}
+
 export function ReportCenterMetricsSkeleton() {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="space-y-3">
       {Array.from({ length: 3 }).map((_, i) => (
-        <Skeleton key={i} className="h-12 w-24 rounded-md" />
+        <Skeleton key={i} className="h-[72px] rounded-xl" />
       ))}
     </div>
   );
 }
 
-/** 页头次要操作 */
+/** 页头主操作 */
 export function ReportCenterHeaderActions({ canManage }: { canManage: boolean }) {
   if (!canManage) return null;
   return (
-    <Button type="button" variant="outline" size="sm" asChild>
-      <Link to="/admin/reports/schedules">
+    <Button type="button" variant="primary" size="sm" asChild>
+      <Link to="/admin/reports/schedules?tab=dashboard">
         <CalendarClock className="size-4" aria-hidden />
-        定时报告
+        管理全部定时报告
       </Link>
     </Button>
   );

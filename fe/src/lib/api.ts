@@ -248,6 +248,12 @@ export async function apiFetch<T>(
     );
   }
   if (!response.ok) {
+    if (response.status === 413) {
+      throw new ApiRequestError(
+        "保存数据过大（常见原因：自定义背景图过大），请压缩图片或移除背景图后再保存",
+        "PAYLOAD_TOO_LARGE",
+      );
+    }
     throw toApiRequestError(await parseErrorBody(response));
   }
   if (response.status === 204) {

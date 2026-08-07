@@ -102,8 +102,8 @@ describe("ReportCenterPage smoke", () => {
   it("expands document templates section on click", async () => {
     const user = userEvent.setup();
     renderPage();
-    expect(await screen.findByText("文档模板（后续能力）")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /文档模板（后续能力）/ }));
+    expect(await screen.findByTestId("report-center-templates-toggle")).toBeInTheDocument();
+    await user.click(screen.getByTestId("report-center-templates-toggle"));
     expect(await screen.findByText("月报模板")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "运行" })).toHaveAttribute("href", "/admin/reports/view/tpl-1");
   });
