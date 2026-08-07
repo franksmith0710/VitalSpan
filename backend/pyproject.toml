@@ -19,6 +19,7 @@ dependencies = [
     "gmssl>=3.2.2",
     "elasticsearch>=8.0.0",
     "pandas>=2.2.0",
+    "reportlab>=4.2.0",
 ]
 
 [project.optional-dependencies]
@@ -26,6 +27,7 @@ dev = [
     "ruff>=0.8.0",
     "pytest>=8.3.0",
     "httpx>=0.28.0",
+    "playwright>=1.49.0",
 ]
 connectors-ext = [
     "pyhive>=0.7.0",
@@ -42,7 +44,6 @@ connectors-ext = [
 ]
 export-render = [
     "playwright>=1.49.0",
-    "reportlab>=4.2.0",
 ]
 
 [tool.hatch.build.targets.wheel]

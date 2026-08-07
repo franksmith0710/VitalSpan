@@ -211,6 +211,14 @@ class Settings(BaseSettings):
     def cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins_raw.split(",") if origin.strip()]
 
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def should_seed_demo_reports(self) -> bool:
+        """开发显式开关；staging 且已启用官方演示源时自动幂等种子（与 dev 报表演示一致）。"""
+        if self.dev_report_seed:
+            return True
+        return self.vitalspan_env == "staging" and self.ensure_official_demo_datasource
+
 
 @lru_cache
 def get_settings() -> Settings:

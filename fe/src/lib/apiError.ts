@@ -244,6 +244,8 @@ const EXACT_MESSAGE_MAP: Record<string, string> = {
   "View override not found": "个人视图不存在",
   "Access denied": "无权访问",
   "Not found": "资源不存在",
+  "Template requires extension configuration": "请先在「扩展配置」中添加指标并保存后再导出",
+  "请先在「扩展配置」中添加指标并保存后再导出": "请先在「扩展配置」中添加指标并保存后再导出",
 };
 
 const MESSAGE_PREFIX_MAP: Array<[RegExp, string]> = [

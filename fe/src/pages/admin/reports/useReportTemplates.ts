@@ -157,7 +157,6 @@ export function useCatalogExtension(nodeId: string | null) {
       }>(`/api/v1/reports/catalog/nodes/${nodeId}/extension`),
     enabled: Boolean(nodeId),
     retry: false,
-    placeholderData: keepPreviousData,
   });
 }
 

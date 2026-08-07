@@ -103,7 +103,7 @@ export function TemplateDetailPanel({
             </dl>
             <ReportExportCard
               defaultTemplateId={node.id}
-              disabled={!extensionData}
+              disabled={!extensionData || (extensionData.metrics?.length ?? 0) === 0}
               disabledHint="请先在「扩展配置」Tab 添加指标、选择运行数据源并保存后再导出。"
             />
           </TabsContent>

@@ -14,7 +14,7 @@ from app.dashboard.export_fe_url import build_export_snapshot_url
 
 logger = logging.getLogger(__name__)
 
-PLAYWRIGHT_INSTALL_HINT = "pip install playwright && playwright install chromium"
+PLAYWRIGHT_INSTALL_HINT = "pip install -e \".[dev]\" && python -m playwright install chromium"
 
 CAPTURE_SELECTOR = '[data-export-ready="true"]'
 SETTLE_MS = 1500
@@ -123,7 +123,7 @@ def render_dashboard_visual_pdf(
     except ImportError as exc:
         raise dash_service.DashboardError(
             "DASH_EXPORT_RENDER_UNAVAILABLE",
-            "Playwright 未安装；请 pip install playwright && playwright install chromium",
+            f"Playwright 未安装；请 {PLAYWRIGHT_INSTALL_HINT}",
             503,
         ) from exc
 

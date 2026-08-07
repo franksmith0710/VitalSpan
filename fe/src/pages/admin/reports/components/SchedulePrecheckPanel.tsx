@@ -44,7 +44,7 @@ function precheckFixHint(item: PrecheckItem): string | undefined {
   }
   if (item.id === "export") {
     if (detail.includes("playwright") || detail.includes("chromium")) {
-      return "本地修复：cd backend && pip install -e \".[export-render]\" && playwright install chromium";
+      return "本地修复：cd backend && pip install -e \".[dev]\" && python -m playwright install chromium";
     }
     if (detail.includes("5173") || detail.includes("前端")) {
       return "请确认 fe 已启动（pnpm dev），且 FE_BASE_URL 与访问地址一致";

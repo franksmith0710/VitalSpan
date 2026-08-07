@@ -94,14 +94,14 @@ def _warm_meta_database() -> None:
                 username=settings.vitalspan_bootstrap_admin_username,
             )
             repair_dev_datasource_credentials(session)
-            if settings.dev_report_seed:
-                try:
-                    from app.reports.dev_seed import seed_dev_reports
+        if settings.should_seed_demo_reports:
+            try:
+                from app.reports.dev_seed import seed_dev_reports
 
-                    counts = seed_dev_reports(session)
-                    logger.info("report_dev_seed_ok %s", counts)
-                except Exception:
-                    logger.warning("report_dev_seed_failed", exc_info=True)
+                counts = seed_dev_reports(session)
+                logger.info("report_dev_seed_ok %s", counts)
+            except Exception:
+                logger.warning("report_dev_seed_failed", exc_info=True)
     except Exception:
         logger.warning("meta_db_warmup_failed", exc_info=True)
     finally:

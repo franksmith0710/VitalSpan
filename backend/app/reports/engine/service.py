@@ -60,7 +60,7 @@ def _assert_extension_when_kind(node: CatalogNodeOut) -> None:
     except ReportExtensionError:
         raise ReportEngineError(
             "RPT_ENGINE_INCOMPLETE_TEMPLATE",
-            "Template requires extension configuration",
+            "请先在「扩展配置」中添加指标并保存后再导出",
             422,
         ) from None
 

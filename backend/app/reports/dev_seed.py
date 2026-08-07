@@ -111,8 +111,16 @@ def _ensure_equipment_table(session: Session, ds_id: uuid.UUID) -> bool:
         return False
 
 
+def _equipment_table_registered() -> bool:
+    try:
+        physical_service.get_physical_table(_EQUIPMENT_FQN)
+        return True
+    except PhysicalTableError:
+        return False
+
+
 def _seed_equipment_entity(session: Session, ds_id: uuid.UUID, actor: UserContext) -> int:
-    if _EQUIPMENT_FQN in physical_service._store:
+    if _equipment_table_registered():
         return 0
     try:
         entity_service.get_entity_type("equipment")

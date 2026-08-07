@@ -16,6 +16,7 @@ import { useAuth } from "@/context/auth-context";
 import type { ReportCatalogNode } from "@/lib/reportCatalogUtils";
 import { ReportExportCard } from "./components/ReportExportCard";
 import { ReportResultTable } from "./components/ReportResultTable";
+import { useCatalogExtension } from "./useReportTemplates";
 
 type RenderSection = {
   kind: string;
@@ -43,6 +44,12 @@ export function ReportViewPage() {
     queryFn: () => apiFetch<ReportCatalogNode>(`/api/v1/reports/catalog/nodes/${nodeId}`),
     enabled: Boolean(nodeId),
   });
+
+  const extQuery = useCatalogExtension(nodeId ?? null);
+  const extensionReady =
+    Boolean(extQuery.data) &&
+    extQuery.data!.catalogNodeId === nodeId &&
+    (extQuery.data!.metrics?.length ?? 0) > 0;
 
   const runMutation = useMutation({
     mutationFn: () =>
@@ -149,7 +156,11 @@ export function ReportViewPage() {
             </Card>
           ) : null}
 
-          <ReportExportCard defaultTemplateId={node.id} />
+          <ReportExportCard
+            defaultTemplateId={node.id}
+            disabled={!extensionReady}
+            disabledHint="请先在模板编辑页的「扩展配置」中添加指标、选择运行数据源并保存后再导出。"
+          />
         </div>
       ) : null}
     </AdminPageShell>
