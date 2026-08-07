@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import copy
 import uuid
+from typing import Any
 
 from sqlalchemy.orm import Session
 
 from app.dashboard.templates.demo_datasource import (
+    TEMPLATE_DEMO_DATASOURCE_REF,
     resolve_official_demo_connection,
     resolve_sample_db_datasource_id,
 )
@@ -88,3 +91,47 @@ def ensure_demo_dataset_bindings(db: Session) -> int:
         bound += 1
 
     return bound
+
+
+def bind_demo_dataset_config_ids(db: Session, layout: dict[str, Any]) -> dict[str, Any]:
+    """将官方示例 Dataset 的 bound_config_id 写入 layout（跨环境分享/embed 可复用）。"""
+    cloned = copy.deepcopy(layout)
+    widgets = cloned.get("widgets")
+    if not isinstance(widgets, list):
+        return cloned
+    demo_ds = resolve_sample_db_datasource_id(db)
+    for widget in widgets:
+        if not isinstance(widget, dict) or widget.get("type") != "chart":
+            continue
+        chart_cfg = widget.get("chartConfig")
+        if not isinstance(chart_cfg, dict) or chart_cfg.get("mode") != "dataset":
+            continue
+        dataset_id = chart_cfg.get("datasetId")
+        if not dataset_id:
+            continue
+        row = db.get(DatasetRecord, dataset_id)
+        if row is None or row.bound_config_id is None:
+            continue
+        chart_cfg["configId"] = str(row.bound_config_id)
+        if demo_ds is not None:
+            chart_cfg["dataSourceId"] = str(demo_ds)
+    return cloned
+
+
+def prepare_chart_config_for_embed(db: Session, chart_config: dict[str, Any]) -> dict[str, Any]:
+    """单图 embed：绑定演示数据源与 Dataset configId。"""
+    ensure_demo_dataset_bindings(db)
+    cfg = copy.deepcopy(chart_config)
+    demo_ds = resolve_sample_db_datasource_id(db)
+    current = cfg.get("dataSourceId")
+    if demo_ds is not None and current in (None, "", TEMPLATE_DEMO_DATASOURCE_REF):
+        cfg["dataSourceId"] = str(demo_ds)
+    if cfg.get("mode") == "dataset":
+        dataset_id = cfg.get("datasetId")
+        if dataset_id:
+            row = db.get(DatasetRecord, dataset_id)
+            if row is not None and row.bound_config_id is not None:
+                cfg["configId"] = str(row.bound_config_id)
+                if demo_ds is not None:
+                    cfg["dataSourceId"] = str(demo_ds)
+    return cfg

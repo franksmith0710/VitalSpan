@@ -226,6 +226,20 @@ def repair_legacy_template_layout(layout: dict[str, Any]) -> dict[str, Any]:
     return migrate_layout_chart_configs(cloned)
 
 
+def prepare_layout_for_embed(db: Session, layout: dict[str, Any]) -> dict[str, Any]:
+    """分享/embed 只读页：修复 legacy 字段并绑定本环境 sample_db 与官方 Dataset 配置。"""
+    from app.metadata.dataset.demo_bindings import (
+        bind_demo_dataset_config_ids,
+        ensure_demo_dataset_bindings,
+    )
+
+    ensure_demo_dataset_bindings(db)
+    repaired = repair_legacy_template_layout(layout)
+    demo_ds = resolve_sample_db_datasource_id(db)
+    bound = bind_template_demo_datasources(repaired, demo_ds)
+    return bind_demo_dataset_config_ids(db, bound)
+
+
 def layout_requires_demo_datasource(layout: dict[str, Any]) -> bool:
     widgets = layout.get("widgets")
     if not isinstance(widgets, list):

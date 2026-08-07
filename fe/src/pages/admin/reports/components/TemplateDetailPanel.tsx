@@ -44,6 +44,8 @@ export function TemplateDetailPanel({
   const renderQuery = useExtensionRenderSpec(node.id, tab === "preview");
   const extensionData =
     extQuery.data && String(extQuery.data.catalogNodeId) === String(node.id) ? extQuery.data : null;
+  const extensionLoading =
+    extQuery.isLoading || (extQuery.isFetching && !extensionData);
   const previewData =
     renderQuery.data && String(renderQuery.data.templateNodeId ?? "") === node.id
       ? renderQuery.data
@@ -103,8 +105,8 @@ export function TemplateDetailPanel({
             </dl>
             <ReportExportCard
               defaultTemplateId={node.id}
-              disabled={!extensionData || (extensionData.metrics?.length ?? 0) === 0}
-              disabledHint="请先在「扩展配置」Tab 添加指标、选择运行数据源并保存后再导出。"
+              disabled={extensionLoading || !extensionData || (extensionData.metrics?.length ?? 0) === 0}
+              disabledHint="请先在「扩展配置」Tab 添加指标、选择数据集并保存后再导出。"
             />
           </TabsContent>
 
@@ -128,7 +130,7 @@ export function TemplateDetailPanel({
               metrics={extensionData?.metrics ?? []}
               filters={extensionData?.filters ?? []}
               defaultDataSourceId={extensionData?.defaultDataSourceId}
-              isLoading={extQuery.isLoading && !extensionData}
+              isLoading={extensionLoading}
             />
           </TabsContent>
 

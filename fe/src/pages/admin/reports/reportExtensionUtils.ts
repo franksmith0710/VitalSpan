@@ -1,4 +1,8 @@
 import { ApiRequestError } from "@/lib/api";
+import {
+  resolveAnalyticsDatasourceId,
+  type DatasourceListItem,
+} from "@/lib/datasourceRoles";
 import type { ExtensionMetric } from "./useReportTemplates";
 
 export type ExtensionConfig = {
@@ -67,4 +71,26 @@ export function metricKeyValidationMessage(key: string): string | null {
     return "指标键须以小写字母开头，仅含小写字母、数字与下划线（如 revenue）";
   }
   return null;
+}
+
+/** 扩展里存在 SQL 指标时，才需要用户手选运行数据源。 */
+export function extensionNeedsSqlDatasourcePicker(metrics: ExtensionMetric[]): boolean {
+  return metrics.some((m) => {
+    if (!m.visible && m.visible !== undefined) return false;
+    if (m.queryMode === "dataset") return false;
+    return m.queryMode === "sql" || Boolean(m.expression?.trim());
+  });
+}
+
+export function resolveExtensionDefaultDataSourceId(
+  metrics: ExtensionMetric[],
+  dsItems: DatasourceListItem[],
+  explicitId: string,
+): string {
+  const trimmed = explicitId.trim();
+  if (trimmed) return trimmed;
+  if (!extensionNeedsSqlDatasourcePicker(metrics)) {
+    return resolveAnalyticsDatasourceId(dsItems);
+  }
+  return "";
 }

@@ -636,6 +636,22 @@ def test_embed_chart_view_iframe_fe_origin_r44(client):
     assert body["chartId"] == str(chart_id)
 
 
+def test_embed_dataset_execute_requires_token_r44(client):
+    """嵌入 Dataset 查数无 token → 401。"""
+    resp = client.post(
+        "/api/v1/embed/dataset/execute",
+        json={
+            "dataSourceId": "00000000-0000-4000-8000-000000000010",
+            "configId": "00000000-0000-4000-8000-000000000011",
+            "limit": 10,
+            "parameters": {},
+            "rls": {"enabled": False},
+        },
+    )
+    assert resp.status_code == 401
+    assert resp.json()["code"] == "UNAUTHORIZED"
+
+
 def test_openapi_version_policy_extension_r44(client):
     """T-API-R44-007-01: info.x-api-version-policy 存在。"""
     resp = client.get("/openapi.json")

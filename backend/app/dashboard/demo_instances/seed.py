@@ -112,6 +112,10 @@ def seed_demo_instances(db: Session) -> int:
             sanitize_layout_for_template(template.layout_json),
         )
         layout = bind_template_demo_datasources(repaired, demo_ds)
+        from app.metadata.dataset.demo_bindings import bind_demo_dataset_config_ids, ensure_demo_dataset_bindings
+
+        ensure_demo_dataset_bindings(db)
+        layout = bind_demo_dataset_config_ids(db, layout)
         layout = _build_demo_layout(layout, spec["template_key"])
         surface = read_surface_kind_from_layout(layout) or spec["surface_kind"]
         existing = _find_existing_demo_row(db, spec)

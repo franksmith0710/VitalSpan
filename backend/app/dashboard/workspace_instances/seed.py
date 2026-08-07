@@ -131,6 +131,10 @@ def seed_workspace_instances(db: Session, *, reset_layout: bool = False) -> int:
             sanitize_layout_for_template(template.layout_json),
         )
         layout = bind_template_demo_datasources(repaired, demo_ds)
+        from app.metadata.dataset.demo_bindings import bind_demo_dataset_config_ids, ensure_demo_dataset_bindings
+
+        ensure_demo_dataset_bindings(db)
+        layout = bind_demo_dataset_config_ids(db, layout)
         layout = regenerate_widget_ids(layout)
         surface = read_surface_kind_from_layout(layout) or spec["surface_kind"]
         existing = _find_existing_workspace_row(db, spec)

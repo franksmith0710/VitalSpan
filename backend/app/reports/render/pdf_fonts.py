@@ -6,8 +6,13 @@ from functools import lru_cache
 from pathlib import Path
 
 FONT_NAME = "VitalSpanCJK"
+CID_FONT_NAME = "STSong-Light"
+
+_PACKAGE_DIR = Path(__file__).resolve().parent
 
 _FONT_CANDIDATES: tuple[Path, ...] = (
+    _PACKAGE_DIR / "fonts" / "NotoSansSC-Regular.otf",
+    _PACKAGE_DIR / "fonts" / "NotoSansSC-Regular.ttf",
     Path(r"C:/Windows/Fonts/msyh.ttc"),
     Path(r"C:/Windows/Fonts/msyhbd.ttc"),
     Path(r"C:/Windows/Fonts/simsun.ttc"),
@@ -20,9 +25,22 @@ _FONT_CANDIDATES: tuple[Path, ...] = (
 )
 
 
+def _register_cid_font() -> str | None:
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.cidfonts import UnicodeCIDFont
+
+    if CID_FONT_NAME in pdfmetrics.getRegisteredFontNames():
+        return CID_FONT_NAME
+    try:
+        pdfmetrics.registerFont(UnicodeCIDFont(CID_FONT_NAME))
+        return CID_FONT_NAME
+    except Exception:
+        return None
+
+
 @lru_cache(maxsize=1)
 def resolve_report_pdf_font_name() -> str:
-    """Return registered CJK font name, or Helvetica when no font file is available."""
+    """Return registered CJK font name; prefer bundled/system TTF, else ReportLab CID."""
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
 
@@ -40,4 +58,8 @@ def resolve_report_pdf_font_name() -> str:
             return FONT_NAME
         except Exception:
             continue
+
+    cid = _register_cid_font()
+    if cid:
+        return cid
     return "Helvetica"

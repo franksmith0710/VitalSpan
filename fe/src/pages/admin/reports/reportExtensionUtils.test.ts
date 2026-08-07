@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   emptyExtensionConfig,
+  extensionNeedsSqlDatasourcePicker,
   metricKeyValidationMessage,
   normalizeExtensionResponse,
+  resolveExtensionDefaultDataSourceId,
 } from "./reportExtensionUtils";
 
 describe("reportExtensionUtils", () => {
@@ -43,5 +45,21 @@ describe("reportExtensionUtils", () => {
   it("rejects invalid metric keys", () => {
     expect(metricKeyValidationMessage("22")).toMatch(/小写字母/);
     expect(metricKeyValidationMessage("revenue")).toBeNull();
+  });
+
+  it("skips datasource picker for dataset-only extensions", () => {
+    const metrics = [
+      { key: "amount", label: "金额", queryMode: "dataset" as const, datasetId: "d1", boundConfigId: "c1" },
+    ];
+    expect(extensionNeedsSqlDatasourcePicker(metrics)).toBe(false);
+    expect(
+      resolveExtensionDefaultDataSourceId(metrics, [{ id: "ds-analytics", name: "托管分析库", code: "analytics" }], ""),
+    ).toBe("ds-analytics");
+  });
+
+  it("requires explicit datasource for sql metrics", () => {
+    const metrics = [{ key: "rev", label: "营收", queryMode: "sql" as const, expression: "select 1" }];
+    expect(extensionNeedsSqlDatasourcePicker(metrics)).toBe(true);
+    expect(resolveExtensionDefaultDataSourceId(metrics, [], "")).toBe("");
   });
 });

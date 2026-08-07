@@ -5,9 +5,11 @@ import {
   fetchChartExecuteResult,
   fetchChartExecuteResultShared,
   isChartExecuteReady,
-  resolveChartExecuteMode,
   resetChartExecuteSharedInflight,
+  resetDemoDatasourceExecuteCache,
+  resolveChartExecuteMode,
 } from "@/lib/chartExecuteProbe";
+import { TEMPLATE_DEMO_DATASOURCE_REF } from "@/lib/templateDemoData";
 import { defaultChartConfig } from "@/components/dashboard/layoutUtils";
 import { patchChartDeStyle } from "@/lib/chartDeStyle";
 import { buildChartRenderModel } from "@/lib/buildChartRenderModel";
@@ -33,6 +35,7 @@ vi.mock("@/lib/api", () => ({
 describe("chartExecuteProbe shared execute", () => {
   beforeEach(() => {
     resetChartExecuteSharedInflight();
+    resetDemoDatasourceExecuteCache();
     apiFetchMock.mockClear();
   });
 
@@ -178,6 +181,38 @@ describe("chartExecuteProbe shared execute", () => {
     expect(apiFetchMock).toHaveBeenCalledWith(
       "/api/v1/dashboards/export-query/dataset/execute",
       expect.objectContaining({ method: "POST" }),
+    );
+  });
+
+  it("resolves template demo datasource ref before execute", async () => {
+    apiFetchMock.mockImplementation(async (url: string) => {
+      if (url === "/api/v1/datasources") {
+        return {
+          items: [
+            { id: "demo-ds-uuid", name: "示例数据", code: "demo", database: "sample_db" },
+          ],
+        };
+      }
+      return { columns: ["product_name"], rows: [["A"]] };
+    });
+
+    const config = {
+      ...defaultChartConfig("radar"),
+      mode: "sql" as const,
+      dataSourceId: TEMPLATE_DEMO_DATASOURCE_REF,
+      sql: "SELECT product_name, SUM(amount) AS amount FROM v_sales GROUP BY product_name",
+    };
+
+    await fetchChartExecuteResult(config);
+
+    const executeCall = apiFetchMock.mock.calls.find(
+      (call) => String(call[0]).includes("execute"),
+    );
+    expect(executeCall?.[1]).toEqual(
+      expect.objectContaining({
+        method: "POST",
+        body: expect.stringContaining('"dataSourceId":"demo-ds-uuid"'),
+      }),
     );
   });
 });

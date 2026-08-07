@@ -1,3 +1,5 @@
+import type { QueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/queryKeys";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { sanitizeChartFieldsForValidate } from "@/lib/chartFieldRules";
 import { apiFetch } from "@/lib/api";
@@ -161,6 +163,25 @@ export function batchResolveVizComponents(ids: string[]) {
     method: "POST",
     body: JSON.stringify({ ids }),
   });
+}
+
+/** batch-resolve 缓存就地更新，避免 linked 组件改配置后画布不刷新 */
+export function patchVizComponentResolveCache(
+  queryClient: QueryClient,
+  componentIds: string[],
+  updated: VizComponentDetail,
+): void {
+  queryClient.setQueryData<VizComponentBatchResolveResponse>(
+    queryKeys.vizComponents.resolve(componentIds),
+    (old) => {
+      if (!old) return { items: [updated] };
+      const exists = old.items.some((item) => item.id === updated.id);
+      const items = exists
+        ? old.items.map((item) => (item.id === updated.id ? updated : item))
+        : [...old.items, updated];
+      return { items };
+    },
+  );
 }
 
 export function createVizComponent(body: {

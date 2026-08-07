@@ -6,8 +6,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.dashboard.models import Dashboard
+from app.dashboard.templates.demo_datasource import prepare_layout_for_embed
 from app.integration import embed_token as et
 from app.integration.errors import IntegrationError
+from app.metadata.dataset.demo_bindings import prepare_chart_config_for_embed
 from app.schemas.chart_view import ChartViewError, validate_chart_view_config
 
 
@@ -50,6 +52,7 @@ def resolve_embed_chart_view(
             403,
         )
     raw = _find_chart_config(session, target_id)
+    raw = prepare_chart_config_for_embed(session, raw)
     merged = {**raw, "chartId": str(target_id)}
     try:
         cfg = validate_chart_view_config(merged)
@@ -82,6 +85,7 @@ def resolve_embed_dashboard_layout(
     if row is None or row.deleted_at is not None:
         raise IntegrationError("EMBED_DASHBOARD_NOT_FOUND", "Dashboard not found for embed", 404)
     layout = row.layout_json if isinstance(row.layout_json, dict) else {}
+    layout = prepare_layout_for_embed(session, layout)
     return {
         "id": str(row.id),
         "name": row.name,

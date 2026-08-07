@@ -20,13 +20,14 @@ import { useFormDirtyState } from "@/hooks/use-form-dirty-state";
 import { useUnsavedLeaveGuard } from "@/hooks/use-unsaved-leave-guard";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
-import {
-  ANALYTICS_DATASOURCE_NAME,
-  resolveAnalyticsDatasourceId,
-  type DatasourceListItem,
-} from "@/lib/datasourceRoles";
+import { resolveAnalyticsDatasourceId, type DatasourceListItem } from "@/lib/datasourceRoles";
+import { ExtensionRuntimeDatasourceField } from "./ExtensionRuntimeDatasourceField";
 import { ReportMetricDatasetFields } from "./ReportMetricDatasetFields";
-import { metricKeyValidationMessage } from "../reportExtensionUtils";
+import {
+  extensionNeedsSqlDatasourcePicker,
+  metricKeyValidationMessage,
+  resolveExtensionDefaultDataSourceId,
+} from "../reportExtensionUtils";
 import { type ExtensionMetric, useReportTemplates } from "../useReportTemplates";
 type QueryMode = "sql" | "dataset";
 
@@ -125,18 +126,33 @@ export function ReportMetricExtensionForm({
   });
   const dsItems = dsQuery.data?.items ?? [];
 
+  const pendingMetric = buildMetricFromForm(form);
+
+  const showRuntimeDatasourcePicker = useMemo(() => {
+    if (form.queryMode === "sql") return true;
+    return extensionNeedsSqlDatasourcePicker(draftMetrics);
+  }, [draftMetrics, form.queryMode]);
+
+  const resolvedDefaultDsId = useMemo(
+    () => defaultDsId.trim() || resolveAnalyticsDatasourceId(dsItems),
+    [defaultDsId, dsItems],
+  );
+
   useEffect(() => {
+    if (isLoading) return;
     setDraftMetrics(metrics);
     setDefaultDsId(defaultDataSourceId ?? "");
     resetBaseline({
       metrics,
       defaultDataSourceId: defaultDataSourceId ?? "",
     });
-  }, [metrics, defaultDataSourceId, resetBaseline]);
+    resetForm();
+    setChangeNote("");
+  }, [nodeId, metrics, defaultDataSourceId, resetBaseline, isLoading]);
 
   useEffect(() => {
-    if (readOnly || dsItems.length === 0 || defaultDataSourceId) return;
-    const analyticsId = resolveAnalyticsDatasourceId(dsItems);
+    if (readOnly || dsItems.length === 0) return;
+    const analyticsId = resolveAnalyticsDatasourceId(dsItems, defaultDataSourceId ?? undefined);
     if (!analyticsId) return;
     setDefaultDsId((current) => current || analyticsId);
   }, [dsItems, defaultDataSourceId, readOnly]);
@@ -193,7 +209,6 @@ export function ReportMetricExtensionForm({
     setForm(formFromMetric(metric));
   };
 
-  const pendingMetric = buildMetricFromForm(form);
   const hasPendingForm = pendingMetric !== null;
   const canSave =
     !readOnly &&
@@ -215,9 +230,37 @@ export function ReportMetricExtensionForm({
         nextMetrics.push(pending);
       }
     }
-    if (metricsNeedDataSource(nextMetrics) && !defaultDsId.trim()) {
-      toast.error("请选择运行数据源（数据集也需要，用于执行查询）");
-      return false;
+    if (metricsNeedDataSource(nextMetrics)) {
+      const saveDsId = resolveExtensionDefaultDataSourceId(nextMetrics, dsItems, defaultDsId);
+      if (!saveDsId) {
+        toast.error("请选择运行数据源");
+        return false;
+      }
+      try {
+        await saveExtension.mutateAsync({
+          nodeId,
+          body: {
+            catalogNodeId: nodeId,
+            metrics: nextMetrics,
+            filters,
+            changeNote: changeNote.trim(),
+            defaultDataSourceId: saveDsId,
+          },
+        });
+        toast.success("扩展配置已保存");
+        resetForm();
+        setChangeNote("");
+        markSaved({
+          metrics: nextMetrics,
+          defaultDataSourceId: saveDsId,
+        });
+        setDraftMetrics(nextMetrics);
+        setDefaultDsId(saveDsId);
+        return true;
+      } catch (err) {
+        toast.error(mapApiError(err));
+        return false;
+      }
     }
     try {
       await saveExtension.mutateAsync({
@@ -227,7 +270,6 @@ export function ReportMetricExtensionForm({
           metrics: nextMetrics,
           filters,
           changeNote: changeNote.trim(),
-          ...(defaultDsId.trim() ? { defaultDataSourceId: defaultDsId.trim() } : {}),
         },
       });
       toast.success("扩展配置已保存");
@@ -250,13 +292,13 @@ export function ReportMetricExtensionForm({
     if (ok) confirmLeave();
   };
 
-  if (isLoading) return <Skeleton className="h-20 w-full rounded-xl" />;
+  if (isLoading) return <Skeleton className="h-64 w-full rounded-xl" />;
 
   return (
     <div className="space-y-4">
       {draftMetrics.length === 0 ? (
         <p className="rounded-xl border border-dashed border-gray-200 px-4 py-8 text-center text-theme-sm text-gray-500 dark:border-gray-800 dark:text-gray-400">
-          暂无扩展指标。请填写下方表单 → 点「添加到列表」→ 选运行数据源 → 填变更说明 →「保存扩展配置」；保存后可在「预览」查看。
+          暂无扩展指标。请填写下方表单 → 点「添加到列表」→ 填变更说明 →「保存扩展配置」；保存后可在「预览」查看。
         </p>
       ) : (
         <ul className="space-y-2">
@@ -349,38 +391,14 @@ export function ReportMetricExtensionForm({
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="default-ds">运行数据源</Label>
-              {dsQuery.isLoading ? (
-                <Skeleton className="h-11 w-full rounded-lg" />
-              ) : dsQuery.isError ? (
-                <p className="rounded-lg border border-error-200 bg-error-50 px-3 py-2 text-theme-xs text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400">
-                  数据源加载失败：{mapApiError(dsQuery.error)}
-                </p>
-              ) : (
-                <Select value={defaultDsId || undefined} onValueChange={setDefaultDsId}>
-                  <SelectTrigger id="default-ds" className="h-11">
-                    <SelectValue placeholder="必选：运行报表用的数据连接" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {dsItems.map((ds) => (
-                      <SelectItem key={ds.id} value={ds.id}>
-                        {ds.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              {!dsQuery.isLoading && !dsQuery.isError && dsItems.length === 0 ? (
-                <p className="text-theme-xs text-amber-700 dark:text-amber-400">
-                  暂无数据源。请先到「数据连接」创建连接。
-                </p>
-              ) : (
-                <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-                  同步 Dataset 默认使用「{ANALYTICS_DATASOURCE_NAME}」；选数据集后会自动对齐绑定库。
-                </p>
-              )}
-            </div>
+            <ExtensionRuntimeDatasourceField
+              mode={showRuntimeDatasourcePicker ? "picker" : "readonly"}
+              value={showRuntimeDatasourcePicker ? defaultDsId : resolvedDefaultDsId}
+              items={dsItems}
+              loading={dsQuery.isLoading}
+              error={dsQuery.isError ? dsQuery.error : undefined}
+              onChange={setDefaultDsId}
+            />
           </div>
           {form.queryMode === "sql" ? (
             <div className="grid gap-2">

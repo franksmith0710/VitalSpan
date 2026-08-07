@@ -1,6 +1,12 @@
-import { apiFetch, resolveDatasetExecutePath, resolveQueryExecutePath } from "@/lib/api";
+import { apiFetch, isEmbedShareContext, resolveDatasetExecutePath, resolveQueryExecutePath } from "@/lib/api";
 import { createConcurrencyLimiter } from "@/lib/asyncConcurrencyLimiter";
 import type { ChartFilterRef, ChartTimeRangeRef, ChartViewConfig } from "@/lib/chartViewConfig";
+import type { SampleDatasourceItem } from "@/lib/mapChartSalesGeo";
+import {
+  bindChartConfigDemoDatasource,
+  resolveTemplateDemoDatasourceId,
+  TEMPLATE_DEMO_DATASOURCE_REF,
+} from "@/lib/templateDemoData";
 
 export const CHART_EXECUTE_MAX_CONCURRENCY = 3;
 import type { ChartType } from "@/lib/chartViewConfig";
@@ -167,6 +173,41 @@ const inflightExecute = new Map<string, Promise<ChartExecuteResult>>();
 const executeResultCache = new Map<string, ChartExecuteResult>();
 const executeConcurrencyLimiter = createConcurrencyLimiter(CHART_EXECUTE_MAX_CONCURRENCY);
 
+let cachedDemoDatasourceId: string | null | undefined;
+
+/** 测试用：清空演示数据源缓存 */
+export function resetDemoDatasourceExecuteCache(): void {
+  cachedDemoDatasourceId = undefined;
+}
+
+async function resolveDemoDatasourceRef(dataSourceId: string | undefined): Promise<string | undefined> {
+  if (!dataSourceId || dataSourceId !== TEMPLATE_DEMO_DATASOURCE_REF) {
+    return dataSourceId;
+  }
+  // 分享/embed 页 layout 已由后端绑定真实数据源；避免匿名页请求 /datasources。
+  if (isEmbedShareContext()) {
+    return dataSourceId;
+  }
+  if (cachedDemoDatasourceId !== undefined) {
+    return cachedDemoDatasourceId ?? dataSourceId;
+  }
+  try {
+    const res = await apiFetch<{ items: SampleDatasourceItem[] }>("/api/v1/datasources");
+    cachedDemoDatasourceId = resolveTemplateDemoDatasourceId(res.items ?? []) ?? null;
+  } catch {
+    cachedDemoDatasourceId = null;
+  }
+  return cachedDemoDatasourceId ?? dataSourceId;
+}
+
+async function configForExecute(config: ChartViewConfig): Promise<ChartViewConfig> {
+  const dataSourceId = await resolveDemoDatasourceRef(config.dataSourceId);
+  return bindChartConfigDemoDatasource(
+    dataSourceId === config.dataSourceId ? config : { ...config, dataSourceId },
+    dataSourceId !== config.dataSourceId ? dataSourceId : null,
+  );
+}
+
 /** 读取最近一次成功的 execute 结果（用于 remount 时避免 loading 闪屏） */
 export function peekChartExecuteCachedResult(
   config: ChartViewConfig,
@@ -212,19 +253,20 @@ export async function fetchChartExecuteResult(
   options: ChartExecuteProbeOptions = {},
 ): Promise<ChartExecuteResult> {
   const { filterParameters, limit = CHART_EXECUTE_LIMIT } = options;
+  const executeConfig = await configForExecute(config);
 
-  if (!isChartExecuteReady(config)) {
-    throw new Error(chartExecuteNotReadyMessage(config));
+  if (!isChartExecuteReady(executeConfig)) {
+    throw new Error(chartExecuteNotReadyMessage(executeConfig));
   }
 
-  const mode = resolveChartExecuteMode(config);
+  const mode = resolveChartExecuteMode(executeConfig);
 
   if (mode === "dataset") {
     return apiFetch<ChartExecuteResult>(resolveDatasetExecutePath(), {
       method: "POST",
       body: JSON.stringify({
-        dataSourceId: config.dataSourceId,
-        configId: config.configId,
+        dataSourceId: executeConfig.dataSourceId,
+        configId: executeConfig.configId,
         limit,
         parameters: filterParameters ?? {},
         rls: { enabled: false },
@@ -232,38 +274,38 @@ export async function fetchChartExecuteResult(
     });
   }
 
-  const timeParams = mode === "sql" ? buildTimeRangeParameters(config.timeRange) : {};
+  const timeParams = mode === "sql" ? buildTimeRangeParameters(executeConfig.timeRange) : {};
   const filterParams =
     mode === "sql"
       ? {
           ...filterParameters,
-          ...buildFilterParameters(config.filters ?? []),
+          ...buildFilterParameters(executeConfig.filters ?? []),
           ...timeParams,
         }
       : filterParameters;
 
-  let sql = config.sql;
+  let sql = executeConfig.sql;
   if (sql && filterParams && Object.keys(filterParams).length) {
     sql = injectSqlParameters(sql, filterParams);
   }
 
-  const body = config.bindingId
-    ? { bindingId: config.bindingId, rls: { enabled: false } }
+  const body = executeConfig.bindingId
+    ? { bindingId: executeConfig.bindingId, rls: { enabled: false } }
     : mode === "native"
       ? {
-          dataSourceId: config.dataSourceId,
+          dataSourceId: executeConfig.dataSourceId,
           mode: "native",
-          nativeBody: config.nativeBody,
-          index: config.index,
+          nativeBody: executeConfig.nativeBody,
+          index: executeConfig.index,
           limit,
           rls: { enabled: false },
         }
       : {
-          dataSourceId: config.dataSourceId,
+          dataSourceId: executeConfig.dataSourceId,
           mode,
           sql,
-          schema: config.schema,
-          table: config.table,
+          schema: executeConfig.schema,
+          table: executeConfig.table,
           limit,
           rls: { enabled: false },
         };

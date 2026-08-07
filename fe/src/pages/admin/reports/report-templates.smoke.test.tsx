@@ -37,11 +37,7 @@ describe("report templates smoke", () => {
         return { catalogNodeId: NODE_ID, metrics: [{ key: "amount", label: "金额" }], filters: [] };
       }
       if (path.endsWith("/extension")) {
-        return {
-          catalog_node_id: NODE_ID,
-          metrics: [{ key: "amount", label: "金额", query_mode: "sql", expression: "SELECT 1" }],
-          filters: [],
-        };
+        return { catalogNodeId: NODE_ID, metrics: [], filters: [] };
       }
       if (path.endsWith("/render-spec")) {
         return {
@@ -125,6 +121,7 @@ describe("report templates smoke", () => {
 
   it("saves extension with toast on change note", async () => {
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const user = userEvent.setup();
     render(
       <QueryClientProvider client={qc}>
         <TooltipProvider delayDuration={0}>
@@ -135,16 +132,19 @@ describe("report templates smoke", () => {
       </QueryClientProvider>,
     );
     await waitFor(() => expect(screen.getByText("销售模板")).toBeInTheDocument());
-    await userEvent.click(screen.getByRole("button", { name: "销售模板" }));
-    await userEvent.click(screen.getByRole("tab", { name: "扩展配置" }));
-    await userEvent.type(screen.getByLabelText("变更说明"), "初始化");
-    await userEvent.click(screen.getByRole("button", { name: "保存扩展配置" }));
-    await waitFor(() =>
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        expect.stringContaining("/extension"),
-        expect.objectContaining({ method: "PUT" }),
-      ),
-    );
+    await user.click(screen.getByRole("button", { name: "销售模板" }));
+    await user.click(screen.getByRole("tab", { name: "扩展配置" }));
+    await screen.findByLabelText("查数模式");
+    const saveBtn = await screen.findByRole("button", { name: "保存扩展配置" });
+    await user.type(screen.getByLabelText("变更说明"), "初始化");
+    await waitFor(() => expect(saveBtn).toBeEnabled());
+    await user.click(saveBtn);
+    await waitFor(() => {
+      const putCall = mockApiFetch.mock.calls.find(
+        ([path, opts]) => path.endsWith("/extension") && opts?.method === "PUT",
+      );
+      expect(putCall).toBeTruthy();
+    });
     await waitFor(() => expect(screen.getByText("金额")).toBeInTheDocument());
   });
 
@@ -282,9 +282,11 @@ describe("report templates smoke", () => {
     await waitFor(() => expect(screen.getByText("销售模板")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "销售模板" }));
     await user.click(screen.getByRole("tab", { name: "扩展配置" }));
+    await screen.findByLabelText("查数模式");
     await waitFor(() =>
-      expect(screen.getByLabelText("运行数据源")).toHaveTextContent("托管分析库"),
+      expect(screen.getByLabelText("运行库")).toHaveValue("托管分析库"),
     );
+    expect(screen.queryByLabelText("运行数据源")).not.toBeInTheDocument();
   });
 });
 

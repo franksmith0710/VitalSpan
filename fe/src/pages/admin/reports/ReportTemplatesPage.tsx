@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router";
 import { FilePlus, FolderOpen, FolderPlus, Info, MousePointerClick } from "lucide-react";
 import { toast } from "sonner";
@@ -22,7 +23,8 @@ import { CatalogFolderPanel } from "./components/CatalogFolderPanel";
 import { CatalogTreeNode } from "./components/CatalogTreeNode";
 import { ListGhostEmptyState } from "@/components/ui/panel-empty-state";
 import { TemplateDetailPanel } from "./components/TemplateDetailPanel";
-import { type CatalogNode, useAllCatalogNodes, useReportTemplates } from "./useReportTemplates";
+import { type CatalogNode, fetchCatalogExtension, useAllCatalogNodes, useReportTemplates } from "./useReportTemplates";
+import { queryKeys } from "@/lib/queryKeys";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -45,6 +47,7 @@ const FORMAT_OPTIONS: { id: TemplateKind; label: string }[] = [
 export function ReportTemplatesPage() {
   const { nodeId } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const [selectedId, setSelectedId] = useState<string | null>(nodeId ?? null);
   const [selectedOverride, setSelectedOverride] = useState<CatalogNode | null>(null);
@@ -74,8 +77,20 @@ export function ReportTemplatesPage() {
     if (nodeId) setSelectedId(nodeId);
   }, [nodeId]);
 
+  const prefetchExtension = useCallback(
+    (id: string) => {
+      void queryClient.prefetchQuery({
+        queryKey: queryKeys.reports.extension(id),
+        queryFn: () => fetchCatalogExtension(id),
+        staleTime: 5 * 60_000,
+      });
+    },
+    [queryClient],
+  );
+
   const handleSelect = useCallback(
     (id: string | null) => {
+      if (id) prefetchExtension(id);
       setSelectedId(id);
       setSelectedOverride(null);
       if (id) {
@@ -84,7 +99,7 @@ export function ReportTemplatesPage() {
         navigate("/admin/reports/templates", { replace: true, preventScrollReset: true });
       }
     },
-    [navigate],
+    [navigate, prefetchExtension],
   );
 
   const handleCreateFolder = (parentId: string | null = createParentId) => {
@@ -217,6 +232,7 @@ export function ReportTemplatesPage() {
             onMove={handleMove}
             onDelete={handleDelete}
             expandFolderIds={expandFolderIds}
+            onPrefetch={prefetchExtension}
           />
         ))}
       </div>

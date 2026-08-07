@@ -305,6 +305,20 @@ describe("embed share auth", () => {
     expect(onUnauthorized).not.toHaveBeenCalled();
     expect(error.code).toBe("EMBED_TOKEN_INVALID");
   });
+
+  it("detects embed context when app is mounted under basename", () => {
+    vi.stubGlobal("location", {
+      pathname: "/vs/embed/screen/d1",
+      search: "?token=embed-public-token&shareMode=public",
+      href: "http://localhost:5173/vs/embed/screen/d1?token=embed-public-token&shareMode=public",
+    });
+    vi.stubEnv("BASE_URL", "/vs/");
+    setAuthToken("stale-jwt");
+    expect(isEmbedShareContext()).toBe(true);
+    expect(getAuthHeaders()).toEqual({ "X-Embed-Token": "embed-public-token" });
+    expect(resolveDatasetExecutePath()).toBe("/api/v1/embed/dataset/execute");
+    expect(resolveQueryExecutePath()).toBe("/api/v1/embed/query/execute");
+  });
 });
 
 describe("export snapshot auth", () => {

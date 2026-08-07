@@ -1,22 +1,9 @@
-import { useState } from "react";
-import { Link2, Upload } from "lucide-react";
-import { Link } from "react-router";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Upload } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { WidgetRailCollapseButton } from "./widgetRailChrome";
 import type { LayoutWidget } from "./layoutUtils";
 import type { VizComponentMap } from "@/lib/resolveVizComponent";
-import { detachLinkedWidget } from "@/lib/resolveVizComponent";
 import { isLinkedComponentRef } from "@/lib/vizComponents";
 import { isPublishableWidgetType } from "@/lib/vizComponentEdit";
 
@@ -43,7 +30,6 @@ export function VizComponentInspectorHeader({
   pushing,
   onCollapse,
 }: VizComponentInspectorHeaderProps) {
-  const [detachOpen, setDetachOpen] = useState(false);
   const linked = isLinkedComponentRef(widget.componentRef);
   const detached = Boolean(widget.componentRef?.detached);
   const publishable = isPublishableWidgetType(widget.type);
@@ -78,68 +64,11 @@ export function VizComponentInspectorHeader({
   }
 
   if (linked) {
-    const component = componentMap.get(widget.componentRef!.componentId);
-    const label = component
-      ? `${component.name} · v${component.contentRevision}`
-      : "组件已下架或无权访问";
-
-    return (
-      <>
-        <div
-          className="flex shrink-0 flex-wrap items-center gap-2 border-b border-brand-500/20 bg-brand-500/5 px-3 py-2 dark:border-brand-400/20 dark:bg-brand-400/10"
-          data-testid="viz-component-link-banner"
-        >
-          <Badge variant="light" color="primary" className="gap-1">
-            <Link2 className="size-3" aria-hidden />
-            已链接
-          </Badge>
-          <span className="min-w-0 flex-1 truncate text-theme-xs text-gray-700 dark:text-gray-300">
-            {label}
-          </span>
-          {component ? (
-            <Button type="button" size="sm" variant="ghost" asChild>
-              <Link to={`/admin/viz-components/${component.id}/edit`}>在库中编辑</Link>
-            </Button>
-          ) : null}
-          {onPushToLibrary ? (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              disabled={pushing || !component}
-              onClick={onPushToLibrary}
-            >
-              {pushing ? "保存中…" : "更新到库"}
-            </Button>
-          ) : null}
-          <Button type="button" size="sm" variant="ghost" onClick={() => setDetachOpen(true)}>
-            断开链接
-          </Button>
-          {onCollapse ? <WidgetRailCollapseButton onClick={onCollapse} /> : null}
-        </div>
-        <AlertDialog open={detachOpen} onOpenChange={setDetachOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>断开组件库链接？</AlertDialogTitle>
-              <AlertDialogDescription>
-                将复制当前配置到本地，之后修改不再同步到组织组件库「{component?.name ?? "未知组件"}」。
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>取消</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => {
-                  onDetach(detachLinkedWidget(widget, componentMap));
-                  setDetachOpen(false);
-                }}
-              >
-                断开并本地化
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </>
-    );
+    return onCollapse ? (
+      <div className="flex shrink-0 justify-end border-b border-gray-100 px-2 py-1 dark:border-white/[0.06]">
+        <WidgetRailCollapseButton onClick={onCollapse} />
+      </div>
+    ) : null;
   }
 
   if (!onPublish) return null;

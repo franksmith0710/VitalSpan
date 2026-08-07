@@ -241,9 +241,13 @@ export async function apiFetch<T>(
           ? (body?.message ?? "导出令牌无效或已过期")
           : "登录已过期，请重新登录",
       isEmbedShareContext()
-        ? body?.code ?? "EMBED_UNAUTHORIZED"
+        ? body?.code === "UNAUTHORIZED"
+          ? "EMBED_UNAUTHORIZED"
+          : (body?.code ?? "EMBED_UNAUTHORIZED")
         : isExportSnapshotContext()
-          ? body?.code ?? "EXPORT_UNAUTHORIZED"
+          ? body?.code === "UNAUTHORIZED"
+            ? "EXPORT_UNAUTHORIZED"
+            : (body?.code ?? "EXPORT_UNAUTHORIZED")
           : "UNAUTHORIZED",
     );
   }

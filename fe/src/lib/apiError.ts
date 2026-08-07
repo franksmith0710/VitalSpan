@@ -14,6 +14,8 @@ const CODE_MESSAGES: Record<string, string> = {
   AUTH_PASSWORD_NOT_SET: "该账号未配置密码",
   AUTH_ROOT_ROLE_IMMUTABLE: "根角色不可删除或停用",
   UNAUTHORIZED: "登录已过期，请重新登录",
+  EMBED_UNAUTHORIZED: "嵌入访问未授权，请重新生成分享链接",
+  EXPORT_UNAUTHORIZED: "导出访问未授权，请重新生成导出链接",
   NOT_AUTHENTICATED: "未登录，请先登录",
   MISSING_OR_INVALID_TOKEN: "登录凭证无效，请重新登录",
 

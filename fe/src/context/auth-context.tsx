@@ -88,6 +88,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (isHeadlessAuthContext()) {
+      setIsLoading(false);
+      return;
+    }
     const unregisterUnauthorizedHandler = registerUnauthorizedHandler(() => {
       if (isHeadlessAuthContext()) {
         clearAuthToken();

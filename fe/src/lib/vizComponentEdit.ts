@@ -47,8 +47,8 @@ export async function syncResolvedWidgetToLibrary(
   widget: LayoutWidget,
   resolved: LayoutWidget,
   componentMap: VizComponentMap,
-): Promise<void> {
-  await pushWidgetPayloadToLibrary(widget, componentMap, extractWidgetPayload(resolved));
+): Promise<VizComponentDetail | void> {
+  return pushWidgetPayloadToLibrary(widget, componentMap, extractWidgetPayload(resolved));
 }
 
 export async function flushLinkedLocalOverridesToLibrary(

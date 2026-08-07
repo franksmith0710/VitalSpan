@@ -159,7 +159,7 @@ export function ReportViewPage() {
           <ReportExportCard
             defaultTemplateId={node.id}
             disabled={!extensionReady}
-            disabledHint="请先在模板编辑页的「扩展配置」中添加指标、选择运行数据源并保存后再导出。"
+            disabledHint="请先在模板编辑页的「扩展配置」中添加指标、配置数据集并保存后再导出。"
           />
         </div>
       ) : null}

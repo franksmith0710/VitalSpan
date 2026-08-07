@@ -85,6 +85,16 @@ export function resolveTemplateDemoDatasourceId(items: SampleDatasourceItem[]): 
   return resolveSampleDbDatasource(items)?.id ?? null;
 }
 
+/** 执行查数前：将演示占位符绑定到当前环境的 sample_db 数据源 */
+export function bindChartConfigDemoDatasource(
+  chartConfig: ChartViewConfig,
+  demoDatasourceId: string | null | undefined,
+): ChartViewConfig {
+  if (!demoDatasourceId) return chartConfig;
+  if (chartConfig.dataSourceId !== TEMPLATE_DEMO_DATASOURCE_REF) return chartConfig;
+  return { ...chartConfig, dataSourceId: demoDatasourceId };
+}
+
 /** 模板是否含需演示库查数的图表（无 bindingId 的 SQL/表模式） */
 export function layoutRequiresDemoCharts(layout: DashboardLayout): boolean {
   return layout.widgets.some((widget) => {

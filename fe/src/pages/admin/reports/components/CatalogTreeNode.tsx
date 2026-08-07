@@ -107,6 +107,7 @@ export function CatalogTreeNode({
   onDelete,
   expandFolderIds,
   depth = 0,
+  onPrefetch,
 }: {
   node: CatalogNode;
   selectedId: string | null;
@@ -118,6 +119,7 @@ export function CatalogTreeNode({
   onDelete: (nodeId: string) => void;
   expandFolderIds: Set<string>;
   depth?: number;
+  onPrefetch?: (nodeId: string) => void;
 }) {
   const shouldExpand = expandFolderIds.has(node.id);
   const [open, setOpen] = useState(depth < 1 || shouldExpand);
@@ -146,6 +148,8 @@ export function CatalogTreeNode({
           type="button"
           className={treeItemClass(selected)}
           onClick={() => onSelect(node.id)}
+          onMouseEnter={() => onPrefetch?.(node.id)}
+          onFocus={() => onPrefetch?.(node.id)}
           aria-current={selected ? "true" : undefined}
         >
           <TemplateIcon kind={node.templateKind} />
@@ -207,6 +211,7 @@ export function CatalogTreeNode({
             onDelete={onDelete}
             expandFolderIds={expandFolderIds}
             depth={depth + 1}
+            onPrefetch={onPrefetch}
           />
         ))}
       </CollapsibleContent>

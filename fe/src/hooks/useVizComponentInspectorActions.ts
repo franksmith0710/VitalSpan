@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { LayoutWidget } from "@/components/dashboard/layoutUtils";
 import { mapApiError } from "@/lib/apiError";
@@ -6,9 +7,14 @@ import type { VizComponentMap } from "@/lib/resolveVizComponent";
 import {
   pushWidgetPayloadToLibrary,
   relinkWidgetToComponent,
-  syncResolvedWidgetToLibrary,
 } from "@/lib/vizComponentEdit";
-import { isLinkedComponentRef, type VizComponentPayload } from "@/lib/vizComponents";
+import {
+  collectComponentIds,
+  extractWidgetPayload,
+  isLinkedComponentRef,
+  patchVizComponentResolveCache,
+  type VizComponentPayload,
+} from "@/lib/vizComponents";
 
 type UseVizComponentInspectorActionsArgs = {
   primarySelectedId: string | null;
@@ -27,6 +33,7 @@ export function useVizComponentInspectorActions({
   setWidgets,
   refetchComponents,
 }: UseVizComponentInspectorActionsArgs) {
+  const queryClient = useQueryClient();
   const [pushing, setPushing] = useState(false);
 
   const detach = useCallback(
@@ -51,11 +58,18 @@ export function useVizComponentInspectorActions({
     if (!selectedWidget || !resolvedSelectedWidget) return;
     setPushing(true);
     try {
-      await syncResolvedWidgetToLibrary(
+      const updated = await pushWidgetPayloadToLibrary(
         selectedWidget,
-        resolvedSelectedWidget,
         componentMap,
+        extractWidgetPayload(resolvedSelectedWidget),
       );
+      if (updated) {
+        patchVizComponentResolveCache(
+          queryClient,
+          collectComponentIds([selectedWidget]),
+          updated,
+        );
+      }
       toast.success("已更新到组件库");
       await refetchComponents();
     } catch (err) {
@@ -63,15 +77,22 @@ export function useVizComponentInspectorActions({
     } finally {
       setPushing(false);
     }
-  }, [componentMap, refetchComponents, resolvedSelectedWidget, selectedWidget]);
+  }, [componentMap, queryClient, refetchComponents, resolvedSelectedWidget, selectedWidget]);
 
   const applyPayloadChange = useCallback(
     async (payload: VizComponentPayload, localPatch: Partial<LayoutWidget>) => {
       if (!primarySelectedId || !selectedWidget) return;
       if (isLinkedComponentRef(selectedWidget.componentRef)) {
         try {
-          await pushWidgetPayloadToLibrary(selectedWidget, componentMap, payload);
-          void refetchComponents();
+          const updated = await pushWidgetPayloadToLibrary(selectedWidget, componentMap, payload);
+          if (updated) {
+            patchVizComponentResolveCache(
+              queryClient,
+              collectComponentIds([selectedWidget]),
+              updated,
+            );
+          }
+          await refetchComponents();
         } catch (err) {
           toast.error(mapApiError(err));
         }
@@ -81,7 +102,14 @@ export function useVizComponentInspectorActions({
         prev.map((w) => (w.id === primarySelectedId ? { ...w, ...localPatch } : w)),
       );
     },
-    [componentMap, primarySelectedId, refetchComponents, selectedWidget, setWidgets],
+    [
+      componentMap,
+      primarySelectedId,
+      queryClient,
+      refetchComponents,
+      selectedWidget,
+      setWidgets,
+    ],
   );
 
   return { pushing, detach, relink, pushToLibrary, applyPayloadChange };

@@ -48,6 +48,18 @@ export type ExtensionMetric = {
   compareMode?: string;
 };
 
+export async function fetchCatalogExtension(nodeId: string): Promise<ExtensionConfig> {
+  try {
+    const raw = await apiFetch<ExtensionConfig>(`/api/v1/reports/catalog/nodes/${nodeId}/extension`);
+    return normalizeExtensionResponse(raw);
+  } catch (err) {
+    if (isExtensionNotFoundError(err)) {
+      return emptyExtensionConfig(nodeId);
+    }
+    throw err;
+  }
+}
+
 export function useReportTemplates(parentId: string | null = null, templateKey: string | null = null) {
   const qc = useQueryClient();
   const nodesQuery = useQuery({
@@ -153,21 +165,10 @@ export function useCatalogNode(nodeId: string | null) {
 export function useCatalogExtension(nodeId: string | null) {
   return useQuery({
     queryKey: queryKeys.reports.extension(nodeId ?? ""),
-    queryFn: async () => {
-      try {
-        const raw = await apiFetch<ExtensionConfig>(
-          `/api/v1/reports/catalog/nodes/${nodeId}/extension`,
-        );
-        return normalizeExtensionResponse(raw);
-      } catch (err) {
-        if (nodeId && isExtensionNotFoundError(err)) {
-          return emptyExtensionConfig(nodeId);
-        }
-        throw err;
-      }
-    },
+    queryFn: () => fetchCatalogExtension(nodeId!),
     enabled: Boolean(nodeId),
     retry: false,
+    staleTime: 5 * 60_000,
   });
 }
 

@@ -21,6 +21,11 @@ def render_pdf(title: str, sections: list[dict[str, Any]]) -> bytes:
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4)
     styles = getSampleStyleSheet()
+    body_style = ParagraphStyle(
+        "ReportBody",
+        parent=styles["Normal"],
+        fontName=font_name,
+    )
     title_style = ParagraphStyle(
         "ReportTitle",
         parent=styles["Title"],
@@ -48,7 +53,7 @@ def render_pdf(title: str, sections: list[dict[str, Any]]) -> bytes:
             ]))
             story.append(table)
         elif section.get("placeholder"):
-            story.append(Paragraph("(no data)", styles["Normal"]))
+            story.append(Paragraph("(no data)", body_style))
         story.append(Spacer(1, 12))
     doc.build(story)
     return buf.getvalue()
