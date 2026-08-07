@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
+import { buildEmbedShareUrl } from "@/lib/appBasePath";
 import { mapApiError } from "@/lib/apiError";
 import { ShareIssuedUrlPanel } from "@/components/dashboard/ShareIssuedUrlPanel";
 import { ShareDialogListItem } from "@/components/dashboard/ShareDialogSection";
@@ -40,7 +41,7 @@ export function ChartEmbedShareActions({
               },
         ),
       });
-      setEmbedUrl(`${window.location.origin}${tokenResp.embedUrl}`);
+      setEmbedUrl(buildEmbedShareUrl(tokenResp.embedUrl));
       toast.success(mode === "public" ? "公开链接已生成" : "嵌入链接已生成");
     } catch (err) {
       toast.error(mapApiError(err));

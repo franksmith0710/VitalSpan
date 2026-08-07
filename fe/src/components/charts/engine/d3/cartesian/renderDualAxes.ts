@@ -144,6 +144,7 @@ function renderDualAxesLineSeries(params: {
   smooth?: boolean;
   shadowId: string;
   dotClass: string;
+  depthVisual?: D3DualAxesRenderConfig["depthVisual"];
   conditionalRules?: D3DualAxesRenderConfig["conditionalRules"];
   onPointClick?: D3DualAxesRenderConfig["onPointClick"];
 }): void {
@@ -164,7 +165,7 @@ function renderDualAxesLineSeries(params: {
     .attr("stroke-width", 2.5)
     .attr("stroke-linecap", "round")
     .attr("d", lineGen);
-  applyPathDepthShadow(params.defs, linePath, params.color, params.shadowId);
+  applyPathDepthShadow(params.defs, linePath, params.color, params.shadowId, params.depthVisual);
   animateStrokePath(linePath);
 
   params.plot
@@ -200,6 +201,7 @@ function renderDualAxesLineLayers(params: {
   smooth?: boolean;
   shadowPrefix: string;
   dotClassPrefix: string;
+  depthVisual?: D3DualAxesRenderConfig["depthVisual"];
   conditionalRules?: D3DualAxesRenderConfig["conditionalRules"];
   onPointClick?: D3DualAxesRenderConfig["onPointClick"];
 }): void {
@@ -219,6 +221,7 @@ function renderDualAxesLineLayers(params: {
       smooth: params.smooth,
       shadowId: `${params.shadowPrefix}-0`,
       dotClass: params.dotClassPrefix,
+      depthVisual: params.depthVisual,
       conditionalRules: params.conditionalRules,
       onPointClick: params.onPointClick,
     });
@@ -238,6 +241,7 @@ function renderDualAxesLineLayers(params: {
       smooth: params.smooth,
       shadowId: `${params.shadowPrefix}-${index}`,
       dotClass: `${params.dotClassPrefix}-${index}`,
+      depthVisual: params.depthVisual,
       conditionalRules: params.conditionalRules,
       onPointClick: params.onPointClick,
     });
@@ -306,6 +310,7 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
     axisStyle,
     smooth: styleSmooth,
     categoryLevelCount,
+    depthVisual,
   } = config;
   const lineLabels = config.lineLabels;
   const leftGeom = geometryOptions[0];
@@ -441,6 +446,7 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
       smooth: leftSmooth,
       shadowPrefix: "dual-line-left",
       dotClassPrefix: "dual-line-dot-l",
+      depthVisual,
       conditionalRules,
       onPointClick,
     });
@@ -487,6 +493,7 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
       smooth: rightSmooth,
       shadowPrefix: dualLine ? "dual-line-right" : "dual-line-1",
       dotClassPrefix: "dual-line-dot-r",
+      depthVisual,
       conditionalRules,
       onPointClick,
     });

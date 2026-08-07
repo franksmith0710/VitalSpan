@@ -43,7 +43,7 @@ export function TemplateDetailPanel({
   const extQuery = useCatalogExtension(node.id);
   const renderQuery = useExtensionRenderSpec(node.id, tab === "preview");
   const extensionData =
-    extQuery.data && extQuery.data.catalogNodeId === node.id ? extQuery.data : null;
+    extQuery.data && String(extQuery.data.catalogNodeId) === String(node.id) ? extQuery.data : null;
   const previewData =
     renderQuery.data && String(renderQuery.data.templateNodeId ?? "") === node.id
       ? renderQuery.data

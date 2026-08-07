@@ -132,6 +132,48 @@ def test_rpt003_04_run_word_export_hook(client: TestClient):
     assert run.json()["exportHook"]["placeholder"] is False
 
 
+def test_rpt003_04b_extension_get_returns_camel_case(client: TestClient):
+    """FE 依赖 catalogNodeId / queryMode 等 camelCase 字段。"""
+    _put_template(client)
+    nid = client.post(
+        "/api/v1/reports/catalog/nodes",
+        headers=AUTH,
+        json={"name": "Ext", "nodeType": "template", "templateKind": "word", "templateKey": "sales_summary"},
+    ).json()["id"]
+    ds_id = str(uuid.uuid4())
+    put = client.put(
+        f"/api/v1/reports/catalog/nodes/{nid}/extension",
+        headers=AUTH,
+        json={
+            "catalogNodeId": nid,
+            "defaultDataSourceId": ds_id,
+            "metrics": [
+                {
+                    "key": "revenue",
+                    "label": "营收",
+                    "queryMode": "sql",
+                    "expression": "SELECT 1",
+                    "visible": True,
+                }
+            ],
+            "filters": [],
+            "changeNote": "init",
+        },
+    )
+    assert put.status_code == 200, put.text
+    body = put.json()
+    assert "catalogNodeId" in body
+    assert "catalog_node_id" not in body
+    assert body["defaultDataSourceId"] == ds_id
+    assert body["metrics"][0]["queryMode"] == "sql"
+
+    got = client.get(f"/api/v1/reports/catalog/nodes/{nid}/extension", headers=AUTH)
+    assert got.status_code == 200, got.text
+    payload = got.json()
+    assert payload["catalogNodeId"] == nid
+    assert payload["metrics"][0]["key"] == "revenue"
+
+
 def test_rpt003_05_viewer_delete_forbidden(client: TestClient):
     _put_template(client, "v_only")
 

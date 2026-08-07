@@ -55,6 +55,7 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
     areaOpacity,
     categoryLevelCount,
     isPercent,
+    depthVisual,
   } = config;
 
   const stackFillOpacity = areaOpacity ?? 0.35;
@@ -183,7 +184,7 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
         .attr("stroke", strokeColor)
         .attr("stroke-width", 2)
         .attr("d", d3.line<typeof points[0]>().x((d) => x(String(d.__category__)) ?? 0).y((d) => y(Number(d.__value__))).curve(curve));
-      applyPathDepthShadow(defs, topLine, strokeColor, `area-top-${i}`);
+      applyPathDepthShadow(defs, topLine, strokeColor, `area-top-${i}`, depthVisual);
 
       if (showLabel) {
         const labelTotal = sumCartesianLabelTotal(points);

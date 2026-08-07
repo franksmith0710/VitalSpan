@@ -4,6 +4,12 @@ import { invalidateCatalogQueries } from "@/lib/catalogQueryInvalidation";
 import { fetchAllCatalogNodes, normalizeCatalogNodes } from "@/lib/reportCatalogUtils";
 import { provisionCatalogTemplate, type TemplateKind } from "@/lib/reportCatalogProvision";
 import { queryKeys } from "@/lib/queryKeys";
+import {
+  emptyExtensionConfig,
+  isExtensionNotFoundError,
+  normalizeExtensionResponse,
+  type ExtensionConfig,
+} from "./reportExtensionUtils";
 
 export type CatalogNode = {
   id: string;
@@ -96,12 +102,12 @@ export function useReportTemplates(parentId: string | null = null, templateKey: 
 
   const saveExtension = useMutation({
     mutationFn: ({ nodeId, body }: { nodeId: string; body: Record<string, unknown> }) =>
-      apiFetch(`/api/v1/reports/catalog/nodes/${nodeId}/extension`, {
+      apiFetch<ExtensionConfig>(`/api/v1/reports/catalog/nodes/${nodeId}/extension`, {
         method: "PUT",
         body: JSON.stringify(body),
-      }),
-    onSuccess: (_d, v) => {
-      void qc.invalidateQueries({ queryKey: queryKeys.reports.extension(v.nodeId) });
+      }).then(normalizeExtensionResponse),
+    onSuccess: (data, v) => {
+      qc.setQueryData(queryKeys.reports.extension(v.nodeId), data);
       void qc.invalidateQueries({ queryKey: queryKeys.reports.renderSpec(v.nodeId) });
     },
   });
@@ -147,14 +153,19 @@ export function useCatalogNode(nodeId: string | null) {
 export function useCatalogExtension(nodeId: string | null) {
   return useQuery({
     queryKey: queryKeys.reports.extension(nodeId ?? ""),
-    queryFn: () =>
-      apiFetch<{
-        catalogNodeId: string;
-        metrics: ExtensionMetric[];
-        filters: Array<{ key: string; operator: string }>;
-        changeNote?: string | null;
-        defaultDataSourceId?: string | null;
-      }>(`/api/v1/reports/catalog/nodes/${nodeId}/extension`),
+    queryFn: async () => {
+      try {
+        const raw = await apiFetch<ExtensionConfig>(
+          `/api/v1/reports/catalog/nodes/${nodeId}/extension`,
+        );
+        return normalizeExtensionResponse(raw);
+      } catch (err) {
+        if (nodeId && isExtensionNotFoundError(err)) {
+          return emptyExtensionConfig(nodeId);
+        }
+        throw err;
+      }
+    },
     enabled: Boolean(nodeId),
     retry: false,
   });

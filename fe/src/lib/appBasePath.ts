@@ -53,3 +53,19 @@ export function matchExportDashboardId(pathname?: string): string | null {
   const match = path.match(/^\/export\/(?:dashboard|data-screen)\/([^/]+)/);
   return match?.[1] ?? null;
 }
+
+export function isEmbedPath(pathname?: string): boolean {
+  const path = stripAppBase(pathname ?? (typeof window !== "undefined" ? window.location.pathname : ""));
+  return path.startsWith("/embed/");
+}
+
+/** 将后端返回的 `/embed/...` 路径拼成可访问的完整分享 URL（含 Vite base）。 */
+export function buildEmbedShareUrl(embedPath: string): string {
+  if (typeof window === "undefined") return embedPath;
+  const trimmed = embedPath.trim();
+  if (!trimmed) return window.location.origin;
+  const path = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+  const base = getAppBasePath();
+  const withBase = base && !path.startsWith(`${base}/`) ? `${base}${path}` : path;
+  return `${window.location.origin}${withBase}`;
+}

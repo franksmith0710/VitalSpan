@@ -11,6 +11,8 @@ from app.integration import embed_resolve
 from app.integration import embed_token as et
 from app.integration.errors import IntegrationError
 from app.query import service as query_service
+from app.query.dataset.execute_config import execute_dataset_from_config
+from app.query.dataset.schemas import DatasetExecuteRequest
 from app.query.schemas import ExecuteRequest, ExecuteResponse, QueryError
 
 from app.auth.deps import UserContext, require_permission
@@ -96,6 +98,30 @@ def embed_query_execute(request: Request, payload: ExecuteRequest):
         session = get_meta_session()
         try:
             return query_service.execute_query(session, actor, payload)
+        except QueryError as exc:
+            return JSONResponse(
+                status_code=exc.status,
+                content={"code": exc.code, "message": exc.message, "detail": None},
+            )
+        finally:
+            session.close()
+    except IntegrationError as exc:
+        return _err(exc)
+
+
+@router.post("/dataset/execute")
+def embed_dataset_execute(request: Request, payload: DatasetExecuteRequest):
+    token = request.headers.get("X-Embed-Token", "").strip()
+    if not token:
+        return JSONResponse(
+            status_code=401,
+            content={"code": "UNAUTHORIZED", "message": "Missing embed token", "detail": None},
+        )
+    try:
+        actor = et.resolve_embed_actor(token)
+        session = get_meta_session()
+        try:
+            return execute_dataset_from_config(session, actor, payload)
         except QueryError as exc:
             return JSONResponse(
                 status_code=exc.status,

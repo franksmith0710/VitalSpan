@@ -259,7 +259,65 @@ export function buildCartesianScene(opts: BuildCartesianSceneOptions): Cartesian
   return { root, defs, g, plot, margin, innerW, innerH, clipId };
 }
 
-/** 2.5D 挤出面会超出 plot 盒，须扩展 clip 区域否则顶/右侧面被裁切 */
+/** 横轴数值图：clip 与纵轴图一致，边距按纵轴类目标签扩展 */
+export function buildHorizontalCartesianScene(
+  opts: BuildCartesianSceneOptions & { categories: string[] },
+): CartesianScene {
+  const { margin, innerW, innerH } = resolveHorizontalCategoryCartesianLayout(
+    opts.width,
+    opts.height,
+    opts.categories,
+    {
+      showLegend: opts.showLegend,
+      legendLayout: opts.legendLayout,
+      legendItems: opts.legendItems,
+    },
+  );
+  const clipId = opts.clipId ?? `vs-clip-h-${Math.random().toString(36).slice(2, 9)}`;
+
+  let root = d3.select(opts.container).select<SVGSVGElement>("svg.vs-chart-svg");
+  if (root.empty() || !opts.incremental) {
+    opts.container.replaceChildren();
+    root = d3
+      .select(opts.container)
+      .append("svg")
+      .attr("class", "vs-chart-svg")
+      .attr("width", opts.width)
+      .attr("height", opts.height)
+      .attr("role", "img")
+      .style("overflow", "visible");
+  } else {
+    root.attr("width", opts.width).attr("height", opts.height);
+  }
+
+  let defs = root.select<SVGDefsElement>("defs");
+  if (defs.empty()) defs = root.append("defs");
+
+  let g = root.select<SVGGElement>("g.vs-chart-plot-root");
+  if (g.empty()) {
+    g = root.append("g").attr("class", "vs-chart-plot-root").attr("transform", `translate(${margin.left},${margin.top})`);
+  } else {
+    g.attr("transform", `translate(${margin.left},${margin.top})`);
+  }
+
+  let clip = defs.select(`#${clipId}`);
+  if (clip.empty()) {
+    clip = defs.append("clipPath").attr("id", clipId);
+    clip.append("rect").attr("rx", 4);
+  }
+  clip.select("rect").attr("width", innerW).attr("height", innerH);
+  applyPlotClipPadding(clip, innerW, innerH);
+
+  let plot = g.select<SVGGElement>("g.vs-chart-plot");
+  if (plot.empty()) {
+    plot = g.append("g").attr("class", "vs-chart-plot").attr("clip-path", `url(#${clipId})`);
+  } else {
+    plot.attr("clip-path", `url(#${clipId})`);
+  }
+
+  return { root, defs, g, plot, margin, innerW, innerH, clipId };
+}
+
 function applyPlotClipPadding(
   clip: d3.Selection<d3.BaseType, unknown, null, undefined>,
   innerW: number,
@@ -271,7 +329,12 @@ function applyPlotClipPadding(
     clip.select("rect").attr("x", 0).attr("y", 0);
     return;
   }
-  clip.select("rect").attr("x", 0).attr("y", -pad).attr("width", innerW + pad).attr("height", innerH + pad);
+  // 纵柱：顶/右挤出；横柱：底/右挤出 — 四向留白避免 clip 裁切 2.5D 面
+  clip.select("rect")
+    .attr("x", 0)
+    .attr("y", -pad)
+    .attr("width", innerW + pad)
+    .attr("height", innerH + 2 * pad);
 }
 
 type GridOptions = {

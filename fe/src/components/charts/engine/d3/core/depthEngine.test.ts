@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { setChartAnimationSuppressed } from "@/components/charts/engine/d3/core/animate";
 import {
   paintVerticalBar,
+  drawExtrudedHorizontalBar,
   resolveEffectiveDepth,
   setDepthVisual,
   shadeColor,
@@ -56,5 +57,26 @@ describe("paintVerticalBar", () => {
         animate: false,
       }),
     ).not.toThrow();
+  });
+});
+
+describe("drawExtrudedHorizontalBar", () => {
+  it("does not extend bar length on top face (value axis is horizontal)", () => {
+    const host = document.createElement("div");
+    const svg = d3.select(host).append("svg");
+    const plot = svg.append("g");
+    setDepthVisual("enhanced");
+    drawExtrudedHorizontalBar({
+      plot,
+      x: 10,
+      y: 20,
+      width: 80,
+      height: 16,
+      color: "#465fff",
+    });
+    const top = plot.select(".vs-hbar-top").attr("d") ?? "";
+    expect(top).toContain("90 20");
+    expect(top).not.toContain("100 20");
+    setDepthVisual("off");
   });
 });

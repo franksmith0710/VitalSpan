@@ -9,6 +9,7 @@ import { SHARE_DIALOG_STACK_CLASS } from "@/components/dashboard/sharePageUi";
 import type { DashboardLayout, DashboardWidgetBase } from "@/components/dashboard/layoutUtils";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { apiFetch } from "@/lib/api";
+import { buildEmbedShareUrl } from "@/lib/appBasePath";
 import { mapApiError } from "@/lib/apiError";
 import { Button } from "@/components/ui/button";
 
@@ -41,7 +42,7 @@ export function DataScreenSharePanel({ dashboardId, name, layout }: DataScreenSh
           theme: "dark",
         }),
       });
-      setScreenEmbedUrl(`${window.location.origin}${tokenResp.embedUrl}`);
+      setScreenEmbedUrl(buildEmbedShareUrl(tokenResp.embedUrl));
       toast.success("整屏嵌入链接已生成");
     } catch (err) {
       toast.error(mapApiError(err));

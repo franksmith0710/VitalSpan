@@ -1,6 +1,6 @@
 import * as d3 from "d3";
 import { prefersReducedMotion } from "@/components/charts/engine/d3/core/animate";
-import { resolveEffectiveDepth, shadeColor } from "@/components/charts/engine/d3/core/depthEngine";
+import { resolveEffectiveDepth, depthExtrudePx, shadeColor } from "@/components/charts/engine/d3/core/depthEngine";
 import { radialMargin } from "@/components/charts/engine/d3/core/margin";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
@@ -90,7 +90,9 @@ export function renderD3GaugeChart(container: HTMLElement, config: D3RenderConfi
   const activeColor = rangeColors?.[0] ?? colors[0] ?? "#465fff";
   const trackColor = rangeColors?.[1] ?? theme.axisLine;
   const pointerColor = String(options.__gaugePointerColor || "").trim() || shadeColor(activeColor, "shadow");
-  const depthOn = resolveEffectiveDepth() !== "off";
+  const depthLevel = resolveEffectiveDepth(config.depthVisual);
+  const depthOn = depthLevel !== "off";
+  const depthOffset = depthOn ? depthExtrudePx(depthLevel) : 0;
   const valueEnd = START_ANGLE + span * percent;
   const uid = `g${Math.random().toString(36).slice(2, 8)}`;
 
@@ -120,7 +122,12 @@ export function renderD3GaugeChart(container: HTMLElement, config: D3RenderConfi
 
   g.append("path").attr("d", trackArc).attr("fill", trackColor).attr("opacity", 0.92);
   if (depthOn) {
-    g.append("path").attr("d", trackArc).attr("fill", shadeColor(trackColor, "top")).attr("opacity", 0.35);
+    g
+      .append("path")
+      .attr("d", trackArc)
+      .attr("fill", shadeColor(trackColor, "top"))
+      .attr("opacity", 0.4)
+      .attr("transform", `translate(0, ${depthOffset * 0.55})`);
   }
 
   let valueShadowPath: d3.Selection<SVGPathElement, unknown, null, undefined> | null = null;
@@ -128,7 +135,8 @@ export function renderD3GaugeChart(container: HTMLElement, config: D3RenderConfi
     valueShadowPath = g
       .append("path")
       .attr("fill", shadeColor(activeColor, "shadow"))
-      .attr("opacity", 0.55)
+      .attr("opacity", depthLevel === "enhanced" ? 0.62 : 0.48)
+      .attr("transform", `translate(0, ${depthOffset * 0.65})`)
       .attr("d", valueArc);
   }
   const valuePath = g

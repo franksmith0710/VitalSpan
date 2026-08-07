@@ -37,7 +37,11 @@ describe("report templates smoke", () => {
         return { catalogNodeId: NODE_ID, metrics: [{ key: "amount", label: "金额" }], filters: [] };
       }
       if (path.endsWith("/extension")) {
-        return { catalogNodeId: NODE_ID, metrics: [], filters: [] };
+        return {
+          catalog_node_id: NODE_ID,
+          metrics: [{ key: "amount", label: "金额", query_mode: "sql", expression: "SELECT 1" }],
+          filters: [],
+        };
       }
       if (path.endsWith("/render-spec")) {
         return {
@@ -141,6 +145,7 @@ describe("report templates smoke", () => {
         expect.objectContaining({ method: "PUT" }),
       ),
     );
+    await waitFor(() => expect(screen.getByText("金额")).toBeInTheDocument());
   });
 
   it("creates template inside selected folder", async () => {

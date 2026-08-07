@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiFetch } from "@/lib/api";
+import { buildEmbedShareUrl } from "@/lib/appBasePath";
 import { mapApiError } from "@/lib/apiError";
 import { cn } from "@/lib/utils";
 import { ShareIssuedUrlPanel } from "@/components/dashboard/ShareIssuedUrlPanel";
@@ -48,7 +49,7 @@ export function PublicShareLinkCard({
           theme,
         }),
       });
-      setPublicUrl(`${window.location.origin}${tokenResp.embedUrl}`);
+      setPublicUrl(buildEmbedShareUrl(tokenResp.embedUrl));
       toast.success("公开链接已生成");
     } catch (err) {
       toast.error(mapApiError(err));

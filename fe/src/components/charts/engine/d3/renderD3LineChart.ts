@@ -185,7 +185,7 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
       .attr("stroke-linecap", VCDS.line.cap)
       .attr("stroke-linejoin", VCDS.line.join)
       .attr("d", lineGen);
-    applyPathDepthShadow(defs, linePath, color, `line-${seriesIndex}`);
+    applyPathDepthShadow(defs, linePath, color, `line-${seriesIndex}`, config.depthVisual);
     animateStrokePath(linePath);
 
     const dots = plot
@@ -321,7 +321,7 @@ function renderHorizontalLineFallback(
       .attr("stroke", color)
       .attr("stroke-width", strokeWidth)
       .attr("d", lineGen);
-    applyPathDepthShadow(scene.defs, linePath, color, `hline-${i}`);
+    applyPathDepthShadow(scene.defs, linePath, color, `hline-${i}`, config.depthVisual);
   });
   const tooltip = showTooltip ? createTooltipLayer(container, theme, tooltipPresentation) : null;
   return () => {

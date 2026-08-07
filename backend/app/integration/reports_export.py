@@ -29,7 +29,7 @@ _MIME = {
 
 
 class ReportExportOut(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
     export_id: uuid.UUID = Field(alias="exportId")
     template_id: uuid.UUID = Field(alias="templateId")
     format: str
@@ -53,14 +53,9 @@ def _template_export_allowed(template_id: uuid.UUID) -> bool:
     return node.node_type == "template"
 
 
-def _assert_reports_export(actor: UserContext) -> None:
-    if "admin" in actor.roles or "integration" in actor.roles:
-        return
-    raise IntegrationError(
-        "REPORT_EXPORT_FORBIDDEN",
-        "Report export requires integration or admin role",
-        403,
-    )
+def _assert_reports_export(_actor: UserContext) -> None:
+    """Route entry already requires ``report:read``; no extra role gate."""
+    return
 
 
 def _minimal_pdf(label: str) -> bytes:

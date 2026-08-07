@@ -10,7 +10,7 @@ _KEY_PATTERN = r"^[a-z][a-z0-9_]{0,63}$"
 
 
 class MetricAdjustment(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
     key: str = Field(pattern=_KEY_PATTERN)
     label: str = Field(min_length=1, max_length=120)
     expression: str | None = None
@@ -31,7 +31,7 @@ class MetricAdjustment(BaseModel):
 
 
 class FilterAdjustment(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
     key: str = Field(pattern=_KEY_PATTERN)
     operator: str
     default_value: str | None = Field(default=None, alias="defaultValue")
@@ -39,7 +39,7 @@ class FilterAdjustment(BaseModel):
 
 
 class ExtensionConfigUpsert(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
     catalog_node_id: uuid.UUID = Field(alias="catalogNodeId")
     metrics: list[MetricAdjustment] = Field(default_factory=list)
     filters: list[FilterAdjustment] = Field(default_factory=list)
@@ -52,7 +52,7 @@ class ExtensionConfigOut(ExtensionConfigUpsert):
 
 
 class ExtensionRenderSpecOut(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
     template_node_id: str = Field(alias="templateNodeId")
     revision: int
     template_kind: str | None = Field(default=None, alias="templateKind")
@@ -62,7 +62,7 @@ class ExtensionRenderSpecOut(BaseModel):
 
 
 class ExtensionRevisionOut(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
     revision: int
     change_note: str | None = Field(default=None, alias="changeNote")
     updated_at: str = Field(alias="updatedAt")

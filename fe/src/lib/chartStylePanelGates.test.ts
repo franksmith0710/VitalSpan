@@ -29,10 +29,13 @@ describe("chartStylePanelGates", () => {
     expect(filterStyleSectionsForChart("treemap", ["remark", "label", "treemapShape"])).toContain("label");
   });
 
-  it("depth visual only for supported cartesian types", () => {
+  it("depth visual for bar, line, gauge and related cartesian types", () => {
     expect(supportsDepthVisualToggle("bar")).toBe(true);
-    expect(supportsDepthVisualToggle("line")).toBe(false);
+    expect(supportsDepthVisualToggle("line")).toBe(true);
+    expect(supportsDepthVisualToggle("area")).toBe(true);
     expect(supportsDepthVisualToggle("gauge")).toBe(true);
+    expect(supportsDepthVisualToggle("pie")).toBe(true);
+    expect(supportsDepthVisualToggle("table-info")).toBe(false);
   });
 
   it("series gradient whitelist: bar/line yes, pie/map no", () => {

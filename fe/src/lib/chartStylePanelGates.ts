@@ -7,6 +7,17 @@ import type { ChartStyleSectionId } from "@/lib/chartStyleSectionRegistry";
 import { resolveD3InspectorFeatureMatrix } from "@/components/charts/engine/d3/inspectorCapabilityMatrix";
 
 const DEPTH_VISUAL_CHART_TYPES = new Set<ChartType>([
+  "line",
+  "area",
+  "area-stack",
+  "timeline",
+  "scatter",
+  "combo",
+  "chart-mix-dual-line",
+  "pie",
+  "pie-donut",
+  "pie-rose",
+  "pie-donut-rose",
   "bar",
   "bar-stack",
   "percentage-bar-stack",

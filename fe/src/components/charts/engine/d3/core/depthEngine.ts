@@ -177,6 +177,7 @@ export function drawExtrudedHorizontalBar(opts: ExtrudedHorizontalBarOpts): d3.S
   const topColor = shadeColor(opts.color, "top");
   const sideColor = shadeColor(opts.color, "side");
 
+  // 横柱数值沿 x：挤出在厚度(y)与末端(x)，不沿数值轴拉长柱长
   group
     .append("path")
     .attr("class", "vs-hbar-bottom")
@@ -189,8 +190,17 @@ export function drawExtrudedHorizontalBar(opts: ExtrudedHorizontalBarOpts): d3.S
   group
     .append("path")
     .attr("class", "vs-hbar-top")
-    .attr("d", `M ${x} ${y} L ${x + depth} ${y + depth} L ${x + w + depth} ${y + depth} L ${x + w} ${y} Z`)
+    .attr("d", `M ${x} ${y} L ${x + depth} ${y + depth} L ${x + w} ${y + depth} L ${x + w} ${y} Z`)
     .attr("fill", topColor);
+
+  group
+    .append("path")
+    .attr("class", "vs-hbar-side")
+    .attr(
+      "d",
+      `M ${x + w} ${y} L ${x + w + depth} ${y + depth} L ${x + w + depth} ${y + h + depth} L ${x + w} ${y + h} Z`,
+    )
+    .attr("fill", sideColor);
 
   group
     .append("rect")
@@ -234,7 +244,18 @@ export function applyPathDepthShadow(
   const depthLevel = resolveEffectiveDepth(level);
   const filterId = ensureDepthShadowFilter(defs, filterKey, depthLevel);
   if (!filterId) return;
-  path.clone(true).lower().attr("fill", "none").attr("stroke", shadeColor(color, "shadow")).attr("stroke-width", VCDS.line.width + 2).attr("stroke-linecap", "round").attr("stroke-linejoin", "round").attr("opacity", 0.35).attr("filter", `url(#${filterId})`);
+  const offset = depthExtrudePx(depthLevel) * 0.45;
+  path
+    .clone(true)
+    .lower()
+    .attr("transform", `translate(${offset * 0.55}, ${offset})`)
+    .attr("fill", "none")
+    .attr("stroke", shadeColor(color, "shadow"))
+    .attr("stroke-width", VCDS.line.width + 2)
+    .attr("stroke-linecap", "round")
+    .attr("stroke-linejoin", "round")
+    .attr("opacity", depthLevel === "enhanced" ? 0.42 : 0.32)
+    .attr("filter", `url(#${filterId})`);
 }
 
 export function applyDepthHoverLift(

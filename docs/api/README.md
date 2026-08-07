@@ -250,6 +250,8 @@ redoc: /redoc
 | GET | `/api/v1/embed/sdk-params` | 按 token 解析 SDK 参数（`containerId`/`apiBase`） | IF-04 | 三期 | API-006 | 已实现 | `backend/app/api/v1/embed.py` |
 | GET | `/api/v1/embed/chart-view` | 按 embed token 加载单图 `ChartViewConfig` | IF-04 | 三期 | VIZ-006 | 已实现 | `backend/app/integration/embed_resolve.py` |
 | GET | `/api/v1/embed/dashboard-layout` | 按 embed token 加载看板/大屏 `layoutJson`（token 须含匹配 `dashboardId`） | IF-04 | 三期 | DASH-002 | 已实现 | `backend/app/integration/embed_resolve.py` |
+| POST | `/api/v1/embed/query/execute` | 嵌入页匿名查数（Header `X-Embed-Token`） | IF-04 | 三期 | VIZ-006 | 已实现 | `backend/app/api/v1/embed.py` |
+| POST | `/api/v1/embed/dataset/execute` | 嵌入页 Dataset 查数（Header `X-Embed-Token`） | IF-04 | 三期 | VIZ-006 | 已实现 | `backend/app/api/v1/embed.py` |
 
 ---
 

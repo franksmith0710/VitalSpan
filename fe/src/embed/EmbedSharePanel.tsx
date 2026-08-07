@@ -10,6 +10,7 @@ import { TruncateHint } from "@/components/ui/hint-tooltip";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiFetch } from "@/lib/api";
+import { buildEmbedShareUrl } from "@/lib/appBasePath";
 import { localizeApiMessage, mapApiError } from "@/lib/apiError";
 import { cn } from "@/lib/utils";
 
@@ -72,7 +73,7 @@ export function EmbedSharePanel() {
           allowedOrigins,
         }),
       });
-      const url = `${window.location.origin}${tokenResp.embedUrl}`;
+      const url = buildEmbedShareUrl(tokenResp.embedUrl);
       setEmbedUrl(url);
     } catch (e) {
       const err = e as Error & { code?: string; fields?: Array<{ message: string }> };

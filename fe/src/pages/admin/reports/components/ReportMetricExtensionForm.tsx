@@ -26,6 +26,7 @@ import {
   type DatasourceListItem,
 } from "@/lib/datasourceRoles";
 import { ReportMetricDatasetFields } from "./ReportMetricDatasetFields";
+import { metricKeyValidationMessage } from "../reportExtensionUtils";
 import { type ExtensionMetric, useReportTemplates } from "../useReportTemplates";
 type QueryMode = "sql" | "dataset";
 
@@ -146,6 +147,11 @@ export function ReportMetricExtensionForm({
   };
 
   const validateFormMetric = (metric: ExtensionMetric) => {
+    const keyError = metricKeyValidationMessage(metric.key);
+    if (keyError) {
+      toast.error(keyError);
+      return false;
+    }
     if (metric.queryMode === "dataset") {
       if (!metric.datasetId || !metric.boundConfigId) {
         toast.error("数据集模式须选择数据集，并完成查询绑定（或选已绑定的数据集）");

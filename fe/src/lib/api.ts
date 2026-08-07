@@ -1,4 +1,4 @@
-import { matchExportDashboardId, resolveApiBaseUrl } from "@/lib/appBasePath";
+import { isEmbedPath, matchExportDashboardId, resolveApiBaseUrl } from "@/lib/appBasePath";
 import { clearAuthToken, getAuthToken } from "@/lib/auth-token";
 import {
   getExportAuthHeaders,
@@ -28,7 +28,7 @@ export function getEmbedTokenFromLocation(): string | null {
 
 export function isEmbedShareContext(): boolean {
   if (typeof window === "undefined") return false;
-  if (!window.location.pathname.startsWith("/embed/")) return false;
+  if (!isEmbedPath()) return false;
   return Boolean(getEmbedTokenFromLocation());
 }
 
@@ -48,15 +48,15 @@ export function getAuthHeaders(): Record<string, string> {
 
 export function resolveQueryExecutePath(): string {
   if (isExportSnapshotContext()) return resolveExportQueryExecutePath();
-  return getEmbedTokenFromLocation()
-    ? "/api/v1/embed/query/execute"
-    : "/api/v1/query/execute";
+  if (isEmbedShareContext()) return "/api/v1/embed/query/execute";
+  return "/api/v1/query/execute";
 }
 
 export function resolveDatasetExecutePath(): string {
   if (isExportSnapshotContext()) {
     return "/api/v1/dashboards/export-query/dataset/execute";
   }
+  if (isEmbedShareContext()) return "/api/v1/embed/dataset/execute";
   return "/api/v1/query/dataset/execute";
 }
 
