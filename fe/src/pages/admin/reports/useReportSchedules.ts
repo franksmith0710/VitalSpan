@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
+import { randomId } from "@/lib/randomId";
 import { queryKeys } from "@/lib/queryKeys";
 
 export type ScheduleRecipient = { type: "role" | "user" | "email"; value: string };
@@ -77,6 +78,7 @@ export function useReportScheduleMutations(filter?: ReportScheduleListFilter) {
       void qc.invalidateQueries({ queryKey: ["reports", "schedule-executions", scheduleId] });
     }
     void qc.invalidateQueries({ queryKey: ["reports", "schedules"] });
+    void qc.invalidateQueries({ queryKey: ["reports", "schedules", "recent-failures"] });
   };
 
   const createSchedule = useMutation({
@@ -111,7 +113,7 @@ export function useReportScheduleMutations(filter?: ReportScheduleListFilter) {
       apiFetch(`/api/v1/reports/schedules/${id}/execute`, {
         method: "POST",
         headers: {
-          "Idempotency-Key": crypto.randomUUID(),
+          "Idempotency-Key": randomId(),
           "X-Rpt-Semi-Real": "1",
         },
       }),
@@ -122,7 +124,7 @@ export function useReportScheduleMutations(filter?: ReportScheduleListFilter) {
     mutationFn: ({ executionId, scheduleId }: { executionId: string; scheduleId: string }) =>
       apiFetch(`/api/v1/reports/schedules/executions/${executionId}/retry`, {
         method: "POST",
-        headers: { "Idempotency-Key": crypto.randomUUID() },
+        headers: { "Idempotency-Key": randomId() },
       }).then((result) => ({ result, scheduleId })),
     onSuccess: (_data, vars) => invalidate(vars.scheduleId),
   });

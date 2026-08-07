@@ -134,7 +134,7 @@ describe("FilterControl / GlobalFilterBar", () => {
         onValueChange={onValueChange}
       />,
     );
-    const input = screen.getByLabelText("region");
+    const input = screen.getByLabelText("区域筛选");
     await userEvent.type(input, "east");
     expect(onValueChange).toHaveBeenCalled();
     expect(onValueChange.mock.calls.at(-1)?.[0]).toBe("f1");

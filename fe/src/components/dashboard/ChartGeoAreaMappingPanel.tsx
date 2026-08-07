@@ -24,6 +24,7 @@ import { listUnmatchedGeoRegionValues } from "@/lib/geoAreaMappingFromData";
 import { isChartExecuteReady } from "@/lib/chartExecuteProbe";
 import { listOfflineProvinceNames } from "@/lib/geoMapLevels";
 import { cn } from "@/lib/utils";
+import { randomId } from "@/lib/randomId";
 import { useChartInspector } from "./chartInspectorContext";
 import {
   INSPECTOR_CTRL,
@@ -66,7 +67,7 @@ function MappingPagination({
   );
 }
 
-/** 2D/3D 区域地图 · 高级「地名映射」（对标 DataEase：图�?地图区域，属�?业务取值） */
+/** 2D/3D 区域地图 · 高级「地名映射」（对标 DataEase：图形=地图区域，属性=业务取值） */
 export function ChartAdvancedMapAreaMappingSection() {
   const { cfg, onChange } = useChartInspector();
   const geo = readChartGeoStyle(readChartDeStyle(cfg));
@@ -156,16 +157,16 @@ export function ChartAdvancedMapAreaMappingSection() {
       <div className="flex items-start justify-between gap-2 rounded-md border border-gray-200 bg-gray-50/80 px-2 py-1.5 dark:border-gray-800 dark:bg-white/[0.03]">
         <p className={cn(INSPECTOR_HINT, "min-w-0 flex-1 pt-0.5")}>
           {!regionField
-            ? "请先在数�?Tab 绑定地理维度字段"
+            ? "请先在数据 Tab 绑定地理维度字段"
             : loading
-              ? "正在加载预览数据�?
+              ? "正在加载预览数据…"
               : error
                 ? "预览数据不可用，仍可手动编辑映射"
                 : matchStats
                   ? matchStats.total > 0
                     ? (
                         <>
-                          已匹�?{matchStats.matched}/{matchStats.total} �?
+                          已匹配 {matchStats.matched}/{matchStats.total} 条
                           {unmatchedValues.length > 0 ? (
                             <span className="text-amber-600 dark:text-amber-500">
                               {" "}
@@ -177,7 +178,7 @@ export function ChartAdvancedMapAreaMappingSection() {
                     : "当前数据为空"
                   : executeReady
                     ? "等待预览数据"
-                    : "配置数据源后可自动匹�?}
+                    : "配置数据源后可自动匹配"}
         </p>
         <Button
           type="button"
@@ -193,17 +194,17 @@ export function ChartAdvancedMapAreaMappingSection() {
       </div>
 
       <p className={INSPECTOR_HINT}>
-        对标 DataEase：左侧为离线地图标准区域（图形），右侧填写业务维度取值（属性）。配置数据后将自动按同名�?
-        join 规则建议匹配�?
+        对标 DataEase：左侧为离线地图标准区域（图形），右侧填写业务维度取值（属性）。配置数据后将自动按同名与
+        join 规则建议匹配。
       </p>
 
       {!regionField ? (
-        <InspectorSubtleEmpty message="绑定地理维度并配置数据源后，将自动列出省级区域并尝试匹配�? />
+        <InspectorSubtleEmpty message="绑定地理维度并配置数据源后，将自动列出省级区域并尝试匹配。" />
       ) : (
         <div className="overflow-hidden rounded-md border border-gray-200 dark:border-gray-800">
           <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-1.5 border-b border-gray-200 bg-gray-50/90 px-2 py-1.5 text-[10px] font-medium text-gray-500 dark:border-gray-800 dark:bg-white/[0.04] dark:text-gray-400">
             <span>图形</span>
-            <span>属�?/span>
+            <span>属性</span>
           </div>
           {viewRows.map((row) => (
             <div
@@ -216,7 +217,7 @@ export function ChartAdvancedMapAreaMappingSection() {
               <Input
                 className={cn(INSPECTOR_CTRL, "min-w-0")}
                 value={row.dataValue}
-                placeholder="业务取�?
+                placeholder="业务取值"
                 aria-label={`${row.mapRegion} 属性`}
                 onChange={(e) =>
                   patchEntries(
@@ -238,8 +239,8 @@ export function ChartAdvancedMapAreaMappingSection() {
       {unmatchedValues.length > 0 ? (
         <p className={INSPECTOR_HINT}>
           未匹配取值：
-          {unmatchedValues.slice(0, 5).join("�?)}
-          {unmatchedValues.length > 5 ? "�? : ""} �?在对应「图形」行的「属性」中填写即可�?
+          {unmatchedValues.slice(0, 5).join("、")}
+          {unmatchedValues.length > 5 ? "…" : ""} — 在对应「图形」行的「属性」中填写即可。
         </p>
       ) : null}
     </div>

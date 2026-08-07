@@ -22,6 +22,7 @@ from app.metadata.physical import service as physical_service
 from app.metadata.physical.errors import PhysicalTableError
 from app.metadata.physical.schemas import PhysicalTableRegisterFromSchemaIn
 from app.reports.catalog import service as catalog_service
+from app.reports.persistence import catalog_repo
 from app.reports.catalog.schemas import CatalogNodeCreate
 from app.reports.errors import ReportExtensionError
 from app.reports.extension.schemas import ExtensionConfigUpsert, MetricAdjustment
@@ -144,8 +145,19 @@ def _seed_equipment_entity(session: Session, ds_id: uuid.UUID, actor: UserContex
 
 
 def _find_demo_node_id() -> uuid.UUID | None:
-    for raw in catalog_service._nodes.values():
+    for raw in catalog_repo.all_nodes().values():
         if raw.get("template_key") == _DEMO_TEMPLATE_KEY:
+            return uuid.UUID(str(raw["id"]))
+    return None
+
+
+def _find_demo_root_folder_id() -> uuid.UUID | None:
+    for raw in catalog_repo.all_nodes().values():
+        if (
+            raw.get("name") == _DEMO_FOLDER_NAME
+            and raw.get("node_type") == "folder"
+            and raw.get("parent_id") is None
+        ):
             return uuid.UUID(str(raw["id"]))
     return None
 
@@ -180,11 +192,7 @@ def _seed_demo_template(actor: UserContext, ds_id: uuid.UUID | None) -> tuple[in
         ),
         actor,
     )
-    folder_id = None
-    for raw in catalog_service._nodes.values():
-        if raw.get("name") == _DEMO_FOLDER_NAME and raw.get("node_type") == "folder":
-            folder_id = raw["id"]
-            break
+    folder_id = _find_demo_root_folder_id()
     if folder_id is None:
         folder = catalog_service.create_node(
             CatalogNodeCreate(name=_DEMO_FOLDER_NAME, nodeType="folder"),

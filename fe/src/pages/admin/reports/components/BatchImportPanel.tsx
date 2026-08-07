@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { randomId } from "@/lib/randomId";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,7 +51,7 @@ export function BatchImportPanel({ readOnly }: { readOnly: boolean }) {
     mutationFn: (body: { items: BatchItem[] }) =>
       apiFetch<BatchResult>("/api/v1/reports/batch", {
         method: "POST",
-        headers: { "Idempotency-Key": crypto.randomUUID() },
+        headers: { "Idempotency-Key": randomId() },
         body: JSON.stringify(body),
       }),
     onSuccess: (data) => {

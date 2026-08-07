@@ -499,3 +499,48 @@ def test_schedule_persists_with_db_store(client: TestClient, monkeypatch):
     assert fetched.status_code == 200
     assert fetched.json()["name"] == "Persisted Schedule"
 
+
+def test_recent_failures_omit_superseded_by_later_success(client: TestClient):
+    dash_id = _create_dashboard_with_widget(client, name="Fail Hide Dash", description="recent-failures")
+    sched = client.post(
+        "/api/v1/reports/schedules",
+        headers=AUTH,
+        json={
+            "sourceType": "dashboard",
+            "sourceId": dash_id,
+            "cron": "0 9 * * *",
+            "recipients": [{"type": "role", "value": "admin"}],
+        },
+    )
+    schedule_id = sched.json()["id"]
+    client.post(
+        f"/api/v1/reports/schedules/{schedule_id}/transition",
+        headers=AUTH,
+        json={"action": "schedule"},
+    )
+    fail_resp = client.post(
+        f"/api/v1/reports/schedules/{schedule_id}/execute",
+        headers={
+            **AUTH,
+            "Idempotency-Key": "recent-fail-1",
+            "X-Rpt-Semi-Real": "1",
+            "X-Rpt-Delivery-Mock": "fail",
+        },
+    )
+    assert fail_resp.status_code == 200, fail_resp.text
+    parent_id = fail_resp.json()["executionId"]
+    before = client.get("/api/v1/reports/schedules/executions/recent-failures", headers=AUTH)
+    assert before.status_code == 200
+    assert any(item["executionId"] == parent_id for item in before.json()["items"])
+
+    retry = client.post(
+        f"/api/v1/reports/schedules/executions/{parent_id}/retry",
+        headers={**AUTH, "Idempotency-Key": "recent-fail-retry-1"},
+    )
+    assert retry.status_code == 200, retry.text
+    assert retry.json()["status"] == "semi_real_succeeded"
+
+    after = client.get("/api/v1/reports/schedules/executions/recent-failures", headers=AUTH)
+    assert after.status_code == 200
+    assert not any(item["executionId"] == parent_id for item in after.json()["items"])
+

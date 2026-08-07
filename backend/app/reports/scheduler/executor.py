@@ -113,13 +113,39 @@ def _append_history(
     _HISTORY.setdefault(schedule_id, []).append(entry)
 
 
+def _is_failure_status(status: str) -> bool:
+    return "failed" in status or "degraded" in status
+
+
+def _is_success_status(status: str) -> bool:
+    if _is_failure_status(status):
+        return False
+    return "succeeded" in status or status == "mock_succeeded"
+
+
 def list_recent_failed_executions(limit: int = 20) -> dict:
     mem = _memory_store()
     rows: list[dict] = mem.list_all_executions() if mem else get_schedule_store().list_all_executions()
+    latest_success_by_schedule: dict[str, str] = {}
+    for entry in rows:
+        schedule_id = str(entry.get("scheduleId", ""))
+        status = entry.get("status", "")
+        if not schedule_id or not _is_success_status(status):
+            continue
+        executed_at = entry.get("executedAt") or ""
+        prev = latest_success_by_schedule.get(schedule_id)
+        if prev is None or executed_at > prev:
+            latest_success_by_schedule[schedule_id] = executed_at
+
     failed_rows: list[dict] = []
     for entry in rows:
         status = entry.get("status", "")
-        if "failed" not in status and "degraded" not in status:
+        if not _is_failure_status(status):
+            continue
+        schedule_id = str(entry.get("scheduleId", ""))
+        fail_at = entry.get("executedAt") or ""
+        success_at = latest_success_by_schedule.get(schedule_id)
+        if success_at and success_at >= fail_at:
             continue
         failed_rows.append(entry)
     failed_rows.sort(key=lambda r: r.get("executedAt", ""), reverse=True)

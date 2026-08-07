@@ -55,6 +55,7 @@ import {
   InspectorInlineColorRow,
   InspectorSwitchRow,
 } from "./inspectorCompact";
+import { randomId } from "@/lib/randomId";
 
 function newId(): string {
   return randomId();
@@ -70,13 +71,13 @@ export function ChartAdvancedFeatureSettings() {
     <div className={INSPECTOR_SECTION_GAP}>
       {caps.dataZoom ? (
         <InspectorSwitchRow
-          label="缩略�?
+          label="缩略轴"
           checked={Boolean(features.dataZoom)}
           onCheckedChange={(checked) =>
             onChange(patchChartDeFeatures(cfg, { dataZoom: checked }))
           }
-          hint="折线/柱图底部缩放�?
-          aria-label="缩略�?
+          hint="折线/柱图底部缩放条"
+          aria-label="缩略轴"
         />
       ) : null}
       {caps.timeRange ? (
@@ -105,7 +106,7 @@ function MarkLineRow({
     <div className={INSPECTOR_NESTED_CARD}>
       <div className="flex items-center justify-between gap-2">
         <InspectorSwitchRow
-          label={line.name?.trim() || "辅助�?}
+          label={line.name?.trim() || "辅助线"}
           checked={line.enabled}
           onCheckedChange={(enabled) => onChange({ ...line, enabled })}
         />
@@ -114,7 +115,7 @@ function MarkLineRow({
           variant="ghost"
           size="icon"
           className="size-7 shrink-0 text-gray-400"
-          aria-label="删除辅助�?
+          aria-label="删除辅助线"
           onClick={onRemove}
         >
           <Trash2 className="size-3.5" aria-hidden />
@@ -125,7 +126,7 @@ function MarkLineRow({
           className={INSPECTOR_CTRL}
           value={line.name ?? ""}
           onChange={(e) => onChange({ ...line, name: e.target.value })}
-          placeholder="目标�?
+          placeholder="目标线"
         />
       </InspectorFieldRow>
       <div className="grid grid-cols-2 gap-2">
@@ -143,7 +144,7 @@ function MarkLineRow({
             </SelectContent>
           </Select>
         </InspectorFieldRow>
-        <InspectorFieldRow label="数�?>
+        <InspectorFieldRow label="数值">
           <Input
             type="number"
             className={INSPECTOR_CTRL}
@@ -171,7 +172,7 @@ export function ChartAdvancedMarkLinesSection() {
   return (
     <div className={INSPECTOR_SECTION_GAP}>
       {lines.length === 0 ? (
-        <p className={INSPECTOR_HINT}>添加固定值参考线，用于标注目标或阈�?/p>
+        <p className={INSPECTOR_HINT}>添加固定值参考线，用于标注目标或阈值</p>
       ) : null}
       {lines.map((line) => (
         <MarkLineRow
@@ -192,7 +193,7 @@ export function ChartAdvancedMarkLinesSection() {
             {
               id: newId(),
               enabled: true,
-              name: `辅助�?${lines.length + 1}`,
+              name: `辅助线 ${lines.length + 1}`,
               axis: "y",
               value: 0,
               color: "#f04438",
@@ -202,7 +203,7 @@ export function ChartAdvancedMarkLinesSection() {
         }
       >
         <Plus className="mr-1 size-3.5" aria-hidden />
-        添加辅助�?
+        添加辅助线
       </Button>
     </div>
   );
@@ -264,7 +265,7 @@ function ConditionalRuleRow({
             </SelectContent>
           </Select>
         </InspectorFieldRow>
-        <InspectorFieldRow label="阈�?>
+        <InspectorFieldRow label="阈值">
           <Input
             type="number"
             className={INSPECTOR_CTRL}
@@ -274,7 +275,7 @@ function ConditionalRuleRow({
         </InspectorFieldRow>
       </div>
       <InspectorInlineColorRow
-        label="满足时颜�?
+        label="满足时颜色"
         value={rule.color}
         onChange={(color) => onChange({ ...rule, color })}
       />
@@ -292,10 +293,10 @@ export function ChartAdvancedConditionalSection() {
 
   return (
     <div className={INSPECTOR_SECTION_GAP}>
-      <p className={INSPECTOR_HINT}>按度量值阈值高亮柱/线段颜色（自上而下匹配首条规则�?/p>
+      <p className={INSPECTOR_HINT}>按度量值阈值高亮柱/线段颜色（自上而下匹配首条规则）</p>
       {caps.conditionalPartial ? (
         <p className={INSPECTOR_HINT}>
-          柱线组合图条件色可能仅作用于部分系列，请预览确认效果�?
+          柱线组合图条件色可能仅作用于部分系列，请预览确认效果。
         </p>
       ) : null}
       {rules.map((rule) => (
@@ -368,7 +369,7 @@ export function ChartAdvancedJumpSection() {
             </Select>
           </InspectorFieldRow>
           {jump.mode === "url" ? (
-            <InspectorFieldRow label="链接地址" hint="支持 https:// 或站�?/ 路径">
+            <InspectorFieldRow label="链接地址" hint="支持 https:// 或站内 / 路径">
               <Input
                 className={INSPECTOR_CTRL}
                 value={jump.url ?? ""}
@@ -381,7 +382,7 @@ export function ChartAdvancedJumpSection() {
               label="目标看板"
               hint={
                 !jump.dashboardId?.trim()
-                  ? "从列表选择跳转目标看板（对�?DataEase 内部链接�?
+                  ? "从列表选择跳转目标看板（对标 DataEase 内部链接）"
                   : undefined
               }
             >
@@ -433,15 +434,15 @@ export function ChartAdvancedMapLinkageSection() {
         onCheckedChange={(enabled) => patchLinkage({ enabled })}
         hint={
           linkage.enabled
-            ? "查看态单击区域将维度值注入目标图�?SQL 参数（与跳转互斥时跳转优先）"
-            : "启用后可在查看态点击地图区域联动其他图�?
+            ? "查看态单击区域将维度值注入目标图表 SQL 参数（与跳转互斥时跳转优先）"
+            : "启用后可在查看态点击地图区域联动其他图表"
         }
       />
       {linkage.enabled ? (
         <>
           <InspectorFieldRow
-            label="参数�?
-            hint="对应 SQL �?{{region}} 等占位符"
+            label="参数键"
+            hint="对应 SQL 中 {{region}} 等占位符"
           >
             <Input
               className={INSPECTOR_CTRL}
@@ -455,7 +456,7 @@ export function ChartAdvancedMapLinkageSection() {
               目标图表
             </legend>
             <p className={INSPECTOR_HINT}>
-              未勾选时默认联动看板上其余全部图表；目标 SQL 须含对应占位符�?
+              未勾选时默认联动看板上其余全部图表；目标 SQL 须含对应占位符。
             </p>
             <div className="flex flex-wrap gap-3">
               {chartTargets.length > 0 ? (
@@ -472,7 +473,7 @@ export function ChartAdvancedMapLinkageSection() {
                   </label>
                 ))
               ) : (
-                <p className="text-theme-xs text-gray-400">画布上暂无其他图表组件�?/p>
+                <p className="text-theme-xs text-gray-400">画布上暂无其他图表组件。</p>
               )}
             </div>
           </fieldset>
@@ -482,7 +483,7 @@ export function ChartAdvancedMapLinkageSection() {
   );
 }
 
-/** 2D 区域地图 · 高级「气泡动效」（对标 DataEase 水波 / 速率 / 环数�?*/
+/** 2D 区域地图 · 高级「气泡动效」（对标 DataEase 水波 / 速率 / 环数） */
 export function ChartAdvancedMapBubbleSection() {
   const { cfg, onChange, dashboardStyle } = useChartInspector();
   const deStyle = readChartDeStyle(cfg);
@@ -546,7 +547,7 @@ export function ChartAdvancedMapBubbleSection() {
             ariaLabel="水波环数"
             onChange={(bubbleEffectRingCount) => patchGeo({ bubbleEffectRingCount })}
           />
-          <p className={INSPECTOR_HINT}>在有数据的区域中心显示扩散水波；速率越高动画越快�?/p>
+          <p className={INSPECTOR_HINT}>在有数据的区域中心显示扩散水波；速率越高动画越快。</p>
         </>
       ) : null}
     </div>

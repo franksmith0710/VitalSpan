@@ -38,12 +38,23 @@ export function FilterWidgetInspector({
 
   const body = (
     <div className="space-y-4 p-4">
+      <p className="text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
+        维度对应图表查询字段；参数名须与 SQL 占位符一致（如 {"{{region}}"}），筛选值会注入关联图表。
+      </p>
       <div className="space-y-1.5">
         <Label htmlFor={`fc-dim-${widget.id}`}>维度 / 字段</Label>
         <Input
           id={`fc-dim-${widget.id}`}
           value={cfg.dimensionRef}
-          onChange={(e) => patch({ dimensionRef: e.target.value })}
+          onChange={(e) => {
+            const nextDim = e.target.value;
+            const syncParam =
+              !cfg.parameterKey?.trim() || cfg.parameterKey === cfg.dimensionRef;
+            patch({
+              dimensionRef: nextDim,
+              ...(syncParam ? { parameterKey: nextDim } : {}),
+            });
+          }}
           placeholder="如 region"
         />
       </div>
@@ -53,7 +64,7 @@ export function FilterWidgetInspector({
           id={`fc-param-${widget.id}`}
           value={cfg.parameterKey ?? ""}
           onChange={(e) => patch({ parameterKey: e.target.value })}
-          placeholder="注入 SQL 的 {{key}}"
+          placeholder="如 region（对应 {{region}}）"
         />
       </div>
       <div className="space-y-1.5">

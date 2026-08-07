@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { randomId } from "@/lib/randomId";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -150,7 +151,7 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
       apiFetch(`/api/v1/reports/schedules/${id}/execute`, {
         method: "POST",
         headers: {
-          "Idempotency-Key": crypto.randomUUID(),
+          "Idempotency-Key": randomId(),
           "X-Rpt-Semi-Real": "1",
         },
       }),
@@ -165,7 +166,7 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
     mutationFn: (executionId: string) =>
       apiFetch(`/api/v1/reports/schedules/executions/${executionId}/retry`, {
         method: "POST",
-        headers: { "Idempotency-Key": crypto.randomUUID() },
+        headers: { "Idempotency-Key": randomId() },
       }),
     onSuccess: () => {
       toast.success("已提交重试");

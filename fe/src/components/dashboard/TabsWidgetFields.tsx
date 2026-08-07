@@ -2,6 +2,7 @@ import { Filter, ImageIcon, Plus, Trash2, Type } from "lucide-react";
 import { Button, IconButton } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { randomId } from "@/lib/randomId";
 import type { LayoutWidget, TabsWidgetConfig } from "./layoutUtils";
 import { TABS_CAROUSEL_MIN_INTERVAL_SEC, getTabChildWidgets } from "./layoutUtils";
 import { InspectorPanelSection } from "./inspector-panel-section";
@@ -16,7 +17,7 @@ function tabChildTypeLabel(widget: LayoutWidget): string {
     return WIDGET_CHART_LABELS[widget.chartConfig?.chartType ?? "bar"] ?? "图表";
   }
   if (widget.type === "media") return "图片";
-  if (widget.type === "text") return "富文�?;
+  if (widget.type === "text") return "富文本";
   if (widget.type === "filter") return "筛选器";
   return widget.type;
 }
@@ -94,7 +95,7 @@ export function TabsPaneList({
   return (
     <InspectorPanelSection
       title="页签列表"
-      description={`�?${cfg.panes.length} 个页�?· ${totalChildren} 个组件`}
+      description={`共 ${cfg.panes.length} 个页签 · ${totalChildren} 个组件`}
       action={
         cfg.panes.length < MAX_PANES ? (
           <Button
@@ -134,7 +135,7 @@ export function TabsPaneList({
                       ? "bg-brand-500 text-white"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-white/10 dark:text-gray-300",
                   )}
-                  aria-label={`切换到页�?${index + 1}`}
+                  aria-label={`切换到页签 ${index + 1}`}
                   aria-pressed={active}
                   onPointerDown={(event) => {
                     event.stopPropagation();
@@ -226,7 +227,7 @@ export function TabsPaneList({
                   })}
                 </div>
               ) : childCount === 0 && active ? (
-                <InspectorSubtleEmpty message="拖入组件或从工具栏添�? className="ml-2" />
+                <InspectorSubtleEmpty message="拖入组件或从工具栏添加" className="ml-2" />
               ) : null}
             </div>
           );
@@ -252,7 +253,7 @@ export function TabsCarouselFields({
     <InspectorPanelSection title="预览轮播">
       <DeAttrToggleRow
         label="自动轮播"
-        description="仅在预览/投放态生�?
+        description="仅在预览/投放态生效"
         checked={carousel.enabled}
         onCheckedChange={(enabled) =>
           onChange({
@@ -264,7 +265,7 @@ export function TabsCarouselFields({
       {carousel.enabled ? (
         <div className="mt-2">
           <label className="mb-1 block text-theme-xs text-gray-500 dark:text-gray-400">
-            间隔（秒，≥{TABS_CAROUSEL_MIN_INTERVAL_SEC}�?
+            间隔（秒，≥{TABS_CAROUSEL_MIN_INTERVAL_SEC}）
           </label>
           <Input
             type="number"

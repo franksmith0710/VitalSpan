@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { IconButton } from "@/components/ui/button";
 import { HintTooltip } from "@/components/ui/hint-tooltip";
+import { cn } from "@/lib/utils";
 import { FilterControl } from "./FilterWidgetControls";
 import { TabNestedDragRail } from "./TabNestedDragRail";
 import { WidgetInlineTitle } from "./WidgetInlineTitle";
@@ -98,7 +99,8 @@ export function FilterWidget({
     >
       <FilterControl
         id={controlId}
-        label={cfg.dimensionRef || widget.title}
+        label={widget.title || cfg.dimensionRef}
+        placeholder={cfg.dimensionRef ? `输入${cfg.dimensionRef}` : "输入筛选值"}
         controlType={cfg.controlType}
         value={value}
         options={cfg.options}

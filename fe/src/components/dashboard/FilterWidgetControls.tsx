@@ -26,6 +26,7 @@ export type FilterControlProps = {
   labelPosition?: "top" | "left";
   /** 维度/字段标签颜色（看板级 filterChromeStyle.titleColor） */
   labelStyle?: CSSProperties;
+  placeholder?: string;
 };
 
 function splitMulti(value: string): string[] {
@@ -49,6 +50,7 @@ export function FilterControl({
   inputStyle,
   labelPosition = "top",
   labelStyle,
+  placeholder,
 }: FilterControlProps) {
   const emptyHint = options.length === 0;
   const labelRowClass =
@@ -165,6 +167,7 @@ export function FilterControl({
         style={inputStyle}
         value={value}
         disabled={disabled}
+        placeholder={placeholder ?? "输入筛选值"}
         onChange={(e) => onChange(e.target.value)}
       />
     </div>
