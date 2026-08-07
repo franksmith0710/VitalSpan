@@ -67,6 +67,17 @@ describe("resolveGeo3dQuality", () => {
     ).toBe("low");
   });
 
+  it("thumbnail tier allows 3D on card-sized short side", () => {
+    expect(
+      resolveGeo3dQuality({
+        drillDepth: 0,
+        featureCount: 10,
+        shortSide: 180,
+        renderTier: "thumbnail",
+      }),
+    ).toBe("medium");
+  });
+
   it("keeps 3D for list thumbnails so cards match the real screen", () => {
     expect(
       resolveGeo3dQuality({

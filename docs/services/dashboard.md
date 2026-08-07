@@ -29,12 +29,42 @@
 | | 在线模板商店 / 外网 CDN（GEO-IRON 式离线原则） |
 | | 报表 Word/Excel/PDF 模板（→ `reports/templates`） |
 
-### templates/ 子域（DASH-009 · 2026-07-23）
+### templates/ 子域（DASH-009 · 2026-07-23 · 2026-08 种子 rev 25）
 
-- **In**：`dashboard_templates` 持久化；内置种子（大屏 4 + 看板 3）；组织/私有模板 CRUD；发布/下架；`viz-layout` 信封导入导出；`from-template` 原子实例化；widget id 重生
+- **In**：`dashboard_templates` 持久化；**内置种子 11 套**（数据大屏 **6** + 仪表板 **5**，`BUILTIN_SEED_CONTENT_REVISION=25`）；组织/私有模板 CRUD；发布/下架/删除；`viz-layout` 信封导入导出；`from-template` 原子实例化；widget id 重生；过时 builtin 键 `_purge_obsolete_builtin_templates` 幂等清理
 - **Out**：报表模板树；在线模板市场；第三方 CDN 缩略图
 - **依赖**：`dashboard/service`（layout 校验与实例化）、`auth`（`dashboard:read` / `dashboard:edit` / `dashboard:template.manage`）
-- **FE**：`fe/src/pages/admin/viz-templates/VizTemplatesHubPage.tsx` · `fe/src/components/dashboard/templates/*`
+- **BE 锚点**：`templates/seed.py` · `templates/presets_exported.py` · `templates/service.py` · `templates/acl.py` · `api/v1/dashboard_templates.py`
+- **FE**：`fe/src/pages/admin/viz-templates/VizTemplatesHubPage.tsx` · `fe/src/components/dashboard/templates/*` · `fe/src/lib/dashboardTemplates.ts`
+
+**内置模板清单（rev 25）**
+
+| template_key | 表面 | 布局来源 |
+|--------------|------|----------|
+| `builtin-gov-industrial-park` | data-screen | `layouts/industrial-park-screen.json` |
+| `builtin-gov-smart-city` | data-screen | `workspace-smart-city.json` |
+| `builtin-gov-digital-cockpit` | data-screen | `workspace-digital-cockpit.json` |
+| `builtin-gov-emergency-command` | data-screen | `workspace-emergency.json` |
+| `builtin-gov-eco-monitor` | data-screen | `workspace-eco.json` |
+| `builtin-gov-community` | data-screen | `workspace-community.json` |
+| `builtin-gov-efficiency` | dashboard | `workspace-efficiency.json` |
+| `builtin-gov-satisfaction` | dashboard | `workspace-satisfaction.json` |
+| `builtin-gov-finance` | dashboard | `workspace-finance.json` |
+| `builtin-gov-investment` | dashboard | `workspace-investment.json` |
+| `builtin-gov-grid` | dashboard | `workspace-grid.json` |
+
+布局 JSON 经 `presets_exported.load_exported_layout()` 加载，演示数据源占位 `__demo:sample_db__`。
+
+**删除守卫（BE + FE 对称）**
+
+| 条件 | 结果 |
+|------|------|
+| `visibility=builtin` | **禁止删除** → 403 `DASH_TEMPLATE_BUILTIN_READONLY` |
+| 模板不存在 | 404 `DASH_TEMPLATE_NOT_FOUND` |
+| 非 builtin | 须 `dashboard:edit`；`assert_template_write`（admin 或 `dashboard:template.manage` 或 owner） |
+| FE `canDeleteTemplate` | builtin → false；`canManage`（`dashboard:template.manage`）→ true；否则仅 `ownerUserId === currentUserId` |
+
+**Hub 列表筛选**（`GET /api/v1/dashboard-templates`）：`surfaceKind` · `status` · `categoryKey` · `visibility` · `q` · `includeDrafts` · `limit`/`offset`。
 
 ### theme/ 子域（DASH-006 · r53 + r57 + r58 companion）
 

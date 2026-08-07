@@ -1,13 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Upload } from "lucide-react";
+import { FileJson, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { randomId } from "@/lib/randomId";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -19,6 +17,7 @@ import {
 import { apiFetch } from "@/lib/api";
 import { invalidateCatalogQueries } from "@/lib/catalogQueryInvalidation";
 import { mapApiError } from "@/lib/apiError";
+import { TemplateField, TemplatePanelSection, TemplateTabShell } from "./templatePanelUi";
 
 type BatchItem = {
   name: string;
@@ -84,26 +83,59 @@ export function BatchImportPanel({ readOnly }: { readOnly: boolean }) {
     }
   };
 
+  const downloadSample = () => {
+    const blob = new Blob([SAMPLE_JSON], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "batch-import-sample.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const preview = items.slice(0, 20);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-title-sm">批量导入报表</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-2">
-          <Label htmlFor="batch-json-file">选择 JSON 文件</Label>
+    <TemplateTabShell>
+      <TemplatePanelSection
+        title="批量导入报表"
+        description="上传符合规范的 JSON 文件，一次性创建多个报表模板节点。"
+        icon={Upload}
+        footer={
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="primary"
+              className="h-11"
+              disabled={readOnly || items.length === 0 || importMutation.isPending}
+              onClick={() => importMutation.mutate({ items })}
+            >
+              <Upload className="size-4" aria-hidden />
+              {importMutation.isPending ? "导入中…" : "开始导入"}
+            </Button>
+            <Button type="button" variant="outline" className="h-11" onClick={downloadSample}>
+              <FileJson className="size-4" aria-hidden />
+              下载 JSON 样例
+            </Button>
+          </div>
+        }
+      >
+        <TemplateField
+          id="batch-json-file"
+          label="选择 JSON 文件"
+          hint="文件须包含 items 数组，每项至少含 name 字段。"
+        >
           <Input
             id="batch-json-file"
             ref={fileRef}
             type="file"
             accept=".json"
+            className="h-11"
             disabled={readOnly}
             aria-label="选择批量导入 JSON 文件"
             onChange={(e) => void handleFile(e.target.files?.[0] ?? null)}
           />
-        </div>
+        </TemplateField>
 
         {parseError ? (
           <Alert severity="error">
@@ -113,7 +145,7 @@ export function BatchImportPanel({ readOnly }: { readOnly: boolean }) {
         ) : null}
 
         {preview.length > 0 ? (
-          <div className="overflow-x-only rounded-lg border border-gray-200 dark:border-gray-800">
+          <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -128,45 +160,23 @@ export function BatchImportPanel({ readOnly }: { readOnly: boolean }) {
                   <TableRow key={idx}>
                     <TableCell>{idx + 1}</TableCell>
                     <TableCell>{row.name}</TableCell>
-                    <TableCell>{row.parentId ?? "—"}</TableCell>
+                    <TableCell className="font-mono text-theme-xs">{row.parentId ?? "—"}</TableCell>
                     <TableCell>{row.templateKind ?? "—"}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
+            {items.length > preview.length ? (
+              <p className="border-t border-gray-200 px-4 py-2 text-theme-xs text-gray-500 dark:border-gray-800 dark:text-gray-400">
+                仅展示前 {preview.length} 行，共 {items.length} 行待导入。
+              </p>
+            ) : null}
           </div>
         ) : null}
 
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="primary"
-            disabled={readOnly || items.length === 0 || importMutation.isPending}
-            onClick={() => importMutation.mutate({ items })}
-          >
-            <Upload className="size-4" aria-hidden />
-            {importMutation.isPending ? "导入中…" : "开始导入"}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              const blob = new Blob([SAMPLE_JSON], { type: "application/json" });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = "batch-import-sample.json";
-              a.click();
-              URL.revokeObjectURL(url);
-            }}
-          >
-            下载 JSON 样例
-          </Button>
-        </div>
-
         {result ? (
-          <div className="space-y-2 rounded-xl border border-gray-200 p-4 dark:border-gray-800">
-            <p className="text-theme-sm text-success-600 dark:text-success-400">
+          <div className="space-y-2 rounded-xl border border-success-200 bg-success-50/50 p-4 dark:border-success-500/25 dark:bg-success-500/10">
+            <p className="text-theme-sm font-medium text-success-700 dark:text-success-400">
               成功创建 {result.createdNodeIds.length} 项
               {result.idempotentReplay ? "（幂等重放）" : ""}
             </p>
@@ -189,7 +199,7 @@ export function BatchImportPanel({ readOnly }: { readOnly: boolean }) {
             ) : null}
           </div>
         ) : null}
-      </CardContent>
-    </Card>
+      </TemplatePanelSection>
+    </TemplateTabShell>
   );
 }

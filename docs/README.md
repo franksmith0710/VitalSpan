@@ -13,7 +13,7 @@
 | **业务域** | [services/README.md](services/README.md) | 后端域职责、边界、依赖 |
 | **API** | [api/README.md](api/README.md) | REST 路由、状态、契约 |
 | **架构** | [arch.md](arch.md) | 分层、模块、环境变量、部署 |
-| **壳层 IA** | [ui/layout.md](ui/layout.md) | 路由、导航、Embed |
+| **壳层 IA** | [ui/layout.md](ui/layout.md) · [ui/anchor.md](ui/anchor.md) | 路由、导航、页面组件锚点 |
 
 ## 演化与归档
 
@@ -32,6 +32,7 @@
 | [feature-truth/](feature-truth/) | 实现真值审计 |
 | [feature-design/](feature-design/) | 功能落地方案 |
 | [ux-critique/](ux-critique/) | UX 待办与评审 |
+| [mock/](mock/) | 非测试 stub/mock 诚实清单 |
 | [user-guide/](user-guide/) | 面向用户的操作说明 |
 | [ui/page-style-sync/](ui/page-style-sync/) | 页面样式对齐矩阵 |
 

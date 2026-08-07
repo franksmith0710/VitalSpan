@@ -1,7 +1,15 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Badge } from "@/components/ui/badge";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Clock,
+  Eye,
+  FileText,
+  Layers,
+  Settings2,
+  Upload,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { catalogNodePath } from "@/lib/reportCatalogUtils";
 import { BatchImportPanel } from "./BatchImportPanel";
 import { CatalogNodeMetaPanel } from "./CatalogNodeMetaPanel";
 import { ReportExportCard } from "./ReportExportCard";
@@ -9,6 +17,14 @@ import { ReportExtensionPreview } from "./ReportExtensionPreview";
 import { ReportMetricExtensionForm } from "./ReportMetricExtensionForm";
 import { SchedulePanel } from "./SchedulePanel";
 import { TemplateBlockEditor } from "./TemplateBlockEditor";
+import {
+  TemplateEmptyState,
+  TemplateMetaGrid,
+  TemplateMetaItem,
+  TemplatePanelHeader,
+  TemplatePanelSection,
+  TemplateTabShell,
+} from "./templatePanelUi";
 import { type CatalogNode, useCatalogExtension, useExtensionRenderSpec } from "../useReportTemplates";
 import type { ReportCatalogNode } from "@/lib/reportCatalogUtils";
 
@@ -18,14 +34,14 @@ const KIND_LABELS: Record<NonNullable<CatalogNode["templateKind"]>, string> = {
   pdf: "PDF",
 };
 
-function BasicInfoRow({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="grid gap-1 sm:grid-cols-[120px_1fr] sm:items-center sm:gap-4">
-      <dt className="text-theme-xs text-gray-500 dark:text-gray-400">{label}</dt>
-      <dd className="text-theme-sm font-medium text-gray-800 dark:text-white/90">{children}</dd>
-    </div>
-  );
-}
+const TEMPLATE_TABS = [
+  { value: "basic", label: "基本信息", icon: FileText },
+  { value: "blocks", label: "模板块", icon: Layers },
+  { value: "extension", label: "扩展配置", icon: Settings2 },
+  { value: "preview", label: "预览", icon: Eye },
+  { value: "schedule", label: "调度", icon: Clock },
+  { value: "batch", label: "批量导入", icon: Upload },
+] as const;
 
 export function TemplateDetailPanel({
   node,
@@ -51,6 +67,12 @@ export function TemplateDetailPanel({
       ? renderQuery.data
       : null;
 
+  const parentPath = useMemo(() => {
+    if (!node.parentId) return "根目录";
+    const parent = allNodes.find((n) => n.id === node.parentId);
+    return parent ? catalogNodePath(parent, allNodes) : "…";
+  }, [allNodes, node.parentId]);
+
   useEffect(() => {
     const saved = tabByNodeRef.current[node.id];
     if (saved) setTab(saved);
@@ -62,97 +84,139 @@ export function TemplateDetailPanel({
     setTab(value);
   };
 
-  return (
-    <div className="flex h-full flex-col">
-      <div className="border-b border-gray-200 px-6 py-5 dark:border-gray-800">
-        <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-theme-lg font-semibold text-gray-900 dark:text-white">{node.name}</h2>
-          {node.templateKind ? (
-            <Badge variant="light" color="primary" size="sm">
-              {KIND_LABELS[node.templateKind]}
-            </Badge>
-          ) : null}
-        </div>
-        {node.templateKey ? (
-          <p className="mt-1 font-mono text-theme-xs text-gray-500 dark:text-gray-400">{node.templateKey}</p>
-        ) : null}
-      </div>
+  const exportDisabled =
+    extensionLoading || !extensionData || (extensionData.metrics?.length ?? 0) === 0;
 
-      <div className="flex-1 p-6 pt-4">
-        <Tabs value={tab} onValueChange={handleTabChange}>
-          <TabsList className="w-full justify-start overflow-x-only">
-            <TabsTrigger value="basic">基本信息</TabsTrigger>
-            <TabsTrigger value="blocks">模板块</TabsTrigger>
-            <TabsTrigger value="extension">扩展配置</TabsTrigger>
-            <TabsTrigger value="preview">预览</TabsTrigger>
-            <TabsTrigger value="schedule">调度</TabsTrigger>
-            <TabsTrigger value="batch">批量导入</TabsTrigger>
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <TemplatePanelHeader
+        title={node.name}
+        kindLabel={node.templateKind ? KIND_LABELS[node.templateKind] : undefined}
+        templateKey={node.templateKey}
+        parentPath={parentPath}
+        icon={FileText}
+      />
+
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-4 md:p-6">
+        <Tabs value={tab} onValueChange={handleTabChange} className="flex min-h-0 flex-1 flex-col">
+          <TabsList
+            variant="enclosed"
+            size="sm"
+            className="w-full shrink-0 justify-start overflow-x-auto"
+          >
+            {TEMPLATE_TABS.map(({ value, label, icon: Icon }) => (
+              <TabsTrigger key={value} value={value} variant="enclosed" size="sm">
+                <Icon className="size-3.5 shrink-0" aria-hidden />
+                {label}
+              </TabsTrigger>
+            ))}
           </TabsList>
 
-          <TabsContent value="basic" className="mt-6 space-y-6">
-            <CatalogNodeMetaPanel
-              node={node}
-              allNodes={allNodes}
-              readOnly={readOnly}
-              onDeleted={onDeleted}
-            />
-            <dl className="grid gap-4 rounded-xl border border-gray-200 p-5 dark:border-gray-800">
-              <BasicInfoRow label="节点类型">报表模板</BasicInfoRow>
-              <BasicInfoRow label="模板格式">
-                {node.templateKind ? KIND_LABELS[node.templateKind] : "—"}
-              </BasicInfoRow>
-              <BasicInfoRow label="模板键">{node.templateKey ?? "—"}</BasicInfoRow>
-            </dl>
-            <ReportExportCard
-              defaultTemplateId={node.id}
-              disabled={extensionLoading || !extensionData || (extensionData.metrics?.length ?? 0) === 0}
-              disabledHint="请先在「扩展配置」Tab 添加指标、选择数据集并保存后再导出。"
-            />
-          </TabsContent>
+          <div className="min-h-0 flex-1 overflow-y-auto pt-5">
+            <TabsContent value="basic" className="mt-0">
+              <TemplateTabShell>
+                <CatalogNodeMetaPanel
+                  node={node}
+                  allNodes={allNodes}
+                  readOnly={readOnly}
+                  onDeleted={onDeleted}
+                />
+                <TemplatePanelSection
+                  title="模板属性"
+                  description="节点类型与格式标识，用于目录管理与导出路由。"
+                  icon={FileText}
+                >
+                  <TemplateMetaGrid columns={3}>
+                    <TemplateMetaItem label="节点类型">报表模板</TemplateMetaItem>
+                    <TemplateMetaItem label="模板格式">
+                      {node.templateKind ? KIND_LABELS[node.templateKind] : "—"}
+                    </TemplateMetaItem>
+                    <TemplateMetaItem label="模板键">
+                      <span className="font-mono text-theme-xs">{node.templateKey ?? "—"}</span>
+                    </TemplateMetaItem>
+                  </TemplateMetaGrid>
+                </TemplatePanelSection>
+                <TemplatePanelSection
+                  title="报表导出"
+                  description="将已配置的指标绑定到模板并导出为 PDF、Word 或 Excel。"
+                  icon={Upload}
+                >
+                  <ReportExportCard
+                    embedded
+                    defaultTemplateId={node.id}
+                    disabled={exportDisabled}
+                    disabledHint="请先在「扩展配置」中添加指标、选择数据集并保存后再导出。"
+                  />
+                </TemplatePanelSection>
+              </TemplateTabShell>
+            </TabsContent>
 
-          <TabsContent value="blocks" className="mt-6">
-            {node.templateKey && node.templateKind ? (
-              <TemplateBlockEditor
-                templateKey={node.templateKey}
-                format={node.templateKind}
-                displayName={node.name}
-                readOnly={readOnly}
-              />
-            ) : (
-              <p className="text-theme-sm text-gray-500">请先为模板节点设置模板键。</p>
-            )}
-          </TabsContent>
+            <TabsContent value="blocks" className="mt-0">
+              <TemplateTabShell>
+                <TemplatePanelSection
+                  title="模板块"
+                  description="定义模板中的 SQL、表格或图表数据块，保存后用于文档渲染。"
+                  icon={Layers}
+                >
+                  {node.templateKey && node.templateKind ? (
+                    <TemplateBlockEditor
+                      templateKey={node.templateKey}
+                      format={node.templateKind}
+                      displayName={node.name}
+                      readOnly={readOnly}
+                    />
+                  ) : (
+                    <TemplateEmptyState
+                      title="尚未设置模板键"
+                      description="请先在基本信息中保存模板键，再编辑模板块。"
+                    />
+                  )}
+                </TemplatePanelSection>
+              </TemplateTabShell>
+            </TabsContent>
 
-          <TabsContent value="extension" className="mt-6">
-            <ReportMetricExtensionForm
-              nodeId={node.id}
-              readOnly={readOnly}
-              metrics={extensionData?.metrics ?? []}
-              filters={extensionData?.filters ?? []}
-              defaultDataSourceId={extensionData?.defaultDataSourceId}
-              isLoading={extensionLoading}
-            />
-          </TabsContent>
+            <TabsContent value="extension" className="mt-0">
+              <TemplateTabShell>
+                <TemplatePanelSection
+                  title="指标与筛选"
+                  description="配置报表查数指标、数据集绑定与运行时数据源。"
+                  icon={Settings2}
+                >
+                  <ReportMetricExtensionForm
+                    nodeId={node.id}
+                    readOnly={readOnly}
+                    metrics={extensionData?.metrics ?? []}
+                    filters={extensionData?.filters ?? []}
+                    defaultDataSourceId={extensionData?.defaultDataSourceId}
+                    isLoading={extensionLoading}
+                  />
+                </TemplatePanelSection>
+              </TemplateTabShell>
+            </TabsContent>
 
-          <TabsContent value="preview" className="mt-6">
-            {renderQuery.isLoading && !previewData ? (
-              <Skeleton className="h-48 w-full rounded-xl" />
-            ) : null}
-            {renderQuery.isError && !previewData ? (
-              <p className="rounded-xl border border-dashed border-gray-200 px-4 py-10 text-center text-theme-sm text-gray-500 dark:border-gray-800 dark:text-gray-400">
-                暂无渲染规格。请先在「扩展配置」中添加指标、保存后再预览（当前为指标配置预览，非 Word 文档渲染）。
-              </p>
-            ) : null}
-            {previewData ? <ReportExtensionPreview data={previewData} /> : null}
-          </TabsContent>
+            <TabsContent value="preview" className="mt-0">
+              <TemplateTabShell>
+                {renderQuery.isLoading && !previewData ? (
+                  <Skeleton className="h-48 w-full rounded-2xl" />
+                ) : null}
+                {renderQuery.isError && !previewData ? (
+                  <TemplateEmptyState
+                    title="暂无渲染规格"
+                    description="请先在「扩展配置」中添加指标并保存。当前为指标配置预览，非 Word 文档渲染。"
+                  />
+                ) : null}
+                {previewData ? <ReportExtensionPreview data={previewData} /> : null}
+              </TemplateTabShell>
+            </TabsContent>
 
-          <TabsContent value="schedule" className="mt-6">
-            <SchedulePanel catalogNodeId={node.id} readOnly={readOnly} />
-          </TabsContent>
+            <TabsContent value="schedule" className="mt-0">
+              <SchedulePanel catalogNodeId={node.id} readOnly={readOnly} />
+            </TabsContent>
 
-          <TabsContent value="batch" className="mt-6">
-            <BatchImportPanel readOnly={readOnly} />
-          </TabsContent>
+            <TabsContent value="batch" className="mt-0">
+              <BatchImportPanel readOnly={readOnly} />
+            </TabsContent>
+          </div>
         </Tabs>
       </div>
     </div>

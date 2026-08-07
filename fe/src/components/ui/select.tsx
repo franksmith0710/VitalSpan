@@ -61,7 +61,7 @@ const SelectContent = React.forwardRef<
     /** Portal 挂载容器；Dialog 内 Select 须传入 Dialog 内节点，避免误关弹层 */
     container?: HTMLElement | null;
   }
->(({ className, children, position = "popper", container, onPointerDownOutside, ...props }, ref) => (
+>(({ className, children, position = "popper", container, onPointerDownOutside, onCloseAutoFocus, ...props }, ref) => (
   <SelectPrimitive.Portal container={container ?? undefined}>
     <SelectPrimitive.Content
       ref={ref}
@@ -73,8 +73,18 @@ const SelectContent = React.forwardRef<
         className,
       )}
       position={position}
+      onCloseAutoFocus={(event) => {
+        if (container) event.preventDefault();
+        onCloseAutoFocus?.(event);
+      }}
       onPointerDownOutside={(event) => {
-        if (container instanceof HTMLElement && event.target instanceof Node && container.contains(event.target)) {
+        const inspect =
+          "detail" in event &&
+          (event as CustomEvent<{ originalEvent?: Event }>).detail?.originalEvent
+            ? (event as CustomEvent<{ originalEvent?: Event }>).detail.originalEvent!
+            : event;
+        const target = inspect.target;
+        if (container instanceof HTMLElement && target instanceof Node && container.contains(target)) {
           event.preventDefault();
         }
         onPointerDownOutside?.(event);

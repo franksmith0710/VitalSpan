@@ -4,6 +4,7 @@
 
 | ID | 文档 | 状态 | 优先级 | 摘要 |
 |----|------|------|--------|------|
+| BUG-15 | [BUG-15_schedule-dialog-select-dismiss_2026-08-07.md](./BUG-15_schedule-dialog-select-dismiss_2026-08-07.md) | fixed | P1 | 定时推送弹窗 Select 误关弹窗；Portal + guard 竞态 + onOpenChange 防线 |
 | BUG-14 | [BUG-14_embed-share-no-data_2026-08-07.md](./BUG-14_embed-share-no-data_2026-08-07.md) | fixing | P0 | 公开分享大屏 Dataset 图表无数据；运行中后端缺 embed dataset 路由 |
 | BUG-13 | [BUG-13_map-texture-misalign_2026-07-23.md](./BUG-13_map-texture-misalign_2026-07-23.md) | fixing | P0 | 3D 地图卫星纹理与省界错位；R1 WM UV 对齐构建期瓦片裁切 |
 | BUG-12 | [BUG-12_data-screen-resize-content-vanish_2026-07-20.md](./BUG-12_data-screen-resize-content-vanish_2026-07-20.md) | fixing | P0 | 大屏 edit resize 后内容消失；R4 仪表板方案无效，二次收口几何+测量管线 |

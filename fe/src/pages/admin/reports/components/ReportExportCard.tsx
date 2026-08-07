@@ -2,9 +2,8 @@ import { useEffect, useState } from "react";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { TemplateField } from "./templatePanelUi";
 import {
   Select,
   SelectContent,
@@ -148,10 +147,9 @@ export function ReportExportCard({
   }
 
   const body = (
-    <div className={embedded ? "grid gap-4 sm:grid-cols-2" : "grid gap-4 sm:grid-cols-2"}>
+    <div className="grid gap-4 sm:grid-cols-2">
       {showTemplateIdField ? (
-        <div className="grid gap-2">
-          <Label htmlFor="export-template-id">模板 ID</Label>
+        <TemplateField id="export-template-id" label="模板 ID" className="sm:col-span-2">
           <Input
             id="export-template-id"
             className="h-11"
@@ -159,10 +157,9 @@ export function ReportExportCard({
             onChange={(e) => setTemplateId(e.target.value)}
             placeholder="粘贴报表模板 UUID"
           />
-        </div>
+        </TemplateField>
       ) : null}
-      <div className="grid gap-2">
-        <Label htmlFor="export-format">导出格式</Label>
+      <TemplateField id="export-format" label="导出格式">
         <Select value={format} onValueChange={setFormat}>
           <SelectTrigger id="export-format" className="h-11">
             <SelectValue />
@@ -173,7 +170,7 @@ export function ReportExportCard({
             <SelectItem value="excel">Excel</SelectItem>
           </SelectContent>
         </Select>
-      </div>
+      </TemplateField>
       <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
         <Button
           type="button"
@@ -209,23 +206,15 @@ export function ReportExportCard({
   );
 
   if (embedded) {
-    return (
-      <div className="space-y-3">
-        <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">导出为文件</p>
-        <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-          将当前分析结果关联到报表模板并导出 PDF / Word / Excel。
-        </p>
-        {body}
-      </div>
-    );
+    return body;
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-theme-base">报表导出</CardTitle>
-      </CardHeader>
-      <CardContent>{body}</CardContent>
-    </Card>
+    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.02]">
+      <div className="border-b border-gray-100 bg-gray-50/60 px-5 py-3.5 dark:border-gray-800 dark:bg-white/[0.02]">
+        <h3 className="text-theme-sm font-semibold text-gray-900 dark:text-white">报表导出</h3>
+      </div>
+      <div className="px-5 py-4">{body}</div>
+    </div>
   );
 }

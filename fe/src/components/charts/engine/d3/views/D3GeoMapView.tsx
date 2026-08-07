@@ -75,6 +75,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     mapPlaceholderHint,
     mapDrillError,
     drillStack = [],
+    onPaintReady,
   } = props;
 
   const isThreeMap = viewModel.chartType === "map-3d";
@@ -157,6 +158,8 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const lastMeasureRef = useRef({ width: 0, height: 0 });
   const liveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const measureRetryRef = useRef(0);
+  const paintReadySentRef = useRef(false);
   const renderGenRef = useRef(0);
   const threePendingGenRef = useRef(0);
   const threeApiRef = useRef<ThreeMapApi | null>(null);
@@ -247,6 +250,12 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     [],
   );
 
+  const notifyPaintReady = useCallback(() => {
+    if (paintReadySentRef.current) return;
+    paintReadySentRef.current = true;
+    onPaintReady?.();
+  }, [onPaintReady]);
+
   const clearThreePending = useCallback((gen: number) => {
     if (threePendingGenRef.current !== gen) return;
     threePendingGenRef.current = 0;
@@ -305,10 +314,27 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       if (!el || planWithGeo.kind !== "d3" || planWithGeo.empty) return;
 
       const paint = readPaintSize();
-      if (!paint) return;
+      if (!paint) {
+        if (measureRetryRef.current < 12) {
+          measureRetryRef.current += 1;
+          requestAnimationFrame(() => measureAndRender(mode, force));
+        } else {
+          notifyPaintReady();
+        }
+        return;
+      }
       const { width: chartWidth, height: chartHeight } = paint;
       const next = { width: chartWidth, height: chartHeight };
-      if (next.width <= 0 || next.height <= 0) return;
+      if (next.width <= 0 || next.height <= 0) {
+        if (measureRetryRef.current < 12) {
+          measureRetryRef.current += 1;
+          requestAnimationFrame(() => measureAndRender(mode, force));
+        } else {
+          notifyPaintReady();
+        }
+        return;
+      }
+      measureRetryRef.current = 0;
 
       if (
         isThreeMap &&
@@ -351,6 +377,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       if (!payload || payload.kind !== "geo") {
         endPresentationPaint();
         if (mode !== "live") setChartAnimationSuppressed(false);
+        notifyPaintReady();
         return;
       }
 
@@ -362,6 +389,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
           runD3Renderer(el, () => renderD3Chart(el, planWithGeo, payload));
           applyRenderMeta(null, null);
           setRenderError(null);
+          notifyPaintReady();
         } finally {
           endPresentationPaint();
           if (mode !== "live") setChartAnimationSuppressed(false);
@@ -379,6 +407,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
               endPresentationPaint();
               setRenderError(geoAssetMissingMessage(mapIdToLoad));
               if (mode !== "live") setChartAnimationSuppressed(false);
+              notifyPaintReady();
               return;
             }
             try {
@@ -387,6 +416,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
               endPresentationPaint();
               setRenderError(err instanceof Error ? err.message : "地图渲染失败");
               if (mode !== "live") setChartAnimationSuppressed(false);
+              notifyPaintReady();
             }
           })
           .catch((err) => {
@@ -394,6 +424,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
             endPresentationPaint();
             setRenderError(err instanceof Error ? err.message : "地图资产加载失败");
             if (mode !== "live") setChartAnimationSuppressed(false);
+            notifyPaintReady();
           })
           .finally(() => {
             if (gen !== renderGenRef.current) return;
@@ -443,6 +474,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
                 }
                 applyRenderMeta(result.engine, result.fallbackReason ?? null);
                 setRenderError(null);
+                notifyPaintReady();
                 resolve();
               })
               .catch(reject);
@@ -460,6 +492,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
           if (err instanceof Error && err.message === "cancelled") return;
           setRenderError(err instanceof Error ? err.message : "3D 地图渲染失败");
           applyRenderMeta(null, null);
+          notifyPaintReady();
         })
         .finally(() => {
           clearThreePending(gen);
@@ -481,6 +514,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       applyRenderMeta,
       clearThreePending,
       geoStyleVisualSig,
+      notifyPaintReady,
     ],
   );
 
@@ -522,7 +556,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     if (!fill && (size.width <= 0 || size.height <= 0)) return;
 
     const tier = props.geo3dRenderTier ?? "full";
-    const debounceMs = tier === "full" ? 0 : 300;
+    const debounceMs = tier === "full" || tier === "thumbnail" ? 0 : 300;
 
     const runRebuild = () => {
       threeApiRef.current = null;
@@ -603,6 +637,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     threePendingGenRef.current = 0;
     setThreeLoading(false);
     setMapAssetLoading(false);
+    paintReadySentRef.current = false;
     applyRenderMeta(null, null);
     disposeD3Renderer(containerRef.current);
   }, [viewModel.chartType, applyRenderMeta]);

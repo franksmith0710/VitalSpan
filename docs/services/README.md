@@ -74,6 +74,7 @@ flowchart TB
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 0.5.4 | 2026-08-07 | dashboard templates：11 套 builtin（rev 25）· 删除守卫；reports：PDF CJK 字体回退链；mock 清单见 [mock/README.md](../mock/README.md) |
 | 0.5.3 | 2026-07-29 | Doc sync：metadata/integration/reports/dashboard 与 M-DEPTH 收官对齐 |
 | 0.5.0 | 2026-07-04 | M8/M12/M13 r44：新增 integration 域（IF-01~04 集成 API L1 + OpenAPI 版本策略，API-003~007） |
 | 0.5.2 | 2026-07-20 | reports/views/viz/governance 状态与 FE companion 对齐 |

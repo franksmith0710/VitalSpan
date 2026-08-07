@@ -14,6 +14,7 @@ export type DataScreenPresenterProps = {
   globalChartRefreshKey?: number;
   className?: string;
   geo3dRenderTier?: Geo3dRenderTier;
+  mountMaxConcurrent?: number;
 };
 
 export function DataScreenPresenter({
@@ -25,6 +26,7 @@ export function DataScreenPresenter({
   globalChartRefreshKey = 0,
   className,
   geo3dRenderTier = "full",
+  mountMaxConcurrent,
 }: DataScreenPresenterProps) {
   if (layout.version !== 2) {
     return (
@@ -35,6 +37,7 @@ export function DataScreenPresenter({
         onFilterValueChange={onFilterValueChange}
         className={className}
         geo3dRenderTier={geo3dRenderTier}
+        mountMaxConcurrent={mountMaxConcurrent}
       />
     );
   }
@@ -58,6 +61,7 @@ export function DataScreenPresenter({
           globalChartRefreshKey={globalChartRefreshKey}
           className="h-full w-full"
           geo3dRenderTier={geo3dRenderTier}
+          mountMaxConcurrent={mountMaxConcurrent}
         />
       </div>
     </CanvasScaleViewport>

@@ -1,6 +1,8 @@
 import { LayoutDashboard } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { CHART_MOUNT_MAX_VIEW } from "@/components/charts/ChartMountContext";
 import { setChartAnimationSuppressed } from "@/components/charts/engine/d3/core/animate";
+import { MAX_LIST_PREVIEW_ACTIVATIONS } from "@/lib/listPreviewActivation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useAdminHeavyRenderSuspended } from "@/hooks/useAdminHeavyRenderSuspended";
@@ -184,6 +186,7 @@ export function DashboardListCardPreview({
               layout={resolvedLayout!}
               presentationMode="fit"
               geo3dRenderTier="thumbnail"
+              mountMaxConcurrent={Math.max(CHART_MOUNT_MAX_VIEW, MAX_LIST_PREVIEW_ACTIVATIONS)}
               className="pointer-events-none h-full min-h-0 select-none"
             />
           ) : resolvedLayout!.version === 1 ? (
@@ -192,6 +195,7 @@ export function DashboardListCardPreview({
                 layout={resolvedLayout!}
                 scaleMode="component"
                 geo3dRenderTier="thumbnail"
+                mountMaxConcurrent={Math.max(CHART_MOUNT_MAX_VIEW, MAX_LIST_PREVIEW_ACTIVATIONS)}
                 className="pointer-events-none min-h-0 select-none"
               />
             </TemplateGridFitPreview>
@@ -200,6 +204,7 @@ export function DashboardListCardPreview({
               layout={resolvedLayout!}
               scaleMode="component"
               geo3dRenderTier="thumbnail"
+              mountMaxConcurrent={Math.max(CHART_MOUNT_MAX_VIEW, MAX_LIST_PREVIEW_ACTIVATIONS)}
               className="pointer-events-none h-full min-h-0 select-none [&_.pixel-canvas-host]:h-full [&_.pixel-canvas-host]:min-h-0 [&_.pixel-canvas-host]:overflow-hidden"
             />
           )}

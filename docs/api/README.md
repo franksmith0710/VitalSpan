@@ -5,7 +5,7 @@
 > **真理源**：行为需求见 [SRS §6](../srs/全生命周期系统需求规格说明书.md#6-接口需求)；功能项见 [PRD API-001~007](../automate/prd/F13-API.md)。
 
 ```yaml
-version: 1.0.8
+version: 1.0.9
 last_updated: 2026-08-07
 api_prefix: /api/v1
 openapi_docs: /docs
@@ -218,9 +218,12 @@ redoc: /redoc
 | GET | `/api/v1/dashboards/{id}/export-layout` | 无头导出页布局（`?token=`；export token 免 Bearer） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/dashboards.py` · `backend/app/dashboard/export_snapshot.py` |
 | POST | `/api/v1/dashboards/export-query/execute` | 导出快照 SQL/table/native 查询代理（`X-Export-Token` + `X-Export-Dashboard-Id`） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/dashboards.py` · `backend/app/dashboard/export_snapshot.py` |
 | POST | `/api/v1/dashboards/export-query/dataset/execute` | 导出快照 Dataset 查询代理（同上 headers；避免 dataset/execute 401 踢登录） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/dashboards.py` · `backend/app/dashboard/export_snapshot.py` |
+| POST | `/api/v1/dashboards/{dashboard_id}/export-jobs` | Dashboard 异步导出任务提交（`format`；201 + job 元数据；与 Playwright 快照链分工） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/dashboards.py` · `backend/app/dashboard/export_jobs.py` |
+| GET | `/api/v1/dashboards/export-jobs/{job_id}` | 导出任务状态轮询 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/dashboards.py` · `backend/app/dashboard/export_jobs.py` |
+| GET | `/api/v1/dashboards/export-jobs/{job_id}/download` | 导出产物下载（`Content-Disposition: attachment`） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/dashboards.py` · `backend/app/dashboard/export_jobs.py` |
 | GET | `/api/v1/demo-package/status` | 官方演示包就绪状态（sample_db 迁移 / demo 源 / 示例实例） | 内部 | 一期 | DASH-009 | 已实现 | `backend/app/api/v1/demo_package.py` |
-| GET/POST | `/api/v1/dashboard-templates` | 可视化模板列表/创建草稿 | 内部 | 一期 | DASH-009 | 已实现 | `backend/app/api/v1/dashboard_templates.py` |
-| GET/PUT/DELETE | `/api/v1/dashboard-templates/{id}` | 模板详情/更新/删除（builtin 只读） | 内部 | 一期 | DASH-009 | 已实现 | `backend/app/api/v1/dashboard_templates.py` |
+| GET/POST | `/api/v1/dashboard-templates` | 可视化模板列表/创建草稿；列表查询：`surfaceKind` · `status` · `categoryKey` · `visibility` · `q` · `includeDrafts` · `limit`/`offset`；响应含 `contentRevision`（builtin 种子升级见 `seed.py` rev 25） | 内部 | 一期 | DASH-009 | 已实现 | `backend/app/api/v1/dashboard_templates.py` |
+| GET/PUT/DELETE | `/api/v1/dashboard-templates/{id}` | 模板详情/更新/删除；DELETE 须 `dashboard:edit`；**204** 成功；builtin → **403** `DASH_TEMPLATE_BUILTIN_READONLY`；不存在 → **404** `DASH_TEMPLATE_NOT_FOUND` | 内部 | 一期 | DASH-009 | 已实现 | `backend/app/api/v1/dashboard_templates.py` |
 | POST | `/api/v1/dashboard-templates/{id}/publish` | 发布模板（`dashboard:template.manage`） | 内部 | 一期 | DASH-009 | 已实现 | `backend/app/api/v1/dashboard_templates.py` |
 | POST | `/api/v1/dashboard-templates/{id}/archive` | 下架模板 | 内部 | 一期 | DASH-009 | 已实现 | `backend/app/api/v1/dashboard_templates.py` |
 | POST | `/api/v1/dashboard-templates/import` | 导入 `viz-layout` 信封为草稿 | 内部 | 一期 | DASH-009 | 已实现 | `backend/app/api/v1/dashboard_templates.py` |
@@ -265,6 +268,7 @@ redoc: /redoc
 | PUT | `/api/v1/reports/templates/{templateKey}` | 模板块 upsert（**r67** viewer/enterprise ACL） | 内部 | 二期 | RPT-003 | 已实现 | `backend/app/api/v1/reports/templates.py` |
 | GET | `/api/v1/reports/templates/{templateKey}` | 模板块查询（**r67** enterprise ACL） | 内部 | 二期 | RPT-003 | 已实现 | `backend/app/api/v1/reports/templates.py` |
 | GET/POST/PATCH/DELETE | `/api/v1/reports/catalog/nodes*` | 报表模板树 catalog CRUD/move（`RPT_CATALOG_*`；template 节点可选 `templateKey` 唯一关联） | 内部 | 一期 | RPT-004 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
+| POST | `/api/v1/reports/catalog/templates/readiness` | 模板 hub 批量就绪探测（body `nodeIds`；扩展配置/数据源绑定探测） | 内部 | 二期 | RPT-006 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/catalog/nodes/{id}/move` | 模板树节点移动（循环/深度守卫） | 内部 | 一期 | RPT-004 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST/GET | `/api/v1/reports/schedules*` | 报表调度 FSM（draft→scheduled→paused/cancelled；`RPT_SCHEDULE_*`） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | PATCH | `/api/v1/reports/schedules/{id}` | 草稿调度更新（cron/recipients/attachmentFormats/deliveryChannels；仅 draft） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
@@ -285,7 +289,7 @@ redoc: /redoc
 | GET | `/api/v1/reports/jobs/{id}` | 批量导出任务轮询（pending→processing→ready） | 内部 | 三期 | RPT-007 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | GET | `/api/v1/reports/jobs/{id}/download` | 批量导出产物下载 | 内部 | 三期 | RPT-007 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/templates/{id}/run` | 手工执行报表（M3-LITE：`dataSourceId`+extension → 真实 sections；无 ds → placeholder 回归 r60） | 内部 | 二期 | RPT-001 | M3-LITE 已实现 | `backend/app/api/v1/reports/engine.py` |
-| GET | `/api/v1/reports/export` | 按模板/时间同步导出（`templateId`+`format`；seed 模板 `status=ready` + `downloadUrl`；502/413 边界；429 `REPORT_EXPORT_RATE_LIMITED`；`X-RateLimit-*` 头） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
+| GET | `/api/v1/reports/export` | 按模板/时间同步导出（`templateId`+`format`；可选 `from`/`to` ISO8601 时间窗；seed 模板 `status=ready` + `downloadUrl`；502/413 边界；429 `REPORT_EXPORT_RATE_LIMITED`；`X-RateLimit-*` 头） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
 | GET | `/api/v1/reports/export/{exportId}` | 导出任务状态（未知 → 404 `REPORT_EXPORT_NOT_FOUND`） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
 | GET | `/api/v1/reports/export/{exportId}/download` | 导出文件下载（`Content-Disposition: attachment`） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
 | GET/PUT | `/api/v1/reports/prefab/bindings*` | 预制报表绑定 list/upsert（`RPT_PREFAB_*`） | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/prefab.py` |
@@ -577,6 +581,7 @@ redoc: /redoc
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.0.9 | 2026-08-07 | Dashboard `export-jobs` 三路由；`dashboard-templates` 列表参数与 DELETE 语义；`reports/catalog/templates/readiness`；`reports/export` 补 `from`/`to` |
 | 1.0.8 | 2026-08-07 | 导出快照：登记 `export-layout` / `export-query/execute` / `export-query/dataset/execute`（RPT-005 无头 PDF） |
 | 1.0.7 | 2026-07-20 | 修复 §8 用户视图表行 228 列错位；大屏 layoutJson 扩展字段见 §5 Dashboard |
 | 1.0.6 | 2026-07-17 | `surfaceKind=data-screen` 画布尺寸 800–7680；Tab parked 子组件 0×0 校验放宽 |

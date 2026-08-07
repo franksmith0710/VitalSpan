@@ -1,4 +1,7 @@
-import { GEO3D_THREE_MIN_SHORT_SIDE } from "./geo3dRuntime";
+import { GEO3D_THREE_MIN_SHORT_SIDE, type Geo3dRenderTier } from "./geo3dRuntime";
+
+/** 列表卡片缩略图允许更低短边仍尝试 3D（否则过早 2D 且易与测量竞态） */
+export const GEO3D_THUMBNAIL_MIN_SHORT_SIDE = 96;
 
 export type Geo3dQualityLevel = "high" | "medium" | "low";
 
@@ -19,6 +22,7 @@ export type ResolveGeo3dQualityInput = {
   drillDepth: number;
   featureCount: number;
   shortSide: number;
+  renderTier?: Geo3dRenderTier;
 };
 
 export function resolveGeo3dQuality(input: ResolveGeo3dQualityInput): Geo3dQualityLevel {
@@ -29,7 +33,9 @@ export function resolveGeo3dQuality(input: ResolveGeo3dQualityInput): Geo3dQuali
   if (input.drillDepth >= 2 || input.featureCount > GEO3D_FEATURE_DEGRADE_THRESHOLD) {
     return "low";
   }
-  if (input.shortSide < GEO3D_THREE_MIN_SHORT_SIDE) {
+  const minShortSide =
+    input.renderTier === "thumbnail" ? GEO3D_THUMBNAIL_MIN_SHORT_SIDE : GEO3D_THREE_MIN_SHORT_SIDE;
+  if (input.shortSide < minShortSide) {
     return "low";
   }
   if (input.drillDepth >= 1 || input.shortSide < GEO3D_HIGH_MIN_SHORT_SIDE) {

@@ -287,6 +287,7 @@ export async function renderThreeChoroplethChart(
     drillDepth,
     featureCount: features.length,
     shortSide: Math.min(width, height),
+    renderTier: renderTier,
   });
   if (!shouldRenderGeo3d(quality)) {
     return d3Fallback(container, config, "quality-degraded");
@@ -302,7 +303,7 @@ export async function renderThreeChoroplethChart(
     slotReleased = true;
     releaseWebGLSlot(webglSlotKey);
   };
-  if (!tryAcquireWebGLSlot(webglSlotKey)) {
+  if (!tryAcquireWebGLSlot(webglSlotKey, { evictOldest: renderTier === "thumbnail" })) {
     return d3Fallback(container, config, "webgl-cap-exceeded");
   }
 

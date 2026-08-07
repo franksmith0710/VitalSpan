@@ -267,6 +267,7 @@ export const ChartRenderer = memo(function ChartRenderer({
   );
 
   const isGeoMapChart = isGeoMapChartType(effectiveConfig.chartType);
+  const deferMountReadyForPaint = effectiveConfig.chartType === "map-3d";
 
   const persistedRevisionRef = useRef(
     manualDrillStack === undefined ? "__unset__" : drillStackRevision(manualDrillStack),
@@ -393,9 +394,25 @@ export const ChartRenderer = memo(function ChartRenderer({
     if (!effectiveRenderEnabled || mountReadySentRef.current || !onMountReady) return;
     if (!effectiveQueryEnabled) return;
     if (loading) return;
+    if (deferMountReadyForPaint) return;
     mountReadySentRef.current = true;
     onMountReady();
-  }, [effectiveRenderEnabled, effectiveQueryEnabled, loading, error, empty, isGeoChart, onMountReady]);
+  }, [
+    effectiveRenderEnabled,
+    effectiveQueryEnabled,
+    loading,
+    error,
+    empty,
+    isGeoChart,
+    onMountReady,
+    deferMountReadyForPaint,
+  ]);
+
+  const handlePaintReady = useCallback(() => {
+    if (mountReadySentRef.current || !onMountReady) return;
+    mountReadySentRef.current = true;
+    onMountReady();
+  }, [onMountReady]);
 
   useLayoutEffect(() => {
     setLocalConfig(effectiveConfig);
@@ -740,6 +757,7 @@ export const ChartRenderer = memo(function ChartRenderer({
       geo3dRenderTier={geo3dRenderTier ?? defaultGeo3dRenderTier(embedded)}
       geo3dAnimationActive={geo3dAnimationActive}
       instanceKey={widgetId}
+      onPaintReady={deferMountReadyForPaint ? handlePaintReady : undefined}
     />
   );
 

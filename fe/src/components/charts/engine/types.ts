@@ -96,6 +96,8 @@ export type ChartEngineViewProps = {
   geo3dAnimationActive?: boolean;
   /** WebGL 实例槽位 key */
   instanceKey?: string;
+  /** 首帧绘制完成（3D 地图异步渲染结束后通知挂载调度释放 slot） */
+  onPaintReady?: () => void;
 };
 
 /** @deprecated 使用 ChartViewModel；兼容过渡期 */

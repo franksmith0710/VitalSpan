@@ -12,9 +12,31 @@ import { cn } from "@/lib/utils";
 
 const AdminFormDialogPortalContext = React.createContext<HTMLElement | null>(null);
 
-/** Dialog 内 Select 下拉挂载容器（由 AdminFormDialogContent 注入） */
+/** Dialog 内 Select 下拉挂载容器（由 AdminFormDialogContent / DialogSelectPortalProvider 注入） */
 export function useAdminFormDialogPortalContainer(): HTMLElement | undefined {
   return React.useContext(AdminFormDialogPortalContext) ?? undefined;
+}
+
+/** 任意 Dialog 内容区可包裹，使内部 Select 挂载在弹层内，避免误关弹窗 */
+export function DialogSelectPortalProvider({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const [portalContainer, setPortalContainer] = React.useState<HTMLDivElement | null>(null);
+  return (
+    <AdminFormDialogPortalContext.Provider value={portalContainer}>
+      <div
+        ref={setPortalContainer}
+        data-dialog-select-portal=""
+        className={cn("relative flex min-h-0 flex-col", className)}
+      >
+        {children}
+      </div>
+    </AdminFormDialogPortalContext.Provider>
+  );
 }
 
 type AdminFormDialogSize = "sm" | "md" | "lg";
@@ -41,8 +63,6 @@ function AdminFormDialogContent({
   onFocusOutside,
   ...props
 }: AdminFormDialogContentProps) {
-  const [portalContainer, setPortalContainer] = React.useState<HTMLDivElement | null>(null);
-
   return (
     <DialogContent
       className={cn(
@@ -65,14 +85,11 @@ function AdminFormDialogContent({
       }}
       {...props}
     >
-      <AdminFormDialogPortalContext.Provider value={portalContainer}>
-        <div
-          ref={setPortalContainer}
-          className={cn("flex min-h-0 flex-col", scrollable && "min-h-0 flex-1 overflow-hidden")}
-        >
-          {children}
-        </div>
-      </AdminFormDialogPortalContext.Provider>
+      <DialogSelectPortalProvider
+        className={cn("flex min-h-0 flex-col", scrollable && "min-h-0 flex-1 overflow-hidden")}
+      >
+        {children}
+      </DialogSelectPortalProvider>
     </DialogContent>
   );
 }

@@ -13,12 +13,22 @@ export const GEO3D_MAX_WEBGL_INSTANCES = 4;
 const activeWebglSlots = new Map<string, () => void>();
 
 /** 抢占最旧实例槽位；返回 false 仅当驱逐后仍无法分配 */
-export function tryAcquireWebGLSlot(instanceKey: string): boolean {
+export function tryAcquireWebGLSlot(
+  instanceKey: string,
+  options?: { evictOldest?: boolean },
+): boolean {
   if (activeWebglSlots.has(instanceKey)) {
     return true;
   }
   if (activeWebglSlots.size >= GEO3D_MAX_WEBGL_INSTANCES) {
-    return false;
+    if (options?.evictOldest && activeWebglSlots.size > 0) {
+      const oldestKey = activeWebglSlots.keys().next().value as string;
+      const dispose = activeWebglSlots.get(oldestKey);
+      dispose?.();
+      activeWebglSlots.delete(oldestKey);
+    } else {
+      return false;
+    }
   }
   activeWebglSlots.set(instanceKey, () => undefined);
   return true;

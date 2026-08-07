@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { Trash2 } from "lucide-react";
+import { FolderInput, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -17,6 +16,7 @@ import {
   catalogNodePath,
   type ReportCatalogNode,
 } from "@/lib/reportCatalogUtils";
+import { TemplateField, TemplatePanelSection } from "./templatePanelUi";
 import { type CatalogNode, useReportTemplates } from "../useReportTemplates";
 
 export function CatalogNodeMetaPanel({
@@ -52,12 +52,11 @@ export function CatalogNodeMetaPanel({
 
   if (readOnly) {
     return (
-      <dl className="grid gap-3 text-theme-sm text-gray-600 dark:text-gray-400">
-        <div>
-          <dt className="text-theme-xs text-gray-500">所在目录</dt>
-          <dd className="mt-0.5 font-medium text-gray-800 dark:text-white/90">{parentPath}</dd>
-        </div>
-      </dl>
+      <TemplatePanelSection title="目录信息" icon={Pencil}>
+        <p className="text-theme-sm text-gray-600 dark:text-gray-400">
+          所在目录：<span className="font-medium text-gray-800 dark:text-white/90">{parentPath}</span>
+        </p>
+      </TemplatePanelSection>
     );
   }
 
@@ -106,69 +105,142 @@ export function CatalogNodeMetaPanel({
   };
 
   return (
-    <div className="space-y-4 rounded-xl border border-gray-200 p-5 dark:border-gray-800">
-      <div className="grid gap-2">
-        <Label htmlFor={`node-name-${node.id}`}>显示名称</Label>
-        <div className="flex flex-wrap gap-2">
-          <Input
-            id={`node-name-${node.id}`}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="max-w-md"
-          />
+    <TemplateTabSections
+      node={node}
+      name={name}
+      setName={setName}
+      parentPath={parentPath}
+      moveTarget={moveTarget}
+      setMoveTarget={setMoveTarget}
+      moveTargets={moveTargets}
+      updatePending={updateNode.isPending}
+      movePending={moveNode.isPending}
+      deletePending={deleteNode.isPending}
+      onRename={handleRename}
+      onMove={handleMove}
+      onDelete={handleDelete}
+    />
+  );
+}
+
+function TemplateTabSections({
+  node,
+  name,
+  setName,
+  parentPath,
+  moveTarget,
+  setMoveTarget,
+  moveTargets,
+  updatePending,
+  movePending,
+  deletePending,
+  onRename,
+  onMove,
+  onDelete,
+}: {
+  node: CatalogNode;
+  name: string;
+  setName: (v: string) => void;
+  parentPath: string;
+  moveTarget: string;
+  setMoveTarget: (v: string) => void;
+  moveTargets: Array<{ id: string | null; label: string }>;
+  updatePending: boolean;
+  movePending: boolean;
+  deletePending: boolean;
+  onRename: () => void;
+  onMove: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <>
+      <TemplatePanelSection
+        title="显示名称"
+        description="在目录树与导出记录中展示的名称。"
+        icon={Pencil}
+      >
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <TemplateField id={`node-name-${node.id}`} label="名称" className="min-w-0 flex-1">
+            <Input
+              id={`node-name-${node.id}`}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="h-11"
+            />
+          </TemplateField>
           <Button
             type="button"
-            variant="outline"
-            size="sm"
-            disabled={updateNode.isPending || !name.trim() || name.trim() === node.name}
-            onClick={handleRename}
+            variant="primary"
+            className="h-11 shrink-0"
+            disabled={updatePending || !name.trim() || name.trim() === node.name}
+            onClick={onRename}
           >
             保存名称
           </Button>
         </div>
-      </div>
-      <div className="grid gap-1 text-theme-xs text-gray-500 dark:text-gray-400">
-        <span>所在目录：{parentPath}</span>
-        {node.templateKey ? <span className="font-mono">模板键：{node.templateKey}</span> : null}
-      </div>
+        <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+          所在目录：{parentPath}
+          {node.templateKey ? (
+            <>
+              {" "}
+              · 模板键：<span className="font-mono">{node.templateKey}</span>
+            </>
+          ) : null}
+        </p>
+      </TemplatePanelSection>
+
       {moveTargets.length > 0 ? (
-        <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
-          <div className="grid gap-2">
-            <Label htmlFor={`move-${node.id}`}>移动到</Label>
-            <Select value={moveTarget} onValueChange={setMoveTarget}>
-              <SelectTrigger id={`move-${node.id}`} className="h-11">
-                <SelectValue placeholder="选择目标目录" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__keep__">选择目标…</SelectItem>
-                {moveTargets.map((t) => (
-                  <SelectItem key={t.id ?? "root"} value={t.id ?? "__root__"}>
-                    {t.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <TemplatePanelSection
+          title="移动位置"
+          description="将模板或文件夹移动到目标目录。"
+          icon={FolderInput}
+        >
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <TemplateField id={`move-${node.id}`} label="目标目录" className="min-w-0 flex-1">
+              <Select value={moveTarget} onValueChange={setMoveTarget}>
+                <SelectTrigger id={`move-${node.id}`} className="h-11">
+                  <SelectValue placeholder="选择目标目录" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__keep__">选择目标…</SelectItem>
+                  {moveTargets.map((t) => (
+                    <SelectItem key={t.id ?? "root"} value={t.id ?? "__root__"}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </TemplateField>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 shrink-0"
+              disabled={movePending || moveTarget === "__keep__"}
+              onClick={onMove}
+            >
+              确认移动
+            </Button>
           </div>
+        </TemplatePanelSection>
+      ) : null}
+
+      <TemplatePanelSection
+        title="危险操作"
+        description="删除后不可恢复，文件夹须为空方可删除。"
+        icon={Trash2}
+        footer={
           <Button
             type="button"
             variant="outline"
-            disabled={moveNode.isPending || moveTarget === "__keep__"}
-            onClick={handleMove}
+            className="text-error-600 hover:text-error-700 dark:text-error-400"
+            disabled={deletePending}
+            onClick={onDelete}
           >
-            确认移动
+            <Trash2 className="size-4" aria-hidden />
+            删除{node.nodeType === "folder" ? "文件夹" : "模板"}
           </Button>
-        </div>
-      ) : null}
-      <Button
-        type="button"
-        variant="outline"
-        className="text-error-600 hover:text-error-700 dark:text-error-400"
-        disabled={deleteNode.isPending}
-        onClick={handleDelete}
-      >
-        <Trash2 className="size-4" aria-hidden />
-        删除{node.nodeType === "folder" ? "文件夹" : "模板"}
-      </Button>
-    </div>
+        }
+      />
+    </>
   );
 }

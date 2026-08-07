@@ -1,9 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import { randomId } from "@/lib/randomId";
+import { CalendarClock, History, Plus } from "lucide-react";
+import { toast } from "sonner";import { randomId } from "@/lib/randomId";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
@@ -30,6 +29,7 @@ import {
 } from "./ScheduleFormFields";
 import { ScheduleActivationBanner } from "./ScheduleActivationBanner";
 import { ScheduleHistoryTable } from "./ScheduleHistoryTable";
+import { TemplatePanelSection, TemplateTabShell } from "./templatePanelUi";
 import {
   localizeScheduleStatus,
   SCHEDULE_ACTION_LABELS,
@@ -243,11 +243,25 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
 
   if (!schedule) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-title-sm">新建调度</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <TemplateTabShell>
+        <TemplatePanelSection
+          title="新建调度"
+          description="配置定时发送频率、接收人与附件格式，创建后需激活方可执行。"
+          icon={Plus}
+          footer={
+            !readOnly ? (
+              <Button
+                type="button"
+                variant="primary"
+                className="h-11"
+                disabled={createMutation.isPending || !isScheduleFormSubmittable(form)}
+                onClick={handleCreate}
+              >
+                {createMutation.isPending ? "创建中…" : "创建调度"}
+              </Button>
+            ) : undefined
+          }
+        >
           {activationBanner}
           <ScheduleFormFields
             value={form}
@@ -256,66 +270,23 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
             showAttachments
             idPrefix="template-schedule"
           />
-          {!readOnly ? (
-            <Button
-              type="button"
-              variant="primary"
-              disabled={createMutation.isPending || !isScheduleFormSubmittable(form)}
-              onClick={handleCreate}
-            >
-              {createMutation.isPending ? "创建中…" : "创建调度"}
-            </Button>
-          ) : null}
-        </CardContent>
-      </Card>
+        </TemplatePanelSection>
+      </TemplateTabShell>
     );
   }
 
   return (
     <>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-title-sm">调度配置</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {activationBanner}
-            {draftSelected ? (
-              <>
-                <ScheduleFormFields
-                  value={form}
-                  onChange={setForm}
-                  disabled={readOnly}
-                  showAttachments
-                  idPrefix="template-schedule-edit"
-                />
-                {!readOnly ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={updateMutation.isPending}
-                    onClick={handleSaveDraft}
-                  >
-                    {updateMutation.isPending ? "保存中…" : "保存草稿"}
-                  </Button>
-                ) : null}
-              </>
-            ) : (
-              <>
-                <p className="text-theme-sm text-gray-600 dark:text-gray-400">
-                  {describeCron(schedule.cron)} · {localizeScheduleStatus(schedule.status)}
-                </p>
-                <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-                  接收人：{summarizeRecipients(schedule.recipients)}
-                </p>
-                {!readOnly ? (
-                  <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-                    调度已激活后无法直接修改配置。可「复制配置新建」，或先「取消调度」后重建。
-                  </p>
-                ) : null}
-              </>
-            )}
+      <TemplateTabShell className="lg:grid lg:grid-cols-2 lg:items-start">
+        <TemplatePanelSection
+          title="调度配置"
+          description={
+            draftSelected
+              ? "编辑草稿后保存，激活后将按计划执行。"
+              : "已激活的调度无法直接修改，可复制配置新建或取消后重建。"
+          }
+          icon={CalendarClock}
+          footer={
             <div className="flex flex-wrap gap-2">
               {schedule.status !== "draft" && !readOnly ? (
                 <Button
@@ -359,27 +330,59 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
                 </Button>
               ) : null}
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-title-sm">执行历史</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {historyQuery.isLoading ? <Skeleton className="h-32 w-full" /> : null}
-            {!historyQuery.isLoading ? (
-              <ScheduleHistoryTable
-                rows={historyQuery.data?.items ?? []}
-                readOnly={readOnly}
-                retryPending={retryMutation.isPending}
-                retryPendingExecutionId={retryMutation.variables}
-                onRetry={(executionId) => retryMutation.mutate(executionId)}
+          }
+        >
+          {activationBanner}
+          {draftSelected ? (
+            <>
+              <ScheduleFormFields
+                value={form}
+                onChange={setForm}
+                disabled={readOnly}
+                showAttachments
+                idPrefix="template-schedule-edit"
               />
-            ) : null}
-          </CardContent>
-        </Card>
-      </div>
+              {!readOnly ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11"
+                  disabled={updateMutation.isPending}
+                  onClick={handleSaveDraft}
+                >
+                  {updateMutation.isPending ? "保存中…" : "保存草稿"}
+                </Button>
+              ) : null}
+            </>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-theme-sm text-gray-700 dark:text-gray-300">
+                {describeCron(schedule.cron)} · {localizeScheduleStatus(schedule.status)}
+              </p>
+              <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+                接收人：{summarizeRecipients(schedule.recipients)}
+              </p>
+            </div>
+          )}
+        </TemplatePanelSection>
+
+        <TemplatePanelSection
+          title="执行历史"
+          description="查看近期发送记录，失败项可重试。"
+          icon={History}
+        >
+          {historyQuery.isLoading ? <Skeleton className="h-32 w-full rounded-xl" /> : null}
+          {!historyQuery.isLoading ? (
+            <ScheduleHistoryTable
+              rows={historyQuery.data?.items ?? []}
+              readOnly={readOnly}
+              retryPending={retryMutation.isPending}
+              retryPendingExecutionId={retryMutation.variables}
+              onRetry={(executionId) => retryMutation.mutate(executionId)}
+            />
+          ) : null}
+        </TemplatePanelSection>
+      </TemplateTabShell>
 
       <AlertDialog open={confirmState?.kind === "clone"} onOpenChange={(open) => !open && setConfirmState(null)}>
         <AlertDialogContent>

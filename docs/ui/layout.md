@@ -4,8 +4,8 @@
 > **行为需求**：Dashboard/权限/嵌入能力见 [PRD](../automate/prd.md)；HTTP 路由见 [api/README.md](../api/README.md)。
 
 ```yaml
-version: 1.3.3
-last_updated: 2026-07-20
+version: 1.3.4
+last_updated: 2026-08-07
 frontend_root: fe/
 design_system: .agents/skills/b-design-system-tailadmin-radix
 layout_pattern_ref: references/layout-patterns/app-shell.md
@@ -197,6 +197,30 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 | `/admin/viz-components` | 组织组件库 Hub；`componentRef` 引用管理 | DASH-010 |
 | `/admin/viz-components/:id/edit` | 组件库内编辑（复用看板 Inspector + 实时预览） | DASH-010 |
 | `/admin/viz-templates` | 可视化模板 Hub（整页 layout 信封） | DASH-009 companion |
+
+### 可视化模板 Hub（DASH-009 · 2026-08）
+
+| 项 | 说明 |
+|----|------|
+| 路由 | `/admin/viz-templates`；深链筛选 `?surfaceKind=dashboard\|data-screen` · `?categoryKey=` |
+| 读权限 | 路由 gate：`dashboard:read` |
+| 写权限 | 发布/下架/导入：`dashboard:template.manage`；删除/更新：须 `dashboard:edit` + owner 或 manage |
+| 内置模板 | `visibility=builtin` **不可删除**（FE `canDeleteTemplate` · BE 403 `DASH_TEMPLATE_BUILTIN_READONLY`） |
+| 主流程 | 浏览卡片 → **使用模板**（`POST /dashboards/from-template`）→ 跳转 `/dashboards/:id/edit` 或大屏 edit |
+| 其他操作 | 发布/下架 · 导入 `viz-layout` · 导出信封 · 删除（确认弹窗） |
+| 预览 | `TemplateCardPreview` 优先 live 布局预览（非静态 SVG） |
+| 代码锚点 | `VizTemplatesHubPage.tsx` · `VizTemplateCard.tsx` · `templateLabels.ts` · [anchor.md](./anchor.md) |
+
+### 看板 / 大屏编辑器 IA
+
+| 表面 | 画布 | 拖拽 | 图表挂载 |
+|------|------|------|----------|
+| 仪表板 `surfaceKind=dashboard` | v1 **栅格** `DashboardGrid`（react-grid-layout） | 栅格拖拽 + 碰撞推挤预览 | `ChartMountInteractionBridge`；拖拽/播放中 `interactionFrozen` 保持 ready 图表不灰化 |
+| 数据大屏 `surfaceKind=data-screen` | v2 **像素** `PixelCanvas` | 指针拖拽 + 标尺视口 | 同上；`layoutStyleDeferred` 时 `PixelShape` 同步 imperative 几何 |
+
+- **事务保存**：`PUT /api/v1/dashboards/{id}/editor-save`（name + layoutJson + globalFilters 一次提交）。
+- **三栏**：左 Palette（组件库）· 中 Canvas · 右 Inspector（`ChartEditRail` / 大屏 `ScreenVisualEditRail`）。
+- 代码锚点：`DashboardEditWorkspace.tsx` · `DashboardGrid.tsx` · `PixelCanvas.tsx` · `fe/src/lib/chartMountScheduler.ts`。
 
 **DashboardView 适配（VIEW-001 companion）**：Dashboard 存储形态为 `layoutJson`（widgets + globalFilters）；消费/校验时经 `dashboardLayoutToView()`（`fe/src/lib/dashboardLayoutToView.ts` · 后端 `views/adapter.py`）映射为 FR-VIEW-1 `DashboardView` 文档（含 `protocolVersion: 1` 与 `dashboardId`）。`PUT /api/v1/dashboards/{id}/layout` 在持久化前执行 DashboardView 校验，与 `POST /api/v1/views/validate` 同域错误码。
 

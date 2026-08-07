@@ -41,6 +41,18 @@ describe("tryAcquireWebGLSlot", () => {
     releaseWebGLSlotIfCurrent("widget-a", activeDispose);
     expect(tryAcquireWebGLSlot("widget-a")).toBe(true);
   });
+
+  it("evictOldest frees a slot for thumbnail previews", () => {
+    for (let i = 0; i < GEO3D_MAX_WEBGL_INSTANCES; i += 1) {
+      expect(tryAcquireWebGLSlot(`slot-${i}`)).toBe(true);
+    }
+    let evicted = false;
+    setWebGLSlotDispose("slot-0", () => {
+      evicted = true;
+    });
+    expect(tryAcquireWebGLSlot("thumb-new", { evictOldest: true })).toBe(true);
+    expect(evicted).toBe(true);
+  });
 });
 
 describe("resolveTerrainTextureEnabled", () => {

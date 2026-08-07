@@ -1,11 +1,17 @@
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { Braces, ChevronDown, Eye } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { ReportResultTable } from "./ReportResultTable";
+import {
+  TemplateEmptyState,
+  TemplateMetaGrid,
+  TemplateMetaItem,
+  TemplatePanelSection,
+} from "./templatePanelUi";
 import type { ExtensionMetric } from "../useReportTemplates";
 
 type RenderSpec = {
@@ -32,7 +38,13 @@ function metricConfigSummary(metric: ExtensionMetric) {
   return "未配置 SQL 表达式";
 }
 
-export function ReportExtensionPreview({ data }: { data: RenderSpec }) {
+export function ReportExtensionPreview({
+  data,
+  embedded = false,
+}: {
+  data: RenderSpec;
+  embedded?: boolean;
+}) {
   const [jsonOpen, setJsonOpen] = useState(false);
   const metrics = data.metrics ?? [];
 
@@ -43,30 +55,22 @@ export function ReportExtensionPreview({ data }: { data: RenderSpec }) {
     metricConfigSummary(m),
   ]);
 
-  return (
-    <div className="space-y-4">
-      <dl className="grid gap-3 rounded-xl border border-gray-200 p-4 text-theme-sm dark:border-gray-800 sm:grid-cols-3">
-        <div>
-          <dt className="text-theme-xs text-gray-500 dark:text-gray-400">修订版本</dt>
-          <dd className="font-medium text-gray-800 dark:text-white/90">{data.revision ?? "—"}</dd>
-        </div>
-        <div>
-          <dt className="text-theme-xs text-gray-500 dark:text-gray-400">渲染版本</dt>
-          <dd className="font-medium text-gray-800 dark:text-white/90">{data.renderVersion ?? "—"}</dd>
-        </div>
-        <div>
-          <dt className="text-theme-xs text-gray-500 dark:text-gray-400">模板格式</dt>
-          <dd className="font-medium text-gray-800 dark:text-white/90">{data.templateKind ?? "—"}</dd>
-        </div>
-      </dl>
+  const content = (
+    <div className="space-y-5">
+      <TemplateMetaGrid columns={3}>
+        <TemplateMetaItem label="修订版本">{data.revision ?? "—"}</TemplateMetaItem>
+        <TemplateMetaItem label="渲染版本">{data.renderVersion ?? "—"}</TemplateMetaItem>
+        <TemplateMetaItem label="模板格式">{data.templateKind ?? "—"}</TemplateMetaItem>
+      </TemplateMetaGrid>
 
       {metrics.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-gray-200 px-4 py-8 text-center text-theme-sm text-gray-500 dark:border-gray-800 dark:text-gray-400">
-          暂无可见指标，请先在扩展配置中添加并保存。
-        </p>
+        <TemplateEmptyState
+          title="暂无可见指标"
+          description="请先在扩展配置中添加并保存指标，再查看预览。"
+        />
       ) : (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-800">
-          <p className="border-b border-gray-200 px-4 py-3 text-theme-sm font-medium text-gray-800 dark:border-gray-800 dark:text-white/90">
+        <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
+          <p className="border-b border-gray-200 bg-gray-50/60 px-4 py-3 text-theme-sm font-medium text-gray-800 dark:border-gray-800 dark:bg-white/[0.02] dark:text-white/90">
             指标预览
           </p>
           <div className="p-4">
@@ -79,16 +83,33 @@ export function ReportExtensionPreview({ data }: { data: RenderSpec }) {
       )}
 
       <Collapsible open={jsonOpen} onOpenChange={setJsonOpen}>
-        <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border border-gray-200 px-4 py-2 text-theme-sm text-gray-600 hover:bg-gray-50 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03]">
-          开发者 JSON
+        <CollapsibleTrigger className="flex w-full items-center justify-between rounded-xl border border-gray-200 px-4 py-3 text-theme-sm text-gray-600 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-500/20 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03]">
+          <span className="flex items-center gap-2">
+            <Braces className="size-4" aria-hidden />
+            开发者 JSON
+          </span>
           <ChevronDown className={`size-4 transition-transform ${jsonOpen ? "rotate-180" : ""}`} />
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <pre className="mt-2 max-h-[320px] overflow-auto rounded-xl border border-gray-200 p-4 text-theme-xs text-gray-700 dark:border-gray-800 dark:text-gray-300">
+          <pre className="mt-2 max-h-[320px] overflow-auto rounded-xl border border-gray-200 bg-gray-50/50 p-4 font-mono text-theme-xs text-gray-700 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-300">
             {JSON.stringify(data, null, 2)}
           </pre>
         </CollapsibleContent>
       </Collapsible>
     </div>
+  );
+
+  if (embedded) {
+    return content;
+  }
+
+  return (
+    <TemplatePanelSection
+      title="配置预览"
+      description="展示当前扩展配置的指标摘要与版本信息。"
+      icon={Eye}
+    >
+      {content}
+    </TemplatePanelSection>
   );
 }

@@ -72,7 +72,7 @@
 | `engine/service.py` | validate + `run_template`（M3-LITE：`dataSourceId` 驱动 `engine/execute`；无 ds placeholder 回归 r60） | RPT-001 | M3-LITE 已实现 r233 |
 | `engine/execute.py` | extension metrics → SQL `execute_query` **或** Dataset `execute_dataset_from_config` | RPT-001/006 | P3 已实现 |
 | `reports/persistence/` | `RPT_METADATA_STORE=memory\|db`（**默认 db**）；catalog/extension/prefab/templates 持久化 | RPT-006 | P3 已实现 |
-| `reports/render/` | `render_from_spec` → PDF/Excel/Word bytes | RPT-001/003 | P3 已实现 |
+| `reports/render/` | `render_from_spec` → PDF/Excel/Word bytes；PDF 中文经 `pdf_fonts.resolve_report_pdf_font_name()` | RPT-001/003 | P3 已实现 |
 | `engine/acl.py` | run 访问控制 + `set_user_engine_scope` enterprise 白名单 | RPT-001 | companion 已实现 r66 |
 | `engine/probe.py` | `probe_run_template_budget_ms` ≤50ms | RPT-001 | companion 已实现 r66 |
 | `prefab/service.py` | 预制报表绑定 validate/upsert/list（内存 store） | RPT-002 | L1 已实现 r62 |
@@ -97,6 +97,17 @@
 见 [api/README.md](../api/README.md) §报表。
 
 ## 实现笔记
+
+### RenderSpec PDF 中文字体（2026-08）
+
+`reports/render/pdf_fonts.py` 在 `pdf_renderer.py` 渲染前解析字体名，避免中文 PDF 黑块：
+
+1. 仓内 bundled `NotoSansSC-Regular`（`reports/render/fonts/`）
+2. 系统 TTF/TTC：Windows `msyh`/`simsun`/`simhei`；Linux Noto/WQY；macOS PingFang/STHeiti
+3. 回退 ReportLab CID `STSong-Light`（`UnicodeCIDFont`）
+4. 最终回退 `Helvetica`（无 CJK 字形时仍可能缺字）
+
+**验收**：RenderSpec PDF 导出含中文标题/指标时不应全黑块；部署机无系统字体时须保证 bundled 字体随包发布。
 
 - r54：`reports/extension/` + `reports/batch/` 内存 store；extension 仅 template 节点；batch 幂等 + 原子回滚；错误码 `RPT_EXT_*`、`RPT_BATCH_*`
 
