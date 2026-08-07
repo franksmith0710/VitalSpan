@@ -45,7 +45,12 @@ def get_job_status(job_id: uuid.UUID, actor: UserContext) -> dict:
         if job["status"] == ReportJobStatus.READY.value
         else None
     )
-    return {"jobId": job["id"], "status": job["status"], "downloadUrl": download_url}
+    return {
+        "jobId": job["id"],
+        "status": job["status"],
+        "downloadUrl": download_url,
+        "errorMessage": job.get("errorMessage"),
+    }
 
 
 def read_job_download(job_id: uuid.UUID, actor: UserContext) -> tuple[bytes, str, str]:

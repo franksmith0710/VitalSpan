@@ -15,8 +15,6 @@ import {
   releaseListPreviewSlot,
   requestListPreviewSlot,
 } from "@/lib/listPreviewActivation";
-import { DashboardPreviewThumb } from "./DashboardPreviewThumb";
-import { HubCardDashboardThumbnail } from "./HubCardDashboardThumbnail";
 import { DashboardLayoutPreview } from "./DashboardLayoutPreview";
 import { DataScreenPresenter } from "./screen/DataScreenPresenter";
 import { prepareLayoutForListPreview } from "./stylePipeline";
@@ -26,9 +24,6 @@ import type { DashboardLayout } from "./layoutUtils";
 type DashboardListCardPreviewProps = {
   dashboardId?: string;
   layoutJson?: DashboardLayout;
-  thumbnailUrl?: string | null;
-  /** 父级预览框 hover（用于有静态缩略图时按需 live） */
-  frameHovered?: boolean;
   className?: string;
   /** 测试用：跳过后台懒加载，直接挂载真实预览 */
   eager?: boolean;
@@ -51,24 +46,21 @@ function layoutHasFullChartConfig(layout?: DashboardLayout): boolean {
 }
 
 /**
- * 看板列表卡片预览：优先静态缩略图；无图时视口内 live；有图时仅 hover live。
+ * 看板列表卡片真实预览：视口内挂载完整布局，card 档位降级查询与特效。
  */
 export function DashboardListCardPreview({
   dashboardId,
   layoutJson,
-  thumbnailUrl,
-  frameHovered = false,
   className,
   eager = false,
 }: DashboardListCardPreviewProps) {
   const navSuspended = useAdminHeavyRenderSuspended();
   const hostRef = useRef<HTMLDivElement>(null);
-  const hasThumbnail = Boolean(thumbnailUrl?.trim());
   const hasFullLayout = layoutHasFullChartConfig(layoutJson);
   const [active, setActive] = useState(eager);
   const [slotGranted, setSlotGranted] = useState(eager);
   const shouldFetch = Boolean(dashboardId && !hasFullLayout);
-  const liveEligible = eager || (hasThumbnail ? frameHovered && active : active);
+  const liveEligible = eager || active;
   const layoutQuery = useDashboardListCardLayout(
     dashboardId,
     liveEligible && slotGranted && shouldFetch && !navSuspended,
@@ -182,8 +174,6 @@ export function DashboardListCardPreview({
   const showLive =
     !navSuspended && liveEligible && slotGranted && !loading && Boolean(resolvedLayout);
 
-  const wireframeLayout = resolvedLayout ?? layoutJson;
-
   return (
     <div
       ref={hostRef}
@@ -191,28 +181,21 @@ export function DashboardListCardPreview({
         "dashboard-canvas-surface dashboard-list-card-preview relative h-full overflow-hidden",
         isScreen ? "bg-slate-950" : "bg-white dark:bg-gray-900/60",
         !navSuspended &&
-          !hasThumbnail &&
           "transition-[filter,transform] duration-300 group-hover:scale-[1.02] group-hover:blur-[2px]",
         className,
       )}
       data-testid="dashboard-list-card-preview"
       data-live={showLive ? "true" : "false"}
-      data-has-thumbnail={hasThumbnail ? "true" : "false"}
+      data-preview-profile="card"
       aria-hidden
     >
-      {hasThumbnail && thumbnailUrl ? (
-        <HubCardDashboardThumbnail
-          thumbnailUrl={thumbnailUrl}
-          isDataScreen={isScreen}
-          className="absolute inset-0"
-        />
-      ) : null}
       {showLive ? (
-        <div className="absolute inset-0 h-full w-full" data-testid="dashboard-list-card-live-preview">
+        <div className="h-full w-full" data-testid="dashboard-list-card-live-preview">
           {isScreen ? (
             <DataScreenPresenter
               layout={resolvedLayout!}
               presentationMode="fit"
+              previewProfile="card"
               geo3dRenderTier="thumbnail"
               mountMaxConcurrent={Math.max(CHART_MOUNT_MAX_VIEW, MAX_LIST_PREVIEW_ACTIVATIONS)}
               className="pointer-events-none h-full min-h-0 select-none"
@@ -222,6 +205,7 @@ export function DashboardListCardPreview({
               <DashboardLayoutPreview
                 layout={resolvedLayout!}
                 scaleMode="component"
+                previewProfile="card"
                 geo3dRenderTier="thumbnail"
                 mountMaxConcurrent={Math.max(CHART_MOUNT_MAX_VIEW, MAX_LIST_PREVIEW_ACTIVATIONS)}
                 className="pointer-events-none min-h-0 select-none"
@@ -231,23 +215,18 @@ export function DashboardListCardPreview({
             <DashboardLayoutPreview
               layout={resolvedLayout!}
               scaleMode="component"
+              previewProfile="card"
               geo3dRenderTier="thumbnail"
               mountMaxConcurrent={Math.max(CHART_MOUNT_MAX_VIEW, MAX_LIST_PREVIEW_ACTIVATIONS)}
               className="pointer-events-none h-full min-h-0 select-none [&_.pixel-canvas-host]:h-full [&_.pixel-canvas-host]:min-h-0 [&_.pixel-canvas-host]:overflow-hidden"
             />
           )}
         </div>
-      ) : hasThumbnail ? null : loading ? (
-        <Skeleton className="h-full w-full rounded-none" data-testid="dashboard-list-card-preview-skeleton" />
-      ) : wireframeLayout ? (
-        <DashboardPreviewThumb
-          layoutJson={wireframeLayout}
-          embedded
-          isDataScreen={isScreen}
-          className="h-full"
-        />
       ) : (
-        <Skeleton className="h-full w-full rounded-none" />
+        <Skeleton
+          className="h-full w-full rounded-none"
+          data-testid="dashboard-list-card-preview-skeleton"
+        />
       )}
     </div>
   );

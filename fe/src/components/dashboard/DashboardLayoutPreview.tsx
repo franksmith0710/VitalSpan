@@ -33,6 +33,8 @@ import type { Geo3dRenderTier } from "@/components/charts/engine/three/geo3dRunt
 import { WidgetErrorBoundary } from "./WidgetErrorBoundary";
 import { useVizComponentMap } from "@/hooks/useVizComponentMap";
 import { resolveLayoutWidget } from "@/lib/resolveVizComponent";
+import type { DashboardPreviewProfile } from "@/lib/dashboardPreviewProfile";
+import { isCardPreviewProfile } from "@/lib/dashboardPreviewProfile";
 
 type DashboardLayoutPreviewProps = {
   layout: DashboardLayout;
@@ -56,6 +58,8 @@ type DashboardLayoutPreviewProps = {
   mountMaxConcurrent?: number;
   /** 3D 地图渲染分级 */
   geo3dRenderTier?: Geo3dRenderTier;
+  /** 列表卡片等轻量真实预览档位 */
+  previewProfile?: DashboardPreviewProfile;
 };
 
 export function DashboardLayoutPreview({
@@ -72,7 +76,9 @@ export function DashboardLayoutPreview({
   className,
   mountMaxConcurrent = CHART_MOUNT_MAX_VIEW,
   geo3dRenderTier = "embed",
+  previewProfile = "default",
 }: DashboardLayoutPreviewProps) {
+  const cardPreview = isCardPreviewProfile(previewProfile);
   const styleConfig = useMemo(
     () => resolveEffectiveDashboardStyle(layout, styleConfigOverride),
     [layout, styleConfigOverride],
@@ -146,13 +152,16 @@ export function DashboardLayoutPreview({
           }
           onFilterValueChange={onFilterValueChange}
           onChartLinkageClick={
-            onChartLinkageClick
-              ? (payload) => onChartLinkageClick(displayWidget.id, payload)
-              : undefined
+            cardPreview
+              ? undefined
+              : onChartLinkageClick
+                ? (payload) => onChartLinkageClick(displayWidget.id, payload)
+                : undefined
           }
           onTitleChange={() => {}}
           dashboardStyle={widgetDashboardStyle}
           geo3dRenderTier={geo3dRenderTier}
+          previewProfile={previewProfile}
           componentMap={componentMap}
         />
       </WidgetErrorBoundary>

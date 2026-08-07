@@ -118,8 +118,9 @@ def test_batch_export_job_produces_download(client: TestClient):
     assert submit.status_code in {200, 201, 202}
     job_id = submit.json()["jobId"]
     poll = client.get(f"/api/v1/reports/jobs/{job_id}", headers=AUTH)
-    assert poll.status_code == 200
-    assert poll.json()["status"] in {"ready", "processing", "pending"}
+    assert poll.status_code == 200, poll.text
+    body = poll.json()
+    assert body["status"] in {"ready", "processing", "pending"}, body.get("errorMessage") or body
     if poll.json()["status"] == "ready":
         download = client.get(f"/api/v1/reports/jobs/{job_id}/download", headers=AUTH)
         assert download.status_code == 200

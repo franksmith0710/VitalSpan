@@ -95,6 +95,8 @@ import {
   readChartLinkageConfig,
   resolveChartJumpHref,
 } from "@/lib/chartDeFeatures";
+import type { DashboardPreviewProfile } from "@/lib/dashboardPreviewProfile";
+import { isCardPreviewProfile } from "@/lib/dashboardPreviewProfile";
 
 type ChartRendererProps = {
   config: ChartViewConfig;
@@ -141,6 +143,7 @@ type ChartRendererProps = {
   onChartLinkageClick?: (payload: { parameterKey: string; value: string }) => void;
   geo3dRenderTier?: import("@/components/charts/engine/three/geo3dRuntime").Geo3dRenderTier;
   geo3dAnimationActive?: boolean;
+  previewProfile?: DashboardPreviewProfile;
 };
 
 function sizeSpanEqual(
@@ -217,7 +220,8 @@ function chartRendererPropsAreEqual(
     prev.renderEnabled === next.renderEnabled &&
     prev.mountGateStatus === next.mountGateStatus &&
     prev.geo3dRenderTier === next.geo3dRenderTier &&
-    prev.geo3dAnimationActive === next.geo3dAnimationActive
+    prev.geo3dAnimationActive === next.geo3dAnimationActive &&
+    prev.previewProfile === next.previewProfile
   );
 }
 
@@ -251,8 +255,10 @@ export const ChartRenderer = memo(function ChartRenderer({
   onChartLinkageClick,
   geo3dRenderTier,
   geo3dAnimationActive = true,
+  previewProfile = "default",
 }: ChartRendererProps) {
   const navSuspended = useAdminHeavyRenderSuspended();
+  const isCardPreview = isCardPreviewProfile(previewProfile);
   const effectiveQueryEnabled = queryEnabled && !navSuspended;
   const effectiveRenderEnabled = renderEnabled && !navSuspended;
   const drill = useChartDrill(drillEnabled ? widgetId : undefined);
@@ -604,7 +610,7 @@ export const ChartRenderer = memo(function ChartRenderer({
     supportsEmbeddedShellLegend(localConfig.chartType);
 
   const shellLegendVisible =
-    shellLegendEligible && readChartLegendVisible(deStyle, { embedded: true });
+    !isCardPreview && shellLegendEligible && readChartLegendVisible(deStyle, { embedded: true });
 
   const chartViewModel = useMemo(() => {
     let configForView = localConfig;
@@ -620,31 +626,37 @@ export const ChartRenderer = memo(function ChartRenderer({
     });
   }, [localConfig, displayColumns, displayRows, drillPipeline.displayField]);
 
-  const styleContext = useMemo(
-    () =>
-      buildStyleContext({
-        config: localConfig,
-        scheme: surfaceScheme,
-        chartColors,
-        dashboardPaletteId: paletteId,
-        dashboardDefaults: dashboardColorDefaults,
-        shellLegend: false,
-        embedEdit: embedded && dashboardEditMode,
-        numberFormat,
-        widgetShellBg: widgetShellColor,
-      }),
-    [
-      localConfig,
-      surfaceScheme,
+  const styleContext = useMemo(() => {
+    const ctx = buildStyleContext({
+      config: localConfig,
+      scheme: surfaceScheme,
       chartColors,
-      paletteId,
-      dashboardColorDefaults,
-      embedded,
-      dashboardEditMode,
+      dashboardPaletteId: paletteId,
+      dashboardDefaults: dashboardColorDefaults,
+      shellLegend: false,
+      embedEdit: embedded && dashboardEditMode,
       numberFormat,
-      widgetShellColor,
-    ],
-  );
+      widgetShellBg: widgetShellColor,
+    });
+    if (!isCardPreview) return ctx;
+    return {
+      ...ctx,
+      showTooltip: false,
+      showLabel: false,
+      shellLegend: false,
+    };
+  }, [
+    localConfig,
+    surfaceScheme,
+    chartColors,
+    paletteId,
+    dashboardColorDefaults,
+    embedded,
+    dashboardEditMode,
+    numberFormat,
+    widgetShellColor,
+    isCardPreview,
+  ]);
 
   const shellLegendItemsRef = useRef<ChartLegendItem[]>([]);
   const shellLegendItems = useMemo(() => {
@@ -755,7 +767,7 @@ export const ChartRenderer = memo(function ChartRenderer({
           : undefined
       }
       geo3dRenderTier={geo3dRenderTier ?? defaultGeo3dRenderTier(embedded)}
-      geo3dAnimationActive={geo3dAnimationActive}
+      geo3dAnimationActive={isCardPreview ? false : geo3dAnimationActive}
       instanceKey={widgetId}
       onPaintReady={deferMountReadyForPaint ? handlePaintReady : undefined}
     />

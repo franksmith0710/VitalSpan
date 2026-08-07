@@ -53,15 +53,21 @@ import { usePixelChromeScale } from "./pixelCanvas/PixelCanvasScaleContext";
 import { widgetChartIcon, WIDGET_CHART_LABELS } from "./widgetIcons";
 import { resolveLayoutWidget, type VizComponentMap } from "@/lib/resolveVizComponent";
 import { isLinkedComponentRef } from "@/lib/vizComponents";
+import {
+  type DashboardPreviewProfile,
+  isCardPreviewProfile,
+  resolveCardPreviewQueryLimit,
+} from "@/lib/dashboardPreviewProfile";
 
 function useWidgetAutoRefreshExecuteKey(
   chartConfig: ChartViewConfig | undefined,
   baseKey: string | undefined,
+  enabled = true,
 ): string | undefined {
   const refreshSec = useMemo(() => {
-    if (!chartConfig) return null;
+    if (!enabled || !chartConfig) return null;
     return parseDeRefreshIntervalSec(readChartDeDisplay(chartConfig).refreshMode);
-  }, [chartConfig]);
+  }, [chartConfig, enabled]);
 
   const [tick, setTick] = useState(0);
   useEffect(() => {
@@ -105,6 +111,7 @@ type DashboardWidgetProps = {
   nested?: boolean;
   /** 3D 地图渲染分级：列表 thumbnail / 看板 embed / 全屏预览 full */
   geo3dRenderTier?: Geo3dRenderTier;
+  previewProfile?: DashboardPreviewProfile;
   componentMap?: VizComponentMap;
 };
 
@@ -242,10 +249,12 @@ export function DashboardWidget({
   suspendLiveResize = false,
   nested = false,
   geo3dRenderTier = "embed",
+  previewProfile = "default",
   componentMap,
 }: DashboardWidgetProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const chromeScale = usePixelChromeScale();
+  const isCardPreview = isCardPreviewProfile(previewProfile);
   const resolvedWidget = useMemo(
     () => (componentMap ? resolveLayoutWidget(widget, componentMap) : widget),
     [widget, componentMap],
@@ -259,7 +268,11 @@ export function DashboardWidget({
     [chartPaletteDefaultsProp, chartPaletteDefaultsFingerprint(dashboardStyle)],
   );
   const chartCfg = resolvedWidget.type === "chart" ? resolvedWidget.chartConfig : undefined;
-  const widgetExecuteKey = useWidgetAutoRefreshExecuteKey(chartCfg, executeKey);
+  const widgetExecuteKey = useWidgetAutoRefreshExecuteKey(
+    chartCfg,
+    executeKey,
+    !isCardPreview,
+  );
 
   if (componentPending) {
     return (
@@ -389,7 +402,11 @@ export function DashboardWidget({
         )
       : mergeTitleStyle(dashboardStyle?.titleStyle);
   const queryLimit = resolvedWidget.chartConfig
-    ? resolveChartQueryLimit(resolvedWidget.chartConfig, dashboardStyle ?? {})
+    ? isCardPreview
+      ? resolveCardPreviewQueryLimit(
+          resolveChartQueryLimit(resolvedWidget.chartConfig, dashboardStyle ?? {}),
+        )
+      : resolveChartQueryLimit(resolvedWidget.chartConfig, dashboardStyle ?? {})
     : 100;
   const chartRemark = resolvedWidget.chartConfig ? readChartRemark(resolvedWidget.chartConfig) : { show: false, text: "" };
   const readyChartConfig = resolvedWidget.chartConfig;
@@ -410,8 +427,9 @@ export function DashboardWidget({
               title={widget.title}
               widgetId={widget.id}
               drillEnabled={
-                mode === "view" ||
-                (mode === "edit" && isGeoMapChartType(readyChartConfig.chartType))
+                !isCardPreview &&
+                (mode === "view" ||
+                  (mode === "edit" && isGeoMapChartType(readyChartConfig.chartType)))
               }
               filterParameters={filterParameters}
               executeKey={widgetExecuteKey}
@@ -422,7 +440,7 @@ export function DashboardWidget({
               numberFormat={dashboardStyle?.numberFormat}
               colorScheme={dashboardStyle?.colorScheme ?? "light"}
               widgetShellColor={shellColor}
-              showLoadingHint={chrome.showChartLoadingHint}
+              showLoadingHint={!isCardPreview && chrome.showChartLoadingHint}
               suspendLiveResize={suspendLiveResize}
               dashboardEditMode={mode === "edit"}
               queryEnabled={queryEnabled}
@@ -430,14 +448,17 @@ export function DashboardWidget({
               mountGateStatus={mountGateStatus}
               onMountReady={onMountReady}
               geo3dRenderTier={geo3dRenderTier}
-              geo3dAnimationActive={mode !== "edit" || selected}
+              geo3dAnimationActive={!isCardPreview && (mode !== "edit" || selected)}
+              previewProfile={previewProfile}
               onChartConfigChange={
                 onChartConfigChange
                   ? (config) => onChartConfigChange(widget.id, config)
                   : undefined
               }
               onChartLinkageClick={
-                mode === "view" && onChartLinkageClick ? onChartLinkageClick : undefined
+                !isCardPreview && mode === "view" && onChartLinkageClick
+                  ? onChartLinkageClick
+                  : undefined
               }
             />
           </div>

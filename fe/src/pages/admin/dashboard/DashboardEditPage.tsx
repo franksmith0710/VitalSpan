@@ -5,7 +5,6 @@ import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { ChevronLeft, Clock, Redo2, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { queryKeys } from "@/lib/queryKeys";
-import { queueDashboardThumbnailUpload } from "@/lib/queueDashboardThumbnailUpload";
 import { updateTemplate } from "@/lib/dashboardTemplates";
 import {
   readTemplateEditSyncState,
@@ -1132,7 +1131,6 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       } else {
         toast.success("看板已保存");
       }
-      queueDashboardThumbnailUpload(id, queryClient);
       return true;
     } catch (err) {
       if (isDashboardNotFound(err)) {

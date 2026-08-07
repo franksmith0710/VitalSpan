@@ -1,5 +1,4 @@
 import { Link } from "react-router";
-import { useState } from "react";
 import { Eye, LayoutDashboard, MoreHorizontal, Pencil, Share2, Trash2 } from "lucide-react";
 import {
   HUB_CARD_BODY_CLASS,
@@ -96,15 +95,12 @@ export function DashboardListCard({
     name: dashboard.name,
     layoutJson: layoutForPreview,
   });
-  const [previewFrameHovered, setPreviewFrameHovered] = useState(false);
 
   return (
     <article className={cn(HUB_CARD_SHELL_CLASS, className)}>
       <div
         className={HUB_CARD_PREVIEW_FRAME_CLASS}
         style={hubCardPreviewFrameStyle(isScreen ? "data-screen" : "dashboard")}
-        onMouseEnter={() => setPreviewFrameHovered(true)}
-        onMouseLeave={() => setPreviewFrameHovered(false)}
       >
         {onToggleSelect ? (
           <div className="absolute left-2 top-2 z-20 rounded-md bg-white/90 p-0.5 shadow-sm dark:bg-gray-900/90">
@@ -119,8 +115,6 @@ export function DashboardListCard({
           <DashboardListCardPreview
             dashboardId={dashboard.id}
             layoutJson={layoutForPreview}
-            thumbnailUrl={dashboard.thumbnailUrl}
-            frameHovered={previewFrameHovered}
             className="h-full"
           />
         </div>

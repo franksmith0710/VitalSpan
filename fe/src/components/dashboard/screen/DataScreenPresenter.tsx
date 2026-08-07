@@ -2,6 +2,7 @@ import type { Linkage } from "@/components/dashboard/dashboardFilterUtils";
 import type { Geo3dRenderTier } from "@/components/charts/engine/three/geo3dRuntime";
 import { DashboardLayoutPreview } from "@/components/dashboard/DashboardLayoutPreview";
 import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
+import type { DashboardPreviewProfile } from "@/lib/dashboardPreviewProfile";
 import { CanvasScaleViewport } from "./CanvasScaleViewport";
 import type { PresentationMode } from "./presentationScale";
 
@@ -15,6 +16,7 @@ export type DataScreenPresenterProps = {
   className?: string;
   geo3dRenderTier?: Geo3dRenderTier;
   mountMaxConcurrent?: number;
+  previewProfile?: DashboardPreviewProfile;
 };
 
 export function DataScreenPresenter({
@@ -27,6 +29,7 @@ export function DataScreenPresenter({
   className,
   geo3dRenderTier = "full",
   mountMaxConcurrent,
+  previewProfile = "default",
 }: DataScreenPresenterProps) {
   if (layout.version !== 2) {
     return (
@@ -38,6 +41,7 @@ export function DataScreenPresenter({
         className={className}
         geo3dRenderTier={geo3dRenderTier}
         mountMaxConcurrent={mountMaxConcurrent}
+        previewProfile={previewProfile}
       />
     );
   }
@@ -62,6 +66,7 @@ export function DataScreenPresenter({
           className="h-full w-full"
           geo3dRenderTier={geo3dRenderTier}
           mountMaxConcurrent={mountMaxConcurrent}
+          previewProfile={previewProfile}
         />
       </div>
     </CanvasScaleViewport>
