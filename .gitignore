@@ -15,3 +15,5 @@ fe/.vite/
 .dev/secrets.env
 .dev/walkthrough/
 .dev/baselines/
+.codegraph/
+.ast-grep/cache/
