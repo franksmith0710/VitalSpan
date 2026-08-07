@@ -23,6 +23,7 @@ import {
   resolveEffectivePaletteColors,
 } from "@/lib/chartDeStyle";
 import type { ColorScheme, DashboardStyleConfig, NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
+import { chartPaletteDefaultsFingerprint } from "@/components/dashboard/dashboardStyleConfig";
 import { readChartGeoAreaMappingLookup } from "@/lib/chartGeoAreaMapping";
 import {
   readChartLegendIcon,
@@ -171,6 +172,23 @@ function filterParamsEqual(
   return aKeys.every((key) => a[key] === b[key]);
 }
 
+function palettePropsEqual(
+  prev: Pick<ChartRendererProps, "paletteId" | "paletteColors" | "dashboardColorDefaults">,
+  next: Pick<ChartRendererProps, "paletteId" | "paletteColors" | "dashboardColorDefaults">,
+): boolean {
+  if (prev.paletteId !== next.paletteId) return false;
+  const prevColors = prev.paletteColors;
+  const nextColors = next.paletteColors;
+  if (prevColors !== nextColors) {
+    if (!prevColors || !nextColors || prevColors.length !== nextColors.length) return false;
+    if (!prevColors.every((color, index) => color === nextColors[index])) return false;
+  }
+  return (
+    chartPaletteDefaultsFingerprint(prev.dashboardColorDefaults) ===
+    chartPaletteDefaultsFingerprint(next.dashboardColorDefaults)
+  );
+}
+
 function chartRendererPropsAreEqual(
   prev: ChartRendererProps,
   next: ChartRendererProps,
@@ -186,9 +204,7 @@ function chartRendererPropsAreEqual(
     filterParamsEqual(prev.filterParameters, next.filterParameters) &&
     prev.executeKey === next.executeKey &&
     prev.queryLimit === next.queryLimit &&
-    prev.paletteId === next.paletteId &&
-    prev.paletteColors === next.paletteColors &&
-    prev.dashboardColorDefaults === next.dashboardColorDefaults &&
+    palettePropsEqual(prev, next) &&
     prev.numberFormat === next.numberFormat &&
     prev.colorScheme === next.colorScheme &&
     prev.widgetShellColor === next.widgetShellColor &&

@@ -50,10 +50,10 @@ describe("dataScreenTemplates", () => {
   });
 
   it("export normalizes chart dataSourceId to demo ref", () => {
-    const layout = buildDataScreenLayoutFromTemplate("blank");
+    const layout = buildDataScreenLayoutFromTemplate("command-center");
     const chart = layout.widgets.find((w) => w.type === "chart");
     if (!chart || chart.type !== "chart" || !chart.chartConfig) {
-      throw new Error("expected chart widget in blank template");
+      throw new Error("expected chart widget in command-center template");
     }
     chart.chartConfig = {
       ...chart.chartConfig,

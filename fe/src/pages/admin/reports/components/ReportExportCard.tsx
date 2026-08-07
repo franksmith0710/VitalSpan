@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { apiFetch } from "@/lib/api";
+import { fetchAuthenticatedBlob } from "@/lib/apiUpload";
 import { mapApiError } from "@/lib/apiError";
 import { exportMagicMatches } from "@/lib/reportExportUtils";
 
@@ -33,6 +34,22 @@ function localizeExportStatus(status: string): string {
   return EXPORT_STATUS_LABELS[status] ?? status;
 }
 
+function exportFileName(exportId: string, format: string): string {
+  const ext = format === "word" ? "docx" : format === "excel" ? "xlsx" : format;
+  return `report-${exportId}.${ext}`;
+}
+
+async function triggerBlobDownload(blob: Blob, fileName: string): Promise<void> {
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(objectUrl);
+}
+
 export function ReportExportCard({
   defaultTemplateId,
   showTemplateIdField = false,
@@ -49,8 +66,10 @@ export function ReportExportCard({
   const [templateId, setTemplateId] = useState(defaultTemplateId ?? "");
   const [format, setFormat] = useState("pdf");
   const [status, setStatus] = useState<string | null>(null);
-  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [downloadPath, setDownloadPath] = useState<string | null>(null);
+  const [exportId, setExportId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     if (defaultTemplateId) setTemplateId(defaultTemplateId);
@@ -63,15 +82,19 @@ export function ReportExportCard({
     if (!canExport) return;
     setLoading(true);
     setStatus(null);
-    setDownloadUrl(null);
+    setDownloadPath(null);
+    setExportId(null);
     try {
       const created = await apiFetch<ExportOut>(
         `/api/v1/reports/export?templateId=${encodeURIComponent(effectiveTemplateId)}&format=${encodeURIComponent(format)}`,
       );
       setStatus(created.status);
-      if (created.downloadUrl) setDownloadUrl(created.downloadUrl);
+      setExportId(created.exportId);
+      if (created.downloadUrl) setDownloadPath(created.downloadUrl);
       if (created.status === "pending") {
         await pollExport(created.exportId);
+      } else if (created.downloadUrl) {
+        await verifyExportMagic(created.downloadUrl);
       }
     } catch (err) {
       toast.error(mapApiError(err));
@@ -80,24 +103,43 @@ export function ReportExportCard({
     }
   };
 
+  const verifyExportMagic = async (path: string) => {
+    try {
+      const blob = await fetchAuthenticatedBlob(path);
+      const buffer = await blob.arrayBuffer();
+      if (!exportMagicMatches(new Uint8Array(buffer), format)) {
+        toast.warning("导出文件格式与所选格式不一致，请检查模板配置");
+      }
+    } catch {
+      /* smoke tests may mock without blob fetch */
+    }
+  };
+
   const pollExport = async (id: string) => {
     for (let i = 0; i < 5; i++) {
       await new Promise((r) => setTimeout(r, 400));
       const out = await apiFetch<ExportOut>(`/api/v1/reports/export/${id}`);
       setStatus(out.status);
+      setExportId(out.exportId);
       if (out.downloadUrl) {
-        setDownloadUrl(out.downloadUrl);
-        try {
-          const blob = await fetch(out.downloadUrl).then((r) => r.arrayBuffer());
-          if (!exportMagicMatches(new Uint8Array(blob), format)) {
-            toast.warning("导出文件格式与所选格式不一致，请检查模板配置");
-          }
-        } catch {
-          /* download URL may be same-origin API; smoke tests mock without fetch */
-        }
+        setDownloadPath(out.downloadUrl);
+        await verifyExportMagic(out.downloadUrl);
         return;
       }
       if (out.status === "failed") return;
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!downloadPath || !exportId) return;
+    setDownloading(true);
+    try {
+      const blob = await fetchAuthenticatedBlob(downloadPath);
+      await triggerBlobDownload(blob, exportFileName(exportId, format));
+    } catch (err) {
+      toast.error(mapApiError(err));
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -150,12 +192,16 @@ export function ReportExportCard({
             状态：{localizeExportStatus(status)}
           </span>
         ) : null}
-        {downloadUrl ? (
-          <Button asChild className="h-11" variant="outline">
-            <a href={downloadUrl} download>
-              <Download className="size-4" aria-hidden />
-              下载
-            </a>
+        {downloadPath ? (
+          <Button
+            type="button"
+            className="h-11"
+            variant="outline"
+            disabled={downloading}
+            onClick={() => void handleDownload()}
+          >
+            <Download className="size-4" aria-hidden />
+            {downloading ? "下载中…" : "下载"}
           </Button>
         ) : null}
       </div>

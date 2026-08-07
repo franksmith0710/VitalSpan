@@ -131,6 +131,55 @@ def test_import_export_envelope_roundtrip(client: TestClient, auth_headers: dict
     assert imported.json()["status"] == "draft"
 
 
+def test_export_envelope_normalizes_datasource_to_demo_ref(
+    client: TestClient, auth_headers: dict, db_session
+) -> None:
+    from app.dashboard.templates.demo_datasource import TEMPLATE_DEMO_DATASOURCE_REF
+
+    env_uuid = str(uuid.uuid4())
+    widget_id = str(uuid.uuid4())
+    create = client.post(
+        "/api/v1/dashboard-templates",
+        headers=auth_headers,
+        json={
+            "name": "export-demo-ref-test",
+            "surfaceKind": "dashboard",
+            "layoutJson": {
+                "version": 1,
+                "widgets": [
+                    {
+                        "id": widget_id,
+                        "type": "chart",
+                        "title": "sales",
+                        "order": 0,
+                        "colSpan": 12,
+                        "rowSpan": 4,
+                        "chartConfig": {
+                            "chartId": widget_id,
+                            "chartType": "bar",
+                            "mode": "sql",
+                            "sql": "SELECT 1",
+                            "dataSourceId": env_uuid,
+                        },
+                    }
+                ],
+                "globalFilters": [],
+                "styleConfig": {"surfaceKind": "dashboard"},
+            },
+        },
+    )
+    assert create.status_code == 201
+    template_id = create.json()["id"]
+    exported = client.get(
+        f"/api/v1/dashboard-templates/{template_id}/export",
+        headers=auth_headers,
+    )
+    assert exported.status_code == 200
+    chart_cfg = exported.json()["layout"]["widgets"][0]["chartConfig"]
+    assert chart_cfg["dataSourceId"] == TEMPLATE_DEMO_DATASOURCE_REF
+    assert chart_cfg["sql"] == "SELECT 1"
+
+
 def test_export_envelope_repairs_deprecated_chart_types(client: TestClient, auth_headers: dict) -> None:
     widget_id = str(uuid.uuid4())
     create = client.post(

@@ -134,6 +134,25 @@ const TABLE_COLOR_FIELD_KEYS = [
   "borderColor",
 ] as const satisfies readonly (keyof ChartDeTableStyle)[];
 
+/** 看板图表配色变更时：保留表格结构字段，重写配色预设与逐字段色 */
+export function buildDashboardTableColorStyleForPalette(
+  prev: ChartDeTableStyle | undefined,
+  paletteId: string,
+  scheme: ColorScheme = "light",
+): ChartDeTableStyle {
+  const preset = resolveTablePaletteStyle(paletteId, scheme);
+  const structure: ChartDeTableStyle = { ...(prev ?? {}) };
+  for (const key of TABLE_COLOR_FIELD_KEYS) {
+    delete structure[key];
+  }
+  delete structure.tablePaletteId;
+  return {
+    ...structure,
+    ...preset,
+    tablePaletteId: paletteId,
+  };
+}
+
 /** 清除组件级表格配色 override，保留列宽/分页等结构字段 */
 export function stripChartTableColorOverrides(cfg: ChartViewConfig): ChartViewConfig {
   const prev = readChartDeTableStyle(cfg);

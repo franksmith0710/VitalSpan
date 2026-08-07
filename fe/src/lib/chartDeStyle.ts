@@ -29,7 +29,10 @@ export {
   PIE_INNER_RADIUS_MAX,
   PIE_INNER_RADIUS_MIN,
 } from "@/lib/chartDeStyleBlocks";
-import { stripChartTableColorOverrides } from "@/lib/chartDeTableStyle";
+import {
+  patchChartDeTablePalette,
+  stripChartTableColorOverrides,
+} from "@/lib/chartDeTableStyle";
 
 export type { ChartSeriesColorItem } from "@/lib/chartSeriesColor";
 
@@ -539,7 +542,10 @@ export function syncChartWidgetsForDashboardScopes(
 
     if (scopes.has("title")) cfg = stripChartTitleOverrides(cfg);
     if (scopes.has("widgetAppearance")) cfg = stripChartWidgetAppearanceOverrides(cfg);
-    if (scopes.has("palette")) cfg = stripChartPaletteOverrides(cfg);
+    if (scopes.has("palette")) {
+      cfg = stripChartPaletteOverrides(cfg);
+      cfg = patchChartDeTablePalette(cfg, undefined);
+    }
     if (scopes.has("numberFormat")) cfg = stripChartLabelFormatOverrides(cfg);
     if (scopes.has("queryLimit")) cfg = stripChartQueryLimitOverride(cfg);
 

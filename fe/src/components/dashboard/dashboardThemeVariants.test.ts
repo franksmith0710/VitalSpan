@@ -294,7 +294,7 @@ describe("dashboardThemeVariants", () => {
       { widgetStyle: { padding: 12 }, paletteId: "warm" },
     );
     expect(bundle.styleConfig.widgetStyle?.padding).toBe(12);
-    expect(bundle.styleConfig.paletteId).toBe("warm");
+    expect(bundle.styleConfig.paletteId).toBe("amber");
     const de =
       bundle.widgets[0].type === "chart"
         ? bundle.widgets[0].chartConfig?.nativeBody?.deStyle
@@ -303,6 +303,25 @@ describe("dashboardThemeVariants", () => {
     expect(de?.paletteId).toBeUndefined();
     expect(de?.paletteOpacity).toBeUndefined();
     expect(de?.seriesColor).toBeUndefined();
+  });
+
+  it("applyDashboardStylePatch syncs tableColorStyle with chart palette", () => {
+    const bundle = applyDashboardStylePatch(
+      {
+        colorScheme: "light",
+        paletteId: "default",
+        tableColorStyle: {
+          headerBg: "#001122",
+          tablePaletteId: "default",
+        },
+      },
+      [],
+      { paletteId: "clarity" },
+    );
+    expect(bundle.styleConfig.paletteId).toBe("clarity");
+    expect(bundle.styleConfig.tableColorStyle?.tablePaletteId).toBe("clarity");
+    expect(bundle.styleConfig.tableColorStyle?.headerBg).not.toBe("#001122");
+    expect(bundle.styleConfig.tableColorStyle?.headerBg).toBeTruthy();
   });
 
   it("resetDashboardColorsToActiveThemeBundle resets dashboard and chart color overrides", () => {

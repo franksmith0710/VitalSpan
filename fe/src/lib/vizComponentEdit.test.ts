@@ -96,7 +96,7 @@ describe("cross-dashboard copy", () => {
       colSpan: 6,
       rowSpan: 4,
       order: 0,
-      componentRef: { componentId: "c-linked" },
+      componentRef: { componentId: "550e8400-e29b-41d4-a716-446655440001" },
     } as LayoutWidget;
 
     const snapshot = await resolveWidgetForCrossDashboardCopy(linked);

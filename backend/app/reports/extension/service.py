@@ -86,8 +86,8 @@ def upsert(node_id: uuid.UUID, payload: ExtensionConfigUpsert, actor: UserContex
     revision = (prev["revision"] + 1) if prev else 1
     record = {
         "catalog_node_id": node_id,
-        "metrics": [m.model_dump(by_alias=True) for m in payload.metrics],
-        "filters": [f.model_dump(by_alias=True) for f in payload.filters],
+        "metrics": [m.model_dump(by_alias=True, mode="json") for m in payload.metrics],
+        "filters": [f.model_dump(by_alias=True, mode="json") for f in payload.filters],
         "change_note": payload.change_note,
         "default_data_source_id": payload.default_data_source_id,
         "revision": revision,

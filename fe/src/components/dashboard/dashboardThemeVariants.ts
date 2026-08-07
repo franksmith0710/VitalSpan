@@ -11,6 +11,8 @@ import { normalizeDashboardGapConfig } from "./gapPolicy";
 import type { LayoutWidget } from "./layoutUtils";
 import { getDashboardThemeTokens, isOppositeThemeTitleColor } from "./dashboardThemeTokens";
 import type { ChartDeTableStyle } from "@/lib/chartDeTableStyle";
+import { buildDashboardTableColorStyleForPalette } from "@/lib/chartDeTableStyle";
+import { resolveChartColors, resolvePaletteId } from "@/lib/chartPalette";
 import {
   inferWidgetSyncScopes,
   patchChartDeStyleNested,
@@ -477,15 +479,53 @@ export function switchDashboardColorScheme(
   });
 }
 
+/** 看板图表配色 patch：同步表格配色预设，避免 tableColorStyle 滞留在旧主题色 */
+export function buildDashboardChartPalettePatch(
+  config: DashboardStyleConfig,
+  paletteId: string | undefined,
+  paletteColors: readonly string[],
+): Pick<DashboardStyleConfig, "paletteId" | "paletteColors" | "tableColorStyle"> {
+  const resolvedId = resolvePaletteId(paletteId) ?? "default";
+  const scheme = config.colorScheme ?? "light";
+  return {
+    paletteId: resolvedId,
+    paletteColors: [...paletteColors],
+    tableColorStyle: buildDashboardTableColorStyleForPalette(
+      config.tableColorStyle,
+      resolvedId,
+      scheme,
+    ),
+  };
+}
+
+function normalizeDashboardPalettePatch(
+  config: DashboardStyleConfig,
+  patch: Partial<DashboardStyleConfig>,
+): Partial<DashboardStyleConfig> {
+  if (patch.paletteId === undefined && patch.paletteColors === undefined) {
+    return patch;
+  }
+  const resolvedId = resolvePaletteId(patch.paletteId ?? config.paletteId) ?? "default";
+  const colors =
+    patch.paletteColors ??
+    config.paletteColors ??
+    resolveChartColors(resolvedId);
+  return {
+    ...patch,
+    ...buildDashboardChartPalettePatch(config, resolvedId, colors),
+  };
+}
+
 /** 看板配置变更：写 styleConfig 并清除图表组件级同类 override */
 export function applyDashboardStylePatch(
   styleConfig: DashboardStyleConfig,
   widgets: LayoutWidget[],
   patch: Partial<DashboardStyleConfig>,
 ): { styleConfig: DashboardStyleConfig; widgets: LayoutWidget[] } {
-  const scopes = inferWidgetSyncScopes(patch);
+  const normalizedPatch = normalizeDashboardPalettePatch(styleConfig, patch);
+  const scopes = inferWidgetSyncScopes(normalizedPatch);
   return {
-    styleConfig: patchDashboardStyle(styleConfig, patch),
+    styleConfig: patchDashboardStyle(styleConfig, normalizedPatch),
     widgets:
       scopes.size > 0
         ? syncChartWidgetsForDashboardScopes(widgets, scopes)

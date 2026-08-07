@@ -152,6 +152,7 @@
   - [x] 能力码 `dashboard:template.manage`；内置模板只读
   - [x] FE Hub `/admin/viz-templates`；列表「使用模板新建」；大屏/看板发布为模板
   - [x] 统一信封 `kind: viz-layout`；兼容旧 `kind: data-screen` 导入
+  - [x] 导出 JSON 将 chart `dataSourceId` 归一化为 `__demo:sample_db__`（保留 SQL）；导入/预览/实例化绑定本环境 sample_db 后 execute 有数据
 - **代码锚点**：`backend/app/dashboard/templates/` · `backend/app/api/v1/dashboard_templates.py` · `fe/src/pages/admin/viz-templates/VizTemplatesHubPage.tsx` · `fe/src/components/dashboard/templates/` · `tests/test_dash_templates_r01.py`
 - **演化建议**：模板缩略图自动生成（Hub 已支持布局示意预览）、组织级分类管理 UI；看板编辑页对称发布入口（已实现 `DashboardTemplateExtras`）
 
@@ -166,4 +167,5 @@
   - [x] `VizReuseDialog` 组织库 + 从看板复制双 Tab
   - [x] Hub `/admin/viz-components`；发布对话框 + 链接横幅
   - [x] vitest + `tests/test_viz_components_r01.py`
+  - [x] 发布/跨看板复制 payload 归一化演示占位符；linked 复制为 inline 快照含 SQL；插入后 refetch 可 execute
 - **代码锚点**：`backend/app/viz/components/` · `fe/src/lib/vizComponents.ts` · `fe/src/lib/resolveVizComponent.ts` · `fe/src/components/dashboard/VizReuseDialog.tsx` · `fe/src/pages/admin/viz-components/VizComponentsHubPage.tsx`

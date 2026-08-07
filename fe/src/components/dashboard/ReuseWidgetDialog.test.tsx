@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -6,46 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { VizReuseDialog } from "./VizReuseDialog";
 import type { DashboardLayoutV1, DashboardLayoutV2 } from "./layoutUtils";
 import { TEMPLATE_DEMO_DATASOURCE_REF } from "@/lib/templateDemoData";
-
-vi.mock("@/lib/vizComponents", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/vizComponents")>();
-  return {
-    ...actual,
-    batchResolveVizComponents: vi.fn(async () => ({
-      items: [
-        {
-          id: "comp-1",
-          componentKey: "comp-1",
-          name: "库内柱状图",
-          description: null,
-          categoryKey: "general",
-          widgetType: "chart",
-          surfaceKinds: ["dashboard"],
-          status: "published",
-          thumbnailRef: null,
-          tags: [],
-          visibility: "org",
-          contentRevision: 1,
-          updatedAt: "",
-          publishedAt: null,
-          ownerUserId: null,
-          orgScope: null,
-          createdAt: "",
-          payloadJson: {
-            chartConfig: {
-              chartId: "placeholder",
-              chartType: "bar",
-              mode: "sql",
-              sql: "SELECT amount FROM orders",
-              dataSourceId: "550e8400-e29b-41d4-a716-446655440000",
-            },
-          },
-        },
-      ],
-    })),
-    fetchVizComponents: vi.fn(async () => ({ items: [], total: 0, limit: 50, offset: 0 })),
-  };
-});
+import * as vizComponentEdit from "@/lib/vizComponentEdit";
 
 vi.mock("@/lib/api", () => ({
   apiFetch: vi.fn(),
@@ -107,6 +68,7 @@ function renderDialog(onInsertCloned = vi.fn()) {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  vi.restoreAllMocks();
 });
 
 describe("VizReuseDialog", () => {
@@ -185,11 +147,26 @@ describe("VizReuseDialog", () => {
           order: 0,
           colSpan: 6,
           rowSpan: 4,
-          componentRef: { componentId: "comp-1" },
+          componentRef: { componentId: "550e8400-e29b-41d4-a716-446655440001" },
         },
       ],
       globalFilters: [],
     };
+    vi.spyOn(vizComponentEdit, "resolveWidgetForCrossDashboardCopy").mockResolvedValue({
+      id: "w-linked",
+      type: "chart",
+      title: "引用图表",
+      order: 0,
+      colSpan: 6,
+      rowSpan: 4,
+      chartConfig: {
+        chartId: "w-linked",
+        chartType: "bar",
+        mode: "sql",
+        sql: "SELECT amount FROM orders",
+        dataSourceId: TEMPLATE_DEMO_DATASOURCE_REF,
+      },
+    } as DashboardLayoutV1["widgets"][number]);
     vi.mocked(apiFetch).mockImplementation(async (path: string) => {
       if (path.includes("/viz-components")) {
         return { items: [], total: 0, limit: 50, offset: 0 };
@@ -210,7 +187,7 @@ describe("VizReuseDialog", () => {
     await user.click(await screen.findByRole("option", { name: "引用图表 (chart)" }));
     await user.click(screen.getByRole("button", { name: "插入副本" }));
 
-    expect(onInsert).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(onInsert).toHaveBeenCalledTimes(1));
     const inserted = onInsert.mock.calls[0][0];
     expect(inserted.componentRef).toBeUndefined();
     expect(inserted.chartConfig?.sql).toBe("SELECT amount FROM orders");

@@ -291,6 +291,39 @@ describe("dashboard widget style sync", () => {
     expect(stripped.nativeBody?.deFeatures).toBeUndefined();
   });
 
+  it("syncChartWidgetsForDashboardScopes clears table palette overrides", () => {
+    const cfg = {
+      chartType: "table-info",
+      nativeBody: {
+        deTableStyle: {
+          tablePaletteId: "amber",
+          headerBg: "#111111",
+          headerFontSize: 9,
+        },
+      },
+    };
+    const widgets = syncChartWidgetsForDashboardScopes(
+      [
+        {
+          id: "w1",
+          type: "chart",
+          title: "表",
+          colSpan: 6,
+          rowSpan: 4,
+          chartConfig: cfg,
+        },
+      ],
+      new Set(["palette"]),
+    );
+    const tableStyle =
+      widgets[0].type === "chart"
+        ? widgets[0].chartConfig?.nativeBody?.deTableStyle
+        : undefined;
+    expect(tableStyle?.tablePaletteId).toBeUndefined();
+    expect(tableStyle?.headerBg).toBeUndefined();
+    expect(tableStyle?.headerFontSize).toBe(9);
+  });
+
   it("strip helpers are no-ops when override absent", () => {
     expect(stripChartWidgetAppearanceOverrides(baseCfg)).toBe(baseCfg);
     expect(stripChartPaletteOverrides(baseCfg)).toBe(baseCfg);
