@@ -72,6 +72,18 @@ describe("ReportCenterPage smoke", () => {
           },
         ];
       }
+      if (path === "/api/v1/reports/center/preferences") {
+        return {
+          favorites: [],
+          recent: [
+            {
+              resourceType: "template",
+              resourceId: "tpl-1",
+              resourceLabel: "月报模板",
+            },
+          ],
+        };
+      }
       return { items: [], total: 0 };
     });
   });
@@ -104,7 +116,6 @@ describe("ReportCenterPage smoke", () => {
     renderPage();
     expect(await screen.findByTestId("report-center-templates-toggle")).toBeInTheDocument();
     await user.click(screen.getByTestId("report-center-templates-toggle"));
-    expect(await screen.findByText("月报模板")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "运行" })).toHaveAttribute("href", "/admin/reports/view/tpl-1");
   });
 
@@ -118,6 +129,15 @@ describe("ReportCenterPage smoke", () => {
     renderPage();
     expect(await screen.findByText("预制A")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "运行 预制A" })).toHaveAttribute("href", "/admin/reports?binding=k1");
+  });
+
+  it("recent views link to resource pages", async () => {
+    renderPage();
+    expect(await screen.findByText("最近访问")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /月报模板/ })).toHaveAttribute(
+      "href",
+      "/admin/reports/view/tpl-1",
+    );
   });
 
   it("shows empty dashboard schedule hint when none exist", async () => {

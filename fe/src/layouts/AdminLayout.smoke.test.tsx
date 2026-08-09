@@ -440,9 +440,8 @@ describe("AdminLayout smoke", () => {
     expect(screen.getByText("workspace home")).toBeInTheDocument();
   });
 
-  it("admin sidebar has 报表 collapsible that expands to show sub-items (T-FE-SMFA-01)", async () => {
+  it("admin sidebar has 报表中心 direct link (T-FE-SMFA-01)", () => {
     setDesktopViewport(1600);
-    const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={["/admin"]}>
         <Routes>
@@ -453,19 +452,13 @@ describe("AdminLayout smoke", () => {
       </MemoryRouter>,
     );
 
-    const reportTrigger = screen.getByRole("button", { name: "报表中心" });
-    expect(reportTrigger).toBeInTheDocument();
-
-    await user.click(reportTrigger);
-
-    expect(screen.getByRole("link", { name: "预制报表" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "文档模板" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "定时报告" })).toBeInTheDocument();
+    const reportLink = screen.getByRole("link", { name: "报表中心" });
+    expect(reportLink).toBeInTheDocument();
+    expect(reportLink).toHaveAttribute("href", "/admin/reports/center");
   });
 
-  it("T-FE-SMFA-05: hover expands collapsed nav group without click", async () => {
+  it("T-FE-SMFA-05: collapsed nav still shows 报表中心 link", () => {
     setDesktopViewport(1600);
-    const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={["/admin"]}>
         <Routes>
@@ -476,11 +469,7 @@ describe("AdminLayout smoke", () => {
       </MemoryRouter>,
     );
 
-    const reportTrigger = screen.getByRole("button", { name: "报表中心" });
-    expect(screen.queryByRole("link", { name: "预制报表" })).not.toBeInTheDocument();
-
-    await user.hover(reportTrigger);
-    expect(await screen.findByRole("link", { name: "预制报表" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "报表中心" })).toBeInTheDocument();
   });
 
   it("admin sidebar 数据连接 links to datasources (T-FE-SMFA-02)", async () => {
@@ -616,9 +605,8 @@ describe("AdminLayout smoke", () => {
     expect(screen.queryByText("资源授权")).not.toBeInTheDocument();
   });
 
-  it("T-FE-SMFB-03: admin still has 报表 subItems (no regression T-FE-SMFA-01)", async () => {
+  it("T-FE-SMFB-03: admin 报表中心为单一侧栏入口", () => {
     setDesktopViewport(1600);
-    const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={["/admin"]}>
         <Routes>
@@ -628,8 +616,8 @@ describe("AdminLayout smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
-    await user.click(screen.getByRole("button", { name: "报表中心" }));
-    expect(screen.getByRole("link", { name: "预制报表" })).toBeInTheDocument();
+    const reportLink = screen.getByRole("link", { name: "报表中心" });
+    expect(reportLink).toHaveAttribute("href", "/admin/reports/center");
   });
 
   it("T-NAV-FC-04: analyst sidebar has no 实体总览 or 连接管理", () => {

@@ -1,0 +1,37 @@
+import { prefabReportsRunPath } from "@/pages/admin/reports/reportRoutes";
+
+export const DOC_TEMPLATE_SCHEDULE_HINT =
+  "打开文档模板 → 右侧「调度」Tab 配置定时生成与投递。";
+
+export const DOC_TEMPLATE_PRODUCT_LINE =
+  "固定版式文档（Word/Excel/PDF 套版填数），支持扩展配置、版本发布与定时投递。";
+
+export const VISUAL_SCHEDULE_PRODUCT_LINE =
+  "看板/大屏编辑页「定时推送」，生成可视化 PDF 定时报告（推荐主路径）。";
+
+const RESOURCE_TYPE_LABELS: Record<string, string> = {
+  template: "文档模板",
+  prefab: "预制分析",
+  schedule: "定时报告",
+  dashboard: "看板",
+};
+
+export function localizeCenterResourceType(resourceType: string): string {
+  return RESOURCE_TYPE_LABELS[resourceType] ?? resourceType;
+}
+
+export function resolveCenterRecentHref(item: {
+  resourceType: string;
+  resourceId: string;
+}): string {
+  switch (item.resourceType) {
+    case "template":
+      return `/admin/reports/view/${item.resourceId}`;
+    case "prefab":
+      return prefabReportsRunPath(item.resourceId);
+    case "schedule":
+      return `/admin/reports/schedules?tab=all&expand=${encodeURIComponent(item.resourceId)}`;
+    default:
+      return "/admin/reports/center";
+  }
+}

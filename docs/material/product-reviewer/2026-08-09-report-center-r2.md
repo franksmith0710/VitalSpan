@@ -85,11 +85,11 @@
 | B-10 | P2 | 否 | 否 | verified | r2 复核 | 服务端收藏 | center prefs API test | 2026-08-09 |
 | B-11 | P2 | 否 | 否 | verified | r2 复核 | capability 门控 | ReportView smoke | 2026-08-09 |
 | B-12 | P2 | 否 | 否 | open | — | 向导有，仍 JSON | BatchImport smoke | 2026-08-09 |
-| B-13 | P0 | 否 | 否 | open | r2 新增 | — | — | 2026-08-09 |
-| B-14 | P1 | 否 | 否 | open | r2 新增 | — | — | 2026-08-09 |
-| B-15 | P1 | 否 | 否 | open | r2 新增 | — | — | 2026-08-09 |
-| B-16 | P2 | 否 | 否 | open | r2 新增 | — | — | 2026-08-09 |
-| B-17 | P1 | 否 | 否 | open | r2 新增 | — | — | 2026-08-09 |
+| B-13 | P0 | 否 | 否 | verified | 叙事还债 | `reportCenterNav.ts` 两条产品线文案；删「后续能力」 | vitest 47 passed · grep 无残留 | 2026-08-09 |
+| B-14 | P1 | 否 | 否 | verified | 工作台闭环 | 最近访问 `Link` + 中文 type + 深链 | report-center smoke | 2026-08-09 |
+| B-15 | P1 | 否 | 否 | verified | 导航收拢 | 侧栏仅「报表中心」单入口 | AdminLayout smoke | 2026-08-09 |
+| B-16 | P2 | 否 | 否 | verified | 收藏真源 | 仅服务端 `center/preferences` | report-center smoke | 2026-08-09 |
+| B-17 | P1 | 否 | 否 | verified | 调度空态 | `DOC_TEMPLATE_SCHEDULE_HINT` 对齐 Tab 能力 | ReportSchedules smoke | 2026-08-09 |
 | B-18 | P1 | 否 | 否 | open | r2 新增 | — | — | 2026-08-09 |
 | B-19 | P2 | 否 | 否 | open | r2 新增 | — | — | 2026-08-09 |
 
@@ -187,6 +187,6 @@
 ## 下一步
 
 - [x] 报告已落盘 `docs/material/product-reviewer/2026-08-09-report-center-r2.md`
-- [ ] P0 B-13 文案还债（go-fast 小 PR）
-- [ ] P1 B-14/B-15 工作台闭环
+- [x] P0 B-13 文案还债（go-fast 小 PR）
+- [x] P1 B-14/B-15 工作台闭环
 - [ ] 真机补证 → browser-reviewer（分享 Dialog、邮件附件）

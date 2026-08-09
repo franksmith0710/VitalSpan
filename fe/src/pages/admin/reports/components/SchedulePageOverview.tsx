@@ -3,6 +3,10 @@ import { Link } from "react-router";
 import { CalendarClock, LayoutTemplate, Monitor } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { dashboardsListForScheduleCreate } from "@/lib/scheduleSourceMeta";
+import {
+  DOC_TEMPLATE_PRODUCT_LINE,
+  VISUAL_SCHEDULE_PRODUCT_LINE,
+} from "@/lib/reportCenterNav";
 
 type ScheduleStat = {
   label: string;
@@ -91,13 +95,13 @@ export function SchedulePageOverview({ stats }: SchedulePageOverviewProps) {
         <CreateEntryCard
           primary
           title="从看板/大屏创建"
-          description="编辑页「定时推送」配置 PDF（推荐主路径）"
+          description={VISUAL_SCHEDULE_PRODUCT_LINE}
           to={dashboardsListForScheduleCreate()}
           icon={<Monitor className="size-5" aria-hidden />}
         />
         <CreateEntryCard
           title="从文档模板创建"
-          description="固定版式文档报表（后续能力）"
+          description={DOC_TEMPLATE_PRODUCT_LINE}
           to="/admin/reports/templates"
           icon={<LayoutTemplate className="size-5" aria-hidden />}
         />

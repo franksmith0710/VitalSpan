@@ -17,6 +17,7 @@ import {
 } from "../useReportSchedules";
 import { Badge } from "@/components/ui/badge";
 import { CreateEntryCard, ScheduleStatCard } from "./SchedulePageOverview";
+import { DOC_TEMPLATE_PRODUCT_LINE } from "@/lib/reportCenterNav";
 
 function ScheduleMiniRow({
   schedule,
@@ -145,7 +146,7 @@ export function ReportCenterQuickAside({ schedules, loading, canManage }: HubPro
           {canManage ? (
             <CreateEntryCard
               title="文档模板调度"
-              description="固定版式文档（后续能力）"
+              description={DOC_TEMPLATE_PRODUCT_LINE}
               to="/admin/reports/templates"
               icon={<LayoutTemplate className="size-5" aria-hidden />}
             />

@@ -92,10 +92,11 @@ describe("resolveNavGroups", () => {
     expect(allItems.some((i) => i.name === "实体与主题")).toBe(false);
     const reportSection = groups.find((g) => g.title === "报表");
     const reportParent = reportSection?.items.find((i) => i.name === "报表中心");
-    expect(reportParent?.subItems?.map((s) => s.name)).toContain("预制报表");
+    expect(reportParent?.path).toBe("/admin/reports/center");
+    expect(reportParent?.subItems).toBeUndefined();
   });
 
-  it("T-NAV-MF-05: viewer with M1-only capabilities sees 报表 parent with only 预制报表 subItem", () => {
+  it("T-NAV-MF-05: viewer with M1-only capabilities sees 报表中心 single entry", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("viewer", ["viewer"]), {
       activeMilestones: new Set(["M1"]),
     });
@@ -103,11 +104,8 @@ describe("resolveNavGroups", () => {
     expect(reportSection).toBeDefined();
     const reportParent = reportSection?.items.find((i) => i.name === "报表中心");
     expect(reportParent).toBeDefined();
-    const subNames = reportParent?.subItems?.map((s) => s.name) ?? [];
-    expect(subNames).toContain("报表中心");
-    expect(subNames).toContain("预制报表");
-    expect(subNames).not.toContain("文档模板");
-    expect(subNames).not.toContain("定时报告");
+    expect(reportParent?.path).toBe("/admin/reports/center");
+    expect(reportParent?.subItems).toBeUndefined();
   });
 
   it("T-NAV-MF-06: admin 数据 section has 数据连接与数据集（无实体与主题、元数据）", () => {
@@ -258,11 +256,12 @@ describe("resolveNavGroups", () => {
     expect(names).not.toContain("图表类型目录");
   });
 
-  it("T-NAV-RPT-01: analyst 报表中心含全部报表与预制报表", () => {
+  it("T-NAV-RPT-01: analyst 报表中心为单一工作台入口", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("analyst", ["analyst"]));
     const report = groups.find((g) => g.title === "报表");
     const center = report?.items.find((i) => i.name === "报表中心");
-    expect(center?.subItems?.map((s) => s.name)).toEqual(["报表中心", "预制报表"]);
+    expect(center?.path).toBe("/admin/reports/center");
+    expect(center?.subItems).toBeUndefined();
   });
 
   it("T-DESIGN-FC-01: admin governance group has 查询设计器 with badge when gov nav on", () => {

@@ -23,7 +23,7 @@ import {
   summarizeRecipients,
   type ScheduleTabFilter,
 } from "@/lib/scheduleSourceMeta";
-import { useReportSchedulesList } from "./useReportSchedules";
+import { useReportSchedulesList, useReportScheduleMutations } from "./useReportSchedules";
 import {
   resolveScheduleSourceLabel,
   ScheduleListTable,
@@ -33,7 +33,7 @@ import {
   SchedulePageOverview,
   SchedulePageOverviewSkeleton,
 } from "./components/SchedulePageOverview";
-import { useReportScheduleMutations } from "./useReportSchedules";
+import { DOC_TEMPLATE_SCHEDULE_HINT } from "@/lib/reportCenterNav";
 
 const TAB_OPTIONS: { id: ScheduleTabFilter; label: string }[] = [
   { id: "dashboard", label: "看板/大屏" },
@@ -51,7 +51,7 @@ function emptyTitle(tab: ScheduleTabFilter, hasSearch: boolean): string {
 function emptyDescription(tab: ScheduleTabFilter, hasSearch: boolean): string {
   if (hasSearch) return "请调整搜索词，或切换上方分类筛选。";
   if (tab === "template") {
-    return "在「文档模板」详情页的调度 Tab 中创建（后续能力）。";
+    return DOC_TEMPLATE_SCHEDULE_HINT;
   }
   if (tab === "dashboard") {
     return "进入看板或数据大屏编辑页，点击「定时推送」创建定时报告。";

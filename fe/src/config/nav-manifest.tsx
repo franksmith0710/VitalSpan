@@ -124,17 +124,9 @@ export const NAV_MANIFEST: NavManifestSection[] = [
       {
         name: "报表中心",
         icon: <FileBarChart className="size-5" aria-hidden />,
-        subItems: [
-          { name: "报表中心", path: "/admin/reports/center", milestone: "M1", capability: "report:read" },
-          { name: "定时报告", path: "/admin/reports/schedules", milestone: "M11", capability: "report:manage" },
-          { name: "预制报表", path: "/admin/reports", milestone: "M1", capability: "report:read" },
-          {
-            name: "文档模板",
-            path: "/admin/reports/templates",
-            milestone: "M7",
-            capability: "report:manage",
-          },
-        ],
+        path: "/admin/reports/center",
+        milestone: "M1",
+        capability: "report:read",
       },
     ],
   },

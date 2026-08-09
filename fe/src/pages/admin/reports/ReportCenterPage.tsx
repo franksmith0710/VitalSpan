@@ -17,11 +17,10 @@ import { fetchAllCatalogNodes, fetchAllCatalogTemplates, filterCatalogTemplates 
 import { queryKeys } from "@/lib/queryKeys";
 import type { TemplateReadiness } from "@/lib/reportTemplateReadiness";
 import {
-  readPinnedPrefabKeys,
-  sortPrefabsByPin,
-  togglePinnedPrefabKey,
-  writePinnedPrefabKeys,
-} from "@/lib/reportCenterPrefs";
+  localizeCenterResourceType,
+  resolveCenterRecentHref,
+} from "@/lib/reportCenterNav";
+import { sortPrefabsByPin } from "@/lib/reportCenterPrefs";
 import {
   toggleFavorite,
   useReportCenterPreferenceMutations,
@@ -59,7 +58,6 @@ export function ReportCenterPage() {
   const caps = resolveEffectiveCapabilities(user);
   const [search, setSearch] = useState("");
   const [kindFilter, setKindFilter] = useState<TemplateKindFilter>("all");
-  const [pinnedPrefabs, setPinnedPrefabs] = useState<string[]>(() => readPinnedPrefabKeys());
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const centerPrefsQuery = useReportCenterPreferences();
   const { saveFavorites } = useReportCenterPreferenceMutations();
@@ -113,7 +111,7 @@ export function ReportCenterPage() {
         .map((f) => f.resourceId),
     [centerPrefsQuery.data],
   );
-  const effectivePinned = serverPinnedPrefabs.length > 0 ? serverPinnedPrefabs : pinnedPrefabs;
+  const effectivePinned = serverPinnedPrefabs;
   const recentViews = centerPrefsQuery.data?.recent ?? [];
   const filteredTemplates = useMemo(
     () => filterCatalogTemplates(templates, search, kindFilter),
@@ -143,8 +141,6 @@ export function ReportCenterPage() {
     }));
     const next = toggleFavorite(favorites, "prefab", key);
     const prefabIds = next.filter((f) => f.resourceType === "prefab").map((f) => f.resourceId);
-    setPinnedPrefabs(prefabIds);
-    writePinnedPrefabKeys(prefabIds);
     void saveFavorites.mutateAsync(next);
   };
 
@@ -213,9 +209,18 @@ export function ReportCenterPage() {
               <p className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">最近访问</p>
               <ul className="mt-3 space-y-2">
                 {recentViews.slice(0, 8).map((item) => (
-                  <li key={`${item.resourceType}-${item.resourceId}`} className="text-theme-xs text-gray-600 dark:text-gray-400">
-                    {item.resourceLabel || item.resourceId}
-                    <span className="ml-2 text-gray-400">{item.resourceType}</span>
+                  <li key={`${item.resourceType}-${item.resourceId}`}>
+                    <Link
+                      to={resolveCenterRecentHref(item)}
+                      className="flex flex-wrap items-baseline gap-2 rounded-lg px-2 py-1.5 text-theme-xs text-gray-700 transition-colors hover:bg-gray-50 hover:text-brand-600 dark:text-gray-300 dark:hover:bg-white/[0.04] dark:hover:text-brand-400"
+                    >
+                      <span className="font-medium text-gray-800 dark:text-white/90">
+                        {item.resourceLabel || item.resourceId}
+                      </span>
+                      <span className="text-gray-400">
+                        {localizeCenterResourceType(item.resourceType)}
+                      </span>
+                    </Link>
                   </li>
                 ))}
               </ul>
