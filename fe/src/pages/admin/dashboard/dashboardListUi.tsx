@@ -1,7 +1,8 @@
 import { LayoutGrid, LayoutList } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { DashboardSurfaceViewMode } from "@/lib/dashboardSurfaceListPrefs";
 
-export type DashboardSurfaceViewMode = "grid" | "list";
+export type { DashboardSurfaceViewMode };
 
 export function formatDashboardListUpdatedAt(value: string): string {
   const date = new Date(value);

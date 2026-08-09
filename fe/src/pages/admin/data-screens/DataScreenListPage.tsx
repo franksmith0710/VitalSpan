@@ -73,6 +73,10 @@ import {
   type DashboardSurfaceViewMode,
 } from "@/pages/admin/dashboard/dashboardListUi";
 import { DESTRUCTIVE_ALERT_ACTION_CLASS } from "@/components/layout/list-batch-delete";
+import {
+  readDashboardSurfaceListViewMode,
+  writeDashboardSurfaceListViewMode,
+} from "@/lib/dashboardSurfaceListPrefs";
 
 type DashboardListResponse = {
   items: DashboardListItem[];
@@ -101,7 +105,9 @@ export function DataScreenListPage() {
     : sessionUserFromMe({ username: "用户", roles: ["viewer"] });
   const canEdit = canEditDashboards(sessionUser);
   const canShare = canShareDashboards(sessionUser);
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [viewMode, setViewMode] = useState<ViewMode>(() =>
+    readDashboardSurfaceListViewMode("data-screen"),
+  );
   const [deleteTarget, setDeleteTarget] = useState<DashboardListItem | null>(null);
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [batchDeleting, setBatchDeleting] = useState(false);
@@ -323,7 +329,10 @@ export function DataScreenListPage() {
         <>
           <DashboardSurfaceViewModeToggle
             viewMode={viewMode}
-            onChange={setViewMode}
+            onChange={(mode) => {
+              setViewMode(mode);
+              writeDashboardSurfaceListViewMode("data-screen", mode);
+            }}
             ariaLabel="大屏视图切换"
           />
           {createButton}

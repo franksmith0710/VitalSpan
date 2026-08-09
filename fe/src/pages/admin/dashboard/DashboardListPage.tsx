@@ -61,6 +61,10 @@ import {
   type DashboardSurfaceViewMode,
 } from "./dashboardListUi";
 import { DESTRUCTIVE_ALERT_ACTION_CLASS } from "@/components/layout/list-batch-delete";
+import {
+  readDashboardSurfaceListViewMode,
+  writeDashboardSurfaceListViewMode,
+} from "@/lib/dashboardSurfaceListPrefs";
 
 type DashboardListResponse = {
   items: DashboardListItem[];
@@ -92,7 +96,9 @@ export function DashboardListPage() {
   const canEdit = canEditDashboards(sessionUser);
   const canShare = canShareDashboards(sessionUser);
 
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [viewMode, setViewMode] = useState<ViewMode>(() =>
+    readDashboardSurfaceListViewMode("dashboard"),
+  );
   const [deleteTarget, setDeleteTarget] = useState<DashboardListItem | null>(null);
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [batchDeleting, setBatchDeleting] = useState(false);
@@ -215,7 +221,13 @@ export function DashboardListPage() {
       }
       actions={
         <>
-          <DashboardSurfaceViewModeToggle viewMode={viewMode} onChange={setViewMode} />
+          <DashboardSurfaceViewModeToggle
+            viewMode={viewMode}
+            onChange={(mode) => {
+              setViewMode(mode);
+              writeDashboardSurfaceListViewMode("dashboard", mode);
+            }}
+          />
           {createButton}
         </>
       }
