@@ -22,6 +22,8 @@ import {
 type ChartPickerPopoverProps = {
   onInsert: (type: ChartType) => void;
   onInserted?: () => void;
+  /** 由父级托管目录 Drawer 时传入（避免 Dropdown 关闭导致 Drawer 卸载） */
+  onOpenCatalog?: () => void;
   onPaletteDragStart?: () => void;
   onPaletteDragEnd?: () => void;
   /** 选择态高亮（新建组件等场景） */
@@ -140,6 +142,7 @@ function SectionGrid({
 export function ChartPickerPopover({
   onInsert,
   onInserted,
+  onOpenCatalog,
   onPaletteDragStart,
   onPaletteDragEnd,
   selectedType,
@@ -266,14 +269,19 @@ export function ChartPickerPopover({
           <ChartExploreCatalogTrigger
             dense
             onOpen={() => {
+              if (onOpenCatalog) {
+                onOpenCatalog();
+                return;
+              }
               setCatalogOpen(true);
-              onInserted?.();
             }}
           />
         </div>
       </div>
     </div>
-    <ChartExploreDrawer open={catalogOpen} onOpenChange={setCatalogOpen} />
+    {!onOpenCatalog ? (
+      <ChartExploreDrawer open={catalogOpen} onOpenChange={setCatalogOpen} />
+    ) : null}
     </>
   );
 }

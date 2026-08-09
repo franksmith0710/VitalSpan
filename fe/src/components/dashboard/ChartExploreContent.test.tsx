@@ -97,7 +97,7 @@ describe("ChartExploreContent", () => {
   it("shows DE palette section count instead of legacy category count", async () => {
     renderContent();
     await screen.findByRole("heading", { name: "折线图" });
-    const stats = screen.getByText("渲染引擎").closest("div.flex.flex-wrap");
+    const stats = screen.getByText("注册渲染器").closest("div.flex.flex-wrap");
     expect(stats?.textContent).toMatch(/组件分区/);
     expect(stats?.textContent).toMatch(/3/);
     expect(stats?.textContent).not.toMatch(/分类/);

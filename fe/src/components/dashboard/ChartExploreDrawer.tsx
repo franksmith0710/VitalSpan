@@ -5,6 +5,8 @@ import {
   SheetContent,
   SheetDescription,
   SheetHeader,
+  SheetOverlay,
+  SheetPortal,
   SheetTitle,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -17,11 +19,14 @@ type ChartExploreDrawerProps = {
 export function ChartExploreDrawer({ open, onOpenChange }: ChartExploreDrawerProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="z-100000 flex w-full max-w-5xl flex-col gap-0 p-0 sm:max-w-5xl"
-        aria-describedby="chart-explore-drawer-desc"
-      >
+      <SheetPortal>
+        <SheetOverlay className="z-[100001]" />
+        <SheetContent
+          side="right"
+          showOverlay={false}
+          className="z-[100001] flex w-full max-w-5xl flex-col gap-0 p-0 sm:max-w-5xl"
+          aria-describedby="chart-explore-drawer-desc"
+        >
         <SheetHeader className="shrink-0 border-b border-gray-200 px-6 py-4 dark:border-gray-800">
           <SheetTitle>图表类型目录</SheetTitle>
           <SheetDescription id="chart-explore-drawer-desc">
@@ -32,6 +37,7 @@ export function ChartExploreDrawer({ open, onOpenChange }: ChartExploreDrawerPro
           <ChartExploreContent embedded />
         </div>
       </SheetContent>
+      </SheetPortal>
     </Sheet>
   );
 }

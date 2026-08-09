@@ -20,6 +20,10 @@ export type ChartTypeCatalogItem = {
   paletteCategory?: string;
   deprecated?: boolean;
   migratesTo?: string | null;
+  /** API 原始 renderer（契约登记，可能与运行时不同） */
+  catalogRenderer?: string;
+  /** API 原始 library（历史 AntV 分包登记，可能与运行时不同） */
+  catalogLibrary?: string;
 };
 
 let cache: ChartTypeCatalogItem[] | null = null;
@@ -83,6 +87,10 @@ export function enrichChartCatalogItems(items: ChartTypeCatalogItem[]): ChartTyp
       paletteCategory: item.paletteCategory || plugin?.paletteCategory || item.category,
       deprecated: item.deprecated ?? plugin?.deprecated,
       migratesTo: item.migratesTo ?? plugin?.migratesTo ?? null,
+      catalogRenderer: item.renderer,
+      catalogLibrary: item.library,
+      library: plugin?.library ?? item.library,
+      renderer: plugin?.renderer ?? item.renderer,
     };
   });
 }

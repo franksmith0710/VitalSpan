@@ -98,6 +98,11 @@ const VizComponentEditPage = lazy(() =>
     default: m.VizComponentEditPage,
   })),
 );
+const ChartTypesCatalogPage = lazy(() =>
+  import("@/pages/admin/charts/ChartTypesCatalogPage").then((m) => ({
+    default: m.ChartTypesCatalogPage,
+  })),
+);
 const DevChartsPage = lazy(() =>
   import("@/pages/dev/DevChartsPage").then((m) => ({ default: m.DevChartsPage })),
 );
@@ -214,11 +219,15 @@ export function AppRoutes() {
           <Route path="reports/schedules" element={<RequireCapabilityName capability="report:manage"><ReportSchedulesPage /></RequireCapabilityName>} />
           <Route
             path="charts/explore"
-            element={<Navigate to="/admin/dashboards" replace />}
+            element={<Navigate to="/admin/charts/types" replace />}
           />
           <Route
             path="charts/types"
-            element={<Navigate to="/admin/dashboards" replace />}
+            element={
+              <RequireCapabilityName capability="dashboard:read">
+                <Lazy><ChartTypesCatalogPage /></Lazy>
+              </RequireCapabilityName>
+            }
           />
           <Route
             path="designer"

@@ -23,6 +23,7 @@ import { INSPECTOR_SWITCH_SIZE } from "./inspectorCompact";
 import { cn } from "@/lib/utils";
 import type { PaletteInsertType } from "./createLayoutWidget";
 import { ChartPickerPopover } from "./ChartPickerPopover";
+import { ChartExploreDrawer } from "./ChartExploreDrawer";
 import { QueryComponentPicker } from "./QueryComponentPicker";
 import { ScreenMaterialPicker } from "./screen/ScreenMaterialPicker";
 import { ScreenMorePicker } from "./screen/ScreenMorePicker";
@@ -89,6 +90,7 @@ export function CanvasEditToolbar({
   onAuxiliaryGridChange,
 }: CanvasEditToolbarProps) {
   const [chartOpen, setChartOpen] = useState(false);
+  const [chartCatalogOpen, setChartCatalogOpen] = useState(false);
   const [queryOpen, setQueryOpen] = useState(false);
   const [materialOpen, setMaterialOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -125,11 +127,16 @@ export function CanvasEditToolbar({
           <ChartPickerPopover
             onInsert={onInsert}
             onInserted={() => setChartOpen(false)}
+            onOpenCatalog={() => {
+              setChartOpen(false);
+              setChartCatalogOpen(true);
+            }}
             onPaletteDragStart={chartDragLock.onDragStart}
             onPaletteDragEnd={chartDragLock.onDragEnd}
           />
         </DropdownMenuContent>
       </DropdownMenu>
+      <ChartExploreDrawer open={chartCatalogOpen} onOpenChange={setChartCatalogOpen} />
 
       <DropdownMenu open={queryOpen} onOpenChange={setQueryOpen} modal={false}>
         <DropdownMenuTrigger asChild>

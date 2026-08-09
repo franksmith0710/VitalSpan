@@ -98,8 +98,10 @@ export function ChartExploreContent({ embedded: _embedded = false }: ChartExplor
     }
   }, [filtered, selectedType]);
 
-  const rendererKinds = new Set(items.map((chart) => chart.renderer)).size;
-  const libraryKinds = new Set(items.map((chart) => chart.library).filter(Boolean)).size;
+  const runtimeEngineKinds = new Set(items.map((chart) => chart.library).filter(Boolean)).size;
+  const catalogRendererKinds = new Set(
+    items.map((chart) => chart.catalogRenderer ?? chart.renderer).filter(Boolean),
+  ).size;
   const maxStyleVariants = items.length
     ? Math.max(...items.map((chart) => chart.styleVariants.length))
     : 0;
@@ -175,8 +177,8 @@ export function ChartExploreContent({ embedded: _embedded = false }: ChartExplor
               <div className="flex flex-wrap items-center gap-4 rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-2 dark:border-gray-800 dark:bg-white/[0.02]">
                 <CatalogMetric label="图表类型" value={items.length} />
                 <CatalogMetric label="组件分区" value={sections.length} />
-                <CatalogMetric label="渲染引擎" value={rendererKinds} />
-                <CatalogMetric label="图表库" value={libraryKinds} />
+                <CatalogMetric label="运行时引擎" value={runtimeEngineKinds} />
+                <CatalogMetric label="注册渲染器" value={catalogRendererKinds} />
                 <CatalogMetric label="样式变体（最多）" value={maxStyleVariants} />
               </div>
             )

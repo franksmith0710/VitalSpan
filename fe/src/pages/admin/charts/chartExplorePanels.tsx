@@ -14,14 +14,14 @@ import { paletteCategoryLabel } from "@/lib/chartPaletteTaxonomy";
 import {
   CHART_CAPABILITY_LABELS,
   CHART_CATEGORY_LABELS,
-  CHART_RENDERER_LABELS,
+  chartLibraryLabel,
+  chartRendererLabel,
   chartTypeIcon,
 } from "@/lib/chartTypeCatalogDisplay";
 import { cn } from "@/lib/utils";
 import type { ChartTypeCatalogEntry } from "./chartExploreTypes";
 
 const CATEGORY_LABELS = CHART_CATEGORY_LABELS;
-const RENDERER_LABELS = CHART_RENDERER_LABELS;
 const CAPABILITY_LABELS = CHART_CAPABILITY_LABELS;
 
 export function formatFieldSlotCount(min: number, max: number): string {
@@ -97,13 +97,8 @@ export function ChartTypeDetail({ chart }: { chart: ChartTypeCatalogEntry }) {
                 {paletteLabel}
               </Badge>
               <Badge variant="light" color="light" size="sm">
-                {RENDERER_LABELS[chart.renderer] ?? chart.renderer}
+                {chartLibraryLabel(chart.library)}
               </Badge>
-              {chart.library ? (
-                <Badge variant="light" color="light" size="sm">
-                  {chart.library}
-                </Badge>
-              ) : null}
               {chart.deprecated ? (
                 <Badge variant="light" color="warning" size="sm">
                   已弃用
@@ -139,11 +134,26 @@ export function ChartTypeDetail({ chart }: { chart: ChartTypeCatalogEntry }) {
             </dd>
           </div>
           <div>
+            <dt className="text-theme-xs text-gray-500 dark:text-gray-400">运行时引擎</dt>
+            <dd className="mt-1 text-theme-sm font-medium text-gray-800 dark:text-white/90">
+              {chartLibraryLabel(chart.library)}
+            </dd>
+          </div>
+          <div>
             <dt className="text-theme-xs text-gray-500 dark:text-gray-400">注册分类</dt>
             <dd className="mt-1 text-theme-sm font-medium text-gray-800 dark:text-white/90">
               {CATEGORY_LABELS[chart.category] ?? chart.category}
             </dd>
           </div>
+          {chart.catalogRenderer || chart.catalogLibrary ? (
+            <div className="sm:col-span-2">
+              <dt className="text-theme-xs text-gray-500 dark:text-gray-400">API 契约登记</dt>
+              <dd className="mt-1 text-theme-sm text-gray-600 dark:text-gray-400">
+                {chartRendererLabel(chart.catalogRenderer ?? chart.renderer)}
+                {chart.catalogLibrary ? ` · ${chart.catalogLibrary}` : ""}
+              </dd>
+            </div>
+          ) : null}
           {chart.fieldRule.note ? (
             <div className="sm:col-span-2">
               <dt className="text-theme-xs text-gray-500 dark:text-gray-400">字段说明</dt>
@@ -223,7 +233,7 @@ export function CatalogListItem({
           {chart.displayName}
         </p>
         <p className="truncate text-theme-xs text-gray-500 dark:text-gray-400">
-          {RENDERER_LABELS[chart.renderer] ?? chart.renderer}
+          {chartLibraryLabel(chart.library)}
         </p>
       </div>
     </button>

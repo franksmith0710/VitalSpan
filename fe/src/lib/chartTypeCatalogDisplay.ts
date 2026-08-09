@@ -23,12 +23,29 @@ export const CHART_CATEGORY_ORDER: readonly string[] = [
   "advanced",
 ] as const;
 
+/** 后端 catalog `renderer` 契约字段（非运行时 SDK 名） */
 export const CHART_RENDERER_LABELS: Record<string, string> = {
-  table: "表格引擎",
-  antv: "AntV",
+  table: "表格",
+  antv: "画布",
   kpi: "KPI 卡",
   echarts: "ECharts（已迁移）",
 };
+
+/** FE 插件 `library` — 实际运行时引擎 */
+export const CHART_LIBRARY_LABELS: Record<string, string> = {
+  d3: "D3",
+  react: "React",
+};
+
+export function chartLibraryLabel(library?: string | null): string {
+  if (!library) return "—";
+  return CHART_LIBRARY_LABELS[library] ?? library;
+}
+
+export function chartRendererLabel(renderer?: string | null): string {
+  if (!renderer) return "—";
+  return CHART_RENDERER_LABELS[renderer] ?? renderer;
+}
 
 export const CHART_CAPABILITY_LABELS: Record<string, string> = {
   style_variant: "样式变体",

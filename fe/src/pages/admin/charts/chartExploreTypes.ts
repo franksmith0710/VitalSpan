@@ -9,6 +9,8 @@ export type ChartTypeCatalogEntry = {
   capabilities: string[];
   deprecated?: boolean;
   migratesTo?: string | null;
+  catalogRenderer?: string;
+  catalogLibrary?: string;
   fieldRule: {
     minDimensions: number;
     maxDimensions: number;
