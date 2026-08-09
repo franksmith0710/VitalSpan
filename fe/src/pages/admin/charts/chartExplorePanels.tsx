@@ -10,6 +10,7 @@ import {
   smokeCaseToViewModel,
 } from "@/components/charts/chartCatalogSmokeFixtures";
 import { resolveChartColors } from "@/lib/chartPalette";
+import { paletteCategoryLabel } from "@/lib/chartPaletteTaxonomy";
 import {
   CHART_CAPABILITY_LABELS,
   CHART_CATEGORY_LABELS,
@@ -22,6 +23,12 @@ import type { ChartTypeCatalogEntry } from "./chartExploreTypes";
 const CATEGORY_LABELS = CHART_CATEGORY_LABELS;
 const RENDERER_LABELS = CHART_RENDERER_LABELS;
 const CAPABILITY_LABELS = CHART_CAPABILITY_LABELS;
+
+export function formatFieldSlotCount(min: number, max: number): string {
+  if (min === 0 && max === 0) return "无";
+  if (min === max) return `${min} 个`;
+  return `${min}–${max} 个`;
+}
 
 export function ChartExplorePreview({ chartType }: { chartType: string }) {
   const pluginDemo = getChartPluginPackage(chartType)?.demo;
@@ -72,6 +79,8 @@ export function CatalogMetric({ label, value }: { label: string; value: number }
 
 export function ChartTypeDetail({ chart }: { chart: ChartTypeCatalogEntry }) {
   const Icon = chartTypeIcon(chart.type);
+  const paletteLabel = paletteCategoryLabel(chart.paletteCategory ?? chart.category);
+
   return (
     <div className="flex min-h-0 flex-col">
       <div className="shrink-0 border-b border-gray-100 px-5 py-5 dark:border-white/[0.06] sm:px-6">
@@ -85,14 +94,25 @@ export function ChartTypeDetail({ chart }: { chart: ChartTypeCatalogEntry }) {
                 {chart.displayName}
               </h2>
               <Badge variant="light" color="primary" size="sm">
-                {CATEGORY_LABELS[chart.category] ?? chart.category}
+                {paletteLabel}
               </Badge>
               <Badge variant="light" color="light" size="sm">
                 {RENDERER_LABELS[chart.renderer] ?? chart.renderer}
               </Badge>
+              {chart.library ? (
+                <Badge variant="light" color="light" size="sm">
+                  {chart.library}
+                </Badge>
+              ) : null}
+              {chart.deprecated ? (
+                <Badge variant="light" color="warning" size="sm">
+                  已弃用
+                </Badge>
+              ) : null}
             </div>
             <p className="mt-1 font-mono text-theme-xs text-gray-500 dark:text-gray-400">
               {chart.type}
+              {chart.migratesTo ? ` → ${chart.migratesTo}` : ""}
             </p>
           </div>
         </div>
@@ -109,13 +129,19 @@ export function ChartTypeDetail({ chart }: { chart: ChartTypeCatalogEntry }) {
           <div>
             <dt className="text-theme-xs text-gray-500 dark:text-gray-400">维度字段</dt>
             <dd className="mt-1 text-theme-sm font-medium text-gray-800 dark:text-white/90">
-              {chart.fieldRule.minDimensions}–{chart.fieldRule.maxDimensions} 个
+              {formatFieldSlotCount(chart.fieldRule.minDimensions, chart.fieldRule.maxDimensions)}
             </dd>
           </div>
           <div>
             <dt className="text-theme-xs text-gray-500 dark:text-gray-400">指标字段</dt>
             <dd className="mt-1 text-theme-sm font-medium text-gray-800 dark:text-white/90">
-              {chart.fieldRule.minMetrics}–{chart.fieldRule.maxMetrics} 个
+              {formatFieldSlotCount(chart.fieldRule.minMetrics, chart.fieldRule.maxMetrics)}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-theme-xs text-gray-500 dark:text-gray-400">注册分类</dt>
+            <dd className="mt-1 text-theme-sm font-medium text-gray-800 dark:text-white/90">
+              {CATEGORY_LABELS[chart.category] ?? chart.category}
             </dd>
           </div>
           {chart.fieldRule.note ? (
@@ -201,5 +227,53 @@ export function CatalogListItem({
         </p>
       </div>
     </button>
+  );
+}
+
+export function CatalogSectionNav({
+  sections,
+  activeSectionId,
+  onSelect,
+}: {
+  sections: Array<{ id: string; label: string }>;
+  activeSectionId: string;
+  onSelect: (sectionId: string) => void;
+}) {
+  return (
+    <nav
+      className="flex w-[92px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-gray-100 py-2 pr-1 dark:border-white/[0.06]"
+      aria-label="图表组件分区"
+    >
+      <button
+        type="button"
+        onClick={() => onSelect("__all__")}
+        className={cn(
+          "rounded-md px-2 py-2 text-left text-[11px] leading-snug transition-colors",
+          activeSectionId === "__all__"
+            ? "bg-brand-50 font-semibold text-brand-600 dark:bg-brand-500/15 dark:text-brand-400"
+            : "text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5",
+        )}
+      >
+        全部
+      </button>
+      {sections.map((section) => {
+        const active = section.id === activeSectionId;
+        return (
+          <button
+            key={section.id}
+            type="button"
+            onClick={() => onSelect(section.id)}
+            className={cn(
+              "rounded-md px-2 py-2 text-left text-[11px] leading-snug transition-colors",
+              active
+                ? "bg-brand-50 font-semibold text-brand-600 dark:bg-brand-500/15 dark:text-brand-400"
+                : "text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5",
+            )}
+          >
+            {section.label}
+          </button>
+        );
+      })}
+    </nav>
   );
 }

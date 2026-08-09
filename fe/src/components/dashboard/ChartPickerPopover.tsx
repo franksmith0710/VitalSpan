@@ -263,7 +263,13 @@ export function ChartPickerPopover({
           ))}
         </div>
         <div className="mt-4 border-t border-gray-200 pt-2 dark:border-gray-800">
-          <ChartExploreCatalogTrigger dense onOpen={() => setCatalogOpen(true)} />
+          <ChartExploreCatalogTrigger
+            dense
+            onOpen={() => {
+              setCatalogOpen(true);
+              onInserted?.();
+            }}
+          />
         </div>
       </div>
     </div>

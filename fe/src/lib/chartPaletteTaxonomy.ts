@@ -83,3 +83,9 @@ export function buildPluginCatalogFallback(): ChartTypeCatalogItem[] {
       fieldRule: {},
     }));
 }
+
+/** paletteCategory → 中文分区名（与 Picker 侧栏一致） */
+export function paletteCategoryLabel(categoryId: string): string {
+  const found = DE_PALETTE_CATEGORY_SECTIONS.find((section) => section.id === categoryId);
+  return found?.label ?? categoryId;
+}

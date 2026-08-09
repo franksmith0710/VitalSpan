@@ -64,8 +64,7 @@ export function ListEmptyPreviewBackdrop({
           <GhostTableRows rows={rows} />
         )}
       </div>
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_50%_35%,rgba(255,255,255,0.05)_0%,rgba(255,255,255,0.55)_52%,rgba(255,255,255,0.92)_100%)] dark:bg-[radial-gradient(ellipse_90%_70%_at_50%_35%,rgba(3,7,18,0.05)_0%,rgba(3,7,18,0.55)_52%,rgba(3,7,18,0.94)_100%)]" />
-      <div className="absolute inset-x-0 bottom-0 h-[58%] bg-gradient-to-t from-white via-white/85 to-transparent dark:from-gray-950 dark:via-gray-950/85 dark:to-transparent" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_65%_at_50%_50%,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0.52)_48%,rgba(255,255,255,0.9)_100%)] dark:bg-[radial-gradient(ellipse_80%_65%_at_50%_50%,rgba(3,7,18,0.06)_0%,rgba(3,7,18,0.52)_48%,rgba(3,7,18,0.94)_100%)]" />
     </div>
   );
 }

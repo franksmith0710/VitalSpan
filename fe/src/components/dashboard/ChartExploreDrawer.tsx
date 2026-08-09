@@ -19,7 +19,7 @@ export function ChartExploreDrawer({ open, onOpenChange }: ChartExploreDrawerPro
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="flex w-full max-w-5xl flex-col gap-0 p-0 sm:max-w-5xl"
+        className="z-100000 flex w-full max-w-5xl flex-col gap-0 p-0 sm:max-w-5xl"
         aria-describedby="chart-explore-drawer-desc"
       >
         <SheetHeader className="shrink-0 border-b border-gray-200 px-6 py-4 dark:border-gray-800">

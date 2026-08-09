@@ -15,7 +15,7 @@
 | Alert | `ui/alert.tsx` | 字段级/区块提示 |
 | Skeleton | `ui/skeleton.tsx` | 加载占位 |
 | PanelEmptyState | `ui/panel-empty-state.tsx` | 面板空态；`ListGhostEmptyState` 模糊虚拟数据列表空态、`PanelEmptyStateSteps` 引导步骤 |
-| ListEmptyPreview | `ui/list-empty-preview.tsx` · `list-empty-preview-dashboard.tsx` · `list-empty-preview-data-screen.tsx` | 列表空态背景与 `ListEmptyHeroPanel` 玻璃态 CTA 条 |
+| ListEmptyPreview | `ui/list-empty-preview.tsx` · `list-empty-preview-dashboard.tsx` · `list-empty-preview-data-screen.tsx` | 列表空态背景与居中 `ListEmptyHeroPanel` 玻璃态 CTA |
 | Select | `ui/select.tsx` | 下拉选择（Radix） |
 | DropdownMenu | `ui/dropdown-menu.tsx` | 下拉菜单（Radix） |
 | Avatar | `ui/avatar.tsx` | 用户头像 |

@@ -171,7 +171,7 @@ export type ListGhostEmptyStateProps = {
   className?: string;
 };
 
-/** 列表卡片内的空态：模糊虚拟数据背景 + 底部玻璃态 CTA。 */
+/** 列表卡片内的空态：模糊虚拟数据背景 + 居中玻璃态 CTA。 */
 export function ListGhostEmptyState({
   icon,
   title,
@@ -203,7 +203,7 @@ export function ListGhostEmptyState({
     >
       <ListEmptyPreviewBackdrop layout={layout} rows={rows} />
 
-      <div className={cn("relative flex h-full flex-col justify-end", padClass, heightClass)}>
+      <div className={cn("relative flex h-full flex-col items-center justify-center", padClass, heightClass)}>
         <ListEmptyHeroPanel
           icon={icon}
           title={title}
