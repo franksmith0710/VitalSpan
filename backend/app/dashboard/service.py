@@ -35,15 +35,25 @@ class DashboardError(Exception):
         super().__init__(message)
 
 
-def assert_dashboard_access(actor: UserContext, created_by: uuid.UUID | None) -> None:
-    """Minimal ownership ACL: admin bypass; otherwise actor must own the dashboard."""
-    if "admin" in actor.roles:
-        return
-    try:
-        actor_uuid = uuid.UUID(actor.id)
-    except ValueError as exc:
-        raise DashboardError("DASH_FORBIDDEN", "Access denied", 403) from exc
-    if created_by is None or created_by != actor_uuid:
+def assert_dashboard_access(
+    db: Session,
+    actor: UserContext,
+    dashboard_id: uuid.UUID,
+    created_by: uuid.UUID | None,
+    *,
+    slug: str | None = None,
+) -> None:
+    """ACL: admin bypass; owner, official demo slug, or resource grant."""
+    from app.dashboard import acl
+
+    if not acl.can_access(
+        db,
+        actor,
+        dashboard_id,
+        created_by,
+        official_slugs=_official_demo_slugs(),
+        slug=slug,
+    ):
         raise DashboardError("DASH_FORBIDDEN", "Access denied", 403)
 
 
@@ -184,17 +194,21 @@ def list_dashboards(
 ) -> DashboardListResponse:
     base = select(Dashboard).where(Dashboard.deleted_at.is_(None))
     if actor is not None and "admin" not in actor.roles:
+        from app.dashboard import acl
+
         try:
             actor_uuid = uuid.UUID(actor.id)
         except ValueError:
             return DashboardListResponse(items=[], total=0, limit=limit, offset=offset)
         official_slugs = _official_demo_slugs()
-        base = base.where(
-            or_(
-                Dashboard.created_by == actor_uuid,
-                Dashboard.slug.in_(official_slugs),
-            ),
-        )
+        clauses = [
+            Dashboard.created_by == actor_uuid,
+            Dashboard.slug.in_(official_slugs),
+        ]
+        granted_ids = acl.list_granted_ids(db, actor.roles)
+        if granted_ids:
+            clauses.append(Dashboard.id.in_(granted_ids))
+        base = base.where(or_(*clauses))
     if surface_kind == "data-screen":
         base = base.where(Dashboard.surface_kind == "data-screen")
     elif surface_kind == "dashboard":
@@ -350,7 +364,7 @@ def save_editor_state(
     from app.dashboard.global_filters import service as global_filter_service
 
     existing = get_dashboard(db, dashboard_id)
-    assert_dashboard_access(actor, existing.created_by)
+    assert_dashboard_access(db, actor, dashboard_id, existing.created_by, slug=existing.slug)
     try:
         dash_out = update_layout(db, dashboard_id, layout_json, auto_commit=False)
         if name is not None:
@@ -415,7 +429,7 @@ def get_dashboard_thumbnail(
     row = db.scalar(_active(select(Dashboard).where(Dashboard.id == dashboard_id)))
     if row is None:
         raise DashboardError("DASH_NOT_FOUND", "Dashboard not found", 404)
-    assert_dashboard_access(actor, row.created_by)
+    assert_dashboard_access(db, actor, dashboard_id, row.created_by, slug=row.slug)
     if not row.thumbnail_ref:
         raise DashboardError("DASH_THUMBNAIL_NOT_FOUND", "Thumbnail not found", 404)
     try:

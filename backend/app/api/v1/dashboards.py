@@ -341,7 +341,7 @@ def get_dashboard(
 ):
     try:
         out = dash_service.get_dashboard(db, dashboard_id)
-        dash_service.assert_dashboard_access(user, out.created_by)
+        dash_service.assert_dashboard_access(db, user, dashboard_id, out.created_by, slug=out.slug)
         return out
     except dash_service.DashboardError as exc:
         return _error_response(exc)
@@ -356,7 +356,9 @@ def update_dashboard(
 ):
     try:
         existing = dash_service.get_dashboard(db, dashboard_id)
-        dash_service.assert_dashboard_access(user, existing.created_by)
+        dash_service.assert_dashboard_access(
+            db, user, dashboard_id, existing.created_by, slug=existing.slug,
+        )
         return dash_service.update_dashboard(db, dashboard_id, payload)
     except dash_service.DashboardError as exc:
         return _error_response(exc)
@@ -370,7 +372,9 @@ def delete_dashboard(
 ):
     try:
         existing = dash_service.get_dashboard(db, dashboard_id)
-        dash_service.assert_dashboard_access(user, existing.created_by)
+        dash_service.assert_dashboard_access(
+            db, user, dashboard_id, existing.created_by, slug=existing.slug,
+        )
         dash_service.delete_dashboard(db, dashboard_id)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except dash_service.DashboardError as exc:
@@ -386,7 +390,9 @@ def update_layout(
 ):
     try:
         existing = dash_service.get_dashboard(db, dashboard_id)
-        dash_service.assert_dashboard_access(user, existing.created_by)
+        dash_service.assert_dashboard_access(
+            db, user, dashboard_id, existing.created_by, slug=existing.slug,
+        )
         return dash_service.update_layout(db, dashboard_id, payload.layout_json)
     except dash_service.DashboardError as exc:
         return _error_response(exc)
@@ -425,7 +431,9 @@ async def upload_dashboard_thumbnail(
 ):
     try:
         existing = dash_service.get_dashboard(db, dashboard_id)
-        dash_service.assert_dashboard_access(user, existing.created_by)
+        dash_service.assert_dashboard_access(
+            db, user, dashboard_id, existing.created_by, slug=existing.slug,
+        )
         content = await request.body()
         content_type = request.headers.get("content-type", "application/octet-stream")
         return dash_service.save_dashboard_thumbnail(db, dashboard_id, content, content_type)

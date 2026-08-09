@@ -207,7 +207,13 @@ def _resolve_layout_from_create(
         return layout
     if payload.source_dashboard_id is not None:
         dash = dash_service.get_dashboard(db, payload.source_dashboard_id)
-        dash_service.assert_dashboard_access(actor, dash.created_by)
+        dash_service.assert_dashboard_access(
+            db,
+            actor,
+            dash.id,
+            dash.created_by,
+            slug=dash.slug,
+        )
         layout = sanitize_layout_for_template(dash.layout_json.model_dump(by_alias=True, mode="json"))
         dash_service.validate_layout(layout)
         return layout
