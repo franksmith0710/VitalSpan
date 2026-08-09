@@ -4,8 +4,8 @@
 > **维护**：架构或路由分层变更时同步本文件（见 `.cursor/rules/prd-sync.mdc` 文档同步总表）。
 
 ```yaml
-version: 1.0.0
-last_updated: 2026-07-31
+version: 1.0.1
+last_updated: 2026-08-09
 status: bootstrap
 srs_ref: docs/srs/全生命周期系统需求规格说明书.md
 prd_ref: docs/automate/prd.md
@@ -83,6 +83,8 @@ flowchart TB
 | ADR-14 | **组织组件库 `componentRef` 引用模式** | 单 widget 级复用；layout 仅存引用，payload 在 `viz_components`；保存时剥离内联配置 | 已定 |
 | ADR-15 | **designer / gov query-design 双 API 收敛策略** | 短期保持双路由；中期抽取 `designer/translator` 公共模块；gov 委托 validate/preview | 已定 |
 | ADR-18 | **看板定时 PDF 可视化导出（Playwright）** | G5 交付：BE 无头 Chromium 打开 FE `/export/*?token=` → `page.pdf()`；`artifactKind=visual_snapshot`；Playwright 为 optional 运行时依赖，非 Superset/DE 运行时 | 已定 |
+| ADR-19 | **报表调度持久化与多通道投递** | `report_schedules` 等 ORM（rev 0032）；`RPT_SCHEDULE_STORE` 默认 db；email/wecom/dingtalk 投递 | 已定 |
+| ADR-20 | **报表元数据持久化与真导出** | catalog/extension/prefab/templates ORM（rev 0034）；RenderSpec 真 PDF/Excel/Word | 已定 |
 
 ### ADR-15 · 查询设计器内核收敛（DESIGN-001 F-D）
 
@@ -201,7 +203,9 @@ VitalSpan/
 ├── fe/                      # React 单应用前端（M1 Admin 壳层已实现）
 ├── docs/
 │   ├── arch.md              # 本文件
-│   ├── api/                 # OpenAPI 端点索引
+│   ├── api/                 # OpenAPI 端点索引 + 域可消费附录（auth/datasources/query）
+│   ├── data/                # Alembic revision → 域表导航（head 0041）
+│   ├── service/             # 后端运维：健康探针、配置、启动
 │   ├── services/            # 域服务附录（随实现补充）
 │   ├── srs/                 # 需求权威（SRS + 附录）
 │   ├── automate/            # 演化文档 goal/prd/plan
@@ -231,7 +235,7 @@ backend/
 │   ├── governance/     # M8 catalog, workflow, publish, bus
 │   ├── ingestion/      # FR-DATA/FR-ETL：同步、清洗、调度（M1B）
 │   └── designer/       # M2 四期
-├── migrations/         # Alembic
+├── migrations/         # Alembic（当前 head **0041**，见 docs/data/README.md）
 └── pyproject.toml      # （待建）依赖与工具配置
 ```
 
@@ -465,6 +469,15 @@ pnpm dev            # 默认 :5173
 一期冒烟（P1-SMOKE）：MySQL/PG 建源 → SQL → Dashboard 出数 + 越权失败。  
 三期冒烟（P3-SMOKE）：TimescaleDB `sample-timescaledb:5434` 建源 → hypertable 元数据浏览 → 图表出数。
 
+### 9.4 健康检查与探针
+
+| 路径 | 鉴权 | 说明 |
+|------|------|------|
+| `GET /health` | 免鉴权 | 进程存活；返回 `{"status":"ok"}` |
+| `GET /sample-api/health` | 样例 API 配置 | REST 连接器联调（见 `integration.md`） |
+
+**无独立 readiness 端点**：`/health` 不探测元库连通性。编排建议 liveness 用 `/health`；readiness 另做迁移门禁 + 带 token 冒烟（详见 [service/backend.md](service/backend.md)）。
+
 ---
 
 ## 10. 文档索引
@@ -478,6 +491,9 @@ pnpm dev            # 默认 :5173
 | [automate/plan.archive.md](automate/plan.archive.md) | 里程碑 M1–M13 |
 | [automate/plan.md](automate/plan.md) | 活跃里程碑（当前 **P1–P3**；节 **M-FE-1**） |
 | [api/README.md](api/README.md) | API 端点一行索引 |
+| [api/auth.md](api/auth.md) · [datasources.md](api/datasources.md) · [query.md](api/query.md) | 联调可消费附录（Postman/网关） |
+| [data/README.md](data/README.md) | 平台元库 Alembic head 与域 ↔ 表 |
+| [service/backend.md](service/backend.md) | 后端运维：配置、健康、本地启动 |
 | [services/README.md](services/README.md) | 域服务附录（随实现补充） |
 | [ui/layout.md](ui/layout.md) | 壳层与信息架构（单应用 + Embed） |
 | [ui/map-texture.md](ui/map-texture.md) | 3D 地图离线 hillshade 纹理管线（`map-3d`） |
@@ -506,6 +522,7 @@ pnpm dev            # 默认 :5173
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.0.3 | 2026-08-09 | ADR-19/20 入 §2 摘要表；§9.4 健康探针；登记 `docs/data` · `docs/service` · API 可消费附录 |
 | 1.0.2 | 2026-07-03 | FR-DATA/FR-ETL 纳入 M1B；增 ingestion 域与 ANALYTICS_DATABASE_URL |
 | 1.0.3 | 2026-07-03 | ADR-11 单应用 + RBAC；架构图 WebApp + Embed；废止双 URL 双端 |
 | 1.0.4 | 2026-07-17 | §9 compose 六服务；§6.2 双查询路径（直连 + Dataset）；Dataset 已落地说明 |

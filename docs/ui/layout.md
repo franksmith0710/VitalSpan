@@ -4,8 +4,8 @@
 > **行为需求**：Dashboard/权限/嵌入能力见 [PRD](../automate/prd.md)；HTTP 路由见 [api/README.md](../api/README.md)。
 
 ```yaml
-version: 1.3.4
-last_updated: 2026-08-07
+version: 1.3.5
+last_updated: 2026-08-09
 frontend_root: fe/
 design_system: .agents/skills/b-design-system-tailadmin-radix
 layout_pattern_ref: references/layout-patterns/app-shell.md
@@ -80,7 +80,7 @@ fe/src/layouts/AdminLayout.tsx      # AppLayout + RBAC 导航（M1 已落地）
 fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 ```
 
-**默认落地**（登录后）：有 `dashboard:edit` 等建设权限 → 运营总览或 Dashboard 列表；仅消费权限 → 重定向至角色默认 Dashboard（FR-VIEW-3）`/admin/dashboards/:id`（view）。
+**默认落地**（登录后）：`/admin` index 重定向至 `/admin/dashboards`；有建设权限可走运营总览或 Dashboard 列表；仅消费权限 → 角色默认 Dashboard（FR-VIEW-3）。
 
 **空态**：平台出厂无预装 Dashboard → ContentState「联系管理员配置数据源与仪表板」。
 
@@ -95,13 +95,20 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 ├── /login                          # 认证（壳层外）
 ├── /                                # 运营总览（可选）或按角色重定向至默认 Dashboard
 │
-├── 数据                            # 建设权限（RBAC）
+├── 数据准备                        # 建设权限（RBAC）；侧栏标题见 nav-manifest「数据准备」
 │   ├── /datasources                 # 连接管理 · crud-flow
 │   ├── /datasources/new             # 新建 · form-flow（含类型选型向导）
 │   ├── /datasources/:id             # 详情/连通性/schema · detail-page
-│   ├── /ingestion/sync-jobs         # 同步任务（侧栏挂在「数据连接」下，非一级项）
-│   ├── /datasets                    # 数据集（对标 DataEase；侧栏一级，M13）
-│   ├── /metadata                    # 语义层元数据（**已移出侧栏**；路由保留，深链可达）
+│   ├── /datasources/:id/edit        # 编辑连接 · form-flow
+│   ├── /ingestion/sync-jobs         # 同步任务（挂在「数据连接」下）
+│   ├── /ingestion/sync-jobs/new     # 新建同步任务
+│   ├── /ingestion/sync-jobs/:id/edit
+│   ├── /ingestion/sync-jobs/:id/history
+│   ├── /ingestion/sync-jobs/:id/etl-rules
+│   ├── /datasets                    # 数据集（侧栏一级，M13）
+│   ├── /datasets/new · /datasets/:id/edit
+│   ├── /metadata                    # 语义层元数据（**已移出侧栏**；深链可达）
+│   ├── /metadata/glossary           # 术语深链（同 MetadataHub）
 │   │
 │   > **实体与主题**（`/entities/overview`、`/themes/:id`）**已移出侧栏**；路由与能力保留，深链可达。
 │
@@ -136,6 +143,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │   # /account/preferences、/account/settings 重定向至 landing（兼容旧链接）
 │
 ├── 后台管理                        # 用户菜单进入（admin · `system:*`）
+│   ├── /system                      # 配置向导（SystemAdminHomePage）
 │   ├── /system/roles                # AUTH · crud-flow（含维度分组绑定入口见 RLS）
 │   ├── /system/users                # AUTH
 │   ├── /system/orgs                 # AUTH
@@ -157,7 +165,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 |------|--------|----------|--------|------|---------|
 | 分析 | 仪表板、数据大屏、可视化模板 | — | M1/M5 | admin/analyst/viewer | **展开**（主路径） |
 | 报表 | 报表中心（含「全部报表」hub；analyst/viewer 见全部报表+预制；admin 另含模板/调度） | `report:read` / `report:manage` | M1/M7/M11 | 全员 | **展开** |
-| 数据 | 数据连接（连接管理/同步任务）、**数据集** | `datasource:*` / `dataset:*` | M1/M13 | admin | **展开** |
+| 数据准备 | 数据连接（连接管理/同步任务）、**数据集** | `datasource:*` / `dataset:*` | M1/M13 | admin | **展开** |
 | 治理 | 治理流程、查询服务、查询设计器 | `governance:*` | M1/M13 | admin | **H1 固定隐藏**（测试专用 `govNavEnabled`） |
 | 我的 | 个人资料、偏好、安全 | — | — | 全员 | 头像菜单进入 |
 | 后台管理 | 权限与安全 / 组织 / 审计 | `system:*` | M1 | admin | 头像菜单进入 |
@@ -166,6 +174,18 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 > **已移出侧栏（路由保留）**：图表类型目录、实体总览、主题分析、独立「数据接入」一级项、**语义层元数据**（`/admin/metadata`；术语/主题/维度字典能力保留，对标 DataEase 不在顶栏单独暴露）。  
 > **生产不注册**：`/embed/sdk-demo` 仅 `import.meta.env.DEV`。  
 > **nav 单一真理源**：主 IA `fe/src/config/nav-manifest.tsx`；个人中心 `account-nav.tsx`、后台管理 `system-admin-nav.tsx`；派生：`fe/src/lib/resolve-nav.ts`。
+
+### 二级路由与导出（未上侧栏，路由保留）
+
+| 前缀 | 代表路径 | 说明 |
+|------|----------|------|
+| `/export/*` | `/export/dashboard/:id` · `/export/data-screen/:id` | 无头导出快照（chromeless） |
+| `/admin/ingestion/sync-jobs/*` | `new` · `:id/edit` · `history` · `etl-rules` | 同步任务子流程 |
+| `/admin/datasets/*` | `new` · `:id/edit` | 数据集表单 |
+| `/admin/datasources/:id/edit` | — | 连接编辑 |
+| `/admin/metadata/glossary` | — | 术语 Hub 深链 |
+| `/admin/entities/overview` | — | 实体总览（**已移出侧栏**） |
+| `/admin/themes/:dashboardId` | — | 主题分析（**已移出侧栏**） |
 ---
 
 ## 4. 嵌入 IA（`/embed/*`）
@@ -262,7 +282,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 未到期能力：**侧栏不展示**或标「即将推出」；禁止死链。
 
 > **里程碑可见性矩阵（M-FINAL · F-A）**：
-> - `ACTIVE_MILESTONES = {"M1", "M7", "M11", "M13"}`；M13 项对具备能力的角色可见，不再标「预览」badge
+> - `ACTIVE_MILESTONES = {"M1", "M5", "M7", "M11", "M13"}`（与 `fe/src/lib/resolve-nav.ts` 一致；M5 含 viz-templates / viz-components）
 > - 单一真理源：`fe/src/config/nav-manifest.tsx`；派生函数：`resolveNavGroups(user, capabilities?)`
 > - `capabilities` 参数为 F-B ability-nav 扩展预留（默认使用 `ACTIVE_MILESTONES`）
 
@@ -270,7 +290,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 
 | 分组 | admin | analyst | viewer |
 |------|-------|---------|--------|
-| 数据（含嵌套「实体与主题」子分组） | 可见 | 隐藏 | 隐藏 |
+| 数据准备 | 可见 | 隐藏 | 隐藏 |
 | 治理 | **固定隐藏** | 隐藏 | 隐藏 |
 | 分析（仪表板 / 数据大屏） | 可见 | 可见 | 可见 |
 | 报表 | 可见 | 可见 | 可见 |
@@ -279,7 +299,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 
 脚注：
 
-- **数据工程** = `数据` 分组（`iaTier: engineering`）；「实体与主题」为其内嵌子分组（`nav-manifest.tsx` 未独立为侧栏一级分组）
+- **数据工程** = `数据准备` 分组（`iaTier: engineering`）；**实体总览**（`/admin/entities/overview`）与**主题分析**（`/admin/themes/:id`）**已移出侧栏**，仅深链可达
 - **图表类型目录**（`/admin/charts/types`）在「治理」分组；旧路径 `/admin/charts/explore` 重定向
 - **查询设计器**位于治理分组，侧栏 Badge「治理专用」；普通分析请使用仪表板
 
@@ -323,7 +343,8 @@ fe/src/
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
-| 1.3.3 | 2026-07-20 | 大屏编辑：`DataScreenEditViewport` 与投放 `CanvasScaleViewport` 分层说明 |
+| 1.3.5 | 2026-08-09 | 对齐「数据准备」分组名；`ACTIVE_MILESTONES` 补 M5；二级路由表；`/admin/system`；默认 index→dashboards |
+| 1.3.4 | 2026-08-07 | 大屏编辑：`DataScreenEditViewport` 与投放 `CanvasScaleViewport` 分层说明 |
 | 1.3.2 | 2026-07-17 | 数据大屏 Phase 1：补 `preview`/`share` 路由；`surfaceKind` 与 view/preview 语义区分 |
 | 1.3.1 | 2026-07-10 | H1：治理侧栏固定隐藏；深链诚实横幅；RLS/审计 Admin 说明 |
 | 1.2.3 | 2026-07-09 | F-F VIEW-001 companion：`dashboardLayoutToView` 适配层与 Dashboard PUT 校验说明 |

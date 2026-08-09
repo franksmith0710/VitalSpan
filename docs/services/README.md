@@ -21,11 +21,11 @@
 | [core.md](./core.md) | `app/core/` | F01-BOOT | M1 | 已实现 |
 | [nfr.md](./nfr.md) | `app/core/nfr/` | F15-NFR | 横切 | 部分（L1） |
 | [metadata.md](./metadata.md) | `app/metadata/` | F11-META | M1（四期） | **已实现**（ORM + 可视化编辑 · 2026-07-29 回写） |
-| [datasources.md](./datasources.md) | `app/datasources/` | F03-DS · F04-CONN | 连接层 | 部分（L1 · r59 CONN-018 kingbase） |
-| [query.md](./query.md) | `app/query/` | F05-QUERY | M3 | 部分（L1） |
+| [datasources.md](./datasources.md) | `app/datasources/` | F03-DS · F04-CONN | 连接层 | **已实现（L1 companion r25）** |
+| [query.md](./query.md) | `app/query/` | F05-QUERY | M3 | **L1 已实现（r26）** |
 | [designer.md](./designer.md) | `app/designer/` | F12-DESIGN | M2（四期） | 部分（L1 · r59 DESIGN-004 workflow-link） |
 | [dashboard.md](./dashboard.md) | `app/dashboard/` | F07-DASH | M5 | **已实现**（v1 栅格 + v2 像素布局；BUG-2 手测表见 [project master §6.1](../feature-design/2026-07-29-vitalspan-project-master-gap-fill.md)） |
-| [reports.md](./reports.md) | `app/reports/` | F08-RPT | M6/M10/M12 | **部分**（BE L1 + FE 中心/调度/重试 · M-DEPTH F-C 2026-07-29） |
+| [reports.md](./reports.md) | `app/reports/` | F08-RPT | M6/M10/M12 | **最终形态**（ReportService · Job Queue · RenderSpec · 2026-08-07） |
 | [views.md](./views.md) | `app/views/` | F09-VIEW | FR-VIEW | **部分**（VIEW-001~003 API + FE 偏好已接线） |
 | [auth.md](./auth.md) | `app/auth/` | F02-AUTH | M7 | 已实现 |
 | [ingestion.md](./ingestion.md) | `app/ingestion/` | F16-DATA | M1B | 已实现 |
@@ -34,6 +34,14 @@
 | [integration.md](./integration.md) | `app/integration/` | F13-API | M8/M12/M13 | **已实现**（r45 + M-DEPTH F-C Trial Sheet · 2026-07-29） |
 
 **横切**：F13-API（对外集成）、F15-NFR（非功能）——F15-NFR 域附录见 [nfr.md](./nfr.md)；其余横切由各服务与 `core` 分担。F06-VIZ 图表类型注册与渲染/嵌入配置契约现由 [viz.md](./viz.md) 域承载。
+
+## 走查与运维附录
+
+| 文档 | 说明 |
+|------|------|
+| [reports-dashboard-schedule-walkthrough.md](./reports-dashboard-schedule-walkthrough.md) | 看板定时 PDF / 调度投递端到端走查 |
+| [../service/backend.md](../service/backend.md) | 后端健康探针、配置、迁移、本地启动 |
+| [../data/README.md](../data/README.md) | Alembic head 与域 ↔ 表导航 |
 
 ## 域依赖图（目标态）
 
@@ -74,6 +82,7 @@ flowchart TB
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 0.5.5 | 2026-08-09 | 索引与单文件 frontmatter 对齐（datasources/query/reports）；补走查与运维附录链 |
 | 0.5.4 | 2026-08-07 | dashboard templates：11 套 builtin（rev 25）· 删除守卫；reports：PDF CJK 字体回退链；mock 清单见 [mock/README.md](../mock/README.md) |
 | 0.5.3 | 2026-07-29 | Doc sync：metadata/integration/reports/dashboard 与 M-DEPTH 收官对齐 |
 | 0.5.0 | 2026-07-04 | M8/M12/M13 r44：新增 integration 域（IF-01~04 集成 API L1 + OpenAPI 版本策略，API-003~007） |

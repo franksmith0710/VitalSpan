@@ -27,6 +27,27 @@
 | `/admin/reports/center` | `ReportCenterPage` | `ReportCenterScheduleHub` |
 | `/admin/reports/templates` | `ReportTemplatesPage` | `useReportTemplates` · `TemplateDetailPanel` |
 
+## 数据源管理（CONN / DS）
+
+| 路由 | 页面 | 关键组件 |
+|------|------|----------|
+| `/admin/datasources` | `DatasourceListPage` | 列表 · ACL `datasource:*` |
+| `/admin/datasources/new` | `DatasourceFormPage` | 创建表单 |
+| `/admin/datasources/:id` | `DatasourceDetailPage` | 详情 · 元数据浏览 |
+| `/admin/datasources/:id/edit` | `DatasourceFormPage` | 编辑 |
+
+## 系统管理（M7）
+
+| 路由 | 页面 | 关键组件 |
+|------|------|----------|
+| `/admin/system` | `SystemAdminHomePage` | 管理入口 hub |
+| `/admin/system/users` | `UserListPage` | 用户 |
+| `/admin/system/roles` | `RoleListPage` | 角色 |
+| `/admin/system/orgs` | `OrgTreePage` | 组织树 |
+| `/admin/system/rls` | `RlsAdminPage` | 行级权限 |
+| `/admin/system/grants` | `GrantsPage` | 资源授权 |
+| `/admin/system/audit` | `AuditLogPage` | 审计日志 |
+
 ## 设计系统外部锚
 
 - `.agents/skills/b-design-system-tailadmin-radix/SKILL.md`

@@ -3,13 +3,22 @@
 | 字段 | 值 |
 |------|-----|
 | 模块 | `backend/app/core/nfr/push_channels.py` |
-| 关联 | `core/nfr/notifications.py` · `core/nfr/push_config.py` · `api/v1/nfr.py` |
+| 关联 | `core/nfr/notifications.py` · `core/nfr/push_config.py` · `api/v1/nfr.py` · `governance/publish/notifications.py` |
 | 域附录 | [services/nfr.md](../services/nfr.md) |
 
 ## 行为
 
-- `dispatch_push_mock`：NFR 探针与未配置真实推送通道时的占位分发。
-- 治理发布通知（`governance/publish/notifications.py`）在 SMTP/通道未就绪时可能走 mock 路径。
+- `dispatch_push_mock`：配置 `PUSH_WECOM_WEBHOOK` / `PUSH_DINGTALK_WEBHOOK` 后仅校验 URL 格式、写 `_PUSH_MOCK_LOG`，**不发起 HTTP**，仍返回 `delivered`。
+- 治理发布通知（`governance/publish/notifications.py`）走同 mock 路径，审计可显示「已投递」但无外发。
+
+## 双轨推送（勿混淆）
+
+| 路径 | 行为 | 代码锚点 |
+|------|------|----------|
+| **NFR / 治理 mock** | 配置 webhook 仍不发 HTTP | `core/nfr/push_channels.py` |
+| **报表调度真实投递** | 企微/钉钉 `httpx.post`（timeout=5） | `reports/scheduler/channels/dispatch.py` |
+
+同一环境变量名在两路径语义不同；联调与验收须区分调用面。
 
 ## 非 mock 路径
 
@@ -17,4 +26,4 @@
 
 ## 计划
 
-M1–M6 以探针与诚实 `unconfigured` 为主；外发通道选型见 PRD F15-NFR 分期。
+收敛为单一 HTTP 出站层，或 NFR 探针响应显式 `deliveryMode: mock`；未配通道返回 `failed`/`unconfigured`。

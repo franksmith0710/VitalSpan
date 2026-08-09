@@ -11,8 +11,10 @@
 | **Goal / Plan** | [automate/goal.md](automate/goal.md) · [automate/plan.md](automate/plan.md) | 产品方向、活跃里程碑 |
 | **PRD** | [automate/prd.md](automate/prd.md) · [automate/prd/](automate/prd/) | 做什么、验收标准、代码锚点 |
 | **业务域** | [services/README.md](services/README.md) | 后端域职责、边界、依赖 |
-| **API** | [api/README.md](api/README.md) | REST 路由、状态、契约 |
-| **架构** | [arch.md](arch.md) | 分层、模块、环境变量、部署 |
+| **API** | [api/README.md](api/README.md) · [api/auth.md](api/auth.md) 等 | REST 路由、状态、联调可消费附录 |
+| **数据模型** | [data/README.md](data/README.md) | Alembic head、revision → 域表导航 |
+| **运维** | [service/backend.md](service/backend.md) | 健康探针、配置、本地启动 |
+| **架构** | [arch.md](arch.md) | 分层、模块、环境变量、部署；**ADR 内嵌 §2**（无独立 `docs/adr/`） |
 | **壳层 IA** | [ui/layout.md](ui/layout.md) · [ui/anchor.md](ui/anchor.md) | 路由、导航、页面组件锚点 |
 
 ## 演化与归档

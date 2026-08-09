@@ -50,6 +50,28 @@
 | `POST /api/v1/embed/token` · `GET /api/v1/embed/sdk-params` | IF-04 entry | API-006 | companion |
 | `openapi/version_policy.apply_version_policy` | v1/v2 文档面 + IF tag + stability | API-007 | companion |
 
+## OpenAPI 运行时与版本策略
+
+| 锚点 | 说明 |
+|------|------|
+| `backend/app/openapi/` | OpenAPI 后处理：`extensions.py` · `version_policy.py` |
+| `GET /openapi.json` | 运行时规范；`x-api-version-policy` · IF tag · operationId 前缀 |
+| `backend/app/governance/openapi/` | 治理侧 OpenAPI 片段生成（catalog 已发布服务） |
+| `GET /docs` · `GET /redoc` | Swagger UI / ReDoc（免鉴权） |
+
+**说明**：`info.x-supported-versions` 含 `v2` **文档面**；运行时 HTTP 仍委托 `/api/v1/*`（无真实 `/api/v2/*` 路由）。
+
+## 内置 sample-api（REST 连接器联调）
+
+供 `datasources` REST API 连接器本地测连与 Native 查询；挂载于主应用根路径（非 `/api/v1`）。
+
+| 路径 | 说明 | 代码锚点 |
+|------|------|----------|
+| `GET /sample-api/health` | 存活 | `backend/app/sample_api/router.py` |
+| `GET /sample-api/orders` | 订单列表样例 | Native body: `{"path":"/sample-api/orders"}` |
+| `GET /sample-api/v1/orders` | 包装 JSON（`jsonPath` 演示） | `internal.py` dispatch |
+| Basic Auth | 可选 | `HTTPBasic` · `SAMPLE_API_*` env（见 `.env.example`） |
+
 ## 关联 API
 
 见 [api/README.md](../api/README.md) §5（嵌入）、§6（报表）、§8（查询服务与 IF-01）。

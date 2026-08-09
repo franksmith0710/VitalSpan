@@ -268,3 +268,14 @@ coverage:
   lanes_run: [D1,D2,D3,D4,D5,D6,D7,D8]
 blockers: []
 ```
+
+---
+
+## 修复状态 · 2026-08-09（R0 + R1 + D5 + D6 已执行）
+
+| 批次 | 状态 | 变更 |
+|------|------|------|
+| R0 | ✅ | `prd-sync.mdc` · `docs-layer.mdc` · `docs/README.md` |
+| R1 | ✅ | `docs/api/README.md` v1.0.10 |
+| D5 | ✅ | `docs/mock/*`（含新增 `nfr-perf-probe.md`） |
+| D6 | ✅ | `docs/ui/layout.md` v1.3.5 |

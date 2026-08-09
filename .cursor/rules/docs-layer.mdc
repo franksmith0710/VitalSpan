@@ -21,7 +21,9 @@ alwaysApply: false
 | `docs/arch.md` | 架构变更时 | 技术决策、目录、环境变量 |
 | `docs/api/` | 随实现补充 | HTTP 路由登记簿 |
 | `docs/services/` | 随域落地补充 | 后端域职责、边界、依赖 |
-| `docs/ui/layout.md` | IA/壳层变更时 | 单应用 + Embed 路由与导航 |
+| `docs/mock/` | stub/mock 变更时 | 非测试主路径占位诚实清单 |
+| `docs/ui/layout.md` · `docs/ui/anchor.md` | IA/壳层变更时 | 单应用 + Embed 路由与导航；页面组件锚点 |
+| `docs/README.md` | 索引变更时 | 文档真理源分层索引 |
 | `docs/superpowers/` | 演化轮次产出 | design/spec/plan 归档 |
 
 ## 禁止

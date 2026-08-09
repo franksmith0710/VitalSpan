@@ -5,8 +5,8 @@
 > **真理源**：行为需求见 [SRS §6](../srs/全生命周期系统需求规格说明书.md#6-接口需求)；功能项见 [PRD API-001~007](../automate/prd/F13-API.md)。
 
 ```yaml
-version: 1.0.9
-last_updated: 2026-08-07
+version: 1.0.11
+last_updated: 2026-08-09
 api_prefix: /api/v1
 openapi_docs: /docs
 redoc: /redoc
@@ -23,6 +23,18 @@ redoc: /redoc
 | 错误体 | `{ "code": "...", "message": "...", "detail": ... }` |
 
 **运行时 OpenAPI**：`http://localhost:8000/docs` · `http://localhost:8000/redoc`
+
+### 联调可消费附录（D3）
+
+面向 Postman / 网关 / 冒烟；**非**端点目录替代。完整登记仍以本文件各 § 为准。
+
+| 模块 | 文档 | 说明 |
+|------|------|------|
+| 认证 | [auth.md](./auth.md) | 登录、me、改密、冒烟 |
+| 数据源 | [datasources.md](./datasources.md) | CRUD、test、types、schemas |
+| 查询 | [query.md](./query.md) | execute、bindings、execute-plan 边界 |
+
+环境与运维：[service/backend.md](../service/backend.md) · 鉴权步骤见 [auth.md](./auth.md)。
 
 ---
 
@@ -65,14 +77,21 @@ redoc: /redoc
 | POST | `/api/v1/users/{id}/disable` · `/enable` · `/unlock` | 用户启停/解锁（解锁清零失败计数与 `lockedUntil`；`system:user.manage`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
 | POST | `/api/v1/users/{id}/reset-password` | 管理员重置密码（返回 `{temporaryPassword, passwordChangedAt}`；`Cache-Control: no-store`；`token_version+1`；审计无明文；`system:user.password.reset`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
 | PUT | `/api/v1/users/{id}/roles` | 用户角色绑定（deprecated，等价 PATCH `roleIds`；`system:user.manage`） | 内部 | 一期 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
+| GET | `/api/v1/users/{id}/roles` | 用户已绑角色列表 | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
+| POST | `/api/v1/users/{id}/roles/{role_id}` | 增量绑定单角色 | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
+| DELETE | `/api/v1/users/{id}/roles/{role_id}` | 增量移除单角色（204） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
 | PUT/GET/DELETE | `/api/v1/users/{id}/org` | 用户组织归属 | 内部 | 一期 | AUTH-002 | 已实现 | `backend/app/api/v1/users.py` |
-| GET/POST | `/api/v1/orgs` | 组织树节点 | 内部 | 一期 | AUTH-002 | 已实现 | `backend/app/api/v1/orgs.py` |
-| GET/POST/DELETE | `/api/v1/resource-grants` | AUTH-004 资源授权 CRUD | 内部 | 一期 | AUTH-004 | 已实现 | `backend/app/api/v1/resource_grants.py` |
+| GET/POST | `/api/v1/orgs` | 组织树节点列表/创建 | 内部 | 一期 | AUTH-002 | 已实现 | `backend/app/api/v1/orgs.py` |
+| GET/PUT/DELETE | `/api/v1/orgs/{org_id}` | 组织节点详情/更新/删除 | 内部 | 一期 | AUTH-002 | 已实现 | `backend/app/api/v1/orgs.py` |
+| GET/POST | `/api/v1/resource-grants` | AUTH-004 资源授权列表/创建 | 内部 | 一期 | AUTH-004 | 已实现 | `backend/app/api/v1/resource_grants.py` |
+| DELETE | `/api/v1/resource-grants/{grant_id}` | 删除单条资源授权（204） | 内部 | 一期 | AUTH-004 | 已实现 | `backend/app/api/v1/resource_grants.py` |
 | GET/POST | `/api/v1/rls/dimensions` | 权限维度类型（写操作 admin 守卫 → 403 `DIMENSION_FORBIDDEN`） | 内部 | 一期 | AUTH-005 | 已实现 | `backend/app/api/v1/rls.py` |
+| GET/PUT/DELETE | `/api/v1/rls/dimensions/{dim_id}` | 维度类型详情/更新/删除 | 内部 | 一期 | AUTH-005 | 已实现 | `backend/app/api/v1/rls.py` |
 | GET | `/api/v1/audit/events` | 审计事件查询（`?target_id=&action=&target_type=&actor_id=&created_after=&created_before=&limit=&offset=` ISO8601 时间窗；admin 守卫；detail 脱敏） | 内部 | 一期 | AUTH-003, AUTH-008 | 已实现 | `backend/app/api/v1/audit.py` |
 | GET/POST | `/api/v1/rls/groups` | 维度分组列表/创建 | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/rls.py` |
 | GET/PUT/DELETE | `/api/v1/rls/groups/{id}` | 分组详情/更新/删除 | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/rls.py` |
-| GET/POST/PUT/DELETE | `/api/v1/rls/groups/{id}/values` | 分组成员值列表/添加/全量替换/删除 | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/rls.py` |
+| GET/POST/PUT/DELETE | `/api/v1/rls/groups/{id}/values` | 分组成员值列表/添加/全量替换/删除集合 | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/rls.py` |
+| DELETE | `/api/v1/rls/groups/{id}/values/{value}` | 删除分组内单个成员值（204） | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/rls.py` |
 | GET | `/api/v1/roles/{id}/dimension-values` | 角色直绑维度值（`?dimensionTypeId=`；`RoleDimensionValuesOut` 含 `version`） | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/roles.py` |
 | PUT | `/api/v1/roles/{id}/dimension-values` | 角色直绑维度值全量替换（`expectedVersion` 乐观锁；`confirmEmpty`；成功 **200** + `RoleDimensionValuesOut`；冲突 409 `RLS_BINDING_VERSION_CONFLICT`；空绑定 422 `RLS_EMPTY_CONFIRM_REQUIRED`） | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/roles.py` |
 | GET | `/api/v1/roles/{id}/dimension-groups` | 角色分组绑定（`RoleDimensionGroupsOut` 含 `groupIds`/`version`） | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/roles.py` |
@@ -175,6 +194,7 @@ redoc: /redoc
 | POST | `/api/v1/designer/output-fields/validate` | 输出字段/聚合校验（`DESIGN_EMPTY_OUTPUT_FIELDS`/`DESIGN_UNKNOWN_FIELD`/`DESIGN_INVALID_AGGREGATE`） | 内部 | 一期 | DESIGN-003 | 已实现 | `backend/app/api/v1/designer.py` |
 | PUT/GET | `/api/v1/designer/output-fields` | 输出字段持久化（`config_type=output_fields`；`?refId=`） | 内部 | 一期 | DESIGN-003 | 已实现 | `backend/app/api/v1/designer.py` |
 | POST/PUT/GET/DELETE | `/api/v1/designer/workflow-link` | 设计器项与工单实例关联 validate/save/get/delete（双向 query；draft 可撤回） | 内部 | 四期 | DESIGN-004 | 已实现 | `backend/app/api/v1/designer.py` |
+| POST | `/api/v1/designer/workflow-link/validate` | 设计器↔工单关联校验（不落库） | 内部 | 四期 | DESIGN-004 | 已实现 | `backend/app/api/v1/designer.py` |
 | POST | `/api/v1/query/preview` | 查询预览（设计器/图表配置） | 内部 | 二期 | QUERY-005 | 规划 | `backend/app/api/v1/query.py` |
 
 ---
@@ -233,6 +253,7 @@ redoc: /redoc
 | GET/PUT/DELETE | `/api/v1/viz-components/{id}` | 组件详情/更新/删除 | 内部 | 一期 | DASH-010 | 已实现 | `backend/app/api/v1/viz_components.py` |
 | POST | `/api/v1/viz-components/{id}/publish` | 发布组件（`viz:component.manage`） | 内部 | 一期 | DASH-010 | 已实现 | `backend/app/api/v1/viz_components.py` |
 | GET | `/api/v1/viz-components/{id}/references` | 组件引用明细（看板/大屏实例列表） | 内部 | 一期 | DASH-010 | 已实现 | `backend/app/api/v1/viz_components.py` |
+| POST | `/api/v1/viz-components/{id}/archive` | 下架组件（对标 dashboard-templates archive） | 内部 | 一期 | DASH-010 | 已实现 | `backend/app/api/v1/viz_components.py` |
 | POST | `/api/v1/views/validate` | DashboardView 协议校验；422 码：`VIEW_UNKNOWN_CHART_REF` / `VIEW_DEFAULT_SELF_REF` | IF-06 | 一期 | VIEW-001 | 已实现 | `backend/app/api/v1/views.py` |
 | GET | `/api/v1/views/schema` | DashboardView JSON Schema | IF-06 | 一期 | VIEW-001 | 已实现 | `backend/app/api/v1/views.py` |
 
@@ -301,6 +322,7 @@ redoc: /redoc
 | POST | `/api/v1/reports/center/recent` | 记录最近访问 | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/center.py` |
 | POST | `/api/v1/reports/catalog/nodes/{id}/duplicate` | 目录节点另存为（含扩展配置复制） | 内部 | 二期 | RPT-004 | 已实现 | `backend/app/reports/service.py` |
 | POST | `/api/v1/reports/schedules/{id}/revise` | 激活调度生成新草稿修订 | 内部 | 三期 | RPT-005 | 已实现 | `backend/app/reports/service.py` |
+| POST | `/api/v1/reports/schedules/{id}/transition` | 调度 FSM 迁移（`action`；`RPT_SCHEDULE_*`） | 内部 | 三期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | GET | `/api/v1/reports/schedules/executions/{executionId}/artifact/download` | 调度执行产物下载 | 内部 | 三期 | RPT-005 | 已实现 | `backend/app/reports/scheduler/executor.py` |
 | GET | `/api/v1/reports/templates/{templateKey}/versions` | 模板版本历史 | 内部 | 二期 | RPT-003 | 已实现 | `backend/app/reports/templates/versions.py` |
 | POST | `/api/v1/reports/templates/{templateKey}/publish` | 发布模板版本 | 内部 | 二期 | RPT-003 | 已实现 | `backend/app/reports/templates/versions.py` |
@@ -326,6 +348,7 @@ redoc: /redoc
 | GET | `/api/v1/metadata/entity-types/{typeCode}/query-bindings` | 只读 query bindings（`readOnly=true`；json 不可 filter） | 内部 | 二期 | META-006 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/PUT/DELETE | `/api/v1/metadata/entity-types/{typeCode}` | 实体类型详情/更新/删除（引用中 → 409 `META_ENTITY_TYPE_IN_USE`） | 内部 | 二期 | META-006 | 已实现 | `backend/app/api/v1/metadata.py` |
 | POST | `/api/v1/metadata/physical-tables/register-from-schema` | M8 META-005 schema 登记（`list_columns` 真理源） | 内部 | 二期 | META-005 | 已实现 | `backend/app/api/v1/metadata.py` |
+| POST | `/api/v1/metadata/physical-tables/validate` | 物理表登记草稿校验（不落库） | 内部 | 二期 | META-005 | 已实现 | `backend/app/api/v1/metadata.py` |
 | POST | `/api/v1/metadata/physical-tables` | M8 META-005 直登物理表（`tableFqn` 唯一） | 内部 | 二期 | META-005 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET | `/api/v1/metadata/physical-tables?fqn=` | M8 META-005 单条 physical 详情 | 内部 | 二期 | META-005 | 已实现 | `backend/app/api/v1/metadata.py` |
 | PUT | `/api/v1/metadata/physical-tables/{fqn}` | M8 META-005 更新 displayName/entityTypeCode | 内部 | 二期 | META-005 | 已实现 | `backend/app/api/v1/metadata.py` |
@@ -339,7 +362,8 @@ redoc: /redoc
 | DELETE | `/api/v1/datasets/{dataset_id}` | Dataset 删除（204） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
 | POST | `/api/v1/datasets/{dataset_id}/bind-query-config` | body `{configId}` 绑定 `dataset_query` 配置（非 dataset_query → 422 `META_DATASET_CONFIG_TYPE_INVALID`） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
 | POST | `/api/v1/datasets/validate` | Dataset 草稿校验（不落库） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
-| GET/POST | `/api/v1/entities/types` | 实体类型 schema | 内部 | 二期 | META-006 | 规划 | `backend/app/api/v1/metadata/entities.py` |
+| GET/POST/PUT/DELETE | `/api/v1/metadata/entity-types` | 实体类型 schema CRUD（**已替代** 下方废弃路径） | 内部 | 二期 | META-006 | 已实现 | `backend/app/api/v1/metadata.py` |
+| GET/POST | `/api/v1/entities/types` | **deprecated** — 无运行时路由；请用 `/api/v1/metadata/entity-types` | — | — | META-006 | 废弃 | — |
 | POST | `/api/v1/datasets/migrate-binding` | 直连→datasetId 迁移 | 内部 | 四期 | QUERY-009 | 规划 | `backend/app/api/v1/datasets.py` |
 
 ---
@@ -357,7 +381,7 @@ redoc: /redoc
 | GET/POST | `/api/v1/gov/catalog/classification/nodes` | 分类树节点 list/create（`?parentId=`；`CAT_CLASS_*`） | IF-06 | 一期 | CAT-004 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/catalog/classification/nodes/{id}/move` | 分类树节点移动（环检测；超深 → 422 `CAT_CLASS_MAX_DEPTH`） | IF-06 | 一期 | CAT-004 | 已实现 | `backend/app/api/v1/gov.py` |
 | DELETE | `/api/v1/gov/catalog/classification/nodes/{id}` | 删除叶节点（含子节点 → 409 `CAT_CLASS_HAS_CHILDREN`） | IF-06 | 一期 | CAT-004 | 已实现 | `backend/app/api/v1/gov.py` |
-| GET | `/api/v1/gov/catalog/classification/m11-probe` | M11 | CAT-004 m11-probe | 已实现 |
+| GET | `/api/v1/gov/catalog/classification/m11-probe` | CAT-004 M11 集成 probe | IF-06 | 一期 | CAT-004 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET/POST | `/api/v1/gov/catalog/geo-regions/nodes` | 地域 geo 树 list/create（`?parentId=`；`CAT03_*`） | IF-06 | 一期 | CAT-003 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/catalog/geo-regions/m6-probe` | CAT-003 M6 集成 probe | IF-06 | 一期 | CAT-003 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/catalog/geo-regions/nodes/{id}/move` | geo 树节点移动（环检测；超深 → 422 `CAT03_MAX_DEPTH`） | IF-06 | 一期 | CAT-003 | 已实现 | `backend/app/api/v1/gov.py` |
@@ -365,12 +389,12 @@ redoc: /redoc
 | POST | `/api/v1/gov/catalog/tickets/validate` | 工单 stats item 校验（`CAT05_*`） | IF-06 | 一期 | CAT-005 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST/GET | `/api/v1/gov/catalog/tickets/items` | 工单 stats item 登记/列表 | IF-06 | 一期 | CAT-005 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/catalog/tickets/items/{key}/stats` | 工单 stats mock probe | IF-06 | 一期 | CAT-005 | 已实现 | `backend/app/api/v1/gov.py` |
-| GET | `/api/v1/gov/catalog/tickets/m11-probe` | M11 | CAT-005 m11-probe | 已实现 |
+| GET | `/api/v1/gov/catalog/tickets/m11-probe` | CAT-005 M11 集成 probe | IF-06 | 一期 | CAT-005 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/catalog/production-stats/validate` | 生产销售 stats 校验（`CAT06_*`） | IF-06 | 一期 | CAT-006 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST/GET | `/api/v1/gov/catalog/production-stats` | 生产销售 stats 登记/列表 | IF-06 | 一期 | CAT-006 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/catalog/production-stats/{stats_key}/stats` | 生产销售 stats mock probe | IF-06 | 一期 | CAT-006 | 已实现 | `backend/app/api/v1/gov.py` |
-| GET | `/api/v1/gov/catalog/production-stats/m11-probe` | M11 | CAT-006 m11-probe | 已实现 |
-| GET | `/api/v1/gov/catalog/workno-behavior/m12-probe` | M12 | CAT-007 m12-probe | 已实现 |
+| GET | `/api/v1/gov/catalog/production-stats/m11-probe` | CAT-006 M11 集成 probe | IF-06 | 一期 | CAT-006 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/catalog/workno-behavior/m12-probe` | CAT-007 M12 集成 probe | IF-06 | 三期 | CAT-007 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/catalog/lifecycle-templates/validate` | CAT-001 lifecycle 校验 | IF-06 | 一期 | CAT-001 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/catalog/lifecycle-templates` | CAT-001 lifecycle 创建 | IF-06 | 一期 | CAT-001 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/catalog/lifecycle-templates` | CAT-001 lifecycle 列表 | IF-06 | 一期 | CAT-001 | 已实现 | `backend/app/api/v1/gov.py` |
@@ -404,7 +428,9 @@ redoc: /redoc
 | GET | `/api/v1/gov/openapi-mappings/{id}` | OpenAPI 映射详情 | IF-06 | 四期 | GOV-006 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/openapi-mappings/validate` | OpenAPI 映射校验（apiVersion/operationId/path + entityTypeRef） | IF-06 | 四期 | GOV-006 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/openapi-mappings/{id}/deactivate` | OpenAPI 映射停用（409 `GOV_OPENAPI_MAP_ALREADY_INACTIVE`） | IF-06 | 四期 | GOV-006 | 已实现 | `backend/app/api/v1/gov.py` |
-| POST/PUT/DELETE | `/api/v1/gov/workflow/templates` | 自定义工单模板 CRUD（builtin 只读） | IF-06 | 四期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST | `/api/v1/gov/workflow/templates` | 创建自定义工单模板 | IF-06 | 四期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
+| PUT | `/api/v1/gov/workflow/templates/{template_id}` | 更新自定义工单模板（builtin 只读） | IF-06 | 四期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
+| DELETE | `/api/v1/gov/workflow/templates/{template_id}` | 删除自定义工单模板（builtin 只读） | IF-06 | 四期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/workflow/templates` | 工单流程模板列表（builtin + custom） | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/workflow/templates/validate` | 工单模板校验 | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/workflow/templates/{template_id}/node-roles` | 工单模板节点角色配置 | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
@@ -415,9 +441,9 @@ redoc: /redoc
 | POST | `/api/v1/gov/publish/from-workflow` | 工单实例一键发布查询服务 | IF-06 | 四期 | GOV-005 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/publish/entries/{entryId}/openapi` | 已发布条目 OpenAPI 3.1 文档 | IF-06 | 四期 | GOV-006 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/workflow/instances/{id}/transition` | 五态 FSM 迁移（`GOV_WORKFLOW_*`） | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
-| GET/POST | `/api/v1/governance/tickets` | 查询工单 | 内部 | 四期 | GOV-003 | 规划 | `backend/app/api/v1/governance/tickets.py` |
-| POST | `/api/v1/governance/tickets/{id}/submit` | 提交审批 | 内部 | 四期 | GOV-003 | 规划 | `backend/app/api/v1/governance/tickets.py` |
-| POST | `/api/v1/governance/publish` | 发布查询服务 | 内部 | 四期 | GOV-005 | 规划 | `backend/app/api/v1/governance/publish.py` |
+
+> **历史路径（无运行时路由）**：`/api/v1/governance/tickets*`、`POST /api/v1/governance/publish` 为早期规划路径；工单与发布能力已实现于 `/api/v1/gov/workflow/*` 与 `/api/v1/gov/publish/*`（见上表）。
+
 | POST | `/api/v1/integration/bus/register` | IF-01 总线注册（`catalogEntryId`；nil UUID → 422；integration/admin；幂等 201/200；retry `maxAttempts`） | IF-01 | 四期 | API-004 | 已实现（companion） | `backend/app/api/v1/integration_bus.py` |
 | POST | `/api/v1/integration/bus/register/retry` | IF-01 总线注册重试 | IF-01 | 四期 | API-004 | 已实现（companion） | `backend/app/api/v1/integration_bus.py` |
 | GET | `/api/v1/services` | 已发布查询服务列表（仅 `published`；`?category=&limit=&offset=`） | IF-02 | 四期 | API-003 | 已实现（companion） | `backend/app/api/v1/services.py` |
@@ -446,7 +472,7 @@ redoc: /redoc
 
 ---
 
-## 9. 数据接入（M1B · FR-DATA / FR-ETL）
+## 10. 数据接入（M1B · FR-DATA / FR-ETL）
 
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
@@ -456,6 +482,7 @@ redoc: /redoc
 | POST | `/api/v1/ingestion/sync-jobs/{id}/cancel` | 停止当前运行中的同步（协作式：阶段边界生效） | 内部 | M1B | DATA-002 | 已实现 | `backend/app/ingestion/sync_cancel.py` |
 | GET | `/api/v1/ingestion/sync-jobs/{id}/runs` | 运行历史 | 内部 | M1B | DATA-002 | 已实现 | `backend/app/api/v1/ingestion/sync.py` |
 | GET/PUT | `/api/v1/ingestion/sync-jobs/{id}/etl-rules` | 清洗规则配置 | 内部 | M1B | ETL-001 | 已实现 | `backend/app/ingestion/etl_rules.py` |
+| POST | `/api/v1/ingestion/sync-jobs/{id}/etl-rules/auto-align` | ETL 规则与源表列自动对齐 | 内部 | M1B | ETL-001 | 已实现 | `backend/app/api/v1/ingestion/sync.py` |
 | GET | `/api/v1/ingestion/sync-jobs/{id}/consume-hints` | 消费管道状态（分析库/Dataset/下一步动作） | 内部 | M1B | DATA-003 | 已实现 | `backend/app/ingestion/sync_consume.py` |
 | POST | `/api/v1/ingestion/sync-jobs/{id}/prepare-consume` | 幂等登记托管分析库数据源 | 内部 | M1B | DATA-003 | 已实现 | `backend/app/ingestion/sync_consume.py` |
 | POST | `/api/v1/ingestion/sync-jobs/{id}/ensure-dataset` | 一键创建 Dataset 并绑定 query config | 内部 | M1B | DATA-003 | 已实现 | `backend/app/ingestion/sync_consume.py` |
@@ -588,6 +615,8 @@ redoc: /redoc
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.0.11 | 2026-08-09 | D3：联调可消费附录 auth/datasources/query；链 service/backend 运维 |
+| 1.0.10 | 2026-08-09 | R1 索引修补：orgs/rls/users roles/resource-grants 子路径；designer validate；viz archive；schedule transition；physical-tables validate；etl auto-align；gov 模板 `{id}`；废弃 governance/* 与 entities/types；m11/m12 probe 表列对齐；§10 数据接入 |
 | 1.0.9 | 2026-08-07 | Dashboard `export-jobs` 三路由；`dashboard-templates` 列表参数与 DELETE 语义；`reports/catalog/templates/readiness`；`reports/export` 补 `from`/`to` |
 | 1.0.8 | 2026-08-07 | 导出快照：登记 `export-layout` / `export-query/execute` / `export-query/dataset/execute`（RPT-005 无头 PDF） |
 | 1.0.7 | 2026-07-20 | 修复 §8 用户视图表行 228 列错位；大屏 layoutJson 扩展字段见 §5 Dashboard |
@@ -596,4 +625,4 @@ redoc: /redoc
 | 1.0.4 | 2026-07-13 | BUG-001 文档纠错：`PATCH /api/v1/me` 与 `POST /api/v1/auth/change-password` PRD 列改为 `—`；说明列引用 BUG-001 + Account Self-Service plan；change-password 补充 204/401 业务码与 422 边界 |
 | 1.0.3 | 2026-07-09 | F-E API-007 对账：`/docs`/`/redoc` 状态 规划→已实现（`AuthMiddleware.PUBLIC_PATHS` 已豁免且 FastAPI `docs_url`/`redoc_url` 已启用）；补 `/health`/`/openapi.json`/`/api/v1/auth/login` 免鉴权注记 |
 | 1.0.2 | 2026-07-04 | M8/M12/M13 r44：IF-01~04 集成 API L1（services/integration_bus/reports/export/embed）；OpenAPI 版本策略 |
-| 1.0.1 | 2026-07-03 | FR-DATA/FR-ETL 纳入 M1B；§9 数据接入 API；移除 IF-05 范围外 |
+| 1.0.1 | 2026-07-03 | FR-DATA/FR-ETL 纳入 M1B；§10 数据接入 API；移除 IF-05 范围外 |
