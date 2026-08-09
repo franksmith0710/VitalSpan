@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router";
 import { ChevronDown } from "lucide-react";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import { HintTooltip } from "@/components/ui/hint-tooltip";
-import { isNavPathActive, navPathMatches, resolveActiveNavPath } from "@/lib/nav-active";
+import { isNavPathActive, resolveActiveNavPath } from "@/lib/nav-active";
 import { cn } from "@/lib/utils";
 import {
   ADMIN_CONTENT_MARGIN_COLLAPSED_CLASS,
@@ -143,12 +143,25 @@ function useCollapsibleOpen(hasActiveChild: boolean, defaultOpen = false) {
   };
 }
 
+function collectSectionPaths(section: NavSection): string[] {
+  const paths: string[] = [];
+  for (const item of section.items) {
+    if (item.path) paths.push(item.path);
+    for (const sub of item.subItems ?? []) {
+      paths.push(sub.path);
+    }
+  }
+  return paths;
+}
+
 function SidebarNavItem({
   item,
   showLabels,
+  sectionPaths,
 }: {
   item: NavItem;
   showLabels: boolean;
+  sectionPaths: string[];
 }) {
   const location = useLocation();
   const subPaths = item.subItems?.map((sub) => sub.path) ?? [];
@@ -156,7 +169,7 @@ function SidebarNavItem({
   const isActive = (path: string) =>
     subPaths.length > 0
       ? isNavPathActive(location.pathname, path, subPaths)
-      : navPathMatches(location.pathname, path);
+      : isNavPathActive(location.pathname, path, sectionPaths);
   const hasActiveChild = activeSubPath !== null;
   const { open, handleOpenChange, hoverZoneProps, toggleFromClick, toggleFromKeyboard } =
     useCollapsibleOpen(hasActiveChild);
@@ -317,12 +330,13 @@ function SidebarSection({
   showDivider?: boolean;
 }) {
   const location = useLocation();
+  const sectionPaths = React.useMemo(() => collectSectionPaths(section), [section]);
   const hasActiveItem = section.items.some((item) => {
     if (item.subItems?.length) {
       const subPaths = item.subItems.map((sub) => sub.path);
       return resolveActiveNavPath(location.pathname, subPaths) !== null;
     }
-    if (item.path) return navPathMatches(location.pathname, item.path);
+    if (item.path) return isNavPathActive(location.pathname, item.path, sectionPaths);
     return false;
   });
   const { open, handleOpenChange, hoverZoneProps, toggleFromClick, toggleFromKeyboard } =
@@ -332,7 +346,7 @@ function SidebarSection({
     <ul className="flex flex-col gap-0.5">
       {section.items.map((item) => (
         <li key={item.name}>
-          <SidebarNavItem item={item} showLabels={showLabels} />
+          <SidebarNavItem item={item} showLabels={showLabels} sectionPaths={sectionPaths} />
         </li>
       ))}
     </ul>

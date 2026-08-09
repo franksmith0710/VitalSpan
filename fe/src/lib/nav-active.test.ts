@@ -8,6 +8,16 @@ const REPORT_SUB_PATHS = [
   "/admin/reports/schedules",
 ];
 
+const SYSTEM_ADMIN_NAV_PATHS = [
+  "/admin/system",
+  "/admin/system/orgs",
+  "/admin/system/users",
+  "/admin/system/roles",
+  "/admin/system/grants",
+  "/admin/system/rls",
+  "/admin/system/audit",
+];
+
 describe("nav-active", () => {
   it("matches exact path and descendants", () => {
     expect(navPathMatches("/admin/reports", "/admin/reports")).toBe(true);
@@ -30,6 +40,25 @@ describe("nav-active", () => {
       isNavPathActive("/admin/reports/center", "/admin/reports/center", REPORT_SUB_PATHS),
     ).toBe(true);
     expect(isNavPathActive("/admin/reports/center", "/admin/reports", REPORT_SUB_PATHS)).toBe(
+      false,
+    );
+  });
+
+  it("does not mark 配置向导 active when on 角色管理", () => {
+    expect(
+      isNavPathActive("/admin/system/roles", "/admin/system/roles", SYSTEM_ADMIN_NAV_PATHS),
+    ).toBe(true);
+    expect(
+      isNavPathActive("/admin/system/roles", "/admin/system", SYSTEM_ADMIN_NAV_PATHS),
+    ).toBe(false);
+  });
+
+  it("marks 配置向导 active only on system home", () => {
+    expect(isNavPathActive("/admin/system", "/admin/system", SYSTEM_ADMIN_NAV_PATHS)).toBe(true);
+    expect(isNavPathActive("/admin/system/orgs", "/admin/system/orgs", SYSTEM_ADMIN_NAV_PATHS)).toBe(
+      true,
+    );
+    expect(isNavPathActive("/admin/system/orgs", "/admin/system", SYSTEM_ADMIN_NAV_PATHS)).toBe(
       false,
     );
   });
