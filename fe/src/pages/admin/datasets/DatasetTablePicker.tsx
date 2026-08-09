@@ -10,6 +10,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -92,6 +102,8 @@ export function DatasetTablePicker({
   const isSyncOrigin = origin === "sync_job";
   const readOnlyTables = isSyncOrigin && tables.length > 0;
   const [dataSourceId, setDataSourceId] = useState("");
+  const [pendingTablePick, setPendingTablePick] = useState<TableSelection | null>(null);
+  const [pendingDataSourceId, setPendingDataSourceId] = useState<string | null>(null);
   const primaryTableName = tables[0]?.name ?? "";
   const [schemaExpanded, setSchemaExpanded] = useState(() => !primaryTableName);
   const focusTable = useMemo(
@@ -165,8 +177,8 @@ export function DatasetTablePicker({
 
       const hasBindDraft = (bindDraft?.selectedColumns.length ?? 0) > 0;
       if (hasBindDraft && primaryTableName) {
-        const ok = window.confirm("切换表将重置字段勾选，是否继续？");
-        if (!ok) return;
+        setPendingTablePick(sel);
+        return;
       }
       applyTablePick(sel);
     },
@@ -176,19 +188,33 @@ export function DatasetTablePicker({
   const handleDataSourceChange = (nextId: string) => {
     if (readOnlyTables || isSyncOrigin) return;
     if (primaryTableName && nextId !== effectiveDataSourceId) {
-      const ok = window.confirm("切换数据源将清空当前数据表，是否继续？");
-      if (!ok) return;
-      onChange([]);
-      onTableChange?.();
-      setSchemaExpanded(true);
+      setPendingDataSourceId(nextId);
+      return;
     }
     setDataSourceId(nextId);
     onDataSourceIdChange?.(nextId);
   };
 
+  const confirmTablePick = () => {
+    if (!pendingTablePick) return;
+    applyTablePick(pendingTablePick);
+    setPendingTablePick(null);
+  };
+
+  const confirmDataSourceChange = () => {
+    if (!pendingDataSourceId) return;
+    onChange([]);
+    onTableChange?.();
+    setSchemaExpanded(true);
+    setDataSourceId(pendingDataSourceId);
+    onDataSourceIdChange?.(pendingDataSourceId);
+    setPendingDataSourceId(null);
+  };
+
   const showSchemaPicker = !primaryTableName || schemaExpanded;
 
   return (
+    <>
     <div className="flex min-h-0 flex-1 flex-col gap-3">
       <div
         className={cn(
@@ -361,5 +387,42 @@ export function DatasetTablePicker({
         </div>
       ) : null}
     </div>
+
+      <AlertDialog
+        open={pendingTablePick !== null}
+        onOpenChange={(open) => !open && setPendingTablePick(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>切换数据表？</AlertDialogTitle>
+            <AlertDialogDescription>
+              切换表将重置字段勾选，是否继续？
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmTablePick}>继续</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={pendingDataSourceId !== null}
+        onOpenChange={(open) => !open && setPendingDataSourceId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>切换数据源？</AlertDialogTitle>
+            <AlertDialogDescription>
+              切换数据源将清空当前数据表，是否继续？
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDataSourceChange}>继续</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

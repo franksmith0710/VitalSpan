@@ -70,7 +70,10 @@ export function DesignerPage() {
 
   const datasetsQuery = useQuery({
     queryKey: queryKeys.datasets.list(),
-    queryFn: () => apiFetch<{ items: Array<{ id: string; name: string }> }>("/api/v1/datasets"),
+    queryFn: () =>
+      apiFetch<{ items: Array<{ datasetId: string; displayName: string }> }>(
+        "/api/v1/datasets",
+      ),
   });
 
   const { leaveDialogOpen, confirmLeave, cancelLeave } = useUnsavedLeaveGuard({
@@ -139,7 +142,7 @@ export function DesignerPage() {
   return (
     <AdminPageShell
       title="查询设计器"
-      description="配置查询条件、运算规则与输出字段，预览 SQL 并提交工单审批（DESIGN-001~004）。"
+      description="配置查询条件、运算规则与输出字段，预览 SQL 并提交工单审批。"
       actions={actions}
     >
       <div className="mb-4 flex flex-wrap items-center gap-3">

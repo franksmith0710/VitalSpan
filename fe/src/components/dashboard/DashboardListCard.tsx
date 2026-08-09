@@ -65,6 +65,7 @@ function formatUpdatedAt(value: string): string {
 export function DashboardListCard({
   dashboard,
   canEdit,
+  canShare,
   onDelete,
   selected,
   onToggleSelect,
@@ -73,6 +74,7 @@ export function DashboardListCard({
 }: {
   dashboard: DashboardListItem;
   canEdit: boolean;
+  canShare?: boolean;
   onDelete?: () => void;
   selected?: boolean;
   onToggleSelect?: () => void;
@@ -80,6 +82,7 @@ export function DashboardListCard({
   /** 列表入口：看板或数据大屏 */
   routeBase?: string;
 }) {
+  const shareAllowed = canShare ?? canEdit;
   const layoutForPreview =
     dashboard.layoutJson ?? previewSummaryToLayout(dashboard.previewSummary);
   const widgetCount =
@@ -192,26 +195,26 @@ export function DashboardListCard({
                 </Link>
               </DropdownMenuItem>
               {canEdit ? (
-                <>
-                  <DropdownMenuItem asChild>
-                    <Link to={editPath} className="gap-2">
-                      <Pencil className="size-4" />
-                      编辑
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to={sharePath} className="gap-2">
-                      <Share2 className="size-4" />
-                      分享
-                    </Link>
-                  </DropdownMenuItem>
-                  {onDelete ? (
-                    <DropdownMenuItem variant="destructive" onClick={onDelete}>
-                      <Trash2 className="size-4" aria-hidden />
-                      删除
-                    </DropdownMenuItem>
-                  ) : null}
-                </>
+                <DropdownMenuItem asChild>
+                  <Link to={editPath} className="gap-2">
+                    <Pencil className="size-4" />
+                    编辑
+                  </Link>
+                </DropdownMenuItem>
+              ) : null}
+              {shareAllowed ? (
+                <DropdownMenuItem asChild>
+                  <Link to={sharePath} className="gap-2">
+                    <Share2 className="size-4" />
+                    分享
+                  </Link>
+                </DropdownMenuItem>
+              ) : null}
+              {canEdit && onDelete ? (
+                <DropdownMenuItem variant="destructive" onClick={onDelete}>
+                  <Trash2 className="size-4" aria-hidden />
+                  删除
+                </DropdownMenuItem>
               ) : null}
             </DropdownMenuContent>
           </DropdownMenu>

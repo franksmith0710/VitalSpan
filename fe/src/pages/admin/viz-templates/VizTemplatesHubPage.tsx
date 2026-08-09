@@ -356,6 +356,20 @@ export function VizTemplatesHubPage() {
               icon={<LayoutTemplate className="size-8" aria-hidden />}
               title={VIZ_TEMPLATES_HUB.emptyTitle}
               description={VIZ_TEMPLATES_HUB.emptyDescription}
+              action={
+                canEdit ? (
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    onClick={() => importRef.current?.click()}
+                    disabled={importMutation.isPending}
+                  >
+                    <Upload className="size-4" aria-hidden />
+                    {VIZ_TEMPLATES_HUB.importJson}
+                  </Button>
+                ) : undefined
+              }
             />
           ) : (
             <>

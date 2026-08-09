@@ -176,7 +176,10 @@ def create_dataset(payload: DatasetItemIn, user: UserContext) -> DatasetItemOut:
 
 
 def list_datasets(
-    limit: int = 50, offset: int = 0, user: UserContext | None = None,
+    limit: int = 50,
+    offset: int = 0,
+    user: UserContext | None = None,
+    q: str | None = None,
 ) -> DatasetListResponse:
     def _op(session: Session) -> DatasetListResponse:
         stmt = select(DatasetRecord).order_by(DatasetRecord.dataset_id)
@@ -193,6 +196,13 @@ def list_datasets(
         )
         if user is not None and "admin" not in set(user.roles):
             rows = [r for r in rows if _can_read_dataset(user, r)]
+        needle = (q or "").strip().lower()
+        if needle:
+            rows = [
+                r
+                for r in rows
+                if needle in r.display_name.lower() or needle in r.dataset_id.lower()
+            ]
         total = len(rows)
         page = rows[max(offset, 0) : max(offset, 0) + capped]
         return DatasetListResponse(items=[_row_to_out(r) for r in page], total=total)

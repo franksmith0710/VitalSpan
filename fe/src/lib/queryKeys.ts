@@ -133,7 +133,8 @@ export const queryKeys = {
   },
   datasets: {
     all: ["datasets"] as const,
-    list: (params?: { limit?: number; offset?: number }) => ["datasets", "list", params] as const,
+    list: (params?: { q?: string; limit?: number; offset?: number }) =>
+      ["datasets", "list", params] as const,
     detail: (id: string) => ["datasets", "detail", id] as const,
   },
   services: {

@@ -51,6 +51,10 @@ export function canEditDashboards(user: SessionUser): boolean {
   return hasCapability(user, "dashboard:edit");
 }
 
+export function canShareDashboards(user: SessionUser): boolean {
+  return hasCapability(user, "dashboard:share");
+}
+
 const ROLE_LABELS: Record<SessionRole, string> = {
   admin: "管理员",
   analyst: "分析师",

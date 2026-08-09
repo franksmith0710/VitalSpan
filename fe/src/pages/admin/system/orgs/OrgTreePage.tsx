@@ -37,6 +37,7 @@ import { queryKeys } from "@/lib/queryKeys";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { mapOrgError } from "./orgErrors";
 import { OrgTreeRows, type OrgOut } from "./OrgTreeRows";
+import { DESTRUCTIVE_ALERT_ACTION_CLASS } from "@/components/layout/list-batch-delete";
 
 function parentOptions(items: OrgOut[], excludeId?: string) {
   return items.filter((o) => o.id !== excludeId);
@@ -255,6 +256,7 @@ export function OrgTreePage() {
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction
+              className={DESTRUCTIVE_ALERT_ACTION_CLASS}
               disabled={deleteMutation.isPending}
               onClick={() => deleteOrg && deleteMutation.mutate(deleteOrg.id)}
             >

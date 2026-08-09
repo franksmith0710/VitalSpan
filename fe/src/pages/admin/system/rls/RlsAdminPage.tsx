@@ -9,6 +9,7 @@ import {
   ListPageBatchActions,
   ListRowCheckbox,
   useListBatchMode,
+  DESTRUCTIVE_ALERT_ACTION_CLASS,
 } from "@/components/layout/list-batch-delete";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import {
@@ -377,6 +378,7 @@ export function RlsAdminPage() {
                         variant="ghost"
                         size="sm"
                         aria-label="删除维度类型"
+                        className="text-error-600 hover:text-error-700 dark:text-error-400 dark:hover:text-error-300"
                         onClick={() => setDeleteDim(d)}
                       >
                         <Trash2 className="size-4" />
@@ -498,6 +500,7 @@ export function RlsAdminPage() {
                         variant="ghost"
                         size="sm"
                         aria-label="删除分组"
+                        className="text-error-600 hover:text-error-700 dark:text-error-400 dark:hover:text-error-300"
                         onClick={() => setDeleteGroup(g)}
                       >
                         <Trash2 className="size-4" />
@@ -636,15 +639,12 @@ export function RlsAdminPage() {
                 取消
               </Button>
             </AlertDialogCancel>
-            <AlertDialogAction asChild>
-              <Button
-                type="button"
-                variant="primary"
-                disabled={removeDim.isPending}
-                onClick={() => deleteDim && removeDim.mutate(deleteDim.id)}
-              >
-                删除
-              </Button>
+            <AlertDialogAction
+              className={DESTRUCTIVE_ALERT_ACTION_CLASS}
+              disabled={removeDim.isPending}
+              onClick={() => deleteDim && removeDim.mutate(deleteDim.id)}
+            >
+              删除
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -815,15 +815,12 @@ export function RlsAdminPage() {
                 取消
               </Button>
             </AlertDialogCancel>
-            <AlertDialogAction asChild>
-              <Button
-                type="button"
-                variant="primary"
-                disabled={removeGroup.isPending}
-                onClick={() => deleteGroup && removeGroup.mutate(deleteGroup.id)}
-              >
-                删除
-              </Button>
+            <AlertDialogAction
+              className={DESTRUCTIVE_ALERT_ACTION_CLASS}
+              disabled={removeGroup.isPending}
+              onClick={() => deleteGroup && removeGroup.mutate(deleteGroup.id)}
+            >
+              删除
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

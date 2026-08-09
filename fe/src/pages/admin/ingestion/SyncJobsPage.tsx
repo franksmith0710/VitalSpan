@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { Plus } from "lucide-react";
+import { Plus, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/auth-context";
 import { hasCapability } from "@/lib/capabilities";
@@ -12,8 +12,9 @@ import {
 } from "@/components/layout/list-batch-delete";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { runBatchDelete } from "@/lib/runBatchDelete";
-import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import { ListPagePagination, ListPageSection, ListPageTableFrame } from "@/components/layout/list-page-kit";
+import { ListGhostEmptyState } from "@/components/ui/panel-empty-state";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -305,10 +306,15 @@ export function SyncJobsPage() {
     <AdminPageShell
       layout="list"
       title="同步任务"
+      icon={
+        <AdminPageHeaderIcon>
+          <RefreshCw className="size-6" aria-hidden />
+        </AdminPageHeaderIcon>
+      }
       description="管理源库到托管分析库的全量同步任务，配置定时计划与清洗规则。"
       actions={
         canManage ? (
-          <Button asChild variant="primary">
+          <Button asChild variant="primary" size="sm">
             <Link to="/admin/ingestion/sync-jobs/new">
               <Plus className="size-4" aria-hidden />
               新建任务
@@ -324,20 +330,22 @@ export function SyncJobsPage() {
       ) : null}
 
       {loading ? (
-        <div className="shrink-0 space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <ListPageSection>
+          <div className="space-y-4 px-5 py-5">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-[88px] rounded-xl" />
+              ))}
+            </div>
             {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-[88px] rounded-xl" />
+              <Skeleton key={i} className="h-10 w-full rounded-lg" />
             ))}
           </div>
-          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="mb-3 h-10 w-full rounded-lg last:mb-0" />
-            ))}
-          </div>
-        </div>
+        </ListPageSection>
       ) : jobs.length === 0 ? (
-        <SyncJobsEmptyState />
+        <ListPageSection>
+          <SyncJobsEmptyState />
+        </ListPageSection>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
           <div
@@ -382,11 +390,16 @@ export function SyncJobsPage() {
                 }
               />
               {filteredJobs.length === 0 ? (
-                <div className="min-h-0 flex-1 px-6 py-12 text-center text-theme-sm text-gray-500 dark:text-gray-400">
-                  {search.trim()
-                    ? `未找到匹配「${search.trim()}」的任务`
-                    : "当前筛选条件下暂无任务"}
-                </div>
+                <ListGhostEmptyState
+                  layout="table"
+                  icon={<RefreshCw className="size-7" aria-hidden />}
+                  title={search.trim() ? "未找到匹配任务" : "当前筛选条件下暂无任务"}
+                  description={
+                    search.trim()
+                      ? `未找到匹配「${search.trim()}」的任务，请调整搜索或筛选。`
+                      : "尝试调整状态筛选或新建同步任务。"
+                  }
+                />
               ) : (
                 <>
                   <ListPageTableFrame className="px-0">

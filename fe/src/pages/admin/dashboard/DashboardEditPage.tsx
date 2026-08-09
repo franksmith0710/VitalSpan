@@ -18,6 +18,7 @@ import { DashboardShareDialog } from "@/components/dashboard/DashboardShareDialo
 import { DashboardScheduleSheet } from "@/pages/admin/reports/components/DashboardScheduleSheet";
 import { useAuth } from "@/context/auth-context";
 import { matchesCapability, resolveEffectiveCapabilities } from "@/lib/capabilities";
+import { canEditDashboards, canShareDashboards, sessionUserFromMe } from "@/lib/session";
 import {
   dataScreenListPath,
   dataScreenPreviewPath,
@@ -197,6 +198,9 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const location = useLocation();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const sessionUser = user ? sessionUserFromMe(user) : null;
+  const canEditDashboard = sessionUser ? canEditDashboards(sessionUser) : false;
+  const canShareDashboard = sessionUser ? canShareDashboards(sessionUser) : false;
   const canManageSchedule =
     matchesCapability(resolveEffectiveCapabilities(user), "report:manage") ||
     matchesCapability(resolveEffectiveCapabilities(user), "dashboard:schedule");
@@ -1172,9 +1176,11 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                   预览
                 </Link>
               </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => setShareOpen(true)}>
-                分享
-              </Button>
+              {canShareDashboard ? (
+                <Button type="button" variant="outline" size="sm" onClick={() => setShareOpen(true)}>
+                  分享
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 variant="outline"
@@ -1186,11 +1192,11 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 <span className="hidden sm:inline">定时推送</span>
               </Button>
             </>
-          ) : (
+          ) : canEditDashboard ? (
             <Button asChild variant="outline" size="sm">
               <Link to={`${routeBase}/${id}/edit`}>编辑布局</Link>
             </Button>
-          )}
+          ) : null}
         </>
       ) : null}
 

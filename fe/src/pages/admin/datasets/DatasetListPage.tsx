@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { Layers, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -51,32 +51,42 @@ type DatasetItem = {
   isDemoPackage?: boolean;
 };
 
-function matchesDatasetSearch(item: DatasetItem, query: string): boolean {
-  const q = query.trim().toLowerCase();
-  if (!q) return true;
-  return (
-    item.displayName.toLowerCase().includes(q) ||
-    item.datasetId.toLowerCase().includes(q)
-  );
-}
-
 export function DatasetListPage() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<DatasetItem | null>(null);
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [batchDeleting, setBatchDeleting] = useState(false);
-  const pagination = useListPagination(20, [search]);
 
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: queryKeys.datasets.list({
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedQ(search.trim()), 300);
+    return () => window.clearTimeout(timer);
+  }, [search]);
+
+  const pagination = useListPagination(20, [debouncedQ]);
+
+  const listParams = useMemo(
+    () => ({
+      q: debouncedQ || undefined,
       limit: pagination.pageSize,
       offset: pagination.offset,
     }),
-    queryFn: () =>
-      apiFetch<{ items: DatasetItem[]; total: number }>(
-        `/api/v1/datasets?limit=${pagination.pageSize}&offset=${pagination.offset}`,
-      ),
+    [debouncedQ, pagination.pageSize, pagination.offset],
+  );
+
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: queryKeys.datasets.list(listParams),
+    queryFn: () => {
+      const params = new URLSearchParams({
+        limit: String(listParams.limit),
+        offset: String(listParams.offset),
+      });
+      if (listParams.q) params.set("q", listParams.q);
+      return apiFetch<{ items: DatasetItem[]; total: number }>(
+        `/api/v1/datasets?${params.toString()}`,
+      );
+    },
   });
 
   const deleteMutation = useMutation({
@@ -91,19 +101,11 @@ export function DatasetListPage() {
 
   const items = data?.items ?? [];
   const total = data?.total ?? 0;
-  const hasFilters = Boolean(search.trim());
-  const filteredItems = useMemo(() => {
-    const matched = items.filter((item) => matchesDatasetSearch(item, search));
-    return [...matched].sort((a, b) => {
-      const aDemo = isDemoPackageDataset(a.datasetId, a.displayName) || a.isDemoPackage ? 1 : 0;
-      const bDemo = isDemoPackageDataset(b.datasetId, b.displayName) || b.isDemoPackage ? 1 : 0;
-      return bDemo - aDemo || a.displayName.localeCompare(b.displayName, "zh-CN");
-    });
-  }, [items, search]);
-  const rowIds = useMemo(() => filteredItems.map((item) => item.datasetId), [filteredItems]);
+  const hasFilters = Boolean(debouncedQ);
+  const rowIds = useMemo(() => items.map((item) => item.datasetId), [items]);
   const selection = useListRowSelection(rowIds);
   const batch = useListBatchMode(selection.clear);
-  const isEmpty = !isLoading && filteredItems.length === 0;
+  const isEmpty = !isLoading && items.length === 0;
 
   const handleBatchDelete = async () => {
     const ids = [...selection.selectedIds];
@@ -138,7 +140,7 @@ export function DatasetListPage() {
           <Layers className="size-6" aria-hidden />
         </AdminPageHeaderIcon>
       }
-      description="语义层数据集管理。安装后可在列表中看到「【官方示例】」预置数据集（对标 DataEase 数据准备）。"
+      description="语义层数据集管理。安装后可在列表中看到「【官方示例】」预置数据集。"
       actions={createButton}
     >
       <ListPageSection>
@@ -166,7 +168,7 @@ export function DatasetListPage() {
               />
               {!isLoading && hasFilters ? (
                 <p className="text-theme-sm text-gray-500 dark:text-gray-400">
-                  筛选结果 {filteredItems.length} 条
+                  筛选结果 {total} 条
                 </p>
               ) : null}
             </div>
@@ -199,7 +201,7 @@ export function DatasetListPage() {
                         key="select-all"
                         checked={selection.allSelected}
                         indeterminate={selection.someSelected}
-                        disabled={filteredItems.length === 0}
+                        disabled={items.length === 0}
                         onCheckedChange={() => selection.toggleAll()}
                       />,
                     ]
@@ -210,7 +212,7 @@ export function DatasetListPage() {
                 "表数量",
                 "操作",
               ]}
-              rows={filteredItems.map((d) => [
+              rows={items.map((d) => [
                 ...(batch.batchMode
                   ? [
                       <ListRowCheckbox
@@ -263,7 +265,7 @@ export function DatasetListPage() {
           )}
         </ListPageTableFrame>
 
-        {!isLoading && total > 0 && !hasFilters ? (
+        {!isLoading && total > 0 ? (
           <ListPagePagination
             current={pagination.page}
             pageSize={pagination.pageSize}
@@ -285,6 +287,7 @@ export function DatasetListPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction
+              className="bg-error-500 text-white hover:bg-error-600 dark:bg-error-500 dark:hover:bg-error-600"
               onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.datasetId)}
             >
               删除

@@ -71,7 +71,7 @@ export function GovernanceCatalogPage() {
     <AdminPageShell
       layout="list"
       title="接口分类目录"
-      description="治理域 catalog 条目登记与七分法分类浏览（GOV-001）。"
+      description="治理域接口目录登记与分类浏览。"
     >
       <ListPageSection>
         {entriesQuery.isError ? (

@@ -14,6 +14,16 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { UnsavedLeaveDialog } from "@/components/ui/unsaved-leave-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import {
   DIRTY_ORDERS_DEMO_ETL_RULES,
@@ -50,6 +60,7 @@ export function EtlRulesPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState(false);
+  const [alignConfirmOpen, setAlignConfirmOpen] = useState(false);
 
   const { isDirty, isBaselineReady, resetBaseline, markSaved } = useFormDirtyState(
     rules,
@@ -207,7 +218,8 @@ export function EtlRulesPage() {
     const hasExistingRules = rules.some((rule) =>
       Object.entries(rule).some(([key, value]) => key !== "type" && Boolean(value?.trim())),
     );
-    if (hasExistingRules && !window.confirm("一键对齐将覆盖当前规则，是否继续？")) {
+    if (hasExistingRules) {
+      setAlignConfirmOpen(true);
       return;
     }
     void runAutoAlign();
@@ -282,6 +294,28 @@ export function EtlRulesPage() {
         onDiscardLeave={confirmLeave}
         onSaveAndLeave={handleSaveAndLeave}
       />
+
+      <AlertDialog open={alignConfirmOpen} onOpenChange={setAlignConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>覆盖当前规则？</AlertDialogTitle>
+            <AlertDialogDescription>
+              一键对齐将覆盖当前已填写的清洗规则，是否继续？
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setAlignConfirmOpen(false);
+                void runAutoAlign();
+              }}
+            >
+              继续对齐
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminPageShell>
   );
 }

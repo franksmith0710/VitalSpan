@@ -35,8 +35,9 @@ def list_datasets(
     actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
+    q: str | None = Query(default=None),
 ) -> DatasetListResponse:
-    return dataset_service.list_datasets(limit, offset, actor)
+    return dataset_service.list_datasets(limit, offset, actor, q=q)
 
 
 @router.post("", response_model=DatasetItemOut, status_code=status.HTTP_201_CREATED)

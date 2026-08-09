@@ -7,6 +7,7 @@ import {
   Hand,
   History,
   Layers,
+  MoreHorizontal,
   Pencil,
   Play,
   RefreshCw,
@@ -17,6 +18,12 @@ import {
 import { ListHeaderCheckbox, ListRowCheckbox, listTableSelectCellClass, listTableSelectHeadClass } from "@/components/layout/list-batch-delete";
 import { Badge } from "@/components/ui/badge";
 import { IconButton } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { HintTooltip, TruncateHint } from "@/components/ui/hint-tooltip";
 import { cn } from "@/lib/utils";
 import { localizeApiMessage } from "@/lib/apiError";
@@ -296,28 +303,45 @@ export function SyncJobsTable({
                           </HintTooltip>
                         );
                       })()}
-                      <IconButton asChild variant="ghost" size="sm" aria-label="配置清洗规则">
-                        <Link to={`/admin/ingestion/sync-jobs/${job.id}/etl-rules`}>
-                          <Settings2 className="size-4" />
-                        </Link>
-                      </IconButton>
-                      <IconButton asChild variant="ghost" size="sm" aria-label="编辑任务">
-                        <Link to={`/admin/ingestion/sync-jobs/${job.id}/edit`}>
-                          <Pencil className="size-4" />
-                        </Link>
-                      </IconButton>
-                      <IconButton
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className={cn(
-                          "text-gray-500 hover:text-error-600 dark:text-gray-400 dark:hover:text-error-400",
-                        )}
-                        aria-label="删除任务"
-                        onClick={() => onDelete(job)}
-                      >
-                        <Trash2 className="size-4" />
-                      </IconButton>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <IconButton
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            aria-label="更多操作"
+                          >
+                            <MoreHorizontal className="size-4" />
+                          </IconButton>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44">
+                          <DropdownMenuItem asChild>
+                            <Link
+                              to={`/admin/ingestion/sync-jobs/${job.id}/etl-rules`}
+                              className="gap-2"
+                            >
+                              <Settings2 className="size-4" />
+                              清洗规则
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link
+                              to={`/admin/ingestion/sync-jobs/${job.id}/edit`}
+                              className="gap-2"
+                            >
+                              <Pencil className="size-4" />
+                              编辑任务
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onClick={() => onDelete(job)}
+                          >
+                            <Trash2 className="size-4" aria-hidden />
+                            删除任务
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </>
                   ) : null}
                   <IconButton asChild variant="ghost" size="sm" aria-label="查看运行历史">

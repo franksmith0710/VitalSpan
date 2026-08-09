@@ -15,6 +15,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 
+/** 危险操作确认按钮（删除等） */
+export const DESTRUCTIVE_ALERT_ACTION_CLASS =
+  "bg-error-500 text-white hover:bg-error-600 dark:bg-error-500 dark:hover:bg-error-600";
+
 /** 原生 table 选择列（非 shadcn Table） */
 export const listTableSelectHeadClass =
   "w-10 max-w-10 px-2 py-2 text-center font-medium text-gray-600 dark:text-gray-400";
@@ -209,7 +213,11 @@ export function BatchDeleteDialog({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={pending}>取消</AlertDialogCancel>
-          <AlertDialogAction disabled={pending} onClick={onConfirm}>
+          <AlertDialogAction
+            className={DESTRUCTIVE_ALERT_ACTION_CLASS}
+            disabled={pending}
+            onClick={onConfirm}
+          >
             {pending ? "删除中…" : "删除"}
           </AlertDialogAction>
         </AlertDialogFooter>

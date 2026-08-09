@@ -51,6 +51,7 @@ export function OrgTreeRows({ items, parentId, depth, onEdit, onDelete }: OrgTre
                 variant="ghost"
                 size="sm"
                 aria-label={`删除 ${org.name}`}
+                className="text-error-600 hover:text-error-700 dark:text-error-400 dark:hover:text-error-300"
                 onClick={() => onDelete(org)}
               >
                 <Trash2 className="size-4" />

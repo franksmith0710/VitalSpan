@@ -239,8 +239,9 @@ export function GrantsPage() {
                         <td className="px-4 py-3 text-right">
                           <Button
                             type="button"
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
+                            className="text-error-600 hover:text-error-700 dark:text-error-400 dark:hover:text-error-300"
                             aria-label="撤销授权"
                             onClick={() => {
                               page.setActionError(null);

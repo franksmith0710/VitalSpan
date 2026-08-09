@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { Eye, LayoutDashboard, LayoutGrid, LayoutList, LayoutTemplate, Pencil, Plus, Share2, Trash2, CalendarClock } from "lucide-react";
+import { Eye, LayoutDashboard, LayoutTemplate, Pencil, Plus, Share2, Trash2, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 import {
   BatchDeleteDialog,
@@ -46,7 +46,7 @@ import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
 import { useListPagination } from "@/lib/list-pagination";
-import { canEditDashboards, sessionUserFromMe } from "@/lib/session";
+import { canEditDashboards, canShareDashboards, sessionUserFromMe } from "@/lib/session";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { runBatchDelete } from "@/lib/runBatchDelete";
 import { useAuth } from "@/context/auth-context";
@@ -55,6 +55,12 @@ import { createFromTemplate, type DashboardTemplateListItem } from "@/lib/dashbo
 import { isDemoPackageDashboard } from "@/lib/demoPackage";
 import { SCHEDULE_CREATE_INTENT } from "@/lib/scheduleSourceMeta";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  DashboardSurfaceViewModeToggle,
+  formatDashboardListUpdatedAt,
+  type DashboardSurfaceViewMode,
+} from "./dashboardListUi";
+import { DESTRUCTIVE_ALERT_ACTION_CLASS } from "@/components/layout/list-batch-delete";
 
 type DashboardListResponse = {
   items: DashboardListItem[];
@@ -63,7 +69,7 @@ type DashboardListResponse = {
   offset: number;
 };
 
-type ViewMode = "grid" | "list";
+type ViewMode = DashboardSurfaceViewMode;
 
 function sortDashboardListItems(items: DashboardListItem[]): DashboardListItem[] {
   return [...items].sort((a, b) => {
@@ -72,51 +78,6 @@ function sortDashboardListItems(items: DashboardListItem[]): DashboardListItem[]
     if (aDemo !== bDemo) return bDemo - aDemo;
     return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
   });
-}
-
-function formatUpdatedAt(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-  return date.toLocaleString("zh-CN");
-}
-
-function ViewModeToggle({
-  viewMode,
-  onChange,
-}: {
-  viewMode: ViewMode;
-  onChange: (mode: ViewMode) => void;
-}) {
-  return (
-    <div
-      className="inline-flex rounded-lg border border-gray-200 bg-gray-100/80 p-0.5 dark:border-gray-800 dark:bg-white/[0.04]"
-      role="group"
-      aria-label="看板视图切换"
-    >
-      <Button
-        type="button"
-        variant={viewMode === "grid" ? "primary" : "ghost"}
-        size="sm"
-        aria-pressed={viewMode === "grid"}
-        onClick={() => onChange("grid")}
-      >
-        <LayoutGrid className="size-4" aria-hidden />
-        卡片
-      </Button>
-      <Button
-        type="button"
-        variant={viewMode === "list" ? "primary" : "ghost"}
-        size="sm"
-        aria-pressed={viewMode === "list"}
-        onClick={() => onChange("list")}
-      >
-        <LayoutList className="size-4" aria-hidden />
-        列表
-      </Button>
-    </div>
-  );
 }
 
 export function DashboardListPage() {
@@ -129,6 +90,7 @@ export function DashboardListPage() {
     ? sessionUserFromMe(authUser)
     : sessionUserFromMe({ username: "用户", roles: ["viewer"] });
   const canEdit = canEditDashboards(sessionUser);
+  const canShare = canShareDashboards(sessionUser);
 
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [deleteTarget, setDeleteTarget] = useState<DashboardListItem | null>(null);
@@ -253,7 +215,7 @@ export function DashboardListPage() {
       }
       actions={
         <>
-          <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
+          <DashboardSurfaceViewModeToggle viewMode={viewMode} onChange={setViewMode} />
           {createButton}
         </>
       }
@@ -316,6 +278,7 @@ export function DashboardListPage() {
                       key={dashboard.id}
                       dashboard={dashboard}
                       canEdit={canEdit}
+                      canShare={canShare}
                       selected={selection.isSelected(dashboard.id)}
                       onToggleSelect={
                         canEdit && batch.batchMode
@@ -392,7 +355,7 @@ export function DashboardListPage() {
                   </p>
                 </div>,
                 String(widgetCount),
-                formatUpdatedAt(row.updatedAt),
+                formatDashboardListUpdatedAt(row.updatedAt),
                 <RowActions key={`${row.id}-actions`}>
                   <IconButton asChild variant="ghost" size="sm" aria-label="查看">
                     <Link to={viewPath}>
@@ -400,26 +363,29 @@ export function DashboardListPage() {
                     </Link>
                   </IconButton>
                   {canEdit ? (
-                    <>
-                      <IconButton asChild variant="ghost" size="sm" aria-label="编辑">
-                        <Link to={editPath}>
-                          <Pencil className="size-4" />
-                        </Link>
-                      </IconButton>
-                      <IconButton asChild variant="ghost" size="sm" aria-label="分享">
-                        <Link to={`/admin/dashboards/${row.id}/share`}>
-                          <Share2 className="size-4" />
-                        </Link>
-                      </IconButton>
-                      <IconButton
-                        variant="ghost"
-                        size="sm"
-                        aria-label="删除"
-                        onClick={() => setDeleteTarget(row)}
-                      >
-                        <Trash2 className="size-4" />
-                      </IconButton>
-                    </>
+                    <IconButton asChild variant="ghost" size="sm" aria-label="编辑">
+                      <Link to={editPath}>
+                        <Pencil className="size-4" />
+                      </Link>
+                    </IconButton>
+                  ) : null}
+                  {canShare ? (
+                    <IconButton asChild variant="ghost" size="sm" aria-label="分享">
+                      <Link to={`/admin/dashboards/${row.id}/share`}>
+                        <Share2 className="size-4" />
+                      </Link>
+                    </IconButton>
+                  ) : null}
+                  {canEdit ? (
+                    <IconButton
+                      variant="ghost"
+                      size="sm"
+                      aria-label="删除"
+                      className="text-error-600 hover:text-error-700 dark:text-error-400 dark:hover:text-error-300"
+                      onClick={() => setDeleteTarget(row)}
+                    >
+                      <Trash2 className="size-4" />
+                    </IconButton>
                   ) : null}
                 </RowActions>,
               ];
@@ -463,6 +429,7 @@ export function DashboardListPage() {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleteMutation.isPending}>取消</AlertDialogCancel>
             <AlertDialogAction
+              className={DESTRUCTIVE_ALERT_ACTION_CLASS}
               disabled={deleteMutation.isPending}
               onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
             >

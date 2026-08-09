@@ -10,6 +10,7 @@ import {
   listTableSelectCellClass,
   listTableSelectHeadClass,
   useListBatchMode,
+  DESTRUCTIVE_ALERT_ACTION_CLASS,
 } from "@/components/layout/list-batch-delete";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import {
@@ -569,6 +570,7 @@ export function RoleListPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction
+              className={DESTRUCTIVE_ALERT_ACTION_CLASS}
               disabled={deleteMutation.isPending}
               onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
             >

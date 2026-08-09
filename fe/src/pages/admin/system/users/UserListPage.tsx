@@ -7,8 +7,9 @@ import {
   ListPageTableFrame,
   ListPageToolbar,
 } from "@/components/layout/list-page-kit";
+import { Settings2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, IconButton } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
@@ -188,17 +189,18 @@ export function UserListPage() {
                           <UserRoleBadges userId={row.id} />
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <Button
+                          <IconButton
                             type="button"
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
+                            aria-label={`管理 ${row.username}`}
                             onClick={() => {
                               setSheetUser(row);
                               setActionError(null);
                             }}
                           >
-                            管理
-                          </Button>
+                            <Settings2 className="size-4" />
+                          </IconButton>
                         </td>
                       </tr>
                     ))

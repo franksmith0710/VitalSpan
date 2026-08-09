@@ -10,6 +10,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { mapApiError } from "@/lib/apiError";
 import {
   buildCatalogMoveTargets,
@@ -36,6 +46,7 @@ export function CatalogNodeMetaPanel({
 }) {
   const [name, setName] = useState(node.name);
   const [moveTarget, setMoveTarget] = useState<string>("__keep__");
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const { updateNode, deleteNode, moveNode } = useReportTemplates(null);
   const moveTargets = buildCatalogMoveTargets(node.id, allNodes);
   const parentPath = node.parentId
@@ -48,6 +59,7 @@ export function CatalogNodeMetaPanel({
   useEffect(() => {
     setName(node.name);
     setMoveTarget("__keep__");
+    setDeleteOpen(false);
   }, [node.id, node.name]);
 
   if (readOnly) {
@@ -76,12 +88,10 @@ export function CatalogNodeMetaPanel({
   };
 
   const handleDelete = () => {
-    if (!window.confirm(`确定删除「${node.name}」？${node.nodeType === "folder" ? "（须为空文件夹）" : ""}`)) {
-      return;
-    }
     deleteNode.mutate(node.id, {
       onSuccess: () => {
         toast.success("已删除");
+        setDeleteOpen(false);
         onDeleted?.();
       },
       onError: (err) => toast.error(mapApiError(err)),
@@ -105,21 +115,45 @@ export function CatalogNodeMetaPanel({
   };
 
   return (
-    <TemplateTabSections
-      node={node}
-      name={name}
-      setName={setName}
-      parentPath={parentPath}
-      moveTarget={moveTarget}
-      setMoveTarget={setMoveTarget}
-      moveTargets={moveTargets}
-      updatePending={updateNode.isPending}
-      movePending={moveNode.isPending}
-      deletePending={deleteNode.isPending}
-      onRename={handleRename}
-      onMove={handleMove}
-      onDelete={handleDelete}
-    />
+    <>
+      <TemplateTabSections
+        node={node}
+        name={name}
+        setName={setName}
+        parentPath={parentPath}
+        moveTarget={moveTarget}
+        setMoveTarget={setMoveTarget}
+        moveTargets={moveTargets}
+        updatePending={updateNode.isPending}
+        movePending={moveNode.isPending}
+        deletePending={deleteNode.isPending}
+        onRename={handleRename}
+        onMove={handleMove}
+        onDelete={() => setDeleteOpen(true)}
+      />
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除？</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定删除「{node.name}」？
+              {node.nodeType === "folder" ? "（须为空文件夹）" : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteNode.isPending}>取消</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteNode.isPending}
+              className="bg-error-500 text-white hover:bg-error-600 dark:bg-error-500 dark:hover:bg-error-600"
+              onClick={handleDelete}
+            >
+              删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 

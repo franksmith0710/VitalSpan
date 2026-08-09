@@ -16,7 +16,7 @@ export function MetadataHubPage() {
   return (
     <AdminPageShell
       title="语义层元数据"
-      description="维护术语字典、业务主题树与维度字典，为 Dataset 与报表提供统一语义口径（META-001~003）。"
+      description="维护术语字典、业务主题树与维度字典，为数据集与报表提供统一语义口径。"
     >
       <ListPageSection>
         <Tabs value={tab} onValueChange={setTab}>

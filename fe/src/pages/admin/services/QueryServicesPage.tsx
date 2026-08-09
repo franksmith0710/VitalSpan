@@ -54,7 +54,7 @@ export function QueryServicesPage() {
     <AdminPageShell
       layout="list"
       title="查询服务"
-      description="浏览已发布的治理查询服务，并试执行验证（IF-02）。"
+      description="浏览已发布的治理查询服务，并试执行验证。"
     >
       <ListPageSection>
         {isError ? (

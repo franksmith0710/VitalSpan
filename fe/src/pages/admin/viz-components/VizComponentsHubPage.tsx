@@ -17,6 +17,17 @@ import { Button } from "@/components/ui/button";
 import { SearchField } from "@/components/ui/search-field";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { DESTRUCTIVE_ALERT_ACTION_CLASS } from "@/components/layout/list-batch-delete";
+import {
   ListGhostEmptyState,
   PanelEmptyStateSteps,
 } from "@/components/ui/panel-empty-state";
@@ -108,6 +119,7 @@ export function VizComponentsHubPage() {
   const [q, setQ] = useState("");
   const [insertTarget, setInsertTarget] = useState<VizComponentListItem | null>(null);
   const [referencesTarget, setReferencesTarget] = useState<VizComponentListItem | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<VizComponentListItem | null>(null);
   const previewPaused = Boolean(insertTarget || referencesTarget);
   const pagination = useListPagination(20, [surfaceTab, widgetFilter, q]);
 
@@ -158,6 +170,7 @@ export function VizComponentsHubPage() {
     mutationFn: deleteVizComponent,
     onSuccess: () => {
       toast.success(VIZ_COMPONENTS_HUB.toastDeleted);
+      setDeleteTarget(null);
       invalidate();
     },
     onError: (err) => toast.error(mapApiError(err)),
@@ -278,7 +291,7 @@ export function VizComponentsHubPage() {
                     onViewReferences={() => setReferencesTarget(item)}
                     onPublish={() => publishMutation.mutate(item.id)}
                     onArchive={() => archiveMutation.mutate(item.id)}
-                    onDelete={() => deleteMutation.mutate(item.id)}
+                    onDelete={() => setDeleteTarget(item)}
                 />
               ))}
             </div>
@@ -311,6 +324,27 @@ export function VizComponentsHubPage() {
         componentId={referencesTarget?.id ?? null}
         componentName={referencesTarget?.name}
       />
+
+      <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>删除组件？</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定删除「{deleteTarget?.name}」？若仍被看板或大屏引用，删除将失败。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>取消</AlertDialogCancel>
+            <AlertDialogAction
+              className={DESTRUCTIVE_ALERT_ACTION_CLASS}
+              disabled={deleteMutation.isPending}
+              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+            >
+              {deleteMutation.isPending ? "删除中…" : "删除"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminPageShell>
   );
 }

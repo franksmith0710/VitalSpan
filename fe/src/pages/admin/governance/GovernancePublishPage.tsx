@@ -76,7 +76,7 @@ export function GovernancePublishPage() {
   return (
     <AdminPageShell
       title="发布流水线"
-      description="管理 catalog 条目发布状态、审批与 OpenAPI 文档预览（GOV-005~006）。"
+      description="管理目录条目发布状态、审批与 OpenAPI 文档预览。"
     >
       {isError ? <PageErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} /> : null}
 

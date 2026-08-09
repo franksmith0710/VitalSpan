@@ -8,6 +8,7 @@ import {
   ListHeaderCheckbox,
   ListRowCheckbox,
   useListBatchMode,
+  DESTRUCTIVE_ALERT_ACTION_CLASS,
 } from "@/components/layout/list-batch-delete";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
@@ -451,6 +452,7 @@ export function DatasourceListPage() {
                       aria-label={`删除 ${row.name}`}
                       disabled={isLocked}
                       title={isLocked ? "官方示例数据连接不可删除" : undefined}
+                      className="text-error-600 hover:text-error-700 dark:text-error-400 dark:hover:text-error-300"
                       onClick={() => {
                         setDeleteError(null);
                         setDeleteTarget(row);
@@ -487,6 +489,7 @@ export function DatasourceListPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction
+              className={DESTRUCTIVE_ALERT_ACTION_CLASS}
               disabled={deleteMutation.isPending}
               onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
             >

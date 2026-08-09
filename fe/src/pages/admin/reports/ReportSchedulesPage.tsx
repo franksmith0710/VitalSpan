@@ -14,6 +14,8 @@ import { PanelEmptyState } from "@/components/ui/panel-empty-state";
 import { SearchField } from "@/components/ui/search-field";
 import { Skeleton } from "@/components/ui/skeleton";
 import { mapApiError } from "@/lib/apiError";
+import { matchesCapability, resolveEffectiveCapabilities } from "@/lib/capabilities";
+import { useAuth } from "@/context/auth-context";
 import { describeCron } from "@/lib/scheduleCronWizard";
 import { fetchAllCatalogTemplates } from "@/lib/reportCatalogUtils";
 import {
@@ -115,11 +117,13 @@ function summarizeStats(items: { status?: string }[]) {
 }
 
 export function ReportSchedulesPage() {
+  const { user } = useAuth();
+  const caps = resolveEffectiveCapabilities(user);
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = parseScheduleTabParam(searchParams.get("tab"));
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const readOnly = false;
+  const readOnly = !matchesCapability(caps, "report:manage");
 
   useEffect(() => {
     const expand = searchParams.get("expand");
