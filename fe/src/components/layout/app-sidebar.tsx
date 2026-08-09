@@ -16,6 +16,7 @@ import {
 import { useSidebar } from "@/context/sidebar-context";
 import { prefetchAdminRoute } from "@/lib/routePrefetch";
 import { beginAdminNavTransition } from "@/lib/adminHeavyRenderSuspend";
+import { isReportCenterNavGroup, resolveReportCenterSubNavPath } from "@/lib/reportCenterNav";
 
 export type NavSubItem = {
   name: string;
@@ -165,11 +166,21 @@ function SidebarNavItem({
 }) {
   const location = useLocation();
   const subPaths = item.subItems?.map((sub) => sub.path) ?? [];
-  const activeSubPath = subPaths.length ? resolveActiveNavPath(location.pathname, subPaths) : null;
-  const isActive = (path: string) =>
-    subPaths.length > 0
-      ? isNavPathActive(location.pathname, path, subPaths)
-      : isNavPathActive(location.pathname, path, sectionPaths);
+  const reportNavGroup = isReportCenterNavGroup(item.subItems);
+  const activeSubPath = subPaths.length
+    ? reportNavGroup
+      ? resolveReportCenterSubNavPath(location.pathname)
+      : resolveActiveNavPath(location.pathname, subPaths)
+    : null;
+  const isActive = (path: string) => {
+    if (subPaths.length > 0) {
+      if (reportNavGroup) {
+        return resolveReportCenterSubNavPath(location.pathname) === path;
+      }
+      return isNavPathActive(location.pathname, path, subPaths);
+    }
+    return isNavPathActive(location.pathname, path, sectionPaths);
+  };
   const hasActiveChild = activeSubPath !== null;
   const { open, handleOpenChange, hoverZoneProps, toggleFromClick, toggleFromKeyboard } =
     useCollapsibleOpen(hasActiveChild);

@@ -4,6 +4,12 @@ import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import {
+  BatchDeleteDialog,
+  ListHeaderCheckbox,
+  ListPageBatchActions,
+  DESTRUCTIVE_ALERT_ACTION_CLASS,
+} from "@/components/layout/list-batch-delete";
+import {
   AdminFormDialogBody,
   AdminFormDialogContent,
   AdminFormDialogFooter,
@@ -37,7 +43,7 @@ import { queryKeys } from "@/lib/queryKeys";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { mapOrgError } from "./orgErrors";
 import { OrgTreeRows, type OrgOut } from "./OrgTreeRows";
-import { DESTRUCTIVE_ALERT_ACTION_CLASS } from "@/components/layout/list-batch-delete";
+import { useOrgBatchDelete } from "./useOrgBatchDelete";
 
 function parentOptions(items: OrgOut[], excludeId?: string) {
   return items.filter((o) => o.id !== excludeId);
@@ -100,6 +106,14 @@ export function OrgTreePage() {
   });
 
   const items = data?.items ?? [];
+  const {
+    selection,
+    batch,
+    batchDeleteOpen,
+    setBatchDeleteOpen,
+    batchDeleting,
+    handleBatchDelete,
+  } = useOrgBatchDelete(items, invalidate);
 
   const openEdit = (org: OrgOut) => {
     setEditOrg(org);
@@ -121,6 +135,31 @@ export function OrgTreePage() {
       {isError ? <PageErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} /> : null}
 
       <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
+        {items.length > 0 ? (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <ListPageBatchActions
+              batchMode={batch.batchMode}
+              onToggleBatchMode={batch.toggleBatchMode}
+              selectedCount={selection.selectedCount}
+              entityLabel="个组织"
+              onClear={selection.clear}
+              onDelete={() => setBatchDeleteOpen(true)}
+            />
+            {batch.batchMode ? (
+              <div className="flex items-center gap-2">
+                <ListHeaderCheckbox
+                  checked={selection.allSelected}
+                  indeterminate={selection.someSelected}
+                  disabled={items.length === 0}
+                  onCheckedChange={() => selection.toggleAll()}
+                />
+                <span className="text-theme-xs text-gray-500 dark:text-gray-400">全选</span>
+              </div>
+            ) : (
+              <p className="text-theme-sm text-gray-500 dark:text-gray-400">共 {items.length} 个组织节点</p>
+            )}
+          </div>
+        ) : null}
         {isLoading ? (
           <div className="space-y-2">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -136,6 +175,9 @@ export function OrgTreePage() {
             items={items}
             parentId={null}
             depth={0}
+            batchMode={batch.batchMode}
+            isSelected={selection.isSelected}
+            onToggleSelect={selection.toggle}
             onEdit={openEdit}
             onDelete={setDeleteOrg}
           />
@@ -265,6 +307,16 @@ export function OrgTreePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <BatchDeleteDialog
+        open={batchDeleteOpen}
+        onOpenChange={setBatchDeleteOpen}
+        count={selection.selectedCount}
+        title="批量删除组织"
+        description={`确定删除选中的 ${selection.selectedCount} 个组织节点？仍有下级组织或已绑定用户的节点会删除失败。`}
+        pending={batchDeleting}
+        onConfirm={() => void handleBatchDelete()}
+      />
     </AdminPageShell>
   );
 }

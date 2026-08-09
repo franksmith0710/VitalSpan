@@ -14,6 +14,7 @@ import { SystemAdminHeaderButton } from "@/components/layout/system-admin-header
 import { ThemeToggleButton } from "@/components/layout/theme-toggle";
 import { UserDropdown } from "@/components/layout/user-dropdown";
 import { VitalSpanLogo } from "@/components/layout/vitalspan-logo";
+import { isGovNavEnabledFromEnv } from "@/lib/gov-nav";
 import { resolveSidebarSections } from "@/lib/resolve-nav";
 import { sessionUserFromMe } from "@/lib/session";
 import { isDetachedFromWorkspacePath } from "@/lib/workspace";
@@ -34,7 +35,10 @@ function AdminLayoutContent() {
     : sessionUserFromMe({ username: "用户", roles: ["viewer"], permissions: [], isRoot: false });
   const isDetachedArea = isDetachedFromWorkspacePath(location.pathname);
   const navSections = useMemo(
-    () => resolveSidebarSections(sessionUser, location.pathname),
+    () =>
+      resolveSidebarSections(sessionUser, location.pathname, {
+        govNavEnabled: isGovNavEnabledFromEnv(),
+      }),
     [sessionUser, location.pathname],
   );
   const dashboardEditMatch = useMatch("/admin/dashboards/:id/edit");

@@ -1,8 +1,9 @@
 import { useEffect, useRef } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import { ReportCenterBackLink } from "./components/ReportCenterBackLink";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -94,14 +95,7 @@ export function ReportViewPage() {
     <AdminPageShell
       title={node?.name ?? "报表查看"}
       description="运行报表模板并查看 Web 展现结果。"
-      actions={
-        <Button type="button" variant="outline" size="sm" asChild>
-          <Link to="/admin/reports/center">
-            <ArrowLeft className="size-4" aria-hidden />
-            返回全部报表
-          </Link>
-        </Button>
-      }
+      actions={<ReportCenterBackLink label="返回全部报表" />}
     >
       {nodeQuery.isError ? (
         <PageErrorBanner message={mapApiError(nodeQuery.error)} onRetry={() => void nodeQuery.refetch()} />

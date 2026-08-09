@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router";
+import { useSearchParams } from "react-router";
 import { useAuth } from "@/context/auth-context";
 import { matchesCapability, resolveEffectiveCapabilities } from "@/lib/capabilities";
-import { ArrowLeft, BarChart3 } from "lucide-react";
+import { BarChart3 } from "lucide-react";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import { ReportCenterBackLink } from "./components/ReportCenterBackLink";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -107,14 +108,7 @@ export function PrefabReportsPage() {
     <AdminPageShell
       title="预制分析报表"
       description="浏览并运行系统预置的分析报表，支持实体生命周期、分布等标准模型。"
-      actions={
-        <Button type="button" variant="outline" size="sm" className="h-10" asChild>
-          <Link to="/admin/reports/center">
-            <ArrowLeft className="size-4" aria-hidden />
-            返回全部报表
-          </Link>
-        </Button>
-      }
+      actions={<ReportCenterBackLink label="返回全部报表" />}
     >
       {bindingsQuery.isError ? (
         <PageErrorBanner

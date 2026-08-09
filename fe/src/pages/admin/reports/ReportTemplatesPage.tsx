@@ -26,6 +26,7 @@ import { TemplateDetailPanel } from "./components/TemplateDetailPanel";
 import { type CatalogNode, fetchCatalogExtension, useAllCatalogNodes, useReportTemplates } from "./useReportTemplates";
 import { queryKeys } from "@/lib/queryKeys";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
+import { ReportCenterBackLink } from "./components/ReportCenterBackLink";
 import {
   DOC_TEMPLATE_PRODUCT_LINE,
   VISUAL_SCHEDULE_PRODUCT_LINE,
@@ -285,7 +286,12 @@ export function ReportTemplatesPage() {
     <AdminPageShell
       title="文档模板"
       description={`${DOC_TEMPLATE_PRODUCT_LINE}${VISUAL_SCHEDULE_PRODUCT_LINE}`}
-      actions={nodes.length > 0 ? createActions : null}
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
+          <ReportCenterBackLink />
+          {nodes.length > 0 ? createActions : null}
+        </div>
+      }
     >
       <Alert severity="info" className="mb-4 border-brand-200 bg-brand-50/40 dark:border-brand-500/30 dark:bg-brand-500/5">
         <Info className="size-4" aria-hidden />

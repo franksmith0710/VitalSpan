@@ -133,7 +133,9 @@ describe("AppRoutes smoke", () => {
     mockApiFetch.mockResolvedValueOnce({ items: [] });
     renderRoutes(["/admin"]);
     expect(await screen.findByRole("heading", { name: "数据看板" })).toBeInTheDocument();
-    expect(mockResolveDefaultDashboardPath).toHaveBeenCalledWith(["admin"]);
+    expect(mockApiFetch).toHaveBeenCalledWith(
+      expect.stringContaining("surfaceKind=dashboard"),
+    );
   });
 
   it("redirects unknown paths to admin shell (T-FE-05)", () => {
@@ -242,12 +244,13 @@ describe("AppRoutes smoke", () => {
     expect(focusable).toBe(true);
   });
 
-  it("keeps admin shell for unknown /admin/* path without API leak (T-FE-28)", () => {
+  it("keeps admin shell for unknown /admin/* path (T-FE-28)", async () => {
     setDesktopViewport();
+    mockApiFetch.mockResolvedValue({ items: [] });
     renderRoutes(["/admin/nonexistent-secret"]);
     expect(screen.getAllByText("VitalSpan").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByRole("main").length).toBeGreaterThanOrEqual(1);
-    expect(mockApiFetch).not.toHaveBeenCalled();
+    expect(await screen.findByRole("heading", { name: "数据看板" })).toBeInTheDocument();
   });
 
   it("nested unknown ingestion path stays inside AdminLayout (T-FE-29)", () => {

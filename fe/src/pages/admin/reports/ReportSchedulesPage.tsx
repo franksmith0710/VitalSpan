@@ -31,6 +31,7 @@ import {
   ScheduleListTable,
 } from "./components/ScheduleListTable";
 import { ScheduleRecentFailuresPanel } from "./components/ScheduleRecentFailuresPanel";
+import { ReportCenterBackLink } from "./components/ReportCenterBackLink";
 import {
   SchedulePageOverview,
   SchedulePageOverviewSkeleton,
@@ -171,6 +172,7 @@ export function ReportSchedulesPage() {
         </AdminPageHeaderIcon>
       }
       description="管理看板/大屏可视化 PDF 定时投递、执行历史与失败重试。"
+      actions={<ReportCenterBackLink />}
     >
       {schedulesQuery.isError ? (
         <PageErrorBanner

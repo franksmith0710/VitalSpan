@@ -14,7 +14,7 @@ describe("resolveNavGroups", () => {
   it("returns full admin nav for admin (系统已移出主侧栏)", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]));
     expect(groups.some((g) => g.title === "系统")).toBe(false);
-    expect(groups.some((g) => g.title === "数据")).toBe(true);
+    expect(groups.some((g) => g.title === "数据准备")).toBe(true);
   });
 
   it("returns analyst nav without system or data groups", () => {
@@ -22,7 +22,7 @@ describe("resolveNavGroups", () => {
     expect(groups.some((g) => g.title === "分析")).toBe(true);
     expect(groups.some((g) => g.title === "主题与实体")).toBe(false);
     expect(groups.some((g) => g.title === "系统")).toBe(false);
-    expect(groups.some((g) => g.title === "数据")).toBe(false);
+    expect(groups.some((g) => g.title === "数据准备")).toBe(false);
   });
 
   it("returns viewer nav with 分析 and 报表 sections only (no 系统/数据)", () => {
@@ -31,7 +31,7 @@ describe("resolveNavGroups", () => {
     expect(sectionTitles).toContain("分析");
     expect(sectionTitles).toContain("报表");
     expect(sectionTitles).not.toContain("系统");
-    expect(sectionTitles).not.toContain("数据");
+    expect(sectionTitles).not.toContain("数据准备");
     const analysisSection = groups.find((g) => g.title === "分析");
     expect(analysisSection?.items.map((i) => i.name)).toContain("仪表板");
     const allItemNames = groups.flatMap((g) => g.items.map((i) => i.name));
@@ -92,11 +92,15 @@ describe("resolveNavGroups", () => {
     expect(allItems.some((i) => i.name === "实体与主题")).toBe(false);
     const reportSection = groups.find((g) => g.title === "报表");
     const reportParent = reportSection?.items.find((i) => i.name === "报表中心");
-    expect(reportParent?.path).toBe("/admin/reports/center");
-    expect(reportParent?.subItems).toBeUndefined();
+    expect(reportParent?.subItems?.map((s) => s.name)).toEqual([
+      "工作台",
+      "预制分析",
+      "文档模板",
+      "定时报告",
+    ]);
   });
 
-  it("T-NAV-MF-05: viewer with M1-only capabilities sees 报表中心 single entry", () => {
+  it("T-NAV-MF-05: viewer with M1-only capabilities sees report hub sub-nav without manage items", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("viewer", ["viewer"]), {
       activeMilestones: new Set(["M1"]),
     });
@@ -104,13 +108,12 @@ describe("resolveNavGroups", () => {
     expect(reportSection).toBeDefined();
     const reportParent = reportSection?.items.find((i) => i.name === "报表中心");
     expect(reportParent).toBeDefined();
-    expect(reportParent?.path).toBe("/admin/reports/center");
-    expect(reportParent?.subItems).toBeUndefined();
+    expect(reportParent?.subItems?.map((s) => s.name)).toEqual(["工作台", "预制分析"]);
   });
 
   it("T-NAV-MF-06: admin 数据 section has 数据连接与数据集（无实体与主题、元数据）", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]));
-    const dataSection = groups.find((g) => g.title === "数据");
+    const dataSection = groups.find((g) => g.title === "数据准备");
     expect(dataSection).toBeDefined();
     expect(dataSection?.defaultCollapsed).toBeFalsy();
     const dataConn = dataSection?.items.find((i) => i.name === "数据连接");
@@ -162,7 +165,7 @@ describe("resolveNavGroups", () => {
       isRoot: true,
     });
     expect(groups.some((g) => g.title === "系统")).toBe(false);
-    expect(groups.some((g) => g.title === "数据")).toBe(true);
+    expect(groups.some((g) => g.title === "数据准备")).toBe(true);
   });
 
   it("T-NAV-CAP-03: custom role with report:* sees 报表 only", () => {
@@ -175,7 +178,7 @@ describe("resolveNavGroups", () => {
       const titles = groups.map((g) => g.title);
       expect(titles).toContain("报表");
       expect(titles).not.toContain("系统");
-      expect(titles).not.toContain("数据");
+      expect(titles).not.toContain("数据准备");
     } finally {
       delete OPTIONAL_ROLE_CAPABILITY_MAP.reports_editor;
     }
@@ -186,14 +189,14 @@ describe("resolveNavGroups", () => {
     const titles = groups.map((g) => g.title);
     expect(titles).toContain("分析");
     expect(titles).toContain("报表");
-    expect(titles).not.toContain("数据");
+    expect(titles).not.toContain("数据准备");
     expect(titles).not.toContain("系统");
   });
 
   it("T-NAV-FC-01: analyst hides engineering sections", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("analyst", ["analyst"]));
     const titles = groups.map((g) => g.title);
-    expect(titles).not.toContain("数据");
+    expect(titles).not.toContain("数据准备");
     expect(titles).not.toContain("主题与实体");
     expect(titles).not.toContain("治理");
   });
@@ -201,7 +204,7 @@ describe("resolveNavGroups", () => {
   it("T-NAV-FC-02: viewer hides engineering sections", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("viewer", ["viewer"]));
     const titles = groups.map((g) => g.title);
-    expect(titles).not.toContain("数据");
+    expect(titles).not.toContain("数据准备");
     expect(titles).not.toContain("主题与实体");
     expect(titles).not.toContain("治理");
   });
@@ -209,10 +212,10 @@ describe("resolveNavGroups", () => {
   it("T-NAV-FC-03: admin sees engineering 数据; 治理 hidden by default (H1)", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]));
     const titles = groups.map((g) => g.title);
-    expect(titles).toContain("数据");
+    expect(titles).toContain("数据准备");
     expect(titles).not.toContain("治理");
     expect(titles).not.toContain("系统");
-    const data = groups.find((g) => g.title === "数据");
+    const data = groups.find((g) => g.title === "数据准备");
     expect(data?.defaultCollapsed).toBeFalsy();
     expect(data?.items.some((i) => i.name === "实体与主题")).toBe(false);
   });
@@ -256,12 +259,14 @@ describe("resolveNavGroups", () => {
     expect(names).not.toContain("图表类型目录");
   });
 
-  it("T-NAV-RPT-01: analyst 报表中心为单一工作台入口", () => {
+  it("T-NAV-RPT-01: analyst 报表中心含工作台与预制分析子项", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("analyst", ["analyst"]));
     const report = groups.find((g) => g.title === "报表");
     const center = report?.items.find((i) => i.name === "报表中心");
-    expect(center?.path).toBe("/admin/reports/center");
-    expect(center?.subItems).toBeUndefined();
+    expect(center?.subItems?.map((s) => s.path)).toEqual([
+      "/admin/reports/center",
+      "/admin/reports",
+    ]);
   });
 
   it("T-DESIGN-FC-01: admin governance group has 查询设计器 with badge when gov nav on", () => {
@@ -310,7 +315,7 @@ describe("resolveSidebarSections", () => {
   it("uses workspace nav elsewhere", () => {
     const admin = sessionUserFromAuth("admin", ["admin"]);
     const sections = resolveSidebarSections(admin, "/admin/dashboards");
-    expect(sections.some((g) => g.title === "数据")).toBe(true);
+    expect(sections.some((g) => g.title === "数据准备")).toBe(true);
     expect(sections.some((g) => g.title === "系统")).toBe(false);
   });
 

@@ -1,4 +1,24 @@
 import { prefabReportsRunPath } from "@/pages/admin/reports/reportRoutes";
+import { resolveActiveNavPath } from "@/lib/nav-active";
+
+export const REPORT_CENTER_SUB_NAV_PATHS = [
+  "/admin/reports/center",
+  "/admin/reports/templates",
+  "/admin/reports/schedules",
+  "/admin/reports",
+] as const;
+
+/** 侧栏报表子项高亮：模板查看页归入「文档模板」 */
+export function resolveReportCenterSubNavPath(pathname: string): string | null {
+  if (pathname.startsWith("/admin/reports/view")) {
+    return "/admin/reports/templates";
+  }
+  return resolveActiveNavPath(pathname, [...REPORT_CENTER_SUB_NAV_PATHS]);
+}
+
+export function isReportCenterNavGroup(subItems: { path: string }[] | undefined): boolean {
+  return Boolean(subItems?.some((sub) => sub.path.startsWith("/admin/reports")));
+}
 
 export const DOC_TEMPLATE_SCHEDULE_HINT =
   "打开文档模板 → 右侧「调度」Tab 配置定时生成与投递。";

@@ -440,24 +440,24 @@ describe("AdminLayout smoke", () => {
     expect(screen.getByText("workspace home")).toBeInTheDocument();
   });
 
-  it("admin sidebar has 报表中心 direct link (T-FE-SMFA-01)", () => {
+  it("admin sidebar has 报表中心 group with 工作台 link (T-FE-SMFA-01)", () => {
     setDesktopViewport(1600);
     render(
-      <MemoryRouter initialEntries={["/admin"]}>
+      <MemoryRouter initialEntries={["/admin/reports/center"]}>
         <Routes>
           <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<div>home</div>} />
+            <Route path="reports/center" element={<div>center</div>} />
           </Route>
         </Routes>
       </MemoryRouter>,
     );
 
-    const reportLink = screen.getByRole("link", { name: "报表中心" });
-    expect(reportLink).toBeInTheDocument();
-    expect(reportLink).toHaveAttribute("href", "/admin/reports/center");
+    expect(screen.getByText("报表中心")).toBeInTheDocument();
+    const hubLink = screen.getByRole("link", { name: "工作台" });
+    expect(hubLink).toHaveAttribute("href", "/admin/reports/center");
   });
 
-  it("T-FE-SMFA-05: collapsed nav still shows 报表中心 link", () => {
+  it("T-FE-SMFA-05: collapsed nav still shows 报表中心 group", () => {
     setDesktopViewport(1600);
     render(
       <MemoryRouter initialEntries={["/admin"]}>
@@ -469,7 +469,7 @@ describe("AdminLayout smoke", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole("link", { name: "报表中心" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "报表中心" })).toBeInTheDocument();
   });
 
   it("admin sidebar 数据连接 links to datasources (T-FE-SMFA-02)", async () => {
@@ -605,19 +605,25 @@ describe("AdminLayout smoke", () => {
     expect(screen.queryByText("资源授权")).not.toBeInTheDocument();
   });
 
-  it("T-FE-SMFB-03: admin 报表中心为单一侧栏入口", () => {
+  it("T-FE-SMFB-03: admin 报表中心侧栏含子导航", () => {
     setDesktopViewport(1600);
     render(
-      <MemoryRouter initialEntries={["/admin"]}>
+      <MemoryRouter initialEntries={["/admin/reports/templates"]}>
         <Routes>
           <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<div>home</div>} />
+            <Route path="reports/templates" element={<div>templates</div>} />
           </Route>
         </Routes>
       </MemoryRouter>,
     );
-    const reportLink = screen.getByRole("link", { name: "报表中心" });
-    expect(reportLink).toHaveAttribute("href", "/admin/reports/center");
+    expect(screen.getByRole("link", { name: "工作台" })).toHaveAttribute(
+      "href",
+      "/admin/reports/center",
+    );
+    expect(screen.getByRole("link", { name: "文档模板" })).toHaveAttribute(
+      "href",
+      "/admin/reports/templates",
+    );
   });
 
   it("T-NAV-FC-04: analyst sidebar has no 实体总览 or 连接管理", () => {

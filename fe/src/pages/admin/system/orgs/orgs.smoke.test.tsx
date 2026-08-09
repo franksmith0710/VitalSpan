@@ -124,4 +124,35 @@ describe("OrgTreePage smoke", () => {
       expect(body.parent_id).toBeNull();
     });
   });
+
+  it("batch delete triggers DELETE for selected orgs", async () => {
+    const ORG_B = "00000000-0000-4000-8000-000000000031";
+    const deleted: string[] = [];
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      const init = args[1] as RequestInit | undefined;
+      if (path.startsWith("/api/v1/orgs/") && init?.method === "DELETE") {
+        deleted.push(path.split("/").pop() ?? "");
+        return {};
+      }
+      if (path === "/api/v1/orgs") {
+        return {
+          items: [
+            { id: ORG_A, parent_id: null, name: "总部", path: "/hq", level: 0 },
+            { id: ORG_B, parent_id: null, name: "华东区", path: "/east", level: 0 },
+          ],
+        };
+      }
+      return {};
+    });
+    renderOrgs();
+    await userEvent.click(await screen.findByRole("button", { name: "批量操作" }));
+    await userEvent.click(screen.getByRole("checkbox", { name: "选择组织 总部" }));
+    await userEvent.click(screen.getByRole("checkbox", { name: "选择组织 华东区" }));
+    await userEvent.click(screen.getByRole("button", { name: "删除 (2)" }));
+    await userEvent.click(await screen.findByRole("button", { name: "删除" }));
+    await waitFor(() => {
+      expect(deleted.sort()).toEqual([ORG_A, ORG_B].sort());
+    });
+  });
 });

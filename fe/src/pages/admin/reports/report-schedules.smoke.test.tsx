@@ -8,6 +8,16 @@ import { ReportSchedulesPage } from "./ReportSchedulesPage";
 
 const mockApiFetch = vi.fn();
 vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => mockApiFetch(...args) }));
+vi.mock("@/context/auth-context", () => ({
+  useAuth: () => ({
+    user: { id: "1", username: "admin", roles: ["admin"], isRoot: true },
+    isLoading: false,
+    isAuthenticated: true,
+    logout: vi.fn(),
+    refresh: vi.fn(async () => {}),
+  }),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
 
 function renderPage() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });

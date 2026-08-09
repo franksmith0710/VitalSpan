@@ -3,6 +3,7 @@ import {
   canRetryReportSchedules,
   localizeCenterResourceType,
   resolveCenterRecentHref,
+  resolveReportCenterSubNavPath,
 } from "./reportCenterNav";
 
 describe("reportCenterNav", () => {
@@ -29,5 +30,19 @@ describe("reportCenterNav", () => {
     expect(canRetryReportSchedules(["dashboard:schedule"])).toBe(true);
     expect(canRetryReportSchedules(["report:*"])).toBe(true);
     expect(canRetryReportSchedules(["*"])).toBe(true);
+  });
+
+  it("resolves report sub-nav active path", () => {
+    expect(resolveReportCenterSubNavPath("/admin/reports/center")).toBe("/admin/reports/center");
+    expect(resolveReportCenterSubNavPath("/admin/reports/templates/foo")).toBe(
+      "/admin/reports/templates",
+    );
+    expect(resolveReportCenterSubNavPath("/admin/reports/view/tpl-1")).toBe(
+      "/admin/reports/templates",
+    );
+    expect(resolveReportCenterSubNavPath("/admin/reports/schedules")).toBe(
+      "/admin/reports/schedules",
+    );
+    expect(resolveReportCenterSubNavPath("/admin/reports")).toBe("/admin/reports");
   });
 });
