@@ -1,7 +1,7 @@
 {
   "name": "智慧城市运行监测",
   "slug": "workspace-gov-smart-city",
-  "surfaceKind": null,
+  "surfaceKind": "data-screen",
   "layoutJson": {
     "version": 2,
     "canvas": {
@@ -91,7 +91,7 @@
         "chartConfig": {
           "chartType": "gauge",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "2730bcfd-fa20-4fc9-a8c4-65da8aef1a84",
           "mode": "dataset",
@@ -186,7 +186,7 @@
         "chartConfig": {
           "chartType": "bar",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "2c40f9c0-7dcc-4efe-950c-0f3c824c8c88",
           "mode": "dataset",
@@ -288,7 +288,7 @@
         "chartConfig": {
           "chartType": "word-cloud",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "8bffe4b3-4be0-45ab-9c99-6f31d9c55e54",
           "mode": "sql",
@@ -390,7 +390,7 @@
         "chartConfig": {
           "chartType": "line",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "badf50a0-4b35-436b-bb19-d1ddfd93c433",
           "mode": "dataset",
@@ -492,7 +492,7 @@
         "chartConfig": {
           "chartType": "table-info",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "4ba6f9e0-2212-4380-ac1b-3314d353aa1c",
           "mode": "sql",
@@ -678,7 +678,7 @@
         "chartConfig": {
           "chartType": "kpi",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "5656acab-14d6-44a9-9537-17c8ba92b024",
           "mode": "dataset",
@@ -739,7 +739,7 @@
         "chartConfig": {
           "chartType": "kpi",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "b8368141-b46d-48b4-a3bb-15eca5203188",
           "mode": "dataset",
@@ -805,7 +805,7 @@
         "chartConfig": {
           "chartType": "kpi",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "b5406e55-f675-4efb-a92e-a57bc5421c15",
           "mode": "dataset",
@@ -866,7 +866,7 @@
         "chartConfig": {
           "chartType": "kpi",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "f81653c3-07f4-4711-ae59-d38bd7584388",
           "mode": "dataset",

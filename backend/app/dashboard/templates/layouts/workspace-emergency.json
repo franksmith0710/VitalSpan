@@ -1,7 +1,7 @@
 {
   "name": "应急指挥调度中心",
   "slug": "workspace-gov-emergency-command",
-  "surfaceKind": null,
+  "surfaceKind": "data-screen",
   "layoutJson": {
     "version": 2,
     "canvas": {
@@ -149,7 +149,7 @@
         "chartConfig": {
           "chartType": "bar",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "b5b18d55-d29e-4783-bfbe-634f73f675be",
           "mode": "dataset",
@@ -265,7 +265,7 @@
         "chartConfig": {
           "chartType": "map",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "1b62dc10-546b-476a-aa16-c3d7b91fe649",
           "mode": "sql",
@@ -519,7 +519,7 @@
         "chartConfig": {
           "chartType": "line",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "49d980fc-95b8-4e9d-aa63-1f5e057de89e",
           "mode": "dataset",
@@ -631,7 +631,7 @@
         "chartConfig": {
           "chartType": "pie",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "832c4fa1-5ba8-4dc8-a555-84ddb43e5397",
           "mode": "sql",
@@ -732,7 +732,7 @@
         "chartConfig": {
           "chartType": "table-info",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "aaec8ec2-13ea-4a74-bd72-a93bd27271f4",
           "mode": "sql",
@@ -858,7 +858,7 @@
         "chartConfig": {
           "chartType": "area",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "3424acb8-f798-4872-ba98-095ed04a3c62",
           "mode": "dataset",
@@ -949,8 +949,6 @@
       "pixelGutter": 5,
       "scaleMode": null,
       "canvasBackgroundImage": "/template-assets/packs/gov-enterprise-v1/panels/panel-de-frame-cyan.svg",
-      "canvasBackgroundImageFit": null,
-      "canvasBackgroundImagePosition": null,
       "canvasBackgroundCustom": true,
       "canvasDecorPresetId": "custom",
       "refreshIntervalSec": null,
@@ -1031,8 +1029,6 @@
       "themeVariants": {
         "light": {
           "canvasBackground": "#ffffff",
-          "canvasBackgroundImageFit": null,
-          "canvasBackgroundImagePosition": null,
           "canvasBackgroundImage": null,
           "canvasBackgroundCustom": null,
           "canvasDecorPresetId": null,
@@ -1059,8 +1055,6 @@
         },
         "dark": {
           "canvasBackground": "#1a0509",
-          "canvasBackgroundImageFit": null,
-          "canvasBackgroundImagePosition": null,
           "canvasBackgroundImage": "/template-assets/packs/gov-enterprise-v1/panels/panel-de-frame-cyan.svg",
           "canvasBackgroundCustom": true,
           "canvasDecorPresetId": "custom",

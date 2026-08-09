@@ -1,7 +1,7 @@
 {
   "name": "社区治理一张图",
   "slug": "workspace-gov-community",
-  "surfaceKind": null,
+  "surfaceKind": "data-screen",
   "layoutJson": {
     "version": 2,
     "canvas": {
@@ -120,7 +120,7 @@
         "chartConfig": {
           "chartType": "table-info",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "a117f43c-2f4e-4be4-8d6a-bbf4c71ec48a",
           "mode": "dataset",
@@ -219,7 +219,7 @@
         "chartConfig": {
           "chartType": "word-cloud",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "79e78199-96cc-45b2-85c6-763226c3537b",
           "mode": "dataset",
@@ -321,7 +321,7 @@
         "chartConfig": {
           "chartType": "bar",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "039b5759-ffed-4d41-9ac3-9f384cafe9a0",
           "mode": "dataset",
@@ -423,7 +423,7 @@
         "chartConfig": {
           "chartType": "gauge",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "67c73004-18a8-4354-a95f-9b68d6b5f6e2",
           "mode": "dataset",
@@ -518,7 +518,7 @@
         "chartConfig": {
           "chartType": "pie",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "4cca58c7-c665-4c57-95fd-18ce991fa8be",
           "mode": "sql",
@@ -620,7 +620,7 @@
         "chartConfig": {
           "chartType": "area",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "8c6e1a29-2f3f-46a7-9371-ce83606b1a32",
           "mode": "dataset",
@@ -730,7 +730,7 @@
         "chartConfig": {
           "chartType": "quadrant",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "607648de-80f2-45d5-836d-e3efadfe7570",
           "mode": "dataset",
@@ -816,8 +816,6 @@
       "pixelGutter": 5,
       "scaleMode": null,
       "canvasBackgroundImage": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-lime-de-circuit-wing.svg",
-      "canvasBackgroundImageFit": null,
-      "canvasBackgroundImagePosition": null,
       "canvasBackgroundCustom": true,
       "canvasDecorPresetId": "custom",
       "refreshIntervalSec": null,
@@ -901,8 +899,6 @@
       "themeVariants": {
         "light": {
           "canvasBackground": "#faf5ff",
-          "canvasBackgroundImageFit": null,
-          "canvasBackgroundImagePosition": null,
           "canvasBackgroundImage": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-lime-de-circuit-wing.svg",
           "canvasBackgroundCustom": true,
           "canvasDecorPresetId": "custom",
@@ -929,8 +925,6 @@
         },
         "dark": {
           "canvasBackground": "#0f172a",
-          "canvasBackgroundImageFit": null,
-          "canvasBackgroundImagePosition": null,
           "canvasBackgroundImage": null,
           "canvasBackgroundCustom": null,
           "canvasDecorPresetId": null,

@@ -1,7 +1,7 @@
 {
   "name": "生态环境监测大屏",
   "slug": "workspace-gov-eco-monitor",
-  "surfaceKind": null,
+  "surfaceKind": "data-screen",
   "layoutJson": {
     "version": 2,
     "canvas": {
@@ -26,7 +26,7 @@
         "chartConfig": {
           "chartType": "map-3d",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "2180dcd8-2cdc-4553-9495-ffbe15cffa8a",
           "mode": "dataset",
@@ -375,7 +375,7 @@
         "chartConfig": {
           "chartType": "gauge",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "cba71e79-5702-4dde-b677-1b97675457ea",
           "mode": "dataset",
@@ -444,7 +444,7 @@
         "chartConfig": {
           "chartType": "bar",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "4d57b995-73b6-47aa-a0c8-9a3b7ce55d0c",
           "mode": "dataset",
@@ -546,7 +546,7 @@
         "chartConfig": {
           "chartType": "word-cloud",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "bfbf96f0-b9b6-45d9-a19a-b1e2a1cee3a9",
           "mode": "dataset",
@@ -648,7 +648,7 @@
         "chartConfig": {
           "chartType": "pie-donut-rose",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "3e4e576a-3115-41e6-a3b5-6f2ed990f2df",
           "mode": "dataset",
@@ -742,7 +742,7 @@
         "chartConfig": {
           "chartType": "scatter",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "972ef13e-44a4-491f-b539-11d852518afe",
           "mode": "dataset",
@@ -827,7 +827,7 @@
         "chartConfig": {
           "chartType": "circle-packing",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "c5f3499c-6db3-41c0-9e16-c13744922a7e",
           "mode": "dataset",
@@ -898,8 +898,6 @@
       "pixelGutter": 5,
       "scaleMode": null,
       "canvasBackgroundImage": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-royal-gradient-mesh.svg",
-      "canvasBackgroundImageFit": null,
-      "canvasBackgroundImagePosition": null,
       "canvasBackgroundCustom": true,
       "canvasDecorPresetId": "custom",
       "refreshIntervalSec": null,
@@ -983,8 +981,6 @@
       "themeVariants": {
         "light": {
           "canvasBackground": "#ffffff",
-          "canvasBackgroundImageFit": null,
-          "canvasBackgroundImagePosition": null,
           "canvasBackgroundImage": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-royal-gradient-mesh.svg",
           "canvasBackgroundCustom": true,
           "canvasDecorPresetId": "custom",
@@ -1011,8 +1007,6 @@
         },
         "dark": {
           "canvasBackground": "#0f172a",
-          "canvasBackgroundImageFit": null,
-          "canvasBackgroundImagePosition": null,
           "canvasBackgroundImage": null,
           "canvasBackgroundCustom": null,
           "canvasDecorPresetId": null,

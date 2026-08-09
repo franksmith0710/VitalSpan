@@ -21,6 +21,8 @@ import {
 import { cn } from "@/lib/utils";
 import type { ChartTypeCatalogEntry } from "./chartExploreTypes";
 
+const GEO_MAP_CHART_TYPES = new Set(["map", "map-3d"]);
+
 const CATEGORY_LABELS = CHART_CATEGORY_LABELS;
 const CAPABILITY_LABELS = CHART_CAPABILITY_LABELS;
 
@@ -59,9 +61,21 @@ export function ChartExplorePreview({ chartType }: { chartType: string }) {
     );
   }
 
+  const isGeoMap = GEO_MAP_CHART_TYPES.has(chartType);
+
   return (
-    <div className="h-[220px] w-full overflow-hidden rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
-      <CanvasChartHost viewModel={viewModel} style={style} chartConfig={config} height={190} />
+    <div className="relative h-[220px] w-full overflow-hidden rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
+      <div className={cn("relative w-full", isGeoMap ? "h-full min-h-0" : "h-[190px]")}>
+        <CanvasChartHost
+          viewModel={viewModel}
+          style={style}
+          chartConfig={config}
+          height={isGeoMap ? undefined : 190}
+          fill={isGeoMap}
+          instanceKey={`chart-catalog:${chartType}`}
+          geo3dRenderTier={chartType === "map-3d" ? "full" : undefined}
+        />
+      </div>
     </div>
   );
 }
