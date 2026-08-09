@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  canRetryReportSchedules,
   localizeCenterResourceType,
   resolveCenterRecentHref,
 } from "./reportCenterNav";
@@ -20,5 +21,13 @@ describe("reportCenterNav", () => {
     expect(resolveCenterRecentHref({ resourceType: "schedule", resourceId: "s1" })).toBe(
       "/admin/reports/schedules?tab=all&expand=s1",
     );
+  });
+
+  it("gates schedule retry by capability", () => {
+    expect(canRetryReportSchedules(["report:read"])).toBe(false);
+    expect(canRetryReportSchedules(["report:manage"])).toBe(true);
+    expect(canRetryReportSchedules(["dashboard:schedule"])).toBe(true);
+    expect(canRetryReportSchedules(["report:*"])).toBe(true);
+    expect(canRetryReportSchedules(["*"])).toBe(true);
   });
 });

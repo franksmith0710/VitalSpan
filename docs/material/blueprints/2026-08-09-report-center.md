@@ -152,7 +152,7 @@ flowchart LR
 | S3 | 元数据 DB 持久化 | **anchored** | ADR-20 · E5 | F3, F4, F5 | |
 | S4 | G5 Playwright 可视化 PDF | **anchored** | E10/E11 | F1 | 创建态须诚实披露产物类型 |
 | S5 | 双线并列叙事（非「后续能力」） | **assumed** | E12/E13 | F2, F4 | **确认面请裁定**是否升格文档模板为并列主路径 |
-| S6 | 批量 dry-run API | **open** | E14 | A1 | 仅附录；不阻塞 F1–F5 |
+| S6 | 批量 dry-run API | **anchored** | E14 · `batch/dry_run.py` | A1 | 2026-08-09 闭环 B-18 |
 
 ### 2.3 F ↔ S 阻塞矩阵
 
@@ -176,7 +176,7 @@ flowchart LR
 | 财务月报 Word 套版填数 | 文档模板树 → 扩展指标 → 运行 → 导出 Word | 帆软/润乾套版 + 调度 | **偏离**：自研 RenderSpec，**非** WYSIWYG 设计器 | S1 · E8 |
 | 文档模板定时发 Excel 附件 | 模板详情 → 调度 Tab → 激活 → 等待执行 | 同行「报表模板 + 定时任务」 | **跟随**（次路径但已可用） | E7 TemplateDetailPanel |
 | 分析师查生命周期分布 | 预制分析 → 选绑定 → 运行 | 内置分析报表（政企扩展） | **跟随** | E2 RPT-002 |
-| 批量迁 50 个模板节点 | JSON 上传 → 预览 → 确认导入 | ETL/目录批量迁移工具 | **偏离**：缺 dry-run 冲突预检（B-18 / S6 open） | E14 |
+| 批量迁 50 个模板节点 | JSON 上传 → 预览 → 确认导入 | ETL/目录批量迁移工具 | **跟随**（dry-run 冲突预检已闭合 B-18） | E14 |
 | SMTP 未配置就建调度 | delivery-health / export-health 告警 | 投递前置检查 | **跟随** | E9 ScheduleDeliveryHealthAlert |
 | 投递失败追责 | 执行历史 + artifactKind + 通道错误 | 运维看失败队列 + 重试 | **跟随**；**偏离**：调度写操作未进平台审计表 | E9 · ops 席 |
 
@@ -331,7 +331,7 @@ flowchart TB
 
 | ID | 业务名 | 摘要 | 阻塞 |
 |----|--------|------|------|
-| A1 | 批量 dry-run | `POST /batch?dryRun=1` 预览冲突行 | **S6 open** · B-18 |
+| A1 | 批量 dry-run | `POST /batch/dry-run` 预览冲突行 | **S6 anchored** · B-18 verified |
 
 ### 4.n 状态与信任
 
@@ -354,7 +354,7 @@ flowchart TB
 | `/admin/reports/schedules` | table-list | 全量调度 + 执行历史 | 模板空态链到模板调度 Tab |
 | 看板分享 Dialog | Sheet/Dialog | DashboardSchedulePanel + Precheck | export-health 阻断 |
 
-**导航**：侧栏仅「报表中心」；`docs/ui/layout.md` 四入口描述为**已知文档债**（待 sync）。
+**导航**：侧栏仅「报表中心」；`docs/ui/layout.md` · `docs/services/reports.md` · 演示手册已 sync 双线叙事（B-21 verified）。
 
 ---
 
@@ -416,7 +416,7 @@ flowchart TB
 | H1 | 文档模板长期为「次路径但已可用」，不升格为与看板定时并列的一级导航 | S5 · product-reviewer 开放问题 #1 | 需改 IA / layout.md | 否 |
 | H2 | 调度写操作分期接入 `auth_audit_events`；当前以执行历史为运维追溯 | ops 席 | 等保抽查需补审计 | 否 |
 | H3 | analyst 不单独授予 `report:manage` 子集（仅能管自己的模板调度） | PRD 开放问题 #2 | 需新 RBAC 模型 | 是 |
-| H4 | 批量 dry-run（S6）下一迭代实现，不纳入本蓝图开工范围 | B-18 | 批量迁移运维风险 | **是** |
+| H4 | 批量 dry-run（S6）已实现 `POST /batch/dry-run` + BatchImportPanel 预检 | B-18 verified 2026-08-09 | — | 否 |
 
 ---
 
@@ -426,9 +426,9 @@ flowchart TB
 |----|----------|-----------|------|------|------------|
 | RPT-005 | 看板定时为主路径 | 已收敛 IA + G5 | 无 | — | 否 |
 | RPT-003 | WYSIWYG companion | 块编辑器非全量 WYSIWYG | 有意偏离 | 保持 companion | 否 |
-| RPT-007 | 批量 FR-6.4 | 缺 dry-run | 部分 | A1 切片 | 可选补验收条 |
-| docs/services | 四入口 + 「后续能力」 | 代码已单入口+双线文案 | **文档债** | sync reports.md + layout.md | 否（docs） |
-| F08 L84 | 文档模板降级后续能力 | UI 已改双线并列 | PRD 行陈旧 | 更新 RPT-005 演化建议 | 可选 |
+| RPT-007 | 批量 FR-6.4 | dry-run 已闭合 | 无 | — | 已回写 F08-RPT |
+| docs/services | 四入口 + 「后续能力」 | 单入口+双线文案已 sync | 无 | — | verified B-21 |
+| F08 L84 | 文档模板降级后续能力 | UI+PRD 已改双线并列 | 无 | 已更新演化建议 | 是 |
 
 ---
 

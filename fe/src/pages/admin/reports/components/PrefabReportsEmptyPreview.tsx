@@ -1,4 +1,5 @@
 import { BarChart3, Settings2 } from "lucide-react";
+import { Link } from "react-router";
 import { PanelEmptyStateSteps, ListGhostEmptyState } from "@/components/ui/panel-empty-state";
 import { PrefabBindingForm } from "./PrefabBindingForm";
 import { TemplatePanelSection } from "./templatePanelUi";
@@ -49,6 +50,11 @@ export function PrefabReportsEmptyPreview({ isAdmin }: PrefabReportsEmptyPreview
           : "系统预置的分析报表尚未配置，请联系管理员添加实体与分析类型绑定。"
       }
       headingId="prefab-empty-title"
+      action={
+        <Link to="/admin/reports/center" className="text-theme-sm font-medium text-brand-600 hover:underline">
+          返回报表中心
+        </Link>
+      }
     />
   );
 }

@@ -47,6 +47,9 @@ describe("ReportViewPage smoke", () => {
           sortOrder: 0,
         };
       }
+      if (path === "/api/v1/reports/catalog/templates/readiness" && init?.method === "POST") {
+        return { items: [{ nodeId: NODE_ID, readiness: "demo" }] };
+      }
       if (path === `/api/v1/reports/templates/${NODE_ID}/run` && init?.method === "POST") {
         return {
           status: "ready",
@@ -85,5 +88,37 @@ describe("ReportViewPage smoke", () => {
       "href",
       "/admin/reports/center",
     );
+  });
+
+  it("shows placeholder alert and readiness badge for demo templates", async () => {
+    mockApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === `/api/v1/reports/catalog/nodes/${NODE_ID}`) {
+        return {
+          id: NODE_ID,
+          name: "季度经营报表",
+          parentId: null,
+          nodeType: "template",
+          templateKind: "pdf",
+          templateKey: "quarterly",
+          sortOrder: 0,
+        };
+      }
+      if (path === "/api/v1/reports/catalog/templates/readiness" && init?.method === "POST") {
+        return { items: [{ nodeId: NODE_ID, readiness: "demo" }] };
+      }
+      if (path === `/api/v1/reports/templates/${NODE_ID}/run` && init?.method === "POST") {
+        return {
+          status: "ready",
+          renderSpec: {
+            sections: [{ kind: "table", placeholder: true }],
+          },
+        };
+      }
+      return {};
+    });
+    renderPage();
+    expect(await screen.findByText("示例态")).toBeInTheDocument();
+    expect(screen.getByText("示例态展示")).toBeInTheDocument();
+    expect(screen.getByText(/模板尚未接入业务数据/)).toBeInTheDocument();
   });
 });

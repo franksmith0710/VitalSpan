@@ -11,7 +11,7 @@
 | 上轮报告 | `docs/material/product-reviewer/2026-08-09-report-center-r2.md` |
 | 总分 | **80** / 100（本轮独立评分） |
 | 较上轮 Δ | +3（r2 为 77） |
-| 结论 | **可用**（主链叙事与 Hub 闭环已成立；余 P1 为批量 dry-run、Hub 重试门控、文档债） |
+| 结论 | **可用**（主链叙事与 Hub 闭环已成立；r3 开放项 B-2/5/7/12 已 verified；B-6 视觉债 wontfix） |
 | 硬门槛 | 无 |
 
 ## Review Card
@@ -78,17 +78,17 @@
 | ID | 优先级 | 硬门槛 | 视觉债 | 状态 | 本轮动作 | 改动摘要 | 验证 | 更新于 |
 |----|--------|--------|--------|------|----------|----------|------|--------|
 | B-1 | P0 | 是→否 | 否 | verified | r3 复核 | 产物类型 Badge | vitest | 2026-08-09 |
-| B-2 | P1 | 否 | 否 | open | — | placeholder 仍在 | pytest readiness | 2026-08-09 |
+| B-2 | P1 | 否 | 否 | verified | placeholder Alert | readiness Badge + 示例态 Alert + 编辑链 | ReportView smoke | 2026-08-09 |
 | B-3 | P1 | 否 | 否 | verified | r3 复核 | 复制配置新建 | SchedulePanel smoke | 2026-08-09 |
 | B-4 | P1 | 否 | 否 | verified | r3 复核 | delivery-health | PrecheckPanel test | 2026-08-09 |
-| B-5 | P1 | 否 | 否 | open | — | 空库依赖 seed | prefab smoke | 2026-08-09 |
-| B-6 | P2 | 否 | 是 | open | — | — | — | 2026-07-31 |
-| B-7 | P2 | 否 | 否 | open | — | viz-templates 仍分域 | — | 2026-07-31 |
+| B-5 | P1 | 否 | 否 | verified | 空态回链 | PrefabReportsEmptyPreview 返回报表中心 | prefab empty action | 2026-08-09 |
+| B-6 | P2 | 否 | 是 | wontfix | 视觉债 | Hub 卡片 vs ListKit 分裂交 ui-ux-reviewer | — | 2026-08-09 |
+| B-7 | P2 | 否 | 否 | verified | 双线说明 | `VIZ_VS_DOC_TEMPLATE_HINT` on ReportTemplatesPage | ReportTemplatesPage | 2026-08-09 |
 | B-8 | P1 | 否 | 否 | verified | r3 复核 | Hub 失败面板 | report-center smoke | 2026-08-09 |
 | B-9 | P2 | 否 | 否 | verified | r3 复核 | 导出 smoke | vitest | 2026-08-09 |
 | B-10 | P2 | 否 | 否 | verified | r3 复核 | 服务端收藏 | center prefs | 2026-08-09 |
 | B-11 | P2 | 否 | 否 | verified | r3 复核 | capability 门控 | ReportView smoke | 2026-08-09 |
-| B-12 | P2 | 否 | 否 | open | — | JSON 向导 | BatchImport smoke | 2026-08-09 |
+| B-12 | P2 | 否 | 否 | verified | dry-run 向导 | JSON 上传 + 预检冲突高亮 | BatchImport smoke + pytest | 2026-08-09 |
 | B-13 | P0 | 否 | 否 | verified | r3 复核 | UI 无「后续能力」 | grep + vitest 47 | 2026-08-09 |
 | B-14 | P1 | 否 | 否 | verified | r3 复核 | Link+中文 type | report-center smoke | 2026-08-09 |
 | B-15 | P1 | 否 | 否 | verified | r3 复核 | 侧栏单入口 | nav-manifest + AdminLayout smoke | 2026-08-09 |

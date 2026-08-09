@@ -9,6 +9,19 @@ export const DOC_TEMPLATE_PRODUCT_LINE =
 export const VISUAL_SCHEDULE_PRODUCT_LINE =
   "看板/大屏编辑页「定时推送」，生成可视化 PDF 定时报告（推荐主路径）。";
 
+export const VIZ_VS_DOC_TEMPLATE_HINT =
+  "看板/大屏组件模板在侧栏「可视化模板」；本页为文档套版（Word/Excel/PDF 填数导出）。";
+
+export function canRetryReportSchedules(caps: Iterable<string> | Set<string>): boolean {
+  const set = caps instanceof Set ? caps : new Set(caps);
+  const has = (required: string) => {
+    if (set.has("*") || set.has(required)) return true;
+    const prefix = required.split(":")[0];
+    return set.has(`${prefix}:*`) || set.has(`${prefix}:manage`);
+  };
+  return has("report:manage") || has("dashboard:schedule");
+}
+
 const RESOURCE_TYPE_LABELS: Record<string, string> = {
   template: "文档模板",
   prefab: "预制分析",

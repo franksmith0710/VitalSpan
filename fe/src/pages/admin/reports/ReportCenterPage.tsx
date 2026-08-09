@@ -17,6 +17,7 @@ import { fetchAllCatalogNodes, fetchAllCatalogTemplates, filterCatalogTemplates 
 import { queryKeys } from "@/lib/queryKeys";
 import type { TemplateReadiness } from "@/lib/reportTemplateReadiness";
 import {
+  canRetryReportSchedules,
   DOC_TEMPLATE_PRODUCT_LINE,
   localizeCenterResourceType,
   resolveCenterRecentHref,
@@ -83,8 +84,7 @@ export function ReportCenterPage() {
   });
 
   const canManage = matchesCapability(caps, "report:manage");
-  const canRetrySchedules =
-    canManage || matchesCapability(caps, "dashboard:schedule");
+  const canRetrySchedules = canRetryReportSchedules(caps);
   const templates = templatesQuery.data ?? [];
   const templateIdsKey = templates.map((node) => node.id).join(",");
   const readinessQuery = useQuery({

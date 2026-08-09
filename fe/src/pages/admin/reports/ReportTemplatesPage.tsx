@@ -29,6 +29,7 @@ import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import {
   DOC_TEMPLATE_PRODUCT_LINE,
   VISUAL_SCHEDULE_PRODUCT_LINE,
+  VIZ_VS_DOC_TEMPLATE_HINT,
 } from "@/lib/reportCenterNav";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -295,6 +296,9 @@ export function ReportTemplatesPage() {
           <strong className="mt-2 block">文档模板报表：</strong>
           {DOC_TEMPLATE_PRODUCT_LINE}
           在本页维护目录、扩展配置、模板块与调度。
+          <span className="mt-2 block text-theme-xs text-gray-600 dark:text-gray-400">
+            {VIZ_VS_DOC_TEMPLATE_HINT}
+          </span>
         </AlertDescription>
       </Alert>
       {nodesQuery.isError ? (

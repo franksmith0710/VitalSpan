@@ -3,6 +3,8 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,6 +16,7 @@ import { matchesCapability, resolveEffectiveCapabilities } from "@/lib/capabilit
 import { queryKeys } from "@/lib/queryKeys";
 import { useAuth } from "@/context/auth-context";
 import type { ReportCatalogNode } from "@/lib/reportCatalogUtils";
+import { localizeTemplateReadiness, type TemplateReadiness } from "@/lib/reportTemplateReadiness";
 import { ReportExportCard } from "./components/ReportExportCard";
 import { ReportResultTable } from "./components/ReportResultTable";
 import { useCatalogExtension } from "./useReportTemplates";
@@ -46,6 +49,19 @@ export function ReportViewPage() {
   });
 
   const extQuery = useCatalogExtension(nodeId ?? null);
+  const readinessQuery = useQuery({
+    queryKey: ["reports", "template-readiness", nodeId],
+    queryFn: () =>
+      apiFetch<{ items: { nodeId: string; readiness: TemplateReadiness }[] }>(
+        "/api/v1/reports/catalog/templates/readiness",
+        {
+          method: "POST",
+          body: JSON.stringify({ nodeIds: [nodeId] }),
+        },
+      ),
+    enabled: Boolean(nodeId),
+  });
+  const readiness = readinessQuery.data?.items?.[0]?.readiness;
   const extensionReady =
     Boolean(extQuery.data) &&
     extQuery.data!.catalogNodeId === nodeId &&
@@ -124,6 +140,9 @@ export function ReportViewPage() {
                 <Link to={`/admin/reports/templates/${node.id}`}>编辑模板</Link>
               </Button>
             ) : null}
+            {readiness ? (
+              <Badge variant="outline">{localizeTemplateReadiness(readiness)}</Badge>
+            ) : null}
           </div>
 
           {runMutation.isError ? (
@@ -140,11 +159,22 @@ export function ReportViewPage() {
               </CardHeader>
               <CardContent>
                 {section.placeholder ? (
-                  <p className="text-theme-sm text-gray-500">
-                    {canManage
-                      ? "占位数据（请配置扩展指标与数据源后查看真实结果）"
-                      : "暂无业务数据，当前为示例展示。如需完整报表，请联系管理员完善模板配置。"}
-                  </p>
+                  <Alert severity="info">
+                    <AlertTitle>示例态展示</AlertTitle>
+                    <AlertDescription>
+                      {canManage ? (
+                        <>
+                          模板尚未接入真实数据源，当前为占位结果。请前往
+                          <Link to={`/admin/reports/templates/${node.id}`} className="mx-1 text-brand-600 hover:underline">
+                            模板编辑
+                          </Link>
+                          配置扩展指标与数据源后再运行。
+                        </>
+                      ) : (
+                        "模板尚未接入业务数据，当前为示例展示。如需完整报表，请联系管理员完善模板配置。"
+                      )}
+                    </AlertDescription>
+                  </Alert>
                 ) : section.columns && section.rows ? (
                   <ReportResultTable columns={section.columns} rows={section.rows} />
                 ) : (

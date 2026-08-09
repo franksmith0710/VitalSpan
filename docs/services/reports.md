@@ -154,6 +154,7 @@
 - **RPT-003**：FE `TemplateBlockEditor` 块列表/SQL/重排
 - **RPT-005**：`scheduler/delivery_adapter.py` — SMTP `add_attachment` 发送 visual_snapshot PDF；固定 SMTP；测试 mock 仅 `X-Rpt-Delivery-Mock` header
 - **RPT-007**：`batch/export_jobs.py` — `POST /batch/export` + `GET /jobs/{id}` 轮询
+- **RPT-007**：`batch/dry_run.py` — `POST /batch/dry-run` 预检冲突行（2026-08-09 闭环 B-18）；`BatchImportPanel` 高亮冲突
 
 - **RPT-003**：`GET/DELETE /reports/templates`；`storageRef` 默认 `mock://templates/{key}.{format}`；`exportHook`（IF-03 placeholder）；`engine/service.run_template` word/excel/pdf 返回 `exportHook`
 - **RPT-004**：catalog `templateKey` 外键唯一；`RPT_CATALOG_DUPLICATE_TEMPLATE_KEY` / `RPT_CATALOG_TEMPLATE_KIND_MISMATCH`；`catalog/probe.py` list ≤50ms
