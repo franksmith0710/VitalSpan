@@ -152,6 +152,9 @@ def _acquire_test_slot(key: str) -> None:
         _test_inflight[key] = now + _INFLIGHT_TTL_SEC
 
 
+_CONNECTOR_TYPES_NEED_OPTIONS = frozenset({"trino", "presto", "rest_api"})
+
+
 def _build_test_connection_kwargs(
     connector,
     *,
@@ -177,8 +180,30 @@ def _build_test_connection_kwargs(
         "read_timeout_sec": opts.read_timeout_sec,
     }
     params = inspect.signature(connector.test_connection).parameters
-    if any(p.kind == inspect.Parameter.VAR_KEYWORD for p in params.values()) or "connection_options" in params:
+    has_var_kw = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in params.values())
+    if "connection_options" in params:
         kwargs["connection_options"] = _connection_options_to_json(opts)
+    elif has_var_kw and connector.type in _CONNECTOR_TYPES_NEED_OPTIONS:
+        kwargs["connection_options"] = _connection_options_to_json(opts)
+    if has_var_kw:
+        allowed = {
+            "host",
+            "port",
+            "database",
+            "username",
+            "password",
+            "timeout_sec",
+            "charset",
+            "collation",
+            "ssl_mode",
+            "connect_timeout_sec",
+            "read_timeout_sec",
+        }
+        if connector.type in _CONNECTOR_TYPES_NEED_OPTIONS:
+            allowed.add("connection_options")
+        kwargs = {k: v for k, v in kwargs.items() if k in allowed}
+    else:
+        kwargs = {k: v for k, v in kwargs.items() if k in params}
     return kwargs
 
 

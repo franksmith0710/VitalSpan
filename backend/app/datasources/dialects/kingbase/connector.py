@@ -1,12 +1,8 @@
 from __future__ import annotations
 
-import time
 from typing import Any
 
-import psycopg
-
 from app.datasources.dialects.base import ColumnInfo, SchemaInfo, TableInfo, TestConnectionResult
-from app.datasources.dialects.errors import map_kingbase_error
 from app.datasources.dialects.kingbase.params import KingbaseParamsError, validate_kingbase_connection_params
 from app.datasources.dialects.postgres import PostgresConnector
 
@@ -33,24 +29,8 @@ class KingbaseConnector:
             )
         except KingbaseParamsError as exc:
             return TestConnectionResult(ok=False, message=exc.message, latency_ms=0, code=exc.code)
-        started = time.perf_counter()
         port = kwargs.get("port", KINGBASE_DEFAULT_PORT)
-        conn_kwargs = {**kwargs, "port": port}
-        try:
-            connection = self._inner.open_connection(**conn_kwargs)
-            try:
-                connection.execute("SELECT 1")
-            finally:
-                connection.close()
-        except psycopg.Error as exc:
-            code, detail = map_kingbase_error(exc)
-            latency_ms = int((time.perf_counter() - started) * 1000)
-            return TestConnectionResult(ok=False, message=f"[{code}] {detail}", latency_ms=latency_ms, code=code)
-        except Exception as exc:
-            latency_ms = int((time.perf_counter() - started) * 1000)
-            return TestConnectionResult(ok=False, message=str(exc), latency_ms=latency_ms, code=None)
-        latency_ms = int((time.perf_counter() - started) * 1000)
-        return TestConnectionResult(ok=True, message="Connection successful", latency_ms=latency_ms, code=None)
+        return self._inner.test_connection(**{**kwargs, "port": port})
 
     def open_connection(self, **kwargs) -> Any:
         port = kwargs.get("port", KINGBASE_DEFAULT_PORT)

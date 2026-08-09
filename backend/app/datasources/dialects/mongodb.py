@@ -28,7 +28,8 @@ def _import_pymongo():
 
 
 def _mongo_uri(*, host: str, port: int, username: str, password: str, database: str) -> str:
-    auth = f"{username}:{password}@" if username or password else ""
+    use_auth = bool(username and username != "none" and password and password != "-")
+    auth = f"{username}:{password}@" if use_auth else ""
     db = database or "admin"
     return f"mongodb://{auth}{host}:{port}/{db}"
 

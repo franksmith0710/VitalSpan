@@ -96,7 +96,7 @@ async function main() {
 
   const token = await apiLogin(context.request, password);
   await page.addInitScript((t) => {
-    localStorage.setItem("vs_access_token", t);
+    localStorage.setItem("vitalspan:access_token", t);
   }, token);
 
   await runStep(page, results, "R0", "health + login", async () => {

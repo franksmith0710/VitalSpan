@@ -22,6 +22,10 @@ class TrinoConnector:
             raise ImportError("trino driver not installed") from exc
         catalog = kwargs.get("database") or kwargs.get("catalog")
         schema = (kwargs.get("connection_options") or {}).get("schema", "default")
+        password = kwargs.get("password") or ""
+        auth = None
+        if password and password not in {"-", "none"}:
+            auth = trino.auth.BasicAuthentication(kwargs["username"], password)
         return trino.dbapi.connect(
             host=kwargs["host"],
             port=kwargs.get("port", 8080),
@@ -29,9 +33,7 @@ class TrinoConnector:
             catalog=catalog,
             schema=schema,
             http_scheme="http",
-            auth=None if not kwargs.get("password") else trino.auth.BasicAuthentication(
-                kwargs["username"], kwargs["password"],
-            ),
+            auth=auth,
         )
 
     def open_connection(self, **kwargs: Any) -> Any:

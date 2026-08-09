@@ -67,7 +67,7 @@ services:
       retries: 10
 
   sample-mariadb:
-    image: mariadb:11
+    image: docker.m.daocloud.io/library/mariadb:11
     ports:
       - "3308:3306"
     environment:
@@ -84,11 +84,12 @@ services:
       retries: 10
 
   sample-clickhouse:
-    image: clickhouse/clickhouse-server:24-alpine
+    image: docker.m.daocloud.io/clickhouse/clickhouse-server:24-alpine
     ports:
       - "8124:8123"
     volumes:
       - ./docker/sample-clickhouse/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./docker/sample-clickhouse/users.d/default-user.xml:/etc/clickhouse-server/users.d/default-user.xml:ro
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8123/ping"]
       interval: 5s

@@ -1,12 +1,8 @@
 from __future__ import annotations
 
-import time
 from typing import Any
 
-import pymysql.err
-
 from app.datasources.dialects.base import ColumnInfo, SchemaInfo, TableInfo, TestConnectionResult
-from app.datasources.dialects.errors import map_gbase_error
 from app.datasources.dialects.mysql import MysqlConnector
 
 GBASE_MAX_COLUMNS = 500
@@ -23,26 +19,23 @@ class GbaseConnector:
         self._inner = MysqlConnector()
 
     def test_connection(self, **kwargs) -> TestConnectionResult:
-        started = time.perf_counter()
         port = kwargs.get("port", GBASE_DEFAULT_PORT)
-        conn_kwargs = {**kwargs, "port": port}
-        try:
-            connection = self._inner.open_connection(**conn_kwargs)
-            try:
-                connection.ping(reconnect=False)
-            finally:
-                connection.close()
-        except pymysql.err.OperationalError as exc:
-            code, detail = map_gbase_error(exc)
-            latency_ms = int((time.perf_counter() - started) * 1000)
-            return TestConnectionResult(
-                ok=False, message=f"[{code}] {detail}", latency_ms=latency_ms, code=code,
-            )
-        except Exception as exc:
-            latency_ms = int((time.perf_counter() - started) * 1000)
-            return TestConnectionResult(ok=False, message=str(exc), latency_ms=latency_ms, code=None)
-        latency_ms = int((time.perf_counter() - started) * 1000)
-        return TestConnectionResult(ok=True, message="Connection successful", latency_ms=latency_ms, code=None)
+        result = self._inner.test_connection(**{**kwargs, "port": port})
+        if result.ok or not result.code:
+            return result
+        mapping = {
+            "MYSQL_TIMEOUT": "GBASE_TIMEOUT",
+            "MYSQL_CONN_REFUSED": "GBASE_CONN_REFUSED",
+            "MYSQL_AUTH_FAILED": "GBASE_AUTH_FAILED",
+            "MYSQL_UNKNOWN_DATABASE": "GBASE_UNKNOWN_DATABASE",
+        }
+        code = mapping.get(result.code, "GBASE_UNKNOWN")
+        return TestConnectionResult(
+            ok=result.ok,
+            message=result.message.replace(result.code, code) if result.code in result.message else result.message,
+            latency_ms=result.latency_ms,
+            code=code,
+        )
 
     def open_connection(self, **kwargs) -> Any:
         port = kwargs.get("port", GBASE_DEFAULT_PORT)
