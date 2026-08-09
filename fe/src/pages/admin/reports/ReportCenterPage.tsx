@@ -17,6 +17,7 @@ import { fetchAllCatalogNodes, fetchAllCatalogTemplates, filterCatalogTemplates 
 import { queryKeys } from "@/lib/queryKeys";
 import type { TemplateReadiness } from "@/lib/reportTemplateReadiness";
 import {
+  DOC_TEMPLATE_PRODUCT_LINE,
   localizeCenterResourceType,
   resolveCenterRecentHref,
 } from "@/lib/reportCenterNav";
@@ -82,6 +83,8 @@ export function ReportCenterPage() {
   });
 
   const canManage = matchesCapability(caps, "report:manage");
+  const canRetrySchedules =
+    canManage || matchesCapability(caps, "dashboard:schedule");
   const templates = templatesQuery.data ?? [];
   const templateIdsKey = templates.map((node) => node.id).join(",");
   const readinessQuery = useQuery({
@@ -195,8 +198,11 @@ export function ReportCenterPage() {
           <ScheduleRecentFailuresPanel
             schedules={schedulesQuery.data?.items ?? []}
             onSelectSchedule={(id) => navigate(`/admin/reports/schedules?tab=all&expand=${id}`)}
-            onRetry={(executionId, scheduleId) =>
-              void retryExecution.mutateAsync({ executionId, scheduleId })
+            onRetry={
+              canRetrySchedules
+                ? (executionId, scheduleId) =>
+                    void retryExecution.mutateAsync({ executionId, scheduleId })
+                : undefined
             }
             retryPending={retryExecution.isPending}
             retryPendingExecutionId={
@@ -248,7 +254,7 @@ export function ReportCenterPage() {
                 </span>
               </span>
               <span className="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
-                Word/Excel 固定版式报表，非当前默认定时报告主路径。
+                {DOC_TEMPLATE_PRODUCT_LINE}
               </span>
             </span>
             {hasTemplates ? (

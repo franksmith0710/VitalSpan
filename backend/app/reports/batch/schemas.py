@@ -46,6 +46,24 @@ class BatchCreateReportsOut(BaseModel):
     rolled_back_count: int = Field(default=0, alias="rolledBackCount")
 
 
+class BatchDryRunItemOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    index: int
+    name: str
+    status: Literal["create", "conflict", "invalid", "duplicate_in_batch"]
+    message: str | None = None
+    parent_id: uuid.UUID | None = Field(default=None, alias="parentId")
+
+
+class BatchDryRunOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    items: list[BatchDryRunItemOut]
+    create_count: int = Field(alias="createCount")
+    conflict_count: int = Field(alias="conflictCount")
+    invalid_count: int = Field(alias="invalidCount")
+    can_import: bool = Field(alias="canImport")
+
+
 class BatchExportJobIn(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     node_ids: list[uuid.UUID] = Field(min_length=1, alias="nodeIds")

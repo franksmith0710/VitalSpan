@@ -128,12 +128,12 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │   # 图表类型目录：Palette Drawer「查看全部类型」（无独立 `/charts/types` 路由；旧路径重定向 dashboards）
 │
 ├── 报表
-│   ├── /reports/center              # 报表中心 hub（授权模板 + 快捷入口）
-│   ├── /reports                     # 预制分析报表
+│   ├── /reports/center              # 报表中心 Hub（侧栏唯一入口；内含快捷深链）
+│   ├── /reports                     # 预制分析报表（Hub 快捷区深链）
 │   ├── /reports/view/:nodeId        # 报表查看与运行
-│   ├── /reports/templates           # 模板目录（admin · `report:manage`）
+│   ├── /reports/templates           # 文档模板（Hub 展开区 / manage 深链）
 │   ├── /reports/templates/:id       # 模板编辑
-│   └── /reports/schedules           # 调度（admin · `report:manage`）
+│   └── /reports/schedules           # 定时报告全量运维（manage 深链）
 │
 ├── 我的                            # 用户菜单进入（脱离主侧栏 IA）
 │   ├── /account/profile             # 用户资料
@@ -164,7 +164,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 | 分组 | 图标区 | 典型权限 | 里程碑 | 角色 | 默认 IA |
 |------|--------|----------|--------|------|---------|
 | 分析 | 仪表板、数据大屏、可视化模板 | — | M1/M5 | admin/analyst/viewer | **展开**（主路径） |
-| 报表 | 报表中心（含「全部报表」hub；analyst/viewer 见全部报表+预制；admin 另含模板/调度） | `report:read` / `report:manage` | M1/M7/M11 | 全员 | **展开** |
+| 报表 | 报表中心（侧栏单入口 Hub；预制/模板/定时经 Hub 快捷区或深链） | `report:read` / `report:manage` | M1/M7/M11 | 全员 | **展开** |
 | 数据准备 | 数据连接（连接管理/同步任务）、**数据集** | `datasource:*` / `dataset:*` | M1/M13 | admin | **展开** |
 | 治理 | 治理流程、查询服务、查询设计器 | `governance:*` | M1/M13 | admin | **H1 固定隐藏**（测试专用 `govNavEnabled`） |
 | 我的 | 个人资料、偏好、安全 | — | — | 全员 | 头像菜单进入 |

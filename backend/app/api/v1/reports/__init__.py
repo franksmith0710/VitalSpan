@@ -22,8 +22,9 @@ from app.reports.extension.schemas import (
     TemplateReadinessIn,
 )
 from app.reports.extension import service as extension_service
-from app.reports.batch.schemas import BatchCreateReportsIn, BatchExportJobIn
+from app.reports.batch.schemas import BatchCreateReportsIn, BatchExportJobIn, BatchDryRunOut
 from app.reports.batch import service as batch_service
+from app.reports.batch.dry_run import batch_dry_run
 from app.reports.batch import export_jobs as batch_export_jobs
 from app.reports.scheduler.errors import ScheduleError
 from app.reports.scheduler.schemas import ScheduleCreate, ScheduleTransitionIn, ScheduleUpdate
@@ -128,6 +129,17 @@ def list_extension_revisions(node_id: uuid.UUID, _: Annotated[UserContext, Depen
         )
     except ReportExtensionError as exc:
         return _extension_error(exc)
+
+
+@router.post("/batch/dry-run", status_code=status.HTTP_200_OK, response_model=None)
+def batch_dry_run_reports(
+    payload: BatchCreateReportsIn,
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
+):
+    try:
+        return batch_dry_run(payload)
+    except ReportBatchError as exc:
+        return _batch_error(exc)
 
 
 @router.post("/batch", status_code=status.HTTP_201_CREATED, response_model=None)

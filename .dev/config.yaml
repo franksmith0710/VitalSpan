@@ -75,7 +75,7 @@ environments:
       password_env: VITALSPAN_DEV_ADMIN_PASSWORD
     walkthrough:
       enabled: true
-      allow_writes: false
+      allow_writes: true
       allow_destructive: false
     notes: |
       走查前须：`docker compose up -d postgres sample-mysql mailhog`；
@@ -131,7 +131,7 @@ environments:
       password_env: VITALSPAN_DEV_ADMIN_PASSWORD
     walkthrough:
       enabled: true
-      allow_writes: false
+      allow_writes: true
       allow_destructive: false
     notes: |
       部署日志：docs/material/deploy/2026-08-04-vitalspan-staging-deploy-log.md
@@ -192,7 +192,7 @@ viewport:
     height: 900
 
 walkthrough:
-  allow_writes: false
+  allow_writes: true
   allow_destructive: false
   allow_prod: false
   artifact_dir: .dev/walkthrough

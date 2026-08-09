@@ -14,11 +14,22 @@ function wrap(ui: React.ReactNode) {
 
 describe("BatchImportPanel smoke", () => {
   beforeEach(() => {
-    mockApiFetch.mockResolvedValue({
-      batchId: "b1",
-      createdNodeIds: ["n1"],
-      rolledBackCount: 0,
-      failures: [],
+    mockApiFetch.mockImplementation(async (path: string) => {
+      if (path === "/api/v1/reports/batch/dry-run") {
+        return {
+          items: [{ index: 0, name: "批量节点 A", status: "create" }],
+          createCount: 1,
+          conflictCount: 0,
+          invalidCount: 0,
+          canImport: true,
+        };
+      }
+      return {
+        batchId: "b1",
+        createdNodeIds: ["n1"],
+        rolledBackCount: 0,
+        failures: [],
+      };
     });
   });
   afterEach(() => cleanup());
@@ -32,7 +43,7 @@ describe("BatchImportPanel smoke", () => {
     expect(await screen.findByText(/无法解析 JSON/)).toBeInTheDocument();
   });
 
-  it("imports valid json and shows created count", async () => {
+  it("dry-runs then imports valid json", async () => {
     const user = userEvent.setup();
     render(wrap(<BatchImportPanel readOnly={false} />));
     const input = screen.getByLabelText("选择批量导入 JSON 文件");
@@ -41,11 +52,40 @@ describe("BatchImportPanel smoke", () => {
     Object.defineProperty(file, "text", { value: async () => payload });
     await user.upload(input, file);
     expect(await screen.findByText("批量节点 A")).toBeInTheDocument();
+    expect(await screen.findByText(/预检结果/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "确认导入" }));
     expect(await screen.findByText(/成功创建 1 项/)).toBeInTheDocument();
+    expect(mockApiFetch).toHaveBeenCalledWith(
+      "/api/v1/reports/batch/dry-run",
+      expect.objectContaining({ method: "POST" }),
+    );
     expect(mockApiFetch).toHaveBeenCalledWith(
       "/api/v1/reports/batch",
       expect.objectContaining({ method: "POST" }),
     );
+  });
+
+  it("blocks import when dry-run reports conflict", async () => {
+    mockApiFetch.mockImplementation(async (path: string) => {
+      if (path === "/api/v1/reports/batch/dry-run") {
+        return {
+          items: [{ index: 0, name: "重复", status: "conflict", message: "同目录下已存在同名节点" }],
+          createCount: 0,
+          conflictCount: 1,
+          invalidCount: 0,
+          canImport: false,
+        };
+      }
+      throw new Error("should not import");
+    });
+    const user = userEvent.setup();
+    render(wrap(<BatchImportPanel readOnly={false} />));
+    const input = screen.getByLabelText("选择批量导入 JSON 文件");
+    const payload = JSON.stringify({ items: [{ name: "重复" }] });
+    const file = new File([payload], "batch.json", { type: "application/json" });
+    Object.defineProperty(file, "text", { value: async () => payload });
+    await user.upload(input, file);
+    expect(await screen.findByText(/冲突 1 项/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "确认导入" })).toBeDisabled();
   });
 });

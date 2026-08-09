@@ -7,7 +7,7 @@
 | source | scenario-playbook |
 | blueprint | `docs/material/blueprints/2026-08-09-system-admin-audit.md`（F1～F4，用户已确认） |
 | .dev | 有 · `.dev/config.yaml` |
-| allow_writes | false |
+| allow_writes | true |
 | allow_destructive | false |
 | handoff | browser-reviewer |
 

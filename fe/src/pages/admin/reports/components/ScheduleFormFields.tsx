@@ -17,6 +17,7 @@ import {
 } from "./ScheduleRecipientsField";
 import { ScheduleDeliveryHealthAlert } from "./ScheduleDeliveryHealthAlert";
 import { ScheduleExportHealthAlert } from "./ScheduleExportHealthAlert";
+import { VISUAL_SNAPSHOT_CREATE_NOTICE } from "@/lib/scheduleArtifactMeta";
 import { ScheduleFormSection } from "./scheduleDialogUi";
 import type { ScheduleRecipient } from "../useReportSchedules";
 import type { ScheduleWizardState } from "@/lib/scheduleCronWizard";
@@ -135,6 +136,9 @@ export function ScheduleFormFields({
             <p className="mt-0.5 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
               截取当前画布生成报告，经邮件投递附件。
             </p>
+            <p className="mt-1.5 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
+              {VISUAL_SNAPSHOT_CREATE_NOTICE}
+            </p>
           </div>
         </div>
       ) : (
@@ -143,7 +147,7 @@ export function ScheduleFormFields({
           <p className="rounded-lg border border-gray-200 bg-gray-50/80 px-3 py-2 text-theme-sm text-gray-700 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-300">
             PDF 可视化快照
             <span className="mt-0.5 block text-theme-xs text-gray-500">
-              截取画布生成 PDF；看板/大屏定时报告主路径仅支持 PDF。
+              {VISUAL_SNAPSHOT_CREATE_NOTICE}
             </span>
           </p>
         </div>

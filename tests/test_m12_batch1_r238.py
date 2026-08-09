@@ -283,6 +283,33 @@ def test_rpt_r238_007_idempotent_replay(client):
     assert second.json()["idempotentReplay"] is True
 
 
+def test_rpt_batch_dry_run_conflict(client):
+    """Batch dry-run flags sibling name conflict without creating nodes."""
+    parent = client.post(
+        "/api/v1/reports/catalog/nodes",
+        headers=AUTH,
+        json={"name": "batch-parent", "nodeType": "folder"},
+    )
+    assert parent.status_code == 201
+    parent_id = parent.json()["id"]
+    existing = client.post(
+        "/api/v1/reports/catalog/nodes",
+        headers=AUTH,
+        json={"name": "Taken", "nodeType": "template", "templateKind": "excel", "parentId": parent_id},
+    )
+    assert existing.status_code == 201
+    dry = client.post(
+        "/api/v1/reports/batch/dry-run",
+        headers=AUTH,
+        json={"items": [{"name": "Taken", "templateKind": "word", "parentId": parent_id}]},
+    )
+    assert dry.status_code == 200
+    dry_body = dry.json()
+    assert dry_body["canImport"] is False
+    assert dry_body["conflictCount"] == 1
+    assert dry_body["items"][0]["status"] == "conflict"
+
+
 # --- VIEW-003 ---
 
 

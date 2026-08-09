@@ -33,22 +33,25 @@
 
 ## 前端消费 IA（报表中心 · 2026-08 收敛）
 
-**产品主线（当前默认）**：看板/数据大屏 → 分享页「创建定时报告」→ Playwright 可视化 PDF（`dashboard/export_render.py`）→ SMTP/消息投递 → 执行记录与重试。
+**两条产品线（并列叙事，均已可用）**：
 
-**后续能力（非默认路径）**：文档模板树（Word/Excel 套版填数）+ RenderSpec 引擎；保留管理与历史数据，不承担默认定时投递承诺。
+| 产品线 | 适用场景 | 入口 |
+|--------|----------|------|
+| **看板/大屏可视化定时 PDF**（推荐主路径） | 已有看板/大屏，定期邮件投递画布快照 | 看板分享 → `DashboardSchedulePanel` |
+| **文档模板套版**（固定版式填数） | Word/Excel/PDF 固定版式月报/台账 | Hub 展开「文档模板」或 `/admin/reports/templates` |
 
-侧栏 **「报表中心」** 为「报表」分组一级父项；Hub 页 `/admin/reports/center`（`ReportCenterPage.tsx`）职责：**定时报告运维聚合**（我的看板调度、近期失败、重试入口）+ 折叠的文档模板区 + 预制分析。
+侧栏 **仅「报表中心」单入口** → `/admin/reports/center`（`nav-manifest.tsx`）。Hub 聚合：看板定时摘要、近期失败重试、最近访问、预制分析、折叠文档模板区。深链保留：
 
-| 子入口（nav-manifest） | 路由 | 权限 | 说明 |
-|------------------------|------|------|------|
-| 报表中心 | `/admin/reports/center` | `report:read` | Hub：定时报告概览、失败重试、文档模板（折叠） |
-| 定时报告 | `/admin/reports/schedules` | `report:manage` | 全量调度列表、执行历史、重试（admin） |
-| 预制报表 | `/admin/reports` | `report:read` | 内置 entity×analysis 绑定（FR-3.1） |
-| 文档模板 | `/admin/reports/templates` | `report:manage` | 固定版式模板树（后续能力） |
+| 深链路由 | 权限 | 说明 |
+|----------|------|------|
+| `/admin/reports/center` | `report:read` | 统一工作台 Hub |
+| `/admin/reports/schedules` | `report:manage` | 全量定时报告运维 |
+| `/admin/reports` | `report:read` | 预制分析 |
+| `/admin/reports/templates` | `report:manage` | 文档模板树 |
 
 - **创建主路径**：看板/大屏编辑 → 分享 → `DashboardSchedulePanel`（前置检查：组件非空、Playwright、SMTP）
-- **analyst**：Hub + 预制报表；可通过 `dashboard:schedule` 在看板分享页创建定时报告
-- **admin**：另含定时报告全量管理、文档模板管理
+- **analyst**：Hub + 预制；`dashboard:schedule` 可在看板分享页管理本人看板定时
+- **admin**：`report:manage` 含模板/全量调度/批量导入
 
 ### DataEase 对标（IA，非菜单名 1:1）
 
@@ -56,7 +59,7 @@
 |----------------|-------------------|
 | 报表中心 + 看板分享定时报告 | X-Pack 定时报告 / 可视化快照投递 |
 | 预制报表 | 内置分析类固定报表（政企扩展） |
-| 文档模板 | 报表模板管理（后续 Office 套版） |
+| 文档模板 | 报表模板管理（固定版式 Office 套版 · RenderSpec） |
 | 定时报告（schedules） | 定时报告运维 / 执行历史 |
 
 ## 主要类型 / 入口
