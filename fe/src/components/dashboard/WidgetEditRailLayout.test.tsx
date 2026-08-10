@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, it } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { WidgetEditRailLayout } from "./WidgetEditRailLayout";
 import { DatasetPickerPanel } from "./DatasetPickerPanel";
 
@@ -10,7 +11,9 @@ function renderRail(ui: ReactElement) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      <MemoryRouter>{ui}</MemoryRouter>
+      <TooltipProvider delayDuration={0}>
+        <MemoryRouter>{ui}</MemoryRouter>
+      </TooltipProvider>
     </QueryClientProvider>,
   );
 }
@@ -68,5 +71,40 @@ describe("WidgetEditRailLayout", () => {
     expect(screen.getByLabelText("展开数据集")).toBeVisible();
     expect(screen.queryByText("维度")).not.toBeInTheDocument();
     expect(screen.getByText("配置")).toBeInTheDocument();
+  });
+
+  it("collapsed tabs stack on the right so the rail shrinks for canvas expansion", () => {
+    const { container } = renderRail(
+      <WidgetEditRailLayout
+        leftLabel="区域地图"
+        rightLabel="数据集"
+        left={<div data-testid="config-pane">配置</div>}
+        right={
+          <DatasetPickerPanel
+            widgetId="w1"
+            datasetsLoading={false}
+            datasetsError={false}
+            datasetsEmpty
+            datasetItems={[]}
+            columns={[]}
+            columnsLoading={false}
+            columnsReady={false}
+            onDatasetSelect={() => {}}
+          />
+        }
+      />,
+    );
+
+    fireEvent.click(screen.getByLabelText("收起区域地图"));
+    fireEvent.click(screen.getByLabelText("收起数据集"));
+
+    const tabs = screen.getAllByRole("button", { name: /展开/ });
+    expect(tabs).toHaveLength(2);
+    expect(screen.queryByTestId("config-pane")).not.toBeInTheDocument();
+    expect(screen.queryByText("维度")).not.toBeInTheDocument();
+
+    const rail = container.firstElementChild as HTMLElement;
+    expect(rail).toHaveClass("w-fit");
+    expect(rail).toHaveClass("ml-auto");
   });
 });

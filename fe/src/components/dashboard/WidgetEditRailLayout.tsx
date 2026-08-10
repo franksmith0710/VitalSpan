@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import {
   DASHBOARD_EDIT_RAIL_LEFT_COLUMN_CLASS,
@@ -12,6 +12,8 @@ type WidgetEditRailLayoutProps = {
   leftSubtitle?: string;
   rightLabel?: string;
   className?: string;
+  /** 双列均收起时通知外层缩窄右栏外壳 */
+  onCompactChange?: (compact: boolean) => void;
 };
 
 const RAIL_LEFT_WIDTH = DASHBOARD_EDIT_RAIL_LEFT_COLUMN_CLASS;
@@ -64,9 +66,15 @@ export function WidgetEditRailLayout({
   leftSubtitle,
   rightLabel = "数据集",
   className,
+  onCompactChange,
 }: WidgetEditRailLayoutProps) {
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
+  const compact = !leftOpen && !rightOpen;
+
+  useEffect(() => {
+    onCompactChange?.(compact);
+  }, [compact, onCompactChange]);
 
   const hasExpandedColumn = leftOpen || rightOpen;
 
