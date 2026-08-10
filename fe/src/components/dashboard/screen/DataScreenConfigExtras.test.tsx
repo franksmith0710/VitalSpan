@@ -39,7 +39,7 @@ describe("DataScreenConfigExtras canvas size", () => {
     );
   });
 
-  it("applies 16:9 preset in one patch", () => {
+  it("does not commit partial width while typing", () => {
     const onCanvasSizeChange = vi.fn();
     render(
       <DataScreenConfigExtras
@@ -54,11 +54,42 @@ describe("DataScreenConfigExtras canvas size", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "1920×1080 (16:9)" }));
-    expect(onCanvasSizeChange).toHaveBeenCalledWith({ width: 1920, height: 1080 });
+    const widthInput = screen.getByLabelText("宽度");
+    fireEvent.change(widthInput, { target: { value: "1" } });
+    fireEvent.change(widthInput, { target: { value: "19" } });
+    fireEvent.change(widthInput, { target: { value: "192" } });
+
+    expect(onCanvasSizeChange).not.toHaveBeenCalled();
+
+    fireEvent.change(widthInput, { target: { value: "1920" } });
+    expect(onCanvasSizeChange).toHaveBeenCalledWith({ width: 1920 });
   });
 
-  it("increments width with inline stepper buttons", () => {
+  it("does not clamp intermediate digits before blur", () => {
+    const onCanvasSizeChange = vi.fn();
+    render(
+      <DataScreenConfigExtras
+        layout={{ ...baseLayout, canvas: { width: 1920, height: 1080 } }}
+        styleConfig={baseLayout.styleConfig!}
+        widgets={[]}
+        name="测试大屏"
+        canSave
+        presentationMode="fitWidth"
+        onPresentationModeChange={vi.fn()}
+        onCanvasSizeChange={onCanvasSizeChange}
+      />,
+    );
+
+    const widthInput = screen.getByLabelText("宽度");
+    fireEvent.change(widthInput, { target: { value: "192" } });
+    expect(onCanvasSizeChange).not.toHaveBeenCalled();
+    expect(widthInput).toHaveValue("192");
+
+    fireEvent.change(widthInput, { target: { value: "1923" } });
+    expect(onCanvasSizeChange).toHaveBeenCalledWith({ width: 1923 });
+  });
+
+  it("applies 16:9 preset in one patch", () => {
     const onCanvasSizeChange = vi.fn();
     render(
       <DataScreenConfigExtras

@@ -103,7 +103,6 @@ function CanvasSizeInput({
   onCommit: (value: number) => void;
 }) {
   const [draft, setDraft] = useState(String(value));
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastAppliedRef = useRef(value);
 
   useEffect(() => {
@@ -116,13 +115,6 @@ function CanvasSizeInput({
     [value, min, max, draft],
   );
 
-  useEffect(
-    () => () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    },
-    [],
-  );
-
   const commitSized = (next: number) => {
     const clamped = Math.min(max, Math.max(min, Math.round(next)));
     if (!Number.isFinite(clamped) || clamped === lastAppliedRef.current) return;
@@ -131,46 +123,29 @@ function CanvasSizeInput({
     onCommit(clamped);
   };
 
-  const applyValue = (parsed: number) => {
+  const flushDraft = () => {
+    const parsed = Number.parseInt(draft, 10);
+    if (!Number.isFinite(parsed)) {
+      setDraft(String(value));
+      return;
+    }
     commitSized(parsed);
   };
 
   const bump = (delta: number) => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-      debounceRef.current = null;
-    }
     const parsed = Number.parseInt(draft, 10);
     const base = Number.isFinite(parsed) ? parsed : value;
     commitSized(base + delta);
   };
 
   const handleChange = (raw: string) => {
-    setDraft(raw);
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-      debounceRef.current = null;
-    }
-    const parsed = Number.parseInt(raw, 10);
+    const nextDraft = raw.replace(/[^\d]/g, "");
+    setDraft(nextDraft);
+    const parsed = Number.parseInt(nextDraft, 10);
     if (!Number.isFinite(parsed)) return;
     if (parsed >= min && parsed <= max) {
-      applyValue(parsed);
-      return;
+      commitSized(parsed);
     }
-    debounceRef.current = setTimeout(() => applyValue(parsed), 400);
-  };
-
-  const flushDraft = () => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-      debounceRef.current = null;
-    }
-    const parsed = Number.parseInt(draft, 10);
-    if (!Number.isFinite(parsed)) {
-      setDraft(String(value));
-      return;
-    }
-    applyValue(parsed);
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {

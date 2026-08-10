@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import {
   Collapsible,
@@ -85,6 +85,8 @@ export function ChartPaletteColorSwatch({
   const [open, setOpen] = useState(false);
   const [local, setLocal] = useState(value);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (open || timerRef.current != null) return;
@@ -108,15 +110,43 @@ export function ChartPaletteColorSwatch({
     }, 120);
   };
 
+  const flushCommit = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    const normalized = normalizeHexColor(local) ?? local;
+    onChange(normalized);
+  };
+
+  const handleOpenChange = useCallback((next: boolean) => {
+    if (!next) flushCommit();
+    setOpen(next);
+  }, [local, onChange]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (triggerRef.current?.contains(target)) return;
+      if (contentRef.current?.contains(target)) return;
+      handleOpenChange(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => document.removeEventListener("pointerdown", onPointerDown, true);
+  }, [open, handleOpenChange]);
+
   const display = local || value;
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <button
+          ref={triggerRef}
           type="button"
           aria-label={ariaLabel}
           aria-expanded={open}
+          onMouseDown={(event) => event.preventDefault()}
           className={cn(
             "size-5 shrink-0 rounded-[3px] border border-transparent p-0.5",
             "transition-colors hover:border-brand-500/60",
@@ -130,7 +160,16 @@ export function ChartPaletteColorSwatch({
           />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-2" align="start" sideOffset={4}>
+      <PopoverContent
+        ref={contentRef}
+        className="w-64 p-2"
+        align="start"
+        sideOffset={4}
+        onOpenAutoFocus={(event) => event.preventDefault()}
+        onCloseAutoFocus={(event) => event.preventDefault()}
+        onPointerDownOutside={(event) => event.preventDefault()}
+        onFocusOutside={(event) => event.preventDefault()}
+      >
         <ColorPickerPanel value={display} onChange={commit} />
       </PopoverContent>
     </Popover>
@@ -323,6 +362,8 @@ export function ChartTableColorGridCell({
   const [open, setOpen] = useState(false);
   const [localValue, setLocalValue] = useState(value);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (open || timerRef.current != null) return;
@@ -336,7 +377,7 @@ export function ChartTableColorGridCell({
     [],
   );
 
-  const flushCommit = (raw: string) => {
+  const commitValue = (raw: string) => {
     const trimmed = raw.trim();
     const resolved = trimmed ? normalizeHexColor(trimmed) ?? undefined : undefined;
     if (trimmed && !resolved) return;
@@ -355,6 +396,34 @@ export function ChartTableColorGridCell({
     }, 120);
   };
 
+  const flushPendingCommit = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    const trimmed = localValue.trim();
+    const resolved = trimmed ? normalizeHexColor(trimmed) ?? undefined : undefined;
+    if (trimmed && !resolved) return;
+    onChange(resolved);
+  };
+
+  const handleOpenChange = useCallback((next: boolean) => {
+    if (!next) flushPendingCommit();
+    setOpen(next);
+  }, [localValue, onChange]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (triggerRef.current?.contains(target)) return;
+      if (contentRef.current?.contains(target)) return;
+      handleOpenChange(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => document.removeEventListener("pointerdown", onPointerDown, true);
+  }, [open, handleOpenChange]);
+
   const displayHex = normalizeHexColor(localValue) ?? localValue;
   const swatchTitle = displayHex
     ? `${label} · ${displayHex.toUpperCase()}`
@@ -362,9 +431,10 @@ export function ChartTableColorGridCell({
 
   return (
     <div className="min-w-0">
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={handleOpenChange}>
         <PopoverTrigger asChild>
           <button
+            ref={triggerRef}
             type="button"
             aria-label={`${label}取色器`}
             aria-expanded={open}
@@ -398,9 +468,14 @@ export function ChartTableColorGridCell({
           </button>
         </PopoverTrigger>
         <PopoverContent
+          ref={contentRef}
           align="start"
           sideOffset={6}
           collisionPadding={12}
+          onOpenAutoFocus={(event) => event.preventDefault()}
+          onCloseAutoFocus={(event) => event.preventDefault()}
+          onPointerDownOutside={(event) => event.preventDefault()}
+          onFocusOutside={(event) => event.preventDefault()}
           className="w-[228px] max-h-[min(70vh,24rem)] overflow-y-auto overscroll-contain p-2.5"
         >
           <p className="mb-2 text-[10px] font-medium text-gray-500 dark:text-gray-400">{label}</p>
@@ -441,7 +516,7 @@ export function ChartTableColorGridCell({
               className="mt-2 w-full rounded-md border border-gray-200 px-2 py-1.5 text-[11px] text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
               onClick={() => {
                 setLocalValue("");
-                flushCommit("");
+                commitValue("");
               }}
             >
               清除颜色

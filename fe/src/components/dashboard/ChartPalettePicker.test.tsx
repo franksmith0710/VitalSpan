@@ -119,4 +119,23 @@ describe("ChartPalettePicker", () => {
     expect(swatch).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
+
+  it("closes color picker on first outside click", async () => {
+    const user = userEvent.setup();
+    render(
+      <ChartPalettePicker
+        value="default"
+        paletteColors={["#465fff", "#ff0000", "#12b76a", "#f79009", "#7a5af8", "#0ba5ec", "#ee46bc", "#3641f5"]}
+        onChange={vi.fn()}
+      />,
+    );
+
+    const swatch = screen.getByRole("button", { name: "系列色 1" });
+    await user.click(swatch);
+    expect(swatch).toHaveAttribute("aria-expanded", "true");
+
+    await user.click(document.body);
+    expect(swatch).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
 });
