@@ -6,6 +6,7 @@ import { ChartDrillProvider } from "@/components/charts/ChartDrillContext";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { isGeoMapChartType } from "@/lib/chartViewConfig";
 import { localizeApiMessage } from "@/lib/apiError";
+import { cn } from "@/lib/utils";
 import { isEmbedPageAuthorized } from "./embedAccess";
 
 export function EmbedChartPage() {
@@ -108,16 +109,28 @@ export function EmbedChartPage() {
   }
 
   return (
-    <div className={`min-h-[240px] p-4 ${theme === "dark" ? "dark" : ""}`}>
-      <ChartDrillProvider>
-        <ChartRenderer
-          config={config}
-          title="嵌入图表"
-          embedded
-          widgetId={chartId}
-          drillEnabled={isGeoMapChartType(config.chartType)}
-        />
-      </ChartDrillProvider>
+    <div
+      className={cn(
+        "flex h-dvh min-h-[360px] w-full flex-col",
+        theme === "dark" ? "dark bg-gray-950" : "bg-white",
+      )}
+      data-embed-chart
+    >
+      <div className="flex min-h-0 flex-1 flex-col p-4">
+        <ChartDrillProvider>
+          <div className="relative min-h-0 flex-1">
+            <ChartRenderer
+              config={config}
+              title="嵌入图表"
+              embedded
+              colorScheme={theme}
+              widgetId={chartId}
+              drillEnabled={isGeoMapChartType(config.chartType)}
+              pixelSize={{ width: 960, height: 540 }}
+            />
+          </div>
+        </ChartDrillProvider>
+      </div>
     </div>
   );
 }

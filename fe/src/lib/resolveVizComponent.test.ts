@@ -3,6 +3,7 @@ import type { LayoutWidget } from "@/components/dashboard/layoutUtils";
 import {
   buildComponentMap,
   detachLinkedWidget,
+  linkedComponentContentRevisionSuffix,
   resolveLayoutWidget,
 } from "@/lib/resolveVizComponent";
 import type { VizComponentDetail } from "@/lib/vizComponents";
@@ -143,5 +144,28 @@ describe("resolveVizComponent", () => {
     const detached = detachLinkedWidget(widget, map);
     expect(detached.componentRef?.detached).toBe(true);
     expect(detached.chartConfig?.chartType).toBe("pie");
+  });
+
+  it("linkedComponentContentRevisionSuffix reflects loading and resolved revision", () => {
+    const widget = chartWidget("w1", { componentRef: { componentId: "c1" } });
+    const map = buildComponentMap([
+      componentDetail("c1", {
+        chartConfig: {
+          chartId: "c1",
+          chartType: "area",
+          mode: "sql",
+          dataSourceId: "ds-1",
+          sql: "select 1",
+          dimensions: [],
+          metrics: [],
+          filters: [],
+        },
+      }, 3),
+    ]);
+    expect(
+      linkedComponentContentRevisionSuffix(widget, new Map(), true),
+    ).toBe(":linked:loading");
+    expect(linkedComponentContentRevisionSuffix(widget, map, false)).toBe(":linked:c1:3");
+    expect(linkedComponentContentRevisionSuffix(widget, new Map(), false)).toBe(":linked:missing");
   });
 });

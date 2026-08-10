@@ -65,6 +65,18 @@ export function buildComponentMap(items: VizComponentDetail[]): VizComponentMap 
   return new Map(items.map((item) => [item.id, item]));
 }
 
+/** PixelWidgetSlot contentRevision：关联组件 batch-resolve 状态变化须触发重渲染 */
+export function linkedComponentContentRevisionSuffix(
+  widget: DashboardWidgetBase,
+  componentMap: VizComponentMap,
+  componentsLoading: boolean,
+): string {
+  if (!isLinkedComponentRef(widget.componentRef)) return "";
+  if (componentsLoading) return ":linked:loading";
+  const comp = componentMap.get(widget.componentRef.componentId);
+  return comp ? `:linked:${comp.id}:${comp.contentRevision}` : ":linked:missing";
+}
+
 export function detachLinkedWidget<T extends DashboardWidgetBase>(
   widget: T,
   componentMap: VizComponentMap,

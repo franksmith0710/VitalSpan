@@ -35,7 +35,7 @@ import {
 import type { Geo3dRenderTier } from "@/components/charts/engine/three/geo3dRuntime";
 import { WidgetErrorBoundary } from "./WidgetErrorBoundary";
 import { useVizComponentMap } from "@/hooks/useVizComponentMap";
-import { resolveLayoutWidget } from "@/lib/resolveVizComponent";
+import { resolveLayoutWidget, linkedComponentContentRevisionSuffix } from "@/lib/resolveVizComponent";
 import type { DashboardPreviewProfile } from "@/lib/dashboardPreviewProfile";
 import { isCardPreviewProfile } from "@/lib/dashboardPreviewProfile";
 
@@ -183,6 +183,12 @@ export function DashboardLayoutPreview({
         chartLinkage,
       );
       const layoutWidget = pixelWidgetToLayoutWidget(widget);
+      const linkedRev = linkedComponentContentRevisionSuffix(
+        layoutWidget,
+        componentMap,
+        componentsLoading,
+      );
+      if (linkedRev) return `${base}${linkedRev}`;
       if (
         layoutWidget.type === "chart" &&
         layoutWidget.chartConfig &&

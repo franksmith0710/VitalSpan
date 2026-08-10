@@ -104,6 +104,7 @@ describe("embed share loop", () => {
     );
     expect(await screen.findByTestId("chart-mock")).toBeInTheDocument();
     expect(screen.getByTestId("chart-mock")).toHaveAttribute("data-embedded", "1");
+    expect(document.querySelector("[data-embed-chart]")).toBeTruthy();
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/api/v1/embed/chart-view?token=pub-tok&chartId=ch-1"),
     );

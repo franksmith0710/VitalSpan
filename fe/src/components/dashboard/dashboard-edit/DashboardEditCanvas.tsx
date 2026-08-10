@@ -48,6 +48,7 @@ import {
   type RenderDashboardCanvasWidgetOptions,
 } from "./DashboardCanvasWidgetRenderer";
 import { useVizComponentMap } from "@/hooks/useVizComponentMap";
+import { linkedComponentContentRevisionSuffix } from "@/lib/resolveVizComponent";
 
 type DashboardEditCanvasProps = {
   mode: "edit" | "view";
@@ -221,9 +222,15 @@ export function DashboardEditCanvas({
         );
         return `${base}:${childCount}`;
       }
+      const linkedRev = linkedComponentContentRevisionSuffix(
+        pixelWidgetToLayoutWidget(widget),
+        componentMap,
+        componentsLoading,
+      );
+      if (linkedRev) return `${base}${linkedRev}`;
       return base;
     },
-    [linkage, filterValues, chartRefreshKeys, chartLinkage],
+    [linkage, filterValues, chartRefreshKeys, chartLinkage, componentMap, componentsLoading],
   );
 
   if (mode === "view" || editor === "pixel-readonly") {

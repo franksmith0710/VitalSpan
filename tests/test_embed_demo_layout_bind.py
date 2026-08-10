@@ -150,3 +150,52 @@ def test_embed_chart_view_binds_demo_dataset_config(client: TestClient):
     body = resp.json()
     assert body["configId"] == expected_config
     assert body["dataSourceId"] not in (None, "", TEMPLATE_DEMO_DATASOURCE_REF)
+
+
+def test_embed_chart_view_resolves_legacy_widget_without_type(client: TestClient):
+    dash = client.post(
+        "/api/v1/dashboards",
+        headers=AUTH,
+        json={"name": "Embed Legacy Widget", "slug": f"embed-leg-{uuid.uuid4().hex[:8]}"},
+    )
+    assert dash.status_code == 201, dash.text
+    dash_id = dash.json()["id"]
+    chart_id = str(uuid.uuid4())
+    layout = {
+        "version": 1,
+        "widgets": [
+            {
+                "id": chart_id,
+                "title": "Widget",
+                "colSpan": 6,
+                "rowSpan": 1,
+                "order": 0,
+                "chartConfig": {
+                    "chartType": "table",
+                    "chartId": chart_id,
+                    "mode": "sql",
+                    "dataSourceId": "00000000-0000-4000-8000-000000000010",
+                    "sql": "SELECT 1 AS id",
+                },
+            }
+        ],
+        "globalFilters": [],
+    }
+    put = client.put(
+        f"/api/v1/dashboards/{dash_id}/layout",
+        headers=AUTH,
+        json={"layoutJson": layout},
+    )
+    assert put.status_code == 200, put.text
+
+    created = client.post(
+        "/api/v1/embed/token",
+        headers=AUTH,
+        json={"chartId": chart_id, "shareMode": "public"},
+    )
+    assert created.status_code == 201, created.text
+    token = created.json()["token"]
+
+    resp = client.get(f"/api/v1/embed/chart-view?token={token}&chartId={chart_id}")
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["chartId"] == chart_id

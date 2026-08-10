@@ -13,17 +13,26 @@ from app.metadata.dataset.demo_bindings import prepare_chart_config_for_embed
 from app.schemas.chart_view import ChartViewError, validate_chart_view_config
 
 
+def _is_chart_widget(widget: dict) -> bool:
+    widget_type = widget.get("type")
+    if widget_type == "chart":
+        return True
+    if widget_type in (None, "") and isinstance(widget.get("chartConfig"), dict):
+        return True
+    return False
+
+
 def _find_chart_config(session: Session, chart_id: uuid.UUID) -> dict:
     chart_id_str = str(chart_id)
     for row in session.scalars(select(Dashboard).where(Dashboard.deleted_at.is_(None))):
         layout = row.layout_json if isinstance(row.layout_json, dict) else {}
         for widget in layout.get("widgets") or []:
-            if widget.get("type") != "chart":
+            if not isinstance(widget, dict) or not _is_chart_widget(widget):
                 continue
             chart_config = widget.get("chartConfig") or {}
             widget_id = str(widget.get("id", ""))
             resolved_id = str(chart_config.get("chartId") or widget_id)
-            if resolved_id == chart_id_str:
+            if resolved_id == chart_id_str or widget_id == chart_id_str:
                 return dict(chart_config)
     raise IntegrationError("EMBED_CHART_NOT_FOUND", "Chart config not found for embed", 404)
 
