@@ -8,13 +8,17 @@ import {
   isScreenBorderWidget,
   isScreenClockWidget,
   isScreenIconWidget,
+  isScreenMaterialPresetPayload,
   isScreenShapeWidget,
   isScreenTitleBarWidget,
+  patchScreenMaterialPreset,
   resolveScreenWidgetLayerLabel,
+  screenVisualContentRevisionSuffix,
   SCREEN_BORDER_MARKER,
   SCREEN_CLOCK_MARKER,
   SCREEN_ICON_MARKER,
   SCREEN_SHAPE_MARKER,
+  toolbarScreenMaterialSkipsTabHost,
 } from "./screenVisualAssets";
 
 describe("screenVisualAssets", () => {
@@ -60,5 +64,42 @@ describe("screenVisualAssets", () => {
     expect(resolveScreenWidgetLayerLabel(clock)).toBe("素材 · 时钟");
     expect(resolveScreenWidgetLayerLabel(createScreenShapeWidget([]))).toBe("素材 · 图形");
     expect(resolveScreenWidgetLayerLabel(createScreenIconWidget([]))).toBe("素材 · 图标");
+  });
+
+  it("patches border variant when same-type widget selected", () => {
+    const border = createScreenBorderWidget([], undefined, "border-1");
+    const patched = patchScreenMaterialPreset(border, {
+      insert: "screen-border",
+      preset: "border-7",
+    });
+    expect(patched?.textConfig?.screenStyle?.border?.variant).toBe("border-7");
+  });
+
+  it("returns null when preset type mismatches selected widget", () => {
+    const border = createScreenBorderWidget([], undefined, "border-1");
+    expect(
+      patchScreenMaterialPreset(border, { insert: "screen-shape", preset: "circle" }),
+    ).toBeNull();
+  });
+
+  it("content revision suffix changes when border variant changes", () => {
+    const border = createScreenBorderWidget([], undefined, "border-1");
+    const rev1 = screenVisualContentRevisionSuffix(border);
+    const border2 = patchScreenMaterialPreset(border, {
+      insert: "screen-border",
+      preset: "border-2",
+    })!;
+    const rev2 = screenVisualContentRevisionSuffix(border2);
+    expect(rev1).not.toBe(rev2);
+    expect(rev2).toContain("border-2");
+  });
+
+  it("toolbar decorative inserts skip tab host parking", () => {
+    expect(
+      toolbarScreenMaterialSkipsTabHost({ insert: "screen-border", preset: "border-3" }),
+    ).toBe(true);
+    expect(toolbarScreenMaterialSkipsTabHost("screen-clock")).toBe(true);
+    expect(toolbarScreenMaterialSkipsTabHost("bar")).toBe(false);
+    expect(isScreenMaterialPresetPayload({ insert: "screen-icon", preset: "star" })).toBe(true);
   });
 });

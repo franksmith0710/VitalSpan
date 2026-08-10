@@ -102,6 +102,18 @@ export function defaultPixelSizeForPalettePayload(
   if (payload === "media") return PIXEL_DEFAULT_MEDIA_SIZE;
   if (payload === "tabs") return PIXEL_DEFAULT_TABS_SIZE;
   if (isScreenMaterialInsertType(payload)) {
+    if (typeof payload === "object" && "insert" in payload) {
+      switch (payload.insert) {
+        case "screen-border":
+          return PIXEL_DEFAULT_SCREEN_BORDER_SIZE;
+        case "screen-shape":
+          return PIXEL_DEFAULT_SCREEN_SHAPE_SIZE;
+        case "screen-icon":
+          return PIXEL_DEFAULT_SCREEN_ICON_SIZE;
+        default:
+          break;
+      }
+    }
     switch (payload) {
       case "screen-clock":
         return PIXEL_DEFAULT_SCREEN_CLOCK_SIZE;

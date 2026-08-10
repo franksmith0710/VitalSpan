@@ -9,6 +9,11 @@ import type {
   ScreenBorderVariant,
   ScreenShapeKind,
 } from "@/lib/screenVisualStyle";
+import {
+  normalizeScreenBorderStyle,
+  normalizeScreenIconStyle,
+  normalizeScreenShapeStyle,
+} from "@/lib/screenVisualStyle";
 
 /** 文本组件 content 魔术标记（无需后端 schema 扩展） */
 export const SCREEN_CLOCK_MARKER = "__vs_screen_clock__";
@@ -113,6 +118,105 @@ export function isScreenVisualWidget(
     isScreenShapeWidget(widget) ||
     isScreenIconWidget(widget)
   );
+}
+
+/** 素材库 catalog 项 payload（边框/图形/图标） */
+export type ScreenMaterialPresetPayload = {
+  insert: "screen-border" | "screen-shape" | "screen-icon";
+  preset: string;
+};
+
+export function isScreenMaterialPresetPayload(
+  value: unknown,
+): value is ScreenMaterialPresetPayload {
+  if (typeof value !== "object" || value === null || !("insert" in value) || !("preset" in value)) {
+    return false;
+  }
+  const insert = (value as ScreenMaterialPresetPayload).insert;
+  return insert === "screen-border" || insert === "screen-shape" || insert === "screen-icon";
+}
+
+/** 工具栏点击素材库：装饰类素材落画布视口，不进 Tab 0×0 折叠位 */
+export function toolbarScreenMaterialSkipsTabHost(type: unknown): boolean {
+  if (isScreenMaterialPresetPayload(type)) return true;
+  if (typeof type === "string" && isScreenMaterialInsertType(type)) return true;
+  return false;
+}
+
+/** 已选同类型素材组件时，素材库点击切换样式而非再插一层 */
+export function patchScreenMaterialPreset(
+  widget: LayoutWidget,
+  payload: ScreenMaterialPresetPayload,
+): LayoutWidget | null {
+  if (!widget.textConfig) return null;
+  const screenStyle = widget.textConfig.screenStyle ?? {};
+  if (payload.insert === "screen-border" && isScreenBorderWidget(widget)) {
+    return {
+      ...widget,
+      textConfig: {
+        ...widget.textConfig,
+        screenStyle: {
+          ...screenStyle,
+          border: {
+            ...normalizeScreenBorderStyle(screenStyle.border),
+            variant: payload.preset as ScreenBorderVariant,
+          },
+        },
+      },
+    };
+  }
+  if (payload.insert === "screen-shape" && isScreenShapeWidget(widget)) {
+    return {
+      ...widget,
+      textConfig: {
+        ...widget.textConfig,
+        screenStyle: {
+          ...screenStyle,
+          shape: {
+            ...normalizeScreenShapeStyle(screenStyle.shape),
+            shape: payload.preset as ScreenShapeKind,
+          },
+        },
+      },
+    };
+  }
+  if (payload.insert === "screen-icon" && isScreenIconWidget(widget)) {
+    return {
+      ...widget,
+      textConfig: {
+        ...widget.textConfig,
+        screenStyle: {
+          ...screenStyle,
+          icon: {
+            ...normalizeScreenIconStyle(screenStyle.icon),
+            icon: payload.preset,
+          },
+        },
+      },
+    };
+  }
+  return null;
+}
+
+/** PixelWidgetSlot：screenStyle 变更须触发画布重渲染 */
+export function screenVisualContentRevisionSuffix(
+  widget: Pick<LayoutWidget, "type" | "textConfig">,
+): string {
+  if (!widget.textConfig?.screenStyle) return "";
+  if (isScreenBorderWidget(widget)) {
+    const border = normalizeScreenBorderStyle(widget.textConfig.screenStyle.border);
+    const sparkleKey = border.sparkle.sparkles.map((s) => s.id).join(",");
+    return `:sv:border:${border.variant}:${border.accentColor}:${border.glowEnabled}:${border.innerBorderOpacity}:${border.sparkle.enabled}:${sparkleKey}`;
+  }
+  if (isScreenShapeWidget(widget)) {
+    const shape = normalizeScreenShapeStyle(widget.textConfig.screenStyle.shape);
+    return `:sv:shape:${shape.shape}:${shape.fillColor}:${shape.strokeColor}:${shape.strokeWidth}`;
+  }
+  if (isScreenIconWidget(widget)) {
+    const icon = normalizeScreenIconStyle(widget.textConfig.screenStyle.icon);
+    return `:sv:icon:${icon.icon}:${icon.color}:${icon.size}`;
+  }
+  return "";
 }
 
 export function formatScreenClock(date: Date): string {

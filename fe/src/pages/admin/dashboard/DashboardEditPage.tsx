@@ -122,7 +122,12 @@ import { FilterWidgetInspector } from "@/components/dashboard/FilterWidgetInspec
 import { TextEditRail } from "@/components/dashboard/TextEditRail";
 import { ScreenVisualEditRail } from "@/components/dashboard/screen/ScreenVisualEditRail";
 import { DataScreenConfigExtras } from "@/components/dashboard/screen/DataScreenConfigExtras";
-import { isScreenVisualWidget } from "@/lib/screenVisualAssets";
+import {
+  isScreenMaterialPresetPayload,
+  isScreenVisualWidget,
+  patchScreenMaterialPreset,
+  toolbarScreenMaterialSkipsTabHost,
+} from "@/lib/screenVisualAssets";
 import { collectDashboardImageUrls } from "@/lib/collectDashboardImageUrls";
 import {
   clampDataScreenCanvasSize,
@@ -763,7 +768,9 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     if (layout.version === 2) {
       commitPixelPaletteInsert(
         type,
-        tabInsertIntent && type !== "tabs"
+        tabInsertIntent &&
+          type !== "tabs" &&
+          !toolbarScreenMaterialSkipsTabHost(type)
           ? { tabsWidgetId: tabInsertIntent.tabsWidgetId }
           : undefined,
       );
@@ -869,6 +876,15 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   }, [mode, loading, missing, canSave, location.search, location.pathname, navigate, refetchComponents]);
 
   const handleInsert = (type: PaletteInsertType) => {
+    if (primarySelectedId && selectedWidget && isScreenMaterialPresetPayload(type)) {
+      const patched = patchScreenMaterialPreset(selectedWidget, type);
+      if (patched) {
+        setWidgets((prev) =>
+          prev.map((w) => (w.id === primarySelectedId ? patched : w)),
+        );
+        return;
+      }
+    }
     appendWidget(type);
   };
 

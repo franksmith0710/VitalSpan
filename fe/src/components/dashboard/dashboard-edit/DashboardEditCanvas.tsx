@@ -49,6 +49,7 @@ import {
 } from "./DashboardCanvasWidgetRenderer";
 import { useVizComponentMap } from "@/hooks/useVizComponentMap";
 import { linkedComponentContentRevisionSuffix } from "@/lib/resolveVizComponent";
+import { screenVisualContentRevisionSuffix } from "@/lib/screenVisualAssets";
 
 type DashboardEditCanvasProps = {
   mode: "edit" | "view";
@@ -228,6 +229,10 @@ export function DashboardEditCanvas({
         componentsLoading,
       );
       if (linkedRev) return `${base}${linkedRev}`;
+      const screenVisualRev = screenVisualContentRevisionSuffix(
+        pixelWidgetToLayoutWidget(widget),
+      );
+      if (screenVisualRev) return `${base}${screenVisualRev}`;
       return base;
     },
     [linkage, filterValues, chartRefreshKeys, chartLinkage, componentMap, componentsLoading],
