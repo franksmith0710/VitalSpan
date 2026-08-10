@@ -50,6 +50,7 @@
 |------|------|
 | 后端 FastAPI | `.agents/skills/fastapi/SKILL.md` |
 | 前端视觉 | `.agents/skills/b-design-system-tailadmin-radix/SKILL.md` |
+| 代码审查（OCR） | `.agents/skills/ocr-code-review/SKILL.md` |
 | Bug 案例库 | `.agents/skills/bug-case-library/` |
 | 演化 SOP（只读） | `.cursor/automate/skills/` |
 | 架构巡检 | `arch-inspect/` · `arch-inspect.config.yaml` |
