@@ -4,7 +4,7 @@ import { drillStackRevision, useChartDrill } from "@/components/charts/ChartDril
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { patchChartDeStyleNested, readChartDeStyle, readChartGeoStyle } from "@/lib/chartDeStyle";
+import { patchChartDeStyleNested } from "@/lib/chartDeStyle";
 import {
   isMunicipalityAdcode,
   listOfflineCityNames,
@@ -17,6 +17,7 @@ import {
   formatGeoMapRegionSelectionLabel,
   geoMapRegionMaxDepth,
   parseGeoMapDrillStackSelection,
+  readManualGeoMapDrillStack,
   resolveGeoMapCityAdcode,
   resolveGeoMapDrillChain,
   validateManualGeoMapDrillStack,
@@ -58,21 +59,22 @@ export function ChartMapRegionPicker() {
   const [loadingKeys, setLoadingKeys] = useState<Set<string>>(() => new Set());
   const loadedKeysRef = useRef<Set<string>>(new Set());
 
-  const persistedStack = useMemo(
-    () => readChartGeoStyle(readChartDeStyle(cfg)).manualDrillStack ?? [],
-    [cfg],
-  );
-  const stackRevision = drillStackRevision(
-    drill.active && drill.stack.length ? drill.stack : persistedStack,
-  );
+  const manualDrillStack = useMemo(() => readManualGeoMapDrillStack(cfg), [cfg]);
+
+  const activeStack = useMemo(() => {
+    if (drill.active && drill.stack.length) return drill.stack;
+    if (manualDrillStack !== undefined) return manualDrillStack;
+    return [];
+  }, [drill.active, drill.stack, manualDrillStack]);
+
+  const stackRevision = drillStackRevision(activeStack);
 
   useEffect(() => {
-    if (!drill.active) return;
-    if (drillStackRevision(drill.stack) === drillStackRevision(persistedStack)) return;
-    drill.setStack(persistedStack);
-  }, [drill, persistedStack]);
-
-  const activeStack = drill.active && drill.stack.length ? drill.stack : persistedStack;
+    if (!drill.active || manualDrillStack === undefined) return;
+    if (drillStackRevision(drill.stack) === drillStackRevision(manualDrillStack)) return;
+    if (manualDrillStack.length) drill.setStack(manualDrillStack);
+    else drill.reset();
+  }, [drill.active, drill.reset, drill.setStack, drill.stack, manualDrillStack]);
   const chain = resolveGeoMapDrillChain(cfg);
   const maxDepth = geoMapRegionMaxDepth(cfg);
   const selection = useMemo(

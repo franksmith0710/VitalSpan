@@ -318,8 +318,11 @@ export const ChartRenderer = memo(function ChartRenderer({
 
   const effectiveDrillStack = useMemo(() => {
     if (isGeoMapChart) {
-      // 有 DrillContext 时以 live stack 为准，避免 config 滞后把返回全国冲掉
-      if (drill.active) return drill.stack;
+      if (drill.active) {
+        if (drill.stack.length) return drill.stack;
+        if (manualDrillStack !== undefined) return manualDrillStack;
+        return [];
+      }
       if (manualDrillStack !== undefined) return manualDrillStack;
       return [];
     }
