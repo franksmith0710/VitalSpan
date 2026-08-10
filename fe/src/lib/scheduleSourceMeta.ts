@@ -76,3 +76,10 @@ export function filterSchedulesByTab<T extends { sourceType?: string }>(
   }
   return items.filter((s) => s.sourceType === "dashboard" || s.sourceType === "data_screen");
 }
+
+/** 侧栏「查看调度」：切换到能展示该调度源的行所在 Tab */
+export function scheduleTabForSourceType(sourceType?: string): ScheduleTabFilter {
+  if (sourceType === "dashboard" || sourceType === "data_screen") return "dashboard";
+  if (!sourceType || sourceType === "template") return "template";
+  return "all";
+}

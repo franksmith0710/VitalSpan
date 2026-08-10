@@ -2,7 +2,7 @@ services:
   postgres:
     image: docker.m.daocloud.io/library/postgres:16-alpine
     ports:
-      - "5432:5432"
+      - "5435:5432"
     environment:
       POSTGRES_USER: vitalspan
       POSTGRES_PASSWORD: vitalspan

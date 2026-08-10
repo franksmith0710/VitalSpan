@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarClock, LayoutTemplate, Monitor, Search } from "lucide-react";
@@ -22,6 +22,7 @@ import {
   dashboardsListForScheduleCreate,
   filterSchedulesByTab,
   parseScheduleTabParam,
+  scheduleTabForSourceType,
   summarizeRecipients,
   type ScheduleTabFilter,
 } from "@/lib/scheduleSourceMeta";
@@ -162,6 +163,30 @@ export function ReportSchedulesPage() {
     setSearchParams(nextParams, { replace: true });
   };
 
+  const focusSchedule = useCallback(
+    (scheduleId: string) => {
+      const schedule = allItems.find((item) => item.id === scheduleId);
+      const nextTab = schedule ? scheduleTabForSourceType(schedule.sourceType) : "all";
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.set("tab", nextTab);
+      nextParams.set("expand", scheduleId);
+      setSearchParams(nextParams, { replace: true });
+      setSearch("");
+      setExpandedId(scheduleId);
+    },
+    [allItems, searchParams, setSearchParams],
+  );
+
+  useEffect(() => {
+    if (!expandedId) return;
+    if (!items.some((item) => item.id === expandedId)) return;
+    requestAnimationFrame(() => {
+      document
+        .querySelector(`[data-schedule-row="${expandedId}"]`)
+        ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  }, [expandedId, items]);
+
   return (
     <AdminPageShell
       layout="list"
@@ -186,11 +211,11 @@ export function ReportSchedulesPage() {
       {!isLoading ? (
         <ScheduleRecentFailuresPanel
           schedules={allItems}
-          onSelectSchedule={(id) => setExpandedId(id)}
+          onSelectSchedule={focusSchedule}
           onRetry={(executionId, scheduleId) =>
             void retryExecution
               .mutateAsync({ executionId, scheduleId })
-              .then(() => setExpandedId(scheduleId))
+              .then(() => focusSchedule(scheduleId))
           }
           retryPending={retryExecution.isPending}
           retryPendingExecutionId={

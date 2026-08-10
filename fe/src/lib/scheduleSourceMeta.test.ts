@@ -3,6 +3,7 @@ import {
   filterSchedulesByTab,
   localizeSourceType,
   scheduleSourceHref,
+  scheduleTabForSourceType,
   summarizeRecipients,
 } from "@/lib/scheduleSourceMeta";
 
@@ -40,5 +41,12 @@ describe("scheduleSourceMeta", () => {
     ];
     expect(filterSchedulesByTab(items, "dashboard")).toHaveLength(2);
     expect(filterSchedulesByTab(items, "template")).toHaveLength(1);
+  });
+
+  it("resolves tab for schedule source type", () => {
+    expect(scheduleTabForSourceType("dashboard")).toBe("dashboard");
+    expect(scheduleTabForSourceType("data_screen")).toBe("dashboard");
+    expect(scheduleTabForSourceType("template")).toBe("template");
+    expect(scheduleTabForSourceType(undefined)).toBe("template");
   });
 });

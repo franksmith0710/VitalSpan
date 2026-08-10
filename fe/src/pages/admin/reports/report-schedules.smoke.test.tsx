@@ -144,4 +144,87 @@ describe("ReportSchedulesPage smoke", () => {
     expect(await screen.findByText("邮件投递不可用", {}, { timeout: 3000 })).toBeInTheDocument();
     expect(await screen.findByRole("button", { name: "重试" })).toBeInTheDocument();
   });
+
+  it("查看调度 from failures panel switches tab and expands row", async () => {
+    const templateScheduleId = "sched-tpl";
+    mockApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path.includes("/schedules/delivery-health")) {
+        return { status: "reachable", host: "localhost", port: 1025, error: null };
+      }
+      if (path.includes("/schedules/export-health")) {
+        return { status: "available", error: null };
+      }
+      if (path.includes("/executions/recent-failures")) {
+        return {
+          items: [
+            {
+              executionId: "ex-fail",
+              scheduleId: templateScheduleId,
+              status: "semi_real_failed",
+              artifactRef: "semi://x",
+              executedAt: "2026-07-07T00:00:00Z",
+              errorMessage: "SMTP failed",
+            },
+          ],
+          total: 1,
+        };
+      }
+      if (path.match(/\/schedules\/[^/]+\/executions$/)) {
+        return { items: [], total: 0 };
+      }
+      if (path.startsWith("/api/v1/reports/schedules")) {
+        return {
+          items: [
+            {
+              id: scheduleId,
+              catalogNodeId: nodeId,
+              sourceType: "dashboard",
+              sourceId: "d1",
+              sourceLabel: "销售月报",
+              cron: "0 8 * * *",
+              timezone: "Asia/Shanghai",
+              status: "scheduled",
+              allowedActions: ["pause"],
+              recipients: [{ type: "role", value: "admin" }],
+              attachmentFormats: ["pdf"],
+            },
+            {
+              id: templateScheduleId,
+              catalogNodeId: nodeId,
+              sourceType: "template",
+              sourceLabel: "模板月报",
+              cron: "0 9 * * 1",
+              timezone: "Asia/Shanghai",
+              status: "scheduled",
+              allowedActions: ["pause"],
+              recipients: [{ type: "role", value: "admin" }],
+              attachmentFormats: ["pdf"],
+            },
+          ],
+          total: 2,
+        };
+      }
+      if (path.startsWith("/api/v1/reports/catalog/nodes")) {
+        return [
+          {
+            id: nodeId,
+            name: "销售月报",
+            parentId: null,
+            nodeType: "template",
+            templateKind: "pdf",
+            templateKey: "sales",
+            sortOrder: 0,
+          },
+        ];
+      }
+      return {};
+    });
+
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText(/近期失败/);
+    await user.click(screen.getByRole("button", { name: "查看调度" }));
+    expect(await screen.findByText("模板月报")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "文档模板" })).toHaveAttribute("aria-pressed", "true");
+  });
 });

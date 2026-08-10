@@ -113,7 +113,10 @@ function ScheduleDataRow({
 
   return (
     <>
-      <TableRow className="border-gray-100 hover:bg-gray-50/60 dark:border-gray-800 dark:hover:bg-white/[0.02]">
+      <TableRow
+        data-schedule-row={schedule.id}
+        className="border-gray-100 hover:bg-gray-50/60 dark:border-gray-800 dark:hover:bg-white/[0.02]"
+      >
         <TableCell>
           <Badge variant="light" color={sourceTypeBadgeColor(schedule.sourceType)} size="sm">
             {localizeSourceType(schedule.sourceType)}
