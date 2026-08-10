@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { useEffect } from "react";
 import { Link } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -62,11 +63,11 @@ export function ReportMetricDatasetFields({
     if (dsId) onSuggestedDataSourceId?.(dsId);
   }, [boundConfigQuery.data?.dataSourceId, onSuggestedDataSourceId]);
 
-  const handleBound = () => {
+  const handleBound = (configId: string) => {
+    onBoundConfigIdChange(configId);
     void qc.invalidateQueries({ queryKey: ["reports", "datasets", datasetId] });
-    void detailQuery.refetch().then((res) => {
-      if (res.data?.boundConfigId) onBoundConfigIdChange(res.data.boundConfigId);
-    });
+    void detailQuery.refetch();
+    toast.message("绑定已同步，请保存扩展配置后再导出");
   };
 
   return (

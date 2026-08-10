@@ -12,7 +12,7 @@ import {
   drawCartesianBandAxes,
   drawHorizontalGrid,
 } from "@/components/charts/engine/d3/core/sceneGraph";
-import { groupSeries, normalizeCartesianData, resolveDatumColor, resolveSeriesKeys, seriesDataKey } from "@/components/charts/engine/d3/core/series";
+import { groupSeries, normalizeCartesianData, resolveDatumColor, resolveSeriesKeys, seriesDataKey, seriesDomClass, seriesDomSelector } from "@/components/charts/engine/d3/core/series";
 import { normalizeCategoryAxisDomain } from "@/components/charts/engine/buildDatasetEncoding";
 import { themeFromConfig } from "@/components/charts/engine/d3/core/themeEngine";
 import { createTooltipLayer } from "@/components/charts/engine/d3/core/tooltipLayer";
@@ -165,15 +165,18 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
 
   if (isStack) {
     const stack = d3.stack<WideRow>().keys(keys);
-    for (const layer of stack(wideRows)) {
+    const stackLayers = stack(wideRows);
+    for (let layerIndex = 0; layerIndex < stackLayers.length; layerIndex += 1) {
+      const layer = stackLayers[layerIndex];
       const name = String(layer.key);
+      const domClass = seriesDomClass("bar-stack", layerIndex);
       const color = colorScale(name) ?? colors[0] ?? theme.accent;
-      const gradientFill = resolveSeriesGradientFill(defs, `bar-stack-${name}`, color, seriesGradient);
+      const gradientFill = resolveSeriesGradientFill(defs, domClass, color, seriesGradient);
       plot
-        .selectAll(`g.bar-stack-${name}`)
+        .selectAll(seriesDomSelector("bar-stack", layerIndex))
         .data(layer)
         .join("g")
-        .attr("class", `bar-stack-${name}`)
+        .attr("class", domClass)
         .attr("transform", (d) => `translate(${x(String(d.data.__category__)) ?? 0},0)`)
         .attr("cursor", onPointClick ? "pointer" : "default")
         .each(function (d) {
@@ -194,16 +197,17 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
         );
     }
   } else {
-    for (const s of seriesGroups) {
+    seriesGroups.forEach((s, seriesIndex) => {
       const name = s.name || "value";
+      const domClass = seriesDomClass("bar", seriesIndex);
       const color = colorScale(name) ?? colors[0] ?? theme.accent;
       const barW = useGrouped && xSub ? xSub.bandwidth() : x.bandwidth();
-      const gradientFill = resolveSeriesGradientFill(defs, `bar-${name}`, color, seriesGradient);
+      const gradientFill = resolveSeriesGradientFill(defs, domClass, color, seriesGradient);
       plot
-        .selectAll(`g.bar-${name}`)
+        .selectAll(seriesDomSelector("bar", seriesIndex))
         .data(s.points)
         .join("g")
-        .attr("class", `bar-${name}`)
+        .attr("class", domClass)
         .attr("transform", (d) => {
           const base = x(String(d.__category__)) ?? 0;
           const bx = useGrouped && xSub ? base + (xSub(name) ?? 0) : base;
@@ -219,7 +223,7 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
           paintVBarCell(d3.select(this), { y1, h: innerH - y1, w: barW, front, solid, rx: barRx });
         })
         .on("click", (_e, d) => onPointClick?.(d));
-    }
+    });
   }
 
   for (const line of markLines.filter((m) => m.enabled && Number.isFinite(m.value))) {

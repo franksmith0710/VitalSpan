@@ -14,6 +14,7 @@ from app.query.executor import QueryExecutor
 from app.query.readonly import assert_safe_sql_parameters
 from app.query.schemas import QueryError
 from app.query.translator.from_config import translate_from_config_record
+from app.query.translator.schemas import TranslateError
 
 _executor = QueryExecutor()
 _FORBIDDEN_PARAM_KEYS = frozenset({"__proto__", "_sql"})
@@ -57,7 +58,10 @@ def execute_dataset_from_config(
             raise QueryError(exc.code, exc.message, exc.status) from exc
         raise
 
-    translated = translate_from_config_record(record)
+    try:
+        translated = translate_from_config_record(record)
+    except TranslateError as exc:
+        raise QueryError(exc.code, exc.message, exc.status) from exc
     parameters = _merge_parameters(translated.parameters, req.parameters)
 
     sql = translated.sql

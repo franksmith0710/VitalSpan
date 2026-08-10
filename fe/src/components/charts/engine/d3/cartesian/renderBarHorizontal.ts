@@ -6,7 +6,7 @@ import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core
 import { drawVerticalMarkLines } from "@/components/charts/engine/d3/core/markLines";
 import { resolveSeriesGradientFill } from "@/components/charts/engine/d3/core/gradient";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
-import { groupSeries, normalizeCartesianData, resolveDatumColor, resolveSeriesKeys, seriesDataKey } from "@/components/charts/engine/d3/core/series";
+import { groupSeries, normalizeCartesianData, resolveDatumColor, resolveSeriesKeys, seriesDataKey, seriesDomClass, seriesDomSelector } from "@/components/charts/engine/d3/core/series";
 import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3CartesianRenderConfig } from "@/components/charts/engine/d3/types";
 import { normalizeCategoryAxisDomain } from "@/components/charts/engine/buildDatasetEncoding";
@@ -162,15 +162,18 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
 
   if (isStack) {
     const stack = d3.stack<WideRow>().keys(keys);
-    for (const layer of stack(wideRows)) {
+    const stackLayers = stack(wideRows);
+    for (let layerIndex = 0; layerIndex < stackLayers.length; layerIndex += 1) {
+      const layer = stackLayers[layerIndex];
       const name = String(layer.key);
+      const domClass = seriesDomClass("hbar-stack", layerIndex);
       const color = colorScale(name) ?? colors[0] ?? "#465fff";
-      const gradientFill = resolveSeriesGradientFill(defs, `hbar-stack-${name}`, color, seriesGradient, "horizontal");
+      const gradientFill = resolveSeriesGradientFill(defs, domClass, color, seriesGradient, "horizontal");
       plot
-        .selectAll(`g.hbar-stack-${name}`)
+        .selectAll(seriesDomSelector("hbar-stack", layerIndex))
         .data(layer)
         .join("g")
-        .attr("class", `hbar-stack-${name}`)
+        .attr("class", domClass)
         .attr("transform", (d) => `translate(0,${y(String(d.data.__category__)) ?? 0})`)
         .attr("cursor", onPointClick ? "pointer" : "default")
         .each(function (d) {
@@ -190,16 +193,17 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
         );
     }
   } else {
-    for (const s of seriesGroups) {
+    seriesGroups.forEach((s, seriesIndex) => {
       const name = s.name || "value";
+      const domClass = seriesDomClass("hbar", seriesIndex);
       const color = colorScale(name) ?? colors[0] ?? "#465fff";
       const barH = useGrouped && ySub ? ySub.bandwidth() : y.bandwidth();
-      const gradientFill = resolveSeriesGradientFill(defs, `hbar-${name}`, color, seriesGradient, "horizontal");
+      const gradientFill = resolveSeriesGradientFill(defs, domClass, color, seriesGradient, "horizontal");
       plot
-        .selectAll(`g.hbar-${name}`)
+        .selectAll(seriesDomSelector("hbar", seriesIndex))
         .data(s.points)
         .join("g")
-        .attr("class", `hbar-${name}`)
+        .attr("class", domClass)
         .attr("transform", (d) => {
           const base = y(String(d.__category__)) ?? 0;
           const by = useGrouped && ySub ? base + (ySub(name) ?? 0) : base;
@@ -215,7 +219,7 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
           paintHBarCell(d3.select(this), { x: 0, w, h: barH, front, solid, rx: barRx }, depthLevel);
         })
         .on("click", (_e, d) => onPointClick?.(d));
-    }
+    });
   }
 
   if (showTooltip) {

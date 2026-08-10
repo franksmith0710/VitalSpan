@@ -12,7 +12,9 @@ from app.query.dataset.schemas import DatasetExecuteRequest
 from app.query.schemas import ExecuteRequest, ExecuteResponse, QueryError
 from app.query.service import execute_query
 from app.query.sql_parameters import inject_sql_parameters
-from app.reports.engine.errors import ReportEngineError
+from app.query.config_store.schemas import ConfigError, DatasetQueryConfigPayload
+from app.query.config_store.service import get_config_by_id
+from app.reports.engine.errors import RPT_ENGINE_DATASOURCE_REQUIRED, ReportEngineError
 from app.reports.extension.schemas import ExtensionConfigOut, MetricAdjustment
 
 
@@ -85,19 +87,54 @@ def execute_dataset_section(
     }
 
 
+def _resolve_dataset_metric_binding(
+    db: Session,
+    metric: MetricAdjustment,
+) -> tuple[uuid.UUID, uuid.UUID]:
+    """Resolve live boundConfig + dataSource; prefer dataset's current binding over stale metric snapshot."""
+    bound_id = metric.bound_config_id
+    if metric.dataset_id:
+        from app.metadata.dataset.errors import DatasetError
+        from app.metadata.dataset import service as dataset_service
+
+        try:
+            ds_row = dataset_service.get_dataset(metric.dataset_id)
+            if ds_row.bound_config_id:
+                bound_id = ds_row.bound_config_id
+        except DatasetError:
+            pass
+    if bound_id is None:
+        raise ReportEngineError(
+            RPT_ENGINE_DATASOURCE_REQUIRED,
+            "数据集指标缺少绑定配置，请先保存出图字段并保存扩展配置",
+            422,
+        )
+    try:
+        record = get_config_by_id(db, bound_id)
+        payload = DatasetQueryConfigPayload.model_validate(record.payload)
+    except ConfigError as exc:
+        raise ReportEngineError("RPT_ENGINE_QUERY_FAILED", exc.message, exc.status) from exc
+    return payload.data_source_id, bound_id
+
+
 def _execute_metric(
     db: Session,
     user: UserContext,
     metric: MetricAdjustment,
-    data_source_id: uuid.UUID,
+    fallback_data_source_id: uuid.UUID | None,
     parameters: dict[str, Any],
 ) -> dict[str, Any]:
-    if metric.query_mode == "dataset" and metric.bound_config_id:
-        return execute_dataset_section(
-            db, user, data_source_id, metric.bound_config_id, parameters,
+    if metric.query_mode == "dataset" and (metric.bound_config_id or metric.dataset_id):
+        ds_id, bound_id = _resolve_dataset_metric_binding(db, metric)
+        return execute_dataset_section(db, user, ds_id, bound_id, parameters)
+    if fallback_data_source_id is None:
+        raise ReportEngineError(
+            RPT_ENGINE_DATASOURCE_REQUIRED,
+            "SQL 指标需要运行数据源，请在扩展配置中选择数据连接",
+            422,
         )
     sql = build_metric_sql(metric, parameters)
-    return execute_section(db, user, data_source_id, sql)
+    return execute_section(db, user, fallback_data_source_id, sql)
 
 
 def build_sections_from_template_blocks(template_key: str) -> list[dict[str, Any]]:
@@ -137,19 +174,31 @@ def build_sections_from_template_blocks(template_key: str) -> list[dict[str, Any
     return sections
 
 
+def _extension_has_executable_metrics(ext: ExtensionConfigOut) -> bool:
+    for metric in ext.metrics:
+        if not metric.visible:
+            continue
+        if metric.query_mode == "dataset" and (metric.bound_config_id or metric.dataset_id):
+            return True
+        if metric.query_mode == "sql" and (metric.expression or metric.key):
+            return True
+    return False
+
+
 def build_sections_from_extension(
     db: Session,
     user: UserContext,
     ext: ExtensionConfigOut,
-    data_source_id: uuid.UUID,
     parameters: dict[str, Any],
+    *,
+    fallback_data_source_id: uuid.UUID | None = None,
 ) -> tuple[list[dict[str, Any]], float]:
     sections: list[dict[str, Any]] = []
     total_ms = 0.0
     for metric in ext.metrics:
         if not metric.visible:
             continue
-        payload = _execute_metric(db, user, metric, data_source_id, parameters)
+        payload = _execute_metric(db, user, metric, fallback_data_source_id, parameters)
         total_ms += float(payload["elapsedMs"])
         kind = "chart" if metric.compare_mode in {"yoy", "mom"} else "table"
         section: dict[str, Any] = {

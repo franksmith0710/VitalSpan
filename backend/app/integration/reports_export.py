@@ -218,6 +218,13 @@ def _generate_artifact_bytes(fmt: str, template_id: uuid.UUID, actor: UserContex
             trace_id=trace,
         ) from exc
     except Exception as exc:
+        import logging
+
+        logging.getLogger(__name__).exception(
+            "report_export_generation_failed templateId=%s format=%s",
+            template_id,
+            fmt,
+        )
         raise IntegrationError(
             "REPORT_EXPORT_GENERATION_FAILED",
             "Report generation failed",

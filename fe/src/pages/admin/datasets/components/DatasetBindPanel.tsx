@@ -55,7 +55,7 @@ export function DatasetBindPanel({
   tableSourceDataSourceId?: string;
   origin?: DatasetOrigin;
   syncJobId?: string | null;
-  onBound: () => void;
+  onBound: (boundConfigId: string) => void;
 }) {
   const isSyncOrigin = origin === "sync_job";
   const queryClient = useQueryClient();
@@ -141,7 +141,7 @@ export function DatasetBindPanel({
     }
     setSaving(true);
     try {
-      await persistDatasetBind({
+      const configId = await persistDatasetBind({
         datasetId,
         boundConfigId,
         dataSourceId,
@@ -153,7 +153,7 @@ export function DatasetBindPanel({
       await queryClient.invalidateQueries({ queryKey: ["query-config"] });
       seedKeyRef.current = "";
       toast.success(`出图字段已更新（${bindDraft.selectedColumns.length} 列）`);
-      onBound();
+      onBound(configId);
     } catch (err) {
       toast.error(mapApiError(err));
     } finally {
@@ -179,7 +179,9 @@ export function DatasetBindPanel({
         syncJobId={syncJobId}
         syncDataSourceName={syncDatasourceDisplay?.name}
         syncDataSourceEndpoint={syncDatasourceDisplay?.endpoint}
-        onRefreshBinding={onBound}
+        onRefreshBinding={() => {
+          if (boundConfigId) onBound(boundConfigId);
+        }}
       />
       <div className="flex justify-end">
         <Button

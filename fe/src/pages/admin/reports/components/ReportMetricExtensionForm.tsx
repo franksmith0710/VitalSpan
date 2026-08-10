@@ -418,7 +418,17 @@ export function ReportMetricExtensionForm({
               onDatasetIdChange={(id) =>
                 setForm((f) => ({ ...f, datasetId: id, boundConfigId: "" }))
               }
-              onBoundConfigIdChange={(id) => setForm((f) => ({ ...f, boundConfigId: id }))}
+              onBoundConfigIdChange={(id) => {
+                setForm((f) => ({ ...f, boundConfigId: id }));
+                if (editingKey) {
+                  setDraftMetrics((prev) =>
+                    prev.map((m) => (m.key === editingKey ? { ...m, boundConfigId: id } : m)),
+                  );
+                  if (!changeNote.trim()) {
+                    setChangeNote("更新出图字段绑定");
+                  }
+                }
+              }}
               onSuggestedDataSourceId={(id) => {
                 if (id) setDefaultDsId(id);
               }}

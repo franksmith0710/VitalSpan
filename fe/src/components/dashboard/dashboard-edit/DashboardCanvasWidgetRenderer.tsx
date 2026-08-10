@@ -70,6 +70,7 @@ type DashboardCanvasWidgetRendererProps = {
     options?: RenderDashboardCanvasWidgetOptions,
   ) => ReactNode;
   componentMap?: import("@/lib/resolveVizComponent").VizComponentMap;
+  componentsLoading?: boolean;
   /** 关联组件推库成功后刷新 componentMap（否则 resolve 仍读旧 payload） */
   onLinkedPayloadSynced?: () => void | Promise<unknown>;
 };
@@ -113,6 +114,7 @@ function rendererPropsEqual(
   if (prev.dashboardStyle !== next.dashboardStyle) return false;
   if (prev.chartPaletteDefaults !== next.chartPaletteDefaults) return false;
   if (prev.componentMap !== next.componentMap) return false;
+  if (prev.componentsLoading !== next.componentsLoading) return false;
   if (prev.allWidgets !== next.allWidgets) return false;
   if (!widgetContentEqual(prev.widget, next.widget)) return false;
   if (prev.gridSize?.w !== next.gridSize?.w || prev.gridSize?.h !== next.gridSize?.h) {
@@ -145,6 +147,7 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
   onTabPaletteDrop,
   renderChild,
   componentMap,
+  componentsLoading = false,
   onLinkedPayloadSynced,
 }: DashboardCanvasWidgetRendererProps) {
   const widget = asLayoutWidget(sourceWidget);
@@ -295,6 +298,7 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
         chartPaletteDefaults={chartPaletteDefaults}
         suspendLiveResize={isShapePlaying || isGridPlaying}
         componentMap={componentMap}
+        componentsLoading={componentsLoading}
       />
     </WidgetErrorBoundary>
   );

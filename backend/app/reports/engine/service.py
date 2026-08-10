@@ -21,6 +21,10 @@ _SUPPORTED_FORMATS = frozenset({"web", "html"})
 _EXPORT_KINDS = frozenset({"word", "excel", "pdf"})
 
 
+def _extension_has_executable_metrics(ext: Any) -> bool:
+    return engine_execute._extension_has_executable_metrics(ext)
+
+
 def _extension_needs_datasource(ext: Any) -> bool:
     for metric in ext.metrics:
         if not metric.visible:
@@ -118,10 +122,10 @@ def run_template(template_id: uuid.UUID, payload: RenderRunIn, actor: UserContex
         export_hook = _build_export_hook(node)
 
     query_meta: QueryMeta | None = None
-    if ds_id is not None and ext is not None:
+    if ext is not None and _extension_has_executable_metrics(ext):
         with Session(bind=get_meta_engine()) as db:
             sections, elapsed = engine_execute.build_sections_from_extension(
-                db, actor, ext, ds_id, parameters,
+                db, actor, ext, parameters, fallback_data_source_id=ds_id,
             )
         if node.template_key:
             block_sections = engine_execute.build_sections_from_template_blocks(node.template_key)

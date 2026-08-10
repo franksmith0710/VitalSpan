@@ -170,6 +170,45 @@ describe("renderD3DualAxesChart dual-line legend", () => {
     expect(labels).toContain("华北");
   });
 
+  it("renders stacked column with series names containing parentheses", () => {
+    const container = document.createElement("div");
+    Object.defineProperty(container, "clientWidth", { value: 480, configurable: true });
+    Object.defineProperty(container, "clientHeight", { value: 320, configurable: true });
+
+    renderD3DualAxesChart(container, {
+      width: 480,
+      height: 320,
+      data: [
+        [
+          { __category__: "2025-01-05", __value__: 100, __series__: "墨盒套装" },
+          { __category__: "2025-01-05", __value__: 200, __series__: "A4打印纸(箱)" },
+          { __category__: "2025-02-15", __value__: 150, __series__: "墨盒套装" },
+          { __category__: "2025-02-15", __value__: 180, __series__: "A4打印纸(箱)" },
+        ],
+        [
+          { __category__: "2025-01-05", __value__: 50 },
+          { __category__: "2025-02-15", __value__: 60 },
+        ],
+      ],
+      xField: "__category__",
+      yField: ["__value__", "__value__"],
+      geometryOptions: [{ geometry: "column", isStack: true }, { geometry: "line" }],
+      columnSeriesField: "__series__",
+      colors: ["#465fff", "#12b76a", "#f79009"],
+      theme,
+      showTooltip: false,
+      showLegend: true,
+      lineLabels: ["amount", "quantity"],
+    });
+
+    expect(container.querySelectorAll('[class*="dual-stack-s"]').length).toBeGreaterThan(0);
+    const labels = Array.from(container.querySelectorAll("g.vs-legend text")).map((n) =>
+      n.textContent?.trim(),
+    );
+    expect(labels).toContain("A4打印纸(箱)");
+    expect(labels).toContain("墨盒套装");
+  });
+
   it("aligns grouped column legend colors with series palette order", () => {
     const container = document.createElement("div");
     Object.defineProperty(container, "clientWidth", { value: 480, configurable: true });

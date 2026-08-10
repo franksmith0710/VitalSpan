@@ -10,6 +10,15 @@ export function seriesDataKey(name: string): string {
   return name || "value";
 }
 
+/** 系列索引 DOM class（展示名可能含括号等 CSS 非法字符） */
+export function seriesDomClass(prefix: string, index: number): string {
+  return `${prefix}-s${index}`;
+}
+
+export function seriesDomSelector(prefix: string, index: number): string {
+  return `g.${seriesDomClass(prefix, index)}`;
+}
+
 export function resolveSeriesKeys(seriesNames: string[]): string[] {
   if (seriesNames.length === 0) return ["value"];
   return seriesNames.map(seriesDataKey);

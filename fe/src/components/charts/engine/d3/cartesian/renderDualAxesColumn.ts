@@ -8,6 +8,8 @@ import {
   resolveDatumColor,
   resolveSeriesKeys,
   seriesDataKey,
+  seriesDomClass,
+  seriesDomSelector,
 } from "@/components/charts/engine/d3/core/series";
 import type { AntvThemeTokens } from "@/components/charts/engine/antv/theme";
 import type { ChartConditionalRule } from "@/lib/chartDeFeatures";
@@ -155,16 +157,19 @@ export function renderDualAxesColumnBars(params: {
 
   if (columnOpts.isStack && hasMultiSeries) {
     const stack = d3.stack<WideRow>().keys(keys);
-    for (const layer of stack(wideRows)) {
+    const stackLayers = stack(wideRows);
+    for (let layerIndex = 0; layerIndex < stackLayers.length; layerIndex += 1) {
+      const layer = stackLayers[layerIndex];
       const name = String(layer.key);
+      const domClass = seriesDomClass("dual-stack", layerIndex);
       const color = colorScale(name) ?? fallbackColor;
       legendItems.push({ label: name, color, w: 10, h: 10 });
-      const gradientFill = resolveSeriesGradientFill(defs, `dual-stack-${name}`, color, seriesGradient);
+      const gradientFill = resolveSeriesGradientFill(defs, domClass, color, seriesGradient);
       plot
-        .selectAll(`g.dual-stack-${name}`)
+        .selectAll(seriesDomSelector("dual-stack", layerIndex))
         .data(layer)
         .join("g")
-        .attr("class", `dual-stack-${name}`)
+        .attr("class", domClass)
         .attr("transform", (d) => `translate(${(x(String(d.data.__category__)) ?? 0) - barWidth / 2},0)`)
         .attr("cursor", onPointClick ? "pointer" : "default")
         .each(function (d) {
@@ -188,15 +193,16 @@ export function renderDualAxesColumnBars(params: {
     const groupWidth = barWidth / seriesNames.length;
     seriesGroups.forEach((s, i) => {
       const name = s.name || "value";
+      const domClass = seriesDomClass("dual-group", i);
       const color = colorScale(name) ?? fallbackColor;
       legendItems.push({ label: name, color, w: 10, h: 10 });
       const cellW = Math.max(2, groupWidth * 0.9);
-      const gradientFill = resolveSeriesGradientFill(defs, `dual-group-${name}`, color, seriesGradient);
+      const gradientFill = resolveSeriesGradientFill(defs, domClass, color, seriesGradient);
       plot
-        .selectAll(`g.dual-group-${name}`)
+        .selectAll(seriesDomSelector("dual-group", i))
         .data(s.points)
         .join("g")
-        .attr("class", `dual-group-${name}`)
+        .attr("class", domClass)
         .attr("transform", (d) => {
           const cx = x(String(d.__category__)) ?? 0;
           return `translate(${cx - barWidth / 2 + i * groupWidth},0)`;

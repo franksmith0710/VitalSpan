@@ -52,7 +52,7 @@ import { pixelDragRailHeightPx, pixelViewTitleHeightPx, dwCaption } from "./dash
 import { usePixelChromeScale } from "./pixelCanvas/PixelCanvasScaleContext";
 import { widgetChartIcon, WIDGET_CHART_LABELS } from "./widgetIcons";
 import { resolveLayoutWidget, type VizComponentMap } from "@/lib/resolveVizComponent";
-import { isLinkedComponentRef } from "@/lib/vizComponents";
+import { isLinkedComponentRef, isValidComponentUuid } from "@/lib/vizComponents";
 import {
   type DashboardPreviewProfile,
   isCardPreviewProfile,
@@ -113,7 +113,56 @@ type DashboardWidgetProps = {
   geo3dRenderTier?: Geo3dRenderTier;
   previewProfile?: DashboardPreviewProfile;
   componentMap?: VizComponentMap;
+  /** 关联组件 batch-resolve 进行中（仅未拿到 payload 时用于 loading） */
+  componentsLoading?: boolean;
 };
+
+function linkedWidgetPayloadReady(widget: LayoutWidget): boolean {
+  switch (widget.type) {
+    case "chart":
+      return Boolean(widget.chartConfig);
+    case "filter":
+      return Boolean(widget.filterConfig);
+    case "text":
+      return Boolean(widget.textConfig);
+    case "media":
+      return Boolean(widget.mediaConfig);
+    default:
+      return false;
+  }
+}
+
+function WidgetLinkedComponentState({
+  invalidRef,
+  missing,
+}: {
+  invalidRef?: boolean;
+  missing?: boolean;
+}) {
+  if (invalidRef) {
+    return (
+      <div className="flex h-full min-h-[64px] flex-col items-center justify-center gap-1 px-3 text-center text-theme-xs text-gray-500 dark:text-gray-400">
+        <span>组件引用无效</span>
+        <span className="text-theme-xs text-gray-400 dark:text-gray-500">请在右侧解除关联后重新选择</span>
+      </div>
+    );
+  }
+  if (missing) {
+    return (
+      <div className="flex h-full min-h-[64px] flex-col items-center justify-center gap-1 px-3 text-center text-theme-xs text-gray-500 dark:text-gray-400">
+        <span>组件库配置不可用</span>
+        <span className="text-theme-xs text-gray-400 dark:text-gray-500">
+          组件已下架、无访问权限或未发布
+        </span>
+      </div>
+    );
+  }
+  return (
+    <div className="flex h-full min-h-[64px] items-center justify-center px-3 text-theme-xs text-gray-500 dark:text-gray-400">
+      正在加载组件库配置…
+    </div>
+  );
+}
 
 function WidgetPendingPreview({
   widget,
@@ -251,6 +300,7 @@ export function DashboardWidget({
   geo3dRenderTier = "embed",
   previewProfile = "default",
   componentMap,
+  componentsLoading = false,
 }: DashboardWidgetProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const chromeScale = usePixelChromeScale();
@@ -259,10 +309,15 @@ export function DashboardWidget({
     () => (componentMap ? resolveLayoutWidget(widget, componentMap) : widget),
     [widget, componentMap],
   );
-  const componentPending =
-    isLinkedComponentRef(widget.componentRef) &&
+  const linkedRef = isLinkedComponentRef(widget.componentRef) ? widget.componentRef : null;
+  const linkedPayloadReady = linkedWidgetPayloadReady(resolvedWidget);
+  const showLinkedLoading =
+    Boolean(linkedRef) && Boolean(componentMap) && !linkedPayloadReady && componentsLoading;
+  const showLinkedMissing =
+    Boolean(linkedRef) &&
     Boolean(componentMap) &&
-    !componentMap?.has(widget.componentRef.componentId);
+    !linkedPayloadReady &&
+    !componentsLoading;
   const chartPaletteDefaults = useMemo(
     () => chartPaletteDefaultsProp ?? pickChartPaletteDefaults(dashboardStyle),
     [chartPaletteDefaultsProp, chartPaletteDefaultsFingerprint(dashboardStyle)],
@@ -274,11 +329,12 @@ export function DashboardWidget({
     !isCardPreview,
   );
 
-  if (componentPending) {
+  if (showLinkedLoading || showLinkedMissing) {
     return (
-      <div className="flex h-full min-h-[64px] items-center justify-center px-3 text-theme-xs text-gray-500 dark:text-gray-400">
-        正在加载组件库配置…
-      </div>
+      <WidgetLinkedComponentState
+        invalidRef={showLinkedMissing && linkedRef && !isValidComponentUuid(linkedRef.componentId)}
+        missing={showLinkedMissing && linkedRef && isValidComponentUuid(linkedRef.componentId)}
+      />
     );
   }
 

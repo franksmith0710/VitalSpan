@@ -106,7 +106,7 @@ export function DashboardLayoutPreview({
     chartLinkageProp !== undefined ? chartLinkageProp : internalLinkage.chartLinkageRuntime;
   const onChartLinkageClick =
     onChartLinkageClickProp ?? internalLinkage.handleChartLinkageClick;
-  const { componentMap } = useVizComponentMap(widgets);
+  const { componentMap, isLoading: componentsLoading } = useVizComponentMap(widgets);
   const styleRevision = widgetDashboardStyleFingerprint(styleConfig);
   const effectiveLinkage: Linkage = linkage ?? {
     filters: [],
@@ -166,6 +166,7 @@ export function DashboardLayoutPreview({
           geo3dRenderTier={geo3dRenderTier}
           previewProfile={previewProfile}
           componentMap={componentMap}
+          componentsLoading={componentsLoading}
         />
       </WidgetErrorBoundary>
     );
