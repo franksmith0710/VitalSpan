@@ -96,4 +96,27 @@ describe("ChartPalettePicker", () => {
     await user.click(screen.getByRole("button", { name: "重置" }));
     expect(onChange).toHaveBeenCalledWith("default", expect.arrayContaining(["#465fff"]));
   });
+
+  it("keeps color picker open after adjusting a custom swatch", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <ChartPalettePicker
+        value="default"
+        paletteColors={["#465fff", "#ff0000", "#12b76a", "#f79009", "#7a5af8", "#0ba5ec", "#ee46bc", "#3641f5"]}
+        onChange={onChange}
+      />,
+    );
+
+    const swatch = screen.getByRole("button", { name: "系列色 1" });
+    await user.click(swatch);
+    expect(swatch).toHaveAttribute("aria-expanded", "true");
+
+    const rInput = screen.getByLabelText("R 分量");
+    await user.clear(rInput);
+    await user.type(rInput, "18");
+
+    expect(swatch).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
 });

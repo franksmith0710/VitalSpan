@@ -275,43 +275,37 @@ export const ChartRenderer = memo(function ChartRenderer({
   const isGeoMapChart = isGeoMapChartType(effectiveConfig.chartType);
   const deferMountReadyForPaint = effectiveConfig.chartType === "map-3d";
 
-  const persistedRevisionRef = useRef(
-    manualDrillStack === undefined ? "__unset__" : drillStackRevision(manualDrillStack),
-  );
-
-  useEffect(() => {
-    if (!drillEnabled || !widgetId || !drill.active) return;
-
-    const revision =
-      manualDrillStack === undefined ? "__unset__" : drillStackRevision(manualDrillStack);
-    const configChanged = revision !== persistedRevisionRef.current;
-    if (!configChanged) return;
-    persistedRevisionRef.current = revision;
-
-    if (!isGeoMapChart) {
-      if (drill.stack.length > 0) return;
-      if (!persistedDrillStack.length) return;
-      drill.setStack(persistedDrillStack);
-      return;
-    }
-
-    // 仅在配置侧 revision 变化时同步；禁止用旧 config 覆盖用户刚点的「返回/全部」
-    if (manualDrillStack === undefined) {
-      if (!drill.stack.length && persistedDrillStack.length) {
-        drill.setStack(persistedDrillStack);
-      }
-      return;
-    }
+  useLayoutEffect(() => {
+    if (!drillEnabled || !widgetId || !drill.active || !isGeoMapChart) return;
+    if (manualDrillStack === undefined) return;
+    const liveRev = drillStackRevision(drill.stack);
+    const persistedRev = drillStackRevision(manualDrillStack);
+    if (liveRev === persistedRev) return;
     if (manualDrillStack.length) drill.setStack(manualDrillStack);
     else drill.reset();
   }, [
     drillEnabled,
+    widgetId,
     drill.active,
     drill.reset,
     drill.setStack,
-    drill.stack.length,
+    drill.stack,
     isGeoMapChart,
     manualDrillStack,
+  ]);
+
+  useEffect(() => {
+    if (!drillEnabled || !widgetId || !drill.active || isGeoMapChart) return;
+
+    if (drill.stack.length > 0) return;
+    if (!persistedDrillStack.length) return;
+    drill.setStack(persistedDrillStack);
+  }, [
+    drillEnabled,
+    drill.active,
+    drill.setStack,
+    drill.stack.length,
+    isGeoMapChart,
     persistedDrillStack,
     widgetId,
   ]);

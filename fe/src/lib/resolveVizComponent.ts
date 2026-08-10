@@ -1,6 +1,7 @@
 import type { DashboardWidgetBase } from "@/components/dashboard/dashboardLayoutContracts";
 import type { VizComponentDetail } from "@/lib/vizComponents";
 import { isLinkedComponentRef } from "@/lib/vizComponents";
+import { applyManualGeoMapDrillOverlay } from "@/lib/geoMapRegionPicker";
 
 export type VizComponentMap = Map<string, VizComponentDetail>;
 
@@ -43,7 +44,14 @@ export function resolveLayoutWidget<T extends DashboardWidgetBase>(
   }
 
   const payload = component.payloadJson as Record<string, unknown>;
-  return rewriteIds({ ...widget, title: widget.title || component.name }, payload) as T;
+  const resolved = rewriteIds({ ...widget, title: widget.title || component.name }, payload) as T;
+  if (resolved.type === "chart" && resolved.chartConfig && widget.type === "chart" && widget.chartConfig) {
+    return {
+      ...resolved,
+      chartConfig: applyManualGeoMapDrillOverlay(resolved.chartConfig, widget.chartConfig),
+    } as T;
+  }
+  return resolved;
 }
 
 export function resolveLayoutWidgets<T extends DashboardWidgetBase>(

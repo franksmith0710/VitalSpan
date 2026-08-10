@@ -25,6 +25,9 @@ import { DashboardStyleSurface } from "./DashboardStyleSurface";
 import { DashboardWidgetsProvider } from "./DashboardWidgetsContext";
 import { widgetFilterExecuteRevision } from "./dashboardWidgetExecuteKey";
 import { ChartDrillProvider } from "@/components/charts/ChartDrillContext";
+import { drillStackRevision } from "@/components/charts/ChartDrillContext";
+import { readChartDeStyle, readChartGeoStyle } from "@/lib/chartDeStyle";
+import { isGeoMapChartType } from "@/lib/chartViewConfig";
 import {
   ChartMountProvider,
   CHART_MOUNT_MAX_VIEW,
@@ -169,8 +172,8 @@ export function DashboardLayoutPreview({
   };
 
   if (displayLayout.version === 2) {
-    const widgetContentRevision = (widget: PixelLayoutWidget) =>
-      widgetFilterExecuteRevision(
+    const widgetContentRevision = (widget: PixelLayoutWidget) => {
+      const base = widgetFilterExecuteRevision(
         widget.id,
         effectiveLinkage,
         filterValues,
@@ -178,6 +181,19 @@ export function DashboardLayoutPreview({
         globalChartRefreshKey,
         chartLinkage,
       );
+      const layoutWidget = pixelWidgetToLayoutWidget(widget);
+      if (
+        layoutWidget.type === "chart" &&
+        layoutWidget.chartConfig &&
+        isGeoMapChartType(layoutWidget.chartConfig.chartType)
+      ) {
+        const manualStack =
+          readChartGeoStyle(readChartDeStyle(layoutWidget.chartConfig)).manualDrillStack ?? [];
+        const drillRev = drillStackRevision(manualStack);
+        if (drillRev) return `${base}:geo-drill:${drillRev}`;
+      }
+      return base;
+    };
 
     return (
       <ChartMountProvider maxConcurrent={mountMaxConcurrent}>

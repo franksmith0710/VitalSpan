@@ -1,7 +1,7 @@
 import type { ChartDrillFrame } from "@/lib/chartDrill";
 import { getDrillChain } from "@/lib/chartDrill";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
-import { readChartDeStyle, readChartGeoStyle } from "@/lib/chartDeStyle";
+import { readChartDeStyle, readChartGeoStyle, patchChartDeStyleNested } from "@/lib/chartDeStyle";
 import {
   isMunicipalityAdcode,
   lookupCityAdcode,
@@ -20,6 +20,30 @@ export function readManualGeoMapDrillStack(
   config: ChartViewConfig,
 ): ChartDrillFrame[] | undefined {
   return readChartGeoStyle(readChartDeStyle(config)).manualDrillStack;
+}
+
+/** 实例级 manualDrillStack 覆盖到库内/合并后的 chartConfig */
+export function applyManualGeoMapDrillOverlay(
+  base: ChartViewConfig,
+  instance?: ChartViewConfig | null,
+): ChartViewConfig {
+  if (!instance) return base;
+  const stack = readManualGeoMapDrillStack(instance);
+  if (stack === undefined) return base;
+  return patchChartDeStyleNested(base, "geo", { manualDrillStack: stack });
+}
+
+/** 关联组件落库时仅保留地图下钻实例覆盖 */
+export function buildGeoMapDrillPersistOverlay(
+  config: ChartViewConfig,
+): ChartViewConfig | undefined {
+  const stack = readManualGeoMapDrillStack(config);
+  if (stack === undefined) return undefined;
+  return patchChartDeStyleNested(
+    { chartType: config.chartType } as ChartViewConfig,
+    "geo",
+    { manualDrillStack: stack },
+  );
 }
 
 export function formatGeoMapRegionSelectionLabel(

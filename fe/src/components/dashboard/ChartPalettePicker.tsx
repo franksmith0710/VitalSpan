@@ -313,7 +313,7 @@ export function ChartPalettePicker({
                 ))
               : customColors.map((color, index) => (
                   <ChartPaletteColorSwatch
-                    key={`${index}-${color}`}
+                    key={`palette-swatch-${index}`}
                     value={color}
                     aria-label={`系列色 ${index + 1}`}
                     onChange={(next) => handleColorChange(index, next)}

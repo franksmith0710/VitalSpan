@@ -21,6 +21,9 @@ import {
 } from "@/lib/canvasPersistPolicy";
 import { sanitizeChartFieldsForValidate } from "@/lib/chartFieldRules";
 import { isLinkedComponentRef } from "@/lib/vizComponents";
+import { buildGeoMapDrillPersistOverlay } from "@/lib/geoMapRegionPicker";
+import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import type { LayoutWidget } from "./layoutUtils";
 
 const CANVAS_WIDTH = 1440 as const;
 const MIN_CANVAS_HEIGHT = 900;
@@ -208,10 +211,17 @@ function stripLinkedWidgetForPersist<T extends { componentRef?: { componentId: s
     textConfig?: unknown;
     mediaConfig?: unknown;
   };
+  const geoDrillOverlay =
+    (widget as LayoutWidget).type === "chart" && (widget as LayoutWidget).chartConfig
+      ? buildGeoMapDrillPersistOverlay((widget as LayoutWidget).chartConfig as ChartViewConfig)
+      : undefined;
   delete next.chartConfig;
   delete next.filterConfig;
   delete next.textConfig;
   delete next.mediaConfig;
+  if (geoDrillOverlay) {
+    next.chartConfig = geoDrillOverlay;
+  }
   return next as T;
 }
 

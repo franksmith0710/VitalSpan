@@ -82,6 +82,48 @@ describe("resolveVizComponent", () => {
     expect(resolved.chartConfig?.dataSourceId).toBe("ds-2");
   });
 
+  it("merges instance manualDrillStack over library payload", () => {
+    const widget = chartWidget("w1", {
+      componentRef: { componentId: "c1" },
+      chartConfig: {
+        chartId: "w1",
+        chartType: "map-3d",
+        mode: "sql",
+        dataSourceId: "ds-1",
+        sql: "select 1",
+        dimensions: [{ field: "province" }],
+        metrics: [{ field: "total" }],
+        filters: [],
+        nativeBody: {
+          deStyle: {
+            geo: {
+              manualDrillStack: [{ field: "province", value: "福建省", label: "福建省" }],
+            },
+          },
+        },
+      },
+    });
+    const map = buildComponentMap([
+      componentDetail("c1", {
+        chartConfig: {
+          chartId: "stale",
+          chartType: "map-3d",
+          mode: "sql",
+          dataSourceId: "ds-2",
+          sql: "select 2",
+          dimensions: [{ field: "province" }],
+          metrics: [{ field: "total" }],
+          filters: [],
+        },
+      }),
+    ]);
+    const resolved = resolveLayoutWidget(widget, map);
+    expect(resolved.chartConfig?.nativeBody?.deStyle?.geo?.manualDrillStack).toEqual([
+      { field: "province", value: "福建省", label: "福建省" },
+    ]);
+    expect(resolved.chartConfig?.dataSourceId).toBe("ds-2");
+  });
+
   it("detaches linked widget to inline config", () => {
     const widget = chartWidget("w1", { componentRef: { componentId: "c1" } });
     const map = buildComponentMap([
