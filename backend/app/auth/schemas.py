@@ -107,6 +107,9 @@ class OrgOut(BaseModel):
 
 class OrgListResponse(BaseModel):
     items: list[OrgOut]
+    total: int
+    limit: int
+    offset: int
 
 
 class UserCreate(BaseModel):

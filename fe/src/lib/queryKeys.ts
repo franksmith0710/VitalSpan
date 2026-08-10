@@ -99,6 +99,9 @@ export const queryKeys = {
   },
   orgs: {
     all: ["orgs"] as const,
+    list: (params?: { q?: string; limit?: number; offset?: number }) =>
+      ["orgs", "list", params ?? {}] as const,
+    picker: ["orgs", "picker"] as const,
   },
   rls: {
     dimensions: (params?: { limit?: number; offset?: number }) =>

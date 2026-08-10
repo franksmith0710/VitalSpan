@@ -4,7 +4,7 @@ import { useListBatchMode } from "@/components/layout/list-batch-delete";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { apiFetch } from "@/lib/api";
 import { runBatchDelete } from "@/lib/runBatchDelete";
-import type { OrgOut } from "./OrgTreeRows";
+import type { OrgOut } from "./OrgListRow";
 
 function sortIdsForDelete(ids: string[], items: OrgOut[]): string[] {
   const levelById = new Map(items.map((o) => [o.id, o.level]));

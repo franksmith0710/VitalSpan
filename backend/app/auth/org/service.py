@@ -44,8 +44,22 @@ def _init_path_level(node: AuthOrgNode, parent: AuthOrgNode | None) -> None:
         node.path = f"{parent.path}/{node.id}"
 
 
-def list_org_nodes(session: Session) -> list[AuthOrgNode]:
-    return list(session.scalars(select(AuthOrgNode).order_by(AuthOrgNode.path)))
+def list_org_nodes(
+    session: Session,
+    *,
+    name_query: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> tuple[list[AuthOrgNode], int]:
+    base = select(AuthOrgNode)
+    if name_query:
+        base = base.where(AuthOrgNode.name.ilike(f"%{name_query}%"))
+    count_stmt = select(func.count()).select_from(base.subquery())
+    total = int(session.scalar(count_stmt) or 0)
+    rows = session.scalars(
+        base.order_by(AuthOrgNode.path).limit(limit).offset(offset),
+    ).all()
+    return list(rows), total
 
 
 def create_org_node(

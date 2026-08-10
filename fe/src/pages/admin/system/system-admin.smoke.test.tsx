@@ -43,7 +43,7 @@ describe("SystemAdminHomePage smoke", () => {
   it("renders setup wizard and progress", async () => {
     mockApiFetch.mockImplementation(async (...args: unknown[]) => {
       const path = String(args[0] ?? "");
-      if (path === "/api/v1/orgs") return { items: [] };
+      if (path.startsWith("/api/v1/orgs")) return { items: [], total: 0 };
       if (path.startsWith("/api/v1/users")) return { total: 1, items: [{ id: "1", username: "admin" }] };
       if (path.startsWith("/api/v1/roles")) {
         return {
@@ -66,7 +66,7 @@ describe("SystemAdminHomePage smoke", () => {
   it("links to org setup step", async () => {
     mockApiFetch.mockImplementation(async (...args: unknown[]) => {
       const path = String(args[0] ?? "");
-      if (path === "/api/v1/orgs") return { items: [] };
+      if (path.startsWith("/api/v1/orgs")) return { items: [], total: 0 };
       if (path.startsWith("/api/v1/users")) return { total: 1, items: [] };
       if (path.startsWith("/api/v1/roles")) return { items: [{ id: "r1", isRoot: true }], total: 1 };
       if (path.startsWith("/api/v1/resource-grants")) return { items: [] };
@@ -80,7 +80,7 @@ describe("SystemAdminHomePage smoke", () => {
   it("marks users step incomplete when only current admin exists", async () => {
     mockApiFetch.mockImplementation(async (...args: unknown[]) => {
       const path = String(args[0] ?? "");
-      if (path === "/api/v1/orgs") return { items: [{ id: "o1", name: "总部" }] };
+      if (path.startsWith("/api/v1/orgs")) return { items: [{ id: "o1", name: "总部" }], total: 1 };
       if (path.startsWith("/api/v1/users")) {
         return { total: 1, items: [{ id: "1", username: "admin" }] };
       }
@@ -98,7 +98,7 @@ describe("SystemAdminHomePage smoke", () => {
   it("marks users step complete when another user exists", async () => {
     mockApiFetch.mockImplementation(async (...args: unknown[]) => {
       const path = String(args[0] ?? "");
-      if (path === "/api/v1/orgs") return { items: [{ id: "o1", name: "总部" }] };
+      if (path.startsWith("/api/v1/orgs")) return { items: [{ id: "o1", name: "总部" }], total: 1 };
       if (path.startsWith("/api/v1/users")) {
         return {
           total: 2,

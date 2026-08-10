@@ -37,14 +37,23 @@ function renderOrgs() {
   );
 }
 
+const ORG_LIST = {
+  items: [{ id: ORG_A, parent_id: null, name: "总部", path: "/hq", level: 0 }],
+  total: 1,
+  limit: 50,
+  offset: 0,
+};
+
+function orgListResponse(items = ORG_LIST.items, total = items.length) {
+  return { items, total, limit: 50, offset: 0 };
+}
+
 describe("OrgTreePage smoke", () => {
   beforeEach(() => mockApiFetch.mockReset());
   afterEach(() => cleanup());
 
   it("renders org tree", async () => {
-    mockApiFetch.mockResolvedValue({
-      items: [{ id: ORG_A, parent_id: null, name: "总部", path: "/hq", level: 0 }],
-    });
+    mockApiFetch.mockResolvedValue(orgListResponse());
     renderOrgs();
     expect(await screen.findByText("总部")).toBeInTheDocument();
   });
@@ -56,8 +65,8 @@ describe("OrgTreePage smoke", () => {
       if (path === `/api/v1/orgs/${ORG_A}` && init?.method === "PUT") {
         return { id: ORG_A, parent_id: null, name: "总部（改）", path: "/hq", level: 0 };
       }
-      if (path === "/api/v1/orgs") {
-        return { items: [{ id: ORG_A, parent_id: null, name: "总部", path: "/hq", level: 0 }] };
+      if (path.startsWith("/api/v1/orgs")) {
+        return orgListResponse();
       }
       return {};
     });
@@ -81,9 +90,9 @@ describe("OrgTreePage smoke", () => {
     mockApiFetch.mockImplementation(async (...args: unknown[]) => {
       const path = String(args[0] ?? "");
       const init = args[1] as RequestInit | undefined;
-      if (path === `/api/v1/orgs/${ORG_A}` && init?.method === "DELETE") return {};
-      if (path === "/api/v1/orgs") {
-        return { items: [{ id: ORG_A, parent_id: null, name: "总部", path: "/hq", level: 0 }] };
+      if (path.startsWith("/api/v1/orgs/") && init?.method === "DELETE") return {};
+      if (path.startsWith("/api/v1/orgs")) {
+        return orgListResponse();
       }
       return {};
     });
@@ -105,8 +114,8 @@ describe("OrgTreePage smoke", () => {
       if (path === "/api/v1/orgs" && init?.method === "POST") {
         return { id: "org-new", parent_id: null, name: "华东区", path: "/east", level: 0 };
       }
-      if (path === "/api/v1/orgs") {
-        return { items: [] };
+      if (path.startsWith("/api/v1/orgs")) {
+        return orgListResponse([]);
       }
       return {};
     });
@@ -135,13 +144,14 @@ describe("OrgTreePage smoke", () => {
         deleted.push(path.split("/").pop() ?? "");
         return {};
       }
-      if (path === "/api/v1/orgs") {
-        return {
-          items: [
+      if (path.startsWith("/api/v1/orgs")) {
+        return orgListResponse(
+          [
             { id: ORG_A, parent_id: null, name: "总部", path: "/hq", level: 0 },
             { id: ORG_B, parent_id: null, name: "华东区", path: "/east", level: 0 },
           ],
-        };
+          2,
+        );
       }
       return {};
     });

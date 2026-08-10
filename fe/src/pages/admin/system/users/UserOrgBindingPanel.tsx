@@ -38,8 +38,8 @@ export function UserOrgBindingPanel({ userId, onActionError }: UserOrgBindingPan
   const [selectedOrgId, setSelectedOrgId] = useState<string>("__none__");
 
   const { data: orgs, isLoading: orgsLoading } = useQuery({
-    queryKey: queryKeys.orgs.all,
-    queryFn: () => apiFetch<{ items: OrgOut[] }>("/api/v1/orgs"),
+    queryKey: queryKeys.orgs.picker,
+    queryFn: () => apiFetch<{ items: OrgOut[] }>("/api/v1/orgs?limit=500&offset=0"),
   });
 
   const {

@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
@@ -35,9 +35,13 @@ def _org_error_response(exc: org_service.OrgError) -> JSONResponse:
 def list_orgs(
     _: Annotated[UserContext, Depends(require_permission("system:org.read"))],
     db: Annotated[Session, Depends(_db)],
+    q: str | None = Query(default=None, max_length=128),
+    limit: int = Query(default=50, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
 ) -> OrgListResponse:
-    items = [OrgOut.model_validate(n) for n in org_service.list_org_nodes(db)]
-    return OrgListResponse(items=items)
+    rows, total = org_service.list_org_nodes(db, name_query=q, limit=limit, offset=offset)
+    items = [OrgOut.model_validate(n) for n in rows]
+    return OrgListResponse(items=items, total=total, limit=limit, offset=offset)
 
 
 @router.post("", response_model=OrgOut, status_code=status.HTTP_201_CREATED)

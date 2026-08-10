@@ -81,7 +81,7 @@ redoc: /redoc
 | POST | `/api/v1/users/{id}/roles/{role_id}` | 增量绑定单角色 | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
 | DELETE | `/api/v1/users/{id}/roles/{role_id}` | 增量移除单角色（204） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
 | PUT/GET/DELETE | `/api/v1/users/{id}/org` | 用户组织归属 | 内部 | 一期 | AUTH-002 | 已实现 | `backend/app/api/v1/users.py` |
-| GET/POST | `/api/v1/orgs` | 组织树节点列表/创建 | 内部 | 一期 | AUTH-002 | 已实现 | `backend/app/api/v1/orgs.py` |
+| GET/POST | `/api/v1/orgs` | 组织树节点列表/创建（`q` · `limit` · `offset`） | 内部 | 一期 | AUTH-002 | 已实现 | `backend/app/api/v1/orgs.py` |
 | GET/PUT/DELETE | `/api/v1/orgs/{org_id}` | 组织节点详情/更新/删除 | 内部 | 一期 | AUTH-002 | 已实现 | `backend/app/api/v1/orgs.py` |
 | GET/POST | `/api/v1/resource-grants` | AUTH-004 资源授权列表/创建 | 内部 | 一期 | AUTH-004 | 已实现 | `backend/app/api/v1/resource_grants.py` |
 | DELETE | `/api/v1/resource-grants/{grant_id}` | 删除单条资源授权（204） | 内部 | 一期 | AUTH-004 | 已实现 | `backend/app/api/v1/resource_grants.py` |

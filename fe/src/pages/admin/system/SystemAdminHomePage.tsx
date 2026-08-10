@@ -61,8 +61,9 @@ function StepCard({ step, index }: { step: SetupStep; index: number }) {
 export function SystemAdminHomePage() {
   const { user: authUser } = useAuth();
   const orgsQuery = useQuery({
-    queryKey: queryKeys.orgs.all,
-    queryFn: () => apiFetch<{ items: unknown[] }>("/api/v1/orgs"),
+    queryKey: queryKeys.orgs.list({ limit: 1, offset: 0 }),
+    queryFn: () =>
+      apiFetch<{ items: unknown[]; total: number }>("/api/v1/orgs?limit=1&offset=0"),
   });
   const usersQuery = useQuery({
     queryKey: queryKeys.users.list({ limit: 500, offset: 0 }),
@@ -87,7 +88,7 @@ export function SystemAdminHomePage() {
     rolesQuery.isLoading ||
     grantsQuery.isLoading;
 
-  const orgCount = orgsQuery.data?.items.length ?? 0;
+  const orgCount = orgsQuery.data?.total ?? 0;
   const userTotal = usersQuery.data?.total ?? 0;
   const businessUserCount = (usersQuery.data?.items ?? []).filter(
     (u) => u.id !== authUser?.id,
