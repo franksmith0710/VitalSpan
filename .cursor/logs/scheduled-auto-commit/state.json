@@ -1,9 +1,9 @@
 ﻿{
-    "tickCount": 294,
+    "tickCount": 295,
     "loopPid": 28632,
-    "lastStatus": "success",
+    "lastStatus": "skipped",
     "lastCommit": "2372bc39",
     "lastError": null,
-    "lastSubject": "wip: [fe,_root] 6f (+131/-5) @ 2026-08-10 10:30 +0800",
-    "lastRunAt": "2026-08-10T10:30:55+08:00"
+    "lastSubject": "wip: scheduled-auto-commit tick #295 skipped (only excluded untracked)",
+    "lastRunAt": "2026-08-10T10:50:29+08:00"
 }
