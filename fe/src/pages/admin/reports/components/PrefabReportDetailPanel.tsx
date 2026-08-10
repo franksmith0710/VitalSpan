@@ -59,6 +59,8 @@ type Props = {
   onCancelCreate?: () => void;
   onBindingSaved?: (bindingKey: string) => void;
   onBindingDeleted?: () => void;
+  createDraftKey?: string;
+  existingBindingKeys?: string[];
 };
 
 export function PrefabReportDetailPanel({
@@ -74,6 +76,8 @@ export function PrefabReportDetailPanel({
   onCancelCreate,
   onBindingSaved,
   onBindingDeleted,
+  createDraftKey,
+  existingBindingKeys = [],
 }: Props) {
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -90,7 +94,12 @@ export function PrefabReportDetailPanel({
           <p className="text-theme-sm text-gray-500 dark:text-gray-400">
             填写绑定键、实体类型与分析模型；保存后可在左侧列表运行。实体须已在元数据中注册物理表。
           </p>
-          <PrefabBindingForm onSaved={onBindingSaved} />
+          <PrefabBindingForm
+            key={createDraftKey}
+            suggestedBindingKey={createDraftKey}
+            existingKeys={existingBindingKeys}
+            onSaved={onBindingSaved}
+          />
           <div className="flex justify-end">
             <Button type="button" variant="outline" className="h-11" onClick={onCancelCreate}>
               取消
@@ -223,7 +232,7 @@ export function PrefabReportDetailPanel({
           </TemplateMetaItem>
         </TemplateMetaGrid>
         <div className="mt-5">
-          <PrefabBindingForm binding={binding} onSaved={onBindingSaved} />
+          <PrefabBindingForm binding={binding} existingKeys={existingBindingKeys} onSaved={onBindingSaved} />
         </div>
         {deleteBinding ? (
           <div className="mt-6 flex justify-end border-t border-gray-100 pt-4 dark:border-gray-800">

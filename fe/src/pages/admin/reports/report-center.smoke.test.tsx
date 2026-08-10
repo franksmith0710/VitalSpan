@@ -103,12 +103,12 @@ describe("ReportCenterPage smoke", () => {
   it("shows admin overview shortcuts", async () => {
     renderPage();
     expect(await screen.findByText("销售看板")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "定时报告" })).toHaveAttribute("href", "/admin/reports/schedules");
     expect(screen.getByRole("link", { name: "文档模板" })).toHaveAttribute("href", "/admin/reports/templates");
     expect(screen.getByRole("link", { name: "管理全部定时报告" })).toHaveAttribute(
       "href",
       "/admin/reports/schedules?tab=dashboard",
     );
+    expect(screen.queryByRole("link", { name: "定时报告" })).not.toBeInTheDocument();
   });
 
   it("expands document templates section on click", async () => {

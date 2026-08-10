@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { mapApiError } from "@/lib/apiError";
 import { TemplateField, TemplatePanelSection } from "./templatePanelUi";
+import { suggestPrefabBindingKey } from "../prefabBindingUtils";
 import { type PrefabBinding, usePrefabReports } from "../usePrefabReports";
 
 const ANALYSIS_TYPES = [
@@ -23,12 +24,23 @@ const ANALYSIS_TYPES = [
 type Props = {
   binding?: PrefabBinding | null;
   readOnly?: boolean;
+  suggestedBindingKey?: string;
+  existingKeys?: string[];
   onSaved?: (bindingKey: string) => void;
 };
 
-export function PrefabBindingForm({ binding, readOnly = false, onSaved }: Props) {
+export function PrefabBindingForm({
+  binding,
+  readOnly = false,
+  suggestedBindingKey,
+  existingKeys = [],
+  onSaved,
+}: Props) {
+  const isCreate = !binding;
   const { upsertBinding } = usePrefabReports();
-  const [bindingKey, setBindingKey] = useState(binding?.bindingKey ?? "");
+  const [bindingKey, setBindingKey] = useState(
+    binding?.bindingKey ?? suggestedBindingKey ?? suggestPrefabBindingKey(),
+  );
   const [displayName, setDisplayName] = useState(binding?.displayName ?? "");
   const [entityTypeCode, setEntityTypeCode] = useState(binding?.entityTypeCode ?? "equipment");
   const [analysisType, setAnalysisType] = useState(binding?.analysisType ?? "lifecycle");
@@ -62,11 +74,16 @@ export function PrefabBindingForm({ binding, readOnly = false, onSaved }: Props)
       toast.error("请填写绑定键、显示名与至少一个维度");
       return;
     }
+    const trimmedKey = bindingKey.trim();
+    if (isCreate && existingKeys.includes(trimmedKey)) {
+      toast.error("绑定键已存在，请更换后再创建");
+      return;
+    }
     upsertBinding.mutate(
       {
-        bindingKey: bindingKey.trim(),
+        bindingKey: trimmedKey,
         body: {
-          bindingKey: bindingKey.trim(),
+          bindingKey: trimmedKey,
           displayName: displayName.trim(),
           entityTypeCode: entityTypeCode.trim(),
           analysisType,
@@ -76,8 +93,8 @@ export function PrefabBindingForm({ binding, readOnly = false, onSaved }: Props)
       },
       {
         onSuccess: () => {
-          toast.success(binding ? "预制绑定已保存" : "预制绑定已创建");
-          onSaved?.(bindingKey.trim());
+          toast.success(isCreate ? "预制绑定已创建" : "预制绑定已保存");
+          onSaved?.(trimmedKey);
         },
         onError: (err) => toast.error(mapApiError(err)),
       },
@@ -100,10 +117,15 @@ export function PrefabBindingForm({ binding, readOnly = false, onSaved }: Props)
               className="h-11 font-mono text-theme-sm"
               value={bindingKey}
               onChange={(e) => setBindingKey(e.target.value)}
-              placeholder="prefab-entity-lifecycle"
-              disabled={Boolean(binding)}
+              placeholder="如 prefab-equipment-activity"
+              disabled={!isCreate}
             />
           </TemplateField>
+          {isCreate && existingKeys.includes(bindingKey.trim()) ? (
+            <p className="sm:col-span-2 text-theme-xs text-error-600 dark:text-error-400">
+              该绑定键已存在，保存会覆盖原配置而不会新增列表项，请更换绑定键。
+            </p>
+          ) : null}
           <TemplateField id="prefab-display-name" label="显示名称" hint="在列表与 Hub 中展示的名称。">
             <Input
               id="prefab-display-name"
@@ -164,7 +186,7 @@ export function PrefabBindingForm({ binding, readOnly = false, onSaved }: Props)
 
       <div className="flex justify-end">
         <Button type="submit" variant="primary" className="h-11 min-w-[7.5rem]" disabled={upsertBinding.isPending}>
-          {upsertBinding.isPending ? "保存中…" : binding ? "保存绑定" : "创建绑定"}
+          {upsertBinding.isPending ? "保存中…" : isCreate ? "创建绑定" : "保存绑定"}
         </Button>
       </div>
     </form>

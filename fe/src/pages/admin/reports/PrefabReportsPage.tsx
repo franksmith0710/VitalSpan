@@ -26,22 +26,25 @@ import {
 import { PrefabBindingsList, PrefabBindingsListEmpty } from "./components/PrefabBindingsList";
 import { PrefabReportDetailPanel } from "./components/PrefabReportDetailPanel";
 import { usePrefabReports } from "./usePrefabReports";
+import { suggestPrefabBindingKey } from "./prefabBindingUtils";
 import { PREFAB_BINDING_QUERY } from "./reportRoutes";
 
 export function PrefabReportsPage() {
   const { user } = useAuth();
   const caps = resolveEffectiveCapabilities(user);
   const canManage = matchesCapability(caps, "report:manage");
-  const { bindingsQuery, runMutation, deleteBinding } = usePrefabReports();
+  const { bindingsQuery, runMutation, deleteBinding, invalidateBindings } = usePrefabReports();
   const [searchParams] = useSearchParams();
   const bindingFromUrl = searchParams.get(PREFAB_BINDING_QUERY);
   const autoRanBindingRef = useRef<string | null>(null);
   const [search, setSearch] = useState("");
   const [selectedBindingKey, setSelectedBindingKey] = useState<string | null>(null);
   const [createMode, setCreateMode] = useState(false);
+  const [createDraftKey, setCreateDraftKey] = useState(() => suggestPrefabBindingKey());
   const lastRunBindingRef = useRef<string | null>(null);
 
   const bindings = bindingsQuery.data?.items ?? [];
+  const existingBindingKeys = useMemo(() => bindings.map((b) => b.bindingKey), [bindings]);
   const editingBinding = useMemo(() => {
     const key = selectedBindingKey ?? bindings[0]?.bindingKey ?? null;
     return bindings.find((b) => b.bindingKey === key) ?? null;
@@ -97,15 +100,17 @@ export function PrefabReportsPage() {
   };
 
   const handleStartCreate = () => {
+    setCreateDraftKey(suggestPrefabBindingKey());
     setCreateMode(true);
     setSelectedBindingKey(null);
     runMutation.reset();
   };
 
-  const handleBindingSaved = (key: string) => {
+  const handleBindingSaved = async (key: string) => {
+    setSearch("");
     setCreateMode(false);
     setSelectedBindingKey(key);
-    void bindingsQuery.refetch();
+    await invalidateBindings();
   };
 
   const handleBindingDeleted = () => {
@@ -138,7 +143,13 @@ export function PrefabReportsPage() {
       actions={
         <div className="flex flex-wrap items-center gap-2">
           {canManage && !isEmpty ? (
-            <Button type="button" variant="outline" className="h-10" onClick={handleStartCreate}>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 lg:hidden"
+              data-testid="prefab-create-binding"
+              onClick={handleStartCreate}
+            >
               <Plus className="size-4" aria-hidden />
               新建预制绑定
             </Button>
@@ -217,7 +228,8 @@ export function PrefabReportsPage() {
                       <Button
                         type="button"
                         variant="outline"
-                        className="h-11 shrink-0"
+                        className="hidden h-11 shrink-0 lg:inline-flex"
+                        data-testid="prefab-create-binding"
                         onClick={handleStartCreate}
                       >
                         <Plus className="size-4" aria-hidden />
@@ -243,8 +255,10 @@ export function PrefabReportsPage() {
                   lastRunBindingRef={lastRunBindingRef}
                   bindingFromUrl={bindingFromUrl}
                   onCancelCreate={() => setCreateMode(false)}
-                  onBindingSaved={handleBindingSaved}
+                  onBindingSaved={(key) => void handleBindingSaved(key)}
                   onBindingDeleted={handleBindingDeleted}
+                  createDraftKey={createDraftKey}
+                  existingBindingKeys={existingBindingKeys}
                 />
               </section>
             </div>

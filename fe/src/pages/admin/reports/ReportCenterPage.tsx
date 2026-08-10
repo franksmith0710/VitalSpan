@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router";
-import { ChevronDown, ChevronRight, FileBarChart, LayoutTemplate, Search, CalendarClock } from "lucide-react";
+import { ChevronDown, ChevronRight, FileBarChart, LayoutTemplate, Search } from "lucide-react";
 import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import {
   DataTable,
@@ -151,20 +151,12 @@ export function ReportCenterPage() {
     <div className="flex flex-wrap items-center gap-2">
       <ReportCenterHeaderActions canManage={canManage} />
       {canManage ? (
-        <>
-          <Button type="button" variant="outline" size="sm" asChild>
-            <Link to="/admin/reports/schedules">
-              <CalendarClock className="size-4" aria-hidden />
-              定时报告
-            </Link>
-          </Button>
-          <Button type="button" variant="ghost" size="sm" asChild>
-            <Link to="/admin/reports/templates">
-              <LayoutTemplate className="size-4" aria-hidden />
-              文档模板
-            </Link>
-          </Button>
-        </>
+        <Button type="button" variant="ghost" size="sm" asChild>
+          <Link to="/admin/reports/templates">
+            <LayoutTemplate className="size-4" aria-hidden />
+            文档模板
+          </Link>
+        </Button>
       ) : null}
     </div>
   );

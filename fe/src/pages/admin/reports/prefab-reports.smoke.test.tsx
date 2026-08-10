@@ -117,10 +117,75 @@ describe("PrefabReportsPage smoke", () => {
   it("admin can open create binding panel", async () => {
     const user = userEvent.setup();
     renderPage();
-    await user.click(await screen.findByRole("button", { name: "新建预制绑定" }));
+    await user.click((await screen.findAllByTestId("prefab-create-binding"))[0]!);
     expect(screen.getByRole("button", { name: "创建绑定" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "取消" })).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("prefab-entity-lifecycle")).toBeInTheDocument();
+    expect((screen.getByLabelText("绑定键") as HTMLInputElement).value).toMatch(/^prefab-/);
+  });
+
+  it("creates binding and refreshes list count", async () => {
+    const user = userEvent.setup();
+    let putCount = 0;
+    mockApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === "/api/v1/reports/prefab/bindings") {
+        const items =
+          putCount > 0
+            ? [
+                {
+                  bindingKey: "prefab-entity-lifecycle",
+                  displayName: "实体生命周期分布",
+                  analysisType: "lifecycle",
+                  entityTypeCode: "equipment",
+                  dimensionCodes: ["status"],
+                },
+                {
+                  bindingKey: "prefab-new-demo",
+                  displayName: "新预制报表",
+                  analysisType: "activity",
+                  entityTypeCode: "equipment",
+                  dimensionCodes: ["status"],
+                },
+              ]
+            : [
+                {
+                  bindingKey: "prefab-entity-lifecycle",
+                  displayName: "实体生命周期分布",
+                  analysisType: "lifecycle",
+                  entityTypeCode: "equipment",
+                  dimensionCodes: ["status"],
+                },
+              ];
+        return { items, total: items.length };
+      }
+      if (init?.method === "PUT" && path.includes("/prefab/bindings/")) {
+        putCount += 1;
+        return {
+          bindingKey: "prefab-new-demo",
+          displayName: "新预制报表",
+          analysisType: "activity",
+          entityTypeCode: "equipment",
+          dimensionCodes: ["status"],
+        };
+      }
+      if (path.includes("/run") && init?.method === "POST") {
+        return {
+          bindingKey: "prefab-entity-lifecycle",
+          analysisType: "lifecycle",
+          dataSourceId: "00000000-0000-4000-8000-000000000001",
+          status: "ready",
+          renderSpec: { sections: [{ kind: "table", columns: ["status"], rows: [["a", 1]] }] },
+        };
+      }
+      return { items: [], total: 0 };
+    });
+    renderPage();
+    await user.click((await screen.findAllByTestId("prefab-create-binding"))[0]!);
+    await user.clear(screen.getByLabelText("绑定键"));
+    await user.type(screen.getByLabelText("绑定键"), "prefab-new-demo");
+    await user.type(screen.getByLabelText("显示名称"), "新预制报表");
+    await user.click(screen.getByRole("button", { name: "创建绑定" }));
+    expect(await screen.findByText("共 2 条")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "运行报表 新预制报表" })).toBeInTheDocument();
   });
 
   it("auto-runs binding from hub deep-link query", async () => {

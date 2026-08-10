@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
 
@@ -28,6 +28,7 @@ export type PrefabRunResult = {
 };
 
 export function usePrefabReports() {
+  const queryClient = useQueryClient();
   const bindingsQuery = useQuery({
     queryKey: queryKeys.reports.prefabBindings,
     queryFn: () => apiFetch<{ items: PrefabBinding[]; total: number }>("/api/v1/reports/prefab/bindings"),
@@ -47,14 +48,21 @@ export function usePrefabReports() {
         method: "PUT",
         body: JSON.stringify(body),
       }),
-    onSuccess: () => void bindingsQuery.refetch(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.reports.prefabBindings });
+    },
   });
 
   const deleteBinding = useMutation({
     mutationFn: (bindingKey: string) =>
       apiFetch<void>(`/api/v1/reports/prefab/bindings/${bindingKey}`, { method: "DELETE" }),
-    onSuccess: () => void bindingsQuery.refetch(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.reports.prefabBindings });
+    },
   });
 
-  return { bindingsQuery, runMutation, upsertBinding, deleteBinding };
+  const invalidateBindings = () =>
+    queryClient.invalidateQueries({ queryKey: queryKeys.reports.prefabBindings });
+
+  return { bindingsQuery, runMutation, upsertBinding, deleteBinding, invalidateBindings };
 }
