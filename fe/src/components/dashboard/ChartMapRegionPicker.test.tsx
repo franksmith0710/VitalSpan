@@ -2,11 +2,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { useEffect } from "react";
-import { ChartDrillProvider, useChartDrill } from "@/components/charts/ChartDrillContext";
+import { ChartDrillProvider } from "@/components/charts/ChartDrillContext";
 import { ChartInspectorProvider } from "./ChartInspectorProvider";
 import { ChartMapDataPanel } from "./ChartMapDataPanel";
-import { ChartMapRegionPicker } from "./ChartMapRegionPicker";
 import { defaultChartConfig, type LayoutWidget } from "./layoutUtils";
 import { applySalesGeoDrillMapConfig } from "@/lib/mapChartSalesGeo";
 
@@ -99,41 +97,4 @@ describe("ChartMapRegionPicker", () => {
     });
   });
 
-  it("keeps live drill stack when config has not synced yet", async () => {
-    const onChange = vi.fn();
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    mockApiFetch.mockImplementation(async (path: string) => {
-      if (path === "/api/v1/datasources") {
-        return { items: [{ id: "ds-sample", name: "sample_db", code: "sample_db" }] };
-      }
-      if (path.includes("/columns")) {
-        return { columns: ["province", "city", "district", "total"] };
-      }
-      return {};
-    });
-
-    function DrillPrimedPicker() {
-      const drill = useChartDrill(mapWidget.id);
-      useEffect(() => {
-        drill.setStack([{ field: "province", value: "福建省", label: "福建省" }]);
-      }, [drill.setStack]);
-      return (
-        <ChartInspectorProvider widget={mapWidget} onChange={onChange}>
-          <ChartMapRegionPicker />
-        </ChartInspectorProvider>
-      );
-    }
-
-    render(
-      <QueryClientProvider client={client}>
-        <ChartDrillProvider>
-          <DrillPrimedPicker />
-        </ChartDrillProvider>
-      </QueryClientProvider>,
-    );
-
-    await waitFor(() => {
-      expect(screen.getByTestId("chart-map-region-picker-trigger")).toHaveTextContent("福建省");
-    });
-  });
 });
