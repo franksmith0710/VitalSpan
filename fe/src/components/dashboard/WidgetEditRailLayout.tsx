@@ -68,8 +68,15 @@ export function WidgetEditRailLayout({
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
 
+  const hasExpandedColumn = leftOpen || rightOpen;
+
   return (
-    <div className={cn("flex h-full min-h-0 w-full max-w-full overflow-hidden", className)}>
+    <div
+      className={cn(
+        "ml-auto flex h-full min-h-0 w-fit max-w-full shrink-0 overflow-hidden",
+        className,
+      )}
+    >
       {leftOpen ? (
         <ExpandedRailPanel
           label={leftLabel}
@@ -79,9 +86,7 @@ export function WidgetEditRailLayout({
         >
           {left}
         </ExpandedRailPanel>
-      ) : (
-        <CollapsedRailTab label={leftLabel} onExpand={() => setLeftOpen(true)} className="border-l-0" />
-      )}
+      ) : null}
       {rightOpen ? (
         <ExpandedRailPanel
           label={rightLabel}
@@ -94,9 +99,17 @@ export function WidgetEditRailLayout({
             {right}
           </WidgetEditRailRightCollapseContext.Provider>
         </ExpandedRailPanel>
-      ) : (
+      ) : null}
+      {!leftOpen ? (
+        <CollapsedRailTab
+          label={leftLabel}
+          onExpand={() => setLeftOpen(true)}
+          className={hasExpandedColumn ? undefined : "border-l-0"}
+        />
+      ) : null}
+      {!rightOpen ? (
         <CollapsedRailTab label={rightLabel} onExpand={() => setRightOpen(true)} />
-      )}
+      ) : null}
     </div>
   );
 }

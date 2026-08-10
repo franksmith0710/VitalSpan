@@ -35,6 +35,6 @@ describe("DashboardEditWorkspace", () => {
     expect(shells).toHaveLength(1);
     expect(shells[0]).toHaveClass("overflow-hidden");
     expect(shells[0]).toContainElement(screen.getByTestId("rail-child"));
-    expect(shells[0].closest(".w-\\[432px\\]")).toBeTruthy();
+    expect(shells[0].closest(".w-fit")).toBeTruthy();
   });
 });
