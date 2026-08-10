@@ -111,6 +111,7 @@ describe("PrefabReportsPage smoke", () => {
     await user.click(await screen.findByRole("button", { name: "运行报表 实体生命周期分布" }));
     expect(await screen.findByText("status")).toBeInTheDocument();
     expect(screen.getByText("cnt")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "导出当前结果" })).toBeInTheDocument();
   });
 
   it("auto-runs binding from hub deep-link query", async () => {

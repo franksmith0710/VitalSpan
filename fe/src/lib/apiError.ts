@@ -192,6 +192,7 @@ const CODE_MESSAGES: Record<string, string> = {
   RPT_SCHEDULE_FORBIDDEN: "无权操作报表调度",
   RPT_PREFAB_FORBIDDEN: "无权操作预制报表绑定",
   RPT_PREFAB_ENTITY_NOT_READY: "实体物理表尚未就绪，无法运行预制分析",
+  RPT_PREFAB_EXPORT_INVALID_FORMAT: "导出格式无效，请选择 PDF / Word / Excel",
   RPT_EXT_FORBIDDEN: "无权修改报表扩展配置",
   RPT_EXT_NODE_NOT_FOUND: "扩展配置不存在，请先保存扩展配置",
   RPT_EXT_DUPLICATE_KEY: "指标键或筛选键重复",

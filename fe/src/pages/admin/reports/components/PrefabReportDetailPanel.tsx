@@ -7,7 +7,7 @@ import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { mapApiError } from "@/lib/apiError";
 import { ApiRequestError } from "@/lib/api";
 import { PrefabBindingForm } from "./PrefabBindingForm";
-import { ReportExportCard } from "./ReportExportCard";
+import { PrefabResultExportCard } from "./PrefabResultExportCard";
 import { ReportResultTable } from "./ReportResultTable";
 import {
   TemplateEmptyState,
@@ -130,17 +130,15 @@ export function PrefabReportDetailPanel({
           {section ? (
             <TemplatePanelSection
               title="数据预览"
-              description="当前绑定下的分析结果摘要，完整导出请使用下方导出区。"
+              description="当前绑定下的分析结果；可导出为 PDF / Word / Excel。"
               icon={BarChart3}
             >
               <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
                 <ReportResultTable columns={section.columns} rows={section.rows} />
               </div>
-              {canManage ? (
-                <div className="mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">
-                  <ReportExportCard embedded showTemplateIdField disabled={!section} />
-                </div>
-              ) : null}
+              <div className="mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">
+                <PrefabResultExportCard bindingKey={binding.bindingKey} disabled={!section} />
+              </div>
             </TemplatePanelSection>
           ) : null}
         </>

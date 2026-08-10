@@ -318,6 +318,7 @@ redoc: /redoc
 | GET | `/api/v1/reports/prefab/bindings/{binding_key}` | 预制 binding 单条读取（`RPT_PREFAB_NOT_FOUND`） | 内部 | 二期 | RPT-002 | 已实现（companion） | `backend/app/api/v1/reports/prefab.py` |
 | POST | `/api/v1/reports/prefab/bindings/validate` | 预制绑定校验（allowedRoles/analysisType 联动） | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/prefab.py` |
 | POST | `/api/v1/reports/prefab/bindings/{binding_key}/run` | 预制 binding 运行（analysisType SQL 模板 + physical table 解析 → renderSpec） | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/prefab.py` |
+| GET | `/api/v1/reports/prefab/bindings/{binding_key}/export?format=` | 预制分析结果导出 PDF/Word/Excel（二进制下载） | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/reports/prefab/export.py` |
 | GET | `/api/v1/reports/prefab/probe` | prefab validate/list perf probe 预算探测 | 内部 | 二期 | RPT-002 | 已实现（companion） | `backend/app/api/v1/reports/prefab.py` |
 | GET/PUT | `/api/v1/reports/center/preferences` | 报表中心收藏偏好 | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/center.py` |
 | POST | `/api/v1/reports/center/recent` | 记录最近访问 | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/center.py` |

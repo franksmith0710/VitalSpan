@@ -3,8 +3,8 @@ from __future__ import annotations
 from collections.abc import Generator
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, Query
+from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext, require_permission
@@ -13,6 +13,7 @@ PERM_READ = "report:read"
 PERM_MANAGE = "report:manage"
 from app.datasources.models import get_meta_session
 from app.reports.prefab.errors import PrefabError
+from app.reports.prefab.export import export_prefab_binding_bytes
 from app.reports.prefab.run import run_prefab_binding
 from app.reports.prefab.schemas import (
     PrefabBindingIn,
@@ -104,5 +105,30 @@ def run_binding(
 ) -> PrefabRunOut | JSONResponse:
     try:
         return run_prefab_binding(db, binding_key, payload, actor)
+    except PrefabError as exc:
+        return _prefab_error(exc)
+
+
+@router.get("/bindings/{binding_key}/export")
+def export_binding(
+    binding_key: str,
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    db: Annotated[Session, Depends(_db)],
+    format: str = Query(alias="format"),
+    limit: int = Query(default=100, ge=1, le=500),
+):
+    try:
+        data, content_type, filename = export_prefab_binding_bytes(
+            db,
+            binding_key,
+            format,
+            PrefabRunIn(limit=limit),
+            actor,
+        )
+        return Response(
+            content=data,
+            media_type=content_type,
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
     except PrefabError as exc:
         return _prefab_error(exc)
