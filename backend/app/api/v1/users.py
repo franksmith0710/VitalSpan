@@ -121,6 +121,20 @@ def update_user(
     return UserOut.model_validate(user)
 
 
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(
+    user_id: uuid.UUID,
+    actor: Annotated[UserContext, Depends(require_permission(PERM_USER_MANAGE))],
+    db: Annotated[Session, Depends(_db)],
+) -> Response:
+    ctx = _binding_context(actor)
+    try:
+        user_service.delete_user(db, user_id, **ctx)
+    except user_service.UserError as exc:
+        return _user_error_response(exc)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 @router.post("/{user_id}/disable", response_model=UserOut)
 def disable_user(
     user_id: uuid.UUID,

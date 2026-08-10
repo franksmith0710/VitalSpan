@@ -1,55 +1,46 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import {
+  BatchDeleteDialog,
+  DESTRUCTIVE_ALERT_ACTION_CLASS,
+  ListHeaderCheckbox,
+  ListPageBatchActions,
+  listTableSelectHeadClass,
+} from "@/components/layout/list-batch-delete";
 import {
   ListPagePagination,
   ListPageSection,
   ListPageTableFrame,
   ListPageToolbar,
 } from "@/components/layout/list-page-kit";
-import { Settings2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button, IconButton } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { useListPagination } from "@/lib/list-pagination";
 import { CreateUserDialog } from "./CreateUserDialog";
+import { UserListRow, type UserRow } from "./UserListRow";
 import { UserManageSheet } from "./UserManageSheet";
-import { isUserLocked } from "./userAccountStatus";
+import { mapUserError } from "./userErrors";
+import { useUserBatchDelete } from "./useUserBatchDelete";
 
-type UserOut = {
-  id: string;
-  username: string;
-  isActive?: boolean;
-  lockedUntil?: string | null;
-};
 type RoleOut = { id: string; code: string; name: string };
-
-function UserStatusBadge({ isActive, lockedUntil }: { isActive?: boolean; lockedUntil?: string | null }) {
-  if (isUserLocked(lockedUntil)) {
-    return (
-      <Badge variant="light" color="warning" size="sm">
-        已锁定
-      </Badge>
-    );
-  }
-  if (isActive === false) {
-    return (
-      <Badge variant="light" color="error" size="sm">
-        已停用
-      </Badge>
-    );
-  }
-  return (
-    <Badge variant="light" color="success" size="sm">
-      正常
-    </Badge>
-  );
-}
 
 function UserRoleBadges({ userId }: { userId: string }) {
   const { data } = useQuery({
@@ -70,10 +61,12 @@ function UserRoleBadges({ userId }: { userId: string }) {
 }
 
 export function UserListPage() {
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
-  const [sheetUser, setSheetUser] = useState<UserOut | null>(null);
+  const [sheetUser, setSheetUser] = useState<UserRow | null>(null);
+  const [deleteUser, setDeleteUser] = useState<UserRow | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -100,11 +93,42 @@ export function UserListPage() {
         offset: String(pagination.offset),
       });
       if (debouncedQ) params.set("q", debouncedQ);
-      return apiFetch<{ items: UserOut[]; total: number }>(`/api/v1/users?${params}`);
+      return apiFetch<{ items: UserRow[]; total: number }>(`/api/v1/users?${params}`);
     },
   });
 
+  const items = data?.items ?? [];
   const total = data?.total ?? 0;
+
+  const invalidate = async () => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
+  };
+
+  const {
+    selection,
+    batch,
+    batchDeleteOpen,
+    setBatchDeleteOpen,
+    batchDeleting,
+    handleBatchDelete,
+  } = useUserBatchDelete(items, invalidate);
+
+  const deleteMutation = useMutation({
+    mutationFn: (userId: string) => apiFetch(`/api/v1/users/${userId}`, { method: "DELETE" }),
+    onSuccess: async (_data, userId) => {
+      toast.success("用户已删除");
+      setDeleteUser(null);
+      if (sheetUser?.id === userId) setSheetUser(null);
+      setActionError(null);
+      await invalidate();
+    },
+    onError: (err) => {
+      setDeleteUser(null);
+      setActionError(mapUserError(err));
+    },
+  });
+
+  const colSpan = batch.batchMode ? 5 : 4;
 
   return (
     <AdminPageShell
@@ -128,6 +152,21 @@ export function UserListPage() {
               aria-label="搜索用户"
             />
           }
+          actions={
+            <div className="flex flex-wrap items-center gap-3">
+              <ListPageBatchActions
+                batchMode={batch.batchMode}
+                onToggleBatchMode={batch.toggleBatchMode}
+                selectedCount={selection.selectedCount}
+                entityLabel="个用户"
+                onClear={selection.clear}
+                onDelete={() => setBatchDeleteOpen(true)}
+              />
+              {!isLoading ? (
+                <p className="text-theme-sm text-gray-500 dark:text-gray-400">共 {total} 个用户</p>
+              ) : null}
+            </div>
+          }
         />
 
         {isError ? (
@@ -146,6 +185,16 @@ export function UserListPage() {
             <table className="min-w-[640px] w-full text-left text-theme-sm">
               <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
                 <tr>
+                  {batch.batchMode ? (
+                    <th className={listTableSelectHeadClass}>
+                      <ListHeaderCheckbox
+                        checked={selection.allSelected}
+                        indeterminate={selection.someSelected}
+                        disabled={items.length === 0}
+                        onCheckedChange={() => selection.toggleAll()}
+                      />
+                    </th>
+                  ) : null}
                   <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">用户名</th>
                   <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">状态</th>
                   <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
@@ -160,49 +209,37 @@ export function UserListPage() {
                 {isLoading
                   ? Array.from({ length: 5 }).map((_, i) => (
                       <tr key={i} className="border-b border-gray-100 dark:border-gray-800">
-                        <td className="px-4 py-3" colSpan={4}>
+                        <td className="px-4 py-3" colSpan={colSpan}>
                           <Skeleton className="h-6 w-full" />
                         </td>
                       </tr>
                     ))
                   : null}
-                {!isLoading && data?.items.length === 0 ? (
+                {!isLoading && items.length === 0 ? (
                   <tr>
                     <td
                       className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
-                      colSpan={4}
+                      colSpan={colSpan}
                     >
                       暂无用户
                     </td>
                   </tr>
                 ) : null}
                 {!isLoading
-                  ? data?.items.map((row) => (
-                      <tr key={row.id} className="border-b border-gray-100 dark:border-gray-800">
-                        <td className="px-4 py-3 font-medium text-gray-800 dark:text-white/90">
-                          {row.username}
-                        </td>
-                        <td className="px-4 py-3">
-                          <UserStatusBadge isActive={row.isActive} lockedUntil={row.lockedUntil} />
-                        </td>
-                        <td className="px-4 py-3">
-                          <UserRoleBadges userId={row.id} />
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <IconButton
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            aria-label={`管理 ${row.username}`}
-                            onClick={() => {
-                              setSheetUser(row);
-                              setActionError(null);
-                            }}
-                          >
-                            <Settings2 className="size-4" />
-                          </IconButton>
-                        </td>
-                      </tr>
+                  ? items.map((row) => (
+                      <UserListRow
+                        key={row.id}
+                        row={row}
+                        batchMode={batch.batchMode}
+                        isSelected={selection.isSelected(row.id)}
+                        onToggleSelect={() => selection.toggle(row.id)}
+                        onManage={(user) => {
+                          setSheetUser(user);
+                          setActionError(null);
+                        }}
+                        onDelete={setDeleteUser}
+                        roleBadges={<UserRoleBadges userId={row.id} />}
+                      />
                     ))
                   : null}
               </tbody>
@@ -227,6 +264,37 @@ export function UserListPage() {
         onOpenChange={(open) => !open && setSheetUser(null)}
         onActionError={setActionError}
         onUserChange={setSheetUser}
+      />
+
+      <AlertDialog open={Boolean(deleteUser)} onOpenChange={(open) => !open && setDeleteUser(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除用户？</AlertDialogTitle>
+            <AlertDialogDescription>
+              将永久删除用户「{deleteUser?.username}」及其角色绑定，此操作不可恢复。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>取消</AlertDialogCancel>
+            <AlertDialogAction
+              className={DESTRUCTIVE_ALERT_ACTION_CLASS}
+              disabled={deleteMutation.isPending}
+              onClick={() => deleteUser && deleteMutation.mutate(deleteUser.id)}
+            >
+              {deleteMutation.isPending ? "删除中…" : "删除"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <BatchDeleteDialog
+        open={batchDeleteOpen}
+        onOpenChange={setBatchDeleteOpen}
+        count={selection.selectedCount}
+        title="确认批量删除用户？"
+        description={`将永久删除选中的 ${selection.selectedCount} 个用户及其角色绑定，此操作不可恢复。超级管理员与当前登录账号将自动跳过。`}
+        pending={batchDeleting}
+        onConfirm={() => void handleBatchDelete()}
       />
     </AdminPageShell>
   );

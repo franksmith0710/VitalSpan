@@ -27,8 +27,9 @@
   - [x] 维度字典驱动（r62 L1：dimensionKey 校验 + `RPT_PREFAB_DIMENSION_UNKNOWN` 422）
   - [x] companion binding ACL + perf probe（r65：`set_user_prefab_scope` + `RPT_PREFAB_EMPTY_ROLES`/`RPT_PREFAB_ANALYSIS_MISMATCH` 422；enterprise scope 403；`probe_prefab_validate_budget_ms`/`probe_prefab_list_budget_ms` ≤50ms）
   - [x] companion GET binding + duplicate dimension guard + list scope filter（r68：`GET /api/v1/reports/prefab/bindings/{id}` 404/`RPT_PREFAB_GET_FORBIDDEN` 403；`RPT_PREFAB_DUPLICATE_DIMENSION` 422；enterprise list 空集；`probe_prefab_get_budget_ms` ≤50ms）
-  - [x] prefab seed + run API + FE 浏览运行（r233：`seed_builtin_prefab_bindings` + `POST .../bindings/{key}/run`；`PrefabReportsPage` + vitest smoke 4/4）
+  - [x] prefab seed + run API + FE 浏览运行（r233：`seed_builtin_prefab_bindings` + `POST .../bindings/{key}/run`；`PrefabReportsPage` + vitest smoke 7/7）
   - [x] Admin binding 编辑表单（companion r-e95d：`PrefabBindingForm` + PUT `/prefab/bindings/{key}`）
+  - [x] 预制绑定 CRUD + 结果导出（companion：`DELETE .../bindings/{key}`；`GET .../export`；FE「新建预制绑定」/「导出当前结果」）
 - **代码锚点**：`backend/app/reports/prefab/run.py` · `backend/app/reports/prefab/seed.py` · `backend/app/api/v1/reports/prefab.py` · `fe/src/pages/admin/reports/PrefabReportsPage.tsx` · `fe/src/pages/admin/reports/components/PrefabBindingForm.tsx` · `fe/src/pages/admin/reports/usePrefabReports.ts` · `tests/test_ff_rpt_companion_e95d.py` · `tests/test_m9_rpt_theme_r233.py` T-R233-RPT-002-01~06 · `fe/src/pages/admin/reports/prefab-reports.smoke.test.tsx`
 - **演化建议**：r233 闭合内置预制 seed、M3-LITE run 链路与 FE 浏览/运行页；binding 编辑表单与 Playwright E2E 留 companion
 - **里程碑对齐**：M9 · 已完成 · 2026-07-06

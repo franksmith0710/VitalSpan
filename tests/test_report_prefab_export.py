@@ -99,3 +99,23 @@ def test_prefab_export_returns_pdf(client: TestClient):
     assert resp.status_code == 200, resp.text
     assert resp.content.startswith(b"%PDF")
     assert "attachment" in resp.headers.get("content-disposition", "")
+
+
+def test_prefab_delete_binding(client: TestClient):
+    key = "prefab-to-delete"
+    client.put(
+        f"/api/v1/reports/prefab/bindings/{key}",
+        headers=AUTH,
+        json={
+            "bindingKey": key,
+            "entityTypeCode": "equipment",
+            "analysisType": "lifecycle",
+            "dimensionCodes": ["status"],
+            "displayName": "待删除",
+            "allowedRoles": ["admin"],
+        },
+    )
+    deleted = client.delete(f"/api/v1/reports/prefab/bindings/{key}", headers=AUTH)
+    assert deleted.status_code == 204
+    missing = client.get(f"/api/v1/reports/prefab/bindings/{key}", headers=AUTH)
+    assert missing.status_code == 404

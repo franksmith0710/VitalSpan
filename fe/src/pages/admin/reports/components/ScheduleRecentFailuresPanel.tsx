@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
@@ -10,6 +11,7 @@ import {
   localizeExecutionStatus,
   type ReportScheduleRow,
   type ScheduleExecutionRow,
+  useReportScheduleMutations,
 } from "../useReportSchedules";
 
 type Props = {
@@ -32,6 +34,7 @@ export function ScheduleRecentFailuresPanel({
   retryPending,
   retryPendingExecutionId,
 }: Props) {
+  const { dismissFailure, dismissAllFailures } = useReportScheduleMutations();
   const failuresQuery = useQuery({
     queryKey: ["reports", "schedules", "recent-failures"],
     queryFn: () =>
@@ -54,18 +57,47 @@ export function ScheduleRecentFailuresPanel({
   const items = failuresQuery.data?.items ?? [];
   if (items.length === 0) return null;
 
+  const dismissOne = (executionId: string) => {
+    dismissFailure.mutate(executionId, {
+      onSuccess: () => toast.success("已从列表移除"),
+      onError: (err) => toast.error(mapApiError(err)),
+    });
+  };
+
+  const dismissAll = () => {
+    dismissAllFailures.mutate(
+      items.map((row) => row.executionId),
+      {
+        onSuccess: () => toast.success("已全部忽略"),
+        onError: (err) => toast.error(mapApiError(err)),
+      },
+    );
+  };
+
   return (
     <Card className="border-amber-200 bg-amber-50/30 dark:border-amber-500/30 dark:bg-amber-500/5">
-      <CardHeader className="pb-2">
+      <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 pb-2">
         <CardTitle className="flex items-center gap-2 text-title-sm">
           <AlertCircle className="size-4 text-amber-600 dark:text-amber-400" aria-hidden />
           近期失败 / 降级投递（{items.length}）
         </CardTitle>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="shrink-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+          disabled={dismissAllFailures.isPending}
+          onClick={dismissAll}
+        >
+          {dismissAllFailures.isPending ? "处理中…" : "全部忽略"}
+        </Button>
       </CardHeader>
       <CardContent className="space-y-2">
         {items.map((row) => {
           const sourceLabel = resolveSourceLabel(row, schedules);
           const isRetrying = retryPending && retryPendingExecutionId === row.executionId;
+          const isDismissing =
+            dismissFailure.isPending && dismissFailure.variables === row.executionId;
           return (
             <div
               key={row.executionId}
@@ -83,7 +115,7 @@ export function ScheduleRecentFailuresPanel({
                   <p className="mt-0.5 line-clamp-2 text-gray-500">{localizeApiMessage(row.errorMessage)}</p>
                 ) : null}
               </div>
-              <div className="flex shrink-0 gap-2">
+              <div className="flex shrink-0 flex-wrap gap-2">
                 {onSelectSchedule ? (
                   <Button type="button" variant="outline" size="sm" onClick={() => onSelectSchedule(row.scheduleId)}>
                     查看调度
@@ -100,6 +132,15 @@ export function ScheduleRecentFailuresPanel({
                     {isRetrying ? "重试中…" : "重试"}
                   </Button>
                 ) : null}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={isDismissing}
+                  onClick={() => dismissOne(row.executionId)}
+                >
+                  {isDismissing ? "忽略中…" : "忽略"}
+                </Button>
               </div>
             </div>
           );

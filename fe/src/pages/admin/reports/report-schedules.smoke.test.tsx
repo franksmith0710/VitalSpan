@@ -227,4 +227,81 @@ describe("ReportSchedulesPage smoke", () => {
     expect(await screen.findByText("模板月报")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "文档模板" })).toHaveAttribute("aria-pressed", "true");
   });
+
+  it("dismiss removes failure row from recent failures panel", async () => {
+    mockApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path.includes("/schedules/delivery-health")) {
+        return { status: "reachable", host: "localhost", port: 1025, error: null };
+      }
+      if (path.includes("/schedules/export-health")) {
+        return { status: "available", error: null };
+      }
+      if (path.includes("/executions/recent-failures/dismiss-all")) {
+        return undefined;
+      }
+      if (path.includes("/executions/ex-fail/dismiss") && init?.method === "POST") {
+        return undefined;
+      }
+      if (path.includes("/executions/recent-failures")) {
+        return {
+          items: [
+            {
+              executionId: "ex-fail",
+              scheduleId,
+              status: "semi_real_failed",
+              artifactRef: "semi://x",
+              executedAt: "2026-07-07T00:00:00Z",
+              errorMessage: "SMTP failed",
+            },
+          ],
+          total: 1,
+        };
+      }
+      if (path.startsWith("/api/v1/reports/schedules")) {
+        return {
+          items: [
+            {
+              id: scheduleId,
+              catalogNodeId: nodeId,
+              sourceType: "dashboard",
+              sourceId: "d1",
+              sourceLabel: "销售月报",
+              cron: "0 8 * * *",
+              timezone: "Asia/Shanghai",
+              status: "scheduled",
+              allowedActions: ["pause"],
+              recipients: [{ type: "role", value: "admin" }],
+              attachmentFormats: ["pdf"],
+            },
+          ],
+          total: 1,
+        };
+      }
+      if (path.startsWith("/api/v1/reports/catalog/nodes")) {
+        return [
+          {
+            id: nodeId,
+            name: "销售月报",
+            parentId: null,
+            nodeType: "template",
+            templateKind: "pdf",
+            templateKey: "sales",
+            sortOrder: 0,
+          },
+        ];
+      }
+      return {};
+    });
+
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText(/近期失败/);
+    expect(screen.getByRole("button", { name: "忽略" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "全部忽略" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "忽略" }));
+    expect(mockApiFetch).toHaveBeenCalledWith(
+      "/api/v1/reports/schedules/executions/ex-fail/dismiss",
+      expect.objectContaining({ method: "POST" }),
+    );
+  });
 });

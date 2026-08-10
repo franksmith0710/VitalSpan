@@ -5,7 +5,7 @@ import { CalendarClock, LayoutTemplate, Monitor, Search } from "lucide-react";
 import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import { Button } from "@/components/ui/button";
 import {
-  ListPageSection,
+  ADMIN_PAGE_SURFACE_CLASS,
   ListPageTableFrame,
   ListPageToolbar,
   PageErrorBanner,
@@ -189,7 +189,6 @@ export function ReportSchedulesPage() {
 
   return (
     <AdminPageShell
-      layout="list"
       title="定时报告"
       icon={
         <AdminPageHeaderIcon>
@@ -199,6 +198,7 @@ export function ReportSchedulesPage() {
       description="管理看板/大屏可视化 PDF 定时投递、执行历史与失败重试。"
       actions={<ReportCenterBackLink />}
     >
+      <div className="space-y-6">
       {schedulesQuery.isError ? (
         <PageErrorBanner
           message={mapApiError(schedulesQuery.error)}
@@ -224,7 +224,7 @@ export function ReportSchedulesPage() {
         />
       ) : null}
 
-      <ListPageSection className="min-h-0 flex-1">
+      <section className={ADMIN_PAGE_SURFACE_CLASS}>
         <ListPageToolbar
           filters={
             <>
@@ -261,7 +261,7 @@ export function ReportSchedulesPage() {
           }
         />
 
-        <ListPageTableFrame className="py-0">
+        <ListPageTableFrame className="max-h-none flex-none overflow-visible py-0">
           {isLoading ? (
             <div className="space-y-2 py-5">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -295,7 +295,8 @@ export function ReportSchedulesPage() {
             />
           )}
         </ListPageTableFrame>
-      </ListPageSection>
+      </section>
+      </div>
     </AdminPageShell>
   );
 }

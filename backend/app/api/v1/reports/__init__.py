@@ -5,12 +5,19 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, Query, status
 from fastapi.responses import JSONResponse, Response
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.auth.deps import UserContext, require_any_permission, require_permission
 
 PERM_READ = "report:read"
 PERM_MANAGE = "report:manage"
 PERM_SCHEDULE = "dashboard:schedule"
+
+
+class DismissRecentFailuresIn(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    execution_ids: list[uuid.UUID] = Field(alias="executionIds")
+
 from app.reports.catalog.errors import ReportCatalogError
 from app.reports.catalog.schemas import CatalogNodeCreate, CatalogNodeMove, CatalogNodeOut, CatalogNodeUpdate
 from app.reports.catalog import service as catalog_service
@@ -305,10 +312,14 @@ def list_recent_schedule_failures(
 ):
     from app.reports.scheduler import acl as schedule_acl
     from app.reports.scheduler import executor as scheduler_executor
+    from app.reports.scheduler import failure_dismiss as schedule_failure_dismiss
 
     data = scheduler_executor.list_recent_failed_executions(limit=limit)
+    dismissed = schedule_failure_dismiss.list_dismissed_execution_ids(user)
     visible: list[dict] = []
     for entry in data["items"]:
+        if str(entry.get("executionId", "")) in dismissed:
+            continue
         try:
             row = scheduler_service._get_row(entry["scheduleId"])
             schedule_acl.assert_schedule_read(user, row)
@@ -316,6 +327,32 @@ def list_recent_schedule_failures(
         except ScheduleError:
             continue
     return {"items": visible, "total": len(visible)}
+
+
+@router.post("/schedules/executions/{execution_id}/dismiss", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
+def dismiss_schedule_failure(
+    execution_id: uuid.UUID,
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+):
+    from app.reports.scheduler import failure_dismiss as schedule_failure_dismiss
+
+    schedule_failure_dismiss.dismiss_execution(user, execution_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/schedules/executions/recent-failures/dismiss-all",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
+)
+def dismiss_all_recent_schedule_failures(
+    payload: DismissRecentFailuresIn,
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+):
+    from app.reports.scheduler import failure_dismiss as schedule_failure_dismiss
+
+    schedule_failure_dismiss.dismiss_executions(user, payload.execution_ids)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/schedules/{schedule_id}", response_model=None)

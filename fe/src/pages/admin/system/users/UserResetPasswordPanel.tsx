@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { Copy, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -11,9 +12,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
+import { Button, IconButton } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
 import { mapUserError } from "./userErrors";
+import { UserSheetSection } from "./UserSheetSection";
 
 type UserResetPasswordPanelProps = {
   userId: string;
@@ -51,21 +53,27 @@ export function UserResetPasswordPanel({
 
   return (
     <>
-      <div className="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
-        <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">登录密码</p>
-        <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
-          重置后将生成新的临时密码，请一次性交付给用户。
+      <UserSheetSection
+        title="登录密码"
+        description="重置后将生成新的临时密码，请一次性交付给用户。"
+        icon={<KeyRound className="size-4" aria-hidden />}
+        variant="warning"
+        footer={
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full border-warning-200 text-warning-700 hover:bg-warning-50 dark:border-warning-500/30 dark:text-warning-400 dark:hover:bg-warning-500/10"
+            onClick={() => setResetConfirmOpen(true)}
+          >
+            重置密码
+          </Button>
+        }
+      >
+        <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+          重置操作不可撤销，旧密码将立即失效。
         </p>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="mt-3"
-          onClick={() => setResetConfirmOpen(true)}
-        >
-          重置密码
-        </Button>
-      </div>
+      </UserSheetSection>
 
       <AlertDialog open={resetConfirmOpen} onOpenChange={setResetConfirmOpen}>
         <AlertDialogContent>
@@ -94,26 +102,32 @@ export function UserResetPasswordPanel({
             <AlertDialogDescription asChild>
               <div className="space-y-3 text-left">
                 <p>请将以下密码交给用户 {username}：</p>
-                <p className="break-all rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 font-mono text-theme-sm dark:border-gray-800 dark:bg-white/[0.04]">
-                  {resetResult}
-                </p>
+                <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-white/[0.04]">
+                  <p className="min-w-0 flex-1 break-all font-mono text-theme-sm text-gray-800 dark:text-white/90">
+                    {resetResult}
+                  </p>
+                  <IconButton
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    aria-label="复制密码"
+                    onClick={async () => {
+                      if (!resetResult) return;
+                      try {
+                        await navigator.clipboard.writeText(resetResult);
+                        toast.success("密码已复制");
+                      } catch {
+                        toast.error("复制失败");
+                      }
+                    }}
+                  >
+                    <Copy className="size-4" aria-hidden />
+                  </IconButton>
+                </div>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction
-              onClick={async () => {
-                if (!resetResult) return;
-                try {
-                  await navigator.clipboard.writeText(resetResult);
-                  toast.success("密码已复制");
-                } catch {
-                  toast.error("复制失败");
-                }
-              }}
-            >
-              复制密码
-            </AlertDialogAction>
             <AlertDialogAction onClick={() => setResetResult(null)}>关闭</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

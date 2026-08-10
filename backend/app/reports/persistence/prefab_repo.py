@@ -42,3 +42,18 @@ def save_binding(key: str, payload: dict) -> None:
         else:
             model.payload = payload
         db.commit()
+
+
+def delete_binding(key: str) -> bool:
+    if not _use_db():
+        if key not in memory_stores.prefab_bindings:
+            return False
+        del memory_stores.prefab_bindings[key]
+        return True
+    with Session(bind=get_meta_engine()) as db:
+        model = db.get(ReportPrefabBinding, key)
+        if model is None:
+            return False
+        db.delete(model)
+        db.commit()
+        return True

@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Shield, UserRound } from "lucide-react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetFooter,
   SheetHeader,
   SheetTitle,
@@ -15,11 +18,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiFetch } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
+import { cn } from "@/lib/utils";
 import { mapUserError } from "./userErrors";
 import { UserAccountStatusPanel } from "./UserAccountStatusPanel";
 import { UserOrgBindingPanel } from "./UserOrgBindingPanel";
 import { UserResetPasswordPanel } from "./UserResetPasswordPanel";
-import type { UserAccountFields } from "./userAccountStatus";
+import { isUserLocked, type UserAccountFields } from "./userAccountStatus";
 
 type UserOut = { id: string; username: string } & UserAccountFields;
 type RoleOut = { id: string; code: string; name: string; isActive?: boolean };
@@ -98,56 +102,96 @@ export function UserManageSheet({
     );
   };
 
+  const locked = user ? isUserLocked(accountStatus.lockedUntil) : false;
+  const statusLabel = locked ? "已锁定" : accountStatus.isActive ? "正常" : "已停用";
+  const statusColor = locked ? "warning" : accountStatus.isActive ? "success" : "error";
+
   return (
     <Sheet open={Boolean(user)} onOpenChange={onOpenChange}>
-      <SheetContent className="flex w-full flex-col sm:max-w-md">
-        <SheetHeader>
-          <SheetTitle>管理用户 — {user?.username}</SheetTitle>
+      <SheetContent side="right" size="edit" className="flex flex-col gap-0 p-0">
+        <SheetHeader className="text-left">
+          <SheetTitle className="flex items-center gap-3 pr-8 text-title-sm">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 shadow-theme-xs dark:bg-brand-500/10 dark:text-brand-400">
+              <UserRound className="size-5" aria-hidden />
+            </span>
+            <span className="min-w-0 truncate">{user?.username}</span>
+          </SheetTitle>
+          <SheetDescription className="flex flex-wrap items-center gap-2">
+            <span>管理角色绑定、组织归属与账号安全。</span>
+            {user ? (
+              <Badge variant="light" color={statusColor} size="sm">
+                {statusLabel}
+              </Badge>
+            ) : null}
+          </SheetDescription>
         </SheetHeader>
 
         <Tabs
           value={tab}
           onValueChange={(v) => setTab(v as "roles" | "org")}
-          className="mt-4 flex min-h-0 flex-1 flex-col"
+          className="flex min-h-0 flex-1 flex-col"
         >
-          <TabsList className="w-full">
-            <TabsTrigger value="roles" className="flex-1">
+          <TabsList className="mx-6 mt-4 grid w-[calc(100%-3rem)] grid-cols-2">
+            <TabsTrigger value="roles" className="gap-1.5">
+              <Shield className="size-3.5" aria-hidden />
               角色
             </TabsTrigger>
-            <TabsTrigger value="org" className="flex-1">
-              组织与安全
-            </TabsTrigger>
+            <TabsTrigger value="org">组织与安全</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="roles" className="mt-4 min-h-0 flex-1">
-            <ScrollArea className="h-[min(50vh,360px)] pr-4">
-              <div className="grid gap-3" aria-label="选择角色">
+          <TabsContent
+            value="roles"
+            className="mt-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
+          >
+            <ScrollArea className="min-h-0 flex-1 px-6 py-4">
+              <div className="grid gap-2.5" aria-label="选择角色">
                 {rolesLoading || rolesCatalogLoading ? (
-                  <Skeleton className="h-8 w-full" />
+                  <>
+                    <Skeleton className="h-12 w-full rounded-xl" />
+                    <Skeleton className="h-12 w-full rounded-xl" />
+                  </>
                 ) : null}
-                {allRoles.map((role) => (
-                  <label
-                    key={role.id}
-                    className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 px-3 py-2 dark:border-gray-800"
-                  >
-                    <Checkbox
-                      checked={selectedRoleIds.includes(role.id)}
-                      onCheckedChange={(c) => toggleRole(role.id, c === true)}
-                      aria-label={role.name}
-                    />
-                    <span className="text-theme-sm">{role.name}</span>
-                    <span className="ml-auto font-mono text-theme-xs text-gray-500">
-                      {role.code}
-                    </span>
-                  </label>
-                ))}
+                {allRoles.map((role) => {
+                  const selected = selectedRoleIds.includes(role.id);
+                  return (
+                    <label
+                      key={role.id}
+                      className={cn(
+                        "flex cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-3 transition-colors",
+                        selected
+                          ? "border-brand-300 bg-brand-50/60 dark:border-brand-500/40 dark:bg-brand-500/10"
+                          : "border-gray-200 hover:border-gray-300 hover:bg-gray-50/80 dark:border-gray-800 dark:hover:border-gray-700 dark:hover:bg-white/[0.03]",
+                        role.isActive === false && "opacity-60",
+                      )}
+                    >
+                      <Checkbox
+                        checked={selected}
+                        onCheckedChange={(c) => toggleRole(role.id, c === true)}
+                        aria-label={role.name}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-theme-sm font-medium text-gray-800 dark:text-white/90">
+                          {role.name}
+                        </p>
+                        <p className="truncate font-mono text-theme-xs text-gray-500 dark:text-gray-400">
+                          {role.code}
+                        </p>
+                      </div>
+                      {role.isActive === false ? (
+                        <Badge variant="light" color="light" size="sm">
+                          已停用
+                        </Badge>
+                      ) : null}
+                    </label>
+                  );
+                })}
               </div>
             </ScrollArea>
-            <SheetFooter className="mt-4 px-0">
+            <SheetFooter className="mt-auto">
               <Button
                 type="button"
                 variant="primary"
-                className="w-full"
+                className="w-full sm:w-auto"
                 disabled={saveRolesMutation.isPending}
                 onClick={() => saveRolesMutation.mutate()}
               >
@@ -156,35 +200,40 @@ export function UserManageSheet({
             </SheetFooter>
           </TabsContent>
 
-          <TabsContent value="org" className="mt-4 space-y-6">
-            {user ? (
-              <>
-                <UserAccountStatusPanel
-                  userId={user.id}
-                  username={user.username}
-                  isActive={accountStatus.isActive}
-                  lockedUntil={accountStatus.lockedUntil}
-                  onStatusChange={(status) => {
-                    setAccountStatus({
-                      isActive: status.isActive ?? true,
-                      lockedUntil: status.lockedUntil ?? null,
-                    });
-                    onUserChange?.({
-                      ...user,
-                      isActive: status.isActive,
-                      lockedUntil: status.lockedUntil,
-                    });
-                  }}
-                  onActionError={onActionError}
-                />
-                <UserOrgBindingPanel userId={user.id} onActionError={onActionError} />
-                <UserResetPasswordPanel
-                  userId={user.id}
-                  username={user.username}
-                  onActionError={onActionError}
-                />
-              </>
-            ) : null}
+          <TabsContent
+            value="org"
+            className="mt-0 min-h-0 flex-1 overflow-y-auto data-[state=inactive]:hidden"
+          >
+            <div className="space-y-4 px-6 py-4">
+              {user ? (
+                <>
+                  <UserAccountStatusPanel
+                    userId={user.id}
+                    username={user.username}
+                    isActive={accountStatus.isActive}
+                    lockedUntil={accountStatus.lockedUntil}
+                    onStatusChange={(status) => {
+                      setAccountStatus({
+                        isActive: status.isActive ?? true,
+                        lockedUntil: status.lockedUntil ?? null,
+                      });
+                      onUserChange?.({
+                        ...user,
+                        isActive: status.isActive,
+                        lockedUntil: status.lockedUntil,
+                      });
+                    }}
+                    onActionError={onActionError}
+                  />
+                  <UserOrgBindingPanel userId={user.id} onActionError={onActionError} />
+                  <UserResetPasswordPanel
+                    userId={user.id}
+                    username={user.username}
+                    onActionError={onActionError}
+                  />
+                </>
+              ) : null}
+            </div>
           </TabsContent>
         </Tabs>
       </SheetContent>

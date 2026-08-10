@@ -1,16 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Building2 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -25,6 +16,7 @@ import { ApiRequestError, apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
 import { mapUserError } from "./userErrors";
+import { UserSheetSection } from "./UserSheetSection";
 
 type OrgOut = { id: string; parent_id: string | null; name: string; path: string; level: number };
 
@@ -86,39 +78,51 @@ export function UserOrgBindingPanel({ userId, onActionError }: UserOrgBindingPan
   });
 
   const orgItems = orgs?.items ?? [];
+  const loading = orgsLoading || userOrgLoading;
 
   return (
-    <div className="grid gap-2">
-      <Label htmlFor="user-org">所属组织</Label>
-      {orgsLoading || userOrgLoading ? (
-        <Skeleton className="h-11 w-full" />
-      ) : userOrgIsError && !(userOrgError instanceof ApiRequestError) ? (
-        <p className="text-theme-xs text-error-600">{mapApiError(userOrgError)}</p>
-      ) : (
-        <Select value={selectedOrgId} onValueChange={setSelectedOrgId}>
-          <SelectTrigger id="user-org" aria-label="选择组织">
-            <SelectValue placeholder="未分配组织" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__none__">（未分配）</SelectItem>
-            {orgItems.map((org) => (
-              <SelectItem key={org.id} value={org.id}>
-                {org.name} ({org.path})
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      )}
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="w-fit"
-        disabled={saveOrgMutation.isPending || orgsLoading || userOrgLoading}
-        onClick={() => saveOrgMutation.mutate()}
-      >
-        {saveOrgMutation.isPending ? "保存中…" : "保存组织归属"}
-      </Button>
-    </div>
+    <UserSheetSection
+      title="所属组织"
+      description="用于行级权限与数据范围过滤，建议为业务用户分配明确组织。"
+      icon={<Building2 className="size-4" aria-hidden />}
+      footer={
+        <Button
+          type="button"
+          variant="primary"
+          size="sm"
+          className="w-full"
+          disabled={saveOrgMutation.isPending || loading}
+          onClick={() => saveOrgMutation.mutate()}
+        >
+          {saveOrgMutation.isPending ? "保存中…" : "保存组织归属"}
+        </Button>
+      }
+    >
+      <div className="grid gap-2">
+        <Label htmlFor="user-org" className="sr-only">
+          所属组织
+        </Label>
+        {loading ? (
+          <Skeleton className="h-11 w-full rounded-lg" />
+        ) : userOrgIsError && !(userOrgError instanceof ApiRequestError) ? (
+          <p className="text-theme-xs text-error-600">{mapApiError(userOrgError)}</p>
+        ) : (
+          <Select value={selectedOrgId} onValueChange={setSelectedOrgId}>
+            <SelectTrigger id="user-org" aria-label="选择组织" className="h-11">
+              <SelectValue placeholder="未分配组织" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">（未分配）</SelectItem>
+              {orgItems.map((org) => (
+                <SelectItem key={org.id} value={org.id}>
+                  <span className="truncate">{org.name}</span>
+                  <span className="ml-2 font-mono text-theme-xs text-gray-400">{org.path}</span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
+    </UserSheetSection>
   );
 }

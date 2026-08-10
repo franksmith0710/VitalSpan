@@ -122,6 +122,14 @@ class ReportRecentView(Base):
     viewed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
 
 
+class ReportDismissedFailure(Base):
+    __tablename__ = "report_dismissed_failures"
+
+    user_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    execution_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    dismissed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class ReportDeliveryAttempt(Base):
     __tablename__ = "report_delivery_attempts"
 

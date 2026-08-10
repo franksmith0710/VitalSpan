@@ -74,6 +74,7 @@ redoc: /redoc
 | PUT | `/api/v1/roles/{id}/permissions` | 角色权限全量替换（`expectedVersion` 乐观锁；冲突 409 `ROLE_PERMISSION_VERSION_CONFLICT`；root 禁改 409 `AUTH_ROOT_ROLE_IMMUTABLE`；`system:role.manage`） | 内部 | M7 | AUTH-001 | 已实现 | `backend/app/api/v1/roles.py` |
 | GET/POST | `/api/v1/users` | 用户列表/创建（POST body `{username, displayName?, email?, orgId?, roleIds, initialPassword}`；保存 SM3 hash（`$sm3$`），不返回密码；`system:user.manage`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
 | PATCH | `/api/v1/users/{id}` | 用户信息/角色更新（`{displayName?, email?, orgId?, roleIds?}`；根管理员保护；`system:user.manage`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
+| DELETE | `/api/v1/users/{id}` | 删除用户（204；不可删当前登录账号；最后一个 root 管理员保护 409 `AUTH_ROOT_ADMIN_REQUIRED`；`system:user.manage`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
 | POST | `/api/v1/users/{id}/disable` · `/enable` · `/unlock` | 用户启停/解锁（解锁清零失败计数与 `lockedUntil`；`system:user.manage`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
 | POST | `/api/v1/users/{id}/reset-password` | 管理员重置密码（返回 `{temporaryPassword, passwordChangedAt}`；`Cache-Control: no-store`；`token_version+1`；审计无明文；`system:user.password.reset`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
 | PUT | `/api/v1/users/{id}/roles` | 用户角色绑定（deprecated，等价 PATCH `roleIds`；`system:user.manage`） | 内部 | 一期 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
@@ -296,6 +297,8 @@ redoc: /redoc
 | GET | `/api/v1/reports/schedules/delivery-health` | SMTP 投递健康探测 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | GET | `/api/v1/reports/schedules/export-health` | Playwright PDF 导出服务可用性探测 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/dashboard/export_render.py` · `backend/app/api/v1/reports/__init__.py` |
 | GET | `/api/v1/reports/schedules/executions/recent-failures` | 近期失败/降级执行列表 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
+| POST | `/api/v1/reports/schedules/executions/{executionId}/dismiss` | 忽略单条失败提醒（不删执行历史） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
+| POST | `/api/v1/reports/schedules/executions/recent-failures/dismiss-all` | 批量忽略失败提醒 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | GET | `/api/v1/reports/schedules` | 调度列表（可选 `catalogNodeId`） | 内部 | 三期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | GET | `/api/v1/reports/schedules/{id}/executions` | 调度执行历史 | 内部 | 三期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/schedules/executions/{executionId}/retry` | 失败/降级执行重试 | 内部 | 三期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
@@ -319,6 +322,7 @@ redoc: /redoc
 | POST | `/api/v1/reports/prefab/bindings/validate` | 预制绑定校验（allowedRoles/analysisType 联动） | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/prefab.py` |
 | POST | `/api/v1/reports/prefab/bindings/{binding_key}/run` | 预制 binding 运行（analysisType SQL 模板 + physical table 解析 → renderSpec） | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/prefab.py` |
 | GET | `/api/v1/reports/prefab/bindings/{binding_key}/export?format=` | 预制分析结果导出 PDF/Word/Excel（二进制下载） | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/reports/prefab/export.py` |
+| DELETE | `/api/v1/reports/prefab/bindings/{binding_key}` | 删除预制绑定（`report:manage`，204） | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/prefab.py` |
 | GET | `/api/v1/reports/prefab/probe` | prefab validate/list perf probe 预算探测 | 内部 | 二期 | RPT-002 | 已实现（companion） | `backend/app/api/v1/reports/prefab.py` |
 | GET/PUT | `/api/v1/reports/center/preferences` | 报表中心收藏偏好 | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/center.py` |
 | POST | `/api/v1/reports/center/recent` | 记录最近访问 | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/center.py` |

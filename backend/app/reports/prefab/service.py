@@ -132,3 +132,11 @@ def upsert_prefab_binding(key: str, payload: PrefabBindingIn, user: UserContext)
     item = _validate_binding(payload)
     prefab_repo.save_binding(key, item.model_dump(by_alias=True, mode="json"))
     return PrefabBindingOut.model_validate(prefab_repo.get_binding(key))
+
+
+def delete_prefab_binding(key: str, user: UserContext) -> None:
+    _assert_write_access(user)
+    _assert_prefab_scope(user, key)
+    if prefab_repo.get_binding(key) is None:
+        raise PrefabError(RPT_PREFAB_NOT_FOUND, "Prefab binding not found", 404)
+    prefab_repo.delete_binding(key)

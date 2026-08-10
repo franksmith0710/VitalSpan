@@ -23,7 +23,7 @@ const ANALYSIS_TYPES = [
 type Props = {
   binding?: PrefabBinding | null;
   readOnly?: boolean;
-  onSaved?: () => void;
+  onSaved?: (bindingKey: string) => void;
 };
 
 export function PrefabBindingForm({ binding, readOnly = false, onSaved }: Props) {
@@ -44,6 +44,13 @@ export function PrefabBindingForm({ binding, readOnly = false, onSaved }: Props)
     setAnalysisType(binding.analysisType);
     setDimensionCodes(binding.dimensionCodes.join(", "));
   }, [binding]);
+
+  useEffect(() => {
+    if (binding) return;
+    if (analysisType === "lifecycle") setDimensionCodes("status");
+    else if (analysisType === "distribution") setDimensionCodes("region");
+    else if (analysisType === "activity" || analysisType === "trend") setDimensionCodes("status");
+  }, [analysisType, binding]);
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -69,8 +76,8 @@ export function PrefabBindingForm({ binding, readOnly = false, onSaved }: Props)
       },
       {
         onSuccess: () => {
-          toast.success("预制绑定已保存");
-          onSaved?.();
+          toast.success(binding ? "预制绑定已保存" : "预制绑定已创建");
+          onSaved?.(bindingKey.trim());
         },
         onError: (err) => toast.error(mapApiError(err)),
       },
@@ -157,7 +164,7 @@ export function PrefabBindingForm({ binding, readOnly = false, onSaved }: Props)
 
       <div className="flex justify-end">
         <Button type="submit" variant="primary" className="h-11 min-w-[7.5rem]" disabled={upsertBinding.isPending}>
-          {upsertBinding.isPending ? "保存中…" : "保存绑定"}
+          {upsertBinding.isPending ? "保存中…" : binding ? "保存绑定" : "创建绑定"}
         </Button>
       </div>
     </form>

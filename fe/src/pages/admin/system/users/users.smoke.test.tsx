@@ -94,7 +94,7 @@ describe("UserListPage smoke", () => {
       return {};
     });
     renderUsers();
-    await userEvent.click(await screen.findByRole("button", { name: "管理" }));
+    await userEvent.click(await screen.findByRole("button", { name: /管理/ }));
     const checkbox = await screen.findByRole("checkbox", { name: /查看者/ });
     await userEvent.click(checkbox);
     await userEvent.click(screen.getByRole("button", { name: "保存角色绑定" }));
@@ -156,7 +156,7 @@ describe("UserListPage smoke", () => {
       return { items: [] };
     });
     renderUsers();
-    await userEvent.click(await screen.findByRole("button", { name: "管理" }));
+    await userEvent.click(await screen.findByRole("button", { name: /管理/ }));
     await userEvent.click(await screen.findByRole("tab", { name: "组织与安全" }));
     await userEvent.click(screen.getByRole("combobox", { name: "选择组织" }));
     await userEvent.click(await screen.findByRole("option", { name: /总部/ }));
@@ -190,7 +190,7 @@ describe("UserListPage smoke", () => {
       return { items: [] };
     });
     renderUsers();
-    await userEvent.click(await screen.findByRole("button", { name: "管理" }));
+    await userEvent.click(await screen.findByRole("button", { name: /管理/ }));
     await userEvent.click(await screen.findByRole("tab", { name: "组织与安全" }));
     await userEvent.click(screen.getByRole("button", { name: "重置密码" }));
     await userEvent.click(await screen.findByRole("button", { name: "确认重置" }));
@@ -224,7 +224,7 @@ describe("UserListPage smoke", () => {
       return { items: [] };
     });
     renderUsers();
-    await userEvent.click(await screen.findByRole("button", { name: "管理" }));
+    await userEvent.click(await screen.findByRole("button", { name: /管理/ }));
     await userEvent.click(await screen.findByRole("tab", { name: "组织与安全" }));
     await userEvent.click(screen.getByRole("button", { name: "停用账号" }));
     await userEvent.click(await screen.findByRole("button", { name: "确认停用" }));
@@ -258,7 +258,7 @@ describe("UserListPage smoke", () => {
       return { items: [] };
     });
     renderUsers();
-    await userEvent.click(await screen.findByRole("button", { name: "管理" }));
+    await userEvent.click(await screen.findByRole("button", { name: /管理/ }));
     await userEvent.click(await screen.findByRole("tab", { name: "组织与安全" }));
     await userEvent.click(screen.getByRole("button", { name: "解除锁定" }));
     await waitFor(() => {
@@ -268,5 +268,67 @@ describe("UserListPage smoke", () => {
       expect(postCall).toBeTruthy();
     });
     expect(await screen.findByText("正常")).toBeInTheDocument();
+  });
+
+  it("T-AUTH-003-08: delete user triggers DELETE /users/{id}", async () => {
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      const init = args[1] as RequestInit | undefined;
+      if (path === `/api/v1/users/${USER_A}` && init?.method === "DELETE") {
+        return undefined;
+      }
+      if (path === `/api/v1/users/${USER_A}/roles`) {
+        return { items: [] };
+      }
+      if (path.startsWith("/api/v1/users")) {
+        return listUsersResponse();
+      }
+      return { items: [] };
+    });
+    renderUsers();
+    await userEvent.click(await screen.findByRole("button", { name: /删除 alice/ }));
+    await userEvent.click(await screen.findByRole("button", { name: "删除" }));
+    await waitFor(() => {
+      const delCall = mockApiFetch.mock.calls.find(
+        (c) => c[0] === `/api/v1/users/${USER_A}` && (c[1] as RequestInit)?.method === "DELETE",
+      );
+      expect(delCall).toBeTruthy();
+    });
+  });
+
+  it("T-AUTH-003-09: batch delete triggers DELETE for selected users", async () => {
+    const USER_B = "00000000-0000-4000-8000-000000000011";
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      const init = args[1] as RequestInit | undefined;
+      if (init?.method === "DELETE" && path.startsWith("/api/v1/users/")) {
+        return undefined;
+      }
+      if (path.startsWith("/api/v1/users") && !path.includes("/roles")) {
+        return {
+          items: [
+            { id: USER_A, username: "alice", isActive: true, lockedUntil: null },
+            { id: USER_B, username: "bob", isActive: true, lockedUntil: null },
+          ],
+          total: 2,
+        };
+      }
+      if (path.includes("/roles")) {
+        return { items: [] };
+      }
+      return { items: [] };
+    });
+    renderUsers();
+    await userEvent.click(await screen.findByRole("button", { name: "批量操作" }));
+    await userEvent.click(await screen.findByRole("checkbox", { name: /选择用户 alice/ }));
+    await userEvent.click(await screen.findByRole("checkbox", { name: /选择用户 bob/ }));
+    await userEvent.click(screen.getByRole("button", { name: "删除 (2)" }));
+    await userEvent.click(await screen.findByRole("button", { name: "删除" }));
+    await waitFor(() => {
+      const deletes = mockApiFetch.mock.calls.filter(
+        (c) => (c[1] as RequestInit)?.method === "DELETE" && String(c[0]).startsWith("/api/v1/users/"),
+      );
+      expect(deletes.length).toBe(2);
+    });
   });
 });

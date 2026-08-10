@@ -50,5 +50,11 @@ export function usePrefabReports() {
     onSuccess: () => void bindingsQuery.refetch(),
   });
 
-  return { bindingsQuery, runMutation, upsertBinding };
+  const deleteBinding = useMutation({
+    mutationFn: (bindingKey: string) =>
+      apiFetch<void>(`/api/v1/reports/prefab/bindings/${bindingKey}`, { method: "DELETE" }),
+    onSuccess: () => void bindingsQuery.refetch(),
+  });
+
+  return { bindingsQuery, runMutation, upsertBinding, deleteBinding };
 }

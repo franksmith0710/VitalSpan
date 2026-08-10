@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import { useAuth } from "@/context/auth-context";
 import { matchesCapability, resolveEffectiveCapabilities } from "@/lib/capabilities";
-import { BarChart3 } from "lucide-react";
+import { BarChart3, Plus } from "lucide-react";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { ReportCenterBackLink } from "./components/ReportCenterBackLink";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
@@ -32,12 +32,13 @@ export function PrefabReportsPage() {
   const { user } = useAuth();
   const caps = resolveEffectiveCapabilities(user);
   const canManage = matchesCapability(caps, "report:manage");
-  const { bindingsQuery, runMutation } = usePrefabReports();
+  const { bindingsQuery, runMutation, deleteBinding } = usePrefabReports();
   const [searchParams] = useSearchParams();
   const bindingFromUrl = searchParams.get(PREFAB_BINDING_QUERY);
   const autoRanBindingRef = useRef<string | null>(null);
   const [search, setSearch] = useState("");
   const [selectedBindingKey, setSelectedBindingKey] = useState<string | null>(null);
+  const [createMode, setCreateMode] = useState(false);
   const lastRunBindingRef = useRef<string | null>(null);
 
   const bindings = bindingsQuery.data?.items ?? [];
@@ -81,9 +82,35 @@ export function PrefabReportsPage() {
   }, [bindingFromUrl, bindings, bindingsQuery.isLoading, isRunning, runBinding]);
 
   const handleRun = (key: string) => {
+    setCreateMode(false);
     lastRunBindingRef.current = key;
     setSelectedBindingKey(key);
     runMutation.mutate(key);
+  };
+
+  const handleSelect = (key: string) => {
+    setCreateMode(false);
+    setSelectedBindingKey(key);
+    if (lastRunBindingRef.current !== key) {
+      runMutation.reset();
+    }
+  };
+
+  const handleStartCreate = () => {
+    setCreateMode(true);
+    setSelectedBindingKey(null);
+    runMutation.reset();
+  };
+
+  const handleBindingSaved = (key: string) => {
+    setCreateMode(false);
+    setSelectedBindingKey(key);
+    void bindingsQuery.refetch();
+  };
+
+  const handleBindingDeleted = () => {
+    setSelectedBindingKey(null);
+    runMutation.reset();
   };
 
   const listBody = bindingsQuery.isLoading ? (
@@ -98,8 +125,8 @@ export function PrefabReportsPage() {
     <PrefabBindingsList
       bindings={filteredBindings}
       runningKey={runningKey}
-      selectedKey={editingBinding?.bindingKey ?? null}
-      onSelect={setSelectedBindingKey}
+      selectedKey={createMode ? null : (editingBinding?.bindingKey ?? null)}
+      onSelect={handleSelect}
       onRun={handleRun}
     />
   );
@@ -108,7 +135,17 @@ export function PrefabReportsPage() {
     <AdminPageShell
       title="预制分析报表"
       description="浏览并运行系统预置的分析报表，支持实体生命周期、分布等标准模型。"
-      actions={<ReportCenterBackLink label="返回全部报表" />}
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
+          {canManage && !isEmpty ? (
+            <Button type="button" variant="outline" className="h-10" onClick={handleStartCreate}>
+              <Plus className="size-4" aria-hidden />
+              新建预制绑定
+            </Button>
+          ) : null}
+          <ReportCenterBackLink label="返回全部报表" />
+        </div>
+      }
     >
       {bindingsQuery.isError ? (
         <PageErrorBanner
@@ -153,8 +190,8 @@ export function PrefabReportsPage() {
               "dark:border-gray-800 dark:bg-white/[0.03]",
             )}
           >
-            <div className="grid min-h-[560px] lg:grid-cols-[minmax(280px,340px)_1fr]">
-              <aside className="hidden flex-col border-b border-gray-200 lg:flex lg:border-b-0 lg:border-r dark:border-gray-800">
+            <div className="grid lg:grid-cols-[minmax(280px,340px)_1fr] lg:items-start">
+              <aside className="hidden border-gray-200 dark:border-gray-800 lg:sticky lg:top-6 lg:flex lg:max-h-[calc(100dvh-12rem)] lg:flex-col lg:self-start lg:border-r">
                 <div className="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
                   <div className="flex items-start gap-3">
                     <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600 ring-1 ring-brand-200/80 dark:bg-brand-500/15 dark:text-brand-400 dark:ring-brand-500/25">
@@ -168,14 +205,25 @@ export function PrefabReportsPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="mt-4">
+                  <div className="mt-4 flex flex-wrap gap-2">
                     <Input
                       value={search}
                       onChange={(event) => setSearch(event.target.value)}
                       placeholder="搜索名称、类型或实体…"
-                      className="h-11"
+                      className="h-11 min-w-0 flex-1"
                       aria-label="搜索预制报表"
                     />
+                    {canManage ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-11 shrink-0"
+                        onClick={handleStartCreate}
+                      >
+                        <Plus className="size-4" aria-hidden />
+                        新建
+                      </Button>
+                    ) : null}
                   </div>
                 </div>
                 <ScrollArea className="min-h-0 flex-1 p-3">
@@ -183,15 +231,20 @@ export function PrefabReportsPage() {
                 </ScrollArea>
               </aside>
 
-              <section className="flex min-h-[280px] flex-col">
+              <section className="min-w-0">
                 <PrefabReportDetailPanel
-                  binding={editingBinding}
+                  binding={createMode ? null : editingBinding}
                   canManage={canManage}
+                  isCreating={createMode}
                   runningKey={runningKey}
                   onRun={handleRun}
                   runMutation={runMutation}
+                  deleteBinding={canManage ? deleteBinding : undefined}
                   lastRunBindingRef={lastRunBindingRef}
                   bindingFromUrl={bindingFromUrl}
+                  onCancelCreate={() => setCreateMode(false)}
+                  onBindingSaved={handleBindingSaved}
+                  onBindingDeleted={handleBindingDeleted}
                 />
               </section>
             </div>

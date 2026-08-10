@@ -96,6 +96,18 @@ def upsert_binding(
         return _prefab_error(exc)
 
 
+@router.delete("/bindings/{binding_key}", status_code=204)
+def delete_binding(
+    binding_key: str,
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
+):
+    try:
+        prefab_service.delete_prefab_binding(binding_key, actor)
+        return Response(status_code=204)
+    except PrefabError as exc:
+        return _prefab_error(exc)
+
+
 @router.post("/bindings/{binding_key}/run", response_model=None)
 def run_binding(
     binding_key: str,

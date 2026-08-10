@@ -523,3 +523,34 @@ def clear_user_org(
         trace_id=trace_id,
     )
     session.commit()
+
+
+def delete_user(
+    session: Session,
+    user_id: uuid.UUID,
+    *,
+    actor_id: str,
+    actor_username: str | None,
+    actor_roles: list[str],
+    trace_id: str,
+) -> None:
+    """删除用户及其角色绑定；保护最后一个 root 管理员与当前登录账号。"""
+    user = get_user(session, user_id)
+    if str(user.id) == actor_id:
+        raise UserError("USER_SELF_DELETE_FORBIDDEN", "Cannot delete your own account", 409)
+    had_root = _user_has_enabled_root_binding(session, user_id)
+    target_id = user.id
+    username = user.username
+    _audit_user_event(
+        session,
+        actor_id=actor_id,
+        actor_username=actor_username,
+        target_id=target_id,
+        action="user.delete",
+        detail={"username": username},
+        trace_id=trace_id,
+    )
+    session.delete(user)
+    if had_root:
+        _guard_root_admin(session)
+    session.commit()

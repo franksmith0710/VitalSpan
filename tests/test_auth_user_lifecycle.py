@@ -197,6 +197,41 @@ def test_can_disable_first_root_when_second_enabled_root_exists():
         session.close()
 
 
+def test_cannot_delete_last_root_user():
+    """T-LIFE-07b: 删除最后 root 用户 → AUTH_ROOT_ADMIN_REQUIRED(409)。"""
+    session = _new_session()
+    try:
+        root = _reset_root_state(session)
+        user = _make_user(session, role_ids=[root.id])
+        with pytest.raises(user_service.UserError) as exc:
+            user_service.delete_user(session, user.id, **_CTX)
+        assert exc.value.code == "AUTH_ROOT_ADMIN_REQUIRED"
+        assert session.get(AuthUser, user.id) is not None
+    finally:
+        session.close()
+
+
+def test_delete_user_removes_record_and_bindings():
+    """T-LIFE-07c: 删除普通用户后记录与角色绑定均移除。"""
+    session = _new_session()
+    try:
+        role = _make_role(session)
+        user = _make_user(session, role_ids=[role.id])
+        user_id = user.id
+        user_service.delete_user(session, user_id, **_CTX)
+        assert session.get(AuthUser, user_id) is None
+        assert session.get(AuthUserRole, {"user_id": user_id, "role_id": role.id}) is None
+        event = session.scalar(
+            select(AuthAuditEvent).where(
+                AuthAuditEvent.action == "user.delete",
+                AuthAuditEvent.target_id == user_id,
+            )
+        )
+        assert event is not None
+    finally:
+        session.close()
+
+
 # --------------------------------------------------------------------------- #
 # 并发移除最后 root 绑定：至少一个 409
 # --------------------------------------------------------------------------- #

@@ -99,19 +99,28 @@ describe("PrefabReportsPage smoke", () => {
     renderPage();
     expect(await screen.findByText("暂无预制报表")).toBeInTheDocument();
     expect(screen.getByText("定义绑定键")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "保存绑定" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "创建绑定" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "暂无预制报表" })).toBeInTheDocument();
     expect(screen.queryByText("运行结果")).not.toBeInTheDocument();
     expect(screen.queryByText("报表导出")).not.toBeInTheDocument();
   });
 
-  it("run success displays table headers", async () => {
+  it("run success displays table headers and export action", async () => {
     renderPage();
     const user = userEvent.setup();
     await user.click(await screen.findByRole("button", { name: "运行报表 实体生命周期分布" }));
     expect(await screen.findByText("status")).toBeInTheDocument();
     expect(screen.getByText("cnt")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "导出当前结果" })).toBeInTheDocument();
+  });
+
+  it("admin can open create binding panel", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole("button", { name: "新建预制绑定" }));
+    expect(screen.getByRole("button", { name: "创建绑定" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "取消" })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("prefab-entity-lifecycle")).toBeInTheDocument();
   });
 
   it("auto-runs binding from hub deep-link query", async () => {

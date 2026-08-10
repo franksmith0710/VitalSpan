@@ -129,6 +129,23 @@ export function useReportScheduleMutations(filter?: ReportScheduleListFilter) {
     onSuccess: (_data, vars) => invalidate(vars.scheduleId),
   });
 
+  const dismissFailure = useMutation({
+    mutationFn: (executionId: string) =>
+      apiFetch(`/api/v1/reports/schedules/executions/${executionId}/dismiss`, {
+        method: "POST",
+      }),
+    onSuccess: () => invalidate(),
+  });
+
+  const dismissAllFailures = useMutation({
+    mutationFn: (executionIds: string[]) =>
+      apiFetch("/api/v1/reports/schedules/executions/recent-failures/dismiss-all", {
+        method: "POST",
+        body: JSON.stringify({ executionIds }),
+      }),
+    onSuccess: () => invalidate(),
+  });
+
   const updateSchedule = useMutation({
     mutationFn: ({ id, body }: { id: string; body: Record<string, unknown> }) =>
       apiFetch<ReportScheduleRow>(`/api/v1/reports/schedules/${id}`, {
@@ -144,6 +161,8 @@ export function useReportScheduleMutations(filter?: ReportScheduleListFilter) {
     transitionSchedule,
     executeSchedule,
     retryExecution,
+    dismissFailure,
+    dismissAllFailures,
     invalidate,
   };
 }

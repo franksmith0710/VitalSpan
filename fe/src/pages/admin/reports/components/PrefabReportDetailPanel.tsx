@@ -1,7 +1,19 @@
-import { BarChart3, Database, Lock, MousePointerClick, Play, Settings2 } from "lucide-react";
+import { useState } from "react";
+import { BarChart3, Database, Lock, MousePointerClick, Play, Settings2, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { PanelEmptyState } from "@/components/ui/panel-empty-state";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { mapApiError } from "@/lib/apiError";
@@ -32,26 +44,63 @@ function analysisLabel(type: string): string {
 }
 
 type RunMutation = UseMutationResult<PrefabRunResult, Error, string, unknown>;
+type DeleteMutation = UseMutationResult<void, Error, string, unknown>;
 
 type Props = {
   binding: PrefabBinding | null;
   canManage: boolean;
+  isCreating?: boolean;
   runningKey: string | null;
   onRun: (bindingKey: string) => void;
   runMutation: RunMutation;
+  deleteBinding?: DeleteMutation;
   lastRunBindingRef: React.MutableRefObject<string | null>;
   bindingFromUrl: string | null;
+  onCancelCreate?: () => void;
+  onBindingSaved?: (bindingKey: string) => void;
+  onBindingDeleted?: () => void;
 };
 
 export function PrefabReportDetailPanel({
   binding,
   canManage,
+  isCreating = false,
   runningKey,
   onRun,
   runMutation,
+  deleteBinding,
   lastRunBindingRef,
   bindingFromUrl,
+  onCancelCreate,
+  onBindingSaved,
+  onBindingDeleted,
 }: Props) {
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  if (isCreating) {
+    return (
+      <div className="flex flex-col">
+        <TemplatePanelHeader
+          title="新建预制绑定"
+          kindLabel="配置"
+          templateKey="new-binding"
+          icon={Settings2}
+        />
+        <div className="flex flex-col gap-4 p-4 md:p-6">
+          <p className="text-theme-sm text-gray-500 dark:text-gray-400">
+            填写绑定键、实体类型与分析模型；保存后可在左侧列表运行。实体须已在元数据中注册物理表。
+          </p>
+          <PrefabBindingForm onSaved={onBindingSaved} />
+          <div className="flex justify-end">
+            <Button type="button" variant="outline" className="h-11" onClick={onCancelCreate}>
+              取消
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!binding) {
     return (
       <TemplateEmptyState
@@ -80,6 +129,18 @@ export function PrefabReportDetailPanel({
     runForbidden ||
     runEntityNotReady ||
     (runMutation.isError && !runForbidden && !runEntityNotReady);
+
+  const handleDelete = () => {
+    if (!deleteBinding) return;
+    deleteBinding.mutate(binding.bindingKey, {
+      onSuccess: () => {
+        toast.success("预制绑定已删除");
+        setDeleteOpen(false);
+        onBindingDeleted?.();
+      },
+      onError: (err) => toast.error(mapApiError(err)),
+    });
+  };
 
   const runTab = (
     <TemplateTabShell>
@@ -162,21 +223,34 @@ export function PrefabReportDetailPanel({
           </TemplateMetaItem>
         </TemplateMetaGrid>
         <div className="mt-5">
-          <PrefabBindingForm binding={binding} />
+          <PrefabBindingForm binding={binding} onSaved={onBindingSaved} />
         </div>
+        {deleteBinding ? (
+          <div className="mt-6 flex justify-end border-t border-gray-100 pt-4 dark:border-gray-800">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 text-error-600 hover:text-error-700 dark:text-error-400"
+              onClick={() => setDeleteOpen(true)}
+            >
+              <Trash2 className="size-4" aria-hidden />
+              删除绑定
+            </Button>
+          </div>
+        ) : null}
       </TemplatePanelSection>
     </TemplateTabShell>
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex flex-col">
       <TemplatePanelHeader
         title={binding.displayName}
         kindLabel={analysisLabel(binding.analysisType)}
         templateKey={binding.bindingKey}
         icon={BarChart3}
       />
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-4 md:p-6">
+      <div className="flex flex-col p-4 md:p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <p className="text-theme-xs text-gray-500 dark:text-gray-400">
             实体类型{" "}
@@ -219,6 +293,30 @@ export function PrefabReportDetailPanel({
           <div className="min-h-0 flex-1 overflow-y-auto">{runTab}</div>
         )}
       </div>
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>删除预制绑定？</AlertDialogTitle>
+            <AlertDialogDescription>
+              将删除「{binding.displayName}」（{binding.bindingKey}）。删除后 Hub 与列表不再显示该项；开发环境重启后内置演示绑定可能重新写入。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-error-600 hover:bg-error-700"
+              disabled={deleteBinding?.isPending}
+              onClick={(event) => {
+                event.preventDefault();
+                handleDelete();
+              }}
+            >
+              {deleteBinding?.isPending ? "删除中…" : "确认删除"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
