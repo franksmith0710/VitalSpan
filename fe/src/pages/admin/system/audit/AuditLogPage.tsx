@@ -16,7 +16,6 @@ import { Badge } from "@/components/ui/badge";
 import { IconButton } from "@/components/ui/button";
 import { HintTooltip } from "@/components/ui/hint-tooltip";
 import { DateField } from "@/components/ui/date-field";
-import { SearchField } from "@/components/ui/search-field";
 import {
   Select,
   SelectContent,
@@ -30,6 +29,7 @@ import { queryKeys } from "@/lib/queryKeys";
 import { useListPagination } from "@/lib/list-pagination";
 import { AuditDetailSheet } from "./AuditDetailSheet";
 import {
+  AUDIT_ACTION_OPTIONS,
   AUDIT_TARGET_TYPE_OPTIONS,
   auditActionLabel,
   auditTargetTypeLabel,
@@ -40,7 +40,7 @@ import {
 } from "./audit-display";
 
 export function AuditLogPage() {
-  const [action, setAction] = useState("");
+  const [actionFilter, setActionFilter] = useState<string>("all");
   const [targetType, setTargetType] = useState<string>("all");
   const [createdAfter, setCreatedAfter] = useState("");
   const [createdBefore, setCreatedBefore] = useState("");
@@ -57,7 +57,7 @@ export function AuditLogPage() {
     const t = window.setTimeout(
       () =>
         setDebounced({
-          action: action.trim(),
+          action: actionFilter === "all" ? "" : actionFilter,
           targetType: targetType === "all" ? "" : targetType,
           createdAfter: createdAfter.trim(),
           createdBefore: createdBefore.trim(),
@@ -65,7 +65,7 @@ export function AuditLogPage() {
       300,
     );
     return () => window.clearTimeout(t);
-  }, [action, targetType, createdAfter, createdBefore]);
+  }, [actionFilter, targetType, createdAfter, createdBefore]);
 
   const pagination = useListPagination(20, [
     debounced.action,
@@ -122,13 +122,18 @@ export function AuditLogPage() {
         <ListPageToolbar
           filters={
             <>
-              <SearchField
-                className="w-full sm:max-w-xs"
-                value={action}
-                onChange={setAction}
-                placeholder="搜索操作编码…"
-                aria-label="搜索操作"
-              />
+              <Select value={actionFilter} onValueChange={setActionFilter}>
+                <SelectTrigger className="h-11 w-full sm:w-[180px]" aria-label="筛选操作类型">
+                  <SelectValue placeholder="操作类型" />
+                </SelectTrigger>
+                <SelectContent>
+                  {AUDIT_ACTION_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Select value={targetType} onValueChange={setTargetType}>
                 <SelectTrigger className="h-11 w-full sm:w-[160px]" aria-label="筛选目标类型">
                   <SelectValue placeholder="目标类型" />
@@ -164,7 +169,7 @@ export function AuditLogPage() {
                 debounced.targetType ||
                 debounced.createdAfter ||
                 debounced.createdBefore
-                  ? `筛选结果 ${items.length} 条`
+                  ? `筛选结果 ${total} 条`
                   : `共 ${total} 条`}
               </p>
             ) : null

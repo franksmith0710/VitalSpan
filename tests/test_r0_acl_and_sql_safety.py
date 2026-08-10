@@ -190,3 +190,68 @@ def test_dataset_get_enforces_allowed_roles(client):
     ok = client.get(f"/api/v1/datasets/{ds_id}", headers=AUTH)
     assert ok.status_code == 200
     fastapi_app.dependency_overrides.pop(get_current_user, None)
+
+
+def test_dashboard_list_filters_by_resource_grant(client, auth_headers):
+    """T-AUTH-DASH-ACL: 资源授权后非 owner 用户可在列表看到仪表板。"""
+    owner_id = str(uuid.uuid4())
+    viewer_id = str(uuid.uuid4())
+    role = client.post(
+        "/api/v1/roles",
+        json={"code": f"dash_acl_{uuid.uuid4().hex[:6]}", "name": "Dash ACL Viewer"},
+        headers=auth_headers,
+    ).json()
+    client.put(
+        f"/api/v1/roles/{role['id']}/permissions",
+        json={"permissionCodes": ["dashboard:read"], "expectedVersion": 0},
+        headers=auth_headers,
+    )
+
+    fastapi_app.dependency_overrides[get_current_user] = lambda: UserContext(
+        id=owner_id,
+        username="owner",
+        roles=["analyst"],
+        permissions={"dashboard:read", "dashboard:edit"},
+    )
+    slug = f"grant-{uuid.uuid4().hex[:8]}"
+    created = client.post(
+        "/api/v1/dashboards",
+        headers=AUTH,
+        json={"name": "Granted Dash", "slug": slug},
+    )
+    assert created.status_code == 201, created.text
+    dash_id = created.json()["id"]
+
+    fastapi_app.dependency_overrides[get_current_user] = lambda: UserContext(
+        id=viewer_id,
+        username="viewer",
+        roles=[role["code"]],
+        permissions={"dashboard:read"},
+    )
+    listed = client.get("/api/v1/dashboards", headers=AUTH)
+    assert listed.status_code == 200
+    ids_before = {item["id"] for item in listed.json()["items"]}
+    assert dash_id not in ids_before
+
+    fastapi_app.dependency_overrides.pop(get_current_user, None)
+    grant = client.post(
+        "/api/v1/resource-grants",
+        json={
+            "role_id": role["id"],
+            "resource_type": "dashboard",
+            "resource_id": dash_id,
+        },
+        headers=auth_headers,
+    )
+    assert grant.status_code == 201
+
+    fastapi_app.dependency_overrides[get_current_user] = lambda: UserContext(
+        id=viewer_id,
+        username="viewer",
+        roles=[role["code"]],
+        permissions={"dashboard:read"},
+    )
+    listed_after = client.get("/api/v1/dashboards", headers=AUTH)
+    ids_after = {item["id"] for item in listed_after.json()["items"]}
+    assert dash_id in ids_after
+    fastapi_app.dependency_overrides.pop(get_current_user, None)

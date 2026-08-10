@@ -18,8 +18,9 @@ const baseEvent: AuditEventRow = {
 };
 
 describe("audit-display", () => {
-  it("maps known actions to Chinese labels", () => {
-    expect(auditActionLabel("user.roles.replace")).toBe("替换用户角色");
+  it("maps grant actions to Chinese labels", () => {
+    expect(auditActionLabel("grant.create")).toBe("创建资源授权");
+    expect(auditActionLabel("user.delete")).toBe("删除用户");
   });
 
   it("summarizes role replace detail", () => {

@@ -3,9 +3,11 @@ import { ArrowRight, Building2, CheckCircle2, Circle, Shield, Users } from "luci
 import { Link } from "react-router";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { Button } from "@/components/ui/button";
+import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/auth-context";
 import { apiFetch } from "@/lib/api";
+import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";
 
@@ -88,6 +90,26 @@ export function SystemAdminHomePage() {
     rolesQuery.isLoading ||
     grantsQuery.isLoading;
 
+  const hasError =
+    orgsQuery.isError ||
+    usersQuery.isError ||
+    rolesQuery.isError ||
+    grantsQuery.isError;
+
+  const errorMessage =
+    (orgsQuery.error && mapApiError(orgsQuery.error)) ||
+    (usersQuery.error && mapApiError(usersQuery.error)) ||
+    (rolesQuery.error && mapApiError(rolesQuery.error)) ||
+    (grantsQuery.error && mapApiError(grantsQuery.error)) ||
+    "加载配置进度失败";
+
+  const retryAll = () => {
+    void orgsQuery.refetch();
+    void usersQuery.refetch();
+    void rolesQuery.refetch();
+    void grantsQuery.refetch();
+  };
+
   const orgCount = orgsQuery.data?.total ?? 0;
   const userTotal = usersQuery.data?.total ?? 0;
   const businessUserCount = (usersQuery.data?.items ?? []).filter(
@@ -139,6 +161,9 @@ export function SystemAdminHomePage() {
     >
       <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
         <div className="space-y-4">
+          {hasError ? (
+            <PageErrorBanner message={errorMessage} onRetry={retryAll} />
+          ) : null}
           <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
             <div className="flex items-center justify-between gap-3">
               <div>

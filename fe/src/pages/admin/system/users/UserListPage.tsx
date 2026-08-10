@@ -40,18 +40,11 @@ import { UserManageSheet } from "./UserManageSheet";
 import { mapUserError } from "./userErrors";
 import { useUserBatchDelete } from "./useUserBatchDelete";
 
-type RoleOut = { id: string; code: string; name: string };
-
-function UserRoleBadges({ userId }: { userId: string }) {
-  const { data } = useQuery({
-    queryKey: queryKeys.users.roles(userId),
-    queryFn: () =>
-      apiFetch<{ items: RoleOut[] }>(`/api/v1/users/${userId}/roles`).then((r) => r.items),
-  });
-  if (!data?.length) return <span className="text-gray-400">—</span>;
+function UserRoleBadges({ roles }: { roles?: UserRow["roles"] }) {
+  if (!roles?.length) return <span className="text-gray-400">—</span>;
   return (
     <div className="flex flex-wrap gap-1">
-      {data.map((r) => (
+      {roles.map((r) => (
         <Badge key={r.id} variant="light" color="primary" size="sm">
           {r.name}
         </Badge>
@@ -238,7 +231,7 @@ export function UserListPage() {
                           setActionError(null);
                         }}
                         onDelete={setDeleteUser}
-                        roleBadges={<UserRoleBadges userId={row.id} />}
+                        roleBadges={<UserRoleBadges roles={row.roles} />}
                       />
                     ))
                   : null}

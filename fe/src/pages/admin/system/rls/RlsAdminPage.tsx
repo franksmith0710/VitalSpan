@@ -21,7 +21,7 @@ import {
   RowActions,
 } from "@/components/layout/list-page-kit";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
-import { runBatchDelete } from "@/lib/runBatchDelete";
+import { formatBatchDeleteToast, runBatchDelete } from "@/lib/runBatchDelete";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -261,15 +261,16 @@ export function RlsAdminPage() {
     const ids = [...groupSelection.selectedIds];
     if (ids.length === 0) return;
     setBatchDeleting(true);
-    const { ok, failed } = await runBatchDelete(ids, (id) =>
+    const { ok, failed, failures } = await runBatchDelete(ids, (id) =>
       apiFetch(`/api/v1/rls/groups/${id}`, { method: "DELETE" }),
     );
     setBatchDeleting(false);
     setBatchDeleteOpen(false);
     groupSelection.clear();
     await qc.invalidateQueries({ queryKey: ["rls", "groups"] });
-    if (failed === 0) toast.success(`已删除 ${ok} 个维度分组`);
-    else toast.warning(`已删除 ${ok} 个，${failed} 个删除失败`);
+    const toastMsg = formatBatchDeleteToast(ok, failed, failures, "维度分组");
+    if (toastMsg.variant === "success") toast.success(toastMsg.message);
+    else toast.warning(toastMsg.message);
   };
 
   return (

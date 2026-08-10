@@ -14,6 +14,7 @@ from app.auth.password.service import PasswordPolicyError
 from app.auth.schemas import (
     ResetPasswordOut,
     UserCreate,
+    UserListItemOut,
     UserListResponse,
     UserOrgAssign,
     UserOrgResponse,
@@ -84,7 +85,15 @@ def list_users(
     offset: int = Query(default=0, ge=0),
 ) -> UserListResponse:
     items, total = user_service.list_users(db, q, limit, offset)
-    return UserListResponse(items=[UserOut.model_validate(u) for u in items], total=total)
+    role_map = user_service.list_users_role_map(db, [u.id for u in items])
+    out_items = [
+        UserListItemOut(
+            **UserOut.model_validate(u).model_dump(),
+            roles=[UserRoleOut(id=r.id, code=r.code, name=r.name) for r in role_map.get(u.id, [])],
+        )
+        for u in items
+    ]
+    return UserListResponse(items=out_items, total=total)
 
 
 @router.post("", response_model=UserOut, status_code=status.HTTP_201_CREATED)

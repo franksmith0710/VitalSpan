@@ -11,6 +11,7 @@ import { DashboardPickerSelect } from "@/pages/admin/account/components/Dashboar
 import { apiFetch } from "@/lib/api";
 import { buildDashboardsListUrl } from "@/lib/dashboardsListQuery";
 import { queryKeys } from "@/lib/queryKeys";
+import { fetchAllCatalogTemplates } from "@/lib/reportCatalogUtils";
 import type { ResourceType } from "./grantFormSchema";
 
 type NamedResource = { id: string; name: string };
@@ -87,13 +88,9 @@ export function ResourceGrantPicker({
   const reportsQuery = useQuery({
     queryKey: queryKeys.reports.catalogNodes("grant-templates"),
     queryFn: async () => {
-      const data = await apiFetch<{ items: Array<{ id: string; name: string; nodeType: string }> }>(
-        "/api/v1/reports/catalog/nodes",
-      );
+      const templates = await fetchAllCatalogTemplates();
       return {
-        items: data.items
-          .filter((n) => n.nodeType === "template")
-          .map((n) => ({ id: n.id, name: n.name })),
+        items: templates.map((n) => ({ id: n.id, name: n.name })),
       };
     },
     enabled: resourceType === "report",
@@ -162,14 +159,8 @@ export function useGrantResourceNameMaps() {
   const reportsQuery = useQuery({
     queryKey: queryKeys.reports.catalogNodes("grant-labels"),
     queryFn: async () => {
-      const data = await apiFetch<{ items: Array<{ id: string; name: string; nodeType: string }> }>(
-        "/api/v1/reports/catalog/nodes",
-      );
-      return {
-        items: data.items
-          .filter((n) => n.nodeType === "template")
-          .map((n) => ({ id: n.id, name: n.name })),
-      };
+      const templates = await fetchAllCatalogTemplates();
+      return { items: templates.map((n) => ({ id: n.id, name: n.name })) };
     },
     staleTime: 60_000,
   });

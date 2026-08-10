@@ -40,7 +40,9 @@ function normalizeGrant(row: GrantApiRow): ResourceGrantOut {
   };
 }
 
-export function useGrantsPage() {
+export function useGrantsPage(
+  resolveResourceName?: (type: ResourceType, id: string) => string | undefined,
+) {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
@@ -76,10 +78,13 @@ export function useGrantsPage() {
     return items.filter((row) => {
       if (roleFilter !== "all" && row.roleId !== roleFilter) return false;
       if (typeFilter !== "all" && row.resourceType !== typeFilter) return false;
-      if (q && !row.resourceId.toLowerCase().startsWith(q)) return false;
+      if (q) {
+        const name = resolveResourceName?.(row.resourceType, row.resourceId)?.toLowerCase() ?? "";
+        if (!row.resourceId.toLowerCase().includes(q) && !name.includes(q)) return false;
+      }
       return true;
     });
-  }, [grantsQuery.data?.items, roleFilter, search, typeFilter]);
+  }, [grantsQuery.data?.items, resolveResourceName, roleFilter, search, typeFilter]);
 
   const pagination = useListPagination(undefined, [search, roleFilter, typeFilter]);
 

@@ -20,7 +20,7 @@ import {
   ListPageToolbar,
 } from "@/components/layout/list-page-kit";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
-import { runBatchDelete } from "@/lib/runBatchDelete";
+import { runBatchDelete, formatBatchDeleteToast } from "@/lib/runBatchDelete";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -55,6 +55,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
+import { fetchAllCatalogTemplates } from "@/lib/reportCatalogUtils";
 import { cn } from "@/lib/utils";
 import { mapRoleError } from "./roleErrors";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
@@ -78,7 +79,6 @@ type RoleOut = {
 };
 
 type DashboardSummary = { id: string; name: string };
-type CatalogTemplateNode = { id: string; name: string; nodeType: string };
 
 const EMPTY_CREATE: RoleCreateValues = {
   code: "",
@@ -151,8 +151,8 @@ export function RoleListPage() {
   const { data: reportTemplates } = useQuery({
     queryKey: queryKeys.reports.catalogNodes("all-templates"),
     queryFn: async () => {
-      const data = await apiFetch<{ items: CatalogTemplateNode[] }>("/api/v1/reports/catalog/nodes");
-      return { items: data.items.filter((n) => n.nodeType === "template") };
+      const templates = await fetchAllCatalogTemplates();
+      return { items: templates.map((n) => ({ id: n.id, name: n.name })) };
     },
   });
 
@@ -180,7 +180,7 @@ export function RoleListPage() {
       defaultDashboardId = dv.dashboardId ?? "";
       defaultReportTemplateNodeId = dv.reportTemplateNodeId ?? "";
     } catch {
-      /* optional */
+      toast.warning("默认视图配置加载失败，可稍后重试");
     }
     setForm({
       name: role.name,
@@ -267,15 +267,16 @@ export function RoleListPage() {
     const ids = [...selection.selectedIds];
     if (ids.length === 0) return;
     setBatchDeleting(true);
-    const { ok, failed } = await runBatchDelete(ids, (id) =>
+    const { ok, failed, failures } = await runBatchDelete(ids, (id) =>
       apiFetch(`/api/v1/roles/${id}`, { method: "DELETE" }),
     );
     setBatchDeleting(false);
     setBatchDeleteOpen(false);
     selection.clear();
     await queryClient.invalidateQueries({ queryKey: queryKeys.roles.all });
-    if (failed === 0) toast.success(`已删除 ${ok} 个角色`);
-    else toast.warning(`已删除 ${ok} 个，${failed} 个删除失败`);
+    const toastMsg = formatBatchDeleteToast(ok, failed, failures, "角色");
+    if (toastMsg.variant === "success") toast.success(toastMsg.message);
+    else toast.warning(toastMsg.message);
   };
 
   return (

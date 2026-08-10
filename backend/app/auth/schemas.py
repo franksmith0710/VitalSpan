@@ -145,6 +145,10 @@ class UserOut(BaseModel):
     org_node_id: uuid.UUID | None = Field(default=None, serialization_alias="orgId")
 
 
+class UserListItemOut(UserOut):
+    roles: list["UserRoleOut"] = Field(default_factory=list)
+
+
 class ResetPasswordOut(BaseModel):
     model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
 
@@ -153,7 +157,7 @@ class ResetPasswordOut(BaseModel):
 
 
 class UserListResponse(BaseModel):
-    items: list[UserOut]
+    items: list[UserListItemOut]
     total: int
 
 

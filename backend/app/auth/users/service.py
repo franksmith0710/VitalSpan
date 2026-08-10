@@ -268,6 +268,24 @@ def list_users(
     return items, total
 
 
+def list_users_role_map(
+    session: Session,
+    user_ids: list[uuid.UUID],
+) -> dict[uuid.UUID, list[AuthRole]]:
+    if not user_ids:
+        return {}
+    rows = session.execute(
+        select(AuthUserRole.user_id, AuthRole)
+        .join(AuthRole, AuthRole.id == AuthUserRole.role_id)
+        .where(AuthUserRole.user_id.in_(user_ids), AuthRole.is_active.is_(True))
+        .order_by(AuthRole.code)
+    ).all()
+    result: dict[uuid.UUID, list[AuthRole]] = {}
+    for user_id, role in rows:
+        result.setdefault(user_id, []).append(role)
+    return result
+
+
 def list_user_roles(session: Session, user_id: uuid.UUID) -> list[AuthRole]:
     get_user(session, user_id)
     return list(

@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.auth.audit.write_hooks import record_platform_event
 from app.auth.models import AuthResourceGrant, AuthRole
 from app.auth.schemas import ResourceGrantCreate
 
@@ -31,8 +32,16 @@ def list_grants(
     return list(session.scalars(stmt))
 
 
-def create_grant(session: Session, payload: ResourceGrantCreate) -> AuthResourceGrant:
-    if session.get(AuthRole, payload.role_id) is None:
+def create_grant(
+    session: Session,
+    payload: ResourceGrantCreate,
+    *,
+    actor_id: str,
+    actor_username: str | None,
+    trace_id: str,
+) -> AuthResourceGrant:
+    role = session.get(AuthRole, payload.role_id)
+    if role is None:
         raise GrantError("ROLE_NOT_FOUND", "Role not found", 404)
     grant = AuthResourceGrant(
         role_id=payload.role_id,
@@ -41,19 +50,60 @@ def create_grant(session: Session, payload: ResourceGrantCreate) -> AuthResource
     )
     session.add(grant)
     try:
-        session.commit()
+        session.flush()
     except IntegrityError as exc:
         session.rollback()
         raise GrantError("GRANT_ALREADY_EXISTS", "Resource grant already exists", 409) from exc
+    record_platform_event(
+        session,
+        actor_id=actor_id,
+        actor_username=actor_username,
+        target_type="grant",
+        target_id=grant.id,
+        action="grant.create",
+        detail={
+            "role_id": str(payload.role_id),
+            "role_code": role.code,
+            "resource_type": payload.resource_type,
+            "resource_id": str(payload.resource_id),
+        },
+        trace_id=trace_id,
+    )
+    session.commit()
     session.refresh(grant)
     return grant
 
 
-def delete_grant(session: Session, grant_id: uuid.UUID) -> None:
+def delete_grant(
+    session: Session,
+    grant_id: uuid.UUID,
+    *,
+    actor_id: str,
+    actor_username: str | None,
+    trace_id: str,
+) -> None:
     grant = session.get(AuthResourceGrant, grant_id)
     if grant is None:
         raise GrantError("GRANT_NOT_FOUND", "Resource grant not found", 404)
+    role = session.get(AuthRole, grant.role_id)
+    detail = {
+        "role_id": str(grant.role_id),
+        "role_code": role.code if role else None,
+        "resource_type": grant.resource_type,
+        "resource_id": str(grant.resource_id),
+    }
+    target_id = grant.id
     session.delete(grant)
+    record_platform_event(
+        session,
+        actor_id=actor_id,
+        actor_username=actor_username,
+        target_type="grant",
+        target_id=target_id,
+        action="grant.delete",
+        detail=detail,
+        trace_id=trace_id,
+    )
     session.commit()
 
 

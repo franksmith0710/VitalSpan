@@ -11,6 +11,7 @@ export type AuditEventRow = {
 };
 
 const ACTION_LABELS: Record<string, string> = {
+  "user.delete": "删除用户",
   "user.roles.replace": "替换用户角色",
   "user.role.bind": "绑定用户角色",
   "user.role.unbind": "解绑用户角色",
@@ -24,6 +25,8 @@ const ACTION_LABELS: Record<string, string> = {
   "role.dimension.replace": "替换角色维度",
   "role.group.replace": "替换角色分组",
   "role.permissions.replace": "替换角色权限",
+  "grant.create": "创建资源授权",
+  "grant.delete": "撤销资源授权",
   "group.create": "创建分组",
   "group.update": "更新分组",
   "group.delete": "删除分组",
@@ -44,11 +47,16 @@ const TARGET_TYPE_LABELS: Record<string, string> = {
   org: "组织",
   group: "分组",
   dimension: "维度",
+  grant: "资源授权",
   profile: "个人资料",
 };
 
 const DETAIL_KEY_LABELS: Record<string, string> = {
   role_ids: "角色",
+  role_id: "角色",
+  role_code: "角色编码",
+  resource_type: "资源类型",
+  resource_id: "资源",
   code: "编码",
   name: "名称",
   org_id: "组织",
@@ -162,4 +170,23 @@ export const AUDIT_TARGET_TYPE_OPTIONS = [
   { value: "org", label: "组织" },
   { value: "group", label: "分组" },
   { value: "dimension", label: "维度" },
+  { value: "grant", label: "资源授权" },
+] as const;
+
+export const AUDIT_ACTION_OPTIONS = [
+  { value: "all", label: "全部操作" },
+  { value: "user.delete", label: "删除用户" },
+  { value: "user.roles.replace", label: "替换用户角色" },
+  { value: "user.role.bind", label: "绑定用户角色" },
+  { value: "user.role.unbind", label: "解绑用户角色" },
+  { value: "user.org.assign", label: "分配组织" },
+  { value: "role.create", label: "创建角色" },
+  { value: "role.update", label: "更新角色" },
+  { value: "role.delete", label: "删除角色" },
+  { value: "role.permissions.replace", label: "替换角色权限" },
+  { value: "grant.create", label: "创建资源授权" },
+  { value: "grant.delete", label: "撤销资源授权" },
+  { value: "org.create", label: "创建组织" },
+  { value: "org.update", label: "更新组织" },
+  { value: "org.delete", label: "删除组织" },
 ] as const;

@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { useListBatchMode } from "@/components/layout/list-batch-delete";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { apiFetch } from "@/lib/api";
-import { runBatchDelete } from "@/lib/runBatchDelete";
+import { formatBatchDeleteToast, runBatchDelete } from "@/lib/runBatchDelete";
 
 type UserRow = { id: string; username: string };
 
@@ -18,15 +18,16 @@ export function useUserBatchDelete(items: UserRow[], invalidate: () => Promise<v
     const ids = [...selection.selectedIds];
     if (ids.length === 0) return;
     setBatchDeleting(true);
-    const { ok, failed } = await runBatchDelete(ids, (id) =>
+    const { ok, failed, failures } = await runBatchDelete(ids, (id) =>
       apiFetch(`/api/v1/users/${id}`, { method: "DELETE" }),
     );
     setBatchDeleting(false);
     setBatchDeleteOpen(false);
     selection.clear();
     await invalidate();
-    if (failed === 0) toast.success(`已删除 ${ok} 个用户`);
-    else toast.warning(`已删除 ${ok} 个，${failed} 个删除失败（可能为超级管理员或当前账号）`);
+    const toastMsg = formatBatchDeleteToast(ok, failed, failures, "用户");
+    if (toastMsg.variant === "success") toast.success(toastMsg.message);
+    else toast.warning(toastMsg.message);
   };
 
   return {

@@ -10,6 +10,7 @@ export type UserRow = {
   username: string;
   isActive?: boolean;
   lockedUntil?: string | null;
+  roles?: { id: string; code: string; name: string }[];
 };
 
 type UserListRowProps = {

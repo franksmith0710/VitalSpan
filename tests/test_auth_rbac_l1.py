@@ -401,6 +401,9 @@ def test_resource_grant_create_list(client, auth_headers):
     assert created.status_code == 201
     items = client.get("/api/v1/resource-grants", headers=auth_headers).json()["items"]
     assert any(i["resource_id"] == rid for i in items)
+    audit = client.get("/api/v1/audit/events?action=grant.create&limit=20", headers=auth_headers)
+    assert audit.status_code == 200
+    assert any(e["action"] == "grant.create" for e in audit.json()["items"])
 
 
 def test_resource_grant_duplicate_409(client, auth_headers):
@@ -2116,3 +2119,21 @@ def test_list_users_paginated(client, auth_headers):
     usernames = {u["username"] for u in body["items"]}
     assert "u_list_a" in usernames
     assert "u_list_b" in usernames
+
+
+def test_list_users_embeds_roles(client, auth_headers):
+    """T-AUTH-U-EMBED: 用户列表嵌入角色摘要，避免 N+1。"""
+    role = client.post(
+        "/api/v1/roles", json={"code": "list_embed_r", "name": "列表嵌入"}, headers=auth_headers
+    ).json()
+    user = client.post(
+        "/api/v1/users",
+        json={"username": "u_list_roles", "initialPassword": "Init-Pass-1234567"},
+        headers=auth_headers,
+    ).json()
+    client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
+    resp = client.get("/api/v1/users?q=u_list_roles", headers=auth_headers)
+    assert resp.status_code == 200
+    row = next(u for u in resp.json()["items"] if u["username"] == "u_list_roles")
+    assert "roles" in row
+    assert any(r["code"] == "list_embed_r" for r in row["roles"])

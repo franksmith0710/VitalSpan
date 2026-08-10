@@ -40,8 +40,8 @@ import { useGrantsPage } from "./useGrantsPage";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 
 export function GrantsPage() {
-  const page = useGrantsPage();
   const { nameByTypeAndId } = useGrantResourceNameMaps();
+  const page = useGrantsPage((type, id) => nameByTypeAndId.get(`${type}:${id}`));
   const { isLoading, isError, error, refetch } = page.grantsQuery;
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [batchDeleting, setBatchDeleting] = useState(false);
@@ -58,7 +58,7 @@ export function GrantsPage() {
     const ids = [...selection.selectedIds];
     if (ids.length === 0) return;
     setBatchDeleting(true);
-    const { ok, failed } = await runBatchDelete(ids, (id) =>
+    const { ok, failed, failures } = await runBatchDelete(ids, (id) =>
       apiFetch(`/api/v1/resource-grants/${id}`, { method: "DELETE" }),
     );
     setBatchDeleting(false);
@@ -66,7 +66,15 @@ export function GrantsPage() {
     selection.clear();
     await page.grantsQuery.refetch();
     if (failed === 0) toast.success(`已撤销 ${ok} 条授权`);
-    else toast.warning(`已撤销 ${ok} 条，${failed} 条撤销失败`);
+    else {
+      const detail = failures
+        .slice(0, 3)
+        .map((f) => f.message)
+        .join("；");
+      toast.warning(
+        `已撤销 ${ok} 条，${failed} 条失败：${detail}${failures.length > 3 ? "…" : ""}`,
+      );
+    }
   };
 
   return (
@@ -120,14 +128,21 @@ export function GrantsPage() {
             </>
           }
           actions={
-            <ListPageBatchActions
-              batchMode={batch.batchMode}
-              onToggleBatchMode={batch.toggleBatchMode}
-              selectedCount={selection.selectedCount}
-              entityLabel="条授权"
-              onClear={selection.clear}
-              onDelete={() => setBatchDeleteOpen(true)}
-            />
+            <div className="flex flex-wrap items-center gap-3">
+              <ListPageBatchActions
+                batchMode={batch.batchMode}
+                onToggleBatchMode={batch.toggleBatchMode}
+                selectedCount={selection.selectedCount}
+                entityLabel="条授权"
+                onClear={selection.clear}
+                onDelete={() => setBatchDeleteOpen(true)}
+              />
+              {!isLoading ? (
+                <p className="text-theme-sm text-gray-500 dark:text-gray-400">
+                  共 {filteredTotal} 条授权
+                </p>
+              ) : null}
+            </div>
           }
         />
 

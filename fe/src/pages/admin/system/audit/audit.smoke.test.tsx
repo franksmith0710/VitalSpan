@@ -47,15 +47,16 @@ describe("AuditLogPage smoke", () => {
     expect(screen.getByLabelText("筛选结束日期")).toBeInTheDocument();
   });
 
-  it("action search debounces into audit events query", async () => {
+  it("action filter debounces into audit events query", async () => {
     mockApiFetch.mockResolvedValue({ items: [], total: 0 });
     const user = userEvent.setup();
     renderAuditPage();
-    await user.type(await screen.findByLabelText("搜索操作"), "user.disable");
+    await user.click(await screen.findByLabelText("筛选操作类型"));
+    await user.click(await screen.findByRole("option", { name: "删除用户" }));
     await waitFor(
       () => {
         expect(
-          mockApiFetch.mock.calls.some((c) => String(c[0]).includes("action=user.disable")),
+          mockApiFetch.mock.calls.some((c) => String(c[0]).includes("action=user.delete")),
         ).toBe(true);
       },
       { timeout: 2000 },
