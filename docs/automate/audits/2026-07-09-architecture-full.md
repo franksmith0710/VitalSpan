@@ -1,4 +1,4 @@
-# Architecture full audit — 2026-07-09
+# Architecture full audit — 2026-08-11
 
 > Findings: **145** · P0=16 P1=52 P2=60 P3=17
 > HTML: `C:\Users\30381\AppData\Local\Temp\architecture-review-20260709-181722.html`

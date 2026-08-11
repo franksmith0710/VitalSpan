@@ -39,6 +39,8 @@ import {
   HUB_CARD_SHELL_CLASS,
   HUB_CARD_SKELETON_BODY_CLASS,
   HUB_CARD_SKELETON_PREVIEW_CLASS,
+  HUB_CARD_SUBTITLE_CLASS,
+  HUB_CARD_TITLE_CLASS,
   hubCardPreviewFrameStyle,
 } from "@/components/dashboard/hubCardUi";
 
@@ -158,14 +160,16 @@ export function VizTemplateCard({
       <div className={HUB_CARD_BODY_CLASS}>
         <div className="flex min-w-0 items-stretch gap-2">
           <div className="min-w-0 flex-1">
-            <h2 className="truncate text-theme-sm font-semibold text-gray-900 dark:text-white">
+            <h2 className={HUB_CARD_TITLE_CLASS}>
               {item.name}
             </h2>
             {secondaryLine ? (
-              <p className="mt-0.5 truncate text-theme-xs text-gray-500 dark:text-gray-400">
+              <p className={HUB_CARD_SUBTITLE_CLASS}>
                 {secondaryLine}
               </p>
-            ) : null}
+            ) : (
+              <p className={HUB_CARD_SUBTITLE_CLASS} aria-hidden="true">&nbsp;</p>
+            )}
           </div>
           <div className={HUB_CARD_BODY_ACTION_RAIL_CLASS}>
             <span className="rounded bg-gray-100 px-1.5 py-px text-[10px] font-medium leading-4 text-gray-500 dark:bg-white/[0.06] dark:text-gray-400">

@@ -31,6 +31,7 @@
 | [ingestion.md](./ingestion.md) | `app/ingestion/` | F16-DATA | M1B | 已实现 |
 | [governance.md](./governance.md) | `app/governance/` | F10-GOV · F14-CAT | M6 | **部分**（API L1；FE catalog 深链 + 诚实横幅） |
 | [viz.md](./viz.md) | `app/viz/` | F06-VIZ | M9 | **部分**（BE 注册表 + FE **AntV** 渲染已实现） |
+| [ai-viz.md](./ai-viz.md) | `app/ai_viz/` | F17-AIVIZ | 试点 | **部分**（VS-AI-SPEC M1） |
 | [integration.md](./integration.md) | `app/integration/` | F13-API | M8/M12/M13 | **已实现**（r45 + M-DEPTH F-C Trial Sheet · 2026-07-29） |
 
 **横切**：F13-API（对外集成）、F15-NFR（非功能）——F15-NFR 域附录见 [nfr.md](./nfr.md)；其余横切由各服务与 `core` 分担。F06-VIZ 图表类型注册与渲染/嵌入配置契约现由 [viz.md](./viz.md) 域承载。

@@ -10,7 +10,7 @@ import {
   DashboardListCard,
   type DashboardListItem,
 } from "@/components/dashboard/DashboardListCard";
-import { DASHBOARD_LIST_CARD_ASPECT_RATIO } from "@/components/dashboard/DashboardPreviewThumb";
+import { DASHBOARD_LIST_CARD_ASPECT_RATIO } from "@/components/dashboard/hubCardUi";
 
 const tallCanvasDashboard: DashboardListItem = {
   id: "dash-tall",
@@ -109,5 +109,22 @@ describe("DashboardListCard", () => {
 
     const preview = container.querySelector("article > div");
     expect(preview).toHaveStyle({ aspectRatio: DASHBOARD_LIST_CARD_ASPECT_RATIO });
+  });
+
+  it("forces data-screen preview ratio when previewSurfaceKind is set", () => {
+    const { container } = render(
+      <TooltipProvider delayDuration={0}>
+        <MemoryRouter>
+          <DashboardListCard
+            dashboard={tallCanvasDashboard}
+            canEdit
+            previewSurfaceKind="data-screen"
+          />
+        </MemoryRouter>
+      </TooltipProvider>,
+    );
+
+    const preview = container.querySelector("article > div");
+    expect(preview).toHaveStyle({ aspectRatio: "16 / 9" });
   });
 });

@@ -289,6 +289,7 @@ export function DashboardListPage() {
                     <DashboardListCard
                       key={dashboard.id}
                       dashboard={dashboard}
+                      previewSurfaceKind="dashboard"
                       canEdit={canEdit}
                       canShare={canShare}
                       selected={selection.isSelected(dashboard.id)}

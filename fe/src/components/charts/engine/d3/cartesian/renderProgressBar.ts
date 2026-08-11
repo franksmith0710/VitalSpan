@@ -38,7 +38,9 @@ export function renderD3ProgressBarChart(
 
   const barRx = barRadius ?? BAR_RX;
   const categories = data.map((d) => d.type);
-  const { margin, innerW, innerH } = resolveHorizontalCategoryCartesianLayout(width, height, categories);
+  const { margin, innerW, innerH } = resolveHorizontalCategoryCartesianLayout(width, height, categories, {
+    axisStyle,
+  });
   const fillColor = colors[0] ?? "#465fff";
   const trackColor = theme.gridLine;
 

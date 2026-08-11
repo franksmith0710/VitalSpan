@@ -1,11 +1,14 @@
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 
+/** 类目轴标签旋转：未配置或 0 为水平；`auto` 为按槽宽智能倾斜 */
+export type AxisLabelRotate = number | "auto";
+
 export type ChartAxisSideStyle = {
   show?: boolean;
   name?: string;
   lineColor?: string;
   lineWidth?: number;
-  labelRotate?: number;
+  labelRotate?: AxisLabelRotate;
   formatType?: NumberFormatConfig["type"];
 };
 

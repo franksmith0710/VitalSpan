@@ -2,6 +2,7 @@ import * as d3 from "d3";
 import type { AntvThemeTokens } from "@/components/charts/engine/antv/theme";
 import { formatCompositeCategoryDisplay } from "@/components/charts/engine/buildDatasetEncoding";
 import { VCDS, resolveAxisFontSize } from "@/components/charts/engine/d3/core/chartVisualTokens";
+import type { AxisLabelRotate } from "@/lib/chartDeStyleBlocks";
 
 /** 11px 轴标签下平均每字符占位（中文/数字混合估算） */
 const CHAR_PX = 6.5;
@@ -279,12 +280,7 @@ export function pickCategoryTicksForLabels(
   return indices.map((index) => categories[index]!);
 }
 
-export function resolveCategoryLabelRotate(
-  tickLabels: string[],
-  innerSpan: number,
-  explicitRotate?: number,
-): number {
-  if (explicitRotate != null) return explicitRotate;
+function resolveAutoCategoryLabelRotate(tickLabels: string[], innerSpan: number): number {
   if (tickLabels.length === 0 || innerSpan <= 0) return 0;
 
   const slot = innerSpan / tickLabels.length;
@@ -294,6 +290,16 @@ export function resolveCategoryLabelRotate(
   if (estWidth > slot * 1.4) return -45;
   if (estWidth > slot * 0.82) return VCDS.axis.rotateDeg;
   if (tickLabels.length >= 3 && slot < VCDS.axis.rotateThreshold) return VCDS.axis.rotateDeg;
+  return 0;
+}
+
+export function resolveCategoryLabelRotate(
+  tickLabels: string[],
+  innerSpan: number,
+  explicitRotate?: AxisLabelRotate,
+): number {
+  if (explicitRotate === "auto") return resolveAutoCategoryLabelRotate(tickLabels, innerSpan);
+  if (typeof explicitRotate === "number") return explicitRotate;
   return 0;
 }
 
@@ -310,16 +316,20 @@ export function formatAxisCategoryLabel(label: string, slotSpan = 48, rotateDeg 
 }
 
 /** 横向柱图 / 热力图行轴：宽度不足时隐藏 */
-export function formatHorizontalBandAxisLabel(label: string, maxWidthPx = 120): string {
+export function formatHorizontalBandAxisLabel(
+  label: string,
+  maxWidthPx = 120,
+  rotateDeg = 0,
+): string {
   const display = axisCategoryDisplayText(label);
-  if (!axisLabelFitsSlot(display, maxWidthPx, 0)) return "";
+  if (!axisLabelFitsSlot(display, maxWidthPx, rotateDeg)) return "";
   return display;
 }
 
 export function planCategoryAxisLayout(
   categories: string[],
   innerSpan: number,
-  explicitRotate?: number,
+  explicitRotate?: AxisLabelRotate,
   minPx = CATEGORY_THINNING_MIN_PX,
   bandWidth?: number,
 ): CategoryAxisLayout {
@@ -407,17 +417,28 @@ export function resolveBarLabelFontSize(bandSpan: number, preferred = 11): numbe
   return Math.max(7, Math.min(preferred, Math.floor(bandSpan * 0.85)));
 }
 
+export type HorizontalCategoryAxisLayout = {
+  ticks: string[];
+  leftMargin: number;
+  bandHeight: number;
+  labelMaxWidth: number;
+  rotateDeg: number;
+};
+
 /** 横向柱图左侧类目轴：抽稀刻度 + 按最长标签估算左边距 */
 export function resolveHorizontalCategoryAxisLayout(
   categories: string[],
   innerH: number,
   minPx = 28,
-): { ticks: string[]; leftMargin: number; bandHeight: number; labelMaxWidth: number } {
+  explicitRotate?: AxisLabelRotate,
+): HorizontalCategoryAxisLayout {
   if (categories.length === 0 || innerH <= 0) {
-    return { ticks: [], leftMargin: 52, bandHeight: 0, labelMaxWidth: 120 };
+    return { ticks: [], leftMargin: 52, bandHeight: 0, labelMaxWidth: 120, rotateDeg: 0 };
   }
 
   const bandHeight = innerH / categories.length;
+  const allLabels = categories.map((category) => axisCategoryDisplayText(String(category)));
+  const rotateDeg = resolveCategoryLabelRotate(allLabels, innerH, explicitRotate);
   const indexToPx = (idx: number) =>
     estimateCategoryBandCenterPx(idx, categories.length, innerH);
   const tickIndices = pickCategoryTickIndicesForLabels(
@@ -425,7 +446,7 @@ export function resolveHorizontalCategoryAxisLayout(
     innerH,
     (category) => axisCategoryDisplayText(String(category)),
     minPx,
-    0,
+    rotateDeg,
     indexToPx,
   );
   const ticks = tickIndices.map((index) => categories[index]!);
@@ -434,9 +455,10 @@ export function resolveHorizontalCategoryAxisLayout(
     0,
   );
   const labelMaxWidth = estimateAxisLabelWidth(maxLabelChars);
-  const leftMargin = Math.max(52, labelMaxWidth + 18);
+  const extraLeft = resolveRotatedAxisExtraSpan(rotateDeg);
+  const leftMargin = Math.max(52, labelMaxWidth + 18) + extraLeft;
 
-  return { ticks, leftMargin, bandHeight, labelMaxWidth };
+  return { ticks, leftMargin, bandHeight, labelMaxWidth, rotateDeg };
 }
 
 export function styleAxis(
@@ -471,6 +493,18 @@ export function applyRotatedCategoryLabels(
     .style("text-anchor", "end")
     .attr("dx", "-0.2em")
     .attr("dy", "0.15em");
+}
+
+export function applyRotatedLeftCategoryLabels(
+  sel: d3.Selection<SVGTextElement, unknown, null, undefined>,
+  rotateDeg: number,
+) {
+  if (!rotateDeg) return;
+  sel.attr("transform", function () {
+    const x = Number(d3.select(this).attr("x") ?? 0);
+    const y = Number(d3.select(this).attr("y") ?? 0);
+    return `rotate(${rotateDeg}, ${x}, ${y})`;
+  });
 }
 
 type CategoryBandAxisSideStyle = { lineColor?: string; lineWidth?: number };
@@ -549,6 +583,7 @@ export function drawCategoryBandAxisLeft(
   theme: AntvThemeTokens,
   fontSize = resolveBandAxisFontSize(innerH / Math.max(1, yScale.domain().length)),
   sideStyle?: CategoryBandAxisSideStyle,
+  rotateDeg = 0,
 ): void {
   const bh = yScale.bandwidth();
   const stroke = sideStyle?.lineColor ?? theme.axisLine;
@@ -569,7 +604,7 @@ export function drawCategoryBandAxisLeft(
     const bandY = yScale(tick);
     if (bandY == null) continue;
     const cy = bandY + bh / 2;
-    const label = formatHorizontalBandAxisLabel(String(tick), labelMaxWidth);
+    const label = formatHorizontalBandAxisLabel(String(tick), labelMaxWidth, rotateDeg);
     if (!label) continue;
 
     axisRoot
@@ -582,7 +617,7 @@ export function drawCategoryBandAxisLeft(
       .attr("stroke", stroke)
       .attr("stroke-width", strokeWidth);
 
-    axisRoot
+    const text = axisRoot
       .append("text")
       .attr("x", -8)
       .attr("y", cy)
@@ -592,5 +627,6 @@ export function drawCategoryBandAxisLeft(
       .style("font-size", `${fontSize}px`)
       .style("font-family", "inherit")
       .text(label);
+    applyRotatedLeftCategoryLabels(text, rotateDeg);
   }
 }

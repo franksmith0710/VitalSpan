@@ -1,14 +1,10 @@
 # Session and Lifecycle
 
-## 所有权
+## 所有权与存储
 
-Controller 只保存结构化状态、调度和聚合，不加载所有文件正文或子任务推理。每个 Primary Target 一个任务；宿主按可用能力动态调度，`concurrency=auto` 默认，无固定 4/8/50，也没有逻辑批次屏障。
+Controller 只编排、聚合和展示，不加载全部文件正文，也不代替 reviewer。每个 Primary Target 对应一个独占 reviewer context；每个 verifier action 对应一个新的独立 verifier context。
 
-语言、模块和 root-cause group 仅用于规则、路由、去重、汇总，不用于制造文件批次。
-
-## 保存位置
-
-默认通过 Git 解析私有目录：
+Session 默认保存在 Git 私有目录，不污染工作树：
 
 ```text
 <git-dir>/ocr-code-review/sessions/<session-id>/
@@ -16,51 +12,83 @@ Controller 只保存结构化状态、调度和聚合，不加载所有文件正
   manifest.json
   tasks/<task-id>.json
   findings/<task-id>/<finding-id>.json
+  dedup/candidates/<candidate-id>.json
   checkpoints/<task-id>.json
   result.json
   result.md
+  result.partial.json
+  _partial_summary.md
+  fix-queue.json
+  fix-queue.md
+  results/findings-0001.json
+  results/findings-0001.md
 ```
 
-它不进入工作树。Reviewer 不直接编辑这些文件，只通过脚本命令提交状态。各任务正文仍可并行审查；所有会修改 Session/Manifest/Finding 的命令使用跨进程 Session 锁串行提交，并以原子替换写 JSON，避免并发 Agent 的 lost update。
+Reviewer 不直接编辑这些文件，只通过 CLI 提交。所有写状态命令使用跨进程 Session 锁和原子 UTF-8 JSON/Markdown 替换，避免并发 lost update 与 BOM/终端编码漂移。
 
-## 生命周期
+## Task 生命周期
 
 ```text
-pending → running → checkpointed/interrupted → complete
-                    stale → 重新审查 → complete
+pending/stale/interrupted/checkpointed
+  → leased → running
+  → complete
+  → task-fail → interrupted → retry
+  → 连续失败 3 次 → blocked + material Blind Spot
+
+pause: running 保持 running，不派新任务
+abort: running → orphaned；runnable → aborted；session_epoch + 1
 ```
 
-合法转换由程序强制：pending/stale 任务可在 dispatch 前 `task-plan`；只有 running 任务可以 `submit`、`checkpoint`、`complete`；只有 pending/interrupted/checkpointed/stale 可以重新 `task-start`；只有当前 revision 的 candidate Finding 可以 `verify`。聊天文本不改变状态。没有合法 `complete` 的 reviewer 即使说“没有问题”也必须重试或恢复。
+只有 running 可 `submit`、`checkpoint`、`complete` 或 `task-fail`。`complete` 校验 Coverage 后立即释放 reviewer 槽；其待验证 Finding 由独立 verifier queue 接管。
 
-## 恢复
+`task-plan` 先验证全部输入再写状态。同一个 plan hash 重放返回 `skipped_same_plan`；任务已不在 pending/stale 时若出现不同 plan，返回 `PLAN_CONFLICT`，Controller 只调和该文件，不能让整波调度崩溃。
 
-`resume` 重新计算 task input hash：
+## 租约与 epoch
 
-- 未变化 complete：复用。
-- 内容、规则、协议或 Requirement 变化：stale，重新审查。
-- orphan running：interrupted。
-- checkpoint 且指纹匹配：按 next_action 继续。
-- 旧 Finding 标 superseded，不进入输出；新 revision 产生不同 Finding ID，迟到的 verifier 不能确认旧 Finding。
+`orchestrate-tick` 根据目标并发原子申请工作，action 包含 `lease_id`、`session_epoch` 与 `expires_at`。创建 context 后必须用相同租约 ACK，并通过 `orchestrate-report` 完整报告本轮接受/拒绝结果；未 ACK 的拒绝或过期租约会回收。Verifier 优先于 reviewer，并在 backlog 存在时保留 verifier 容量。
 
-上下文依赖指纹能取得时也应存入 task；Context Evidence 变化且可能推翻 Finding 时，重新验证或审查。
+`abort` 增加 `session_epoch`，之后旧 epoch、旧租约或 orphan reviewer 的 submit/verify/complete 均被拒绝。这样“用户停止”是机器可执行状态，而不是一份不受约束的说明文件。
 
-## Checkpoint
+兼容命令 `dispatch-next/capacity-report` 和 `orchestrate-tick --available-slots` 仍保留，但新 Controller 只应使用 `orchestrate-tick` + `orchestrate-report`，避免手工槽位猜测与 probe 状态机执行漂移。
 
-只用于大文件、上下文压力或中断，不是普通文件默认流程：
+## Pause、Abort 与 Resume
 
-```json
-{
-  "covered_symbols": ["CreatePayment"],
-  "covered_ranges": [],
-  "finding_ids": ["finding-..."],
-  "rejected_candidates": [{"claim": "...", "counter_evidence": ["..."]}],
-  "pending_questions": ["callback 是否可能重放"],
-  "next_action": "读取 callback router 和幂等键生成逻辑"
-}
-```
+- `pause --reason`：停止新派发，允许在途 reviewer checkpoint/complete/fail；`resume` 不把 pause 前仍运行的 context 误判为 orphan。
+- `abort --reason`：拒绝新派发、验证和 finalize，清理租约并生成权威 partial result、partial summary 与 partial fix queue。重复 abort 幂等。
+- `resume`：重新计算 Primary Target、规则、协议、Requirement 和已记录 Context Evidence 指纹。变化项变为 stale，旧 Finding superseded，必须重新审查；非 pause 的 orphan running 记一次失败后进入重试。
 
-## 聚合和输出
+Checkpoint 只用于大文件分段、上下文压力、宿主中断或外部依赖暂不可用。它必须包含已覆盖符号/范围、Finding ID、被否定 Candidate、待解决问题、下一动作和 task input hash。
 
-顺序：结构校验 → 确定性同项去重 → 选择性 verifier → confirmed Finding → root-cause grouping → 新鲜度检查 → 输出。聚合量很大时按序列化 Finding token/字节量分段，不按文件数分段。
+## Finding 与去重门禁
 
-项目摘要可以由模型起草，但每一项必须引用已有 Finding ID；程序复核 ID、数量、路径和严重度。摘要不得创造问题。
+顺序是：结构校验 → 程序严格同项去重 → 选择性 Finding verifier → confirmed Finding → 新鲜度检查 → `dedup-plan` → 独立 `dedup-verify` → canonical 发布视图。
+
+普通 verifier backlog 非零时，Finalizer 返回 `VERIFIER_PENDING`。语义重复候选未验证时返回 `DEDUP_VERIFIER_PENDING`。两者都是硬门禁，不生成可误解为完成的最终结果。
+
+语义去重只压缩发布视图，`findings/` 中原始 confirmed Finding 永不修改或删除。结果计数分层：
+
+- `confirmed_finding_count`：新鲜 confirmed 原始 Finding 数。
+- `published_issue_count`：验证归并后的 canonical 问题数，也是 `finding_count`。
+- `duplicate_count`：发布视图折叠的 occurrence 数；满足 `confirmed_finding_count = published_issue_count + duplicate_count`。
+
+## 输出与分片
+
+`result.md` 是可独立交付入口，固定包含 `Run summary → Coverage → Findings summary → Severity → 去重/Findings 或 Highest-priority preview → 分片索引 → incomplete/Blind Spot → Audit artifacts`。
+
+Finalizer 以 UTF-8 序列化后的 JSON/Markdown 实际字节数判断：均不超过 512 KiB 时为 `output_mode=inline`，`findings_complete=true`。任一超出时为 `output_mode=sharded`：
+
+- `stdout`、`result.json`、`result.md` 只保留聚合摘要、最多 20 条 `finding_preview` 和完整 `finding_shards` 索引。
+- 全量证据写入 `results/findings-NNNN.json/.md`；例如 `results/findings-0001.json`。
+- 单个 Finding 超限时独占分片并标记 `oversized=true`，不截断证据。
+- 重复 finalize 会清理不再使用的旧分片。
+
+Finalizer 同时生成 `fix-queue.json/.md`，包含 verified canonical issues、位置、impact surface、最小 fix scope 和依赖，状态统一为 pending。它不修改源码；`export-fix-queue` 可从 final 或 partial result 幂等重建队列。
+
+## 进度与完成语义
+
+`status` 默认返回 compact summary：task counts、running/runnable、并发窗口和 `verifier_backlog`；`--verbose` 才包含逐任务详情。`heartbeat` 按终态增量或时间间隔限流。
+
+- `completion_status=complete`：所有活动 Primary Target 合法终态，普通与 dedup verifier 已结束，无 stale Finding。
+- `assurance=limited`：存在 material Blind Spot 或 session aborted。
+- `clean=true`：仅当 complete、零 confirmed Finding、零 material Blind Spot。
+- `completion_status=partial` 或 `assurance=limited` 时禁止使用 clean 措辞。

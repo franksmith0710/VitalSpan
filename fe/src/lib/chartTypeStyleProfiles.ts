@@ -97,7 +97,7 @@ const PROFILE_BY_TYPE: Record<string, ChartStyleSectionId[]> = {
 
   map: MAP_2D_STYLE,
   "map-3d": MAP_3D_STYLE,
-  heatmap: MINIMAL,
+  heatmap: ["axis", ...SHELL, "label"],
 
   scatter: CARTESIAN_CORE,
   quadrant: QUADRANT_STYLE,

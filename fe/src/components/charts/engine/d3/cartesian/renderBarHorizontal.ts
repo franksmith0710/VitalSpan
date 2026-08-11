@@ -118,6 +118,7 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
     legendLayout,
     legendItems,
     categories,
+    axisStyle,
   });
   const { root, defs, g, plot, margin, innerW, innerH } = scene;
   const keys = resolveSeriesKeys(seriesNames);

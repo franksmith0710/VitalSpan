@@ -87,6 +87,16 @@ export type MediaWidgetConfig = {
   widgetStyle?: WidgetStyleConfig;
 };
 
+export type CustomVizDataBinding = {
+  status?: "manual" | "connected";
+};
+
+export type CustomVizWidgetConfig = {
+  artifactId: string;
+  dataBinding?: CustomVizDataBinding;
+  widgetStyle?: WidgetStyleConfig;
+};
+
 export function mediaAlignToObjectPosition(align: MediaAlign = "center"): string {
   const map: Record<MediaAlign, string> = {
     center: "center center",
@@ -183,7 +193,7 @@ export {
   CANVAS_BG_SWATCHES,
 } from "./dashboardStyleConfig";
 
-export type WidgetType = "chart" | "filter" | "text" | "media" | "tabs";
+export type WidgetType = "chart" | "filter" | "text" | "media" | "tabs" | "customViz";
 
 export function defaultTextConfig(): TextWidgetConfig {
   return { content: "", variant: "html" };
@@ -222,7 +232,8 @@ export function coerceLayoutWidget(raw: Partial<LayoutWidget> & { id: string }):
     raw.type === "filter" ||
     raw.type === "text" ||
     raw.type === "media" ||
-    raw.type === "tabs"
+    raw.type === "tabs" ||
+    raw.type === "customViz"
       ? raw.type
       : "chart";
   const defaultTitle =
@@ -234,7 +245,9 @@ export function coerceLayoutWidget(raw: Partial<LayoutWidget> & { id: string }):
           ? "媒体"
           : type === "tabs"
             ? "页签"
-            : "图表";
+            : type === "customViz"
+              ? "自定义组件"
+              : "图表";
   const base = {
     id: raw.id,
     title: raw.title?.trim() || defaultTitle,
@@ -272,6 +285,13 @@ export function coerceLayoutWidget(raw: Partial<LayoutWidget> & { id: string }):
       ...base,
       type: "tabs",
       tabsConfig: raw.tabsConfig ?? defaultTabsConfig(raw.id),
+    };
+  }
+  if (type === "customViz") {
+    return {
+      ...base,
+      type: "customViz",
+      customVizConfig: raw.customVizConfig ?? { artifactId: "", dataBinding: { status: "manual" } },
     };
   }
   return normalizeChartWidgetTitle({

@@ -3,6 +3,7 @@ import { Eye, LayoutDashboard, MoreHorizontal, Pencil, Share2, Trash2 } from "lu
 import {
   HUB_CARD_BODY_CLASS,
   HUB_CARD_BODY_MORE_TRIGGER_CLASS,
+  HUB_CARD_FOOTER_CLASS,
   HUB_CARD_PREVIEW_CONTENT_CLASS,
   HUB_CARD_PREVIEW_FRAME_CLASS,
   HUB_CARD_PREVIEW_HOVER_OUTLINE_BTN_CLASS,
@@ -10,6 +11,9 @@ import {
   HUB_CARD_SHELL_CLASS,
   HUB_CARD_SKELETON_BODY_CLASS,
   HUB_CARD_SKELETON_PREVIEW_CLASS,
+  HUB_CARD_SUBTITLE_CLASS,
+  HUB_CARD_SUBTITLE_MUTED_CLASS,
+  HUB_CARD_TITLE_CLASS,
   hubCardPreviewFrameStyle,
 } from "@/components/dashboard/hubCardUi";
 import { DashboardListCardPreview } from "@/components/dashboard/DashboardListCardPreview";
@@ -30,6 +34,7 @@ import {
   dataScreenPreviewPath,
   dashboardSharePath,
   isDataScreenLayout,
+  type DashboardSurfaceKind,
 } from "@/lib/dataScreenLayout";
 import { previewSummaryToLayout, type DashboardPreviewSummary } from "@/lib/dashboardListPreview";
 import { shouldShowOfficialDemoBadge } from "@/lib/demoPackage";
@@ -71,6 +76,7 @@ export function DashboardListCard({
   onToggleSelect,
   className,
   routeBase = "/admin/dashboards",
+  previewSurfaceKind,
 }: {
   dashboard: DashboardListItem;
   canEdit: boolean;
@@ -81,6 +87,8 @@ export function DashboardListCard({
   className?: string;
   /** 列表入口：看板或数据大屏 */
   routeBase?: string;
+  /** 列表页固定预览比例，避免单条数据 surface 识别不一致导致卡片错位 */
+  previewSurfaceKind?: DashboardSurfaceKind;
 }) {
   const shareAllowed = canShare ?? canEdit;
   const layoutForPreview =
@@ -88,7 +96,10 @@ export function DashboardListCard({
   const widgetCount =
     dashboard.widgetCount ?? layoutForPreview?.widgets?.length ?? 0;
   const isScreen =
-    dashboard.surfaceKind === "data-screen" || isDataScreenLayout(layoutForPreview);
+    previewSurfaceKind === "data-screen" ||
+    dashboard.surfaceKind === "data-screen" ||
+    isDataScreenLayout(layoutForPreview);
+  const previewKind: DashboardSurfaceKind = previewSurfaceKind ?? (isScreen ? "data-screen" : "dashboard");
   const viewPath = isScreen ? dataScreenPreviewPath(dashboard.id) : `${routeBase}/${dashboard.id}`;
   const editPath = isScreen ? dataScreenEditPath(dashboard.id) : `${routeBase}/${dashboard.id}/edit`;
   const sharePath = dashboardSharePath(dashboard.id, isScreen);
@@ -103,7 +114,7 @@ export function DashboardListCard({
     <article className={cn(HUB_CARD_SHELL_CLASS, className)}>
       <div
         className={HUB_CARD_PREVIEW_FRAME_CLASS}
-        style={hubCardPreviewFrameStyle(isScreen ? "data-screen" : "dashboard")}
+        style={hubCardPreviewFrameStyle(previewKind)}
       >
         {onToggleSelect ? (
           <div className="absolute left-2 top-2 z-20 rounded-md bg-white/90 p-0.5 shadow-sm dark:bg-gray-900/90">
@@ -143,7 +154,7 @@ export function DashboardListCard({
           <div className="min-w-0 flex-1">
             <Link
               to={primaryPath}
-              className="block truncate text-theme-sm font-semibold text-gray-900 hover:text-brand-600 dark:text-white dark:hover:text-brand-400"
+              className={HUB_CARD_TITLE_CLASS}
             >
               {dashboard.name}
             </Link>
@@ -151,19 +162,19 @@ export function DashboardListCard({
               <TruncateHint
                 title={dashboard.description}
                 as="p"
-                className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400"
+                className={HUB_CARD_SUBTITLE_CLASS}
               >
                 {dashboard.description}
               </TruncateHint>
             ) : (
-              <p className="mt-1 truncate text-theme-xs text-gray-400 dark:text-gray-500">
+              <p className={HUB_CARD_SUBTITLE_MUTED_CLASS}>
                 {dashboard.slug}
               </p>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className={HUB_CARD_FOOTER_CLASS}>
           {showOfficialDemoBadge ? (
             <Badge variant="light" color="primary" size="sm">
               官方示例

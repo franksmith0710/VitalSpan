@@ -162,15 +162,30 @@ describe("d3 core", () => {
     host.remove();
   });
 
-  it("resolveCategoryLabelRotate rotates when slots are tight", () => {
+  it("resolveCategoryLabelRotate defaults to horizontal without explicit rotate", () => {
     const ticks = ["一月", "二月", "三月", "四月", "五月", "六月"];
-    expect(resolveCategoryLabelRotate(ticks, 180)).toBeLessThan(0);
+    expect(resolveCategoryLabelRotate(ticks, 180)).toBe(0);
     expect(resolveCategoryLabelRotate(ticks, 600)).toBe(0);
+    expect(resolveCategoryLabelRotate(ticks, 180, -45)).toBe(-45);
   });
 
-  it("planCategoryAxisLayout thins ticks and reserves bottom when rotated", () => {
+  it("resolveCategoryLabelRotate auto mode rotates when slots are tight", () => {
+    const ticks = ["一月", "二月", "三月", "四月", "五月", "六月"];
+    expect(resolveCategoryLabelRotate(ticks, 180, "auto")).toBeLessThan(0);
+    expect(resolveCategoryLabelRotate(ticks, 600, "auto")).toBe(0);
+  });
+
+  it("planCategoryAxisLayout thins ticks without rotating by default", () => {
     const cats = Array.from({ length: 16 }, (_, i) => `类目${i + 1}`);
     const layout = planCategoryAxisLayout(cats, 160);
+    expect(layout.ticks.length).toBeLessThan(cats.length);
+    expect(layout.rotateDeg).toBe(0);
+    expect(layout.extraBottom).toBe(0);
+  });
+
+  it("planCategoryAxisLayout auto mode reserves bottom when rotated", () => {
+    const cats = Array.from({ length: 16 }, (_, i) => `类目${i + 1}`);
+    const layout = planCategoryAxisLayout(cats, 160, "auto");
     expect(layout.ticks.length).toBeLessThan(cats.length);
     if (layout.rotateDeg) expect(layout.extraBottom).toBeGreaterThan(0);
   });
@@ -184,10 +199,16 @@ describe("d3 core", () => {
     expect(formatAxisCategoryLabel("华东\u00012025-01", 80, 0)).toBe("华东 / 2025-01");
   });
 
-  it("planCategoryAxisLayout rotates when composite labels are long", () => {
+  it("planCategoryAxisLayout auto mode rotates when composite labels are long", () => {
+    const cats = Array.from({ length: 8 }, (_, i) => `产品${i + 1}\u0001类目${i + 1}\u00012025-01-0${i + 1}`);
+    const layout = planCategoryAxisLayout(cats, 160, "auto");
+    expect(layout.rotateDeg).toBeLessThan(0);
+  });
+
+  it("planCategoryAxisLayout keeps horizontal when composite labels are long by default", () => {
     const cats = Array.from({ length: 8 }, (_, i) => `产品${i + 1}\u0001类目${i + 1}\u00012025-01-0${i + 1}`);
     const layout = planCategoryAxisLayout(cats, 160);
-    expect(layout.rotateDeg).toBeLessThan(0);
+    expect(layout.rotateDeg).toBe(0);
   });
 
   it("formatHorizontalBandAxisLabel hides labels when width is limited", () => {

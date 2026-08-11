@@ -32,7 +32,7 @@
 
 顺序与 OCR 一致：
 
-1. provider 固定目录排除（如 `.git`、`vendor`、`node_modules`）
+1. provider 固定目录排除（如 `.git`、`vendor`、`node_modules`），以及安装到仓库内的 `.agents/.cursor/skills/ocr-code-review/**` 自身副本
 2. 用户 exclude
 3. 用户 include 命中时直接准入
 4. 扩展名 allowlist
@@ -40,7 +40,9 @@
 
 注意：OCR 的 include 是“准入覆盖”，不是非命中文件全部排除的白名单。未命中 include 的文件仍按默认规则判断。
 
-默认排除测试、snapshot、fixture、testdata 和常见 generated 文件。它们可以被 reviewer 按需读取为 Context Evidence；除非 include 显式准入，否则不是 Primary Target。
+默认排除精确的测试目录组件 `test/tests/__tests__/spec/specs`，以及标准测试命名，例如 `test_*.py`、`*_test.py`、`*_test.go`、`*.test.ts`、`*.spec.ts`、`PaymentTest.java`。CamelCase 的 `Test/Tests/Spec` 后缀只对采用该惯例的语言做大小写敏感匹配，因此 `Contest.java` 不会被误伤；`contest.ts`、`latest.go`、`testimony.py` 等仅包含字母序列 `test` 的生产文件也不会被排除。
+
+测试、snapshot、fixture、testdata 和常见 generated 文件可以被 reviewer 按需读取为 Context Evidence；用户 include 显式命中时直接准入为 Primary Target。
 
 ## 指纹
 

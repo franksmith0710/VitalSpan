@@ -36,7 +36,9 @@ export function renderD3BarRangeChart(container: HTMLElement, config: D3BarRange
   const categories = data.map((d) => d.type);
   const maxVal = d3.max(data, (d) => Math.max(d.low, d.high)) ?? 0;
   const minVal = d3.min(data, (d) => Math.min(d.low, d.high)) ?? 0;
-  const { margin, innerW, innerH } = resolveHorizontalCategoryCartesianLayout(width, height, categories);
+  const { margin, innerW, innerH } = resolveHorizontalCategoryCartesianLayout(width, height, categories, {
+    axisStyle,
+  });
   const rangeColor = colors[0] ?? "#465fff";
 
   const y = d3.scaleBand<string>().domain(categories).range([0, innerH]).padding(resolveBarBandPadding(barWidthRatio));

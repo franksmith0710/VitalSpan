@@ -387,6 +387,7 @@ export function DataScreenListPage() {
                   <DashboardListCard
                     key={screen.id}
                     dashboard={screen}
+                    previewSurfaceKind="data-screen"
                     canEdit={canEdit}
                     canShare={canShare}
                     routeBase="/admin/data-screens"

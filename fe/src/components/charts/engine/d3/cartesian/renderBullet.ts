@@ -37,7 +37,9 @@ export function renderD3BulletChart(container: HTMLElement, config: D3BulletRend
   const barRx = barRadius ?? BAR_RX;
   const categories = data.map((d) => d.type);
   const maxRange = d3.max(data, (d) => d.rangeMax) ?? 1;
-  const { margin, innerW, innerH } = resolveHorizontalCategoryCartesianLayout(width, height, categories);
+  const { margin, innerW, innerH } = resolveHorizontalCategoryCartesianLayout(width, height, categories, {
+    axisStyle,
+  });
   const measureColor = colors[0] ?? "#465fff";
   const zoneColors = [colors[2] ?? "#e4e7ec", colors[3] ?? "#d0d5dd", colors[4] ?? "#98a2b3"];
 

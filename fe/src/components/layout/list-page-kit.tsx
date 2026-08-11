@@ -56,7 +56,7 @@ export function AdminPageHeaderIcon({
 
 /** 看板 / 大屏等列表卡片栅格：宽屏一行 4 列 */
 export const LIST_PAGE_CARD_GRID_CLASS =
-  "grid grid-cols-1 items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
+  "grid grid-cols-1 items-stretch gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
 
 export function ListPageSection({
   children,

@@ -10,7 +10,7 @@ export const HUB_CARD_SCREEN_ASPECT_RATIO = "16 / 9";
 export const DASHBOARD_LIST_CARD_ASPECT_RATIO = HUB_CARD_ASPECT_RATIO;
 
 export const HUB_CARD_SHELL_CLASS =
-  "group flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs transition hover:border-brand-200 hover:shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03] dark:hover:border-brand-500/30";
+  "group flex h-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs transition hover:border-brand-200 hover:shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03] dark:hover:border-brand-500/30";
 
 export const HUB_CARD_PREVIEW_FRAME_CLASS =
   "relative overflow-hidden border-b border-gray-100 dark:border-white/[0.06]";
@@ -27,7 +27,21 @@ export const HUB_CARD_PREVIEW_HOVER_OVERLAY_CLASS =
 export const HUB_CARD_PREVIEW_HOVER_OUTLINE_BTN_CLASS =
   "border-white/30 bg-white/10 text-white hover:bg-white/20";
 
-export const HUB_CARD_BODY_CLASS = "flex flex-col gap-1 p-3";
+export const HUB_CARD_BODY_CLASS = "flex flex-1 flex-col gap-1 p-3";
+
+/** 标题行：固定行高，避免有无副标题时正文区高度漂移 */
+export const HUB_CARD_TITLE_CLASS =
+  "block min-h-5 truncate leading-5 text-theme-sm font-semibold text-gray-900 hover:text-brand-600 dark:text-white dark:hover:text-brand-400";
+
+/** 副标题行：固定行高，长描述单行截断 */
+export const HUB_CARD_SUBTITLE_CLASS =
+  "mt-1 min-h-5 truncate leading-5 text-theme-xs text-gray-500 dark:text-gray-400";
+
+export const HUB_CARD_SUBTITLE_MUTED_CLASS =
+  "mt-1 min-h-5 truncate leading-5 text-theme-xs text-gray-400 dark:text-gray-500";
+
+/** 底栏：拉伸卡片时贴底对齐 */
+export const HUB_CARD_FOOTER_CLASS = "mt-auto flex min-h-6 items-center gap-2";
 
 /** 卡片正文区更多菜单触发器（始终可见） */
 export const HUB_CARD_BODY_MORE_TRIGGER_CLASS = "shrink-0";

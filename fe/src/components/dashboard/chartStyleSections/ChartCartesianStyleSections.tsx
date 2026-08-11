@@ -1,21 +1,52 @@
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useChartInspector } from "../ChartInspectorContext";
 import {
   ChartInspectorSection,
   InspectorSwitchRow,
   INSPECTOR_SECTION_GAP,
   InspectorInlineColorRow,
+  INSPECTOR_SELECT,
 } from "../inspectorCompact";
 import { ChartDeSliderField } from "../deAttrSlider";
 import { patchChartDeStyleNested, readChartDeStyle } from "@/lib/chartDeStyle";
+import type { AxisLabelRotate } from "@/lib/chartDeStyleBlocks";
 import { resolveChartTypeStyleProfile } from "@/lib/chartTypeStyleProfiles";
-import { resolveCartesianShapeFields } from "@/lib/chartStyleCartesianFields";
+import {
+  resolveCartesianShapeFields,
+  resolveCategoryLabelAxisSides,
+} from "@/lib/chartStyleCartesianFields";
 import { DEFAULT_CARTESIAN_BAR_WIDTH_RATIO, DEFAULT_CARTESIAN_LINE_WIDTH, DEFAULT_CARTESIAN_POINT_SIZE } from "@/lib/chartDeStyleBlocks";
+
+const AXIS_LABEL_ROTATE_OPTIONS: Array<{ value: string; label: string; rotate: AxisLabelRotate }> = [
+  { value: "0", label: "水平", rotate: 0 },
+  { value: "-45", label: "倾斜", rotate: -45 },
+  { value: "-90", label: "垂直", rotate: -90 },
+  { value: "auto", label: "自动", rotate: "auto" },
+];
+
+function axisLabelRotateSelectValue(rotate: AxisLabelRotate | undefined): string {
+  if (rotate === "auto") return "auto";
+  if (rotate === -45) return "-45";
+  if (rotate === -90) return "-90";
+  return "0";
+}
+
+function axisLabelRotateFromSelect(value: string): AxisLabelRotate {
+  const option = AXIS_LABEL_ROTATE_OPTIONS.find((item) => item.value === value);
+  return option?.rotate ?? 0;
+}
 
 export function ChartAxisStyleSection() {
   const { cfg, mutateChartConfig } = useChartInspector();
   const axis = readChartDeStyle(cfg).axis ?? {};
+  const categoryLabelSides = resolveCategoryLabelAxisSides(cfg.chartType);
 
   const patchAxis = (side: "x" | "y", patch: Record<string, unknown>) =>
     mutateChartConfig((current) =>
@@ -44,6 +75,26 @@ export function ChartAxisStyleSection() {
                 placeholder={side === "x" ? "类别轴" : "数值轴"}
               />
             </div>
+            {categoryLabelSides.includes(side) ? (
+              <div className="mt-2">
+                <p className="mb-1 text-[11px] text-gray-500">标签方向</p>
+                <Select
+                  value={axisLabelRotateSelectValue(axis[side]?.labelRotate)}
+                  onValueChange={(value) => patchAxis(side, { labelRotate: axisLabelRotateFromSelect(value) })}
+                >
+                  <SelectTrigger className={INSPECTOR_SELECT} aria-label={`${side === "x" ? "横轴" : "纵轴"}标签方向`}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {AXIS_LABEL_ROTATE_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
             <div className="mt-2">
               <InspectorInlineColorRow
                 label="轴线颜色"

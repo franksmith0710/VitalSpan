@@ -103,6 +103,13 @@ def _field_count_message(
 _EMPTY_UUID_KEYS = ("dataSourceId", "bindingId", "chartId", "configId")
 
 
+def is_manual_data_binding(native_body: dict[str, Any] | None) -> bool:
+    if not native_body or not isinstance(native_body, dict):
+        return False
+    binding = native_body.get("dataBinding")
+    return isinstance(binding, dict) and binding.get("status") == "manual"
+
+
 def coerce_chart_config_ids(data: Any) -> Any:
     """FE 草稿常传 \"\"；layout 持久化时视为未配置。"""
     if not isinstance(data, dict):
@@ -200,6 +207,8 @@ class ChartViewConfig(BaseModel):
         inline = [self.mode, self.sql, self.schema_name, self.table_name, self.data_source_id]
         if self.binding_id is not None and any(v is not None for v in inline):
             raise ValueError("CHART_BINDING_CONFLICT:bindingId 与内联 SQL/数据源字段不能同时存在")
+        if is_manual_data_binding(self.native_body):
+            return self
         if self.binding_id is None:
             if self.data_source_id is None:
                 raise ValueError("CHART_MISSING_DATASOURCE:请先选择数据源")

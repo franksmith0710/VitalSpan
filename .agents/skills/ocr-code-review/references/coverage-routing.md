@@ -89,3 +89,5 @@ Finding 的 evidence 应引用命令、工件或代码事实；敏感内容只�
 Blind Spot 必须包含 `area`、`reason`、`scope`。`scope` 只能是 `primary-target | changed-code | core-path | external-integration | auth-boundary | data-boundary | optional-tool | peripheral`。程序根据 scope 计算 `material`，不信任 reviewer 自报的布尔值：前六类一定是实质性盲区；仅缺少非必要增强工具、且已用原生工具完成等价复核时才使用后两类。
 
 Session 是否完成与 assurance 分开：流程可以 complete，但 material Blind Spot 使 `assurance=limited` 且 `clean=false`。
+
+Reviewer 连续失败 3 次时，程序自动为该 Primary Target 生成 `scope=primary-target` 的 material Blind Spot 并将任务置为 blocked。Controller 不因单文件失败暂停全仓调度；Finalizer 统一输出 `partial + limited + clean=false`。

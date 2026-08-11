@@ -57,6 +57,7 @@ export function renderD3BidirectionalBarChart(
     legendLayout,
     legendItems: bidirectionalLegendItems,
     marginOverrides: { left: 28, right: 28 },
+    axisStyle,
   });
   const centerX = innerW / 2;
 

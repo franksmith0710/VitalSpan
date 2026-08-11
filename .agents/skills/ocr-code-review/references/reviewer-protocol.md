@@ -5,6 +5,8 @@
 ## Reviewer 输入
 
 - 一个 `task_id`
+- `orchestrate-tick` 返回的 `lease_id` 与 `session_epoch`
+- 一个宿主实际创建、只服务于此文件的 reviewer context ID
 - 一个 Primary Target path
 - `review` 的该文件 unified diff，或 `scan` 的完整文件
 - 解析后的 OCR 规则
@@ -14,7 +16,7 @@
 
 ## 硬提示词
 
-将以下语义放入每个 reviewer context：
+创建 context 后先用租约调用 `task-start`；租约过期或 epoch 不匹配时退出，不尝试绕过程序状态。将以下语义放入每个 reviewer context：
 
 > 你只审查当前 Primary Target。其他文件仅供理解；即使在其中发现真实历史 Bug，也不得报告。先完整理解当前 diff/文件，再调查 Candidate。事实不清时使用只读工具获取上下文，禁止猜测。搜索命中不是问题。只有能够描述触发条件、期望行为、实际行为、影响并提供当前代码锚点时，才提交 Finding。完成必须提交 Coverage 并调用 `complete`；自然语言 complete 无效。
 
@@ -65,6 +67,6 @@ Finding 至少回答：
 
 ## 提交与完成
 
-语义闭环后按 [finding-contract.md](finding-contract.md) 生成 JSON，调用 `submit`。收到 `LOCATION_AMBIGUOUS` 或 `LOCATION_FAILED` 必须扩大/纠正原样代码片段，不得手填行号绕过。
+语义闭环后按 [finding-contract.md](finding-contract.md) 生成 JSON，调用 `submit`。必须明确 `impact_surface`、`reachability`、`current_input_reproducible`；跨文件证据写入 `xref`，`cross_file` 由程序派生。只有对共同根因有把握时才补充稳定、简短的 `root_cause_key` 与最小 `fix_scope`；不要为了减少最终数量而猜测标签。收到 `LOCATION_AMBIGUOUS` 或 `LOCATION_FAILED` 必须扩大/纠正原样代码片段，不得手填行号绕过。
 
-全部 Candidate 已证实或否定后，按 [coverage-routing.md](coverage-routing.md) 生成 Coverage，调用 `complete`。命令失败即任务未完成。
+全部 Candidate 已证实或否定后，按 [coverage-routing.md](coverage-routing.md) 生成 Coverage，调用 `complete`。即使某些 Finding 仍在 verifier backlog，`complete` 也会释放 reviewer 槽；不要让 reviewer 等待 verifier。命令失败即任务未完成。

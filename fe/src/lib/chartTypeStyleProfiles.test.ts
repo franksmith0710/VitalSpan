@@ -54,6 +54,10 @@ describe("chartTypeStyleProfiles", () => {
     expect(chartStyleSectionsFromProfile("gauge")).toContain("gaugeShape");
   });
 
+  it("heatmap exposes axis style section", () => {
+    expect(chartStyleSectionsFromProfile("heatmap")).toContain("axis");
+  });
+
   it("covers all active chart types with non-empty gated sections", () => {
     for (const type of ACTIVE_TYPES) {
       const raw = chartStyleSectionsFromProfile(type);

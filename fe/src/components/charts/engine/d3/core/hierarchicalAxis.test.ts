@@ -8,6 +8,7 @@ import {
   resolveActiveCategoryLevels,
   resolveFinestLevelForThinning,
   resolveHierarchicalAxisLayout,
+  resolveHierarchicalCategoryAxisRotate,
   splitCompositeCategoryParts,
 } from "@/components/charts/engine/d3/core/hierarchicalAxis";
 
@@ -140,5 +141,17 @@ describe("hierarchical category axis", () => {
       4,
     );
     expect(dateSegments.some((segment) => segment.end > segment.start)).toBe(true);
+  });
+
+  it("resolveHierarchicalCategoryAxisRotate defaults to horizontal without explicit rotate", () => {
+    expect(resolveHierarchicalCategoryAxisRotate(categories, 640)).toBe(0);
+    expect(resolveHierarchicalCategoryAxisRotate(categories, 640, "auto", 3)).toBe(0);
+  });
+
+  it("resolveHierarchicalCategoryAxisRotate auto mode can tilt leaf labels on narrow width", () => {
+    const dense = Array.from({ length: 12 }, (_, i) =>
+      `云南省${CARTESIAN_CATEGORY_KEY_SEP}2025-01-${String(i + 1).padStart(2, "0")}${CARTESIAN_CATEGORY_KEY_SEP}销量`,
+    );
+    expect(resolveHierarchicalCategoryAxisRotate(dense, 180, "auto", 3)).toBeLessThan(0);
   });
 });

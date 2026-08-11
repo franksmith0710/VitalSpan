@@ -25,12 +25,14 @@ import type { DashboardWidgetShell } from "./dashboardCanvasMode";
 import { FilterWidget } from "./FilterWidget";
 import { TextWidget } from "./TextWidget";
 import { MediaWidget } from "./MediaWidget";
+import { CustomVizWidget } from "./CustomVizWidget";
 import { TabsWidget } from "./TabsWidget";
 import { TabNestedDragRail } from "./TabNestedDragRail";
 import type {
   FilterWidgetConfig,
   LayoutWidget,
   MediaWidgetConfig,
+  CustomVizWidgetConfig,
   TabsWidgetConfig,
   TextWidgetConfig,
   DashboardStyleConfig,
@@ -127,6 +129,8 @@ function linkedWidgetPayloadReady(widget: LayoutWidget): boolean {
       return Boolean(widget.textConfig);
     case "media":
       return Boolean(widget.mediaConfig);
+    case "customViz":
+      return Boolean(widget.customVizConfig?.artifactId);
     default:
       return false;
   }
@@ -377,6 +381,22 @@ export function DashboardWidget({
     return (
       <MediaWidget
         widget={resolvedWidget as LayoutWidget & { mediaConfig: MediaWidgetConfig }}
+        mode={mode}
+        shell={shell}
+        nested={nested}
+        selected={selected}
+        onSelect={() => onSelect?.({ shiftKey: false } as MouseEvent)}
+        onTitleChange={onTitleChange}
+        onDelete={onDelete}
+        dashboardStyle={dashboardStyle}
+      />
+    );
+  }
+
+  if (resolvedWidget.type === "customViz" && resolvedWidget.customVizConfig) {
+    return (
+      <CustomVizWidget
+        widget={resolvedWidget as LayoutWidget & { customVizConfig: CustomVizWidgetConfig }}
         mode={mode}
         shell={shell}
         nested={nested}

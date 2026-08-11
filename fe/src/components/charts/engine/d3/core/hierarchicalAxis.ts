@@ -10,9 +10,10 @@ import {
   estimateAxisLabelWidth,
   estimateCategoryBandCenterPx,
   pickUniformOverlapAwareTickIndices,
+  resolveCategoryLabelRotate,
 } from "@/components/charts/engine/d3/core/axes";
 import { resolveAxisFontSize } from "@/components/charts/engine/d3/core/chartVisualTokens";
-import type { ChartAxisStyle } from "@/lib/chartDeStyleBlocks";
+import type { AxisLabelRotate, ChartAxisStyle } from "@/lib/chartDeStyleBlocks";
 
 const ROW_HEIGHT = 16;
 
@@ -265,7 +266,22 @@ type DrawHierarchicalCategoryAxisOptions = {
   plan?: HierarchicalAxisPlan;
 };
 
-/** 对标 DataEase：多维度分行 + 底行抽稀，标签仅在轴区水平展示 */
+export function resolveHierarchicalCategoryAxisRotate(
+  categories: string[],
+  innerW: number,
+  labelRotate?: AxisLabelRotate,
+  structuralLevelCount?: number,
+): number {
+  const levelCount = structuralLevelCount ?? inferCompositeCategoryLevels(categories);
+  const leafLevel = Math.max(0, levelCount - 1);
+  const leafLabels = categories.map((category) => {
+    const partLabel = splitCompositeCategoryParts(category, levelCount)[leafLevel] ?? "";
+    return axisCategoryDisplayText(partLabel);
+  });
+  return resolveCategoryLabelRotate(leafLabels, innerW, labelRotate);
+}
+
+/** 对标 DataEase：多维度分行 + 底行抽稀，最底行可配置倾斜 */
 export function drawHierarchicalCategoryAxis(opts: DrawHierarchicalCategoryAxisOptions): void {
   if (opts.axisStyle?.x?.show === false) return;
 
@@ -298,6 +314,13 @@ export function drawHierarchicalCategoryAxis(opts: DrawHierarchicalCategoryAxisO
   const fontSize = resolveAxisFontSize();
   const stroke = opts.axisStyle?.x?.lineColor ?? opts.theme.axisLine;
   const strokeWidth = opts.axisStyle?.x?.lineWidth ?? 1;
+  const bottomLevel = activeLevels[activeLevels.length - 1] ?? 0;
+  const rotateDeg = resolveHierarchicalCategoryAxisRotate(
+    categories,
+    opts.innerW,
+    opts.axisStyle?.x?.labelRotate,
+    structuralLevelCount,
+  );
   const axisRoot = opts.g.append("g").attr("class", "vs-axis-x vs-axis-x-tiered");
 
   axisRoot
@@ -312,6 +335,7 @@ export function drawHierarchicalCategoryAxis(opts: DrawHierarchicalCategoryAxisO
 
   activeLevels.forEach((level, rowIdx) => {
     const rowY = opts.innerH + (rowIdx + 1) * ROW_HEIGHT - 4;
+    const isBottomRow = level === bottomLevel;
 
     for (const idx of visibleIndices) {
       const category = categories[idx]!;
@@ -319,7 +343,7 @@ export function drawHierarchicalCategoryAxis(opts: DrawHierarchicalCategoryAxisO
       const display = axisCategoryDisplayText(partLabel);
       if (!display) continue;
 
-      axisRoot
+      const text = axisRoot
         .append("text")
         .attr("x", bandCenterPx(opts.xScale, category, bandWidth))
         .attr("y", rowY)
@@ -328,6 +352,16 @@ export function drawHierarchicalCategoryAxis(opts: DrawHierarchicalCategoryAxisO
         .style("font-size", `${fontSize}px`)
         .style("font-family", "inherit")
         .text(display);
+
+      if (isBottomRow && rotateDeg) {
+        const x = Number(text.attr("x") ?? 0);
+        const y = Number(text.attr("y") ?? 0);
+        text
+          .attr("transform", `rotate(${rotateDeg}, ${x}, ${y})`)
+          .style("text-anchor", "end")
+          .attr("dx", "-0.2em")
+          .attr("dy", "0.15em");
+      }
     }
 
     const nextRowIdx = rowIdx + 1;

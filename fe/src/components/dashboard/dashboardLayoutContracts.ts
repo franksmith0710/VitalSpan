@@ -31,6 +31,7 @@ export type DashboardWidgetBase = {
   textConfig?: TextWidgetConfig;
   mediaConfig?: MediaWidgetConfig;
   tabsConfig?: TabsWidgetConfig;
+  customVizConfig?: CustomVizWidgetConfig;
 };
 
 export type LayoutWidget = DashboardWidgetBase & {

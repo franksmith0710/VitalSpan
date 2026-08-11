@@ -28,3 +28,25 @@ export function chartTypeHasTooltipSection(chartType: ChartType): boolean {
   if (chartType === "t-heatmap" || chartType === "kpi") return false;
   return true;
 }
+
+function isHorizontalCategoryChart(chartType: ChartType): boolean {
+  return (
+    chartType === "bar-horizontal" ||
+    chartType === "bar-stack-horizontal" ||
+    chartType === "percentage-bar-stack-horizontal" ||
+    chartType === "bar-range" ||
+    chartType === "bullet-graph" ||
+    chartType === "progress-bar" ||
+    chartType === "bidirectional-bar"
+  );
+}
+
+/** 样式面板「标签方向」应出现在哪些类目轴侧 */
+export function resolveCategoryLabelAxisSides(chartType: ChartType): Array<"x" | "y"> {
+  if (chartType === "heatmap") return ["x", "y"];
+  if (chartType === "scatter" || chartType === "quadrant" || chartType === "multi-scatter") {
+    return [];
+  }
+  if (isHorizontalCategoryChart(chartType)) return ["y"];
+  return ["x"];
+}

@@ -1,6 +1,6 @@
 import * as d3 from "d3";
 import { appendChartSvg } from "@/components/charts/engine/d3/core/sceneGraph";
-import { planCategoryAxisLayout, resolveHorizontalCategoryAxisLayout, applyRotatedCategoryLabels, formatAxisCategoryLabel, formatHorizontalBandAxisLabel, resolveBandAxisFontSize, styleAxis } from "@/components/charts/engine/d3/core/axes";
+import { planCategoryAxisLayout, resolveHorizontalCategoryAxisLayout, applyRotatedCategoryLabels, applyRotatedLeftCategoryLabels, formatAxisCategoryLabel, formatHorizontalBandAxisLabel, resolveBandAxisFontSize, styleAxis } from "@/components/charts/engine/d3/core/axes";
 import { VCDS, resolveAxisFontSize } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { applyCellBevel, applyDepthHoverLift, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
@@ -68,6 +68,7 @@ export function renderD3HeatmapChart(container: HTMLElement, config: D3MatrixRen
     showVisualMap = true,
     labelFontSize = 11,
     renderTier,
+    axisStyle,
   } = config;
 
   const isThumbnail = renderTier === "thumbnail";
@@ -86,13 +87,14 @@ export function renderD3HeatmapChart(container: HTMLElement, config: D3MatrixRen
     yCategories,
     provisionalInnerH,
     categoryThinPx ?? 28,
+    axisStyle?.y?.labelRotate,
   );
   let margin = cartesianMargin(false, { left: Math.max(baseMargin.left, ySideLayout.leftMargin) });
   const innerW = Math.max(0, width - margin.left - margin.right);
   const xLayout = planCategoryAxisLayout(
     xCategories,
     innerW,
-    undefined,
+    axisStyle?.x?.labelRotate,
     categoryThinPx,
   );
   margin = { ...margin, bottom: margin.bottom + xLayout.extraBottom };
@@ -135,7 +137,8 @@ export function renderD3HeatmapChart(container: HTMLElement, config: D3MatrixRen
     .call(d3.axisLeft(y).tickValues(ySideLayout.ticks))
     .call(styleAxis, theme, resolveBandAxisFontSize(ySideLayout.bandHeight))
     .selectAll<SVGTextElement, string>("text")
-    .text((d) => formatHorizontalBandAxisLabel(String(d)));
+    .text((d) => formatHorizontalBandAxisLabel(String(d), ySideLayout.labelMaxWidth, ySideLayout.rotateDeg))
+    .call((sel) => applyRotatedLeftCategoryLabels(sel, ySideLayout.rotateDeg));
   g.append("g")
     .attr("transform", `translate(0,${plotInnerH})`)
     .call(d3.axisBottom(x).tickValues(xLayout.ticks))

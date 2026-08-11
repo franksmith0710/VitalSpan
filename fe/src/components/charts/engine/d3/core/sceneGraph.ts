@@ -1,6 +1,7 @@
 import * as d3 from "d3";
 import {
   applyRotatedCategoryLabels,
+  applyRotatedLeftCategoryLabels,
   axisCategoryDisplayText,
   drawCategoryBandAxisBottom,
   drawCategoryBandAxisLeft,
@@ -10,6 +11,7 @@ import {
   planNumericAxisTicks,
   resolveBandAxisFontSize,
   resolveHorizontalCategoryAxisLayout,
+  resolveRotatedAxisExtraSpan,
   styleAxis,
   type CategoryAxisLayout,
 } from "@/components/charts/engine/d3/core/axes";
@@ -23,12 +25,33 @@ import {
 } from "@/components/charts/engine/d3/core/d3Legend";
 import type { D3Theme } from "@/components/charts/engine/d3/core/themeEngine";
 import { formatChartValue } from "@/lib/chartValueFormat";
-import type { ChartAxisStyle } from "@/lib/chartDeStyleBlocks";
+import type { AxisLabelRotate, ChartAxisStyle } from "@/lib/chartDeStyleBlocks";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import {
   drawHierarchicalCategoryAxis,
   planHierarchicalCategoryAxis,
+  resolveHierarchicalCategoryAxisRotate,
 } from "@/components/charts/engine/d3/core/hierarchicalAxis";
+
+function buildHierarchicalCategoryXLayout(
+  categories: string[],
+  innerW: number,
+  hierPlan: NonNullable<ReturnType<typeof planHierarchicalCategoryAxis>>,
+  labelRotate?: AxisLabelRotate,
+): CategoryAxisLayout {
+  const rotateDeg = resolveHierarchicalCategoryAxisRotate(
+    categories,
+    innerW,
+    labelRotate,
+    hierPlan.structuralLevelCount,
+  );
+  return {
+    ticks: categories,
+    rotateDeg,
+    slotSpan: innerW / Math.max(1, categories.length),
+    extraBottom: hierPlan.extraBottom + resolveRotatedAxisExtraSpan(rotateDeg),
+  };
+}
 
 function numericTickValues(
   scale: d3.ScaleLinear<number, number>,
@@ -136,12 +159,12 @@ export function resolveCategoryCartesianLayout(
     structuralLevelCount: options?.categoryLevelCount,
   });
   const xLayout = hierPlan
-    ? {
-        ticks: categories,
-        rotateDeg: 0,
-        slotSpan: provisionalInnerW / Math.max(1, categories.length),
-        extraBottom: hierPlan.extraBottom,
-      }
+    ? buildHierarchicalCategoryXLayout(
+        categories,
+        provisionalInnerW,
+        hierPlan,
+        options?.axisStyle?.x?.labelRotate,
+      )
     : planCategoryAxisLayout(
         categories,
         provisionalInnerW,
@@ -171,11 +194,17 @@ export function resolveHorizontalCategoryCartesianLayout(
     legendLayout?: D3LegendLayout;
     legendItems?: D3LegendItem[];
     marginOverrides?: Partial<ReturnType<typeof cartesianMargin>>;
+    axisStyle?: ChartAxisStyle;
   },
 ): HorizontalCategoryCartesianLayout {
   const baseMargin = cartesianMargin(false, options?.marginOverrides);
   const provisionalInnerH = Math.max(0, height - baseMargin.top - baseMargin.bottom);
-  const yLayout = resolveHorizontalCategoryAxisLayout(categories, provisionalInnerH);
+  const yLayout = resolveHorizontalCategoryAxisLayout(
+    categories,
+    provisionalInnerH,
+    undefined,
+    options?.axisStyle?.y?.labelRotate,
+  );
   let margin = {
     ...baseMargin,
     left: Math.max(baseMargin.left, yLayout.leftMargin, options?.marginOverrides?.left ?? 0),
@@ -271,6 +300,7 @@ export function buildHorizontalCartesianScene(
       showLegend: opts.showLegend,
       legendLayout: opts.legendLayout,
       legendItems: opts.legendItems,
+      axisStyle: opts.axisStyle,
     },
   );
   const clipId = opts.clipId ?? `vs-clip-h-${Math.random().toString(36).slice(2, 9)}`;
@@ -391,11 +421,12 @@ export function drawCartesianBandAxes(opts: BandAxesOptions): { rotateX: number 
     structuralLevelCount: opts.categoryLevelCount,
   });
   const xLayout = hierPlan
-    ? {
-        ticks: opts.categories,
-        rotateDeg: 0,
-        slotSpan: opts.innerW / Math.max(1, opts.categories.length),
-      }
+    ? buildHierarchicalCategoryXLayout(
+        opts.categories,
+        opts.innerW,
+        hierPlan,
+        opts.axisStyle?.x?.labelRotate,
+      )
     : planCategoryAxisLayout(
         opts.categories,
         opts.innerW,
@@ -500,11 +531,12 @@ export function drawCartesianAxes(opts: AxesOptions): { rotateX: number } {
     structuralLevelCount: opts.categoryLevelCount,
   });
   const xLayout = hierPlan
-    ? {
-        ticks: opts.categories,
-        rotateDeg: 0,
-        slotSpan: opts.innerW / Math.max(1, opts.categories.length),
-      }
+    ? buildHierarchicalCategoryXLayout(
+        opts.categories,
+        opts.innerW,
+        hierPlan,
+        opts.axisStyle?.x?.labelRotate,
+      )
     : planCategoryAxisLayout(opts.categories, opts.innerW, opts.axisStyle?.x?.labelRotate);
 
   opts.g.selectAll("g.vs-axis-x, g.vs-axis-y, text.vs-axis-name, text.vs-axis-name-y").remove();
@@ -600,7 +632,12 @@ export function drawCartesianHorizontalBandAxes(opts: HorizontalBandAxesOptions)
   opts.g.selectAll("g.vs-axis-x, g.vs-axis-y, text.vs-axis-name, text.vs-axis-name-y").remove();
 
   const categories = opts.yScale.domain();
-  const yLayout = resolveHorizontalCategoryAxisLayout(categories, opts.innerH);
+  const yLayout = resolveHorizontalCategoryAxisLayout(
+    categories,
+    opts.innerH,
+    undefined,
+    opts.axisStyle?.y?.labelRotate,
+  );
   const yAxisFontSize = resolveBandAxisFontSize(yLayout.bandHeight);
 
   if (opts.axisStyle?.y?.show !== false) {
@@ -617,6 +654,7 @@ export function drawCartesianHorizontalBandAxes(opts: HorizontalBandAxesOptions)
           opts.theme,
           yAxisFontSize,
           opts.axisStyle?.y,
+          yLayout.rotateDeg,
         ),
       );
   }
@@ -763,11 +801,12 @@ export function drawDualAxesAxes(opts: DualAxesOptions): void {
     structuralLevelCount: opts.categoryLevelCount,
   });
   const xLayout = hierPlan
-    ? {
-        ticks: opts.categories,
-        rotateDeg: 0,
-        slotSpan: opts.innerW / Math.max(1, opts.categories.length),
-      }
+    ? buildHierarchicalCategoryXLayout(
+        opts.categories,
+        opts.innerW,
+        hierPlan,
+        opts.axisStyle?.x?.labelRotate,
+      )
     : planCategoryAxisLayout(opts.categories, opts.innerW, opts.axisStyle?.x?.labelRotate);
 
   opts.g
@@ -878,14 +917,19 @@ export function drawBidirectionalBandAxes(opts: BidirectionalAxesOptions): void 
   ).remove();
 
   const categories = opts.yScale.domain();
-  const yLayout = resolveHorizontalCategoryAxisLayout(categories, opts.innerH);
+  const yLayout = resolveHorizontalCategoryAxisLayout(
+    categories,
+    opts.innerH,
+    undefined,
+    opts.axisStyle?.y?.labelRotate,
+  );
   const yAxisFontSize = resolveBandAxisFontSize(yLayout.bandHeight);
   const labelMaxWidth = Math.min(opts.centerX, opts.innerW - opts.centerX) * 1.75;
 
   if (opts.axisStyle?.y?.show !== false) {
     const centerLabels = opts.g.append("g").attr("class", "vs-axis-y-center");
     for (const tick of yLayout.ticks) {
-      const label = formatHorizontalBandAxisLabel(String(tick), labelMaxWidth);
+      const label = formatHorizontalBandAxisLabel(String(tick), labelMaxWidth, yLayout.rotateDeg);
       if (!label) continue;
       centerLabels
         .append("text")
@@ -895,7 +939,8 @@ export function drawBidirectionalBandAxes(opts: BidirectionalAxesOptions): void 
         .attr("text-anchor", "middle")
         .attr("fill", opts.theme.axisLabel)
         .style("font-size", `${yAxisFontSize}px`)
-        .text(label);
+        .text(label)
+        .call((sel) => applyRotatedLeftCategoryLabels(sel, yLayout.rotateDeg));
     }
   }
 

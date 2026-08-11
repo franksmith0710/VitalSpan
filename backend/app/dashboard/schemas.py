@@ -14,7 +14,7 @@ FilterControlType = Literal["text", "select", "date", "multiselect"]
 TextVariant = Literal["markdown", "plain", "html"]
 MediaFit = Literal["contain", "cover", "fill"]
 MediaWidgetKind = Literal["image", "webpage"]
-WidgetType = Literal["chart", "filter", "text", "media", "tabs"]
+WidgetType = Literal["chart", "filter", "text", "media", "tabs", "customViz"]
 # 本地上传以 data URL 写入 layoutJson；与 FE MAX_IMAGE_SOURCE_BYTES(2MB) 对齐（base64≈4/3 + 头）
 IMAGE_DATA_URL_MAX_LENGTH = 3_145_728
 CANVAS_WIDTH = 1440
@@ -82,6 +82,18 @@ class TabsWidgetConfig(BaseModel):
     tabs_id: str = Field(alias="tabsId", min_length=1, max_length=64)
     panes: list[TabPaneConfig] = Field(min_length=1, max_length=8)
     active_pane_id: str = Field(alias="activePaneId", min_length=1, max_length=64)
+    widget_style: WidgetStyleConfig | None = Field(default=None, alias="widgetStyle")
+
+
+class CustomVizDataBinding(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    status: Literal["manual", "connected"] = "manual"
+
+
+class CustomVizWidgetConfig(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    artifact_id: uuid.UUID = Field(alias="artifactId")
+    data_binding: CustomVizDataBinding | None = Field(default=None, alias="dataBinding")
     widget_style: WidgetStyleConfig | None = Field(default=None, alias="widgetStyle")
 
 
@@ -410,6 +422,7 @@ class LayoutWidget(BaseModel):
     text_config: TextWidgetConfig | None = Field(default=None, alias="textConfig")
     media_config: MediaWidgetConfig | None = Field(default=None, alias="mediaConfig")
     tabs_config: TabsWidgetConfig | None = Field(default=None, alias="tabsConfig")
+    custom_viz_config: CustomVizWidgetConfig | None = Field(default=None, alias="customVizConfig")
     component_ref: VizComponentRef | None = Field(default=None, alias="componentRef")
 
     def _is_linked_component(self) -> bool:
@@ -424,7 +437,7 @@ class LayoutWidget(BaseModel):
         if self.type == "chart":
             if self.chart_config is None:
                 raise ValueError("chart widget requires chartConfig")
-            for forbidden in (self.filter_config, self.text_config, self.media_config, self.tabs_config):
+            for forbidden in (self.filter_config, self.text_config, self.media_config, self.tabs_config, self.custom_viz_config):
                 if forbidden is not None:
                     raise ValueError("chart widget must not carry non-chart config")
         elif self.type == "filter":
@@ -450,6 +463,11 @@ class LayoutWidget(BaseModel):
             pane_ids = {p.id for p in self.tabs_config.panes}
             if self.tabs_config.active_pane_id not in pane_ids:
                 raise ValueError("activePaneId must reference a pane id")
+        elif self.type == "customViz":
+            if self.custom_viz_config is None:
+                raise ValueError("customViz widget requires customVizConfig")
+            if self.chart_config is not None:
+                raise ValueError("customViz widget must not have chartConfig")
         return self
 
     @model_validator(mode="before")

@@ -100,6 +100,76 @@ describe("renderD3LineChart", () => {
     setChartAnimationSuppressed(false);
   });
 
+  it("keeps x-axis labels horizontal by default for dense date categories", () => {
+    setChartAnimationSuppressed(true);
+    const host = document.createElement("div");
+    host.style.width = "320px";
+    host.style.height = "200px";
+    document.body.appendChild(host);
+
+    const categories = Array.from({ length: 12 }, (_, i) => `2025-01-${String(i + 1).padStart(2, "0")}`);
+    const data = categories.map((cat, i) => ({
+      __category__: cat,
+      __value__: 10 + i,
+      __series__: "S1",
+    }));
+
+    renderD3LineChart(host, {
+      width: 320,
+      height: 200,
+      data,
+      xField: "__category__",
+      yField: "__value__",
+      seriesField: "__series__",
+      colors: ["#3b82f6"],
+      theme,
+    });
+
+    const axisTexts = [...host.querySelectorAll(".vs-axis-x text")];
+    expect(axisTexts.length).toBeGreaterThan(0);
+    for (const node of axisTexts) {
+      expect(node.getAttribute("transform")).toBeNull();
+    }
+
+    host.remove();
+    setChartAnimationSuppressed(false);
+  });
+
+  it("rotates x-axis labels when axisStyle labelRotate is auto", () => {
+    setChartAnimationSuppressed(true);
+    const host = document.createElement("div");
+    host.style.width = "320px";
+    host.style.height = "200px";
+    document.body.appendChild(host);
+
+    const categories = Array.from({ length: 12 }, (_, i) => `2025-01-${String(i + 1).padStart(2, "0")}`);
+    const data = categories.map((cat, i) => ({
+      __category__: cat,
+      __value__: 10 + i,
+      __series__: "S1",
+    }));
+
+    renderD3LineChart(host, {
+      width: 320,
+      height: 200,
+      data,
+      xField: "__category__",
+      yField: "__value__",
+      seriesField: "__series__",
+      colors: ["#3b82f6"],
+      theme,
+      axisStyle: { x: { labelRotate: "auto" } },
+    });
+
+    const rotated = [...host.querySelectorAll(".vs-axis-x text")].some((node) =>
+      node.getAttribute("transform")?.includes("rotate"),
+    );
+    expect(rotated).toBe(true);
+
+    host.remove();
+    setChartAnimationSuppressed(false);
+  });
+
   it("renders tiered x-axis groups for multi-dimension categories", () => {
     setChartAnimationSuppressed(true);
     const host = document.createElement("div");
@@ -135,6 +205,40 @@ describe("renderD3LineChart", () => {
     expect(labels).toContain("云南省");
     expect(labels.some((label) => label === "销量" || label?.includes("销量"))).toBe(true);
     expect(labels.length).toBeGreaterThan(2);
+
+    host.remove();
+    setChartAnimationSuppressed(false);
+  });
+
+  it("tilts bottom tier labels when axisStyle labelRotate is auto", () => {
+    setChartAnimationSuppressed(true);
+    const host = document.createElement("div");
+    host.style.width = "320px";
+    host.style.height = "200px";
+    document.body.appendChild(host);
+
+    const categories = Array.from({ length: 12 }, (_, i) => `2025-01-${String(i + 1).padStart(2, "0")}\u0001销量`);
+    const data = categories.flatMap((cat) => [
+      { __category__: cat, __value__: 10, __series__: "amount" },
+    ]);
+
+    renderD3LineChart(host, {
+      width: 320,
+      height: 200,
+      data,
+      xField: "__category__",
+      yField: "__value__",
+      seriesField: "__series__",
+      colors: ["#3b82f6"],
+      theme,
+      axisStyle: { x: { labelRotate: "auto" } },
+    });
+
+    expect(host.querySelector(".vs-axis-x-tiered")).toBeTruthy();
+    const rotated = [...host.querySelectorAll(".vs-axis-x-tiered text")].some((node) =>
+      node.getAttribute("transform")?.includes("rotate"),
+    );
+    expect(rotated).toBe(true);
 
     host.remove();
     setChartAnimationSuppressed(false);
