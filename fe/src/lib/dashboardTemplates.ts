@@ -73,7 +73,10 @@ export const HUB_HIDDEN_BUILTIN_TEMPLATE_KEYS = new Set<string>();
 export function filterTemplatesForHub(
   items: DashboardTemplateListItem[],
 ): DashboardTemplateListItem[] {
-  return items.filter((item) => !HUB_HIDDEN_BUILTIN_TEMPLATE_KEYS.has(item.templateKey));
+  return items.filter(
+    (item) =>
+      item.status !== "archived" && !HUB_HIDDEN_BUILTIN_TEMPLATE_KEYS.has(item.templateKey),
+  );
 }
 
 export function buildTemplatesListUrl(params: {

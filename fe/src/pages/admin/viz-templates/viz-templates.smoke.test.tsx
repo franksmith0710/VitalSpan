@@ -152,6 +152,15 @@ describe("VizTemplatesHubPage smoke", () => {
     expect(screen.getByRole("button", { name: "政务效能分析看板 更多操作" })).toBeInTheDocument();
   });
 
+  it("shows archive for builtin templates and hides delete", async () => {
+    const user = userEvent.setup();
+    renderHub();
+    const [card] = await screen.findAllByTestId("viz-template-card-tpl-1");
+    await user.click(within(card).getByRole("button", { name: "政务效能分析看板 更多操作" }));
+    expect(await screen.findByRole("menuitem", { name: "下架" })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: "删除" })).not.toBeInTheDocument();
+  });
+
   it("exports template json from card menu", async () => {
     const user = userEvent.setup();
     const downloadMock = vi.mocked(downloadJsonFile);

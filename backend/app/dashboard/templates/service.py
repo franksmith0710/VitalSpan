@@ -17,7 +17,6 @@ from app.dashboard.templates.acl import (
     assert_template_manage,
     assert_template_read,
     assert_template_write,
-    can_manage_templates,
 )
 from app.dashboard.templates.errors import DashboardTemplateError
 from app.dashboard.templates.demo_datasource import (
@@ -141,9 +140,11 @@ def _filter_list_row(
         return False
     if visibility is not None and row.visibility != visibility:
         return False
-    if not include_drafts and row.status != "published" and row.visibility != "builtin":
-        if not can_manage_templates(actor):
-            return False
+    # 模板市场默认不展示已下架（含内置模板）
+    if status is None and row.status == "archived":
+        return False
+    if not include_drafts and row.status == "draft":
+        return False
     return True
 
 

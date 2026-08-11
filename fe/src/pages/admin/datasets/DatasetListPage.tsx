@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
-import { Layers, Pencil, Plus, Trash2 } from "lucide-react";
+import { Layers, Pencil, Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
   BatchDeleteDialog,
@@ -12,6 +12,7 @@ import {
 import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import {
   DataTable,
+  DeleteRowIconButton,
   ListPagePagination,
   ListPageSection,
   ListPageTableFrame,
@@ -245,21 +246,12 @@ export function DatasetListPage() {
                       <Pencil className="size-4" />
                     </Link>
                   </IconButton>
-                  <IconButton
-                    variant="ghost"
-                    size="sm"
-                    aria-label={`删除 ${d.displayName}`}
+                  <DeleteRowIconButton
+                    label={`删除 ${d.displayName}`}
                     disabled={isDemoPackageDataset(d.datasetId, d.displayName) || d.isDemoPackage}
-                    title={
-                      isDemoPackageDataset(d.datasetId, d.displayName) || d.isDemoPackage
-                        ? "官方示例 Dataset 不可删除"
-                        : undefined
-                    }
-                    className="text-error-600 hover:text-error-700 dark:text-error-400 dark:hover:text-error-300"
+                    disabledTitle="官方示例 Dataset 不可删除"
                     onClick={() => setDeleteTarget(d)}
-                  >
-                    <Trash2 className="size-4" />
-                  </IconButton>
+                  />
                 </RowActions>,
               ])}
             />

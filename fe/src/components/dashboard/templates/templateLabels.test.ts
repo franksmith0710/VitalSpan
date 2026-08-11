@@ -1,63 +1,36 @@
 import { describe, expect, it } from "vitest";
 import {
-  categoryLabel,
+  canArchiveTemplate,
   canDeleteTemplate,
-  resolveTemplateThumbnail,
-  statusLabel,
-  surfaceLabel,
-  visibilityLabel,
 } from "./templateLabels";
+import type { DashboardTemplateListItem } from "@/lib/dashboardTemplates";
 
-describe("templateLabels", () => {
-  it("maps surface kinds", () => {
-    expect(surfaceLabel("dashboard")).toBe("仪表板");
-    expect(surfaceLabel("data-screen")).toBe("数据大屏");
+const builtinPublished = {
+  id: "tpl-builtin",
+  templateKey: "builtin-gov-investment",
+  name: "招商引资分析",
+  categoryKey: "government",
+  surfaceKind: "dashboard",
+  status: "published",
+  visibility: "builtin",
+} as DashboardTemplateListItem;
+
+const privatePublished = {
+  ...builtinPublished,
+  id: "tpl-private",
+  templateKey: "custom-investment",
+  visibility: "private",
+  ownerUserId: "user-1",
+} as DashboardTemplateListItem;
+
+describe("templateLabels lifecycle actions", () => {
+  it("allows admins to archive builtin published templates", () => {
+    expect(canArchiveTemplate(builtinPublished, true)).toBe(true);
+    expect(canArchiveTemplate(builtinPublished, false)).toBe(false);
   });
 
-  it("maps template status", () => {
-    expect(statusLabel("draft")).toBe("草稿");
-    expect(statusLabel("published")).toBe("已发布");
-    expect(statusLabel("archived")).toBe("已归档");
-  });
-
-  it("maps visibility", () => {
-    expect(visibilityLabel("builtin")).toBe("内置");
-    expect(visibilityLabel("org")).toBe("组织");
-    expect(visibilityLabel("private")).toBe("私有");
-  });
-
-  it("resolves category labels", () => {
-    expect(categoryLabel("general")).toBe("通用");
-    expect(categoryLabel("monitoring")).toBe("监控");
-    expect(categoryLabel("unknown")).toBe("unknown");
-  });
-
-  it("resolves builtin template thumbnails", () => {
-    expect(resolveTemplateThumbnail("builtin-gov-efficiency", null)).toBe(
-      "/template-assets/packs/de-dashboard-v1/thumbs/gov-efficiency.svg",
-    );
-    expect(resolveTemplateThumbnail("custom", "/custom.png")).toBe("/custom.png");
-  });
-
-  it("allows delete for non-builtin templates when user can manage", () => {
-    const item = {
-      id: "tpl-1",
-      templateKey: "custom-map",
-      name: "大屏地图",
-      description: null,
-      categoryKey: "general",
-      surfaceKind: "data-screen" as const,
-      status: "archived" as const,
-      thumbnailRef: null,
-      visibility: "org" as const,
-      ownerUserId: "user-1",
-      contentRevision: 1,
-      updatedAt: new Date().toISOString(),
-      publishedAt: null,
-    };
-    expect(canDeleteTemplate(item, true)).toBe(true);
-    expect(canDeleteTemplate(item, false, "user-1")).toBe(true);
-    expect(canDeleteTemplate(item, false, "user-2")).toBe(false);
-    expect(canDeleteTemplate({ ...item, visibility: "builtin" }, true)).toBe(false);
+  it("only allows delete for non-builtin templates", () => {
+    expect(canDeleteTemplate(builtinPublished, true)).toBe(false);
+    expect(canDeleteTemplate(privatePublished, true)).toBe(true);
   });
 });

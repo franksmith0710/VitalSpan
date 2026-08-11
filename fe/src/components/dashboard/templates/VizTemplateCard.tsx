@@ -18,6 +18,7 @@ import {
   statusLabel,
   surfaceLabel,
   TEMPLATE_ACTIONS,
+  canArchiveTemplate,
   canEditTemplateMeta,
   visibilityLabel,
 } from "@/components/dashboard/templates/templateLabels";
@@ -80,8 +81,8 @@ export function VizTemplateCard({
   const [previewOpen, setPreviewOpen] = useState(false);
   const thumbnailSrc = resolveTemplateThumbnail(item.templateKey, item.thumbnailRef);
   const showPublish = canManage && item.status === "draft";
-  const showArchive =
-    canManage && item.status === "published" && item.visibility !== "builtin";
+  const showArchive = canArchiveTemplate(item, canManage);
+  const showDelete = canDelete;
   const showSettings = canEditTemplateMeta(item, canManage);
   const editLayoutTitle =
     item.visibility === "builtin"
@@ -216,13 +217,16 @@ export function VizTemplateCard({
                     </DropdownMenuItem>
                   </>
                 ) : null}
-                {canDelete ? (
+                {showDelete ? (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       disabled={pending}
                       className="text-error-600 focus:text-error-600 dark:text-error-400"
-                      onClick={onDelete}
+                      onSelect={(event) => {
+                        event.preventDefault();
+                        onDelete();
+                      }}
                     >
                       <Trash2 className="size-4" aria-hidden />
                       {TEMPLATE_ACTIONS.delete}

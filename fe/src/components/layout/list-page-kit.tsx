@@ -1,4 +1,7 @@
 import type { ReactNode } from "react";
+import { Trash2 } from "lucide-react";
+import { IconButton } from "@/components/ui/button";
+import { HintTooltip } from "@/components/ui/hint-tooltip";
 import { PaginationBar, type PaginationBarProps } from "@/components/ui/pagination-bar";
 import type { ListEmptyPreviewLayout } from "@/components/ui/list-empty-preview";
 import { ListGhostEmptyState } from "@/components/ui/panel-empty-state";
@@ -296,4 +299,53 @@ export function DataTable({
 
 export function RowActions({ children }: { children: ReactNode }) {
   return <div className="flex items-center justify-end gap-0.5">{children}</div>;
+}
+
+/** 列表行删除：禁用时垃圾桶加斜杠，表示不可删除 */
+export function DeleteRowIconButton({
+  label,
+  disabled,
+  disabledTitle,
+  onClick,
+}: {
+  label: string;
+  disabled?: boolean;
+  disabledTitle?: string;
+  onClick?: () => void;
+}) {
+  const button = (
+    <IconButton
+      type="button"
+      variant="ghost"
+      size="sm"
+      aria-label={label}
+      disabled={disabled}
+      showTooltip={!disabled}
+      className={cn(
+        disabled
+          ? "cursor-not-allowed text-gray-400 dark:text-gray-500"
+          : "text-error-600 hover:text-error-700 dark:text-error-400 dark:hover:text-error-300",
+      )}
+      onClick={onClick}
+    >
+      <span className="relative inline-flex">
+        <Trash2 className={cn("size-4", disabled && "opacity-60")} aria-hidden />
+        {disabled ? (
+          <span aria-hidden className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <span className="h-px w-[140%] rotate-[-45deg] bg-current opacity-90" />
+          </span>
+        ) : null}
+      </span>
+    </IconButton>
+  );
+
+  if (disabled && disabledTitle) {
+    return (
+      <HintTooltip label={disabledTitle}>
+        <span className="inline-flex">{button}</span>
+      </HintTooltip>
+    );
+  }
+
+  return button;
 }

@@ -34,11 +34,16 @@ describe("filterTemplatesForHub", () => {
     expect(filterTemplatesForHub(items)).toEqual(items);
   });
 
-  it("keeps non-blank templates unchanged", () => {
+  it("hides archived templates from the hub gallery", () => {
     const items = [
-      mockTemplate({ templateKey: "builtin-gov-smart-city", name: "智慧城市", surfaceKind: "data-screen" }),
+      mockTemplate({ templateKey: "builtin-gov-efficiency", name: "政务效能分析看板" }),
+      mockTemplate({
+        templateKey: "builtin-gov-investment",
+        name: "招商引资分析",
+        status: "archived",
+      }),
     ];
-    expect(filterTemplatesForHub(items)).toEqual(items);
+    expect(filterTemplatesForHub(items)).toEqual([items[0]]);
   });
 });
 

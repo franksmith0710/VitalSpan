@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router";
 import { LayoutTemplate, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
+import { DESTRUCTIVE_ALERT_ACTION_CLASS } from "@/components/layout/list-batch-delete";
 import {
   LIST_PAGE_CARD_GRID_CLASS,
   ListPageSection,
@@ -105,6 +106,7 @@ export function VizTemplatesHubPage() {
   const [q, setQ] = useState("");
   const importRef = useRef<HTMLInputElement>(null);
   const [settingsItem, setSettingsItem] = useState<DashboardTemplateListItem | null>(null);
+  const [archiveTarget, setArchiveTarget] = useState<DashboardTemplateListItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DashboardTemplateListItem | null>(null);
 
   useEffect(() => {
@@ -197,6 +199,7 @@ export function VizTemplatesHubPage() {
     mutationFn: archiveTemplate,
     onSuccess: () => {
       toast.success(VIZ_TEMPLATES_HUB.toastArchived);
+      setArchiveTarget(null);
       invalidate();
     },
     onError: (err) => toast.error(mapApiError(err)),
@@ -254,7 +257,7 @@ export function VizTemplatesHubPage() {
           onEditLayout={() => editLayoutMutation.mutate(item)}
           onOpenSettings={() => setSettingsItem(item)}
           onPublish={() => publishMutation.mutate(item.id)}
-          onArchive={() => archiveMutation.mutate(item.id)}
+          onArchive={() => setArchiveTarget(item)}
           onDelete={() => setDeleteTarget(item)}
           canDelete={canDeleteTemplate(item, canManage, authUser?.id)}
         />
@@ -392,6 +395,30 @@ export function VizTemplatesHubPage() {
         onEditLayout={(item) => editLayoutMutation.mutate(item)}
       />
 
+      <AlertDialog open={Boolean(archiveTarget)} onOpenChange={(open) => !open && setArchiveTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>下架模板</AlertDialogTitle>
+            <AlertDialogDescription>
+              {archiveTarget?.visibility === "builtin"
+                ? `确定下架「${archiveTarget.name}」？下架后将从模板市场隐藏；内置模板不会被永久删除，可在数据库中恢复发布。`
+                : archiveTarget
+                  ? `确定下架「${archiveTarget.name}」？下架后将从模板市场隐藏；如需永久删除，请使用「删除」。`
+                  : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={archiveMutation.isPending}>取消</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={archiveMutation.isPending}
+              onClick={() => archiveTarget && archiveMutation.mutate(archiveTarget.id)}
+            >
+              {archiveMutation.isPending ? "下架中…" : "下架"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -403,6 +430,7 @@ export function VizTemplatesHubPage() {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleteMutation.isPending}>取消</AlertDialogCancel>
             <AlertDialogAction
+              className={DESTRUCTIVE_ALERT_ACTION_CLASS}
               disabled={deleteMutation.isPending}
               onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
             >

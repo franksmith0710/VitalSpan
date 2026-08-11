@@ -19,7 +19,7 @@ export const VIZ_TEMPLATES_HUB = {
   emptyTitle: "暂无模板",
   emptyDescription: "当前筛选条件下没有可用模板，可尝试切换分类或导入 JSON 创建。",
   toastPublished: "模板已发布",
-  toastArchived: "模板已下架",
+  toastArchived: "模板已下架，已从模板市场移除",
   toastDeleted: "模板已删除",
   toastImported: "模板导入成功",
   toastExportFailed: "导出失败",
@@ -74,6 +74,16 @@ export function canDeleteTemplate(
   if (canManage) return true;
   return Boolean(currentUserId && item.ownerUserId && item.ownerUserId === currentUserId);
 }
+
+/** 已发布模板可下架（含内置，管理员） */
+export function canArchiveTemplate(
+  item: DashboardTemplateListItem,
+  canManage: boolean,
+): boolean {
+  return canManage && item.status === "published";
+}
+
+export const TEMPLATE_BUILTIN_READONLY_HINT = "内置模板不可删除，请使用「下架」";
 
 export const GOV_SECTION_LABELS = {
   dataScreen: "数据大屏",

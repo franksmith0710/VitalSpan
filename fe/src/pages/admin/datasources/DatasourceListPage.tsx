@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
-import { Database, Eye, Pencil, Plus, Trash2 } from "lucide-react";
+import { Database, Eye, Pencil, Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
   BatchDeleteDialog,
@@ -14,6 +14,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import {
   DataTable,
+  DeleteRowIconButton,
   ListPageBody,
   ListPagePagination,
   ListPageSection,
@@ -446,20 +447,15 @@ export function DatasourceListPage() {
                         </Link>
                       )}
                     </IconButton>
-                    <IconButton
-                      variant="ghost"
-                      size="sm"
-                      aria-label={`删除 ${row.name}`}
+                    <DeleteRowIconButton
+                      label={`删除 ${row.name}`}
                       disabled={isLocked}
-                      title={isLocked ? "官方示例数据连接不可删除" : undefined}
-                      className="text-error-600 hover:text-error-700 dark:text-error-400 dark:hover:text-error-300"
+                      disabledTitle="官方示例数据连接不可删除"
                       onClick={() => {
                         setDeleteError(null);
                         setDeleteTarget(row);
                       }}
-                    >
-                      <Trash2 className="size-4" />
-                    </IconButton>
+                    />
                   </RowActions>,
                 ];
               })}
