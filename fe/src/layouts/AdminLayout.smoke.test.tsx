@@ -88,7 +88,7 @@ describe("AdminLayout smoke", () => {
     ).toBeGreaterThanOrEqual(1);
   });
 
-  it("T-FE-SMFB-04: admin workspace shows header 系统管理 link", () => {
+  it("T-FE-SMFB-04: admin workspace has no duplicate header 系统管理 link", () => {
     setDesktopViewport(1600);
     render(
       <MemoryRouter initialEntries={["/admin/dashboards"]}>
@@ -99,7 +99,7 @@ describe("AdminLayout smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(screen.getByRole("link", { name: "系统管理" })).toHaveAttribute("href", "/admin/system");
+    expect(screen.queryByRole("link", { name: "系统管理" })).not.toBeInTheDocument();
   });
 
   it("T-FE-SMFB-05: viewer does not show header 系统管理 link", () => {

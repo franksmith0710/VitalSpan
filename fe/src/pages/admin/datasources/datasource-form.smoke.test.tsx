@@ -91,6 +91,24 @@ describe("DatasourceFormPage wizard smoke", () => {
     expect(screen.queryByLabelText("名称")).not.toBeInTheDocument();
   });
 
+  it("FB-3-01c: pristine create wizard does not show unsaved hint or leave dialog", async () => {
+    const user = userEvent.setup();
+    renderForm();
+    await waitFor(() => expect(screen.getByRole("button", { name: /关系型数据库/ })).toBeInTheDocument());
+    expect(screen.queryByText(/有未保存的更改/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole("link", { name: /返回列表/ }));
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+  });
+
+  it("FB-3-01d: create form step shows leave dialog after editing", async () => {
+    const user = userEvent.setup();
+    renderForm();
+    await selectType("关系型数据库", "MySQL");
+    await user.type(screen.getByLabelText("名称"), "测试源");
+    await user.click(screen.getByRole("link", { name: /返回列表/ }));
+    expect(await screen.findByRole("alertdialog")).toHaveTextContent("未保存的更改");
+  });
+
   it("FB-3-01b: legacy API without displayGroup still shows multiple categories", async () => {
     mockApiFetch.mockImplementation(async (path: string) => {
       if (path === "/api/v1/datasources/types") {

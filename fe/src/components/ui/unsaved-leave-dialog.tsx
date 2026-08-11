@@ -38,10 +38,7 @@ export function UnsavedLeaveDialog({
         </AlertDialogHeader>
         <AlertDialogFooter className="flex-col gap-2 sm:flex-row sm:justify-end">
           <AlertDialogCancel onClick={onStay}>留在此页</AlertDialogCancel>
-          <AlertDialogAction
-            className="bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-white/10 dark:text-white/90 dark:hover:bg-white/15"
-            onClick={onDiscardLeave}
-          >
+          <AlertDialogAction variant="outline" onClick={onDiscardLeave}>
             放弃更改并离开
           </AlertDialogAction>
           <Button

@@ -143,10 +143,14 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
     serializeDatasourceDraft,
   );
 
-  const leaveGuardEnabled = isBaselineReady && isDirty;
+  const hasActionableDraftChanges =
+    isDirty && (mode === "edit" || wizardStep === "form");
+  const leaveGuardEnabled = isBaselineReady && hasActionableDraftChanges;
   const { leaveDialogOpen, confirmLeave, cancelLeave } = useUnsavedLeaveGuard({
     enabled: leaveGuardEnabled,
   });
+
+  const prevWizardStepRef = useRef<WizardStep>(wizardStep);
 
   useEffect(() => {
     if (mode === "create") {
@@ -155,8 +159,8 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
         wizardStep: "category",
         selectedGroup: null,
         form: emptyForm,
-        restApiCompanion: defaultRestApiCompanion,
-        fileCompanion: defaultFileSourceCompanion,
+        restApiCompanion: defaultRestApiCompanion(),
+        fileCompanion: defaultFileSourceCompanion(),
       });
       return;
     }
@@ -216,6 +220,32 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
       fileCompanion: nextFile,
     });
   }, [detailQuery.data, mode, resetBaseline]);
+
+  useEffect(() => {
+    if (mode !== "create") {
+      prevWizardStepRef.current = wizardStep;
+      return;
+    }
+    if (prevWizardStepRef.current !== "form" && wizardStep === "form") {
+      resetBaseline({
+        mode,
+        wizardStep,
+        selectedGroup,
+        form,
+        restApiCompanion,
+        fileCompanion,
+      });
+    }
+    prevWizardStepRef.current = wizardStep;
+  }, [
+    mode,
+    wizardStep,
+    selectedGroup,
+    form,
+    restApiCompanion,
+    fileCompanion,
+    resetBaseline,
+  ]);
 
   useEffect(() => {
     if (errorCode === "DATASOURCE_CODE_CONFLICT" && mode === "create") {
@@ -306,10 +336,10 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
 
   const pageDescription = useMemo(() => {
     if (!isBaselineReady) return undefined;
-    if (isDirty) return "有未保存的更改 · 保存后生效";
+    if (hasActionableDraftChanges) return "有未保存的更改 · 保存后生效";
     if (mode === "create") return "选择连接器类型并填写连接信息以注册新的数据源。";
     return "已保存 · 留空密码表示不修改";
-  }, [isBaselineReady, isDirty, mode]);
+  }, [hasActionableDraftChanges, isBaselineReady, mode]);
 
   const showHeaderSave = mode === "edit" || (mode === "create" && wizardStep === "form");
 
