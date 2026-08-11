@@ -255,6 +255,7 @@ export function DatasetListPage() {
                         ? "官方示例 Dataset 不可删除"
                         : undefined
                     }
+                    className="text-error-600 hover:text-error-700 dark:text-error-400 dark:hover:text-error-300"
                     onClick={() => setDeleteTarget(d)}
                   >
                     <Trash2 className="size-4" />
