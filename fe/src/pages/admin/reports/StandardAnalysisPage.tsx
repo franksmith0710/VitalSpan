@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
-import { Settings2 } from "lucide-react";
-import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import { Settings2, TrendingUp } from "lucide-react";
+import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import { ListPageSection } from "@/components/layout/list-page-kit";
 import { Button } from "@/components/ui/button";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
@@ -61,6 +61,11 @@ export function StandardAnalysisPage() {
   return (
     <AdminPageShell
       layout="list"
+      icon={
+        <AdminPageHeaderIcon>
+          <TrendingUp className="size-6" aria-hidden />
+        </AdminPageHeaderIcon>
+      }
       title="标准分析"
       description="面向业务对象的决策分析：查看现状并与上期快照对比。"
       leadingActions={<ReportCenterBackLink />}
@@ -75,10 +80,6 @@ export function StandardAnalysisPage() {
         ) : null
       }
     >
-      {packsQuery.isError ? (
-        <PageErrorBanner message={mapApiError(packsQuery.error)} onRetry={() => packsQuery.refetch()} />
-      ) : null}
-
       {packs.length === 0 && !packsQuery.isLoading ? (
         <ListGhostEmptyState
           title="暂无分析包"
@@ -93,6 +94,12 @@ export function StandardAnalysisPage() {
         />
       ) : (
         <ListPageSection className="min-h-0 flex-1">
+          {packsQuery.isError ? (
+            <div className="shrink-0 border-b border-gray-100 px-5 py-3 dark:border-white/[0.06]">
+              <PageErrorBanner message={mapApiError(packsQuery.error)} onRetry={() => packsQuery.refetch()} />
+            </div>
+          ) : null}
+
           <div className="border-b border-gray-200 px-4 py-3 lg:hidden dark:border-gray-800">
             <Select value={activePack?.packKey ?? ""} onValueChange={selectPack}>
               <SelectTrigger aria-label="选择分析包" className="h-11">
