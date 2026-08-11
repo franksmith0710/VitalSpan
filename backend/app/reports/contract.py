@@ -48,7 +48,7 @@ class ReportJobStatus(StrEnum):
 
 class CenterResourceType(StrEnum):
     TEMPLATE = "template"
-    PREFAB = "prefab"
+    STANDARD = "standard"
     SCHEDULE = "schedule"
     DASHBOARD = "dashboard"
 

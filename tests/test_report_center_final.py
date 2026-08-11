@@ -95,7 +95,7 @@ def client() -> TestClient:
 
 
 def test_center_preferences_roundtrip(client: TestClient):
-    favorites = [{"resourceType": "prefab", "resourceId": "lifecycle-overview"}]
+    favorites = [{"resourceType": "standard", "resourceId": "equipment-overview"}]
     put = client.put(
         "/api/v1/reports/center/preferences",
         headers=AUTH,

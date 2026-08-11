@@ -20,7 +20,7 @@ rule:
   has:
     stopBy: end
     kind: string
-    regex: '(?i)not implemented|unimplemented|\btodo\b|\bstub\b'
+    regex: '(?i)not implemented|unimplemented|\btodo\b|\bstub\b|未实现'
 ---
 id: js-mock-data-export
 language: javascript
@@ -65,6 +65,7 @@ rule:
   any:
     - pattern: alert($MSG)
     - pattern: window.alert($MSG)
+    - pattern: console.log($MSG)
   has:
     stopBy: end
     kind: string

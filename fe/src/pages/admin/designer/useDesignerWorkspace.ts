@@ -222,13 +222,15 @@ export function useDesignerWorkspace() {
     onSuccess: (data) => setPreviewSql(data.sql),
   });
 
+  const { mutate: previewMutate } = previewMutation;
+
   useEffect(() => {
     if (!conditions.length) return;
     const timer = window.setTimeout(() => {
-      previewMutation.mutate(buildPreviewBody());
+      previewMutate(buildPreviewBody());
     }, 400);
     return () => window.clearTimeout(timer);
-  }, [buildPreviewBody, conditions, previewMutation]);
+  }, [buildPreviewBody, conditions, previewMutate]);
 
   const validateConditions = useCallback(async () => {
     const payload = {

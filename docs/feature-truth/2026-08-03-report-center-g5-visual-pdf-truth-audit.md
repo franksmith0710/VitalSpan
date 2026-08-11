@@ -192,7 +192,7 @@
 
 ### G5-T1 — 文档过度签收（P0）
 
-**判定**：[`2026-08-03-report-center-delivery-recheck.md`](./2026-08-03-report-center-delivery-recheck.md) 宣称 REAL 8.6/A- 无 §3d  
+**判定**：初版复评文档（已移除）曾宣称 REAL 8.6/A- 无 §3d  
 **修复方向**：标 superseded；closure/reports 降级 PARTIAL  
 **修后验收**：无 REAL 宣称直至 13/13 达标
 
@@ -224,4 +224,4 @@
 
 - 建议：`root-first-solve` 先 P0（SMTP 附件 + FE base path），再 P1
 - **用户批准修复**：否（本审计默认不改业务代码）
--  superseded：[`2026-08-03-report-center-delivery-recheck.md`](./2026-08-03-report-center-delivery-recheck.md)
+-  superseded：初版 `2026-08-03-report-center-delivery-recheck.md`（已移除；以本审计为准）

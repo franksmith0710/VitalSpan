@@ -3,7 +3,10 @@ from __future__ import annotations
 import json
 import re
 
-_SENSITIVE_KEY = re.compile(r"password|secret|token|credential", re.IGNORECASE)
+_SENSITIVE_KEY = re.compile(
+    r"password|passwd|secret|token|credential|api[_-]?key|private[_-]?key|access[_-]?key",
+    re.IGNORECASE,
+)
 
 
 def mask_audit_detail(detail: str | None) -> str | None:

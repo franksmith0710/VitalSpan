@@ -137,6 +137,7 @@ function dualAxesLineSubField(
 /** 仪表盘/水波图：0~1 原样；1~100 视为百分比；更大数值满弧展示原值 */
 function resolveQuotaPercent(value: number): { percent: number; rawValue: number } {
   if (!Number.isFinite(value)) return { percent: 0, rawValue: 0 };
+  if (value < 0) return { percent: 0, rawValue: value };
   if (value >= 0 && value <= 1) return { percent: value, rawValue: value };
   if (value > 1 && value <= 100) return { percent: value / 100, rawValue: value };
   return { percent: 1, rawValue: value };

@@ -16,23 +16,22 @@
 - **代码锚点**：`backend/app/reports/engine/execute.py` · `backend/app/reports/engine/service.py` · `backend/app/integration/reports_export.py` · `backend/app/api/v1/reports/engine.py` · `fe/src/pages/admin/reports/components/ReportExportCard.tsx` · `tests/test_ff_rpt_companion_e95d.py` · `tests/test_m9_rpt_theme_r233.py` T-R233-RPT-001-01~06
 - **演化建议**：r233 闭合 M3-LITE extension→query 执行链与 datasource 守卫；PDF/Word 渲染引擎与 fe 模板展现 UI 留 companion
 - **里程碑对齐**：M9 · 已完成 · 2026-07-06
-### [RPT-002] 预制分析报表体系 FR-3.1
+### [RPT-002] 标准分析报表体系 FR-3.1
 
-- **状态**：已实现（M9 r233）
+- **状态**：已实现（2026-08-11 重建）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
-- **描述**：预制分析报表体系 FR-3.1（SRS 追溯项）。
+- **描述**：面向业务对象的标准分析：显式物理表绑定、主题运行、周期快照与本期 vs 上期对比。
 - **验收标准**：
-  - [x] N 实体×M 分析类型可配置（r62 L1：`PUT/GET /api/v1/reports/prefab/bindings` + entityType/analysisType 幂等 upsert + list）
-  - [x] 维度字典驱动（r62 L1：dimensionKey 校验 + `RPT_PREFAB_DIMENSION_UNKNOWN` 422）
-  - [x] companion binding ACL + perf probe（r65：`set_user_prefab_scope` + `RPT_PREFAB_EMPTY_ROLES`/`RPT_PREFAB_ANALYSIS_MISMATCH` 422；enterprise scope 403；`probe_prefab_validate_budget_ms`/`probe_prefab_list_budget_ms` ≤50ms）
-  - [x] companion GET binding + duplicate dimension guard + list scope filter（r68：`GET /api/v1/reports/prefab/bindings/{id}` 404/`RPT_PREFAB_GET_FORBIDDEN` 403；`RPT_PREFAB_DUPLICATE_DIMENSION` 422；enterprise list 空集；`probe_prefab_get_budget_ms` ≤50ms）
-  - [x] prefab seed + run API + FE 浏览运行（r233：`seed_builtin_prefab_bindings` + `POST .../bindings/{key}/run`；`PrefabReportsPage` + vitest smoke 7/7）
-  - [x] Admin binding 编辑表单（companion r-e95d：`PrefabBindingForm` + PUT `/prefab/bindings/{key}`）
-  - [x] 预制绑定 CRUD + 结果导出（companion：`DELETE .../bindings/{key}`；`GET .../export`；FE「新建预制绑定」/「导出当前结果」）
-- **代码锚点**：`backend/app/reports/prefab/run.py` · `backend/app/reports/prefab/seed.py` · `backend/app/api/v1/reports/prefab.py` · `fe/src/pages/admin/reports/PrefabReportsPage.tsx` · `fe/src/pages/admin/reports/components/PrefabBindingForm.tsx` · `fe/src/pages/admin/reports/usePrefabReports.ts` · `tests/test_ff_rpt_companion_e95d.py` · `tests/test_m9_rpt_theme_r233.py` T-R233-RPT-002-01~06 · `fe/src/pages/admin/reports/prefab-reports.smoke.test.tsx`
-- **演化建议**：r233 闭合内置预制 seed、M3-LITE run 链路与 FE 浏览/运行页；binding 编辑表单与 Playwright E2E 留 companion
-- **里程碑对齐**：M9 · 已完成 · 2026-07-06
+  - [x] 分析包 CRUD（`PUT/GET/DELETE /api/v1/reports/standard/packs`）
+  - [x] 字段能力探测（`GET .../capabilities`）
+  - [x] 实时运行与对比（`POST .../run` · `GET .../compare`）
+  - [x] 周期快照（`POST .../snapshots/capture` · `GET .../snapshots`）
+  - [x] APScheduler 快照 job（`standard/jobs.py`）
+  - [x] FE 工作台 + 配置页 + Hub（`StandardAnalysisPage` · `StandardAnalysisConfigPage`）
+- **代码锚点**：`backend/app/reports/standard/` · `backend/app/api/v1/reports/standard.py` · `fe/src/pages/admin/reports/StandardAnalysisPage.tsx` · `tests/test_standard_analysis.py`
+- **演化建议**：关键节点快照、另存为自由报表留 companion
+- **里程碑对齐**：M9 · 已完成 · 2026-08-11
 ### [RPT-003] Word/Excel/PDF 模板定义
 
 - **状态**：已实现（M10 r234）

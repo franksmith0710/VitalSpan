@@ -61,20 +61,23 @@ class OcrReviewCliTest(unittest.TestCase):
         stream = proc.stdout if proc.returncode == 0 else proc.stderr
         return json.loads(stream)
 
-    def init_scan(self, concurrency="auto"):
-        result = self.cli(
+    def init_scan(self, concurrency="max", yes=True, session_id="scan-test"):
+        args = [
             "init",
             "--repo",
             self.repo,
             "--mode",
             "scan",
             "--session-id",
-            "scan-test",
+            session_id,
             "--state-root",
             self.state,
             "--concurrency",
             concurrency,
-        )
+        ]
+        if yes:
+            args.append("--yes")
+        result = self.cli(*args)
         return Path(result["session_dir"])
 
     def start_task(self, session, task_id, reviewer_context=None):
@@ -221,7 +224,11 @@ class OcrReviewCliTest(unittest.TestCase):
 
         self.assertEqual({"account.go", "payment.go"}, paths)
         self.assertTrue(all(task["status"] == "pending" for task in manifest["tasks"].values()))
-        self.assertEqual("auto", manifest["scheduling"]["concurrency"])
+        self.assertEqual("max", manifest["scheduling"]["concurrency"])
+        self.assertEqual(
+            "maximum-host-capacity",
+            manifest["scheduling"]["source"],
+        )
         session_json = json.loads((session / "session.json").read_text(encoding="utf-8"))
         self.assertIsInstance(session_json["stack_card"], dict)
         self.assertGreaterEqual(session_json["stack_card"]["languages"][".go"], 2)
@@ -261,7 +268,7 @@ class OcrReviewCliTest(unittest.TestCase):
 
         self.assertEqual(production_files, paths)
         self.assertTrue(test_files.isdisjoint(paths))
-        self.assertEqual("0.8.0", session_json["skill_version"])
+        self.assertEqual("0.10.0", session_json["skill_version"])
 
     def test_user_include_can_restore_a_default_excluded_test_file(self):
         self.write("app.py", "value = True\n")
@@ -1139,6 +1146,7 @@ class OcrReviewCliTest(unittest.TestCase):
             "rule-resume",
             "--state-root",
             self.state,
+            "--yes",
         )
         session = Path(initialized["session_dir"])
         before = json.loads((session / "manifest.json").read_text(encoding="utf-8"))
@@ -1168,6 +1176,7 @@ class OcrReviewCliTest(unittest.TestCase):
             "delivery-impact",
             "--state-root",
             self.state,
+            "--yes",
         )
         session = Path(initialized["session_dir"])
         manifest = json.loads((session / "manifest.json").read_text(encoding="utf-8"))
@@ -1281,6 +1290,7 @@ class OcrReviewCliTest(unittest.TestCase):
             "invented-deletion",
             "--state-root",
             self.state,
+            "--yes",
         )
         session = Path(initialized["session_dir"])
         manifest = json.loads((session / "manifest.json").read_text(encoding="utf-8"))
@@ -1332,7 +1342,7 @@ class OcrReviewCliTest(unittest.TestCase):
         self.commit_all("head")
         initialized = self.cli(
             "init", "--repo", self.repo, "--mode", "review", "--base", base,
-            "--session-id", "real-deletion", "--state-root", self.state,
+            "--session-id", "real-deletion", "--state-root", self.state, "--yes",
         )
         session = Path(initialized["session_dir"])
         manifest = json.loads((session / "manifest.json").read_text(encoding="utf-8"))
@@ -1377,7 +1387,7 @@ class OcrReviewCliTest(unittest.TestCase):
         self.commit_all("head")
         initialized = self.cli(
             "init", "--repo", self.repo, "--mode", "review", "--base", base,
-            "--session-id", "partial-deletion", "--state-root", self.state,
+            "--session-id", "partial-deletion", "--state-root", self.state, "--yes",
         )
         session = Path(initialized["session_dir"])
         manifest = json.loads((session / "manifest.json").read_text(encoding="utf-8"))
@@ -1480,7 +1490,7 @@ class OcrReviewCliTest(unittest.TestCase):
         self.commit_all()
         initialized = self.cli(
             "init", "--repo", self.repo, "--mode", "scan", "--session-id", "range-shape",
-            "--state-root", self.state, "--segment-threshold", "1",
+            "--state-root", self.state, "--segment-threshold", "1", "--yes",
         )
         session = Path(initialized["session_dir"])
         manifest = json.loads((session / "manifest.json").read_text(encoding="utf-8"))
@@ -1556,7 +1566,7 @@ class OcrReviewCliTest(unittest.TestCase):
 
         runtime = self.cli(
             "init", "--repo", self.repo, "--mode", "scan",
-            "--session-id", "runtime-scope", "--state-root", self.state,
+            "--session-id", "runtime-scope", "--state-root", self.state, "--yes",
         )
         runtime_manifest = json.loads(
             (Path(runtime["session_dir"]) / "manifest.json").read_text(encoding="utf-8")
@@ -1570,7 +1580,7 @@ class OcrReviewCliTest(unittest.TestCase):
 
         full = self.cli(
             "init", "--repo", self.repo, "--mode", "scan", "--scope", "full",
-            "--session-id", "full-scope", "--state-root", self.state,
+            "--session-id", "full-scope", "--state-root", self.state, "--yes",
         )
         full_manifest = json.loads(
             (Path(full["session_dir"]) / "manifest.json").read_text(encoding="utf-8")
@@ -1590,6 +1600,9 @@ class OcrReviewCliTest(unittest.TestCase):
             "--token-budget", "1", "--session-id", "token-preflight",
             "--state-root", self.state,
         )
+        self.assertEqual("awaiting_start", initialized["status"])
+        self.assertEqual("present_launch_menu_and_wait_for_start", initialized["next_action"])
+        self.assertIn("launch_menu", initialized)
         estimate = initialized["token_estimate"]
         self.assertGreater(estimate["source_tokens"], 0)
         self.assertLessEqual(estimate["low"], estimate["likely"])
@@ -1666,18 +1679,167 @@ class OcrReviewCliTest(unittest.TestCase):
         self.assertTrue(any(action["kind"] == "review" for action in tick["actions"]))
         self.assertTrue(all(action["session_epoch"] == 1 for action in tick["actions"]))
 
-    def test_adaptive_orchestrate_tick_requests_fifteen_without_controller_slot_guess(self):
+    def test_adaptive_orchestrate_tick_requests_all_targets_without_controller_slot_guess(self):
         for index in range(40):
             self.write(f"file{index:02d}.go", f"package pay\nfunc F{index}() {{}}\n")
         self.commit_all()
-        session = self.init_scan()
+        session = self.init_scan(concurrency="auto")
 
         tick = self.cli("orchestrate-tick", "--session", session)
 
-        self.assertEqual(15, len(tick["actions"]))
-        self.assertEqual(15, tick["requested_concurrency"])
+        self.assertEqual(40, len(tick["actions"]))
+        self.assertEqual(40, tick["requested_concurrency"])
         self.assertIsNotNone(tick["launch_id"])
-        self.assertEqual("initial", tick["phase"])
+        self.assertEqual("maximize", tick["phase"])
+
+    def test_init_awaits_start_and_blocks_dispatch_until_confirmed(self):
+        self.write("payment.go", "package pay\n\nfunc Charge() error { return nil }\n")
+        self.commit_all()
+        initialized = self.cli(
+            "init",
+            "--repo", self.repo,
+            "--mode", "scan",
+            "--session-id", "await-start",
+            "--state-root", self.state,
+        )
+        self.assertEqual("awaiting_start", initialized["status"])
+        self.assertEqual("present_launch_menu_and_wait_for_start", initialized["next_action"])
+        self.assertIn("launch_menu", initialized)
+        self.assertIn("token_estimate", initialized)
+        self.assertTrue(initialized["launch_menu"]["must_confirm_before_dispatch"])
+        session = Path(initialized["session_dir"])
+
+        blocked = self.cli("orchestrate-tick", "--session", session, expect=2)
+        self.assertEqual("SESSION_AWAITING_START", blocked["error"])
+        self.assertEqual("present_launch_menu_and_wait_for_start", blocked["next_action"])
+
+        started = self.cli("start", "--session", session, "--concurrency", "max", "--choice", "scan-runtime")
+        self.assertEqual("running", started["status"])
+        self.assertEqual("enrich_stack_card_then_orchestrate_tick", started["next_action"])
+
+        tick = self.cli("orchestrate-tick", "--session", session)
+        self.assertEqual(1, len(tick["actions"]))
+
+    def test_fleet_plan_opens_shards_and_merges_like_go_fast(self):
+        for index in range(20):
+            self.write(f"pkg{index:02d}/main.go", f"package p{index}\nfunc F() {{}}\n")
+        self.commit_all()
+        session = self.init_scan(concurrency="max", yes=False, session_id="fleet-cap")
+        started = self.cli("start", "--session", session, "--choice", "scan-runtime")
+        self.assertTrue(started.get("fleet_recommendation", {}).get("recommended"))
+        self.assertEqual("fleet_plan_then_worktree_shards", started["next_action"])
+
+        planned = self.cli("fleet-plan", "--session", session, "--fleet-cap", "5")
+        self.assertEqual(5, planned["shard_count"])
+        self.assertEqual(20, planned["runnable_tasks"])
+        self.assertEqual("create_worktrees_and_open_fleet_shards", planned["next_action"])
+
+        # Reuse the same repo path as a stand-in worktree for unit tests.
+        for shard in planned["shards"]:
+            opened = self.cli(
+                "fleet-shard-open",
+                "--session",
+                session,
+                "--shard",
+                shard["id"],
+                "--repo",
+                self.repo,
+            )
+            self.assertEqual(shard["id"], opened["shard_id"])
+            child = Path(opened["session_dir"])
+            child_manifest = json.loads((child / "manifest.json").read_text(encoding="utf-8"))
+            for task_id in child_manifest["tasks"]:
+                self.start_task(child, task_id)
+                self.cli(
+                    "complete",
+                    "--session",
+                    child,
+                    "--task",
+                    task_id,
+                    "--coverage",
+                    self.coverage_file(f"{shard['id']}-{task_id}.json"),
+                )
+
+        status = self.cli("fleet-status", "--session", session)
+        self.assertTrue(status["all_shards_terminal"])
+        self.assertEqual("fleet_merge", status["next_action"])
+
+        merged = self.cli("fleet-merge", "--session", session)
+        self.assertEqual(20, merged["merged_tasks"])
+        self.assertEqual("dedup_plan_then_finalize", merged["next_action"])
+        parent_manifest = json.loads((session / "manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(
+            20,
+            sum(task["status"] == "complete" for task in parent_manifest["tasks"].values()),
+        )
+        self.assertEqual(
+            0,
+            sum(task["status"] == "fleeted" for task in parent_manifest["tasks"].values()),
+        )
+
+    def test_launch_menu_includes_budgets_for_every_option_and_reply_guide(self):
+        self.write("apps/main.go", "package main\nfunc main() {}\n")
+        self.write("packages/lib.go", "package lib\nfunc Help() {}\n")
+        self.write("docs/readme.md", "# docs\n")
+        self.write("scripts/tool.py", "print('x')\n")
+        self.commit_all()
+        # Uncommitted workspace change so workspace-review has a target.
+        self.write("apps/main.go", "package main\nfunc main() { println(\"x\") }\n")
+
+        initialized = self.cli(
+            "init",
+            "--repo", self.repo,
+            "--mode", "review",
+            "--workspace",
+            "--session-id", "menu-budgets",
+            "--state-root", self.state,
+        )
+        menu = initialized["launch_menu"]
+        self.assertIn("how_to_reply", menu)
+        self.assertIn("display_template", menu)
+        self.assertIn("option_comparison", menu)
+        self.assertIn("scan-runtime", menu["display_template"])
+        self.assertIn("如何回复", menu["display_template"])
+        by_id = {item["id"]: item for item in menu["options"]}
+        self.assertIn("workspace-review", by_id)
+        self.assertIn("scan-runtime", by_id)
+        self.assertIn("scan-apps-packages", by_id)
+        self.assertIn("scan-full", by_id)
+        self.assertTrue(by_id["workspace-review"]["matches_current_session"])
+        self.assertFalse(by_id["scan-runtime"]["matches_current_session"])
+        for option_id in ("workspace-review", "scan-runtime", "scan-apps-packages", "scan-full"):
+            option = by_id[option_id]
+            self.assertIsNotNone(option.get("primary_targets"))
+            self.assertIn("likely", option.get("token_estimate") or {})
+            self.assertGreaterEqual(option["primary_targets"], 0)
+        self.assertGreaterEqual(by_id["scan-full"]["primary_targets"], by_id["scan-runtime"]["primary_targets"])
+        self.assertGreaterEqual(
+            by_id["scan-runtime"]["token_estimate"]["likely"],
+            by_id["workspace-review"]["token_estimate"]["likely"],
+        )
+
+        session = Path(initialized["session_dir"])
+        mismatch = self.cli(
+            "start",
+            "--session",
+            session,
+            "--choice",
+            "scan-runtime",
+            expect=2,
+        )
+        self.assertEqual("LAUNCH_CHOICE_REQUIRES_REINIT", mismatch["error"])
+        self.assertIn("init --repo", mismatch["suggested_command"])
+
+        started = self.cli(
+            "start",
+            "--session",
+            session,
+            "--choice",
+            "workspace-review",
+            "--concurrency",
+            "max",
+        )
+        self.assertEqual("running", started["status"])
 
     def test_orchestrate_report_learns_real_host_capacity_and_releases_rejections(self):
         for index in range(40):
@@ -1706,7 +1868,7 @@ class OcrReviewCliTest(unittest.TestCase):
         report = self.report_launch(session, tick["launch_id"], accepted, rejected)
 
         self.assertEqual(4, report["accepted"])
-        self.assertEqual(11, report["rejected"])
+        self.assertEqual(36, report["rejected"])
         self.assertEqual(4, report["host_capacity"])
         self.assertEqual(4, report["desired_concurrency"])
         self.assertEqual("saturated", report["probe_state"])
@@ -1717,12 +1879,13 @@ class OcrReviewCliTest(unittest.TestCase):
         waiting = self.cli("orchestrate-tick", "--session", session)
         self.assertEqual([], waiting["actions"])
 
-    def test_adaptive_orchestrator_expands_beyond_fifteen_after_full_acceptance(self):
+    def test_adaptive_orchestrator_requests_all_targets_when_host_accepts_everything(self):
         for index in range(40):
             self.write(f"file{index:02d}.go", f"package pay\nfunc F{index}() {{}}\n")
         self.commit_all()
-        session = self.init_scan()
+        session = self.init_scan(concurrency="auto")
         first = self.cli("orchestrate-tick", "--session", session)
+        self.assertEqual(40, len(first["actions"]))
         accepted = []
         for index, action in enumerate(first["actions"]):
             context_id = f"expansion-reviewer-{index}"
@@ -1732,14 +1895,11 @@ class OcrReviewCliTest(unittest.TestCase):
             )
             accepted.append({"lease_id": action["lease_id"], "context_id": context_id})
         report = self.report_launch(session, first["launch_id"], accepted)
-        self.assertEqual(15, report["host_capacity"])
-        self.assertEqual("probing", report["probe_state"])
-
+        self.assertEqual(40, report["accepted"])
+        self.assertEqual(0, report["rejected"])
+        self.assertEqual(40, report["host_capacity"])
         second = self.cli("orchestrate-tick", "--session", session)
-
-        self.assertEqual(15, len(second["actions"]))
-        self.assertEqual(30, second["requested_concurrency"])
-        self.assertEqual("expand", second["phase"])
+        self.assertEqual([], second["actions"])
 
     def test_verifier_launch_is_acknowledged_before_capacity_report(self):
         for index in range(4):
@@ -1997,83 +2157,77 @@ class OcrReviewCliTest(unittest.TestCase):
         paths = {task["path"] for task in manifest["tasks"].values()}
         self.assertEqual({"app.py"}, paths)
 
-    def test_auto_concurrency_has_fifteen_floor_and_no_skill_ceiling(self):
+    def test_auto_concurrency_maximize_first_has_no_skill_ceiling(self):
         for index in range(16):
             self.write(f"file{index}.go", f"package pay\nfunc F{index}() {{}}\n")
         self.commit_all()
-        session = self.init_scan()
+        session = self.init_scan(concurrency="auto")
         manifest = json.loads((session / "manifest.json").read_text(encoding="utf-8"))
-        task_ids = [
-            task_id
-            for _path, task_id in sorted(
-                (task["path"], task_id) for task_id, task in manifest["tasks"].items()
-            )
-        ]
-        self.assertEqual(15, manifest["scheduling"]["minimum"])
+        self.assertEqual(16, manifest["scheduling"]["initial_window"])
+        self.assertEqual(16, manifest["scheduling"]["desired_window"])
         self.assertEqual(16, manifest["scheduling"]["limit"])
-        self.assertEqual("auto-host-capacity", manifest["scheduling"]["source"])
-        for task_id in task_ids:
-            self.start_task(session, task_id)
+        self.assertEqual("auto-maximize-then-learn-host-capacity", manifest["scheduling"]["source"])
+        tick = self.cli("orchestrate-tick", "--session", session)
+        self.assertEqual(16, len(tick["actions"]))
+        accepted = []
+        for index, action in enumerate(tick["actions"]):
+            context_id = f"reviewer-{index}"
+            self.cli(
+                "task-start",
+                "--session",
+                session,
+                "--task",
+                action["task_id"],
+                "--reviewer-context",
+                context_id,
+                "--lease",
+                action["lease_id"],
+            )
+            accepted.append({"lease_id": action["lease_id"], "context_id": context_id})
+        self.report_launch(session, tick["launch_id"], accepted)
 
         status = self.cli("status", "--session", session)
         self.assertEqual(16, status["scheduling"]["running"])
         self.assertEqual(0, status["scheduling"]["available_slots"])
 
-    def test_auto_dispatch_keeps_expanding_past_two_fifteen_agent_waves(self):
+    def test_auto_dispatch_requests_all_targets_on_first_wave(self):
         for index in range(60):
             self.write(f"file{index:02d}.go", f"package pay\nfunc F{index}() {{}}\n")
         self.commit_all()
-        session = self.init_scan()
+        session = self.init_scan(concurrency="auto")
 
         first = self.dispatch_next(session)
-        self.assertEqual("initial", first["phase"])
-        self.assertEqual(15, len(first["task_ids"]))
-        self.assertEqual(15, first["requested_window"])
-        for task_id in first["task_ids"]:
+        self.assertEqual("maximize", first["phase"])
+        self.assertEqual(60, len(first["task_ids"]))
+        self.assertEqual(60, first["requested_window"])
+        for task_id in first["task_ids"][:20]:
             self.start_task(session, task_id)
-        first_report = self.report_capacity(session, first["probe_id"])
-        self.assertEqual("expand_reviewer_window", first_report["next_action"])
-
-        second = self.dispatch_next(session)
-        self.assertEqual("expand", second["phase"])
-        self.assertEqual(15, len(second["task_ids"]))
-        self.assertEqual(30, second["requested_window"])
-        for task_id in second["task_ids"]:
-            self.start_task(session, task_id)
-        self.report_capacity(session, second["probe_id"])
-
-        third = self.dispatch_next(session)
-        self.assertEqual("expand", third["phase"])
-        self.assertEqual(15, len(third["task_ids"]))
-        self.assertEqual(45, third["requested_window"])
-        for task_id in third["task_ids"]:
-            self.start_task(session, task_id)
-        self.report_capacity(session, third["probe_id"])
-
-        fourth = self.dispatch_next(session)
-        self.assertEqual("expand", fourth["phase"])
-        self.assertEqual(15, len(fourth["task_ids"]))
-        self.assertEqual(60, fourth["requested_window"])
-
+        report = self.report_capacity(
+            session, first["probe_id"], "Cursor rejected additional reviewer contexts"
+        )
+        self.assertEqual(20, report["accepted"])
+        self.assertEqual(40, report["rejected"])
+        self.assertEqual(20, report["observed_capacity"])
+        self.assertEqual("saturated", report["probe_state"])
+        status = self.cli("status", "--session", session)
+        self.assertEqual(20, status["scheduling"]["running"])
+        self.assertEqual(40, status["tasks"]["pending"])
     def test_host_rejection_sets_observed_capacity_and_preserves_pending_tasks(self):
         for index in range(40):
             self.write(f"file{index:02d}.go", f"package pay\nfunc F{index}() {{}}\n")
         self.commit_all()
-        session = self.init_scan()
+        session = self.init_scan(concurrency="auto")
         initial = self.dispatch_next(session)
-        for task_id in initial["task_ids"]:
-            self.start_task(session, task_id)
-        self.report_capacity(session, initial["probe_id"])
-        expansion = self.dispatch_next(session)
-        for task_id in expansion["task_ids"][:7]:
+        self.assertEqual(40, len(initial["task_ids"]))
+        for task_id in initial["task_ids"][:22]:
             self.start_task(session, task_id)
 
         report = self.report_capacity(
-            session, expansion["probe_id"], "Cursor rejected the next reviewer context"
+            session, initial["probe_id"], "Cursor rejected the next reviewer context"
         )
 
-        self.assertEqual(7, report["accepted"])
-        self.assertEqual(8, report["rejected"])
+        self.assertEqual(22, report["accepted"])
+        self.assertEqual(18, report["rejected"])
         self.assertEqual(22, report["observed_capacity"])
         self.assertEqual(22, report["desired_window"])
         self.assertEqual("saturated", report["probe_state"])
@@ -2088,18 +2242,20 @@ class OcrReviewCliTest(unittest.TestCase):
         for index in range(40):
             self.write(f"file{index:02d}.go", f"package pay\nfunc F{index}() {{}}\n")
         self.commit_all()
-        session = self.init_scan()
+        session = self.init_scan(concurrency="auto")
         initial = self.dispatch_next(session)
-        for task_id in initial["task_ids"]:
+        self.assertEqual(40, len(initial["task_ids"]))
+        for task_id in initial["task_ids"][:22]:
             self.start_task(session, task_id)
-        self.report_capacity(session, initial["probe_id"])
-        expansion = self.dispatch_next(session)
-        for task_id in expansion["task_ids"][:7]:
-            self.start_task(session, task_id)
-        self.report_capacity(session, expansion["probe_id"], "temporary host limit")
+        self.report_capacity(session, initial["probe_id"], "temporary host limit")
 
         coverage = self.coverage_file("reprobe-coverage.json")
-        for task_id in initial["task_ids"][:5]:
+        running_ids = [
+            task_id
+            for task_id, task in json.loads((session / "manifest.json").read_text(encoding="utf-8"))["tasks"].items()
+            if task["status"] == "running"
+        ]
+        for task_id in running_ids[:5]:
             self.cli("complete", "--session", session, "--task", task_id, "--coverage", coverage)
 
         refill = self.dispatch_next(session)
@@ -2175,7 +2331,10 @@ class OcrReviewCliTest(unittest.TestCase):
         self.assertLess(len(skill.splitlines()), 150)
         self.assertIn("orchestrate-tick", skill)
         self.assertIn("orchestrate-report", skill)
-        self.assertIn("至少 15", skill)
+        self.assertIn("15 不是并发上限", skill)
+        self.assertIn("awaiting_start", skill)
+        self.assertIn("launch_menu", skill)
+        self.assertIn("fleet-plan", skill)
         self.assertIn("verifier", skill)
         self.assertIn("session_epoch", runbook)
         self.assertIn("lease_id", runbook)

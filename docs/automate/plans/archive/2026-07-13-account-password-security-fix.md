@@ -46,7 +46,7 @@ Execution trigger: dev-autopilot A5 plan-execute
 - `tests/test_auth_profile.py` 将错误当前密码的 401 固化为期望，未验证会话连续性和审计边界，并直接操作环境 admin；登录失败还会伪造 admin JWT。
 - `docs/api/README.md` 将 `PATCH /api/v1/me` 与修改密码都错误挂到 `AUTH-003`；`F02-AUTH.md` 当前仅有 AUTH-001～008。
 - `docs/srs/` 对“修改密码”“账户自服务”“用户资料”检索无权威需求条款；`F01-BOOT.md::BOOT-003` 只约束鉴权中间件、JWT 登录/守卫与 `GET /api/v1/me`，不能据此扩展出账户资料/凭证维护验收。因此本轮无权新增 `AUTH-009`，也不能把两条自服务写路由硬挂 BOOT-003。
-- `docs/automate/plans/2026-07-08-account-self-service.md:7-16` 已明确记录账户资料、`GET/PATCH /api/v1/me`、change-password、前端页面与测试的实施范围，可与 BUG-001 及现有代码/测试共同构成“已实现能力/缺陷修复”追溯，不冒充 SRS/PRD 功能 ID。
+- `docs/automate/plans/archive/2026-07-08-account-self-service.md:7-16` 已明确记录账户资料、`GET/PATCH /api/v1/me`、change-password、前端页面与测试的实施范围，可与 BUG-001 及现有代码/测试共同构成“已实现能力/缺陷修复”追溯，不冒充 SRS/PRD 功能 ID。
 - `fe/src/lib/api.ts::registerUnauthorizedHandler()` 当前写入模块级单例且没有 reset/unsubscribe；`AuthProvider` effect 注册后也无 cleanup，真实集成测试会产生跨测试污染风险。
 - `docs/features/` 未找到相关 feature-assessment；没有未完成 assessment 前置条件。
 - Bug Case 关键词检索未命中相同 401/会话语义案例；修复完成后应新增可复用案例。
@@ -141,7 +141,7 @@ Execution trigger: dev-autopilot A5 plan-execute
 - `docs/arch.md`：不改目录、技术栈、环境变量或架构边界。
 - `backend/app/auth/profile/service.py`、`backend/app/api/v1/auth.py`、`backend/app/auth/profile/schemas.py`：API v1 业务 401 保持兼容，错误映射已透传 `ProfileError.status`，现有 1/8/128 输入边界已满足；明确不做 422 状态迁移。
 - `docs/srs/**`：无账户自服务权威条款且用户明确禁止扩展 SRS，本轮不修改。
-- `docs/automate/plans/2026-07-08-account-self-service.md`：作为已完成实施范围锚点引用，历史计划内容不改。
+- `docs/automate/plans/archive/2026-07-08-account-self-service.md`：作为已完成实施范围锚点引用，历史计划内容不改。
 
 ## 改动清单（严格 TDD）
 
@@ -269,7 +269,7 @@ Execution trigger: dev-autopilot A5 plan-execute
   - `.agents/skills/bug-case-library/cases/auth-password-401-session-semantics.md`
   - `.agents/skills/bug-case-library/SKILL.md`
 - **改动**：
-  - **合同决策已由本轮用户明确给出**：不新增未经 SRS 授权的 PRD 功能 ID；不缩减“API/PRD 文档纠错”范围；不保留“待人工”占位；以 BUG-001 + `docs/automate/plans/2026-07-08-account-self-service.md:7-16` + 当前代码/测试/页面文档锚点完成已实现能力与缺陷修复追溯。
+  - **合同决策已由本轮用户明确给出**：不新增未经 SRS 授权的 PRD 功能 ID；不缩减“API/PRD 文档纠错”范围；不保留“待人工”占位；以 BUG-001 + `docs/automate/plans/archive/2026-07-08-account-self-service.md:7-16` + 当前代码/测试/页面文档锚点完成已实现能力与缺陷修复追溯。
   - `prd.md`：版本 `1.2.117→1.2.118`、`last_updated→2026-07-13` 并新增修订记录；在 F02 索引或执行范围旁增加“非计数实现纠错”说明，明确 AUTH-003 仅为用户角色绑定，不包含 profile/change-password；链接 F02、BUG-001 和账户自服务实施计划。`feature_count: 129`、评分表、F02 ID 范围均不变。
   - `F02-AUTH.md`：顶部增加“账户自服务实现追溯（非新增功能项）”边界块，明确 `PATCH /me` 与 change-password 不属于 AUTH-003；列出实施计划、BUG-001、`backend/app/auth/profile/`、两条 API 路由、前端账户页及专项测试锚点；不得新增 AUTH-009 或任何验收项到 AUTH-001～008。
   - `prd/README.md`：增加与 hub/F02 一致的非计数说明，保持“16 域 · 129 项”、AUTH-001～008、F02 项数 8；hub 版本同步为 `v1.2.118`。

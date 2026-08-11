@@ -33,14 +33,16 @@ export function ChartInspectorProvider({
   const widgetRef = useRef(widget);
   widgetRef.current = widget;
 
-  const readChartConfig = useCallback(
-    () => widgetRef.current.chartConfig ?? defaultChartConfig("table"),
-    [],
-  );
+  const readChartConfig = useCallback((): ChartViewConfig => {
+    const current = widgetRef.current;
+    if (current.chartConfig) return current.chartConfig;
+    return defaultChartConfig("bar");
+  }, []);
 
   /** 同步更新 ref，避免 columns/binding effect 在父级 re-render 前用旧 cfg 覆盖 deStyle */
   const emitChange = useCallback(
     (next: ChartViewConfig) => {
+      if (!widgetRef.current.chartConfig) return;
       widgetRef.current = { ...widgetRef.current, chartConfig: next };
       onChange(next);
     },

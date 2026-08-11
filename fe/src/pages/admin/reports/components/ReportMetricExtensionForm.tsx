@@ -224,6 +224,11 @@ export function ReportMetricExtensionForm({
     const pending = buildMetricFromForm(form);
     if (pending) {
       if (!validateFormMetric(pending)) return false;
+      const duplicate = draftMetrics.some((m) => m.key === pending.key && m.key !== editingKey);
+      if (duplicate) {
+        toast.error("指标键已存在");
+        return false;
+      }
       if (editingKey) {
         nextMetrics = nextMetrics.map((m) => (m.key === editingKey ? pending : m));
       } else if (!nextMetrics.some((m) => m.key === pending.key)) {

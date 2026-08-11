@@ -42,7 +42,7 @@
 | WP | 内容 |
 |----|------|
 | WP-P1-1 | README / user-guide SMTP · MailHog · `DEV_REPORT_SEED` |
-| WP-P1-2 | 真值复评 `2026-08-03-report-center-delivery-recheck.md` |
+| WP-P1-2 | 真值复评 → [`2026-08-03-report-center-g5-visual-pdf-truth-audit.md`](../feature-truth/2026-08-03-report-center-g5-visual-pdf-truth-audit.md) |
 | WP-P1-3 | `reports.md` 状态 · F08 companion 演化说明 |
 
 ## §4 验收

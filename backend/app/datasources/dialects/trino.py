@@ -1,12 +1,19 @@
 from __future__ import annotations
 
+import re
 import time
 from typing import Any
 
 from app.datasources.dialects.base import ColumnInfo, SchemaInfo, TableInfo, TestConnectionResult
 from app.datasources.dialects.errors import TRINO_DRIVER_MISSING, map_trino_error
+from app.query.rls.guard import validate_identifier
 
 TRINO_MAX_COLUMNS = 500
+
+
+def _quote_ident(name: str) -> str:
+    validate_identifier(name)
+    return f'"{name}"'
 
 
 class TrinoConnector:
@@ -22,6 +29,7 @@ class TrinoConnector:
             raise ImportError("trino driver not installed") from exc
         catalog = kwargs.get("database") or kwargs.get("catalog")
         schema = (kwargs.get("connection_options") or {}).get("schema", "default")
+        http_scheme = (kwargs.get("connection_options") or {}).get("http_scheme", "http")
         password = kwargs.get("password") or ""
         auth = None
         if password and password not in {"-", "none"}:
@@ -32,7 +40,7 @@ class TrinoConnector:
             user=kwargs["username"],
             catalog=catalog,
             schema=schema,
-            http_scheme="http",
+            http_scheme=http_scheme,
             auth=auth,
         )
 
@@ -71,14 +79,14 @@ class TrinoConnector:
         if not catalog:
             return []
         cursor = connection.cursor()
-        cursor.execute(f"SHOW SCHEMAS FROM {catalog}")
+        cursor.execute(f"SHOW SCHEMAS FROM {_quote_ident(catalog)}")
         return [SchemaInfo(name=row[0]) for row in cursor.fetchall() if row]
 
     def list_tables(self, connection: Any, schema: str, *, catalog: str | None = None) -> list[TableInfo]:
         if not catalog or not schema.strip():
             return []
         cursor = connection.cursor()
-        cursor.execute(f"SHOW TABLES FROM {catalog}.{schema}")
+        cursor.execute(f"SHOW TABLES FROM {_quote_ident(catalog)}.{_quote_ident(schema)}")
         rows = cursor.fetchall()
         return [TableInfo(name=row[0], type="table") for row in rows if row] if rows else []
 
@@ -87,7 +95,9 @@ class TrinoConnector:
         if not catalog or not schema.strip() or not table.strip():
             return []
         cursor = connection.cursor()
-        cursor.execute(f"DESCRIBE {catalog}.{schema}.{table}")
+        cursor.execute(
+            f"DESCRIBE {_quote_ident(catalog)}.{_quote_ident(schema)}.{_quote_ident(table)}"
+        )
         columns = [
             ColumnInfo(name=row[0], data_type=row[1], nullable=True)
             for row in cursor.fetchall()

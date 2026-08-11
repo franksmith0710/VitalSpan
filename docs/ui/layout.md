@@ -129,7 +129,8 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │
 ├── 报表
 │   ├── /reports/center              # 报表中心 Hub（侧栏「报表中心」分组 · 含子项高亮）
-│   ├── /reports                     # 预制分析（侧栏子项）
+│   ├── /reports/standard            # 标准分析工作台（侧栏子项）
+│   ├── /reports/standard/config     # 标准分析配置（manage）
 │   ├── /reports/view/:nodeId        # 报表查看与运行（侧栏高亮「文档模板」）
 │   ├── /reports/templates           # 文档模板（侧栏子项 · manage 深链）
 │   ├── /reports/templates/:id       # 模板编辑
@@ -164,7 +165,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 | 分组 | 图标区 | 典型权限 | 里程碑 | 角色 | 默认 IA |
 |------|--------|----------|--------|------|---------|
 | 分析 | 仪表板、数据大屏、可视化模板 | — | M1/M5 | admin/analyst/viewer | **展开**（主路径） |
-| 报表 | 报表中心（侧栏分组：工作台 / 预制分析 / 文档模板 / 定时报告） | `report:read` / `report:manage` | M1/M7/M11 | 全员 | **展开** |
+| 报表 | 报表中心（侧栏分组：工作台 / 标准分析 / 我的报表 / 调度与投递） | `report:read` / `report:manage` | M1/M7/M11 | 全员 | **展开** |
 | 数据准备 | 数据连接（连接管理/同步任务）、**数据集** | `datasource:*` / `dataset:*` | M1/M13 | admin | **展开** |
 | 治理 | 治理流程、查询服务、查询设计器 | `governance:*` | M1/M13 | admin | **H1 固定隐藏**（测试专用 `govNavEnabled`） |
 | 我的 | 个人资料、偏好、安全 | — | — | 全员 | 头像菜单进入 |

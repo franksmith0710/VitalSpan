@@ -18,6 +18,7 @@ from app.core.template_assets import resolve_template_assets_dir, template_asset
 from app.core.middleware import TraceIdMiddleware
 from app.core.middleware.https_audit_guard import HttpsAuditGuardMiddleware
 from app.reports.scheduler.jobs import get_report_scheduler, refresh_schedule_jobs
+from app.reports.standard.jobs import refresh_standard_snapshot_jobs
 from app.openapi.extensions import customize_openapi
 
 settings = get_settings()
@@ -126,6 +127,7 @@ async def lifespan(_app: FastAPI):
     refresh_all_jobs()
     scheduler.start()
     refresh_schedule_jobs()
+    refresh_standard_snapshot_jobs()
     report_scheduler = get_report_scheduler()
     report_scheduler.start()
     yield

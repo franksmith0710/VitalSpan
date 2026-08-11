@@ -9,15 +9,15 @@ import {
 describe("reportCenterNav", () => {
   it("localizes resource types", () => {
     expect(localizeCenterResourceType("template")).toBe("文档模板");
-    expect(localizeCenterResourceType("prefab")).toBe("预制分析");
+    expect(localizeCenterResourceType("standard")).toBe("标准分析");
   });
 
   it("resolves recent view hrefs", () => {
     expect(resolveCenterRecentHref({ resourceType: "template", resourceId: "tpl-1" })).toBe(
       "/admin/reports/view/tpl-1",
     );
-    expect(resolveCenterRecentHref({ resourceType: "prefab", resourceId: "k1" })).toBe(
-      "/admin/reports?binding=k1",
+    expect(resolveCenterRecentHref({ resourceType: "standard", resourceId: "k1" })).toBe(
+      "/admin/reports/standard?pack=k1",
     );
     expect(resolveCenterRecentHref({ resourceType: "schedule", resourceId: "s1" })).toBe(
       "/admin/reports/schedules?tab=all&expand=s1",
@@ -34,6 +34,7 @@ describe("reportCenterNav", () => {
 
   it("resolves report sub-nav active path", () => {
     expect(resolveReportCenterSubNavPath("/admin/reports/center")).toBe("/admin/reports/center");
+    expect(resolveReportCenterSubNavPath("/admin/reports/standard")).toBe("/admin/reports/standard");
     expect(resolveReportCenterSubNavPath("/admin/reports/templates/foo")).toBe(
       "/admin/reports/templates",
     );
@@ -43,6 +44,5 @@ describe("reportCenterNav", () => {
     expect(resolveReportCenterSubNavPath("/admin/reports/schedules")).toBe(
       "/admin/reports/schedules",
     );
-    expect(resolveReportCenterSubNavPath("/admin/reports")).toBe("/admin/reports");
   });
 });

@@ -206,11 +206,11 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
         ) : null}
         {isMap && chartType === "map" ? (
           <>
-            <InspectorSwitchRow
-              label="区域标签"
-              checked={geo.showRegionLabel === true}
-              onCheckedChange={(showRegionLabel) => patchGeo({ showRegionLabel })}
-            />
+          <InspectorSwitchRow
+            label="区域标签"
+            checked={geo.showRegionLabel === true}
+            onCheckedChange={(showRegionLabel) => patchGeo({ showRegionLabel })}
+          />
             {geo.showRegionLabel === true ? (
               <>
                 <InspectorInlineColorRow

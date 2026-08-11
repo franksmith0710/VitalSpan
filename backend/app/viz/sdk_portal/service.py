@@ -51,7 +51,11 @@ def validate_sdk_init(payload: SdkPortalInitIn) -> SdkPortalValidateOut:
                 [{"field": f"allowedOrigins[{i}]", "message": "duplicate"}],
             )
         seen.add(origin)
-    return SdkPortalValidateOut(valid=True, app_id=payload.app_id, token_required=False)
+    return SdkPortalValidateOut(
+        valid=True,
+        app_id=payload.app_id,
+        token_required=payload.auth_mode == "token",
+    )
 
 
 def lifecycle_manifest(payload: SdkLifecycleIn, actor: UserContext) -> SdkLifecycleOut:

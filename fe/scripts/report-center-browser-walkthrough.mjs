@@ -128,10 +128,10 @@ async function main() {
     await shot(page, "R3-doc-templates", results, "R3");
   });
 
-  await runStep(page, results, "R4", "prefab reports page", async () => {
-    await page.goto(`${BASE}/admin/reports`);
+  await runStep(page, results, "R4", "standard analysis page", async () => {
+    await page.goto(`${BASE}/admin/reports/standard`);
     await waitStable(page);
-    await shot(page, "R4-prefab", results, "R4");
+    await shot(page, "R4-standard", results, "R4");
   });
 
   await runStep(page, results, "R5", "report templates page", async () => {

@@ -123,7 +123,7 @@ def claim_next_job(worker_id: str, job_kind: str | None = None) -> dict | None:
         )
         if job_kind:
             stmt = stmt.where(ReportJob.job_kind == job_kind)
-        job = db.scalar(stmt)
+        job = db.scalar(stmt.with_for_update(skip_locked=True))
         if job is None:
             return _claim_memory_job(worker_id, job_kind)
         job.status = ReportJobStatus.PROCESSING.value

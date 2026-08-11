@@ -66,9 +66,9 @@ class MysqlConnector:
         if init_cmd:
             connect_kwargs["init_command"] = init_cmd
         if ssl_mode == "required":
-            connect_kwargs["ssl"] = {"ssl": {}}
+            connect_kwargs["ssl"] = {}
         elif ssl_mode == "disabled":
-            connect_kwargs["ssl"] = None
+            connect_kwargs["ssl_disabled"] = True
         return connect_kwargs
 
     def open_connection(

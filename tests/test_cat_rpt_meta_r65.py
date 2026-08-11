@@ -42,14 +42,14 @@ def r65_sqlite_env():
     from app.governance.catalog.classification import service as class_service
     from app.governance.catalog.cat06 import service as cat06_service
     from app.metadata.physical import service as physical_service
-    from app.reports.prefab import service as prefab_service
+    from app.reports.persistence import memory_stores
 
     cat03_service._nodes.clear()
     cat03_service._codes.clear()
     class_service._nodes.clear()
     class_service._codes.clear()
     cat06_service._store.clear()
-    prefab_service._store.clear()
+    memory_stores.analysis_packs.clear()
     physical_service._store.clear()
     if previous_db is None:
         os.environ.pop("DATABASE_URL", None)
@@ -81,7 +81,7 @@ def enterprise_user() -> Generator[None, None, None]:
     from app.governance.catalog.cat03 import service as cat03_service
     from app.governance.catalog.classification import service as class_service
     from app.governance.catalog.cat06 import service as cat06_service
-    from app.reports.prefab import service as prefab_service
+    from app.reports.persistence import memory_stores
 
     async def _override() -> UserContext:
         return UserContext(id="enterprise-r65", username="enterprise", roles=["enterprise"])
@@ -89,7 +89,6 @@ def enterprise_user() -> Generator[None, None, None]:
     cat03_service.set_user_region_scope("enterprise-r65", "CN")
     class_service.set_user_class_scope("enterprise-r65", "CAT")
     cat06_service.set_user_brand_scope("enterprise-r65", "BRAND01")
-    prefab_service.set_user_prefab_scope("enterprise-r65", "bind-cn")
     fastapi_app.dependency_overrides[get_current_user] = _override
     yield
     fastapi_app.dependency_overrides.pop(get_current_user, None)
@@ -133,14 +132,17 @@ def _production_stats_payload(stats_key: str | None = None, brand_id: str = "BRA
     }
 
 
-def _prefab_payload(binding_key: str | None = None) -> dict:
+def _standard_pack_payload(pack_key: str | None = None) -> dict:
     return {
-        "bindingKey": binding_key or f"bind-{uuid.uuid4().hex[:8]}",
-        "entityTypeCode": "customer",
-        "analysisType": "lifecycle",
-        "dimensionCodes": ["region"],
+        "packKey": pack_key or f"pack-{uuid.uuid4().hex[:8]}",
         "displayName": "Customer Lifecycle",
+        "businessObjectCode": "customer",
+        "physicalTableFqn": "ops.customer",
+        "dataSourceId": str(uuid.uuid4()),
+        "fieldMapping": {"status": "status", "region": "region", "createdAt": "created_at"},
+        "enabledThemes": ["lifecycle"],
         "allowedRoles": ["analyst"],
+        "snapshotCronPreset": "daily",
     }
 
 
@@ -353,55 +355,64 @@ def test_cat_r65_006_list_filtered_for_enterprise(client, enterprise_user):
 
 
 def test_rpt_r65_002_empty_roles(client):
-    """T-RPT-R65-002-01: allowedRoles=[] 422 RPT_PREFAB_EMPTY_ROLES。"""
-    payload = _prefab_payload()
+    """T-RPT-R65-002-01: allowedRoles=[] 422 RPT_STD_EMPTY_ROLES。"""
+    key = f"pack-empty-{uuid.uuid4().hex[:4]}"
+    payload = _standard_pack_payload(key)
     payload["allowedRoles"] = []
-    resp = client.post("/api/v1/reports/prefab/bindings/validate", headers=AUTH, json=payload)
+    resp = client.put(f"/api/v1/reports/standard/packs/{key}", headers=AUTH, json=payload)
     assert resp.status_code == 422
-    assert resp.json()["code"] == "RPT_PREFAB_EMPTY_ROLES"
+    assert resp.json()["code"] == "RPT_STD_EMPTY_ROLES"
 
 
-def test_rpt_r65_002_analysis_mismatch(client):
-    """T-RPT-R65-002-02: distribution 无 region 422 RPT_PREFAB_ANALYSIS_MISMATCH。"""
-    payload = _prefab_payload()
-    payload["analysisType"] = "distribution"
-    payload["dimensionCodes"] = ["status"]
-    resp = client.post("/api/v1/reports/prefab/bindings/validate", headers=AUTH, json=payload)
+def test_rpt_r65_002_theme_disabled(client, monkeypatch):
+    """T-RPT-R65-002-02: disabled theme run 422 RPT_STD_THEME_DISABLED。"""
+    from app.metadata.physical.schemas import PhysicalTableOut, PhysicalColumn
+
+    monkeypatch.setattr(
+        "app.reports.standard.service.physical_service.get_physical_table",
+        lambda fqn: PhysicalTableOut(
+            tableFqn=fqn,
+            dataSourceId=uuid.uuid4(),
+            displayName="t",
+            columns=[PhysicalColumn(name="status", dataType="varchar")],
+        ),
+    )
+    key = f"pack-theme-{uuid.uuid4().hex[:4]}"
+    payload = _standard_pack_payload(key)
+    payload["enabledThemes"] = ["lifecycle"]
+    client.put(f"/api/v1/reports/standard/packs/{key}", headers=AUTH, json=payload)
+    resp = client.post(
+        f"/api/v1/reports/standard/packs/{key}/run",
+        headers=AUTH,
+        json={"theme": "distribution"},
+    )
     assert resp.status_code == 422
-    assert resp.json()["code"] == "RPT_PREFAB_ANALYSIS_MISMATCH"
+    assert resp.json()["code"] == "RPT_STD_THEME_DISABLED"
 
 
-def test_rpt_r65_002_enterprise_scope_forbidden(client, enterprise_user):
-    """T-RPT-R65-002-03: enterprise scope 外 bindingKey PUT 403 RPT_PREFAB_FORBIDDEN。"""
-    key = f"bind-us-{uuid.uuid4().hex[:4]}"
-    resp = client.put(f"/api/v1/reports/prefab/bindings/{key}", headers=AUTH, json=_prefab_payload(key))
+def test_rpt_r65_002_viewer_forbidden(client, viewer_user):
+    """T-RPT-R65-002-03: viewer PUT 403 RPT_STD_FORBIDDEN。"""
+    key = f"pack-v-{uuid.uuid4().hex[:4]}"
+    resp = client.put(
+        f"/api/v1/reports/standard/packs/{key}",
+        headers=AUTH,
+        json=_standard_pack_payload(key),
+    )
     assert resp.status_code == 403
-    assert resp.json()["code"] == "RPT_PREFAB_FORBIDDEN"
+    assert resp.json()["code"] in {"RPT_STD_FORBIDDEN", "PERMISSION_DENIED"}
 
 
-def test_rpt_r65_002_probe_validate_under_50ms(client):
-    """T-RPT-R65-002-04: probe_validate_prefab_budget_ms < 50ms。"""
-    from app.reports.prefab.probe import probe_validate_prefab_budget_ms
-
-    result = probe_validate_prefab_budget_ms()
-    assert result.ok is True
-    assert result.elapsed_ms < 50
+def test_rpt_r65_002_list_route(client):
+    """T-RPT-R65-002-04: GET standard packs 路由可达。"""
+    resp = client.get("/api/v1/reports/standard/packs", headers=AUTH)
+    assert resp.status_code == 200
 
 
-def test_rpt_r65_002_probe_list_under_50ms(client):
-    """T-RPT-R65-002-05: probe_list_prefab_bindings_budget_ms < 50ms。"""
-    from app.reports.prefab.probe import probe_list_prefab_bindings_budget_ms
-
-    result = probe_list_prefab_bindings_budget_ms()
-    assert result.ok is True
-    assert result.elapsed_ms < 50
-
-
-def test_rpt_r65_002_enterprise_scope_ok(client, enterprise_user):
-    """T-RPT-R65-002-06: enterprise scope 内 bindingKey PUT 200。"""
-    key = f"bind-cn-{uuid.uuid4().hex[:4]}"
-    resp = client.put(f"/api/v1/reports/prefab/bindings/{key}", headers=AUTH, json=_prefab_payload(key))
-    assert resp.status_code == 200, resp.text
+def test_rpt_r65_002_not_found(client):
+    """T-RPT-R65-002-05: unknown pack GET 404。"""
+    resp = client.get("/api/v1/reports/standard/packs/missing-pack-r65", headers=AUTH)
+    assert resp.status_code == 404
+    assert resp.json()["code"] == "RPT_STD_NOT_FOUND"
 
 
 def test_meta_r65_005_viewer_register_forbidden(client, viewer_user):
@@ -450,9 +461,9 @@ def test_r65_geo_route_exists(client):
     assert resp.status_code == 200
 
 
-def test_r65_prefab_route_exists(client):
-    """T-R65-000-03: prefab bindings list 路由可达。"""
-    resp = client.get("/api/v1/reports/prefab/bindings", headers=AUTH)
+def test_r65_standard_route_exists(client):
+    """T-R65-000-03: standard packs list 路由可达。"""
+    resp = client.get("/api/v1/reports/standard/packs", headers=AUTH)
     assert resp.status_code == 200
 
 

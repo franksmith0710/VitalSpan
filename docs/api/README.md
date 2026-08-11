@@ -320,13 +320,12 @@ redoc: /redoc
 | GET | `/api/v1/reports/export` | 按模板/时间同步导出（`templateId`+`format`；可选 `from`/`to` ISO8601 时间窗；seed 模板 `status=ready` + `downloadUrl`；502/413 边界；429 `REPORT_EXPORT_RATE_LIMITED`；`X-RateLimit-*` 头） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
 | GET | `/api/v1/reports/export/{exportId}` | 导出任务状态（未知 → 404 `REPORT_EXPORT_NOT_FOUND`） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
 | GET | `/api/v1/reports/export/{exportId}/download` | 导出文件下载（`Content-Disposition: attachment`） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
-| GET/PUT | `/api/v1/reports/prefab/bindings*` | 预制报表绑定 list/upsert（`RPT_PREFAB_*`） | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/prefab.py` |
-| GET | `/api/v1/reports/prefab/bindings/{binding_key}` | 预制 binding 单条读取（`RPT_PREFAB_NOT_FOUND`） | 内部 | 二期 | RPT-002 | 已实现（companion） | `backend/app/api/v1/reports/prefab.py` |
-| POST | `/api/v1/reports/prefab/bindings/validate` | 预制绑定校验（allowedRoles/analysisType 联动） | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/prefab.py` |
-| POST | `/api/v1/reports/prefab/bindings/{binding_key}/run` | 预制 binding 运行（analysisType SQL 模板 + physical table 解析 → renderSpec） | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/prefab.py` |
-| GET | `/api/v1/reports/prefab/bindings/{binding_key}/export?format=` | 预制分析结果导出 PDF/Word/Excel（二进制下载） | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/reports/prefab/export.py` |
-| DELETE | `/api/v1/reports/prefab/bindings/{binding_key}` | 删除预制绑定（`report:manage`，204） | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/prefab.py` |
-| GET | `/api/v1/reports/prefab/probe` | prefab validate/list perf probe 预算探测 | 内部 | 二期 | RPT-002 | 已实现（companion） | `backend/app/api/v1/reports/prefab.py` |
+| GET/PUT/DELETE | `/api/v1/reports/standard/packs*` | 标准分析包 CRUD（`RPT_STD_*`） | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/standard.py` |
+| GET | `/api/v1/reports/standard/packs/{pack_key}/capabilities` | 字段能力探测与主题推荐 | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/reports/standard/capabilities.py` |
+| POST | `/api/v1/reports/standard/packs/{pack_key}/run` | 实时运行指定主题 → renderSpec | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/reports/standard/service.py` |
+| POST | `/api/v1/reports/standard/packs/{pack_key}/snapshots/capture` | 立即打点周期快照 | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/reports/standard/snapshot.py` |
+| GET | `/api/v1/reports/standard/packs/{pack_key}/snapshots` | 快照列表 | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/reports/standard/snapshot.py` |
+| GET | `/api/v1/reports/standard/packs/{pack_key}/compare?theme=` | 本期 vs 上期对比 | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/reports/standard/compare.py` |
 | GET/PUT | `/api/v1/reports/center/preferences` | 报表中心收藏偏好 | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/center.py` |
 | POST | `/api/v1/reports/center/recent` | 记录最近访问 | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/center.py` |
 | POST | `/api/v1/reports/catalog/nodes/{id}/duplicate` | 目录节点另存为（含扩展配置复制） | 内部 | 二期 | RPT-004 | 已实现 | `backend/app/reports/service.py` |

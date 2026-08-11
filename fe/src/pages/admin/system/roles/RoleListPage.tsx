@@ -221,10 +221,26 @@ export function RoleListPage() {
             is_active: (values as RoleEditValues).isActive,
           }),
         });
-        await apiFetch(`/api/v1/roles/${editing.id}/default-views`, {
-          method: "PUT",
-          body: JSON.stringify({ dashboardId: dashId, reportTemplateNodeId: reportId }),
-        });
+        try {
+          await apiFetch(`/api/v1/roles/${editing.id}/default-views`, {
+            method: "PUT",
+            body: JSON.stringify({ dashboardId: dashId, reportTemplateNodeId: reportId }),
+          });
+        } catch (err) {
+          try {
+            await apiFetch(`/api/v1/roles/${editing.id}`, {
+              method: "PUT",
+              body: JSON.stringify({
+                name: editing.name,
+                description: editing.description || null,
+                is_active: editing.isActive,
+              }),
+            });
+          } catch {
+            // best-effort rollback
+          }
+          throw err;
+        }
       } else {
         const created = await apiFetch<RoleOut>("/api/v1/roles", {
           method: "POST",

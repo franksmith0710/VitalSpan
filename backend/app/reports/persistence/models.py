@@ -58,11 +58,33 @@ class ReportExtensionRevision(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
-class ReportPrefabBinding(Base):
-    __tablename__ = "report_prefab_bindings"
+class ReportAnalysisPack(Base):
+    __tablename__ = "report_analysis_packs"
 
-    binding_key: Mapped[str] = mapped_column(String(64), primary_key=True)
-    payload: Mapped[dict] = mapped_column(JSON, nullable=False)
+    pack_key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    display_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    business_object_code: Mapped[str] = mapped_column(String(64), nullable=False)
+    physical_table_fqn: Mapped[str] = mapped_column(String(128), nullable=False)
+    data_source_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    field_mapping: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    enabled_themes: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    allowed_roles: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    snapshot_cron_preset: Mapped[str] = mapped_column(String(16), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ReportAnalysisSnapshot(Base):
+    __tablename__ = "report_analysis_snapshots"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    pack_key: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    theme: Mapped[str] = mapped_column(String(32), nullable=False)
+    period_kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    period_key: Mapped[str] = mapped_column(String(32), nullable=False)
+    filters_hash: Mapped[str] = mapped_column(String(64), nullable=False, default="none")
+    captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    payload: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
 
 
 class ReportTemplateDefinition(Base):

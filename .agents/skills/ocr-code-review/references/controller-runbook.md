@@ -5,20 +5,21 @@
 ## 状态机
 
 ```text
-init → preflight → stack-card/task-plan
+init → awaiting_start（展示 launch_menu / composition / token_estimate）
+     → start（用户确认）→ stack-card/task-plan
      → orchestrate-tick ─┬─ reviewer lease → task-start ─┬→ orchestrate-report
-                        └─ verifier lease → verifier-start┘
-                              ├─ reviewer → submit* → complete ───────────────┐
-                              └─ verifier → verify ───────────────────────────┤
-                                   ↑                                         │
-                                   └──── verifier_backlog 优先 ───────────────┘
+                         └─ verifier lease → verifier-start┘
+                               ├─ reviewer → submit* → complete ───────────────┐
+                               └─ verifier → verify ───────────────────────────┤
+                                    ↑                                         │
+                                    └──── verifier_backlog 优先 ───────────────┘
      → dedup-plan → dedup-verify* → finalize → result + fix queue
 
 任意 running → pause → resume
-任意 running/paused → abort → authoritative partial result
+任意 running/paused/awaiting_start → abort → authoritative partial result
 ```
 
-## 初始化与预检
+## 初始化与启动确认（强制）
 
 通用“code review”默认 `review --workspace`；只有明确的全仓意图才传 `--mode scan`。Scan scope：
 
@@ -26,7 +27,30 @@ init → preflight → stack-card/task-plan
 - `apps-packages`：只保留常见 app/package/service/lib 根目录内的运行代码。
 - `full`：保留受支持的全部代码、文档和工具脚本；生成物、vendor、OCR 安装副本仍受硬过滤器约束。
 
-`init` 返回 `composition` 与 `token_estimate`（low/likely/high）。估算用于成本预告和预算告警，不是实际账单。只有 materially 超出授权时才在第一次派发前确认；确认后不中断逐文件询问。
+`init`（无 `--yes`）进入 `awaiting_start`，返回 `launch_menu`、`composition` 与 `token_estimate`（low/likely/high）。`launch_menu.options[]` 与 `option_comparison` 必须包含**每个启动选项**的 Primary Targets 与 token 预估；Controller 优先渲染 `display_template`，并展示 `how_to_reply.examples`。**禁止只展示当前 session 预算、省略全仓选项。** 估算用于成本预告和预算告警，不是实际账单。
+
+用户确认后：
+
+- 选项与当前 session 一致 → `start --choice <id> [--concurrency ...]`
+- 选项切换了 mode/scope → 按该选项 `reinit_if_different_session` 新建；对旧 session `start --choice` 会返回 `LAUNCH_CHOICE_REQUIRES_REINIT`
+
+默认并发 **`max`**：首轮请求全部 Primary Target。`auto` 同样 maximize-first；固定 `N` 仅调试。**15 不是上限**，只是宿主饱和后的再探测步长。
+
+用户回复格式：`<选项ID>` 或 `<选项ID> <并发>`（如 `scan-runtime max`），或 `保持默认，开始`。
+
+## Fleet（学习 go-fast，抬高产品并发）
+
+Primary Target ≥ 16 或用户要求高吞吐时：`start` 后走 [fleet-mode.md](fleet-mode.md)。
+
+```text
+fleet-plan --fleet-cap 20
+  → 每 shard 建 .worktrees/ocr-fleet-shard-NN
+  → fleet-shard-open（同波）
+  → ≤20 个 shard-controller（cwd=worktree，窗内 concurrency=max）
+  → fleet-status → fleet-merge → dedup → finalize → 清理 worktree
+```
+
+产品并发上限是 **`fleet_cap`（默认 20）个 shard-controller**，总吞吐约 `shards × 单窗容量`。禁止在单窗只接受 8 路后把其余 bulk reject 为 `host_capacity` 却不转 fleet。
 
 ## Tick 与租约
 
@@ -36,7 +60,7 @@ init → preflight → stack-card/task-plan
 ocr_review.py orchestrate-tick --session <dir>
 ```
 
-程序根据 `desired_concurrency` 主动返回一轮 action；每个 action 都包含 `kind`、目标 ID、`lease_id`、`session_epoch`、`expires_at`。Controller 应尝试全部 action，而不是先传一个自认为只有 4 的槽位数。创建 context 成功后立刻 ACK：
+程序根据 `desired_concurrency` 主动返回一轮 action；每个 action 都包含 `kind`、目标 ID、`lease_id`、`session_epoch`、`expires_at`。Controller 应尝试全部 action，而不是先传一个自认为只有 4 或 15 的槽位数。创建 context 成功后立刻 ACK：
 
 ```text
 reviewer: task-start --task <task_id> --reviewer-context <context-id> --lease <lease_id>
@@ -45,9 +69,7 @@ verifier: verifier-start --finding <finding_id> --verifier-context <context-id> 
 
 然后把该 `launch_id` 的每个租约恰好报告一次：成功项写 `accepted[{lease_id, context_id}]`，宿主拒绝项写 `rejected[{lease_id, reason}]`，调用 `orchestrate-report --launch <id> --input <json>`。报告完成前不得再次 tick；拒绝项立即释放回 pending。
 
-不要缓存 action，不要在创建 context 失败时 ACK，不要复用 context。过期租约会重新变为可派发；旧 `session_epoch` 的回调会被拒绝，避免 abort 后 orphan reviewer 写盘。
-
-`auto` 首轮 `requested_concurrency` 至少是 15（任务不足时取任务数）；全接受后程序按 15→30→45… 继续探测。`accepted_concurrency` 是已 ACK 的实际活跃 context，`host_capacity` 是宿主反馈学到的容量。若宿主只接受 4 路，程序降到 4 并进入 saturated；达到重探条件后再试探。宿主真实硬上限仍不可绕过。
+`max`/`auto` 首轮 `requested_concurrency` 等于全部 runnable Primary Target。全接受后，`auto` 在宿主饱和并完成若干终态任务后，可按约 15 的步长再探测扩容；这不是 skill 强加的启动天花板。`accepted_concurrency` 是已 ACK 的实际活跃 context，`host_capacity` 是宿主反馈学到的容量。若宿主只接受 4 路，程序降到 4 并进入 saturated。宿主真实硬上限仍不可绕过。
 
 ## Verifier 背压
 

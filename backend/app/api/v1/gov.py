@@ -1146,9 +1146,9 @@ def cat02_m6_probe(
 @router.get("/catalog/aggregate-templates/{aggregate_key}/attribution", response_model=AggregateAttributionOut)
 def aggregate_templates_attribution(
     aggregate_key: str,
-    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> AggregateAttributionOut | JSONResponse:
     try:
-        return cat02_service.get_aggregate_attribution(aggregate_key)
+        return cat02_service.get_aggregate_attribution(aggregate_key, actor)
     except Cat02Error as exc:
         return _cat02_error(exc)

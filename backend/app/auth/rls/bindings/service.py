@@ -40,7 +40,12 @@ def resolve_effective_values(
     )
     group_ids = list(
         session.scalars(
-            select(AuthRoleDimensionGroup.group_id).where(AuthRoleDimensionGroup.role_id == role_id)
+            select(AuthRoleDimensionGroup.group_id)
+            .join(AuthDimensionGroup, AuthDimensionGroup.id == AuthRoleDimensionGroup.group_id)
+            .where(
+                AuthRoleDimensionGroup.role_id == role_id,
+                AuthDimensionGroup.dimension_type_id == dimension_type_id,
+            )
         )
     )
     from_groups: list[str] = []

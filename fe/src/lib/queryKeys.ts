@@ -69,8 +69,10 @@ export const queryKeys = {
       ["metadata", "entityOverview", dashboardId] as const,
   },
   reports: {
-    prefabBindings: ["reports", "prefabBindings"] as const,
-    prefabRun: (bindingKey: string) => ["reports", "prefabRun", bindingKey] as const,
+    standardPacks: ["reports", "standardPacks"] as const,
+    standardRun: (packKey: string, theme: string) => ["reports", "standardRun", packKey, theme] as const,
+    standardCompare: (packKey: string, theme: string) =>
+      ["reports", "standardCompare", packKey, theme] as const,
     catalogNodes: (parentId?: string | null) =>
       ["reports", "catalogNodes", parentId ?? "root"] as const,
     catalogAllNodes: ["reports", "catalogAllNodes"] as const,

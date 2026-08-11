@@ -23,7 +23,7 @@ async function mockReportCenterApis(page: Page) {
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
-          favorites: [{ resourceType: "prefab", resourceId: "k1" }],
+          favorites: [{ resourceType: "standard", resourceId: "equipment-overview" }],
           recent: [
             {
               resourceType: "template",
@@ -72,12 +72,18 @@ async function mockReportCenterApis(page: Page) {
       body: JSON.stringify({ items: [], total: 0 }),
     });
   });
-  await page.route("**/api/v1/reports/prefab/bindings", async (route) => {
+  await page.route("**/api/v1/reports/standard/packs", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
-        items: [{ bindingKey: "k1", displayName: "预制A", analysisType: "lifecycle" }],
+        items: [
+          {
+            packKey: "equipment-overview",
+            displayName: "设备标准分析",
+            enabledThemes: ["lifecycle"],
+          },
+        ],
         total: 1,
       }),
     });
@@ -117,11 +123,11 @@ async function openReportCenter(page: Page) {
 }
 
 test.describe("report center final smoke", () => {
-  test("hub shows schedules, prefabs and recent views", async ({ page }) => {
+  test("hub shows schedules, standard analysis and recent views", async ({ page }) => {
     await openReportCenter(page);
     await expect(page.getByRole("heading", { name: /报表中心/i })).toBeVisible();
     await expect(page.getByText("销售看板")).toBeVisible();
-    await expect(page.getByText("预制A")).toBeVisible();
+    await expect(page.getByText("设备标准分析")).toBeVisible();
     await expect(page.getByText("最近访问")).toBeVisible();
     await expect(page.getByText("月报模板")).toBeVisible();
   });

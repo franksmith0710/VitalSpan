@@ -59,6 +59,20 @@ def _assert_aggregate_write_access(user: UserContext, aggregate_key: str) -> Non
             raise Cat02Error(CAT02_FORBIDDEN, "enterprise user out of aggregate scope", 403)
 
 
+def _assert_aggregate_read_access(user: UserContext, aggregate_key: str) -> None:
+    roles = set(user.roles)
+    if roles.intersection({"admin", "analyst"}):
+        return
+    if "enterprise" in roles:
+        prefix = _USER_AGGREGATE_SCOPE.get(user.id, "AGG")
+        if not aggregate_key.startswith(prefix):
+            raise Cat02Error(CAT02_FORBIDDEN, "enterprise user out of aggregate scope", 403)
+        return
+    if "viewer" in roles:
+        return
+    raise Cat02Error(CAT02_FORBIDDEN, "aggregate read access denied", 403)
+
+
 def _validate_payload(payload: AggregateTemplateIn) -> AggregateTemplateIn:
     if not payload.dimensions:
         raise Cat02Error(CAT02_EMPTY_DIMENSIONS, "dimensions must not be empty", 422)
@@ -132,7 +146,8 @@ def get_aggregate_template(aggregate_key: str) -> AggregateTemplateOut:
         session.close()
 
 
-def get_aggregate_attribution(aggregate_key: str) -> AggregateAttributionOut:
+def get_aggregate_attribution(aggregate_key: str, user: UserContext) -> AggregateAttributionOut:
+    _assert_aggregate_read_access(user, aggregate_key)
     session = get_meta_session()
     try:
         row = gov_config_store.get_json(

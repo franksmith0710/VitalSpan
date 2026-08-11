@@ -19,7 +19,7 @@
 | In | Out |
 |----|-----|
 | `reports/catalog/` 模板树 registry（memory \| db `RPT_METADATA_STORE`）+ 循环/深度守卫 + M7 ACL | 通用查询引擎（→ `query`） |
-| `reports/persistence/` catalog/extension/prefab/templates/integration_exports ORM + repo 抽象 | Jasper WYSIWYG 设计器 |
+| `reports/persistence/` catalog/extension/standard/templates/integration_exports ORM + repo 抽象 | Jasper WYSIWYG 设计器 |
 | `reports/render/` RenderSpec → PDF/Excel/Word 真字节（reportlab/openpyxl/OOXML） | 在线地图/瓦片 |
 | `reports/scheduler/` 调度 FSM + semi-real 执行 + 模板/看板附件投递 | Celery 队列、飞书 webhook |
 | `reports/extension/` metrics/filters；metric 级 `queryMode=sql\|dataset` + `boundConfigId` | Dataset 建模 UI（→ `metadata/dataset`） |
@@ -40,25 +40,26 @@
 | **看板/大屏可视化定时 PDF**（推荐主路径） | 已有看板/大屏，定期邮件投递画布快照 | 看板分享 → `DashboardSchedulePanel` |
 | **文档模板套版**（固定版式填数） | Word/Excel/PDF 固定版式月报/台账 | Hub 展开「文档模板」或 `/admin/reports/templates` |
 
-侧栏 **仅「报表中心」单入口** → `/admin/reports/center`（`nav-manifest.tsx`）。Hub 聚合：看板定时摘要、近期失败重试、最近访问、预制分析、折叠文档模板区。深链保留：
+侧栏 **仅「报表中心」单入口** → `/admin/reports/center`（`nav-manifest.tsx`）。Hub 聚合：看板定时摘要、近期失败重试、最近访问、标准分析、折叠文档模板区。深链保留：
 
 | 深链路由 | 权限 | 说明 |
 |----------|------|------|
 | `/admin/reports/center` | `report:read` | 统一工作台 Hub |
 | `/admin/reports/schedules` | `report:manage` | 全量定时报告运维 |
-| `/admin/reports` | `report:read` | 预制分析 |
+| `/admin/reports/standard` | `report:read` | 标准分析工作台 |
+| `/admin/reports/standard/config` | `report:manage` | 标准分析包配置 |
 | `/admin/reports/templates` | `report:manage` | 文档模板树 |
 
 - **创建主路径**：看板/大屏编辑 → 分享 → `DashboardSchedulePanel`（前置检查：组件非空、Playwright、SMTP）
-- **analyst**：Hub + 预制；`dashboard:schedule` 可在看板分享页管理本人看板定时
-- **admin**：`report:manage` 含模板/全量调度/批量导入
+- **analyst**：Hub + 标准分析；`dashboard:schedule` 可在看板分享页管理本人看板定时
+- **admin**：`report:manage` 含模板/全量调度/批量导入/标准分析配置
 
 ### DataEase 对标（IA，非菜单名 1:1）
 
 | VitalSpan 入口 | 近似 DataEase 能力 |
 |----------------|-------------------|
 | 报表中心 + 看板分享定时报告 | X-Pack 定时报告 / 可视化快照投递 |
-| 预制报表 | 内置分析类固定报表（政企扩展） |
+| 标准分析 | 对象工作台 + 显式表绑定 + 周期快照对比（政企扩展） |
 | 文档模板 | 报表模板管理（固定版式 Office 套版 · RenderSpec） |
 | 定时报告（schedules） | 定时报告运维 / 执行历史 |
 
@@ -74,14 +75,14 @@
 | `batch/service.py` | 批量创建模板 + Idempotency-Key 守卫 | RPT-007 | L1 已实现 r54 |
 | `engine/service.py` | validate + `run_template`（M3-LITE：`dataSourceId` 驱动 `engine/execute`；无 ds placeholder 回归 r60） | RPT-001 | M3-LITE 已实现 r233 |
 | `engine/execute.py` | extension metrics → SQL `execute_query` **或** Dataset `execute_dataset_from_config` | RPT-001/006 | P3 已实现 |
-| `reports/persistence/` | `RPT_METADATA_STORE=memory\|db`（**默认 db**）；catalog/extension/prefab/templates 持久化 | RPT-006 | P3 已实现 |
+| `reports/persistence/` | `RPT_METADATA_STORE=memory\|db`（**默认 db**）；catalog/extension/standard/templates 持久化 | RPT-006 | P3 已实现 |
 | `reports/render/` | `render_from_spec` → PDF/Excel/Word bytes；PDF 中文经 `pdf_fonts.resolve_report_pdf_font_name()` | RPT-001/003 | P3 已实现 |
 | `engine/acl.py` | run 访问控制 + `set_user_engine_scope` enterprise 白名单 | RPT-001 | companion 已实现 r66 |
 | `engine/probe.py` | `probe_run_template_budget_ms` ≤50ms | RPT-001 | companion 已实现 r66 |
-| `prefab/service.py` | 预制报表绑定 validate/upsert/list（内存 store） | RPT-002 | L1 已实现 r62 |
-| `prefab/run.py` | binding → analysisType SQL → `engine/execute`；`RPT_PREFAB_RUN_FORBIDDEN` | RPT-002 | M3-LITE 已实现 r233 |
-| `prefab/seed.py` | 内置 lifecycle/distribution binding 幂等 upsert | RPT-002 | M3-LITE 已实现 r233 |
-| **FE** | `fe/src/pages/admin/reports/PrefabReportsPage.tsx` + `usePrefabReports.ts`（列表/运行/空态 vitest） | RPT-002 | M3-LITE 已实现 r233 |
+| `standard/service.py` | 分析包 CRUD、run、capabilities、周期快照 compare | RPT-002 | 已实现 |
+| `standard/jobs.py` | APScheduler 周期快照（与投递调度分离） | RPT-002 | 已实现 |
+| `standard/seed.py` | 内置 `equipment-overview` 分析包幂等 upsert | RPT-002 | 已实现 |
+| **FE** | `fe/src/pages/admin/reports/StandardAnalysisPage.tsx` + `StandardAnalysisConfigPage.tsx` | RPT-002 | 已实现 |
 | **FE** | `fe/src/pages/admin/reports/ReportCenterPage.tsx` + `ReportCenterScheduleHub.tsx`（定时报告 Hub · 2026-08 收敛） | RPT-005 | 已实现 |
 | **FE** | `fe/src/pages/admin/reports/components/DashboardSchedulePanel.tsx` + `SchedulePrecheckPanel.tsx`（看板分享页创建 + 前置检查） | RPT-005 | 已实现 |
 | **FE** | `fe/src/pages/export/DashboardExportSnapshotPage.tsx` + `export_render.py`（Playwright PDF 快照） | RPT-005 | G5 · 2026-08-03 |
@@ -150,7 +151,7 @@
 ### F-F companion r-e95d
 
 - **RPT-001**：`integration/reports_export.py` catalog 模板 UUID 导出链 + mock bytes；`exportHook.placeholder=false`
-- **RPT-002**：FE `PrefabBindingForm` + PUT prefab bindings
+- **RPT-002**：FE `StandardAnalysisConfigPage` + PUT standard packs
 - **RPT-003**：FE `TemplateBlockEditor` 块列表/SQL/重排
 - **RPT-005**：`scheduler/delivery_adapter.py` — SMTP `add_attachment` 发送 visual_snapshot PDF；固定 SMTP；测试 mock 仅 `X-Rpt-Delivery-Mock` header
 - **RPT-007**：`batch/export_jobs.py` — `POST /batch/export` + `GET /jobs/{id}` 轮询
@@ -162,8 +163,8 @@
 
 ### r65 companion 质量推分（RPT-002）
 
-- **RPT-002**：`prefab/probe.py` — validate/list perf probe ≤50ms；`allowedRoles` 非空（`RPT_PREFAB_EMPTY_ROLES`）；`analysisType=distribution` 需 `region` 维度（`RPT_PREFAB_ANALYSIS_MISMATCH`）；`set_user_prefab_scope` + enterprise `bindingKey` 前缀 scope；`GET /api/v1/reports/prefab/probe`
+- **RPT-002**：`standard/capabilities.py` — 按物理表列推荐/禁用主题；`allowedRoles` 非空；显式 `physical_table_fqn` 绑定；`GET /api/v1/reports/standard/packs/{pack_key}/capabilities`
 
 ### r68 companion 质量推分（RPT-002）
 
-- **RPT-002**：`get_prefab_binding` + `RPT_PREFAB_NOT_FOUND`；`RPT_PREFAB_DUPLICATE_DIMENSION`；`list_prefab_bindings(user)` enterprise scope 过滤；`probe_get_prefab_binding_budget_ms` ≤50ms；`GET /api/v1/reports/prefab/bindings/{binding_key}`
+- **RPT-002**：`standard/compare.py` — 本期 vs 上期；`standard/snapshot.py` — 周期快照 capture/list；`GET /api/v1/reports/standard/packs/{pack_key}/compare`

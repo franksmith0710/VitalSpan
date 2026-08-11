@@ -410,10 +410,7 @@ def retry_execution(
     schedule_id = out.schedule_id
     schedule_acl.assert_schedule_write(actor, scheduler_service._get_row(schedule_id), "retry")
     new_out = semi_real_execute_schedule(schedule_id, idempotency_key, actor)
-    new_out = new_out.model_copy(update={"parent_execution_id": execution_id})
-    _remember_execution(new_out)
-    _append_history(schedule_id, new_out)
-    return new_out
+    return new_out.model_copy(update={"parent_execution_id": execution_id})
 
 
 def get_execution_artifact_meta(execution_id: uuid.UUID) -> dict:

@@ -38,7 +38,7 @@ from app.reports.scheduler.schemas import ScheduleCreate, ScheduleTransitionIn, 
 from app.reports.scheduler import service as scheduler_service
 from app.reports.scheduler import executor as scheduler_executor
 from app.api.v1.reports.engine import router as engine_router
-from app.api.v1.reports.prefab import router as prefab_router
+from app.api.v1.reports.standard import router as standard_router
 from app.api.v1.reports.templates import router as templates_router
 from app.api.v1.reports.center import router as center_router
 
@@ -534,5 +534,5 @@ def revise_schedule(
 
 router.include_router(center_router)
 router.include_router(engine_router)
-router.include_router(prefab_router)
+router.include_router(standard_router)
 router.include_router(templates_router)

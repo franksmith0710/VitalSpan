@@ -20,4 +20,7 @@ def probe_workno_behavior_budget_ms(workno: str = "EMP1001") -> Cat07ProbeResult
     actor = UserContext(id="probe", username="probe", roles=["admin"])
     cat07_service.query_behavior(workno, None, None, 50, 0, actor)
     elapsed = (time.perf_counter() - started) * 1000
-    return Cat07ProbeResult(elapsed_ms=elapsed, ok=True)
+    return Cat07ProbeResult(
+        elapsed_ms=elapsed,
+        ok=elapsed < probe_workno_behavior_budget_ms_limit,
+    )

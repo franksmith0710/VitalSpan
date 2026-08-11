@@ -4,7 +4,7 @@
 > 来源 SRS V3.7 + 附录 E/F + FR-DATA/FR-ETL（F16）+ M-FINAL 连接器扩展（CONN-023~027）  
 > Hub 索引：[`../prd.md`](../prd.md) · 执行范围：[`../plan.md`](../plan.md)（**companion backlog · 发版 QA + F-D 可选**）
 
-> **非计数实现追溯（2026-07-13）**：F02 仍 **8 项**（AUTH-001～008）。账户资料与修改密码无独立 PRD ID；见 hub/F02 边界说明、[BUG-001](../../bugs/BUG-001_account-password-security_2026-07-13.md) 与 [`plans/2026-07-08-account-self-service.md`](../plans/2026-07-08-account-self-service.md)。
+> **非计数实现追溯（2026-07-13）**：F02 仍 **8 项**（AUTH-001～008）。账户资料与修改密码无独立 PRD ID；见 hub/F02 边界说明、[BUG-001](../../bugs/BUG-001_account-password-security_2026-07-13.md) 与 [`plans/archive/2026-07-08-account-self-service.md`](../plans/archive/2026-07-08-account-self-service.md)。
 
 | 分片 | ID 域 | 模块 | 期次 | 项数 |
 |------|-------|------|------|------|

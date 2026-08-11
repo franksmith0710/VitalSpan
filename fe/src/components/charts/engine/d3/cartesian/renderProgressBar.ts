@@ -107,7 +107,7 @@ export function renderD3ProgressBarChart(
           .html(
             `<div style="font-weight:600;margin-bottom:2px">${d.type}</div>` +
               `<div>进度 <strong>${pct.toFixed(1)}%</strong></div>` +
-              `<div>数�?<strong>${formatChartValue(d.value, valueFormat)}</strong> / ${formatChartValue(d.max, valueFormat)}</div>`,
+              `<div>数值 <strong>${formatChartValue(d.value, valueFormat)}</strong> / ${formatChartValue(d.max, valueFormat)}</div>`,
           );
       })
       .on("mousemove", (event) => {

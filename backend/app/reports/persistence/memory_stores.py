@@ -9,7 +9,8 @@ catalog_owners: dict[uuid.UUID, str] = {}
 artifact_owners: dict[str, str] = {}
 extension_configs: dict[uuid.UUID, dict] = {}
 extension_audit: list[dict] = []
-prefab_bindings: dict[str, dict] = {}
+analysis_packs: dict[str, dict] = {}
+analysis_snapshots: list[dict] = []
 template_definitions: dict[str, dict] = {}
 integration_exports: dict[uuid.UUID, dict] = {}
 
@@ -20,6 +21,7 @@ def clear_all() -> None:
     artifact_owners.clear()
     extension_configs.clear()
     extension_audit.clear()
-    prefab_bindings.clear()
+    analysis_packs.clear()
+    analysis_snapshots.clear()
     template_definitions.clear()
     integration_exports.clear()

@@ -327,7 +327,7 @@ export function createScreenTitleBarWidget(
     gridY: at?.gridY,
     textConfig: {
       ...defaultTextConfig(),
-      content: "",
+      content: SCREEN_TITLE_BAR_MARKER,
       variant: "plain",
       widgetStyle: {
         backgroundShow: true,

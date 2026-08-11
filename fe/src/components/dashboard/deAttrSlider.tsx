@@ -270,6 +270,7 @@ function DeSliderStackedRow({
   ariaLabel,
   className,
   onChange,
+  onPreview,
 }: DeSliderStackedRowProps) {
   const clamped = clampValue(value, min, max);
   const [preview, setPreview] = useState<number | null>(null);
@@ -290,7 +291,10 @@ function DeSliderStackedRow({
         step={step}
         ariaLabel={ariaLabel ?? label}
         ariaValuetext={display}
-        onPreview={setPreview}
+        onPreview={(value) => {
+          setPreview(value);
+          onPreview?.(value);
+        }}
         onChange={onChange}
       />
     </div>

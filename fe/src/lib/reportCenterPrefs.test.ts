@@ -1,23 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { readPinnedPrefabKeys, sortPrefabsByPin, togglePinnedPrefabKey } from "./reportCenterPrefs";
+import { readPinnedStandardKeys, sortStandardByPin, togglePinnedStandardKey } from "./reportCenterPrefs";
 
 describe("reportCenterPrefs", () => {
-  it("toggles pinned prefab keys", () => {
+  it("toggles pinned standard keys", () => {
     localStorage.clear();
-    expect(togglePinnedPrefabKey("k1")).toEqual(["k1"]);
-    expect(togglePinnedPrefabKey("k1")).toEqual([]);
+    expect(togglePinnedStandardKey("k1")).toEqual(["k1"]);
+    expect(togglePinnedStandardKey("k1")).toEqual([]);
   });
 
-  it("sorts pinned prefabs first", () => {
+  it("sorts pinned standard packs first", () => {
     const items = [
-      { bindingKey: "a", displayName: "A" },
-      { bindingKey: "b", displayName: "B" },
+      { packKey: "a", displayName: "A" },
+      { packKey: "b", displayName: "B" },
     ];
-    expect(sortPrefabsByPin(items, ["b"]).map((item) => item.bindingKey)).toEqual(["b", "a"]);
+    expect(sortStandardByPin(items, ["b"]).map((item) => item.packKey)).toEqual(["b", "a"]);
   });
 
-  it("reads persisted pins", () => {
-    localStorage.setItem("vitalspan.reportCenter.pinnedPrefabs", JSON.stringify(["x"]));
-    expect(readPinnedPrefabKeys()).toEqual(["x"]);
+  it("reads pinned keys from storage", () => {
+    localStorage.setItem("vitalspan.reportCenter.pinnedStandard", JSON.stringify(["x"]));
+    expect(readPinnedStandardKeys()).toEqual(["x"]);
   });
 });

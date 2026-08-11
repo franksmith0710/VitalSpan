@@ -52,7 +52,7 @@ def build_dashboard_availability_report(
         within_sla = False
         sla_uptime = 99.0
     fs = probe_dashboard_first_screen(DashboardFirstScreenProbeIn(dashboardId=dashboard_id), actor)
-    within_fs = fs.budget_ms <= 5000
+    within_fs = fs.elapsed_ms <= P95_THRESHOLD_MS
     if within_sla and within_fs:
         overall: OVERALL = "available"
     elif within_sla or within_fs:
@@ -65,7 +65,7 @@ def build_dashboard_availability_report(
         within_first_screen_budget=within_fs,
         overall_status=overall,
         sla_uptime_percent=sla_uptime,
-        first_screen_p95_ms=float(fs.budget_ms),
+        first_screen_p95_ms=float(fs.elapsed_ms),
     )
 
 

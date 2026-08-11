@@ -151,7 +151,13 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
         )
         .attr("stroke-width", 1)
         .style("cursor", onPointClick ? "pointer" : "default")
-        .on("click", () => onPointClick?.({ __category__: name, __value__: 0 }));
+        .on("click", (_e, d) =>
+          onPointClick?.({
+            __category__: d.data.__category__,
+            __value__: Number(d[1]) - Number(d[0]),
+            __series__: name,
+          }),
+        );
     });
   } else {
     for (const [i, s] of seriesGroups.entries()) {

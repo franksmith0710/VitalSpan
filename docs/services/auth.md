@@ -4,7 +4,7 @@
 |------|-----|
 | 模块路径 | `backend/app/auth/` |
 | PRD | [F02-AUTH](../automate/prd/F02-AUTH.md) · AUTH-001 ~ AUTH-008；M1 骨架 [BOOT-003](../automate/prd/F01-BOOT.md) |
-| 实现追溯 | [BUG-001](../bugs/BUG-001_account-password-security_2026-07-13.md) · [Account Self-Service plan](../automate/plans/2026-07-08-account-self-service.md)（profile/change-password，无独立 PRD ID） |
+| 实现追溯 | [BUG-001](../bugs/BUG-001_account-password-security_2026-07-13.md) · [Account Self-Service plan](../automate/plans/archive/2026-07-08-account-self-service.md)（profile/change-password，无独立 PRD ID） |
 | 里程碑 | M7（完整 RBAC）；M1 横切鉴权骨架 |
 | 状态 | **已实现** |
 

@@ -6,12 +6,13 @@ from app.core.config import get_settings
 from app.datasources.models import get_meta_engine
 from app.reports.persistence import memory_stores
 from app.reports.persistence.models import (
+    ReportAnalysisPack,
+    ReportAnalysisSnapshot,
     ReportCatalogNode,
     ReportCatalogOwner,
     ReportExtensionConfig,
     ReportExtensionRevision,
     ReportIntegrationExport,
-    ReportPrefabBinding,
     ReportTemplateDefinition,
 )
 from sqlalchemy.orm import Session
@@ -25,7 +26,8 @@ def reset_metadata_for_tests() -> None:
             db.query(ReportExtensionConfig).delete()
             db.query(ReportCatalogOwner).delete()
             db.query(ReportCatalogNode).delete()
-            db.query(ReportPrefabBinding).delete()
+            db.query(ReportAnalysisSnapshot).delete()
+            db.query(ReportAnalysisPack).delete()
             db.query(ReportTemplateDefinition).delete()
             db.query(ReportIntegrationExport).delete()
             db.commit()

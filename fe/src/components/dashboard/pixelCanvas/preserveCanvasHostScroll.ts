@@ -7,12 +7,16 @@ function queryCanvasHost(): HTMLElement | null {
 }
 
 function restoreIfNeeded(host: HTMLElement, saved: ScrollSnapshot): boolean {
+  let restored = false;
   if (host.scrollTop < saved.top - 8) {
     host.scrollTop = saved.top;
-    host.scrollLeft = saved.left;
-    return true;
+    restored = true;
   }
-  return false;
+  if (host.scrollLeft !== saved.left) {
+    host.scrollLeft = saved.left;
+    restored = true;
+  }
+  return restored;
 }
 
 function scheduleRestore(host: HTMLElement, saved: ScrollSnapshot): void {

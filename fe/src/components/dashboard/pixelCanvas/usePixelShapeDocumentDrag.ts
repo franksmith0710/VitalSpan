@@ -8,14 +8,22 @@ type DocumentDragHandlers = {
 /** DataEase Shape.vue：document 级 pointer 监听，避免手柄/参考线导致丢事件 */
 export function usePixelShapeDocumentDrag() {
   const handlersRef = useRef<DocumentDragHandlers | null>(null);
+  const cleanupRef = useRef<(() => void) | null>(null);
+
+  const unbind = () => {
+    cleanupRef.current?.();
+    cleanupRef.current = null;
+    handlersRef.current = null;
+  };
 
   useEffect(() => {
     return () => {
-      handlersRef.current = null;
+      unbind();
     };
   }, []);
 
   const bind = (pointerId: number, handlers: DocumentDragHandlers) => {
+    unbind();
     handlersRef.current = handlers;
 
     const onMove = (event: PointerEvent) => {
@@ -27,15 +35,17 @@ export function usePixelShapeDocumentDrag() {
       if (event.pointerId !== pointerId) return;
       const commit = event.type !== "pointercancel";
       handlersRef.current?.onEnd(event, commit);
-      document.removeEventListener("pointermove", onMove);
-      document.removeEventListener("pointerup", onEnd);
-      document.removeEventListener("pointercancel", onEnd);
-      handlersRef.current = null;
+      unbind();
     };
 
     document.addEventListener("pointermove", onMove);
     document.addEventListener("pointerup", onEnd);
     document.addEventListener("pointercancel", onEnd);
+    cleanupRef.current = () => {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onEnd);
+      document.removeEventListener("pointercancel", onEnd);
+    };
   };
 
   return bind;

@@ -289,7 +289,7 @@ BE 测试提交错误当前密码
   - [x] 变更有审计记录
 ```
 
-`docs/automate/plans/2026-07-08-account-self-service.md:7-16` 把修改密码列为 Account Self-Service 实施任务，但没有给出对应 PRD ID。API 登记因此引用了语义不相干的 `AUTH-003`。
+`docs/automate/plans/archive/2026-07-08-account-self-service.md:7-16` 把修改密码列为 Account Self-Service 实施任务，但没有给出对应 PRD ID。API 登记因此引用了语义不相干的 `AUTH-003`。
 
 **数据流**：
 
@@ -309,7 +309,7 @@ Account Self-Service 实施计划（无 PRD ID）
 |--------|---------|------|---------|
 | P1 | 先在 PRD hub/F02-AUTH 中定位或新增账户自服务的正式功能项，再把 change-password 路由改挂该 ID；不得继续借用 AUTH-003 | `docs/automate/prd.md`、`docs/automate/prd/F02-AUTH.md`、`docs/api/README.md:47` | 中 |
 | P1 | 在正式功能项补入错误当前密码不终止有效会话、字段错误与测试锚点，保证修复验收可追溯 | 对应 PRD 分片 | 中 |
-| P2 | 将 `2026-07-08-account-self-service.md` 的验证项与最终测试文件/用例对齐 | `docs/automate/plans/2026-07-08-account-self-service.md:18-21` | 低 |
+| P2 | 将 `2026-07-08-account-self-service.md` 的验证项与最终测试文件/用例对齐 | `docs/automate/plans/archive/2026-07-08-account-self-service.md:18-21` | 低 |
 
 ---
 

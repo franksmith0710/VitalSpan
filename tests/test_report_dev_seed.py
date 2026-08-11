@@ -10,7 +10,7 @@ from app.auth.deps import UserContext
 from app.core.config import get_settings
 from app.main import app as fastapi_app
 from app.reports.catalog import service as catalog_service
-from app.reports.prefab import service as prefab_service
+from app.reports.persistence import memory_stores
 from app.reports.scheduler import service as scheduler_service
 from app.reports.templates import service as template_service
 from jwt_auth import AUTH
@@ -47,13 +47,13 @@ def _sqlite():
 def _reset_memory_stores():
     catalog_service._nodes.clear()
     template_service._store.clear()
-    prefab_service._store.clear()
+    memory_stores.clear_all()
     from app.reports.scheduler.store import reset_schedules_for_tests
     reset_schedules_for_tests()
     yield
     catalog_service._nodes.clear()
     template_service._store.clear()
-    prefab_service._store.clear()
+    memory_stores.clear_all()
     reset_schedules_for_tests()
 
 
@@ -96,8 +96,8 @@ def test_dev_seed_idempotent_without_mysql(monkeypatch):
         second = dev_seed.seed_dev_reports(session)
     finally:
         session.close()
-    assert first["prefab"] >= 1
-    assert second["prefab"] >= 1
+    assert first["standard"] >= 1
+    assert second["standard"] >= 1
 
 
 def test_schedule_with_recipients_and_source_fields(client: TestClient):

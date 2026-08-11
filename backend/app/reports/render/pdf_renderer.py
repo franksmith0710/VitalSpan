@@ -4,8 +4,18 @@ from __future__ import annotations
 
 import io
 from typing import Any
+from xml.sax.saxutils import escape
 
 from app.reports.render.pdf_fonts import resolve_report_pdf_font_name
+
+
+def _section_label(section: dict[str, Any], idx: int) -> str:
+    return str(
+        section.get("title")
+        or section.get("metricKey")
+        or section.get("kind")
+        or f"Section {idx + 1}"
+    )
 
 
 def render_pdf(title: str, sections: list[dict[str, Any]]) -> bytes:
@@ -36,10 +46,10 @@ def render_pdf(title: str, sections: list[dict[str, Any]]) -> bytes:
         parent=styles["Heading2"],
         fontName=font_name,
     )
-    story: list = [Paragraph(title, title_style), Spacer(1, 12)]
+    story: list = [Paragraph(escape(title), title_style), Spacer(1, 12)]
     for idx, section in enumerate(sections):
-        label = section.get("metricKey") or section.get("kind") or f"Section {idx + 1}"
-        story.append(Paragraph(str(label), heading_style))
+        label = _section_label(section, idx)
+        story.append(Paragraph(escape(label), heading_style))
         cols = section.get("columns") or []
         rows = section.get("rows") or []
         if cols and rows:

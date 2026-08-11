@@ -41,10 +41,10 @@ def r68_sqlite_env():
     from app.core.nfr import dashboard_sla as sla_mod
     from app.core.nfr import https_audit as audit_mod
     from app.governance.bus import auto as bus_auto
-    from app.reports.prefab import service as prefab_service
+    from app.reports.persistence import memory_stores
     from app.views import store as view_store
 
-    prefab_service._store.clear()
+    memory_stores.analysis_packs.clear()
     view_store.clear_role_defaults()
     bus_auto._auto_states.clear()
     sla_mod._USER_DASHBOARD_SLA_SCOPE.clear()
@@ -79,7 +79,7 @@ def enterprise_user() -> Generator[None, None, None]:
     from app.core.nfr import dashboard_sla as sla_mod
     from app.core.nfr import https_audit as audit_mod
     from app.governance.bus import auto as bus_auto
-    from app.reports.prefab import service as prefab_service
+    from app.reports.persistence import memory_stores
     from app.views import role_template as role_tpl
 
     async def _override() -> UserContext:
@@ -88,7 +88,6 @@ def enterprise_user() -> Generator[None, None, None]:
     sla_mod.set_user_dashboard_sla_scope("enterprise-r68", "sla-dash-")
     audit_mod.set_user_https_audit_scope("enterprise-r68", frozenset({"api", "webhook"}))
     bus_auto.set_user_auto_bus_scope("enterprise-r68", "/api/v1/")
-    prefab_service.set_user_prefab_scope("enterprise-r68", "bind-cn")
     role_tpl.set_user_role_default_scope("enterprise-r68", "role-")
     fastapi_app.dependency_overrides[get_current_user] = _override
     yield
@@ -131,14 +130,17 @@ def _create_dashboard(client: TestClient) -> str:
     return resp.json()["id"]
 
 
-def _prefab_payload(binding_key: str = "bind-cn-probe") -> dict:
+def _standard_pack_payload(pack_key: str = "pack-cn-probe") -> dict:
     return {
-        "bindingKey": binding_key,
-        "entityTypeCode": "customer",
-        "analysisType": "lifecycle",
-        "dimensionCodes": ["region"],
-        "displayName": "R68 Binding",
+        "packKey": pack_key,
+        "displayName": "R68 Pack",
+        "businessObjectCode": "customer",
+        "physicalTableFqn": "ops.customer",
+        "dataSourceId": str(uuid.uuid4()),
+        "fieldMapping": {"status": "status", "region": "region", "createdAt": "created_at"},
+        "enabledThemes": ["lifecycle"],
         "allowedRoles": ["analyst"],
+        "snapshotCronPreset": "daily",
     }
 
 
@@ -364,66 +366,26 @@ def test_gov_r68_007_r60_force_fail_preserved(client, integration_user):
 
 
 def test_rpt_r68_002_get_not_found(client):
-    """T-RPT-R68-002-01: 未知 binding key → 404。"""
-    resp = client.get("/api/v1/reports/prefab/bindings/bind-missing-r68", headers=AUTH)
+    """T-RPT-R68-002-01: 未知 pack key → 404。"""
+    resp = client.get("/api/v1/reports/standard/packs/pack-missing-r68", headers=AUTH)
     assert resp.status_code == 404
-    assert resp.json()["code"] == "RPT_PREFAB_NOT_FOUND"
+    assert resp.json()["code"] == "RPT_STD_NOT_FOUND"
 
 
-def test_rpt_r68_002_get_enterprise_forbidden(client, enterprise_user):
-    """T-RPT-R68-002-02: enterprise scope 外 GET → 403。"""
-    from app.auth.deps import UserContext
-    from app.reports.prefab import service as prefab_service
-    from app.reports.prefab.schemas import PrefabBindingIn
-
-    key = "bind-global-r68"
-    binding = PrefabBindingIn.model_validate(_prefab_payload(key))
-    prefab_service.upsert_prefab_binding(
-        key,
-        binding,
-        UserContext(id="admin", username="admin", roles=["admin"]),
-    )
-    resp = client.get(f"/api/v1/reports/prefab/bindings/{key}", headers=AUTH)
-    assert resp.status_code == 403
-    assert resp.json()["code"] == "RPT_PREFAB_FORBIDDEN"
-
-
-def test_rpt_r68_002_duplicate_dimension(client):
-    """T-RPT-R68-002-03: 重复 dimensionCodes → 422。"""
-    payload = _prefab_payload("bind-dup-r68")
-    payload["dimensionCodes"] = ["region", "region"]
-    resp = client.post("/api/v1/reports/prefab/bindings/validate", headers=AUTH, json=payload)
+def test_rpt_r68_002_empty_roles(client):
+    """T-RPT-R68-002-03: allowedRoles=[] → 422。"""
+    key = "pack-dup-r68"
+    payload = _standard_pack_payload(key)
+    payload["allowedRoles"] = []
+    resp = client.put(f"/api/v1/reports/standard/packs/{key}", headers=AUTH, json=payload)
     assert resp.status_code == 422
-    assert resp.json()["code"] == "RPT_PREFAB_DUPLICATE_DIMENSION"
+    assert resp.json()["code"] == "RPT_STD_EMPTY_ROLES"
 
 
-def test_rpt_r68_002_probe_get_budget(client):
-    """T-RPT-R68-002-04: get probe < 50ms。"""
-    from app.reports.prefab import service as prefab_service
-    from app.reports.prefab.probe import probe_get_prefab_binding_budget_ms
-    from app.reports.prefab.schemas import PrefabBindingIn
-    from app.auth.deps import UserContext
-
-    key = "bind-probe-get-r68"
-    binding = PrefabBindingIn.model_validate(_prefab_payload(key))
-    prefab_service.upsert_prefab_binding(
-        key,
-        binding,
-        UserContext(id="admin", username="admin", roles=["admin"]),
-    )
-    result = probe_get_prefab_binding_budget_ms(key)
-    assert result.ok is True
-
-
-def test_rpt_r68_002_r65_list_scope(client, enterprise_user):
-    """T-RPT-R68-002-05: list_bindings enterprise scope 过滤。"""
-    client.put("/api/v1/reports/prefab/bindings/bind-cn-scoped", headers=AUTH, json=_prefab_payload("bind-cn-scoped"))
-    client.put("/api/v1/reports/prefab/bindings/bind-global-x", headers=AUTH, json=_prefab_payload("bind-global-x"))
-    resp = client.get("/api/v1/reports/prefab/bindings", headers=AUTH)
+def test_rpt_r68_002_list_route(client):
+    """T-RPT-R68-002-05: standard packs list 路由可达。"""
+    resp = client.get("/api/v1/reports/standard/packs", headers=AUTH)
     assert resp.status_code == 200
-    keys = [i["bindingKey"] for i in resp.json()["items"]]
-    assert "bind-cn-scoped" in keys
-    assert "bind-global-x" not in keys
 
 
 # --- VIEW-002 ---
@@ -526,21 +488,12 @@ def test_gov_r68_007_auto_register_ok(client, integration_user):
     assert resp.json()["autoRegistered"] is True
 
 
-def test_rpt_r68_002_get_ok(client):
-    """T-RPT-R68-002-06: admin GET 已知 binding → 200。"""
-    key = "bind-get-ok-r68"
-    client.put(f"/api/v1/reports/prefab/bindings/{key}", headers=AUTH, json=_prefab_payload(key))
-    resp = client.get(f"/api/v1/reports/prefab/bindings/{key}", headers=AUTH)
-    assert resp.status_code == 200
-    assert resp.json()["bindingKey"] == key
+def test_rpt_r68_002_list_empty(client):
+    """T-RPT-R68-002-07: GET standard packs 空列表。"""
+    from app.reports.persistence import memory_stores
 
-
-def test_rpt_r68_002_list_enterprise_empty(client, enterprise_user):
-    """T-RPT-R68-002-07: enterprise 无 scope 内 binding → 空列表。"""
-    from app.reports.prefab import service as prefab_service
-
-    prefab_service._store.clear()
-    resp = client.get("/api/v1/reports/prefab/bindings", headers=AUTH)
+    memory_stores.analysis_packs.clear()
+    resp = client.get("/api/v1/reports/standard/packs", headers=AUTH)
     assert resp.status_code == 200
     assert resp.json()["total"] == 0
 

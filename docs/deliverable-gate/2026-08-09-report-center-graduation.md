@@ -81,7 +81,7 @@
 |------|----------|------|------|------|-----------|----------|
 | 主链收官 | `2026-08-07-report-center-final-signoff.md` | 2026-08-07 | **REAL** | 9.0/A | 0 | **是** |
 | r3 产品闭环 | `2026-08-09-report-center-product-closure.md` | 2026-08-09 | **REAL** | 9.2/A | 0 | **是** |
-| 真机走查 | `browser-reviewer/2026-08-09-report-center.md` | 2026-08-09 | 主链过 | — | 0 | **是** |
+| 真机走查 | `product-reviewer/2026-08-09-report-center-r3.md` | 2026-08-09 | 主链过 | — | 0 | **是** |
 | G5 窄 scope | `2026-08-03-report-center-g5-visual-pdf-truth-audit.md` | 2026-08-03 | PARTIAL | 5.8/C | 3 | **否**（文档过期） |
 | UX 扩展 | `2026-08-04-report-center-ux-truth-audit.md` | 2026-08-04 | PARTIAL | 7.2/B | — | **否**（UX-T5 已修，文档未回填） |
 
@@ -174,5 +174,5 @@ cd .. && python -m pytest tests/ -k report -q
 
 - **用户批准修复**：否（本 skill 只报告）
 - **关联 truth**：`2026-08-07-report-center-final-signoff.md` · `2026-08-09-report-center-product-closure.md`
-- **关联评审**：`product-reviewer/2026-08-09-report-center-r3.md` · `browser-reviewer/2026-08-09-report-center.md`
+- **关联评审**：`product-reviewer/2026-08-09-report-center-r3.md`
 - **关联 PRD**：`docs/automate/prd/F08-RPT.md`

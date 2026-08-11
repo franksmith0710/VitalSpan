@@ -5,8 +5,8 @@ export function useAuthenticatedBlobUrl(path: string | null | undefined): string
   const [url, setUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    setUrl(null);
     if (!path) {
-      setUrl(null);
       return;
     }
     let active = true;

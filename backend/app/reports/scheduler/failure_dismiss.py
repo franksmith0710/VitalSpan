@@ -18,17 +18,20 @@ def _memory_ids(user_id: str) -> set[str]:
     return _MEMORY.setdefault(user_id, set())
 
 
+def _read_dismissed_from_db(user: UserContext) -> set[str]:
+    with Session(bind=get_meta_engine()) as db:
+        rows = db.scalars(
+            select(ReportDismissedFailure.execution_id).where(
+                ReportDismissedFailure.user_id == user.id,
+            ),
+        ).all()
+        return {str(row) for row in rows}
+
+
 def list_dismissed_execution_ids(user: UserContext) -> set[str]:
-    if user.id in _MEMORY:
-        return set(_MEMORY[user.id])
     try:
-        with Session(bind=get_meta_engine()) as db:
-            rows = db.scalars(
-                select(ReportDismissedFailure.execution_id).where(
-                    ReportDismissedFailure.user_id == user.id,
-                ),
-            ).all()
-            return {str(row) for row in rows}
+        persisted = _read_dismissed_from_db(user)
+        return persisted | _MEMORY.get(user.id, set())
     except Exception:
         return set(_MEMORY.get(user.id, ()))
 
@@ -41,6 +44,7 @@ def dismiss_execution(user: UserContext, execution_id: uuid.UUID) -> None:
                 return
             db.add(ReportDismissedFailure(user_id=user.id, execution_id=execution_id))
             db.commit()
+            _MEMORY.get(user.id, set()).discard(str(execution_id))
             return
     except Exception:
         pass

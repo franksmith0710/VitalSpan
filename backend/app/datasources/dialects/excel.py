@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import time
+from io import BytesIO
 from pathlib import Path
 from typing import Any
 
@@ -31,6 +32,18 @@ def _resolve_file_path(host: str) -> tuple[Path | None, str | None, bool]:
     if not path.is_file() or not os.access(path, os.R_OK):
         return None, FILE_NOT_FOUND, False
     return path, None, False
+
+
+def _open_workbook(connection: Any) -> Any:
+    if isinstance(connection, dict) and connection.get("remote"):
+        url = str(connection["remote"])
+        with httpx.Client(timeout=30.0, follow_redirects=True) as client:
+            resp = client.get(url)
+            resp.raise_for_status()
+        from openpyxl import load_workbook
+
+        return load_workbook(BytesIO(resp.content), read_only=True, data_only=True)
+    return connection
 
 
 class ExcelConnector:
@@ -101,8 +114,9 @@ class ExcelConnector:
         return [TableInfo(name="Sheet1", type="SHEET")]
 
     def list_columns(self, connection: Any, schema: str, table: str) -> list[ColumnInfo]:
-        sheet_name = table or (connection.sheetnames[0] if hasattr(connection, "sheetnames") else "Sheet1")
-        ws = connection[sheet_name]
+        workbook = _open_workbook(connection)
+        sheet_name = table or (workbook.sheetnames[0] if hasattr(workbook, "sheetnames") else "Sheet1")
+        ws = workbook[sheet_name]
         row = next(ws.iter_rows(min_row=1, max_row=1, values_only=True), ())
         return [ColumnInfo(name=str(c), data_type="string", nullable=True) for c in row if c is not None]
 
@@ -116,8 +130,9 @@ class ExcelConnector:
         database: str | None = None,
     ) -> tuple[list[str], list[list], bool]:
         guard_native_injection(body)
+        workbook = _open_workbook(connection)
         sheet = body.get("table") or database or "Sheet1"
-        ws = connection[str(sheet)]
+        ws = workbook[str(sheet)]
         rows_iter = ws.iter_rows(values_only=True)
         header = [str(c) for c in next(rows_iter, ()) if c is not None]
         data = [list(r) for r in rows_iter if any(r)]

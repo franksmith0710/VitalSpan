@@ -1,4 +1,4 @@
-"""Dev-only report demo seed (G3): datasource + template + equipment + prefab + schedule."""
+"""Dev-only report demo seed (G3): datasource + template + equipment + standard analysis + schedule."""
 
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ from app.reports.catalog.schemas import CatalogNodeCreate
 from app.reports.errors import ReportExtensionError
 from app.reports.extension.schemas import ExtensionConfigUpsert, MetricAdjustment
 from app.reports.extension import service as extension_service
-from app.reports.prefab.seed import seed_builtin_prefab_bindings
+from app.reports.standard.seed import seed_builtin_analysis_pack
 from app.reports.scheduler import service as scheduler_service
 from app.reports.scheduler.schemas import ScheduleCreate, ScheduleRecipientIn
 from app.reports.templates.schemas import TemplateBlock, TemplateDefinitionIn
@@ -263,7 +263,7 @@ def seed_dev_reports(session: Session, *, actor: UserContext | None = None) -> d
         "datasource": 0,
         "equipment": 0,
         "template": 0,
-        "prefab": 0,
+        "standard": 0,
         "schedule": 0,
         "dataSourceId": None,
         "catalogNodeId": None,
@@ -271,13 +271,13 @@ def seed_dev_reports(session: Session, *, actor: UserContext | None = None) -> d
     ds_id = _resolve_or_create_datasource(session)
     if ds_id is None:
         logger.warning("report_dev_seed_aborted_no_datasource")
-        counts["prefab"] = seed_builtin_prefab_bindings(user)
+        counts["standard"] = seed_builtin_analysis_pack(user)
         return counts
     counts["dataSourceId"] = str(ds_id)
     counts["equipment"] = _seed_equipment_entity(session, ds_id, user)
     tpl_n, node_id = _seed_demo_template(user, ds_id)
     counts["template"] = tpl_n
-    counts["prefab"] = seed_builtin_prefab_bindings(user)
+    counts["standard"] = seed_builtin_analysis_pack(user)
     if node_id is not None:
         counts["catalogNodeId"] = str(node_id)
         counts["schedule"] = _seed_demo_schedule(node_id, user)

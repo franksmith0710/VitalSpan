@@ -18,7 +18,7 @@ from app.datasources.dialects.mariadb import MariadbConnector
 from app.datasources.dialects.influxdb import INFLUX_MAX_MEASUREMENTS, InfluxdbConnector
 from app.datasources.dialects.mongodb import MONGODB_MAX_FIELDS, MongodbConnector
 from app.datasources.dialects.mysql import MysqlConnector
-from app.datasources.dialects.oracle import OracleConnector
+from app.datasources.dialects.oracle import ORACLE_MAX_COLUMNS, OracleConnector
 from app.datasources.dialects.postgres import PostgresConnector
 from app.datasources.dialects.presto import PrestoConnector
 from app.datasources.dialects.sqlite import SqliteConnector

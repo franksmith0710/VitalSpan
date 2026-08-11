@@ -20,13 +20,27 @@ def validate_sync_table_names(source_type: str, source_table: str, target_table:
     validate_identifier(target_table)
 
 
+def _watermark_greater(candidate: object, baseline: object) -> bool:
+    try:
+        return float(candidate) > float(baseline)
+    except (TypeError, ValueError):
+        return str(candidate) > str(baseline)
+
+
+def _watermark_sort_key(value: object) -> tuple[int, float | str]:
+    try:
+        return (0, float(value))  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return (1, str(value))
+
+
 def _max_watermark(rows: list[dict[str, Any]], column: str) -> str | None:
     if not rows:
         return None
     values = [row.get(column) for row in rows if row.get(column) is not None]
     if not values:
         return None
-    return str(max(values, key=lambda v: str(v)))
+    return str(max(values, key=_watermark_sort_key))
 
 
 def compute_next_watermark(job: SyncJob, rows: list[dict[str, Any]]) -> str | None:
@@ -37,7 +51,7 @@ def compute_next_watermark(job: SyncJob, rows: list[dict[str, Any]]) -> str | No
         return job.last_watermark
     if job.last_watermark is None:
         return candidate
-    return candidate if str(candidate) > str(job.last_watermark) else job.last_watermark
+    return candidate if _watermark_greater(candidate, job.last_watermark) else job.last_watermark
 
 
 def fetch_source_rows(job: SyncJob) -> list[dict[str, Any]]:

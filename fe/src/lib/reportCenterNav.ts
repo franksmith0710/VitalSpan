@@ -1,11 +1,11 @@
-import { prefabReportsRunPath } from "@/pages/admin/reports/reportRoutes";
+import { standardAnalysisPath } from "@/pages/admin/reports/standardRoutes";
 import { resolveActiveNavPath } from "@/lib/nav-active";
 
 export const REPORT_CENTER_SUB_NAV_PATHS = [
   "/admin/reports/center",
+  "/admin/reports/standard",
   "/admin/reports/templates",
   "/admin/reports/schedules",
-  "/admin/reports",
 ] as const;
 
 /** 侧栏报表子项高亮：模板查看页归入「文档模板」 */
@@ -44,7 +44,7 @@ export function canRetryReportSchedules(caps: Iterable<string> | Set<string>): b
 
 const RESOURCE_TYPE_LABELS: Record<string, string> = {
   template: "文档模板",
-  prefab: "预制分析",
+  standard: "标准分析",
   schedule: "定时报告",
   dashboard: "看板",
 };
@@ -60,8 +60,8 @@ export function resolveCenterRecentHref(item: {
   switch (item.resourceType) {
     case "template":
       return `/admin/reports/view/${item.resourceId}`;
-    case "prefab":
-      return prefabReportsRunPath(item.resourceId);
+    case "standard":
+      return standardAnalysisPath(item.resourceId);
     case "schedule":
       return `/admin/reports/schedules?tab=all&expand=${encodeURIComponent(item.resourceId)}`;
     default:

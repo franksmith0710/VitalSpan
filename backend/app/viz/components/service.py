@@ -174,9 +174,12 @@ def list_components(
     limit: int = 50,
     offset: int = 0,
 ) -> VizComponentListResponse:
-    rows = db.scalars(
-        select(VizComponent).order_by(VizComponent.updated_at.desc()),
-    ).all()
+    stmt = select(VizComponent).order_by(VizComponent.updated_at.desc())
+    if widget_type is not None:
+        stmt = stmt.where(VizComponent.widget_type == widget_type)
+    if category_key is not None:
+        stmt = stmt.where(VizComponent.category_key == category_key)
+    rows = db.scalars(stmt).all()
     filtered: list[VizComponent] = []
     for row in rows:
         if surface_kind is not None and surface_kind not in (row.surface_kinds or []):

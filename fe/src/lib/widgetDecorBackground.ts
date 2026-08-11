@@ -10,7 +10,6 @@ import type {
 } from "@/lib/widgetBackgroundImageFit";
 import {
   defaultPositionForFit,
-  decorImageUsesAxisFit,
   effectiveDecorBackgroundFit,
   inferFitFromBackgroundSize,
   isDecorativeWidgetBackgroundUrl,

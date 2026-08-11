@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import os
+import tempfile
 import time
 from pathlib import Path
 from typing import Any
@@ -48,6 +49,21 @@ def _read_csv_rows(path: Path) -> tuple[list[str], list[list]]:
     header = [str(c) for c in rows[0]]
     data = [list(r) for r in rows[1:]]
     return header, data
+
+
+def _resolve_connection_path(connection: Any) -> Path:
+    if isinstance(connection, dict) and connection.get("remote"):
+        url = str(connection["remote"])
+        with httpx.Client(timeout=30.0, follow_redirects=True) as client:
+            resp = client.get(url)
+            resp.raise_for_status()
+        fd, name = tempfile.mkstemp(suffix=ALLOWED_CSV_SUFFIX)
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(resp.content)
+        return Path(name)
+    if isinstance(connection, Path):
+        return connection
+    raise ValueError(FILE_NOT_FOUND)
 
 
 class CsvFileConnector:
@@ -104,7 +120,7 @@ class CsvFileConnector:
         return [TableInfo(name="data", type="TABLE")]
 
     def list_columns(self, connection: Any, schema: str, table: str) -> list[ColumnInfo]:
-        header, _ = _read_csv_rows(connection)
+        header, _ = _read_csv_rows(_resolve_connection_path(connection))
         return [ColumnInfo(name=c, data_type="string", nullable=True) for c in header]
 
     def execute_native_query(
@@ -117,7 +133,7 @@ class CsvFileConnector:
         database: str | None = None,
     ) -> tuple[list[str], list[list], bool]:
         guard_native_injection(body)
-        header, data = _read_csv_rows(connection)
+        header, data = _read_csv_rows(_resolve_connection_path(connection))
         data = data[offset : offset + limit + 1]
         truncated = len(data) > limit
         return header, data[:limit], truncated

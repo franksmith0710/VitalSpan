@@ -8,7 +8,7 @@ SRS 与 AUTH-001～008 **未**定义独立「账户资料 / 修改密码」功�
 
 | 能力 | 追溯 |
 |------|------|
-| 资料读取 / 更新 | [`backend/app/auth/profile/`](../../../backend/app/auth/profile/) · `GET/PATCH /api/v1/me` · [`plans/2026-07-08-account-self-service.md`](../plans/2026-07-08-account-self-service.md) |
+| 资料读取 / 更新 | [`backend/app/auth/profile/`](../../../backend/app/auth/profile/) · `GET/PATCH /api/v1/me` · [`plans/archive/2026-07-08-account-self-service.md`](../plans/archive/2026-07-08-account-self-service.md) |
 | 修改密码 | `profile/service.py::change_password` · `POST /api/v1/auth/change-password` · [`BUG-001`](../../bugs/BUG-001_account-password-security_2026-07-13.md) |
 | 前端 | `fe/src/pages/admin/account/` · `ChangePasswordSection` · `ChangePasswordSection.smoke.test.tsx` · `ChangePasswordSession.integration.test.tsx` |
 | 后端测试 | `tests/test_auth_profile.py` |

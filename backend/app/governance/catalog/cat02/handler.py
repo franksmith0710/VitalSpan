@@ -41,7 +41,7 @@ def run_cat02_catalog_probe(actor: UserContext) -> Cat02CatalogProbeOut:
         }),
         actor,
     )
-    attr = cat02_service.get_aggregate_attribution(sample_key)
+    attr = cat02_service.get_aggregate_attribution(sample_key, actor)
     attribution_ready = attr.poc_ready is True
     elapsed = (time.perf_counter() - started) * 1000
     return Cat02CatalogProbeOut(

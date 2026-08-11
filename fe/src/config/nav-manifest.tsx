@@ -134,19 +134,19 @@ export const NAV_MANIFEST: NavManifestSection[] = [
             capability: "report:read",
           },
           {
-            name: "预制分析",
-            path: "/admin/reports",
+            name: "标准分析",
+            path: "/admin/reports/standard",
             milestone: "M1",
             capability: "report:read",
           },
           {
-            name: "文档模板",
+            name: "我的报表",
             path: "/admin/reports/templates",
             milestone: "M1",
             capability: "report:manage",
           },
           {
-            name: "定时报告",
+            name: "调度与投递",
             path: "/admin/reports/schedules",
             milestone: "M1",
             capability: "report:manage",

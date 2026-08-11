@@ -21,6 +21,22 @@ from app.query.translator.service import translate_config_to_sql
 probe_preview_translate_budget_ms_limit = 50
 
 
+def _resolve_connector_type(session: Session, dataset_id: uuid.UUID | None) -> str:
+    if dataset_id is None:
+        return "postgresql"
+    try:
+        ds = dataset_service.get_dataset(str(dataset_id))
+        source_id = ds.table_source_datasource_id
+        if source_id is None:
+            return "postgresql"
+        from app.datasources import service as datasource_service
+
+        source = datasource_service.get_data_source(session, source_id, role_codes=["admin"])
+        return source.type
+    except Exception:
+        return "postgresql"
+
+
 def list_designer_fields(session: Session, dataset_id: uuid.UUID | None = None) -> FieldRegistryOut:
     items, _ = glossary_service.list_terms(session, limit=200, offset=0)
     glossary = [item.code for item in items]
@@ -63,7 +79,7 @@ def build_preview_translate_request(session: Session, payload: PreviewTranslateI
         ],
     )
     return TranslateRequest(
-        connectorType="postgresql",
+        connectorType=_resolve_connector_type(session, payload.dataset_id),
         schema="public",
         table=table,
         columns=columns or ["order_amount"],

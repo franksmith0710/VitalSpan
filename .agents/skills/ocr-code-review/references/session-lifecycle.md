@@ -26,6 +26,15 @@ Session 默认保存在 Git 私有目录，不污染工作树：
 
 Reviewer 不直接编辑这些文件，只通过 CLI 提交。所有写状态命令使用跨进程 Session 锁和原子 UTF-8 JSON/Markdown 替换，避免并发 lost update 与 BOM/终端编码漂移。
 
+## Session 启动闸门
+
+```text
+init → awaiting_start（launch_menu + composition + token_estimate 已就绪）
+    → start（或 init --yes）→ running
+```
+
+在 `awaiting_start` 时禁止 `orchestrate-tick` / `dispatch-next`；Controller 必须先把菜单与 token 预估展示给用户。`abort` 允许从 `awaiting_start` 退出。
+
 ## Task 生命周期
 
 ```text

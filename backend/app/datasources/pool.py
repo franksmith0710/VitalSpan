@@ -11,6 +11,7 @@ from typing import Any
 from app.datasources.dialects.base import DialectConnector
 
 DEFAULT_POOL_SIZE = 2
+_POOL_WAIT_SECONDS = 30.0
 
 
 @dataclass
@@ -66,8 +67,14 @@ class DataSourcePoolManager:
             try:
                 conn = entry.queue.get_nowait()
             except queue.Empty:
-                conn = connector.open_connection(**connect_kwargs)
-                entry.connect_count += 1
+                with self._lock:
+                    can_open = entry.connect_count < entry.pool_size
+                    if can_open:
+                        entry.connect_count += 1
+                if can_open:
+                    conn = connector.open_connection(**connect_kwargs)
+                else:
+                    conn = entry.queue.get(timeout=_POOL_WAIT_SECONDS)
             yield conn
         except Exception:
             pool_broken = True
@@ -75,6 +82,8 @@ class DataSourcePoolManager:
         finally:
             if conn is not None:
                 if pool_broken:
+                    with self._lock:
+                        entry.connect_count = max(0, entry.connect_count - 1)
                     try:
                         conn.close()
                     except Exception:
@@ -83,6 +92,8 @@ class DataSourcePoolManager:
                     try:
                         entry.queue.put_nowait(conn)
                     except queue.Full:
+                        with self._lock:
+                            entry.connect_count = max(0, entry.connect_count - 1)
                         try:
                             conn.close()
                         except Exception:

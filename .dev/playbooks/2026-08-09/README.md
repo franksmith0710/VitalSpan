@@ -9,7 +9,7 @@
 | `.dev` | 有 · `active_env: local` |
 | allow_writes | **false**（默认只读走查；写步打开对话框后关闭，不提交） |
 | allow_destructive | **false** |
-| 交接摘要 | `docs/material/scenario-playbook/2026-08-09-system-admin-first-tenant.md` |
+| 交接摘要 | `docs/material/browser-reviewer/2026-08-09-system-admin-walkthrough-r3.md` |
 
 ## 场景一览
 

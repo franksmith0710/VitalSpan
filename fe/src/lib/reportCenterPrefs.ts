@@ -1,6 +1,6 @@
-const STORAGE_KEY = "vitalspan.reportCenter.pinnedPrefabs";
+const STORAGE_KEY = "vitalspan.reportCenter.pinnedStandard";
 
-export function readPinnedPrefabKeys(): string[] {
+export function readPinnedStandardKeys(): string[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
@@ -12,23 +12,23 @@ export function readPinnedPrefabKeys(): string[] {
   }
 }
 
-export function writePinnedPrefabKeys(keys: string[]): void {
+export function writePinnedStandardKeys(keys: string[]): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(keys));
 }
 
-export function togglePinnedPrefabKey(key: string): string[] {
-  const current = readPinnedPrefabKeys();
+export function togglePinnedStandardKey(key: string): string[] {
+  const current = readPinnedStandardKeys();
   const next = current.includes(key) ? current.filter((k) => k !== key) : [...current, key];
-  writePinnedPrefabKeys(next);
+  writePinnedStandardKeys(next);
   return next;
 }
 
-export function sortPrefabsByPin<T extends { bindingKey: string }>(items: T[], pinned: string[]): T[] {
+export function sortStandardByPin<T extends { packKey: string }>(items: T[], pinned: string[]): T[] {
   if (pinned.length === 0) return items;
   const pinSet = new Set(pinned);
   return [...items].sort((a, b) => {
-    const aPin = pinSet.has(a.bindingKey);
-    const bPin = pinSet.has(b.bindingKey);
+    const aPin = pinSet.has(a.packKey);
+    const bPin = pinSet.has(b.packKey);
     if (aPin === bPin) return 0;
     return aPin ? -1 : 1;
   });

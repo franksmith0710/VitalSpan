@@ -59,6 +59,7 @@ import { useListPagination } from "@/lib/list-pagination";
 import { queryKeys } from "@/lib/queryKeys";
 import { RlsRoleBindingPanel } from "./RlsRoleBindingPanel";
 import type { DimensionGroupOut, DimensionTypeOut } from "./rls-types";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 
 export function RlsAdminPage() {
@@ -277,26 +278,39 @@ export function RlsAdminPage() {
     <AdminPageShell
       layout="list"
       title="行级权限（高级）"
-      description="按组织或自定义维度过滤查询结果。日常「谁能看哪些报表」请优先使用角色权限与资源授权；仅在有细粒度数据范围需求时配置本模块。"
+      description="按组织或自定义维度过滤查询结果，适用于细粒度数据范围控制。"
     >
-      <div className="mx-5 mt-4 rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-theme-sm text-gray-700 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-gray-300">
-        <strong className="font-medium">提示：</strong>
-        本模块面向数据安全进阶场景。若只需控制菜单与报表可见性，请返回
-        <Link to="/admin/system" className="mx-1 text-brand-600 underline dark:text-brand-400">
-          配置向导
-        </Link>
-        完成角色与用户配置即可。
-      </div>
-      {dimensionsCatalogQuery.isError ? (
-        <PageErrorBanner
-          message={mapApiError(dimensionsCatalogQuery.error)}
-          onRetry={() => void dimensionsCatalogQuery.refetch()}
-        />
-      ) : null}
-
       <ListPageSection>
-        <Tabs value={tab} onValueChange={setTab}>
-          <div className="flex flex-col gap-3 border-b border-gray-100 px-5 pb-3 pt-4 dark:border-white/[0.06] sm:flex-row sm:items-center sm:justify-between">
+        <div className="shrink-0 border-b border-gray-100 px-5 py-3 dark:border-white/[0.06]">
+          <Alert severity="warning" appearance="subtle" className="rounded-lg py-3">
+            <AlertDescription className="text-theme-sm leading-relaxed text-gray-600 dark:text-gray-400">
+              日常「谁能看哪些报表」请优先使用
+              <Link to="/admin/system/roles" className="mx-1 text-brand-600 underline dark:text-brand-400">
+                角色权限
+              </Link>
+              与
+              <Link to="/admin/system/grants" className="mx-1 text-brand-600 underline dark:text-brand-400">
+                资源授权
+              </Link>
+              ；仅在有进阶数据范围需求时配置本模块。也可返回
+              <Link to="/admin/system" className="mx-1 text-brand-600 underline dark:text-brand-400">
+                配置向导
+              </Link>
+              完成基础设置。
+            </AlertDescription>
+          </Alert>
+        </div>
+        {dimensionsCatalogQuery.isError ? (
+          <div className="shrink-0 border-b border-gray-100 px-5 py-3 dark:border-white/[0.06]">
+            <PageErrorBanner
+              message={mapApiError(dimensionsCatalogQuery.error)}
+              onRetry={() => void dimensionsCatalogQuery.refetch()}
+            />
+          </div>
+        ) : null}
+
+        <Tabs value={tab} onValueChange={setTab} className="flex min-h-0 flex-1 flex-col">
+          <div className="flex shrink-0 flex-col gap-3 border-b border-gray-100 px-5 py-3 dark:border-white/[0.06] sm:flex-row sm:items-center sm:justify-between">
             <TabsList>
               <TabsTrigger value="dimensions">维度类型</TabsTrigger>
               <TabsTrigger value="groups">维度分组</TabsTrigger>
@@ -520,11 +534,13 @@ export function RlsAdminPage() {
           )}
         </TabsContent>
 
-        <TabsContent value="bindings" className="mt-0 p-5">
-          <RlsRoleBindingPanel
-            groups={bindingGroups}
-            groupsLoading={bindingsGroupsQuery.isLoading}
-          />
+        <TabsContent value="bindings" className="mt-0 flex min-h-0 flex-1 flex-col">
+          <ListPageTableFrame>
+            <RlsRoleBindingPanel
+              groups={bindingGroups}
+              groupsLoading={bindingsGroupsQuery.isLoading}
+            />
+          </ListPageTableFrame>
         </TabsContent>
       </Tabs>
       </ListPageSection>

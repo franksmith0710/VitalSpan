@@ -27,6 +27,14 @@ def _would_create_cycle(session: Session, node_id: uuid.UUID, new_parent_id: uui
     return parent.id == node_id or parent.path.startswith(f"/{node_id}/")
 
 
+def _max_subtree_level(session: Session, node: AuthOrgNode) -> int:
+    max_level = node.level
+    children = session.scalars(select(AuthOrgNode).where(AuthOrgNode.parent_id == node.id))
+    for child in children:
+        max_level = max(max_level, _max_subtree_level(session, child))
+    return max_level
+
+
 def _repath_subtree(session: Session, node: AuthOrgNode) -> None:
     children = session.scalars(select(AuthOrgNode).where(AuthOrgNode.parent_id == node.id))
     for child in children:
@@ -130,7 +138,7 @@ def update_org_node(
         node.parent_id = payload.parent_id
         _init_path_level(node, parent)
         _repath_subtree(session, node)
-    if node.level >= MAX_ORG_DEPTH:
+    if _max_subtree_level(session, node) >= MAX_ORG_DEPTH:
         raise OrgError("ORG_DEPTH_EXCEEDED", f"Org tree depth cannot exceed {MAX_ORG_DEPTH}", 422)
     record_platform_event(
         session,

@@ -10,7 +10,10 @@ def extract_preview_summary(layout_json: dict[str, Any] | None) -> dict[str, Any
     if not layout_json:
         return {"version": 1, "widgets": [], "styleConfig": {}}
 
-    version = int(layout_json.get("version") or 1)
+    try:
+        version = int(layout_json.get("version") or 1)
+    except (TypeError, ValueError):
+        version = 1
     raw_widgets = layout_json.get("widgets") or []
     style = layout_json.get("styleConfig") or layout_json.get("style_config") or {}
 

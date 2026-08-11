@@ -23,6 +23,8 @@ def submit_batch_export_job(
         payload={"nodeIds": [str(nid) for nid in node_ids], "format": fmt},
     )
     process_one_job(UserContext(id=owner_id, username=owner_id, roles=["admin"]))
+    job = job_store.get_job(job["id"])
+    assert job is not None
     return {
         "jobId": job["id"],
         "status": job["status"],

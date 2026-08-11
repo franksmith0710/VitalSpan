@@ -22,7 +22,7 @@ import {
   localizeCenterResourceType,
   resolveCenterRecentHref,
 } from "@/lib/reportCenterNav";
-import { sortPrefabsByPin } from "@/lib/reportCenterPrefs";
+import { sortStandardByPin } from "@/lib/reportCenterPrefs";
 import {
   toggleFavorite,
   useReportCenterPreferenceMutations,
@@ -34,15 +34,15 @@ import {
   ReportCenterQuickAside,
   ReportCenterScheduleList,
 } from "./components/ReportCenterScheduleHub";
-import { ReportCenterPrefabPanel } from "./components/ReportCenterPrefabPanel";
+import { ReportCenterStandardPanel } from "./components/ReportCenterStandardPanel";
 import { buildReportCenterTemplateRows } from "./components/ReportCenterTemplateTable";
 import { ScheduleRecentFailuresPanel } from "./components/ScheduleRecentFailuresPanel";
 import { useReportSchedulesList, useReportScheduleMutations } from "./useReportSchedules";
 
-type PrefabBinding = {
-  bindingKey: string;
+type AnalysisPackSummary = {
+  packKey: string;
   displayName: string;
-  analysisType: string;
+  enabledThemes: string[];
 };
 
 type TemplateKindFilter = "all" | "word" | "excel" | "pdf";
@@ -76,10 +76,10 @@ export function ReportCenterPage() {
     queryFn: fetchAllCatalogNodes,
   });
 
-  const prefabQuery = useQuery({
-    queryKey: queryKeys.reports.prefabBindings,
+  const standardQuery = useQuery({
+    queryKey: queryKeys.reports.standardPacks,
     queryFn: () =>
-      apiFetch<{ items: PrefabBinding[]; total: number }>("/api/v1/reports/prefab/bindings"),
+      apiFetch<{ items: AnalysisPackSummary[]; total: number }>("/api/v1/reports/standard/packs"),
     enabled: matchesCapability(caps, "report:read"),
   });
 
@@ -107,14 +107,14 @@ export function ReportCenterPage() {
     return map;
   }, [readinessQuery.data]);
 
-  const serverPinnedPrefabs = useMemo(
+  const serverPinnedStandard = useMemo(
     () =>
       (centerPrefsQuery.data?.favorites ?? [])
-        .filter((f) => f.resourceType === "prefab")
+        .filter((f) => f.resourceType === "standard")
         .map((f) => f.resourceId),
     [centerPrefsQuery.data],
   );
-  const effectivePinned = serverPinnedPrefabs;
+  const effectivePinned = serverPinnedStandard;
   const recentViews = centerPrefsQuery.data?.recent ?? [];
   const filteredTemplates = useMemo(
     () => filterCatalogTemplates(templates, search, kindFilter),
@@ -131,19 +131,18 @@ export function ReportCenterPage() {
     [filteredTemplates, readinessByNodeId, allNodesQuery.data],
   );
 
-  const prefabItems = prefabQuery.data?.items ?? [];
-  const sortedPrefabItems = useMemo(
-    () => sortPrefabsByPin(prefabItems, effectivePinned),
-    [prefabItems, effectivePinned],
+  const standardItems = standardQuery.data?.items ?? [];
+  const sortedStandardItems = useMemo(
+    () => sortStandardByPin(standardItems, effectivePinned),
+    [standardItems, effectivePinned],
   );
 
   const handleTogglePin = (key: string) => {
     const favorites = centerPrefsQuery.data?.favorites ?? effectivePinned.map((id) => ({
-      resourceType: "prefab",
+      resourceType: "standard",
       resourceId: id,
     }));
-    const next = toggleFavorite(favorites, "prefab", key);
-    const prefabIds = next.filter((f) => f.resourceType === "prefab").map((f) => f.resourceId);
+    const next = toggleFavorite(favorites, "standard", key);
     void saveFavorites.mutateAsync(next);
   };
 
@@ -169,7 +168,7 @@ export function ReportCenterPage() {
           <FileBarChart className="size-6" aria-hidden />
         </AdminPageHeaderIcon>
       }
-      description="统一工作台：定时报告、预制分析、文档模板与最近访问。"
+      description="统一工作台：定时报告、标准分析、文档模板与最近访问。"
       actions={headerActions}
     >
       {schedulesQuery.isError ? (
@@ -350,26 +349,26 @@ export function ReportCenterPage() {
           ) : null}
         </div>
 
-        {!prefabQuery.isLoading && prefabItems.length > 0 ? (
+        {!standardQuery.isLoading && standardItems.length > 0 ? (
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
             <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <p
                   className="text-theme-sm font-semibold text-gray-800 dark:text-white/90"
-                  data-testid="report-center-prefab-heading"
+                  data-testid="report-center-standard-heading"
                 >
-                  预制分析
+                  标准分析
                 </p>
                 <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                  一键运行常用分析模板，可固定到列表顶部。
+                  面向业务对象的决策分析，支持周期快照对比。
                 </p>
               </div>
               <Button type="button" variant="outline" size="sm" className="shrink-0" asChild>
-                <Link to="/admin/reports">查看全部</Link>
+                <Link to="/admin/reports/standard">查看全部</Link>
               </Button>
             </div>
-            <ReportCenterPrefabPanel
-              items={sortedPrefabItems}
+            <ReportCenterStandardPanel
+              items={sortedStandardItems}
               pinnedKeys={effectivePinned}
               onTogglePin={handleTogglePin}
             />

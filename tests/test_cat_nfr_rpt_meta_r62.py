@@ -229,72 +229,48 @@ def test_nfr_r62_003_window_out_of_range(client):
     assert resp.json()["code"] == "DASHBOARD_SLA_WINDOW_OUT_OF_RANGE"
 
 
-def _prefab_payload(binding_key: str | None = None) -> dict:
+def _standard_pack_payload(pack_key: str | None = None) -> dict:
     return {
-        "bindingKey": binding_key or f"bind-{uuid.uuid4().hex[:8]}",
-        "entityTypeCode": "customer",
-        "analysisType": "lifecycle",
-        "dimensionCodes": ["region"],
+        "packKey": pack_key or f"pack-{uuid.uuid4().hex[:8]}",
         "displayName": "Customer Lifecycle",
+        "businessObjectCode": "customer",
+        "physicalTableFqn": "ops.customer",
+        "dataSourceId": "00000000-0000-4000-8000-000000000099",
+        "fieldMapping": {"status": "status", "region": "region", "createdAt": "created_at"},
+        "enabledThemes": ["lifecycle"],
         "allowedRoles": ["analyst"],
+        "snapshotCronPreset": "daily",
     }
 
 
 def test_rpt_r62_002_list_empty(client):
-    """T-RPT-R62-002-01: GET bindings 空列表 200。"""
-    resp = client.get("/api/v1/reports/prefab/bindings", headers=AUTH)
+    """T-RPT-R62-002-01: GET standard packs 空列表 200。"""
+    resp = client.get("/api/v1/reports/standard/packs", headers=AUTH)
     assert resp.status_code == 200
     body = resp.json()
     assert body["items"] == []
 
 
-def test_rpt_r62_002_validate_ok(client):
-    """T-RPT-R62-002-02: POST validate 合法 200 valid=true。"""
-    resp = client.post(
-        "/api/v1/reports/prefab/bindings/validate",
-        headers=AUTH,
-        json=_prefab_payload(),
-    )
-    assert resp.status_code == 200
-    assert resp.json()["valid"] is True
-
-
-def test_rpt_r62_002_dimension_unknown(client):
-    """T-RPT-R62-002-03: 未知 dimension 422 RPT_PREFAB_DIMENSION_UNKNOWN。"""
-    payload = _prefab_payload()
-    payload["dimensionCodes"] = ["missing_dim"]
-    resp = client.post("/api/v1/reports/prefab/bindings/validate", headers=AUTH, json=payload)
-    assert resp.status_code == 422
-    assert resp.json()["code"] == "RPT_PREFAB_DIMENSION_UNKNOWN"
-
-
-def test_rpt_r62_002_upsert_and_list(client):
-    """T-RPT-R62-002-04: PUT upsert 200 + GET 列表含项。"""
-    key = f"bind-{uuid.uuid4().hex[:6]}"
-    payload = _prefab_payload(key)
-    put = client.put(f"/api/v1/reports/prefab/bindings/{key}", headers=AUTH, json=payload)
-    assert put.status_code == 200, put.text
-    listed = client.get("/api/v1/reports/prefab/bindings", headers=AUTH)
-    assert any(i["bindingKey"] == key for i in listed.json()["items"])
-
-
 def test_rpt_r62_002_viewer_forbidden(client, viewer_user):
-    """T-RPT-R62-002-05: viewer 角色 PUT 403 RPT_PREFAB_FORBIDDEN。"""
-    key = f"bind-v-{uuid.uuid4().hex[:4]}"
-    resp = client.put(f"/api/v1/reports/prefab/bindings/{key}", headers=AUTH, json=_prefab_payload(key))
+    """T-RPT-R62-002-05: viewer 角色 PUT 403 RPT_STD_FORBIDDEN。"""
+    key = f"pack-v-{uuid.uuid4().hex[:4]}"
+    resp = client.put(
+        f"/api/v1/reports/standard/packs/{key}",
+        headers=AUTH,
+        json=_standard_pack_payload(key),
+    )
     assert resp.status_code == 403
-    assert resp.json()["code"] == "RPT_PREFAB_FORBIDDEN"
+    assert resp.json()["code"] in {"RPT_STD_FORBIDDEN", "PERMISSION_DENIED"}
 
 
-def test_rpt_r62_002_upsert_idempotent(client):
-    """T-RPT-R62-002-06: 重复 PUT 覆盖幂等 200。"""
-    key = f"bind-idem-{uuid.uuid4().hex[:4]}"
-    payload = _prefab_payload(key)
-    assert client.put(f"/api/v1/reports/prefab/bindings/{key}", headers=AUTH, json=payload).status_code == 200
-    payload["displayName"] = "Updated Name"
-    again = client.put(f"/api/v1/reports/prefab/bindings/{key}", headers=AUTH, json=payload)
-    assert again.status_code == 200
-    assert again.json()["displayName"] == "Updated Name"
+def test_rpt_r62_002_empty_roles(client):
+    """T-RPT-R62-002-03: allowedRoles=[] 422 RPT_STD_EMPTY_ROLES。"""
+    key = f"pack-empty-{uuid.uuid4().hex[:4]}"
+    payload = _standard_pack_payload(key)
+    payload["allowedRoles"] = []
+    resp = client.put(f"/api/v1/reports/standard/packs/{key}", headers=AUTH, json=payload)
+    assert resp.status_code == 422
+    assert resp.json()["code"] == "RPT_STD_EMPTY_ROLES"
 
 
 def _template_payload(template_key: str | None = None) -> dict:

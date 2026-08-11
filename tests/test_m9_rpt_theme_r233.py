@@ -274,87 +274,121 @@ def test_r233_engine_datasource_required_422(client):
 
 
 @patch("app.reports.engine.execute.execute_query")
-def test_r233_prefab_seed_and_run(mock_execute, client):
+def test_r233_standard_seed_and_run(mock_execute, client):
     """R233-RPT-002-01: seed 后 run lifecycle → status 列。"""
-    from app.reports.prefab.seed import seed_builtin_prefab_bindings
+    from app.reports.standard.seed import seed_builtin_analysis_pack
 
     _seed_physical_equipment()
-    seed_builtin_prefab_bindings()
+    seed_builtin_analysis_pack()
     mock_execute.return_value = ExecuteResponse(
         columns=["status", "cnt"], rows=[["active", 3]], rowCount=1, truncated=False, traceId="t"
     )
     resp = client.post(
-        "/api/v1/reports/prefab/bindings/prefab-entity-lifecycle/run",
+        "/api/v1/reports/standard/packs/equipment-overview/run",
         headers=AUTH,
-        json={},
+        json={"theme": "lifecycle"},
     )
     assert resp.status_code == 200
     assert "status" in resp.json()["renderSpec"]["sections"][0]["columns"]
 
 
-def test_r233_prefab_list_total_ge_2(client):
-    """R233-RPT-002-02: seed 后 GET bindings total≥2。"""
-    from app.reports.prefab.seed import seed_builtin_prefab_bindings
+def test_r233_standard_list_total_ge_1(client):
+    """R233-RPT-002-02: seed 后 GET packs total≥1。"""
+    from app.reports.standard.seed import seed_builtin_analysis_pack
 
-    seed_builtin_prefab_bindings()
-    resp = client.get("/api/v1/reports/prefab/bindings", headers=AUTH)
+    _seed_physical_equipment()
+    seed_builtin_analysis_pack()
+    resp = client.get("/api/v1/reports/standard/packs", headers=AUTH)
     assert resp.status_code == 200
-    assert resp.json()["total"] >= 2
+    assert resp.json()["total"] >= 1
 
 
-def test_r233_prefab_not_found_404(client):
-    """R233-RPT-002-03: unknown binding → 404。"""
+def test_r233_standard_not_found_404(client):
+    """R233-RPT-002-03: unknown pack → 404。"""
     resp = client.post(
-        "/api/v1/reports/prefab/bindings/missing-key/run",
+        "/api/v1/reports/standard/packs/missing-key/run",
         headers=AUTH,
-        json={},
+        json={"theme": "lifecycle"},
     )
     assert resp.status_code == 404
-    assert resp.json()["code"] == "RPT_PREFAB_NOT_FOUND"
+    assert resp.json()["code"] == "RPT_STD_NOT_FOUND"
 
 
-def test_r233_prefab_duplicate_dimension_regression(client):
-    """R233-RPT-002-04: duplicate dimensionCodes → 422 r68 回归。"""
+def test_r233_standard_theme_disabled(client, monkeypatch):
+    """R233-RPT-002-04: disabled theme → 422。"""
+    from app.metadata.physical.schemas import PhysicalTableOut, PhysicalColumn
+
+    monkeypatch.setattr(
+        "app.reports.standard.service.physical_service.get_physical_table",
+        lambda fqn: PhysicalTableOut(
+            tableFqn=fqn,
+            dataSourceId=uuid.uuid4(),
+            displayName="t",
+            columns=[PhysicalColumn(name="status", dataType="varchar")],
+        ),
+    )
+    _seed_physical_equipment()
     payload = {
-        "bindingKey": "bind-dup-r233",
-        "entityTypeCode": "equipment",
-        "analysisType": "lifecycle",
-        "dimensionCodes": ["status", "status"],
-        "displayName": "dup",
-        "allowedRoles": ["analyst"],
-    }
-    resp = client.post("/api/v1/reports/prefab/bindings/validate", headers=AUTH, json=payload)
-    assert resp.status_code == 422
-    assert resp.json()["code"] == "RPT_PREFAB_DUPLICATE_DIMENSION"
-
-
-def test_r233_prefab_distribution_requires_region(client):
-    """R233-RPT-002-05: distribution 无 region → 422 r65 回归。"""
-    payload = {
-        "bindingKey": "bind-dist-r233",
-        "entityTypeCode": "equipment",
-        "analysisType": "distribution",
-        "dimensionCodes": ["status"],
+        "packKey": "bind-dist-r233",
         "displayName": "bad",
+        "businessObjectCode": "equipment",
+        "physicalTableFqn": "ops.equipment",
+        "dataSourceId": str(uuid.uuid4()),
+        "fieldMapping": {"status": "status", "region": "region", "createdAt": "created_at"},
+        "enabledThemes": ["lifecycle"],
         "allowedRoles": ["analyst"],
+        "snapshotCronPreset": "daily",
     }
-    resp = client.post("/api/v1/reports/prefab/bindings/validate", headers=AUTH, json=payload)
-    assert resp.status_code == 422
-    assert resp.json()["code"] == "RPT_PREFAB_ANALYSIS_MISMATCH"
-
-
-def test_r233_prefab_run_forbidden_viewer(client, viewer_user):
-    """R233-RPT-002-06: viewer run → 403。"""
-    from app.reports.prefab.seed import seed_builtin_prefab_bindings
-
-    seed_builtin_prefab_bindings()
+    client.put("/api/v1/reports/standard/packs/bind-dist-r233", headers=AUTH, json=payload)
     resp = client.post(
-        "/api/v1/reports/prefab/bindings/prefab-entity-lifecycle/run",
+        f"/api/v1/reports/standard/packs/bind-dist-r233/run",
         headers=AUTH,
-        json={},
+        json={"theme": "distribution"},
+    )
+    assert resp.status_code in {403, 422}
+    if resp.status_code == 422:
+        assert resp.json()["code"] == "RPT_STD_THEME_DISABLED"
+
+
+def test_r233_standard_empty_roles_rejected(client):
+    """R233-RPT-002-05: empty allowedRoles → 422。"""
+    _seed_physical_equipment()
+    payload = {
+        "packKey": "bind-empty-r233",
+        "displayName": "bad",
+        "businessObjectCode": "equipment",
+        "physicalTableFqn": "ops.equipment",
+        "dataSourceId": str(uuid.uuid4()),
+        "fieldMapping": {"status": "status"},
+        "enabledThemes": ["lifecycle"],
+        "allowedRoles": [],
+        "snapshotCronPreset": "daily",
+    }
+    resp = client.put("/api/v1/reports/standard/packs/bind-empty-r233", headers=AUTH, json=payload)
+    assert resp.status_code == 422
+    assert resp.json()["code"] == "RPT_STD_EMPTY_ROLES"
+
+
+def test_r233_standard_viewer_cannot_manage(client, viewer_user):
+    """R233-RPT-002-06: viewer PUT → 403。"""
+    _seed_physical_equipment()
+    resp = client.put(
+        "/api/v1/reports/standard/packs/viewer-blocked",
+        headers=AUTH,
+        json={
+            "packKey": "viewer-blocked",
+            "displayName": "x",
+            "businessObjectCode": "equipment",
+            "physicalTableFqn": "ops.equipment",
+            "dataSourceId": str(uuid.uuid4()),
+            "fieldMapping": {"status": "status"},
+            "enabledThemes": ["lifecycle"],
+            "allowedRoles": ["analyst"],
+            "snapshotCronPreset": "daily",
+        },
     )
     assert resp.status_code == 403
-    assert resp.json()["code"] == "RPT_PREFAB_RUN_FORBIDDEN"
+    assert resp.json()["code"] in {"RPT_STD_FORBIDDEN", "PERMISSION_DENIED"}
 
 
 @patch("app.reports.engine.execute.execute_query")

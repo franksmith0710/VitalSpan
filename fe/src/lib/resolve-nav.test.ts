@@ -94,9 +94,9 @@ describe("resolveNavGroups", () => {
     const reportParent = reportSection?.items.find((i) => i.name === "报表中心");
     expect(reportParent?.subItems?.map((s) => s.name)).toEqual([
       "工作台",
-      "预制分析",
-      "文档模板",
-      "定时报告",
+      "标准分析",
+      "我的报表",
+      "调度与投递",
     ]);
   });
 
@@ -108,7 +108,7 @@ describe("resolveNavGroups", () => {
     expect(reportSection).toBeDefined();
     const reportParent = reportSection?.items.find((i) => i.name === "报表中心");
     expect(reportParent).toBeDefined();
-    expect(reportParent?.subItems?.map((s) => s.name)).toEqual(["工作台", "预制分析"]);
+    expect(reportParent?.subItems?.map((s) => s.name)).toEqual(["工作台", "标准分析"]);
   });
 
   it("T-NAV-MF-06: admin 数据 section has 数据连接与数据集（无实体与主题、元数据）", () => {
@@ -259,13 +259,13 @@ describe("resolveNavGroups", () => {
     expect(names).not.toContain("图表类型目录");
   });
 
-  it("T-NAV-RPT-01: analyst 报表中心含工作台与预制分析子项", () => {
+  it("T-NAV-RPT-01: analyst 报表中心含工作台与标准分析子项", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("analyst", ["analyst"]));
     const report = groups.find((g) => g.title === "报表");
     const center = report?.items.find((i) => i.name === "报表中心");
     expect(center?.subItems?.map((s) => s.path)).toEqual([
       "/admin/reports/center",
-      "/admin/reports",
+      "/admin/reports/standard",
     ]);
   });
 

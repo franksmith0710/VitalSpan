@@ -5,6 +5,7 @@ from app.reports.scheduler.channels.dispatch import deliver_to_channels
 from app.reports.scheduler.delivery_adapter import deliver_artifact as _legacy_deliver
 
 _DELIVERY_LOG: list[dict] = []
+_MAX_DELIVERY_LOG = 1000
 
 
 def dispatch_artifact(
@@ -45,5 +46,7 @@ def dispatch_artifact(
             attachment_filename=attachment_filename,
             attachment_mime=attachment_mime,
         )
+    if len(_DELIVERY_LOG) >= _MAX_DELIVERY_LOG:
+        del _DELIVERY_LOG[: len(_DELIVERY_LOG) - _MAX_DELIVERY_LOG + 1]
     _DELIVERY_LOG.append({"ref": artifact_ref, **result})
     return result

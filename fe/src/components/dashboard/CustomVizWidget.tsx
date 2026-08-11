@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { GripVertical } from "lucide-react";
-import { apiFetch } from "@/lib/api";
+import { fetchWithTimeout, getAuthHeaders } from "@/lib/api";
+import { resolveApiBaseUrl } from "@/lib/appBasePath";
 import { cn } from "@/lib/utils";
 import type { DashboardWidgetShell } from "./dashboardCanvasMode";
 import type { LayoutWidget, CustomVizWidgetConfig, DashboardStyleConfig } from "./layoutUtils";
@@ -47,7 +48,11 @@ export function CustomVizWidget({
     }
     void (async () => {
       try {
-        const resp = await apiFetch(`/ai-viz/artifacts/${encodeURIComponent(artifactId)}/entry`);
+        const apiBase = resolveApiBaseUrl();
+        const resp = await fetchWithTimeout(
+          `${apiBase}/api/v1/ai-viz/artifacts/${encodeURIComponent(artifactId)}/entry`,
+          { headers: { ...getAuthHeaders() } },
+        );
         if (!resp.ok) {
           const body = (await resp.json().catch(() => null)) as { message?: string } | null;
           throw new Error(body?.message ?? "加载自定义组件失败");

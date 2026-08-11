@@ -22,6 +22,8 @@ def get_scheduler() -> BackgroundScheduler:
 def refresh_all_jobs() -> None:
     scheduler = get_scheduler()
     for job in scheduler.get_jobs():
+        if job.id == "ingestion_reconcile_stale_runs":
+            continue
         scheduler.remove_job(job.id)
     db = get_meta_session()
     try:

@@ -9,10 +9,12 @@ free-form model text.
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -25,8 +27,8 @@ from typing import Any, Iterable
 
 
 SCHEMA_VERSION = 5
-SKILL_VERSION = "0.8.0"
-PROTOCOL_VERSION = "ocr-code-review-protocol-v9"
+SKILL_VERSION = "0.10.0"
+PROTOCOL_VERSION = "ocr-code-review-protocol-v11"
 
 SUPPORTED_EXTENSIONS = {
     ".java", ".kt", ".kts", ".scala", ".groovy", ".py", ".pyi", ".js",
@@ -85,9 +87,14 @@ APPS_PACKAGES_ROOTS = {
     "cmd", "internal", "lib", "libs", "server", "client", "backend", "frontend",
 }
 MAX_TASK_RETRIES = 2
+# Soft re-probe step only — never a hard launch ceiling. Default/auto first wave
+# requests ALL Primary Targets (maximize-first) so Controllers do not stop at 15.
 AUTO_CONCURRENCY_MINIMUM = 15
 AUTO_PROBE_MIN_STEP = 15
 AUTO_REPROBE_COMPLETIONS = 5
+DEFAULT_CONCURRENCY = "max"
+FLEET_CAP_DEFAULT = 20
+FLEET_RECOMMEND_THRESHOLD = 16
 RESULT_SHARD_MAX_BYTES = 512 * 1024
 RESULT_PREVIEW_LIMIT = 20
 SEMANTIC_HINT_MAX_CHARS = 512
@@ -804,6 +811,9 @@ def load_session(session: str) -> tuple[Path, dict[str, Any], dict[str, Any]]:
 
 PAUSED_ALLOWED_COMMANDS = {"status", "heartbeat", "resume", "abort", "checkpoint", "complete", "task-fail"}
 ABORTED_ALLOWED_COMMANDS = {"status", "abort", "export-fix-queue"}
+AWAITING_START_ALLOWED_COMMANDS = {
+    "status", "heartbeat", "start", "abort", "stack-card", "task-plan", "resume",
+}
 
 
 def require_session_command(session_json: dict[str, Any], command: str) -> None:
@@ -821,6 +831,389 @@ def require_session_command(session_json: dict[str, Any], command: str) -> None:
             f"Session {session_json.get('session_id')} is paused and rejects {command}",
             "resume_or_abort_session",
         )
+    if status == "awaiting_start" and command not in AWAITING_START_ALLOWED_COMMANDS:
+        raise ReviewError(
+            "SESSION_AWAITING_START",
+            f"Session {session_json.get('session_id')} is awaiting launch confirmation; "
+            "present launch_menu / token_estimate to the user, then call start before dispatch",
+            "present_launch_menu_and_wait_for_start",
+        )
+
+
+def _primary_paths_for_scope(
+    paths: list[str],
+    repo: Path,
+    file_filter: dict[str, list[str]] | None,
+    scan_scope: str | None,
+) -> list[str]:
+    return [
+        path
+        for path in paths
+        if is_regular_workspace_file(repo, path)
+        and not is_binary_file(repo, path)
+        and should_review(path, file_filter, scan_scope)
+    ]
+
+
+def _compact_token_estimate(estimate: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "files": estimate.get("files"),
+        "source_tokens": estimate.get("source_tokens"),
+        "low": estimate.get("low"),
+        "likely": estimate.get("likely"),
+        "high": estimate.get("high"),
+    }
+
+
+def estimate_launch_option(
+    *,
+    repo: Path,
+    option_id: str,
+    mode: str,
+    scope: str | None,
+    paths: list[str],
+    file_filter: dict[str, list[str]] | None,
+    token_budget: int,
+    base: str | None = None,
+    head: str | None = None,
+) -> dict[str, Any]:
+    """Preflight composition + token range for one launch-menu option."""
+    primary_paths = _primary_paths_for_scope(paths, repo, file_filter, scope)
+    composition = composition_preview(repo, paths, primary_paths, file_filter, scope)
+    if mode == "review":
+        source_tokens_by_task = [
+            estimated_text_tokens(
+                review_diff_text(repo, base or "HEAD", head or "WORKTREE", path).encode("utf-8")
+            )
+            for path in primary_paths
+        ]
+    else:
+        source_tokens_by_task = [
+            estimated_text_tokens(file_bytes(repo, path)) for path in primary_paths
+        ]
+    estimate = token_preflight(source_tokens_by_task, token_budget)
+    return {
+        "option_id": option_id,
+        "mode": mode,
+        "scope": scope or "changed-code",
+        "primary_targets": len(primary_paths),
+        "candidates": len(paths),
+        "source_tokens": composition.get("source_tokens"),
+        "top_directories": composition.get("top_directories"),
+        "extensions": composition.get("extensions"),
+        "token_estimate": _compact_token_estimate(estimate),
+    }
+
+
+def build_launch_option_estimates(
+    *,
+    repo: Path,
+    file_filter: dict[str, list[str]] | None,
+    token_budget: int,
+    base: str,
+    head: str,
+) -> dict[str, dict[str, Any]]:
+    """Estimate every menu option so Controllers can compare budgets before start."""
+    review_paths = list_review_files(repo, base, head)
+    scan_paths = list_scan_files(repo)
+    return {
+        "workspace-review": estimate_launch_option(
+            repo=repo,
+            option_id="workspace-review",
+            mode="review",
+            scope=None,
+            paths=review_paths,
+            file_filter=file_filter,
+            token_budget=token_budget,
+            base=base,
+            head=head,
+        ),
+        "scan-runtime": estimate_launch_option(
+            repo=repo,
+            option_id="scan-runtime",
+            mode="scan",
+            scope="runtime-code",
+            paths=scan_paths,
+            file_filter=file_filter,
+            token_budget=token_budget,
+        ),
+        "scan-apps-packages": estimate_launch_option(
+            repo=repo,
+            option_id="scan-apps-packages",
+            mode="scan",
+            scope="apps-packages",
+            paths=scan_paths,
+            file_filter=file_filter,
+            token_budget=token_budget,
+        ),
+        "scan-full": estimate_launch_option(
+            repo=repo,
+            option_id="scan-full",
+            mode="scan",
+            scope="full",
+            paths=scan_paths,
+            file_filter=file_filter,
+            token_budget=token_budget,
+        ),
+    }
+
+
+def build_launch_menu(
+    *,
+    mode: str,
+    scope: str | None,
+    concurrency: str,
+    profile: str,
+    primary_tasks: int,
+    composition: dict[str, Any],
+    token_estimate: dict[str, Any],
+    option_estimates: dict[str, dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Options the Controller must show before any subagent is created."""
+    warnings: list[str] = []
+    if token_estimate.get("budget", {}).get("likely_exceeds"):
+        warnings.append("current option token_estimate.likely exceeds --token-budget")
+    if primary_tasks >= 200:
+        warnings.append(
+            f"{primary_tasks} Primary Targets — prefer runtime-code/apps-packages unless full was requested"
+        )
+    if concurrency == "15":
+        warnings.append("fixed concurrency 15 is slow; prefer max unless debugging")
+
+    estimates = option_estimates or {}
+    current_option_id = (
+        "workspace-review"
+        if mode == "review"
+        else {
+            "runtime-code": "scan-runtime",
+            "apps-packages": "scan-apps-packages",
+            "full": "scan-full",
+        }.get(scope or "runtime-code", "scan-runtime")
+    )
+
+    def option(
+        option_id: str,
+        label: str,
+        when: str,
+        apply: dict[str, Any],
+        *,
+        recommended: bool = False,
+    ) -> dict[str, Any]:
+        preview = estimates.get(option_id, {})
+        token = preview.get("token_estimate") or {}
+        matches_current = option_id == current_option_id
+        reinit_bits = ["ocr_review.py init --repo <repo>"]
+        if apply.get("mode") == "review":
+            reinit_bits.append("--mode review --workspace")
+        else:
+            reinit_bits.append(f"--mode scan --scope {apply.get('scope')}")
+        reinit_bits.append(f"--concurrency {apply.get('concurrency', 'max')}")
+        reinit_bits.append(f"--profile {apply.get('profile', 'correctness')}")
+        return {
+            "id": option_id,
+            "label": label,
+            "when": when,
+            "recommended": recommended,
+            "matches_current_session": matches_current,
+            "apply": apply,
+            "primary_targets": preview.get("primary_targets"),
+            "source_tokens": preview.get("source_tokens"),
+            "token_estimate": token,
+            "top_directories": preview.get("top_directories"),
+            "reply": option_id,
+            "reply_with_concurrency": f"{option_id} max",
+            "confirm_if_same_session": (
+                f"ocr_review.py start --session <dir> --choice {option_id} --concurrency max"
+            ),
+            "reinit_if_different_session": " ".join(reinit_bits),
+        }
+
+    options = [
+        option(
+            "workspace-review",
+            "审查当前工作区改动（默认，最快）",
+            "用户未明确要求全仓",
+            {
+                "mode": "review",
+                "workspace": True,
+                "concurrency": "max",
+                "profile": "correctness",
+            },
+            recommended=mode == "review",
+        ),
+        option(
+            "scan-runtime",
+            "全仓 runtime-code（推荐全仓默认）",
+            "用户明确要求全仓扫描",
+            {
+                "mode": "scan",
+                "scope": "runtime-code",
+                "concurrency": "max",
+                "profile": "correctness",
+            },
+            recommended=mode == "scan" and scope == "runtime-code",
+        ),
+        option(
+            "scan-apps-packages",
+            "全仓 apps/packages/services/src",
+            "用户只要应用与共享包",
+            {
+                "mode": "scan",
+                "scope": "apps-packages",
+                "concurrency": "max",
+                "profile": "correctness",
+            },
+        ),
+        option(
+            "scan-full",
+            "全仓 full（含 docs/scripts，最慢最贵）",
+            "用户明确要求连文档和工具脚本",
+            {
+                "mode": "scan",
+                "scope": "full",
+                "concurrency": "max",
+                "profile": "correctness",
+            },
+        ),
+    ]
+
+    comparison_rows = []
+    for item in options:
+        token = item.get("token_estimate") or {}
+        comparison_rows.append(
+            {
+                "id": item["id"],
+                "primary_targets": item.get("primary_targets"),
+                "source_tokens": item.get("source_tokens"),
+                "likely_tokens": token.get("likely"),
+                "low_tokens": token.get("low"),
+                "high_tokens": token.get("high"),
+                "matches_current_session": item.get("matches_current_session"),
+            }
+        )
+
+    how_to_reply = {
+        "instruction": (
+            "回复一行即可。格式：`<选项ID>` 或 `<选项ID> <并发>`。"
+            "也接受「保持默认，开始」。不要只回复「开始」却不说明是否改范围。"
+        ),
+        "option_ids": [item["id"] for item in options],
+        "concurrency_ids": ["max", "auto", "30", "15"],
+        "examples": [
+            {
+                "user_reply": "workspace-review",
+                "means": "用工作区改动 + 并发 max；若当前 session 已是该模式则 start，否则按 reinit 命令新建",
+            },
+            {
+                "user_reply": "scan-runtime max",
+                "means": "全仓 runtime-code + 并发 max",
+            },
+            {
+                "user_reply": "scan-apps-packages auto",
+                "means": "全仓 apps/packages + 并发 auto",
+            },
+            {
+                "user_reply": "保持默认，开始",
+                "means": f"确认当前选项 {current_option_id} + 当前并发 {concurrency}",
+            },
+        ],
+        "controller_mapping": (
+            "解析出 option_id 与 concurrency 后："
+            "若选项 matches_current_session=true → "
+            "`start --session <dir> --choice <id> --concurrency <c>`；"
+            "若为 false → 不要对旧 session start，改用该选项的 reinit_if_different_session 新建 session。"
+        ),
+    }
+
+    display_template = (
+        "OCR 会话已就绪，等待确认（确认前不派发 reviewer）。\n\n"
+        "## 当前 session\n"
+        f"- 选项：`{current_option_id}`（mode={mode}, scope={scope or 'changed-code'}）\n"
+        f"- Profile：{profile}\n"
+        f"- 并发：{concurrency}\n"
+        f"- Primary Targets（当前）：{primary_tasks}\n\n"
+        "## 各选项预算对比（非账单）\n"
+        "| 选项 ID | Primary Targets | 源码 tokens | Likely | Low–High |\n"
+        "|---|---:|---:|---:|---|\n"
+        + "".join(
+            (
+                f"| `{row['id']}`"
+                f"{' ←当前' if row.get('matches_current_session') else ''} "
+                f"| {row.get('primary_targets')} "
+                f"| ~{row.get('source_tokens')} "
+                f"| ~{row.get('likely_tokens')} "
+                f"| ~{row.get('low_tokens')}–~{row.get('high_tokens')} |\n"
+            )
+            for row in comparison_rows
+        )
+        + "\n## 如何回复\n"
+        "直接回复选项 ID，可附加并发，例如：\n"
+        "- `workspace-review`\n"
+        "- `scan-runtime max`\n"
+        "- `scan-apps-packages auto`\n"
+        "- `保持默认，开始`\n"
+    )
+
+    return {
+        "prompt": (
+            "请先选择启动模式与并发策略，并确认各选项 token 预估。"
+            "在调用 `start` 之前禁止创建任何 reviewer/verifier subagent。"
+        ),
+        "must_confirm_before_dispatch": True,
+        "current": {
+            "option_id": current_option_id,
+            "mode": mode,
+            "scope": scope or "changed-code",
+            "concurrency": concurrency,
+            "profile": profile,
+            "primary_tasks": primary_tasks,
+        },
+        "options": options,
+        "option_comparison": comparison_rows,
+        "how_to_reply": how_to_reply,
+        "display_template": display_template,
+        "concurrency_presets": [
+            {
+                "id": "max",
+                "label": "尽可能快：首轮请求全部 Primary Target（默认）",
+                "recommended": True,
+            },
+            {
+                "id": "auto",
+                "label": "自适应：同样首轮全量请求，宿主拒绝后收敛到实测容量",
+                "recommended": False,
+            },
+            {
+                "id": "30",
+                "label": "固定 30 路并行",
+                "recommended": False,
+            },
+            {
+                "id": "15",
+                "label": "固定 15 路（慢，仅调试）",
+                "recommended": False,
+            },
+        ],
+        "composition": {
+            "primary_targets": composition.get("primary_targets"),
+            "top_directories": composition.get("top_directories"),
+            "impact_surfaces": composition.get("impact_surfaces"),
+            "excluded_by_reason": composition.get("excluded_by_reason"),
+            "source_tokens": composition.get("source_tokens"),
+        },
+        "token_estimate": token_estimate,
+        "option_estimates": estimates,
+        "warnings": warnings,
+        "confirm_command": (
+            "ocr_review.py start --session <dir> --choice <option-id> "
+            "[--concurrency max|auto|N] [--profile ...]"
+        ),
+        "note": (
+            "15 不是并发上限。默认 max/auto 都会在第一轮请求全部 Primary Target；"
+            "只有宿主拒绝新建 context 时才收敛。"
+            "切换到与当前 session 不同的模式/范围时必须重新 init，不能只改 choice。"
+        ),
+    }
 
 
 def save_session(session_dir: Path, session_json: dict[str, Any], manifest: dict[str, Any]) -> None:
@@ -853,11 +1246,14 @@ def scheduling_config(
 ) -> dict[str, Any]:
     active_count = sum(task.get("status") != "removed" for task in tasks.values())
     if value == "auto":
+        # Maximize-first: request every runnable Primary Target immediately.
+        # 15 is only a re-probe expansion step after the host saturates — never a
+        # skill-imposed launch ceiling. Controllers must not stop at 15.
         limit = auto_concurrency_limit(tasks)
-        minimum = min(AUTO_CONCURRENCY_MINIMUM, active_count)
-        initial_window = minimum
-        source = "auto-host-capacity"
-        probe_state = "probing"
+        minimum = min(AUTO_CONCURRENCY_MINIMUM, active_count) if active_count else 1
+        initial_window = active_count
+        source = "auto-maximize-then-learn-host-capacity"
+        probe_state = "maximizing"
     elif value == "max":
         limit = auto_concurrency_limit(tasks)
         minimum = active_count
@@ -931,7 +1327,8 @@ def scheduling_config(
 
 
 RUNNABLE_TASK_STATES = {"pending", "interrupted", "checkpointed", "stale"}
-TERMINAL_TASK_STATES = {"complete", "blocked", "removed"}
+FLEETED_TASK_STATE = "fleeted"
+TERMINAL_TASK_STATES = {"complete", "blocked", "removed", "aborted", "orphaned"}
 
 
 def scheduling_counts(manifest: dict[str, Any]) -> tuple[int, int, int]:
@@ -1057,6 +1454,25 @@ def cmd_init(args: argparse.Namespace) -> dict[str, Any]:
     else:
         source_tokens_by_task = [int(task.get("estimated_source_tokens", 0)) for task in tasks.values()]
     estimate = token_preflight(source_tokens_by_task, args.token_budget)
+    concurrency = args.concurrency or DEFAULT_CONCURRENCY
+    start_immediately = bool(getattr(args, "yes", False))
+    option_estimates = build_launch_option_estimates(
+        repo=repo,
+        file_filter=file_filter,
+        token_budget=args.token_budget,
+        base=args.base or "HEAD",
+        head=head,
+    )
+    launch_menu = build_launch_menu(
+        mode=args.mode,
+        scope=scan_scope,
+        concurrency=concurrency,
+        profile=args.profile,
+        primary_tasks=len(tasks),
+        composition=composition,
+        token_estimate=estimate,
+        option_estimates=option_estimates,
+    )
 
     config_hashes = {
         "rules": canonical_hash([layer for _source, layer in layers] + [system]),
@@ -1070,16 +1486,18 @@ def cmd_init(args: argparse.Namespace) -> dict[str, Any]:
         "mode": args.mode,
         "scope": args.scope if args.mode == "scan" else "changed-code",
         "tasks": tasks,
-        "scheduling": scheduling_config(args.concurrency, tasks),
+        "scheduling": scheduling_config(concurrency, tasks),
         "filter": file_filter,
         "scope_candidates_at_init": len(paths),
         "primary_targets_at_init": len(tasks),
         "excluded_count": len(paths) - len(primary_paths),
         "composition": composition,
         "token_estimate": estimate,
+        "launch_menu": launch_menu,
         "created_at": now(),
         "updated_at": now(),
     }
+    session_status = "running" if start_immediately else "awaiting_start"
     session_json = {
         "schema_version": SCHEMA_VERSION,
         "skill_version": SKILL_VERSION,
@@ -1091,7 +1509,7 @@ def cmd_init(args: argparse.Namespace) -> dict[str, Any]:
         "profile": args.profile,
         "base": args.base,
         "head": head,
-        "status": "running",
+        "status": session_status,
         "session_epoch": 1,
         "assurance": "full",
         "requirement": args.requirement or "",
@@ -1100,11 +1518,15 @@ def cmd_init(args: argparse.Namespace) -> dict[str, Any]:
         "token_budget": args.token_budget,
         "composition": composition,
         "token_estimate": estimate,
+        "launch_menu": launch_menu,
         "config_hashes": config_hashes,
         "stack_card": stack_card_for(paths),
         "created_at": now(),
         "updated_at": now(),
     }
+    if start_immediately:
+        session_json["started_at"] = now()
+        session_json["start_choice"] = "yes-flag"
     try:
         session_dir.mkdir(parents=True, exist_ok=False)
     except FileExistsError as exc:
@@ -1115,13 +1537,618 @@ def cmd_init(args: argparse.Namespace) -> dict[str, Any]:
     return {
         "session_id": session_id,
         "session_dir": str(session_dir),
+        "status": session_status,
         "mode": args.mode,
         "scope": args.scope if args.mode == "scan" else "changed-code",
+        "concurrency": concurrency,
         "primary_tasks": len(tasks),
         "excluded": len(paths) - len(primary_paths),
         "composition": composition,
         "token_estimate": estimate,
-        "next_action": "enrich_stack_card_then_orchestrate_tick",
+        "launch_menu": launch_menu,
+        "next_action": (
+            "enrich_stack_card_then_orchestrate_tick"
+            if start_immediately
+            else "present_launch_menu_and_wait_for_start"
+        ),
+    }
+
+
+def cmd_start(args: argparse.Namespace) -> dict[str, Any]:
+    session_dir, session_json, manifest = load_session(args.session)
+    status = session_json.get("status")
+    if status == "running":
+        return {
+            "session_id": session_json["session_id"],
+            "status": "running",
+            "concurrency": manifest.get("scheduling", {}).get("concurrency"),
+            "next_action": "enrich_stack_card_then_orchestrate_tick",
+            "idempotent": True,
+        }
+    if status != "awaiting_start":
+        raise ReviewError(
+            "INVALID_SESSION_STATE",
+            f"Cannot start session while status is {status!r}",
+            "inspect_session_status",
+        )
+
+    concurrency = args.concurrency or manifest.get("scheduling", {}).get("concurrency") or DEFAULT_CONCURRENCY
+    if args.choice:
+        menu = manifest.get("launch_menu") or session_json.get("launch_menu") or {}
+        options = {item.get("id"): item for item in menu.get("options", []) if item.get("id")}
+        chosen = options.get(args.choice)
+        if chosen is None:
+            raise ReviewError(
+                "INVALID_LAUNCH_CHOICE",
+                f"Unknown launch option {args.choice!r}; reply with one of: "
+                + ", ".join(sorted(options) or ["workspace-review", "scan-runtime"]),
+                "present_launch_menu_and_wait_for_start",
+                valid_choices=sorted(options),
+            )
+        if not chosen.get("matches_current_session", True):
+            raise ReviewError(
+                "LAUNCH_CHOICE_REQUIRES_REINIT",
+                (
+                    f"Option {args.choice!r} does not match this session's frozen scope. "
+                    "Do not start the current session; create a new one with the suggested command."
+                ),
+                "reinit_with_selected_option",
+                choice=args.choice,
+                suggested_command=chosen.get("reinit_if_different_session"),
+                current=menu.get("current"),
+            )
+        session_json["start_choice"] = args.choice
+    manifest["scheduling"] = scheduling_config(concurrency, manifest.get("tasks", {}))
+    if args.profile:
+        session_json["profile"] = args.profile
+    session_json["status"] = "running"
+    session_json["started_at"] = now()
+    session_json["launch_menu"] = manifest.get("launch_menu")
+    # Re-bind menu current concurrency for audit.
+    menu = dict(manifest.get("launch_menu") or {})
+    current = dict(menu.get("current") or {})
+    current["concurrency"] = concurrency
+    current["profile"] = session_json.get("profile")
+    menu["current"] = current
+    manifest["launch_menu"] = menu
+    session_json["launch_menu"] = menu
+    save_session(session_dir, session_json, manifest)
+    return {
+        "session_id": session_json["session_id"],
+        "status": "running",
+        "concurrency": concurrency,
+        "profile": session_json.get("profile"),
+        "choice": session_json.get("start_choice"),
+        "primary_tasks": sum(
+            task.get("status") != "removed" for task in manifest.get("tasks", {}).values()
+        ),
+        "composition": session_json.get("composition"),
+        "token_estimate": session_json.get("token_estimate"),
+        "next_action": (
+            "fleet_plan_then_worktree_shards"
+            if sum(
+                task.get("status") != "removed"
+                for task in manifest.get("tasks", {}).values()
+            )
+            >= FLEET_RECOMMEND_THRESHOLD
+            else "enrich_stack_card_then_orchestrate_tick"
+        ),
+        "fleet_recommendation": (
+            {
+                "recommended": True,
+                "fleet_cap": FLEET_CAP_DEFAULT,
+                "reason": (
+                    "Primary Target count exceeds single-window comfort; "
+                    "use go-fast-style worktree fleet to raise product concurrency"
+                ),
+                "command": "ocr_review.py fleet-plan --session <dir> --fleet-cap 20",
+            }
+            if sum(
+                task.get("status") != "removed"
+                for task in manifest.get("tasks", {}).values()
+            )
+            >= FLEET_RECOMMEND_THRESHOLD
+            else {"recommended": False}
+        ),
+    }
+
+
+def partition_fleet_shards(
+    tasks: dict[str, Any],
+    fleet_cap: int,
+) -> list[dict[str, Any]]:
+    """Balance runnable Primary Targets across ≤ fleet_cap shards (go-fast style)."""
+    if fleet_cap < 1 or fleet_cap > 64:
+        raise ReviewError("INVALID_FLEET_CAP", "fleet-cap must be between 1 and 64")
+    candidates: list[tuple[str, dict[str, Any], int]] = []
+    for task_id, task in sorted(
+        tasks.items(), key=lambda item: (item[1].get("path", ""), item[0])
+    ):
+        if task.get("status") not in RUNNABLE_TASK_STATES:
+            continue
+        weight = max(1, int(task.get("estimated_source_tokens") or 1))
+        candidates.append((task_id, task, weight))
+    if not candidates:
+        return []
+    shard_count = min(fleet_cap, len(candidates))
+    shards: list[dict[str, Any]] = [
+        {
+            "id": f"shard-{index + 1:02d}",
+            "task_ids": [],
+            "paths": [],
+            "weight": 0,
+            "top_directories": Counter(),
+        }
+        for index in range(shard_count)
+    ]
+    for task_id, task, weight in sorted(
+        candidates, key=lambda item: (-item[2], item[1].get("path", ""))
+    ):
+        target = min(
+            shards, key=lambda shard: (shard["weight"], len(shard["task_ids"]), shard["id"])
+        )
+        path = normalize_path(task["path"])
+        top = path.split("/", 1)[0] if "/" in path else "[root]"
+        target["task_ids"].append(task_id)
+        target["paths"].append(path)
+        target["weight"] += weight
+        target["top_directories"][top] += 1
+    return [
+        {
+            "id": shard["id"],
+            "task_ids": shard["task_ids"],
+            "paths": shard["paths"],
+            "primary_targets": len(shard["task_ids"]),
+            "source_tokens": shard["weight"],
+            "top_directories": dict(shard["top_directories"].most_common(12)),
+            "worktree_name": f"ocr-fleet-{shard['id']}",
+            "branch_name": f"ocr-fleet/{shard['id']}",
+            "status": "planned",
+        }
+        for shard in shards
+        if shard["task_ids"]
+    ]
+
+
+def fleet_plan_path(session_dir: Path) -> Path:
+    return session_dir / "fleet" / "plan.json"
+
+
+def load_fleet_plan(session_dir: Path) -> dict[str, Any]:
+    path = fleet_plan_path(session_dir)
+    if not path.is_file():
+        raise ReviewError(
+            "FLEET_PLAN_REQUIRED",
+            "No fleet plan exists; run fleet-plan before opening shards",
+            "run_fleet_plan",
+        )
+    return read_json(path)
+
+
+def cmd_fleet_plan(args: argparse.Namespace) -> dict[str, Any]:
+    session_dir, session_json, manifest = load_session(args.session)
+    if session_json.get("status") not in {"running", "paused", "awaiting_start"}:
+        raise ReviewError(
+            "INVALID_SESSION_STATE",
+            f"Cannot plan a fleet while status is {session_json.get('status')!r}",
+            "inspect_session_status",
+        )
+    fleet_cap = int(args.fleet_cap or FLEET_CAP_DEFAULT)
+    existing = session_json.get("fleet") or {}
+    if existing.get("shards") and any(
+        shard.get("status") in {"opened", "running", "merged"}
+        for shard in existing.get("shards", [])
+    ):
+        raise ReviewError(
+            "FLEET_ALREADY_ACTIVE",
+            "Fleet shards are already opened; abort or merge before replanning",
+            "inspect_fleet_status",
+        )
+    shards = partition_fleet_shards(manifest.get("tasks", {}), fleet_cap)
+    runnable = sum(
+        task.get("status") in RUNNABLE_TASK_STATES
+        for task in manifest.get("tasks", {}).values()
+    )
+    plan = {
+        "schema_version": SCHEMA_VERSION,
+        "parent_session_id": session_json["session_id"],
+        "fleet_cap": fleet_cap,
+        "inspired_by": "go-fast fleet_cap + worktree subagents",
+        "created_at": now(),
+        "runnable_tasks": runnable,
+        "shard_count": len(shards),
+        "shards": shards,
+        "worktree_root_hint": ".worktrees/",
+        "controller_protocol": [
+            "Ensure .worktrees/ is gitignored",
+            "For each shard: git worktree add .worktrees/<worktree_name> -b <branch_name>",
+            "fleet-shard-open --shard <id> --repo <worktree-abs-path>",
+            "Spawn ≤ fleet_cap shard-controller subagents in one wave (cwd=worktree)",
+            "Each shard runs orchestrate-tick loop with concurrency=max inside its worktree",
+            "Parent polls fleet-status; when all terminal → fleet-merge → dedup-plan → finalize",
+            "Cleanup worktrees after merge like go-fast",
+        ],
+    }
+    (session_dir / "fleet").mkdir(parents=True, exist_ok=True)
+    atomic_json(fleet_plan_path(session_dir), plan)
+    session_json["fleet"] = {
+        "fleet_cap": fleet_cap,
+        "shard_count": len(shards),
+        "status": "planned",
+        "plan_path": "fleet/plan.json",
+        "shards": [
+            {
+                "id": shard["id"],
+                "primary_targets": shard["primary_targets"],
+                "status": "planned",
+                "worktree_name": shard["worktree_name"],
+                "branch_name": shard["branch_name"],
+            }
+            for shard in shards
+        ],
+    }
+    session_json["dispatch_strategy"] = (
+        "fleet-worktree" if runnable >= FLEET_RECOMMEND_THRESHOLD else "single-window-or-fleet"
+    )
+    save_session(session_dir, session_json, manifest)
+    return {
+        "session_id": session_json["session_id"],
+        "fleet_cap": fleet_cap,
+        "shard_count": len(shards),
+        "runnable_tasks": runnable,
+        "shards": [
+            {
+                "id": shard["id"],
+                "primary_targets": shard["primary_targets"],
+                "source_tokens": shard["source_tokens"],
+                "top_directories": shard["top_directories"],
+                "worktree_name": shard["worktree_name"],
+                "branch_name": shard["branch_name"],
+                "open_command": (
+                    f"ocr_review.py fleet-shard-open --session <parent> --shard {shard['id']} "
+                    f"--repo <abs-path-to-.worktrees/{shard['worktree_name']}>"
+                ),
+            }
+            for shard in shards
+        ],
+        "controller_protocol": plan["controller_protocol"],
+        "next_action": "create_worktrees_and_open_fleet_shards",
+        "note": (
+            f"Product concurrency ceiling is fleet_cap={fleet_cap} shard controllers "
+            "(go-fast style), each maximizing reviewers inside its own worktree."
+        ),
+    }
+
+
+def cmd_fleet_shard_open(args: argparse.Namespace) -> dict[str, Any]:
+    session_dir, session_json, manifest = load_session(args.session)
+    if session_json.get("status") not in {"running", "paused"}:
+        raise ReviewError(
+            "INVALID_SESSION_STATE",
+            "fleet-shard-open requires a started (running) parent session",
+            "start_parent_session_first",
+        )
+    plan = load_fleet_plan(session_dir)
+    shard = next((item for item in plan.get("shards", []) if item.get("id") == args.shard), None)
+    if shard is None:
+        raise ReviewError(
+            "UNKNOWN_FLEET_SHARD",
+            f"Shard {args.shard!r} is not in the fleet plan",
+            "run_fleet_plan",
+            valid_shards=[item.get("id") for item in plan.get("shards", [])],
+        )
+    worktree = Path(args.repo).resolve()
+    if not worktree.is_dir():
+        raise ReviewError(
+            "INVALID_WORKTREE",
+            f"Worktree path does not exist: {worktree}",
+            "create_git_worktree_for_shard",
+        )
+    try:
+        repo = git_root(worktree)
+    except ReviewError as exc:
+        raise ReviewError(
+            "INVALID_WORKTREE",
+            f"Path is not a git worktree/repo: {worktree}",
+            "create_git_worktree_for_shard",
+        ) from exc
+
+    child_root = session_dir / "fleet" / "shards" / shard["id"]
+    child_session_dir = child_root / "session"
+    if child_session_dir.is_dir() and (child_session_dir / "session.json").is_file():
+        child_session = read_json(child_session_dir / "session.json")
+        return {
+            "session_id": child_session.get("session_id"),
+            "shard_id": shard["id"],
+            "session_dir": str(child_session_dir),
+            "repo_root": child_session.get("repo_root"),
+            "primary_tasks": len(shard.get("task_ids", [])),
+            "idempotent": True,
+            "next_action": "shard_controller_orchestrate_tick",
+        }
+
+    child_tasks: dict[str, Any] = {}
+    for task_id in shard.get("task_ids", []):
+        parent_task = manifest["tasks"].get(task_id)
+        if parent_task is None:
+            continue
+        if parent_task.get("status") not in RUNNABLE_TASK_STATES | {FLEETED_TASK_STATE}:
+            continue
+        task = copy.deepcopy(parent_task)
+        task["status"] = "pending"
+        task.pop("dispatch_lease", None)
+        task.pop("reviewer_context", None)
+        task.pop("fleet_shard", None)
+        task["attempt_count"] = int(task.get("attempt_count", 0))
+        child_tasks[task_id] = task
+        parent_task["status"] = FLEETED_TASK_STATE
+        parent_task["fleet_shard"] = shard["id"]
+        parent_task["fleeted_at"] = now()
+
+    if not child_tasks:
+        raise ReviewError(
+            "EMPTY_FLEET_SHARD",
+            f"Shard {shard['id']} has no runnable tasks left to open",
+            "inspect_fleet_status",
+        )
+
+    child_session_id = f"{session_json['session_id']}-{shard['id']}"
+    child_manifest = {
+        "schema_version": SCHEMA_VERSION,
+        "session_id": child_session_id,
+        "mode": session_json.get("mode"),
+        "scope": session_json.get("scope"),
+        "tasks": child_tasks,
+        "scheduling": scheduling_config("max", child_tasks),
+        "parent_session_id": session_json["session_id"],
+        "fleet_shard_id": shard["id"],
+        "created_at": now(),
+        "updated_at": now(),
+    }
+    child_session = {
+        "schema_version": SCHEMA_VERSION,
+        "skill_version": SKILL_VERSION,
+        "session_id": child_session_id,
+        "repo_root": str(repo),
+        "repo_identity": session_json.get("repo_identity"),
+        "mode": session_json.get("mode"),
+        "scope": session_json.get("scope"),
+        "profile": session_json.get("profile"),
+        "base": session_json.get("base"),
+        "head": session_json.get("head"),
+        "status": "running",
+        "session_epoch": 1,
+        "assurance": session_json.get("assurance", "full"),
+        "parent_session_id": session_json["session_id"],
+        "fleet_shard_id": shard["id"],
+        "dispatch_strategy": "shard-window",
+        "started_at": now(),
+        "created_at": now(),
+        "updated_at": now(),
+        "config_hashes": session_json.get("config_hashes"),
+        "stack_card": session_json.get("stack_card"),
+        "segment_threshold": session_json.get("segment_threshold", 0),
+        "token_budget": session_json.get("token_budget", 0),
+    }
+    child_root.mkdir(parents=True, exist_ok=True)
+    child_session_dir.mkdir(parents=True, exist_ok=True)
+    (child_session_dir / "findings").mkdir(exist_ok=True)
+    atomic_json(child_session_dir / "session.json", child_session)
+    atomic_json(child_session_dir / "manifest.json", child_manifest)
+    atomic_json(
+        child_root / "shard.json",
+        {
+            "id": shard["id"],
+            "parent_session_id": session_json["session_id"],
+            "session_dir": str(child_session_dir),
+            "repo_root": str(repo),
+            "worktree": str(worktree),
+            "task_ids": list(child_tasks),
+            "opened_at": now(),
+            "status": "opened",
+        },
+    )
+
+    for item in plan["shards"]:
+        if item["id"] == shard["id"]:
+            item["status"] = "opened"
+            item["session_dir"] = str(child_session_dir)
+            item["repo_root"] = str(repo)
+            item["worktree"] = str(worktree)
+            item["opened_at"] = now()
+    atomic_json(fleet_plan_path(session_dir), plan)
+
+    fleet = session_json.setdefault("fleet", {})
+    fleet["status"] = "running"
+    registry = {item.get("id"): item for item in fleet.get("shards", [])}
+    entry = registry.get(shard["id"], {"id": shard["id"]})
+    entry.update(
+        {
+            "status": "opened",
+            "session_dir": str(child_session_dir),
+            "repo_root": str(repo),
+            "worktree": str(worktree),
+            "primary_targets": len(child_tasks),
+        }
+    )
+    registry[shard["id"]] = entry
+    fleet["shards"] = list(registry.values())
+    session_json["dispatch_strategy"] = "fleet-worktree"
+    save_session(session_dir, session_json, manifest)
+    return {
+        "session_id": child_session_id,
+        "shard_id": shard["id"],
+        "session_dir": str(child_session_dir),
+        "repo_root": str(repo),
+        "primary_tasks": len(child_tasks),
+        "concurrency": "max",
+        "next_action": "shard_controller_orchestrate_tick",
+        "shard_controller_hint": (
+            "In this worktree, run orchestrate-tick → create reviewer contexts → "
+            "orchestrate-report → submit/complete until shard tasks are terminal."
+        ),
+    }
+
+
+def cmd_fleet_status(args: argparse.Namespace) -> dict[str, Any]:
+    session_dir, session_json, manifest = load_session(args.session)
+    plan = (
+        read_json(fleet_plan_path(session_dir))
+        if fleet_plan_path(session_dir).is_file()
+        else None
+    )
+    shards_out = []
+    opened = 0
+    terminal_shards = 0
+    source_shards = (
+        plan.get("shards", [])
+        if plan
+        else (session_json.get("fleet") or {}).get("shards", [])
+    )
+    for shard in source_shards:
+        shard_id = shard.get("id")
+        child_dir = Path(shard.get("session_dir") or "")
+        if not child_dir.is_dir():
+            alt = session_dir / "fleet" / "shards" / str(shard_id) / "session"
+            child_dir = alt if alt.is_dir() else child_dir
+        entry: dict[str, Any] = {
+            "id": shard_id,
+            "status": shard.get("status", "planned"),
+            "primary_targets": shard.get("primary_targets")
+            or len(shard.get("task_ids") or []),
+            "session_dir": str(child_dir) if child_dir else None,
+        }
+        if child_dir.is_dir() and (child_dir / "manifest.json").is_file():
+            opened += 1
+            child_manifest = read_json(child_dir / "manifest.json")
+            child_session = read_json(child_dir / "session.json")
+            statuses = Counter(
+                task.get("status") for task in child_manifest.get("tasks", {}).values()
+            )
+            entry["task_status"] = dict(statuses)
+            entry["child_status"] = child_session.get("status")
+            runnable = sum(statuses.get(state, 0) for state in RUNNABLE_TASK_STATES)
+            running = statuses.get("running", 0)
+            done = sum(statuses.get(state, 0) for state in TERMINAL_TASK_STATES)
+            total = sum(statuses.values())
+            entry["progress"] = {
+                "runnable": runnable,
+                "running": running,
+                "terminal": done,
+                "total": total,
+            }
+            if total and runnable == 0 and running == 0 and done == total:
+                entry["status"] = "terminal"
+                terminal_shards += 1
+            else:
+                entry["status"] = "running"
+        shards_out.append(entry)
+
+    parent_counts = Counter(
+        task.get("status") for task in manifest.get("tasks", {}).values()
+    )
+    all_terminal = bool(shards_out) and terminal_shards == len(shards_out)
+    if all_terminal:
+        next_action = "fleet_merge"
+    elif opened:
+        next_action = "wait_for_shard_controllers_or_open_remaining"
+    else:
+        next_action = "create_worktrees_and_open_fleet_shards"
+    return {
+        "session_id": session_json["session_id"],
+        "dispatch_strategy": session_json.get("dispatch_strategy"),
+        "fleet": session_json.get("fleet"),
+        "parent_task_status": dict(parent_counts),
+        "shards": shards_out,
+        "opened_shards": opened,
+        "terminal_shards": terminal_shards,
+        "all_shards_terminal": all_terminal,
+        "next_action": next_action,
+    }
+
+
+def cmd_fleet_merge(args: argparse.Namespace) -> dict[str, Any]:
+    session_dir, session_json, manifest = load_session(args.session)
+    plan = load_fleet_plan(session_dir)
+    merged_shards = 0
+    merged_tasks = 0
+    incomplete: list[dict[str, Any]] = []
+    for shard in plan.get("shards", []):
+        shard_id = shard["id"]
+        child_dir = Path(
+            shard.get("session_dir")
+            or session_dir / "fleet" / "shards" / shard_id / "session"
+        )
+        if not (child_dir / "manifest.json").is_file():
+            incomplete.append({"shard": shard_id, "reason": "not_opened"})
+            continue
+        child_manifest = read_json(child_dir / "manifest.json")
+        child_findings_root = child_dir / "findings"
+        for task_id, child_task in child_manifest.get("tasks", {}).items():
+            status = child_task.get("status")
+            if status not in TERMINAL_TASK_STATES:
+                incomplete.append(
+                    {"shard": shard_id, "task": task_id, "status": status}
+                )
+                continue
+            parent_task = manifest["tasks"].get(task_id)
+            if parent_task is None:
+                continue
+            src_dir = child_findings_root / task_id
+            dst_dir = session_dir / "findings" / task_id
+            if src_dir.is_dir():
+                dst_dir.mkdir(parents=True, exist_ok=True)
+                for finding_file in src_dir.glob("*.json"):
+                    shutil.copy2(finding_file, dst_dir / finding_file.name)
+            parent_task["status"] = status
+            for key in (
+                "completed_at",
+                "blocked_at",
+                "blocking_blind_spot",
+                "failure_count",
+                "coverage",
+                "reviewer_context",
+            ):
+                if key in child_task:
+                    parent_task[key] = child_task[key]
+            parent_task["merged_from_fleet_shard"] = shard_id
+            parent_task.pop("fleet_shard", None)
+            merged_tasks += 1
+        shard["status"] = "merged"
+        shard["merged_at"] = now()
+        merged_shards += 1
+
+    if incomplete and not getattr(args, "partial", False):
+        raise ReviewError(
+            "FLEET_SHARDS_INCOMPLETE",
+            "One or more fleet shards still have non-terminal tasks",
+            "wait_for_shard_controllers",
+            incomplete=incomplete[:50],
+            incomplete_count=len(incomplete),
+        )
+
+    atomic_json(fleet_plan_path(session_dir), plan)
+    fleet = session_json.setdefault("fleet", {})
+    fleet["status"] = "merged" if not incomplete else "partial-merged"
+    for entry in fleet.get("shards", []):
+        match = next(
+            (shard for shard in plan["shards"] if shard["id"] == entry.get("id")),
+            None,
+        )
+        if match:
+            entry["status"] = match.get("status")
+    save_session(session_dir, session_json, manifest)
+    return {
+        "session_id": session_json["session_id"],
+        "merged_shards": merged_shards,
+        "merged_tasks": merged_tasks,
+        "incomplete_count": len(incomplete),
+        "incomplete": incomplete[:20],
+        "next_action": (
+            "dedup_plan_then_finalize"
+            if not incomplete
+            else "wait_for_shard_controllers"
+        ),
     }
 
 
@@ -1150,14 +2177,14 @@ def cmd_dispatch_next(args: argparse.Namespace) -> dict[str, Any]:
 
     if runnable_count and running < desired:
         request_count = desired - running
-        if concurrency == "max" and not scheduling.get("probe_history"):
-            phase = "maximize"
-        elif concurrency not in {"auto", "max"}:
+        if concurrency not in {"auto", "max"}:
             phase = "fixed-fill"
         elif not scheduling.get("probe_history") and int(
             scheduling.get("observed_capacity", 0)
         ) == 0:
-            phase = "initial"
+            # auto and max both maximize-first; do not label the first wave "initial"
+            # in a way that Controllers misread as a 15-slot probe ceiling.
+            phase = "maximize"
         else:
             phase = "refill"
     elif (
@@ -1839,14 +2866,13 @@ def cmd_orchestrate_tick(args: argparse.Namespace) -> dict[str, Any]:
     phase: str | None = None
 
     if available_work and active < desired:
-        if concurrency == "max" and not scheduling.get("launch_history"):
-            phase = "maximize"
-        elif concurrency not in {"auto", "max"}:
+        if concurrency not in {"auto", "max"}:
             phase = "fixed-fill"
         elif not scheduling.get("launch_history") and int(
             scheduling.get("host_capacity", 0)
         ) == 0:
-            phase = "initial"
+            # auto and max both maximize-first on the first wave.
+            phase = "maximize"
         else:
             phase = "refill"
     elif (
@@ -2886,7 +3912,7 @@ def cmd_abort(args: argparse.Namespace) -> dict[str, Any]:
             "partial_summary": str(session_dir / "_partial_summary.md"),
             "idempotent": True,
         }
-    if session_json.get("status") not in {"running", "paused"}:
+    if session_json.get("status") not in {"running", "paused", "awaiting_start"}:
         raise ReviewError(
             "INVALID_SESSION_STATE",
             f"Cannot abort session while status is {session_json.get('status')!r}",
@@ -2957,6 +3983,8 @@ def cmd_status(args: argparse.Namespace) -> dict[str, Any]:
     launch_in_flight = scheduling.get("launch_in_flight")
     if session_json.get("status") == "aborted":
         next_action = "inspect_partial_result"
+    elif session_json.get("status") == "awaiting_start":
+        next_action = "present_launch_menu_and_wait_for_start"
     elif session_json.get("status") == "paused":
         next_action = "resume_or_abort_session"
     elif launch_in_flight:
@@ -2976,6 +4004,9 @@ def cmd_status(args: argparse.Namespace) -> dict[str, Any]:
         "tasks": dict(sorted(counts.items())),
         "summary": summary,
         "verifier_backlog": backlog,
+        "launch_menu": session_json.get("launch_menu") if session_json.get("status") == "awaiting_start" else None,
+        "composition": session_json.get("composition") if session_json.get("status") == "awaiting_start" else None,
+        "token_estimate": session_json.get("token_estimate") if session_json.get("status") == "awaiting_start" else None,
         "scheduling": {
             "minimum": minimum,
             "limit": limit,
@@ -4150,11 +5181,26 @@ def build_parser() -> argparse.ArgumentParser:
     init.add_argument("--requirement", default="")
     init.add_argument("--session-id")
     init.add_argument("--state-root")
-    init.add_argument("--concurrency", default="auto")
+    init.add_argument("--concurrency", default=DEFAULT_CONCURRENCY)
     init.add_argument("--scope", choices=["runtime-code", "apps-packages", "full"], default="runtime-code")
     init.add_argument("--token-budget", type=int, default=0, help="warning-only aggregate token estimate budget")
     init.add_argument("--segment-threshold", type=int, default=256 * 1024)
+    init.add_argument(
+        "--yes",
+        action="store_true",
+        help="Skip launch menu confirmation and start immediately (CI / explicit go-ahead)",
+    )
     init.set_defaults(func=cmd_init)
+
+    confirm_start = sub.add_parser(
+        "start",
+        help="Confirm launch menu selection and allow orchestrate-tick to dispatch subagents",
+    )
+    add_session_argument(confirm_start)
+    confirm_start.add_argument("--concurrency", help="Override concurrency: max|auto|N")
+    confirm_start.add_argument("--profile", choices=["correctness", "production-readiness"])
+    confirm_start.add_argument("--choice", help="Selected launch_menu option id for audit")
+    confirm_start.set_defaults(func=cmd_start)
 
     tick = sub.add_parser(
         "orchestrate-tick", help="Actively request an adaptive verifier-first launch batch"
@@ -4298,6 +5344,44 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_session_argument(export_fix_queue)
     export_fix_queue.set_defaults(func=cmd_export_fix_queue)
+
+    fleet_plan = sub.add_parser(
+        "fleet-plan",
+        help="Partition runnable Primary Targets into go-fast-style worktree shards",
+    )
+    add_session_argument(fleet_plan)
+    fleet_plan.add_argument(
+        "--fleet-cap",
+        type=int,
+        default=FLEET_CAP_DEFAULT,
+        help=f"Max shard controllers in one wave (default {FLEET_CAP_DEFAULT}, go-fast fleet_cap)",
+    )
+    fleet_plan.set_defaults(func=cmd_fleet_plan)
+
+    fleet_open = sub.add_parser(
+        "fleet-shard-open",
+        help="Open one fleet shard session bound to a git worktree",
+    )
+    add_session_argument(fleet_open)
+    fleet_open.add_argument("--shard", required=True)
+    fleet_open.add_argument("--repo", required=True, help="Absolute path to the shard worktree")
+    fleet_open.set_defaults(func=cmd_fleet_shard_open)
+
+    fleet_status = sub.add_parser("fleet-status", help="Aggregate parent + shard progress")
+    add_session_argument(fleet_status)
+    fleet_status.set_defaults(func=cmd_fleet_status)
+
+    fleet_merge = sub.add_parser(
+        "fleet-merge",
+        help="Merge terminal shard findings/task states back into the parent session",
+    )
+    add_session_argument(fleet_merge)
+    fleet_merge.add_argument(
+        "--partial",
+        action="store_true",
+        help="Allow merge while some shards are still incomplete",
+    )
+    fleet_merge.set_defaults(func=cmd_fleet_merge)
     return parser
 
 
@@ -4308,9 +5392,10 @@ def main() -> int:
         if args.command in {
             "orchestrate-tick", "orchestrate-report", "dispatch-next", "capacity-report",
             "task-start", "task-fail", "task-plan", "submit", "verifier-start", "verify",
-            "checkpoint", "complete", "pause", "abort", "heartbeat",
+            "checkpoint", "complete", "pause", "abort", "heartbeat", "start",
             "dedup-plan", "dedup-verify", "stack-card", "resume", "finalize",
             "export-fix-queue",
+            "fleet-plan", "fleet-shard-open", "fleet-status", "fleet-merge",
         }:
             with session_lock(Path(args.session).resolve()):
                 _session_dir, session_json, _manifest = load_session(args.session)

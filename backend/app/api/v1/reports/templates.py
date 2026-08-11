@@ -75,11 +75,15 @@ def upsert_template(
 @router.get("/{template_key}/versions", response_model=None)
 def list_template_versions(
     template_key: str,
-    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ):
-    from app.reports.templates import versions as template_versions
+    from app.reports.templates import acl, versions as template_versions
 
-    return template_versions.list_versions(template_key)
+    try:
+        acl.assert_template_read_access(actor, template_key)
+        return template_versions.list_versions(template_key)
+    except TemplateDefError as exc:
+        return _template_error(exc)
 
 
 @router.post("/{template_key}/publish", response_model=None)
@@ -89,8 +93,10 @@ def publish_template(
     change_note: str | None = Query(default=None, alias="changeNote"),
 ):
     from app.reports import service as report_service
+    from app.reports.templates import acl
 
     try:
+        acl.assert_template_write_access(actor, template_key)
         return report_service.publish_template(template_key, actor, change_note=change_note)
     except TemplateDefError as exc:
         return _template_error(exc)

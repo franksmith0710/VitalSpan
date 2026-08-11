@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 from app.auth.deps import UserContext, get_current_user
 from app.core.config import get_settings
 from app.main import app as fastapi_app
-from app.reports.batch import export_jobs as batch_export_jobs
+from app.reports.jobs import store as job_store
 from app.reports.scheduler.delivery_adapter import deliver_artifact
 from jwt_auth import AUTH, jwt_auth_headers
 
@@ -53,12 +53,10 @@ def _reset_stores():
     from app.reports.persistence.store import reset_metadata_for_tests
 
     reset_metadata_for_tests()
-    jobs_snapshot = dict(batch_export_jobs._jobs)
-    batch_export_jobs._jobs.clear()
+    job_store.reset_jobs_for_tests()
     yield
     reset_metadata_for_tests()
-    batch_export_jobs._jobs.clear()
-    batch_export_jobs._jobs.update(jobs_snapshot)
+    job_store.reset_jobs_for_tests()
     fastapi_app.dependency_overrides.clear()
 
 
@@ -140,21 +138,56 @@ def test_rpt001_pdf_export_bytes(client: TestClient):
     assert b"mock" not in dl.content.lower()
 
 
-def test_rpt002_prefab_binding_put(client: TestClient):
-    """RPT-002: Admin PUT prefab binding."""
+def test_rpt002_standard_pack_put(client: TestClient):
+    """RPT-002: Admin PUT standard analysis pack."""
+    from app.auth.deps import UserContext
+    from app.metadata.entity import service as entity_service
+    from app.metadata.entity.schemas import EntityTypeCreate
+    from app.metadata.physical import service as physical_service
+    from app.metadata.physical.schemas import PhysicalTableRegisterIn
+
+    ds_id = "00000000-0000-4000-8000-000000000001"
+    fqn = "ops.equipment"
+    try:
+        entity_service.get_entity_type("equipment")
+    except Exception:
+        entity_service.create_entity_type(
+            EntityTypeCreate(typeCode="equipment", displayName="设备", attributes=[], lifecycleStates=[]),
+        )
+    try:
+        physical_service.get_physical_table(fqn)
+    except Exception:
+        physical_service.register_physical_table(
+            PhysicalTableRegisterIn(
+                tableFqn=fqn,
+                dataSourceId=ds_id,
+                displayName="设备表",
+                entityTypeCode="equipment",
+                columns=[
+                    {"name": "status", "dataType": "varchar", "nullable": False},
+                    {"name": "region", "dataType": "varchar", "nullable": False},
+                    {"name": "created_at", "dataType": "datetime", "nullable": True},
+                ],
+            ),
+            UserContext(id="1", username="admin", roles=["admin"]),
+        )
+
     payload = {
-        "bindingKey": "prefab-custom",
-        "entityTypeCode": "equipment",
-        "analysisType": "lifecycle",
-        "dimensionCodes": ["status"],
-        "displayName": "自定义预制",
-        "allowedRoles": ["analyst"],
+        "packKey": "equipment-custom",
+        "displayName": "自定义标准分析",
+        "businessObjectCode": "equipment",
+        "physicalTableFqn": fqn,
+        "dataSourceId": ds_id,
+        "fieldMapping": {"status": "status", "region": "region", "createdAt": "created_at"},
+        "enabledThemes": ["lifecycle"],
+        "allowedRoles": ["analyst", "admin"],
+        "snapshotCronPreset": "daily",
     }
-    resp = client.put("/api/v1/reports/prefab/bindings/prefab-custom", headers=AUTH, json=payload)
+    resp = client.put("/api/v1/reports/standard/packs/equipment-custom", headers=AUTH, json=payload)
     assert resp.status_code == 200, resp.text
-    got = client.get("/api/v1/reports/prefab/bindings/prefab-custom", headers=AUTH)
+    got = client.get("/api/v1/reports/standard/packs/equipment-custom", headers=AUTH)
     assert got.status_code == 200
-    assert got.json()["displayName"] == "自定义预制"
+    assert got.json()["displayName"] == "自定义标准分析"
 
 
 def test_rpt003_template_blocks_reorder(client: TestClient):

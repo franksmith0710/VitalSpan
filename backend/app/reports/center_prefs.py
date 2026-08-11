@@ -21,38 +21,44 @@ def _favorite_key(user_id: str, resource_type: str, resource_id: str) -> tuple[s
     return user_id, resource_type, resource_id
 
 
-def get_preferences(user: UserContext) -> ReportCenterPreferencesOut:
-    if user.id in _MEMORY_FAVORITES or user.id in _MEMORY_RECENT:
+def _clear_memory_cache(user_id: str) -> None:
+    _MEMORY_FAVORITES.pop(user_id, None)
+    _MEMORY_RECENT.pop(user_id, None)
+
+
+def _read_from_db(user: UserContext) -> ReportCenterPreferencesOut:
+    with Session(bind=get_meta_engine()) as db:
+        favorites = db.scalars(
+            select(ReportUserFavorite).where(ReportUserFavorite.user_id == user.id),
+        ).all()
+        recent = db.scalars(
+            select(ReportRecentView)
+            .where(ReportRecentView.user_id == user.id)
+            .order_by(ReportRecentView.viewed_at.desc())
+            .limit(_MAX_RECENT),
+        ).all()
         return ReportCenterPreferencesOut(
-            favorites=_MEMORY_FAVORITES.get(user.id, []),
-            recent=_MEMORY_RECENT.get(user.id, []),
+            favorites=[
+                {"resourceType": f.resource_type, "resourceId": f.resource_id}
+                for f in favorites
+            ],
+            recent=[
+                {
+                    "resourceType": r.resource_type,
+                    "resourceId": r.resource_id,
+                    "resourceLabel": r.resource_label or "",
+                    "viewedAt": r.viewed_at.isoformat() if r.viewed_at else "",
+                }
+                for r in recent
+            ],
         )
+
+
+def get_preferences(user: UserContext) -> ReportCenterPreferencesOut:
     try:
-        with Session(bind=get_meta_engine()) as db:
-            favorites = db.scalars(
-                select(ReportUserFavorite).where(ReportUserFavorite.user_id == user.id),
-            ).all()
-            recent = db.scalars(
-                select(ReportRecentView)
-                .where(ReportRecentView.user_id == user.id)
-                .order_by(ReportRecentView.viewed_at.desc())
-                .limit(_MAX_RECENT),
-            ).all()
-            return ReportCenterPreferencesOut(
-                favorites=[
-                    {"resourceType": f.resource_type, "resourceId": f.resource_id}
-                    for f in favorites
-                ],
-                recent=[
-                    {
-                        "resourceType": r.resource_type,
-                        "resourceId": r.resource_id,
-                        "resourceLabel": r.resource_label or "",
-                        "viewedAt": r.viewed_at.isoformat() if r.viewed_at else "",
-                    }
-                    for r in recent
-                ],
-            )
+        result = _read_from_db(user)
+        _clear_memory_cache(user.id)
+        return result
     except Exception:
         return ReportCenterPreferencesOut(
             favorites=_MEMORY_FAVORITES.get(user.id, []),
@@ -67,18 +73,16 @@ def set_favorites(user: UserContext, favorites: list[dict[str, str]]) -> ReportC
         if item.get("resourceType") in {t.value for t in CenterResourceType}
         and item.get("resourceId")
     ]
-    try:
-        with Session(bind=get_meta_engine()) as db:
-            db.execute(delete(ReportUserFavorite).where(ReportUserFavorite.user_id == user.id))
-            for item in cleaned:
-                db.add(ReportUserFavorite(
-                    user_id=user.id,
-                    resource_type=item["resourceType"],
-                    resource_id=item["resourceId"],
-                ))
-            db.commit()
-    except Exception:
-        _MEMORY_FAVORITES[user.id] = cleaned
+    with Session(bind=get_meta_engine()) as db:
+        db.execute(delete(ReportUserFavorite).where(ReportUserFavorite.user_id == user.id))
+        for item in cleaned:
+            db.add(ReportUserFavorite(
+                user_id=user.id,
+                resource_type=item["resourceType"],
+                resource_id=item["resourceId"],
+            ))
+        db.commit()
+    _clear_memory_cache(user.id)
     return get_preferences(user)
 
 
@@ -106,6 +110,7 @@ def record_recent_view(
                 resource_label=resource_label,
             ))
             db.commit()
+        _clear_memory_cache(user.id)
     except Exception:
         current = [e for e in _MEMORY_RECENT.get(user.id, []) if e["resourceId"] != resource_id]
         _MEMORY_RECENT[user.id] = [entry, *current][:_MAX_RECENT]
