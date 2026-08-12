@@ -25,6 +25,7 @@ type ScheduleFormSectionProps = {
   title: string;
   description?: string;
   icon?: LucideIcon;
+  action?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
   className?: string;
@@ -34,6 +35,7 @@ export function ScheduleFormSection({
   title,
   description,
   icon: Icon,
+  action,
   children,
   footer,
   className,
@@ -41,20 +43,23 @@ export function ScheduleFormSection({
   return (
     <section className={cn(SCHEDULE_SECTION_CARD_CLASS, className)}>
       <div className={SCHEDULE_SECTION_HEADER_CLASS}>
-        <div className="flex items-start gap-3">
-          {Icon ? (
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600 ring-1 ring-brand-200/80 dark:bg-brand-500/15 dark:text-brand-400 dark:ring-brand-500/25">
-              <Icon className="size-4" aria-hidden />
-            </span>
-          ) : null}
-          <div className="min-w-0">
-            <h3 className="text-theme-sm font-semibold text-gray-900 dark:text-white">{title}</h3>
-            {description ? (
-              <p className="mt-0.5 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                {description}
-              </p>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-start gap-3">
+            {Icon ? (
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600 ring-1 ring-brand-200/80 dark:bg-brand-500/15 dark:text-brand-400 dark:ring-brand-500/25">
+                <Icon className="size-4" aria-hidden />
+              </span>
             ) : null}
+            <div className="min-w-0">
+              <h3 className="text-theme-sm font-semibold text-gray-900 dark:text-white">{title}</h3>
+              {description ? (
+                <p className="mt-0.5 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
+                  {description}
+                </p>
+              ) : null}
+            </div>
           </div>
+          {action ? <div className="shrink-0">{action}</div> : null}
         </div>
       </div>
       <div className={SCHEDULE_SECTION_BODY_CLASS}>{children}</div>

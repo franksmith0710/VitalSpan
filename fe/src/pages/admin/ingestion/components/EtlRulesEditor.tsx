@@ -93,9 +93,7 @@ export function EtlRulesEditor({
               ) : (
                 <>
                   类似 Pandas 整列处理：运行同步时会自动去空格、推断数值、过滤 deleted、填充备注空值。
-                  本页规则在<strong className="font-medium text-gray-700 dark:text-gray-300">写库前</strong>
-                  执行；同步产物 Dataset 出图查询<strong className="font-medium text-gray-700 dark:text-gray-300">不会重复清洗</strong>
-                  。本页规则用于<strong className="font-medium text-gray-700 dark:text-gray-300">覆盖或补充</strong>
+                  本页规则用于<strong className="font-medium text-gray-700 dark:text-gray-300">覆盖或补充</strong>
                   默认行为；打开页面时会自动扫描全部列并保存。
                 </>
               )}

@@ -295,14 +295,14 @@ redoc: /redoc
 | GET/POST/PATCH/DELETE | `/api/v1/reports/catalog/nodes*` | 报表模板树 catalog CRUD/move（`RPT_CATALOG_*`；template 节点可选 `templateKey` 唯一关联） | 内部 | 一期 | RPT-004 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/catalog/templates/readiness` | 模板 hub 批量就绪探测（body `nodeIds`；扩展配置/数据源绑定探测） | 内部 | 二期 | RPT-006 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/catalog/nodes/{id}/move` | 模板树节点移动（循环/深度守卫） | 内部 | 一期 | RPT-004 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
-| POST/GET | `/api/v1/reports/schedules*` | 报表调度 FSM（`sourceType` 含 `template`/`dashboard`/`data_screen`/`standard`；`standard` 用 `sourceKey` 标识分析包；`RPT_SCHEDULE_*`） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
+| POST/GET | `/api/v1/reports/schedules*` | 报表调度 FSM（draft→scheduled→paused/cancelled；`RPT_SCHEDULE_*`） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | PATCH | `/api/v1/reports/schedules/{id}` | 草稿调度更新（cron/recipients/attachmentFormats/deliveryChannels；仅 draft） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | GET | `/api/v1/reports/schedules/delivery-health` | SMTP 投递健康探测 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | GET | `/api/v1/reports/schedules/export-health` | Playwright PDF 导出服务可用性探测 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/dashboard/export_render.py` · `backend/app/api/v1/reports/__init__.py` |
 | GET | `/api/v1/reports/schedules/executions/recent-failures` | 近期失败/降级执行列表 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/schedules/executions/{executionId}/dismiss` | 忽略单条失败提醒（不删执行历史） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/schedules/executions/recent-failures/dismiss-all` | 批量忽略失败提醒 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
-| GET | `/api/v1/reports/schedules` | 调度列表（可选 `catalogNodeId` · `sourceType` · `sourceId` · `sourceKey`；`sourceType=standard` 时以 `sourceKey` 标识分析包） | 内部 | 三期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
+| GET | `/api/v1/reports/schedules` | 调度列表（可选 `catalogNodeId`） | 内部 | 三期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | GET | `/api/v1/reports/schedules/{id}/executions` | 调度执行历史 | 内部 | 三期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/schedules/executions/{executionId}/retry` | 失败/降级执行重试 | 内部 | 三期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/schedules/{id}/execute` | 调度 semi-real 执行器（`X-Rpt-Semi-Real: 1`；mock 兼容默认；Idempotency-Key；`deliverySteps`） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
@@ -369,9 +369,9 @@ redoc: /redoc
 | PUT | `/api/v1/datasets/{dataset_id}` | Dataset 全量更新（写 ACL；403 `META_DATASET_FORBIDDEN`） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
 | DELETE | `/api/v1/datasets/{dataset_id}` | Dataset 删除（204） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
 | POST | `/api/v1/datasets/{dataset_id}/bind-query-config` | body `{configId}` 绑定 `dataset_query` 配置（非 dataset_query → 422 `META_DATASET_CONFIG_TYPE_INVALID`） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
-| GET | `/api/v1/datasets/{dataset_id}/transform-rules` | 读取查询清洗规则；响应含 `queryPandasApplies`（`sync_job` 为 false） | 内部 | 四期 | META-004 | 已实现 | `backend/app/metadata/dataset/transform_rules.py` |
-| PUT | `/api/v1/datasets/{dataset_id}/transform-rules` | 保存查询清洗规则（仅 `origin=manual`；`sync_job` → 422 `META_DATASET_TRANSFORM_SYNC_LOCKED`） | 内部 | 四期 | META-004 | 已实现 | `backend/app/metadata/dataset/transform_rules.py` |
-| POST | `/api/v1/datasets/{dataset_id}/transform-rules/auto-align` | 按物理表列元数据一键生成规则（`sync_job` → 422） | 内部 | 四期 | META-004 | 已实现 | `backend/app/metadata/dataset/transform_rules.py` |
+| GET | `/api/v1/datasets/{dataset_id}/transform-rules` | 读取 Dataset 查询清洗规则（外部源 query pandas） | 内部 | 四期 | META-004 | 已实现 | `backend/app/metadata/dataset/transform_rules.py` |
+| PUT | `/api/v1/datasets/{dataset_id}/transform-rules` | 保存查询清洗规则（sync_job → 422 `META_DATASET_TRANSFORM_SYNC_LOCKED`） | 内部 | 四期 | META-004 | 已实现 | `backend/app/metadata/dataset/transform_rules.py` |
+| POST | `/api/v1/datasets/{dataset_id}/transform-rules/auto-align` | 按物理表列元数据一键生成规则 | 内部 | 四期 | META-004 | 已实现 | `backend/app/metadata/dataset/transform_rules.py` |
 | POST | `/api/v1/datasets/validate` | Dataset 草稿校验（不落库） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
 | GET/POST/PUT/DELETE | `/api/v1/metadata/entity-types` | 实体类型 schema CRUD（**已替代** 下方废弃路径） | 内部 | 二期 | META-006 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/POST | `/api/v1/entities/types` | **deprecated** — 无运行时路由；请用 `/api/v1/metadata/entity-types` | — | — | META-006 | 废弃 | — |

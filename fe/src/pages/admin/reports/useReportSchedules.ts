@@ -11,7 +11,6 @@ export type ReportScheduleRow = {
   catalogNodeId?: string | null;
   sourceType?: string;
   sourceId?: string;
-  sourceKey?: string;
   sourceLabel?: string | null;
   recipients?: ScheduleRecipient[];
   attachmentFormats?: string[];
@@ -36,7 +35,6 @@ export type ScheduleExecutionRow = {
 export type ReportScheduleListFilter = {
   catalogNodeId?: string;
   sourceId?: string;
-  sourceKey?: string;
   sourceType?: string;
 };
 
@@ -44,7 +42,6 @@ function scheduleListQuery(filter?: ReportScheduleListFilter): string {
   const params = new URLSearchParams();
   if (filter?.catalogNodeId) params.set("catalogNodeId", filter.catalogNodeId);
   if (filter?.sourceId) params.set("sourceId", filter.sourceId);
-  if (filter?.sourceKey) params.set("sourceKey", filter.sourceKey);
   if (filter?.sourceType) params.set("sourceType", filter.sourceType);
   const q = params.toString();
   return q ? `?${q}` : "";
@@ -89,8 +86,6 @@ export function useReportScheduleMutations(filter?: ReportScheduleListFilter) {
       catalogNodeId?: string;
       sourceType?: string;
       sourceId?: string;
-      sourceKey?: string;
-      name?: string;
       cron: string;
       timezone: string;
       recipients?: ScheduleRecipient[];

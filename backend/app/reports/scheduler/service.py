@@ -57,20 +57,6 @@ def _validate_cron(cron: str) -> None:
 
 def _source_label(row: dict) -> str | None:
     source_type = row.get("source_type", "template")
-    if source_type == "standard":
-        source_key = row.get("source_key")
-        if not source_key:
-            return None
-        from app.reports.persistence import standard_repo
-        from app.reports.standard.schemas import AnalysisPackOut
-
-        raw = standard_repo.all_packs().get(source_key)
-        if raw is None:
-            return source_key
-        try:
-            return AnalysisPackOut.model_validate(raw).display_name
-        except Exception:
-            return source_key
     source_id = row.get("source_id") or row.get("catalog_node_id")
     if source_id is None:
         return None
@@ -94,8 +80,7 @@ def _out(row: dict) -> ScheduleStatusOut:
         name=row.get("name"),
         catalogNodeId=row.get("catalog_node_id"),
         sourceType=row.get("source_type", "template"),
-        sourceId=row.get("source_id") or row.get("catalog_node_id"),
-        sourceKey=row.get("source_key"),
+        sourceId=row.get("source_id") or row["catalog_node_id"],
         sourceLabel=_source_label(row),
         recipients=recipients,
         attachmentFormats=row.get("attachment_formats") or ["pdf"],
@@ -107,7 +92,7 @@ def _out(row: dict) -> ScheduleStatusOut:
     )
 
 
-def _assert_source_exists(payload: ScheduleCreate, actor: UserContext) -> None:
+def _assert_source_exists(payload: ScheduleCreate) -> None:
     if payload.source_type == "template":
         if not catalog_service.node_exists(payload.source_id):
             raise ReportCatalogError("RPT_CATALOG_NODE_NOT_FOUND", "Catalog node not found", 404)
@@ -123,23 +108,11 @@ def _assert_source_exists(payload: ScheduleCreate, actor: UserContext) -> None:
                     exc.status,
                 ) from exc
         return
-    if payload.source_type == "standard":
-        key = (payload.source_key or "").strip()
-        from app.reports.persistence import standard_repo
-        from app.reports.standard.schemas import AnalysisPackOut
-
-        raw = standard_repo.all_packs().get(key)
-        if raw is None:
-            raise ScheduleError("RPT_SCHEDULE_SOURCE_NOT_FOUND", "Standard analysis pack not found", 404)
-        pack = AnalysisPackOut.model_validate(raw)
-        if not set(actor.roles).intersection(set(pack.allowed_roles)):
-            raise ScheduleError("RPT_SCHEDULE_FORBIDDEN", "Not allowed to schedule this analysis pack", 403)
-        return
     raise ScheduleError("RPT_SCHEDULE_INVALID_SOURCE", "Invalid sourceType", 422)
 
 
 def create_schedule(payload: ScheduleCreate, actor: UserContext) -> ScheduleStatusOut:
-    _assert_source_exists(payload, actor)
+    _assert_source_exists(payload)
     _validate_cron(payload.cron)
     recipients = [r.model_dump(by_alias=True) for r in payload.recipients]
     if payload.source_type == "template" and payload.catalog_node_id:
@@ -151,7 +124,6 @@ def create_schedule(payload: ScheduleCreate, actor: UserContext) -> ScheduleStat
         "catalog_node_id": payload.catalog_node_id,
         "source_type": payload.source_type,
         "source_id": payload.source_id,
-        "source_key": payload.source_key,
         "recipients": recipients,
         "attachment_formats": list(payload.attachment_formats),
         "delivery_channels": list(payload.delivery_channels),
@@ -203,7 +175,6 @@ def list_schedules(
     *,
     catalog_node_id: uuid.UUID | None = None,
     source_id: uuid.UUID | None = None,
-    source_key: str | None = None,
     source_type: str | None = None,
     limit: int = 50,
     offset: int = 0,
@@ -216,8 +187,6 @@ def list_schedules(
         ]
     if source_id is not None:
         rows = [r for r in rows if r.get("source_id") == source_id]
-    if source_key is not None:
-        rows = [r for r in rows if r.get("source_key") == source_key]
     if source_type is not None:
         rows = [r for r in rows if r.get("source_type", "template") == source_type]
     visible: list[dict] = []

@@ -258,3 +258,75 @@ def test_template_schedule_smtp_live(_mailhog_sink):
         for part in mime_parts
     )
     assert pdf_found or "pdf" in json.dumps(latest).lower()
+
+
+def test_standard_schedule_smtp_live(_mailhog_sink):
+    """Live: standard analysis schedule execute → SMTP receives PDF attachment (DG6)."""
+    if not _url_reachable(f"{BACKEND_BASE.rstrip('/')}/health"):
+        pytest.skip("uvicorn not running at VITALSPAN_LIVE_API")
+
+    from local_mailhog import clear_messages
+
+    if _mailhog_sink == "local":
+        clear_messages()
+    elif not _mailhog_reachable():
+        pytest.skip("MailHog API not reachable")
+
+    pack_key = "equipment-overview"
+    status, raw = _live_request("GET", f"/api/v1/reports/standard/packs/{pack_key}")
+    if status == 404:
+        pytest.skip("standard pack equipment-overview not seeded on live DB")
+
+    status, raw = _live_request(
+        "POST",
+        "/api/v1/reports/schedules",
+        {
+            "sourceType": "standard",
+            "sourceKey": pack_key,
+            "cron": "0 9 * * *",
+            "recipients": [{"type": "role", "value": "admin"}],
+            "deliveryChannels": ["email"],
+            "attachmentFormats": ["pdf"],
+        },
+    )
+    assert status == 201, raw.decode("utf-8", "replace")
+    schedule_id = json.loads(raw)["id"]
+
+    status, raw = _live_request(
+        "POST",
+        f"/api/v1/reports/schedules/{schedule_id}/transition",
+        {"action": "schedule"},
+    )
+    assert status == 200, raw.decode("utf-8", "replace")
+
+    status, raw = _live_request(
+        "POST",
+        f"/api/v1/reports/schedules/{schedule_id}/execute",
+        None,
+        extra_headers={
+            "Idempotency-Key": f"live-std-{schedule_id}",
+            "X-Rpt-Semi-Real": "1",
+        },
+    )
+    assert status == 200, raw.decode("utf-8", "replace")
+    body = json.loads(raw)
+    assert body.get("artifactKind") == "standard_render"
+    assert body.get("status") == "semi_real_succeeded", body
+    steps = body.get("deliverySteps") or []
+    assert steps and steps[0].get("status") == "delivered"
+    assert steps[0].get("mode") == "smtp"
+
+    host = os.environ.get("RPT_SMTP_HOST", "localhost")
+    api_base = os.environ.get("MAILHOG_API", f"http://{host}:8025")
+    with urllib.request.urlopen(f"{api_base.rstrip('/')}/api/v2/messages", timeout=10) as resp:
+        messages = json.loads(resp.read())
+    items = messages.get("items") or []
+    assert items, "expected MailHog to receive standard schedule email"
+    latest = items[0]
+    mime_parts = latest.get("MIME", {}).get("Parts") or []
+    pdf_found = any(
+        part.get("Body", "").startswith("%PDF")
+        or "application/pdf" in (part.get("Headers", {}).get("Content-Type") or [""])[0]
+        for part in mime_parts
+    )
+    assert pdf_found or "pdf" in json.dumps(latest).lower()

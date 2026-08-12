@@ -28,11 +28,9 @@ function ScheduleMiniRow({
 }) {
   const label =
     schedule.sourceLabel ??
-    (schedule.sourceType === "standard"
-      ? schedule.sourceKey ?? "标准分析"
-      : schedule.sourceType === "dashboard" || schedule.sourceType === "data_screen"
-        ? `${localizeSourceType(schedule.sourceType)} ${schedule.sourceId?.slice(0, 8) ?? ""}`
-        : "模板调度");
+    (schedule.sourceType === "dashboard" || schedule.sourceType === "data_screen"
+      ? `${localizeSourceType(schedule.sourceType)} ${schedule.sourceId?.slice(0, 8) ?? ""}`
+      : "模板调度");
 
   const rowClassName = cn(
     "group flex min-w-0 items-center gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3 transition-colors dark:border-gray-800 dark:bg-white/[0.02]",

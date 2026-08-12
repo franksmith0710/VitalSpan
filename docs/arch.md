@@ -204,7 +204,7 @@ VitalSpan/
 ├── docs/
 │   ├── arch.md              # 本文件
 │   ├── api/                 # OpenAPI 端点索引 + 域可消费附录（auth/datasources/query）
-│   ├── data/                # Alembic revision → 域表导航（head 0046）
+│   ├── data/                # Alembic revision → 域表导航（head 0041）
 │   ├── service/             # 后端运维：健康探针、配置、启动
 │   ├── services/            # 域服务附录（随实现补充）
 │   ├── srs/                 # 需求权威（SRS + 附录）
@@ -235,7 +235,7 @@ backend/
 │   ├── governance/     # M8 catalog, workflow, publish, bus
 │   ├── ingestion/      # FR-DATA/FR-ETL：同步、清洗、调度（M1B）
 │   └── designer/       # M2 四期
-├── migrations/         # Alembic（当前 head **0046**，见 docs/data/README.md）
+├── migrations/         # Alembic（当前 head **0041**，见 docs/data/README.md）
 └── pyproject.toml      # （待建）依赖与工具配置
 ```
 
@@ -341,7 +341,7 @@ Dataset CRUD（ORM `datasets` 表）
   → 图表 ChartViewConfig(mode=dataset, datasetId, configId) / 报表扩展指标
 ```
 
-**pandas 落点**：同步写托管库前（`ingestion/sync_executor` + job `EtlRuleSet`）；`origin=manual` 的 Dataset 在每次 `dataset/execute` 出数后在内存过 pandas（`query/dataset/pandas_transform.py` + `datasets.transform_rules`）。`origin=sync_job` 同步产物**不**重复 query pandas。
+**pandas 落点**：同步写托管库前（`ingestion/sync_executor`）；**每次** Dataset execute 出数后在内存过 pandas（`query/dataset/pandas_transform.py`）。
 
 **`POST /query/execute`（sql/table/native）**：仅保留给管理面表预览、连接器探针、集成 smoke 等非图表/报表业务；**禁止**图表与报表扩展指标调用。
 

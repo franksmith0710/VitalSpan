@@ -4,7 +4,6 @@ const ARTIFACT_KIND_LABELS: Record<string, string> = {
   layout_inventory: "布局摘要",
   visual_snapshot: "可视化快照",
   template_render: "报表渲染",
-  standard_render: "标准分析报告",
 };
 
 export function localizeArtifactKind(kind: string | null | undefined): string | null {

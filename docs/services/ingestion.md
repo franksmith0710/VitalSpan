@@ -13,7 +13,7 @@
 - 同步任务定义与调度（内联或引用 MySQL 数据源 → 托管分析库表）
 - 全量覆盖与增量 upsert（单列 PK + 水位）
 - 轻量 ETL 规则（写库前 pandas 清洗；创建同步任务时按源表列元数据自动生成默认规则）
-- 同步产物 Dataset（`origin=sync_job`）读托管分析库时**不**重复 query pandas；查询清洗规则在 Dataset 侧锁定（`META_DATASET_TRANSFORM_SYNC_LOCKED`），须在同步任务 ETL 页配置
+- 同步产物 Dataset 读托管分析库时不再重复 query pandas（清洗已在写库前完成）
 - 同步运行历史与失败重试
 
 ## 边界

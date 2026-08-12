@@ -1064,7 +1064,7 @@ export function PixelCanvas({
         <div
           ref={stageRef}
           id="editor-canvas-main"
-          data-testid="pixel-canvas-stage"
+        data-testid="pixel-canvas-stage"
           data-dashboard-thumbnail-capture=""
           data-canvas-design-width={viewCanvas.width}
           data-canvas-design-height={viewCanvas.height}
@@ -1072,7 +1072,7 @@ export function PixelCanvas({
             "editor-canvas-main pixel-canvas-stage absolute top-0 origin-top-left",
             hostOverflowLocked ? "overflow-hidden" : "overflow-visible",
           )}
-          style={{
+        style={{
             left: stageLeft,
             width: viewCanvas.width,
             height: viewCanvas.height,
@@ -1102,14 +1102,14 @@ export function PixelCanvas({
             />
           ) : null}
           {visibleTopLevelWidgets.map((widget) => (
-              <PixelShape
-                key={widget.id}
-                widget={widget}
+          <PixelShape
+            key={widget.id}
+            widget={widget}
                 canvas={viewCanvas}
-                scale={scale}
+            scale={scale}
                 shapeGapPx={gapRuntime.snapGapPx}
-                mode={mode}
-                selected={mode === "edit" && Boolean(selectedIds?.has(widget.id))}
+            mode={mode}
+            selected={mode === "edit" && Boolean(selectedIds?.has(widget.id))}
                 onSelect={handleSelect}
                 onPreview={mode === "edit" ? handlePreview : undefined}
                 onCommit={handleCommit}
@@ -1142,8 +1142,8 @@ export function PixelCanvas({
                   renderWidget={renderWidget}
                   contentRevision={widgetContentRevision?.(widget) ?? widget.id}
                 />
-              </PixelShape>
-            ))}
+          </PixelShape>
+        ))}
           {showTabPaletteDropZones ? (
             <TabPaletteDropZones
               tabs={tabHosts}

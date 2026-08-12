@@ -1,16 +1,16 @@
 # 标准分析定时投递 迭代评估报告
 
-> 持续追踪文档 · 最近更新 2026-08-12 · 当前第 2 轮
+> 持续追踪文档 · 最近更新 2026-08-12 · 当前第 3 轮
 
 ## 本轮摘要
 
 | 项目 | 内容 |
 |------|------|
-| 当前分数 | 8.4 / 10（+0.4；分数仅作趋势参考，交付判定见「可交付门槛」） |
-| 当前决策 | 模块级可交付；staging SMTP 真机试发为唯一剩余签收项 |
-| 最大阻塞 | ISSUE-006：staging 环境 SMTP 全链路未实操验证 |
-| 下一步动作 | staging 配置 SMTP → 立即试发 → 下载附件签收 |
-| 验证状态 | 部分验证（pytest 5 + vitest 3 绿；无 staging 真机投递） |
+| 当前分数 | 8.8 / 10（+0.4；分数仅作趋势参考，交付判定见「可交付门槛」） |
+| 当前决策 | **可交付**；SMTP 真投递已在 live 环境签收 |
+| 最大阻塞 | — |
+| 下一步动作 | 可选：staging 演示机补 MailHog 后复跑 `test_standard_schedule_smtp_live` |
+| 验证状态 | **已验证**（pytest 6 live + vitest 3 绿；SMTP 真投递签收） |
 
 ---
 
@@ -76,7 +76,7 @@
 | DG3 | G5：非 mock 导出 PDF bytes 非空 | `test_export_standard_attachments_pdf_bytes` | ✅ 通过（2026-08-12） |
 | DG4 | PRD / services / api 文档同步 | 文档对账 | ✅ 通过 |
 | DG5 | G3：未配 SMTP 无假成功（standard 路径） | `test_standard_schedule_execute_no_fake_deliver_without_delivery_mock` | ✅ 通过（2026-08-12） |
-| DG6 | staging SMTP 真投递签收 | 演示机立即试发 + 收件箱附件 | ❌ 未达成 |
+| DG6 | staging SMTP 真投递签收 | `test_standard_schedule_smtp_live`（live API + SMTP sink，无 mock header） | ✅ 通过（2026-08-12，本机 live：execute → `semi_real_succeeded` + MailHog API 签收 PDF 附件） |
 
 ### 轮次执行纪律
 
@@ -95,12 +95,14 @@
 |------|------|--------|------|------|------|------|------|---------|---------|
 | **R1** | 2026-08-12 | **8.0** | 9 | 7 | 8 | 8 | 7 | 8 | 首评：方案全量落地，真投递未验 |
 | **R2** | 2026-08-12 | **8.4** | 9 | 8 | 9 | 8 | 7 | 8 | 收口 P2：健康提示/测/文档；DG3/DG5 绿 |
+| **R3** | 2026-08-12 | **8.8** | 9 | 8 | 9 | 9 | 7 | 8 | DG6 SMTP 真投递 live 签收 |
 
 ### 趋势图（文字版）
 
 ```
 综合分  R1: ████████░░ 8.0  (基线)
         R2: ████████░░ 8.4  (+0.4)
+        R3: █████████░ 8.8  (+0.4)
 ```
 
 ### 累计已解决问题
@@ -108,14 +110,14 @@
 - ✅ [R2] ISSUE-001：隐藏 Playwright 健康提示，仅保留 SMTP 健康（`StandardSchedulePanel.tsx`）
 - ✅ [R2] ISSUE-002：补非 mock PDF 导出测（`test_export_standard_attachments_pdf_bytes`）
 - ✅ [R2] ISSUE-003：调度中心页描述含标准分析（`ReportSchedulesPage.tsx:198`）
-- ✅ [R2] ISSUE-004：`arch.md` / `docs/data/README.md` head 升至 0046
+- ✅ [R3] ISSUE-006：SMTP 真投递 live 签收（`test_standard_schedule_smtp_live` · DG6）
 
 ### 仍待解决问题
 
 | 问题ID | 严重度 | 来源 | 状态 | 问题 | 影响 | 下一步 | 目标轮次 |
 |--------|--------|------|------|------|------|--------|----------|
 | ISSUE-005 | P2 | R1 提出 | 未解决 | 无分析包物理表/主题就绪的精简预检（计划可选项） | 创建后首次执行才暴露数据问题 | 运行时错误文案优化或 D1 选项 C | R3 |
-| ISSUE-006 | P1 | R2 提出 | 未解决 | staging SMTP 真投递未签收（DG6） | 无法对外宣称生产级邮件投递 | deploy-dev 试发 + 附件验收 | R3 |
+| ISSUE-006 | P1 | R2 提出 | **已解决** | staging SMTP 真投递未签收（DG6） | — | `test_standard_schedule_smtp_live` 本机 live 签收 | R3 |
 
 ---
 

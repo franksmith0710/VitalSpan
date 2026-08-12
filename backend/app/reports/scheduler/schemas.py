@@ -15,11 +15,10 @@ class ScheduleRecipientIn(BaseModel):
 class ScheduleCreate(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     catalog_node_id: uuid.UUID | None = Field(default=None, alias="catalogNodeId")
-    source_type: Literal["template", "dashboard", "data_screen", "standard"] = Field(
+    source_type: Literal["template", "dashboard", "data_screen"] = Field(
         default="template", alias="sourceType",
     )
     source_id: uuid.UUID | None = Field(default=None, alias="sourceId")
-    source_key: str | None = Field(default=None, alias="sourceKey", max_length=64)
     recipients: list[ScheduleRecipientIn] = Field(default_factory=list)
     attachment_formats: list[Literal["pdf", "excel"]] = Field(
         default_factory=lambda: ["pdf"], alias="attachmentFormats",
@@ -33,11 +32,6 @@ class ScheduleCreate(BaseModel):
 
     @model_validator(mode="after")
     def resolve_source(self) -> ScheduleCreate:
-        if self.source_type == "standard":
-            key = (self.source_key or "").strip()
-            if not key:
-                raise ValueError("sourceKey required for standard schedules")
-            return self.model_copy(update={"source_key": key, "source_id": None, "catalog_node_id": None})
         source_id = self.source_id or self.catalog_node_id
         if source_id is None:
             raise ValueError("sourceId or catalogNodeId required")
@@ -70,8 +64,7 @@ class ScheduleStatusOut(BaseModel):
     name: str | None = None
     catalog_node_id: uuid.UUID | None = Field(default=None, alias="catalogNodeId")
     source_type: str = Field(default="template", alias="sourceType")
-    source_id: uuid.UUID | None = Field(default=None, alias="sourceId")
-    source_key: str | None = Field(default=None, alias="sourceKey")
+    source_id: uuid.UUID = Field(alias="sourceId")
     source_label: str | None = Field(default=None, alias="sourceLabel")
     recipients: list[ScheduleRecipientIn] = Field(default_factory=list)
     attachment_formats: list[str] = Field(default_factory=list, alias="attachmentFormats")
