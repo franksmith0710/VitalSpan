@@ -22,6 +22,8 @@ type EtlRulesEditorProps = {
   selectedCount: number;
   showDemoTemplate: boolean;
   demoSourceTable: string;
+  /** sync=同步写库前；dataset-query=外部源 Dataset 查询时 */
+  variant?: "sync" | "dataset-query";
   onToggleBatchMode: () => void;
   onClearSelection: () => void;
   onRemoveSelected: () => void;
@@ -49,6 +51,7 @@ export function EtlRulesEditor({
   selectedCount,
   showDemoTemplate,
   demoSourceTable,
+  variant = "sync",
   onToggleBatchMode,
   onClearSelection,
   onRemoveSelected,
@@ -70,16 +73,30 @@ export function EtlRulesEditor({
         ? "未能读取源表列"
         : "未绑定源连接";
 
+  const isDatasetQuery = variant === "dataset-query";
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar px-5 py-5 lg:px-8 lg:py-6">
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-5">
           <Alert severity="info" appearance="subtle" className="rounded-xl">
-            <AlertTitle className="text-theme-sm">同步时自动清洗，无需逐条手配</AlertTitle>
+            <AlertTitle className="text-theme-sm">
+              {isDatasetQuery ? "查询时自动清洗，无需逐条手配" : "同步时自动清洗，无需逐条手配"}
+            </AlertTitle>
             <AlertDescription className="text-theme-xs leading-relaxed">
-              类似 Pandas 整列处理：运行同步时会自动去空格、推断数值、过滤 deleted、填充备注空值。
-              本页规则用于<strong className="font-medium text-gray-700 dark:text-gray-300">覆盖或补充</strong>
-              默认行为；打开页面时会自动扫描全部列并保存。
+              {isDatasetQuery ? (
+                <>
+                  外部源 Dataset 在每次查询出数后会自动去空格、推断数值、过滤 deleted。
+                  本页规则用于<strong className="font-medium text-gray-700 dark:text-gray-300">覆盖或补充</strong>
+                  默认行为；保存后在图表绑定该 Dataset 时生效。
+                </>
+              ) : (
+                <>
+                  类似 Pandas 整列处理：运行同步时会自动去空格、推断数值、过滤 deleted、填充备注空值。
+                  本页规则用于<strong className="font-medium text-gray-700 dark:text-gray-300">覆盖或补充</strong>
+                  默认行为；打开页面时会自动扫描全部列并保存。
+                </>
+              )}
             </AlertDescription>
           </Alert>
 
@@ -152,7 +169,11 @@ export function EtlRulesEditor({
             <ListGhostEmptyState
               icon={<Wand2 className="size-6 text-brand-500" aria-hidden />}
               title="暂无额外规则"
-              description="同步运行时会自动执行默认清洗。若需显式记录重命名/类型转换，可点「一键对齐全部列」或手动添加。"
+              description={
+                isDatasetQuery
+                  ? "查询时会自动执行默认清洗。若需显式记录重命名/类型转换，可点「一键对齐全部列」或手动添加。"
+                  : "同步运行时会自动执行默认清洗。若需显式记录重命名/类型转换，可点「一键对齐全部列」或手动添加。"
+              }
               density="compact"
               action={
                 <Button
@@ -197,7 +218,11 @@ export function EtlRulesEditor({
       >
         <div className="mx-auto flex w-full max-w-4xl flex-wrap items-center justify-between gap-3">
           <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-            {isDirty ? "有未保存的更改，保存后同步任务才会使用新规则。" : "规则已同步到当前编辑状态。"}
+            {isDirty
+              ? isDatasetQuery
+                ? "有未保存的更改，保存后 Dataset 查询才会使用新规则。"
+                : "有未保存的更改，保存后同步任务才会使用新规则。"
+              : "规则已同步到当前编辑状态。"}
           </p>
           <Button
             type="button"

@@ -369,6 +369,9 @@ redoc: /redoc
 | PUT | `/api/v1/datasets/{dataset_id}` | Dataset 全量更新（写 ACL；403 `META_DATASET_FORBIDDEN`） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
 | DELETE | `/api/v1/datasets/{dataset_id}` | Dataset 删除（204） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
 | POST | `/api/v1/datasets/{dataset_id}/bind-query-config` | body `{configId}` 绑定 `dataset_query` 配置（非 dataset_query → 422 `META_DATASET_CONFIG_TYPE_INVALID`） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
+| GET | `/api/v1/datasets/{dataset_id}/transform-rules` | 读取 Dataset 查询清洗规则（外部源 query pandas） | 内部 | 四期 | META-004 | 已实现 | `backend/app/metadata/dataset/transform_rules.py` |
+| PUT | `/api/v1/datasets/{dataset_id}/transform-rules` | 保存查询清洗规则（sync_job → 422 `META_DATASET_TRANSFORM_SYNC_LOCKED`） | 内部 | 四期 | META-004 | 已实现 | `backend/app/metadata/dataset/transform_rules.py` |
+| POST | `/api/v1/datasets/{dataset_id}/transform-rules/auto-align` | 按物理表列元数据一键生成规则 | 内部 | 四期 | META-004 | 已实现 | `backend/app/metadata/dataset/transform_rules.py` |
 | POST | `/api/v1/datasets/validate` | Dataset 草稿校验（不落库） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
 | GET/POST/PUT/DELETE | `/api/v1/metadata/entity-types` | 实体类型 schema CRUD（**已替代** 下方废弃路径） | 内部 | 二期 | META-006 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/POST | `/api/v1/entities/types` | **deprecated** — 无运行时路由；请用 `/api/v1/metadata/entity-types` | — | — | META-006 | 废弃 | — |

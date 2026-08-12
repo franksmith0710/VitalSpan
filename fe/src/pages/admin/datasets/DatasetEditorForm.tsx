@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { ComputedFieldsEditor } from "./ComputedFieldsEditor";
+import { DatasetTransformRulesPanel } from "./components/DatasetTransformRulesPanel";
 import { DatasetTablePicker } from "./DatasetTablePicker";
 import type { DatasetComputedField, DatasetEditorValues, DatasetOrigin } from "./types";
 
@@ -63,6 +64,7 @@ export function DatasetEditorForm({
   onSubmit,
   tablePickerPrefill,
   origin = "manual",
+  transformRulesPrefill,
 }: {
   mode: "create" | "edit";
   values: DatasetEditorValues;
@@ -79,6 +81,13 @@ export function DatasetEditorForm({
     onTableChange?: () => void;
   };
   origin?: DatasetOrigin;
+  transformRulesPrefill?: {
+    datasetId: string;
+    columnNames: string[];
+    columnsLoading: boolean;
+    hasDataSource: boolean;
+    disabledReason?: string | null;
+  };
 }) {
   const patch = useCallback(
     (update: SetStateAction<DatasetEditorValues>) => onChange(update),
@@ -86,6 +95,7 @@ export function DatasetEditorForm({
   );
   const tableTabLabel = "数据表";
   const computedTabLabel = `计算字段${values.computedFields.length > 0 ? ` (${values.computedFields.length})` : ""}`;
+  const showTransformTab = mode === "edit" && Boolean(transformRulesPrefill);
 
   return (
     <Card className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
@@ -163,6 +173,9 @@ export function DatasetEditorForm({
               <TabsList variant="enclosed" size="sm" className="w-fit">
                 <TabsTrigger value="tables">{tableTabLabel}</TabsTrigger>
                 <TabsTrigger value="computed">{computedTabLabel}</TabsTrigger>
+                {showTransformTab ? (
+                  <TabsTrigger value="transform-rules">查询清洗</TabsTrigger>
+                ) : null}
               </TabsList>
             </div>
 
@@ -201,6 +214,21 @@ export function DatasetEditorForm({
                 />
               </DatasetFormSection>
             </TabsContent>
+
+            {showTransformTab && transformRulesPrefill ? (
+              <TabsContent
+                value="transform-rules"
+                className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden"
+              >
+                <DatasetTransformRulesPanel
+                  datasetId={transformRulesPrefill.datasetId}
+                  columnNames={transformRulesPrefill.columnNames}
+                  columnsLoading={transformRulesPrefill.columnsLoading}
+                  hasDataSource={transformRulesPrefill.hasDataSource}
+                  disabledReason={transformRulesPrefill.disabledReason}
+                />
+              </TabsContent>
+            ) : null}
           </Tabs>
         </form>
       </CardContent>

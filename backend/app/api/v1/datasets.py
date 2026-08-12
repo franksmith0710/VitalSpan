@@ -15,9 +15,12 @@ from app.metadata.dataset.schemas import (
     DatasetItemIn,
     DatasetItemOut,
     DatasetListResponse,
+    DatasetTransformRulesIn,
+    DatasetTransformRulesOut,
     DatasetValidateOut,
 )
 from app.metadata.dataset import service as dataset_service
+from app.metadata.dataset import transform_rules as dataset_transform_rules
 
 router = APIRouter(prefix="/datasets", tags=["metadata", "META-004"])
 
@@ -105,5 +108,39 @@ def bind_query_config(
 ) -> DatasetItemOut | JSONResponse:
     try:
         return dataset_service.bind_query_config(dataset_id, payload.config_id, actor)
+    except DatasetError as exc:
+        return _dataset_error(exc)
+
+
+@router.get("/{dataset_id}/transform-rules", response_model=DatasetTransformRulesOut)
+def get_transform_rules(
+    dataset_id: str,
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+) -> DatasetTransformRulesOut | JSONResponse:
+    try:
+        return dataset_transform_rules.get_transform_rules(dataset_id, actor)
+    except DatasetError as exc:
+        return _dataset_error(exc)
+
+
+@router.put("/{dataset_id}/transform-rules", response_model=DatasetTransformRulesOut)
+def put_transform_rules(
+    dataset_id: str,
+    payload: DatasetTransformRulesIn,
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
+) -> DatasetTransformRulesOut | JSONResponse:
+    try:
+        return dataset_transform_rules.put_transform_rules(dataset_id, payload.rules, actor)
+    except DatasetError as exc:
+        return _dataset_error(exc)
+
+
+@router.post("/{dataset_id}/transform-rules/auto-align", response_model=DatasetTransformRulesOut)
+def auto_align_transform_rules(
+    dataset_id: str,
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
+) -> DatasetTransformRulesOut | JSONResponse:
+    try:
+        return dataset_transform_rules.auto_align_transform_rules(dataset_id, actor)
     except DatasetError as exc:
         return _dataset_error(exc)

@@ -40,8 +40,10 @@ def needs_query_time_pandas(
 
 
 def resolve_dataset_transform_rules(_session: Session, _dataset: DatasetItemOut | None) -> list[dict[str, Any]]:
-    """首期仅 auto_profile（rules=[]）；二期可挂 Dataset.transform_rules。"""
-    return []
+    """加载 Dataset 查询清洗规则；sync/托管库路径在 transform_query_result 层跳过。"""
+    from app.metadata.dataset.transform_rules import resolve_transform_rules_for_dataset
+
+    return resolve_transform_rules_for_dataset(_session, _dataset)
 
 
 def rows_to_records(columns: list[str], rows: list[list[Any]]) -> list[dict[str, Any]]:

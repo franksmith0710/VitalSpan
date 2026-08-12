@@ -85,6 +85,7 @@ def _row_to_out(row: DatasetRecord) -> DatasetItemOut:
         "boundConfigId": row.bound_config_id,
         "origin": row.origin or "manual",
         "syncJobId": row.sync_job_id,
+        "transformRules": list(row.transform_rules or []),
         "isDemoPackage": is_demo_package_dataset(row.dataset_id, row.display_name),
     })
 

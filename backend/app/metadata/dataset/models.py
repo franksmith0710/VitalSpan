@@ -23,6 +23,7 @@ class DatasetRecord(Base):
     bound_config_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True)
     origin: Mapped[str] = mapped_column(String(16), nullable=False, default="manual", server_default="manual")
     sync_job_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True)
+    transform_rules: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False,
     )

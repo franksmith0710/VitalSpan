@@ -48,7 +48,20 @@ class DatasetItemOut(BaseModel):
     bound_config_id: uuid.UUID | None = Field(default=None, alias="boundConfigId")
     origin: str = Field(default="manual")
     sync_job_id: uuid.UUID | None = Field(default=None, alias="syncJobId")
+    transform_rules: list[dict[str, object]] = Field(default_factory=list, alias="transformRules")
     is_demo_package: bool = Field(default=False, alias="isDemoPackage")
+
+
+class DatasetTransformRulesIn(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    rules: list[dict[str, object]]
+
+
+class DatasetTransformRulesOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    dataset_id: str = Field(alias="datasetId")
+    rules: list[dict[str, object]]
+    query_pandas_applies: bool = Field(alias="queryPandasApplies")
 
 
 class DatasetBindConfigIn(BaseModel):
