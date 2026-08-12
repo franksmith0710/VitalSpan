@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, ChevronUp, Table2 } from "lucide-react";
-import { toast } from "sonner";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { SchemaBrowser } from "@/components/datasources/SchemaBrowser";
 import {
   qualifiedTableName,
@@ -36,7 +35,12 @@ import { formatSyncDatasourceDisplay } from "@/lib/formatDatasourceDisplay";
 import { queryKeys } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";
 import { DatasetFieldWorkbench } from "./components/DatasetFieldWorkbench";
-import { DatasetQualifiedTableReadout, SyncOutputConnectionReadout, SYNC_HEADER_LABEL_BLOCK_CLASS } from "./components/SyncOutputConnectionReadout";
+import {
+  DatasetQualifiedTableReadout,
+  SYNC_HEADER_LABEL_BLOCK_CLASS,
+  SYNC_HEADER_READOUT_MIN_H,
+  SyncOutputConnectionReadout,
+} from "./components/SyncOutputConnectionReadout";
 import { setPrimaryTable } from "./datasetTableSelection";
 import { useDatasetTableColumns } from "./hooks/useDatasetTableColumns";
 import type { DatasetBindDraft, DatasetOrigin, DatasetTable } from "./types";
@@ -105,7 +109,7 @@ export function DatasetTablePicker({
   const [pendingTablePick, setPendingTablePick] = useState<TableSelection | null>(null);
   const [pendingDataSourceId, setPendingDataSourceId] = useState<string | null>(null);
   const primaryTableName = tables[0]?.name ?? "";
-  const [schemaExpanded, setSchemaExpanded] = useState(() => !primaryTableName);
+  const [schemaExpanded, setSchemaExpanded] = useState(false);
   const focusTable = useMemo(
     () => parseTableFocus(primaryTableName) ?? parseFocusTable(prefillTable),
     [prefillTable, primaryTableName],
@@ -127,7 +131,31 @@ export function DatasetTablePicker({
     [selectedDs],
   );
 
-  const syncHeaderGrid = isSyncOrigin && Boolean(dataSourceId) && selectableItems.length > 0;
+  const headerGridLayout = Boolean(dataSourceId) && selectableItems.length > 0;
+  const useTallReadout = headerGridLayout && (isSyncOrigin || readOnlyTables);
+
+  const tableChangeButton = !readOnlyTables ? (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      className="h-8 shrink-0"
+      aria-expanded={schemaExpanded}
+      onClick={() => setSchemaExpanded((open) => !open)}
+    >
+      {schemaExpanded ? (
+        <>
+          <ChevronUp className="size-3.5" aria-hidden />
+          收起
+        </>
+      ) : (
+        <>
+          <ChevronDown className="size-3.5" aria-hidden />
+          更换
+        </>
+      )}
+    </Button>
+  ) : null;
 
   useEffect(() => {
     if (selectableItems.length === 0) return;
@@ -219,27 +247,24 @@ export function DatasetTablePicker({
       <div
         className={cn(
           "shrink-0 rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]",
-          syncHeaderGrid
+          headerGridLayout
             ? "grid grid-cols-1 items-stretch gap-4 px-4 py-4 md:grid-cols-2 md:gap-6"
             : "flex flex-wrap items-end gap-4 px-4 py-3",
         )}
       >
-        <div
-          className={cn(
-            "flex min-w-0 flex-col gap-2",
-            !syncHeaderGrid && "grid min-w-[200px] flex-1 gap-1.5 sm:max-w-xs",
-          )}
-        >
-          <div className={syncHeaderGrid ? SYNC_HEADER_LABEL_BLOCK_CLASS : "grid gap-0.5"}>
+        <div className={cn("flex min-w-0 flex-col gap-2", !headerGridLayout && "grid min-w-[200px] flex-1 gap-1.5 sm:max-w-xs")}>
+          <div className={headerGridLayout ? SYNC_HEADER_LABEL_BLOCK_CLASS : "grid gap-0.5"}>
             <Label htmlFor="dataset-datasource" className="text-theme-xs text-gray-600 dark:text-gray-400">
               {isSyncOrigin ? "同步产出库" : "数据源"}
             </Label>
             {isSyncOrigin ? (
               <p className="text-theme-xs text-gray-400 dark:text-gray-500">托管分析库连接（只读）</p>
+            ) : headerGridLayout ? (
+              <p className="text-theme-xs text-gray-400 dark:text-gray-500">选择要浏览 Schema 的数据连接</p>
             ) : null}
           </div>
           {dsQuery.isLoading ? (
-            <Skeleton className="h-11 w-full rounded-lg" />
+            <Skeleton className={cn("h-11 w-full rounded-lg", headerGridLayout && SYNC_HEADER_READOUT_MIN_H)} />
           ) : selectableItems.length === 0 ? (
             <p className="text-theme-xs text-gray-500">
               {isSyncOrigin
@@ -247,18 +272,18 @@ export function DatasetTablePicker({
                 : "暂无可用数据源，请先在「数据源」中创建。"}
             </p>
           ) : !dataSourceId ? (
-            <Skeleton className="h-11 w-full rounded-lg" />
+            <Skeleton className={cn("h-11 w-full rounded-lg", headerGridLayout && SYNC_HEADER_READOUT_MIN_H)} />
           ) : readOnlyTables || isSyncOrigin ? (
             selectedDs ? (
               <SyncOutputConnectionReadout
                 id="dataset-datasource"
                 data-testid="sync-output-datasource"
                 datasource={selectedDs}
-                tall={syncHeaderGrid}
+                tall={useTallReadout}
                 className="min-h-0 flex-1"
               />
             ) : (
-              <Skeleton className="h-11 w-full rounded-lg" />
+              <Skeleton className={cn("h-11 w-full rounded-lg", headerGridLayout && SYNC_HEADER_READOUT_MIN_H)} />
             )
           ) : (
             <Select value={dataSourceId} onValueChange={handleDataSourceChange}>
@@ -276,54 +301,29 @@ export function DatasetTablePicker({
           )}
         </div>
 
-        <div className={cn("flex min-w-0 flex-col gap-2", !syncHeaderGrid && "grid gap-1.5")}>
-          <div className={syncHeaderGrid ? SYNC_HEADER_LABEL_BLOCK_CLASS : undefined}>
+        <div className={cn("flex min-w-0 flex-col gap-2", !headerGridLayout && "grid gap-1.5")}>
+          <div className={headerGridLayout ? SYNC_HEADER_LABEL_BLOCK_CLASS : undefined}>
             <span className="text-theme-xs text-gray-600 dark:text-gray-400">当前数据表</span>
-            {syncHeaderGrid ? (
-              <p className="text-theme-xs text-gray-400 dark:text-gray-500">同步写入的目标表（只读）</p>
+            {headerGridLayout ? (
+              <p className="text-theme-xs text-gray-400 dark:text-gray-500">
+                {isSyncOrigin ? "同步写入的目标表（只读）" : "已选物理表，可在下方更换"}
+              </p>
             ) : null}
           </div>
           {primaryTableName ? (
-            <div className={cn("flex min-w-0 gap-2", syncHeaderGrid ? "min-h-0 flex-1" : "h-11 items-center")}>
-              {syncHeaderGrid ? (
-                <DatasetQualifiedTableReadout
-                  tableName={primaryTableName}
-                  tall
-                  className="min-h-0 flex-1"
-                />
-              ) : (
-                <p className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 dark:border-gray-800 dark:bg-white/[0.02]">
-                  <Table2 className="size-4 shrink-0 text-gray-400" aria-hidden />
-                  <span className="truncate font-mono text-theme-sm text-gray-800 dark:text-gray-200">
-                    {primaryTableName}
-                  </span>
-                </p>
-              )}
-              {!readOnlyTables ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="shrink-0"
-                  aria-expanded={schemaExpanded}
-                  onClick={() => setSchemaExpanded((open) => !open)}
-                >
-                  {schemaExpanded ? (
-                    <>
-                      <ChevronUp className="size-3.5" aria-hidden />
-                      收起
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="size-3.5" aria-hidden />
-                      更换
-                    </>
-                  )}
-                </Button>
-              ) : null}
-            </div>
+            <DatasetQualifiedTableReadout
+              tableName={primaryTableName}
+              tall={useTallReadout}
+              className="w-full"
+              action={tableChangeButton}
+            />
           ) : (
-            <p className="flex h-11 items-center rounded-lg border border-dashed border-gray-200 px-3 text-theme-xs text-gray-500 dark:border-gray-700 dark:text-gray-400">
+            <p
+              className={cn(
+                "flex h-11 items-center rounded-lg border border-dashed border-gray-200 px-3 text-theme-xs text-gray-500 dark:border-gray-700 dark:text-gray-400",
+                useTallReadout && cn(SYNC_HEADER_READOUT_MIN_H, "h-auto justify-center"),
+              )}
+            >
               请在下方 Schema 树单击表名
             </p>
           )}
@@ -337,15 +337,37 @@ export function DatasetTablePicker({
       ) : null}
 
       {showSchemaPicker ? (
-        <div
-          className={cn(
-            "shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-white",
-            "dark:border-gray-800 dark:bg-white/[0.02]",
-            primaryTableName
-              ? "h-[min(240px,28vh)] min-h-[200px]"
-              : "h-[min(320px,36vh)] min-h-[240px]",
-          )}
-        >
+        <div className="flex shrink-0 flex-col gap-2">
+          {schemaExpanded && !isSyncOrigin && !readOnlyTables && selectableItems.length > 0 ? (
+            <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-white/[0.02]">
+              <div className="grid gap-1.5">
+                <Label htmlFor="dataset-datasource-switch" className="text-theme-xs text-gray-600 dark:text-gray-400">
+                  切换数据源
+                </Label>
+                <Select value={dataSourceId} onValueChange={handleDataSourceChange}>
+                  <SelectTrigger id="dataset-datasource-switch" className="h-11" aria-label="切换数据源">
+                    <SelectValue placeholder="选择数据源" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectableItems.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>
+                        {d.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          ) : null}
+          <div
+            className={cn(
+              "overflow-hidden rounded-xl border border-gray-200 bg-white",
+              "dark:border-gray-800 dark:bg-white/[0.02]",
+              primaryTableName
+                ? "h-[min(240px,28vh)] min-h-[200px]"
+                : "h-[min(320px,36vh)] min-h-[240px]",
+            )}
+          >
           {dataSourceId ? (
             <SchemaBrowser
               key={dataSourceId}
@@ -363,6 +385,7 @@ export function DatasetTablePicker({
               <p className="text-theme-xs text-gray-500 dark:text-gray-400">请先选择数据源。</p>
             </div>
           )}
+          </div>
         </div>
       ) : null}
 

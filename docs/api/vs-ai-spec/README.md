@@ -8,12 +8,12 @@
 | 路径 | AI 产出 | 平台能力 |
 |------|---------|----------|
 | **L1/L2 配置已有图** | `chartConfig` + `nativeBody.deStyle` | 49 种 `chartType`；见 `capability-manifest.json` |
-| **L3 全新组件** | 沙箱 HTML bundle + `manifest.json` | `POST /api/v1/ai-viz/artifacts` → widget `type: "customViz"` |
+| **L3 全新组件** | 沙箱 HTML bundle + `manifest.json` | `POST /api/v1/ai-viz/artifacts` → widget `type: "customViz"`；渲染器 **可选**（vanilla / canvas / 内联 D3），见 [guides/RENDERERS.md](./guides/RENDERERS.md) |
 | **拼大屏** | `layoutJson` v2（混排 widget） | `PUT /api/v1/dashboards/{id}/editor-save` |
 
 ## 推荐工作流
 
-1. 读取 `capability-manifest.json` + `style-vocabulary.json`
+1. 读取 `capability-manifest.json` + `style-vocabulary.json` +（customViz 推荐）`theme-tokens.json`
 2. 生成 artifact（图表 / 自定义组件 / 布局）
 3. `POST /api/v1/charts/validate`（内置图）或 `POST /api/v1/ai-viz/artifacts`（新组件）
 4. `POST /api/v1/views/validate` 或 `editor-save` 写入看板/大屏
@@ -23,11 +23,14 @@
 
 | 文件 | 说明 |
 |------|------|
-| [PROTOCOL.md](./PROTOCOL.md) | 自定义组件沙箱协议 |
+| [PROTOCOL.md](./PROTOCOL.md) | 自定义组件沙箱协议（含可选 `rendererHint`） |
+| [guides/RENDERERS.md](./guides/RENDERERS.md) | 渲染器选择索引（不强制） |
+| [guides/D3-OPTIONAL.md](./guides/D3-OPTIONAL.md) | 可选 D3 内联开发规范 |
+| [theme-tokens.json](./theme-tokens.json) | 看板/D3 主题 token（推荐对齐内置 chart） |
 | [capability-manifest.json](./capability-manifest.json) | chartType + widgetType 能力清单（可 `scripts/export-vs-ai-spec.py` 刷新） |
 | [style-vocabulary.json](./style-vocabulary.json) | 已接通 `deStyle` 字段词典 |
 | [schemas/](./schemas/) | JSON Schema |
-| [examples/](./examples/) | 黄金样例 |
+| [examples/](./examples/) | 黄金样例（含 vanilla 与 D3 对照 bundle） |
 
 ## 鉴权
 

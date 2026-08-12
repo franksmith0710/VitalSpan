@@ -144,7 +144,7 @@ describe("Dataset form pages", () => {
     expect(await screen.findByText("当前数据表")).toBeInTheDocument();
     expect(screen.queryByText("已选表")).not.toBeInTheDocument();
     expect(await screen.findByText("字段工作台")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "更换" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "更换" })).toBeInTheDocument();
     expect(screen.getAllByText("public.orders").length).toBeGreaterThan(0);
     expect(screen.queryByRole("tab", { name: /绑定配置/ })).not.toBeInTheDocument();
 

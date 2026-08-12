@@ -1239,5 +1239,10 @@
       }
     }
   ],
-  "customVizProtocol": "docs/api/vs-ai-spec/PROTOCOL.md"
+  "customVizProtocol": "docs/api/vs-ai-spec/PROTOCOL.md",
+  "customVizGuides": {
+    "renderers": "docs/api/vs-ai-spec/guides/RENDERERS.md",
+    "d3Optional": "docs/api/vs-ai-spec/guides/D3-OPTIONAL.md",
+    "themeTokens": "docs/api/vs-ai-spec/theme-tokens.json"
+  }
 }

@@ -10,6 +10,7 @@
 | 对外 `docs/api/vs-ai-spec/` 规范包 | AI 自动生成 SQL / 智能问数 |
 | 内置 chartType + `deStyle` 配置（L1/L2） | 动态注册第 50+ chartType 进 plugin catalog |
 | 沙箱 HTML bundle → `customViz` widget（L3） | PDF 导出 sandbox 像素保真 |
+| 可选 D3 创作指南 + `theme-tokens.json`（不强制渲染器） | 强制 customViz 使用平台 D3 引擎 |
 | `layoutJson` v2 混排 chart + customViz | `layout/orchestrate` 规则引擎（M2） |
 | `dataBinding.status=manual` 占位保存 | postMessage 数据桥（M2） |
 
@@ -20,6 +21,7 @@
 - [x] AIVIZ-003：`layoutJson` 支持 `type: customViz` + `customVizConfig.artifactId`
 - [x] AIVIZ-004：`POST /api/v1/charts/validate` 接受 `nativeBody.dataBinding.status=manual` 且无数据源
 - [x] AIVIZ-005：FE `CustomVizWidget` iframe `sandbox=allow-scripts`（无 same-origin）
+- [x] AIVIZ-008：可选 D3 规范（`guides/D3-OPTIONAL.md`）+ `theme-tokens.json` + D3/vanilla 示例；`rendererHint` 仅元数据
 - [ ] AIVIZ-006：组件库入库 customViz（M2）
 - [ ] AIVIZ-007：postMessage 查询桥（M2）
 

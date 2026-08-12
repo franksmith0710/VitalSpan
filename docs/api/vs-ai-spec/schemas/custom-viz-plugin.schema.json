@@ -13,6 +13,11 @@
         "displayName": { "type": "string", "minLength": 1, "maxLength": 120 },
         "version": { "type": "string" },
         "entry": { "type": "string", "default": "index.html" },
+        "rendererHint": {
+          "type": "string",
+          "enum": ["d3", "vanilla", "canvas", "svg"],
+          "description": "Optional metadata only; platform does not validate or enforce."
+        },
         "fieldSlots": { "type": "object" },
         "styleSchema": { "type": "object" },
         "defaultStyle": { "type": "object" }

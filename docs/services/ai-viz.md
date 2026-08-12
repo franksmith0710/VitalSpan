@@ -20,6 +20,7 @@
 | `POST/GET /api/v1/ai-viz/artifacts` | 内置 chart plugin 注册 |
 | bundle 安全扫描（禁外链脚本） | AI 生成 SQL |
 | `customViz` layout 契约 | 组件库 customViz 入库（M2） |
+| 可选 D3 / 渲染器创作指南（`guides/`、`theme-tokens.json`） | 强制 customViz 使用 D3 |
 
 ## 依赖
 

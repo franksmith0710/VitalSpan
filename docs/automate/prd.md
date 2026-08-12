@@ -201,7 +201,7 @@ domain_count: 16
 | F14-CAT.md | CAT-001 ~ CAT-007 | `prd/F14-CAT.md` |
 | F15-NFR.md | NFR-001 ~ NFR-008 | `prd/F15-NFR.md` |
 | F16-DATA.md | DATA-001 ~ DATA-005 · ETL-001 | `prd/F16-DATA.md` |
-| F17-AIVIZ.md | AIVIZ-001 ~ AIVIZ-007 | `prd/F17-AIVIZ.md` |
+| F17-AIVIZ.md | AIVIZ-001 ~ AIVIZ-008 | `prd/F17-AIVIZ.md` |
 
 ---
 

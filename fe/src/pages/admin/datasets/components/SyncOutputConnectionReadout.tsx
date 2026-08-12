@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Database } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { TruncateHint } from "@/components/ui/hint-tooltip";
@@ -76,18 +77,21 @@ export function DatasetQualifiedTableReadout({
   tableName,
   className,
   tall = false,
+  action,
 }: {
   tableName: string;
   className?: string;
-  /** 与 SyncOutputConnectionReadout 顶栏等高 */
+  /** 与 SyncOutputConnectionReadout 顶栏等高（同步产物只读场景） */
   tall?: boolean;
+  /** 右侧操作（如「更换」），与表名同处一张读数卡内 */
+  action?: ReactNode;
 }) {
   return (
     <div
       className={cn(
         READOUT_SHELL_CLASS,
         "flex min-w-0 items-center gap-2",
-        tall && cn(SYNC_HEADER_READOUT_MIN_H, "h-full"),
+        tall ? cn(SYNC_HEADER_READOUT_MIN_H, "h-full") : "h-11 py-0",
         className,
       )}
     >
@@ -98,6 +102,7 @@ export function DatasetQualifiedTableReadout({
       >
         {tableName}
       </TruncateHint>
+      {action ? <div className="shrink-0">{action}</div> : null}
     </div>
   );
 }
