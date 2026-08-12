@@ -11,7 +11,6 @@ from app.auth.deps import UserContext, get_current_user
 from app.core.config import get_settings
 from app.main import app as fastapi_app
 from app.metadata.dataset import service as dataset_service
-from app.metadata.dataset.errors import DatasetError
 from app.metadata.dataset.models import DatasetRecord
 from app.datasources.models import get_meta_session
 from app.metadata.dataset.schemas import DatasetItemIn, DatasetItemOut, DatasetTableDef
@@ -127,7 +126,7 @@ def test_apply_query_transform_with_custom_rename_rule():
     assert cleaned[0]["product"] == "A"
 
 
-def test_sync_job_put_transform_rules_rejected(admin_actor):
+def test_sync_job_put_transform_rules_allowed(admin_actor):
     ds_id = "ds-sync-test"
     session = get_meta_session()
     try:
@@ -146,9 +145,10 @@ def test_sync_job_put_transform_rules_rejected(admin_actor):
     finally:
         session.close()
 
-    with pytest.raises(DatasetError) as exc:
-        put_transform_rules(ds_id, [], admin_actor)
-    assert exc.value.code == "META_DATASET_TRANSFORM_SYNC_LOCKED"
+    rules = [{"type": "rename_column", "from": "a", "to": "b"}]
+    saved = put_transform_rules(ds_id, rules, admin_actor)
+    assert saved.rules == rules
+    assert saved.query_pandas_applies is True
 
 
 def test_transform_rules_api_routes(client, admin_actor):

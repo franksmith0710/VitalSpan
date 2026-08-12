@@ -11,7 +11,6 @@ from app.auth.deps import UserContext
 from app.datasources.metadata.service import list_columns
 from app.datasources.models import get_meta_session
 from app.datasources.service import DataSourceError
-from app.ingestion.analytics_datasource import is_managed_analytics_datasource
 from app.ingestion.etl_suggest import EtlColumnMeta, suggest_etl_rules_from_columns
 from app.metadata.dataset.errors import DatasetError
 from app.metadata.dataset.models import DatasetRecord
@@ -24,7 +23,6 @@ from app.metadata.dataset.service import (
 from app.metadata.dataset.schemas import DatasetItemOut, DatasetTransformRulesOut
 
 META_DATASET_TRANSFORM_SYNC_LOCKED = "META_DATASET_TRANSFORM_SYNC_LOCKED"
-META_DATASET_TRANSFORM_ANALYTICS_LOCKED = "META_DATASET_TRANSFORM_ANALYTICS_LOCKED"
 
 
 def _load_row(session: Session, dataset_id: str, user: UserContext) -> DatasetRecord:
@@ -35,13 +33,8 @@ def _load_row(session: Session, dataset_id: str, user: UserContext) -> DatasetRe
     return row
 
 
-def _assert_transform_editable(row: DatasetRecord) -> None:
-    if row.origin == "sync_job":
-        raise DatasetError(
-            META_DATASET_TRANSFORM_SYNC_LOCKED,
-            "同步产物 Dataset 清洗在同步任务 ETL 中配置，查询时不再重复执行",
-            422,
-        )
+def _assert_transform_editable(_row: DatasetRecord) -> None:
+    return
 
 
 def _validate_rules(rules: list[dict[str, Any]]) -> None:
@@ -163,13 +156,7 @@ def resolve_transform_rules_for_dataset(
     return list(row.transform_rules or [])
 
 
-def _query_pandas_applies(session: Session, row: DatasetRecord) -> bool:
-    if row.origin == "sync_job":
-        return False
-    if row.table_source_datasource_id and is_managed_analytics_datasource(
-        session, row.table_source_datasource_id,
-    ):
-        return False
+def _query_pandas_applies(_session: Session, _row: DatasetRecord) -> bool:
     return True
 
 

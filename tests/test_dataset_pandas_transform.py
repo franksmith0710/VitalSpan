@@ -67,46 +67,39 @@ def test_apply_query_transform_failure_raises_query_error():
     assert exc.value.code == "QUERY_DATASET_TRANSFORM_FAILED"
 
 
-def test_needs_query_time_pandas_sync_job_skips():
+def test_needs_query_time_pandas_always_true():
     db = MagicMock()
     ds_id = uuid.uuid4()
-    with patch(
-        "app.query.dataset.pandas_transform.is_managed_analytics_datasource",
-        return_value=True,
-    ):
-        assert needs_query_time_pandas(db, _dataset(origin="sync_job"), ds_id) is False
+    assert needs_query_time_pandas(db, _dataset(origin="sync_job"), ds_id) is True
+    assert needs_query_time_pandas(db, _dataset(origin="manual"), ds_id) is True
+    assert needs_query_time_pandas() is True
 
 
-def test_needs_query_time_pandas_managed_analytics_skips():
+def test_transform_query_result_cleans_sync_dataset():
     db = MagicMock()
     ds_id = uuid.uuid4()
-    with patch(
-        "app.query.dataset.pandas_transform.is_managed_analytics_datasource",
-        return_value=True,
-    ):
-        assert needs_query_time_pandas(db, _dataset(origin="manual"), ds_id) is False
+    raw = QueryResult(
+        columns=["product_name", "amount", "status"],
+        rows=[["  Widget  ", "12.5", "active"]],
+        row_count=1,
+        truncated=False,
+    )
+    out = transform_query_result(db, _dataset(origin="sync_job"), ds_id, raw)
+    assert out.rows[0][0] == "Widget"
+    assert out.rows[0][1] == 12.5
 
 
-def test_needs_query_time_pandas_external_source_requires():
+def test_transform_query_result_cleans_managed_analytics():
     db = MagicMock()
     ds_id = uuid.uuid4()
-    with patch(
-        "app.query.dataset.pandas_transform.is_managed_analytics_datasource",
-        return_value=False,
-    ):
-        assert needs_query_time_pandas(db, _dataset(origin="manual"), ds_id) is True
-
-
-def test_transform_query_result_skips_sync_dataset():
-    db = MagicMock()
-    ds_id = uuid.uuid4()
-    raw = QueryResult(columns=["a"], rows=[[" dirty "]], row_count=1, truncated=False)
-    with patch(
-        "app.query.dataset.pandas_transform.is_managed_analytics_datasource",
-        return_value=True,
-    ):
-        out = transform_query_result(db, _dataset(origin="sync_job"), ds_id, raw)
-    assert out.rows == raw.rows
+    raw = QueryResult(
+        columns=["product_name", "status"],
+        rows=[["  A  ", "active"]],
+        row_count=1,
+        truncated=False,
+    )
+    out = transform_query_result(db, _dataset(origin="manual"), ds_id, raw)
+    assert out.rows[0][0] == "A"
 
 
 def test_transform_query_result_cleans_external_source():
@@ -118,11 +111,7 @@ def test_transform_query_result_cleans_external_source():
         row_count=1,
         truncated=False,
     )
-    with patch(
-        "app.query.dataset.pandas_transform.is_managed_analytics_datasource",
-        return_value=False,
-    ):
-        out = transform_query_result(db, _dataset(origin="manual"), ds_id, raw)
+    out = transform_query_result(db, _dataset(origin="manual"), ds_id, raw)
     assert out.rows[0][0] == "Widget"
     assert out.rows[0][1] == 12.5
 
@@ -131,11 +120,7 @@ def test_transform_query_result_preserves_truncated_flag():
     db = MagicMock()
     ds_id = uuid.uuid4()
     raw = QueryResult(columns=["status"], rows=[["active"]], row_count=1, truncated=True)
-    with patch(
-        "app.query.dataset.pandas_transform.is_managed_analytics_datasource",
-        return_value=False,
-    ):
-        out = transform_query_result(db, _dataset(origin="manual"), ds_id, raw)
+    out = transform_query_result(db, _dataset(origin="manual"), ds_id, raw)
     assert out.truncated is True
 
 
@@ -150,14 +135,44 @@ def test_transform_query_result_respects_query_limit_and_truncated():
         row_count=_QUERY_DEFAULT_LIMIT,
         truncated=True,
     )
-    with patch(
-        "app.query.dataset.pandas_transform.is_managed_analytics_datasource",
-        return_value=False,
-    ):
-        out = transform_query_result(db, _dataset(origin="manual"), ds_id, raw)
+    out = transform_query_result(db, _dataset(origin="manual"), ds_id, raw)
     assert out.truncated is True
     assert out.row_count == _QUERY_DEFAULT_LIMIT
     assert len(out.rows) == _QUERY_DEFAULT_LIMIT
+
+
+def test_execute_query_applies_pandas_for_sql_mode():
+    from app.auth.deps import UserContext
+    from app.query.schemas import ExecuteRequest, RlsOptions
+    from app.query.service import execute_query
+
+    session = MagicMock()
+    user = UserContext(id=str(uuid.uuid4()), username="admin", roles=["admin"])
+    ds_id = uuid.uuid4()
+    raw = QueryResult(
+        columns=["name", "status"],
+        rows=[["  hello  ", "active"], ["gone", "deleted"]],
+        row_count=2,
+        truncated=False,
+    )
+    payload = ExecuteRequest(
+        dataSourceId=ds_id,
+        mode="sql",
+        sql="SELECT name, status FROM t",
+        rls=RlsOptions(enabled=False),
+    )
+
+    with (
+        patch("app.query.service.assert_visible"),
+        patch("app.query.service._executor.execute_sql", return_value=raw),
+        patch("app.query.service.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value.query_default_limit = 1000
+        mock_settings.return_value.vitalspan_env = "development"
+        resp = execute_query(session, user, payload)
+
+    assert resp.row_count == 1
+    assert resp.rows[0][0] == "hello"
 
 
 def test_execute_config_limit_boundary_truncated_after_transform():
@@ -226,10 +241,6 @@ def test_execute_config_limit_boundary_truncated_after_transform():
             return_value=bound,
         ),
         patch("app.query.dataset.execute_config._executor.execute_sql", return_value=raw_result),
-        patch(
-            "app.query.dataset.pandas_transform.is_managed_analytics_datasource",
-            return_value=False,
-        ),
         patch("app.query.dataset.execute_config.get_settings") as mock_settings,
     ):
         mock_settings.return_value.query_default_limit = _QUERY_DEFAULT_LIMIT
@@ -315,10 +326,6 @@ def test_execute_config_applies_transform_for_external_source():
             "app.query.dataset.execute_config.transform_query_result",
             wraps=transform_query_result,
         ) as mock_transform,
-        patch(
-            "app.query.dataset.pandas_transform.is_managed_analytics_datasource",
-            return_value=False,
-        ),
         patch("app.query.dataset.execute_config.get_settings") as mock_settings,
     ):
         mock_settings.return_value.query_default_limit = 1000

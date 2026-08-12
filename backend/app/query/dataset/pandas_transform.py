@@ -1,4 +1,4 @@
-"""Dataset 查询时 pandas 清洗（外部源实时直连；同步产物已在 ingestion 过 pandas）。"""
+"""查询出数后 pandas 清洗（Dataset execute 与 /query/execute 共用 etl_rules 引擎）。"""
 
 from __future__ import annotations
 
@@ -10,7 +10,6 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.ingestion.analytics_datasource import is_managed_analytics_datasource
 from app.ingestion.etl_rules import apply_rules
 from app.metadata.dataset.schemas import DatasetItemOut
 from app.query.executor import QueryResult
@@ -28,22 +27,19 @@ class DatasetPandasProbeResult:
 
 
 def needs_query_time_pandas(
-    db: Session,
-    dataset: DatasetItemOut | None,
-    data_source_id: uuid.UUID,
+    _db: Session | None = None,
+    _dataset: DatasetItemOut | None = None,
+    _data_source_id: uuid.UUID | None = None,
 ) -> bool:
-    if dataset is not None and dataset.origin == "sync_job":
-        return False
-    if is_managed_analytics_datasource(db, data_source_id):
-        return False
+    """所有查询出数路径均执行 pandas 清洗（含 sync、托管库、图表直连）。"""
     return True
 
 
-def resolve_dataset_transform_rules(_session: Session, _dataset: DatasetItemOut | None) -> list[dict[str, Any]]:
-    """加载 Dataset 查询清洗规则；sync/托管库路径在 transform_query_result 层跳过。"""
+def resolve_dataset_transform_rules(session: Session, dataset: DatasetItemOut | None) -> list[dict[str, Any]]:
+    """加载 Dataset 查询清洗规则；无 Dataset 绑定时返回空列表（仍执行 auto_profile）。"""
     from app.metadata.dataset.transform_rules import resolve_transform_rules_for_dataset
 
-    return resolve_transform_rules_for_dataset(_session, _dataset)
+    return resolve_transform_rules_for_dataset(session, dataset)
 
 
 def rows_to_records(columns: list[str], rows: list[list[Any]]) -> list[dict[str, Any]]:
@@ -86,25 +82,30 @@ def apply_query_transform(records: list[dict[str, Any]], rules: list[dict[str, A
         raise QueryError("QUERY_DATASET_TRANSFORM_FAILED", str(exc)[:500], 422) from exc
 
 
-def transform_query_result(
-    db: Session,
-    dataset: DatasetItemOut | None,
-    data_source_id: uuid.UUID,
+def apply_pandas_to_query_result(
     result: QueryResult,
     rules: list[dict[str, Any]] | None = None,
 ) -> QueryResult:
-    if not needs_query_time_pandas(db, dataset, data_source_id):
-        return result
     records = rows_to_records(result.columns, result.rows)
     rows_in = len(records)
     cleaned = apply_query_transform(records, rules or [])
     rows_out = len(cleaned)
     logger.info(
-        "dataset_query_pandas_transform pandasTransform=true rowsIn=%s rowsOut=%s",
+        "query_pandas_transform pandasTransform=true rowsIn=%s rowsOut=%s",
         rows_in,
         rows_out,
     )
     return records_to_query_result(result.columns, cleaned, truncated=result.truncated)
+
+
+def transform_query_result(
+    _db: Session,
+    _dataset: DatasetItemOut | None,
+    _data_source_id: uuid.UUID,
+    result: QueryResult,
+    rules: list[dict[str, Any]] | None = None,
+) -> QueryResult:
+    return apply_pandas_to_query_result(result, rules)
 
 
 def probe_dataset_pandas_budget_ms() -> DatasetPandasProbeResult:

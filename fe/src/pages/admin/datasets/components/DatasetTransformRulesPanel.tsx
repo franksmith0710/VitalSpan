@@ -57,7 +57,6 @@ export function DatasetTransformRulesPanel({
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState(false);
   const [alignConfirmOpen, setAlignConfirmOpen] = useState(false);
-  const [queryPandasApplies, setQueryPandasApplies] = useState(true);
 
   const { isDirty, isBaselineReady, resetBaseline, markSaved } = useFormDirtyState(
     rules,
@@ -77,7 +76,6 @@ export function DatasetTransformRulesPanel({
         `/api/v1/datasets/${datasetId}/transform-rules`,
       );
       setRules(data.rules);
-      setQueryPandasApplies(data.queryPandasApplies);
       resetBaseline(data.rules);
     } catch (err) {
       setError(mapApiError(err));
@@ -155,14 +153,6 @@ export function DatasetTransformRulesPanel({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {error ? <PageErrorBanner message={error} onRetry={() => void loadRules()} /> : null}
-      {!queryPandasApplies ? (
-        <Alert severity="info" appearance="subtle" className="mx-6 mt-4 rounded-xl">
-          <AlertTitle className="text-theme-sm">当前 Dataset 查询时不执行 pandas 清洗</AlertTitle>
-          <AlertDescription className="text-theme-xs">
-            同步产物或托管分析库 Dataset 已在写库前清洗；此处规则仅对外部源实时查询生效。
-          </AlertDescription>
-        </Alert>
-      ) : null}
       <EtlRulesEditor
         variant="dataset-query"
         rules={rules}

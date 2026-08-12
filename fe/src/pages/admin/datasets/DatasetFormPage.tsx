@@ -336,16 +336,6 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
   const transformRulesPrefill = useMemo(() => {
     if (mode !== "edit" || !id) return undefined;
     const hasSource = Boolean(effectiveDataSourceIdForColumns && primaryTableName);
-    if (datasetItem?.origin === "sync_job") {
-      return {
-        datasetId: id,
-        columnNames,
-        columnsLoading,
-        hasDataSource: hasSource,
-        disabledReason:
-          "同步产物 Dataset 的清洗规则在「同步任务 → ETL 规则」中配置，写库前已执行 pandas 清洗。",
-      };
-    }
     return {
       datasetId: id,
       columnNames,
@@ -356,7 +346,6 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
   }, [
     mode,
     id,
-    datasetItem?.origin,
     columnNames,
     columnsLoading,
     effectiveDataSourceIdForColumns,

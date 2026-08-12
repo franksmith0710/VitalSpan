@@ -8,6 +8,7 @@ from app.auth.rls.predicate import RlsConfigError
 from app.core.config import get_settings
 from app.core.logging import trace_id_var
 from app.datasources.acl import assert_visible
+from app.query.dataset.pandas_transform import apply_pandas_to_query_result
 from app.query.executor import QueryExecutor
 from app.query.native.executor import NativeQueryExecutor
 from app.query.schemas import ExecuteRequest, ExecuteResponse, QueryError
@@ -99,6 +100,8 @@ def execute_query(session: Session, user: UserContext, payload: ExecuteRequest) 
             )
     except RlsConfigError as exc:
         raise QueryError("RLS_CONFIG_INVALID", str(exc), 400) from exc
+
+    result = apply_pandas_to_query_result(result)
 
     return ExecuteResponse(
         columns=result.columns,
