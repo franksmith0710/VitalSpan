@@ -63,7 +63,7 @@ describe("chartExecuteProbe shared execute", () => {
       configId: "",
     };
 
-    await expect(fetchChartExecuteResult(config)).rejects.toThrow("请选择");
+    await expect(fetchChartExecuteResult(config)).rejects.toThrow("Dataset");
     expect(apiFetchMock).not.toHaveBeenCalled();
   });
 

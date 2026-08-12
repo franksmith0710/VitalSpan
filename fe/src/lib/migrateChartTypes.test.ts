@@ -37,22 +37,25 @@ describe("migrateChartViewConfig", () => {
     expect(next.chartType).toBe("word-cloud");
   });
 
-  it("infers sql mode when sql exists without mode", () => {
+  it("forces dataset mode and clears legacy sql binding", () => {
     const next = migrateChartViewConfig({
       chartType: "line",
       dataSourceId: "ds-1",
       sql: "SELECT 1",
     });
-    expect(next.mode).toBe("sql");
+    expect(next.mode).toBe("dataset");
+    expect(next.sql).toBeUndefined();
+    expect(next.bindingId).toBeUndefined();
   });
 
-  it("promotes dataset mode to sql when sql is configured without configId", () => {
+  it("keeps dataset mode and clears sql when configId missing", () => {
     const next = migrateChartViewConfig({
       chartType: "line",
       mode: "dataset",
       dataSourceId: "ds-1",
       sql: "SELECT 1",
     });
-    expect(next.mode).toBe("sql");
+    expect(next.mode).toBe("dataset");
+    expect(next.sql).toBeUndefined();
   });
 });

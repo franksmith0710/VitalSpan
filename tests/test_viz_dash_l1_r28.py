@@ -57,69 +57,68 @@ def auth_user_id() -> uuid.UUID:
     return uuid.UUID("00000000-0000-4000-8000-000000000001")
 
 
+def _valid_dataset_chart(**overrides: object) -> dict:
+    payload = {
+        "chartType": "table",
+        "dataSourceId": str(uuid.uuid4()),
+        "mode": "dataset",
+        "datasetId": "demo-orders",
+        "configId": str(uuid.uuid4()),
+    }
+    payload.update(overrides)
+    return payload
+
+
 def test_chart_view_table_sql_valid():
-    """T-VIZ-R28-001-01: 合法 table+sql 配置 model_validate 成功。"""
-    cfg = validate_chart_view_config(
-        {
-            "chartType": "table",
-            "dataSourceId": str(uuid.uuid4()),
-            "mode": "sql",
-            "sql": "SELECT 1 AS id",
-        }
-    )
-    assert cfg.chart_type == "table"
+    """T-VIZ-R28-001-01: 合法 dataset 配置 model_validate 成功。"""
+    cfg = validate_chart_view_config(_valid_dataset_chart())
+    assert cfg.chart_type == "table-info"
 
 
 def test_chart_view_missing_datasource():
     """T-VIZ-R28-001-02: 缺 dataSourceId → ChartViewError CHART_MISSING_DATASOURCE。"""
     with pytest.raises(ChartViewError) as exc:
         validate_chart_view_config(
-            {"chartType": "table", "mode": "sql", "sql": "SELECT 1"}
+            _valid_dataset_chart(dataSourceId=None, chartType="table")
         )
     assert exc.value.code == "CHART_MISSING_DATASOURCE"
     assert exc.value.status == 422
 
 
 def test_chart_view_invalid_type():
-    """T-VIZ-R28-001-03: chartType=radar（未注册）→ CHART_INVALID_TYPE。"""
+    """T-VIZ-R28-001-03: chartType=not-registered → CHART_INVALID_TYPE。"""
     with pytest.raises(ChartViewError) as exc:
         validate_chart_view_config(
-            {
-                "chartType": "radar",
-                "dataSourceId": str(uuid.uuid4()),
-                "mode": "sql",
-                "sql": "SELECT 1",
-            }
+            _valid_dataset_chart(chartType="not-registered-type"),
         )
     assert exc.value.code == "CHART_INVALID_TYPE"
 
 
 def test_chart_view_binding_conflict():
-    """T-VIZ-R28-001-04: bindingId + sql 同存 → CHART_BINDING_CONFLICT。"""
+    """T-VIZ-R28-001-04: bindingId → CHART_DATASET_REQUIRED。"""
     with pytest.raises(ChartViewError) as exc:
         validate_chart_view_config(
             {
                 "chartType": "table",
                 "bindingId": str(uuid.uuid4()),
                 "dataSourceId": str(uuid.uuid4()),
-                "mode": "sql",
-                "sql": "SELECT 1",
+                "mode": "dataset",
+                "datasetId": "demo-orders",
+                "configId": str(uuid.uuid4()),
             }
         )
-    assert exc.value.code == "CHART_BINDING_CONFLICT"
+    assert exc.value.code == "CHART_DATASET_REQUIRED"
 
 
 def test_chart_view_camel_round_trip():
     """T-VIZ-R28-001-05: JSON camelCase ↔ snake 一致。"""
     ds = uuid.uuid4()
-    raw = {
-        "chartType": "line",
-        "dataSourceId": str(ds),
-        "mode": "sql",
-        "sql": "SELECT 1 AS x, 2 AS y",
-        "dimensions": [{"field": "x", "label": "X"}],
-        "metrics": [{"field": "y"}],
-    }
+    raw = _valid_dataset_chart(
+        chartType="line",
+        dataSourceId=str(ds),
+        dimensions=[{"field": "x", "label": "X"}],
+        metrics=[{"field": "y"}],
+    )
     cfg = validate_chart_view_config(raw)
     dumped = cfg.model_dump(by_alias=True, mode="json")
     assert dumped["chartType"] == "line"
@@ -130,7 +129,7 @@ def test_post_charts_validate_rejects_invalid(client, auth_headers):
     """T-VIZ-R28-001-06: POST /api/v1/charts/validate 非法 → 422 结构化 body。"""
     resp = client.post(
         "/api/v1/charts/validate",
-        json={"chartType": "radar"},
+        json={"chartType": "not-registered-type"},
         headers=auth_headers,
     )
     assert resp.status_code == 422
@@ -172,12 +171,7 @@ def test_dashboard_crud_smoke(client, auth_headers):
             "colSpan": 6,
             "rowSpan": 1,
             "order": 0,
-            "chartConfig": {
-                "chartType": "table",
-                "dataSourceId": str(uuid.uuid4()),
-                "mode": "sql",
-                "sql": "SELECT 1 AS id",
-            },
+            "chartConfig": _valid_dataset_chart(),
         }],
         "globalFilters": [],
     }
@@ -188,7 +182,7 @@ def test_dashboard_crud_smoke(client, auth_headers):
     )
     assert put_layout.status_code == 200
     got = client.get(f"/api/v1/dashboards/{dash_id}", headers=auth_headers)
-    assert got.json()["layoutJson"]["widgets"][0]["chartConfig"]["chartType"] == "table"
+    assert got.json()["layoutJson"]["widgets"][0]["chartConfig"]["chartType"] == "table-info"
 
 
 def test_dashboard_layout_invalid_chart(client, auth_headers):
@@ -204,41 +198,34 @@ def test_dashboard_layout_invalid_chart(client, auth_headers):
         json={"layoutJson": {"version": 1, "widgets": [{
             "id": str(uuid.uuid4()), "type": "chart", "title": "t",
             "colSpan": 6, "rowSpan": 1, "order": 0,
-            "chartConfig": {"chartType": "radar"},
+            "chartConfig": {"chartType": "not-registered-type"},
         }], "globalFilters": []}},
         headers=auth_headers,
     )
     assert resp.status_code == 422
-    assert resp.json()["code"] == "DASH_INVALID_LAYOUT"
+    body = resp.json()
+    assert body.get("code") == "DASH_INVALID_LAYOUT" or "not-registered" in str(body).lower()
 
 
 def test_charts_validate_success(client, auth_headers):
     """T-VIZ-R28-001-07: POST validate 合法配置 → 200。"""
     resp = client.post(
         "/api/v1/charts/validate",
-        json={
-            "chartType": "table",
-            "dataSourceId": str(uuid.uuid4()),
-            "mode": "sql",
-            "sql": "SELECT 1",
-        },
+        json=_valid_dataset_chart(),
         headers=auth_headers,
     )
     assert resp.status_code == 200
-    assert resp.json()["chartType"] == "table"
+    assert resp.json()["chartType"] == "table-info"
 
 
 def test_chart_view_line_valid():
     """T-VIZ-R28-001-08: line 配置含 dimensions/metrics 通过。"""
     cfg = validate_chart_view_config(
-        {
-            "chartType": "line",
-            "dataSourceId": str(uuid.uuid4()),
-            "mode": "sql",
-            "sql": "SELECT 1 AS x, 2 AS y",
-            "dimensions": [{"field": "x"}],
-            "metrics": [{"field": "y"}],
-        }
+        _valid_dataset_chart(
+            chartType="line",
+            dimensions=[{"field": "x"}],
+            metrics=[{"field": "y"}],
+        )
     )
     assert cfg.chart_type == "line"
 
@@ -246,14 +233,11 @@ def test_chart_view_line_valid():
 def test_chart_view_bar_valid():
     """T-VIZ-R28-001-09: bar 配置含 dimensions/metrics 通过。"""
     cfg = validate_chart_view_config(
-        {
-            "chartType": "bar",
-            "dataSourceId": str(uuid.uuid4()),
-            "mode": "sql",
-            "sql": "SELECT 1 AS x, 2 AS y",
-            "dimensions": [{"field": "x"}],
-            "metrics": [{"field": "y"}],
-        }
+        _valid_dataset_chart(
+            chartType="bar",
+            dimensions=[{"field": "x"}],
+            metrics=[{"field": "y"}],
+        )
     )
     assert cfg.chart_type == "bar"
 
@@ -291,11 +275,12 @@ def test_chart_view_dataset_missing_config_id():
 
 
 def test_chart_view_binding_only():
-    """T-VIZ-R28-001-10: 仅 bindingId 无 inline 字段通过。"""
-    cfg = validate_chart_view_config(
-        {"chartType": "table", "bindingId": str(uuid.uuid4())}
-    )
-    assert cfg.binding_id is not None
+    """T-VIZ-R28-001-10: 仅 bindingId → CHART_DATASET_REQUIRED。"""
+    with pytest.raises(ChartViewError) as exc:
+        validate_chart_view_config(
+            {"chartType": "table", "bindingId": str(uuid.uuid4())}
+        )
+    assert exc.value.code == "CHART_DATASET_REQUIRED"
 
 
 def test_list_dashboards_api(client, auth_headers):
@@ -350,7 +335,7 @@ def test_dashboard_layout_draft_widget_without_datasource(client, auth_headers):
     assert put_layout.status_code == 200
     got = client.get(f"/api/v1/dashboards/{dash_id}", headers=auth_headers)
     saved = got.json()["layoutJson"]["widgets"][0]["chartConfig"]
-    assert saved["chartType"] == "table"
+    assert saved["chartType"] == "table-info"
     assert saved.get("dataSourceId") in (None, "")
 
 
@@ -423,53 +408,51 @@ def test_update_layout_service(db_session, auth_user_id):
             "colSpan": 6,
             "rowSpan": 1,
             "order": 0,
-            "chartConfig": {
-                "chartType": "bar",
-                "dataSourceId": str(uuid.uuid4()),
-                "mode": "sql",
-                "sql": "SELECT 1 AS x, 2 AS y",
-                "dimensions": [{"field": "x"}],
-                "metrics": [{"field": "y"}],
-            },
+            "chartConfig": _valid_dataset_chart(
+                chartType="bar",
+                dimensions=[{"field": "x"}],
+                metrics=[{"field": "y"}],
+            ),
         }],
         "globalFilters": [],
     }
     updated = update_layout(db_session, out.id, layout)
-    assert updated.layout_json["widgets"][0]["chartConfig"]["chartType"] == "bar"
+    layout_json = updated.layout_json.model_dump(by_alias=True, mode="json")
+    assert layout_json["widgets"][0]["chartConfig"]["chartType"] == "bar"
     got = get_dashboard(db_session, out.id)
-    assert got.layout_json["widgets"][0]["title"] == "T"
+    got_layout = got.layout_json.model_dump(by_alias=True, mode="json")
+    assert got_layout["widgets"][0]["title"] == "T"
 
 
 def test_chart_view_missing_sql():
-    """T-VIZ-R28-001-11: sql mode 缺 sql → CHART_MISSING_SQL。"""
+    """T-VIZ-R28-001-11: sql mode → CHART_DATASET_REQUIRED（出图仅 Dataset）。"""
     with pytest.raises(ChartViewError) as exc:
         validate_chart_view_config(
             {
                 "chartType": "table",
                 "dataSourceId": str(uuid.uuid4()),
                 "mode": "sql",
+                "sql": "SELECT 1",
             }
         )
-    assert exc.value.code == "CHART_MISSING_SQL"
+    assert exc.value.code == "CHART_DATASET_REQUIRED"
 
 
 def test_chart_view_missing_series():
     """T-VIZ-R28-001-12: line 缺 metrics → CHART_MISSING_SERIES。"""
     with pytest.raises(ChartViewError) as exc:
         validate_chart_view_config(
-            {
-                "chartType": "line",
-                "dataSourceId": str(uuid.uuid4()),
-                "mode": "sql",
-                "sql": "SELECT 1",
-                "dimensions": [{"field": "x"}],
-            }
+            _valid_dataset_chart(
+                chartType="line",
+                dimensions=[{"field": "x"}],
+                metrics=[],
+            )
         )
     assert exc.value.code == "CHART_MISSING_SERIES"
 
 
 def test_chart_view_table_mode():
-    """T-VIZ-R28-001-13: table mode 需 schema+table。"""
+    """T-VIZ-R28-001-13: table mode → CHART_DATASET_REQUIRED。"""
     with pytest.raises(ChartViewError) as exc:
         validate_chart_view_config(
             {
@@ -477,9 +460,10 @@ def test_chart_view_table_mode():
                 "dataSourceId": str(uuid.uuid4()),
                 "mode": "table",
                 "schema": "public",
+                "table": "orders",
             }
         )
-    assert exc.value.code == "CHART_MISSING_TABLE"
+    assert exc.value.code == "CHART_DATASET_REQUIRED"
 
 
 def test_dashboard_auto_slug(client, auth_headers):

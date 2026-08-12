@@ -161,10 +161,11 @@ def test_dashboard_export_job(client: TestClient, monkeypatch):
                         "rowSpan": 1,
                         "order": 0,
                         "chartConfig": {
-                            "chartType": "table",
+                            "chartType": "table-info",
                             "dataSourceId": str(_uuid.uuid4()),
-                            "mode": "sql",
-                            "sql": "SELECT 1 AS id",
+                            "mode": "dataset",
+                            "datasetId": "demo-orders",
+                            "configId": str(_uuid.uuid4()),
                         },
                     }
                 ],

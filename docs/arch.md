@@ -56,7 +56,7 @@ flowchart TB
 **建设原则**（摘自 goal / SRS）：
 
 - BI 层全部自研；**零** Superset / DataEase 运行时依赖（NFR-08）
-- 一至三期：**主路径**为图表直连 `dataSourceId` + SQL/表/native；**Dataset 路径已提前可用**（META-004 + QUERY-009，见 §6.2）
+- 一至三期图表直连已废弃；**出图/出报表唯一路径**为 Dataset + `POST /query/dataset/execute`（见 §6.2）
 - 四期：补齐 M1 Dataset 全量语义层、M2 设计器、M8 治理全自动
 
 ---
@@ -331,27 +331,21 @@ DataSourceCategory → DataSourceType → ConnectionConfig → dataSourceId
 
 ### 6.2 查询与展现
 
-**路径 A — 直连（一至三期合同主路径 · QUERY-005）**
-
-```
-dataSourceId + ChartViewConfig(mode=sql|table|native)
-  → POST /query/execute
-  → 图表 / Dashboard 组件渲染
-```
-
-**路径 B — Dataset（四期能力 · 已提前落地 · META-004 + QUERY-009）**
+**唯一出图/出报表路径 — Dataset execute（META-004 + QUERY-009）**
 
 ```
 Dataset CRUD（ORM `datasets` 表）
   → bind-query-config（dataset_query 配置）
-  → POST /query/dataset/execute（真实 SQL 执行）
-  → [外部源] query pandas 清洗（ingestion/etl_rules 复用；sync_job/托管库跳过）
-  → 图表 ChartViewConfig(mode=dataset, datasetId, configId)
+  → POST /query/dataset/execute（QueryExecutor 出数）
+  → pandas 清洗（ingestion/etl_rules + datasets.transform_rules）
+  → 图表 ChartViewConfig(mode=dataset, datasetId, configId) / 报表扩展指标
 ```
 
-**pandas 落点**：同步任务在写托管分析库前过 pandas（`ingestion/sync_executor` → `etl_rules.apply_rules`）；外部源 Dataset 在 execute 出数后内存过 pandas（`query/dataset/pandas_transform.py`）。图表 sql/table 直连不经 Dataset，不强制 pandas。
+**pandas 落点**：同步写托管库前（`ingestion/sync_executor`）；**每次** Dataset execute 出数后在内存过 pandas（`query/dataset/pandas_transform.py`）。
 
-两条路径**并存**：编辑页 `ChartEditRail` 可选 Dataset 或 SQL；快速创建向导默认走 Dataset。直连与 Dataset 可迁移（`POST /datasets/migrate-binding` 规划中）。
+**`POST /query/execute`（sql/table/native）**：仅保留给管理面表预览、连接器探针、集成 smoke 等非图表/报表业务；**禁止**图表与报表扩展指标调用。
+
+**已废弃**：图表 `mode=sql|table|native`、`chart_query_bindings` 出图路径（QUERY-005 直连绑定 deprecated）。
 
 ### 6.3 权限（M7）
 

@@ -52,19 +52,13 @@
 - **代码锚点**：`backend/app/query/dialects/` · `backend/app/query/dialects/clickhouse.py`
 - **演化建议**：r27 交付 ClickHouse L1（标识符、LIMIT/OFFSET、table select）与执行错误映射；后续可补更多 OLAP 类型映射
 - **里程碑对齐**：
-### [QUERY-005] 图表直连绑定 FR-2.0b
+### [QUERY-005] 图表直连绑定 FR-2.0b（**deprecated · 2026-08**）
 
-- **状态**：已实现
+- **状态**：已废弃（出图/出报表统一 Dataset execute；bindings API 保留兼容）
 - **goal_ref**：goal.md §2.3（G3）
-- **期次**：一期
-- **描述**：图表直连绑定 FR-2.0b（SRS 追溯项）。
-- **验收标准**：
-  - [x] 组件绑定 dataSourceId+SQL/表
-  - [x] 不经 Dataset
-  - [x] **M-DASH-UX F-A**：编辑态 SQL/table 直连 `useChartExecute` 出图（`DashboardWidget` mode=edit · Wave1 2026-07-09）
-- **代码锚点**：`backend/app/query/binding_service.py` · `backend/app/query/models.py` · `fe/src/components/dashboard/DashboardWidget.tsx` · `fe/src/components/charts/useChartExecute.ts`
-- **演化建议**：r27 加固 chartId 唯一冲突检测、并发 PATCH 与软删后不可见；预览 API 与设计器 UI 待 M5+
-- **里程碑对齐**：
+- **期次**：一期（历史）
+- **描述**：原图表直连绑定；新功能不得使用。
+- **替代**：QUERY-009 `POST /query/dataset/execute` + `ChartViewConfig(mode=dataset)`
 ### [QUERY-006] RLS 注入执行链
 
 - **状态**：已实现

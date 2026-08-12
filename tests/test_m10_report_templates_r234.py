@@ -141,6 +141,7 @@ def test_rpt003_04b_extension_get_returns_camel_case(client: TestClient):
         json={"name": "Ext", "nodeType": "template", "templateKind": "word", "templateKey": "sales_summary"},
     ).json()["id"]
     ds_id = str(uuid.uuid4())
+    cfg_id = str(uuid.uuid4())
     put = client.put(
         f"/api/v1/reports/catalog/nodes/{nid}/extension",
         headers=AUTH,
@@ -151,8 +152,9 @@ def test_rpt003_04b_extension_get_returns_camel_case(client: TestClient):
                 {
                     "key": "revenue",
                     "label": "营收",
-                    "queryMode": "sql",
-                    "expression": "SELECT 1",
+                    "queryMode": "dataset",
+                    "datasetId": "demo-sales-wide",
+                    "boundConfigId": cfg_id,
                     "visible": True,
                 }
             ],
@@ -165,7 +167,7 @@ def test_rpt003_04b_extension_get_returns_camel_case(client: TestClient):
     assert "catalogNodeId" in body
     assert "catalog_node_id" not in body
     assert body["defaultDataSourceId"] == ds_id
-    assert body["metrics"][0]["queryMode"] == "sql"
+    assert body["metrics"][0]["queryMode"] == "dataset"
 
     got = client.get(f"/api/v1/reports/catalog/nodes/{nid}/extension", headers=AUTH)
     assert got.status_code == 200, got.text

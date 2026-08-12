@@ -25,8 +25,9 @@ def test_layout_widget_defaults_missing_type_to_chart():
         "chartConfig": {
             "chartType": "bar",
             "dataSourceId": str(uuid.uuid4()),
-            "mode": "sql",
-            "sql": "select 1",
+            "mode": "dataset",
+            "datasetId": "demo-orders",
+            "configId": str(uuid.uuid4()),
             "dimensions": [{"field": "x"}],
             "metrics": [{"field": "y"}],
         },

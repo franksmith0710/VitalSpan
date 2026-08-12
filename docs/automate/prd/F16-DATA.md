@@ -80,7 +80,7 @@
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：M1B
 - **里程碑对齐**：M1B · 已完成 · 2026-07-03
-- **描述**：JSON 规则：列重命名、类型转换、空值填充、简单过滤（pandas DataFrame 实现）。同步写托管库前执行；外部源 Dataset 查询时复用同一引擎做 auto_profile（见 QUERY-009 `pandas_transform.py`）。
+- **描述**：JSON 规则：列重命名、类型转换、空值填充、简单过滤（pandas DataFrame 实现）。同步写托管库前执行；**所有** Dataset execute 出数后复用同一引擎（见 QUERY-009 `pandas_transform.py`）。
 - **验收标准**：
   - [x] 规则在写托管库前生效
   - [x] 脏数据样例经规则后字段符合配置

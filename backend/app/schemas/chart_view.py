@@ -259,7 +259,7 @@ class ChartViewConfigLayout(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     chart_type: str = Field(alias="chartType")
     style_variant: str = Field(default="default", alias="styleVariant")
-    data_source_id: uuid.UUID | None = Field(default=None, alias="dataSourceId")
+    data_source_id: uuid.UUID | str | None = Field(default=None, alias="dataSourceId")
     binding_id: uuid.UUID | None = Field(default=None, alias="bindingId")
     chart_id: uuid.UUID | None = Field(default=None, alias="chartId")
     mode: Literal["sql", "table", "native", "dataset"] | None = None

@@ -164,16 +164,16 @@ redoc: /redoc
 
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
-| POST | `/api/v1/query/execute` | 只读查询（`mode=sql\|table\|native`；native 需 `nativeBody` + 可选 `index`） | IF-06 | 一期 | QUERY-001/003 | 已实现 | `backend/app/api/v1/query.py` |
+| POST | `/api/v1/query/execute` | 只读查询（`mode=sql\|table\|native`）；**非图表/报表出图路径**（管理预览/探针） | IF-06 | 一期 | QUERY-001/003 | 已实现 | `backend/app/api/v1/query.py` |
 | POST | `/api/v1/query/translate` | 可视化查询配置→参数化 SQL | IF-06 | 一期 | QUERY-008 | 已实现 | `backend/app/api/v1/query.py` |
 | GET | `/api/v1/query/routing/modes` | 连接器路由模式（search/document/timeseries→native，其余→sql） | IF-06 | 一期 | QUERY-003 | 已实现 | `backend/app/api/v1/query.py` |
 | POST | `/api/v1/query/native/validate` | Native 查询守卫（`QUERY_NATIVE_*`；禁止 sql 字段） | IF-06 | 一期 | QUERY-003 | 已实现 | `backend/app/api/v1/query.py` |
 | POST | `/api/v1/query/readonly-guard` | 只读 SQL / native 路由守卫 smoke | IF-06 | 一期 | QUERY-003 | 已实现 | `backend/app/api/v1/query.py` |
-| GET | `/api/v1/query/bindings` | 图表直连绑定列表 | IF-06 | 一期 | QUERY-005 | 已实现 | `backend/app/api/v1/query.py` |
-| POST | `/api/v1/query/bindings` | 创建绑定（可选 `chartId` UUID；重复 → 409 `BINDING_CHART_CONFLICT`） | IF-06 | 一期 | QUERY-005 | 已实现 | `backend/app/api/v1/query.py` |
-| GET | `/api/v1/query/bindings/{bindingId}` | 绑定详情 | IF-06 | 一期 | QUERY-005 | 已实现 | `backend/app/api/v1/query.py` |
-| PUT | `/api/v1/query/bindings/{bindingId}` | 更新绑定（可选 `chartId` UUID；重复 → 409 `BINDING_CHART_CONFLICT`） | IF-06 | 一期 | QUERY-005 | 已实现 | `backend/app/api/v1/query.py` |
-| DELETE | `/api/v1/query/bindings/{bindingId}` | 删除绑定 | IF-06 | 一期 | QUERY-005 | 已实现 | `backend/app/api/v1/query.py` |
+| GET | `/api/v1/query/bindings` | 图表直连绑定列表（**deprecated**，新图表勿用） | IF-06 | 一期 | QUERY-005 | deprecated | `backend/app/api/v1/query.py` |
+| POST | `/api/v1/query/bindings` | 创建绑定（**deprecated**，新图表勿用） | IF-06 | 一期 | QUERY-005 | deprecated | `backend/app/api/v1/query.py` |
+| GET | `/api/v1/query/bindings/{bindingId}` | 绑定详情（**deprecated**） | IF-06 | 一期 | QUERY-005 | deprecated | `backend/app/api/v1/query.py` |
+| PUT | `/api/v1/query/bindings/{bindingId}` | 更新绑定（**deprecated**） | IF-06 | 一期 | QUERY-005 | deprecated | `backend/app/api/v1/query.py` |
+| DELETE | `/api/v1/query/bindings/{bindingId}` | 删除绑定（**deprecated**） | IF-06 | 一期 | QUERY-005 | deprecated | `backend/app/api/v1/query.py` |
 | GET | `/api/v1/query/dataset/routing` | Dataset 第三路径路由文档（sql/native/dataset） | IF-06 | 一期 | QUERY-009 | 已实现 | `backend/app/api/v1/query.py` |
 | POST | `/api/v1/query/dataset/validate` | Dataset 路径 ACL/readonly 守卫（`QUERY_DATASET_*`/`QUERY_PATH_AMBIGUOUS`） | IF-06 | 一期 | QUERY-009 | 已实现 | `backend/app/api/v1/query.py` |
 | POST | `/api/v1/query/dataset/execute-plan` | Dataset execute-plan 四步链 companion（`dataset-plan-v1`；调试/契约用；**生产出数走 `/dataset/execute`**） | IF-06 | 一期 | QUERY-009 | 已实现 | `backend/app/api/v1/query.py` |

@@ -88,8 +88,8 @@
 ### M-DEPTH F-A（QUERY-009 · 2026-07-10）
 
 - **`execute_dataset_from_config`**：`config_store` 读取 `dataset_query` → `translate_from_config_record` → `QueryExecutor.execute` → 真实 rows
-- **pandas 查询清洗（2026-08）**：外部源 Dataset 在 SQL 出数后、返回前经 `query/dataset/pandas_transform.py`（复用 `ingestion/etl_rules`）；`origin=sync_job` 或托管分析库数据源跳过（已在同步写库前清洗）。自定义规则存 `datasets.transform_rules`，Admin「查询清洗」Tab + `GET/PUT /datasets/{id}/transform-rules`。失败 → `QUERY_DATASET_TRANSFORM_FAILED`；探针 `probe_dataset_pandas_budget_ms` ≤100ms
-- **与 execute-plan 分工**：`/dataset/execute-plan` 保留契约/探针；图表 `useChartExecute` mode=dataset 走 `/dataset/execute`
+- **pandas 查询清洗（2026-08）**：所有 Dataset execute 出数后、返回前经 `query/dataset/pandas_transform.py`（复用 `ingestion/etl_rules`）。自定义规则存 `datasets.transform_rules`，Admin「查询清洗」Tab。失败 → `QUERY_DATASET_TRANSFORM_FAILED`
+- **出图路径**：`useChartExecute` **仅** `mode=dataset` → `/dataset/execute`；sql/table/native 直连已废弃
 - **FE**：`DatasetBindPanel` 创建并绑定 config；`ChartEditRail` `DatasetPickerPanel`；`useChartExecute` dataset 路径
 
 ### r52 companion 质量推分（QUERY-003）
@@ -105,9 +105,9 @@
 - **PostgreSQL**（`postgresql`）：双引号标识符、子查询包裹 LIMIT/OFFSET
 - **ClickHouse**（`clickhouse`）：L1 已注册 — 反引号标识符、后缀 `LIMIT/OFFSET`；执行错误映射 `QUERY_SYNTAX_ERROR` / `QUERY_TABLE_NOT_FOUND`；无 CONN-007 连接器（mock/单元测试验收）。
 
-### chart_query_bindings
+### chart_query_bindings（deprecated）
 
-- 可选字段 `chartId`（UUID，全局唯一）；冲突 → `409 BINDING_CHART_CONFLICT`
+- 历史图表直连绑定；**新图表/报表不得使用**。保留 API 仅供存量迁移与集成兼容。
 
 ### RLS
 

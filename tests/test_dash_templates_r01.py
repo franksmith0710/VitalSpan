@@ -157,8 +157,9 @@ def test_export_envelope_normalizes_datasource_to_demo_ref(
                         "chartConfig": {
                             "chartId": widget_id,
                             "chartType": "bar",
-                            "mode": "sql",
-                            "sql": "SELECT 1",
+                            "mode": "dataset",
+                            "datasetId": "demo-sales-wide",
+                            "configId": str(uuid.uuid4()),
                             "dataSourceId": env_uuid,
                         },
                     }
@@ -177,7 +178,8 @@ def test_export_envelope_normalizes_datasource_to_demo_ref(
     assert exported.status_code == 200
     chart_cfg = exported.json()["layout"]["widgets"][0]["chartConfig"]
     assert chart_cfg["dataSourceId"] == TEMPLATE_DEMO_DATASOURCE_REF
-    assert chart_cfg["sql"] == "SELECT 1"
+    assert chart_cfg.get("mode") == "dataset"
+    assert chart_cfg.get("datasetId") == "demo-sales-wide"
 
 
 def test_export_envelope_repairs_deprecated_chart_types(client: TestClient, auth_headers: dict) -> None:
@@ -201,8 +203,9 @@ def test_export_envelope_repairs_deprecated_chart_types(client: TestClient, auth
                         "chartConfig": {
                             "chartId": widget_id,
                             "chartType": "table",
-                            "mode": "sql",
-                            "sql": "SELECT 1",
+                            "mode": "dataset",
+                            "datasetId": "demo-orders",
+                            "configId": str(uuid.uuid4()),
                         },
                     }
                 ],

@@ -457,12 +457,16 @@ const ACTIVE_TYPES = new Set(
   BUILTIN_PLUGIN_DEFS.filter((def) => !def.deprecated).map((def) => def.type),
 );
 
+const SMOKE_DATASET_ID = "demo-sales-wide";
+const SMOKE_CONFIG_ID = "d769b018-4fc9-46ea-a055-45c67ec6a318";
+
 export function smokeCaseToConfig(item: ChartCatalogSmokeCase): ChartViewConfig {
   return {
     chartType: item.type,
     dataSourceId: SMOKE_DS,
-    mode: "sql",
-    sql: "SELECT 1",
+    mode: "dataset",
+    datasetId: SMOKE_DATASET_ID,
+    configId: SMOKE_CONFIG_ID,
     dimensions: item.dimensions,
     metrics: item.metrics,
   };
