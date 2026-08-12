@@ -337,37 +337,15 @@ export function DatasetTablePicker({
       ) : null}
 
       {showSchemaPicker ? (
-        <div className="flex shrink-0 flex-col gap-2">
-          {schemaExpanded && !isSyncOrigin && !readOnlyTables && selectableItems.length > 0 ? (
-            <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-white/[0.02]">
-              <div className="grid gap-1.5">
-                <Label htmlFor="dataset-datasource-switch" className="text-theme-xs text-gray-600 dark:text-gray-400">
-                  切换数据源
-                </Label>
-                <Select value={dataSourceId} onValueChange={handleDataSourceChange}>
-                  <SelectTrigger id="dataset-datasource-switch" className="h-11" aria-label="切换数据源">
-                    <SelectValue placeholder="选择数据源" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {selectableItems.map((d) => (
-                      <SelectItem key={d.id} value={d.id}>
-                        {d.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          ) : null}
-          <div
-            className={cn(
-              "overflow-hidden rounded-xl border border-gray-200 bg-white",
-              "dark:border-gray-800 dark:bg-white/[0.02]",
-              primaryTableName
-                ? "h-[min(240px,28vh)] min-h-[200px]"
-                : "h-[min(320px,36vh)] min-h-[240px]",
-            )}
-          >
+        <div
+          className={cn(
+            "shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-white",
+            "dark:border-gray-800 dark:bg-white/[0.02]",
+            primaryTableName
+              ? "h-[min(240px,28vh)] min-h-[200px]"
+              : "h-[min(320px,36vh)] min-h-[240px]",
+          )}
+        >
           {dataSourceId ? (
             <SchemaBrowser
               key={dataSourceId}
@@ -385,7 +363,6 @@ export function DatasetTablePicker({
               <p className="text-theme-xs text-gray-500 dark:text-gray-400">请先选择数据源。</p>
             </div>
           )}
-          </div>
         </div>
       ) : null}
 

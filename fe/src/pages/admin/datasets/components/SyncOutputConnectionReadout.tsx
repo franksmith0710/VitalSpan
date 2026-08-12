@@ -11,6 +11,10 @@ import { cn } from "@/lib/utils";
 const READOUT_SHELL_CLASS =
   "rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 dark:border-gray-800 dark:bg-white/[0.02]";
 
+/** 与 SelectTrigger 一致的表单控件外框（Dataset 顶栏紧凑态） */
+const FIELD_MATCH_SHELL_CLASS =
+  "rounded-lg border border-gray-300 bg-transparent shadow-theme-xs dark:border-gray-700 dark:bg-gray-900";
+
 /** 同步产物页顶栏：左右读数卡等高 */
 export const SYNC_HEADER_READOUT_MIN_H = "min-h-[5.5rem]";
 
@@ -89,16 +93,16 @@ export function DatasetQualifiedTableReadout({
   return (
     <div
       className={cn(
-        READOUT_SHELL_CLASS,
+        tall ? READOUT_SHELL_CLASS : FIELD_MATCH_SHELL_CLASS,
         "flex min-w-0 items-center gap-2",
-        tall ? cn(SYNC_HEADER_READOUT_MIN_H, "h-full") : "h-11 py-0",
+        tall ? cn(SYNC_HEADER_READOUT_MIN_H, "h-full") : "h-11 px-3 py-0",
         className,
       )}
     >
-      <Database className="size-4 shrink-0 text-gray-400" aria-hidden />
+      <Database className="size-4 shrink-0 text-gray-400 dark:text-gray-500" aria-hidden />
       <TruncateHint
         title={tableName}
-        className="min-w-0 flex-1 font-mono text-theme-sm leading-snug text-gray-800 dark:text-gray-200"
+        className="min-w-0 flex-1 font-mono text-sm leading-snug text-gray-800 dark:text-white/90"
       >
         {tableName}
       </TruncateHint>
