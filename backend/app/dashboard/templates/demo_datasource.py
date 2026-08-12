@@ -250,9 +250,11 @@ def layout_requires_demo_datasource(layout: dict[str, Any]) -> bool:
         chart_cfg = widget.get("chartConfig")
         if not isinstance(chart_cfg, dict):
             continue
+        if chart_cfg.get("mode") not in ("dataset", None):
+            continue
         if chart_cfg.get("bindingId"):
             continue
-        if chart_cfg.get("mode") in ("sql", "table", None):
+        if chart_cfg.get("sql") or chart_cfg.get("table"):
             return True
     return False
 

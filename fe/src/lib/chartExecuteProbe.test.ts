@@ -22,80 +22,89 @@ const apiFetchMock = vi.fn(async () => ({
 
 vi.mock("@/lib/api", () => ({
   apiFetch: (...args: unknown[]) => apiFetchMock(...args),
-  resolveQueryExecutePath: () =>
-    typeof window !== "undefined" && window.location.pathname.startsWith("/export/")
-      ? "/api/v1/dashboards/export-query/execute"
-      : "/api/v1/query/execute",
+  isEmbedShareContext: () => false,
   resolveDatasetExecutePath: () =>
     typeof window !== "undefined" && window.location.pathname.startsWith("/export/")
       ? "/api/v1/dashboards/export-query/dataset/execute"
       : "/api/v1/query/dataset/execute",
 }));
 
+const datasetReadyConfig = () => ({
+  ...defaultChartConfig("line"),
+  mode: "dataset" as const,
+  dataSourceId: "550e8400-e29b-41d4-a716-446655440000",
+  configId: "d769b018-4fc9-46ea-a055-45c67ec6a318",
+  datasetId: "demo-sales-wide",
+});
+
 describe("chartExecuteProbe shared execute", () => {
   beforeEach(() => {
     resetChartExecuteSharedInflight();
     resetDemoDatasourceExecuteCache();
     apiFetchMock.mockClear();
+    apiFetchMock.mockResolvedValue({ columns: ["id"], rows: [[1]] });
   });
 
-  it("infers sql mode when layout has sql without mode field", async () => {
+  it("always resolves dataset execute mode", () => {
     const config = {
       ...defaultChartConfig("line"),
-      dataSourceId: "550e8400-e29b-41d4-a716-446655440000",
+      dataSourceId: "ds-1",
       sql: "SELECT 1",
     };
-    delete (config as { mode?: string }).mode;
-
-    expect(resolveChartExecuteMode(config)).toBe("sql");
-    expect(isChartExecuteReady(config)).toBe(true);
-
-    await fetchChartExecuteResult(config);
-
-    expect(apiFetchMock).toHaveBeenCalledWith(
-      "/api/v1/query/execute",
-      expect.objectContaining({
-        method: "POST",
-        body: expect.stringContaining('"mode":"sql"'),
-      }),
-    );
+    expect(resolveChartExecuteMode(config)).toBe("dataset");
+    expect(isChartExecuteReady(config)).toBe(false);
   });
 
   it("does not call api when execute is not ready", async () => {
     const config = {
       ...defaultChartConfig("line"),
-      mode: "sql" as const,
+      mode: "dataset" as const,
       dataSourceId: "",
-      sql: "",
+      configId: "",
     };
 
-    await expect(fetchChartExecuteResult(config)).rejects.toThrow("请配置数据源与 SQL");
+    await expect(fetchChartExecuteResult(config)).rejects.toThrow("请选择");
     expect(apiFetchMock).not.toHaveBeenCalled();
   });
 
-  it("dedupes concurrent requests with the same binding key", async () => {
+  it("rejects legacy sql-only config", async () => {
     const config = {
-      ...defaultChartConfig("table"),
-      mode: "dataset" as const,
-      dataSourceId: "ds-1",
-      configId: "cfg-1",
+      ...defaultChartConfig("line"),
+      mode: "sql" as const,
+      dataSourceId: "550e8400-e29b-41d4-a716-446655440000",
+      sql: "SELECT 1",
     };
 
+    await expect(fetchChartExecuteResult(config)).rejects.toThrow("Dataset");
+    expect(apiFetchMock).not.toHaveBeenCalled();
+  });
+
+  it("calls dataset execute when config is ready", async () => {
+    const config = datasetReadyConfig();
+    await fetchChartExecuteResult(config);
+
+    expect(apiFetchMock).toHaveBeenCalledWith(
+      "/api/v1/query/dataset/execute",
+      expect.objectContaining({
+        method: "POST",
+        body: expect.stringContaining('"configId"'),
+      }),
+    );
+    const body = JSON.parse(String(apiFetchMock.mock.calls[0]?.[1]?.body));
+    expect(body.parameters).toEqual({});
+  });
+
+  it("dedupes concurrent requests with the same binding key", async () => {
+    const config = datasetReadyConfig();
     await Promise.all([
       fetchChartExecuteResultShared(config),
       fetchChartExecuteResultShared(config),
     ]);
-
     expect(apiFetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("keeps binding key stable when only deStyle changes", () => {
-    const base = {
-      ...defaultChartConfig("bar"),
-      mode: "dataset" as const,
-      dataSourceId: "ds-1",
-      configId: "cfg-1",
-    };
+    const base = datasetReadyConfig();
     const styled = patchChartDeStyle(base, {
       legend: { show: true },
       title: { show: true, fontSize: 18 },
@@ -103,8 +112,8 @@ describe("chartExecuteProbe shared execute", () => {
     expect(chartExecuteBindingKey(base)).toBe(chartExecuteBindingKey(styled));
   });
 
-  describe("GAP-FILTER-CHAIN: inspector filters → execute SQL → render model", () => {
-    it("buildFilterParameters maps ChartConfigPanel filter rows to SQL placeholders", () => {
+  describe("GAP-FILTER-CHAIN: inspector filters → dataset parameters → render model", () => {
+    it("buildFilterParameters maps ChartConfigPanel filter rows", () => {
       const params = buildFilterParameters([
         { field: "region_name", operator: "eq", value: "华东" },
         { field: "sale_date", operator: "in", value: ["2025-01", "2025-02"] },
@@ -115,35 +124,26 @@ describe("chartExecuteProbe shared execute", () => {
       });
     });
 
-    it("chartExecuteBindingKey changes when filters change (cache invalidation)", () => {
-      const base = {
-        ...defaultChartConfig("line"),
-        mode: "sql" as const,
-        dataSourceId: "ds-1",
-        sql: "SELECT * FROM t WHERE region = {{filter_region_name_0}}",
-        filters: [{ field: "region_name", operator: "eq" as const, value: "华东" }],
-      };
-      const filtered = {
-        ...base,
-        filters: [{ field: "region_name", operator: "eq" as const, value: "华北" }],
-      };
-      expect(chartExecuteBindingKey(base)).not.toBe(chartExecuteBindingKey(filtered));
+    it("chartExecuteBindingKey changes when filter parameters change", () => {
+      const base = datasetReadyConfig();
+      expect(chartExecuteBindingKey(base, { region: "华东" })).not.toBe(
+        chartExecuteBindingKey(base, { region: "华北" }),
+      );
     });
 
-    it("fetchChartExecuteResult injects filter parameters into SQL body", async () => {
+    it("fetchChartExecuteResult passes filter parameters to dataset execute", async () => {
       const config = {
-        ...defaultChartConfig("line"),
-        mode: "sql" as const,
-        dataSourceId: "550e8400-e29b-41d4-a716-446655440000",
-        sql: "SELECT region_name, amount FROM sales WHERE region_name = {{filter_region_name_0}}",
+        ...datasetReadyConfig(),
         filters: [{ field: "region_name", operator: "eq" as const, value: "华东" }],
       };
 
-      await fetchChartExecuteResult(config);
+      await fetchChartExecuteResult(config, { filterParameters: { region: "华东" } });
 
       const body = JSON.parse(String(apiFetchMock.mock.calls[0]?.[1]?.body));
-      expect(body.sql).toContain("region_name = 华东");
-      expect(body.sql).not.toContain("{{filter_region_name_0}}");
+      expect(body.parameters).toMatchObject({
+        region: "华东",
+        filter_region_name_0: "华东",
+      });
     });
 
     it("filtered execute result yields different render row count than unfiltered", () => {
@@ -169,14 +169,7 @@ describe("chartExecuteProbe shared execute", () => {
       search: "?token=export-token",
       href: "http://localhost:5173/export/dashboard/d1?token=export-token",
     });
-    const config = {
-      ...defaultChartConfig("table"),
-      mode: "dataset" as const,
-      dataSourceId: "ds-1",
-      configId: "cfg-1",
-    };
-
-    await fetchChartExecuteResult(config);
+    await fetchChartExecuteResult(datasetReadyConfig());
 
     expect(apiFetchMock).toHaveBeenCalledWith(
       "/api/v1/dashboards/export-query/dataset/execute",
@@ -184,7 +177,7 @@ describe("chartExecuteProbe shared execute", () => {
     );
   });
 
-  it("resolves template demo datasource ref before execute", async () => {
+  it("resolves template demo datasource ref before dataset execute", async () => {
     apiFetchMock.mockImplementation(async (url: string) => {
       if (url === "/api/v1/datasources") {
         return {
@@ -197,22 +190,16 @@ describe("chartExecuteProbe shared execute", () => {
     });
 
     const config = {
-      ...defaultChartConfig("radar"),
-      mode: "sql" as const,
+      ...datasetReadyConfig(),
       dataSourceId: TEMPLATE_DEMO_DATASOURCE_REF,
-      sql: "SELECT product_name, SUM(amount) AS amount FROM v_sales GROUP BY product_name",
     };
 
     await fetchChartExecuteResult(config);
 
-    const executeCall = apiFetchMock.mock.calls.find(
-      (call) => String(call[0]).includes("execute"),
+    const executeCall = apiFetchMock.mock.calls.find((call) =>
+      String(call[0]).includes("dataset/execute"),
     );
-    expect(executeCall?.[1]).toEqual(
-      expect.objectContaining({
-        method: "POST",
-        body: expect.stringContaining('"dataSourceId":"demo-ds-uuid"'),
-      }),
-    );
+    const body = JSON.parse(String(executeCall?.[1]?.body));
+    expect(body.dataSourceId).toBe("demo-ds-uuid");
   });
 });

@@ -22,15 +22,15 @@
         "chartConfig": {
           "chartType": "table-info",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "1f963036-006f-41c4-9de7-d0cc002d46d6",
-          "mode": "sql",
-          "sql": "SELECT grid_name AS 网格, event_count AS 事件数, resolved_count AS 已办结\nFROM gov_grid_stats\nORDER BY 事件数 DESC\nLIMIT 10",
+          "mode": "dataset",
+          "sql": null,
           "schema": null,
           "table": null,
           "configId": null,
-          "datasetId": null,
+          "datasetId": "demo-gov-grid-stats",
           "nativeBody": {
             "deStyle": {
               "seriesGradient": false,
@@ -88,17 +88,17 @@
           "index": null,
           "dimensions": [
             {
-              "field": "网格",
+              "field": "grid_name",
               "label": null
             }
           ],
           "metrics": [
             {
-              "field": "事件数",
+              "field": "event_count",
               "label": null
             },
             {
-              "field": "已办结",
+              "field": "resolved_count",
               "label": null
             }
           ],
@@ -129,15 +129,15 @@
         "chartConfig": {
           "chartType": "map",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "5658adc9-3564-46d8-9cb8-817e0770ff94",
-          "mode": "sql",
-          "sql": "SELECT province AS 省份, city AS 城市, district AS 区县, SUM(service_volume) AS 服务量\nFROM v_gov_region_service\nGROUP BY province, city, district",
+          "mode": "dataset",
+          "sql": null,
           "schema": null,
           "table": null,
           "configId": null,
-          "datasetId": null,
+          "datasetId": "demo-gov-region-service",
           "nativeBody": {
             "deStyle": {
               "seriesGradient": false,
@@ -175,21 +175,21 @@
           "index": null,
           "dimensions": [
             {
-              "field": "省份",
+              "field": "province",
               "label": null
             },
             {
-              "field": "城市",
+              "field": "city",
               "label": null
             },
             {
-              "field": "区县",
+              "field": "district",
               "label": null
             }
           ],
           "metrics": [
             {
-              "field": "服务量",
+              "field": "service_volume",
               "label": null
             }
           ],
@@ -220,15 +220,15 @@
         "chartConfig": {
           "chartType": "bar",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "612a390e-e778-48c9-a940-efa10ff3bb96",
-          "mode": "sql",
-          "sql": "SELECT incident_type AS 事件类型, SUM(count) AS 数量\nFROM gov_incidents\nGROUP BY incident_type\nORDER BY 数量 DESC",
+          "mode": "dataset",
+          "sql": null,
           "schema": null,
           "table": null,
           "configId": null,
-          "datasetId": null,
+          "datasetId": "demo-gov-incidents",
           "nativeBody": {
             "deStyle": {
               "seriesGradient": false,
@@ -286,13 +286,13 @@
           "index": null,
           "dimensions": [
             {
-              "field": "事件类型",
+              "field": "incident_type",
               "label": null
             }
           ],
           "metrics": [
             {
-              "field": "数量",
+              "field": "count",
               "label": null
             }
           ],

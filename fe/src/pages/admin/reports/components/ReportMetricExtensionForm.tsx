@@ -6,13 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button, IconButton } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { UnsavedLeaveDialog } from "@/components/ui/unsaved-leave-dialog";
@@ -24,42 +17,34 @@ import { resolveAnalyticsDatasourceId, type DatasourceListItem } from "@/lib/dat
 import { ExtensionRuntimeDatasourceField } from "./ExtensionRuntimeDatasourceField";
 import { ReportMetricDatasetFields } from "./ReportMetricDatasetFields";
 import {
-  extensionNeedsSqlDatasourcePicker,
   metricKeyValidationMessage,
   resolveExtensionDefaultDataSourceId,
 } from "../reportExtensionUtils";
 import { type ExtensionMetric, useReportTemplates } from "../useReportTemplates";
-type QueryMode = "sql" | "dataset";
 
 const EMPTY_FORM = {
   metricKey: "",
   metricLabel: "",
-  queryMode: "dataset" as QueryMode,
-  expression: "",
   datasetId: "",
   boundConfigId: "",
 };
 
 function buildMetricFromForm(form: typeof EMPTY_FORM): ExtensionMetric | null {
   if (!form.metricKey.trim() || !form.metricLabel.trim()) return null;
-  const base = { key: form.metricKey.trim(), label: form.metricLabel.trim(), visible: true };
-  if (form.queryMode === "dataset") {
-    return {
-      ...base,
-      queryMode: "dataset",
-      datasetId: form.datasetId.trim(),
-      boundConfigId: form.boundConfigId.trim(),
-    };
-  }
-  return { ...base, queryMode: "sql", expression: form.expression.trim() || null };
+  return {
+    key: form.metricKey.trim(),
+    label: form.metricLabel.trim(),
+    visible: true,
+    queryMode: "dataset",
+    datasetId: form.datasetId.trim(),
+    boundConfigId: form.boundConfigId.trim(),
+  };
 }
 
 function formFromMetric(metric: ExtensionMetric) {
   return {
     metricKey: metric.key,
     metricLabel: metric.label,
-    queryMode: (metric.queryMode === "sql" ? "sql" : "dataset") as QueryMode,
-    expression: metric.expression ?? "",
     datasetId: metric.datasetId ?? "",
     boundConfigId: metric.boundConfigId ?? "",
   };
@@ -68,8 +53,7 @@ function formFromMetric(metric: ExtensionMetric) {
 function metricsNeedDataSource(metrics: ExtensionMetric[]) {
   return metrics.some((m) => {
     if (!m.visible && m.visible !== undefined) return false;
-    if (m.queryMode === "dataset") return Boolean(m.boundConfigId || m.datasetId);
-    return Boolean(m.expression?.trim() || m.key);
+    return Boolean(m.boundConfigId || m.datasetId);
   });
 }
 
@@ -128,10 +112,10 @@ export function ReportMetricExtensionForm({
 
   const pendingMetric = buildMetricFromForm(form);
 
-  const showRuntimeDatasourcePicker = useMemo(() => {
-    if (form.queryMode === "sql") return true;
-    return extensionNeedsSqlDatasourcePicker(draftMetrics);
-  }, [draftMetrics, form.queryMode]);
+  const showRuntimeDatasourcePicker = useMemo(
+    () => metricsNeedDataSource(draftMetrics),
+    [draftMetrics],
+  );
 
   const resolvedDefaultDsId = useMemo(
     () => defaultDsId.trim() || resolveAnalyticsDatasourceId(dsItems),
@@ -168,13 +152,8 @@ export function ReportMetricExtensionForm({
       toast.error(keyError);
       return false;
     }
-    if (metric.queryMode === "dataset") {
-      if (!metric.datasetId || !metric.boundConfigId) {
-        toast.error("数据集模式须选择数据集，并完成查询绑定（或选已绑定的数据集）");
-        return false;
-      }
-    } else if (!metric.expression?.trim()) {
-      toast.error("SQL 模式须填写 SQL 表达式");
+    if (!metric.datasetId || !metric.boundConfigId) {
+      toast.error("须选择数据集并完成查询绑定");
       return false;
     }
     return true;
@@ -315,8 +294,8 @@ export function ReportMetricExtensionForm({
               <div className="min-w-0 flex-1">
                 <span className="font-medium text-gray-800 dark:text-white/90">{m.label}</span>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
-                  <Badge variant="light" color={m.queryMode === "dataset" ? "info" : "light"}>
-                    {m.queryMode === "dataset" ? "数据集" : "SQL 查询"}
+                  <Badge variant="light" color="info">
+                    数据集
                   </Badge>
                   <code className="text-theme-xs text-gray-500 dark:text-gray-400">{m.key}</code>
                 </div>
@@ -373,29 +352,6 @@ export function ReportMetricExtensionForm({
                 onChange={(e) => setForm((f) => ({ ...f, metricLabel: e.target.value }))}
               />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="query-mode">查数模式</Label>
-              <Select
-                value={form.queryMode}
-                onValueChange={(v) =>
-                  setForm((f) => ({
-                    ...f,
-                    queryMode: v as QueryMode,
-                    expression: v === "dataset" ? "" : f.expression,
-                    datasetId: v === "sql" ? "" : f.datasetId,
-                    boundConfigId: v === "sql" ? "" : f.boundConfigId,
-                  }))
-                }
-              >
-                <SelectTrigger id="query-mode" className="h-11">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="dataset">数据集（推荐）</SelectItem>
-                  <SelectItem value="sql">SQL 查询</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
             <ExtensionRuntimeDatasourceField
               mode={showRuntimeDatasourcePicker ? "picker" : "readonly"}
               value={showRuntimeDatasourcePicker ? defaultDsId : resolvedDefaultDsId}
@@ -405,19 +361,7 @@ export function ReportMetricExtensionForm({
               onChange={setDefaultDsId}
             />
           </div>
-          {form.queryMode === "sql" ? (
-            <div className="grid gap-2">
-              <Label htmlFor="metric-expression">SQL 表达式</Label>
-              <Textarea
-                id="metric-expression"
-                rows={4}
-                placeholder="SELECT SUM(amount) FROM orders WHERE …"
-                value={form.expression}
-                onChange={(e) => setForm((f) => ({ ...f, expression: e.target.value }))}
-              />
-            </div>
-          ) : (
-            <ReportMetricDatasetFields
+          <ReportMetricDatasetFields
               datasetId={form.datasetId}
               boundConfigId={form.boundConfigId}
               onDatasetIdChange={(id) =>
@@ -438,7 +382,6 @@ export function ReportMetricExtensionForm({
                 if (id) setDefaultDsId(id);
               }}
             />
-          )}
           <div className="flex flex-wrap gap-2">
             <Button type="button" variant="outline" onClick={handleApplyMetric}>
               {editingKey ? "更新到列表" : "添加到列表"}

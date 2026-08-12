@@ -29,12 +29,12 @@
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "3749b971-eaf1-4582-8167-732d9a5309d8",
-          "mode": "sql",
-          "sql": "SELECT grid_name AS 网格, event_count AS 事件数, resolved_count AS 已办结\nFROM gov_grid_stats\nORDER BY 事件数 DESC\nLIMIT 10",
+          "mode": "dataset",
+          "sql": null,
           "schema": null,
           "table": null,
           "configId": null,
-          "datasetId": null,
+          "datasetId": "demo-gov-grid-stats",
           "nativeBody": {
             "deStyle": {
               "legend": {
@@ -53,15 +53,15 @@
           "index": null,
           "dimensions": [
             {
-              "field": "网格",
+              "field": "grid_name",
               "label": null
             },
             {
-              "field": "事件数",
+              "field": "event_count",
               "label": null
             },
             {
-              "field": "已办结",
+              "field": "resolved_count",
               "label": null
             }
           ],

@@ -204,39 +204,19 @@ class ChartViewConfig(BaseModel):
                 f"样式子类型「{self.style_variant}」对{_CHART_TYPE_ZH.get(self.chart_type, self.chart_type)}无效"
             )
 
-        inline = [self.mode, self.sql, self.schema_name, self.table_name, self.data_source_id]
-        if self.binding_id is not None and any(v is not None for v in inline):
-            raise ValueError("CHART_BINDING_CONFLICT:bindingId 与内联 SQL/数据源字段不能同时存在")
+
         if is_manual_data_binding(self.native_body):
             return self
-        if self.binding_id is None:
-            if self.data_source_id is None:
-                raise ValueError("CHART_MISSING_DATASOURCE:请先选择数据源")
-            if self.mode == "native":
-                if not self.native_body:
-                    raise ValueError("CHART_MISSING_NATIVE_BODY:原生模式需填写 nativeBody 配置")
-                if self.sql:
-                    raise ValueError("CHART_NATIVE_SQL_DISGUISE:原生模式不允许同时填写 SQL")
-            if self.mode == "sql" and not self.sql:
-                raise ValueError("CHART_MISSING_SQL:SQL 模式需填写查询语句")
-            if self.mode == "sql" and self.sql:
-                from app.query.readonly import assert_readonly_sql
-                from app.query.schemas import QueryError
-
-                try:
-                    assert_readonly_sql(self.sql)
-                except QueryError as exc:
-                    raise ValueError(f"CHART_SQL_NOT_READONLY:{exc.message}") from exc
-            if self.mode == "table" and (not self.schema_name or not self.table_name):
-                raise ValueError("CHART_MISSING_TABLE:表模式需选择 schema 与数据表")
-            if self.mode == "dataset":
-                if self.config_id is None:
-                    raise ValueError("CHART_MISSING_CONFIG_ID:Dataset 模式需选择数据集配置")
-            elif self.mode is None:
-                raise ValueError("CHART_MISSING_MODE:请选择数据绑定方式（SQL / 表 / Dataset）")
-
         if self.binding_id is not None:
-            return self
+            raise ValueError("CHART_DATASET_REQUIRED:图表出数须绑定 Dataset，不再支持 bindingId 直连")
+        if self.sql or self.schema_name or self.table_name:
+            raise ValueError("CHART_DATASET_REQUIRED:图表出数须绑定 Dataset，不再支持手写 SQL/表直连")
+        if self.mode not in (None, "dataset"):
+            raise ValueError("CHART_DATASET_REQUIRED:图表出数须使用 Dataset 模式")
+        if self.data_source_id is None:
+            raise ValueError("CHART_MISSING_DATASOURCE:请先选择数据源")
+        if self.config_id is None:
+            raise ValueError("CHART_MISSING_CONFIG_ID:Dataset 模式需选择已绑定查询配置的数据集")
         if self.chart_type in ("line", "bar"):
             if not self.dimensions or not self.metrics:
                 raise ValueError(
@@ -365,6 +345,7 @@ _CODE_FIELD_HINTS: dict[str, list[str]] = {
     "CHART_MISSING_TABLE": ["schema", "table"],
     "CHART_MISSING_MODE": ["mode"],
     "CHART_MISSING_CONFIG_ID": ["configId"],
+    "CHART_DATASET_REQUIRED": ["mode", "datasetId", "configId"],
     "CHART_MISSING_NATIVE_BODY": ["nativeBody"],
     "CHART_INVALID_STYLE_VARIANT": ["styleVariant"],
     "CHART_FIELD_REQUIREMENT": ["dimensions", "metrics"],

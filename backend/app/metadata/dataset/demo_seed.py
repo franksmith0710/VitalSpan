@@ -38,6 +38,46 @@ DEMO_DATASET_SPECS: tuple[dict[str, Any], ...] = (
         "display_name": "【官方示例】政务服务指标",
         "tables": [{"name": "gov_service_metrics"}],
     },
+    {
+        "dataset_id": "demo-gov-grid-stats",
+        "display_name": "【官方示例】网格事件统计",
+        "tables": [{"name": "gov_grid_stats"}],
+    },
+    {
+        "dataset_id": "demo-gov-incidents",
+        "display_name": "【官方示例】事件类型统计",
+        "tables": [{"name": "gov_incidents"}],
+    },
+    {
+        "dataset_id": "demo-gov-region-service",
+        "display_name": "【官方示例】区域服务量",
+        "tables": [{"name": "v_gov_region_service"}],
+    },
+    {
+        "dataset_id": "demo-gov-hotwords",
+        "display_name": "【官方示例】政务热词",
+        "tables": [{"name": "gov_hotwords"}],
+    },
+    {
+        "dataset_id": "demo-gov-issues",
+        "display_name": "【官方示例】问题台账",
+        "tables": [{"name": "gov_issues"}],
+    },
+    {
+        "dataset_id": "demo-gov-budget",
+        "display_name": "【官方示例】财政支出",
+        "tables": [{"name": "gov_budget_items"}],
+    },
+    {
+        "dataset_id": "demo-gov-investment",
+        "display_name": "【官方示例】产业投资",
+        "tables": [{"name": "gov_investment"}],
+    },
+    {
+        "dataset_id": "demo-v-sales-geo",
+        "display_name": "【官方示例】销售地理分布",
+        "tables": [{"name": "v_sales_geo"}],
+    },
 )
 
 DEMO_DATASET_IDS: frozenset[str] = frozenset(spec["dataset_id"] for spec in DEMO_DATASET_SPECS)

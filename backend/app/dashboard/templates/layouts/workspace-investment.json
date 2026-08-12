@@ -22,15 +22,15 @@
         "chartConfig": {
           "chartType": "map",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "e84b8e2c-ed97-4cd0-8054-9494a4be79a7",
-          "mode": "sql",
-          "sql": "SELECT province AS 省份, city AS 城市, district AS 区县, SUM(service_volume) AS 服务量\nFROM v_gov_region_service\nGROUP BY province, city, district",
+          "mode": "dataset",
+          "sql": null,
           "schema": null,
           "table": null,
           "configId": null,
-          "datasetId": null,
+          "datasetId": "demo-gov-region-service",
           "nativeBody": {
             "deStyle": {
               "seriesGradient": false,
@@ -68,21 +68,21 @@
           "index": null,
           "dimensions": [
             {
-              "field": "省份",
+              "field": "province",
               "label": null
             },
             {
-              "field": "城市",
+              "field": "city",
               "label": null
             },
             {
-              "field": "区县",
+              "field": "district",
               "label": null
             }
           ],
           "metrics": [
             {
-              "field": "服务量",
+              "field": "service_volume",
               "label": null
             }
           ],
@@ -113,15 +113,15 @@
         "chartConfig": {
           "chartType": "bar",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "d8660722-1ea5-4879-8bfc-2f4734c07f22",
-          "mode": "sql",
-          "sql": "SELECT industry AS 产业, SUM(investment_amount) AS 投资额\nFROM gov_investment\nGROUP BY industry\nORDER BY 投资额 DESC",
+          "mode": "dataset",
+          "sql": null,
           "schema": null,
           "table": null,
           "configId": null,
-          "datasetId": null,
+          "datasetId": "demo-gov-investment",
           "nativeBody": {
             "deStyle": {
               "seriesGradient": false,
@@ -179,13 +179,13 @@
           "index": null,
           "dimensions": [
             {
-              "field": "产业",
+              "field": "industry",
               "label": null
             }
           ],
           "metrics": [
             {
-              "field": "投资额",
+              "field": "investment_amount",
               "label": null
             }
           ],
@@ -216,15 +216,15 @@
         "chartConfig": {
           "chartType": "kpi",
           "styleVariant": "default",
-          "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+          "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "b12f2ef5-bf49-4959-aa6d-d257eb9dde21",
-          "mode": "sql",
-          "sql": "SELECT metric_name AS 指标, AVG(value) AS 数值\nFROM gov_service_metrics\nWHERE metric_code IN ('cases_handled', 'online_rate', 'response_time')\n  AND stat_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)\nGROUP BY metric_name",
+          "mode": "dataset",
+          "sql": null,
           "schema": null,
           "table": null,
           "configId": null,
-          "datasetId": null,
+          "datasetId": "demo-gov-service",
           "nativeBody": {
             "deStyle": {
               "seriesGradient": false,
@@ -282,13 +282,13 @@
           "index": null,
           "dimensions": [
             {
-              "field": "指标",
+              "field": "metric_name",
               "label": null
             }
           ],
           "metrics": [
             {
-              "field": "数值",
+              "field": "value",
               "label": null
             }
           ],

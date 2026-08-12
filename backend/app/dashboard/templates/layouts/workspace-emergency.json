@@ -268,12 +268,12 @@
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "1b62dc10-546b-476a-aa16-c3d7b91fe649",
-          "mode": "sql",
-          "sql": "SELECT province AS 省份, city AS 城市, district AS 区县, SUM(service_volume) AS 服务量\nFROM v_gov_region_service\nGROUP BY province, city, district",
+          "mode": "dataset",
+          "sql": null,
           "schema": null,
           "table": null,
           "configId": null,
-          "datasetId": null,
+          "datasetId": "demo-gov-region-service",
           "nativeBody": {
             "deStyle": {
               "seriesGradient": true,
@@ -451,21 +451,21 @@
           "index": null,
           "dimensions": [
             {
-              "field": "省份",
+              "field": "province",
               "label": null
             },
             {
-              "field": "城市",
+              "field": "city",
               "label": null
             },
             {
-              "field": "区县",
+              "field": "district",
               "label": null
             }
           ],
           "metrics": [
             {
-              "field": "服务量",
+              "field": "service_volume",
               "label": null
             }
           ],
@@ -634,12 +634,12 @@
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "832c4fa1-5ba8-4dc8-a555-84ddb43e5397",
-          "mode": "sql",
-          "sql": "SELECT category AS 类别, spent_amount AS 支出金额\nFROM gov_budget_items\nWHERE fiscal_year = YEAR(CURDATE())\nORDER BY 支出金额 DESC",
+          "mode": "dataset",
+          "sql": null,
           "schema": null,
           "table": null,
           "configId": null,
-          "datasetId": null,
+          "datasetId": "demo-gov-budget",
           "nativeBody": {
             "deStyle": {
               "seriesGradient": true,
@@ -682,13 +682,13 @@
           "index": null,
           "dimensions": [
             {
-              "field": "类别",
+              "field": "category",
               "label": null
             }
           ],
           "metrics": [
             {
-              "field": "支出金额",
+              "field": "spent_amount",
               "label": null
             }
           ],
@@ -735,12 +735,12 @@
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "aaec8ec2-13ea-4a74-bd72-a93bd27271f4",
-          "mode": "sql",
-          "sql": "SELECT grid_name AS 网格, event_count AS 事件数, resolved_count AS 已办结\nFROM gov_grid_stats\nORDER BY 事件数 DESC\nLIMIT 10",
+          "mode": "dataset",
+          "sql": null,
           "schema": null,
           "table": null,
           "configId": null,
-          "datasetId": null,
+          "datasetId": "demo-gov-grid-stats",
           "nativeBody": {
             "deStyle": {
               "seriesGradient": true,
@@ -803,15 +803,15 @@
           "index": null,
           "dimensions": [
             {
-              "field": "网格",
+              "field": "grid_name",
               "label": null
             },
             {
-              "field": "事件数",
+              "field": "event_count",
               "label": null
             },
             {
-              "field": "已办结",
+              "field": "resolved_count",
               "label": null
             }
           ],

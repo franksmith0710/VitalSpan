@@ -151,13 +151,26 @@ def _build_sql(theme: ThemeType, table_ref: str, mapping: FieldMapping) -> str:
 
 
 def run_pack(db: Session, key: str, payload: RunIn, user: UserContext) -> RunOut:
+    from app.reports.standard.dataset_binding import ensure_analysis_pack_dataset_binding
+    from app.reports.standard.theme_aggregate import aggregate_pack_theme
+
     pack = get_pack(key, user)
     if payload.theme not in pack.enabled_themes:
         raise StandardAnalysisError(RPT_STD_THEME_DISABLED, "theme not enabled for pack", 422)
-    table_ref = _resolve_table_ref(pack.physical_table_fqn)
-    sql = _build_sql(payload.theme, table_ref, pack.field_mapping)
-    section_payload = engine_execute.execute_section(
-        db, user, pack.data_source_id, sql, limit=payload.limit
+    bound_id = ensure_analysis_pack_dataset_binding(db, pack)
+    section_payload = engine_execute.execute_dataset_section(
+        db,
+        user,
+        pack.data_source_id,
+        bound_id,
+        payload.parameters,
+        limit=payload.limit,
+    )
+    columns, rows = aggregate_pack_theme(
+        payload.theme,
+        section_payload["columns"],
+        section_payload["rows"],
+        pack.field_mapping,
     )
     chart_type = (
         "bar"
@@ -168,8 +181,8 @@ def run_pack(db: Session, key: str, payload: RunIn, user: UserContext) -> RunOut
     )
     section: dict = {
         "kind": "chart" if chart_type else "table",
-        "columns": section_payload["columns"],
-        "rows": section_payload["rows"],
+        "columns": columns,
+        "rows": rows,
         "placeholder": False,
     }
     if chart_type:

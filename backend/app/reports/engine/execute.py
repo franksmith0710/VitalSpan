@@ -7,52 +7,13 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext
-from app.query.dataset.execute_config import execute_dataset_from_config
-from app.query.dataset.schemas import DatasetExecuteRequest
-from app.query.schemas import ExecuteRequest, ExecuteResponse, QueryError
-from app.query.service import execute_query
-from app.query.sql_parameters import inject_sql_parameters
 from app.query.config_store.schemas import ConfigError, DatasetQueryConfigPayload
 from app.query.config_store.service import get_config_by_id
+from app.query.dataset.execute_config import execute_dataset_from_config
+from app.query.dataset.schemas import DatasetExecuteRequest
+from app.query.schemas import QueryError
 from app.reports.engine.errors import RPT_ENGINE_DATASOURCE_REQUIRED, ReportEngineError
 from app.reports.extension.schemas import ExtensionConfigOut, MetricAdjustment
-
-
-def build_metric_sql(metric: MetricAdjustment, parameters: dict[str, Any]) -> str:
-    base = metric.expression or f"SELECT {metric.key} AS value"
-    str_params = {k: str(v) for k, v in (parameters or {}).items()}
-    return inject_sql_parameters(base, str_params)
-
-
-def execute_section(
-    db: Session,
-    user: UserContext,
-    data_source_id: uuid.UUID,
-    sql: str,
-    *,
-    limit: int = 100,
-) -> dict[str, Any]:
-    started = time.perf_counter()
-    try:
-        result: ExecuteResponse = execute_query(
-            db,
-            user,
-            ExecuteRequest(
-                dataSourceId=data_source_id,
-                mode="sql",
-                sql=sql,
-                limit=limit,
-                rls={"enabled": False},
-            ),
-        )
-    except QueryError as exc:
-        raise ReportEngineError("RPT_ENGINE_QUERY_FAILED", exc.message, exc.status) from exc
-    elapsed_ms = (time.perf_counter() - started) * 1000
-    return {
-        "columns": result.columns,
-        "rows": result.rows,
-        "elapsedMs": round(elapsed_ms, 2),
-    }
 
 
 def execute_dataset_section(
@@ -121,20 +82,17 @@ def _execute_metric(
     db: Session,
     user: UserContext,
     metric: MetricAdjustment,
-    fallback_data_source_id: uuid.UUID | None,
+    _fallback_data_source_id: uuid.UUID | None,
     parameters: dict[str, Any],
 ) -> dict[str, Any]:
-    if metric.query_mode == "dataset" and (metric.bound_config_id or metric.dataset_id):
-        ds_id, bound_id = _resolve_dataset_metric_binding(db, metric)
-        return execute_dataset_section(db, user, ds_id, bound_id, parameters)
-    if fallback_data_source_id is None:
+    if not metric.bound_config_id and not metric.dataset_id:
         raise ReportEngineError(
             RPT_ENGINE_DATASOURCE_REQUIRED,
-            "SQL 指标需要运行数据源，请在扩展配置中选择数据连接",
+            "报表指标须绑定 Dataset 与查询配置",
             422,
         )
-    sql = build_metric_sql(metric, parameters)
-    return execute_section(db, user, fallback_data_source_id, sql)
+    ds_id, bound_id = _resolve_dataset_metric_binding(db, metric)
+    return execute_dataset_section(db, user, ds_id, bound_id, parameters)
 
 
 def build_sections_from_template_blocks(template_key: str) -> list[dict[str, Any]]:
@@ -178,9 +136,7 @@ def _extension_has_executable_metrics(ext: ExtensionConfigOut) -> bool:
     for metric in ext.metrics:
         if not metric.visible:
             continue
-        if metric.query_mode == "dataset" and (metric.bound_config_id or metric.dataset_id):
-            return True
-        if metric.query_mode == "sql" and (metric.expression or metric.key):
+        if metric.bound_config_id or metric.dataset_id:
             return True
     return False
 

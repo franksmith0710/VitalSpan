@@ -141,40 +141,6 @@ def test_transform_query_result_respects_query_limit_and_truncated():
     assert len(out.rows) == _QUERY_DEFAULT_LIMIT
 
 
-def test_execute_query_applies_pandas_for_sql_mode():
-    from app.auth.deps import UserContext
-    from app.query.schemas import ExecuteRequest, RlsOptions
-    from app.query.service import execute_query
-
-    session = MagicMock()
-    user = UserContext(id=str(uuid.uuid4()), username="admin", roles=["admin"])
-    ds_id = uuid.uuid4()
-    raw = QueryResult(
-        columns=["name", "status"],
-        rows=[["  hello  ", "active"], ["gone", "deleted"]],
-        row_count=2,
-        truncated=False,
-    )
-    payload = ExecuteRequest(
-        dataSourceId=ds_id,
-        mode="sql",
-        sql="SELECT name, status FROM t",
-        rls=RlsOptions(enabled=False),
-    )
-
-    with (
-        patch("app.query.service.assert_visible"),
-        patch("app.query.service._executor.execute_sql", return_value=raw),
-        patch("app.query.service.get_settings") as mock_settings,
-    ):
-        mock_settings.return_value.query_default_limit = 1000
-        mock_settings.return_value.vitalspan_env = "development"
-        resp = execute_query(session, user, payload)
-
-    assert resp.row_count == 1
-    assert resp.rows[0][0] == "hello"
-
-
 def test_execute_config_limit_boundary_truncated_after_transform():
     """P2-1: 模拟 fetch 1001 行后 executor 返回 1000 行 + truncated，经 execute 链仍遵守 limit。"""
     from app.auth.deps import UserContext

@@ -39,6 +39,38 @@ _DEMO_DATASET_BINDING_SPECS: dict[str, dict[str, object]] = {
         "table": "gov_service_metrics",
         "columns": ["stat_date", "department", "metric_code", "metric_name", "value"],
     },
+    "demo-gov-grid-stats": {
+        "table": "gov_grid_stats",
+        "columns": ["grid_name", "event_count", "resolved_count"],
+    },
+    "demo-gov-incidents": {
+        "table": "gov_incidents",
+        "columns": ["incident_type", "count"],
+    },
+    "demo-gov-region-service": {
+        "table": "v_gov_region_service",
+        "columns": ["province", "city", "district", "service_volume"],
+    },
+    "demo-gov-hotwords": {
+        "table": "gov_hotwords",
+        "columns": ["word", "weight"],
+    },
+    "demo-gov-issues": {
+        "table": "gov_issues",
+        "columns": ["issue_type", "location", "unit", "status", "progress"],
+    },
+    "demo-gov-budget": {
+        "table": "gov_budget_items",
+        "columns": ["category", "spent_amount", "fiscal_year"],
+    },
+    "demo-gov-investment": {
+        "table": "gov_investment",
+        "columns": ["industry", "investment_amount"],
+    },
+    "demo-v-sales-geo": {
+        "table": "v_sales_geo",
+        "columns": ["province", "city", "district", "amount"],
+    },
 }
 
 

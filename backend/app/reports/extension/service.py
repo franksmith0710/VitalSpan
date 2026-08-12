@@ -51,7 +51,7 @@ def _validate_compare_metrics(metrics: list) -> None:
                 422,
                 fields={"fields": ["compareMode"]},
             )
-        if mode in {"yoy", "mom"} and getattr(m, "query_mode", "sql") == "sql" and not m.expression and not _KEY_RE.match(m.key):
+        if mode in {"yoy", "mom"} and not m.bound_config_id and not _KEY_RE.match(m.key):
             raise ReportExtensionError(
                 "RPT_EXT_INVALID_COMPARE",
                 "compare metric requires expression or valid key",

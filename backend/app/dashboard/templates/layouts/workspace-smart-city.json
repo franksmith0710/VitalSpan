@@ -291,12 +291,12 @@
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "8bffe4b3-4be0-45ab-9c99-6f31d9c55e54",
-          "mode": "sql",
-          "sql": "SELECT word AS 热词, weight AS 权重\nFROM gov_hotwords\nORDER BY 权重 DESC\nLIMIT 20",
+          "mode": "dataset",
+          "sql": null,
           "schema": null,
           "table": null,
           "configId": null,
-          "datasetId": null,
+          "datasetId": "demo-gov-hotwords",
           "nativeBody": {
             "deStyle": {
               "legend": {
@@ -340,13 +340,13 @@
           "index": null,
           "dimensions": [
             {
-              "field": "热词",
+              "field": "word",
               "label": null
             }
           ],
           "metrics": [
             {
-              "field": "权重",
+              "field": "weight",
               "label": null
             }
           ],
@@ -495,12 +495,12 @@
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "4ba6f9e0-2212-4380-ac1b-3314d353aa1c",
-          "mode": "sql",
-          "sql": "SELECT issue_type AS 问题类型, location AS 地点, unit AS 责任单位, status AS 状态, progress AS 进度\nFROM gov_issues\nORDER BY seq\nLIMIT 10",
+          "mode": "dataset",
+          "sql": null,
           "schema": null,
           "table": null,
           "configId": null,
-          "datasetId": null,
+          "datasetId": "demo-gov-issues",
           "nativeBody": {
             "deStyle": {
               "legend": {
@@ -557,19 +557,19 @@
           "index": null,
           "dimensions": [
             {
-              "field": "问题类型",
+              "field": "issue_type",
               "label": null
             },
             {
-              "field": "地点",
+              "field": "location",
               "label": null
             },
             {
-              "field": "状态",
+              "field": "status",
               "label": null
             },
             {
-              "field": "进度",
+              "field": "progress",
               "label": null
             }
           ],

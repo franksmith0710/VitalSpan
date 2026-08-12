@@ -521,12 +521,12 @@
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
           "chartId": "4cca58c7-c665-4c57-95fd-18ce991fa8be",
-          "mode": "sql",
-          "sql": "SELECT incident_type AS 事件类型, SUM(count) AS 数量\nFROM gov_incidents\nGROUP BY incident_type\nORDER BY 数量 DESC",
+          "mode": "dataset",
+          "sql": null,
           "schema": null,
           "table": null,
           "configId": null,
-          "datasetId": null,
+          "datasetId": "demo-gov-incidents",
           "nativeBody": {
             "deStyle": {
               "legend": {
@@ -570,13 +570,13 @@
           "index": null,
           "dimensions": [
             {
-              "field": "事件类型",
+              "field": "incident_type",
               "label": null
             }
           ],
           "metrics": [
             {
-              "field": "数量",
+              "field": "count",
               "label": null
             }
           ],

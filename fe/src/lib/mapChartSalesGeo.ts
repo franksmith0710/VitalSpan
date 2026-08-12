@@ -37,29 +37,35 @@ export function resolveSampleDbDatasource(
   return ranked[0]?.ds ?? null;
 }
 
-/** 一键配置 SQL + 槽位，可选绑定 sample 数据源 */
+/** 官方示例 Dataset：区域销售地理（v_sales_geo 视图） */
+export const DEMO_SALES_GEO_DATASET_ID = "demo-v-sales-geo";
+
+/** 一键配置 Dataset + 槽位，可选绑定 sample 数据源 */
 export function applySalesGeoDrillMapConfig(
   cfg: ChartViewConfig,
   dataSourceId?: string,
+  configId?: string,
 ): ChartViewConfig {
   return ensureChartSlotCapacity({
     ...cfg,
-    mode: "sql",
-    sql: SALES_GEO_DRILL_SQL,
+    mode: "dataset",
+    sql: undefined,
+    datasetId: DEMO_SALES_GEO_DATASET_ID,
+    configId: configId ?? cfg.configId,
     dataSourceId: dataSourceId ?? cfg.dataSourceId,
-    datasetId: undefined,
-    configId: undefined,
+    bindingId: undefined,
     dimensions: [{ field: "province" }, { field: "city" }, { field: "district" }],
-    metrics: [{ field: "total" }],
+    metrics: [{ field: "amount" }],
   });
 }
 
 export function isSalesGeoMapConfig(cfg: ChartViewConfig): boolean {
   const dims = cfg.dimensions?.map((d) => d.field?.trim()) ?? [];
   return (
-    dims[0] === "province" &&
-    dims[1] === "city" &&
-    dims[2] === "district" &&
-    Boolean(cfg.sql?.includes("v_sales_geo"))
+    cfg.datasetId === DEMO_SALES_GEO_DATASET_ID ||
+    (dims[0] === "province" &&
+      dims[1] === "city" &&
+      dims[2] === "district" &&
+      Boolean(cfg.configId))
   );
 }

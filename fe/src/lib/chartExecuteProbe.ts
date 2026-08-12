@@ -1,4 +1,4 @@
-import { apiFetch, isEmbedShareContext, resolveDatasetExecutePath, resolveQueryExecutePath } from "@/lib/api";
+import { apiFetch, isEmbedShareContext, resolveDatasetExecutePath } from "@/lib/api";
 import { createConcurrencyLimiter } from "@/lib/asyncConcurrencyLimiter";
 import type { ChartFilterRef, ChartTimeRangeRef, ChartViewConfig } from "@/lib/chartViewConfig";
 import type { SampleDatasourceItem } from "@/lib/mapChartSalesGeo";
@@ -10,7 +10,6 @@ import {
 
 export const CHART_EXECUTE_MAX_CONCURRENCY = 3;
 import type { ChartType } from "@/lib/chartViewConfig";
-import { injectSqlParameters } from "@/components/dashboard/dashboardFilterUtils";
 import { groupDatasetFields } from "@/components/dashboard/datasetFieldClassification";
 
 export type ChartExecuteResult = {
@@ -84,42 +83,31 @@ export function buildTimeRangeParameters(tr?: ChartTimeRangeRef): Record<string,
   return { time_start: formatUtcDate(start), time_end: formatUtcDate(end) };
 }
 
-export type ChartExecuteMode = NonNullable<ChartViewConfig["mode"]>;
+export type ChartExecuteMode = "dataset";
 
-/** 与 chartExecuteBindingKey / fetch 请求体共用，避免缺 mode 导致 422 */
-export function resolveChartExecuteMode(config: ChartViewConfig): ChartExecuteMode {
-  if (config.bindingId) {
-    return config.mode ?? "sql";
-  }
-  if (config.mode) return config.mode;
-  if (config.sql?.trim()) return "sql";
-  if (config.table) return "table";
-  if (config.nativeBody && Object.keys(config.nativeBody).length > 0) return "native";
+/** 图表出数仅支持 Dataset 路径 */
+export function resolveChartExecuteMode(_config: ChartViewConfig): ChartExecuteMode {
   return "dataset";
 }
 
 export function chartExecuteNotReadyMessage(config: ChartViewConfig): string {
-  if (config.bindingId) return "请配置有效的查询绑定";
-  const mode = resolveChartExecuteMode(config);
-  if (!config.dataSourceId) return "请配置数据源与 SQL";
-  if (mode === "dataset") return "请选择数据源与已绑定配置的 Dataset";
-  if (mode === "sql") return "请配置数据源与 SQL";
-  if (mode === "table") return "请配置数据源、schema 与表名";
-  if (mode === "native") return "请配置原生查询体";
-  return "请配置数据源与 SQL";
+  if (config.bindingId || config.sql?.trim() || config.table || config.nativeBody) {
+    return "请改绑 Dataset：手写 SQL / 直连绑定已不再支持出图";
+  }
+  if (!config.dataSourceId) return "请选择数据源与已绑定配置的 Dataset";
+  if (!config.configId) return "请选择已绑定查询配置的 Dataset";
+  return "请选择数据源与已绑定配置的 Dataset";
 }
 
 export function isChartExecuteReady(config: ChartViewConfig): boolean {
-  if (config.bindingId) return true;
-  if (!config.dataSourceId) return false;
-  const mode = resolveChartExecuteMode(config);
-  if (mode === "dataset") return Boolean(config.configId);
-  if (mode === "sql") return Boolean(config.sql?.trim());
-  if (mode === "table") return Boolean(config.schema && config.table);
-  if (mode === "native") {
-    return Boolean(config.nativeBody && Object.keys(config.nativeBody).length > 0);
+  if (config.bindingId || config.sql?.trim() || config.table) return false;
+  if (config.nativeBody && Object.keys(config.nativeBody).length > 0) {
+    const keys = Object.keys(config.nativeBody);
+    if (keys.some((k) => k !== "deStyle" && k !== "deDisplay" && k !== "deTableStyle")) {
+      return false;
+    }
   }
-  return false;
+  return Boolean(config.dataSourceId && config.configId);
 }
 
 /** 仅序列化会影响 execute 请求的绑定字段（不含 deStyle/deDisplay 等展示配置） */
@@ -128,36 +116,13 @@ export function chartExecuteBindingKey(
   filterParameters?: Record<string, string>,
   limit: number = CHART_EXECUTE_LIMIT,
 ): string {
-  const mode = resolveChartExecuteMode(config);
-  const base: Record<string, unknown> = {
-    mode,
+  return JSON.stringify({
+    mode: "dataset",
     dataSourceId: config.dataSourceId,
     configId: config.configId,
     datasetId: config.datasetId,
-    bindingId: config.bindingId,
     filterParameters: filterParameters ?? {},
     limit,
-  };
-
-  if (mode === "dataset") {
-    return JSON.stringify(base);
-  }
-
-  if (mode === "native") {
-    return JSON.stringify({
-      ...base,
-      nativeBody: config.nativeBody,
-      index: config.index,
-    });
-  }
-
-  return JSON.stringify({
-    ...base,
-    sql: config.sql,
-    table: config.table,
-    schema: config.schema,
-    filters: config.filters,
-    timeRange: config.timeRange,
   });
 }
 
@@ -259,60 +224,22 @@ export async function fetchChartExecuteResult(
     throw new Error(chartExecuteNotReadyMessage(executeConfig));
   }
 
-  const mode = resolveChartExecuteMode(executeConfig);
+  const timeParams = buildTimeRangeParameters(executeConfig.timeRange);
+  const parameters = {
+    ...(filterParameters ?? {}),
+    ...buildFilterParameters(executeConfig.filters ?? []),
+    ...timeParams,
+  };
 
-  if (mode === "dataset") {
-    return apiFetch<ChartExecuteResult>(resolveDatasetExecutePath(), {
-      method: "POST",
-      body: JSON.stringify({
-        dataSourceId: executeConfig.dataSourceId,
-        configId: executeConfig.configId,
-        limit,
-        parameters: filterParameters ?? {},
-        rls: { enabled: false },
-      }),
-    });
-  }
-
-  const timeParams = mode === "sql" ? buildTimeRangeParameters(executeConfig.timeRange) : {};
-  const filterParams =
-    mode === "sql"
-      ? {
-          ...filterParameters,
-          ...buildFilterParameters(executeConfig.filters ?? []),
-          ...timeParams,
-        }
-      : filterParameters;
-
-  let sql = executeConfig.sql;
-  if (sql && filterParams && Object.keys(filterParams).length) {
-    sql = injectSqlParameters(sql, filterParams);
-  }
-
-  const body = executeConfig.bindingId
-    ? { bindingId: executeConfig.bindingId, rls: { enabled: false } }
-    : mode === "native"
-      ? {
-          dataSourceId: executeConfig.dataSourceId,
-          mode: "native",
-          nativeBody: executeConfig.nativeBody,
-          index: executeConfig.index,
-          limit,
-          rls: { enabled: false },
-        }
-      : {
-          dataSourceId: executeConfig.dataSourceId,
-          mode,
-          sql,
-          schema: executeConfig.schema,
-          table: executeConfig.table,
-          limit,
-          rls: { enabled: false },
-        };
-
-  return apiFetch<ChartExecuteResult>(resolveQueryExecutePath(), {
+  return apiFetch<ChartExecuteResult>(resolveDatasetExecutePath(), {
     method: "POST",
-    body: JSON.stringify(body),
+    body: JSON.stringify({
+      dataSourceId: executeConfig.dataSourceId,
+      configId: executeConfig.configId,
+      limit,
+      parameters,
+      rls: { enabled: false },
+    }),
   });
 }
 
