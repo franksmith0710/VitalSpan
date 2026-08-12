@@ -294,7 +294,8 @@ def semi_real_execute_schedule(
         raise ScheduleError("RPT_SCHEDULE_EXECUTE_NOT_READY", f"Cannot execute from {row['status']}", 400)
     execution_id = uuid.uuid4()
     source_type = row.get("source_type", "template")
-    source_id = row.get("source_id") or row["catalog_node_id"]
+    source_id = row.get("source_id") or row.get("catalog_node_id")
+    source_key = row.get("source_key")
     revision_snapshot = None
     if source_type == "template" and source_id is not None:
         from app.reports.extension import service as extension_service
@@ -316,6 +317,13 @@ def semi_real_execute_schedule(
         formats = row.get("attachment_formats") or ["pdf"]
         artifact_ref, artifact_kind, attachments, export_error = _export_template_attachments(
             source_id, formats, actor,
+        )
+    elif source_type == "standard" and source_key:
+        from app.reports.scheduler.standard_export import export_standard_attachments
+
+        formats = row.get("attachment_formats") or ["pdf"]
+        artifact_ref, artifact_kind, attachments, export_error = export_standard_attachments(
+            source_key, formats, actor,
         )
     if not export_error and attachments:
         artifact_ref, _storage_key = _persist_execution_artifact(

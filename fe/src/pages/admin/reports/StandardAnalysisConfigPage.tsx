@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { ArrowLeft, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
@@ -30,10 +30,12 @@ import { queryKeys } from "@/lib/queryKeys";
 import { type AnalysisPack, useStandardPackMutations, useStandardPacks } from "./useStandardAnalysis";
 import { StandardAnalysisConfigForm } from "./components/StandardAnalysisConfigForm";
 import { StandardAnalysisPackList } from "./components/StandardAnalysisPackList";
+import { StandardSchedulePanel } from "./components/StandardSchedulePanel";
 import {
   createEmptyAnalysisPack,
   STANDARD_WORKBENCH_GRID_CLASS,
 } from "./components/standardAnalysisUi";
+import { STANDARD_PACK_QUERY } from "./standardRoutes";
 
 type PhysicalTable = {
   tableFqn: string;
@@ -42,6 +44,7 @@ type PhysicalTable = {
 };
 
 export function StandardAnalysisConfigPage() {
+  const [searchParams] = useSearchParams();
   const packsQuery = useStandardPacks();
   const packs = packsQuery.data?.items ?? [];
   const { upsert, remove } = useStandardPackMutations();
@@ -62,10 +65,13 @@ export function StandardAnalysisConfigPage() {
 
   useEffect(() => {
     if (bootstrapped || isCreating || editingKey || packs.length === 0) return;
-    setDraft(packs[0]);
-    setEditingKey(packs[0].packKey);
+    const packFromUrl = searchParams.get(STANDARD_PACK_QUERY);
+    const initial = packFromUrl ? packs.find((pack) => pack.packKey === packFromUrl) : packs[0];
+    if (!initial) return;
+    setDraft(initial);
+    setEditingKey(initial.packKey);
     setBootstrapped(true);
-  }, [bootstrapped, editingKey, isCreating, packs]);
+  }, [bootstrapped, editingKey, isCreating, packs, searchParams]);
 
   const activePackKey = isCreating ? null : editingKey;
 
@@ -203,19 +209,27 @@ export function StandardAnalysisConfigPage() {
             />
           </div>
 
-          <StandardAnalysisConfigForm
-            draft={draft}
-            isCreating={isCreating}
-            editingKey={editingKey}
-            physicalTables={physicalQuery.data?.items ?? []}
-            physicalLoading={physicalQuery.isLoading}
-            saving={upsert.isPending}
-            deleting={remove.isPending}
-            onChange={(updater) => setDraft((current) => updater(current))}
-            onSelectTable={onSelectTable}
-            onSave={() => void onSave()}
-            onDelete={() => setDeleteOpen(true)}
-          />
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <StandardAnalysisConfigForm
+              draft={draft}
+              isCreating={isCreating}
+              editingKey={editingKey}
+              physicalTables={physicalQuery.data?.items ?? []}
+              physicalLoading={physicalQuery.isLoading}
+              saving={upsert.isPending}
+              deleting={remove.isPending}
+              onChange={(updater) => setDraft((current) => updater(current))}
+              onSelectTable={onSelectTable}
+              onSave={() => void onSave()}
+              onDelete={() => setDeleteOpen(true)}
+            />
+            {editingKey && !isCreating ? (
+              <StandardSchedulePanel
+                sourceKey={editingKey}
+                packName={draft.displayName || editingKey}
+              />
+            ) : null}
+          </div>
         </div>
       </ListPageSection>
 

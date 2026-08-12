@@ -21,7 +21,7 @@
 | `reports/catalog/` 模板树 registry（memory \| db `RPT_METADATA_STORE`）+ 循环/深度守卫 + M7 ACL | 通用查询引擎（→ `query`） |
 | `reports/persistence/` catalog/extension/standard/templates/integration_exports ORM + repo 抽象 | Jasper WYSIWYG 设计器 |
 | `reports/render/` RenderSpec → PDF/Excel/Word 真字节（reportlab/openpyxl/OOXML） | 在线地图/瓦片 |
-| `reports/scheduler/` 调度 FSM + semi-real 执行 + 模板/看板附件投递 | Celery 队列、飞书 webhook |
+| `reports/scheduler/` 调度 FSM + semi-real 执行 + 模板/看板/标准分析附件投递 | Celery 队列、飞书 webhook |
 | `reports/extension/` metrics/filters；metric 级 `queryMode=sql\|dataset` + `boundConfigId` | Dataset 建模 UI（→ `metadata/dataset`） |
 | `reports/batch/` 批量创建模板节点 + 幂等守卫 | 打印排版 UI（前端 `/admin/reports/*`） |
 | `reports/engine/` render run + `export_template_bytes` | 组合调度粒度枚举 |
@@ -38,6 +38,7 @@
 | 产品线 | 适用场景 | 入口 |
 |--------|----------|------|
 | **看板/大屏可视化定时 PDF**（推荐主路径） | 已有看板/大屏，定期邮件投递画布快照 | 看板分享 → `DashboardSchedulePanel` |
+| **标准分析定时 PDF** | 业务对象分析包，周期投递多主题 PDF | 标准分析配置页 → `StandardSchedulePanel` |
 | **文档模板套版**（固定版式填数） | Word/Excel/PDF 固定版式月报/台账 | Hub 展开「文档模板」或 `/admin/reports/templates` |
 
 侧栏 **仅「报表中心」单入口** → `/admin/reports/center`（`nav-manifest.tsx`）。Hub 聚合：看板定时摘要、近期失败重试、最近访问、标准分析、折叠文档模板区。深链保留：
@@ -81,12 +82,14 @@
 | `engine/probe.py` | `probe_run_template_budget_ms` ≤50ms | RPT-001 | companion 已实现 r66 |
 | `standard/service.py` | 分析包 CRUD、run、capabilities、周期快照 compare | RPT-002 | 已实现 |
 | `standard/jobs.py` | APScheduler 周期快照（与投递调度分离） | RPT-002 | 已实现 |
+| `scheduler/standard_export.py` | 标准分析多主题 run → PDF 产物（RPT-005 `sourceType=standard`） | RPT-002, RPT-005 | 已实现 |
 | `standard/seed.py` | 内置 `equipment-overview` 分析包幂等 upsert | RPT-002 | 已实现 |
 | **FE** | `fe/src/pages/admin/reports/StandardAnalysisPage.tsx` + `StandardAnalysisConfigPage.tsx` | RPT-002 | 已实现 |
 | **FE** | `fe/src/pages/admin/reports/ReportCenterPage.tsx` + `ReportCenterScheduleHub.tsx`（定时报告 Hub · 2026-08 收敛） | RPT-005 | 已实现 |
 | **FE** | `fe/src/pages/admin/reports/components/DashboardSchedulePanel.tsx` + `SchedulePrecheckPanel.tsx`（看板分享页创建 + 前置检查） | RPT-005 | 已实现 |
 | **FE** | `fe/src/pages/export/DashboardExportSnapshotPage.tsx` + `export_render.py`（Playwright PDF 快照） | RPT-005 | G5 · 2026-08-03 |
 | **FE** | `fe/src/pages/admin/reports/ReportViewPage.tsx`（模板运行 + 导出） | RPT-001 | 已实现（2026-07-17 IA） |
+| **FE** | `fe/src/pages/admin/reports/components/StandardSchedulePanel.tsx`（标准分析配置页定时投递） | RPT-002, RPT-005 | 已实现 |
 | **FE** | `fe/src/pages/admin/reports/ReportSchedulesPage.tsx` + `SchedulePanel.tsx` + `SchedulePanel.smoke.test.tsx`（调度列表/历史/重试） | RPT-005 | M-DEPTH F-C · 2026-07-29 |
 | `templates/acl.py` | viewer 禁写 + enterprise scope（`set_user_template_scope`） | RPT-003 | companion 已实现 r67 |
 | `templates/probe.py` | validate/get/list perf probe ≤50ms | RPT-003 | M10 已实现 r234 |

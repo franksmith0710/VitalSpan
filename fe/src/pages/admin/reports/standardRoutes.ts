@@ -7,6 +7,12 @@ export function standardAnalysisPath(packKey?: string): string {
   return `/admin/reports/standard?${params.toString()}`;
 }
 
+export function standardAnalysisConfigPath(packKey?: string): string {
+  if (!packKey) return "/admin/reports/standard/config";
+  const params = new URLSearchParams({ [STANDARD_PACK_QUERY]: packKey });
+  return `/admin/reports/standard/config?${params.toString()}`;
+}
+
 export const THEME_LABELS: Record<string, string> = {
   lifecycle: "生命周期",
   distribution: "区域分布",

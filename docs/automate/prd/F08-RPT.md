@@ -29,7 +29,8 @@
   - [x] 周期快照（`POST .../snapshots/capture` · `GET .../snapshots`）
   - [x] APScheduler 快照 job（`standard/jobs.py`）
   - [x] FE 工作台 + 配置页 + Hub（`StandardAnalysisPage` · `StandardAnalysisConfigPage`）
-- **代码锚点**：`backend/app/reports/standard/` · `backend/app/api/v1/reports/standard.py` · `fe/src/pages/admin/reports/StandardAnalysisPage.tsx` · `tests/test_standard_analysis.py`
+  - [x] 标准分析定时投递（`sourceType=standard` + `sourceKey`；配置页 `StandardSchedulePanel`；邮件/企微/钉钉；`scheduler/standard_export.py`）
+- **代码锚点**：`backend/app/reports/standard/` · `backend/app/api/v1/reports/standard.py` · `backend/app/reports/scheduler/standard_export.py` · `fe/src/pages/admin/reports/StandardAnalysisPage.tsx` · `fe/src/pages/admin/reports/components/StandardSchedulePanel.tsx` · `tests/test_standard_analysis.py` · `tests/test_standard_schedule_delivery.py`
 - **演化建议**：关键节点快照、另存为自由报表留 companion
 - **里程碑对齐**：M9 · 已完成 · 2026-08-11
 ### [RPT-003] Word/Excel/PDF 模板定义

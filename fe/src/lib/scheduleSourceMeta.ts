@@ -4,6 +4,7 @@ import type { ReportScheduleRow } from "@/pages/admin/reports/useReportSchedules
 export function localizeSourceType(sourceType?: string): string {
   if (sourceType === "dashboard") return "看板";
   if (sourceType === "data_screen") return "大屏";
+  if (sourceType === "standard") return "标准分析";
   return "模板";
 }
 
@@ -12,10 +13,16 @@ export function sourceTypeBadgeColor(
 ): "primary" | "success" | "warning" | "error" {
   if (sourceType === "dashboard") return "primary";
   if (sourceType === "data_screen") return "warning";
+  if (sourceType === "standard") return "primary";
   return "success";
 }
 
-export function scheduleSourceHref(schedule: Pick<ReportScheduleRow, "sourceType" | "sourceId" | "catalogNodeId">): string {
+export function scheduleSourceHref(
+  schedule: Pick<ReportScheduleRow, "sourceType" | "sourceId" | "sourceKey" | "catalogNodeId">,
+): string {
+  if (schedule.sourceType === "standard" && schedule.sourceKey) {
+    return `/admin/reports/standard?pack=${encodeURIComponent(schedule.sourceKey)}`;
+  }
   const id = schedule.sourceId ?? schedule.catalogNodeId;
   if (!id) return "/admin/reports/schedules";
   if (schedule.sourceType === "data_screen") {
@@ -79,6 +86,7 @@ export function filterSchedulesByTab<T extends { sourceType?: string }>(
 
 /** 侧栏「查看调度」：切换到能展示该调度源的行所在 Tab */
 export function scheduleTabForSourceType(sourceType?: string): ScheduleTabFilter {
+  if (sourceType === "standard") return "all";
   if (sourceType === "dashboard" || sourceType === "data_screen") return "dashboard";
   if (!sourceType || sourceType === "template") return "template";
   return "all";

@@ -302,7 +302,7 @@ redoc: /redoc
 | GET | `/api/v1/reports/schedules/executions/recent-failures` | 近期失败/降级执行列表 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/schedules/executions/{executionId}/dismiss` | 忽略单条失败提醒（不删执行历史） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/schedules/executions/recent-failures/dismiss-all` | 批量忽略失败提醒 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
-| GET | `/api/v1/reports/schedules` | 调度列表（可选 `catalogNodeId`） | 内部 | 三期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
+| GET | `/api/v1/reports/schedules` | 调度列表（可选 `catalogNodeId` · `sourceType` · `sourceId` · `sourceKey`；`sourceType=standard` 时以 `sourceKey` 标识分析包） | 内部 | 三期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | GET | `/api/v1/reports/schedules/{id}/executions` | 调度执行历史 | 内部 | 三期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/schedules/executions/{executionId}/retry` | 失败/降级执行重试 | 内部 | 三期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/schedules/{id}/execute` | 调度 semi-real 执行器（`X-Rpt-Semi-Real: 1`；mock 兼容默认；Idempotency-Key；`deliverySteps`） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |

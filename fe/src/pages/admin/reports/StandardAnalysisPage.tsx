@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
-import { Settings2, TrendingUp } from "lucide-react";
+import { CalendarClock, Settings2, TrendingUp } from "lucide-react";
 import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import { ListPageSection } from "@/components/layout/list-page-kit";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,7 @@ import {
   useStandardPacks,
   useStandardRun,
 } from "./useStandardAnalysis";
-import { STANDARD_PACK_QUERY } from "./standardRoutes";
+import { STANDARD_PACK_QUERY, standardAnalysisConfigPath } from "./standardRoutes";
 
 export function StandardAnalysisPage() {
   const { user } = useAuth();
@@ -71,12 +71,22 @@ export function StandardAnalysisPage() {
       leadingActions={<ReportCenterBackLink />}
       actions={
         canManage ? (
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/admin/reports/standard/config">
-              <Settings2 className="size-4" aria-hidden />
-              配置分析包
-            </Link>
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            {activePack ? (
+              <Button variant="outline" size="sm" asChild>
+                <Link to={standardAnalysisConfigPath(activePack.packKey)}>
+                  <CalendarClock className="size-4" aria-hidden />
+                  投递设置
+                </Link>
+              </Button>
+            ) : null}
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/admin/reports/standard/config">
+                <Settings2 className="size-4" aria-hidden />
+                配置分析包
+              </Link>
+            </Button>
+          </div>
         ) : null
       }
     >

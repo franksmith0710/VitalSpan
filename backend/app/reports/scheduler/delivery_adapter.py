@@ -35,6 +35,10 @@ _ARTIFACT_EMAIL: dict[str, tuple[str, str]] = {
         "VitalSpan 报表定时报告",
         "报表已生成，附件引用如下：\n\n{ref}",
     ),
+    "standard_render": (
+        "VitalSpan 标准分析定时报告",
+        "标准分析结果已生成，见附件 PDF。\n\n下载引用：{ref}",
+    ),
 }
 
 

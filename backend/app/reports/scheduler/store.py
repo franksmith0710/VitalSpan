@@ -27,6 +27,7 @@ def _schedule_to_row(model: ReportSchedule) -> dict:
         "catalog_node_id": model.catalog_node_id,
         "source_type": model.source_type,
         "source_id": model.source_id,
+        "source_key": model.source_key,
         "owner_id": model.owner_id,
         "recipients": model.recipients or [],
         "attachment_formats": model.attachment_formats or ["pdf"],
@@ -148,7 +149,8 @@ class DbScheduleStore(ScheduleStore):
             model.name = row.get("name")
             model.catalog_node_id = row.get("catalog_node_id")
             model.source_type = row.get("source_type", "template")
-            model.source_id = row["source_id"]
+            model.source_id = row.get("source_id")
+            model.source_key = row.get("source_key")
             model.owner_id = row.get("owner_id")
             model.recipients = row.get("recipients") or []
             model.attachment_formats = row.get("attachment_formats") or ["pdf"]
