@@ -18,6 +18,8 @@ from app.query.dataset.pandas_transform import (
 from app.query.executor import QueryResult
 from app.query.schemas import QueryError
 
+_QUERY_DEFAULT_LIMIT = 1000
+
 
 def _dataset(origin: str = "manual") -> DatasetItemOut:
     return DatasetItemOut(
@@ -135,6 +137,108 @@ def test_transform_query_result_preserves_truncated_flag():
     ):
         out = transform_query_result(db, _dataset(origin="manual"), ds_id, raw)
     assert out.truncated is True
+
+
+def test_transform_query_result_respects_query_limit_and_truncated():
+    """P2-1: QueryExecutor 已截断至 limit 且 truncated=True 时，pandas 不扩行、保留 truncated。"""
+    db = MagicMock()
+    ds_id = uuid.uuid4()
+    rows = [[f"item-{i}", "active"] for i in range(_QUERY_DEFAULT_LIMIT)]
+    raw = QueryResult(
+        columns=["name", "status"],
+        rows=rows,
+        row_count=_QUERY_DEFAULT_LIMIT,
+        truncated=True,
+    )
+    with patch(
+        "app.query.dataset.pandas_transform.is_managed_analytics_datasource",
+        return_value=False,
+    ):
+        out = transform_query_result(db, _dataset(origin="manual"), ds_id, raw)
+    assert out.truncated is True
+    assert out.row_count == _QUERY_DEFAULT_LIMIT
+    assert len(out.rows) == _QUERY_DEFAULT_LIMIT
+
+
+def test_execute_config_limit_boundary_truncated_after_transform():
+    """P2-1: 模拟 fetch 1001 行后 executor 返回 1000 行 + truncated，经 execute 链仍遵守 limit。"""
+    from app.auth.deps import UserContext
+    from app.query.config_store.models import QueryConfigRecord
+    from app.query.dataset.execute_config import execute_dataset_from_config
+    from app.query.dataset.schemas import DatasetExecuteRequest
+    from app.query.schemas import RlsOptions
+    from app.query.translator.schemas import TranslateResponse
+
+    session = MagicMock()
+    user = UserContext(id=str(uuid.uuid4()), username="admin", roles=["admin"])
+    config_id = uuid.uuid4()
+    ds_id = uuid.uuid4()
+    req = DatasetExecuteRequest(
+        configId=config_id,
+        dataSourceId=ds_id,
+        parameters={},
+        limit=_QUERY_DEFAULT_LIMIT,
+        offset=0,
+        rls=RlsOptions(enabled=False),
+    )
+    bound = _dataset(origin="manual")
+    limited_rows = [[f"row-{i}", "active"] for i in range(_QUERY_DEFAULT_LIMIT)]
+    raw_result = QueryResult(
+        columns=["name", "status"],
+        rows=limited_rows,
+        row_count=_QUERY_DEFAULT_LIMIT,
+        truncated=True,
+    )
+    config_row = QueryConfigRecord(
+        id=config_id,
+        config_type="dataset_query",
+        schema_version="1.0",
+        ref_type="dataset",
+        ref_id=uuid.uuid4(),
+        payload={
+            "dataSourceId": str(ds_id),
+            "connectorType": "mysql",
+            "schema": "demo",
+            "table": "orders",
+            "columns": ["name", "status"],
+            "conditions": {"logic": "AND", "conditions": []},
+            "limit": _QUERY_DEFAULT_LIMIT,
+            "offset": 0,
+        },
+        revision=1,
+        owner_id=uuid.uuid4(),
+    )
+
+    with (
+        patch("app.query.dataset.execute_config.get_config_by_id", return_value=config_row),
+        patch("app.query.dataset.execute_config.assert_config_readable"),
+        patch("app.query.dataset.execute_config.assert_visible"),
+        patch(
+            "app.query.dataset.execute_config.translate_from_config_record",
+            return_value=TranslateResponse(
+                sql="SELECT name, status FROM orders",
+                parameters={},
+                connectorType="mysql",
+            ),
+        ),
+        patch(
+            "app.metadata.dataset.service.find_dataset_by_bound_config",
+            return_value=bound,
+        ),
+        patch("app.query.dataset.execute_config._executor.execute_sql", return_value=raw_result),
+        patch(
+            "app.query.dataset.pandas_transform.is_managed_analytics_datasource",
+            return_value=False,
+        ),
+        patch("app.query.dataset.execute_config.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value.query_default_limit = _QUERY_DEFAULT_LIMIT
+        mock_settings.return_value.vitalspan_env = "development"
+        resp = execute_dataset_from_config(session, user, req)
+
+    assert resp.truncated is True
+    assert resp.row_count == _QUERY_DEFAULT_LIMIT
+    assert len(resp.rows) == _QUERY_DEFAULT_LIMIT
 
 
 def test_probe_dataset_pandas_budget_ms():
