@@ -345,8 +345,11 @@ dataSourceId + ChartViewConfig(mode=sql|table|native)
 Dataset CRUD（ORM `datasets` 表）
   → bind-query-config（dataset_query 配置）
   → POST /query/dataset/execute（真实 SQL 执行）
+  → [外部源] query pandas 清洗（ingestion/etl_rules 复用；sync_job/托管库跳过）
   → 图表 ChartViewConfig(mode=dataset, datasetId, configId)
 ```
+
+**pandas 落点**：同步任务在写托管分析库前过 pandas（`ingestion/sync_executor` → `etl_rules.apply_rules`）；外部源 Dataset 在 execute 出数后内存过 pandas（`query/dataset/pandas_transform.py`）。图表 sql/table 直连不经 Dataset，不强制 pandas。
 
 两条路径**并存**：编辑页 `ChartEditRail` 可选 Dataset 或 SQL；快速创建向导默认走 Dataset。直连与 Dataset 可迁移（`POST /datasets/migrate-binding` 规划中）。
 

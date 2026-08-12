@@ -80,11 +80,11 @@
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：M1B
 - **里程碑对齐**：M1B · 已完成 · 2026-07-03
-- **描述**：JSON 规则：列重命名、类型转换、空值填充、简单过滤。
+- **描述**：JSON 规则：列重命名、类型转换、空值填充、简单过滤（pandas DataFrame 实现）。同步写托管库前执行；外部源 Dataset 查询时复用同一引擎做 auto_profile（见 QUERY-009 `pandas_transform.py`）。
 - **验收标准**：
   - [x] 规则在写托管库前生效
   - [x] 脏数据样例经规则后字段符合配置
-- **代码锚点**：`backend/app/ingestion/etl_rules.py`
+- **代码锚点**：`backend/app/ingestion/etl_rules.py` · `backend/app/query/dataset/pandas_transform.py`（外部源 Dataset 查询清洗）
 - **演化建议**：`tests/test_etl_rules.py` T-ETL-23~24（type 数字不崩、cast_type 缺 column KeyError）；`test_sync_executor` T-ETL-25 apply_rules 异常 failed 不写库；补 executor+rules 组合失败降级场景
 
 ### [DATA-003] Admin 配置台页面

@@ -88,6 +88,7 @@
 ### M-DEPTH F-A（QUERY-009 · 2026-07-10）
 
 - **`execute_dataset_from_config`**：`config_store` 读取 `dataset_query` → `translate_from_config_record` → `QueryExecutor.execute` → 真实 rows
+- **pandas 查询清洗（2026-08）**：外部源 Dataset 在 SQL 出数后、返回前经 `query/dataset/pandas_transform.py`（复用 `ingestion/etl_rules`）；`origin=sync_job` 或托管分析库数据源跳过（已在同步写库前清洗）。失败 → `QUERY_DATASET_TRANSFORM_FAILED`；探针 `probe_dataset_pandas_budget_ms` ≤100ms
 - **与 execute-plan 分工**：`/dataset/execute-plan` 保留契约/探针；图表 `useChartExecute` mode=dataset 走 `/dataset/execute`
 - **FE**：`DatasetBindPanel` 创建并绑定 config；`ChartEditRail` `DatasetPickerPanel`；`useChartExecute` dataset 路径
 

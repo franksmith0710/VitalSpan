@@ -12,7 +12,8 @@
 
 - 同步任务定义与调度（内联或引用 MySQL 数据源 → 托管分析库表）
 - 全量覆盖与增量 upsert（单列 PK + 水位）
-- 轻量 ETL 规则（写库前清洗；创建同步任务时按源表列元数据自动生成默认规则）
+- 轻量 ETL 规则（写库前 pandas 清洗；创建同步任务时按源表列元数据自动生成默认规则）
+- 同步产物 Dataset 读托管分析库时不再重复 query pandas（清洗已在写库前完成）
 - 同步运行历史与失败重试
 
 ## 边界
@@ -40,7 +41,7 @@
 | `ingestion.sync_fetch` / `sync_write` | MySQL 拉取 + PG 全量/增量写入 | 已实现 |
 | `ingestion.sync_executor` | 同步编排（mysql 源，1 次重试） | 已实现 |
 | `ingestion.sync_consume` | 同步成功后消费链：prepare 分析库、ensure-dataset、状态解析 | 已实现 |
-| `ingestion.etl_rules` | 清洗规则引擎 | 已实现 |
+| `ingestion.etl_rules` | 清洗规则引擎（pandas DataFrame；写托管库前执行） | 已实现 |
 | `ingestion.scheduler` | APScheduler 定时触发 | 已实现 |
 | `GET/POST /api/v1/ingestion/sync-jobs` | 任务 API | 已实现 |
 
