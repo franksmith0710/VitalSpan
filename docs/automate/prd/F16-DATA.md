@@ -84,7 +84,8 @@
 - **验收标准**：
   - [x] 规则在写托管库前生效
   - [x] 脏数据样例经规则后字段符合配置
-- **代码锚点**：`backend/app/ingestion/etl_rules.py` · `backend/app/query/dataset/pandas_transform.py`（外部源 Dataset 查询清洗）
+- **代码锚点**：`backend/app/ingestion/etl_rules.py`（同步写库前）· `backend/app/metadata/dataset/transform_rules.py`（manual Dataset 查询清洗）· `backend/app/query/dataset/pandas_transform.py`
+- **三分区**：① 同步 ETL（`EtlRuleSet`）② 查询清洗（`transform_rules`，仅 `origin=manual`）③ 计算字段（`computed_fields`）；`sync_job` 产物跳过 query pandas（`META_DATASET_TRANSFORM_SYNC_LOCKED`）
 - **演化建议**：`tests/test_etl_rules.py` T-ETL-23~24（type 数字不崩、cast_type 缺 column KeyError）；`test_sync_executor` T-ETL-25 apply_rules 异常 failed 不写库；补 executor+rules 组合失败降级场景
 
 ### [DATA-003] Admin 配置台页面

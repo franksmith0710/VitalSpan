@@ -88,7 +88,7 @@
 ### M-DEPTH F-A（QUERY-009 · 2026-07-10）
 
 - **`execute_dataset_from_config`**：`config_store` 读取 `dataset_query` → `translate_from_config_record` → `QueryExecutor.execute` → 真实 rows
-- **pandas 查询清洗（2026-08）**：所有 Dataset execute 出数后、返回前经 `query/dataset/pandas_transform.py`（复用 `ingestion/etl_rules`）。自定义规则存 `datasets.transform_rules`，Admin「查询清洗」Tab。失败 → `QUERY_DATASET_TRANSFORM_FAILED`
+- **pandas 查询清洗（2026-08）**：`origin=manual` 的外部源 Dataset 在 `dataset/execute` 出数后经 `query/dataset/pandas_transform.py`（复用 `ingestion/etl_rules` + `datasets.transform_rules`）。`origin=sync_job` 同步产物已在写库前清洗，**跳过** query pandas。Admin「查询清洗」Tab 仅 manual 型可编辑。失败 → `QUERY_DATASET_TRANSFORM_FAILED`
 - **出图路径**：`useChartExecute` **仅** `mode=dataset` → `/dataset/execute`；sql/table/native 直连已废弃
 - **FE**：`DatasetBindPanel` 创建并绑定 config；`ChartEditRail` `DatasetPickerPanel`；`useChartExecute` dataset 路径
 

@@ -115,6 +115,12 @@ def _pack_payload() -> dict:
     }
 
 
+def _pack_payload_lifecycle_only() -> dict:
+    payload = _pack_payload()
+    payload["enabledThemes"] = ["lifecycle"]
+    return payload
+
+
 def _create_standard_schedule(client: TestClient) -> str:
     created = client.post(
         "/api/v1/reports/schedules",
@@ -200,3 +206,54 @@ def test_standard_schedule_execute_with_mock_delivery(mock_export, client: TestC
     history = client.get(f"/api/v1/reports/schedules/{schedule_id}/executions", headers=AUTH)
     assert history.status_code == 200
     assert history.json()["total"] >= 1
+
+
+@patch("app.reports.standard.service.engine_execute.execute_dataset_section")
+def test_export_standard_attachments_pdf_bytes(mock_section, client: TestClient):
+    """DG3: non-mock export returns real PDF bytes."""
+    from app.reports.scheduler.standard_export import export_standard_attachments
+
+    _seed_physical_equipment()
+    client.put(f"/api/v1/reports/standard/packs/{_PACK_KEY}", headers=AUTH, json=_pack_payload_lifecycle_only())
+    mock_section.return_value = {
+        "columns": ["status", "cnt"],
+        "rows": [["active", 3]],
+        "elapsedMs": 1.0,
+    }
+    actor = UserContext(id="1", username="admin", roles=["admin"])
+    _ref, kind, attachments, export_error = export_standard_attachments(_PACK_KEY, ["pdf"], actor)
+    assert export_error is None
+    assert kind == "standard_render"
+    assert attachments
+    pdf_bytes = attachments[0][0]
+    assert pdf_bytes.startswith(b"%PDF")
+    assert len(pdf_bytes) > 100
+
+
+@patch("app.reports.standard.service.engine_execute.execute_dataset_section")
+def test_standard_schedule_execute_no_fake_deliver_without_delivery_mock(mock_section, client: TestClient):
+    """DG5: without X-Rpt-Delivery-Mock, standard schedule must not report delivered."""
+    _seed_physical_equipment()
+    client.put(f"/api/v1/reports/standard/packs/{_PACK_KEY}", headers=AUTH, json=_pack_payload_lifecycle_only())
+    mock_section.return_value = {
+        "columns": ["status", "cnt"],
+        "rows": [["active", 3]],
+        "elapsedMs": 1.0,
+    }
+    schedule_id = _create_standard_schedule(client)
+    executed = client.post(
+        f"/api/v1/reports/schedules/{schedule_id}/execute",
+        headers={
+            **AUTH,
+            "Idempotency-Key": "std-schedule-unconfigured",
+            "X-Rpt-Semi-Real": "1",
+        },
+    )
+    assert executed.status_code == 200, executed.text
+    body = executed.json()
+    assert body["status"] != "semi_real_succeeded"
+    assert body["status"] in {"semi_real_failed", "semi_real_delivery_degraded"}
+    assert body.get("errorMessage")
+    steps = body.get("deliverySteps", [])
+    assert steps
+    assert all(step.get("status") != "delivered" for step in steps)

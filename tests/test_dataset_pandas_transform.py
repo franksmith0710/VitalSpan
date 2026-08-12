@@ -67,10 +67,10 @@ def test_apply_query_transform_failure_raises_query_error():
     assert exc.value.code == "QUERY_DATASET_TRANSFORM_FAILED"
 
 
-def test_needs_query_time_pandas_always_true():
+def test_needs_query_time_pandas_by_origin():
     db = MagicMock()
     ds_id = uuid.uuid4()
-    assert needs_query_time_pandas(db, _dataset(origin="sync_job"), ds_id) is True
+    assert needs_query_time_pandas(db, _dataset(origin="sync_job"), ds_id) is False
     assert needs_query_time_pandas(db, _dataset(origin="manual"), ds_id) is True
     assert needs_query_time_pandas() is True
 
@@ -222,6 +222,81 @@ def test_probe_dataset_pandas_budget_ms():
     result = probe_dataset_pandas_budget_ms()
     assert result.ok is True
     assert result.elapsed_ms >= 0
+
+
+def test_execute_config_skips_transform_for_sync_dataset():
+    from app.auth.deps import UserContext
+    from app.query.config_store.models import QueryConfigRecord
+    from app.query.dataset.execute_config import execute_dataset_from_config
+    from app.query.dataset.schemas import DatasetExecuteRequest
+    from app.query.schemas import RlsOptions
+    from app.query.translator.schemas import TranslateResponse
+
+    session = MagicMock()
+    user = UserContext(id=str(uuid.uuid4()), username="admin", roles=["admin"])
+    config_id = uuid.uuid4()
+    ds_id = uuid.uuid4()
+    req = DatasetExecuteRequest(
+        configId=config_id,
+        dataSourceId=ds_id,
+        parameters={},
+        limit=100,
+        offset=0,
+        rls=RlsOptions(enabled=False),
+    )
+    bound = _dataset(origin="sync_job")
+    raw_result = QueryResult(
+        columns=["product_name", "amount"],
+        rows=[["  X  ", "10"]],
+        row_count=1,
+        truncated=False,
+    )
+    config_row = QueryConfigRecord(
+        id=config_id,
+        config_type="dataset_query",
+        schema_version="1.0",
+        ref_type="dataset",
+        ref_id=uuid.uuid4(),
+        payload={
+            "dataSourceId": str(ds_id),
+            "connectorType": "postgresql",
+            "schema": "public",
+            "table": "orders_clean",
+            "columns": ["product_name", "amount"],
+            "conditions": {"logic": "AND", "conditions": []},
+            "limit": 100,
+            "offset": 0,
+        },
+        revision=1,
+        owner_id=uuid.uuid4(),
+    )
+
+    with (
+        patch("app.query.dataset.execute_config.get_config_by_id", return_value=config_row),
+        patch("app.query.dataset.execute_config.assert_config_readable"),
+        patch("app.query.dataset.execute_config.assert_visible"),
+        patch(
+            "app.query.dataset.execute_config.translate_from_config_record",
+            return_value=TranslateResponse(
+                sql="SELECT product_name, amount FROM orders_clean",
+                parameters={},
+                connectorType="postgresql",
+            ),
+        ),
+        patch(
+            "app.metadata.dataset.service.find_dataset_by_bound_config",
+            return_value=bound,
+        ),
+        patch("app.query.dataset.execute_config._executor.execute_sql", return_value=raw_result),
+        patch("app.query.dataset.execute_config.transform_query_result") as mock_transform,
+        patch("app.query.dataset.execute_config.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value.query_default_limit = 1000
+        mock_settings.return_value.vitalspan_env = "development"
+        resp = execute_dataset_from_config(session, user, req)
+
+    mock_transform.assert_not_called()
+    assert resp.rows[0][0] == "  X  "
 
 
 def test_execute_config_applies_transform_for_external_source():

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router";
 import { toast } from "sonner";
 import { useListBatchMode } from "@/components/layout/list-batch-delete";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
@@ -6,6 +7,7 @@ import { useFormDirtyState } from "@/hooks/use-form-dirty-state";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -44,19 +46,24 @@ export function DatasetTransformRulesPanel({
   columnsLoading,
   hasDataSource,
   disabledReason,
+  etlRulesHref,
 }: {
   datasetId: string;
   columnNames: string[];
   columnsLoading: boolean;
   hasDataSource: boolean;
   disabledReason?: string | null;
+  etlRulesHref?: string | null;
 }) {
   const [rules, setRules] = useState<EtlRule[]>([]);
+  const [queryPandasApplies, setQueryPandasApplies] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState(false);
   const [alignConfirmOpen, setAlignConfirmOpen] = useState(false);
+
+  const readOnly = Boolean(disabledReason) || !queryPandasApplies;
 
   const { isDirty, isBaselineReady, resetBaseline, markSaved } = useFormDirtyState(
     rules,
@@ -76,6 +83,7 @@ export function DatasetTransformRulesPanel({
         `/api/v1/datasets/${datasetId}/transform-rules`,
       );
       setRules(data.rules);
+      setQueryPandasApplies(data.queryPandasApplies);
       resetBaseline(data.rules);
     } catch (err) {
       setError(mapApiError(err));
@@ -103,6 +111,7 @@ export function DatasetTransformRulesPanel({
         { method: "PUT", body: JSON.stringify({ rules }) },
       );
       setRules(data.rules);
+      setQueryPandasApplies(data.queryPandasApplies);
       markSaved(data.rules);
       toast.success("查询清洗规则已保存");
     } catch (err) {
@@ -122,6 +131,7 @@ export function DatasetTransformRulesPanel({
         { method: "POST" },
       );
       setRules(data.rules);
+      setQueryPandasApplies(data.queryPandasApplies);
       resetBaseline(data.rules);
       toast.success(`已对齐 ${data.rules.length} 条规则`);
     } catch (err) {
@@ -132,20 +142,32 @@ export function DatasetTransformRulesPanel({
     }
   };
 
-  if (disabledReason) {
-    return (
-      <Alert severity="warning" appearance="subtle" className="mx-6 my-4 rounded-xl">
-        <AlertTitle className="text-theme-sm">无需配置查询清洗</AlertTitle>
-        <AlertDescription className="text-theme-xs">{disabledReason}</AlertDescription>
-      </Alert>
-    );
-  }
-
   if (loading) {
     return (
       <div className="space-y-3 px-6 py-4">
         <Skeleton className="h-16 w-full rounded-xl" />
         <Skeleton className="h-40 w-full rounded-xl" />
+      </div>
+    );
+  }
+
+  if (readOnly) {
+    return (
+      <div className="px-6 py-4">
+        <Alert severity="info" appearance="subtle" className="rounded-xl">
+          <AlertTitle className="text-theme-sm">同步产物无需配置查询清洗</AlertTitle>
+          <AlertDescription className="text-theme-xs leading-relaxed">
+            {disabledReason ??
+              "此 Dataset 由同步任务产出，数据已在写入托管分析库前完成清洗。出图查询不会再次执行 pandas 清洗。"}
+            {etlRulesHref ? (
+              <span className="mt-3 block">
+                <Button asChild variant="outline" size="sm">
+                  <Link to={etlRulesHref}>前往同步任务清洗规则</Link>
+                </Button>
+              </span>
+            ) : null}
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }

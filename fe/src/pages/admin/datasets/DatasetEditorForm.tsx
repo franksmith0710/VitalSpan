@@ -87,6 +87,7 @@ export function DatasetEditorForm({
     columnsLoading: boolean;
     hasDataSource: boolean;
     disabledReason?: string | null;
+    etlRulesHref?: string | null;
   };
 }) {
   const patch = useCallback(
@@ -206,7 +207,7 @@ export function DatasetEditorForm({
             >
               <DatasetFormSection
                 title="计算字段"
-                description="基于物理列编写表达式，供图表与查询服务引用。"
+                description="基于物理列编写业务表达式（如毛利率、同比），供图表与查询引用；脏数据清洗请在「查询清洗」或同步任务 ETL 中配置。"
               >
                 <ComputedFieldsEditor
                   fields={values.computedFields}
@@ -226,6 +227,7 @@ export function DatasetEditorForm({
                   columnsLoading={transformRulesPrefill.columnsLoading}
                   hasDataSource={transformRulesPrefill.hasDataSource}
                   disabledReason={transformRulesPrefill.disabledReason}
+                  etlRulesHref={transformRulesPrefill.etlRulesHref}
                 />
               </TabsContent>
             ) : null}

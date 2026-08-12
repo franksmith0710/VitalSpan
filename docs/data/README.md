@@ -5,8 +5,8 @@
 > **域边界**：各表业务语义见 [services/README.md](../services/README.md)。
 
 ```yaml
-alembic_head: 0041
-revision_count: 41
+alembic_head: 0046
+revision_count: 46
 migrations_path: backend/migrations/versions/
 ```
 
@@ -22,16 +22,16 @@ migrations_path: backend/migrations/versions/
 
 | 项 | 值 |
 |----|-----|
-| **Head revision** | `0041`（`0041_report_center_final.py`） |
-| **上一版** | `0040_report_artifact_owners.py` |
-| **主要新增** | `report_jobs` · `report_favorites` · `report_recent_views` · `report_delivery_audit` · `report_template_versions` |
+| **Head revision** | `0046`（`0046_standard_schedule_source_key.py`） |
+| **上一版** | `0045`（`0045_datasets_transform_rules.py`） |
+| **主要新增** | `report_schedules.source_key`；`source_id` 可空（标准分析定时投递） |
 
 升级命令（本地）：
 
 ```bash
 cd backend
 alembic upgrade head
-alembic current   # 应显示 0041
+alembic current   # 应显示 0046
 ```
 
 ## 修订一览（按域分组）
@@ -70,6 +70,11 @@ alembic current   # 应显示 0041
 | 0039 | `entity_physical_embed_gov` | governance | 实体物理表/embed 治理 |
 | 0040 | `report_artifact_owners` | reports | 产物 owner ACL |
 | 0041 | `report_center_final` | reports | 报表中心 jobs/收藏/最近/投递审计/模板版本 |
+| 0042 | `report_dismissed_failures` | reports | 调度失败提醒忽略 |
+| 0043 | `ai_viz_artifacts` | viz | AI 可视化产物 |
+| 0044 | `standard_analysis` | reports | 标准分析包持久化 |
+| 0045 | `datasets_transform_rules` | metadata | Dataset 转换规则 |
+| 0046 | `standard_schedule_source_key` | reports | 调度 `source_key`（标准分析投递） |
 
 ## 域 ↔ 主要表（导航）
 
@@ -93,4 +98,5 @@ alembic current   # 应显示 0041
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 0.1.1 | 2026-08-12 | head 升至 0046；补 0042–0046 修订行 |
 | 0.1.0 | 2026-08-09 | 初版：head 0041、修订一览、域表导航 |

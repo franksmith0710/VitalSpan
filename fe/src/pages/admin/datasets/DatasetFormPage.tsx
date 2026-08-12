@@ -336,12 +336,20 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
   const transformRulesPrefill = useMemo(() => {
     if (mode !== "edit" || !id) return undefined;
     const hasSource = Boolean(effectiveDataSourceIdForColumns && primaryTableName);
+    const isSyncOrigin = datasetItem?.origin === "sync_job";
+    const syncJobId = datasetItem?.syncJobId;
     return {
       datasetId: id,
       columnNames,
       columnsLoading,
       hasDataSource: hasSource,
-      disabledReason: null,
+      disabledReason: isSyncOrigin
+        ? "此 Dataset 由同步任务产出，结构性清洗（类型转换、过滤删除行等）已在写入托管分析库前完成。请在同步任务的「清洗规则」中配置。"
+        : null,
+      etlRulesHref:
+        isSyncOrigin && syncJobId
+          ? `/admin/ingestion/sync-jobs/${syncJobId}/etl-rules`
+          : null,
     };
   }, [
     mode,
@@ -350,6 +358,8 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
     columnsLoading,
     effectiveDataSourceIdForColumns,
     primaryTableName,
+    datasetItem?.origin,
+    datasetItem?.syncJobId,
   ]);
 
   const headerLeadingActions = (

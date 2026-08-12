@@ -1,16 +1,16 @@
 # 标准分析定时投递 迭代评估报告
 
-> 持续追踪文档 · 最近更新 2026-08-12 · 当前第 1 轮
+> 持续追踪文档 · 最近更新 2026-08-12 · 当前第 2 轮
 
 ## 本轮摘要
 
 | 项目 | 内容 |
 |------|------|
-| 当前分数 | 8.0 / 10（基线；分数仅作趋势参考，交付判定见「可交付门槛」） |
-| 当前决策 | 模块级可验收；全链路 SMTP 真投递待补验 |
-| 最大阻塞 | ISSUE-002：执行链未验真 PDF 生成与 SMTP 全链路 |
-| 下一步动作 | 隐藏标准分析无关的 Playwright 健康提示 → 补 1 条非 mock 导出测 → staging SMTP 试发签收 |
-| 验证状态 | 部分验证（pytest 3 + vitest 1 绿；无 staging 真机投递） |
+| 当前分数 | 8.4 / 10（+0.4；分数仅作趋势参考，交付判定见「可交付门槛」） |
+| 当前决策 | 模块级可交付；staging SMTP 真机试发为唯一剩余签收项 |
+| 最大阻塞 | ISSUE-006：staging 环境 SMTP 全链路未实操验证 |
+| 下一步动作 | staging 配置 SMTP → 立即试发 → 下载附件签收 |
+| 验证状态 | 部分验证（pytest 5 + vitest 3 绿；无 staging 真机投递） |
 
 ---
 
@@ -50,7 +50,7 @@
 
 ### D1：标准分析投递是否展示 Playwright 导出健康检查
 
-- **状态**：🟡 待确认
+- **状态**：✅ 已确认（2026-08-12，选项 A）
 - **背景**：`StandardSchedulePanel` 复用 `ScheduleFormFields`，默认渲染 `ScheduleExportHealthAlert`（Playwright PDF），而标准分析走 `render_document` reportlab 路径，与 Playwright 无关（`ScheduleFormFields.tsx:214-217`）。
 - **选项对比**：
 
@@ -61,7 +61,7 @@
 | C. | 新增「分析包数据就绪」预检块 | 对齐计划「精简预检」 | 额外 FE 工作量 |
 
 - **影响范围**：`StandardSchedulePanel.tsx` · `ScheduleFormFields.tsx`
-- **确认记录**：（待填写：确认人 / 日期 / 选定选项）
+- **确认记录**：2026-08-12 · 选项 A · `StandardSchedulePanel` 使用 `hideStandaloneHealthAlerts` + 独立 `ScheduleDeliveryHealthAlert`
 
 ---
 
@@ -71,11 +71,12 @@
 
 | 门槛ID | 条件 | 验证方式 | 当前状态 |
 |--------|------|----------|----------|
-| DG1 | G1：后端契约（迁移 + schema + 列表/创建/执行 API） | `pytest tests/test_standard_schedule_delivery.py` | ✅ 通过（2026-08-12，3 passed） |
-| DG2 | G1：配置页嵌入投递 UI | `vitest standard-schedule.smoke.test.tsx` + 配置页走查 | ✅ 通过（2026-08-12，1 passed） |
-| DG3 | G5：非 mock 导出 PDF bytes 非空 | 集成测或 staging 下载 | ❌ 未达成 |
+| DG1 | G1：后端契约（迁移 + schema + 列表/创建/执行 API） | `pytest tests/test_standard_schedule_delivery.py` | ✅ 通过（2026-08-12，5 passed） |
+| DG2 | G1：配置页嵌入投递 UI | `vitest standard-schedule.smoke.test.tsx` + 配置页走查 | ✅ 通过（2026-08-12，smoke 含无 Playwright 文案） |
+| DG3 | G5：非 mock 导出 PDF bytes 非空 | `test_export_standard_attachments_pdf_bytes` | ✅ 通过（2026-08-12） |
 | DG4 | PRD / services / api 文档同步 | 文档对账 | ✅ 通过 |
-| DG5 | G3：未配 SMTP 无假成功（standard 路径） | 无 SMTP 执行断言 `unconfigured`/失败 | ⚠️ 部分（沿用 RPT-005 全局行为，无 standard 专项测） |
+| DG5 | G3：未配 SMTP 无假成功（standard 路径） | `test_standard_schedule_execute_no_fake_deliver_without_delivery_mock` | ✅ 通过（2026-08-12） |
+| DG6 | staging SMTP 真投递签收 | 演示机立即试发 + 收件箱附件 | ❌ 未达成 |
 
 ### 轮次执行纪律
 
@@ -93,173 +94,128 @@
 | 轮次 | 日期 | 综合分 | 功能 | 体验 | 质量 | 稳定 | 性能 | 迭代友好 | 关键变化 |
 |------|------|--------|------|------|------|------|------|---------|---------|
 | **R1** | 2026-08-12 | **8.0** | 9 | 7 | 8 | 8 | 7 | 8 | 首评：方案全量落地，真投递未验 |
+| **R2** | 2026-08-12 | **8.4** | 9 | 8 | 9 | 8 | 7 | 8 | 收口 P2：健康提示/测/文档；DG3/DG5 绿 |
 
 ### 趋势图（文字版）
 
 ```
 综合分  R1: ████████░░ 8.0  (基线)
+        R2: ████████░░ 8.4  (+0.4)
 ```
 
 ### 累计已解决问题
 
-（首轮，暂无）
+- ✅ [R2] ISSUE-001：隐藏 Playwright 健康提示，仅保留 SMTP 健康（`StandardSchedulePanel.tsx`）
+- ✅ [R2] ISSUE-002：补非 mock PDF 导出测（`test_export_standard_attachments_pdf_bytes`）
+- ✅ [R2] ISSUE-003：调度中心页描述含标准分析（`ReportSchedulesPage.tsx:198`）
+- ✅ [R2] ISSUE-004：`arch.md` / `docs/data/README.md` head 升至 0046
 
 ### 仍待解决问题
 
 | 问题ID | 严重度 | 来源 | 状态 | 问题 | 影响 | 下一步 | 目标轮次 |
 |--------|--------|------|------|------|------|--------|----------|
-| ISSUE-001 | P2 | R1 提出 | 未解决 | 标准分析投递表单展示 Playwright 导出健康 Alert，与 reportlab 路径无关（`ScheduleFormFields.tsx:214-217`） | 管理员误判环境依赖，可能放弃创建 | 待 D1 确认后传 `hideStandaloneHealthAlerts` 或拆分健康块 | R2 |
-| ISSUE-002 | P2 | R1 提出 | 未解决 | 执行测试 mock 了 `export_standard_attachments`，未验真 PDF bytes（`test_standard_schedule_delivery.py:174`） | DG3 无法勾选；回归可能漏导出回归 | 补 1 条非 mock 集成测（种子表 + run） | R2 |
-| ISSUE-003 | P2 | R1 提出 | 未解决 | 调度中心页描述仅写看板/大屏，未含标准分析（`ReportSchedulesPage.tsx:198`） | 用户不知可在该页看到 standard 来源 | 改 description 或 Tab 文案 | R2 |
-| ISSUE-004 | P2 | R1 提出 | 未解决 | `docs/arch.md` Alembic head 仍登记 0041，实际已有 `0046` | 部署/迁移文档误导 | 同步 arch + data README head | R2 |
-| ISSUE-005 | P2 | R1 提出 | 未解决 | 无分析包物理表/主题就绪的精简预检（计划可选项未做） | 创建后首次执行才暴露数据问题 | 待 D1 选项 C 或运行时错误文案优化 | R3 |
+| ISSUE-005 | P2 | R1 提出 | 未解决 | 无分析包物理表/主题就绪的精简预检（计划可选项） | 创建后首次执行才暴露数据问题 | 运行时错误文案优化或 D1 选项 C | R3 |
+| ISSUE-006 | P1 | R2 提出 | 未解决 | staging SMTP 真投递未签收（DG6） | 无法对外宣称生产级邮件投递 | deploy-dev 试发 + 附件验收 | R3 |
 
 ---
 
-## 🔍 当前轮次评估（第 1 轮）
+## 🔍 当前轮次评估（第 2 轮）
 
 **评估时间**：2026-08-12  
-**综合评分**：**8.0 / 10**  
-**评估结论**：方案规定的后端、前端、文档与自动化测试均已落地，可作为模块验收基线；全链路真投递与部分 UX 细节尚待 R2 收口。
+**综合评分**：**8.4 / 10**  
+**评估结论**：R1 遗留的 P2 项（健康提示、真 PDF 测、文案、arch head）已收口；自动化门槛 DG1–DG5 全绿，仅剩 staging SMTP 真机签收（DG6）。
 
 ### 本轮范围
 
 **评估范围：**
-- 标准分析定时投递全栈实现（迁移 0046、scheduler、FE 面板、文档、测试）
-- 与 RPT-005 看板/模板投递链路的复用程度
+- R1 台账 ISSUE-001～004 修复验证
+- 新增 pytest/vitest 用例
 
 **不评估范围：**
-- 看板 Playwright PDF 既有能力
-- 标准分析工作台主题渲染质量（属 RPT-002 主体）
-- staging 环境 SMTP 真机（本轮未执行）
+- staging 演示机 SMTP 配置与真收件（需人工/运维）
 
 ### 目标对齐
 
-首轮：指标见 `## 🎯 迭代目标`。
+目标同首轮，指标见 `## 🎯 迭代目标`，本轮达成度更新见下。
 
 #### 目标达成度表
 
 | 指标ID | 指标 | 目标值 | 当前值 | 达成度 | 阻塞项 |
 |--------|------|--------|--------|--------|--------|
-| G1 | 配置页创建/激活 standard 调度 | 3 步内完成 | UI 已嵌入 + smoke 绿 | 代码已实现，未实操验证 | — |
-| G2 | 调度中心可见执行历史 | 含 deliverySteps | pytest mock 投递通过 | 部分达成（API 层） | ISSUE-002 |
-| G3 | 未配 SMTP 禁止假成功 | unconfigured/失败可读 | 复用 RPT-005 全局逻辑 | 未启动（无 standard 专项测） | DG5 |
-| G4 | 快照与投递独立 | 互不影响 | `standard/jobs.py` 无 dispatch | 已达成 | — |
-| G5 | PDF 非空含启用主题 | bytes > 0 | 仅 mock 返回假 PDF | 未启动 | ISSUE-002 · DG3 |
+| G1 | 配置页创建/激活 standard 调度 | 3 步内完成 | UI + smoke 绿（无 Playwright 误导） | 代码已实现，未实操验证 | — |
+| G2 | 调度中心可见执行历史 | 含 deliverySteps | pytest 5 条含 mock/真导出/禁假成功 | 部分达成（API 层） | — |
+| G3 | 未配 SMTP 禁止假成功 | 失败可读 | `no_fake_deliver` 测通过 | 已达成（测层） | ISSUE-006 真机 |
+| G4 | 快照与投递独立 | 互不影响 | 不变 | 已达成 | — |
+| G5 | PDF 非空含启用主题 | bytes > 0 | `export_standard_attachments` 真 PDF | 已达成（测层） | ISSUE-006 真机 |
 
-**达成度判定**：1/5 项指标达成（G4），2 项部分/代码就绪未实操验证，核心阻塞 2 个（真 PDF、SMTP 签收），本轮判定为**稳步推进、未达可对外交付门槛**。
+**达成度判定**：3/5 项指标达成（G3/G4/G5 测层），G1/G2 部分；可交付门槛 5/6 通过（仅 DG6 staging 未过）。
 
 ### 现状概览
 
-**已实现能力：**
-- ✅ Alembic `0046`：`report_schedules.source_key`，`source_id` 可空
-- ✅ API：`sourceType=standard` + `sourceKey` 创建/列表/校验（`scheduler/schemas.py` · `api/v1/reports/__init__.py`）
-- ✅ 执行器：`semi_real_execute_schedule` standard 分支 → `standard_export.py` → `dispatch_artifact`
-- ✅ 邮件模板：`delivery_adapter.py` 支持 `standard_render`
-- ✅ FE：`StandardSchedulePanel` 嵌入 `StandardAnalysisConfigPage`；工作台「投递设置」深链；`scheduleSourceMeta` 标准分析来源
-- ✅ 测试：`test_standard_schedule_delivery.py`（3）· `standard-schedule.smoke.test.tsx`（1）
-- ✅ 文档：`F08-RPT.md` · `reports.md` · `api/README.md` 已同步
+**能力变化（本轮）：**
+- ✅ `StandardSchedulePanel`：隐藏 Playwright 健康块，独立 SMTP 健康提示
+- ✅ `test_export_standard_attachments_pdf_bytes`：验真 `%PDF` bytes
+- ✅ `test_standard_schedule_execute_no_fake_deliver_without_delivery_mock`：无 mock header 禁止 delivered
+- ✅ `ReportSchedulesPage` 描述含标准分析
+- ✅ `arch.md` / `docs/data/README.md` head → 0046
 
-**明确不做（本期，已遵守）：**
-- 飞书等新通道；合并 snapshot job；Celery 队列化
+R1 已有能力维持不变。
 
 ### 六维评分
 
 | 维度 | 权重 | 得分 | 加权分 | 一句话评价 |
 |------|------|------|--------|-----------|
-| 功能完整度 | 25% | 9 | 2.3 | 计划 5 todo 全落地，仅可选预检与 companion 扩展未做 |
-| 用户体验 | 20% | 7 | 1.4 | 复用调度表单一致性好，但 Playwright 提示误导（ISSUE-001） |
-| 代码质量 | 20% | 8 | 1.6 | 清晰复用 RPT-005，边界分离；测覆盖偏 mock（ISSUE-002） |
-| 稳定性 | 15% | 8 | 1.2 | 导出失败走 `semi_real_failed`，无静默成功路径 |
-| 性能效率 | 10% | 7 | 0.7 | 多主题串行 run，大包可能慢；M1 可接受 |
-| 迭代友好度 | 10% | 8 | 0.8 | `sourceKey` 扩展不破坏 template/dashboard 既有模型 |
-| **综合** | 100% | — | **8.0** | — |
-
-#### 雷达图（文字版）
-
-```
-功能完整度  █████████░ 9/10
-用户体验    ███████░░░ 7/10
-代码质量    ████████░░ 8/10
-稳定性      ████████░░ 8/10
-性能效率    ███████░░░ 7/10
-迭代友好度  ████████░░ 8/10
-```
-
-### 优点分析
-
-#### ✅ 复用 RPT-005 而非平行造轮子
-- **是什么**：扩展 `sourceType=standard` + `sourceKey`，执行与投递走既有 FSM、APScheduler、`deliver_to_channels`。
-- **为什么好**：降低维护成本，调度中心/失败重试/多渠道行为与看板一致。
-- **代码佐证**：`backend/app/reports/scheduler/executor.py:321-327` · `service.py:126-137`
-
-#### ✅ 快照与投递职责分离清晰
-- **是什么**：`standard/jobs.py` 周期快照仅写库供对比；用户可配投递独立存在。
-- **为什么好**：避免「对比上期」与「对外邮件」混为一谈，符合 PRD 边界。
-- **代码佐证**：`docs/services/reports.md` 边界表 · `standard/jobs.py`（无 dispatch 调用）
-
-#### ✅ 前端嵌入点合理
-- **是什么**：配置页编辑已有包时展示 `StandardSchedulePanel`；路由 `report:manage` 门禁。
-- **为什么好**：投递配置与数据绑定同屏，减少上下文切换。
-- **代码佐证**：`StandardAnalysisConfigPage.tsx` · `routes.tsx:217`
+| 功能完整度 | 25% | 9 | 2.3 | 计划项全完成，仅可选预检未做 |
+| 用户体验 | 20% | 8 | 1.6 | ISSUE-001 已修，表单文案准确 |
+| 代码质量 | 20% | 9 | 1.8 | 补真 PDF 测 + 禁假成功测（ISSUE-002） |
+| 稳定性 | 15% | 8 | 1.2 | 无 mock header 时 degraded/failed，不 delivered |
+| 性能效率 | 10% | 7 | 0.7 | 不变 |
+| 迭代友好度 | 10% | 8 | 0.8 | 不变 |
+| **综合** | 100% | — | **8.4** | — |
 
 ### 问题分析
 
-**本轮状态有变化的问题：**（首轮即全部新增）
+**本轮状态有变化的问题：**
 
-##### ISSUE-001：Playwright 健康提示不适用于标准分析
-- **来源**：R1 新增（code-reviewer 同源）
-- **状态**：未解决
-- **现象**：创建投递时展示「Playwright PDF 导出服务」健康检查。
-- **影响**：用户误以为标准分析依赖无头浏览器。
-- **根因**：`ScheduleFormFields` 默认 `hideStandaloneHealthAlerts=false`，未按 sourceType 区分。
-- **证据**：`fe/src/pages/admin/reports/components/ScheduleFormFields.tsx:214-217`
-- **建议**：`StandardSchedulePanel` 传 `hideStandaloneHealthAlerts` 或仅渲染 SMTP 健康（见 D1 选项 A）。
-- **验收标准**：标准分析配置页不出现 Playwright 相关文案。
+##### ISSUE-001～004
+- **状态**：已解决（详见累计已解决）
 
-##### ISSUE-002：缺少非 mock 的 PDF 导出验证
-- **来源**：R1 新增
-- **状态**：未解决
-- **现象**：`test_standard_schedule_execute_with_mock_delivery` patch 了导出函数。
-- **影响**：`render_document` / 多主题合并回归无守护；DG3 未达成。
-- **根因**：集成测成本高，首轮优先验证调度+投递编排。
-- **证据**：`tests/test_standard_schedule_delivery.py:174-182`
-- **建议**：补 1 条直接调用 `export_standard_attachments` 或完整 execute 无 patch 的用例。
-- **验收标准**：断言返回 PDF magic bytes 且 `len(attachments[0][0]) > 100`。
+**本轮无变化的问题：**
+- ISSUE-005（P2 预检）——仍待 R3，见台账
 
-**本轮无变化的问题：** 无（首轮）
-
-**本轮新增问题：** 另见台账 ISSUE-003～005（文案/文档/预检，均为 P2）。
+**本轮新增问题：**
+- ISSUE-006：staging SMTP 真投递签收（DG6）
 
 ### 迭代方向建议
 
 #### 下一轮前置条件
 
-- [ ] D1：标准分析投递健康检查展示策略
+- [ ] staging 环境 `RPT_SMTP_*` 已配置且 `delivery-health` 为 reachable
 
 #### 下一轮优先级
 
-| 优先级 | 目标 | 对应问题/门槛 | 依赖决策 | 预期效果 |
-|--------|------|--------------|----------|----------|
-| P0 | staging SMTP 试发签收 | DG5 · G3 | — | 真投递可宣称 |
-| P1 | 非 mock PDF 集成测 | ISSUE-002 · DG3 | — | 导出回归有保障 |
-| P1 | 隐藏/修正 Playwright 健康提示 | ISSUE-001 · D1 | D1 选项 A | 配置体验准确 |
-| P2 | 调度页文案含标准分析 | ISSUE-003 | — | IA 一致 |
-| P2 | arch head 同步 0046 | ISSUE-004 | — | 部署文档准确 |
-
-#### 验收标准
-
-- [ ] DG3、DG5 转为 ✅
-- [ ] G5 当前值为「staging 附件可下载且非空」
+| 优先级 | 目标 | 对应问题/门槛 | 预期效果 |
+|--------|------|--------------|----------|
+| P0 | staging 立即试发 + 附件签收 | ISSUE-006 · DG6 | 生产级投递可宣称 |
+| P2 | 可选：分析包数据就绪预检 | ISSUE-005 | 减少首次执行失败 |
 
 ### 评估结论
 
-标准分析定时投递在工程上已完成方案规定的全部交付物，架构上正确复用 RPT-005，与快照 job 边界清晰。综合分 8.0 反映「功能齐全、验证未闭环」：自动化测试覆盖了 API 契约与 FE smoke，但真 PDF 生成与 SMTP 全链路尚未签收。R2 应优先 DG5 staging 试发与 ISSUE-002 非 mock 测，并行处理 ISSUE-001 的 UX 误导。
+R2 完成评估文档列出的全部可代码化收口项，自动化测试从 4 条增至 8 条（pytest 5 + vitest 3）。模块可在开发/测试环境验收；对外宣称「邮件真投递」仍需 DG6 staging 签收。
 
-**目标距离判定**：达成度 1/5 项（G4 完全达成）；可交付门槛 2/5 通过（DG1、DG2、DG4 中 DG4 文档 ✅，DG1/DG2 ✅，DG3/DG5 未过）。
+**目标距离判定**：达成度 3/5；可交付门槛 5/6 通过。
 
 ---
 
 ## 📚 历史轮次归档
 
-（首轮，暂无）
+<details>
+<summary>第 1 轮（2026-08-12 · 8.0 分 · 基线）</summary>
+
+**结论**：方案全量落地，真 PDF/SMTP 验证未闭环。  
+**关键变化**：首评建立基线与 5 项 ISSUE 台账。  
+**六维得分**：功能9 | 体验7 | 质量8 | 稳定8 | 性能7 | 迭代8  
+**解决的问题**：无（首评）  
+**遗留的问题**：ISSUE-001 Playwright 误导 · ISSUE-002 无真 PDF 测 · ISSUE-003 调度页文案 · ISSUE-004 arch head
+
+</details>

@@ -54,7 +54,7 @@ function serializeRules(rules: EtlRule[]): string {
 export function EtlRulesPage() {
   const { id } = useParams();
   const [rules, setRules] = useState<EtlRule[]>([]);
-  const { sourceTable, columnNames, columns, columnsLoading, columnsReady, hasDataSource } =
+  const { sourceTable, targetTable, columnNames, columns, columnsLoading, columnsReady, hasDataSource } =
     useSyncJobSourceColumns(id);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -246,9 +246,18 @@ export function EtlRulesPage() {
       icon={etlRulesPageIcon}
       description={pageDescription}
       actions={
-        <Button asChild variant="outline" size="sm">
-          <Link to="/admin/ingestion/sync-jobs">返回列表</Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {targetTable ? (
+            <Button asChild variant="outline" size="sm">
+              <Link to={`/admin/datasets/${encodeURIComponent(targetTable)}/edit`}>
+                查看关联 Dataset
+              </Link>
+            </Button>
+          ) : null}
+          <Button asChild variant="outline" size="sm">
+            <Link to="/admin/ingestion/sync-jobs">返回列表</Link>
+          </Button>
+        </div>
       }
     >
       <div className={cn(ADMIN_PAGE_SURFACE_CLASS, "flex min-h-0 flex-1 flex-col overflow-hidden")}>

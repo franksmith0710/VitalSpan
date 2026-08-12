@@ -27,6 +27,7 @@ import {
   type ScheduleFormValue,
 } from "./ScheduleFormFields";
 import { ScheduleActivationBanner } from "./ScheduleActivationBanner";
+import { ScheduleDeliveryHealthAlert } from "./ScheduleDeliveryHealthAlert";
 import { ScheduleHistoryTable } from "./ScheduleHistoryTable";
 import { ScheduleFormSection } from "./scheduleDialogUi";
 import {
@@ -169,12 +170,14 @@ export function StandardSchedulePanel({ sourceKey, packName, disabled = false }:
             ) : undefined
           }
         >
+          {!disabled ? <ScheduleDeliveryHealthAlert /> : null}
           <ScheduleFormFields
             value={form}
             onChange={setForm}
             disabled={disabled}
             showAttachments={false}
             showDeliveryChannels
+            hideStandaloneHealthAlerts
             idPrefix={`std-schedule-${sourceKey}`}
           />
         </ScheduleFormSection>
@@ -224,12 +227,14 @@ export function StandardSchedulePanel({ sourceKey, packName, disabled = false }:
           >
             {draftSelected ? (
               <>
+                {!disabled ? <ScheduleDeliveryHealthAlert /> : null}
                 <ScheduleFormFields
                   value={form}
                   onChange={setForm}
                   disabled={disabled}
                   showAttachments={false}
                   showDeliveryChannels
+                  hideStandaloneHealthAlerts
                   idPrefix={`std-schedule-edit-${sourceKey}`}
                 />
                 {!disabled ? (

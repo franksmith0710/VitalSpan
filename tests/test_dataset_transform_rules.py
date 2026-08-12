@@ -14,6 +14,7 @@ from app.metadata.dataset import service as dataset_service
 from app.metadata.dataset.models import DatasetRecord
 from app.datasources.models import get_meta_session
 from app.metadata.dataset.schemas import DatasetItemIn, DatasetItemOut, DatasetTableDef
+from app.metadata.dataset.errors import DatasetError
 from app.metadata.dataset.transform_rules import get_transform_rules, put_transform_rules
 from app.query.dataset.pandas_transform import apply_query_transform, resolve_dataset_transform_rules
 from jwt_auth import AUTH
@@ -126,7 +127,7 @@ def test_apply_query_transform_with_custom_rename_rule():
     assert cleaned[0]["product"] == "A"
 
 
-def test_sync_job_put_transform_rules_allowed(admin_actor):
+def test_sync_job_put_transform_rules_locked(admin_actor):
     ds_id = "ds-sync-test"
     session = get_meta_session()
     try:
@@ -146,9 +147,33 @@ def test_sync_job_put_transform_rules_allowed(admin_actor):
         session.close()
 
     rules = [{"type": "rename_column", "from": "a", "to": "b"}]
-    saved = put_transform_rules(ds_id, rules, admin_actor)
-    assert saved.rules == rules
-    assert saved.query_pandas_applies is True
+    with pytest.raises(DatasetError) as exc:
+        put_transform_rules(ds_id, rules, admin_actor)
+    assert exc.value.code == "META_DATASET_TRANSFORM_SYNC_LOCKED"
+
+
+def test_sync_job_get_transform_rules_query_pandas_false(admin_actor):
+    ds_id = "ds-sync-get"
+    session = get_meta_session()
+    try:
+        session.add(
+            DatasetRecord(
+                dataset_id=ds_id,
+                display_name="sync ds",
+                tables=[{"name": "public.orders_clean"}],
+                computed_fields=[],
+                allowed_roles=["analyst"],
+                origin="sync_job",
+                transform_rules=[],
+            ),
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    loaded = get_transform_rules(ds_id, admin_actor)
+    assert loaded.rules == []
+    assert loaded.query_pandas_applies is False
 
 
 def test_transform_rules_api_routes(client, admin_actor):

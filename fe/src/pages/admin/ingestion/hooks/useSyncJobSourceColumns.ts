@@ -7,6 +7,7 @@ import { queryKeys } from "@/lib/queryKeys";
 import type { EtlColumnMeta } from "../etlRuleSuggest";
 
 type SyncJobSourceMeta = {
+  target_table?: string;
   source_data_source_id?: string | null;
   source_type?: string;
   source?: {
@@ -96,6 +97,7 @@ export function useSyncJobSourceColumns(jobId: string | undefined) {
   const columnNames = useMemo(() => columns.map((col) => col.name), [columns]);
 
   return {
+    targetTable: jobQuery.data?.target_table?.trim() ?? "",
     sourceTable: table,
     columnNames,
     columns,

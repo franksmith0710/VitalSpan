@@ -195,7 +195,7 @@ export function ReportSchedulesPage() {
           <CalendarClock className="size-6" aria-hidden />
         </AdminPageHeaderIcon>
       }
-      description="管理看板/大屏可视化 PDF 定时投递、执行历史与失败重试。"
+      description="管理看板/大屏/标准分析定时 PDF 投递、执行历史与失败重试。"
       actions={<ReportCenterBackLink />}
     >
       <div className="space-y-6">
