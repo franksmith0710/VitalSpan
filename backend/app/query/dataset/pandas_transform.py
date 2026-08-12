@@ -27,11 +27,19 @@ class DatasetPandasProbeResult:
 
 
 def needs_query_time_pandas(
-    _db: Session | None = None,
-    _dataset: DatasetItemOut | None = None,
+    db: Session | None = None,
+    dataset: DatasetItemOut | None = None,
     _data_source_id: uuid.UUID | None = None,
 ) -> bool:
-    """所有查询出数路径均执行 pandas 清洗（含 sync、托管库、图表直连）。"""
+    """manual / 外部源 Dataset 查询后 pandas 清洗；sync_job 产物已在写库前清洗。"""
+    if dataset is not None and dataset.origin == "sync_job":
+        return False
+    if db is not None and dataset is not None:
+        from app.metadata.dataset.models import DatasetRecord
+
+        row = db.get(DatasetRecord, dataset.dataset_id)
+        if row is not None and row.origin == "sync_job":
+            return False
     return True
 
 

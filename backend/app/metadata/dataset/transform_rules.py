@@ -33,8 +33,13 @@ def _load_row(session: Session, dataset_id: str, user: UserContext) -> DatasetRe
     return row
 
 
-def _assert_transform_editable(_row: DatasetRecord) -> None:
-    return
+def _assert_transform_editable(row: DatasetRecord) -> None:
+    if row.origin == "sync_job":
+        raise DatasetError(
+            META_DATASET_TRANSFORM_SYNC_LOCKED,
+            "同步产物 Dataset 的清洗规则在同步任务中配置，此处不可编辑",
+            422,
+        )
 
 
 def _validate_rules(rules: list[dict[str, Any]]) -> None:
@@ -156,8 +161,8 @@ def resolve_transform_rules_for_dataset(
     return list(row.transform_rules or [])
 
 
-def _query_pandas_applies(_session: Session, _row: DatasetRecord) -> bool:
-    return True
+def _query_pandas_applies(_session: Session, row: DatasetRecord) -> bool:
+    return row.origin != "sync_job"
 
 
 def row_to_dataset_out(row: DatasetRecord) -> DatasetItemOut:
