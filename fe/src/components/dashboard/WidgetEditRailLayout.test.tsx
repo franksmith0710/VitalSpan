@@ -73,27 +73,12 @@ describe("WidgetEditRailLayout", () => {
     expect(screen.getByText("配置")).toBeInTheDocument();
   });
 
-  it("expanded dual columns use full rail width aligned to the left", () => {
-    const { container } = renderRail(
+  it("keeps the other collapsed tab visible when only one column is expanded", () => {
+    renderRail(
       <WidgetEditRailLayout
         leftLabel="堆叠柱状图"
         rightLabel="数据集"
-        left={<div data-testid="config-pane">配置</div>}
-        right={<div data-testid="dataset-main">字段库</div>}
-      />,
-    );
-
-    const rail = container.firstElementChild as HTMLElement;
-    expect(rail).toHaveClass("w-[432px]");
-    expect(rail).not.toHaveClass("ml-auto");
-  });
-
-  it("collapsed tabs stack on the right so the rail shrinks for canvas expansion", () => {
-    const { container } = renderRail(
-      <WidgetEditRailLayout
-        leftLabel="区域地图"
-        rightLabel="数据集"
-        left={<div data-testid="config-pane">配置</div>}
+        left={<div style={{ minWidth: 800 }}>配置</div>}
         right={
           <DatasetPickerPanel
             widgetId="w1"
@@ -110,16 +95,54 @@ describe("WidgetEditRailLayout", () => {
       />,
     );
 
-    fireEvent.click(screen.getByLabelText("收起区域地图"));
     fireEvent.click(screen.getByLabelText("收起数据集"));
 
-    const tabs = screen.getAllByRole("button", { name: /展开/ });
-    expect(tabs).toHaveLength(2);
-    expect(screen.queryByTestId("config-pane")).not.toBeInTheDocument();
-    expect(screen.queryByText("维度")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("展开数据集")).toBeVisible();
+    expect(screen.getByText("配置")).toBeInTheDocument();
+    expect(screen.getByLabelText("收起堆叠柱状图")).toBeInTheDocument();
+  });
+
+  it("shows both expand tabs when config and dataset columns are collapsed", () => {
+    renderRail(
+      <WidgetEditRailLayout
+        leftLabel="堆叠柱状图"
+        rightLabel="数据集"
+        left={<div>配置</div>}
+        right={
+          <DatasetPickerPanel
+            widgetId="w1"
+            datasetsLoading={false}
+            datasetsError={false}
+            datasetsEmpty
+            datasetItems={[]}
+            columns={[]}
+            columnsLoading={false}
+            columnsReady={false}
+            onDatasetSelect={() => {}}
+          />
+        }
+      />,
+    );
+
+    fireEvent.click(screen.getByLabelText("收起堆叠柱状图"));
+    fireEvent.click(screen.getByLabelText("收起数据集"));
+
+    expect(screen.getByLabelText("展开堆叠柱状图")).toBeVisible();
+    expect(screen.getByLabelText("展开数据集")).toBeVisible();
+  });
+
+  it("uses full rail width inside the fixed shell", () => {
+    const { container } = renderRail(
+      <WidgetEditRailLayout
+        leftLabel="堆叠柱状图"
+        rightLabel="数据集"
+        left={<div>配置</div>}
+        right={<div>字段库</div>}
+      />,
+    );
 
     const rail = container.firstElementChild as HTMLElement;
-    expect(rail).toHaveClass("w-fit");
-    expect(rail).toHaveClass("ml-auto");
+    expect(rail).toHaveClass("w-full");
+    expect(rail).not.toHaveClass("ml-auto");
   });
 });

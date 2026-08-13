@@ -46,7 +46,7 @@ export function RailFoldHeader({
   subtitle,
 }: {
   label: string;
-  onCollapse: () => void;
+  onCollapse?: () => void;
   className?: string;
   subtitle?: string;
 }) {
@@ -66,16 +66,18 @@ export function RailFoldHeader({
             <p className="mt-0.5 truncate text-[11px] text-gray-500 dark:text-gray-400">{subtitle}</p>
           ) : null}
         </div>
-        <IconButton
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="size-7 shrink-0 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/5 dark:hover:text-gray-300"
-          aria-label={`收起${label}`}
-          onClick={onCollapse}
-        >
-          <RailFoldIcon />
-        </IconButton>
+        {onCollapse ? (
+          <IconButton
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="size-7 shrink-0 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/5 dark:hover:text-gray-300"
+            aria-label={`收起${label}`}
+            onClick={onCollapse}
+          >
+            <RailFoldIcon />
+          </IconButton>
+        ) : null}
       </div>
     </div>
   );

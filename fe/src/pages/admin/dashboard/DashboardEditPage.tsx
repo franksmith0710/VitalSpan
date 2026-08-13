@@ -114,7 +114,7 @@ import { DashboardContextInspector } from "@/components/dashboard/DashboardConte
 import { DashboardTemplateExtras } from "@/components/dashboard/DashboardTemplateExtras";
 import { LayerPanel } from "@/components/dashboard/LayerPanel";
 import { DashboardEditWorkspace } from "@/components/dashboard/DashboardEditWorkspace";
-import { DASHBOARD_EDIT_RAIL_CONTENT_WIDTH_CLASS, DASHBOARD_EDIT_RAIL_SCROLL_CLASS } from "@/components/dashboard/dashboardEditRailLayout";
+import { DASHBOARD_EDIT_RAIL_SCROLL_CLASS } from "@/components/dashboard/dashboardEditRailLayout";
 import { DashboardEditCanvas } from "@/components/dashboard/dashboard-edit/DashboardEditCanvas";
 import { ChartDrillProvider } from "@/components/charts/ChartDrillContext";
 import { ChartEditRail, ChartEditRailEmpty } from "@/components/dashboard/ChartEditRail";
@@ -1569,7 +1569,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 onRailCollapse={collapseChartRail}
               />
             ) : selectedWidget?.type === "chart" ? (
-              <div className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden">
+              <div className="flex h-full min-h-0 flex-col overflow-hidden">
                 {vizComponentHeader}
               <ChartEditRail
                 key={primarySelectedId ?? selectedWidget.id}
@@ -1591,7 +1591,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               />
               </div>
             ) : id ? (
-              <div className={cn(DASHBOARD_EDIT_RAIL_SCROLL_CLASS, DASHBOARD_EDIT_RAIL_CONTENT_WIDTH_CLASS, "min-h-0 flex-1")}>
+              <div className={cn(DASHBOARD_EDIT_RAIL_SCROLL_CLASS, "min-h-0 flex-1")}>
                 {isDataScreenSurface && layout.version === 2 ? (
                   <DataScreenConfigExtras
                     layout={layout}
