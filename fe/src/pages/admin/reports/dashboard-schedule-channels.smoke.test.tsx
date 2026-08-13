@@ -49,7 +49,7 @@ describe("DashboardSchedulePanel embedded channels", () => {
     );
     expect(await screen.findByText("投递方式")).toBeInTheDocument();
     expect(screen.getByText("将发到收件人邮箱")).toBeInTheDocument();
-    expect(screen.getAllByText(/RPT_SMTP_/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/平台对接/).length).toBeGreaterThan(0);
     expect(screen.getByText("邮件投递")).toBeInTheDocument();
     expect(screen.queryByText("钉钉")).not.toBeInTheDocument();
     expect(screen.queryByText("飞书")).not.toBeInTheDocument();

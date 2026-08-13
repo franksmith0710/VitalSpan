@@ -20,6 +20,7 @@ if (-not $Token) {
 }
 
 $body = Get-Content -Raw -Encoding UTF8 -LiteralPath $BundlePath
+$bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($body)
 $headers = @{
   Authorization = "Bearer $Token"
   "Content-Type" = "application/json; charset=utf-8"
@@ -33,5 +34,5 @@ if ($ArtifactId) {
   $method = "POST"
 }
 
-$response = Invoke-RestMethod -Uri $uri -Method $method -Headers $headers -Body $body
+$response = Invoke-RestMethod -Uri $uri -Method $method -Headers $headers -Body $bodyBytes
 $response | ConvertTo-Json -Depth 8

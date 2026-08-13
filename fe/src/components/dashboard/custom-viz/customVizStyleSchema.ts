@@ -1,3 +1,5 @@
+import { resolveCustomVizStylePropertyLabel } from "./customVizManifestLabels";
+
 export type StyleProperty = {
   type?: string;
   format?: string;
@@ -21,12 +23,13 @@ export function inferStyleSchemaFromDefault(
   if (!defaultStyle || Object.keys(defaultStyle).length === 0) return undefined;
   const properties: Record<string, StyleProperty> = {};
   for (const [key, val] of Object.entries(defaultStyle)) {
+    const title = resolveCustomVizStylePropertyLabel(key);
     if (typeof val === "number") {
-      properties[key] = { type: "number", title: key };
+      properties[key] = { type: "number", title };
     } else if (typeof val === "string" && /^#/.test(val)) {
-      properties[key] = { type: "string", format: "color", title: key };
+      properties[key] = { type: "string", format: "color", title };
     } else {
-      properties[key] = { type: "string", title: key };
+      properties[key] = { type: "string", title };
     }
   }
   return { type: "object", properties };

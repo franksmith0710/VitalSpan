@@ -18,4 +18,13 @@ describe("expandCustomVizFieldSlotsForUi", () => {
     expect(slots.filter((s) => s.kind === "metric").map((s) => s.index)).toEqual([0, 1]);
     expect(slots[2]?.label).toBe("数值 2");
   });
+
+  it("falls back when manifest label is corrupted encoding", () => {
+    const slots = expandCustomVizFieldSlotsForUi({
+      dimensions: { min: 1, max: 1, label: "??" },
+      metrics: { min: 1, max: 1, label: "???" },
+    });
+    expect(slots[0]?.label).toBe("维度");
+    expect(slots[1]?.label).toBe("指标");
+  });
 });

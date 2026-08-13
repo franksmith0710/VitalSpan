@@ -62,6 +62,8 @@ customViz bundle **不限定**渲染技术栈。可选用原生 DOM/CSS、Canvas
 | 禁外链脚本 | 不得含 `<script src="http...">` 或 `//cdn` |
 | 禁内联事件 | 不得含 `onload=`、`onclick=` 等 |
 | 大小上限 | 整包 ≤ 512KB（含 HTML） |
+| 数据槽位 | **必填** `manifest.fieldSlots`：`dimensions` 与 `metrics` 均须 `min >= 1` |
+| 样式声明 | **必填** `manifest.styleSchema.properties`（至少 1 项）；推荐同时提供 `defaultStyle` |
 | 节点 ID | 禁止 `id="root"` / `id="app"`（与平台 SPA 冲突）；多实例时 ID 须唯一 |
 | CSS 作用域 | 挂载时选择器会收到 `.vs-custom-viz-host`；宿主已注入 `--dashboard-*`，不必再用 `:root` 改全局 |
 

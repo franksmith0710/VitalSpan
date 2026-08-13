@@ -17,6 +17,18 @@ DEMO_BUNDLE = {
         "id": "demo-ranking-strip",
         "displayName": "演示排名条",
         "entry": "index.html",
+        "fieldSlots": {
+            "dimensions": {"min": 1, "max": 1, "label": "类别"},
+            "metrics": {"min": 1, "max": 1, "label": "数值"},
+        },
+        "styleSchema": {
+            "type": "object",
+            "properties": {
+                "accentColor": {"type": "string", "format": "color", "title": "强调色"},
+                "barHeight": {"type": "number", "minimum": 8, "maximum": 48, "title": "条高度"},
+            },
+        },
+        "defaultStyle": {"accentColor": "#2563eb", "barHeight": 20},
     },
     "files": {
         "index.html": "<!DOCTYPE html><html><body><p>ok</p></body></html>",
@@ -115,3 +127,33 @@ def test_ai_viz_rejects_external_script(auth_headers: dict[str, str]) -> None:
     resp = client.post("/api/v1/ai-viz/artifacts", json=bad, headers=auth_headers)
     assert resp.status_code == 422
     assert resp.json()["code"] == "AIVIZ_UNSAFE_CONTENT"
+
+
+def test_ai_viz_rejects_manifest_without_field_slots(auth_headers: dict[str, str]) -> None:
+    bad = {
+        **DEMO_BUNDLE,
+        "manifest": {
+            "id": "incomplete",
+            "displayName": "缺槽位",
+            "entry": "index.html",
+            "styleSchema": DEMO_BUNDLE["manifest"]["styleSchema"],
+        },
+    }
+    resp = client.post("/api/v1/ai-viz/artifacts", json=bad, headers=auth_headers)
+    assert resp.status_code == 422
+    assert resp.json()["code"] == "AIVIZ_INVALID_MANIFEST"
+
+
+def test_ai_viz_rejects_manifest_without_style_schema(auth_headers: dict[str, str]) -> None:
+    bad = {
+        **DEMO_BUNDLE,
+        "manifest": {
+            "id": "incomplete",
+            "displayName": "缺样式",
+            "entry": "index.html",
+            "fieldSlots": DEMO_BUNDLE["manifest"]["fieldSlots"],
+        },
+    }
+    resp = client.post("/api/v1/ai-viz/artifacts", json=bad, headers=auth_headers)
+    assert resp.status_code == 422
+    assert resp.json()["code"] == "AIVIZ_INVALID_MANIFEST"

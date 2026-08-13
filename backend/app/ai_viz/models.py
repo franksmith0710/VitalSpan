@@ -32,6 +32,48 @@ class AiVizArtifact(Base):
     )
 
 
+def validate_manifest(manifest: dict) -> None:
+    from app.ai_viz.errors import AiVizError
+
+    field_slots = manifest.get("fieldSlots")
+    if not isinstance(field_slots, dict):
+        raise AiVizError(
+            "AIVIZ_INVALID_MANIFEST",
+            "manifest.fieldSlots is required (dimensions + metrics)",
+            422,
+        )
+    for key in ("dimensions", "metrics"):
+        rule = field_slots.get(key)
+        if not isinstance(rule, dict):
+            raise AiVizError(
+                "AIVIZ_INVALID_MANIFEST",
+                f"manifest.fieldSlots.{key} is required",
+                422,
+            )
+        min_count = rule.get("min")
+        if not isinstance(min_count, int) or min_count < 1:
+            raise AiVizError(
+                "AIVIZ_INVALID_MANIFEST",
+                f"manifest.fieldSlots.{key}.min must be >= 1",
+                422,
+            )
+
+    style_schema = manifest.get("styleSchema")
+    if not isinstance(style_schema, dict):
+        raise AiVizError(
+            "AIVIZ_INVALID_MANIFEST",
+            "manifest.styleSchema is required",
+            422,
+        )
+    properties = style_schema.get("properties")
+    if not isinstance(properties, dict) or len(properties) == 0:
+        raise AiVizError(
+            "AIVIZ_INVALID_MANIFEST",
+            "manifest.styleSchema.properties must declare at least one style field",
+            422,
+        )
+
+
 def validate_bundle_files(files: dict[str, str], entry: str) -> None:
     from app.ai_viz.errors import AiVizError
 

@@ -9,8 +9,8 @@ describe("customVizStyleSchema", () => {
   it("infers style schema from defaultStyle when styleSchema is missing", () => {
     const schema = inferStyleSchemaFromDefault({ accentColor: "#2563eb", barHeight: 20 });
     expect(schema?.properties).toMatchObject({
-      accentColor: { type: "string", format: "color" },
-      barHeight: { type: "number" },
+      accentColor: { type: "string", format: "color", title: "强调色" },
+      barHeight: { type: "number", title: "条高度" },
     });
   });
 

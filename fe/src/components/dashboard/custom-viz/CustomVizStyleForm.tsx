@@ -1,12 +1,80 @@
 import { Input } from "@/components/ui/input";
-import { DeAttrField, DeAttrForm } from "../dashboardInspectorUi";
-import { readStyleSchemaProperties, type StyleProperty } from "./customVizStyleSchema";
+import { TEXT_COLOR_RECOMMENDED } from "@/components/dashboard/dashboardStyleConfig";
+import { ChartDeAttrField, CHART_DE_INPUT } from "../chartInspectorDeFields";
+import { ChartInspectorSection, InspectorInlineColorRow } from "../inspectorCompact";
+import { ChartDeSliderField } from "../deAttrSlider";
+import {
+  readStyleSchemaProperties,
+  type StyleProperty,
+} from "./customVizStyleSchema";
+import { resolveCustomVizStylePropertyLabel } from "./customVizManifestLabels";
 
 type CustomVizStyleFormProps = {
   styleSchema?: Record<string, unknown>;
   value: Record<string, unknown>;
   onChange: (next: Record<string, unknown>) => void;
 };
+
+function readNumber(value: unknown, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function StylePropertyField({
+  propKey,
+  prop,
+  value,
+  onChange,
+}: {
+  propKey: string;
+  prop: StyleProperty;
+  value: Record<string, unknown>;
+  onChange: (next: Record<string, unknown>) => void;
+}) {
+  const label = resolveCustomVizStylePropertyLabel(propKey, prop.title);
+  const current = value[propKey];
+
+  if (prop.format === "color" || (prop.type === "string" && prop.format === "color")) {
+    const color = typeof current === "string" && current ? current : "#2563eb";
+    return (
+      <InspectorInlineColorRow
+        label={label}
+        value={color}
+        swatches={TEXT_COLOR_RECOMMENDED}
+        allowClear={false}
+        fallbackValue="#2563eb"
+        onChange={(next) => onChange({ ...value, [propKey]: next ?? "#2563eb" })}
+      />
+    );
+  }
+
+  if (prop.type === "number") {
+    const min = typeof prop.minimum === "number" ? prop.minimum : 0;
+    const max = typeof prop.maximum === "number" ? prop.maximum : 100;
+    const fallback = readNumber(current, min);
+    return (
+      <ChartDeSliderField
+        label={label}
+        value={readNumber(current, fallback)}
+        fallback={fallback}
+        min={min}
+        max={max}
+        step={1}
+        layout="stacked"
+        onChange={(next) => onChange({ ...value, [propKey]: next })}
+      />
+    );
+  }
+
+  return (
+    <ChartDeAttrField label={label}>
+      <Input
+        className={CHART_DE_INPUT}
+        value={current != null ? String(current) : ""}
+        onChange={(e) => onChange({ ...value, [propKey]: e.target.value })}
+      />
+    </ChartDeAttrField>
+  );
+}
 
 export function CustomVizStyleForm({ styleSchema, value, onChange }: CustomVizStyleFormProps) {
   const properties = readStyleSchemaProperties(styleSchema);
@@ -20,49 +88,18 @@ export function CustomVizStyleForm({ styleSchema, value, onChange }: CustomVizSt
   }
 
   return (
-    <DeAttrForm className="space-y-3">
-      {entries.map(([key, prop]) => {
-        const label = prop.title ?? key;
-        const current = value[key];
-        if (prop.format === "color" || prop.type === "string") {
-          return (
-            <DeAttrField key={key} label={label}>
-              <Input
-                type={prop.format === "color" ? "color" : "text"}
-                className="h-8"
-                value={typeof current === "string" ? current : ""}
-                onChange={(e) => onChange({ ...value, [key]: e.target.value })}
-              />
-            </DeAttrField>
-          );
-        }
-        if (prop.type === "number") {
-          return (
-            <DeAttrField key={key} label={label}>
-              <Input
-                type="number"
-                className="h-8"
-                min={prop.minimum}
-                max={prop.maximum}
-                value={typeof current === "number" ? current : ""}
-                onChange={(e) => {
-                  const parsed = Number(e.target.value);
-                  onChange({ ...value, [key]: Number.isFinite(parsed) ? parsed : undefined });
-                }}
-              />
-            </DeAttrField>
-          );
-        }
-        return (
-          <DeAttrField key={key} label={label}>
-            <Input
-              className="h-8"
-              value={current != null ? String(current) : ""}
-              onChange={(e) => onChange({ ...value, [key]: e.target.value })}
-            />
-          </DeAttrField>
-        );
-      })}
-    </DeAttrForm>
+    <ChartInspectorSection title="组件样式" defaultOpen>
+      <div className="flex flex-col" data-testid="custom-viz-style-form">
+        {entries.map(([key, prop]) => (
+          <StylePropertyField
+            key={key}
+            propKey={key}
+            prop={prop}
+            value={value}
+            onChange={onChange}
+          />
+        ))}
+      </div>
+    </ChartInspectorSection>
   );
 }

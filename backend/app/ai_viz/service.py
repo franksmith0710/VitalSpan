@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.ai_viz.errors import AiVizError
-from app.ai_viz.models import AiVizArtifact, validate_bundle_files
+from app.ai_viz.models import AiVizArtifact, validate_bundle_files, validate_manifest
 from app.ai_viz.schemas import AiVizArtifactCreateIn, AiVizArtifactOut
 from app.auth.deps import UserContext
 
@@ -24,6 +24,7 @@ def create_artifact(db: Session, payload: AiVizArtifactCreateIn, actor: UserCont
     entry = payload.manifest.entry or "index.html"
     validate_bundle_files(payload.files, entry)
     manifest_dict = payload.manifest.model_dump(by_alias=True)
+    validate_manifest(manifest_dict)
     files = dict(payload.files)
     content_hash = _content_hash(files)
     row = AiVizArtifact(
@@ -57,7 +58,9 @@ def update_artifact(
     row = get_artifact(db, artifact_id, actor)
     entry = payload.manifest.entry or "index.html"
     validate_bundle_files(payload.files, entry)
-    row.manifest_json = payload.manifest.model_dump(by_alias=True)
+    manifest_dict = payload.manifest.model_dump(by_alias=True)
+    validate_manifest(manifest_dict)
+    row.manifest_json = manifest_dict
     row.files_json = dict(payload.files)
     row.content_hash = _content_hash(row.files_json)
     db.commit()

@@ -26,7 +26,12 @@ _TEMPLATE_BODY = {
 @pytest.fixture(scope="module", autouse=True)
 def _sqlite():
     prev = os.environ.get("DATABASE_URL")
+    prev_host = os.environ.get("RPT_SMTP_HOST")
+    prev_from = os.environ.get("RPT_SMTP_FROM")
     os.environ["DATABASE_URL"] = _SQLITE
+    os.environ["RPT_SMTP_HOST"] = "localhost"
+    os.environ["RPT_SMTP_PORT"] = "1025"
+    os.environ["RPT_SMTP_FROM"] = "reports@vitalspan.local"
     get_settings.cache_clear()
     from app.auth.models import Base as AuthBase, get_meta_engine as auth_engine
     from app.datasources.models import Base, get_meta_engine
@@ -42,6 +47,14 @@ def _sqlite():
     QueryBase.metadata.create_all(engine)
     yield
     os.environ["DATABASE_URL"] = prev if prev else os.environ.pop("DATABASE_URL", None)
+    if prev_host is None:
+        os.environ.pop("RPT_SMTP_HOST", None)
+    else:
+        os.environ["RPT_SMTP_HOST"] = prev_host
+    if prev_from is None:
+        os.environ.pop("RPT_SMTP_FROM", None)
+    else:
+        os.environ["RPT_SMTP_FROM"] = prev_from
     get_settings.cache_clear()
     get_meta_engine.cache_clear()
     auth_engine.cache_clear()

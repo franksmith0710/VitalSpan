@@ -1,3 +1,9 @@
+import {
+  CUSTOM_VIZ_DEFAULT_DIMENSION_LABEL,
+  CUSTOM_VIZ_DEFAULT_METRIC_LABEL,
+  sanitizeManifestLabel,
+} from "./customVizManifestLabels";
+
 export type CustomVizFieldSlotDef = {
   key: string;
   kind: "dimension" | "metric";
@@ -32,10 +38,11 @@ function parseSlot(key: string, rule: SlotRule | undefined): CustomVizFieldSlotD
   const kind = key.toLowerCase().includes("metric") ? "metric" : "dimension";
   const min = typeof rule.min === "number" ? rule.min : kind === "metric" ? 1 : 1;
   const max = typeof rule.max === "number" ? rule.max : 1;
+  const fallback = kind === "metric" ? CUSTOM_VIZ_DEFAULT_METRIC_LABEL : CUSTOM_VIZ_DEFAULT_DIMENSION_LABEL;
   return {
     key,
     kind,
-    label: rule.label ?? (kind === "metric" ? "指标" : "维度"),
+    label: sanitizeManifestLabel(rule.label, fallback),
     required: min > 0,
     min,
     max,
@@ -43,8 +50,22 @@ function parseSlot(key: string, rule: SlotRule | undefined): CustomVizFieldSlotD
 }
 
 const DEFAULT_FIELD_SLOT_DEFS: CustomVizFieldSlotDef[] = [
-  { key: "dimensions", kind: "dimension", label: "维度", required: true, min: 1, max: 1 },
-  { key: "metrics", kind: "metric", label: "指标", required: true, min: 1, max: 1 },
+  {
+    key: "dimensions",
+    kind: "dimension",
+    label: CUSTOM_VIZ_DEFAULT_DIMENSION_LABEL,
+    required: true,
+    min: 1,
+    max: 1,
+  },
+  {
+    key: "metrics",
+    kind: "metric",
+    label: CUSTOM_VIZ_DEFAULT_METRIC_LABEL,
+    required: true,
+    min: 1,
+    max: 1,
+  },
 ];
 
 export function parseCustomVizFieldSlots(

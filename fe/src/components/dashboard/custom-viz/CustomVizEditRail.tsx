@@ -9,6 +9,7 @@ import { FieldBankPlaceholder } from "../DatasetFieldBank";
 import { WidgetEditRailLayout } from "../WidgetEditRailLayout";
 import { CustomVizEditorColumn } from "./CustomVizEditorColumn";
 import type { CustomVizFieldTarget } from "./customVizFieldSlots";
+import { sanitizeManifestLabel } from "./customVizManifestLabels";
 import { useCustomVizInspectorState } from "./useCustomVizInspectorState";
 
 export type CustomVizEditRailProps = {
@@ -42,7 +43,7 @@ export function CustomVizEditRail({
 
   const inspector = useCustomVizInspectorState(cfg, onChange);
 
-  const typeLabel = meta?.manifest.displayName ?? "自定义组件";
+  const typeLabel = sanitizeManifestLabel(meta?.manifest.displayName, "自定义组件");
   const leftSubtitle = widget.title && widget.title !== typeLabel ? widget.title : undefined;
 
   return (
