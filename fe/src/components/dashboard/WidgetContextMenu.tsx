@@ -1,70 +1,48 @@
-import {
-  Copy,
-  Eye,
-  ChevronsDown,
-  ChevronsUp,
-  Maximize2,
-  Trash2,
-} from "lucide-react";
+import { ChevronsDown, ChevronsUp, ClipboardPaste, Copy, Eye, Maximize2, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
-import type { ColorScheme } from "@/components/dashboard/dashboardStyleConfig";
+import type { ColorScheme, DashboardStyleConfig } from "@/components/dashboard/dashboardStyleConfig";
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
-  ContextMenuSub,
-  ContextMenuSubContent,
-  ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { cn } from "@/lib/utils";
 import type { LayoutWidget } from "./layoutUtils";
+import {
+  WidgetContextMenuStyleItems,
+  menuItemClass,
+} from "./WidgetContextMenuStyleItems";
+import type { WidgetContextMenuSurface, WidgetQuickStyleAction, WidgetQuickStyleActionOptions } from "./widgetContextMenuStyle";
 
 export type DashboardWidgetActions = {
+  surface?: WidgetContextMenuSurface;
+  dashboardStyle?: Pick<DashboardStyleConfig, "widgetStyle" | "titleStyle" | "paletteId" | "paletteColors">;
   onCopy?: (widgetId: string) => void;
+  onPaste?: () => void;
+  clipboardReady?: boolean;
   onDelete?: (widgetId: string) => void;
+  onBringToFront?: (widgetId: string) => void;
+  onSendToBack?: (widgetId: string) => void;
+  onStyleQuickAction?: (
+    widgetId: string,
+    action: WidgetQuickStyleAction,
+    options?: WidgetQuickStyleActionOptions,
+  ) => void;
+  showLayerActions?: boolean;
   onEnlarge?: (widgetId: string) => void;
   onViewData?: (widgetId: string) => void;
   onTitleChange?: (widgetId: string, title: string) => void;
-  onBringToFront?: (widgetId: string) => void;
-  onSendToBack?: (widgetId: string) => void;
-  showLayerActions?: boolean;
 };
 
 /** @deprecated 使用 {@link DashboardWidgetActions} */
 export type PixelWidgetActions = DashboardWidgetActions;
 
-function menuChromeClass(scheme: ColorScheme): string {
-  return cn(
-    "z-[90] min-w-[10.5rem]",
-    scheme === "dark"
-      ? "border-gray-700 bg-gray-900 text-gray-300"
-      : "border-gray-200 bg-white text-gray-700",
-  );
-}
-
-function menuItemClass(scheme: ColorScheme, destructive = false): string | undefined {
-  if (destructive) {
-    return scheme === "dark"
-      ? "text-error-400 focus:bg-error-500/10 focus:text-error-300"
-      : "text-error-600 focus:text-error-600";
-  }
-  return scheme === "dark" ? "text-gray-300 focus:bg-white/5 focus:text-gray-200" : undefined;
-}
-
-function menuSubTriggerClass(scheme: ColorScheme): string | undefined {
-  return scheme === "dark"
-    ? "text-gray-300 focus:bg-white/5 data-[state=open]:bg-white/5"
-    : undefined;
-}
-
-function menuSeparatorClass(scheme: ColorScheme): string | undefined {
-  return scheme === "dark" ? "bg-gray-800" : undefined;
-}
-
 type WidgetContextMenuContentProps = {
-  widget: Pick<LayoutWidget, "id" | "type" | "locked">;
+  widget: Pick<
+    LayoutWidget,
+    "id" | "type" | "locked" | "chartConfig" | "textConfig" | "mediaConfig" | "tabsConfig"
+  >;
   actions: DashboardWidgetActions;
   colorScheme?: ColorScheme;
 };
@@ -74,8 +52,8 @@ export function WidgetContextMenuContent({
   actions,
   colorScheme = "light",
 }: WidgetContextMenuContentProps) {
-  const isChart = widget.type === "chart";
   const locked = Boolean(widget.locked);
+  const surface = actions.surface ?? "dashboard";
 
   return (
     <>
@@ -89,20 +67,32 @@ export function WidgetContextMenuContent({
       </ContextMenuItem>
       <ContextMenuItem
         className={menuItemClass(colorScheme)}
-        disabled={!isChart || !actions.onEnlarge}
-        onSelect={() => actions.onEnlarge?.(widget.id)}
+        disabled={locked || !actions.onPaste || !actions.clipboardReady}
+        onSelect={() => actions.onPaste?.()}
       >
-        <Maximize2 className="size-3.5" aria-hidden />
-        放大
+        <ClipboardPaste className="size-3.5" aria-hidden />
+        粘贴
       </ContextMenuItem>
-      <ContextMenuItem
-        className={menuItemClass(colorScheme)}
-        disabled={!isChart || !actions.onViewData}
-        onSelect={() => actions.onViewData?.(widget.id)}
-      >
-        <Eye className="size-3.5" aria-hidden />
-        查看数据
-      </ContextMenuItem>
+      {widget.type === "chart" && actions.onEnlarge ? (
+        <ContextMenuItem
+          className={menuItemClass(colorScheme)}
+          disabled={locked}
+          onSelect={() => actions.onEnlarge?.(widget.id)}
+        >
+          <Maximize2 className="size-3.5" aria-hidden />
+          放大
+        </ContextMenuItem>
+      ) : null}
+      {widget.type === "chart" && actions.onViewData ? (
+        <ContextMenuItem
+          className={menuItemClass(colorScheme)}
+          disabled={locked}
+          onSelect={() => actions.onViewData?.(widget.id)}
+        >
+          <Eye className="size-3.5" aria-hidden />
+          查看数据
+        </ContextMenuItem>
+      ) : null}
       {actions.showLayerActions ? (
         <>
           <ContextMenuItem
@@ -123,26 +113,14 @@ export function WidgetContextMenuContent({
           </ContextMenuItem>
         </>
       ) : null}
-      <ContextMenuSub>
-        <ContextMenuSubTrigger className={menuSubTriggerClass(colorScheme)} disabled>
-          导出为
-        </ContextMenuSubTrigger>
-        <ContextMenuSubContent
-          className={menuChromeClass(colorScheme)}
-          data-dashboard-menu=""
-          data-dashboard-color-scheme={colorScheme}
-        >
-          <ContextMenuItem className={menuItemClass(colorScheme)} disabled>
-            图片
-          </ContextMenuItem>
-          <ContextMenuItem className={menuItemClass(colorScheme)} disabled>
-            PDF
-          </ContextMenuItem>
-        </ContextMenuSubContent>
-      </ContextMenuSub>
-      <ContextMenuItem className={menuItemClass(colorScheme)} disabled>
-        隐藏
-      </ContextMenuItem>
+      <WidgetContextMenuStyleItems
+        widget={widget}
+        surface={surface}
+        dashboardStyle={actions.dashboardStyle}
+        locked={locked}
+        onStyleQuickAction={actions.onStyleQuickAction}
+        colorScheme={colorScheme}
+      />
       <ContextMenuSeparator className={menuSeparatorClass(colorScheme)} />
       <ContextMenuItem
         variant="destructive"
@@ -157,15 +135,22 @@ export function WidgetContextMenuContent({
   );
 }
 
+function menuSeparatorClass(scheme: ColorScheme): string | undefined {
+  return scheme === "dark" ? "bg-gray-800" : undefined;
+}
+
 type DashboardWidgetContextMenuProps = {
-  widget: Pick<LayoutWidget, "id" | "type" | "locked">;
+  widget: Pick<
+    LayoutWidget,
+    "id" | "type" | "locked" | "chartConfig" | "textConfig" | "mediaConfig" | "tabsConfig"
+  >;
   actions: DashboardWidgetActions;
   colorScheme?: ColorScheme;
   selected?: boolean;
   onSelect?: (widgetId: string, additive: boolean) => void;
   children: ReactNode;
   className?: string;
-  /** 测试用：受控展开菜单（Radix ContextMenu 不支持无交互 defaultOpen） */
+  /** 测试用：受控展开菜单 */
   open?: boolean;
 };
 
@@ -195,7 +180,11 @@ export function DashboardWidgetContextMenu({
         {children}
       </ContextMenuTrigger>
       <ContextMenuContent
-        className={menuChromeClass(colorScheme)}
+        className={
+          colorScheme === "dark"
+            ? "z-[90] min-w-[10.5rem] border-gray-700 bg-gray-900 text-gray-300"
+            : "z-[90] min-w-[10.5rem] border-gray-200 bg-white text-gray-700"
+        }
         data-dashboard-menu=""
         data-dashboard-color-scheme={colorScheme}
         data-testid={`widget-context-menu-${widget.id}`}

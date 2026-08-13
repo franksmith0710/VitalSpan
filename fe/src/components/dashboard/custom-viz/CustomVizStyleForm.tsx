@@ -1,5 +1,4 @@
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { DeAttrField, DeAttrForm } from "../dashboardInspectorUi";
 
 type StyleProperty = {

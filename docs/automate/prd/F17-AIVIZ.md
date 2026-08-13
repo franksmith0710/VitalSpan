@@ -24,8 +24,8 @@
 - [x] AIVIZ-005：FE `CustomVizWidget` 作为唯一 Base，将 entry HTML 挂进主页面宿主（与看板同页，注入 `--dashboard-*`）
 - [x] AIVIZ-008：可选 D3 规范 + `theme-tokens.json` + D3/vanilla 示例；`rendererHint` 仅元数据
 - [x] AIVIZ-009：`PUT /api/v1/ai-viz/artifacts/{id}` 覆盖同一组件源码，引用方刷新即新
-- [ ] AIVIZ-006：组件库入库 customViz（M2）
-- [ ] AIVIZ-007：平台向宿主喂 query 结果（后续）
+- [x] AIVIZ-006：组件库入库 customViz（M2）
+- [x] AIVIZ-007：平台向宿主喂 query 结果（后续）
 
 ## 代码锚点
 

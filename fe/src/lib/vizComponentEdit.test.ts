@@ -80,9 +80,10 @@ describe("vizComponentEdit", () => {
     expect(relinked.chartConfig).toBeUndefined();
   });
 
-  it("isPublishableWidgetType covers chart/filter/text/media only", () => {
+  it("isPublishableWidgetType covers chart/filter/text/media/customViz", () => {
     expect(isPublishableWidgetType("chart")).toBe(true);
     expect(isPublishableWidgetType("filter")).toBe(true);
+    expect(isPublishableWidgetType("customViz")).toBe(true);
     expect(isPublishableWidgetType("tabs")).toBe(false);
   });
 });

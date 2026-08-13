@@ -6,7 +6,7 @@
 - 证据袋: [2026-08-13-im-app-config-self-bind-evidence.md](./2026-08-13-im-app-config-self-bind-evidence.md) · domain_strength: mixed
 - 提纲: [2026-08-13-im-app-config-self-bind-outline.md](./2026-08-13-im-app-config-self-bind-outline.md)
 - 智囊团：提纲① 六席独立 Task 轮1 全 revise → 轮2 五席 pass + 终端用户小 revise 已吸收；成稿② product revise（§8 负向验收）已吸收，plan/end_user/ops_audit pass；architecture/domain 成稿轮 skipped（相对提纲主路径/选型未变）
-- 假设状态: **用户已确认**（2026-08-13 整包接受 H1–H5 / S1–S3）。S1/S2 可作为后续 spec 约束；S3 仍须 integration-research 简报后才能写协议，不得直接 go-fast。
+- 假设状态: **用户已确认**（2026-08-13 整包接受 H1–H5 / S1–S2）。S3 已有简报 `docs/integrations/im-platform-connect.md`（researched，可行性 B）。
 - 关联: RPT-005 · F02 账户自服务 · ADR-06/19 · `docs/ui/layout.md` 个人中心/后台管理
 
 ## 1. 问题与主任务
@@ -43,7 +43,7 @@ flowchart LR
 |----|------|------|------|--------|------|
 | S1 | 凭证 SoR=管理面 DB（SM4）。从未保存才 env 回落；保存或清空后以库为准，清空=禁用且忽略 env | assumed | E3 H1 | F1 F3 | 难回退 |
 | S2 | 认人=已登录授权跳转绑定；不替代 JWT 登录；建用户不猜号 | assumed | E15 H2 | F2 | 难回退 |
-| S3 | 三厂商契约不写死 URL；开工前 integration-research | assumed | H3 | F2 | 难回退 |
+| S3 | 三厂商契约不写死 URL；httpx 官方 REST | researched | docs/integrations/im-platform-connect.md | F2 | — |
 | S4 | 工作通知 + 禁回落群 | anchored | E2 E4 | F3 | — |
 | S5 | Secret SM4，API 不回明文 | anchored | E2 | F1 | — |
 
@@ -271,7 +271,7 @@ flowchart TB
 | 元数据库 | 配置与绑定 | Alembic 可重放 | 迁移失败不得假绿 | E6 |
 | SM4 根密钥 | 加密 Secret | `CREDENTIAL_SM4_KEY` | 缺密钥拒绝保存 | S5 |
 
-禁止 mock 标已配置 / 已送达。S3 协议细节待 `docs/integrations/` 简报。
+禁止 mock 标已配置 / 已送达。S3 契约见 `docs/integrations/im-platform-connect.md`。
 
 ## 8. 可观察验收（生产级）
 
@@ -315,6 +315,6 @@ flowchart TB
 
 - [x] 用户已确认（确认面；含架构图 + 核心 F 流程图 + 选型状态 + 假设整包）— 2026-08-13
 - [ ] （可选）点名回写 PRD / auth.md / ADR-19
-- [ ] 确认后 `mode=spec` 前先跑 **integration-research**（S3）
-- [x] 未确认 assumed 不得交 go-fast（已确认假设；S3 协议仍禁未调研开工）
+- [x] 确认后 `mode=spec` 前先跑 **integration-research**（S3）— 简报已落盘
+- [x] 未确认 assumed 不得交 go-fast（已确认假设；无凭据不得宣称已对接）
 - [ ] （可选）product-reviewer 打分

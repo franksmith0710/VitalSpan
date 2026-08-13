@@ -4,7 +4,7 @@ from typing import Any, Literal
 
 from app.viz.components.errors import VizComponentError
 
-WidgetType = Literal["chart", "filter", "text", "media"]
+WidgetType = Literal["chart", "filter", "text", "media", "customViz"]
 SurfaceKind = Literal["dashboard", "data-screen"]
 
 _PAYLOAD_KEYS: dict[str, str] = {
@@ -12,6 +12,7 @@ _PAYLOAD_KEYS: dict[str, str] = {
     "filter": "filterConfig",
     "text": "textConfig",
     "media": "mediaConfig",
+    "customViz": "customVizConfig",
 }
 
 

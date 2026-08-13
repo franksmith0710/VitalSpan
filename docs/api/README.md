@@ -257,6 +257,7 @@ redoc: /redoc
 | POST | `/api/v1/viz-components/{id}/archive` | 下架组件（对标 dashboard-templates archive） | 内部 | 一期 | DASH-010 | 已实现 | `backend/app/api/v1/viz_components.py` |
 | POST | `/api/v1/ai-viz/artifacts` | 注册自定义组件源码（customViz 库） | 内部 | 试点 | AIVIZ-002 | 已实现 | `backend/app/api/v1/ai_viz.py` |
 | PUT | `/api/v1/ai-viz/artifacts/{id}` | 覆盖同一组件源码；引用方刷新即新 | 内部 | 试点 | AIVIZ-009 | 已实现 | `backend/app/api/v1/ai_viz.py` |
+| GET | `/api/v1/ai-viz/artifacts` | 当前用户 artifact 列表（图表盘「自定义」） | 内部 | 试点 | AIVIZ-006 | 已实现 | `backend/app/api/v1/ai_viz.py` |
 | GET | `/api/v1/ai-viz/artifacts/{id}` | artifact 元数据 | 内部 | 试点 | AIVIZ-002 | 已实现 | `backend/app/api/v1/ai_viz.py` |
 | GET | `/api/v1/ai-viz/artifacts/{id}/entry` | 组件 HTML 源码（供 Base 挂载） | 内部 | 试点 | AIVIZ-002 | 已实现 | `backend/app/api/v1/ai_viz.py` |
 | POST | `/api/v1/views/validate` | DashboardView 协议校验；422 码：`VIEW_UNKNOWN_CHART_REF` / `VIEW_DEFAULT_SELF_REF` | IF-06 | 一期 | VIEW-001 | 已实现 | `backend/app/api/v1/views.py` |

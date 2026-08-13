@@ -56,6 +56,7 @@ import {
   type PixelLayoutWidget,
   type TabsWidgetConfig,
   type TextWidgetConfig,
+  type CustomVizWidgetConfig,
 } from "@/components/dashboard/layoutUtils";
 import {
   pixelWidgetToLayoutWidget,
@@ -94,7 +95,9 @@ import {
 } from "@/components/dashboard/pixelCanvas/gapCompaction";
 import { hasPositiveOuterGaps } from "@/components/dashboard/gapRuntimeProbe";
 import { cloneLayoutWidget } from "@/components/dashboard/cloneLayoutWidget";
+import type { WidgetClipboardEntry } from "@/components/dashboard/widgetClipboard";
 import type { DashboardWidgetActions } from "@/components/dashboard/WidgetContextMenu";
+import { applyWidgetQuickStyleAction } from "@/components/dashboard/widgetContextMenuStyle";
 import {
   normalizeWidgetLayout,
   placeWidgetAt,
@@ -301,6 +304,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     type: "view-data" | "enlarge";
     widgetId: string;
   } | null>(null);
+  const [widgetClipboard, setWidgetClipboard] = useState<WidgetClipboardEntry | null>(null);
 
   const layoutRef = useRef(layout);
   const styleConfigRef = useRef(styleConfig);
@@ -747,6 +751,9 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       } else {
         setPixelLayout(nextLayout);
         handleSelect(draft.id, false);
+        if (draft.type === "chart" || draft.type === "customViz") {
+          setChartRailOpen(true);
+        }
       }
       if (draft.type === "filter" && draft.filterConfig) {
         setFilterValues((previous) => ({
@@ -819,6 +826,9 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     }
     setWidgets(next);
     handleSelect(draft.id, false);
+    if (draft.type === "chart" || draft.type === "customViz") {
+      setChartRailOpen(true);
+    }
     if (draft.type === "filter" && draft.filterConfig) {
       setFilterValues((prev) => ({
         ...prev,
@@ -946,10 +956,22 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       if (!source) return;
       const sourcePixel =
         layout.version === 2 ? layout.widgets.find((w) => w.id === widgetId) : undefined;
-      appendClonedWidget(cloneLayoutWidget(source, widgets), sourcePixel);
+      setWidgetClipboard({
+        widget: structuredClone(source),
+        sourcePixel: sourcePixel ? structuredClone(sourcePixel) : undefined,
+      });
+      toast.success("已复制组件");
     },
-    [canSave, widgets, layout, appendClonedWidget],
+    [canSave, widgets, layout],
   );
+
+  const handlePasteWidget = useCallback(() => {
+    if (!canSave || !widgetClipboard) return;
+    appendClonedWidget(
+      cloneLayoutWidget(widgetClipboard.widget, widgets),
+      widgetClipboard.sourcePixel,
+    );
+  }, [canSave, widgetClipboard, widgets, appendClonedWidget]);
 
   const openWidgetViewDataDialog = useCallback((widgetId: string) => {
     const target = widgets.find((item) => item.id === widgetId);
@@ -963,12 +985,37 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     setWidgetActionDialog({ type: "enlarge", widgetId });
   }, [widgets]);
 
+  const handleWidgetStyleQuickAction = useCallback(
+    (
+      widgetId: string,
+      action: Parameters<typeof applyWidgetQuickStyleAction>[1],
+      options?: Parameters<typeof applyWidgetQuickStyleAction>[3],
+    ) => {
+      setWidgets((prev) =>
+        prev.map((item) =>
+          item.id === widgetId
+            ? applyWidgetQuickStyleAction(item, action, {
+                surface: isDataScreenSurface ? "data-screen" : "dashboard",
+                dashboardStyle: styleConfig,
+              }, options)
+            : item,
+        ),
+      );
+    },
+    [isDataScreenSurface, setWidgets, styleConfig],
+  );
+
   const dashboardWidgetActions = useMemo<DashboardWidgetActions>(
     () => ({
+      surface: isDataScreenSurface ? "data-screen" : "dashboard",
+      dashboardStyle: styleConfig,
       onCopy: handleCopyWidget,
+      onPaste: handlePasteWidget,
+      clipboardReady: Boolean(widgetClipboard),
       onDelete: handleDeleteWidget,
       onEnlarge: openWidgetEnlargeDialog,
       onViewData: openWidgetViewDataDialog,
+      onStyleQuickAction: handleWidgetStyleQuickAction,
       onTitleChange: (widgetId, title) => {
         setWidgets((prev) => resizeWidget(prev, widgetId, { title }));
       },
@@ -983,10 +1030,14 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     [
       handleCopyWidget,
       handleDeleteWidget,
+      handlePasteWidget,
+      handleWidgetStyleQuickAction,
+      isDataScreenSurface,
       openWidgetEnlargeDialog,
       openWidgetViewDataDialog,
       setWidgets,
-      isDataScreenSurface,
+      styleConfig,
+      widgetClipboard,
     ],
   );
 
@@ -1572,7 +1623,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                   className="min-h-0 flex-1"
                   widget={
                     inspectorWidget as typeof inspectorWidget & {
-                      customVizConfig: import("@/components/dashboard/layoutUtils").CustomVizWidgetConfig;
+                      customVizConfig: CustomVizWidgetConfig;
                     }
                   }
                   onTitleChange={(title) => {

@@ -10,6 +10,22 @@ vi.mock("@/lib/api", () => ({
     text: async () => "<!DOCTYPE html><html><body><p>custom</p></body></html>",
   })),
   getAuthHeaders: () => ({}),
+  apiFetch: vi.fn(async () => ({
+    artifactId: "550e8400-e29b-41d4-a716-446655440000",
+    manifest: { defaultStyle: {} },
+    status: "active",
+    contentHash: "abc",
+  })),
+}));
+
+vi.mock("@/components/charts/useChartExecute", () => ({
+  useChartExecute: () => ({
+    columns: [],
+    rows: [],
+    loading: false,
+    error: null,
+    slowHint: false,
+  }),
 }));
 
 vi.mock("@/lib/appBasePath", () => ({

@@ -90,7 +90,16 @@ customViz bundle **不限定**渲染技术栈。可选用原生 DOM/CSS、Canvas
 }
 ```
 
+## 运行时数据与样式（平台 → 宿主）
+
+Base 在 `query/execute` 出数后，向 `.vs-custom-viz-host` 注入：
+
+1. **JSON 载荷**：宿主内 `<script type="application/json" class="vs-cv-payload">`，结构 `{ columns, rows, style }`
+2. **样式变量**：`style` 各键映射为 `--vs-style-<kebab-case>` 写在宿主元素 `style` 上（与 manifest `defaultStyle` + layout `customVizConfig.style` 合并）
+
+bundle 内脚本可读取 `.vs-cv-payload` 文本并监听 DOM；推荐用 `getComputedStyle(host)` 读 `--vs-style-*`。
+
 ## 数据（第一期）
 
 - `dataBinding.status: "manual"`：用户稍后在平台绑字段；bundle 可用静态演示数据
-- 后续：平台向宿主注入查询结果
+- 平台绑字段后走与内置 chart 相同的 `query/execute`；**不在 layout 写入合成 chartType**

@@ -14,6 +14,12 @@ import {
 } from "@/lib/chartPaletteTaxonomy";
 import { cn } from "@/lib/utils";
 import { chartTypeIcon } from "@/lib/chartTypeIcons";
+import type { CustomVizInsertPayload } from "@/components/dashboard/createLayoutWidget";
+import { setCustomVizDragData, type CustomVizDragPayload } from "@/lib/dashboardDnd";
+import { fetchAiVizArtifacts, type AiVizArtifactMeta } from "@/lib/aiVizArtifacts";
+import { queryKeys } from "@/lib/queryKeys";
+import { useQuery } from "@tanstack/react-query";
+import { Sparkles } from "lucide-react";
 import {
   ChartExploreCatalogTrigger,
   ChartExploreDrawer,
@@ -21,6 +27,7 @@ import {
 
 type ChartPickerPopoverProps = {
   onInsert: (type: ChartType) => void;
+  onInsertCustomViz?: (payload: CustomVizInsertPayload) => void;
   onInserted?: () => void;
   /** 由父级托管目录 Drawer 时传入（避免 Dropdown 关闭导致 Drawer 卸载） */
   onOpenCatalog?: () => void;
@@ -32,6 +39,73 @@ type ChartPickerPopoverProps = {
   enableDrag?: boolean;
   className?: string;
 };
+
+const CUSTOM_VIZ_SECTION_ID = "custom-viz";
+
+function CustomVizTile({
+  item,
+  onInsert,
+  onInserted,
+  onPaletteDragStart,
+  onPaletteDragEnd,
+  enableDrag = true,
+}: {
+  item: AiVizArtifactMeta;
+  onInsert: (payload: CustomVizInsertPayload) => void;
+  onInserted?: () => void;
+  onPaletteDragStart?: () => void;
+  onPaletteDragEnd?: () => void;
+  enableDrag?: boolean;
+}) {
+  const label = item.manifest.displayName ?? item.manifest.id ?? "自定义组件";
+  const payload: CustomVizDragPayload = {
+    type: "customViz",
+    artifactId: item.artifactId,
+    displayName: label,
+  };
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      draggable={enableDrag}
+      onDragStart={(e) => {
+        if (!enableDrag) return;
+        setCustomVizDragData(e.dataTransfer, payload);
+        onPaletteDragStart?.();
+        e.stopPropagation();
+      }}
+      onDragEnd={() => {
+        if (!enableDrag) return;
+        onPaletteDragEnd?.();
+      }}
+      onClick={() => {
+        onInsert({ type: "customViz", artifactId: item.artifactId, displayName: label });
+        onInserted?.();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onInsert({ type: "customViz", artifactId: item.artifactId, displayName: label });
+          onInserted?.();
+        }
+      }}
+      className={cn(
+        "flex flex-col items-center gap-1.5 rounded-lg border border-transparent p-1.5 text-center transition-colors",
+        enableDrag ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
+        "hover:border-brand-200 hover:bg-brand-50/60 dark:hover:border-brand-500/30 dark:hover:bg-brand-500/10",
+        "focus-visible:outline-hidden focus-visible:ring-3 focus-visible:ring-brand-500/20",
+      )}
+    >
+      <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-brand-500 dark:bg-white/[0.06] dark:text-brand-400">
+        <Sparkles className="size-6" strokeWidth={1.75} aria-hidden />
+      </span>
+      <span className="line-clamp-2 w-full text-[11px] leading-tight text-gray-700 dark:text-gray-300">
+        {label}
+      </span>
+    </div>
+  );
+}
 
 function ChartTypeTile({
   item,
@@ -141,6 +215,7 @@ function SectionGrid({
 /** DataEase 风格：左侧分类导航 + 右侧连续滚动分区 */
 export function ChartPickerPopover({
   onInsert,
+  onInsertCustomViz,
   onInserted,
   onOpenCatalog,
   onPaletteDragStart,
@@ -167,21 +242,35 @@ export function ChartPickerPopover({
     return buildDeStylePaletteSections(enrichChartCatalogItems(items));
   }, [catalog]);
 
+  const { data: customArtifactsData } = useQuery({
+    queryKey: queryKeys.aiViz.list({ limit: 100, offset: 0 }),
+    queryFn: () => fetchAiVizArtifacts(100, 0),
+    enabled: Boolean(onInsertCustomViz),
+  });
+  const customArtifacts = customArtifactsData?.items ?? [];
+  const navSections = useMemo(
+    () =>
+      onInsertCustomViz
+        ? [...sections, { id: CUSTOM_VIZ_SECTION_ID, label: "自定义", items: [] }]
+        : sections,
+    [onInsertCustomViz, sections],
+  );
+
   const setSectionRef = useCallback((id: string, node: HTMLElement | null) => {
     if (node) sectionRefs.current.set(id, node);
     else sectionRefs.current.delete(id);
   }, []);
 
   useEffect(() => {
-    if (sections.length === 0) return;
-    if (!sections.some((section) => section.id === activeSectionId)) {
-      setActiveSectionId(sections[0]!.id);
+    if (navSections.length === 0) return;
+    if (!navSections.some((section) => section.id === activeSectionId)) {
+      setActiveSectionId(navSections[0]!.id);
     }
-  }, [sections, activeSectionId]);
+  }, [navSections, activeSectionId]);
 
   useEffect(() => {
     const root = scrollRef.current;
-    if (!root || sections.length === 0) return;
+    if (!root || navSections.length === 0) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -195,13 +284,13 @@ export function ChartPickerPopover({
       { root, threshold: 0.15, rootMargin: "-8px 0px -55% 0px" },
     );
 
-    for (const section of sections) {
+    for (const section of navSections) {
       const node = sectionRefs.current.get(section.id);
       if (node) observer.observe(node);
     }
 
     return () => observer.disconnect();
-  }, [sections]);
+  }, [navSections]);
 
   const scrollToSection = (sectionId: string) => {
     const node = sectionRefs.current.get(sectionId);
@@ -224,7 +313,7 @@ export function ChartPickerPopover({
         className="flex w-[84px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-gray-200 py-1 pr-1 dark:border-gray-800"
         aria-label="图表分类"
       >
-        {sections.map((section) => {
+        {navSections.map((section) => {
           const active = section.id === activeSectionId;
           return (
             <button
@@ -264,6 +353,36 @@ export function ChartPickerPopover({
               />
             </div>
           ))}
+          {onInsertCustomViz ? (
+            <div
+              ref={(node) => setSectionRef(CUSTOM_VIZ_SECTION_ID, node)}
+              data-section-id={CUSTOM_VIZ_SECTION_ID}
+              className="scroll-mt-1"
+            >
+              <section className="space-y-2">
+                <h3 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">自定义</h3>
+                {customArtifacts.length === 0 ? (
+                  <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+                    暂无 AI 自定义组件，请先在 VS-AI 生成并保存。
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-4 gap-1">
+                    {customArtifacts.map((item) => (
+                      <CustomVizTile
+                        key={item.artifactId}
+                        item={item}
+                        onInsert={onInsertCustomViz}
+                        onInserted={onInserted}
+                        onPaletteDragStart={onPaletteDragStart}
+                        onPaletteDragEnd={onPaletteDragEnd}
+                        enableDrag={enableDrag}
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
+            </div>
+          ) : null}
         </div>
         <div className="mt-4 border-t border-gray-200 pt-2 dark:border-gray-800">
           <ChartExploreCatalogTrigger

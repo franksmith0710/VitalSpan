@@ -21,6 +21,9 @@ function rewriteIds(widget: DashboardWidgetBase, payload: Record<string, unknown
   if (next.type === "media" && payload.mediaConfig) {
     next.mediaConfig = { ...(payload.mediaConfig as object) } as DashboardWidgetBase["mediaConfig"];
   }
+  if (next.type === "customViz" && payload.customVizConfig) {
+    next.customVizConfig = { ...(payload.customVizConfig as object) } as DashboardWidgetBase["customVizConfig"];
+  }
   return next;
 }
 

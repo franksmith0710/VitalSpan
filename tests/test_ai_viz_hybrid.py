@@ -95,6 +95,18 @@ def test_ai_viz_artifact_update_overwrites_entry(auth_headers: dict[str, str]) -
     assert "ok" not in entry.text
 
 
+def test_ai_viz_artifact_list(auth_headers: dict[str, str]) -> None:
+    created = client.post("/api/v1/ai-viz/artifacts", json=DEMO_BUNDLE, headers=auth_headers)
+    assert created.status_code == 201, created.text
+    artifact_id = created.json()["artifactId"]
+    listed = client.get("/api/v1/ai-viz/artifacts?limit=50&offset=0", headers=auth_headers)
+    assert listed.status_code == 200, listed.text
+    body = listed.json()
+    assert "items" in body
+    ids = [item["artifactId"] for item in body["items"]]
+    assert artifact_id in ids
+
+
 def test_ai_viz_rejects_external_script(auth_headers: dict[str, str]) -> None:
     bad = {
         **DEMO_BUNDLE,

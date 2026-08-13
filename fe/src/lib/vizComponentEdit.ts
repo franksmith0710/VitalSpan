@@ -61,7 +61,8 @@ export async function flushLinkedLocalOverridesToLibrary(
       (widget.type === "chart" && Boolean(widget.chartConfig)) ||
       (widget.type === "filter" && Boolean(widget.filterConfig)) ||
       (widget.type === "text" && Boolean(widget.textConfig)) ||
-      (widget.type === "media" && Boolean(widget.mediaConfig));
+      (widget.type === "media" && Boolean(widget.mediaConfig)) ||
+      (widget.type === "customViz" && Boolean(widget.customVizConfig));
     if (!hasLocalPayload) continue;
     const resolved = resolveLayoutWidget(widget, componentMap);
     await pushWidgetPayloadToLibrary(widget, componentMap, extractWidgetPayload(resolved));
@@ -97,7 +98,7 @@ export function relinkWidgetToComponent(
   widget: LayoutWidget,
   componentId: string,
 ): LayoutWidget {
-  const { chartConfig, filterConfig, textConfig, mediaConfig, ...rest } = widget;
+  const { chartConfig, filterConfig, textConfig, mediaConfig, customVizConfig, ...rest } = widget;
   return {
     ...rest,
     componentRef: { componentId },
@@ -106,6 +107,12 @@ export function relinkWidgetToComponent(
 
 export function isPublishableWidgetType(
   type: DashboardWidgetBase["type"],
-): type is "chart" | "filter" | "text" | "media" {
-  return type === "chart" || type === "filter" || type === "text" || type === "media";
+): type is "chart" | "filter" | "text" | "media" | "customViz" {
+  return (
+    type === "chart" ||
+    type === "filter" ||
+    type === "text" ||
+    type === "media" ||
+    type === "customViz"
+  );
 }

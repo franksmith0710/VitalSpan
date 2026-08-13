@@ -41,7 +41,7 @@ from app.viz.components.schemas import (
 SurfaceKind = Literal["dashboard", "data-screen"]
 ComponentStatus = Literal["draft", "published", "archived", None]
 ComponentVisibility = Literal["org", "private", None]
-WidgetType = Literal["chart", "filter", "text", "media", None]
+WidgetType = Literal["chart", "filter", "text", "media", "customViz", None]
 
 
 def _parse_user_id(actor: UserContext) -> uuid.UUID | None:

@@ -11,7 +11,7 @@ import type {
   DashboardWidgetBase,
   VizComponentRef,
 } from "@/components/dashboard/dashboardLayoutContracts";
-import type { FilterWidgetConfig, MediaWidgetConfig, TextWidgetConfig } from "@/components/dashboard/layoutUtils";
+import type { FilterWidgetConfig, MediaWidgetConfig, TextWidgetConfig, CustomVizWidgetConfig } from "@/components/dashboard/layoutUtils";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -21,13 +21,14 @@ export function isValidComponentUuid(id: string): boolean {
 }
 
 export type VizSurfaceKind = "dashboard" | "data-screen";
-export type VizWidgetType = "chart" | "filter" | "text" | "media";
+export type VizWidgetType = "chart" | "filter" | "text" | "media" | "customViz";
 
 export type VizComponentPayload = {
   chartConfig?: ChartViewConfig;
   filterConfig?: FilterWidgetConfig;
   textConfig?: TextWidgetConfig;
   mediaConfig?: MediaWidgetConfig;
+  customVizConfig?: CustomVizWidgetConfig;
 };
 
 export type VizComponentListItem = {
@@ -110,7 +111,13 @@ export function buildVizComponentsListUrl(params: {
 }
 
 function normalizeWidgetType(value: unknown): VizWidgetType {
-  if (value === "chart" || value === "filter" || value === "text" || value === "media") {
+  if (
+    value === "chart" ||
+    value === "filter" ||
+    value === "text" ||
+    value === "media" ||
+    value === "customViz"
+  ) {
     return value;
   }
   return "chart";
@@ -250,6 +257,9 @@ export function extractWidgetPayload(widget: DashboardWidgetBase): VizComponentP
     case "media":
       if (!widget.mediaConfig) throw new Error("media widget missing mediaConfig");
       return { mediaConfig: widget.mediaConfig };
+    case "customViz":
+      if (!widget.customVizConfig) throw new Error("customViz widget missing customVizConfig");
+      return { customVizConfig: widget.customVizConfig };
     default:
       throw new Error(`Widget type ${widget.type} cannot be published`);
   }

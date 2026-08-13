@@ -126,6 +126,7 @@ export function CanvasEditToolbar({
         >
           <ChartPickerPopover
             onInsert={onInsert}
+            onInsertCustomViz={(payload) => onInsert(payload)}
             onInserted={() => setChartOpen(false)}
             onOpenCatalog={() => {
               setChartOpen(false);

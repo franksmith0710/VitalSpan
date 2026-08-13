@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 SurfaceKind = Literal["dashboard", "data-screen"]
 ComponentStatus = Literal["draft", "published", "archived"]
 ComponentVisibility = Literal["org", "private"]
-WidgetType = Literal["chart", "filter", "text", "media"]
+WidgetType = Literal["chart", "filter", "text", "media", "customViz"]
 
 
 class VizComponentRef(BaseModel):
