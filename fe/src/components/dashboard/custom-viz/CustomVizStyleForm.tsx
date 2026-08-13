@@ -1,13 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { DeAttrField, DeAttrForm } from "../dashboardInspectorUi";
-
-type StyleProperty = {
-  type?: string;
-  format?: string;
-  minimum?: number;
-  maximum?: number;
-  title?: string;
-};
+import { readStyleSchemaProperties, type StyleProperty } from "./customVizStyleSchema";
 
 type CustomVizStyleFormProps = {
   styleSchema?: Record<string, unknown>;
@@ -15,14 +8,8 @@ type CustomVizStyleFormProps = {
   onChange: (next: Record<string, unknown>) => void;
 };
 
-function readProperties(schema: Record<string, unknown> | undefined): Record<string, StyleProperty> {
-  const props = schema?.properties;
-  if (!props || typeof props !== "object") return {};
-  return props as Record<string, StyleProperty>;
-}
-
 export function CustomVizStyleForm({ styleSchema, value, onChange }: CustomVizStyleFormProps) {
-  const properties = readProperties(styleSchema);
+  const properties = readStyleSchemaProperties(styleSchema);
   const entries = Object.entries(properties);
   if (entries.length === 0) {
     return (

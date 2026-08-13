@@ -83,12 +83,17 @@ export function SystemAdminHomePage() {
     queryKey: queryKeys.resourceGrants.list({}),
     queryFn: () => apiFetch<{ items: unknown[] }>("/api/v1/resource-grants"),
   });
+  const emailConnectQuery = useQuery({
+    queryKey: queryKeys.platformConnect.email,
+    queryFn: () => apiFetch<{ configured: boolean }>("/api/v1/platform/delivery/email"),
+  });
 
   const loading =
     orgsQuery.isLoading ||
     usersQuery.isLoading ||
     rolesQuery.isLoading ||
     grantsQuery.isLoading;
+  const emailConfigured = emailConnectQuery.data?.configured ?? false;
 
   const hasError =
     orgsQuery.isError ||
@@ -140,6 +145,14 @@ export function SystemAdminHomePage() {
       summary: "创建业务人员账号，绑定岗位角色与所属组织，交付初始密码。",
       href: "/admin/system/users",
       done: businessUserCount > 0,
+    },
+    {
+      id: "email",
+      title: "配置邮件发信",
+      summary: "在平台对接中保存 SMTP，定时报告将发到用户邮箱。客户部署时在此配置企业邮箱即可。",
+      href: "/admin/system/platform-connect",
+      done: emailConfigured,
+      optional: true,
     },
     {
       id: "grants",

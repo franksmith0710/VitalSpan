@@ -1,6 +1,7 @@
 # 开工规格 · IM 后台配置 + 自助绑定
 
-> **延期（2026-08-13）**：本期定时投递仅支持邮件通道；企微/钉钉/飞书按人投递与自助绑定暂不实现，后端 IM 代码保留。恢复实现时以本文与 [docs/integrations/im-platform-connect.md](../integrations/im-platform-connect.md) 为准。
+> **延期（2026-08-13）**：本期定时投递仅支持邮件通道；企微/钉钉/飞书按人投递与自助绑定暂不实现，后端 IM 代码保留。恢复实现时以本文与 [docs/integrations/im-platform-connect.md](../integrations/im-platform-connect.md) 为准。  
+> **邮件 SMTP**：不得长期依赖 `.env`；见 [email-smtp-platform-config.md](./email-smtp-platform-config.md)（与本文共用「平台对接」页与 `system:platform_connect.manage`）。
 
 ## 问题陈述
 

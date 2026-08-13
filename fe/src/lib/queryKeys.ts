@@ -118,6 +118,9 @@ export const queryKeys = {
     events: (params?: Record<string, string | number | undefined>) =>
       ["audit", "events", params] as const,
   },
+  platformConnect: {
+    email: ["platform-connect", "email"] as const,
+  },
   gov: {
     categories: ["gov", "categories"] as const,
     entries: (params?: { category?: string; limit?: number; offset?: number }) =>

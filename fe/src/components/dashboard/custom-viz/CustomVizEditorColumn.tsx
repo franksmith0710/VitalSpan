@@ -15,6 +15,7 @@ import { CustomVizDataOptions } from "./CustomVizDataOptions";
 import { CustomVizDataSlots } from "./CustomVizDataSlots";
 import { CustomVizStyleForm } from "./CustomVizStyleForm";
 import type { CustomVizFieldTarget } from "./customVizFieldSlots";
+import { mergeCustomVizStyleValue, resolveCustomVizStyleSchema } from "./customVizStyleSchema";
 
 type CustomVizEditorColumnProps = {
   widgetTitle: string;
@@ -53,6 +54,11 @@ export function CustomVizEditorColumn({
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [validating, setValidating] = useState(false);
   const [refreshOk, setRefreshOk] = useState(false);
+  const resolvedStyleSchema = resolveCustomVizStyleSchema(
+    manifest?.styleSchema,
+    manifest?.defaultStyle,
+  );
+  const styleValue = mergeCustomVizStyleValue(config.style, manifest?.defaultStyle);
 
   const validate = async () => {
     setError(null);
@@ -147,8 +153,8 @@ export function CustomVizEditorColumn({
         }
         style={
           <CustomVizStyleForm
-            styleSchema={manifest?.styleSchema}
-            value={config.style ?? {}}
+            styleSchema={resolvedStyleSchema}
+            value={styleValue}
             onChange={(style) => onChange({ ...config, style })}
           />
         }

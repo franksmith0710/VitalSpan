@@ -33,6 +33,8 @@ PERMISSION_CATALOG: tuple[PermissionDefinition, ...] = (
     _p("system:org.read", "查看组织", "读取组织树"),
     _p("system:org.manage", "管理组织", "创建、修改、删除组织节点"),
     _p("system:audit.read", "查看审计", "读取审计事件"),
+    _p("system:platform_connect.read", "查看平台对接", "读取邮件等通道对接配置摘要"),
+    _p("system:platform_connect.manage", "管理平台对接", "保存、探测与清空邮件等通道对接配置"),
     _p("datasource:read", "查看数据源", "读取数据源列表、详情与元数据浏览"),
     _p("datasource:manage", "管理数据源", "创建、编辑、删除数据源与测试连接"),
     _p("dashboard:read", "查看仪表板", "读取、预览、执行仪表板"),

@@ -8,6 +8,7 @@ from typing import Any
 import httpx
 
 from app.core.config import Settings, get_settings
+from app.core.platform_config.resolve import resolve_email_smtp
 from app.reports.scheduler.channels import work_notice
 from app.reports.scheduler.delivery_adapter import _deliver_explicit_mock, _send_smtp
 
@@ -122,9 +123,10 @@ def deliver_to_channels(
 
     for channel in channel_list:
         if channel == "email":
+            smtp = resolve_email_smtp()
             steps.append(_send_smtp(
                 artifact_ref,
-                settings,
+                smtp,
                 recipient_emails=recipient_emails,
                 artifact_kind=artifact_kind,
                 attachments=attachments,

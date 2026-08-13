@@ -37,10 +37,10 @@ function precheckFixHint(item: PrecheckItem): string | undefined {
   if (item.ok) return undefined;
   const detail = item.detail.toLowerCase();
   if (item.id === "delivery") {
-    if (detail.includes("1025") || detail.includes("smtp")) {
-      return "本地修复：docker compose up -d mailhog；或 python .tmp/run_local_mailhog.py";
+    if (detail.includes("1025") || detail.includes("mailhog") || detail.includes("localhost")) {
+      return "请在系统管理 → 平台对接配置邮件 SMTP；本地调试可 docker compose up -d mailhog";
     }
-    return "请配置 RPT_SMTP_HOST / RPT_SMTP_PORT / RPT_SMTP_FROM（见 backend/.env.example）";
+    return "请在系统管理 → 平台对接配置邮件 SMTP（保存前会自动探测连通性）";
   }
   if (item.id === "export") {
     if (detail.includes("playwright") || detail.includes("chromium")) {

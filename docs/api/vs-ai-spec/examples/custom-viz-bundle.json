@@ -5,8 +5,15 @@
     "version": "1.0.0",
     "entry": "index.html",
     "fieldSlots": {
-      "dimensions": { "min": 1, "max": 1 },
-      "metrics": { "min": 1, "max": 1 }
+      "dimensions": { "min": 1, "max": 1, "label": "类别" },
+      "metrics": { "min": 1, "max": 1, "label": "数值" }
+    },
+    "styleSchema": {
+      "type": "object",
+      "properties": {
+        "accentColor": { "type": "string", "format": "color", "title": "强调色" },
+        "barHeight": { "type": "number", "minimum": 8, "maximum": 48, "title": "条高度" }
+      }
     },
     "defaultStyle": { "accentColor": "#2563eb", "barHeight": 20 },
     "rendererHint": "vanilla"

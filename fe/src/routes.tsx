@@ -32,6 +32,7 @@ import { RlsAdminPage } from "@/pages/admin/system/rls/RlsAdminPage";
 import { AuditLogPage } from "@/pages/admin/system/audit/AuditLogPage";
 import { GrantsPage } from "@/pages/admin/system/grants/GrantsPage";
 import { SystemAdminHomePage } from "@/pages/admin/system/SystemAdminHomePage";
+import { PlatformConnectPage } from "@/pages/admin/system/platform-connect/PlatformConnectPage";
 import { GovernanceCatalogPage } from "@/pages/admin/governance/GovernanceCatalogPage";
 import { GovernanceWorkflowPage } from "@/pages/admin/governance/GovernanceWorkflowPage";
 import { GovernancePublishPage } from "@/pages/admin/governance/GovernancePublishPage";
@@ -258,11 +259,18 @@ export function AppRoutes() {
           <Route path="system/orgs" element={<RequireCapabilityName capability="system:*"><OrgTreePage /></RequireCapabilityName>} />
           <Route path="system/rls" element={<RequireCapabilityName capability="system:*"><RlsAdminPage /></RequireCapabilityName>} />
           <Route path="system/audit" element={<RequireCapabilityName capability="system:*"><AuditLogPage /></RequireCapabilityName>} />
-          <Route
-            path="system/grants"
+          <Route path="system/grants"
             element={
               <RequireCapabilityName capability="system:*">
                 <GrantsPage />
+              </RequireCapabilityName>
+            }
+          />
+          <Route
+            path="system/platform-connect"
+            element={
+              <RequireCapabilityName capability="system:*">
+                <PlatformConnectPage />
               </RequireCapabilityName>
             }
           />

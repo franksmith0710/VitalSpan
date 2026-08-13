@@ -42,22 +42,22 @@ function parseSlot(key: string, rule: SlotRule | undefined): CustomVizFieldSlotD
   };
 }
 
+const DEFAULT_FIELD_SLOT_DEFS: CustomVizFieldSlotDef[] = [
+  { key: "dimensions", kind: "dimension", label: "维度", required: true, min: 1, max: 1 },
+  { key: "metrics", kind: "metric", label: "指标", required: true, min: 1, max: 1 },
+];
+
 export function parseCustomVizFieldSlots(
   fieldSlots: Record<string, unknown> | undefined,
 ): CustomVizFieldSlotDef[] {
-  if (!fieldSlots) return [];
+  if (!fieldSlots) return DEFAULT_FIELD_SLOT_DEFS;
   const slots: CustomVizFieldSlotDef[] = [];
   for (const [key, value] of Object.entries(fieldSlots)) {
     if (!value || typeof value !== "object") continue;
     const slot = parseSlot(key, value as SlotRule);
     if (slot) slots.push(slot);
   }
-  if (slots.length === 0) {
-    return [
-      { key: "dimensions", kind: "dimension", label: "维度", required: true, min: 1, max: 1 },
-      { key: "metrics", kind: "metric", label: "指标", required: true, min: 1, max: 1 },
-    ];
-  }
+  if (slots.length === 0) return DEFAULT_FIELD_SLOT_DEFS;
   return slots;
 }
 

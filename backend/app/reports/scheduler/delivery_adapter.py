@@ -4,37 +4,13 @@ import logging
 import smtplib
 from email.message import EmailMessage
 
-from app.core.config import Settings, get_settings
+from sqlalchemy.orm import Session
+
+from app.core.platform_config.resolve import resolve_email_smtp
+from app.core.platform_config.smtp_probe import connect_smtp, format_smtp_error, probe_smtp_connection
+from app.core.platform_config.smtp_settings import SmtpSettings
 
 logger = logging.getLogger(__name__)
-
-
-def _connect_smtp(settings: Settings, *, timeout: int) -> smtplib.SMTP:
-    host = settings.rpt_smtp_host
-    port = settings.rpt_smtp_port
-    if port == 465:
-        smtp = smtplib.SMTP_SSL(host, port, timeout=timeout)
-        smtp.ehlo()
-        return smtp
-    smtp = smtplib.SMTP(host, port, timeout=timeout)
-    smtp.ehlo()
-    if port == 587:
-        smtp.starttls()
-        smtp.ehlo()
-    return smtp
-
-
-def _format_smtp_error(exc: OSError, settings: Settings) -> str:
-    host = settings.rpt_smtp_host
-    port = settings.rpt_smtp_port
-    if isinstance(exc, ConnectionRefusedError) or "Connection refused" in str(exc):
-        return (
-            f"邮件投递失败：无法连接 SMTP {host}:{port}。"
-            "本地开发请启动 MailHog（端口 1025）或配置 RPT_SMTP_* 环境变量。"
-        )
-    if "timed out" in str(exc).lower():
-        return f"邮件投递失败：连接 SMTP {host}:{port} 超时，请检查网络与防火墙。"
-    return f"邮件投递失败：{exc}"
 
 
 _ARTIFACT_EMAIL: dict[str, tuple[str, str]] = {
@@ -59,7 +35,7 @@ _ARTIFACT_EMAIL: dict[str, tuple[str, str]] = {
 
 def _send_smtp(
     artifact_ref: str,
-    settings: Settings,
+    smtp: SmtpSettings,
     *,
     recipient_emails: list[str] | None = None,
     artifact_kind: str | None = None,
@@ -68,14 +44,23 @@ def _send_smtp(
     attachment_mime: str | None = None,
     attachments: list[tuple[bytes, str, str]] | None = None,
 ) -> dict:
-    to_addrs = recipient_emails or [settings.rpt_smtp_from]
+    if not smtp.is_configured:
+        return {
+            "channel": "email",
+            "status": "failed",
+            "attempt": 1,
+            "mode": "smtp",
+            "error": "SMTP 未配置：请在系统管理 → 平台对接配置邮件发信。",
+            "recipients": recipient_emails or [],
+        }
+    to_addrs = recipient_emails or [smtp.from_addr]
     subject, body_tpl = _ARTIFACT_EMAIL.get(
         artifact_kind or "",
         ("VitalSpan scheduled report", "Report artifact: {ref}"),
     )
     msg = EmailMessage()
     msg["Subject"] = subject
-    msg["From"] = settings.rpt_smtp_from
+    msg["From"] = smtp.from_addr
     msg["To"] = ", ".join(to_addrs)
     body = body_tpl.format(ref=artifact_ref) if "{ref}" in body_tpl else body_tpl
     msg.set_content(body)
@@ -87,13 +72,23 @@ def _send_smtp(
         subtype = subtype or "octet-stream"
         msg.add_attachment(att_bytes, maintype=maintype, subtype=subtype, filename=att_name)
     try:
-        with _connect_smtp(settings, timeout=5) as smtp:
-            if settings.rpt_smtp_user and settings.rpt_smtp_password:
-                smtp.login(settings.rpt_smtp_user, settings.rpt_smtp_password)
-            smtp.send_message(msg)
+        with connect_smtp(smtp, timeout=5) as conn:
+            if smtp.username and smtp.password:
+                conn.login(smtp.username, smtp.password)
+            conn.send_message(msg)
     except OSError as exc:
-        error = _format_smtp_error(exc, settings)
+        error = format_smtp_error(exc, smtp)
         logger.warning("SMTP delivery failed: %s", error)
+        return {
+            "channel": "email",
+            "status": "failed",
+            "attempt": 1,
+            "mode": "smtp",
+            "error": error,
+            "recipients": to_addrs,
+        }
+    except smtplib.SMTPAuthenticationError as exc:
+        error = f"SMTP 认证失败：请检查发件账号与授权码。{exc.smtp_code}"
         return {
             "channel": "email",
             "status": "failed",
@@ -112,7 +107,6 @@ def _send_smtp(
 
 
 def _deliver_explicit_mock(channels: list[str], mock_mode: str) -> dict:
-    """Test-only mock delivery; requires explicit X-Rpt-Delivery-Mock header."""
     channel_list = channels or ["email"]
     steps: list[dict] = []
     overall = "delivered"
@@ -138,35 +132,17 @@ def _deliver_explicit_mock(channels: list[str], mock_mode: str) -> dict:
     }
 
 
-def probe_smtp_health(settings: Settings | None = None) -> dict:
-    settings = settings or get_settings()
-    host = settings.rpt_smtp_host.strip()
-    port = settings.rpt_smtp_port
-    if not host or not settings.rpt_smtp_from.strip():
-        return {
-            "status": "unconfigured",
-            "host": host or None,
-            "port": port,
-            "error": "SMTP 未配置：请设置 RPT_SMTP_HOST 与 RPT_SMTP_FROM。",
-        }
-    try:
-        with _connect_smtp(settings, timeout=3) as smtp:
-            pass
-    except OSError as exc:
-        return {
-            "status": "unreachable",
-            "host": host,
-            "port": port,
-            "error": _format_smtp_error(exc, settings),
-        }
-    return {"status": "reachable", "host": host, "port": port, "error": None}
+def probe_smtp_health(session: Session | None = None) -> dict:
+    smtp = resolve_email_smtp(session)
+    result = probe_smtp_connection(smtp)
+    return result
 
 
 def deliver_artifact(
     artifact_ref: str,
     channels: list[str],
     mock_mode: str | None,
-    settings: Settings | None = None,
+    session: Session | None = None,
     *,
     recipient_emails: list[str] | None = None,
     artifact_kind: str | None = None,
@@ -174,15 +150,13 @@ def deliver_artifact(
     attachment_filename: str | None = None,
     attachment_mime: str | None = None,
 ) -> dict:
-    settings = settings or get_settings()
     channel_list = channels or ["email"]
-
     if mock_mode is not None:
         return _deliver_explicit_mock(channel_list, mock_mode)
-
+    smtp = resolve_email_smtp(session)
     step = _send_smtp(
         artifact_ref,
-        settings,
+        smtp,
         recipient_emails=recipient_emails,
         artifact_kind=artifact_kind,
         attachment_bytes=attachment_bytes,
@@ -198,4 +172,5 @@ def deliver_artifact(
         "deliverySteps": steps,
         "deliveryMode": "smtp",
         "error": error,
+        "source": smtp.source,
     }

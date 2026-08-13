@@ -218,43 +218,39 @@ def test_rpt003_template_blocks_reorder(client: TestClient):
 
 def test_rpt005_delivery_smtp_without_header(client: TestClient):
     """RPT-005: 无 mock header 时固定走 SMTP 适配器。"""
-    settings = get_settings()
-    result = deliver_artifact("semi://x", ["email"], None, settings)
+    result = deliver_artifact("semi://x", ["email"], None, None)
     assert result["deliveryMode"] == "smtp"
     assert result["deliverySteps"][0]["mode"] == "smtp"
 
 
 def test_rpt005_delivery_mock_mode_requires_header(client: TestClient):
     """RPT-005: explicit X-Rpt-Delivery-Mock success → mock delivered."""
-    settings = get_settings()
-    result = deliver_artifact("semi://x", ["email"], "success", settings)
+    result = deliver_artifact("semi://x", ["email"], "success", None)
     assert result["deliveryMode"] == "mock"
     assert result["status"] == "delivered"
 
 
 def test_rpt005_delivery_smtp_mode(client: TestClient):
     """RPT-005: smtp adapter attempts send (mock SMTP)."""
-    settings = get_settings()
     with patch(
-        "app.reports.scheduler.delivery_adapter.smtplib.SMTP",
+        "app.reports.scheduler.delivery_adapter.connect_smtp",
     ) as smtp_cls:
         smtp_cls.return_value.__enter__.return_value.send_message.return_value = None
-        result = deliver_artifact("semi://reports/x/y", ["email"], None, settings)
+        result = deliver_artifact("semi://reports/x/y", ["email"], None, None)
     assert result["deliveryMode"] == "smtp"
     assert result["deliverySteps"][0]["mode"] == "smtp"
 
 
 def test_rpt005_delivery_smtp_includes_pdf_attachment(client: TestClient):
     """RPT-005: visual_snapshot 投递应附带 PDF MIME 附件。"""
-    settings = get_settings()
     pdf_bytes = b"%PDF-1.4 attachment test\n" + b"x" * 64
-    with patch("app.reports.scheduler.delivery_adapter.smtplib.SMTP") as smtp_cls:
+    with patch("app.reports.scheduler.delivery_adapter.connect_smtp") as smtp_cls:
         smtp_instance = smtp_cls.return_value.__enter__.return_value
         result = deliver_artifact(
             "/api/v1/dashboards/export-jobs/00000000-0000-4000-8000-000000000001/download",
             ["email"],
             None,
-            settings,
+            None,
             artifact_kind="visual_snapshot",
             attachment_bytes=pdf_bytes,
             attachment_filename="dashboard-test.pdf",
@@ -270,12 +266,11 @@ def test_rpt005_delivery_smtp_includes_pdf_attachment(client: TestClient):
 
 def test_rpt005_delivery_smtp_connection_refused_surfaces_error():
     """RPT-005: SMTP 连接失败时返回可读中文错误并写入顶层 error。"""
-    settings = get_settings()
     with patch(
-        "app.reports.scheduler.delivery_adapter.smtplib.SMTP",
+        "app.reports.scheduler.delivery_adapter.connect_smtp",
         side_effect=ConnectionRefusedError(111, "Connection refused"),
     ):
-        result = deliver_artifact("semi://reports/x/y", ["email"], None, settings)
+        result = deliver_artifact("semi://reports/x/y", ["email"], None, None)
     assert result["status"] == "degraded"
     assert result["deliverySteps"][0]["status"] == "failed"
     assert "邮件投递失败" in (result.get("error") or "")

@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { expandCustomVizFieldSlotsForUi } from "./customVizFieldSlots";
 
 describe("expandCustomVizFieldSlotsForUi", () => {
+  it("uses default dimension and metric slots when manifest fieldSlots is omitted", () => {
+    const slots = expandCustomVizFieldSlotsForUi(undefined);
+    expect(slots).toHaveLength(2);
+    expect(slots.map((s) => s.kind)).toEqual(["dimension", "metric"]);
+  });
+
   it("expands metrics.max into indexed UI slots", () => {
     const slots = expandCustomVizFieldSlotsForUi({
       dimensions: { min: 1, max: 1, label: "类别" },

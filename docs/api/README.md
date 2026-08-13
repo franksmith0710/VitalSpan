@@ -84,6 +84,9 @@ redoc: /redoc
 | PUT/GET/DELETE | `/api/v1/users/{id}/org` | 用户组织归属 | 内部 | 一期 | AUTH-002 | 已实现 | `backend/app/api/v1/users.py` |
 | GET/POST | `/api/v1/orgs` | 组织树节点列表/创建（`q` · `limit` · `offset`） | 内部 | 一期 | AUTH-002 | 已实现 | `backend/app/api/v1/orgs.py` |
 | GET/PUT/DELETE | `/api/v1/orgs/{org_id}` | 组织节点详情/更新/删除 | 内部 | 一期 | AUTH-002 | 已实现 | `backend/app/api/v1/orgs.py` |
+| GET | `/api/v1/platform/delivery/email` | 邮件 SMTP 对接摘要（无明文密码；含 `source` db/env/none） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
+| PUT | `/api/v1/platform/delivery/email` | 保存邮件 SMTP 并探测（`system:platform_connect.manage`） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
+| DELETE | `/api/v1/platform/delivery/email` | 清空邮件 SMTP（清空后忽略 env 回落） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
 | GET/POST | `/api/v1/resource-grants` | AUTH-004 资源授权列表/创建 | 内部 | 一期 | AUTH-004 | 已实现 | `backend/app/api/v1/resource_grants.py` |
 | DELETE | `/api/v1/resource-grants/{grant_id}` | 删除单条资源授权（204） | 内部 | 一期 | AUTH-004 | 已实现 | `backend/app/api/v1/resource_grants.py` |
 | GET/POST | `/api/v1/rls/dimensions` | 权限维度类型（写操作 admin 守卫 → 403 `DIMENSION_FORBIDDEN`） | 内部 | 一期 | AUTH-005 | 已实现 | `backend/app/api/v1/rls.py` |
