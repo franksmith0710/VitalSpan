@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileText, Mail, Timer, Users } from "lucide-react";
+import { FileText, Mail, Plus, Timer, Users } from "lucide-react";
 import { cronFromWizard, ScheduleWizard } from "./ScheduleWizard";
 import {
   DEFAULT_RECIPIENTS,
@@ -65,7 +65,7 @@ type ScheduleFormFieldsProps = {
   showDeliveryChannels?: boolean;
   /** 与 SchedulePrecheckPanel 同屏时隐藏独立健康 Alert，避免重复 */
   hideStandaloneHealthAlerts?: boolean;
-  /** 看板/大屏弹窗内：双栏布局 + 精简 PDF/投递说明 */
+  /** 看板/大屏弹窗内：纵向分区 + 精简 PDF/投递说明 */
   embeddedLayout?: boolean;
   idPrefix?: string;
 };
@@ -127,20 +127,9 @@ export function ScheduleFormFields({
   const attachmentField =
     showAttachments && attachmentFormatMode === "pdf-only" ? (
       embeddedLayout ? (
-        <div className="flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50/80 px-3 py-2.5 dark:border-gray-800 dark:bg-white/[0.03]">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white text-brand-600 ring-1 ring-gray-200 dark:bg-white/5 dark:text-brand-400 dark:ring-gray-700">
-            <FileText className="size-4" aria-hidden />
-          </span>
-          <div className="min-w-0">
-            <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">PDF 可视化快照</p>
-            <p className="mt-0.5 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-              截取当前画布生成报告，经邮件投递附件。
-            </p>
-            <p className="mt-1.5 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-              {VISUAL_SNAPSHOT_CREATE_NOTICE}
-            </p>
-          </div>
-        </div>
+        <p className="text-theme-xs leading-relaxed text-gray-600 dark:text-gray-400">
+          按上方调度时间截取当前画布，生成 PDF 并经邮件投递。若 Playwright 或 SMTP 未就绪，创建前预检会提示。
+        </p>
       ) : (
         <div className="grid gap-2">
           <Label>附件格式</Label>
@@ -218,53 +207,73 @@ export function ScheduleFormFields({
         </>
       ) : null}
       {embeddedLayout ? (
-        <div className="grid gap-4 lg:grid-cols-5 lg:items-start">
-          <div className="grid gap-4 lg:col-span-3">
-            <ScheduleFormSection
-              title="调度规则"
-              description="设置执行频率、时间与附件格式"
-              icon={Timer}
-            >
-              <div className="space-y-4">
-                <ScheduleWizard
-                  value={value.wizard}
-                  onChange={(wizard) => {
-                    patch({ wizard, cron: cronFromWizard(wizard) });
-                  }}
-                  disabled={disabled}
-                  showAdvancedCron={value.showAdvancedCron}
-                  cron={value.cron}
-                  onCronChange={(cron) => patch({ cron })}
-                  idPrefix={idPrefix}
-                  embedded
-                />
-                {timezoneField}
-                {attachmentField}
-                {advancedCronButton}
-              </div>
-            </ScheduleFormSection>
-          </div>
-          <div className="grid gap-4 lg:col-span-2">
-            <ScheduleFormSection
-              title="接收人"
-              description="按角色、用户或邮箱指定投递对象"
-              icon={Users}
-            >
-              <ScheduleRecipientsField
-                value={value.recipients}
-                onChange={(recipients) => patch({ recipients })}
+        <div className="space-y-4">
+          <ScheduleFormSection title="调度规则" description="执行频率、时间与 Cron" icon={Timer}>
+            <div className="space-y-4">
+              <ScheduleWizard
+                value={value.wizard}
+                onChange={(wizard) => {
+                  patch({ wizard, cron: cronFromWizard(wizard) });
+                }}
                 disabled={disabled}
-                idPrefix={`${idPrefix}-recipient`}
+                showAdvancedCron={value.showAdvancedCron}
+                cron={value.cron}
+                onCronChange={(cron) => patch({ cron })}
+                idPrefix={idPrefix}
                 embedded
               />
-            </ScheduleFormSection>
-            <div className="flex items-start gap-2.5 rounded-xl border border-dashed border-gray-200 bg-gray-50/50 px-4 py-3 dark:border-gray-800 dark:bg-white/[0.02]">
-              <Mail className="mt-0.5 size-4 shrink-0 text-gray-400" aria-hidden />
-              <p className="text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                看板/大屏主路径经邮件投递 PDF；企微与钉钉仅发送摘要引用。
-              </p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {timezoneField}
+                <div className="flex items-end">{advancedCronButton}</div>
+              </div>
             </div>
-          </div>
+          </ScheduleFormSection>
+
+          <ScheduleFormSection
+            title="接收人"
+            description="按角色、用户或邮箱指定投递对象"
+            icon={Users}
+            action={
+              !disabled ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    patch({
+                      recipients: [...value.recipients, ...DEFAULT_RECIPIENTS],
+                    })
+                  }
+                >
+                  <Plus className="size-3.5" aria-hidden />
+                  添加
+                </Button>
+              ) : undefined
+            }
+            footer={
+              <div className="flex items-start gap-2.5">
+                <Mail className="mt-0.5 size-4 shrink-0 text-gray-400" aria-hidden />
+                <p className="text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
+                  看板/大屏主路径经邮件投递 PDF；企微与钉钉仅发送摘要引用。
+                </p>
+              </div>
+            }
+          >
+            <ScheduleRecipientsField
+              value={value.recipients}
+              onChange={(recipients) => patch({ recipients })}
+              disabled={disabled}
+              idPrefix={`${idPrefix}-recipient`}
+              embedded
+              hideAddButton
+            />
+          </ScheduleFormSection>
+
+          {showAttachments && attachmentFormatMode === "pdf-only" ? (
+            <ScheduleFormSection title="报告附件" description="PDF 可视化快照" icon={FileText}>
+              {attachmentField}
+            </ScheduleFormSection>
+          ) : null}
         </div>
       ) : (
         <>

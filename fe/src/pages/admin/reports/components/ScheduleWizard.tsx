@@ -47,7 +47,12 @@ export function ScheduleWizard({
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div
+        className={cn(
+          "grid gap-3",
+          embedded ? "sm:grid-cols-2 lg:grid-cols-3" : "sm:grid-cols-2",
+        )}
+      >
         <div className="grid gap-2">
           <Label htmlFor={`${idPrefix}-frequency`}>频率</Label>
           <Select
@@ -99,60 +104,62 @@ export function ScheduleWizard({
             <p className="text-theme-xs text-error-500">小时须为 0–23，分钟须为 0–59</p>
           ) : null}
         </div>
-      </div>
-      {value.frequency === "weekly" ? (
-        <div className="grid gap-2">
-          <Label htmlFor={`${idPrefix}-weekday`}>星期</Label>
-          <Select
-            value={String(value.weekday)}
-            onValueChange={(v) => onChange({ ...value, weekday: Number(v) })}
-            disabled={disabled}
-          >
-            <SelectTrigger id={`${idPrefix}-weekday`} className="h-11">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {WEEKDAY_LABELS.map((label, idx) => (
-                <SelectItem key={idx} value={String(idx)}>
-                  周{label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      ) : null}
-      {value.frequency === "monthly" ? (
-        <div className="grid gap-2">
-          <Label htmlFor={`${idPrefix}-day`}>每月第几天</Label>
-          <Input
-            id={`${idPrefix}-day`}
-            type="number"
-            min={1}
-            max={31}
-            className="h-11"
-            value={value.dayOfMonth}
-            disabled={disabled}
-            onChange={(e) => onChange({ ...value, dayOfMonth: Number(e.target.value) })}
-          />
-        </div>
-      ) : null}
-      <div
-        className={cn(
-          embedded
-            ? "flex items-center gap-2 rounded-lg border border-brand-200/80 bg-brand-50/70 px-3 py-2 dark:border-brand-500/25 dark:bg-brand-500/10"
-            : "",
-        )}
-      >
-        {embedded ? <Clock3 className="size-3.5 shrink-0 text-brand-600 dark:text-brand-400" aria-hidden /> : null}
-        <p
+        {value.frequency === "weekly" ? (
+          <div className="grid gap-2 sm:col-span-2 lg:col-span-1">
+            <Label htmlFor={`${idPrefix}-weekday`}>星期</Label>
+            <Select
+              value={String(value.weekday)}
+              onValueChange={(v) => onChange({ ...value, weekday: Number(v) })}
+              disabled={disabled}
+            >
+              <SelectTrigger id={`${idPrefix}-weekday`} className="h-11">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {WEEKDAY_LABELS.map((label, idx) => (
+                  <SelectItem key={idx} value={String(idx)}>
+                    周{label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
+        {value.frequency === "monthly" ? (
+          <div className="grid gap-2 sm:col-span-2 lg:col-span-1">
+            <Label htmlFor={`${idPrefix}-day`}>每月第几天</Label>
+            <Input
+              id={`${idPrefix}-day`}
+              type="number"
+              min={1}
+              max={31}
+              className="h-11"
+              value={value.dayOfMonth}
+              disabled={disabled}
+              onChange={(e) => onChange({ ...value, dayOfMonth: Number(e.target.value) })}
+            />
+          </div>
+        ) : null}
+        <div
           className={cn(
             embedded
-              ? "text-theme-xs font-medium text-brand-700 dark:text-brand-300"
-              : "text-theme-xs text-gray-500 dark:text-gray-400",
+              ? "flex items-center gap-2 rounded-lg border border-brand-200/80 bg-brand-50/70 px-3 py-2 sm:col-span-2 lg:col-span-3 dark:border-brand-500/25 dark:bg-brand-500/10"
+              : "sm:col-span-2",
           )}
         >
-          {embedded ? `将按「${preview}」执行` : `预览：${preview}`}
-        </p>
+          {embedded ? (
+            <Clock3 className="size-3.5 shrink-0 text-brand-600 dark:text-brand-400" aria-hidden />
+          ) : null}
+          <p
+            className={cn(
+              embedded
+                ? "text-theme-xs font-medium text-brand-700 dark:text-brand-300"
+                : "text-theme-xs text-gray-500 dark:text-gray-400",
+            )}
+          >
+            {embedded ? `将按「${preview}」执行` : `预览：${preview}`}
+          </p>
+        </div>
       </div>
       {showAdvancedCron && onCronChange ? (
         <div className="grid gap-2">

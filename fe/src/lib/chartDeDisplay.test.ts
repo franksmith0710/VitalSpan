@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import {
   buildCustomRefreshFromParts,
+  CHART_RESULT_LIMIT_OPTIONS,
   dashboardQueryLimitSelectValue,
   parseCustomRefreshParts,
   parseDeRefreshIntervalSec,
@@ -36,5 +37,20 @@ describe("chartDeDisplay", () => {
     expect(buildCustomRefreshFromParts(2, "m")).toBe("custom:120");
     expect(parseCustomRefreshParts("custom:120")).toEqual({ amount: 2, unit: "m" });
     expect(parseCustomRefreshParts("custom:45")).toEqual({ amount: 45, unit: "s" });
+  });
+
+  it("T-DE-DISP-05: result limit options exclude 10000 and 全部", () => {
+    const values = CHART_RESULT_LIMIT_OPTIONS.map((opt) => opt.value);
+    expect(values).toEqual(["100", "500", "1000"]);
+  });
+
+  it("T-DE-DISP-06: legacy all/10000 coerce to latest 1000", () => {
+    expect(parseDeResultLimit("all")).toBe(1000);
+    expect(parseDeResultLimit("10000")).toBe(1000);
+    expect(dashboardQueryLimitSelectValue(10000)).toBe("1000");
+    expect(selectValueToDashboardQueryLimit("all")).toBe(1000);
+    expect(
+      resolveChartQueryLimit(patchChartDeDisplay(baseCfg, { resultLimit: "all" }), {}),
+    ).toBe(1000);
   });
 });

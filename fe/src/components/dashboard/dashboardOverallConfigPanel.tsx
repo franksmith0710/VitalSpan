@@ -215,7 +215,7 @@ function QueryLimitField({
   const selectValue = dashboardQueryLimitSelectValue(defaultQueryLimit);
 
   return (
-    <DeAttrField label="结果展示" compact hint="看板默认">
+    <DeAttrField label="结果展示" compact hint="看板默认，取最新 N 条">
       <Select
         value={selectValue}
         onValueChange={(next) => onChange(selectValueToDashboardQueryLimit(next))}

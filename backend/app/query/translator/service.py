@@ -5,6 +5,7 @@ from app.designer.schemas import DESIGNER_FIELD_REGISTRY
 from app.query.dialects import UnsupportedDialectError, get_sql_dialect
 from app.query.capabilities import resolve_sql_dialect_type
 from app.query.rls.guard import validate_identifier
+from app.query.translator.latest_order import apply_latest_limit
 from app.query.translator.schemas import (
     ALLOWED_LOGIC,
     L1_OPERATORS,
@@ -158,7 +159,13 @@ def translate_config_to_sql(request: TranslateRequest) -> TranslateResponse:
         joiner = f" {request.conditions.logic} "
         sql = f"{sql} WHERE {joiner.join(parts)}"
 
-    sql = dialect.wrap_limit(sql, limit=limit, offset=request.offset)
+    sql = apply_latest_limit(
+        sql,
+        dialect,
+        request.columns,
+        limit=limit,
+        offset=request.offset,
+    )
     return TranslateResponse(
         sql=sql,
         parameters=parameters,

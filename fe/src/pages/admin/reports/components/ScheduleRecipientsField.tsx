@@ -39,6 +39,8 @@ type ScheduleRecipientsFieldProps = {
   disabled?: boolean;
   idPrefix?: string;
   embedded?: boolean;
+  /** 区块标题栏已提供「添加」时隐藏字段内按钮 */
+  hideAddButton?: boolean;
 };
 
 export function ScheduleRecipientsField({
@@ -47,6 +49,7 @@ export function ScheduleRecipientsField({
   disabled,
   idPrefix = "schedule-recipient",
   embedded = false,
+  hideAddButton = false,
 }: ScheduleRecipientsFieldProps) {
   const [userFilter, setUserFilter] = useState("");
   const usersQuery = useQuery({
@@ -75,8 +78,8 @@ export function ScheduleRecipientsField({
   };
 
   return (
-    <div className="space-y-3">
-      {!embedded ? (
+    <div className={cn(embedded ? "space-y-2" : "space-y-3")}>
+      {!embedded && !hideAddButton ? (
         <div className="flex items-center justify-between gap-2">
           <Label>接收人</Label>
           {!disabled ? (
@@ -86,7 +89,7 @@ export function ScheduleRecipientsField({
             </Button>
           ) : null}
         </div>
-      ) : !disabled ? (
+      ) : embedded && !hideAddButton && !disabled ? (
         <div className="flex justify-end">
           <Button type="button" variant="outline" size="sm" onClick={addRow}>
             <Plus className="size-3.5" aria-hidden />
@@ -99,18 +102,19 @@ export function ScheduleRecipientsField({
           value={userFilter}
           onChange={(event) => setUserFilter(event.target.value)}
           placeholder="搜索用户名…"
-          className="h-9 max-w-xs"
+          className={cn("h-9", embedded ? "max-w-md" : "max-w-xs")}
           disabled={disabled}
           aria-label="搜索用户"
         />
       ) : null}
-      <div className={cn("space-y-2", embedded ? "rounded-lg border border-gray-100 bg-gray-50/40 p-3 dark:border-gray-800 dark:bg-white/[0.02]" : "")}>
+      <div className={cn(embedded ? "divide-y divide-gray-100 dark:divide-gray-800" : "space-y-2")}>
         {value.map((row, index) => (
           <div
             key={index}
             className={cn(
-              "flex flex-wrap items-start gap-2",
-              embedded ? "rounded-lg border border-gray-200/80 bg-white p-2 dark:border-gray-800 dark:bg-gray-900/40" : "",
+              embedded
+                ? "grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[7.5rem_minmax(0,1fr)_auto] sm:items-start"
+                : "flex flex-wrap items-start gap-2",
             )}
           >
             <Select
@@ -123,7 +127,10 @@ export function ScheduleRecipientsField({
               }
               disabled={disabled}
             >
-              <SelectTrigger className="h-11 w-[120px]" id={`${idPrefix}-type-${index}`}>
+              <SelectTrigger
+                className={cn("h-11", embedded ? "w-full" : "w-[120px]")}
+                id={`${idPrefix}-type-${index}`}
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

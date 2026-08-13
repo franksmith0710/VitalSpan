@@ -89,6 +89,7 @@
 
 - **`execute_dataset_from_config`**：`config_store` 读取 `dataset_query` → `translate_from_config_record` → `QueryExecutor.execute` → 真实 rows
 - **pandas 查询清洗（2026-08）**：`origin=manual` 的外部源 Dataset 在 `dataset/execute` 出数后经 `query/dataset/pandas_transform.py`（复用 `ingestion/etl_rules` + `datasets.transform_rules`）。`origin=sync_job` 同步产物已在写库前清洗，**跳过** query pandas。Admin「查询清洗」Tab 仅 manual 型可编辑。失败 → `QUERY_DATASET_TRANSFORM_FAILED`
+- **LIMIT 取最新**：翻译 SQL 时若选出时间列（如 `sale_date` / `updated_at`），先 `ORDER BY 时间 DESC LIMIT N`，再按时间升序返回给图表；无时间列则仍为无序前 N 行。组件「结果展示」仅 100/500/1000，历史 `all`/`10000` 视为 1000。
 - **出图路径**：`useChartExecute` **仅** `mode=dataset` → `/dataset/execute`；sql/table/native 直连已废弃
 - **FE**：`DatasetBindPanel` 创建并绑定 config；`ChartEditRail` `DatasetPickerPanel`；`useChartExecute` dataset 路径
 

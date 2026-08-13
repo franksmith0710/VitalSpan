@@ -27,8 +27,6 @@ import { useChartInspector } from "./chartInspectorContext";
 import { DE_SELECT, DeAttrField, DeAttrForm } from "./dashboardInspectorUi";
 import { cn } from "@/lib/utils";
 
-const LIMIT_PRESETS = ["100", "500", "1000", "10000"] as const;
-
 /** DataEase 数据 Tab：刷新频率 + 结果展示 */
 export function ChartDataOptions() {
   const { cfg, onChange } = useChartInspector();
@@ -39,8 +37,10 @@ export function ChartDataOptions() {
   const customRefresh = parseCustomRefreshParts(refreshMode);
   const isCustom = refreshSelect === "custom" || isCustomRefreshMode(refreshMode);
   const customBounds = customRefreshAmountBounds(customRefresh.unit);
-  const resultLimit = display.resultLimit ?? "1000";
-  const isAll = resultLimit === "all";
+  const resultLimit =
+    CHART_RESULT_LIMIT_OPTIONS.some((opt) => opt.value === display.resultLimit)
+      ? display.resultLimit!
+      : "1000";
 
   const setRefreshMode = (mode: string) => {
     onChange(patchChartDeDisplay(cfg, { refreshMode: mode }));
@@ -134,54 +134,22 @@ export function ChartDataOptions() {
           ) : null}
         </div>
       </DeAttrField>
-      <DeAttrField label="结果展示" compact>
-        <div className="flex flex-wrap items-center gap-3 text-theme-xs text-gray-700 dark:text-gray-300">
-          <label className="inline-flex cursor-pointer items-center gap-1.5">
-            <input
-              type="radio"
-              name={`result-limit-${cfg.chartType}`}
-              className="size-3.5 accent-brand-500"
-              checked={isAll}
-              onChange={() => onChange(patchChartDeDisplay(cfg, { resultLimit: "all" }))}
-            />
-            全部
-          </label>
-          <label className="inline-flex cursor-pointer items-center gap-1.5">
-            <input
-              type="radio"
-              name={`result-limit-${cfg.chartType}`}
-              className="size-3.5 accent-brand-500"
-              checked={!isAll}
-              onChange={() =>
-                onChange(
-                  patchChartDeDisplay(cfg, {
-                    resultLimit: LIMIT_PRESETS.includes(
-                      resultLimit as (typeof LIMIT_PRESETS)[number],
-                    )
-                      ? resultLimit
-                      : "1000",
-                  }),
-                )
-              }
-            />
-            <Select
-              value={isAll ? "1000" : resultLimit}
-              onValueChange={(value) => onChange(patchChartDeDisplay(cfg, { resultLimit: value }))}
-              disabled={isAll}
-            >
-              <SelectTrigger className={cn(DE_SELECT, "h-8 w-[4.5rem] px-2")} aria-label="结果条数">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CHART_RESULT_LIMIT_OPTIONS.filter((opt) => opt.value !== "all").map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </label>
-        </div>
+      <DeAttrField label="结果展示" compact hint="取最新 N 条">
+        <Select
+          value={resultLimit}
+          onValueChange={(value) => onChange(patchChartDeDisplay(cfg, { resultLimit: value }))}
+        >
+          <SelectTrigger className={cn(DE_SELECT, "h-8 w-[4.5rem] px-2")} aria-label="结果条数">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {CHART_RESULT_LIMIT_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </DeAttrField>
     </DeAttrForm>
   );

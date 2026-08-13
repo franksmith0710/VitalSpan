@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from app.query.rls.guard import validate_identifier
 
 
@@ -21,6 +23,11 @@ class SqlServerDialect:
 
     def wrap_limit(self, sql: str, *, limit: int, offset: int = 0) -> str:
         normalized = sql.strip().rstrip(";")
+        if re.search(r"\border\s+by\b", normalized, re.IGNORECASE):
+            return (
+                f"{normalized} OFFSET {int(offset)} ROWS "
+                f"FETCH NEXT {int(limit)} ROWS ONLY"
+            )
         inner = f"SELECT * FROM ({normalized}) AS _vs"
         return self._paginate(inner, limit=limit, offset=offset)
 
