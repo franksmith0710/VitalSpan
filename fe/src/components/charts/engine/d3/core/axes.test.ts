@@ -20,17 +20,15 @@ import { nearestCategory } from "@/components/charts/engine/d3/core/interaction"
 import * as d3 from "d3";
 
 describe("d3 core", () => {
-  it("pickCategoryTickIndices spaces ticks evenly across span", () => {
+  it("pickCategoryTickIndices uses a constant index step", () => {
     const indices = pickCategoryTickIndices(24, 480, 72);
     expect(indices[0]).toBe(0);
-    expect(indices[indices.length - 1]).toBe(23);
     expect(indices.length).toBeGreaterThan(2);
     const gaps = indices.slice(1).map((value, i) => value - indices[i]!);
-    const avgGap = gaps.reduce((sum, gap) => sum + gap, 0) / gaps.length;
-    gaps.forEach((gap) => expect(gap).toBeGreaterThanOrEqual(Math.floor(avgGap * 0.6)));
+    gaps.forEach((gap) => expect(gap).toBe(gaps[0]));
   });
 
-  it("pickCategoryTickIndicesByPixel spreads ticks on band centers", () => {
+  it("pickCategoryTickIndicesByPixel uses the same constant index step", () => {
     const count = 40;
     const innerW = 800;
     const step = innerW / count;
@@ -39,10 +37,8 @@ describe("d3 core", () => {
     const indices = pickCategoryTickIndicesByPixel(count, innerW, 56, indexToPx);
     const positions = indices.map(indexToPx);
     expect(positions[0]).toBeLessThan(innerW * 0.15);
-    expect(positions[positions.length - 1]).toBeGreaterThan(innerW * 0.85);
-    const gaps = positions.slice(1).map((p, i) => p - positions[i]!);
-    const avgGap = gaps.reduce((sum, g) => sum + g, 0) / gaps.length;
-    gaps.forEach((gap) => expect(gap).toBeGreaterThan(avgGap * 0.35));
+    const gaps = indices.slice(1).map((value, i) => value - indices[i]!);
+    gaps.forEach((gap) => expect(gap).toBe(gaps[0]));
   });
 
   it("pickCategoryTicks thins labels when viewport is narrow", () => {
@@ -94,9 +90,8 @@ describe("d3 core", () => {
       toPx,
     );
     expect(indices).toContain(0);
-    expect(indices).toContain(count - 1);
-    const positions = indices.map(toPx);
-    expect(positions[positions.length - 1]).toBeGreaterThan(innerW * 0.85);
+    const gaps = indices.slice(1).map((value, i) => value - indices[i]!);
+    gaps.forEach((gap) => expect(gap).toBe(gaps[0]));
   });
 
   it("pickUniformOverlapAwareTickIndices shows all when labels do not overlap", () => {
@@ -116,7 +111,7 @@ describe("d3 core", () => {
     expect(indices.length).toBe(count);
   });
 
-  it("pickUniformOverlapAwareTickIndices thins uniformly when overlap required", () => {
+  it("pickUniformOverlapAwareTickIndices thins with constant step when overlap required", () => {
     const provinces = Array.from({ length: 25 }, (_, i) => `省${i}`);
     const innerW = 320;
     const count = provinces.length;
@@ -131,10 +126,8 @@ describe("d3 core", () => {
     );
     expect(indices.length).toBeLessThan(count);
     expect(indices[0]).toBe(0);
-    expect(indices[indices.length - 1]).toBe(count - 1);
     const gaps = indices.slice(1).map((v, i) => v - indices[i]!);
-    const avgGap = gaps.reduce((s, g) => s + g, 0) / gaps.length;
-    gaps.forEach((gap) => expect(gap).toBeGreaterThanOrEqual(Math.floor(avgGap * 0.5)));
+    gaps.forEach((gap) => expect(gap).toBe(gaps[0]));
   });
 
   it("drawCategoryBandAxisBottom anchors labels at band centers", () => {

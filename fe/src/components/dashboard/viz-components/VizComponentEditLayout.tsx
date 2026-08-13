@@ -37,7 +37,7 @@ export function VizComponentEditLayout({ preview, rail }: VizComponentEditLayout
         data-testid="viz-component-edit-rail"
       >
         <div className={DASHBOARD_EDIT_RAIL_SCROLL_CLIP_CLASS}>
-          <div className={cn(DASHBOARD_EDIT_RAIL_PASS_THROUGH_CLASS, "items-end")}>{rail}</div>
+          <div className={DASHBOARD_EDIT_RAIL_PASS_THROUGH_CLASS}>{rail}</div>
         </div>
       </aside>
     </div>

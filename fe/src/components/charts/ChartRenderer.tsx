@@ -2,10 +2,10 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import { buildChartRenderModel } from "@/lib/buildChartRenderModel";
 import { resolveChartConfigPhase } from "@/lib/chartConfigState";
 import { isChartExecuteReady } from "@/lib/chartExecuteProbe";
+import { isCartesianRowCountExceeded } from "@/lib/cartesianRowLimit";
 import { DEFAULT_GEO_HEATMAP_PLACEHOLDER_HINT, DEFAULT_GEO_MAP_PLACEHOLDER_HINT, MAP_REGION_NAME_HINT, activeGeoEngine } from "@/components/charts/engine/geoEnginePort";
 import {
   isCanvasChartType,
-  isCartesianRowLimitedType,
   isGeoMapChartType,
   isLegacyTableChartType,
   isMatrixHeatmapChartType,
@@ -787,7 +787,7 @@ export const ChartRenderer = memo(function ChartRenderer({
 
     if (isCanvasChartType(localConfig.chartType)) {
       const chartType = localConfig.chartType;
-      if (isCartesianRowLimitedType(chartType) && displayRows.length > cartesianRowLimit) {
+      if (isCartesianRowCountExceeded(chartType, displayRows.length, queryLimit)) {
         const message = `结果超过 ${cartesianRowLimit} 行，请缩小查询范围`;
         return embedded
           ? embeddedStateMessage(dwStateWarning, message)

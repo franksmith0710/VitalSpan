@@ -73,6 +73,21 @@ describe("WidgetEditRailLayout", () => {
     expect(screen.getByText("配置")).toBeInTheDocument();
   });
 
+  it("expanded dual columns use full rail width aligned to the left", () => {
+    const { container } = renderRail(
+      <WidgetEditRailLayout
+        leftLabel="堆叠柱状图"
+        rightLabel="数据集"
+        left={<div data-testid="config-pane">配置</div>}
+        right={<div data-testid="dataset-main">字段库</div>}
+      />,
+    );
+
+    const rail = container.firstElementChild as HTMLElement;
+    expect(rail).toHaveClass("w-[432px]");
+    expect(rail).not.toHaveClass("ml-auto");
+  });
+
   it("collapsed tabs stack on the right so the rail shrinks for canvas expansion", () => {
     const { container } = renderRail(
       <WidgetEditRailLayout

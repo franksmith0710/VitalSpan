@@ -81,7 +81,8 @@ export function WidgetEditRailLayout({
   return (
     <div
       className={cn(
-        "ml-auto flex h-full min-h-0 w-fit max-w-full shrink-0 overflow-hidden",
+        "flex h-full min-h-0 shrink-0 overflow-hidden",
+        compact ? "ml-auto w-fit max-w-full" : "w-[432px] max-w-full",
         className,
       )}
     >

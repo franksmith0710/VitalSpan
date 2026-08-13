@@ -1569,7 +1569,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 onRailCollapse={collapseChartRail}
               />
             ) : selectedWidget?.type === "chart" ? (
-              <div className="flex h-full min-h-0 w-fit max-w-full flex-col self-end overflow-hidden">
+              <div className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden">
                 {vizComponentHeader}
               <ChartEditRail
                 key={primarySelectedId ?? selectedWidget.id}

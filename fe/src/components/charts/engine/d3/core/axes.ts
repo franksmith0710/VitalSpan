@@ -20,17 +20,34 @@ export function estimateAxisLabelWidth(charCount: number): number {
   return charCount * CHAR_PX;
 }
 
-/** 均匀索引抽稀（对标 DataEase：首尾必留、中间等距） */
+/** 固定索引步长抽稀：0, step, 2*step, …（末段不足 step 时不硬塞尾点，保证步长恒定） */
+export function buildStrictUniformTickIndices(count: number, tickCount: number): number[] {
+  if (count <= 0 || tickCount <= 0) return [];
+  if (count <= tickCount) return Array.from({ length: count }, (_, i) => i);
+  if (tickCount === 1) return [0];
+
+  const step = Math.ceil((count - 1) / (tickCount - 1));
+  const indices: number[] = [];
+  for (let i = 0; i < count; i += step) {
+    indices.push(i);
+  }
+  return indices;
+}
+
+function hasStrictUniformIndexGaps(indices: number[]): boolean {
+  if (indices.length <= 1) return true;
+  const gap = indices[1]! - indices[0]!;
+  for (let j = 2; j < indices.length; j += 1) {
+    if (indices[j]! - indices[j - 1]! !== gap) return false;
+  }
+  return true;
+}
+
+/** 均匀索引抽稀（固定步长；视口决定最多刻度数） */
 export function pickCategoryTickIndices(count: number, innerSpan: number, minPx = 48): number[] {
   if (count <= 0 || innerSpan <= 0) return [];
   const maxTicks = Math.max(2, Math.floor(innerSpan / minPx));
-  if (count <= maxTicks) return Array.from({ length: count }, (_, i) => i);
-
-  const indices: number[] = [];
-  for (let i = 0; i < maxTicks; i += 1) {
-    indices.push(Math.round((i * (count - 1)) / (maxTicks - 1)));
-  }
-  return [...new Set(indices)].sort((a, b) => a - b);
+  return buildStrictUniformTickIndices(count, maxTicks);
 }
 
 function indexToSpanPx(index: number, count: number, innerSpan: number): number {
@@ -55,40 +72,16 @@ export function estimateCategoryBandCenterPx(
   return index * step + step * 0.4;
 }
 
-/** 像素空间均匀取点再吸附索引（band 轴防索引舍入右端扎堆） */
+/** band 轴：与 buildStrictUniformTickIndices 同策略，索引步长恒定 */
 export function pickCategoryTickIndicesByPixel(
   count: number,
   innerSpan: number,
   minPx: number,
-  indexToPx: (index: number) => number,
+  _indexToPx: (index: number) => number,
 ): number[] {
   if (count <= 0 || innerSpan <= 0) return [];
   const maxTicks = Math.max(2, Math.floor(innerSpan / minPx));
-  if (count <= maxTicks) return Array.from({ length: count }, (_, i) => i);
-
-  const indices: number[] = [];
-  const firstPx = indexToPx(0);
-  const lastPx = indexToPx(count - 1);
-  const spanPx = lastPx - firstPx;
-
-  for (let k = 0; k < maxTicks; k += 1) {
-    const targetPx =
-      maxTicks <= 1
-        ? (firstPx + lastPx) / 2
-        : firstPx + (k / (maxTicks - 1)) * spanPx;
-    let bestIdx = 0;
-    let bestDist = Infinity;
-    for (let i = 0; i < count; i += 1) {
-      if (indices.includes(i)) continue;
-      const dist = Math.abs(indexToPx(i) - targetPx);
-      if (dist < bestDist) {
-        bestDist = dist;
-        bestIdx = i;
-      }
-    }
-    indices.push(bestIdx);
-  }
-  return [...new Set(indices)].sort((a, b) => a - b);
+  return buildStrictUniformTickIndices(count, maxTicks);
 }
 
 function horizontalLabelWidthPx(label: string, rotateDeg: number): number {
@@ -107,16 +100,6 @@ function labelWidthAtIndex(
   return horizontalLabelWidthPx(label, rotateDeg);
 }
 
-/** 均匀索引步进（首尾必留、中间等距） */
-function pickUniformCategoryTickIndices(count: number, maxTicks: number): number[] {
-  if (count <= 0 || maxTicks <= 0) return [];
-  if (count <= maxTicks) return Array.from({ length: count }, (_, i) => i);
-  const indices: number[] = [];
-  for (let k = 0; k < maxTicks; k += 1) {
-    indices.push(Math.round((k * (count - 1)) / (maxTicks - 1)));
-  }
-  return [...new Set(indices)].sort((a, b) => a - b);
-}
 
 function tickIndicesHaveNoOverlap(
   indices: number[],
@@ -137,7 +120,7 @@ function tickIndicesHaveNoOverlap(
 }
 
 /**
- * 对标 DataEase：能全显则全显；必须抽稀时均匀等距取点，且相邻不重叠。
+ * 能全显则全显；必须抽稀时固定索引步长均匀取点；仍重叠则逐层减少刻度数再抽稀。
  * @param labelWidthAt 可选自定义宽度（分层轴各层最宽标签）
  */
 export function pickUniformOverlapAwareTickIndices(
@@ -158,13 +141,14 @@ export function pickUniformOverlapAwareTickIndices(
 
   const allIndices = Array.from({ length: count }, (_, i) => i);
   if (tickIndicesHaveNoOverlap(allIndices, minGapPx, toPx, widthAt)) {
-    return withLabel;
+    return allIndices;
   }
 
-  for (let targetCount = count; targetCount >= 2; targetCount -= 1) {
-    const indices = pickUniformCategoryTickIndices(count, targetCount);
+  for (let tickCount = count; tickCount >= 2; tickCount -= 1) {
+    const indices = buildStrictUniformTickIndices(count, tickCount);
+    if (indices.length < 2 || !hasStrictUniformIndexGaps(indices)) continue;
     if (tickIndicesHaveNoOverlap(indices, minGapPx, toPx, widthAt)) {
-      return indices.filter((i) => widthAt(i) > 0);
+      return indices;
     }
   }
 

@@ -5,9 +5,9 @@
 | 日期 | 2026-08-13 |
 | 核验范围 | 计划 `de-style_chart_query`：WHERE→GROUP BY→LIMIT、encoding 请求、FE 发 encoding、文档 |
 | 锚点 | `POST /api/v1/query/dataset/execute` · `chart_sql.py` · `chartExecuteProbe.ts` |
-| 总体判定 | **PARTIAL** |
-| **总分 / 档位** | **6.5/10 · C** |
-| 状态 | draft |
+| 总体判定 | **PARTIAL**（P0 单测已闭合；仍缺 BROWSER） |
+| **总分 / 档位** | **7.5/10 · B** |
+| 状态 | approved-fix |
 | **sampling** | `full`（计划 4 todo 全量，非 44 chartType） |
 
 ## 1. 核验标准与预期（来自计划）
@@ -58,11 +58,11 @@ ChartConfigPanel 过滤器/维指
 |----|--------|------|---------|----------|
 | T1 | 聚合图表 SQL 顺序 | PARTIAL | 7/B | `test_filter_lte_before_group_by` WHERE<GROUP BY |
 | T2 | 明细表路径 | PARTIAL | 7/B | `test_detail_table_no_group_by` |
-| T3 | 无 encoding 兼容 | **UNVERIFIED** | 4/D | 代码有分支，**无单测** |
+| T3 | 无 encoding 兼容 | PARTIAL | 7/B | `test_execute_without_encoding_uses_translate_not_chart_sql` |
 | T4 | FE encoding 请求 | PARTIAL | 7/B | vitest 断言 body.encoding |
-| T5 | queryLimit 拒画 | STUB | 5/C | 代码已改，**无测试** |
+| T5 | queryLimit 拒画 | PARTIAL | 7/B | `cartesianRowLimit.test.ts` |
 | T6 | 文档 | PARTIAL | 8/B | query.md / api README / F05 / F06 已写 |
-| T7 | 单测清单 | PARTIAL | 6/C | 6/7 计划项有测；缺「无 encoding」 |
+| T7 | 单测清单 | PARTIAL | 8/B | 10 项 pytest + 19 vitest |
 
 ## 3b. 前端控件下钻表
 
@@ -86,24 +86,25 @@ ChartConfigPanel 过滤器/维指
 | M4 invalid field 422 | 单测 | — | ✅ | ❌ | CHAIN | 2 | 2 | PARTIAL | |
 | M5 invalid operator 422 | 单测 | — | ✅ | ❌ | CHAIN | 2 | 2 | PARTIAL | |
 | M6 KPI SUM | 单测 | — | ✅ | ❌ | CHAIN | 2 | 1 | PARTIAL | |
-| M7 no encoding legacy | 单测 | ✅ 静态 | ❌ | ❌ | GATE | 1 | 0 | STUB | `execute_config.py` 分支，**无测** |
-| M8 timeRange BETWEEN | 单测 | ✅ 静态 | ❌ | ❌ | GATE | 1 | 0 | STUB | `chart_sql._time_range_sql`，**无测** |
-| M9 FE encoding body | vitest | — | ✅ | ❌ | CHAIN | 2 | 1 | PARTIAL | `chartExecuteProbe.test.ts` |
-| M10 过滤器改变出图 | E2E | ❌ | ❌ | ❌ | NONE | 0 | 0 | UNVERIFIED | 无 |
+| M7 no encoding legacy | 单测 | — | ✅ | ❌ | CHAIN | 2 | 2 | PARTIAL | `test_execute_without_encoding_*` |
+| M8 timeRange BETWEEN | 单测 | — | ✅ | ❌ | CHAIN | 2 | 2 | PARTIAL | `test_time_range_between_before_group_by` |
+| M9 FE encoding body | vitest | — | ✅ | ❌ | CHAIN | 2 | 2 | PARTIAL | 含 timeRange |
+| M10 过滤器到达 executor | 集成 | — | ✅ | ❌ | CHAIN | 2 | 2 | PARTIAL | `test_execute_filter_encoding_reaches_executor_sql` |
 | M11 docs 四份 | 静态 | ✅ | ❌ | ❌ | GATE | 1 | 1 | STUB | grep 已更新 |
+| M12 queryLimit 拒画 | vitest | — | ✅ | ❌ | CHAIN | 2 | 2 | PARTIAL | `cartesianRowLimit.test.ts` |
 
 ### 覆盖摘要
 
 | 指标 | 值 |
 |------|-----|
-| 必验实体 | 11 |
-| GATE only | 3 |
-| CHAIN | 7 |
+| 必验实体 | 12 |
+| GATE only | 1 |
+| CHAIN | 11 |
 | UI / BROWSER | 0 |
-| NONE（未验） | 1 |
-| REAL 达标 | 0/11 |
-| **逐一校验** | **否** — 已验 10/11（M10 未验）；无 BROWSER；M7/M8 仅 GATE |
-| 总体可否 REAL | **否** |
+| NONE（未验） | 0 |
+| REAL 达标 | 0/12 |
+| **逐一校验** | **否** — CHAIN 11/12；仍缺 BROWSER 真机验过滤器改图 |
+| 总体可否 REAL | **否**（无 BROWSER） |
 
 ## 3c. 五维评分汇总
 
@@ -169,4 +170,4 @@ ChartConfigPanel 过滤器/维指
 
 - **结论**：**代码实现上计划 4 个 todo 已基本落地**（后端 chart_sql、execute 接线、FE encoding、文档），但 **feature-truth 视角尚未「全部完成」**——缺端到端正确性验证与 2 项计划单测。
 - 建议：`root-first-solve` 先闭合 M7+M8 单测，再 BROWSER 验 M10。
-- 用户批准修复：**否**
+- 用户批准修复：**是**（2026-08-13：闭合 M7/M8/M10/T5 单测与集成测）

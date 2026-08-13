@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   buildFilterParameters,
+  buildChartExecuteEncoding,
   chartExecuteBindingKey,
   fetchChartExecuteResult,
   fetchChartExecuteResultShared,
@@ -147,6 +148,47 @@ describe("chartExecuteProbe shared execute", () => {
         { field: "region_name", operator: "eq", value: "华东" },
       ]);
       expect(body.encoding.chartType).toBe("line");
+    });
+
+    it("buildChartExecuteEncoding includes absolute timeRange", () => {
+      const config = {
+        ...datasetReadyConfig(),
+        timeRange: {
+          enabled: true,
+          mode: "absolute" as const,
+          field: "sale_date",
+          start: "2025-01-01",
+          end: "2025-12-31",
+        },
+      };
+      expect(buildChartExecuteEncoding(config).timeRange).toEqual({
+        enabled: true,
+        field: "sale_date",
+        start: "2025-01-01",
+        end: "2025-12-31",
+      });
+    });
+
+    it("fetchChartExecuteResult passes encoding timeRange to dataset execute", async () => {
+      const config = {
+        ...datasetReadyConfig(),
+        timeRange: {
+          enabled: true,
+          mode: "absolute" as const,
+          field: "sale_date",
+          start: "2025-01-01",
+          end: "2025-12-31",
+        },
+      };
+      await fetchChartExecuteResult(config);
+      const body = JSON.parse(String(apiFetchMock.mock.calls[0]?.[1]?.body));
+      expect(body.encoding.timeRange).toEqual({
+        enabled: true,
+        field: "sale_date",
+        start: "2025-01-01",
+        end: "2025-12-31",
+      });
+      expect(body.parameters).toEqual({});
     });
 
     it("filtered execute result yields different render row count than unfiltered", () => {

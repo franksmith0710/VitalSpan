@@ -172,7 +172,7 @@ export function DashboardEditWorkspace({
           ) : null}
           <div className={cn(DASHBOARD_EDIT_RAIL_SCROLL_CLIP_CLASS)}>
             <div
-              className={cn(DASHBOARD_EDIT_RAIL_PASS_THROUGH_CLASS, "items-end")}
+              className={cn(DASHBOARD_EDIT_RAIL_PASS_THROUGH_CLASS)}
               data-testid="dashboard-edit-rail-scroll"
             >
               {chartRail}

@@ -6,6 +6,7 @@ from app.query.dataset.schemas import (
     ChartExecuteEncoding,
     ChartFilterEncoding,
     ChartMetricEncoding,
+    ChartTimeRangeEncoding,
 )
 from app.query.translator.schemas import TranslateError
 
@@ -107,3 +108,25 @@ def test_kpi_sum_without_group_by():
     sql, _params = build_chart_sql(_payload(), encoding, computed_fields=[], limit=10, offset=0)
     assert "GROUP BY" not in sql.upper()
     assert "SUM" in sql.upper()
+
+
+def test_time_range_between_before_group_by():
+    encoding = ChartExecuteEncoding(
+        chartType="line",
+        dimensions=["sale_date"],
+        metrics=[ChartMetricEncoding(field="amount", agg="sum")],
+        timeRange=ChartTimeRangeEncoding(
+            enabled=True,
+            field="sale_date",
+            start="2025-01-01",
+            end="2025-12-31",
+        ),
+    )
+    sql, params = build_chart_sql(_payload(), encoding, computed_fields=[], limit=100, offset=0)
+    upper = sql.upper()
+    assert "BETWEEN" in upper
+    assert "WHERE" in upper
+    assert "GROUP BY" in upper
+    assert upper.index("WHERE") < upper.index("GROUP BY")
+    assert "2025-01-01" in params.values()
+    assert "2025-12-31" in params.values()
