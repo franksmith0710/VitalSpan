@@ -101,6 +101,7 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
           recipients: form.recipients.filter((r) => r.value.trim()),
           attachmentFormats: form.attachmentFormats,
           deliveryChannels: form.deliveryChannels,
+          notifyGroup: form.notifyGroup,
         }),
       }),
     onSuccess: (created) => {
@@ -124,6 +125,7 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
           recipients: form.recipients.filter((r) => r.value.trim()),
           attachmentFormats: form.attachmentFormats,
           deliveryChannels: form.deliveryChannels,
+          notifyGroup: form.notifyGroup,
         }),
       }),
     onSuccess: () => {

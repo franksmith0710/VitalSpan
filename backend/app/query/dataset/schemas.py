@@ -3,9 +3,47 @@ from __future__ import annotations
 import uuid
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.query.schemas import RlsOptions
+
+CHART_FILTER_OPS = frozenset({"eq", "neq", "gt", "gte", "lt", "lte", "in"})
+CHART_METRIC_AGGS = frozenset({"sum", "avg", "max", "min", "count"})
+
+
+class ChartMetricEncoding(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    field: str = Field(min_length=1)
+    agg: Literal["sum", "avg", "max", "min", "count"] = "sum"
+
+
+class ChartFilterEncoding(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    field: str = Field(min_length=1)
+    operator: Literal["eq", "neq", "gt", "gte", "lt", "lte", "in"] = "eq"
+    value: object | None = None
+
+
+class ChartTimeRangeEncoding(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    enabled: bool = False
+    field: str | None = None
+    start: str | None = None
+    end: str | None = None
+
+
+class ChartExecuteEncoding(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    chart_type: str = Field(alias="chartType", min_length=1)
+    dimensions: list[str] = Field(default_factory=list)
+    metrics: list[ChartMetricEncoding] = Field(default_factory=list)
+    filters: list[ChartFilterEncoding] = Field(default_factory=list)
+    time_range: ChartTimeRangeEncoding | None = Field(default=None, alias="timeRange")
+
+    @field_validator("dimensions")
+    @classmethod
+    def strip_dimensions(cls, dims: list[str]) -> list[str]:
+        return [d.strip() for d in dims if d and d.strip()]
 
 
 class DatasetQuerySpec(BaseModel):
@@ -52,6 +90,7 @@ class DatasetExecuteRequest(BaseModel):
     limit: int | None = Field(default=None, ge=1)
     offset: int = Field(default=0, ge=0)
     rls: RlsOptions = Field(default_factory=RlsOptions)
+    encoding: ChartExecuteEncoding | None = None
 
 
 class DatasetExecuteResponse(BaseModel):

@@ -9,6 +9,7 @@ from app.datasources.acl import assert_visible
 from app.query.config_store.access import assert_config_readable
 from app.query.config_store.schemas import ConfigError, DatasetQueryConfigPayload
 from app.query.config_store.service import get_config_by_id
+from app.query.dataset.chart_sql import build_chart_sql
 from app.query.dataset.pandas_transform import (
     resolve_dataset_transform_rules,
     transform_query_result,
@@ -62,23 +63,38 @@ def execute_dataset_from_config(
             raise QueryError(exc.code, exc.message, exc.status) from exc
         raise
 
-    try:
-        translated = translate_from_config_record(record)
-    except TranslateError as exc:
-        raise QueryError(exc.code, exc.message, exc.status) from exc
-    parameters = _merge_parameters(translated.parameters, req.parameters)
-
-    sql = translated.sql
     from app.metadata.dataset import service as dataset_service
-    from app.metadata.dataset.computed_sql import augment_select_sql
 
     bound = dataset_service.find_dataset_by_bound_config(req.config_id)
-    if bound is not None and bound.computed_fields:
-        allowed = set(payload.columns) | {t.name for t in bound.tables}
-        sql = augment_select_sql(sql, bound.computed_fields, allowed)
-
     settings = get_settings()
     limit = min(req.limit or settings.query_default_limit, settings.query_default_limit)
+
+    if req.encoding is not None:
+        computed_fields = list(bound.computed_fields) if bound is not None else []
+        try:
+            sql, chart_parameters = build_chart_sql(
+                payload,
+                req.encoding,
+                computed_fields=computed_fields,
+                limit=limit,
+                offset=req.offset,
+            )
+        except TranslateError as exc:
+            raise QueryError(exc.code, exc.message, exc.status) from exc
+        parameters = _merge_parameters(chart_parameters, req.parameters)
+    else:
+        try:
+            translated = translate_from_config_record(record)
+        except TranslateError as exc:
+            raise QueryError(exc.code, exc.message, exc.status) from exc
+        parameters = _merge_parameters(translated.parameters, req.parameters)
+        sql = translated.sql
+        if bound is not None and bound.computed_fields:
+            from app.metadata.dataset.computed_sql import augment_select_sql
+
+            allowed = set(payload.columns) | {t.name for t in bound.tables}
+            sql = augment_select_sql(sql, bound.computed_fields, allowed)
+
     apply_rls = req.rls.enabled
     if not apply_rls and settings.vitalspan_env != "development":
         raise QueryError("RLS_CONFIG_INVALID", "Disabling RLS is only allowed in development", 400)

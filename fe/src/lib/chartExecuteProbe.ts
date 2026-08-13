@@ -1,16 +1,70 @@
 import { apiFetch, isEmbedShareContext, resolveDatasetExecutePath } from "@/lib/api";
 import { createConcurrencyLimiter } from "@/lib/asyncConcurrencyLimiter";
-import type { ChartFilterRef, ChartTimeRangeRef, ChartViewConfig } from "@/lib/chartViewConfig";
+import type { ChartFilterRef, ChartTimeRangeRef, ChartViewConfig, ChartType } from "@/lib/chartViewConfig";
 import type { SampleDatasourceItem } from "@/lib/mapChartSalesGeo";
 import {
   bindChartConfigDemoDatasource,
   resolveTemplateDemoDatasourceId,
   TEMPLATE_DEMO_DATASOURCE_REF,
 } from "@/lib/templateDemoData";
-
-export const CHART_EXECUTE_MAX_CONCURRENCY = 3;
-import type { ChartType } from "@/lib/chartViewConfig";
+import { migrateChartConfigToDeAxes, resolveChartEncoding } from "@/lib/resolveChartEncoding";
 import { groupDatasetFields } from "@/components/dashboard/datasetFieldClassification";
+
+export type ChartExecuteEncoding = {
+  chartType: string;
+  dimensions: string[];
+  metrics: { field: string; agg: "sum" | "avg" | "max" | "min" | "count" }[];
+  filters: {
+    field: string;
+    operator: NonNullable<ChartFilterRef["operator"]>;
+    value: ChartFilterRef["value"];
+  }[];
+  timeRange?: {
+    enabled: boolean;
+    field?: string;
+    start?: string;
+    end?: string;
+  };
+};
+
+function buildChartTimeRangeEncoding(tr?: ChartTimeRangeRef): ChartExecuteEncoding["timeRange"] {
+  if (!tr?.enabled) return undefined;
+  const params = buildTimeRangeParameters(tr);
+  if (!params.time_start || !params.time_end) return undefined;
+  return {
+    enabled: true,
+    field: tr.field,
+    start: params.time_start,
+    end: params.time_end,
+  };
+}
+
+/** 图表维/指/过滤/时间 → execute encoding（汇总前 SQL 过滤） */
+export function buildChartExecuteEncoding(config: ChartViewConfig): ChartExecuteEncoding {
+  const migrated = migrateChartConfigToDeAxes(config);
+  const encoding = resolveChartEncoding(migrated);
+  const filters = (config.filters ?? [])
+    .filter((f) => {
+      if (!f.field?.trim()) return false;
+      const v = f.value;
+      if (v === null || v === undefined) return false;
+      if (typeof v === "string" && !v.trim()) return false;
+      if (Array.isArray(v) && v.length === 0) return false;
+      return true;
+    })
+    .map((f) => ({
+      field: f.field.trim(),
+      operator: f.operator ?? "eq",
+      value: f.value,
+    }));
+  return {
+    chartType: config.chartType,
+    dimensions: encoding.dimensions.map((d) => d.field),
+    metrics: encoding.metrics.map((m) => ({ field: m.field, agg: "sum" as const })),
+    filters,
+    timeRange: buildChartTimeRangeEncoding(config.timeRange),
+  };
+}
 
 export type ChartExecuteResult = {
   columns: string[];
@@ -83,6 +137,8 @@ export function buildTimeRangeParameters(tr?: ChartTimeRangeRef): Record<string,
   return { time_start: formatUtcDate(start), time_end: formatUtcDate(end) };
 }
 
+export const CHART_EXECUTE_MAX_CONCURRENCY = 3;
+
 export type ChartExecuteMode = "dataset";
 
 /** 图表出数仅支持 Dataset 路径 */
@@ -121,6 +177,7 @@ export function chartExecuteBindingKey(
     dataSourceId: config.dataSourceId,
     configId: config.configId,
     datasetId: config.datasetId,
+    encoding: buildChartExecuteEncoding(config),
     filterParameters: filterParameters ?? {},
     limit,
   });
@@ -224,12 +281,10 @@ export async function fetchChartExecuteResult(
     throw new Error(chartExecuteNotReadyMessage(executeConfig));
   }
 
-  const timeParams = buildTimeRangeParameters(executeConfig.timeRange);
   const parameters = {
     ...(filterParameters ?? {}),
-    ...buildFilterParameters(executeConfig.filters ?? []),
-    ...timeParams,
   };
+  const encoding = buildChartExecuteEncoding(executeConfig);
 
   return apiFetch<ChartExecuteResult>(resolveDatasetExecutePath(), {
     method: "POST",
@@ -238,6 +293,7 @@ export async function fetchChartExecuteResult(
       configId: executeConfig.configId,
       limit,
       parameters,
+      encoding,
       rls: { enabled: false },
     }),
   });

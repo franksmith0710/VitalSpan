@@ -23,9 +23,10 @@ import { mapUserError } from "./userErrors";
 import { UserAccountStatusPanel } from "./UserAccountStatusPanel";
 import { UserOrgBindingPanel } from "./UserOrgBindingPanel";
 import { UserResetPasswordPanel } from "./UserResetPasswordPanel";
+import { UserImAccountsPanel, type ImAccounts } from "./UserImAccountsPanel";
 import { isUserLocked, type UserAccountFields } from "./userAccountStatus";
 
-type UserOut = { id: string; username: string } & UserAccountFields;
+type UserOut = { id: string; username: string; email?: string | null; imAccounts?: ImAccounts } & UserAccountFields;
 type RoleOut = { id: string; code: string; name: string; isActive?: boolean };
 
 type UserManageSheetProps = {
@@ -117,7 +118,7 @@ export function UserManageSheet({
             <span className="min-w-0 truncate">{user?.username}</span>
           </SheetTitle>
           <SheetDescription className="flex flex-wrap items-center gap-2">
-            <span>管理角色绑定、组织归属与账号安全。</span>
+            <span>管理角色绑定、组织归属、联系方式与账号安全。</span>
             {user ? (
               <Badge variant="light" color={statusColor} size="sm">
                 {statusLabel}
@@ -226,6 +227,19 @@ export function UserManageSheet({
                     onActionError={onActionError}
                   />
                   <UserOrgBindingPanel userId={user.id} onActionError={onActionError} />
+                  <UserImAccountsPanel
+                    userId={user.id}
+                    email={user.email}
+                    imAccounts={user.imAccounts}
+                    onActionError={onActionError}
+                    onSaved={(next) =>
+                      onUserChange?.({
+                        ...user,
+                        email: next.email,
+                        imAccounts: next.imAccounts,
+                      })
+                    }
+                  />
                   <UserResetPasswordPanel
                     userId={user.id}
                     username={user.username}

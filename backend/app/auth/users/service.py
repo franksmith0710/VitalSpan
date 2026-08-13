@@ -20,6 +20,7 @@ from app.auth.password.service import (
     validate_password_policy,
 )
 from app.auth.schemas import UserCreate, UserUpdate
+from app.auth.users import im_bindings
 
 
 class UserError(Exception):
@@ -165,6 +166,9 @@ def update_user(
         if had_root:
             _guard_root_admin(session)
         changes["roleIds"] = [str(r.id) for r in roles]
+    if payload.im_accounts is not None:
+        saved = im_bindings.upsert_accounts(session, user_id, payload.im_accounts)
+        changes["imAccounts"] = saved
 
     if not changes:
         raise UserError("USER_NO_CHANGES", "No user fields to update", 422)

@@ -11,8 +11,9 @@
 - **验收标准**：
   - [x] chartType/style/dimensions/metrics/filters Schema
   - [x] 前后端校验一致
-- **代码锚点**：`backend/app/schemas/chart_view.py` · `backend/app/api/v1/charts.py` · `fe/src/lib/chartViewConfig.ts`
-- **演化建议**：r29 字段级 `ChartViewError.fields` + POST validate `detail.fields`（T-VIZ-R29-001）；后续可补 `filters[]` SQL 注入防护与 styleVariant 全量枚举
+  - [x] Inspector `filters[]` 编入 `encoding` 后在汇总前 SQL 过滤生效（`chartExecuteProbe` → `chart_sql.py`；`tests/test_dataset_chart_sql.py`）
+- **代码锚点**：`backend/app/schemas/chart_view.py` · `backend/app/api/v1/charts.py` · `fe/src/lib/chartViewConfig.ts` · `fe/src/lib/chartExecuteProbe.ts` · `backend/app/query/dataset/chart_sql.py`
+- **演化建议**：r29 字段级 `ChartViewError.fields` + POST validate `detail.fields`（T-VIZ-R29-001）；后续可补过滤器 AND/OR 分组、枚举点选与 styleVariant 全量枚举
 - **里程碑对齐**：
 ### [VIZ-002] 最小图表集 M4-MIN
 

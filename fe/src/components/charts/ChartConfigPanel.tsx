@@ -271,6 +271,7 @@ export function ChartConfigPanel({
                   {addFilterLabel}
                 </Button>
               </div>
+              <p className="text-theme-xs text-gray-500 dark:text-gray-400">汇总前过滤，条件编入查询 SQL</p>
               {(config.filters ?? []).map((f, i) => (
                 <div key={`filter-${i}`} className={filterGridClass}>
                   <FieldSelect

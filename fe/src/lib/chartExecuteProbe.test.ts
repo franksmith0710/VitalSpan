@@ -92,6 +92,8 @@ describe("chartExecuteProbe shared execute", () => {
     );
     const body = JSON.parse(String(apiFetchMock.mock.calls[0]?.[1]?.body));
     expect(body.parameters).toEqual({});
+    expect(body.encoding).toBeDefined();
+    expect(body.encoding.chartType).toBe("line");
   });
 
   it("dedupes concurrent requests with the same binding key", async () => {
@@ -131,7 +133,7 @@ describe("chartExecuteProbe shared execute", () => {
       );
     });
 
-    it("fetchChartExecuteResult passes filter parameters to dataset execute", async () => {
+    it("fetchChartExecuteResult passes encoding filters to dataset execute", async () => {
       const config = {
         ...datasetReadyConfig(),
         filters: [{ field: "region_name", operator: "eq" as const, value: "华东" }],
@@ -140,10 +142,11 @@ describe("chartExecuteProbe shared execute", () => {
       await fetchChartExecuteResult(config, { filterParameters: { region: "华东" } });
 
       const body = JSON.parse(String(apiFetchMock.mock.calls[0]?.[1]?.body));
-      expect(body.parameters).toMatchObject({
-        region: "华东",
-        filter_region_name_0: "华东",
-      });
+      expect(body.parameters).toEqual({ region: "华东" });
+      expect(body.encoding.filters).toEqual([
+        { field: "region_name", operator: "eq", value: "华东" },
+      ]);
+      expect(body.encoding.chartType).toBe("line");
     });
 
     it("filtered execute result yields different render row count than unfiltered", () => {

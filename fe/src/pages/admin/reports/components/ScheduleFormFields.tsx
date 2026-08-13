@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -21,8 +20,12 @@ import { VISUAL_SNAPSHOT_CREATE_NOTICE } from "@/lib/scheduleArtifactMeta";
 import { ScheduleFormSection } from "./scheduleDialogUi";
 import type { ScheduleRecipient } from "../useReportSchedules";
 import type { ScheduleWizardState } from "@/lib/scheduleCronWizard";
+import {
+  ScheduleDeliveryChannelsField,
+  type DeliveryChannel,
+} from "./ScheduleDeliveryChannelsField";
 
-export type DeliveryChannel = "email" | "wecom" | "dingtalk";
+export type { DeliveryChannel };
 export type AttachmentFormat = "pdf" | "excel";
 
 export type ScheduleFormValue = {
@@ -33,6 +36,7 @@ export type ScheduleFormValue = {
   recipients: ScheduleRecipient[];
   attachmentFormats: AttachmentFormat[];
   deliveryChannels: DeliveryChannel[];
+  notifyGroup: boolean;
 };
 
 export const DEFAULT_SCHEDULE_FORM: ScheduleFormValue = {
@@ -49,6 +53,7 @@ export const DEFAULT_SCHEDULE_FORM: ScheduleFormValue = {
   recipients: DEFAULT_RECIPIENTS,
   attachmentFormats: ["pdf"],
   deliveryChannels: ["email"],
+  notifyGroup: false,
 };
 
 export function resolveScheduleCron(form: ScheduleFormValue): string {
@@ -75,12 +80,6 @@ const ATTACHMENT_OPTIONS: { value: AttachmentFormat; label: string; hint: string
   { value: "excel", label: "Excel 布局清单", hint: "组件列表 CSV，非图表渲染" },
 ];
 
-const CHANNEL_OPTIONS: { value: DeliveryChannel; label: string }[] = [
-  { value: "email", label: "邮件" },
-  { value: "wecom", label: "企业微信" },
-  { value: "dingtalk", label: "钉钉" },
-];
-
 export function ScheduleFormFields({
   value,
   onChange,
@@ -96,13 +95,6 @@ export function ScheduleFormFields({
 
   const setAttachmentFormat = (format: AttachmentFormat) => {
     patch({ attachmentFormats: [format] });
-  };
-
-  const toggleChannel = (channel: DeliveryChannel, checked: boolean) => {
-    const next = checked
-      ? [...new Set([...value.deliveryChannels, channel])]
-      : value.deliveryChannels.filter((c) => c !== channel);
-    patch({ deliveryChannels: next.length ? next : ["email"] });
   };
 
   const timezoneField = (
@@ -166,24 +158,13 @@ export function ScheduleFormFields({
     ) : null;
 
   const deliveryChannelsField = showDeliveryChannels ? (
-    <div className="grid gap-2">
-      <Label>投递方式</Label>
-      <div className="flex min-h-11 flex-wrap items-center gap-4">
-        {CHANNEL_OPTIONS.map((opt) => (
-          <label key={opt.value} className="flex items-center gap-2 text-theme-sm">
-            <Checkbox
-              checked={value.deliveryChannels.includes(opt.value)}
-              disabled={disabled}
-              onCheckedChange={(c) => toggleChannel(opt.value, c === true)}
-            />
-            {opt.label}
-          </label>
-        ))}
-      </div>
-      <p className="text-theme-xs text-gray-500">
-        企微/钉钉发送摘要与下载引用；PDF 附件经邮件投递。
-      </p>
-    </div>
+    <ScheduleDeliveryChannelsField
+      deliveryChannels={value.deliveryChannels}
+      notifyGroup={value.notifyGroup}
+      disabled={disabled}
+      onChannelsChange={(deliveryChannels) => patch({ deliveryChannels })}
+      onNotifyGroupChange={(notifyGroup) => patch({ notifyGroup })}
+    />
   ) : null;
 
   const advancedCronButton = (
@@ -254,7 +235,7 @@ export function ScheduleFormFields({
               <div className="flex items-start gap-2.5">
                 <Mail className="mt-0.5 size-4 shrink-0 text-gray-400" aria-hidden />
                 <p className="text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                  看板/大屏主路径经邮件投递 PDF；企微与钉钉仅发送摘要引用。
+                  邮件发给收件人邮箱；钉钉/企微/飞书发给用户资料里绑的账号。未绑号不会改发到群。
                 </p>
               </div>
             }

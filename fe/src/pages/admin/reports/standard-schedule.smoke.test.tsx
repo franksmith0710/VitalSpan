@@ -46,7 +46,8 @@ describe("StandardSchedulePanel smoke", () => {
     expect(screen.getByText("投递方式")).toBeInTheDocument();
     expect(screen.getByText("邮件")).toBeInTheDocument();
     expect(screen.getByText("企业微信")).toBeInTheDocument();
-    expect(screen.getByText("钉钉")).toBeInTheDocument();
+    expect(screen.getByText("飞书")).toBeInTheDocument();
+    expect(screen.getByText("同时发到群")).toBeInTheDocument();
     expect(screen.getByText("创建定时投递")).toBeInTheDocument();
     expect(screen.queryByText(/Playwright/i)).not.toBeInTheDocument();
   });

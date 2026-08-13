@@ -290,9 +290,12 @@ def create_schedule(
 def schedule_delivery_health(
     _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ):
+    from app.core.config import get_settings
+    from app.reports.scheduler.channels.work_notice import probe_im_apps
     from app.reports.scheduler.delivery_adapter import probe_smtp_health
 
-    return probe_smtp_health()
+    smtp = probe_smtp_health()
+    return {**smtp, "smtp": smtp, "im": probe_im_apps(get_settings())}
 
 
 @router.get("/schedules/export-health", response_model=None)

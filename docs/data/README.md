@@ -5,8 +5,8 @@
 > **域边界**：各表业务语义见 [services/README.md](../services/README.md)。
 
 ```yaml
-alembic_head: 0046
-revision_count: 46
+alembic_head: 0047
+revision_count: 47
 migrations_path: backend/migrations/versions/
 ```
 
@@ -22,16 +22,16 @@ migrations_path: backend/migrations/versions/
 
 | 项 | 值 |
 |----|-----|
-| **Head revision** | `0046`（`0046_standard_schedule_source_key.py`） |
-| **上一版** | `0045`（`0045_datasets_transform_rules.py`） |
-| **主要新增** | `report_schedules.source_key`；`source_id` 可空（标准分析定时投递） |
+| **Head revision** | `0047`（`0047_user_im_bindings.py`） |
+| **上一版** | `0046`（`0046_standard_schedule_source_key.py`） |
+| **主要新增** | `user_im_bindings`（用户钉钉/企微/飞书账号）；`report_schedules.notify_group` |
 
 升级命令（本地）：
 
 ```bash
 cd backend
 alembic upgrade head
-alembic current   # 应显示 0046
+alembic current   # 应显示 0047
 ```
 
 ## 修订一览（按域分组）
@@ -75,12 +75,13 @@ alembic current   # 应显示 0046
 | 0044 | `standard_analysis` | reports | 标准分析包持久化 |
 | 0045 | `datasets_transform_rules` | metadata | Dataset 转换规则 |
 | 0046 | `standard_schedule_source_key` | reports | 调度 `source_key`（标准分析投递） |
+| 0047 | `user_im_bindings` | auth / reports | 用户 IM 账号绑定；调度 `notify_group` |
 
 ## 域 ↔ 主要表（导航）
 
 | 域附录 | 后端模块 | 代表性表 / 存储 |
 |--------|----------|-----------------|
-| [auth.md](../services/auth.md) | `app/auth/` | `auth_users` · `auth_roles` · `auth_orgs` · `auth_audit_logs` · RLS 相关 |
+| [auth.md](../services/auth.md) | `app/auth/` | `auth_users` · `auth_roles` · `auth_orgs` · `user_im_bindings` · `auth_audit_logs` · RLS 相关 |
 | [datasources.md](../services/datasources.md) | `app/datasources/` | `datasources` |
 | [ingestion.md](../services/ingestion.md) | `app/ingestion/` | `ingestion_sync_jobs` 等 |
 | [metadata.md](../services/metadata.md) | `app/metadata/` | `datasets` · `dimension_*` · `meta_design_*` |
@@ -98,5 +99,5 @@ alembic current   # 应显示 0046
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
-| 0.1.1 | 2026-08-12 | head 升至 0046；补 0042–0046 修订行 |
-| 0.1.0 | 2026-08-09 | 初版：head 0041、修订一览、域表导航 |
+| 0.1.2 | 2026-08-13 | head 升至 0047；`user_im_bindings` + 调度 `notify_group` |
+| 0.1.1 | 2026-08-12 | head 升至 0046；补 0042–0046 

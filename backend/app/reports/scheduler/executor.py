@@ -16,7 +16,7 @@ from app.reports.catalog.acl import register_artifact_owner
 from app.reports.scheduler import acl as schedule_acl
 from app.reports.scheduler.delivery import dispatch_artifact
 from app.reports.scheduler.errors import ScheduleError
-from app.reports.scheduler.recipients import resolve_recipient_emails
+from app.reports.scheduler.recipients import resolve_im_targets, resolve_recipient_emails
 from app.reports.scheduler.schemas import ScheduleExecuteOut, ScheduleRecipientIn
 from app.reports.scheduler import service as scheduler_service
 from app.core.config import get_settings
@@ -349,17 +349,22 @@ def semi_real_execute_schedule(
         _append_history(schedule_id, out, error_message=export_error)
         return out
     recipient_emails: list[str] | None = None
+    im_targets: dict[str, list[tuple[str, str]]] = {}
+    im_missing: dict[str, list[str]] = {}
     raw_recipients = row.get("recipients") or []
+    channels = row.get("delivery_channels") or ["email"]
     if raw_recipients:
         session = get_meta_session()
         try:
-            recipient_emails = resolve_recipient_emails(
-                session,
-                [ScheduleRecipientIn.model_validate(r) for r in raw_recipients],
-            )
+            parsed = [ScheduleRecipientIn.model_validate(r) for r in raw_recipients]
+            recipient_emails = resolve_recipient_emails(session, parsed)
+            for channel in channels:
+                if channel in {"wecom", "dingtalk", "feishu"}:
+                    targets, missing = resolve_im_targets(session, parsed, channel)
+                    im_targets[channel] = targets
+                    im_missing[channel] = missing
         finally:
             session.close()
-    channels = row.get("delivery_channels") or ["email"]
     att_bytes = attachments[0][0] if attachments else None
     att_mime = attachments[0][1] if attachments else None
     att_name = attachments[0][2] if attachments else None
@@ -373,6 +378,9 @@ def semi_real_execute_schedule(
         attachment_filename=att_name,
         attachment_mime=att_mime,
         attachments=attachments,
+        im_targets=im_targets,
+        im_missing=im_missing,
+        notify_group=bool(row.get("notify_group", False)),
     )
     error_message: str | None = None
     if delivery_mock == "fail":

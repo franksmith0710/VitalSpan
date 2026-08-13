@@ -117,6 +117,7 @@ export function DashboardSchedulePanel({
     sourceLabel: sourceName,
     widgetCount,
     requireVisualExport: true,
+    deliveryChannels: form.deliveryChannels,
   });
   const canCreate = canCreateDashboardSchedule({
     widgetCount,
@@ -165,6 +166,7 @@ export function DashboardSchedulePanel({
         recipients: form.recipients.filter((r) => r.value.trim()),
         attachmentFormats: ["pdf"],
         deliveryChannels: form.deliveryChannels,
+        notifyGroup: form.notifyGroup,
       });
       setShowCreate(false);
       setSelectedId(created.id);
@@ -189,6 +191,7 @@ export function DashboardSchedulePanel({
           recipients: form.recipients.filter((r) => r.value.trim()),
           attachmentFormats: ["pdf"],
           deliveryChannels: form.deliveryChannels,
+          notifyGroup: form.notifyGroup,
         },
       });
       toast.success("草稿已保存");
@@ -310,6 +313,7 @@ export function DashboardSchedulePanel({
               sourceLabel={sourceName}
               widgetCount={widgetCount}
               active={precheckActive}
+              deliveryChannels={form.deliveryChannels}
             />
           ) : null}
           <ScheduleFormFields

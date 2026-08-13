@@ -180,7 +180,7 @@ redoc: /redoc
 | GET/PUT | `/api/v1/query/configs` | 配置元模型存取（`configType`/`schemaVersion`/`refType`/`refId`；可选 `expectedRevision` 乐观锁；revision upsert；payload >256KB → 413 `CONFIG_PAYLOAD_TOO_LARGE`；revision 冲突 → 409 `CONFIG_VERSION_CONFLICT`） | 内部 | 一期 | QUERY-007 | 已实现 | `backend/app/api/v1/query_configs.py` |
 | GET | `/api/v1/query/configs/{config_id}` | 按 id 读取配置记录 | 内部 | 一期 | QUERY-007 | 已实现 | `backend/app/api/v1/query_configs.py` |
 | POST | `/api/v1/query/configs/{config_id}/translate` | 已存 `dataset_query` 配置翻译为参数化 SQL | 内部 | 一期 | QUERY-008 | 已实现 | `backend/app/api/v1/query_configs.py` |
-| POST | `/api/v1/query/dataset/execute` | `dataSourceId` + `configId` 存储→翻译→执行 | IF-06 | 一期 | QUERY-009 | 已实现 | `backend/app/api/v1/query.py` |
+| POST | `/api/v1/query/dataset/execute` | `dataSourceId` + `configId` 存储→翻译→执行；可选 `encoding`（维/指/过滤器/时间范围 → `chart_sql` WHERE→聚合→LIMIT） | IF-06 | 一期 | QUERY-009 | 已实现 | `backend/app/api/v1/query.py` · `backend/app/query/dataset/chart_sql.py` |
 | GET | `/api/v1/designer/fields` | 设计器字段注册表 + glossary + dataset 字段 | 内部 | 四期 | DESIGN-001 | 已实现 | `backend/app/api/v1/designer.py` |
 | POST | `/api/v1/designer/preview/translate` | 三块配置合并 SQL 预览（含规则注释） | 内部 | 四期 | DESIGN-001 | 已实现 | `backend/app/api/v1/designer.py` |
 | POST | `/api/v1/designer/submit-workflow` | 快照 + 工单实例 + 自动 submit | 内部 | 四期 | DESIGN-004 | 已实现 | `backend/app/api/v1/designer.py` |

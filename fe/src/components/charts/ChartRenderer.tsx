@@ -379,6 +379,7 @@ export const ChartRenderer = memo(function ChartRenderer({
     limit: queryLimit,
     enabled: effectiveQueryEnabled,
   });
+  const cartesianRowLimit = queryLimit ?? CHART_EXECUTE_LIMIT;
   const mountReadySentRef = useRef(false);
   const [page, setPage] = useState(1);
   const [localConfig, setLocalConfig] = useState(() => effectiveConfig);
@@ -786,8 +787,8 @@ export const ChartRenderer = memo(function ChartRenderer({
 
     if (isCanvasChartType(localConfig.chartType)) {
       const chartType = localConfig.chartType;
-      if (isCartesianRowLimitedType(chartType) && displayRows.length > CHART_EXECUTE_LIMIT) {
-        const message = `结果超过 ${CHART_EXECUTE_LIMIT} 行，请缩小查询范围`;
+      if (isCartesianRowLimitedType(chartType) && displayRows.length > cartesianRowLimit) {
+        const message = `结果超过 ${cartesianRowLimit} 行，请缩小查询范围`;
         return embedded
           ? embeddedStateMessage(dwStateWarning, message)
           : <p className="text-theme-sm text-warning-600 dark:text-warning-400">{message}</p>;

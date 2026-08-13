@@ -98,6 +98,7 @@ def _out(row: dict) -> ScheduleStatusOut:
         recipients=recipients,
         attachmentFormats=row.get("attachment_formats") or ["pdf"],
         deliveryChannels=row.get("delivery_channels") or ["email"],
+        notifyGroup=bool(row.get("notify_group", False)),
         cron=row["cron"],
         timezone=row["timezone"],
         status=row["status"],
@@ -151,6 +152,7 @@ def create_schedule(payload: ScheduleCreate, actor: UserContext) -> ScheduleStat
         "recipients": recipients,
         "attachment_formats": list(payload.attachment_formats),
         "delivery_channels": list(payload.delivery_channels),
+        "notify_group": bool(payload.notify_group),
         "cron": payload.cron,
         "timezone": payload.timezone,
         "status": "draft",
@@ -180,6 +182,8 @@ def update_schedule(
         row["attachment_formats"] = list(payload.attachment_formats)
     if payload.delivery_channels is not None:
         row["delivery_channels"] = list(payload.delivery_channels)
+    if payload.notify_group is not None:
+        row["notify_group"] = bool(payload.notify_group)
     if payload.name is not None:
         row["name"] = payload.name
     _store().save(row)

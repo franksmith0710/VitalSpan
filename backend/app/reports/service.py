@@ -110,6 +110,7 @@ def revise_schedule(
         recipients=row.get("recipients") or [],
         attachmentFormats=row.get("attachment_formats") or ["pdf"],
         deliveryChannels=row.get("delivery_channels") or ["email"],
+        notifyGroup=bool(row.get("notify_group", False)),
         name=(payload.name or row.get("name") or "定时报告") + "（修订）",
         cron=payload.cron or row["cron"],
         timezone=payload.timezone or row["timezone"],

@@ -20,6 +20,9 @@ def dispatch_artifact(
     attachment_filename: str | None = None,
     attachment_mime: str | None = None,
     attachments: list[tuple[bytes, str, str]] | None = None,
+    im_targets: dict[str, list[tuple[str, str]]] | None = None,
+    im_missing: dict[str, list[str]] | None = None,
+    notify_group: bool = False,
 ) -> dict:
     att_list = attachments or []
     if not att_list and attachment_bytes and attachment_filename:
@@ -33,6 +36,9 @@ def dispatch_artifact(
             attachments=att_list,
             mock_mode=mock_mode,
             settings=settings,
+            im_targets=im_targets,
+            im_missing=im_missing,
+            notify_group=notify_group,
         )
     else:
         result = _legacy_deliver(

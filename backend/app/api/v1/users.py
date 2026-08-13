@@ -24,6 +24,7 @@ from app.auth.schemas import (
     UserRolesResponse,
     UserUpdate,
 )
+from app.auth.users import im_bindings
 from app.auth.users import service as user_service
 from app.auth.roles import service as role_service
 from app.core.logging import trace_id_var
@@ -67,6 +68,11 @@ def _binding_context(actor: UserContext) -> dict[str, str | list[str] | None]:
     }
 
 
+def _to_user_out(db: Session, user) -> UserOut:
+    out = UserOut.model_validate(user)
+    return out.model_copy(update={"im_accounts": im_bindings.list_accounts(db, user.id)})
+
+
 def _audit_context(actor: UserContext) -> dict[str, str | None]:
     trace = trace_id_var.get() or uuid_mod.uuid4().hex
     return {
@@ -88,7 +94,7 @@ def list_users(
     role_map = user_service.list_users_role_map(db, [u.id for u in items])
     out_items = [
         UserListItemOut(
-            **UserOut.model_validate(u).model_dump(),
+            **_to_user_out(db, u).model_dump(),
             roles=[UserRoleOut(id=r.id, code=r.code, name=r.name) for r in role_map.get(u.id, [])],
         )
         for u in items
@@ -111,7 +117,7 @@ def create_user(
         )
     except user_service.UserError as exc:
         return _user_error_response(exc)
-    return UserOut.model_validate(user)
+    return _to_user_out(db, user)
 
 
 @router.patch("/{user_id}", response_model=UserOut)
@@ -127,7 +133,7 @@ def update_user(
         return _user_error_response(exc)
     except role_service.RoleError as exc:
         return _role_error_response(exc)
-    return UserOut.model_validate(user)
+    return _to_user_out(db, user)
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
@@ -155,7 +161,7 @@ def disable_user(
         user = user_service.set_user_active(db, user_id, False, **ctx)
     except user_service.UserError as exc:
         return _user_error_response(exc)
-    return UserOut.model_validate(user)
+    return _to_user_out(db, user)
 
 
 @router.post("/{user_id}/enable", response_model=UserOut)
@@ -169,7 +175,7 @@ def enable_user(
         user = user_service.set_user_active(db, user_id, True, **ctx)
     except user_service.UserError as exc:
         return _user_error_response(exc)
-    return UserOut.model_validate(user)
+    return _to_user_out(db, user)
 
 
 @router.post("/{user_id}/unlock", response_model=UserOut)
@@ -182,7 +188,7 @@ def unlock_user(
         user = user_service.unlock_user(db, user_id, **_audit_context(actor))
     except user_service.UserError as exc:
         return _user_error_response(exc)
-    return UserOut.model_validate(user)
+    return _to_user_out(db, user)
 
 
 @router.post("/{user_id}/reset-password", response_model=ResetPasswordOut)

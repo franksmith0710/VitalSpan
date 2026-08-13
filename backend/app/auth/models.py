@@ -241,6 +241,7 @@ class AuthDimensionTypeRef(Base):
     ref_source: Mapped[str] = mapped_column(String(32), nullable=False, server_default="group")
 
 
+from app.auth.im_models import UserImBinding  # noqa: F401 — register metadata
 from app.core.db.meta import get_meta_engine, get_meta_session
 
-__all__ = ["get_meta_engine", "get_meta_session"]
+__all__ = ["get_meta_engine", "get_meta_session", "UserImBinding"]

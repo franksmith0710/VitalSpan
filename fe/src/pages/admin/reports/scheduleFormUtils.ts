@@ -27,5 +27,6 @@ export function scheduleRowToForm(schedule: ReportScheduleRow): ScheduleFormValu
     deliveryChannels: (schedule.deliveryChannels?.length
       ? schedule.deliveryChannels
       : ["email"]) as ScheduleFormValue["deliveryChannels"],
+    notifyGroup: Boolean(schedule.notifyGroup),
   };
 }
