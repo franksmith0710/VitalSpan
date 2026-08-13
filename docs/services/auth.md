@@ -14,6 +14,7 @@
 - RBAC：角色、权限点、资源绑定
 - 资源可见性：`ensure_resource_visible`、`list_visible_resource_ids`、`require_resource_visible` deps
 - 用户-组织：`auth_users.org_node_id` FK；`assign_user_org` / `clear_user_org`
+- 用户 IM 账号：`user_im_bindings`（钉钉/企微/飞书 userid，管理员在用户资料填写；报表调度按人投递消费）
 - 组织维度、多维行级权限（RLS）策略：维度分组、角色维度绑定、有效维度集解析
 - RLS L1：`resolve_user_org_node_ids`、`build_org_rls_fragment`、`prepare_query_rls`、`get_query_rls_fragment`（供 `query/rls/guard.py` 消费）
 - 绑定操作审计 L1：`auth_audit_events` + `audit/service.py`（AUTH-003 用户绑定子集）
@@ -25,6 +26,7 @@
 | In | Out |
 |----|-----|
 | 身份、授权、RLS 策略定义与 L1 谓词 hook | 查询执行细节（→ `query/rls/guard.py` 消费 `prepare_query_rls`） |
+| 用户资料邮箱与 IM 账号绑定（管理员填写，非 OAuth） | 钉钉/企微/飞书开放平台代发实现（→ `reports/scheduler/channels/work_notice.py`） |
 | 租户/组织模型、用户组织归属 | 业务视图模板内容（→ `views`） |
 | L1 资源可见性守卫（域 + deps） | 全方言 SQL 改写、M3 数据源实查 RLS |
 | 维度分组 CRUD、角色维度/分组绑定、有效维度集 | 登录/数据源等非 auth 域审计（AUTH-008 后续扩展） |

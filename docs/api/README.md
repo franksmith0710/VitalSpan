@@ -72,8 +72,8 @@ redoc: /redoc
 | GET | `/api/v1/permissions` | 权限目录全集（`PermissionListOut`；`system:role.read`） | 内部 | M7 | AUTH-001 | 已实现 | `backend/app/api/v1/permissions.py` |
 | GET | `/api/v1/roles/{id}/permissions` | 角色权限绑定（`RolePermissionsOut`；root 返回 `allPermissions=true`；`system:role.read`） | 内部 | M7 | AUTH-001 | 已实现 | `backend/app/api/v1/roles.py` |
 | PUT | `/api/v1/roles/{id}/permissions` | 角色权限全量替换（`expectedVersion` 乐观锁；冲突 409 `ROLE_PERMISSION_VERSION_CONFLICT`；root 禁改 409 `AUTH_ROOT_ROLE_IMMUTABLE`；`system:role.manage`） | 内部 | M7 | AUTH-001 | 已实现 | `backend/app/api/v1/roles.py` |
-| GET/POST | `/api/v1/users` | 用户列表/创建（POST body `{username, displayName?, email?, orgId?, roleIds, initialPassword}`；保存 SM3 hash（`$sm3$`），不返回密码；`system:user.manage`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
-| PATCH | `/api/v1/users/{id}` | 用户信息/角色更新（`{displayName?, email?, orgId?, roleIds?}`；根管理员保护；`system:user.manage`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
+| GET/POST | `/api/v1/users` | 用户列表/创建（POST body `{username, displayName?, email?, orgId?, roleIds, initialPassword}`；列表项含 `imAccounts`；保存 SM3 hash（`$sm3$`），不返回密码；`system:user.manage`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
+| PATCH | `/api/v1/users/{id}` | 用户信息/角色更新（`{displayName?, email?, orgId?, roleIds?, imAccounts?}`；`imAccounts` 为 `{dingtalk?, wecom?, feishu?}`，空串解绑；根管理员保护；`system:user.manage`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
 | DELETE | `/api/v1/users/{id}` | 删除用户（204；不可删当前登录账号；最后一个 root 管理员保护 409 `AUTH_ROOT_ADMIN_REQUIRED`；`system:user.manage`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
 | POST | `/api/v1/users/{id}/disable` · `/enable` · `/unlock` | 用户启停/解锁（解锁清零失败计数与 `lockedUntil`；`system:user.manage`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
 | POST | `/api/v1/users/{id}/reset-password` | 管理员重置密码（返回 `{temporaryPassword, passwordChangedAt}`；`Cache-Control: no-store`；`token_version+1`；审计无明文；`system:user.password.reset`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
@@ -297,8 +297,8 @@ redoc: /redoc
 | POST | `/api/v1/reports/catalog/templates/readiness` | 模板 hub 批量就绪探测（body `nodeIds`；扩展配置/数据源绑定探测） | 内部 | 二期 | RPT-006 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/catalog/nodes/{id}/move` | 模板树节点移动（循环/深度守卫） | 内部 | 一期 | RPT-004 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST/GET | `/api/v1/reports/schedules*` | 报表调度 FSM（draft→scheduled→paused/cancelled；`RPT_SCHEDULE_*`） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
-| PATCH | `/api/v1/reports/schedules/{id}` | 草稿调度更新（cron/recipients/attachmentFormats/deliveryChannels；仅 draft） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
-| GET | `/api/v1/reports/schedules/delivery-health` | SMTP 投递健康探测 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
+| PATCH | `/api/v1/reports/schedules/{id}` | 草稿调度更新（cron/recipients/attachmentFormats/deliveryChannels/notifyGroup；仅 draft） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
+| GET | `/api/v1/reports/schedules/delivery-health` | SMTP + IM App 是否已配置（布尔，不泄密钥）；顶层仍保留 SMTP `status/host/port/error` | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | GET | `/api/v1/reports/schedules/export-health` | Playwright PDF 导出服务可用性探测 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/dashboard/export_render.py` · `backend/app/api/v1/reports/__init__.py` |
 | GET | `/api/v1/reports/schedules/executions/recent-failures` | 近期失败/降级执行列表 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/schedules/executions/{executionId}/dismiss` | 忽略单条失败提醒（不删执行历史） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
@@ -627,6 +627,7 @@ redoc: /redoc
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.0.13 | 2026-08-13 | 用户 `imAccounts`；调度 `notifyGroup` / `feishu`；delivery-health 含 IM App 配置布尔 |
 | 1.0.12 | 2026-08-13 | AI 可视化：登记 `PUT /ai-viz/artifacts/{id}`；entry 改为 Base 宿主挂载源码 |
 | 1.0.11 | 2026-08-09 | D3：联调可消费附录 auth/datasources/query；链 service/backend 运维 |
 | 1.0.10 | 2026-08-09 | R1 索引修补：orgs/rls/users roles/resource-grants 子路径；designer validate；viz archive；schedule transition；physical-tables validate；etl auto-align；gov 模板 `{id}`；废弃 governance/* 与 entities/types；m11/m12 probe 表列对齐；§10 数据接入 |

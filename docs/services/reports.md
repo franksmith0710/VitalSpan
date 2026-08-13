@@ -21,7 +21,7 @@
 | `reports/catalog/` 模板树 registry（memory \| db `RPT_METADATA_STORE`）+ 循环/深度守卫 + M7 ACL | 通用查询引擎（→ `query`） |
 | `reports/persistence/` catalog/extension/standard/templates/integration_exports ORM + repo 抽象 | Jasper WYSIWYG 设计器 |
 | `reports/render/` RenderSpec → PDF/Excel/Word 真字节（reportlab/openpyxl/OOXML） | 在线地图/瓦片 |
-| `reports/scheduler/` 调度 FSM + semi-real 执行 + 模板/看板附件投递 | Celery 队列、飞书 webhook |
+| `reports/scheduler/` 调度 FSM + semi-real 执行 + 模板/看板附件投递；IM 按人工作通知（`user_im_bindings`） | Celery 队列、把群 webhook 当按人投递 |
 | `reports/extension/` metrics/filters；metric 级 `queryMode=sql\|dataset` + `boundConfigId` | Dataset 建模 UI（→ `metadata/dataset`） |
 | `reports/batch/` 批量创建模板节点 + 幂等守卫 | 打印排版 UI（前端 `/admin/reports/*`） |
 | `reports/engine/` render run + `export_template_bytes` | 组合调度粒度枚举 |
