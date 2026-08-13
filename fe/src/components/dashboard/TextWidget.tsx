@@ -36,6 +36,7 @@ type TextWidgetProps = {
   onTitleChange?: (id: string, title: string) => void;
   onTextConfigChange?: (id: string, config: TextWidgetConfig) => void;
   dashboardStyle?: DashboardStyleConfig;
+  showToolbarDelete?: boolean;
 };
 
 export function TextWidget({
@@ -49,6 +50,7 @@ export function TextWidget({
   onTitleChange,
   onTextConfigChange,
   dashboardStyle,
+  showToolbarDelete = true,
 }: TextWidgetProps) {
   const [isEditing, setIsEditing] = useState(false);
   const widgetRef = useRef<HTMLDivElement>(null);
@@ -116,7 +118,7 @@ export function TextWidget({
             ariaLabel="富文本标题"
             testId={`widget-inline-title-${widget.id}`}
           />
-          {onDelete ? (
+          {onDelete && showToolbarDelete ? (
             <IconButton
               type="button"
               variant="ghost"

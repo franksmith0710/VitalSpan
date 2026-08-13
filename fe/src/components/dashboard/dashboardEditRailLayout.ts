@@ -32,6 +32,10 @@ export const DASHBOARD_EDIT_RAIL_COLUMN_CLASS = DASHBOARD_EDIT_RAIL_LEFT_COLUMN_
 export const DASHBOARD_EDIT_RAIL_SHELL_CLASS =
   "w-[432px] max-w-[min(100%,432px)] shrink-0";
 
+/** 看板编辑右栏外壳视觉（展开壳 / 收起竖条共用圆角边框） */
+export const DASHBOARD_EDIT_RAIL_SHELL_CHROME_CLASS =
+  "rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]";
+
 /** @deprecated 右栏已统一为 {@link DASHBOARD_EDIT_RAIL_SHELL_CLASS} */
 export const DASHBOARD_EDIT_RAIL_NARROW_SHELL_CLASS = DASHBOARD_EDIT_RAIL_SHELL_CLASS;
 

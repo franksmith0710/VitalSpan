@@ -37,6 +37,7 @@ type FilterWidgetProps = {
   onDelete?: (id: string) => void;
   onTitleChange?: (id: string, title: string) => void;
   dashboardStyle?: DashboardStyleConfig;
+  showToolbarDelete?: boolean;
 };
 
 export function FilterWidget({
@@ -51,6 +52,7 @@ export function FilterWidget({
   onDelete,
   onTitleChange,
   dashboardStyle,
+  showToolbarDelete = true,
 }: FilterWidgetProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const cfg = widget.filterConfig;
@@ -183,7 +185,7 @@ export function FilterWidget({
             ariaLabel="筛选器标题"
             testId={`widget-inline-title-${widget.id}`}
           />
-          {onDelete ? (
+          {onDelete && showToolbarDelete ? (
             <IconButton
               type="button"
               variant="ghost"

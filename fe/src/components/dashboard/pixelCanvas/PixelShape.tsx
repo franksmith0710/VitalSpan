@@ -36,7 +36,7 @@ import {
 import { computeMarkLineSnap, markLineThreshold, type MarkLineGuide } from "./pixelMarkLine";
 import { resolveWidgetChromeInset } from "./shapeVisualInset";
 import type { PixelShapePreviewSync } from "./pixelShapePreviewRegistry";
-import { PixelShapeActionRail, type PixelWidgetActions } from "./PixelShapeActionRail";
+import { DashboardWidgetContextMenu, type DashboardWidgetActions } from "../WidgetContextMenu";
 import { PixelShapeDragEdges } from "./PixelShapeDragEdges";
 import { WidgetShapeChrome } from "./WidgetShapeChrome";
 import { PixelShapeInteractionProvider } from "./PixelShapeInteractionContext";
@@ -88,7 +88,7 @@ type PixelShapeProps = {
   viewport?: PixelRect;
   snapTargets?: Array<Pick<PixelRect, "x" | "y" | "width" | "height">>;
   otherWidgets?: Array<Pick<PixelRect, "x" | "y" | "width" | "height">>;
-  widgetActions?: PixelWidgetActions;
+  widgetActions?: DashboardWidgetActions;
   styleConfig?: DashboardStyleConfig;
   registerPreviewSync?: (widgetId: string, sync: PixelShapePreviewSync) => () => void;
   /** 拖动/缩放中靠近画布边缘时自动滚动，返回 scrollTop 变化量 */
@@ -696,66 +696,77 @@ export function PixelShape({
         data-testid={`pixel-shape-body-${widget.id}`}
         className="pixel-shape-body relative flex min-h-0 min-w-0 flex-1 flex-col overflow-visible"
       >
-        {mode === "edit" && selected && widgetActions && viewport && chrome.showFloatingActions ? (
-          <PixelShapeActionRail
-            widget={widget}
-            scale={scale}
-            viewport={viewport}
-            otherWidgets={otherWidgets}
-            actions={widgetActions}
-            colorScheme={styleConfig?.colorScheme ?? "light"}
-          />
-        ) : null}
         <PixelShapeInteractionProvider value={startInteraction}>
           <WidgetShellLegendProvider>
             <PixelShapePlayerProvider playing={isPlayer}>
-              <div
-                className={cn(
-                  "pixel-shape-inner dashboard-widget-surface relative z-[1] flex min-h-0 flex-1 flex-col overflow-hidden",
-                  selectedInEdit && "pixel-shape-selected",
-                )}
-                style={innerShell.style}
-                data-pixel-no-drag
-                data-screen-border-asset={isBorderAsset ? "" : undefined}
-                onPointerDown={(event) => {
-                  if (mode === "edit" && !paletteDragActive) {
-                    const target = event.target as HTMLElement;
-                    if (target.closest("[data-tabs-widget-id]")) {
-                      return;
-                    }
-                    if (
-                      allowStackCycleSelect &&
-                      onCycleStackSelect &&
-                      (event.altKey || event.ctrlKey)
-                    ) {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      onCycleStackSelect(event.clientX, event.clientY, widget.id);
-                      return;
-                    }
-                    onSelect?.(widget.id, event.shiftKey);
-                  }
-                }}
-              >
-                <PixelShapeInnerChrome
-                  widget={widget}
-                  scale={scale}
-                  mode={mode}
-                  selectedInEdit={selectedInEdit}
-                  showTitle={showTitle}
-                  titleStyle={titleStyle}
-                  remark={remark}
-                  innerShell={innerShell}
-                  contentShell={contentShell}
-                  onTitleChange={onTitleChange}
-                  onSelect={onSelect}
-                  startInteraction={startInteraction}
-                  handleKeyboardInteraction={handleKeyboardInteraction}
-                  contentRef={contentRef}
-                >
-                  {children}
-                </PixelShapeInnerChrome>
-              </div>
+              {(() => {
+                const inner = (
+                  <div
+                    className={cn(
+                      "pixel-shape-inner dashboard-widget-surface relative z-[1] flex min-h-0 flex-1 flex-col overflow-hidden",
+                      selectedInEdit && "pixel-shape-selected",
+                    )}
+                    style={innerShell.style}
+                    data-pixel-no-drag
+                    data-screen-border-asset={isBorderAsset ? "" : undefined}
+                    onPointerDown={(event) => {
+                      if (mode === "edit" && !paletteDragActive) {
+                        const target = event.target as HTMLElement;
+                        if (target.closest("[data-tabs-widget-id]")) {
+                          return;
+                        }
+                        if (
+                          allowStackCycleSelect &&
+                          onCycleStackSelect &&
+                          (event.altKey || event.ctrlKey)
+                        ) {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          onCycleStackSelect(event.clientX, event.clientY, widget.id);
+                          return;
+                        }
+                        onSelect?.(widget.id, event.shiftKey);
+                      }
+                    }}
+                  >
+                    <PixelShapeInnerChrome
+                      widget={widget}
+                      scale={scale}
+                      mode={mode}
+                      selectedInEdit={selectedInEdit}
+                      showTitle={showTitle}
+                      titleStyle={titleStyle}
+                      remark={remark}
+                      innerShell={innerShell}
+                      contentShell={contentShell}
+                      onTitleChange={onTitleChange}
+                      onSelect={onSelect}
+                      startInteraction={startInteraction}
+                      handleKeyboardInteraction={handleKeyboardInteraction}
+                      contentRef={contentRef}
+                    >
+                      {children}
+                    </PixelShapeInnerChrome>
+                  </div>
+                );
+
+                if (mode === "edit" && widgetActions && chrome.showFloatingActions) {
+                  return (
+                    <DashboardWidgetContextMenu
+                      widget={widget}
+                      actions={widgetActions}
+                      colorScheme={styleConfig?.colorScheme ?? "light"}
+                      selected={selected}
+                      onSelect={onSelect}
+                      className="flex min-h-0 min-w-0 flex-1 flex-col"
+                    >
+                      {inner}
+                    </DashboardWidgetContextMenu>
+                  );
+                }
+
+                return inner;
+              })()}
             </PixelShapePlayerProvider>
           </WidgetShellLegendProvider>
         </PixelShapeInteractionProvider>

@@ -1,7 +1,13 @@
+import type { ReactElement } from "react";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { DashboardStyleSurface } from "../DashboardStyleSurface";
 import { PixelShape } from "./PixelShape";
+
+function renderWithProviders(ui: ReactElement) {
+  return render(<TooltipProvider delayDuration={0}>{ui}</TooltipProvider>);
+}
 
 const widget = {
   id: "w1",
@@ -63,9 +69,9 @@ describe("PixelShape component gap", () => {
   });
 });
 
-describe("PixelShape action rail", () => {
-  it("renders floating action rail when selected in edit mode", () => {
-    render(
+describe("PixelShape context menu", () => {
+  it("wraps shape body with context menu in edit mode", () => {
+    renderWithProviders(
       <DashboardStyleSurface componentGapPx={0}>
         <PixelShape
           widget={widget}
@@ -81,12 +87,13 @@ describe("PixelShape action rail", () => {
       </DashboardStyleSurface>,
     );
 
-    expect(screen.getByTestId("pixel-shape-actions-w1")).toBeInTheDocument();
-    expect(screen.getByTestId("pixel-shape-body-w1")).toHaveClass("overflow-visible");
+    const inner = screen.getByTestId("pixel-shape-body-w1").querySelector(".pixel-shape-inner");
+    expect(inner).toHaveAttribute("data-state", "closed");
+    expect(screen.queryByTestId("pixel-shape-actions-w1")).not.toBeInTheDocument();
   });
 
-  it("hides action rail when chrome.showFloatingActions is off", () => {
-    render(
+  it("hides context menu when chrome.showFloatingActions is off", () => {
+    renderWithProviders(
       <DashboardStyleSurface componentGapPx={0}>
         <PixelShape
           widget={widget}
@@ -103,6 +110,7 @@ describe("PixelShape action rail", () => {
       </DashboardStyleSurface>,
     );
 
-    expect(screen.queryByTestId("pixel-shape-actions-w1")).not.toBeInTheDocument();
+    const inner = screen.getByTestId("pixel-shape-body-w1").querySelector(".pixel-shape-inner");
+    expect(inner).not.toHaveAttribute("data-state");
   });
 });

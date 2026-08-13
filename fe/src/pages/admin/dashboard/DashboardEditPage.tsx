@@ -94,7 +94,7 @@ import {
 } from "@/components/dashboard/pixelCanvas/gapCompaction";
 import { hasPositiveOuterGaps } from "@/components/dashboard/gapRuntimeProbe";
 import { cloneLayoutWidget } from "@/components/dashboard/cloneLayoutWidget";
-import type { PixelWidgetActions } from "@/components/dashboard/pixelCanvas/PixelShapeActionRail";
+import type { DashboardWidgetActions } from "@/components/dashboard/WidgetContextMenu";
 import {
   normalizeWidgetLayout,
   placeWidgetAt,
@@ -291,7 +291,6 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const [reuseOpen, setReuseOpen] = useState(false);
   const [publishComponentOpen, setPublishComponentOpen] = useState(false);
   const [chartRailOpen, setChartRailOpen] = useState(true);
-  const [chartRailInnerCompact, setChartRailInnerCompact] = useState(false);
   const [chartRefreshKeys, setChartRefreshKeys] = useState<Record<string, number>>({});
   const pixelViewportRef = useRef<PixelRect | undefined>(undefined);
   const handlePixelViewportChange = useCallback((viewport: PixelRect) => {
@@ -555,10 +554,6 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     Boolean(selectedWidget && isPublishableWidgetType(selectedWidget.type));
   const collapseChartRail = useCallback(() => setChartRailOpen(false), []);
 
-  useEffect(() => {
-    setChartRailInnerCompact(false);
-  }, [primarySelectedId]);
-
   const vizComponentHeader =
     selectedWidget && isPublishableWidgetType(selectedWidget.type) ? (
       <VizComponentInspectorHeader
@@ -571,7 +566,6 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         onPushToLibrary={() => void vizInspectorActions.pushToLibrary()}
         pushing={vizInspectorActions.pushing}
         onCollapse={collapseChartRail}
-        compact={chartRailInnerCompact}
       />
     ) : null;
 
@@ -967,7 +961,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     setWidgetActionDialog({ type: "enlarge", widgetId });
   }, [widgets]);
 
-  const pixelWidgetActions = useMemo<PixelWidgetActions>(
+  const dashboardWidgetActions = useMemo<DashboardWidgetActions>(
     () => ({
       onCopy: handleCopyWidget,
       onDelete: handleDeleteWidget,
@@ -1444,7 +1438,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               onViewportChange={handlePixelViewportChange}
               tabInsertIntent={tabInsertIntent}
               onTabInsertIntentChange={setTabInsertIntent}
-              widgetActions={layout.version === 2 && canSave ? pixelWidgetActions : undefined}
+              widgetActions={canSave ? dashboardWidgetActions : undefined}
               dataScreenPresentationMode={dataScreenEditPresentationMode}
             />
           }
@@ -1578,7 +1572,6 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 dashboardId={id}
                 dashboardStyle={styleConfig}
                 dashboardWidgets={widgets}
-                onCompactChange={setChartRailInnerCompact}
                 onTitleChange={(title) => {
                   if (!primarySelectedId) return;
                   setWidgets((prev) => resizeWidget(prev, primarySelectedId, { title }));

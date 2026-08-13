@@ -30,6 +30,7 @@ type TabsWidgetProps = {
   onPaletteDrop?: (payload: PaletteDragPayload) => void;
   renderChild: (child: LayoutWidget) => ReactNode;
   dashboardStyle?: DashboardStyleConfig;
+  showToolbarDelete?: boolean;
 };
 
 function TabsPaneEmptyState({ mode, dragHint }: { mode: "edit" | "view"; dragHint?: boolean }) {
@@ -117,6 +118,7 @@ export function TabsWidget({
   onPaletteDrop,
   renderChild,
   dashboardStyle,
+  showToolbarDelete = true,
 }: TabsWidgetProps) {
   const cfg = widget.tabsConfig;
   const cfgRef = useRef(cfg);
@@ -245,7 +247,7 @@ export function TabsWidget({
             ariaLabel="Tab 容器标题"
             testId={`widget-inline-title-${widget.id}`}
           />
-          {onDelete ? (
+          {onDelete && showToolbarDelete ? (
             <IconButton
               type="button"
               variant="ghost"

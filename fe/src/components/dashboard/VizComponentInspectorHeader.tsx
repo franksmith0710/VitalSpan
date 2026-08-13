@@ -17,8 +17,6 @@ type VizComponentInspectorHeaderProps = {
   onPushToLibrary?: () => void;
   pushing?: boolean;
   onCollapse?: () => void;
-  /** 内层双列均收起：仅保留收起按钮，避免顶栏撑开右栏 */
-  compact?: boolean;
 };
 
 export function VizComponentInspectorHeader({
@@ -31,21 +29,12 @@ export function VizComponentInspectorHeader({
   onPushToLibrary,
   pushing,
   onCollapse,
-  compact,
 }: VizComponentInspectorHeaderProps) {
   const linked = isLinkedComponentRef(widget.componentRef);
   const detached = Boolean(widget.componentRef?.detached);
   const publishable = isPublishableWidgetType(widget.type);
 
   if (!publishable) return null;
-
-  if (compact && onCollapse) {
-    return (
-      <div className="flex w-fit shrink-0 self-end border-b border-gray-100 px-2 py-1 dark:border-white/[0.06]">
-        <WidgetRailCollapseButton onClick={onCollapse} />
-      </div>
-    );
-  }
 
   if (detached) {
     return (

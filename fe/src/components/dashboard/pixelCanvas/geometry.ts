@@ -199,12 +199,7 @@ export function resolvePixelCanvasMeasureElement(host: HTMLElement): HTMLElement
   return host;
 }
 
-/** 侧栏工具条屏幕宽度（px），用于左右翻转判定 */
-export const SHAPE_ACTION_RAIL_SCREEN_WIDTH = 36;
-export const SHAPE_ACTION_RAIL_ICON_SCREEN_WIDTH = 18;
 export const SHAPE_RESIZE_HANDLE_SCREEN_PX = 28;
-/** 操作条与组件外缘间距（屏幕 px）；须避开边缘 resize 热区（手柄半宽 + 留白） */
-export const SHAPE_ACTION_RAIL_SCREEN_GAP = SHAPE_RESIZE_HANDLE_SCREEN_PX / 2 + 8;
 /** 对标 DE 左侧 edit-bar：屏幕 px，缩放后换算为画布命中宽 */
 export const SHAPE_EDIT_BAR_SCREEN_WIDTH = 32;
 export const SHAPE_RESIZE_VISUAL_SCREEN_PX = 12;
@@ -213,8 +208,6 @@ export const SHAPE_DRAG_EDGE_TOP_SCREEN_PX = 12;
 export const SHAPE_DRAG_EDGE_SIDE_SCREEN_PX = 16;
 export const SHAPE_DRAG_EDGE_RIGHT_TOP_SCREEN_PX = 70;
 export const SHAPE_DRAG_EDGE_BOTTOM_INSET_SCREEN_PX = 40;
-export const SHAPE_ACTION_MENU_SCREEN_WIDTH = 168;
-export const SHAPE_ACTION_RAIL_BUTTON_COUNT = 3;
 
 /** 辅助网格叠层（须低于所有组件 shape） */
 export const PIXEL_AUX_GRID_Z_INDEX = 1;
@@ -222,7 +215,7 @@ export const PIXEL_AUX_GRID_Z_INDEX = 1;
 /** 未选中 shape 起始 z-index，保证始终在辅助网格之上 */
 export const PIXEL_SHAPE_BASE_Z_INDEX = 10;
 
-/** 选中 shape 抬升 z-index，使外伸操作条不被邻组件遮盖 */
+/** 选中 shape 抬升 z-index，避免被邻组件遮盖 */
 export const PIXEL_SHAPE_SELECTED_Z_BOOST = 1_000_000;
 
 /** 拖动/缩放中（isPlayer）再抬升，确保可叠过邻块且无体积阻挡 */
@@ -239,86 +232,6 @@ export function pixelShapeZIndex(order: number, selected: boolean): number {
 
 export function pixelShapePlayerZIndex(order: number): number {
   return PIXEL_SHAPE_PLAYER_Z_BOOST + order;
-}
-
-export type ShapeActionRailPlacement = "left" | "right" | "overlay";
-
-/** @deprecated 使用 ShapeActionRailPlacement */
-export type ShapeActionRailPlacementLegacy = ShapeActionRailPlacement;
-
-function shapeActionRailRect(
-  widget: Pick<PixelRect, "x" | "y" | "width" | "height">,
-  side: "left" | "right",
-  scale: number,
-): PixelRect {
-  const safeScale = scale > 0 ? scale : 1;
-  const railPx = SHAPE_ACTION_RAIL_SCREEN_WIDTH / safeScale;
-  const gapPx = SHAPE_ACTION_RAIL_SCREEN_GAP / safeScale;
-  const height = railPx * SHAPE_ACTION_RAIL_BUTTON_COUNT;
-  if (side === "right") {
-    return {
-      x: widget.x + widget.width + gapPx,
-      y: widget.y,
-      width: railPx,
-      height,
-    };
-  }
-  return {
-    x: widget.x - gapPx - railPx,
-    y: widget.y,
-    width: railPx,
-    height,
-  };
-}
-
-function pixelRectsOverlap(a: PixelRect, b: PixelRect): boolean {
-  return (
-    a.x < b.x + b.width &&
-    a.x + a.width > b.x &&
-    a.y < b.y + b.height &&
-    a.y + a.height > b.y
-  );
-}
-
-/** 根据视口空间决定操作条在左/右；两侧均越界时叠放在本组件内侧 */
-export function resolveShapeActionRailPlacement(
-  widget: Pick<PixelRect, "x" | "y" | "width" | "height">,
-  viewport: Pick<PixelRect, "x" | "width">,
-  scale: number,
-  others: Array<Pick<PixelRect, "x" | "y" | "width" | "height">> = [],
-): ShapeActionRailPlacement {
-  const safeScale = scale > 0 ? scale : 1;
-  const railCanvas = (SHAPE_ACTION_RAIL_SCREEN_WIDTH + SHAPE_ACTION_RAIL_SCREEN_GAP) / safeScale;
-  const menuCanvas = SHAPE_ACTION_MENU_SCREEN_WIDTH / safeScale;
-  const rightEdge = widget.x + widget.width;
-  const viewportRight = viewport.x + viewport.width;
-
-  const fitsViewport = (side: "left" | "right") => {
-    if (side === "right") return rightEdge + railCanvas + menuCanvas <= viewportRight + 0.5;
-    return widget.x - railCanvas - menuCanvas >= viewport.x - 0.5;
-  };
-
-  const collides = (side: "left" | "right") =>
-    others.some((other) => pixelRectsOverlap(shapeActionRailRect(widget, side, scale), other));
-
-  if (fitsViewport("right") && !collides("right")) return "right";
-  if (fitsViewport("left") && !collides("left")) return "left";
-
-  // 邻组件碰撞时仍外置，靠选中 shape 的 z-index 浮在邻组件之上
-  if (fitsViewport("right")) return "right";
-  if (fitsViewport("left")) return "left";
-
-  return "overlay";
-}
-
-/** @deprecated 使用 resolveShapeActionRailPlacement */
-export function resolveShapeActionRailSide(
-  widget: Pick<PixelRect, "x" | "y" | "width" | "height">,
-  viewport: Pick<PixelRect, "x" | "width">,
-  scale: number,
-  others: Array<Pick<PixelRect, "x" | "y" | "width" | "height">> = [],
-): ShapeActionRailPlacement {
-  return resolveShapeActionRailPlacement(widget, viewport, scale, others);
 }
 
 export function clientPointToCanvas(

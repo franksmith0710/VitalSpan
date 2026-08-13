@@ -1,206 +1,65 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-
 import { resolveWidgetEditRailGridColumns } from "./dashboardEditRailLayout";
-
-import { CollapsedRailTab, RailFoldHeader } from "./RailFoldTab";
-
-
+import { RailFoldHeader } from "./RailFoldTab";
 
 type WidgetEditRailLayoutProps = {
-
   left: ReactNode;
-
   right: ReactNode;
-
   leftLabel: string;
-
   leftSubtitle?: string;
-
   rightLabel?: string;
-
   className?: string;
-
-  /** 双列均收起时通知外层（顶栏紧凑态） */
-
-  onCompactChange?: (compact: boolean) => void;
-
 };
 
-
-
-const WidgetEditRailRightCollapseContext = createContext<(() => void) | undefined>(undefined);
-
-
-
-/** 数据集列顶栏「收起」回调（由 `WidgetEditRailLayout` 注入） */
-
-export function useWidgetEditRailRightCollapse() {
-
-  return useContext(WidgetEditRailRightCollapseContext);
-
-}
-
-
-
 function ExpandedRailPanel({
-
   label,
-
   subtitle,
-
   bordered,
-
-  onCollapse,
-
-  children,
-
   hideFoldHeader,
-
+  children,
 }: {
-
   label: string;
-
   subtitle?: string;
-
   bordered?: boolean;
-
-  onCollapse?: () => void;
-
-  children: ReactNode;
-
   hideFoldHeader?: boolean;
-
+  children: ReactNode;
 }) {
-
   return (
-
     <div
-
       className={cn(
-
         "flex h-full min-h-0 min-w-0 flex-col overflow-hidden",
-
         bordered && "border-l border-gray-200 dark:border-gray-800",
-
       )}
-
     >
-
       {hideFoldHeader ? null : (
-
-        <RailFoldHeader label={label} subtitle={subtitle} onCollapse={onCollapse} />
-
+        <RailFoldHeader label={label} subtitle={subtitle} />
       )}
-
       <div className="flex h-0 min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{children}</div>
-
     </div>
-
   );
-
 }
 
-
-
+/** 图表编辑双列：配置 + 数据集；整栏收起由外层 {@link VizComponentInspectorHeader} 负责。 */
 export function WidgetEditRailLayout({
-
   left,
-
   right,
-
   leftLabel,
-
   leftSubtitle,
-
   rightLabel = "数据集",
-
   className,
-
-  onCompactChange,
-
 }: WidgetEditRailLayoutProps) {
-
-  const [leftOpen, setLeftOpen] = useState(true);
-
-  const [rightOpen, setRightOpen] = useState(true);
-
-  const compact = !leftOpen && !rightOpen;
-
-
-
-  useEffect(() => {
-
-    onCompactChange?.(compact);
-
-  }, [compact, onCompactChange]);
-
-
-
   return (
-
     <div
-
       className={cn("grid h-full min-h-0 w-full max-w-full overflow-hidden", className)}
-
-      style={{ gridTemplateColumns: resolveWidgetEditRailGridColumns(leftOpen, rightOpen) }}
-
+      style={{ gridTemplateColumns: resolveWidgetEditRailGridColumns(true, true) }}
     >
-
-      {leftOpen ? (
-
-        <ExpandedRailPanel
-
-          label={leftLabel}
-
-          subtitle={leftSubtitle}
-
-          onCollapse={() => setLeftOpen(false)}
-
-        >
-
-          {left}
-
-        </ExpandedRailPanel>
-
-      ) : (
-
-        <CollapsedRailTab label={leftLabel} onExpand={() => setLeftOpen(true)} className="border-l-0" />
-
-      )}
-
-      {rightOpen ? (
-
-        <ExpandedRailPanel
-
-          label={rightLabel}
-
-          bordered
-
-          hideFoldHeader
-
-          onCollapse={() => setRightOpen(false)}
-
-        >
-
-          <WidgetEditRailRightCollapseContext.Provider value={() => setRightOpen(false)}>
-
-            {right}
-
-          </WidgetEditRailRightCollapseContext.Provider>
-
-        </ExpandedRailPanel>
-
-      ) : (
-
-        <CollapsedRailTab label={rightLabel} onExpand={() => setRightOpen(true)} />
-
-      )}
-
+      <ExpandedRailPanel label={leftLabel} subtitle={leftSubtitle}>
+        {left}
+      </ExpandedRailPanel>
+      <ExpandedRailPanel label={rightLabel} bordered hideFoldHeader>
+        {right}
+      </ExpandedRailPanel>
     </div>
-
   );
-
 }
-

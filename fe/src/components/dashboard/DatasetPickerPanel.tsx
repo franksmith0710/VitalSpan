@@ -1,13 +1,10 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router";
-import { IconButton } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { queryKeys } from "@/lib/queryKeys";
 import type { DatasetFieldKind } from "./datasetFieldClassification";
 import { DatasetFieldGroups } from "./DatasetFieldGroups";
 import { DatasetSelector } from "./DatasetSelector";
-import { RailFoldIcon } from "./RailFoldTab";
-import { useWidgetEditRailRightCollapse } from "./WidgetEditRailLayout";
 
 export type DatasetListItem = {
   datasetId: string;
@@ -52,7 +49,6 @@ export function DatasetPickerPanel({
   className,
 }: DatasetPickerPanelProps) {
   const queryClient = useQueryClient();
-  const collapseRail = useWidgetEditRailRightCollapse();
   const refreshDatasets = () => {
     void queryClient.invalidateQueries({
       queryKey: queryKeys.datasets.list({ limit: 200, offset: 0 }),
@@ -69,20 +65,8 @@ export function DatasetPickerPanel({
       )}
     >
       <div className="shrink-0 border-b border-gray-200 px-2 py-2 dark:border-gray-800">
-        <div className="mb-1.5 flex items-center justify-between gap-1.5">
+        <div className="mb-1.5">
           <h3 className="text-theme-xs font-semibold text-gray-800 dark:text-white/90">数据集</h3>
-          {collapseRail ? (
-            <IconButton
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="size-7 text-gray-400 hover:bg-white hover:text-gray-600 dark:hover:bg-white/[0.06] dark:hover:text-gray-300"
-              aria-label="收起数据集"
-              onClick={collapseRail}
-            >
-              <RailFoldIcon />
-            </IconButton>
-          ) : null}
         </div>
         <DatasetSelector
           widgetId={widgetId}

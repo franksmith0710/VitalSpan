@@ -69,7 +69,7 @@ import {
   scaledCanvasMetrics,
 } from "./geometry";
 import { PixelShape } from "./PixelShape";
-import type { PixelWidgetActions } from "./PixelShapeActionRail";
+import type { DashboardWidgetActions } from "./WidgetContextMenu";
 import { PixelMarkLineOverlay } from "./PixelMarkLineOverlay";
 import { PixelCanvasInteractionProvider } from "./PixelCanvasInteractionContext";
 import { ChartMountInteractionBridge } from "@/components/charts/ChartMountInteractionBridge";
@@ -101,7 +101,7 @@ type PixelCanvasProps = {
   onTabPaletteDrop?: (tabsWidgetId: string, type: PaletteDragPayload) => void;
   onTabChildUnpark?: (widgetId: string, point: PixelPoint) => void;
   onTabInsertIntentChange?: (intent: TabInsertIntent | null) => void;
-  widgetActions?: PixelWidgetActions;
+  widgetActions?: DashboardWidgetActions;
   className?: string;
   scaleMode?: ScaleMode;
   styleConfig?: DashboardStyleConfig;

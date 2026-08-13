@@ -20,6 +20,11 @@ import {
   type PixelLayoutWidget,
 } from "../layoutUtils";
 import { WidgetErrorBoundary } from "../WidgetErrorBoundary";
+import { resolveDashboardChrome } from "../dashboardChromeConfig";
+import {
+  DashboardWidgetContextMenu,
+  type DashboardWidgetActions,
+} from "../WidgetContextMenu";
 import type { PaletteDragPayload } from "@/lib/dashboardDnd";
 import { mapApiError } from "@/lib/apiError";
 import { pushWidgetPayloadToLibrary } from "@/lib/vizComponentEdit";
@@ -73,6 +78,7 @@ type DashboardCanvasWidgetRendererProps = {
   componentsLoading?: boolean;
   /** 关联组件推库成功后刷新 componentMap（否则 resolve 仍读旧 payload） */
   onLinkedPayloadSynced?: () => void | Promise<unknown>;
+  widgetActions?: DashboardWidgetActions;
 };
 
 function asLayoutWidget(
@@ -114,6 +120,7 @@ function rendererPropsEqual(
   if (prev.dashboardStyle !== next.dashboardStyle) return false;
   if (prev.chartPaletteDefaults !== next.chartPaletteDefaults) return false;
   if (prev.componentMap !== next.componentMap) return false;
+  if (prev.widgetActions !== next.widgetActions) return false;
   if (prev.componentsLoading !== next.componentsLoading) return false;
   if (prev.allWidgets !== next.allWidgets) return false;
   if (!widgetContentEqual(prev.widget, next.widget)) return false;
@@ -149,6 +156,7 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
   componentMap,
   componentsLoading = false,
   onLinkedPayloadSynced,
+  widgetActions,
 }: DashboardCanvasWidgetRendererProps) {
   const widget = asLayoutWidget(sourceWidget);
   const isShapePlaying = usePixelShapePlayer();
@@ -259,47 +267,73 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
     [onTabPaletteDrop, widget.id],
   );
 
+  const chrome = resolveDashboardChrome(dashboardStyle);
+  const showWidgetContextMenu =
+    mode === "edit" &&
+    shell === "grid" &&
+    !nested &&
+    Boolean(widgetActions) &&
+    chrome.showFloatingActions;
+
+  const widgetBody = (
+    <DashboardWidget
+      widget={widget}
+      mode={mode}
+      shell={shell}
+      nested={nested}
+      selected={selected}
+      gridSize={effectiveGridSize}
+      pixelSize={pixelSize}
+      allWidgets={widget.type === "tabs" ? allWidgets : undefined}
+      renderNestedWidget={nested ? undefined : renderNested}
+      filterParameters={filterParameters}
+      executeKey={executeKey}
+      filterValue={
+        widget.filterConfig
+          ? filterValues[widget.filterConfig.filterId]
+          : undefined
+      }
+      onFilterValueChange={onFilterValueChange}
+      onSelect={handleSelect}
+      onDelete={mode === "edit" ? onDelete : undefined}
+      onTitleChange={handleTitleChange}
+      onChartConfigChange={handleChartConfigChange}
+      onChartLinkageClick={
+        onChartLinkageClick
+          ? (payload) => onChartLinkageClick(widget.id, payload)
+          : undefined
+      }
+      onTabsConfigChange={nested ? undefined : handleTabsConfigChange}
+      onTabPaletteDrop={nested || mode !== "edit" ? undefined : handleTabPaletteDrop}
+      onTextConfigChange={handleTextConfigChange}
+      dashboardStyle={dashboardStyle}
+      chartPaletteDefaults={chartPaletteDefaults}
+      suspendLiveResize={isShapePlaying || isGridPlaying}
+      componentMap={componentMap}
+      componentsLoading={componentsLoading}
+      showToolbarDelete={!showWidgetContextMenu}
+    />
+  );
+
   return (
     <WidgetErrorBoundary
       widgetTitle={widget.title}
       onDelete={mode === "edit" ? () => onDelete(widget.id) : undefined}
     >
-      <DashboardWidget
-        widget={widget}
-        mode={mode}
-        shell={shell}
-        nested={nested}
-        selected={selected}
-        gridSize={effectiveGridSize}
-        pixelSize={pixelSize}
-        allWidgets={widget.type === "tabs" ? allWidgets : undefined}
-        renderNestedWidget={nested ? undefined : renderNested}
-        filterParameters={filterParameters}
-        executeKey={executeKey}
-        filterValue={
-          widget.filterConfig
-            ? filterValues[widget.filterConfig.filterId]
-            : undefined
-        }
-        onFilterValueChange={onFilterValueChange}
-        onSelect={handleSelect}
-        onDelete={mode === "edit" ? onDelete : undefined}
-        onTitleChange={handleTitleChange}
-        onChartConfigChange={handleChartConfigChange}
-        onChartLinkageClick={
-          onChartLinkageClick
-            ? (payload) => onChartLinkageClick(widget.id, payload)
-            : undefined
-        }
-        onTabsConfigChange={nested ? undefined : handleTabsConfigChange}
-        onTabPaletteDrop={nested || mode !== "edit" ? undefined : handleTabPaletteDrop}
-        onTextConfigChange={handleTextConfigChange}
-        dashboardStyle={dashboardStyle}
-        chartPaletteDefaults={chartPaletteDefaults}
-        suspendLiveResize={isShapePlaying || isGridPlaying}
-        componentMap={componentMap}
-        componentsLoading={componentsLoading}
-      />
+      {showWidgetContextMenu && widgetActions ? (
+        <DashboardWidgetContextMenu
+          widget={widget}
+          actions={widgetActions}
+          colorScheme={dashboardStyle?.colorScheme ?? "light"}
+          selected={selected}
+          onSelect={selectWidget}
+          className="flex h-full min-h-0 min-w-0 flex-col"
+        >
+          {widgetBody}
+        </DashboardWidgetContextMenu>
+      ) : (
+        widgetBody
+      )}
     </WidgetErrorBoundary>
   );
 }, rendererPropsEqual);

@@ -117,6 +117,8 @@ type DashboardWidgetProps = {
   componentMap?: VizComponentMap;
   /** 关联组件 batch-resolve 进行中（仅未拿到 payload 时用于 loading） */
   componentsLoading?: boolean;
+  /** 顶栏删除按钮；右键菜单开启时由外层关闭 */
+  showToolbarDelete?: boolean;
 };
 
 function linkedWidgetPayloadReady(widget: LayoutWidget): boolean {
@@ -305,6 +307,7 @@ export function DashboardWidget({
   previewProfile = "default",
   componentMap,
   componentsLoading = false,
+  showToolbarDelete = true,
 }: DashboardWidgetProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const chromeScale = usePixelChromeScale();
@@ -356,6 +359,7 @@ export function DashboardWidget({
         onTitleChange={onTitleChange}
         onDelete={onDelete}
         dashboardStyle={dashboardStyle}
+        showToolbarDelete={showToolbarDelete}
       />
     );
   }
@@ -373,6 +377,7 @@ export function DashboardWidget({
         onDelete={onDelete}
         onTextConfigChange={onTextConfigChange}
         dashboardStyle={dashboardStyle}
+        showToolbarDelete={showToolbarDelete}
       />
     );
   }
@@ -389,6 +394,7 @@ export function DashboardWidget({
         onTitleChange={onTitleChange}
         onDelete={onDelete}
         dashboardStyle={dashboardStyle}
+        showToolbarDelete={showToolbarDelete}
       />
     );
   }
@@ -405,6 +411,7 @@ export function DashboardWidget({
         onTitleChange={onTitleChange}
         onDelete={onDelete}
         dashboardStyle={dashboardStyle}
+        showToolbarDelete={showToolbarDelete}
       />
     );
   }
@@ -424,6 +431,7 @@ export function DashboardWidget({
         onPaletteDrop={onTabPaletteDrop}
         renderChild={(child) => renderNestedWidget?.(child) ?? null}
         dashboardStyle={dashboardStyle}
+        showToolbarDelete={showToolbarDelete}
       />
     );
   }
@@ -577,7 +585,7 @@ export function DashboardWidget({
         >
           {chartBody}
         </div>
-        {onDelete ? (
+        {onDelete && showToolbarDelete ? (
           <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
             <AlertDialogContent>
               <AlertDialogHeader>
@@ -646,7 +654,7 @@ export function DashboardWidget({
           <span className="dashboard-no-drag hidden shrink-0 text-theme-xs tabular-nums text-gray-400 sm:inline">
             {sizeLabel}
           </span>
-          {onDelete ? (
+          {onDelete && showToolbarDelete ? (
             <IconButton
               type="button"
               variant="ghost"
@@ -747,7 +755,7 @@ export function DashboardWidget({
         />
       ) : null}
 
-      {onDelete ? (
+      {onDelete && showToolbarDelete ? (
         <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>

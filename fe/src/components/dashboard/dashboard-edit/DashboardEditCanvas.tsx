@@ -10,7 +10,7 @@ import type { Linkage, ChartLinkageRuntime } from "../dashboardFilterUtils";
 import type { DashboardCanvasEditor } from "../dashboardCanvasMode";
 import { pixelWidgetToLayoutWidget } from "../dashboardCanvasMode";
 import { PixelCanvas, type PixelRect } from "../pixelCanvas";
-import type { PixelWidgetActions } from "../pixelCanvas/PixelShapeActionRail";
+import type { DashboardWidgetActions } from "../WidgetContextMenu";
 import {
   PaletteDragProvider,
   usePaletteDocumentDrag,
@@ -84,7 +84,7 @@ type DashboardEditCanvasProps = {
   onViewportChange: (viewport: PixelRect) => void;
   tabInsertIntent?: TabInsertIntent | null;
   onTabInsertIntentChange?: (intent: TabInsertIntent | null) => void;
-  widgetActions?: PixelWidgetActions;
+  widgetActions?: DashboardWidgetActions;
   dataScreenPresentationMode?: PresentationMode;
 };
 
@@ -169,6 +169,7 @@ export function DashboardEditCanvas({
           componentMap={componentMap}
           componentsLoading={componentsLoading}
           onLinkedPayloadSynced={refetchComponents}
+          widgetActions={widgetActions}
         />
       );
     },
@@ -192,6 +193,7 @@ export function DashboardEditCanvas({
       componentMap,
       componentsLoading,
       refetchComponents,
+      widgetActions,
     ],
   );
 

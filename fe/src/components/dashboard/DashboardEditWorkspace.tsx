@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { CanvasEditToolbar } from "@/components/dashboard/CanvasEditToolbar";
 import type { PaletteInsertType } from "@/components/dashboard/createLayoutWidget";
 import { CollapsedRailTab, RailFoldHeader } from "@/components/dashboard/RailFoldTab";
-import { DASHBOARD_EDIT_RAIL_PASS_THROUGH_CLASS, DASHBOARD_EDIT_RAIL_SCROLL_CLIP_CLASS, DASHBOARD_EDIT_RAIL_SHELL_CLASS } from "@/components/dashboard/dashboardEditRailLayout";
+import { DASHBOARD_EDIT_RAIL_PASS_THROUGH_CLASS, DASHBOARD_EDIT_RAIL_SCROLL_CLIP_CLASS, DASHBOARD_EDIT_RAIL_SHELL_CHROME_CLASS, DASHBOARD_EDIT_RAIL_SHELL_CLASS } from "@/components/dashboard/dashboardEditRailLayout";
 import type { ColorScheme } from "@/components/dashboard/dashboardStyleConfig";
 import { cn } from "@/lib/utils";
 
@@ -160,7 +160,8 @@ export function DashboardEditWorkspace({
       {chartRailOpen ? (
         <div
           className={cn(
-            "flex min-h-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]",
+            "flex min-h-0 flex-col overflow-hidden",
+            DASHBOARD_EDIT_RAIL_SHELL_CHROME_CLASS,
             DASHBOARD_EDIT_RAIL_SHELL_CLASS,
           )}
         >

@@ -22,6 +22,7 @@ type CustomVizWidgetProps = {
   onDelete?: (id: string) => void;
   onTitleChange?: (id: string, title: string) => void;
   dashboardStyle?: DashboardStyleConfig;
+  showToolbarDelete?: boolean;
 };
 
 export function CustomVizWidget({
@@ -34,6 +35,7 @@ export function CustomVizWidget({
   onDelete,
   onTitleChange,
   dashboardStyle,
+  showToolbarDelete: _showToolbarDelete = true,
 }: CustomVizWidgetProps) {
   const cfg = widget.customVizConfig;
   const hostRef = useRef<HTMLDivElement | null>(null);

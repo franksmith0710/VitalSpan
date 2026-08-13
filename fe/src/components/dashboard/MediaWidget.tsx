@@ -21,6 +21,7 @@ type MediaWidgetProps = {
   onDelete?: (id: string) => void;
   onTitleChange?: (id: string, title: string) => void;
   dashboardStyle?: DashboardStyleConfig;
+  showToolbarDelete?: boolean;
 };
 
 export function MediaWidget({
@@ -33,6 +34,7 @@ export function MediaWidget({
   onDelete,
   onTitleChange,
   dashboardStyle,
+  showToolbarDelete = true,
 }: MediaWidgetProps) {
   const cfg = normalizeMediaConfig(widget.mediaConfig);
   const [broken, setBroken] = useState(false);
@@ -168,7 +170,7 @@ export function MediaWidget({
             ariaLabel="媒体标题"
             testId={`widget-inline-title-${widget.id}`}
           />
-          {onDelete ? (
+          {onDelete && showToolbarDelete ? (
             <IconButton
               type="button"
               variant="ghost"

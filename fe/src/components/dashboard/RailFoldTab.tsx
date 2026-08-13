@@ -1,6 +1,7 @@
 import { List } from "lucide-react";
 import { IconButton } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { DASHBOARD_EDIT_RAIL_SHELL_CHROME_CLASS } from "./dashboardEditRailLayout";
 
 export function RailFoldIcon({ className }: { className?: string }) {
   return <List className={cn("size-4 text-gray-400 dark:text-gray-500", className)} aria-hidden />;
@@ -20,9 +21,10 @@ export function CollapsedRailTab({
     <button
       type="button"
       className={cn(
-        "flex h-full w-8 shrink-0 flex-col items-center border-l border-gray-200 bg-white py-2.5 transition-colors",
+        "flex h-full min-h-0 w-8 shrink-0 flex-col items-center overflow-hidden py-2.5 transition-colors",
+        DASHBOARD_EDIT_RAIL_SHELL_CHROME_CLASS,
         "hover:bg-gray-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500/30",
-        "dark:border-gray-800 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]",
+        "dark:hover:bg-white/[0.05]",
         className,
       )}
       aria-label={`展开${label}`}

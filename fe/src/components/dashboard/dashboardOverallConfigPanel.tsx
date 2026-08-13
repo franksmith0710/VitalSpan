@@ -333,7 +333,7 @@ export function DashboardOverallConfigPanel({
           onCheckedChange={(checked) => patchChrome({ showChartLoadingHint: checked })}
         />
         <DeAttrToggleRow
-          label="悬浮操作按钮"
+          label="组件右键菜单"
           checked={chrome.showFloatingActions}
           onCheckedChange={(checked) => patchChrome({ showFloatingActions: checked })}
         />

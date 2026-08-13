@@ -23,15 +23,13 @@ export type ChartEditRailProps = ChartEditRailChromeProps & {
   dashboardStyle?: DashboardStyleConfig;
   dashboardId?: string;
   dashboardWidgets?: LayoutWidget[];
-  onCompactChange?: (compact: boolean) => void;
 };
 
 function ChartEditRailInner({
   onDelete,
   onDataRefresh,
   className,
-  onCompactChange,
-}: ChartEditRailChromeProps & { onCompactChange?: (compact: boolean) => void }) {
+}: ChartEditRailChromeProps) {
   const {
     widget,
     cfg,
@@ -62,7 +60,6 @@ function ChartEditRailInner({
       leftLabel={typeLabel}
       leftSubtitle={leftSubtitle}
       rightLabel="数据集"
-      onCompactChange={onCompactChange}
       left={
         <ChartEditorColumn
           onDelete={onDelete}
@@ -104,7 +101,6 @@ export function ChartEditRail({
   dashboardStyle,
   dashboardId,
   dashboardWidgets,
-  onCompactChange,
   ...chromeProps
 }: ChartEditRailProps) {
   return (
@@ -116,7 +112,7 @@ export function ChartEditRail({
       dashboardId={dashboardId}
       dashboardWidgets={dashboardWidgets}
     >
-      <ChartEditRailInner {...chromeProps} onCompactChange={onCompactChange} />
+      <ChartEditRailInner {...chromeProps} />
     </ChartInspectorProvider>
   );
 }
