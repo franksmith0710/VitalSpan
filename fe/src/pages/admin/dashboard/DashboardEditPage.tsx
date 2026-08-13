@@ -118,6 +118,7 @@ import { DASHBOARD_EDIT_RAIL_SCROLL_CLASS } from "@/components/dashboard/dashboa
 import { DashboardEditCanvas } from "@/components/dashboard/dashboard-edit/DashboardEditCanvas";
 import { ChartDrillProvider } from "@/components/charts/ChartDrillContext";
 import { ChartEditRail, ChartEditRailEmpty } from "@/components/dashboard/ChartEditRail";
+import { CustomVizEditRail } from "@/components/dashboard/custom-viz/CustomVizEditRail";
 import { FilterWidgetInspector } from "@/components/dashboard/FilterWidgetInspector";
 import { TextEditRail } from "@/components/dashboard/TextEditRail";
 import { ScreenVisualEditRail } from "@/components/dashboard/screen/ScreenVisualEditRail";
@@ -576,6 +577,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         if (
           w &&
           (w.type === "chart" ||
+            w.type === "customViz" ||
             w.type === "media" ||
             w.type === "tabs" ||
             w.type === "filter" ||
@@ -1562,6 +1564,31 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 onDelete={() => handleDeleteWidget(primarySelectedId!)}
                 onRailCollapse={collapseChartRail}
               />
+            ) : selectedWidget?.type === "customViz" && inspectorWidget?.customVizConfig ? (
+              <div className="flex h-full min-h-0 flex-col overflow-hidden">
+                {vizComponentHeader}
+                <CustomVizEditRail
+                  key={primarySelectedId ?? selectedWidget.id}
+                  className="min-h-0 flex-1"
+                  widget={
+                    inspectorWidget as typeof inspectorWidget & {
+                      customVizConfig: import("@/components/dashboard/layoutUtils").CustomVizWidgetConfig;
+                    }
+                  }
+                  onTitleChange={(title) => {
+                    if (!primarySelectedId) return;
+                    setWidgets((prev) => resizeWidget(prev, primarySelectedId, { title }));
+                  }}
+                  onChange={(customVizConfig) => {
+                    void vizInspectorActions.applyPayloadChange(
+                      { customVizConfig },
+                      { customVizConfig },
+                    );
+                  }}
+                  onDelete={() => handleDeleteWidget(primarySelectedId!)}
+                  onDataRefresh={() => primarySelectedId && handleChartDataRefresh(primarySelectedId)}
+                />
+              </div>
             ) : selectedWidget?.type === "chart" ? (
               <div className="flex h-full min-h-0 flex-col overflow-hidden">
                 {vizComponentHeader}

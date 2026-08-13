@@ -6,7 +6,7 @@ import {
   Maximize2,
   Trash2,
 } from "lucide-react";
-import type { MouseEvent, ReactNode } from "react";
+import type { ReactNode } from "react";
 import type { ColorScheme } from "@/components/dashboard/dashboardStyleConfig";
 import {
   ContextMenu,
@@ -165,8 +165,8 @@ type DashboardWidgetContextMenuProps = {
   onSelect?: (widgetId: string, additive: boolean) => void;
   children: ReactNode;
   className?: string;
-  /** 测试用：默认展开菜单 */
-  defaultOpen?: boolean;
+  /** 测试用：受控展开菜单（Radix ContextMenu 不支持无交互 defaultOpen） */
+  open?: boolean;
 };
 
 export function DashboardWidgetContextMenu({
@@ -177,18 +177,21 @@ export function DashboardWidgetContextMenu({
   onSelect,
   children,
   className,
-  defaultOpen = false,
+  open,
 }: DashboardWidgetContextMenuProps) {
-  const handleContextMenu = (event: MouseEvent) => {
-    event.preventDefault();
-    if (!selected) {
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen && !selected) {
       onSelect?.(widget.id, false);
     }
   };
 
   return (
-    <ContextMenu modal={false} defaultOpen={defaultOpen}>
-      <ContextMenuTrigger asChild className={className} onContextMenu={handleContextMenu}>
+    <ContextMenu
+      modal={false}
+      onOpenChange={handleOpenChange}
+      {...(open !== undefined ? { open } : {})}
+    >
+      <ContextMenuTrigger asChild className={className}>
         {children}
       </ContextMenuTrigger>
       <ContextMenuContent

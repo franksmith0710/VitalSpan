@@ -69,7 +69,7 @@ import {
   scaledCanvasMetrics,
 } from "./geometry";
 import { PixelShape } from "./PixelShape";
-import type { DashboardWidgetActions } from "./WidgetContextMenu";
+import type { DashboardWidgetActions } from "../WidgetContextMenu";
 import { PixelMarkLineOverlay } from "./PixelMarkLineOverlay";
 import { PixelCanvasInteractionProvider } from "./PixelCanvasInteractionContext";
 import { ChartMountInteractionBridge } from "@/components/charts/ChartMountInteractionBridge";

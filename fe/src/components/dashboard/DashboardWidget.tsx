@@ -412,6 +412,8 @@ export function DashboardWidget({
         onDelete={onDelete}
         dashboardStyle={dashboardStyle}
         showToolbarDelete={showToolbarDelete}
+        filterParameters={filterParameters}
+        executeKey={widgetExecuteKey}
       />
     );
   }

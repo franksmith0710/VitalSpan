@@ -11,10 +11,17 @@ import {
 } from "@/lib/screenVisualAssets";
 
 
+export type CustomVizDragPayload = {
+  type: "customViz";
+  artifactId: string;
+  displayName: string;
+};
+
 /** HTML5 拖放 MIME；对齐 DataEase/Superset「组件面板 → 画布」 */
 export const DASHBOARD_CHART_DND_TYPE = "application/vnd.vitalspan.chart-type";
 export const DASHBOARD_FILTER_DND_TYPE = "application/vnd.vitalspan.filter-widget";
 export const DASHBOARD_SCREEN_INSERT_DND_TYPE = "application/vnd.vitalspan.screen-insert";
+export const DASHBOARD_CUSTOM_VIZ_DND_TYPE = "application/vnd.vitalspan.custom-viz";
 
 /** 新组件默认占位（12 列栅格，约半宽 × 3 行） */
 export const DEFAULT_WIDGET_COLSPAN = 6;

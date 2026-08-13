@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { GripVertical } from "lucide-react";
 import { fetchWithTimeout, getAuthHeaders } from "@/lib/api";
 import { resolveApiBaseUrl } from "@/lib/appBasePath";
+import { resolveChartQueryLimit } from "@/lib/chartDeDisplay";
+import { useChartExecute } from "@/components/charts/useChartExecute";
+import { fetchAiVizArtifactMeta } from "@/lib/aiVizArtifacts";
 import type { DashboardWidgetShell } from "./dashboardCanvasMode";
 import type { LayoutWidget, CustomVizWidgetConfig, DashboardStyleConfig } from "./layoutUtils";
 import {
@@ -10,6 +13,12 @@ import {
   customVizHostStyle,
   mountCustomVizHtml,
 } from "./customVizHost";
+import {
+  customVizBindingToChartConfig,
+  isCustomVizExecuteReady,
+  resolveCustomVizStyle,
+} from "./custom-viz/customVizExecute";
+import { injectCustomVizPayload } from "./custom-viz/customVizPayload";
 import { gridWidgetShellClassName, GridWidgetShellFrame, resolveGridWidgetShell } from "./widgetRailStyleSections";
 
 type CustomVizWidgetProps = {
@@ -23,6 +32,8 @@ type CustomVizWidgetProps = {
   onTitleChange?: (id: string, title: string) => void;
   dashboardStyle?: DashboardStyleConfig;
   showToolbarDelete?: boolean;
+  filterParameters?: Record<string, string>;
+  executeKey?: string;
 };
 
 export function CustomVizWidget({
@@ -32,19 +43,32 @@ export function CustomVizWidget({
   nested = false,
   selected = false,
   onSelect,
-  onDelete,
-  onTitleChange,
+  onDelete: _onDelete,
+  onTitleChange: _onTitleChange,
   dashboardStyle,
   showToolbarDelete: _showToolbarDelete = true,
+  filterParameters,
+  executeKey,
 }: CustomVizWidgetProps) {
   const cfg = widget.customVizConfig;
   const hostRef = useRef<HTMLDivElement | null>(null);
   const [html, setHtml] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [manifestDefaultStyle, setManifestDefaultStyle] = useState<Record<string, unknown>>({});
   const showGridChrome = shell === "grid";
   const gridShell = resolveGridWidgetShell(widget, dashboardStyle);
   const inShapeShell = shell === "shape";
   const hostStyle = customVizHostStyle(dashboardStyle);
+
+  const chartCfg = customVizBindingToChartConfig(cfg.dataBinding);
+  const executeReady = isCustomVizExecuteReady(cfg.dataBinding);
+  const queryLimit = resolveChartQueryLimit(chartCfg, dashboardStyle ?? {});
+  const { columns, rows } = useChartExecute(chartCfg, {
+    enabled: executeReady,
+    filterParameters,
+    executeKey,
+    limit: queryLimit,
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -80,10 +104,33 @@ export function CustomVizWidget({
   }, [cfg.artifactId]);
 
   useEffect(() => {
+    const artifactId = cfg.artifactId?.trim();
+    if (!artifactId) return undefined;
+    let cancelled = false;
+    void fetchAiVizArtifactMeta(artifactId)
+      .then((meta) => {
+        if (!cancelled) setManifestDefaultStyle(meta.manifest.defaultStyle ?? {});
+      })
+      .catch(() => {
+        if (!cancelled) setManifestDefaultStyle({});
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [cfg.artifactId]);
+
+  useEffect(() => {
     const host = hostRef.current;
     if (!host || !html) return undefined;
     return mountCustomVizHtml(host, html);
   }, [html]);
+
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host || !html) return;
+    const style = resolveCustomVizStyle(manifestDefaultStyle, cfg.style);
+    injectCustomVizPayload(host, { columns, rows, style });
+  }, [html, columns, rows, cfg.style, manifestDefaultStyle]);
 
   const body = loadError ? (
     <div className="flex h-full min-h-[64px] flex-col items-center justify-center gap-1 px-3 text-center text-theme-xs text-gray-500 dark:text-gray-400">

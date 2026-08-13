@@ -54,7 +54,7 @@ describe("DashboardWidgetContextMenu", () => {
         widget={chartWidget}
         actions={{ onCopy, onEnlarge, onViewData, onDelete }}
         selected
-        defaultOpen
+        open
       >
         <div data-testid="widget-body">chart</div>
       </DashboardWidgetContextMenu>,

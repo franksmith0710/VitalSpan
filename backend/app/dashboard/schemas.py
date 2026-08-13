@@ -7,7 +7,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, model_serializer, model_validator
 
 from app.dashboard.gap_policy import normalize_gap_config
-from app.schemas.chart_view import ChartViewConfigLayout
+from app.schemas.chart_view import ChartFieldRef, ChartFilterRef, ChartViewConfigLayout
 from app.viz.components.schemas import VizComponentRef
 
 FilterControlType = Literal["text", "select", "date", "multiselect"]
@@ -85,15 +85,31 @@ class TabsWidgetConfig(BaseModel):
     widget_style: WidgetStyleConfig | None = Field(default=None, alias="widgetStyle")
 
 
+class CustomVizMetricRef(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    field: str = Field(min_length=1, max_length=128)
+    label: str | None = Field(default=None, max_length=128)
+    agg: Literal["sum", "avg", "max", "min", "count"] = "sum"
+
+
 class CustomVizDataBinding(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     status: Literal["manual", "connected"] = "manual"
+    data_source_id: str | None = Field(default=None, alias="dataSourceId", max_length=64)
+    dataset_id: str | None = Field(default=None, alias="datasetId", max_length=64)
+    config_id: str | None = Field(default=None, alias="configId", max_length=64)
+    dimensions: list[ChartFieldRef] = Field(default_factory=list)
+    metrics: list[CustomVizMetricRef] = Field(default_factory=list)
+    filters: list[ChartFilterRef] = Field(default_factory=list)
+    refresh_mode: str | None = Field(default=None, alias="refreshMode", max_length=32)
+    result_limit: str | None = Field(default=None, alias="resultLimit", max_length=16)
 
 
 class CustomVizWidgetConfig(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     artifact_id: uuid.UUID = Field(alias="artifactId")
     data_binding: CustomVizDataBinding | None = Field(default=None, alias="dataBinding")
+    style: dict[str, Any] | None = None
     widget_style: WidgetStyleConfig | None = Field(default=None, alias="widgetStyle")
 
 

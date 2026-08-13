@@ -3,13 +3,13 @@ from __future__ import annotations
 import uuid
 from typing import Annotated, Generator
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
 
 from app.ai_viz import service as ai_viz_service
 from app.ai_viz.errors import AiVizError
-from app.ai_viz.schemas import AiVizArtifactCreateIn, AiVizArtifactOut
+from app.ai_viz.schemas import AiVizArtifactCreateIn, AiVizArtifactListOut, AiVizArtifactOut
 from app.auth.deps import UserContext, require_permission
 from app.datasources.models import get_meta_session
 
@@ -56,6 +56,20 @@ def update_artifact(
 ) -> AiVizArtifactOut | JSONResponse:
     try:
         return ai_viz_service.update_artifact(db, artifact_id, payload, user)
+    except AiVizError as exc:
+        return _error_response(exc)
+
+
+@router.get("/artifacts", response_model=AiVizArtifactListOut)
+def list_artifacts(
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    db: Annotated[Session, Depends(_db)],
+    limit: Annotated[int, Query(ge=1, le=200)] = 100,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> AiVizArtifactListOut | JSONResponse:
+    try:
+        items = ai_viz_service.list_artifacts(db, user, limit=limit, offset=offset)
+        return AiVizArtifactListOut(items=items)
     except AiVizError as exc:
         return _error_response(exc)
 

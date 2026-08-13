@@ -102,7 +102,7 @@ export type DialogStyleConfig = {
 export type DashboardChromeConfig = {
   /** 图表加载骨架/提示 */
   showChartLoadingHint?: boolean;
-  /** 选中组件时显示放大/导出等悬浮操作轨 */
+  /** 编辑态组件右键菜单（style JSON 历史字段名 showFloatingActions） */
   showFloatingActions?: boolean;
   /** 编辑态组件标题栏操作按钮 */
   showChartActionButtons?: boolean;

@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import uuid
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.ai_viz.errors import AiVizError
@@ -80,3 +81,23 @@ def get_entry_html(db: Session, artifact_id: uuid.UUID, actor: UserContext) -> s
     if not isinstance(html, str):
         raise AiVizError("AIVIZ_MISSING_ENTRY", "entry file missing", 422)
     return html
+
+
+def list_artifacts(
+    db: Session,
+    actor: UserContext,
+    *,
+    limit: int = 100,
+    offset: int = 0,
+) -> list[AiVizArtifactOut]:
+    user_id = uuid.UUID(actor.id)
+    capped = min(max(limit, 1), 200)
+    stmt = (
+        select(AiVizArtifact)
+        .where(AiVizArtifact.owner_user_id == user_id)
+        .order_by(AiVizArtifact.updated_at.desc())
+        .offset(max(offset, 0))
+        .limit(capped)
+    )
+    rows = db.scalars(stmt).all()
+    return [_to_out(row) for row in rows]

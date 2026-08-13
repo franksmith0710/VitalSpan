@@ -32,3 +32,9 @@ class AiVizArtifactOut(BaseModel):
     manifest: dict[str, Any]
     status: str
     content_hash: str = Field(alias="contentHash")
+
+
+class AiVizArtifactListOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    items: list[AiVizArtifactOut]

@@ -149,6 +149,11 @@ export const queryKeys = {
   charts: {
     types: ["charts", "types"] as const,
   },
+  aiViz: {
+    all: ["aiViz"] as const,
+    list: (params?: { limit?: number; offset?: number }) => ["aiViz", "list", params] as const,
+    detail: (artifactId: string) => ["aiViz", "detail", artifactId] as const,
+  },
   designer: {
     sqlCapabilities: ["designer", "sqlCapabilities"] as const,
     fields: (datasetId?: string | null) => ["designer", "fields", datasetId ?? "none"] as const,

@@ -483,11 +483,6 @@ html.dark {
   font-size: calc(var(--dw-screen-caption) / var(--pixel-canvas-chrome-scale));
   line-height: calc(1.25rem / var(--pixel-canvas-chrome-scale));
 }
-
-.pixel-canvas-host [data-testid^="pixel-shape-actions"] :where(button svg) {
-  width: calc(var(--dw-screen-action-icon) / var(--pixel-canvas-chrome-scale));
-  height: calc(var(--dw-screen-action-icon) / var(--pixel-canvas-chrome-scale));
-}
 /* DataEase shape-inner：标题与图表共享内边距；水平 padding 由 inner 承担 */
 .pixel-canvas-host .pixel-shape-inner .shape-title {
   display: flex;
@@ -601,21 +596,6 @@ html.dark {
 
 .dashboard-theme-scope .pixel-canvas-host .pixel-shape-outer.pixel-shape-selected {
   border-color: var(--dashboard-accent, var(--color-brand-500));
-}
-
-.dashboard-theme-scope .pixel-canvas-host [data-testid^="pixel-shape-actions"] :where(button) {
-  color: var(--dashboard-action-icon, var(--color-gray-500));
-}
-
-.dashboard-theme-scope .pixel-canvas-host [data-testid^="pixel-shape-actions"] :where(button:hover:not(:disabled)) {
-  color: var(--dashboard-action-icon-hover, var(--color-gray-800));
-}
-
-.dashboard-theme-scope[data-dashboard-color-scheme="dark"]
-  .pixel-canvas-host
-  [data-testid^="pixel-shape-actions"]
-  :where(button:hover:not(:disabled)) {
-  color: var(--dashboard-action-icon-hover, var(--color-gray-200));
 }
 
 .chart-drill-chrome {
@@ -1137,17 +1117,11 @@ html.admin-fill-lock #root {
   flex: 1;
 }
 
-.pixel-canvas-host .pixel-shape-outer[data-pixel-is-player] .dashboard-no-drag:not([data-testid^="pixel-shape-actions"]),
+.pixel-canvas-host .pixel-shape-outer[data-pixel-is-player] .dashboard-no-drag,
 .pixel-canvas-host .pixel-shape-outer[data-pixel-is-player] .embedded-chart-table-host {
   width: 100%;
   height: 100%;
   min-height: 0;
-}
-
-/* isPlayer 下操作栏仅保持固定尺寸，避免随组件外框被拉高 */
-.pixel-canvas-host .pixel-shape-outer[data-pixel-is-player] [data-testid^="pixel-shape-actions"] {
-  width: auto;
-  height: auto;
 }
 
 .pixel-canvas-host .widget-pending-preview-icon {

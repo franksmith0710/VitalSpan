@@ -3,6 +3,7 @@ import type { DashboardChromeConfig, DashboardStyleConfig, DialogStyleConfig } f
 
 export const DEFAULT_DASHBOARD_CHROME: Required<DashboardChromeConfig> = {
   showChartLoadingHint: true,
+  /** 编辑态组件右键菜单（style JSON 历史字段名 showFloatingActions） */
   showFloatingActions: true,
   showChartActionButtons: true,
   showAuxiliaryGrid: true,

@@ -1,4 +1,4 @@
-import type { ChartViewConfig, ChartType } from "@/lib/chartViewConfig";
+import type { ChartViewConfig, ChartType, ChartFieldRef, ChartFilterRef } from "@/lib/chartViewConfig";
 import { randomId } from "@/lib/randomId";
 import { migrateChartViewConfig } from "@/lib/migrateChartTypes";
 import { resolveChartWidgetTitle } from "@/lib/chartTypeDisplayNames";
@@ -87,13 +87,26 @@ export type MediaWidgetConfig = {
   widgetStyle?: WidgetStyleConfig;
 };
 
+export type CustomVizMetricRef = ChartFieldRef & {
+  agg?: "sum" | "avg" | "max" | "min" | "count";
+};
+
 export type CustomVizDataBinding = {
   status?: "manual" | "connected";
+  dataSourceId?: string;
+  datasetId?: string;
+  configId?: string;
+  dimensions?: ChartFieldRef[];
+  metrics?: CustomVizMetricRef[];
+  filters?: ChartFilterRef[];
+  refreshMode?: string;
+  resultLimit?: string;
 };
 
 export type CustomVizWidgetConfig = {
   artifactId: string;
   dataBinding?: CustomVizDataBinding;
+  style?: Record<string, unknown>;
   widgetStyle?: WidgetStyleConfig;
 };
 

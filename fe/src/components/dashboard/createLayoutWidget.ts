@@ -38,6 +38,12 @@ export type ScreenPresetInsertPayload = {
   preset: string;
 };
 
+export type CustomVizInsertPayload = {
+  type: "customViz";
+  artifactId: string;
+  displayName?: string;
+};
+
 export type PaletteInsertType =
   | ChartType
   | "filter"
@@ -45,6 +51,7 @@ export type PaletteInsertType =
   | "text"
   | "media"
   | "tabs"
+  | CustomVizInsertPayload
   | ScreenMaterialInsertType
   | ScreenPresetInsertPayload;
 
@@ -59,6 +66,10 @@ function resolveFilterControlType(type: PaletteInsertType): FilterControlType | 
   if (type === "filter") return "text";
   if (typeof type === "object" && "type" in type && type.type === "filter") return type.controlType;
   return null;
+}
+
+function isCustomVizInsert(type: PaletteInsertType): type is CustomVizInsertPayload {
+  return typeof type === "object" && "type" in type && type.type === "customViz";
 }
 
 function isScreenPresetInsert(
@@ -169,6 +180,30 @@ export function createTabsWidget(
   };
 }
 
+export function createCustomVizWidget(
+  artifactId: string,
+  displayName: string,
+  widgets: LayoutWidget[],
+  at?: { gridX: number; gridY: number; colSpan?: number; rowSpan?: number },
+): LayoutWidget {
+  const widgetId = randomId();
+  const maxOrder = widgets.reduce((m, w) => Math.max(m, w.order), -1);
+  return {
+    id: widgetId,
+    type: "customViz",
+    title: displayName || "自定义组件",
+    colSpan: at?.colSpan ?? DEFAULT_WIDGET_COLSPAN,
+    rowSpan: at?.rowSpan ?? DEFAULT_WIDGET_ROWSPAN,
+    order: maxOrder + 1,
+    gridX: at?.gridX,
+    gridY: at?.gridY,
+    customVizConfig: {
+      artifactId,
+      dataBinding: { status: "manual" },
+    },
+  };
+}
+
 export function createPaletteWidget(
   type: PaletteInsertType,
   widgets: LayoutWidget[],
@@ -176,6 +211,14 @@ export function createPaletteWidget(
 ): LayoutWidget {
   const filterControlType = resolveFilterControlType(type);
   if (filterControlType != null) return createFilterWidget(widgets, at, filterControlType);
+  if (isCustomVizInsert(type)) {
+    return createCustomVizWidget(
+      type.artifactId,
+      type.displayName ?? "自定义组件",
+      widgets,
+      at,
+    );
+  }
   if (isScreenPresetInsert(type)) {
     if (type.insert === "screen-border") {
       return createScreenBorderWidget(widgets, at, type.preset);
