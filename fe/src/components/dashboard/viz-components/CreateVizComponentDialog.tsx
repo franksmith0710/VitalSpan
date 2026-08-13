@@ -150,8 +150,6 @@ export function CreateVizComponentDialog({ open, onOpenChange }: CreateVizCompon
     });
   };
 
-  const isChart = widgetType === "chart";
-
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <AdminFormDialogContent size="lg" scrollable className="sm:max-w-[540px]">
@@ -169,7 +167,11 @@ export function CreateVizComponentDialog({ open, onOpenChange }: CreateVizCompon
               onChange={(e) => setName(e.target.value)}
               placeholder={defaultVizComponentName(
                 widgetType,
-                isChart ? chartDefaults : undefined,
+                widgetType === "chart"
+                  ? chartDefaults
+                  : isCustomViz && customVizPick
+                    ? { customViz: customVizPick }
+                    : undefined,
               )}
             />
           </AdminFormField>
@@ -180,7 +182,7 @@ export function CreateVizComponentDialog({ open, onOpenChange }: CreateVizCompon
               className={cn(HUB_SEGMENTED_SHELL_CLASS, "flex flex-wrap gap-0.5")}
             >
               {WIDGET_TYPES.map((type) => {
-                const active = widgetType === type;
+                const active = widgetType === type || (type === "chart" && isCustomViz);
                 return (
                   <Button
                     key={type}
@@ -188,7 +190,10 @@ export function CreateVizComponentDialog({ open, onOpenChange }: CreateVizCompon
                     size="sm"
                     variant={active ? "subtle" : "ghost"}
                     className={HUB_SEGMENTED_BUTTON_CLASS}
-                    onClick={() => setWidgetType(type)}
+                    onClick={() => {
+                      setWidgetType(type);
+                      setCustomVizPick(null);
+                    }}
                   >
                     {widgetTypeLabel(type)}
                   </Button>
@@ -196,27 +201,41 @@ export function CreateVizComponentDialog({ open, onOpenChange }: CreateVizCompon
               })}
             </div>
           </AdminFormField>
-          <AdminFormField label={TYPE_PICKER_LABEL[widgetType]} hint={TYPE_PICKER_HINT[widgetType]}>
+          <AdminFormField
+            label={TYPE_PICKER_LABEL[widgetType] ?? widgetTypeLabel(widgetType)}
+            hint={TYPE_PICKER_HINT[widgetType]}
+          >
             <div
               className={cn(
                 "relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800",
                 TYPE_PICKER_SLOT_CLASS,
               )}
             >
-              <div className={cn("absolute inset-0", !isChart && "hidden")} aria-hidden={!isChart}>
+              <div
+                className={cn("absolute inset-0", !isChartPicker && "hidden")}
+                aria-hidden={!isChartPicker}
+              >
                 <ChartPickerPopover
                   selectedType={chartType}
                   enableDrag={false}
                   className="h-full min-h-0"
-                  onInsert={setChartType}
+                  onInsert={(type) => {
+                    setWidgetType("chart");
+                    setCustomVizPick(null);
+                    setChartType(type);
+                  }}
+                  onInsertCustomViz={(payload) => {
+                    setWidgetType("customViz");
+                    setCustomVizPick(payload);
+                  }}
                 />
               </div>
               <div
                 className={cn(
                   "flex h-full flex-col items-center justify-center gap-2 px-6 text-center",
-                  isChart && "hidden",
+                  isChartPicker && "hidden",
                 )}
-                aria-hidden={isChart}
+                aria-hidden={isChartPicker}
               >
                 <p className="text-theme-sm font-medium text-gray-700 dark:text-gray-300">
                   {widgetTypeLabel(widgetType)}
@@ -225,6 +244,11 @@ export function CreateVizComponentDialog({ open, onOpenChange }: CreateVizCompon
                   {TYPE_PICKER_HINT[widgetType]}
                 </p>
               </div>
+              {isCustomViz && customVizPick ? (
+                <p className="absolute bottom-2 left-2 right-2 truncate rounded-md bg-brand-50 px-2 py-1 text-center text-[11px] text-brand-700 dark:bg-brand-500/10 dark:text-brand-300">
+                  已选：{customVizPick.displayName ?? customVizPick.artifactId}
+                </p>
+              ) : null}
             </div>
           </AdminFormField>
           <AdminFormField label="分类">
@@ -262,7 +286,7 @@ export function CreateVizComponentDialog({ open, onOpenChange }: CreateVizCompon
           <Button
             type="button"
             variant="primary"
-            disabled={createMutation.isPending}
+            disabled={createDisabled}
             onClick={() => createMutation.mutate()}
           >
             <Plus className="size-4" aria-hidden />

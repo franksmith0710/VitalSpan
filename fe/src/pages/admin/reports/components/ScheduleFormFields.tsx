@@ -120,7 +120,7 @@ export function ScheduleFormFields({
     showAttachments && attachmentFormatMode === "pdf-only" ? (
       embeddedLayout ? (
         <p className="text-theme-xs leading-relaxed text-gray-600 dark:text-gray-400">
-          按上方调度时间截取当前画布生成 PDF。邮件带附件；钉钉/企微/飞书发给用户资料里绑的账号。
+          按上方调度时间截取当前画布生成 PDF，并以邮件附件发送。
         </p>
       ) : (
         <div className="grid gap-2">
@@ -158,13 +158,7 @@ export function ScheduleFormFields({
     ) : null;
 
   const deliveryChannelsField = showDeliveryChannels ? (
-    <ScheduleDeliveryChannelsField
-      deliveryChannels={value.deliveryChannels}
-      notifyGroup={value.notifyGroup}
-      disabled={disabled}
-      onChannelsChange={(deliveryChannels) => patch({ deliveryChannels })}
-      onNotifyGroupChange={(notifyGroup) => patch({ notifyGroup })}
-    />
+    <ScheduleDeliveryChannelsField disabled={disabled} />
   ) : null;
 
   const advancedCronButton = (
@@ -212,7 +206,7 @@ export function ScheduleFormFields({
 
           <ScheduleFormSection
             title="接收人"
-            description="按角色、用户或邮箱指定；钉钉/企微/飞书账号在系统管理 → 用户里填写"
+            description="按角色、用户或邮箱指定；收件人邮箱在系统管理 → 用户里填写"
             icon={Users}
             action={
               !disabled ? (
@@ -235,7 +229,7 @@ export function ScheduleFormFields({
               <div className="flex items-start gap-2.5">
                 <Mail className="mt-0.5 size-4 shrink-0 text-gray-400" aria-hidden />
                 <p className="text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                  邮件发给收件人邮箱；钉钉/企微/飞书发给用户资料里绑的账号。未绑号不会改发到群。
+                  定时报告将发到收件人在用户资料中填写的邮箱。
                 </p>
               </div>
             }

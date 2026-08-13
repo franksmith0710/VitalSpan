@@ -17,7 +17,7 @@ import {
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { mapApiError } from "@/lib/apiError";
 import { summarizeRecipients } from "@/lib/scheduleSourceMeta";
-import { pickActiveSchedule, scheduleRowToForm } from "../scheduleFormUtils";
+import { pickActiveSchedule, scheduleRowToForm, EMAIL_ONLY_DELIVERY } from "../scheduleFormUtils";
 import { describeCron } from "./ScheduleWizard";
 import {
   DEFAULT_SCHEDULE_FORM,
@@ -81,8 +81,7 @@ export function StandardSchedulePanel({ sourceKey, packName, disabled = false }:
         timezone: form.timezone,
         recipients: form.recipients.filter((item) => item.value.trim()),
         attachmentFormats: ["pdf"],
-        deliveryChannels: form.deliveryChannels,
-        notifyGroup: form.notifyGroup,
+        ...EMAIL_ONLY_DELIVERY,
       });
       if (created.allowedActions.includes("schedule")) {
         setPendingActivateId(created.id);
@@ -104,8 +103,7 @@ export function StandardSchedulePanel({ sourceKey, packName, disabled = false }:
           timezone: form.timezone,
           recipients: form.recipients.filter((item) => item.value.trim()),
           attachmentFormats: ["pdf"],
-          deliveryChannels: form.deliveryChannels,
-          notifyGroup: form.notifyGroup,
+          ...EMAIL_ONLY_DELIVERY,
         },
       });
       toast.success("草稿已保存");
@@ -130,7 +128,7 @@ export function StandardSchedulePanel({ sourceKey, packName, disabled = false }:
         <div>
           <h3 className="text-theme-sm font-semibold text-gray-900 dark:text-white">定时投递</h3>
           <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
-            按周期生成标准分析 PDF，并选择邮件、企微或钉钉投递。
+            按周期生成标准分析 PDF，并通过邮件投递。
           </p>
         </div>
         <Button type="button" variant="ghost" size="sm" asChild>

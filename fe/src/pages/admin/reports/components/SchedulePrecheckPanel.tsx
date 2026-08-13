@@ -13,11 +13,6 @@ import {
 type DeliveryHealth = {
   status: "reachable" | "unreachable" | "unconfigured";
   error?: string | null;
-  im?: {
-    dingtalk?: { configured: boolean; groupWebhook: boolean };
-    wecom?: { configured: boolean; groupWebhook: boolean };
-    feishu?: { configured: boolean; groupWebhook: boolean };
-  };
 };
 
 type PrecheckItem = {
@@ -36,7 +31,6 @@ type SchedulePrecheckPanelProps = {
   className?: string;
   /** 弹窗打开时触发一次强制刷新 */
   active?: boolean;
-  deliveryChannels?: string[];
 };
 
 function precheckFixHint(item: PrecheckItem): string | undefined {
@@ -47,9 +41,6 @@ function precheckFixHint(item: PrecheckItem): string | undefined {
       return "本地修复：docker compose up -d mailhog；或 python .tmp/run_local_mailhog.py";
     }
     return "请配置 RPT_SMTP_HOST / RPT_SMTP_PORT / RPT_SMTP_FROM（见 backend/.env.example）";
-  }
-  if (item.id.startsWith("im-")) {
-    return "请在 backend/.env 配置对应 AppKey/Secret（DINGTALK_* / WECOM_* / FEISHU_*），并在用户管理里填写该用户的账号。";
   }
   if (item.id === "export") {
     if (detail.includes("playwright") || detail.includes("chromium")) {
@@ -87,7 +78,6 @@ export function useSchedulePrecheckItems(input: {
   widgetCount?: number;
   requireVisualExport?: boolean;
   forceRefresh?: boolean;
-  deliveryChannels?: string[];
 }): {
   items: PrecheckItem[];
   blocking: boolean;
@@ -135,41 +125,18 @@ export function useSchedulePrecheckItems(input: {
   });
 
   const delivery = deliveryQuery.data;
-  const selectedChannels = input.deliveryChannels ?? ["email"];
-  if (selectedChannels.includes("email")) {
-    const deliveryOk = delivery?.status === "reachable";
-    items.push({
-      id: "delivery",
-      label: "邮件投递",
-      ok: deliveryOk,
-      detail:
-        delivery?.error ??
-        (deliveryOk
-          ? "邮件服务可用，激活后可正常投递。"
-          : "邮件服务未配置或不可达；激活后执行可能投递失败，请联系管理员。"),
-      blocking: false,
-    });
-  }
-
-  const imLabels: Record<string, string> = {
-    dingtalk: "钉钉",
-    wecom: "企业微信",
-    feishu: "飞书",
-  };
-  const selectedIm = selectedChannels.filter((c) => c in imLabels);
-  for (const channel of selectedIm) {
-    const health = delivery?.im?.[channel as keyof NonNullable<DeliveryHealth["im"]>];
-    const configured = Boolean(health?.configured);
-    items.push({
-      id: `im-${channel}`,
-      label: `${imLabels[channel]}按人投递`,
-      ok: configured,
-      detail: configured
-        ? `${imLabels[channel]}应用已配置，将发给收件人资料里绑的账号。`
-        : `${imLabels[channel]}应用未配置。绑了号也发不出去；群机器人不能代替按人投递。`,
-      blocking: false,
-    });
-  }
+  const deliveryOk = delivery?.status === "reachable";
+  items.push({
+    id: "delivery",
+    label: "邮件投递",
+    ok: deliveryOk,
+    detail:
+      delivery?.error ??
+      (deliveryOk
+        ? "邮件服务可用，激活后可正常投递。"
+        : "邮件服务未配置或不可达；激活后执行可能投递失败，请联系管理员。"),
+    blocking: false,
+  });
 
   if (input.requireVisualExport !== false) {
     const exportHealth = exportQuery.data;
@@ -197,7 +164,6 @@ export function SchedulePrecheckPanel({
   requireVisualExport = true,
   className,
   active = true,
-  deliveryChannels,
 }: SchedulePrecheckPanelProps) {
   const [manualRefresh, setManualRefresh] = useState(false);
   const { items, loading, refetch } = useSchedulePrecheckItems({
@@ -205,7 +171,6 @@ export function SchedulePrecheckPanel({
     widgetCount,
     requireVisualExport,
     forceRefresh: manualRefresh,
-    deliveryChannels,
   });
 
   useEffect(() => {

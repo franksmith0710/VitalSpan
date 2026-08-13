@@ -1,7 +1,8 @@
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { CreateVizComponentDialog } from "./CreateVizComponentDialog";
 
 vi.mock("@/lib/vizComponents", () => ({
@@ -19,6 +20,19 @@ vi.mock("@/lib/chartRegistry", async (importOriginal) => {
     ]),
   };
 });
+
+vi.mock("@/lib/aiVizArtifacts", () => ({
+  fetchAiVizArtifacts: vi.fn(async () => ({
+    items: [
+      {
+        artifactId: "art-hub-1",
+        manifest: { displayName: "Hub 排名条", id: "ranking-strip" },
+        status: "active",
+        contentHash: "abc",
+      },
+    ],
+  })),
+}));
 
 vi.stubGlobal(
   "IntersectionObserver",
@@ -41,10 +55,26 @@ describe("CreateVizComponentDialog", () => {
     );
   }
 
+  afterEach(() => {
+    cleanup();
+  });
+
   it("expands chart catalog when chart widget type is selected", async () => {
     renderDialog();
 
-    expect(await screen.findByTestId("chart-picker-popover")).toBeInTheDocument();
-    expect(await screen.findByRole("button", { name: /基础折线图/i })).toBeInTheDocument();
+    const popover = await screen.findByTestId("chart-picker-popover");
+    expect(await within(popover).findByRole("button", { name: /基础折线图/i })).toBeInTheDocument();
+  });
+
+  it("selects custom viz artifact from chart picker and enables create", async () => {
+    const user = userEvent.setup();
+    renderDialog();
+    const popover = await screen.findByTestId("chart-picker-popover");
+
+    await user.click(await within(popover).findByTestId("custom-viz-tile-art-hub-1"));
+    expect(await screen.findByText(/已选：Hub 排名条/)).toBeInTheDocument();
+
+    const createButton = screen.getByRole("button", { name: /创建并编辑/i });
+    expect(createButton).not.toBeDisabled();
   });
 });

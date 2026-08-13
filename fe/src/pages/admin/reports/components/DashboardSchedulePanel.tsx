@@ -18,7 +18,7 @@ import {
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { mapApiError } from "@/lib/apiError";
 import { summarizeRecipients } from "@/lib/scheduleSourceMeta";
-import { scheduleRowToForm } from "../scheduleFormUtils";
+import { scheduleRowToForm, EMAIL_ONLY_DELIVERY } from "../scheduleFormUtils";
 import {
   localizeScheduleStatus,
   SCHEDULE_ACTION_LABELS,
@@ -117,7 +117,6 @@ export function DashboardSchedulePanel({
     sourceLabel: sourceName,
     widgetCount,
     requireVisualExport: true,
-    deliveryChannels: form.deliveryChannels,
   });
   const canCreate = canCreateDashboardSchedule({
     widgetCount,
@@ -140,7 +139,7 @@ export function DashboardSchedulePanel({
     : null;
 
   const requestDeliveryConfirm = (onConfirm: () => void) => {
-    if (!form.deliveryChannels.includes("email") || !deliveryWarning) {
+    if (!deliveryWarning) {
       onConfirm();
       return;
     }
@@ -165,8 +164,7 @@ export function DashboardSchedulePanel({
         timezone: form.timezone,
         recipients: form.recipients.filter((r) => r.value.trim()),
         attachmentFormats: ["pdf"],
-        deliveryChannels: form.deliveryChannels,
-        notifyGroup: form.notifyGroup,
+        ...EMAIL_ONLY_DELIVERY,
       });
       setShowCreate(false);
       setSelectedId(created.id);
@@ -190,8 +188,7 @@ export function DashboardSchedulePanel({
           timezone: form.timezone,
           recipients: form.recipients.filter((r) => r.value.trim()),
           attachmentFormats: ["pdf"],
-          deliveryChannels: form.deliveryChannels,
-          notifyGroup: form.notifyGroup,
+          ...EMAIL_ONLY_DELIVERY,
         },
       });
       toast.success("草稿已保存");
@@ -313,7 +310,6 @@ export function DashboardSchedulePanel({
               sourceLabel={sourceName}
               widgetCount={widgetCount}
               active={precheckActive}
-              deliveryChannels={form.deliveryChannels}
             />
           ) : null}
           <ScheduleFormFields

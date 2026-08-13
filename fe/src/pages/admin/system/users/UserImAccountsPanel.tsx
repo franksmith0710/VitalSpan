@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { MessageCircle } from "lucide-react";
+import { Mail } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,12 +24,6 @@ type Props = {
   onSaved?: (next: { email?: string | null; imAccounts: ImAccounts }) => void;
 };
 
-const FIELDS: { key: keyof ImAccounts; label: string; placeholder: string }[] = [
-  { key: "dingtalk", label: "钉钉账号", placeholder: "钉钉 userid" },
-  { key: "wecom", label: "企业微信账号", placeholder: "企微 userid" },
-  { key: "feishu", label: "飞书账号", placeholder: "飞书 user_id" },
-];
-
 export function UserImAccountsPanel({
   userId,
   email,
@@ -39,19 +33,17 @@ export function UserImAccountsPanel({
 }: Props) {
   const queryClient = useQueryClient();
   const [emailValue, setEmailValue] = useState(email ?? "");
-  const [accounts, setAccounts] = useState<ImAccounts>(imAccounts ?? {});
 
   useEffect(() => {
     setEmailValue(email ?? "");
-    setAccounts(imAccounts ?? {});
-  }, [userId, email, imAccounts?.dingtalk, imAccounts?.wecom, imAccounts?.feishu]);
+  }, [userId, email]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
       const imPayload: Record<string, string> = {
-        dingtalk: accounts.dingtalk?.trim() ?? "",
-        wecom: accounts.wecom?.trim() ?? "",
-        feishu: accounts.feishu?.trim() ?? "",
+        dingtalk: imAccounts?.dingtalk?.trim() ?? "",
+        wecom: imAccounts?.wecom?.trim() ?? "",
+        feishu: imAccounts?.feishu?.trim() ?? "",
       };
       return apiFetch<{ email?: string | null; imAccounts?: ImAccounts }>(
         `/api/v1/users/${userId}`,
@@ -69,7 +61,7 @@ export function UserImAccountsPanel({
       onActionError(null);
       onSaved?.({
         email: data.email ?? emailValue.trim(),
-        imAccounts: data.imAccounts ?? accounts,
+        imAccounts: data.imAccounts ?? imAccounts ?? {},
       });
       await queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
     },
@@ -79,8 +71,8 @@ export function UserImAccountsPanel({
   return (
     <UserSheetSection
       title="联系方式"
-      description="邮件发给这个邮箱；钉钉/企微/飞书发给绑的那个号。没绑号，对应通道会失败，不会改发到群。"
-      icon={<MessageCircle className="size-4" aria-hidden />}
+      description="定时报告与系统通知将发到该邮箱。"
+      icon={<Mail className="size-4" aria-hidden />}
       footer={
         <Button
           type="button"
@@ -104,18 +96,6 @@ export function UserImAccountsPanel({
             autoComplete="off"
           />
         </div>
-        {FIELDS.map((field) => (
-          <div key={field.key} className="grid gap-1.5">
-            <Label htmlFor={`user-im-${field.key}-${userId}`}>{field.label}</Label>
-            <Input
-              id={`user-im-${field.key}-${userId}`}
-              value={accounts[field.key] ?? ""}
-              onChange={(e) => setAccounts((prev) => ({ ...prev, [field.key]: e.target.value }))}
-              placeholder={field.placeholder}
-              autoComplete="off"
-            />
-          </div>
-        ))}
       </div>
     </UserSheetSection>
   );

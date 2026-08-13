@@ -6,8 +6,8 @@
 | 核验范围 | 会话目标：AI 组件上画布/大屏、图表盘「自定义」、432px 右轨、手配数据+execute、styleSchema 样式、viz-components 收录；禁 iframe / 禁进 `GET /charts/types` |
 | 锚点 | `CustomVizWidget` · `CustomVizEditRail` · `ChartPickerPopover` · `GET /api/v1/ai-viz/artifacts` · `viz-components` |
 | 总体判定 | **PARTIAL** |
-| **总分 / 档位** | **7/10 · B** |
-| 状态 | draft（P0+P1 已修，待 BROWSER） |
+| **总分 / 档位** | **7.5/10 · B** |
+| 状态 | draft（P0–P2 已修，主路径 BROWSER 已验） |
 | **sampling** | `full`（8 项交付能力全量矩阵，非 44 chartType） |
 
 ## 1. 核验标准与预期（来自对话 / F17 / PROTOCOL）
@@ -56,20 +56,20 @@
 | 5 | 右轨编辑 | 通（smoke） | `CustomVizEditRail.smoke.test.tsx` | 无 userEvent 深度 |
 | 6 | execute→payload | 通 | `customVizPayload.test.ts` · `CustomVizWidget.payload.test.tsx` | 无 bundle 消费断言 |
 | 7 | viz-components 入库 | 通 | `test_create_publish_and_resolve_custom_viz` + EditPage/LivePreview | 无 BROWSER |
-| 8 | 真机走查 | **未验** | 无 BROWSER | 未启动前后端点选验证 |
+| 8 | 真机走查 | **部分** | BROWSER 2026-08-13 | 看板插入+右轨+payload 已验；大屏/绑数 execute 未深验 |
 
 ## 3. 子能力判定表
 
 | ID | 子能力 | 判定 | 总分/档 | 证据摘要 |
 |----|--------|------|---------|----------|
 | T1 | Base 同页挂载 | PARTIAL | 6/C | vitest 挂载 HTML；无 iframe 静态确认；payload 未验 |
-| T2 | 图表盘「自定义」 | PARTIAL | 7/B | ChartPicker vitest + DnD 测；CreateVizComponentDialog 未接 custom |
+| T2 | 图表盘「自定义」 | PARTIAL | 8/B | ChartPicker vitest + BROWSER 插入 tile |
 | T3 | 432px 右轨 | PARTIAL | 7/B | smoke 通过；无 userEvent 深度 |
 | T4 | execute + 宿主喂数 | PARTIAL | 7/B | payload/execute 单测 + Widget 集成 mock |
 | T5 | styleSchema 样式 | PARTIAL | 5/C | `CustomVizStyleForm` 静态；无 schema 驱动 UI 测 |
 | T6 | viz-components 全链路 | PARTIAL | 8/B | EditPage/LivePreview 已接；roundtrip pytest |
 | T7 | artifacts 列表 API | PARTIAL | 7/B | `test_ai_viz_artifact_list` 通过 |
-| T8 | 看板/大屏画布 | PARTIAL | 6/C | 共用 `DashboardEditWorkspace`+Toolbar；未 BROWSER 验大屏 |
+| T8 | 看板/大屏画布 | PARTIAL | 7/B | 看板 BROWSER 通；大屏未走查 |
 
 ## 3b. 前端控件下钻表
 
@@ -117,7 +117,7 @@
 | 必验实体 | 15 |
 | GATE only | 5（T2,T3,T4,T5,T6,T8 中 5 项仅静态） |
 | CHAIN | 6 |
-| UI / BROWSER | 0 |
+| UI / BROWSER | 1（看板插入+右轨） |
 | NONE（未验） | 0 |
 | REAL 达标 | 0/15 |
 | **逐一校验** | **否** — 仍缺 BROWSER；自动化 CHAIN 已覆盖主路径 |
@@ -150,7 +150,7 @@
 | 3 | 绑 dataset+字段 → execute → `.vs-cv-payload` rows 非空 | rows 与 API 一致 | mock 单测通过 | ⚠️ | `CustomVizWidget.payload.test.tsx` |
 | 4 | 发布 customViz 到组件库 → 编辑页预览 | LivePreview 渲染 + EditRail | pytest + 静态接线 | ⚠️ | 无 BROWSER |
 | 5 | manifest 多 metric 槽 | 各槽独立绑字段 | indexed 读写 | ✅ | `customVizFieldSlots.test.ts` |
-| 6 | BROWSER 看板走查 | 自定义分区可见、右轨三 Tab | **未执行** | ❌ | 无 MCP snapshot |
+| 6 | BROWSER 看板走查 | 自定义分区+插入+三 Tab 右轨 | **通过** | ✅ | MCP snapshot + CDP payload |
 
 ## 5. 修复文档（P0）
 
@@ -240,3 +240,12 @@
 | P1-Payload | `CustomVizWidget.payload.test.tsx` execute rows 注入 DOM | vitest 1 passed |
 
 **P1 复验**：`vitest` 7 文件 14 passed · pytest 7 passed · **仍缺 BROWSER 走查**（T8 / 绑数真机 / bundle 消费）。
+
+## 10. P2 修复回执（2026-08-13）
+
+| ID | 修复 | 证据 |
+|----|------|------|
+| Dialog | `CreateVizComponentDialog` 接 `onInsertCustomViz`；`widgetType=customViz` 创建 payload | `CreateVizComponentDialog.test.tsx` 2 passed · `vizComponentDefaults.ts` |
+| BROWSER | 看板编辑：图表盘「自定义」→ 点击「演示排名条」→ 画布 widget + 432px 右轨（数据/样式/高级） | MCP snapshot；CDP：`.vs-cv-payload` 存在、`iframeCount=0`、bundle 渲染 `ready` |
+
+**P2 复验**：vitest 16 passed（含 Dialog）· **看板主路径 BROWSER 已验** · 仍缺：大屏画布走查、绑 dataset→execute→rows 非空真机对比。

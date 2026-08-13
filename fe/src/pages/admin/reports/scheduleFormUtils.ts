@@ -5,6 +5,11 @@ import {
 } from "./components/ScheduleFormFields";
 import type { ReportScheduleRow, ScheduleRecipient } from "./useReportSchedules";
 
+export const EMAIL_ONLY_DELIVERY: Pick<ScheduleFormValue, "deliveryChannels" | "notifyGroup"> = {
+  deliveryChannels: ["email"],
+  notifyGroup: false,
+};
+
 export function pickActiveSchedule(items: ReportScheduleRow[]): ReportScheduleRow | null {
   return items.find((item) => item.status !== "cancelled") ?? null;
 }
@@ -24,9 +29,6 @@ export function scheduleRowToForm(schedule: ReportScheduleRow): ScheduleFormValu
     attachmentFormats: (schedule.attachmentFormats?.length
       ? schedule.attachmentFormats
       : ["pdf"]) as ScheduleFormValue["attachmentFormats"],
-    deliveryChannels: (schedule.deliveryChannels?.length
-      ? schedule.deliveryChannels
-      : ["email"]) as ScheduleFormValue["deliveryChannels"],
-    notifyGroup: Boolean(schedule.notifyGroup),
+    ...EMAIL_ONLY_DELIVERY,
   };
 }

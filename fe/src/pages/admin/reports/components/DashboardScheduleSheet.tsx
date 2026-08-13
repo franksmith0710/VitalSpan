@@ -68,7 +68,7 @@ export function DashboardScheduleSheet({
             <div className="min-w-0 space-y-1.5">
               <DialogTitle className="text-title-sm">定时推送</DialogTitle>
               <DialogDescription className="text-theme-sm leading-relaxed">
-                为「{sourceName}」{label}配置定时 PDF 推送（邮件、钉钉、企微或飞书）。复用已保存的查询与筛选，无需重复选数据源。
+                为「{sourceName}」{label}配置定时 PDF 邮件推送。复用已保存的查询与筛选，无需重复选数据源。
               </DialogDescription>
             </div>
           </div>

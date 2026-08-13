@@ -27,7 +27,7 @@ describe("DashboardSchedulePanel embedded channels", () => {
         return { items: [], total: 0 };
       }
       if (path.includes("/delivery-health")) {
-        return { status: "unreachable", im: { dingtalk: { configured: false } } };
+        return { status: "unreachable" };
       }
       if (path.includes("/export-health")) return { status: "available" };
       return {};
@@ -35,7 +35,7 @@ describe("DashboardSchedulePanel embedded channels", () => {
   });
   afterEach(() => cleanup());
 
-  it("shows dingTalk/feishu and bind-account hint in dashboard dialog", async () => {
+  it("shows email-only delivery hint and SMTP guidance in dashboard dialog", async () => {
     render(
       wrap(
         <DashboardSchedulePanel
@@ -48,10 +48,11 @@ describe("DashboardSchedulePanel embedded channels", () => {
       ),
     );
     expect(await screen.findByText("投递方式")).toBeInTheDocument();
-    expect(screen.getByText("钉钉")).toBeInTheDocument();
-    expect(screen.getByText("企业微信")).toBeInTheDocument();
-    expect(screen.getByText("飞书")).toBeInTheDocument();
-    expect(screen.getByText("同时发到群")).toBeInTheDocument();
-    expect(screen.getAllByText(/系统管理 → 用户/).length).toBeGreaterThan(0);
+    expect(screen.getByText("将发到收件人邮箱")).toBeInTheDocument();
+    expect(screen.getAllByText(/RPT_SMTP_/).length).toBeGreaterThan(0);
+    expect(screen.getByText("邮件投递")).toBeInTheDocument();
+    expect(screen.queryByText("钉钉")).not.toBeInTheDocument();
+    expect(screen.queryByText("飞书")).not.toBeInTheDocument();
+    expect(screen.queryByText("同时发到群")).not.toBeInTheDocument();
   });
 });

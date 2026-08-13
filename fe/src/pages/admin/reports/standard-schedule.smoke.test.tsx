@@ -29,26 +29,26 @@ describe("StandardSchedulePanel smoke", () => {
         return { items: [], total: 0 };
       }
       if (path.includes("/delivery-health")) {
-        return { status: "ok" };
+        return { status: "reachable" };
       }
       if (path.includes("/export-health")) {
-        return { status: "ok" };
+        return { status: "available" };
       }
       return {};
     });
   });
   afterEach(() => cleanup());
 
-  it("renders delivery form with channel checkboxes", async () => {
+  it("renders email-only delivery form", async () => {
     render(wrap(<StandardSchedulePanel sourceKey="equipment-overview" packName="设备标准分析" />));
     expect(await screen.findByText("定时投递")).toBeInTheDocument();
     expect(screen.getByText("新建定时投递")).toBeInTheDocument();
     expect(screen.getByText("投递方式")).toBeInTheDocument();
-    expect(screen.getByText("邮件")).toBeInTheDocument();
-    expect(screen.getByText("企业微信")).toBeInTheDocument();
-    expect(screen.getByText("飞书")).toBeInTheDocument();
-    expect(screen.getByText("同时发到群")).toBeInTheDocument();
+    expect(screen.getByText("将发到收件人邮箱")).toBeInTheDocument();
     expect(screen.getByText("创建定时投递")).toBeInTheDocument();
+    expect(screen.queryByText("钉钉")).not.toBeInTheDocument();
+    expect(screen.queryByText("飞书")).not.toBeInTheDocument();
+    expect(screen.queryByText("同时发到群")).not.toBeInTheDocument();
     expect(screen.queryByText(/Playwright/i)).not.toBeInTheDocument();
   });
 });

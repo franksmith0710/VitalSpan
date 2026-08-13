@@ -171,12 +171,12 @@ describe("UserListPage smoke", () => {
     });
   });
 
-  it("saves IM accounts via PATCH /users/{id}", async () => {
+  it("saves email via PATCH /users/{id}", async () => {
     mockApiFetch.mockImplementation(async (...args: unknown[]) => {
       const path = String(args[0] ?? "");
       const init = args[1] as RequestInit | undefined;
       if (path === `/api/v1/users/${USER_A}` && init?.method === "PATCH") {
-        return { id: USER_A, username: "alice", imAccounts: { dingtalk: "ding-1" } };
+        return { id: USER_A, username: "alice", email: "alice@example.com" };
       }
       if (path === `/api/v1/users/${USER_A}/org`) {
         throw new ApiRequestError("User has no org assignment", "USER_ORG_NOT_SET", 404);
@@ -192,7 +192,7 @@ describe("UserListPage smoke", () => {
     renderUsers();
     await userEvent.click(await screen.findByRole("button", { name: /管理/ }));
     await userEvent.click(await screen.findByRole("tab", { name: "组织与安全" }));
-    await userEvent.type(await screen.findByLabelText("钉钉账号"), "ding-1");
+    await userEvent.type(await screen.findByLabelText("邮箱"), "alice@example.com");
     await userEvent.click(screen.getByRole("button", { name: "保存联系方式" }));
     await waitFor(() => {
       const patchCall = mockApiFetch.mock.calls.find(
@@ -200,8 +200,9 @@ describe("UserListPage smoke", () => {
       );
       expect(patchCall).toBeTruthy();
       const body = JSON.parse(String((patchCall![1] as RequestInit).body));
-      expect(body.imAccounts.dingtalk).toBe("ding-1");
+      expect(body.email).toBe("alice@example.com");
     });
+    expect(screen.queryByLabelText("钉钉账号")).not.toBeInTheDocument();
   });
 
   it("T-AUTH-003-05: reset password triggers POST /users/{id}/reset-password", async () => {
