@@ -9,6 +9,21 @@ from app.core.config import Settings, get_settings
 logger = logging.getLogger(__name__)
 
 
+def _connect_smtp(settings: Settings, *, timeout: int) -> smtplib.SMTP:
+    host = settings.rpt_smtp_host
+    port = settings.rpt_smtp_port
+    if port == 465:
+        smtp = smtplib.SMTP_SSL(host, port, timeout=timeout)
+        smtp.ehlo()
+        return smtp
+    smtp = smtplib.SMTP(host, port, timeout=timeout)
+    smtp.ehlo()
+    if port == 587:
+        smtp.starttls()
+        smtp.ehlo()
+    return smtp
+
+
 def _format_smtp_error(exc: OSError, settings: Settings) -> str:
     host = settings.rpt_smtp_host
     port = settings.rpt_smtp_port
@@ -72,7 +87,7 @@ def _send_smtp(
         subtype = subtype or "octet-stream"
         msg.add_attachment(att_bytes, maintype=maintype, subtype=subtype, filename=att_name)
     try:
-        with smtplib.SMTP(settings.rpt_smtp_host, settings.rpt_smtp_port, timeout=5) as smtp:
+        with _connect_smtp(settings, timeout=5) as smtp:
             if settings.rpt_smtp_user and settings.rpt_smtp_password:
                 smtp.login(settings.rpt_smtp_user, settings.rpt_smtp_password)
             smtp.send_message(msg)
@@ -135,8 +150,8 @@ def probe_smtp_health(settings: Settings | None = None) -> dict:
             "error": "SMTP 未配置：请设置 RPT_SMTP_HOST 与 RPT_SMTP_FROM。",
         }
     try:
-        with smtplib.SMTP(host, port, timeout=3) as smtp:
-            smtp.ehlo()
+        with _connect_smtp(settings, timeout=3) as smtp:
+            pass
     except OSError as exc:
         return {
             "status": "unreachable",

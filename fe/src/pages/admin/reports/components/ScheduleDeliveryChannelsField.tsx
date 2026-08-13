@@ -16,7 +16,7 @@ export function ScheduleDeliveryChannelsField({ disabled: _disabled }: Props) {
         <p className="text-theme-sm text-gray-700 dark:text-gray-300">
           将发到收件人邮箱
           <span className="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
-            请确保收件人在系统管理 → 用户资料中填写了有效邮箱；管理员需配置 SMTP（RPT_SMTP_*）。
+            请确保收件人在系统管理 → 用户资料中填写了有效邮箱。发信 SMTP 由管理员在 backend/.env 配置（如 QQ 邮箱），本页不提供登录。
           </span>
         </p>
       </div>
