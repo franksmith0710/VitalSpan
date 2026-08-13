@@ -120,7 +120,7 @@ export function ScheduleFormFields({
     showAttachments && attachmentFormatMode === "pdf-only" ? (
       embeddedLayout ? (
         <p className="text-theme-xs leading-relaxed text-gray-600 dark:text-gray-400">
-          按上方调度时间截取当前画布，生成 PDF 并经邮件投递。若 Playwright 或 SMTP 未就绪，创建前预检会提示。
+          按上方调度时间截取当前画布生成 PDF。邮件带附件；钉钉/企微/飞书发给用户资料里绑的账号。
         </p>
       ) : (
         <div className="grid gap-2">
@@ -212,7 +212,7 @@ export function ScheduleFormFields({
 
           <ScheduleFormSection
             title="接收人"
-            description="按角色、用户或邮箱指定投递对象"
+            description="按角色、用户或邮箱指定；钉钉/企微/飞书账号在系统管理 → 用户里填写"
             icon={Users}
             action={
               !disabled ? (
@@ -249,6 +249,8 @@ export function ScheduleFormFields({
               hideAddButton
             />
           </ScheduleFormSection>
+
+          {deliveryChannelsField}
 
           {showAttachments && attachmentFormatMode === "pdf-only" ? (
             <ScheduleFormSection title="报告附件" description="PDF 可视化快照" icon={FileText}>

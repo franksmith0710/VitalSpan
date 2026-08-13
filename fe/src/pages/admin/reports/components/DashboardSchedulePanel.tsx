@@ -233,7 +233,7 @@ export function DashboardSchedulePanel({
   const handleTestSend = async (scheduleId: string) => {
     try {
       await executeSchedule.mutateAsync(scheduleId);
-      toast.success("已触发试发，请查收邮箱");
+      toast.success("已触发试发，请按所选通道查收");
     } catch (err) {
       toast.error(mapApiError(err));
     }
@@ -257,7 +257,7 @@ export function DashboardSchedulePanel({
     attachmentFormatMode: "pdf-only" as const,
     hideStandaloneHealthAlerts: true as const,
     embeddedLayout: embedded,
-    showDeliveryChannels: !embedded,
+    showDeliveryChannels: true,
   };
 
   const inner = (

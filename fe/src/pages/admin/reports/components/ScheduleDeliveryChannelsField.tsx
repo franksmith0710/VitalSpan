@@ -81,6 +81,7 @@ export function ScheduleDeliveryChannelsField({
       </label>
       <p className="text-theme-xs text-gray-500">
         邮件发给收件人邮箱；钉钉/企微/飞书发给该用户在资料里绑的账号。未绑号不会改发到群。勾选「同时发到群」才会再发群机器人。
+        账号入口：系统管理 → 用户 → 管理 → 组织与安全。
       </p>
       {unconfigured.length > 0 ? (
         <p className="text-theme-xs text-amber-700 dark:text-amber-400">

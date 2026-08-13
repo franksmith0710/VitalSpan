@@ -135,25 +135,28 @@ export function useSchedulePrecheckItems(input: {
   });
 
   const delivery = deliveryQuery.data;
-  const deliveryOk = delivery?.status === "reachable";
-  items.push({
-    id: "delivery",
-    label: "邮件投递",
-    ok: deliveryOk,
-    detail:
-      delivery?.error ??
-      (deliveryOk
-        ? "邮件服务可用，激活后可正常投递。"
-        : "邮件服务未配置或不可达；激活后执行可能投递失败，请联系管理员。"),
-    blocking: false,
-  });
+  const selectedChannels = input.deliveryChannels ?? ["email"];
+  if (selectedChannels.includes("email")) {
+    const deliveryOk = delivery?.status === "reachable";
+    items.push({
+      id: "delivery",
+      label: "邮件投递",
+      ok: deliveryOk,
+      detail:
+        delivery?.error ??
+        (deliveryOk
+          ? "邮件服务可用，激活后可正常投递。"
+          : "邮件服务未配置或不可达；激活后执行可能投递失败，请联系管理员。"),
+      blocking: false,
+    });
+  }
 
   const imLabels: Record<string, string> = {
     dingtalk: "钉钉",
     wecom: "企业微信",
     feishu: "飞书",
   };
-  const selectedIm = (input.deliveryChannels ?? []).filter((c) => c in imLabels);
+  const selectedIm = selectedChannels.filter((c) => c in imLabels);
   for (const channel of selectedIm) {
     const health = delivery?.im?.[channel as keyof NonNullable<DeliveryHealth["im"]>];
     const configured = Boolean(health?.configured);

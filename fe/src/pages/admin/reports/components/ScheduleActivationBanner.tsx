@@ -20,7 +20,7 @@ export function ScheduleActivationBanner({
     >
       <div className="space-y-1">
         <p className="text-theme-sm text-gray-700 dark:text-gray-300">
-          已创建草稿，<strong>点击激活后才会按时发送</strong>邮件。
+          已创建草稿，<strong>点击激活后才会按时发送</strong>。
         </p>
         {deliveryWarning ? (
           <p className="text-theme-xs text-amber-700 dark:text-amber-300">{deliveryWarning}</p>
