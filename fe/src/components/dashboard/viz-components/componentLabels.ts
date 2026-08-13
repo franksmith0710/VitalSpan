@@ -16,7 +16,7 @@ export function resolveHubWidgetFilter(filter: VizComponentHubWidgetFilter): {
   chartPaletteCategory?: string;
 } {
   if (filter === "all") return {};
-  if (filter === "filter" || filter === "text" || filter === "media") {
+  if (filter === "filter" || filter === "text" || filter === "media" || filter === "customViz") {
     return { widgetType: filter };
   }
   if (filter === "chart") {
@@ -75,6 +75,7 @@ export const WIDGET_TYPE_FILTERS: { key: VizComponentHubWidgetFilter; label: str
   { key: "filter", label: "筛选器" },
   { key: "text", label: "富文本" },
   { key: "media", label: "媒体" },
+  { key: "customViz", label: "自定义" },
 ];
 
 export const CATEGORY_ACCENT: Record<string, string> = {
@@ -98,6 +99,8 @@ export function widgetTypeLabel(type: VizWidgetType): string {
       return "富文本";
     case "media":
       return "媒体";
+    case "customViz":
+      return "自定义组件";
     default:
       return type;
   }

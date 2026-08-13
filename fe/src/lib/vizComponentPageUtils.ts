@@ -46,6 +46,12 @@ export function vizPayloadToLayoutWidget(input: {
         type: "media",
         mediaConfig: payload.mediaConfig!,
       } as LayoutWidget;
+    case "customViz":
+      return {
+        ...base,
+        type: "customViz",
+        customVizConfig: payload.customVizConfig!,
+      } as LayoutWidget;
     default:
       throw new Error(`Unsupported widget type: ${input.widgetType}`);
   }

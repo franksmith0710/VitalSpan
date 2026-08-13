@@ -11,6 +11,7 @@ import type { VizComponentPayload, VizWidgetType } from "./vizComponents";
 
 export type VizComponentDefaultsOptions = {
   chartType?: ChartType;
+  customViz?: { artifactId: string; displayName?: string };
 };
 
 export function defaultVizComponentPayload(
@@ -32,6 +33,13 @@ export function defaultVizComponentPayload(
       return { textConfig: defaultTextConfig() };
     case "media":
       return { mediaConfig: defaultMediaConfig() };
+    case "customViz":
+      return {
+        customVizConfig: {
+          artifactId: options?.customViz?.artifactId ?? "",
+          dataBinding: { status: "manual" },
+        },
+      };
     default:
       return { chartConfig: { ...defaultChartConfig("bar"), chartId: seedId } };
   }
@@ -53,6 +61,8 @@ export function defaultVizComponentName(
       return "未命名富文本";
     case "media":
       return "未命名媒体";
+    case "customViz":
+      return options?.customViz?.displayName?.trim() || "未命名自定义组件";
     default:
       return "未命名组件";
   }

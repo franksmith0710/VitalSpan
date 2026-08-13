@@ -1,14 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
-import {
-  chartExecuteBindingKey,
-  fetchChartExecuteResultShared,
-  isChartExecuteReady,
-} from "@/lib/chartExecuteProbe";
+import { fetchDatasetQueryConfig } from "@/lib/datasetChartBinding";
 
+/** 字段库列出来自 dataset_query 配置，不跑带 encoding 的图表 execute。 */
 export function useInspectorColumns(cfg: ChartViewConfig) {
-  const ready = isChartExecuteReady(cfg);
-  const bindingKey = chartExecuteBindingKey(cfg);
+  const configId = cfg.configId;
+  const ready = Boolean(configId);
   const [columns, setColumns] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
@@ -18,7 +15,7 @@ export function useInspectorColumns(cfg: ChartViewConfig) {
   }, []);
 
   useEffect(() => {
-    if (!ready) {
+    if (!configId) {
       setColumns([]);
       setLoading(false);
       return;
@@ -27,9 +24,9 @@ export function useInspectorColumns(cfg: ChartViewConfig) {
     let cancelled = false;
     setLoading(true);
 
-    void fetchChartExecuteResultShared(cfg)
-      .then((data) => {
-        if (!cancelled) setColumns(Array.isArray(data.columns) ? data.columns : []);
+    void fetchDatasetQueryConfig(configId)
+      .then((binding) => {
+        if (!cancelled) setColumns(binding.columns ?? []);
       })
       .catch(() => {
         if (!cancelled) setColumns([]);
@@ -41,7 +38,7 @@ export function useInspectorColumns(cfg: ChartViewConfig) {
     return () => {
       cancelled = true;
     };
-  }, [ready, bindingKey, refreshTick]);
+  }, [configId, refreshTick]);
 
   return { columns, loading, ready, refreshColumns };
 }

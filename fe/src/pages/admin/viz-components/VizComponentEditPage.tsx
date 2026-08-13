@@ -15,6 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ChartEditRail } from "@/components/dashboard/ChartEditRail";
+import { CustomVizEditRail } from "@/components/dashboard/custom-viz/CustomVizEditRail";
 import { FilterWidgetInspector } from "@/components/dashboard/FilterWidgetInspector";
 import { TextEditRail } from "@/components/dashboard/TextEditRail";
 import { MediaEditRail } from "@/components/dashboard/MediaEditRail";
@@ -28,6 +29,7 @@ import type {
   FilterWidgetConfig,
   MediaWidgetConfig,
   TextWidgetConfig,
+  CustomVizWidgetConfig,
 } from "@/components/dashboard/layoutUtils";
 
 function EditPageSkeleton() {
@@ -87,6 +89,17 @@ function ComponentEditRail({
         widget={widget as typeof widget & { mediaConfig: MediaWidgetConfig }}
         onTitleChange={(name) => patchWidget({ title: name })}
         onChange={(mediaConfig) => patchWidget({ mediaConfig })}
+      />
+    );
+  }
+  if (widget.type === "customViz" && widget.customVizConfig) {
+    return (
+      <CustomVizEditRail
+        key={`${componentId}-${contentRevision}`}
+        className="min-h-0 flex-1"
+        widget={widget as typeof widget & { customVizConfig: CustomVizWidgetConfig }}
+        onTitleChange={(name) => patchWidget({ title: name })}
+        onChange={(customVizConfig) => patchWidget({ customVizConfig })}
       />
     );
   }

@@ -1,80 +1,98 @@
 import { ChartFieldSlot } from "../ChartFieldSlot";
 import type { CustomVizDataBinding, CustomVizMetricRef } from "../layoutUtils";
 import { classifyDatasetField } from "../datasetFieldClassification";
-import { parseCustomVizFieldSlots, type CustomVizFieldSlotDef } from "./customVizFieldSlots";
+import {
+  customVizFieldTargetsEqual,
+  expandCustomVizFieldSlotsForUi,
+  type CustomVizFieldTarget,
+} from "./customVizFieldSlots";
 
 type CustomVizDataSlotsProps = {
   binding: CustomVizDataBinding;
   fieldSlots?: Record<string, unknown>;
   columnsDisabled?: boolean;
-  activeKind: "dimension" | "metric";
-  onActiveKindChange: (kind: "dimension" | "metric") => void;
+  activeFieldTarget: CustomVizFieldTarget;
+  onActiveFieldTargetChange: (target: CustomVizFieldTarget) => void;
   onPatch: (patch: Partial<CustomVizDataBinding>) => void;
 };
 
-function readDimensionField(binding: CustomVizDataBinding, slot: CustomVizFieldSlotDef): string | undefined {
-  const dims = binding.dimensions ?? [];
-  return dims[0]?.field?.trim() || undefined;
+function readFieldAt(
+  binding: CustomVizDataBinding,
+  kind: CustomVizFieldTarget["kind"],
+  index: number,
+): string | undefined {
+  const arr = kind === "dimension" ? binding.dimensions : binding.metrics;
+  return arr?.[index]?.field?.trim() || undefined;
 }
 
-function readMetricField(binding: CustomVizDataBinding): string | undefined {
-  const metrics = binding.metrics ?? [];
-  return metrics[0]?.field?.trim() || undefined;
+function ensureSlotArray<T>(arr: T[] | undefined, index: number, empty: T): T[] {
+  const next = [...(arr ?? [])];
+  while (next.length <= index) next.push(empty);
+  return next;
 }
 
 export function CustomVizDataSlots({
   binding,
   fieldSlots,
   columnsDisabled = false,
-  activeKind,
-  onActiveKindChange,
+  activeFieldTarget,
+  onActiveFieldTargetChange,
   onPatch,
 }: CustomVizDataSlotsProps) {
-  const slots = parseCustomVizFieldSlots(fieldSlots);
+  const slots = expandCustomVizFieldSlotsForUi(fieldSlots);
 
-  const assignField = (fieldName: string, kind: "dimension" | "metric") => {
-    if (kind === "dimension") {
-      onPatch({ dimensions: [{ field: fieldName }], status: "connected" });
+  const assignField = (fieldName: string, target: CustomVizFieldTarget) => {
+    if (target.kind === "dimension") {
+      const next = ensureSlotArray(binding.dimensions, target.index, { field: "" });
+      if (next.some((d, i) => i !== target.index && d.field === fieldName)) return;
+      next[target.index] = { field: fieldName };
+      onPatch({ dimensions: next, status: "connected" });
       return;
     }
-    onPatch({
-      metrics: [{ field: fieldName, agg: "sum" } satisfies CustomVizMetricRef],
-      status: "connected",
-    });
+    const next = ensureSlotArray(binding.metrics, target.index, { field: "", agg: "sum" as const });
+    if (next.some((m, i) => i !== target.index && m.field === fieldName)) return;
+    next[target.index] = { field: fieldName, agg: "sum" } satisfies CustomVizMetricRef;
+    onPatch({ metrics: next, status: "connected" });
   };
 
-  const clearSlot = (kind: "dimension" | "metric") => {
-    if (kind === "dimension") {
-      onPatch({ dimensions: [] });
+  const clearSlot = (target: CustomVizFieldTarget) => {
+    if (target.kind === "dimension") {
+      const next = [...(binding.dimensions ?? [])];
+      if (target.index >= next.length) return;
+      next.splice(target.index, 1);
+      onPatch({ dimensions: next });
       return;
     }
-    onPatch({ metrics: [] });
+    const next = [...(binding.metrics ?? [])];
+    if (target.index >= next.length) return;
+    next.splice(target.index, 1);
+    onPatch({ metrics: next });
   };
 
   return (
     <div className="space-y-3" data-testid="custom-viz-data-slots">
       {slots.map((slot) => {
-        const kind = slot.kind;
-        const fieldName = kind === "dimension" ? readDimensionField(binding, slot) : readMetricField(binding);
+        const target: CustomVizFieldTarget = { kind: slot.kind, index: slot.index };
+        const fieldName = readFieldAt(binding, slot.kind, slot.index);
         const aggregationSuffix =
-          fieldName && kind === "metric"
+          fieldName && slot.kind === "metric"
             ? classifyDatasetField(fieldName) === "metric"
               ? "求和"
               : "计数"
             : undefined;
         return (
           <ChartFieldSlot
-            key={slot.key}
+            key={slot.uiKey}
             label={slot.label}
             required={slot.required}
             fieldName={fieldName}
             fieldSuffix={aggregationSuffix}
-            slotKind={kind}
-            active={activeKind === kind}
+            slotKind={slot.kind}
+            active={customVizFieldTargetsEqual(activeFieldTarget, target)}
             disabled={columnsDisabled}
-            onClick={() => onActiveKindChange(kind)}
-            onClear={fieldName ? () => clearSlot(kind) : undefined}
-            onDropField={(field) => assignField(field, kind)}
+            onClick={() => onActiveFieldTargetChange(target)}
+            onClear={fieldName ? () => clearSlot(target) : undefined}
+            onDropField={(field) => assignField(field, target)}
           />
         );
       })}

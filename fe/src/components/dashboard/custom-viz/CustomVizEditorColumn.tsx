@@ -5,7 +5,8 @@ import { sanitizeChartFieldsForValidate } from "@/lib/chartFieldRules";
 import { ChartConfigPanel } from "@/components/charts/ChartConfigPanel";
 import { Button } from "@/components/ui/button";
 import type { AiVizArtifactMeta } from "@/lib/aiVizArtifacts";
-import type { CustomVizWidgetConfig } from "../layoutUtils";
+import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import type { CustomVizDataBinding, CustomVizWidgetConfig } from "../layoutUtils";
 import { ChartInspectorTabs } from "../ChartInspectorTabs";
 import { WidgetInspectorDelete } from "../widget-inspector-delete";
 import { WidgetSurfaceAppearanceFields } from "../widgetSurfaceStyleFields";
@@ -13,15 +14,19 @@ import { cn } from "@/lib/utils";
 import { CustomVizDataOptions } from "./CustomVizDataOptions";
 import { CustomVizDataSlots } from "./CustomVizDataSlots";
 import { CustomVizStyleForm } from "./CustomVizStyleForm";
-import { customVizBindingToChartConfig } from "./customVizExecute";
-import { useCustomVizInspectorState } from "./useCustomVizInspectorState";
+import type { CustomVizFieldTarget } from "./customVizFieldSlots";
 
 type CustomVizEditorColumnProps = {
   widgetTitle: string;
   config: CustomVizWidgetConfig;
   manifest?: AiVizArtifactMeta["manifest"];
-  activeKind: "dimension" | "metric";
-  onActiveKindChange: (kind: "dimension" | "metric") => void;
+  activeFieldTarget: CustomVizFieldTarget;
+  onActiveFieldTargetChange: (target: CustomVizFieldTarget) => void;
+  binding: CustomVizDataBinding;
+  chartCfg: ChartViewConfig;
+  patchBinding: (patch: Partial<CustomVizDataBinding>) => void;
+  columns: string[];
+  refreshColumns: () => void;
   onChange: (next: CustomVizWidgetConfig) => void;
   onDelete?: () => void;
   onDataRefresh?: () => void;
@@ -32,21 +37,18 @@ export function CustomVizEditorColumn({
   widgetTitle,
   config,
   manifest,
-  activeKind,
-  onActiveKindChange,
+  activeFieldTarget,
+  onActiveFieldTargetChange,
+  binding,
+  chartCfg,
+  patchBinding,
+  columns,
+  refreshColumns,
   onChange,
   onDelete,
   onDataRefresh,
   className,
 }: CustomVizEditorColumnProps) {
-  const {
-    binding,
-    chartCfg,
-    patchBinding,
-    columns,
-    refreshColumns,
-  } = useCustomVizInspectorState(config, onChange);
-
   const [error, setError] = useState<string | null>(null);
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [validating, setValidating] = useState(false);
@@ -118,8 +120,8 @@ export function CustomVizEditorColumn({
               binding={binding}
               fieldSlots={manifest?.fieldSlots}
               columnsDisabled={columns.length === 0}
-              activeKind={activeKind}
-              onActiveKindChange={onActiveKindChange}
+              activeFieldTarget={activeFieldTarget}
+              onActiveFieldTargetChange={onActiveFieldTargetChange}
               onPatch={patchBinding}
             />
             <ChartConfigPanel

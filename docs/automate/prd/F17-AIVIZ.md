@@ -12,8 +12,8 @@
 | 库中 HTML 源码 → 一个 Base 异步加载（L3） | 仓库为每个组件增加 tsx/py |
 | 可选 D3 创作指南 + `theme-tokens.json`（不强制渲染器） | 强制 customViz 使用平台 D3 引擎 |
 | `layoutJson` v2 混排 chart + customViz | `layout/orchestrate` 规则引擎（M2） |
-| `dataBinding.status=manual` 占位保存 | 查询桥（后续） |
-| 同一 artifactId 覆盖更新 | 组件库 viz-components 收录 customViz（M2） |
+| `dataBinding.status=manual` 占位保存 | 查询桥（M1：合成 table execute + payload 注入） |
+| 同一 artifactId 覆盖更新 | 组件库 viz-components 收录 customViz |
 
 ## 验收标准
 

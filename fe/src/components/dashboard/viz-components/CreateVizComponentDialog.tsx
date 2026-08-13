@@ -23,6 +23,7 @@ import {
   AdminFormField,
 } from "@/components/layout/admin-form-dialog";
 import { ChartPickerPopover } from "@/components/dashboard/ChartPickerPopover";
+import type { CustomVizInsertPayload } from "@/components/dashboard/createLayoutWidget";
 import {
   HUB_SEGMENTED_BUTTON_CLASS,
   HUB_SEGMENTED_SHELL_CLASS,
@@ -49,15 +50,17 @@ const SURFACE_OPTIONS: { kind: VizSurfaceKind; label: string }[] = [
 /** 与 ChartPickerPopover 一致，切换组件类型时保持弹窗高度稳定 */
 const TYPE_PICKER_SLOT_CLASS = "h-[min(45vh,360px)] min-h-[280px]";
 
-const TYPE_PICKER_HINT: Record<VizWidgetType, string | undefined> = {
+const TYPE_PICKER_HINT: Partial<Record<VizWidgetType, string | undefined>> = {
   chart: "与看板/大屏编辑页图表面板一致",
+  customViz: "从 artifact 库选择 AI 自定义组件",
   filter: "创建后可在编辑页配置筛选字段",
   text: "创建后可在编辑页编辑富文本内容",
   media: "创建后可在编辑页上传图片或视频",
 };
 
-const TYPE_PICKER_LABEL: Record<VizWidgetType, string> = {
+const TYPE_PICKER_LABEL: Partial<Record<VizWidgetType, string>> = {
   chart: "图表类型",
+  customViz: "自定义组件",
   filter: "筛选器",
   text: "富文本",
   media: "媒体",
@@ -88,23 +91,28 @@ export function CreateVizComponentDialog({ open, onOpenChange }: CreateVizCompon
     "dashboard",
     "data-screen",
   ]);
+  const [customVizPick, setCustomVizPick] = useState<CustomVizInsertPayload | null>(null);
 
   const chartDefaults = { chartType };
+  const isCustomViz = widgetType === "customViz";
+  const isChartPicker = widgetType === "chart" || isCustomViz;
 
   const createMutation = useMutation({
     mutationFn: async () => {
+      const defaultsOptions =
+        widgetType === "chart"
+          ? chartDefaults
+          : widgetType === "customViz" && customVizPick
+            ? { customViz: customVizPick }
+            : undefined;
       const trimmed =
-        name.trim() ||
-        defaultVizComponentName(widgetType, widgetType === "chart" ? chartDefaults : undefined);
+        name.trim() || defaultVizComponentName(widgetType, defaultsOptions);
       return createVizComponent({
         name: trimmed,
         categoryKey,
         widgetType,
         surfaceKinds,
-        payloadJson: defaultVizComponentPayload(
-          widgetType,
-          widgetType === "chart" ? chartDefaults : undefined,
-        ),
+        payloadJson: defaultVizComponentPayload(widgetType, defaultsOptions),
         visibility: "org",
       });
     },
@@ -116,6 +124,9 @@ export function CreateVizComponentDialog({ open, onOpenChange }: CreateVizCompon
     onError: (err) => toast.error(mapApiError(err)),
   });
 
+  const createDisabled =
+    createMutation.isPending || (isCustomViz && !customVizPick?.artifactId);
+
   const handleOpenChange = (next: boolean) => {
     if (!next) {
       const reset = resetCreateFormState();
@@ -124,6 +135,7 @@ export function CreateVizComponentDialog({ open, onOpenChange }: CreateVizCompon
       setChartType(reset.chartType);
       setCategoryKey(reset.categoryKey);
       setSurfaceKinds(reset.surfaceKinds);
+      setCustomVizPick(null);
     }
     onOpenChange(next);
   };

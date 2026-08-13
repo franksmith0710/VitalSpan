@@ -6,6 +6,7 @@ import { setChartAnimationSuppressed } from "@/components/charts/engine/d3/core/
 import { FilterWidget } from "@/components/dashboard/FilterWidget";
 import { TextWidget } from "@/components/dashboard/TextWidget";
 import { MediaWidget } from "@/components/dashboard/MediaWidget";
+import { CustomVizWidget } from "@/components/dashboard/CustomVizWidget";
 import type { LayoutWidget } from "@/components/dashboard/layoutUtils";
 import { WidgetShellLegendProvider } from "@/components/dashboard/pixelCanvas/widgetShellLegendContext";
 import { VizComponentChartPreviewShell } from "@/components/dashboard/viz-components/VizComponentChartPreviewShell";
@@ -116,6 +117,13 @@ export function VizComponentLivePreview({
       {widget.type === "media" && widget.mediaConfig ? (
         <MediaWidget
           widget={widget as LayoutWidget & { mediaConfig: NonNullable<typeof widget.mediaConfig> }}
+          mode="view"
+          shell={compact ? "shape" : "grid"}
+        />
+      ) : null}
+      {widget.type === "customViz" && widget.customVizConfig ? (
+        <CustomVizWidget
+          widget={widget as LayoutWidget & { customVizConfig: NonNullable<typeof widget.customVizConfig> }}
           mode="view"
           shell={compact ? "shape" : "grid"}
         />

@@ -179,3 +179,52 @@ def test_update_bumps_revision(client: TestClient, auth_headers: dict, db_sessio
     assert updated.status_code == 200
     assert updated.json()["contentRevision"] == revision + 1
     assert updated.json()["payloadJson"]["chartConfig"]["chartType"] == "line"
+
+
+def _custom_viz_payload(artifact_id: str | None = None) -> dict:
+    return {
+        "customVizConfig": {
+            "artifactId": artifact_id or str(uuid.uuid4()),
+            "dataBinding": {
+                "status": "manual",
+                "dimensions": [],
+                "metrics": [],
+            },
+            "style": {"accentColor": "#336699"},
+        }
+    }
+
+
+def test_create_publish_and_resolve_custom_viz(client: TestClient, auth_headers: dict, db_session) -> None:
+    artifact_id = str(uuid.uuid4())
+    created = client.post(
+        "/api/v1/viz-components",
+        headers=auth_headers,
+        json={
+            "name": "AI 排名条",
+            "widgetType": "customViz",
+            "surfaceKinds": ["dashboard", "data-screen"],
+            "payloadJson": _custom_viz_payload(artifact_id),
+            "visibility": "org",
+        },
+    )
+    assert created.status_code == 201, created.text
+    body = created.json()
+    component_id = body["id"]
+    assert body["widgetType"] == "customViz"
+
+    published = client.post(
+        f"/api/v1/viz-components/{component_id}/publish",
+        headers=auth_headers,
+    )
+    assert published.status_code == 200
+
+    resolved = client.post(
+        "/api/v1/viz-components/batch-resolve",
+        headers=auth_headers,
+        json={"ids": [component_id]},
+    )
+    assert resolved.status_code == 200
+    item = resolved.json()["items"][0]
+    assert item["payloadJson"]["customVizConfig"]["artifactId"] == artifact_id
+    assert item["payloadJson"]["customVizConfig"]["style"]["accentColor"] == "#336699"

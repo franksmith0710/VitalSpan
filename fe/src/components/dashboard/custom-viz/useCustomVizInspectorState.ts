@@ -7,6 +7,7 @@ import { queryKeys } from "@/lib/queryKeys";
 import { useInspectorColumns } from "@/hooks/useInspectorColumns";
 import type { CustomVizDataBinding, CustomVizWidgetConfig } from "../layoutUtils";
 import { customVizBindingToChartConfig } from "./customVizExecute";
+import type { CustomVizFieldTarget } from "./customVizFieldSlots";
 
 type DatasetListItem = {
   datasetId: string;
@@ -76,19 +77,19 @@ export function useCustomVizInspectorState(
   );
 
   const assignField = useCallback(
-    (fieldName: string, kind: "dimension" | "metric") => {
-      if (kind === "dimension") {
+    (fieldName: string, target: CustomVizFieldTarget) => {
+      if (target.kind === "dimension") {
         const next = [...(binding.dimensions ?? [])];
-        if (next.some((d) => d.field === fieldName)) return;
-        if (next.length >= 1) next[0] = { field: fieldName };
-        else next.push({ field: fieldName });
+        while (next.length <= target.index) next.push({ field: "" });
+        if (next.some((d, i) => i !== target.index && d.field === fieldName)) return;
+        next[target.index] = { field: fieldName };
         patchBinding({ dimensions: next, status: "connected" });
         return;
       }
       const next = [...(binding.metrics ?? [])];
-      if (next.some((m) => m.field === fieldName)) return;
-      if (next.length >= 1) next[0] = { field: fieldName, agg: "sum" };
-      else next.push({ field: fieldName, agg: "sum" });
+      while (next.length <= target.index) next.push({ field: "", agg: "sum" });
+      if (next.some((m, i) => i !== target.index && m.field === fieldName)) return;
+      next[target.index] = { field: fieldName, agg: "sum" };
       patchBinding({ metrics: next, status: "connected" });
     },
     [binding.dimensions, binding.metrics, patchBinding],

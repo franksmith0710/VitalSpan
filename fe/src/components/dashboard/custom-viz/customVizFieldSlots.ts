@@ -7,6 +7,20 @@ export type CustomVizFieldSlotDef = {
   max: number;
 };
 
+export type CustomVizFieldTarget = {
+  kind: "dimension" | "metric";
+  index: number;
+};
+
+export type CustomVizUiFieldSlot = CustomVizFieldSlotDef & {
+  index: number;
+  uiKey: string;
+};
+
+export function customVizFieldTargetsEqual(a: CustomVizFieldTarget, b: CustomVizFieldTarget): boolean {
+  return a.kind === b.kind && a.index === b.index;
+}
+
 type SlotRule = {
   min?: number;
   max?: number;
@@ -45,4 +59,27 @@ export function parseCustomVizFieldSlots(
     ];
   }
   return slots;
+}
+
+/** 将 manifest max>1 展开为独立 UI 槽，index 对应 dimensions/metrics 数组下标。 */
+export function expandCustomVizFieldSlotsForUi(
+  fieldSlots: Record<string, unknown> | undefined,
+): CustomVizUiFieldSlot[] {
+  const defs = parseCustomVizFieldSlots(fieldSlots);
+  const out: CustomVizUiFieldSlot[] = [];
+  let dimIndex = 0;
+  let metricIndex = 0;
+  for (const def of defs) {
+    const count = Math.max(def.max, def.min, 1);
+    for (let i = 0; i < count; i += 1) {
+      const index = def.kind === "dimension" ? dimIndex++ : metricIndex++;
+      out.push({
+        ...def,
+        index,
+        uiKey: `${def.key}-${index}`,
+        label: count > 1 ? `${def.label} ${i + 1}` : def.label,
+      });
+    }
+  }
+  return out;
 }

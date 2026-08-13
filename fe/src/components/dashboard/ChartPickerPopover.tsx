@@ -96,6 +96,7 @@ function CustomVizTile({
         "hover:border-brand-200 hover:bg-brand-50/60 dark:hover:border-brand-500/30 dark:hover:bg-brand-500/10",
         "focus-visible:outline-hidden focus-visible:ring-3 focus-visible:ring-brand-500/20",
       )}
+      data-testid={`custom-viz-tile-${item.artifactId}`}
     >
       <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-brand-500 dark:bg-white/[0.06] dark:text-brand-400">
         <Sparkles className="size-6" strokeWidth={1.75} aria-hidden />

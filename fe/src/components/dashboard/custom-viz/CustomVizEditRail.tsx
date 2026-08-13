@@ -8,6 +8,7 @@ import { DatasetPickerPanel } from "../DatasetPickerPanel";
 import { FieldBankPlaceholder } from "../DatasetFieldBank";
 import { WidgetEditRailLayout } from "../WidgetEditRailLayout";
 import { CustomVizEditorColumn } from "./CustomVizEditorColumn";
+import type { CustomVizFieldTarget } from "./customVizFieldSlots";
 import { useCustomVizInspectorState } from "./useCustomVizInspectorState";
 
 export type CustomVizEditRailProps = {
@@ -28,7 +29,10 @@ export function CustomVizEditRail({
 }: CustomVizEditRailProps) {
   const cfg = widget.customVizConfig;
   const artifactId = cfg.artifactId?.trim();
-  const [activeKind, setActiveKind] = useState<"dimension" | "metric">("dimension");
+  const [activeFieldTarget, setActiveFieldTarget] = useState<CustomVizFieldTarget>({
+    kind: "dimension",
+    index: 0,
+  });
 
   const { data: meta } = useQuery({
     queryKey: queryKeys.aiViz.detail(artifactId ?? "none"),
@@ -36,20 +40,7 @@ export function CustomVizEditRail({
     enabled: Boolean(artifactId),
   });
 
-  const {
-    binding,
-    handleDatasetSelect,
-    assignField,
-    columns,
-    columnsLoading,
-    columnsReady,
-    refreshColumns,
-    datasetItems,
-    datasetsLoading,
-    datasetsError,
-    datasetsEmpty,
-    datasetBindingError,
-  } = useCustomVizInspectorState(cfg, onChange);
+  const inspector = useCustomVizInspectorState(cfg, onChange);
 
   const typeLabel = meta?.manifest.displayName ?? "自定义组件";
   const leftSubtitle = widget.title && widget.title !== typeLabel ? widget.title : undefined;
@@ -65,8 +56,13 @@ export function CustomVizEditRail({
           widgetTitle={widget.title}
           config={cfg}
           manifest={meta?.manifest}
-          activeKind={activeKind}
-          onActiveKindChange={setActiveKind}
+          activeFieldTarget={activeFieldTarget}
+          onActiveFieldTargetChange={setActiveFieldTarget}
+          binding={inspector.binding}
+          chartCfg={inspector.chartCfg}
+          patchBinding={inspector.patchBinding}
+          columns={inspector.columns}
+          refreshColumns={inspector.refreshColumns}
           onChange={onChange}
           onDelete={onDelete}
           onDataRefresh={onDataRefresh}
@@ -77,18 +73,18 @@ export function CustomVizEditRail({
         artifactId ? (
           <DatasetPickerPanel
             widgetId={widget.id}
-            datasetId={binding.datasetId}
-            datasetsLoading={datasetsLoading}
-            datasetsError={datasetsError}
-            datasetsEmpty={datasetsEmpty}
-            datasetItems={datasetItems}
-            columns={columns}
-            columnsLoading={columnsLoading}
-            columnsReady={columnsReady}
-            onDatasetSelect={handleDatasetSelect}
-            datasetBindingError={datasetBindingError}
-            onFieldClick={(field) => assignField(field, activeKind)}
-            onRefreshFields={refreshColumns}
+            datasetId={inspector.binding.datasetId}
+            datasetsLoading={inspector.datasetsLoading}
+            datasetsError={inspector.datasetsError}
+            datasetsEmpty={inspector.datasetsEmpty}
+            datasetItems={inspector.datasetItems}
+            columns={inspector.columns}
+            columnsLoading={inspector.columnsLoading}
+            columnsReady={inspector.columnsReady}
+            onDatasetSelect={inspector.handleDatasetSelect}
+            datasetBindingError={inspector.datasetBindingError}
+            onFieldClick={(field) => inspector.assignField(field, activeFieldTarget)}
+            onRefreshFields={inspector.refreshColumns}
           />
         ) : (
           <FieldBankPlaceholder />
