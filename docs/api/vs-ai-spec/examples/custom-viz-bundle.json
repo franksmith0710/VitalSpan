@@ -10,15 +10,67 @@
     },
     "styleSchema": {
       "type": "object",
+      "x-styleSections": [
+        {
+          "title": "条形外观",
+          "properties": ["accentColor", "barHeight", "cornerRadius", "fillOpacity"]
+        },
+        {
+          "title": "标签与排列",
+          "properties": ["showValue", "labelColor", "layoutMode", "valuePrefix"]
+        }
+      ],
       "properties": {
         "accentColor": { "type": "string", "format": "color", "title": "强调色" },
-        "barHeight": { "type": "number", "minimum": 8, "maximum": 48, "title": "条高度" }
+        "barHeight": {
+          "type": "number",
+          "minimum": 8,
+          "maximum": 48,
+          "title": "条高度",
+          "description": "条形区域高度（像素）"
+        },
+        "cornerRadius": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 16,
+          "title": "圆角",
+          "step": 1
+        },
+        "fillOpacity": {
+          "type": "number",
+          "format": "opacity",
+          "minimum": 20,
+          "maximum": 100,
+          "title": "填充不透明度"
+        },
+        "showValue": { "type": "boolean", "title": "显示数值" },
+        "labelColor": { "type": "string", "format": "color", "title": "标签颜色" },
+        "layoutMode": {
+          "type": "string",
+          "enum": ["horizontal", "compact"],
+          "enumNames": ["标准横向", "紧凑模式"],
+          "title": "排列方式"
+        },
+        "valuePrefix": {
+          "type": "string",
+          "title": "数值前缀",
+          "description": "显示在数值前的符号，如 ¥ 或 #"
+        }
       }
     },
-    "defaultStyle": { "accentColor": "#2563eb", "barHeight": 20 },
+    "defaultStyle": {
+      "accentColor": "#2563eb",
+      "barHeight": 20,
+      "cornerRadius": 4,
+      "fillOpacity": 100,
+      "showValue": true,
+      "labelColor": "#e2e8f0",
+      "layoutMode": "horizontal",
+      "valuePrefix": ""
+    },
     "rendererHint": "vanilla"
   },
   "files": {
-    "index.html": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>html,body{margin:0;height:100%;background:#0f172a;color:#e2e8f0;font-family:system-ui,sans-serif}#vs-cv-root{padding:12px}.row{display:flex;align-items:center;gap:8px;margin:6px 0}.bar{height:var(--h,20px);background:var(--accent,#2563eb);border-radius:4px;min-width:4px}</style></head><body><div id=\"vs-cv-root\"></div><script>const data=[{n:\"华东\",v:92},{n:\"华南\",v:78},{n:\"华北\",v:65}];const max=Math.max(...data.map(d=>d.v));const root=document.getElementById(\"vs-cv-root\");data.forEach(d=>{const row=document.createElement(\"div\");row.className=\"row\";row.innerHTML=\"<span style=\\\"width:48px\\\">\"+d.n+\"</span><div class=\\\"bar\\\" style=\\\"width:\"+(d.v/max*100)+\"%;--h:20px\\\"></div><span>\"+d.v+\"</span>\";root.appendChild(row);});</script></body></html>"
+    "index.html": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>html,body{margin:0;height:100%;background:#0f172a;color:#e2e8f0;font-family:system-ui,sans-serif}#vs-cv-root{padding:12px}.row{display:flex;align-items:center;gap:8px;margin:6px 0}.row.compact{gap:4px;margin:4px 0}.bar{height:var(--vs-style-bar-height,20px);background:var(--vs-style-accent-color,#2563eb);opacity:calc(var(--vs-style-fill-opacity,100)/100);border-radius:var(--vs-style-corner-radius,4px);min-width:4px}.lbl{color:var(--vs-style-label-color,#e2e8f0);width:48px;font-size:12px}.val{font-size:12px;min-width:2rem;text-align:right}</style></head><body><div id=\"vs-cv-root\"></div><script>(function(){function readPayload(){var n=document.querySelector('.vs-cv-payload');if(!n||!n.textContent)return null;try{return JSON.parse(n.textContent)}catch(e){return null}}function rowsFromPayload(p){if(!p||!p.rows||!p.rows.length)return[{n:'华东',v:92},{n:'华南',v:78},{n:'华北',v:65}];var cols=p.columns||[];var di=cols.findIndex(function(c){return c!=='sum'&&c!=='count'});var mi=cols.findIndex(function(c,i){return i!==di});if(di<0)di=0;if(mi<0)mi=1;return p.rows.map(function(r){return{n:String(r[di]),v:Number(r[mi])||0}})}function render(){var host=document.querySelector('.vs-custom-viz-host')||document.body;var p=readPayload();var st=(p&&p.style)||{};var data=rowsFromPayload(p);var max=Math.max.apply(null,data.map(function(d){return d.v}).concat([1]));var root=document.getElementById('vs-cv-root');root.innerHTML='';var compact=st.layoutMode==='compact';var show=st.showValue!==false;var prefix=String(st.valuePrefix||'');data.forEach(function(d){var row=document.createElement('div');row.className='row'+(compact?' compact':'');var lbl=document.createElement('span');lbl.className='lbl';lbl.textContent=d.n;row.appendChild(lbl);var bar=document.createElement('div');bar.className='bar';bar.style.width=(d.v/max*100)+'%';row.appendChild(bar);if(show){var val=document.createElement('span');val.className='val';val.textContent=prefix+d.v;row.appendChild(val)}root.appendChild(row)})}render();var obs=new MutationObserver(render);var host=document.querySelector('.vs-custom-viz-host');if(host)obs.observe(host,{childList:true,subtree:true,characterData:true})})();</script></body></html>"
   }
 }

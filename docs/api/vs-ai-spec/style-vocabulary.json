@@ -43,6 +43,6 @@
   },
   "customViz": {
     "wired": true,
-    "note": "样式由 bundle manifest.styleSchema + defaultStyle 定义，平台 Base 挂载渲染"
+    "note": "样式由 bundle manifest.styleSchema + defaultStyle 定义；支持 AI 自由声明新样式键，见 guides/STYLE-SCHEMA.md"
   }
 }

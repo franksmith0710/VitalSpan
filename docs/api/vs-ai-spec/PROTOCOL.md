@@ -63,7 +63,7 @@ customViz bundle **不限定**渲染技术栈。可选用原生 DOM/CSS、Canvas
 | 禁内联事件 | 不得含 `onload=`、`onclick=` 等 |
 | 大小上限 | 整包 ≤ 512KB（含 HTML） |
 | 数据槽位 | **必填** `manifest.fieldSlots`：`dimensions` 与 `metrics` 均须 `min >= 1` |
-| 样式声明 | **必填** `manifest.styleSchema.properties`（至少 1 项）；推荐同时提供 `defaultStyle` |
+| 样式声明 | **必填** `manifest.styleSchema.properties`（至少 1 项）；推荐同时提供 `defaultStyle`；**可声明平台从未出现过的样式键**，见 [guides/STYLE-SCHEMA.md](./guides/STYLE-SCHEMA.md) |
 | 节点 ID | 禁止 `id="root"` / `id="app"`（与平台 SPA 冲突）；多实例时 ID 须唯一 |
 | CSS 作用域 | 挂载时选择器会收到 `.vs-custom-viz-host`；宿主已注入 `--dashboard-*`，不必再用 `:root` 改全局 |
 
@@ -97,7 +97,9 @@ customViz bundle **不限定**渲染技术栈。可选用原生 DOM/CSS、Canvas
 Base 在 `query/execute` 出数后，向 `.vs-custom-viz-host` 注入：
 
 1. **JSON 载荷**：宿主内 `<script type="application/json" class="vs-cv-payload">`，结构 `{ columns, rows, style }`
-2. **样式变量**：`style` 各键映射为 `--vs-style-<kebab-case>` 写在宿主元素 `style` 上（与 manifest `defaultStyle` + layout `customVizConfig.style` 合并）
+2. **样式变量**：`style` 各键映射为 `--vs-style-<kebab-case>` 写在宿主元素 `style` 上（与 manifest `defaultStyle` + layout `customVizConfig.style` 合并）；boolean 为 `true`/`false` 字符串
+
+AI 可在 `styleSchema` 中自由声明颜色、滑块、开关、下拉、文本等控件类型，平台自动生成配置栏，详见 [guides/STYLE-SCHEMA.md](./guides/STYLE-SCHEMA.md)。
 
 bundle 内脚本可读取 `.vs-cv-payload` 文本并监听 DOM；推荐用 `getComputedStyle(host)` 读 `--vs-style-*`。
 

@@ -25,7 +25,7 @@
 |------|------|
 | [PROTOCOL.md](./PROTOCOL.md) | 自定义组件库协议：Base 加载、可选 `rendererHint`、PUT 覆盖 |
 | [guides/RENDERERS.md](./guides/RENDERERS.md) | 渲染器选择索引（不强制） |
-| [guides/D3-OPTIONAL.md](./guides/D3-OPTIONAL.md) | 可选 D3 内联开发规范 |
+| [guides/STYLE-SCHEMA.md](./guides/STYLE-SCHEMA.md) | customViz 可自由声明的样式 schema（颜色/滑块/开关/下拉/分组） |
 | [theme-tokens.json](./theme-tokens.json) | 看板/D3 主题 token（推荐对齐内置 chart） |
 | [capability-manifest.json](./capability-manifest.json) | chartType + widgetType 能力清单（可 `scripts/export-vs-ai-spec.py` 刷新） |
 | [style-vocabulary.json](./style-vocabulary.json) | 已接通 `deStyle` 字段词典 |
