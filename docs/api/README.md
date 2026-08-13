@@ -5,8 +5,8 @@
 > **真理源**：行为需求见 [SRS §6](../srs/全生命周期系统需求规格说明书.md#6-接口需求)；功能项见 [PRD API-001~007](../automate/prd/F13-API.md)。
 
 ```yaml
-version: 1.0.11
-last_updated: 2026-08-09
+version: 1.0.12
+last_updated: 2026-08-13
 api_prefix: /api/v1
 openapi_docs: /docs
 redoc: /redoc
@@ -255,9 +255,10 @@ redoc: /redoc
 | POST | `/api/v1/viz-components/{id}/publish` | 发布组件（`viz:component.manage`） | 内部 | 一期 | DASH-010 | 已实现 | `backend/app/api/v1/viz_components.py` |
 | GET | `/api/v1/viz-components/{id}/references` | 组件引用明细（看板/大屏实例列表） | 内部 | 一期 | DASH-010 | 已实现 | `backend/app/api/v1/viz_components.py` |
 | POST | `/api/v1/viz-components/{id}/archive` | 下架组件（对标 dashboard-templates archive） | 内部 | 一期 | DASH-010 | 已实现 | `backend/app/api/v1/viz_components.py` |
-| POST | `/api/v1/ai-viz/artifacts` | 注册沙箱 HTML bundle（customViz） | 内部 | 试点 | AIVIZ-002 | 已实现 | `backend/app/api/v1/ai_viz.py` |
+| POST | `/api/v1/ai-viz/artifacts` | 注册自定义组件源码（customViz 库） | 内部 | 试点 | AIVIZ-002 | 已实现 | `backend/app/api/v1/ai_viz.py` |
+| PUT | `/api/v1/ai-viz/artifacts/{id}` | 覆盖同一组件源码；引用方刷新即新 | 内部 | 试点 | AIVIZ-009 | 已实现 | `backend/app/api/v1/ai_viz.py` |
 | GET | `/api/v1/ai-viz/artifacts/{id}` | artifact 元数据 | 内部 | 试点 | AIVIZ-002 | 已实现 | `backend/app/api/v1/ai_viz.py` |
-| GET | `/api/v1/ai-viz/artifacts/{id}/entry` | 沙箱 HTML 入口（CSP） | 内部 | 试点 | AIVIZ-002 | 已实现 | `backend/app/api/v1/ai_viz.py` |
+| GET | `/api/v1/ai-viz/artifacts/{id}/entry` | 组件 HTML 源码（供 Base 挂载） | 内部 | 试点 | AIVIZ-002 | 已实现 | `backend/app/api/v1/ai_viz.py` |
 | POST | `/api/v1/views/validate` | DashboardView 协议校验；422 码：`VIEW_UNKNOWN_CHART_REF` / `VIEW_DEFAULT_SELF_REF` | IF-06 | 一期 | VIEW-001 | 已实现 | `backend/app/api/v1/views.py` |
 | GET | `/api/v1/views/schema` | DashboardView JSON Schema | IF-06 | 一期 | VIEW-001 | 已实现 | `backend/app/api/v1/views.py` |
 
@@ -626,6 +627,7 @@ redoc: /redoc
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.0.12 | 2026-08-13 | AI 可视化：登记 `PUT /ai-viz/artifacts/{id}`；entry 改为 Base 宿主挂载源码 |
 | 1.0.11 | 2026-08-09 | D3：联调可消费附录 auth/datasources/query；链 service/backend 运维 |
 | 1.0.10 | 2026-08-09 | R1 索引修补：orgs/rls/users roles/resource-grants 子路径；designer validate；viz archive；schedule transition；physical-tables validate；etl auto-align；gov 模板 `{id}`；废弃 governance/* 与 entities/types；m11/m12 probe 表列对齐；§10 数据接入 |
 | 1.0.9 | 2026-08-07 | Dashboard `export-jobs` 三路由；`dashboard-templates` 列表参数与 DELETE 语义；`reports/catalog/templates/readiness`；`reports/export` 补 `from`/`to` |

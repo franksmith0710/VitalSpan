@@ -17,6 +17,9 @@ from app.reports.scheduler.errors import ScheduleError
 from app.reports.scheduler.recipients import validate_recipients_present
 from app.reports.scheduler.schemas import ScheduleCreate, ScheduleListOut, ScheduleStatusOut, ScheduleUpdate
 from app.reports.scheduler.store import get_schedule_store
+from app.reports.persistence import standard_repo
+from app.reports.standard.errors import StandardAnalysisError
+from app.reports.standard.service import get_pack
 
 _ALLOWED: dict[str, frozenset[str]] = {
     "draft": frozenset({"schedule"}),
@@ -57,6 +60,14 @@ def _validate_cron(cron: str) -> None:
 
 def _source_label(row: dict) -> str | None:
     source_type = row.get("source_type", "template")
+    if source_type == "standard":
+        pack_key = row.get("source_key")
+        if not pack_key:
+            return None
+        raw = standard_repo.get_pack(pack_key)
+        if raw is None:
+            return pack_key
+        return raw.get("displayName") or pack_key
     source_id = row.get("source_id") or row.get("catalog_node_id")
     if source_id is None:
         return None
@@ -75,12 +86,14 @@ def _source_label(row: dict) -> str | None:
 
 def _out(row: dict) -> ScheduleStatusOut:
     recipients = row.get("recipients") or []
+    source_id = row.get("source_id") or row.get("catalog_node_id")
     return ScheduleStatusOut(
         id=row["id"],
         name=row.get("name"),
         catalogNodeId=row.get("catalog_node_id"),
         sourceType=row.get("source_type", "template"),
-        sourceId=row.get("source_id") or row["catalog_node_id"],
+        sourceId=source_id,
+        sourceKey=row.get("source_key"),
         sourceLabel=_source_label(row),
         recipients=recipients,
         attachmentFormats=row.get("attachment_formats") or ["pdf"],
@@ -92,7 +105,17 @@ def _out(row: dict) -> ScheduleStatusOut:
     )
 
 
-def _assert_source_exists(payload: ScheduleCreate) -> None:
+def _assert_source_exists(payload: ScheduleCreate, actor: UserContext) -> None:
+    if payload.source_type == "standard":
+        try:
+            get_pack(payload.source_key or "", actor)
+        except StandardAnalysisError as exc:
+            raise ScheduleError(
+                "RPT_SCHEDULE_SOURCE_NOT_FOUND",
+                exc.message,
+                exc.status,
+            ) from exc
+        return
     if payload.source_type == "template":
         if not catalog_service.node_exists(payload.source_id):
             raise ReportCatalogError("RPT_CATALOG_NODE_NOT_FOUND", "Catalog node not found", 404)
@@ -112,7 +135,7 @@ def _assert_source_exists(payload: ScheduleCreate) -> None:
 
 
 def create_schedule(payload: ScheduleCreate, actor: UserContext) -> ScheduleStatusOut:
-    _assert_source_exists(payload)
+    _assert_source_exists(payload, actor)
     _validate_cron(payload.cron)
     recipients = [r.model_dump(by_alias=True) for r in payload.recipients]
     if payload.source_type == "template" and payload.catalog_node_id:
@@ -124,6 +147,7 @@ def create_schedule(payload: ScheduleCreate, actor: UserContext) -> ScheduleStat
         "catalog_node_id": payload.catalog_node_id,
         "source_type": payload.source_type,
         "source_id": payload.source_id,
+        "source_key": payload.source_key,
         "recipients": recipients,
         "attachment_formats": list(payload.attachment_formats),
         "delivery_channels": list(payload.delivery_channels),
@@ -176,6 +200,7 @@ def list_schedules(
     catalog_node_id: uuid.UUID | None = None,
     source_id: uuid.UUID | None = None,
     source_type: str | None = None,
+    source_key: str | None = None,
     limit: int = 50,
     offset: int = 0,
 ) -> ScheduleListOut:
@@ -189,6 +214,8 @@ def list_schedules(
         rows = [r for r in rows if r.get("source_id") == source_id]
     if source_type is not None:
         rows = [r for r in rows if r.get("source_type", "template") == source_type]
+    if source_key is not None:
+        rows = [r for r in rows if r.get("source_key") == source_key]
     visible: list[dict] = []
     for row in rows:
         try:

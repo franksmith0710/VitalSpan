@@ -1,13 +1,19 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { CustomVizWidget } from "./CustomVizWidget";
+import { rewriteBundleCss } from "./customVizHost";
 import { coerceLayoutWidget } from "./layoutUtils";
 
 vi.mock("@/lib/api", () => ({
-  apiFetch: vi.fn(async () => ({
+  fetchWithTimeout: vi.fn(async () => ({
     ok: true,
-    text: async () => "<!DOCTYPE html><html><body>custom</body></html>",
+    text: async () => "<!DOCTYPE html><html><body><p>custom</p></body></html>",
   })),
+  getAuthHeaders: () => ({}),
+}));
+
+vi.mock("@/lib/appBasePath", () => ({
+  resolveApiBaseUrl: () => "http://localhost:8000",
 }));
 
 describe("CustomVizWidget", () => {
@@ -21,7 +27,7 @@ describe("CustomVizWidget", () => {
     expect(w.customVizConfig?.artifactId).toBe("a1");
   });
 
-  it("renders iframe srcDoc from artifact entry", async () => {
+  it("mounts artifact HTML into the host Base", async () => {
     render(
       <CustomVizWidget
         widget={{
@@ -37,7 +43,16 @@ describe("CustomVizWidget", () => {
       />,
     );
     await waitFor(() => {
-      expect(screen.getByTitle("AI")).toBeInTheDocument();
+      expect(screen.getByTestId("custom-viz-host")).toBeInTheDocument();
     });
+    expect(screen.getByText("custom")).toBeInTheDocument();
+    expect(screen.queryByTitle("AI")).not.toBeInTheDocument();
+    expect(screen.getByTestId("custom-viz-host")).toHaveClass("vs-custom-viz-host");
+  });
+
+  it("scopes bundle html/body css to the host", () => {
+    expect(rewriteBundleCss("html,body{margin:0}#root{padding:8px}")).toBe(
+      ".vs-custom-viz-host, .vs-custom-viz-host{margin:0}.vs-custom-viz-host #root{padding:8px}",
+    );
   });
 });

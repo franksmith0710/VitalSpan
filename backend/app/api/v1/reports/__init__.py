@@ -396,6 +396,7 @@ def list_schedules(
     catalog_node_id: uuid.UUID | None = Query(default=None, alias="catalogNodeId"),
     source_id: uuid.UUID | None = Query(default=None, alias="sourceId"),
     source_type: str | None = Query(default=None, alias="sourceType"),
+    source_key: str | None = Query(default=None, alias="sourceKey"),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
 ):
@@ -405,6 +406,7 @@ def list_schedules(
             catalog_node_id=catalog_node_id,
             source_id=source_id,
             source_type=source_type,
+            source_key=source_key,
             limit=limit,
             offset=offset,
         )

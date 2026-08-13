@@ -16,37 +16,30 @@
 
 ```text
 内置 chart：chartConfig → buildChartRenderPlan → applyChartStyleChain → fe/engine/d3/*
-customViz+D3：artifact bundle 内自备 D3 代码 → iframe 沙箱展示
+customViz+D3：artifact bundle 内自备 D3 代码 → Base 宿主挂载展示
 ```
 
 customViz 选 D3 **不会**调用 `applyChartStyleChain` 或 `renderD3Chart`。要对齐内置图风格，请使用 [theme-tokens.json](../theme-tokens.json)。
 
-## 沙箱约束
+## 包约束
 
 与 [PROTOCOL.md](../PROTOCOL.md) 相同：
 
 - 单入口 `index.html`，脚本与样式 **内联**
 - 整包 ≤ **512KB**（含 HTML）。全量 `d3.min.js`（约 250–280KB）仍可能占用大部分配额，复杂组件建议 **d3 子集**（如 `selection` + `scale` + `axis`）
-- `sandbox="allow-scripts"`，无 `allow-same-origin` — 不能访问父页面 CSS，须在 bundle 内定义 `:root` 变量
+- 源码由 Base 挂进主页面；宿主已注入 `--dashboard-*`，bundle 内用 `var(--dashboard-text-primary)` 即可跟看板主题
 
 ## 主题对齐（推荐）
 
 1. 读取 [theme-tokens.json](../theme-tokens.json)（由 `scripts/export-vs-ai-spec.py` 导出，锚点 [`dashboardThemeTokens.ts`](../../../../fe/src/components/dashboard/dashboardThemeTokens.ts)）
-2. 在 `index.html` 的 `<style>` 中声明 CSS 变量，例如暗色大屏：
+2. 宿主已注入 `--dashboard-*`。bundle **不要**用 `:root` / `html` / `body` 改整页；局部覆盖写在组件自己的选择器上：
 
 ```css
-:root {
-  --dashboard-artboard-bg: #0f172a;
-  --dashboard-text-primary: #e2e8f0;
-  --dashboard-chart-axis: #cbd5e1;
-  --dashboard-chart-grid: #344054;
-  --vs-d3-accent: #465fff;
-}
-html, body {
-  margin: 0;
+.vs-custom-viz-host,
+#vs-cv-chart {
   height: 100%;
-  background: var(--dashboard-artboard-bg);
   color: var(--dashboard-text-primary);
+  background: var(--dashboard-widget-surface);
   font-family: system-ui, sans-serif;
 }
 ```
@@ -87,13 +80,14 @@ html, body {
 
 - bundle 内使用静态演示数据
 - `customVizConfig.dataBinding.status: "manual"` — 用户稍后在平台绑字段
-- M2：`postMessage` 查询桥（`vs:query` / `vs:result`）另行文档化
+- 后续：平台向宿主注入查询结果
 
 ## 反模式
 
 - 外链 D3 / React / 地图 CDN
 - `onclick=`、`onload=` 等 inline 事件处理器
 - 假设能访问 `window.parent` 或平台内部模块
+- 使用 `id="root"` / `id="app"`（与平台 SPA 冲突）
 - 把 customViz 当作「动态注册第 50 种 chartType」
 
 ## 示例

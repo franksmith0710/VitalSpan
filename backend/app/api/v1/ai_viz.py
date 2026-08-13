@@ -47,6 +47,19 @@ def create_artifact(
         return _error_response(exc)
 
 
+@router.put("/artifacts/{artifact_id}", response_model=AiVizArtifactOut)
+def update_artifact(
+    artifact_id: uuid.UUID,
+    payload: AiVizArtifactCreateIn,
+    user: Annotated[UserContext, Depends(require_permission(PERM_EDIT))],
+    db: Annotated[Session, Depends(_db)],
+) -> AiVizArtifactOut | JSONResponse:
+    try:
+        return ai_viz_service.update_artifact(db, artifact_id, payload, user)
+    except AiVizError as exc:
+        return _error_response(exc)
+
+
 @router.get("/artifacts/{artifact_id}", response_model=AiVizArtifactOut)
 def get_artifact_meta(
     artifact_id: uuid.UUID,
@@ -75,10 +88,7 @@ def get_artifact_entry(
         html = ai_viz_service.get_entry_html(db, artifact_id, user)
         return HTMLResponse(
             content=html,
-            headers={
-                "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'",
-                "X-Content-Type-Options": "nosniff",
-            },
+            headers={"X-Content-Type-Options": "nosniff"},
         )
     except AiVizError as exc:
         return _error_response(exc)

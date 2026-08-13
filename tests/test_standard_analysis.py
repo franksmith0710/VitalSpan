@@ -15,7 +15,6 @@ from app.metadata.entity import service as entity_service
 from app.metadata.entity.schemas import EntityTypeCreate
 from app.metadata.physical import service as physical_service
 from app.metadata.physical.schemas import PhysicalTableRegisterIn
-from app.query.schemas import ExecuteResponse
 from app.reports.persistence import memory_stores
 from jwt_auth import AUTH
 
@@ -110,8 +109,21 @@ def _pack_payload(key: str = "equipment-overview") -> dict:
     }
 
 
-@patch("app.reports.engine.execute.execute_query")
-def test_std_pack_upsert_and_run(mock_execute, client: TestClient):
+def _mock_dataset_section() -> dict:
+    return {
+        "columns": ["status", "region", "created_at"],
+        "rows": [
+            ["active", "east", "2024-01-01"],
+            ["idle", "west", "2024-01-02"],
+        ],
+        "elapsedMs": 1.0,
+    }
+
+
+@patch("app.reports.standard.dataset_binding.ensure_analysis_pack_dataset_binding")
+@patch("app.reports.standard.service.engine_execute.execute_dataset_section")
+def test_std_pack_upsert_and_run(mock_execute, mock_binding, client: TestClient):
+    mock_binding.return_value = uuid.uuid4()
     _seed_physical_equipment()
     put = client.put(
         "/api/v1/reports/standard/packs/equipment-overview",
@@ -119,16 +131,14 @@ def test_std_pack_upsert_and_run(mock_execute, client: TestClient):
         json=_pack_payload(),
     )
     assert put.status_code == 200, put.text
-    mock_execute.return_value = ExecuteResponse(
-        columns=["status", "cnt"], rows=[["active", 3]], rowCount=1, truncated=False, traceId="t"
-    )
+    mock_execute.return_value = _mock_dataset_section()
     run = client.post(
         "/api/v1/reports/standard/packs/equipment-overview/run",
         headers=AUTH,
         json={"theme": "lifecycle"},
     )
     assert run.status_code == 200
-    assert "status" in run.json()["renderSpec"]["sections"][0]["columns"]
+    assert "dim" in run.json()["renderSpec"]["sections"][0]["columns"]
 
 
 def test_std_seed_builtin(client: TestClient):
@@ -151,13 +161,13 @@ def test_std_not_found_404(client: TestClient):
     assert resp.json()["code"] == "RPT_STD_NOT_FOUND"
 
 
-@patch("app.reports.engine.execute.execute_query")
-def test_std_compare(mock_execute, client: TestClient):
+@patch("app.reports.standard.dataset_binding.ensure_analysis_pack_dataset_binding")
+@patch("app.reports.standard.service.engine_execute.execute_dataset_section")
+def test_std_compare(mock_execute, mock_binding, client: TestClient):
+    mock_binding.return_value = uuid.uuid4()
     _seed_physical_equipment()
     client.put("/api/v1/reports/standard/packs/equipment-overview", headers=AUTH, json=_pack_payload())
-    mock_execute.return_value = ExecuteResponse(
-        columns=["dim", "cnt"], rows=[["east", 2]], rowCount=1, truncated=False, traceId="t"
-    )
+    mock_execute.return_value = _mock_dataset_section()
     compare = client.get(
         "/api/v1/reports/standard/packs/equipment-overview/compare?theme=distribution",
         headers=AUTH,

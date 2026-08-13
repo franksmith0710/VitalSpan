@@ -23,10 +23,8 @@
 
 ## 风格对齐（推荐，非强制）
 
-无论选用何种渲染器，**推荐**在 bundle 内使用 [theme-tokens.json](../theme-tokens.json) 中的 `--dashboard-*` CSS 变量，使 customViz 与相邻内置 chart 视觉接近。
+无论选用何种渲染器，**推荐**在 bundle 内使用 [theme-tokens.json](../theme-tokens.json) 的 `--dashboard-*`。平台 Base 会把看板主题变量写到宿主上，与内置 chart 共用。
 
-M2 计划由平台向 iframe 注入主题变量；M1 由作者在 bundle 内手动引用 token 值。
+## 约束（所有渲染器共用）
 
-## 安全（所有渲染器共用）
-
-见 [PROTOCOL.md](../PROTOCOL.md)：禁外链 script、禁 inline 事件、整包 ≤512KB、同一 iframe 沙箱。
+见 [PROTOCOL.md](../PROTOCOL.md)：禁外链 script、禁 inline 事件、整包 ≤512KB。源码由 Base 挂进主页面宿主。

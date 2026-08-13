@@ -73,7 +73,7 @@
 | CanvasEditToolbar | `dashboard/CanvasEditToolbar.tsx` | 看板编辑画布顶栏 DE middle-area（图表/查询组件/扩展 widget） |
 | ChartPickerPopover | `dashboard/ChartPickerPopover.tsx` | DE 分区图表选择器（410px 网格） |
 | QueryComponentPicker | `dashboard/QueryComponentPicker.tsx` | 查询组件控件类型选择（text/select/date/multiselect） |
-| TextWidget / MediaWidget / TabsWidget | `dashboard/TextWidget.tsx` 等 | 扩展 layout widget 渲染 |
+| TextWidget / MediaWidget / TabsWidget / CustomVizWidget | `dashboard/TextWidget.tsx` · `CustomVizWidget.tsx` · `customVizHost.tsx` | 扩展 layout widget；customViz 为唯一 Base，从库拉源码挂进主页面 |
 | RichTextEditor / RichTextFloatingToolbar / RichTextToolbar | `dashboard/RichTextEditor.tsx` · `RichTextFloatingToolbar.tsx` | Tiptap 3 富文本画布内联编辑（独立浮动工具栏） |
 | richTextHtml | `dashboard/richTextHtml.ts` | 旧格式转 HTML、白名单净化与空值判断 |
 | ReuseWidgetDialog | `dashboard/VizReuseDialog.tsx` | 跨看板/组织组件库复用（`VizReuseDialog`） |

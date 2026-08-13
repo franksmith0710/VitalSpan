@@ -76,6 +76,25 @@ def test_ai_viz_artifact_create_and_entry(auth_headers: dict[str, str]) -> None:
     assert "ok" in entry.text
 
 
+def test_ai_viz_artifact_update_overwrites_entry(auth_headers: dict[str, str]) -> None:
+    created = client.post("/api/v1/ai-viz/artifacts", json=DEMO_BUNDLE, headers=auth_headers)
+    assert created.status_code == 201, created.text
+    artifact_id = created.json()["artifactId"]
+    updated = client.put(
+        f"/api/v1/ai-viz/artifacts/{artifact_id}",
+        json={
+            **DEMO_BUNDLE,
+            "files": {"index.html": "<!DOCTYPE html><html><body><p>v2</p></body></html>"},
+        },
+        headers=auth_headers,
+    )
+    assert updated.status_code == 200, updated.text
+    entry = client.get(f"/api/v1/ai-viz/artifacts/{artifact_id}/entry", headers=auth_headers)
+    assert entry.status_code == 200
+    assert "v2" in entry.text
+    assert "ok" not in entry.text
+
+
 def test_ai_viz_rejects_external_script(auth_headers: dict[str, str]) -> None:
     bad = {
         **DEMO_BUNDLE,

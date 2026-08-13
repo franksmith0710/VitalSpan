@@ -35,12 +35,33 @@ def create_artifact(db: Session, payload: AiVizArtifactCreateIn, actor: UserCont
     db.add(row)
     db.commit()
     db.refresh(row)
+    return _to_out(row)
+
+
+def _to_out(row: AiVizArtifact) -> AiVizArtifactOut:
     return AiVizArtifactOut(
         artifactId=row.id,
         manifest=row.manifest_json,
         status=row.status,
         contentHash=row.content_hash,
     )
+
+
+def update_artifact(
+    db: Session,
+    artifact_id: uuid.UUID,
+    payload: AiVizArtifactCreateIn,
+    actor: UserContext,
+) -> AiVizArtifactOut:
+    row = get_artifact(db, artifact_id, actor)
+    entry = payload.manifest.entry or "index.html"
+    validate_bundle_files(payload.files, entry)
+    row.manifest_json = payload.manifest.model_dump(by_alias=True)
+    row.files_json = dict(payload.files)
+    row.content_hash = _content_hash(row.files_json)
+    db.commit()
+    db.refresh(row)
+    return _to_out(row)
 
 
 def get_artifact(db: Session, artifact_id: uuid.UUID, actor: UserContext) -> AiVizArtifact:

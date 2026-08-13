@@ -161,12 +161,13 @@ export const queryKeys = {
     snapshot: (id: string) => ["designer", "snapshot", id] as const,
   },
   reportSchedules: (
-    filter?: { catalogNodeId?: string; sourceId?: string; sourceType?: string },
+    filter?: { catalogNodeId?: string; sourceId?: string; sourceType?: string; sourceKey?: string },
   ) =>
     [
       "reports",
       "schedules",
-      filter?.catalogNodeId ?? filter?.sourceId ?? "all",
+      filter?.catalogNodeId ?? filter?.sourceId ?? filter?.sourceKey ?? "all",
       filter?.sourceType ?? "",
+      filter?.sourceKey ?? "",
     ] as const,
 };

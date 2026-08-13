@@ -1,1 +1,1 @@
-"""AI-generated custom visualization artifacts (sandbox bundles)."""
+"""AI-generated custom visualization artifacts (library source for Base host)."""

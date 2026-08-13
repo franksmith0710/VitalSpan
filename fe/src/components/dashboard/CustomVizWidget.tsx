@@ -1,10 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GripVertical } from "lucide-react";
 import { fetchWithTimeout, getAuthHeaders } from "@/lib/api";
 import { resolveApiBaseUrl } from "@/lib/appBasePath";
-import { cn } from "@/lib/utils";
 import type { DashboardWidgetShell } from "./dashboardCanvasMode";
 import type { LayoutWidget, CustomVizWidgetConfig, DashboardStyleConfig } from "./layoutUtils";
+import {
+  CUSTOM_VIZ_HOST_CLASS,
+  CustomVizHostErrorBoundary,
+  customVizHostStyle,
+  mountCustomVizHtml,
+} from "./customVizHost";
 import { gridWidgetShellClassName, GridWidgetShellFrame, resolveGridWidgetShell } from "./widgetRailStyleSections";
 
 type CustomVizWidgetProps = {
@@ -31,16 +36,18 @@ export function CustomVizWidget({
   dashboardStyle,
 }: CustomVizWidgetProps) {
   const cfg = widget.customVizConfig;
-  const [srcdoc, setSrcdoc] = useState<string | null>(null);
+  const hostRef = useRef<HTMLDivElement | null>(null);
+  const [html, setHtml] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const showGridChrome = shell === "grid";
   const gridShell = resolveGridWidgetShell(widget, dashboardStyle);
   const inShapeShell = shell === "shape";
+  const hostStyle = customVizHostStyle(dashboardStyle);
 
   useEffect(() => {
     let cancelled = false;
     setLoadError(null);
-    setSrcdoc(null);
+    setHtml(null);
     const artifactId = cfg.artifactId?.trim();
     if (!artifactId) {
       setLoadError("未配置 artifactId");
@@ -57,8 +64,8 @@ export function CustomVizWidget({
           const body = (await resp.json().catch(() => null)) as { message?: string } | null;
           throw new Error(body?.message ?? "加载自定义组件失败");
         }
-        const html = await resp.text();
-        if (!cancelled) setSrcdoc(html);
+        const source = await resp.text();
+        if (!cancelled) setHtml(source);
       } catch (err) {
         if (!cancelled) {
           setLoadError(err instanceof Error ? err.message : "加载自定义组件失败");
@@ -70,6 +77,12 @@ export function CustomVizWidget({
     };
   }, [cfg.artifactId]);
 
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host || !html) return undefined;
+    return mountCustomVizHtml(host, html);
+  }, [html]);
+
   const body = loadError ? (
     <div className="flex h-full min-h-[64px] flex-col items-center justify-center gap-1 px-3 text-center text-theme-xs text-gray-500 dark:text-gray-400">
       <span>{loadError}</span>
@@ -77,14 +90,15 @@ export function CustomVizWidget({
         <span className="text-theme-xs text-gray-400 dark:text-gray-500">数据待手动绑定</span>
       ) : null}
     </div>
-  ) : srcdoc ? (
-    <iframe
-      title={widget.title}
-      srcDoc={srcdoc}
-      sandbox="allow-scripts"
-      className="size-full border-0"
-      referrerPolicy="no-referrer"
-    />
+  ) : html ? (
+    <CustomVizHostErrorBoundary>
+      <div
+        ref={hostRef}
+        data-testid="custom-viz-host"
+        className={`${CUSTOM_VIZ_HOST_CLASS} size-full min-h-[64px]`}
+        style={hostStyle}
+      />
+    </CustomVizHostErrorBoundary>
   ) : (
     <div className="flex h-full min-h-[64px] items-center justify-center text-theme-xs text-gray-500 dark:text-gray-400">
       正在加载自定义组件…

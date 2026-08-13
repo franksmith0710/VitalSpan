@@ -317,6 +317,17 @@ def semi_real_execute_schedule(
         artifact_ref, artifact_kind, attachments, export_error = _export_template_attachments(
             source_id, formats, actor,
         )
+    elif source_type == "standard":
+        pack_key = row.get("source_key")
+        if not pack_key:
+            export_error = "标准分析调度缺少 sourceKey"
+        else:
+            from app.reports.scheduler.standard_export import export_standard_attachments
+
+            formats = row.get("attachment_formats") or ["pdf"]
+            artifact_ref, artifact_kind, attachments, export_error = export_standard_attachments(
+                pack_key, formats, actor,
+            )
     if not export_error and attachments:
         artifact_ref, _storage_key = _persist_execution_artifact(
             execution_id, attachments, artifact_kind=artifact_kind,
