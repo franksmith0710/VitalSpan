@@ -545,15 +545,14 @@ describe("AdminLayout smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(screen.getByRole("heading", { name: "后台管理" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "入门" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "配置向导" })).toHaveAttribute("href", "/admin/system");
     expect(screen.queryByRole("heading", { name: "数据" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "系统管理" })).not.toBeInTheDocument();
   });
 
-  it("T-FE-SMFB-01: system admin sidebar has 资源授权 link", async () => {
+  it("T-FE-SMFB-01: system admin sidebar has 资源授权 link", () => {
     setDesktopViewport(1600);
-    const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={["/admin/system/roles"]}>
         <Routes>
@@ -563,8 +562,7 @@ describe("AdminLayout smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(screen.getByRole("heading", { name: "后台管理" })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "人员与权限" }));
+    expect(screen.getByRole("heading", { name: "平台与组织" })).toBeInTheDocument();
     const link = screen.getByRole("link", { name: "资源授权" });
     expect(link).toHaveAttribute("href", "/admin/system/grants");
   });

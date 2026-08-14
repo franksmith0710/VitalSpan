@@ -7,6 +7,7 @@ import {
   Settings2,
   Upload,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { catalogNodePath } from "@/lib/reportCatalogUtils";
@@ -40,7 +41,6 @@ const TEMPLATE_TABS = [
   { value: "extension", label: "扩展配置", icon: Settings2 },
   { value: "preview", label: "预览", icon: Eye },
   { value: "schedule", label: "调度", icon: Clock },
-  { value: "batch", label: "批量导入", icon: Upload },
 ] as const;
 
 export function TemplateDetailPanel({
@@ -96,6 +96,21 @@ export function TemplateDetailPanel({
         templateKey={node.templateKey}
         parentPath={parentPath}
         icon={FileText}
+        actions={
+          <>
+            <Button type="button" variant="outline" size="sm" className="h-9" onClick={() => handleTabChange("preview")}>
+              <Eye className="size-4" aria-hidden />
+              预览
+            </Button>
+            <ReportExportCard
+              variant="toolbar"
+              defaultTemplateId={node.id}
+              defaultFormat={node.templateKind ?? "pdf"}
+              disabled={exportDisabled}
+              disabledHint="请先配置扩展指标"
+            />
+          </>
+        }
       />
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-4 md:p-6">
@@ -138,16 +153,11 @@ export function TemplateDetailPanel({
                   </TemplateMetaGrid>
                 </TemplatePanelSection>
                 <TemplatePanelSection
-                  title="报表导出"
-                  description="将已配置的指标绑定到模板并导出为 PDF、Word 或 Excel。"
+                  title="批量导入（高级）"
+                  description="从 JSON 批量导入报表模板，适用于迁移或初始化。"
                   icon={Upload}
                 >
-                  <ReportExportCard
-                    embedded
-                    defaultTemplateId={node.id}
-                    disabled={exportDisabled}
-                    disabledHint="请先在「扩展配置」中添加指标、选择数据集并保存后再导出。"
-                  />
+                  <BatchImportPanel readOnly={readOnly} />
                 </TemplatePanelSection>
               </TemplateTabShell>
             </TabsContent>
@@ -225,10 +235,6 @@ export function TemplateDetailPanel({
 
             <TabsContent value="schedule" className="mt-0">
               <SchedulePanel catalogNodeId={node.id} readOnly={readOnly} />
-            </TabsContent>
-
-            <TabsContent value="batch" className="mt-0">
-              <BatchImportPanel readOnly={readOnly} />
             </TabsContent>
           </div>
         </Tabs>

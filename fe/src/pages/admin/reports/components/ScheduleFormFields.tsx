@@ -20,6 +20,8 @@ import { VISUAL_SNAPSHOT_CREATE_NOTICE } from "@/lib/scheduleArtifactMeta";
 import { ScheduleFormSection } from "./scheduleDialogUi";
 import type { ScheduleRecipient } from "../useReportSchedules";
 import type { ScheduleWizardState } from "@/lib/scheduleCronWizard";
+import type { EmailSmtpSlot } from "@/lib/emailSmtpSlots";
+import { DEFAULT_EMAIL_SMTP_SLOT } from "@/lib/emailSmtpSlots";
 import {
   ScheduleDeliveryChannelsField,
   type DeliveryChannel,
@@ -37,6 +39,7 @@ export type ScheduleFormValue = {
   attachmentFormats: AttachmentFormat[];
   deliveryChannels: DeliveryChannel[];
   notifyGroup: boolean;
+  emailSmtpSlot: EmailSmtpSlot;
 };
 
 export const DEFAULT_SCHEDULE_FORM: ScheduleFormValue = {
@@ -54,6 +57,7 @@ export const DEFAULT_SCHEDULE_FORM: ScheduleFormValue = {
   attachmentFormats: ["pdf"],
   deliveryChannels: ["email"],
   notifyGroup: false,
+  emailSmtpSlot: DEFAULT_EMAIL_SMTP_SLOT,
 };
 
 export function resolveScheduleCron(form: ScheduleFormValue): string {
@@ -158,7 +162,11 @@ export function ScheduleFormFields({
     ) : null;
 
   const deliveryChannelsField = showDeliveryChannels ? (
-    <ScheduleDeliveryChannelsField disabled={disabled} />
+    <ScheduleDeliveryChannelsField
+      disabled={disabled}
+      emailSmtpSlot={value.emailSmtpSlot}
+      onEmailSmtpSlotChange={(emailSmtpSlot) => patch({ emailSmtpSlot })}
+    />
   ) : null;
 
   const advancedCronButton = (

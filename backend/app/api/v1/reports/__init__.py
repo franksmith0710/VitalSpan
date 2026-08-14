@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.auth.deps import UserContext, require_any_permission, require_permission
+from app.core.http.download import content_disposition_attachment
 
 PERM_READ = "report:read"
 PERM_MANAGE = "report:manage"
@@ -193,7 +194,7 @@ def download_batch_export_job(
         return Response(
             content=data,
             media_type=content_type,
-            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+            headers={"Content-Disposition": content_disposition_attachment(filename)},
         )
     except ReportBatchError as exc:
         return _batch_error(exc)
@@ -289,13 +290,17 @@ def create_schedule(
 @router.get("/schedules/delivery-health", response_model=None)
 def schedule_delivery_health(
     _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    email_smtp_slot: str | None = Query(default=None, alias="emailSmtpSlot"),
 ):
     from app.core.config import get_settings
     from app.reports.scheduler.channels.work_notice import probe_im_apps
-    from app.reports.scheduler.delivery_adapter import probe_smtp_health
+    from app.reports.scheduler.delivery_adapter import probe_all_smtp_health, probe_smtp_health
 
-    smtp = probe_smtp_health()
-    return {**smtp, "smtp": smtp, "im": probe_im_apps(get_settings())}
+    if email_smtp_slot:
+        smtp = probe_smtp_health(slot=email_smtp_slot)
+        return {**smtp, "smtp": smtp, "im": probe_im_apps(get_settings())}
+    combined = probe_all_smtp_health()
+    return {**combined, "smtp": combined, "im": probe_im_apps(get_settings())}
 
 
 @router.get("/schedules/export-health", response_model=None)
@@ -377,6 +382,18 @@ def update_schedule(
 ):
     try:
         return scheduler_service.update_schedule(schedule_id, payload, user)
+    except ScheduleError as exc:
+        return _schedule_error(exc)
+
+
+@router.delete("/schedules/{schedule_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
+def delete_schedule(
+    schedule_id: uuid.UUID,
+    user: Annotated[UserContext, Depends(require_any_permission(PERM_MANAGE, PERM_SCHEDULE))],
+):
+    try:
+        scheduler_service.delete_schedule(schedule_id, user)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
     except ScheduleError as exc:
         return _schedule_error(exc)
 
@@ -490,17 +507,20 @@ def get_execution_artifact(
 def download_execution_artifact(
     execution_id: uuid.UUID,
     user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    slot: str | None = Query(default=None, description="primary|full_page 或 per_widget"),
 ):
     from app.reports.catalog.acl import assert_artifact_access
 
     try:
         meta = scheduler_executor.get_execution_artifact_meta(execution_id)
         assert_artifact_access(user, meta["artifactRef"])
-        data, mime, filename = scheduler_executor.get_execution_artifact_download(execution_id)
+        data, mime, filename = scheduler_executor.get_execution_artifact_download(
+            execution_id, slot=slot,
+        )
         return Response(
             content=data,
             media_type=mime,
-            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+            headers={"Content-Disposition": content_disposition_attachment(filename)},
         )
     except ReportCatalogError as exc:
         return _catalog_error(exc)

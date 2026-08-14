@@ -86,7 +86,7 @@ def test_demo_package_status_response_shape(
         "probe_sample_db_schema",
         lambda: SchemaBootstrapResult(
             mysql_reachable=True,
-            schema_version=3,
+            schema_version=4,
             applied_count=0,
         ),
     )
@@ -103,7 +103,7 @@ def test_demo_package_status_response_shape(
     monkeypatch.setattr(
         demo_status,
         "resolve_demo_dataset_ids",
-        lambda _db: ["demo-sales-wide", "demo-orders", "demo-daily-kpi", "demo-gov-service", "demo-sales-detail"],
+        lambda _db: ["demo-sales-wide", "demo-sales-detail", "demo-v-sales-geo", "demo-gov-grid-stats"],
     )
 
     res = client.get("/api/v1/demo-package/status", headers=auth_headers)
@@ -111,11 +111,11 @@ def test_demo_package_status_response_shape(
     body = res.json()
     assert body["ready"] is True
     assert body["mysqlReachable"] is True
-    assert body["schemaVersion"] == 3
+    assert body["schemaVersion"] == 4
     assert body["datasourceId"] == str(ds_id)
     assert body["datasourceCode"] == "demo"
     assert len(body["demoDashboardIds"]) == 3
-    assert len(body["demoDatasetIds"]) == 5
+    assert len(body["demoDatasetIds"]) == 4
     assert body["message"] is None
 
 

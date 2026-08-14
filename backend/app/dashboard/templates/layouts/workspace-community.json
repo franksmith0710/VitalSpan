@@ -127,7 +127,114 @@
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
+          "configId": null,
+          "datasetId": "demo-gov-grid-stats",
+          "nativeBody": {
+            "deStyle": {
+              "legend": {
+                "show": false,
+                "color": "#64748b",
+                "fontSize": 11
+              },
+              "title": {
+                "color": "#1e293b",
+                "fontSize": 13,
+                "fontWeight": 600
+              },
+              "seriesColor": [
+                {
+                  "name": "series-0",
+                  "color": "#7c3aed"
+                },
+                {
+                  "name": "series-1",
+                  "color": "#8b5cf6"
+                },
+                {
+                  "name": "series-2",
+                  "color": "#a78bfa"
+                },
+                {
+                  "name": "series-3",
+                  "color": "#6d28d9"
+                },
+                {
+                  "name": "series-4",
+                  "color": "#475569"
+                },
+                {
+                  "name": "series-5",
+                  "color": "#c4b5fd"
+                }
+              ]
+            }
+          },
+          "index": null,
+          "dimensions": [
+            {
+              "field": "grid_name",
+              "label": null
+            },
+            {
+              "field": "event_count",
+              "label": null
+            },
+            {
+              "field": "resolved_count",
+              "label": null
+            }
+          ],
+          "metrics": [],
+          "axes": {
+            "xAxis": [
+              {
+                "field": "grid_name",
+                "label": null
+              },
+              {
+                "field": "event_count",
+                "label": null
+              },
+              {
+                "field": "resolved_count",
+                "label": null
+              }
+            ]
+          },
+          "filters": [],
+          "timeRange": null
+        },
+        "filterConfig": null,
+        "textConfig": null,
+        "mediaConfig": null,
+        "tabsConfig": null,
+        "componentRef": null
+      },
+      {
+        "id": "79e78199-96cc-45b2-85c6-763226c3537b",
+        "type": "chart",
+        "title": "治理热词",
+        "x": 460,
+        "y": 112,
+        "width": 543,
+        "height": 273,
+        "order": 3,
+        "hidden": null,
+        "locked": null,
+        "chartRef": null,
+        "parentTabsId": null,
+        "tabPaneId": null,
+        "chartConfig": {
+          "chartType": "word-cloud",
+          "styleVariant": "default",
+          "dataSourceId": "__demo:sample_db__",
+          "bindingId": null,
+          "chartId": "79e78199-96cc-45b2-85c6-763226c3537b",
+          "mode": "dataset",
+          "sql": null,
+          "schema": null,
+          "table": null,
+          "configId": null,
           "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
@@ -174,105 +281,6 @@
             {
               "field": "product_name",
               "label": null
-            },
-            {
-              "field": "category_name",
-              "label": null
-            }
-          ],
-          "metrics": [],
-          "axes": {
-            "xAxis": [
-              {
-                "field": "product_name",
-                "label": null
-              },
-              {
-                "field": "category_name",
-                "label": null
-              }
-            ]
-          },
-          "filters": [],
-          "timeRange": null
-        },
-        "filterConfig": null,
-        "textConfig": null,
-        "mediaConfig": null,
-        "tabsConfig": null,
-        "componentRef": null
-      },
-      {
-        "id": "79e78199-96cc-45b2-85c6-763226c3537b",
-        "type": "chart",
-        "title": "治理热词",
-        "x": 460,
-        "y": 112,
-        "width": 543,
-        "height": 273,
-        "order": 3,
-        "hidden": null,
-        "locked": null,
-        "chartRef": null,
-        "parentTabsId": null,
-        "tabPaneId": null,
-        "chartConfig": {
-          "chartType": "word-cloud",
-          "styleVariant": "default",
-          "dataSourceId": "__demo:sample_db__",
-          "bindingId": null,
-          "chartId": "79e78199-96cc-45b2-85c6-763226c3537b",
-          "mode": "dataset",
-          "sql": null,
-          "schema": null,
-          "table": null,
-          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
-          "datasetId": "demo-sales-wide",
-          "nativeBody": {
-            "deStyle": {
-              "legend": {
-                "show": false,
-                "color": "#64748b",
-                "fontSize": 11
-              },
-              "title": {
-                "color": "#1e293b",
-                "fontSize": 13,
-                "fontWeight": 600
-              },
-              "seriesColor": [
-                {
-                  "name": "series-0",
-                  "color": "#7c3aed"
-                },
-                {
-                  "name": "series-1",
-                  "color": "#8b5cf6"
-                },
-                {
-                  "name": "series-2",
-                  "color": "#a78bfa"
-                },
-                {
-                  "name": "series-3",
-                  "color": "#6d28d9"
-                },
-                {
-                  "name": "series-4",
-                  "color": "#475569"
-                },
-                {
-                  "name": "series-5",
-                  "color": "#c4b5fd"
-                }
-              ]
-            }
-          },
-          "index": null,
-          "dimensions": [
-            {
-              "field": "province",
-              "label": null
             }
           ],
           "metrics": [
@@ -284,7 +292,7 @@
           "axes": {
             "xAxis": [
               {
-                "field": "province",
+                "field": "product_name",
                 "label": null
               }
             ],
@@ -328,7 +336,7 @@
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
+          "configId": null,
           "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
@@ -373,26 +381,26 @@
           "index": null,
           "dimensions": [
             {
-              "field": "sale_date",
+              "field": "category_name",
               "label": null
             }
           ],
           "metrics": [
             {
-              "field": "quantity",
+              "field": "amount",
               "label": null
             }
           ],
           "axes": {
-            "yAxis": [
+            "xAxis": [
               {
-                "field": "quantity",
+                "field": "category_name",
                 "label": null
               }
             ],
-            "xAxis": [
+            "yAxis": [
               {
-                "field": "sale_date",
+                "field": "amount",
                 "label": null
               }
             ]
@@ -430,7 +438,7 @@
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
+          "configId": null,
           "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
@@ -480,14 +488,14 @@
           "dimensions": [],
           "metrics": [
             {
-              "field": "quantity",
+              "field": "amount",
               "label": null
             }
           ],
           "axes": {
             "yAxis": [
               {
-                "field": "quantity",
+                "field": "amount",
                 "label": null
               }
             ]
@@ -526,7 +534,7 @@
           "schema": null,
           "table": null,
           "configId": null,
-          "datasetId": "demo-gov-incidents",
+          "datasetId": "demo-gov-grid-stats",
           "nativeBody": {
             "deStyle": {
               "legend": {
@@ -570,26 +578,26 @@
           "index": null,
           "dimensions": [
             {
-              "field": "incident_type",
+              "field": "grid_name",
               "label": null
             }
           ],
           "metrics": [
             {
-              "field": "count",
+              "field": "event_count",
               "label": null
             }
           ],
           "axes": {
             "xAxis": [
               {
-                "field": "incident_type",
+                "field": "grid_name",
                 "label": null
               }
             ],
             "yAxis": [
               {
-                "field": "count",
+                "field": "event_count",
                 "label": null
               }
             ]
@@ -627,7 +635,7 @@
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
+          "configId": null,
           "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
@@ -672,11 +680,7 @@
           "index": null,
           "dimensions": [
             {
-              "field": "category_name",
-              "label": null
-            },
-            {
-              "field": "province",
+              "field": "sale_date",
               "label": null
             }
           ],
@@ -687,19 +691,15 @@
             }
           ],
           "axes": {
-            "yAxis": [
+            "xAxis": [
               {
-                "field": "amount",
+                "field": "sale_date",
                 "label": null
               }
             ],
-            "xAxis": [
+            "yAxis": [
               {
-                "field": "category_name",
-                "label": null
-              },
-              {
-                "field": "province",
+                "field": "amount",
                 "label": null
               }
             ]
@@ -737,7 +737,7 @@
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
+          "configId": null,
           "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
@@ -765,14 +765,14 @@
               "label": null
             },
             {
-              "field": "amount",
+              "field": "quantity",
               "label": null
             }
           ],
           "axes": {
-            "yAxisExt": [
+            "xAxis": [
               {
-                "field": "amount",
+                "field": "product_name",
                 "label": null
               }
             ],
@@ -782,9 +782,9 @@
                 "label": null
               }
             ],
-            "xAxis": [
+            "yAxisExt": [
               {
-                "field": "product_name",
+                "field": "quantity",
                 "label": null
               }
             ],

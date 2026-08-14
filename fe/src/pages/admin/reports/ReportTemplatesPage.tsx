@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router";
 import { FilePlus, FolderOpen, FolderPlus, MousePointerClick } from "lucide-react";
 import { toast } from "sonner";
@@ -17,13 +17,14 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { mapApiError } from "@/lib/apiError";
 import type { TemplateKind } from "@/lib/reportCatalogProvision";
-import { catalogAncestorFolderIds, catalogNodePath } from "@/lib/reportCatalogUtils";
+import { catalogAncestorFolderIds, catalogNodePath, pickDefaultCatalogNodeId } from "@/lib/reportCatalogUtils";
 import { cn } from "@/lib/utils";
 import { CatalogFolderPanel } from "./components/CatalogFolderPanel";
 import { CatalogTreeNode } from "./components/CatalogTreeNode";
 import { ListGhostEmptyState } from "@/components/ui/panel-empty-state";
 import { TemplateDetailPanel } from "./components/TemplateDetailPanel";
 import { type CatalogNode, fetchCatalogExtension, useAllCatalogNodes, useReportTemplates } from "./useReportTemplates";
+import { useReportCenterPreferences } from "./useReportCenterPrefs";
 import { queryKeys } from "@/lib/queryKeys";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { ReportCenterBackLink } from "./components/ReportCenterBackLink";
@@ -58,6 +59,8 @@ export function ReportTemplatesPage() {
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const { nodesQuery, createNode, createTemplateNode, deleteNode, moveNode } = useReportTemplates(null);
   const allNodesQuery = useAllCatalogNodes();
+  const centerPrefsQuery = useReportCenterPreferences();
+  const autoSelectedRef = useRef(false);
   const readOnly = user?.roles?.length === 1 && user.roles[0] === "viewer";
   const nodes = nodesQuery.data?.items ?? [];
   const allNodes = allNodesQuery.data ?? [];
@@ -75,10 +78,6 @@ export function ReportTemplatesPage() {
     if (createParentId) set.add(createParentId);
     return set;
   }, [selectedId, allNodes, createParentId]);
-
-  useEffect(() => {
-    if (nodeId) setSelectedId(nodeId);
-  }, [nodeId]);
 
   const prefetchExtension = useCallback(
     (id: string) => {
@@ -103,6 +102,41 @@ export function ReportTemplatesPage() {
       }
     },
     [navigate, prefetchExtension],
+  );
+
+  useEffect(() => {
+    if (nodeId) {
+      autoSelectedRef.current = true;
+      setSelectedId(nodeId);
+      return;
+    }
+    if (autoSelectedRef.current) return;
+    if (nodesQuery.isLoading) return;
+    if (allNodesQuery.isLoading && allNodes.length === 0) return;
+    if (!centerPrefsQuery.isFetched) return;
+    const catalog = allNodes.length > 0 ? allNodes : nodes;
+    if (catalog.length === 0) return;
+    const defaultId = pickDefaultCatalogNodeId(catalog, centerPrefsQuery.data?.recent ?? []);
+    if (!defaultId) return;
+    autoSelectedRef.current = true;
+    handleSelect(defaultId);
+  }, [
+    nodeId,
+    nodesQuery.isLoading,
+    allNodesQuery.isLoading,
+    allNodes,
+    nodes,
+    centerPrefsQuery.isFetched,
+    centerPrefsQuery.data,
+    handleSelect,
+  ]);
+
+  const selectAfterDelete = useCallback(
+    (deletedId: string) => {
+      const catalog = (allNodes.length > 0 ? allNodes : nodes).filter((n) => n.id !== deletedId);
+      handleSelect(pickDefaultCatalogNodeId(catalog, centerPrefsQuery.data?.recent ?? []));
+    },
+    [allNodes, nodes, centerPrefsQuery.data, handleSelect],
   );
 
   const handleCreateFolder = (parentId: string | null = createParentId) => {
@@ -159,7 +193,7 @@ export function ReportTemplatesPage() {
     const id = deleteTargetId;
     deleteNode.mutate(id, {
       onSuccess: () => {
-        if (selectedId === id) handleSelect(null);
+        if (selectedId === id) selectAfterDelete(id);
         setDeleteTargetId(null);
         toast.success("已删除");
       },
@@ -247,7 +281,7 @@ export function ReportTemplatesPage() {
       node={selected}
       allNodes={allNodes}
       readOnly={readOnly}
-      onDeleted={() => handleSelect(null)}
+      onDeleted={() => selectAfterDelete(selected.id)}
     />
   ) : selected?.nodeType === "folder" ? (
     <CatalogFolderPanel
@@ -259,7 +293,7 @@ export function ReportTemplatesPage() {
         nodeType === "folder" ? handleCreateFolder(selected.id) : handleCreateTemplate(selected.id)
       }
       onSelectChild={handleSelect}
-      onDeleted={() => handleSelect(null)}
+      onDeleted={() => selectAfterDelete(selected.id)}
     />
   ) : (
     <ListGhostEmptyState
@@ -343,7 +377,7 @@ export function ReportTemplatesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>确认删除？</AlertDialogTitle>
             <AlertDialogDescription>
-              确定删除「{deleteTarget?.name ?? "节点"}」？
+              确定删除「{deleteTarget?.name ?? "节点"}」？删除后无法恢复。
               {deleteTarget?.nodeType === "folder" ? "（须为空文件夹）" : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>

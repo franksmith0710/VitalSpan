@@ -102,25 +102,67 @@ export function customRefreshAmountBounds(unit: CustomRefreshUnit): { min: numbe
 
 /** 结果展示可选条数上限（LIMIT 取最新 N 条，不是全表） */
 export const CHART_RESULT_LIMIT_MAX = 1000;
+export const CHART_RESULT_LIMIT_CUSTOM = "custom";
 
-/** DataEase 结果展示：组件级与看板默认共用选项 */
+/** DataEase 结果展示：组件级与看板默认共用预设 */
 export const CHART_RESULT_LIMIT_OPTIONS = [
+  { value: "10", label: "10" },
+  { value: "20", label: "20" },
+  { value: "50", label: "50" },
   { value: "100", label: "100" },
   { value: "500", label: "500" },
   { value: "1000", label: "1000" },
 ] as const;
 
+export const CHART_RESULT_LIMIT_SELECT_OPTIONS = [
+  ...CHART_RESULT_LIMIT_OPTIONS,
+  { value: CHART_RESULT_LIMIT_CUSTOM, label: "自定义" },
+] as const;
+
 export type ChartResultLimitOption = (typeof CHART_RESULT_LIMIT_OPTIONS)[number]["value"];
 
-function clampChartResultLimit(n: number): number {
+export function clampChartResultLimit(n: number): number {
   return Math.min(CHART_RESULT_LIMIT_MAX, Math.max(MIN_QUERY_LIMIT, n));
 }
 
+export function isPresetResultLimit(value?: string): boolean {
+  return CHART_RESULT_LIMIT_OPTIONS.some((opt) => opt.value === value);
+}
+
+export function isCustomResultLimit(value?: string): boolean {
+  if (!value) return false;
+  if (value.startsWith(`${CHART_RESULT_LIMIT_CUSTOM}:`)) return true;
+  return parseDeResultLimit(value) != null && !isPresetResultLimit(value);
+}
+
+/** Select 展示值：预设条数或「自定义」 */
+export function formatResultLimitSelectValue(
+  value?: string,
+  emptyFallback = String(DEFAULT_QUERY_LIMIT),
+): string {
+  if (isPresetResultLimit(value)) return value!;
+  if (isCustomResultLimit(value)) return CHART_RESULT_LIMIT_CUSTOM;
+  return isPresetResultLimit(emptyFallback) ? emptyFallback : "1000";
+}
+
+export function buildCustomResultLimit(n: number): string {
+  return `${CHART_RESULT_LIMIT_CUSTOM}:${clampChartResultLimit(n)}`;
+}
+
+export function resultLimitCustomAmount(value?: string, fallback = CHART_RESULT_LIMIT_MAX): number {
+  return parseDeResultLimit(value) ?? clampChartResultLimit(fallback);
+}
+
+export function persistResultLimitSelection(selectValue: string, stored?: string): string {
+  if (selectValue === CHART_RESULT_LIMIT_CUSTOM) {
+    return buildCustomResultLimit(resultLimitCustomAmount(stored));
+  }
+  return selectValue;
+}
+
 /** 看板 defaultQueryLimit → Select value（与组件 deDisplay.resultLimit 同语义） */
-export function dashboardQueryLimitSelectValue(limit?: number): ChartResultLimitOption {
-  const value = clampChartResultLimit(limit ?? DEFAULT_QUERY_LIMIT);
-  const hit = CHART_RESULT_LIMIT_OPTIONS.find((opt) => Number(opt.value) === value);
-  return (hit?.value as ChartResultLimitOption | undefined) ?? "100";
+export function dashboardQueryLimitSelectValue(limit?: number): string {
+  return formatResultLimitSelectValue(String(clampChartResultLimit(limit ?? DEFAULT_QUERY_LIMIT)));
 }
 
 /** Select value → 看板 defaultQueryLimit 持久化值 */
@@ -159,7 +201,11 @@ export function patchChartDeDisplay(
 export function parseDeResultLimit(value?: string): number | undefined {
   if (!value) return undefined;
   if (value === "all" || value === "10000") return CHART_RESULT_LIMIT_MAX;
-  const n = Number.parseInt(value, 10);
+  const raw = value.startsWith(`${CHART_RESULT_LIMIT_CUSTOM}:`)
+    ? value.slice(`${CHART_RESULT_LIMIT_CUSTOM}:`.length)
+    : value;
+  if (raw === CHART_RESULT_LIMIT_CUSTOM) return undefined;
+  const n = Number.parseInt(raw, 10);
   if (!Number.isFinite(n)) return undefined;
   return clampChartResultLimit(n);
 }

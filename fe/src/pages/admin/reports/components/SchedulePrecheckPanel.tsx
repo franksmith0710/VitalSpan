@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, CircleAlert, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
+import { emailSmtpSlotLabel } from "@/lib/emailSmtpSlots";
 import { cn } from "@/lib/utils";
 import {
   SCHEDULE_DELIVERY_HEALTH_KEY,
@@ -31,6 +32,7 @@ type SchedulePrecheckPanelProps = {
   className?: string;
   /** 弹窗打开时触发一次强制刷新 */
   active?: boolean;
+  emailSmtpSlot?: "qq" | "163";
 };
 
 function precheckFixHint(item: PrecheckItem): string | undefined {
@@ -78,6 +80,7 @@ export function useSchedulePrecheckItems(input: {
   widgetCount?: number;
   requireVisualExport?: boolean;
   forceRefresh?: boolean;
+  emailSmtpSlot?: "qq" | "163";
 }): {
   items: PrecheckItem[];
   blocking: boolean;
@@ -85,8 +88,11 @@ export function useSchedulePrecheckItems(input: {
   refetch: () => Promise<void>;
 } {
   const deliveryQuery = useQuery({
-    queryKey: SCHEDULE_DELIVERY_HEALTH_KEY,
-    queryFn: () => apiFetch<DeliveryHealth>("/api/v1/reports/schedules/delivery-health"),
+    queryKey: [...SCHEDULE_DELIVERY_HEALTH_KEY, input.emailSmtpSlot ?? "qq"],
+    queryFn: () =>
+      apiFetch<DeliveryHealth>(
+        `/api/v1/reports/schedules/delivery-health?emailSmtpSlot=${input.emailSmtpSlot ?? "qq"}`,
+      ),
     staleTime: 30_000,
   });
   const exportQuery = useScheduleExportHealth({ forceRefresh: input.forceRefresh });
@@ -96,8 +102,11 @@ export function useSchedulePrecheckItems(input: {
   const refetch = useCallback(async () => {
     await Promise.all([
       queryClient.fetchQuery({
-        queryKey: SCHEDULE_DELIVERY_HEALTH_KEY,
-        queryFn: () => apiFetch<DeliveryHealth>("/api/v1/reports/schedules/delivery-health"),
+        queryKey: [...SCHEDULE_DELIVERY_HEALTH_KEY, input.emailSmtpSlot ?? "qq"],
+        queryFn: () =>
+          apiFetch<DeliveryHealth>(
+            `/api/v1/reports/schedules/delivery-health?emailSmtpSlot=${input.emailSmtpSlot ?? "qq"}`,
+          ),
         staleTime: 0,
       }),
       queryClient.fetchQuery({
@@ -133,8 +142,8 @@ export function useSchedulePrecheckItems(input: {
     detail:
       delivery?.error ??
       (deliveryOk
-        ? "邮件服务可用，激活后可正常投递。"
-        : "邮件服务未配置或不可达；激活后执行可能投递失败，请联系管理员。"),
+        ? `${emailSmtpSlotLabel(input.emailSmtpSlot ?? "qq")} 发信通道可用，激活后可正常投递。`
+        : `${emailSmtpSlotLabel(input.emailSmtpSlot ?? "qq")} 发信通道未配置或不可达；激活后执行可能投递失败，请联系管理员。`),
     blocking: false,
   });
 
@@ -164,6 +173,7 @@ export function SchedulePrecheckPanel({
   requireVisualExport = true,
   className,
   active = true,
+  emailSmtpSlot = "qq",
 }: SchedulePrecheckPanelProps) {
   const [manualRefresh, setManualRefresh] = useState(false);
   const { items, loading, refetch } = useSchedulePrecheckItems({
@@ -171,6 +181,7 @@ export function SchedulePrecheckPanel({
     widgetCount,
     requireVisualExport,
     forceRefresh: manualRefresh,
+    emailSmtpSlot,
   });
 
   useEffect(() => {

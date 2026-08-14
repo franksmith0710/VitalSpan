@@ -2,7 +2,6 @@ import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import {
   isGeoMapChartType,
   isKpiType,
-  isMatrixHeatmapChartType,
   isLineOrBarType,
 } from "@/lib/chartViewConfig";
 import { resolveEngineCapabilities } from "@/components/charts/engine/capabilities";
@@ -20,7 +19,6 @@ export type ChartInspectorCapabilities = {
   remark: boolean;
   markLines: boolean;
   conditional: boolean;
-  jump: boolean;
   timeRange: boolean;
   /** D3 矩阵标 partial：能力可用但仅部分系列/场景生效 */
   legendPartial: boolean;
@@ -51,7 +49,6 @@ export function chartInspectorCapabilities(
       remark: false,
       markLines: false,
       conditional: tableProfile.advancedConditional,
-      jump: tableProfile.advancedJump,
       timeRange: tableProfile.advancedTimeRange,
       ...NO_PARTIAL,
     };
@@ -68,7 +65,6 @@ export function chartInspectorCapabilities(
       remark: false,
       markLines: false,
       conditional: false,
-      jump: false,
       timeRange: false,
       ...NO_PARTIAL,
     };
@@ -102,11 +98,6 @@ export function chartInspectorCapabilities(
     labelFormat,
     markLines: engineCaps.markLines,
     conditional: engineCaps.conditional,
-    jump:
-      chartType === "map" ||
-      (!isGeoMapChartType(chartType) &&
-        !isMatrixHeatmapChartType(chartType) &&
-        !isKpiType(chartType)),
     timeRange: !isGeoMapChartType(chartType) && !isKpiType(chartType),
     legendPartial: isD3FeaturePartial(chartType, "legend"),
     conditionalPartial: isD3FeaturePartial(chartType, "conditional"),
@@ -125,7 +116,6 @@ export function chartHasAdvancedTab(chartType: ChartViewConfig["chartType"]): bo
     caps.timeRange ||
     caps.markLines ||
     caps.conditional ||
-    caps.jump ||
     chartType === "map" ||
     chartType === "map-3d"
   );

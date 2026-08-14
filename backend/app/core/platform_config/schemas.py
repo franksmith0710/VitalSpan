@@ -4,6 +4,8 @@ from pydantic import BaseModel, Field
 
 
 class EmailDeliveryConfigOut(BaseModel):
+    slot: str = Field(description="qq | 163")
+    label: str
     configured: bool
     source: str = Field(description="db | env | none")
     host: str | None = None
@@ -13,6 +15,12 @@ class EmailDeliveryConfigOut(BaseModel):
     has_password: bool = Field(alias="hasPassword")
     probe_status: str | None = Field(default=None, alias="probeStatus")
     probe_error: str | None = Field(default=None, alias="probeError")
+
+    model_config = {"populate_by_name": True}
+
+
+class EmailDeliverySlotsOut(BaseModel):
+    items: list[EmailDeliveryConfigOut]
 
     model_config = {"populate_by_name": True}
 

@@ -49,6 +49,7 @@ def _execution_row_to_out(row: dict) -> ScheduleExecuteOut:
         revisionSnapshot=row.get("revisionSnapshot"),
         errorMessage=row.get("errorMessage"),
         parentExecutionId=row.get("parentExecutionId"),
+        secondaryArtifacts=row.get("secondaryArtifacts") or [],
     )
 
 
@@ -101,6 +102,12 @@ def _append_history(
         "status": out.status,
         "artifactRef": out.artifact_ref,
         "artifactKind": out.artifact_kind,
+        "secondaryArtifacts": out.secondary_artifacts,
+        "artifactStorageKey": (
+            out.artifact_ref.removeprefix("storage://")
+            if out.artifact_ref.startswith("storage://")
+            else None
+        ),
         "executedAt": out.executed_at,
         "errorMessage": error_message or out.error_message,
         "parentExecutionId": out.parent_execution_id,
@@ -195,15 +202,29 @@ def _persist_execution_artifact(
     attachments: list[tuple[bytes, str, str]],
     *,
     artifact_kind: str | None,
-) -> tuple[str, str | None]:
+) -> tuple[str, str | None, list[dict]]:
     if not attachments:
-        return f"semi://reports/{execution_id}", None
-    data, mime, filename = attachments[0]
-    ext = filename.rsplit(".", 1)[-1] if "." in filename else "bin"
-    storage_key = artifact_storage_key("schedule-execution", execution_id, ext)
-    get_artifact_store().put(storage_key, data, mime)
-    artifact_ref = f"storage://{storage_key}"
-    return artifact_ref, storage_key
+        return f"semi://reports/{execution_id}", None, []
+    primary_ref = ""
+    primary_key: str | None = None
+    secondary: list[dict] = []
+    for index, (data, mime, filename) in enumerate(attachments):
+        ext = filename.rsplit(".", 1)[-1] if "." in filename else "bin"
+        storage_key = artifact_storage_key("schedule-execution", execution_id, ext)
+        get_artifact_store().put(storage_key, data, mime)
+        if index == 0:
+            primary_ref = f"storage://{storage_key}"
+            primary_key = storage_key
+            continue
+        label = "按组件分页" if "按组件分页" in filename else filename
+        kind = "visual_snapshot_per_widget" if "按组件分页" in filename else "secondary"
+        secondary.append({
+            "label": label,
+            "kind": kind,
+            "storageKey": storage_key,
+            "filename": filename,
+        })
+    return primary_ref, primary_key, secondary
 
 
 def _record_delivery_attempts(execution_id: uuid.UUID, steps: list[dict]) -> None:
@@ -263,15 +284,24 @@ def _export_dashboard_attachments(
     for fmt in formats:
         try:
             with Session(bind=get_meta_engine()) as db:
-                job = dashboard_export_jobs.submit_dashboard_export(db, source_id, fmt, actor)
-            if not artifact_ref:
-                artifact_ref = job.download_url or ""
-                artifact_kind = job.artifact_kind
-            job_id = dashboard_export_jobs.parse_export_job_id_from_download_url(job.download_url)
-            if job_id is not None:
-                attachment = dashboard_export_jobs.read_export_attachment(job_id)
-                if attachment is not None:
-                    attachments.append(attachment)
+                if fmt == "pdf":
+                    batch = dashboard_export_jobs.build_dashboard_schedule_pdf_attachments(
+                        db, source_id, actor,
+                    )
+                    attachments.extend(batch)
+                    if not artifact_ref and batch:
+                        artifact_kind = "visual_snapshot_full_page"
+                        artifact_ref = f"dashboard://{source_id}/pdf-full"
+                else:
+                    job = dashboard_export_jobs.submit_dashboard_export(db, source_id, fmt, actor)
+                    if not artifact_ref:
+                        artifact_ref = job.download_url or ""
+                        artifact_kind = job.artifact_kind
+                    job_id = dashboard_export_jobs.parse_export_job_id_from_download_url(job.download_url)
+                    if job_id is not None:
+                        attachment = dashboard_export_jobs.read_export_attachment(job_id)
+                        if attachment is not None:
+                            attachments.append(attachment)
         except dash_service.DashboardError as exc:
             export_error = exc.message
             break
@@ -329,9 +359,11 @@ def semi_real_execute_schedule(
                 pack_key, formats, actor,
             )
     if not export_error and attachments:
-        artifact_ref, _storage_key = _persist_execution_artifact(
+        artifact_ref, _storage_key, secondary_artifacts = _persist_execution_artifact(
             execution_id, attachments, artifact_kind=artifact_kind,
         )
+    else:
+        secondary_artifacts = []
     if export_error:
         out = ScheduleExecuteOut(
             executionId=execution_id,
@@ -365,6 +397,32 @@ def semi_real_execute_schedule(
                     im_missing[channel] = missing
         finally:
             session.close()
+    if "email" in channels and not recipient_emails:
+        error_message = (
+            "未解析到有效收件邮箱：请配置接收人（直接填邮箱，或确保角色/用户资料含真实邮箱）。"
+        )
+        out = ScheduleExecuteOut(
+            executionId=execution_id,
+            scheduleId=schedule_id,
+            status="semi_real_failed",
+            artifactRef=artifact_ref or f"semi://reports/{schedule_id}/{execution_id}",
+            artifactKind=artifact_kind,
+            idempotencyKey=idempotency_key,
+            executedAt=datetime.now(UTC).isoformat(),
+            deliverySteps=[{
+                "channel": "email",
+                "status": "failed",
+                "attempt": 1,
+                "mode": "smtp",
+                "error": error_message,
+                "recipients": [],
+            }],
+            revisionSnapshot=revision_snapshot,
+            errorMessage=error_message,
+        )
+        _remember_execution(out)
+        _append_history(schedule_id, out, error_message=error_message)
+        return out
     att_bytes = attachments[0][0] if attachments else None
     att_mime = attachments[0][1] if attachments else None
     att_name = attachments[0][2] if attachments else None
@@ -381,6 +439,7 @@ def semi_real_execute_schedule(
         im_targets=im_targets,
         im_missing=im_missing,
         notify_group=bool(row.get("notify_group", False)),
+        email_smtp_slot=row.get("email_smtp_slot") or "qq",
     )
     error_message: str | None = None
     if delivery_mock == "fail":
@@ -403,6 +462,7 @@ def semi_real_execute_schedule(
         status=status,
         artifactRef=artifact_ref,
         artifactKind=artifact_kind,
+        secondaryArtifacts=secondary_artifacts,
         idempotencyKey=idempotency_key,
         executedAt=datetime.now(UTC).isoformat(),
         deliverySteps=delivery["deliverySteps"],
@@ -450,19 +510,32 @@ def get_execution_artifact_meta(execution_id: uuid.UUID) -> dict:
     }
 
 
-def get_execution_artifact_download(execution_id: uuid.UUID) -> tuple[bytes, str, str]:
+def get_execution_artifact_download(
+    execution_id: uuid.UUID,
+    *,
+    slot: str | None = None,
+) -> tuple[bytes, str, str]:
     out = _get_execution_out(execution_id)
     if out is None or not out.artifact_ref.startswith("storage://"):
         from app.reports.catalog.errors import ReportCatalogError
         raise ReportCatalogError("RPT_ARTIFACT_NOT_FOUND", "Execution artifact not found", 404)
     storage_key = out.artifact_ref.removeprefix("storage://")
+    filename = f"schedule-{execution_id}-可视化报告.pdf"
+    if slot in {"per_widget", "1", "secondary"}:
+        secondary = out.secondary_artifacts or []
+        if not secondary:
+            from app.reports.catalog.errors import ReportCatalogError
+            raise ReportCatalogError("RPT_ARTIFACT_NOT_FOUND", "Secondary artifact not found", 404)
+        item = secondary[0]
+        storage_key = item.get("storageKey") or ""
+        filename = item.get("filename") or f"schedule-{execution_id}-按组件分页.pdf"
     data = get_artifact_store().get(storage_key)
     if data is None:
         from app.reports.catalog.errors import ReportCatalogError
         raise ReportCatalogError("RPT_ARTIFACT_NOT_FOUND", "Execution artifact not found", 404)
     ext = storage_key.rsplit(".", 1)[-1]
     mime = "application/pdf" if ext == "pdf" else "application/octet-stream"
-    return data, mime, f"schedule-{execution_id}.{ext}"
+    return data, mime, filename
 
 
 def probe_mock_execute_budget_ms(schedule_id: uuid.UUID, key: str, actor: UserContext) -> float:

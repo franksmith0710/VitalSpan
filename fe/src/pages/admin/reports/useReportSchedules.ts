@@ -17,6 +17,7 @@ export type ReportScheduleRow = {
   attachmentFormats?: string[];
   deliveryChannels?: string[];
   notifyGroup?: boolean;
+  emailSmtpSlot?: "qq" | "163";
   cron: string;
   timezone: string;
   status: string;
@@ -32,6 +33,13 @@ export type ScheduleExecutionRow = {
   executedAt: string;
   errorMessage?: string | null;
   parentExecutionId?: string | null;
+  deliverySteps?: { channel?: string; recipients?: string[]; status?: string }[];
+  secondaryArtifacts?: {
+    label: string;
+    kind?: string;
+    storageKey: string;
+    filename: string;
+  }[];
 };
 
 export type ReportScheduleListFilter = {
@@ -98,6 +106,7 @@ export function useReportScheduleMutations(filter?: ReportScheduleListFilter) {
       attachmentFormats?: string[];
       deliveryChannels?: string[];
       notifyGroup?: boolean;
+      emailSmtpSlot?: "qq" | "163";
     }) =>
       apiFetch<ReportScheduleRow>("/api/v1/reports/schedules", {
         method: "POST",
@@ -162,9 +171,18 @@ export function useReportScheduleMutations(filter?: ReportScheduleListFilter) {
     onSuccess: (_data, vars) => invalidate(vars.id),
   });
 
+  const deleteSchedule = useMutation({
+    mutationFn: (id: string) =>
+      apiFetch(`/api/v1/reports/schedules/${id}`, {
+        method: "DELETE",
+      }),
+    onSuccess: (_data, id) => invalidate(id),
+  });
+
   return {
     createSchedule,
     updateSchedule,
+    deleteSchedule,
     transitionSchedule,
     executeSchedule,
     retryExecution,
@@ -214,6 +232,16 @@ export function scheduleStatusColor(status: string): "primary" | "success" | "wa
   if (status === "paused" || status === "draft") return "warning";
   if (status === "cancelled") return "error";
   return "primary";
+}
+
+export function executionStatusColor(
+  status: string,
+): "success" | "error" | "warning" | "info" | "light" {
+  if (status.includes("failed")) return "error";
+  if (status.includes("degraded")) return "warning";
+  if (status.includes("succeeded")) return "success";
+  if (status.includes("pending")) return "info";
+  return "light";
 }
 
 export function canRetryExecution(status: string): boolean {

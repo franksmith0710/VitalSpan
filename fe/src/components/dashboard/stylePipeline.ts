@@ -67,7 +67,7 @@ export function persistDashboardLayout(
   return buildDashboardLayoutForSave(layoutForSave, style);
 }
 
-/** 加载/预览前：无间隙时压实外框坐标缝（编辑/只读/分享单路径） */
+/** 加载/预览前：Tab 修复与可选 pack；不在此隐式压实外框坐标 */
 export function preparePixelLayoutForDisplay(
   layout: DashboardLayoutV2,
   style?: DashboardStyleConfig | null,

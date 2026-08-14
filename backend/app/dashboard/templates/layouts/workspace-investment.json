@@ -30,7 +30,7 @@
           "schema": null,
           "table": null,
           "configId": null,
-          "datasetId": "demo-gov-region-service",
+          "datasetId": "demo-v-sales-geo",
           "nativeBody": {
             "deStyle": {
               "seriesGradient": false,
@@ -82,11 +82,34 @@
           ],
           "metrics": [
             {
-              "field": "service_volume",
+              "field": "amount",
               "label": null
             }
           ],
-          "axes": null,
+          "axes": {
+            "xAxis": [
+              {
+                "field": "province",
+                "label": null
+              }
+            ],
+            "yAxis": [
+              {
+                "field": "amount",
+                "label": null
+              }
+            ],
+            "drill": [
+              {
+                "field": "city",
+                "label": null
+              },
+              {
+                "field": "district",
+                "label": null
+              }
+            ]
+          },
           "filters": [],
           "timeRange": null
         },
@@ -121,7 +144,7 @@
           "schema": null,
           "table": null,
           "configId": null,
-          "datasetId": "demo-gov-investment",
+          "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
               "seriesGradient": false,
@@ -179,17 +202,30 @@
           "index": null,
           "dimensions": [
             {
-              "field": "industry",
+              "field": "category_name",
               "label": null
             }
           ],
           "metrics": [
             {
-              "field": "investment_amount",
+              "field": "amount",
               "label": null
             }
           ],
-          "axes": null,
+          "axes": {
+            "xAxis": [
+              {
+                "field": "category_name",
+                "label": null
+              }
+            ],
+            "yAxis": [
+              {
+                "field": "amount",
+                "label": null
+              }
+            ]
+          },
           "filters": [],
           "timeRange": null
         },
@@ -224,7 +260,7 @@
           "schema": null,
           "table": null,
           "configId": null,
-          "datasetId": "demo-gov-service",
+          "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
               "seriesGradient": false,
@@ -280,19 +316,21 @@
             }
           },
           "index": null,
-          "dimensions": [
-            {
-              "field": "metric_name",
-              "label": null
-            }
-          ],
+          "dimensions": [],
           "metrics": [
             {
-              "field": "value",
+              "field": "amount",
               "label": null
             }
           ],
-          "axes": null,
+          "axes": {
+            "yAxis": [
+              {
+                "field": "amount",
+                "label": null
+              }
+            ]
+          },
           "filters": [],
           "timeRange": null
         },

@@ -13,7 +13,7 @@ from app.dashboard.templates.demo_datasource import (
     resolve_official_demo_connection,
     resolve_sample_db_datasource_id,
 )
-from app.metadata.dataset.demo_seed import DEMO_DATASET_SPECS
+from app.metadata.dataset.demo_seed import DEMO_DATASET_SPECS, remap_retired_demo_datasets_in_layout
 from app.metadata.dataset.models import DatasetRecord
 from app.query.config_store.schemas import ConfigUpsert
 from app.query.config_store.service import upsert_config
@@ -27,45 +27,9 @@ _DEMO_DATASET_BINDING_SPECS: dict[str, dict[str, object]] = {
         "table": "sales",
         "columns": ["sale_date", "amount", "quantity", "channel"],
     },
-    "demo-orders": {
-        "table": "orders",
-        "columns": ["order_date", "order_no", "status", "total_amount"],
-    },
-    "demo-daily-kpi": {
-        "table": "daily_kpi",
-        "columns": ["stat_date", "metric_code", "metric_name", "value"],
-    },
-    "demo-gov-service": {
-        "table": "gov_service_metrics",
-        "columns": ["stat_date", "department", "metric_code", "metric_name", "value"],
-    },
     "demo-gov-grid-stats": {
         "table": "gov_grid_stats",
         "columns": ["grid_name", "event_count", "resolved_count"],
-    },
-    "demo-gov-incidents": {
-        "table": "gov_incidents",
-        "columns": ["incident_type", "count"],
-    },
-    "demo-gov-region-service": {
-        "table": "v_gov_region_service",
-        "columns": ["province", "city", "district", "service_volume"],
-    },
-    "demo-gov-hotwords": {
-        "table": "gov_hotwords",
-        "columns": ["word", "weight"],
-    },
-    "demo-gov-issues": {
-        "table": "gov_issues",
-        "columns": ["issue_type", "location", "unit", "status", "progress"],
-    },
-    "demo-gov-budget": {
-        "table": "gov_budget_items",
-        "columns": ["category", "spent_amount", "fiscal_year"],
-    },
-    "demo-gov-investment": {
-        "table": "gov_investment",
-        "columns": ["industry", "investment_amount"],
     },
     "demo-v-sales-geo": {
         "table": "v_sales_geo",
@@ -127,7 +91,7 @@ def ensure_demo_dataset_bindings(db: Session) -> int:
 
 def bind_demo_dataset_config_ids(db: Session, layout: dict[str, Any]) -> dict[str, Any]:
     """将官方示例 Dataset 的 bound_config_id 写入 layout（跨环境分享/embed 可复用）。"""
-    cloned = copy.deepcopy(layout)
+    cloned = remap_retired_demo_datasets_in_layout(copy.deepcopy(layout))
     widgets = cloned.get("widgets")
     if not isinstance(widgets, list):
         return cloned
@@ -153,7 +117,9 @@ def bind_demo_dataset_config_ids(db: Session, layout: dict[str, Any]) -> dict[st
 def prepare_chart_config_for_embed(db: Session, chart_config: dict[str, Any]) -> dict[str, Any]:
     """单图 embed：绑定演示数据源与 Dataset configId。"""
     ensure_demo_dataset_bindings(db)
-    cfg = copy.deepcopy(chart_config)
+    from app.metadata.dataset.demo_seed import remap_retired_demo_chart_config
+
+    cfg = remap_retired_demo_chart_config(copy.deepcopy(chart_config))
     demo_ds = resolve_sample_db_datasource_id(db)
     current = cfg.get("dataSourceId")
     if demo_ds is not None and current in (None, "", TEMPLATE_DEMO_DATASOURCE_REF):

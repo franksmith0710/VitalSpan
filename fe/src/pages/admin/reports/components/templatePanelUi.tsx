@@ -101,12 +101,14 @@ export function TemplatePanelHeader({
   templateKey,
   parentPath,
   icon: Icon,
+  actions,
 }: {
   title: string;
   kindLabel?: string;
   templateKey?: string | null;
   parentPath?: string;
   icon?: LucideIcon;
+  actions?: ReactNode;
 }) {
   return (
     <div className="border-b border-gray-200 bg-gradient-to-r from-gray-50/90 via-white to-white px-6 py-5 dark:border-gray-800 dark:from-white/[0.04] dark:via-transparent dark:to-transparent">
@@ -132,6 +134,7 @@ export function TemplatePanelHeader({
             <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">所在目录：{parentPath}</p>
           ) : null}
         </div>
+        {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
       </div>
     </div>
   );

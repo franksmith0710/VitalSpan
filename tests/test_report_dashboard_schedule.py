@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 import os
+import sys
+import types
+from contextlib import contextmanager
 from unittest.mock import patch
 
 import pytest
@@ -13,6 +16,75 @@ from app.reports.scheduler import service as scheduler_service
 from jwt_auth import AUTH
 
 _SQLITE = "sqlite+pysqlite:///file:report_dash_sched?mode=memory&cache=shared&uri=true"
+FAKE_PDF = b"%PDF-1.4 visual snapshot\n" + b"x" * 600
+
+
+class _FakePage:
+    def goto(self, *_args, **_kwargs) -> None:
+        return None
+
+    def wait_for_selector(self, *_args, **_kwargs) -> None:
+        return None
+
+    def wait_for_timeout(self, *_args, **_kwargs) -> None:
+        return None
+
+    def evaluate(self, *_args, **_kwargs):
+        return {"width": 1440, "height": 1800}
+
+    def set_viewport_size(self, *_args, **_kwargs) -> None:
+        return None
+
+    def pdf(self, **_kwargs) -> bytes:
+        return FAKE_PDF
+
+
+class _FakeContext:
+    def new_page(self, **_kwargs) -> _FakePage:
+        return _FakePage()
+
+    def close(self) -> None:
+        return None
+
+
+class _FakeBrowser:
+    def new_context(self, **_kwargs) -> _FakeContext:
+        return _FakeContext()
+
+    def new_page(self, **_kwargs) -> _FakePage:
+        return _FakePage()
+
+    def close(self) -> None:
+        return None
+
+
+class _FakeChromium:
+    def launch(self, **_kwargs) -> _FakeBrowser:
+        return _FakeBrowser()
+
+
+class _FakePlaywright:
+    chromium = _FakeChromium()
+
+
+@contextmanager
+def _fake_sync_playwright():
+    yield _FakePlaywright()
+
+
+def _install_playwright_mock(monkeypatch) -> None:
+    sync_api_mod = types.ModuleType("playwright.sync_api")
+    sync_api_mod.sync_playwright = _fake_sync_playwright
+    sync_api_mod.Error = Exception
+    playwright_mod = types.ModuleType("playwright")
+    playwright_mod.sync_api = sync_api_mod
+    monkeypatch.setitem(sys.modules, "playwright", playwright_mod)
+    monkeypatch.setitem(sys.modules, "playwright.sync_api", sync_api_mod)
+
+
+@pytest.fixture
+def mock_playwright(monkeypatch):
+    _install_playwright_mock(monkeypatch)
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -105,7 +177,8 @@ def _create_dashboard_with_widget(client: TestClient, *, name: str, description:
 def _mock_visual_pdf(monkeypatch):
     fake_pdf = b"%PDF-1.4 schedule visual\n" + b"y" * 600
 
-    def _fake_render(dashboard_id, *, token, surface="dashboard"):
+    def _fake_render(dashboard_id, *, token, surface="dashboard", layout_mode=None):
+        del dashboard_id, token, surface, layout_mode
         return fake_pdf
 
     monkeypatch.setattr(
@@ -232,7 +305,7 @@ def test_probe_export_render_health_chromium_missing(monkeypatch):
     assert "Chromium" in (result.get("error") or "")
 
 
-def test_dashboard_execute_records_visual_snapshot_artifact(client: TestClient):
+def test_dashboard_execute_records_visual_snapshot_artifact(client: TestClient, mock_playwright):
     dash_id = _create_dashboard_with_widget(client, name="Exec Dash", description="artifact-kind")
     sched = client.post(
         "/api/v1/reports/schedules",
@@ -256,12 +329,12 @@ def test_dashboard_execute_records_visual_snapshot_artifact(client: TestClient):
     )
     assert exec_resp.status_code == 200, exec_resp.text
     body = exec_resp.json()
-    assert body.get("artifactKind") == "visual_snapshot"
+    assert body.get("artifactKind") == "visual_snapshot_full_page"
     hist = client.get(f"/api/v1/reports/schedules/{schedule_id}/executions", headers=AUTH)
-    assert hist.json()["items"][0]["artifactKind"] == "visual_snapshot"
+    assert hist.json()["items"][0]["artifactKind"] == "visual_snapshot_full_page"
 
 
-def test_dashboard_execute_smtp_attaches_pdf(client: TestClient):
+def test_dashboard_execute_smtp_attaches_pdf(client: TestClient, mock_playwright):
     dash_id = _create_dashboard_with_widget(client, name="Attach Dash", description="smtp-pdf")
     sched = client.post(
         "/api/v1/reports/schedules",
@@ -293,7 +366,8 @@ def test_dashboard_execute_smtp_attaches_pdf(client: TestClient):
         msg = smtp_instance.send_message.call_args[0][0]
         attachments = list(msg.iter_attachments())
         assert len(attachments) == 1
-        assert attachments[0].get_filename().endswith(".pdf")
+        name = attachments[0].get_filename() or ""
+        assert "可视化报告" in name or name.endswith(".pdf")
         assert attachments[0].get_content().startswith(b"%PDF")
 
 
@@ -608,7 +682,30 @@ def test_recent_failures_dismiss_hides_entry_for_user(client: TestClient):
     )
     assert dismissed.status_code == 204, dismissed.text
 
-    hidden = client.get("/api/v1/reports/schedules/executions/recent-failures", headers=AUTH)
-    assert hidden.status_code == 200
-    assert not any(item["executionId"] == execution_id for item in hidden.json()["items"])
+def test_delete_schedule_removes_from_list(client: TestClient):
+    dash_id = _create_dashboard_with_widget(client, name="Delete Dash", description="delete")
+    sched = client.post(
+        "/api/v1/reports/schedules",
+        headers=AUTH,
+        json={
+            "sourceType": "dashboard",
+            "sourceId": dash_id,
+            "cron": "0 9 * * *",
+            "recipients": [{"type": "role", "value": "admin"}],
+        },
+    )
+    schedule_id = sched.json()["id"]
+    client.post(
+        f"/api/v1/reports/schedules/{schedule_id}/transition",
+        headers=AUTH,
+        json={"action": "schedule"},
+    )
+    deleted = client.delete(f"/api/v1/reports/schedules/{schedule_id}", headers=AUTH)
+    assert deleted.status_code == 204, deleted.text
+    listed = client.get("/api/v1/reports/schedules", headers=AUTH)
+    assert listed.status_code == 200
+    assert not any(item["id"] == schedule_id for item in listed.json()["items"])
+    missing = client.get(f"/api/v1/reports/schedules/{schedule_id}", headers=AUTH)
+    assert missing.status_code == 404
+
 

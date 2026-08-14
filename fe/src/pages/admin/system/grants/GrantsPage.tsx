@@ -38,6 +38,7 @@ import { GrantsDialogs, RESOURCE_TYPE_LABELS } from "./GrantsDialogs";
 import { useGrantResourceNameMaps } from "./ResourceGrantPicker";
 import { useGrantsPage } from "./useGrantsPage";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
+import { SystemAdminListHint } from "../SystemAdminListHint";
 
 export function GrantsPage() {
   const { nameByTypeAndId } = useGrantResourceNameMaps();
@@ -89,6 +90,7 @@ export function GrantsPage() {
       }
     >
       <ListPageSection>
+        <SystemAdminListHint scope="grants" />
         <ListPageToolbar
           filters={
             <>

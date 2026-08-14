@@ -113,8 +113,10 @@ describe("hierarchical category axis", () => {
     );
     const active = resolveActiveCategoryLevels(keys, 2);
     const indices = pickSynchronizedVisibleIndices(keys, 960, 2, active);
-    expect(indices).toContain(0);
-    expect(indices).toContain(keys.length - 1);
+    expect(indices[0]).toBe(0);
+    expect(indices.length).toBeGreaterThan(2);
+    const gaps = indices.slice(1).map((value, i) => value - indices[i]!);
+    gaps.forEach((gap) => expect(gap).toBe(gaps[0]));
   });
 
   it("resolveHierarchicalAxisLayout reserves bottom space per active level", () => {

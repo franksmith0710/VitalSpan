@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext, require_permission
+from app.core.http.download import content_disposition_attachment
 
 PERM_READ = "dashboard:read"
 PERM_EDIT = "dashboard:edit"
@@ -498,7 +499,7 @@ def download_dashboard_export_job(
         return Response(
             content=body,
             media_type=media_type,
-            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+            headers={"Content-Disposition": content_disposition_attachment(filename)},
         )
     except dash_service.DashboardError as exc:
         return _error_response(exc)

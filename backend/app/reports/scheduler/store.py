@@ -14,6 +14,8 @@ from app.datasources.models import get_meta_engine
 from app.reports.models import (
     DashboardExportJob,
     ExportToken,
+    ReportDeliveryAttempt,
+    ReportDismissedFailure,
     ReportSchedule,
     ReportScheduleExecution,
     ScheduleTickLock,
@@ -33,6 +35,7 @@ def _schedule_to_row(model: ReportSchedule) -> dict:
         "attachment_formats": model.attachment_formats or ["pdf"],
         "delivery_channels": model.delivery_channels or ["email"],
         "notify_group": bool(model.notify_group),
+        "email_smtp_slot": model.email_smtp_slot or "qq",
         "cron": model.cron,
         "timezone": model.timezone,
         "status": model.status,
@@ -46,6 +49,7 @@ def _execution_to_dict(m: ReportScheduleExecution) -> dict:
         "status": m.status,
         "artifactRef": m.artifact_ref,
         "artifactKind": m.artifact_kind,
+        "secondaryArtifacts": m.secondary_artifacts or [],
         "executedAt": m.executed_at.isoformat() if m.executed_at else "",
         "errorMessage": m.error_message,
         "parentExecutionId": m.parent_execution_id,
@@ -64,6 +68,9 @@ class ScheduleStore(ABC):
 
     @abstractmethod
     def list_all(self) -> list[dict]: ...
+
+    @abstractmethod
+    def delete(self, schedule_id: uuid.UUID) -> bool: ...
 
     @abstractmethod
     def clear(self) -> None: ...
@@ -87,6 +94,24 @@ class MemoryScheduleStore(ScheduleStore):
 
     def list_all(self) -> list[dict]:
         return list(self._schedules.values())
+
+    def delete(self, schedule_id: uuid.UUID) -> bool:
+        if schedule_id not in self._schedules:
+            return False
+        self._schedules.pop(schedule_id, None)
+        history = self._executions.pop(schedule_id, [])
+        for entry in history:
+            exec_id = entry.get("executionId")
+            if exec_id is not None:
+                self._execution_by_id.pop(exec_id, None)
+        stale_keys = [
+            key
+            for key, out in self._idempotency.items()
+            if str(out.get("scheduleId")) == str(schedule_id)
+        ]
+        for key in stale_keys:
+            self._idempotency.pop(key, None)
+        return True
 
     def clear(self) -> None:
         self._schedules.clear()
@@ -157,6 +182,7 @@ class DbScheduleStore(ScheduleStore):
             model.attachment_formats = row.get("attachment_formats") or ["pdf"]
             model.delivery_channels = row.get("delivery_channels") or ["email"]
             model.notify_group = bool(row.get("notify_group", False))
+            model.email_smtp_slot = row.get("email_smtp_slot") or "qq"
             model.cron = row["cron"]
             model.timezone = row.get("timezone", "Asia/Shanghai")
             model.status = row["status"]
@@ -168,6 +194,35 @@ class DbScheduleStore(ScheduleStore):
         with Session(bind=get_meta_engine()) as db:
             models = db.scalars(select(ReportSchedule)).all()
             return [_schedule_to_row(m) for m in models]
+
+    def delete(self, schedule_id: uuid.UUID) -> bool:
+        with Session(bind=get_meta_engine()) as db:
+            model = db.get(ReportSchedule, schedule_id)
+            if model is None:
+                return False
+            exec_ids = list(
+                db.scalars(
+                    select(ReportScheduleExecution.id).where(
+                        ReportScheduleExecution.schedule_id == schedule_id,
+                    ),
+                ).all(),
+            )
+            if exec_ids:
+                db.query(ReportDeliveryAttempt).filter(
+                    ReportDeliveryAttempt.execution_id.in_(exec_ids),
+                ).delete(synchronize_session=False)
+                db.query(ReportDismissedFailure).filter(
+                    ReportDismissedFailure.execution_id.in_(exec_ids),
+                ).delete(synchronize_session=False)
+            db.query(ReportScheduleExecution).filter(
+                ReportScheduleExecution.schedule_id == schedule_id,
+            ).delete(synchronize_session=False)
+            db.query(ScheduleTickLock).filter(
+                ScheduleTickLock.schedule_id == schedule_id,
+            ).delete(synchronize_session=False)
+            db.delete(model)
+            db.commit()
+            return True
 
     def clear(self) -> None:
         with Session(bind=get_meta_engine()) as db:
@@ -185,6 +240,8 @@ class DbScheduleStore(ScheduleStore):
                 existing.status = entry["status"]
                 existing.artifact_ref = entry["artifactRef"]
                 existing.artifact_kind = entry.get("artifactKind")
+                existing.artifact_storage_key = entry.get("artifactStorageKey")
+                existing.secondary_artifacts = entry.get("secondaryArtifacts")
                 existing.error_message = entry.get("errorMessage")
                 existing.parent_execution_id = entry.get("parentExecutionId")
                 if out_data:
@@ -199,6 +256,8 @@ class DbScheduleStore(ScheduleStore):
                 status=entry["status"],
                 artifact_ref=entry["artifactRef"],
                 artifact_kind=entry.get("artifactKind"),
+                artifact_storage_key=entry.get("artifactStorageKey"),
+                secondary_artifacts=entry.get("secondaryArtifacts"),
                 error_message=entry.get("errorMessage"),
                 delivery_steps=out_data.get("deliverySteps") if out_data else None,
                 idempotency_key=out_data.get("idempotencyKey") if out_data else None,
@@ -214,16 +273,7 @@ class DbScheduleStore(ScheduleStore):
                 .where(ReportScheduleExecution.schedule_id == schedule_id)
                 .order_by(ReportScheduleExecution.executed_at.desc()),
             ).all()
-            return [{
-                "executionId": m.id,
-                "scheduleId": m.schedule_id,
-                "status": m.status,
-                "artifactRef": m.artifact_ref,
-                "artifactKind": m.artifact_kind,
-                "executedAt": m.executed_at.isoformat() if m.executed_at else "",
-                "errorMessage": m.error_message,
-                "parentExecutionId": m.parent_execution_id,
-            } for m in models]
+            return [_execution_to_dict(m) for m in models]
 
     def get_execution(self, execution_id: uuid.UUID) -> dict | None:
         with Session(bind=get_meta_engine()) as db:

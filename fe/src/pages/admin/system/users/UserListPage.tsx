@@ -35,6 +35,7 @@ import { queryKeys } from "@/lib/queryKeys";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { useListPagination } from "@/lib/list-pagination";
 import { CreateUserDialog } from "./CreateUserDialog";
+import { SystemAdminListHint } from "../SystemAdminListHint";
 import { UserListRow, type UserRow } from "./UserListRow";
 import { UserManageSheet } from "./UserManageSheet";
 import { mapUserError } from "./userErrors";
@@ -135,6 +136,7 @@ export function UserListPage() {
       }
     >
       <ListPageSection>
+        <SystemAdminListHint scope="users" />
         <ListPageToolbar
           filters={
             <Input

@@ -21,6 +21,7 @@ import {
 } from "@/lib/connector-taxonomy";
 import { queryKeys } from "@/lib/queryKeys";
 import { isProtectedDemoDatasource } from "@/lib/demoPackage";
+import { isManagedAnalyticsDatasource } from "@/lib/datasourceRoles";
 import { cn } from "@/lib/utils";
 import { emptyForm, type FormState } from "./components/datasource-form-constants";
 import { applyTypePort, DatasourceConnectionForm, DATASOURCE_CONNECTION_FORM_ID } from "./components/DatasourceConnectionForm";
@@ -377,7 +378,8 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
   if (
     mode === "edit" &&
     detailQuery.data &&
-    isProtectedDemoDatasource(detailQuery.data)
+    (isProtectedDemoDatasource(detailQuery.data) ||
+      isManagedAnalyticsDatasource(detailQuery.data))
   ) {
     return <Navigate to={`/admin/datasources/${id}`} replace />;
   }

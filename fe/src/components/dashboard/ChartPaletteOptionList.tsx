@@ -30,7 +30,7 @@ export function PaletteMenuOption({
           inheritPreviewColors={inheritPreviewColors}
           className="rounded-[2px]"
         />
-        <span className="mt-1 block text-theme-xs leading-tight text-gray-700 dark:text-gray-300">
+        <span className="mt-1 block w-full text-left text-theme-xs leading-tight text-gray-700 dark:text-gray-300">
           {row.label}
         </span>
       </div>
@@ -125,14 +125,14 @@ export function ChartPaletteCurrentDisplay({
 }: ChartPaletteCurrentDisplayProps) {
   const content = (
     <>
-      <span className="flex min-w-0 flex-1 flex-col gap-1 overflow-hidden">
+      <span className="flex min-w-0 w-full flex-1 flex-col items-start gap-1 overflow-hidden text-left">
         <ChartPaletteSwatchStrip
           colors={activeColors}
           inherit={inheritActive}
           inheritPreviewColors={inheritPreviewColors}
           className="w-full rounded-[2px]"
         />
-        <span className="min-w-0 truncate text-theme-xs font-medium leading-tight text-gray-800 dark:text-gray-200">
+        <span className="min-w-0 w-full truncate text-left text-theme-xs font-medium leading-tight text-gray-800 dark:text-gray-200">
           {activeLabel}
         </span>
       </span>

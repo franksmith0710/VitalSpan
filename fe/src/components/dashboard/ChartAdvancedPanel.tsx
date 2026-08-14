@@ -3,7 +3,6 @@ import { chartInspectorCapabilities } from "@/lib/chartInspectorCapabilities";
 import {
   readChartConditionalRules,
   readChartDeFeatures,
-  readChartJumpConfig,
   readChartMarkLines,
 } from "@/lib/chartDeFeatures";
 import { useChartInspector } from "./chartInspectorContext";
@@ -12,7 +11,6 @@ import { WidgetAdvancedAccordion } from "./WidgetAdvancedAccordion";
 import {
   ChartAdvancedConditionalSection,
   ChartAdvancedFeatureSettings,
-  ChartAdvancedJumpSection,
   ChartAdvancedMapBubbleSection,
   ChartAdvancedMapLinkageSection,
   ChartAdvancedMarkLinesSection,
@@ -32,7 +30,6 @@ export function ChartAdvancedPanel(_props: ChartAdvancedPanelProps) {
   const sections = useMemo(() => {
     const markLines = readChartMarkLines(cfg);
     const rules = readChartConditionalRules(cfg);
-    const jump = readChartJumpConfig(cfg);
     const mapLinkage = readChartLinkageConfig(cfg);
     const list = [];
 
@@ -97,15 +94,6 @@ export function ChartAdvancedPanel(_props: ChartAdvancedPanelProps) {
         defaultOpen: mapLinkage.enabled,
         badge: mapLinkage.enabled ? "开" : undefined,
         content: <ChartAdvancedMapLinkageSection />,
-      });
-    }
-
-    if (caps.jump) {
-      list.push({
-        id: "jump",
-        title: "跳转设置",
-        defaultOpen: jump.enabled,
-        content: <ChartAdvancedJumpSection />,
       });
     }
 

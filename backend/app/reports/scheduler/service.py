@@ -17,6 +17,7 @@ from app.reports.scheduler.errors import ScheduleError
 from app.reports.scheduler.recipients import validate_recipients_present
 from app.reports.scheduler.schemas import ScheduleCreate, ScheduleListOut, ScheduleStatusOut, ScheduleUpdate
 from app.reports.scheduler.store import get_schedule_store
+from app.core.platform_config.slots import normalize_email_slot
 from app.reports.persistence import standard_repo
 from app.reports.standard.errors import StandardAnalysisError
 from app.reports.standard.service import get_pack
@@ -99,6 +100,7 @@ def _out(row: dict) -> ScheduleStatusOut:
         attachmentFormats=row.get("attachment_formats") or ["pdf"],
         deliveryChannels=row.get("delivery_channels") or ["email"],
         notifyGroup=bool(row.get("notify_group", False)),
+        emailSmtpSlot=normalize_email_slot(row.get("email_smtp_slot")),
         cron=row["cron"],
         timezone=row["timezone"],
         status=row["status"],
@@ -153,6 +155,7 @@ def create_schedule(payload: ScheduleCreate, actor: UserContext) -> ScheduleStat
         "attachment_formats": list(payload.attachment_formats),
         "delivery_channels": list(payload.delivery_channels),
         "notify_group": bool(payload.notify_group),
+        "email_smtp_slot": normalize_email_slot(payload.email_smtp_slot),
         "cron": payload.cron,
         "timezone": payload.timezone,
         "status": "draft",
@@ -184,6 +187,8 @@ def update_schedule(
         row["delivery_channels"] = list(payload.delivery_channels)
     if payload.notify_group is not None:
         row["notify_group"] = bool(payload.notify_group)
+    if payload.email_smtp_slot is not None:
+        row["email_smtp_slot"] = normalize_email_slot(payload.email_smtp_slot)
     if payload.name is not None:
         row["name"] = payload.name
     _store().save(row)
@@ -250,3 +255,11 @@ def transition_schedule(schedule_id: uuid.UUID, action: str, actor: UserContext)
     if action == "cancel":
         schedule_jobs.remove_job_on_cancel(schedule_id)
     return _out(row)
+
+
+def delete_schedule(schedule_id: uuid.UUID, actor: UserContext) -> None:
+    row = _get_row(schedule_id)
+    schedule_acl.assert_schedule_write(actor, row, "delete")
+    schedule_jobs.remove_job_on_cancel(schedule_id)
+    if not _store().delete(schedule_id):
+        raise ScheduleError("RPT_SCHEDULE_NOT_FOUND", "Schedule not found", 404)

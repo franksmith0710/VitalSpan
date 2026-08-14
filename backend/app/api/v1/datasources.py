@@ -66,9 +66,16 @@ def list_data_sources(
     offset: int = Query(0, ge=0),
     type: str | None = None,
     q: str | None = None,
+    include_managed: bool = Query(False, alias="includeManaged"),
 ) -> DataSourceListResponse:
     return ds_service.list_data_sources(
-        db, role_codes=user.roles, limit=limit, offset=offset, type=type, q=q
+        db,
+        role_codes=user.roles,
+        limit=limit,
+        offset=offset,
+        type=type,
+        q=q,
+        include_managed=include_managed,
     )
 
 

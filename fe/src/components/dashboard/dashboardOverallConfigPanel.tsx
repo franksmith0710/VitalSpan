@@ -6,11 +6,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  CHART_RESULT_LIMIT_OPTIONS,
-  dashboardQueryLimitSelectValue,
-  selectValueToDashboardQueryLimit,
-} from "@/lib/chartDeDisplay";
+import { parseDeResultLimit } from "@/lib/chartDeDisplay";
+import { ChartResultLimitField } from "./ChartResultLimitField";
 import {
   DASHBOARD_FONT_OPTIONS,
   DASHBOARD_REFRESH_PRESETS,
@@ -21,6 +18,7 @@ import {
   resolveDashboardRefreshPreset,
   type DashboardStyleConfig,
   type GapPreset,
+  DEFAULT_QUERY_LIMIT,
 } from "./dashboardStyleConfig";
 import { resolveDashboardChrome, type DashboardChromeConfig } from "./dashboardChromeConfig";
 import {
@@ -212,26 +210,12 @@ function QueryLimitField({
   defaultQueryLimit?: number;
   onChange: (limit: number) => void;
 }) {
-  const selectValue = dashboardQueryLimitSelectValue(defaultQueryLimit);
-
   return (
-    <DeAttrField label="结果展示" compact hint="看板默认，取最新 N 条">
-      <Select
-        value={selectValue}
-        onValueChange={(next) => onChange(selectValueToDashboardQueryLimit(next))}
-      >
-        <SelectTrigger className={DE_SELECT} aria-label="结果展示">
-          <SelectValue placeholder="请选择" />
-        </SelectTrigger>
-        <SelectContent>
-          {CHART_RESULT_LIMIT_OPTIONS.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value}>
-              {opt.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </DeAttrField>
+    <ChartResultLimitField
+      stored={String(defaultQueryLimit ?? DEFAULT_QUERY_LIMIT)}
+      onChange={(value) => onChange(parseDeResultLimit(value) ?? DEFAULT_QUERY_LIMIT)}
+      hint="看板默认，取最新 N 条"
+    />
   );
 }
 

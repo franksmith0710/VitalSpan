@@ -32,10 +32,10 @@ const AXIS_LABEL_ROTATE_OPTIONS: Array<{ value: string; label: string; rotate: A
 ];
 
 function axisLabelRotateSelectValue(rotate: AxisLabelRotate | undefined): string {
-  if (rotate === "auto") return "auto";
+  if (rotate === 0) return "0";
   if (rotate === -45) return "-45";
   if (rotate === -90) return "-90";
-  return "0";
+  return "auto";
 }
 
 function axisLabelRotateFromSelect(value: string): AxisLabelRotate {

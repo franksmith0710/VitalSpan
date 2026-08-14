@@ -1,7 +1,12 @@
 import * as d3 from "d3";
 import { drawCartesianHorizontalBandAxes, buildHorizontalCartesianScene } from "@/components/charts/engine/d3/core/sceneGraph";
 import { paintHorizontalBar, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
-import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
+import {
+  attachCartesianDataZoom,
+  cartesianSparkline,
+  rowsInCategories,
+  visibleDataZoomCategories,
+} from "@/components/charts/engine/d3/core/dataZoom";
 import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
 import { drawVerticalMarkLines } from "@/components/charts/engine/d3/core/markLines";
 import { resolveSeriesGradientFill } from "@/components/charts/engine/d3/core/gradient";
@@ -55,7 +60,8 @@ function pickCategoryAtBand(my: number, categories: string[], y: d3.ScaleBand<st
 
 /** 横向柱状图（isHorizontal=true 时由 renderD3BarChart 委托） */
 export function renderD3HorizontalBarChart(container: HTMLElement, config: D3CartesianRenderConfig): () => void {
-  container.replaceChildren();
+  const incremental = container.dataset.vsIncremental === "true";
+  if (!incremental) container.replaceChildren();
   if (config.width <= 0 || config.height <= 0 || config.data.length === 0) return () => undefined;
 
   const {
@@ -95,10 +101,11 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
   const depthLevel = resolveEffectiveDepth(depthVisual);
 
   const normalized = normalizeCartesianData(data, xField, yField, seriesField);
-  const { categories } = normalizeCategoryAxisDomain(
+  const allCategories = normalizeCategoryAxisDomain(
     normalized.map((d) => String(d.__category__ ?? "")),
     categoryLevelCount,
-  );
+  ).categories;
+  const categories = visibleDataZoomCategories(container, dataZoom, allCategories);
   const seriesGroups = groupSeries(normalized, seriesField);
   const seriesNames = seriesGroups.map((s) => s.name);
   const hasMultiSeries = seriesNames.length > 1 && Boolean(seriesField);
@@ -119,6 +126,8 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
     legendItems,
     categories,
     axisStyle,
+    dataZoom,
+    incremental,
   });
   const { root, defs, g, plot, margin, innerW, innerH } = scene;
   const keys = resolveSeriesKeys(seriesNames);
@@ -139,7 +148,7 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
   const maxVal =
     isStack || isPercent
       ? (d3.max(wideRows, (row) => keys.reduce((sum, k) => sum + Number(row[k] ?? 0), 0)) ?? 0)
-      : (d3.max(normalized, (d) => Number(d.__value__)) ?? 0);
+      : (d3.max(rowsInCategories(normalized, categories), (d) => Number(d.__value__)) ?? 0);
 
   const y = d3.scaleBand<string>().domain(categories).range([0, innerH]).padding(resolveBarBandPadding(barWidthRatio));
   const x = d3.scaleLinear().domain([0, maxVal]).nice().range([0, innerW]);
@@ -202,7 +211,7 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
       const gradientFill = resolveSeriesGradientFill(defs, domClass, color, seriesGradient, "horizontal");
       plot
         .selectAll(seriesDomSelector("hbar", seriesIndex))
-        .data(s.points)
+        .data(rowsInCategories(s.points, categories))
         .join("g")
         .attr("class", domClass)
         .attr("transform", (d) => {
@@ -282,7 +291,19 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
     );
   }
 
-  const detachZoom = dataZoom ? attachCartesianDataZoom(root, plot, innerW, innerH, { theme }) : () => undefined;
+  const detachZoom = dataZoom
+    ? attachCartesianDataZoom({
+        host: container,
+        plotRoot: g,
+        innerW,
+        innerH,
+        marginBottom: margin.bottom,
+        categories: allCategories,
+        sparkline: cartesianSparkline(allCategories, normalized),
+        theme,
+        redraw: () => renderD3HorizontalBarChart(container, config),
+      })
+    : () => undefined;
 
   return () => {
     detachZoom();

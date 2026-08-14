@@ -11,7 +11,6 @@ import {
   buildCustomRefreshFromParts,
   buildCustomRefreshMode,
   CHART_REFRESH_PRESET_OPTIONS,
-  CHART_RESULT_LIMIT_OPTIONS,
   CUSTOM_REFRESH_UNIT_OPTIONS,
   customRefreshAmountBounds,
   formatChartRefreshSelectValue,
@@ -22,6 +21,7 @@ import {
   type CustomRefreshUnit,
 } from "@/lib/chartDeDisplay";
 import type { CustomVizDataBinding } from "../layoutUtils";
+import { ChartResultLimitField } from "../ChartResultLimitField";
 import { DE_SELECT, DeAttrField, DeAttrForm } from "../dashboardInspectorUi";
 import { cn } from "@/lib/utils";
 
@@ -37,10 +37,6 @@ export function CustomVizDataOptions({ binding, onPatch }: CustomVizDataOptionsP
   const customRefresh = parseCustomRefreshParts(refreshMode);
   const isCustom = refreshSelect === "custom" || isCustomRefreshMode(refreshMode);
   const customBounds = customRefreshAmountBounds(customRefresh.unit);
-  const resultLimit =
-    CHART_RESULT_LIMIT_OPTIONS.some((opt) => opt.value === binding.resultLimit)
-      ? binding.resultLimit!
-      : "1000";
 
   const setRefreshMode = (mode: string) => onPatch({ refreshMode: mode });
 
@@ -127,20 +123,10 @@ export function CustomVizDataOptions({ binding, onPatch }: CustomVizDataOptionsP
           ) : null}
         </div>
       </DeAttrField>
-      <DeAttrField label="结果展示" compact>
-        <Select value={resultLimit} onValueChange={(value) => onPatch({ resultLimit: value })}>
-          <SelectTrigger className={cn(DE_SELECT, "h-8")} aria-label="结果条数">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {CHART_RESULT_LIMIT_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </DeAttrField>
+      <ChartResultLimitField
+        stored={binding.resultLimit}
+        onChange={(value) => onPatch({ resultLimit: value })}
+      />
     </DeAttrForm>
   );
 }

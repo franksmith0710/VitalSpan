@@ -5,7 +5,7 @@ export const queryKeys = {
   },
   datasources: {
     all: ["datasources"] as const,
-    list: (params?: { q?: string; type?: string; limit?: number; offset?: number }) =>
+    list: (params?: { q?: string; type?: string; limit?: number; offset?: number; includeManaged?: boolean }) =>
       ["datasources", "list", params] as const,
     detail: (id: string) => ["datasources", "detail", id] as const,
     schemas: (id: string) => ["datasources", id, "schemas"] as const,
@@ -120,6 +120,8 @@ export const queryKeys = {
   },
   platformConnect: {
     email: ["platform-connect", "email"] as const,
+    emailSlots: ["platform-connect", "email-slots"] as const,
+    emailSlot: (slot: string) => ["platform-connect", "email-slot", slot] as const,
   },
   gov: {
     categories: ["gov", "categories"] as const,

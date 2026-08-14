@@ -95,7 +95,7 @@ describe("resolveNavGroups", () => {
     expect(reportParent?.subItems?.map((s) => s.name)).toEqual([
       "工作台",
       "标准分析",
-      "我的报表",
+      "文档模板",
       "调度与投递",
     ]);
   });
@@ -129,15 +129,14 @@ describe("resolveNavGroups", () => {
     expect(groups.some((g) => g.title === "主题与实体")).toBe(false);
   });
 
-  it("T-NAV-CAP-01: admin system admin nav has 资源授权 subItem", () => {
+  it("T-NAV-CAP-01: admin system admin nav has 资源授权 link", () => {
     const sections = resolveSidebarSections(
       sessionUserFromAuth("admin", ["admin"]),
       "/admin/system/roles",
     );
-    const system = sections.find((g) => g.title === "后台管理");
-    expect(system).toBeDefined();
-    const people = system?.items.find((i) => i.name === "人员与权限");
-    expect(people?.subItems?.map((s) => s.name)).toContain("资源授权");
+    const orgSection = sections.find((g) => g.title === "平台与组织");
+    expect(orgSection).toBeDefined();
+    expect(orgSection?.items.map((i) => i.name)).toContain("资源授权");
   });
 
   it("T-NAV-CAP-02: viewer does not see 系统 section", () => {
@@ -322,22 +321,25 @@ describe("resolveSidebarSections", () => {
   it("uses system admin nav on /admin/system/* paths", () => {
     const admin = sessionUserFromAuth("admin", ["admin"]);
     const sections = resolveSidebarSections(admin, "/admin/system/users");
-    expect(sections).toHaveLength(1);
-    expect(sections[0]?.title).toBe("后台管理");
-    expect(sections[0]?.items.map((i) => i.name)).toEqual([
-      "配置向导",
+    expect(sections.map((g) => g.title)).toEqual([
+      "入门",
+      "平台与组织",
+      "集成与对接",
+      "安全与审计",
+    ]);
+    const orgSection = sections.find((g) => g.title === "平台与组织");
+    expect(orgSection?.items.map((i) => i.name)).toEqual([
       "组织架构",
-      "人员与权限",
-      "高级 · 行级权限",
-      "审计日志",
+      "用户管理",
+      "角色管理",
+      "资源授权",
     ]);
   });
 
   it("uses system admin nav on /admin/system home path", () => {
     const admin = sessionUserFromAuth("admin", ["admin"]);
     const sections = resolveSidebarSections(admin, SYSTEM_ADMIN_HOME_PATH);
-    expect(sections).toHaveLength(1);
-    expect(sections[0]?.title).toBe("后台管理");
+    expect(sections[0]?.title).toBe("入门");
     expect(sections[0]?.items[0]?.name).toBe("配置向导");
     expect(isDetachedFromWorkspacePath(SYSTEM_ADMIN_HOME_PATH)).toBe(true);
   });

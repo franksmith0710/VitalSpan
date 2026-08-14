@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import uuid
 from datetime import UTC, datetime
 from typing import Any
@@ -159,6 +160,13 @@ def seed_workspace_instances(db: Session, *, reset_layout: bool = False) -> int:
             if reset_layout or was_deleted:
                 existing.layout_json = layout
                 existing.surface_kind = sync_surface_kind_column(layout)
+            else:
+                from app.dashboard.templates.rebind_demo_encodings import rebind_layout_demo_encodings
+                from app.metadata.dataset.demo_seed import remap_retired_demo_datasets_in_layout
+
+                remapped = remap_retired_demo_datasets_in_layout(copy.deepcopy(existing.layout_json or {}))
+                remapped = rebind_layout_demo_encodings(remapped)
+                existing.layout_json = bind_demo_dataset_config_ids(db, remapped)
             if was_deleted:
                 upserted += 1
     db.commit()

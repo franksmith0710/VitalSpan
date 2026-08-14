@@ -55,10 +55,15 @@ describe("SystemAdminHomePage smoke", () => {
         };
       }
       if (path.startsWith("/api/v1/resource-grants")) return { items: [] };
+      if (path.startsWith("/api/v1/platform/delivery/email/slots")) {
+        return { items: [{ configured: false }] };
+      }
       return {};
     });
     renderHome();
     expect(await screen.findByText("首租户配置向导")).toBeInTheDocument();
+    expect(await screen.findByText("权限怎么配？")).toBeInTheDocument();
+    expect(await screen.findByText("基础配置（必做）")).toBeInTheDocument();
     expect(await screen.findByText("建立组织架构")).toBeInTheDocument();
     expect(await screen.findByText("配置岗位角色")).toBeInTheDocument();
   });
@@ -70,6 +75,9 @@ describe("SystemAdminHomePage smoke", () => {
       if (path.startsWith("/api/v1/users")) return { total: 1, items: [] };
       if (path.startsWith("/api/v1/roles")) return { items: [{ id: "r1", isRoot: true }], total: 1 };
       if (path.startsWith("/api/v1/resource-grants")) return { items: [] };
+      if (path.startsWith("/api/v1/platform/delivery/email/slots")) {
+        return { items: [{ configured: false }] };
+      }
       return {};
     });
     renderHome();
@@ -88,6 +96,9 @@ describe("SystemAdminHomePage smoke", () => {
         return { items: [{ id: "r1", isRoot: true }], total: 1 };
       }
       if (path.startsWith("/api/v1/resource-grants")) return { items: [] };
+      if (path.startsWith("/api/v1/platform/delivery/email/slots")) {
+        return { items: [{ configured: false }] };
+      }
       return {};
     });
     renderHome();
@@ -112,6 +123,9 @@ describe("SystemAdminHomePage smoke", () => {
         return { items: [{ id: "r1", isRoot: true }], total: 1 };
       }
       if (path.startsWith("/api/v1/resource-grants")) return { items: [] };
+      if (path.startsWith("/api/v1/platform/delivery/email/slots")) {
+        return { items: [{ configured: false }] };
+      }
       return {};
     });
     renderHome();

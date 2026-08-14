@@ -138,6 +138,28 @@ export function buildCatalogMoveTargets(
   return targets;
 }
 
+export type CatalogRecentEntry = {
+  resourceType: string;
+  resourceId: string;
+};
+
+/** 进页默认选中：最近访问的 template → 第一份 template → 任意首项。 */
+export function pickDefaultCatalogNodeId(
+  allNodes: ReportCatalogNode[],
+  recent: CatalogRecentEntry[] = [],
+): string | null {
+  if (allNodes.length === 0) return null;
+  const nodeById = new Map(allNodes.map((n) => [n.id, n]));
+  for (const entry of recent) {
+    if (entry.resourceType !== "template") continue;
+    const node = nodeById.get(entry.resourceId);
+    if (node?.nodeType === "template") return node.id;
+  }
+  const firstTemplate = allNodes.find((n) => n.nodeType === "template");
+  if (firstTemplate) return firstTemplate.id;
+  return allNodes[0]?.id ?? null;
+}
+
 export function filterCatalogTemplates(
   templates: ReportCatalogNode[],
   query: string,

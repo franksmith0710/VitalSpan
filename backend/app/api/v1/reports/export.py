@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Query, Response
 from fastapi.responses import JSONResponse
 
 from app.auth.deps import UserContext, require_permission
+from app.core.http.download import content_disposition_attachment
 
 PERM_READ = "report:read"
 PERM_MANAGE = "report:manage"
@@ -77,7 +78,7 @@ def download_export(
         return Response(
             content=data,
             media_type=content_type,
-            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+            headers={"Content-Disposition": content_disposition_attachment(filename)},
         )
     except IntegrationError as exc:
         return _err(exc)

@@ -7,15 +7,16 @@ import {
 } from "@/components/charts/engine/buildDatasetEncoding";
 import {
   axisCategoryDisplayText,
-  estimateAxisLabelWidth,
+  categoryBottomAxisTickPadding,
+  estimateAxisLabelTextWidth,
   estimateCategoryBandCenterPx,
   pickUniformOverlapAwareTickIndices,
   resolveCategoryLabelRotate,
 } from "@/components/charts/engine/d3/core/axes";
-import { resolveAxisFontSize } from "@/components/charts/engine/d3/core/chartVisualTokens";
+import { resolveAxisFontSize, scaleAxisLayoutPx } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import type { AxisLabelRotate, ChartAxisStyle } from "@/lib/chartDeStyleBlocks";
 
-const ROW_HEIGHT = 16;
+const ROW_HEIGHT_BASE = 16;
 
 type HierarchicalAxisPlanOptions = {
   /** 类别轴字段数下限（axes.xAxis），避免仅首维有值时层数被低估 */
@@ -29,13 +30,14 @@ export type HierarchicalAxisLayout = {
 };
 
 export function resolveHierarchicalAxisLayout(activeLevelCount: number): HierarchicalAxisLayout {
+  const rowHeight = scaleAxisLayoutPx(ROW_HEIGHT_BASE);
   if (activeLevelCount <= 1) {
-    return { levelCount: 1, extraBottom: 0, rowHeight: ROW_HEIGHT };
+    return { levelCount: 1, extraBottom: 0, rowHeight };
   }
   return {
     levelCount: activeLevelCount,
-    extraBottom: activeLevelCount * ROW_HEIGHT + 6,
-    rowHeight: ROW_HEIGHT,
+    extraBottom: activeLevelCount * rowHeight + scaleAxisLayoutPx(6) + categoryBottomAxisTickPadding(),
+    rowHeight,
   };
 }
 
@@ -129,7 +131,7 @@ export function pickCategoryBoundaryIndices(
   return [...indices].sort((a, b) => a - b);
 }
 
-const LABEL_GAP_PX = 12;
+const LABEL_GAP_BASE_PX = 12;
 
 function defaultBandIndexToPx(count: number, innerW: number): (index: number) => number {
   return (index: number) => estimateCategoryBandCenterPx(index, count, innerW);
@@ -145,7 +147,7 @@ function widestLabelWidthAtIndex(
   let maxW = 0;
   for (const level of activeLevels) {
     const label = axisCategoryDisplayText(parts[level] ?? "").trim();
-    if (label) maxW = Math.max(maxW, estimateAxisLabelWidth(label.length));
+    if (label) maxW = Math.max(maxW, estimateAxisLabelTextWidth(label));
   }
   return maxW;
 }
@@ -170,7 +172,7 @@ export function pickSynchronizedVisibleIndices(
     categories,
     () => "",
     0,
-    LABEL_GAP_PX,
+    scaleAxisLayoutPx(LABEL_GAP_BASE_PX),
     toPx,
     labelWidthAt,
   );
@@ -312,6 +314,7 @@ export function drawHierarchicalCategoryAxis(opts: DrawHierarchicalCategoryAxisO
     indexToPx,
   );
   const fontSize = resolveAxisFontSize();
+  const rowHeight = scaleAxisLayoutPx(ROW_HEIGHT_BASE);
   const stroke = opts.axisStyle?.x?.lineColor ?? opts.theme.axisLine;
   const strokeWidth = opts.axisStyle?.x?.lineWidth ?? 1;
   const bottomLevel = activeLevels[activeLevels.length - 1] ?? 0;
@@ -334,7 +337,7 @@ export function drawHierarchicalCategoryAxis(opts: DrawHierarchicalCategoryAxisO
     .attr("stroke-width", strokeWidth);
 
   activeLevels.forEach((level, rowIdx) => {
-    const rowY = opts.innerH + (rowIdx + 1) * ROW_HEIGHT - 4;
+    const rowY = opts.innerH + categoryBottomAxisTickPadding() + (rowIdx + 1) * rowHeight - 4;
     const isBottomRow = level === bottomLevel;
 
     for (const idx of visibleIndices) {
@@ -366,7 +369,7 @@ export function drawHierarchicalCategoryAxis(opts: DrawHierarchicalCategoryAxisO
 
     const nextRowIdx = rowIdx + 1;
     if (nextRowIdx < activeLevels.length) {
-      const nextRowY = opts.innerH + (nextRowIdx + 1) * ROW_HEIGHT - 4;
+      const nextRowY = opts.innerH + (nextRowIdx + 1) * rowHeight - 4;
       for (const idx of visibleIndices) {
         const category = categories[idx]!;
         const edges = bandEdgePx(opts.xScale, category, bandWidth);

@@ -68,6 +68,7 @@ import {
 } from "./roleFormSchema";
 import { RolePermissionsPanel } from "./RolePermissionsPanel";
 import { RoleProfileFormFields } from "./RoleProfileFormFields";
+import { SystemAdminListHint } from "../SystemAdminListHint";
 
 type RoleOut = {
   id: string;
@@ -307,6 +308,7 @@ export function RoleListPage() {
       }
     >
       <ListPageSection>
+        <SystemAdminListHint scope="roles" />
         <ListPageToolbar
           filters={
             <>

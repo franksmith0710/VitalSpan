@@ -22,9 +22,8 @@ describe("chartTableInspector", () => {
     expect(tableInspectorProfile("table-info")?.styleSections).toContain("tableColor");
   });
 
-  it("table-info advanced enables jump and time range", () => {
+  it("table-info advanced enables time range", () => {
     const caps = chartInspectorCapabilities("table-info");
-    expect(caps.jump).toBe(true);
     expect(caps.timeRange).toBe(true);
     expect(caps.conditional).toBe(false);
   });
@@ -32,6 +31,5 @@ describe("chartTableInspector", () => {
   it("t-heatmap advanced enables conditional", () => {
     const caps = chartInspectorCapabilities("t-heatmap");
     expect(caps.conditional).toBe(true);
-    expect(caps.jump).toBe(true);
   });
 });

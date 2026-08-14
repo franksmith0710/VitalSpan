@@ -1,6 +1,4 @@
 import { readSurfaceKind } from "@/lib/dataScreenLayout";
-import { bootstrapDashboardStyleConfig } from "../dashboardThemeVariants";
-import { normalizeDashboardGapConfig } from "../gapPolicy";
 import type { DashboardLayoutV2, DashboardStyleConfig } from "../layoutUtils";
 import {
   reconcileTabPaneChildIdsInPixelLayout,
@@ -8,7 +6,6 @@ import {
   syncParkedTabChildren,
   normalizeLayerOrders,
 } from "../layoutUtils";
-import { compactPixelLayoutWhenZeroGap } from "./gapCompaction";
 import { layoutsOverlap, packPixelLayoutSeamless } from "./collisionLayout";
 import { clampPixelRectToCanvas } from "./geometry";
 import { fitCanvasHeightToContent } from "./PixelCanvas";
@@ -51,21 +48,19 @@ export function repairPixelLayoutTabState(layout: DashboardLayoutV2): DashboardL
 
 /**
  * 加载 / 保存 / 展示前统一消毒：
- * 1. 间隙压实 2. Tab 归属对齐 3. 未 park 子组件折叠
- * 4. 仪表板：顶层重叠则 pack（修复误叠放）；数据大屏保留叠放（WYSIWYG）
+ * 1. Tab 归属对齐 2. 未 park 子组件折叠
+ * 3. 仪表板：仅在显式 packOverlaps 时 pack 重叠块
+ *
+ * 零间隙外框压实仅由间隙配置变更触发（DashboardEditPage.applyStyleConfig），
+ * 禁止在 save/load 隐式 compact，避免保存后坐标突变或交错布局被挤叠。
  */
 export function sanitizePixelLayoutGeometry(
   layout: DashboardLayoutV2,
   style?: DashboardStyleConfig | null,
   options?: { packOverlaps?: boolean },
 ): DashboardLayoutV2 {
-  const gapConfig = normalizeDashboardGapConfig(
-    bootstrapDashboardStyleConfig(style ?? layout.styleConfig ?? {}),
-  );
   const isDataScreen = readSurfaceKind(style ?? layout) === "data-screen";
-  let prepared = isDataScreen
-    ? layout
-    : compactPixelLayoutWhenZeroGap(layout, gapConfig).layout;
+  let prepared = layout;
   prepared = repairPixelLayoutTabState(prepared);
   const hasOverlap = layoutsOverlap(prepared, 0);
   const shouldPack = !isDataScreen && hasOverlap && options?.packOverlaps === true;

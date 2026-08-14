@@ -410,6 +410,8 @@ export async function renderThreeChoroplethChart(
       antialias: renderTier === "full",
       alpha: true,
       powerPreference: "high-performance",
+      // 封面截图要 toDataURL；默认 false 会在合成后清空缓冲，html-to-image 读到空画布或抛 SecurityError
+      preserveDrawingBuffer: true,
     });
     if (!renderer.getContext()) {
       renderer.dispose();

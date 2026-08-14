@@ -100,7 +100,7 @@ describe("renderD3LineChart", () => {
     setChartAnimationSuppressed(false);
   });
 
-  it("keeps x-axis labels horizontal by default for dense date categories", () => {
+  it("tilts x-axis labels by default for dense date categories", () => {
     setChartAnimationSuppressed(true);
     const host = document.createElement("div");
     host.style.width = "320px";
@@ -127,9 +127,9 @@ describe("renderD3LineChart", () => {
 
     const axisTexts = [...host.querySelectorAll(".vs-axis-x text")];
     expect(axisTexts.length).toBeGreaterThan(0);
-    for (const node of axisTexts) {
-      expect(node.getAttribute("transform")).toBeNull();
-    }
+    expect(
+      axisTexts.some((node) => node.getAttribute("transform")?.includes("rotate")),
+    ).toBe(true);
 
     host.remove();
     setChartAnimationSuppressed(false);

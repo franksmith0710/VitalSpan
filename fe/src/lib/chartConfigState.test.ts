@@ -18,6 +18,21 @@ describe("chartConfigState", () => {
     expect(resolveChartConfigPhase(ready).queryReady).toBe(true);
   });
 
+  it("stays widget-ready after enabling deFeatures markLines", () => {
+    const withFeatures = {
+      ...defaultChartConfig("bar-group"),
+      mode: "dataset" as const,
+      dataSourceId: "ds-1",
+      configId: "cfg-1",
+      nativeBody: {
+        deFeatures: {
+          markLines: [{ id: "l1", enabled: true, axis: "y" as const, value: 100 }],
+        },
+      },
+    };
+    expect(isWidgetConfigReady(withFeatures)).toBe(true);
+  });
+
   it("requires configId for dataset binding ready", () => {
     const partial = {
       ...defaultChartConfig("line"),

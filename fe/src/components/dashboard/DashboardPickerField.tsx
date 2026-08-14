@@ -25,7 +25,7 @@ type DashboardPickerFieldProps = {
   "aria-label"?: string;
 };
 
-/** 对标 DataEase 仪表板跳转：可搜索、重名可区分、展示更新时间/组件数 */
+/** 可搜索看板选择（组件复用等） */
 export function DashboardPickerField({
   value,
   onChange,

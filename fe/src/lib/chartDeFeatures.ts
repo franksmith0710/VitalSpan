@@ -1,5 +1,4 @@
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
-import { buildChartJumpHref, type ChartJumpClickContext } from "@/lib/chartJump";
 
 export type ChartMarkLine = {
   id: string;
@@ -21,19 +20,6 @@ export type ChartConditionalRule = {
   color: string;
 };
 
-export type ChartJumpMode = "url" | "dashboard";
-
-export type ChartJumpConfig = {
-  enabled: boolean;
-  mode: ChartJumpMode;
-  url?: string;
-  dashboardId?: string;
-  openInNewTab?: boolean;
-  /** 注入目标看板 SQL `{{key}}` 与 URL `vs_p_{key}` */
-  parameterKey?: string;
-};
-
-/** 图表级联动（地图点击 → SQL 参数注入目标看板组件） */
 export type ChartLinkageConfig = {
   enabled: boolean;
   /** 注入 SQL `{{key}}` 占位符的参数键 */
@@ -47,14 +33,7 @@ export type ChartDeFeatures = {
   showLabel?: boolean;
   markLines?: ChartMarkLine[];
   conditionalRules?: ChartConditionalRule[];
-  jump?: ChartJumpConfig;
   linkage?: ChartLinkageConfig;
-};
-
-const DEFAULT_JUMP: ChartJumpConfig = {
-  enabled: false,
-  mode: "url",
-  openInNewTab: true,
 };
 
 const DEFAULT_LINKAGE: ChartLinkageConfig = {
@@ -91,11 +70,6 @@ export function readChartConditionalRules(cfg: ChartViewConfig): ChartConditiona
   return readChartDeFeatures(cfg).conditionalRules ?? [];
 }
 
-export function readChartJumpConfig(cfg: ChartViewConfig): ChartJumpConfig {
-  const jump = readChartDeFeatures(cfg).jump;
-  return { ...DEFAULT_JUMP, ...jump };
-}
-
 export function readChartLinkageConfig(cfg: ChartViewConfig): ChartLinkageConfig {
   const linkage = readChartDeFeatures(cfg).linkage;
   return { ...DEFAULT_LINKAGE, ...linkage };
@@ -103,12 +77,6 @@ export function readChartLinkageConfig(cfg: ChartViewConfig): ChartLinkageConfig
 
 export function chartLinkageIsConfigured(linkage: ChartLinkageConfig): boolean {
   return linkage.enabled && Boolean(linkage.parameterKey?.trim());
-}
-
-export function chartJumpIsConfigured(jump: ChartJumpConfig): boolean {
-  if (!jump.enabled) return false;
-  if (jump.mode === "url") return Boolean(jump.url?.trim());
-  return Boolean(jump.dashboardId?.trim());
 }
 
 export function matchConditionalRule(value: number, rule: ChartConditionalRule): boolean {
@@ -262,12 +230,4 @@ export function applyChartAdvancedFeaturesToEchartsOption(
   next = applyMarkLinesToEchartsOption(next, readChartMarkLines(cfg));
   next = applyConditionalRulesToEchartsOption(next, readChartConditionalRules(cfg));
   return next;
-}
-
-export function resolveChartJumpHref(
-  jump: ChartJumpConfig,
-  context?: ChartJumpClickContext,
-  cfg?: ChartViewConfig,
-): string | null {
-  return buildChartJumpHref(jump, context, cfg);
 }

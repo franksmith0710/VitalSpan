@@ -1463,13 +1463,6 @@ html.admin-fill-lock #root {
   }
 }
 
-/* 保存缩略图：隐藏编辑态手柄与对齐辅助 */
-html.dashboard-thumbnail-capture [data-thumbnail-ignore],
-html.dashboard-thumbnail-capture [data-testid^="pixel-resize"],
-html.dashboard-thumbnail-capture [data-testid^="pixel-align"] {
-  visibility: hidden !important;
-}
-
 .pixel-shape-inner[data-screen-border-asset] {
   background: transparent !important;
   border: none !important;

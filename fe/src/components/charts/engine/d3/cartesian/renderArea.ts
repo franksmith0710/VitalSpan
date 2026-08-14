@@ -3,7 +3,12 @@ import { ensureGradientDef } from "@/components/charts/engine/d3/core/gradient";
 import { createCrosshair } from "@/components/charts/engine/d3/core/crosshair";
 import { drawHorizontalMarkLines } from "@/components/charts/engine/d3/core/markLines";
 import { writeIncrementalSession } from "@/components/charts/engine/d3/core/incrementalRender";
-import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
+import {
+  attachCartesianDataZoom,
+  cartesianSparkline,
+  rowsInCategories,
+  visibleDataZoomCategories,
+} from "@/components/charts/engine/d3/core/dataZoom";
 import {
   buildCartesianScene,
   drawCartesianAxes,
@@ -63,10 +68,13 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
 
   const theme = themeFromConfig(rawTheme);
   const normalized = normalizeCartesianData(data, xField, yField, seriesField);
-  const { categories, structuralLevelCount } = normalizeCategoryAxisDomain(
+  const domain = normalizeCategoryAxisDomain(
     normalized.map((d) => String(d.__category__ ?? "")),
     categoryLevelCount,
   );
+  const allCategories = domain.categories;
+  const categories = visibleDataZoomCategories(container, dataZoom, allCategories);
+  const structuralLevelCount = domain.structuralLevelCount;
   const seriesGroups = groupSeries(normalized, seriesField);
   const seriesNames = seriesGroups.map((s) => s.name);
   const hasMultiSeries = seriesNames.length > 1 && Boolean(seriesField);
@@ -90,6 +98,7 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
     categories,
     axisStyle,
     categoryLevelCount: structuralLevelCount,
+    dataZoom,
   });
   const { root, defs, g, plot, margin, innerW, innerH } = scene;
 
@@ -105,7 +114,7 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
   const keys = resolveSeriesKeys(seriesNames);
   const maxVal = isStack
     ? (d3.max(wideRows, (row) => keys.reduce((sum, k) => sum + Number(row[k] ?? 0), 0)) ?? 0)
-    : (d3.max(normalized, (d) => Number(d.__value__)) ?? 0);
+    : (d3.max(rowsInCategories(normalized, categories), (d) => Number(d.__value__)) ?? 0);
   const y = d3.scaleLinear().domain([0, maxVal]).nice().range([innerH, 0]);
   const curve = smooth ? d3.curveMonotoneX : d3.curveLinear;
 
@@ -168,7 +177,7 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
         conditionalRules,
       );
       const gradId = ensureGradientDef(defs, `area-${i}`, strokeColor, 0.38, 0.04);
-      const points = [...s.points].sort(
+      const points = rowsInCategories(s.points, categories).sort(
         (a, b) => categories.indexOf(String(a.__category__)) - categories.indexOf(String(b.__category__)),
       );
       const areaGen = d3
@@ -257,7 +266,19 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
   }
 
   writeIncrementalSession(container, { plotType: "Area", width, height });
-  const detachZoom = dataZoom ? attachCartesianDataZoom(root, plot, innerW, innerH, { theme }) : () => undefined;
+  const detachZoom = dataZoom
+    ? attachCartesianDataZoom({
+        host: container,
+        plotRoot: g,
+        innerW,
+        innerH,
+        marginBottom: margin.bottom,
+        categories: allCategories,
+        sparkline: cartesianSparkline(allCategories, normalized),
+        theme,
+        redraw: () => renderD3AreaChart(container, config),
+      })
+    : () => undefined;
 
   return () => {
     detachZoom();

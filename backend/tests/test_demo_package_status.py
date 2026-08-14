@@ -25,7 +25,7 @@ def test_build_demo_package_status_ready() -> None:
     try:
         demo_package.status.probe_sample_db_schema = lambda: SchemaBootstrapResult(
             mysql_reachable=True,
-            schema_version=3,
+            schema_version=4,
             applied_count=0,
         )
         demo_package.status.resolve_sample_db_datasource_id = lambda _db: ds_id
@@ -35,8 +35,8 @@ def test_build_demo_package_status_ready() -> None:
         status = build_demo_package_status(db)
         assert status.ready is True
         assert status.datasource_id == ds_id
-        assert status.schema_version == 3
-        assert len(status.demo_dataset_ids) == 5
+        assert status.schema_version == 4
+        assert len(status.demo_dataset_ids) == len(DEMO_DATASET_IDS)
         assert status.message is None
     finally:
         demo_package.status.probe_sample_db_schema = original_probe

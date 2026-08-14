@@ -13,6 +13,7 @@ from app.dashboard.templates.demo_datasource import (
     repair_legacy_template_layout,
 )
 from app.dashboard.templates.layout_utils import sanitize_layout_for_template
+from app.dashboard.templates.rebind_demo_encodings import rebind_layout_demo_encodings
 
 _LAYOUTS_DIR = Path(__file__).resolve().parent / "layouts"
 _UUID_RE = re.compile(
@@ -47,7 +48,8 @@ def prepare_exported_layout(raw: dict[str, Any]) -> dict[str, Any]:
     """清洗导出布局：去运行时字段、统一演示数据源占位、修复 legacy 字段。"""
     sanitized = sanitize_layout_for_template(raw)
     normalized = _normalize_datasource_refs(sanitized)
-    return repair_legacy_template_layout(normalized)
+    migrated = repair_legacy_template_layout(normalized)
+    return rebind_layout_demo_encodings(migrated)
 
 
 @lru_cache(maxsize=32)

@@ -140,7 +140,7 @@ export const NAV_MANIFEST: NavManifestSection[] = [
             capability: "report:read",
           },
           {
-            name: "我的报表",
+            name: "文档模板",
             path: "/admin/reports/templates",
             milestone: "M1",
             capability: "report:manage",

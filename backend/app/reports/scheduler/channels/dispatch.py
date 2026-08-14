@@ -9,6 +9,7 @@ import httpx
 
 from app.core.config import Settings, get_settings
 from app.core.platform_config.resolve import resolve_email_smtp
+from app.core.platform_config.slots import EMAIL_SLOT_QQ, normalize_email_slot
 from app.reports.scheduler.channels import work_notice
 from app.reports.scheduler.delivery_adapter import _deliver_explicit_mock, _send_smtp
 
@@ -110,6 +111,7 @@ def deliver_to_channels(
     im_targets: dict[str, list[tuple[str, str]]] | None = None,
     im_missing: dict[str, list[str]] | None = None,
     notify_group: bool = False,
+    email_smtp_slot: str | None = EMAIL_SLOT_QQ,
 ) -> dict[str, Any]:
     settings = settings or get_settings()
     if mock_mode is not None:
@@ -123,7 +125,7 @@ def deliver_to_channels(
 
     for channel in channel_list:
         if channel == "email":
-            smtp = resolve_email_smtp()
+            smtp = resolve_email_smtp(slot=normalize_email_slot(email_smtp_slot))
             steps.append(_send_smtp(
                 artifact_ref,
                 smtp,

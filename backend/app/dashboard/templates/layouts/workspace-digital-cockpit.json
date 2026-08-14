@@ -98,7 +98,7 @@
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
+          "configId": null,
           "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
@@ -177,7 +177,7 @@
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
+          "configId": null,
           "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
@@ -199,7 +199,7 @@
           "index": null,
           "dimensions": [
             {
-              "field": "product_name",
+              "field": "sale_date",
               "label": null
             }
           ],
@@ -212,7 +212,7 @@
           "axes": {
             "xAxis": [
               {
-                "field": "product_name",
+                "field": "sale_date",
                 "label": null
               }
             ],
@@ -256,8 +256,8 @@
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
-          "datasetId": "demo-sales-wide",
+          "configId": null,
+          "datasetId": "demo-gov-grid-stats",
           "nativeBody": {
             "deStyle": {
               "legend": {
@@ -275,36 +275,36 @@
           "index": null,
           "dimensions": [
             {
-              "field": "sale_date",
+              "field": "grid_name",
               "label": null
             }
           ],
           "metrics": [
             {
-              "field": "amount",
+              "field": "event_count",
               "label": null
             },
             {
-              "field": "amount",
+              "field": "resolved_count",
               "label": null
             }
           ],
           "axes": {
             "xAxis": [
               {
-                "field": "sale_date",
+                "field": "grid_name",
                 "label": null
               }
             ],
             "yAxis": [
               {
-                "field": "amount",
+                "field": "event_count",
                 "label": null
               }
             ],
             "yAxisExt": [
               {
-                "field": "amount",
+                "field": "resolved_count",
                 "label": null
               }
             ]
@@ -342,8 +342,8 @@
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": "8f770930-6675-4707-9925-68cac3fee49a",
-          "datasetId": "demo-sales-detail",
+          "configId": null,
+          "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
               "label": {
@@ -423,7 +423,7 @@
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
+          "configId": null,
           "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
@@ -435,7 +435,7 @@
           "index": null,
           "dimensions": [
             {
-              "field": "province",
+              "field": "sale_date",
               "label": null
             }
           ],
@@ -458,6 +458,12 @@
             }
           ],
           "axes": {
+            "xAxis": [
+              {
+                "field": "sale_date",
+                "label": null
+              }
+            ],
             "yAxis": [
               {
                 "field": "amount",
@@ -473,12 +479,6 @@
               },
               {
                 "field": "quantity",
-                "label": null
-              }
-            ],
-            "xAxis": [
-              {
-                "field": "province",
                 "label": null
               }
             ]
@@ -516,7 +516,7 @@
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
+          "configId": null,
           "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
@@ -540,7 +540,7 @@
           "index": null,
           "dimensions": [
             {
-              "field": "sale_date",
+              "field": "category_name",
               "label": null
             }
           ],
@@ -553,7 +553,7 @@
           "axes": {
             "xAxis": [
               {
-                "field": "sale_date",
+                "field": "category_name",
                 "label": null
               }
             ],
@@ -597,7 +597,7 @@
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
+          "configId": null,
           "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deTableStyle": {
@@ -623,10 +623,6 @@
               "label": null
             },
             {
-              "field": "product_name",
-              "label": null
-            },
-            {
               "field": "category_name",
               "label": null
             }
@@ -649,10 +645,6 @@
               },
               {
                 "field": "province",
-                "label": null
-              },
-              {
-                "field": "product_name",
                 "label": null
               },
               {
@@ -705,7 +697,7 @@
           "schema": null,
           "table": null,
           "configId": null,
-          "datasetId": null,
+          "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
               "legend": {
@@ -717,9 +709,42 @@
             }
           },
           "index": null,
-          "dimensions": [],
-          "metrics": [],
-          "axes": null,
+          "dimensions": [
+            {
+              "field": "product_name",
+              "label": null
+            }
+          ],
+          "metrics": [
+            {
+              "field": "quantity",
+              "label": null
+            },
+            {
+              "field": "amount",
+              "label": null
+            }
+          ],
+          "axes": {
+            "xAxis": [
+              {
+                "field": "product_name",
+                "label": null
+              }
+            ],
+            "yAxis": [
+              {
+                "field": "quantity",
+                "label": null
+              }
+            ],
+            "yAxisExt": [
+              {
+                "field": "amount",
+                "label": null
+              }
+            ]
+          },
           "filters": [],
           "timeRange": null
         },

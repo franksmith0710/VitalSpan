@@ -37,8 +37,6 @@ type LayoutOpts = {
 
 const LEGEND_GAP = 6;
 const LEGEND_ITEM_GAP = 8;
-const LEGEND_FALLBACK_ROW_H = 22;
-const LEGEND_FALLBACK_COL_W = 80;
 const LEGEND_TEXT_PAD = 6;
 
 function isWideLegendChar(code: number): boolean {
@@ -144,11 +142,7 @@ export function estimateLegendBlockSize(
   const rowH = legendRowHeight(fontSize, iconSize);
 
   if (items.length === 0) {
-    const position = layout?.position ?? "bottom";
-    if (position === "left" || position === "right") {
-      return { width: LEGEND_FALLBACK_COL_W, height: rowH * 2 };
-    }
-    return { width: width - margin.left - margin.right, height: LEGEND_FALLBACK_ROW_H };
+    return { width: 0, height: 0 };
   }
 
   if (!horizontal) {
@@ -174,7 +168,7 @@ export function reserveLegendMargin(
   layout: D3LegendLayout | undefined,
   items: D3LegendItem[],
 ): ChartMargin {
-  if (items.length === 0 && !layout) return margin;
+  if (items.length === 0) return margin;
 
   const position = layout?.position ?? "bottom";
   const size = estimateLegendBlockSize(items, layout, width, height, margin);

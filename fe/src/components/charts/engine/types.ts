@@ -6,7 +6,6 @@ import type { ChartFieldRef, ChartViewConfig } from "@/lib/chartViewConfig";
 import type { ChartAxesConfig } from "@/lib/chartDeAxis";
 import type { ColorScheme, NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import type { DataLabelContentOptions } from "@/lib/chartDataLabelFormat";
-import type { ChartJumpClickContext } from "@/lib/chartJump";
 
 import type { Geo3dRenderTier } from "@/components/charts/engine/three/geo3dRuntime";
 
@@ -59,7 +58,6 @@ export type ChartStyleContext = {
 
 export type ChartInteractionEvent =
   | { kind: "drill"; value: string; label?: string }
-  | { kind: "jump"; context?: ChartJumpClickContext }
   | { kind: "legend-toggle"; seriesName: string };
 
 export type ChartLegendSnapshot = {
@@ -82,9 +80,7 @@ export type ChartEngineViewProps = {
   drillStack?: ChartDrillFrame[];
   drillClickField?: string;
   onInteraction?: (event: ChartInteractionEvent) => void;
-  /** 跳转交互：点击图表数据点触发（优先于下钻） */
-  onJumpClick?: (context: ChartJumpClickContext) => void;
-  /** 地图联动：单击区域写入 SQL 参数（优先于下钻，次于跳转） */
+  /** 地图联动：单击区域写入 SQL 参数（优先于下钻） */
   onLinkageClick?: (payload: { name: string; value: string }) => void;
   /** 表格行列拖拽结果写回 deTableStyle（看板编辑态） */
   onTableStylePatch?: (patch: Partial<import("@/lib/chartDeTableStyle").ChartDeTableStyle>) => void;

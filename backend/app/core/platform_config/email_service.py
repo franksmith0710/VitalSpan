@@ -6,14 +6,16 @@ from sqlalchemy.orm import Session
 
 from app.auth.audit.write_hooks import record_platform_event
 from app.core.crypto.credentials import decrypt_credential, encrypt_credential
-from app.core.platform_config.models import (
-    AUDIT_TARGET_EMAIL,
-    EMAIL_CHANNEL,
-    PlatformDeliveryConfig,
-)
+from app.core.platform_config.models import AUDIT_TARGET_BY_CHANNEL, PlatformDeliveryConfig
 from app.core.platform_config.resolve import resolve_email_smtp
-from app.core.platform_config.schemas import EmailDeliveryConfigOut, EmailDeliveryConfigPut
-from app.core.platform_config.smtp_probe import probe_smtp_connection
+from app.core.platform_config.schemas import EmailDeliveryConfigOut, EmailDeliveryConfigPut, EmailDeliverySlotsOut
+from app.core.platform_config.slots import (
+    EMAIL_SLOTS,
+    SLOT_LABELS,
+    channel_for_slot,
+    normalize_email_slot,
+)
+from app.core.platform_config.smtp_probe import normalize_smtp_username, probe_smtp_connection
 from app.core.platform_config.smtp_settings import SmtpSettings
 
 
@@ -25,28 +27,34 @@ class PlatformConfigError(Exception):
         super().__init__(message)
 
 
-def _row_or_none(session: Session) -> PlatformDeliveryConfig | None:
-    return session.get(PlatformDeliveryConfig, EMAIL_CHANNEL)
+def _row_or_none(session: Session, slot: str) -> PlatformDeliveryConfig | None:
+    return session.get(PlatformDeliveryConfig, channel_for_slot(slot))
 
 
-def _effective_source(session: Session) -> str:
-    row = _row_or_none(session)
+def _effective_source(session: Session, slot: str) -> str:
+    row = _row_or_none(session, slot)
+    normalized = normalize_email_slot(slot)
     if row is None:
-        return "env" if resolve_email_smtp(session).source == "env" else "none"
+        if normalized == "qq" and resolve_email_smtp(session, slot=normalized).source == "env":
+            return "env"
+        return "none"
     if row.state == "cleared":
         return "none"
     return "db"
 
 
-def get_email_config(session: Session, *, probe: bool = True) -> EmailDeliveryConfigOut:
-    row = _row_or_none(session)
-    smtp = resolve_email_smtp(session)
-    source = _effective_source(session)
+def get_email_config(session: Session, slot: str, *, probe: bool = True) -> EmailDeliveryConfigOut:
+    normalized = normalize_email_slot(slot)
+    row = _row_or_none(session, normalized)
+    smtp = resolve_email_smtp(session, slot=normalized)
+    source = _effective_source(session, normalized)
     configured = smtp.is_configured and source != "none"
     probe_result = probe_smtp_connection(smtp) if probe and configured else None
     if probe_result and probe_result["status"] != "reachable":
         configured = False
     return EmailDeliveryConfigOut(
+        slot=normalized,
+        label=SLOT_LABELS[normalized],
         configured=configured,
         source=source,
         host=row.host if row and row.state == "active" else (smtp.host if source == "env" else None),
@@ -62,15 +70,24 @@ def get_email_config(session: Session, *, probe: bool = True) -> EmailDeliveryCo
     )
 
 
+def list_email_configs(session: Session, *, probe: bool = True) -> EmailDeliverySlotsOut:
+    return EmailDeliverySlotsOut(
+        items=[get_email_config(session, slot, probe=probe) for slot in EMAIL_SLOTS],
+    )
+
+
 def save_email_config(
     session: Session,
+    slot: str,
     payload: EmailDeliveryConfigPut,
     *,
     actor_id: str,
     actor_username: str | None,
     trace_id: str,
 ) -> EmailDeliveryConfigOut:
-    row = _row_or_none(session)
+    normalized = normalize_email_slot(slot)
+    channel = channel_for_slot(normalized)
+    row = _row_or_none(session, normalized)
     existing_cipher = row.password_encrypted if row and row.state == "active" else None
     password = payload.password
     if not password:
@@ -86,7 +103,19 @@ def save_email_config(
         host=payload.host.strip(),
         port=payload.port,
         from_addr=payload.from_addr.strip(),
-        username=payload.username.strip() if payload.username else None,
+        username=None,
+        password=password,
+        source="db",
+    )
+    try:
+        smtp_username = normalize_smtp_username(payload.username, smtp.from_addr)
+    except ValueError as exc:
+        raise PlatformConfigError("PLATFORM_SMTP_USERNAME_INVALID", str(exc), 422) from exc
+    smtp = SmtpSettings(
+        host=smtp.host,
+        port=smtp.port,
+        from_addr=smtp.from_addr,
+        username=smtp_username,
         password=password,
         source="db",
     )
@@ -98,7 +127,7 @@ def save_email_config(
             422,
         )
     if row is None:
-        row = PlatformDeliveryConfig(channel=EMAIL_CHANNEL, state="active")
+        row = PlatformDeliveryConfig(channel=channel, state="active")
         session.add(row)
     else:
         row.state = "active"
@@ -114,25 +143,28 @@ def save_email_config(
         actor_id=actor_id,
         actor_username=actor_username,
         target_type="platform_delivery",
-        target_id=AUDIT_TARGET_EMAIL,
-        action="platform_connect.email.save",
-        detail={"channel": EMAIL_CHANNEL, "host": row.host, "port": row.port},
+        target_id=AUDIT_TARGET_BY_CHANNEL[channel],
+        action=f"platform_connect.email.{normalized}.save",
+        detail={"channel": channel, "slot": normalized, "host": row.host, "port": row.port},
         trace_id=trace_id,
     )
     session.commit()
-    return get_email_config(session, probe=False)
+    return get_email_config(session, normalized, probe=False)
 
 
 def clear_email_config(
     session: Session,
+    slot: str,
     *,
     actor_id: str,
     actor_username: str | None,
     trace_id: str,
 ) -> EmailDeliveryConfigOut:
-    row = _row_or_none(session)
+    normalized = normalize_email_slot(slot)
+    channel = channel_for_slot(normalized)
+    row = _row_or_none(session, normalized)
     if row is None:
-        row = PlatformDeliveryConfig(channel=EMAIL_CHANNEL, state="cleared")
+        row = PlatformDeliveryConfig(channel=channel, state="cleared")
         session.add(row)
     row.state = "cleared"
     row.host = None
@@ -146,10 +178,10 @@ def clear_email_config(
         actor_id=actor_id,
         actor_username=actor_username,
         target_type="platform_delivery",
-        target_id=AUDIT_TARGET_EMAIL,
-        action="platform_connect.email.clear",
-        detail={"channel": EMAIL_CHANNEL},
+        target_id=AUDIT_TARGET_BY_CHANNEL[channel],
+        action=f"platform_connect.email.{normalized}.clear",
+        detail={"channel": channel, "slot": normalized},
         trace_id=trace_id,
     )
     session.commit()
-    return get_email_config(session, probe=False)
+    return get_email_config(session, normalized, probe=False)

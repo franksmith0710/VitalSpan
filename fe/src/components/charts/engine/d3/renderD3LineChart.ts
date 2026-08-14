@@ -10,7 +10,12 @@ import {
   paintConditionalLineSegments,
   resolveDatumColor,
 } from "@/components/charts/engine/d3/d3LineVisual";
-import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
+import {
+  attachCartesianDataZoom,
+  cartesianSparkline,
+  rowsInCategories,
+  visibleDataZoomCategories,
+} from "@/components/charts/engine/d3/core/dataZoom";
 import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
 import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { applyPathDepthShadow } from "@/components/charts/engine/d3/core/depthEngine";
@@ -84,10 +89,13 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
 
   const theme = themeFromConfig(rawTheme);
   const normalized = normalizeCartesianData(data, xField, yField, seriesField);
-  const { categories, structuralLevelCount } = normalizeCategoryAxisDomain(
+  const domain = normalizeCategoryAxisDomain(
     normalized.map((d) => String(d.__category__ ?? "")),
     categoryLevelCount,
   );
+  const allCategories = domain.categories;
+  const categories = visibleDataZoomCategories(container, dataZoom, allCategories);
+  const structuralLevelCount = domain.structuralLevelCount;
   const seriesGroups = groupSeries(normalized, seriesField);
   const colorScale = d3.scaleOrdinal<string>().domain(seriesGroups.map((s) => s.name)).range(colors);
   const singleSeries = seriesGroups.length === 1;
@@ -116,10 +124,11 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
     categories,
     axisStyle,
     categoryLevelCount: structuralLevelCount,
+    dataZoom,
   });
-  const { root, defs, g, plot, innerW, innerH } = scene;
+  const { root, defs, g, plot, innerW, innerH, margin } = scene;
 
-  const maxVal = d3.max(normalized, (d) => Number(d.__value__)) ?? 0;
+  const maxVal = d3.max(rowsInCategories(normalized, categories), (d) => Number(d.__value__)) ?? 0;
   const xScale = d3.scalePoint<string>().domain(categories).range([0, innerW]).padding(0.5);
   const yScale = d3.scaleLinear().domain([0, maxVal]).nice().range([innerH, 0]);
 
@@ -163,7 +172,7 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
   seriesGroups.forEach((series, seriesIndex) => {
     const color = colorScale(series.name) ?? colors[0] ?? theme.accent;
     const gradId = ensureGradientDef(defs, `d3-line-grad-${seriesIndex}`, color, singleSeries ? 0.32 : 0.16, 0.01);
-    const points = [...series.points].sort(
+    const points = rowsInCategories(series.points, categories).sort(
       (a, b) => categories.indexOf(String(a.__category__)) - categories.indexOf(String(b.__category__)),
     );
 
@@ -303,7 +312,19 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
   }
 
   writeIncrementalSession(container, { plotType: "Line", width, height });
-  const detachZoom = dataZoom ? attachCartesianDataZoom(root, plot, innerW, innerH, { theme }) : () => undefined;
+  const detachZoom = dataZoom
+    ? attachCartesianDataZoom({
+        host: container,
+        plotRoot: g,
+        innerW,
+        innerH,
+        marginBottom: margin.bottom,
+        categories: allCategories,
+        sparkline: cartesianSparkline(allCategories, normalized),
+        theme,
+        redraw: () => renderD3LineChart(container, config),
+      })
+    : () => undefined;
 
   return () => {
     detachZoom();

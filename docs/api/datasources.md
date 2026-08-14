@@ -28,7 +28,7 @@
 
 | ID | 方法 | 路径 | 摘要 | 成功码 |
 |----|------|------|------|--------|
-| DS-01 | GET | `/api/v1/datasources` | 列表（ACL 过滤） | 200 |
+| DS-01 | GET | `/api/v1/datasources` | 列表（ACL；默认隐藏托管分析库，`includeManaged=true` 可见） | 200 |
 | DS-02 | POST | `/api/v1/datasources` | 创建 | 201 |
 | DS-03 | GET | `/api/v1/datasources/{id}` | 详情 | 200 |
 | DS-04 | POST | `/api/v1/datasources/{id}/test` | 连通性测试 | 200 |

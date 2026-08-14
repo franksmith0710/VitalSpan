@@ -1,8 +1,19 @@
 import { Link } from "react-router";
-import { ChevronDown, ChevronRight, ExternalLink, MoreHorizontal, RefreshCw } from "lucide-react";
+import { useState } from "react";
+import { ChevronDown, ChevronRight, ExternalLink, MoreHorizontal, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button, IconButton } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -101,12 +112,14 @@ function ScheduleDataRow({
   readOnly,
   expanded,
   onToggle,
+  onDelete,
 }: {
   schedule: ReportScheduleRow;
   sourceLabel: string;
   readOnly: boolean;
   expanded: boolean;
   onToggle: () => void;
+  onDelete: () => void;
 }) {
   const { transitionSchedule } = useReportScheduleMutations();
   const sourceHref = scheduleSourceHref(schedule);
@@ -163,6 +176,18 @@ function ScheduleDataRow({
                 查看源
               </Link>
             </Button>
+            {!readOnly ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-error-600 hover:text-error-700 dark:text-error-400"
+                onClick={onDelete}
+              >
+                <Trash2 className="size-3.5" aria-hidden />
+                删除
+              </Button>
+            ) : null}
             {!readOnly && schedule.allowedActions.length > 0 ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -240,6 +265,9 @@ export function ScheduleListTable({
   expandedId,
   onToggleExpand,
 }: ScheduleListTableProps) {
+  const [pendingDelete, setPendingDelete] = useState<ReportScheduleRow | null>(null);
+  const { deleteSchedule } = useReportScheduleMutations();
+
   return (
     <div className="overflow-x-only">
       <Table size="comfortable" wrapperClassName="min-w-[960px] border-0 shadow-none">
@@ -263,10 +291,40 @@ export function ScheduleListTable({
               readOnly={readOnly}
               expanded={expandedId === schedule.id}
               onToggle={() => onToggleExpand(schedule.id)}
+              onDelete={() => setPendingDelete(schedule)}
             />
           ))}
         </TableBody>
       </Table>
+      <AlertDialog open={Boolean(pendingDelete)} onOpenChange={(open) => !open && setPendingDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>删除这条定时报告？</AlertDialogTitle>
+            <AlertDialogDescription>
+              删除后将停止定时执行，并从列表中移除。执行历史一并清理，不可恢复。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteSchedule.isPending}>取消</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={deleteSchedule.isPending}
+              onClick={() => {
+                if (!pendingDelete) return;
+                deleteSchedule.mutate(pendingDelete.id, {
+                  onSuccess: () => {
+                    setPendingDelete(null);
+                    toast.success("已删除");
+                  },
+                  onError: (err) => toast.error(mapApiError(err)),
+                });
+              }}
+            >
+              {deleteSchedule.isPending ? "删除中…" : "删除"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

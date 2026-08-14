@@ -60,7 +60,7 @@ import { runBatchDelete } from "@/lib/runBatchDelete";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { isProtectedDemoDatasource } from "@/lib/demoPackage";
-import { isAnalyticsDatasource, isSyncSourceCapable } from "@/lib/datasourceRoles";
+import { isAnalyticsDatasource, isManagedAnalyticsDatasource, isSyncSourceCapable } from "@/lib/datasourceRoles";
 
 type DataSourceOut = {
   id: string;
@@ -196,7 +196,7 @@ export function DatasourceListPage() {
   });
 
   const items = useMemo(() => {
-    const raw = data?.items ?? [];
+    const raw = (data?.items ?? []).filter((row) => !isManagedAnalyticsDatasource(row));
     return [...raw].sort((a, b) => {
       const aDemo = isProtectedDemoDatasource(a) ? 1 : 0;
       const bDemo = isProtectedDemoDatasource(b) ? 1 : 0;
@@ -213,7 +213,7 @@ export function DatasourceListPage() {
   const handleBatchDelete = async () => {
     const ids = [...selection.selectedIds].filter((selectedId) => {
       const row = items.find((item) => item.id === selectedId);
-      return row ? !isProtectedDemoDatasource(row) : false;
+      return row ? !isProtectedDemoDatasource(row) && !isManagedAnalyticsDatasource(row) : false;
     });
     if (ids.length === 0) return;
     setBatchDeleting(true);

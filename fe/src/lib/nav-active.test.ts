@@ -14,6 +14,7 @@ const SYSTEM_ADMIN_NAV_PATHS = [
   "/admin/system/users",
   "/admin/system/roles",
   "/admin/system/grants",
+  "/admin/system/platform-connect",
   "/admin/system/rls",
   "/admin/system/audit",
 ];

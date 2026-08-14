@@ -4,12 +4,15 @@ import {
   buildCustomRefreshFromParts,
   CHART_RESULT_LIMIT_OPTIONS,
   dashboardQueryLimitSelectValue,
+  formatResultLimitSelectValue,
   parseCustomRefreshParts,
   parseDeRefreshIntervalSec,
   parseDeResultLimit,
   patchChartDeDisplay,
   readChartDeDisplay,
   resolveChartQueryLimit,
+  persistResultLimitSelection,
+  resultLimitCustomAmount,
   selectValueToDashboardQueryLimit,
 } from "@/lib/chartDeDisplay";
 
@@ -41,7 +44,26 @@ describe("chartDeDisplay", () => {
 
   it("T-DE-DISP-05: result limit options exclude 10000 and 全部", () => {
     const values = CHART_RESULT_LIMIT_OPTIONS.map((opt) => opt.value);
-    expect(values).toEqual(["100", "500", "1000"]);
+    expect(values).toEqual(["10", "20", "50", "100", "500", "1000"]);
+  });
+
+  it("T-DE-DISP-07: non-preset result counts map to custom select", () => {
+    expect(formatResultLimitSelectValue("600")).toBe("custom");
+    expect(resultLimitCustomAmount("600")).toBe(600);
+    expect(parseDeResultLimit("600")).toBe(600);
+    expect(dashboardQueryLimitSelectValue(600)).toBe("custom");
+    expect(formatResultLimitSelectValue(undefined)).toBe("50");
+    expect(resolveChartQueryLimit(baseCfg, {})).toBe(50);
+  });
+
+  it("T-DE-DISP-08: selecting custom from a preset stays custom", () => {
+    expect(persistResultLimitSelection("custom", "1000")).toBe("custom:1000");
+    expect(formatResultLimitSelectValue("custom:1000")).toBe("custom");
+    expect(parseDeResultLimit("custom:1000")).toBe(1000);
+    expect(parseDeResultLimit("custom:80")).toBe(80);
+    expect(
+      resolveChartQueryLimit(patchChartDeDisplay(baseCfg, { resultLimit: "custom:80" }), {}),
+    ).toBe(80);
   });
 
   it("T-DE-DISP-06: legacy all/10000 coerce to latest 1000", () => {

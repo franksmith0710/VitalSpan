@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { isProtectedDemoDatasource } from "@/lib/demoPackage";
+import { isManagedAnalyticsDatasource } from "@/lib/datasourceRoles";
 import { queryKeys } from "@/lib/queryKeys";
 import {
   ConnectionStatusBadge,
@@ -106,7 +107,9 @@ export function DatasourceDetailPage() {
 
   if (!data) return null;
 
-  const isLocked = isProtectedDemoDatasource(data);
+  const isDemoLocked = isProtectedDemoDatasource(data);
+  const isAnalyticsLocked = isManagedAnalyticsDatasource(data);
+  const isLocked = isDemoLocked || isAnalyticsLocked;
   const connectionStatus = deriveConnectionStatus(
     testMutation.isPending,
     testError,
@@ -122,9 +125,14 @@ export function DatasourceDetailPage() {
           <Badge variant="light" color="primary" size="sm">
             {sourceTypeLabel(data.type)}
           </Badge>
-          {isLocked ? (
+          {isDemoLocked ? (
             <Badge variant="light" color="primary" size="sm">
               官方示例数据
+            </Badge>
+          ) : null}
+          {isAnalyticsLocked ? (
+            <Badge variant="light" color="success" size="sm">
+              托管分析库
             </Badge>
           ) : null}
           <span className="font-mono text-theme-xs text-gray-500 dark:text-gray-400">
@@ -160,9 +168,14 @@ export function DatasourceDetailPage() {
         </div>
       }
     >
-      {isLocked ? (
+      {isDemoLocked ? (
         <p className="mb-4 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-theme-sm text-brand-800 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-300">
           官方内置示例库，仅供模板预览与官方示例看板使用，不可修改或删除。
+        </p>
+      ) : null}
+      {isAnalyticsLocked ? (
+        <p className="mb-4 rounded-xl border border-success-200 bg-success-50 px-4 py-3 text-theme-sm text-success-800 dark:border-success-500/30 dark:bg-success-500/10 dark:text-success-300">
+          平台托管分析库，供同步入湖后的 Dataset 与看板使用，不在数据源列表中管理，不可修改或删除。
         </p>
       ) : null}
       <DatasourceDetailPanel

@@ -1,13 +1,40 @@
 import * as d3 from "d3";
 import type { AntvThemeTokens } from "@/components/charts/engine/antv/theme";
 import { formatCompositeCategoryDisplay } from "@/components/charts/engine/buildDatasetEncoding";
-import { VCDS, resolveAxisFontSize } from "@/components/charts/engine/d3/core/chartVisualTokens";
+import { VCDS, resolveAxisFontSize, scaleAxisLayoutPx } from "@/components/charts/engine/d3/core/chartVisualTokens";
+import { estimateLabelPixelWidth } from "@/components/charts/engine/d3/core/labelWidth";
 import type { AxisLabelRotate } from "@/lib/chartDeStyleBlocks";
 
-/** 11px 轴标签下平均每字符占位（中文/数字混合估算） */
-const CHAR_PX = 6.5;
-const CATEGORY_LABEL_GAP_PX = 12;
-const CATEGORY_THINNING_MIN_PX = 48;
+/** 数值轴：ASCII 数字估宽（与 estimateLabelPixelWidth 的 0.58 倍对齐） */
+const ASCII_CHAR_PX_AT_11 = 7.15;
+const CATEGORY_LABEL_GAP_BASE_PX = 12;
+const CATEGORY_THINNING_MIN_BASE_PX = 48;
+const CATEGORY_AXIS_TICK_SIZE_BASE = 6;
+const CATEGORY_AXIS_TICK_PADDING_BASE = 10;
+
+export function categoryBottomAxisTickSize(): number {
+  return scaleAxisLayoutPx(CATEGORY_AXIS_TICK_SIZE_BASE);
+}
+
+export function categoryBottomAxisTickPadding(): number {
+  return scaleAxisLayoutPx(CATEGORY_AXIS_TICK_PADDING_BASE);
+}
+
+export function categoryBottomAxisLabelY(): number {
+  return categoryBottomAxisTickSize() + categoryBottomAxisTickPadding();
+}
+
+function axisAsciiCharPx(): number {
+  return ASCII_CHAR_PX_AT_11 * (resolveAxisFontSize() / VCDS.axis.fontSize);
+}
+
+function categoryLabelGapPx(): number {
+  return scaleAxisLayoutPx(CATEGORY_LABEL_GAP_BASE_PX);
+}
+
+function categoryThinningMinPx(): number {
+  return scaleAxisLayoutPx(CATEGORY_THINNING_MIN_BASE_PX);
+}
 
 export type CategoryAxisLayout = {
   ticks: string[];
@@ -16,8 +43,21 @@ export type CategoryAxisLayout = {
   extraBottom: number;
 };
 
-export function estimateAxisLabelWidth(charCount: number): number {
-  return charCount * CHAR_PX;
+export function estimateAxisLabelWidth(charCount: number, rotateDeg = 0): number {
+  const w = charCount * axisAsciiCharPx();
+  return rotateDeg ? projectedRotatedWidth(w, rotateDeg) : w;
+}
+
+/** 类目轴：按中英文字符真实占位估宽，旋转时取水平投影 */
+export function estimateAxisLabelTextWidth(text: string, rotateDeg = 0): number {
+  const fontSize = resolveAxisFontSize();
+  const raw = estimateLabelPixelWidth(text, fontSize);
+  return rotateDeg ? projectedRotatedWidth(raw, rotateDeg, fontSize) : raw;
+}
+
+function projectedRotatedWidth(textWidth: number, rotateDeg: number, fontSize = resolveAxisFontSize()): number {
+  const rad = (Math.abs(rotateDeg) * Math.PI) / 180;
+  return textWidth * Math.cos(rad) + fontSize * Math.sin(rad);
 }
 
 /** 固定索引步长抽稀：0, step, 2*step, …（末段不足 step 时不硬塞尾点，保证步长恒定） */
@@ -85,8 +125,7 @@ export function pickCategoryTickIndicesByPixel(
 }
 
 function horizontalLabelWidthPx(label: string, rotateDeg: number): number {
-  const charPx = rotateDeg ? CHAR_PX * 0.75 : CHAR_PX;
-  return label.length * charPx;
+  return estimateAxisLabelTextWidth(label, rotateDeg);
 }
 
 function labelWidthAtIndex(
@@ -160,7 +199,7 @@ export function pickCategoryTickIndicesForLabels(
   categories: string[],
   innerSpan: number,
   labelFor: (category: string) => string,
-  minPx = CATEGORY_THINNING_MIN_PX,
+  minPx = categoryThinningMinPx(),
   rotateDeg = 0,
   indexToPx?: (index: number) => number,
 ): number[] {
@@ -175,7 +214,7 @@ export function pickCategoryTickIndicesForLabels(
     categories,
     labelFor,
     rotateDeg,
-    CATEGORY_LABEL_GAP_PX,
+    categoryLabelGapPx(),
     toPx,
   );
 }
@@ -186,7 +225,7 @@ export function filterTickIndicesByLabelSpacing(
   indices: number[],
   innerSpan: number,
   labelFor: (category: string) => string,
-  minGapPx = 10,
+  minGapPx = categoryLabelGapPx(),
   indexToPx?: (index: number) => number,
 ): number[] {
   if (indices.length === 0 || categories.length === 0) return indices;
@@ -201,7 +240,7 @@ export function filterTickIndicesByLabelSpacing(
     const label = labelFor(category).trim();
     if (!label) continue;
 
-    const labelW = estimateAxisLabelWidth(label.length);
+    const labelW = estimateAxisLabelTextWidth(label);
     const pos = toPx(idx);
     const prev = kept[kept.length - 1];
     if (prev != null) {
@@ -225,11 +264,6 @@ export function pickCategoryTicks(categories: string[], innerSpan: number, minPx
   return indices.map((index) => categories[index]!);
 }
 
-function maxCharsForSlot(slotSpan: number, rotateDeg = 0): number {
-  const charPx = rotateDeg ? CHAR_PX * 0.75 : CHAR_PX;
-  return Math.max(2, Math.floor(slotSpan / charPx));
-}
-
 /** 类目轴完整展示文案（不截断） */
 export function axisCategoryDisplayText(label: string): string {
   return formatCompositeCategoryDisplay(label);
@@ -238,7 +272,7 @@ export function axisCategoryDisplayText(label: string): string {
 /** 槽位是否可容纳完整标签（对标 DataEase：放不下则隐藏，不用省略号） */
 export function axisLabelFitsSlot(text: string, slotSpan: number, rotateDeg = 0): boolean {
   if (!text) return false;
-  return text.length <= maxCharsForSlot(slotSpan, rotateDeg);
+  return estimateAxisLabelTextWidth(text, rotateDeg) <= slotSpan;
 }
 
 /** 按标签宽度过滤抽稀结果（均匀间距 + 像素防重叠） */
@@ -246,7 +280,7 @@ export function pickCategoryTicksForLabels(
   categories: string[],
   innerSpan: number,
   labelFor: (category: string) => string,
-  minPx = CATEGORY_THINNING_MIN_PX,
+  minPx = categoryThinningMinPx(),
   rotateDeg = 0,
   indexToPx?: (index: number) => number,
 ): string[] {
@@ -268,12 +302,11 @@ function resolveAutoCategoryLabelRotate(tickLabels: string[], innerSpan: number)
   if (tickLabels.length === 0 || innerSpan <= 0) return 0;
 
   const slot = innerSpan / tickLabels.length;
-  const maxChars = Math.max(...tickLabels.map((t) => String(t).length));
-  const estWidth = estimateAxisLabelWidth(maxChars);
+  const estWidth = Math.max(...tickLabels.map((t) => estimateAxisLabelTextWidth(String(t))));
 
   if (estWidth > slot * 1.4) return -45;
   if (estWidth > slot * 0.82) return VCDS.axis.rotateDeg;
-  if (tickLabels.length >= 3 && slot < VCDS.axis.rotateThreshold) return VCDS.axis.rotateDeg;
+  if (tickLabels.length >= 3 && slot < scaleAxisLayoutPx(VCDS.axis.rotateThreshold)) return VCDS.axis.rotateDeg;
   return 0;
 }
 
@@ -282,14 +315,37 @@ export function resolveCategoryLabelRotate(
   innerSpan: number,
   explicitRotate?: AxisLabelRotate,
 ): number {
-  if (explicitRotate === "auto") return resolveAutoCategoryLabelRotate(tickLabels, innerSpan);
+  if (explicitRotate === 0) return 0;
   if (typeof explicitRotate === "number") return explicitRotate;
-  return 0;
+  return resolveAutoCategoryLabelRotate(tickLabels, innerSpan);
 }
 
 export function resolveRotatedAxisExtraSpan(rotateDeg: number): number {
   if (!rotateDeg) return 0;
-  return rotateDeg <= -40 ? 24 : 16;
+  return scaleAxisLayoutPx(rotateDeg <= -40 ? 28 : 18);
+}
+
+/** 首尾类目标签超出绘图区时补边，避免压住 Y 轴刻度 */
+export function categoryAxisEdgePad(
+  ticks: string[],
+  rotateDeg: number,
+): { left: number; right: number } {
+  if (ticks.length === 0) return { left: 0, right: 0 };
+  const first = estimateAxisLabelTextWidth(axisCategoryDisplayText(ticks[0]!), rotateDeg);
+  const last = estimateAxisLabelTextWidth(
+    axisCategoryDisplayText(ticks[ticks.length - 1]!),
+    rotateDeg,
+  );
+  if (rotateDeg) {
+    return {
+      left: Math.min(scaleAxisLayoutPx(40), Math.round(first * 0.5)),
+      right: scaleAxisLayoutPx(10),
+    };
+  }
+  return {
+    left: Math.max(0, Math.round(first / 2) - scaleAxisLayoutPx(6)),
+    right: Math.max(0, Math.round(last / 2) - scaleAxisLayoutPx(6)),
+  };
 }
 
 /** 对标 DataEase：槽位足够时展示完整类目名，不足则隐藏（不截断为省略号） */
@@ -314,7 +370,7 @@ export function planCategoryAxisLayout(
   categories: string[],
   innerSpan: number,
   explicitRotate?: AxisLabelRotate,
-  minPx = CATEGORY_THINNING_MIN_PX,
+  minPx = categoryThinningMinPx(),
   bandWidth?: number,
 ): CategoryAxisLayout {
   const count = categories.length;
@@ -343,11 +399,11 @@ export function planCategoryAxisLayout(
 /** 数据显示优先：数值轴尽量多刻度 */
 export function resolveNumericTickCount(innerSpan: number, min = 4, max = 12): number {
   if (innerSpan <= 0) return min;
-  return Math.max(min, Math.min(max, Math.floor(innerSpan / 48)));
+  return Math.max(min, Math.min(max, Math.floor(innerSpan / scaleAxisLayoutPx(48))));
 }
 
-const NUMERIC_TICK_LABEL_GAP_PX = 8;
-const NUMERIC_TICK_MIN_LABEL_PX = 44;
+const NUMERIC_TICK_LABEL_GAP_BASE_PX = 8;
+const NUMERIC_TICK_MIN_LABEL_BASE_PX = 44;
 
 function sampleNumericDomain(scale: d3.ScaleLinear<number, number>): number[] {
   const [a, b] = scale.domain();
@@ -368,13 +424,13 @@ export function planNumericAxisTicks(
 ): number[] {
   const minTicks = options?.minTicks ?? 2;
   const maxTicks = options?.maxTicks ?? 12;
-  const minLabelPx = options?.minLabelPx ?? NUMERIC_TICK_MIN_LABEL_PX;
+  const minLabelPx = options?.minLabelPx ?? scaleAxisLayoutPx(NUMERIC_TICK_MIN_LABEL_BASE_PX);
   if (innerSpan <= 0) return scale.ticks(minTicks);
 
   const maxLabelW = Math.max(
     minLabelPx,
     ...sampleNumericDomain(scale).map(
-      (v) => estimateAxisLabelWidth(formatLabel(v).length) + NUMERIC_TICK_LABEL_GAP_PX,
+      (v) => estimateAxisLabelWidth(formatLabel(v).length) + scaleAxisLayoutPx(NUMERIC_TICK_LABEL_GAP_BASE_PX),
     ),
   );
   const capacity = Math.max(minTicks, Math.min(maxTicks, Math.floor(innerSpan / maxLabelW)));
@@ -417,7 +473,7 @@ export function resolveHorizontalCategoryAxisLayout(
   explicitRotate?: AxisLabelRotate,
 ): HorizontalCategoryAxisLayout {
   if (categories.length === 0 || innerH <= 0) {
-    return { ticks: [], leftMargin: 52, bandHeight: 0, labelMaxWidth: 120, rotateDeg: 0 };
+    return { ticks: [], leftMargin: scaleAxisLayoutPx(52), bandHeight: 0, labelMaxWidth: 120, rotateDeg: 0 };
   }
 
   const bandHeight = innerH / categories.length;
@@ -434,13 +490,12 @@ export function resolveHorizontalCategoryAxisLayout(
     indexToPx,
   );
   const ticks = tickIndices.map((index) => categories[index]!);
-  const maxLabelChars = categories.reduce(
-    (max, cat) => Math.max(max, formatCompositeCategoryDisplay(String(cat)).length),
-    0,
-  );
-  const labelMaxWidth = estimateAxisLabelWidth(maxLabelChars);
+  const labelMaxWidth = categories.reduce((max, cat) => {
+    const label = formatCompositeCategoryDisplay(String(cat));
+    return Math.max(max, estimateAxisLabelTextWidth(label, rotateDeg));
+  }, 0);
   const extraLeft = resolveRotatedAxisExtraSpan(rotateDeg);
-  const leftMargin = Math.max(52, labelMaxWidth + 18) + extraLeft;
+  const leftMargin = Math.max(scaleAxisLayoutPx(52), labelMaxWidth + scaleAxisLayoutPx(18)) + extraLeft;
 
   return { ticks, leftMargin, bandHeight, labelMaxWidth, rotateDeg };
 }
@@ -476,7 +531,7 @@ export function applyRotatedCategoryLabels(
     })
     .style("text-anchor", "end")
     .attr("dx", "-0.2em")
-    .attr("dy", "0.15em");
+    .attr("dy", "0.65em");
 }
 
 export function applyRotatedLeftCategoryLabels(
@@ -532,14 +587,15 @@ export function drawCategoryBandAxisBottom(
       .attr("x1", cx)
       .attr("x2", cx)
       .attr("y1", 0)
-      .attr("y2", 6)
+      .attr("y2", categoryBottomAxisTickSize())
       .attr("stroke", stroke)
       .attr("stroke-width", strokeWidth);
 
+    const labelY = categoryBottomAxisLabelY();
     const text = axisRoot
       .append("text")
       .attr("x", cx)
-      .attr("y", 9)
+      .attr("y", labelY)
       .attr("fill", theme.axisLabel)
       .style("font-size", `${fontSize}px`)
       .style("font-family", "inherit")
@@ -547,10 +603,10 @@ export function drawCategoryBandAxisBottom(
 
     if (rotateDeg) {
       text
-        .attr("transform", `rotate(${rotateDeg}, ${cx}, 9)`)
+        .attr("transform", `rotate(${rotateDeg}, ${cx}, ${labelY})`)
         .style("text-anchor", "end")
         .attr("dx", "-0.2em")
-        .attr("dy", "0.15em");
+        .attr("dy", "0.65em");
     } else {
       text.attr("text-anchor", "middle");
     }

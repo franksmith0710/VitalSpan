@@ -12,6 +12,10 @@ from app.core.config import get_settings
 from app.dashboard import service as dash_service
 from app.dashboard.export_jobs_schemas import DashboardExportJobOut
 from app.dashboard.export_layout import build_dashboard_excel_csv, build_dashboard_pdf
+from app.dashboard.export_layout_mode import (
+    EXPORT_LAYOUT_FULL_PAGE,
+    MODE_LABELS,
+)
 from app.dashboard.export_persistence import (
     get_export_job_meta,
     read_export_job_bytes,
@@ -53,14 +57,46 @@ def _build_pdf_bytes(db: Session, dashboard_id: uuid.UUID, row) -> tuple[bytes, 
     surface_key = "data_screen" if surface == "data-screen" else "dashboard"
     token = issue_export_token(dashboard_id)
     try:
-        data = render_dashboard_visual_pdf(dashboard_id, token=token, surface=surface_key)
-        return data, "visual_snapshot"
+        data = render_dashboard_visual_pdf(
+            dashboard_id, token=token, surface=surface_key, layout_mode=EXPORT_LAYOUT_FULL_PAGE,
+        )
+        return data, "visual_snapshot_full_page"
     except dash_service.DashboardError:
         if settings.rpt_export_fallback:
             return (
                 build_dashboard_pdf(row.name, dashboard_id, row.description, row.layout_json),
                 "layout_inventory",
             )
+        raise
+
+
+def build_dashboard_schedule_pdf_attachments(
+    db: Session,
+    dashboard_id: uuid.UUID,
+    actor: UserContext,
+) -> list[tuple[bytes, str, str]]:
+    """Scheduled delivery: single full-page HD visual snapshot PDF."""
+    row = dash_service.get_dashboard(db, dashboard_id)
+    layout = layout_to_dict(row.layout_json)
+    settings = get_settings()
+    if _count_widgets(layout) == 0 and not settings.rpt_export_fallback:
+        raise dash_service.DashboardError(
+            "DASHBOARD_EXPORT_EMPTY",
+            "看板为空，无法导出。请先添加组件后再创建定时报告。",
+            422,
+        )
+    surface = read_surface_kind_from_layout(row.layout_json)
+    surface_key = "data_screen" if surface == "data-screen" else "dashboard"
+    token = issue_export_token(dashboard_id)
+    try:
+        data = render_dashboard_visual_pdf(
+            dashboard_id, token=token, surface=surface_key, layout_mode=EXPORT_LAYOUT_FULL_PAGE,
+        )
+        return [(data, "application/pdf", f"dashboard-{dashboard_id}-可视化报告.pdf")]
+    except dash_service.DashboardError:
+        if settings.rpt_export_fallback:
+            data = build_dashboard_pdf(row.name, dashboard_id, row.description, row.layout_json)
+            return [(data, "application/pdf", f"dashboard-{dashboard_id}-可视化报告.pdf")]
         raise
 
 

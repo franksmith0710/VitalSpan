@@ -14,6 +14,7 @@
 - **维度字典**（`dimensions/`）：维度 code 与枚举值注册/维护（META-003）
 - **实体类型 schema**（`entity/`）：实体属性/生命周期配置（META-006）
 - **Dataset 元数据项**（`dataset/`）：ORM 持久化 validate/list/create/update/delete/bind（META-004）
+- **官方示例 Dataset**：启动 seed 仅保留四类典型（区域销售宽表、销售明细、销售地理、网格事件）；多余 `demo-*` 启动时删除，存量看板改绑到保留项
 - 逻辑数据集（Dataset）定义：表关联、计算字段、指标维度（四期）
 - 与物理数据源映射；版本与发布状态
 - 为 `query` 四期提供语义解析输入

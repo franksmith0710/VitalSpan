@@ -3,6 +3,9 @@ import {
   applyRotatedCategoryLabels,
   applyRotatedLeftCategoryLabels,
   axisCategoryDisplayText,
+  categoryAxisEdgePad,
+  categoryBottomAxisTickPadding,
+  categoryBottomAxisTickSize,
   drawCategoryBandAxisBottom,
   drawCategoryBandAxisLeft,
   formatAxisCategoryLabel,
@@ -17,6 +20,7 @@ import {
 } from "@/components/charts/engine/d3/core/axes";
 import { VCDS, getDepthVisual, resolveAxisFontSize } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { depthExtrudePx } from "@/components/charts/engine/d3/core/depthEngine";
+import { DATA_ZOOM_SLIDER_RESERVE } from "@/components/charts/engine/d3/core/dataZoomWindow";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import {
   reserveLegendMargin,
@@ -107,6 +111,8 @@ type BuildCartesianSceneOptions = {
   categories?: string[];
   categoryLevelCount?: number;
   axisStyle?: ChartAxisStyle;
+  /** 为底部类目缩略轴预留下边距 */
+  dataZoom?: boolean;
 };
 
 export type ChartSvgLayout = {
@@ -170,9 +176,13 @@ export function resolveCategoryCartesianLayout(
         provisionalInnerW,
         options?.axisStyle?.x?.labelRotate,
       );
+  const edgePad = categoryAxisEdgePad(xLayout.ticks, xLayout.rotateDeg);
+  const depthPad = depthExtrudePx(getDepthVisual());
   margin = {
     ...margin,
-    bottom: margin.bottom + xLayout.extraBottom,
+    left: margin.left + edgePad.left,
+    right: margin.right + edgePad.right,
+    bottom: margin.bottom + xLayout.extraBottom + depthPad,
   };
   margin = applyInlineLegendMargin(margin, width, height, {
     showLegend: options?.showLegend,
@@ -181,7 +191,15 @@ export function resolveCategoryCartesianLayout(
   });
   const innerW = Math.max(0, width - margin.left - margin.right);
   const innerH = Math.max(0, height - margin.top - margin.bottom);
-  return { margin, innerW, innerH, xLayout };
+  const fittedXLayout = hierPlan
+    ? buildHierarchicalCategoryXLayout(
+        categories,
+        innerW,
+        hierPlan,
+        options?.axisStyle?.x?.labelRotate,
+      )
+    : planCategoryAxisLayout(categories, innerW, options?.axisStyle?.x?.labelRotate);
+  return { margin, innerW, innerH, xLayout: fittedXLayout };
 }
 
 /** 横轴类目图：抽稀纵轴刻度 + 按最长标签扩展 left 边距 */
@@ -219,12 +237,18 @@ export function resolveHorizontalCategoryCartesianLayout(
   return { margin, innerW, innerH, yLayout };
 }
 
+function dataZoomBottomOverride(enabled?: boolean) {
+  if (!enabled) return undefined;
+  return { bottom: cartesianMargin().bottom + DATA_ZOOM_SLIDER_RESERVE };
+}
+
 export function buildCartesianScene(opts: BuildCartesianSceneOptions): CartesianScene {
   const legendOpts: InlineLegendMarginOpts = {
     showLegend: opts.showLegend,
     legendLayout: opts.legendLayout,
     legendItems: opts.legendItems,
   };
+  const zoomMargin = dataZoomBottomOverride(opts.dataZoom);
   const { margin, innerW, innerH } =
     opts.categories && opts.categories.length > 0
       ? resolveCategoryCartesianLayout(opts.width, opts.height, opts.categories, {
@@ -233,9 +257,10 @@ export function buildCartesianScene(opts: BuildCartesianSceneOptions): Cartesian
           legendItems: opts.legendItems,
           axisStyle: opts.axisStyle,
           categoryLevelCount: opts.categoryLevelCount,
+          marginOverrides: zoomMargin,
         })
       : (() => {
-          let baseMargin = cartesianMargin(false);
+          let baseMargin = cartesianMargin(false, zoomMargin);
           baseMargin = applyInlineLegendMargin(baseMargin, opts.width, opts.height, legendOpts);
           return {
             margin: baseMargin,
@@ -301,6 +326,7 @@ export function buildHorizontalCartesianScene(
       legendLayout: opts.legendLayout,
       legendItems: opts.legendItems,
       axisStyle: opts.axisStyle,
+      marginOverrides: dataZoomBottomOverride(opts.dataZoom),
     },
   );
   const clipId = opts.clipId ?? `vs-clip-h-${Math.random().toString(36).slice(2, 9)}`;
@@ -576,6 +602,8 @@ export function drawCartesianAxes(opts: AxesOptions): { rotateX: number } {
         .call(
           d3
             .axisBottom(opts.xScale)
+            .tickSizeInner(categoryBottomAxisTickSize())
+            .tickPadding(categoryBottomAxisTickPadding())
             .tickValues(xLayout.ticks)
             .tickFormat((d) => axisCategoryDisplayText(String(d))),
         )
@@ -667,6 +695,8 @@ export function drawCartesianHorizontalBandAxes(opts: HorizontalBandAxesOptions)
       .call(
         d3
           .axisBottom(opts.xScale)
+          .tickSizeInner(categoryBottomAxisTickSize())
+          .tickPadding(categoryBottomAxisTickPadding())
           .tickValues(
             numericTickValues(opts.xScale, opts.innerW, (d) =>
               opts.xTickFormat ? opts.xTickFormat(d) : formatChartValue(d, opts.valueFormat),
@@ -745,6 +775,8 @@ export function drawLinearCartesianAxes(opts: LinearAxesOptions): void {
       .call(
         d3
           .axisBottom(opts.xScale)
+          .tickSizeInner(categoryBottomAxisTickSize())
+          .tickPadding(categoryBottomAxisTickPadding())
           .tickValues(
             numericTickValues(opts.xScale, opts.innerW, (d) => formatChartValue(d, opts.valueFormat)),
           )
@@ -861,6 +893,8 @@ export function drawDualAxesAxes(opts: DualAxesOptions): void {
         .call(
           d3
             .axisBottom(opts.xScale)
+            .tickSizeInner(categoryBottomAxisTickSize())
+            .tickPadding(categoryBottomAxisTickPadding())
             .tickValues(xLayout.ticks)
             .tickFormat((d) => axisCategoryDisplayText(String(d))),
         )
@@ -951,8 +985,10 @@ export function drawBidirectionalBandAxes(opts: BidirectionalAxesOptions): void 
       .attr("class", "vs-axis-x-left")
       .attr("transform", `translate(0,${opts.innerH})`)
       .call(
-        d3
+          d3
           .axisBottom(opts.xLeftScale)
+          .tickSizeInner(categoryBottomAxisTickSize())
+          .tickPadding(categoryBottomAxisTickPadding())
           .tickValues(
             numericTickValues(opts.xLeftScale, opts.centerX, (d) => formatChartValue(d, opts.valueFormat)),
           )
@@ -965,8 +1001,10 @@ export function drawBidirectionalBandAxes(opts: BidirectionalAxesOptions): void 
       .attr("class", "vs-axis-x-right")
       .attr("transform", `translate(0,${opts.innerH})`)
       .call(
-        d3
+          d3
           .axisBottom(opts.xRightScale)
+          .tickSizeInner(categoryBottomAxisTickSize())
+          .tickPadding(categoryBottomAxisTickPadding())
           .tickValues(
             numericTickValues(
               opts.xRightScale,

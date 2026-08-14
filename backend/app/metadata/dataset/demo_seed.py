@@ -12,6 +12,7 @@ from app.metadata.dataset.models import DatasetRecord
 DEMO_DATASET_PREFIX = "demo-"
 DEMO_DATASET_DISPLAY_PREFIX = "【官方示例】"
 
+# 精简为四类典型：宽表出图、明细、地理、政务表格（数据量足够、覆盖主路径）
 DEMO_DATASET_SPECS: tuple[dict[str, Any], ...] = (
     {
         "dataset_id": "demo-sales-wide",
@@ -24,63 +25,76 @@ DEMO_DATASET_SPECS: tuple[dict[str, Any], ...] = (
         "tables": [{"name": "sales"}],
     },
     {
-        "dataset_id": "demo-orders",
-        "display_name": "【官方示例】订单明细",
-        "tables": [{"name": "orders"}, {"name": "order_items"}],
-    },
-    {
-        "dataset_id": "demo-daily-kpi",
-        "display_name": "【官方示例】日度 KPI",
-        "tables": [{"name": "daily_kpi"}],
-    },
-    {
-        "dataset_id": "demo-gov-service",
-        "display_name": "【官方示例】政务服务指标",
-        "tables": [{"name": "gov_service_metrics"}],
+        "dataset_id": "demo-v-sales-geo",
+        "display_name": "【官方示例】销售地理分布",
+        "tables": [{"name": "v_sales_geo"}],
     },
     {
         "dataset_id": "demo-gov-grid-stats",
         "display_name": "【官方示例】网格事件统计",
         "tables": [{"name": "gov_grid_stats"}],
     },
-    {
-        "dataset_id": "demo-gov-incidents",
-        "display_name": "【官方示例】事件类型统计",
-        "tables": [{"name": "gov_incidents"}],
-    },
-    {
-        "dataset_id": "demo-gov-region-service",
-        "display_name": "【官方示例】区域服务量",
-        "tables": [{"name": "v_gov_region_service"}],
-    },
-    {
-        "dataset_id": "demo-gov-hotwords",
-        "display_name": "【官方示例】政务热词",
-        "tables": [{"name": "gov_hotwords"}],
-    },
-    {
-        "dataset_id": "demo-gov-issues",
-        "display_name": "【官方示例】问题台账",
-        "tables": [{"name": "gov_issues"}],
-    },
-    {
-        "dataset_id": "demo-gov-budget",
-        "display_name": "【官方示例】财政支出",
-        "tables": [{"name": "gov_budget_items"}],
-    },
-    {
-        "dataset_id": "demo-gov-investment",
-        "display_name": "【官方示例】产业投资",
-        "tables": [{"name": "gov_investment"}],
-    },
-    {
-        "dataset_id": "demo-v-sales-geo",
-        "display_name": "【官方示例】销售地理分布",
-        "tables": [{"name": "v_sales_geo"}],
-    },
 )
 
 DEMO_DATASET_IDS: frozenset[str] = frozenset(spec["dataset_id"] for spec in DEMO_DATASET_SPECS)
+
+# 已下线官方 Dataset → 保留项（模板/存量看板改绑）
+RETIRED_DEMO_DATASET_REMAP: dict[str, str] = {
+    "demo-orders": "demo-sales-detail",
+    "demo-daily-kpi": "demo-sales-wide",
+    "demo-gov-service": "demo-sales-wide",
+    "demo-gov-incidents": "demo-gov-grid-stats",
+    "demo-gov-region-service": "demo-v-sales-geo",
+    "demo-gov-hotwords": "demo-sales-wide",
+    "demo-gov-issues": "demo-gov-grid-stats",
+    "demo-gov-budget": "demo-sales-wide",
+    "demo-gov-investment": "demo-sales-wide",
+}
+
+_RETIRED_FIELD_REMAP: dict[str, dict[str, str]] = {
+    "demo-orders": {
+        "order_date": "sale_date",
+        "order_no": "channel",
+        "status": "channel",
+        "total_amount": "amount",
+    },
+    "demo-daily-kpi": {
+        "stat_date": "sale_date",
+        "metric_name": "product_name",
+        "metric_code": "category_name",
+        "value": "amount",
+    },
+    "demo-gov-service": {
+        "stat_date": "sale_date",
+        "department": "province",
+        "metric_name": "product_name",
+        "metric_code": "category_name",
+        "value": "amount",
+    },
+    "demo-gov-incidents": {"incident_type": "grid_name", "count": "event_count"},
+    "demo-gov-region-service": {"服务量": "amount", "service_volume": "amount"},
+    "demo-gov-hotwords": {"word": "product_name", "weight": "amount", "热词": "product_name", "权重": "amount"},
+    "demo-gov-issues": {
+        "issue_type": "grid_name",
+        "location": "grid_name",
+        "unit": "grid_name",
+        "status": "grid_name",
+        "progress": "event_count",
+    },
+    "demo-gov-budget": {
+        "category": "category_name",
+        "spent_amount": "amount",
+        "fiscal_year": "sale_date",
+        "类别": "category_name",
+        "支出金额": "amount",
+    },
+    "demo-gov-investment": {
+        "industry": "category_name",
+        "investment_amount": "amount",
+        "产业": "category_name",
+        "投资额": "amount",
+    },
+}
 
 
 def is_demo_package_dataset(dataset_id: str | None, display_name: str | None = None) -> bool:
@@ -90,8 +104,63 @@ def is_demo_package_dataset(dataset_id: str | None, display_name: str | None = N
     return (display_name or "").startswith(DEMO_DATASET_DISPLAY_PREFIX)
 
 
+def remap_retired_demo_dataset_id(dataset_id: str | None) -> str | None:
+    if not dataset_id:
+        return dataset_id
+    return RETIRED_DEMO_DATASET_REMAP.get(dataset_id, dataset_id)
+
+
+def remap_retired_demo_field(dataset_id: str | None, field: str) -> str:
+    mapping = _RETIRED_FIELD_REMAP.get(dataset_id or "")
+    if not mapping:
+        return field
+    return mapping.get(field, field)
+
+
+def _remap_field_refs(items: Any, old_dataset_id: str) -> None:
+    if not isinstance(items, list):
+        return
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        field = item.get("field")
+        if isinstance(field, str):
+            item["field"] = remap_retired_demo_field(old_dataset_id, field)
+
+
+def remap_retired_demo_chart_config(chart_cfg: dict[str, Any]) -> dict[str, Any]:
+    """单图：已下线官方 Dataset 改绑到保留项，并映射字段名。"""
+    old_id = chart_cfg.get("datasetId")
+    if not isinstance(old_id, str) or old_id not in RETIRED_DEMO_DATASET_REMAP:
+        return chart_cfg
+    _remap_field_refs(chart_cfg.get("dimensions"), old_id)
+    _remap_field_refs(chart_cfg.get("metrics"), old_id)
+    _remap_field_refs(chart_cfg.get("filters"), old_id)
+    axes = chart_cfg.get("axes")
+    if isinstance(axes, dict):
+        for refs in axes.values():
+            _remap_field_refs(refs, old_id)
+    chart_cfg["datasetId"] = RETIRED_DEMO_DATASET_REMAP[old_id]
+    chart_cfg["configId"] = None
+    return chart_cfg
+
+
+def remap_retired_demo_datasets_in_layout(layout: dict[str, Any]) -> dict[str, Any]:
+    """把已下线官方 Dataset 改绑到保留项，并映射字段名。"""
+    widgets = layout.get("widgets")
+    if not isinstance(widgets, list):
+        return layout
+    for widget in widgets:
+        if not isinstance(widget, dict) or widget.get("type") != "chart":
+            continue
+        chart_cfg = widget.get("chartConfig")
+        if isinstance(chart_cfg, dict):
+            remap_retired_demo_chart_config(chart_cfg)
+    return layout
+
+
 def seed_demo_datasets(db: Session) -> int:
-    """幂等 upsert 官方示例 Dataset（绑定 sample_db 表/视图名）。"""
+    """幂等 upsert 官方示例 Dataset，并删除已下线的 demo-* 行。"""
     upserted = 0
     for spec in DEMO_DATASET_SPECS:
         row = db.get(DatasetRecord, spec["dataset_id"])
@@ -111,8 +180,24 @@ def seed_demo_datasets(db: Session) -> int:
             row.display_name = spec["display_name"]
             row.tables = list(spec["tables"])
             row.allowed_roles = ["analyst", "viewer"]
+    pruned = _prune_retired_demo_datasets(db)
     db.commit()
-    return upserted
+    return upserted + pruned
+
+
+def _prune_retired_demo_datasets(db: Session) -> int:
+    rows = list(
+        db.scalars(
+            select(DatasetRecord).where(DatasetRecord.dataset_id.like(f"{DEMO_DATASET_PREFIX}%")),
+        ),
+    )
+    removed = 0
+    for row in rows:
+        if row.dataset_id in DEMO_DATASET_IDS:
+            continue
+        db.delete(row)
+        removed += 1
+    return removed
 
 
 def resolve_demo_dataset_ids(db: Session) -> list[str]:

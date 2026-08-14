@@ -25,6 +25,7 @@ class ReportSchedule(Base):
     attachment_formats: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     delivery_channels: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     notify_group: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    email_smtp_slot: Mapped[str] = mapped_column(String(8), nullable=False, default="qq")
     cron: Mapped[str] = mapped_column(String(64), nullable=False)
     timezone: Mapped[str] = mapped_column(String(64), nullable=False, default="Asia/Shanghai")
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft", index=True)

@@ -11,11 +11,22 @@ from app.dashboard.templates.official_demo_bootstrap import (
 
 def test_discover_migration_versions() -> None:
     versions = _discover_migration_versions()
-    assert versions == [1, 2, 3]
+    assert versions == [1, 2, 3, 4]
 
 
 def test_latest_migration_version_matches_files() -> None:
-    assert _latest_migration_version() == 3
+    assert _latest_migration_version() == 4
+
+
+def test_pad_demo_tables_migration_is_idempotent_sql() -> None:
+    path = next(
+        p for p in __import__("pathlib").Path(__file__).resolve().parents[2].joinpath(
+            "docker", "demo-mysql", "migrations"
+        ).glob("004_*.sql")
+    )
+    text = path.read_text(encoding="utf-8")
+    assert "n < 600" in text
+    assert "WHERE seq.n > (SELECT COUNT(*) FROM sales)" in text
 
 
 def test_split_sql_statements_skips_empty_and_comments() -> None:

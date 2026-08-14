@@ -82,6 +82,7 @@ export function StandardSchedulePanel({ sourceKey, packName, disabled = false }:
         recipients: form.recipients.filter((item) => item.value.trim()),
         attachmentFormats: ["pdf"],
         ...EMAIL_ONLY_DELIVERY,
+        emailSmtpSlot: form.emailSmtpSlot,
       });
       if (created.allowedActions.includes("schedule")) {
         setPendingActivateId(created.id);
@@ -104,6 +105,7 @@ export function StandardSchedulePanel({ sourceKey, packName, disabled = false }:
           recipients: form.recipients.filter((item) => item.value.trim()),
           attachmentFormats: ["pdf"],
           ...EMAIL_ONLY_DELIVERY,
+          emailSmtpSlot: form.emailSmtpSlot,
         },
       });
       toast.success("草稿已保存");

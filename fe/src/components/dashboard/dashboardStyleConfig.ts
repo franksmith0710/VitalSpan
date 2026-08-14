@@ -753,7 +753,7 @@ function resolveDecorImageStyle(
 }
 
 export const DEFAULT_SCALE_MODE: ScaleMode = "canvas";
-export const DEFAULT_QUERY_LIMIT = 100;
+export const DEFAULT_QUERY_LIMIT = 50;
 export const MIN_QUERY_LIMIT = 1;
 export const MAX_QUERY_LIMIT = 10000;
 

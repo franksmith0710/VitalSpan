@@ -37,10 +37,6 @@ import {
 } from "@/components/dashboard/dashboardFilterUtils";
 import { useChartLinkageState } from "@/components/dashboard/useChartLinkageState";
 import {
-  applyChartJumpParamsToDashboard,
-  parseChartJumpSearchParams,
-} from "@/lib/chartJump";
-import {
   appendWidgetToTabPane,
   coerceLayoutWidgets,
   isTabPaneChild,
@@ -112,7 +108,7 @@ import {
 } from "@/components/dashboard/createLayoutWidget";
 import type { PaletteDragPayload } from "@/lib/dashboardDnd";
 import { readTabsWidgetIdFromDropEvent } from "@/lib/tabsDropTarget";
-import { scheduleDashboardThumbnailUpload } from "@/lib/scheduleDashboardThumbnailUpload";
+import { persistDashboardThumbnailBestEffort } from "@/lib/uploadDashboardThumbnail";
 import { cn } from "@/lib/utils";
 import { DashboardContextInspector } from "@/components/dashboard/DashboardContextInspector";
 import { DashboardTemplateExtras } from "@/components/dashboard/DashboardTemplateExtras";
@@ -456,14 +452,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
             }
           }
         }
-        const jumpParams = parseChartJumpSearchParams(location.search);
-        if (Object.keys(jumpParams).length === 0) return next;
-        return applyChartJumpParamsToDashboard(
-          jumpParams,
-          prepared.layout.widgets as LayoutWidget[],
-          loadedLinkage,
-          next,
-        ).filterValues;
+        return next;
       });
     } catch (err) {
       if (generation !== loadGenerationRef.current) return;
@@ -658,14 +647,8 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     [resolvedWidgets, linkage],
   );
 
-  const initialJumpParams = useMemo(
-    () => parseChartJumpSearchParams(location.search),
-    [location.search],
-  );
-
   const { chartLinkageRuntime, handleChartLinkageClick } = useChartLinkageState(
     resolvedWidgets,
-    initialJumpParams,
   );
 
   const widgetActionTarget = useMemo(
@@ -1167,6 +1150,11 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       applyName(editorSave.dashboard.name);
       setSavedName(editorSave.dashboard.name);
 
+      const thumbnailUploaded = await persistDashboardThumbnailBestEffort(id);
+      if (thumbnailUploaded) {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.dashboards.all });
+      }
+
       const savedStyle = hydrateDashboardStyle(normalizedLayout.styleConfig);
       const layoutForEditor = layoutForEditorAfterPersist(normalizedLayout, savedStyle);
       resetLayout(layoutForEditor);
@@ -1206,7 +1194,6 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       } else {
         toast.success("看板已保存");
       }
-      scheduleDashboardThumbnailUpload(id);
       return true;
     } catch (err) {
       if (isDashboardNotFound(err)) {

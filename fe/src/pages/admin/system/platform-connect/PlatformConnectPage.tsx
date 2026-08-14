@@ -1,21 +1,24 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link2, Mail } from "lucide-react";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { Info, Link2, Mail } from "lucide-react";
+import { useState } from "react";
 import {
   AdminPageHeaderIcon,
   AdminPageShell,
 } from "@/components/layout/admin-page-shell";
+import { ListPageSection } from "@/components/layout/list-page-kit";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
+import { DEFAULT_EMAIL_SMTP_SLOT, type EmailSmtpSlot } from "@/lib/emailSmtpSlots";
 import { queryKeys } from "@/lib/queryKeys";
+import { EmailSmtpSlotForm } from "./EmailSmtpSlotForm";
+import { ChannelPickerCard } from "./platformConnectUi";
+import { SystemAdminScopeHint } from "../SystemAdminScopeHint";
 
 type EmailConfig = {
+  slot: EmailSmtpSlot;
+  label: string;
   configured: boolean;
   source: "db" | "env" | "none";
   host?: string | null;
@@ -27,77 +30,25 @@ type EmailConfig = {
   probeError?: string | null;
 };
 
-const SOURCE_LABEL: Record<string, string> = {
-  db: "管理面已保存",
-  env: "服务器环境变量回落（开发用）",
-  none: "未配置",
+type EmailSlotsResponse = {
+  items: EmailConfig[];
 };
 
 export function PlatformConnectPage() {
-  const qc = useQueryClient();
+  const [activeSlot, setActiveSlot] = useState<EmailSmtpSlot>(DEFAULT_EMAIL_SMTP_SLOT);
   const configQuery = useQuery({
-    queryKey: queryKeys.platformConnect.email,
-    queryFn: () => apiFetch<EmailConfig>("/api/v1/platform/delivery/email"),
-  });
-  const [host, setHost] = useState("smtp.qq.com");
-  const [port, setPort] = useState("587");
-  const [from, setFrom] = useState("");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-
-  useEffect(() => {
-    const data = configQuery.data;
-    if (!data) return;
-    if (data.host) setHost(data.host);
-    if (data.port) setPort(String(data.port));
-    if (data.from) setFrom(data.from);
-    if (data.username) setUsername(data.username);
-  }, [configQuery.data]);
-
-  const saveMutation = useMutation({
-    mutationFn: () =>
-      apiFetch<EmailConfig>("/api/v1/platform/delivery/email", {
-        method: "PUT",
-        body: JSON.stringify({
-          host: host.trim(),
-          port: Number(port),
-          from: from.trim(),
-          username: username.trim() || null,
-          password: password.trim() || null,
-        }),
-      }),
-    onSuccess: async (data) => {
-      toast.success("邮件 SMTP 已保存并通过探测");
-      setPassword("");
-      await qc.invalidateQueries({ queryKey: queryKeys.platformConnect.email });
-      await qc.invalidateQueries({ queryKey: ["reports", "schedules", "delivery-health"] });
-      void configQuery.refetch();
-      if (!data.configured) {
-        toast.warning("保存成功但当前仍不可用，请检查探测结果");
-      }
-    },
-    onError: (err) => toast.error(mapApiError(err)),
+    queryKey: queryKeys.platformConnect.emailSlots,
+    queryFn: () => apiFetch<EmailSlotsResponse>("/api/v1/platform/delivery/email/slots"),
   });
 
-  const clearMutation = useMutation({
-    mutationFn: () =>
-      apiFetch<EmailConfig>("/api/v1/platform/delivery/email", { method: "DELETE" }),
-    onSuccess: async () => {
-      toast.success("邮件 SMTP 配置已清空");
-      setPassword("");
-      await qc.invalidateQueries({ queryKey: queryKeys.platformConnect.email });
-      await qc.invalidateQueries({ queryKey: ["reports", "schedules", "delivery-health"] });
-    },
-    onError: (err) => toast.error(mapApiError(err)),
-  });
-
-  const data = configQuery.data;
-  const pending = saveMutation.isPending || clearMutation.isPending;
+  const items = configQuery.data?.items ?? [];
+  const activeConfig = items.find((item) => item.slot === activeSlot) ?? items[0];
+  const pending = configQuery.isLoading;
 
   return (
     <AdminPageShell
       title="平台对接"
-      description="配置定时报告等系统通知的发信通道。保存前会自动探测 SMTP 连通性。"
+      description="配置邮件 SMTP 发信通道。定时报告创建时可选择使用哪一套邮箱。"
       headerIcon={
         <AdminPageHeaderIcon>
           <Link2 className="size-5" aria-hidden />
@@ -107,71 +58,63 @@ export function PlatformConnectPage() {
       {configQuery.isError ? (
         <PageErrorBanner message={mapApiError(configQuery.error)} onRetry={() => void configQuery.refetch()} />
       ) : null}
-      {configQuery.isLoading ? <Skeleton className="h-64 w-full rounded-xl" /> : null}
-      {data ? (
-        <div className="mx-auto max-w-2xl space-y-6">
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
-            <div className="flex items-start gap-3">
-              <Mail className="mt-0.5 size-5 text-brand-500" aria-hidden />
-              <div className="min-w-0 flex-1 space-y-1">
-                <h2 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">邮件 SMTP</h2>
-                <p className="text-theme-xs text-gray-500">
-                  来源：{SOURCE_LABEL[data.source] ?? data.source}
-                  {data.configured ? " · 已配置" : " · 未就绪"}
-                </p>
-                {data.probeError ? (
-                  <p className="text-theme-xs text-amber-700 dark:text-amber-400">{data.probeError}</p>
-                ) : null}
+
+      <div className="mx-auto w-full max-w-4xl px-1">
+        <SystemAdminScopeHint scope="platform-connect" />
+      </div>
+
+      <ListPageSection className="mx-auto w-full max-w-4xl">
+        {pending ? (
+          <div className="space-y-5 p-5 md:p-6">
+            <Skeleton className="h-24 w-full rounded-2xl" />
+            <Skeleton className="h-64 w-full rounded-2xl" />
+          </div>
+        ) : items.length > 0 ? (
+          <div className="flex flex-col">
+            <div className="border-b border-gray-100 px-5 py-5 md:px-6 dark:border-white/[0.06]">
+              <div className="mb-4 flex items-start gap-3">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 shadow-theme-xs dark:bg-brand-500/10 dark:text-brand-400">
+                  <Mail className="size-4" aria-hidden />
+                </span>
+                <div>
+                  <h2 className="text-theme-sm font-semibold text-gray-900 dark:text-white">邮件发信</h2>
+                  <p className="mt-0.5 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
+                    选择通道后配置 SMTP。两套配置互不影响，定时任务创建时可指定发信通道。
+                  </p>
+                </div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {items.map((config) => (
+                  <ChannelPickerCard
+                    key={config.slot}
+                    config={config}
+                    active={activeSlot === config.slot}
+                    onSelect={() => setActiveSlot(config.slot)}
+                  />
+                ))}
               </div>
             </div>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <div className="grid gap-1.5 sm:col-span-2">
-                <Label htmlFor="smtp-host">SMTP 主机</Label>
-                <Input id="smtp-host" value={host} onChange={(e) => setHost(e.target.value)} placeholder="smtp.qq.com" />
-              </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="smtp-port">端口</Label>
-                <Input id="smtp-port" value={port} onChange={(e) => setPort(e.target.value)} inputMode="numeric" />
-              </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="smtp-from">发件人邮箱</Label>
-                <Input id="smtp-from" value={from} onChange={(e) => setFrom(e.target.value)} placeholder="reports@company.com" />
-              </div>
-              <div className="grid gap-1.5 sm:col-span-2">
-                <Label htmlFor="smtp-user">登录用户名（通常与发件人相同）</Label>
-                <Input id="smtp-user" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="off" />
-              </div>
-              <div className="grid gap-1.5 sm:col-span-2">
-                <Label htmlFor="smtp-pass">密码 / 授权码</Label>
-                <Input
-                  id="smtp-pass"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder={data.hasPassword ? "留空则保留已保存的授权码" : "首次保存必填"}
-                  autoComplete="new-password"
+
+            {activeConfig ? (
+              <div className="px-5 py-5 md:px-6 md:py-6">
+                <EmailSmtpSlotForm
+                  key={activeConfig.slot}
+                  config={activeConfig}
+                  disabled={pending}
+                  onSaved={() => void configQuery.refetch()}
                 />
               </div>
+            ) : null}
+
+            <div className="flex items-start gap-2.5 border-t border-gray-100 px-5 py-4 md:px-6 dark:border-white/[0.06]">
+              <Info className="mt-0.5 size-4 shrink-0 text-gray-400" aria-hidden />
+              <p className="text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
+                收件人邮箱在「用户管理 → 联系方式」维护。清空某通道后即使服务器环境变量仍有旧值，该通道也不会再发信。
+              </p>
             </div>
-            <div className="mt-5 flex flex-wrap gap-2">
-              <Button type="button" variant="primary" disabled={pending} onClick={() => saveMutation.mutate()}>
-                {saveMutation.isPending ? "保存并探测…" : "保存并探测"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={pending || data.source !== "db"}
-                onClick={() => clearMutation.mutate()}
-              >
-                清空配置
-              </Button>
-            </div>
-            <p className="mt-4 text-theme-xs text-gray-500">
-              收件人邮箱仍在「用户管理 → 联系方式」维护。清空后即使服务器环境变量仍有旧值，也不会再发信。
-            </p>
           </div>
-        </div>
-      ) : null}
+        ) : null}
+      </ListPageSection>
     </AdminPageShell>
   );
 }

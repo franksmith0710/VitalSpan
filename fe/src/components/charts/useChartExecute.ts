@@ -50,7 +50,7 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
   filterRef.current = filterParameters;
   limitRef.current = limit;
 
-  const requestKey = chartExecuteBindingKey(config, filterParameters);
+  const requestKey = chartExecuteBindingKey(config, filterParameters, limit);
 
   const run = useCallback(async () => {
     const gen = ++requestGenRef.current;

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { fetchAllCatalogTemplates, filterCatalogTemplates, normalizeCatalogNodes } from "./reportCatalogUtils";
+import { fetchAllCatalogTemplates, filterCatalogTemplates, normalizeCatalogNodes, pickDefaultCatalogNodeId } from "./reportCatalogUtils";
 
 vi.mock("@/lib/api", () => ({
   apiFetch: vi.fn(async (url: string) => {
@@ -62,5 +62,42 @@ describe("reportCatalogUtils", () => {
   it("fetchAllCatalogTemplates collects templates via parallel BFS", async () => {
     const templates = await fetchAllCatalogTemplates();
     expect(templates.map((node) => node.id).sort()).toEqual(["t1", "t2"]);
+  });
+
+  it("pickDefaultCatalogNodeId prefers recent template then first template", () => {
+    const nodes = [
+      {
+        id: "f1",
+        name: "Folder",
+        parentId: null,
+        nodeType: "folder" as const,
+        templateKind: null,
+        templateKey: null,
+        sortOrder: 0,
+      },
+      {
+        id: "t1",
+        name: "Template A",
+        parentId: null,
+        nodeType: "template" as const,
+        templateKind: "pdf" as const,
+        templateKey: "a",
+        sortOrder: 1,
+      },
+      {
+        id: "t2",
+        name: "Template B",
+        parentId: null,
+        nodeType: "template" as const,
+        templateKind: "word" as const,
+        templateKey: "b",
+        sortOrder: 2,
+      },
+    ];
+    expect(
+      pickDefaultCatalogNodeId(nodes, [{ resourceType: "template", resourceId: "t2" }]),
+    ).toBe("t2");
+    expect(pickDefaultCatalogNodeId(nodes, [])).toBe("t1");
+    expect(pickDefaultCatalogNodeId([], [])).toBeNull();
   });
 });

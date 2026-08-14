@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from app.core.config import Settings
+from app.core.platform_config.slots import EMAIL_SLOT_QQ
 from app.reports.scheduler.channels.dispatch import deliver_to_channels
 from app.reports.scheduler.delivery_adapter import deliver_artifact as _legacy_deliver
 
@@ -24,11 +25,12 @@ def dispatch_artifact(
     im_targets: dict[str, list[tuple[str, str]]] | None = None,
     im_missing: dict[str, list[str]] | None = None,
     notify_group: bool = False,
+    email_smtp_slot: str | None = EMAIL_SLOT_QQ,
 ) -> dict:
     att_list = attachments or []
     if not att_list and attachment_bytes and attachment_filename:
         att_list = [(attachment_bytes, attachment_mime or "application/pdf", attachment_filename)]
-    if len(channels) > 1 or any(c != "email" for c in channels):
+    if len(channels) > 1 or any(c != "email" for c in channels) or len(att_list) > 1:
         result = deliver_to_channels(
             channels,
             artifact_ref=artifact_ref,
@@ -40,6 +42,7 @@ def dispatch_artifact(
             im_targets=im_targets,
             im_missing=im_missing,
             notify_group=notify_group,
+            email_smtp_slot=email_smtp_slot,
         )
     else:
         result = _legacy_deliver(
@@ -52,6 +55,7 @@ def dispatch_artifact(
             attachment_bytes=attachment_bytes,
             attachment_filename=attachment_filename,
             attachment_mime=attachment_mime,
+            email_smtp_slot=email_smtp_slot,
         )
     if len(_DELIVERY_LOG) >= _MAX_DELIVERY_LOG:
         del _DELIVERY_LOG[: len(_DELIVERY_LOG) - _MAX_DELIVERY_LOG + 1]

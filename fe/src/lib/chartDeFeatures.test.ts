@@ -3,10 +3,7 @@ import {
   applyConditionalRulesToEchartsOption,
   applyConditionalRulesToG2PlotOptions,
   applyMarkLinesToEchartsOption,
-  chartJumpIsConfigured,
   patchChartDeFeatures,
-  readChartJumpConfig,
-  resolveChartJumpHref,
 } from "./chartDeFeatures";
 import type { ChartViewConfig } from "./chartViewConfig";
 
@@ -64,35 +61,5 @@ describe("chartDeFeatures", () => {
       y: 30,
     });
     expect(styled.fill).toBe("#12b76a");
-  });
-
-  it("resolveChartJumpHref supports dashboard and url modes", () => {
-    expect(
-      resolveChartJumpHref({
-        enabled: true,
-        mode: "dashboard",
-        dashboardId: "dash-1",
-      }),
-    ).toBe("/admin/dashboards/dash-1");
-    expect(
-      resolveChartJumpHref({
-        enabled: true,
-        mode: "url",
-        url: "https://example.com",
-      }),
-    ).toBe("https://example.com");
-    expect(chartJumpIsConfigured(readChartJumpConfig(baseCfg))).toBe(false);
-    expect(
-      resolveChartJumpHref(
-        {
-          enabled: true,
-          mode: "dashboard",
-          dashboardId: "dash-1",
-          parameterKey: "region",
-        },
-        { category: "华东" },
-        baseCfg,
-      ),
-    ).toBe("/admin/dashboards/dash-1?vs_p_region=%E5%8D%8E%E4%B8%9C");
   });
 });

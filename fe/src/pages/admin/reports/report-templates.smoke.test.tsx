@@ -18,6 +18,9 @@ describe("report templates smoke", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
     mockApiFetch.mockImplementation(async (path: string, opts?: { method?: string; body?: string }) => {
+      if (path === "/api/v1/reports/center/preferences") {
+        return { favorites: [], recent: [] };
+      }
       if (path.startsWith("/api/v1/reports/catalog/nodes") && !path.includes("/extension")) {
         return {
           items: [
@@ -32,6 +35,21 @@ describe("report templates smoke", () => {
             },
           ],
         };
+      }
+      if (path.includes("/extension/revisions")) {
+        return { items: [], total: 0 };
+      }
+      if (path === "/api/v1/datasets/demo-daily-kpi") {
+        return {
+          datasetId: "demo-daily-kpi",
+          displayName: "日 KPI",
+          boundConfigId: "cfg-1",
+          tables: [],
+          origin: "manual",
+        };
+      }
+      if (path.startsWith("/api/v1/query/configs/")) {
+        return { id: "cfg-1", payload: { dataSourceId: "ds-demo", columns: ["amount"] } };
       }
       if (path.endsWith("/extension") && opts?.method === "PUT") {
         return { catalogNodeId: NODE_ID, metrics: [{ key: "amount", label: "金额" }], filters: [] };
@@ -101,6 +119,21 @@ describe("report templates smoke", () => {
     await waitFor(() => expect(screen.getByText(/暂无模板目录/)).toBeInTheDocument());
   });
 
+  it("auto-selects first template when opening page without node id", async () => {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <TooltipProvider delayDuration={0}>
+          <MemoryRouter initialEntries={["/admin/reports/templates"]}>
+            <ReportTemplatesPage />
+          </MemoryRouter>
+        </TooltipProvider>
+      </QueryClientProvider>,
+    );
+    await waitFor(() => expect(screen.getByRole("tab", { name: "基本信息" })).toBeInTheDocument());
+    expect(screen.queryByText("从目录选择模板")).not.toBeInTheDocument();
+  });
+
   it("loads tree and shows extension preview", async () => {
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
@@ -112,8 +145,7 @@ describe("report templates smoke", () => {
         </TooltipProvider>
       </QueryClientProvider>,
     );
-    await waitFor(() => expect(screen.getByText("销售模板")).toBeInTheDocument());
-    await userEvent.click(screen.getByRole("button", { name: "销售模板" }));
+    await waitFor(() => expect(screen.getByRole("heading", { name: "销售模板" })).toBeInTheDocument());
     await userEvent.click(screen.getByRole("tab", { name: "预览" }));
     await waitFor(() => expect(screen.getByText("渲染版本")).toBeInTheDocument());
     await waitFor(() => expect(screen.getByText("金额")).toBeInTheDocument());
@@ -125,16 +157,15 @@ describe("report templates smoke", () => {
     render(
       <QueryClientProvider client={qc}>
         <TooltipProvider delayDuration={0}>
-          <MemoryRouter>
+          <MemoryRouter initialEntries={[`/admin/reports/templates/${NODE_ID}`]}>
             <ReportTemplatesPage />
           </MemoryRouter>
         </TooltipProvider>
       </QueryClientProvider>,
     );
-    await waitFor(() => expect(screen.getByText("销售模板")).toBeInTheDocument());
-    await user.click(screen.getByRole("button", { name: "销售模板" }));
+    await waitFor(() => expect(screen.getByRole("tab", { name: "扩展配置" })).toBeInTheDocument());
     await user.click(screen.getByRole("tab", { name: "扩展配置" }));
-    await screen.findByLabelText("查数模式");
+    await screen.findByLabelText("变更说明");
     const saveBtn = await screen.findByRole("button", { name: "保存扩展配置" });
     await user.type(screen.getByLabelText("变更说明"), "初始化");
     await waitFor(() => expect(saveBtn).toBeEnabled());
@@ -151,6 +182,9 @@ describe("report templates smoke", () => {
   it("creates template inside selected folder", async () => {
     const FOLDER_ID = "folder-1";
     mockApiFetch.mockImplementation(async (path: string, opts?: { method?: string; body?: string }) => {
+      if (path === "/api/v1/reports/center/preferences") {
+        return { favorites: [], recent: [] };
+      }
       if (path.startsWith("/api/v1/reports/templates/") && opts?.method === "PUT") {
         return JSON.parse(opts.body ?? "{}");
       }
@@ -221,31 +255,27 @@ describe("report templates smoke", () => {
     );
   });
 
-  it("saves sql metric with expression in extension body", async () => {
+  it("saves dataset metric in extension body", async () => {
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const user = userEvent.setup();
     render(
       <QueryClientProvider client={qc}>
         <TooltipProvider delayDuration={0}>
-          <MemoryRouter>
+          <MemoryRouter initialEntries={[`/admin/reports/templates/${NODE_ID}`]}>
             <ReportTemplatesPage />
           </MemoryRouter>
         </TooltipProvider>
       </QueryClientProvider>,
     );
-    await waitFor(() => expect(screen.getByText("销售模板")).toBeInTheDocument());
-    await user.click(screen.getByRole("button", { name: "销售模板" }));
+    await waitFor(() => expect(screen.getByRole("tab", { name: "扩展配置" })).toBeInTheDocument());
     await user.click(screen.getByRole("tab", { name: "扩展配置" }));
-    await user.click(screen.getByLabelText("查数模式"));
-    await user.click(await screen.findByRole("option", { name: "SQL 查询" }));
+    await screen.findByLabelText("指标键");
     fireEvent.change(screen.getByLabelText("指标键"), { target: { value: "revenue" } });
     fireEvent.change(screen.getByLabelText("显示名"), { target: { value: "营收" } });
-    fireEvent.change(screen.getByLabelText("SQL 表达式"), {
-      target: { value: "SELECT SUM(amount) FROM orders" },
-    });
-    await user.click(screen.getByLabelText("运行数据源"));
-    await user.click(await screen.findByRole("option", { name: "示例数据" }));
-    await user.type(screen.getByLabelText("变更说明"), "添加 SQL 指标");
+    await user.click(screen.getByLabelText("数据集"));
+    await user.click(await screen.findByRole("option", { name: /日 KPI/ }));
+    await user.click(screen.getByRole("button", { name: "添加到列表" }));
+    await user.type(screen.getByLabelText("变更说明"), "添加数据集指标");
     await user.click(screen.getByRole("button", { name: "保存扩展配置" }));
     await waitFor(() => {
       const putCall = mockApiFetch.mock.calls.find(
@@ -253,14 +283,14 @@ describe("report templates smoke", () => {
       );
       expect(putCall).toBeTruthy();
       const body = JSON.parse((putCall?.[1] as { body: string }).body);
-      expect(body.defaultDataSourceId).toBe("ds-demo");
       expect(body.metrics).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             key: "revenue",
             label: "营收",
-            queryMode: "sql",
-            expression: "SELECT SUM(amount) FROM orders",
+            queryMode: "dataset",
+            datasetId: "demo-daily-kpi",
+            boundConfigId: "cfg-1",
           }),
         ]),
       );
@@ -273,16 +303,15 @@ describe("report templates smoke", () => {
     render(
       <QueryClientProvider client={qc}>
         <TooltipProvider delayDuration={0}>
-          <MemoryRouter>
+          <MemoryRouter initialEntries={[`/admin/reports/templates/${NODE_ID}`]}>
             <ReportTemplatesPage />
           </MemoryRouter>
         </TooltipProvider>
       </QueryClientProvider>,
     );
-    await waitFor(() => expect(screen.getByText("销售模板")).toBeInTheDocument());
-    await user.click(screen.getByRole("button", { name: "销售模板" }));
+    await waitFor(() => expect(screen.getByRole("tab", { name: "扩展配置" })).toBeInTheDocument());
     await user.click(screen.getByRole("tab", { name: "扩展配置" }));
-    await screen.findByLabelText("查数模式");
+    await screen.findByLabelText("运行库");
     await waitFor(() =>
       expect(screen.getByLabelText("运行库")).toHaveValue("托管分析库"),
     );

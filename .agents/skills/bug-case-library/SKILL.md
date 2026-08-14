@@ -91,7 +91,17 @@ cases/<域>-<简短主题>.md
 | CASE-2026-08-06-004 | [fe-table-style-tests-unwired.md](./cases/fe-table-style-tests-unwired.md) | 表格样式, table-info, 透明度, 表头分页, headerFontSize, tablePaletteId, 快速配色, 测试未接线 |
 | CASE-2026-08-07-001 | [fe-richtext-blank-line-collapse.md](./cases/fe-richtext-blank-line-collapse.md) | 富文本, 换行, 空行, TipTap, ProseMirror-trailingBreak, stripEditorArtifacts |
 | CASE-2026-08-07-002 | [fe-export-snapshot-401-login-redirect.md](./cases/fe-export-snapshot-401-login-redirect.md) | 导出, PDF, data-export-ready, 401, 登录页, export-query, dataset/execute |
-| CASE-2026-08-14-001 | [be-chart-sql-duplicate-alias-zh-field.md](./cases/be-chart-sql-duplicate-alias-zh-field.md) | 网格, Invalid column identifier, Duplicate column, 缩略轴, 堆叠折线, K线, axes 中文别名 |
+| CASE-2026-08-14-002 | [fe-dashboard-thumbnail-empty-blob.md](./cases/fe-dashboard-thumbnail-empty-blob.md) | 封面截图, 0字节 PNG, html-to-image, thumbnail, 加载失败 |
+| CASE-2026-08-14-004 | [fe-chart-axis-font-layout-scale.md](./cases/fe-chart-axis-font-layout-scale.md) | 轴标签, 重叠, CHAR_PX, visualScale, 放大组件, cartesianMargin |
+| CASE-2026-08-14-005 | [fe-schedule-history-smtp-dump.md](./cases/fe-schedule-history-smtp-dump.md) | 执行历史, SMTP, 550, ScheduleHistoryTable, 弹窗表格 |
+| CASE-2026-08-14-006 | [fe-chart-axis-cjk-overlap.md](./cases/fe-chart-axis-cjk-overlap.md) | X轴, 中文, 省名, 抽稀, CHAR_PX, 分组柱状图 |
+| CASE-2026-08-14-008 | [fe-funnel-empty-legend-pad.md](./cases/fe-funnel-empty-legend-pad.md) | 漏斗, 图例, 空白, reserveLegendMargin |
+| CASE-2026-08-14-009 | [fe-funnel-fake-3d-offset.md](./cases/fe-funnel-fake-3d-offset.md) | 漏斗, 3D, 挤出, 顶面, 侧面 |
+| CASE-2026-08-14-007 | [fe-chart-result-limit-stale-execute.md](./cases/fe-chart-result-limit-stale-execute.md) | 结果展示, 自定义N, 超过N行, 拒画, queryLimit, useChartExecute |
+| CASE-2026-08-14-011 | [fe-chart-jump-removed.md](./cases/fe-chart-jump-removed.md) | 图表跳转已下线, 勿再接入 onJumpClick / 跳转设置 |
+| CASE-2026-08-14-012 | [fe-chart-palette-trigger-label-center.md](./cases/fe-chart-palette-trigger-label-center.md) | 配色方案, 品牌, 左对齐, SelectValue |
+| CASE-2026-08-14-013 | [fe-chart-datazoom-svg-transform.md](./cases/fe-chart-datazoom-svg-transform.md) | 缩略轴, dataZoom, d3.zoom, 跳动, 类目窗口 |
+| CASE-2026-08-14-014 | [be-builtin-template-demo-encoding.md](./cases/be-builtin-template-demo-encoding.md) | 可视化模板, Dataset 精简, 空图, 维指错绑 |
 
 ## 维护规则
 

@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { ChartPalettePicker } from "./ChartPalettePicker";
 
 afterEach(cleanup);
@@ -27,17 +28,24 @@ describe("ChartPalettePicker", () => {
     const trigger = screen.getByRole("combobox", { name: "配色方案" });
     expect(trigger).toHaveTextContent("品牌");
     expect(trigger.querySelector("[aria-hidden]")).toBeTruthy();
+    expect(trigger.className).toContain("text-left");
+    const label = screen.getByTestId("chart-palette-option-label");
+    expect(label).toHaveTextContent("品牌");
+    expect(label.className).toContain("text-left");
+    expect(label.className).toContain("w-full");
   });
 
   it("renders series color rows for bar chart metrics", async () => {
     const user = userEvent.setup();
     render(
-      <ChartPalettePicker
-        value="default"
-        seriesColors={[{ id: "amount", name: "amount", color: "#465fff" }]}
-        onChange={vi.fn()}
-        onSeriesColorsChange={vi.fn()}
-      />,
+      <TooltipProvider delayDuration={0}>
+        <ChartPalettePicker
+          value="default"
+          seriesColors={[{ id: "amount", name: "amount", color: "#465fff" }]}
+          onChange={vi.fn()}
+          onSeriesColorsChange={vi.fn()}
+        />
+      </TooltipProvider>,
     );
 
     await user.click(screen.getByRole("button", { name: "自定义配色" }));

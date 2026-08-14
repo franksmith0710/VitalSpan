@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { Eye, LayoutDashboard, MoreHorizontal, Pencil, Share2, Trash2 } from "lucide-react";
+import { Eye, ImageIcon, LayoutDashboard, MoreHorizontal, Pencil, Share2, Trash2 } from "lucide-react";
 import {
   HUB_CARD_BODY_CLASS,
   HUB_CARD_BODY_MORE_TRIGGER_CLASS,
@@ -17,8 +17,9 @@ import {
   HUB_CARD_TITLE_CLASS,
   hubCardPreviewFrameStyle,
 } from "@/components/dashboard/hubCardUi";
-import { DashboardPreviewThumb } from "@/components/dashboard/DashboardPreviewThumb";
 import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAuthenticatedBlobUrl } from "@/hooks/useAuthenticatedBlobUrl";
 import { Badge } from "@/components/ui/badge";
 import { Button, IconButton } from "@/components/ui/button";
 import { TruncateHint } from "@/components/ui/hint-tooltip";
@@ -68,29 +69,63 @@ function formatUpdatedAt(value: string): string {
   });
 }
 
+function DashboardListCardThumbnailPlaceholder({
+  isDataScreen,
+  className,
+  message = "保存后将生成封面截图",
+}: {
+  isDataScreen: boolean;
+  className?: string;
+  message?: string;
+}) {
+  return (
+    <div
+      data-testid="dashboard-list-card-thumbnail-placeholder"
+      className={cn(
+        "flex h-full flex-col items-center justify-center gap-2 px-4 text-center",
+        isDataScreen ? "bg-slate-950 text-slate-500" : "bg-gray-50 text-gray-400 dark:bg-gray-900/60",
+        className,
+      )}
+    >
+      <ImageIcon className="size-8 opacity-40" aria-hidden />
+      <p className="text-theme-xs">{message}</p>
+    </div>
+  );
+}
+
 function DashboardListCardStaticPreview({
   thumbnailUrl,
-  layoutJson,
   isDataScreen,
   className,
 }: {
   thumbnailUrl?: string | null;
-  layoutJson?: DashboardLayout;
   isDataScreen: boolean;
   className?: string;
 }) {
   const [imgFailed, setImgFailed] = useState(false);
-  const resolvedUrl = thumbnailUrl?.trim();
-  const showImage = Boolean(resolvedUrl) && !imgFailed;
+  const resolvedPath = thumbnailUrl?.trim() || null;
+  const { url: blobUrl, loading, error: fetchFailed } = useAuthenticatedBlobUrl(resolvedPath);
 
-  if (showImage && resolvedUrl) {
+  useEffect(() => {
+    setImgFailed(false);
+  }, [resolvedPath]);
+  const loadingThumbnail = Boolean(resolvedPath) && loading;
+
+  if (loadingThumbnail) {
+    return <Skeleton className={cn("h-full w-full rounded-none", className)} data-testid="dashboard-list-card-thumbnail-loading" />;
+  }
+
+  if (blobUrl && !imgFailed) {
     return (
       <img
-        src={resolvedUrl}
+        src={blobUrl}
         alt=""
         data-testid="dashboard-list-card-thumbnail"
-        className={cn("h-full w-full object-cover object-center", className)}
-        loading="lazy"
+        className={cn(
+          "absolute inset-0 h-full w-full object-cover object-top",
+          isDataScreen ? "bg-slate-950" : "bg-gray-50 dark:bg-gray-900/60",
+          className,
+        )}
         decoding="async"
         onError={() => setImgFailed(true)}
       />
@@ -98,11 +133,10 @@ function DashboardListCardStaticPreview({
   }
 
   return (
-    <DashboardPreviewThumb
-      layoutJson={layoutJson}
-      embedded
+    <DashboardListCardThumbnailPlaceholder
       isDataScreen={isDataScreen}
       className={className}
+      message={imgFailed || fetchFailed ? "封面截图加载失败，请重新保存" : "保存后将生成封面截图"}
     />
   );
 }
@@ -168,7 +202,6 @@ export function DashboardListCard({
         <div className={HUB_CARD_PREVIEW_CONTENT_CLASS}>
           <DashboardListCardStaticPreview
             thumbnailUrl={dashboard.thumbnailUrl}
-            layoutJson={layoutForPreview}
             isDataScreen={previewKind === "data-screen"}
             className="h-full"
           />

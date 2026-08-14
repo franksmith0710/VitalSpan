@@ -6,7 +6,6 @@ import { buildD3PresentationProps } from "@/components/charts/engine/d3/core/pre
 import { scaleD3PresentationProps, type ChartPresentationPaintContext } from "@/components/charts/engine/d3/core/chartPresentationScale";
 import type { Geo3dRenderTier } from "@/components/charts/engine/three/geo3dRuntime";
 import { readChartConditionalRules, readChartMarkLines } from "@/lib/chartDeFeatures";
-import { jumpContextFromCartesianDatum } from "@/lib/chartJump";
 import { resolveD3ChartColors } from "@/components/charts/engine/d3/views/resolveD3ChartColors";
 
 export function extractDrillValue(datum: D3CartesianDatum, xField: string): string {
@@ -22,7 +21,7 @@ export function buildCartesianRenderConfig(
   paintContext?: { visualScale?: number; renderTier?: Geo3dRenderTier },
 ): D3CartesianRenderConfig | null {
   if (plan.kind !== "d3" || plan.empty) return null;
-  const { style, chartConfig, onInteraction, onJumpClick, isDark } = props;
+  const { style, chartConfig, onInteraction, isDark } = props;
   const options = plan.options;
 
   const xField = String(options.xField ?? "__category__");
@@ -71,17 +70,12 @@ export function buildCartesianRenderConfig(
     conditionalRules:
       chartConfig ? readChartConditionalRules(chartConfig) : conditionalFromPlan ?? style.deFeatures?.conditionalRules,
     dataZoom: Boolean(options.__dataZoom),
-    onPointClick:
-      onInteraction || onJumpClick
-        ? (datum) => {
-            if (onJumpClick) {
-              onJumpClick(jumpContextFromCartesianDatum(datum));
-              return;
-            }
-            const value = extractDrillValue(datum, xField);
-            if (value) onInteraction?.({ kind: "drill", value, label: value });
-          }
-        : undefined,
+    onPointClick: onInteraction
+      ? (datum) => {
+          const value = extractDrillValue(datum, xField);
+          if (value) onInteraction({ kind: "drill", value, label: value });
+        }
+      : undefined,
   };
 }
 

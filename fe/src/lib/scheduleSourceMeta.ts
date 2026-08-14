@@ -47,6 +47,18 @@ export function summarizeRecipients(
   return `${parts.slice(0, 2).join("、")} 等 ${parts.length} 项`;
 }
 
+export function summarizeDeliveryRecipients(
+  deliverySteps?: { channel?: string; recipients?: string[] }[],
+): string {
+  if (!deliverySteps?.length) return "—";
+  const emails = deliverySteps
+    .filter((step) => step.channel === "email")
+    .flatMap((step) => step.recipients ?? []);
+  if (!emails.length) return "—";
+  if (emails.length <= 2) return emails.join("、");
+  return `${emails.slice(0, 2).join("、")} 等 ${emails.length} 个`;
+}
+
 export function formatAttachmentLabels(formats?: string[]): string {
   if (!formats?.length) return "PDF";
   return formats.map((f) => f.toUpperCase()).join(" / ");

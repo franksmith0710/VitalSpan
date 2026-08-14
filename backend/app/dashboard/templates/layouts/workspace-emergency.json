@@ -156,8 +156,8 @@
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
-          "datasetId": "demo-sales-wide",
+          "configId": null,
+          "datasetId": "demo-gov-grid-stats",
           "nativeBody": {
             "deStyle": {
               "seriesGradient": true,
@@ -215,26 +215,26 @@
           "index": null,
           "dimensions": [
             {
-              "field": "province",
+              "field": "grid_name",
               "label": null
             }
           ],
           "metrics": [
             {
-              "field": "amount",
+              "field": "event_count",
               "label": null
             }
           ],
           "axes": {
             "xAxis": [
               {
-                "field": "province",
+                "field": "grid_name",
                 "label": null
               }
             ],
             "yAxis": [
               {
-                "field": "amount",
+                "field": "event_count",
                 "label": null
               }
             ]
@@ -273,7 +273,7 @@
           "schema": null,
           "table": null,
           "configId": null,
-          "datasetId": "demo-gov-region-service",
+          "datasetId": "demo-v-sales-geo",
           "nativeBody": {
             "deStyle": {
               "seriesGradient": true,
@@ -465,7 +465,7 @@
           ],
           "metrics": [
             {
-              "field": "service_volume",
+              "field": "amount",
               "label": null
             }
           ],
@@ -478,7 +478,7 @@
             ],
             "yAxis": [
               {
-                "field": "service_volume",
+                "field": "amount",
                 "label": null
               }
             ],
@@ -526,7 +526,7 @@
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
+          "configId": null,
           "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
@@ -639,7 +639,7 @@
           "schema": null,
           "table": null,
           "configId": null,
-          "datasetId": "demo-gov-budget",
+          "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
               "seriesGradient": true,
@@ -682,26 +682,26 @@
           "index": null,
           "dimensions": [
             {
-              "field": "category",
+              "field": "category_name",
               "label": null
             }
           ],
           "metrics": [
             {
-              "field": "spent_amount",
+              "field": "amount",
               "label": null
             }
           ],
           "axes": {
             "xAxis": [
               {
-                "field": "category",
+                "field": "category_name",
                 "label": null
               }
             ],
             "yAxis": [
               {
-                "field": "spent_amount",
+                "field": "amount",
                 "label": null
               }
             ]
@@ -865,7 +865,7 @@
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
+          "configId": null,
           "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
@@ -904,7 +904,7 @@
           "index": null,
           "dimensions": [
             {
-              "field": "product_name",
+              "field": "sale_date",
               "label": null
             }
           ],
@@ -917,7 +917,7 @@
           "axes": {
             "xAxis": [
               {
-                "field": "product_name",
+                "field": "sale_date",
                 "label": null
               }
             ],

@@ -2,7 +2,12 @@ import * as d3 from "d3";
 import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { paintVerticalBar, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
 import { createCrosshair } from "@/components/charts/engine/d3/core/crosshair";
-import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
+import {
+  attachCartesianDataZoom,
+  cartesianSparkline,
+  rowsInCategories,
+  visibleDataZoomCategories,
+} from "@/components/charts/engine/d3/core/dataZoom";
 import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
 import { resolveSeriesGradientFill } from "@/components/charts/engine/d3/core/gradient";
 import { writeIncrementalSession } from "@/components/charts/engine/d3/core/incrementalRender";
@@ -87,10 +92,13 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
 
   const theme = themeFromConfig(rawTheme);
   const normalized = normalizeCartesianData(data, xField, yField, seriesField);
-  const { categories, structuralLevelCount } = normalizeCategoryAxisDomain(
+  const domain = normalizeCategoryAxisDomain(
     normalized.map((d) => String(d.__category__ ?? "")),
     categoryLevelCount,
   );
+  const allCategories = domain.categories;
+  const categories = visibleDataZoomCategories(container, dataZoom, allCategories);
+  const structuralLevelCount = domain.structuralLevelCount;
   const seriesGroups = groupSeries(normalized, seriesField);
   const seriesNames = seriesGroups.map((s) => s.name);
   const hasMultiSeries = seriesNames.length > 1 && Boolean(seriesField);
@@ -115,6 +123,7 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
     categories,
     axisStyle,
     categoryLevelCount: structuralLevelCount,
+    dataZoom,
   });
   const { root, defs, g, plot, innerW, innerH, margin } = scene;
   const keys = resolveSeriesKeys(seriesNames);
@@ -135,7 +144,7 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
   const maxVal =
     isStack || isPercent
       ? (d3.max(wideRows, (row) => keys.reduce((sum, k) => sum + Number(row[k] ?? 0), 0)) ?? 0)
-      : (d3.max(normalized, (d) => Number(d.__value__)) ?? 0);
+      : (d3.max(rowsInCategories(normalized, categories), (d) => Number(d.__value__)) ?? 0);
 
   const x = d3
     .scaleBand<string>()
@@ -188,13 +197,14 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
           const front = gradientFill.startsWith("url(") ? gradientFill : solid;
           paintVBarCell(d3.select(this), { y1, h, w: x.bandwidth(), front, solid, rx: barRx });
         })
-        .on("click", (_e, d) =>
+        .on("click", (event, d) => {
+          event.stopPropagation();
           onPointClick?.({
             __category__: d.data.__category__,
             __value__: Number(d[1]) - Number(d[0]),
             __series__: name,
-          }),
-        );
+          });
+        });
     }
   } else {
     seriesGroups.forEach((s, seriesIndex) => {
@@ -205,7 +215,7 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
       const gradientFill = resolveSeriesGradientFill(defs, domClass, color, seriesGradient);
       plot
         .selectAll(seriesDomSelector("bar", seriesIndex))
-        .data(s.points)
+        .data(rowsInCategories(s.points, categories))
         .join("g")
         .attr("class", domClass)
         .attr("transform", (d) => {
@@ -222,7 +232,10 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
           const front = gradientFill.startsWith("url(") ? gradientFill : solid;
           paintVBarCell(d3.select(this), { y1, h: innerH - y1, w: barW, front, solid, rx: barRx });
         })
-        .on("click", (_e, d) => onPointClick?.(d));
+        .on("click", (event, d) => {
+          event.stopPropagation();
+          onPointClick?.(d);
+        });
     });
   }
 
@@ -302,7 +315,19 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
   }
 
   writeIncrementalSession(container, { plotType: "Column", width, height });
-  const detachZoom = dataZoom ? attachCartesianDataZoom(root, plot, innerW, innerH, { theme }) : () => undefined;
+  const detachZoom = dataZoom
+    ? attachCartesianDataZoom({
+        host: container,
+        plotRoot: g,
+        innerW,
+        innerH,
+        marginBottom: margin.bottom,
+        categories: allCategories,
+        sparkline: cartesianSparkline(allCategories, normalized),
+        theme,
+        redraw: () => renderD3BarChart(container, config),
+      })
+    : () => undefined;
 
   return () => {
     detachZoom();

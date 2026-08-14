@@ -1,4 +1,5 @@
 import { pickUniformOverlapAwareTickIndices } from "./axes";
+import { estimateLabelPixelWidth } from "./labelWidth";
 
 export type LabelBBox = {
   left: number;
@@ -7,14 +8,7 @@ export type LabelBBox = {
   bottom: number;
 };
 
-export function estimateLabelPixelWidth(text: string, fontSize: number): number {
-  let width = 0;
-  for (const ch of text) {
-    const code = ch.codePointAt(0) ?? 0;
-    width += code > 0xff ? fontSize : fontSize * 0.58;
-  }
-  return width;
-}
+export { estimateLabelPixelWidth } from "./labelWidth";
 
 export function bboxFromAnchor(
   x: number,

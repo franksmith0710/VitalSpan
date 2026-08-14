@@ -51,6 +51,28 @@ describe("migrateChartViewConfig", () => {
     ]);
   });
 
+  it("preserves deFeatures when stripping leftover sql nativeBody", () => {
+    const next = migrateChartViewConfig({
+      chartType: "bar-group",
+      dataSourceId: "ds-1",
+      configId: "cfg-1",
+      sql: "SELECT 1",
+      nativeBody: {
+        leftoverQuery: { sql: "SELECT 1" },
+        deFeatures: {
+          markLines: [{ id: "l1", enabled: true, axis: "y", value: 10 }],
+        },
+        deDisplay: { resultLimit: 100 },
+      },
+    });
+    expect(next.sql).toBeUndefined();
+    expect(next.nativeBody?.leftoverQuery).toBeUndefined();
+    expect(next.nativeBody?.deFeatures).toEqual({
+      markLines: [{ id: "l1", enabled: true, axis: "y", value: 10 }],
+    });
+    expect(next.nativeBody?.deDisplay).toEqual({ resultLimit: 100 });
+  });
+
   it("forces dataset mode and clears legacy sql binding", () => {
     const next = migrateChartViewConfig({
       chartType: "line",

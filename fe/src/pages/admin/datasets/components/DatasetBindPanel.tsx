@@ -65,8 +65,8 @@ export function DatasetBindPanel({
   const [saving, setSaving] = useState(false);
 
   const dsQuery = useQuery({
-    queryKey: queryKeys.datasources.list(),
-    queryFn: () => apiFetch<{ items: DsItem[] }>("/api/v1/datasources"),
+    queryKey: queryKeys.datasources.list({ includeManaged: true }),
+    queryFn: () => apiFetch<{ items: DsItem[] }>("/api/v1/datasources?includeManaged=true"),
   });
 
   const boundConfigQuery = useQuery({

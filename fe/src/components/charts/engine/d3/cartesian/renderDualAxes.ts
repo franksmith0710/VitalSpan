@@ -10,7 +10,14 @@ import {
 } from "@/components/charts/engine/d3/core/series";
 import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
 import { drawHorizontalMarkLines } from "@/components/charts/engine/d3/core/markLines";
-import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
+import {
+  attachCartesianDataZoom,
+  cartesianSparkline,
+  rowsInCategories,
+  visibleDataZoomCategories,
+} from "@/components/charts/engine/d3/core/dataZoom";
+import { DATA_ZOOM_SLIDER_RESERVE } from "@/components/charts/engine/d3/core/dataZoomWindow";
+import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { renderConfiguredInlineLegend, type D3LegendItem } from "@/components/charts/engine/d3/core/d3Legend";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { applyPathDepthShadow } from "@/components/charts/engine/d3/core/depthEngine";
@@ -294,7 +301,8 @@ function lineTooltipRows(
 }
 
 export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxesRenderConfig): () => void {
-  container.replaceChildren();
+  const incremental = container.dataset.vsIncremental === "true";
+  if (!incremental) container.replaceChildren();
   if (config.width <= 0 || config.height <= 0) return () => undefined;
 
   const {
@@ -337,11 +345,14 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
 
   const leftSet = normalizeDataset(leftData, xField, leftYField, categoryLevelCount);
   const rightSet = normalizeDataset(rightData, xField, rightYField, categoryLevelCount);
-  const { categories, structuralLevelCount } = normalizeCategoryAxisDomain(
+  const domain = normalizeCategoryAxisDomain(
     [...new Set([...leftSet.categories, ...rightSet.categories])],
     categoryLevelCount,
   );
-  if (categories.length === 0) return () => undefined;
+  const allCategories = domain.categories;
+  const categories = visibleDataZoomCategories(container, dataZoom, allCategories);
+  const structuralLevelCount = domain.structuralLevelCount;
+  if (allCategories.length === 0) return () => undefined;
 
   const leftSmooth = leftGeom.geometry === "line" && (leftGeom.smooth ?? styleSmooth);
   const rightSmooth = rightGeom.geometry === "line" && (rightGeom.smooth ?? styleSmooth);
@@ -375,7 +386,10 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
     legendItems,
     axisStyle,
     categoryLevelCount: structuralLevelCount,
-    marginOverrides: { right: 56 },
+    marginOverrides: {
+      right: 56,
+      ...(dataZoom ? { bottom: cartesianMargin().bottom + DATA_ZOOM_SLIDER_RESERVE } : {}),
+    },
   });
 
   const x = d3.scalePoint<string>().domain(categories).range([0, innerW]).padding(0.5);
@@ -388,7 +402,7 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
           leftGeom.isGroup || leftGeom.isStack ? columnSeriesField : undefined,
           leftColumnOpts,
         )
-      : (d3.max(leftSet.points, (d) => Number(d.__value__)) ?? 0);
+      : (d3.max(rowsInCategories(leftSet.points, categories), (d) => Number(d.__value__)) ?? 0);
   const rightMax =
     rightGeom.geometry === "column"
       ? resolveDualAxesColumnMax(
@@ -398,14 +412,26 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
           rightGeom.isGroup || rightGeom.isStack ? columnSeriesField : undefined,
           rightColumnOpts,
         )
-      : (d3.max(rightSet.points, (d) => Number(d.__value__)) ?? 0);
+      : (d3.max(rowsInCategories(rightSet.points, categories), (d) => Number(d.__value__)) ?? 0);
   const yLeft = d3.scaleLinear().domain([0, leftMax]).nice().range([innerH, 0]);
   const yRight = d3.scaleLinear().domain([0, rightMax]).nice().range([innerH, 0]);
 
-  const root = appendChartSvg(container, width, height);
-  const defs = root.append("defs");
-  const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
-  const plot = g.append("g");
+  let root = d3.select(container).select<SVGSVGElement>("svg.vs-chart-svg");
+  if (root.empty()) {
+    root = appendChartSvg(container, width, height);
+  } else {
+    root.attr("width", width).attr("height", height);
+  }
+  let defs = root.select<SVGDefsElement>("defs");
+  if (defs.empty()) defs = root.append("defs");
+  let g = root.select<SVGGElement>("g.vs-chart-plot-root");
+  if (g.empty()) {
+    g = root.append("g").attr("class", "vs-chart-plot-root").attr("transform", `translate(${margin.left},${margin.top})`);
+  } else {
+    g.attr("transform", `translate(${margin.left},${margin.top})`);
+    g.selectAll(":not(.data-zoom-slider)").remove();
+  }
+  const plot = g.append("g").attr("class", "vs-chart-plot");
   drawHorizontalMarkLines(plot, markLines, yLeft, innerW);
   const tooltip = showTooltip ? createTooltip(container, theme, tooltipPresentation) : null;
 
@@ -705,7 +731,19 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
     fontSize: legendLayout?.fontSize,
   });
 
-  const detachZoom = dataZoom ? attachCartesianDataZoom(root, plot, innerW, innerH, { theme }) : () => undefined;
+  const detachZoom = dataZoom
+    ? attachCartesianDataZoom({
+        host: container,
+        plotRoot: g,
+        innerW,
+        innerH,
+        marginBottom: margin.bottom,
+        categories: allCategories,
+        sparkline: cartesianSparkline(allCategories, [...leftSet.points, ...rightSet.points]),
+        theme,
+        redraw: () => renderD3DualAxesChart(container, config),
+      })
+    : () => undefined;
 
   return () => {
     detachZoom();

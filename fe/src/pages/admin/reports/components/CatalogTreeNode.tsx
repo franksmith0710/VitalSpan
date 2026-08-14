@@ -46,12 +46,14 @@ function CatalogNodeActions({
   node,
   allNodes,
   readOnly,
+  selected,
   onMove,
   onDelete,
 }: {
   node: CatalogNode;
   allNodes: ReportCatalogNode[];
   readOnly: boolean;
+  selected: boolean;
   onMove: (nodeId: string, parentId: string | null) => void;
   onDelete: (nodeId: string) => void;
 }) {
@@ -65,7 +67,10 @@ function CatalogNodeActions({
           type="button"
           variant="ghost"
           size="sm"
-          className="size-7 shrink-0 opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100"
+          className={cn(
+            "size-7 shrink-0",
+            selected ? "text-brand-600 dark:text-brand-400" : "text-gray-500 dark:text-gray-400",
+          )}
           aria-label={`${node.name} 操作`}
           onClick={(e) => e.stopPropagation()}
         >
@@ -159,6 +164,7 @@ export function CatalogTreeNode({
           node={node}
           allNodes={allNodes}
           readOnly={readOnly}
+          selected={selected}
           onMove={onMove}
           onDelete={onDelete}
         />
@@ -190,6 +196,7 @@ export function CatalogTreeNode({
           node={node}
           allNodes={allNodes}
           readOnly={readOnly}
+          selected={selected}
           onMove={onMove}
           onDelete={onDelete}
         />

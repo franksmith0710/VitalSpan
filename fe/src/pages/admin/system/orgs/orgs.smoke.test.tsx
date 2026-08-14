@@ -134,6 +134,43 @@ describe("OrgTreePage smoke", () => {
     });
   });
 
+  it("add child org preselects parent and POST", async () => {
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      const init = args[1] as RequestInit | undefined;
+      if (path === "/api/v1/orgs" && init?.method === "POST") {
+        return {
+          id: "org-child",
+          parent_id: ORG_A,
+          name: "综合处",
+          path: "/hq/office",
+          level: 1,
+        };
+      }
+      if (path.startsWith("/api/v1/orgs")) {
+        return orgListResponse();
+      }
+      return {};
+    });
+    renderOrgs();
+    await userEvent.click(await screen.findByRole("button", { name: "为 总部 添加子组织" }));
+    expect(screen.getByRole("heading", { name: "添加子组织" })).toBeInTheDocument();
+    expect(screen.getByText("上级组织：总部")).toBeInTheDocument();
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    expect(screen.getByText("总部", { selector: "p[aria-readonly='true']" })).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText("名称"), "综合处");
+    await userEvent.click(screen.getByRole("button", { name: "创建" }));
+    await waitFor(() => {
+      const postCall = mockApiFetch.mock.calls.find(
+        (c) => c[0] === "/api/v1/orgs" && (c[1] as RequestInit)?.method === "POST",
+      );
+      expect(postCall).toBeTruthy();
+      const body = JSON.parse(String((postCall![1] as RequestInit).body));
+      expect(body.name).toBe("综合处");
+      expect(body.parent_id).toBe(ORG_A);
+    });
+  });
+
   it("batch delete triggers DELETE for selected orgs", async () => {
     const ORG_B = "00000000-0000-4000-8000-000000000031";
     const deleted: string[] = [];

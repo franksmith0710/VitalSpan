@@ -11,7 +11,6 @@ import {
   buildCustomRefreshFromParts,
   buildCustomRefreshMode,
   CHART_REFRESH_PRESET_OPTIONS,
-  CHART_RESULT_LIMIT_OPTIONS,
   CUSTOM_REFRESH_UNIT_OPTIONS,
   customRefreshAmountBounds,
   formatChartRefreshSelectValue,
@@ -24,6 +23,7 @@ import {
   type CustomRefreshUnit,
 } from "@/lib/chartDeDisplay";
 import { useChartInspector } from "./chartInspectorContext";
+import { ChartResultLimitField } from "./ChartResultLimitField";
 import { DE_SELECT, DeAttrField, DeAttrForm } from "./dashboardInspectorUi";
 import { cn } from "@/lib/utils";
 
@@ -37,10 +37,6 @@ export function ChartDataOptions() {
   const customRefresh = parseCustomRefreshParts(refreshMode);
   const isCustom = refreshSelect === "custom" || isCustomRefreshMode(refreshMode);
   const customBounds = customRefreshAmountBounds(customRefresh.unit);
-  const resultLimit =
-    CHART_RESULT_LIMIT_OPTIONS.some((opt) => opt.value === display.resultLimit)
-      ? display.resultLimit!
-      : "1000";
 
   const setRefreshMode = (mode: string) => {
     onChange(patchChartDeDisplay(cfg, { refreshMode: mode }));
@@ -134,23 +130,11 @@ export function ChartDataOptions() {
           ) : null}
         </div>
       </DeAttrField>
-      <DeAttrField label="结果展示" compact hint="取最新 N 条">
-        <Select
-          value={resultLimit}
-          onValueChange={(value) => onChange(patchChartDeDisplay(cfg, { resultLimit: value }))}
-        >
-          <SelectTrigger className={cn(DE_SELECT, "h-8 w-[4.5rem] px-2")} aria-label="结果条数">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {CHART_RESULT_LIMIT_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </DeAttrField>
+      <ChartResultLimitField
+        key={cfg.chartId ?? "chart-result-limit"}
+        stored={display.resultLimit}
+        onChange={(value) => onChange(patchChartDeDisplay(cfg, { resultLimit: value }))}
+      />
     </DeAttrForm>
   );
 }

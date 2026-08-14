@@ -33,9 +33,12 @@ from app.auth.models import get_meta_session
 from app.dashboard.models import Dashboard
 from app.dashboard.templates.models import DashboardTemplate
 from app.dashboard.templates.presets_exported import prepare_exported_layout
-from app.dashboard.workspace_instances.seed import WORKSPACE_INSTANCE_SPECS, WORKSPACE_INSTANCE_SLUGS
+from app.dashboard.workspace_instances.seed import (
+    WORKSPACE_INSTANCE_DESCRIPTION,
+    WORKSPACE_INSTANCE_SPECS,
+    WORKSPACE_INSTANCE_SLUGS,
+)
 
-# template_key -> layouts/*.json
 TEMPLATE_LAYOUT_FILES: dict[str, str] = {
     "builtin-gov-industrial-park": "industrial-park-screen.json",
     "builtin-gov-smart-city": "workspace-smart-city.json",
@@ -59,8 +62,59 @@ EXTRA_DASHBOARD_SPECS: tuple[dict[str, Any], ...] = (
 )
 
 
-def _slug_to_template_key() -> dict[str, str]:
-    return {spec["slug"]: spec["template_key"] for spec in WORKSPACE_INSTANCE_SPECS}
+def _resolve_dashboard_for_spec(session, spec: dict[str, Any]) -> Dashboard | None:
+    dash = session.scalar(
+        select(Dashboard).where(
+            Dashboard.slug == spec["slug"],
+            Dashboard.deleted_at.is_(None),
+        ),
+    )
+    if dash is None:
+        dash = session.scalar(select(Dashboard).where(Dashboard.id == spec["id"]))
+        if dash is not None and dash.deleted_at is not None:
+            dash = None
+    if dash is not None:
+        return dash
+
+    name = spec["name"]
+    surface = spec["surface_kind"]
+    candidates = session.scalars(
+        select(Dashboard).where(
+            Dashboard.deleted_at.is_(None),
+            Dashboard.surface_kind == surface,
+            Dashboard.name.in_((name, f"{name}（编辑）")),
+        ),
+    ).all()
+    if not candidates:
+        candidates = session.scalars(
+            select(Dashboard).where(
+                Dashboard.deleted_at.is_(None),
+                Dashboard.surface_kind == surface,
+                Dashboard.name.like(f"{name}%"),
+            ),
+        ).all()
+    if candidates:
+        return max(
+            candidates,
+            key=lambda row: (
+                1 if row.description != WORKSPACE_INSTANCE_DESCRIPTION else 0,
+                row.updated_at or row.created_at,
+            ),
+        )
+
+    # Last resort: recently soft-deleted workspace row or edited copy.
+    archived = session.scalars(
+        select(Dashboard).where(
+            Dashboard.surface_kind == surface,
+            Dashboard.deleted_at.is_not(None),
+            (Dashboard.id == spec["id"])
+            | (Dashboard.slug == spec["slug"])
+            | Dashboard.name.in_((name, f"{name}（编辑）")),
+        ),
+    ).all()
+    if not archived:
+        return None
+    return max(archived, key=lambda row: row.updated_at or row.created_at)
 
 
 def _export_payload(dashboard: Dashboard) -> dict[str, Any]:
@@ -166,23 +220,13 @@ def main() -> int:
     parser.add_argument("--skip-seed-bump", action="store_true", help="Do not bump seed.py revision")
     args = parser.parse_args()
 
-    slug_map = _slug_to_template_key()
     session = get_meta_session()
     synced = 0
     try:
         print("=== sync dashboards -> templates ===")
         for spec in WORKSPACE_INSTANCE_SPECS:
-            dash = session.scalar(
-                select(Dashboard).where(
-                    Dashboard.slug == spec["slug"],
-                    Dashboard.deleted_at.is_(None),
-                ),
-            )
+            dash = _resolve_dashboard_for_spec(session, spec)
             if dash is None:
-                dash = session.scalar(
-                    select(Dashboard).where(Dashboard.id == spec["id"]),
-                )
-            if dash is None or dash.deleted_at is not None:
                 print(f"  SKIP missing dashboard slug={spec['slug']}")
                 continue
             if sync_one(

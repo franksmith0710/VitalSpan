@@ -39,6 +39,8 @@ type OrgFormDialogsProps = {
   onCreateNameChange: (value: string) => void;
   createParentId: string;
   onCreateParentIdChange: (value: string) => void;
+  createParentLocked?: boolean;
+  createParentLabel?: string | null;
   createPending: boolean;
   onCreate: () => void;
   editOrg: OrgOut | null;
@@ -72,6 +74,8 @@ export function OrgFormDialogs({
   onCreateNameChange,
   createParentId,
   onCreateParentIdChange,
+  createParentLocked = false,
+  createParentLabel = null,
   createPending,
   onCreate,
   editOrg,
@@ -92,12 +96,23 @@ export function OrgFormDialogs({
   batchDeleting,
   onBatchDeleteConfirm,
 }: OrgFormDialogsProps) {
+  const createParentName =
+    createParentLabel ??
+    (createParentId === "__root__"
+      ? null
+      : (pickerItems.find((o) => o.id === createParentId)?.name ?? null));
+
   return (
     <>
       <Dialog open={createOpen} onOpenChange={onCreateOpenChange}>
         <AdminFormDialogContent>
           <AdminFormDialogHeader>
-            <DialogTitle>新建组织</DialogTitle>
+            <DialogTitle>{createParentName ? "添加子组织" : "新建组织"}</DialogTitle>
+            {createParentName ? (
+              <p className="text-theme-sm text-gray-500 dark:text-gray-400">
+                上级组织：{createParentName}
+              </p>
+            ) : null}
           </AdminFormDialogHeader>
           <AdminFormDialogBody>
             <AdminFormField label="名称" htmlFor="org-create-name">
@@ -109,19 +124,28 @@ export function OrgFormDialogs({
               />
             </AdminFormField>
             <AdminFormField label="上级组织">
-              <Select value={createParentId} onValueChange={onCreateParentIdChange}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__root__">（顶级组织）</SelectItem>
-                  {pickerItems.map((o) => (
-                    <SelectItem key={o.id} value={o.id}>
-                      {o.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {createParentLocked && createParentName ? (
+                <p
+                  className="flex h-11 items-center rounded-lg border border-gray-200 bg-gray-50 px-4 text-theme-sm text-gray-800 dark:border-gray-800 dark:bg-white/[0.03] dark:text-white/90"
+                  aria-readonly="true"
+                >
+                  {createParentName}
+                </p>
+              ) : (
+                <Select value={createParentId} onValueChange={onCreateParentIdChange}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__root__">（顶级组织）</SelectItem>
+                    {pickerItems.map((o) => (
+                      <SelectItem key={o.id} value={o.id}>
+                        {o.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </AdminFormField>
           </AdminFormDialogBody>
           <AdminFormDialogFooter>

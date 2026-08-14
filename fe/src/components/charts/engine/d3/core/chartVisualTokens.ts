@@ -69,6 +69,15 @@ export function resolveAxisFontSize(): number {
   return axisFontSizeOverride ?? VCDS.axis.fontSize;
 }
 
+/** 轴标签绘制字号相对 11px 基准的布局缩放（高分辨率 paint / 放大组件时边距与抽稀必须同步） */
+export function axisLayoutScale(): number {
+  return resolveAxisFontSize() / VCDS.axis.fontSize;
+}
+
+export function scaleAxisLayoutPx(basePx: number): number {
+  return Math.max(1, Math.round(basePx * axisLayoutScale()));
+}
+
 export function motionDuration(kind: keyof typeof VCDS.motion): number {
   if (motionIntensity === "off") return 0;
   const base = VCDS.motion[kind];

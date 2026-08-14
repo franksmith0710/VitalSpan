@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -59,7 +58,7 @@ import { useListPagination } from "@/lib/list-pagination";
 import { queryKeys } from "@/lib/queryKeys";
 import { RlsRoleBindingPanel } from "./RlsRoleBindingPanel";
 import type { DimensionGroupOut, DimensionTypeOut } from "./rls-types";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { SystemAdminListHint } from "../SystemAdminListHint";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 
 export function RlsAdminPage() {
@@ -281,25 +280,7 @@ export function RlsAdminPage() {
       description="按组织或自定义维度过滤查询结果，适用于细粒度数据范围控制。"
     >
       <ListPageSection>
-        <div className="shrink-0 border-b border-gray-100 px-5 py-3 dark:border-white/[0.06]">
-          <Alert severity="warning" appearance="subtle" className="rounded-lg py-3">
-            <AlertDescription className="text-theme-sm leading-relaxed text-gray-600 dark:text-gray-400">
-              日常「谁能看哪些报表」请优先使用
-              <Link to="/admin/system/roles" className="mx-1 text-brand-600 underline dark:text-brand-400">
-                角色权限
-              </Link>
-              与
-              <Link to="/admin/system/grants" className="mx-1 text-brand-600 underline dark:text-brand-400">
-                资源授权
-              </Link>
-              ；仅在有进阶数据范围需求时配置本模块。也可返回
-              <Link to="/admin/system" className="mx-1 text-brand-600 underline dark:text-brand-400">
-                配置向导
-              </Link>
-              完成基础设置。
-            </AlertDescription>
-          </Alert>
-        </div>
+        <SystemAdminListHint scope="rls" />
         {dimensionsCatalogQuery.isError ? (
           <div className="shrink-0 border-b border-gray-100 px-5 py-3 dark:border-white/[0.06]">
             <PageErrorBanner

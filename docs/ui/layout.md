@@ -145,12 +145,15 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │
 ├── 后台管理                        # 用户菜单进入（admin · `system:*`）
 │   ├── /system                      # 配置向导（SystemAdminHomePage）
-│   ├── /system/roles                # AUTH · crud-flow（含维度分组绑定入口见 RLS）
-│   ├── /system/users                # AUTH
-│   ├── /system/orgs                 # AUTH
+│   ├── /system/orgs                 # 组织架构
+│   ├── /system/users                # 用户管理
+│   ├── /system/roles                # 角色管理（含维度分组绑定入口见 RLS）
+│   ├── /system/grants               # 资源授权 · table-list + dialog form
+│   ├── /system/platform-connect     # 平台对接（IM / 邮件等）
 │   ├── /system/rls                  # 行级权限：维度/分组 CRUD + 角色绑定 · form-composition
-│   ├── /system/audit                # 审计日志（含时间窗筛选）· table-list
-│   └── /system/grants               # 资源授权 · table-list + dialog form
+│   └── /system/audit                # 审计日志（含时间窗筛选）· table-list
+│
+│   侧栏分组：入门 · 平台与组织 · 集成与对接 · 安全与审计（`system-admin-nav.tsx`）
 │
 ├── 治理                            # H1：固定隐藏（无 env 开关；测试可传 resolveNav govNavEnabled）
 │   ├── /governance/catalog         # 深链可达；页顶诚实横幅（未对接真实总线）
@@ -165,7 +168,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 | 分组 | 图标区 | 典型权限 | 里程碑 | 角色 | 默认 IA |
 |------|--------|----------|--------|------|---------|
 | 分析 | 仪表板、数据大屏、可视化模板 | — | M1/M5 | admin/analyst/viewer | **展开**（主路径） |
-| 报表 | 报表中心（侧栏分组：工作台 / 标准分析 / 我的报表 / 调度与投递） | `report:read` / `report:manage` | M1/M7/M11 | 全员 | **展开** |
+| 报表 | 报表中心（侧栏分组：工作台 / 标准分析 / 文档模板 / 调度与投递） | `report:read` / `report:manage` | M1/M7/M11 | 全员 | **展开** |
 | 数据准备 | 数据连接（连接管理/同步任务）、**数据集** | `datasource:*` / `dataset:*` | M1/M13 | admin | **展开** |
 | 治理 | 治理流程、查询服务、查询设计器 | `governance:*` | M1/M13 | admin | **H1 固定隐藏**（测试专用 `govNavEnabled`） |
 | 我的 | 个人资料、偏好、安全 | — | — | 全员 | 头像菜单进入 |

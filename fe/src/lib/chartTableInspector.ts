@@ -20,7 +20,6 @@ export type TableInspectorProfile = {
   showWordWrap: boolean;
   showRowHover: boolean;
   showSubTotals: boolean;
-  advancedJump: boolean;
   advancedTimeRange: boolean;
   advancedConditional: boolean;
 };
@@ -45,7 +44,6 @@ const PROFILES: Record<TableChartKind, TableInspectorProfile> = {
     showWordWrap: true,
     showRowHover: true,
     showSubTotals: false,
-    advancedJump: true,
     advancedTimeRange: true,
     advancedConditional: false,
   },
@@ -61,7 +59,6 @@ const PROFILES: Record<TableChartKind, TableInspectorProfile> = {
     showWordWrap: true,
     showRowHover: true,
     showSubTotals: false,
-    advancedJump: true,
     advancedTimeRange: true,
     advancedConditional: false,
   },
@@ -77,7 +74,6 @@ const PROFILES: Record<TableChartKind, TableInspectorProfile> = {
     showWordWrap: true,
     showRowHover: true,
     showSubTotals: true,
-    advancedJump: true,
     advancedTimeRange: true,
     advancedConditional: false,
   },
@@ -93,7 +89,6 @@ const PROFILES: Record<TableChartKind, TableInspectorProfile> = {
     showWordWrap: true,
     showRowHover: true,
     showSubTotals: true,
-    advancedJump: true,
     advancedTimeRange: true,
     advancedConditional: false,
   },
@@ -109,7 +104,6 @@ const PROFILES: Record<TableChartKind, TableInspectorProfile> = {
     showWordWrap: false,
     showRowHover: false,
     showSubTotals: false,
-    advancedJump: true,
     advancedTimeRange: true,
     advancedConditional: true,
   },

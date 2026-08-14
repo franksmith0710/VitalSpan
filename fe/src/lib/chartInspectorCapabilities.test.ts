@@ -11,7 +11,6 @@ describe("chartInspectorCapabilities", () => {
     const caps = chartInspectorCapabilities("bar");
     expect(caps.markLines).toBe(true);
     expect(caps.conditional).toBe(true);
-    expect(caps.jump).toBe(true);
   });
 
   it("disables legend for graph (D3 matrix missing)", () => {
@@ -25,7 +24,7 @@ describe("chartInspectorCapabilities", () => {
     expect(supportsEmbeddedShellLegend("funnel")).toBe(false);
   });
 
-  it("hides advanced tab for kpi without jump/timeRange", () => {
+  it("hides advanced tab for kpi without timeRange", () => {
     expect(chartHasAdvancedTab("kpi")).toBe(false);
     expect(chartHasAdvancedTab("bar")).toBe(true);
     expect(chartHasAdvancedTab("pie")).toBe(true);
@@ -34,10 +33,6 @@ describe("chartInspectorCapabilities", () => {
   it("shows advanced tab for 2D map bubble effect", () => {
     expect(chartHasAdvancedTab("map")).toBe(true);
     expect(chartHasAdvancedTab("map-3d")).toBe(true);
-  });
-
-  it("enables jump for 2D map", () => {
-    expect(chartInspectorCapabilities("map").jump).toBe(true);
   });
 
   it("enables label format for funnel and graph", () => {

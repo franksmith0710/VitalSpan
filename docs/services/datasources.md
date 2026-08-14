@@ -22,6 +22,7 @@
 |----|-----|
 | 连接配置、方言适配、池化、元数据浏览 L1 API | SQL 语义解析与图表绑定（→ `query`） |
 | 官方演示源 **`demo`**（显示名「示例数据」；`sample_db` 自动注册 + 启动迁移） | 生产环境业务库直连（非演示包） |
+| 托管分析库 `analytics`（同步入湖目标；列表默认隐藏，`includeManaged=true` 内部可见） | 用户当普通业务源增删托管分析库 |
 | CONN-014~016：`probe_readonly_*` + `execute_native_query`（MongoDB find / ES·OS search） | GridFS 写入、集群管理、OpenSearch Dashboards 嵌入 |
 | CONN-023~026（**r249**）：REST API / Excel·CSV 文件 / Db2 / Impala 方言注册与连通链 | OAuth2 专用表单项、文件上传 UI、`query/native/executor` HTTP 出数（companion） |
 | 连接器插件目录 `dialects/`（mysql、postgresql） | Dataset 语义层（四期 → `metadata` + `query`） |
@@ -82,7 +83,7 @@
 
 ### 官方演示数据源（可视化模板）
 
-- **物理库**：compose `sample-mysql:3307` / `sample_db`；首次 init 见 `docker/demo-mysql/tables.sql`；**存量卷**由启动时 `ensure_sample_db_schema()` 应用 `docker/demo-mysql/migrations/` 增量迁移（含 `vs_official_*` 视图）
+- **物理库**：compose `sample-mysql:3307` / `sample_db`；首次 init 见 `docker/demo-mysql/tables.sql`；**存量卷**由启动时 `ensure_sample_db_schema()` 应用 `docker/demo-mysql/migrations/` 增量迁移（含 `vs_official_*` 视图；`004` 将事实表补齐至少 600 行）
 - **元库注册**：启动顺序 `ensure_sample_db_schema` → `ensure_official_demo_datasource()`（`ENSURE_OFFICIAL_DEMO_DATASOURCE`，默认开）幂等写入 code **`demo`**；legacy `official-demo-mysql` 一次性 rename；`delete` 对 `demo` 返回 409
 - **示例实例**：`seed_demo_instances()` 预置中文 slug「官方示例-*」看板/大屏（绑定「示例数据」源；legacy `demo-*` slug 自动迁移）
 - **就绪 API**：`GET /api/v1/demo-package/status`（Hub 横幅 / 运维探测）

@@ -1,11 +1,16 @@
-export const CARTESIAN_MARGIN = { top: 24, right: 20, bottom: 44, left: 52 };
+import { scaleAxisLayoutPx } from "@/components/charts/engine/d3/core/chartVisualTokens";
+
+export const CARTESIAN_MARGIN = { top: 24, right: 20, bottom: 52, left: 52 };
 
 type MarginOverrides = Partial<typeof CARTESIAN_MARGIN>;
 
-/** 基础笛卡尔边距；图例占位请用 reserveLegendMargin */
+/** 基础笛卡尔边距；随轴字号放大，避免标签画出绘图区 */
 export function cartesianMargin(_showLegend = false, overrides?: MarginOverrides): typeof CARTESIAN_MARGIN {
   return {
-    ...CARTESIAN_MARGIN,
+    top: scaleAxisLayoutPx(CARTESIAN_MARGIN.top),
+    right: scaleAxisLayoutPx(CARTESIAN_MARGIN.right),
+    bottom: scaleAxisLayoutPx(CARTESIAN_MARGIN.bottom),
+    left: scaleAxisLayoutPx(CARTESIAN_MARGIN.left),
     ...overrides,
   };
 }

@@ -171,8 +171,8 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
 
   const primaryTableName = values.tables[0]?.name ?? "";
   const dsQuery = useQuery({
-    queryKey: queryKeys.datasources.list(),
-    queryFn: () => apiFetch<{ items: Array<{ id: string; type?: string }> }>("/api/v1/datasources"),
+    queryKey: queryKeys.datasources.list({ includeManaged: true }),
+    queryFn: () => apiFetch<{ items: Array<{ id: string; type?: string }> }>("/api/v1/datasources?includeManaged=true"),
   });
   const effectiveDataSourceIdForColumns = useMemo(() => {
     if (values.tableSourceDataSourceId) return values.tableSourceDataSourceId;

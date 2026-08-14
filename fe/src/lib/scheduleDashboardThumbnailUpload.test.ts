@@ -1,33 +1,39 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { scheduleDashboardThumbnailUpload } from "./scheduleDashboardThumbnailUpload";
+import { persistDashboardThumbnailBestEffort } from "./uploadDashboardThumbnail";
 
 vi.mock("./uploadDashboardThumbnail", () => ({
-  uploadDashboardThumbnail: vi.fn(async () => undefined),
+  persistDashboardThumbnailBestEffort: vi.fn(async () => true),
 }));
 
-import { uploadDashboardThumbnail } from "./uploadDashboardThumbnail";
+import { scheduleDashboardThumbnailUpload } from "./scheduleDashboardThumbnailUpload";
 
 describe("scheduleDashboardThumbnailUpload", () => {
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  it("calls uploadDashboardThumbnail without blocking", async () => {
+  it("calls persist immediately without delay", async () => {
     scheduleDashboardThumbnailUpload("dash-1");
     await vi.waitFor(() => {
-      expect(uploadDashboardThumbnail).toHaveBeenCalledWith("dash-1");
+      expect(persistDashboardThumbnailBestEffort).toHaveBeenCalledWith("dash-1");
     });
   });
 
-  it("swallows upload failures", async () => {
-    vi.mocked(uploadDashboardThumbnail).mockRejectedValueOnce(new Error("capture failed"));
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-
-    scheduleDashboardThumbnailUpload("dash-2");
+  it("runs onUploaded after successful persist", async () => {
+    const onUploaded = vi.fn();
+    scheduleDashboardThumbnailUpload("dash-3", { onUploaded });
     await vi.waitFor(() => {
-      expect(warn).toHaveBeenCalled();
+      expect(onUploaded).toHaveBeenCalled();
     });
+  });
 
-    warn.mockRestore();
+  it("skips onUploaded when persist fails", async () => {
+    vi.mocked(persistDashboardThumbnailBestEffort).mockResolvedValueOnce(false);
+    const onUploaded = vi.fn();
+    scheduleDashboardThumbnailUpload("dash-2", { onUploaded });
+    await vi.waitFor(() => {
+      expect(persistDashboardThumbnailBestEffort).toHaveBeenCalled();
+    });
+    expect(onUploaded).not.toHaveBeenCalled();
   });
 });

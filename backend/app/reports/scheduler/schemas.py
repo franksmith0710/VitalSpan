@@ -4,6 +4,7 @@ import uuid
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+from app.core.platform_config.slots import EMAIL_SLOT_QQ
 
 
 class ScheduleRecipientIn(BaseModel):
@@ -28,6 +29,7 @@ class ScheduleCreate(BaseModel):
         default_factory=lambda: ["email"], alias="deliveryChannels",
     )
     notify_group: bool = Field(default=False, alias="notifyGroup")
+    email_smtp_slot: Literal["qq", "163"] = Field(default=EMAIL_SLOT_QQ, alias="emailSmtpSlot")
     name: str | None = Field(default=None, max_length=120)
     cron: str = Field(min_length=1, max_length=64)
     timezone: str = Field(default="Asia/Shanghai", max_length=64)
@@ -66,6 +68,7 @@ class ScheduleUpdate(BaseModel):
         default=None, alias="deliveryChannels",
     )
     notify_group: bool | None = Field(default=None, alias="notifyGroup")
+    email_smtp_slot: Literal["qq", "163"] | None = Field(default=None, alias="emailSmtpSlot")
 
 
 class ScheduleStatusOut(BaseModel):
@@ -81,6 +84,7 @@ class ScheduleStatusOut(BaseModel):
     attachment_formats: list[str] = Field(default_factory=list, alias="attachmentFormats")
     delivery_channels: list[str] = Field(default_factory=lambda: ["email"], alias="deliveryChannels")
     notify_group: bool = Field(default=False, alias="notifyGroup")
+    email_smtp_slot: str = Field(default=EMAIL_SLOT_QQ, alias="emailSmtpSlot")
     cron: str
     timezone: str
     status: str
@@ -133,6 +137,7 @@ class ScheduleExecuteOut(BaseModel):
     ]
     artifact_ref: str = Field(alias="artifactRef")
     artifact_kind: str | None = Field(default=None, alias="artifactKind")
+    secondary_artifacts: list[dict[str, Any]] = Field(default_factory=list, alias="secondaryArtifacts")
     idempotency_key: str = Field(alias="idempotencyKey")
     executed_at: str = Field(alias="executedAt")
     delivery_steps: list[dict[str, Any]] = Field(default_factory=list, alias="deliverySteps")

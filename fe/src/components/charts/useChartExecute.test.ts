@@ -124,4 +124,27 @@ describe("useChartExecute", () => {
     expect(fetchChartExecuteResult).not.toHaveBeenCalled();
     expect(result.current.error).toBe("请配置数据源与 SQL");
   });
+
+  it("refetches when result limit changes", async () => {
+    const base = {
+      ...defaultChartConfig("bar"),
+      chartId: "w-bar",
+      dataSourceId: "ds-1",
+      mode: "dataset" as const,
+      configId: "cfg-1",
+    };
+
+    const { rerender } = renderHook(
+      ({ limit }) => useChartExecute(base, { limit }),
+      { initialProps: { limit: 1000 } },
+    );
+
+    await waitFor(() => expect(fetchChartExecuteResult).toHaveBeenCalledTimes(1));
+    expect(fetchChartExecuteResult.mock.calls[0][1]).toMatchObject({ limit: 1000 });
+
+    rerender({ limit: 11 });
+
+    await waitFor(() => expect(fetchChartExecuteResult).toHaveBeenCalledTimes(2));
+    expect(fetchChartExecuteResult.mock.calls[1][1]).toMatchObject({ limit: 11 });
+  });
 });

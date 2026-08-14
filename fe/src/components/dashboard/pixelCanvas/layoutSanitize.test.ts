@@ -98,6 +98,23 @@ describe("layoutSanitize", () => {
     expect(layoutsOverlap(sanitized, 0)).toBe(true);
   });
 
+  it("does not compact separated widgets on dashboard sanitize", () => {
+    const layout: DashboardLayoutV2 = {
+      version: 2,
+      canvas: { width: 1440, height: 900 },
+      widgets: [
+        chart("a", 0, 0, 480, 280, 0),
+        chart("b", 500, 0, 480, 280, 1),
+      ],
+      globalFilters: [],
+      styleConfig: { gapPreset: "none", widgetGap: 0, pixelGutter: 0 },
+    };
+    const sanitized = sanitizePixelLayoutGeometry(layout);
+    const b = sanitized.widgets.find((w) => w.id === "b");
+    expect(b?.x).toBe(500);
+    expect(b?.y).toBe(0);
+  });
+
   it("does not compact separated widgets on data-screen sanitize", () => {
     const layout: DashboardLayoutV2 = {
       version: 2,

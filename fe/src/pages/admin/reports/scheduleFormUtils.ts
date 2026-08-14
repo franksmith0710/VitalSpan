@@ -5,9 +5,18 @@ import {
 } from "./components/ScheduleFormFields";
 import type { ReportScheduleRow, ScheduleRecipient } from "./useReportSchedules";
 
-export const EMAIL_ONLY_DELIVERY: Pick<ScheduleFormValue, "deliveryChannels" | "notifyGroup"> = {
+import {
+  DEFAULT_EMAIL_SMTP_SLOT,
+  type EmailSmtpSlot,
+} from "@/lib/emailSmtpSlots";
+
+export const EMAIL_ONLY_DELIVERY: Pick<
+  ScheduleFormValue,
+  "deliveryChannels" | "notifyGroup" | "emailSmtpSlot"
+> = {
   deliveryChannels: ["email"],
   notifyGroup: false,
+  emailSmtpSlot: DEFAULT_EMAIL_SMTP_SLOT,
 };
 
 export function pickActiveSchedule(items: ReportScheduleRow[]): ReportScheduleRow | null {
@@ -30,5 +39,6 @@ export function scheduleRowToForm(schedule: ReportScheduleRow): ScheduleFormValu
       ? schedule.attachmentFormats
       : ["pdf"]) as ScheduleFormValue["attachmentFormats"],
     ...EMAIL_ONLY_DELIVERY,
+    emailSmtpSlot: (schedule.emailSmtpSlot === "163" ? "163" : "qq") as EmailSmtpSlot,
   };
 }

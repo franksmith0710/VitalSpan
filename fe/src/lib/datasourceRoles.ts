@@ -73,9 +73,18 @@ export function isAnalyticsDatasource(code: string): boolean {
   return code === ANALYTICS_DATASOURCE_CODE;
 }
 
-/** @deprecated 使用 isSyncSourceCapable */
-export function isMysqlSyncSource(type: string): boolean {
-  return type === "mysql";
+export function isManagedAnalyticsDatasource(item: {
+  code?: string | null;
+  type?: string;
+  port?: number;
+  database?: string;
+}): boolean {
+  if (isAnalyticsDatasource(item.code ?? "")) return true;
+  return (
+    (item.type === "postgresql" || item.type === "postgres") &&
+    item.port === 5433 &&
+    item.database === "analytics"
+  );
 }
 
 export function isSyncSourceCapable(type: string): boolean {

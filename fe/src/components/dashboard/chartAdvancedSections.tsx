@@ -15,12 +15,10 @@ import {
   patchChartDeFeatures,
   readChartConditionalRules,
   readChartDeFeatures,
-  readChartJumpConfig,
   readChartLinkageConfig,
   readChartMarkLines,
   type ChartConditionalOperator,
   type ChartConditionalRule,
-  type ChartJumpConfig,
   type ChartLinkageConfig,
   type ChartMarkLine,
 } from "@/lib/chartDeFeatures";
@@ -43,7 +41,6 @@ import {
 } from "@/lib/chartDeStyle";
 import { useChartInspector } from "./chartInspectorContext";
 import { DeAttrSliderField } from "./deAttrSlider";
-import { DashboardPickerField } from "./DashboardPickerField";
 import { WIDGET_BORDER_RECOMMENDED } from "./dashboardStyleConfig";
 import {
   INSPECTOR_CTRL,
@@ -76,7 +73,7 @@ export function ChartAdvancedFeatureSettings() {
           onCheckedChange={(checked) =>
             onChange(patchChartDeFeatures(cfg, { dataZoom: checked }))
           }
-          hint="折线/柱图底部缩放条"
+          hint="拖手柄或窗口时主图即时跟随；滚轮平移，Ctrl+滚轮缩放"
           aria-label="缩略轴"
         />
       ) : null}
@@ -329,88 +326,6 @@ export function ChartAdvancedConditionalSection() {
         <Plus className="mr-1 size-3.5" aria-hidden />
         添加规则
       </Button>
-    </div>
-  );
-}
-
-export function ChartAdvancedJumpSection() {
-  const { cfg, onChange, dashboardId: currentDashboardId } = useChartInspector();
-  const jump = readChartJumpConfig(cfg);
-
-  const patchJump = (patch: Partial<ChartJumpConfig>) =>
-    onChange(patchChartDeFeatures(cfg, { jump: { ...jump, ...patch } }));
-
-  return (
-    <div className={INSPECTOR_SECTION_GAP}>
-      <InspectorSwitchRow
-        label="启用跳转"
-        checked={jump.enabled}
-        onCheckedChange={(enabled) => patchJump({ enabled })}
-        hint={
-          jump.enabled
-            ? "查看态点击图表数据点触发跳转（与下钻互斥时优先跳转）"
-            : "启用后可在查看态点击数据点跳转"
-        }
-      />
-      {jump.enabled ? (
-        <>
-          <InspectorFieldRow label="跳转类型">
-            <Select
-              value={jump.mode}
-              onValueChange={(v) => patchJump({ mode: v as ChartJumpConfig["mode"] })}
-            >
-              <SelectTrigger className={INSPECTOR_SELECT}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="url">外部链接</SelectItem>
-                <SelectItem value="dashboard">看板</SelectItem>
-              </SelectContent>
-            </Select>
-          </InspectorFieldRow>
-          {jump.mode === "url" ? (
-            <InspectorFieldRow label="链接地址" hint="支持 https:// 或站内 / 路径">
-              <Input
-                className={INSPECTOR_CTRL}
-                value={jump.url ?? ""}
-                onChange={(e) => patchJump({ url: e.target.value })}
-                placeholder="https://example.com"
-              />
-            </InspectorFieldRow>
-          ) : (
-            <InspectorFieldRow
-              label="目标看板"
-              hint={
-                !jump.dashboardId?.trim()
-                  ? "从列表选择跳转目标看板（对标 DataEase 内部链接）"
-                  : undefined
-              }
-            >
-              <DashboardPickerField
-                value={jump.dashboardId}
-                onChange={(dashboardId) => patchJump({ dashboardId })}
-                currentDashboardId={currentDashboardId}
-              />
-            </InspectorFieldRow>
-          )}
-          <InspectorFieldRow
-            label="参数键"
-            hint="点击维度写入 URL：?vs_p_{参数键}=值；目标看板筛选器/联动按此键接收"
-          >
-            <Input
-              className={INSPECTOR_CTRL}
-              value={jump.parameterKey ?? cfg.dimensions?.[0]?.field ?? ""}
-              onChange={(e) => patchJump({ parameterKey: e.target.value })}
-              placeholder={cfg.dimensions?.[0]?.field?.trim() || "category"}
-            />
-          </InspectorFieldRow>
-          <InspectorSwitchRow
-            label="新标签页打开"
-            checked={jump.openInNewTab !== false}
-            onCheckedChange={(openInNewTab) => patchJump({ openInNewTab })}
-          />
-        </>
-      ) : null}
     </div>
   );
 }

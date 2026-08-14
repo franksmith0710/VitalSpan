@@ -69,7 +69,7 @@
 |------|------|-----|------|
 | `catalog/service.py` | 树 CRUD/move；`MAX_CATALOG_DEPTH=8`；mutating 接入 ACL | RPT-004 | companion 已实现（r57） |
 | `catalog/acl.py` | M7 目录 ACL + `_NODE_OWNERS` 内存 owner 登记 | RPT-004 | companion 已实现（r57） |
-| `scheduler/service.py` | 调度 FSM + cron 字段范围校验 | RPT-005 | companion 已实现（r57） |
+| `scheduler/service.py` | 调度 FSM + cron 字段范围校验 + 删除 | RPT-005 | companion 已实现（r57） |
 | `scheduler/executor.py` | 默认 `semi_real_execute_schedule`；`X-Rpt-Execute-Mock:1` 才走 `mock_execute_schedule`（probe） | RPT-005 | companion 已实现（r57+诚实化） |
 | `extension/service.py` | 模板节点扩展配置 CRUD（metrics/filters/revision） | RPT-006 | L1 已实现 r54 |
 | `batch/service.py` | 批量创建模板 + Idempotency-Key 守卫 | RPT-007 | L1 已实现 r54 |

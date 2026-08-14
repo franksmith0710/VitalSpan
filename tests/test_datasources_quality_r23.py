@@ -346,6 +346,33 @@ def test_list_filter_by_q(client, auth_headers):
     assert resp.json()["total"] >= 1
 
 
+def test_list_hides_managed_analytics_unless_include_managed(client, auth_headers):
+    created = client.post(
+        "/api/v1/datasources",
+        json={
+            "name": "托管分析库",
+            "code": "analytics",
+            "type": "postgresql",
+            "host": "127.0.0.1",
+            "port": 5433,
+            "database": "analytics",
+            "username": "vitalspan",
+            "password": "vitalspan",
+        },
+        headers=auth_headers,
+    )
+    assert created.status_code == 201
+    hidden = client.get("/api/v1/datasources?limit=100", headers=auth_headers)
+    assert hidden.status_code == 200
+    assert all(item["code"] != "analytics" for item in hidden.json()["items"])
+    shown = client.get("/api/v1/datasources?limit=100&includeManaged=true", headers=auth_headers)
+    assert any(item["code"] == "analytics" for item in shown.json()["items"])
+    ds_id = created.json()["id"]
+    deleted = client.delete(f"/api/v1/datasources/{ds_id}", headers=auth_headers)
+    assert deleted.status_code == 409
+    assert deleted.json()["code"] == "DATASOURCE_ANALYTICS_PROTECTED"
+
+
 def test_patch_description_only(client, auth_headers):
     """T-DS-C11: PATCH 仅改 description。"""
     created = client.post("/api/v1/datasources", json=_payload(), headers=auth_headers)

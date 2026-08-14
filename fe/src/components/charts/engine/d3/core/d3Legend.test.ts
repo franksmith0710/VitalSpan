@@ -65,6 +65,12 @@ describe("reserveLegendMargin", () => {
     const many = reserveLegendMargin(base, 400, 220, { position: "bottom" }, makeItems(16));
     expect(many.bottom).toBeGreaterThan(few.bottom);
   });
+
+  it("does not reserve space when legend items are empty", () => {
+    const base = { top: 8, right: 8, bottom: 8, left: 8 };
+    const margin = reserveLegendMargin(base, 400, 200, { position: "bottom" }, []);
+    expect(margin).toEqual(base);
+  });
 });
 
 describe("estimateLegendBlockSize", () => {

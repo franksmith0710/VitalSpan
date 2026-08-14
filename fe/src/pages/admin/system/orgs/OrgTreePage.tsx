@@ -9,8 +9,10 @@ import {
 import {
   ListHeaderCheckbox,
   ListPageBatchActions,
+  listTableSelectHeadClass,
 } from "@/components/layout/list-batch-delete";
 import {
+  ListPageCardGridEmptyState,
   ListPagePagination,
   ListPageSection,
   ListPageTableFrame,
@@ -27,8 +29,15 @@ import { useListPagination } from "@/lib/list-pagination";
 import { queryKeys } from "@/lib/queryKeys";
 import { OrgFormDialogs } from "./OrgFormDialogs";
 import { mapOrgError } from "./orgErrors";
-import { OrgListRow, type OrgOut } from "./OrgListRow";
+import { OrgListRow } from "./OrgListRow";
+import type { OrgOut } from "./org-tree-utils";
+import {
+  buildOrgChildCounts,
+  filterVisibleOrgs,
+  sortOrgsByPath,
+} from "./org-tree-utils";
 import { useOrgBatchDelete } from "./useOrgBatchDelete";
+import { SystemAdminListHint } from "../SystemAdminListHint";
 
 const ORG_PICKER_LIMIT = 500;
 
@@ -36,13 +45,18 @@ export function OrgTreePage() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(() => new Set());
   const [createOpen, setCreateOpen] = useState(false);
   const [createName, setCreateName] = useState("");
   const [createParentId, setCreateParentId] = useState<string>("__root__");
+  const [createParentLocked, setCreateParentLocked] = useState(false);
+  const [createParentLabel, setCreateParentLabel] = useState<string | null>(null);
   const [editOrg, setEditOrg] = useState<OrgOut | null>(null);
   const [editName, setEditName] = useState("");
   const [editParentId, setEditParentId] = useState<string>("__root__");
   const [deleteOrg, setDeleteOrg] = useState<OrgOut | null>(null);
+
+  const isTreeView = debouncedQ.length === 0;
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQ(search.trim()), 300);
@@ -69,13 +83,15 @@ export function OrgTreePage() {
       if (listParams.q) params.set("q", listParams.q);
       return apiFetch<{ items: OrgOut[]; total: number }>(`/api/v1/orgs?${params}`);
     },
+    enabled: !isTreeView,
   });
 
-  const { data: pickerData } = useQuery({
+  const { data: pickerData, isLoading: pickerLoading } = useQuery({
     queryKey: queryKeys.orgs.picker,
     queryFn: () =>
       apiFetch<{ items: OrgOut[] }>(`/api/v1/orgs?limit=${ORG_PICKER_LIMIT}&offset=0`),
     staleTime: 60_000,
+    enabled: isTreeView,
   });
 
   const invalidate = async () => {
@@ -119,10 +135,23 @@ export function OrgTreePage() {
     onError: (err) => toast.error(mapOrgError(err)),
   });
 
-  const items = data?.items ?? [];
-  const total = data?.total ?? 0;
-  const pickerItems = pickerData?.items ?? items;
-  const isEmpty = !isLoading && items.length === 0;
+  const treeSource = useMemo(
+    () => sortOrgsByPath(pickerData?.items ?? []),
+    [pickerData?.items],
+  );
+  const childCounts = useMemo(() => buildOrgChildCounts(treeSource), [treeSource]);
+  const visibleTreeItems = useMemo(
+    () => filterVisibleOrgs(treeSource, collapsedIds),
+    [treeSource, collapsedIds],
+  );
+
+  const searchItems = data?.items ?? [];
+  const displayItems = isTreeView ? visibleTreeItems : searchItems;
+  const total = isTreeView ? treeSource.length : (data?.total ?? 0);
+  const pickerItems = pickerData?.items ?? searchItems;
+  const listLoading = isTreeView ? pickerLoading : isLoading;
+  const isEmpty = !listLoading && displayItems.length === 0;
+
   const {
     selection,
     batch,
@@ -130,12 +159,47 @@ export function OrgTreePage() {
     setBatchDeleteOpen,
     batchDeleting,
     handleBatchDelete,
-  } = useOrgBatchDelete(items, invalidate);
+  } = useOrgBatchDelete(displayItems, invalidate);
+
+  const toggleCollapse = (orgId: string) => {
+    setCollapsedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(orgId)) next.delete(orgId);
+      else next.add(orgId);
+      return next;
+    });
+  };
 
   const openEdit = (org: OrgOut) => {
     setEditOrg(org);
     setEditName(org.name);
     setEditParentId(org.parent_id ?? "__root__");
+  };
+
+  const openCreateRoot = () => {
+    setCreateName("");
+    setCreateParentId("__root__");
+    setCreateParentLocked(false);
+    setCreateParentLabel(null);
+    setCreateOpen(true);
+  };
+
+  const openCreateChild = (org: OrgOut) => {
+    setCreateName("");
+    setCreateParentId(org.id);
+    setCreateParentLocked(true);
+    setCreateParentLabel(org.name);
+    setCreateOpen(true);
+  };
+
+  const handleCreateOpenChange = (open: boolean) => {
+    setCreateOpen(open);
+    if (!open) {
+      setCreateParentLocked(false);
+      setCreateParentLabel(null);
+      setCreateParentId("__root__");
+      setCreateName("");
+    }
   };
 
   return (
@@ -149,13 +213,14 @@ export function OrgTreePage() {
       }
       description="维护处室、部门或辖区层级。用户归属与数据范围过滤都依赖组织树，建议作为后台管理的第一步。"
       actions={
-        <Button type="button" variant="primary" size="sm" onClick={() => setCreateOpen(true)}>
+        <Button type="button" variant="primary" size="sm" onClick={openCreateRoot}>
           <Plus className="size-4" aria-hidden />
           新建组织
         </Button>
       }
     >
       <ListPageSection>
+        <SystemAdminListHint scope="orgs" />
         <ListPageToolbar
           filters={
             <div className="grid w-full gap-2 sm:max-w-xs">
@@ -178,7 +243,7 @@ export function OrgTreePage() {
                 onClear={selection.clear}
                 onDelete={() => setBatchDeleteOpen(true)}
               />
-              {!isLoading ? (
+              {!listLoading ? (
                 <p className="text-theme-sm text-gray-500 dark:text-gray-400">
                   {debouncedQ ? `筛选结果 ${total} 条` : `共 ${total} 个组织节点`}
                 </p>
@@ -187,51 +252,90 @@ export function OrgTreePage() {
           }
         />
 
-        <ListPageTableFrame>
-          {isError ? (
-            <PageErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} />
+        <ListPageTableFrame className="px-0">
+          {isError && !isTreeView ? (
+            <div className="px-5 py-3">
+              <PageErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} />
+            </div>
           ) : null}
-          {isLoading ? (
-            <div className="space-y-2">
+          {listLoading ? (
+            <div className="space-y-2 px-5 py-5">
               {Array.from({ length: 8 }).map((_, i) => (
-                <Skeleton key={i} className="h-10 w-full rounded-lg" />
+                <Skeleton key={i} className="h-12 w-full rounded-lg" />
               ))}
             </div>
           ) : isEmpty ? (
-            <p className="py-12 text-center text-theme-sm text-gray-500 dark:text-gray-400">
-              {debouncedQ
-                ? "没有匹配的组织节点。"
-                : "尚未建立组织。点击「新建组织」添加第一个处室或部门。"}
-            </p>
+            <ListPageCardGridEmptyState
+              icon={<Building2 className="size-7" aria-hidden />}
+              title={debouncedQ ? "没有匹配的组织" : "尚未建立组织"}
+              description={
+                debouncedQ
+                  ? "试试其他关键词，或清空搜索查看完整组织树。"
+                  : "点击「新建组织」添加第一个处室或部门，随后在节点右侧添加子组织。"
+              }
+              action={
+                !debouncedQ ? (
+                  <Button type="button" variant="primary" size="sm" onClick={openCreateRoot}>
+                    <Plus className="size-4" aria-hidden />
+                    新建组织
+                  </Button>
+                ) : undefined
+              }
+            />
           ) : (
-            <div className="space-y-0.5">
-              {batch.batchMode ? (
-                <div className="mb-2 flex items-center gap-2 border-b border-gray-100 pb-2 dark:border-gray-800">
-                  <ListHeaderCheckbox
-                    checked={selection.allSelected}
-                    indeterminate={selection.someSelected}
-                    disabled={items.length === 0}
-                    onCheckedChange={() => selection.toggleAll()}
-                  />
-                  <span className="text-theme-xs text-gray-500 dark:text-gray-400">全选当前页</span>
-                </div>
-              ) : null}
-              {items.map((org) => (
-                <OrgListRow
-                  key={org.id}
-                  org={org}
-                  batchMode={batch.batchMode}
-                  isSelected={selection.isSelected(org.id)}
-                  onToggleSelect={() => selection.toggle(org.id)}
-                  onEdit={openEdit}
-                  onDelete={setDeleteOrg}
-                />
-              ))}
+            <div className="overflow-x-only">
+              <table className="min-w-[640px] w-full text-left text-theme-sm" aria-label="组织树">
+                <thead className="border-b border-gray-200 bg-gray-50/80 dark:border-gray-800 dark:bg-white/[0.02]">
+                  <tr>
+                    {batch.batchMode ? (
+                      <th className={listTableSelectHeadClass}>
+                        <ListHeaderCheckbox
+                          checked={selection.allSelected}
+                          indeterminate={selection.someSelected}
+                          disabled={displayItems.length === 0}
+                          onCheckedChange={() => selection.toggleAll()}
+                        />
+                      </th>
+                    ) : null}
+                    <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
+                      组织名称
+                    </th>
+                    <th className="hidden px-4 py-3 font-medium text-gray-600 dark:text-gray-400 sm:table-cell">
+                      层级
+                    </th>
+                    <th className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-400">
+                      操作
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {displayItems.map((org) => {
+                    const childCount = childCounts.get(org.id) ?? 0;
+                    return (
+                      <OrgListRow
+                        key={org.id}
+                        org={org}
+                        batchMode={batch.batchMode}
+                        isSelected={selection.isSelected(org.id)}
+                        onToggleSelect={() => selection.toggle(org.id)}
+                        onEdit={openEdit}
+                        onAddChild={openCreateChild}
+                        onDelete={setDeleteOrg}
+                        showTreeChrome={isTreeView}
+                        hasChildren={isTreeView && childCount > 0}
+                        childCount={childCount}
+                        isCollapsed={collapsedIds.has(org.id)}
+                        onToggleCollapse={() => toggleCollapse(org.id)}
+                      />
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </ListPageTableFrame>
 
-        {!isLoading && total > 0 ? (
+        {!listLoading && !isTreeView && total > 0 ? (
           <ListPagePagination
             current={pagination.page}
             pageSize={pagination.pageSize}
@@ -245,11 +349,13 @@ export function OrgTreePage() {
       <OrgFormDialogs
         pickerItems={pickerItems}
         createOpen={createOpen}
-        onCreateOpenChange={setCreateOpen}
+        onCreateOpenChange={handleCreateOpenChange}
         createName={createName}
         onCreateNameChange={setCreateName}
         createParentId={createParentId}
         onCreateParentIdChange={setCreateParentId}
+        createParentLocked={createParentLocked}
+        createParentLabel={createParentLabel}
         createPending={createMutation.isPending}
         onCreate={() =>
           createMutation.mutate({

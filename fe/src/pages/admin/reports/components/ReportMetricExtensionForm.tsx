@@ -105,7 +105,7 @@ export function ReportMetricExtensionForm({
 
   const dsQuery = useQuery({
     queryKey: ["reports", "datasources", "picker"],
-    queryFn: () => apiFetch<{ items: DatasourceListItem[] }>("/api/v1/datasources?limit=100"),
+    queryFn: () => apiFetch<{ items: DatasourceListItem[] }>("/api/v1/datasources?limit=100&includeManaged=true"),
     enabled: !readOnly,
   });
   const dsItems = dsQuery.data?.items ?? [];

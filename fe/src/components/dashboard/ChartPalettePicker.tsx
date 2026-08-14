@@ -184,7 +184,8 @@ export function ChartPalettePicker({
 
   const wideSelectTriggerClass = cn(
     DE_SELECT,
-    "h-auto min-h-8 px-2.5 py-1 text-[12px] [&>span]:line-clamp-none",
+    "h-auto min-h-8 px-2.5 py-1 text-left text-[12px]",
+    "[&>span]:line-clamp-none [&>span]:flex [&>span]:w-full [&>span]:flex-col [&>span]:items-start [&>span]:justify-start [&>span]:text-left",
   );
   const settingsBtnClass = dense ? "size-8" : "size-7";
 
@@ -249,19 +250,7 @@ export function ChartPalettePicker({
               className={cn(wideSelectTriggerClass, "min-w-0 flex-1 shadow-none")}
               aria-label="配色方案"
             >
-              <span className="flex min-w-0 flex-1 flex-col gap-1 overflow-hidden">
-                <ChartPaletteSwatchStrip
-                  colors={activeColors}
-                  inherit={effectiveInheritActive}
-                  inheritPreviewColors={inheritPreviewColors}
-                  className="w-full rounded-[2px]"
-                />
-                <SelectValue placeholder="配色方案">
-                  <span className="min-w-0 truncate text-left text-[11px] leading-tight">
-                    {activeLabel}
-                  </span>
-                </SelectValue>
-              </span>
+              <SelectValue placeholder="配色方案" />
             </SelectTrigger>
             <SelectContent
               position="popper"
@@ -271,15 +260,25 @@ export function ChartPalettePicker({
               className={paletteSelectContentClass}
             >
               {rows.map((row) => (
-                <SelectItem key={row.id} value={row.id} textValue={row.label}>
-                  <span className="flex min-w-0 flex-col gap-1">
+                <SelectItem
+                  key={row.id}
+                  value={row.id}
+                  textValue={row.label}
+                  className="items-start text-left"
+                >
+                  <span className="flex min-w-0 w-full flex-col items-start gap-1 text-left">
                     <ChartPaletteSwatchStrip
                       colors={row.colors}
                       inherit={row.id === INHERIT_VALUE}
                       inheritPreviewColors={inheritPreviewColors}
-                      className="rounded-[2px]"
+                      className="w-full rounded-[2px]"
                     />
-                    <span className="text-theme-xs leading-tight">{row.label}</span>
+                    <span
+                      data-testid="chart-palette-option-label"
+                      className="w-full text-left text-theme-xs leading-tight"
+                    >
+                      {row.label}
+                    </span>
                   </span>
                 </SelectItem>
               ))}

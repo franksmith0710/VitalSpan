@@ -1,9 +1,17 @@
 from __future__ import annotations
 
 import smtplib
-import uuid
 
 from app.core.platform_config.smtp_settings import SmtpSettings
+
+_SMTP_LOGIN_ASCII_ERROR = "登录用户名须为完整邮箱地址（通常与发件人相同），不能包含中文或空格。"
+
+
+def normalize_smtp_username(username: str | None, from_addr: str) -> str:
+    user = (username or "").strip() or from_addr.strip()
+    if not user or not user.isascii():
+        raise ValueError(_SMTP_LOGIN_ASCII_ERROR)
+    return user
 
 
 def connect_smtp(smtp: SmtpSettings, *, timeout: int) -> smtplib.SMTP:
@@ -49,6 +57,14 @@ def probe_smtp_connection(smtp: SmtpSettings, *, timeout: int = 8) -> dict:
         with connect_smtp(smtp, timeout=timeout) as conn:
             if smtp.username and smtp.password:
                 conn.login(smtp.username, smtp.password)
+    except ValueError as exc:
+        return {
+            "status": "unreachable",
+            "host": smtp.host,
+            "port": smtp.port,
+            "source": smtp.source,
+            "error": str(exc),
+        }
     except OSError as exc:
         return {
             "status": "unreachable",
@@ -64,6 +80,14 @@ def probe_smtp_connection(smtp: SmtpSettings, *, timeout: int = 8) -> dict:
             "port": smtp.port,
             "source": smtp.source,
             "error": f"SMTP 认证失败：请检查发件账号与授权码。{exc.smtp_code}",
+        }
+    except UnicodeEncodeError:
+        return {
+            "status": "unreachable",
+            "host": smtp.host,
+            "port": smtp.port,
+            "source": smtp.source,
+            "error": _SMTP_LOGIN_ASCII_ERROR,
         }
     return {
         "status": "reachable",

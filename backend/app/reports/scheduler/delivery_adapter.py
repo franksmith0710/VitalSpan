@@ -7,6 +7,7 @@ from email.message import EmailMessage
 from sqlalchemy.orm import Session
 
 from app.core.platform_config.resolve import resolve_email_smtp
+from app.core.platform_config.slots import EMAIL_SLOT_QQ, normalize_email_slot
 from app.core.platform_config.smtp_probe import connect_smtp, format_smtp_error, probe_smtp_connection
 from app.core.platform_config.smtp_settings import SmtpSettings
 
@@ -17,6 +18,24 @@ _ARTIFACT_EMAIL: dict[str, tuple[str, str]] = {
     "visual_snapshot": (
         "VitalSpan 看板定时报告（可视化快照）",
         "见附件 PDF：看板/大屏画布可视化快照。",
+    ),
+    "visual_snapshot_full_page": (
+        "VitalSpan 看板定时报告（高清整页快照）",
+        "见附件 PDF：看板整页高清可视化快照。",
+    ),
+    "visual_snapshot_per_widget": (
+        "VitalSpan 看板定时报告（按组件分页）",
+        "见附件 PDF《按组件分页》：每个看板组件单独一页，避免图表被拦腰切断。",
+    ),
+    "visual_snapshot_combined": (
+        "VitalSpan 看板定时报告（总览 + 组件放大）",
+        "见附件 PDF：前半为整页总览，后半为每个组件放大分页，便于阅读数据细节。",
+    ),
+    "visual_snapshot_bundle": (
+        "VitalSpan 看板定时报告（整页长图 + 按组件分页）",
+        "见附件两份 PDF：\n"
+        "1.《整页长图》— 单页连续完整画布\n"
+        "2.《按组件分页》— 每个组件单独一页",
     ),
     "layout_inventory": (
         "VitalSpan 看板定时报告（布局摘要预览）",
@@ -53,7 +72,16 @@ def _send_smtp(
             "error": "SMTP 未配置：请在系统管理 → 平台对接配置邮件发信。",
             "recipients": recipient_emails or [],
         }
-    to_addrs = recipient_emails or [smtp.from_addr]
+    if not recipient_emails:
+        return {
+            "channel": "email",
+            "status": "failed",
+            "attempt": 1,
+            "mode": "smtp",
+            "error": "未解析到有效收件邮箱：请配置接收人（直接填邮箱或确保角色/用户资料含真实邮箱）。",
+            "recipients": [],
+        }
+    to_addrs = recipient_emails
     subject, body_tpl = _ARTIFACT_EMAIL.get(
         artifact_kind or "",
         ("VitalSpan scheduled report", "Report artifact: {ref}"),
@@ -97,6 +125,16 @@ def _send_smtp(
             "error": error,
             "recipients": to_addrs,
         }
+    except UnicodeEncodeError:
+        error = "登录用户名须为完整邮箱地址（通常与发件人相同），不能包含中文。"
+        return {
+            "channel": "email",
+            "status": "failed",
+            "attempt": 1,
+            "mode": "smtp",
+            "error": error,
+            "recipients": to_addrs,
+        }
     return {
         "channel": "email",
         "status": "delivered",
@@ -132,10 +170,18 @@ def _deliver_explicit_mock(channels: list[str], mock_mode: str) -> dict:
     }
 
 
-def probe_smtp_health(session: Session | None = None) -> dict:
-    smtp = resolve_email_smtp(session)
+def probe_smtp_health(session: Session | None = None, *, slot: str | None = EMAIL_SLOT_QQ) -> dict:
+    smtp = resolve_email_smtp(session, slot=normalize_email_slot(slot))
     result = probe_smtp_connection(smtp)
-    return result
+    return {**result, "slot": normalize_email_slot(slot)}
+
+
+def probe_all_smtp_health(session: Session | None = None) -> dict[str, dict]:
+    from app.core.platform_config.slots import EMAIL_SLOTS
+
+    slots = {slot: probe_smtp_health(session, slot=slot) for slot in EMAIL_SLOTS}
+    primary = slots[EMAIL_SLOT_QQ]
+    return {**primary, "slots": slots}
 
 
 def deliver_artifact(
@@ -149,11 +195,12 @@ def deliver_artifact(
     attachment_bytes: bytes | None = None,
     attachment_filename: str | None = None,
     attachment_mime: str | None = None,
+    email_smtp_slot: str | None = EMAIL_SLOT_QQ,
 ) -> dict:
     channel_list = channels or ["email"]
     if mock_mode is not None:
         return _deliver_explicit_mock(channel_list, mock_mode)
-    smtp = resolve_email_smtp(session)
+    smtp = resolve_email_smtp(session, slot=normalize_email_slot(email_smtp_slot))
     step = _send_smtp(
         artifact_ref,
         smtp,

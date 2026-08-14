@@ -1,4 +1,5 @@
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import { pickChartNativeBodyUi } from "@/lib/chartNativeBodyUi";
 import { remapLegacySqlFieldsInChartConfig } from "@/lib/legacySqlFieldAliases";
 import { migrateTimelineChartConfig } from "@/lib/migrateTimelineChartType";
 
@@ -52,15 +53,7 @@ export function migrateChartViewConfig<T extends ChartViewConfig>(config: T): T 
     schema: undefined,
     table: undefined,
     index: undefined,
-    nativeBody:
-      next.nativeBody &&
-      (next.nativeBody.deStyle || next.nativeBody.deDisplay || next.nativeBody.deTableStyle)
-        ? {
-            ...(next.nativeBody.deStyle ? { deStyle: next.nativeBody.deStyle } : {}),
-            ...(next.nativeBody.deDisplay ? { deDisplay: next.nativeBody.deDisplay } : {}),
-            ...(next.nativeBody.deTableStyle ? { deTableStyle: next.nativeBody.deTableStyle } : {}),
-          }
-        : undefined,
+    nativeBody: pickChartNativeBodyUi(next.nativeBody),
   });
 
   return next;

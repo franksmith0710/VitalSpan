@@ -1,5 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import {
+  estimateAxisLabelWidth,
+  estimateAxisLabelTextWidth,
   formatAxisCategoryLabel,
   formatHorizontalBandAxisLabel,
   estimateCategoryBandCenterPx,
@@ -17,9 +19,14 @@ import {
   planNumericAxisTicks,
 } from "@/components/charts/engine/d3/core/axes";
 import { nearestCategory } from "@/components/charts/engine/d3/core/interaction";
+import { setAxisFontSize } from "@/components/charts/engine/d3/core/chartVisualTokens";
+import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import * as d3 from "d3";
 
 describe("d3 core", () => {
+  afterEach(() => {
+    setAxisFontSize(null);
+  });
   it("pickCategoryTickIndices uses a constant index step", () => {
     const indices = pickCategoryTickIndices(24, 480, 72);
     expect(indices[0]).toBe(0);
@@ -95,16 +102,16 @@ describe("d3 core", () => {
   });
 
   it("pickUniformOverlapAwareTickIndices shows all when labels do not overlap", () => {
-    const provinces = Array.from({ length: 25 }, (_, i) => `省${i}`);
+    const labels = Array.from({ length: 12 }, (_, i) => String(i));
     const innerW = 900;
-    const count = provinces.length;
+    const count = labels.length;
     const bw = (innerW / count) * 0.8;
     const toPx = (i: number) => estimateCategoryBandCenterPx(i, count, innerW, bw);
     const indices = pickUniformOverlapAwareTickIndices(
       count,
-      provinces,
+      labels,
       (c) => String(c),
-      -45,
+      0,
       12,
       toPx,
     );
@@ -146,6 +153,7 @@ describe("d3 core", () => {
     });
     const texts = [...host.querySelectorAll(".vs-axis-x text")];
     expect(texts.length).toBe(3);
+    expect(Number(texts[0]?.getAttribute("y"))).toBeGreaterThan(12);
     const bw = x.bandwidth();
     texts.forEach((node, i) => {
       const cx = Number(node.getAttribute("x"));
@@ -155,10 +163,11 @@ describe("d3 core", () => {
     host.remove();
   });
 
-  it("resolveCategoryLabelRotate defaults to horizontal without explicit rotate", () => {
+  it("resolveCategoryLabelRotate defaults to auto when unspecified", () => {
     const ticks = ["一月", "二月", "三月", "四月", "五月", "六月"];
-    expect(resolveCategoryLabelRotate(ticks, 180)).toBe(0);
+    expect(resolveCategoryLabelRotate(ticks, 180)).toBeLessThan(0);
     expect(resolveCategoryLabelRotate(ticks, 600)).toBe(0);
+    expect(resolveCategoryLabelRotate(ticks, 180, 0)).toBe(0);
     expect(resolveCategoryLabelRotate(ticks, 180, -45)).toBe(-45);
   });
 
@@ -168,10 +177,17 @@ describe("d3 core", () => {
     expect(resolveCategoryLabelRotate(ticks, 600, "auto")).toBe(0);
   });
 
-  it("planCategoryAxisLayout thins ticks without rotating by default", () => {
+  it("planCategoryAxisLayout rotates dense ticks by default and reserves bottom", () => {
     const cats = Array.from({ length: 16 }, (_, i) => `类目${i + 1}`);
     const layout = planCategoryAxisLayout(cats, 160);
     expect(layout.ticks.length).toBeLessThan(cats.length);
+    expect(layout.rotateDeg).toBeLessThan(0);
+    expect(layout.extraBottom).toBeGreaterThan(0);
+  });
+
+  it("planCategoryAxisLayout stays horizontal when rotate is explicitly 0", () => {
+    const cats = Array.from({ length: 16 }, (_, i) => `类目${i + 1}`);
+    const layout = planCategoryAxisLayout(cats, 160, 0);
     expect(layout.rotateDeg).toBe(0);
     expect(layout.extraBottom).toBe(0);
   });
@@ -189,7 +205,48 @@ describe("d3 core", () => {
   });
 
   it("formatAxisCategoryLabel renders multi-dimension composite keys readably", () => {
-    expect(formatAxisCategoryLabel("华东\u00012025-01", 80, 0)).toBe("华东 / 2025-01");
+    expect(formatAxisCategoryLabel("华东\u00012025-01", 120, 0)).toBe("华东 / 2025-01");
+  });
+
+  it("thins CJK province labels so estimated boxes do not overlap", () => {
+    const cats = [
+      "上海市",
+      "吉林省",
+      "安徽省",
+      "山东省",
+      "山西省",
+      "广东省",
+      "江苏省",
+      "江西省",
+      "河北省",
+      "河南省",
+      "浙江省",
+      "海南省",
+      "湖北省",
+      "湖南省",
+      "甘肃省",
+      "福建省",
+      "贵州省",
+      "辽宁省",
+    ];
+    const innerW = 560;
+    const layout = planCategoryAxisLayout(cats, innerW);
+    expect(layout.ticks.length).toBeLessThan(cats.length);
+    const toPx = (idx: number) => estimateCategoryBandCenterPx(idx, cats.length, innerW);
+    const shown = layout.ticks
+      .map((tick) => cats.indexOf(tick))
+      .filter((idx) => idx >= 0);
+    const gap = 12;
+    for (let i = 1; i < shown.length; i += 1) {
+      const prev = shown[i - 1]!;
+      const curr = shown[i]!;
+      const minDist =
+        (estimateAxisLabelTextWidth(cats[prev]!, layout.rotateDeg) +
+          estimateAxisLabelTextWidth(cats[curr]!, layout.rotateDeg)) /
+          2 +
+        gap;
+      expect(toPx(curr) - toPx(prev)).toBeGreaterThanOrEqual(minDist - 0.5);
+    }
   });
 
   it("planCategoryAxisLayout auto mode rotates when composite labels are long", () => {
@@ -198,10 +255,23 @@ describe("d3 core", () => {
     expect(layout.rotateDeg).toBeLessThan(0);
   });
 
-  it("planCategoryAxisLayout keeps horizontal when composite labels are long by default", () => {
+  it("planCategoryAxisLayout rotates when composite labels are long by default", () => {
     const cats = Array.from({ length: 8 }, (_, i) => `产品${i + 1}\u0001类目${i + 1}\u00012025-01-0${i + 1}`);
     const layout = planCategoryAxisLayout(cats, 160);
-    expect(layout.rotateDeg).toBe(0);
+    expect(layout.rotateDeg).toBeLessThan(0);
+  });
+
+  it("planCategoryAxisLayout tilts dense ISO dates by default", () => {
+    const dates = Array.from({ length: 40 }, (_, i) => {
+      const day = 26 + i;
+      const d = new Date(Date.UTC(2025, 2, day));
+      return d.toISOString().slice(0, 10);
+    });
+    const layout = planCategoryAxisLayout(dates, 560);
+    expect(layout.rotateDeg).toBeLessThan(0);
+    expect(layout.extraBottom).toBeGreaterThan(0);
+    expect(layout.ticks.length).toBeGreaterThan(1);
+    expect(layout.ticks.length).toBeLessThan(dates.length);
   });
 
   it("formatHorizontalBandAxisLabel hides labels when width is limited", () => {
@@ -239,5 +309,22 @@ describe("d3 core", () => {
     const cats = ["a", "b", "c"];
     const x = d3.scalePoint<string>().domain(cats).range([0, 100]).padding(0.5);
     expect(nearestCategory(50, cats, x)).toBe("b");
+  });
+
+  it("scales label width and cartesian margin with axis font size", () => {
+    const at11 = estimateAxisLabelWidth(10);
+    const marginAt11 = cartesianMargin();
+    setAxisFontSize(22);
+    expect(estimateAxisLabelWidth(10)).toBeCloseTo(at11 * 2, 0);
+    expect(cartesianMargin().left).toBe(marginAt11.left * 2);
+    expect(cartesianMargin().bottom).toBe(marginAt11.bottom * 2);
+  });
+
+  it("thins more category ticks when paint axis font is larger", () => {
+    const cats = Array.from({ length: 20 }, (_, i) => `类目${i + 1}`);
+    const at11 = planCategoryAxisLayout(cats, 400).ticks.length;
+    setAxisFontSize(22);
+    const at22 = planCategoryAxisLayout(cats, 400).ticks.length;
+    expect(at22).toBeLessThanOrEqual(at11);
   });
 });

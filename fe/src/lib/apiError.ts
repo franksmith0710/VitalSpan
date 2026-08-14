@@ -86,6 +86,7 @@ const CODE_MESSAGES: Record<string, string> = {
   DATASOURCE_CODE_CONFLICT: "数据源标识已存在，请更换为唯一标识",
   DATASOURCE_NAME_CONFLICT: "数据源名称已存在，请更换名称",
   DATASOURCE_DEMO_PROTECTED: "官方示例数据连接不可修改或删除",
+  DATASOURCE_ANALYTICS_PROTECTED: "托管分析库连接不可修改或删除",
   DATASOURCE_TEST_INFLIGHT: "已有连接测试进行中，请稍候",
   REST_API_PROBE_FAILED:
     "无法访问 Base URL，请确认地址可解析且健康检查路径正确（本地样例：http://127.0.0.1:8000 + /sample-api/health）",

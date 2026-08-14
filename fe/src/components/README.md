@@ -106,14 +106,15 @@
 | DatasetPickerPanel | `dashboard/DatasetPickerPanel.tsx` | 图表右栏 Dataset 选择与绑定 |
 | ChartFieldSlot | `dashboard/ChartFieldSlot.tsx` | 单字段槽位（虚线框 + 拖放） |
 | ChartDataSlots | `dashboard/ChartDataSlots.tsx` | 类别轴/值轴等语义槽位组 |
+| ChartResultLimitField | `dashboard/ChartResultLimitField.tsx` | 结果展示：10/20/50/100/500/1000 或自定义 N（1–1000） |
 | ChartInspectorProvider | `dashboard/ChartInspectorContext.tsx` | 图表 Inspector 共享状态 |
 | useInspectorColumns | `../hooks/useInspectorColumns.ts` | Inspector 字段探测（复用 `chartExecuteProbe`） |
 | chartExecuteProbe | `../lib/chartExecuteProbe.ts` | 图表 query execute 共享探测与字段建议 |
 | DashboardQuickCreateDialog | `dashboard/DashboardQuickCreateDialog.tsx` | 看板列表快速创建向导（数据源 + Dataset + 首图） |
 | ChartPalettePicker / ChartPaletteOptionList | `dashboard/ChartPalettePicker.tsx` | 样式栏配色选择（含 dense 内联模式） |
 | ChartInspectorTabs | `dashboard/ChartInspectorTabs.tsx` | 数据/样式/**高级** Tab；`advanced` 可选隐藏 |
-| ChartAdvancedFeatureSettings | `dashboard/chartAdvancedSections.tsx` | 高级 Tab：缩放、跳转、条件格式、标线等 |
-| DashboardPickerField | `dashboard/DashboardPickerField.tsx` | 可搜索看板选择（图表跳转目标） |
+| ChartAdvancedFeatureSettings | `dashboard/chartAdvancedSections.tsx` | 高级 Tab：缩放、条件格式、标线、地图联动等 |
+| DashboardPickerField | `dashboard/DashboardPickerField.tsx` | 可搜索看板选择（组件复用目标等） |
 | TabsWidgetFields / TabsEditRail | `dashboard/TabsWidgetFields.tsx` · `TabsEditRail.tsx` | Tab 页签配置与子组件列表 |
 | layoutSanitize | `dashboard/pixelCanvas/layoutSanitize.ts` | 载入/保存前 Tab `childWidgetIds` reconcile + park 修复 |
 | PIXEL_CANVAS_EDIT_MIN_SCALE | `dashboard/pixelCanvas/geometry.ts` | 编辑态最小缩放 `0.5`（窄视口防叠压） |
@@ -135,6 +136,6 @@
 | 配色 | 看板 `paletteId` 为默认；改看板配置会清除 `deStyle.paletteId/paletteOpacity`；组件单独设置优先直至下次看板修改 |
 | 标题样式 | 看板 `titleStyle` 为默认；改看板配置会清除 `deStyle.title` 外观字段（保留 `show`） |
 | 组件外观 | 看板 `widgetStyle` 为外壳默认；改看板配置会清除 `deStyle.background/border` |
-| 查询条数 | 看板 `defaultQueryLimit` 为默认；改看板配置会清除 `deDisplay.resultLimit` |
+| 查询条数 | 看板 `defaultQueryLimit` 为默认；组件 `deDisplay.resultLimit` 可覆盖（含自定义 N）；改看板配置会清除组件级 resultLimit |
 | 数值格式 | 看板 `numberFormat` 为默认；改看板配置会清除 `deStyle.label` 格式字段（保留标签字号/开关） |
 | 刷新 | 组件 `deDisplay.refreshMode` 轮询单图；看板 `refreshIntervalSec` 仅分享页整页 reload |

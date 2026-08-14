@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Download, History } from "lucide-react";
+import { AlertCircle, History } from "lucide-react";
 import { fetchAuthenticatedBlob } from "@/lib/apiUpload";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PanelEmptyState } from "@/components/ui/panel-empty-state";
 import { TruncateHint } from "@/components/ui/hint-tooltip";
+import { HistoryRowActions } from "./ScheduleHistoryRowActions";
 import {
   Dialog,
   DialogContent,
@@ -24,11 +25,13 @@ import {
 import { formatDateTime } from "@/lib/formatDateTime";
 import { localizeApiMessage } from "@/lib/apiError";
 import {
-  canRetryExecution,
+  executionStatusColor,
   localizeExecutionStatus,
   type ScheduleExecutionRow,
 } from "../useReportSchedules";
+import { executionErrorHeadline } from "../scheduleHistoryPresentation";
 import { localizeArtifactKind } from "@/lib/scheduleArtifactMeta";
+import { summarizeDeliveryRecipients } from "@/lib/scheduleSourceMeta";
 
 type ScheduleHistoryTableProps = {
   rows: ScheduleExecutionRow[];
@@ -52,21 +55,28 @@ export function ScheduleHistoryTable({
 }: ScheduleHistoryTableProps) {
   const [detailRow, setDetailRow] = useState<ScheduleExecutionRow | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [downloadingSlot, setDownloadingSlot] = useState<"full_page" | "per_widget" | null>(null);
 
-  const handleDownload = async (executionId: string) => {
+  const handleDownload = async (
+    executionId: string,
+    slot?: "full_page" | "per_widget",
+  ) => {
     setDownloadingId(executionId);
+    setDownloadingSlot(slot ?? "full_page");
     try {
+      const query = slot === "per_widget" ? "?slot=per_widget" : "";
       const blob = await fetchAuthenticatedBlob(
-        `/api/v1/reports/schedules/executions/${executionId}/artifact/download`,
+        `/api/v1/reports/schedules/executions/${executionId}/artifact/download${query}`,
       );
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = `schedule-${executionId}.pdf`;
+      anchor.download = `schedule-${executionId}-可视化报告.pdf`;
       anchor.click();
       URL.revokeObjectURL(url);
     } finally {
       setDownloadingId(null);
+      setDownloadingSlot(null);
     }
   };
 
@@ -85,101 +95,132 @@ export function ScheduleHistoryTable({
     );
   }
 
+  const renderActions = (row: ScheduleExecutionRow) => (
+    <HistoryRowActions
+      row={row}
+      compact={compact}
+      readOnly={readOnly}
+      downloading={downloadingId === row.executionId}
+      downloadingSlot={downloadingId === row.executionId ? downloadingSlot : null}
+      retrying={Boolean(retryPending && retryPendingExecutionId === row.executionId)}
+      onDownload={(slot) => void handleDownload(row.executionId, slot)}
+      onDetail={() => setDetailRow(row)}
+      onRetry={onRetry ? () => onRetry(row.executionId) : undefined}
+    />
+  );
+
   return (
     <>
-      <div
-        className={
-          embedded
-            ? "overflow-x-only rounded-lg border border-gray-200/80 bg-white dark:border-gray-800 dark:bg-gray-900/40"
-            : "overflow-x-only rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
-        }
-      >
-        <Table size="compact" wrapperClassName="min-w-[520px] border-0 shadow-none">
-          <TableHeader>
-            <TableRow className="border-gray-100 dark:border-gray-800">
-              <TableHead className="px-3 py-2">状态</TableHead>
-              <TableHead className="px-3 py-2">产物</TableHead>
-              <TableHead className="px-3 py-2">执行时间</TableHead>
-              <TableHead className="px-3 py-2">错误信息</TableHead>
-              <TableHead className="w-24 px-3 py-2" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.map((row) => {
-              const isRetrying = retryPending && retryPendingExecutionId === row.executionId;
-              const hasError = Boolean(row.errorMessage);
-              return (
-                <TableRow key={row.executionId} className="border-gray-50 dark:border-gray-800/60">
-                  <TableCell className="px-3 py-2">{localizeExecutionStatus(row.status)}</TableCell>
-                  <TableCell className="px-3 py-2">
-                    {localizeArtifactKind(row.artifactKind) ? (
-                      <Badge variant="outline" className="text-[10px] font-normal">
-                        {localizeArtifactKind(row.artifactKind)}
+      {compact ? (
+        <ul className="space-y-2.5">
+          {rows.map((row) => {
+            const recipients = summarizeDeliveryRecipients(row.deliverySteps);
+            const artifact = localizeArtifactKind(row.artifactKind);
+            const hasError = Boolean(row.errorMessage);
+            return (
+              <li
+                key={row.executionId}
+                className="rounded-xl border border-gray-100 bg-gray-50/70 p-3.5 dark:border-gray-800 dark:bg-white/[0.03]"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="light" color={executionStatusColor(row.status)} size="sm">
+                        {localizeExecutionStatus(row.status)}
                       </Badge>
-                    ) : (
-                      "—"
-                    )}
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap px-3 py-2 text-gray-600 dark:text-gray-400">
-                    {formatDateTime(row.executedAt)}
-                  </TableCell>
-                  <TableCell className={`max-w-[240px] px-3 py-2 text-gray-600 dark:text-gray-400 ${compact ? "text-theme-xs" : ""}`}>
-                    {hasError ? (
-                      <TruncateHint title={localizeApiMessage(row.errorMessage)}>
-                        <span className={compact ? "line-clamp-2" : "line-clamp-3"}>
-                          {localizeApiMessage(row.errorMessage)}
-                        </span>
-                      </TruncateHint>
-                    ) : (
-                      "—"
-                    )}
-                  </TableCell>
-                  <TableCell className="px-3 py-2">
-                    <div className="flex flex-wrap gap-1">
-                      {row.artifactRef?.startsWith("storage://") ? (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 px-2 text-theme-xs"
-                          disabled={downloadingId === row.executionId}
-                          onClick={() => void handleDownload(row.executionId)}
-                        >
-                          <Download className="size-3.5" aria-hidden />
-                          {downloadingId === row.executionId ? "下载中…" : "下载"}
-                        </Button>
+                      {artifact ? (
+                        <Badge variant="light" color="light" size="sm">
+                          {artifact}
+                        </Badge>
                       ) : null}
-                      {hasError ? (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 px-2 text-theme-xs"
-                          onClick={() => setDetailRow(row)}
-                        >
-                          详情
-                        </Button>
-                      ) : null}
-                      {!readOnly && canRetryExecution(row.status) && onRetry ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-8"
-                          disabled={isRetrying}
-                          onClick={() => onRetry(row.executionId)}
-                        >
-                          {isRetrying ? "重试中…" : "重试"}
-                        </Button>
-                      ) : null}
+                      <span className="text-theme-xs tabular-nums text-gray-400">
+                        {formatDateTime(row.executedAt)}
+                      </span>
                     </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
+                    <p className="truncate text-theme-xs text-gray-500 dark:text-gray-400">
+                      收件 {recipients || "—"}
+                    </p>
+                    {hasError ? (
+                      <p className="flex items-start gap-1.5 text-theme-xs leading-5 text-error-600 dark:text-error-400">
+                        <AlertCircle className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+                        <span className="min-w-0">
+                          {executionErrorHeadline(row.errorMessage ?? "")}
+                        </span>
+                      </p>
+                    ) : null}
+                  </div>
+                  {renderActions(row)}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <div
+          className={
+            embedded
+              ? "overflow-x-only rounded-lg border border-gray-200/80 bg-white dark:border-gray-800 dark:bg-gray-900/40"
+              : "overflow-x-only rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
+          }
+        >
+          <Table size="compact" wrapperClassName="min-w-[620px] border-0 shadow-none">
+            <TableHeader>
+              <TableRow className="border-gray-100 dark:border-gray-800">
+                <TableHead className="px-3 py-2">状态</TableHead>
+                <TableHead className="px-3 py-2">实际收件</TableHead>
+                <TableHead className="px-3 py-2">产物</TableHead>
+                <TableHead className="px-3 py-2">执行时间</TableHead>
+                <TableHead className="px-3 py-2">说明</TableHead>
+                <TableHead className="w-28 px-3 py-2" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((row) => {
+                const hasError = Boolean(row.errorMessage);
+                const recipients = summarizeDeliveryRecipients(row.deliverySteps);
+                return (
+                  <TableRow key={row.executionId} className="border-gray-50 dark:border-gray-800/60">
+                    <TableCell className="px-3 py-2">
+                      <Badge variant="light" color={executionStatusColor(row.status)} size="sm">
+                        {localizeExecutionStatus(row.status)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="max-w-[180px] px-3 py-2 text-gray-600 dark:text-gray-400">
+                      <TruncateHint title={recipients}>
+                        <span className="truncate">{recipients}</span>
+                      </TruncateHint>
+                    </TableCell>
+                    <TableCell className="px-3 py-2">
+                      {localizeArtifactKind(row.artifactKind) ? (
+                        <Badge variant="light" color="light" size="sm">
+                          {localizeArtifactKind(row.artifactKind)}
+                        </Badge>
+                      ) : (
+                        "—"
+                      )}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap px-3 py-2 text-gray-600 dark:text-gray-400">
+                      {formatDateTime(row.executedAt)}
+                    </TableCell>
+                    <TableCell className="max-w-[220px] px-3 py-2 text-theme-xs text-gray-600 dark:text-gray-400">
+                      {hasError ? (
+                        <TruncateHint title={localizeApiMessage(row.errorMessage)}>
+                          <span className="line-clamp-1 text-error-600 dark:text-error-400">
+                            {executionErrorHeadline(row.errorMessage ?? "")}
+                          </span>
+                        </TruncateHint>
+                      ) : (
+                        "—"
+                      )}
+                    </TableCell>
+                    <TableCell className="px-3 py-2">{renderActions(row)}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       <Dialog open={Boolean(detailRow)} onOpenChange={(open) => !open && setDetailRow(null)}>
         <DialogContent className="max-w-lg">
@@ -189,9 +230,18 @@ export function ScheduleHistoryTable({
               {detailRow ? formatDateTime(detailRow.executedAt) : null}
             </DialogDescription>
           </DialogHeader>
-          <p className="max-h-60 overflow-y-auto whitespace-pre-wrap break-words text-theme-sm text-gray-600 dark:text-gray-400">
-            {detailRow?.errorMessage ? localizeApiMessage(detailRow.errorMessage) : "无详细错误信息"}
-          </p>
+          {detailRow?.errorMessage ? (
+            <div className="space-y-3">
+              <p className="text-theme-sm text-gray-800 dark:text-gray-200">
+                {executionErrorHeadline(detailRow.errorMessage)}
+              </p>
+              <pre className="max-h-48 overflow-y-auto whitespace-pre-wrap break-words rounded-lg bg-gray-50 p-3 text-theme-xs leading-5 text-gray-500 dark:bg-white/[0.04] dark:text-gray-400">
+                {localizeApiMessage(detailRow.errorMessage)}
+              </pre>
+            </div>
+          ) : (
+            <p className="text-theme-sm text-gray-600 dark:text-gray-400">无详细错误信息</p>
+          )}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setDetailRow(null)}>
               关闭

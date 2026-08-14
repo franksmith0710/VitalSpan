@@ -6,7 +6,7 @@
 
 ```yaml
 version: 1.0.12
-last_updated: 2026-08-13
+last_updated: 2026-08-14
 api_prefix: /api/v1
 openapi_docs: /docs
 redoc: /redoc
@@ -84,9 +84,13 @@ redoc: /redoc
 | PUT/GET/DELETE | `/api/v1/users/{id}/org` | 用户组织归属 | 内部 | 一期 | AUTH-002 | 已实现 | `backend/app/api/v1/users.py` |
 | GET/POST | `/api/v1/orgs` | 组织树节点列表/创建（`q` · `limit` · `offset`） | 内部 | 一期 | AUTH-002 | 已实现 | `backend/app/api/v1/orgs.py` |
 | GET/PUT/DELETE | `/api/v1/orgs/{org_id}` | 组织节点详情/更新/删除 | 内部 | 一期 | AUTH-002 | 已实现 | `backend/app/api/v1/orgs.py` |
-| GET | `/api/v1/platform/delivery/email` | 邮件 SMTP 对接摘要（无明文密码；含 `source` db/env/none） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
-| PUT | `/api/v1/platform/delivery/email` | 保存邮件 SMTP 并探测（`system:platform_connect.manage`） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
-| DELETE | `/api/v1/platform/delivery/email` | 清空邮件 SMTP（清空后忽略 env 回落） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
+| GET | `/api/v1/platform/delivery/email/slots` | QQ / 163 双槽位 SMTP 摘要列表 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
+| GET | `/api/v1/platform/delivery/email` | QQ 槽位 SMTP 摘要（兼容旧路径） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
+| GET | `/api/v1/platform/delivery/email/{slot}` | 单槽位 SMTP 摘要（`slot`=qq\|163） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
+| PUT | `/api/v1/platform/delivery/email` | 保存 QQ 槽位 SMTP 并探测 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
+| PUT | `/api/v1/platform/delivery/email/{slot}` | 保存指定槽位 SMTP 并探测 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
+| DELETE | `/api/v1/platform/delivery/email` | 清空 QQ 槽位 SMTP | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
+| DELETE | `/api/v1/platform/delivery/email/{slot}` | 清空指定槽位 SMTP（清空后忽略 env 回落） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
 | GET/POST | `/api/v1/resource-grants` | AUTH-004 资源授权列表/创建 | 内部 | 一期 | AUTH-004 | 已实现 | `backend/app/api/v1/resource_grants.py` |
 | DELETE | `/api/v1/resource-grants/{grant_id}` | 删除单条资源授权（204） | 内部 | 一期 | AUTH-004 | 已实现 | `backend/app/api/v1/resource_grants.py` |
 | GET/POST | `/api/v1/rls/dimensions` | 权限维度类型（写操作 admin 守卫 → 403 `DIMENSION_FORBIDDEN`） | 内部 | 一期 | AUTH-005 | 已实现 | `backend/app/api/v1/rls.py` |
@@ -112,7 +116,7 @@ redoc: /redoc
 |------|------|------|-----|------|-----|------|----------|
 | GET | `/api/v1/datasources/types` | 已注册连接器类型清单（含 M11：`starrocks`/`trino`/`presto`/`influxdb`/`tdengine`/`timescaledb`；**r249** `rest_api`/`excel`/`csv`/`db2`/`impala`；**r250** `redshift`（category=olap）；`type`、`displayName`、`category`、`capabilities`、**`displayGroup`**（`oltp`/`olap`/`warehouse`/`file`/`api`/`extension`）、**`categoryLabel`**（中文组名）） | IF-06 | 一期 | DS-007 · CONN-023~027 | 已实现（r250） | `backend/app/api/v1/datasources.py` |
 | POST | `/api/v1/datasources` | 创建数据源；请求/响应可选 `connectionOptions`（charset/collation/sslMode/connectTimeoutSec/readTimeoutSec） | IF-06 | 一期 | DS-002 | 已实现 | `backend/app/api/v1/datasources.py` |
-| GET | `/api/v1/datasources` | 数据源列表（`?limit=&offset=&type=&q=`）；列表项含 `connectionOptions` | IF-06 | 一期 | DS-002 | 已实现 | `backend/app/api/v1/datasources.py` |
+| GET | `/api/v1/datasources` | 数据源列表（`?limit=&offset=&type=&q=&includeManaged=`）；默认不含托管分析库；`includeManaged=true` 才返回 | IF-06 | 一期 | DS-002 | 已实现 | `backend/app/api/v1/datasources.py` |
 | GET | `/api/v1/datasources/{id}` | 数据源详情（无明文密码）；含 `connectionOptions` | IF-06 | 一期 | DS-002 | 已实现 | `backend/app/api/v1/datasources.py` |
 | PUT | `/api/v1/datasources/{id}` | 更新数据源 | IF-06 | 一期 | DS-002 | 已实现 | `backend/app/api/v1/datasources.py` |
 | PATCH | `/api/v1/datasources/{id}` | 部分更新数据源；支持部分更新 `connectionOptions` | IF-06 | 一期 | DS-002 | 已实现 | `backend/app/api/v1/datasources.py` |
@@ -302,6 +306,7 @@ redoc: /redoc
 | POST | `/api/v1/reports/catalog/nodes/{id}/move` | 模板树节点移动（循环/深度守卫） | 内部 | 一期 | RPT-004 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST/GET | `/api/v1/reports/schedules*` | 报表调度 FSM（draft→scheduled→paused/cancelled；`RPT_SCHEDULE_*`） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | PATCH | `/api/v1/reports/schedules/{id}` | 草稿调度更新（cron/recipients/attachmentFormats/deliveryChannels/notifyGroup；仅 draft） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
+| DELETE | `/api/v1/reports/schedules/{id}` | 删除定时报告（停 job，并清理执行历史；`RPT_SCHEDULE_*`） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/reports/scheduler/service.py` |
 | GET | `/api/v1/reports/schedules/delivery-health` | SMTP + IM App 是否已配置（布尔，不泄密钥）；顶层仍保留 SMTP `status/host/port/error` | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | GET | `/api/v1/reports/schedules/export-health` | Playwright PDF 导出服务可用性探测 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/dashboard/export_render.py` · `backend/app/api/v1/reports/__init__.py` |
 | GET | `/api/v1/reports/schedules/executions/recent-failures` | 近期失败/降级执行列表 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |

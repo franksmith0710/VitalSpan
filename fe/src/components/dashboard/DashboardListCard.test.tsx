@@ -1,7 +1,20 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
+
+const blobHook = vi.hoisted(() => ({
+  impl: (path: string | null | undefined) => ({
+    url: path ?? null,
+    loading: false,
+    error: false,
+  }),
+}));
+
+vi.mock("@/hooks/useAuthenticatedBlobUrl", () => ({
+  useAuthenticatedBlobUrl: (path: string | null | undefined) => blobHook.impl(path),
+}));
+
 import {
   DashboardListCard,
   type DashboardListItem,
@@ -52,6 +65,11 @@ function renderCard(dashboard: DashboardListItem, props?: { previewSurfaceKind?:
 describe("DashboardListCard", () => {
   afterEach(() => {
     cleanup();
+    blobHook.impl = (path: string | null | undefined) => ({
+      url: path ?? null,
+      loading: false,
+      error: false,
+    });
   });
 
   it("hides official demo badge when title already contains 官方示例", () => {
@@ -100,7 +118,7 @@ describe("DashboardListCard", () => {
     expect(preview).toHaveStyle({ aspectRatio: "16 / 9" });
   });
 
-  it("renders static thumbnail image when thumbnailUrl is present", () => {
+  it("renders authenticated screenshot image when thumbnailUrl is present", () => {
     renderCard({
       ...tallCanvasDashboard,
       thumbnailUrl: "/api/v1/dashboards/dash-tall/thumbnail?v=1",
@@ -108,14 +126,27 @@ describe("DashboardListCard", () => {
 
     const img = screen.getByTestId("dashboard-list-card-thumbnail");
     expect(img).toHaveAttribute("src", "/api/v1/dashboards/dash-tall/thumbnail?v=1");
-    expect(img).toHaveAttribute("loading", "lazy");
-    expect(screen.queryByTestId("dashboard-preview-thumb")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("dashboard-list-card-thumbnail-placeholder")).not.toBeInTheDocument();
   });
 
-  it("falls back to wireframe preview when thumbnailUrl is missing", () => {
+  it("shows screenshot placeholder when thumbnailUrl is missing", () => {
     renderCard(tallCanvasDashboard);
 
     expect(screen.queryByTestId("dashboard-list-card-thumbnail")).not.toBeInTheDocument();
-    expect(screen.getByTestId("dashboard-preview-thumb")).toBeInTheDocument();
+    expect(screen.getByTestId("dashboard-list-card-thumbnail-placeholder")).toHaveTextContent(
+      "保存后将生成封面截图",
+    );
+  });
+
+  it("shows load-failed copy when authenticated blob fetch fails", () => {
+    blobHook.impl = () => ({ url: null, loading: false, error: true });
+    renderCard({
+      ...tallCanvasDashboard,
+      thumbnailUrl: "/api/v1/dashboards/dash-tall/thumbnail?v=1",
+    });
+
+    expect(screen.getByTestId("dashboard-list-card-thumbnail-placeholder")).toHaveTextContent(
+      "封面截图加载失败，请重新保存",
+    );
   });
 });

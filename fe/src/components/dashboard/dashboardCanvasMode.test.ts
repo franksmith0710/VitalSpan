@@ -114,7 +114,7 @@ describe("dashboard canvas mode", () => {
     expect(saved.widgets[0]).toMatchObject({ x: 120, y: 100, width: 480, height: 320 });
   });
 
-  it("prepareDashboardLayout packs overlapping top-level widgets on load", () => {
+  it("prepareDashboardLayout preserves overlapping top-level widgets on load", () => {
     const overlapping: DashboardLayoutV2 = {
       version: 2,
       canvas: { width: 1440, height: 900 },
@@ -145,10 +145,10 @@ describe("dashboard canvas mode", () => {
     const prepared = prepareDashboardLayout(overlapping, true);
     expect(prepared.layout.version).toBe(2);
     if (prepared.layout.version !== 2) return;
-    expect(layoutsOverlap(prepared.layout, 0)).toBe(false);
+    expect(layoutsOverlap(prepared.layout, 0)).toBe(true);
   });
 
-  it("persistDashboardLayout packs overlapping widgets before save", () => {
+  it("persistDashboardLayout preserves overlapping widgets without implicit pack", () => {
     const overlapping: DashboardLayoutV2 = {
       version: 2,
       canvas: { width: 1440, height: 900 },
@@ -179,7 +179,7 @@ describe("dashboard canvas mode", () => {
     const saved = persistDashboardLayout(overlapping, { widgetGap: 8 });
     expect(saved.version).toBe(2);
     if (saved.version !== 2) return;
-    expect(layoutsOverlap(saved, 0)).toBe(false);
+    expect(layoutsOverlap(saved, 0)).toBe(true);
   });
 
   it("save 往返保持稀疏布局坐标（不隐式 pack）", () => {

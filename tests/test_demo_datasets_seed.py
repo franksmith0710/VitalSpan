@@ -67,6 +67,47 @@ def test_seed_demo_datasets_idempotent(db_session) -> None:
     assert second == 0
 
 
+def test_seed_demo_datasets_prunes_retired_ids(db_session) -> None:
+    db_session.add(
+        DatasetRecord(
+            dataset_id="demo-gov-hotwords",
+            display_name="【官方示例】政务热词",
+            tables=[{"name": "gov_hotwords"}],
+            computed_fields=[],
+            allowed_roles=["analyst"],
+        ),
+    )
+    db_session.commit()
+    seed_demo_datasets(db_session)
+    leftover = db_session.get(DatasetRecord, "demo-gov-hotwords")
+    assert leftover is None
+    assert db_session.get(DatasetRecord, "demo-sales-wide") is not None
+
+
+def test_remap_retired_demo_dataset_in_layout() -> None:
+    from app.metadata.dataset.demo_seed import remap_retired_demo_datasets_in_layout
+
+    layout = {
+        "widgets": [
+            {
+                "type": "chart",
+                "chartConfig": {
+                    "datasetId": "demo-gov-hotwords",
+                    "dimensions": [{"field": "word"}],
+                    "metrics": [{"field": "weight"}],
+                    "axes": {"xAxis": [{"field": "word"}], "yAxis": [{"field": "weight"}]},
+                },
+            }
+        ]
+    }
+    next_layout = remap_retired_demo_datasets_in_layout(layout)
+    cfg = next_layout["widgets"][0]["chartConfig"]
+    assert cfg["datasetId"] == "demo-sales-wide"
+    assert cfg["dimensions"][0]["field"] == "product_name"
+    assert cfg["metrics"][0]["field"] == "amount"
+    assert cfg["axes"]["xAxis"][0]["field"] == "product_name"
+
+
 def test_demo_dataset_delete_protected(client, auth_headers, db_session) -> None:
     seed_demo_datasets(db_session)
 

@@ -26,11 +26,28 @@ class _FakePage:
     def wait_for_timeout(self, *_args, **_kwargs) -> None:
         return None
 
+    def evaluate(self, *_args, **_kwargs):
+        return {"width": 1440, "height": 1800}
+
+    def set_viewport_size(self, *_args, **_kwargs) -> None:
+        return None
+
     def pdf(self, **_kwargs) -> bytes:
         return FAKE_PDF
 
 
+class _FakeContext:
+    def new_page(self, **_kwargs) -> _FakePage:
+        return _FakePage()
+
+    def close(self) -> None:
+        return None
+
+
 class _FakeBrowser:
+    def new_context(self, **_kwargs) -> _FakeContext:
+        return _FakeContext()
+
     def new_page(self, **_kwargs) -> _FakePage:
         return _FakePage()
 
@@ -135,7 +152,7 @@ def test_submit_pdf_export_returns_visual_snapshot(
     assert job.status_code == 201, job.text
     body = job.json()
     assert body["status"] == "ready"
-    assert body["artifactKind"] == "visual_snapshot"
+    assert body["artifactKind"] == "visual_snapshot_full_page"
 
     download = client.get(body["downloadUrl"], headers=auth_headers)
     assert download.status_code == 200
@@ -153,9 +170,13 @@ def test_render_rejects_inventory_leak(monkeypatch) -> None:
         def pdf(self, **_kwargs) -> bytes:
             return inventory_pdf
 
-    class _InventoryBrowser(_FakeBrowser):
+    class _InventoryContext(_FakeContext):
         def new_page(self, **_kwargs) -> _InventoryPage:
             return _InventoryPage()
+
+    class _InventoryBrowser(_FakeBrowser):
+        def new_context(self, **_kwargs) -> _InventoryContext:
+            return _InventoryContext()
 
     class _InventoryChromium(_FakeChromium):
         def launch(self, **_kwargs) -> _InventoryBrowser:

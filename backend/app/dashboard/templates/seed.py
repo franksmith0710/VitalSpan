@@ -139,7 +139,7 @@ def _builtin_template_specs() -> list[dict[str, Any]]:
     ]
 
 
-BUILTIN_SEED_CONTENT_REVISION = 26
+BUILTIN_SEED_CONTENT_REVISION = 30
 
 
 def _purge_obsolete_builtin_templates(db: Session, active_keys: set[str]) -> int:

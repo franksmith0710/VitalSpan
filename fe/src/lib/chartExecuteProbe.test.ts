@@ -106,6 +106,29 @@ describe("chartExecuteProbe shared execute", () => {
     expect(apiFetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it("stays execute-ready when deFeatures markLines are set", () => {
+    const config = {
+      ...datasetReadyConfig(),
+      nativeBody: {
+        deFeatures: {
+          markLines: [{ id: "l1", enabled: true, axis: "y" as const, value: 100 }],
+        },
+      },
+    };
+    expect(isChartExecuteReady(config)).toBe(true);
+  });
+
+  it("rejects leftover sql keys in nativeBody even with deFeatures", () => {
+    const config = {
+      ...datasetReadyConfig(),
+      nativeBody: {
+        sql: "SELECT 1",
+        deFeatures: { markLines: [{ id: "l1", enabled: true, axis: "y" as const, value: 1 }] },
+      },
+    };
+    expect(isChartExecuteReady(config)).toBe(false);
+  });
+
   it("keeps binding key stable when only deStyle changes", () => {
     const base = datasetReadyConfig();
     const styled = patchChartDeStyle(base, {

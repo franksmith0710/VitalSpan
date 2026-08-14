@@ -12,7 +12,6 @@ import {
 import { tableInspectorProfile } from "@/lib/chartTableInspector";
 import { resolveTableThemeVars } from "@/lib/chartSurfaceTheme";
 import { cn } from "@/lib/utils";
-import { jumpContextFromLabel } from "@/lib/chartJump";
 
 const TABLE_TYPES = new Set(["table-info", "table-normal", "table-pivot"]);
 
@@ -30,7 +29,6 @@ function D3TableViewInner(props: ChartEngineViewProps) {
     width,
     ariaLabel,
     onInteraction,
-    onJumpClick,
     drillClickField,
     onTableStylePatch,
   } = props;
@@ -89,10 +87,6 @@ function D3TableViewInner(props: ChartEngineViewProps) {
   );
 
   const handleDrillCellClick = (field: string, value: string) => {
-    if (onJumpClick) {
-      onJumpClick(jumpContextFromLabel(value));
-      return;
-    }
     if (!onInteraction) return;
     if (drillClickField && drillClickField !== field) return;
     onInteraction({ kind: "drill", value, label: value });
@@ -138,7 +132,7 @@ function D3TableViewInner(props: ChartEngineViewProps) {
           page={page}
           onPageChange={setPage}
           drillField={drillClickField}
-          onDrillCellClick={onInteraction || onJumpClick ? handleDrillCellClick : undefined}
+          onDrillCellClick={onInteraction ? handleDrillCellClick : undefined}
           onTableStylePatch={onTableStylePatch}
           depthVisual={style.depthVisual}
         />
@@ -165,7 +159,7 @@ function D3TableViewInner(props: ChartEngineViewProps) {
         themeVars={themeVars}
         valueFormat={style.valueFormat}
         drillField={drillClickField}
-        onDrillCellClick={onInteraction || onJumpClick ? handleDrillCellClick : undefined}
+        onDrillCellClick={onInteraction ? handleDrillCellClick : undefined}
         metricFields={metricFields}
         embedded={fill}
         showSeriesNumber={

@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import { buildChartRenderModel } from "@/lib/buildChartRenderModel";
 import { resolveChartConfigPhase } from "@/lib/chartConfigState";
 import { isChartExecuteReady } from "@/lib/chartExecuteProbe";
-import { isCartesianRowCountExceeded } from "@/lib/cartesianRowLimit";
+import { sliceCartesianDisplayRows } from "@/lib/cartesianRowLimit";
 import { DEFAULT_GEO_HEATMAP_PLACEHOLDER_HINT, DEFAULT_GEO_MAP_PLACEHOLDER_HINT, MAP_REGION_NAME_HINT, activeGeoEngine } from "@/components/charts/engine/geoEnginePort";
 import {
   isCanvasChartType,
@@ -60,7 +60,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmbeddedChartTable } from "./adapters/EmbeddedChartTable";
 import { ChartConfigPanel } from "./ChartConfigPanel";
 import { ChartPanel } from "./ChartPanel";
-import { CHART_EXECUTE_LIMIT, useChartExecute } from "./useChartExecute";
+import { useChartExecute } from "./useChartExecute";
 import { readChartDeTableStyle, mergeChartTableStyle, patchChartDeTableStyle } from "@/lib/chartDeTableStyle";
 import {
   resolveEffectiveChartScheme,
@@ -89,11 +89,8 @@ import { drillStackRevision, useChartDrill } from "./ChartDrillContext";
 import { usePublishWidgetShellLegend } from "@/components/dashboard/pixelCanvas/widgetShellLegendContext";
 import { supportsEmbeddedShellLegend } from "@/lib/chartInspectorCapabilities";
 import {
-  chartJumpIsConfigured,
   chartLinkageIsConfigured,
-  readChartJumpConfig,
   readChartLinkageConfig,
-  resolveChartJumpHref,
 } from "@/lib/chartDeFeatures";
 import type { DashboardPreviewProfile } from "@/lib/dashboardPreviewProfile";
 import { isCardPreviewProfile } from "@/lib/dashboardPreviewProfile";
@@ -379,7 +376,6 @@ export const ChartRenderer = memo(function ChartRenderer({
     limit: queryLimit,
     enabled: effectiveQueryEnabled,
   });
-  const cartesianRowLimit = queryLimit ?? CHART_EXECUTE_LIMIT;
   const mountReadySentRef = useRef(false);
   const [page, setPage] = useState(1);
   const [localConfig, setLocalConfig] = useState(() => effectiveConfig);
@@ -451,7 +447,11 @@ export const ChartRenderer = memo(function ChartRenderer({
     return filterRowsByDrillStack(rows as unknown[][], columns, effectiveDrillStack);
   }, [rows, columns, effectiveDrillStack]);
 
-  const displayRows = drillPipeline.rows;
+  const displayRows = sliceCartesianDisplayRows(
+    localConfig.chartType,
+    drillPipeline.rows,
+    queryLimit,
+  );
   const displayColumns = drillPipeline.columns;
 
   const drillClickField = useMemo(() => {
@@ -510,29 +510,12 @@ export const ChartRenderer = memo(function ChartRenderer({
     [localConfig, drill, drillInteraction, effectiveDrillStack, persistManualDrillStack],
   );
 
-  const jumpConfig = useMemo(() => readChartJumpConfig(config), [config]);
   const linkageConfig = useMemo(() => readChartLinkageConfig(config), [config]);
-  const jumpInteraction =
-    drillEnabled && jumpConfig.enabled && chartJumpIsConfigured(jumpConfig);
   const linkageInteraction =
     drillEnabled &&
-    !jumpInteraction &&
     chartLinkageIsConfigured(linkageConfig) &&
     Boolean(onChartLinkageClick);
-  const activeDrillInteraction = drillInteraction && !jumpInteraction;
-
-  const handleJumpClick = useCallback(
-    (context: import("@/lib/chartJump").ChartJumpClickContext) => {
-      const href = resolveChartJumpHref(jumpConfig, context, config);
-      if (!href) return;
-      if (jumpConfig.openInNewTab !== false) {
-        window.open(href, "_blank", "noopener,noreferrer");
-        return;
-      }
-      window.location.assign(href);
-    },
-    [config, jumpConfig],
-  );
+  const activeDrillInteraction = drillInteraction;
 
   const handleLinkageClick = useCallback(
     (payload: { name: string; value: string }) => {
@@ -756,7 +739,6 @@ export const ChartRenderer = memo(function ChartRenderer({
       drillStack={effectiveDrillStack}
       drillClickField={drillClickField}
       onInteraction={activeDrillInteraction ? handleChartInteraction : undefined}
-      onJumpClick={jumpInteraction ? handleJumpClick : undefined}
       onLinkageClick={linkageInteraction ? handleLinkageClick : undefined}
       onTableStylePatch={dashboardEditMode ? handleTableStylePatch : undefined}
       layoutFootprint={
@@ -787,12 +769,6 @@ export const ChartRenderer = memo(function ChartRenderer({
 
     if (isCanvasChartType(localConfig.chartType)) {
       const chartType = localConfig.chartType;
-      if (isCartesianRowCountExceeded(chartType, displayRows.length, queryLimit)) {
-        const message = `结果超过 ${cartesianRowLimit} 行，请缩小查询范围`;
-        return embedded
-          ? embeddedStateMessage(dwStateWarning, message)
-          : <p className="text-theme-sm text-warning-600 dark:text-warning-400">{message}</p>;
-      }
       if (isGeoMapChartType(chartType) || isMatrixHeatmapChartType(chartType)) {
         return wrapEmbedded(canvasChart());
       }

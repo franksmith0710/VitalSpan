@@ -6,7 +6,35 @@ from pathlib import Path
 from app.core.config import get_settings
 
 THUMBNAIL_MAX_BYTES = 3 * 1024 * 1024
+THUMBNAIL_MIN_BYTES = 256
 ALLOWED_CONTENT_TYPES = frozenset({"image/webp", "image/png", "image/jpeg"})
+_PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
+_JPEG_MAGIC = b"\xff\xd8"
+
+
+def normalize_thumbnail_content_type(raw: str) -> str:
+    return raw.split(";", 1)[0].strip().lower()
+
+
+def sniff_thumbnail_media(content: bytes, declared: str) -> str:
+    if content.startswith(_PNG_MAGIC):
+        return "image/png"
+    if content.startswith(_JPEG_MAGIC):
+        return "image/jpeg"
+    if len(content) >= 12 and content[:4] == b"RIFF" and content[8:12] == b"WEBP":
+        return "image/webp"
+    media = normalize_thumbnail_content_type(declared)
+    if media in ALLOWED_CONTENT_TYPES:
+        raise ValueError("thumbnail not an image")
+    raise ValueError("unsupported thumbnail type")
+
+
+def validate_thumbnail_payload(content: bytes, content_type: str) -> str:
+    if len(content) < THUMBNAIL_MIN_BYTES:
+        raise ValueError("thumbnail empty")
+    if len(content) > THUMBNAIL_MAX_BYTES:
+        raise ValueError("thumbnail too large")
+    return sniff_thumbnail_media(content, content_type)
 
 
 def resolve_data_dir() -> Path:
@@ -37,11 +65,8 @@ def thumbnail_path_for_ref(ref: str) -> Path:
 
 
 def write_thumbnail(dashboard_id: uuid.UUID, content: bytes, content_type: str) -> str:
-    if len(content) > THUMBNAIL_MAX_BYTES:
-        raise ValueError("thumbnail too large")
-    if content_type not in ALLOWED_CONTENT_TYPES:
-        raise ValueError("unsupported thumbnail type")
-    ext = "webp" if content_type == "image/webp" else "png" if content_type == "image/png" else "jpg"
+    media = validate_thumbnail_payload(content, content_type)
+    ext = "webp" if media == "image/webp" else "png" if media == "image/png" else "jpg"
     ref = thumbnail_ref_for(dashboard_id, ext)
     path = thumbnail_path_for_ref(ref)
     path.parent.mkdir(parents=True, exist_ok=True)

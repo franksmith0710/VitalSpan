@@ -9,7 +9,7 @@ import time
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -89,11 +89,38 @@ def is_demo_package_datasource_code(code: str | None) -> bool:
     return (code or "").lower() == "demo"
 
 
+def is_managed_analytics_row(row: DataSource) -> bool:
+    if (row.code or "").lower() == "analytics":
+        return True
+    return (
+        row.type in ("postgresql", "postgres")
+        and row.port == 5433
+        and (row.database or "") == "analytics"
+    )
+
+
+def _managed_analytics_clause():
+    return or_(
+        DataSource.code == "analytics",
+        and_(
+            DataSource.type.in_(("postgresql", "postgres")),
+            DataSource.port == 5433,
+            DataSource.database == "analytics",
+        ),
+    )
+
+
 def _assert_demo_editable(row: DataSource) -> None:
     if is_demo_package_datasource_code(row.code):
         raise DataSourceError(
             "DATASOURCE_DEMO_PROTECTED",
             "官方示例数据连接不可修改",
+            409,
+        )
+    if is_managed_analytics_row(row):
+        raise DataSourceError(
+            "DATASOURCE_ANALYTICS_PROTECTED",
+            "托管分析库连接不可修改或删除",
             409,
         )
 
@@ -246,6 +273,7 @@ def list_data_sources(
     offset: int = 0,
     type: str | None = None,
     q: str | None = None,
+    include_managed: bool = False,
 ) -> DataSourceListResponse:
     limit = max(1, min(limit, 100))
     offset = max(0, offset)
@@ -257,6 +285,8 @@ def list_data_sources(
     if q:
         pattern = f"%{q}%"
         base = base.where(or_(ilike(DataSource.name, pattern), ilike(DataSource.code, pattern)))
+    if not include_managed:
+        base = base.where(~_managed_analytics_clause())
     count_stmt = select(func.count()).select_from(DataSource)
     count_stmt = _active_filter(count_stmt)
     count_stmt = apply_list_filter(count_stmt, session, role_codes)
@@ -265,6 +295,8 @@ def list_data_sources(
     if q:
         pattern = f"%{q}%"
         count_stmt = count_stmt.where(or_(ilike(DataSource.name, pattern), ilike(DataSource.code, pattern)))
+    if not include_managed:
+        count_stmt = count_stmt.where(~_managed_analytics_clause())
     total = session.scalar(count_stmt) or 0
     rows = list(session.scalars(base.order_by(DataSource.code).limit(limit).offset(offset)))
     return DataSourceListResponse(
@@ -407,6 +439,12 @@ def delete_data_source(session: Session, data_source_id: uuid.UUID, *, role_code
         raise DataSourceError(
             "DATASOURCE_DEMO_PROTECTED",
             "官方示例数据连接不可删除",
+            409,
+        )
+    if is_managed_analytics_row(row):
+        raise DataSourceError(
+            "DATASOURCE_ANALYTICS_PROTECTED",
+            "托管分析库连接不可修改或删除",
             409,
         )
     grant = session.scalar(

@@ -7,9 +7,15 @@ from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, T
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.auth.models import Base
+from app.core.platform_config.slots import CHANNEL_EMAIL_QQ, CHANNEL_EMAIL_163
 
-EMAIL_CHANNEL = "email"
-AUDIT_TARGET_EMAIL = uuid.UUID("00000000-0000-4000-8000-0000000000e1")
+EMAIL_CHANNEL = CHANNEL_EMAIL_QQ
+AUDIT_TARGET_EMAIL_QQ = uuid.UUID("00000000-0000-4000-8000-0000000000e1")
+AUDIT_TARGET_EMAIL_163 = uuid.UUID("00000000-0000-4000-8000-0000000000e2")
+AUDIT_TARGET_BY_CHANNEL = {
+    CHANNEL_EMAIL_QQ: AUDIT_TARGET_EMAIL_QQ,
+    CHANNEL_EMAIL_163: AUDIT_TARGET_EMAIL_163,
+}
 
 
 class PlatformDeliveryConfig(Base):
@@ -20,7 +26,7 @@ class PlatformDeliveryConfig(Base):
             name="ck_platform_delivery_configs_state",
         ),
         CheckConstraint(
-            "channel IN ('email')",
+            "channel IN ('email_qq', 'email_163')",
             name="ck_platform_delivery_configs_channel",
         ),
     )

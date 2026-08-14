@@ -5,7 +5,13 @@ from sqlalchemy.orm import Session
 from app.auth.models import get_meta_session
 from app.core.config import Settings, get_settings
 from app.core.crypto.credentials import decrypt_credential
-from app.core.platform_config.models import EMAIL_CHANNEL, PlatformDeliveryConfig
+from app.core.platform_config.models import PlatformDeliveryConfig
+from app.core.platform_config.slots import (
+    CHANNEL_EMAIL_QQ,
+    EMAIL_SLOT_QQ,
+    channel_for_slot,
+    normalize_email_slot,
+)
 from app.core.platform_config.smtp_settings import SmtpSettings
 
 _UNCONFIGURED = SmtpSettings("", 0, "", None, None, "none")
@@ -40,13 +46,21 @@ def _from_row(row: PlatformDeliveryConfig) -> SmtpSettings:
     )
 
 
-def resolve_email_smtp(session: Session | None = None) -> SmtpSettings:
+def resolve_email_smtp(
+    session: Session | None = None,
+    *,
+    slot: str | None = EMAIL_SLOT_QQ,
+) -> SmtpSettings:
+    normalized = normalize_email_slot(slot)
+    channel = channel_for_slot(normalized)
     owns = session is None
     db = session or get_meta_session()
     try:
-        row = db.get(PlatformDeliveryConfig, EMAIL_CHANNEL)
+        row = db.get(PlatformDeliveryConfig, channel)
         if row is None:
-            return _from_env(get_settings())
+            if normalized == EMAIL_SLOT_QQ:
+                return _from_env(get_settings())
+            return _UNCONFIGURED
         if row.state == "cleared":
             return _UNCONFIGURED
         return _from_row(row)

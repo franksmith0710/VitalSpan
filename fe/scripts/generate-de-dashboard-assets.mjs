@@ -115,9 +115,10 @@ function pieChart(cx, cy, r, accent, accent2) {
 }
 
 function kpiBlock(x, y, w, h, accent, value) {
+  const barW = Math.min(56, Math.max(28, w - 32));
   return `${card(x, y, w, h, "sh")}
   <text x="${x + 16}" y="${y + 22}" font-family="system-ui,sans-serif" font-size="11" fill="#8c8c8c">${value}</text>
-  <text x="${x + 16}" y="${y + 48}" font-family="system-ui,sans-serif" font-size="22" font-weight="600" fill="#262626">1,286</text>
+  <rect x="${x + 16}" y="${y + 36}" width="${barW}" height="12" rx="2" fill="#d9d9d9" opacity="0.85"/>
   <rect x="${x + 16}" y="${y + 56}" width="36" height="3" rx="1.5" fill="${accent}" opacity="0.8"/>`;
 }
 
