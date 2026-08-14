@@ -40,6 +40,24 @@ def test_layout_shell_persists_de_axes():
     assert cfg.axes["yAxis"][0].field == "amount"
 
 
+def test_migrate_remaps_legacy_chinese_axis_aliases():
+    out = migrate_chart_config(
+        {
+            "chartType": "table-info",
+            "dimensions": [{"field": "grid_name"}],
+            "axes": {
+                "xAxis": [
+                    {"field": "网格"},
+                    {"field": "事件数"},
+                    {"field": "已办结"},
+                ]
+            },
+        },
+    )
+    fields = [item["field"] for item in out["axes"]["xAxis"]]
+    assert fields == ["grid_name", "event_count", "resolved_count"]
+
+
 def test_layout_rejects_unknown_axis_id():
     import pytest
 

@@ -1,270 +1,57 @@
 import { LayoutDashboard } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { setChartAnimationSuppressed } from "@/components/charts/engine/d3/core/animate";
 import { ComponentPreviewShell } from "@/components/dashboard/viz-components/ComponentCardPreview";
-import { prepareLayoutForListPreview } from "@/components/dashboard/stylePipeline";
-import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
-import { TemplateLayoutLivePreview } from "@/components/dashboard/templates/TemplateLayoutLivePreview";
-import { Skeleton } from "@/components/ui/skeleton";
 import type { DashboardTemplateListItem } from "@/lib/dashboardTemplates";
-import { fetchTemplateDetail } from "@/lib/dashboardTemplates";
-import { apiFetch } from "@/lib/api";
-import {
-  bindTemplateDemoDatasource,
-  layoutRequiresDemoCharts,
-  resolveTemplateDemoDatasourceId,
-} from "@/lib/templateDemoData";
-import { queryKeys } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";
-import { useAdminHeavyRenderSuspended } from "@/hooks/useAdminHeavyRenderSuspended";
-import {
-  ListPreviewSlotResetError,
-  releaseListPreviewSlot,
-  requestListPreviewSlot,
-  unregisterListPreviewWaiter,
-  updateListPreviewPriority,
-} from "@/lib/listPreviewActivation";
 
 type TemplateCardPreviewProps = {
   templateId: string;
   surfaceKind: DashboardTemplateListItem["surfaceKind"];
   className?: string;
   eager?: boolean;
-  /** 静态缩略图：仅作加载占位或缺演示库时的回退 */
+  /** 静态缩略图（内置 SVG 或上传封面） */
   thumbnailSrc?: string | null;
-  /** 强制 live 布局预览（缺演示库时也不回退静态图） */
-  livePreview?: boolean;
 };
 
-/** 模板卡片预览区：优先渲染真实布局，元信息由 VizTemplateCard 正文展示。 */
+/** 模板卡片预览区：仅展示静态缩略图，不在列表页 live 渲染布局。 */
 export function TemplateCardPreview({
-  templateId,
   surfaceKind,
   className,
   eager = false,
   thumbnailSrc = null,
-  livePreview,
 }: TemplateCardPreviewProps) {
-  const navSuspended = useAdminHeavyRenderSuspended();
-  const hostRef = useRef<HTMLDivElement>(null);
-  const previewKey = `template-${templateId}`;
-  const [active, setActive] = useState(eager);
-  const [slotGranted, setSlotGranted] = useState(eager);
-  const [intersectionPriority, setIntersectionPriority] = useState(eager ? 1 : 0);
-
-  const detailQuery = useQuery({
-    queryKey: queryKeys.dashboardTemplates.detail(templateId),
-    queryFn: () => fetchTemplateDetail(templateId),
-    enabled: active && slotGranted && !navSuspended,
-    staleTime: 60_000,
-  });
-
-  const datasourcesQuery = useQuery({
-    queryKey: queryKeys.datasources.list({}),
-    queryFn: () =>
-      apiFetch<{ items: { id: string; name: string; code: string; database?: string }[] }>(
-        "/api/v1/datasources",
-      ),
-    enabled: active && slotGranted && !navSuspended,
-    staleTime: 120_000,
-  });
-
-  const layout = useMemo(() => {
-    const raw = detailQuery.data?.layoutJson as DashboardLayout | undefined;
-    if (!raw) return undefined;
-    const demoId = resolveTemplateDemoDatasourceId(datasourcesQuery.data?.items ?? []);
-    const bound = bindTemplateDemoDatasource(raw, demoId);
-    return prepareLayoutForListPreview(bound);
-  }, [detailQuery.data, datasourcesQuery.data]);
-
   const isScreen = surfaceKind === "data-screen";
-  const datasourcesLoading = active && datasourcesQuery.isLoading;
-  const loading = active && (detailQuery.isLoading || datasourcesLoading);
-  const demoDatasourceId = resolveTemplateDemoDatasourceId(datasourcesQuery.data?.items ?? []);
-  const demoDatasourceMissing =
-    active &&
-    !datasourcesLoading &&
-    Boolean(layout) &&
-    layoutRequiresDemoCharts(layout!) &&
-    !demoDatasourceId;
-  /** 有演示库时优先 live 出图；仅仪表板缺数据源时回退静态示意图 */
-  const useStaticFallback =
-    livePreview !== true &&
-    !isScreen &&
-    Boolean(thumbnailSrc?.trim()) &&
-    demoDatasourceMissing;
+  const resolvedSrc = thumbnailSrc?.trim();
 
-  useEffect(() => {
-    if (navSuspended) {
-      if (!eager) {
-        setActive(false);
-        setSlotGranted(false);
-        unregisterListPreviewWaiter(previewKey);
-      }
-      return undefined;
-    }
-    if (!active || slotGranted || eager) return undefined;
-    let cancelled = false;
-    void requestListPreviewSlot({ key: previewKey, priority: intersectionPriority })
-      .then(() => {
-        if (!cancelled) setSlotGranted(true);
-      })
-      .catch((err) => {
-        if (cancelled || err instanceof ListPreviewSlotResetError) return;
-        console.warn("[list-preview] slot request failed", err);
-      });
-    return () => {
-      cancelled = true;
-      unregisterListPreviewWaiter(previewKey);
-    };
-  }, [active, slotGranted, eager, navSuspended, previewKey, intersectionPriority]);
-
-  useEffect(() => {
-    if (!slotGranted || eager) return undefined;
-    return () => releaseListPreviewSlot(previewKey);
-  }, [slotGranted, eager, previewKey]);
-
-  useEffect(() => {
-    if (!active || navSuspended) return undefined;
-    setChartAnimationSuppressed(true);
-    return () => setChartAnimationSuppressed(false);
-  }, [active, navSuspended]);
-
-  useEffect(() => {
-    if (eager) {
-      setActive(true);
-      setIntersectionPriority(1);
-      return undefined;
-    }
-    const el = hostRef.current;
-    if (!el) return undefined;
-
-    if (typeof IntersectionObserver === "undefined") {
-      setActive(true);
-      setIntersectionPriority(1);
-      return undefined;
-    }
-
-    const leaveViewport = () => {
-      setActive(false);
-      setSlotGranted(false);
-      unregisterListPreviewWaiter(previewKey);
-    };
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (navSuspended) return;
-        if (entry?.isIntersecting) {
-          const ratio = entry.intersectionRatio;
-          setActive(true);
-          setIntersectionPriority(ratio);
-          updateListPreviewPriority(previewKey, ratio);
-        } else {
-          leaveViewport();
-        }
-      },
-      { rootMargin: "80px" },
-    );
-    observer.observe(el);
-
-    const syncVisible = () => {
-      if (navSuspended) return;
-      const rect = el.getBoundingClientRect();
-      const margin = 80;
-      if (rect.bottom >= -margin && rect.top <= window.innerHeight + margin) {
-        setActive(true);
-        setIntersectionPriority(1);
-        updateListPreviewPriority(previewKey, 1);
-      }
-    };
-    syncVisible();
-    if (!navSuspended) {
-      requestAnimationFrame(syncVisible);
-    }
-
-    return () => {
-      observer.disconnect();
-      unregisterListPreviewWaiter(previewKey);
-    };
-  }, [eager, templateId, navSuspended, previewKey]);
-
-  const thumbnailFallback = thumbnailSrc ? (
+  const content = resolvedSrc ? (
     <img
-      src={thumbnailSrc}
+      src={resolvedSrc}
       alt=""
       className="h-full w-full object-cover object-center"
       loading={eager ? "eager" : "lazy"}
       decoding="async"
     />
   ) : (
-    <Skeleton className="h-full w-full rounded-none" />
+    <div
+      className={cn(
+        "flex h-full items-center justify-center",
+        isScreen ? "bg-slate-950" : "bg-gray-50 dark:bg-gray-900/60",
+      )}
+    >
+      <LayoutDashboard
+        className={cn("size-10", isScreen ? "text-slate-600" : "text-gray-300 dark:text-gray-600")}
+        aria-hidden
+      />
+    </div>
   );
-
-  if (navSuspended) {
-    return (
-      <div
-        ref={hostRef}
-        className={cn("h-full", className)}
-        data-testid="template-card-preview"
-        data-live="false"
-        aria-hidden
-      >
-        <ComponentPreviewShell className="h-full">{thumbnailFallback}</ComponentPreviewShell>
-      </div>
-    );
-  }
-
-  if (useStaticFallback && thumbnailSrc) {
-    return (
-      <div
-        ref={hostRef}
-        className={cn("h-full", className)}
-        data-testid="template-card-preview"
-        data-live="false"
-        aria-hidden
-      >
-        <ComponentPreviewShell className="h-full">{thumbnailFallback}</ComponentPreviewShell>
-      </div>
-    );
-  }
-
-  if (!layout?.widgets?.length && !loading && active && !detailQuery.isLoading) {
-    return (
-      <div ref={hostRef} className={cn("h-full", className)} data-testid="template-card-preview">
-        <ComponentPreviewShell className="h-full">
-          <div className="flex h-full items-center justify-center">
-            <LayoutDashboard
-              className={cn("size-10", isScreen ? "text-slate-600" : "text-gray-300 dark:text-gray-600")}
-              aria-hidden
-            />
-          </div>
-        </ComponentPreviewShell>
-      </div>
-    );
-  }
 
   return (
     <div
-      ref={hostRef}
       className={cn("h-full", className)}
       data-testid="template-card-preview"
-      data-live={active && slotGranted && !loading && layout ? "true" : "false"}
+      data-live="false"
       aria-hidden
     >
-      <ComponentPreviewShell className="h-full">
-        {active && slotGranted && !loading && layout?.widgets?.length ? (
-          <TemplateLayoutLivePreview
-            layout={layout}
-            surfaceKind={surfaceKind}
-            variant="card"
-            geo3dRenderTier="thumbnail"
-            demoDatasourceMissing={demoDatasourceMissing}
-          />
-        ) : (
-          thumbnailFallback
-        )}
-      </ComponentPreviewShell>
+      <ComponentPreviewShell className="h-full">{content}</ComponentPreviewShell>
     </div>
   );
 }

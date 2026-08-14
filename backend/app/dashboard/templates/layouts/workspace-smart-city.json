@@ -353,13 +353,13 @@
           "axes": {
             "xAxis": [
               {
-                "field": "热词",
+                "field": "word",
                 "label": null
               }
             ],
             "yAxis": [
               {
-                "field": "权重",
+                "field": "weight",
                 "label": null
               }
             ]
@@ -577,19 +577,19 @@
           "axes": {
             "xAxis": [
               {
-                "field": "问题类型",
+                "field": "issue_type",
                 "label": null
               },
               {
-                "field": "地点",
+                "field": "location",
                 "label": null
               },
               {
-                "field": "状态",
+                "field": "status",
                 "label": null
               },
               {
-                "field": "进度",
+                "field": "progress",
                 "label": null
               }
             ]

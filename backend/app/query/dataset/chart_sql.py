@@ -180,6 +180,27 @@ def _is_detail_chart(chart_type: str) -> bool:
     return chart_type in DETAIL_CHART_TYPES
 
 
+def _unique_names(names: list[str]) -> list[str]:
+    return list(dict.fromkeys(names))
+
+
+def _metric_alias_exprs(metrics: list, dialect, reserved: set[str]) -> list[str]:
+    used = set(reserved)
+    exprs: list[str] = []
+    for metric in metrics:
+        field = metric.field.strip()
+        alias = field
+        suffix = 2
+        while alias in used:
+            alias = f"{field}_{suffix}"
+            suffix += 1
+        used.add(alias)
+        exprs.append(
+            f"{_agg_expr(metric.agg, dialect.quote_identifier(field))} AS {dialect.quote_identifier(alias)}"
+        )
+    return exprs
+
+
 def build_chart_sql(
     payload: DatasetQueryConfigPayload,
     encoding: ChartExecuteEncoding,
@@ -200,7 +221,7 @@ def build_chart_sql(
     computed_names = {f.name for f in computed_fields}
     allowed = set(payload.columns) | computed_names
 
-    dimensions = [d.strip() for d in encoding.dimensions if d and d.strip()]
+    dimensions = _unique_names([d.strip() for d in encoding.dimensions if d and d.strip()])
     metrics = [m for m in encoding.metrics if m.field and m.field.strip()]
 
     for field in dimensions:
@@ -273,10 +294,7 @@ def build_chart_sql(
         return sql, parameters
 
     dim_exprs = [dialect.quote_identifier(d) for d in dimensions]
-    metric_exprs = [
-        f"{_agg_expr(m.agg, dialect.quote_identifier(m.field.strip()))} AS {dialect.quote_identifier(m.field.strip())}"
-        for m in metrics
-    ]
+    metric_exprs = _metric_alias_exprs(metrics, dialect, set(dimensions))
     select_list = ", ".join([*dim_exprs, *metric_exprs])
     sql = f"SELECT {select_list} FROM ({inner}) _src"
     if dimensions:

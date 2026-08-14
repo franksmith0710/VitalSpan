@@ -1,4 +1,5 @@
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import { remapLegacySqlFieldsInChartConfig } from "@/lib/legacySqlFieldAliases";
 import { migrateTimelineChartConfig } from "@/lib/migrateTimelineChartType";
 
 type StyleMigration = {
@@ -43,7 +44,7 @@ export function migrateChartViewConfig<T extends ChartViewConfig>(config: T): T 
     break;
   }
 
-  next = {
+  next = remapLegacySqlFieldsInChartConfig({
     ...next,
     mode: "dataset",
     bindingId: undefined,
@@ -60,7 +61,7 @@ export function migrateChartViewConfig<T extends ChartViewConfig>(config: T): T 
             ...(next.nativeBody.deTableStyle ? { deTableStyle: next.nativeBody.deTableStyle } : {}),
           }
         : undefined,
-  };
+  });
 
   return next;
 }

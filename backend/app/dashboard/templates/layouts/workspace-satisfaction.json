@@ -69,15 +69,15 @@
           "axes": {
             "xAxis": [
               {
-                "field": "网格",
+                "field": "grid_name",
                 "label": null
               },
               {
-                "field": "事件数",
+                "field": "event_count",
                 "label": null
               },
               {
-                "field": "已办结",
+                "field": "resolved_count",
                 "label": null
               }
             ]
@@ -248,7 +248,7 @@
       {
         "id": "41b02af7-d9b8-49d1-9878-933ff5208269",
         "type": "chart",
-        "title": "K 线图",
+        "title": "销售额趋势",
         "x": 475,
         "y": 0,
         "width": 480,
@@ -260,7 +260,7 @@
         "parentTabsId": null,
         "tabPaneId": null,
         "chartConfig": {
-          "chartType": "stock-line",
+          "chartType": "line",
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
@@ -289,34 +289,10 @@
             {
               "field": "amount",
               "label": null
-            },
-            {
-              "field": "quantity",
-              "label": null
-            },
-            {
-              "field": "quantity",
-              "label": null
-            },
-            {
-              "field": "amount",
-              "label": null
             }
           ],
           "axes": {
             "yAxis": [
-              {
-                "field": "amount",
-                "label": null
-              },
-              {
-                "field": "quantity",
-                "label": null
-              },
-              {
-                "field": "quantity",
-                "label": null
-              },
               {
                 "field": "amount",
                 "label": null

@@ -110,6 +110,35 @@ def test_kpi_sum_without_group_by():
     assert "SUM" in sql.upper()
 
 
+def test_duplicate_dimension_does_not_repeat_select_alias():
+    encoding = ChartExecuteEncoding(
+        chartType="area-stack",
+        dimensions=["sale_date", "sale_date"],
+        metrics=[ChartMetricEncoding(field="amount", agg="sum")],
+    )
+    sql, _params = build_chart_sql(_payload(), encoding, computed_fields=[], limit=100, offset=0)
+    assert 'GROUP BY "sale_date", "sale_date"' not in sql
+    assert 'GROUP BY "sale_date"' in sql
+
+
+def test_duplicate_metric_fields_get_unique_aliases():
+    encoding = ChartExecuteEncoding(
+        chartType="stock-line",
+        dimensions=["sale_date"],
+        metrics=[
+            ChartMetricEncoding(field="amount", agg="sum"),
+            ChartMetricEncoding(field="quantity", agg="sum"),
+            ChartMetricEncoding(field="quantity", agg="sum"),
+            ChartMetricEncoding(field="amount", agg="sum"),
+        ],
+    )
+    payload = _payload(columns=["sale_date", "amount", "quantity"])
+    sql, _params = build_chart_sql(payload, encoding, computed_fields=[], limit=100, offset=0)
+    assert 'AS "quantity_2"' in sql
+    assert 'AS "amount_2"' in sql
+    assert sql.upper().count("SUM") == 4
+
+
 def test_time_range_between_before_group_by():
     encoding = ChartExecuteEncoding(
         chartType="line",

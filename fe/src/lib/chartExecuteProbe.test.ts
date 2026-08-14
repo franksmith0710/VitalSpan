@@ -150,6 +150,34 @@ describe("chartExecuteProbe shared execute", () => {
       expect(body.encoding.chartType).toBe("line");
     });
 
+    it("buildChartExecuteEncoding remaps Chinese aliases and unique dimensions", () => {
+      const config = {
+        ...datasetReadyConfig(),
+        chartType: "area-stack" as const,
+        axes: {
+          xAxis: [{ field: "sale_date" }],
+          xAxisExt: [{ field: "sale_date" }],
+          yAxis: [{ field: "amount" }],
+        },
+      };
+      const encoding = buildChartExecuteEncoding(config);
+      expect(encoding.dimensions).toEqual(["sale_date"]);
+      expect(encoding.metrics).toEqual([{ field: "amount", agg: "sum" }]);
+    });
+
+    it("buildChartExecuteEncoding remaps leftover 网格 alias", () => {
+      const config = {
+        ...datasetReadyConfig(),
+        chartType: "table-info" as const,
+        axes: {
+          xAxis: [{ field: "网格" }, { field: "事件数" }, { field: "已办结" }],
+        },
+      };
+      const encoding = buildChartExecuteEncoding(config);
+      expect(encoding.dimensions).toEqual(["grid_name"]);
+      expect(encoding.metrics.map((m) => m.field)).toEqual(["event_count", "resolved_count"]);
+    });
+
     it("buildChartExecuteEncoding includes absolute timeRange", () => {
       const config = {
         ...datasetReadyConfig(),

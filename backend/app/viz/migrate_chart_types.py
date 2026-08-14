@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.dashboard.templates.legacy_sql_field_aliases import remap_legacy_sql_fields_in_chart_config
+
 _TYPE_MIGRATIONS: dict[str, str] = {
     "table": "table-info",
     "combo": "chart-mix",
@@ -44,7 +46,7 @@ def migrate_chart_config(data: Any) -> Any:
                 out["styleVariant"] = "default"
                 break
 
-    return out
+    return remap_legacy_sql_fields_in_chart_config(out)
 
 
 def migrate_layout_chart_configs(layout: Any) -> Any:

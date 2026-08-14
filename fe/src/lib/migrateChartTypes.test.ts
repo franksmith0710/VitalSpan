@@ -37,6 +37,20 @@ describe("migrateChartViewConfig", () => {
     expect(next.chartType).toBe("word-cloud");
   });
 
+  it("remaps leftover Chinese SQL aliases on axes", () => {
+    const next = migrateChartViewConfig({
+      chartType: "table-info",
+      axes: {
+        xAxis: [{ field: "网格" }, { field: "事件数" }, { field: "已办结" }],
+      },
+    });
+    expect(next.axes?.xAxis?.map((item) => item.field)).toEqual([
+      "grid_name",
+      "event_count",
+      "resolved_count",
+    ]);
+  });
+
   it("forces dataset mode and clears legacy sql binding", () => {
     const next = migrateChartViewConfig({
       chartType: "line",

@@ -58,17 +58,24 @@ SQL_DATASET_MAP: list[tuple[str, str, dict[str, str]]] = [
 ]
 
 
-def _rename_fields(chart_cfg: dict, mapping: dict[str, str]) -> None:
-    for bucket in ("dimensions", "metrics"):
-        items = chart_cfg.get(bucket)
-        if not isinstance(items, list):
+def _rename_field_list(items: object, mapping: dict[str, str]) -> None:
+    if not isinstance(items, list):
+        return
+    for item in items:
+        if not isinstance(item, dict):
             continue
-        for item in items:
-            if not isinstance(item, dict):
-                continue
-            field = item.get("field")
-            if isinstance(field, str) and field in mapping:
-                item["field"] = mapping[field]
+        field = item.get("field")
+        if isinstance(field, str) and field in mapping:
+            item["field"] = mapping[field]
+
+
+def _rename_fields(chart_cfg: dict, mapping: dict[str, str]) -> None:
+    _rename_field_list(chart_cfg.get("dimensions"), mapping)
+    _rename_field_list(chart_cfg.get("metrics"), mapping)
+    axes = chart_cfg.get("axes")
+    if isinstance(axes, dict):
+        for value in axes.values():
+            _rename_field_list(value, mapping)
 
 
 def _match_dataset(sql: str) -> tuple[str, dict[str, str]] | None:

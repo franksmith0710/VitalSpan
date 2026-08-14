@@ -112,6 +112,7 @@ import {
 } from "@/components/dashboard/createLayoutWidget";
 import type { PaletteDragPayload } from "@/lib/dashboardDnd";
 import { readTabsWidgetIdFromDropEvent } from "@/lib/tabsDropTarget";
+import { scheduleDashboardThumbnailUpload } from "@/lib/scheduleDashboardThumbnailUpload";
 import { cn } from "@/lib/utils";
 import { DashboardContextInspector } from "@/components/dashboard/DashboardContextInspector";
 import { DashboardTemplateExtras } from "@/components/dashboard/DashboardTemplateExtras";
@@ -1205,6 +1206,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       } else {
         toast.success("看板已保存");
       }
+      scheduleDashboardThumbnailUpload(id);
       return true;
     } catch (err) {
       if (isDashboardNotFound(err)) {

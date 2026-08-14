@@ -1,11 +1,7 @@
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
-
-vi.mock("@/components/dashboard/DashboardListCardPreview", () => ({
-  DashboardListCardPreview: () => <div data-testid="mock-preview" className="h-full" />,
-}));
 import {
   DashboardListCard,
   type DashboardListItem,
@@ -43,88 +39,83 @@ const tallCanvasDashboard: DashboardListItem = {
   },
 };
 
+function renderCard(dashboard: DashboardListItem, props?: { previewSurfaceKind?: "dashboard" | "data-screen" }) {
+  return render(
+    <TooltipProvider delayDuration={0}>
+      <MemoryRouter>
+        <DashboardListCard dashboard={dashboard} canEdit {...props} />
+      </MemoryRouter>
+    </TooltipProvider>,
+  );
+}
+
 describe("DashboardListCard", () => {
   afterEach(() => {
     cleanup();
   });
 
   it("hides official demo badge when title already contains 官方示例", () => {
-    const { queryByText } = render(
-      <TooltipProvider delayDuration={0}>
-        <MemoryRouter>
-          <DashboardListCard
-            dashboard={{
-              id: "demo-1",
-              name: "官方示例 · 双栏指标看板",
-              slug: "官方示例-双栏指标看板",
-              updatedAt: "2026-07-14T12:00:00.000Z",
-              layoutJson: {
-                version: 1,
-                widgets: [],
-                globalFilters: [],
-                demoPackage: { seed: true, sourceTemplateKey: "builtin-dash-dual-kpi" },
-              },
-            }}
-            canEdit
-          />
-        </MemoryRouter>
-      </TooltipProvider>,
-    );
+    const { queryByText } = renderCard({
+      id: "demo-1",
+      name: "官方示例 · 双栏指标看板",
+      slug: "官方示例-双栏指标看板",
+      updatedAt: "2026-07-14T12:00:00.000Z",
+      layoutJson: {
+        version: 1,
+        widgets: [],
+        globalFilters: [],
+        demoPackage: { seed: true, sourceTemplateKey: "builtin-dash-dual-kpi" },
+      },
+    });
     expect(queryByText("官方示例", { exact: true })).not.toBeInTheDocument();
   });
 
   it("shows official demo badge when demo instance was renamed", () => {
-    const { getByText } = render(
-      <TooltipProvider delayDuration={0}>
-        <MemoryRouter>
-          <DashboardListCard
-            dashboard={{
-              id: "demo-1",
-              name: "我的销售看板",
-              slug: "官方示例-双栏指标看板",
-              updatedAt: "2026-07-14T12:00:00.000Z",
-              layoutJson: {
-                version: 1,
-                widgets: [],
-                globalFilters: [],
-                demoPackage: { seed: true, sourceTemplateKey: "builtin-dash-dual-kpi" },
-              },
-            }}
-            canEdit
-          />
-        </MemoryRouter>
-      </TooltipProvider>,
-    );
+    const { getByText } = renderCard({
+      id: "demo-1",
+      name: "我的销售看板",
+      slug: "官方示例-双栏指标看板",
+      updatedAt: "2026-07-14T12:00:00.000Z",
+      layoutJson: {
+        version: 1,
+        widgets: [],
+        globalFilters: [],
+        demoPackage: { seed: true, sourceTemplateKey: "builtin-dash-dual-kpi" },
+      },
+    });
     expect(getByText("官方示例")).toBeInTheDocument();
   });
 
   it("uses fixed list card aspect ratio regardless of canvas height", () => {
-    const { container } = render(
-      <TooltipProvider delayDuration={0}>
-        <MemoryRouter>
-          <DashboardListCard dashboard={tallCanvasDashboard} canEdit />
-        </MemoryRouter>
-      </TooltipProvider>,
-    );
+    const { container } = renderCard(tallCanvasDashboard);
 
     const preview = container.querySelector("article > div");
     expect(preview).toHaveStyle({ aspectRatio: DASHBOARD_LIST_CARD_ASPECT_RATIO });
   });
 
   it("forces data-screen preview ratio when previewSurfaceKind is set", () => {
-    const { container } = render(
-      <TooltipProvider delayDuration={0}>
-        <MemoryRouter>
-          <DashboardListCard
-            dashboard={tallCanvasDashboard}
-            canEdit
-            previewSurfaceKind="data-screen"
-          />
-        </MemoryRouter>
-      </TooltipProvider>,
-    );
+    const { container } = renderCard(tallCanvasDashboard, { previewSurfaceKind: "data-screen" });
 
     const preview = container.querySelector("article > div");
     expect(preview).toHaveStyle({ aspectRatio: "16 / 9" });
+  });
+
+  it("renders static thumbnail image when thumbnailUrl is present", () => {
+    renderCard({
+      ...tallCanvasDashboard,
+      thumbnailUrl: "/api/v1/dashboards/dash-tall/thumbnail?v=1",
+    });
+
+    const img = screen.getByTestId("dashboard-list-card-thumbnail");
+    expect(img).toHaveAttribute("src", "/api/v1/dashboards/dash-tall/thumbnail?v=1");
+    expect(img).toHaveAttribute("loading", "lazy");
+    expect(screen.queryByTestId("dashboard-preview-thumb")).not.toBeInTheDocument();
+  });
+
+  it("falls back to wireframe preview when thumbnailUrl is missing", () => {
+    renderCard(tallCanvasDashboard);
+
+    expect(screen.queryByTestId("dashboard-list-card-thumbnail")).not.toBeInTheDocument();
+    expect(screen.getByTestId("dashboard-preview-thumb")).toBeInTheDocument();
   });
 });

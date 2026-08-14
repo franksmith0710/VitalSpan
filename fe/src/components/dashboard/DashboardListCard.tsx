@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router";
 import { Eye, LayoutDashboard, MoreHorizontal, Pencil, Share2, Trash2 } from "lucide-react";
 import {
@@ -16,7 +17,7 @@ import {
   HUB_CARD_TITLE_CLASS,
   hubCardPreviewFrameStyle,
 } from "@/components/dashboard/hubCardUi";
-import { DashboardListCardPreview } from "@/components/dashboard/DashboardListCardPreview";
+import { DashboardPreviewThumb } from "@/components/dashboard/DashboardPreviewThumb";
 import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
 import { Badge } from "@/components/ui/badge";
 import { Button, IconButton } from "@/components/ui/button";
@@ -65,6 +66,45 @@ function formatUpdatedAt(value: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function DashboardListCardStaticPreview({
+  thumbnailUrl,
+  layoutJson,
+  isDataScreen,
+  className,
+}: {
+  thumbnailUrl?: string | null;
+  layoutJson?: DashboardLayout;
+  isDataScreen: boolean;
+  className?: string;
+}) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const resolvedUrl = thumbnailUrl?.trim();
+  const showImage = Boolean(resolvedUrl) && !imgFailed;
+
+  if (showImage && resolvedUrl) {
+    return (
+      <img
+        src={resolvedUrl}
+        alt=""
+        data-testid="dashboard-list-card-thumbnail"
+        className={cn("h-full w-full object-cover object-center", className)}
+        loading="lazy"
+        decoding="async"
+        onError={() => setImgFailed(true)}
+      />
+    );
+  }
+
+  return (
+    <DashboardPreviewThumb
+      layoutJson={layoutJson}
+      embedded
+      isDataScreen={isDataScreen}
+      className={className}
+    />
+  );
 }
 
 export function DashboardListCard({
@@ -126,9 +166,10 @@ export function DashboardListCard({
           </div>
         ) : null}
         <div className={HUB_CARD_PREVIEW_CONTENT_CLASS}>
-          <DashboardListCardPreview
-            dashboardId={dashboard.id}
+          <DashboardListCardStaticPreview
+            thumbnailUrl={dashboard.thumbnailUrl}
             layoutJson={layoutForPreview}
+            isDataScreen={previewKind === "data-screen"}
             className="h-full"
           />
         </div>

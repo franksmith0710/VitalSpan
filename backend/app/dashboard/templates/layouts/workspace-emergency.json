@@ -472,23 +472,23 @@
           "axes": {
             "xAxis": [
               {
-                "field": "省份",
+                "field": "province",
                 "label": null
               }
             ],
             "yAxis": [
               {
-                "field": "服务量",
+                "field": "service_volume",
                 "label": null
               }
             ],
             "drill": [
               {
-                "field": "城市",
+                "field": "city",
                 "label": null
               },
               {
-                "field": "区县",
+                "field": "district",
                 "label": null
               }
             ]
@@ -695,13 +695,13 @@
           "axes": {
             "xAxis": [
               {
-                "field": "类别",
+                "field": "category",
                 "label": null
               }
             ],
             "yAxis": [
               {
-                "field": "支出金额",
+                "field": "spent_amount",
                 "label": null
               }
             ]
@@ -819,15 +819,15 @@
           "axes": {
             "xAxis": [
               {
-                "field": "网格",
+                "field": "grid_name",
                 "label": null
               },
               {
-                "field": "事件数",
+                "field": "event_count",
                 "label": null
               },
               {
-                "field": "已办结",
+                "field": "resolved_count",
                 "label": null
               }
             ]

@@ -59,7 +59,7 @@ export function buildChartExecuteEncoding(config: ChartViewConfig): ChartExecute
     }));
   return {
     chartType: config.chartType,
-    dimensions: encoding.dimensions.map((d) => d.field),
+    dimensions: [...new Set(encoding.dimensions.map((d) => d.field))],
     metrics: encoding.metrics.map((m) => ({ field: m.field, agg: "sum" as const })),
     filters,
     timeRange: buildChartTimeRangeEncoding(config.timeRange),

@@ -583,13 +583,13 @@
           "axes": {
             "xAxis": [
               {
-                "field": "事件类型",
+                "field": "incident_type",
                 "label": null
               }
             ],
             "yAxis": [
               {
-                "field": "数量",
+                "field": "count",
                 "label": null
               }
             ]

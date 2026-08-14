@@ -1,3 +1,4 @@
+import { remapLegacySqlFieldsInChartConfig } from "@/lib/legacySqlFieldAliases";
 import type { ChartFieldRef, ChartViewConfig } from "@/lib/chartViewConfig";
 import { classifyDatasetField } from "@/components/dashboard/datasetFieldClassification";
 import {
@@ -66,30 +67,31 @@ function setAxisField(
 
 /** 旧 dimensions/metrics → DE 命名轴 */
 export function migrateChartConfigToDeAxes(config: ChartViewConfig): ChartViewConfig {
-  if (config.axes && Object.keys(config.axes).length > 0) {
-    return syncLegacyFieldsFromAxes(remapMixAxisSlots(config));
+  const remapped = remapLegacySqlFieldsInChartConfig(config);
+  if (remapped.axes && Object.keys(remapped.axes).length > 0) {
+    return syncLegacyFieldsFromAxes(remapMixAxisSlots(remapped));
   }
-  const chartType = config.chartType;
+  const chartType = remapped.chartType;
 
   if (chartType === "table-info" || chartType === "table") {
     const fields = [
-      ...(config.dimensions?.map((d) => d.field?.trim()).filter(Boolean) ?? []),
-      ...(config.metrics?.map((m) => m.field?.trim()).filter(Boolean) ?? []),
+      ...(remapped.dimensions?.map((d) => d.field?.trim()).filter(Boolean) ?? []),
+      ...(remapped.metrics?.map((m) => m.field?.trim()).filter(Boolean) ?? []),
     ];
     const axes: ChartAxesConfig = {
       xAxis: fields.map((field) => ({ field: field! })),
     };
-    return syncLegacyFieldsFromAxes({ ...config, axes });
+    return syncLegacyFieldsFromAxes({ ...remapped, axes });
   }
 
   if (chartType === "table-normal") {
-    const dims = config.dimensions?.map((d) => d.field?.trim()).filter(Boolean) ?? [];
-    const mets = config.metrics?.map((m) => m.field?.trim()).filter(Boolean) ?? [];
+    const dims = remapped.dimensions?.map((d) => d.field?.trim()).filter(Boolean) ?? [];
+    const mets = remapped.metrics?.map((m) => m.field?.trim()).filter(Boolean) ?? [];
     const axes: ChartAxesConfig = {
       xAxis: dims.map((field) => ({ field })),
       yAxis: mets.map((field) => ({ field })),
     };
-    return syncLegacyFieldsFromAxes({ ...config, axes });
+    return syncLegacyFieldsFromAxes({ ...remapped, axes });
   }
 
   const legacyMap = getDeAxisLegacyMap(chartType);
@@ -99,15 +101,15 @@ export function migrateChartConfigToDeAxes(config: ChartViewConfig): ChartViewCo
     if (!map.legacy) continue;
     const src =
       map.legacy.kind === "dimension"
-        ? config.dimensions?.[map.legacy.index]?.field
-        : config.metrics?.[map.legacy.index]?.field;
+        ? remapped.dimensions?.[map.legacy.index]?.field
+        : remapped.metrics?.[map.legacy.index]?.field;
     if (!src?.trim()) continue;
     axes[map.axisId] = [...(axes[map.axisId] ?? [])];
     while (axes[map.axisId]!.length <= map.index) axes[map.axisId]!.push({ field: "" });
     axes[map.axisId]![map.index] = { field: src.trim() };
   }
 
-  return syncLegacyFieldsFromAxes(remapMixAxisSlots({ ...config, axes }));
+  return syncLegacyFieldsFromAxes(remapMixAxisSlots({ ...remapped, axes }));
 }
 
 function syncTableBothAxesToLegacy(

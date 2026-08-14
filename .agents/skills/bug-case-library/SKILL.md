@@ -91,7 +91,7 @@ cases/<域>-<简短主题>.md
 | CASE-2026-08-06-004 | [fe-table-style-tests-unwired.md](./cases/fe-table-style-tests-unwired.md) | 表格样式, table-info, 透明度, 表头分页, headerFontSize, tablePaletteId, 快速配色, 测试未接线 |
 | CASE-2026-08-07-001 | [fe-richtext-blank-line-collapse.md](./cases/fe-richtext-blank-line-collapse.md) | 富文本, 换行, 空行, TipTap, ProseMirror-trailingBreak, stripEditorArtifacts |
 | CASE-2026-08-07-002 | [fe-export-snapshot-401-login-redirect.md](./cases/fe-export-snapshot-401-login-redirect.md) | 导出, PDF, data-export-ready, 401, 登录页, export-query, dataset/execute |
-| CASE-2026-08-07-002 | [fe-text-widget-commit-drops-widget-style.md](./cases/fe-text-widget-commit-drops-widget-style.md) | 富文本, 组件背景图, widgetStyle, commit, textConfig, 切走切回消失 |
+| CASE-2026-08-14-001 | [be-chart-sql-duplicate-alias-zh-field.md](./cases/be-chart-sql-duplicate-alias-zh-field.md) | 网格, Invalid column identifier, Duplicate column, 缩略轴, 堆叠折线, K线, axes 中文别名 |
 
 ## 维护规则
 
