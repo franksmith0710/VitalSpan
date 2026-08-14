@@ -17,3 +17,11 @@ fe/.vite/
 .dev/baselines/
 .codegraph/
 .ast-grep/cache/
+
+# 本地临时文件与运行产物（禁止入库）
+.tmp/
+fe/.tmp/
+data/backups/
+data/artifacts/
+backend/data/artifacts/
+fe/.env.production.local
