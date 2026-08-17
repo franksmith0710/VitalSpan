@@ -2,6 +2,10 @@
 # Runs on staging host during deploy_dev.ps1
 set -euo pipefail
 
+if [[ -n "${VITALSPAN_SUDO_PASSWORD:-}" ]]; then
+  sudo() { echo "$VITALSPAN_SUDO_PASSWORD" | command sudo -S "$@"; }
+fi
+
 REMOTE_ROOT="${VITALSPAN_ROOT:-/opt/apps/vitalspan}"
 REMOTE_BACKUP="${VITALSPAN_BACKUP:-}"
 DATA_ONLY="${DATA_ONLY:-0}"
@@ -37,15 +41,16 @@ if [[ "$CODE_ONLY" != "1" && -n "$REMOTE_BACKUP" && -d "$REMOTE_BACKUP" ]]; then
     if [[ -f "$REMOTE_BACKUP/$f" ]]; then meta_dump="$f"; break; fi
   done
   if [[ -n "$meta_dump" ]]; then
-    docker run --rm -e PGPASSWORD -v "$REMOTE_BACKUP:/b" docker.m.daocloud.io/library/postgres:17-alpine \
-      pg_restore -h host.docker.internal -U vitalspan -d vitalspan --clean --if-exists --no-owner --role=vitalspan "/b/$meta_dump" || true
+    docker run --rm --network host -e PGPASSWORD -v "$REMOTE_BACKUP:/b" docker.m.daocloud.io/library/postgres:17-alpine \
+      pg_restore -h 127.0.0.1 -U vitalspan -d vitalspan --clean --if-exists --no-owner --role=vitalspan "/b/$meta_dump" || true
   fi
   if [[ -f "$REMOTE_BACKUP/analytics-postgres.dump" ]]; then
-    docker run --rm -e PGPASSWORD -v "$REMOTE_BACKUP:/b" docker.m.daocloud.io/library/postgres:17-alpine \
-      pg_restore -h host.docker.internal -U vitalspan -d analytics --clean --if-exists --no-owner --role=vitalspan /b/analytics-postgres.dump || true
+    docker run --rm --network host -e PGPASSWORD -v "$REMOTE_BACKUP:/b" docker.m.daocloud.io/library/postgres:17-alpine \
+      pg_restore -h 127.0.0.1 -U vitalspan -d analytics --clean --if-exists --no-owner --role=vitalspan /b/analytics-postgres.dump || true
   fi
   if [[ -f "$REMOTE_BACKUP/sample-mysql.sql" ]]; then
-    sudo mysql --defaults-file=/etc/mysql/debian.cnf sample_db < "$REMOTE_BACKUP/sample-mysql.sql" || true
+    echo "$VITALSPAN_SUDO_PASSWORD" | sudo -S bash -c \
+      "mysql --defaults-file=/etc/mysql/debian.cnf sample_db < '$REMOTE_BACKUP/sample-mysql.sql'" || true
   fi
 fi
 
@@ -57,6 +62,9 @@ if [[ "$DATA_ONLY" != "1" ]]; then
   sudo systemctl restart vitalspan-backend || sudo systemctl start vitalspan-backend
   sudo nginx -t
   sudo systemctl reload nginx
-  curl -fsS http://127.0.0.1:8088/health
+fi
+
+if [[ "$CODE_ONLY" != "1" ]]; then
+  curl -fsS http://127.0.0.1:8088/health || true
   echo
 fi
