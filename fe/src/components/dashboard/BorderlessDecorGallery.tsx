@@ -1,3 +1,4 @@
+import { GalleryThumbFrame } from "@/components/dashboard/GalleryThumbFrame";
 import { BORDERLESS_DECOR_ASSETS } from "@/lib/borderlessDecorAssets";
 import { cn } from "@/lib/utils";
 
@@ -38,20 +39,22 @@ export function BorderlessDecorGallery({ value, onSelect, className }: Borderles
                 title={`${STYLE_LABEL[item.style] ?? item.style} · ${item.palette}`}
                 data-testid={`borderless-decor-${item.id}`}
                 className={cn(
-                  "overflow-hidden rounded border bg-[repeating-conic-gradient(#e5e7eb_0%_25%,#f8fafc_0%_50%)] bg-[length:8px_8px] dark:bg-[repeating-conic-gradient(#1f2937_0%_25%,#111827_0%_50%)]",
+                  "overflow-hidden rounded border border-gray-200 p-0 dark:border-gray-600",
                   active
                     ? "border-brand-500 ring-2 ring-brand-500/30"
-                    : "border-gray-200 hover:border-brand-400/60 dark:border-gray-600",
+                    : "hover:border-brand-400/60",
                 )}
                 onClick={() => onSelect(item.url)}
               >
-                <img
-                  src={item.url}
-                  alt=""
-                  className="h-9 w-full object-contain object-center"
-                  loading="lazy"
-                  draggable={false}
-                />
+                <GalleryThumbFrame className="h-9">
+                  <img
+                    src={item.url}
+                    alt=""
+                    className="h-full w-full object-contain object-center"
+                    loading="lazy"
+                    draggable={false}
+                  />
+                </GalleryThumbFrame>
               </button>
             );
           })}

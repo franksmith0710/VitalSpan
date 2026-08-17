@@ -69,4 +69,17 @@ describe("buildLegendSnapshot", () => {
     const snapshot = buildLegendSnapshot(vm, styleCtx());
     expect(snapshot.items.length).toBeGreaterThanOrEqual(2);
   });
+
+  it("produces shell legend items for pie and funnel", () => {
+    const pie = buildLegendSnapshot(smokeVm("pie"), styleCtx());
+    expect(pie.items.length).toBeGreaterThan(0);
+
+    const funnel = buildLegendSnapshot(smokeVm("funnel"), styleCtx());
+    expect(funnel.items.length).toBeGreaterThan(0);
+  });
+
+  it("produces fixed legend items for waterfall", () => {
+    const snapshot = buildLegendSnapshot(smokeVm("waterfall"), styleCtx());
+    expect(snapshot.items.map((item) => item.name)).toEqual(["增加", "减少"]);
+  });
 });

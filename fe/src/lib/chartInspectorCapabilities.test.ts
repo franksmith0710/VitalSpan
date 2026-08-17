@@ -17,11 +17,15 @@ describe("chartInspectorCapabilities", () => {
     expect(chartInspectorCapabilities("graph").legend).toBe(false);
   });
 
-  it("uses shell legend only for line and bar", () => {
+  it("uses shell legend for all chart types with legend except map-like", () => {
     expect(supportsEmbeddedShellLegend("bar")).toBe(true);
     expect(supportsEmbeddedShellLegend("line")).toBe(true);
-    expect(supportsEmbeddedShellLegend("pie")).toBe(false);
-    expect(supportsEmbeddedShellLegend("funnel")).toBe(false);
+    expect(supportsEmbeddedShellLegend("area-stack")).toBe(true);
+    expect(supportsEmbeddedShellLegend("pie")).toBe(true);
+    expect(supportsEmbeddedShellLegend("funnel")).toBe(true);
+    expect(supportsEmbeddedShellLegend("waterfall")).toBe(true);
+    expect(supportsEmbeddedShellLegend("map")).toBe(false);
+    expect(supportsEmbeddedShellLegend("gauge")).toBe(false);
   });
 
   it("hides advanced tab for kpi without timeRange", () => {

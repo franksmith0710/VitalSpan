@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
+import { GalleryThumbFrame } from "@/components/dashboard/GalleryThumbFrame";
 import {
   filterTemplateAssetsByScope,
   galleryPreviewFallbackUrl,
@@ -132,8 +133,8 @@ function GalleryThumb({
       src={primary}
       alt=""
       className={cn(
-        "w-full object-center",
-        wideTransparent ? "h-11 object-contain" : "h-9 object-contain",
+        "w-full object-center object-cover",
+        wideTransparent ? "h-11" : "h-9",
       )}
       loading="lazy"
       draggable={false}
@@ -190,20 +191,16 @@ function AssetThumbGrid({
               title={item.label}
               data-testid={`template-asset-${item.id}`}
               className={cn(
-                "overflow-hidden rounded border",
-                wideTransparent
-                  ? "bg-slate-900"
-                  : "bg-[repeating-conic-gradient(#e5e7eb_0%_25%,#f8fafc_0%_50%)] bg-[length:8px_8px] dark:bg-[repeating-conic-gradient(#1f2937_0%_25%,#111827_0%_50%)]",
+                "overflow-hidden rounded border border-gray-200 p-0 dark:border-gray-600",
                 active
                   ? "border-brand-500 ring-2 ring-brand-500/30"
-                  : "border-gray-200 hover:border-brand-400/60 dark:border-gray-600",
+                  : "hover:border-brand-400/60",
               )}
               onClick={() => onSelect(item.url)}
             >
-              <GalleryThumb
-                item={item}
-                wideTransparent={wideTransparent}
-              />
+              <GalleryThumbFrame className="h-9">
+                <GalleryThumb item={item} wideTransparent={wideTransparent} />
+              </GalleryThumbFrame>
             </button>
           );
         })}

@@ -1,5 +1,6 @@
 import { useState, type DragEvent } from "react";
 import { ImagePlus, Upload, X } from "lucide-react";
+import { GalleryThumbFrame } from "@/components/dashboard/GalleryThumbFrame";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -103,7 +104,7 @@ export function ImagePreviewCard({
 }: ImagePreviewCardProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900/50">
-      <div className="relative h-28 w-full overflow-hidden bg-[repeating-conic-gradient(#e5e7eb_0%_25%,#f8fafc_0%_50%)] bg-[length:10px_10px] dark:bg-[repeating-conic-gradient(#1f2937_0%_25%,#111827_0%_50%)]">
+      <GalleryThumbFrame className="h-28">
         <img
           key={previewUrl}
           src={previewUrl}
@@ -115,7 +116,7 @@ export function ImagePreviewCard({
           role="img"
           aria-label="图片预览"
         />
-      </div>
+      </GalleryThumbFrame>
       <div className="flex items-center gap-2 border-t border-gray-200 px-2 py-1.5 dark:border-gray-700">
         <p className="min-w-0 flex-1 truncate text-[10px] text-gray-500 dark:text-gray-400">
           {caption ?? "已设置图片"}

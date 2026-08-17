@@ -83,20 +83,9 @@ export function listSeriesGradientChartTypes(): ChartType[] {
   return [...SERIES_GRADIENT_CHART_TYPES];
 }
 
-const D3_INLINE_LEGEND_TYPES = new Set<ChartType>([
-  "pie",
-  "pie-donut",
-  "pie-rose",
-  "pie-donut-rose",
-  "waterfall",
-  "bidirectional-bar",
-  "funnel",
-]);
-
 export function resolveLegendEditorMode(chartType: ChartType): LegendEditorMode {
   const caps = chartInspectorCapabilities(chartType);
   if (!caps.legend) return "none";
-  if (D3_INLINE_LEGEND_TYPES.has(chartType)) return "d3";
   if (supportsEmbeddedShellLegend(chartType)) return "shell";
   return "d3";
 }

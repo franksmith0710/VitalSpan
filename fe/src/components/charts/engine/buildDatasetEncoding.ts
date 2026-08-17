@@ -317,22 +317,44 @@ function resolveDualAxesShellLegendNames(
   return [columnMetric, lineMetric].filter((name, index, all) => name && all.indexOf(name) === index);
 }
 
+function resolveDimensionCategoryLegendNames(
+  encoding: RenderSpec["encoding"],
+  rows: unknown[][],
+  columns: string[],
+): string[] {
+  const dim = encoding.dimensions[0]?.field ?? "";
+  const di = safeColIndex(columns, dim);
+  if (di === null) return [];
+  return uniqueOrdered(rows.map((r) => String(r[di] ?? "")).filter(Boolean));
+}
+
 export function resolveSeriesLegendNames(
   spec: Pick<RenderSpec, "chartType" | "encoding" | "styleVariant">,
   rows: unknown[][],
   columns: string[],
 ): string[] {
   const { chartType, encoding } = spec;
+  if (chartType === "waterfall") {
+    return ["增加", "减少"];
+  }
+  if (chartType === "bidirectional-bar") {
+    return ["左", "右"];
+  }
+  if (
+    chartType === "scatter" ||
+    chartType === "multi-scatter" ||
+    chartType === "quadrant"
+  ) {
+    const names = resolveDimensionCategoryLegendNames(encoding, rows, columns);
+    return names.length > 1 ? names : [];
+  }
   if (
     chartType === "pie" ||
     chartType.startsWith("pie-") ||
     chartType === "funnel" ||
     chartType === "radar"
   ) {
-    const dim = encoding.dimensions[0]?.field ?? "";
-    const di = safeColIndex(columns, dim);
-    if (di === null) return [];
-    return uniqueOrdered(rows.map((r) => String(r[di] ?? "")).filter(Boolean));
+    return resolveDimensionCategoryLegendNames(encoding, rows, columns);
   }
   if (chartType.startsWith("chart-mix")) {
     return resolveDualAxesShellLegendNames(spec, rows, columns);

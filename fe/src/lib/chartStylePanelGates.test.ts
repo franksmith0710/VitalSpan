@@ -55,8 +55,9 @@ describe("chartStylePanelGates", () => {
 
   it("resolves legend editor mode", () => {
     expect(resolveLegendEditorMode("bar")).toBe("shell");
-    expect(resolveLegendEditorMode("pie")).toBe("d3");
+    expect(resolveLegendEditorMode("pie")).toBe("shell");
     expect(resolveLegendEditorMode("gauge")).toBe("none");
-    expect(resolveLegendEditorMode("waterfall")).toBe("d3");
+    expect(resolveLegendEditorMode("waterfall")).toBe("shell");
+    expect(resolveLegendEditorMode("map")).toBe("none");
   });
 });

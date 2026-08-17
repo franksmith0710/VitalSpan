@@ -104,8 +104,21 @@ export function chartInspectorCapabilities(
   };
 }
 
+/** 嵌入看板/大屏不走 React 壳层图例的类型（地图色带、关系图节点等仍用图表内渲染） */
+const EMBEDDED_SHELL_LEGEND_BLOCKLIST = new Set<ChartViewConfig["chartType"]>([
+  "map",
+  "map-3d",
+  "heatmap",
+  "t-heatmap",
+  "gauge",
+  "liquid",
+  "sankey",
+  "graph",
+]);
+
 export function supportsEmbeddedShellLegend(chartType: ChartViewConfig["chartType"]): boolean {
-  return isLineOrBarType(chartType);
+  if (EMBEDDED_SHELL_LEGEND_BLOCKLIST.has(chartType)) return false;
+  return chartInspectorCapabilities(chartType).legend;
 }
 
 /** 高级 Tab 是否至少有一项可配置能力 */
