@@ -10,9 +10,7 @@ import {
   useStandardPacks,
 } from "./useStandardAnalysis";
 import { createEmptyAnalysisPack } from "./components/standardAnalysisUi";
-import { STANDARD_PACK_QUERY, STANDARD_PANEL_QUERY } from "./standardRoutes";
-
-export type StandardPanelMode = "view" | "settings";
+import { STANDARD_PACK_QUERY } from "./standardRoutes";
 
 export function buildStandardAnalysisSaveBody(draft: AnalysisPack): AnalysisPack {
   const base = {
@@ -38,17 +36,11 @@ export function buildStandardAnalysisSaveBody(draft: AnalysisPack): AnalysisPack
   };
 }
 
-export function useStandardAnalysisEditor(initialPanel?: StandardPanelMode) {
+export function useStandardAnalysisEditor() {
   const [searchParams, setSearchParams] = useSearchParams();
   const packsQuery = useStandardPacks();
   const packs = packsQuery.data?.items ?? [];
   const { upsert, remove } = useStandardPackMutations();
-
-  const panelFromUrl = searchParams.get(STANDARD_PANEL_QUERY);
-  const panel: StandardPanelMode =
-    panelFromUrl === "settings" || panelFromUrl === "view"
-      ? panelFromUrl
-      : initialPanel ?? "view";
 
   const [draft, setDraft] = useState<AnalysisPack>(createEmptyAnalysisPack());
   const [editingKey, setEditingKey] = useState<string | null>(null);
@@ -68,12 +60,6 @@ export function useStandardAnalysisEditor(initialPanel?: StandardPanelMode) {
     [boundConfigQuery.data?.columns],
   );
 
-  const setPanel = (next: StandardPanelMode) => {
-    const params = new URLSearchParams(searchParams);
-    params.set(STANDARD_PANEL_QUERY, next);
-    setSearchParams(params, { replace: true });
-  };
-
   const selectPack = (packKey: string) => {
     const pack = packs.find((item) => item.packKey === packKey);
     if (!pack) return;
@@ -89,31 +75,20 @@ export function useStandardAnalysisEditor(initialPanel?: StandardPanelMode) {
     setIsCreating(true);
     setEditingKey(null);
     setDraft(createEmptyAnalysisPack());
-    setPanel("settings");
     const params = new URLSearchParams(searchParams);
     params.delete(STANDARD_PACK_QUERY);
     setSearchParams(params, { replace: true });
   };
 
   useEffect(() => {
-    if (bootstrapped || isCreating) return;
+    if (bootstrapped || isCreating || editingKey || packs.length === 0) return;
     const packFromUrl = searchParams.get(STANDARD_PACK_QUERY);
-    if (packFromUrl) {
-      const pack = packs.find((item) => item.packKey === packFromUrl);
-      if (pack) {
-        setDraft(pack);
-        setEditingKey(pack.packKey);
-        setBootstrapped(true);
-      }
-      return;
-    }
-    if (panel === "settings" && packs.length > 0 && !editingKey) {
-      const initial = packs[0];
-      setDraft(initial);
-      setEditingKey(initial.packKey);
-      setBootstrapped(true);
-    }
-  }, [bootstrapped, editingKey, isCreating, packs, panel, searchParams]);
+    const initial = packFromUrl ? packs.find((pack) => pack.packKey === packFromUrl) : packs[0];
+    if (!initial) return;
+    setDraft(initial);
+    setEditingKey(initial.packKey);
+    setBootstrapped(true);
+  }, [bootstrapped, editingKey, isCreating, packs, searchParams]);
 
   const onSave = async () => {
     if (!draft.packKey.trim()) {
@@ -148,8 +123,6 @@ export function useStandardAnalysisEditor(initialPanel?: StandardPanelMode) {
       setIsCreating(false);
       setBootstrapped(true);
       setDraft(body);
-      selectPack(draft.packKey);
-      setPanel("view");
       toast.success("分析包已保存");
     } catch (err) {
       toast.error(mapApiError(err));
@@ -176,8 +149,6 @@ export function useStandardAnalysisEditor(initialPanel?: StandardPanelMode) {
   return {
     packsQuery,
     packs,
-    panel,
-    setPanel,
     draft,
     setDraft,
     editingKey,

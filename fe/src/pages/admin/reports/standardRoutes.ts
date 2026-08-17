@@ -1,17 +1,16 @@
 /** Query key for standard analysis pack deep-link from Report Center Hub. */
 export const STANDARD_PACK_QUERY = "pack";
-export const STANDARD_PANEL_QUERY = "panel";
 
-export function standardAnalysisPath(packKey?: string, panel: "view" | "settings" = "view"): string {
-  const params = new URLSearchParams();
-  if (packKey) params.set(STANDARD_PACK_QUERY, packKey);
-  if (panel === "settings") params.set(STANDARD_PANEL_QUERY, "settings");
-  const query = params.toString();
-  return query ? `/admin/reports/standard?${query}` : "/admin/reports/standard";
+export function standardAnalysisPath(packKey?: string): string {
+  if (!packKey) return "/admin/reports/standard";
+  const params = new URLSearchParams({ [STANDARD_PACK_QUERY]: packKey });
+  return `/admin/reports/standard?${params.toString()}`;
 }
 
 export function standardAnalysisConfigPath(packKey?: string): string {
-  return standardAnalysisPath(packKey, "settings");
+  if (!packKey) return "/admin/reports/standard/config";
+  const params = new URLSearchParams({ [STANDARD_PACK_QUERY]: packKey });
+  return `/admin/reports/standard/config?${params.toString()}`;
 }
 
 export const THEME_LABELS: Record<string, string> = {

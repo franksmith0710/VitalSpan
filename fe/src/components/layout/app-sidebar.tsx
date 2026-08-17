@@ -16,7 +16,7 @@ import {
 import { useSidebar } from "@/context/sidebar-context";
 import { prefetchAdminRoute } from "@/lib/routePrefetch";
 import { beginAdminNavTransition } from "@/lib/adminHeavyRenderSuspend";
-import { isReportCenterNavActive, isReportCenterNavGroup, resolveReportCenterSubNavPath } from "@/lib/reportCenterNav";
+import { isReportCenterNavGroup, resolveReportCenterSubNavPath } from "@/lib/reportCenterNav";
 
 export type NavSubItem = {
   name: string;
@@ -281,10 +281,7 @@ function SidebarNavItem({
     return null;
   }
 
-  const reportCenterItem = item.path === "/admin/reports/center";
-  const active = reportCenterItem
-    ? isReportCenterNavActive(location.pathname)
-    : isActive(item.path);
+  const active = isActive(item.path);
 
   const link = (
     <Link

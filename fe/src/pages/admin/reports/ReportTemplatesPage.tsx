@@ -27,7 +27,7 @@ import { type CatalogNode, fetchCatalogExtension, useAllCatalogNodes, useReportT
 import { useReportCenterPreferences } from "./useReportCenterPrefs";
 import { queryKeys } from "@/lib/queryKeys";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
-import { ReportCenterTabNav } from "./components/ReportCenterTabNav";
+import { ReportCenterBackLink } from "./components/ReportCenterBackLink";
 import {
   DOC_TEMPLATE_PRODUCT_LINE,
 } from "@/lib/reportCenterNav";
@@ -317,9 +317,13 @@ export function ReportTemplatesPage() {
     <AdminPageShell
       title="文档模板"
       description={`${DOC_TEMPLATE_PRODUCT_LINE} 在本页维护目录、扩展配置、模板块与调度。`}
-      actions={nodes.length > 0 ? createActions : null}
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
+          <ReportCenterBackLink />
+          {nodes.length > 0 ? createActions : null}
+        </div>
+      }
     >
-      <ReportCenterTabNav />
       {nodesQuery.isError ? (
         <PageErrorBanner message={mapApiError(nodesQuery.error)} onRetry={() => void nodesQuery.refetch()} />
       ) : null}

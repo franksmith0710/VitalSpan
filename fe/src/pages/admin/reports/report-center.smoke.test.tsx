@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen, cleanup, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -58,22 +58,23 @@ describe("ReportCenterPage smoke", () => {
     });
   });
 
-  it("lists standard analysis section", async () => {
+  it("shows hub entry cards for standard analysis", async () => {
     renderPage();
-    expect(await screen.findByTestId("report-center-standard-heading")).toBeInTheDocument();
-    expect(await screen.findByText("标准A")).toBeInTheDocument();
+    const link = await screen.findByRole("link", { name: "标准分析" });
+    await waitFor(() => {
+      expect(link).toHaveAttribute("href", "/admin/reports/standard?pack=k1");
+    });
   });
 
-  it("standard link opens workbench", async () => {
+  it("standard entry links to workbench", async () => {
     renderPage();
-    expect(await screen.findByText("标准A")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "打开 标准A" })).toHaveAttribute(
-      "href",
-      "/admin/reports/standard?pack=k1",
-    );
+    const link = await screen.findByRole("link", { name: "标准分析" });
+    await waitFor(() => {
+      expect(link).toHaveAttribute("href", "/admin/reports/standard?pack=k1");
+    });
   });
 
-  it("hides standard section when empty", async () => {
+  it("hides manage entry cards when standard packs empty", async () => {
     mockApiFetch.mockImplementation(async (path: string) => {
       if (path === "/api/v1/reports/standard/packs") return { items: [], total: 0 };
       if (path === "/api/v1/reports/center/preferences") return { favorites: [], recent: [] };
@@ -83,6 +84,6 @@ describe("ReportCenterPage smoke", () => {
     });
     renderPage();
     expect(await screen.findByTestId("admin-page-header-frame")).toBeInTheDocument();
-    expect(screen.queryByTestId("report-center-standard-heading")).not.toBeInTheDocument();
+    expect(screen.queryByText("1 个分析包")).not.toBeInTheDocument();
   });
 });

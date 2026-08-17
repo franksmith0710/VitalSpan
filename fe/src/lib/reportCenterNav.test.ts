@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   canRetryReportSchedules,
+  isReportCenterNavActive,
   localizeCenterResourceType,
   resolveCenterRecentHref,
   resolveReportCenterSubNavPath,
@@ -44,5 +45,16 @@ describe("reportCenterNav", () => {
     expect(resolveReportCenterSubNavPath("/admin/reports/schedules")).toBe(
       "/admin/reports/schedules",
     );
+    expect(resolveReportCenterSubNavPath("/admin/reports/standard/config")).toBe(
+      "/admin/reports/standard",
+    );
+  });
+
+  it("highlights report center nav for all report routes", () => {
+    expect(isReportCenterNavActive("/admin/reports/center")).toBe(true);
+    expect(isReportCenterNavActive("/admin/reports/standard")).toBe(true);
+    expect(isReportCenterNavActive("/admin/reports/standard/config")).toBe(true);
+    expect(isReportCenterNavActive("/admin/reports/templates")).toBe(true);
+    expect(isReportCenterNavActive("/admin/reports/dashboards")).toBe(false);
   });
 });

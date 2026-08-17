@@ -21,7 +21,10 @@ export const HUB_CARD_PREVIEW_CONTENT_CLASS =
 
 /** 预览区 hover 操作浮层（看板 / 模板 / 组件库 Hub 卡片） */
 export const HUB_CARD_PREVIEW_HOVER_OVERLAY_CLASS =
-  "pointer-events-none absolute inset-0 z-10 flex items-center justify-center gap-2 bg-gray-900/30 opacity-0 backdrop-blur-[3px] transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100";
+  "pointer-events-none absolute inset-0 z-10 flex flex-row flex-wrap items-center justify-center gap-2 p-2.5 bg-gray-900/30 opacity-0 backdrop-blur-[3px] transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100";
+
+/** 浮层内主/次按钮：横排紧凑、长文案不换行 */
+export const HUB_CARD_PREVIEW_HOVER_BTN_CLASS = "shrink-0 whitespace-nowrap";
 
 /** 浮层上的次要按钮（浅底预览上） */
 export const HUB_CARD_PREVIEW_HOVER_OUTLINE_BTN_CLASS =

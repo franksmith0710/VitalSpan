@@ -7,6 +7,7 @@ import {
   HUB_CARD_FOOTER_CLASS,
   HUB_CARD_PREVIEW_CONTENT_CLASS,
   HUB_CARD_PREVIEW_FRAME_CLASS,
+  HUB_CARD_PREVIEW_HOVER_BTN_CLASS,
   HUB_CARD_PREVIEW_HOVER_OUTLINE_BTN_CLASS,
   HUB_CARD_PREVIEW_HOVER_OVERLAY_CLASS,
   HUB_CARD_SHELL_CLASS,
@@ -207,7 +208,7 @@ export function DashboardListCard({
           />
         </div>
         <div className={HUB_CARD_PREVIEW_HOVER_OVERLAY_CLASS}>
-          <Button asChild variant="primary" size="sm">
+          <Button asChild variant="primary" size="sm" className={HUB_CARD_PREVIEW_HOVER_BTN_CLASS}>
             <Link to={primaryPath}>{canEdit ? "编辑" : "查看"}</Link>
           </Button>
           {canEdit ? (
@@ -215,7 +216,7 @@ export function DashboardListCard({
               asChild
               variant="outline"
               size="sm"
-              className={HUB_CARD_PREVIEW_HOVER_OUTLINE_BTN_CLASS}
+              className={`${HUB_CARD_PREVIEW_HOVER_BTN_CLASS} ${HUB_CARD_PREVIEW_HOVER_OUTLINE_BTN_CLASS}`}
             >
               <Link to={viewPath}>预览</Link>
             </Button>

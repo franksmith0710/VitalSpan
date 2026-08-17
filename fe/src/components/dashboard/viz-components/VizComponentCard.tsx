@@ -25,6 +25,7 @@ import {
   HUB_CARD_BODY_MORE_TRIGGER_CLASS,
   HUB_CARD_PREVIEW_CONTENT_CLASS,
   HUB_CARD_PREVIEW_FRAME_CLASS,
+  HUB_CARD_PREVIEW_HOVER_BTN_CLASS,
   HUB_CARD_PREVIEW_HOVER_OUTLINE_BTN_CLASS,
   HUB_CARD_PREVIEW_HOVER_OVERLAY_CLASS,
   HUB_CARD_SHELL_CLASS,
@@ -105,7 +106,7 @@ export function VizComponentCard({
           />
         </div>
         <div className={HUB_CARD_PREVIEW_HOVER_OVERLAY_CLASS}>
-          <Button type="button" variant="primary" size="sm" disabled={pending} asChild>
+          <Button type="button" variant="primary" size="sm" className={HUB_CARD_PREVIEW_HOVER_BTN_CLASS} disabled={pending} asChild>
             <Link to={editPath}>
               <Pencil className="size-3.5" aria-hidden />
               {COMPONENT_ACTIONS.edit}
@@ -115,7 +116,7 @@ export function VizComponentCard({
             type="button"
             variant="outline"
             size="sm"
-            className={HUB_CARD_PREVIEW_HOVER_OUTLINE_BTN_CLASS}
+            className={`${HUB_CARD_PREVIEW_HOVER_BTN_CLASS} ${HUB_CARD_PREVIEW_HOVER_OUTLINE_BTN_CLASS}`}
             disabled={pending}
             onClick={onInsert}
           >

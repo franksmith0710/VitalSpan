@@ -98,7 +98,17 @@ function outsideLabelLineLengths(outerR: number, fontSize: number): { length1: n
   };
 }
 
-function estimateLabelPixelWidth(text: string, fontSize: number): number {
+/** 圆心到外标签右/左外沿的水平占用（半径 + 引线 + 字宽） */
+export function pieOutsideLabelExtentFromCenter(
+  outerR: number,
+  fontSize: number,
+  textWidth: number,
+): number {
+  const { length1, length2 } = outsideLabelLineLengths(outerR, fontSize);
+  return outerR + length1 + length2 + OUTSIDE_LABEL_TEXT_GAP + textWidth;
+}
+
+export function estimatePieOutsideLabelWidth(text: string, fontSize: number): number {
   let width = 0;
   for (const ch of text) {
     const code = ch.codePointAt(0) ?? 0;
@@ -181,7 +191,7 @@ function labelTextBBox(
   text: string,
   fontSize: number,
 ): LabelBBox {
-  const w = estimateLabelPixelWidth(text, fontSize);
+  const w = estimatePieOutsideLabelWidth(text, fontSize);
   const h = fontSize + 4;
   const cy = geo.textY;
   if (geo.anchor === "start") {
@@ -341,11 +351,18 @@ function finalizeLineGeometry(geo: PieOutsideLabelGeometry): void {
   geo.y2 = geo.textY;
 }
 
+export type PieOutsideLabelBounds = {
+  ymin: number;
+  ymax: number;
+  xmin?: number;
+  xmax?: number;
+};
+
 function layoutSide(
   sideItems: LayoutItem[],
   outerR: number,
   fontSize: number,
-  bounds: { ymin: number; ymax: number },
+  bounds: PieOutsideLabelBounds,
 ): void {
   const dir: 1 | -1 = sideItems[0]?.geo.isRight ? 1 : -1;
 
@@ -366,7 +383,11 @@ function layoutSide(
 
   for (const item of sideItems) {
     const box = labelTextBBox(item.geo, item.text, fontSize);
-    if (box.top < bounds.ymin || box.bottom > bounds.ymax) {
+    const overflowY = box.top < bounds.ymin || box.bottom > bounds.ymax;
+    const overflowX =
+      (bounds.xmin != null && box.left < bounds.xmin) ||
+      (bounds.xmax != null && box.right > bounds.xmax);
+    if (overflowY || overflowX) {
       item.visible = false;
     }
   }
@@ -376,7 +397,7 @@ function avoidOutsideLabelOverlap(
   items: LayoutItem[],
   outerR: number,
   fontSize: number,
-  bounds: { ymin: number; ymax: number },
+  bounds: PieOutsideLabelBounds,
   showAll = false,
 ): void {
   const right: LayoutItem[] = [];
@@ -413,7 +434,7 @@ export function layoutPieOutsideLabels(
   candidates: PieOutsideLabelCandidate[],
   outerR: number,
   fontSize: number,
-  bounds: { ymin: number; ymax: number },
+  bounds: PieOutsideLabelBounds,
   showAll = false,
 ): Map<string, PieOutsideLabelPlaced> {
   const result = new Map<string, PieOutsideLabelPlaced>();
@@ -470,7 +491,10 @@ export function layoutPieOutsideLabels(
   return result;
 }
 
-export function pieOutsideLabelBounds(outerR: number, halfHeight?: number): { ymin: number; ymax: number } {
+export function pieOutsideLabelBounds(
+  outerR: number,
+  halfHeight?: number,
+): PieOutsideLabelBounds {
   const ymax = halfHeight ?? outerR * 1.42;
   return { ymin: -ymax, ymax };
 }

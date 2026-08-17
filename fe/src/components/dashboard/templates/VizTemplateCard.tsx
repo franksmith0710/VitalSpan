@@ -34,6 +34,7 @@ import {
   HUB_CARD_BODY_MORE_TRIGGER_CLASS,
   HUB_CARD_PREVIEW_CONTENT_CLASS,
   HUB_CARD_PREVIEW_FRAME_CLASS,
+  HUB_CARD_PREVIEW_HOVER_BTN_CLASS,
   HUB_CARD_PREVIEW_HOVER_OUTLINE_BTN_CLASS,
   HUB_CARD_PREVIEW_HOVER_OVERLAY_CLASS,
   HUB_CARD_SHELL_CLASS,
@@ -128,7 +129,7 @@ export function VizTemplateCard({
           />
         </div>
         <div className={HUB_CARD_PREVIEW_HOVER_OVERLAY_CLASS}>
-          <Button type="button" variant="primary" size="sm" disabled={pending} onClick={onUse}>
+          <Button type="button" variant="primary" size="sm" className={HUB_CARD_PREVIEW_HOVER_BTN_CLASS} disabled={pending} onClick={onUse}>
             {TEMPLATE_ACTIONS.use}
           </Button>
           {canEdit ? (
@@ -136,7 +137,7 @@ export function VizTemplateCard({
               type="button"
               variant="outline"
               size="sm"
-              className={HUB_CARD_PREVIEW_HOVER_OUTLINE_BTN_CLASS}
+              className={`${HUB_CARD_PREVIEW_HOVER_BTN_CLASS} ${HUB_CARD_PREVIEW_HOVER_OUTLINE_BTN_CLASS}`}
               disabled={pending}
               title={editLayoutTitle}
               onClick={onEditLayout}
@@ -148,7 +149,7 @@ export function VizTemplateCard({
             type="button"
             variant="outline"
             size="sm"
-            className={HUB_CARD_PREVIEW_HOVER_OUTLINE_BTN_CLASS}
+            className={`${HUB_CARD_PREVIEW_HOVER_BTN_CLASS} ${HUB_CARD_PREVIEW_HOVER_OUTLINE_BTN_CLASS}`}
             disabled={pending}
             onClick={() => setPreviewOpen(true)}
           >

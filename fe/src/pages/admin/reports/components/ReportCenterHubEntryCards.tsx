@@ -12,6 +12,7 @@ type StandardSummary = {
 type Props = {
   standardCount: number;
   pinnedStandard?: StandardSummary | null;
+  pinnedPackKey?: string | null;
   templateCount: number;
   activeScheduleCount: number;
   canManage: boolean;
@@ -33,6 +34,7 @@ function HubEntryCard({
   return (
     <Link
       to={href}
+      aria-label={title}
       className="group flex items-start gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-sm transition-colors hover:border-brand-200 hover:bg-brand-50/20 dark:border-gray-800 dark:bg-white/[0.03] dark:hover:border-brand-500/30 dark:hover:bg-brand-500/5"
     >
       <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-600 dark:bg-white/[0.06] dark:text-gray-400">
@@ -60,20 +62,22 @@ function HubEntryCard({
 export function ReportCenterHubEntryCards({
   standardCount,
   pinnedStandard,
+  pinnedPackKey,
   templateCount,
   activeScheduleCount,
   canManage,
 }: Props) {
+  const standardDescription =
+    pinnedPackKey && pinnedStandard
+      ? `置顶：${pinnedStandard.displayName}`
+      : "面向业务对象的决策分析，支持周期快照对比。";
+
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
       <HubEntryCard
         icon={<TrendingUp className="size-5" aria-hidden />}
         title="标准分析"
-        description={
-          pinnedStandard
-            ? `置顶：${pinnedStandard.displayName}`
-            : "面向业务对象的决策分析，支持周期快照对比。"
-        }
+        description={standardDescription}
         stat={standardCount > 0 ? `${standardCount} 个分析包` : undefined}
         href={pinnedStandard ? standardAnalysisPath(pinnedStandard.packKey) : "/admin/reports/standard"}
       />

@@ -19,7 +19,6 @@ import { useReportCenterPreferences } from "./useReportCenterPrefs";
 import { useAuth } from "@/context/auth-context";
 import { ReportCenterHeaderActions, ReportCenterQuickAside } from "./components/ReportCenterScheduleHub";
 import { ReportCenterHubEntryCards } from "./components/ReportCenterHubEntryCards";
-import { ReportCenterTabNav } from "./components/ReportCenterTabNav";
 import { ScheduleRecentFailuresPanel } from "./components/ScheduleRecentFailuresPanel";
 import { useReportSchedulesList, useReportScheduleMutations } from "./useReportSchedules";
 
@@ -66,6 +65,7 @@ export function ReportCenterPage() {
     [standardItems, pinnedKeys],
   );
   const pinnedStandard = sortedStandardItems[0] ?? null;
+  const pinnedPackKey = pinnedKeys[0] ?? null;
   const schedules = schedulesQuery.data?.items ?? [];
   const activeScheduleCount = schedules.filter((item) => item.status === "scheduled").length;
 
@@ -77,10 +77,9 @@ export function ReportCenterPage() {
           <FileBarChart className="size-6" aria-hidden />
         </AdminPageHeaderIcon>
       }
-      description="统一入口：标准分析、文档模板与定时投递。"
+      description="最近访问、失败告警与各模块快捷入口。"
       actions={<ReportCenterHeaderActions canManage={canManage} />}
     >
-      <ReportCenterTabNav />
       {schedulesQuery.isError ? (
         <PageErrorBanner
           message={mapApiError(schedulesQuery.error)}
@@ -93,6 +92,7 @@ export function ReportCenterPage() {
           <ReportCenterHubEntryCards
             standardCount={standardItems.length}
             pinnedStandard={pinnedStandard}
+            pinnedPackKey={pinnedPackKey}
             templateCount={templatesQuery.data?.length ?? 0}
             activeScheduleCount={activeScheduleCount}
             canManage={canManage}

@@ -231,4 +231,23 @@ describe("pieLabels", () => {
     }
     expect(new Set(horizontals).size).toBe(horizontals.length);
   });
+
+  it("hides labels that overflow the horizontal canvas bounds", () => {
+    const outerR = 80;
+    const candidates = [
+      {
+        key: "left",
+        midAngle: Math.PI * 1.5,
+        sliceAngle: 0.4,
+        text: "海南省 48,102 (2.20%)",
+      },
+    ];
+    const placed = layoutPieOutsideLabels(candidates, outerR, 11, {
+      ymin: -120,
+      ymax: 120,
+      xmin: -90,
+      xmax: 90,
+    });
+    expect(placed.get("left")?.visible).toBe(false);
+  });
 });

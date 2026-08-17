@@ -101,7 +101,7 @@ cases/<域>-<简短主题>.md
 | CASE-2026-08-14-011 | [fe-chart-jump-removed.md](./cases/fe-chart-jump-removed.md) | 图表跳转已下线, 勿再接入 onJumpClick / 跳转设置 |
 | CASE-2026-08-14-012 | [fe-chart-palette-trigger-label-center.md](./cases/fe-chart-palette-trigger-label-center.md) | 配色方案, 品牌, 左对齐, SelectValue |
 | CASE-2026-08-14-013 | [fe-chart-datazoom-svg-transform.md](./cases/fe-chart-datazoom-svg-transform.md) | 缩略轴, dataZoom, d3.zoom, 跳动, 类目窗口 |
-| CASE-2026-08-14-014 | [be-builtin-template-demo-encoding.md](./cases/be-builtin-template-demo-encoding.md) | 可视化模板, Dataset 精简, 空图, 维指错绑 |
+| CASE-2026-08-17-001 | [fe-pie-outside-label-clip.md](./cases/fe-pie-outside-label-clip.md) | 饼图, 玫瑰图, 外标签, 裁切, 叠字, capPieRadiusForOutsideLabels |
 
 ## 维护规则
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   backgroundImageFitSupportsPosition,
   inferDefaultBackgroundImageFitForUrl,
+  normalizeBackgroundImageFitForUi,
   resolveWidgetBackgroundImageLayerStyle,
 } from "./widgetBackgroundImageFit";
 
@@ -74,5 +75,12 @@ describe("widgetBackgroundImageFit", () => {
   it("stretch does not support position UI", () => {
     expect(backgroundImageFitSupportsPosition("stretch")).toBe(false);
     expect(backgroundImageFitSupportsPosition("widthFit")).toBe(true);
+  });
+
+  it("maps legacy fit modes to contain for simplified UI", () => {
+    expect(normalizeBackgroundImageFitForUi("widthFit")).toBe("contain");
+    expect(normalizeBackgroundImageFitForUi("heightFit")).toBe("contain");
+    expect(normalizeBackgroundImageFitForUi("original")).toBe("contain");
+    expect(normalizeBackgroundImageFitForUi("cover")).toBe("cover");
   });
 });

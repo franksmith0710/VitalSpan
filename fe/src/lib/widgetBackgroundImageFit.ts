@@ -29,12 +29,17 @@ export const WIDGET_BACKGROUND_IMAGE_FIT_OPTIONS: {
   label: string;
 }[] = [
   { value: "stretch", label: "拉伸" },
-  { value: "widthFit", label: "按宽等比" },
-  { value: "heightFit", label: "按高等比" },
   { value: "contain", label: "适应" },
   { value: "cover", label: "覆盖" },
-  { value: "original", label: "原始" },
 ];
+
+/** 面板展示：存量 widthFit/heightFit/original 映射到「适应」 */
+export function normalizeBackgroundImageFitForUi(
+  fit: WidgetBackgroundImageFit | undefined,
+): WidgetBackgroundImageFit {
+  if (fit === "stretch" || fit === "contain" || fit === "cover") return fit;
+  return "contain";
+}
 
 export const WIDGET_BACKGROUND_IMAGE_POSITION_OPTIONS: {
   value: WidgetBackgroundImagePosition;

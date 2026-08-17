@@ -23,7 +23,7 @@ import { RoleListPage } from "@/pages/admin/system/roles/RoleListPage";
 import { UserListPage } from "@/pages/admin/system/users/UserListPage";
 import { EntityOverviewPage } from "@/pages/admin/entities/EntityOverviewPage";
 import { StandardAnalysisPage } from "@/pages/admin/reports/StandardAnalysisPage";
-import { StandardAnalysisConfigRedirect } from "@/pages/admin/reports/StandardAnalysisConfigRedirect";
+import { StandardAnalysisConfigPage } from "@/pages/admin/reports/StandardAnalysisConfigPage";
 import { ReportTemplatesPage } from "@/pages/admin/reports/ReportTemplatesPage";
 import { ThemeAnalysisPage } from "@/pages/admin/themes/ThemeAnalysisPage";
 import { EmbedSdkDemoPage } from "@/pages/embed/EmbedSdkDemoPage";
@@ -215,7 +215,7 @@ export function AppRoutes() {
           />
           <Route path="entities/overview" element={<RequireCapabilityName capability="theme:*"><EntityOverviewPage /></RequireCapabilityName>} />
           <Route path="reports/standard" element={<RequireCapabilityName capability="report:read"><StandardAnalysisPage /></RequireCapabilityName>} />
-          <Route path="reports/standard/config" element={<RequireCapabilityName capability="report:manage"><StandardAnalysisConfigRedirect /></RequireCapabilityName>} />
+          <Route path="reports/standard/config" element={<RequireCapabilityName capability="report:manage"><StandardAnalysisConfigPage /></RequireCapabilityName>} />
           <Route path="reports/center" element={<RequireCapabilityName capability="report:read"><Lazy><ReportCenterPage /></Lazy></RequireCapabilityName>} />
           <Route path="reports/view/:nodeId" element={<RequireCapabilityName capability="report:read"><ReportViewPage /></RequireCapabilityName>} />
           <Route path="reports/templates/:nodeId?" element={<RequireCapabilityName capability="report:manage"><ReportTemplatesPage /></RequireCapabilityName>} />
