@@ -103,8 +103,17 @@ describe("templateAssetCatalog", () => {
     expect(galleryPreviewUrl(screenBg!)).toContain("/admin/template-assets/packs/gov-enterprise-v1/thumbs/");
   });
 
+  it("excludes grid-pattern canvas backgrounds from gallery", () => {
+    const canvas = filterTemplateAssetsByScope("canvas");
+    expect(canvas.some((item) => item.pattern === "honeycomb")).toBe(false);
+    expect(canvas.some((item) => item.pattern === "hud-scan")).toBe(false);
+    expect(canvas.some((item) => item.pattern === "circuit")).toBe(false);
+    expect(canvas.some((item) => item.pattern === "aurora")).toBe(true);
+    expect(canvas.some((item) => item.pattern === "command")).toBe(true);
+  });
+
   it("uses packs thumbs for canvas-light preview", () => {
-    const light = TEMPLATE_ASSET_CATALOG.find((item) => item.id === "canvas-light-lime-honeycomb");
+    const light = TEMPLATE_ASSET_CATALOG.find((item) => item.id === "canvas-light-lime-aurora");
     expect(light).toBeDefined();
     expect(light!.thumbUrl).toContain("/packs/gov-enterprise-v1/thumbs/");
     expect(galleryPreviewUrl(light!)).toContain("/admin/template-assets/packs/gov-enterprise-v1/thumbs/");

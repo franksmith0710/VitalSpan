@@ -5,7 +5,7 @@
 
 ```yaml
 version: 1.0.1
-last_updated: 2026-08-13
+last_updated: 2026-08-17
 status: bootstrap
 srs_ref: docs/srs/全生命周期系统需求规格说明书.md
 prd_ref: docs/automate/prd.md
@@ -154,12 +154,27 @@ flowchart TB
 - **与模板区分**：`viz-templates` 为整页 layout 信封；`viz-components` 为单 widget 级组织库
 - **代码锚点**：`backend/app/viz/components/` · `fe/src/lib/resolveVizComponent.ts` · `fe/src/components/dashboard/VizReuseDialog.tsx`
 
-### ADR-12 · GEO-IRON-01（地图铁律）
+### ADR-12 · GEO-IRON-01（地图铁律 · 双路径）
 
-- **仅中国**：中华人民共和国省级行政区（可扩展省→市下钻，资产仍为离线 GeoJSON）
+#### A. Choropleth（`map` / `map-3d`）
+
+- **仅中国**：省级行政区（可省→市下钻，资产仍为离线 GeoJSON）
 - **仅离线**：`GeoEnginePort` / `OfflineGeoPort` + 仓库内或平台分发的 `.json`；**禁止**运行时拉取瓦片 CDN
 - **3D 地形纹理**（仅 `map-3d`）：离线 hillshade WebP 贴 Extrude 顶面；`pnpm run build:geo-terrain` → `fe/src/assets/geo/terrain/`；详见 [ui/map-texture.md](ui/map-texture.md)
-- **禁止**：高德/天地图/腾讯/Mapbox/MapLibre/OSM、AntV L7 在线 Scene、世界地图/境外行政区、地图 Key 配置项
+- **禁止**：MapLibre / 瓦片底图 / 地图 Key（本路径）
+
+#### B. GIS 图（`gis-map` · chartType）
+
+- **引擎**：同页 **MapLibre GL JS**（懒加载 chunk）；**不做** iframe / sandbox / GeoLibre 运行时
+- **默认底图**：`blank` 或离线中国省界 GeoJSON（`fe/src/assets/geo/china-provinces.json`）；**禁止**默认 OpenFreeMap / 高德 / 天地图 / Cesium Ion
+- **配置**：layout 存校验后的 `gisProject` JSON（`nativeBody.gisProject`）；AI 走 vs-ai-spec **L1/L2**，禁止 L3 customViz 内嵌 MapLibre
+- **出数**：Dataset 查询在父页完成；引擎不持有 JWT（二期：Dataset→GeoJSON join；一期仅离线省界/空白）
+- **导出**：Playwright PDF 对 WebGL 不稳定 → 允许空白/静态降级（见 ADR-18 补充）
+- **代码锚点**：`fe/src/components/charts/engine/maplibre/` · `backend/app/viz/builtin/map.py`
+
+#### 共用禁止
+
+- 高德/天地图/腾讯/Mapbox/OSM 在线瓦片、AntV L7 在线 Scene、世界地图/境外行政区默认底图、地图 Key 配置项（`gis-map` 未登记服务时）
 - **执行规则**：`.cursor/rules/geo-map-offline-china.mdc`（`alwaysApply: true`）
 
 ### ADR-17 · JWT SM2 签名（废止 HS256）

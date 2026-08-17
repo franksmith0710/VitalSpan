@@ -38,6 +38,19 @@ export const GALLERY_EXCLUDED_CATEGORIES = new Set([
   "top-decor-clear",
 ]);
 
+/** 图库不展示：蜂窝/电路/HUD 网格等强网格纹理背景 */
+export const GALLERY_EXCLUDED_PATTERNS = new Set([
+  "honeycomb",
+  "circuit",
+  "hud-scan",
+  "de-circuit-wing",
+  "de-circuit-sym",
+  "grid",
+  "grid-ops",
+  "mesh",
+  "hex-nodes",
+]);
+
 const CANVAS_CATEGORIES = new Set(["canvas-dark", "canvas-light", "screen-bg"]);
 
 const WIDGET_CATEGORIES = new Set([
@@ -51,7 +64,9 @@ const WIDGET_CATEGORIES = new Set([
 const BACKGROUND_IMAGE_CATEGORIES = new Set([...WIDGET_CATEGORIES, ...CANVAS_CATEGORIES]);
 
 export function isGalleryEligibleAsset(item: TemplateAssetCatalogItem): boolean {
-  return !GALLERY_EXCLUDED_CATEGORIES.has(item.category);
+  if (GALLERY_EXCLUDED_CATEGORIES.has(item.category)) return false;
+  if (GALLERY_EXCLUDED_PATTERNS.has(item.pattern)) return false;
+  return true;
 }
 
 /** @deprecated 使用 resolvePublicAssetUrl；保留别名避免大范围重命名 */

@@ -31,6 +31,7 @@ export function getEngineIdForChartType(chartType: string): ChartEngineId {
   const plugin = resolvePlugin(chartType);
   if (plugin) {
     if (plugin.renderer === "table") return "table";
+    if (plugin.library === "maplibre") return "d3";
     if (plugin.library === "d3") return "d3";
     return "antv";
   }

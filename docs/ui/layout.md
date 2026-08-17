@@ -235,6 +235,17 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 | 预览 | `TemplateCardPreview` 优先 live 布局预览（非静态 SVG） |
 | 代码锚点 | `VizTemplatesHubPage.tsx` · `VizTemplateCard.tsx` · `templateLabels.ts` · [anchor.md](./anchor.md) |
 
+### 报表中心 Hub（RPT-002/005 · 2026-08-17 多入口）
+
+| 项 | 说明 |
+|----|------|
+| 侧栏 | 「报表中心」展开四子项：工作台 / 标准分析 / 文档模板 / 调度与投递（`nav-manifest.tsx`） |
+| 工作台 | `/admin/reports/center` — `ReportCenterHubEntryCards` + 失败摘要 + 最近访问；**非**完整 CRUD 列表 |
+| 标准分析 | `/admin/reports/standard` 消费；`/admin/reports/standard/config` 配置（manage） |
+| 三条产品线 | A 看板分享定时 PDF · B 文档模板 · C 标准分析（并列叙事，见 `docs/services/reports.md`） |
+| 快照 vs 投递 | 配置页 `StandardAnalysisConfigForm` 分层；快照=比上期，投递=外发 |
+| 蓝图 | `docs/material/blueprints/2026-08-17-report-center-industry-blueprint.md` |
+
 ### 看板 / 大屏编辑器 IA
 
 | 表面 | 画布 | 拖拽 | 图表挂载 |
@@ -259,8 +270,9 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 
 **素材组件（对标 DataEase）**：数据大屏编辑工具栏 **更多** 含时钟/边框/标题装饰；**素材** 为图标网格（日期时间、网页）。选中素材组件时右栏提供 **数据 + 样式** Tab（`ScreenVisualEditRail` / 网页走 `MediaEditRail`）。代码锚点：`fe/src/components/dashboard/CanvasEditToolbar.tsx` · `screen/ScreenMaterialPicker.tsx` · `lib/screenVisualAssets.ts` · `lib/screenVisualStyle.ts`。
 
-| `/admin/reports/center` | hub 卡片 + 授权模板网格 | RPT-002/004 |
-| `/admin/reports` | `table-list` + 运行结果区 | RPT-002 |
+| `/admin/reports/center` | 工作台：入口卡片 + 失败摘要 + 最近访问 | RPT-002/005 |
+| `/admin/reports/standard` | 标准分析消费：看数 + 对比上期 | RPT-002 |
+| `/admin/reports/standard/config` | 标准分析配置：数据集/主题/快照/可选投递 | RPT-002 |
 | `/admin/reports/view/:nodeId` | 运行 + 结果 + 导出 | RPT-001 |
 | `/admin/reports/templates` | `master-detail` 树 + 扩展配置 Tabs | RPT-004/006 |
 | `/admin/reports/templates/:nodeId` | 同上（深链选中节点） | RPT-004/006 |

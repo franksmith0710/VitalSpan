@@ -7,6 +7,7 @@ import {
 } from "@/components/charts/engine/plugins/pluginStore";
 import type { ChartViewPlugin } from "@/components/charts/engine/plugins/types";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import { defaultGisProjectNativeBody } from "@/components/charts/engine/maplibre/gisProject";
 import { chartStyleSectionsFromProfile } from "@/lib/chartTypeStyleProfiles";
 import { createBarPluginPackage } from "@/components/charts/plugins/bar";
 
@@ -27,6 +28,9 @@ export function registerBuiltinChartPlugins(): void {
         ...cfg,
         chartType: def.type as ChartViewConfig["chartType"],
         styleVariant: "default",
+        ...(def.type === "gis-map"
+          ? { nativeBody: { ...cfg.nativeBody, ...defaultGisProjectNativeBody() } }
+          : {}),
       }),
     };
     registerChartPlugin(plugin);

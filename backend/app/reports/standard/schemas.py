@@ -34,6 +34,12 @@ class AnalysisPackIn(BaseModel):
     enabled_themes: list[ThemeType] = Field(min_length=1, alias="enabledThemes")
     allowed_roles: list[str] = Field(default_factory=lambda: ["analyst"], alias="allowedRoles")
     snapshot_cron_preset: SnapshotCronPreset = Field(alias="snapshotCronPreset")
+    snapshot_retention_periods: int = Field(
+        default=12,
+        ge=1,
+        le=120,
+        alias="snapshotRetentionPeriods",
+    )
 
     @model_validator(mode="after")
     def _binding_mode(self) -> AnalysisPackIn:

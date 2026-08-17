@@ -1,50 +1,50 @@
 ---
-description: 地图铁律——仅离线中国行政区 GeoJSON，禁止在线瓦片与境外底图
+description: 地图铁律——choropleth 仅离线中国 GeoJSON；gis-map 允许同页 MapLibre（默认禁公网底图）
 alwaysApply: true
 ---
 
 # 地图铁律（GEO-IRON-01）
 
-> 对标 DataEase/Superset 时**只借鉴离线区域地图**能力；**禁止**引入其在线地图（高德/天地图/腾讯/Mapbox/MapLibre 瓦片等）路径。
+> 对标 DataEase/Superset 时**只借鉴离线区域地图**能力；**禁止**引入其在线地图（高德/天地图/腾讯/Mapbox 瓦片等）路径。
 
-## 必须遵守
+## 双路径
+
+| 路径 | chartType | 引擎 | 底图 |
+|------|-----------|------|------|
+| **Choropleth** | `map` / `map-3d` | `GeoEnginePort` / Three.js Extrude | 仅离线中国 GeoJSON |
+| **GIS 图** | `gis-map` | 同页 MapLibre GL JS（懒加载） | 默认 `blank` 或离线省界；**禁止**默认 OpenFreeMap / 地图 Key |
+
+## Choropleth 必须遵守
 
 | 项 | 约定 |
 |----|------|
 | **范围** | **仅中华人民共和国**省级行政区（可扩展省→市下钻，仍须离线 GeoJSON） |
-| **底图** | **仅离线**：`fe/src/assets/geo/*.json` 或经平台 API 分发的 GeoJSON；经 `GeoEnginePort`（默认 ECharts `registerMap`） |
-| **渲染** | ECharts `series.type=map` / 分类热力（非经纬度瓦片底图） |
-| **数据 join** | 维度为**省/市名称**或**国标 adcode**；禁止把业务 `region_id` 直接当地理维度 |
-| **依赖** | **零**在线地图 SDK、瓦片 CDN、地图 Key 环境变量 |
+| **底图** | **仅离线**：`fe/src/assets/geo/*.json` 或经平台 API 分发的 GeoJSON |
+| **渲染** | ECharts / D3 choropleth / Three Extrude（非瓦片底图） |
+| **依赖** | **零**在线地图 SDK、瓦片 CDN、地图 Key |
 
-## 明确禁止
+## gis-map 必须遵守
 
-- 高德 / 天地图 / 腾讯 / Mapbox / MapLibre / OSM 等**在线瓦片底图**
-- AntV L7 / L7Plot **在线 Scene**（符号地图、流向地图等需 Key 的类型）
-- 运行时请求外部 geo CDN（含 `geo.datav.aliyun.com` 等）——资产须**打包进仓库**
-- 世界地图、境外行政区、地球村 `000.json` 等多国底图
-- PRD/计划中出现「生产级地图瓦片 CDN」「在线地图 Key」类需求（除非经 `goal.md` 人工推翻本铁律）
+- **不做** iframe / sandbox / GeoLibre 运行时 / `web.geolibre.app`
+- **配置** 仅校验后的 `nativeBody.gisProject`（AI L1/L2；禁止 L3 customViz 内嵌 MapLibre）
+- **查询** JWT 在父页；MapLibre `transformRequest` 不得带 `Authorization` / Cookie
+- **默认** 不得预填公网瓦片 URL；二期才允许管理员登记 `serviceId`
 
-## 允许（离线中国）
+## 明确禁止（共用）
 
-- 全国 / 省级 / 市级 **GeoJSON** 内置或管理端上传（无外链拉取）
-- 地名归一化、`areaMapping` 式别名、自定义区域（如华东=多省合集）
-- 省→市下钻（换 `registerMap` 的 adcode 资产，仍离线）
-- **空态/未配置**：仍渲染中国省级轮廓占位（`buildGeoMapPlaceholderEchartsOption`），对标 DataEase 图案地图
-- CAT-003 `geo-regions` 作**目录与自定义区域**，不替代「离线边界文件」
+- 高德 / 天地图 / 腾讯 / Mapbox / OSM 等**在线瓦片底图**（choropleth 全禁；gis-map 未登记服务时全禁）
+- AntV L7 / L7Plot **在线 Scene**
+- 运行时请求外部 geo CDN（含 `geo.datav.aliyun.com` 等）——choropleth 资产须**打包进仓库**
+- 世界地图、境外行政区默认底图
+- customViz bundle 内嵌 MapLibre / 在线瓦片
 
 ## 代码锚点
 
-- `fe/src/components/charts/engine/geoEnginePort.ts` · `fe/src/components/charts/engine/geo/OfflineGeoPort.ts` · `fe/src/assets/geo/china-provinces.json`
-- `fe/src/components/charts/adapters/renderFromSpec.ts`（`map` / `heatmap`）
-- `fe/src/lib/buildChartRenderModel.ts`（`region_id` 校验）
-
-## 文档真理源
-
+- Choropleth：`fe/src/components/charts/engine/geoEnginePort.ts` · `OfflineGeoPort.ts`
+- GIS 图：`fe/src/components/charts/engine/maplibre/`
 - 架构：`docs/arch.md` **ADR-12**
-- PRD：`docs/automate/prd/F06-VIZ.md` VIZ-003
-- 域边界：`docs/services/viz.md`
 
 ## Agent 纪律
 
-新增/修改地图相关代码前：若方案涉及在线瓦片、境外地图或地图 Key → **停止并拒绝**，改为离线 GeoJSON 方案。
+- Choropleth 方案涉及 MapLibre / 在线瓦片 → **停止**，改离线 GeoJSON
+- `gis-map` 方案涉及 iframe 沙箱、GeoLibre 整应用、默认 OpenFreeMap → **停止**，改平台 MapLibre + 离线模板

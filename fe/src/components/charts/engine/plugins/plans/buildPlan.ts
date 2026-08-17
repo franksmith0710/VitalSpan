@@ -691,7 +691,7 @@ export function buildPlanForType(chartType: string, vm: ChartViewModel): ChartRe
   const { rows: capped } = capRows(vm.dataset.rows, ADVANCED_CHART_ROW_CAP);
   const columns = vm.dataset.columns;
 
-  if (capped.length === 0 && chartType !== "map" && chartType !== "map-3d") {
+  if (capped.length === 0 && chartType !== "map" && chartType !== "map-3d" && chartType !== "gis-map") {
     return emptyPlan();
   }
 
@@ -770,6 +770,8 @@ export function buildPlanForType(chartType: string, vm: ChartViewModel): ChartRe
     case "map":
     case "map-3d":
       return d3Plan("Choropleth", { rows: capped, columns, spec });
+    case "gis-map":
+      return d3Plan("GisMap", { rows: capped, columns, spec });
     case "table-info":
     case "table-normal":
     case "table-pivot":

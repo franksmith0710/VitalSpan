@@ -31,37 +31,46 @@
 - `core`、`auth`、`query`
 - `reports/catalog` → `reports/scheduler`（`catalogNodeId` 引用）
 
-## 前端消费 IA（报表中心 · 2026-08 收敛）
+## 前端消费 IA（报表中心 · 2026-08-17 多入口）
 
-**两条产品线（并列叙事，均已可用）**：
+**三条产品线（并列叙事，均已可用）**：
 
-| 产品线 | 适用场景 | 入口 |
-|--------|----------|------|
-| **看板/大屏可视化定时 PDF**（推荐主路径） | 已有看板/大屏，定期邮件投递画布快照 | 看板分享 → `DashboardSchedulePanel` |
-| **文档模板套版**（固定版式填数） | Word/Excel/PDF 固定版式月报/台账 | Hub 展开「文档模板」或 `/admin/reports/templates` |
+| 产品线 | 适用场景 | 主入口 |
+|--------|----------|--------|
+| **A. 看板/大屏可视化定时 PDF**（推荐主路径） | 已有看板/大屏，定期邮件投递画布快照 | 看板分享 → `DashboardSchedulePanel` |
+| **B. 文档模板套版**（固定版式填数） | Word/Excel/PDF 固定版式月报/台账 | 侧栏「文档模板」`/admin/reports/templates` |
+| **C. 标准分析**（对象工作台） | 面向业务对象的决策分析、周期快照与本期 vs 上期对比 | 侧栏「标准分析」`/admin/reports/standard`；配置 `/admin/reports/standard/config` |
 
-侧栏 **仅「报表中心」单入口** → `/admin/reports/center`（`nav-manifest.tsx`）。Hub 聚合：看板定时摘要、近期失败重试、最近访问、标准分析、折叠文档模板区。深链保留：
+侧栏 **「报表中心」多入口**（`nav-manifest.tsx` 子项）：
+
+| 侧栏子项 | 路由 | 权限 | 职责（一句话） |
+|----------|------|------|----------------|
+| 工作台 | `/admin/reports/center` | `report:read` | 最近访问、失败告警、各模块快捷入口卡片 |
+| 标准分析 | `/admin/reports/standard` | `report:read` | 选包看数、对比上期快照（消费端） |
+| 文档模板 | `/admin/reports/templates` | `report:manage` | 目录树、模板块、扩展配置、手动运行 |
+| 调度与投递 | `/admin/reports/schedules` | `report:manage` | 跨看板/模板/标准分析的 cron、历史、重试 |
+
+深链（侧栏不单独列出）：
 
 | 深链路由 | 权限 | 说明 |
 |----------|------|------|
-| `/admin/reports/center` | `report:read` | 统一工作台 Hub |
-| `/admin/reports/schedules` | `report:manage` | 全量定时报告运维 |
-| `/admin/reports/standard` | `report:read` | 标准分析工作台 |
-| `/admin/reports/standard/config` | `report:manage` | 标准分析包配置 |
-| `/admin/reports/templates` | `report:manage` | 文档模板树 |
+| `/admin/reports/standard/config` | `report:manage` | 标准分析包配置：绑数据集、主题、周期快照、可选定时投递 |
+| `/admin/reports/view/:nodeId` | `report:read` | 模板运行与导出 |
 
 - **创建主路径**：看板/大屏编辑 → 分享 → `DashboardSchedulePanel`（前置检查：组件非空、Playwright、SMTP）
-- **analyst**：Hub + 标准分析；`dashboard:schedule` 可在看板分享页管理本人看板定时
+- **快照 vs 投递**：周期快照仅供平台内「比上期」；定时投递为外发作业，配置页 UI 分层（见 `StandardAnalysisConfigForm`）
+- **analyst**：工作台 + 标准分析；`dashboard:schedule` 可在看板分享页管理本人看板定时
 - **admin**：`report:manage` 含模板/全量调度/批量导入/标准分析配置
+- **产品蓝图**：行业抽象见 `docs/material/blueprints/2026-08-17-report-center-industry-blueprint.md`；VitalSpan audit 见同目录 `-audit.md`
 
 ### DataEase 对标（IA，非菜单名 1:1）
 
 | VitalSpan 入口 | 近似 DataEase 能力 |
 |----------------|-------------------|
-| 报表中心 + 看板分享定时报告 | X-Pack 定时报告 / 可视化快照投递 |
-| 标准分析 | 对象工作台 + 显式表绑定 + 周期快照对比（政企扩展） |
+| 工作台 + 看板分享定时报告 | X-Pack 定时报告 / 可视化快照投递 |
+| 标准分析 | 对象工作台 + 数据集绑定 + 周期快照对比（政企扩展） |
 | 文档模板 | 报表模板管理（固定版式 Office 套版 · RenderSpec） |
-| 定时报告（schedules） | 定时报告运维 / 执行历史 |
+| 调度与投递 | 定时报告运维 / 执行历史 |
 
 ## 主要类型 / 入口
 

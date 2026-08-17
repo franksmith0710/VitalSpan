@@ -89,6 +89,10 @@ export function isGeoMapChartType(type: ChartType): boolean {
   return type === "map" || type === "map-3d";
 }
 
+export function isGisMapChartType(type: ChartType): boolean {
+  return type === "gis-map";
+}
+
 export function isMatrixHeatmapChartType(type: ChartType): boolean {
   return type === "heatmap" || type === "t-heatmap";
 }

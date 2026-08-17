@@ -5,7 +5,7 @@ import { getChartPlugin, listChartPluginTypes } from "@/components/charts/engine
 import { chartStyleSectionsFromProfile } from "@/lib/chartTypeStyleProfiles";
 import type { ChartType } from "@/lib/chartViewConfig";
 
-const EXPECTED_CHART_TYPE_COUNT = 49;
+const EXPECTED_CHART_TYPE_COUNT = 50;
 
 describe("chart catalog parity (FE registry ↔ metadata)", () => {
   registerBuiltinChartPlugins();

@@ -73,7 +73,7 @@ export function resolveCenterRecentHref(item: {
 }): string {
   switch (item.resourceType) {
     case "template":
-      return `/admin/reports/view/${item.resourceId}`;
+      return `/admin/reports/templates/${item.resourceId}`;
     case "standard":
       return standardAnalysisPath(item.resourceId);
     case "schedule":

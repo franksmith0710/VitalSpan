@@ -18,7 +18,7 @@ def _use_db(settings: Settings | None = None) -> bool:
 
 
 def _pack_to_dict(row: ReportAnalysisPack) -> dict:
-    return {
+    out: dict = {
         "packKey": row.pack_key,
         "displayName": row.display_name,
         "businessObjectCode": row.business_object_code,
@@ -28,7 +28,13 @@ def _pack_to_dict(row: ReportAnalysisPack) -> dict:
         "enabledThemes": row.enabled_themes or [],
         "allowedRoles": row.allowed_roles or [],
         "snapshotCronPreset": row.snapshot_cron_preset,
+        "snapshotRetentionPeriods": row.snapshot_retention_periods,
     }
+    if row.dataset_id:
+        out["datasetId"] = row.dataset_id
+    if row.bound_config_id:
+        out["boundConfigId"] = str(row.bound_config_id)
+    return out
 
 
 def _snapshot_to_dict(row: ReportAnalysisSnapshot) -> dict:
@@ -65,29 +71,26 @@ def save_pack(key: str, payload: dict) -> None:
         return
     with Session(bind=get_meta_engine()) as db:
         model = db.get(ReportAnalysisPack, key)
+        bound_raw = payload.get("boundConfigId")
+        bound_config_id = uuid.UUID(str(bound_raw)) if bound_raw else None
+        common = {
+            "display_name": payload["displayName"],
+            "business_object_code": payload.get("businessObjectCode"),
+            "physical_table_fqn": payload.get("physicalTableFqn"),
+            "dataset_id": payload.get("datasetId"),
+            "bound_config_id": bound_config_id,
+            "data_source_id": uuid.UUID(str(payload["dataSourceId"])),
+            "field_mapping": payload.get("fieldMapping") or {},
+            "enabled_themes": payload.get("enabledThemes") or [],
+            "allowed_roles": payload.get("allowedRoles") or [],
+            "snapshot_cron_preset": payload["snapshotCronPreset"],
+            "snapshot_retention_periods": int(payload.get("snapshotRetentionPeriods") or 12),
+        }
         if model is None:
-            db.add(
-                ReportAnalysisPack(
-                    pack_key=key,
-                    display_name=payload["displayName"],
-                    business_object_code=payload["businessObjectCode"],
-                    physical_table_fqn=payload["physicalTableFqn"],
-                    data_source_id=uuid.UUID(str(payload["dataSourceId"])),
-                    field_mapping=payload.get("fieldMapping") or {},
-                    enabled_themes=payload.get("enabledThemes") or [],
-                    allowed_roles=payload.get("allowedRoles") or [],
-                    snapshot_cron_preset=payload["snapshotCronPreset"],
-                )
-            )
+            db.add(ReportAnalysisPack(pack_key=key, **common))
         else:
-            model.display_name = payload["displayName"]
-            model.business_object_code = payload["businessObjectCode"]
-            model.physical_table_fqn = payload["physicalTableFqn"]
-            model.data_source_id = uuid.UUID(str(payload["dataSourceId"]))
-            model.field_mapping = payload.get("fieldMapping") or {}
-            model.enabled_themes = payload.get("enabledThemes") or []
-            model.allowed_roles = payload.get("allowedRoles") or []
-            model.snapshot_cron_preset = payload["snapshotCronPreset"]
+            for attr, value in common.items():
+                setattr(model, attr, value)
             model.updated_at = datetime.now(UTC)
         db.commit()
 
@@ -218,3 +221,59 @@ def get_snapshot_for_period(
             )
         )
         return _snapshot_to_dict(row) if row else None
+
+
+def prune_snapshots(pack_key: str, theme: str, period_kind: str, retain: int) -> int:
+    """Keep newest `retain` period keys per pack/theme/kind; return deleted count."""
+    if retain < 1:
+        return 0
+    if not _use_db():
+        matched = [
+            s
+            for s in memory_stores.analysis_snapshots
+            if s.get("packKey") == pack_key
+            and s.get("theme") == theme
+            and s.get("periodKind") == period_kind
+        ]
+        keys = sorted({s.get("periodKey", "") for s in matched}, reverse=True)
+        drop_keys = set(keys[retain:])
+        if not drop_keys:
+            return 0
+        before = len(memory_stores.analysis_snapshots)
+        memory_stores.analysis_snapshots = [
+            s
+            for s in memory_stores.analysis_snapshots
+            if not (
+                s.get("packKey") == pack_key
+                and s.get("theme") == theme
+                and s.get("periodKind") == period_kind
+                and s.get("periodKey") in drop_keys
+            )
+        ]
+        return before - len(memory_stores.analysis_snapshots)
+    with Session(bind=get_meta_engine()) as db:
+        rows = db.scalars(
+            select(ReportAnalysisSnapshot.period_key)
+            .where(
+                ReportAnalysisSnapshot.pack_key == pack_key,
+                ReportAnalysisSnapshot.theme == theme,
+                ReportAnalysisSnapshot.period_kind == period_kind,
+            )
+            .distinct()
+        ).all()
+        keys = sorted(rows, reverse=True)
+        drop_keys = keys[retain:]
+        if not drop_keys:
+            return 0
+        deleted = (
+            db.query(ReportAnalysisSnapshot)
+            .filter(
+                ReportAnalysisSnapshot.pack_key == pack_key,
+                ReportAnalysisSnapshot.theme == theme,
+                ReportAnalysisSnapshot.period_kind == period_kind,
+                ReportAnalysisSnapshot.period_key.in_(drop_keys),
+            )
+            .delete(synchronize_session=False)
+        )
+        db.commit()
+        return int(deleted)

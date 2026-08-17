@@ -5,7 +5,7 @@ import type { ChartViewModel } from "@/components/charts/engine/types";
 import type { ChartStyleSectionId } from "@/lib/chartStyleSectionRegistry";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 
-export type ChartLibrary = "d3" | "react";
+export type ChartLibrary = "d3" | "react" | "maplibre";
 
 export type DePaletteCategory =
   | "quota"

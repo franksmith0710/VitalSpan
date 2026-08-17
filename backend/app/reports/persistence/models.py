@@ -63,13 +63,16 @@ class ReportAnalysisPack(Base):
 
     pack_key: Mapped[str] = mapped_column(String(64), primary_key=True)
     display_name: Mapped[str] = mapped_column(String(120), nullable=False)
-    business_object_code: Mapped[str] = mapped_column(String(64), nullable=False)
-    physical_table_fqn: Mapped[str] = mapped_column(String(128), nullable=False)
+    business_object_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    physical_table_fqn: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    dataset_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    bound_config_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True)
     data_source_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     field_mapping: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     enabled_themes: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     allowed_roles: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     snapshot_cron_preset: Mapped[str] = mapped_column(String(16), nullable=False)
+    snapshot_retention_periods: Mapped[int] = mapped_column(Integer, nullable=False, default=12)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

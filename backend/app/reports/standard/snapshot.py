@@ -33,6 +33,8 @@ def capture_snapshot(
         else pack_service.period_key_for(pack.snapshot_cron_preset)
     )
     raw = standard_repo.upsert_snapshot(pack_key, theme, kind, key, _section_payload(run_out))
+    retain = pack.snapshot_retention_periods
+    standard_repo.prune_snapshots(pack_key, theme, kind, retain)
     return SnapshotOut.model_validate(raw)
 
 

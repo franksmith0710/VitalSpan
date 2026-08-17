@@ -912,6 +912,31 @@
       }
     },
     {
+      "type": "gis-map",
+      "displayName": "GIS 地图",
+      "category": "basic",
+      "renderer": "antv",
+      "styleVariants": [
+        "default"
+      ],
+      "capabilities": [
+        "style_variant",
+        "field_config",
+        "render_spec"
+      ],
+      "library": "maplibre",
+      "paletteCategory": "map",
+      "deprecated": false,
+      "migratesTo": null,
+      "fieldRule": {
+        "minDimensions": 1,
+        "maxDimensions": 3,
+        "minMetrics": 1,
+        "maxMetrics": 1,
+        "note": ""
+      }
+    },
+    {
       "type": "heatmap",
       "displayName": "热力图（已弃用）",
       "category": "basic",

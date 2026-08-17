@@ -54,6 +54,8 @@ const MAP_2D_STYLE: ChartStyleSectionId[] = ["background", "mapBasic", "title", 
 
 const MAP_3D_STYLE: ChartStyleSectionId[] = ["background", "title", "geo", "remark"];
 
+const GIS_MAP_STYLE: ChartStyleSectionId[] = ["background", "title", "remark"];
+
 const MINIMAL: ChartStyleSectionId[] = [...SHELL];
 
 export type ChartTypeStyleProfile = {
@@ -97,6 +99,7 @@ const PROFILE_BY_TYPE: Record<string, ChartStyleSectionId[]> = {
 
   map: MAP_2D_STYLE,
   "map-3d": MAP_3D_STYLE,
+  "gis-map": GIS_MAP_STYLE,
   heatmap: ["axis", ...SHELL, "label"],
 
   scatter: CARTESIAN_CORE,

@@ -49,6 +49,7 @@ export const BACKEND_CATALOG_FIELD_RULES: Record<string, BackendFieldRule> = {
   wordCloud: { minDimensions: 1, maxDimensions: 1, minMetrics: 1, maxMetrics: 1 },
   map: { minDimensions: 1, maxDimensions: 3, minMetrics: 1, maxMetrics: 1 },
   "map-3d": { minDimensions: 1, maxDimensions: 3, minMetrics: 1, maxMetrics: 1 },
+  "gis-map": { minDimensions: 1, maxDimensions: 3, minMetrics: 1, maxMetrics: 1 },
   heatmap: { minDimensions: 2, maxDimensions: 2, minMetrics: 1, maxMetrics: 1 },
   scatter: { minDimensions: 1, maxDimensions: 2, minMetrics: 1, maxMetrics: 2 },
   quadrant: { minDimensions: 1, maxDimensions: 2, minMetrics: 2, maxMetrics: 2 },

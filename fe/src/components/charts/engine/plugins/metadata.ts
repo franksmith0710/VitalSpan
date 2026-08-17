@@ -126,6 +126,7 @@ export const BUILTIN_PLUGIN_DEFS: ChartPluginDef[] = [
 
   def("map", "map", "d3", "antv", MAP),
   def("map-3d", "map", "d3", "antv", MAP),
+  def("gis-map", "map", "maplibre", "antv", MAP),
   def("heatmap", "map", "d3", "antv", MAP, { deprecated: true, migratesTo: "t-heatmap" }),
 
   def("scatter", "relation", "d3", "antv", STATS),
