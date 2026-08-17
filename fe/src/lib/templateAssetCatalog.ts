@@ -38,17 +38,28 @@ export const GALLERY_EXCLUDED_CATEGORIES = new Set([
   "top-decor-clear",
 ]);
 
-/** 图库不展示：蜂窝/电路/HUD 网格等强网格纹理背景 */
+/** 图库不展示：带网格/蜂窝/HUD 扫描/点阵/条纹等纹理感素材 */
 export const GALLERY_EXCLUDED_PATTERNS = new Set([
+  // 蜂窝 / 电路 / HUD
   "honeycomb",
   "circuit",
   "hud-scan",
+  "hud-bracket",
   "de-circuit-wing",
   "de-circuit-sym",
+  // 显式网格 / 点阵 / 条纹
   "grid",
   "grid-ops",
   "mesh",
   "hex-nodes",
+  "dots",
+  "stripes",
+  "band",
+  "tech-rail",
+  // 角线网格 / 指挥台底纹 / 雷达脉冲
+  "aurora",
+  "command",
+  "radial-pulse",
 ]);
 
 const CANVAS_CATEGORIES = new Set(["canvas-dark", "canvas-light", "screen-bg"]);

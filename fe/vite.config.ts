@@ -33,11 +33,18 @@ export default defineConfig(({ mode }) => {
       alias: {
         "@": path.resolve(__dirname, "./src"),
       },
-      dedupe: ["three"],
+      dedupe: ["three", "react", "react-dom", "maplibre-gl", "zustand"],
+    },
+    optimizeDeps: {
+      include: ["maplibre-gl", "zustand", "zundo"],
+      exclude: ["cesium"],
     },
     server: {
       // Align with backend FE_BASE_URL default (127.0.0.1) for Playwright PDF export.
       host: "127.0.0.1",
+      fs: {
+        allow: [path.resolve(__dirname, "..")],
+      },
       proxy,
     },
     build: {
@@ -51,7 +58,9 @@ export default defineConfig(({ mode }) => {
               return "vendor-react";
             }
             if (id.includes("/pages/admin/dashboard/DashboardEditPage")) return "page-dashboard-edit";
-            if (id.includes("/components/charts/engine/")) return "charts-engine";
+            if (id.includes("node_modules/maplibre-gl")) return "vendor-maplibre";
+            if (id.includes("vendor/geolibre") || id.includes("@geolibre/")) return "vendor-geolibre";
+            if (id.includes("/components/charts/engine/geolibre/")) return "charts-geolibre";
           },
         },
       },
@@ -60,6 +69,11 @@ export default defineConfig(({ mode }) => {
       environment: "jsdom",
       setupFiles: ["./src/vitest.setup.ts", "./src/vitest.antv.mock.ts"],
       include: ["src/**/*.test.{ts,tsx}"],
+      server: {
+        deps: {
+          inline: [/@geolibre\//, /@maplibre\//, /vendor\/geolibre/],
+        },
+      },
     },
   };
 });

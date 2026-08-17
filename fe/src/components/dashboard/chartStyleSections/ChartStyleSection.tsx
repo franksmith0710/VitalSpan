@@ -1,8 +1,11 @@
-import { isGeoMapChartType } from "@/lib/chartViewConfig";
+import { isGeoMapChartType, isGisMapChartType } from "@/lib/chartViewConfig";
 import type { ChartStyleSectionId } from "@/lib/chartStyleSectionRegistry";
 import { ChartTableStylePanel } from "../ChartTableStylePanel";
 import { ChartTableColorPanel } from "../ChartTableColorPanel";
 import { ChartGeoStylePanel } from "../ChartGeoStylePanel";
+import { GisMapBasemapInspector } from "../gisMap/GisMapBasemapInspector";
+import { GisMapLayerInspector } from "../gisMap/GisMapLayerInspector";
+import { GisMapStyleInspector } from "../gisMap/GisMapStyleInspector";
 import { useChartInspector } from "../ChartInspectorContext";
 import { readChartDeStyle } from "@/lib/chartDeStyle";
 import { ChartVariantBasicSection } from "./ChartVariantBasicSection";
@@ -96,6 +99,7 @@ export function ChartStyleSection({ sectionId }: ChartStyleSectionProps) {
     case "mapBasic":
       return cfg.chartType === "map" ? <ChartMapBasicStyleSection /> : null;
     case "geo":
+      if (isGisMapChartType(cfg.chartType)) return null;
       return (
         <ChartGeoStylePanel
           cfg={cfg}
@@ -110,6 +114,12 @@ export function ChartStyleSection({ sectionId }: ChartStyleSectionProps) {
           onChange={onChange}
         />
       );
+    case "gisBasemap":
+      return isGisMapChartType(cfg.chartType) ? <GisMapBasemapInspector /> : null;
+    case "gisLayers":
+      return isGisMapChartType(cfg.chartType) ? <GisMapLayerInspector /> : null;
+    case "gisStyle":
+      return isGisMapChartType(cfg.chartType) ? <GisMapStyleInspector /> : null;
     case "title":
       return <ChartTitleStyleSection />;
     case "remark":

@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { CalendarClock, History } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { standardScheduleHubPath } from "../standardRoutes";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
@@ -153,7 +154,7 @@ export function StandardSchedulePanel({ sourceKey, packName, disabled = false }:
           </p>
         </div>
         <Button type="button" variant="ghost" size="sm" className="shrink-0" asChild>
-          <Link to="/admin/reports/schedules">在调度中心查看</Link>
+          <Link to={standardScheduleHubPath(sourceKey)}>在调度中心查看</Link>
         </Button>
       </div>
 

@@ -24,6 +24,13 @@ export const SNAPSHOT_LABELS: Record<string, string> = {
 
 export const ALL_ANALYSIS_THEMES: AnalysisTheme[] = ["lifecycle", "distribution", "activity", "trend"];
 
+export const SNAPSHOT_RETENTION_OPTIONS = [
+  { value: 6, label: "保留最近 6 期" },
+  { value: 12, label: "保留最近 12 期（推荐）" },
+  { value: 24, label: "保留最近 24 期" },
+  { value: 36, label: "保留最近 36 期" },
+] as const;
+
 export function createEmptyAnalysisPack(): AnalysisPack {
   return {
     packKey: "",
@@ -35,6 +42,7 @@ export function createEmptyAnalysisPack(): AnalysisPack {
     enabledThemes: ["lifecycle", "distribution"],
     allowedRoles: ["analyst", "admin"],
     snapshotCronPreset: "daily",
+    snapshotRetentionPeriods: 12,
   };
 }
 

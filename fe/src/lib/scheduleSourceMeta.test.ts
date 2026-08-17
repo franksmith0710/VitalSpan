@@ -21,7 +21,7 @@ describe("scheduleSourceMeta", () => {
         sourceId: "ds-1",
         catalogNodeId: null,
       }),
-    ).toBe("/admin/data-screens/ds-1/share");
+    ).toBe("/admin/data-screens/ds-1/edit");
   });
 
   it("summarizes recipients", () => {
@@ -38,15 +38,29 @@ describe("scheduleSourceMeta", () => {
       { sourceType: "template" },
       { sourceType: "dashboard" },
       { sourceType: "data_screen" },
+      { sourceType: "standard" },
     ];
     expect(filterSchedulesByTab(items, "dashboard")).toHaveLength(2);
     expect(filterSchedulesByTab(items, "template")).toHaveLength(1);
+    expect(filterSchedulesByTab(items, "standard")).toHaveLength(1);
   });
 
   it("resolves tab for schedule source type", () => {
     expect(scheduleTabForSourceType("dashboard")).toBe("dashboard");
     expect(scheduleTabForSourceType("data_screen")).toBe("dashboard");
+    expect(scheduleTabForSourceType("standard")).toBe("standard");
     expect(scheduleTabForSourceType("template")).toBe("template");
     expect(scheduleTabForSourceType(undefined)).toBe("template");
+  });
+
+  it("builds standard schedule config href", () => {
+    expect(
+      scheduleSourceHref({
+        sourceType: "standard",
+        sourceKey: "equipment-overview",
+        sourceId: null,
+        catalogNodeId: null,
+      }),
+    ).toBe("/admin/reports/standard/config?pack=equipment-overview");
   });
 });

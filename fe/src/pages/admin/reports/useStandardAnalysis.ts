@@ -23,6 +23,7 @@ export type AnalysisPack = {
   enabledThemes: AnalysisTheme[];
   allowedRoles: string[];
   snapshotCronPreset: SnapshotCronPreset;
+  snapshotRetentionPeriods?: number;
 };
 
 export type RunResult = {

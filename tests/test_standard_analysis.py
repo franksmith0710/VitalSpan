@@ -272,3 +272,41 @@ def test_std_pack_dataset_binding_upsert_and_run(mock_execute, client: TestClien
     )
     assert run.status_code == 200
     assert "dim" in run.json()["renderSpec"]["sections"][0]["columns"]
+
+
+def test_snapshot_retention_prunes_old_periods():
+    from app.reports.persistence import standard_repo
+
+    pack_key = "retention-pack"
+    theme = "lifecycle"
+    kind = "daily"
+    for day in range(1, 16):
+        standard_repo.upsert_snapshot(
+            pack_key,
+            theme,
+            kind,
+            f"2026-08-{day:02d}",
+            {"columns": [], "rows": []},
+        )
+    deleted = standard_repo.prune_snapshots(pack_key, theme, kind, 12)
+    assert deleted == 3
+    remaining = standard_repo.list_snapshots(pack_key, theme=theme)
+    assert len(remaining) == 12
+    keys = sorted(s["periodKey"] for s in remaining)
+    assert keys[0] == "2026-08-04"
+    assert keys[-1] == "2026-08-15"
+
+
+def test_pack_snapshot_retention_periods_persisted(client: TestClient):
+    ds_id, bound_config_id = _seed_dataset_with_binding(client)
+    payload = _dataset_pack_payload(ds_id, bound_config_id, key="retention-pack")
+    payload["snapshotRetentionPeriods"] = 6
+    put = client.put(
+        "/api/v1/reports/standard/packs/retention-pack",
+        headers=AUTH,
+        json=payload,
+    )
+    assert put.status_code == 200, put.text
+    got = client.get("/api/v1/reports/standard/packs/retention-pack", headers=AUTH)
+    assert got.status_code == 200
+    assert got.json()["snapshotRetentionPeriods"] == 6

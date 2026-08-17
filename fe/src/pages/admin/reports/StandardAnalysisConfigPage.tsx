@@ -46,6 +46,8 @@ export function StandardAnalysisConfigPage() {
     onDelete,
     upsert,
     remove,
+    showSavedHint,
+    setShowSavedHint,
   } = editor;
 
   return (
@@ -117,6 +119,8 @@ export function StandardAnalysisConfigPage() {
               columnOptions={columnOptions}
               saving={upsert.isPending}
               deleting={remove.isPending}
+              showSavedHint={showSavedHint}
+              onDismissSavedHint={() => setShowSavedHint(false)}
               onChange={(updater) => setDraft((current) => updater(current))}
               onSave={() => void onSave()}
               onDelete={() => setDeleteOpen(true)}

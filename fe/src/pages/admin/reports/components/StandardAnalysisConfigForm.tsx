@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { CalendarClock, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -14,9 +14,11 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { AnalysisPack, AnalysisTheme, SnapshotCronPreset } from "../useStandardAnalysis";
+import { standardScheduleHubPath } from "../standardRoutes";
 import {
   ALL_ANALYSIS_THEMES,
   SNAPSHOT_LABELS,
+  SNAPSHOT_RETENTION_OPTIONS,
   THEME_META,
 } from "./standardAnalysisUi";
 import { ConfigField, ConfigSection } from "./standardAnalysisConfigUi";
@@ -30,6 +32,8 @@ type Props = {
   columnOptions: string[];
   saving: boolean;
   deleting: boolean;
+  showSavedHint?: boolean;
+  onDismissSavedHint?: () => void;
   onChange: (updater: (current: AnalysisPack) => AnalysisPack) => void;
   onSave: () => void;
   onDelete: () => void;
@@ -74,30 +78,38 @@ function FieldMappingInput({
   );
 }
 
-function CollapsibleDeliverySection({ children }: { children: ReactNode }) {
+function CollapsibleDeliverySection({
+  packKey,
+  children,
+}: {
+  packKey: string;
+  children: ReactNode;
+}) {
   const [open, setOpen] = useState(false);
+  const schedulesHref = standardScheduleHubPath(packKey);
 
   return (
     <ConfigSection
       title="定时投递（可选）"
-      description="按周期生成 PDF 并通过邮件发送；与上方「周期快照」不同，快照仅供平台内对比上期。"
+      description="按周期生成 PDF 并通过邮件外发；与上方「周期快照」不同，快照仅供平台内对比上期。"
     >
-      <button
-        type="button"
-        className="flex w-full items-center gap-2 rounded-lg border border-gray-200 px-3 py-2.5 text-left text-theme-sm text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.02]"
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
-      >
-        {open ? <ChevronDown className="size-4 shrink-0" /> : <ChevronRight className="size-4 shrink-0" />}
-        <span>{open ? "收起定时投递配置" : "展开定时投递配置"}</span>
-      </button>
-      <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-        也可在{" "}
-        <Link to="/admin/reports/schedules" className="text-brand-600 underline dark:text-brand-400">
-          调度与投递
-        </Link>{" "}
-        Tab 查看全部任务。
-      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button type="button" variant="outline" size="sm" asChild>
+          <Link to={schedulesHref}>
+            <CalendarClock className="size-4" aria-hidden />
+            在调度与投递查看
+          </Link>
+        </Button>
+        <button
+          type="button"
+          className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-theme-xs text-gray-600 transition-colors hover:bg-gray-50 hover:text-brand-600 dark:text-gray-400 dark:hover:bg-white/[0.02] dark:hover:text-brand-400"
+          onClick={() => setOpen((value) => !value)}
+          aria-expanded={open}
+        >
+          {open ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+          {open ? "收起本页配置" : "在本页配置投递"}
+        </button>
+      </div>
       {open ? <div className="mt-4">{children}</div> : null}
     </ConfigSection>
   );
@@ -110,12 +122,18 @@ export function StandardAnalysisConfigForm({
   columnOptions,
   saving,
   deleting,
+  showSavedHint,
+  onDismissSavedHint,
   onChange,
   onSave,
   onDelete,
 }: Props) {
+  const handleChange = (updater: (current: AnalysisPack) => AnalysisPack) => {
+    onDismissSavedHint?.();
+    onChange(updater);
+  };
   const toggleTheme = (theme: AnalysisTheme, checked: boolean) => {
-    onChange((current) => ({
+    handleChange((current) => ({
       ...current,
       enabledThemes: checked
         ? [...current.enabledThemes, theme]
@@ -148,6 +166,20 @@ export function StandardAnalysisConfigForm({
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex max-w-3xl flex-col gap-8 px-5 py-5">
+          {showSavedHint && editingKey ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-200 bg-brand-50/60 px-4 py-3 dark:border-brand-500/30 dark:bg-brand-500/10">
+              <p className="text-theme-sm text-brand-800 dark:text-brand-200">
+                分析包已保存。需要外发 PDF 报告？可在下方配置定时投递，或前往调度中心统一管理。
+              </p>
+              <Button type="button" variant="outline" size="sm" asChild>
+                <Link to={standardScheduleHubPath(editingKey)}>
+                  <CalendarClock className="size-4" aria-hidden />
+                  前往调度与投递
+                </Link>
+              </Button>
+            </div>
+          ) : null}
+
           <ConfigSection
             title="基本信息"
             description="分析包在工作台与导航中的展示名称；标识保存后不可修改。"
@@ -163,7 +195,7 @@ export function StandardAnalysisConfigForm({
                   className="h-11"
                   value={draft.packKey}
                   disabled={Boolean(editingKey) && !isCreating}
-                  onChange={(event) => onChange((current) => ({ ...current, packKey: event.target.value }))}
+                  onChange={(event) => handleChange((current) => ({ ...current, packKey: event.target.value }))}
                   placeholder="equipment-overview"
                 />
               </ConfigField>
@@ -172,24 +204,27 @@ export function StandardAnalysisConfigForm({
                   id="displayName"
                   className="h-11"
                   value={draft.displayName}
-                  onChange={(event) => onChange((current) => ({ ...current, displayName: event.target.value }))}
+                  onChange={(event) => handleChange((current) => ({ ...current, displayName: event.target.value }))}
                   placeholder="设备标准分析"
                 />
               </ConfigField>
             </div>
           </ConfigSection>
 
-          <ConfigSection title="数据源" description="选择已绑定查询的数据集，并映射分析所需字段。">
+          <ConfigSection
+            title="数据源"
+            description="推荐绑定已发布的数据集（语义层取数）；物理表绑定仅用于兼容旧分析包。"
+          >
             {legacyBinding ? (
               <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-theme-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300">
-                当前分析包仍绑定物理表「{draft.physicalTableFqn}」。选择数据集并保存后将迁移到新绑定方式。
+                当前分析包仍使用旧版物理表「{draft.physicalTableFqn}」。请选择数据集并保存以迁移到新绑定方式。
               </p>
             ) : null}
             <ReportMetricDatasetFields
               datasetId={draft.datasetId ?? ""}
               boundConfigId={draft.boundConfigId ?? ""}
               onDatasetIdChange={(datasetId) =>
-                onChange((current) => ({
+                handleChange((current) => ({
                   ...current,
                   datasetId,
                   boundConfigId: "",
@@ -197,10 +232,10 @@ export function StandardAnalysisConfigForm({
                 }))
               }
               onBoundConfigIdChange={(boundConfigId) =>
-                onChange((current) => ({ ...current, boundConfigId }))
+                handleChange((current) => ({ ...current, boundConfigId }))
               }
               onSuggestedDataSourceId={(dataSourceId) =>
-                onChange((current) => ({ ...current, dataSourceId }))
+                handleChange((current) => ({ ...current, dataSourceId }))
               }
             />
             <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -210,7 +245,7 @@ export function StandardAnalysisConfigForm({
                 value={draft.fieldMapping.status ?? ""}
                 columns={columnOptions}
                 onChange={(status) =>
-                  onChange((current) => ({
+                  handleChange((current) => ({
                     ...current,
                     fieldMapping: { ...current.fieldMapping, status },
                   }))
@@ -222,7 +257,7 @@ export function StandardAnalysisConfigForm({
                 value={draft.fieldMapping.region ?? ""}
                 columns={columnOptions}
                 onChange={(region) =>
-                  onChange((current) => ({
+                  handleChange((current) => ({
                     ...current,
                     fieldMapping: { ...current.fieldMapping, region },
                   }))
@@ -234,7 +269,7 @@ export function StandardAnalysisConfigForm({
                 value={draft.fieldMapping.createdAt ?? ""}
                 columns={columnOptions}
                 onChange={(createdAt) =>
-                  onChange((current) => ({
+                  handleChange((current) => ({
                     ...current,
                     fieldMapping: { ...current.fieldMapping, createdAt },
                   }))
@@ -278,29 +313,60 @@ export function StandardAnalysisConfigForm({
             title="周期快照"
             description="平台按周期自动保存分析结果，供「对比上期」使用；不会发送邮件或推送到外部。"
           >
-            <ConfigField id="snapshotCronPreset" label="快照周期" className="sm:max-w-xs">
-              <Select
-                value={draft.snapshotCronPreset}
-                onValueChange={(value) =>
-                  onChange((current) => ({ ...current, snapshotCronPreset: value as SnapshotCronPreset }))
-                }
+            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+              <ConfigField id="snapshotCronPreset" label="快照周期">
+                <Select
+                  value={draft.snapshotCronPreset}
+                  onValueChange={(value) =>
+                    handleChange((current) => ({
+                      ...current,
+                      snapshotCronPreset: value as SnapshotCronPreset,
+                    }))
+                  }
+                >
+                  <SelectTrigger id="snapshotCronPreset" className="h-11">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(["daily", "weekly", "monthly"] as const).map((preset) => (
+                      <SelectItem key={preset} value={preset}>
+                        {SNAPSHOT_LABELS[preset]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </ConfigField>
+              <ConfigField
+                id="snapshotRetentionPeriods"
+                label="保留期数"
+                hint="超出后自动清理最旧快照，避免存储膨胀。"
               >
-                <SelectTrigger id="snapshotCronPreset" className="h-11">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(["daily", "weekly", "monthly"] as const).map((preset) => (
-                    <SelectItem key={preset} value={preset}>
-                      {SNAPSHOT_LABELS[preset]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </ConfigField>
+                <Select
+                  value={String(draft.snapshotRetentionPeriods ?? 12)}
+                  onValueChange={(value) =>
+                    handleChange((current) => ({
+                      ...current,
+                      snapshotRetentionPeriods: Number(value),
+                    }))
+                  }
+                >
+                  <SelectTrigger id="snapshotRetentionPeriods" className="h-11">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SNAPSHOT_RETENTION_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={String(option.value)}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </ConfigField>
+            </div>
           </ConfigSection>
 
           {editingKey && !isCreating ? (
-            <CollapsibleDeliverySection>
+            <CollapsibleDeliverySection packKey={editingKey}>
               <StandardSchedulePanel
                 sourceKey={editingKey}
                 packName={draft.displayName || editingKey}

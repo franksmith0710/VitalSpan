@@ -5,8 +5,8 @@
 > **域边界**：各表业务语义见 [services/README.md](../services/README.md)。
 
 ```yaml
-alembic_head: 0047
-revision_count: 47
+alembic_head: 0050
+revision_count: 50
 migrations_path: backend/migrations/versions/
 ```
 
@@ -22,16 +22,16 @@ migrations_path: backend/migrations/versions/
 
 | 项 | 值 |
 |----|-----|
-| **Head revision** | `0047`（`0047_user_im_bindings.py`） |
-| **上一版** | `0046`（`0046_standard_schedule_source_key.py`） |
-| **主要新增** | `user_im_bindings`（用户钉钉/企微/飞书账号）；`report_schedules.notify_group` |
+| **Head revision** | `0050`（`0050_standard_pack_dataset_retention.py`） |
+| **上一版** | `0049`（`0049_email_smtp_dual_slots.py`） |
+| **主要新增** | 标准分析包 `dataset_id` / `bound_config_id` / `snapshot_retention_periods` |
 
 升级命令（本地）：
 
 ```bash
 cd backend
 alembic upgrade head
-alembic current   # 应显示 0047
+alembic current   # 应显示 0050
 ```
 
 ## 修订一览（按域分组）
@@ -76,6 +76,9 @@ alembic current   # 应显示 0047
 | 0045 | `datasets_transform_rules` | metadata | Dataset 转换规则 |
 | 0046 | `standard_schedule_source_key` | reports | 调度 `source_key`（标准分析投递） |
 | 0047 | `user_im_bindings` | auth / reports | 用户 IM 账号绑定；调度 `notify_group` |
+| 0048 | `platform_delivery_configs` | integration | 平台投递配置 |
+| 0049 | `email_smtp_dual_slots` | integration | 双 SMTP 槽位 |
+| 0050 | `standard_pack_dataset_retention` | reports | 分析包 dataset 绑定 + 快照保留期数 |
 
 ## 域 ↔ 主要表（导航）
 

@@ -280,6 +280,7 @@ function ScheduleDataRow({
 type ScheduleListTableProps = {
   items: ReportScheduleRow[];
   nameByNodeId: Map<string, string>;
+  nameByPackKey?: Map<string, string>;
   readOnly: boolean;
   expandedId: string | null;
   onToggleExpand: (id: string) => void;
@@ -288,7 +289,12 @@ type ScheduleListTableProps = {
 export function resolveScheduleSourceLabel(
   schedule: ReportScheduleRow,
   nameByNodeId: Map<string, string>,
+  nameByPackKey: Map<string, string> = new Map(),
 ): string {
+  if (schedule.sourceType === "standard") {
+    const key = schedule.sourceKey ?? "";
+    return schedule.sourceLabel ?? nameByPackKey.get(key) ?? (key || "标准分析");
+  }
   return (
     schedule.sourceLabel ??
     nameByNodeId.get(schedule.catalogNodeId ?? schedule.sourceId ?? "") ??
@@ -303,6 +309,7 @@ export function resolveScheduleSourceLabel(
 export function ScheduleListTable({
   items,
   nameByNodeId,
+  nameByPackKey,
   readOnly,
   expandedId,
   onToggleExpand,
@@ -329,7 +336,7 @@ export function ScheduleListTable({
             <ScheduleDataRow
               key={schedule.id}
               schedule={schedule}
-              sourceLabel={resolveScheduleSourceLabel(schedule, nameByNodeId)}
+              sourceLabel={resolveScheduleSourceLabel(schedule, nameByNodeId, nameByPackKey)}
               readOnly={readOnly}
               expanded={expandedId === schedule.id}
               onToggle={() => onToggleExpand(schedule.id)}

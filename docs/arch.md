@@ -165,12 +165,15 @@ flowchart TB
 
 #### B. GIS 图（`gis-map` · chartType）
 
-- **引擎**：同页 **MapLibre GL JS**（懒加载 chunk）；**不做** iframe / sandbox / GeoLibre 运行时
-- **默认底图**：`blank` 或离线中国省界 GeoJSON（`fe/src/assets/geo/china-provinces.json`）；**禁止**默认 OpenFreeMap / 高德 / 天地图 / Cesium Ion
-- **配置**：layout 存校验后的 `gisProject` JSON（`nativeBody.gisProject`）；AI 走 vs-ai-spec **L1/L2**，禁止 L3 customViz 内嵌 MapLibre
+- **引擎**：**GeoLibre**（`vendor/geolibre` git submodule + `@geolibre/core` / `@geolibre/map` pnpm 链接）；同页 `MapCanvas` 懒加载；**不做** iframe / sandbox
+- **Store**：每 widget 独立 `GeoLibreStoreProvider` + widget 级 registry（`geolibreWidgetStore.ts`）；禁止全局单例互踩
+- **默认底图**：`BLANK_BASEMAP`（空白）+ 离线中国省界 GeoJSON 矢量层；**禁止**默认 OpenFreeMap / 高德 / 天地图 / Cesium Ion
+- **配置**：layout 存 `nativeBody.geolibreProject`（`GeoLibreProject` 子集）；加载时从旧 `gisProject` 迁移；右侧 Inspector：`gisBasemap` / `gisLayers` / `gisStyle`
+- **AI**：vs-ai-spec **L1/L2** 产出 `geolibreProject` 补丁；禁止 L3 customViz 内嵌 GeoLibre
+- **Submodule 升级**：锁定 `vendor/geolibre` commit/tag；CI `git submodule update --init`；升级时回归 `geolibreProject` round-trip 与双 widget 隔离测试
 - **出数**：Dataset 查询在父页完成；引擎不持有 JWT（二期：Dataset→GeoJSON join；一期仅离线省界/空白）
 - **导出**：Playwright PDF 对 WebGL 不稳定 → 允许空白/静态降级（见 ADR-18 补充）
-- **代码锚点**：`fe/src/components/charts/engine/maplibre/` · `backend/app/viz/builtin/map.py`
+- **代码锚点**：`fe/src/components/charts/engine/geolibre/` · `fe/src/components/dashboard/gisMap/` · `vendor/geolibre/packages/{core,map}` · `backend/app/viz/builtin/map.py`
 
 #### 共用禁止
 

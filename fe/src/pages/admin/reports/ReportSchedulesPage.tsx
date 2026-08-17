@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarClock, LayoutTemplate, Monitor, Search } from "lucide-react";
+import { CalendarClock, LayoutTemplate, Monitor, Search, TrendingUp } from "lucide-react";
 import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +26,9 @@ import {
   summarizeRecipients,
   type ScheduleTabFilter,
 } from "@/lib/scheduleSourceMeta";
+import { queryKeys } from "@/lib/queryKeys";
+import { apiFetch } from "@/lib/api";
+import { standardAnalysisConfigPath } from "./standardRoutes";
 import { useReportSchedulesList, useReportScheduleMutations } from "./useReportSchedules";
 import {
   resolveScheduleSourceLabel,
@@ -41,13 +44,15 @@ import { DOC_TEMPLATE_SCHEDULE_HINT } from "@/lib/reportCenterNav";
 
 const TAB_OPTIONS: { id: ScheduleTabFilter; label: string }[] = [
   { id: "dashboard", label: "看板/大屏" },
-  { id: "all", label: "全部" },
+  { id: "standard", label: "标准分析" },
   { id: "template", label: "文档模板" },
+  { id: "all", label: "全部" },
 ];
 
 function emptyTitle(tab: ScheduleTabFilter, hasSearch: boolean): string {
   if (hasSearch) return "无匹配调度";
   if (tab === "template") return "暂无模板调度";
+  if (tab === "standard") return "暂无标准分析投递";
   if (tab === "dashboard") return "暂无看板/大屏调度";
   return "暂无调度任务";
 }
@@ -57,13 +62,16 @@ function emptyDescription(tab: ScheduleTabFilter, hasSearch: boolean): string {
   if (tab === "template") {
     return DOC_TEMPLATE_SCHEDULE_HINT;
   }
+  if (tab === "standard") {
+    return "在标准分析配置页展开「定时投递」，或保存分析包后前往配置外发。";
+  }
   if (tab === "dashboard") {
     return "进入看板或数据大屏编辑页，点击「定时推送」创建定时报告。";
   }
   return "推荐从看板/大屏编辑页「定时推送」创建可视化 PDF 定时报告。";
 }
 
-function emptyAction(tab: ScheduleTabFilter, hasSearch: boolean) {
+function emptyAction(tab: ScheduleTabFilter, hasSearch: boolean, sourceKeyFilter?: string | null) {
   if (hasSearch) return undefined;
   if (tab === "template") {
     return (
@@ -71,6 +79,16 @@ function emptyAction(tab: ScheduleTabFilter, hasSearch: boolean) {
         <Link to="/admin/reports/templates">
           <LayoutTemplate className="size-3.5" aria-hidden />
           前往文档模板
+        </Link>
+      </Button>
+    );
+  }
+  if (tab === "standard") {
+    return (
+      <Button type="button" variant="outline" size="sm" asChild>
+        <Link to={standardAnalysisConfigPath(sourceKeyFilter ?? undefined)}>
+          <TrendingUp className="size-3.5" aria-hidden />
+          前往标准分析配置
         </Link>
       </Button>
     );
@@ -100,11 +118,12 @@ function emptyAction(tab: ScheduleTabFilter, hasSearch: boolean) {
 function matchesSearch(
   schedule: Parameters<typeof resolveScheduleSourceLabel>[0],
   nameByNodeId: Map<string, string>,
+  nameByPackKey: Map<string, string>,
   query: string,
 ): boolean {
   const q = query.trim().toLowerCase();
   if (!q) return true;
-  const label = resolveScheduleSourceLabel(schedule, nameByNodeId).toLowerCase();
+  const label = resolveScheduleSourceLabel(schedule, nameByNodeId, nameByPackKey).toLowerCase();
   const recipients = summarizeRecipients(schedule.recipients).toLowerCase();
   const cron = describeCron(schedule.cron).toLowerCase();
   return label.includes(q) || recipients.includes(q) || cron.includes(q);
@@ -123,6 +142,7 @@ export function ReportSchedulesPage() {
   const caps = resolveEffectiveCapabilities(user);
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = parseScheduleTabParam(searchParams.get("tab"));
+  const sourceKeyFilter = searchParams.get("sourceKey");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const readOnly = !matchesCapability(caps, "report:manage");
@@ -138,6 +158,11 @@ export function ReportSchedulesPage() {
     queryKey: ["reports", "center", "templates"],
     queryFn: fetchAllCatalogTemplates,
   });
+  const standardPacksQuery = useQuery({
+    queryKey: queryKeys.reports.standardPacks,
+    queryFn: () =>
+      apiFetch<{ items: { packKey: string; displayName: string }[] }>("/api/v1/reports/standard/packs"),
+  });
 
   const nameByNodeId = useMemo(() => {
     const map = new Map<string, string>();
@@ -147,12 +172,24 @@ export function ReportSchedulesPage() {
     return map;
   }, [templatesQuery.data]);
 
+  const nameByPackKey = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const pack of standardPacksQuery.data?.items ?? []) {
+      map.set(pack.packKey, pack.displayName);
+    }
+    return map;
+  }, [standardPacksQuery.data]);
+
   const allItems = schedulesQuery.data?.items ?? [];
   const stats = useMemo(() => summarizeStats(allItems), [allItems]);
   const items = useMemo(() => {
     const tabbed = filterSchedulesByTab(allItems, tab);
-    return tabbed.filter((schedule) => matchesSearch(schedule, nameByNodeId, search));
-  }, [allItems, tab, search, nameByNodeId]);
+    const keyed =
+      tab === "standard" && sourceKeyFilter
+        ? tabbed.filter((schedule) => schedule.sourceKey === sourceKeyFilter)
+        : tabbed;
+    return keyed.filter((schedule) => matchesSearch(schedule, nameByNodeId, nameByPackKey, search));
+  }, [allItems, tab, sourceKeyFilter, search, nameByNodeId, nameByPackKey]);
 
   const hasSearch = Boolean(search.trim());
   const isLoading = schedulesQuery.isLoading;
@@ -195,7 +232,7 @@ export function ReportSchedulesPage() {
           <CalendarClock className="size-6" aria-hidden />
         </AdminPageHeaderIcon>
       }
-      description="管理看板/大屏可视化 PDF 定时投递、执行历史与失败重试。"
+      description="管理看板/大屏 PDF、标准分析投递与文档模板的定时任务、执行历史与失败重试。"
       actions={<ReportCenterBackLink />}
     >
       <div className="space-y-6">
@@ -282,13 +319,14 @@ export function ReportSchedulesPage() {
                 }
                 title={emptyTitle(tab, hasSearch)}
                 description={emptyDescription(tab, hasSearch)}
-                action={emptyAction(tab, hasSearch)}
+                action={emptyAction(tab, hasSearch, sourceKeyFilter)}
               />
             </div>
           ) : (
             <ScheduleListTable
               items={items}
               nameByNodeId={nameByNodeId}
+              nameByPackKey={nameByPackKey}
               readOnly={readOnly}
               expandedId={expandedId}
               onToggleExpand={(id) => setExpandedId((prev) => (prev === id ? null : id))}

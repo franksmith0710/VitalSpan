@@ -21,6 +21,7 @@ export function buildStandardAnalysisSaveBody(draft: AnalysisPack): AnalysisPack
     enabledThemes: draft.enabledThemes,
     allowedRoles: draft.allowedRoles,
     snapshotCronPreset: draft.snapshotCronPreset,
+    snapshotRetentionPeriods: draft.snapshotRetentionPeriods ?? 12,
   };
   if (draft.datasetId) {
     return {
@@ -47,6 +48,7 @@ export function useStandardAnalysisEditor() {
   const [isCreating, setIsCreating] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [bootstrapped, setBootstrapped] = useState(false);
+  const [showSavedHint, setShowSavedHint] = useState(false);
 
   const effectiveBoundConfigId = draft.boundConfigId ?? "";
   const boundConfigQuery = useQuery({
@@ -63,6 +65,7 @@ export function useStandardAnalysisEditor() {
   const selectPack = (packKey: string) => {
     const pack = packs.find((item) => item.packKey === packKey);
     if (!pack) return;
+    setShowSavedHint(false);
     setIsCreating(false);
     setEditingKey(pack.packKey);
     setDraft(pack);
@@ -72,6 +75,7 @@ export function useStandardAnalysisEditor() {
   };
 
   const startCreate = () => {
+    setShowSavedHint(false);
     setIsCreating(true);
     setEditingKey(null);
     setDraft(createEmptyAnalysisPack());
@@ -123,6 +127,7 @@ export function useStandardAnalysisEditor() {
       setIsCreating(false);
       setBootstrapped(true);
       setDraft(body);
+      setShowSavedHint(true);
       toast.success("分析包已保存");
     } catch (err) {
       toast.error(mapApiError(err));
@@ -163,5 +168,7 @@ export function useStandardAnalysisEditor() {
     onDelete,
     upsert,
     remove,
+    showSavedHint,
+    setShowSavedHint,
   };
 }

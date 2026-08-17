@@ -7,7 +7,7 @@
 
 | 路径 | AI 产出 | 平台能力 |
 |------|---------|----------|
-| **L1/L2 配置已有图** | `chartConfig` + `nativeBody.deStyle` / `gisProject` | 50 种 `chartType`（含 `gis-map`）；见 `capability-manifest.json` |
+| **L1/L2 配置已有图** | `chartConfig` + `nativeBody.deStyle` / `geolibreProject` | 50 种 `chartType`（含 `gis-map`）；见 `capability-manifest.json` |
 | **L3 全新组件** | HTML 源码 bundle + `manifest.json` | `POST/PUT /api/v1/ai-viz/artifacts` → 一个 Base（`CustomVizWidget`）异步加载；渲染器 **可选**，见 [guides/RENDERERS.md](./guides/RENDERERS.md) |
 | **拼大屏** | `layoutJson` v2（混排 widget） | `PUT /api/v1/dashboards/{id}/editor-save` |
 
@@ -38,6 +38,6 @@
 
 ## 红线
 
-- 地图仅离线 GeoJSON（GEO-IRON-01 choropleth）；`gis-map` 允许同页 MapLibre，默认禁公网底图与 L3 内嵌 MapLibre
+- 地图仅离线 GeoJSON（GEO-IRON-01 choropleth）；`gis-map` 使用 GeoLibre 工程 JSON（`geolibreProject`），默认禁公网底图与 L3 内嵌
 - 自定义 bundle 禁止外链 `<script src>`；样式与逻辑须内联
 - `customViz` 不进 `GET /charts/types`（与内置 chartType 分离）

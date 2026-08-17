@@ -276,7 +276,13 @@ export function ReportTemplatesPage() {
     </ScrollArea>
   );
 
-  const detailBody = selected?.nodeType === "template" ? (
+  const detailBody = pendingAutoSelect ? (
+    <div className="flex min-h-[280px] flex-col justify-center gap-3 p-6">
+      <Skeleton className="h-8 w-48" />
+      <Skeleton className="h-32 w-full rounded-xl" />
+      <p className="text-theme-xs text-gray-500 dark:text-gray-400">正在打开模板…</p>
+    </div>
+  ) : selected?.nodeType === "template" ? (
     <TemplateDetailPanel
       node={selected}
       allNodes={allNodes}
@@ -312,6 +318,13 @@ export function ReportTemplatesPage() {
   );
 
   const mobileOptions = allNodes.length > 0 ? allNodes : nodes;
+
+  const catalog = allNodes.length > 0 ? allNodes : nodes;
+  const pendingAutoSelect =
+    !nodeId &&
+    !autoSelectedRef.current &&
+    catalog.length > 0 &&
+    (nodesQuery.isLoading || allNodesQuery.isLoading || !centerPrefsQuery.isFetched);
 
   return (
     <AdminPageShell
