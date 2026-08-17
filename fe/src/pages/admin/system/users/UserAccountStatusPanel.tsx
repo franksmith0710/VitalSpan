@@ -124,6 +124,7 @@ export function UserAccountStatusPanel({
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction
+              variant="primary"
               disabled={statusMutation.isPending}
               onClick={() => statusMutation.mutate("disable")}
             >

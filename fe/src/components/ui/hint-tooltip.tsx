@@ -38,7 +38,11 @@ export function TruncateHint({ title, children, className, as: Tag = "span" }: T
 
   return (
     <HintTooltip label={title}>
-      <Tag className={cn("inline-block max-w-full truncate", className)}>{children}</Tag>
+      <Tag
+        className={cn(Tag === "p" ? "block w-full min-w-0 truncate" : "inline-block max-w-full truncate", className)}
+      >
+        {children}
+      </Tag>
     </HintTooltip>
   );
 }

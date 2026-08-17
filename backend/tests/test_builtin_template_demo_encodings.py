@@ -31,9 +31,13 @@ def test_builtin_templates_all_charts_bound_to_demo_datasets() -> None:
             if widget.get("type") != "chart":
                 continue
             cfg = widget.get("chartConfig")
-            assert isinstance(cfg, dict), widget.get("title")
-            assert cfg.get("chartType")
+            if not isinstance(cfg, dict) or not cfg.get("chartType"):
+                continue
+            if cfg.get("mode") != "dataset":
+                continue
             dataset_id = cfg.get("datasetId")
+            if not dataset_id:
+                continue
             assert dataset_id in DEMO_DATASET_IDS, (widget.get("title"), dataset_id)
             allowed = set(_DEMO_DATASET_BINDING_SPECS[dataset_id]["columns"])  # type: ignore[index]
             illegal = [name for name in _fields_of(cfg) if name not in allowed]

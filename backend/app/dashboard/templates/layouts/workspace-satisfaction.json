@@ -1,16 +1,16 @@
 {
   "name": "公共服务满意度",
-  "slug": "workspace-gov-satisfaction",
+  "slug": "公共服务满意度编辑-1786607571845",
   "surfaceKind": "dashboard",
   "layoutJson": {
     "version": 2,
     "canvas": {
       "width": 1440,
-      "height": 1285
+      "height": 1200
     },
     "widgets": [
       {
-        "id": "3749b971-eaf1-4582-8167-732d9a5309d8",
+        "id": "e09d1d43-6cd1-4fe1-a3c0-57d150c6d429",
         "type": "chart",
         "title": "网格服务 TOP10",
         "x": 955,
@@ -28,13 +28,13 @@
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "3749b971-eaf1-4582-8167-732d9a5309d8",
+          "chartId": "e09d1d43-6cd1-4fe1-a3c0-57d150c6d429",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
-          "datasetId": "demo-gov-grid-stats",
+          "configId": "f3e6571b-a8ae-42cf-80c7-2c2843dde9b2",
+          "datasetId": "demo-v-sales-geo",
           "nativeBody": {
             "deStyle": {
               "legend": {
@@ -53,31 +53,32 @@
           "index": null,
           "dimensions": [
             {
-              "field": "grid_name",
+              "field": "city",
               "label": null
             },
             {
-              "field": "event_count",
-              "label": null
-            },
-            {
-              "field": "resolved_count",
+              "field": "province",
               "label": null
             }
           ],
-          "metrics": [],
+          "metrics": [
+            {
+              "field": "amount",
+              "label": null
+            }
+          ],
           "axes": {
             "xAxis": [
               {
-                "field": "grid_name",
+                "field": "city",
                 "label": null
               },
               {
-                "field": "event_count",
+                "field": "province",
                 "label": null
               },
               {
-                "field": "resolved_count",
+                "field": "amount",
                 "label": null
               }
             ]
@@ -89,10 +90,11 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "eb62d373-e3b6-4fdc-b299-be61e5733e9f",
+        "id": "79bf977f-c4e9-4d1c-ae75-35d41959ef77",
         "type": "chart",
         "title": "透视表",
         "x": 0,
@@ -110,12 +112,12 @@
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "eb62d373-e3b6-4fdc-b299-be61e5733e9f",
+          "chartId": "79bf977f-c4e9-4d1c-ae75-35d41959ef77",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
+          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
           "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deTableStyle": {
@@ -131,11 +133,11 @@
           "index": null,
           "dimensions": [
             {
-              "field": "category_name",
+              "field": "sale_date",
               "label": null
             },
             {
-              "field": "province",
+              "field": "category_name",
               "label": null
             }
           ],
@@ -148,17 +150,19 @@
           "axes": {
             "xAxis": [
               {
-                "field": "category_name",
-                "label": null
-              },
-              {
-                "field": "province",
+                "field": "sale_date",
                 "label": null
               }
             ],
             "yAxis": [
               {
                 "field": "amount",
+                "label": null
+              }
+            ],
+            "xAxisExt": [
+              {
+                "field": "category_name",
                 "label": null
               }
             ]
@@ -170,16 +174,17 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "cf086425-9bb6-48d4-800a-6288153a5cf3",
+        "id": "5b473ca0-6b8c-489e-944c-eb71732d9612",
         "type": "chart",
         "title": "堆叠折线图",
         "x": 0,
         "y": 274,
         "width": 1440,
-        "height": 372,
+        "height": 427,
         "order": 2,
         "hidden": null,
         "locked": null,
@@ -191,12 +196,12 @@
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "cf086425-9bb6-48d4-800a-6288153a5cf3",
+          "chartId": "5b473ca0-6b8c-489e-944c-eb71732d9612",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
+          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
           "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
@@ -228,6 +233,10 @@
             {
               "field": "amount",
               "label": null
+            },
+            {
+              "field": "quantity",
+              "label": null
             }
           ],
           "axes": {
@@ -241,6 +250,10 @@
               {
                 "field": "amount",
                 "label": null
+              },
+              {
+                "field": "quantity",
+                "label": null
               }
             ]
           },
@@ -251,12 +264,13 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "41b02af7-d9b8-49d1-9878-933ff5208269",
+        "id": "24930f43-1660-492e-927b-45b6faf694be",
         "type": "chart",
-        "title": "销售额趋势",
+        "title": "K 线图",
         "x": 475,
         "y": 0,
         "width": 480,
@@ -268,19 +282,119 @@
         "parentTabsId": null,
         "tabPaneId": null,
         "chartConfig": {
-          "chartType": "line",
+          "chartType": "stock-line",
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "41b02af7-d9b8-49d1-9878-933ff5208269",
+          "chartId": "24930f43-1660-492e-927b-45b6faf694be",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
+          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
           "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
+              "title": {
+                "color": "#1d2939"
+              }
+            }
+          },
+          "index": null,
+          "dimensions": [
+            {
+              "field": "sale_date",
+              "label": null
+            }
+          ],
+          "metrics": [
+            {
+              "field": "amount",
+              "label": null
+            },
+            {
+              "field": "quantity",
+              "label": null
+            },
+            {
+              "field": "quantity",
+              "label": null
+            },
+            {
+              "field": "amount",
+              "label": null
+            }
+          ],
+          "axes": {
+            "yAxis": [
+              {
+                "field": "amount",
+                "label": null
+              },
+              {
+                "field": "quantity",
+                "label": null
+              },
+              {
+                "field": "quantity",
+                "label": null
+              },
+              {
+                "field": "amount",
+                "label": null
+              }
+            ],
+            "xAxis": [
+              {
+                "field": "sale_date",
+                "label": null
+              }
+            ]
+          },
+          "filters": [],
+          "timeRange": null
+        },
+        "filterConfig": null,
+        "textConfig": null,
+        "mediaConfig": null,
+        "tabsConfig": null,
+        "customVizConfig": null,
+        "componentRef": null
+      },
+      {
+        "id": "d0c6dc87-3fe0-4ee6-a5da-314d9eb91dff",
+        "type": "chart",
+        "title": "漏斗图",
+        "x": 0,
+        "y": 701,
+        "width": 342,
+        "height": 499,
+        "order": 4,
+        "hidden": null,
+        "locked": null,
+        "chartRef": null,
+        "parentTabsId": null,
+        "tabPaneId": null,
+        "chartConfig": {
+          "chartType": "funnel",
+          "styleVariant": "default",
+          "dataSourceId": "__demo:sample_db__",
+          "bindingId": null,
+          "chartId": "d0c6dc87-3fe0-4ee6-a5da-314d9eb91dff",
+          "mode": "dataset",
+          "sql": null,
+          "schema": null,
+          "table": null,
+          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
+          "datasetId": "demo-sales-wide",
+          "nativeBody": {
+            "deStyle": {
+              "legend": {
+                "show": false,
+                "position": "bottom",
+                "hAlign": "center",
+                "vAlign": "bottom"
+              },
               "title": {
                 "color": "#1d2939"
               }
@@ -320,91 +434,17 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "7e61fad3-a264-48f4-a43b-8a39862b3ef2",
-        "type": "chart",
-        "title": "漏斗图",
-        "x": 0,
-        "y": 646,
-        "width": 342,
-        "height": 639,
-        "order": 4,
-        "hidden": null,
-        "locked": null,
-        "chartRef": null,
-        "parentTabsId": null,
-        "tabPaneId": null,
-        "chartConfig": {
-          "chartType": "funnel",
-          "styleVariant": "default",
-          "dataSourceId": "__demo:sample_db__",
-          "bindingId": null,
-          "chartId": "7e61fad3-a264-48f4-a43b-8a39862b3ef2",
-          "mode": "dataset",
-          "sql": null,
-          "schema": null,
-          "table": null,
-          "configId": null,
-          "datasetId": "demo-sales-wide",
-          "nativeBody": {
-            "deStyle": {
-              "legend": {
-                "show": false,
-                "position": "bottom",
-                "hAlign": "center",
-                "vAlign": "bottom"
-              },
-              "title": {
-                "color": "#1d2939"
-              }
-            }
-          },
-          "index": null,
-          "dimensions": [
-            {
-              "field": "category_name",
-              "label": null
-            }
-          ],
-          "metrics": [
-            {
-              "field": "amount",
-              "label": null
-            }
-          ],
-          "axes": {
-            "xAxis": [
-              {
-                "field": "category_name",
-                "label": null
-              }
-            ],
-            "yAxis": [
-              {
-                "field": "amount",
-                "label": null
-              }
-            ]
-          },
-          "filters": [],
-          "timeRange": null
-        },
-        "filterConfig": null,
-        "textConfig": null,
-        "mediaConfig": null,
-        "tabsConfig": null,
-        "componentRef": null
-      },
-      {
-        "id": "cc357b4b-821f-4f19-ab3b-12b805c2c760",
+        "id": "cf576610-a32c-4d0b-88ad-5f0c7b3aca70",
         "type": "chart",
         "title": "分组柱状图",
         "x": 342,
-        "y": 646,
+        "y": 701,
         "width": 1098,
-        "height": 639,
+        "height": 499,
         "order": 5,
         "hidden": null,
         "locked": null,
@@ -416,12 +456,12 @@
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "cc357b4b-821f-4f19-ab3b-12b805c2c760",
+          "chartId": "cf576610-a32c-4d0b-88ad-5f0c7b3aca70",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
+          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
           "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
@@ -439,7 +479,7 @@
           "index": null,
           "dimensions": [
             {
-              "field": "category_name",
+              "field": "sale_date",
               "label": null
             }
           ],
@@ -452,7 +492,7 @@
           "axes": {
             "xAxis": [
               {
-                "field": "category_name",
+                "field": "sale_date",
                 "label": null
               }
             ],
@@ -470,6 +510,7 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       }
     ],

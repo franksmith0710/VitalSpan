@@ -56,7 +56,6 @@ import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
 import { fetchAllCatalogTemplates } from "@/lib/reportCatalogUtils";
-import { cn } from "@/lib/utils";
 import { mapRoleError } from "./roleErrors";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { useListPagination } from "@/lib/list-pagination";
@@ -465,9 +464,7 @@ export function RoleListPage() {
                               type="button"
                               variant="ghost"
                               size="sm"
-                              className={cn(
-                                "text-gray-500 hover:text-error-600 dark:text-gray-400 dark:hover:text-error-400",
-                              )}
+                              className="text-error-600 hover:text-error-700 dark:text-error-400 dark:hover:text-error-300"
                               aria-label="删除"
                               onClick={() => {
                                 setActionError(null);

@@ -128,13 +128,13 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │   # 图表类型目录：Palette Drawer「查看全部类型」（无独立 `/charts/types` 路由；旧路径重定向 dashboards）
 │
 ├── 报表
-│   ├── /reports/center              # 报表中心 Hub（侧栏「报表中心」分组 · 含子项高亮）
-│   ├── /reports/standard            # 标准分析工作台（侧栏子项）
-│   ├── /reports/standard/config     # 标准分析配置（manage）
-│   ├── /reports/view/:nodeId        # 报表查看与运行（侧栏高亮「文档模板」）
-│   ├── /reports/templates           # 文档模板（侧栏子项 · manage 深链）
+│   ├── /reports/center              # 报表中心概览（侧栏唯一入口）
+│   ├── /reports/standard            # 标准分析（页内 Tab；?panel=settings 为包设置）
+│   ├── /reports/standard/config     # 重定向至 standard?panel=settings（兼容旧书签）
+│   ├── /reports/view/:nodeId        # 报表查看与运行（Tab 高亮「文档模板」）
+│   ├── /reports/templates           # 文档模板（页内 Tab · manage）
 │   ├── /reports/templates/:id       # 模板编辑
-│   └── /reports/schedules           # 定时报告（侧栏子项 · manage 深链）
+│   └── /reports/schedules           # 调度与投递（页内 Tab · manage）
 │
 ├── 我的                            # 用户菜单进入（脱离主侧栏 IA）
 │   ├── /account/profile             # 用户资料

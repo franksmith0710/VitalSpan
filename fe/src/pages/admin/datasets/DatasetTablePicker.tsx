@@ -401,7 +401,7 @@ export function DatasetTablePicker({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmTablePick}>继续</AlertDialogAction>
+            <AlertDialogAction variant="primary" onClick={confirmTablePick}>继续</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -419,7 +419,7 @@ export function DatasetTablePicker({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDataSourceChange}>继续</AlertDialogAction>
+            <AlertDialogAction variant="primary" onClick={confirmDataSourceChange}>继续</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

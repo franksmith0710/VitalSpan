@@ -28,7 +28,10 @@ describe("AdminPageShell", () => {
     );
 
     expect(screen.getByRole("heading", { name: "数据大屏" })).toHaveClass("text-lg");
-    expect(screen.getByText(/16:9 深色可视化大屏/)).toHaveClass("line-clamp-2");
+    const description = screen.getByText(/16:9 深色可视化大屏/);
+    expect(description).toHaveClass("line-clamp-2");
+    expect(description).not.toHaveClass("inline-block");
+    expect(description).not.toHaveClass("truncate");
     expect(screen.getByTestId("admin-page-header-frame")).toHaveClass("rounded-2xl");
     expect(screen.getByRole("button", { name: "新建" })).toBeInTheDocument();
   });

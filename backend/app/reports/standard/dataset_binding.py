@@ -10,6 +10,7 @@ from app.metadata.dataset.models import DatasetRecord
 from app.metadata.physical import service as physical_service
 from app.query.config_store.schemas import ConfigUpsert
 from app.query.config_store.service import upsert_config
+from app.reports.standard.errors import RPT_STD_DATASET_NOT_FOUND, RPT_STD_DATASET_UNBOUND, StandardAnalysisError
 from app.reports.standard.schemas import AnalysisPackOut
 
 
@@ -18,8 +19,18 @@ def _stable_ref_id(pack_key: str) -> uuid.UUID:
 
 
 def ensure_analysis_pack_dataset_binding(db: Session, pack: AnalysisPackOut) -> uuid.UUID:
-    """幂等创建分析包 Dataset 与 dataset_query 配置，返回 bound_config_id。"""
+    """返回分析包出数用的 bound_config_id；优先使用已选数据集，否则幂等创建 std-pack-*。"""
+    if pack.dataset_id:
+        row = db.get(DatasetRecord, pack.dataset_id)
+        if row is None:
+            raise StandardAnalysisError(RPT_STD_DATASET_NOT_FOUND, "Dataset not found", 404)
+        bound_id = pack.bound_config_id or row.bound_config_id
+        if bound_id is None:
+            raise StandardAnalysisError(RPT_STD_DATASET_UNBOUND, "Dataset has no bound query config", 422)
+        return bound_id
+
     dataset_id = f"std-pack-{pack.pack_key}"
+    assert pack.physical_table_fqn
     pt = physical_service.get_physical_table(pack.physical_table_fqn)
     schema = pt.source_schema or "public"
     table = pt.source_table or pack.physical_table_fqn.split(".")[-1]

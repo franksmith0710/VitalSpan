@@ -265,8 +265,7 @@ function TemplateTabSections({
         footer={
           <Button
             type="button"
-            variant="outline"
-            className="text-error-600 hover:text-error-700 dark:text-error-400"
+            variant="destructive"
             disabled={deletePending}
             onClick={onDelete}
           >

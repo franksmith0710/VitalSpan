@@ -110,7 +110,7 @@ export function ListPageToolbar({
         "flex shrink-0 border-b border-gray-100 bg-gray-50/80 dark:border-white/[0.06] dark:bg-white/[0.02]",
         actionsOnly
           ? "justify-end px-5 py-3"
-          : "flex-col gap-3 px-5 py-3 sm:flex-row sm:items-center sm:justify-between",
+          : "flex-col gap-3 px-5 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between",
         className,
       )}
     >

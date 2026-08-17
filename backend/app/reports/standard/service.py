@@ -10,6 +10,8 @@ from app.metadata.physical import service as physical_service
 from app.metadata.physical.errors import PhysicalTableError
 from app.reports.engine import execute as engine_execute
 from app.reports.standard.errors import (
+    RPT_STD_DATASET_NOT_FOUND,
+    RPT_STD_DATASET_UNBOUND,
     RPT_STD_EMPTY_ROLES,
     RPT_STD_FIELD_MAPPING,
     RPT_STD_FORBIDDEN,
@@ -44,14 +46,53 @@ def _assert_write_access(user: UserContext) -> None:
         raise StandardAnalysisError(RPT_STD_FORBIDDEN, "viewer cannot manage analysis packs", 403)
 
 
+def _load_columns(table_fqn: str) -> list[dict]:
+    pt = physical_service.get_physical_table(table_fqn)
+    return [c.model_dump(by_alias=True) for c in pt.columns]
+
+
+def _load_columns_from_dataset(dataset_id: str, bound_config_id: uuid.UUID | None) -> list[dict]:
+    from app.datasources.models import get_meta_session
+    from app.metadata.dataset.errors import DatasetError
+    from app.metadata.dataset.service import get_dataset
+    from app.query.config_store.service import get_config_by_id
+
+    try:
+        dataset = get_dataset(dataset_id)
+    except DatasetError as exc:
+        raise StandardAnalysisError(RPT_STD_DATASET_NOT_FOUND, exc.message, exc.status) from exc
+    config_id = bound_config_id or dataset.bound_config_id
+    if config_id is None:
+        raise StandardAnalysisError(RPT_STD_DATASET_UNBOUND, "Dataset has no bound query config", 422)
+    session = get_meta_session()
+    try:
+        record = get_config_by_id(session, config_id)
+    finally:
+        session.close()
+    payload = record.payload or {}
+    raw_columns = payload.get("columns") or []
+    return [{"name": col} for col in raw_columns if isinstance(col, str) and col.strip()]
+
+
+def _load_pack_columns(pack: AnalysisPackIn) -> list[dict]:
+    if pack.dataset_id:
+        return _load_columns_from_dataset(pack.dataset_id, pack.bound_config_id)
+    assert pack.physical_table_fqn
+    return _load_columns(pack.physical_table_fqn)
+
+
 def _validate_pack(payload: AnalysisPackIn) -> AnalysisPackIn:
     if not payload.allowed_roles:
         raise StandardAnalysisError(RPT_STD_EMPTY_ROLES, "allowedRoles must not be empty", 422)
-    try:
-        physical_service.get_physical_table(payload.physical_table_fqn)
-    except PhysicalTableError as exc:
-        raise StandardAnalysisError(RPT_STD_TABLE_NOT_FOUND, exc.message, 404) from exc
-    caps = evaluate_capabilities(payload.field_mapping, _load_columns(payload.physical_table_fqn))
+    if payload.dataset_id:
+        columns = _load_pack_columns(payload)
+    else:
+        try:
+            physical_service.get_physical_table(payload.physical_table_fqn or "")
+        except PhysicalTableError as exc:
+            raise StandardAnalysisError(RPT_STD_TABLE_NOT_FOUND, exc.message, 404) from exc
+        columns = _load_pack_columns(payload)
+    caps = evaluate_capabilities(payload.field_mapping, columns)
     for theme in payload.enabled_themes:
         cap = next((c for c in caps if c.theme == theme), None)
         if cap is None or not cap.available:
@@ -61,11 +102,6 @@ def _validate_pack(payload: AnalysisPackIn) -> AnalysisPackIn:
                 422,
             )
     return payload
-
-
-def _load_columns(table_fqn: str) -> list[dict]:
-    pt = physical_service.get_physical_table(table_fqn)
-    return [c.model_dump(by_alias=True) for c in pt.columns]
 
 
 def list_packs(user: UserContext) -> AnalysisPackListResponse:
@@ -110,7 +146,7 @@ def delete_pack(key: str, user: UserContext) -> None:
 
 def get_capabilities(key: str, user: UserContext) -> CapabilitiesOut:
     pack = get_pack(key, user)
-    columns = _load_columns(pack.physical_table_fqn)
+    columns = _load_pack_columns(pack)
     themes = evaluate_capabilities(pack.field_mapping, columns, pack.enabled_themes)
     return CapabilitiesOut(
         packKey=pack.pack_key,

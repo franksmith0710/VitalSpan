@@ -10,7 +10,7 @@
     },
     "widgets": [
       {
-        "id": "1d0da968-78c1-422c-bd3f-88cb4ee55914",
+        "id": "b514cc88-3c12-4cef-86eb-2b8e214a9ca1",
         "type": "chart",
         "title": "区域服务热力",
         "x": 518,
@@ -28,13 +28,13 @@
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "1d0da968-78c1-422c-bd3f-88cb4ee55914",
+          "chartId": "b514cc88-3c12-4cef-86eb-2b8e214a9ca1",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
-          "datasetId": "demo-v-sales-geo",
+          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
+          "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
               "seriesGradient": false,
@@ -80,11 +80,11 @@
               "label": null
             },
             {
-              "field": "city",
+              "field": "sale_date",
               "label": null
             },
             {
-              "field": "district",
+              "field": "province",
               "label": null
             }
           ],
@@ -109,11 +109,11 @@
             ],
             "drill": [
               {
-                "field": "city",
+                "field": "sale_date",
                 "label": null
               },
               {
-                "field": "district",
+                "field": "province",
                 "label": null
               }
             ]
@@ -125,10 +125,11 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "602b951c-78f6-4b62-87f3-49c607004300",
+        "id": "443edecc-8939-4a81-8334-e18c62d13f0d",
         "type": "chart",
         "title": "柱线组合图",
         "x": 0,
@@ -146,12 +147,12 @@
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "602b951c-78f6-4b62-87f3-49c607004300",
+          "chartId": "443edecc-8939-4a81-8334-e18c62d13f0d",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
+          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
           "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
@@ -186,6 +187,86 @@
             }
           ],
           "axes": {
+            "yAxis": [
+              {
+                "field": "amount",
+                "label": null
+              }
+            ],
+            "xAxis": [
+              {
+                "field": "sale_date",
+                "label": null
+              }
+            ]
+          },
+          "filters": [],
+          "timeRange": null
+        },
+        "filterConfig": null,
+        "textConfig": null,
+        "mediaConfig": null,
+        "tabsConfig": null,
+        "customVizConfig": null,
+        "componentRef": null
+      },
+      {
+        "id": "3437194f-2174-4a60-a733-782d85a08acb",
+        "type": "chart",
+        "title": "区间条形图",
+        "x": 998,
+        "y": 300,
+        "width": 442,
+        "height": 301,
+        "order": 2,
+        "hidden": null,
+        "locked": null,
+        "chartRef": null,
+        "parentTabsId": null,
+        "tabPaneId": null,
+        "chartConfig": {
+          "chartType": "bar-range",
+          "styleVariant": "default",
+          "dataSourceId": "__demo:sample_db__",
+          "bindingId": null,
+          "chartId": "3437194f-2174-4a60-a733-782d85a08acb",
+          "mode": "dataset",
+          "sql": null,
+          "schema": null,
+          "table": null,
+          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
+          "datasetId": "demo-sales-wide",
+          "nativeBody": {
+            "deStyle": {
+              "title": {
+                "color": "#1d2939"
+              }
+            }
+          },
+          "index": null,
+          "dimensions": [
+            {
+              "field": "sale_date",
+              "label": null
+            }
+          ],
+          "metrics": [
+            {
+              "field": "amount",
+              "label": null
+            },
+            {
+              "field": "quantity",
+              "label": null
+            }
+          ],
+          "axes": {
+            "yAxisExt": [
+              {
+                "field": "quantity",
+                "label": null
+              }
+            ],
             "xAxis": [
               {
                 "field": "sale_date",
@@ -206,89 +287,11 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "f1522c12-8371-4555-a38d-3fcfce81e223",
-        "type": "chart",
-        "title": "区间条形图",
-        "x": 998,
-        "y": 300,
-        "width": 442,
-        "height": 301,
-        "order": 2,
-        "hidden": null,
-        "locked": null,
-        "chartRef": null,
-        "parentTabsId": null,
-        "tabPaneId": null,
-        "chartConfig": {
-          "chartType": "bar-range",
-          "styleVariant": "default",
-          "dataSourceId": "__demo:sample_db__",
-          "bindingId": null,
-          "chartId": "f1522c12-8371-4555-a38d-3fcfce81e223",
-          "mode": "dataset",
-          "sql": null,
-          "schema": null,
-          "table": null,
-          "configId": null,
-          "datasetId": "demo-sales-wide",
-          "nativeBody": {
-            "deStyle": {
-              "title": {
-                "color": "#1d2939"
-              }
-            }
-          },
-          "index": null,
-          "dimensions": [
-            {
-              "field": "category_name",
-              "label": null
-            }
-          ],
-          "metrics": [
-            {
-              "field": "amount",
-              "label": null
-            },
-            {
-              "field": "quantity",
-              "label": null
-            }
-          ],
-          "axes": {
-            "xAxis": [
-              {
-                "field": "category_name",
-                "label": null
-              }
-            ],
-            "yAxis": [
-              {
-                "field": "amount",
-                "label": null
-              }
-            ],
-            "yAxisExt": [
-              {
-                "field": "quantity",
-                "label": null
-              }
-            ]
-          },
-          "filters": [],
-          "timeRange": null
-        },
-        "filterConfig": null,
-        "textConfig": null,
-        "mediaConfig": null,
-        "tabsConfig": null,
-        "componentRef": null
-      },
-      {
-        "id": "0b0ed241-6c5d-49af-9681-432261e8a99f",
+        "id": "6c185057-2920-4793-9cd3-3bedb290d075",
         "type": "chart",
         "title": "词云图",
         "x": 517,
@@ -306,256 +309,17 @@
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "0b0ed241-6c5d-49af-9681-432261e8a99f",
+          "chartId": "6c185057-2920-4793-9cd3-3bedb290d075",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
+          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
           "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
               "title": {
                 "color": "#1d2939"
-              }
-            }
-          },
-          "index": null,
-          "dimensions": [
-            {
-              "field": "product_name",
-              "label": null
-            }
-          ],
-          "metrics": [
-            {
-              "field": "amount",
-              "label": null
-            }
-          ],
-          "axes": {
-            "xAxis": [
-              {
-                "field": "product_name",
-                "label": null
-              }
-            ],
-            "yAxis": [
-              {
-                "field": "amount",
-                "label": null
-              }
-            ]
-          },
-          "filters": [],
-          "timeRange": null
-        },
-        "filterConfig": null,
-        "textConfig": null,
-        "mediaConfig": null,
-        "tabsConfig": null,
-        "componentRef": null
-      },
-      {
-        "id": "a118b786-0a23-47dd-a457-0c3c0a76be97",
-        "type": "chart",
-        "title": "对称条形图",
-        "x": 0,
-        "y": 300,
-        "width": 517,
-        "height": 300,
-        "order": 4,
-        "hidden": null,
-        "locked": null,
-        "chartRef": null,
-        "parentTabsId": null,
-        "tabPaneId": null,
-        "chartConfig": {
-          "chartType": "bidirectional-bar",
-          "styleVariant": "default",
-          "dataSourceId": "__demo:sample_db__",
-          "bindingId": null,
-          "chartId": "a118b786-0a23-47dd-a457-0c3c0a76be97",
-          "mode": "dataset",
-          "sql": null,
-          "schema": null,
-          "table": null,
-          "configId": null,
-          "datasetId": "demo-sales-detail",
-          "nativeBody": {
-            "deStyle": {
-              "legend": {
-                "show": true,
-                "position": "bottom",
-                "hAlign": "center",
-                "vAlign": "bottom"
-              },
-              "title": {
-                "color": "#1d2939"
-              }
-            }
-          },
-          "index": null,
-          "dimensions": [
-            {
-              "field": "channel",
-              "label": null
-            }
-          ],
-          "metrics": [
-            {
-              "field": "quantity",
-              "label": null
-            },
-            {
-              "field": "amount",
-              "label": null
-            }
-          ],
-          "axes": {
-            "xAxis": [
-              {
-                "field": "channel",
-                "label": null
-              }
-            ],
-            "yAxis": [
-              {
-                "field": "quantity",
-                "label": null
-              }
-            ],
-            "yAxisExt": [
-              {
-                "field": "amount",
-                "label": null
-              }
-            ]
-          },
-          "filters": [],
-          "timeRange": null
-        },
-        "filterConfig": null,
-        "textConfig": null,
-        "mediaConfig": null,
-        "tabsConfig": null,
-        "componentRef": null
-      },
-      {
-        "id": "e1c8afaa-3eb2-42a8-9580-7b4ef39b56ab",
-        "type": "chart",
-        "title": "对称条形图",
-        "x": 997,
-        "y": 0,
-        "width": 443,
-        "height": 300,
-        "order": 5,
-        "hidden": null,
-        "locked": null,
-        "chartRef": null,
-        "parentTabsId": null,
-        "tabPaneId": null,
-        "chartConfig": {
-          "chartType": "bidirectional-bar",
-          "styleVariant": "default",
-          "dataSourceId": "__demo:sample_db__",
-          "bindingId": null,
-          "chartId": "e1c8afaa-3eb2-42a8-9580-7b4ef39b56ab",
-          "mode": "dataset",
-          "sql": null,
-          "schema": null,
-          "table": null,
-          "configId": null,
-          "datasetId": "demo-sales-detail",
-          "nativeBody": {
-            "deStyle": {
-              "legend": {
-                "show": true,
-                "position": "bottom",
-                "hAlign": "center",
-                "vAlign": "bottom"
-              },
-              "title": {
-                "color": "#1d2939"
-              }
-            }
-          },
-          "index": null,
-          "dimensions": [
-            {
-              "field": "channel",
-              "label": null
-            }
-          ],
-          "metrics": [
-            {
-              "field": "quantity",
-              "label": null
-            },
-            {
-              "field": "amount",
-              "label": null
-            }
-          ],
-          "axes": {
-            "xAxis": [
-              {
-                "field": "channel",
-                "label": null
-              }
-            ],
-            "yAxis": [
-              {
-                "field": "quantity",
-                "label": null
-              }
-            ],
-            "yAxisExt": [
-              {
-                "field": "amount",
-                "label": null
-              }
-            ]
-          },
-          "filters": [],
-          "timeRange": null
-        },
-        "filterConfig": null,
-        "textConfig": null,
-        "mediaConfig": null,
-        "tabsConfig": null,
-        "componentRef": null
-      },
-      {
-        "id": "3c1498c2-242e-4a11-9ec5-6577a779c447",
-        "type": "chart",
-        "title": "趋势",
-        "x": 0,
-        "y": 0,
-        "width": 517,
-        "height": 300,
-        "order": 6,
-        "hidden": null,
-        "locked": null,
-        "chartRef": null,
-        "parentTabsId": null,
-        "tabPaneId": null,
-        "chartConfig": {
-          "chartType": "area",
-          "styleVariant": "default",
-          "dataSourceId": "__demo:sample_db__",
-          "bindingId": null,
-          "chartId": "3c1498c2-242e-4a11-9ec5-6577a779c447",
-          "mode": "dataset",
-          "sql": null,
-          "schema": null,
-          "table": null,
-          "configId": null,
-          "datasetId": "demo-sales-wide",
-          "nativeBody": {
-            "deStyle": {
-              "legend": {
-                "show": true
               }
             }
           },
@@ -593,7 +357,215 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
+      },
+      {
+        "id": "9386fe25-1ca3-4d34-bd12-b0ee121f9b19",
+        "type": "chart",
+        "title": "对称条形图",
+        "x": 0,
+        "y": 301,
+        "width": 517,
+        "height": 300,
+        "order": 4,
+        "hidden": null,
+        "locked": null,
+        "chartRef": null,
+        "parentTabsId": null,
+        "tabPaneId": null,
+        "chartConfig": {
+          "chartType": "bidirectional-bar",
+          "styleVariant": "default",
+          "dataSourceId": "__demo:sample_db__",
+          "bindingId": null,
+          "chartId": "9386fe25-1ca3-4d34-bd12-b0ee121f9b19",
+          "mode": "dataset",
+          "sql": null,
+          "schema": null,
+          "table": null,
+          "configId": "8f770930-6675-4707-9925-68cac3fee49a",
+          "datasetId": "demo-sales-detail",
+          "nativeBody": {
+            "deStyle": {
+              "legend": {
+                "show": true,
+                "position": "bottom",
+                "hAlign": "center",
+                "vAlign": "bottom"
+              },
+              "title": {
+                "color": "#1d2939"
+              }
+            },
+            "deDisplay": {
+              "resultLimit": "10000"
+            }
+          },
+          "index": null,
+          "dimensions": [
+            {
+              "field": "sale_date",
+              "label": null
+            }
+          ],
+          "metrics": [
+            {
+              "field": "amount",
+              "label": null
+            },
+            {
+              "field": "amount",
+              "label": null
+            }
+          ],
+          "axes": {
+            "yAxisExt": [
+              {
+                "field": "amount",
+                "label": null
+              }
+            ],
+            "yAxis": [
+              {
+                "field": "amount",
+                "label": null
+              }
+            ],
+            "xAxis": [
+              {
+                "field": "sale_date",
+                "label": null
+              }
+            ]
+          },
+          "filters": [
+            {
+              "field": "amount",
+              "operator": "lte",
+              "value": "10"
+            }
+          ],
+          "timeRange": null
+        },
+        "filterConfig": null,
+        "textConfig": null,
+        "mediaConfig": null,
+        "tabsConfig": null,
+        "customVizConfig": null,
+        "componentRef": null
+      },
+      {
+        "id": "09e96c38-db22-4b19-83b1-2a70672a90da",
+        "type": "chart",
+        "title": "对称条形图",
+        "x": 997,
+        "y": 0,
+        "width": 443,
+        "height": 300,
+        "order": 5,
+        "hidden": null,
+        "locked": null,
+        "chartRef": null,
+        "parentTabsId": null,
+        "tabPaneId": null,
+        "chartConfig": {
+          "chartType": "bidirectional-bar",
+          "styleVariant": "default",
+          "dataSourceId": "__demo:sample_db__",
+          "bindingId": null,
+          "chartId": "09e96c38-db22-4b19-83b1-2a70672a90da",
+          "mode": "dataset",
+          "sql": null,
+          "schema": null,
+          "table": null,
+          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
+          "datasetId": "demo-sales-wide",
+          "nativeBody": {
+            "deStyle": {
+              "legend": {
+                "show": true,
+                "position": "bottom",
+                "hAlign": "center",
+                "vAlign": "bottom"
+              },
+              "title": {
+                "color": "#1d2939"
+              }
+            }
+          },
+          "index": null,
+          "dimensions": [
+            {
+              "field": "product_name",
+              "label": null
+            }
+          ],
+          "metrics": [
+            {
+              "field": "quantity",
+              "label": null
+            },
+            {
+              "field": "amount",
+              "label": null
+            }
+          ],
+          "axes": {
+            "yAxisExt": [
+              {
+                "field": "amount",
+                "label": null
+              }
+            ],
+            "yAxis": [
+              {
+                "field": "quantity",
+                "label": null
+              }
+            ],
+            "xAxis": [
+              {
+                "field": "product_name",
+                "label": null
+              }
+            ]
+          },
+          "filters": [],
+          "timeRange": null
+        },
+        "filterConfig": null,
+        "textConfig": null,
+        "mediaConfig": null,
+        "tabsConfig": null,
+        "customVizConfig": null,
+        "componentRef": null
+      },
+      {
+        "id": "7cadb5e7-d982-4298-9988-b78820545553",
+        "type": "chart",
+        "title": "未命名面积图",
+        "x": 0,
+        "y": 0,
+        "width": 517,
+        "height": 300,
+        "order": 6,
+        "hidden": null,
+        "locked": null,
+        "chartRef": null,
+        "parentTabsId": null,
+        "tabPaneId": null,
+        "chartConfig": null,
+        "filterConfig": null,
+        "textConfig": null,
+        "mediaConfig": null,
+        "tabsConfig": null,
+        "customVizConfig": null,
+        "componentRef": {
+          "componentId": "2d52df47-8b2b-465e-aa98-23141c9beb87",
+          "pinnedRevision": null,
+          "detached": null
+        }
       }
     ],
     "globalFilters": [],

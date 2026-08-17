@@ -10,7 +10,7 @@
     },
     "widgets": [
       {
-        "id": "a77159e1-45f9-431d-81a8-1a59b71c1634",
+        "id": "2e3eced4-fb3a-475e-960a-070d5471d885",
         "type": "text",
         "title": "数据大屏标题",
         "x": 52,
@@ -65,10 +65,11 @@
         },
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "7740af6a-53ac-4e4c-a2bc-fc5ec346ee96",
+        "id": "617b5f9d-2e46-4c26-a9ea-39ea009f0bbb",
         "type": "text",
         "title": "时钟",
         "x": 1579,
@@ -130,10 +131,11 @@
         },
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "b5b18d55-d29e-4783-bfbe-634f73f675be",
+        "id": "63c7de6b-264b-4cdc-97f9-a57b0d42c105",
         "type": "chart",
         "title": "事件分类",
         "x": 52,
@@ -151,13 +153,13 @@
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "b5b18d55-d29e-4783-bfbe-634f73f675be",
+          "chartId": "63c7de6b-264b-4cdc-97f9-a57b0d42c105",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
-          "datasetId": "demo-gov-grid-stats",
+          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
+          "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
               "seriesGradient": true,
@@ -215,26 +217,26 @@
           "index": null,
           "dimensions": [
             {
-              "field": "grid_name",
+              "field": "province",
               "label": null
             }
           ],
           "metrics": [
             {
-              "field": "event_count",
+              "field": "amount",
               "label": null
             }
           ],
           "axes": {
             "xAxis": [
               {
-                "field": "grid_name",
+                "field": "province",
                 "label": null
               }
             ],
             "yAxis": [
               {
-                "field": "event_count",
+                "field": "amount",
                 "label": null
               }
             ]
@@ -246,10 +248,11 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "1b62dc10-546b-476a-aa16-c3d7b91fe649",
+        "id": "f95632b2-7c77-4baa-950d-745ae9f3d488",
         "type": "chart",
         "title": "区域态势",
         "x": 613,
@@ -267,13 +270,13 @@
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "1b62dc10-546b-476a-aa16-c3d7b91fe649",
+          "chartId": "f95632b2-7c77-4baa-950d-745ae9f3d488",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
-          "datasetId": "demo-v-sales-geo",
+          "configId": "7f223c7d-28cf-48dc-b877-cc9568f09023",
+          "datasetId": "demo-gov-region-service",
           "nativeBody": {
             "deStyle": {
               "seriesGradient": true,
@@ -465,7 +468,7 @@
           ],
           "metrics": [
             {
-              "field": "amount",
+              "field": "service_volume",
               "label": null
             }
           ],
@@ -478,7 +481,7 @@
             ],
             "yAxis": [
               {
-                "field": "amount",
+                "field": "service_volume",
                 "label": null
               }
             ],
@@ -500,10 +503,11 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "49d980fc-95b8-4e9d-aa63-1f5e057de89e",
+        "id": "8a978c8c-1485-42f7-8a8a-73d9b7f4d795",
         "type": "chart",
         "title": "满意度监测",
         "x": 1444,
@@ -521,12 +525,12 @@
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "49d980fc-95b8-4e9d-aa63-1f5e057de89e",
+          "chartId": "8a978c8c-1485-42f7-8a8a-73d9b7f4d795",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
+          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
           "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
@@ -612,10 +616,11 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "832c4fa1-5ba8-4dc8-a555-84ddb43e5397",
+        "id": "32147f06-77b0-4456-a8ce-535855228c5b",
         "type": "chart",
         "title": "支出结构",
         "x": 1444,
@@ -633,13 +638,13 @@
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "832c4fa1-5ba8-4dc8-a555-84ddb43e5397",
+          "chartId": "32147f06-77b0-4456-a8ce-535855228c5b",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
-          "datasetId": "demo-sales-wide",
+          "configId": "fd118df4-bde7-49f5-9a83-22f8ac177d87",
+          "datasetId": "demo-gov-budget",
           "nativeBody": {
             "deStyle": {
               "seriesGradient": true,
@@ -682,26 +687,26 @@
           "index": null,
           "dimensions": [
             {
-              "field": "category_name",
+              "field": "category",
               "label": null
             }
           ],
           "metrics": [
             {
-              "field": "amount",
+              "field": "spent_amount",
               "label": null
             }
           ],
           "axes": {
             "xAxis": [
               {
-                "field": "category_name",
+                "field": "category",
                 "label": null
               }
             ],
             "yAxis": [
               {
-                "field": "amount",
+                "field": "spent_amount",
                 "label": null
               }
             ]
@@ -713,10 +718,11 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "aaec8ec2-13ea-4a74-bd72-a93bd27271f4",
+        "id": "b9f69f84-f6b5-42a4-8c53-4efb7cf25f69",
         "type": "chart",
         "title": "网格待办",
         "x": 52,
@@ -734,12 +740,12 @@
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "aaec8ec2-13ea-4a74-bd72-a93bd27271f4",
+          "chartId": "b9f69f84-f6b5-42a4-8c53-4efb7cf25f69",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
+          "configId": "c8669b9e-35b9-4f95-9e43-a5b5fb405856",
           "datasetId": "demo-gov-grid-stats",
           "nativeBody": {
             "deStyle": {
@@ -805,7 +811,9 @@
             {
               "field": "grid_name",
               "label": null
-            },
+            }
+          ],
+          "metrics": [
             {
               "field": "event_count",
               "label": null
@@ -815,7 +823,6 @@
               "label": null
             }
           ],
-          "metrics": [],
           "axes": {
             "xAxis": [
               {
@@ -839,15 +846,16 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "3424acb8-f798-4872-ba98-095ed04a3c62",
+        "id": "a7f3eb5f-9095-4fa8-9d40-c736d5dd4449",
         "type": "chart",
         "title": "趋势",
         "x": 613,
         "y": 748,
-        "width": 778,
+        "width": 787,
         "height": 254,
         "order": 7,
         "hidden": null,
@@ -860,12 +868,12 @@
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "3424acb8-f798-4872-ba98-095ed04a3c62",
+          "chartId": "a7f3eb5f-9095-4fa8-9d40-c736d5dd4449",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
+          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
           "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
@@ -904,7 +912,7 @@
           "index": null,
           "dimensions": [
             {
-              "field": "sale_date",
+              "field": "product_name",
               "label": null
             }
           ],
@@ -917,7 +925,7 @@
           "axes": {
             "xAxis": [
               {
-                "field": "sale_date",
+                "field": "product_name",
                 "label": null
               }
             ],
@@ -935,6 +943,7 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       }
     ],
@@ -949,6 +958,8 @@
       "pixelGutter": 5,
       "scaleMode": null,
       "canvasBackgroundImage": "/template-assets/packs/gov-enterprise-v1/panels/panel-de-frame-cyan.svg",
+      "canvasBackgroundImageFit": null,
+      "canvasBackgroundImagePosition": null,
       "canvasBackgroundCustom": true,
       "canvasDecorPresetId": "custom",
       "refreshIntervalSec": null,
@@ -1029,6 +1040,8 @@
       "themeVariants": {
         "light": {
           "canvasBackground": "#ffffff",
+          "canvasBackgroundImageFit": null,
+          "canvasBackgroundImagePosition": null,
           "canvasBackgroundImage": null,
           "canvasBackgroundCustom": null,
           "canvasDecorPresetId": null,
@@ -1055,6 +1068,8 @@
         },
         "dark": {
           "canvasBackground": "#1a0509",
+          "canvasBackgroundImageFit": null,
+          "canvasBackgroundImagePosition": null,
           "canvasBackgroundImage": "/template-assets/packs/gov-enterprise-v1/panels/panel-de-frame-cyan.svg",
           "canvasBackgroundCustom": true,
           "canvasDecorPresetId": "custom",

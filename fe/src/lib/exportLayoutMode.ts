@@ -7,7 +7,7 @@ export const EXPORT_LAYOUT_MODE_LABELS: Record<
   full_page: {
     badge: "高清整页",
     title: "【导出模式：高清整页快照】",
-    hint: "整页连续展示完整看板画布（高分辨率渲染）。",
+    hint: "单页连续展示完整看板画布（高分辨率）；仅当内容超出引擎上限时才分页。",
   },
   per_widget: {
     badge: "按组件分页",

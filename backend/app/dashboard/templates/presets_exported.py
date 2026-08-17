@@ -13,7 +13,7 @@ from app.dashboard.templates.demo_datasource import (
     repair_legacy_template_layout,
 )
 from app.dashboard.templates.layout_utils import sanitize_layout_for_template
-from app.dashboard.templates.rebind_demo_encodings import rebind_layout_demo_encodings
+from app.metadata.dataset.demo_seed import remap_retired_demo_datasets_in_layout
 
 _LAYOUTS_DIR = Path(__file__).resolve().parent / "layouts"
 _UUID_RE = re.compile(
@@ -49,7 +49,7 @@ def prepare_exported_layout(raw: dict[str, Any]) -> dict[str, Any]:
     sanitized = sanitize_layout_for_template(raw)
     normalized = _normalize_datasource_refs(sanitized)
     migrated = repair_legacy_template_layout(normalized)
-    return rebind_layout_demo_encodings(migrated)
+    return remap_retired_demo_datasets_in_layout(migrated)
 
 
 @lru_cache(maxsize=32)

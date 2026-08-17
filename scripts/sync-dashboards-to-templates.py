@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""将工作区仪表板布局同步到内置可视化模板，并软删除工作副本看板。
+"""将当前仪表板 / 数据大屏布局同步到内置可视化模板。
 
 用法（仓库根目录）：
   python scripts/sync-dashboards-to-templates.py
@@ -11,9 +11,9 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import sys
 import uuid
-from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +21,8 @@ ROOT = Path(__file__).resolve().parents[1]
 BACKEND = Path(os.environ.get("VITALSPAN_BACKEND", str(ROOT / "backend")))
 LAYOUTS_DIR = BACKEND / "app" / "dashboard" / "templates" / "layouts"
 SEED_FILE = BACKEND / "app" / "dashboard" / "templates" / "seed.py"
+DATA_DIR = ROOT / "data"
+THUMB_PUBLIC_DIR = ROOT / "fe" / "public" / "template-assets" / "instance-thumbs"
 
 if str(BACKEND) not in sys.path:
     sys.path.insert(0, str(BACKEND))
@@ -33,11 +35,7 @@ from app.auth.models import get_meta_session
 from app.dashboard.models import Dashboard
 from app.dashboard.templates.models import DashboardTemplate
 from app.dashboard.templates.presets_exported import prepare_exported_layout
-from app.dashboard.workspace_instances.seed import (
-    WORKSPACE_INSTANCE_DESCRIPTION,
-    WORKSPACE_INSTANCE_SPECS,
-    WORKSPACE_INSTANCE_SLUGS,
-)
+from app.dashboard.workspace_instances.seed import WORKSPACE_INSTANCE_SPECS
 
 TEMPLATE_LAYOUT_FILES: dict[str, str] = {
     "builtin-gov-industrial-park": "industrial-park-screen.json",
@@ -49,11 +47,9 @@ TEMPLATE_LAYOUT_FILES: dict[str, str] = {
     "builtin-gov-efficiency": "workspace-efficiency.json",
     "builtin-gov-satisfaction": "workspace-satisfaction.json",
     "builtin-gov-finance": "workspace-finance.json",
-    "builtin-gov-investment": "workspace-investment.json",
     "builtin-gov-grid": "workspace-grid.json",
 }
 
-# 非 workspace 固定 ID 的额外看板（工业园区）
 EXTRA_DASHBOARD_SPECS: tuple[dict[str, Any], ...] = (
     {
         "dashboard_id": uuid.UUID("f8951c72-d2f9-41b0-9f80-3446d7c85105"),
@@ -62,59 +58,33 @@ EXTRA_DASHBOARD_SPECS: tuple[dict[str, Any], ...] = (
 )
 
 
+def _display_name(name: str) -> str:
+    return name.removesuffix("（编辑）").strip() or name
+
+
 def _resolve_dashboard_for_spec(session, spec: dict[str, Any]) -> Dashboard | None:
-    dash = session.scalar(
+    name = spec["name"]
+    surface = spec["surface_kind"]
+    candidates = list(
+        session.scalars(
+            select(Dashboard).where(
+                Dashboard.deleted_at.is_(None),
+                Dashboard.surface_kind == surface,
+                Dashboard.name.in_((name, f"{name}（编辑）")),
+            ),
+        ).all(),
+    )
+    by_slug = session.scalar(
         select(Dashboard).where(
             Dashboard.slug == spec["slug"],
             Dashboard.deleted_at.is_(None),
         ),
     )
-    if dash is None:
-        dash = session.scalar(select(Dashboard).where(Dashboard.id == spec["id"]))
-        if dash is not None and dash.deleted_at is not None:
-            dash = None
-    if dash is not None:
-        return dash
-
-    name = spec["name"]
-    surface = spec["surface_kind"]
-    candidates = session.scalars(
-        select(Dashboard).where(
-            Dashboard.deleted_at.is_(None),
-            Dashboard.surface_kind == surface,
-            Dashboard.name.in_((name, f"{name}（编辑）")),
-        ),
-    ).all()
+    if by_slug is not None and all(row.id != by_slug.id for row in candidates):
+        candidates.append(by_slug)
     if not candidates:
-        candidates = session.scalars(
-            select(Dashboard).where(
-                Dashboard.deleted_at.is_(None),
-                Dashboard.surface_kind == surface,
-                Dashboard.name.like(f"{name}%"),
-            ),
-        ).all()
-    if candidates:
-        return max(
-            candidates,
-            key=lambda row: (
-                1 if row.description != WORKSPACE_INSTANCE_DESCRIPTION else 0,
-                row.updated_at or row.created_at,
-            ),
-        )
-
-    # Last resort: recently soft-deleted workspace row or edited copy.
-    archived = session.scalars(
-        select(Dashboard).where(
-            Dashboard.surface_kind == surface,
-            Dashboard.deleted_at.is_not(None),
-            (Dashboard.id == spec["id"])
-            | (Dashboard.slug == spec["slug"])
-            | Dashboard.name.in_((name, f"{name}（编辑）")),
-        ),
-    ).all()
-    if not archived:
         return None
-    return max(archived, key=lambda row: row.updated_at or row.created_at)
+    return max(candidates, key=lambda row: row.updated_at or row.created_at)
 
 
 def _export_payload(dashboard: Dashboard) -> dict[str, Any]:
@@ -125,7 +95,7 @@ def _export_payload(dashboard: Dashboard) -> dict[str, Any]:
         raw = dict(layout)
     cleaned = prepare_exported_layout(raw)
     return {
-        "name": dashboard.name,
+        "name": _display_name(dashboard.name),
         "slug": dashboard.slug,
         "surfaceKind": dashboard.surface_kind,
         "layoutJson": cleaned,
@@ -142,6 +112,25 @@ def _write_layout_file(filename: str, payload: dict[str, Any], *, dry_run: bool)
     print(f"  wrote {path.name} widgets={len(payload['layoutJson'].get('widgets') or [])}")
 
 
+def _copy_thumbnail(dashboard: Dashboard, template_key: str, *, dry_run: bool) -> str | None:
+    ref = (dashboard.thumbnail_ref or "").replace("\\", "/").strip()
+    if not ref:
+        return None
+    src = DATA_DIR / ref
+    if not src.is_file():
+        print(f"  thumb missing {src}")
+        return None
+    dest = THUMB_PUBLIC_DIR / f"{template_key}{src.suffix.lower()}"
+    public = f"/template-assets/instance-thumbs/{dest.name}"
+    if dry_run:
+        print(f"  [dry-run] would copy thumb {src.name} -> {public}")
+        return public
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(src, dest)
+    print(f"  thumb {dest.name}")
+    return public
+
+
 def _bump_seed_revision(*, dry_run: bool) -> int:
     content = SEED_FILE.read_text(encoding="utf-8")
     marker = "BUILTIN_SEED_CONTENT_REVISION = "
@@ -155,11 +144,7 @@ def _bump_seed_revision(*, dry_run: bool) -> int:
     if dry_run:
         print(f"  [dry-run] would bump BUILTIN_SEED_CONTENT_REVISION {current} -> {new_rev}")
         return new_rev
-    updated = content.replace(
-        f"{marker}{current}",
-        f"{marker}{new_rev}",
-        1,
-    )
+    updated = content.replace(f"{marker}{current}", f"{marker}{new_rev}", 1)
     SEED_FILE.write_text(updated, encoding="utf-8")
     print(f"  bumped BUILTIN_SEED_CONTENT_REVISION {current} -> {new_rev}")
     return new_rev
@@ -185,33 +170,33 @@ def sync_one(
 
     payload = _export_payload(dashboard)
     widgets = len(payload["layoutJson"].get("widgets") or [])
-    print(f"  sync {dashboard.name} ({dashboard.slug}) -> {template_key} widgets={widgets}")
+    print(f"  sync {dashboard.name} -> {template_key} widgets={widgets}")
+    thumb = _copy_thumbnail(dashboard, template_key, dry_run=dry_run)
 
     if not dry_run:
         template.layout_json = payload["layoutJson"]
         template.content_revision = max(template.content_revision, 0) + 1
         template.status = "published"
         template.visibility = "builtin"
-        if payload.get("name"):
-            template.name = payload["name"]
+        template.name = payload["name"]
+        if thumb:
+            template.thumbnail_ref = thumb
 
     _write_layout_file(filename, payload, dry_run=dry_run)
     return True
 
 
-def soft_delete_workspace_dashboards(db, *, dry_run: bool) -> int:
-    now = datetime.now(UTC)
-    rows = db.scalars(
-        select(Dashboard).where(
-            Dashboard.slug.in_(WORKSPACE_INSTANCE_SLUGS),
-            Dashboard.deleted_at.is_(None),
-        ),
-    ).all()
+def _purge_old_templates(db, *, keep_keys: set[str], dry_run: bool) -> int:
+    rows = db.scalars(select(DashboardTemplate)).all()
+    removed = 0
     for row in rows:
-        print(f"  delete workspace dashboard: {row.slug}")
+        if row.visibility == "builtin" and row.template_key in keep_keys:
+            continue
+        print(f"  delete template {row.visibility} {row.template_key} {row.name}")
         if not dry_run:
-            row.deleted_at = now
-    return len(rows)
+            db.delete(row)
+        removed += 1
+    return removed
 
 
 def main() -> int:
@@ -222,12 +207,16 @@ def main() -> int:
 
     session = get_meta_session()
     synced = 0
+    keep_keys = set(TEMPLATE_LAYOUT_FILES)
     try:
         print("=== sync dashboards -> templates ===")
+        seen_keys: set[str] = set()
         for spec in WORKSPACE_INSTANCE_SPECS:
             dash = _resolve_dashboard_for_spec(session, spec)
             if dash is None:
                 print(f"  SKIP missing dashboard slug={spec['slug']}")
+                continue
+            if spec["template_key"] in seen_keys:
                 continue
             if sync_one(
                 session,
@@ -236,8 +225,11 @@ def main() -> int:
                 dry_run=args.dry_run,
             ):
                 synced += 1
+                seen_keys.add(spec["template_key"])
 
         for extra in EXTRA_DASHBOARD_SPECS:
+            if extra["template_key"] in seen_keys:
+                continue
             dash = session.scalar(
                 select(Dashboard).where(
                     Dashboard.id == extra["dashboard_id"],
@@ -254,10 +246,11 @@ def main() -> int:
                 dry_run=args.dry_run,
             ):
                 synced += 1
+                seen_keys.add(extra["template_key"])
 
-        print("=== soft-delete workspace dashboard copies ===")
-        deleted = soft_delete_workspace_dashboards(session, dry_run=args.dry_run)
-        print(f"  workspace dashboards marked deleted: {deleted}")
+        print("=== delete original templates not in current set ===")
+        removed = _purge_old_templates(session, keep_keys=keep_keys, dry_run=args.dry_run)
+        print(f"  removed={removed}")
 
         print("=== bump seed revision ===")
         if args.skip_seed_bump:
@@ -267,7 +260,7 @@ def main() -> int:
 
         if not args.dry_run:
             session.commit()
-        print(f"DONE synced={synced} deleted_workspaces={deleted}")
+        print(f"DONE synced={synced} removed_old_templates={removed}")
         return 0 if synced > 0 else 1
     finally:
         session.close()

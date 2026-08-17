@@ -182,10 +182,10 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => void handleCopyPassword()}>
+            <AlertDialogAction variant="primary" onClick={() => void handleCopyPassword()}>
               复制密码
             </AlertDialogAction>
-            <AlertDialogAction onClick={() => setCreatedCredentials(null)}>关闭</AlertDialogAction>
+            <AlertDialogAction variant="primary" onClick={() => setCreatedCredentials(null)}>关闭</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -81,13 +81,6 @@ WORKSPACE_INSTANCE_SPECS: tuple[dict[str, Any], ...] = (
         "surface_kind": "dashboard",
     },
     {
-        "id": uuid.UUID("00000000-0000-4000-8003-000000000104"),
-        "slug": "workspace-gov-investment",
-        "name": "招商引资分析",
-        "template_key": "builtin-gov-investment",
-        "surface_kind": "dashboard",
-    },
-    {
         "id": uuid.UUID("00000000-0000-4000-8003-000000000105"),
         "slug": "workspace-gov-grid",
         "name": "基层网格化管理",
@@ -161,11 +154,9 @@ def seed_workspace_instances(db: Session, *, reset_layout: bool = False) -> int:
                 existing.layout_json = layout
                 existing.surface_kind = sync_surface_kind_column(layout)
             else:
-                from app.dashboard.templates.rebind_demo_encodings import rebind_layout_demo_encodings
                 from app.metadata.dataset.demo_seed import remap_retired_demo_datasets_in_layout
 
                 remapped = remap_retired_demo_datasets_in_layout(copy.deepcopy(existing.layout_json or {}))
-                remapped = rebind_layout_demo_encodings(remapped)
                 existing.layout_json = bind_demo_dataset_config_ids(db, remapped)
             if was_deleted:
                 upserted += 1

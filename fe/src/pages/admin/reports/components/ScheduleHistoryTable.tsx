@@ -171,7 +171,7 @@ export function ScheduleHistoryTable({
                 <TableHead className="px-3 py-2">产物</TableHead>
                 <TableHead className="px-3 py-2">执行时间</TableHead>
                 <TableHead className="px-3 py-2">说明</TableHead>
-                <TableHead className="w-28 px-3 py-2" />
+                <TableHead className="w-[1%] whitespace-nowrap px-3 py-2" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -213,7 +213,7 @@ export function ScheduleHistoryTable({
                         "—"
                       )}
                     </TableCell>
-                    <TableCell className="px-3 py-2">{renderActions(row)}</TableCell>
+                    <TableCell className="whitespace-nowrap px-3 py-2">{renderActions(row)}</TableCell>
                   </TableRow>
                 );
               })}

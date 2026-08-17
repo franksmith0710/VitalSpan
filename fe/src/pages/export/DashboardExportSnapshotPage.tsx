@@ -83,18 +83,29 @@ function ExportSectionBanner({
 function OverviewCanvas({
   layout,
   isScreen,
+  layoutMode,
 }: {
   layout: DashboardLayout;
   isScreen: boolean;
+  layoutMode: ExportLayoutMode;
 }) {
+  const fitContent = layoutMode === "full_page";
   if (isScreen && layout.version === 2) {
     return (
-      <DataScreenPresenter layout={layout} presentationMode="original" className="min-h-[calc(100dvh-4rem)]" />
+      <DataScreenPresenter
+        layout={layout}
+        presentationMode="original"
+        className={fitContent ? "min-h-0" : "min-h-[calc(100dvh-4rem)]"}
+      />
     );
   }
   return (
-    <div className="min-h-[calc(100dvh-4rem)] p-0" data-export-widget-shell {...{ [DASHBOARD_THUMBNAIL_CAPTURE_ATTR]: "" }}>
-      <DashboardLayoutPreview layout={layout} className="min-h-full" />
+    <div
+      className={fitContent ? "p-0" : "min-h-[calc(100dvh-4rem)] p-0"}
+      data-export-widget-shell
+      {...{ [DASHBOARD_THUMBNAIL_CAPTURE_ATTR]: "" }}
+    >
+      <DashboardLayoutPreview layout={layout} className={fitContent ? "min-h-0" : "min-h-full"} />
     </div>
   );
 }
@@ -200,7 +211,7 @@ export function DashboardExportSnapshotPage({ surface }: DashboardExportSnapshot
   const rootClass =
     layoutMode === "per_widget" || layoutMode === "combined"
       ? "export-snapshot-root export-layout-per-widget min-h-dvh bg-gray-950 text-white"
-      : "export-snapshot-root export-layout-full-page min-h-dvh bg-gray-950 text-white";
+      : "export-snapshot-root export-layout-full-page bg-gray-950 text-white";
 
   return (
     <div
@@ -227,7 +238,7 @@ export function DashboardExportSnapshotPage({ surface }: DashboardExportSnapshot
                 title={EXPORT_SECTION_LABELS.overview.title}
                 hint={EXPORT_SECTION_LABELS.overview.hint}
               />
-              <OverviewCanvas layout={layout} isScreen={isScreen} />
+              <OverviewCanvas layout={layout} isScreen={isScreen} layoutMode={layoutMode} />
             </section>
             <section className="export-combined-detail">
               <ExportSectionBanner
@@ -244,7 +255,7 @@ export function DashboardExportSnapshotPage({ surface }: DashboardExportSnapshot
             {layoutMode === "per_widget" ? (
               <PerWidgetPages layout={layout} widgets={exportWidgets} />
             ) : (
-              <OverviewCanvas layout={layout} isScreen={isScreen} />
+              <OverviewCanvas layout={layout} isScreen={isScreen} layoutMode={layoutMode} />
             )}
           </>
         )}

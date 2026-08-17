@@ -5,7 +5,7 @@ import {
   ADMIN_PAGE_HEADER_FRAME_CLASS,
 } from "@/components/layout/list-page-kit";
 import { cn } from "@/lib/utils";
-import { TruncateHint } from "@/components/ui/hint-tooltip";
+import { HintTooltip } from "@/components/ui/hint-tooltip";
 
 export type AdminPageShellProps = {
   title: ReactNode;
@@ -45,9 +45,9 @@ function PageHeaderDescription({
 
   if (typeof description === "string") {
     return (
-      <TruncateHint title={description} as="p" className={className}>
-        {description}
-      </TruncateHint>
+      <HintTooltip label={description}>
+        <p className={className}>{description}</p>
+      </HintTooltip>
     );
   }
 
@@ -105,12 +105,12 @@ function PageHeaderHero({
         if (event.target === event.currentTarget) onHeaderBlankPointerDown?.();
       }}
     >
-      <div className="flex items-start gap-4 sm:gap-5">
-        {leadingActions ? (
-          <div className={cn(ADMIN_PAGE_HEADER_ACTIONS_CLASS, "shrink-0 pt-0.5")}>{leadingActions}</div>
-        ) : null}
-        {icon ? <div className="shrink-0">{icon}</div> : null}
-        <div className="flex min-w-0 flex-1 items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start gap-3 sm:gap-4">
+        <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
+          {leadingActions ? (
+            <div className={cn(ADMIN_PAGE_HEADER_ACTIONS_CLASS, "shrink-0 pt-0.5")}>{leadingActions}</div>
+          ) : null}
+          {icon ? <div className="shrink-0">{icon}</div> : null}
           <div
             className="min-w-0 flex-1"
             onPointerDown={(event) => {
@@ -122,8 +122,10 @@ function PageHeaderHero({
               <PageHeaderDescription description={description} variant="hero" />
             ) : null}
           </div>
-          {actions ? <div className={cn(ADMIN_PAGE_HEADER_ACTIONS_CLASS, "pt-0.5")}>{actions}</div> : null}
         </div>
+        {actions ? (
+          <div className={cn(ADMIN_PAGE_HEADER_ACTIONS_CLASS, "w-full sm:w-auto sm:pt-0.5")}>{actions}</div>
+        ) : null}
       </div>
     </header>
   );

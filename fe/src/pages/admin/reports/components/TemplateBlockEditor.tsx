@@ -194,7 +194,7 @@ export function TemplateBlockEditor({ templateKey, format, displayName, readOnly
                 <Button type="button" size="icon" variant="outline" aria-label="下移" onClick={() => moveBlock(index, 1)}>
                   <ArrowDown className="size-4" />
                 </Button>
-                <Button type="button" size="icon" variant="outline" aria-label="删除" onClick={() => removeBlock(index)}>
+                <Button type="button" size="icon" variant="destructive" aria-label="删除" onClick={() => removeBlock(index)}>
                   <Trash2 className="size-4" />
                 </Button>
               </>

@@ -1,6 +1,6 @@
 {
   "name": "智慧城市运行监测",
-  "slug": "workspace-gov-smart-city",
+  "slug": "智慧城市运行监测编辑-1786064581297",
   "surfaceKind": "data-screen",
   "layoutJson": {
     "version": 2,
@@ -10,7 +10,7 @@
     },
     "widgets": [
       {
-        "id": "9e847a67-bfcf-4732-942d-00f3516b2029",
+        "id": "a2356437-4b39-4ca9-a2d4-98fc1e525f27",
         "type": "text",
         "title": "数据大屏标题",
         "x": 0,
@@ -36,10 +36,11 @@
         },
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "616d763c-6761-40c4-ac34-a9933c823060",
+        "id": "599f61be-90b9-4f3d-beb8-ff54481d1f78",
         "type": "text",
         "title": "时钟",
         "x": 1668,
@@ -72,10 +73,11 @@
         },
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "2730bcfd-fa20-4fc9-a8c4-65da8aef1a84",
+        "id": "58cf1c66-e30c-401e-8235-0332244b2c3d",
         "type": "chart",
         "title": "城市安全指数",
         "x": 52,
@@ -93,12 +95,12 @@
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "2730bcfd-fa20-4fc9-a8c4-65da8aef1a84",
+          "chartId": "58cf1c66-e30c-401e-8235-0332244b2c3d",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
+          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
           "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
@@ -107,37 +109,6 @@
                 "color": "#94a3b8",
                 "fontSize": 11
               },
-              "title": {
-                "color": "#f1f5f9",
-                "fontSize": 13,
-                "fontWeight": 600
-              },
-              "seriesColor": [
-                {
-                  "name": "series-0",
-                  "color": "#22d3ee"
-                },
-                {
-                  "name": "series-1",
-                  "color": "#38bdf8"
-                },
-                {
-                  "name": "series-2",
-                  "color": "#0ea5e9"
-                },
-                {
-                  "name": "series-3",
-                  "color": "#67e8f9"
-                },
-                {
-                  "name": "series-4",
-                  "color": "#94a3b8"
-                },
-                {
-                  "name": "series-5",
-                  "color": "#475569"
-                }
-              ],
               "gauge": {
                 "axisColor": "#94a3b8",
                 "pointerColor": "#22d3ee"
@@ -148,14 +119,14 @@
           "dimensions": [],
           "metrics": [
             {
-              "field": "amount",
+              "field": "quantity",
               "label": null
             }
           ],
           "axes": {
             "yAxis": [
               {
-                "field": "amount",
+                "field": "quantity",
                 "label": null
               }
             ]
@@ -167,10 +138,11 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "2c40f9c0-7dcc-4efe-950c-0f3c824c8c88",
+        "id": "08fd0ddb-39a6-405d-a78d-db9f99ae71f6",
         "type": "chart",
         "title": "产业结构占比",
         "x": 52,
@@ -188,12 +160,12 @@
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "2c40f9c0-7dcc-4efe-950c-0f3c824c8c88",
+          "chartId": "08fd0ddb-39a6-405d-a78d-db9f99ae71f6",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
+          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
           "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
@@ -201,44 +173,13 @@
                 "show": true,
                 "color": "#94a3b8",
                 "fontSize": 11
-              },
-              "title": {
-                "color": "#f1f5f9",
-                "fontSize": 13,
-                "fontWeight": 600
-              },
-              "seriesColor": [
-                {
-                  "name": "series-0",
-                  "color": "#22d3ee"
-                },
-                {
-                  "name": "series-1",
-                  "color": "#38bdf8"
-                },
-                {
-                  "name": "series-2",
-                  "color": "#0ea5e9"
-                },
-                {
-                  "name": "series-3",
-                  "color": "#67e8f9"
-                },
-                {
-                  "name": "series-4",
-                  "color": "#94a3b8"
-                },
-                {
-                  "name": "series-5",
-                  "color": "#475569"
-                }
-              ]
+              }
             }
           },
           "index": null,
           "dimensions": [
             {
-              "field": "category_name",
+              "field": "province",
               "label": null
             }
           ],
@@ -251,7 +192,7 @@
           "axes": {
             "xAxis": [
               {
-                "field": "category_name",
+                "field": "province",
                 "label": null
               }
             ],
@@ -269,10 +210,11 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "8bffe4b3-4be0-45ab-9c99-6f31d9c55e54",
+        "id": "7782cf6c-0be9-49c0-987e-8f40453eed6c",
         "type": "chart",
         "title": "部门热词",
         "x": 1389,
@@ -290,57 +232,26 @@
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "8bffe4b3-4be0-45ab-9c99-6f31d9c55e54",
+          "chartId": "7782cf6c-0be9-49c0-987e-8f40453eed6c",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
-          "datasetId": "demo-sales-wide",
+          "configId": "f3e6571b-a8ae-42cf-80c7-2c2843dde9b2",
+          "datasetId": "demo-v-sales-geo",
           "nativeBody": {
             "deStyle": {
               "legend": {
                 "show": false,
                 "color": "#94a3b8",
                 "fontSize": 11
-              },
-              "title": {
-                "color": "#f1f5f9",
-                "fontSize": 13,
-                "fontWeight": 600
-              },
-              "seriesColor": [
-                {
-                  "name": "series-0",
-                  "color": "#22d3ee"
-                },
-                {
-                  "name": "series-1",
-                  "color": "#38bdf8"
-                },
-                {
-                  "name": "series-2",
-                  "color": "#0ea5e9"
-                },
-                {
-                  "name": "series-3",
-                  "color": "#67e8f9"
-                },
-                {
-                  "name": "series-4",
-                  "color": "#94a3b8"
-                },
-                {
-                  "name": "series-5",
-                  "color": "#475569"
-                }
-              ]
+              }
             }
           },
           "index": null,
           "dimensions": [
             {
-              "field": "product_name",
+              "field": "province",
               "label": null
             }
           ],
@@ -353,7 +264,7 @@
           "axes": {
             "xAxis": [
               {
-                "field": "product_name",
+                "field": "province",
                 "label": null
               }
             ],
@@ -371,10 +282,11 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "badf50a0-4b35-436b-bb19-d1ddfd93c433",
+        "id": "f87ee7fb-0ef3-43cd-92f5-4a2785d206ed",
         "type": "chart",
         "title": "事件类型",
         "x": 1389,
@@ -392,76 +304,45 @@
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "badf50a0-4b35-436b-bb19-d1ddfd93c433",
+          "chartId": "f87ee7fb-0ef3-43cd-92f5-4a2785d206ed",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
-          "datasetId": "demo-gov-grid-stats",
+          "configId": "8f770930-6675-4707-9925-68cac3fee49a",
+          "datasetId": "demo-sales-detail",
           "nativeBody": {
             "deStyle": {
               "legend": {
                 "show": true,
                 "color": "#94a3b8",
                 "fontSize": 11
-              },
-              "title": {
-                "color": "#f1f5f9",
-                "fontSize": 13,
-                "fontWeight": 600
-              },
-              "seriesColor": [
-                {
-                  "name": "series-0",
-                  "color": "#22d3ee"
-                },
-                {
-                  "name": "series-1",
-                  "color": "#38bdf8"
-                },
-                {
-                  "name": "series-2",
-                  "color": "#0ea5e9"
-                },
-                {
-                  "name": "series-3",
-                  "color": "#67e8f9"
-                },
-                {
-                  "name": "series-4",
-                  "color": "#94a3b8"
-                },
-                {
-                  "name": "series-5",
-                  "color": "#475569"
-                }
-              ]
+              }
             }
           },
           "index": null,
           "dimensions": [
             {
-              "field": "grid_name",
+              "field": "sale_date",
               "label": null
             }
           ],
           "metrics": [
             {
-              "field": "event_count",
+              "field": "amount",
               "label": null
             }
           ],
           "axes": {
             "xAxis": [
               {
-                "field": "grid_name",
+                "field": "sale_date",
                 "label": null
               }
             ],
             "yAxis": [
               {
-                "field": "event_count",
+                "field": "amount",
                 "label": null
               }
             ]
@@ -473,10 +354,11 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "4ba6f9e0-2212-4380-ac1b-3314d353aa1c",
+        "id": "77e5480d-4c6a-4414-91aa-9b13c3bb1aa6",
         "type": "chart",
         "title": "发现问题及整改数据",
         "x": 52,
@@ -494,55 +376,22 @@
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "4ba6f9e0-2212-4380-ac1b-3314d353aa1c",
+          "chartId": "77e5480d-4c6a-4414-91aa-9b13c3bb1aa6",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
-          "datasetId": "demo-gov-grid-stats",
+          "configId": "f3e6571b-a8ae-42cf-80c7-2c2843dde9b2",
+          "datasetId": "demo-v-sales-geo",
           "nativeBody": {
             "deStyle": {
               "legend": {
                 "show": false,
                 "color": "#94a3b8",
                 "fontSize": 11
-              },
-              "title": {
-                "color": "#f1f5f9",
-                "fontSize": 13,
-                "fontWeight": 600,
-                "show": false
-              },
-              "seriesColor": [
-                {
-                  "name": "series-0",
-                  "color": "#22d3ee"
-                },
-                {
-                  "name": "series-1",
-                  "color": "#38bdf8"
-                },
-                {
-                  "name": "series-2",
-                  "color": "#0ea5e9"
-                },
-                {
-                  "name": "series-3",
-                  "color": "#67e8f9"
-                },
-                {
-                  "name": "series-4",
-                  "color": "#94a3b8"
-                },
-                {
-                  "name": "series-5",
-                  "color": "#475569"
-                }
-              ]
+              }
             },
             "deTableStyle": {
-              "tablePaletteId": "pastel",
               "pageSize": 50,
               "paginationMode": "scroll",
               "columnWidthMode": "custom",
@@ -557,31 +406,24 @@
           "index": null,
           "dimensions": [
             {
-              "field": "grid_name",
-              "label": null
-            },
-            {
-              "field": "event_count",
-              "label": null
-            },
-            {
-              "field": "resolved_count",
+              "field": "province",
               "label": null
             }
           ],
-          "metrics": [],
+          "metrics": [
+            {
+              "field": "amount",
+              "label": null
+            }
+          ],
           "axes": {
             "xAxis": [
               {
-                "field": "grid_name",
+                "field": "amount",
                 "label": null
               },
               {
-                "field": "event_count",
-                "label": null
-              },
-              {
-                "field": "resolved_count",
+                "field": "province",
                 "label": null
               }
             ]
@@ -593,10 +435,11 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "329a0b1a-5abb-4ae5-86ae-1e78a55c4e5b",
+        "id": "5f6029b2-7b2c-4425-890e-dea79bce653d",
         "type": "text",
         "title": "富文本",
         "x": 505,
@@ -651,10 +494,11 @@
         },
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "5656acab-14d6-44a9-9537-17c8ba92b024",
+        "id": "823fd917-640d-4204-b836-e2aa19dd9a87",
         "type": "chart",
         "title": "指标卡",
         "x": 505,
@@ -672,20 +516,17 @@
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "5656acab-14d6-44a9-9537-17c8ba92b024",
+          "chartId": "823fd917-640d-4204-b836-e2aa19dd9a87",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
-          "datasetId": "demo-sales-wide",
+          "configId": "8f770930-6675-4707-9925-68cac3fee49a",
+          "datasetId": "demo-sales-detail",
           "nativeBody": {
             "deStyle": {
               "kpi": {
                 "fontSize": 26
-              },
-              "title": {
-                "color": "#f2f4f7"
               }
             }
           },
@@ -712,10 +553,11 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "b8368141-b46d-48b4-a3bb-15eca5203188",
+        "id": "b75bf42f-ffd1-497b-b643-e5e536d6a5b3",
         "type": "chart",
         "title": "指标卡",
         "x": 691,
@@ -733,13 +575,13 @@
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "b8368141-b46d-48b4-a3bb-15eca5203188",
+          "chartId": "b75bf42f-ffd1-497b-b643-e5e536d6a5b3",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
-          "datasetId": "demo-sales-wide",
+          "configId": "4b7388b4-2796-46b6-85ba-5993cc2671ed",
+          "datasetId": "demo-daily-kpi",
           "nativeBody": {
             "deStyle": {
               "label": {
@@ -749,9 +591,6 @@
               "kpi": {
                 "fontSize": 28,
                 "align": "center"
-              },
-              "title": {
-                "color": "#f2f4f7"
               }
             }
           },
@@ -759,14 +598,14 @@
           "dimensions": [],
           "metrics": [
             {
-              "field": "quantity",
+              "field": "metric_code",
               "label": null
             }
           ],
           "axes": {
             "yAxis": [
               {
-                "field": "quantity",
+                "field": "metric_code",
                 "label": null
               }
             ]
@@ -778,10 +617,11 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "b5406e55-f675-4efb-a92e-a57bc5421c15",
+        "id": "34171c86-8863-4b8b-bff3-0bfed937dac6",
         "type": "chart",
         "title": "指标卡",
         "x": 931,
@@ -799,81 +639,17 @@
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "b5406e55-f675-4efb-a92e-a57bc5421c15",
+          "chartId": "34171c86-8863-4b8b-bff3-0bfed937dac6",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
-          "datasetId": "demo-sales-wide",
+          "configId": "8f770930-6675-4707-9925-68cac3fee49a",
+          "datasetId": "demo-sales-detail",
           "nativeBody": {
             "deStyle": {
               "kpi": {
                 "fontSize": 31
-              },
-              "title": {
-                "color": "#f2f4f7"
-              }
-            }
-          },
-          "index": null,
-          "dimensions": [],
-          "metrics": [
-            {
-              "field": "amount",
-              "label": null
-            }
-          ],
-          "axes": {
-            "yAxis": [
-              {
-                "field": "amount",
-                "label": null
-              }
-            ]
-          },
-          "filters": [],
-          "timeRange": null
-        },
-        "filterConfig": null,
-        "textConfig": null,
-        "mediaConfig": null,
-        "tabsConfig": null,
-        "componentRef": null
-      },
-      {
-        "id": "f81653c3-07f4-4711-ae59-d38bd7584388",
-        "type": "chart",
-        "title": "指标卡",
-        "x": 1157,
-        "y": 665,
-        "width": 194,
-        "height": 127,
-        "order": 11,
-        "hidden": null,
-        "locked": null,
-        "chartRef": null,
-        "parentTabsId": null,
-        "tabPaneId": null,
-        "chartConfig": {
-          "chartType": "kpi",
-          "styleVariant": "default",
-          "dataSourceId": "__demo:sample_db__",
-          "bindingId": null,
-          "chartId": "f81653c3-07f4-4711-ae59-d38bd7584388",
-          "mode": "dataset",
-          "sql": null,
-          "schema": null,
-          "table": null,
-          "configId": null,
-          "datasetId": "demo-sales-wide",
-          "nativeBody": {
-            "deStyle": {
-              "kpi": {
-                "fontSize": 26
-              },
-              "title": {
-                "color": "#f2f4f7"
               }
             }
           },
@@ -900,6 +676,66 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
+        "componentRef": null
+      },
+      {
+        "id": "054eef4a-e50e-47e9-8053-d52292c530d3",
+        "type": "chart",
+        "title": "指标卡",
+        "x": 1157,
+        "y": 665,
+        "width": 194,
+        "height": 127,
+        "order": 11,
+        "hidden": null,
+        "locked": null,
+        "chartRef": null,
+        "parentTabsId": null,
+        "tabPaneId": null,
+        "chartConfig": {
+          "chartType": "kpi",
+          "styleVariant": "default",
+          "dataSourceId": "__demo:sample_db__",
+          "bindingId": null,
+          "chartId": "054eef4a-e50e-47e9-8053-d52292c530d3",
+          "mode": "dataset",
+          "sql": null,
+          "schema": null,
+          "table": null,
+          "configId": "8f770930-6675-4707-9925-68cac3fee49a",
+          "datasetId": "demo-sales-detail",
+          "nativeBody": {
+            "deStyle": {
+              "kpi": {
+                "fontSize": 26
+              }
+            }
+          },
+          "index": null,
+          "dimensions": [],
+          "metrics": [
+            {
+              "field": "sale_date",
+              "label": null
+            }
+          ],
+          "axes": {
+            "yAxis": [
+              {
+                "field": "sale_date",
+                "label": null
+              }
+            ]
+          },
+          "filters": [],
+          "timeRange": null
+        },
+        "filterConfig": null,
+        "textConfig": null,
+        "mediaConfig": null,
+        "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       }
     ],
@@ -950,17 +786,17 @@
         "borderStyle": "solid",
         "borderEnabled": true
       },
-      "paletteId": "default",
+      "paletteId": "clarity",
       "paletteColors": [
-        "#465fff",
-        "#7a5af8",
-        "#12b76a",
         "#0ba5ec",
-        "#ee46bc",
-        "#f79009",
+        "#36bffa",
+        "#53b1fd",
         "#2e90fa",
-        "#15b79e",
-        "#d4d6e8"
+        "#465fff",
+        "#12b76a",
+        "#4ade80",
+        "#667085",
+        "#98a2b3"
       ],
       "paletteOpacity": 1.0,
       "seriesGradient": true,
@@ -972,7 +808,35 @@
       },
       "tooltipShow": null,
       "chartTooltipStyle": null,
-      "tableColorStyle": null,
+      "tableColorStyle": {
+        "opacity": null,
+        "headerBg": "rgba(11, 165, 236, 0.28)",
+        "headerFg": "#e4e7ec",
+        "bodyBg": "rgba(15, 23, 42, 0.35)",
+        "bodyFg": "#d0d5dd",
+        "summaryBg": "rgba(54, 191, 250, 0.22)",
+        "summaryFg": "#d0d5dd",
+        "zebraBg": "rgba(11, 165, 236, 0.14)",
+        "zebraStriped": null,
+        "columnBg": "rgba(15, 23, 42, 0.2)",
+        "cornerBg": "rgba(11, 165, 236, 0.32)",
+        "emptyHintFg": "#98a2b3",
+        "paginationFg": "#98a2b3",
+        "paginationFontSize": null,
+        "scrollbarColor": "rgba(54, 191, 250, 0.45)",
+        "borderColor": "#334155",
+        "paginationMode": null,
+        "pageSize": null,
+        "paginationVariant": null,
+        "columnWidthMode": null,
+        "columnWidths": null,
+        "columnWidthsPx": null,
+        "seriesColumnWidthPx": null,
+        "rowHeightPx": null,
+        "wordWrap": null,
+        "rowHover": null,
+        "showSummary": null
+      },
       "titleStyle": {
         "show": null,
         "fontSize": 14,
@@ -980,7 +844,7 @@
         "fontWeight": 600,
         "fontStyle": null,
         "align": null,
-        "letterSpacing": null,
+        "letterSpacing": 0.0,
         "shadow": true
       },
       "filterChromeStyle": {

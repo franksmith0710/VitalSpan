@@ -45,6 +45,10 @@ import {
   ScheduleFormSection,
   ScheduleSwitcher,
 } from "./scheduleDialogUi";
+import {
+  resolveActivationBannerSchedule,
+  syncPendingActivationId,
+} from "../scheduleActivationUi";
 
 type ConfirmState =
   | { kind: "delivery"; onConfirm: () => void }
@@ -100,10 +104,13 @@ export function DashboardSchedulePanel({
     attachmentFormats: ["pdf"],
   });
   const [showCreate, setShowCreate] = useState(false);
-  const [showActivationBanner, setShowActivationBanner] = useState(false);
   const [pendingActivateId, setPendingActivateId] = useState<string | null>(null);
   const [clonePending, setClonePending] = useState(false);
   const [confirmState, setConfirmState] = useState<ConfirmState>(null);
+
+  useEffect(() => {
+    setPendingActivateId((current) => syncPendingActivationId(schedules, current));
+  }, [schedules]);
 
   useEffect(() => {
     if (selected && draftSelected) {
@@ -170,9 +177,8 @@ export function DashboardSchedulePanel({
       });
       setShowCreate(false);
       setSelectedId(created.id);
-      if (created.allowedActions.includes("schedule")) {
+      if (created.allowedActions.includes("schedule") && !embedded) {
         setPendingActivateId(created.id);
-        setShowActivationBanner(true);
       }
       toast.success("定时报告已创建");
     } catch (err) {
@@ -203,7 +209,6 @@ export function DashboardSchedulePanel({
   const handleActivate = async (scheduleId: string) => {
     try {
       await transitionSchedule.mutateAsync({ id: scheduleId, action: "schedule" });
-      setShowActivationBanner(false);
       setPendingActivateId(null);
       toast.success(ACTION_SUCCESS_MESSAGES.schedule);
     } catch (err) {
@@ -260,6 +265,12 @@ export function DashboardSchedulePanel({
     showDeliveryChannels: true,
   };
 
+  const activationBannerSchedule = resolveActivationBannerSchedule(
+    schedules,
+    pendingActivateId,
+    { embedded },
+  );
+
   const inner = (
     <div className={embedded ? "space-y-4" : "space-y-4"}>
       <ScheduleArtifactNotice show={showLegacyNotice} />
@@ -268,9 +279,11 @@ export function DashboardSchedulePanel({
           您没有管理定时报告的权限。请联系管理员开通「看板定时推送」或「报表管理」权限。
         </p>
       ) : null}
-      {showActivationBanner && pendingActivateId ? (
+      {activationBannerSchedule ? (
         <ScheduleActivationBanner
-          onActivate={() => requestDeliveryConfirm(() => void handleActivate(pendingActivateId))}
+          onActivate={() =>
+            requestDeliveryConfirm(() => void handleActivate(activationBannerSchedule.id))
+          }
           activating={transitionSchedule.isPending}
           disabled={readOnly}
           deliveryWarning={deliveryWarning}
@@ -444,6 +457,10 @@ export function DashboardSchedulePanel({
                         return;
                       }
                       if (action === "schedule" || action === "resume") {
+                        if (action === "schedule") {
+                          requestDeliveryConfirm(() => void handleActivate(selected.id));
+                          return;
+                        }
                         requestDeliveryConfirm(() =>
                           void transitionSchedule
                             .mutateAsync({ id: selected.id, action })
@@ -564,6 +581,10 @@ export function DashboardSchedulePanel({
                       return;
                     }
                     if (action === "schedule" || action === "resume") {
+                      if (action === "schedule") {
+                        requestDeliveryConfirm(() => void handleActivate(selected.id));
+                        return;
+                      }
                       requestDeliveryConfirm(() =>
                         void transitionSchedule
                           .mutateAsync({ id: selected.id, action })
@@ -638,6 +659,7 @@ export function DashboardSchedulePanel({
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction
+              variant="primary"
               onClick={() => {
                 const action = confirmState?.kind === "delivery" ? confirmState.onConfirm : null;
                 setConfirmState(null);
@@ -661,6 +683,7 @@ export function DashboardSchedulePanel({
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction
+              variant="primary"
               onClick={() => {
                 const schedule = confirmState?.kind === "clone" ? confirmState.schedule : null;
                 setConfirmState(null);

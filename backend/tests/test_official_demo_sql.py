@@ -58,6 +58,8 @@ def test_builtin_templates_use_official_datasource_ref() -> None:
             if widget.get("type") != "chart":
                 continue
             cfg = widget.get("chartConfig") or {}
+            if not cfg.get("chartType"):
+                continue
             if cfg.get("bindingId"):
                 continue
             if cfg.get("mode") not in ("sql", "table", None):

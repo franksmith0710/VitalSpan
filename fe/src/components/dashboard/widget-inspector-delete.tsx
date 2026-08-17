@@ -28,13 +28,13 @@ export function WidgetInspectorDelete({
   return (
     <>
       <div className={embedded ? undefined : "mt-6 border-t border-gray-100 pt-4 dark:border-white/[0.06]"}>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="w-full border-error-200 text-error-600 hover:bg-error-50 hover:text-error-700 dark:border-error-500/30 dark:text-error-400 dark:hover:bg-error-500/10"
-          onClick={() => setConfirmOpen(true)}
-        >
+      <Button
+        type="button"
+        variant="destructive"
+        size="sm"
+        className="w-full"
+        onClick={() => setConfirmOpen(true)}
+      >
           <Trash2 className="size-4" aria-hidden />
           删除组件
         </Button>

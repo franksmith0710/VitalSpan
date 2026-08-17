@@ -18,6 +18,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { TruncateHint } from "@/components/ui/hint-tooltip";
@@ -106,6 +107,95 @@ function ScheduleHistoryPanel({
   );
 }
 
+function ScheduleMoreMenu({
+  schedule,
+  onDelete,
+}: {
+  schedule: ReportScheduleRow;
+  onDelete: () => void;
+}) {
+  const { transitionSchedule } = useReportScheduleMutations();
+  const hasActions = schedule.allowedActions.length > 0;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <IconButton
+          type="button"
+          size="xs"
+          variant="ghost"
+          className="shrink-0"
+          disabled={transitionSchedule.isPending}
+          aria-label="调度操作"
+          showTooltip={false}
+        >
+          <MoreHorizontal className="size-3.5" aria-hidden />
+        </IconButton>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-[8rem]">
+        {schedule.allowedActions.map((action) => (
+          <DropdownMenuItem
+            key={action}
+            onClick={() =>
+              transitionSchedule.mutate(
+                { id: schedule.id, action },
+                {
+                  onSuccess: () => toast.success("调度状态已更新"),
+                  onError: (err) => toast.error(mapApiError(err)),
+                },
+              )
+            }
+          >
+            {SCHEDULE_ACTION_LABELS[action] ?? action}
+          </DropdownMenuItem>
+        ))}
+        {hasActions ? <DropdownMenuSeparator /> : null}
+        <DropdownMenuItem variant="destructive" onClick={onDelete}>
+          <Trash2 className="size-3.5" aria-hidden />
+          删除
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function ScheduleRowActions({
+  schedule,
+  sourceHref,
+  readOnly,
+  onDelete,
+}: {
+  schedule: ReportScheduleRow;
+  sourceHref: string;
+  readOnly: boolean;
+  onDelete: () => void;
+}) {
+  if (readOnly) {
+    return (
+      <RowActions>
+        <Button type="button" variant="ghost" size="sm" className="shrink-0 px-2" asChild>
+          <Link to={sourceHref}>
+            <ExternalLink className="size-3.5" aria-hidden />
+            查看源
+          </Link>
+        </Button>
+      </RowActions>
+    );
+  }
+
+  return (
+    <RowActions>
+      <Button type="button" variant="ghost" size="sm" className="shrink-0 px-2" asChild>
+        <Link to={sourceHref}>
+          <ExternalLink className="size-3.5" aria-hidden />
+          查看源
+        </Link>
+      </Button>
+      <ScheduleMoreMenu schedule={schedule} onDelete={onDelete} />
+    </RowActions>
+  );
+}
+
 function ScheduleDataRow({
   schedule,
   sourceLabel,
@@ -121,7 +211,6 @@ function ScheduleDataRow({
   onToggle: () => void;
   onDelete: () => void;
 }) {
-  const { transitionSchedule } = useReportScheduleMutations();
   const sourceHref = scheduleSourceHref(schedule);
 
   return (
@@ -168,60 +257,13 @@ function ScheduleDataRow({
             {localizeScheduleStatus(schedule.status)}
           </Badge>
         </TableCell>
-        <TableCell className="text-right">
-          <RowActions>
-            <Button type="button" variant="ghost" size="sm" asChild>
-              <Link to={sourceHref}>
-                <ExternalLink className="size-3.5" aria-hidden />
-                查看源
-              </Link>
-            </Button>
-            {!readOnly ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-error-600 hover:text-error-700 dark:text-error-400"
-                onClick={onDelete}
-              >
-                <Trash2 className="size-3.5" aria-hidden />
-                删除
-              </Button>
-            ) : null}
-            {!readOnly && schedule.allowedActions.length > 0 ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <IconButton
-                    type="button"
-                    size="xs"
-                    variant="outline"
-                    disabled={transitionSchedule.isPending}
-                    aria-label="调度操作"
-                  >
-                    <MoreHorizontal className="size-3.5" aria-hidden />
-                  </IconButton>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="min-w-[8rem]">
-                  {schedule.allowedActions.map((action) => (
-                    <DropdownMenuItem
-                      key={action}
-                      onClick={() =>
-                        transitionSchedule.mutate(
-                          { id: schedule.id, action },
-                          {
-                            onSuccess: () => toast.success("调度状态已更新"),
-                            onError: (err) => toast.error(mapApiError(err)),
-                          },
-                        )
-                      }
-                    >
-                      {SCHEDULE_ACTION_LABELS[action] ?? action}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : null}
-          </RowActions>
+        <TableCell className="whitespace-nowrap p-0 pr-3">
+          <ScheduleRowActions
+            schedule={schedule}
+            sourceHref={sourceHref}
+            readOnly={readOnly}
+            onDelete={onDelete}
+          />
         </TableCell>
       </TableRow>
       {expanded ? (
@@ -279,7 +321,7 @@ export function ScheduleListTable({
             <TableHead className="font-medium text-gray-600 dark:text-gray-400">接收人</TableHead>
             <TableHead className="font-medium text-gray-600 dark:text-gray-400">附件</TableHead>
             <TableHead className="font-medium text-gray-600 dark:text-gray-400">状态</TableHead>
-            <TableHead className="text-right font-medium text-gray-600 dark:text-gray-400">操作</TableHead>
+            <TableHead className="w-[1%] whitespace-nowrap pr-3 text-right font-medium text-gray-600 dark:text-gray-400">操作</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

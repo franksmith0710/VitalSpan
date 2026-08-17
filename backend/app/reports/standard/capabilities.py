@@ -43,7 +43,7 @@ def evaluate_capabilities(
                 ThemeCapability(
                     theme=theme,
                     available=False,
-                    reason="映射列不在物理表元数据中",
+                    reason="映射列不在数据集列中",
                 )
             )
             continue

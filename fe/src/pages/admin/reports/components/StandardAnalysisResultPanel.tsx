@@ -54,7 +54,7 @@ function LiveSummaryStrip({ headers, rows }: { headers: string[]; rows: unknown[
   if (metrics.length === 0) return null;
 
   return (
-    <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+    <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {metrics.map((metric) => (
         <div
           key={metric.label}
@@ -91,10 +91,10 @@ export function StandardAnalysisResultPanel({
   return (
     <section className="flex min-h-0 min-w-0 flex-1 flex-col">
       <div className="shrink-0 border-b border-gray-200 px-5 py-4 dark:border-gray-800">
-        <h2 className="truncate text-theme-sm font-semibold text-gray-900 dark:text-white lg:hidden">
+        <h2 className="truncate text-theme-sm font-semibold text-gray-900 dark:text-white xl:hidden">
           {pack.displayName}
         </h2>
-        <div className="hidden min-w-0 lg:block">
+        <div className="hidden min-w-0 xl:block">
           <h2 className="truncate text-base font-semibold tracking-tight text-gray-900 dark:text-white">
             {pack.displayName}
           </h2>

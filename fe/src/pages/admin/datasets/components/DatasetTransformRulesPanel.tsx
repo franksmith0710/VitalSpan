@@ -219,7 +219,7 @@ export function DatasetTransformRulesPanel({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void runAutoAlign()}>确认对齐</AlertDialogAction>
+            <AlertDialogAction variant="primary" onClick={() => void runAutoAlign()}>确认对齐</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

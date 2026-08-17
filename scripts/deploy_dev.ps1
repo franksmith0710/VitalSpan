@@ -105,8 +105,17 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
+$sudoPass = $env:VITALSPAN_SUDO_PASSWORD
+if (-not $sudoPass -and $env:VITALSPAN_STAGING_SSH_PASSWORD) {
+    $sudoPass = $env:VITALSPAN_STAGING_SSH_PASSWORD
+}
+if (-not $sudoPass) {
+    Fail "Set VITALSPAN_SUDO_PASSWORD (remote sudo) before deploy"
+}
+$sudoPassEscaped = $sudoPass.Replace("'", "'\\''")
+
 $Stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-$RemoteBackupDir = "$RemoteRestoreRoot/$Stamp"
+$RemoteBackupDir = if ($BackupDir) { "$RemoteRestoreRoot/$($BackupDir.Name)" } else { "$RemoteRestoreRoot/$Stamp" }
 
 if ($BackupDir -and -not $CodeOnly) {
     Write-Step "Upload database backup -> $RemoteBackupDir"
@@ -119,7 +128,8 @@ if (-not $DataOnly) {
     Write-Step "Upload code tarball and fe/dist"
     scp $CodeTar "${DevHost}:/tmp/vitalspan-deploy-code.tar.gz"
     if ($LASTEXITCODE -ne 0) { Fail "scp code tar failed" }
-    ssh $DevHost "mkdir -p '$RemoteRoot/fe'"
+    ssh $DevHost "mkdir -p '$RemoteRoot/fe' && echo '$sudoPassEscaped' | sudo -S chown -R ontomind:ontomind '$RemoteRoot/fe'"
+    if ($LASTEXITCODE -ne 0) { Fail "remote fe dir chown failed" }
     scp -r (Join-Path $RepoRoot "fe/dist") "${DevHost}:${RemoteRoot}/fe/"
     if ($LASTEXITCODE -ne 0) { Fail "scp fe/dist failed" }
 }
@@ -131,7 +141,8 @@ scp $remotePath "${DevHost}:/tmp/vitalspan_remote_apply.sh"
 $dataFlag = if ($DataOnly) { "1" } else { "0" }
 $codeFlag = if ($CodeOnly) { "1" } else { "0" }
 $cleanFlag = if ($Clean) { "1" } else { "0" }
-ssh $DevHost "chmod +x /tmp/vitalspan_remote_apply.sh && VITALSPAN_ROOT='$RemoteRoot' VITALSPAN_BACKUP='$RemoteBackupDir' DATA_ONLY=$dataFlag CODE_ONLY=$codeFlag CLEAN=$cleanFlag bash /tmp/vitalspan_remote_apply.sh"
+$remoteCmd = "sed -i 's/\r$//' /tmp/vitalspan_remote_apply.sh && chmod +x /tmp/vitalspan_remote_apply.sh && VITALSPAN_SUDO_PASSWORD='$sudoPassEscaped' VITALSPAN_ROOT='$RemoteRoot' VITALSPAN_BACKUP='$RemoteBackupDir' DATA_ONLY=$dataFlag CODE_ONLY=$codeFlag CLEAN=$cleanFlag bash /tmp/vitalspan_remote_apply.sh"
+ssh $DevHost $remoteCmd
 if ($LASTEXITCODE -ne 0) { Fail "remote deploy script failed" }
 
 Write-Host ""

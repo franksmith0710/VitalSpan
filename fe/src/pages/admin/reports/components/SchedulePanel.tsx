@@ -36,6 +36,10 @@ import {
   type ReportScheduleRow,
   type ScheduleExecutionRow,
 } from "../useReportSchedules";
+import {
+  resolveActivationBannerSchedule,
+  syncPendingActivationId,
+} from "../scheduleActivationUi";
 
 type ConfirmState =
   | { kind: "clone" }
@@ -53,7 +57,6 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
   const qc = useQueryClient();
   const [form, setForm] = useState<ScheduleFormValue>(DEFAULT_SCHEDULE_FORM);
   const [clonePending, setClonePending] = useState(false);
-  const [showActivationBanner, setShowActivationBanner] = useState(false);
   const [pendingActivateId, setPendingActivateId] = useState<string | null>(null);
   const [confirmState, setConfirmState] = useState<ConfirmState>(null);
 
@@ -65,8 +68,13 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
       ),
   });
 
-  const schedule = pickActiveSchedule(listQuery.data?.items ?? []);
+  const schedules = listQuery.data?.items ?? [];
+  const schedule = pickActiveSchedule(schedules);
   const draftSelected = schedule?.status === "draft";
+
+  useEffect(() => {
+    setPendingActivateId((current) => syncPendingActivationId(schedules, current));
+  }, [schedules]);
 
   useEffect(() => {
     if (schedule && draftSelected) {
@@ -108,7 +116,6 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
       toast.success("调度已创建");
       if (created.allowedActions.includes("schedule")) {
         setPendingActivateId(created.id);
-        setShowActivationBanner(true);
       }
       invalidate();
     },
@@ -142,6 +149,9 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
         body: JSON.stringify({ action }),
       }),
     onSuccess: (_data, vars) => {
+      if (vars.action === "schedule") {
+        setPendingActivateId(null);
+      }
       toast.success(ACTION_SUCCESS_MESSAGES[vars.action] ?? "状态已更新");
       invalidate();
     },
@@ -212,21 +222,13 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
     void transitionMutation.mutateAsync({ id: schedule.id, action });
   };
 
-  const activationBanner =
-    showActivationBanner && pendingActivateId ? (
-      <ScheduleActivationBanner
-        onActivate={() =>
-          void transitionMutation
-            .mutateAsync({ id: pendingActivateId, action: "schedule" })
-            .then(() => {
-              setShowActivationBanner(false);
-              setPendingActivateId(null);
-              toast.success("调度已激活");
-            })
-        }
-        activating={transitionMutation.isPending}
-      />
-    ) : null;
+  const activationBannerSchedule = resolveActivationBannerSchedule(schedules, pendingActivateId);
+  const activationBanner = activationBannerSchedule ? (
+    <ScheduleActivationBanner
+      onActivate={() => void transitionMutation.mutateAsync({ id: activationBannerSchedule.id, action: "schedule" })}
+      activating={transitionMutation.isPending}
+    />
+  ) : null;
 
   if (listQuery.isError) {
     return (
@@ -397,6 +399,7 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction
+              variant="primary"
               onClick={() => {
                 setConfirmState(null);
                 void runCloneConfig();

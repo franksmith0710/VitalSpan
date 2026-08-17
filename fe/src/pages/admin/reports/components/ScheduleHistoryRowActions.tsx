@@ -1,4 +1,5 @@
 import { AlertCircle, Download, RotateCcw } from "lucide-react";
+import { RowActions } from "@/components/layout/list-page-kit";
 import { Button } from "@/components/ui/button";
 import { canRetryExecution, type ScheduleExecutionRow } from "../useReportSchedules";
 
@@ -29,10 +30,10 @@ export function HistoryRowActions({
   const canDownload = row.artifactRef?.startsWith("storage://");
   const hasPerWidget = (row.secondaryArtifacts?.length ?? 0) > 0;
   const showRetry = !readOnly && canRetryExecution(row.status) && onRetry;
-  const iconBtn = compact ? "size-8" : "h-8 px-2 text-theme-xs";
+  const iconBtn = compact ? "size-8 shrink-0" : "h-8 shrink-0 px-2 text-theme-xs";
 
   return (
-    <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
+    <RowActions>
       {canDownload ? (
         <>
           <Button
@@ -99,7 +100,7 @@ export function HistoryRowActions({
           type="button"
           variant="outline"
           size={compact ? "xs" : "sm"}
-          className={compact ? "h-8 px-2.5" : "h-8"}
+          className={compact ? "h-8 shrink-0 px-2.5" : "h-8 shrink-0"}
           disabled={retrying}
           onClick={onRetry}
         >
@@ -107,6 +108,6 @@ export function HistoryRowActions({
           {retrying ? "重试中…" : "重试"}
         </Button>
       ) : null}
-    </div>
+    </RowActions>
   );
 }

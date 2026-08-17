@@ -501,6 +501,7 @@ export function SyncJobsPage() {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={runningId !== null}>取消</AlertDialogCancel>
             <AlertDialogAction
+              variant="primary"
               disabled={runningId !== null}
               onClick={(event) => {
                 event.preventDefault();

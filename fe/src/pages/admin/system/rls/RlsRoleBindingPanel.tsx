@@ -208,6 +208,7 @@ export function RlsRoleBindingPanel({ groups, groupsLoading }: Props) {
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction
+              variant="primary"
               disabled={saveMutation.isPending}
               onClick={() => saveMutation.mutate(true)}
             >

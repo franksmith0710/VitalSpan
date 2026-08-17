@@ -137,20 +137,18 @@ export function templatePreviewAspectRatio(_surfaceKind: VizSurfaceKind): string
   return "16 / 10";
 }
 
-/** 内置模板缩略图（public 静态资源） */
+/** 内置模板缩略图（当前工作区看板/大屏截图） */
 export const BUILTIN_TEMPLATE_THUMBS: Record<string, string> = {
-  "builtin-gov-industrial-park":
-    "/template-assets/packs/gov-enterprise-v1/thumbs/canvas-dark-emerald-de-platform-header.svg",
-  "builtin-gov-smart-city": "/template-assets/packs/gov-enterprise-v1/thumbs/canvas-dark-cyan-hud-scan.svg",
-  "builtin-gov-digital-cockpit": "/template-assets/packs/gov-enterprise-v1/thumbs/canvas-light-indigo-de-cloud-center.svg",
-  "builtin-gov-emergency-command": "/template-assets/packs/gov-enterprise-v1/thumbs/canvas-dark-crimson-command.svg",
-  "builtin-gov-eco-monitor": "/template-assets/packs/gov-enterprise-v1/thumbs/canvas-light-emerald-gradient-mesh.svg",
-  "builtin-gov-community": "/template-assets/packs/gov-enterprise-v1/thumbs/canvas-light-violet-de-platform-header.svg",
-  "builtin-gov-efficiency": "/template-assets/packs/de-dashboard-v1/thumbs/gov-efficiency.svg",
-  "builtin-gov-satisfaction": "/template-assets/packs/de-dashboard-v1/thumbs/gov-satisfaction.svg",
-  "builtin-gov-finance": "/template-assets/packs/de-dashboard-v1/thumbs/gov-finance.svg",
-  "builtin-gov-investment": "/template-assets/packs/de-dashboard-v1/thumbs/gov-investment.svg",
-  "builtin-gov-grid": "/template-assets/packs/de-dashboard-v1/thumbs/gov-grid.svg",
+  "builtin-gov-industrial-park": "/template-assets/instance-thumbs/builtin-gov-industrial-park.jpg",
+  "builtin-gov-smart-city": "/template-assets/instance-thumbs/builtin-gov-smart-city.jpg",
+  "builtin-gov-digital-cockpit": "/template-assets/instance-thumbs/builtin-gov-digital-cockpit.png",
+  "builtin-gov-emergency-command": "/template-assets/instance-thumbs/builtin-gov-emergency-command.png",
+  "builtin-gov-eco-monitor": "/template-assets/instance-thumbs/builtin-gov-eco-monitor.jpg",
+  "builtin-gov-community": "/template-assets/instance-thumbs/builtin-gov-community.jpg",
+  "builtin-gov-efficiency": "/template-assets/instance-thumbs/builtin-gov-efficiency.jpg",
+  "builtin-gov-satisfaction": "/template-assets/instance-thumbs/builtin-gov-satisfaction.jpg",
+  "builtin-gov-finance": "/template-assets/instance-thumbs/builtin-gov-finance.jpg",
+  "builtin-gov-grid": "/template-assets/instance-thumbs/builtin-gov-grid.jpg",
 };
 
 export const CATEGORY_ACCENT: Record<string, string> = {

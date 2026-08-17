@@ -37,7 +37,7 @@ def _sqlite_env():
     import app.datasources.models  # noqa: F401
     import app.governance.catalog.models  # noqa: F401
     import app.query.config_store.models  # noqa: F401
-    import app.query.models  # noqa: F401
+    import app.metadata.dataset.models  # noqa: F401
 
     get_meta_engine.cache_clear()
     auth_engine.cache_clear()
@@ -59,9 +59,16 @@ def _sqlite_env():
 
 @pytest.fixture(autouse=True)
 def _reset_stores():
+    from app.metadata.dataset import service as dataset_service
+    from app.reports.persistence.store import reset_metadata_for_tests
+
     memory_stores.clear_all()
+    reset_metadata_for_tests()
+    dataset_service._store.clear()
     yield
     memory_stores.clear_all()
+    reset_metadata_for_tests()
+    dataset_service._store.clear()
 
 
 @pytest.fixture
@@ -192,3 +199,76 @@ def test_std_viewer_cannot_upsert(client: TestClient):
         assert resp.json()["code"] in {"RPT_STD_FORBIDDEN", "PERMISSION_DENIED"}
     finally:
         fastapi_app.dependency_overrides.pop(get_current_user, None)
+
+
+def _seed_dataset_with_binding(client: TestClient) -> tuple[str, str]:
+    ds_id = "equipment-dataset"
+    data_source_id = str(_DS_ID)
+    assert client.post(
+        "/api/v1/datasets",
+        headers=AUTH,
+        json={"datasetId": ds_id, "displayName": "设备数据集", "tables": [{"name": "ops.equipment"}]},
+    ).status_code == 201
+    cfg = client.put(
+        "/api/v1/query/configs",
+        headers=AUTH,
+        json={
+            "configType": "dataset_query",
+            "schemaVersion": "1.0",
+            "refType": "dataset",
+            "refId": str(uuid.uuid4()),
+            "payload": {
+                "dataSourceId": data_source_id,
+                "connectorType": "mysql",
+                "schema": "ops",
+                "table": "equipment",
+                "columns": ["status", "region", "created_at"],
+                "conditions": {"logic": "AND", "conditions": []},
+                "limit": 1000,
+                "offset": 0,
+            },
+        },
+    ).json()
+    bound_config_id = cfg["id"]
+    assert client.post(
+        f"/api/v1/datasets/{ds_id}/bind-query-config",
+        headers=AUTH,
+        json={"configId": bound_config_id},
+    ).status_code == 200
+    return ds_id, bound_config_id
+
+
+def _dataset_pack_payload(ds_id: str, bound_config_id: str, key: str = "equipment-dataset-pack") -> dict:
+    return {
+        "packKey": key,
+        "displayName": "设备数据集分析",
+        "datasetId": ds_id,
+        "boundConfigId": bound_config_id,
+        "dataSourceId": str(_DS_ID),
+        "fieldMapping": {"status": "status", "region": "region", "createdAt": "created_at"},
+        "enabledThemes": ["lifecycle", "distribution", "trend"],
+        "allowedRoles": ["analyst", "admin"],
+        "snapshotCronPreset": "daily",
+    }
+
+
+@patch("app.reports.standard.service.engine_execute.execute_dataset_section")
+def test_std_pack_dataset_binding_upsert_and_run(mock_execute, client: TestClient):
+    ds_id, bound_config_id = _seed_dataset_with_binding(client)
+    put = client.put(
+        "/api/v1/reports/standard/packs/equipment-dataset-pack",
+        headers=AUTH,
+        json=_dataset_pack_payload(ds_id, bound_config_id),
+    )
+    assert put.status_code == 200, put.text
+    caps = client.get("/api/v1/reports/standard/packs/equipment-dataset-pack/capabilities", headers=AUTH)
+    assert caps.status_code == 200
+    assert "status" in caps.json()["columns"]
+    mock_execute.return_value = _mock_dataset_section()
+    run = client.post(
+        "/api/v1/reports/standard/packs/equipment-dataset-pack/run",
+        headers=AUTH,
+        json={"theme": "lifecycle"},
+    )
+    assert run.status_code == 200
+    assert "dim" in run.json()["renderSpec"]["sections"][0]["columns"]

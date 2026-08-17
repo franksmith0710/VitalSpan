@@ -104,9 +104,9 @@ export class WidgetErrorBoundary extends Component<
           {this.props.onDelete ? (
             <Button
               type="button"
-              variant="ghost"
+              variant="destructive"
               size="sm"
-              className="h-7 gap-1 px-2.5 text-theme-xs text-gray-600 hover:text-error-600 dark:text-gray-300 dark:hover:text-error-400"
+              className="h-7 gap-1 px-2.5 text-theme-xs"
               onClick={this.props.onDelete}
             >
               <Trash2 className="size-3.5" aria-hidden />

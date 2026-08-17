@@ -410,6 +410,7 @@ export function VizTemplatesHubPage() {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={archiveMutation.isPending}>取消</AlertDialogCancel>
             <AlertDialogAction
+              variant="primary"
               disabled={archiveMutation.isPending}
               onClick={() => archiveTarget && archiveMutation.mutate(archiveTarget.id)}
             >

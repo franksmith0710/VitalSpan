@@ -49,8 +49,7 @@ if [[ "$CODE_ONLY" != "1" && -n "$REMOTE_BACKUP" && -d "$REMOTE_BACKUP" ]]; then
       pg_restore -h 127.0.0.1 -U vitalspan -d analytics --clean --if-exists --no-owner --role=vitalspan /b/analytics-postgres.dump || true
   fi
   if [[ -f "$REMOTE_BACKUP/sample-mysql.sql" ]]; then
-    echo "$VITALSPAN_SUDO_PASSWORD" | sudo -S bash -c \
-      "mysql --defaults-file=/etc/mysql/debian.cnf sample_db < '$REMOTE_BACKUP/sample-mysql.sql'" || true
+    sudo bash -c "mysql --defaults-file=/etc/mysql/debian.cnf sample_db < '$REMOTE_BACKUP/sample-mysql.sql'" || true
   fi
 fi
 

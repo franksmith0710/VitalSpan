@@ -1,17 +1,31 @@
 import { standardAnalysisPath } from "@/pages/admin/reports/standardRoutes";
 import { resolveActiveNavPath } from "@/lib/nav-active";
 
+export const REPORT_CENTER_NAV_PATH = "/admin/reports/center";
+
 export const REPORT_CENTER_SUB_NAV_PATHS = [
-  "/admin/reports/center",
+  REPORT_CENTER_NAV_PATH,
   "/admin/reports/standard",
+  "/admin/reports/standard/config",
   "/admin/reports/templates",
   "/admin/reports/schedules",
 ] as const;
 
-/** 侧栏报表子项高亮：模板查看页归入「文档模板」 */
+/** 侧栏「报表中心」单入口：任一报表子路由均高亮 */
+export function isReportCenterNavActive(pathname: string): boolean {
+  if (pathname.startsWith("/admin/reports/view")) return true;
+  return REPORT_CENTER_SUB_NAV_PATHS.some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`),
+  );
+}
+
+/** 页内 Tab 高亮路径 */
 export function resolveReportCenterSubNavPath(pathname: string): string | null {
   if (pathname.startsWith("/admin/reports/view")) {
     return "/admin/reports/templates";
+  }
+  if (pathname.startsWith("/admin/reports/standard/config")) {
+    return "/admin/reports/standard";
   }
   return resolveActiveNavPath(pathname, [...REPORT_CENTER_SUB_NAV_PATHS]);
 }

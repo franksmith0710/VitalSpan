@@ -1,6 +1,6 @@
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 
-/** 类目轴标签旋转：未配置与 `auto` 为按槽宽智能倾斜；`0` 为强制水平 */
+/** 类目轴标签旋转：未配置与 `0` 为水平；`auto` 为按槽宽智能倾斜 */
 export type AxisLabelRotate = number | "auto";
 
 export type ChartAxisSideStyle = {

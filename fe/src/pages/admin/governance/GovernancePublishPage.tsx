@@ -193,6 +193,7 @@ export function GovernancePublishPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction
+              variant="primary"
               onClick={() => {
                 if (confirmAction) {
                   actionMutation.mutate({

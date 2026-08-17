@@ -37,6 +37,10 @@ import {
   useReportSchedulesList,
   useScheduleExecutions,
 } from "../useReportSchedules";
+import {
+  resolveActivationBannerSchedule,
+  syncPendingActivationId,
+} from "../scheduleActivationUi";
 
 type Props = {
   sourceKey: string;
@@ -47,7 +51,8 @@ type Props = {
 export function StandardSchedulePanel({ sourceKey, packName, disabled = false }: Props) {
   const filter = { sourceType: "standard", sourceKey };
   const listQuery = useReportSchedulesList(filter);
-  const schedule = pickActiveSchedule(listQuery.data?.items ?? []);
+  const schedules = listQuery.data?.items ?? [];
+  const schedule = pickActiveSchedule(schedules);
   const draftSelected = schedule?.status === "draft";
   const historyQuery = useScheduleExecutions(schedule?.id ?? null);
   const { createSchedule, updateSchedule, transitionSchedule, executeSchedule } =
@@ -57,9 +62,12 @@ export function StandardSchedulePanel({ sourceKey, packName, disabled = false }:
     ...DEFAULT_SCHEDULE_FORM,
     attachmentFormats: ["pdf"],
   });
-  const [showActivationBanner, setShowActivationBanner] = useState(false);
   const [pendingActivateId, setPendingActivateId] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPendingActivateId((current) => syncPendingActivationId(schedules, current));
+  }, [schedules]);
 
   useEffect(() => {
     if (schedule && draftSelected) {
@@ -86,7 +94,6 @@ export function StandardSchedulePanel({ sourceKey, packName, disabled = false }:
       });
       if (created.allowedActions.includes("schedule")) {
         setPendingActivateId(created.id);
-        setShowActivationBanner(true);
       }
       toast.success("定时投递已创建");
     } catch (err) {
@@ -114,6 +121,18 @@ export function StandardSchedulePanel({ sourceKey, packName, disabled = false }:
     }
   };
 
+  const handleActivate = async (scheduleId: string) => {
+    try {
+      await transitionSchedule.mutateAsync({ id: scheduleId, action: "schedule" });
+      setPendingActivateId(null);
+      toast.success("定时投递已激活");
+    } catch (err) {
+      toast.error(mapApiError(err));
+    }
+  };
+
+  const activationBannerSchedule = resolveActivationBannerSchedule(schedules, pendingActivateId);
+
   if (listQuery.isError) {
     return (
       <PageErrorBanner message={mapApiError(listQuery.error)} onRetry={() => void listQuery.refetch()} />
@@ -125,30 +144,22 @@ export function StandardSchedulePanel({ sourceKey, packName, disabled = false }:
   }
 
   return (
-    <div className="space-y-4 border-t border-gray-200 px-5 py-5 dark:border-gray-800">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
+    <div className="relative isolate space-y-4 border-t border-gray-200 pt-8 dark:border-gray-800">
+      <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
           <h3 className="text-theme-sm font-semibold text-gray-900 dark:text-white">定时投递</h3>
-          <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
+          <p className="mt-0.5 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
             按周期生成标准分析 PDF，并通过邮件投递。
           </p>
         </div>
-        <Button type="button" variant="ghost" size="sm" asChild>
+        <Button type="button" variant="ghost" size="sm" className="shrink-0" asChild>
           <Link to="/admin/reports/schedules">在调度中心查看</Link>
         </Button>
       </div>
 
-      {showActivationBanner && pendingActivateId ? (
+      {activationBannerSchedule ? (
         <ScheduleActivationBanner
-          onActivate={() =>
-            void transitionSchedule
-              .mutateAsync({ id: pendingActivateId, action: "schedule" })
-              .then(() => {
-                setShowActivationBanner(false);
-                setPendingActivateId(null);
-                toast.success("定时投递已激活");
-              })
-          }
+          onActivate={() => void handleActivate(activationBannerSchedule.id)}
           activating={transitionSchedule.isPending}
         />
       ) : null}
@@ -184,7 +195,7 @@ export function StandardSchedulePanel({ sourceKey, packName, disabled = false }:
           />
         </ScheduleFormSection>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid min-w-0 gap-4 xl:grid-cols-2">
           <ScheduleFormSection
             title="投递配置"
             description={
@@ -205,6 +216,10 @@ export function StandardSchedulePanel({ sourceKey, packName, disabled = false }:
                     onClick={() => {
                       if (action === "cancel" || action === "pause") {
                         setConfirmAction(action);
+                        return;
+                      }
+                      if (action === "schedule") {
+                        void handleActivate(schedule.id);
                         return;
                       }
                       void transitionSchedule.mutateAsync({ id: schedule.id, action });

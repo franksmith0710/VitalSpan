@@ -86,6 +86,7 @@ export function UserResetPasswordPanel({
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction
+              variant="primary"
               disabled={resetPasswordMutation.isPending}
               onClick={() => resetPasswordMutation.mutate()}
             >
@@ -128,7 +129,7 @@ export function UserResetPasswordPanel({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setResetResult(null)}>关闭</AlertDialogAction>
+            <AlertDialogAction variant="primary" onClick={() => setResetResult(null)}>关闭</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

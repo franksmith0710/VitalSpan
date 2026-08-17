@@ -247,7 +247,7 @@ export function SchemaBrowser({
     <div
       className={cn(
         "grid min-h-0 flex-1 overflow-hidden",
-        isDatasetPick ? "grid-cols-1" : "lg:grid-cols-[minmax(260px,320px)_1fr]",
+        isDatasetPick ? "grid-cols-1" : "lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]",
         !embedded && !isDatasetPick && "min-h-[420px]",
       )}
       data-testid="schema-browser-split"

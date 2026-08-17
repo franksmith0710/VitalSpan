@@ -48,7 +48,7 @@ describe("ChartAxisStyleSection", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "坐标轴" }));
-    expect(screen.getByLabelText("横轴标签方向")).toBeInTheDocument();
+    expect(screen.getByLabelText("横轴标签方向")).toHaveTextContent("水平");
     expect(screen.queryByLabelText("纵轴标签方向")).not.toBeInTheDocument();
     await user.click(screen.getByLabelText("横轴标签方向"));
     expect(screen.getByRole("option", { name: "水平" })).toBeInTheDocument();

@@ -40,7 +40,7 @@ export function ConfigField({
   className?: string;
 }) {
   return (
-    <div className={cn("grid gap-1.5", className)}>
+    <div className={cn("grid min-w-0 gap-1.5", className)}>
       <Label htmlFor={id}>{label}</Label>
       {children}
       {hint ? <p className="text-theme-xs text-gray-500 dark:text-gray-400">{hint}</p> : null}

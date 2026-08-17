@@ -24,13 +24,15 @@ export function StandardAnalysisPackList({
   emptyHint = "暂无分析包",
 }: Props) {
   return (
-    <aside className="flex min-h-0 w-full flex-col border-b border-gray-200 bg-gray-50/40 lg:border-b-0 lg:border-r dark:border-gray-800 dark:bg-white/[0.02]">
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-gray-200 px-4 py-3 dark:border-gray-800">
-        <div className="min-w-0">
+    <aside className="flex min-h-0 min-w-0 w-full flex-col overflow-hidden border-b border-gray-200 bg-gray-50/40 xl:border-b-0 xl:border-r dark:border-gray-800 dark:bg-white/[0.02]">
+      <div className="flex shrink-0 flex-wrap items-start justify-between gap-2 border-b border-gray-200 px-4 py-3 dark:border-gray-800">
+        <div className="min-w-0 flex-1">
           <h2 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">分析包</h2>
-          <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">选择业务对象分析范围</p>
+          <p className="mt-0.5 text-theme-xs break-words text-gray-500 dark:text-gray-400">
+            选择业务对象分析范围
+          </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {!isLoading ? (
             <Badge variant="light" color="light" size="sm" className="tabular-nums">
               {packs.length}

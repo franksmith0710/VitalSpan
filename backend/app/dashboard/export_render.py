@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 PLAYWRIGHT_INSTALL_HINT = "pip install -e \".[dev]\" && python -m playwright install chromium"
 
 CAPTURE_SELECTOR = '[data-export-ready="true"]'
+CAPTURE_ROOT_SELECTOR = "[data-export-snapshot]"
 SETTLE_MS = 2200
 NAV_TIMEOUT_MS = 30_000
 HEALTH_PROBE_CACHE_SECONDS = 60
@@ -34,6 +35,7 @@ VIEWPORT_WIDTH = 1920
 VIEWPORT_HEIGHT = 1080
 DEVICE_SCALE_FACTOR = 2
 MIN_PAGE_WIDTH = 1920
+MAX_PDF_PAGE_HEIGHT_PX = 19200
 
 _health_cache: dict | None = None
 _health_cache_at: float = 0.0
@@ -122,12 +124,45 @@ def reset_export_render_health_cache_for_tests() -> None:
 
 def _measure_page_size(page) -> tuple[int, int]:
     dims = page.evaluate(
-        f"""() => ({{
-            width: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth, {MIN_PAGE_WIDTH}),
-            height: Math.max(document.documentElement.scrollHeight, document.body.scrollHeight, 900),
-        }})""",
+        f"""() => {{
+            const root = document.querySelector({CAPTURE_ROOT_SELECTOR!r});
+            const scope = root ?? document.documentElement;
+            const rect = scope.getBoundingClientRect();
+            const width = Math.max(
+                scope.scrollWidth,
+                scope.offsetWidth,
+                Math.ceil(rect.width),
+                document.documentElement.scrollWidth,
+                {MIN_PAGE_WIDTH},
+            );
+            const height = Math.max(
+                scope.scrollHeight,
+                scope.offsetHeight,
+                Math.ceil(rect.height),
+                document.documentElement.scrollHeight,
+                document.body?.scrollHeight ?? 0,
+                900,
+            );
+            return {{ width: Math.ceil(width), height: Math.ceil(height) }};
+        }}""",
     )
     return int(dims["width"]), int(dims["height"])
+
+
+def _full_page_pdf_options(page) -> dict:
+    width, height = _measure_page_size(page)
+    scale = 1.0
+    if height > MAX_PDF_PAGE_HEIGHT_PX:
+        scale = MAX_PDF_PAGE_HEIGHT_PX / height
+        height = MAX_PDF_PAGE_HEIGHT_PX
+    return {
+        "width": f"{width}px",
+        "height": f"{height}px",
+        "print_background": True,
+        "prefer_css_page_size": False,
+        "margin": {"top": "0", "bottom": "0", "left": "0", "right": "0"},
+        "scale": scale,
+    }
 
 
 def _pdf_options(layout_mode: ExportLayoutMode, page) -> dict:
@@ -138,6 +173,8 @@ def _pdf_options(layout_mode: ExportLayoutMode, page) -> dict:
             "landscape": True,
             "margin": {"top": "12mm", "bottom": "12mm", "left": "10mm", "right": "10mm"},
         }
+    if layout_mode == EXPORT_LAYOUT_FULL_PAGE:
+        return _full_page_pdf_options(page)
     width, height = _measure_page_size(page)
     return {
         "width": f"{width}px",
@@ -202,6 +239,10 @@ def render_dashboard_visual_pdf(
                     width, height = _measure_page_size(page)
                     page.set_viewport_size({"width": width, "height": height})
                     page.wait_for_timeout(500)
+                    if mode == EXPORT_LAYOUT_FULL_PAGE:
+                        width, height = _measure_page_size(page)
+                        page.set_viewport_size({"width": width, "height": height})
+                        page.wait_for_timeout(300)
                 pdf_bytes = page.pdf(**_pdf_options(mode, page))
                 context.close()
             finally:

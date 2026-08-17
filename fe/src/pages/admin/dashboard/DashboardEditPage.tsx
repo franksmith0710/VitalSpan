@@ -1398,9 +1398,8 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               {multiSelectCount >= 2 ? (
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="destructive"
                   size="xs"
-                  className="border-error-200 text-error-600 hover:bg-error-50 dark:border-error-500/30 dark:text-error-400"
                   onClick={() => setBatchDeleteOpen(true)}
                 >
                   删除选中 ({multiSelectCount})
@@ -1855,7 +1854,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               <AlertDialogCancel disabled={deleting}>取消</AlertDialogCancel>
               <Button
                 type="button"
-                variant="primary"
+                variant="destructive"
                 size="sm"
                 disabled={deleting}
                 onClick={() => void handleDeleteDashboard()}

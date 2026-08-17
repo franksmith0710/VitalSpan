@@ -10,7 +10,7 @@
     },
     "widgets": [
       {
-        "id": "625e1d94-e49c-47e7-8fc0-e10dabd558e7",
+        "id": "9766e01a-e404-4b03-abb2-700d2d85388e",
         "type": "text",
         "title": "数据大屏标题",
         "x": 0,
@@ -65,10 +65,11 @@
         },
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "848c5ba7-4b9c-491e-b078-9fd48efd4489",
+        "id": "9920c8de-03e7-4f15-976d-9ae3a3fa355e",
         "type": "text",
         "title": "时钟",
         "x": 1591,
@@ -101,10 +102,11 @@
         },
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "a117f43c-2f4e-4be4-8d6a-bbf4c71ec48a",
+        "id": "9a5f2909-8c87-4edb-b205-4bc592db219f",
         "type": "chart",
         "title": "网格事件明细",
         "x": 52,
@@ -122,119 +124,12 @@
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "a117f43c-2f4e-4be4-8d6a-bbf4c71ec48a",
+          "chartId": "9a5f2909-8c87-4edb-b205-4bc592db219f",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
-          "datasetId": "demo-gov-grid-stats",
-          "nativeBody": {
-            "deStyle": {
-              "legend": {
-                "show": false,
-                "color": "#64748b",
-                "fontSize": 11
-              },
-              "title": {
-                "color": "#1e293b",
-                "fontSize": 13,
-                "fontWeight": 600
-              },
-              "seriesColor": [
-                {
-                  "name": "series-0",
-                  "color": "#7c3aed"
-                },
-                {
-                  "name": "series-1",
-                  "color": "#8b5cf6"
-                },
-                {
-                  "name": "series-2",
-                  "color": "#a78bfa"
-                },
-                {
-                  "name": "series-3",
-                  "color": "#6d28d9"
-                },
-                {
-                  "name": "series-4",
-                  "color": "#475569"
-                },
-                {
-                  "name": "series-5",
-                  "color": "#c4b5fd"
-                }
-              ]
-            }
-          },
-          "index": null,
-          "dimensions": [
-            {
-              "field": "grid_name",
-              "label": null
-            },
-            {
-              "field": "event_count",
-              "label": null
-            },
-            {
-              "field": "resolved_count",
-              "label": null
-            }
-          ],
-          "metrics": [],
-          "axes": {
-            "xAxis": [
-              {
-                "field": "grid_name",
-                "label": null
-              },
-              {
-                "field": "event_count",
-                "label": null
-              },
-              {
-                "field": "resolved_count",
-                "label": null
-              }
-            ]
-          },
-          "filters": [],
-          "timeRange": null
-        },
-        "filterConfig": null,
-        "textConfig": null,
-        "mediaConfig": null,
-        "tabsConfig": null,
-        "componentRef": null
-      },
-      {
-        "id": "79e78199-96cc-45b2-85c6-763226c3537b",
-        "type": "chart",
-        "title": "治理热词",
-        "x": 460,
-        "y": 112,
-        "width": 543,
-        "height": 273,
-        "order": 3,
-        "hidden": null,
-        "locked": null,
-        "chartRef": null,
-        "parentTabsId": null,
-        "tabPaneId": null,
-        "chartConfig": {
-          "chartType": "word-cloud",
-          "styleVariant": "default",
-          "dataSourceId": "__demo:sample_db__",
-          "bindingId": null,
-          "chartId": "79e78199-96cc-45b2-85c6-763226c3537b",
-          "mode": "dataset",
-          "sql": null,
-          "schema": null,
-          "table": null,
-          "configId": null,
+          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
           "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
@@ -281,6 +176,106 @@
             {
               "field": "product_name",
               "label": null
+            },
+            {
+              "field": "category_name",
+              "label": null
+            }
+          ],
+          "metrics": [],
+          "axes": {
+            "xAxis": [
+              {
+                "field": "product_name",
+                "label": null
+              },
+              {
+                "field": "category_name",
+                "label": null
+              }
+            ]
+          },
+          "filters": [],
+          "timeRange": null
+        },
+        "filterConfig": null,
+        "textConfig": null,
+        "mediaConfig": null,
+        "tabsConfig": null,
+        "customVizConfig": null,
+        "componentRef": null
+      },
+      {
+        "id": "d832437c-e756-40ad-927e-1e82b27f398e",
+        "type": "chart",
+        "title": "治理热词",
+        "x": 460,
+        "y": 112,
+        "width": 543,
+        "height": 273,
+        "order": 3,
+        "hidden": null,
+        "locked": null,
+        "chartRef": null,
+        "parentTabsId": null,
+        "tabPaneId": null,
+        "chartConfig": {
+          "chartType": "word-cloud",
+          "styleVariant": "default",
+          "dataSourceId": "__demo:sample_db__",
+          "bindingId": null,
+          "chartId": "d832437c-e756-40ad-927e-1e82b27f398e",
+          "mode": "dataset",
+          "sql": null,
+          "schema": null,
+          "table": null,
+          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
+          "datasetId": "demo-sales-wide",
+          "nativeBody": {
+            "deStyle": {
+              "legend": {
+                "show": false,
+                "color": "#64748b",
+                "fontSize": 11
+              },
+              "title": {
+                "color": "#1e293b",
+                "fontSize": 13,
+                "fontWeight": 600
+              },
+              "seriesColor": [
+                {
+                  "name": "series-0",
+                  "color": "#7c3aed"
+                },
+                {
+                  "name": "series-1",
+                  "color": "#8b5cf6"
+                },
+                {
+                  "name": "series-2",
+                  "color": "#a78bfa"
+                },
+                {
+                  "name": "series-3",
+                  "color": "#6d28d9"
+                },
+                {
+                  "name": "series-4",
+                  "color": "#475569"
+                },
+                {
+                  "name": "series-5",
+                  "color": "#c4b5fd"
+                }
+              ]
+            }
+          },
+          "index": null,
+          "dimensions": [
+            {
+              "field": "province",
+              "label": null
             }
           ],
           "metrics": [
@@ -292,7 +287,7 @@
           "axes": {
             "xAxis": [
               {
-                "field": "product_name",
+                "field": "province",
                 "label": null
               }
             ],
@@ -310,10 +305,11 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "039b5759-ffed-4d41-9ac3-9f384cafe9a0",
+        "id": "d25c2c5a-97d4-4840-a462-c1c624686d73",
         "type": "chart",
         "title": "部门服务满意度",
         "x": 460,
@@ -331,12 +327,12 @@
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "039b5759-ffed-4d41-9ac3-9f384cafe9a0",
+          "chartId": "d25c2c5a-97d4-4840-a462-c1c624686d73",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
+          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
           "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
@@ -381,26 +377,26 @@
           "index": null,
           "dimensions": [
             {
-              "field": "category_name",
+              "field": "sale_date",
               "label": null
             }
           ],
           "metrics": [
             {
-              "field": "amount",
+              "field": "quantity",
               "label": null
             }
           ],
           "axes": {
-            "xAxis": [
+            "yAxis": [
               {
-                "field": "category_name",
+                "field": "quantity",
                 "label": null
               }
             ],
-            "yAxis": [
+            "xAxis": [
               {
-                "field": "amount",
+                "field": "sale_date",
                 "label": null
               }
             ]
@@ -412,10 +408,11 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "67c73004-18a8-4354-a95f-9b68d6b5f6e2",
+        "id": "4f832f51-f568-4d2a-8457-8ea7c2d45d41",
         "type": "chart",
         "title": "综合满意度",
         "x": 1472,
@@ -433,13 +430,13 @@
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "67c73004-18a8-4354-a95f-9b68d6b5f6e2",
+          "chartId": "4f832f51-f568-4d2a-8457-8ea7c2d45d41",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
-          "datasetId": "demo-sales-wide",
+          "configId": "8f770930-6675-4707-9925-68cac3fee49a",
+          "datasetId": "demo-sales-detail",
           "nativeBody": {
             "deStyle": {
               "legend": {
@@ -488,14 +485,14 @@
           "dimensions": [],
           "metrics": [
             {
-              "field": "amount",
+              "field": "quantity",
               "label": null
             }
           ],
           "axes": {
             "yAxis": [
               {
-                "field": "amount",
+                "field": "quantity",
                 "label": null
               }
             ]
@@ -507,10 +504,11 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "4cca58c7-c665-4c57-95fd-18ce991fa8be",
+        "id": "bd634418-e410-41bb-bca8-c3ed1b4bacc1",
         "type": "chart",
         "title": "事件类型",
         "x": 1472,
@@ -528,13 +526,13 @@
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "4cca58c7-c665-4c57-95fd-18ce991fa8be",
+          "chartId": "bd634418-e410-41bb-bca8-c3ed1b4bacc1",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
-          "datasetId": "demo-gov-grid-stats",
+          "configId": "95092dfd-f123-4efa-8b23-a5d37c3e4c6f",
+          "datasetId": "demo-gov-incidents",
           "nativeBody": {
             "deStyle": {
               "legend": {
@@ -578,26 +576,26 @@
           "index": null,
           "dimensions": [
             {
-              "field": "grid_name",
+              "field": "incident_type",
               "label": null
             }
           ],
           "metrics": [
             {
-              "field": "event_count",
+              "field": "count",
               "label": null
             }
           ],
           "axes": {
             "xAxis": [
               {
-                "field": "grid_name",
+                "field": "incident_type",
                 "label": null
               }
             ],
             "yAxis": [
               {
-                "field": "event_count",
+                "field": "count",
                 "label": null
               }
             ]
@@ -609,10 +607,11 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "8c6e1a29-2f3f-46a7-9371-ce83606b1a32",
+        "id": "6182a690-b455-45a7-9deb-9433a54fb461",
         "type": "chart",
         "title": "满意度变化",
         "x": 52,
@@ -630,12 +629,12 @@
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "8c6e1a29-2f3f-46a7-9371-ce83606b1a32",
+          "chartId": "6182a690-b455-45a7-9deb-9433a54fb461",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
+          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
           "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
@@ -680,7 +679,11 @@
           "index": null,
           "dimensions": [
             {
-              "field": "sale_date",
+              "field": "category_name",
+              "label": null
+            },
+            {
+              "field": "province",
               "label": null
             }
           ],
@@ -691,15 +694,19 @@
             }
           ],
           "axes": {
-            "xAxis": [
-              {
-                "field": "sale_date",
-                "label": null
-              }
-            ],
             "yAxis": [
               {
                 "field": "amount",
+                "label": null
+              }
+            ],
+            "xAxis": [
+              {
+                "field": "category_name",
+                "label": null
+              },
+              {
+                "field": "province",
                 "label": null
               }
             ]
@@ -711,10 +718,11 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       },
       {
-        "id": "607648de-80f2-45d5-836d-e3efadfe7570",
+        "id": "2545fea6-8e58-47dd-96d8-9b56ec1758d8",
         "type": "chart",
         "title": "象限图",
         "x": 1003,
@@ -732,12 +740,12 @@
           "styleVariant": "default",
           "dataSourceId": "__demo:sample_db__",
           "bindingId": null,
-          "chartId": "607648de-80f2-45d5-836d-e3efadfe7570",
+          "chartId": "2545fea6-8e58-47dd-96d8-9b56ec1758d8",
           "mode": "dataset",
           "sql": null,
           "schema": null,
           "table": null,
-          "configId": null,
+          "configId": "d769b018-4fc9-46ea-a055-45c67ec6a318",
           "datasetId": "demo-sales-wide",
           "nativeBody": {
             "deStyle": {
@@ -765,14 +773,14 @@
               "label": null
             },
             {
-              "field": "quantity",
+              "field": "amount",
               "label": null
             }
           ],
           "axes": {
-            "xAxis": [
+            "yAxisExt": [
               {
-                "field": "product_name",
+                "field": "amount",
                 "label": null
               }
             ],
@@ -782,9 +790,9 @@
                 "label": null
               }
             ],
-            "yAxisExt": [
+            "xAxis": [
               {
-                "field": "quantity",
+                "field": "product_name",
                 "label": null
               }
             ],
@@ -802,6 +810,7 @@
         "textConfig": null,
         "mediaConfig": null,
         "tabsConfig": null,
+        "customVizConfig": null,
         "componentRef": null
       }
     ],
@@ -816,6 +825,8 @@
       "pixelGutter": 5,
       "scaleMode": null,
       "canvasBackgroundImage": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-lime-de-circuit-wing.svg",
+      "canvasBackgroundImageFit": null,
+      "canvasBackgroundImagePosition": null,
       "canvasBackgroundCustom": true,
       "canvasDecorPresetId": "custom",
       "refreshIntervalSec": null,
@@ -899,6 +910,8 @@
       "themeVariants": {
         "light": {
           "canvasBackground": "#faf5ff",
+          "canvasBackgroundImageFit": null,
+          "canvasBackgroundImagePosition": null,
           "canvasBackgroundImage": "/template-assets/packs/gov-enterprise-v1/backgrounds/light/canvas-light-lime-de-circuit-wing.svg",
           "canvasBackgroundCustom": true,
           "canvasDecorPresetId": "custom",
@@ -925,6 +938,8 @@
         },
         "dark": {
           "canvasBackground": "#0f172a",
+          "canvasBackgroundImageFit": null,
+          "canvasBackgroundImagePosition": null,
           "canvasBackgroundImage": null,
           "canvasBackgroundCustom": null,
           "canvasDecorPresetId": null,

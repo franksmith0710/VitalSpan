@@ -6,12 +6,11 @@ import {
 } from "@/components/charts/engine/d3/core/sceneGraph";
 
 describe("sceneGraph layout helpers", () => {
-  it("resolveCategoryCartesianLayout rotates dense ticks and reserves bottom by default", () => {
+  it("resolveCategoryCartesianLayout keeps dense ticks horizontal by default", () => {
     const categories = Array.from({ length: 16 }, (_, i) => `类目${i + 1}`);
     const layout = resolveCategoryCartesianLayout(200, 180, categories);
     expect(layout.xLayout.ticks.length).toBeLessThan(categories.length);
-    expect(layout.xLayout.rotateDeg).toBeLessThan(0);
-    expect(layout.margin.bottom).toBeGreaterThan(44);
+    expect(layout.xLayout.rotateDeg).toBe(0);
     expect(layout.innerW).toBeGreaterThan(0);
     expect(layout.innerH).toBeGreaterThan(0);
   });

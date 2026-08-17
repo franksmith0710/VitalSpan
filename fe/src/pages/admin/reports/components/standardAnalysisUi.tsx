@@ -5,8 +5,9 @@ import type { AnalysisPack, AnalysisTheme } from "../useStandardAnalysis";
 import { THEME_LABELS } from "../standardRoutes";
 import { cn } from "@/lib/utils";
 
+/** 分栏仅 xl+：侧栏占用后 lg 内容区过窄，栅格 min-width:auto 会叠到详情上。 */
 export const STANDARD_WORKBENCH_GRID_CLASS =
-  "grid min-h-0 flex-1 lg:grid-cols-[minmax(240px,280px)_minmax(0,1fr)]";
+  "grid min-h-0 min-w-0 flex-1 overflow-hidden xl:grid-cols-[minmax(0,16rem)_minmax(0,1fr)]";
 
 export const THEME_META: Record<AnalysisTheme, { label: string; icon: LucideIcon }> = {
   lifecycle: { label: THEME_LABELS.lifecycle, icon: GitBranch },
@@ -27,10 +28,10 @@ export function createEmptyAnalysisPack(): AnalysisPack {
   return {
     packKey: "",
     displayName: "",
-    businessObjectCode: "",
-    physicalTableFqn: "",
+    datasetId: "",
+    boundConfigId: "",
     dataSourceId: "",
-    fieldMapping: { status: "status", region: "region", createdAt: "created_at" },
+    fieldMapping: { status: "", region: "", createdAt: "" },
     enabledThemes: ["lifecycle", "distribution"],
     allowedRoles: ["analyst", "admin"],
     snapshotCronPreset: "daily",
@@ -39,15 +40,18 @@ export function createEmptyAnalysisPack(): AnalysisPack {
 
 export function StandardAnalysisMetaRow({ pack, className }: { pack: AnalysisPack; className?: string }) {
   const snapshotLabel = SNAPSHOT_LABELS[pack.snapshotCronPreset] ?? pack.snapshotCronPreset;
+  const bindingLabel = pack.datasetId || pack.physicalTableFqn || "未绑定";
 
   return (
     <div className={cn("flex flex-wrap items-center gap-2", className)}>
-      <Badge variant="light" color="primary" size="sm">
-        {pack.businessObjectCode}
-      </Badge>
+      {pack.businessObjectCode ? (
+        <Badge variant="light" color="primary" size="sm">
+          {pack.businessObjectCode}
+        </Badge>
+      ) : null}
       <Badge variant="light" color="light" size="sm" className="max-w-[min(100%,14rem)] truncate font-mono">
         <Database className="size-3 shrink-0" aria-hidden />
-        {pack.physicalTableFqn}
+        {bindingLabel}
       </Badge>
       <Badge variant="light" color="info" size="sm">
         <Timer className="size-3 shrink-0" aria-hidden />

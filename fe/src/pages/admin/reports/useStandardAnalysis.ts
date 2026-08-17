@@ -14,8 +14,10 @@ export type FieldMapping = {
 export type AnalysisPack = {
   packKey: string;
   displayName: string;
-  businessObjectCode: string;
-  physicalTableFqn: string;
+  businessObjectCode?: string;
+  physicalTableFqn?: string;
+  datasetId?: string;
+  boundConfigId?: string;
   dataSourceId: string;
   fieldMapping: FieldMapping;
   enabledThemes: AnalysisTheme[];

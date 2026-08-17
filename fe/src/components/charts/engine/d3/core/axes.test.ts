@@ -163,9 +163,9 @@ describe("d3 core", () => {
     host.remove();
   });
 
-  it("resolveCategoryLabelRotate defaults to auto when unspecified", () => {
+  it("resolveCategoryLabelRotate defaults to horizontal when unspecified", () => {
     const ticks = ["一月", "二月", "三月", "四月", "五月", "六月"];
-    expect(resolveCategoryLabelRotate(ticks, 180)).toBeLessThan(0);
+    expect(resolveCategoryLabelRotate(ticks, 180)).toBe(0);
     expect(resolveCategoryLabelRotate(ticks, 600)).toBe(0);
     expect(resolveCategoryLabelRotate(ticks, 180, 0)).toBe(0);
     expect(resolveCategoryLabelRotate(ticks, 180, -45)).toBe(-45);
@@ -177,12 +177,12 @@ describe("d3 core", () => {
     expect(resolveCategoryLabelRotate(ticks, 600, "auto")).toBe(0);
   });
 
-  it("planCategoryAxisLayout rotates dense ticks by default and reserves bottom", () => {
+  it("planCategoryAxisLayout keeps dense ticks horizontal by default and still thins", () => {
     const cats = Array.from({ length: 16 }, (_, i) => `类目${i + 1}`);
     const layout = planCategoryAxisLayout(cats, 160);
     expect(layout.ticks.length).toBeLessThan(cats.length);
-    expect(layout.rotateDeg).toBeLessThan(0);
-    expect(layout.extraBottom).toBeGreaterThan(0);
+    expect(layout.rotateDeg).toBe(0);
+    expect(layout.extraBottom).toBe(0);
   });
 
   it("planCategoryAxisLayout stays horizontal when rotate is explicitly 0", () => {
@@ -255,21 +255,21 @@ describe("d3 core", () => {
     expect(layout.rotateDeg).toBeLessThan(0);
   });
 
-  it("planCategoryAxisLayout rotates when composite labels are long by default", () => {
+  it("planCategoryAxisLayout stays horizontal when composite labels are long by default", () => {
     const cats = Array.from({ length: 8 }, (_, i) => `产品${i + 1}\u0001类目${i + 1}\u00012025-01-0${i + 1}`);
     const layout = planCategoryAxisLayout(cats, 160);
-    expect(layout.rotateDeg).toBeLessThan(0);
+    expect(layout.rotateDeg).toBe(0);
   });
 
-  it("planCategoryAxisLayout tilts dense ISO dates by default", () => {
+  it("planCategoryAxisLayout keeps dense ISO dates horizontal by default", () => {
     const dates = Array.from({ length: 40 }, (_, i) => {
       const day = 26 + i;
       const d = new Date(Date.UTC(2025, 2, day));
       return d.toISOString().slice(0, 10);
     });
     const layout = planCategoryAxisLayout(dates, 560);
-    expect(layout.rotateDeg).toBeLessThan(0);
-    expect(layout.extraBottom).toBeGreaterThan(0);
+    expect(layout.rotateDeg).toBe(0);
+    expect(layout.extraBottom).toBe(0);
     expect(layout.ticks.length).toBeGreaterThan(1);
     expect(layout.ticks.length).toBeLessThan(dates.length);
   });

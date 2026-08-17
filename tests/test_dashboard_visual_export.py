@@ -160,6 +160,19 @@ def test_submit_pdf_export_returns_visual_snapshot(
     assert b"LAYOUT INVENTORY PREVIEW" not in download.content[:4096]
 
 
+def test_full_page_pdf_options_scale_when_too_tall() -> None:
+    from app.dashboard.export_render import MAX_PDF_PAGE_HEIGHT_PX, _full_page_pdf_options
+
+    class _TallPage:
+        def evaluate(self, *_args, **_kwargs):
+            return {"width": 1920, "height": MAX_PDF_PAGE_HEIGHT_PX + 2000}
+
+    opts = _full_page_pdf_options(_TallPage())
+    assert opts["height"] == f"{MAX_PDF_PAGE_HEIGHT_PX}px"
+    assert opts["scale"] < 1.0
+    assert opts["margin"]["top"] == "0"
+
+
 def test_render_rejects_inventory_leak(monkeypatch) -> None:
     from app.dashboard import service as dash_service
     from app.dashboard.export_render import render_dashboard_visual_pdf

@@ -174,9 +174,9 @@ export function ListBatchDeleteBar({
       </Button>
       <Button
         type="button"
-        variant="outline"
+        variant="destructive"
         size="xs"
-        className="h-7 border-error-200 px-2 text-error-600 hover:bg-error-50 dark:border-error-500/30 dark:text-error-400"
+        className="h-7 px-2"
         onClick={onDelete}
       >
         删除 ({selectedCount})

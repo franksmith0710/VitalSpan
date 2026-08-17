@@ -8,23 +8,14 @@ from sqlalchemy.orm import Session
 
 from app.dashboard.templates.models import DashboardTemplate
 from app.dashboard.templates.presets_exported import load_exported_layout
-from app.dashboard.templates.presets_gov_assets import (
-    COMMUNITY_THUMB,
-    DIGITAL_COCKPIT_THUMB,
-    ECO_MONITOR_THUMB,
-    EFFICIENCY_THUMB,
-    EMERGENCY_THUMB,
-    FINANCE_THUMB,
-    GRID_THUMB,
-    INVESTMENT_THUMB,
-    SATISFACTION_THUMB,
-    SMART_CITY_THUMB,
-    thumb,
-)
+
+
+def _instance_thumb(template_key: str, ext: str) -> str:
+    return f"/template-assets/instance-thumbs/{template_key}.{ext}"
 
 
 def _builtin_template_specs() -> list[dict[str, Any]]:
-    """11 套内置模板：6 数据大屏 + 5 仪表板（来自已配置实例布局）。"""
+    """10 套内置模板：6 数据大屏 + 4 仪表板（来自当前工作区看板/大屏）。"""
     return [
         {
             "id": uuid.UUID("00000000-0000-4000-8001-000000000211"),
@@ -33,7 +24,7 @@ def _builtin_template_specs() -> list[dict[str, Any]]:
             "description": "工业监控大屏 · 条形/柱线/环形组合 · 官方示例数据",
             "category_key": "monitoring",
             "surface_kind": "data-screen",
-            "thumbnail_ref": thumb("canvas-dark-emerald-de-platform-header"),
+            "thumbnail_ref": _instance_thumb("builtin-gov-industrial-park", "jpg"),
             "layout_json": load_exported_layout("industrial-park-screen.json"),
         },
         {
@@ -43,7 +34,7 @@ def _builtin_template_specs() -> list[dict[str, Any]]:
             "description": "深色青蓝 HUD 扫描底图 · 毛玻璃组件 · 城市态势地图 · 官方示例数据",
             "category_key": "government",
             "surface_kind": "data-screen",
-            "thumbnail_ref": SMART_CITY_THUMB,
+            "thumbnail_ref": _instance_thumb("builtin-gov-smart-city", "jpg"),
             "layout_json": load_exported_layout("workspace-smart-city.json"),
         },
         {
@@ -53,7 +44,7 @@ def _builtin_template_specs() -> list[dict[str, Any]]:
             "description": "纸纹水印浅色底图 · 顶栏 KPI 条 · 满意度趋势 · 官方示例数据",
             "category_key": "government",
             "surface_kind": "data-screen",
-            "thumbnail_ref": DIGITAL_COCKPIT_THUMB,
+            "thumbnail_ref": _instance_thumb("builtin-gov-digital-cockpit", "png"),
             "layout_json": load_exported_layout("workspace-digital-cockpit.json"),
         },
         {
@@ -63,7 +54,7 @@ def _builtin_template_specs() -> list[dict[str, Any]]:
             "description": "深色绯红指挥底图 · 毛玻璃告警带 · 区域态势 · 官方示例数据",
             "category_key": "government",
             "surface_kind": "data-screen",
-            "thumbnail_ref": EMERGENCY_THUMB,
+            "thumbnail_ref": _instance_thumb("builtin-gov-emergency-command", "png"),
             "layout_json": load_exported_layout("workspace-emergency.json"),
         },
         {
@@ -73,7 +64,7 @@ def _builtin_template_specs() -> list[dict[str, Any]]:
             "description": "薄荷丝带浅色底图 · 顶色条卡片 · AQI 趋势 · 官方示例数据",
             "category_key": "government",
             "surface_kind": "data-screen",
-            "thumbnail_ref": ECO_MONITOR_THUMB,
+            "thumbnail_ref": _instance_thumb("builtin-gov-eco-monitor", "jpg"),
             "layout_json": load_exported_layout("workspace-eco.json"),
         },
         {
@@ -83,7 +74,7 @@ def _builtin_template_specs() -> list[dict[str, Any]]:
             "description": "薰衣草浮层卡片底图 · 网格事件 · 治理热词 · 官方示例数据",
             "category_key": "government",
             "surface_kind": "data-screen",
-            "thumbnail_ref": COMMUNITY_THUMB,
+            "thumbnail_ref": _instance_thumb("builtin-gov-community", "jpg"),
             "layout_json": load_exported_layout("workspace-community.json"),
         },
         {
@@ -93,7 +84,7 @@ def _builtin_template_specs() -> list[dict[str, Any]]:
             "description": "浅灰 #f0f2f5 画布 · 顶行 KPI/仪表 + 柱线双图 · 官方示例数据",
             "category_key": "government",
             "surface_kind": "dashboard",
-            "thumbnail_ref": EFFICIENCY_THUMB,
+            "thumbnail_ref": _instance_thumb("builtin-gov-efficiency", "jpg"),
             "layout_json": load_exported_layout("workspace-efficiency.json"),
         },
         {
@@ -103,7 +94,7 @@ def _builtin_template_specs() -> list[dict[str, Any]]:
             "description": "DataEase 风三栏 · 地图 + 饼图 + 明细表 · 官方示例数据",
             "category_key": "government",
             "surface_kind": "dashboard",
-            "thumbnail_ref": SATISFACTION_THUMB,
+            "thumbnail_ref": _instance_thumb("builtin-gov-satisfaction", "jpg"),
             "layout_json": load_exported_layout("workspace-satisfaction.json"),
         },
         {
@@ -113,18 +104,8 @@ def _builtin_template_specs() -> list[dict[str, Any]]:
             "description": "DataEase 风运营布局 · KPI + 地图 + 趋势 + 预算表 · 官方示例数据",
             "category_key": "government",
             "surface_kind": "dashboard",
-            "thumbnail_ref": FINANCE_THUMB,
+            "thumbnail_ref": _instance_thumb("builtin-gov-finance", "jpg"),
             "layout_json": load_exported_layout("workspace-finance.json"),
-        },
-        {
-            "id": uuid.UUID("00000000-0000-4000-8001-000000000209"),
-            "template_key": "builtin-gov-investment",
-            "name": "招商引资分析",
-            "description": "DataEase 风招商看板 · 地图主视觉 + 产业柱图 · 官方示例数据",
-            "category_key": "government",
-            "surface_kind": "dashboard",
-            "thumbnail_ref": INVESTMENT_THUMB,
-            "layout_json": load_exported_layout("workspace-investment.json"),
         },
         {
             "id": uuid.UUID("00000000-0000-4000-8001-000000000210"),
@@ -133,13 +114,13 @@ def _builtin_template_specs() -> list[dict[str, Any]]:
             "description": "DataEase 风网格看板 · 台账表 + 地图 + 分类柱图 · 官方示例数据",
             "category_key": "government",
             "surface_kind": "dashboard",
-            "thumbnail_ref": GRID_THUMB,
+            "thumbnail_ref": _instance_thumb("builtin-gov-grid", "jpg"),
             "layout_json": load_exported_layout("workspace-grid.json"),
         },
     ]
 
 
-BUILTIN_SEED_CONTENT_REVISION = 30
+BUILTIN_SEED_CONTENT_REVISION = 31
 
 
 def _purge_obsolete_builtin_templates(db: Session, active_keys: set[str]) -> int:

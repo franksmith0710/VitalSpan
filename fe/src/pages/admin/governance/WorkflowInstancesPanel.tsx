@@ -173,8 +173,8 @@ export function WorkflowInstancesPanel({ embedded = false }: WorkflowInstancesPa
 
   return (
     <div className={shellClass}>
-      <div className="grid min-h-[520px] lg:grid-cols-[minmax(260px,280px)_1fr]">
-        <aside className="flex flex-col border-b border-gray-200 lg:border-r lg:border-b-0 dark:border-gray-800">
+      <div className="grid min-h-[520px] min-w-0 overflow-hidden xl:grid-cols-[minmax(0,17.5rem)_minmax(0,1fr)]">
+        <aside className="flex min-w-0 flex-col overflow-hidden border-b border-gray-200 xl:border-b-0 xl:border-r dark:border-gray-800">
           <div className="flex items-center justify-between gap-2 border-b border-gray-200 px-4 py-3.5 dark:border-gray-800">
             <h2 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">实例</h2>
             <Badge variant="light" color="light" size="sm">

@@ -306,6 +306,7 @@ export function EtlRulesPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction
+              variant="primary"
               onClick={() => {
                 setAlignConfirmOpen(false);
                 void runAutoAlign();

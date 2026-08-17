@@ -315,9 +315,9 @@ export function resolveCategoryLabelRotate(
   innerSpan: number,
   explicitRotate?: AxisLabelRotate,
 ): number {
-  if (explicitRotate === 0) return 0;
-  if (typeof explicitRotate === "number") return explicitRotate;
-  return resolveAutoCategoryLabelRotate(tickLabels, innerSpan);
+  if (explicitRotate === "auto") return resolveAutoCategoryLabelRotate(tickLabels, innerSpan);
+  if (explicitRotate == null) return 0;
+  return explicitRotate;
 }
 
 export function resolveRotatedAxisExtraSpan(rotateDeg: number): number {

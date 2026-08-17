@@ -9,6 +9,28 @@
   page-break-after: avoid;
 }
 
+/* full_page：单页连续快照，禁止把画布整块推到下一页 */
+.export-layout-full-page {
+  min-height: auto !important;
+}
+
+.export-layout-full-page .export-snapshot-header,
+.export-layout-full-page .export-mode-banner,
+.export-layout-full-page .export-snapshot-body,
+.export-layout-full-page .export-snapshot-body > *,
+.export-layout-full-page [data-export-widget-shell] {
+  break-inside: auto !important;
+  page-break-inside: auto !important;
+  break-before: auto !important;
+  page-break-before: auto !important;
+  break-after: auto !important;
+  page-break-after: auto !important;
+}
+
+.export-layout-full-page [data-export-widget-shell] {
+  min-height: 0 !important;
+}
+
 .export-mode-banner,
 .export-section-banner {
   margin: 0 0 12px;
@@ -96,11 +118,6 @@
   width: 100%;
 }
 
-.export-layout-full-page .export-snapshot-body [data-export-widget-shell] {
-  break-inside: avoid;
-  page-break-inside: avoid;
-}
-
 @media print {
   .export-snapshot-root {
     background: #fff !important;
@@ -120,7 +137,13 @@
     page-break-inside: auto;
   }
 
-  .export-layout-full-page .export-snapshot-body > * {
+  .export-layout-per-widget .export-snapshot-body,
+  .export-layout-combined .export-snapshot-body {
+    page-break-inside: auto;
+  }
+
+  .export-layout-per-widget .export-snapshot-body > *,
+  .export-layout-combined .export-snapshot-body > * {
     page-break-inside: avoid;
   }
 

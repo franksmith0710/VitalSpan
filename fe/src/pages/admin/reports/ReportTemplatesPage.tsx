@@ -27,7 +27,7 @@ import { type CatalogNode, fetchCatalogExtension, useAllCatalogNodes, useReportT
 import { useReportCenterPreferences } from "./useReportCenterPrefs";
 import { queryKeys } from "@/lib/queryKeys";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
-import { ReportCenterBackLink } from "./components/ReportCenterBackLink";
+import { ReportCenterTabNav } from "./components/ReportCenterTabNav";
 import {
   DOC_TEMPLATE_PRODUCT_LINE,
 } from "@/lib/reportCenterNav";
@@ -317,18 +317,14 @@ export function ReportTemplatesPage() {
     <AdminPageShell
       title="文档模板"
       description={`${DOC_TEMPLATE_PRODUCT_LINE} 在本页维护目录、扩展配置、模板块与调度。`}
-      actions={
-        <div className="flex flex-wrap items-center gap-2">
-          <ReportCenterBackLink />
-          {nodes.length > 0 ? createActions : null}
-        </div>
-      }
+      actions={nodes.length > 0 ? createActions : null}
     >
+      <ReportCenterTabNav />
       {nodesQuery.isError ? (
         <PageErrorBanner message={mapApiError(nodesQuery.error)} onRetry={() => void nodesQuery.refetch()} />
       ) : null}
 
-      <div className="mb-4 lg:hidden">
+      <div className="mb-4 xl:hidden">
         <Select value={selectedId ?? "__none__"} onValueChange={(v) => handleSelect(v === "__none__" ? null : v)}>
           <SelectTrigger aria-label="选择目录节点" className="h-11">
             <SelectValue placeholder="选择节点" />
@@ -353,8 +349,8 @@ export function ReportTemplatesPage() {
         {nodes.length === 0 && !nodesQuery.isLoading ? (
           <div className="p-4">{catalogBody}</div>
         ) : (
-          <div className="grid min-h-[560px] lg:grid-cols-[minmax(260px,300px)_1fr]">
-            <aside className="hidden flex-col border-b border-gray-200 lg:flex lg:border-b-0 lg:border-r dark:border-gray-800">
+          <div className="grid min-h-[560px] min-w-0 overflow-hidden xl:grid-cols-[minmax(0,18rem)_minmax(0,1fr)]">
+            <aside className="hidden min-w-0 flex-col overflow-hidden border-b border-gray-200 xl:flex xl:border-b-0 xl:border-r dark:border-gray-800">
               <div className="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
                 <h2 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">模板目录</h2>
                 <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
@@ -367,7 +363,7 @@ export function ReportTemplatesPage() {
               <div className="flex min-h-0 flex-1 flex-col p-3">{catalogBody}</div>
             </aside>
 
-            <section className="flex min-h-[280px] flex-col p-4">{detailBody}</section>
+            <section className="flex min-h-[280px] min-w-0 flex-col overflow-hidden p-4">{detailBody}</section>
           </div>
         )}
       </div>

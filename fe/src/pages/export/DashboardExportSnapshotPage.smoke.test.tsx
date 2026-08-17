@@ -50,7 +50,7 @@ describe("DashboardExportSnapshotPage", () => {
       </MemoryRouter>,
     );
     expect(await screen.findByTestId("layout-preview")).toBeInTheDocument();
-    expect(screen.getAllByText(/整页长图/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/高清整页/).length).toBeGreaterThan(0);
     expect(document.querySelector('[data-export-layout-mode="full_page"]')).toBeTruthy();
   });
 

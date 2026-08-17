@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 ThemeType = Literal["lifecycle", "activity", "trend", "distribution"]
 SnapshotCronPreset = Literal["daily", "weekly", "monthly"]
@@ -21,13 +21,27 @@ class AnalysisPackIn(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     pack_key: str = Field(alias="packKey", pattern=r"^[a-z][a-z0-9_-]{1,63}$")
     display_name: str = Field(min_length=1, max_length=120, alias="displayName")
-    business_object_code: str = Field(alias="businessObjectCode", pattern=r"^[a-z][a-z0-9_]{1,63}$")
-    physical_table_fqn: str = Field(alias="physicalTableFqn", min_length=3, max_length=128)
+    business_object_code: str | None = Field(
+        default=None,
+        alias="businessObjectCode",
+        pattern=r"^[a-z][a-z0-9_]{1,63}$",
+    )
+    physical_table_fqn: str | None = Field(default=None, alias="physicalTableFqn", min_length=3, max_length=128)
+    dataset_id: str | None = Field(default=None, alias="datasetId", pattern=r"^[a-z][a-z0-9_-]{1,63}$")
+    bound_config_id: uuid.UUID | None = Field(default=None, alias="boundConfigId")
     data_source_id: uuid.UUID = Field(alias="dataSourceId")
     field_mapping: FieldMapping = Field(alias="fieldMapping")
     enabled_themes: list[ThemeType] = Field(min_length=1, alias="enabledThemes")
     allowed_roles: list[str] = Field(default_factory=lambda: ["analyst"], alias="allowedRoles")
     snapshot_cron_preset: SnapshotCronPreset = Field(alias="snapshotCronPreset")
+
+    @model_validator(mode="after")
+    def _binding_mode(self) -> AnalysisPackIn:
+        if self.dataset_id:
+            return self
+        if not self.physical_table_fqn or not self.business_object_code:
+            raise ValueError("physicalTableFqn and businessObjectCode required when datasetId is absent")
+        return self
 
 
 class AnalysisPackOut(AnalysisPackIn):

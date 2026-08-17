@@ -31,13 +31,13 @@
 
 ### templates/ 子域（DASH-009 · 2026-07-23 · 2026-08 种子 rev 25）
 
-- **In**：`dashboard_templates` 持久化；**内置种子 11 套**（数据大屏 **6** + 仪表板 **5**，`BUILTIN_SEED_CONTENT_REVISION=30`）；组织/私有模板 CRUD；发布/下架/删除；`viz-layout` 信封导入导出；`from-template` 原子实例化；widget id 重生；过时 builtin 键 `_purge_obsolete_builtin_templates` 幂等清理
+- **In**：`dashboard_templates` 持久化；**内置种子 10 套**（数据大屏 **6** + 仪表板 **4**，`BUILTIN_SEED_CONTENT_REVISION=31`）；组织/私有模板 CRUD；发布/下架/删除；`viz-layout` 信封导入导出；`from-template` 原子实例化；widget id 重生；过时 builtin 键 `_purge_obsolete_builtin_templates` 幂等清理
 - **Out**：报表模板树；在线模板市场；第三方 CDN 缩略图
 - **依赖**：`dashboard/service`（layout 校验与实例化）、`auth`（`dashboard:read` / `dashboard:edit` / `dashboard:template.manage`）
 - **BE 锚点**：`templates/seed.py` · `templates/presets_exported.py` · `templates/service.py` · `templates/acl.py` · `api/v1/dashboard_templates.py`
 - **FE**：`fe/src/pages/admin/viz-templates/VizTemplatesHubPage.tsx` · `fe/src/components/dashboard/templates/*` · `fe/src/lib/dashboardTemplates.ts`
 
-**内置模板清单（rev 30）**
+**内置模板清单（rev 31）**
 
 | template_key | 表面 | 布局来源 |
 |--------------|------|----------|
@@ -50,7 +50,6 @@
 | `builtin-gov-efficiency` | dashboard | `workspace-efficiency.json` |
 | `builtin-gov-satisfaction` | dashboard | `workspace-satisfaction.json` |
 | `builtin-gov-finance` | dashboard | `workspace-finance.json` |
-| `builtin-gov-investment` | dashboard | `workspace-investment.json` |
 | `builtin-gov-grid` | dashboard | `workspace-grid.json` |
 
 布局 JSON 经 `presets_exported.load_exported_layout()` 加载，演示数据源占位 `__demo:sample_db__`。

@@ -595,6 +595,7 @@ export function SyncJobFormPage() {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={runningId === id}>取消</AlertDialogCancel>
             <AlertDialogAction
+              variant="primary"
               disabled={runningId === id}
               onClick={() => void handleConfirmRun()}
             >

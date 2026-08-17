@@ -310,7 +310,8 @@ describe("ReportSchedulesPage smoke", () => {
     const user = userEvent.setup();
     renderPage();
     await screen.findByText("销售月报");
-    await user.click(screen.getByRole("button", { name: "删除" }));
+    await user.click(screen.getByRole("button", { name: "调度操作" }));
+    await user.click(screen.getByRole("menuitem", { name: "删除" }));
     const dialog = await screen.findByRole("alertdialog");
     expect(within(dialog).getByText("删除这条定时报告？")).toBeInTheDocument();
     await user.click(within(dialog).getByRole("button", { name: "删除" }));
