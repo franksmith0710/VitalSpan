@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { useRef } from "react";
 import { EmbeddedChartLegendShell, legendShellMaxHeightPx } from "./EmbeddedChartLegend";
@@ -110,5 +110,24 @@ describe("EmbeddedChartLegendShell", () => {
       </EmbeddedChartLegendShell>,
     );
     expect(getInstanceId()).toBe(before);
+  });
+
+  it("paginates horizontal legend when items exceed page size", () => {
+    const manyItems = Array.from({ length: 10 }, (_, index) => ({
+      name: `系列${index + 1}`,
+      color: "#111",
+    }));
+
+    render(
+      <EmbeddedChartLegendShell position="bottom" fontSize={12} items={manyItems}>
+        <div data-testid="chart-body">chart</div>
+      </EmbeddedChartLegendShell>,
+    );
+
+    const legend = screen.getByLabelText("图例");
+    expect(within(legend).getByText("系列1")).toBeInTheDocument();
+    expect(within(legend).queryByText("系列9")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("下一页图例")).toBeInTheDocument();
+    expect(screen.getByText("1/2")).toBeInTheDocument();
   });
 });

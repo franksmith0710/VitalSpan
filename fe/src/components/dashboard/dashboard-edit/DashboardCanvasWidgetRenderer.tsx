@@ -268,12 +268,12 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
   );
 
   const chrome = resolveDashboardChrome(dashboardStyle);
+  const isDataScreenSurface = widgetActions?.surface === "data-screen";
   const showWidgetContextMenu =
     mode === "edit" &&
-    shell === "grid" &&
-    !nested &&
     Boolean(widgetActions) &&
-    chrome.showFloatingActions;
+    chrome.showFloatingActions &&
+    ((shell === "grid" && !nested) || (isDataScreenSurface && nested));
 
   const widgetBody = (
     <DashboardWidget

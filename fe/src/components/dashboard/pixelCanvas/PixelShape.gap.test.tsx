@@ -87,8 +87,8 @@ describe("PixelShape context menu", () => {
       </DashboardStyleSurface>,
     );
 
-    const inner = screen.getByTestId("pixel-shape-body-w1").querySelector(".pixel-shape-inner");
-    expect(inner).toHaveAttribute("data-state", "closed");
+    const trigger = screen.getByTestId("pixel-shape-body-w1").querySelector("[data-state]");
+    expect(trigger).toHaveAttribute("data-state", "closed");
     expect(screen.queryByTestId("pixel-shape-actions-w1")).not.toBeInTheDocument();
   });
 

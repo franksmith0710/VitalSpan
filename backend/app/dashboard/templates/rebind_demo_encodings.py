@@ -13,6 +13,7 @@ GRID = "demo-gov-grid-stats"
 
 _GRID_TITLE_KEYS = ("网格", "事件", "待办", "台账", "整改", "发现")
 _MAP_TITLE_KEYS = ("热力", "区域分布", "区域态势", "地图")
+_GOV_ANALYTICS_KEYS = ("政务", "满意度", "水质", "效能", "部门")
 
 
 def _refs(fields: list[str]) -> list[dict[str, Any]]:
@@ -69,6 +70,37 @@ def encoding_for(chart_type: str, title: str) -> tuple[str, list[str], list[str]
             ["event_count"],
             {"xAxis": ["grid_name"], "yAxis": ["event_count"]},
         )
+
+    govish = any(key in title for key in _GOV_ANALYTICS_KEYS)
+    if govish:
+        if chart_type in {"map", "map-3d"} or any(key in title for key in _MAP_TITLE_KEYS):
+            return _pack(
+                GEO,
+                ["province", "city", "district"],
+                ["amount"],
+                {"xAxis": ["province"], "yAxis": ["amount"], "drill": ["city", "district"]},
+            )
+        if chart_type == "gauge" or "水质" in title:
+            return _pack(GRID, [], ["resolved_count"], {"yAxis": ["resolved_count"]})
+        if chart_type in {"line", "area", "timeline"} or "趋势" in title:
+            return _pack(WIDE, ["sale_date"], ["amount"], {"xAxis": ["sale_date"], "yAxis": ["amount"]})
+        if chart_type == "bar-stack-horizontal":
+            return _pack(
+                GRID,
+                ["grid_name"],
+                ["event_count", "resolved_count"],
+                {"xAxis": ["grid_name"], "yAxis": ["event_count", "resolved_count"]},
+            )
+        if chart_type in {"bar-stack", "chart-mix-group", "chart-mix-stack"}:
+            return _pack(
+                GRID,
+                ["grid_name"],
+                ["event_count", "resolved_count"],
+                {"xAxis": ["grid_name"], "yAxis": ["event_count", "resolved_count"]},
+            )
+        if chart_type == "bar":
+            return _pack(GRID, ["grid_name"], ["event_count"], {"xAxis": ["grid_name"], "yAxis": ["event_count"]})
+        return _pack(GRID, ["grid_name"], ["event_count"], {"xAxis": ["grid_name"], "yAxis": ["event_count"]})
 
     catalog: dict[str, tuple[str, list[str], list[str], dict[str, list[str]]]] = {
         "kpi": _pack(WIDE, [], ["amount"], {"yAxis": ["amount"]}),

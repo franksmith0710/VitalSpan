@@ -177,4 +177,36 @@ describe("WidgetContextMenuContent", () => {
     expect(screen.getByText("实体背景")).toBeInTheDocument();
     expect(screen.getByText("隐藏边框")).toBeInTheDocument();
   });
+
+  it("shows data-screen layer shortcuts", () => {
+    render(
+      <ContextMenu open>
+        <ContextMenuTrigger asChild>
+          <span>trigger</span>
+        </ContextMenuTrigger>
+        <ContextMenuContent data-testid="menu-content">
+          <WidgetContextMenuContent
+            widget={{ ...textWidget, hidden: false, locked: false }}
+            actions={{
+              surface: "data-screen",
+              onMoveLayerUp: vi.fn(),
+              onMoveLayerDown: vi.fn(),
+              onBringToFront: vi.fn(),
+              onSendToBack: vi.fn(),
+              onToggleHidden: vi.fn(),
+              onToggleLocked: vi.fn(),
+            }}
+          />
+        </ContextMenuContent>
+      </ContextMenu>,
+    );
+
+    const menu = screen.getByTestId("menu-content");
+    expect(within(menu).getByText("上移一层")).toBeInTheDocument();
+    expect(within(menu).getByText("下移一层")).toBeInTheDocument();
+    expect(within(menu).getByText("置顶")).toBeInTheDocument();
+    expect(within(menu).getByText("置底")).toBeInTheDocument();
+    expect(within(menu).getByText("隐藏图层")).toBeInTheDocument();
+    expect(within(menu).getByText("锁定图层")).toBeInTheDocument();
+  });
 });

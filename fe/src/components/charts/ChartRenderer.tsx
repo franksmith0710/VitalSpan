@@ -668,8 +668,7 @@ export const ChartRenderer = memo(function ChartRenderer({
   ]);
 
 
-  const suppressInlineLegend =
-    shellLegendEligible && shellLegendVisible && shellLegendItems.length > 0;
+  const suppressInlineLegend = shellLegendEligible && shellLegendVisible;
   const useShellLegendLayout = suppressInlineLegend;
   const shellLegendPosition = readChartLegendPosition(deStyle);
 

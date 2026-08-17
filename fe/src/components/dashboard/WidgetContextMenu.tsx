@@ -1,4 +1,4 @@
-import { ChevronsDown, ChevronsUp, ClipboardPaste, Copy, Eye, Maximize2, Trash2 } from "lucide-react";
+import { ChevronsDown, ChevronsUp, ClipboardPaste, Copy, Eye, EyeOff, Lock, Maximize2, Trash2, Unlock, ArrowDown, ArrowUp } from "lucide-react";
 import type { ReactNode } from "react";
 import type { ColorScheme, DashboardStyleConfig } from "@/components/dashboard/dashboardStyleConfig";
 import {
@@ -30,6 +30,10 @@ export type DashboardWidgetActions = {
     options?: WidgetQuickStyleActionOptions,
   ) => void;
   showLayerActions?: boolean;
+  onMoveLayerUp?: (widgetId: string) => void;
+  onMoveLayerDown?: (widgetId: string) => void;
+  onToggleHidden?: (widgetId: string) => void;
+  onToggleLocked?: (widgetId: string) => void;
   onEnlarge?: (widgetId: string) => void;
   onViewData?: (widgetId: string) => void;
   onTitleChange?: (widgetId: string, title: string) => void;
@@ -41,11 +45,89 @@ export type PixelWidgetActions = DashboardWidgetActions;
 type WidgetContextMenuContentProps = {
   widget: Pick<
     LayoutWidget,
-    "id" | "type" | "locked" | "chartConfig" | "textConfig" | "mediaConfig" | "tabsConfig"
+    "id" | "type" | "locked" | "hidden" | "chartConfig" | "textConfig" | "mediaConfig" | "tabsConfig"
   >;
   actions: DashboardWidgetActions;
   colorScheme?: ColorScheme;
 };
+
+function DataScreenLayerMenuItems({
+  widget,
+  actions,
+  colorScheme,
+}: {
+  widget: Pick<LayoutWidget, "id" | "locked" | "hidden">;
+  actions: DashboardWidgetActions;
+  colorScheme: ColorScheme;
+}) {
+  const locked = Boolean(widget.locked);
+  const hidden = Boolean(widget.hidden);
+
+  return (
+    <>
+      {actions.onMoveLayerUp ? (
+        <ContextMenuItem
+          className={menuItemClass(colorScheme)}
+          disabled={locked}
+          onSelect={() => actions.onMoveLayerUp?.(widget.id)}
+        >
+          <ArrowUp className="size-3.5" aria-hidden />
+          上移一层
+        </ContextMenuItem>
+      ) : null}
+      {actions.onMoveLayerDown ? (
+        <ContextMenuItem
+          className={menuItemClass(colorScheme)}
+          disabled={locked}
+          onSelect={() => actions.onMoveLayerDown?.(widget.id)}
+        >
+          <ArrowDown className="size-3.5" aria-hidden />
+          下移一层
+        </ContextMenuItem>
+      ) : null}
+      {actions.onBringToFront ? (
+        <ContextMenuItem
+          className={menuItemClass(colorScheme)}
+          disabled={locked}
+          onSelect={() => actions.onBringToFront?.(widget.id)}
+        >
+          <ChevronsUp className="size-3.5" aria-hidden />
+          置顶
+        </ContextMenuItem>
+      ) : null}
+      {actions.onSendToBack ? (
+        <ContextMenuItem
+          className={menuItemClass(colorScheme)}
+          disabled={locked}
+          onSelect={() => actions.onSendToBack?.(widget.id)}
+        >
+          <ChevronsDown className="size-3.5" aria-hidden />
+          置底
+        </ContextMenuItem>
+      ) : null}
+      {actions.onToggleHidden ? (
+        <ContextMenuItem
+          className={menuItemClass(colorScheme)}
+          disabled={locked}
+          onSelect={() => actions.onToggleHidden?.(widget.id)}
+        >
+          {hidden ? <Eye className="size-3.5" aria-hidden /> : <EyeOff className="size-3.5" aria-hidden />}
+          {hidden ? "显示图层" : "隐藏图层"}
+        </ContextMenuItem>
+      ) : null}
+      {actions.onToggleLocked ? (
+        <ContextMenuItem
+          className={menuItemClass(colorScheme)}
+          onSelect={() => actions.onToggleLocked?.(widget.id)}
+        >
+          {locked ? <Unlock className="size-3.5" aria-hidden /> : <Lock className="size-3.5" aria-hidden />}
+          {locked ? "解锁图层" : "锁定图层"}
+        </ContextMenuItem>
+      ) : null}
+      <ContextMenuSeparator className={menuSeparatorClass(colorScheme)} />
+    </>
+  );
+}
 
 export function WidgetContextMenuContent({
   widget,
@@ -93,7 +175,16 @@ export function WidgetContextMenuContent({
           查看数据
         </ContextMenuItem>
       ) : null}
-      {actions.showLayerActions ? (
+      {surface === "data-screen" &&
+      (actions.onMoveLayerUp ||
+        actions.onMoveLayerDown ||
+        actions.onBringToFront ||
+        actions.onSendToBack ||
+        actions.onToggleHidden ||
+        actions.onToggleLocked) ? (
+        <DataScreenLayerMenuItems widget={widget} actions={actions} colorScheme={colorScheme} />
+      ) : null}
+      {surface !== "data-screen" && actions.showLayerActions ? (
         <>
           <ContextMenuItem
             className={menuItemClass(colorScheme)}
@@ -142,7 +233,7 @@ function menuSeparatorClass(scheme: ColorScheme): string | undefined {
 type DashboardWidgetContextMenuProps = {
   widget: Pick<
     LayoutWidget,
-    "id" | "type" | "locked" | "chartConfig" | "textConfig" | "mediaConfig" | "tabsConfig"
+    "id" | "type" | "locked" | "hidden" | "chartConfig" | "textConfig" | "mediaConfig" | "tabsConfig"
   >;
   actions: DashboardWidgetActions;
   colorScheme?: ColorScheme;

@@ -647,6 +647,78 @@ export function PixelShape({
     return null;
   }
 
+  const shapeSurface = (
+    <PixelShapeInteractionProvider value={startInteraction}>
+      <WidgetShellLegendProvider>
+        <PixelShapePlayerProvider playing={isPlayer}>
+          <div
+            className={cn(
+              "pixel-shape-inner dashboard-widget-surface relative z-[1] flex min-h-0 flex-1 flex-col overflow-hidden",
+              selectedInEdit && "pixel-shape-selected",
+            )}
+            style={innerShell.style}
+            data-pixel-no-drag
+            data-screen-border-asset={isBorderAsset ? "" : undefined}
+            onPointerDown={(event) => {
+              if (mode === "edit" && !paletteDragActive) {
+                const target = event.target as HTMLElement;
+                if (target.closest("[data-tabs-widget-id]")) {
+                  return;
+                }
+                if (
+                  allowStackCycleSelect &&
+                  onCycleStackSelect &&
+                  (event.altKey || event.ctrlKey)
+                ) {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onCycleStackSelect(event.clientX, event.clientY, widget.id);
+                  return;
+                }
+                onSelect?.(widget.id, event.shiftKey);
+              }
+            }}
+          >
+            <PixelShapeInnerChrome
+              widget={widget}
+              scale={scale}
+              mode={mode}
+              selectedInEdit={selectedInEdit}
+              showTitle={showTitle}
+              titleStyle={titleStyle}
+              remark={remark}
+              innerShell={innerShell}
+              contentShell={contentShell}
+              onTitleChange={onTitleChange}
+              onSelect={onSelect}
+              startInteraction={startInteraction}
+              handleKeyboardInteraction={handleKeyboardInteraction}
+              contentRef={contentRef}
+            >
+              {children}
+            </PixelShapeInnerChrome>
+          </div>
+        </PixelShapePlayerProvider>
+      </WidgetShellLegendProvider>
+    </PixelShapeInteractionProvider>
+  );
+
+  const shapeBody =
+    mode === "edit" && widgetActions && chrome.showFloatingActions ? (
+      <DashboardWidgetContextMenu
+        widget={widget}
+        actions={widgetActions}
+        colorScheme={styleConfig?.colorScheme ?? "light"}
+        selected={selected}
+        onSelect={onSelect}
+        className="flex min-h-0 min-w-0 flex-1 flex-col"
+      >
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">{shapeSurface}</div>
+      </DashboardWidgetContextMenu>
+    ) : (
+      shapeSurface
+    );
+
   return (
     <div
       ref={bindOuterRef}
@@ -696,80 +768,7 @@ export function PixelShape({
         data-testid={`pixel-shape-body-${widget.id}`}
         className="pixel-shape-body relative flex min-h-0 min-w-0 flex-1 flex-col overflow-visible"
       >
-        <PixelShapeInteractionProvider value={startInteraction}>
-          <WidgetShellLegendProvider>
-            <PixelShapePlayerProvider playing={isPlayer}>
-              {(() => {
-                const inner = (
-                  <div
-                    className={cn(
-                      "pixel-shape-inner dashboard-widget-surface relative z-[1] flex min-h-0 flex-1 flex-col overflow-hidden",
-                      selectedInEdit && "pixel-shape-selected",
-                    )}
-                    style={innerShell.style}
-                    data-pixel-no-drag
-                    data-screen-border-asset={isBorderAsset ? "" : undefined}
-                    onPointerDown={(event) => {
-                      if (mode === "edit" && !paletteDragActive) {
-                        const target = event.target as HTMLElement;
-                        if (target.closest("[data-tabs-widget-id]")) {
-                          return;
-                        }
-                        if (
-                          allowStackCycleSelect &&
-                          onCycleStackSelect &&
-                          (event.altKey || event.ctrlKey)
-                        ) {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          onCycleStackSelect(event.clientX, event.clientY, widget.id);
-                          return;
-                        }
-                        onSelect?.(widget.id, event.shiftKey);
-                      }
-                    }}
-                  >
-                    <PixelShapeInnerChrome
-                      widget={widget}
-                      scale={scale}
-                      mode={mode}
-                      selectedInEdit={selectedInEdit}
-                      showTitle={showTitle}
-                      titleStyle={titleStyle}
-                      remark={remark}
-                      innerShell={innerShell}
-                      contentShell={contentShell}
-                      onTitleChange={onTitleChange}
-                      onSelect={onSelect}
-                      startInteraction={startInteraction}
-                      handleKeyboardInteraction={handleKeyboardInteraction}
-                      contentRef={contentRef}
-                    >
-                      {children}
-                    </PixelShapeInnerChrome>
-                  </div>
-                );
-
-                if (mode === "edit" && widgetActions && chrome.showFloatingActions) {
-                  return (
-                    <DashboardWidgetContextMenu
-                      widget={widget}
-                      actions={widgetActions}
-                      colorScheme={styleConfig?.colorScheme ?? "light"}
-                      selected={selected}
-                      onSelect={onSelect}
-                      className="flex min-h-0 min-w-0 flex-1 flex-col"
-                    >
-                      {inner}
-                    </DashboardWidgetContextMenu>
-                  );
-                }
-
-                return inner;
-              })()}
-            </PixelShapePlayerProvider>
-          </WidgetShellLegendProvider>
-        </PixelShapeInteractionProvider>
+        {shapeBody}
       </div>
 
       {mode === "edit" && selected && !widget.locked

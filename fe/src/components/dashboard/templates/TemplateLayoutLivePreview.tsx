@@ -3,6 +3,7 @@ import { DataScreenPresenter } from "@/components/dashboard/screen/DataScreenPre
 import type { Geo3dRenderTier } from "@/components/charts/engine/three/geo3dRuntime";
 import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
 import type { DashboardTemplateListItem } from "@/lib/dashboardTemplates";
+import { CanvasScaleViewport } from "@/components/dashboard/screen/CanvasScaleViewport";
 import { TemplateGridFitPreview } from "@/components/dashboard/templates/TemplateGridFitPreview";
 import type { TemplateGridFitMode } from "@/components/dashboard/templates/templateGridFitScale";
 import { cn } from "@/lib/utils";
@@ -63,13 +64,21 @@ export function TemplateLayoutLivePreview({
           />
         </TemplateGridFitPreview>
       ) : (
-        <DashboardLayoutPreview
-          layout={layout}
-          scaleMode="component"
-          geo3dRenderTier={effectiveTier}
-          mountMaxConcurrent={8}
-          className="pointer-events-none h-full min-h-0 select-none [&_.pixel-canvas-host]:h-full [&_.pixel-canvas-host]:min-h-0 [&_.pixel-canvas-host]:overflow-hidden"
-        />
+        <CanvasScaleViewport
+          canvasWidth={layout.canvas.width}
+          canvasHeight={layout.canvas.height}
+          mode="fit"
+          className="h-full w-full"
+        >
+          <DashboardLayoutPreview
+            layout={layout}
+            styleConfig={layout.styleConfig}
+            fixedDesignViewport
+            geo3dRenderTier={effectiveTier}
+            mountMaxConcurrent={8}
+            className="pointer-events-none h-full w-full select-none"
+          />
+        </CanvasScaleViewport>
       )}
     </div>
   );

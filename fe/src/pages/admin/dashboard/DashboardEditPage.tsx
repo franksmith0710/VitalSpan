@@ -40,6 +40,7 @@ import {
   appendWidgetToTabPane,
   coerceLayoutWidgets,
   isTabPaneChild,
+  moveWidget,
   moveWidgetToExtreme,
   resizeWidget,
   sortWidgets,
@@ -1004,6 +1005,28 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         setWidgets((prev) => resizeWidget(prev, widgetId, { title }));
       },
       showLayerActions: isDataScreenSurface,
+      onMoveLayerUp: isDataScreenSurface
+        ? (widgetId) => setWidgets((prev) => moveWidget(prev, widgetId, "down"))
+        : undefined,
+      onMoveLayerDown: isDataScreenSurface
+        ? (widgetId) => setWidgets((prev) => moveWidget(prev, widgetId, "up"))
+        : undefined,
+      onToggleHidden: isDataScreenSurface
+        ? (widgetId) =>
+            setWidgets((prev) =>
+              prev.map((item) =>
+                item.id === widgetId ? { ...item, hidden: !item.hidden } : item,
+              ),
+            )
+        : undefined,
+      onToggleLocked: isDataScreenSurface
+        ? (widgetId) =>
+            setWidgets((prev) =>
+              prev.map((item) =>
+                item.id === widgetId ? { ...item, locked: !item.locked } : item,
+              ),
+            )
+        : undefined,
       onBringToFront: isDataScreenSurface
         ? (widgetId) => setWidgets((prev) => moveWidgetToExtreme(prev, widgetId, "top"))
         : undefined,

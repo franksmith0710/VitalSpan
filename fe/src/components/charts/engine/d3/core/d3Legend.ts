@@ -38,6 +38,8 @@ type LayoutOpts = {
 const LEGEND_GAP = 6;
 const LEGEND_ITEM_GAP = 8;
 const LEGEND_TEXT_PAD = 6;
+/** 内联横向图例最多绘制行数，超出部分由壳层图例或分页承接 */
+const INLINE_HORIZONTAL_LEGEND_MAX_ROWS = 3;
 
 function isWideLegendChar(code: number): boolean {
   return (
@@ -154,9 +156,10 @@ export function estimateLegendBlockSize(
 
   const innerW = Math.max(0, width - margin.left - margin.right);
   const rows = packHorizontalLegendRows(items, innerW, fontSize, iconSize);
+  const cappedRows = rows.slice(0, INLINE_HORIZONTAL_LEGEND_MAX_ROWS);
   const rowGap = 2;
-  const blockHeight = rows.length * rowH + Math.max(0, rows.length - 1) * rowGap;
-  const widthUsed = Math.max(...rows.map((row) => rowContentWidth(row, fontSize, iconSize)), 0);
+  const blockHeight = cappedRows.length * rowH + Math.max(0, cappedRows.length - 1) * rowGap;
+  const widthUsed = Math.max(...cappedRows.map((row) => rowContentWidth(row, fontSize, iconSize)), 0);
   return { width: innerW > 0 ? Math.min(innerW, widthUsed) : widthUsed, height: blockHeight };
 }
 
@@ -358,7 +361,10 @@ export function layoutD3InlineLegend(
     return;
   }
 
-  const rows = packHorizontalLegendRows(items, innerW, fontSize, defaultIconSize);
+  const rows = packHorizontalLegendRows(items, innerW, fontSize, defaultIconSize).slice(
+    0,
+    INLINE_HORIZONTAL_LEGEND_MAX_ROWS,
+  );
   let offsetY = 0;
   for (const row of rows) {
     let offsetX = resolveRowOffsetX(row, innerW, hAlign, fontSize, defaultIconSize);
