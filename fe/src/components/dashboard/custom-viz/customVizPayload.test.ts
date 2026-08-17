@@ -43,4 +43,28 @@ describe("injectCustomVizPayload", () => {
       style: { foo: "bar" },
     });
   });
+
+  it("skips redundant inject with identical payload", () => {
+    const host = document.createElement("div");
+    let events = 0;
+    host.addEventListener("vs-cv-payload-update", () => {
+      events += 1;
+    });
+    const payload = { columns: ["a"], rows: [[1]], style: { accentColor: "#111" } };
+    injectCustomVizPayload(host, payload);
+    injectCustomVizPayload(host, payload);
+    expect(events).toBe(1);
+    expect(host.querySelectorAll(`.${CUSTOM_VIZ_PAYLOAD_CLASS}`)).toHaveLength(1);
+  });
+
+  it("dispatches vs-cv-payload-update for bundle listeners", () => {
+    const host = document.createElement("div");
+    let detail: unknown;
+    host.addEventListener("vs-cv-payload-update", (e) => {
+      detail = (e as CustomEvent).detail;
+    });
+    const payload = { columns: ["x"], rows: [[9]], style: {} };
+    injectCustomVizPayload(host, payload);
+    expect(detail).toEqual(payload);
+  });
 });

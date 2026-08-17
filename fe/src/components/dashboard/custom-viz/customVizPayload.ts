@@ -1,4 +1,5 @@
 export const CUSTOM_VIZ_PAYLOAD_CLASS = "vs-cv-payload";
+export const CUSTOM_VIZ_PAYLOAD_UPDATE_EVENT = "vs-cv-payload-update";
 
 export type CustomVizRuntimePayload = {
   columns: string[];
@@ -16,7 +17,14 @@ function styleToCssVars(style: Record<string, unknown>): Record<string, string> 
   return out;
 }
 
+function payloadSignature(payload: CustomVizRuntimePayload): string {
+  return JSON.stringify(payload);
+}
+
 export function injectCustomVizPayload(host: HTMLElement, payload: CustomVizRuntimePayload): void {
+  const signature = payloadSignature(payload);
+  if (host.dataset.vsCvPayloadSig === signature) return;
+
   let node = host.querySelector(`.${CUSTOM_VIZ_PAYLOAD_CLASS}`);
   if (!node) {
     node = document.createElement("script");
@@ -29,4 +37,11 @@ export function injectCustomVizPayload(host: HTMLElement, payload: CustomVizRunt
   for (const [name, value] of Object.entries(vars)) {
     host.style.setProperty(name, value);
   }
+  host.dataset.vsCvPayloadSig = signature;
+  host.dispatchEvent(
+    new CustomEvent(CUSTOM_VIZ_PAYLOAD_UPDATE_EVENT, {
+      detail: payload,
+      bubbles: false,
+    }),
+  );
 }

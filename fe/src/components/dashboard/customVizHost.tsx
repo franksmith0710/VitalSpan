@@ -39,6 +39,21 @@ function importStyle(styleEl: HTMLStyleElement): HTMLStyleElement {
   return clone;
 }
 
+function sanitizeBundleScript(source: string): string {
+  const listener =
+    "render();var host=document.currentScript&&document.currentScript.parentElement;" +
+    "if(host&&host.classList.contains('vs-custom-viz-host')){host.addEventListener('vs-cv-payload-update',render)}";
+  return source
+    .replace(
+      "render();var host=document.querySelector('.vs-custom-viz-host');if(host)new MutationObserver(render).observe(host,{childList:true,subtree:true,characterData:true})",
+      listener,
+    )
+    .replace(
+      "render();var obs=new MutationObserver(render);var host=document.querySelector('.vs-custom-viz-host');if(host)obs.observe(host,{childList:true,subtree:true,characterData:true})",
+      listener,
+    );
+}
+
 /** 把库里的 HTML 源码挂进主页面 Base（innerHTML 不会跑 script，需重建）。 */
 export function mountCustomVizHtml(host: HTMLElement, html: string): () => void {
   host.replaceChildren();
@@ -65,7 +80,7 @@ export function mountCustomVizHtml(host: HTMLElement, html: string): () => void 
   host.appendChild(fragment);
   for (const source of scripts) {
     const script = document.createElement("script");
-    script.textContent = source;
+    script.textContent = sanitizeBundleScript(source);
     host.appendChild(script);
   }
 

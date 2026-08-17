@@ -101,7 +101,7 @@ Base 在 `query/execute` 出数后，向 `.vs-custom-viz-host` 注入：
 
 AI 可在 `styleSchema` 中自由声明颜色、滑块、开关、下拉、文本等控件类型，平台自动生成配置栏，详见 [guides/STYLE-SCHEMA.md](./guides/STYLE-SCHEMA.md)。
 
-bundle 内脚本可读取 `.vs-cv-payload` 文本并监听 DOM；推荐用 `getComputedStyle(host)` 读 `--vs-style-*`。
+bundle 内脚本可读取 `.vs-cv-payload` 文本，或监听宿主上的 **`vs-cv-payload-update`** 自定义事件（推荐，避免 MutationObserver 死循环）；推荐用 `getComputedStyle(host)` 读 `--vs-style-*`。
 
 ## 数据（第一期）
 
