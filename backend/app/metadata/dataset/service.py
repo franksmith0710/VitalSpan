@@ -16,7 +16,11 @@ from app.metadata.dataset.errors import (
     META_DATASET_FORBIDDEN,
     DatasetError,
 )
-from app.metadata.dataset.cleanup import delete_dataset_row, purge_orphan_sync_datasets
+from app.metadata.dataset.cleanup import (
+    delete_dataset_row,
+    purge_datasets_with_missing_table_source,
+    purge_orphan_sync_datasets,
+)
 from app.metadata.dataset.demo_seed import is_demo_package_dataset
 from app.metadata.dataset.models import DatasetRecord
 from app.metadata.dataset.schemas import (
@@ -185,6 +189,7 @@ def list_datasets(
 ) -> DatasetListResponse:
     def _purge(session: Session) -> None:
         purge_orphan_sync_datasets(session)
+        purge_datasets_with_missing_table_source(session)
 
     _with_session(_purge)
 

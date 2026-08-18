@@ -1,4 +1,6 @@
+import type { PaletteInsertType } from "../createLayoutWidget";
 import type { DashboardLayoutV2, PixelLayoutWidget } from "../layoutUtils";
+import { toolbarScreenMaterialSkipsTabHost } from "@/lib/screenVisualAssets";
 import {
   findTabsHostAtPoint,
   getTopLevelPixelWidgets,
@@ -105,6 +107,24 @@ export function tryAbsorbTopLevelWidgetIntoTab(
 }
 
 /** 对标 DE：统一解析 Tab 投放目标（显式 id > 意图 > DOM > 落点缓冲 > 当前选中 Tab） */
+/** 调色板插入：装饰类素材落画布视口，不进 Tab 0×0 折叠位 */
+export function resolvePaletteInsertTabHost(
+  insertType: PaletteInsertType,
+  layout: DashboardLayoutV2,
+  options: {
+    tabsWidgetId?: string | null;
+    point?: { x: number; y: number };
+    selectedWidgetId?: string | null;
+    intent?: TabInsertIntent | null;
+    dropBufferPx?: number;
+  },
+): PixelLayoutWidget | undefined {
+  if (insertType === "tabs" || toolbarScreenMaterialSkipsTabHost(insertType)) {
+    return undefined;
+  }
+  return resolveTabPaletteInsertHost(layout, options);
+}
+
 export function resolveTabPaletteInsertHost(
   layout: DashboardLayoutV2,
   options: {

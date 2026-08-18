@@ -103,6 +103,29 @@ describe("Dataset form pages", () => {
     );
   });
 
+  it("T1-FE-07: list only renders datasets returned by API after server purge", async () => {
+    mockApiFetch.mockImplementation(async (path: string) => {
+      if (path.startsWith("/api/v1/datasets")) {
+        return {
+          items: [
+            {
+              datasetId: "keep_ds",
+              displayName: "保留项",
+              tables: [{ name: "public.orders" }],
+              boundConfigId: null,
+            },
+          ],
+          total: 1,
+        };
+      }
+      return {};
+    });
+    renderList();
+    expect(await screen.findByText("保留项")).toBeInTheDocument();
+    expect(screen.queryByText("orphan_removed")).not.toBeInTheDocument();
+    expect(screen.queryByText("源已删的手动 Dataset")).not.toBeInTheDocument();
+  });
+
   it("T1-FE-03: edit page loads existing dataset with field workbench", async () => {
     mockApiFetch.mockImplementation(async (path: string) => {
       if (path === "/api/v1/datasets/ds-demo") {

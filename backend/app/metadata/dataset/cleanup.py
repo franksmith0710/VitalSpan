@@ -16,12 +16,16 @@ from app.query.config_store.models import QueryConfigRecord
 logger = logging.getLogger(__name__)
 
 
+def _stable_ref_id(dataset_id: str) -> uuid.UUID:
+    return uuid.uuid5(uuid.NAMESPACE_DNS, f"vitalspan.sync.dataset.{dataset_id}")
+
+
 def _delete_bound_query_config(session: Session, row: DatasetRecord) -> None:
     if row.bound_config_id is not None:
         record = session.get(QueryConfigRecord, row.bound_config_id)
         if record is not None:
             session.delete(record)
-    ref_id = uuid.uuid5(uuid.NAMESPACE_DNS, f"vitalspan.sync.dataset.{row.dataset_id}")
+    ref_id = _stable_ref_id(row.dataset_id)
     orphan = session.scalar(
         select(QueryConfigRecord)
         .where(
@@ -81,4 +85,30 @@ def purge_orphan_sync_datasets(session: Session) -> int:
                 removed += 1
     if removed:
         logger.info("purge_orphan_sync_datasets removed=%s", removed)
+    return removed
+
+
+def purge_datasets_with_missing_table_source(session: Session) -> int:
+    """清理 table_source 指向已删除或不存在数据源的 Dataset（非同步产物、非官方示例）。"""
+    from app.datasources.models import DataSource
+
+    rows = list(
+        session.scalars(
+            select(DatasetRecord).where(
+                DatasetRecord.table_source_datasource_id.is_not(None),
+                DatasetRecord.origin != "sync_job",
+            ),
+        ),
+    )
+    removed = 0
+    for row in rows:
+        ds_id = row.table_source_datasource_id
+        if ds_id is None:
+            continue
+        src = session.get(DataSource, ds_id)
+        if src is None or src.deleted_at is not None:
+            if delete_dataset_row(session, row):
+                removed += 1
+    if removed:
+        logger.info("purge_datasets_with_missing_table_source removed=%s", removed)
     return removed

@@ -69,7 +69,7 @@ import {
 import { TAB_PALETTE_DROP_BUFFER_PX } from "@/components/dashboard/pixelCanvas/tabPaletteDrop";
 import {
   activePaneIdForTabHost,
-  resolveTabPaletteInsertHost,
+  resolvePaletteInsertTabHost,
   type TabInsertIntent,
 } from "@/components/dashboard/pixelCanvas/tabInsertResolver";
 import { preservePixelCanvasHostScroll } from "@/components/dashboard/pixelCanvas/preserveCanvasHostScroll";
@@ -701,16 +701,13 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     ) => {
       if (missing || !canSave || layout.version !== 2) return;
       const insertType = type as PaletteInsertType;
-      const tabsHost =
-        insertType === "tabs"
-          ? undefined
-          : resolveTabPaletteInsertHost(layout, {
-              tabsWidgetId: options?.tabsWidgetIdFromDom ?? options?.tabsWidgetId,
-              point: options?.point,
-              selectedWidgetId: primarySelectedId,
-              intent: tabInsertIntent,
-              dropBufferPx: TAB_PALETTE_DROP_BUFFER_PX,
-            });
+      const tabsHost = resolvePaletteInsertTabHost(insertType, layout, {
+        tabsWidgetId: options?.tabsWidgetIdFromDom ?? options?.tabsWidgetId,
+        point: options?.point,
+        selectedWidgetId: primarySelectedId,
+        intent: tabInsertIntent,
+        dropBufferPx: TAB_PALETTE_DROP_BUFFER_PX,
+      });
       let nextLayout: DashboardLayoutV2;
       if (tabsHost?.tabsConfig) {
         const paneId = activePaneIdForTabHost(
@@ -773,7 +770,10 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       return;
     }
     const tabsHost =
-      selectedWidget?.type === "tabs" && selectedWidget.tabsConfig && type !== "tabs"
+      selectedWidget?.type === "tabs" &&
+      selectedWidget.tabsConfig &&
+      type !== "tabs" &&
+      !toolbarScreenMaterialSkipsTabHost(type)
         ? selectedWidget
         : null;
     let draft = createPaletteWidget(type, widgets, at);

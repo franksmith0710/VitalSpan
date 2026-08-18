@@ -6,6 +6,7 @@ import {
   TAB_PALETTE_DROP_BUFFER_PX,
   activePaneIdForTabHost,
   resolveTabHostForWidgetDrop,
+  resolvePaletteInsertTabHost,
   resolveTabPaletteInsertHost,
   tryAbsorbTopLevelWidgetIntoTab,
 } from "./tabInsertResolver";
@@ -32,6 +33,25 @@ function layoutWith(host: PixelLayoutWidget) {
     globalFilters: [],
   };
 }
+
+describe("resolvePaletteInsertTabHost", () => {
+  it("skips tab host for screen border preset (素材库边框落画布)", () => {
+    const host = tabHost();
+    const layout = layoutWith(host);
+    const resolved = resolvePaletteInsertTabHost(
+      { insert: "screen-border", preset: "border-1" },
+      layout,
+      {
+        selectedWidgetId: host.id,
+        intent: {
+          tabsWidgetId: host.id,
+          paneId: host.tabsConfig!.activePaneId,
+        },
+      },
+    );
+    expect(resolved).toBeUndefined();
+  });
+});
 
 describe("resolveTabPaletteInsertHost", () => {
   const host = tabHost();

@@ -14,9 +14,11 @@
 ## 修复
 
 - `delete_sync_job` → `delete_datasets_for_sync_job` 级联删除同步产物 Dataset 及 `dataset_query` 绑定。
-- `list_datasets` 启动时 `purge_orphan_sync_datasets` 清理历史孤儿记录。
+- `list_datasets` 启动时 `purge_orphan_sync_datasets` + `purge_datasets_with_missing_table_source` 清理历史孤儿。
 - `delete_dataset` 同步删除 `bound_config_id` 对应 query config。
 - 删除数据源前检查是否被同步任务或 Dataset `tableSourceDataSourceId` 引用。
+
+- 手动 Dataset 的 `tableSourceDataSourceId` 指向已软删数据源时，列表加载时一并清理。
 
 ## 锚点
 
