@@ -149,11 +149,11 @@ export function resolveChartExecuteMode(_config: ChartViewConfig): ChartExecuteM
 
 export function chartExecuteNotReadyMessage(config: ChartViewConfig): string {
   if (config.bindingId || config.sql?.trim() || config.table || nativeBodyHasLegacySqlBinding(config.nativeBody)) {
-    return "请改绑 Dataset：手写 SQL / 直连绑定已不再支持出图";
+    return "请绑定数据集后再出图";
   }
-  if (!config.dataSourceId) return "请选择数据源与已绑定配置的 Dataset";
-  if (!config.configId) return "请选择已绑定查询配置的 Dataset";
-  return "请选择数据源与已绑定配置的 Dataset";
+  if (!config.dataSourceId) return "请绑定数据集";
+  if (!config.configId) return "请绑定数据集";
+  return "请绑定数据集";
 }
 
 export function isChartExecuteReady(config: ChartViewConfig): boolean {

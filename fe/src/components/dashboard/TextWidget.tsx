@@ -94,7 +94,6 @@ export function TextWidget({
     <div
       ref={widgetRef}
       className={cn(
-        inShapeShell && "flex h-full min-h-0 w-full flex-1 flex-col",
         nested && inShapeShell && mode === "edit" && "pl-7",
         mode === "edit" && "group/text-widget",
       )}

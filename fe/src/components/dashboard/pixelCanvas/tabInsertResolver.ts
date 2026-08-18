@@ -106,7 +106,6 @@ export function tryAbsorbTopLevelWidgetIntoTab(
   return movePixelWidgetIntoTab(layout, widget.id, host, paneId);
 }
 
-/** 对标 DE：统一解析 Tab 投放目标（显式 id > 意图 > DOM > 落点缓冲 > 当前选中 Tab） */
 /** 调色板插入：装饰类素材落画布视口，不进 Tab 0×0 折叠位 */
 export function resolvePaletteInsertTabHost(
   insertType: PaletteInsertType,
@@ -125,6 +124,7 @@ export function resolvePaletteInsertTabHost(
   return resolveTabPaletteInsertHost(layout, options);
 }
 
+/** 对标 DE：统一解析 Tab 投放目标（显式 id > 意图 > DOM > 落点缓冲 > 当前选中 Tab） */
 export function resolveTabPaletteInsertHost(
   layout: DashboardLayoutV2,
   options: {

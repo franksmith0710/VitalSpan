@@ -12,7 +12,6 @@ import {
 } from "react";
 import { IconButton } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { pixelWidgetToLayoutWidget } from "../dashboardCanvasMode";
 import { mergeChartTitleStyle, readChartRemark, readChartTitleVisible, resolveChartContentShellStyle, mergeShapeInnerPresentation, resolveWidgetShellStyle } from "@/lib/chartDeStyle";
 import type { DashboardCanvas, PixelLayoutWidget } from "../layoutUtils";
 import { mergeTitleStyle } from "../dashboardStyleConfig";
@@ -53,10 +52,7 @@ import { usePixelChromeScale } from "./PixelCanvasScaleContext";
 import {
   dispatchPixelShapeLiveResize,
 } from "./pixelShapeLiveResize";
-import {
-  isScreenBorderWidget,
-  isScreenVisualWidget,
-} from "@/lib/screenVisualAssets";
+import { isScreenBorderWidget } from "@/lib/screenVisualAssets";
 import { applyScreenBorderShellPresentation } from "../screen/screenBorderWidgetChrome";
 import { WidgetShellBackgroundLayers } from "../WidgetShellPresentationLayers";
 import { pixelRectsNearlyEqual } from "./pixelRectEqual";
@@ -249,18 +245,11 @@ function PixelShapeInnerChrome({
   const chromeScale = usePixelChromeScale();
   const legendCtx = useWidgetShellLegend();
   const legend = legendCtx?.state;
-  const layoutWidget = pixelWidgetToLayoutWidget(widget);
-  const screenVisualAsset =
-    layoutWidget.type === "text" && isScreenVisualWidget(layoutWidget);
   // 始终使用同一壳层结构，避免图例从空→有时在 Shell/裸 children 间切换导致 ChartRenderer 卸载重挂、execute 死循环
   const legendItems =
     legend?.visible && legend.items.length > 0 ? legend.items : [];
 
-  const chartBody = screenVisualAsset ? (
-    <div className="relative z-[1] flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      {children}
-    </div>
-  ) : (
+  const chartBody = (
     <EmbeddedChartLegendShell
       position={legend?.position ?? "bottom"}
       orient={legend?.orient ?? "horizontal"}

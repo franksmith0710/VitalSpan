@@ -1643,13 +1643,6 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                     setWidgets((prev) => resizeWidget(prev, primarySelectedId, { title }));
                   }}
                   onChange={(customVizConfig) => {
-                    if (primarySelectedId) {
-                      setWidgets((prev) =>
-                        prev.map((w) =>
-                          w.id === primarySelectedId ? { ...w, customVizConfig } : w,
-                        ),
-                      );
-                    }
                     void vizInspectorActions.applyPayloadChange(
                       { customVizConfig },
                       { customVizConfig },

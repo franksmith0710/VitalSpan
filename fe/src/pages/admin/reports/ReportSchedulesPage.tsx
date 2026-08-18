@@ -63,7 +63,7 @@ function emptyDescription(tab: ScheduleTabFilter, hasSearch: boolean): string {
     return DOC_TEMPLATE_SCHEDULE_HINT;
   }
   if (tab === "standard") {
-    return "在标准分析中打开「管理分析包」，展开「定时投递」；或保存分析包后配置外发。";
+    return "在标准分析配置页展开「定时投递」，或保存分析包后前往配置外发。";
   }
   if (tab === "dashboard") {
     return "进入看板或数据大屏编辑页，点击「定时推送」创建定时报告。";
@@ -88,7 +88,7 @@ function emptyAction(tab: ScheduleTabFilter, hasSearch: boolean, sourceKeyFilter
       <Button type="button" variant="outline" size="sm" asChild>
         <Link to={standardAnalysisConfigPath(sourceKeyFilter ?? undefined)}>
           <TrendingUp className="size-3.5" aria-hidden />
-          前往标准分析
+          前往标准分析配置
         </Link>
       </Button>
     );
