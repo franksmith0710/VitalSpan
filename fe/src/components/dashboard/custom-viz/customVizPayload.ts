@@ -1,11 +1,52 @@
 export const CUSTOM_VIZ_PAYLOAD_CLASS = "vs-cv-payload";
 export const CUSTOM_VIZ_PAYLOAD_UPDATE_EVENT = "vs-cv-payload-update";
+export const CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION = 1 as const;
+
+export type CustomVizBindingStatus = "unbound" | "bound" | "empty" | "error";
 
 export type CustomVizRuntimePayload = {
+  protocolVersion: typeof CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION;
+  bindingStatus: CustomVizBindingStatus;
   columns: string[];
   rows: (string | number | boolean | null)[][];
   style: Record<string, unknown>;
+  error?: string;
 };
+
+export function resolveCustomVizBindingStatus(args: {
+  executeReady: boolean;
+  loading: boolean;
+  error: string | null;
+  rows: (string | number | boolean | null)[][];
+}): CustomVizBindingStatus {
+  if (!args.executeReady) return "unbound";
+  if (args.error) return "error";
+  if (args.loading && args.rows.length === 0) return "unbound";
+  if (args.rows.length === 0) return "empty";
+  return "bound";
+}
+
+export function buildCustomVizRuntimePayload(args: {
+  executeReady: boolean;
+  loading: boolean;
+  error: string | null;
+  columns: string[];
+  rows: (string | number | boolean | null)[][];
+  style: Record<string, unknown>;
+}): CustomVizRuntimePayload {
+  const bindingStatus = resolveCustomVizBindingStatus(args);
+  const payload: CustomVizRuntimePayload = {
+    protocolVersion: CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
+    bindingStatus,
+    columns: args.columns,
+    rows: args.rows,
+    style: args.style,
+  };
+  if (bindingStatus === "error" && args.error) {
+    payload.error = args.error;
+  }
+  return payload;
+}
 
 function styleToCssVars(style: Record<string, unknown>): Record<string, string> {
   const out: Record<string, string> = {};

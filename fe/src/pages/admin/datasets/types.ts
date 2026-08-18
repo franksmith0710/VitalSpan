@@ -1,3 +1,5 @@
+import type { SourceHealth } from "@/lib/sourceHealth";
+
 export type DatasetOrigin = "manual" | "sync_job";
 export type DatasetFieldKind = "dimension" | "metric";
 
@@ -19,6 +21,7 @@ export type DatasetItem = {
   boundConfigId?: string | null;
   origin?: DatasetOrigin;
   syncJobId?: string | null;
+  sourceHealth?: SourceHealth;
 };
 
 export type DatasetEditorValues = {

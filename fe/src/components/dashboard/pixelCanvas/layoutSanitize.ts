@@ -8,7 +8,7 @@ import {
 } from "../layoutUtils";
 import { layoutsOverlap, packPixelLayoutSeamless } from "./collisionLayout";
 import { clampPixelRectToCanvas } from "./geometry";
-import { fitCanvasHeightToContent } from "./PixelCanvas";
+import { fitCanvasHeightToContent } from "./pixelCanvasHost";
 
 /** 顶层组件收进画布边界；Tab 子组件随宿主同步 park 坐标 */
 export function clampPixelLayoutToCanvasBounds(layout: DashboardLayoutV2): DashboardLayoutV2 {

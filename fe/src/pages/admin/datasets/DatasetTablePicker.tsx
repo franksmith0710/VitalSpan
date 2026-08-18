@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
+import { fetchDatasetQueryConfig } from "@/lib/datasetChartBinding";
 import {
   filterSyncJobBindDatasources,
   resolveAnalyticsDatasourceId,
@@ -42,7 +43,7 @@ import {
   SyncOutputConnectionReadout,
 } from "./components/SyncOutputConnectionReadout";
 import { setPrimaryTable } from "./datasetTableSelection";
-import { useDatasetTableColumns } from "./hooks/useDatasetTableColumns";
+import { useDatasetWorkbenchColumns } from "./hooks/useDatasetWorkbenchColumns";
 import type { DatasetBindDraft, DatasetOrigin, DatasetTable } from "./types";
 
 type DsItem = {
@@ -120,6 +121,12 @@ export function DatasetTablePicker({
     queryFn: () => apiFetch<{ items: DsItem[] }>("/api/v1/datasources?includeManaged=true"),
   });
 
+  const boundConfigQuery = useQuery({
+    queryKey: ["query-config", boundConfigId ?? ""],
+    queryFn: () => fetchDatasetQueryConfig(boundConfigId!),
+    enabled: Boolean(boundConfigId),
+  });
+
   const items = dsQuery.data?.items ?? [];
   const selectableItems = useMemo(
     () => (origin === "sync_job" ? filterSyncJobBindDatasources(items) : items),
@@ -177,10 +184,16 @@ export function DatasetTablePicker({
     setSchemaExpanded(!primaryTableName);
   }, [primaryTableName]);
 
-  const effectiveDataSourceId = dataSourceId || savedDataSourceId || "";
-  const { columnNames, columnsLoading, columnsError } = useDatasetTableColumns(
+  const effectiveDataSourceId = useMemo(() => {
+    const boundDs = boundConfigQuery.data?.dataSourceId;
+    if (boundDs) return boundDs;
+    return dataSourceId || savedDataSourceId || "";
+  }, [boundConfigQuery.data?.dataSourceId, dataSourceId, savedDataSourceId]);
+
+  const { columnNames, columnsLoading, columnsError } = useDatasetWorkbenchColumns(
     effectiveDataSourceId,
     primaryTableName,
+    boundConfigQuery.data,
   );
 
   const applyTablePick = useCallback(

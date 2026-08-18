@@ -13,7 +13,7 @@ import { normalizeWidgetLayout } from "./gridLayoutAdapter";
 import { normalizeDashboardGapConfig } from "./gapPolicy";
 import { styleConfigHasPersistedFields, type DashboardStyleConfig } from "./dashboardStyleConfig";
 import { bootstrapDashboardStyleConfig } from "./dashboardThemeVariants";
-import { fitCanvasHeightToContent } from "./pixelCanvas/PixelCanvas";
+import { fitCanvasHeightToContent } from "./pixelCanvas/pixelCanvasHost";
 import { sanitizePixelLayoutGeometry } from "./pixelCanvas/layoutSanitize";
 import {
   clampCanvasHeightForPersist,

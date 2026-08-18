@@ -1,7 +1,7 @@
-import { toast } from "sonner";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -24,16 +24,21 @@ export function ReportMetricDatasetFields({
   onDatasetIdChange,
   onBoundConfigIdChange,
   onSuggestedDataSourceId,
-  boundSuccessMessage = "绑定已同步，请保存扩展配置后再导出",
+  boundPendingHint,
+  hideBoundPendingHint = false,
 }: {
   datasetId: string;
   boundConfigId: string;
   onDatasetIdChange: (id: string) => void;
   onBoundConfigIdChange: (id: string) => void;
   onSuggestedDataSourceId?: (id: string) => void;
-  boundSuccessMessage?: string;
+  /** 绑定变更后在面板内展示提示（不再弹 toast，避免与 DatasetBindPanel 重复） */
+  boundPendingHint?: string;
+  /** 为 true 时隐藏待保存提示（例如分析包已保存） */
+  hideBoundPendingHint?: boolean;
 }) {
   const qc = useQueryClient();
+  const [showPendingHint, setShowPendingHint] = useState(false);
   const listQuery = useQuery({
     queryKey: ["reports", "datasets", "picker"],
     queryFn: () => apiFetch<{ items: DatasetListItem[] }>("/api/v1/datasets?limit=200&offset=0"),
@@ -65,11 +70,18 @@ export function ReportMetricDatasetFields({
     if (dsId) onSuggestedDataSourceId?.(dsId);
   }, [boundConfigQuery.data?.dataSourceId, onSuggestedDataSourceId]);
 
+  useEffect(() => {
+    setShowPendingHint(false);
+  }, [datasetId]);
+
   const handleBound = (configId: string) => {
+    const bindingChanged = configId !== boundConfigId;
     onBoundConfigIdChange(configId);
     void qc.invalidateQueries({ queryKey: ["reports", "datasets", datasetId] });
     void detailQuery.refetch();
-    toast.message(boundSuccessMessage);
+    if (boundPendingHint && bindingChanged) {
+      setShowPendingHint(true);
+    }
   };
 
   return (
@@ -129,6 +141,11 @@ export function ReportMetricDatasetFields({
             syncJobId={detail.syncJobId}
             onBound={handleBound}
           />
+          {showPendingHint && boundPendingHint && !hideBoundPendingHint ? (
+            <Alert severity="info" appearance="soft" className="mt-3">
+              <AlertDescription>{boundPendingHint}</AlertDescription>
+            </Alert>
+          ) : null}
         </div>
       ) : null}
     </div>

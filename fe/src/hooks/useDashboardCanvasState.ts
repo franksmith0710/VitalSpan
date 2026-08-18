@@ -11,9 +11,7 @@ import {
 } from "@/components/dashboard/pixelCanvas";
 import { packPixelLayoutSeamless } from "@/components/dashboard/pixelCanvas/collisionLayout";
 import { repairPixelLayoutTabState } from "@/components/dashboard/pixelCanvas/layoutSanitize";
-import {
-  fitCanvasHeightToContent,
-} from "@/components/dashboard/pixelCanvas/PixelCanvas";
+import { fitCanvasHeightToContent } from "@/components/dashboard/pixelCanvas/pixelCanvasHost";
 import { PIXEL_CANVAS_MIN_HEIGHT } from "@/components/dashboard/pixelCanvas/constants";
 import {
   type DashboardLayout,

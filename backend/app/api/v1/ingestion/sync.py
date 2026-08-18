@@ -44,6 +44,7 @@ from app.ingestion.source_resolver import (
 from app.ingestion.sync_cancel import find_active_run, request_cancel_run
 from app.ingestion.sync_executor import run_job
 from app.metadata.dataset.cleanup import delete_datasets_for_sync_job
+from app.datasources.source_health import resolve_sync_job_source_health
 from app.query.rls.guard import validate_identifier
 
 router = APIRouter(prefix="/ingestion", tags=["ingestion"])
@@ -203,6 +204,7 @@ class SyncJobSummary(BaseModel):
     enabled: bool
     schedule_cron: str | None
     source_data_source_id: uuid.UUID | None = None
+    source_health: Literal["active", "missing", "none"] = "none"
     last_run: SyncJobLastRun | None = None
     consume_status: SyncJobConsumeLabel | None = None
 
@@ -398,6 +400,8 @@ def _to_summary(
     last_run: SyncRun | None,
     ds_labels: dict[uuid.UUID, str],
     consume_status=None,
+    *,
+    source_health: Literal["active", "missing", "none"] = "none",
 ) -> SyncJobSummary:
     label = ds_labels.get(job.source_data_source_id) if job.source_data_source_id else None
     consume_out = None
@@ -417,6 +421,7 @@ def _to_summary(
         enabled=job.enabled,
         schedule_cron=job.schedule_cron,
         source_data_source_id=job.source_data_source_id,
+        source_health=source_health,
         last_run=_to_last_run(last_run),
         consume_status=consume_out,
     )
@@ -427,8 +432,12 @@ def _to_detail(
     last_run: SyncRun | None,
     ds_labels: dict[uuid.UUID, str],
     consume_status=None,
+    *,
+    source_health: Literal["active", "missing", "none"] = "none",
 ) -> SyncJobDetail:
-    summary = _to_summary(job, last_run, ds_labels, consume_status)
+    summary = _to_summary(
+        job, last_run, ds_labels, consume_status, source_health=source_health,
+    )
     return SyncJobDetail(
         **summary.model_dump(),
         source=_to_source_out(job),
@@ -445,7 +454,8 @@ def _detail_for_job(db: Session, job: SyncJob) -> SyncJobDetail:
     if last is not None and last.status == "succeeded":
         consume = resolve_consume_status(db, job)
     ds_labels = _datasource_labels(db, [job])
-    return _to_detail(job, last, ds_labels, consume)
+    health = resolve_sync_job_source_health(db, job)
+    return _to_detail(job, last, ds_labels, consume, source_health=health)
 
 
 @router.get("/sync-jobs", response_model=SyncJobListResponse)
@@ -462,7 +472,8 @@ def list_sync_jobs(
         last = last_runs.get(j.id)
         if last is not None and last.status == "succeeded":
             consume = resolve_consume_status(db, j)
-        items.append(_to_summary(j, last, ds_labels, consume))
+        health = resolve_sync_job_source_health(db, j)
+        items.append(_to_summary(j, last, ds_labels, consume, source_health=health))
     return SyncJobListResponse(items=items)
 
 

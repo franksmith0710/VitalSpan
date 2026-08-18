@@ -42,6 +42,10 @@ export default defineConfig(({ mode }) => {
     server: {
       // Align with backend FE_BASE_URL default (127.0.0.1) for Playwright PDF export.
       host: "127.0.0.1",
+      watch: {
+        // vitest 写测试文件会触发整页 reload，易导致开发态白屏
+        ignored: ["**/*.{test,spec}.{ts,tsx}"],
+      },
       fs: {
         allow: [path.resolve(__dirname, "..")],
       },

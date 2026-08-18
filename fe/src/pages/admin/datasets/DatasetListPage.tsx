@@ -42,7 +42,9 @@ import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { runBatchDelete } from "@/lib/runBatchDelete";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { SourceHealthBadge } from "@/components/datasources/SourceHealthBadge";
 import { isDemoPackageDataset } from "@/lib/demoPackage";
+import type { SourceHealth } from "@/lib/sourceHealth";
 
 type DatasetItem = {
   datasetId: string;
@@ -50,6 +52,7 @@ type DatasetItem = {
   tables: Array<{ name: string }>;
   boundConfigId?: string | null;
   isDemoPackage?: boolean;
+  sourceHealth?: SourceHealth;
 };
 
 export function DatasetListPage() {
@@ -226,6 +229,7 @@ export function DatasetListPage() {
                   : []),
                 <span key="n" className="inline-flex flex-wrap items-center gap-2 font-medium text-gray-900 dark:text-white/90">
                   {d.displayName}
+                  <SourceHealthBadge health={d.sourceHealth} />
                   {isDemoPackageDataset(d.datasetId, d.displayName) || d.isDemoPackage ? (
                     <Badge variant="light" color="primary" size="sm">
                       官方示例

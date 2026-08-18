@@ -267,6 +267,9 @@ redoc: /redoc
 | GET | `/api/v1/ai-viz/artifacts` | 当前用户 artifact 列表（图表盘「自定义」） | 内部 | 试点 | AIVIZ-006 | 已实现 | `backend/app/api/v1/ai_viz.py` |
 | GET | `/api/v1/ai-viz/artifacts/{id}` | artifact 元数据 | 内部 | 试点 | AIVIZ-002 | 已实现 | `backend/app/api/v1/ai_viz.py` |
 | GET | `/api/v1/ai-viz/artifacts/{id}/entry` | 组件 HTML 源码（供 Base 挂载） | 内部 | 试点 | AIVIZ-002 | 已实现 | `backend/app/api/v1/ai_viz.py` |
+
+**CustomViz Payload v1（AIVIZ-010）**：Base 挂载 entry 后向宿主注入 `.vs-cv-payload`，结构 `{ protocolVersion, bindingStatus, columns, rows, style, error? }`；`bindingStatus` 为 `unbound | bound | empty | error`。bundle 须监听 `vs-cv-payload-update`，详见 [`docs/api/vs-ai-spec/PROTOCOL.md`](vs-ai-spec/PROTOCOL.md) §Payload v1。
+
 | POST | `/api/v1/views/validate` | DashboardView 协议校验；422 码：`VIEW_UNKNOWN_CHART_REF` / `VIEW_DEFAULT_SELF_REF` | IF-06 | 一期 | VIEW-001 | 已实现 | `backend/app/api/v1/views.py` |
 | GET | `/api/v1/views/schema` | DashboardView JSON Schema | IF-06 | 一期 | VIEW-001 | 已实现 | `backend/app/api/v1/views.py` |
 
@@ -636,6 +639,7 @@ redoc: /redoc
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.0.14 | 2026-08-18 | AI 可视化：登记 CustomViz Payload v1（`protocolVersion` + `bindingStatus`）；官方 bundle 示例对齐 `vs-cv-payload-update` |
 | 1.0.13 | 2026-08-13 | 用户 `imAccounts`；调度 `notifyGroup` / `feishu`；delivery-health 含 IM App 配置布尔 |
 | 1.0.12 | 2026-08-13 | AI 可视化：登记 `PUT /ai-viz/artifacts/{id}`；entry 改为 Base 宿主挂载源码 |
 | 1.0.11 | 2026-08-09 | D3：联调可消费附录 auth/datasources/query；链 service/backend 运维 |

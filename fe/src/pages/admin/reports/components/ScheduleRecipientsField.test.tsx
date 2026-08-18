@@ -1,8 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, afterEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
+  DEFAULT_EMAIL_RECIPIENTS,
   DEFAULT_RECIPIENTS,
   hasValidRecipients,
   isValidRecipient,
@@ -24,6 +25,10 @@ function wrap(ui: React.ReactElement) {
 }
 
 describe("ScheduleRecipientsField", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it("validates email recipients", () => {
     expect(isValidRecipient({ type: "email", value: "bad" })).toBe(false);
     expect(isValidRecipient({ type: "email", value: "a@b.com" })).toBe(true);
@@ -39,5 +44,25 @@ describe("ScheduleRecipientsField", () => {
     expect(screen.getByText("接收人")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "添加" }));
     expect(onChange).toHaveBeenCalled();
+  });
+
+  it("email-only mode shows email inputs without role selector", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    wrap(
+      <ScheduleRecipientsField
+        value={DEFAULT_EMAIL_RECIPIENTS}
+        onChange={onChange}
+        idPrefix="test"
+        mode="email-only"
+      />,
+    );
+    expect(screen.getByText("收件邮箱")).toBeInTheDocument();
+    expect(screen.queryByText("角色")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "添加邮箱" }));
+    expect(onChange).toHaveBeenCalledWith([
+      { type: "email", value: "" },
+      { type: "email", value: "" },
+    ]);
   });
 });

@@ -2,10 +2,11 @@ export {
   canvasScaleForHost,
   fitCanvasHeightToContent,
   PIXEL_CANVAS_GUTTER,
-  PIXEL_CANVAS_MIN_HEIGHT,
-  PixelCanvas,
+  PIXEL_PREVIEW_THROTTLE_MS,
   visibleCanvasViewport,
-} from "./PixelCanvas";
+} from "./pixelCanvasHost";
+export { PIXEL_CANVAS_MIN_HEIGHT } from "./constants";
+export { PixelCanvas } from "./PixelCanvas";
 export {
   createPixelPaletteWidget,
   clonePixelLayoutWidget,

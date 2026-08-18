@@ -10,11 +10,23 @@ export function isChartNativeBodyUiKey(key: string): boolean {
   return (CHART_NATIVE_BODY_UI_KEYS as readonly string[]).includes(key);
 }
 
+function isManualNativeBodyDataBinding(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  return (value as { status?: unknown }).status === "manual";
+}
+
 export function nativeBodyHasLegacySqlBinding(
   nativeBody: Record<string, unknown> | undefined | null,
 ): boolean {
   if (!nativeBody) return false;
-  return Object.keys(nativeBody).some((key) => !isChartNativeBodyUiKey(key));
+  return Object.keys(nativeBody).some((key) => {
+    if (isChartNativeBodyUiKey(key)) return false;
+    // VS-AI / 混排 demo：`{ status: "manual" }` 仅占位，用户绑 Dataset 后仍应出图（PROTOCOL / AIVIZ-004）
+    if (key === "dataBinding" && isManualNativeBodyDataBinding(nativeBody.dataBinding)) {
+      return false;
+    }
+    return true;
+  });
 }
 
 export function pickChartNativeBodyUi(

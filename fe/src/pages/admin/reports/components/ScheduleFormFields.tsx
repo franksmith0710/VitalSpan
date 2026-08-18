@@ -10,6 +10,7 @@ import {
 import { FileText, Mail, Plus, Timer, Users } from "lucide-react";
 import { cronFromWizard, ScheduleWizard } from "./ScheduleWizard";
 import {
+  DEFAULT_EMAIL_RECIPIENTS,
   DEFAULT_RECIPIENTS,
   hasValidRecipients,
   ScheduleRecipientsField,
@@ -77,6 +78,8 @@ type ScheduleFormFieldsProps = {
   /** 看板/大屏弹窗内：纵向分区 + 精简 PDF/投递说明 */
   embeddedLayout?: boolean;
   idPrefix?: string;
+  /** 标准分析等：仅填写收件邮箱，不展示角色/用户 */
+  recipientsMode?: "full" | "email-only";
 };
 
 const ATTACHMENT_OPTIONS: { value: AttachmentFormat; label: string; hint: string }[] = [
@@ -94,8 +97,10 @@ export function ScheduleFormFields({
   hideStandaloneHealthAlerts = false,
   embeddedLayout = false,
   idPrefix = "schedule-form",
+  recipientsMode = "full",
 }: ScheduleFormFieldsProps) {
   const patch = (partial: Partial<ScheduleFormValue>) => onChange({ ...value, ...partial });
+  const emailOnlyRecipients = recipientsMode === "email-only";
 
   const setAttachmentFormat = (format: AttachmentFormat) => {
     patch({ attachmentFormats: [format] });
@@ -213,8 +218,12 @@ export function ScheduleFormFields({
           </ScheduleFormSection>
 
           <ScheduleFormSection
-            title="接收人"
-            description="按角色、用户或邮箱指定；收件人邮箱在系统管理 → 用户里填写"
+            title={emailOnlyRecipients ? "收件邮箱" : "接收人"}
+            description={
+              emailOnlyRecipients
+                ? "填写一个或多个邮箱地址，定时 PDF 将直接发送到这些邮箱"
+                : "按角色、用户或邮箱指定；收件人邮箱在系统管理 → 用户里填写"
+            }
             icon={Users}
             action={
               !disabled ? (
@@ -224,12 +233,14 @@ export function ScheduleFormFields({
                   size="sm"
                   onClick={() =>
                     patch({
-                      recipients: [...value.recipients, ...DEFAULT_RECIPIENTS],
+                      recipients: emailOnlyRecipients
+                        ? [...value.recipients.filter((r) => r.type === "email"), { type: "email", value: "" }]
+                        : [...value.recipients, ...DEFAULT_RECIPIENTS],
                     })
                   }
                 >
                   <Plus className="size-3.5" aria-hidden />
-                  添加
+                  {emailOnlyRecipients ? "添加邮箱" : "添加"}
                 </Button>
               ) : undefined
             }
@@ -237,7 +248,9 @@ export function ScheduleFormFields({
               <div className="flex items-start gap-2.5">
                 <Mail className="mt-0.5 size-4 shrink-0 text-gray-400" aria-hidden />
                 <p className="text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                  定时报告将发到收件人在用户资料中填写的邮箱。
+                  {emailOnlyRecipients
+                    ? "无需绑定平台角色；请确保邮箱地址可正常收信。"
+                    : "定时报告将发到收件人在用户资料中填写的邮箱。"}
                 </p>
               </div>
             }
@@ -249,6 +262,7 @@ export function ScheduleFormFields({
               idPrefix={`${idPrefix}-recipient`}
               embedded
               hideAddButton
+              mode={recipientsMode}
             />
           </ScheduleFormSection>
 
@@ -277,6 +291,7 @@ export function ScheduleFormFields({
             onChange={(recipients) => patch({ recipients })}
             disabled={disabled}
             idPrefix={`${idPrefix}-recipient`}
+            mode={recipientsMode}
           />
           <div className="grid gap-2 sm:grid-cols-2">
             {timezoneField}

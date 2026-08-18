@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { ArrowLeft, Play, RefreshCw, Square } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/auth-context";
+import { SourceHealthAlert } from "@/components/datasources/SourceHealthAlert";
 import { AdminPageHeaderIcon, AdminPageShell } from "@/components/layout/admin-page-shell";
 import { ADMIN_PAGE_SURFACE_CLASS } from "@/components/layout/list-page-kit";
 import { cn } from "@/lib/utils";
@@ -10,7 +11,7 @@ import { apiFetch } from "@/lib/api";
 import { getApiValidationFieldErrors, mapApiError } from "@/lib/apiError";
 import { hasCapability } from "@/lib/capabilities";
 import { isSyncSourceCapable } from "@/lib/datasourceRoles";
-import { sessionUserFromMe } from "@/lib/session";
+import type { SourceHealth } from "@/lib/sourceHealth";
 import { useSyncJobRun, type SyncRunSuccess } from "@/hooks/useSyncJobRun";
 import {
   AlertDialog,
@@ -102,6 +103,7 @@ export function SyncJobFormPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState<JobFormState>(newJobFormDefaults);
   const [legacyInlineSource, setLegacyInlineSource] = useState<LegacyInlineSource | null>(null);
+  const [sourceHealth, setSourceHealth] = useState<SourceHealth>("none");
   const [existingJobs, setExistingJobs] = useState<SyncJobSummary[]>([]);
   const [allDatasources, setAllDatasources] = useState<DatasourceItem[]>([]);
   const [loading, setLoading] = useState(isEdit);
@@ -196,6 +198,7 @@ export function SyncJobFormPage() {
           target_table: string;
           schedule_cron: string | null;
           last_run?: SyncJobLastRun | null;
+          source_health?: SourceHealth | null;
         }>(`/api/v1/ingestion/sync-jobs/${id}`);
         const nextForm: JobFormState = {
           name: job.name,
@@ -210,6 +213,7 @@ export function SyncJobFormPage() {
           enabled: job.enabled,
         };
         setForm(nextForm);
+        setSourceHealth(job.source_health ?? "none");
         resetBaseline(nextForm);
         targetTableManualRef.current = true;
         setLegacyInlineSource(
@@ -538,6 +542,12 @@ export function SyncJobFormPage() {
                   clearRunError();
                 }}
               />
+            </div>
+          ) : null}
+
+          {isEdit ? (
+            <div className="mx-auto mb-6 w-full max-w-3xl shrink-0">
+              <SourceHealthAlert health={sourceHealth} entity="sync_job" />
             </div>
           ) : null}
 

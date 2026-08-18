@@ -16,11 +16,8 @@ from app.metadata.dataset.errors import (
     META_DATASET_FORBIDDEN,
     DatasetError,
 )
-from app.metadata.dataset.cleanup import (
-    delete_dataset_row,
-    purge_datasets_with_missing_table_source,
-    purge_orphan_sync_datasets,
-)
+from app.datasources.source_health import resolve_dataset_source_health
+from app.metadata.dataset.cleanup import delete_dataset_row, purge_orphan_sync_datasets
 from app.metadata.dataset.demo_seed import is_demo_package_dataset
 from app.metadata.dataset.models import DatasetRecord
 from app.metadata.dataset.schemas import (
@@ -79,7 +76,7 @@ def _with_session(fn):
         session.close()
 
 
-def _row_to_out(row: DatasetRecord) -> DatasetItemOut:
+def _row_to_out(row: DatasetRecord, *, source_health: str = "none") -> DatasetItemOut:
     return DatasetItemOut.model_validate({
         "datasetId": row.dataset_id,
         "displayName": row.display_name,
@@ -92,6 +89,7 @@ def _row_to_out(row: DatasetRecord) -> DatasetItemOut:
         "syncJobId": row.sync_job_id,
         "transformRules": list(row.transform_rules or []),
         "isDemoPackage": is_demo_package_dataset(row.dataset_id, row.display_name),
+        "sourceHealth": source_health,
     })
 
 
@@ -189,7 +187,6 @@ def list_datasets(
 ) -> DatasetListResponse:
     def _purge(session: Session) -> None:
         purge_orphan_sync_datasets(session)
-        purge_datasets_with_missing_table_source(session)
 
     _with_session(_purge)
 
@@ -217,7 +214,13 @@ def list_datasets(
             ]
         total = len(rows)
         page = rows[max(offset, 0) : max(offset, 0) + capped]
-        return DatasetListResponse(items=[_row_to_out(r) for r in page], total=total)
+        return DatasetListResponse(
+            items=[
+                _row_to_out(r, source_health=resolve_dataset_source_health(session, r))
+                for r in page
+            ],
+            total=total,
+        )
 
     session = get_meta_session()
     try:
@@ -234,7 +237,8 @@ def get_dataset(dataset_id: str, user: UserContext | None = None) -> DatasetItem
             raise DatasetError("META_DATASET_NOT_FOUND", "Dataset not found", 404)
         if user is not None:
             _assert_dataset_read_access(user, row)
-        return _row_to_out(row)
+        health = resolve_dataset_source_health(session, row)
+        return _row_to_out(row, source_health=health)
     finally:
         session.close()
 

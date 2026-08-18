@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, waitFor } from "@testing-library/react";
 import { CustomVizWidget } from "./CustomVizWidget";
-import { CUSTOM_VIZ_PAYLOAD_CLASS } from "./custom-viz/customVizPayload";
+import { CUSTOM_VIZ_PAYLOAD_CLASS, CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION } from "./custom-viz/customVizPayload";
 
 const { mockExecuteReturn } = vi.hoisted(() => ({
   mockExecuteReturn: {
@@ -71,6 +71,8 @@ describe("CustomVizWidget payload injection", () => {
       const node = host.querySelector(`.${CUSTOM_VIZ_PAYLOAD_CLASS}`);
       expect(node).not.toBeNull();
       expect(JSON.parse(node!.textContent!)).toEqual({
+        protocolVersion: CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
+        bindingStatus: "bound",
         columns: ["region", "amount"],
         rows: [
           ["华东", 100],

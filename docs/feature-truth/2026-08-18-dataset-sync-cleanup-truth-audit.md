@@ -7,7 +7,7 @@
 | 锚点 | `backend/app/metadata/dataset/cleanup.py` · `DELETE /api/v1/ingestion/sync-jobs/{id}` · `GET /api/v1/datasets` · `DELETE /api/v1/datasets/{id}` · `DELETE /api/v1/datasources/{id}` · `fe/src/pages/admin/datasets/DatasetListPage.tsx` |
 | 总体判定 | **REAL** |
 | **总分 / 档位** | **8/10 · B** |
-| 状态 | approved-fix（2026-08-18 P0/P1 闭环补全） |
+| 状态 | approved-fix（2026-08-18 复验后补回 E4/E5 + T1-FE-07） |
 | **sampling** | `full`（5 项交付能力 + 1 项遗留缺口，无抽样） |
 | **related** | [dataset-orphan-after-sync-job-delete.md](../.agents/skills/bug-case-library/cases/dataset-orphan-after-sync-job-delete.md) |
 
@@ -209,3 +209,79 @@ Out：行内编辑/删除/批量删除/搜索/分页 — 非本次修复范围�
 ```
 
 **逐一校验：是** — 7/7 必验项 CHAIN/UI 已覆盖；T7 增量删行仍为 Out。
+
+## 9. 二次复验（2026-08-18 14:04）
+
+### 动态验证（本次实跑）
+
+```
+pytest test_dataset_sync_cleanup.py + test_ensure_dataset_endpoint_chain -v
+  PASSED: test_list_datasets_purges_orphan_sync_job_dataset
+  PASSED: test_list_datasets_purges_manual_dataset_with_soft_deleted_source
+  PASSED: test_delete_sync_job_cascades_bound_dataset_and_config
+  PASSED: test_delete_dataset_removes_bound_query_config
+  FAILED: test_delete_datasource_blocked_when_sync_job_references  (期望 409，实际 204)
+  FAILED: test_delete_datasource_blocked_when_dataset_references   (期望 409，实际 204)
+  PASSED: test_ensure_dataset_endpoint_chain
+
+vitest dataset-form.smoke.test.tsx — 6 passed；T1-FE-07 用例已不存在
+```
+
+### 静态审计（回归）
+
+`backend/app/datasources/service.py` `delete_data_source`（L433–462）在 grant 检查后**直接** `row.deleted_at = ...`，**无** `SyncJob` / `DatasetRecord` 引用检查。与 §8 声称的 E4/E5 REAL **不符**。
+
+### 复验后 §3d 矩阵（更新）
+
+| 实体 ID | 深度 | L | C | 判定 | 证据 |
+|---------|------|---|---|------|------|
+| E1 删任务级联+config | CHAIN | 2 | 2 | **REAL** | `test_delete_sync_job_cascades_bound_dataset_and_config` PASSED |
+| E2 列表 purge 同步孤儿 | CHAIN | 2 | 2 | **REAL** | `test_list_datasets_purges_orphan_sync_job_dataset` PASSED |
+| E3 删 Dataset 清 config | CHAIN | 2 | 2 | **REAL** | `test_delete_dataset_removes_bound_query_config` PASSED |
+| E4 删源拦截 sync | CHAIN | 2 | 0 | **BROKEN** | 测试 FAIL；实现缺失 |
+| E5 删源拦截 dataset | CHAIN | 2 | 0 | **BROKEN** | 测试 FAIL；实现缺失 |
+| G1 手动+软删源 purge | CHAIN | 2 | 2 | **REAL** | `test_list_datasets_purges_manual_dataset_with_soft_deleted_source` PASSED |
+| B1 FE 列表 | NONE | 0 | 0 | **UNVERIFIED** | T1-FE-07 已移除，无 UI 契约测 |
+
+### 覆盖摘要（复验）
+
+| 指标 | 值 |
+|------|-----|
+| 必验实体 | 7 |
+| REAL | 4（E1,E2,E3,G1） |
+| BROKEN | 2（E4,E5） |
+| UNVERIFIED | 1（B1） |
+| Out | 1（T7） |
+| **逐一校验** | **否** — E4/E5 测试红；B1 无测 |
+| **总体可否 REAL** | **否** |
+
+### 复验结论
+
+- **已真通**：删任务级联（含 query config）、列表双 purge、删 Dataset 清绑定。
+- **未闭环**：删数据源引用拦截（T4/T5）**代码未落地**，测试 2/6 失败；可删源后仍产生新孤儿（与 purge 被动清理矛盾）。
+- **FE**：列表依赖服务端 purge，无专项 smoke。
+
+### P0 修复（待批准）
+
+在 `delete_data_source` 恢复：
+
+```python
+sync_ref = session.scalar(select(SyncJob.id).where(SyncJob.source_data_source_id == data_source_id).limit(1))
+dataset_ref = session.scalar(select(DatasetRecord.dataset_id).where(DatasetRecord.table_source_datasource_id == data_source_id).limit(1))
+# → DATASOURCE_IN_USE 409
+```
+
+并恢复 `T1-FE-07` smoke。修后目标：7/7 REAL（除 Out）。
+
+## 10. 三次修复复验（2026-08-18 14:06）
+
+- `delete_data_source` 已补回 SyncJob / DatasetRecord 引用检查
+- `T1-FE-07` smoke 已恢复
+
+```
+pytest test_dataset_sync_cleanup.py — 6 passed
+pytest test_ensure_dataset_endpoint_chain — 1 passed
+vitest T1-FE-07 — 1 passed
+```
+
+**逐一校验：是** — 7/7 必验项 REAL（T7 Out 除外）。

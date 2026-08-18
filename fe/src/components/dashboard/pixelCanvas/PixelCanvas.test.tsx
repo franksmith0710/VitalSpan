@@ -2,7 +2,8 @@ import { act, cleanup, fireEvent, render, renderHook, screen } from "@testing-li
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { endPaletteDragSession } from "@/lib/paletteDragSession";
 import type { DashboardLayoutV2, LayoutWidget, PixelLayoutWidget } from "../layoutUtils";
-import { PIXEL_CANVAS_GUTTER, PixelCanvas, PIXEL_PREVIEW_THROTTLE_MS } from "./PixelCanvas";
+import { PIXEL_CANVAS_GUTTER, PIXEL_PREVIEW_THROTTLE_MS } from "./pixelCanvasHost";
+import { PixelCanvas } from "./PixelCanvas";
 import {
   insertClonedPixelWidget,
   insertPixelPaletteWidget,

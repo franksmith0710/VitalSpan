@@ -103,6 +103,29 @@ describe("Dataset form pages", () => {
     );
   });
 
+  it("T1-FE-07: list shows source health badge when API marks missing", async () => {
+    mockApiFetch.mockImplementation(async (path: string) => {
+      if (path.startsWith("/api/v1/datasets")) {
+        return {
+          items: [
+            {
+              datasetId: "stale_ds",
+              displayName: "失效 Dataset",
+              tables: [{ name: "public.orders" }],
+              boundConfigId: null,
+              sourceHealth: "missing",
+            },
+          ],
+          total: 1,
+        };
+      }
+      return {};
+    });
+    renderList();
+    expect(await screen.findByText("失效 Dataset")).toBeInTheDocument();
+    expect(screen.getByText("数据源不可用")).toBeInTheDocument();
+  });
+
   it("T1-FE-03: edit page loads existing dataset with field workbench", async () => {
     mockApiFetch.mockImplementation(async (path: string) => {
       if (path === "/api/v1/datasets/ds-demo") {

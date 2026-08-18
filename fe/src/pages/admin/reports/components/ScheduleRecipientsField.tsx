@@ -41,6 +41,8 @@ type ScheduleRecipientsFieldProps = {
   embedded?: boolean;
   /** 区块标题栏已提供「添加」时隐藏字段内按钮 */
   hideAddButton?: boolean;
+  /** 仅邮箱收件人（标准分析等纯邮件投递场景） */
+  mode?: "full" | "email-only";
 };
 
 export function ScheduleRecipientsField({
@@ -50,7 +52,15 @@ export function ScheduleRecipientsField({
   idPrefix = "schedule-recipient",
   embedded = false,
   hideAddButton = false,
+  mode = "full",
 }: ScheduleRecipientsFieldProps) {
+  const emailOnly = mode === "email-only";
+  const rows = emailOnly
+    ? (value.filter((row) => row.type === "email").length > 0
+        ? value.filter((row) => row.type === "email")
+        : DEFAULT_EMAIL_RECIPIENTS)
+    : value;
+
   const [userFilter, setUserFilter] = useState("");
   const usersQuery = useQuery({
     queryKey: ["users", "schedule-recipients"],
@@ -62,20 +72,96 @@ export function ScheduleRecipientsField({
   const filteredUsers = users.filter((u) =>
     u.username.toLowerCase().includes(userFilter.trim().toLowerCase()),
   );
-  const hasUserRow = value.some((row) => row.type === "user");
+  const hasUserRow = !emailOnly && value.some((row) => row.type === "user");
 
   const addRow = () => {
-    onChange([...value, { type: "role", value: "admin" }]);
+    onChange(
+      emailOnly
+        ? [...rows, { type: "email", value: "" }]
+        : [...value, { type: "role", value: "admin" }],
+    );
   };
 
   const updateRow = (index: number, patch: Partial<ScheduleRecipient>) => {
-    onChange(value.map((row, i) => (i === index ? { ...row, ...patch } : row)));
+    const source = emailOnly ? rows : value;
+    const next = source.map((row, i) => (i === index ? { ...row, ...patch } : row));
+    onChange(emailOnly ? next.map((row) => ({ type: "email" as const, value: row.value })) : next);
   };
 
   const removeRow = (index: number) => {
-    if (value.length <= 1) return;
-    onChange(value.filter((_, i) => i !== index));
+    const source = emailOnly ? rows : value;
+    if (source.length <= 1) return;
+    const next = source.filter((_, i) => i !== index);
+    onChange(emailOnly ? next.map((row) => ({ type: "email" as const, value: row.value })) : next);
   };
+
+  if (emailOnly) {
+    return (
+      <div className={cn(embedded ? "space-y-2" : "space-y-3")}>
+        {!embedded && !hideAddButton ? (
+          <div className="flex items-center justify-between gap-2">
+            <Label>收件邮箱</Label>
+            {!disabled ? (
+              <Button type="button" variant="outline" size="sm" onClick={addRow}>
+                <Plus className="size-3.5" aria-hidden />
+                添加邮箱
+              </Button>
+            ) : null}
+          </div>
+        ) : embedded && !hideAddButton && !disabled ? (
+          <div className="flex justify-end">
+            <Button type="button" variant="outline" size="sm" onClick={addRow}>
+              <Plus className="size-3.5" aria-hidden />
+              添加邮箱
+            </Button>
+          </div>
+        ) : null}
+        <div className={cn(embedded ? "divide-y divide-gray-100 dark:divide-gray-800" : "space-y-2")}>
+          {rows.map((row, index) => (
+            <div
+              key={index}
+              className={cn(
+                embedded
+                  ? "grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start"
+                  : "flex flex-wrap items-start gap-2",
+              )}
+            >
+              <div className="min-w-[180px] flex-1 space-y-1">
+                <Input
+                  type="email"
+                  className="h-11 w-full"
+                  placeholder="name@example.com"
+                  value={row.value}
+                  disabled={disabled}
+                  id={`${idPrefix}-email-${index}`}
+                  onChange={(e) => updateRow(index, { value: e.target.value })}
+                  aria-invalid={row.value.length > 0 && !isValidRecipient(row)}
+                />
+                {row.value.length > 0 && !isValidRecipient(row) ? (
+                  <p className="text-theme-xs text-error-500">请输入有效邮箱地址</p>
+                ) : null}
+              </div>
+              {!disabled && rows.length > 1 ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-11 shrink-0"
+                  aria-label="删除邮箱"
+                  onClick={() => removeRow(index)}
+                >
+                  <Trash2 className="size-4" aria-hidden />
+                </Button>
+              ) : null}
+            </div>
+          ))}
+        </div>
+        {!hasValidRecipients(rows) ? (
+          <p className="text-theme-xs text-error-500">请至少填写一个有效邮箱地址</p>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div className={cn(embedded ? "space-y-2" : "space-y-3")}>
@@ -214,3 +300,5 @@ export function ScheduleRecipientsField({
 }
 
 export const DEFAULT_RECIPIENTS: ScheduleRecipient[] = [{ type: "role", value: "admin" }];
+
+export const DEFAULT_EMAIL_RECIPIENTS: ScheduleRecipient[] = [{ type: "email", value: "" }];

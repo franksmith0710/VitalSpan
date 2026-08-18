@@ -16,6 +16,7 @@ import { WIDGET_CHART_LABELS } from "./widgetIcons";
 import { resolveAutoAssignTarget } from "@/lib/chartFieldAssignment";
 import { appendAxisField, writeAxisField } from "@/lib/resolveChartEncoding";
 import { isDemoPackageDataset } from "@/lib/demoPackage";
+import { pickChartNativeBodyUi } from "@/lib/chartNativeBodyUi";
 import type { SlotTarget } from "./chartInspectorTypes";
 
 type DataSourceListItem = { id: string; name: string; code: string };
@@ -115,6 +116,7 @@ export function useChartInspectorState(
         configId: boundId,
         dataSourceId,
         sql: undefined,
+        nativeBody: pickChartNativeBodyUi(current.nativeBody),
       });
     },
     [datasetItems, emitChange, readChartConfig],
@@ -165,6 +167,7 @@ export function useChartInspectorState(
         mode: "dataset",
         configId: boundId,
         ...(dataSourceId ? { dataSourceId } : {}),
+        nativeBody: pickChartNativeBodyUi(readChartConfig().nativeBody),
       });
     })();
 

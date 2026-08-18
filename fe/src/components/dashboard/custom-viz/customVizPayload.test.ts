@@ -1,13 +1,80 @@
 import { describe, expect, it } from "vitest";
 import {
   CUSTOM_VIZ_PAYLOAD_CLASS,
+  CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
+  buildCustomVizRuntimePayload,
   injectCustomVizPayload,
+  resolveCustomVizBindingStatus,
 } from "@/components/dashboard/custom-viz/customVizPayload";
+
+describe("resolveCustomVizBindingStatus", () => {
+  it("returns unbound when execute is not ready", () => {
+    expect(
+      resolveCustomVizBindingStatus({
+        executeReady: false,
+        loading: false,
+        error: null,
+        rows: [[1]],
+      }),
+    ).toBe("unbound");
+  });
+
+  it("returns error when execute fails", () => {
+    expect(
+      resolveCustomVizBindingStatus({
+        executeReady: true,
+        loading: false,
+        error: "查询失败",
+        rows: [],
+      }),
+    ).toBe("error");
+  });
+
+  it("returns empty when bound but no rows", () => {
+    expect(
+      resolveCustomVizBindingStatus({
+        executeReady: true,
+        loading: false,
+        error: null,
+        rows: [],
+      }),
+    ).toBe("empty");
+  });
+
+  it("returns bound when rows exist", () => {
+    expect(
+      resolveCustomVizBindingStatus({
+        executeReady: true,
+        loading: false,
+        error: null,
+        rows: [["a", 1]],
+      }),
+    ).toBe("bound");
+  });
+});
+
+describe("buildCustomVizRuntimePayload", () => {
+  it("includes protocolVersion and error on failure", () => {
+    const payload = buildCustomVizRuntimePayload({
+      executeReady: true,
+      loading: false,
+      error: "查询失败",
+      columns: [],
+      rows: [],
+      style: {},
+    });
+    expect(payload.protocolVersion).toBe(CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION);
+    expect(payload.bindingStatus).toBe("error");
+    expect(payload.error).toBe("查询失败");
+  });
+});
 
 describe("injectCustomVizPayload", () => {
   it("writes JSON payload node and style CSS variables on host", () => {
     const host = document.createElement("div");
     injectCustomVizPayload(host, {
+      protocolVersion: CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
+      bindingStatus: "bound",
       columns: ["region", "amount"],
       rows: [
         ["华东", 100],
@@ -20,6 +87,8 @@ describe("injectCustomVizPayload", () => {
     expect(node).not.toBeNull();
     expect(node?.textContent).toBe(
       JSON.stringify({
+        protocolVersion: CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
+        bindingStatus: "bound",
         columns: ["region", "amount"],
         rows: [
           ["华东", 100],
@@ -34,10 +103,24 @@ describe("injectCustomVizPayload", () => {
 
   it("updates existing payload node in place", () => {
     const host = document.createElement("div");
-    injectCustomVizPayload(host, { columns: ["a"], rows: [[1]], style: {} });
-    injectCustomVizPayload(host, { columns: ["b"], rows: [[2]], style: { foo: "bar" } });
+    injectCustomVizPayload(host, {
+      protocolVersion: CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
+      bindingStatus: "unbound",
+      columns: ["a"],
+      rows: [[1]],
+      style: {},
+    });
+    injectCustomVizPayload(host, {
+      protocolVersion: CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
+      bindingStatus: "bound",
+      columns: ["b"],
+      rows: [[2]],
+      style: { foo: "bar" },
+    });
     expect(host.querySelectorAll(`.${CUSTOM_VIZ_PAYLOAD_CLASS}`)).toHaveLength(1);
     expect(JSON.parse(host.querySelector(`.${CUSTOM_VIZ_PAYLOAD_CLASS}`)!.textContent!)).toEqual({
+      protocolVersion: CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
+      bindingStatus: "bound",
       columns: ["b"],
       rows: [[2]],
       style: { foo: "bar" },
@@ -50,7 +133,13 @@ describe("injectCustomVizPayload", () => {
     host.addEventListener("vs-cv-payload-update", () => {
       events += 1;
     });
-    const payload = { columns: ["a"], rows: [[1]], style: { accentColor: "#111" } };
+    const payload = {
+      protocolVersion: CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
+      bindingStatus: "bound" as const,
+      columns: ["a"],
+      rows: [[1]],
+      style: { accentColor: "#111" },
+    };
     injectCustomVizPayload(host, payload);
     injectCustomVizPayload(host, payload);
     expect(events).toBe(1);
@@ -63,7 +152,13 @@ describe("injectCustomVizPayload", () => {
     host.addEventListener("vs-cv-payload-update", (e) => {
       detail = (e as CustomEvent).detail;
     });
-    const payload = { columns: ["x"], rows: [[9]], style: {} };
+    const payload = {
+      protocolVersion: CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
+      bindingStatus: "unbound" as const,
+      columns: ["x"],
+      rows: [[9]],
+      style: {},
+    };
     injectCustomVizPayload(host, payload);
     expect(detail).toEqual(payload);
   });

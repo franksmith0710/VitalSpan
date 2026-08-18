@@ -99,7 +99,7 @@ def test_list_datasets_purges_orphan_sync_job_dataset(client, auth_headers):
     assert detail.status_code == 404
 
 
-def test_list_datasets_purges_manual_dataset_with_soft_deleted_source(client, auth_headers):
+def test_list_datasets_flags_missing_source_health(client, auth_headers):
     dataset_id = f"stale_{uuid.uuid4().hex[:8]}"
     db = get_meta_session()
     ds_row = DataSource(
@@ -131,8 +131,44 @@ def test_list_datasets_purges_manual_dataset_with_soft_deleted_source(client, au
 
     listed = client.get("/api/v1/datasets", headers=auth_headers)
     assert listed.status_code == 200
-    assert dataset_id not in [item["datasetId"] for item in listed.json()["items"]]
-    assert client.get(f"/api/v1/datasets/{dataset_id}", headers=auth_headers).status_code == 404
+    item = next((i for i in listed.json()["items"] if i["datasetId"] == dataset_id), None)
+    assert item is not None
+    assert item["sourceHealth"] == "missing"
+
+    client.delete(f"/api/v1/datasets/{dataset_id}", headers=auth_headers)
+
+
+def test_sync_job_lists_missing_source_health(client, auth_headers):
+    ds_id = _seed_mysql_datasource()
+    target = f"stale_job_{uuid.uuid4().hex[:8]}"
+    create = client.post(
+        "/api/v1/ingestion/sync-jobs",
+        json={
+            "name": "stale-source-job",
+            "source_mode": "datasource",
+            "source_data_source_id": str(ds_id),
+            "source_table": "dirty_orders",
+            "target_table": target,
+            "schedule_cron": None,
+        },
+        headers=auth_headers,
+    )
+    assert create.status_code == 201, create.text
+    job_id = create.json()["id"]
+
+    db = get_meta_session()
+    row = db.get(DataSource, ds_id)
+    row.deleted_at = datetime.now(UTC)
+    db.commit()
+    db.close()
+
+    listed = client.get("/api/v1/ingestion/sync-jobs", headers=auth_headers)
+    assert listed.status_code == 200
+    item = next((i for i in listed.json()["items"] if i["id"] == job_id), None)
+    assert item is not None
+    assert item["source_health"] == "missing"
+
+    client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
 
 
 def test_delete_sync_job_cascades_bound_dataset_and_config(client, auth_headers):

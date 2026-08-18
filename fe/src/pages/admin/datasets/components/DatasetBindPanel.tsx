@@ -12,10 +12,11 @@ import {
   resolveAnalyticsDatasourceId,
 } from "@/lib/datasourceRoles";
 import { formatSyncDatasourceDisplay } from "@/lib/formatDatasourceDisplay";
+import { tablesMatchForBind } from "@/lib/datasetTableUtils";
 import { queryKeys } from "@/lib/queryKeys";
 import { apiFetch } from "@/lib/api";
 import type { DatasetBindDraft, DatasetOrigin, DatasetTable } from "../types";
-import { useDatasetTableColumns } from "../hooks/useDatasetTableColumns";
+import { useDatasetWorkbenchColumns } from "../hooks/useDatasetWorkbenchColumns";
 import {
   bindDraftFromBinding,
   EMPTY_BIND_DRAFT,
@@ -32,12 +33,6 @@ type DsItem = {
   port?: number;
   database?: string;
 };
-
-function qualifiedTableFromBinding(schema?: string, table?: string): string {
-  if (!table) return "";
-  if (schema) return `${schema}.${table}`;
-  return table;
-}
 
 /** 独立绑定面板（报表指标页等）；Dataset 编辑页请用 TablePicker 内嵌 Workbench。 */
 export function DatasetBindPanel({
@@ -103,24 +98,27 @@ export function DatasetBindPanel({
     [activeDs],
   );
 
-  const { columnNames, columnsLoading, columnsError } = useDatasetTableColumns(dataSourceId, primaryTableName);
+  const { columnNames, columnsLoading, columnsError } = useDatasetWorkbenchColumns(
+    dataSourceId,
+    primaryTableName,
+    boundConfigQuery.data,
+  );
 
   useEffect(() => {
-    if (!primaryTableName || columnsLoading) return;
+    if (!primaryTableName) return;
     if (boundConfigId && boundConfigQuery.isLoading) return;
 
+    const bound = boundConfigQuery.data;
     const seedKey = `${primaryTableName}:${boundConfigId ?? "none"}:${columnNames.join(",")}`;
     if (seedKeyRef.current === seedKey) return;
     seedKeyRef.current = seedKey;
 
-    const bound = boundConfigQuery.data;
-    if (bound?.columns?.length && boundConfigId) {
-      const boundTable = qualifiedTableFromBinding(bound.schema, bound.table);
-      if (!boundTable || boundTable === primaryTableName) {
-        setBindDraft(bindDraftFromBinding(bound.columns, bound.columnKinds));
-        return;
-      }
+    if (bound?.columns?.length && boundConfigId && tablesMatchForBind(primaryTableName, bound.schema, bound.table)) {
+      setBindDraft(bindDraftFromBinding(bound.columns, bound.columnKinds));
+      return;
     }
+
+    if (columnsLoading) return;
 
     if (columnNames.length > 0) {
       setBindDraft(seedBindDraftFromColumns(columnNames, null));

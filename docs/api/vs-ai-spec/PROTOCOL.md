@@ -94,14 +94,36 @@ customViz bundle **不限定**渲染技术栈。可选用原生 DOM/CSS、Canvas
 
 ## 运行时数据与样式（平台 → 宿主）
 
-Base 在 `query/execute` 出数后，向 `.vs-custom-viz-host` 注入：
+Base 在绑定就绪后走 `query/execute`，并**始终**向 `.vs-custom-viz-host` 注入 payload（含未绑定时 `bindingStatus: "unbound"`）：
 
-1. **JSON 载荷**：宿主内 `<script type="application/json" class="vs-cv-payload">`，结构 `{ columns, rows, style }`
+1. **JSON 载荷**：宿主内 `<script type="application/json" class="vs-cv-payload">`，结构见 **Payload v1**（下方）
 2. **样式变量**：`style` 各键映射为 `--vs-style-<kebab-case>` 写在宿主元素 `style` 上（与 manifest `defaultStyle` + layout `customVizConfig.style` 合并）；boolean 为 `true`/`false` 字符串
+
+### Payload v1
+
+```json
+{
+  "protocolVersion": 1,
+  "bindingStatus": "bound",
+  "columns": ["region", "amount"],
+  "rows": [["华东", 100]],
+  "style": { "accentColor": "#3b82f6" },
+  "error": "可选；仅 bindingStatus=error 时出现"
+}
+```
+
+| `bindingStatus` | 含义 |
+|-----------------|------|
+| `unbound` | 未绑 Dataset / 字段，或 execute 尚未就绪 |
+| `bound` | 已绑定且 execute 返回行 |
+| `empty` | 已绑定但结果集为空 |
+| `error` | execute 失败；读 `error` 人话说明 |
 
 AI 可在 `styleSchema` 中自由声明颜色、滑块、开关、下拉、文本等控件类型，平台自动生成配置栏，详见 [guides/STYLE-SCHEMA.md](./guides/STYLE-SCHEMA.md)。
 
-bundle 内脚本可读取 `.vs-cv-payload` 文本，或监听宿主上的 **`vs-cv-payload-update`** 自定义事件（推荐，避免 MutationObserver 死循环）；推荐用 `getComputedStyle(host)` 读 `--vs-style-*`。
+bundle 内脚本**必须**监听宿主上的 **`vs-cv-payload-update`** 自定义事件（`event.detail` 即 Payload v1）；可读取 `.vs-cv-payload` 做首次渲染。**禁止**对宿主使用 `MutationObserver` 监听 payload 变化（易与 Base 注入死循环）。推荐用 `getComputedStyle(host)` 读 `--vs-style-*`。
+
+未绑定时 bundle 应依据 `bindingStatus === "unbound"` 显示引导文案，**不要**假装已有业务数据。
 
 ## 数据（第一期）
 

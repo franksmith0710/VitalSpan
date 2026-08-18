@@ -18,7 +18,7 @@ import {
   isCustomVizExecuteReady,
   resolveCustomVizStyle,
 } from "./custom-viz/customVizExecute";
-import { injectCustomVizPayload } from "./custom-viz/customVizPayload";
+import { buildCustomVizRuntimePayload, injectCustomVizPayload } from "./custom-viz/customVizPayload";
 import { gridWidgetShellClassName, GridWidgetShellFrame, resolveGridWidgetShell } from "./widgetRailStyleSections";
 
 type CustomVizWidgetProps = {
@@ -63,7 +63,7 @@ export function CustomVizWidget({
   const chartCfg = customVizBindingToChartConfig(cfg.dataBinding);
   const executeReady = isCustomVizExecuteReady(cfg.dataBinding);
   const queryLimit = resolveChartQueryLimit(chartCfg, dashboardStyle ?? {});
-  const { columns, rows } = useChartExecute(chartCfg, {
+  const { columns, rows, loading, error: executeError } = useChartExecute(chartCfg, {
     enabled: executeReady,
     filterParameters,
     executeKey,
@@ -129,8 +129,27 @@ export function CustomVizWidget({
     const host = hostRef.current;
     if (!host || !html) return;
     const style = resolveCustomVizStyle(manifestDefaultStyle, cfg.style);
-    injectCustomVizPayload(host, { columns, rows, style });
-  }, [html, columns, rows, cfg.style, manifestDefaultStyle]);
+    injectCustomVizPayload(
+      host,
+      buildCustomVizRuntimePayload({
+        executeReady,
+        loading,
+        error: executeError,
+        columns,
+        rows,
+        style,
+      }),
+    );
+  }, [
+    html,
+    columns,
+    rows,
+    loading,
+    executeError,
+    executeReady,
+    cfg.style,
+    manifestDefaultStyle,
+  ]);
 
   const body = loadError ? (
     <div className="flex h-full min-h-[64px] flex-col items-center justify-center gap-1 px-3 text-center text-theme-xs text-gray-500 dark:text-gray-400">

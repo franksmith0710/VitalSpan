@@ -31,8 +31,29 @@ export function tablesMatchForBind(
         table: boundTable.trim(),
       };
 
+  const tableMatches =
+    normalizeTablePart(datasetParsed.table) === normalizeTablePart(boundParsed.table);
+  if (!tableMatches) return false;
+
+  // Dataset 仅存裸表名（如官方示例 v_sales_geo）时，绑定侧带 schema 仍视为同表。
+  if (!datasetParsed.schema.trim()) return true;
+
   return (
-    normalizeTablePart(datasetParsed.table) === normalizeTablePart(boundParsed.table) &&
-    normalizeSchemaPart(datasetParsed.schema) === normalizeSchemaPart(boundParsed.schema || boundSchema)
+    normalizeSchemaPart(datasetParsed.schema) ===
+    normalizeSchemaPart(boundParsed.schema || boundSchema)
   );
+}
+
+/** 列元数据探针用：裸表名时优先用绑定配置里的 schema.table。 */
+export function resolveMetadataTableName(
+  datasetTableName: string,
+  boundSchema?: string,
+  boundTable?: string,
+): string {
+  const datasetParsed = parseQualifiedTable(datasetTableName);
+  if (datasetParsed.schema.trim()) return datasetTableName;
+  if (boundSchema?.trim() && boundTable?.trim()) {
+    return `${boundSchema.trim()}.${boundTable.trim()}`;
+  }
+  return datasetTableName;
 }

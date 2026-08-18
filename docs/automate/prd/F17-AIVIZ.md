@@ -13,7 +13,8 @@
 | 可选 D3 创作指南 + `theme-tokens.json`（不强制渲染器） | 强制 customViz 使用平台 D3 引擎 |
 | `layoutJson` v2 混排 chart + customViz | `layout/orchestrate` 规则引擎（M2） |
 | `dataBinding.status=manual` 占位保存 | 查询桥（M1：合成 table execute + payload 注入） |
-| 同一 artifactId 覆盖更新 | 组件库 viz-components 收录 customViz |
+| 同一 artifactId 覆盖更新 | 动态注册第 50+ chartType 进 plugin catalog |
+| Payload v1（`bindingStatus` + `vs-cv-payload-update`） | iframe/沙箱隔离（本产品线不做） |
 
 ## 验收标准
 
@@ -26,6 +27,7 @@
 - [x] AIVIZ-009：`PUT /api/v1/ai-viz/artifacts/{id}` 覆盖同一组件源码，引用方刷新即新
 - [x] AIVIZ-006：组件库入库 customViz（M2）
 - [x] AIVIZ-007：平台向宿主喂 query 结果（后续）
+- [x] AIVIZ-010：Payload v1（`protocolVersion` + `bindingStatus`）；Base 始终注入；bundle 仅监听 `vs-cv-payload-update`
 
 ## 代码锚点
 

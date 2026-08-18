@@ -27,6 +27,8 @@ import {
   ScheduleFormFields,
   type ScheduleFormValue,
 } from "./ScheduleFormFields";
+import { DEFAULT_EMAIL_RECIPIENTS } from "./ScheduleRecipientsField";
+import type { ScheduleRecipient } from "../useReportSchedules";
 import { ScheduleActivationBanner } from "./ScheduleActivationBanner";
 import { ScheduleDeliveryHealthAlert } from "./ScheduleDeliveryHealthAlert";
 import { ScheduleHistoryTable } from "./ScheduleHistoryTable";
@@ -49,6 +51,13 @@ type Props = {
   disabled?: boolean;
 };
 
+function toEmailOnlyRecipients(recipients: ScheduleRecipient[]): ScheduleRecipient[] {
+  const emails = recipients
+    .filter((row) => row.type === "email" && row.value.trim())
+    .map((row) => ({ type: "email" as const, value: row.value.trim() }));
+  return emails.length > 0 ? emails : DEFAULT_EMAIL_RECIPIENTS;
+}
+
 export function StandardSchedulePanel({ sourceKey, packName, disabled = false }: Props) {
   const filter = { sourceType: "standard", sourceKey };
   const listQuery = useReportSchedulesList(filter);
@@ -61,6 +70,7 @@ export function StandardSchedulePanel({ sourceKey, packName, disabled = false }:
 
   const [form, setForm] = useState<ScheduleFormValue>({
     ...DEFAULT_SCHEDULE_FORM,
+    recipients: DEFAULT_EMAIL_RECIPIENTS,
     attachmentFormats: ["pdf"],
   });
   const [pendingActivateId, setPendingActivateId] = useState<string | null>(null);
@@ -72,13 +82,18 @@ export function StandardSchedulePanel({ sourceKey, packName, disabled = false }:
 
   useEffect(() => {
     if (schedule && draftSelected) {
-      setForm({ ...scheduleRowToForm(schedule), attachmentFormats: ["pdf"] });
+      const loaded = scheduleRowToForm(schedule);
+      setForm({
+        ...loaded,
+        recipients: toEmailOnlyRecipients(loaded.recipients),
+        attachmentFormats: ["pdf"],
+      });
     }
   }, [schedule?.id, draftSelected, schedule]);
 
   const handleCreate = async () => {
     if (!isScheduleFormSubmittable(form)) {
-      toast.error("请配置至少一位有效接收人");
+      toast.error("请填写至少一个有效邮箱地址");
       return;
     }
     try {
@@ -192,6 +207,8 @@ export function StandardSchedulePanel({ sourceKey, packName, disabled = false }:
             showAttachments={false}
             showDeliveryChannels
             hideStandaloneHealthAlerts
+            embeddedLayout
+            recipientsMode="email-only"
             idPrefix={`std-schedule-${sourceKey}`}
           />
         </ScheduleFormSection>
@@ -253,6 +270,8 @@ export function StandardSchedulePanel({ sourceKey, packName, disabled = false }:
                   showAttachments={false}
                   showDeliveryChannels
                   hideStandaloneHealthAlerts
+                  embeddedLayout
+                  recipientsMode="email-only"
                   idPrefix={`std-schedule-edit-${sourceKey}`}
                 />
                 {!disabled ? (

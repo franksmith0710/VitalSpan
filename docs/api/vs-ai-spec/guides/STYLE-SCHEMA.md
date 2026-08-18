@@ -6,7 +6,7 @@
 
 1. **键名 camelCase**：如 `accentColor`、`showValue`；运行时映射为 CSS 变量 `--vs-style-accent-color`
 2. **必须成对**：`styleSchema.properties` 每个键在 `defaultStyle` 里有默认值
-3. **bundle 消费**：HTML 内读 `getComputedStyle(host).getPropertyValue('--vs-style-…')` 或 `.vs-cv-payload` 的 `style` 对象
+3. **bundle 消费**：HTML 内读 `getComputedStyle(host).getPropertyValue('--vs-style-…')` 或 `.vs-cv-payload` 的 `style` 对象；**数据**须按 Payload v1 的 `bindingStatus`（`unbound | bound | empty | error`）区分未绑定、有数、空结果与失败，见 [PROTOCOL.md](../PROTOCOL.md) §Payload v1
 4. **与内置 chart 无关**：不必复用 `deStyle` 字段名；全新设计只要 schema + bundle 一致即可
 
 ## 支持的 property 类型

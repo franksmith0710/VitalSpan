@@ -1,9 +1,10 @@
-import { Link, useSearchParams } from "react-router";
+import { Link } from "react-router";
 import { ArrowLeft, Plus } from "lucide-react";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { ListPageSection } from "@/components/layout/list-page-kit";
 import { Button } from "@/components/ui/button";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -68,6 +69,15 @@ export function StandardAnalysisConfigPage() {
         <PageErrorBanner message={mapApiError(packsQuery.error)} onRetry={() => packsQuery.refetch()} />
       ) : null}
 
+      {packsQuery.isLoading && packs.length === 0 ? (
+        <ListPageSection className="min-h-0 flex-1">
+          <div className="flex min-h-[320px] flex-col gap-3 p-4">
+            <Skeleton className="h-10 w-full max-w-md" />
+            <Skeleton className="h-48 w-full rounded-2xl" />
+            <Skeleton className="h-64 w-full rounded-2xl" />
+          </div>
+        </ListPageSection>
+      ) : (
       <ListPageSection className="min-h-0 flex-1">
         <div className="border-b border-gray-200 px-4 py-3 xl:hidden dark:border-gray-800">
           <Select
@@ -122,12 +132,13 @@ export function StandardAnalysisConfigPage() {
               showSavedHint={showSavedHint}
               onDismissSavedHint={() => setShowSavedHint(false)}
               onChange={(updater) => setDraft((current) => updater(current))}
-              onSave={() => void onSave()}
+              onSave={onSave}
               onDelete={() => setDeleteOpen(true)}
             />
           </div>
         </div>
       </ListPageSection>
+      )}
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>

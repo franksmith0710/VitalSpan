@@ -193,6 +193,16 @@ const CODE_MESSAGES: Record<string, string> = {
   RPT_SCHEDULE_FORBIDDEN: "无权操作报表调度",
   RPT_STD_FORBIDDEN: "无权操作标准分析包",
   RPT_STD_TABLE_NOT_FOUND: "物理表未注册，无法配置标准分析",
+  RPT_STD_NOT_FOUND: "标准分析包不存在",
+  RPT_STD_THEME_DISABLED: "字段映射与已启用主题不匹配，请检查字段映射或关闭不适用的主题",
+  RPT_STD_THEME_UNSUPPORTED: "不支持的分析主题",
+  RPT_STD_DATASET_NOT_FOUND: "数据集不存在或已被删除",
+  RPT_STD_DATASET_UNBOUND: "数据集尚未绑定查询，请先在下方完成出图字段绑定",
+  RPT_STD_FIELD_MAPPING: "字段映射不完整，请补全状态、区域或时间字段",
+  RPT_STD_SNAPSHOT_NOT_FOUND: "未找到可对比的历史快照",
+  RPT_STD_KEY_MISMATCH: "分析包标识不一致，请刷新页面后重试",
+  RPT_STD_EMPTY_ROLES: "分析包访问角色不能为空",
+  CONFIG_NOT_FOUND: "查询绑定配置不存在，请重新保存出图字段",
   RPT_EXT_FORBIDDEN: "无权修改报表扩展配置",
   RPT_EXT_NODE_NOT_FOUND: "扩展配置不存在，请先保存扩展配置",
   RPT_EXT_DUPLICATE_KEY: "指标键或筛选键重复",
@@ -213,7 +223,6 @@ const CODE_MESSAGES: Record<string, string> = {
   REPORT_EXPORT_INVALID_FORMAT: "导出格式无效，请选择 PDF / Word / Excel",
   REPORT_TEMPLATE_NOT_FOUND: "报表模板不存在",
   AUDIT_FORBIDDEN: "无权查询审计日志",
-  CONFIG_NOT_FOUND: "查询配置不存在",
 };
 
 /** 后端英文 `message` 精确匹配 → 中文 */
@@ -271,6 +280,7 @@ const MESSAGE_PREFIX_MAP: Array<[RegExp, string]> = [
   [/SMTP delivery not configured/i, "邮件投递未配置，请设置 RPT_SMTP_* 环境变量"],
   [/delivery failed/i, "邮件投递失败"],
   [/delivery degraded/i, "邮件投递降级（部分渠道未送达）"],
+  [/^theme \w+ not available for field mapping/i, "字段映射与已启用主题不匹配，请检查字段映射或关闭不适用的主题"],
 ];
 
 const GENERIC_FAILURE = "操作失败，请稍后重试";

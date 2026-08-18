@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Layers } from "lucide-react";
 import { toast } from "sonner";
+import { SourceHealthAlert } from "@/components/datasources/SourceHealthAlert";
 import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -411,6 +412,11 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
       leadingActions={headerLeadingActions}
       actions={headerActions}
     >
+      {mode === "edit" ? (
+        <div className="mb-4">
+          <SourceHealthAlert health={datasetItem?.sourceHealth} entity="dataset" />
+        </div>
+      ) : null}
       <DatasetEditorForm
         mode={mode}
         values={values}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
@@ -11,6 +11,10 @@ import {
 } from "./useStandardAnalysis";
 import { createEmptyAnalysisPack } from "./components/standardAnalysisUi";
 import { STANDARD_PACK_QUERY } from "./standardRoutes";
+import {
+  mergeSuggestedFieldMapping,
+  validateStandardPackDraft,
+} from "./standardAnalysisValidation";
 
 export function buildStandardAnalysisSaveBody(draft: AnalysisPack): AnalysisPack {
   const base = {
@@ -49,6 +53,7 @@ export function useStandardAnalysisEditor() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [bootstrapped, setBootstrapped] = useState(false);
   const [showSavedHint, setShowSavedHint] = useState(false);
+  const savingRef = useRef(false);
 
   const effectiveBoundConfigId = draft.boundConfigId ?? "";
   const boundConfigQuery = useQuery({
@@ -61,6 +66,21 @@ export function useStandardAnalysisEditor() {
     () => boundConfigQuery.data?.columns ?? [],
     [boundConfigQuery.data?.columns],
   );
+
+  useEffect(() => {
+    if (columnOptions.length === 0) return;
+    setDraft((current) => {
+      const nextMapping = mergeSuggestedFieldMapping(current.fieldMapping, columnOptions);
+      if (
+        nextMapping.status === current.fieldMapping.status &&
+        nextMapping.region === current.fieldMapping.region &&
+        nextMapping.createdAt === current.fieldMapping.createdAt
+      ) {
+        return current;
+      }
+      return { ...current, fieldMapping: nextMapping };
+    });
+  }, [columnOptions, draft.datasetId, draft.boundConfigId]);
 
   const selectPack = (packKey: string) => {
     const pack = packs.find((item) => item.packKey === packKey);
@@ -94,32 +114,40 @@ export function useStandardAnalysisEditor() {
     setBootstrapped(true);
   }, [bootstrapped, editingKey, isCreating, packs, searchParams]);
 
-  const onSave = async () => {
+  const onSave = async (): Promise<boolean> => {
+    if (savingRef.current || upsert.isPending) return false;
     if (!draft.packKey.trim()) {
-      toast.error("请填写分析包标识");
-      return;
+      toast.error("请填写分析包标识", { id: "std-pack-save" });
+      return false;
     }
     if (!draft.displayName.trim()) {
-      toast.error("请填写显示名称");
-      return;
+      toast.error("请填写显示名称", { id: "std-pack-save" });
+      return false;
     }
     if (!draft.datasetId && !draft.physicalTableFqn) {
-      toast.error("请选择数据集");
-      return;
+      toast.error("请选择数据集", { id: "std-pack-save" });
+      return false;
     }
     if (draft.datasetId && !draft.boundConfigId) {
-      toast.error("请完成数据集查询绑定");
-      return;
+      toast.error("请完成数据集查询绑定", { id: "std-pack-save" });
+      return false;
     }
     if (!draft.dataSourceId) {
-      toast.error("数据源未就绪，请确认数据集已绑定查询");
-      return;
+      toast.error("数据源未就绪，请确认数据集已绑定查询", { id: "std-pack-save" });
+      return false;
     }
     if (draft.enabledThemes.length === 0) {
-      toast.error("请至少启用一个分析主题");
-      return;
+      toast.error("请至少启用一个分析主题", { id: "std-pack-save" });
+      return false;
     }
 
+    const mappingError = validateStandardPackDraft(draft, columnOptions);
+    if (mappingError) {
+      toast.error(mappingError, { id: "std-pack-save" });
+      return false;
+    }
+
+    savingRef.current = true;
     try {
       const body = buildStandardAnalysisSaveBody(draft);
       const saved = await upsert.mutateAsync({ packKey: draft.packKey, body });
@@ -131,9 +159,13 @@ export function useStandardAnalysisEditor() {
       const params = new URLSearchParams(searchParams);
       params.set(STANDARD_PACK_QUERY, saved.packKey);
       setSearchParams(params, { replace: true });
-      toast.success("分析包已保存");
+      toast.success("分析包已保存", { id: "std-pack-save" });
+      return true;
     } catch (err) {
-      toast.error(mapApiError(err));
+      toast.error(mapApiError(err), { id: "std-pack-save" });
+      return false;
+    } finally {
+      savingRef.current = false;
     }
   };
 

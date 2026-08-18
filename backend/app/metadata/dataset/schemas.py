@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import re
 import uuid
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+SourceHealth = Literal["active", "missing", "none"]
 
 _DATASET_ID_RE = re.compile(r"^[a-z][a-z0-9_-]{1,63}$")
 
@@ -50,6 +53,7 @@ class DatasetItemOut(BaseModel):
     sync_job_id: uuid.UUID | None = Field(default=None, alias="syncJobId")
     transform_rules: list[dict[str, object]] = Field(default_factory=list, alias="transformRules")
     is_demo_package: bool = Field(default=False, alias="isDemoPackage")
+    source_health: SourceHealth = Field(default="none", alias="sourceHealth")
 
 
 class DatasetTransformRulesIn(BaseModel):

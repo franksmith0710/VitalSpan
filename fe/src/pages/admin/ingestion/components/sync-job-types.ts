@@ -1,3 +1,5 @@
+import type { SourceHealth } from "@/lib/sourceHealth";
+
 export type SyncJobLastRun = {
   status: string;
   started_at: string;
@@ -24,6 +26,7 @@ export type SyncJobSummary = {
   schedule_cron: string | null;
   last_run?: SyncJobLastRun | null;
   consume_status?: SyncJobConsumeStatus | null;
+  source_health?: SourceHealth | null;
 };
 
 export type SyncJobListResponse = {

@@ -129,6 +129,18 @@ describe("chartExecuteProbe shared execute", () => {
     expect(isChartExecuteReady(config)).toBe(false);
   });
 
+  it("treats nativeBody.dataBinding manual placeholder as ready when dataset is bound", () => {
+    const config = {
+      ...datasetReadyConfig(),
+      chartType: "gauge" as const,
+      nativeBody: {
+        dataBinding: { status: "manual" },
+        deStyle: { title: { show: true } },
+      },
+    };
+    expect(isChartExecuteReady(config)).toBe(true);
+  });
+
   it("keeps binding key stable when only deStyle changes", () => {
     const base = datasetReadyConfig();
     const styled = patchChartDeStyle(base, {

@@ -16,6 +16,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { ListHeaderCheckbox, ListRowCheckbox, listTableSelectCellClass, listTableSelectHeadClass } from "@/components/layout/list-batch-delete";
+import { SourceHealthBadge } from "@/components/datasources/SourceHealthBadge";
 import { Badge } from "@/components/ui/badge";
 import { IconButton } from "@/components/ui/button";
 import {
@@ -213,9 +214,12 @@ export function SyncJobsTable({
                 </div>
               </td>
               <td className="px-4 py-3">
-                <Badge variant="light" color="primary" size="sm">
-                  {sourceSummaryLabel(job)}
-                </Badge>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="light" color="primary" size="sm">
+                    {sourceSummaryLabel(job)}
+                  </Badge>
+                  <SourceHealthBadge health={job.source_health} />
+                </div>
               </td>
               <td className="px-4 py-3">
                 <Badge variant="light" color={job.sync_mode === "incremental" ? "warning" : "light"} size="sm">

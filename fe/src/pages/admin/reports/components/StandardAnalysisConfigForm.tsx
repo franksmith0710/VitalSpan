@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { CalendarClock, ChevronDown, ChevronRight, Database, Table2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -32,7 +32,7 @@ type Props = {
   showSavedHint?: boolean;
   onDismissSavedHint?: () => void;
   onChange: (updater: (current: AnalysisPack) => AnalysisPack) => void;
-  onSave: () => void;
+  onSave: () => Promise<boolean>;
   onDelete: () => void;
 };
 
@@ -115,6 +115,7 @@ export function StandardAnalysisConfigForm({
   onSave,
   onDelete,
 }: Props) {
+  const scrollRef = useRef<HTMLDivElement>(null);
   const handleChange = (updater: (current: AnalysisPack) => AnalysisPack) => {
     onDismissSavedHint?.();
     onChange(updater);
@@ -127,7 +128,12 @@ export function StandardAnalysisConfigForm({
       className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
       onSubmit={(event) => {
         event.preventDefault();
-        onSave();
+        void (async () => {
+          const saved = await onSave();
+          if (saved) {
+            scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+          }
+        })();
       }}
     >
       <div className="shrink-0 border-b border-gray-200 bg-gray-50/40 px-5 py-4 dark:border-gray-800 dark:bg-white/[0.02]">
@@ -148,7 +154,7 @@ export function StandardAnalysisConfigForm({
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto bg-gray-50/30 dark:bg-transparent">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto bg-gray-50/30 dark:bg-transparent">
         <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-5">
           {showSavedHint && editingKey ? (
             <Alert severity="success" appearance="soft">
@@ -222,7 +228,8 @@ export function StandardAnalysisConfigForm({
               onSuggestedDataSourceId={(dataSourceId) =>
                 handleChange((current) => ({ ...current, dataSourceId }))
               }
-              boundSuccessMessage="查询绑定已同步，请保存分析包使配置生效。"
+              boundPendingHint="查询绑定已更新，请点击底部「保存」使配置生效。"
+              hideBoundPendingHint={showSavedHint}
             />
             <StandardAnalysisFieldMappingFields
               draft={draft}
@@ -311,9 +318,13 @@ export function StandardAnalysisConfigForm({
 
       <ListPageFooter>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-            {isCreating ? "填写完成后保存以创建分析包。" : "修改后点击保存生效。"}
-          </p>
+          {showSavedHint ? (
+            <p className="text-theme-xs font-medium text-success-600 dark:text-success-400">分析包已保存</p>
+          ) : (
+            <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+              {isCreating ? "填写完成后保存以创建分析包。" : "修改后点击保存生效。"}
+            </p>
+          )}
           <div className="flex flex-wrap items-center gap-2">
             {editingKey && !isCreating ? (
               <Button type="button" variant="destructive" size="sm" disabled={deleting || saving} onClick={onDelete}>
