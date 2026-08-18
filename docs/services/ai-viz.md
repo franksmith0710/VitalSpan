@@ -5,14 +5,15 @@
 | 模块路径 | `backend/app/ai_viz/` |
 | PRD | [F17-AIVIZ](../automate/prd/F17-AIVIZ.md) |
 | 里程碑 | 试点 |
-| 状态 | **部分**（库源码 + 唯一 Base 宿主 + Payload v1） |
+| 状态 | **部分**（库源码 + 唯一 Base 宿主 + Payload v1 + vsCv/d3） |
 
 ## 职责
 
 - 自定义可视化源码存储与校验（HTML bundle 落库）
 - 对外规范包索引：`docs/api/vs-ai-spec/`
 - 与看板 `customViz` widget 衔接：**一个** Base（`CustomVizWidget`）按 `artifactId` 异步加载 entry HTML（不进 49 chartTypes catalog）
-- 运行时 Payload v1：`protocolVersion` + `bindingStatus` + execute 结果，经 `vs-cv-payload-update` 推送给 bundle
+- 运行时 Payload v1：`protocolVersion` + `bindingStatus` + execute 结果；宿主挂 `vsCv`（`getPayload` / `onPayload` / 平台 `d3`）
+- bundle 体积 ≤2MB；`manifest.runtime` 仅 `html`|`d3`；拒绝内联 d3 整库
 
 ## 边界
 
@@ -22,7 +23,7 @@
 | bundle 扫描（禁外链脚本、体积上限） | AI 生成 SQL |
 | `customViz` layout 契约 | 一组件一 tsx/py 发版 |
 | Payload v1 与 `vs-cv-payload-update` 契约 | iframe/沙箱隔离（本产品线不做） |
-| 可选 D3 / 渲染器创作指南（`guides/`、`theme-tokens.json`） | 强制 customViz 使用 D3；动态注册 chartType |
+| `vsCv.d3` 与 html/d3 runtime 指南 | ECharts/AntV runtime；iframe 沙箱；动态注册 chartType |
 
 ## 依赖
 

@@ -9,7 +9,9 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.datasources.models import Base
 
-MAX_BUNDLE_BYTES = 512 * 1024
+MAX_BUNDLE_BYTES = 2 * 1024 * 1024
+INLINE_D3_MIN_BYTES = 200 * 1024
+ALLOWED_RUNTIMES = ("html", "d3")
 FORBIDDEN_HTML_PATTERNS = (
     re.compile(r"<script[^>]+src\s*=", re.IGNORECASE),
     re.compile(r"\bon\w+\s*=", re.IGNORECASE),
@@ -73,6 +75,17 @@ def validate_manifest(manifest: dict) -> None:
             422,
         )
 
+    runtime = manifest.get("runtime")
+    if runtime is None:
+        hint = manifest.get("rendererHint")
+        runtime = "d3" if hint == "d3" else "html"
+    if runtime not in ALLOWED_RUNTIMES:
+        raise AiVizError(
+            "AIVIZ_INVALID_MANIFEST",
+            "manifest.runtime must be 'html' or 'd3'",
+            422,
+        )
+
 
 def validate_bundle_files(files: dict[str, str], entry: str) -> None:
     from app.ai_viz.errors import AiVizError
@@ -81,10 +94,17 @@ def validate_bundle_files(files: dict[str, str], entry: str) -> None:
         raise AiVizError("AIVIZ_MISSING_ENTRY", f"files must include entry {entry!r}", 422)
     total = sum(len(v.encode("utf-8")) for v in files.values())
     if total > MAX_BUNDLE_BYTES:
-        raise AiVizError("AIVIZ_BUNDLE_TOO_LARGE", "bundle exceeds 512KB limit", 413)
+        raise AiVizError("AIVIZ_BUNDLE_TOO_LARGE", "bundle exceeds 2MB limit", 413)
     for name, content in files.items():
         if not name.endswith((".html", ".css", ".svg")):
             raise AiVizError("AIVIZ_INVALID_FILE", f"unsupported file name: {name}", 422)
+        encoded = content.encode("utf-8")
+        if len(encoded) >= INLINE_D3_MIN_BYTES and "d3.version" in content:
+            raise AiVizError(
+                "AIVIZ_INLINE_D3_FORBIDDEN",
+                "do not inline the d3 library; use host.vsCv.d3",
+                422,
+            )
         for pattern in FORBIDDEN_HTML_PATTERNS:
             if pattern.search(content):
                 raise AiVizError(

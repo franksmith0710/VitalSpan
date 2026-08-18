@@ -1,6 +1,7 @@
 import { Component, type CSSProperties, type ErrorInfo, type ReactNode } from "react";
 import type { DashboardStyleConfig } from "./dashboardStyleConfig";
 import { getDashboardThemeTokens, themeTokensToScopeVars } from "./dashboardThemeTokens";
+import { attachCustomVizRuntime } from "./custom-viz/customVizRuntime";
 
 export const CUSTOM_VIZ_HOST_CLASS = "vs-custom-viz-host";
 
@@ -39,9 +40,31 @@ function importStyle(styleEl: HTMLStyleElement): HTMLStyleElement {
   return clone;
 }
 
+function runInsertedScriptIfNeeded(scriptEl: HTMLScriptElement, source: string): void {
+  // 浏览器会执行 createElement('script') 后 append 的脚本；jsdom 默认不会。
+  if (!/jsdom/i.test(navigator.userAgent)) return;
+  const previous = Object.getOwnPropertyDescriptor(Document.prototype, "currentScript")
+    ?? Object.getOwnPropertyDescriptor(document, "currentScript");
+  Object.defineProperty(document, "currentScript", {
+    configurable: true,
+    get: () => scriptEl,
+  });
+  try {
+    // eslint-disable-next-line no-new-func -- 与浏览器执行 bundle 源码同路径
+    new Function(source)();
+  } finally {
+    if (previous) {
+      Object.defineProperty(document, "currentScript", previous);
+    } else {
+      delete (document as { currentScript?: unknown }).currentScript;
+    }
+  }
+}
+
 /** 把库里的 HTML 源码挂进主页面 Base（innerHTML 不会跑 script，需重建）。 */
 export function mountCustomVizHtml(host: HTMLElement, html: string): () => void {
   host.replaceChildren();
+  const detachRuntime = attachCustomVizRuntime(host);
   const parsed = new DOMParser().parseFromString(html, "text/html");
   const fragment = document.createDocumentFragment();
 
@@ -67,9 +90,11 @@ export function mountCustomVizHtml(host: HTMLElement, html: string): () => void 
     const script = document.createElement("script");
     script.textContent = source;
     host.appendChild(script);
+    runInsertedScriptIfNeeded(script, source);
   }
 
   return () => {
+    detachRuntime();
     host.replaceChildren();
   };
 }

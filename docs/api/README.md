@@ -5,8 +5,8 @@
 > **真理源**：行为需求见 [SRS §6](../srs/全生命周期系统需求规格说明书.md#6-接口需求)；功能项见 [PRD API-001~007](../automate/prd/F13-API.md)。
 
 ```yaml
-version: 1.0.12
-last_updated: 2026-08-14
+version: 1.0.15
+last_updated: 2026-08-18
 api_prefix: /api/v1
 openapi_docs: /docs
 redoc: /redoc
@@ -639,6 +639,7 @@ redoc: /redoc
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.0.15 | 2026-08-18 | AI 可视化：customViz `runtime` 仅 html\|d3；`host.vsCv` 注入平台 d3；整包 ≤2MB；拒绝内联 d3 整库 |
 | 1.0.14 | 2026-08-18 | AI 可视化：登记 CustomViz Payload v1（`protocolVersion` + `bindingStatus`）；官方 bundle 示例对齐 `vs-cv-payload-update` |
 | 1.0.13 | 2026-08-13 | 用户 `imAccounts`；调度 `notifyGroup` / `feishu`；delivery-health 含 IM App 配置布尔 |
 | 1.0.12 | 2026-08-13 | AI 可视化：登记 `PUT /ai-viz/artifacts/{id}`；entry 改为 Base 宿主挂载源码 |

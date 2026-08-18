@@ -168,7 +168,7 @@ flowchart TB
 - **引擎**：平台内 **薄 MapLibre**（`GisMapView` 懒加载 `maplibre-gl`）；**不做** iframe / sandbox / GeoLibre 整应用
 - **默认底图**：`blank`（空白）或 `china-provinces`（离线中国省界 GeoJSON 矢量层）；**禁止**默认 OpenFreeMap / 高德 / 天地图 / Cesium Ion
 - **配置**：layout 存 `nativeBody.gisProject`（`basemap` + `view`）；加载时兼容读取旧 `geolibreProject` 并映射为 `gisProject`
-- **AI**：vs-ai-spec **L1/L2** 产出 `gisProject` 补丁；禁止 L3 customViz 内嵌 MapLibre
+- **AI**：vs-ai-spec **L1/L2** 产出 `gisProject` 补丁；禁止 L3 customViz 内嵌 MapLibre。L3 仅 `html`/`d3` runtime，使用平台注入的 `host.vsCv.d3`（d3@7.9.0），禁止内联 d3 整库
 - **出数**：Dataset 查询在父页完成；引擎不持有 JWT（二期：Dataset→GeoJSON join；一期仅离线省界/空白）
 - **导出**：Playwright PDF 对 WebGL 不稳定 → 允许空白/静态降级（见 ADR-18 补充）
 - **代码锚点**：`fe/src/components/charts/engine/maplibre/` · `backend/app/viz/builtin/map.py`

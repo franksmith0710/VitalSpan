@@ -59,9 +59,8 @@ describe("CustomVizWidget", () => {
       />,
     );
     await waitFor(() => {
-      expect(screen.getByTestId("custom-viz-host")).toBeInTheDocument();
+      expect(screen.getByText("custom")).toBeInTheDocument();
     });
-    expect(screen.getByText("custom")).toBeInTheDocument();
     expect(screen.queryByTitle("AI")).not.toBeInTheDocument();
     expect(screen.getByTestId("custom-viz-host")).toHaveClass("vs-custom-viz-host");
   });

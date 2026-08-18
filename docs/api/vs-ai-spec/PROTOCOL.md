@@ -27,6 +27,7 @@
       "accentColor": "#3b82f6",
       "barHeight": 24
     },
+    "runtime": "html",
     "rendererHint": "vanilla"
   },
   "files": {
@@ -35,18 +36,18 @@
 }
 ```
 
-## 渲染器选择（可选，不强制）
+## 渲染器（仅 html / d3）
 
-customViz bundle **不限定**渲染技术栈。可选用原生 DOM/CSS、Canvas、SVG、内联 D3 等任意方式，须仍遵守下方安全约束。
+customViz **只支持两种 runtime**。ECharts / AntV 不提供；标准图走 L1/L2 `chartConfig`。
 
-| 项 | 说明 |
-|----|------|
-| 默认 | 不声明 `rendererHint`，平台不推断、不校验 |
-| 可选元数据 | `manifest.rendererHint`: `"d3"` \| `"vanilla"` \| `"canvas"` \| `"svg"` |
-| 平台行为 | **仅元数据**；[`validate_bundle_files`](../../../backend/app/ai_viz/models.py) 不校验、不拒绝 |
-| D3 说明 | 选用 D3 **不等于**平台内置 D3 引擎；须在 bundle 内 **内联** D3 或子集，见 [guides/D3-OPTIONAL.md](./guides/D3-OPTIONAL.md) |
-| 风格对齐 | Base 宿主注入 `--dashboard-*`；bundle **推荐**使用 [theme-tokens.json](./theme-tokens.json) |
-| 渲染器索引 | 见 [guides/RENDERERS.md](./guides/RENDERERS.md) |
+| `manifest.runtime` | 说明 |
+|--------------------|------|
+| `html`（默认） | DOM / CSS / SVG / Canvas；读 `host.vsCv` 的 payload |
+| `d3` | 使用平台注入的 **d3@7.9.0**（`host.vsCv.d3`），**禁止**把 d3 整库打进制品 |
+
+未声明 `runtime` 时：若旧字段 `rendererHint === "d3"` 则视为 `d3`，否则 `html`。`rendererHint` 仅为兼容别名。
+
+Base 在跑 bundle 脚本前给宿主挂 `host.vsCv`：`getPayload()`、`onPayload(fn)`、`d3`。见下方 vsCv。
 
 ## 加载方式
 
@@ -61,7 +62,9 @@ customViz bundle **不限定**渲染技术栈。可选用原生 DOM/CSS、Canvas
 | 单文件入口 | `manifest.entry` 默认 `index.html`，须存在于 `files` |
 | 禁外链脚本 | 不得含 `<script src="http...">` 或 `//cdn` |
 | 禁内联事件 | 不得含 `onload=`、`onclick=` 等 |
-| 大小上限 | 整包 ≤ 512KB（含 HTML） |
+| 大小上限 | 整包 ≤ **2MB**（仅组件 HTML/CSS/内联脚本；**不含**平台 d3） |
+| 禁内联 d3 整库 | 单文件 ≥200KB 且含 `d3.version` → 422 `AIVIZ_INLINE_D3_FORBIDDEN`，改用 `host.vsCv.d3` |
+| runtime | `html` 或 `d3`（见上表） |
 | 数据槽位 | **必填** `manifest.fieldSlots`：`dimensions` 与 `metrics` 均须 `min >= 1` |
 | 样式声明 | **必填** `manifest.styleSchema.properties`（至少 1 项）；推荐同时提供 `defaultStyle`；**可声明平台从未出现过的样式键**，见 [guides/STYLE-SCHEMA.md](./guides/STYLE-SCHEMA.md) |
 | 节点 ID | 禁止 `id="root"` / `id="app"`（与平台 SPA 冲突）；多实例时 ID 须唯一 |
@@ -121,9 +124,23 @@ Base 在绑定就绪后走 `query/execute`，并**始终**向 `.vs-custom-viz-ho
 
 AI 可在 `styleSchema` 中自由声明颜色、滑块、开关、下拉、文本等控件类型，平台自动生成配置栏，详见 [guides/STYLE-SCHEMA.md](./guides/STYLE-SCHEMA.md)。
 
-bundle 内脚本**必须**监听宿主上的 **`vs-cv-payload-update`** 自定义事件（`event.detail` 即 Payload v1）；可读取 `.vs-cv-payload` 做首次渲染。**禁止**对宿主使用 `MutationObserver` 监听 payload 变化（易与 Base 注入死循环）。推荐用 `getComputedStyle(host)` 读 `--vs-style-*`。
+### vsCv（推荐）
 
-未绑定时 bundle 应依据 `bindingStatus === "unbound"` 显示引导文案，**不要**假装已有业务数据。
+```js
+var host = document.currentScript.parentElement;
+var vsCv = host.vsCv;
+function render(p) {
+  p = p || vsCv.getPayload();
+  if (!p || p.bindingStatus !== "bound") return;
+  vsCv.d3.select(host).select("#vs-cv-chart"); // runtime=d3
+}
+render();
+vsCv.onPayload(render);
+```
+
+也可继续监听 **`vs-cv-payload-update`**。**禁止** MutationObserver 盯宿主。推荐 `getComputedStyle(host)` 读 `--vs-style-*`。
+
+未绑定时依据 `bindingStatus === "unbound"` 显示引导，**不要**假装已有业务数据。
 
 ## 数据（第一期）
 

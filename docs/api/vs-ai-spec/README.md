@@ -8,7 +8,7 @@
 | 路径 | AI 产出 | 平台能力 |
 |------|---------|----------|
 | **L1/L2 配置已有图** | `chartConfig` + `nativeBody.deStyle` / `gisProject` | 50 种 `chartType`（含 `gis-map`）；见 `capability-manifest.json` |
-| **L3 全新组件** | HTML 源码 bundle + `manifest.json` | `POST/PUT /api/v1/ai-viz/artifacts` → 一个 Base（`CustomVizWidget`）异步加载；渲染器 **可选**，见 [guides/RENDERERS.md](./guides/RENDERERS.md) |
+| **L3 全新组件** | HTML 源码 bundle + `manifest.json`（`runtime`: `html` 或 `d3`） | `POST/PUT /api/v1/ai-viz/artifacts` → Base 挂载并注入 `host.vsCv`（含平台 d3）；见 [PROTOCOL.md](./PROTOCOL.md) · [guides/RENDERERS.md](./guides/RENDERERS.md) |
 | **拼大屏** | `layoutJson` v2（混排 widget） | `PUT /api/v1/dashboards/{id}/editor-save` |
 
 ## 推荐工作流
@@ -23,8 +23,8 @@
 
 | 文件 | 说明 |
 |------|------|
-| [PROTOCOL.md](./PROTOCOL.md) | 自定义组件库协议：Base 加载、可选 `rendererHint`、PUT 覆盖 |
-| [guides/RENDERERS.md](./guides/RENDERERS.md) | 渲染器选择索引（不强制） |
+| [PROTOCOL.md](./PROTOCOL.md) | 自定义组件库协议：Base、`vsCv`、html/d3 runtime、PUT 覆盖 |
+| [guides/RENDERERS.md](./guides/RENDERERS.md) | 仅 html / d3；ECharts/AntV 不支持 |
 | [guides/STYLE-SCHEMA.md](./guides/STYLE-SCHEMA.md) | customViz 可自由声明的样式 schema（颜色/滑块/开关/下拉/分组） |
 | [theme-tokens.json](./theme-tokens.json) | 看板/D3 主题 token（推荐对齐内置 chart） |
 | [capability-manifest.json](./capability-manifest.json) | chartType + widgetType 能力清单（可 `scripts/export-vs-ai-spec.py` 刷新） |

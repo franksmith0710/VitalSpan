@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -16,6 +16,8 @@ class AiVizManifestIn(BaseModel):
     field_slots: dict[str, Any] | None = Field(default=None, alias="fieldSlots")
     style_schema: dict[str, Any] | None = Field(default=None, alias="styleSchema")
     default_style: dict[str, Any] | None = Field(default=None, alias="defaultStyle")
+    runtime: Literal["html", "d3"] | None = None
+    renderer_hint: str | None = Field(default=None, alias="rendererHint")
 
 
 class AiVizArtifactCreateIn(BaseModel):

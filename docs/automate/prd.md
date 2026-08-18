@@ -2,7 +2,7 @@
 
 ```yaml
 version: 1.2.123
-last_updated: 2026-08-13
+last_updated: 2026-08-18
 truth_source: true
 evolution_hub: true
 goal_ref: docs/automate/goal.md
@@ -201,7 +201,7 @@ domain_count: 16
 | F14-CAT.md | CAT-001 ~ CAT-007 | `prd/F14-CAT.md` |
 | F15-NFR.md | NFR-001 ~ NFR-008 | `prd/F15-NFR.md` |
 | F16-DATA.md | DATA-001 ~ DATA-005 · ETL-001 | `prd/F16-DATA.md` |
-| F17-AIVIZ.md | AIVIZ-001 ~ AIVIZ-009 | `prd/F17-AIVIZ.md` |
+| F17-AIVIZ.md | AIVIZ-001 ~ AIVIZ-011 | `prd/F17-AIVIZ.md` |
 
 ---
 

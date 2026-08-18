@@ -1,30 +1,31 @@
-# Custom Viz 渲染器选择（可选）
+# Custom Viz 渲染器选择
 
-> customViz bundle **不强制**任何渲染技术。`manifest.rendererHint` 仅为元数据，平台不校验、不拒绝。
+> L3 **只支持** `html` 与 `d3`。`manifest.runtime` 由后端校验。ECharts / AntV **不支持**（标准图走 L1/L2）。
 
-## 可选 rendererHint
+## runtime
 
 | 值 | 适用场景 | 示例 |
 |----|----------|------|
-| `vanilla` | 简单 DOM/CSS 排名条、KPI 卡片 | [custom-viz-bundle.json](../examples/custom-viz-bundle.json) |
-| `svg` | 手写 SVG 路径/图形 | 轻量图标、简单矢量 |
-| `canvas` | 像素级绘制、大量点 | 散点热力（仍须离线、无外链） |
-| `d3` | 比例尺、坐标轴、复杂交互 | [custom-viz-d3-bundle.json](../examples/custom-viz-d3-bundle.json) · [D3-OPTIONAL.md](./D3-OPTIONAL.md) |
+| `html` | DOM/CSS/SVG/Canvas、KPI、告警滚动 | [custom-viz-bundle.json](../examples/custom-viz-bundle.json) |
+| `d3` | 比例尺、坐标轴、复杂几何；用 `host.vsCv.d3` | [custom-viz-d3-bundle.json](../examples/custom-viz-d3-bundle.json) · [D3-OPTIONAL.md](./D3-OPTIONAL.md) |
 
-未声明 `rendererHint` 时，平台按普通 HTML bundle 处理。
+未声明 `runtime` 时：`rendererHint === "d3"` → `d3`，否则 `html`。
+
+`html` 下仍可用手写 SVG/Canvas；不必再单独声明 `svg`/`canvas` hint。
 
 ## 与内置 chart 的关系
 
 | 需求 | 推荐路径 |
 |------|----------|
-| 49 种已有 chartType 能表达（含 `gis-map`） | L1/L2：`chartConfig` + `deStyle` / `gisProject` |
-| 全新形态、运行时免发版 | L3：`customViz` + 自选渲染器（**非**平台 D3 引擎） |
-| 必须接 query / deStyle / 导出像素一致 | 原生 chartType 插件（合入仓库发版） |
+| 已有 chartType 能表达（含 `gis-map`） | L1/L2：`chartConfig` + `deStyle` / `gisProject` |
+| 全新形态、免发版 | L3：`customViz` + `html` 或 `d3` |
+| 必须接全套 deStyle / 导出像素一致 | 原生 chartType（合入仓库发版） |
+| ECharts / AntV option | **不支持**；用 L2 或放弃 |
 
-## 风格对齐（推荐，非强制）
+## 风格对齐
 
-无论选用何种渲染器，**推荐**在 bundle 内使用 [theme-tokens.json](../theme-tokens.json) 的 `--dashboard-*`。平台 Base 会把看板主题变量写到宿主上，与内置 chart 共用。
+推荐 [theme-tokens.json](../theme-tokens.json) 的 `--dashboard-*`。Base 会把主题变量写到宿主上。
 
-## 约束（所有渲染器共用）
+## 约束
 
-见 [PROTOCOL.md](../PROTOCOL.md)：禁外链 script、禁 inline 事件、整包 ≤512KB。源码由 Base 挂进主页面宿主。
+见 [PROTOCOL.md](../PROTOCOL.md)：禁 CDN、禁内联 d3 整库、整包 ≤2MB、`host.vsCv`。

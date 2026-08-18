@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { ArrowLeft, Plus } from "lucide-react";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { ListPageSection } from "@/components/layout/list-page-kit";
@@ -26,9 +26,11 @@ import { mapApiError } from "@/lib/apiError";
 import { StandardAnalysisConfigForm } from "./components/StandardAnalysisConfigForm";
 import { StandardAnalysisPackList } from "./components/StandardAnalysisPackList";
 import { STANDARD_WORKBENCH_GRID_CLASS } from "./components/standardAnalysisUi";
+import { STANDARD_PACK_QUERY, standardAnalysisPath } from "./standardRoutes";
 import { useStandardAnalysisEditor } from "./useStandardAnalysisEditor";
 
 export function StandardAnalysisConfigPage() {
+  const [searchParams] = useSearchParams();
   const editor = useStandardAnalysisEditor();
   const {
     packsQuery,
@@ -58,7 +60,11 @@ export function StandardAnalysisConfigPage() {
       description="管理分析包：绑定数据集、映射字段、周期快照与可选定时投递。"
       actions={
         <Button type="button" variant="outline" size="sm" className="h-10" asChild>
-          <Link to="/admin/reports/standard">
+          <Link
+            to={standardAnalysisPath(
+              searchParams.get(STANDARD_PACK_QUERY) ?? editingKey ?? undefined,
+            )}
+          >
             <ArrowLeft className="size-4" aria-hidden />
             返回查看结果
           </Link>

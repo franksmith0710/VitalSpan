@@ -10,10 +10,11 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const examplesDir = path.join(root, "docs/api/vs-ai-spec/examples");
 
 const RUNTIME_HELPERS =
-  "function readPayload(){var n=document.querySelector('.vs-cv-payload');if(!n||!n.textContent)return null;try{return JSON.parse(n.textContent)}catch(e){return null}}" +
+  "var host=document.currentScript&&document.currentScript.parentElement;" +
+  "function readPayload(){if(host&&host.vsCv&&host.vsCv.getPayload)return host.vsCv.getPayload();var n=(host||document).querySelector('.vs-cv-payload');if(!n||!n.textContent)return null;try{return JSON.parse(n.textContent)}catch(e){return null}}" +
   "function bindingStatusOf(p){if(!p)return 'unbound';return p.bindingStatus||((p.rows&&p.rows.length)?'bound':'unbound')}" +
   "function statusHint(p){var st=bindingStatusOf(p);if(st==='error')return(p&&p.error)||'数据加载失败';if(st==='empty')return'暂无数据';if(st==='unbound')return'请在右侧绑定数据集与字段';return null}" +
-  "function attachPayloadListener(render){render();var host=document.currentScript&&document.currentScript.parentElement;if(host&&host.classList.contains('vs-custom-viz-host')){host.addEventListener('vs-cv-payload-update',render)}}";
+  "function attachPayloadListener(render){render();if(host&&host.vsCv&&host.vsCv.onPayload){host.vsCv.onPayload(function(p){render(p)});return}if(host&&host.classList.contains('vs-custom-viz-host')){host.addEventListener('vs-cv-payload-update',render)}}";
 
 const BUNDLE_SCRIPT =
   "(function(){" +
@@ -25,8 +26,8 @@ const BUNDLE_SCRIPT =
 const D3_SCRIPT =
   "(function(){" +
   RUNTIME_HELPERS +
-  "var DEMO=[{n:'华东',v:92},{n:'华南',v:78},{n:'华北',v:65},{n:'西南',v:54}];function sel(q,r){return(r||document).querySelector(q)}function scaleBand(d,r,p){p=p==null?0.2:p;var n=d.length,st=(r[1]-r[0]-(n-1)*p)/n;return function(v){var i=d.indexOf(v);return i<0?undefined:r[0]+i*(st+p)};}scaleBand.bandwidth=function(d,r,p){p=p==null?0.2:p;var n=d.length;return(r[1]-r[0]-(n-1)*p)/n};function scaleLinear(d,r){var a=d[0],b=d[1],ra=r[0],rb=r[1];return function(v){return ra+(v-a)/(b-a||1)*(rb-ra)}}function dataFromPayload(p){var st=bindingStatusOf(p);if(st!=='bound'||!p||!p.rows||!p.rows.length)return null;var cols=p.columns||[];var di=cols.findIndex(function(c){return c!=='sum'&&c!=='count'});var mi=cols.findIndex(function(c,i){return i!==di});if(di<0)di=0;if(mi<0)mi=1;return p.rows.map(function(r){return{n:String(r[di]),v:Number(r[mi])||0}})}" +
-  "function render(){var p=readPayload();var svg=sel('#vs-cv-chart');if(!svg)return;var hint=statusHint(p);var data=dataFromPayload(p);svg.innerHTML='';if(hint||!data){var t=document.createElementNS('http://www.w3.org/2000/svg','text');t.setAttribute('x','50%');t.setAttribute('y','50%');t.setAttribute('text-anchor','middle');t.setAttribute('fill','var(--dashboard-text-muted,#98a2b3)');t.setAttribute('font-size','12');t.textContent=hint||'暂无数据';svg.appendChild(t);return}var w=svg.clientWidth||320,h=svg.clientHeight||200,pad=28,iw=w-pad*2,ih=h-pad*2;var g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('transform','translate('+pad+','+pad+')');svg.appendChild(g);var x=scaleBand(data.map(function(d){return d.n}),[0,iw]);var y=scaleLinear([0,Math.max.apply(null,data.map(function(d){return d.v}).concat([1]))],[ih,0]);var bw=scaleBand.bandwidth(data.map(function(d){return d.n}),[0,iw]);data.forEach(function(d){var rx=x(d.n),ry=y(d.v),bh=ih-y(d.v);var rect=document.createElementNS('http://www.w3.org/2000/svg','rect');rect.setAttribute('x',rx);rect.setAttribute('y',ry);rect.setAttribute('width',bw);rect.setAttribute('height',bh);rect.setAttribute('fill','var(--vs-d3-accent)');rect.setAttribute('rx','3');g.appendChild(rect);var tx=document.createElementNS('http://www.w3.org/2000/svg','text');tx.setAttribute('x',rx+bw/2);tx.setAttribute('y',ih+16);tx.setAttribute('text-anchor','middle');tx.textContent=d.n;g.appendChild(tx)})}" +
+  "function dataFromPayload(p){var st=bindingStatusOf(p);if(st!=='bound'||!p||!p.rows||!p.rows.length)return null;var cols=p.columns||[];var di=cols.findIndex(function(c){return c!=='sum'&&c!=='count'});var mi=cols.findIndex(function(c,i){return i!==di});if(di<0)di=0;if(mi<0)mi=1;return p.rows.map(function(r){return{n:String(r[di]),v:Number(r[mi])||0}})}" +
+  "function render(){var vsCv=host&&host.vsCv;var d3=vsCv&&vsCv.d3;var svgEl=document.getElementById('vs-cv-chart');if(!svgEl||!d3)return;var p=vsCv.getPayload?vsCv.getPayload():readPayload();var hint=statusHint(p);var data=dataFromPayload(p);var svg=d3.select(svgEl);svg.selectAll('*').remove();if(hint||!data){svg.append('text').attr('x','50%').attr('y','50%').attr('text-anchor','middle').attr('fill','var(--dashboard-text-muted,#98a2b3)').attr('font-size',12).text(hint||'暂无数据');return}var w=svgEl.clientWidth||320,h=svgEl.clientHeight||200,pad=28,iw=w-pad*2,ih=h-pad*2;var g=svg.append('g').attr('transform','translate('+pad+','+pad+')');var x=d3.scaleBand().domain(data.map(function(d){return d.n})).range([0,iw]).padding(0.2);var y=d3.scaleLinear().domain([0,d3.max(data,function(d){return d.v})||1]).nice().range([ih,0]);g.selectAll('rect').data(data).join('rect').attr('x',function(d){return x(d.n)}).attr('y',function(d){return y(d.v)}).attr('width',x.bandwidth()).attr('height',function(d){return ih-y(d.v)}).attr('fill','var(--vs-d3-accent)').attr('rx',3);g.selectAll('text.lbl').data(data).join('text').attr('class','lbl').attr('x',function(d){return (x(d.n)||0)+x.bandwidth()/2}).attr('y',ih+16).attr('text-anchor','middle').text(function(d){return d.n})}" +
   "attachPayloadListener(render)})();";
 
 const PULSE_KPI = {
@@ -49,6 +50,7 @@ const PULSE_KPI = {
     },
     defaultStyle: { accentColor: "#38bdf8", glowIntensity: 40, cardGap: 12 },
     rendererHint: "vanilla",
+    runtime: "html",
   },
   files: {},
 };
@@ -77,10 +79,12 @@ function patchFile(relPath, mutator) {
 }
 
 patchFile("custom-viz-bundle.json", (doc) => {
+  doc.manifest.runtime = "html";
   doc.files["index.html"] = patchHtmlScript(doc.files["index.html"], BUNDLE_SCRIPT);
 });
 
 patchFile("custom-viz-d3-bundle.json", (doc) => {
+  doc.manifest.runtime = "d3";
   doc.files["index.html"] = patchHtmlScript(doc.files["index.html"], D3_SCRIPT);
 });
 
@@ -103,10 +107,12 @@ const ALERT_FEED_SCRIPT =
   "attachPayloadListener(render)})();";
 
 patchFile("custom-viz-ring-progress.json", (doc) => {
+  doc.manifest.runtime = "html";
   doc.files["index.html"] = patchHtmlScript(doc.files["index.html"], RING_PROGRESS_SCRIPT);
 });
 
 patchFile("custom-viz-alert-feed.json", (doc) => {
+  doc.manifest.runtime = "html";
   doc.files["index.html"] = patchHtmlScript(doc.files["index.html"], ALERT_FEED_SCRIPT);
 });
 

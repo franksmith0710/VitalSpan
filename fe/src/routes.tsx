@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ReactNode } from "react";
-import { Navigate, Route, Routes } from "react-router";
+import { Navigate, Outlet, Route, Routes } from "react-router";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { RequireCapabilityName } from "@/components/auth/require-capability";
 import { AdminLayout } from "@/layouts/AdminLayout";
@@ -113,6 +113,11 @@ function Lazy({ children }: { children: ReactNode }) {
   return withRouteSuspense(children);
 }
 
+/** 标准分析消费页与配置页嵌套路由，避免 `reports/standard` 与 `reports/standard/config` 平铺时客户端导航不切换。 */
+function StandardAnalysisRouteOutlet() {
+  return <Outlet />;
+}
+
 export function AppRoutes() {
   return (
     <Routes>
@@ -214,8 +219,24 @@ export function AppRoutes() {
             }
           />
           <Route path="entities/overview" element={<RequireCapabilityName capability="theme:*"><EntityOverviewPage /></RequireCapabilityName>} />
-          <Route path="reports/standard" element={<RequireCapabilityName capability="report:read"><StandardAnalysisPage /></RequireCapabilityName>} />
-          <Route path="reports/standard/config" element={<RequireCapabilityName capability="report:manage"><StandardAnalysisConfigPage /></RequireCapabilityName>} />
+          <Route path="reports/standard" element={<StandardAnalysisRouteOutlet />}>
+            <Route
+              index
+              element={
+                <RequireCapabilityName capability="report:read">
+                  <StandardAnalysisPage />
+                </RequireCapabilityName>
+              }
+            />
+            <Route
+              path="config"
+              element={
+                <RequireCapabilityName capability="report:manage">
+                  <StandardAnalysisConfigPage />
+                </RequireCapabilityName>
+              }
+            />
+          </Route>
           <Route path="reports/center" element={<RequireCapabilityName capability="report:read"><Lazy><ReportCenterPage /></Lazy></RequireCapabilityName>} />
           <Route path="reports/view/:nodeId" element={<RequireCapabilityName capability="report:read"><ReportViewPage /></RequireCapabilityName>} />
           <Route path="reports/templates/:nodeId?" element={<RequireCapabilityName capability="report:manage"><ReportTemplatesPage /></RequireCapabilityName>} />
