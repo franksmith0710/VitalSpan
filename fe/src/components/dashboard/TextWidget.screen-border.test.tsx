@@ -23,7 +23,7 @@ describe("TextWidget screen border on pixel canvas", () => {
     vi.unstubAllGlobals();
   });
 
-  it("renders DE border svg in shape shell with non-zero layout height", () => {
+  it("renders DE border svg in shape shell with flex height chain", () => {
     const widget = asTextWidget(createScreenBorderWidget([], undefined, "border-1"));
     const { container } = render(
       <div
@@ -37,10 +37,13 @@ describe("TextWidget screen border on pixel canvas", () => {
 
     const content = screen.getByTestId("text-widget-content");
     expect(content).toBeInTheDocument();
-    expect(container.querySelector("[data-screen-border-de] svg")).not.toBeNull();
+    expect(content.className).toMatch(/\bh-full\b/);
+    expect(content.className).toMatch(/\bflex-1\b/);
+    expect(container.querySelector("[data-screen-border] svg")).not.toBeNull();
 
-    const host = screen.getByTestId("pixel-host");
-    expect(host.getBoundingClientRect().height).toBeGreaterThan(0);
-    expect(content.getBoundingClientRect().height).toBeGreaterThan(0);
+    const outer = content.parentElement;
+    expect(outer?.className).toMatch(/\bh-full\b/);
+    expect(outer?.className).toMatch(/\bflex-1\b/);
+    expect(outer?.className).toMatch(/\bflex-col\b/);
   });
 });

@@ -5,7 +5,7 @@
 | 日期 | 2026-08-18 |
 | 主模式 | **Thrash** |
 | 子类型 | Bug（插入 + 渲染） |
-| 状态 | **draft**（待审批后实现 P0 渲染修复） |
+| 状态 | **done**（P0+P1 已合入，单测 13/13 绿） |
 | 正确性标准 | 数据大屏编辑页：素材库点「边框1–9」→ 画布出现可拖拽的边框装饰组件，选中后可见青色 DE 边框 SVG |
 | 效果标准 | 默认插入尺寸约 320×240，落点视口中心；与预览缩略图一致；不被 Tab/图表遮挡为 0 尺寸 |
 | 启用维度 | `ui-vertical` |
@@ -140,6 +140,7 @@
 | 项 | 状态 |
 |----|------|
 | `resolvePaletteInsertTabHost` | ✅ 已合入 |
-| `TextWidget` 高度链修复 | ❌ 未合入 |
-| `index.css` 高度链 | ❌ 未合入 |
-| `PixelShape` 跳图例壳 | ❌ 未合入 |
+| `TextWidget` 高度链修复 | ✅ 已合入 |
+| `index.css` 高度链 | ✅ 已合入 |
+| `PixelShape` 跳图例壳 | ✅ 已合入 |
+| 单测 `TextWidget.screen-border` + `tabInsertResolver` | ✅ 13/13 通过 |

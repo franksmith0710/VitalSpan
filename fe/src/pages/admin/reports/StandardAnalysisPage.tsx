@@ -67,7 +67,7 @@ export function StandardAnalysisPage() {
         </AdminPageHeaderIcon>
       }
       title="标准分析"
-      description="查看分析结果并与上期快照对比；配置数据绑定与快照请前往「标准分析配置」。"
+      description="查看分析结果并与上期快照对比；管理员可点击右上角「管理分析包」配置数据集与快照。"
       leadingActions={<ReportCenterBackLink />}
       actions={
         canManage ? (
