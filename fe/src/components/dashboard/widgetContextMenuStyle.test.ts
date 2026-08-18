@@ -55,4 +55,47 @@ describe("widgetContextMenuStyle", () => {
     expect(supportsWidgetQuickStyleAction({ type: "text" }, "toggleTitle")).toBe(false);
     expect(supportsWidgetQuickStyleAction({ type: "chart" }, "toggleTitle")).toBe(true);
   });
+
+  it("supports customViz shell quick actions", () => {
+    expect(supportsWidgetQuickStyleAction({ type: "customViz" }, "toggleBorder")).toBe(true);
+    expect(supportsWidgetQuickStyleAction({ type: "customViz" }, "toggleTitle")).toBe(false);
+  });
+
+  it("toggles customViz border via widgetStyle override", () => {
+    const widget = {
+      id: "w-cv",
+      type: "customViz" as const,
+      title: "外部组件",
+      colSpan: 6,
+      rowSpan: 4,
+      order: 0,
+      customVizConfig: {
+        artifactId: "550e8400-e29b-41d4-a716-446655440000",
+        widgetStyle: { borderEnabled: true },
+      },
+    };
+    const next = applyWidgetQuickStyleAction(widget, "toggleBorder", {
+      surface: "dashboard",
+      dashboardStyle: { widgetStyle: { borderEnabled: true } },
+    });
+    expect(next.customVizConfig?.widgetStyle?.borderEnabled).toBe(false);
+  });
+
+  it("inherits dashboard widgetStyle when customViz has no override", () => {
+    const widget = {
+      id: "w-cv",
+      type: "customViz" as const,
+      title: "外部组件",
+      colSpan: 6,
+      rowSpan: 4,
+      order: 0,
+      customVizConfig: { artifactId: "550e8400-e29b-41d4-a716-446655440000" },
+    };
+    const state = readWidgetShellStyleState(widget, {
+      surface: "dashboard",
+      dashboardStyle: { widgetStyle: { opacity: 0.6, borderEnabled: false } },
+    });
+    expect(state.opacity).toBe(0.6);
+    expect(state.borderEnabled).toBe(false);
+  });
 });

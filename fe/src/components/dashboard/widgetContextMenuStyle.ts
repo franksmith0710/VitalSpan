@@ -116,6 +116,17 @@ function patchWidgetStyleOverride(
           },
         },
       };
+    case "customViz":
+      return {
+        ...widget,
+        customVizConfig: {
+          ...(widget.customVizConfig ?? { artifactId: "" }),
+          widgetStyle: {
+            ...(widget.customVizConfig?.widgetStyle ?? {}),
+            ...stylePatch,
+          },
+        },
+      };
     default:
       return widget;
   }
@@ -296,7 +307,19 @@ export function supportsWidgetQuickStyleAction(
   if (action === "setPalette") return widget.type === "chart";
   if (action === "toggleTitle") return widget.type === "chart";
   if (action === "toggleBackdropBlur" || action === "toggleTransparentBg") {
-    return widget.type === "chart" || widget.type === "text" || widget.type === "media" || widget.type === "tabs";
+    return (
+      widget.type === "chart" ||
+      widget.type === "text" ||
+      widget.type === "media" ||
+      widget.type === "tabs" ||
+      widget.type === "customViz"
+    );
   }
-  return widget.type === "chart" || widget.type === "text" || widget.type === "media" || widget.type === "tabs";
+  return (
+    widget.type === "chart" ||
+    widget.type === "text" ||
+    widget.type === "media" ||
+    widget.type === "tabs" ||
+    widget.type === "customViz"
+  );
 }

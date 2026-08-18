@@ -18,6 +18,7 @@ const ADMIN_LIST_FILL_PATTERNS: RegExp[] = [
   /^\/admin\/ingestion\/sync-jobs\/?$/,
   /^\/admin\/reports\/standard\/results\/?$/,
   /^\/admin\/reports\/standard\/setup\/?$/,
+  /^\/admin\/reports\/templates(?:\/[^/]+)?\/?$/,
 ];
 
 const ADMIN_SCREEN_PREVIEW_PATTERN = /^\/admin\/data-screens\/[^/]+\/preview\/?$/;

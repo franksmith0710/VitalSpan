@@ -79,5 +79,8 @@ describe("CustomVizEditRail", () => {
     expect(screen.getByText("数据集")).toBeInTheDocument();
     expect(screen.getByTestId("custom-viz-data-slots")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "更新组件数据" })).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: "高级" }));
+    expect(screen.getByText("背景")).toBeInTheDocument();
+    expect(screen.getByRole("slider", { name: "背景不透明度" })).toBeInTheDocument();
   });
 });

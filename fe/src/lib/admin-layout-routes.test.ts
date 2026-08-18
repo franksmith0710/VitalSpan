@@ -28,6 +28,8 @@ describe("isAdminListFillRoute", () => {
     expect(isAdminListFillRoute("/admin/viz-components")).toBe(true);
     expect(isAdminListFillRoute("/admin/reports/standard/results")).toBe(true);
     expect(isAdminListFillRoute("/admin/reports/standard/setup")).toBe(true);
+    expect(isAdminListFillRoute("/admin/reports/templates")).toBe(true);
+    expect(isAdminListFillRoute("/admin/reports/templates/node-1")).toBe(true);
   });
 
   it("does not match edit or detail routes", () => {

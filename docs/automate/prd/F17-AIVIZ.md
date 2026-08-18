@@ -29,7 +29,7 @@
 - [x] AIVIZ-007：平台向宿主喂 query 结果（后续）
 - [x] AIVIZ-010：Payload v1（`protocolVersion` + `bindingStatus`）；Base 始终注入；bundle 仅监听 `vs-cv-payload-update`
 - [x] AIVIZ-012：GET meta/entry 有 `dashboard:read` 即可（共享看板）；列表与 PUT 仍仅属主；官方示例宿主内 querySelector
-- [x] AIVIZ-013：检查器「高级」单卡外壳走 `customVizConfig.widgetStyle`（与看板 `widgetStyle` 合并）；组件内视觉仅认 manifest `styleSchema` → payload `--vs-style-*`
+- [x] AIVIZ-013：单卡外壳与看板「组件外观 / 整体配置」同链路（`mergeWidgetOverrideStyle` + `mergeWidgetShellStyle`）；单卡可覆写 `customVizConfig.widgetStyle`；右键快捷样式与 media/tabs 同级；组件内视觉仅认 manifest `styleSchema` → payload `--vs-style-*`
 
 ## 代码锚点
 

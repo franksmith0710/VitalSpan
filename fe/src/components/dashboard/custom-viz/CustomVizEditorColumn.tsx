@@ -9,7 +9,7 @@ import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import type { CustomVizDataBinding, CustomVizWidgetConfig } from "../layoutUtils";
 import { ChartInspectorTabs } from "../ChartInspectorTabs";
 import { WidgetInspectorDelete } from "../widget-inspector-delete";
-import { WidgetSurfaceAppearanceFields } from "../widgetSurfaceStyleFields";
+import { WidgetShellBackgroundSection } from "../widgetRailStyleSections";
 import { cn } from "@/lib/utils";
 import { CustomVizDataOptions } from "./CustomVizDataOptions";
 import { CustomVizDataSlots } from "./CustomVizDataSlots";
@@ -59,6 +59,9 @@ export function CustomVizEditorColumn({
     manifest?.defaultStyle,
   );
   const styleValue = mergeCustomVizStyleValue(config.style, manifest?.defaultStyle);
+  const widgetStyle = config.widgetStyle ?? {};
+  const patchWidgetStyle = (stylePatch: Partial<typeof widgetStyle>) =>
+    onChange({ ...config, widgetStyle: { ...widgetStyle, ...stylePatch } });
 
   const validate = async () => {
     setError(null);
@@ -159,15 +162,11 @@ export function CustomVizEditorColumn({
           />
         }
         advanced={
-          <div className="space-y-3">
-            <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-              调整卡片外壳（背景、透明度等）。组件内部视觉请在「样式」页签中配置。
+          <div className="space-y-1">
+            <p className="px-2.5 pb-1 text-theme-xs text-gray-500 dark:text-gray-400">
+              未单独设置时跟随看板「组件外观」与「整体配置」。组件内部视觉请在「样式」页签中配置。
             </p>
-            <WidgetSurfaceAppearanceFields
-              value={config.widgetStyle ?? {}}
-              onChange={(widgetStyle) => onChange({ ...config, widgetStyle })}
-              density="narrow"
-            />
+            <WidgetShellBackgroundSection value={widgetStyle} onChange={patchWidgetStyle} />
           </div>
         }
       />

@@ -238,6 +238,22 @@ describe("AdminLayout smoke", () => {
     expect(main.className).toContain("overflow-y-auto");
   });
 
+  it("report templates workbench uses fill-height main (no scroll jump on node switch)", () => {
+    render(
+      <MemoryRouter initialEntries={["/admin/reports/templates/node-1"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="reports/templates/:nodeId?" element={<div>templates workbench</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    const main = screen.getAllByRole("main")[0];
+    expect(main.className).toContain("overflow-hidden");
+    expect(main.className).not.toContain("overflow-y-auto");
+    expect(document.documentElement.classList.contains("admin-fill-lock")).toBe(true);
+  });
+
   it("account profile uses full-width main", () => {
     render(
       <MemoryRouter initialEntries={["/admin/account/profile"]}>

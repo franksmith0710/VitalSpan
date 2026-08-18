@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router";
 import { FileText, FolderOpen, MousePointerClick } from "lucide-react";
 import { toast } from "sonner";
@@ -83,16 +83,19 @@ export function ReportTemplatesPage() {
 
   const handleSelect = useCallback(
     (id: string | null) => {
+      if (id === selectedId) return;
       if (id) prefetchExtension(id);
       setSelectedId(id);
       setSelectedOverride(null);
       if (id) {
-        navigate(`/admin/reports/templates/${id}`, { replace: true, preventScrollReset: true });
-      } else {
+        if (nodeId !== id) {
+          navigate(`/admin/reports/templates/${id}`, { replace: true, preventScrollReset: true });
+        }
+      } else if (nodeId) {
         navigate("/admin/reports/templates", { replace: true, preventScrollReset: true });
       }
     },
-    [navigate, prefetchExtension],
+    [navigate, nodeId, prefetchExtension, selectedId],
   );
 
   useEffect(() => {
