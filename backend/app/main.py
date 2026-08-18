@@ -116,7 +116,7 @@ async def lifespan(_app: FastAPI):
 
     assert_runtime_compliant()
     try:
-        reconciled = reconcile_stale_running_runs(max_age_seconds=120)
+        reconciled = reconcile_stale_running_runs(max_age_seconds=600)
         if reconciled:
             logger.info("ingestion_stale_runs_reconciled count=%s", reconciled)
     except Exception:

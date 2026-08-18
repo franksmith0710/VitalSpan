@@ -116,6 +116,24 @@ def test_demo_dataset_delete_protected(client, auth_headers, db_session) -> None
     assert res.json()["code"] == "META_DATASET_DEMO_PROTECTED"
 
 
+def test_demo_dataset_update_protected(client, auth_headers, db_session) -> None:
+    seed_demo_datasets(db_session)
+
+    res = client.put(
+        "/api/v1/datasets/demo-sales-detail",
+        headers=auth_headers,
+        json={
+            "datasetId": "demo-sales-detail",
+            "displayName": "【官方示例】销售明细（改）",
+            "tables": [{"name": "sales"}],
+            "computedFields": [],
+            "allowedRoles": ["analyst"],
+        },
+    )
+    assert res.status_code == 409
+    assert res.json()["code"] == "META_DATASET_DEMO_PROTECTED"
+
+
 def test_dataset_list_marks_demo_package(client, auth_headers, db_session) -> None:
     seed_demo_datasets(db_session)
 
@@ -165,3 +183,70 @@ def test_ensure_demo_dataset_bindings_idempotent(db_session) -> None:
 
     second = ensure_demo_dataset_bindings(db_session)
     assert second == 0
+
+
+def test_ensure_demo_dataset_bindings_repairs_stale_payload(db_session) -> None:
+    import uuid
+
+    from app.datasources.models import DataSource
+    from app.dashboard.templates.demo_datasource import OFFICIAL_DEMO_DATASOURCE_CODE
+    from app.query.config_store.models import QueryConfigRecord
+
+    demo_ds_id = uuid.uuid4()
+    stale_ds_id = uuid.uuid4()
+    db_session.add(
+        DataSource(
+            id=demo_ds_id,
+            name="示例数据",
+            code=OFFICIAL_DEMO_DATASOURCE_CODE,
+            type="mysql",
+            host="127.0.0.1",
+            port=3307,
+            database="sample_db",
+            username="sample",
+            password_encrypted="enc",
+        ),
+    )
+    db_session.add(
+        DataSource(
+            id=stale_ds_id,
+            name="托管分析库",
+            code="analytics",
+            type="postgresql",
+            host="127.0.0.1",
+            port=5433,
+            database="analytics",
+            username="vitalspan",
+            password_encrypted="enc",
+        ),
+    )
+    db_session.commit()
+
+    seed_demo_datasets(db_session)
+    ensure_demo_dataset_bindings(db_session)
+
+    row = db_session.get(DatasetRecord, "demo-sales-wide")
+    assert row is not None and row.bound_config_id is not None
+    record = db_session.get(QueryConfigRecord, row.bound_config_id)
+    assert record is not None
+    record.payload = {
+        **record.payload,
+        "dataSourceId": str(stale_ds_id),
+        "connectorType": "postgresql",
+        "schema": "",
+        "table": "de_sales_wide",
+    }
+    record.revision += 1
+    db_session.commit()
+
+    repaired = ensure_demo_dataset_bindings(db_session)
+    assert repaired >= 1
+
+    from app.dashboard.templates.demo_datasource import resolve_sample_db_datasource_id
+
+    expected_ds = resolve_sample_db_datasource_id(db_session)
+    assert expected_ds is not None
+    db_session.refresh(record)
+    assert record.payload["dataSourceId"] == str(expected_ds)
+    assert record.payload["connectorType"] == "mysql"
+    assert record.payload["schema"] == "sample_db"

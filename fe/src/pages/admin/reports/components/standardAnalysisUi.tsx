@@ -107,13 +107,16 @@ export function buildLiveSummaryMetrics(headers: string[], rows: unknown[][]) {
   const metrics: Array<{ label: string; value: string }> = [
     { label: "结果行数", value: String(rows.length) },
   ];
-  const numericIdx = headers.findIndex((header) => /^(cnt|count|total|sum|qty|amount)$/i.test(header));
+  const numericIdx = headers.findIndex((header) =>
+    /^(数量|cnt|count|total|sum|qty|amount)$/i.test(header),
+  );
   if (numericIdx >= 0) {
     const sum = rows.reduce((acc, row) => {
       const value = Number(row[numericIdx]);
       return Number.isFinite(value) ? acc + value : acc;
     }, 0);
-    metrics.push({ label: headers[numericIdx], value: String(sum) });
+    const label = headers[numericIdx] === "cnt" ? "数量合计" : `${headers[numericIdx]}合计`;
+    metrics.push({ label, value: String(sum) });
   }
   return metrics;
 }

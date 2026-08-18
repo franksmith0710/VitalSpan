@@ -23,14 +23,17 @@
 
 | 文件 | 说明 |
 |------|------|
+| [00-REQUIREMENTS.md](./00-REQUIREMENTS.md) | **规范硬要求**：必须 HTTP POST、合法 bundle、本机上传 |
+| [HANDOFF.md](./HANDOFF.md) | 联调环境占位、curl、误读对照 |
+| [CHANGELOG.md](./CHANGELOG.md) | 规范包修订 |
 | [PROTOCOL.md](./PROTOCOL.md) | 自定义组件库协议：Base、`vsCv`、html/d3 runtime、PUT 覆盖 |
 | [guides/RENDERERS.md](./guides/RENDERERS.md) | 仅 html / d3；ECharts/AntV 不支持 |
 | [guides/STYLE-SCHEMA.md](./guides/STYLE-SCHEMA.md) | customViz 可自由声明的样式 schema（颜色/滑块/开关/下拉/分组） |
 | [theme-tokens.json](./theme-tokens.json) | 看板/D3 主题 token（推荐对齐内置 chart） |
 | [capability-manifest.json](./capability-manifest.json) | chartType + widgetType 能力清单（可 `scripts/export-vs-ai-spec.py` 刷新） |
 | [style-vocabulary.json](./style-vocabulary.json) | 已接通 `deStyle` 字段词典 |
-| [schemas/](./schemas/) | JSON Schema |
-| [examples/](./examples/) | 黄金样例（含 vanilla 与 D3 对照 bundle） |
+| [schemas/](./schemas/) | JSON Schema（见 `schemas/README.md`） |
+| [examples/](./examples/) | 黄金样例（`runtime: html` 与 `d3`） |
 
 ## 鉴权
 

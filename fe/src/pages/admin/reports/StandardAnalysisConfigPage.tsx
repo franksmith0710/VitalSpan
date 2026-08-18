@@ -1,4 +1,4 @@
-import { Link, useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { ArrowLeft, Plus } from "lucide-react";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { ListPageSection } from "@/components/layout/list-page-kit";
@@ -30,6 +30,7 @@ import { STANDARD_PACK_QUERY, standardAnalysisPath } from "./standardRoutes";
 import { useStandardAnalysisEditor } from "./useStandardAnalysisEditor";
 
 export function StandardAnalysisConfigPage() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const editor = useStandardAnalysisEditor();
   const {
@@ -41,6 +42,7 @@ export function StandardAnalysisConfigPage() {
     isCreating,
     activePackKey,
     columnOptions,
+    columnKinds,
     deleteOpen,
     setDeleteOpen,
     selectPack,
@@ -59,15 +61,21 @@ export function StandardAnalysisConfigPage() {
       title="标准分析"
       description="管理分析包：绑定数据集、映射字段、周期快照与可选定时投递。"
       actions={
-        <Button type="button" variant="outline" size="sm" className="h-10" asChild>
-          <Link
-            to={standardAnalysisPath(
-              searchParams.get(STANDARD_PACK_QUERY) ?? editingKey ?? undefined,
-            )}
-          >
-            <ArrowLeft className="size-4" aria-hidden />
-            返回查看结果
-          </Link>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-10"
+          onClick={() =>
+            navigate(
+              standardAnalysisPath(
+                searchParams.get(STANDARD_PACK_QUERY) ?? editingKey ?? undefined,
+              ),
+            )
+          }
+        >
+          <ArrowLeft className="size-4" aria-hidden />
+          返回查看结果
         </Button>
       }
     >
@@ -133,6 +141,7 @@ export function StandardAnalysisConfigPage() {
               isCreating={isCreating}
               editingKey={editingKey}
               columnOptions={columnOptions}
+              columnKinds={columnKinds}
               saving={upsert.isPending}
               deleting={remove.isPending}
               showSavedHint={showSavedHint}

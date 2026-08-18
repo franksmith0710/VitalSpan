@@ -1,0 +1,20 @@
+# vs-ai-spec 变更
+
+## 2026-08-18c
+
+- 官方示例禁止 `document.getElementById`，改为宿主内 `querySelector`（同页多实例）
+- 联调：必须服务端/本机脚本 POST；浏览器跨域会 CORS 失败
+- GET artifact meta/entry：有 `dashboard:read` 即可（共享看板）；列表与 PUT 仍仅属主
+
+## 2026-08-18b
+
+- 增加 `00-REQUIREMENTS.md`：完成定义=HTTP 201+artifactId；禁止写桌面/打开本地 html
+- `tools/upload-ai-viz-artifact.py` 随包装走，本机可 POST 黄金样例
+
+## 2026-08-18
+
+- 明确 L3 runtime **仅 html | d3**（非 vanilla/react/webgl）
+- `schemas/layout-v2.schema.json` 作为 `layout.schema.json` 的文件名别名
+- 补 `styles.schema.json`、`tokens.schema.json`
+- artifact schema：`runtime`、单文件上限与后端 2MB 对齐
+- `HANDOFF.md` 增加误读对照

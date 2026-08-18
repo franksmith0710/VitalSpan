@@ -3,7 +3,12 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { LayoutWidget, TabsWidgetConfig } from "./layoutUtils";
-import { MediaWidgetStylePanel, TabsWidgetStylePanel, TextWidgetStylePanel } from "./widgetRailStyleSections";
+import {
+  MediaWidgetStylePanel,
+  mergeWidgetOverrideStyle,
+  TabsWidgetStylePanel,
+  TextWidgetStylePanel,
+} from "./widgetRailStyleSections";
 
 afterEach(cleanup);
 
@@ -90,5 +95,44 @@ describe("widgetRailStyleSections", () => {
 
     expect(screen.getByTestId("text-widget-style-panel")).toBeInTheDocument();
     expect(screen.getByText("当前内容：5 个字符")).toBeInTheDocument();
+  });
+
+  it("mergeWidgetOverrideStyle applies customViz widgetStyle over dashboard defaults", () => {
+    const widget: LayoutWidget = {
+      id: "w-cv",
+      type: "customViz",
+      title: "外部组件",
+      order: 1,
+      colSpan: 6,
+      rowSpan: 4,
+      customVizConfig: {
+        artifactId: "550e8400-e29b-41d4-a716-446655440000",
+        widgetStyle: { opacity: 0.5, background: "#112233" },
+      },
+    };
+
+    const merged = mergeWidgetOverrideStyle(
+      { opacity: 1, background: "#ffffff" },
+      widget,
+    );
+
+    expect(merged).toEqual({
+      opacity: 0.5,
+      background: "#112233",
+    });
+  });
+
+  it("mergeWidgetOverrideStyle returns undefined when neither dashboard nor customViz override", () => {
+    const widget: LayoutWidget = {
+      id: "w-cv-empty",
+      type: "customViz",
+      title: "外部组件",
+      order: 1,
+      colSpan: 6,
+      rowSpan: 4,
+      customVizConfig: { artifactId: "550e8400-e29b-41d4-a716-446655440000" },
+    };
+
+    expect(mergeWidgetOverrideStyle(undefined, widget)).toBeUndefined();
   });
 });

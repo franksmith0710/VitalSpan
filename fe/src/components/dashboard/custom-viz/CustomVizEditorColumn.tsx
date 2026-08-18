@@ -161,7 +161,7 @@ export function CustomVizEditorColumn({
         advanced={
           <div className="space-y-3">
             <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-              组件 ID：{config.artifactId || "—"}
+              调整卡片外壳（背景、透明度等）。组件内部视觉请在「样式」页签中配置。
             </p>
             <WidgetSurfaceAppearanceFields
               value={config.widgetStyle ?? {}}

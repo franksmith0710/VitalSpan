@@ -15,6 +15,7 @@ from app.dashboard.templates.demo_datasource import (
 )
 from app.metadata.dataset.demo_seed import DEMO_DATASET_SPECS, remap_retired_demo_datasets_in_layout
 from app.metadata.dataset.models import DatasetRecord
+from app.query.config_store.models import QueryConfigRecord
 from app.query.config_store.schemas import ConfigUpsert
 from app.query.config_store.service import upsert_config
 
@@ -42,14 +43,35 @@ def _stable_ref_id(dataset_id: str) -> uuid.UUID:
     return uuid.uuid5(uuid.NAMESPACE_DNS, f"vitalspan.demo.dataset.{dataset_id}")
 
 
+def _build_demo_binding_payload(
+    data_source_id: uuid.UUID,
+    binding: dict[str, object],
+) -> dict[str, object]:
+    schema = resolve_official_demo_connection().database
+    return {
+        "dataSourceId": str(data_source_id),
+        "connectorType": "mysql",
+        "schema": schema,
+        "table": binding["table"],
+        "columns": binding["columns"],
+        "conditions": {"logic": "AND", "conditions": []},
+        "limit": 1000,
+        "offset": 0,
+    }
+
+
+def _binding_payload_needs_repair(current: dict[str, object], expected: dict[str, object]) -> bool:
+    keys = ("dataSourceId", "connectorType", "schema", "table", "columns")
+    return any(current.get(key) != expected.get(key) for key in keys)
+
+
 def ensure_demo_dataset_bindings(db: Session) -> int:
-    """为尚未绑定 query config 的官方示例 Dataset 幂等创建并绑定 dataset_query。"""
+    """为官方示例 Dataset 幂等创建/修复 dataset_query 绑定。"""
     data_source_id = resolve_sample_db_datasource_id(db)
     if data_source_id is None:
         return 0
 
-    schema = resolve_official_demo_connection().database
-    bound = 0
+    touched = 0
 
     for spec in DEMO_DATASET_SPECS:
         dataset_id = spec["dataset_id"]
@@ -58,35 +80,60 @@ def ensure_demo_dataset_bindings(db: Session) -> int:
             continue
 
         row = db.get(DatasetRecord, dataset_id)
-        if row is None or row.bound_config_id is not None:
+        if row is None:
             continue
 
-        record = upsert_config(
-            db,
-            ConfigUpsert.model_validate(
-                {
-                    "configType": "dataset_query",
-                    "schemaVersion": "1.0",
-                    "refType": "dataset",
-                    "refId": str(_stable_ref_id(dataset_id)),
-                    "payload": {
-                        "dataSourceId": str(data_source_id),
-                        "connectorType": "mysql",
-                        "schema": schema,
-                        "table": binding["table"],
-                        "columns": binding["columns"],
-                        "conditions": {"logic": "AND", "conditions": []},
-                        "limit": 1000,
-                        "offset": 0,
-                    },
-                },
-            ),
-        )
-        row.bound_config_id = record.id
-        db.commit()
-        bound += 1
+        expected_payload = _build_demo_binding_payload(data_source_id, binding)
 
-    return bound
+        if row.bound_config_id is None:
+            record = upsert_config(
+                db,
+                ConfigUpsert.model_validate(
+                    {
+                        "configType": "dataset_query",
+                        "schemaVersion": "1.0",
+                        "refType": "dataset",
+                        "refId": str(_stable_ref_id(dataset_id)),
+                        "payload": expected_payload,
+                    },
+                ),
+            )
+            row.bound_config_id = record.id
+            db.commit()
+            touched += 1
+            continue
+
+        record = db.get(QueryConfigRecord, row.bound_config_id)
+        if record is None:
+            row.bound_config_id = None
+            db.commit()
+            record = upsert_config(
+                db,
+                ConfigUpsert.model_validate(
+                    {
+                        "configType": "dataset_query",
+                        "schemaVersion": "1.0",
+                        "refType": "dataset",
+                        "refId": str(_stable_ref_id(dataset_id)),
+                        "payload": expected_payload,
+                    },
+                ),
+            )
+            row.bound_config_id = record.id
+            db.commit()
+            touched += 1
+            continue
+
+        current_payload = record.payload if isinstance(record.payload, dict) else {}
+        if not _binding_payload_needs_repair(current_payload, expected_payload):
+            continue
+
+        record.payload = expected_payload
+        record.revision += 1
+        db.commit()
+        touched += 1
+
+    return touched
 
 
 def bind_demo_dataset_config_ids(db: Session, layout: dict[str, Any]) -> dict[str, Any]:

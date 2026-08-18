@@ -15,9 +15,11 @@ import type { DatasetComputedField } from "./types";
 export function ComputedFieldsEditor({
   fields,
   onChange,
+  disabled = false,
 }: {
   fields: DatasetComputedField[];
   onChange: (next: DatasetComputedField[]) => void;
+  disabled?: boolean;
 }) {
   const update = (index: number, patch: Partial<DatasetComputedField>) => {
     onChange(fields.map((f, i) => (i === index ? { ...f, ...patch } : f)));
@@ -44,16 +46,18 @@ export function ComputedFieldsEditor({
   return (
     <div className="grid gap-3">
       <div className="flex flex-wrap items-center justify-end gap-2">
-        <ListPageBatchActions
-          batchMode={batch.batchMode}
-          onToggleBatchMode={batch.toggleBatchMode}
-          selectedCount={selection.selectedCount}
-          entityLabel="个字段"
-          onClear={selection.clear}
-          onDelete={removeSelected}
-          className="mr-auto"
-        />
-        <Button type="button" variant="outline" size="sm" onClick={add}>
+        {!disabled ? (
+          <ListPageBatchActions
+            batchMode={batch.batchMode}
+            onToggleBatchMode={batch.toggleBatchMode}
+            selectedCount={selection.selectedCount}
+            entityLabel="个字段"
+            onClear={selection.clear}
+            onDelete={removeSelected}
+            className="mr-auto"
+          />
+        ) : null}
+        <Button type="button" variant="outline" size="sm" onClick={add} disabled={disabled}>
           <Plus className="size-4" aria-hidden />
           添加计算字段
         </Button>
@@ -94,6 +98,7 @@ export function ComputedFieldsEditor({
                   id={`cf-name-${index}`}
                   value={field.name}
                   placeholder="amt2"
+                  disabled={disabled}
                   onChange={(e) => update(index, { name: e.target.value })}
                 />
               </div>
@@ -106,6 +111,7 @@ export function ComputedFieldsEditor({
                   value={field.expression}
                   placeholder="amount * 2"
                   className="font-mono text-theme-xs"
+                  disabled={disabled}
                   onChange={(e) => update(index, { expression: e.target.value })}
                 />
               </div>
@@ -115,6 +121,7 @@ export function ComputedFieldsEditor({
                 size="sm"
                 className="justify-self-end sm:mb-0.5"
                 aria-label={`删除计算字段 ${field.name || index + 1}`}
+                disabled={disabled}
                 onClick={() => remove(index)}
               >
                 <Trash2 className="size-4" />

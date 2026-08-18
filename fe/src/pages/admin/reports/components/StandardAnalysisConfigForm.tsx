@@ -27,6 +27,7 @@ type Props = {
   isCreating: boolean;
   editingKey: string | null;
   columnOptions: string[];
+  columnKinds?: Record<string, import("@/components/dashboard/datasetFieldClassification").DatasetFieldKind>;
   saving: boolean;
   deleting: boolean;
   showSavedHint?: boolean;
@@ -107,6 +108,7 @@ export function StandardAnalysisConfigForm({
   isCreating,
   editingKey,
   columnOptions,
+  columnKinds,
   saving,
   deleting,
   showSavedHint,
@@ -223,10 +225,14 @@ export function StandardAnalysisConfigForm({
                 }))
               }
               onBoundConfigIdChange={(boundConfigId) =>
-                handleChange((current) => ({ ...current, boundConfigId }))
+                handleChange((current) =>
+                  current.boundConfigId === boundConfigId ? current : { ...current, boundConfigId },
+                )
               }
               onSuggestedDataSourceId={(dataSourceId) =>
-                handleChange((current) => ({ ...current, dataSourceId }))
+                handleChange((current) =>
+                  current.dataSourceId === dataSourceId ? current : { ...current, dataSourceId },
+                )
               }
               boundPendingHint="查询绑定已更新，请点击底部「保存」使配置生效。"
               hideBoundPendingHint={showSavedHint}
@@ -234,6 +240,7 @@ export function StandardAnalysisConfigForm({
             <StandardAnalysisFieldMappingFields
               draft={draft}
               columnOptions={columnOptions}
+              columnKinds={columnKinds}
               onChange={handleChange}
             />
           </ConfigSection>

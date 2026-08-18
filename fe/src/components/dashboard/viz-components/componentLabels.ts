@@ -27,7 +27,7 @@ export function resolveHubWidgetFilter(filter: VizComponentHubWidgetFilter): {
 
 export const VIZ_COMPONENTS_HUB = {
   title: "可视化组件库",
-  description: "管理可复用的图表、筛选器与装饰组件；在看板/大屏编辑页通过「复用」插入并自动同步更新。",
+  description: "管理可复用的图表、筛选器与装饰组件；在看板/大屏编辑页通过「复用」插入当时快照。",
   searchPlaceholder: "搜索组件名称…",
   searchAriaLabel: "搜索组件",
   allCategories: "全部分类",

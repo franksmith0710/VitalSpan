@@ -1,0 +1,111 @@
+# VitalSpan × DeepTalk 联调测试包
+
+**先读 [00-REQUIREMENTS.md](./00-REQUIREMENTS.md)**（完成定义、合法 JSON、本机上传命令）。下文是环境占位与误读对照。
+
+## 环境（由 VitalSpan 方口头提供，勿把密钥写进仓库）
+
+| 项 | 说明 |
+|----|------|
+| API 根 | `{API}`，例如 `http://127.0.0.1:8000/api/v1` |
+| 前端 | `{FE}`，例如 `http://127.0.0.1:5173/admin` |
+| 鉴权 | `Authorization: Bearer {JWT}`，写接口需要 `dashboard:edit` |
+| 测哪张大屏 | 由 VitalSpan 指定一条已有看板/大屏 URL |
+
+业务表数据**不要** POST 给我们。只交组件源码；行数据由用户在 VitalSpan 绑 Dataset 后平台 `query/execute` 注入。
+
+## 它传什么
+
+`POST {API}/ai-viz/artifacts`
+
+```json
+{
+  "manifest": { "id": "...", "displayName": "...", "runtime": "html|d3", "fieldSlots": {}, "styleSchema": {}, "defaultStyle": {}, "entry": "index.html" },
+  "files": { "index.html": "<!DOCTYPE html>..." }
+}
+```
+
+成功 **201**：`{ "artifactId": "<uuid>", "manifest": {}, "status": "...", "contentHash": "..." }`
+
+同一组件更新：`PUT {API}/ai-viz/artifacts/{artifactId}`，body 同上。
+
+挂到大屏：layout widget `type: "customViz"`，`customVizConfig.artifactId` 填该 uuid（可由 VitalSpan 代贴，或走 `editor-save`）。
+
+## 组件脚本怎么读数（平台注入，不是 DeepTalk 推数）
+
+挂载后宿主上有 `host.vsCv`：
+
+- `getPayload()` / `onPayload(fn)`：Payload v1（`bindingStatus`、`columns`、`rows`、`style`）
+- `d3`：平台 d3@7.9.0，**禁止**把 d3 整库打进 `files`
+
+推荐写法见 `PROTOCOL.md` § vsCv。
+
+## 一键试跑（把黄金样例打进去）
+
+在本包根目录（与 `examples/` 同级）：
+
+```bash
+# 将 {API} {JWT} 换成联调环境
+curl -sS -X POST "{API}/ai-viz/artifacts" ^
+  -H "Authorization: Bearer {JWT}" ^
+  -H "Content-Type: application/json" ^
+  --data-binary "@examples/custom-viz-d3-bundle.json"
+```
+
+Linux/macOS 把 `^` 换成 `\`。
+
+建议顺序：
+
+1. `examples/custom-viz-bundle.json`（html）
+2. `examples/custom-viz-d3-bundle.json`（平台 d3）
+3. 可选：`custom-viz-pulse-kpi.json` / `ring-progress` / `alert-feed`
+
+把返回的 `artifactId` 交给 VitalSpan 挂到测试大屏。
+
+**打开本地 `demo-*.html` 或把文件写到桌面 ≠ 已上传。** 必须对正在运行的 VitalSpan 发 HTTP。本机示例：
+
+```bash
+python tools/upload-ai-viz-artifact.py
+```
+
+默认 `http://127.0.0.1:8000/api/v1`，账号 `admin`，密码环境变量 `VITALSPAN_DEV_ADMIN_PASSWORD`。
+
+**必须服务端或本机脚本 POST。** DeepTalk 网页若从别的 origin `fetch` VitalSpan，会被 CORS 拦住；不要把「浏览器跨域失败」当成平台坏了。
+
+DeepTalk 若产出 `runtime: vanilla`、`.iife.js`、`dataSchema` / `eventSchema`，**本平台会拒收**。必须是本包 `examples/custom-viz-*.json` 那种 `{ "manifest", "files": { "index.html": "..." } }`。
+
+## 验收（对方 + VitalSpan 各看一眼）
+
+| 步骤 | 应看到 |
+|------|--------|
+| 未绑 Dataset | 「请在右侧绑定数据集与字段」，不是空白卡死 |
+| 绑字段并刷新 | `bindingStatus=bound`，html/d3 出图 |
+| 同一 ID `PUT` 新 HTML | 切回页签或硬刷新后是新画面 |
+| 失败 | HTTP 与 JSON `{ code, message, detail }`，例如超 2MB → 413 `AIVIZ_BUNDLE_TOO_LARGE` |
+
+## 红线
+
+- 禁止 `<script src="http...">`、inline `onclick=`
+- 禁止内联 d3 整库（单文件 ≥200KB 且含 `d3.version`）
+- 整包 ≤ 2MB（不含平台 d3）
+- 不要 ECharts / AntV；标准柱线饼走 L1/L2 `chartConfig`（见 `README.md`）
+- 不要 L3 内嵌地图 SDK / 在线瓦片
+
+## 建议阅读顺序
+
+1. 本文件  
+2. `README.md`（三条路径）  
+3. `PROTOCOL.md`  
+4. `guides/RENDERERS.md` · `guides/D3-OPTIONAL.md` · `guides/STYLE-SCHEMA.md`  
+5. `examples/` · `theme-tokens.json`
+
+## 不要按别的规范误读
+
+| 误读 | 本包事实 |
+|------|----------|
+| L3 有 vanilla / react / webgl / three | **只有 `html` 与 `d3`**。`html` = 内联 DOM/CSS/SVG/Canvas，不是 React 运行时 |
+| capability-manifest 里 `library: react` | 那是**内置 chartType** 的实现标注，不是 customViz runtime |
+| 缺 WebGL 示例 | **不提供**该 runtime，无需补示例 |
+| `HANDOFF.md` 有 TODO | 本文件无未完成 TODO；勿把第三方清单写回本包 |
+| `layout-v2.schema.json` | 主文件是 `schemas/layout.schema.json`；包内另有同内容别名 |
+
+不提供独立 CHANGELOG/LICENSE/CONTRIBUTING（内部规范包，非开源发行）。版本记录见仓库 `docs/api/README.md` 修订表。

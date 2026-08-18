@@ -29,10 +29,21 @@ vi.mock("@/lib/api", () => ({
       return {
         packKey: "equipment-overview",
         theme: "lifecycle",
-        renderSpec: { sections: [{ kind: "table", columns: ["status", "cnt"], rows: [["active", 3]] }] },
+        renderSpec: {
+          sections: [
+            {
+              kind: "table",
+              columns: [{ name: "status" }, { name: "cnt" }],
+              rows: [["active", 3]],
+            },
+          ],
+        },
         dataSourceId: "00000000-0000-4000-8000-000000000001",
         status: "ready",
       };
+    }
+    if (path.includes("/snapshots")) {
+      return { items: [], total: 0 };
     }
     throw new Error(`unmocked ${path}`);
   }),
@@ -70,6 +81,7 @@ describe("StandardAnalysisPage smoke", () => {
     renderPage();
     await waitFor(() => {
       expect(screen.getAllByText("active").length).toBeGreaterThan(0);
+      expect(screen.getByText("状态")).toBeInTheDocument();
     });
     expect(screen.getByText("对比上期")).toBeInTheDocument();
   });

@@ -118,7 +118,7 @@ function AdminLayoutContent() {
           )}
         >
           <RouteErrorBoundary>
-            <Outlet key={location.pathname} />
+            <Outlet />
           </RouteErrorBoundary>
         </main>
       </div>

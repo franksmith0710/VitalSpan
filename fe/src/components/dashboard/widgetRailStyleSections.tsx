@@ -104,6 +104,8 @@ export function mergeWidgetOverrideStyle(
   else if (widget.type === "text") {
     override =
       resolveLegacyTitleBarWidgetStyle(widget) ?? widget.textConfig?.widgetStyle;
+  } else if (widget.type === "customViz") {
+    override = widget.customVizConfig?.widgetStyle;
   }
 
   if (!dashboardWidgetStyle && !override) return undefined;

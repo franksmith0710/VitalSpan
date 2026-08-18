@@ -26,8 +26,8 @@ describe("isAdminListFillRoute", () => {
     expect(isAdminListFillRoute("/admin/data-screens")).toBe(true);
     expect(isAdminListFillRoute("/admin/viz-templates")).toBe(true);
     expect(isAdminListFillRoute("/admin/viz-components")).toBe(true);
-    expect(isAdminListFillRoute("/admin/reports/standard")).toBe(true);
-    expect(isAdminListFillRoute("/admin/reports/standard/config")).toBe(true);
+    expect(isAdminListFillRoute("/admin/reports/standard/results")).toBe(true);
+    expect(isAdminListFillRoute("/admin/reports/standard/setup")).toBe(true);
   });
 
   it("does not match edit or detail routes", () => {
@@ -44,8 +44,8 @@ describe("isAdminWideScrollRoute", () => {
     expect(isAdminWideScrollRoute("/admin/reports/center")).toBe(true);
     expect(isAdminWideScrollRoute("/admin/reports/templates")).toBe(true);
     expect(isAdminWideScrollRoute("/admin/reports/view/node-1")).toBe(true);
-    expect(isAdminWideScrollRoute("/admin/reports/standard")).toBe(true);
-    expect(isAdminWideScrollRoute("/admin/reports/standard/config")).toBe(true);
+    expect(isAdminWideScrollRoute("/admin/reports/standard/results")).toBe(true);
+    expect(isAdminWideScrollRoute("/admin/reports/standard/setup")).toBe(true);
     expect(isAdminWideScrollRoute("/admin/governance/tickets")).toBe(true);
     expect(isAdminWideScrollRoute("/admin/governance/publish")).toBe(true);
     expect(isAdminWideScrollRoute("/admin/designer")).toBe(true);

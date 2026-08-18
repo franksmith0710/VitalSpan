@@ -79,39 +79,13 @@ export function useVizComponentInspectorActions({
   }, [componentMap, linkedComponentIds, queryClient, refetchComponents, resolvedSelectedWidget, selectedWidget]);
 
   const applyPayloadChange = useCallback(
-    async (payload: VizComponentPayload, localPatch: Partial<LayoutWidget>) => {
+    async (_payload: VizComponentPayload, localPatch: Partial<LayoutWidget>) => {
       if (!primarySelectedId || !selectedWidget) return;
       setWidgets((prev) =>
         prev.map((w) => (w.id === primarySelectedId ? { ...w, ...localPatch } : w)),
       );
-      if (isLinkedComponentRef(selectedWidget.componentRef)) {
-        const componentId = selectedWidget.componentRef.componentId;
-        const existing = componentMap.get(componentId);
-        if (existing) {
-          patchVizComponentResolveCache(queryClient, linkedComponentIds, {
-            ...existing,
-            payloadJson: { ...existing.payloadJson, ...payload },
-          });
-        }
-        try {
-          const updated = await pushWidgetPayloadToLibrary(selectedWidget, componentMap, payload);
-          if (updated) {
-            patchVizComponentResolveCache(queryClient, linkedComponentIds, updated);
-          }
-        } catch (err) {
-          toast.error(mapApiError(err));
-        }
-      }
     },
-    [
-      componentMap,
-      linkedComponentIds,
-      primarySelectedId,
-      queryClient,
-      refetchComponents,
-      selectedWidget,
-      setWidgets,
-    ],
+    [primarySelectedId, selectedWidget, setWidgets],
   );
 
   return { pushing, detach, relink, pushToLibrary, applyPayloadChange };

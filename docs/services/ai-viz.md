@@ -11,7 +11,7 @@
 
 - 自定义可视化源码存储与校验（HTML bundle 落库）
 - 对外规范包索引：`docs/api/vs-ai-spec/`
-- 与看板 `customViz` widget 衔接：**一个** Base（`CustomVizWidget`）按 `artifactId` 异步加载 entry HTML（不进 49 chartTypes catalog）
+- 与看板 `customViz` widget 衔接：**一个** Base（`CustomVizWidget`）按 `artifactId` 异步加载 entry HTML；页签重新可见时按 `contentHash` 重拉
 - 运行时 Payload v1：`protocolVersion` + `bindingStatus` + execute 结果；宿主挂 `vsCv`（`getPayload` / `onPayload` / 平台 `d3`）
 - bundle 体积 ≤2MB；`manifest.runtime` 仅 `html`|`d3`；拒绝内联 d3 整库
 
@@ -28,7 +28,7 @@
 ## 依赖
 
 - 上游：`app/dashboard/schemas`（LayoutWidget）
-- 鉴权：`dashboard:edit` / `dashboard:read`
+- 鉴权：写/列表按属主；`GET` meta/entry 有 `dashboard:read` 即可（单租户共享看板）
 
 ## 关联 API
 

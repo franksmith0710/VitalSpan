@@ -4,30 +4,23 @@ import {
   HUB_SEGMENTED_BUTTON_CLASS,
   HUB_SEGMENTED_SHELL_CLASS,
 } from "@/components/dashboard/hubFilterUi";
-import {
-  DataTable,
-  ListPageFooter,
-  ListPageTableFrame,
-  ListPageToolbar,
-} from "@/components/layout/list-page-kit";
+import { ListPageToolbar } from "@/components/layout/list-page-kit";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import type { AnalysisPack, AnalysisTheme, CompareResult, RunResult } from "../useStandardAnalysis";
-import {
-  buildLiveSummaryMetrics,
-  compareDeltaClassName,
-  formatCompareDelta,
-  normalizeColumns,
-  normalizeRows,
-  StandardAnalysisMetaRow,
-  THEME_META,
-} from "./standardAnalysisUi";
+import { StandardAnalysisCompareView } from "./StandardAnalysisCompareView";
+import { themeAggregationHint } from "./standardAnalysisCompareUi";
+import { StandardAnalysisMetaRow, THEME_META } from "./standardAnalysisUi";
+import { StandardAnalysisLiveView } from "./StandardAnalysisLiveView";
 
 type Props = {
   pack: AnalysisPack;
   activeTheme: AnalysisTheme;
   viewMode: "live" | "compare";
+  canManage: boolean;
+  capturePending: boolean;
+  onCaptureSnapshot: () => void;
   onThemeChange: (theme: AnalysisTheme) => void;
   onViewModeChange: (mode: "live" | "compare") => void;
   runQuery: {
@@ -46,47 +39,26 @@ type Props = {
     refetch: () => void;
     data?: CompareResult;
   };
+  snapshots?: Array<{ theme: AnalysisTheme; periodKey: string; capturedAt: string }>;
   mapError: (error: unknown) => string;
 };
-
-function LiveSummaryStrip({ headers, rows }: { headers: string[]; rows: unknown[][] }) {
-  const metrics = buildLiveSummaryMetrics(headers, rows);
-  if (metrics.length === 0) return null;
-
-  return (
-    <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      {metrics.map((metric) => (
-        <div
-          key={metric.label}
-          className="rounded-xl border border-gray-200 bg-gray-50/60 px-4 py-3 dark:border-gray-800 dark:bg-white/[0.02]"
-        >
-          <p className="text-theme-xs text-gray-500 dark:text-gray-400">{metric.label}</p>
-          <p className="mt-0.5 text-title-sm font-semibold tabular-nums text-gray-900 dark:text-white">
-            {metric.value}
-          </p>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 export function StandardAnalysisResultPanel({
   pack,
   activeTheme,
   viewMode,
+  canManage,
+  capturePending,
+  onCaptureSnapshot,
   onThemeChange,
   onViewModeChange,
   runQuery,
   compareQuery,
+  snapshots,
   mapError,
 }: Props) {
   const activeQuery = viewMode === "live" ? runQuery : compareQuery;
-  const liveSection = runQuery.data?.renderSpec.sections[0];
-  const compareData = compareQuery.data;
-  const liveColumns = liveSection ? normalizeColumns(liveSection.columns) : [];
-  const liveRows = liveSection
-    ? normalizeRows(liveSection.rows, liveColumns).map((row) => row.map((cell) => String(cell ?? "")))
-    : [];
+  const themeLabel = THEME_META[activeTheme]?.label ?? activeTheme;
 
   return (
     <section className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -99,7 +71,8 @@ export function StandardAnalysisResultPanel({
             {pack.displayName}
           </h2>
           <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
-            {THEME_META[activeTheme]?.label ?? activeTheme} · {viewMode === "live" ? "实时查询" : "与上期快照对比"}
+            {themeLabel} · {themeAggregationHint(pack, activeTheme)}
+            {viewMode === "live" ? " · 实时查询" : " · 与上期快照对比"}
           </p>
         </div>
         <div className={cn("min-w-0", "mt-3")}>
@@ -163,67 +136,31 @@ export function StandardAnalysisResultPanel({
           }
         />
 
-        <ListPageTableFrame className="flex min-h-0 flex-1 flex-col">
-          {activeQuery.isError ? (
+        {activeQuery.isError ? (
+          <div className="px-5 pt-4">
             <PageErrorBanner message={mapError(activeQuery.error)} onRetry={() => activeQuery.refetch()} />
-          ) : null}
-
-          {viewMode === "live" && !activeQuery.isLoading && liveRows.length > 0 ? (
-            <LiveSummaryStrip headers={liveColumns} rows={liveRows} />
-          ) : null}
-
-          {viewMode === "live" ? (
-            <DataTable
-              loading={activeQuery.isLoading}
-              empty={!activeQuery.isLoading && liveRows.length === 0}
-              headers={liveColumns}
-              rows={liveRows}
-              emptyState={{
-                icon: null,
-                title: "暂无数据",
-                description: "当前主题未返回结果，请切换主题或稍后重试。",
-              }}
-            />
-          ) : (
-            <DataTable
-              loading={activeQuery.isLoading}
-              empty={!activeQuery.isLoading && (compareData?.deltas.length ?? 0) === 0}
-              headers={["维度", "本期", "上期", "增减"]}
-              lastColumnAlign="right"
-              rows={(compareData?.deltas ?? []).map((delta) => [
-                <span key={`${delta.key}-dim`} className="font-medium text-gray-800 dark:text-white/90">
-                  {delta.key}
-                </span>,
-                <span key={`${delta.key}-current`} className="tabular-nums">
-                  {delta.currentValue}
-                </span>,
-                <span key={`${delta.key}-previous`} className="tabular-nums text-gray-500 dark:text-gray-400">
-                  {delta.previousValue ?? "—"}
-                </span>,
-                <span
-                  key={`${delta.key}-delta`}
-                  className={cn("tabular-nums font-medium", compareDeltaClassName(delta.delta))}
-                >
-                  {formatCompareDelta(delta.delta)}
-                </span>,
-              ])}
-              emptyState={{
-                icon: null,
-                title: "暂无可对比数据",
-                description: "等待周期快照生成后再查看对比。",
-              }}
-            />
-          )}
-        </ListPageTableFrame>
-
-        {viewMode === "compare" && compareData && !activeQuery.isLoading ? (
-          <ListPageFooter>
-            <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-              本期 {compareData.currentPeriodKey}
-              {compareData.previousPeriodKey ? ` · 上期 ${compareData.previousPeriodKey}` : " · 暂无上期快照"}
-            </p>
-          </ListPageFooter>
+          </div>
         ) : null}
+
+        {viewMode === "live" ? (
+          <StandardAnalysisLiveView
+            pack={pack}
+            activeTheme={activeTheme}
+            runData={runQuery.data}
+            isLoading={runQuery.isLoading}
+          />
+        ) : (
+          <StandardAnalysisCompareView
+            pack={pack}
+            activeTheme={activeTheme}
+            compareData={compareQuery.data}
+            snapshots={snapshots}
+            isLoading={compareQuery.isLoading}
+            canManage={canManage}
+            capturePending={capturePending}
+            onCapture={onCaptureSnapshot}
+          />
+        )}
       </Tabs>
     </section>
   );

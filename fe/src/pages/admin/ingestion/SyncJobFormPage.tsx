@@ -12,6 +12,7 @@ import { getApiValidationFieldErrors, mapApiError } from "@/lib/apiError";
 import { hasCapability } from "@/lib/capabilities";
 import { isSyncSourceCapable } from "@/lib/datasourceRoles";
 import type { SourceHealth } from "@/lib/sourceHealth";
+import { isSourceUnavailable } from "@/lib/sourceHealth";
 import { useSyncJobRun, type SyncRunSuccess } from "@/hooks/useSyncJobRun";
 import {
   AlertDialog,
@@ -497,8 +498,14 @@ export function SyncJobFormPage() {
                 type="button"
                 variant="outline"
                 size="sm"
-                disabled={submitting || isDirty}
-                title={isDirty ? "请先保存更改后再运行" : undefined}
+                disabled={submitting || isDirty || isSourceUnavailable(sourceHealth)}
+                title={
+                  isSourceUnavailable(sourceHealth)
+                    ? "数据源不可用，无法运行同步"
+                    : isDirty
+                      ? "请先保存更改后再运行"
+                      : undefined
+                }
                 onClick={() => setRunConfirmOpen(true)}
               >
                 <Play className="size-4" aria-hidden />

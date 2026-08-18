@@ -172,6 +172,7 @@ export function chartExecuteBindingKey(
     mode: "dataset",
     dataSourceId: config.dataSourceId,
     configId: config.configId,
+    configRevision: config.configRevision ?? null,
     datasetId: config.datasetId,
     encoding: buildChartExecuteEncoding(config),
     filterParameters: filterParameters ?? {},
@@ -290,7 +291,7 @@ export async function fetchChartExecuteResult(
       limit,
       parameters,
       encoding,
-      rls: { enabled: false },
+      rls: { enabled: true },
     }),
   });
 }

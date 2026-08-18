@@ -5,7 +5,7 @@
 > **真理源**：行为需求见 [SRS §6](../srs/全生命周期系统需求规格说明书.md#6-接口需求)；功能项见 [PRD API-001~007](../automate/prd/F13-API.md)。
 
 ```yaml
-version: 1.0.15
+version: 1.0.16
 last_updated: 2026-08-18
 api_prefix: /api/v1
 openapi_docs: /docs
@@ -21,6 +21,7 @@ redoc: /redoc
 | 查询类 | 只读；禁止经 API 写入外部数据源 |
 | 分页 | `?page=&page_size=`（三期起统一；前期可省略） |
 | 错误体 | `{ "code": "...", "message": "...", "detail": ... }` |
+| 成功体例外 | `POST/PUT/GET /ai-viz/artifacts` 成功为裸 `AiVizArtifactOut`（DeepTalk 契约，不含 `{code,message}`）；`GET .../entry` 为 HTML |
 
 **运行时 OpenAPI**：`http://localhost:8000/docs` · `http://localhost:8000/redoc`
 
@@ -265,8 +266,8 @@ redoc: /redoc
 | POST | `/api/v1/ai-viz/artifacts` | 注册自定义组件源码（customViz 库） | 内部 | 试点 | AIVIZ-002 | 已实现 | `backend/app/api/v1/ai_viz.py` |
 | PUT | `/api/v1/ai-viz/artifacts/{id}` | 覆盖同一组件源码；引用方刷新即新 | 内部 | 试点 | AIVIZ-009 | 已实现 | `backend/app/api/v1/ai_viz.py` |
 | GET | `/api/v1/ai-viz/artifacts` | 当前用户 artifact 列表（图表盘「自定义」） | 内部 | 试点 | AIVIZ-006 | 已实现 | `backend/app/api/v1/ai_viz.py` |
-| GET | `/api/v1/ai-viz/artifacts/{id}` | artifact 元数据 | 内部 | 试点 | AIVIZ-002 | 已实现 | `backend/app/api/v1/ai_viz.py` |
-| GET | `/api/v1/ai-viz/artifacts/{id}/entry` | 组件 HTML 源码（供 Base 挂载） | 内部 | 试点 | AIVIZ-002 | 已实现 | `backend/app/api/v1/ai_viz.py` |
+| GET | `/api/v1/ai-viz/artifacts/{id}` | artifact 元数据；`dashboard:read` 即可（不限属主） | 内部 | 试点 | AIVIZ-002 | 已实现 | `backend/app/api/v1/ai_viz.py` |
+| GET | `/api/v1/ai-viz/artifacts/{id}/entry` | 组件 HTML；`dashboard:read` 即可（不限属主） | 内部 | 试点 | AIVIZ-002 | 已实现 | `backend/app/api/v1/ai_viz.py` |
 
 **CustomViz Payload v1（AIVIZ-010）**：Base 挂载 entry 后向宿主注入 `.vs-cv-payload`，结构 `{ protocolVersion, bindingStatus, columns, rows, style, error? }`；`bindingStatus` 为 `unbound | bound | empty | error`。bundle 须监听 `vs-cv-payload-update`，详见 [`docs/api/vs-ai-spec/PROTOCOL.md`](vs-ai-spec/PROTOCOL.md) §Payload v1。
 
@@ -639,6 +640,7 @@ redoc: /redoc
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.0.16 | 2026-08-18 | AI 可视化：GET artifact 不限属主（共享看板）；成功体为裸 DTO 例外；规范包多实例 querySelector + CORS 说明 |
 | 1.0.15 | 2026-08-18 | AI 可视化：customViz `runtime` 仅 html\|d3；`host.vsCv` 注入平台 d3；整包 ≤2MB；拒绝内联 d3 整库 |
 | 1.0.14 | 2026-08-18 | AI 可视化：登记 CustomViz Payload v1（`protocolVersion` + `bindingStatus`）；官方 bundle 示例对齐 `vs-cv-payload-update` |
 | 1.0.13 | 2026-08-13 | 用户 `imAccounts`；调度 `notifyGroup` / `feishu`；delivery-health 含 IM App 配置布尔 |

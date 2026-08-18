@@ -77,4 +77,12 @@ describe("CreateVizComponentDialog", () => {
     const createButton = screen.getByRole("button", { name: /创建并编辑/i });
     expect(createButton).not.toBeDisabled();
   });
+
+  it("exposes a dedicated custom viz widget type", async () => {
+    const user = userEvent.setup();
+    renderDialog();
+    await user.click(screen.getByRole("button", { name: "自定义组件" }));
+    expect(await screen.findByTestId("chart-picker-popover")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "自定义组件" })).toBeInTheDocument();
+  });
 });

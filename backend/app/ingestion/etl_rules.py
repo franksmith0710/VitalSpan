@@ -43,7 +43,7 @@ def _match_filter(row: dict[str, Any], column: str, op: str, value: Any) -> bool
         return cell is None or cell == ""
     if op == "is_not_null":
         return cell is not None and cell != ""
-    return True
+    return False
 
 
 def _records_from_df(df: pd.DataFrame) -> list[dict[str, Any]]:
@@ -97,9 +97,7 @@ def _apply_filter(df: pd.DataFrame, rule: dict[str, Any]) -> pd.DataFrame:
         return df[df[col].isna() | (df[col] == "")]
     if op == "is_not_null":
         return df[df[col].notna() & (df[col] != "")]
-    records = _records_from_df(df)
-    kept = [row for row in records if _match_filter(row, col, op, val)]
-    return pd.DataFrame(kept) if kept else pd.DataFrame(columns=df.columns)
+    return pd.DataFrame(columns=df.columns)
 
 
 def apply_auto_profile_df(

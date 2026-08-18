@@ -49,6 +49,7 @@ class DatasetItemOut(BaseModel):
     allowed_roles: list[str] = Field(alias="allowedRoles")
     table_source_datasource_id: uuid.UUID | None = Field(default=None, alias="tableSourceDataSourceId")
     bound_config_id: uuid.UUID | None = Field(default=None, alias="boundConfigId")
+    bound_config_revision: int | None = Field(default=None, alias="boundConfigRevision")
     origin: str = Field(default="manual")
     sync_job_id: uuid.UUID | None = Field(default=None, alias="syncJobId")
     transform_rules: list[dict[str, object]] = Field(default_factory=list, alias="transformRules")

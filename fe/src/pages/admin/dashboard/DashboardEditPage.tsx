@@ -103,7 +103,6 @@ import {
 } from "@/components/dashboard/gridLayoutAdapter";
 import type { GridInsertAt } from "@/components/dashboard/DashboardGrid";
 import {
-  createLinkedLayoutWidget,
   createPaletteWidget,
   type PaletteInsertType,
 } from "@/components/dashboard/createLayoutWidget";
@@ -144,9 +143,8 @@ import { VizComponentInspectorHeader } from "@/components/dashboard/VizComponent
 import { useVizComponentMap } from "@/hooks/useVizComponentMap";
 import { useVizComponentInspectorActions } from "@/hooks/useVizComponentInspectorActions";
 import { resolveLayoutWidget, resolveLayoutWidgets } from "@/lib/resolveVizComponent";
-import { awaitLinkedComponentWrites, flushLinkedLocalOverridesToLibrary } from "@/lib/vizComponentEdit";
+import { awaitLinkedComponentWrites, instantiateVizComponentWidget, isPublishableWidgetType } from "@/lib/vizComponentEdit";
 import { flushDebouncedDrafts } from "@/lib/debouncedDraftFlush";
-import { isPublishableWidgetType } from "@/lib/vizComponentEdit";
 import { fetchVizComponent } from "@/lib/vizComponents";
 import { WidgetEnlargeDialog } from "@/components/dashboard/widget-actions/WidgetEnlargeDialog";
 import { WidgetViewDataDialog } from "@/components/dashboard/widget-actions/WidgetViewDataDialog";
@@ -558,10 +556,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         resolvedWidget={resolvedSelectedWidget ?? selectedWidget}
         componentMap={componentMap}
         onDetach={vizInspectorActions.detach}
-        onRelink={vizInspectorActions.relink}
         onPublish={() => setPublishComponentOpen(true)}
-        onPushToLibrary={() => void vizInspectorActions.pushToLibrary()}
-        pushing={vizInspectorActions.pushing}
         onCollapse={collapseChartRail}
       />
     ) : null;
@@ -857,8 +852,8 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       try {
         const detail = await fetchVizComponent(componentId);
         if (cancelled) return;
-        const linked = createLinkedLayoutWidget(detail, widgetsRef.current);
-        appendClonedWidgetRef.current(linked);
+        const instance = instantiateVizComponentWidget(detail, widgetsRef.current);
+        appendClonedWidgetRef.current(instance);
         refetchComponents();
         navigate(location.pathname, { replace: true });
         toast.success(`已插入组件「${detail.name}」`);
@@ -1129,10 +1124,8 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     setSaving(true);
     setError(null);
     try {
-      // 关联组件若画布侧留下了本地 config，先推库再 strip，避免「保存成功但配置丢失」
       try {
         await awaitLinkedComponentWrites();
-        await flushLinkedLocalOverridesToLibrary(widgetsRef.current, componentMap);
       } catch (syncErr) {
         toast.error(mapApiError(syncErr));
         return false;
@@ -1750,18 +1743,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           widget={selectedWidget}
           styleConfig={styleConfig}
           componentMap={componentMap}
-          onPublished={(componentId) => {
-            if (!primarySelectedId) return;
-            setWidgets((prev) =>
-              prev.map((w) =>
-                w.id === primarySelectedId
-                  ? {
-                      ...w,
-                      componentRef: { componentId },
-                    }
-                  : w,
-              ),
-            );
+          onPublished={() => {
             void refetchComponents();
           }}
         />

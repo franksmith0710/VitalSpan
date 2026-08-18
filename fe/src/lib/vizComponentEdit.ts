@@ -11,6 +11,7 @@ import {
   type VizComponentDetail,
   type VizComponentPayload,
 } from "@/lib/vizComponents";
+import { createLinkedLayoutWidget } from "@/components/dashboard/createLayoutWidget";
 import { normalizeChartConfigForPortableDemo } from "@/lib/templateDemoData";
 import { queueLinkedComponentPush } from "@/lib/linkedComponentSaveQueue";
 
@@ -35,6 +36,18 @@ export async function pushWidgetPayloadToLibrary(
   return updated;
 }
 
+/** 复用：把库里那一刻的 payload 拷到画布，之后只属于看板，不再挂活链接。 */
+export function instantiateVizComponentWidget(
+  component: VizComponentDetail,
+  widgets: LayoutWidget[],
+  at?: { gridX: number; gridY: number; colSpan?: number; rowSpan?: number },
+): LayoutWidget {
+  const stub = createLinkedLayoutWidget(component, widgets, at);
+  const resolved = resolveLayoutWidget(stub, buildComponentMap([component]));
+  const { componentRef: _ref, ...rest } = resolved;
+  return rest as LayoutWidget;
+}
+
 export function enqueueWidgetPayloadToLibrary(
   widget: LayoutWidget,
   componentMap: VizComponentMap,
@@ -52,21 +65,10 @@ export async function syncResolvedWidgetToLibrary(
 }
 
 export async function flushLinkedLocalOverridesToLibrary(
-  widgets: LayoutWidget[],
-  componentMap: VizComponentMap,
+  _widgets: LayoutWidget[],
+  _componentMap: VizComponentMap,
 ): Promise<void> {
-  for (const widget of widgets) {
-    if (!isLinkedComponentRef(widget.componentRef)) continue;
-    const hasLocalPayload =
-      (widget.type === "chart" && Boolean(widget.chartConfig)) ||
-      (widget.type === "filter" && Boolean(widget.filterConfig)) ||
-      (widget.type === "text" && Boolean(widget.textConfig)) ||
-      (widget.type === "media" && Boolean(widget.mediaConfig)) ||
-      (widget.type === "customViz" && Boolean(widget.customVizConfig));
-    if (!hasLocalPayload) continue;
-    const resolved = resolveLayoutWidget(widget, componentMap);
-    await pushWidgetPayloadToLibrary(widget, componentMap, extractWidgetPayload(resolved));
-  }
+  return;
 }
 
 /** 跨看板复制：linked 组件先 resolve 再 inline 快照（含演示 dataSourceId） */

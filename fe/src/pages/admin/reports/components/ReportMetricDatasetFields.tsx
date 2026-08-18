@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -59,16 +59,22 @@ export function ReportMetricDatasetFields({
     enabled: Boolean(effectiveBound),
   });
 
+  const onBoundConfigIdChangeRef = useRef(onBoundConfigIdChange);
+  const onSuggestedDataSourceIdRef = useRef(onSuggestedDataSourceId);
+  onBoundConfigIdChangeRef.current = onBoundConfigIdChange;
+  onSuggestedDataSourceIdRef.current = onSuggestedDataSourceId;
+
   useEffect(() => {
-    if (detail?.boundConfigId && detail.boundConfigId !== boundConfigId) {
-      onBoundConfigIdChange(detail.boundConfigId);
+    const nextBound = detail?.boundConfigId;
+    if (nextBound && nextBound !== boundConfigId) {
+      onBoundConfigIdChangeRef.current(nextBound);
     }
-  }, [detail?.boundConfigId, boundConfigId, onBoundConfigIdChange]);
+  }, [detail?.boundConfigId, boundConfigId]);
 
   useEffect(() => {
     const dsId = boundConfigQuery.data?.dataSourceId;
-    if (dsId) onSuggestedDataSourceId?.(dsId);
-  }, [boundConfigQuery.data?.dataSourceId, onSuggestedDataSourceId]);
+    if (dsId) onSuggestedDataSourceIdRef.current?.(dsId);
+  }, [boundConfigQuery.data?.dataSourceId]);
 
   useEffect(() => {
     setShowPendingHint(false);

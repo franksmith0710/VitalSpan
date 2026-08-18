@@ -224,6 +224,7 @@ describe("ReportSchedulesPage smoke", () => {
     const user = userEvent.setup();
     renderPage();
     await screen.findByText(/近期失败/);
+    await user.click(screen.getByTestId("schedule-recent-failures-toggle"));
     await user.click(screen.getByRole("button", { name: "查看调度" }));
     expect(await screen.findByText("模板月报")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "文档模板" })).toHaveAttribute("aria-pressed", "true");
@@ -297,6 +298,7 @@ describe("ReportSchedulesPage smoke", () => {
     const user = userEvent.setup();
     renderPage();
     await screen.findByText(/近期失败/);
+    await user.click(screen.getByTestId("schedule-recent-failures-toggle"));
     expect(screen.getByRole("button", { name: "忽略" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "全部忽略" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "忽略" }));

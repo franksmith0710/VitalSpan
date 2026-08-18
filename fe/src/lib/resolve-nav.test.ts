@@ -264,7 +264,7 @@ describe("resolveNavGroups", () => {
     const center = report?.items.find((i) => i.name === "报表中心");
     expect(center?.subItems?.map((s) => s.path)).toEqual([
       "/admin/reports/center",
-      "/admin/reports/standard",
+      "/admin/reports/standard/results",
     ]);
   });
 

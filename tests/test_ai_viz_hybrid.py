@@ -119,7 +119,16 @@ def test_ai_viz_artifact_list(auth_headers: dict[str, str]) -> None:
     assert artifact_id in ids
 
 
-def test_ai_viz_rejects_external_script(auth_headers: dict[str, str]) -> None:
+def test_ai_viz_rejects_oversize_bundle(auth_headers: dict[str, str]) -> None:
+    from app.ai_viz.models import MAX_BUNDLE_BYTES
+
+    huge = {
+        **DEMO_BUNDLE,
+        "files": {"index.html": "a" * (MAX_BUNDLE_BYTES + 1)},
+    }
+    resp = client.post("/api/v1/ai-viz/artifacts", json=huge, headers=auth_headers)
+    assert resp.status_code == 413, resp.text
+    assert resp.json()["code"] == "AIVIZ_BUNDLE_TOO_LARGE"
     bad = {
         **DEMO_BUNDLE,
         "files": {"index.html": '<script src="https://evil.example/x.js"></script>'},

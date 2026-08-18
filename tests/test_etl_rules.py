@@ -276,3 +276,9 @@ def test_cast_type_missing_column_raises_keyerror():
     rules = [{"type": "cast_type", "to": "float"}]
     with pytest.raises(KeyError):
         apply_rules(rows, rules)
+
+
+def test_filter_rows_unknown_op_excludes_all_rows():
+    rows = [{"status": "active"}, {"status": "pending"}]
+    rules = [{"type": "filter_rows", "column": "status", "op": "unknown_op", "value": "active"}]
+    assert apply_rules(rows, rules) == []

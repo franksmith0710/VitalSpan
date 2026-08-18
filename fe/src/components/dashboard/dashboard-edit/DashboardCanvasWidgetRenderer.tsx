@@ -1,5 +1,4 @@
 import { memo, useCallback, useMemo, type ReactNode } from "react";
-import { toast } from "sonner";
 import { DashboardWidget } from "../DashboardWidget";
 import {
   pixelWidgetToLayoutWidget,
@@ -26,9 +25,6 @@ import {
   type DashboardWidgetActions,
 } from "../WidgetContextMenu";
 import type { PaletteDragPayload } from "@/lib/dashboardDnd";
-import { mapApiError } from "@/lib/apiError";
-import { pushWidgetPayloadToLibrary } from "@/lib/vizComponentEdit";
-import { isLinkedComponentRef } from "@/lib/vizComponents";
 import { useDashboardGridPlayer } from "../dashboardGridPlayerContext";
 import { usePixelShapePlayer } from "../pixelCanvas/pixelShapePlayerContext";
 import { preservePixelCanvasHostScroll } from "../pixelCanvas/preserveCanvasHostScroll";
@@ -220,17 +216,9 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
   const handleChartConfigChange = useCallback(
     (widgetId: string, chartConfig: LayoutWidget["chartConfig"]) => {
       if (!chartConfig) return;
-      // 关联组件：layout 落库会剥 chartConfig，必须推组件库，否则下钻/样式保存丢失
-      if (isLinkedComponentRef(widget.componentRef) && componentMap) {
-        updateWidget(widgetId, { chartConfig });
-        void pushWidgetPayloadToLibrary(widget, componentMap, { chartConfig })
-          .then(() => onLinkedPayloadSynced?.())
-          .catch((err) => toast.error(mapApiError(err)));
-        return;
-      }
       updateWidget(widgetId, { chartConfig });
     },
-    [componentMap, onLinkedPayloadSynced, updateWidget, widget],
+    [updateWidget],
   );
 
   const handleTabsConfigChange = useCallback(
@@ -242,16 +230,9 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
 
   const handleTextConfigChange = useCallback(
     (widgetId: string, textConfig: NonNullable<LayoutWidget["textConfig"]>) => {
-      if (isLinkedComponentRef(widget.componentRef) && componentMap) {
-        updateWidget(widgetId, { textConfig });
-        void pushWidgetPayloadToLibrary(widget, componentMap, { textConfig })
-          .then(() => onLinkedPayloadSynced?.())
-          .catch((err) => toast.error(mapApiError(err)));
-        return;
-      }
       updateWidget(widgetId, { textConfig });
     },
-    [componentMap, onLinkedPayloadSynced, updateWidget, widget],
+    [updateWidget],
   );
 
   const renderNested = useCallback(

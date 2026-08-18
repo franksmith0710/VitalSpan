@@ -202,13 +202,34 @@ def test_run_job_write_failure(mock_fetch, mock_write):
 
 def test_run_job_missing_job():
     missing = uuid.uuid4()
-    run_job(missing, "trace-missing")
+    result = run_job(missing, "trace-missing")
+    assert result is None
     db = get_meta_session()
     run = db.scalar(select(SyncRun).where(SyncRun.trace_id == "trace-missing"))
     db.close()
-    assert run is not None
-    assert run.status == "failed"
-    assert run.error_message == "任务不存在"
+    assert run is None
+
+
+@patch("app.ingestion.sync_executor.write_analytics", return_value=1)
+@patch("app.ingestion.sync_executor.fetch_source_rows", return_value=[{"id": "1"}])
+def test_scheduled_run_skipped_when_active_run_exists(mock_fetch, mock_write):
+    job_id = _seed_job()
+    db = get_meta_session()
+    active = SyncRun(job_id=job_id, status="running", trace_id="active-run")
+    db.add(active)
+    db.commit()
+    db.close()
+
+    result = run_job(job_id, "trace-scheduled-skip")
+    assert result is None
+
+    db = get_meta_session()
+    runs = list(db.scalars(select(SyncRun).where(SyncRun.job_id == job_id)).all())
+    db.close()
+    assert len(runs) == 1
+    assert runs[0].trace_id == "active-run"
+    mock_fetch.assert_not_called()
+    mock_write.assert_not_called()
 
 
 @patch("app.ingestion.sync_executor.write_analytics", return_value=0)

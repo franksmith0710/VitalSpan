@@ -61,6 +61,6 @@ describe("scheduleSourceMeta", () => {
         sourceId: null,
         catalogNodeId: null,
       }),
-    ).toBe("/admin/reports/standard/config?pack=equipment-overview");
+    ).toBe("/admin/reports/standard/setup?pack=equipment-overview");
   });
 });

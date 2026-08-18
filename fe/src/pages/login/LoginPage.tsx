@@ -4,7 +4,7 @@ import { Loader2, Lock, LogIn, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LoginBrandAside, LoginMobileBrandMark } from "./LoginBrandAside";
+import { LoginBrandAside, LoginMobileBrandMark, LOGIN_PAGE_COPYRIGHT } from "./LoginBrandAside";
 import { ThemeToggleButton } from "@/components/layout/theme-toggle";
 import { useAuth } from "@/context/auth-context";
 import { ThemeProvider } from "@/context/theme-context";
@@ -178,6 +178,9 @@ function LoginFormPanel() {
 
           <p className="mt-6 text-center text-[11px] leading-relaxed text-gray-400 dark:text-gray-500">
             登录即表示您已获授权访问本系统，请妥善保管账号凭证。
+          </p>
+          <p className="mt-3 text-center text-[11px] text-gray-400/80 dark:text-gray-500/80 lg:hidden">
+            {LOGIN_PAGE_COPYRIGHT}
           </p>
         </div>
       </div>

@@ -1,9 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
+import { cn } from "@/lib/utils";
 import { apiFetch } from "@/lib/api";
 import { formatDateTime } from "@/lib/formatDateTime";
 import { localizeApiMessage, mapApiError } from "@/lib/apiError";
@@ -76,23 +82,41 @@ export function ScheduleRecentFailuresPanel({
 
   return (
     <Card className="border-amber-200 bg-amber-50/30 dark:border-amber-500/30 dark:bg-amber-500/5">
-      <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 pb-2">
-        <CardTitle className="flex items-center gap-2 text-title-sm">
-          <AlertCircle className="size-4 text-amber-600 dark:text-amber-400" aria-hidden />
-          近期失败 / 降级投递（{items.length}）
-        </CardTitle>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="shrink-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-          disabled={dismissAllFailures.isPending}
-          onClick={dismissAll}
-        >
-          {dismissAllFailures.isPending ? "处理中…" : "全部忽略"}
-        </Button>
-      </CardHeader>
-      <CardContent className="space-y-2">
+      <Collapsible defaultOpen={false} className="group">
+        <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 pb-2">
+          <CollapsibleTrigger
+            className={cn(
+              "flex min-w-0 flex-1 items-center gap-2 rounded-lg text-left",
+              "hover:bg-amber-100/60 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500/40",
+              "dark:hover:bg-amber-500/10",
+            )}
+            data-testid="schedule-recent-failures-toggle"
+          >
+            <ChevronRight
+              className="size-4 shrink-0 text-amber-600 transition-transform group-data-[state=open]:rotate-90 dark:text-amber-400"
+              aria-hidden
+            />
+            <CardTitle className="flex items-center gap-2 text-title-sm">
+              <AlertCircle className="size-4 text-amber-600 dark:text-amber-400" aria-hidden />
+              近期失败 / 降级投递（{items.length}）
+            </CardTitle>
+          </CollapsibleTrigger>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="shrink-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+            disabled={dismissAllFailures.isPending}
+            onClick={(event) => {
+              event.stopPropagation();
+              dismissAll();
+            }}
+          >
+            {dismissAllFailures.isPending ? "处理中…" : "全部忽略"}
+          </Button>
+        </CardHeader>
+        <CollapsibleContent>
+          <CardContent className="space-y-2">
         {items.map((row) => {
           const sourceLabel = resolveSourceLabel(row, schedules);
           const isRetrying = retryPending && retryPendingExecutionId === row.executionId;
@@ -145,7 +169,9 @@ export function ScheduleRecentFailuresPanel({
             </div>
           );
         })}
-      </CardContent>
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
     </Card>
   );
 }

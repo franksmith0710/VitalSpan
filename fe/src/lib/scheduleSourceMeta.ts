@@ -18,7 +18,7 @@ export function sourceTypeBadgeColor(
 
 export function scheduleSourceHref(schedule: Pick<ReportScheduleRow, "sourceType" | "sourceId" | "catalogNodeId" | "sourceKey">): string {
   if (schedule.sourceType === "standard" && schedule.sourceKey) {
-    return `/admin/reports/standard/config?pack=${encodeURIComponent(schedule.sourceKey)}`;
+    return `/admin/reports/standard/setup?pack=${encodeURIComponent(schedule.sourceKey)}`;
   }
   const id = schedule.sourceId ?? schedule.catalogNodeId;
   if (!id) return "/admin/reports/schedules";

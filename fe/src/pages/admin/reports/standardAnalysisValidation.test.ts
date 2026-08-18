@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  listMappingColumnOptions,
   mergeSuggestedFieldMapping,
   suggestStandardFieldMapping,
+  validateCreatedAtFieldMapping,
   validateStandardPackDraft,
 } from "./standardAnalysisValidation";
 import type { AnalysisPack } from "./useStandardAnalysis";
@@ -28,7 +30,17 @@ describe("standardAnalysisValidation", () => {
     });
   });
 
-  it("fills only empty mapping slots", () => {
+  it("suggests geo dataset columns with city as region", () => {
+    expect(
+      suggestStandardFieldMapping(["province", "city", "district", "amount", "region_map", "sale_count"]),
+    ).toEqual({
+      status: "",
+      region: "city",
+      createdAt: "",
+    });
+  });
+
+  it("keeps valid custom mapping and fills empty slots", () => {
     expect(
       mergeSuggestedFieldMapping(
         { status: "custom_status", region: "", createdAt: "" },
@@ -41,6 +53,25 @@ describe("standardAnalysisValidation", () => {
     });
   });
 
+  it("replaces invalid time mapping with suggestion", () => {
+    expect(
+      mergeSuggestedFieldMapping(
+        { status: "province", region: "region_map", createdAt: "sale_count" },
+        ["province", "city", "district", "amount", "region_map", "sale_count"],
+      ),
+    ).toEqual({
+      status: "province",
+      region: "region_map",
+      createdAt: "",
+    });
+  });
+
+  it("filters time field options to date-like columns", () => {
+    expect(
+      listMappingColumnOptions("createdAt", ["province", "city", "sale_date", "amount"]),
+    ).toEqual(["sale_date"]);
+  });
+
   it("rejects mapping that does not exist in dataset columns", () => {
     const message = validateStandardPackDraft(
       {
@@ -50,5 +81,28 @@ describe("standardAnalysisValidation", () => {
       ["order_id", "amount"],
     );
     expect(message).toMatch(/不在当前数据集列中/);
+  });
+
+  it("rejects numeric column mapped as createdAt when time themes enabled", () => {
+    const message = validateCreatedAtFieldMapping(
+      {
+        ...basePack,
+        enabledThemes: ["activity"],
+        fieldMapping: { status: "status", region: "region", createdAt: "amount" },
+      },
+      { amount: "metric" },
+    );
+    expect(message).toMatch(/指标/);
+  });
+
+  it("rejects suspicious numeric field name for createdAt", () => {
+    const message = validateCreatedAtFieldMapping(
+      {
+        ...basePack,
+        enabledThemes: ["trend"],
+        fieldMapping: { status: "status", region: "region", createdAt: "amount" },
+      },
+    );
+    expect(message).toMatch(/疑似数值列/);
   });
 });

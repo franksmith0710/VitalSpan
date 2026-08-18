@@ -390,4 +390,74 @@ describe("Dataset form pages", () => {
     expect(screen.queryByText("加载列信息中…")).not.toBeInTheDocument();
     expect(screen.getByTestId("bind-selected-count").textContent).toContain("已选 6/");
   });
+
+  it("T1-FE-08: demo package dataset locks field workbench controls", async () => {
+    mockApiFetch.mockImplementation(async (path: string) => {
+      if (path === "/api/v1/datasets/demo-sales-detail") {
+        return {
+          datasetId: "demo-sales-detail",
+          displayName: "【官方示例】销售明细",
+          isDemoPackage: true,
+          tables: [{ name: "sample_db.sales" }],
+          computedFields: [],
+          allowedRoles: ["analyst"],
+          tableSourceDataSourceId: "ds-demo",
+          boundConfigId: "cfg-demo",
+        };
+      }
+      if (path === "/api/v1/query/configs/cfg-demo") {
+        return {
+          id: "cfg-demo",
+          configType: "dataset_query",
+          payload: {
+            dataSourceId: "ds-demo",
+            connectorType: "mysql",
+            schema: "sample_db",
+            table: "sales",
+            columns: ["sale_date", "amount", "quantity", "channel"],
+            columnKinds: { amount: "metric", quantity: "metric" },
+          },
+        };
+      }
+      if (path.includes("/columns")) {
+        return {
+          items: [
+            { name: "id" },
+            { name: "sale_date" },
+            { name: "region_id" },
+            { name: "product_id" },
+            { name: "customer_id" },
+            { name: "channel" },
+            { name: "quantity" },
+            { name: "amount" },
+          ],
+        };
+      }
+      if (path.startsWith("/api/v1/datasources") && !path.includes("/schemas")) {
+        return {
+          items: [{ id: "ds-demo", name: "示例数据", code: "demo", database: "sample_db", type: "mysql" }],
+        };
+      }
+      return {};
+    });
+
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/admin/datasets/demo-sales-detail/edit"]}>
+        <Routes>
+          <Route path="/admin/datasets/:id/edit" element={<DatasetFormPage mode="edit" />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("字段工作台")).toBeInTheDocument();
+    expect(await screen.findByTestId("demo-fields-locked-alert")).toBeInTheDocument();
+    await waitFor(() => expectSelectedCount(4, 8));
+    expect(screen.getByRole("checkbox", { name: "sale_date" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "sale_date" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "自动识别" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "全选" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "更换" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "保存" })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("显示名")).toBeDisabled();
+  });
 });

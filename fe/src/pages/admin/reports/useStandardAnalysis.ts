@@ -57,6 +57,15 @@ export type CompareResult = {
   }>;
 };
 
+export type SnapshotRecord = {
+  id: string;
+  packKey: string;
+  theme: AnalysisTheme;
+  periodKind: SnapshotCronPreset;
+  periodKey: string;
+  capturedAt: string;
+};
+
 export function useStandardPacks() {
   return useQuery({
     queryKey: queryKeys.reports.standardPacks,
@@ -84,6 +93,38 @@ export function useStandardCompare(packKey: string | null, theme: AnalysisTheme 
         `/api/v1/reports/standard/packs/${packKey}/compare?theme=${encodeURIComponent(theme ?? "")}`,
       ),
     enabled: Boolean(packKey && theme),
+  });
+}
+
+export function useStandardSnapshots(packKey: string | null, theme: AnalysisTheme | null) {
+  return useQuery({
+    queryKey: queryKeys.reports.standardSnapshots(packKey ?? "", theme ?? undefined),
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (theme) params.set("theme", theme);
+      const suffix = params.toString() ? `?${params.toString()}` : "";
+      return apiFetch<{ items: SnapshotRecord[]; total: number }>(
+        `/api/v1/reports/standard/packs/${packKey}/snapshots${suffix}`,
+      );
+    },
+    enabled: Boolean(packKey),
+  });
+}
+
+export function useCaptureStandardSnapshot() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ packKey, theme }: { packKey: string; theme: AnalysisTheme }) =>
+      apiFetch<SnapshotRecord>(
+        `/api/v1/reports/standard/packs/${packKey}/snapshots/capture?theme=${encodeURIComponent(theme)}`,
+        { method: "POST" },
+      ),
+    onSuccess: (_data, { packKey, theme }) => {
+      qc.invalidateQueries({ queryKey: queryKeys.reports.standardSnapshots(packKey) });
+      qc.invalidateQueries({ queryKey: queryKeys.reports.standardSnapshots(packKey, theme) });
+      qc.invalidateQueries({ queryKey: queryKeys.reports.standardCompare(packKey, theme) });
+    },
   });
 }
 

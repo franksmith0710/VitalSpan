@@ -47,6 +47,7 @@ export function DatasetFieldWorkbench({
   syncDataSourceName,
   syncDataSourceEndpoint,
   onRefreshBinding,
+  fieldsLocked = false,
 }: {
   dataSourceId: string;
   connectorType?: string;
@@ -62,6 +63,7 @@ export function DatasetFieldWorkbench({
   syncDataSourceName?: string;
   syncDataSourceEndpoint?: string;
   onRefreshBinding?: () => void;
+  fieldsLocked?: boolean;
 }) {
   const isSyncOrigin = origin === "sync_job";
   const parsed = parseQualifiedTable(tableName);
@@ -142,13 +144,25 @@ export function DatasetFieldWorkbench({
               同步产物
             </Badge>
           ) : null}
+          {fieldsLocked ? (
+            <Badge variant="light" color="warning" size="sm" data-testid="demo-fields-locked-badge">
+              官方示例
+            </Badge>
+          ) : null}
         </div>
         <Badge variant="light" color="light" size="sm" data-testid="bind-selected-count">
           已选 {bindDraft.selectedColumns.length}/{allColumnNames.length || "—"}
         </Badge>
       </div>
 
-      {isSyncOrigin ? (
+      {fieldsLocked ? (
+        <Alert variant="info" data-testid="demo-fields-locked-alert">
+          <AlertTitle>官方示例字段已锁定</AlertTitle>
+          <AlertDescription className="text-theme-xs">
+            出图字段与维/指标类型由平台预置，仅供浏览与出图引用，不可修改。
+          </AlertDescription>
+        </Alert>
+      ) : isSyncOrigin ? (
         <Alert variant="info">
           <AlertTitle>来自同步任务</AlertTitle>
           <AlertDescription className="text-theme-xs">
@@ -189,7 +203,7 @@ export function DatasetFieldWorkbench({
               type="button"
               variant="outline"
               size="sm"
-              disabled={actionColumns.length === 0}
+              disabled={fieldsLocked || actionColumns.length === 0}
               onClick={() => onBindDraftChange(autoIdentifyDraft(actionColumns))}
             >
               自动识别
@@ -198,7 +212,7 @@ export function DatasetFieldWorkbench({
               type="button"
               variant="outline"
               size="sm"
-              disabled={actionColumns.length === 0}
+              disabled={fieldsLocked || actionColumns.length === 0}
               onClick={() => onBindDraftChange(selectAllDraft(actionColumns))}
             >
               全选
@@ -252,21 +266,24 @@ export function DatasetFieldWorkbench({
                           <Checkbox
                             aria-label={col}
                             checked={bindDraft.selectedColumns.includes(col)}
+                            disabled={fieldsLocked}
                             onCheckedChange={(checked) =>
                               onBindDraftChange(toggleColumnInDraft(bindDraft, col, checked === true))
                             }
                           />
                           <FieldKindIcon field={col} draft={bindDraft} />
                           <span className="min-w-0 flex-1 truncate font-mono text-theme-xs">{col}</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-1.5 text-[10px]"
-                            onClick={() => onBindDraftChange(toggleFieldKind(bindDraft, col))}
-                          >
-                            转{resolveKindForField(col, bindDraft) === "metric" ? "维度" : "指标"}
-                          </Button>
+                          {!fieldsLocked ? (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-1.5 text-[10px]"
+                              onClick={() => onBindDraftChange(toggleFieldKind(bindDraft, col))}
+                            >
+                              转{resolveKindForField(col, bindDraft) === "metric" ? "维度" : "指标"}
+                            </Button>
+                          ) : null}
                         </li>
                       ))
                     )}

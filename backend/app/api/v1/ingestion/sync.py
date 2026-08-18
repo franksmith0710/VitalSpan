@@ -718,6 +718,15 @@ def delete_sync_job(
             status_code=404,
             detail={"code": "NOT_FOUND", "message": "任务不存在", "detail": None},
         )
+    if find_active_run(db, job_id) is not None:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "SYNC_JOB_RUN_IN_PROGRESS",
+                "message": "任务正在运行中，请等待结束后再删除",
+                "detail": None,
+            },
+        )
     delete_datasets_for_sync_job(db, job)
     db.delete(job)
     db.commit()
@@ -810,6 +819,15 @@ def trigger_run(
             detail={
                 "code": "RUN_ALREADY_IN_PROGRESS",
                 "message": "该任务正在运行中",
+                "detail": None,
+            },
+        )
+    if resolve_sync_job_source_health(db, job) == "missing":
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "SYNC_SOURCE_UNAVAILABLE",
+                "message": "任务引用的数据连接已删除或不可见，无法运行同步",
                 "detail": None,
             },
         )

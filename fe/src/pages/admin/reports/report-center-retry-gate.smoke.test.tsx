@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ScheduleRecentFailuresPanel } from "./components/ScheduleRecentFailuresPanel";
 
@@ -38,6 +39,8 @@ describe("Report center retry gating", () => {
     );
     expect(await screen.findByText(/近期失败/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "重试" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "查看调度" })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByTestId("schedule-recent-failures-toggle"));
     expect(screen.getByRole("button", { name: "查看调度" })).toBeInTheDocument();
   });
 
@@ -50,6 +53,7 @@ describe("Report center retry gating", () => {
         />,
       ),
     );
+    await userEvent.click(await screen.findByTestId("schedule-recent-failures-toggle"));
     expect(await screen.findByRole("button", { name: "重试" })).toBeInTheDocument();
   });
 });

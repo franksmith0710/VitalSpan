@@ -35,9 +35,9 @@ import {
 } from "./layoutUtils";
 import { cloneLayoutWidget } from "./cloneLayoutWidget";
 import { clonePixelLayoutWidget } from "./pixelCanvas/createPixelWidget";
-import { createLinkedLayoutWidget } from "./createLayoutWidget";
-import { resolveWidgetForCrossDashboardCopy } from "@/lib/vizComponentEdit";
+import { instantiateVizComponentWidget, resolveWidgetForCrossDashboardCopy } from "@/lib/vizComponentEdit";
 import {
+  fetchVizComponent,
   fetchVizComponents,
   type VizComponentListItem,
   VIZ_COMPONENT_CATEGORIES,
@@ -298,11 +298,18 @@ export function VizReuseDialog({
   }, [open]);
 
   const handleLibraryPick = (component: VizComponentListItem) => {
-    const linked = createLinkedLayoutWidget(component, widgets);
-    onInsertCloned(linked);
-    void queryClient.invalidateQueries({ queryKey: queryKeys.vizComponents.all });
-    onAfterLibraryInsert?.();
-    onOpenChange(false);
+    void (async () => {
+      try {
+        const detail = await fetchVizComponent(component.id);
+        const instance = instantiateVizComponentWidget(detail, widgets);
+        onInsertCloned(instance);
+        void queryClient.invalidateQueries({ queryKey: queryKeys.vizComponents.all });
+        onAfterLibraryInsert?.();
+        onOpenChange(false);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "插入失败");
+      }
+    })();
   };
 
   return (
@@ -311,7 +318,7 @@ export function VizReuseDialog({
         <DialogHeader>
           <DialogTitle>复用组件</DialogTitle>
           <DialogDescription>
-            从组织组件库引用（自动同步更新）或从其他看板复制快照。
+            从组织组件库插入当前快照到本看板，之后数据和样式只属于本页；或从其他看板复制。
           </DialogDescription>
         </DialogHeader>
         <div className="flex gap-1 rounded-lg bg-gray-100 p-1 dark:bg-white/5">

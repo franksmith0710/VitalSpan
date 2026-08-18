@@ -28,6 +28,7 @@ import {
 import { HintTooltip, TruncateHint } from "@/components/ui/hint-tooltip";
 import { cn } from "@/lib/utils";
 import { localizeApiMessage } from "@/lib/apiError";
+import { isSourceUnavailable } from "@/lib/sourceHealth";
 import {
   consumeActionAriaLabel,
   consumeActionHref,
@@ -275,6 +276,7 @@ export function SyncJobsTable({
                           runningId === job.id ||
                           pollingJobId === job.id;
                         const stopping = cancellingId === job.id || job.last_run?.status === "cancelling";
+                        const sourceUnavailable = isSourceUnavailable(job.source_health);
                         if (runInProgress) {
                           return (
                             <HintTooltip label={stopping ? "正在停止同步…" : "停止当前同步（阶段边界生效）"}>
@@ -294,12 +296,19 @@ export function SyncJobsTable({
                           );
                         }
                         return (
-                          <HintTooltip label="手动运行同步（全量将覆盖目标表）">
+                          <HintTooltip
+                            label={
+                              sourceUnavailable
+                                ? "数据源不可用，无法运行同步"
+                                : "手动运行同步（全量将覆盖目标表）"
+                            }
+                          >
                             <IconButton
                               type="button"
                               variant="ghost"
                               size="sm"
                               aria-label="手动运行同步"
+                              disabled={sourceUnavailable}
                               onClick={() => onRun(job)}
                             >
                               <Play className="size-4" />

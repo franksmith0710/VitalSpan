@@ -40,7 +40,7 @@ import { defaultVizComponentName, defaultVizComponentPayload } from "@/lib/vizCo
 import { cn } from "@/lib/utils";
 import { widgetTypeLabel } from "./componentLabels";
 
-const WIDGET_TYPES: VizWidgetType[] = ["chart", "filter", "text", "media"];
+const WIDGET_TYPES: VizWidgetType[] = ["chart", "customViz", "filter", "text", "media"];
 
 const SURFACE_OPTIONS: { kind: VizSurfaceKind; label: string }[] = [
   { kind: "dashboard", label: "仪表板" },
@@ -182,7 +182,7 @@ export function CreateVizComponentDialog({ open, onOpenChange }: CreateVizCompon
               className={cn(HUB_SEGMENTED_SHELL_CLASS, "flex flex-wrap gap-0.5")}
             >
               {WIDGET_TYPES.map((type) => {
-                const active = widgetType === type || (type === "chart" && isCustomViz);
+                const active = widgetType === type;
                 return (
                   <Button
                     key={type}

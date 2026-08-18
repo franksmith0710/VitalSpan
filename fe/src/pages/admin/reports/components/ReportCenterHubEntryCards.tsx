@@ -79,7 +79,7 @@ export function ReportCenterHubEntryCards({
         title="标准分析"
         description={standardDescription}
         stat={standardCount > 0 ? `${standardCount} 个分析包` : undefined}
-        href={pinnedStandard ? standardAnalysisPath(pinnedStandard.packKey) : "/admin/reports/standard"}
+        href={pinnedStandard ? standardAnalysisPath(pinnedStandard.packKey) : standardAnalysisPath()}
       />
       {canManage ? (
         <>
@@ -102,7 +102,7 @@ export function ReportCenterHubEntryCards({
         <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 p-4 text-theme-xs text-gray-500 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-400 sm:col-span-2">
           文档模板与调度管理需管理员权限。
           <Button type="button" variant="link" size="sm" className="ml-1 h-auto p-0" asChild>
-            <Link to="/admin/reports/standard">前往标准分析</Link>
+            <Link to={standardAnalysisPath()}>前往标准分析</Link>
           </Button>
         </div>
       )}

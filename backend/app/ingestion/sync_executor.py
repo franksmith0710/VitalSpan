@@ -15,6 +15,12 @@ from app.ingestion.sync_cancel import (
     finalize_cancelled,
     raise_if_cancel_requested,
 )
+from app.ingestion.sync_run_guard import (
+    SyncRunSkipped,
+    fail_run_for_guard,
+    guard_api_sync_start,
+    guard_scheduled_sync_start,
+)
 from app.ingestion.sync_fetch import compute_next_watermark, fetch_source_rows, validate_sync_table_names
 from app.ingestion.sync_write import write_analytics
 
@@ -55,9 +61,21 @@ def reconcile_stale_running_runs(*, max_age_seconds: int = 600) -> int:
         db.close()
 
 
-def run_job(job_id: uuid.UUID, trace_id: str, *, run_id: uuid.UUID | None = None, attempt: int = 0) -> uuid.UUID:
+def run_job(job_id: uuid.UUID, trace_id: str, *, run_id: uuid.UUID | None = None, attempt: int = 0) -> uuid.UUID | None:
     db = get_meta_session()
+    job = db.get(SyncJob, job_id)
+    if job is None:
+        if run_id is not None:
+            fail_run_for_guard(db, run_id, "任务不存在")
+        db.close()
+        return run_id
+
     if run_id is None:
+        try:
+            guard_scheduled_sync_start(db, job)
+        except SyncRunSkipped:
+            db.close()
+            return None
         run = SyncRun(job_id=job_id, status="running", trace_id=trace_id, retry_count=attempt)
         db.add(run)
         db.commit()
@@ -68,11 +86,12 @@ def run_job(job_id: uuid.UUID, trace_id: str, *, run_id: uuid.UUID | None = None
         if run is None:
             db.close()
             raise ValueError("run not found")
-    job = db.get(SyncJob, job_id)
-    if job is None:
-        _update_run(db, run, status="failed", finished_at=datetime.now(timezone.utc), error_message="任务不存在")
-        db.close()
-        return run_id
+        try:
+            guard_api_sync_start(db, job)
+        except RuntimeError as exc:
+            fail_run_for_guard(db, run_id, str(exc))
+            db.close()
+            return run_id
     rules_row = db.scalar(select(EtlRuleSet).where(EtlRuleSet.job_id == job_id))
     rules = rules_row.rules if rules_row else []
     try:

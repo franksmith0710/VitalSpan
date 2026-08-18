@@ -18,7 +18,7 @@ describe("reportCenterNav", () => {
       "/admin/reports/templates/tpl-1",
     );
     expect(resolveCenterRecentHref({ resourceType: "standard", resourceId: "k1" })).toBe(
-      "/admin/reports/standard?pack=k1",
+      "/admin/reports/standard/results?pack=k1",
     );
     expect(resolveCenterRecentHref({ resourceType: "schedule", resourceId: "s1" })).toBe(
       "/admin/reports/schedules?tab=all&expand=s1",
@@ -35,7 +35,9 @@ describe("reportCenterNav", () => {
 
   it("resolves report sub-nav active path", () => {
     expect(resolveReportCenterSubNavPath("/admin/reports/center")).toBe("/admin/reports/center");
-    expect(resolveReportCenterSubNavPath("/admin/reports/standard")).toBe("/admin/reports/standard");
+    expect(resolveReportCenterSubNavPath("/admin/reports/standard/results")).toBe(
+      "/admin/reports/standard/results",
+    );
     expect(resolveReportCenterSubNavPath("/admin/reports/templates/foo")).toBe(
       "/admin/reports/templates",
     );
@@ -45,15 +47,15 @@ describe("reportCenterNav", () => {
     expect(resolveReportCenterSubNavPath("/admin/reports/schedules")).toBe(
       "/admin/reports/schedules",
     );
-    expect(resolveReportCenterSubNavPath("/admin/reports/standard/config")).toBe(
-      "/admin/reports/standard",
+    expect(resolveReportCenterSubNavPath("/admin/reports/standard/setup")).toBe(
+      "/admin/reports/standard/results",
     );
   });
 
   it("highlights report center nav for all report routes", () => {
     expect(isReportCenterNavActive("/admin/reports/center")).toBe(true);
-    expect(isReportCenterNavActive("/admin/reports/standard")).toBe(true);
-    expect(isReportCenterNavActive("/admin/reports/standard/config")).toBe(true);
+    expect(isReportCenterNavActive("/admin/reports/standard/results")).toBe(true);
+    expect(isReportCenterNavActive("/admin/reports/standard/setup")).toBe(true);
     expect(isReportCenterNavActive("/admin/reports/templates")).toBe(true);
     expect(isReportCenterNavActive("/admin/reports/dashboards")).toBe(false);
   });

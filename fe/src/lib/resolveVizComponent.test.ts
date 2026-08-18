@@ -122,11 +122,11 @@ describe("resolveVizComponent", () => {
     expect(resolved.chartConfig?.nativeBody?.deStyle?.geo?.manualDrillStack).toEqual([
       { field: "province", value: "福建省", label: "福建省" },
     ]);
-    expect(resolved.chartConfig?.dataSourceId).toBe("ds-2");
+    expect(resolved.chartConfig?.dataSourceId).toBe("ds-1");
   });
 
   it("detaches linked widget to inline config", () => {
-    const widget = chartWidget("w1", { componentRef: { componentId: "c1" } });
+    const widget = chartWidget("w1", { componentRef: { componentId: "c1" }, chartConfig: undefined });
     const map = buildComponentMap([
       componentDetail("c1", {
         chartConfig: {

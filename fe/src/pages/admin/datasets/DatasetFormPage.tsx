@@ -32,6 +32,7 @@ import {
 import { useDatasetTableColumns } from "./hooks/useDatasetTableColumns";
 import type { DatasetEditorValues, DatasetItem } from "./types";
 import { resolveAnalyticsDatasourceId } from "@/lib/datasourceRoles";
+import { isDemoPackageDataset } from "@/lib/demoPackage";
 import { tablesMatchForBind, parseQualifiedTable } from "@/lib/datasetTableUtils";
 
 const datasetPageIcon = (
@@ -168,6 +169,10 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
   });
 
   const datasetItem = detailQuery.data?.item;
+  const isDemoPackage =
+    mode === "edit" &&
+    (datasetItem?.isDemoPackage ??
+      isDemoPackageDataset(values.datasetId, values.displayName));
   const boundConfigId = datasetItem?.boundConfigId;
 
   const primaryTableName = values.tables[0]?.name ?? "";
@@ -326,10 +331,11 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
   };
 
   const pageDescription = useMemo(() => {
+    if (isDemoPackage) return "官方示例 Dataset，字段与配置已锁定，仅供浏览与出图引用";
     if (!isBaselineReady) return undefined;
     if (isDirty) return "有未保存的更改 · 保存后生效";
     return mode === "create" ? "填写完成后保存以创建 Dataset" : "已保存";
-  }, [isBaselineReady, isDirty, mode]);
+  }, [isBaselineReady, isDirty, isDemoPackage, mode]);
 
   const canSubmit = canSubmitDataset(values);
   const submitBlockers = datasetSubmitBlockers(values);
@@ -362,7 +368,7 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
     </Button>
   );
 
-  const headerActions = (
+  const headerActions = isDemoPackage ? null : (
     <Button
       type="submit"
       form={DATASET_EDITOR_FORM_ID}
@@ -438,6 +444,7 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
           },
         }}
         transformRulesPrefill={transformRulesPrefill}
+        isDemoPackage={isDemoPackage}
       />
       <UnsavedLeaveDialog
         open={leaveDialogOpen}

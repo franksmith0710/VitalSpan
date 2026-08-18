@@ -135,7 +135,7 @@ export const NAV_MANIFEST: NavManifestSection[] = [
           },
           {
             name: "标准分析",
-            path: "/admin/reports/standard",
+            path: "/admin/reports/standard/results",
             milestone: "M1",
             capability: "report:read",
           },

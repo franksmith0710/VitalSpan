@@ -28,12 +28,29 @@ function rewriteIds(widget: DashboardWidgetBase, payload: Record<string, unknown
   return next;
 }
 
+function instanceOwnsPayload(widget: DashboardWidgetBase): boolean {
+  if (widget.type === "chart") {
+    const cfg = widget.chartConfig;
+    if (!cfg) return false;
+    const hasQuery = Boolean(cfg.dataSourceId || cfg.sql || cfg.datasetId);
+    const hasFields = (cfg.dimensions?.length ?? 0) + (cfg.metrics?.length ?? 0) > 0;
+    return hasQuery || hasFields;
+  }
+  if (widget.type === "customViz") return Boolean(widget.customVizConfig?.artifactId);
+  if (widget.type === "filter") return Boolean(widget.filterConfig);
+  if (widget.type === "text") return Boolean(widget.textConfig);
+  if (widget.type === "media") return Boolean(widget.mediaConfig);
+  return false;
+}
+
 export function resolveLayoutWidget<T extends DashboardWidgetBase>(
   widget: T,
   componentMap: VizComponentMap,
 ): T {
   const ref = widget.componentRef;
   if (!isLinkedComponentRef(ref)) return widget;
+  // 看板已有实例配置：库只负责当初下发，不再覆盖数据和样式
+  if (instanceOwnsPayload(widget)) return widget;
 
   const component = componentMap.get(ref.componentId);
   if (!component) {

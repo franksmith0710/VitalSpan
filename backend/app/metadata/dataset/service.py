@@ -26,6 +26,7 @@ from app.metadata.dataset.schemas import (
     DatasetListResponse,
     DatasetValidateOut,
 )
+from app.query.config_store.models import QueryConfigRecord
 
 META_DATASET_CONFIG_TYPE_INVALID = "META_DATASET_CONFIG_TYPE_INVALID"
 META_DATASET_SYNC_BIND_LOCKED = "META_DATASET_SYNC_BIND_LOCKED"
@@ -76,7 +77,19 @@ def _with_session(fn):
         session.close()
 
 
-def _row_to_out(row: DatasetRecord, *, source_health: str = "none") -> DatasetItemOut:
+def _bound_config_revision(session: Session, bound_config_id: uuid.UUID | None) -> int | None:
+    if bound_config_id is None:
+        return None
+    record = session.get(QueryConfigRecord, bound_config_id)
+    return record.revision if record is not None else None
+
+
+def _row_to_out(
+    row: DatasetRecord,
+    *,
+    source_health: str = "none",
+    bound_config_revision: int | None = None,
+) -> DatasetItemOut:
     return DatasetItemOut.model_validate({
         "datasetId": row.dataset_id,
         "displayName": row.display_name,
@@ -85,6 +98,7 @@ def _row_to_out(row: DatasetRecord, *, source_health: str = "none") -> DatasetIt
         "allowedRoles": list(row.allowed_roles or []),
         "tableSourceDataSourceId": row.table_source_datasource_id,
         "boundConfigId": row.bound_config_id,
+        "boundConfigRevision": bound_config_revision,
         "origin": row.origin or "manual",
         "syncJobId": row.sync_job_id,
         "transformRules": list(row.transform_rules or []),
@@ -216,7 +230,11 @@ def list_datasets(
         page = rows[max(offset, 0) : max(offset, 0) + capped]
         return DatasetListResponse(
             items=[
-                _row_to_out(r, source_health=resolve_dataset_source_health(session, r))
+                _row_to_out(
+                    r,
+                    source_health=resolve_dataset_source_health(session, r),
+                    bound_config_revision=_bound_config_revision(session, r.bound_config_id),
+                )
                 for r in page
             ],
             total=total,
@@ -238,7 +256,11 @@ def get_dataset(dataset_id: str, user: UserContext | None = None) -> DatasetItem
         if user is not None:
             _assert_dataset_read_access(user, row)
         health = resolve_dataset_source_health(session, row)
-        return _row_to_out(row, source_health=health)
+        return _row_to_out(
+            row,
+            source_health=health,
+            bound_config_revision=_bound_config_revision(session, row.bound_config_id),
+        )
     finally:
         session.close()
 
@@ -282,13 +304,22 @@ def update_dataset(dataset_id: str, payload: DatasetItemIn, user: UserContext) -
         row = session.get(DatasetRecord, dataset_id)
         if row is None:
             raise DatasetError("META_DATASET_NOT_FOUND", "Dataset not found", 404)
+        if is_demo_package_dataset(row.dataset_id, row.display_name):
+            raise DatasetError(
+                META_DATASET_DEMO_PROTECTED,
+                "Official demo datasets cannot be modified",
+                409,
+            )
         row.display_name = payload.display_name
         row.tables = _dump_tables(payload)
         row.computed_fields = _dump_computed(payload)
         row.allowed_roles = list(payload.allowed_roles)
         row.table_source_datasource_id = payload.table_source_datasource_id
         session.flush()
-        return _row_to_out(row)
+        return _row_to_out(
+            row,
+            bound_config_revision=_bound_config_revision(session, row.bound_config_id),
+        )
 
     return _with_session(_op)
 
@@ -380,7 +411,10 @@ def bind_query_config(dataset_id: str, config_id: uuid.UUID, user: UserContext) 
                     )
         row.bound_config_id = config_id
         session.flush()
-        return _row_to_out(row)
+        return _row_to_out(
+            row,
+            bound_config_revision=_bound_config_revision(session, row.bound_config_id),
+        )
 
     return _with_session(_op)
 
@@ -391,6 +425,11 @@ def find_dataset_by_bound_config(config_id: uuid.UUID) -> DatasetItemOut | None:
         row = session.scalar(
             select(DatasetRecord).where(DatasetRecord.bound_config_id == config_id).limit(1),
         )
-        return _row_to_out(row) if row is not None else None
+        if row is None:
+            return None
+        return _row_to_out(
+            row,
+            bound_config_revision=_bound_config_revision(session, row.bound_config_id),
+        )
     finally:
         session.close()

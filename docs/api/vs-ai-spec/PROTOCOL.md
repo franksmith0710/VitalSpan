@@ -1,7 +1,8 @@
 # Custom Viz 组件库协议（v1）
 
 > 一个 Base（`CustomVizWidget`）从接口异步加载库中源码，挂进看板主页面。  
-> 仓库不为每个组件增加 tsx/py。
+> 仓库不为每个组件增加 tsx/py。  
+> **对接完成标准、合法请求体、本机上传**：见 [00-REQUIREMENTS.md](./00-REQUIREMENTS.md)。
 
 ## Bundle 结构
 
@@ -53,7 +54,7 @@ Base 在跑 bundle 脚本前给宿主挂 `host.vsCv`：`getPayload()`、`onPaylo
 
 1. AI：`POST /api/v1/ai-viz/artifacts` 把 HTML 源码存进库；同一 ID 用 `PUT` 覆盖
 2. 大屏 layout 只记 `customVizConfig.artifactId`
-3. Base（`CustomVizWidget`）`GET .../entry` 拉源码，挂进主页面宿主 DOM（与内置 chart 同页）
+3. Base（`CustomVizWidget`）`GET .../entry` 拉源码（带 `?h=<contentHash>` 防缓存）；**页签重新可见时**再拉 meta+entry，以便 PUT 覆盖后不必关页也能换新 HTML。挂进主页面宿主 DOM。
 
 ## 约束
 
@@ -67,7 +68,7 @@ Base 在跑 bundle 脚本前给宿主挂 `host.vsCv`：`getPayload()`、`onPaylo
 | runtime | `html` 或 `d3`（见上表） |
 | 数据槽位 | **必填** `manifest.fieldSlots`：`dimensions` 与 `metrics` 均须 `min >= 1` |
 | 样式声明 | **必填** `manifest.styleSchema.properties`（至少 1 项）；推荐同时提供 `defaultStyle`；**可声明平台从未出现过的样式键**，见 [guides/STYLE-SCHEMA.md](./guides/STYLE-SCHEMA.md) |
-| 节点 ID | 禁止 `id="root"` / `id="app"`（与平台 SPA 冲突）；多实例时 ID 须唯一 |
+| 节点查找 | 禁止 `document.getElementById`（同页多实例会抢节点）。画图节点用宿主内 `querySelector`。禁止 `id="root"` / `id="app"`（与平台 SPA 冲突） |
 | CSS 作用域 | 挂载时选择器会收到 `.vs-custom-viz-host`；宿主已注入 `--dashboard-*`，不必再用 `:root` 改全局 |
 
 ## 注册与更新 API
@@ -132,7 +133,7 @@ var vsCv = host.vsCv;
 function render(p) {
   p = p || vsCv.getPayload();
   if (!p || p.bindingStatus !== "bound") return;
-  vsCv.d3.select(host).select("#vs-cv-chart"); // runtime=d3
+  vsCv.d3.select(host).select("#vs-cv-chart"); // 不要 document.getElementById
 }
 render();
 vsCv.onPayload(render);
@@ -141,6 +142,16 @@ vsCv.onPayload(render);
 也可继续监听 **`vs-cv-payload-update`**。**禁止** MutationObserver 盯宿主。推荐 `getComputedStyle(host)` 读 `--vs-style-*`。
 
 未绑定时依据 `bindingStatus === "unbound"` 显示引导，**不要**假装已有业务数据。
+
+## Schema 文件（磁盘名）
+
+| 路径 | 说明 |
+|------|------|
+| `schemas/layout.schema.json` | layoutJson v2（**请用此文件名**） |
+| `schemas/layout-v2.schema.json` | 同上，兼容旧 `$id` / 误写的文件名 |
+| `schemas/custom-viz-plugin.schema.json` | 注册 artifact 请求体 |
+| `schemas/styles.schema.json` | `manifest.styleSchema` |
+| `schemas/tokens.schema.json` | `theme-tokens.json` 外形 |
 
 ## 数据（第一期）
 

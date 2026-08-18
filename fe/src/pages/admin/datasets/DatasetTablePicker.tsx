@@ -89,6 +89,7 @@ export function DatasetTablePicker({
   syncJobId,
   onRefreshBinding,
   onTableChange,
+  isDemoPackage = false,
 }: {
   tables: DatasetTable[];
   onChange: (next: DatasetTable[]) => void;
@@ -103,9 +104,10 @@ export function DatasetTablePicker({
   syncJobId?: string | null;
   onRefreshBinding?: () => void;
   onTableChange?: () => void;
+  isDemoPackage?: boolean;
 }) {
   const isSyncOrigin = origin === "sync_job";
-  const readOnlyTables = isSyncOrigin && tables.length > 0;
+  const readOnlyTables = (isSyncOrigin && tables.length > 0) || (isDemoPackage && tables.length > 0);
   const [dataSourceId, setDataSourceId] = useState("");
   const [pendingTablePick, setPendingTablePick] = useState<TableSelection | null>(null);
   const [pendingDataSourceId, setPendingDataSourceId] = useState<string | null>(null);
@@ -286,7 +288,7 @@ export function DatasetTablePicker({
             </p>
           ) : !dataSourceId ? (
             <Skeleton className={cn("h-11 w-full rounded-lg", headerGridLayout && SYNC_HEADER_READOUT_MIN_H)} />
-          ) : readOnlyTables || isSyncOrigin ? (
+          ) : readOnlyTables || isSyncOrigin || isDemoPackage ? (
             selectedDs ? (
               <SyncOutputConnectionReadout
                 id="dataset-datasource"
@@ -347,6 +349,10 @@ export function DatasetTablePicker({
         <p className="shrink-0 text-theme-xs text-gray-500 dark:text-gray-400">
           同步产物固定写入托管分析库；此处仅浏览同步目标表结构，不能改选业务源连接。
         </p>
+      ) : isDemoPackage ? (
+        <p className="shrink-0 text-theme-xs text-gray-500 dark:text-gray-400">
+          官方示例 Dataset 的数据源与物理表已预置，不可更换。
+        </p>
       ) : null}
 
       {showSchemaPicker ? (
@@ -396,6 +402,7 @@ export function DatasetTablePicker({
             syncDataSourceName={syncDatasourceDisplay?.name}
             syncDataSourceEndpoint={syncDatasourceDisplay?.endpoint}
             onRefreshBinding={onRefreshBinding}
+            fieldsLocked={isDemoPackage}
           />
         </div>
       ) : null}

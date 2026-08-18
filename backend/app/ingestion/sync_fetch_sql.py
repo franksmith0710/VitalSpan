@@ -2,11 +2,19 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.core.config import get_settings
 from app.datasources.registry import ConnectorNotFoundError, registry
 from app.ingestion.models import SyncJob, decrypt_password
 from app.ingestion.sync_sql_builder import build_sync_select
 from app.query.capabilities import resolve_sql_dialect_type
 from app.query.rls.guard import validate_identifier
+
+_SYNC_CONNECT_TIMEOUT_SEC = 5.0
+
+
+def _sync_read_timeout_sec() -> float:
+    settings = get_settings()
+    return float(min(max(settings.query_timeout_seconds, 30), 120))
 
 
 def _validate_sync_table_names(source_table: str, target_table: str) -> None:
@@ -21,6 +29,8 @@ def _connector_kwargs(job: SyncJob) -> dict[str, Any]:
         "database": job.source_database,
         "username": job.source_username,
         "password": decrypt_password(job.source_password_encrypted),
+        "connect_timeout_sec": _SYNC_CONNECT_TIMEOUT_SEC,
+        "read_timeout_sec": _sync_read_timeout_sec(),
     }
 
 

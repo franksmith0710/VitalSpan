@@ -165,6 +165,13 @@ def export_capability_manifest() -> dict[str, Any]:
             "renderers": "docs/api/vs-ai-spec/guides/RENDERERS.md",
             "d3Optional": "docs/api/vs-ai-spec/guides/D3-OPTIONAL.md",
             "themeTokens": "docs/api/vs-ai-spec/theme-tokens.json",
+            "schemas": {
+                "layout": "docs/api/vs-ai-spec/schemas/layout.schema.json",
+                "layoutV2Alias": "docs/api/vs-ai-spec/schemas/layout-v2.schema.json",
+                "customVizPlugin": "docs/api/vs-ai-spec/schemas/custom-viz-plugin.schema.json",
+                "styles": "docs/api/vs-ai-spec/schemas/styles.schema.json",
+                "tokens": "docs/api/vs-ai-spec/schemas/tokens.schema.json",
+            },
         },
     }
 

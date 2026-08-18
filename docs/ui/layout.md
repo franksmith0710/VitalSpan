@@ -4,8 +4,8 @@
 > **行为需求**：Dashboard/权限/嵌入能力见 [PRD](../automate/prd.md)；HTTP 路由见 [api/README.md](../api/README.md)。
 
 ```yaml
-version: 1.3.5
-last_updated: 2026-08-09
+version: 1.3.6
+last_updated: 2026-08-18
 frontend_root: fe/
 design_system: .agents/skills/b-design-system-tailadmin-radix
 layout_pattern_ref: references/layout-patterns/app-shell.md
@@ -120,7 +120,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │   ├── /data-screens/:id/preview    # 大屏全屏预览投放（`DataScreenPreviewPage` + `DataScreenPresenter`）
 │   ├── /data-screens/:id/share      # 大屏分享/整屏嵌入（`DataScreenSharePanel`）
 │   ├── /viz-templates               # 可视化模板 Hub（看板+大屏；≠ 报表模板）
-│   ├── /viz-components              # 组织组件库（componentRef 引用；看板/大屏复用）
+│   ├── /viz-components              # 组织组件库（复用时拷贝快照到看板）
 │   ├── /dashboards/:id              # 查看 view · bi-dashboard-builder（只读）
 │   ├── /dashboards/:id/edit         # 构建器 edit · bi-dashboard-builder
 │   ├── /dashboards/:id/preview      # （规划）构建器 preview；当前以 `/dashboards/:id` view 模式替代
@@ -218,7 +218,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 | `/admin/data-screens/:id/share` | `bi-share-embed`（复用分享页） | VIZ-006, API-006 |
 | `/admin/dashboards/:id` | `bi-dashboard-builder`（view） | DASH-*, VIEW-* |
 | `/admin/dashboards/:id/share` | `bi-share-embed` | VIZ-006, API-006 |
-| `/admin/viz-components` | 组织组件库 Hub；`componentRef` 引用管理 | DASH-010 |
+| `/admin/viz-components` | 组织组件库 Hub；复用插入为看板实例快照 | DASH-010 |
 | `/admin/viz-components/:id/edit` | 组件库内编辑（复用看板 Inspector + 实时预览） | DASH-010 |
 | `/admin/viz-templates` | 可视化模板 Hub（整页 layout 信封） | DASH-009 companion |
 
@@ -359,6 +359,7 @@ fe/src/
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.3.6 | 2026-08-18 | 组件库复用改为插入快照，看板实例不随库热更新 |
 | 1.3.5 | 2026-08-09 | 对齐「数据准备」分组名；`ACTIVE_MILESTONES` 补 M5；二级路由表；`/admin/system`；默认 index→dashboards |
 | 1.3.4 | 2026-08-07 | 大屏编辑：`DataScreenEditViewport` 与投放 `CanvasScaleViewport` 分层说明 |
 | 1.3.2 | 2026-07-17 | 数据大屏 Phase 1：补 `preview`/`share` 路由；`surfaceKind` 与 view/preview 语义区分 |

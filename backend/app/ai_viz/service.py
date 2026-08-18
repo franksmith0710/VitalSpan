@@ -55,7 +55,7 @@ def update_artifact(
     payload: AiVizArtifactCreateIn,
     actor: UserContext,
 ) -> AiVizArtifactOut:
-    row = get_artifact(db, artifact_id, actor)
+    row = get_artifact(db, artifact_id, actor, write=True)
     entry = payload.manifest.entry or "index.html"
     validate_bundle_files(payload.files, entry)
     manifest_dict = payload.manifest.model_dump(by_alias=True)
@@ -68,11 +68,17 @@ def update_artifact(
     return _to_out(row)
 
 
-def get_artifact(db: Session, artifact_id: uuid.UUID, actor: UserContext) -> AiVizArtifact:
+def get_artifact(
+    db: Session,
+    artifact_id: uuid.UUID,
+    actor: UserContext,
+    *,
+    write: bool = False,
+) -> AiVizArtifact:
     row = db.get(AiVizArtifact, artifact_id)
     if row is None:
         raise AiVizError("AIVIZ_NOT_FOUND", "artifact not found", 404)
-    if row.owner_user_id and str(row.owner_user_id) != actor.id:
+    if write and row.owner_user_id and str(row.owner_user_id) != actor.id:
         raise AiVizError("AIVIZ_FORBIDDEN", "artifact access denied", 403)
     return row
 

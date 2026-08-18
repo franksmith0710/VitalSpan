@@ -24,11 +24,12 @@
 - [x] AIVIZ-004：`POST /api/v1/charts/validate` 接受 `nativeBody.dataBinding.status=manual` 且无数据源
 - [x] AIVIZ-005：FE `CustomVizWidget` 作为唯一 Base，将 entry HTML 挂进主页面宿主（与看板同页，注入 `--dashboard-*`）
 - [x] AIVIZ-008：html/d3 规范 + `theme-tokens.json` + 官方示例；`runtime` 校验，`rendererHint` 仅兼容别名
-- [x] AIVIZ-009：`PUT /api/v1/ai-viz/artifacts/{id}` 覆盖同一组件源码，引用方刷新即新
+- [x] AIVIZ-009：`PUT /api/v1/ai-viz/artifacts/{id}` 覆盖同一组件源码；引用方硬刷新或页签重新可见即新
 - [x] AIVIZ-006：组件库入库 customViz（M2）
 - [x] AIVIZ-007：平台向宿主喂 query 结果（后续）
 - [x] AIVIZ-010：Payload v1（`protocolVersion` + `bindingStatus`）；Base 始终注入；bundle 仅监听 `vs-cv-payload-update`
-- [x] AIVIZ-011：`host.vsCv`（getPayload / onPayload / d3）；整包 ≤2MB；拒绝内联 d3 整库；`runtime` 仅 html|d3
+- [x] AIVIZ-012：GET meta/entry 有 `dashboard:read` 即可（共享看板）；列表与 PUT 仍仅属主；官方示例宿主内 querySelector
+- [x] AIVIZ-013：检查器「高级」单卡外壳走 `customVizConfig.widgetStyle`（与看板 `widgetStyle` 合并）；组件内视觉仅认 manifest `styleSchema` → payload `--vs-style-*`
 
 ## 代码锚点
 

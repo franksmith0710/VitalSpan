@@ -1,12 +1,12 @@
-import { standardAnalysisPath } from "@/pages/admin/reports/standardRoutes";
+import { STANDARD_RESULTS_PATH, STANDARD_SETUP_PATH, standardAnalysisPath } from "@/pages/admin/reports/standardRoutes";
 import { resolveActiveNavPath } from "@/lib/nav-active";
 
 export const REPORT_CENTER_NAV_PATH = "/admin/reports/center";
 
 export const REPORT_CENTER_SUB_NAV_PATHS = [
   REPORT_CENTER_NAV_PATH,
-  "/admin/reports/standard",
-  "/admin/reports/standard/config",
+  STANDARD_RESULTS_PATH,
+  STANDARD_SETUP_PATH,
   "/admin/reports/templates",
   "/admin/reports/schedules",
 ] as const;
@@ -24,8 +24,8 @@ export function resolveReportCenterSubNavPath(pathname: string): string | null {
   if (pathname.startsWith("/admin/reports/view")) {
     return "/admin/reports/templates";
   }
-  if (pathname.startsWith("/admin/reports/standard/config")) {
-    return "/admin/reports/standard";
+  if (pathname.startsWith(STANDARD_SETUP_PATH)) {
+    return STANDARD_RESULTS_PATH;
   }
   return resolveActiveNavPath(pathname, [...REPORT_CENTER_SUB_NAV_PATHS]);
 }

@@ -309,3 +309,100 @@ def test_delete_datasource_blocked_when_dataset_references(client, auth_headers)
 
     assert client.delete(f"/api/v1/datasets/{dataset_id}", headers=auth_headers).status_code == 204
     assert client.delete(f"/api/v1/datasources/{ds_id}", headers=auth_headers).status_code == 204
+
+
+def test_delete_datasource_blocked_when_bound_config_references(client, auth_headers):
+    ds_id = _seed_mysql_datasource()
+    config_id = uuid.uuid4()
+    dataset_id = f"boundcfg_{uuid.uuid4().hex[:8]}"
+    db = get_meta_session()
+    db.add(
+        QueryConfigRecord(
+            id=config_id,
+            config_type="dataset_query",
+            schema_version="1.0",
+            ref_type="dataset",
+            ref_id=_stable_ref_id(dataset_id),
+            payload={"dataSourceId": str(ds_id), "schema": "public", "table": "orders"},
+            revision=1,
+        ),
+    )
+    db.add(
+        DatasetRecord(
+            dataset_id=dataset_id,
+            display_name="绑定 query config",
+            tables=[{"name": "public.orders"}],
+            computed_fields=[],
+            allowed_roles=["analyst"],
+            bound_config_id=config_id,
+        ),
+    )
+    db.commit()
+    db.close()
+
+    blocked = client.delete(f"/api/v1/datasources/{ds_id}", headers=auth_headers)
+    assert blocked.status_code == 409
+    assert blocked.json()["code"] == "DATASOURCE_IN_USE"
+
+    client.delete(f"/api/v1/datasets/{dataset_id}", headers=auth_headers)
+
+
+def test_trigger_run_blocked_when_source_missing(client, auth_headers):
+    ds_id = _seed_mysql_datasource()
+    target = f"norun_{uuid.uuid4().hex[:8]}"
+    create = client.post(
+        "/api/v1/ingestion/sync-jobs",
+        json={
+            "name": "missing-source-run",
+            "source_mode": "datasource",
+            "source_data_source_id": str(ds_id),
+            "source_table": "dirty_orders",
+            "target_table": target,
+            "schedule_cron": None,
+        },
+        headers=auth_headers,
+    )
+    assert create.status_code == 201, create.text
+    job_id = create.json()["id"]
+
+    db = get_meta_session()
+    row = db.get(DataSource, ds_id)
+    row.deleted_at = datetime.now(UTC)
+    db.commit()
+    db.close()
+
+    blocked = client.post(f"/api/v1/ingestion/sync-jobs/{job_id}/run", headers=auth_headers)
+    assert blocked.status_code == 409
+    assert blocked.json()["detail"]["code"] == "SYNC_SOURCE_UNAVAILABLE"
+
+    client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+def test_delete_sync_job_blocked_when_run_in_progress(client, auth_headers):
+    ds_id = _seed_mysql_datasource()
+    target = f"delrun_{uuid.uuid4().hex[:8]}"
+    create = client.post(
+        "/api/v1/ingestion/sync-jobs",
+        json={
+            "name": "running-delete-block",
+            "source_mode": "datasource",
+            "source_data_source_id": str(ds_id),
+            "source_table": "dirty_orders",
+            "target_table": target,
+            "schedule_cron": None,
+        },
+        headers=auth_headers,
+    )
+    assert create.status_code == 201, create.text
+    job_id = uuid.UUID(create.json()["id"])
+
+    db = get_meta_session()
+    from app.ingestion.models import SyncRun
+
+    db.add(SyncRun(job_id=job_id, status="running", trace_id="in-progress"))
+    db.commit()
+    db.close()
+
+    blocked = client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+    assert blocked.status_code == 409
+    assert blocked.json()["detail"]["code"] == "SYNC_JOB_RUN_IN_PROGRESS"

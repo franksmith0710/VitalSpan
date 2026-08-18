@@ -45,6 +45,8 @@ export type ChartViewConfig = {
   table?: string;
   datasetId?: string;
   configId?: string;
+  /** 绑定 query config 的 revision，用于 execute 缓存失效 */
+  configRevision?: number;
   nativeBody?: Record<string, unknown>;
   index?: string;
   dimensions?: ChartFieldRef[];

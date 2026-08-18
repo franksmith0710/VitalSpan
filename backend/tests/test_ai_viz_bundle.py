@@ -41,3 +41,11 @@ def test_bundle_size_limit_is_2mb() -> None:
     assert MAX_BUNDLE_BYTES == 2 * 1024 * 1024
     modest = "a" * 1024
     validate_bundle_files({"index.html": modest}, "index.html")
+    validate_bundle_files({"index.html": "a" * MAX_BUNDLE_BYTES}, "index.html")
+    try:
+        validate_bundle_files({"index.html": "a" * (MAX_BUNDLE_BYTES + 1)}, "index.html")
+    except AiVizError as exc:
+        assert exc.code == "AIVIZ_BUNDLE_TOO_LARGE"
+        assert exc.status == 413
+        return
+    raise AssertionError("expected AIVIZ_BUNDLE_TOO_LARGE")

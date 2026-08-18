@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { createLinkedLayoutWidget } from "@/components/dashboard/createLayoutWidget";
 import type { LayoutWidget } from "@/components/dashboard/layoutUtils";
 import {
+  instantiateVizComponentWidget,
   prepareWidgetInlineSnapshot,
   relinkWidgetToComponent,
   isPublishableWidgetType,
@@ -50,15 +50,41 @@ vi.mock("@/lib/vizComponents", async (importOriginal) => {
   };
 });
 
-describe("createLinkedLayoutWidget", () => {
-  it("creates ref-only widget without inline payload", () => {
-    const linked = createLinkedLayoutWidget(
-      { id: "c1", name: "柱状图", widgetType: "chart" },
-      [],
-    );
-    expect(linked.componentRef).toEqual({ componentId: "c1" });
-    expect(linked.chartConfig).toBeUndefined();
-    expect(linked.type).toBe("chart");
+describe("instantiateVizComponentWidget", () => {
+  it("copies library payload onto the canvas without a live componentRef", () => {
+    const detail: VizComponentDetail = {
+      id: "c1",
+      componentKey: "c1",
+      name: "柱状图",
+      description: null,
+      categoryKey: "general",
+      widgetType: "chart",
+      surfaceKinds: ["dashboard"],
+      status: "published",
+      thumbnailRef: null,
+      tags: [],
+      visibility: "org",
+      contentRevision: 1,
+      updatedAt: "",
+      publishedAt: null,
+      ownerUserId: null,
+      orgScope: null,
+      createdAt: "",
+      payloadJson: {
+        chartConfig: {
+          chartId: "placeholder",
+          chartType: "bar",
+          mode: "sql",
+          sql: "SELECT 1",
+          dataSourceId: "550e8400-e29b-41d4-a716-446655440000",
+        },
+      },
+    };
+    const instance = instantiateVizComponentWidget(detail, []);
+    expect(instance.componentRef).toBeUndefined();
+    expect(instance.chartConfig?.sql).toBe("SELECT 1");
+    expect(instance.chartConfig?.chartId).toBe(instance.id);
+    expect(instance.title).toBe("柱状图");
   });
 });
 

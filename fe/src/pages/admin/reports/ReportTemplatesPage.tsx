@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router";
-import { FilePlus, FolderOpen, FolderPlus, MousePointerClick } from "lucide-react";
+import { FileText, FolderOpen, MousePointerClick } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/auth-context";
-import { AdminPageShell } from "@/components/layout/admin-page-shell";
-import { Button } from "@/components/ui/button";
+import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
+import { ListPageSection } from "@/components/layout/list-page-kit";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
@@ -18,7 +18,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { mapApiError } from "@/lib/apiError";
 import type { TemplateKind } from "@/lib/reportCatalogProvision";
 import { catalogAncestorFolderIds, catalogNodePath, pickDefaultCatalogNodeId } from "@/lib/reportCatalogUtils";
-import { cn } from "@/lib/utils";
 import { CatalogFolderPanel } from "./components/CatalogFolderPanel";
 import { CatalogTreeNode } from "./components/CatalogTreeNode";
 import { ListGhostEmptyState } from "@/components/ui/panel-empty-state";
@@ -28,9 +27,8 @@ import { useReportCenterPreferences } from "./useReportCenterPrefs";
 import { queryKeys } from "@/lib/queryKeys";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { ReportCenterBackLink } from "./components/ReportCenterBackLink";
-import {
-  DOC_TEMPLATE_PRODUCT_LINE,
-} from "@/lib/reportCenterNav";
+import { ReportTemplateHeaderActions } from "./components/ReportTemplateHeaderActions";
+import { REPORT_TEMPLATE_WORKBENCH_GRID_CLASS } from "./components/reportTemplateUi";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,12 +40,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-const FORMAT_OPTIONS: { id: TemplateKind; label: string }[] = [
-  { id: "word", label: "Word" },
-  { id: "excel", label: "Excel" },
-  { id: "pdf", label: "PDF" },
-];
-
 export function ReportTemplatesPage() {
   const { nodeId } = useParams();
   const navigate = useNavigate();
@@ -55,7 +47,6 @@ export function ReportTemplatesPage() {
   const { user } = useAuth();
   const [selectedId, setSelectedId] = useState<string | null>(nodeId ?? null);
   const [selectedOverride, setSelectedOverride] = useState<CatalogNode | null>(null);
-  const [createFormat, setCreateFormat] = useState<TemplateKind>("word");
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const { nodesQuery, createNode, createTemplateNode, deleteNode, moveNode } = useReportTemplates(null);
   const allNodesQuery = useAllCatalogNodes();
@@ -157,9 +148,9 @@ export function ReportTemplatesPage() {
     );
   };
 
-  const handleCreateTemplate = (parentId: string | null = createParentId) => {
+  const handleCreateTemplate = (parentId: string | null = createParentId, templateKind: TemplateKind = "word") => {
     createTemplateNode.mutate(
-      { name: "新建模板", parentId, templateKind: createFormat },
+      { name: "新建模板", parentId, templateKind },
       {
         onSuccess: (created) => {
           setSelectedOverride(created);
@@ -206,35 +197,23 @@ export function ReportTemplatesPage() {
       ? allNodes.find((n) => n.id === deleteTargetId) ?? nodes.find((n) => n.id === deleteTargetId) ?? null
       : null;
 
-  const createHint = createParentId
-    ? `将在「${selected?.name ?? "当前文件夹"}」内创建`
-    : "将在根目录创建";
   const isCreating = createNode.isPending || createTemplateNode.isPending;
 
-  const createActions = !readOnly ? (
-    <>
-      <span className="hidden text-theme-xs text-gray-500 dark:text-gray-400 lg:inline">{createHint}</span>
-      <Select value={createFormat} onValueChange={(v) => setCreateFormat(v as TemplateKind)}>
-        <SelectTrigger className="h-10 w-[108px]" aria-label="新建模板格式">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {FORMAT_OPTIONS.map((opt) => (
-            <SelectItem key={opt.id} value={opt.id}>
-              {opt.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Button type="button" variant="outline" disabled={isCreating} onClick={() => handleCreateFolder()}>
-        <FolderPlus className="size-4" aria-hidden />
-        新建文件夹
-      </Button>
-      <Button type="button" variant="primary" disabled={isCreating} onClick={() => handleCreateTemplate()}>
-        <FilePlus className="size-4" aria-hidden />
-        新建模板
-      </Button>
-    </>
+  const templateCreateToolbar = !readOnly ? (
+    <ReportTemplateHeaderActions
+      disabled={isCreating}
+      onCreateFolder={() => handleCreateFolder()}
+      onCreateTemplate={(kind) => handleCreateTemplate(createParentId, kind)}
+    />
+  ) : null;
+
+  const sidebarCreateToolbar = !readOnly ? (
+    <ReportTemplateHeaderActions
+      disabled={isCreating}
+      orientation="stack"
+      onCreateFolder={() => handleCreateFolder()}
+      onCreateTemplate={(kind) => handleCreateTemplate(createParentId, kind)}
+    />
   ) : null;
 
   const catalogBody = nodesQuery.isLoading ? (
@@ -252,10 +231,10 @@ export function ReportTemplatesPage() {
       icon={<FolderOpen className="size-8" aria-hidden />}
       title="暂无模板目录"
       description="创建文件夹组织模板，或新建 Word / Excel / PDF 报表模板。"
-      action={createActions}
+      action={templateCreateToolbar}
     />
   ) : (
-    <ScrollArea className="h-full max-h-[min(560px,calc(100vh-280px))] pr-2">
+    <ScrollArea className="min-h-0 flex-1 pr-2">
       <div className="space-y-0.5 px-1">
         {nodes.map((node) => (
           <CatalogTreeNode
@@ -328,62 +307,61 @@ export function ReportTemplatesPage() {
 
   return (
     <AdminPageShell
+      layout="list"
       title="文档模板"
-      description={`${DOC_TEMPLATE_PRODUCT_LINE} 在本页维护目录、扩展配置、模板块与调度。`}
-      actions={
-        <div className="flex flex-wrap items-center gap-2">
-          <ReportCenterBackLink />
-          {nodes.length > 0 ? createActions : null}
-        </div>
+      icon={
+        <AdminPageHeaderIcon>
+          <FileText className="size-6" aria-hidden />
+        </AdminPageHeaderIcon>
       }
+      description="维护目录、扩展配置、模板块与定时投递。"
+      actions={<ReportCenterBackLink />}
     >
       {nodesQuery.isError ? (
         <PageErrorBanner message={mapApiError(nodesQuery.error)} onRetry={() => void nodesQuery.refetch()} />
       ) : null}
 
-      <div className="mb-4 xl:hidden">
-        <Select value={selectedId ?? "__none__"} onValueChange={(v) => handleSelect(v === "__none__" ? null : v)}>
-          <SelectTrigger aria-label="选择目录节点" className="h-11">
-            <SelectValue placeholder="选择节点" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__none__">选择节点…</SelectItem>
-            {mobileOptions.map((n) => (
-              <SelectItem key={n.id} value={n.id}>
-                {allNodes.length > 0 ? catalogNodePath(n, allNodes) : n.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div
-        className={cn(
-          "overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-sm",
-          "dark:border-gray-800 dark:bg-white/[0.03]",
-        )}
-      >
+      <ListPageSection className="min-h-0 flex-1">
         {nodes.length === 0 && !nodesQuery.isLoading ? (
-          <div className="p-4">{catalogBody}</div>
+          <div className="flex min-h-[320px] flex-1 flex-col p-4 md:p-6">{catalogBody}</div>
         ) : (
-          <div className="grid min-h-[560px] min-w-0 overflow-hidden xl:grid-cols-[minmax(0,18rem)_minmax(0,1fr)]">
-            <aside className="hidden min-w-0 flex-col overflow-hidden border-b border-gray-200 xl:flex xl:border-b-0 xl:border-r dark:border-gray-800">
-              <div className="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
-                <h2 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">模板目录</h2>
-                <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                  {nodes.length > 0 ? `${nodes.length} 个根节点` : "按文件夹组织报表"}
-                </p>
-                {!readOnly ? (
-                  <p className="mt-1 text-theme-xs text-brand-600 dark:text-brand-400">{createHint}</p>
-                ) : null}
-              </div>
-              <div className="flex min-h-0 flex-1 flex-col p-3">{catalogBody}</div>
-            </aside>
+          <>
+            <div className="flex flex-col gap-3 border-b border-gray-200 px-4 py-3 xl:hidden dark:border-gray-800">
+              {!readOnly && nodes.length > 0 ? templateCreateToolbar : null}
+              <Select value={selectedId ?? "__none__"} onValueChange={(v) => handleSelect(v === "__none__" ? null : v)}>
+                <SelectTrigger aria-label="选择目录节点" className="h-11">
+                  <SelectValue placeholder="选择节点" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">选择节点…</SelectItem>
+                  {mobileOptions.map((n) => (
+                    <SelectItem key={n.id} value={n.id}>
+                      {allNodes.length > 0 ? catalogNodePath(n, allNodes) : n.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-            <section className="flex min-h-[280px] min-w-0 flex-col overflow-hidden p-4">{detailBody}</section>
-          </div>
+            <div className={REPORT_TEMPLATE_WORKBENCH_GRID_CLASS}>
+              <aside className="hidden min-h-0 min-w-0 flex-col overflow-hidden border-b border-gray-200 xl:flex xl:border-b-0 xl:border-r dark:border-gray-800">
+                <div className="shrink-0 border-b border-gray-200 px-4 py-3 dark:border-gray-800">
+                  <div className="min-w-0">
+                    <h2 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">模板目录</h2>
+                    <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                      {nodes.length > 0 ? `${nodes.length} 个根节点` : "按文件夹组织报表"}
+                    </p>
+                  </div>
+                  {sidebarCreateToolbar ? <div className="mt-3">{sidebarCreateToolbar}</div> : null}
+                </div>
+                <div className="flex min-h-0 flex-1 flex-col p-3">{catalogBody}</div>
+              </aside>
+
+              <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{detailBody}</section>
+            </div>
+          </>
         )}
-      </div>
+      </ListPageSection>
 
       <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTargetId(null)}>
         <AlertDialogContent>

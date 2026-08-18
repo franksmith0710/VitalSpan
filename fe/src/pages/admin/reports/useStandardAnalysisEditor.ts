@@ -66,11 +66,16 @@ export function useStandardAnalysisEditor() {
     () => boundConfigQuery.data?.columns ?? [],
     [boundConfigQuery.data?.columns],
   );
+  const columnKinds = boundConfigQuery.data?.columnKinds;
 
   useEffect(() => {
     if (columnOptions.length === 0) return;
     setDraft((current) => {
-      const nextMapping = mergeSuggestedFieldMapping(current.fieldMapping, columnOptions);
+      const nextMapping = mergeSuggestedFieldMapping(
+        current.fieldMapping,
+        columnOptions,
+        columnKinds,
+      );
       if (
         nextMapping.status === current.fieldMapping.status &&
         nextMapping.region === current.fieldMapping.region &&
@@ -80,7 +85,7 @@ export function useStandardAnalysisEditor() {
       }
       return { ...current, fieldMapping: nextMapping };
     });
-  }, [columnOptions, draft.datasetId, draft.boundConfigId]);
+  }, [columnOptions, columnKinds, draft.datasetId, draft.boundConfigId]);
 
   const selectPack = (packKey: string) => {
     const pack = packs.find((item) => item.packKey === packKey);
@@ -141,7 +146,7 @@ export function useStandardAnalysisEditor() {
       return false;
     }
 
-    const mappingError = validateStandardPackDraft(draft, columnOptions);
+    const mappingError = validateStandardPackDraft(draft, columnOptions, columnKinds);
     if (mappingError) {
       toast.error(mappingError, { id: "std-pack-save" });
       return false;
@@ -195,6 +200,7 @@ export function useStandardAnalysisEditor() {
     isCreating,
     activePackKey: isCreating ? null : editingKey,
     columnOptions,
+    columnKinds,
     deleteOpen,
     setDeleteOpen,
     selectPack,

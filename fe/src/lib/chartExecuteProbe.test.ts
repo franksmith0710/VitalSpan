@@ -93,6 +93,7 @@ describe("chartExecuteProbe shared execute", () => {
     );
     const body = JSON.parse(String(apiFetchMock.mock.calls[0]?.[1]?.body));
     expect(body.parameters).toEqual({});
+    expect(body.rls).toEqual({ enabled: true });
     expect(body.encoding).toBeDefined();
     expect(body.encoding.chartType).toBe("line");
   });

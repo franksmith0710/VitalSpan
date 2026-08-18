@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { Settings2, TrendingUp } from "lucide-react";
 import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import { ListPageSection } from "@/components/layout/list-page-kit";
@@ -22,9 +22,11 @@ import { StandardAnalysisResultPanel } from "./components/StandardAnalysisResult
 import { STANDARD_WORKBENCH_GRID_CLASS } from "./components/standardAnalysisUi";
 import {
   type AnalysisTheme,
+  useCaptureStandardSnapshot,
   useStandardCompare,
   useStandardPacks,
   useStandardRun,
+  useStandardSnapshots,
 } from "./useStandardAnalysis";
 import { STANDARD_PACK_QUERY, standardAnalysisConfigPath } from "./standardRoutes";
 
@@ -35,10 +37,16 @@ export function StandardAnalysisPage() {
   const [searchParams] = useSearchParams();
   const packsQuery = useStandardPacks();
   const packs = packsQuery.data?.items ?? [];
-  const initialPack = searchParams.get(STANDARD_PACK_QUERY);
-  const [selectedPackKey, setSelectedPackKey] = useState<string | null>(initialPack);
+  const packFromUrl = searchParams.get(STANDARD_PACK_QUERY);
+  const [selectedPackKey, setSelectedPackKey] = useState<string | null>(packFromUrl);
   const [selectedTheme, setSelectedTheme] = useState<AnalysisTheme | null>(null);
   const [viewMode, setViewMode] = useState<"live" | "compare">("live");
+
+  useEffect(() => {
+    if (packFromUrl) {
+      setSelectedPackKey(packFromUrl);
+    }
+  }, [packFromUrl]);
 
   const activePack = useMemo(
     () => packs.find((p) => p.packKey === selectedPackKey) ?? packs[0] ?? null,
@@ -52,6 +60,13 @@ export function StandardAnalysisPage() {
     viewMode === "compare" ? activePack?.packKey ?? null : null,
     activeTheme,
   );
+  const snapshotsQuery = useStandardSnapshots(activePack?.packKey ?? null, activeTheme);
+  const captureSnapshot = useCaptureStandardSnapshot();
+
+  const handleCaptureSnapshot = () => {
+    if (!activePack || !activeTheme) return;
+    captureSnapshot.mutate({ packKey: activePack.packKey, theme: activeTheme });
+  };
 
   const selectPack = (key: string) => {
     setSelectedPackKey(key);
@@ -131,10 +146,14 @@ export function StandardAnalysisPage() {
                 pack={activePack}
                 activeTheme={activeTheme}
                 viewMode={viewMode}
+                canManage={canManage}
+                capturePending={captureSnapshot.isPending}
+                onCaptureSnapshot={handleCaptureSnapshot}
                 onThemeChange={setSelectedTheme}
                 onViewModeChange={setViewMode}
                 runQuery={runQuery}
                 compareQuery={compareQuery}
+                snapshots={snapshotsQuery.data?.items}
                 mapError={mapApiError}
               />
             ) : null}

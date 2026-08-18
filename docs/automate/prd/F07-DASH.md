@@ -160,13 +160,13 @@
 ### [DASH-010] 可视化组件库（组织内复用）
 
 - **状态**：已实现（2026-07-24）
-- **描述**：单 widget 级组织组件库，引用模式（`componentRef`）跨仪表板/数据大屏同步；工具栏「复用」→ 组织库 Tab；Inspector 发布/断链。
+- **描述**：单 widget 级组织组件库。Hub 保存当时的样式与数据绑定快照；看板「复用」时拷贝到画布，之后只属于该看板，**不写回、不随库热更新**。
 - **验收标准**：
   - [x] `viz_components` 表 + `backend/app/viz/components/` CRUD/ACL/batch-resolve
   - [x] API：`/api/v1/viz-components/*`；能力码 `viz:component.manage`
-  - [x] `LayoutWidget.componentRef` 契约；`resolveVizComponent` 运行时合并
+  - [x] 复用插入为 inline 快照（无活 `componentRef`）；存量引用若已有实例配置则看板优先
   - [x] `VizReuseDialog` 组织库 + 从看板复制双 Tab
-  - [x] Hub `/admin/viz-components`；发布对话框 + 链接横幅
+  - [x] Hub `/admin/viz-components`；发布对话框（下发快照，不把画布重新链回库）
   - [x] vitest + `tests/test_viz_components_r01.py`
-  - [x] 发布/跨看板复制 payload 归一化演示占位符；linked 复制为 inline 快照含 SQL；插入后 refetch 可 execute
+  - [x] 看板编辑不 PATCH 组件库；保存保留实例 payload
 - **代码锚点**：`backend/app/viz/components/` · `fe/src/lib/vizComponents.ts` · `fe/src/lib/resolveVizComponent.ts` · `fe/src/components/dashboard/VizReuseDialog.tsx` · `fe/src/pages/admin/viz-components/VizComponentsHubPage.tsx`

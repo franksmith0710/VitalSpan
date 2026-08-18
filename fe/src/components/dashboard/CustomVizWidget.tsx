@@ -21,6 +21,31 @@ import {
 import { buildCustomVizRuntimePayload, injectCustomVizPayload } from "./custom-viz/customVizPayload";
 import { gridWidgetShellClassName, GridWidgetShellFrame, resolveGridWidgetShell } from "./widgetRailStyleSections";
 
+async function loadCustomVizArtifact(artifactId: string): Promise<{
+  html: string;
+  defaultStyle: Record<string, unknown>;
+}> {
+  let defaultStyle: Record<string, unknown> = {};
+  let hash = "";
+  try {
+    const meta = await fetchAiVizArtifactMeta(artifactId);
+    defaultStyle = meta.manifest.defaultStyle ?? {};
+    hash = meta.contentHash ?? "";
+  } catch {
+    defaultStyle = {};
+  }
+  const qs = hash ? `?h=${encodeURIComponent(hash)}` : "";
+  const resp = await fetchWithTimeout(
+    `${resolveApiBaseUrl()}/api/v1/ai-viz/artifacts/${encodeURIComponent(artifactId)}/entry${qs}`,
+    { headers: { ...getAuthHeaders() } },
+  );
+  if (!resp.ok) {
+    const body = (await resp.json().catch(() => null)) as { message?: string } | null;
+    throw new Error(body?.message ?? "加载自定义组件失败");
+  }
+  return { html: await resp.text(), defaultStyle };
+}
+
 type CustomVizWidgetProps = {
   widget: LayoutWidget & { customVizConfig: CustomVizWidgetConfig };
   mode: "edit" | "view";
@@ -55,6 +80,7 @@ export function CustomVizWidget({
   const [html, setHtml] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [manifestDefaultStyle, setManifestDefaultStyle] = useState<Record<string, unknown>>({});
+  const loadedHtmlRef = useRef(false);
   const showGridChrome = shell === "grid";
   const gridShell = resolveGridWidgetShell(widget, dashboardStyle);
   const inShapeShell = shell === "shape";
@@ -72,50 +98,41 @@ export function CustomVizWidget({
 
   useEffect(() => {
     let cancelled = false;
-    setLoadError(null);
+    let seq = 0;
+    loadedHtmlRef.current = false;
     setHtml(null);
-    const artifactId = cfg.artifactId?.trim();
-    if (!artifactId) {
-      setLoadError("未配置 artifactId");
-      return undefined;
-    }
-    void (async () => {
-      try {
-        const apiBase = resolveApiBaseUrl();
-        const resp = await fetchWithTimeout(
-          `${apiBase}/api/v1/ai-viz/artifacts/${encodeURIComponent(artifactId)}/entry`,
-          { headers: { ...getAuthHeaders() } },
-        );
-        if (!resp.ok) {
-          const body = (await resp.json().catch(() => null)) as { message?: string } | null;
-          throw new Error(body?.message ?? "加载自定义组件失败");
-        }
-        const source = await resp.text();
-        if (!cancelled) setHtml(source);
-      } catch (err) {
-        if (!cancelled) {
-          setLoadError(err instanceof Error ? err.message : "加载自定义组件失败");
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [cfg.artifactId]);
+    setLoadError(null);
 
-  useEffect(() => {
-    const artifactId = cfg.artifactId?.trim();
-    if (!artifactId) return undefined;
-    let cancelled = false;
-    void fetchAiVizArtifactMeta(artifactId)
-      .then((meta) => {
-        if (!cancelled) setManifestDefaultStyle(meta.manifest.defaultStyle ?? {});
-      })
-      .catch(() => {
-        if (!cancelled) setManifestDefaultStyle({});
-      });
+    async function load() {
+      const artifactId = cfg.artifactId?.trim();
+      if (!artifactId) {
+        setLoadError("未配置 artifactId");
+        return;
+      }
+      const my = ++seq;
+      try {
+        const next = await loadCustomVizArtifact(artifactId);
+        if (cancelled || my !== seq) return;
+        loadedHtmlRef.current = true;
+        setManifestDefaultStyle(next.defaultStyle);
+        setHtml(next.html);
+        setLoadError(null);
+      } catch (err) {
+        if (cancelled || my !== seq) return;
+        if (loadedHtmlRef.current) return;
+        setHtml(null);
+        setLoadError(err instanceof Error ? err.message : "加载自定义组件失败");
+      }
+    }
+
+    void load();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void load();
+    };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       cancelled = true;
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [cfg.artifactId]);
 

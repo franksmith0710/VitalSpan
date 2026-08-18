@@ -65,6 +65,7 @@ export function DatasetEditorForm({
   tablePickerPrefill,
   origin = "manual",
   transformRulesPrefill,
+  isDemoPackage = false,
 }: {
   mode: "create" | "edit";
   values: DatasetEditorValues;
@@ -88,6 +89,7 @@ export function DatasetEditorForm({
     hasDataSource: boolean;
     disabledReason?: string | null;
   };
+  isDemoPackage?: boolean;
 }) {
   const patch = useCallback(
     (update: SetStateAction<DatasetEditorValues>) => onChange(update),
@@ -116,6 +118,7 @@ export function DatasetEditorForm({
               <Input
                 id="edit-name"
                 value={values.displayName}
+                disabled={isDemoPackage}
                 onChange={(e) => patch((current) => ({ ...current, displayName: e.target.value }))}
                 className="h-11"
               />
@@ -197,6 +200,7 @@ export function DatasetEditorForm({
                 syncJobId={tablePickerPrefill?.syncJobId}
                 onRefreshBinding={tablePickerPrefill?.onRefreshBinding}
                 onTableChange={tablePickerPrefill?.onTableChange}
+                isDemoPackage={isDemoPackage}
               />
             </TabsContent>
 
@@ -211,6 +215,7 @@ export function DatasetEditorForm({
                 <ComputedFieldsEditor
                   fields={values.computedFields}
                   onChange={(computedFields) => patch((current) => ({ ...current, computedFields }))}
+                  disabled={isDemoPackage}
                 />
               </DatasetFormSection>
             </TabsContent>

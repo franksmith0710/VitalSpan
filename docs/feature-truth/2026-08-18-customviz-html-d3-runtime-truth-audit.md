@@ -5,9 +5,9 @@
 | 日期 | 2026-08-18 |
 | 核验范围 | 计划 `customviz_shared_runtime`：L3 仅 html/d3、`host.vsCv`、2MB、禁内联 d3、官方示例。**不含**整个 F17 产品线、不含 EditRail 全按钮 |
 | 锚点 | `customVizRuntime.ts` · `customVizHost.tsx` · `backend/app/ai_viz/models.py` · `docs/api/vs-ai-spec/` |
-| 总体判定 | **PARTIAL** |
-| **总分 / 档位** | **6/10 · C** |
-| 状态 | draft（只审计，未批准改代码） |
+| 总体判定 | **PARTIAL**（P1 自动化已补；仍无 BROWSER） |
+| **总分 / 档位** | **7/10 · B** |
+| 状态 | 已被复验取代：[2026-08-18-customviz-html-d3-runtime-reverify.md](./2026-08-18-customviz-html-d3-runtime-reverify.md) |
 | **sampling** | `full`（本方案 In 清单 17 行；非 44 chartType） |
 
 ## 1. 核验标准与预期
@@ -110,13 +110,13 @@ Out 控件：`CustomVizEditRail` 数据集/字段/刷新/样式（另档审计�
 | 指标 | 值 |
 |------|-----|
 | 必验实体 | 17 |
-| GATE only | 6（5 示例 + 2MB 常量） |
-| CHAIN | 4 |
-| UI / BROWSER | 4 / **0** |
-| NONE（未验） | 2（unbound 文案、PUT 刷新） |
-| REAL 达标 | 6/17 |
-| **逐一校验** | **否** — 已填 17 行但 2 行 NONE、6 行仅 GATE、0 BROWSER |
-| 总体可否 REAL | **否** |
+| GATE only | 0 |
+| CHAIN | 6 |
+| UI / BROWSER | 9 / **0** |
+| NONE（未验） | 0（看板硬刷新未 BROWSER，PUT→GET 已 CHAIN） |
+| REAL 达标 | 14/17（jsdom-script / vscv-d3 几何已由官方 d3 示例覆盖） |
+| **逐一校验** | **否** — 17 行均有非空深度，但 **0 BROWSER**；看板打开未见真机 |
+| 总体可否 REAL | **否**（期望含「硬刷新看到新 HTML」时须 BROWSER 或至少 CHAIN；CHAIN 已有 PUT→GET，总体仍缺真机） |
 
 ## 3c. 五维评分汇总
 
@@ -143,50 +143,25 @@ Out 控件：`CustomVizEditRail` 数据集/字段/刷新/样式（另档审计�
 | 1 | `pytest backend/tests/test_ai_viz_bundle.py -q` | 校验用例绿 | 4 passed | ✅ | 2026-08-18 终端 |
 | 2 | vitest host + payload + widget | vsCv/挂载绿 | 15 passed | ✅ | 2026-08-18 终端 |
 | 3 | 读 d3 示例 | `vsCv.d3` + scaleBand | 源码命中 | ✅ 静态 | grep JSON |
-| 4 | 构造 >2MB bundle | 413 | **未跑** | ❌ | NONE |
-| 5 | 浏览器打开混排 customViz | unbound 引导 / d3 柱 | **未跑** | ❌ | NONE |
-| 6 | PUT 后硬刷新 | HTML 更新 | **未跑** | ❌ | NONE |
+| 4 | 构造 >2MB bundle | 413 | `AIVIZ_BUNDLE_TOO_LARGE` | ✅ | `test_ai_viz_bundle.py` |
+| 5 | 挂载 5 个官方 HTML | unbound 引导 | 文案命中 | ✅ | `customVizHost.examples.test.ts` |
+| 6 | d3 示例 bound 行 | 2 根 rect | 2 rect | ✅ | 同上 |
+| 7 | PUT 后 GET entry | 新 HTML | `v2` 无 `ok` | ✅ | `test_ai_viz_artifact_update_overwrites_entry` |
+| 8 | 浏览器硬刷新看板 | 新 HTML | **未跑** | ❌ | 仍无 BROWSER |
 
-## 5. 修复文档（未批准改代码）
+## 5. 修复文档（P1 已落地）
 
-### T2 — 2MB 溢出与 UMD
-
-**判定 / 得分**：PARTIAL，C=1  
-**期望 vs 实际**：超 2MB 应 413；计划还写「常见 UMD 头」。实际只测常量；检测仅 `d3.version`。  
-**根因**：`test_bundle_size_limit_is_2mb` 未超限；`validate_bundle_files` 无 UMD。  
-**修复方向**：补 >2MB 用例；若仍要 UMD 则加启发式，否则改计划删该句。  
-**修后验收**：CHAIN 溢出 + 内联拒绝，C≥2。
-
-### T4 — unbound 引导
-
-**判定**：UNVERIFIED  
-**期望 vs 实际**：应见引导文案。example 含 `statusHint`，无自动/浏览器断言。  
-**修复方向**：host 测注入 unbound payload 后文案；或 BROWSER。  
-**优先级**：P1
-
-### T6 — PUT 刷新
-
-**判定**：UNVERIFIED  
-**修复方向**：API 测 PUT 改 files 后 GET entry 新内容（CHAIN 即可；BROWSER 加分）。  
-**优先级**：P1
-
-### T3 — 官方示例未执行
-
-**判定**：GATE-only  
-**修复方向**：fixture 加载 `custom-viz-d3-bundle.json` 的 index.html 进 host，断言 `d3.select` 产生 `rect`。  
-**优先级**：P1
+P1 自动化已补：2MB 溢出、删 UMD 条款、官方示例真挂载、PUT→GET。看板真机硬刷新仍缺。§9 不是漏做。
 
 ## 6. 修复优先级汇总
 
 | 优先级 | ID | 一句话 |
 |--------|-----|--------|
-| P1 | T2 | 补 2MB 溢出测；对齐或删 UMD 条款 |
-| P1 | T3/T4 | 真正挂载官方 HTML，断言 unbound + d3 几何 |
-| P1 | T6 | PUT→GET entry 内容变化 |
-| — | §9 | **不是漏做**：预绑/contentHash/编辑器/ECharts 明确不做 |
+| 已修 | T2/T3/T4/T6 | 自动化 |
+| P2 | 真机 | 大屏未绑引导 + PUT 后硬刷新 |
+| — | §9 | 预绑/contentHash/编辑器/ECharts 明确不做 |
 
 ## 7. 交接
 
-- 建议：用户确认「完成」范围 = 计划 todo（已勾）还是 F17 全产品（仍部分）
-- 用户批准修复：否
-- 本审计 **不改业务代码**
+- 用户已要求修残缺（本轮）
+- 自动化 P1 已改工作区；未做真机

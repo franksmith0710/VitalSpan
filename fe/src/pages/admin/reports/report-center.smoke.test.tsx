@@ -62,7 +62,7 @@ describe("ReportCenterPage smoke", () => {
     renderPage();
     const link = await screen.findByRole("link", { name: "标准分析" });
     await waitFor(() => {
-      expect(link).toHaveAttribute("href", "/admin/reports/standard?pack=k1");
+      expect(link).toHaveAttribute("href", "/admin/reports/standard/results?pack=k1");
     });
   });
 
@@ -70,7 +70,7 @@ describe("ReportCenterPage smoke", () => {
     renderPage();
     const link = await screen.findByRole("link", { name: "标准分析" });
     await waitFor(() => {
-      expect(link).toHaveAttribute("href", "/admin/reports/standard?pack=k1");
+      expect(link).toHaveAttribute("href", "/admin/reports/standard/results?pack=k1");
     });
   });
 

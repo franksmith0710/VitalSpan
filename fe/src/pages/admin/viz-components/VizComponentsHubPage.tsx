@@ -97,7 +97,7 @@ const EMPTY_STEPS = [
   {
     step: 3,
     title: "跨页面复用",
-    description: "在其他看板点击工具栏「复用」→ 组织组件库，自动同步更新。",
+    description: "在其他看板点击工具栏「复用」→ 组织组件库，插入当时的样式与数据绑定快照。",
     icon: Boxes,
   },
 ] as const;

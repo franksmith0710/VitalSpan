@@ -459,6 +459,7 @@ def delete_data_source(session: Session, data_source_id: uuid.UUID, *, role_code
         raise DataSourceError("DATASOURCE_IN_USE", "Data source is referenced by grants", 409)
     from app.ingestion.models import SyncJob
     from app.metadata.dataset.models import DatasetRecord
+    from app.query.config_store.models import QueryConfigRecord
 
     sync_ref = session.scalar(
         select(SyncJob.id).where(SyncJob.source_data_source_id == data_source_id).limit(1),
@@ -478,6 +479,21 @@ def delete_data_source(session: Session, data_source_id: uuid.UUID, *, role_code
         raise DataSourceError(
             "DATASOURCE_IN_USE",
             "Data source is referenced by datasets",
+            409,
+        )
+    ds_id_str = str(data_source_id)
+    bound_ref = session.scalar(
+        select(QueryConfigRecord.id)
+        .where(
+            QueryConfigRecord.config_type == "dataset_query",
+            QueryConfigRecord.payload["dataSourceId"].as_string() == ds_id_str,
+        )
+        .limit(1),
+    )
+    if bound_ref is not None:
+        raise DataSourceError(
+            "DATASOURCE_IN_USE",
+            "Data source is referenced by dataset query bindings",
             409,
         )
     row.deleted_at = datetime.now(UTC)

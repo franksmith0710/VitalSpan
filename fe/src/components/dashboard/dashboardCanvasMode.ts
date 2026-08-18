@@ -20,10 +20,6 @@ import {
   resolvePersistedCanvasMinHeight,
 } from "@/lib/canvasPersistPolicy";
 import { sanitizeChartFieldsForValidate } from "@/lib/chartFieldRules";
-import { isLinkedComponentRef } from "@/lib/vizComponents";
-import { buildGeoMapDrillPersistOverlay } from "@/lib/geoMapRegionPicker";
-import type { ChartViewConfig } from "@/lib/chartViewConfig";
-import type { LayoutWidget } from "./layoutUtils";
 
 const CANVAS_WIDTH = 1440 as const;
 const MIN_CANVAS_HEIGHT = 900;
@@ -206,41 +202,15 @@ function persistedStyle(styleConfig: DashboardStyleConfig): DashboardStyleConfig
   return styleConfigHasPersistedFields(hydrated) ? hydrated : undefined;
 }
 
-function stripLinkedWidgetForPersist<T extends { componentRef?: { componentId: string; detached?: boolean } }>(
-  widget: T,
-): T {
-  if (!isLinkedComponentRef(widget.componentRef)) return widget;
-  const next = { ...widget } as T & {
-    chartConfig?: unknown;
-    filterConfig?: unknown;
-    textConfig?: unknown;
-    mediaConfig?: unknown;
-  };
-  const geoDrillOverlay =
-    (widget as LayoutWidget).type === "chart" && (widget as LayoutWidget).chartConfig
-      ? buildGeoMapDrillPersistOverlay((widget as LayoutWidget).chartConfig as ChartViewConfig)
-      : undefined;
-  delete next.chartConfig;
-  delete next.filterConfig;
-  delete next.textConfig;
-  delete next.mediaConfig;
-  if (geoDrillOverlay) {
-    next.chartConfig = geoDrillOverlay;
-  }
-  return next as T;
-}
-
-/** 持久化前剔除 UI 占位空 field，避免后端 ChartFieldRef min_length=1 422 */
 function prepareChartWidgetForPersist<W extends LayoutWidget>(
   widget: W,
   options?: { attachChartId?: boolean },
 ): W {
-  const stripped = stripLinkedWidgetForPersist(widget);
-  if (stripped.type !== "chart" || !stripped.chartConfig) return stripped;
-  const chartConfig = sanitizeChartFieldsForValidate(stripped.chartConfig);
+  if (widget.type !== "chart" || !widget.chartConfig) return widget;
+  const chartConfig = sanitizeChartFieldsForValidate(widget.chartConfig);
   return {
-    ...stripped,
-    chartConfig: options?.attachChartId ? { ...chartConfig, chartId: stripped.id } : chartConfig,
+    ...widget,
+    chartConfig: options?.attachChartId ? { ...chartConfig, chartId: widget.id } : chartConfig,
   };
 }
 

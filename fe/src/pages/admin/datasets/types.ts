@@ -19,9 +19,11 @@ export type DatasetItem = {
   allowedRoles: string[];
   tableSourceDataSourceId?: string | null;
   boundConfigId?: string | null;
+  boundConfigRevision?: number | null;
   origin?: DatasetOrigin;
   syncJobId?: string | null;
   sourceHealth?: SourceHealth;
+  isDemoPackage?: boolean;
 };
 
 export type DatasetEditorValues = {

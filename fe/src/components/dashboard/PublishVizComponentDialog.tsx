@@ -117,7 +117,7 @@ export function PublishVizComponentDialog({
         <AdminFormDialogHeader>
           <DialogTitle>发布到组件库</DialogTitle>
           <AdminFormDialogDescription>
-            保存当前配置到组织库，其他看板与大屏可通过「复用」引用并自动同步。
+            保存当前配置到组织库。其他看板「复用」时拷贝这一刻的样式与数据绑定，插入后互不影响。
           </AdminFormDialogDescription>
         </AdminFormDialogHeader>
         <form

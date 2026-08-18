@@ -1,6 +1,8 @@
 import { Activity, BarChart3, Database, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+export const LOGIN_PAGE_COPYRIGHT = "© VitalSpan · 北京智能语义软件有限公司";
+
 const FEATURES = [
   { icon: BarChart3, label: "自研可视化" },
   { icon: Database, label: "多源接入" },
@@ -79,8 +81,6 @@ function BrandPreviewCard({ className }: { className?: string }) {
 }
 
 export function LoginBrandAside({ className }: { className?: string }) {
-  const year = new Date().getFullYear();
-
   return (
     <aside
       className={cn(
@@ -141,7 +141,7 @@ export function LoginBrandAside({ className }: { className?: string }) {
       </div>
 
       <footer className="relative z-10 shrink-0 px-10 pb-8 xl:px-14">
-        <p className="text-[11px] text-white/30">© {year} VitalSpan</p>
+        <p className="text-[11px] text-white/30">{LOGIN_PAGE_COPYRIGHT}</p>
       </footer>
     </aside>
   );
