@@ -130,7 +130,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 ├── 报表
 │   ├── /reports/center              # 报表中心工作台（侧栏子项）
 │   ├── /reports/standard            # 标准分析工作台（侧栏子项）
-│   ├── /reports/standard/config     # 标准分析配置（manage）
+│   ├── /reports/standard/config     # 标准分析 · 管理分析包（manage 子路由）
 │   ├── /reports/view/:nodeId        # 报表查看与运行（侧栏高亮「文档模板」）
 │   ├── /reports/templates           # 文档模板（侧栏子项 · manage）
 │   ├── /reports/templates/:id       # 模板编辑
@@ -272,7 +272,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 
 | `/admin/reports/center` | 工作台：入口卡片 + 失败摘要 + 最近访问 | RPT-002/005 |
 | `/admin/reports/standard` | 标准分析消费：看数 + 对比上期 | RPT-002 |
-| `/admin/reports/standard/config` | 标准分析配置：数据集/主题/快照/可选投递 | RPT-002 |
+| `/admin/reports/standard/config` | 标准分析 · 管理分析包（manage 子路由，非侧栏项） | RPT-002 |
 | `/admin/reports/view/:nodeId` | 运行 + 结果 + 导出 | RPT-001 |
 | `/admin/reports/templates` | `master-detail` 树 + 扩展配置 Tabs | RPT-004/006 |
 | `/admin/reports/templates/:nodeId` | 同上（深链选中节点） | RPT-004/006 |

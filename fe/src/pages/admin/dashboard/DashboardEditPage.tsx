@@ -539,6 +539,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     primarySelectedId,
     selectedWidget,
     resolvedSelectedWidget,
+    widgets,
     componentMap,
     setWidgets,
     refetchComponents,

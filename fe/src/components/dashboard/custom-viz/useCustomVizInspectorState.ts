@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import { resolveDatasetChartBinding } from "@/lib/datasetChartBinding";
@@ -16,14 +16,16 @@ type DatasetListItem = {
 };
 
 export function useCustomVizInspectorState(
-  config: CustomVizWidgetConfig,
-  onChange: (next: CustomVizWidgetConfig) => void,
+  readConfig: () => CustomVizWidgetConfig,
+  emitChange: (next: CustomVizWidgetConfig) => void,
 ) {
+  const config = readConfig();
   const binding = config.dataBinding ?? { status: "manual" as const };
   const chartCfg = customVizBindingToChartConfig(binding);
   const { columns, loading: columnsLoading, ready: columnsReady, refreshColumns } =
     useInspectorColumns(chartCfg);
   const [datasetBindingError, setDatasetBindingError] = useState<string | null>(null);
+  const bindingSyncRef = useRef<string | null>(null);
 
   const { data: datasetData, isLoading: datasetsLoading, isError: datasetsError } = useQuery({
     queryKey: queryKeys.datasets.list({ limit: 200, offset: 0 }),
@@ -36,23 +38,26 @@ export function useCustomVizInspectorState(
 
   const patchBinding = useCallback(
     (patch: Partial<CustomVizDataBinding>) => {
-      onChange({
-        ...config,
+      const current = readConfig();
+      const currentBinding = current.dataBinding ?? { status: "manual" as const };
+      emitChange({
+        ...current,
         dataBinding: {
-          ...binding,
+          ...currentBinding,
           ...patch,
-          status: patch.status ?? binding.status ?? "manual",
+          status: patch.status ?? currentBinding.status ?? "manual",
         },
       });
     },
-    [binding, config, onChange],
+    [emitChange, readConfig],
   );
 
   const handleDatasetSelect = useCallback(
     async (datasetId: string) => {
       const ds = datasetItems.find((d) => d.datasetId === datasetId);
       const boundId = ds?.boundConfigId ?? undefined;
-      let dataSourceId = binding.dataSourceId;
+      const currentBinding = readConfig().dataBinding ?? { status: "manual" as const };
+      let dataSourceId = currentBinding.dataSourceId;
       if (boundId) {
         try {
           const resolved = await resolveDatasetChartBinding(boundId);
@@ -62,9 +67,11 @@ export function useCustomVizInspectorState(
           setDatasetBindingError("数据集绑定解析失败，请检查数据集配置");
         }
       } else if (isDemoPackageDataset(datasetId, ds?.displayName)) {
-        setDatasetBindingError("官方示例 Dataset 查询配置尚未就绪");
+        setDatasetBindingError(
+          "官方示例 Dataset 查询配置尚未就绪，请运行 python scripts/seed-demo-package.py",
+        );
       } else {
-        setDatasetBindingError("该 Dataset 尚未绑定查询配置");
+        setDatasetBindingError("该 Dataset 尚未绑定查询配置，请先在数据集管理中绑定");
       }
       patchBinding({
         datasetId,
@@ -73,35 +80,98 @@ export function useCustomVizInspectorState(
         status: "connected",
       });
     },
-    [binding.dataSourceId, datasetItems, patchBinding],
+    [datasetItems, patchBinding, readConfig],
   );
 
   const assignField = useCallback(
     (fieldName: string, target: CustomVizFieldTarget) => {
+      const currentBinding = readConfig().dataBinding ?? { status: "manual" as const };
       if (target.kind === "dimension") {
-        const next = [...(binding.dimensions ?? [])];
+        const next = [...(currentBinding.dimensions ?? [])];
         while (next.length <= target.index) next.push({ field: "" });
         if (next.some((d, i) => i !== target.index && d.field === fieldName)) return;
         next[target.index] = { field: fieldName };
         patchBinding({ dimensions: next, status: "connected" });
         return;
       }
-      const next = [...(binding.metrics ?? [])];
+      const next = [...(currentBinding.metrics ?? [])];
       while (next.length <= target.index) next.push({ field: "", agg: "sum" });
       if (next.some((m, i) => i !== target.index && m.field === fieldName)) return;
       next[target.index] = { field: fieldName, agg: "sum" };
       patchBinding({ metrics: next, status: "connected" });
     },
-    [binding.dimensions, binding.metrics, patchBinding],
+    [patchBinding, readConfig],
   );
 
   useEffect(() => {
     if (!binding.datasetId || datasetsLoading) return;
+
     const ds = datasetItems.find((d) => d.datasetId === binding.datasetId);
     const boundId = ds?.boundConfigId;
-    if (!boundId || binding.configId === boundId) return;
-    void handleDatasetSelect(binding.datasetId);
-  }, [binding.configId, binding.datasetId, datasetItems, datasetsLoading, handleDatasetSelect]);
+    if (!boundId) {
+      if (isDemoPackageDataset(binding.datasetId, ds?.displayName)) {
+        setDatasetBindingError(
+          "官方示例 Dataset 查询配置尚未就绪，请运行 python scripts/seed-demo-package.py",
+        );
+      }
+      return;
+    }
+
+    const needsConfig = binding.configId !== boundId;
+    const needsDs = !binding.dataSourceId;
+    if (!needsConfig && !needsDs) {
+      bindingSyncRef.current = `${binding.datasetId}:${boundId}:${binding.configId}:${binding.dataSourceId}`;
+      return;
+    }
+
+    const syncKey = `${binding.datasetId}:${boundId}:${needsConfig}:${needsDs}`;
+    if (bindingSyncRef.current === syncKey) return;
+
+    let cancelled = false;
+    void (async () => {
+      const currentBinding = readConfig().dataBinding ?? { status: "manual" as const };
+      let dataSourceId = currentBinding.dataSourceId;
+      try {
+        const resolved = await resolveDatasetChartBinding(boundId);
+        if (resolved.dataSourceId) dataSourceId = resolved.dataSourceId;
+        setDatasetBindingError(null);
+      } catch {
+        setDatasetBindingError("数据集绑定解析失败，请检查数据集配置");
+      }
+      if (cancelled) return;
+
+      bindingSyncRef.current = syncKey;
+      patchBinding({
+        configId: boundId,
+        ...(dataSourceId ? { dataSourceId } : {}),
+        status: "connected",
+      });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    binding.configId,
+    binding.dataSourceId,
+    binding.datasetId,
+    datasetItems,
+    datasetsLoading,
+    patchBinding,
+    readConfig,
+  ]);
+
+  useEffect(() => {
+    if (!binding.datasetId || !binding.configId || columnsLoading || columns.length > 0) return;
+    if (datasetBindingError) return;
+    setDatasetBindingError("未加载到字段，请点击刷新或检查数据集查询配置");
+  }, [
+    binding.configId,
+    binding.datasetId,
+    columns.length,
+    columnsLoading,
+    datasetBindingError,
+  ]);
 
   return {
     binding,

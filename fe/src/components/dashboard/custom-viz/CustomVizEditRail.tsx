@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { fetchAiVizArtifactMeta } from "@/lib/aiVizArtifacts";
@@ -28,8 +28,21 @@ export function CustomVizEditRail({
   onDataRefresh,
   className,
 }: CustomVizEditRailProps) {
-  const cfg = widget.customVizConfig;
-  const artifactId = cfg.artifactId?.trim();
+  const artifactId = widget.customVizConfig.artifactId?.trim();
+  const configRef = useRef(widget.customVizConfig);
+  configRef.current = widget.customVizConfig;
+
+  const [, bumpRevision] = useState(0);
+  const readConfig = useCallback(() => configRef.current, []);
+  const emitChange = useCallback(
+    (next: CustomVizWidgetConfig) => {
+      configRef.current = next;
+      bumpRevision((value) => value + 1);
+      onChange(next);
+    },
+    [onChange],
+  );
+
   const [activeFieldTarget, setActiveFieldTarget] = useState<CustomVizFieldTarget>({
     kind: "dimension",
     index: 0,
@@ -41,7 +54,8 @@ export function CustomVizEditRail({
     enabled: Boolean(artifactId),
   });
 
-  const inspector = useCustomVizInspectorState(cfg, onChange);
+  const inspector = useCustomVizInspectorState(readConfig, emitChange);
+  const cfg = readConfig();
 
   const typeLabel = sanitizeManifestLabel(meta?.manifest.displayName, "自定义组件");
   const leftSubtitle = widget.title && widget.title !== typeLabel ? widget.title : undefined;
@@ -64,7 +78,7 @@ export function CustomVizEditRail({
           patchBinding={inspector.patchBinding}
           columns={inspector.columns}
           refreshColumns={inspector.refreshColumns}
-          onChange={onChange}
+          onChange={emitChange}
           onDelete={onDelete}
           onDataRefresh={onDataRefresh}
           className="border-r border-gray-200 dark:border-gray-800"

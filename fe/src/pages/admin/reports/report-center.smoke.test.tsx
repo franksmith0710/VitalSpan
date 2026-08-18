@@ -74,6 +74,19 @@ describe("ReportCenterPage smoke", () => {
     });
   });
 
+  it("shows dashboard PDF schedule signpost on hub", async () => {
+    renderPage();
+    expect(await screen.findByRole("region", { name: "看板与大屏 PDF 定时说明" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "去看板创建" })).toHaveAttribute(
+      "href",
+      "/admin/dashboards?intent=schedule",
+    );
+    expect(screen.getByRole("link", { name: "管理看板调度" })).toHaveAttribute(
+      "href",
+      "/admin/reports/schedules?tab=dashboard",
+    );
+  });
+
   it("hides manage entry cards when standard packs empty", async () => {
     mockApiFetch.mockImplementation(async (path: string) => {
       if (path === "/api/v1/reports/standard/packs") return { items: [], total: 0 };

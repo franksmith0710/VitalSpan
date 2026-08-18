@@ -168,6 +168,10 @@ export function DatasetFieldGroups({
             <FieldSection title="维度" fields={[]} onFieldClick={onFieldClick} />
             <FieldSection title="指标" fields={[]} onFieldClick={onFieldClick} showDivider />
           </div>
+        ) : columns.length === 0 ? (
+          <p className="px-2 py-4 text-theme-xs leading-snug text-gray-500 dark:text-gray-400">
+            未加载到字段。若刚切换数据集，请稍候或点上方刷新；若仍为空，请检查数据集是否已绑定查询配置。
+          </p>
         ) : (
           <div className="space-y-3">
             <FieldSection title="维度" fields={dimensions} columnKindOverrides={columnKindOverrides} onFieldClick={onFieldClick} />

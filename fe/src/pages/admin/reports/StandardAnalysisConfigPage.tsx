@@ -53,13 +53,13 @@ export function StandardAnalysisConfigPage() {
   return (
     <AdminPageShell
       layout="list"
-      title="标准分析配置"
-      description="绑定数据集、映射字段、设置周期快照与可选定时投递。"
+      title="标准分析"
+      description="管理分析包：绑定数据集、映射字段、周期快照与可选定时投递。"
       leadingActions={
         <Button type="button" variant="outline" size="sm" className="h-10" asChild>
           <Link to="/admin/reports/standard">
             <ArrowLeft className="size-4" aria-hidden />
-            返回标准分析
+            返回查看结果
           </Link>
         </Button>
       }

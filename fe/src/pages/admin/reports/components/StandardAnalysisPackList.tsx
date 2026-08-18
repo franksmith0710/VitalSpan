@@ -87,9 +87,15 @@ export function StandardAnalysisPackList({
                         ) : null}
                       </div>
                       <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                        <Badge variant="light" color="light" size="sm">
-                          {pack.businessObjectCode}
-                        </Badge>
+                        {pack.businessObjectCode ? (
+                          <Badge variant="light" color="light" size="sm">
+                            {pack.businessObjectCode}
+                          </Badge>
+                        ) : pack.datasetId ? (
+                          <Badge variant="light" color="light" size="sm">
+                            数据集
+                          </Badge>
+                        ) : null}
                         <Badge variant="light" color="info" size="sm">
                           {snapshotLabel}
                         </Badge>

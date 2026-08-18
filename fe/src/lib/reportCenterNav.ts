@@ -59,7 +59,7 @@ export function canRetryReportSchedules(caps: Iterable<string> | Set<string>): b
 const RESOURCE_TYPE_LABELS: Record<string, string> = {
   template: "文档模板",
   standard: "标准分析",
-  schedule: "定时报告",
+  schedule: "调度任务",
   dashboard: "看板",
 };
 

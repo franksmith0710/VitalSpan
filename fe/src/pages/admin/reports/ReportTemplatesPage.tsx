@@ -276,6 +276,13 @@ export function ReportTemplatesPage() {
     </ScrollArea>
   );
 
+  const catalog = allNodes.length > 0 ? allNodes : nodes;
+  const pendingAutoSelect =
+    !nodeId &&
+    !autoSelectedRef.current &&
+    catalog.length > 0 &&
+    (nodesQuery.isLoading || allNodesQuery.isLoading || !centerPrefsQuery.isFetched);
+
   const detailBody = pendingAutoSelect ? (
     <div className="flex min-h-[280px] flex-col justify-center gap-3 p-6">
       <Skeleton className="h-8 w-48" />
@@ -318,13 +325,6 @@ export function ReportTemplatesPage() {
   );
 
   const mobileOptions = allNodes.length > 0 ? allNodes : nodes;
-
-  const catalog = allNodes.length > 0 ? allNodes : nodes;
-  const pendingAutoSelect =
-    !nodeId &&
-    !autoSelectedRef.current &&
-    catalog.length > 0 &&
-    (nodesQuery.isLoading || allNodesQuery.isLoading || !centerPrefsQuery.isFetched);
 
   return (
     <AdminPageShell

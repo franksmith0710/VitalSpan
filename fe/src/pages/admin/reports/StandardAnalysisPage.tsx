@@ -67,14 +67,14 @@ export function StandardAnalysisPage() {
         </AdminPageHeaderIcon>
       }
       title="标准分析"
-      description="查看分析结果并与上期快照对比；配置数据绑定与快照请前往「标准分析配置」。"
+      description="查看分析结果并与上期快照对比；管理员可在本页管理分析包（数据集、快照与投递）。"
       leadingActions={<ReportCenterBackLink />}
       actions={
         canManage ? (
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="primary" size="sm" asChild>
             <Link to={standardAnalysisConfigPath(activePack?.packKey)}>
               <Settings2 className="size-4" aria-hidden />
-              配置分析包
+              管理分析包
             </Link>
           </Button>
         ) : null
@@ -83,11 +83,11 @@ export function StandardAnalysisPage() {
       {packs.length === 0 && !packsQuery.isLoading ? (
         <ListGhostEmptyState
           title="暂无分析包"
-          description={canManage ? "前往配置页创建第一个标准分析包。" : "请联系管理员配置标准分析包。"}
+          description={canManage ? "点击「管理分析包」创建并绑定第一个标准分析包。" : "请联系管理员配置标准分析包。"}
           action={
             canManage ? (
               <Button size="sm" asChild>
-                <Link to={standardAnalysisConfigPath()}>去配置</Link>
+                <Link to={standardAnalysisConfigPath()}>管理分析包</Link>
               </Button>
             ) : undefined
           }

@@ -89,7 +89,6 @@ export function useStandardCompare(packKey: string | null, theme: AnalysisTheme 
 
 export function useStandardPackMutations() {
   const qc = useQueryClient();
-  const invalidate = () => qc.invalidateQueries({ queryKey: queryKeys.reports.standardPacks });
 
   const upsert = useMutation({
     mutationFn: ({ packKey, body }: { packKey: string; body: AnalysisPack }) =>
@@ -97,13 +96,33 @@ export function useStandardPackMutations() {
         method: "PUT",
         body: JSON.stringify(body),
       }),
-    onSuccess: invalidate,
+    onSuccess: (saved) => {
+      qc.setQueryData<{ items: AnalysisPack[]; total: number }>(
+        queryKeys.reports.standardPacks,
+        (prev) => {
+          const items = prev?.items ?? [];
+          const index = items.findIndex((pack) => pack.packKey === saved.packKey);
+          const nextItems =
+            index >= 0 ? items.map((pack, i) => (i === index ? saved : pack)) : [...items, saved];
+          return { items: nextItems, total: nextItems.length };
+        },
+      );
+    },
   });
 
   const remove = useMutation({
     mutationFn: (packKey: string) =>
       apiFetch<void>(`/api/v1/reports/standard/packs/${packKey}`, { method: "DELETE" }),
-    onSuccess: invalidate,
+    onSuccess: (_data, packKey) => {
+      qc.setQueryData<{ items: AnalysisPack[]; total: number }>(
+        queryKeys.reports.standardPacks,
+        (prev) => {
+          if (!prev) return prev;
+          const items = prev.items.filter((pack) => pack.packKey !== packKey);
+          return { items, total: items.length };
+        },
+      );
+    },
   });
 
   return { upsert, remove };

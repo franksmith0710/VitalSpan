@@ -87,7 +87,7 @@ export function SchedulePageOverview({ stats }: SchedulePageOverviewProps) {
   return (
     <div className="grid shrink-0 gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
       <div className="grid gap-3 sm:grid-cols-3">
-        <ScheduleStatCard label="全部定时报告" value={stats.total} hint="看板/大屏 + 文档模板" />
+        <ScheduleStatCard label="全部调度任务" value={stats.total} hint="看板/大屏 + 文档模板 + 标准分析" />
         <ScheduleStatCard label="已调度" value={stats.active} hint="已激活并按 cron 执行" />
         <ScheduleStatCard label="已暂停 / 取消" value={stats.inactive} hint="暂停、草稿或已取消" />
       </div>

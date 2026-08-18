@@ -20,6 +20,7 @@ type UseVizComponentInspectorActionsArgs = {
   primarySelectedId: string | null;
   selectedWidget: LayoutWidget | null;
   resolvedSelectedWidget: LayoutWidget | null;
+  widgets: LayoutWidget[];
   componentMap: VizComponentMap;
   setWidgets: React.Dispatch<React.SetStateAction<LayoutWidget[]>>;
   refetchComponents: () => void | Promise<unknown>;
@@ -29,10 +30,12 @@ export function useVizComponentInspectorActions({
   primarySelectedId,
   selectedWidget,
   resolvedSelectedWidget,
+  widgets,
   componentMap,
   setWidgets,
   refetchComponents,
 }: UseVizComponentInspectorActionsArgs) {
+  const linkedComponentIds = collectComponentIds(widgets);
   const queryClient = useQueryClient();
   const [pushing, setPushing] = useState(false);
 
@@ -64,11 +67,7 @@ export function useVizComponentInspectorActions({
         extractWidgetPayload(resolvedSelectedWidget),
       );
       if (updated) {
-        patchVizComponentResolveCache(
-          queryClient,
-          collectComponentIds([selectedWidget]),
-          updated,
-        );
+        patchVizComponentResolveCache(queryClient, linkedComponentIds, updated);
       }
       toast.success("已更新到组件库");
       await refetchComponents();
@@ -77,7 +76,7 @@ export function useVizComponentInspectorActions({
     } finally {
       setPushing(false);
     }
-  }, [componentMap, queryClient, refetchComponents, resolvedSelectedWidget, selectedWidget]);
+  }, [componentMap, linkedComponentIds, queryClient, refetchComponents, resolvedSelectedWidget, selectedWidget]);
 
   const applyPayloadChange = useCallback(
     async (payload: VizComponentPayload, localPatch: Partial<LayoutWidget>) => {
@@ -86,11 +85,7 @@ export function useVizComponentInspectorActions({
         try {
           const updated = await pushWidgetPayloadToLibrary(selectedWidget, componentMap, payload);
           if (updated) {
-            patchVizComponentResolveCache(
-              queryClient,
-              collectComponentIds([selectedWidget]),
-              updated,
-            );
+            patchVizComponentResolveCache(queryClient, linkedComponentIds, updated);
           }
           await refetchComponents();
         } catch (err) {
@@ -104,6 +99,7 @@ export function useVizComponentInspectorActions({
     },
     [
       componentMap,
+      linkedComponentIds,
       primarySelectedId,
       queryClient,
       refetchComponents,

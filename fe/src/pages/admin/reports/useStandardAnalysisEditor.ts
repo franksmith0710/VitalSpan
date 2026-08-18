@@ -122,12 +122,15 @@ export function useStandardAnalysisEditor() {
 
     try {
       const body = buildStandardAnalysisSaveBody(draft);
-      await upsert.mutateAsync({ packKey: draft.packKey, body });
-      setEditingKey(draft.packKey);
+      const saved = await upsert.mutateAsync({ packKey: draft.packKey, body });
+      setEditingKey(saved.packKey);
       setIsCreating(false);
       setBootstrapped(true);
-      setDraft(body);
+      setDraft(saved);
       setShowSavedHint(true);
+      const params = new URLSearchParams(searchParams);
+      params.set(STANDARD_PACK_QUERY, saved.packKey);
+      setSearchParams(params, { replace: true });
       toast.success("分析包已保存");
     } catch (err) {
       toast.error(mapApiError(err));

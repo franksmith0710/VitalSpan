@@ -124,7 +124,7 @@ export function ReportCenterQuickAside({ schedules, loading, canManage }: HubPro
       <div className={cardShell("p-5")}>
         <h2 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">运行概览</h2>
         <div className="mt-3 grid gap-3">
-          <ScheduleStatCard label="定时报告" value={schedules.length} hint="看板/大屏 + 模板" />
+          <ScheduleStatCard label="调度任务" value={schedules.length} hint="看板/大屏 + 模板 + 标准分析" />
           <ScheduleStatCard label="已调度" value={active} hint="按 cron 自动执行" />
           <ScheduleStatCard label="看板/大屏" value={dashboardSchedules.length} hint="推荐主路径" />
           {paused > 0 ? (
@@ -248,7 +248,7 @@ export function ReportCenterHeaderActions({ canManage }: { canManage: boolean })
     <Button type="button" variant="primary" size="sm" asChild>
       <Link to="/admin/reports/schedules?tab=dashboard">
         <CalendarClock className="size-4" aria-hidden />
-        管理全部定时报告
+        管理调度与投递
       </Link>
     </Button>
   );

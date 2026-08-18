@@ -18,6 +18,7 @@ import { sortStandardByPin } from "@/lib/reportCenterPrefs";
 import { useReportCenterPreferences } from "./useReportCenterPrefs";
 import { useAuth } from "@/context/auth-context";
 import { ReportCenterHeaderActions, ReportCenterQuickAside } from "./components/ReportCenterScheduleHub";
+import { ReportCenterDashboardScheduleHint } from "./components/ReportCenterDashboardScheduleHint";
 import { ReportCenterHubEntryCards } from "./components/ReportCenterHubEntryCards";
 import { ScheduleRecentFailuresPanel } from "./components/ScheduleRecentFailuresPanel";
 import { useReportSchedulesList, useReportScheduleMutations } from "./useReportSchedules";
@@ -89,6 +90,8 @@ export function ReportCenterPage() {
 
       <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_280px]">
         <div className="order-2 min-w-0 space-y-6 xl:order-1">
+          <ReportCenterDashboardScheduleHint canManageSchedules={canManage} />
+
           <ReportCenterHubEntryCards
             standardCount={standardItems.length}
             pinnedStandard={pinnedStandard}
