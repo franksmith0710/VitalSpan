@@ -82,12 +82,19 @@ export function useVizComponentInspectorActions({
     async (payload: VizComponentPayload, localPatch: Partial<LayoutWidget>) => {
       if (!primarySelectedId || !selectedWidget) return;
       if (isLinkedComponentRef(selectedWidget.componentRef)) {
+        const componentId = selectedWidget.componentRef.componentId;
+        const existing = componentMap.get(componentId);
+        if (existing) {
+          patchVizComponentResolveCache(queryClient, linkedComponentIds, {
+            ...existing,
+            payloadJson: { ...existing.payloadJson, ...payload },
+          });
+        }
         try {
           const updated = await pushWidgetPayloadToLibrary(selectedWidget, componentMap, payload);
           if (updated) {
             patchVizComponentResolveCache(queryClient, linkedComponentIds, updated);
           }
-          await refetchComponents();
         } catch (err) {
           toast.error(mapApiError(err));
         }

@@ -1,7 +1,7 @@
 import { patchChartDeDisplay } from "@/lib/chartDeDisplay";
 import { isChartExecuteReady } from "@/lib/chartExecuteProbe";
 import type { ChartFieldRef, ChartViewConfig } from "@/lib/chartViewConfig";
-import type { CustomVizDataBinding, CustomVizMetricRef } from "../layoutUtils";
+import type { CustomVizDataBinding, CustomVizMetricRef, CustomVizWidgetConfig } from "../layoutUtils";
 
 function metricsAsChartFields(metrics: CustomVizMetricRef[] | undefined): ChartFieldRef[] {
   return (metrics ?? []).filter((m) => m.field?.trim());
@@ -39,4 +39,41 @@ export function resolveCustomVizStyle(
   overrides: Record<string, unknown> | undefined,
 ): Record<string, unknown> {
   return { ...(manifestDefault ?? {}), ...(overrides ?? {}) };
+}
+
+/** 大屏实例上的 customVizConfig 覆盖组件库 payload（编辑态 Dataset/字段绑定）。 */
+export function applyCustomVizEditOverlay(
+  resolved: CustomVizWidgetConfig,
+  local: CustomVizWidgetConfig | undefined,
+): CustomVizWidgetConfig {
+  if (!local) return resolved;
+  const resolvedBinding = resolved.dataBinding ?? { status: "manual" as const };
+  const localBinding = local.dataBinding;
+  if (!localBinding) {
+    return {
+      ...resolved,
+      style: { ...(resolved.style ?? {}), ...(local.style ?? {}) },
+      widgetStyle: { ...(resolved.widgetStyle ?? {}), ...(local.widgetStyle ?? {}) },
+    };
+  }
+  return {
+    ...resolved,
+    artifactId: local.artifactId?.trim() ? local.artifactId : resolved.artifactId,
+    style: { ...(resolved.style ?? {}), ...(local.style ?? {}) },
+    widgetStyle: { ...(resolved.widgetStyle ?? {}), ...(local.widgetStyle ?? {}) },
+    dataBinding: mergeCustomVizDataBinding(resolvedBinding, localBinding),
+  };
+}
+
+function mergeCustomVizDataBinding(
+  resolved: CustomVizDataBinding,
+  local: CustomVizDataBinding,
+): CustomVizDataBinding {
+  return {
+    ...resolved,
+    ...local,
+    dimensions: local.dimensions ?? resolved.dimensions,
+    metrics: local.metrics ?? resolved.metrics,
+    filters: local.filters ?? resolved.filters,
+  };
 }

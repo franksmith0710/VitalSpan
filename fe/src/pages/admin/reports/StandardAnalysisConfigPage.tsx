@@ -55,7 +55,7 @@ export function StandardAnalysisConfigPage() {
       layout="list"
       title="标准分析"
       description="管理分析包：绑定数据集、映射字段、周期快照与可选定时投递。"
-      leadingActions={
+      actions={
         <Button type="button" variant="outline" size="sm" className="h-10" asChild>
           <Link to="/admin/reports/standard">
             <ArrowLeft className="size-4" aria-hidden />

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { LayoutWidget } from "@/components/dashboard/layoutUtils";
@@ -21,6 +21,7 @@ export function useVizComponentEditor(componentId: string | undefined) {
   const queryClient = useQueryClient();
   const [widget, setWidget] = useState<LayoutWidget | null>(null);
   const [saving, setSaving] = useState(false);
+  const hydratedRevisionRef = useRef<number | null>(null);
 
   const detailQuery = useQuery({
     queryKey: queryKeys.vizComponents.detail(componentId ?? ""),
@@ -33,8 +34,12 @@ export function useVizComponentEditor(componentId: string | undefined) {
 
   useEffect(() => {
     if (!component) return;
+    if (widget !== null && hydratedRevisionRef.current === component.contentRevision) {
+      return;
+    }
+    hydratedRevisionRef.current = component.contentRevision;
     setWidget(componentDetailToLayoutWidget(component));
-  }, [component]);
+  }, [component, widget]);
 
   const isDirty = useMemo(() => {
     if (!component || !widget) return false;
@@ -45,6 +50,7 @@ export function useVizComponentEditor(componentId: string | undefined) {
     (detail: VizComponentDetail) => {
       queryClient.setQueryData(queryKeys.vizComponents.detail(detail.id), detail);
       void queryClient.invalidateQueries({ queryKey: queryKeys.vizComponents.all });
+      hydratedRevisionRef.current = detail.contentRevision;
       setWidget(componentDetailToLayoutWidget(detail));
     },
     [queryClient],

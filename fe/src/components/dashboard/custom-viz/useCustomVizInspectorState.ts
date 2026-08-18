@@ -117,7 +117,7 @@ export function useCustomVizInspectorState(
       return;
     }
 
-    const needsConfig = binding.configId !== boundId;
+    const needsConfig = String(binding.configId ?? "") !== String(boundId ?? "");
     const needsDs = !binding.dataSourceId;
     if (!needsConfig && !needsDs) {
       bindingSyncRef.current = `${binding.datasetId}:${boundId}:${binding.configId}:${binding.dataSourceId}`;

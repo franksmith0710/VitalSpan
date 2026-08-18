@@ -16,6 +16,7 @@ from app.metadata.dataset.errors import (
     META_DATASET_FORBIDDEN,
     DatasetError,
 )
+from app.metadata.dataset.cleanup import delete_dataset_row, purge_orphan_sync_datasets
 from app.metadata.dataset.demo_seed import is_demo_package_dataset
 from app.metadata.dataset.models import DatasetRecord
 from app.metadata.dataset.schemas import (
@@ -182,6 +183,11 @@ def list_datasets(
     user: UserContext | None = None,
     q: str | None = None,
 ) -> DatasetListResponse:
+    def _purge(session: Session) -> None:
+        purge_orphan_sync_datasets(session)
+
+    _with_session(_purge)
+
     def _op(session: Session) -> DatasetListResponse:
         stmt = select(DatasetRecord).order_by(DatasetRecord.dataset_id)
         if user is not None and "enterprise" in set(user.roles) and "admin" not in set(user.roles):
@@ -291,7 +297,7 @@ def delete_dataset(dataset_id: str, user: UserContext) -> None:
                 "Official demo datasets cannot be deleted",
                 409,
             )
-        session.delete(row)
+        delete_dataset_row(session, row)
 
     _with_session(_op)
 

@@ -457,6 +457,29 @@ def delete_data_source(session: Session, data_source_id: uuid.UUID, *, role_code
     )
     if grant is not None:
         raise DataSourceError("DATASOURCE_IN_USE", "Data source is referenced by grants", 409)
+    from app.ingestion.models import SyncJob
+    from app.metadata.dataset.models import DatasetRecord
+
+    sync_ref = session.scalar(
+        select(SyncJob.id).where(SyncJob.source_data_source_id == data_source_id).limit(1),
+    )
+    if sync_ref is not None:
+        raise DataSourceError(
+            "DATASOURCE_IN_USE",
+            "Data source is referenced by sync jobs",
+            409,
+        )
+    dataset_ref = session.scalar(
+        select(DatasetRecord.dataset_id)
+        .where(DatasetRecord.table_source_datasource_id == data_source_id)
+        .limit(1),
+    )
+    if dataset_ref is not None:
+        raise DataSourceError(
+            "DATASOURCE_IN_USE",
+            "Data source is referenced by datasets",
+            409,
+        )
     row.deleted_at = datetime.now(UTC)
     session.commit()
     pool_manager.evict_pool(data_source_id)

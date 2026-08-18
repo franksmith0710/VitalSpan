@@ -1,4 +1,5 @@
 import type { DashboardWidgetBase } from "@/components/dashboard/dashboardLayoutContracts";
+import { applyCustomVizEditOverlay } from "@/components/dashboard/custom-viz/customVizExecute";
 import type { VizComponentDetail } from "@/lib/vizComponents";
 import { isLinkedComponentRef } from "@/lib/vizComponents";
 import { applyManualGeoMapDrillOverlay } from "@/lib/geoMapRegionPicker";
@@ -52,6 +53,17 @@ export function resolveLayoutWidget<T extends DashboardWidgetBase>(
     return {
       ...resolved,
       chartConfig: applyManualGeoMapDrillOverlay(resolved.chartConfig, widget.chartConfig),
+    } as T;
+  }
+  if (
+    resolved.type === "customViz" &&
+    resolved.customVizConfig &&
+    widget.type === "customViz" &&
+    widget.customVizConfig
+  ) {
+    return {
+      ...resolved,
+      customVizConfig: applyCustomVizEditOverlay(resolved.customVizConfig, widget.customVizConfig),
     } as T;
   }
   return resolved;

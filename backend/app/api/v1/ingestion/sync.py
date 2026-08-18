@@ -43,6 +43,7 @@ from app.ingestion.source_resolver import (
 )
 from app.ingestion.sync_cancel import find_active_run, request_cancel_run
 from app.ingestion.sync_executor import run_job
+from app.metadata.dataset.cleanup import delete_datasets_for_sync_job
 from app.query.rls.guard import validate_identifier
 
 router = APIRouter(prefix="/ingestion", tags=["ingestion"])
@@ -706,6 +707,7 @@ def delete_sync_job(
             status_code=404,
             detail={"code": "NOT_FOUND", "message": "任务不存在", "detail": None},
         )
+    delete_datasets_for_sync_job(db, job)
     db.delete(job)
     db.commit()
     refresh_all_jobs()

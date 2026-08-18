@@ -225,7 +225,8 @@ def test_ensure_dataset_endpoint_chain(client: TestClient, auth_headers: dict, j
     assert detail.json()["datasetId"] == dataset_id
 
     client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
-    client.delete(f"/api/v1/datasets/{dataset_id}", headers=auth_headers)
+    gone = client.get(f"/api/v1/datasets/{dataset_id}", headers=auth_headers)
+    assert gone.status_code == 404
 
 
 def test_create_job_missing_datasource_id_422(client, auth_headers, mysql_datasource_id):

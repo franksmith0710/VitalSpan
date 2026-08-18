@@ -146,6 +146,42 @@ describe("resolveVizComponent", () => {
     expect(detached.chartConfig?.chartType).toBe("pie");
   });
 
+  it("merges instance customVizConfig dataBinding over library payload", () => {
+    const widget: LayoutWidget = {
+      id: "w-cv-1",
+      type: "customViz",
+      title: "告警滚动",
+      colSpan: 6,
+      rowSpan: 4,
+      order: 0,
+      componentRef: { componentId: "c-cv-1" },
+      customVizConfig: {
+        artifactId: "art-1",
+        dataBinding: {
+          status: "connected",
+          datasetId: "ds-alerts",
+          configId: "cfg-alerts",
+          dimensions: [{ field: "message" }],
+          metrics: [{ field: "severity", agg: "sum" }],
+        },
+      },
+    };
+    const map = buildComponentMap([
+      {
+        ...componentDetail("c-cv-1", {
+          customVizConfig: {
+            artifactId: "art-1",
+            dataBinding: { status: "manual" },
+          },
+        }),
+        widgetType: "customViz",
+      },
+    ]);
+    const resolved = resolveLayoutWidget(widget, map);
+    expect(resolved.customVizConfig?.dataBinding?.datasetId).toBe("ds-alerts");
+    expect(resolved.customVizConfig?.dataBinding?.dimensions?.[0]?.field).toBe("message");
+  });
+
   it("linkedComponentContentRevisionSuffix reflects loading and resolved revision", () => {
     const widget = chartWidget("w1", { componentRef: { componentId: "c1" } });
     const map = buildComponentMap([

@@ -1,8 +1,9 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router";
-import { CalendarClock, ChevronDown, ChevronRight } from "lucide-react";
+import { CalendarClock, ChevronDown, ChevronRight, Database, Table2 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { ListPageFooter } from "@/components/layout/list-page-kit";
 import {
@@ -12,17 +13,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
-import type { AnalysisPack, AnalysisTheme, SnapshotCronPreset } from "../useStandardAnalysis";
+import type { AnalysisPack, SnapshotCronPreset } from "../useStandardAnalysis";
 import { standardScheduleHubPath } from "../standardRoutes";
-import {
-  ALL_ANALYSIS_THEMES,
-  SNAPSHOT_LABELS,
-  SNAPSHOT_RETENTION_OPTIONS,
-  THEME_META,
-} from "./standardAnalysisUi";
+import { SNAPSHOT_LABELS, SNAPSHOT_RETENTION_OPTIONS } from "./standardAnalysisUi";
 import { ConfigField, ConfigSection } from "./standardAnalysisConfigUi";
 import { ReportMetricDatasetFields } from "./ReportMetricDatasetFields";
+import { StandardAnalysisFieldMappingFields } from "./StandardAnalysisFieldMappingFields";
+import { StandardAnalysisThemeGrid } from "./StandardAnalysisThemeGrid";
 import { StandardSchedulePanel } from "./StandardSchedulePanel";
 
 type Props = {
@@ -39,45 +36,6 @@ type Props = {
   onDelete: () => void;
 };
 
-function FieldMappingInput({
-  id,
-  label,
-  value,
-  columns,
-  onChange,
-}: {
-  id: string;
-  label: string;
-  value: string;
-  columns: string[];
-  onChange: (value: string) => void;
-}) {
-  if (columns.length > 0) {
-    return (
-      <ConfigField id={id} label={label}>
-        <Select value={value || undefined} onValueChange={onChange}>
-          <SelectTrigger id={id} className="h-11">
-            <SelectValue placeholder="选择列" />
-          </SelectTrigger>
-          <SelectContent>
-            {columns.map((column) => (
-              <SelectItem key={column} value={column}>
-                {column}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </ConfigField>
-    );
-  }
-
-  return (
-    <ConfigField id={id} label={label}>
-      <Input id={id} className="h-11" value={value} onChange={(event) => onChange(event.target.value)} />
-    </ConfigField>
-  );
-}
-
 function CollapsibleDeliverySection({
   packKey,
   children,
@@ -90,28 +48,57 @@ function CollapsibleDeliverySection({
 
   return (
     <ConfigSection
+      inset
       title="定时投递（可选）"
-      description="按周期生成 PDF 并通过邮件外发；与上方「周期快照」不同，快照仅供平台内对比上期。"
+      description="按周期生成 PDF 并通过邮件外发；与「周期快照」不同，快照仅供平台内对比上期。"
     >
-      <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" variant="outline" size="sm" asChild>
-          <Link to={schedulesHref}>
-            <CalendarClock className="size-4" aria-hidden />
-            在调度与投递查看
-          </Link>
-        </Button>
-        <button
-          type="button"
-          className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-theme-xs text-gray-600 transition-colors hover:bg-gray-50 hover:text-brand-600 dark:text-gray-400 dark:hover:bg-white/[0.02] dark:hover:text-brand-400"
-          onClick={() => setOpen((value) => !value)}
-          aria-expanded={open}
-        >
-          {open ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
-          {open ? "收起本页配置" : "在本页配置投递"}
-        </button>
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.02]">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" asChild>
+            <Link to={schedulesHref}>
+              <CalendarClock className="size-4" aria-hidden />
+              在调度与投递查看
+            </Link>
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-gray-600 dark:text-gray-400"
+            onClick={() => setOpen((value) => !value)}
+            aria-expanded={open}
+          >
+            {open ? <ChevronDown className="size-4" aria-hidden /> : <ChevronRight className="size-4" aria-hidden />}
+            {open ? "收起本页配置" : "在本页配置投递"}
+          </Button>
+        </div>
+        {open ? <div className="mt-4 border-t border-gray-100 pt-4 dark:border-white/[0.06]">{children}</div> : null}
       </div>
-      {open ? <div className="mt-4">{children}</div> : null}
     </ConfigSection>
+  );
+}
+
+function BindingStatusBadge({ draft }: { draft: AnalysisPack }) {
+  if (draft.datasetId) {
+    return (
+      <Badge variant="light" color="primary" size="sm" className="gap-1">
+        <Database className="size-3" aria-hidden />
+        数据集绑定
+      </Badge>
+    );
+  }
+  if (draft.physicalTableFqn) {
+    return (
+      <Badge variant="light" color="warning" size="sm" className="gap-1">
+        <Table2 className="size-3" aria-hidden />
+        物理表（兼容）
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="light" color="light" size="sm">
+      未绑定数据源
+    </Badge>
   );
 }
 
@@ -132,14 +119,6 @@ export function StandardAnalysisConfigForm({
     onDismissSavedHint?.();
     onChange(updater);
   };
-  const toggleTheme = (theme: AnalysisTheme, checked: boolean) => {
-    handleChange((current) => ({
-      ...current,
-      enabledThemes: checked
-        ? [...current.enabledThemes, theme]
-        : current.enabledThemes.filter((item) => item !== theme),
-    }));
-  };
 
   const legacyBinding = !draft.datasetId && draft.physicalTableFqn;
 
@@ -151,39 +130,42 @@ export function StandardAnalysisConfigForm({
         onSave();
       }}
     >
-      <div className="shrink-0 overflow-hidden border-b border-gray-200 px-5 py-3 dark:border-gray-800">
-        <div className="min-w-0">
-          <h2 className="truncate text-theme-sm font-semibold text-gray-900 dark:text-white">
-            {isCreating ? "新建分析包" : draft.displayName || "未命名分析包"}
-          </h2>
-          {!isCreating && editingKey ? (
-            <p className="mt-0.5 truncate font-mono text-theme-xs text-gray-500 dark:text-gray-400">
-              {editingKey}
-            </p>
-          ) : null}
+      <div className="shrink-0 border-b border-gray-200 bg-gray-50/40 px-5 py-4 dark:border-gray-800 dark:bg-white/[0.02]">
+        <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="truncate text-theme-sm font-semibold text-gray-900 dark:text-white">
+                {isCreating ? "新建分析包" : draft.displayName || "未命名分析包"}
+              </h2>
+              {!isCreating ? <BindingStatusBadge draft={draft} /> : null}
+            </div>
+            {!isCreating && editingKey ? (
+              <p className="mt-1 truncate font-mono text-[11px] text-gray-500 dark:text-gray-400">
+                {editingKey}
+              </p>
+            ) : null}
+          </div>
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto flex max-w-3xl flex-col gap-8 px-5 py-5">
+      <div className="min-h-0 flex-1 overflow-y-auto bg-gray-50/30 dark:bg-transparent">
+        <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-5">
           {showSavedHint && editingKey ? (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-200 bg-brand-50/60 px-4 py-3 dark:border-brand-500/30 dark:bg-brand-500/10">
-              <p className="text-theme-sm text-brand-800 dark:text-brand-200">
-                分析包已保存。需要外发 PDF 报告？可在下方配置定时投递，或前往调度中心统一管理。
-              </p>
-              <Button type="button" variant="outline" size="sm" asChild>
-                <Link to={standardScheduleHubPath(editingKey)}>
-                  <CalendarClock className="size-4" aria-hidden />
-                  前往调度与投递
-                </Link>
-              </Button>
-            </div>
+            <Alert severity="success" appearance="soft">
+              <AlertTitle>分析包已保存</AlertTitle>
+              <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+                <span>需要外发 PDF？可在下方配置定时投递，或前往调度中心统一管理。</span>
+                <Button type="button" variant="outline" size="sm" className="shrink-0" asChild>
+                  <Link to={standardScheduleHubPath(editingKey)}>
+                    <CalendarClock className="size-4" aria-hidden />
+                    前往调度与投递
+                  </Link>
+                </Button>
+              </AlertDescription>
+            </Alert>
           ) : null}
 
-          <ConfigSection
-            title="基本信息"
-            description="分析包在工作台与导航中的展示名称；标识保存后不可修改。"
-          >
+          <ConfigSection title="基本信息" description="工作台与导航中的展示名称；标识保存后不可修改。">
             <div className="grid min-w-0 gap-4 md:grid-cols-2">
               <ConfigField
                 id="packKey"
@@ -192,7 +174,7 @@ export function StandardAnalysisConfigForm({
               >
                 <Input
                   id="packKey"
-                  className="h-11"
+                  className="h-11 font-mono text-theme-sm"
                   value={draft.packKey}
                   disabled={Boolean(editingKey) && !isCreating}
                   onChange={(event) => handleChange((current) => ({ ...current, packKey: event.target.value }))}
@@ -212,13 +194,16 @@ export function StandardAnalysisConfigForm({
           </ConfigSection>
 
           <ConfigSection
-            title="数据源"
-            description="推荐绑定已发布的数据集（语义层取数）；物理表绑定仅用于兼容旧分析包。"
+            title="数据源与字段"
+            description="推荐绑定已发布数据集；物理表仅用于兼容旧分析包。"
           >
             {legacyBinding ? (
-              <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-theme-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300">
-                当前分析包仍使用旧版物理表「{draft.physicalTableFqn}」。请选择数据集并保存以迁移到新绑定方式。
-              </p>
+              <Alert severity="warning" appearance="soft">
+                <AlertTitle>建议迁移到数据集</AlertTitle>
+                <AlertDescription>
+                  当前仍使用物理表「{draft.physicalTableFqn}」。请选择下方数据集并保存，以使用语义层取数。
+                </AlertDescription>
+              </Alert>
             ) : null}
             <ReportMetricDatasetFields
               datasetId={draft.datasetId ?? ""}
@@ -237,81 +222,32 @@ export function StandardAnalysisConfigForm({
               onSuggestedDataSourceId={(dataSourceId) =>
                 handleChange((current) => ({ ...current, dataSourceId }))
               }
+              boundSuccessMessage="查询绑定已同步，请保存分析包使配置生效。"
             />
-            <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-3">
-              <FieldMappingInput
-                id="status"
-                label="状态字段"
-                value={draft.fieldMapping.status ?? ""}
-                columns={columnOptions}
-                onChange={(status) =>
-                  handleChange((current) => ({
-                    ...current,
-                    fieldMapping: { ...current.fieldMapping, status },
-                  }))
-                }
-              />
-              <FieldMappingInput
-                id="region"
-                label="区域字段"
-                value={draft.fieldMapping.region ?? ""}
-                columns={columnOptions}
-                onChange={(region) =>
-                  handleChange((current) => ({
-                    ...current,
-                    fieldMapping: { ...current.fieldMapping, region },
-                  }))
-                }
-              />
-              <FieldMappingInput
-                id="createdAt"
-                label="时间字段"
-                value={draft.fieldMapping.createdAt ?? ""}
-                columns={columnOptions}
-                onChange={(createdAt) =>
-                  handleChange((current) => ({
-                    ...current,
-                    fieldMapping: { ...current.fieldMapping, createdAt },
-                  }))
-                }
-              />
-            </div>
+            <StandardAnalysisFieldMappingFields
+              draft={draft}
+              columnOptions={columnOptions}
+              onChange={handleChange}
+            />
           </ConfigSection>
 
-          <ConfigSection title="分析主题" description="勾选要在「看分析」中展示的主题视图。">
-            <div className="grid min-w-0 gap-2 md:grid-cols-2">
-              {ALL_ANALYSIS_THEMES.map((theme) => {
-                const checked = draft.enabledThemes.includes(theme);
-                const meta = THEME_META[theme];
-                return (
-                  <label
-                    key={theme}
-                    className={cn(
-                      "flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-3 transition-colors",
-                      checked
-                        ? "border-gray-300 bg-gray-50 dark:border-gray-700 dark:bg-white/[0.04]"
-                        : "border-gray-200 hover:bg-gray-50/80 dark:border-gray-800 dark:hover:bg-white/[0.02]",
-                    )}
-                  >
-                    <Checkbox
-                      checked={checked}
-                      onCheckedChange={(value) => toggleTheme(theme, value === true)}
-                      aria-label={meta.label}
-                    />
-                    <span className="min-w-0">
-                      <span className="block text-theme-sm font-medium text-gray-800 dark:text-gray-200">
-                        {meta.label}
-                      </span>
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
+          <ConfigSection title="分析主题" description="勾选在「标准分析」消费页展示的主题视图。">
+            <StandardAnalysisThemeGrid
+              enabledThemes={draft.enabledThemes}
+              onToggle={(theme, checked) =>
+                handleChange((current) => ({
+                  ...current,
+                  enabledThemes: checked
+                    ? [...current.enabledThemes, theme]
+                    : current.enabledThemes.filter((item) => item !== theme),
+                }))
+              }
+            />
           </ConfigSection>
 
           <ConfigSection
             title="周期快照"
-            description="平台按周期自动保存分析结果，供「对比上期」使用；不会发送邮件或推送到外部。"
+            description="平台按周期保存分析结果供对比上期；不会发送邮件或推送到外部。"
           >
             <div className="grid min-w-0 gap-4 sm:grid-cols-2">
               <ConfigField id="snapshotCronPreset" label="快照周期">
@@ -367,10 +303,7 @@ export function StandardAnalysisConfigForm({
 
           {editingKey && !isCreating ? (
             <CollapsibleDeliverySection packKey={editingKey}>
-              <StandardSchedulePanel
-                sourceKey={editingKey}
-                packName={draft.displayName || editingKey}
-              />
+              <StandardSchedulePanel sourceKey={editingKey} packName={draft.displayName || editingKey} />
             </CollapsibleDeliverySection>
           ) : null}
         </div>

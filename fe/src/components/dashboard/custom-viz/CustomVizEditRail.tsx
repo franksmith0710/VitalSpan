@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { fetchAiVizArtifactMeta } from "@/lib/aiVizArtifacts";
@@ -29,15 +29,17 @@ export function CustomVizEditRail({
   className,
 }: CustomVizEditRailProps) {
   const artifactId = widget.customVizConfig.artifactId?.trim();
-  const configRef = useRef(widget.customVizConfig);
-  configRef.current = widget.customVizConfig;
+  const scopeKey = `${widget.id}:${artifactId ?? ""}`;
+  const [draftConfig, setDraftConfig] = useState(widget.customVizConfig);
 
-  const [, bumpRevision] = useState(0);
-  const readConfig = useCallback(() => configRef.current, []);
+  useEffect(() => {
+    setDraftConfig(widget.customVizConfig);
+  }, [scopeKey]);
+
+  const readConfig = useCallback(() => draftConfig, [draftConfig]);
   const emitChange = useCallback(
     (next: CustomVizWidgetConfig) => {
-      configRef.current = next;
-      bumpRevision((value) => value + 1);
+      setDraftConfig(next);
       onChange(next);
     },
     [onChange],
@@ -55,10 +57,11 @@ export function CustomVizEditRail({
   });
 
   const inspector = useCustomVizInspectorState(readConfig, emitChange);
-  const cfg = readConfig();
 
   const typeLabel = sanitizeManifestLabel(meta?.manifest.displayName, "自定义组件");
-  const leftSubtitle = widget.title && widget.title !== typeLabel ? widget.title : undefined;
+  const leftSubtitle = useMemo(() => {
+    return widget.title && widget.title !== typeLabel ? widget.title : undefined;
+  }, [typeLabel, widget.title]);
 
   return (
     <WidgetEditRailLayout
@@ -69,7 +72,7 @@ export function CustomVizEditRail({
       left={
         <CustomVizEditorColumn
           widgetTitle={widget.title}
-          config={cfg}
+          config={draftConfig}
           manifest={meta?.manifest}
           activeFieldTarget={activeFieldTarget}
           onActiveFieldTargetChange={setActiveFieldTarget}

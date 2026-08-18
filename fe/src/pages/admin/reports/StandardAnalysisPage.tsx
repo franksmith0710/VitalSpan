@@ -68,16 +68,18 @@ export function StandardAnalysisPage() {
       }
       title="标准分析"
       description="查看分析结果并与上期快照对比；管理员可在本页管理分析包（数据集、快照与投递）。"
-      leadingActions={<ReportCenterBackLink />}
       actions={
-        canManage ? (
-          <Button variant="primary" size="sm" asChild>
-            <Link to={standardAnalysisConfigPath(activePack?.packKey)}>
-              <Settings2 className="size-4" aria-hidden />
-              管理分析包
-            </Link>
-          </Button>
-        ) : null
+        <div className="flex flex-wrap items-center gap-2">
+          <ReportCenterBackLink />
+          {canManage ? (
+            <Button variant="primary" size="sm" asChild>
+              <Link to={standardAnalysisConfigPath(activePack?.packKey)}>
+                <Settings2 className="size-4" aria-hidden />
+                管理分析包
+              </Link>
+            </Button>
+          ) : null}
+        </div>
       }
     >
       {packs.length === 0 && !packsQuery.isLoading ? (

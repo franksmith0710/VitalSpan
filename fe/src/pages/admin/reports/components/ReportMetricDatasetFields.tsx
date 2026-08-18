@@ -24,12 +24,14 @@ export function ReportMetricDatasetFields({
   onDatasetIdChange,
   onBoundConfigIdChange,
   onSuggestedDataSourceId,
+  boundSuccessMessage = "绑定已同步，请保存扩展配置后再导出",
 }: {
   datasetId: string;
   boundConfigId: string;
   onDatasetIdChange: (id: string) => void;
   onBoundConfigIdChange: (id: string) => void;
   onSuggestedDataSourceId?: (id: string) => void;
+  boundSuccessMessage?: string;
 }) {
   const qc = useQueryClient();
   const listQuery = useQuery({
@@ -67,7 +69,7 @@ export function ReportMetricDatasetFields({
     onBoundConfigIdChange(configId);
     void qc.invalidateQueries({ queryKey: ["reports", "datasets", datasetId] });
     void detailQuery.refetch();
-    toast.message("绑定已同步，请保存扩展配置后再导出");
+    toast.message(boundSuccessMessage);
   };
 
   return (
@@ -81,11 +83,13 @@ export function ReportMetricDatasetFields({
             <SelectTrigger id="metric-dataset" className="h-11">
               <SelectValue placeholder="选择已创建的数据集" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="max-w-[min(100vw-2rem,32rem)]">
               {items.map((d) => (
-                <SelectItem key={d.datasetId} value={d.datasetId}>
-                  {d.displayName}
-                  {d.boundConfigId ? "（已绑定）" : "（未绑定）"}
+                <SelectItem key={d.datasetId} value={d.datasetId} className="truncate">
+                  <span className="truncate">
+                    {d.displayName}
+                    {d.boundConfigId ? "（已绑定）" : "（未绑定）"}
+                  </span>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -107,14 +111,14 @@ export function ReportMetricDatasetFields({
       </div>
       {datasetId && detailQuery.isLoading ? <Skeleton className="h-24 w-full rounded-xl" /> : null}
       {datasetId && detail ? (
-        <>
+        <div className="rounded-xl border border-gray-100 bg-white p-4 dark:border-white/[0.06] dark:bg-white/[0.02]">
           {effectiveBound ? (
-            <p className="font-mono text-theme-xs text-gray-500 dark:text-gray-400">
+            <p className="mb-3 font-mono text-[11px] text-gray-500 dark:text-gray-400">
               绑定配置：{effectiveBound.slice(0, 8)}…
             </p>
           ) : (
-            <p className="text-theme-xs text-amber-700 dark:text-amber-400">
-              该数据集尚未绑定查询，请在下方完成绑定后再保存指标。
+            <p className="mb-3 text-theme-xs text-amber-700 dark:text-amber-400">
+              该数据集尚未绑定查询，请在下方完成绑定后再保存。
             </p>
           )}
           <DatasetBindPanel
@@ -125,7 +129,7 @@ export function ReportMetricDatasetFields({
             syncJobId={detail.syncJobId}
             onBound={handleBound}
           />
-        </>
+        </div>
       ) : null}
     </div>
   );
