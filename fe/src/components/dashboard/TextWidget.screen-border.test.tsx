@@ -10,16 +10,6 @@ function asTextWidget(widget: LayoutWidget) {
 
 describe("TextWidget screen border on pixel canvas", () => {
   beforeEach(() => {
-    vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({
-      width: 320,
-      height: 240,
-      x: 0,
-      y: 0,
-      top: 0,
-      left: 0,
-      right: 320,
-      bottom: 240,
-    } as DOMRect);
     vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => {
       cb(0);
       return 1;
@@ -33,15 +23,24 @@ describe("TextWidget screen border on pixel canvas", () => {
     vi.unstubAllGlobals();
   });
 
-  it("renders DE border svg in shape shell", () => {
+  it("renders DE border svg in shape shell with non-zero layout height", () => {
     const widget = asTextWidget(createScreenBorderWidget([], undefined, "border-1"));
     const { container } = render(
-      <div style={{ width: 320, height: 240 }}>
+      <div
+        className="flex flex-col"
+        style={{ width: 320, height: 240, display: "flex" }}
+        data-testid="pixel-host"
+      >
         <TextWidget widget={widget} mode="edit" shell="shape" selected />
       </div>,
     );
 
-    expect(screen.getByTestId("text-widget-content")).toBeInTheDocument();
+    const content = screen.getByTestId("text-widget-content");
+    expect(content).toBeInTheDocument();
     expect(container.querySelector("[data-screen-border-de] svg")).not.toBeNull();
+
+    const host = screen.getByTestId("pixel-host");
+    expect(host.getBoundingClientRect().height).toBeGreaterThan(0);
+    expect(content.getBoundingClientRect().height).toBeGreaterThan(0);
   });
 });

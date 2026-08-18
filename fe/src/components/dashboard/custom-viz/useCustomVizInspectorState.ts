@@ -162,6 +162,14 @@ export function useCustomVizInspectorState(
   ]);
 
   useEffect(() => {
+    if (columns.length > 0) {
+      setDatasetBindingError((prev) =>
+        prev === "未加载到字段，请点击刷新或检查数据集查询配置" ? null : prev,
+      );
+    }
+  }, [columns.length]);
+
+  useEffect(() => {
     if (!binding.datasetId || !binding.configId || columnsLoading || columns.length > 0) return;
     if (datasetBindingError) return;
     setDatasetBindingError("未加载到字段，请点击刷新或检查数据集查询配置");

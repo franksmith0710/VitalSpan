@@ -1474,6 +1474,18 @@ html.admin-fill-lock #root {
   padding: 0 !important;
   border: none !important;
   background: transparent !important;
+  height: 100%;
+  min-height: 0;
+  flex: 1;
+}
+
+.pixel-shape-inner[data-screen-border-asset] .dashboard-no-drag {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  width: 100%;
 }
 
 @media (prefers-reduced-motion: reduce) {

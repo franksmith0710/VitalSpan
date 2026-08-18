@@ -58,7 +58,7 @@ customViz 选 D3 **不会**调用 `applyChartStyleChain` 或 `renderD3Chart`。�
 | 系列色 | `scaleOrdinal` + 2–8 色，与内置 palette 接近 |
 | 交互 | `pointer-events` + tooltip div；禁用 `onclick=` 等 inline 事件（用 `addEventListener`） |
 |  resize | M1 可用静态尺寸；监听 `ResizeObserver` 可选 |
-| 地图 | choropleth 仅离线中国 GeoJSON；`gis-map` 走 GeoLibre `geolibreProject`，禁止 L3 内嵌（GEO-IRON-01） |
+| 地图 | choropleth 仅离线中国 GeoJSON；`gis-map` 走 `nativeBody.gisProject`，禁止 L3 内嵌（GEO-IRON-01） |
 
 参考实现（平台内部，**不可 import**）：[`fe/src/components/charts/engine/d3/`](../../../../fe/src/components/charts/engine/d3/)。
 

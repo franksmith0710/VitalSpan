@@ -39,6 +39,11 @@
     "line": { "sections": ["axis", "cartesianShape", "background", "palette", "title", "remark", "legend", "label", "tooltip"], "wired": true },
     "pie": { "sections": ["pieShape", "background", "title", "remark", "legend", "label", "tooltip"], "wired": true },
     "map": { "sections": ["background", "mapBasic", "title", "geo", "remark"], "wired": true },
+    "gis-map": {
+      "sections": ["background", "title", "remark"],
+      "nativeBody": ["gisProject"],
+      "wired": true
+    },
     "kpi": { "sections": ["background", "palette", "title", "label", "kpiIndicator"], "wired": true }
   },
   "customViz": {

@@ -20,15 +20,43 @@ export const DEFAULT_GIS_PROJECT: GisProject = {
 
 const ALLOWED_BASEMAPS = new Set<GisBasemapId>(["blank", "china-provinces"]);
 
+const CHINA_LAYER_ID = "vitalspan-china-provinces";
+
 export function readGisProject(config: ChartViewConfig | undefined): GisProject {
   const raw = config?.nativeBody?.gisProject;
-  if (!raw || typeof raw !== "object") return DEFAULT_GIS_PROJECT;
+  if (raw && typeof raw === "object") {
+    return normalizeGisProject(raw);
+  }
+  const legacy = config?.nativeBody?.geolibreProject;
+  if (legacy && typeof legacy === "object") {
+    return migrateGeolibreProject(legacy);
+  }
+  return DEFAULT_GIS_PROJECT;
+}
+
+function normalizeGisProject(raw: unknown): GisProject {
   const candidate = raw as Partial<GisProject>;
   const basemap =
     typeof candidate.basemap === "string" && ALLOWED_BASEMAPS.has(candidate.basemap as GisBasemapId)
       ? (candidate.basemap as GisBasemapId)
       : DEFAULT_GIS_PROJECT.basemap;
   const view = normalizeGisView(candidate.view) ?? DEFAULT_GIS_PROJECT.view;
+  return { basemap, view };
+}
+
+function migrateGeolibreProject(raw: unknown): GisProject {
+  const project = raw as {
+    layers?: Array<{ id?: string; metadata?: { vitalspanTemplate?: string } }>;
+    mapView?: { center?: [number, number]; zoom?: number };
+  };
+  const hasChinaLayer =
+    Array.isArray(project.layers) &&
+    project.layers.some(
+      (layer) =>
+        layer.id === CHINA_LAYER_ID || layer.metadata?.vitalspanTemplate === "china-provinces",
+    );
+  const basemap: GisBasemapId = hasChinaLayer ? "china-provinces" : "blank";
+  const view = normalizeGisView(project.mapView) ?? DEFAULT_GIS_PROJECT.view;
   return { basemap, view };
 }
 

@@ -76,4 +76,49 @@ describe("useCustomVizInspectorState", () => {
       expect(result.current.columns).toEqual(["region", "amount"]);
     });
   });
+
+  it("clears stale empty-field alert when columns arrive", async () => {
+    mockApiFetch.mockImplementation(async (path: string) => {
+      if (path.includes("/datasets")) {
+        return {
+          items: [
+            {
+              datasetId: "ds-grid",
+              displayName: "网格事件",
+              boundConfigId: "cfg-grid",
+            },
+          ],
+        };
+      }
+      return {};
+    });
+    mockFetchDatasetQueryConfig.mockResolvedValue({
+      configId: "cfg-grid",
+      dataSourceId: "dsrc-1",
+      columns: ["grid_name", "event_count"],
+    });
+
+    let config: CustomVizWidgetConfig = {
+      artifactId: "art-1",
+      dataBinding: {
+        status: "connected",
+        datasetId: "ds-grid",
+        configId: "cfg-grid",
+        dataSourceId: "dsrc-1",
+      },
+    };
+    const readConfig = () => config;
+    const emitChange = (next: CustomVizWidgetConfig) => {
+      config = next;
+    };
+
+    const { result } = renderHook(() => useCustomVizInspectorState(readConfig, emitChange), {
+      wrapper,
+    });
+
+    await waitFor(() => {
+      expect(result.current.columns).toEqual(["grid_name", "event_count"]);
+      expect(result.current.datasetBindingError).toBeNull();
+    });
+  });
 });

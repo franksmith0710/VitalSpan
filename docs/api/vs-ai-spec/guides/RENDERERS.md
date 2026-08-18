@@ -17,7 +17,7 @@
 
 | 需求 | 推荐路径 |
 |------|----------|
-| 49 种已有 chartType 能表达（含 `gis-map`） | L1/L2：`chartConfig` + `deStyle` / `geolibreProject` |
+| 49 种已有 chartType 能表达（含 `gis-map`） | L1/L2：`chartConfig` + `deStyle` / `gisProject` |
 | 全新形态、运行时免发版 | L3：`customViz` + 自选渲染器（**非**平台 D3 引擎） |
 | 必须接 query / deStyle / 导出像素一致 | 原生 chartType 插件（合入仓库发版） |
 

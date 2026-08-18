@@ -81,6 +81,9 @@ export function useVizComponentInspectorActions({
   const applyPayloadChange = useCallback(
     async (payload: VizComponentPayload, localPatch: Partial<LayoutWidget>) => {
       if (!primarySelectedId || !selectedWidget) return;
+      setWidgets((prev) =>
+        prev.map((w) => (w.id === primarySelectedId ? { ...w, ...localPatch } : w)),
+      );
       if (isLinkedComponentRef(selectedWidget.componentRef)) {
         const componentId = selectedWidget.componentRef.componentId;
         const existing = componentMap.get(componentId);
@@ -98,11 +101,7 @@ export function useVizComponentInspectorActions({
         } catch (err) {
           toast.error(mapApiError(err));
         }
-        return;
       }
-      setWidgets((prev) =>
-        prev.map((w) => (w.id === primarySelectedId ? { ...w, ...localPatch } : w)),
-      );
     },
     [
       componentMap,

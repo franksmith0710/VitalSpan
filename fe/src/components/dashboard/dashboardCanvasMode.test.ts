@@ -338,4 +338,31 @@ describe("dashboard canvas mode", () => {
       height: previous.height,
     });
   });
+
+  it("mergeLayoutWidgetIntoPixel 同步 customVizConfig 变更", () => {
+    const previous = {
+      ...v2.widgets[0]!,
+      type: "customViz" as const,
+      customVizConfig: {
+        artifactId: "art-1",
+        dataBinding: { status: "manual" as const },
+      },
+    };
+    const edited = {
+      ...pixelWidgetToLayoutWidget(previous),
+      customVizConfig: {
+        artifactId: "art-1",
+        dataBinding: {
+          status: "connected" as const,
+          datasetId: "ds-1",
+          configId: "cfg-1",
+          dimensions: [{ field: "grid_name" }],
+          metrics: [{ field: "event_count", agg: "sum" as const }],
+        },
+      },
+    };
+    const merged = mergeLayoutWidgetIntoPixel(previous, edited);
+    expect(merged).not.toBe(previous);
+    expect(merged.customVizConfig?.dataBinding?.datasetId).toBe("ds-1");
+  });
 });

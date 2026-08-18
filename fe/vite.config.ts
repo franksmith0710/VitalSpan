@@ -59,8 +59,6 @@ export default defineConfig(({ mode }) => {
             }
             if (id.includes("/pages/admin/dashboard/DashboardEditPage")) return "page-dashboard-edit";
             if (id.includes("node_modules/maplibre-gl")) return "vendor-maplibre";
-            if (id.includes("vendor/geolibre") || id.includes("@geolibre/")) return "vendor-geolibre";
-            if (id.includes("/components/charts/engine/geolibre/")) return "charts-geolibre";
           },
         },
       },
@@ -71,7 +69,7 @@ export default defineConfig(({ mode }) => {
       include: ["src/**/*.test.{ts,tsx}"],
       server: {
         deps: {
-          inline: [/@geolibre\//, /@maplibre\//, /vendor\/geolibre/],
+          inline: [/@maplibre\//],
         },
       },
     },

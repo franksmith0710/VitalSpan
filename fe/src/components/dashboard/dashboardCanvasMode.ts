@@ -149,7 +149,9 @@ function pixelWidgetContentEqual(
     previous.textConfig === edited.textConfig &&
     previous.tabsConfig === edited.tabsConfig &&
     previous.filterConfig === edited.filterConfig &&
-    previous.mediaConfig === edited.mediaConfig
+    previous.mediaConfig === edited.mediaConfig &&
+    previous.customVizConfig === edited.customVizConfig &&
+    previous.componentRef === edited.componentRef
   );
 }
 

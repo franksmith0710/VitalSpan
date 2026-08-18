@@ -7,7 +7,7 @@
 | 锚点 | `CustomVizEditRail` · `useCustomVizInspectorState` · `DashboardEditPage` · `resolveVizComponent` · `customVizHost` · 大屏 `0a5e70d4-95b2-4be7-a84c-6d3e5252977d` · 组件库 `112c8904-4f8c-4281-be17-96b7811205f4` |
 | 总体判定 | **PARTIAL** |
 | **总分 / 档位** | **6.5/10 · C** |
-| 状态 | draft |
+| 状态 | approved-fix（P0/P1 已修 2026-08-18） |
 | **sampling** | `full`（6 项交付能力 + 8 控件，非 44 chartType） |
 
 ## 1. 核验标准与预期（来自对话 / 2026-08-13 审计延续）
@@ -171,7 +171,17 @@
 
 - **结论**：**代码层主修复（T1/T2/T5 组件库路径）可认为 REAL**；**整体交付仍 PARTIAL**，因大屏画布 execute 闭环、layout dirty、空态 alert 未达标，且 demo 大屏仍占位。
 - 建议：`root-first-solve` 处理 P0/P1；或用户批准后直接修上述 3 项后 **同矩阵复验**。
-- 用户批准修复：**否**（本次仅审计落盘）
+- 用户批准修复：**是**（2026-08-18）
+
+### 修复落盘（2026-08-18）
+
+| ID | 改动 | 文件 |
+|----|------|------|
+| P0/B8 | 关联组件编辑也 `setWidgets` 写入 inline overlay，画布 `resolveLayoutWidget` 可合并绑数 | `useVizComponentInspectorActions.ts` |
+| P1/B6 | `pixelWidgetContentEqual` 纳入 `customVizConfig`/`componentRef`，layout 指纹随绑数变化 → 保存启用 | `dashboardCanvasMode.ts` |
+| P1/T6 | columns 到达后清除 stale「未加载到字段」alert | `useCustomVizInspectorState.ts` |
+
+复验：`dashboardCanvasMode.test.ts` + `useCustomVizInspectorState.test.tsx` 新增用例；25 tests passed。
 
 ---
 

@@ -30,4 +30,4 @@
 ## 约束
 
 - `@antv/*` 仅允许 `engine/antv/**`（见 `fe/scripts/check-chart-engine.mjs`）
-- 地图仅离线 GeoJSON（`map`/`map-3d`）；`gis-map` 经 `GeoLibreMapHost` + `@geolibre/map`；不注册在线 L7 地图 type
+- 地图仅离线 GeoJSON（`map`/`map-3d`）；`gis-map` 经 `GisMapView` + `maplibre-gl`；不注册在线 L7 地图 type

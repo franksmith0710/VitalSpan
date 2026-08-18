@@ -64,7 +64,7 @@ describe("chartExecuteProbe shared execute", () => {
       configId: "",
     };
 
-    await expect(fetchChartExecuteResult(config)).rejects.toThrow("Dataset");
+    await expect(fetchChartExecuteResult(config)).rejects.toThrow("请绑定数据集");
     expect(apiFetchMock).not.toHaveBeenCalled();
   });
 
@@ -76,7 +76,7 @@ describe("chartExecuteProbe shared execute", () => {
       sql: "SELECT 1",
     };
 
-    await expect(fetchChartExecuteResult(config)).rejects.toThrow("Dataset");
+    await expect(fetchChartExecuteResult(config)).rejects.toThrow("请绑定数据集后再出图");
     expect(apiFetchMock).not.toHaveBeenCalled();
   });
 
