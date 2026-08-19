@@ -58,14 +58,14 @@ export const SHARE_DIALOG_HEADER_CLASS =
 export const SHARE_DIALOG_BODY_CLASS =
   "custom-scrollbar max-h-[min(78vh,720px)] overflow-y-auto overflow-x-hidden px-6 py-3 pb-6";
 
-/** 定时推送弹窗：宽于默认 Dialog；勿 overflow-hidden，避免 Select 下拉被裁切后点击穿透遮罩 */
+/** 定时推送弹窗：宽于默认 Dialog；Select 走 Portal，壳层可 overflow-hidden 以贴合圆角 */
 export const SCHEDULE_DIALOG_CONTENT_CLASS =
-  "flex max-h-[min(90vh,820px)] flex-col gap-0 p-0 sm:max-w-4xl";
+  "flex max-h-[min(90vh,820px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl";
 
-export const SCHEDULE_DIALOG_HEADER_CLASS = SHARE_DIALOG_HEADER_CLASS;
+export const SCHEDULE_DIALOG_HEADER_CLASS = `${SHARE_DIALOG_HEADER_CLASS} shrink-0`;
 
 export const SCHEDULE_DIALOG_BODY_CLASS =
-  "custom-scrollbar max-h-[min(82vh,780px)] overflow-y-auto overflow-x-hidden bg-gray-50/40 px-6 py-4 pb-6 dark:bg-gray-950/20";
+  "custom-scrollbar min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-gray-50/40 px-6 py-4 pb-6 dark:bg-gray-950/20";
 
 /** 与 `DatasourceDetailPage` DetailSkeleton 同高 */
 export const SHARE_PAGE_SKELETON_CLASS = "h-[520px] w-full rounded-xl";

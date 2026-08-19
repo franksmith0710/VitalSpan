@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Link, useParams } from "react-router";
 import { ChevronLeft } from "lucide-react";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
@@ -25,7 +26,9 @@ import { widgetTypeLabel } from "@/components/dashboard/viz-components/component
 import { useVizComponentEditor } from "@/hooks/useVizComponentEditor";
 import { useUnsavedLeaveGuard } from "@/hooks/use-unsaved-leave-guard";
 import { mapApiError } from "@/lib/apiError";
+import { bootstrapDashboardStyleConfig } from "@/components/dashboard/dashboardThemeVariants";
 import type {
+  DashboardStyleConfig,
   FilterWidgetConfig,
   MediaWidgetConfig,
   TextWidgetConfig,
@@ -46,11 +49,13 @@ function ComponentEditRail({
   contentRevision,
   widget,
   patchWidget,
+  dashboardStyle,
 }: {
   componentId: string;
   contentRevision: number;
   widget: NonNullable<ReturnType<typeof useVizComponentEditor>["widget"]>;
   patchWidget: ReturnType<typeof useVizComponentEditor>["patchWidget"];
+  dashboardStyle: DashboardStyleConfig;
 }) {
   if (widget.type === "chart") {
     return (
@@ -97,6 +102,7 @@ function ComponentEditRail({
       <CustomVizEditRail
         key={`${componentId}-${contentRevision}`}
         className="min-h-0 flex-1"
+        dashboardStyle={dashboardStyle}
         widget={widget as typeof widget & { customVizConfig: CustomVizWidgetConfig }}
         onTitleChange={(name) => patchWidget({ title: name })}
         onChange={(customVizConfig) => patchWidget({ customVizConfig })}
@@ -125,6 +131,11 @@ export function VizComponentEditPage() {
   const typeMeta = component
     ? `${widgetTypeLabel(component.widgetType)} · v${component.contentRevision}`
     : null;
+
+  const previewDashboardStyle = useMemo(
+    () => bootstrapDashboardStyleConfig({ colorScheme: "light" }),
+    [],
+  );
 
   const { leaveDialogOpen, confirmLeave, cancelLeave } = useUnsavedLeaveGuard({
     enabled: Boolean(component && widget && isDirty),
@@ -192,6 +203,7 @@ export function VizComponentEditPage() {
           preview={
             <VizComponentLivePreview
               widget={widget}
+              dashboardStyle={previewDashboardStyle}
               onChartConfigChange={(chartConfig) => patchWidget({ chartConfig })}
             />
           }
@@ -201,6 +213,7 @@ export function VizComponentEditPage() {
               contentRevision={component.contentRevision}
               widget={widget}
               patchWidget={patchWidget}
+              dashboardStyle={previewDashboardStyle}
             />
           }
         />

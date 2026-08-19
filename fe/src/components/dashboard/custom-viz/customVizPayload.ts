@@ -1,8 +1,14 @@
 export const CUSTOM_VIZ_PAYLOAD_CLASS = "vs-cv-payload";
 export const CUSTOM_VIZ_PAYLOAD_UPDATE_EVENT = "vs-cv-payload-update";
+export const CUSTOM_VIZ_LAYOUT_UPDATE_EVENT = "vs-cv-layout-update";
 export const CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION = 1 as const;
 
 export type CustomVizBindingStatus = "unbound" | "bound" | "empty" | "error";
+
+export type CustomVizRuntimeLayout = {
+  width: number;
+  height: number;
+};
 
 export type CustomVizRuntimePayload = {
   protocolVersion: typeof CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION;
@@ -10,6 +16,9 @@ export type CustomVizRuntimePayload = {
   columns: string[];
   rows: (string | number | boolean | null)[][];
   style: Record<string, unknown>;
+  layout?: CustomVizRuntimeLayout;
+  truncated?: boolean;
+  rowCap?: number;
   error?: string;
 };
 
@@ -33,6 +42,9 @@ export function buildCustomVizRuntimePayload(args: {
   columns: string[];
   rows: (string | number | boolean | null)[][];
   style: Record<string, unknown>;
+  layout?: CustomVizRuntimeLayout;
+  truncated?: boolean;
+  rowCap?: number;
 }): CustomVizRuntimePayload {
   const bindingStatus = resolveCustomVizBindingStatus(args);
   const payload: CustomVizRuntimePayload = {
@@ -42,6 +54,11 @@ export function buildCustomVizRuntimePayload(args: {
     rows: args.rows,
     style: args.style,
   };
+  if (args.layout) payload.layout = args.layout;
+  if (args.truncated) {
+    payload.truncated = true;
+    if (args.rowCap != null) payload.rowCap = args.rowCap;
+  }
   if (bindingStatus === "error" && args.error) {
     payload.error = args.error;
   }
@@ -64,6 +81,11 @@ function payloadSignature(payload: CustomVizRuntimePayload): string {
 
 export function injectCustomVizPayload(host: HTMLElement, payload: CustomVizRuntimePayload): void {
   const signature = payloadSignature(payload);
+  const prevLayoutSig = host.dataset.vsCvLayoutSig ?? "";
+  const nextLayoutSig = payload.layout
+    ? `${payload.layout.width}x${payload.layout.height}`
+    : "";
+
   if (host.dataset.vsCvPayloadSig === signature) return;
 
   let node = host.querySelector(`.${CUSTOM_VIZ_PAYLOAD_CLASS}`);
@@ -79,10 +101,21 @@ export function injectCustomVizPayload(host: HTMLElement, payload: CustomVizRunt
     host.style.setProperty(name, value);
   }
   host.dataset.vsCvPayloadSig = signature;
+
   host.dispatchEvent(
     new CustomEvent(CUSTOM_VIZ_PAYLOAD_UPDATE_EVENT, {
       detail: payload,
       bubbles: false,
     }),
   );
+
+  if (payload.layout && nextLayoutSig !== prevLayoutSig) {
+    host.dataset.vsCvLayoutSig = nextLayoutSig;
+    host.dispatchEvent(
+      new CustomEvent(CUSTOM_VIZ_LAYOUT_UPDATE_EVENT, {
+        detail: payload.layout,
+        bubbles: false,
+      }),
+    );
+  }
 }

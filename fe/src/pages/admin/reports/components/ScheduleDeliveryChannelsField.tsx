@@ -18,13 +18,52 @@ type Props = {
   disabled?: boolean;
   emailSmtpSlot: EmailSmtpSlot;
   onEmailSmtpSlotChange: (slot: EmailSmtpSlot) => void;
+  /** 嵌入「邮件投递」分区时：仅发信通道选择，无外层标题与说明框 */
+  embedded?: boolean;
+  idPrefix?: string;
 };
 
 export function ScheduleDeliveryChannelsField({
   disabled,
   emailSmtpSlot,
   onEmailSmtpSlotChange,
+  embedded = false,
+  idPrefix = "schedule-email-smtp",
 }: Props) {
+  const slotField = (
+    <div className="grid gap-1.5">
+      <Label htmlFor={`${idPrefix}-slot`} className={embedded ? undefined : "text-theme-xs text-gray-500"}>
+        发信通道
+      </Label>
+      <Select
+        value={emailSmtpSlot}
+        onValueChange={(value) => onEmailSmtpSlotChange(value as EmailSmtpSlot)}
+        disabled={disabled}
+      >
+        <SelectTrigger
+          id={`${idPrefix}-slot`}
+          className={embedded ? "h-11 bg-white dark:bg-transparent" : "h-10 bg-white dark:bg-transparent"}
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {EMAIL_SMTP_SLOTS.map((item) => (
+            <SelectItem key={item.slot} value={item.slot}>
+              {item.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+        使用系统管理 → 平台对接中对应槽位的 SMTP 发信。
+      </p>
+    </div>
+  );
+
+  if (embedded) {
+    return slotField;
+  }
+
   return (
     <div className="grid gap-2">
       <Label>投递方式</Label>
@@ -34,34 +73,11 @@ export function ScheduleDeliveryChannelsField({
           <p className="text-theme-sm text-gray-700 dark:text-gray-300">
             将发到收件人邮箱
             <span className="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
-              请确保收件人在系统管理 → 用户资料中填写了有效邮箱。
+              填写下方收件邮箱后，定时报告将一次发往所列地址。
             </span>
           </p>
         </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="schedule-email-smtp-slot" className="text-theme-xs text-gray-500">
-            发信通道
-          </Label>
-          <Select
-            value={emailSmtpSlot}
-            onValueChange={(value) => onEmailSmtpSlotChange(value as EmailSmtpSlot)}
-            disabled={disabled}
-          >
-            <SelectTrigger id="schedule-email-smtp-slot" className="h-10 bg-white dark:bg-transparent">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {EMAIL_SMTP_SLOTS.map((item) => (
-                <SelectItem key={item.slot} value={item.slot}>
-                  {item.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-            使用系统管理 → 平台对接中对应槽位的 SMTP 发信。
-          </p>
-        </div>
+        {slotField}
       </div>
     </div>
   );

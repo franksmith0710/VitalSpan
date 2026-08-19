@@ -21,6 +21,18 @@ customViz+D3：artifact HTML 调用 host.vsCv.d3 → Base 宿主展示
 
 customViz **不会**调用 `applyChartStyleChain` 或 `renderD3Chart`。要对齐内置图风格，请使用 [theme-tokens.json](../theme-tokens.json)。
 
+平台 **会** 注入 Payload `layout`、行数 cap（`truncated`/`rowCap`），以及 `vsCv.helpers.thinCategoryTickIndices` / `onLayout`——但 **不会** 替 bundle 自动重绘；见 [PROTOCOL.md](../PROTOCOL.md) §渲染能力边界。
+
+## 自适应与抽稀（bundle 必做）
+
+| 场景 | 推荐做法 |
+|------|----------|
+| 组件拖大/拖小 | `p.layout.width/height` 设 SVG；`vsCv.onLayout(render)` 重绘 |
+| 类目过多 | `vsCv.helpers.thinCategoryTickIndices(rows.length, innerWidth, 56)` 决定显示哪些 tick |
+| 行数过大 | 读 `payload.truncated` 决定是否提示；SQL 侧用 `resultLimit` |
+
+官方 d3 示例 [`custom-viz-d3-bundle.json`](../examples/custom-viz-d3-bundle.json) 已示范上述模式。
+
 ## 包约束
 
 与 [PROTOCOL.md](../PROTOCOL.md) 相同：

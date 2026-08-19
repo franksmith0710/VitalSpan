@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  CUSTOM_VIZ_LAYOUT_UPDATE_EVENT,
   CUSTOM_VIZ_PAYLOAD_CLASS,
   CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
   buildCustomVizRuntimePayload,
@@ -66,6 +67,23 @@ describe("buildCustomVizRuntimePayload", () => {
     expect(payload.protocolVersion).toBe(CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION);
     expect(payload.bindingStatus).toBe("error");
     expect(payload.error).toBe("查询失败");
+  });
+
+  it("includes layout and truncated metadata", () => {
+    const payload = buildCustomVizRuntimePayload({
+      executeReady: true,
+      loading: false,
+      error: null,
+      columns: ["a"],
+      rows: [[1]],
+      style: {},
+      layout: { width: 480, height: 240 },
+      truncated: true,
+      rowCap: 500,
+    });
+    expect(payload.layout).toEqual({ width: 480, height: 240 });
+    expect(payload.truncated).toBe(true);
+    expect(payload.rowCap).toBe(500);
   });
 });
 
@@ -161,5 +179,30 @@ describe("injectCustomVizPayload", () => {
     };
     injectCustomVizPayload(host, payload);
     expect(detail).toEqual(payload);
+  });
+
+  it("dispatches vs-cv-layout-update when layout changes", () => {
+    const host = document.createElement("div");
+    let layoutDetail: unknown;
+    host.addEventListener(CUSTOM_VIZ_LAYOUT_UPDATE_EVENT, (e) => {
+      layoutDetail = (e as CustomEvent).detail;
+    });
+    injectCustomVizPayload(host, {
+      protocolVersion: CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
+      bindingStatus: "bound",
+      columns: ["a"],
+      rows: [[1]],
+      style: {},
+      layout: { width: 320, height: 200 },
+    });
+    injectCustomVizPayload(host, {
+      protocolVersion: CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
+      bindingStatus: "bound",
+      columns: ["a"],
+      rows: [[1]],
+      style: {},
+      layout: { width: 640, height: 200 },
+    });
+    expect(layoutDetail).toEqual({ width: 640, height: 200 });
   });
 });

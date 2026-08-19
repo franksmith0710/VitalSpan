@@ -43,8 +43,8 @@ describe("StandardSchedulePanel smoke", () => {
     render(wrap(<StandardSchedulePanel sourceKey="equipment-overview" packName="设备标准分析" />));
     expect(await screen.findByText("定时投递")).toBeInTheDocument();
     expect(screen.getByText("新建定时投递")).toBeInTheDocument();
-    expect(screen.getByText("投递方式")).toBeInTheDocument();
-    expect(screen.getByText("将发到收件人邮箱")).toBeInTheDocument();
+    expect(screen.getByText("邮件投递")).toBeInTheDocument();
+    expect(screen.getByText("发信通道")).toBeInTheDocument();
     expect(screen.getByText("创建定时投递")).toBeInTheDocument();
     expect(screen.queryByText("钉钉")).not.toBeInTheDocument();
     expect(screen.queryByText("飞书")).not.toBeInTheDocument();

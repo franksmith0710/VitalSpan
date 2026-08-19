@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileText, Mail, Plus, Timer, Users } from "lucide-react";
+import { FileText, Mail, Plus, Timer } from "lucide-react";
 import { cronFromWizard, ScheduleWizard } from "./ScheduleWizard";
 import {
   DEFAULT_EMAIL_RECIPIENTS,
@@ -171,8 +171,13 @@ export function ScheduleFormFields({
       disabled={disabled}
       emailSmtpSlot={value.emailSmtpSlot}
       onEmailSmtpSlotChange={(emailSmtpSlot) => patch({ emailSmtpSlot })}
+      embedded={embeddedLayout}
+      idPrefix={`${idPrefix}-smtp`}
     />
   ) : null;
+
+  const mergedEmailDelivery =
+    embeddedLayout && showDeliveryChannels && emailOnlyRecipients;
 
   const advancedCronButton = (
     <Button
@@ -218,13 +223,15 @@ export function ScheduleFormFields({
           </ScheduleFormSection>
 
           <ScheduleFormSection
-            title={emailOnlyRecipients ? "收件邮箱" : "接收人"}
+            title={mergedEmailDelivery ? "邮件投递" : emailOnlyRecipients ? "收件邮箱" : "接收人"}
             description={
-              emailOnlyRecipients
-                ? "填写一个或多个邮箱地址，定时 PDF 将直接发送到这些邮箱"
-                : "按角色、用户或邮箱指定；收件人邮箱在系统管理 → 用户里填写"
+              mergedEmailDelivery
+                ? "选择发信通道并填写收件邮箱，定时 PDF 将一次发往所列地址"
+                : emailOnlyRecipients
+                  ? "填写一个或多个邮箱地址，定时 PDF 将直接发送到这些邮箱"
+                  : "按角色、用户或邮箱指定；收件人邮箱在系统管理 → 用户里填写"
             }
-            icon={Users}
+            icon={Mail}
             action={
               !disabled ? (
                 <Button
@@ -248,25 +255,45 @@ export function ScheduleFormFields({
               <div className="flex items-start gap-2.5">
                 <Mail className="mt-0.5 size-4 shrink-0 text-gray-400" aria-hidden />
                 <p className="text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                  {emailOnlyRecipients
-                    ? "无需绑定平台角色；请确保邮箱地址可正常收信。"
-                    : "定时报告将发到收件人在用户资料中填写的邮箱。"}
+                  {mergedEmailDelivery
+                    ? "同一任务可配置多个收件邮箱；发信通道在平台对接中配置 SMTP 后即可切换。"
+                    : emailOnlyRecipients
+                      ? "无需绑定平台角色；请确保邮箱地址可正常收信。"
+                      : "定时报告将发到收件人在用户资料中填写的邮箱。"}
                 </p>
               </div>
             }
           >
-            <ScheduleRecipientsField
-              value={value.recipients}
-              onChange={(recipients) => patch({ recipients })}
-              disabled={disabled}
-              idPrefix={`${idPrefix}-recipient`}
-              embedded
-              hideAddButton
-              mode={recipientsMode}
-            />
+            {mergedEmailDelivery ? (
+              <div className="space-y-5">
+                {deliveryChannelsField}
+                <div className="space-y-2 border-t border-gray-100 pt-5 dark:border-gray-800">
+                  <Label className="text-theme-sm text-gray-700 dark:text-gray-300">收件邮箱</Label>
+                  <ScheduleRecipientsField
+                    value={value.recipients}
+                    onChange={(recipients) => patch({ recipients })}
+                    disabled={disabled}
+                    idPrefix={`${idPrefix}-recipient`}
+                    embedded
+                    hideAddButton
+                    mode={recipientsMode}
+                  />
+                </div>
+              </div>
+            ) : (
+              <ScheduleRecipientsField
+                value={value.recipients}
+                onChange={(recipients) => patch({ recipients })}
+                disabled={disabled}
+                idPrefix={`${idPrefix}-recipient`}
+                embedded
+                hideAddButton
+                mode={recipientsMode}
+              />
+            )}
           </ScheduleFormSection>
 
-          {deliveryChannelsField}
+          {!mergedEmailDelivery ? deliveryChannelsField : null}
 
           {showAttachments && attachmentFormatMode === "pdf-only" ? (
             <ScheduleFormSection title="报告附件" description="PDF 可视化快照" icon={FileText}>

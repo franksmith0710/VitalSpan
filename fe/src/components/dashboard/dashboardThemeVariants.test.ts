@@ -420,6 +420,12 @@ describe("dashboardThemeVariants", () => {
               opacity: 0.5,
               borderColor: "#111111",
             },
+            displayStyle: {
+              background: { background: "#00ff00" },
+              paletteId: "warm",
+              title: { fontSize: 18, color: "#112233" },
+              label: { color: "#445566" },
+            },
           },
         },
       ],
@@ -428,5 +434,8 @@ describe("dashboardThemeVariants", () => {
     expect(bundle.widgets[0].type).toBe("customViz");
     if (bundle.widgets[0].type !== "customViz") return;
     expect(bundle.widgets[0].customVizConfig?.widgetStyle).toBeUndefined();
+    expect(bundle.widgets[0].customVizConfig?.displayStyle).toEqual({
+      title: { fontSize: 18 },
+    });
   });
 });

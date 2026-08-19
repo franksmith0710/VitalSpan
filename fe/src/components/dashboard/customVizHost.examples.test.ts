@@ -74,4 +74,33 @@ describe("official customViz examples", () => {
     const rects = host.querySelectorAll("#vs-cv-chart rect");
     expect(rects.length).toBe(2);
   });
+
+  it("ranking strip respects platform labelShow=false from payload style", () => {
+    const host = mountExample((htmlBundle as ExampleBundle).files["index.html"]);
+    injectCustomVizPayload(host, {
+      protocolVersion: CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
+      bindingStatus: "bound",
+      columns: ["region", "amount"],
+      rows: [["华东", 10]],
+      style: { labelShow: false },
+    });
+    expect(host.querySelector("#vs-cv-root .lbl")).toBeNull();
+    expect(host.querySelector("#vs-cv-root .bar")).toBeTruthy();
+  });
+
+  it("d3 example thins axis labels for dense categories", () => {
+    const host = mountExample((d3Bundle as ExampleBundle).files["index.html"]);
+    const rows = Array.from({ length: 40 }, (_, index) => [`类目${index}`, index + 1]);
+    injectCustomVizPayload(host, {
+      protocolVersion: CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
+      bindingStatus: "bound",
+      columns: ["region", "amount"],
+      rows,
+      style: {},
+      layout: { width: 320, height: 200 },
+    });
+    const labels = host.querySelectorAll("#vs-cv-chart text.lbl");
+    expect(labels.length).toBeGreaterThan(0);
+    expect(labels.length).toBeLessThan(rows.length);
+  });
 });

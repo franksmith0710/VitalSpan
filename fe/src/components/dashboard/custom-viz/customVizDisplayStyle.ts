@@ -209,3 +209,72 @@ function flattenCustomVizDisplayStyle(
 
   return out;
 }
+
+function omitEmptyStyleField<T extends Record<string, unknown>>(
+  value: T | undefined,
+): T | undefined {
+  if (!value) return undefined;
+  const entries = Object.entries(value).filter(([, field]) => field !== undefined);
+  return entries.length > 0 ? (Object.fromEntries(entries) as T) : undefined;
+}
+
+/** 主题「重置颜色」：清除 displayStyle 底色/配色与颜色 override，保留字号/位置等结构字段 */
+export function stripCustomVizDisplayStyleOverrides(
+  displayStyle: CustomVizDisplayStyle | undefined,
+): CustomVizDisplayStyle | undefined {
+  if (!displayStyle) return displayStyle;
+
+  const next: CustomVizDisplayStyle = { ...displayStyle };
+  let changed = false;
+
+  if (next.background) {
+    delete next.background;
+    changed = true;
+  }
+
+  if (next.paletteId != null) {
+    delete next.paletteId;
+    changed = true;
+  }
+  if (next.paletteColors?.length) {
+    delete next.paletteColors;
+    changed = true;
+  }
+  if (next.paletteOpacity != null) {
+    delete next.paletteOpacity;
+    changed = true;
+  }
+  if (next.seriesGradient != null) {
+    delete next.seriesGradient;
+    changed = true;
+  }
+
+  if (next.title?.color !== undefined) {
+    const { color: _removed, ...rest } = next.title;
+    next.title = omitEmptyStyleField(rest);
+    changed = true;
+  }
+
+  if (next.label?.color !== undefined) {
+    const { color: _removed, ...rest } = next.label;
+    next.label = omitEmptyStyleField(rest);
+    changed = true;
+  }
+
+  if (next.tooltip && (next.tooltip.color !== undefined || next.tooltip.background !== undefined)) {
+    const { color: _c, background: _b, ...rest } = next.tooltip;
+    next.tooltip = omitEmptyStyleField(rest);
+    changed = true;
+  }
+
+  if (next.border?.color !== undefined) {
+    const { color: _removed, ...rest } = next.border;
+    next.border = omitEmptyStyleField(rest);
+    changed = true;
+  }
+
+  if (!changed) return displayStyle;
+
+  const compact = omitEmptyStyleField(next);
+  return compact ?? undefined;
+}

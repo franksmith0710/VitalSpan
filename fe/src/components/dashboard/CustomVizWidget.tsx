@@ -1,10 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { GripVertical } from "lucide-react";
 import { fetchWithTimeout, getAuthHeaders } from "@/lib/api";
 import { resolveApiBaseUrl } from "@/lib/appBasePath";
 import { resolveChartQueryLimit } from "@/lib/chartDeDisplay";
 import { useChartExecute } from "@/components/charts/useChartExecute";
+import {
+  ADVANCED_CHART_ROW_CAP,
+  capRows,
+} from "@/components/charts/engine/buildDatasetEncoding";
 import { fetchAiVizArtifactMeta } from "@/lib/aiVizArtifacts";
+import { useElementSize } from "@/hooks/useElementSize";
 import type { DashboardWidgetShell } from "./dashboardCanvasMode";
 import type { LayoutWidget, CustomVizWidgetConfig, DashboardStyleConfig } from "./layoutUtils";
 import {
@@ -102,6 +107,28 @@ export function CustomVizWidget({
   const showDataLoadingHint =
     executeReady && loading && columns.length === 0 && rows.length === 0 && chrome.showChartLoadingHint;
 
+  const { rows: cappedRows, truncated: rowsTruncated } = useMemo(
+    () => capRows(rows, ADVANCED_CHART_ROW_CAP),
+    [rows],
+  );
+
+  const { ref: hostSizeRef, size: hostSize } = useElementSize<HTMLDivElement>({
+    debounceMs: 100,
+  });
+
+  const hostLayout = useMemo(
+    () => ({
+      width: Math.max(Math.round(hostSize.width), 1),
+      height: Math.max(Math.round(hostSize.height), 1),
+    }),
+    [hostSize.width, hostSize.height],
+  );
+
+  const setHostRef = (node: HTMLDivElement | null) => {
+    hostRef.current = node;
+    hostSizeRef(node);
+  };
+
   useEffect(() => {
     let cancelled = false;
     let seq = 0;
@@ -162,14 +189,19 @@ export function CustomVizWidget({
         loading,
         error: executeError,
         columns,
-        rows,
+        rows: cappedRows,
         style,
+        layout: hostLayout,
+        truncated: rowsTruncated,
+        rowCap: rowsTruncated ? ADVANCED_CHART_ROW_CAP : undefined,
       }),
     );
   }, [
     html,
     columns,
-    rows,
+    cappedRows,
+    rowsTruncated,
+    hostLayout,
     loading,
     executeError,
     executeReady,
@@ -197,7 +229,7 @@ export function CustomVizWidget({
           />
         ) : null}
         <div
-          ref={hostRef}
+          ref={setHostRef}
           data-testid="custom-viz-host"
           className={`${CUSTOM_VIZ_HOST_CLASS} size-full min-h-[64px]`}
           style={hostStyle}

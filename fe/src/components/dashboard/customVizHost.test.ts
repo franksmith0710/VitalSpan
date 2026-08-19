@@ -50,6 +50,7 @@ describe("mountCustomVizHtml", () => {
 
     expect((a as CustomVizHostElement).vsCv?.d3.select).toBeTypeOf("function");
     expect((b as CustomVizHostElement).vsCv?.d3.select).toBeTypeOf("function");
+    expect((a as CustomVizHostElement).vsCv?.helpers.thinCategoryTickIndices(10, 320, 56).length).toBeGreaterThan(0);
     expect(a).not.toBe(b);
     expect(a.querySelector("#mark")?.textContent).toBe("function");
 
@@ -64,6 +65,37 @@ describe("mountCustomVizHtml", () => {
     expect(b.querySelector("#mark")?.textContent).toBe("function");
     a.remove();
     b.remove();
+  });
+
+  it("fires vsCv.onLayout when payload layout changes", () => {
+    const host = document.createElement("div");
+    host.className = "vs-custom-viz-host";
+    document.body.appendChild(host);
+    const html = `<!DOCTYPE html><html><body><div id="mark"></div><script>(function(){
+      var host=document.currentScript.parentElement;
+      var mark=host.querySelector('#mark');
+      host.vsCv.onLayout(function(layout){mark.textContent=layout.width+'x'+layout.height});
+    })();</script></body></html>`;
+    mountCustomVizHtml(host, html);
+    injectCustomVizPayload(host, {
+      protocolVersion: CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
+      bindingStatus: "bound",
+      columns: [],
+      rows: [],
+      style: {},
+      layout: { width: 320, height: 200 },
+    });
+    expect(host.querySelector("#mark")?.textContent).toBe("320x200");
+    injectCustomVizPayload(host, {
+      protocolVersion: CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
+      bindingStatus: "bound",
+      columns: [],
+      rows: [],
+      style: {},
+      layout: { width: 640, height: 200 },
+    });
+    expect(host.querySelector("#mark")?.textContent).toBe("640x200");
+    host.remove();
   });
 });
 

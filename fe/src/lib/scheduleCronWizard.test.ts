@@ -2,6 +2,13 @@ import { describe, expect, it } from "vitest";
 import { cronFromWizard, describeCron, parseCronToWizard } from "./scheduleCronWizard";
 
 describe("scheduleCronWizard", () => {
+  it("builds hourly cron", () => {
+    expect(
+      cronFromWizard({ frequency: "hourly", hour: 8, minute: 15, weekday: 1, dayOfMonth: 1 }),
+    ).toBe("15 * * * *");
+    expect(describeCron("15 * * * *")).toBe("每小时 15 分");
+  });
+
   it("builds daily cron", () => {
     expect(
       cronFromWizard({ frequency: "daily", hour: 8, minute: 0, weekday: 1, dayOfMonth: 1 }),
@@ -24,8 +31,12 @@ describe("scheduleCronWizard", () => {
   });
 
   it("round-trips wizard presets", () => {
-    const wizard = parseCronToWizard("0 8 * * 1");
-    expect(wizard?.frequency).toBe("weekly");
-    expect(cronFromWizard(wizard!)).toBe("0 8 * * 1");
+    const weekly = parseCronToWizard("0 8 * * 1");
+    expect(weekly?.frequency).toBe("weekly");
+    expect(cronFromWizard(weekly!)).toBe("0 8 * * 1");
+
+    const hourly = parseCronToWizard("30 * * * *");
+    expect(hourly?.frequency).toBe("hourly");
+    expect(cronFromWizard(hourly!)).toBe("30 * * * *");
   });
 });

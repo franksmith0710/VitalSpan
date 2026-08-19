@@ -96,12 +96,34 @@ Base 在跑 bundle 脚本前给宿主挂 `host.vsCv`：`getPayload()`、`onPaylo
 }
 ```
 
+### layout `customVizConfig` 三层样式
+
+| 字段 | 检查器位置 | 作用 |
+|------|-----------|------|
+| `widgetStyle` | **高级** Tab | 单卡外壳（底色/边框/圆角/透明度），与看板 `styleConfig.widgetStyle` 合并 |
+| `displayStyle` | **样式** Tab 固定六块 | 平台通用：背景/图表配色/标题/备注/标签/提示；未设字段继承看板整体配置 |
+| `style` | **样式** Tab schema 扩展 | manifest `styleSchema` 专属项；键名 camelCase |
+
+合并写入运行时 `payload.style` 的顺序：`manifest.defaultStyle` → `displayStyle`（扁平化）→ `style`（schema 扩展覆盖同名键）。各键同时映射为宿主 CSS 变量 `--vs-style-<kebab-case>`；看板配色 token 另注入 `--vs-palette-0`… 与 `--dashboard-*`。
+
+#### `displayStyle` 扁平化键（Payload v1 `style`）
+
+| 块 | 写入 `style` 的键（节选） |
+|----|--------------------------|
+| 图表配色 | `paletteId` · `paletteColors` · `paletteOpacity` · `seriesGradient` |
+| 标题 | `titleShow` · `titleColor` · `titleFontSize` · `titleFontWeight` · `titleAlign` … |
+| 备注 | `remarkShow` · `remarkText` |
+| 标签 | `labelShow` · `labelColor` · `labelFontSize` · `labelPosition` · `labelFormatter` |
+| 提示 | `tooltipShow` · `tooltipColor` · `tooltipBackground` · `tooltipFontSize` |
+
+bundle **应**优先读 `--vs-palette-*` / `--vs-style-*`（或 `payload.style` 同名键），以响应平台六块；组件专属项仍走 manifest 声明键。主题「重置颜色」会清除单卡 `displayStyle` 底色/配色 override（与内置 chart 对齐）。
+
 ## 运行时数据与样式（平台 → 宿主）
 
 Base 在绑定就绪后走 `query/execute`，并**始终**向 `.vs-custom-viz-host` 注入 payload（含未绑定时 `bindingStatus: "unbound"`）：
 
 1. **JSON 载荷**：宿主内 `<script type="application/json" class="vs-cv-payload">`，结构见 **Payload v1**（下方）
-2. **样式变量**：`style` 各键映射为 `--vs-style-<kebab-case>` 写在宿主元素 `style` 上（与 manifest `defaultStyle` + layout `customVizConfig.style` 合并）；boolean 为 `true`/`false` 字符串
+2. **样式变量**：`style` 各键映射为 `--vs-style-<kebab-case>` 写在宿主元素 `style` 上（与 `defaultStyle` + `displayStyle` 扁平 + `customVizConfig.style` 合并）；boolean 为 `true`/`false` 字符串；看板配色另注入 `--vs-palette-0`…
 
 ### Payload v1
 
@@ -111,10 +133,19 @@ Base 在绑定就绪后走 `query/execute`，并**始终**向 `.vs-custom-viz-ho
   "bindingStatus": "bound",
   "columns": ["region", "amount"],
   "rows": [["华东", 100]],
-  "style": { "accentColor": "#3b82f6" },
+  "style": { "accentColor": "#3b82f6", "titleShow": true, "labelColor": "#667085" },
+  "layout": { "width": 480, "height": 240 },
+  "truncated": false,
+  "rowCap": 500,
   "error": "可选；仅 bindingStatus=error 时出现"
 }
 ```
+
+| 字段 | 说明 |
+|------|------|
+| `layout` | 宿主 `.vs-custom-viz-host` 当前像素尺寸；resize 时 Base 会更新并触发 `vs-cv-layout-update` |
+| `truncated` | 为 `true` 时表示 `rows` 已按 `rowCap` 截断（与内置 chart 采样提示对齐） |
+| `rowCap` | 平台侧 cap 上限（当前 500）；仅 `truncated: true` 时出现 |
 
 | `bindingStatus` | 含义 |
 |-----------------|------|
@@ -123,7 +154,7 @@ Base 在绑定就绪后走 `query/execute`，并**始终**向 `.vs-custom-viz-ho
 | `empty` | 已绑定但结果集为空 |
 | `error` | execute 失败；读 `error` 人话说明 |
 
-AI 可在 `styleSchema` 中自由声明颜色、滑块、开关、下拉、文本等控件类型，平台自动生成配置栏，详见 [guides/STYLE-SCHEMA.md](./guides/STYLE-SCHEMA.md)。
+AI 可在 `styleSchema` 中自由声明颜色、滑块、开关、下拉、文本等控件类型，平台自动生成配置栏（位于样式 Tab **六块之下**），详见 [guides/STYLE-SCHEMA.md](./guides/STYLE-SCHEMA.md)。平台固定六块见上文 `displayStyle`，**不必**在 schema 重复声明。
 
 ### vsCv（推荐）
 
@@ -133,13 +164,34 @@ var vsCv = host.vsCv;
 function render(p) {
   p = p || vsCv.getPayload();
   if (!p || p.bindingStatus !== "bound") return;
+  var w = (p.layout && p.layout.width) || host.clientWidth;
+  var ticks = vsCv.helpers.thinCategoryTickIndices(p.rows.length, w - 56, 56);
   vsCv.d3.select(host).select("#vs-cv-chart"); // 不要 document.getElementById
 }
 render();
 vsCv.onPayload(render);
+vsCv.onLayout(function () { render(vsCv.getPayload()); });
 ```
 
-也可继续监听 **`vs-cv-payload-update`**。**禁止** MutationObserver 盯宿主。推荐 `getComputedStyle(host)` 读 `--vs-style-*`。
+| API | 说明 |
+|-----|------|
+| `getPayload()` / `onPayload(fn)` | Payload v1；数据/样式/ layout 变化时触发 |
+| `onLayout(fn)` | 仅宿主尺寸变化（`vs-cv-layout-update`）；应用 `payload.layout` 重算比例尺 |
+| `d3` | 平台 d3@7.9.0，勿内联整库 |
+| `helpers.thinCategoryTickIndices(count, innerWidth, minLabelPx?)` | 返回应显示类目标签的下标数组（抽稀） |
+| `helpers.measureHost(el?)` | 读宿主或子节点 `getBoundingClientRect` 像素尺寸 |
+
+也可继续监听 **`vs-cv-payload-update`** / **`vs-cv-layout-update`**。**禁止** MutationObserver 盯宿主。推荐 `getComputedStyle(host)` 读 `--vs-style-*`。
+
+### 渲染能力边界（与内置 chart 的区别）
+
+customViz **不会**调用 `applyChartStyleChain` 或 `renderD3Chart`（F17 Out）。平台提供：
+
+- 查数结果 → `payload.rows`（可选 cap + `truncated`）
+- 宿主尺寸 → `payload.layout` + `onLayout`
+- 抽稀 helper → `helpers.thinCategoryTickIndices`（bundle 须主动用于 axis label）
+
+**bundle 责任**：用 `layout.width/height` 设 SVG 视口；resize 时 `onLayout` 重绘；高密度类目须抽稀或滚动，不可假设平台会替你做 cartesian 规划。详见 [guides/D3-OPTIONAL.md](./guides/D3-OPTIONAL.md) · [feature-truth 审计](../../feature-truth/2026-08-19-customviz-engine-separation-truth.md)。
 
 未绑定时依据 `bindingStatus === "unbound"` 显示引导，**不要**假装已有业务数据。
 

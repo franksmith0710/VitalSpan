@@ -7,7 +7,7 @@ import { FilterWidget } from "@/components/dashboard/FilterWidget";
 import { TextWidget } from "@/components/dashboard/TextWidget";
 import { MediaWidget } from "@/components/dashboard/MediaWidget";
 import { CustomVizWidget } from "@/components/dashboard/CustomVizWidget";
-import type { LayoutWidget } from "@/components/dashboard/layoutUtils";
+import type { DashboardStyleConfig, LayoutWidget } from "@/components/dashboard/layoutUtils";
 import { WidgetShellLegendProvider } from "@/components/dashboard/pixelCanvas/widgetShellLegendContext";
 import { VizComponentChartPreviewShell } from "@/components/dashboard/viz-components/VizComponentChartPreviewShell";
 import type { Geo3dRenderTier } from "@/components/charts/engine/three/geo3dRuntime";
@@ -19,6 +19,8 @@ import { cn } from "@/lib/utils";
 
 type VizComponentLivePreviewProps = {
   widget: LayoutWidget;
+  /** 组件库编辑预览：customViz 六块/配色继承默认看板主题 */
+  dashboardStyle?: DashboardStyleConfig;
   className?: string;
   /** 列表卡片等场景：进视口后再挂载图表 */
   lazy?: boolean;
@@ -33,6 +35,7 @@ type VizComponentLivePreviewProps = {
 
 export function VizComponentLivePreview({
   widget,
+  dashboardStyle,
   className,
   lazy = false,
   paused = false,
@@ -126,6 +129,7 @@ export function VizComponentLivePreview({
           widget={widget as LayoutWidget & { customVizConfig: NonNullable<typeof widget.customVizConfig> }}
           mode="view"
           shell={compact ? "shape" : "grid"}
+          dashboardStyle={dashboardStyle}
         />
       ) : null}
     </div>

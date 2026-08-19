@@ -1,15 +1,28 @@
 import * as d3 from "d3";
 import {
+  measureCustomVizHost,
+  thinCategoryTickIndices,
+} from "./customVizLayoutHelpers";
+import {
+  CUSTOM_VIZ_LAYOUT_UPDATE_EVENT,
   CUSTOM_VIZ_PAYLOAD_CLASS,
   CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
   CUSTOM_VIZ_PAYLOAD_UPDATE_EVENT,
+  type CustomVizRuntimeLayout,
   type CustomVizRuntimePayload,
 } from "./customVizPayload";
+
+export type VsCvHelpers = {
+  thinCategoryTickIndices: typeof thinCategoryTickIndices;
+  measureHost: (target?: Element | null) => CustomVizRuntimeLayout;
+};
 
 export type VsCvApi = {
   protocolVersion: typeof CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION;
   getPayload: () => CustomVizRuntimePayload | null;
   onPayload: (handler: (payload: CustomVizRuntimePayload) => void) => () => void;
+  onLayout: (handler: (layout: CustomVizRuntimeLayout) => void) => () => void;
+  helpers: VsCvHelpers;
   d3: typeof d3;
 };
 
@@ -26,7 +39,15 @@ export function getPayloadFromHost(host: HTMLElement): CustomVizRuntimePayload |
 }
 
 export function attachCustomVizRuntime(host: HTMLElement): () => void {
-  const bound: Array<(event: Event) => void> = [];
+  const bound: Array<{ type: "payload" | "layout"; listener: (event: Event) => void }> = [];
+  const helpers: VsCvHelpers = {
+    thinCategoryTickIndices,
+    measureHost: (target) => {
+      const el = (target ?? host) as HTMLElement;
+      return measureCustomVizHost(el);
+    },
+  };
+
   const api: VsCvApi = {
     protocolVersion: CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
     getPayload: () => getPayloadFromHost(host),
@@ -36,15 +57,29 @@ export function attachCustomVizRuntime(host: HTMLElement): () => void {
         handler(detail ?? getPayloadFromHost(host) ?? emptyUnboundPayload());
       };
       host.addEventListener(CUSTOM_VIZ_PAYLOAD_UPDATE_EVENT, listener);
-      bound.push(listener);
+      bound.push({ type: "payload", listener });
       return () => host.removeEventListener(CUSTOM_VIZ_PAYLOAD_UPDATE_EVENT, listener);
     },
+    onLayout: (handler) => {
+      const listener = (event: Event) => {
+        const detail = (event as CustomEvent<CustomVizRuntimeLayout>).detail;
+        const layout = detail ?? getPayloadFromHost(host)?.layout;
+        if (layout) handler(layout);
+      };
+      host.addEventListener(CUSTOM_VIZ_LAYOUT_UPDATE_EVENT, listener);
+      bound.push({ type: "layout", listener });
+      return () => host.removeEventListener(CUSTOM_VIZ_LAYOUT_UPDATE_EVENT, listener);
+    },
+    helpers,
     d3,
   };
   (host as CustomVizHostElement).vsCv = api;
   return () => {
-    for (const listener of bound) {
-      host.removeEventListener(CUSTOM_VIZ_PAYLOAD_UPDATE_EVENT, listener);
+    for (const { type, listener } of bound) {
+      host.removeEventListener(
+        type === "payload" ? CUSTOM_VIZ_PAYLOAD_UPDATE_EVENT : CUSTOM_VIZ_LAYOUT_UPDATE_EVENT,
+        listener,
+      );
     }
     delete (host as CustomVizHostElement).vsCv;
   };

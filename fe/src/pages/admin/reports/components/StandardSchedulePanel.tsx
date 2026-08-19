@@ -18,7 +18,7 @@ import {
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { mapApiError } from "@/lib/apiError";
 import { summarizeRecipients } from "@/lib/scheduleSourceMeta";
-import { pickActiveSchedule, scheduleRowToForm, EMAIL_ONLY_DELIVERY } from "../scheduleFormUtils";
+import { pickActiveSchedule, scheduleRowToForm, EMAIL_ONLY_DELIVERY, toEmailOnlyRecipients } from "../scheduleFormUtils";
 import { describeCron } from "./ScheduleWizard";
 import {
   DEFAULT_SCHEDULE_FORM,
@@ -28,7 +28,6 @@ import {
   type ScheduleFormValue,
 } from "./ScheduleFormFields";
 import { DEFAULT_EMAIL_RECIPIENTS } from "./ScheduleRecipientsField";
-import type { ScheduleRecipient } from "../useReportSchedules";
 import { ScheduleActivationBanner } from "./ScheduleActivationBanner";
 import { ScheduleDeliveryHealthAlert } from "./ScheduleDeliveryHealthAlert";
 import { ScheduleHistoryTable } from "./ScheduleHistoryTable";
@@ -50,13 +49,6 @@ type Props = {
   packName: string;
   disabled?: boolean;
 };
-
-function toEmailOnlyRecipients(recipients: ScheduleRecipient[]): ScheduleRecipient[] {
-  const emails = recipients
-    .filter((row) => row.type === "email" && row.value.trim())
-    .map((row) => ({ type: "email" as const, value: row.value.trim() }));
-  return emails.length > 0 ? emails : DEFAULT_EMAIL_RECIPIENTS;
-}
 
 export function StandardSchedulePanel({ sourceKey, packName, disabled = false }: Props) {
   const filter = { sourceType: "standard", sourceKey };
@@ -183,7 +175,7 @@ export function StandardSchedulePanel({ sourceKey, packName, disabled = false }:
       {!schedule ? (
         <ScheduleFormSection
           title="新建定时投递"
-          description="配置执行频率、接收人与投递方式；创建后需激活才会按计划发送。"
+          description="配置执行频率与邮件投递；创建后需激活才会按计划发送。"
           icon={CalendarClock}
           footer={
             !disabled ? (

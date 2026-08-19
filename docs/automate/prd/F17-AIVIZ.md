@@ -32,6 +32,7 @@
 - [x] AIVIZ-013：检查器「高级」单卡外壳走 `customVizConfig.widgetStyle`（与看板 `widgetStyle` 合并）；组件内视觉仅认 manifest `styleSchema` → payload `--vs-style-*`
 - [x] AIVIZ-014：customViz 外壳与 `chrome`（加载提示/编辑条/右键外壳）跟随看板整体配置；组件内视觉仍只认 `styleSchema`；宿主透明底 + `--dashboard-*` / 字体 / 配色 token
 - [x] AIVIZ-015：样式 Tab 固定六块（背景/图表配色/标题/备注/标签/提示）写入 `displayStyle` 并注入 payload；manifest `styleSchema` 仅承载组件专属扩展项
+- [x] AIVIZ-016：Payload 增 `layout`/`truncated`/`rowCap`；`vsCv.onLayout` + `helpers.thinCategoryTickIndices`；Base capRows + 宿主尺寸监听（仍不调用 `renderD3Chart`）
 
 ## 代码锚点
 

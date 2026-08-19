@@ -18,7 +18,7 @@ import {
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { mapApiError } from "@/lib/apiError";
 import { summarizeRecipients } from "@/lib/scheduleSourceMeta";
-import { scheduleRowToForm, EMAIL_ONLY_DELIVERY } from "../scheduleFormUtils";
+import { scheduleRowToForm, EMAIL_ONLY_DELIVERY, toEmailOnlyRecipients } from "../scheduleFormUtils";
 import {
   localizeScheduleStatus,
   SCHEDULE_ACTION_LABELS,
@@ -35,6 +35,7 @@ import {
   ScheduleFormFields,
   type ScheduleFormValue,
 } from "./ScheduleFormFields";
+import { DEFAULT_EMAIL_RECIPIENTS } from "./ScheduleRecipientsField";
 import { isLayoutInventoryArtifact } from "@/lib/scheduleArtifactMeta";
 import { ScheduleArtifactNotice } from "./ScheduleArtifactNotice";
 import { ScheduleHistoryTable } from "./ScheduleHistoryTable";
@@ -101,6 +102,7 @@ export function DashboardSchedulePanel({
 
   const [form, setForm] = useState<ScheduleFormValue>({
     ...DEFAULT_SCHEDULE_FORM,
+    recipients: DEFAULT_EMAIL_RECIPIENTS,
     attachmentFormats: ["pdf"],
   });
   const [showCreate, setShowCreate] = useState(false);
@@ -115,7 +117,11 @@ export function DashboardSchedulePanel({
   useEffect(() => {
     if (selected && draftSelected) {
       const next = scheduleRowToForm(selected);
-      setForm({ ...next, attachmentFormats: ["pdf"] });
+      setForm({
+        ...next,
+        attachmentFormats: ["pdf"],
+        recipients: toEmailOnlyRecipients(next.recipients),
+      });
     }
   }, [selected?.id, draftSelected, selected]);
 
@@ -143,7 +149,7 @@ export function DashboardSchedulePanel({
 
   const createBlockedReason = !canCreate
     ? precheck.items.find((item) => item.blocking && !item.ok)?.detail ??
-      (!isScheduleFormSubmittable(form) ? "请配置至少一位有效接收人" : "前置检查未通过")
+      (!isScheduleFormSubmittable(form) ? "请填写至少一个有效收件邮箱" : "前置检查未通过")
     : null;
 
   const requestDeliveryConfirm = (onConfirm: () => void) => {
@@ -156,7 +162,7 @@ export function DashboardSchedulePanel({
 
   const handleCreate = async () => {
     if (!isScheduleFormSubmittable(form)) {
-      toast.error("请配置至少一位有效接收人");
+      toast.error("请填写至少一个有效收件邮箱");
       return;
     }
     if (!canCreate) {
@@ -263,6 +269,7 @@ export function DashboardSchedulePanel({
     hideStandaloneHealthAlerts: true as const,
     embeddedLayout: embedded,
     showDeliveryChannels: true,
+    recipientsMode: "email-only" as const,
   };
 
   const activationBannerSchedule = resolveActivationBannerSchedule(

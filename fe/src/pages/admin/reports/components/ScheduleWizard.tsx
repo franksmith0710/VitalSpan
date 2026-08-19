@@ -66,6 +66,7 @@ export function ScheduleWizard({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="hourly">每小时</SelectItem>
               <SelectItem value="daily">每天</SelectItem>
               <SelectItem value="weekly">每周</SelectItem>
               <SelectItem value="monthly">每月</SelectItem>
@@ -73,20 +74,8 @@ export function ScheduleWizard({
           </Select>
         </div>
         <div className="grid gap-2">
-          <Label>执行时间</Label>
-          <div className="flex gap-2">
-            <Input
-              id={`${idPrefix}-hour`}
-              type="number"
-              min={0}
-              max={23}
-              className="h-11"
-              value={value.hour}
-              disabled={disabled}
-              onChange={(e) => onChange({ ...value, hour: clampHour(Number(e.target.value)) })}
-              aria-label="小时"
-              aria-invalid={hourInvalid}
-            />
+          <Label>{value.frequency === "hourly" ? "每小时第几分钟" : "执行时间"}</Label>
+          {value.frequency === "hourly" ? (
             <Input
               id={`${idPrefix}-minute`}
               type="number"
@@ -99,9 +88,40 @@ export function ScheduleWizard({
               aria-label="分钟"
               aria-invalid={minuteInvalid}
             />
-          </div>
-          {hourInvalid || minuteInvalid ? (
-            <p className="text-theme-xs text-error-500">小时须为 0–23，分钟须为 0–59</p>
+          ) : (
+            <div className="flex gap-2">
+              <Input
+                id={`${idPrefix}-hour`}
+                type="number"
+                min={0}
+                max={23}
+                className="h-11"
+                value={value.hour}
+                disabled={disabled}
+                onChange={(e) => onChange({ ...value, hour: clampHour(Number(e.target.value)) })}
+                aria-label="小时"
+                aria-invalid={hourInvalid}
+              />
+              <Input
+                id={`${idPrefix}-minute`}
+                type="number"
+                min={0}
+                max={59}
+                className="h-11"
+                value={value.minute}
+                disabled={disabled}
+                onChange={(e) => onChange({ ...value, minute: clampMinute(Number(e.target.value)) })}
+                aria-label="分钟"
+                aria-invalid={minuteInvalid}
+              />
+            </div>
+          )}
+          {(value.frequency === "hourly" ? minuteInvalid : hourInvalid || minuteInvalid) ? (
+            <p className="text-theme-xs text-error-500">
+              {value.frequency === "hourly"
+                ? "分钟须为 0–59"
+                : "小时须为 0–23，分钟须为 0–59"}
+            </p>
           ) : null}
         </div>
         {value.frequency === "weekly" ? (

@@ -21,6 +21,7 @@ import {
   stripChartColorStyleOverrides,
   syncChartWidgetsForDashboardScopes,
 } from "@/lib/chartDeStyle";
+import { stripCustomVizDisplayStyleOverrides } from "./custom-viz/customVizDisplayStyle";
 
 /** 随浅色/深色分别保存的视觉字段（结构类如圆角/间隙不在此列） */
 export type ThemeVariantFields = {
@@ -742,12 +743,22 @@ function stripLayoutWidgetColorOverrides(widget: LayoutWidget): LayoutWidget {
   }
 
   if (widget.type === "customViz" && widget.customVizConfig) {
-    const widgetStyle = stripWidgetStyleBackgroundOverrides(widget.customVizConfig.widgetStyle);
-    if (widgetStyle === widget.customVizConfig.widgetStyle) return widget;
-    return {
-      ...widget,
-      customVizConfig: { ...widget.customVizConfig, widgetStyle },
-    };
+    const customVizConfig = { ...widget.customVizConfig };
+    let changed = false;
+
+    const widgetStyle = stripWidgetStyleBackgroundOverrides(customVizConfig.widgetStyle);
+    if (widgetStyle !== customVizConfig.widgetStyle) {
+      customVizConfig.widgetStyle = widgetStyle;
+      changed = true;
+    }
+
+    const displayStyle = stripCustomVizDisplayStyleOverrides(customVizConfig.displayStyle);
+    if (displayStyle !== customVizConfig.displayStyle) {
+      customVizConfig.displayStyle = displayStyle;
+      changed = true;
+    }
+
+    return changed ? { ...widget, customVizConfig } : widget;
   }
 
   return widget;

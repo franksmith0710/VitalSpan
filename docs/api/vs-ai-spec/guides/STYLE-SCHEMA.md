@@ -1,13 +1,14 @@
 # Custom Viz 样式声明（styleSchema）
 
-> AI 可为每个组件**自由声明**平台尚未出现过的样式项；平台按 schema 自动生成配置栏，无需新增 tsx。
+> AI 可为每个组件**自由声明**平台尚未出现过的样式项；平台按 schema 自动生成配置栏，无需新增 tsx。  
+> **平台固定六块**（背景/配色/标题/备注/标签/提示）由 FE 写入 `customVizConfig.displayStyle`，见 [PROTOCOL.md](../PROTOCOL.md) §layout `customVizConfig`；**不要**在 schema 重复声明同名键，除非有意覆盖平台值。
 
 ## 原则
 
 1. **键名 camelCase**：如 `accentColor`、`showValue`；运行时映射为 CSS 变量 `--vs-style-accent-color`
 2. **必须成对**：`styleSchema.properties` 每个键在 `defaultStyle` 里有默认值
-3. **bundle 消费**：HTML 内读 `getComputedStyle(host).getPropertyValue('--vs-style-…')` 或 `.vs-cv-payload` 的 `style` 对象；**数据**须按 Payload v1 的 `bindingStatus`（`unbound | bound | empty | error`）区分未绑定、有数、空结果与失败，见 [PROTOCOL.md](../PROTOCOL.md) §Payload v1
-4. **与内置 chart 无关**：不必复用 `deStyle` 字段名；全新设计只要 schema + bundle 一致即可
+3. **bundle 消费**：HTML 内读 `getComputedStyle(host).getPropertyValue('--vs-style-…')` / `--vs-palette-0` 或 `.vs-cv-payload` 的 `style` 对象；**数据**须按 Payload v1 的 `bindingStatus`（`unbound | bound | empty | error`）区分未绑定、有数、空结果与失败，见 [PROTOCOL.md](../PROTOCOL.md) §Payload v1
+4. **与内置 chart 分层对齐**：平台六块 → `displayStyle`；组件专属 → `styleSchema` + `style`；单卡外壳 → `widgetStyle`（高级 Tab）
 
 ## 支持的 property 类型
 
