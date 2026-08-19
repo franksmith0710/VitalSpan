@@ -13,31 +13,48 @@ import {
 } from "@/components/layout/list-page-kit";
 import { cn } from "@/lib/utils";
 import { standardAnalysisConfigPath } from "../standardRoutes";
-import type { AnalysisPack, AnalysisTheme, RunResult } from "../useStandardAnalysis";
+import {
+  readStoredViewMode,
+  writeStoredViewMode,
+  type PresentationMode,
+} from "../standardAnalysisPrefs";
+import type { AnalysisPack, AnalysisTheme, RunResult, SnapshotRecord } from "../useStandardAnalysis";
 import {
   defaultLivePresentationMode,
   detectSuspiciousTimeSeries,
   humanizeSectionHeaders,
   isChartSection,
 } from "../standardAnalysisPresentation";
+import { buildStandardAnalysisDataMetaNote } from "../standardAnalysisDataMeta";
 import {
   buildLiveSummaryMetrics,
   normalizeColumns,
   normalizeRows,
 } from "./standardAnalysisUi";
 import { StandardAnalysisSectionChart } from "./StandardAnalysisSectionChart";
-
-type PresentationMode = "chart" | "table";
+import { StandardAnalysisSnapshotStrip } from "./StandardAnalysisSnapshotStrip";
 
 type Props = {
   pack: AnalysisPack;
   activeTheme: AnalysisTheme;
   runData?: RunResult;
   isLoading: boolean;
+  snapshots?: SnapshotRecord[];
+  canManage: boolean;
+  capturePending: boolean;
+  onCaptureSnapshot: () => void;
 };
 
-function LiveSummaryStrip({ headers, rows }: { headers: string[]; rows: unknown[][] }) {
-  const metrics = buildLiveSummaryMetrics(headers, rows);
+function LiveSummaryStrip({
+  headers,
+  rows,
+  theme,
+}: {
+  headers: string[];
+  rows: unknown[][];
+  theme: AnalysisTheme;
+}) {
+  const metrics = buildLiveSummaryMetrics(headers, rows, theme);
   if (metrics.length === 0) return null;
 
   return (
@@ -57,7 +74,25 @@ function LiveSummaryStrip({ headers, rows }: { headers: string[]; rows: unknown[
   );
 }
 
-export function StandardAnalysisLiveView({ pack, activeTheme, runData, isLoading }: Props) {
+function resolveInitialPresentationMode(
+  packKey: string,
+  liveSection: Parameters<typeof defaultLivePresentationMode>[0],
+): PresentationMode {
+  const stored = readStoredViewMode(packKey);
+  if (stored) return stored;
+  return defaultLivePresentationMode(liveSection);
+}
+
+export function StandardAnalysisLiveView({
+  pack,
+  activeTheme,
+  runData,
+  isLoading,
+  snapshots,
+  canManage,
+  capturePending,
+  onCaptureSnapshot,
+}: Props) {
   const liveSection = runData?.renderSpec.sections[0];
   const rawHeaders = liveSection ? normalizeColumns(liveSection.columns) : [];
   const displayHeaders = humanizeSectionHeaders(rawHeaders);
@@ -67,19 +102,45 @@ export function StandardAnalysisLiveView({ pack, activeTheme, runData, isLoading
   const chartSection = isChartSection(liveSection) ? liveSection : undefined;
 
   const [presentationMode, setPresentationMode] = useState<PresentationMode>(() =>
-    defaultLivePresentationMode(liveSection),
+    resolveInitialPresentationMode(pack.packKey, liveSection),
   );
 
   useEffect(() => {
+    const stored = readStoredViewMode(pack.packKey);
+    if (stored) {
+      setPresentationMode(stored);
+      return;
+    }
     setPresentationMode(defaultLivePresentationMode(liveSection));
-  }, [activeTheme, liveSection?.kind, liveSection?.chartType]);
+  }, [activeTheme, liveSection?.kind, liveSection?.chartType, pack.packKey, liveSection]);
 
   const showChartToggle = Boolean(chartSection);
   const timeSeriesWarning = detectSuspiciousTimeSeries(activeTheme, rawHeaders, liveRows);
   const mappedTimeField = pack.fieldMapping.createdAt?.trim();
+  const dataMetaNote = buildStandardAnalysisDataMetaNote(runData?.renderSpec.meta);
+
+  const handlePresentationModeChange = (mode: PresentationMode) => {
+    setPresentationMode(mode);
+    writeStoredViewMode(pack.packKey, mode);
+  };
 
   return (
     <ListPageTableFrame className="flex min-h-0 flex-1 flex-col">
+      {dataMetaNote ? (
+        <div className="border-b border-gray-200 px-5 py-3 text-theme-xs text-gray-500 dark:border-gray-800 dark:text-gray-400">
+          {dataMetaNote}
+        </div>
+      ) : null}
+
+      <StandardAnalysisSnapshotStrip
+        pack={pack}
+        activeTheme={activeTheme}
+        snapshots={snapshots}
+        canManage={canManage}
+        capturePending={capturePending}
+        onCapture={onCaptureSnapshot}
+      />
+
       {timeSeriesWarning ? (
         <div className="px-5 pt-4">
           <Alert severity="warning" appearance="soft">
@@ -105,7 +166,7 @@ export function StandardAnalysisLiveView({ pack, activeTheme, runData, isLoading
               variant={presentationMode === "chart" ? "primary" : "ghost"}
               size="sm"
               className={cn(HUB_SEGMENTED_BUTTON_CLASS, "h-8 gap-1.5 px-3")}
-              onClick={() => setPresentationMode("chart")}
+              onClick={() => handlePresentationModeChange("chart")}
             >
               <BarChart3 className="size-3.5" aria-hidden />
               图表
@@ -115,7 +176,7 @@ export function StandardAnalysisLiveView({ pack, activeTheme, runData, isLoading
               variant={presentationMode === "table" ? "primary" : "ghost"}
               size="sm"
               className={cn(HUB_SEGMENTED_BUTTON_CLASS, "h-8 gap-1.5 px-3")}
-              onClick={() => setPresentationMode("table")}
+              onClick={() => handlePresentationModeChange("table")}
             >
               <Table2 className="size-3.5" aria-hidden />
               数据表
@@ -124,9 +185,9 @@ export function StandardAnalysisLiveView({ pack, activeTheme, runData, isLoading
         </div>
       ) : null}
 
-      {!isLoading && liveRows.length > 0 && presentationMode === "table" ? (
+      {!isLoading && liveRows.length > 0 ? (
         <div className="px-5 pt-4">
-          <LiveSummaryStrip headers={displayHeaders} rows={liveRows} />
+          <LiveSummaryStrip headers={rawHeaders} rows={liveRows} theme={activeTheme} />
         </div>
       ) : null}
 
@@ -136,6 +197,7 @@ export function StandardAnalysisLiveView({ pack, activeTheme, runData, isLoading
           headers={rawHeaders}
           rows={liveRows}
           chartType={chartSection.chartType}
+          fieldMapping={pack.fieldMapping}
         />
       ) : (
         <DataTable

@@ -75,6 +75,7 @@ export const queryKeys = {
       ["reports", "standardCompare", packKey, theme] as const,
     standardSnapshots: (packKey: string, theme?: string) =>
       ["reports", "standardSnapshots", packKey, theme ?? "all"] as const,
+    standardCapabilities: (packKey: string) => ["reports", "standardCapabilities", packKey] as const,
     catalogNodes: (parentId?: string | null) =>
       ["reports", "catalogNodes", parentId ?? "root"] as const,
     catalogAllNodes: ["reports", "catalogAllNodes"] as const,

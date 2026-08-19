@@ -72,11 +72,14 @@ class CapabilitiesOut(BaseModel):
     columns: list[str]
 
 
+from app.reports.standard.volume_policy import DEFAULT_QUERY_LIMIT, MAX_QUERY_LIMIT
+
+
 class RunIn(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     theme: ThemeType
     parameters: dict[str, Any] = Field(default_factory=dict)
-    limit: int = Field(default=100, ge=1, le=500)
+    limit: int = Field(default=DEFAULT_QUERY_LIMIT, ge=1, le=MAX_QUERY_LIMIT)
 
 
 class RunOut(BaseModel):

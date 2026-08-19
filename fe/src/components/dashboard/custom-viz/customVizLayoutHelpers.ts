@@ -34,3 +34,19 @@ export function measureCustomVizHost(host: HTMLElement): { width: number; height
     height: Math.max(0, Math.round(rect.height)),
   };
 }
+
+const DEFAULT_CHART_PADDING_PX = 56;
+
+/** Base 预计算类目轴抽稀计划，供 d3 bundle 直接消费 payload.axisPlan */
+export function buildCustomVizAxisPlan(
+  categoryCount: number,
+  layoutWidth: number,
+  minLabelPx = 56,
+): { categoryCount: number; categoryTickIndices: number[] } | undefined {
+  if (categoryCount <= 0 || layoutWidth <= 0) return undefined;
+  const innerWidth = Math.max(layoutWidth - DEFAULT_CHART_PADDING_PX, 8);
+  return {
+    categoryCount,
+    categoryTickIndices: thinCategoryTickIndices(categoryCount, innerWidth, minLabelPx),
+  };
+}

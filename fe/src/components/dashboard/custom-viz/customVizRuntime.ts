@@ -17,11 +17,14 @@ export type VsCvHelpers = {
   measureHost: (target?: Element | null) => CustomVizRuntimeLayout;
 };
 
+export type VsCvMountRender = (payload: CustomVizRuntimePayload) => void;
+
 export type VsCvApi = {
   protocolVersion: typeof CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION;
   getPayload: () => CustomVizRuntimePayload | null;
   onPayload: (handler: (payload: CustomVizRuntimePayload) => void) => () => void;
   onLayout: (handler: (layout: CustomVizRuntimeLayout) => void) => () => void;
+  mount: (renderFn: VsCvMountRender) => () => void;
   helpers: VsCvHelpers;
   d3: typeof d3;
 };
@@ -38,8 +41,25 @@ export function getPayloadFromHost(host: HTMLElement): CustomVizRuntimePayload |
   }
 }
 
+function emptyUnboundPayload(): CustomVizRuntimePayload {
+  return {
+    protocolVersion: CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
+    bindingStatus: "unbound",
+    columns: [],
+    rows: [],
+    style: {},
+  };
+}
+
 export function attachCustomVizRuntime(host: HTMLElement): () => void {
   const bound: Array<{ type: "payload" | "layout"; listener: (event: Event) => void }> = [];
+  let mountRender: VsCvMountRender | null = null;
+
+  const invokeMount = (): void => {
+    if (!mountRender) return;
+    mountRender(getPayloadFromHost(host) ?? emptyUnboundPayload());
+  };
+
   const helpers: VsCvHelpers = {
     thinCategoryTickIndices,
     measureHost: (target) => {
@@ -70,10 +90,27 @@ export function attachCustomVizRuntime(host: HTMLElement): () => void {
       bound.push({ type: "layout", listener });
       return () => host.removeEventListener(CUSTOM_VIZ_LAYOUT_UPDATE_EVENT, listener);
     },
+    mount: (renderFn) => {
+      mountRender = renderFn;
+      invokeMount();
+      return () => {
+        if (mountRender === renderFn) mountRender = null;
+      };
+    },
     helpers,
     d3,
   };
   (host as CustomVizHostElement).vsCv = api;
+
+  const mountPayloadListener = () => {
+    invokeMount();
+  };
+  const mountLayoutListener = () => {
+    invokeMount();
+  };
+  host.addEventListener(CUSTOM_VIZ_PAYLOAD_UPDATE_EVENT, mountPayloadListener);
+  host.addEventListener(CUSTOM_VIZ_LAYOUT_UPDATE_EVENT, mountLayoutListener);
+
   return () => {
     for (const { type, listener } of bound) {
       host.removeEventListener(
@@ -81,16 +118,9 @@ export function attachCustomVizRuntime(host: HTMLElement): () => void {
         listener,
       );
     }
+    host.removeEventListener(CUSTOM_VIZ_PAYLOAD_UPDATE_EVENT, mountPayloadListener);
+    host.removeEventListener(CUSTOM_VIZ_LAYOUT_UPDATE_EVENT, mountLayoutListener);
+    mountRender = null;
     delete (host as CustomVizHostElement).vsCv;
-  };
-}
-
-function emptyUnboundPayload(): CustomVizRuntimePayload {
-  return {
-    protocolVersion: CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
-    bindingStatus: "unbound",
-    columns: [],
-    rows: [],
-    style: {},
   };
 }

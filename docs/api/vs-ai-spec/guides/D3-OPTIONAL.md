@@ -21,15 +21,15 @@ customViz+D3：artifact HTML 调用 host.vsCv.d3 → Base 宿主展示
 
 customViz **不会**调用 `applyChartStyleChain` 或 `renderD3Chart`。要对齐内置图风格，请使用 [theme-tokens.json](../theme-tokens.json)。
 
-平台 **会** 注入 Payload `layout`、行数 cap（`truncated`/`rowCap`），以及 `vsCv.helpers.thinCategoryTickIndices` / `onLayout`——但 **不会** 替 bundle 自动重绘；见 [PROTOCOL.md](../PROTOCOL.md) §渲染能力边界。
+平台 **会** 注入 Payload `layout`、`axisPlan`、`truncated`/`rowCap`，壳层 truncated 横幅，以及 `vsCv.mount` / `helpers.thinCategoryTickIndices`。bundle **必须** `host.vsCv.mount(render)`（d3 入库 lint）。详见 [PLATFORM-SLA.md](./PLATFORM-SLA.md) · [PROTOCOL.md](../PROTOCOL.md) §渲染能力边界。
 
-## 自适应与抽稀（bundle 必做）
+## 自适应与抽稀（d3 必做）
 
 | 场景 | 推荐做法 |
 |------|----------|
-| 组件拖大/拖小 | `p.layout.width/height` 设 SVG；`vsCv.onLayout(render)` 重绘 |
-| 类目过多 | `vsCv.helpers.thinCategoryTickIndices(rows.length, innerWidth, 56)` 决定显示哪些 tick |
-| 行数过大 | 读 `payload.truncated` 决定是否提示；SQL 侧用 `resultLimit` |
+| 组件拖大/拖小 | **`vsCv.mount(render)`**；render 内读 `p.layout.width/height` 设 SVG |
+| 类目过多 | 读 **`payload.axisPlan.categoryTickIndices`**；或 `helpers.thinCategoryTickIndices` |
+| 行数过大 | 壳层已提示；可选读 `payload.truncated` |
 
 官方 d3 示例 [`custom-viz-d3-bundle.json`](../examples/custom-viz-d3-bundle.json) 已示范上述模式。
 

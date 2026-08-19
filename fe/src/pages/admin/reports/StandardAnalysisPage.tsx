@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { Settings2, TrendingUp } from "lucide-react";
 import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import { ListPageSection } from "@/components/layout/list-page-kit";
@@ -20,21 +20,29 @@ import { ReportCenterBackLink } from "./components/ReportCenterBackLink";
 import { StandardAnalysisPackList } from "./components/StandardAnalysisPackList";
 import { StandardAnalysisResultPanel } from "./components/StandardAnalysisResultPanel";
 import { STANDARD_WORKBENCH_GRID_CLASS } from "./components/standardAnalysisUi";
+import { isAnalysisTheme, readStoredTheme, writeStoredTheme } from "./standardAnalysisPrefs";
 import {
   type AnalysisTheme,
+  isThemeAvailable,
+  resolveFirstAvailableTheme,
   useCaptureStandardSnapshot,
+  useStandardCapabilities,
   useStandardCompare,
   useStandardPacks,
   useStandardRun,
   useStandardSnapshots,
 } from "./useStandardAnalysis";
-import { STANDARD_PACK_QUERY, standardAnalysisConfigPath } from "./standardRoutes";
+import {
+  STANDARD_PACK_QUERY,
+  STANDARD_THEME_QUERY,
+  standardAnalysisConfigPath,
+} from "./standardRoutes";
 
 export function StandardAnalysisPage() {
   const { user } = useAuth();
   const caps = resolveEffectiveCapabilities(user);
   const canManage = matchesCapability(caps, "report:manage");
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const packsQuery = useStandardPacks();
   const packs = packsQuery.data?.items ?? [];
   const packFromUrl = searchParams.get(STANDARD_PACK_QUERY);
@@ -53,7 +61,45 @@ export function StandardAnalysisPage() {
     [packs, selectedPackKey],
   );
 
-  const activeTheme = selectedTheme ?? activePack?.enabledThemes[0] ?? null;
+  const capabilitiesQuery = useStandardCapabilities(activePack?.packKey ?? null);
+  const themeCapabilities = capabilitiesQuery.data?.themes;
+
+  const themeFromUrl = searchParams.get(STANDARD_THEME_QUERY);
+
+  useEffect(() => {
+    if (!activePack) return;
+
+    setSelectedTheme((current) => {
+      if (
+        current &&
+        activePack.enabledThemes.includes(current) &&
+        isThemeAvailable(current, themeCapabilities)
+      ) {
+        return current;
+      }
+
+      if (
+        isAnalysisTheme(themeFromUrl) &&
+        activePack.enabledThemes.includes(themeFromUrl) &&
+        isThemeAvailable(themeFromUrl, themeCapabilities)
+      ) {
+        return themeFromUrl;
+      }
+
+      const stored = readStoredTheme(activePack.packKey);
+      if (
+        stored &&
+        activePack.enabledThemes.includes(stored) &&
+        isThemeAvailable(stored, themeCapabilities)
+      ) {
+        return stored;
+      }
+
+      return resolveFirstAvailableTheme(activePack, themeCapabilities);
+    });
+  }, [activePack, themeCapabilities, themeFromUrl]);
+
+  const activeTheme = selectedTheme ?? resolveFirstAvailableTheme(activePack, themeCapabilities);
 
   const runQuery = useStandardRun(viewMode === "live" ? activePack?.packKey ?? null : null, activeTheme);
   const compareQuery = useStandardCompare(
@@ -71,6 +117,21 @@ export function StandardAnalysisPage() {
   const selectPack = (key: string) => {
     setSelectedPackKey(key);
     setSelectedTheme(null);
+    const params = new URLSearchParams(searchParams);
+    params.set(STANDARD_PACK_QUERY, key);
+    params.delete(STANDARD_THEME_QUERY);
+    setSearchParams(params, { replace: true });
+  };
+
+  const handleThemeChange = (theme: AnalysisTheme) => {
+    setSelectedTheme(theme);
+    if (activePack) {
+      writeStoredTheme(activePack.packKey, theme);
+    }
+    const params = new URLSearchParams(searchParams);
+    if (activePack) params.set(STANDARD_PACK_QUERY, activePack.packKey);
+    params.set(STANDARD_THEME_QUERY, theme);
+    setSearchParams(params, { replace: true });
   };
 
   return (
@@ -149,11 +210,12 @@ export function StandardAnalysisPage() {
                 canManage={canManage}
                 capturePending={captureSnapshot.isPending}
                 onCaptureSnapshot={handleCaptureSnapshot}
-                onThemeChange={setSelectedTheme}
+                onThemeChange={handleThemeChange}
                 onViewModeChange={setViewMode}
                 runQuery={runQuery}
                 compareQuery={compareQuery}
                 snapshots={snapshotsQuery.data?.items}
+                themeCapabilities={themeCapabilities}
                 mapError={mapApiError}
               />
             ) : null}

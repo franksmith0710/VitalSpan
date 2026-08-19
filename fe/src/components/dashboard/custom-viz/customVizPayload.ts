@@ -10,6 +10,11 @@ export type CustomVizRuntimeLayout = {
   height: number;
 };
 
+export type CustomVizAxisPlan = {
+  categoryCount?: number;
+  categoryTickIndices?: number[];
+};
+
 export type CustomVizRuntimePayload = {
   protocolVersion: typeof CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION;
   bindingStatus: CustomVizBindingStatus;
@@ -17,6 +22,7 @@ export type CustomVizRuntimePayload = {
   rows: (string | number | boolean | null)[][];
   style: Record<string, unknown>;
   layout?: CustomVizRuntimeLayout;
+  axisPlan?: CustomVizAxisPlan;
   truncated?: boolean;
   rowCap?: number;
   error?: string;
@@ -34,6 +40,8 @@ export function resolveCustomVizBindingStatus(args: {
   if (args.rows.length === 0) return "empty";
   return "bound";
 }
+
+import { buildCustomVizAxisPlan } from "./customVizLayoutHelpers";
 
 export function buildCustomVizRuntimePayload(args: {
   executeReady: boolean;
@@ -54,7 +62,13 @@ export function buildCustomVizRuntimePayload(args: {
     rows: args.rows,
     style: args.style,
   };
-  if (args.layout) payload.layout = args.layout;
+  if (args.layout) {
+    payload.layout = args.layout;
+    if (bindingStatus === "bound" && args.rows.length > 0) {
+      const axisPlan = buildCustomVizAxisPlan(args.rows.length, args.layout.width);
+      if (axisPlan) payload.axisPlan = axisPlan;
+    }
+  }
   if (args.truncated) {
     payload.truncated = true;
     if (args.rowCap != null) payload.rowCap = args.rowCap;

@@ -46,11 +46,11 @@ describe("standardAnalysisPresentation", () => {
     expect(resolveSectionChartType("line")).toBe("line");
   });
 
-  it("builds inline chart config from section headers", () => {
-    expect(buildStandardSectionChartConfig(["dim", "cnt"], "bar")).toMatchObject({
+  it("builds inline chart config from section headers with labels", () => {
+    expect(buildStandardSectionChartConfig(["dim", "cnt"], "bar", { region: "province" }, "distribution")).toMatchObject({
       chartType: "bar-horizontal",
-      dimensions: [{ field: "dim" }],
-      metrics: [{ field: "cnt" }],
+      dimensions: [{ field: "dim", label: "省份" }],
+      metrics: [{ field: "cnt", label: "数量" }],
     });
   });
 

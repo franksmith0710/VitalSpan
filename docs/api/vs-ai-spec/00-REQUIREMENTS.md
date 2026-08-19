@@ -53,6 +53,7 @@ Content-Type: application/json
 | 必填 | 规则 |
 |------|------|
 | `manifest.runtime` | 仅 `html` 或 `d3` |
+| d3 入口脚本 | 必须含 `host.vsCv.mount(`，否则 **422** `AIVIZ_MOUNT_REQUIRED` |
 | `manifest.entry` | 必须是 `index.html` 且出现在 `files` |
 | `files` | 仅 `.html` / `.css` / `.svg`；脚本须写在 HTML 内联 `<script>` |
 | `fieldSlots` | dimensions、metrics 的 `min >= 1` |
@@ -61,12 +62,23 @@ Content-Type: application/json
 
 ## 3. 画图怎么读数
 
-平台注入 `host.vsCv`（见 `PROTOCOL.md`）：`getPayload` / `onPayload` / `d3`。  
-**不要**自己定义 `dataSchema`、`eventSchema`、向 VitalSpan 推业务行。
+平台注入 `host.vsCv`（见 [guides/PLATFORM-SLA.md](./guides/PLATFORM-SLA.md) · `PROTOCOL.md`）：
+
+- **必须** `host.vsCv.mount(renderFn)`（d3 入库 lint；html 强烈推荐）
+- 读 `payload.layout` / `payload.axisPlan.categoryTickIndices`
+- **不要**自己定义 `dataSchema`、`eventSchema`、向 VitalSpan 推业务行
 
 未绑数：`bindingStatus === "unbound"`，显示「请在右侧绑定数据集与字段」。
 
-## 4. 本机怎么传（Windows）
+## 4. 路径决策
+
+| 要做的事 | 用什么 |
+|----------|--------|
+| 标准柱/线/表/地图 | L1/L2 `chartConfig`（**不是** customViz） |
+| KPI / DOM / 滚动 | L3 `runtime: html` |
+| 自定义 D3/SVG | L3 `runtime: d3` |
+
+## 5. 本机怎么传（Windows）
 
 1. 后端：`uvicorn` 监听 8000（`GET http://127.0.0.1:8000/health` 要通）
 2. 在本包根目录：
@@ -84,7 +96,7 @@ python tools\upload-ai-viz-artifact.py --file examples\custom-viz-bundle.json
 账号默认 `admin`，密码 `VITALSPAN_DEV_ADMIN_PASSWORD`（未设则 `changeme`）。  
 打印出的 `artifactId` 填进大屏 `customVizConfig.artifactId`。
 
-## 5. 拒收示例（不要生成）
+## 6. 拒收示例（不要生成）
 
 - `runtime: "vanilla"` / `"react"` / `"webgl"`
 - `"entry": "dist/realtime-chart.iife.js"`
@@ -93,7 +105,7 @@ python tools\upload-ai-viz-artifact.py --file examples\custom-viz-bundle.json
 
 黄金样例只用：`examples/custom-viz-bundle.json`、`custom-viz-d3-bundle.json`，以及 pulse / ring / alert。
 
-## 6. 怎么发 HTTP（不要用 DeepTalk 网页跨域 fetch）
+## 7. 怎么发 HTTP（不要用 DeepTalk 网页跨域 fetch）
 
 必须从 **DeepTalk 服务端** 或本机脚本 POST（`tools/upload-ai-viz-artifact.py` / `curl`）。
 

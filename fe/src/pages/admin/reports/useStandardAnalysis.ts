@@ -26,13 +26,27 @@ export type AnalysisPack = {
   snapshotRetentionPeriods?: number;
 };
 
+export type StandardAnalysisRenderMeta = {
+  sourceRowCount?: number;
+  aggregatedPointCount?: number;
+  queryLimit?: number;
+  timeStep?: "daily" | "weekly" | "monthly" | null;
+  timeStepLabel?: string | null;
+  topN?: number | null;
+  topNTruncated?: boolean;
+  pointCap?: number | null;
+  pointCapApplied?: boolean;
+  sampleBased?: boolean;
+};
+
 export type RunResult = {
   packKey: string;
   theme: AnalysisTheme;
   renderSpec: {
+    meta?: StandardAnalysisRenderMeta;
     sections: Array<{
       kind: string;
-      columns: Array<{ name: string }>;
+      columns: Array<{ name: string } | string>;
       rows: unknown[];
       chartType?: string;
     }>;
@@ -65,6 +79,57 @@ export type SnapshotRecord = {
   periodKey: string;
   capturedAt: string;
 };
+
+export type ThemeCapability = {
+  theme: AnalysisTheme;
+  available: boolean;
+  reason?: string | null;
+};
+
+export type CapabilitiesResult = {
+  packKey: string;
+  themes: ThemeCapability[];
+  columns: string[];
+};
+
+export function resolveFirstAvailableTheme(
+  pack: AnalysisPack | null | undefined,
+  capabilities: ThemeCapability[] | undefined,
+): AnalysisTheme | null {
+  if (!pack) return null;
+  const capMap = new Map(capabilities?.map((item) => [item.theme, item]) ?? []);
+  for (const theme of pack.enabledThemes) {
+    const cap = capMap.get(theme);
+    if (!cap || cap.available) return theme;
+  }
+  return pack.enabledThemes[0] ?? null;
+}
+
+export function isThemeAvailable(
+  theme: AnalysisTheme,
+  capabilities: ThemeCapability[] | undefined,
+): boolean {
+  const cap = capabilities?.find((item) => item.theme === theme);
+  return cap?.available ?? true;
+}
+
+export function themeCapabilityReason(
+  theme: AnalysisTheme,
+  capabilities: ThemeCapability[] | undefined,
+): string | undefined {
+  const cap = capabilities?.find((item) => item.theme === theme);
+  if (!cap || cap.available) return undefined;
+  return cap.reason ?? "当前主题不可用";
+}
+
+export function useStandardCapabilities(packKey: string | null) {
+  return useQuery({
+    queryKey: queryKeys.reports.standardCapabilities(packKey ?? ""),
+    queryFn: () =>
+      apiFetch<CapabilitiesResult>(`/api/v1/reports/standard/packs/${packKey}/capabilities`),
+    enabled: Boolean(packKey),
+  });
+}
 
 export function useStandardPacks() {
   return useQuery({

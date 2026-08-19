@@ -1,6 +1,15 @@
 # Custom Viz 渲染器选择
 
-> L3 **只支持** `html` 与 `d3`。`manifest.runtime` 由后端校验。ECharts / AntV **不支持**（标准图走 L1/L2）。
+> L3 **只支持** `html` 与 `d3`。`manifest.runtime` 由后端校验。ECharts / AntV **不支持**（标准图走 L1/L2）。  
+> 平台 SLA：[PLATFORM-SLA.md](./PLATFORM-SLA.md)
+
+## 决策树（先读）
+
+```text
+标准柱/线/表/地图能表达？  → 是 → L1/L2 chartConfig（禁止走 customViz）
+KPI / DOM / 滚动 / 告警？   → 是 → L3 runtime: html + vsCv.mount
+比例尺 / 坐标轴 / SVG 图？  → 是 → L3 runtime: d3 + vsCv.mount + axisPlan
+```
 
 ## runtime
 

@@ -37,6 +37,44 @@ def test_bundle_rejects_inline_d3_library() -> None:
     raise AssertionError("expected AIVIZ_INLINE_D3_FORBIDDEN")
 
 
+def test_bundle_rejects_d3_without_mount() -> None:
+    html = "<!DOCTYPE html><html><body><script>host.vsCv.onPayload(function(){});</script></body></html>"
+    manifest = {**_MIN_MANIFEST, "runtime": "d3"}
+    try:
+        validate_bundle_files({"index.html": html}, "index.html", manifest)
+    except AiVizError as exc:
+        assert exc.code == "AIVIZ_MOUNT_REQUIRED"
+        return
+    raise AssertionError("expected AIVIZ_MOUNT_REQUIRED")
+
+
+def test_bundle_accepts_d3_with_mount() -> None:
+    html = "<!DOCTYPE html><html><body><script>host.vsCv.mount(function(){});</script></body></html>"
+    manifest = {**_MIN_MANIFEST, "runtime": "d3"}
+    validate_bundle_files({"index.html": html}, "index.html", manifest)
+
+
+def test_bundle_rejects_forbidden_root_id() -> None:
+    html = '<!DOCTYPE html><html><body><div id="root"></div></body></html>'
+    try:
+        validate_bundle_files({"index.html": html}, "index.html", _MIN_MANIFEST)
+    except AiVizError as exc:
+        assert exc.code == "AIVIZ_FORBIDDEN_HOST_ID"
+        return
+    raise AssertionError("expected AIVIZ_FORBIDDEN_HOST_ID")
+
+
+def test_official_d3_example_passes_mount_lint() -> None:
+    import json
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[2]
+    doc = json.loads((root / "docs/api/vs-ai-spec/examples/custom-viz-d3-bundle.json").read_text(encoding="utf-8"))
+    html = doc["files"]["index.html"]
+    manifest = doc["manifest"]
+    validate_bundle_files({"index.html": html}, "index.html", manifest)
+
+
 def test_bundle_size_limit_is_2mb() -> None:
     assert MAX_BUNDLE_BYTES == 2 * 1024 * 1024
     modest = "a" * 1024

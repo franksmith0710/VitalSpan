@@ -119,6 +119,7 @@ import { DashboardEditCanvas } from "@/components/dashboard/dashboard-edit/Dashb
 import { ChartDrillProvider } from "@/components/charts/ChartDrillContext";
 import { ChartEditRail, ChartEditRailEmpty } from "@/components/dashboard/ChartEditRail";
 import { CustomVizEditRail } from "@/components/dashboard/custom-viz/CustomVizEditRail";
+import { customVizBindingToChartConfig } from "@/components/dashboard/custom-viz/customVizExecute";
 import { FilterWidgetInspector } from "@/components/dashboard/FilterWidgetInspector";
 import { TextEditRail } from "@/components/dashboard/TextEditRail";
 import { ScreenVisualEditRail } from "@/components/dashboard/screen/ScreenVisualEditRail";
@@ -657,14 +658,24 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   );
 
   const widgetActionChartConfig = useMemo((): ChartViewConfig | null => {
-    if (!widgetActionTarget || widgetActionTarget.type !== "chart" || !widgetActionTarget.chartConfig) {
-      return null;
+    if (!widgetActionTarget) return null;
+    if (widgetActionTarget.type === "chart" && widgetActionTarget.chartConfig) {
+      return { ...widgetActionTarget.chartConfig, chartId: widgetActionTarget.id };
     }
-    return { ...widgetActionTarget.chartConfig, chartId: widgetActionTarget.id };
+    if (widgetActionTarget.type === "customViz" && widgetActionTarget.customVizConfig) {
+      return {
+        ...customVizBindingToChartConfig(widgetActionTarget.customVizConfig.dataBinding),
+        chartId: widgetActionTarget.id,
+      };
+    }
+    return null;
   }, [widgetActionTarget]);
 
   const widgetActionFilterParams = useMemo(() => {
-    if (!widgetActionTarget || widgetActionTarget.type !== "chart") return undefined;
+    if (!widgetActionTarget) return undefined;
+    if (widgetActionTarget.type !== "chart" && widgetActionTarget.type !== "customViz") {
+      return undefined;
+    }
     return buildWidgetFilterParams(
       widgetActionTarget.id,
       effectiveLinkage,
@@ -956,7 +967,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
 
   const openWidgetViewDataDialog = useCallback((widgetId: string) => {
     const target = widgets.find((item) => item.id === widgetId);
-    if (target?.type !== "chart") return;
+    if (target?.type !== "chart" && target?.type !== "customViz") return;
     setWidgetActionDialog({ type: "view-data", widgetId });
   }, [widgets]);
 

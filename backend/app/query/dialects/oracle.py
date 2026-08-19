@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 
+from app.query.table_ref import qualify_table_reference
 from app.query.rls.guard import validate_identifier
 
 
@@ -13,7 +14,11 @@ class OracleDialect:
         return f'"{name}"'
 
     def qualify_table(self, schema: str, table: str) -> str:
-        return f"{self.quote_identifier(schema)}.{self.quote_identifier(table)}"
+        return qualify_table_reference(
+            quote_identifier=self.quote_identifier,
+            schema=schema,
+            table=table,
+        )
 
     def _paginate(self, sql: str, *, limit: int, offset: int) -> str:
         return (

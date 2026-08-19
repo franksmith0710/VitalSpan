@@ -27,6 +27,8 @@
 | [HANDOFF.md](./HANDOFF.md) | 联调环境占位、curl、误读对照 |
 | [CHANGELOG.md](./CHANGELOG.md) | 规范包修订 |
 | [PROTOCOL.md](./PROTOCOL.md) | 自定义组件库协议：Base、`vsCv`、html/d3 runtime、PUT 覆盖 |
+| [guides/PLATFORM-SLA.md](./guides/PLATFORM-SLA.md) | **平台底座 SLA**：mount、axisPlan、壳层 truncated、入库 lint |
+| [guides/HTML-RUNTIME.md](./guides/HTML-RUNTIME.md) | html runtime 配置严格清单 |
 | [guides/RENDERERS.md](./guides/RENDERERS.md) | 仅 html / d3；ECharts/AntV 不支持 |
 | [guides/STYLE-SCHEMA.md](./guides/STYLE-SCHEMA.md) | customViz 可自由声明的样式 schema（颜色/滑块/开关/下拉/分组） |
 | [theme-tokens.json](./theme-tokens.json) | 看板/D3 主题 token（推荐对齐内置 chart） |

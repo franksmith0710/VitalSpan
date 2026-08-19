@@ -101,7 +101,7 @@ export function StandardAnalysisPackList({
                         </Badge>
                       </div>
                       <div className="mt-2 flex flex-wrap gap-1">
-                        {pack.enabledThemes.slice(0, 3).map((theme) => (
+                        {pack.enabledThemes.map((theme) => (
                           <span
                             key={theme}
                             className="rounded-md bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600 dark:bg-white/10 dark:text-gray-400"
@@ -109,9 +109,6 @@ export function StandardAnalysisPackList({
                             {THEME_META[theme]?.label ?? theme}
                           </span>
                         ))}
-                        {pack.enabledThemes.length > 3 ? (
-                          <span className="px-1 text-[11px] text-gray-400">+{pack.enabledThemes.length - 3}</span>
-                        ) : null}
                       </div>
                     </button>
                   </li>

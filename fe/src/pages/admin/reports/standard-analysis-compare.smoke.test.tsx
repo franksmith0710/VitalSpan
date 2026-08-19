@@ -52,6 +52,13 @@ vi.mock("@/lib/api", () => ({
     if (path.includes("/snapshots")) {
       return { items: [], total: 0 };
     }
+    if (path.includes("/capabilities")) {
+      return {
+        packKey: "s1",
+        themes: [{ theme: "distribution", available: true }],
+        columns: ["city", "amount"],
+      };
+    }
     if (path.includes("/run")) {
       return {
         packKey: "s1",
@@ -105,7 +112,7 @@ describe("StandardAnalysisPage compare mode", () => {
       expect(screen.getByText("暂无上期快照，无法对比")).toBeInTheDocument();
     });
     expect(screen.getByText(/当前实时查询/)).toBeInTheDocument();
-    expect(screen.getAllByText(/按「city」计数/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/按城市计数/).length).toBeGreaterThan(0);
     expect(screen.queryByRole("columnheader", { name: "增减" })).not.toBeInTheDocument();
   });
 
@@ -117,10 +124,11 @@ describe("StandardAnalysisPage compare mode", () => {
 
     fireEvent.click(screen.getAllByRole("button", { name: "对比上期" })[0]!);
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "保存本期快照" })).toBeInTheDocument();
+      expect(screen.getAllByRole("button", { name: "保存本期快照" }).length).toBeGreaterThan(0);
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "保存本期快照" }));
+    const captureButtons = screen.getAllByRole("button", { name: "保存本期快照" });
+    fireEvent.click(captureButtons[captureButtons.length - 1]!);
     await waitFor(() => {
       expect(captureMock).toHaveBeenCalledTimes(1);
     });

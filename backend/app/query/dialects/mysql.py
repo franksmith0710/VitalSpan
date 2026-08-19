@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.query.table_ref import qualify_table_reference
 from app.query.rls.guard import validate_identifier
 
 
@@ -11,7 +12,11 @@ class MySqlDialect:
         return f"`{name}`"
 
     def qualify_table(self, schema: str, table: str) -> str:
-        return f"{self.quote_identifier(schema)}.{self.quote_identifier(table)}"
+        return qualify_table_reference(
+            quote_identifier=self.quote_identifier,
+            schema=schema,
+            table=table,
+        )
 
     def wrap_limit(self, sql: str, *, limit: int, offset: int = 0) -> str:
         normalized = sql.strip().rstrip(";")

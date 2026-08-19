@@ -1,4 +1,5 @@
 import type { AnalysisPack, AnalysisTheme, CompareResult, SnapshotRecord } from "../useStandardAnalysis";
+import { themeAggregationHintText } from "../standardAnalysisFieldLabels";
 import { SNAPSHOT_LABELS, THEME_META } from "./standardAnalysisUi";
 
 export const SNAPSHOT_SCHEDULE_HINT: Record<AnalysisPack["snapshotCronPreset"], string> = {
@@ -12,16 +13,8 @@ export function hasPreviousSnapshot(compare: CompareResult | undefined): boolean
 }
 
 export function themeAggregationHint(pack: AnalysisPack, theme: AnalysisTheme): string {
-  const { fieldMapping } = pack;
-  if (theme === "lifecycle" && fieldMapping.status) {
-    return `按「${fieldMapping.status}」计数`;
-  }
-  if (theme === "distribution" && fieldMapping.region) {
-    return `按「${fieldMapping.region}」计数`;
-  }
-  if ((theme === "activity" || theme === "trend") && fieldMapping.createdAt) {
-    return `按「${fieldMapping.createdAt}」按日计数`;
-  }
+  const hint = themeAggregationHintText(theme, pack.fieldMapping);
+  if (hint) return hint;
   return THEME_META[theme]?.label ?? theme;
 }
 

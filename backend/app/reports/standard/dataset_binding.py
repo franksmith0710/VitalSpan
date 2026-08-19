@@ -12,6 +12,7 @@ from app.query.config_store.schemas import ConfigUpsert
 from app.query.config_store.service import upsert_config
 from app.reports.standard.errors import RPT_STD_DATASET_NOT_FOUND, RPT_STD_DATASET_UNBOUND, StandardAnalysisError
 from app.reports.standard.schemas import AnalysisPackOut
+from app.reports.standard.volume_policy import DEFAULT_QUERY_LIMIT
 
 
 def _stable_ref_id(pack_key: str) -> uuid.UUID:
@@ -32,8 +33,9 @@ def ensure_analysis_pack_dataset_binding(db: Session, pack: AnalysisPackOut) -> 
     dataset_id = f"std-pack-{pack.pack_key}"
     assert pack.physical_table_fqn
     pt = physical_service.get_physical_table(pack.physical_table_fqn)
-    schema = pt.source_schema or "public"
+    schema = (pt.source_schema or "").strip()
     table = pt.source_table or pack.physical_table_fqn.split(".")[-1]
+    table_name = f"{schema}.{table}" if schema else table
     columns = [col.name for col in pt.columns if col.name]
 
     row = db.get(DatasetRecord, dataset_id)
@@ -41,7 +43,7 @@ def ensure_analysis_pack_dataset_binding(db: Session, pack: AnalysisPackOut) -> 
         row = DatasetRecord(
             dataset_id=dataset_id,
             display_name=pack.display_name,
-            tables=[{"name": f"{schema}.{table}"}],
+            tables=[{"name": table_name}],
             computed_fields=[],
             allowed_roles=list(pack.allowed_roles),
             bound_config_id=None,
@@ -50,7 +52,7 @@ def ensure_analysis_pack_dataset_binding(db: Session, pack: AnalysisPackOut) -> 
         db.add(row)
     else:
         row.display_name = pack.display_name
-        row.tables = [{"name": f"{schema}.{table}"}]
+        row.tables = [{"name": table_name}]
         row.allowed_roles = list(pack.allowed_roles)
         row.table_source_datasource_id = pack.data_source_id
 
@@ -73,7 +75,7 @@ def ensure_analysis_pack_dataset_binding(db: Session, pack: AnalysisPackOut) -> 
                     "table": table,
                     "columns": columns or ["*"],
                     "conditions": {"logic": "AND", "conditions": []},
-                    "limit": 1000,
+                    "limit": DEFAULT_QUERY_LIMIT,
                     "offset": 0,
                 },
             },

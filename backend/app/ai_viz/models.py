@@ -87,7 +87,39 @@ def validate_manifest(manifest: dict) -> None:
         )
 
 
-def validate_bundle_files(files: dict[str, str], entry: str) -> None:
+def _resolve_runtime(manifest: dict) -> str:
+    runtime = manifest.get("runtime")
+    if runtime is None:
+        hint = manifest.get("rendererHint")
+        runtime = "d3" if hint == "d3" else "html"
+    return str(runtime)
+
+
+def _validate_bundle_runtime_contract(entry_html: str, manifest: dict) -> None:
+    from app.ai_viz.errors import AiVizError
+
+    runtime = _resolve_runtime(manifest)
+    if re.search(r'\bid=["\']root["\']', entry_html, re.IGNORECASE):
+        raise AiVizError(
+            "AIVIZ_FORBIDDEN_HOST_ID",
+            'entry HTML must not use id="root" (conflicts with platform SPA)',
+            422,
+        )
+    if re.search(r'\bid=["\']app["\']', entry_html, re.IGNORECASE):
+        raise AiVizError(
+            "AIVIZ_FORBIDDEN_HOST_ID",
+            'entry HTML must not use id="app" (conflicts with platform SPA)',
+            422,
+        )
+    if runtime == "d3" and "vsCv.mount" not in entry_html:
+        raise AiVizError(
+            "AIVIZ_MOUNT_REQUIRED",
+            "d3 runtime must call host.vsCv.mount(renderFn) for resize/payload lifecycle",
+            422,
+        )
+
+
+def validate_bundle_files(files: dict[str, str], entry: str, manifest: dict | None = None) -> None:
     from app.ai_viz.errors import AiVizError
 
     if entry not in files:
@@ -112,3 +144,5 @@ def validate_bundle_files(files: dict[str, str], entry: str) -> None:
                     f"forbidden pattern in {name}",
                     422,
                 )
+    if manifest is not None:
+        _validate_bundle_runtime_contract(files[entry], manifest)

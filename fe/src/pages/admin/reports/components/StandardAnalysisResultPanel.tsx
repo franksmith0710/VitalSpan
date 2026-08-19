@@ -8,7 +8,8 @@ import { ListPageToolbar } from "@/components/layout/list-page-kit";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import type { AnalysisPack, AnalysisTheme, CompareResult, RunResult } from "../useStandardAnalysis";
+import type { AnalysisPack, AnalysisTheme, CompareResult, RunResult, ThemeCapability } from "../useStandardAnalysis";
+import { isThemeAvailable, themeCapabilityReason } from "../useStandardAnalysis";
 import { StandardAnalysisCompareView } from "./StandardAnalysisCompareView";
 import { themeAggregationHint } from "./standardAnalysisCompareUi";
 import { StandardAnalysisMetaRow, THEME_META } from "./standardAnalysisUi";
@@ -40,6 +41,7 @@ type Props = {
     data?: CompareResult;
   };
   snapshots?: Array<{ theme: AnalysisTheme; periodKey: string; capturedAt: string }>;
+  themeCapabilities?: ThemeCapability[];
   mapError: (error: unknown) => string;
 };
 
@@ -55,6 +57,7 @@ export function StandardAnalysisResultPanel({
   runQuery,
   compareQuery,
   snapshots,
+  themeCapabilities,
   mapError,
 }: Props) {
   const activeQuery = viewMode === "live" ? runQuery : compareQuery;
@@ -90,8 +93,18 @@ export function StandardAnalysisResultPanel({
             <TabsList variant="enclosed" size="sm" className="h-auto max-w-full flex-wrap">
               {(pack.enabledThemes as AnalysisTheme[]).map((theme) => {
                 const Icon = THEME_META[theme]?.icon;
+                const available = isThemeAvailable(theme, themeCapabilities);
+                const reason = themeCapabilityReason(theme, themeCapabilities);
                 return (
-                  <TabsTrigger key={theme} value={theme} variant="enclosed" size="sm" className="gap-1.5">
+                  <TabsTrigger
+                    key={theme}
+                    value={theme}
+                    variant="enclosed"
+                    size="sm"
+                    className="gap-1.5"
+                    disabled={!available}
+                    title={reason}
+                  >
                     {Icon ? <Icon className="size-3.5 shrink-0" aria-hidden /> : null}
                     {THEME_META[theme]?.label ?? theme}
                   </TabsTrigger>
@@ -148,6 +161,10 @@ export function StandardAnalysisResultPanel({
             activeTheme={activeTheme}
             runData={runQuery.data}
             isLoading={runQuery.isLoading}
+            snapshots={snapshots}
+            canManage={canManage}
+            capturePending={capturePending}
+            onCaptureSnapshot={onCaptureSnapshot}
           />
         ) : (
           <StandardAnalysisCompareView

@@ -3,7 +3,7 @@ import {
   fieldDisplayKind,
   resolveFieldKind,
 } from "@/components/dashboard/datasetFieldClassification";
-import type { AnalysisPack, AnalysisTheme, FieldMapping } from "./useStandardAnalysis";
+import type { AnalysisPack, AnalysisTheme, FieldMapping, ThemeCapability } from "./useStandardAnalysis";
 import { THEME_LABELS } from "./standardRoutes";
 
 const THEME_FIELD_REQUIREMENTS: Record<AnalysisTheme, { key: keyof FieldMapping; label: string }> = {
@@ -226,6 +226,37 @@ export function validateCreatedAtFieldMapping(
   return null;
 }
 
+const ALL_ANALYSIS_THEMES: AnalysisTheme[] = ["lifecycle", "distribution", "activity", "trend"];
+
+export function evaluateDraftThemeCapabilities(
+  draft: AnalysisPack,
+  columnOptions: string[],
+  columnKinds?: Record<string, DatasetFieldKind>,
+): ThemeCapability[] {
+  const colSet = new Set(columnOptions.map((column) => column.toLowerCase()));
+
+  return ALL_ANALYSIS_THEMES.map((theme) => {
+    const requirement = THEME_FIELD_REQUIREMENTS[theme];
+    const mapped = draft.fieldMapping[requirement.key]?.trim();
+    if (!mapped) {
+      return { theme, available: false, reason: `缺少${requirement.label}字段映射` };
+    }
+    if (columnOptions.length > 0 && !colSet.has(mapped.toLowerCase())) {
+      return { theme, available: false, reason: "映射列不在数据集列中" };
+    }
+    if (TIME_THEMES.includes(theme)) {
+      const timeError = validateCreatedAtFieldMapping(
+        { ...draft, enabledThemes: [theme] },
+        columnKinds,
+      );
+      if (timeError) {
+        return { theme, available: false, reason: timeError };
+      }
+    }
+    return { theme, available: true, reason: null };
+  });
+}
+
 export function validateStandardPackDraft(
   draft: AnalysisPack,
   columnOptions: string[],
@@ -246,6 +277,14 @@ export function validateStandardPackDraft(
 
   const createdAtError = validateCreatedAtFieldMapping(draft, columnKinds);
   if (createdAtError) return createdAtError;
+
+  const capabilities = evaluateDraftThemeCapabilities(draft, columnOptions, columnKinds);
+  for (const theme of draft.enabledThemes) {
+    const cap = capabilities.find((item) => item.theme === theme);
+    if (cap && !cap.available) {
+      return `主题「${THEME_LABELS[theme]}」当前不可用：${cap.reason ?? "请检查字段映射"}`;
+    }
+  }
 
   return null;
 }

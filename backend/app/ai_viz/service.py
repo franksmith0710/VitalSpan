@@ -22,9 +22,9 @@ def _content_hash(files: dict[str, str]) -> str:
 
 def create_artifact(db: Session, payload: AiVizArtifactCreateIn, actor: UserContext) -> AiVizArtifactOut:
     entry = payload.manifest.entry or "index.html"
-    validate_bundle_files(payload.files, entry)
     manifest_dict = payload.manifest.model_dump(by_alias=True)
     validate_manifest(manifest_dict)
+    validate_bundle_files(payload.files, entry, manifest_dict)
     files = dict(payload.files)
     content_hash = _content_hash(files)
     row = AiVizArtifact(
@@ -57,9 +57,9 @@ def update_artifact(
 ) -> AiVizArtifactOut:
     row = get_artifact(db, artifact_id, actor, write=True)
     entry = payload.manifest.entry or "index.html"
-    validate_bundle_files(payload.files, entry)
     manifest_dict = payload.manifest.model_dump(by_alias=True)
     validate_manifest(manifest_dict)
+    validate_bundle_files(payload.files, entry, manifest_dict)
     row.manifest_json = manifest_dict
     row.files_json = dict(payload.files)
     row.content_hash = _content_hash(row.files_json)

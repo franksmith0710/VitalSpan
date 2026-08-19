@@ -162,6 +162,8 @@ def export_capability_manifest() -> dict[str, Any]:
         "chartTypes": catalog,
         "customVizProtocol": "docs/api/vs-ai-spec/PROTOCOL.md",
         "customVizGuides": {
+            "platformSla": "docs/api/vs-ai-spec/guides/PLATFORM-SLA.md",
+            "htmlRuntime": "docs/api/vs-ai-spec/guides/HTML-RUNTIME.md",
             "renderers": "docs/api/vs-ai-spec/guides/RENDERERS.md",
             "d3Optional": "docs/api/vs-ai-spec/guides/D3-OPTIONAL.md",
             "themeTokens": "docs/api/vs-ai-spec/theme-tokens.json",

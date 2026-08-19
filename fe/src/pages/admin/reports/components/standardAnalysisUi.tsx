@@ -103,20 +103,46 @@ export function normalizeRows(rows: unknown[], headers: string[]): unknown[][] {
   });
 }
 
-export function buildLiveSummaryMetrics(headers: string[], rows: unknown[][]) {
+export function buildLiveSummaryMetrics(
+  headers: string[],
+  rows: unknown[][],
+  theme?: AnalysisTheme,
+) {
   const metrics: Array<{ label: string; value: string }> = [
     { label: "结果行数", value: String(rows.length) },
   ];
   const numericIdx = headers.findIndex((header) =>
-    /^(数量|cnt|count|total|sum|qty|amount)$/i.test(header),
+    /^(数量|cnt|count|total|sum|qty|amount|value)$/i.test(header),
   );
   if (numericIdx >= 0) {
     const sum = rows.reduce((acc, row) => {
       const value = Number(row[numericIdx]);
       return Number.isFinite(value) ? acc + value : acc;
     }, 0);
-    const label = headers[numericIdx] === "cnt" ? "数量合计" : `${headers[numericIdx]}合计`;
+    const label = /^(cnt|count)$/i.test(headers[numericIdx]) ? "数量合计" : `${headers[numericIdx]}合计`;
     metrics.push({ label, value: String(sum) });
   }
+
+  if (theme === "distribution" && rows.length > 0) {
+    const dimIdx = headers.findIndex((header) => /^(dim|维度|region|province|city)$/i.test(header));
+    const cntIdx =
+      numericIdx >= 0
+        ? numericIdx
+        : headers.findIndex((header) => /^(cnt|count|数量)$/i.test(header));
+    if (dimIdx >= 0 && cntIdx >= 0) {
+      let topDim = "";
+      let topVal = Number.NEGATIVE_INFINITY;
+      for (const row of rows) {
+        const val = Number(row[cntIdx]);
+        if (!Number.isFinite(val) || val <= topVal) continue;
+        topVal = val;
+        topDim = String(row[dimIdx] ?? "");
+      }
+      if (topDim) {
+        metrics.push({ label: "最高区域", value: `${topDim}（${topVal}）` });
+      }
+    }
+  }
+
   return metrics;
 }

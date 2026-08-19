@@ -219,21 +219,32 @@ export function CustomVizWidget({
     </div>
   ) : html ? (
     <CustomVizHostErrorBoundary>
-      <div className="relative size-full min-h-[64px]">
-        {showDataLoadingHint ? (
-          <Skeleton
-            className="absolute inset-0 rounded-lg"
-            aria-busy="true"
-            aria-label="图表加载中"
-            data-testid="custom-viz-data-loading"
-          />
+      <div className="relative flex size-full min-h-0 flex-col">
+        {rowsTruncated ? (
+          <p
+            role="status"
+            data-testid="custom-viz-truncated-banner"
+            className="mb-1 shrink-0 px-1 text-theme-sm text-warning-600 dark:text-warning-400"
+          >
+            数据量较大，已采样显示前 {ADVANCED_CHART_ROW_CAP} 条
+          </p>
         ) : null}
-        <div
-          ref={setHostRef}
-          data-testid="custom-viz-host"
-          className={`${CUSTOM_VIZ_HOST_CLASS} size-full min-h-[64px]`}
-          style={hostStyle}
-        />
+        <div className="relative min-h-0 flex-1">
+          {showDataLoadingHint ? (
+            <Skeleton
+              className="absolute inset-0 rounded-lg"
+              aria-busy="true"
+              aria-label="图表加载中"
+              data-testid="custom-viz-data-loading"
+            />
+          ) : null}
+          <div
+            ref={setHostRef}
+            data-testid="custom-viz-host"
+            className={`${CUSTOM_VIZ_HOST_CLASS} size-full min-h-[64px]`}
+            style={hostStyle}
+          />
+        </div>
       </div>
     </CustomVizHostErrorBoundary>
   ) : (

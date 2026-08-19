@@ -69,7 +69,7 @@ describe("buildCustomVizRuntimePayload", () => {
     expect(payload.error).toBe("查询失败");
   });
 
-  it("includes layout and truncated metadata", () => {
+  it("includes layout, axisPlan and truncated metadata", () => {
     const payload = buildCustomVizRuntimePayload({
       executeReady: true,
       loading: false,
@@ -82,6 +82,8 @@ describe("buildCustomVizRuntimePayload", () => {
       rowCap: 500,
     });
     expect(payload.layout).toEqual({ width: 480, height: 240 });
+    expect(payload.axisPlan?.categoryCount).toBe(1);
+    expect(payload.axisPlan?.categoryTickIndices).toEqual([0]);
     expect(payload.truncated).toBe(true);
     expect(payload.rowCap).toBe(500);
   });

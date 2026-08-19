@@ -48,7 +48,7 @@ customViz **只支持两种 runtime**。ECharts / AntV 不提供；标准图走 
 
 未声明 `runtime` 时：若旧字段 `rendererHint === "d3"` 则视为 `d3`，否则 `html`。`rendererHint` 仅为兼容别名。
 
-Base 在跑 bundle 脚本前给宿主挂 `host.vsCv`：`getPayload()`、`onPayload(fn)`、`d3`。见下方 vsCv。
+Base 在跑 bundle 脚本前给宿主挂 `host.vsCv`：`getPayload()`、`onPayload(fn)`、`onLayout(fn)`、**`mount(renderFn)`**、`helpers`、`d3`。平台 SLA 见 [guides/PLATFORM-SLA.md](./guides/PLATFORM-SLA.md)。
 
 ## 加载方式
 
@@ -135,6 +135,10 @@ Base 在绑定就绪后走 `query/execute`，并**始终**向 `.vs-custom-viz-ho
   "rows": [["华东", 100]],
   "style": { "accentColor": "#3b82f6", "titleShow": true, "labelColor": "#667085" },
   "layout": { "width": 480, "height": 240 },
+  "axisPlan": {
+    "categoryCount": 40,
+    "categoryTickIndices": [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 39]
+  },
   "truncated": false,
   "rowCap": 500,
   "error": "可选；仅 bindingStatus=error 时出现"
@@ -143,8 +147,9 @@ Base 在绑定就绪后走 `query/execute`，并**始终**向 `.vs-custom-viz-ho
 
 | 字段 | 说明 |
 |------|------|
-| `layout` | 宿主 `.vs-custom-viz-host` 当前像素尺寸；resize 时 Base 会更新并触发 `vs-cv-layout-update` |
-| `truncated` | 为 `true` 时表示 `rows` 已按 `rowCap` 截断（与内置 chart 采样提示对齐） |
+| `layout` | 宿主 `.vs-custom-viz-host` 当前像素尺寸；resize 时 Base 更新并触发 mount / `vs-cv-layout-update` |
+| `axisPlan` | Base 预计算的类目轴 tick 下标；d3 bundle **应**优先消费 `categoryTickIndices` |
+| `truncated` | 为 `true` 时表示 `rows` 已按 `rowCap` 截断；**壳层横幅**由 Base 绘制，非 bundle 自写 |
 | `rowCap` | 平台侧 cap 上限（当前 500）；仅 `truncated: true` 时出现 |
 
 | `bindingStatus` | 含义 |
@@ -156,27 +161,28 @@ Base 在绑定就绪后走 `query/execute`，并**始终**向 `.vs-custom-viz-ho
 
 AI 可在 `styleSchema` 中自由声明颜色、滑块、开关、下拉、文本等控件类型，平台自动生成配置栏（位于样式 Tab **六块之下**），详见 [guides/STYLE-SCHEMA.md](./guides/STYLE-SCHEMA.md)。平台固定六块见上文 `displayStyle`，**不必**在 schema 重复声明。
 
-### vsCv（推荐）
+### vsCv（推荐 · AIVIZ-017）
 
 ```js
 var host = document.currentScript.parentElement;
 var vsCv = host.vsCv;
 function render(p) {
-  p = p || vsCv.getPayload();
-  if (!p || p.bindingStatus !== "bound") return;
+  if (!p) return;
+  if (p.bindingStatus === "unbound") { /* 引导文案 */ return; }
+  if (p.bindingStatus !== "bound") { /* empty/error */ return; }
   var w = (p.layout && p.layout.width) || host.clientWidth;
-  var ticks = vsCv.helpers.thinCategoryTickIndices(p.rows.length, w - 56, 56);
-  vsCv.d3.select(host).select("#vs-cv-chart"); // 不要 document.getElementById
+  var ticks = (p.axisPlan && p.axisPlan.categoryTickIndices)
+    || vsCv.helpers.thinCategoryTickIndices(p.rows.length, Math.max(w - 56, 8), 56);
+  vsCv.d3.select(host.querySelector("#vs-cv-chart")); // 不要 document.getElementById
 }
-render();
-vsCv.onPayload(render);
-vsCv.onLayout(function () { render(vsCv.getPayload()); });
+vsCv.mount(render);
 ```
 
 | API | 说明 |
 |-----|------|
-| `getPayload()` / `onPayload(fn)` | Payload v1；数据/样式/ layout 变化时触发 |
-| `onLayout(fn)` | 仅宿主尺寸变化（`vs-cv-layout-update`）；应用 `payload.layout` 重算比例尺 |
+| **`mount(renderFn)`** | **推荐**；payload/layout 变化时 Base 自动调用；**d3 入库必须** |
+| `getPayload()` / `onPayload(fn)` | Payload v1；兼容旧 bundle |
+| `onLayout(fn)` | 仅尺寸变化；新制品请用 `mount` |
 | `d3` | 平台 d3@7.9.0，勿内联整库 |
 | `helpers.thinCategoryTickIndices(count, innerWidth, minLabelPx?)` | 返回应显示类目标签的下标数组（抽稀） |
 | `helpers.measureHost(el?)` | 读宿主或子节点 `getBoundingClientRect` 像素尺寸 |
@@ -185,13 +191,13 @@ vsCv.onLayout(function () { render(vsCv.getPayload()); });
 
 ### 渲染能力边界（与内置 chart 的区别）
 
-customViz **不会**调用 `applyChartStyleChain` 或 `renderD3Chart`（F17 Out）。平台提供：
+customViz **不会**调用 `applyChartStyleChain` 或 `renderD3Chart`（F17 Out）。平台提供（见 [guides/PLATFORM-SLA.md](./guides/PLATFORM-SLA.md)）：
 
-- 查数结果 → `payload.rows`（可选 cap + `truncated`）
-- 宿主尺寸 → `payload.layout` + `onLayout`
-- 抽稀 helper → `helpers.thinCategoryTickIndices`（bundle 须主动用于 axis label）
+- 查数结果 → `payload.rows`（cap + `truncated` + **壳层横幅**）
+- 宿主尺寸 → `payload.layout` + **`mount` 自动重绘**
+- 轴抽稀计划 → `payload.axisPlan` + `helpers.thinCategoryTickIndices`
 
-**bundle 责任**：用 `layout.width/height` 设 SVG 视口；resize 时 `onLayout` 重绘；高密度类目须抽稀或滚动，不可假设平台会替你做 cartesian 规划。详见 [guides/D3-OPTIONAL.md](./guides/D3-OPTIONAL.md) · [feature-truth 审计](../../feature-truth/2026-08-19-customviz-engine-separation-truth.md)。
+**bundle 责任**：在 `mount` 的 render 内读 `layout` / `axisPlan` 设 SVG 视口与 tick；处理 unbound/empty/error 态。详见 [guides/D3-OPTIONAL.md](./guides/D3-OPTIONAL.md) · [guides/HTML-RUNTIME.md](./guides/HTML-RUNTIME.md)。
 
 未绑定时依据 `bindingStatus === "unbound"` 显示引导，**不要**假装已有业务数据。
 

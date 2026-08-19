@@ -32,12 +32,35 @@
 
 ## 组件脚本怎么读数（平台注入，不是 DeepTalk 推数）
 
-挂载后宿主上有 `host.vsCv`：
+挂载后宿主上有 `host.vsCv`（完整 SLA 见 [guides/PLATFORM-SLA.md](./guides/PLATFORM-SLA.md)）：
 
-- `getPayload()` / `onPayload(fn)`：Payload v1（`bindingStatus`、`columns`、`rows`、`style`）
+- **`mount(renderFn)`**（**d3 入库必须**）：payload / layout 变化时 Base 自动调用 render
+- `getPayload()` / `onPayload(fn)`：Payload v1（`bindingStatus`、`columns`、`rows`、`style`、`layout`、`axisPlan`…）
+- `onLayout(fn)`：兼容旧写法；新制品请用 `mount`
+- `helpers.thinCategoryTickIndices` / `helpers.measureHost`
 - `d3`：平台 d3@7.9.0，**禁止**把 d3 整库打进 `files`
 
-推荐写法见 `PROTOCOL.md` § vsCv。
+推荐写法：
+
+```js
+host.vsCv.mount(function (p) {
+  if (!p) return;
+  var w = (p.layout && p.layout.width) || 320;
+  var ticks = (p.axisPlan && p.axisPlan.categoryTickIndices)
+    || host.vsCv.helpers.thinCategoryTickIndices(p.rows.length, w - 56, 56);
+  // …按 bindingStatus 渲染…
+});
+```
+
+## 路径决策（先读再写）
+
+| 需求 | 路径 |
+|------|------|
+| 标准柱/线/表/地图 | **L1/L2 `chartConfig`**，**不要** customViz |
+| KPI / DOM / 滚动 | L3 `runtime: html` + `mount` |
+| 自定义 SVG/D3 | L3 `runtime: d3` + `mount` + 读 `axisPlan` |
+
+见 [guides/RENDERERS.md](./guides/RENDERERS.md)。
 
 ## 一键试跑（把黄金样例打进去）
 
@@ -80,7 +103,7 @@ DeepTalk 若产出 `runtime: vanilla`、`.iife.js`、`dataSchema` / `eventSchema
 | 未绑 Dataset | 「请在右侧绑定数据集与字段」，不是空白卡死 |
 | 绑字段并刷新 | `bindingStatus=bound`，html/d3 出图 |
 | 同一 ID `PUT` 新 HTML | 切回页签或硬刷新后是新画面 |
-| 失败 | HTTP 与 JSON `{ code, message, detail }`，例如超 2MB → 413 `AIVIZ_BUNDLE_TOO_LARGE` |
+| 失败 | HTTP 与 JSON `{ code, message, detail }`，例如超 2MB → 413 `AIVIZ_BUNDLE_TOO_LARGE`；d3 无 `vsCv.mount` → 422 `AIVIZ_MOUNT_REQUIRED` |
 
 ## 红线
 
@@ -94,9 +117,10 @@ DeepTalk 若产出 `runtime: vanilla`、`.iife.js`、`dataSchema` / `eventSchema
 
 1. 本文件  
 2. `README.md`（三条路径）  
-3. `PROTOCOL.md`  
-4. `guides/RENDERERS.md` · `guides/D3-OPTIONAL.md` · `guides/STYLE-SCHEMA.md`  
-5. `examples/` · `theme-tokens.json`
+3. `guides/PLATFORM-SLA.md`（平台底座保证什么）  
+4. `PROTOCOL.md`  
+5. `guides/RENDERERS.md` · `guides/D3-OPTIONAL.md` · `guides/HTML-RUNTIME.md` · `guides/STYLE-SCHEMA.md`  
+6. `examples/` · `theme-tokens.json`
 
 ## 不要按别的规范误读
 

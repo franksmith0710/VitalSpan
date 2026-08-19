@@ -39,14 +39,14 @@
 |--------|----------|--------|
 | **A. 看板/大屏可视化定时 PDF**（推荐主路径） | 已有看板/大屏，定期邮件投递画布快照 | 看板分享 → `DashboardSchedulePanel` |
 | **B. 文档模板套版**（固定版式填数） | Word/Excel/PDF 固定版式月报/台账 | 侧栏「文档模板」`/admin/reports/templates` |
-| **C. 标准分析**（对象工作台） | 面向业务对象的决策分析、周期快照与本期 vs 上期对比 | 侧栏「标准分析」`/admin/reports/standard`；配置 `/admin/reports/standard/config` |
+| **C. 标准分析**（对象工作台） | 面向业务对象的决策分析、周期快照与本期 vs 上期对比 | 侧栏「标准分析」`/admin/reports/standard/results`；配置 `/admin/reports/standard/setup` |
 
 侧栏 **「报表中心」多入口**（`nav-manifest.tsx` 子项）：
 
 | 侧栏子项 | 路由 | 权限 | 职责（一句话） |
 |----------|------|------|----------------|
 | 工作台 | `/admin/reports/center` | `report:read` | 最近访问、失败告警、各模块快捷入口卡片 |
-| 标准分析 | `/admin/reports/standard` | `report:read` | 选包看数、对比上期快照（消费端） |
+| 标准分析 | `/admin/reports/standard/results` | `report:read` | 选包看数、对比上期快照（消费端；图主表辅 + 数据口径说明） |
 | 文档模板 | `/admin/reports/templates` | `report:manage` | 目录树、模板块、扩展配置、手动运行 |
 | 调度与投递 | `/admin/reports/schedules` | `report:manage` | 跨看板/模板/标准分析的 cron、历史、重试 |
 
@@ -54,7 +54,7 @@
 
 | 深链路由 | 权限 | 说明 |
 |----------|------|------|
-| `/admin/reports/standard/config` | `report:manage` | 标准分析包配置：绑数据集、主题、周期快照、可选定时投递 |
+| `/admin/reports/standard/setup` | `report:manage` | 标准分析包配置：绑数据集、主题、周期快照、可选定时投递 |
 | `/admin/reports/view/:nodeId` | `report:read` | 模板运行与导出 |
 
 - **创建主路径**：看板/大屏编辑 → 分享 → `DashboardSchedulePanel`（前置检查：组件非空、Playwright、SMTP）
@@ -88,10 +88,12 @@
 | `reports/render/` | `render_from_spec` → PDF/Excel/Word bytes；PDF 中文经 `pdf_fonts.resolve_report_pdf_font_name()` | RPT-001/003 | P3 已实现 |
 | `engine/acl.py` | run 访问控制 + `set_user_engine_scope` enterprise 白名单 | RPT-001 | companion 已实现 r66 |
 | `engine/probe.py` | `probe_run_template_budget_ms` ≤50ms | RPT-001 | companion 已实现 r66 |
-| `standard/service.py` | 分析包 CRUD、run、capabilities、周期快照 compare | RPT-002 | 已实现 |
+| `standard/service.py` | 分析包 CRUD、run、capabilities、周期快照 compare；`renderSpec.meta` 样本口径 | RPT-002 | 已实现 |
+| `standard/volume_policy.py` | 查数上限、Top N、时间步长与点数 cap（M1a/M1b） | RPT-002 | 已实现 |
+| `standard/theme_aggregate.py` | Dataset 出数后内存聚合 + `meta` | RPT-002 | 已实现 |
 | `standard/jobs.py` | APScheduler 周期快照（与投递调度分离） | RPT-002 | 已实现 |
 | `standard/seed.py` | 内置 `equipment-overview` 分析包幂等 upsert | RPT-002 | 已实现 |
-| **FE** | `fe/src/pages/admin/reports/StandardAnalysisPage.tsx` + `StandardAnalysisConfigPage.tsx` | RPT-002 | 已实现 |
+| **FE** | `fe/src/pages/admin/reports/StandardAnalysisPage.tsx` + `StandardAnalysisConfigPage.tsx`；`standardAnalysisDataMeta.ts` 口径说明条；R1：`useStandardCapabilities` 主题灰显、`StandardAnalysisSnapshotStrip` 实时快照条、`?theme=` + localStorage 图/表偏好 | RPT-002 | 已实现 |
 | **FE** | `fe/src/pages/admin/reports/ReportCenterPage.tsx` + `ReportCenterScheduleHub.tsx`（定时报告 Hub · 2026-08 收敛） | RPT-005 | 已实现 |
 | **FE** | `fe/src/pages/admin/reports/components/DashboardSchedulePanel.tsx` + `SchedulePrecheckPanel.tsx`（看板分享页创建 + 前置检查） | RPT-005 | 已实现 |
 | **FE** | `fe/src/pages/export/DashboardExportSnapshotPage.tsx` + `export_render.py`（Playwright PDF 快照） | RPT-005 | G5 · 2026-08-03 |

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildCustomVizAxisPlan,
   measureCustomVizHost,
   thinCategoryTickIndices,
 } from "./customVizLayoutHelpers";
@@ -15,6 +16,16 @@ describe("thinCategoryTickIndices", () => {
     expect(indices[indices.length - 1]).toBe(39);
     expect(indices.length).toBeLessThan(40);
     expect(indices.length).toBeGreaterThan(1);
+  });
+});
+
+describe("buildCustomVizAxisPlan", () => {
+  it("subtracts chart padding from layout width", () => {
+    const plan = buildCustomVizAxisPlan(40, 320, 56);
+    expect(plan?.categoryCount).toBe(40);
+    expect(plan?.categoryTickIndices?.[0]).toBe(0);
+    expect(plan?.categoryTickIndices?.at(-1)).toBe(39);
+    expect(plan?.categoryTickIndices?.length).toBeLessThan(40);
   });
 });
 

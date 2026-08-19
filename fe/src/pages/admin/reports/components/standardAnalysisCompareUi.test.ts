@@ -19,8 +19,8 @@ const pack: AnalysisPack = {
 
 describe("standardAnalysisCompareUi", () => {
   it("describes theme aggregation from field mapping", () => {
-    expect(themeAggregationHint(pack, "distribution")).toBe("按「city」计数");
-    expect(themeAggregationHint(pack, "lifecycle")).toBe("按「status」计数");
+    expect(themeAggregationHint(pack, "distribution")).toBe("按城市计数");
+    expect(themeAggregationHint(pack, "lifecycle")).toBe("按状态计数");
   });
 
   it("detects missing previous snapshot", () => {

@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { CalendarClock, ChevronDown, ChevronRight, Database, Table2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -21,6 +21,7 @@ import { ReportMetricDatasetFields } from "./ReportMetricDatasetFields";
 import { StandardAnalysisFieldMappingFields } from "./StandardAnalysisFieldMappingFields";
 import { StandardAnalysisThemeGrid } from "./StandardAnalysisThemeGrid";
 import { StandardSchedulePanel } from "./StandardSchedulePanel";
+import { evaluateDraftThemeCapabilities } from "../standardAnalysisValidation";
 
 type Props = {
   draft: AnalysisPack;
@@ -122,6 +123,11 @@ export function StandardAnalysisConfigForm({
     onDismissSavedHint?.();
     onChange(updater);
   };
+
+  const themeCapabilities = useMemo(
+    () => evaluateDraftThemeCapabilities(draft, columnOptions, columnKinds),
+    [draft, columnOptions, columnKinds],
+  );
 
   const legacyBinding = !draft.datasetId && draft.physicalTableFqn;
 
@@ -248,6 +254,7 @@ export function StandardAnalysisConfigForm({
           <ConfigSection title="分析主题" description="勾选在「标准分析」消费页展示的主题视图。">
             <StandardAnalysisThemeGrid
               enabledThemes={draft.enabledThemes}
+              themeCapabilities={themeCapabilities}
               onToggle={(theme, checked) =>
                 handleChange((current) => ({
                   ...current,

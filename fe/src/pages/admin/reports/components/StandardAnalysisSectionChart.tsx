@@ -4,23 +4,24 @@ import { buildChartViewModel } from "@/components/charts/engine/buildChartViewMo
 import { buildStyleContext } from "@/components/charts/engine/buildStyleContext";
 import { useDashboardColorScheme } from "@/hooks/useDashboardColorScheme";
 import { resolveEffectivePaletteColors } from "@/lib/chartDeStyle";
+import type { AnalysisTheme, FieldMapping } from "../useStandardAnalysis";
 import { buildStandardSectionChartConfig } from "../standardAnalysisPresentation";
-import type { AnalysisTheme } from "../useStandardAnalysis";
 
 type Props = {
   theme: AnalysisTheme;
   headers: string[];
   rows: unknown[][];
   chartType: "bar" | "line";
+  fieldMapping?: FieldMapping;
 };
 
-export function StandardAnalysisSectionChart({ theme, headers, rows, chartType }: Props) {
+export function StandardAnalysisSectionChart({ theme, headers, rows, chartType, fieldMapping }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const scheme = useDashboardColorScheme(containerRef);
 
   const config = useMemo(
-    () => buildStandardSectionChartConfig(headers, chartType),
-    [headers, chartType],
+    () => buildStandardSectionChartConfig(headers, chartType, fieldMapping, theme),
+    [headers, chartType, fieldMapping, theme],
   );
 
   const viewModel = useMemo(

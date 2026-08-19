@@ -67,6 +67,38 @@ describe("mountCustomVizHtml", () => {
     b.remove();
   });
 
+  it("fires vsCv.mount when payload or layout changes", () => {
+    const host = document.createElement("div");
+    host.className = "vs-custom-viz-host";
+    document.body.appendChild(host);
+    const html = `<!DOCTYPE html><html><body><div id="mark"></div><script>(function(){
+      var host=document.currentScript.parentElement;
+      var mark=host.querySelector('#mark');
+      host.vsCv.mount(function(p){mark.textContent=(p.layout&&p.layout.width)||'none'});
+    })();</script></body></html>`;
+    mountCustomVizHtml(host, html);
+    injectCustomVizPayload(host, {
+      protocolVersion: CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
+      bindingStatus: "bound",
+      columns: [],
+      rows: [],
+      style: {},
+      layout: { width: 320, height: 200 },
+    });
+    expect(host.querySelector("#mark")?.textContent).toBe("320");
+    injectCustomVizPayload(host, {
+      protocolVersion: CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
+      bindingStatus: "bound",
+      columns: ["a"],
+      rows: [[1]],
+      style: {},
+      layout: { width: 640, height: 200 },
+      axisPlan: { categoryCount: 1, categoryTickIndices: [0] },
+    });
+    expect(host.querySelector("#mark")?.textContent).toBe("640");
+    host.remove();
+  });
+
   it("fires vsCv.onLayout when payload layout changes", () => {
     const host = document.createElement("div");
     host.className = "vs-custom-viz-host";

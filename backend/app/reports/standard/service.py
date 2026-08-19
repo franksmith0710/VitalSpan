@@ -202,11 +202,13 @@ def run_pack(db: Session, key: str, payload: RunIn, user: UserContext) -> RunOut
         payload.parameters,
         limit=payload.limit,
     )
-    columns, rows = aggregate_pack_theme(
+    columns, rows, agg_meta = aggregate_pack_theme(
         payload.theme,
         section_payload["columns"],
         section_payload["rows"],
         pack.field_mapping,
+        snapshot_preset=pack.snapshot_cron_preset,
+        query_limit=payload.limit,
     )
     chart_type = (
         "bar"
@@ -228,6 +230,7 @@ def run_pack(db: Session, key: str, payload: RunIn, user: UserContext) -> RunOut
         "format": "web",
         "sections": [section],
         "parameters": payload.parameters,
+        "meta": agg_meta,
     }
     return RunOut(
         packKey=pack.pack_key,

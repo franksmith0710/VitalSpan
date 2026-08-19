@@ -1,5 +1,11 @@
 # vs-ai-spec 变更
 
+## 2026-08-19
+
+- **PLATFORM-SLA**：`vsCv.mount` 统一 lifecycle；Payload `axisPlan`；壳层 truncated；d3 入库须 `vsCv.mount`
+- 新增 [guides/PLATFORM-SLA.md](./guides/PLATFORM-SLA.md) · [guides/HTML-RUNTIME.md](./guides/HTML-RUNTIME.md)
+- 官方示例改为 `boot()` → `host.vsCv.mount`；d3 消费 `axisPlan.categoryTickIndices`
+
 ## 2026-08-18c
 
 - 官方示例禁止 `document.getElementById`，改为宿主内 `querySelector`（同页多实例）

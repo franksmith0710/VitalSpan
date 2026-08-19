@@ -30,7 +30,8 @@ def _placeholder(connector_type: str, name: str, value_type: str) -> str:
 
 def _validate_identifiers(schema: str, table: str, columns: list[str]) -> None:
     try:
-        validate_identifier(schema)
+        if schema and schema.strip():
+            validate_identifier(schema.strip())
         validate_identifier(table)
         for col in columns:
             validate_identifier(col)

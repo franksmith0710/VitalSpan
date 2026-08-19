@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  evaluateDraftThemeCapabilities,
   listMappingColumnOptions,
   mergeSuggestedFieldMapping,
   suggestStandardFieldMapping,
@@ -104,5 +105,29 @@ describe("standardAnalysisValidation", () => {
       },
     );
     expect(message).toMatch(/疑似数值列/);
+  });
+
+  it("flags unavailable enabled themes in validateStandardPackDraft", () => {
+    const message = validateStandardPackDraft(
+      {
+        ...basePack,
+        enabledThemes: ["trend"],
+        fieldMapping: { status: "status", region: "region", createdAt: "amount" },
+      },
+      ["status", "region", "amount"],
+    );
+    expect(message).toMatch(/趋势/);
+  });
+
+  it("evaluates draft theme capabilities from column mapping", () => {
+    const caps = evaluateDraftThemeCapabilities(
+      {
+        ...basePack,
+        fieldMapping: { status: "status", region: "province", createdAt: "" },
+      },
+      ["status", "province", "amount"],
+    );
+    expect(caps.find((item) => item.theme === "distribution")?.available).toBe(true);
+    expect(caps.find((item) => item.theme === "trend")?.available).toBe(false);
   });
 });

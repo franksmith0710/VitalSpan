@@ -165,7 +165,7 @@ export function WidgetContextMenuContent({
           放大
         </ContextMenuItem>
       ) : null}
-      {widget.type === "chart" && actions.onViewData ? (
+      {(widget.type === "chart" || widget.type === "customViz") && actions.onViewData ? (
         <ContextMenuItem
           className={menuItemClass(colorScheme)}
           disabled={locked}

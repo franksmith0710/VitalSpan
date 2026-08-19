@@ -51,6 +51,18 @@ vi.mock("@/lib/api", () => ({
     if (path.includes("/snapshots")) {
       return { items: [], total: 0 };
     }
+    if (path.includes("/capabilities")) {
+      return {
+        packKey: "s1",
+        themes: [
+          { theme: "lifecycle", available: true },
+          { theme: "distribution", available: true },
+          { theme: "activity", available: false, reason: "缺少字段映射: created_at" },
+          { theme: "trend", available: false, reason: "缺少字段映射: created_at" },
+        ],
+        columns: ["province", "city", "amount"],
+      };
+    }
     if (path.startsWith("/api/v1/datasets/query-configs/")) {
       return { columns: [{ name: "province" }, { name: "city" }, { name: "amount" }] };
     }
