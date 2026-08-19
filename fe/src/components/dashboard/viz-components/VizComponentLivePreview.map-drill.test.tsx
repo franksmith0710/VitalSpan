@@ -68,6 +68,12 @@ describe("VizComponentLivePreview map drill wiring", () => {
     expect(chartRendererSpy.mock.calls.at(-1)?.[0]?.drillEnabled).toBe(false);
   });
 
+  it("uses card preview profile in compact hub thumbnails", () => {
+    render(<VizComponentLivePreview widget={barWidget()} compact />);
+
+    expect(chartRendererSpy.mock.calls.at(-1)?.[0]?.previewProfile).toBe("card");
+  });
+
   it("forwards onChartConfigChange to ChartRenderer", () => {
     const onChartConfigChange = vi.fn();
     render(

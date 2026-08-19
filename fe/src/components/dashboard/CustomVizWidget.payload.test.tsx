@@ -38,6 +38,14 @@ vi.mock("@/lib/appBasePath", () => ({
   resolveApiBaseUrl: () => "http://localhost:8000",
 }));
 
+vi.mock("@/hooks/useElementSize", () => ({
+  useElementSize: () => ({
+    ref: () => undefined,
+    size: { width: 480, height: 240 },
+    remeasure: vi.fn(),
+  }),
+}));
+
 describe("CustomVizWidget payload injection", () => {
   it("injects execute rows and merged style into host payload node", async () => {
     const { getByTestId } = render(
@@ -79,6 +87,8 @@ describe("CustomVizWidget payload injection", () => {
           ["华北", 80],
         ],
         style: { accentColor: "#336699" },
+        layout: { width: 480, height: 240 },
+        axisPlan: { categoryCount: 2, categoryTickIndices: [0, 1] },
       });
     });
 

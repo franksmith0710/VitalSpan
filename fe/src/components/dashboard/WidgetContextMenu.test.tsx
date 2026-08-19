@@ -28,6 +28,17 @@ const textWidget = {
   textConfig: { content: "hello", variant: "plain" as const },
 };
 
+const customVizWidget = {
+  id: "w-custom-viz",
+  type: "customViz" as const,
+  title: "自定义",
+  locked: false,
+  customVizConfig: {
+    artifactId: "550e8400-e29b-41d4-a716-446655440000",
+    dataBinding: { status: "manual" as const },
+  },
+};
+
 describe("DashboardWidgetContextMenu", () => {
   afterEach(() => {
     cleanup();
@@ -87,6 +98,31 @@ describe("DashboardWidgetContextMenu", () => {
     expect(onViewData).toHaveBeenCalledWith("w-chart");
     expect(onDelete).toHaveBeenCalledWith("w-chart");
     expect(within(menu).queryByText("导出为")).not.toBeInTheDocument();
+  });
+
+  it("runs view-data action for customViz widgets", async () => {
+    const user = userEvent.setup();
+    const onViewData = vi.fn();
+
+    render(
+      <DashboardWidgetContextMenu
+        widget={customVizWidget}
+        actions={{
+          onCopy: vi.fn(),
+          onDelete: vi.fn(),
+          onViewData,
+          surface: "dashboard",
+        }}
+        selected
+        open
+      >
+        <div data-testid="widget-body">custom viz</div>
+      </DashboardWidgetContextMenu>,
+    );
+
+    const menu = screen.getByTestId("widget-context-menu-w-custom-viz");
+    await user.click(within(menu).getByText("查看数据"));
+    expect(onViewData).toHaveBeenCalledWith("w-custom-viz");
   });
 
   it("disables paste when clipboard is empty", () => {

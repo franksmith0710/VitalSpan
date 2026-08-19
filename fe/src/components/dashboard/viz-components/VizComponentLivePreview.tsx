@@ -16,6 +16,7 @@ import { useInViewport } from "@/hooks/useInViewport";
 import { useAdminHeavyRenderSuspended } from "@/hooks/useAdminHeavyRenderSuspended";
 import { isGeoMapChartType, type ChartViewConfig } from "@/lib/chartViewConfig";
 import { cn } from "@/lib/utils";
+import type { DashboardPreviewProfile } from "@/lib/dashboardPreviewProfile";
 
 type VizComponentLivePreviewProps = {
   widget: LayoutWidget;
@@ -29,6 +30,8 @@ type VizComponentLivePreviewProps = {
   geo3dRenderTier?: Geo3dRenderTier;
   /** 列表卡片缩略图：隐藏组件内标题栏 */
   compact?: boolean;
+  /** Hub 卡片轻量预览：隐藏 shell 图例/标签等，与看板列表卡片一致 */
+  previewProfile?: DashboardPreviewProfile;
   /** 地图下钻栈持久化（编辑页同步 manualDrillStack） */
   onChartConfigChange?: (cfg: ChartViewConfig) => void;
 };
@@ -41,20 +44,24 @@ export function VizComponentLivePreview({
   paused = false,
   geo3dRenderTier,
   compact = false,
+  previewProfile,
   onChartConfigChange,
 }: VizComponentLivePreviewProps) {
   const navSuspended = useAdminHeavyRenderSuspended();
+  const effectivePreviewProfile: DashboardPreviewProfile =
+    previewProfile ?? (compact ? "card" : "default");
   const containerRef = useRef<HTMLDivElement>(null);
   const { ref: viewRef, inView } = useInViewport<HTMLDivElement>({
     enabled: lazy && !navSuspended && !paused,
     rootMargin: "80px",
   });
-  const { width, height } = useElementSize(containerRef);
+  const { ref: sizeRef, size } = useElementSize<HTMLDivElement>();
   const active = !navSuspended && !paused && (!lazy || inView);
 
   const setContainerRef = (node: HTMLDivElement | null) => {
     containerRef.current = node;
     viewRef(node);
+    sizeRef(node);
   };
 
   useEffect(() => {
@@ -80,8 +87,8 @@ export function VizComponentLivePreview({
           widget={widget as LayoutWidget & { chartConfig: NonNullable<typeof widget.chartConfig> }}
           compact={compact}
         >
-          <WidgetShellLegendProvider>
-            <WidgetChartLegendShell>
+          {(() => {
+            const chartNode = (
               <ChartDrillProvider>
                 <ChartRenderer
                   embedded
@@ -94,11 +101,18 @@ export function VizComponentLivePreview({
                   dashboardEditMode
                   pixelSize={{ width: chartWidth, height: chartHeight }}
                   geo3dRenderTier={geo3dRenderTier}
+                  previewProfile={effectivePreviewProfile}
                   onChartConfigChange={onChartConfigChange}
                 />
               </ChartDrillProvider>
-            </WidgetChartLegendShell>
-          </WidgetShellLegendProvider>
+            );
+            if (effectivePreviewProfile === "card") return chartNode;
+            return (
+              <WidgetShellLegendProvider>
+                <WidgetChartLegendShell>{chartNode}</WidgetChartLegendShell>
+              </WidgetShellLegendProvider>
+            );
+          })()}
         </VizComponentChartPreviewShell>
       ) : null}
       {widget.type === "filter" && widget.filterConfig ? (

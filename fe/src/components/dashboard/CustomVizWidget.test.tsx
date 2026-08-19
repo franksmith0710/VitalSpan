@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { useChartExecute } from "@/components/charts/useChartExecute";
+import { ADVANCED_CHART_ROW_CAP } from "@/components/charts/engine/buildDatasetEncoding";
 import { CustomVizWidget } from "./CustomVizWidget";
 import { rewriteBundleCss } from "./customVizHost";
 import { coerceLayoutWidget } from "./layoutUtils";
@@ -152,5 +153,50 @@ describe("CustomVizWidget", () => {
       />,
     );
     expect(screen.queryByTestId("custom-viz-data-loading")).not.toBeInTheDocument();
+  });
+
+  it("shows truncated banner when rows exceed cap", async () => {
+    const cappedRows = Array.from({ length: ADVANCED_CHART_ROW_CAP }, (_, index) => [
+      `row-${index}`,
+      index,
+    ]);
+    vi.mocked(useChartExecute).mockReturnValue({
+      columns: ["name", "value"],
+      rows: [...cappedRows, [`row-${ADVANCED_CHART_ROW_CAP}`, ADVANCED_CHART_ROW_CAP]],
+      loading: false,
+      error: null,
+      slowHint: false,
+    });
+
+    render(
+      <CustomVizWidget
+        widget={{
+          id: "w1",
+          type: "customViz",
+          title: "AI",
+          colSpan: 6,
+          rowSpan: 3,
+          order: 0,
+          customVizConfig: {
+            artifactId: "550e8400-e29b-41d4-a716-446655440000",
+            dataBinding: {
+              status: "connected",
+              dataSourceId: "ds1",
+              datasetId: "set1",
+              configId: "cfg1",
+              dimensions: [{ field: "name" }],
+              metrics: [{ field: "value", agg: "sum" as const }],
+            },
+          },
+        }}
+        mode="view"
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("custom-viz-truncated-banner")).toHaveTextContent(
+        `数据量较大，已采样显示前 ${ADVANCED_CHART_ROW_CAP} 条`,
+      );
+    });
   });
 });

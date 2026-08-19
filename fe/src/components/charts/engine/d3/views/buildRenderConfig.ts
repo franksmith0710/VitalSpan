@@ -108,7 +108,7 @@ export function buildD3DispatchPayload(
         geoStyle: {
           roam: geoStyle.roam,
           showRegionLabel: geoStyle.showRegionLabel,
-          visualMap: geoStyle.visualMap,
+          visualMap: geoStyle.visualMap !== false && renderTier !== "thumbnail",
           showRegionBorder: geoStyle.showRegionBorder,
           regionBorderColor: geoStyle.regionBorderColor,
           regionFillColor: geoStyle.regionFillColor,
