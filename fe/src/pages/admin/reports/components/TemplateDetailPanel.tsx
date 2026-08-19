@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { catalogNodePath } from "@/lib/reportCatalogUtils";
 import { BatchImportPanel } from "./BatchImportPanel";
 import { CatalogNodeMetaPanel } from "./CatalogNodeMetaPanel";
+import { CatalogNodeDeleteButton } from "./CatalogNodeDeleteButton";
 import { ReportExportCard } from "./ReportExportCard";
 import { ReportExtensionPreview } from "./ReportExtensionPreview";
 import { ReportMetricExtensionForm } from "./ReportMetricExtensionForm";
@@ -61,8 +62,7 @@ export function TemplateDetailPanel({
   const renderQuery = useExtensionRenderSpec(node.id, tab === "preview");
   const extensionData =
     extQuery.data && String(extQuery.data.catalogNodeId) === String(node.id) ? extQuery.data : null;
-  const extensionLoading =
-    extQuery.isLoading || (extQuery.isFetching && !extensionData);
+  const extensionLoading = extQuery.isPending && !extensionData;
   const previewData =
     renderQuery.data && String(renderQuery.data.templateNodeId ?? "") === node.id
       ? renderQuery.data
@@ -109,6 +109,7 @@ export function TemplateDetailPanel({
               disabled={exportDisabled}
               disabledHint="请先配置扩展指标"
             />
+            {!readOnly ? <CatalogNodeDeleteButton node={node} onDeleted={onDeleted} /> : null}
           </>
         }
       />
@@ -135,7 +136,6 @@ export function TemplateDetailPanel({
                   node={node}
                   allNodes={allNodes}
                   readOnly={readOnly}
-                  onDeleted={onDeleted}
                 />
                 <TemplatePanelSection
                   title="模板属性"

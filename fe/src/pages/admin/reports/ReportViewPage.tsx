@@ -17,7 +17,7 @@ import { matchesCapability, resolveEffectiveCapabilities } from "@/lib/capabilit
 import { queryKeys } from "@/lib/queryKeys";
 import { useAuth } from "@/context/auth-context";
 import type { ReportCatalogNode } from "@/lib/reportCatalogUtils";
-import { localizeTemplateReadiness, type TemplateReadiness } from "@/lib/reportTemplateReadiness";
+import { reportTemplatePath } from "./components/reportTemplateUi";
 import { ReportExportCard } from "./components/ReportExportCard";
 import { ReportResultTable } from "./components/ReportResultTable";
 import { useCatalogExtension } from "./useReportTemplates";
@@ -131,7 +131,7 @@ export function ReportViewPage() {
             </Button>
             {canManage ? (
               <Button type="button" variant="outline" size="sm" asChild>
-                <Link to={`/admin/reports/templates/${node.id}`}>编辑模板</Link>
+                <Link to={reportTemplatePath(node.id)}>编辑模板</Link>
               </Button>
             ) : null}
             {readiness ? (
@@ -159,7 +159,7 @@ export function ReportViewPage() {
                       {canManage ? (
                         <>
                           模板尚未接入真实数据源，当前为占位结果。请前往
-                          <Link to={`/admin/reports/templates/${node.id}`} className="mx-1 text-brand-600 hover:underline">
+                          <Link to={reportTemplatePath(node.id)} className="mx-1 text-brand-600 hover:underline">
                             模板编辑
                           </Link>
                           配置扩展指标与数据源后再运行。

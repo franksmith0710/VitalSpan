@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { catalogNodePath, type ReportCatalogNode } from "@/lib/reportCatalogUtils";
 import { type CatalogNode } from "../useReportTemplates";
 import { CatalogNodeMetaPanel } from "./CatalogNodeMetaPanel";
+import { CatalogNodeDeleteButton } from "./CatalogNodeDeleteButton";
 
 const KIND_ICONS = { word: FileText, excel: FileSpreadsheet, pdf: FileType2 } as const;
 
@@ -28,21 +29,21 @@ export function CatalogFolderPanel({
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-gray-200 px-6 py-5 dark:border-gray-800">
-        <div className="flex items-center gap-3">
-          <Folder className="size-5 text-gray-500 dark:text-gray-400" aria-hidden />
-          <h2 className="text-theme-lg font-semibold text-gray-900 dark:text-white">{node.name}</h2>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-3">
+              <Folder className="size-5 shrink-0 text-gray-500 dark:text-gray-400" aria-hidden />
+              <h2 className="text-theme-lg font-semibold text-gray-900 dark:text-white">{node.name}</h2>
+            </div>
+            <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
+              文件夹 · {children.length} 个子项
+            </p>
+          </div>
+          {!readOnly ? <CatalogNodeDeleteButton node={node} onDeleted={onDeleted} /> : null}
         </div>
-        <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
-          文件夹 · {children.length} 个子项
-        </p>
       </div>
       <div className="flex-1 space-y-6 overflow-y-auto p-6">
-        <CatalogNodeMetaPanel
-          node={node}
-          allNodes={allNodes}
-          readOnly={readOnly}
-          onDeleted={onDeleted}
-        />
+        <CatalogNodeMetaPanel node={node} allNodes={allNodes} readOnly={readOnly} />
         {!readOnly ? (
           <div className="flex flex-wrap gap-2">
             <Button type="button" variant="outline" disabled={isCreating} onClick={() => onCreate("folder")}>

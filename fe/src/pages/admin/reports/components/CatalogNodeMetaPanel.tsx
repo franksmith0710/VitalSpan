@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FolderInput, Pencil, Trash2 } from "lucide-react";
+import { FolderInput, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,16 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { mapApiError } from "@/lib/apiError";
 import {
   buildCatalogMoveTargets,
@@ -34,20 +24,17 @@ export function CatalogNodeMetaPanel({
   allNodes,
   readOnly,
   onRenamed,
-  onDeleted,
   onMoved,
 }: {
   node: CatalogNode;
   allNodes: ReportCatalogNode[];
   readOnly: boolean;
   onRenamed?: () => void;
-  onDeleted?: () => void;
   onMoved?: () => void;
 }) {
   const [name, setName] = useState(node.name);
   const [moveTarget, setMoveTarget] = useState<string>("__keep__");
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const { updateNode, deleteNode, moveNode } = useReportTemplates(null);
+  const { updateNode, moveNode } = useReportTemplates(null);
   const moveTargets = buildCatalogMoveTargets(node.id, allNodes);
   const parentPath = node.parentId
     ? catalogNodePath(
@@ -59,7 +46,6 @@ export function CatalogNodeMetaPanel({
   useEffect(() => {
     setName(node.name);
     setMoveTarget("__keep__");
-    setDeleteOpen(false);
   }, [node.id, node.name]);
 
   if (readOnly) {
@@ -87,17 +73,6 @@ export function CatalogNodeMetaPanel({
     );
   };
 
-  const handleDelete = () => {
-    deleteNode.mutate(node.id, {
-      onSuccess: () => {
-        toast.success("已删除");
-        setDeleteOpen(false);
-        onDeleted?.();
-      },
-      onError: (err) => toast.error(mapApiError(err)),
-    });
-  };
-
   const handleMove = () => {
     if (moveTarget === "__keep__") return;
     const parentId = moveTarget === "__root__" ? null : moveTarget;
@@ -115,45 +90,19 @@ export function CatalogNodeMetaPanel({
   };
 
   return (
-    <>
-      <TemplateTabSections
-        node={node}
-        name={name}
-        setName={setName}
-        parentPath={parentPath}
-        moveTarget={moveTarget}
-        setMoveTarget={setMoveTarget}
-        moveTargets={moveTargets}
-        updatePending={updateNode.isPending}
-        movePending={moveNode.isPending}
-        deletePending={deleteNode.isPending}
-        onRename={handleRename}
-        onMove={handleMove}
-        onDelete={() => setDeleteOpen(true)}
-      />
-
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>确认删除？</AlertDialogTitle>
-            <AlertDialogDescription>
-              确定删除「{node.name}」？
-              {node.nodeType === "folder" ? "（须为空文件夹）" : ""}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteNode.isPending}>取消</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={deleteNode.isPending}
-              className="bg-error-500 text-white hover:bg-error-600 dark:bg-error-500 dark:hover:bg-error-600"
-              onClick={handleDelete}
-            >
-              删除
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+    <TemplateTabSections
+      node={node}
+      name={name}
+      setName={setName}
+      parentPath={parentPath}
+      moveTarget={moveTarget}
+      setMoveTarget={setMoveTarget}
+      moveTargets={moveTargets}
+      updatePending={updateNode.isPending}
+      movePending={moveNode.isPending}
+      onRename={handleRename}
+      onMove={handleMove}
+    />
   );
 }
 
@@ -167,10 +116,8 @@ function TemplateTabSections({
   moveTargets,
   updatePending,
   movePending,
-  deletePending,
   onRename,
   onMove,
-  onDelete,
 }: {
   node: CatalogNode;
   name: string;
@@ -181,10 +128,8 @@ function TemplateTabSections({
   moveTargets: Array<{ id: string | null; label: string }>;
   updatePending: boolean;
   movePending: boolean;
-  deletePending: boolean;
   onRename: () => void;
   onMove: () => void;
-  onDelete: () => void;
 }) {
   return (
     <>
@@ -257,23 +202,6 @@ function TemplateTabSections({
           </div>
         </TemplatePanelSection>
       ) : null}
-
-      <TemplatePanelSection
-        title="危险操作"
-        description="删除后不可恢复，文件夹须为空方可删除。"
-        icon={Trash2}
-        footer={
-          <Button
-            type="button"
-            variant="destructive"
-            disabled={deletePending}
-            onClick={onDelete}
-          >
-            <Trash2 className="size-4" aria-hidden />
-            删除{node.nodeType === "folder" ? "文件夹" : "模板"}
-          </Button>
-        }
-      />
     </>
   );
 }

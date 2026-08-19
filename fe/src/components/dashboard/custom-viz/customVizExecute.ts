@@ -41,6 +41,9 @@ export function resolveCustomVizStyle(
   return { ...(manifestDefault ?? {}), ...(overrides ?? {}) };
 }
 
+/** @deprecated 使用 resolveCustomVizRuntimeStyle */
+export { resolveCustomVizRuntimeStyle } from "./customVizDisplayStyle";
+
 /** 大屏实例上的 customVizConfig 覆盖组件库 payload（编辑态 Dataset/字段绑定）。 */
 export function applyCustomVizEditOverlay(
   resolved: CustomVizWidgetConfig,
@@ -53,6 +56,7 @@ export function applyCustomVizEditOverlay(
     return {
       ...resolved,
       style: { ...(resolved.style ?? {}), ...(local.style ?? {}) },
+      displayStyle: { ...(resolved.displayStyle ?? {}), ...(local.displayStyle ?? {}) },
       widgetStyle: { ...(resolved.widgetStyle ?? {}), ...(local.widgetStyle ?? {}) },
     };
   }
@@ -60,6 +64,7 @@ export function applyCustomVizEditOverlay(
     ...resolved,
     artifactId: local.artifactId?.trim() ? local.artifactId : resolved.artifactId,
     style: { ...(resolved.style ?? {}), ...(local.style ?? {}) },
+    displayStyle: { ...(resolved.displayStyle ?? {}), ...(local.displayStyle ?? {}) },
     widgetStyle: { ...(resolved.widgetStyle ?? {}), ...(local.widgetStyle ?? {}) },
     dataBinding: mergeCustomVizDataBinding(resolvedBinding, localBinding),
   };

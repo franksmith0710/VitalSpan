@@ -139,7 +139,7 @@ describe("report templates smoke", () => {
     render(
       <QueryClientProvider client={qc}>
         <TooltipProvider delayDuration={0}>
-          <MemoryRouter initialEntries={[`/admin/reports/templates/${NODE_ID}`]}>
+          <MemoryRouter initialEntries={[`/admin/reports/templates?node=${NODE_ID}`]}>
             <ReportTemplatesPage />
           </MemoryRouter>
         </TooltipProvider>
@@ -157,7 +157,7 @@ describe("report templates smoke", () => {
     render(
       <QueryClientProvider client={qc}>
         <TooltipProvider delayDuration={0}>
-          <MemoryRouter initialEntries={[`/admin/reports/templates/${NODE_ID}`]}>
+          <MemoryRouter initialEntries={[`/admin/reports/templates?node=${NODE_ID}`]}>
             <ReportTemplatesPage />
           </MemoryRouter>
         </TooltipProvider>
@@ -261,7 +261,7 @@ describe("report templates smoke", () => {
     render(
       <QueryClientProvider client={qc}>
         <TooltipProvider delayDuration={0}>
-          <MemoryRouter initialEntries={[`/admin/reports/templates/${NODE_ID}`]}>
+          <MemoryRouter initialEntries={[`/admin/reports/templates?node=${NODE_ID}`]}>
             <ReportTemplatesPage />
           </MemoryRouter>
         </TooltipProvider>
@@ -303,7 +303,7 @@ describe("report templates smoke", () => {
     render(
       <QueryClientProvider client={qc}>
         <TooltipProvider delayDuration={0}>
-          <MemoryRouter initialEntries={[`/admin/reports/templates/${NODE_ID}`]}>
+          <MemoryRouter initialEntries={[`/admin/reports/templates?node=${NODE_ID}`]}>
             <ReportTemplatesPage />
           </MemoryRouter>
         </TooltipProvider>

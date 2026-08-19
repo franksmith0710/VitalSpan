@@ -15,7 +15,7 @@ describe("reportCenterNav", () => {
 
   it("resolves recent view hrefs", () => {
     expect(resolveCenterRecentHref({ resourceType: "template", resourceId: "tpl-1" })).toBe(
-      "/admin/reports/templates/tpl-1",
+      "/admin/reports/templates?node=tpl-1",
     );
     expect(resolveCenterRecentHref({ resourceType: "standard", resourceId: "k1" })).toBe(
       "/admin/reports/standard/results?pack=k1",

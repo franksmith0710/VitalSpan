@@ -1,4 +1,5 @@
 import { dataScreenEditPath } from "@/lib/dataScreenLayout";
+import { reportTemplatePath } from "@/pages/admin/reports/components/reportTemplateUi";
 import type { ReportScheduleRow } from "@/pages/admin/reports/useReportSchedules";
 
 export function localizeSourceType(sourceType?: string): string {
@@ -28,7 +29,7 @@ export function scheduleSourceHref(schedule: Pick<ReportScheduleRow, "sourceType
   if (schedule.sourceType === "dashboard") {
     return `/admin/dashboards/${id}/edit`;
   }
-  return `/admin/reports/templates/${id}`;
+  return reportTemplatePath(id);
 }
 
 const ROLE_LABELS: Record<string, string> = {

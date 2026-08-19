@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mountCustomVizHtml } from "./customVizHost";
+import { customVizHostStyle, mountCustomVizHtml } from "./customVizHost";
 import {
   CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
   injectCustomVizPayload,
@@ -64,5 +64,27 @@ describe("mountCustomVizHtml", () => {
     expect(b.querySelector("#mark")?.textContent).toBe("function");
     a.remove();
     b.remove();
+  });
+});
+
+describe("customVizHostStyle", () => {
+  it("uses transparent background and dashboard font family", () => {
+    const style = customVizHostStyle({
+      colorScheme: "dark",
+      fontFamily: "Georgia, serif",
+      paletteColors: ["#112233", "#445566"],
+    });
+
+    expect(style.background).toBe("transparent");
+    expect(style.fontFamily).toBe("Georgia, serif");
+    expect((style as Record<string, string>)["--dashboard-font-family"]).toBe("Georgia, serif");
+    expect((style as Record<string, string>)["--vs-palette-0"]).toBe("#112233");
+    expect((style as Record<string, string>)["--vs-d3-accent"]).toBe("#112233");
+  });
+
+  it("inherits font when dashboard font is unset", () => {
+    const style = customVizHostStyle({ colorScheme: "light" });
+    expect(style.fontFamily).toBe("inherit");
+    expect((style as Record<string, string>)["--dashboard-font-family"]).toBeUndefined();
   });
 });

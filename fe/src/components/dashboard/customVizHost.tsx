@@ -1,6 +1,8 @@
 import { Component, type CSSProperties, type ErrorInfo, type ReactNode } from "react";
 import type { DashboardStyleConfig } from "./dashboardStyleConfig";
 import { getDashboardThemeTokens, themeTokensToScopeVars } from "./dashboardThemeTokens";
+import { resolveCustomVizEffectivePaletteColors } from "./custom-viz/customVizDisplayStyle";
+import type { CustomVizWidgetConfig } from "./layoutUtils";
 import { attachCustomVizRuntime } from "./custom-viz/customVizRuntime";
 
 export const CUSTOM_VIZ_HOST_CLASS = "vs-custom-viz-host";
@@ -99,22 +101,28 @@ export function mountCustomVizHtml(host: HTMLElement, html: string): () => void 
   };
 }
 
-export function customVizHostStyle(dashboardStyle?: DashboardStyleConfig): CSSProperties {
+export function customVizHostStyle(
+  dashboardStyle?: DashboardStyleConfig,
+  config?: CustomVizWidgetConfig,
+): CSSProperties {
   const scheme = dashboardStyle?.colorScheme ?? "light";
   const vars = themeTokensToScopeVars(getDashboardThemeTokens(scheme));
-  const palette = dashboardStyle?.paletteColors ?? [];
+  const palette = resolveCustomVizEffectivePaletteColors(config, dashboardStyle);
+  const fontFamily = dashboardStyle?.fontFamily?.trim();
   const next: Record<string, string> = { ...vars };
   palette.forEach((color, index) => {
     next[`--vs-palette-${index}`] = color;
   });
   if (palette[0]) next["--vs-d3-accent"] = palette[0];
+  if (fontFamily) next["--dashboard-font-family"] = fontFamily;
   return {
     ...next,
     height: "100%",
     minHeight: 64,
     overflow: "hidden",
     color: vars["--dashboard-text-primary"],
-    background: vars["--dashboard-widget-surface"],
+    background: "transparent",
+    fontFamily: fontFamily || "inherit",
   } as CSSProperties;
 }
 

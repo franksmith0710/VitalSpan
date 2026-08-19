@@ -1,4 +1,5 @@
 import { STANDARD_RESULTS_PATH, STANDARD_SETUP_PATH, standardAnalysisPath } from "@/pages/admin/reports/standardRoutes";
+import { reportTemplatePath } from "@/pages/admin/reports/components/reportTemplateUi";
 import { resolveActiveNavPath } from "@/lib/nav-active";
 
 export const REPORT_CENTER_NAV_PATH = "/admin/reports/center";
@@ -73,7 +74,7 @@ export function resolveCenterRecentHref(item: {
 }): string {
   switch (item.resourceType) {
     case "template":
-      return `/admin/reports/templates/${item.resourceId}`;
+      return reportTemplatePath(item.resourceId);
     case "standard":
       return standardAnalysisPath(item.resourceId);
     case "schedule":

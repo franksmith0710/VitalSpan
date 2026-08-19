@@ -176,7 +176,7 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
     (nested ? { w: widget.colSpan, h: widget.rowSpan } : undefined);
   const filterParameters = useMemo(
     () =>
-      widget.type === "chart"
+      widget.type === "chart" || widget.type === "customViz"
         ? buildWidgetFilterParams(widget.id, linkage, filterValues, chartLinkage)
         : undefined,
     [widget.id, widget.type, linkage, filterValues, chartLinkage],

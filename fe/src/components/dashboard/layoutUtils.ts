@@ -3,7 +3,7 @@ import { randomId } from "@/lib/randomId";
 import { migrateChartViewConfig } from "@/lib/migrateChartTypes";
 import { resolveChartWidgetTitle } from "@/lib/chartTypeDisplayNames";
 import { chartInspectorCapabilities } from "@/lib/chartInspectorCapabilities";
-import { DEFAULT_CHART_LEGEND_STYLE, readChartDeStyle } from "@/lib/chartDeStyle";
+import { DEFAULT_CHART_LEGEND_STYLE, readChartDeStyle, type ChartDeStyle } from "@/lib/chartDeStyle";
 import { DEFAULT_TABLE_COLUMN_WIDTH_MODE } from "@/lib/chartDeTableStyle";
 import { isTableLikeChartType } from "@/lib/chartTableInspector";
 import { DEFAULT_MAP_3D_CHART_DE_STYLE } from "@/lib/defaultMap3dChartDeStyle";
@@ -103,10 +103,28 @@ export type CustomVizDataBinding = {
   resultLimit?: string;
 };
 
+/** L3 平台通用样式（对标内置 chart 样式 Tab 六块） */
+export type CustomVizDisplayStyle = Pick<
+  ChartDeStyle,
+  | "paletteId"
+  | "paletteColors"
+  | "paletteOpacity"
+  | "seriesGradient"
+  | "title"
+  | "remark"
+  | "label"
+  | "tooltip"
+  | "background"
+  | "border"
+>;
+
 export type CustomVizWidgetConfig = {
   artifactId: string;
   dataBinding?: CustomVizDataBinding;
+  /** manifest styleSchema 扩展项（组件专属） */
   style?: Record<string, unknown>;
+  /** 平台通用六块：背景/配色/标题/备注/标签/提示 */
+  displayStyle?: CustomVizDisplayStyle;
   widgetStyle?: WidgetStyleConfig;
 };
 

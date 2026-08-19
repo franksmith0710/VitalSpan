@@ -1626,6 +1626,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 <CustomVizEditRail
                   key={primarySelectedId ?? selectedWidget.id}
                   className="min-h-0 flex-1"
+                  dashboardStyle={styleConfig}
                   widget={
                     inspectorWidget as typeof inspectorWidget & {
                       customVizConfig: CustomVizWidgetConfig;

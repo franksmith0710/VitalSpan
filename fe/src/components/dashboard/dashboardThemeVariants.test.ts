@@ -401,4 +401,32 @@ describe("dashboardThemeVariants", () => {
         : undefined;
     expect(tableStyle).toEqual({ columnWidthMode: "auto" });
   });
+
+  it("resetDashboardColorsToActiveThemeBundle strips customViz widgetStyle background overrides", () => {
+    const bundle = resetDashboardColorsToActiveThemeBundle(
+      { colorScheme: "light" },
+      [
+        {
+          id: "w-cv",
+          type: "customViz",
+          title: "外部组件",
+          colSpan: 6,
+          rowSpan: 4,
+          order: 0,
+          customVizConfig: {
+            artifactId: "550e8400-e29b-41d4-a716-446655440000",
+            widgetStyle: {
+              background: "#ff0000",
+              opacity: 0.5,
+              borderColor: "#111111",
+            },
+          },
+        },
+      ],
+    );
+
+    expect(bundle.widgets[0].type).toBe("customViz");
+    if (bundle.widgets[0].type !== "customViz") return;
+    expect(bundle.widgets[0].customVizConfig?.widgetStyle).toBeUndefined();
+  });
 });

@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { fetchAiVizArtifactMeta } from "@/lib/aiVizArtifacts";
 import { queryKeys } from "@/lib/queryKeys";
-import type { LayoutWidget, CustomVizWidgetConfig } from "../layoutUtils";
+import type { LayoutWidget, CustomVizWidgetConfig, DashboardStyleConfig } from "../layoutUtils";
 import { DatasetPickerPanel } from "../DatasetPickerPanel";
 import { FieldBankPlaceholder } from "../DatasetFieldBank";
 import { WidgetEditRailLayout } from "../WidgetEditRailLayout";
@@ -18,14 +18,17 @@ export type CustomVizEditRailProps = {
   onTitleChange?: (title: string) => void;
   onDelete?: () => void;
   onDataRefresh?: () => void;
+  dashboardStyle?: DashboardStyleConfig;
   className?: string;
 };
 
 export function CustomVizEditRail({
   widget,
   onChange,
+  onTitleChange,
   onDelete,
   onDataRefresh,
+  dashboardStyle,
   className,
 }: CustomVizEditRailProps) {
   const artifactId = widget.customVizConfig.artifactId?.trim();
@@ -84,6 +87,8 @@ export function CustomVizEditRail({
           onChange={emitChange}
           onDelete={onDelete}
           onDataRefresh={onDataRefresh}
+          onTitleChange={onTitleChange}
+          dashboardStyle={dashboardStyle}
           className="border-r border-gray-200 dark:border-gray-800"
         />
       }

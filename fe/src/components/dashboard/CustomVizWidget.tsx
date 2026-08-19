@@ -16,9 +16,11 @@ import {
 import {
   customVizBindingToChartConfig,
   isCustomVizExecuteReady,
-  resolveCustomVizStyle,
 } from "./custom-viz/customVizExecute";
+import { resolveCustomVizRuntimeStyle } from "./custom-viz/customVizDisplayStyle";
 import { buildCustomVizRuntimePayload, injectCustomVizPayload } from "./custom-viz/customVizPayload";
+import { resolveDashboardChrome } from "./dashboardChromeConfig";
+import { Skeleton } from "@/components/ui/skeleton";
 import { gridWidgetShellClassName, GridWidgetShellFrame, resolveGridWidgetShell } from "./widgetRailStyleSections";
 
 async function loadCustomVizArtifact(artifactId: string): Promise<{
@@ -84,7 +86,9 @@ export function CustomVizWidget({
   const showGridChrome = shell === "grid";
   const gridShell = resolveGridWidgetShell(widget, dashboardStyle);
   const inShapeShell = shell === "shape";
-  const hostStyle = customVizHostStyle(dashboardStyle);
+  const hostStyle = customVizHostStyle(dashboardStyle, cfg);
+  const chrome = resolveDashboardChrome(dashboardStyle);
+  const showEditToolbar = showGridChrome && mode === "edit" && chrome.showChartActionButtons;
 
   const chartCfg = customVizBindingToChartConfig(cfg.dataBinding);
   const executeReady = isCustomVizExecuteReady(cfg.dataBinding);
@@ -95,6 +99,8 @@ export function CustomVizWidget({
     executeKey,
     limit: queryLimit,
   });
+  const showDataLoadingHint =
+    executeReady && loading && columns.length === 0 && rows.length === 0 && chrome.showChartLoadingHint;
 
   useEffect(() => {
     let cancelled = false;
@@ -145,7 +151,10 @@ export function CustomVizWidget({
   useEffect(() => {
     const host = hostRef.current;
     if (!host || !html) return;
-    const style = resolveCustomVizStyle(manifestDefaultStyle, cfg.style);
+    const style = resolveCustomVizRuntimeStyle({
+      manifestDefault: manifestDefaultStyle,
+      config: cfg,
+    });
     injectCustomVizPayload(
       host,
       buildCustomVizRuntimePayload({
@@ -165,6 +174,7 @@ export function CustomVizWidget({
     executeError,
     executeReady,
     cfg.style,
+    cfg.displayStyle,
     manifestDefaultStyle,
   ]);
 
@@ -177,12 +187,22 @@ export function CustomVizWidget({
     </div>
   ) : html ? (
     <CustomVizHostErrorBoundary>
-      <div
-        ref={hostRef}
-        data-testid="custom-viz-host"
-        className={`${CUSTOM_VIZ_HOST_CLASS} size-full min-h-[64px]`}
-        style={hostStyle}
-      />
+      <div className="relative size-full min-h-[64px]">
+        {showDataLoadingHint ? (
+          <Skeleton
+            className="absolute inset-0 rounded-lg"
+            aria-busy="true"
+            aria-label="图表加载中"
+            data-testid="custom-viz-data-loading"
+          />
+        ) : null}
+        <div
+          ref={hostRef}
+          data-testid="custom-viz-host"
+          className={`${CUSTOM_VIZ_HOST_CLASS} size-full min-h-[64px]`}
+          style={hostStyle}
+        />
+      </div>
     </CustomVizHostErrorBoundary>
   ) : (
     <div className="flex h-full min-h-[64px] items-center justify-center text-theme-xs text-gray-500 dark:text-gray-400">
@@ -204,7 +224,7 @@ export function CustomVizWidget({
       widgetId={widget.id}
       className={gridWidgetShellClassName(showGridChrome, selected)}
     >
-      {showGridChrome && mode === "edit" ? (
+      {showEditToolbar ? (
         <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 bg-gray-50/90 px-2 py-1.5 dark:border-gray-800 dark:bg-white/[0.04]">
           <div
             className="dashboard-drag-handle flex shrink-0 cursor-grab items-center active:cursor-grabbing"

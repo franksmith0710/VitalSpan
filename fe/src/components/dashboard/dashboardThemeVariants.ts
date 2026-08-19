@@ -741,6 +741,15 @@ function stripLayoutWidgetColorOverrides(widget: LayoutWidget): LayoutWidget {
     return changed ? { ...widget, tabsConfig } : widget;
   }
 
+  if (widget.type === "customViz" && widget.customVizConfig) {
+    const widgetStyle = stripWidgetStyleBackgroundOverrides(widget.customVizConfig.widgetStyle);
+    if (widgetStyle === widget.customVizConfig.widgetStyle) return widget;
+    return {
+      ...widget,
+      customVizConfig: { ...widget.customVizConfig, widgetStyle },
+    };
+  }
+
   return widget;
 }
 

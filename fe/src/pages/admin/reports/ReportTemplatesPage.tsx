@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import { FileText, FolderOpen, MousePointerClick } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/auth-context";
@@ -28,7 +28,7 @@ import { queryKeys } from "@/lib/queryKeys";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { ReportCenterBackLink } from "./components/ReportCenterBackLink";
 import { ReportTemplateHeaderActions } from "./components/ReportTemplateHeaderActions";
-import { REPORT_TEMPLATE_WORKBENCH_GRID_CLASS } from "./components/reportTemplateUi";
+import { REPORT_TEMPLATE_WORKBENCH_GRID_CLASS, TEMPLATE_NODE_QUERY } from "./components/reportTemplateUi";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,20 +41,22 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export function ReportTemplatesPage() {
-  const { nodeId } = useParams();
+  const { nodeId: legacyNodeId } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const [selectedId, setSelectedId] = useState<string | null>(nodeId ?? null);
   const [selectedOverride, setSelectedOverride] = useState<CatalogNode | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const { nodesQuery, createNode, createTemplateNode, deleteNode, moveNode } = useReportTemplates(null);
   const allNodesQuery = useAllCatalogNodes();
   const centerPrefsQuery = useReportCenterPreferences();
   const autoSelectedRef = useRef(false);
+  const prefetchedCatalogKeyRef = useRef("");
   const readOnly = user?.roles?.length === 1 && user.roles[0] === "viewer";
   const nodes = nodesQuery.data?.items ?? [];
   const allNodes = allNodesQuery.data ?? [];
+  const selectedId = searchParams.get(TEMPLATE_NODE_QUERY) ?? legacyNodeId ?? null;
   const selected = useMemo(() => {
     if (selectedOverride?.id === selectedId) return selectedOverride;
     return allNodes.find((n) => n.id === selectedId) ?? nodes.find((n) => n.id === selectedId) ?? null;
@@ -81,27 +83,50 @@ export function ReportTemplatesPage() {
     [queryClient],
   );
 
-  const handleSelect = useCallback(
-    (id: string | null) => {
-      if (id === selectedId) return;
+  const applyNodeSelection = useCallback(
+    (id: string | null, override?: CatalogNode | null) => {
+      if (id === selectedId && override === undefined) return;
       if (id) prefetchExtension(id);
-      setSelectedId(id);
-      setSelectedOverride(null);
-      if (id) {
-        if (nodeId !== id) {
-          navigate(`/admin/reports/templates/${id}`, { replace: true, preventScrollReset: true });
-        }
-      } else if (nodeId) {
-        navigate("/admin/reports/templates", { replace: true, preventScrollReset: true });
-      }
+      if (override !== undefined) setSelectedOverride(override);
+      else if (id !== selectedOverride?.id) setSelectedOverride(null);
+      const next = new URLSearchParams(searchParams);
+      if (id) next.set(TEMPLATE_NODE_QUERY, id);
+      else next.delete(TEMPLATE_NODE_QUERY);
+      setSearchParams(next, { replace: true });
     },
-    [navigate, nodeId, prefetchExtension, selectedId],
+    [prefetchExtension, searchParams, selectedId, selectedOverride?.id, setSearchParams],
   );
 
+  const handleSelect = useCallback(
+    (id: string | null) => {
+      applyNodeSelection(id);
+    },
+    [applyNodeSelection],
+  );
+
+  const legacyMigratedRef = useRef(false);
+
   useEffect(() => {
-    if (nodeId) {
+    if (!legacyNodeId || legacyMigratedRef.current) return;
+    legacyMigratedRef.current = true;
+    const next = new URLSearchParams(searchParams);
+    next.set(TEMPLATE_NODE_QUERY, legacyNodeId);
+    navigate({ pathname: "/admin/reports/templates", search: next.toString() }, { replace: true });
+  }, [legacyNodeId, navigate, searchParams]);
+
+  useEffect(() => {
+    const catalog = allNodes.length > 0 ? allNodes : nodes;
+    const catalogKey = catalog.map((n) => n.id).join(",");
+    if (!catalogKey || catalogKey === prefetchedCatalogKeyRef.current) return;
+    prefetchedCatalogKeyRef.current = catalogKey;
+    for (const node of catalog) {
+      if (node.nodeType === "template") prefetchExtension(node.id);
+    }
+  }, [allNodes, nodes, prefetchExtension]);
+
+  useEffect(() => {
+    if (selectedId) {
       autoSelectedRef.current = true;
-      setSelectedId(nodeId);
       return;
     }
     if (autoSelectedRef.current) return;
@@ -113,16 +138,16 @@ export function ReportTemplatesPage() {
     const defaultId = pickDefaultCatalogNodeId(catalog, centerPrefsQuery.data?.recent ?? []);
     if (!defaultId) return;
     autoSelectedRef.current = true;
-    handleSelect(defaultId);
+    applyNodeSelection(defaultId);
   }, [
-    nodeId,
+    selectedId,
     nodesQuery.isLoading,
     allNodesQuery.isLoading,
     allNodes,
     nodes,
     centerPrefsQuery.isFetched,
     centerPrefsQuery.data,
-    handleSelect,
+    applyNodeSelection,
   ]);
 
   const selectAfterDelete = useCallback(
@@ -142,8 +167,7 @@ export function ReportTemplatesPage() {
       },
       {
         onSuccess: (created) => {
-          setSelectedOverride(created);
-          handleSelect(created.id);
+          applyNodeSelection(created.id, created);
           toast.success(parentId ? "已在文件夹内创建" : "已在根目录创建");
         },
         onError: (err) => toast.error(mapApiError(err)),
@@ -156,8 +180,7 @@ export function ReportTemplatesPage() {
       { name: "新建模板", parentId, templateKind },
       {
         onSuccess: (created) => {
-          setSelectedOverride(created);
-          handleSelect(created.id);
+          applyNodeSelection(created.id, created);
           toast.success(parentId ? "模板已创建到当前文件夹" : "模板已创建到根目录");
         },
         onError: (err) => toast.error(mapApiError(err)),
@@ -260,7 +283,7 @@ export function ReportTemplatesPage() {
 
   const catalog = allNodes.length > 0 ? allNodes : nodes;
   const pendingAutoSelect =
-    !nodeId &&
+    !selectedId &&
     !autoSelectedRef.current &&
     catalog.length > 0 &&
     (nodesQuery.isLoading || allNodesQuery.isLoading || !centerPrefsQuery.isFetched);
