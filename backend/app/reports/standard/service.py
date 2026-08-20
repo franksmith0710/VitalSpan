@@ -34,6 +34,7 @@ from app.reports.standard.schemas import (
 )
 from app.reports.standard.capabilities import evaluate_capabilities
 from app.reports.persistence import standard_repo
+from app.reports import label_translation
 
 
 def _assert_read_access(user: UserContext, allowed_roles: list[str]) -> None:
@@ -232,6 +233,9 @@ def run_pack(db: Session, key: str, payload: RunIn, user: UserContext) -> RunOut
         "parameters": payload.parameters,
         "meta": agg_meta,
     }
+    render_spec = label_translation.translate_standard_render_spec(
+        db, render_spec, payload.theme, pack.field_mapping,
+    )
     return RunOut(
         packKey=pack.pack_key,
         theme=payload.theme,

@@ -2,7 +2,15 @@
 
 from __future__ import annotations
 
-from app.reports.persistence import standard_repo
+import pytest
+
+from app.reports.persistence import memory_stores, standard_repo
+
+
+@pytest.fixture(autouse=True)
+def _memory_standard_store(monkeypatch: pytest.MonkeyPatch) -> None:
+    memory_stores.clear_all()
+    monkeypatch.setattr(standard_repo, "_use_db", lambda: False)
 
 
 def test_snapshot_retention_prunes_old_periods() -> None:

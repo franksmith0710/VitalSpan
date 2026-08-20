@@ -35,12 +35,17 @@ export function ChartGisMapProjectPanel() {
   const project = readGisProject(cfg);
   const view = project.view ?? { center: [104, 35] as [number, number], zoom: 3.2 };
   const useGlobalPmtiles = project.basemap === "pmtiles";
-  const { data: tileServices = [] } = useQuery({
+  const {
+    data: tileServices = [],
+    isError: tileServicesError,
+    isLoading: tileServicesLoading,
+  } = useQuery({
     queryKey: ["tile-services"],
     queryFn: listTileServices,
-    enabled: useGlobalPmtiles,
     retry: false,
   });
+
+  const enabledTileServices = tileServices.filter((service) => service.enabled);
 
   const patchProject = (patch: Parameters<typeof writeGisProject>[1]) => {
     onChange(writeGisProject(cfg, patch));
@@ -104,7 +109,11 @@ export function ChartGisMapProjectPanel() {
           checked={useGlobalPmtiles}
           onCheckedChange={(enabled) => {
             if (enabled) {
-              patchProject({ basemap: "pmtiles", tileServiceId: project.tileServiceId });
+              const defaultServiceId =
+                project.tileServiceId ??
+                enabledTileServices[0]?.id ??
+                tileServices[0]?.id;
+              patchProject({ basemap: "pmtiles", tileServiceId: defaultServiceId });
             } else {
               patchProject({ basemap: offlineBasemap, tileServiceId: undefined, projection: "mercator" });
             }
@@ -122,16 +131,26 @@ export function ChartGisMapProjectPanel() {
                 <SelectValue placeholder="选择已登记的全球底图服务" />
               </SelectTrigger>
               <SelectContent>
-                {tileServices.map((service) => (
+                {enabledTileServices.map((service) => (
                   <SelectItem key={service.id} value={service.id}>
                     {service.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {tileServices.length === 0 ? (
+            {tileServicesLoading ? (
+              <p className="text-theme-xs text-gray-500">正在加载已登记的 PMTiles 服务…</p>
+            ) : tileServicesError ? (
+              <p className="text-theme-xs text-amber-600 dark:text-amber-400">
+                无法加载 PMTiles 服务列表，请确认已登录且后端可用。
+              </p>
+            ) : enabledTileServices.length === 0 ? (
               <p className="text-theme-xs text-amber-600 dark:text-amber-400">
                 尚未登记 PMTiles 外部服务。请联系管理员部署并登记 tileServiceId；未部署时保持关闭即可继续使用离线底图。
+              </p>
+            ) : !project.tileServiceId ? (
+              <p className="text-theme-xs text-amber-600 dark:text-amber-400">
+                请选择已登记的全球底图服务。
               </p>
             ) : null}
 

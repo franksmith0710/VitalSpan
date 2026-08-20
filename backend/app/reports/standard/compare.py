@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext
 from app.reports.persistence import standard_repo
+from app.reports import label_translation
 from app.reports.standard.errors import RPT_STD_SNAPSHOT_NOT_FOUND, StandardAnalysisError
 from app.reports.standard.schemas import CompareDeltaRow, CompareMatrixOut, CompareMatrixRow, CompareOut, RunIn
 from app.reports.standard import service as pack_service
@@ -47,7 +48,24 @@ def _section_payload_from_run(run_out) -> dict:
     return {"columns": first.get("columns") or [], "rows": first.get("rows") or []}
 
 
+def _translate_payload(
+    db: Session,
+    pack,
+    theme: str,
+    payload: dict | None,
+) -> dict | None:
+    if not payload:
+        return payload
+    bindings = label_translation.standard_analysis_bindings(theme, pack.field_mapping)
+    if not bindings:
+        return payload
+    translated, _meta = label_translation.translate_table_payload(db, payload, bindings)
+    return translated
+
+
 def _snapshot_payload(
+    db: Session,
+    pack,
     pack_key: str,
     theme: str,
     period_kind: str,
@@ -64,7 +82,8 @@ def _snapshot_payload(
                 404,
             )
         return None
-    return raw.get("payload")
+    payload = raw.get("payload")
+    return _translate_payload(db, pack, theme, payload)
 
 
 def _build_deltas(current_map: dict[str, float], previous_map: dict[str, float]) -> list[CompareDeltaRow]:
@@ -96,12 +115,15 @@ def _resolve_period_maps(
     user: UserContext,
 ) -> dict[str, dict[str, float]]:
     maps: dict[str, dict[str, float]] = {}
+    pack = pack_service.get_pack(pack_key, user)
     for period_key in period_keys:
         if period_key == live_period_key:
             run_out = pack_service.run_pack(db, pack_key, RunIn(theme=theme), user)
             maps[period_key] = _rows_to_map(_section_payload_from_run(run_out))
             continue
-        payload = _snapshot_payload(pack_key, theme, period_kind, period_key, required=False)
+        payload = _snapshot_payload(
+            db, pack, pack_key, theme, period_kind, period_key, required=False,
+        )
         maps[period_key] = _rows_to_map(payload) if payload else {}
     return maps
 
@@ -124,7 +146,7 @@ def compare_pack(
     if current_period_key:
         current_key = current_period_key
         current_payload = _snapshot_payload(
-            pack_key, theme, period_kind, current_key, required=True,
+            db, pack, pack_key, theme, period_kind, current_key, required=True,
         )
         current_source = "snapshot"
     else:
@@ -141,7 +163,7 @@ def compare_pack(
         baseline_key = pack_service.previous_period_key(period_kind, live_period_key)
 
     previous_payload = (
-        _snapshot_payload(pack_key, theme, period_kind, baseline_key, required=False)
+        _snapshot_payload(db, pack, pack_key, theme, period_kind, baseline_key, required=False)
         if baseline_key
         else None
     )

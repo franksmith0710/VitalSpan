@@ -123,8 +123,9 @@ def run_template(template_id: uuid.UUID, payload: RenderRunIn, actor: UserContex
 
     query_meta: QueryMeta | None = None
     if ext is not None and _extension_has_executable_metrics(ext):
+        translation_meta: dict[str, Any] = {}
         with Session(bind=get_meta_engine()) as db:
-            sections, elapsed = engine_execute.build_sections_from_extension(
+            sections, elapsed, translation_meta = engine_execute.build_sections_from_extension(
                 db, actor, ext, parameters, fallback_data_source_id=ds_id,
             )
         if node.template_key:
@@ -138,6 +139,7 @@ def run_template(template_id: uuid.UUID, payload: RenderRunIn, actor: UserContex
             sections=sections,
             parameters=parameters,
             renderedAt=datetime.now(UTC),
+            meta=translation_meta or None,
         )
         query_meta = QueryMeta(sectionCount=len(sections), elapsedMs=round(elapsed, 2))
     elif has_extension and ext is not None and _extension_needs_datasource(ext):

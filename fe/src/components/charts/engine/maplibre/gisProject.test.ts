@@ -69,4 +69,13 @@ describe("gisProject", () => {
       ),
     ).toBe("pmtiles");
   });
+
+  it("keeps pmtiles mode before tileServiceId is chosen", () => {
+    const config: ChartViewConfig = {
+      chartType: "gis-map",
+      nativeBody: { gisProject: { basemap: "pmtiles" } },
+    };
+    expect(readGisProject(config).basemap).toBe("pmtiles");
+    expect(readGisProject(config).tileServiceId).toBeUndefined();
+  });
 });

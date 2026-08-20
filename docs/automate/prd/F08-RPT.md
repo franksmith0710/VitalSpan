@@ -13,13 +13,13 @@
   - [x] companion engine run ACL + parameter guard + perf probe（r66：`set_user_engine_scope` + `RPT_ENGINE_FORBIDDEN` 403；`__proto__` parameter 422；`probe_run_template_budget_ms` ≤50ms）
   - [x] M3-LITE 绑定执行链（r233：`engine/execute.py` + `build_sections_from_extension` → `execute_query`；`dataSourceId` 必填 `RPT_ENGINE_DATASOURCE_REQUIRED`；无 dataSourceId placeholder 回归 r60）
   - [x] PDF/Word 真实渲染（companion r-e95d：`reports_export` catalog 模板链 + mock bytes 下载；`exportHook.placeholder=false`；`ReportExportCard` FE 下载）
-  - [ ] **M-RPT F-C**：给定列/块绑定维度字典字段，当模板 run 或 export PDF/Excel，则展示/导出值为翻译后 label；`GET /dimensions/resolve` 失败时保留裸码并旁注「未翻译」，不得静默冒充成功（A + C）
-  - [ ] **M-RPT F-C**：模板 Web 展现（`format=web`）码值翻译与导出一致，共用 resolve 链（A）
-  - [ ] **M-RPT F-C**：未绑定字典字段的列保持原值；绑定字段变更后 rerun 即时刷新翻译（F 配置）
+  - [x] **M-RPT F-C**：给定列/块绑定维度字典字段，当模板 run 或 export PDF/Excel，则展示/导出值为翻译后 label；resolve 失败时保留裸码并旁注「未翻译」（完成于 2026-08-20 · `label_translation.py`）
+  - [x] **M-RPT F-C**：模板 Web 展现（`format=web`）码值翻译与导出一致，共用 resolve 链（完成于 2026-08-20）
+  - [x] **M-RPT F-C**：未绑定字典字段的列保持原值；绑定字段变更后 rerun 即时刷新翻译（完成于 2026-08-20）
   - [ ] **M-RPT F-D**〔可选〕：套打固定版式 PDF 分页（占位符分页 + 页眉页脚；`reports/render/` 真实排版链，非 placeholder bytes）
 - **代码锚点**：`backend/app/reports/engine/execute.py` · `backend/app/reports/engine/service.py` · `backend/app/integration/reports_export.py` · `backend/app/reports/render/` · `backend/app/api/v1/metadata.py`（`resolve_dimension`）· `backend/app/api/v1/reports/engine.py` · `fe/src/pages/admin/reports/components/ReportExportCard.tsx` · `tests/test_ff_rpt_companion_e95d.py` · `tests/test_m9_rpt_theme_r233.py` T-R233-RPT-001-01~06
 - **演化建议**：M-RPT F-C 导出层码值翻译；套打分页留 F-D 可选
-- **里程碑对齐**：M9 · 已完成 · 2026-07-06；**M-RPT F-C · 待办**
+- **里程碑对齐**：M9 · 已完成 · 2026-07-06；**M-RPT F-C · 已闭合 · 2026-08-20**
 ### [RPT-002] 标准分析报表体系 FR-3.1
 
 - **状态**：已实现（2026-08-11 重建）
@@ -55,11 +55,11 @@
   - [x] M10 FE 模板元数据页（r234：`ReportTemplatesPage` + `useReportTemplates.ts`；vitest smoke 含树加载/空态）
   - [x] PDF/Word 真实排版引擎与 WYSIWYG 设计器（companion r-e95d：`TemplateBlockEditor` 块列表/SQL/重排；非全量 WYSIWYG）
   - [x] **M-RPT F-A**：`report-templates.smoke.test.tsx` 选择器/label 与 `ReportTemplatesPage` 实现一致，vitest 全绿无假绿（E 可运维）（完成于 2026-08-20）
-  - [ ] **M-RPT F-C**：首进模板页展示示例模板种子 + 空态引导 + 「运行/导出」CTA；新用户 60 秒内可完成首次导出（A 主路径 + G UI）
+  - [x] **M-RPT F-C**：首进模板页展示示例模板种子 + 空态引导 + 「运行/导出」CTA；新用户 60 秒内可完成首次导出（完成于 2026-08-20 · `POST /center/seed-demo` · `ReportTemplatesPage`）
   - [ ] **M-RPT F-D**〔可选〕：交叉表 MVP（单维行×列 + 指标聚合；RenderSpec 扩展 + PDF/Excel 导出）
 - **代码锚点**：`backend/app/reports/templates/service.py` · `backend/app/reports/engine/service.py` · `fe/src/pages/admin/reports/ReportTemplatesPage.tsx` · `fe/src/pages/admin/reports/components/TemplateBlockEditor.tsx` · `fe/src/pages/admin/reports/useReportTemplates.ts` · `fe/src/pages/admin/reports/report-templates.smoke.test.tsx` · `tests/test_ff_rpt_companion_e95d.py` · `tests/test_m10_report_templates_r234.py` T-RPT-R234-003-01~09
 - **演化建议**：M-RPT F-A smoke 修漂移；F-C 首进体验；交叉表留 F-D 可选；块模板 ≠ WYSIWYG 设计器（对标积木分期自研）
-- **里程碑对齐**：M10 · 已完成 · 2026-07-07；**M-RPT F-A · 已闭合 · 2026-08-20**；**M-RPT F-C · 待办**
+- **里程碑对齐**：M10 · 已完成 · 2026-07-07；**M-RPT F-A · 已闭合 · 2026-08-20**；**M-RPT F-C · 已闭合 · 2026-08-20**
 ### [RPT-004] 模板树形目录管理
 
 - **状态**：已实现（M10 r234）

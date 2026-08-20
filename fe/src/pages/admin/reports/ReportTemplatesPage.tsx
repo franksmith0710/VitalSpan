@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { FileText, FolderOpen, MousePointerClick } from "lucide-react";
 import { toast } from "sonner";
@@ -16,11 +16,13 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { mapApiError } from "@/lib/apiError";
+import { apiFetch } from "@/lib/api";
 import type { TemplateKind } from "@/lib/reportCatalogProvision";
 import { catalogAncestorFolderIds, catalogNodePath, pickDefaultCatalogNodeId } from "@/lib/reportCatalogUtils";
 import { CatalogFolderPanel } from "./components/CatalogFolderPanel";
 import { CatalogTreeNode } from "./components/CatalogTreeNode";
 import { ListGhostEmptyState } from "@/components/ui/panel-empty-state";
+import { Button } from "@/components/ui/button";
 import { TemplateDetailPanel } from "./components/TemplateDetailPanel";
 import { type CatalogNode, fetchCatalogExtension, useAllCatalogNodes, useReportTemplates } from "./useReportTemplates";
 import { useReportCenterPreferences } from "./useReportCenterPrefs";
@@ -103,6 +105,20 @@ export function ReportTemplatesPage() {
     },
     [applyNodeSelection],
   );
+
+  const seedDemoMutation = useMutation({
+    mutationFn: () =>
+      apiFetch<{ detail?: { catalogNodeId?: string } }>("/api/v1/reports/center/seed-demo", {
+        method: "POST",
+      }),
+    onSuccess: (data) => {
+      void queryClient.invalidateQueries({ queryKey: ["reports", "catalog"] });
+      const nodeId = data.detail?.catalogNodeId;
+      if (nodeId) applyNodeSelection(nodeId);
+      toast.success("示例报表已加载，可在右侧预览并导出");
+    },
+    onError: (err) => toast.error(mapApiError(err)),
+  });
 
   const legacyMigratedRef = useRef(false);
 
@@ -256,8 +272,22 @@ export function ReportTemplatesPage() {
       headingId="templates-catalog-empty"
       icon={<FolderOpen className="size-8" aria-hidden />}
       title="暂无模板目录"
-      description="创建文件夹组织模板，或新建 Word / Excel / PDF 报表模板。"
-      action={templateCreateToolbar}
+      description="可先加载示例报表体验运行与导出，或新建 Word / Excel / PDF 模板。"
+      action={
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {!readOnly ? (
+            <Button
+              type="button"
+              variant="primary"
+              disabled={seedDemoMutation.isPending}
+              onClick={() => seedDemoMutation.mutate()}
+            >
+              {seedDemoMutation.isPending ? "加载中…" : "加载示例报表"}
+            </Button>
+          ) : null}
+          {templateCreateToolbar}
+        </div>
+      }
     />
   ) : (
     <ScrollArea className="min-h-0 flex-1 pr-2">

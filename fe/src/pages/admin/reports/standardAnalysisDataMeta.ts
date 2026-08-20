@@ -9,6 +9,8 @@ export type StandardAnalysisRenderMeta = {
   pointCap?: number | null;
   pointCapApplied?: boolean;
   sampleBased?: boolean;
+  translationNote?: string;
+  translationApplied?: boolean;
 };
 
 function formatCount(value: number | undefined): string | null {
@@ -45,6 +47,10 @@ export function buildStandardAnalysisDataMetaNote(meta: StandardAnalysisRenderMe
 
   if (meta.pointCapApplied && meta.pointCap) {
     parts.push(`仅保留最近 ${meta.pointCap} 个时间点`);
+  }
+
+  if (meta.translationNote) {
+    parts.push(meta.translationNote);
   }
 
   return parts.length > 0 ? parts.join("，") + "。" : null;

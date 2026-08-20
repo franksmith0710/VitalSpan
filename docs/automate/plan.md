@@ -1,7 +1,7 @@
 # 演化里程碑计划（活跃）
 
 > 人工维护（`create-evolution-plan`）；演化 agent **只读**。
-> **当前节** = **§M-RPT · F-C 字典与模板体验**；F-B 标准分析深化已收官（2026-08-20）。  
+> **当前节** = **§M-RPT · F-D 固定版式进阶（可选）**；F-C 字典与模板体验已收官（2026-08-20）。  
 > **全量路线图**：M1–M12 + M-FE + M-FINAL + M-PRODUCT + M-DASH-UX + M-DEPTH 已完成；**活跃 companion** = 报表中心深度收官（依据 [holistic audit](../material/blueprints/2026-08-20-report-center-holistic-audit.md)）。  
 > **完成定义**：`[x]` = 真实依赖下浏览器/集成 smoke 可感知；`[ ]` = 未达；标「可选」不阻塞 M-RPT 必做 gate。  
 > **实施细则**：架构见 [`../arch.md`](../arch.md)；报表域见 [`../services/reports.md`](../services/reports.md)；验收锚点 [`prd/F08-RPT.md`](./prd/F08-RPT.md) · [`prd/F11-META.md`](./prd/F11-META.md)。
@@ -13,7 +13,7 @@ archive_ref: docs/automate/plan.archive.md
 execute_scope: m-rpt-depth
 frozen_milestone: M-FINAL
 current_milestone: M-RPT
-queued_milestone: M-RPT-F-C
+queued_milestone: M-RPT-F-D
 roadmap: M1-M12+M-FE-1~3+M-FINAL+M-PRODUCT+M-DASH-UX+M-DEPTH+M-RPT
 prd_total: 129
 prd_in_scope: 129
@@ -62,7 +62,7 @@ intervention: report-center-holistic-audit-2026-08-20
   → 发版 QA / 数据大屏抽测  ← 按需，不阻塞 M-RPT
 ```
 
-**G2 选题约束**：当前节 **§M-RPT F-C**；F-A/F-B 已收官。每轮 3–5 项必做。**禁止**：嵌入积木/Jimu/AJ-Report 运行时；stub 调度假绿；AI/SQLBot；fork DE/SS。
+**G2 选题约束**：当前节 **§M-RPT F-D（可选）**；F-A~F-C 必做已收官。人工点名才做 F-D；禁止积木/Jimu/AJ-Report 运行时；stub 调度假绿；AI/SQLBot；fork DE/SS。
 
 ---
 
@@ -76,8 +76,8 @@ intervention: report-center-holistic-audit-2026-08-20
 |------|------|------|------|------|
 | **F-A** | 信任链 | 4 | 0 | **已收官** |
 | **F-B** | 标准分析深化 | 3 | 1 | **已收官 · 2026-08-20** |
-| **F-C** | 字典与模板体验 | 3 | 0 | **当前** |
-| **F-D** | 固定版式进阶 | 0 | 3 | 可选 backlog |
+| **F-C** | 字典与模板体验 | 3 | 0 | **已收官 · 2026-08-20** |
+| **F-D** | 固定版式进阶 | 0 | 3 | **可选 backlog** |
 
 **推荐执行顺序**：
 
@@ -114,19 +114,19 @@ F-A  标准分析投递 e2e + 调度探针 + 模板 smoke 修漂移
 
 **代码锚点**：`standard/snapshot.py` · `standard/jobs.py` · `theme_aggregate.py` · `StandardAnalysisSnapshotStrip.tsx` · `standardAnalysisDeliverySummary.ts`
 
-### F-C — 字典与模板体验【必做 · 当前】
+### F-C — 字典与模板体验【必做 · 已收官 · 2026-08-20】
 
 > **对标积木「数据字典」**：复用 META-003，不做第二套字典 CRUD。
 
-- [ ] META-003: 报表 **展示层码值翻译**（标准分析表/图 tooltip + 模板 run 结果；绑定维度字典字段自动 lookup）
-- [ ] RPT-001: **导出产物**含翻译后标签（PDF/Excel 列值非裸码；失败显式降级说明）
-- [ ] RPT-003: 文档模板 **首进体验**（示例模板种子 + 空态引导 + 一键运行/导出 CTA）
+- [x] META-003: 报表 **展示层码值翻译**（标准分析表/图 tooltip + 模板 run 结果；绑定维度字典字段自动 lookup）（完成于 2026-08-20 · `label_translation.py`）
+- [x] RPT-001: **导出产物**含翻译后标签（PDF/Excel 列值非裸码；失败显式降级说明）（完成于 2026-08-20 · run→render 共用 lookup）
+- [x] RPT-003: 文档模板 **首进体验**（示例模板种子 + 空态引导 + 一键运行/导出 CTA）（完成于 2026-08-20 · `seed-demo` API · `ReportTemplatesPage`）
 
 **验收信号**：`status=1` 在标准分析表模式显示「已完成」；模板页新用户 60 秒内完成首次导出。
 
-**代码锚点**：`metadata/dimension/` · `ReportViewPage.tsx` · `reports/render/` · `ReportTemplatesPage.tsx`
+**代码锚点**：`metadata/dimensions/` · `reports/label_translation.py` · `ReportViewPage.tsx` · `reports/render/` · `ReportTemplatesPage.tsx` · `backend/tests/test_report_label_translation.py`
 
-### F-D — 固定版式进阶【可选 · 不阻塞 M-RPT gate】
+### F-D — 固定版式进阶【可选 · 不阻塞 M-RPT gate · 当前】
 
 > **对标积木最大 gap**；分期自研，禁止一夜 WYSIWYG 勾选。
 

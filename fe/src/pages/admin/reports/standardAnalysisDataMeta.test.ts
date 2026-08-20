@@ -39,4 +39,13 @@ describe("buildStandardAnalysisDataMetaNote", () => {
     });
     expect(note).toBe("基于 10,000 行样本聚合（已达查询上限 10,000 行）。");
   });
+
+  it("appends translation note when present", () => {
+    const note = buildStandardAnalysisDataMetaNote({
+      sampleBased: true,
+      sourceRowCount: 100,
+      translationNote: "部分码值未翻译（2 项）",
+    });
+    expect(note).toContain("部分码值未翻译");
+  });
 });

@@ -75,12 +75,6 @@ function normalizeGisProject(raw: unknown): GisProject {
     typeof candidate.tileServiceId === "string" && candidate.tileServiceId.trim()
       ? candidate.tileServiceId.trim()
       : undefined;
-  if (basemap === "pmtiles" && !tileServiceId) {
-    return {
-      ...DEFAULT_GIS_PROJECT,
-      view: normalizeGisView(candidate.view) ?? DEFAULT_GIS_PROJECT.view,
-    };
-  }
   const labelLang =
     candidate.labelLang === "en" || candidate.labelLang === "zh-Hans"
       ? candidate.labelLang

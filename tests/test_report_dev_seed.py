@@ -90,6 +90,7 @@ def test_dev_seed_idempotent_without_mysql(monkeypatch):
     from app.reports import dev_seed
 
     monkeypatch.setattr(dev_seed, "_resolve_or_create_datasource", lambda _s: None)
+    monkeypatch.setattr(dev_seed, "seed_builtin_analysis_pack", lambda _actor=None: 1)
     session = get_meta_session()
     try:
         first = dev_seed.seed_dev_reports(session)
@@ -98,6 +99,8 @@ def test_dev_seed_idempotent_without_mysql(monkeypatch):
         session.close()
     assert first["standard"] >= 1
     assert second["standard"] >= 1
+    assert first["template"] == 0
+    assert second["template"] == 0
 
 
 def test_schedule_with_recipients_and_source_fields(client: TestClient):

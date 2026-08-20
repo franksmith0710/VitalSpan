@@ -14,6 +14,7 @@ from app.query.dataset.schemas import DatasetExecuteRequest
 from app.query.schemas import QueryError
 from app.reports.engine.errors import RPT_ENGINE_DATASOURCE_REQUIRED, ReportEngineError
 from app.reports.extension.schemas import ExtensionConfigOut, MetricAdjustment
+from app.reports import label_translation
 
 
 def execute_dataset_section(
@@ -148,7 +149,7 @@ def build_sections_from_extension(
     parameters: dict[str, Any],
     *,
     fallback_data_source_id: uuid.UUID | None = None,
-) -> tuple[list[dict[str, Any]], float]:
+) -> tuple[list[dict[str, Any]], float, dict[str, Any]]:
     sections: list[dict[str, Any]] = []
     total_ms = 0.0
     for metric in ext.metrics:
@@ -167,4 +168,8 @@ def build_sections_from_extension(
         if kind == "chart":
             section["chartType"] = "line" if metric.compare_mode == "mom" else "bar"
         sections.append(section)
-    return sections, total_ms
+    visible_metrics = [m for m in ext.metrics if m.visible]
+    sections, translation_meta = label_translation.translate_extension_sections(
+        db, sections, visible_metrics,
+    )
+    return sections, total_ms, translation_meta

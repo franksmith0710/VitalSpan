@@ -29,6 +29,7 @@ class EngineRenderSpec(BaseModel):
     sections: list[dict[str, Any]]
     parameters: dict[str, Any]
     rendered_at: datetime = Field(alias="renderedAt")
+    meta: dict[str, Any] | None = None
 
 
 class EngineSection(BaseModel):

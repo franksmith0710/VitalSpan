@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext
 from app.reports.persistence import standard_repo
+from app.reports import label_translation
 from app.reports.standard.schemas import RunIn, SnapshotListResponse, SnapshotOut
 from app.reports.standard import service as pack_service
 
@@ -47,9 +48,24 @@ def capture_all_enabled_themes(db: Session, pack_key: str, user: UserContext) ->
 
 
 def list_snapshots(pack_key: str, theme: str | None, user: UserContext) -> SnapshotListResponse:
-    pack_service.get_pack(pack_key, user)
-    items = [
-        SnapshotOut.model_validate(s)
-        for s in standard_repo.list_snapshots(pack_key, theme=theme)
-    ]
+    from app.datasources.models import get_meta_session
+
+    pack = pack_service.get_pack(pack_key, user)
+    items: list[SnapshotOut] = []
+    session = get_meta_session()
+    try:
+        for raw in standard_repo.list_snapshots(pack_key, theme=theme):
+            item = dict(raw)
+            payload = item.get("payload")
+            snap_theme = item.get("theme")
+            if payload and snap_theme in pack.enabled_themes:
+                bindings = label_translation.standard_analysis_bindings(snap_theme, pack.field_mapping)
+                if bindings:
+                    translated, tmeta = label_translation.translate_table_payload(
+                        session, payload, bindings,
+                    )
+                    item["payload"] = translated
+            items.append(SnapshotOut.model_validate(item))
+    finally:
+        session.close()
     return SnapshotListResponse(items=items, total=len(items))

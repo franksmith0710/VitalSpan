@@ -19,6 +19,21 @@ PERM_MANAGE = "report:manage"
 router = APIRouter(prefix="/center", tags=["reports-center"])
 
 
+@router.post("/seed-demo", response_model=None)
+def seed_demo_reports(
+    user: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
+):
+    from app.auth.models import get_meta_session
+    from app.reports.dev_seed import seed_dev_reports
+
+    session = get_meta_session()
+    try:
+        counts = seed_dev_reports(session, actor=user)
+    finally:
+        session.close()
+    return {"code": "ok", "message": "示例报表已就绪", "detail": counts}
+
+
 @router.get("/preferences", response_model=None)
 def get_center_preferences(
     user: Annotated[UserContext, Depends(require_permission(PERM_READ))],

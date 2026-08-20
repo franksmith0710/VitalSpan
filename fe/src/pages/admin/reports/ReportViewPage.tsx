@@ -33,6 +33,7 @@ type RenderRunOut = {
   status: string;
   renderSpec: {
     sections: RenderSection[];
+    meta?: { translationNote?: string };
   };
   exportHook?: { integrationPath: string; format: string; placeholder: boolean };
 };
@@ -170,7 +171,14 @@ export function ReportViewPage() {
                     </AlertDescription>
                   </Alert>
                 ) : section.columns && section.rows ? (
-                  <ReportResultTable columns={section.columns} rows={section.rows} />
+                  <>
+                    {runMutation.data?.renderSpec.meta?.translationNote ? (
+                      <p className="mb-3 text-theme-xs text-amber-700 dark:text-amber-400">
+                        {runMutation.data.renderSpec.meta.translationNote}
+                      </p>
+                    ) : null}
+                    <ReportResultTable columns={section.columns} rows={section.rows} />
+                  </>
                 ) : (
                   <p className="text-theme-sm text-gray-500">
                     报表已运行，但当前格式暂不支持在此预览。请尝试导出或联系管理员。

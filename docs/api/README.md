@@ -347,6 +347,7 @@ redoc: /redoc
 | GET | `/api/v1/reports/standard/packs/{pack_key}/compare/matrix?theme=&period_keys=` | 多期并排对比（逗号分隔周期键，最多 12 期） | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/reports/standard/compare.py` |
 | GET/PUT | `/api/v1/reports/center/preferences` | 报表中心收藏偏好 | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/center.py` |
 | POST | `/api/v1/reports/center/recent` | 记录最近访问 | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/center.py` |
+| POST | `/api/v1/reports/center/seed-demo` | 幂等加载示例报表模板（admin） | 内部 | 二期 | RPT-003 | 已实现 | `backend/app/api/v1/reports/center.py` · `dev_seed.py` |
 | POST | `/api/v1/reports/catalog/nodes/{id}/duplicate` | 目录节点另存为（含扩展配置复制） | 内部 | 二期 | RPT-004 | 已实现 | `backend/app/reports/service.py` |
 | POST | `/api/v1/reports/schedules/{id}/revise` | 激活调度生成新草稿修订 | 内部 | 三期 | RPT-005 | 已实现 | `backend/app/reports/service.py` |
 | POST | `/api/v1/reports/schedules/{id}/transition` | 调度 FSM 迁移（`action`；`RPT_SCHEDULE_*`） | 内部 | 三期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |

@@ -170,17 +170,75 @@ def _find_demo_root_folder_id() -> uuid.UUID | None:
     return None
 
 
-def _seed_demo_template(actor: UserContext, ds_id: uuid.UUID | None) -> tuple[int, uuid.UUID | None]:
+def _demo_sales_metric(session: Session, ds_id: uuid.UUID | None) -> MetricAdjustment | None:
+    if ds_id is None:
+        return None
+    from app.metadata.dataset.demo_bindings import ensure_demo_dataset_bindings
+    from app.metadata.dataset.models import DatasetRecord
+
+    ensure_demo_dataset_bindings(session)
+    row = session.get(DatasetRecord, "demo-sales-wide")
+    if row is None or row.bound_config_id is None:
+        return None
+    return MetricAdjustment(
+        key="province_sales",
+        label="省份销售",
+        datasetId="demo-sales-wide",
+        boundConfigId=row.bound_config_id,
+        visible=True,
+        dimensionDictCode="region",
+        dimensionValueColumn="province",
+    )
+
+
+def _seed_report_dimension_values(session: Session) -> int:
+    from app.metadata.dimensions.schemas import DimensionValueItem
+    from app.metadata.dimensions.service import (
+        ensure_legacy_probe_dimensions,
+        list_values,
+        register_values,
+        resolve_dimension_by_code,
+    )
+
+    ensure_legacy_probe_dimensions(session)
+    seeded = 0
+    status_values = [
+        DimensionValueItem(code="running", label="运行中"),
+        DimensionValueItem(code="idle", label="空闲"),
+        DimensionValueItem(code="maintenance", label="维护中"),
+        DimensionValueItem(code="active", label="活跃"),
+    ]
+    try:
+        dim = resolve_dimension_by_code(session, "status")
+        existing = {v.code for v in list_values(session, dim.id, limit=500)[0]}
+        new_items = [v for v in status_values if v.code not in existing]
+        if new_items:
+            register_values(session, dim.id, new_items, _ADMIN)
+            seeded += len(new_items)
+    except Exception:
+        logger.warning("report_dev_seed_status_values_skip", exc_info=True)
+    return seeded
+
+
+def _seed_demo_template(
+    session: Session,
+    actor: UserContext,
+    ds_id: uuid.UUID | None,
+) -> tuple[int, uuid.UUID | None]:
+    demo_metric = _demo_sales_metric(session, ds_id)
     existing = _find_demo_node_id()
     if existing is not None:
-        if ds_id is not None:
+        if ds_id is not None and demo_metric is not None:
             try:
                 ext = extension_service.get_extension(existing)
+                metrics = ext.metrics
+                if not any(m.bound_config_id for m in metrics):
+                    metrics = [demo_metric]
                 extension_service.upsert(
                     existing,
                     ExtensionConfigUpsert(
                         catalogNodeId=existing,
-                        metrics=ext.metrics,
+                        metrics=metrics,
                         filters=ext.filters,
                         defaultDataSourceId=ds_id,
                         changeNote="dev seed datasource link",
@@ -217,18 +275,12 @@ def _seed_demo_template(actor: UserContext, ds_id: uuid.UUID | None) -> tuple[in
         ),
         actor,
     )
+    metrics = [demo_metric] if demo_metric is not None else []
     extension_service.upsert(
         node.id,
         ExtensionConfigUpsert(
             catalogNodeId=node.id,
-            metrics=[
-                MetricAdjustment(
-                    key="sales_total",
-                    label="销售总额",
-                    expression="SELECT SUM(amount) AS sales_total FROM sales",
-                    visible=True,
-                ),
-            ],
+            metrics=metrics,
             filters=[],
             changeNote="dev seed",
             defaultDataSourceId=ds_id,
@@ -265,17 +317,19 @@ def seed_dev_reports(session: Session, *, actor: UserContext | None = None) -> d
         "template": 0,
         "standard": 0,
         "schedule": 0,
+        "dimensions": 0,
         "dataSourceId": None,
         "catalogNodeId": None,
     }
     ds_id = _resolve_or_create_datasource(session)
+    counts["dimensions"] = _seed_report_dimension_values(session)
     if ds_id is None:
         logger.warning("report_dev_seed_aborted_no_datasource")
         counts["standard"] = seed_builtin_analysis_pack(user)
         return counts
     counts["dataSourceId"] = str(ds_id)
     counts["equipment"] = _seed_equipment_entity(session, ds_id, user)
-    tpl_n, node_id = _seed_demo_template(user, ds_id)
+    tpl_n, node_id = _seed_demo_template(session, user, ds_id)
     counts["template"] = tpl_n
     counts["standard"] = seed_builtin_analysis_pack(user)
     if node_id is not None:

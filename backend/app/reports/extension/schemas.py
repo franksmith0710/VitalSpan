@@ -16,14 +16,17 @@ class MetricAdjustment(BaseModel):
     expression: str | None = None
     visible: bool = True
     compare_mode: str = Field(default="none", alias="compareMode")
-    query_mode: Literal["dataset"] = Field(default="dataset", alias="queryMode")
+    query_mode: Literal["dataset", "sql"] = Field(default="dataset", alias="queryMode")
     dataset_id: str | None = Field(default=None, alias="datasetId")
     bound_config_id: uuid.UUID | None = Field(default=None, alias="boundConfigId")
+    dimension_dict_code: str | None = Field(default=None, alias="dimensionDictCode", max_length=64)
+    dimension_value_column: str | None = Field(default=None, alias="dimensionValueColumn", max_length=128)
 
     @model_validator(mode="after")
     def validate_query_mode(self) -> MetricAdjustment:
-        if not self.dataset_id or not self.bound_config_id:
-            raise ValueError("dataset mode requires datasetId and boundConfigId")
+        if self.dataset_id or self.bound_config_id:
+            if not self.dataset_id or not self.bound_config_id:
+                raise ValueError("dataset mode requires datasetId and boundConfigId")
         return self
 
 
