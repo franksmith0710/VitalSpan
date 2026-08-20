@@ -39,8 +39,18 @@ def lookup_value_labels(
         dimension = dimension_service.resolve_dimension_by_code(session, dimension_code)
     except DimensionError:
         return {}, list(unique)
-    values, _total = dimension_service.list_values(session, dimension.id, limit=500, offset=0)
-    label_map = {v.code: v.label for v in values}
+    needed = set(unique)
+    label_map: dict[str, str] = {}
+    offset = 0
+    while needed:
+        values, total = dimension_service.list_values(session, dimension.id, limit=500, offset=offset)
+        for value in values:
+            if value.code in needed:
+                label_map[value.code] = value.label
+                needed.discard(value.code)
+        if not values or offset + len(values) >= total:
+            break
+        offset += len(values)
     translated: dict[str, str] = {}
     missing: list[str] = []
     for code in unique:

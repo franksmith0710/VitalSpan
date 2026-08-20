@@ -85,9 +85,9 @@ def _ensure_equipment_table(session: Session, ds_id: uuid.UUID) -> bool:
     seed_sql = """
     INSERT INTO equipment (status, region)
     SELECT * FROM (
-      SELECT 'running' AS status, '华东' AS region UNION ALL
-      SELECT 'idle', '华北' UNION ALL
-      SELECT 'maintenance', '华南'
+      SELECT 'running' AS status, 'east' AS region UNION ALL
+      SELECT 'idle', 'north' UNION ALL
+      SELECT 'maintenance', 'south'
     ) AS seed_rows
     WHERE NOT EXISTS (SELECT 1 FROM equipment LIMIT 1)
     """
@@ -217,6 +217,20 @@ def _seed_report_dimension_values(session: Session) -> int:
             seeded += len(new_items)
     except Exception:
         logger.warning("report_dev_seed_status_values_skip", exc_info=True)
+    region_values = [
+        DimensionValueItem(code="east", label="华东"),
+        DimensionValueItem(code="north", label="华北"),
+        DimensionValueItem(code="south", label="华南"),
+    ]
+    try:
+        region_dim = resolve_dimension_by_code(session, "region")
+        existing_region = {v.code for v in list_values(session, region_dim.id, limit=500)[0]}
+        new_region = [v for v in region_values if v.code not in existing_region]
+        if new_region:
+            register_values(session, region_dim.id, new_region, _ADMIN)
+            seeded += len(new_region)
+    except Exception:
+        logger.warning("report_dev_seed_region_values_skip", exc_info=True)
     return seeded
 
 

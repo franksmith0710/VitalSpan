@@ -137,8 +137,25 @@ def _assert_source_exists(payload: ScheduleCreate, actor: UserContext) -> None:
     raise ScheduleError("RPT_SCHEDULE_INVALID_SOURCE", "Invalid sourceType", 422)
 
 
+def _assert_standard_pdf_only(source_type: str, formats: list[str]) -> None:
+    if source_type != "standard":
+        return
+    unsupported = [fmt for fmt in formats if fmt != "pdf"]
+    if unsupported:
+        raise ScheduleError(
+            "RPT_SCHEDULE_FORMAT_UNSUPPORTED",
+            "标准分析定时投递当前仅支持 PDF 附件",
+            422,
+        )
+
+
+def _validate_attachment_formats(payload: ScheduleCreate) -> None:
+    _assert_standard_pdf_only(payload.source_type, list(payload.attachment_formats))
+
+
 def create_schedule(payload: ScheduleCreate, actor: UserContext) -> ScheduleStatusOut:
     _assert_source_exists(payload, actor)
+    _validate_attachment_formats(payload)
     _validate_cron(payload.cron)
     recipients = [r.model_dump(by_alias=True) for r in payload.recipients]
     if payload.source_type == "template" and payload.catalog_node_id:
@@ -182,6 +199,7 @@ def update_schedule(
     if payload.recipients is not None:
         row["recipients"] = [r.model_dump(by_alias=True) for r in payload.recipients]
     if payload.attachment_formats is not None:
+        _assert_standard_pdf_only(row["source_type"], list(payload.attachment_formats))
         row["attachment_formats"] = list(payload.attachment_formats)
     if payload.delivery_channels is not None:
         row["delivery_channels"] = list(payload.delivery_channels)

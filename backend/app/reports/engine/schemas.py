@@ -50,7 +50,7 @@ class QueryMeta(BaseModel):
 
 class RenderRunOut(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
-    status: Literal["ready"] = "ready"
+    status: Literal["ready", "empty"] = "ready"
     render_spec: EngineRenderSpec = Field(alias="renderSpec")
     query_meta: QueryMeta | None = Field(default=None, alias="queryMeta")
     export_hook: ExportHookOut | None = Field(default=None, alias="exportHook")

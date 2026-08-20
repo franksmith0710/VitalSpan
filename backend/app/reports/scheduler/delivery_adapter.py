@@ -211,7 +211,12 @@ def deliver_artifact(
         attachment_mime=attachment_mime,
     )
     steps = [step]
-    overall = "delivered" if step["status"] == "delivered" else "degraded"
+    if step["status"] == "delivered":
+        overall = "delivered"
+    elif not smtp.is_configured:
+        overall = "unconfigured"
+    else:
+        overall = "degraded"
     error = step.get("error") if step["status"] != "delivered" else None
     return {
         "status": overall,

@@ -225,7 +225,7 @@ def render_dashboard_visual_pdf(
 
     try:
         with sync_playwright() as playwright:
-            browser = playwright.chromium.launch(headless=True)
+            browser = playwright.chromium.launch(headless=True, timeout=HEALTH_BROWSER_TIMEOUT_MS)
             try:
                 context = browser.new_context(
                     viewport={"width": VIEWPORT_WIDTH, "height": VIEWPORT_HEIGHT},

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, Literal
 
 from sqlalchemy.orm import Session
 
@@ -12,7 +12,11 @@ from app.reports.catalog import service as catalog_service
 from app.reports.catalog.schemas import CatalogNodeOut
 from app.reports.engine import acl as engine_acl
 from app.reports.engine import execute as engine_execute
-from app.reports.engine.errors import RPT_ENGINE_INVALID_PARAMETER, ReportEngineError
+from app.reports.engine.errors import (
+    RPT_ENGINE_EMPTY_TEMPLATE,
+    RPT_ENGINE_INVALID_PARAMETER,
+    ReportEngineError,
+)
 from app.reports.engine.schemas import EngineRenderSpec, ExportHookOut, QueryMeta, RenderRunIn, RenderRunOut
 from app.reports.errors import ReportExtensionError
 from app.reports.extension import service as extension_service
@@ -47,12 +51,38 @@ def build_engine_render_spec(node: CatalogNodeOut, parameters: dict[str, Any], f
     )
 
 
-def _build_export_hook(node: CatalogNodeOut) -> ExportHookOut:
+def _sections_are_placeholder_only(sections: list[dict[str, Any]]) -> bool:
+    if not sections:
+        return True
+    return all(bool(s.get("placeholder")) for s in sections)
+
+
+def _assert_exportable_sections(sections: list[dict[str, Any]]) -> None:
+    if _sections_are_placeholder_only(sections):
+        raise ReportEngineError(
+            RPT_ENGINE_EMPTY_TEMPLATE,
+            "模板尚无可用数据，请配置扩展指标与数据源后再导出",
+            422,
+        )
+    has_rows = any(
+        (s.get("rows") or [])
+        for s in sections
+        if not s.get("placeholder")
+    )
+    if not has_rows:
+        raise ReportEngineError(
+            RPT_ENGINE_EMPTY_TEMPLATE,
+            "模板查询未返回数据，请检查数据源与指标配置后再导出",
+            422,
+        )
+
+
+def _build_export_hook(node: CatalogNodeOut, *, placeholder: bool) -> ExportHookOut:
     kind = node.template_kind or "pdf"
     return ExportHookOut(
         integrationPath=f"/api/v1/reports/export?templateId={node.id}&format={kind}",
         format=kind,
-        placeholder=False,
+        placeholder=placeholder,
     )
 
 
@@ -117,10 +147,6 @@ def run_template(template_id: uuid.UUID, payload: RenderRunIn, actor: UserContex
     if ds_id is None and ext is not None and ext.default_data_source_id is not None:
         ds_id = ext.default_data_source_id
 
-    export_hook: ExportHookOut | None = None
-    if node.template_kind in _EXPORT_KINDS:
-        export_hook = _build_export_hook(node)
-
     query_meta: QueryMeta | None = None
     if ext is not None and _extension_has_executable_metrics(ext):
         translation_meta: dict[str, Any] = {}
@@ -157,7 +183,12 @@ def run_template(template_id: uuid.UUID, payload: RenderRunIn, actor: UserContex
     else:
         spec = build_engine_render_spec(node, parameters, payload.format)
 
-    return RenderRunOut(status="ready", renderSpec=spec, queryMeta=query_meta, exportHook=export_hook)
+    placeholder_only = _sections_are_placeholder_only(spec.sections)
+    export_hook: ExportHookOut | None = None
+    if node.template_kind in _EXPORT_KINDS:
+        export_hook = _build_export_hook(node, placeholder=placeholder_only)
+    status: Literal["ready", "empty"] = "empty" if placeholder_only else "ready"
+    return RenderRunOut(status=status, renderSpec=spec, queryMeta=query_meta, exportHook=export_hook)
 
 
 def export_template_bytes(
@@ -176,5 +207,6 @@ def export_template_bytes(
         RenderRunIn(format=fmt, parameters=parameters or {}),  # type: ignore[arg-type]
         actor,
     )
+    _assert_exportable_sections(run_out.render_spec.sections)
     node = catalog_service.get_node(template_id)
     return render_document(run_out.render_spec.model_dump(by_alias=True), fmt, title=node.name)

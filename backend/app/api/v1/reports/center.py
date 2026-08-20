@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse, Response
 
 from app.auth.deps import UserContext, require_permission
+from app.core.config import get_settings
 from app.reports.catalog.errors import ReportCatalogError
 from app.reports.contract import ReportCenterPreferencesOut
 from app.reports.scheduler.errors import ScheduleError
@@ -23,6 +24,15 @@ router = APIRouter(prefix="/center", tags=["reports-center"])
 def seed_demo_reports(
     user: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ):
+    if get_settings().vitalspan_env == "production":
+        return JSONResponse(
+            status_code=403,
+            content={
+                "code": "RPT_SEED_DEMO_FORBIDDEN",
+                "message": "生产环境不支持加载示例报表，请通过模板管理新建或导入正式模板。",
+                "detail": None,
+            },
+        )
     from app.auth.models import get_meta_session
     from app.reports.dev_seed import seed_dev_reports
 
@@ -31,6 +41,12 @@ def seed_demo_reports(
         counts = seed_dev_reports(session, actor=user)
     finally:
         session.close()
+    if counts.get("dataSourceId") is None:
+        return {
+            "code": "partial",
+            "message": "示例报表部分加载：未找到演示数据源，标准分析包已就绪；请配置数据源后重试。",
+            "detail": counts,
+        }
     return {"code": "ok", "message": "示例报表已就绪", "detail": counts}
 
 

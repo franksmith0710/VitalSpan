@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.auth.deps import UserContext, require_any_permission, require_permission
+from app.core.config import get_settings
 from app.core.http.download import content_disposition_attachment
 
 PERM_READ = "report:read"
@@ -478,8 +479,20 @@ def execute_schedule(
     """
     try:
         key = idempotency_key or ""
+        settings = get_settings()
         if execute_mock == "1":
+            if settings.vitalspan_env != "development":
+                return JSONResponse(
+                    status_code=403,
+                    content={
+                        "code": "RPT_SCHEDULE_MOCK_FORBIDDEN",
+                        "message": "模拟执行仅允许在开发环境使用",
+                        "detail": None,
+                    },
+                )
             return scheduler_executor.mock_execute_schedule(schedule_id, key, user)
+        if delivery_mock is not None and settings.vitalspan_env != "development":
+            delivery_mock = None
         # Default + X-Rpt-Semi-Real: honest path (no silent mock delivered)
         return scheduler_executor.semi_real_execute_schedule(
             schedule_id, key, user, delivery_mock
