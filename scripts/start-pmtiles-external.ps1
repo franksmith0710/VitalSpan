@@ -22,8 +22,8 @@ if (-not (Test-Path -LiteralPath $pmtilesPath)) {
 $listeners = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
 foreach ($conn in $listeners) {
   $proc = Get-Process -Id $conn.OwningProcess -ErrorAction SilentlyContinue
-  if ($proc) {
-    Write-Host "Stopping process on port ${Port}: $($proc.ProcessName) (pid $($proc.Id))"
+  if ($proc -and $proc.ProcessName -match '^(python|Python)$') {
+    Write-Host "Stopping legacy dev server on port ${Port}: $($proc.ProcessName) (pid $($proc.Id))"
     Stop-Process -Id $proc.Id -Force
   }
 }
