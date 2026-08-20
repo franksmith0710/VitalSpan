@@ -15,6 +15,7 @@ const COLUMN_FRIENDLY_NAMES: Record<string, string> = {
   order_date: "订单日期",
   amount: "金额",
   quantity: "数量",
+  value: "数量",
   cnt: "数量",
   count: "数量",
 };

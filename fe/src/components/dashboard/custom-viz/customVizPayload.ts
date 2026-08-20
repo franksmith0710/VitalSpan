@@ -42,6 +42,7 @@ export function resolveCustomVizBindingStatus(args: {
 }
 
 import { buildCustomVizAxisPlan } from "./customVizLayoutHelpers";
+import { applyCustomVizStyleBridgeAttributes } from "./customVizStyleBridge";
 
 export function buildCustomVizRuntimePayload(args: {
   executeReady: boolean;
@@ -95,35 +96,51 @@ function payloadSignature(payload: CustomVizRuntimePayload): string {
 
 export function injectCustomVizPayload(host: HTMLElement, payload: CustomVizRuntimePayload): void {
   const signature = payloadSignature(payload);
-  const prevLayoutSig = host.dataset.vsCvLayoutSig ?? "";
+  const styleSig = JSON.stringify(payload.style ?? {});
   const nextLayoutSig = payload.layout
     ? `${payload.layout.width}x${payload.layout.height}`
     : "";
+  const prevPayloadSig = host.dataset.vsCvPayloadSig ?? "";
+  const prevStyleSig = host.dataset.vsCvStyleSig ?? "";
+  const prevLayoutSig = host.dataset.vsCvLayoutSig ?? "";
 
-  if (host.dataset.vsCvPayloadSig === signature) return;
+  const payloadChanged = prevPayloadSig !== signature;
+  const styleChanged = prevStyleSig !== styleSig;
+  const layoutChanged = Boolean(payload.layout) && nextLayoutSig !== prevLayoutSig;
 
-  let node = host.querySelector(`.${CUSTOM_VIZ_PAYLOAD_CLASS}`);
-  if (!node) {
-    node = document.createElement("script");
-    node.type = "application/json";
-    node.className = CUSTOM_VIZ_PAYLOAD_CLASS;
-    host.prepend(node);
+  if (!payloadChanged && !styleChanged && !layoutChanged) return;
+
+  if (payloadChanged || styleChanged) {
+    let node = host.querySelector(`.${CUSTOM_VIZ_PAYLOAD_CLASS}`);
+    if (!node) {
+      node = document.createElement("script");
+      node.type = "application/json";
+      node.className = CUSTOM_VIZ_PAYLOAD_CLASS;
+      host.prepend(node);
+    }
+    node.textContent = JSON.stringify(payload);
+    host.dataset.vsCvPayloadSig = signature;
   }
-  node.textContent = JSON.stringify(payload);
-  const vars = styleToCssVars(payload.style);
-  for (const [name, value] of Object.entries(vars)) {
-    host.style.setProperty(name, value);
+
+  if (styleChanged || payloadChanged) {
+    const vars = styleToCssVars(payload.style ?? {});
+    for (const [name, value] of Object.entries(vars)) {
+      host.style.setProperty(name, value);
+    }
+    applyCustomVizStyleBridgeAttributes(host, payload.style);
+    host.dataset.vsCvStyleSig = styleSig;
   }
-  host.dataset.vsCvPayloadSig = signature;
 
-  host.dispatchEvent(
-    new CustomEvent(CUSTOM_VIZ_PAYLOAD_UPDATE_EVENT, {
-      detail: payload,
-      bubbles: false,
-    }),
-  );
+  if (payloadChanged || styleChanged) {
+    host.dispatchEvent(
+      new CustomEvent(CUSTOM_VIZ_PAYLOAD_UPDATE_EVENT, {
+        detail: payload,
+        bubbles: false,
+      }),
+    );
+  }
 
-  if (payload.layout && nextLayoutSig !== prevLayoutSig) {
+  if (layoutChanged && payload.layout) {
     host.dataset.vsCvLayoutSig = nextLayoutSig;
     host.dispatchEvent(
       new CustomEvent(CUSTOM_VIZ_LAYOUT_UPDATE_EVENT, {

@@ -8,9 +8,20 @@ import { ListPageToolbar } from "@/components/layout/list-page-kit";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import type { AnalysisPack, AnalysisTheme, CompareResult, RunResult, ThemeCapability } from "../useStandardAnalysis";
+import type {
+  AnalysisPack,
+  AnalysisTheme,
+  CompareMatrixResult,
+  CompareResult,
+  RunResult,
+  SnapshotRecord,
+  ThemeCapability,
+} from "../useStandardAnalysis";
 import { isThemeAvailable, themeCapabilityReason } from "../useStandardAnalysis";
+import { StandardAnalysisCompareControls } from "./StandardAnalysisCompareControls";
+import { StandardAnalysisCompareMatrixView } from "./StandardAnalysisCompareMatrixView";
 import { StandardAnalysisCompareView } from "./StandardAnalysisCompareView";
+import type { CompareLayout } from "../standardAnalysisComparePrefs";
 import { themeAggregationHint } from "./standardAnalysisCompareUi";
 import { StandardAnalysisMetaRow, THEME_META } from "./standardAnalysisUi";
 import { StandardAnalysisLiveView } from "./StandardAnalysisLiveView";
@@ -21,7 +32,25 @@ type Props = {
   viewMode: "live" | "compare";
   canManage: boolean;
   capturePending: boolean;
-  onCaptureSnapshot: () => void;
+  onCaptureCurrent: () => void;
+  onCapturePreviousBaseline: () => void;
+  compareLayout: CompareLayout;
+  onCompareLayoutChange: (layout: CompareLayout) => void;
+  livePeriodKey: string;
+  currentPeriodValue: string;
+  baselinePeriodValue: string;
+  matrixPeriodKeys: string[];
+  onCurrentPeriodChange: (value: string) => void;
+  onBaselinePeriodChange: (value: string) => void;
+  onMatrixPeriodKeysChange: (keys: string[]) => void;
+  matrixQuery: {
+    isLoading: boolean;
+    isFetching: boolean;
+    isError: boolean;
+    error: unknown;
+    refetch: () => void;
+    data?: CompareMatrixResult;
+  };
   onThemeChange: (theme: AnalysisTheme) => void;
   onViewModeChange: (mode: "live" | "compare") => void;
   runQuery: {
@@ -40,7 +69,7 @@ type Props = {
     refetch: () => void;
     data?: CompareResult;
   };
-  snapshots?: Array<{ theme: AnalysisTheme; periodKey: string; capturedAt: string }>;
+  snapshots?: SnapshotRecord[];
   themeCapabilities?: ThemeCapability[];
   mapError: (error: unknown) => string;
 };
@@ -51,7 +80,18 @@ export function StandardAnalysisResultPanel({
   viewMode,
   canManage,
   capturePending,
-  onCaptureSnapshot,
+  onCaptureCurrent,
+  onCapturePreviousBaseline,
+  compareLayout,
+  onCompareLayoutChange,
+  livePeriodKey,
+  currentPeriodValue,
+  baselinePeriodValue,
+  matrixPeriodKeys,
+  onCurrentPeriodChange,
+  onBaselinePeriodChange,
+  onMatrixPeriodKeysChange,
+  matrixQuery,
   onThemeChange,
   onViewModeChange,
   runQuery,
@@ -60,7 +100,7 @@ export function StandardAnalysisResultPanel({
   themeCapabilities,
   mapError,
 }: Props) {
-  const activeQuery = viewMode === "live" ? runQuery : compareQuery;
+  const activeQuery = viewMode === "live" ? runQuery : compareLayout === "matrix" ? matrixQuery : compareQuery;
   const themeLabel = THEME_META[activeTheme]?.label ?? activeTheme;
 
   return (
@@ -75,7 +115,7 @@ export function StandardAnalysisResultPanel({
           </h2>
           <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
             {themeLabel} · {themeAggregationHint(pack, activeTheme)}
-            {viewMode === "live" ? " · 实时查询" : " · 与上期快照对比"}
+            {viewMode === "live" ? " · 实时查询" : " · 周期快照对比"}
           </p>
         </div>
         <div className={cn("min-w-0", "mt-3")}>
@@ -131,7 +171,7 @@ export function StandardAnalysisResultPanel({
                   className={cn(HUB_SEGMENTED_BUTTON_CLASS, "h-8 px-3")}
                   onClick={() => onViewModeChange("compare")}
                 >
-                  对比上期
+                  周期对比
                 </Button>
               </div>
               <Button
@@ -164,19 +204,41 @@ export function StandardAnalysisResultPanel({
             snapshots={snapshots}
             canManage={canManage}
             capturePending={capturePending}
-            onCaptureSnapshot={onCaptureSnapshot}
+            onCaptureSnapshot={onCaptureCurrent}
           />
         ) : (
-          <StandardAnalysisCompareView
-            pack={pack}
-            activeTheme={activeTheme}
-            compareData={compareQuery.data}
-            snapshots={snapshots}
-            isLoading={compareQuery.isLoading}
-            canManage={canManage}
-            capturePending={capturePending}
-            onCapture={onCaptureSnapshot}
-          />
+          <>
+            <StandardAnalysisCompareControls
+              layout={compareLayout}
+              onLayoutChange={onCompareLayoutChange}
+              activeTheme={activeTheme}
+              livePeriodKey={livePeriodKey}
+              snapshots={snapshots}
+              currentPeriodValue={currentPeriodValue}
+              baselinePeriodValue={baselinePeriodValue}
+              matrixPeriodKeys={matrixPeriodKeys}
+              onCurrentPeriodChange={onCurrentPeriodChange}
+              onBaselinePeriodChange={onBaselinePeriodChange}
+              onMatrixPeriodKeysChange={onMatrixPeriodKeysChange}
+            />
+            {compareLayout === "matrix" ? (
+              <StandardAnalysisCompareMatrixView
+                matrixData={matrixQuery.data}
+                isLoading={matrixQuery.isLoading}
+              />
+            ) : (
+              <StandardAnalysisCompareView
+                pack={pack}
+                activeTheme={activeTheme}
+                compareData={compareQuery.data}
+                snapshots={snapshots}
+                isLoading={compareQuery.isLoading}
+                canManage={canManage}
+                capturePending={capturePending}
+                onCapturePreviousBaseline={onCapturePreviousBaseline}
+              />
+            )}
+          </>
         )}
       </Tabs>
     </section>

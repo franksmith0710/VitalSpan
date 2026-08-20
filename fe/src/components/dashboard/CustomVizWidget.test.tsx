@@ -42,6 +42,7 @@ afterEach(() => {
     error: null,
     slowHint: false,
   });
+  document.body.innerHTML = "";
 });
 
 describe("CustomVizWidget", () => {
@@ -197,6 +198,44 @@ describe("CustomVizWidget", () => {
       expect(screen.getByTestId("custom-viz-truncated-banner")).toHaveTextContent(
         `数据量较大，已采样显示前 ${ADVANCED_CHART_ROW_CAP} 条`,
       );
+    });
+  });
+
+  it("re-injects payload style on config.style change without executeKey bump", async () => {
+    const widget = {
+      id: "w1",
+      type: "customViz" as const,
+      title: "AI",
+      colSpan: 6,
+      rowSpan: 3,
+      order: 0,
+      customVizConfig: {
+        artifactId: "550e8400-e29b-41d4-a716-446655440000",
+        style: { accentColor: "#111111" },
+      },
+    };
+
+    const view = render(<CustomVizWidget widget={widget} mode="view" />);
+    await waitFor(() => {
+      expect(view.getByTestId("custom-viz-host")).toBeInTheDocument();
+    });
+    const host = view.getByTestId("custom-viz-host");
+    expect(host.style.getPropertyValue("--vs-style-accent-color")).toBe("#111111");
+
+    view.rerender(
+      <CustomVizWidget
+        widget={{
+          ...widget,
+          customVizConfig: {
+            ...widget.customVizConfig,
+            style: { accentColor: "#abcdef" },
+          },
+        }}
+        mode="view"
+      />,
+    );
+    await waitFor(() => {
+      expect(host.style.getPropertyValue("--vs-style-accent-color")).toBe("#abcdef");
     });
   });
 });

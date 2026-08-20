@@ -1,5 +1,6 @@
-import { isGeoMapChartType } from "@/lib/chartViewConfig";
+import { isGeoMapChartType, isGisMapChartType } from "@/lib/chartViewConfig";
 import { isLegacyTableChartType } from "@/lib/chartViewConfig";
+import { isChartExecuteReady } from "@/lib/chartExecuteProbe";
 import { activeFieldRefs } from "@/lib/chartConfigState";
 import { deAxisRenderReady, resolveChartEncoding } from "@/lib/resolveChartEncoding";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
@@ -93,6 +94,27 @@ export function buildChartRenderModel(
     const columnError = validateFieldColumns(columns, dims, metrics);
     if (columnError) return columnError;
     return readyWhenRows(rows);
+  }
+
+  if (isGisMapChartType(config.chartType)) {
+    if (isChartExecuteReady(config)) {
+      const lngField = dims[0]?.field;
+      const latField = dims[1]?.field;
+      if (lngField && latField) {
+        if (!columns.includes(lngField)) {
+          return { kind: "error", message: `经度列「${lngField}」不存在，请检查字段配置` };
+        }
+        if (!columns.includes(latField)) {
+          return { kind: "error", message: `纬度列「${latField}」不存在，请检查字段配置` };
+        }
+        if (metrics.length && !columns.includes(metrics[0]!.field)) {
+          return { kind: "error", message: `指标列「${metrics[0]!.field}」不存在，请检查字段配置` };
+        }
+      }
+      if (rows.length === 0) return { kind: "ready" };
+      return { kind: "ready" };
+    }
+    return { kind: "ready" };
   }
 
   if (isGeoMapChartType(config.chartType)) {

@@ -41,6 +41,12 @@ describe("gisMapStyle", () => {
     expect(style.sources?.[CHINA_PROVINCES_SOURCE_ID]).toBeDefined();
     expect(style.layers?.some((layer) => layer.id === "vs-provinces-fill")).toBe(true);
   });
+
+  it("requires async resolve for pmtiles basemap", () => {
+    expect(() =>
+      resolveGisMapStyleFromProject({ basemap: "pmtiles", tileServiceId: "planet-z15" }),
+    ).toThrow(/async tile service resolve/);
+  });
 });
 
 describe("gisMapTransformRequest", () => {

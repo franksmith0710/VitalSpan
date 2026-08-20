@@ -18,6 +18,7 @@ import { ChartStylePanel } from "./ChartStylePanel";
 import { ChartDataOptions } from "./ChartDataOptions";
 import { ChartTableDataHint } from "./ChartTableDataHint";
 import { tableInspectorProfile } from "@/lib/chartTableInspector";
+import { getChartPlugin } from "@/components/charts/engine/plugins/registry";
 import { migrateChartViewConfig } from "@/lib/migrateChartTypes";
 import {
   shouldSyncWidgetTitleOnChartTypeChange,
@@ -33,7 +34,7 @@ import { WidgetInspectorDelete } from "./widget-inspector-delete";
 import { activeFieldRefs } from "@/lib/chartConfigState";
 import { chartHasAdvancedTab } from "@/lib/chartInspectorCapabilities";
 import { filterVisibleCatalogItems } from "@/lib/chartPaletteTaxonomy";
-import { isGeoMapChartType } from "@/lib/chartViewConfig";
+import { isGeoMapChartType, isGisMapChartType } from "@/lib/chartViewConfig";
 
 function buildValidateSuccessMessage(cfg: ReturnType<typeof useChartInspector>["cfg"]): string {
   const dims = [...new Set(activeFieldRefs(cfg.dimensions).map((d) => d.field))];
@@ -143,14 +144,17 @@ export function ChartEditorColumn({
                 value={cfg.chartType}
                 onValueChange={(chartType) => {
                   const oldChartType = cfg.chartType;
-                  onChange(
-                    ensureChartSlotCapacity(
-                      migrateChartViewConfig({
-                        ...cfg,
-                        chartType: chartType as typeof cfg.chartType,
-                      }),
-                    ),
+                  let next = ensureChartSlotCapacity(
+                    migrateChartViewConfig({
+                      ...cfg,
+                      chartType: chartType as typeof cfg.chartType,
+                    }),
                   );
+                  const plugin = getChartPlugin(chartType);
+                  if (plugin?.setupDefaultConfig) {
+                    next = plugin.setupDefaultConfig(next);
+                  }
+                  onChange(next);
                   if (
                     onTitleChange &&
                     shouldSyncWidgetTitleOnChartTypeChange(widget.title, oldChartType)
@@ -175,7 +179,18 @@ export function ChartEditorColumn({
                 </SelectContent>
               </Select>
             </div>
-            {isGeoMapChartType(cfg.chartType) ? <ChartMapDataPanel /> : <ChartDataSlots />}
+            {isGeoMapChartType(cfg.chartType) ? (
+              <ChartMapDataPanel />
+            ) : isGisMapChartType(cfg.chartType) ? (
+              <div className="space-y-2">
+                <p className="text-theme-xs text-gray-500">
+                  底图无需绑定数据集即可出图。以下为可选叠加层：绑定经度、纬度字段后可在底图上显示点位。
+                </p>
+                <ChartDataSlots />
+              </div>
+            ) : (
+              <ChartDataSlots />
+            )}
             {tableProfile ? <ChartTableDataHint /> : null}
             <ChartConfigPanel
               config={cfg}

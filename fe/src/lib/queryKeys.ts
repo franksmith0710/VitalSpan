@@ -71,8 +71,22 @@ export const queryKeys = {
   reports: {
     standardPacks: ["reports", "standardPacks"] as const,
     standardRun: (packKey: string, theme: string) => ["reports", "standardRun", packKey, theme] as const,
-    standardCompare: (packKey: string, theme: string) =>
-      ["reports", "standardCompare", packKey, theme] as const,
+    standardCompare: (
+      packKey: string,
+      theme: string,
+      baselinePeriodKey?: string,
+      currentPeriodKey?: string,
+    ) =>
+      [
+        "reports",
+        "standardCompare",
+        packKey,
+        theme,
+        baselinePeriodKey ?? "",
+        currentPeriodKey ?? "",
+      ] as const,
+    standardCompareMatrix: (packKey: string, theme: string, periodKeys?: string) =>
+      ["reports", "standardCompareMatrix", packKey, theme, periodKeys ?? ""] as const,
     standardSnapshots: (packKey: string, theme?: string) =>
       ["reports", "standardSnapshots", packKey, theme ?? "all"] as const,
     standardCapabilities: (packKey: string) => ["reports", "standardCapabilities", packKey] as const,

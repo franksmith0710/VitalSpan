@@ -1,5 +1,11 @@
 # vs-ai-spec 变更
 
+## 2026-08-20
+
+- **样式合规 Phase 1**：`AiVizArtifactOut.warnings[]`（POST/PUT/GET 返回，不阻断入库）
+- 新增 [guides/CUSTOM-VIZ-STYLE-COMPLIANCE.md](./guides/CUSTOM-VIZ-STYLE-COMPLIANCE.md)
+- 官方 `custom-viz-*.json` CI：须零 style warnings
+
 ## 2026-08-19
 
 - **PLATFORM-SLA**：`vsCv.mount` 统一 lifecycle；Payload `axisPlan`；壳层 truncated；d3 入库须 `vsCv.mount`

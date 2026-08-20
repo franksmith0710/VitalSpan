@@ -5,9 +5,9 @@
 | 日期 | 2026-08-19 |
 | 核验范围 | 组件库列表卡片图表预览不显示图例；进入编辑页后恢复图例 |
 | 锚点 | `/admin/viz-components` · `VizComponentsHubPage` · `ComponentPayloadPreview` · `VizComponentLivePreview` · `ChartRenderer` |
-| 总体判定 | **PARTIAL** |
-| **总分 / 档位** | **6/10 · C** |
-| 状态 | draft |
+| 总体判定 | **PARTIAL**（实现 + UI 集成测已补，缺 BROWSER 真机） |
+| **总分 / 档位** | **8/10 · B** |
+| 状态 | approved-fix |
 | **sampling** | `full`（按图例机制枚举，非 44 chartType 全量） |
 
 ## 1. 核验标准与预期（来自用户/对话）

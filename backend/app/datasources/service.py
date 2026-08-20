@@ -261,6 +261,8 @@ def _run_test(
     extra: dict = {"traceId": trace, "ok": result.ok}
     if data_source_id is not None:
         extra["dataSourceId"] = str(data_source_id)
+        if result.ok:
+            pool_manager.evict_pool(data_source_id)
     logger.info("datasource_test", extra=extra)
     return out
 

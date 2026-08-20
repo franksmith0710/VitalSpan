@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Settings2, TrendingUp } from "lucide-react";
+import { toast } from "sonner";
 import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import { ListPageSection } from "@/components/layout/list-page-kit";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,17 @@ import { StandardAnalysisPackList } from "./components/StandardAnalysisPackList"
 import { StandardAnalysisResultPanel } from "./components/StandardAnalysisResultPanel";
 import { STANDARD_WORKBENCH_GRID_CLASS } from "./components/standardAnalysisUi";
 import { isAnalysisTheme, readStoredTheme, writeStoredTheme } from "./standardAnalysisPrefs";
+import { livePeriodKeyFromPreset } from "./components/standardAnalysisCompareUi";
+import {
+  COMPARE_AUTO_BASELINE,
+  COMPARE_LIVE_VALUE,
+  defaultMatrixPeriodKeys,
+  readCompareLayout,
+  readMatrixPeriodKeys,
+  writeCompareLayout,
+  writeMatrixPeriodKeys,
+  type CompareLayout,
+} from "./standardAnalysisComparePrefs";
 import {
   type AnalysisTheme,
   isThemeAvailable,
@@ -28,6 +40,7 @@ import {
   useCaptureStandardSnapshot,
   useStandardCapabilities,
   useStandardCompare,
+  useStandardCompareMatrix,
   useStandardPacks,
   useStandardRun,
   useStandardSnapshots,
@@ -49,6 +62,10 @@ export function StandardAnalysisPage() {
   const [selectedPackKey, setSelectedPackKey] = useState<string | null>(packFromUrl);
   const [selectedTheme, setSelectedTheme] = useState<AnalysisTheme | null>(null);
   const [viewMode, setViewMode] = useState<"live" | "compare">("live");
+  const [compareLayout, setCompareLayout] = useState<CompareLayout>("pair");
+  const [currentPeriodValue, setCurrentPeriodValue] = useState(COMPARE_LIVE_VALUE);
+  const [baselinePeriodValue, setBaselinePeriodValue] = useState(COMPARE_AUTO_BASELINE);
+  const [matrixPeriodKeys, setMatrixPeriodKeys] = useState<string[]>([]);
 
   useEffect(() => {
     if (packFromUrl) {
@@ -101,17 +118,100 @@ export function StandardAnalysisPage() {
 
   const activeTheme = selectedTheme ?? resolveFirstAvailableTheme(activePack, themeCapabilities);
 
-  const runQuery = useStandardRun(viewMode === "live" ? activePack?.packKey ?? null : null, activeTheme);
-  const compareQuery = useStandardCompare(
-    viewMode === "compare" ? activePack?.packKey ?? null : null,
-    activeTheme,
+  const livePeriodKey = useMemo(
+    () => (activePack ? livePeriodKeyFromPreset(activePack.snapshotCronPreset) : ""),
+    [activePack],
   );
+
+  const compareOptions = useMemo(
+    () => ({
+      baselinePeriodKey:
+        baselinePeriodValue !== COMPARE_AUTO_BASELINE ? baselinePeriodValue : undefined,
+      currentPeriodKey: currentPeriodValue !== COMPARE_LIVE_VALUE ? currentPeriodValue : undefined,
+    }),
+    [baselinePeriodValue, currentPeriodValue],
+  );
+
+  useEffect(() => {
+    if (!activePack) return;
+    setCompareLayout(readCompareLayout(activePack.packKey));
+  }, [activePack?.packKey]);
+
+  const runQuery = useStandardRun(viewMode === "live" ? activePack?.packKey ?? null : null, activeTheme);
   const snapshotsQuery = useStandardSnapshots(activePack?.packKey ?? null, activeTheme);
+
+  useEffect(() => {
+    if (!activePack || !activeTheme) return;
+    const stored = readMatrixPeriodKeys(activePack.packKey, activeTheme);
+    setMatrixPeriodKeys(
+      stored.length >= 2
+        ? stored
+        : defaultMatrixPeriodKeys(snapshotsQuery.data?.items, activeTheme, livePeriodKey),
+    );
+    setCurrentPeriodValue(COMPARE_LIVE_VALUE);
+    setBaselinePeriodValue(COMPARE_AUTO_BASELINE);
+  }, [activePack?.packKey, activeTheme, livePeriodKey, snapshotsQuery.data?.items]);
+
+  const compareQuery = useStandardCompare(
+    viewMode === "compare" && compareLayout === "pair" ? activePack?.packKey ?? null : null,
+    activeTheme,
+    compareOptions,
+  );
+  const matrixQuery = useStandardCompareMatrix(
+    viewMode === "compare" && compareLayout === "matrix" ? activePack?.packKey ?? null : null,
+    activeTheme,
+    matrixPeriodKeys,
+  );
   const captureSnapshot = useCaptureStandardSnapshot();
 
-  const handleCaptureSnapshot = () => {
+  const handleCaptureCurrent = () => {
     if (!activePack || !activeTheme) return;
-    captureSnapshot.mutate({ packKey: activePack.packKey, theme: activeTheme });
+    captureSnapshot.mutate(
+      { packKey: activePack.packKey, theme: activeTheme },
+      {
+        onSuccess: (saved) => {
+          toast.success(`本期快照已保存（${saved.periodKey}）`);
+        },
+        onError: (err) => {
+          toast.error(mapApiError(err));
+        },
+      },
+    );
+  };
+
+  const handleCapturePreviousBaseline = () => {
+    if (!activePack || !activeTheme) return;
+    const targetPeriodKey =
+      baselinePeriodValue !== COMPARE_AUTO_BASELINE
+        ? baselinePeriodValue
+        : compareQuery.data?.previousPeriodKey;
+    if (!targetPeriodKey) {
+      toast.error("无法确定对比周期，请先选择对比期");
+      return;
+    }
+    captureSnapshot.mutate(
+      { packKey: activePack.packKey, theme: activeTheme, periodKey: targetPeriodKey },
+      {
+        onSuccess: (saved) => {
+          toast.success(`上期基准快照已保存（${saved.periodKey}），正在刷新对比结果…`);
+        },
+        onError: (err) => {
+          toast.error(mapApiError(err));
+        },
+      },
+    );
+  };
+
+  const handleCompareLayoutChange = (layout: CompareLayout) => {
+    setCompareLayout(layout);
+    if (activePack) writeCompareLayout(activePack.packKey, layout);
+  };
+
+  const handleMatrixPeriodKeysChange = (keys: string[]) => {
+    setMatrixPeriodKeys(keys);
+    if (activePack && activeTheme) {
+      writeMatrixPeriodKeys(activePack.packKey, activeTheme, keys);
+    }
   };
 
   const selectPack = (key: string) => {
@@ -209,7 +309,18 @@ export function StandardAnalysisPage() {
                 viewMode={viewMode}
                 canManage={canManage}
                 capturePending={captureSnapshot.isPending}
-                onCaptureSnapshot={handleCaptureSnapshot}
+                onCaptureCurrent={handleCaptureCurrent}
+                onCapturePreviousBaseline={handleCapturePreviousBaseline}
+                compareLayout={compareLayout}
+                onCompareLayoutChange={handleCompareLayoutChange}
+                livePeriodKey={livePeriodKey}
+                currentPeriodValue={currentPeriodValue}
+                baselinePeriodValue={baselinePeriodValue}
+                matrixPeriodKeys={matrixPeriodKeys}
+                onCurrentPeriodChange={setCurrentPeriodValue}
+                onBaselinePeriodChange={setBaselinePeriodValue}
+                onMatrixPeriodKeysChange={handleMatrixPeriodKeysChange}
+                matrixQuery={matrixQuery}
                 onThemeChange={handleThemeChange}
                 onViewModeChange={setViewMode}
                 runQuery={runQuery}

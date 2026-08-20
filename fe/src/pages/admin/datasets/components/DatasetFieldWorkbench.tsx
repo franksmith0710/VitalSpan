@@ -238,7 +238,11 @@ export function DatasetFieldWorkbench({
             <Skeleton className="h-32 w-full rounded-lg" />
           ) : !canShowFields ? (
             <p className="text-theme-xs text-gray-500">
-              {columnsError ? "列元数据加载失败，请检查数据源连接后重试。" : "暂无字段，请先选择数据表。"}
+              {columnsError
+                ? "列元数据加载失败，请检查数据源连接后重试。"
+                : tableName
+                  ? `表 ${tableName} 没有可浏览的列（多为数据库内部表）。请更换为业务 schema（如 public）下的数据表，例如 host_metrics。`
+                  : "暂无字段，请先选择数据表。"}
             </p>
           ) : (
             <div className="grid gap-3">

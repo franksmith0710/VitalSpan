@@ -63,6 +63,7 @@ export function DatasourceDetailPage() {
       setTestResult(result);
       setTestError(null);
       if (result.ok) {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.datasources.schemas(id) });
         void queryClient.invalidateQueries({ queryKey: ["datasources", id] });
       }
     },

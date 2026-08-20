@@ -308,4 +308,36 @@ describe("renderD3ChoroplethChart", () => {
     dispose();
     document.body.removeChild(container);
   });
+
+  it("omits visual map legend in thumbnail hub previews", () => {
+    const container = document.createElement("div");
+    container.style.width = "400px";
+    container.style.height = "320px";
+    document.body.appendChild(container);
+
+    const dispose = renderD3ChoroplethChart(container, {
+      width: 400,
+      height: 320,
+      rows: [
+        ["广东省", 320],
+        ["浙江省", 280],
+      ],
+      columns: ["province", "value"],
+      regionField: "province",
+      metricField: "value",
+      theme: resolveD3Theme("light"),
+      showTooltip: false,
+      colors: ["#1653a9"],
+      renderTier: "thumbnail",
+      geoStyle: {
+        visualMap: true,
+      },
+    });
+
+    expect(container.querySelector("svg linearGradient stop")).toBeNull();
+    expect(container.querySelectorAll("path.region").length).toBeGreaterThan(0);
+
+    dispose();
+    document.body.removeChild(container);
+  });
 });

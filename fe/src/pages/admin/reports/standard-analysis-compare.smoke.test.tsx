@@ -106,28 +106,28 @@ describe("StandardAnalysisPage compare mode", () => {
       expect(screen.getAllByText("南京市").length).toBeGreaterThan(0);
     });
 
-    fireEvent.click(screen.getAllByRole("button", { name: "对比上期" })[0]!);
+    fireEvent.click(screen.getAllByRole("button", { name: "周期对比" })[0]!);
 
     await waitFor(() => {
-      expect(screen.getByText("暂无上期快照，无法对比")).toBeInTheDocument();
+      expect(screen.getByText("对比期快照缺失")).toBeInTheDocument();
     });
     expect(screen.getByText(/当前实时查询/)).toBeInTheDocument();
     expect(screen.getAllByText(/按城市计数/).length).toBeGreaterThan(0);
     expect(screen.queryByRole("columnheader", { name: "增减" })).not.toBeInTheDocument();
   });
 
-  it("allows admin to capture current period snapshot", async () => {
+  it("allows admin to capture previous-period baseline snapshot", async () => {
     renderPage();
     await waitFor(() => {
       expect(screen.getAllByText("南京市").length).toBeGreaterThan(0);
     });
 
-    fireEvent.click(screen.getAllByRole("button", { name: "对比上期" })[0]!);
+    fireEvent.click(screen.getAllByRole("button", { name: "周期对比" })[0]!);
     await waitFor(() => {
-      expect(screen.getAllByRole("button", { name: "保存本期快照" }).length).toBeGreaterThan(0);
+      expect(screen.getAllByRole("button", { name: "保存上期基准快照" }).length).toBeGreaterThan(0);
     });
 
-    const captureButtons = screen.getAllByRole("button", { name: "保存本期快照" });
+    const captureButtons = screen.getAllByRole("button", { name: "保存上期基准快照" });
     fireEvent.click(captureButtons[captureButtons.length - 1]!);
     await waitFor(() => {
       expect(captureMock).toHaveBeenCalledTimes(1);

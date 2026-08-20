@@ -43,10 +43,11 @@ describe("chartPresentationScale", () => {
     ).toBe(6);
   });
 
-  it("disables legend and data labels for hub thumbnail tier", () => {
+  it("disables legend, labels, and depth for hub thumbnail tier", () => {
     const styled = applyHubThumbnailStyleOverrides({ showLegend: true, showLabel: true }, "thumbnail");
     expect(styled.showLegend).toBe(false);
     expect(styled.showLabel).toBe(false);
+    expect(styled.depthVisual).toBe("off");
     const full = applyHubThumbnailStyleOverrides({ showLegend: true, showLabel: true }, "full");
     expect(full.showLegend).toBe(true);
     expect(full.showLabel).toBe(true);

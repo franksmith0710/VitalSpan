@@ -21,6 +21,7 @@ function widgetBodyEqual(prev: PixelLayoutWidget, next: PixelLayoutWidget): bool
   if (prev.tabsConfig !== next.tabsConfig) return false;
   if (prev.filterConfig !== next.filterConfig) return false;
   if (prev.mediaConfig !== next.mediaConfig) return false;
+  if (prev.customVizConfig !== next.customVizConfig) return false;
   return true;
 }
 

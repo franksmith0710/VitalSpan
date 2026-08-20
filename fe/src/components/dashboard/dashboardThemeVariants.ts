@@ -20,8 +20,13 @@ import {
   stripChartBackgroundStyleOverrides,
   stripChartColorStyleOverrides,
   syncChartWidgetsForDashboardScopes,
+  type DashboardWidgetSyncScope,
 } from "@/lib/chartDeStyle";
-import { stripCustomVizDisplayStyleOverrides } from "./custom-viz/customVizDisplayStyle";
+import {
+  stripCustomVizDisplayStyleOverrides,
+  syncCustomVizWidgetsForDashboardScopes,
+  type CustomVizDashboardSyncScope,
+} from "./custom-viz/customVizDisplayStyle";
 
 /** 随浅色/深色分别保存的视觉字段（结构类如圆角/间隙不在此列） */
 export type ThemeVariantFields = {
@@ -518,6 +523,16 @@ function normalizeDashboardPalettePatch(
 }
 
 /** 看板配置变更：写 styleConfig 并清除图表组件级同类 override */
+function toCustomVizDashboardSyncScopes(
+  scopes: ReadonlySet<DashboardWidgetSyncScope>,
+): ReadonlySet<CustomVizDashboardSyncScope> {
+  const out = new Set<CustomVizDashboardSyncScope>();
+  if (scopes.has("title")) out.add("title");
+  if (scopes.has("widgetAppearance")) out.add("widgetAppearance");
+  if (scopes.has("palette")) out.add("palette");
+  return out;
+}
+
 export function applyDashboardStylePatch(
   styleConfig: DashboardStyleConfig,
   widgets: LayoutWidget[],
@@ -525,12 +540,15 @@ export function applyDashboardStylePatch(
 ): { styleConfig: DashboardStyleConfig; widgets: LayoutWidget[] } {
   const normalizedPatch = normalizeDashboardPalettePatch(styleConfig, patch);
   const scopes = inferWidgetSyncScopes(normalizedPatch);
+  let syncedWidgets =
+    scopes.size > 0 ? syncChartWidgetsForDashboardScopes(widgets, scopes) : widgets;
+  const customVizScopes = toCustomVizDashboardSyncScopes(scopes);
+  if (customVizScopes.size > 0) {
+    syncedWidgets = syncCustomVizWidgetsForDashboardScopes(syncedWidgets, customVizScopes);
+  }
   return {
     styleConfig: patchDashboardStyle(styleConfig, normalizedPatch),
-    widgets:
-      scopes.size > 0
-        ? syncChartWidgetsForDashboardScopes(widgets, scopes)
-        : widgets,
+    widgets: syncedWidgets,
   };
 }
 

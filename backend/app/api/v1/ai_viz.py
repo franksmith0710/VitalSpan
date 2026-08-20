@@ -82,12 +82,7 @@ def get_artifact_meta(
 ) -> AiVizArtifactOut | JSONResponse:
     try:
         row = ai_viz_service.get_artifact(db, artifact_id, user)
-        return AiVizArtifactOut(
-            artifactId=row.id,
-            manifest=row.manifest_json,
-            status=row.status,
-            contentHash=row.content_hash,
-        )
+        return ai_viz_service.to_artifact_out(row)
     except AiVizError as exc:
         return _error_response(exc)
 

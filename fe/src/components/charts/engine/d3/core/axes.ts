@@ -445,6 +445,39 @@ export function planNumericAxisTicks(
   return picked;
 }
 
+/** 去掉格式化后重复的数值轴刻度（小整数域如 0–1 时避免 0 0 0 1 1 1） */
+export function distinctFormattedNumericTickValues(
+  scale: d3.ScaleLinear<number, number>,
+  innerSpan: number,
+  formatLabel: (value: d3.NumberValue) => string,
+  options?: { minTicks?: number; maxTicks?: number; minLabelPx?: number },
+): number[] {
+  const candidates = planNumericAxisTicks(scale, innerSpan, formatLabel, options);
+  if (candidates.length <= 2) return candidates;
+
+  const [d0, d1] = scale.domain();
+  const min = Math.min(d0, d1);
+  const max = Math.max(d0, d1);
+  const seen = new Set<string>();
+  const picked: number[] = [];
+
+  const push = (tick: number) => {
+    const label = formatLabel(tick);
+    if (!label || seen.has(label)) return;
+    seen.add(label);
+    picked.push(tick);
+  };
+
+  push(min);
+  for (const tick of candidates) {
+    if (tick === min || tick === max) continue;
+    push(tick);
+  }
+  push(max);
+
+  return picked.length >= 2 ? picked : candidates;
+}
+
 /** 类目 band 过窄时缩小轴标签字号，但不隐藏 */
 export function resolveBandAxisFontSize(bandHeight: number, base = resolveAxisFontSize()): number {
   if (bandHeight >= 13) return base;

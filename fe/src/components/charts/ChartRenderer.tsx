@@ -7,6 +7,7 @@ import { DEFAULT_GEO_HEATMAP_PLACEHOLDER_HINT, DEFAULT_GEO_MAP_PLACEHOLDER_HINT,
 import {
   isCanvasChartType,
   isGeoMapChartType,
+  isGisMapChartType,
   isLegacyTableChartType,
   isMatrixHeatmapChartType,
   type ChartViewConfig,
@@ -256,10 +257,14 @@ export const ChartRenderer = memo(function ChartRenderer({
 }: ChartRendererProps) {
   const navSuspended = useAdminHeavyRenderSuspended();
   const isCardPreview = isCardPreviewProfile(previewProfile);
-  const effectiveQueryEnabled = queryEnabled && !navSuspended;
   const effectiveRenderEnabled = renderEnabled && !navSuspended;
   const drill = useChartDrill(drillEnabled ? widgetId : undefined);
   const effectiveConfig = useMemo(() => migrateChartViewConfig(config), [config]);
+  const isGisMapChart = isGisMapChartType(effectiveConfig.chartType);
+  const gisBasemapOnly = isGisMapChart && !isChartExecuteReady(effectiveConfig);
+  const effectiveQueryEnabled = queryEnabled && !navSuspended;
+  const queryEnabledForExecute =
+    effectiveQueryEnabled && !gisBasemapOnly && isChartExecuteReady(effectiveConfig);
   const manualDrillStack = useMemo(
     () => readManualGeoMapDrillStack(effectiveConfig),
     [effectiveConfig],
@@ -270,7 +275,7 @@ export const ChartRenderer = memo(function ChartRenderer({
   );
 
   const isGeoMapChart = isGeoMapChartType(effectiveConfig.chartType);
-  const deferMountReadyForPaint = effectiveConfig.chartType === "map-3d";
+  const deferMountReadyForPaint = effectiveConfig.chartType === "map-3d" || isGisMapChart;
 
   useLayoutEffect(() => {
     if (!drillEnabled || !widgetId || !drill.active || !isGeoMapChart) return;
@@ -374,7 +379,7 @@ export const ChartRenderer = memo(function ChartRenderer({
     filterParameters: mergedFilterParameters,
     executeKey: resolvedExecuteKey,
     limit: queryLimit,
-    enabled: effectiveQueryEnabled,
+    enabled: queryEnabledForExecute,
   });
   const mountReadySentRef = useRef(false);
   const [page, setPage] = useState(1);
@@ -382,9 +387,10 @@ export const ChartRenderer = memo(function ChartRenderer({
   const drillInteraction =
     drillEnabled && Boolean(widgetId) && supportsChartDrillInteraction(localConfig);
   const isMapChart = isGeoMapChartType(localConfig.chartType);
+  const isGisMapChartLocal = isGisMapChartType(localConfig.chartType);
   const isHeatmapChart = isMatrixHeatmapChartType(localConfig.chartType);
   const isGeoChart = isMapChart || isHeatmapChart;
-  const empty = !loading && !error && (rows?.length ?? 0) === 0 && !isGeoChart;
+  const empty = !loading && !error && (rows?.length ?? 0) === 0 && !isGeoChart && !isGisMapChartLocal;
 
   useEffect(() => {
     mountReadySentRef.current = false;
@@ -393,6 +399,7 @@ export const ChartRenderer = memo(function ChartRenderer({
   useEffect(() => {
     if (!effectiveRenderEnabled || mountReadySentRef.current || !onMountReady) return;
     if (!effectiveQueryEnabled) return;
+    if (gisBasemapOnly) return;
     if (loading) return;
     if (deferMountReadyForPaint) return;
     mountReadySentRef.current = true;
@@ -768,7 +775,7 @@ export const ChartRenderer = memo(function ChartRenderer({
 
     if (isCanvasChartType(localConfig.chartType)) {
       const chartType = localConfig.chartType;
-      if (isGeoMapChartType(chartType) || isMatrixHeatmapChartType(chartType)) {
+      if (isGeoMapChartType(chartType) || isMatrixHeatmapChartType(chartType) || isGisMapChartType(chartType)) {
         return wrapEmbedded(canvasChart());
       }
       if (!renderModel || renderModel.kind === "empty") {
@@ -892,7 +899,7 @@ export const ChartRenderer = memo(function ChartRenderer({
   if (embedded) {
     const gateLabel =
       mountGateStatus === "offscreen" ? "图表屏外已暂停" : "图表排队加载中";
-    if (!effectiveRenderEnabled || !effectiveQueryEnabled) {
+    if (!effectiveRenderEnabled || (!effectiveQueryEnabled && !gisBasemapOnly)) {
       return (
         <div ref={bodyRef} className="relative h-full min-h-0 w-full min-w-0 overflow-hidden">
           <Skeleton
@@ -904,7 +911,8 @@ export const ChartRenderer = memo(function ChartRenderer({
       );
     }
 
-    const showBlockingLoading = loading && columns.length === 0 && rows.length === 0;
+    const showBlockingLoading =
+      loading && columns.length === 0 && rows.length === 0 && !gisBasemapOnly;
     return (
       <div ref={bodyRef} className="relative h-full min-h-0 w-full min-w-0 overflow-hidden">
         {showBlockingLoading ? (
@@ -916,7 +924,7 @@ export const ChartRenderer = memo(function ChartRenderer({
             aria-busy="true"
             aria-label="图表加载中"
           />
-        ) : error ? (
+        ) : error && !gisBasemapOnly ? (
           <div
             role="alert"
             className={cn(

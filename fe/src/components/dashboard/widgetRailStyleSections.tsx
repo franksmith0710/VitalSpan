@@ -20,6 +20,7 @@ import {
 import { ChartPaletteFontSizeSelect } from "./chartPaletteShared";
 import type { WidgetStyleConfig } from "./dashboardStyleConfig";
 import { SURFACE_COLOR_RECOMMENDED } from "./dashboardStyleConfig";
+import { resolveCustomVizWidgetShellStyle } from "./custom-viz/customVizDisplayStyle";
 import type {
   LayoutWidget,
   MediaAlign,
@@ -115,7 +116,10 @@ export function mergeWidgetOverrideStyle(
 /** 栅格看板：合并看板级 + 单组件 widgetStyle 外壳（对标 PixelShape） */
 export function resolveGridWidgetShell(widget: LayoutWidget, dashboardStyle?: DashboardStyleConfig) {
   const scheme = resolveWidgetEffectiveScheme(dashboardStyle);
-  const merged = mergeWidgetOverrideStyle(dashboardStyle?.widgetStyle, widget);
+  const merged =
+    widget.type === "customViz"
+      ? resolveCustomVizWidgetShellStyle(widget, dashboardStyle)
+      : mergeWidgetOverrideStyle(dashboardStyle?.widgetStyle, widget);
   return mergeWidgetShellStyle(merged, scheme);
 }
 

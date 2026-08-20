@@ -31,7 +31,8 @@ export type ChartStyleSectionId =
   | "remark"
   | "legend"
   | "label"
-  | "background";
+  | "background"
+  | "gisProject";
 
 export const STYLE_VARIANT_LABELS: Record<string, string> = {
   default: "默认",

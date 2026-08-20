@@ -64,4 +64,33 @@ describe("PixelWidgetSlot", () => {
     );
     expect(renderWidget).toHaveBeenCalledTimes(2);
   });
+
+  it("re-renders when customVizConfig reference changes", () => {
+    const renderWidget = vi.fn(() => <span>cv</span>);
+    const widget: PixelLayoutWidget = {
+      ...base,
+      type: "customViz",
+      customVizConfig: {
+        artifactId: "550e8400-e29b-41d4-a716-446655440000",
+        style: { accentColor: "#111111" },
+      },
+    };
+    const { rerender } = render(
+      <PixelWidgetSlot widget={widget} renderWidget={renderWidget} contentRevision="r1" />,
+    );
+    rerender(
+      <PixelWidgetSlot
+        widget={{
+          ...widget,
+          customVizConfig: {
+            ...widget.customVizConfig!,
+            style: { accentColor: "#222222" },
+          },
+        }}
+        renderWidget={renderWidget}
+        contentRevision="r1"
+      />,
+    );
+    expect(renderWidget).toHaveBeenCalledTimes(2);
+  });
 });

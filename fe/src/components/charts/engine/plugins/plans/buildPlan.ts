@@ -340,11 +340,13 @@ function columnPlan(
   const horizontal = opts.horizontal ?? false;
   const plotType = horizontal ? "Bar" : "Column";
   const categoryLevelCount = cartesianCategoryLevelCount(spec);
+  const metricField = spec.encoding.metrics[0]?.field ?? "";
   return d3Plan(plotType, {
     data: enc.data,
     xField: enc.xField,
     yField: enc.yField,
     seriesField: enc.seriesField,
+    defaultSeriesName: resolveMetricLabel(spec, metricField),
     isStack: opts.stack ?? false,
     isGroup: opts.group ?? false,
     isPercent: opts.percent ?? false,
@@ -363,11 +365,13 @@ function linePlan(
   const enc = encodeCartesianRows(spec, rows, columns, "line");
   const isHorizontal = enc.isHorizontal;
   const categoryLevelCount = cartesianCategoryLevelCount(spec);
+  const metricField = spec.encoding.metrics[0]?.field ?? "";
   return d3Plan(isHorizontal ? "Bar" : "Line", {
     data: enc.data,
     xField: enc.xField,
     yField: enc.yField,
     seriesField: enc.seriesField,
+    defaultSeriesName: resolveMetricLabel(spec, metricField),
     smooth: opts.smooth ?? vm.styleVariant === "smooth",
     area: opts.area ? {} : undefined,
     isStack: opts.stack ?? false,

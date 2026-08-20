@@ -21,7 +21,7 @@ redoc: /redoc
 | 查询类 | 只读；禁止经 API 写入外部数据源 |
 | 分页 | `?page=&page_size=`（三期起统一；前期可省略） |
 | 错误体 | `{ "code": "...", "message": "...", "detail": ... }` |
-| 成功体例外 | `POST/PUT/GET /ai-viz/artifacts` 成功为裸 `AiVizArtifactOut`（DeepTalk 契约，不含 `{code,message}`）；`GET .../entry` 为 HTML |
+| 成功体例外 | `POST/PUT/GET /ai-viz/artifacts` 成功为裸 `AiVizArtifactOut`（DeepTalk 契约，含 `warnings[]` 样式合规提示；不含 `{code,message}`）；`GET .../entry` 为 HTML |
 
 **运行时 OpenAPI**：`http://localhost:8000/docs` · `http://localhost:8000/redoc`
 
@@ -219,6 +219,10 @@ redoc: /redoc
 | POST | `/api/v1/charts/sdk/validate` | SDK portal init 配置校验（`VIZ_SDK_*`） | 内部 | 一期 | VIZ-007 | 已实现 | `backend/app/api/v1/charts.py` |
 | POST | `/api/v1/charts/sdk/lifecycle` | SDK lifecycle manifest（init/destroy） | 内部 | 一期 | VIZ-007 | 已实现 | `backend/app/api/v1/charts.py` |
 | GET | `/api/v1/charts/sdk/capabilities` | SDK 支持的 targetType/authMode 列表 | 内部 | 一期 | VIZ-007 | 已实现 | `backend/app/api/v1/charts.py` |
+| GET | `/api/v1/tile-services` | 已登记 PMTiles 瓦片服务列表（`gis-map` 底图） | 内部 | 二期 | VIZ-003 | 已实现 | `backend/app/api/v1/tile_services.py` |
+| GET | `/api/v1/tile-services/{serviceId}/resolve` | 解析瓦片服务 URL（PMTiles/glyphs/sprite） | 内部 | 二期 | VIZ-003 | 已实现 | `backend/app/api/v1/tile_services.py` |
+| POST | `/api/v1/tile-services` | 登记瓦片服务（管理员） | 内部 | 二期 | VIZ-003 | 已实现 | `backend/app/api/v1/tile_services.py` |
+| PATCH | `/api/v1/tile-services/{serviceId}` | 更新瓦片服务（管理员） | 内部 | 二期 | VIZ-003 | 已实现 | `backend/app/api/v1/tile_services.py` |
 
 > M9 r42 新增校验错误码：`CHART_INVALID_STYLE_VARIANT`（VIZ-004）、`CHART_FIELD_REQUIREMENT`（VIZ-005）；嵌入错误码 `EMBED_MISSING_TARGET`/`EMBED_TARGET_CONFLICT`/`EMBED_INVALID_ORIGIN`/`EMBED_INVALID`（VIZ-006）。域附录见 [services/viz.md](../services/viz.md)。
 
@@ -339,7 +343,8 @@ redoc: /redoc
 | POST | `/api/v1/reports/standard/packs/{pack_key}/run` | 实时运行指定主题 → renderSpec | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/reports/standard/service.py` |
 | POST | `/api/v1/reports/standard/packs/{pack_key}/snapshots/capture` | 立即打点周期快照 | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/reports/standard/snapshot.py` |
 | GET | `/api/v1/reports/standard/packs/{pack_key}/snapshots` | 快照列表 | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/reports/standard/snapshot.py` |
-| GET | `/api/v1/reports/standard/packs/{pack_key}/compare?theme=` | 本期 vs 上期对比 | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/reports/standard/compare.py` |
+| GET | `/api/v1/reports/standard/packs/{pack_key}/compare?theme=` | 两期对比（可选 `baseline_period_key` / `current_period_key`） | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/reports/standard/compare.py` |
+| GET | `/api/v1/reports/standard/packs/{pack_key}/compare/matrix?theme=&period_keys=` | 多期并排对比（逗号分隔周期键，最多 12 期） | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/reports/standard/compare.py` |
 | GET/PUT | `/api/v1/reports/center/preferences` | 报表中心收藏偏好 | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/center.py` |
 | POST | `/api/v1/reports/center/recent` | 记录最近访问 | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/center.py` |
 | POST | `/api/v1/reports/catalog/nodes/{id}/duplicate` | 目录节点另存为（含扩展配置复制） | 内部 | 二期 | RPT-004 | 已实现 | `backend/app/reports/service.py` |

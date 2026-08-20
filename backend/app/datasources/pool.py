@@ -62,6 +62,7 @@ class DataSourcePoolManager:
                 self._entries[data_source_id] = entry
             entry.pool_size = pool_size
         conn = None
+        leased_new = False
         pool_broken = False
         try:
             try:
@@ -71,10 +72,16 @@ class DataSourcePoolManager:
                     can_open = entry.connect_count < entry.pool_size
                     if can_open:
                         entry.connect_count += 1
+                        leased_new = True
                 if can_open:
                     conn = connector.open_connection(**connect_kwargs)
                 else:
-                    conn = entry.queue.get(timeout=_POOL_WAIT_SECONDS)
+                    try:
+                        conn = entry.queue.get(timeout=_POOL_WAIT_SECONDS)
+                    except queue.Empty as exc:
+                        raise TimeoutError(
+                            f"datasource connection pool exhausted after {_POOL_WAIT_SECONDS:.0f}s",
+                        ) from exc
             yield conn
         except Exception:
             pool_broken = True
@@ -98,6 +105,9 @@ class DataSourcePoolManager:
                             conn.close()
                         except Exception:
                             pass
+            elif leased_new:
+                with self._lock:
+                    entry.connect_count = max(0, entry.connect_count - 1)
 
 
 pool_manager = DataSourcePoolManager()

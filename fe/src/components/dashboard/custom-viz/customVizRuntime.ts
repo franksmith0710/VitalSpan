@@ -4,6 +4,9 @@ import {
   thinCategoryTickIndices,
 } from "./customVizLayoutHelpers";
 import {
+  applyCustomVizStyleBridgeDom,
+} from "./customVizStyleBridge";
+import {
   CUSTOM_VIZ_LAYOUT_UPDATE_EVENT,
   CUSTOM_VIZ_PAYLOAD_CLASS,
   CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
@@ -57,7 +60,9 @@ export function attachCustomVizRuntime(host: HTMLElement): () => void {
 
   const invokeMount = (): void => {
     if (!mountRender) return;
-    mountRender(getPayloadFromHost(host) ?? emptyUnboundPayload());
+    const payload = getPayloadFromHost(host) ?? emptyUnboundPayload();
+    mountRender(payload);
+    applyCustomVizStyleBridgeDom(host, payload.style);
   };
 
   const helpers: VsCvHelpers = {

@@ -14,6 +14,12 @@ import { IconButton } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { pixelWidgetToLayoutWidget } from "../dashboardCanvasMode";
 import { mergeChartTitleStyle, readChartRemark, readChartTitleVisible, resolveChartContentShellStyle, mergeShapeInnerPresentation, resolveWidgetShellStyle } from "@/lib/chartDeStyle";
+import {
+  mergeCustomVizTitleStyle,
+  readCustomVizRemark,
+  readCustomVizTitleVisible,
+  resolveCustomVizContentShellStyle,
+} from "../custom-viz/customVizDisplayStyle";
 import type { DashboardCanvas, PixelLayoutWidget } from "../layoutUtils";
 import { mergeTitleStyle } from "../dashboardStyleConfig";
 import { resolveWidgetEffectiveScheme } from "@/lib/chartSurfaceTheme";
@@ -197,6 +203,17 @@ function resolveShapeTitleState(
       remark: { show: false, text: "" },
     };
   }
+  if (widget.type === "customViz" && widget.customVizConfig) {
+    return {
+      showTitle: readCustomVizTitleVisible(widget.customVizConfig, styleConfig),
+      titleStyle: mergeCustomVizTitleStyle(
+        styleConfig?.titleStyle,
+        widget.customVizConfig,
+        effectiveScheme,
+      ),
+      remark: readCustomVizRemark(widget.customVizConfig),
+    };
+  }
   const showTitle = mode === "edit" ? chrome.showChartActionButtons : true;
   return {
     showTitle,
@@ -377,15 +394,17 @@ export function PixelShape({
           widget.chartConfig,
           effectiveScheme,
         )
-      : {
-          outer: resolveWidgetShellStyle(
-            shellWidgetStyle,
-            effectiveScheme,
-          ),
-          inner: {} as CSSProperties,
-          innerBackgroundLayer: null,
-          innerFrameLayer: null,
-        };
+      : widget.type === "customViz" && widget.customVizConfig
+        ? resolveCustomVizContentShellStyle(widget, styleConfig, effectiveScheme)
+        : {
+            outer: resolveWidgetShellStyle(
+              shellWidgetStyle,
+              effectiveScheme,
+            ),
+            inner: {} as CSSProperties,
+            innerBackgroundLayer: null,
+            innerFrameLayer: null,
+          };
   const { shell: innerShell, content: contentShell } =
     widget.type === "text" && isScreenBorderWidget(widget)
       ? applyScreenBorderShellPresentation(mergeShapeInnerPresentation(shell))

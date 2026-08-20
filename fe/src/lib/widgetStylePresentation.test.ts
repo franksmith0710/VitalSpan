@@ -87,6 +87,18 @@ describe("buildWidgetBackgroundPresentation", () => {
     expect(presentation.backgroundLayer?.opacity).toBe(0.5);
   });
 
+  it("uses transparent shell surface when backgroundShow is false even with color set", () => {
+    const presentation = buildWidgetBackgroundPresentation(
+      {
+        backgroundShow: false,
+        background: "#613e3e",
+      },
+      "light",
+    );
+    expect(presentation.surface.backgroundColor).toBe("transparent");
+    expect(presentation.backgroundLayer).toBeNull();
+  });
+
   it("uses widthFit layer style for decor backgrounds", () => {
     const presentation = buildWidgetBackgroundPresentation(
       {

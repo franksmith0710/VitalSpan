@@ -19,7 +19,7 @@ import { setCustomVizDragData, type CustomVizDragPayload } from "@/lib/dashboard
 import { fetchAiVizArtifacts, type AiVizArtifactMeta } from "@/lib/aiVizArtifacts";
 import { queryKeys } from "@/lib/queryKeys";
 import { useQuery } from "@tanstack/react-query";
-import { Sparkles } from "lucide-react";
+import { Sparkles, TriangleAlert } from "lucide-react";
 import {
   ChartExploreCatalogTrigger,
   ChartExploreDrawer,
@@ -58,6 +58,11 @@ function CustomVizTile({
   enableDrag?: boolean;
 }) {
   const label = item.manifest.displayName ?? item.manifest.id ?? "自定义组件";
+  const complianceWarnings = item.warnings ?? [];
+  const warningHint =
+    complianceWarnings.length > 0
+      ? complianceWarnings.map((warning) => warning.message).join("\n")
+      : undefined;
   const payload: CustomVizDragPayload = {
     type: "customViz",
     artifactId: item.artifactId,
@@ -97,9 +102,19 @@ function CustomVizTile({
         "focus-visible:outline-hidden focus-visible:ring-3 focus-visible:ring-brand-500/20",
       )}
       data-testid={`custom-viz-tile-${item.artifactId}`}
+      title={warningHint}
     >
-      <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-brand-500 dark:bg-white/[0.06] dark:text-brand-400">
+      <span className="relative flex size-12 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-brand-500 dark:bg-white/[0.06] dark:text-brand-400">
         <Sparkles className="size-6" strokeWidth={1.75} aria-hidden />
+        {complianceWarnings.length > 0 ? (
+          <span
+            className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-warning-500 text-white"
+            aria-label="样式合规警告"
+            title={warningHint}
+          >
+            <TriangleAlert className="size-2.5" strokeWidth={2.5} aria-hidden />
+          </span>
+        ) : null}
       </span>
       <span className="line-clamp-2 w-full text-[11px] leading-tight text-gray-700 dark:text-gray-300">
         {label}

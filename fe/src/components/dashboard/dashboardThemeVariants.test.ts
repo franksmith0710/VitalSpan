@@ -305,6 +305,37 @@ describe("dashboardThemeVariants", () => {
     expect(de?.seriesColor).toBeUndefined();
   });
 
+  it("applyDashboardStylePatch clears customViz widgetStyle and displayStyle overrides", () => {
+    const bundle = applyDashboardStylePatch(
+      { widgetStyle: { background: "#fff" }, paletteId: "default", titleStyle: { fontSize: 16 } },
+      [
+        {
+          id: "cv1",
+          type: "customViz",
+          title: "排名条",
+          colSpan: 6,
+          rowSpan: 4,
+          customVizConfig: {
+            artifactId: "a1",
+            widgetStyle: { background: "#613e3e" },
+            displayStyle: {
+              title: { fontSize: 20 },
+              paletteId: "warm",
+              background: { padding: 8 },
+            },
+            style: { accentColor: "#222" },
+          },
+        },
+      ],
+      { widgetStyle: { background: "#000" }, paletteId: "clarity", titleStyle: { fontSize: 18 } },
+    );
+
+    expect(bundle.widgets[0].type === "customViz" && bundle.widgets[0].customVizConfig).toEqual({
+      artifactId: "a1",
+      style: { accentColor: "#222" },
+    });
+  });
+
   it("applyDashboardStylePatch syncs tableColorStyle with chart palette", () => {
     const bundle = applyDashboardStylePatch(
       {

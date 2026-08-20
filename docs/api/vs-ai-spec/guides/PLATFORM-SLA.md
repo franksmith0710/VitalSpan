@@ -74,11 +74,15 @@ host.vsCv.mount(function (payload) {
 
 ## 入库 lint（POST/PUT）
 
-| 规则 | 错误码 |
-|------|--------|
-| d3 须含 `vsCv.mount` | `AIVIZ_MOUNT_REQUIRED` |
-| 禁 `id="root"` / `id="app"` | `AIVIZ_FORBIDDEN_HOST_ID` |
-| 禁外链 script / 内联事件 / 内联 d3 整库 | 既有 AIVIZ_* |
+| 规则 | 级别 | 错误码 / warn code |
+|------|------|---------------------|
+| d3 须含 `vsCv.mount` | **422** | `AIVIZ_MOUNT_REQUIRED` |
+| html 建议含 `vsCv.mount` | warn | `AIVIZ_WARN_MOUNT_RECOMMENDED` |
+| 须引用 `payload.style` 或 `--vs-style-*` / `--vs-palette-*` | warn | `AIVIZ_WARN_STYLE_COMPLIANCE` |
+| 禁 `id="root"` / `id="app"` | **422** | `AIVIZ_FORBIDDEN_HOST_ID` |
+| 禁外链 script / 内联事件 / 内联 d3 整库 | **422** | 既有 AIVIZ_* |
+
+样式合规细则见 [CUSTOM-VIZ-STYLE-COMPLIANCE.md](./CUSTOM-VIZ-STYLE-COMPLIANCE.md)。
 
 ## 老 artifact
 

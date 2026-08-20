@@ -44,6 +44,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--dsn", default=DEFAULT_DSN)
     p.add_argument("--days", type=int, default=14, help="历史天数（默认 14）")
     p.add_argument("--step-minutes", type=int, default=1, help="采样间隔分钟（默认 1）")
+    p.add_argument("--rows", type=int, default=None, help="快速模式：仅灌 host_metrics 指定行数（如 1000）")
     p.add_argument("--truncate", action="store_true", help="清空时序表后重灌")
     p.add_argument("--seed", type=int, default=42)
     return p.parse_args()
@@ -155,6 +156,51 @@ def seed_host_metrics(
         )
         total += len(rows)
     return total
+
+
+def seed_host_metrics_fixed_rows(
+    cur: psycopg.Cursor,
+    *,
+    hosts: list[int],
+    row_count: int,
+    rng: random.Random,
+) -> int:
+    """快速联调：向 host_metrics 写入固定行数（按分钟回溯）。"""
+    if row_count <= 0 or not hosts:
+        return 0
+
+    end = datetime.now(timezone.utc).replace(second=0, microsecond=0)
+    rows: list[tuple] = []
+    for i in range(row_count):
+        host_id = hosts[i % len(hosts)]
+        t = end - timedelta(minutes=row_count - 1 - i)
+        hour = t.hour
+        cpu = clamp(seasonal(hour, 35, 10) + rng.gauss(0, 3), 2, 99)
+        mem = clamp(seasonal(hour, 55, 8) + rng.gauss(0, 2), 10, 98)
+        disk = clamp(60 + rng.gauss(0, 2), 20, 97)
+        rows.append(
+            (
+                t,
+                host_id,
+                round(cpu, 2),
+                round(mem, 2),
+                round(disk, 2),
+                round(rng.uniform(5, 120), 2),
+                round(rng.uniform(2, 80), 2),
+                round(rng.uniform(10, 200), 2),
+                round(rng.uniform(8, 180), 2),
+                round(cpu / 20 + rng.gauss(0, 0.3), 2),
+                round(rng.uniform(15, 60), 2),
+            )
+        )
+
+    cur.executemany(
+        """INSERT INTO host_metrics
+        (time, host_id, cpu_pct, mem_pct, disk_pct, disk_read_mbps, disk_write_mbps,
+         net_in_mbps, net_out_mbps, load_1m, inode_pct) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+        rows,
+    )
+    return len(rows)
 
 
 def seed_service_metrics(
@@ -419,46 +465,52 @@ def main() -> None:
                 print("未找到 dim_host，请先执行 docker compose 初始化 SQL", file=sys.stderr)
                 sys.exit(1)
 
-            print(f"灌入 host_metrics（{len(hosts)} 主机, {args.days} 天）…")
-            n_host = seed_host_metrics(cur, hosts=hosts, start=start, end=end, step=step, rng=rng)
-            conn.commit()
-            print(f"  → {n_host:,} 行")
+            if args.rows is not None:
+                print(f"快速模式：灌入 host_metrics {args.rows:,} 行…")
+                n_host = seed_host_metrics_fixed_rows(cur, hosts=hosts, row_count=args.rows, rng=rng)
+                conn.commit()
+                print(f"  → {n_host:,} 行")
+            else:
+                print(f"灌入 host_metrics（{len(hosts)} 主机, {args.days} 天）…")
+                n_host = seed_host_metrics(cur, hosts=hosts, start=start, end=end, step=step, rng=rng)
+                conn.commit()
+                print(f"  → {n_host:,} 行")
 
-            print("灌入 service_metrics…")
-            n_svc = seed_service_metrics(
-                cur,
-                services=ids["services"],
-                clusters=ids["clusters"],
-                start=start,
-                end=end,
-                step=step,
-                rng=rng,
-            )
-            conn.commit()
-            print(f"  → {n_svc:,} 行")
+                print("灌入 service_metrics…")
+                n_svc = seed_service_metrics(
+                    cur,
+                    services=ids["services"],
+                    clusters=ids["clusters"],
+                    start=start,
+                    end=end,
+                    step=step,
+                    rng=rng,
+                )
+                conn.commit()
+                print(f"  → {n_svc:,} 行")
 
-            print("灌入 k8s_pod_metrics…")
-            n_pod = seed_k8s_pod_metrics(
-                cur, clusters=ids["clusters"], start=start, end=end, step=step, rng=rng
-            )
-            conn.commit()
-            print(f"  → {n_pod:,} 行")
+                print("灌入 k8s_pod_metrics…")
+                n_pod = seed_k8s_pod_metrics(
+                    cur, clusters=ids["clusters"], start=start, end=end, step=step, rng=rng
+                )
+                conn.commit()
+                print(f"  → {n_pod:,} 行")
 
-            print("灌入 alert_events / synthetic_probe / log_volume / backup_jobs…")
-            n_alert = seed_alert_events(
-                cur,
-                rules=ids["rules"],
-                hosts=hosts,
-                services=ids["services"],
-                start=start,
-                end=end,
-                rng=rng,
-            )
-            n_probe = seed_synthetic_probe(cur, start=start, end=end, rng=rng)
-            n_log = seed_log_volume(cur, services=ids["services"], start=start, end=end, rng=rng)
-            n_bak = seed_backup_jobs(cur, hosts=hosts, start=start, end=end, rng=rng)
-            conn.commit()
-            print(f"  → alerts={n_alert:,} probes={n_probe:,} logs={n_log:,} backups={n_bak:,}")
+                print("灌入 alert_events / synthetic_probe / log_volume / backup_jobs…")
+                n_alert = seed_alert_events(
+                    cur,
+                    rules=ids["rules"],
+                    hosts=hosts,
+                    services=ids["services"],
+                    start=start,
+                    end=end,
+                    rng=rng,
+                )
+                n_probe = seed_synthetic_probe(cur, start=start, end=end, rng=rng)
+                n_log = seed_log_volume(cur, services=ids["services"], start=start, end=end, rng=rng)
+                n_bak = seed_backup_jobs(cur, hosts=hosts, start=start, end=end, rng=rng)
+                conn.commit()
+                print(f"  → alerts={n_alert:,} probes={n_probe:,} logs={n_log:,} backups={n_bak:,}")
 
             print("\n=== 行数统计 ===")
             for table in (

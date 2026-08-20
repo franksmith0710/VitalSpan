@@ -14,6 +14,27 @@ import { drawFunnelLayer, funnelTrapezoidPath } from "./funnelDepth";
 
 type FunnelRow = { stage: string; number: number };
 
+function fitFunnelThumbnailViewBox(
+  root: d3.Selection<SVGSVGElement, unknown, null, undefined>,
+  plot: d3.Selection<SVGGElement, unknown, null, undefined>,
+  width: number,
+  height: number,
+  pad = 4,
+): void {
+  const node = plot.node();
+  if (!node) return;
+  const bbox = node.getBBox();
+  if (bbox.width <= 0 || bbox.height <= 0) return;
+  root
+    .attr(
+      "viewBox",
+      `${bbox.x - pad} ${bbox.y - pad} ${bbox.width + pad * 2} ${bbox.height + pad * 2}`,
+    )
+    .attr("width", width)
+    .attr("height", height)
+    .attr("preserveAspectRatio", "xMidYMid meet");
+}
+
 function contrastOnFill(fill: string): string {
   const hex = fill.trim();
   if (!hex.startsWith("#") || hex.length < 7) return "#fff";
@@ -44,9 +65,11 @@ export function renderD3FunnelChart(container: HTMLElement, config: D3RenderConf
     onPointClick,
     options,
     depthVisual,
+    renderTier,
   } = config;
 
-  const depthLevel = resolveEffectiveDepth(depthVisual);
+  const isThumbnail = renderTier === "thumbnail";
+  const depthLevel = isThumbnail ? "off" : resolveEffectiveDepth(depthVisual);
   const extrude = depthExtrudePx(depthLevel);
   const xField = String(options.xField ?? "stage");
   const yField = String(options.yField ?? "number");
@@ -74,6 +97,7 @@ export function renderD3FunnelChart(container: HTMLElement, config: D3RenderConf
     showConversion,
     gap: Number(options.__funnelGap ?? 4),
     extrudePx: extrude,
+    renderTier,
   });
   const { margin, cx, maxWidth, layerH, gap } = layout;
   const maxVal = d3.max(data, (d) => d.number) ?? 1;
@@ -185,6 +209,10 @@ export function renderD3FunnelChart(container: HTMLElement, config: D3RenderConf
     layout: legendLayout,
     fontSize: legendLayout?.fontSize,
   });
+
+  if (isThumbnail) {
+    fitFunnelThumbnailViewBox(root, g, width, height);
+  }
 
   return () => container.replaceChildren();
 }

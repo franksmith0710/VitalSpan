@@ -66,6 +66,7 @@ export function buildCartesianRenderConfig(
     areaOpacity: options.__areaOpacity as number | undefined,
     axisStyle: options.__axisStyle as D3CartesianRenderConfig["axisStyle"],
     categoryLevelCount: options.categoryLevelCount as number | undefined,
+    defaultSeriesName: options.defaultSeriesName ? String(options.defaultSeriesName) : undefined,
     markLines: chartConfig ? readChartMarkLines(chartConfig) : markLinesFromPlan ?? style.deFeatures?.markLines,
     conditionalRules:
       chartConfig ? readChartConditionalRules(chartConfig) : conditionalFromPlan ?? style.deFeatures?.conditionalRules,

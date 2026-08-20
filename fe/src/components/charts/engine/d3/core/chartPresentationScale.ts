@@ -122,8 +122,8 @@ export function endPresentationPaint(): void {
 
 /** Hub 卡片缩略图：仅保留图形轮廓，关闭图例与数据标签避免挤占预览区 */
 export function applyHubThumbnailStyleOverrides<
-  T extends { showLegend?: boolean; showLabel?: boolean },
+  T extends { showLegend?: boolean; showLabel?: boolean; depthVisual?: import("@/components/charts/engine/d3/core/chartVisualTokens").DepthVisualLevel },
 >(style: T, renderTier?: Geo3dRenderTier): T {
   if (renderTier !== "thumbnail") return style;
-  return { ...style, showLegend: false, showLabel: false };
+  return { ...style, showLegend: false, showLabel: false, depthVisual: "off" };
 }

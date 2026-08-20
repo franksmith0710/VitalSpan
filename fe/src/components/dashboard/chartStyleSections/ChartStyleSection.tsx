@@ -5,7 +5,7 @@ import { ChartTableColorPanel } from "../ChartTableColorPanel";
 import { ChartGeoStylePanel } from "../ChartGeoStylePanel";
 import { useChartInspector } from "../ChartInspectorContext";
 import { readChartDeStyle } from "@/lib/chartDeStyle";
-import { ChartVariantBasicSection } from "./ChartVariantBasicSection";
+import { ChartGisMapProjectPanel } from "./ChartGisMapProjectPanel";
 import {
   ChartBackgroundStyleSection,
   ChartLabelStyleSection,
@@ -53,6 +53,8 @@ export function ChartStyleSection({ sectionId }: ChartStyleSectionProps) {
       return <ChartTableStylePanel />;
     case "tableColor":
       return <ChartTableColorPanel />;
+    case "gisProject":
+      return isGisMapChartType(cfg.chartType) ? <ChartGisMapProjectPanel /> : null;
     case "variantBasic":
       return <ChartVariantBasicSection />;
     case "axis":

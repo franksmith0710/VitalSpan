@@ -1,6 +1,6 @@
 import type { ChartFieldRef, ChartViewConfig } from "@/lib/chartViewConfig";
 import { isD3TableChartType } from "@/components/charts/engine/registry";
-import { isLegacyTableChartType } from "@/lib/chartViewConfig";
+import { isGisMapChartType, isLegacyTableChartType } from "@/lib/chartViewConfig";
 import { isChartExecuteReady } from "@/lib/chartExecuteProbe";
 import { deAxisRenderReady, syncLegacyFieldsFromAxes } from "@/lib/resolveChartEncoding";
 
@@ -19,10 +19,19 @@ export function normalizeChartFieldRefs(refs: ChartFieldRef[] | undefined): Char
 }
 
 export function resolveChartConfigPhase(config: ChartViewConfig | undefined): ChartConfigPhase {
+  const chartType = config?.chartType ?? "table";
+  if (config && isGisMapChartType(chartType)) {
+    const queryReady = isChartExecuteReady(config);
+    return {
+      bindingReady: true,
+      queryReady,
+      renderReady: true,
+    };
+  }
+
   const queryReady = config ? isChartExecuteReady(config) : false;
   const dimFields = activeFieldRefs(config?.dimensions);
   const metricFields = activeFieldRefs(config?.metrics);
-  const chartType = config?.chartType ?? "table";
 
   let renderReady = false;
   if (queryReady && config) {
@@ -43,7 +52,9 @@ export function resolveChartConfigPhase(config: ChartViewConfig | undefined): Ch
 }
 
 export function isWidgetConfigReady(chartConfig: ChartViewConfig | undefined): boolean {
-  return chartConfig ? isChartExecuteReady(chartConfig) : false;
+  if (!chartConfig) return false;
+  if (isGisMapChartType(chartConfig.chartType)) return true;
+  return isChartExecuteReady(chartConfig);
 }
 
 function reconcileAxisFields(

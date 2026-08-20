@@ -7,6 +7,7 @@ import { DEFAULT_CHART_LEGEND_STYLE, readChartDeStyle, type ChartDeStyle } from 
 import { DEFAULT_TABLE_COLUMN_WIDTH_MODE } from "@/lib/chartDeTableStyle";
 import { isTableLikeChartType } from "@/lib/chartTableInspector";
 import { DEFAULT_MAP_3D_CHART_DE_STYLE } from "@/lib/defaultMap3dChartDeStyle";
+import { defaultGisProjectNativeBody } from "@/components/charts/engine/maplibre/gisProject";
 import { buildDefaultPieDeStyle, isPieChartType } from "@/lib/defaultPieChartDeStyle";
 import { buildDefaultRadarDeStyle } from "@/lib/defaultRadarChartDeStyle";
 import { buildDefaultTreemapDeStyle } from "@/lib/defaultTreemapChartDeStyle";
@@ -884,6 +885,17 @@ export function defaultChartConfig(type: ChartType): ChartViewConfig {
         deStyle: {
           ...DEFAULT_MAP_3D_CHART_DE_STYLE,
         },
+      },
+    });
+  }
+  if (type === "gis-map") {
+    return withLegendDefault({
+      chartType: "gis-map",
+      ...base,
+      dimensions: [],
+      metrics: [],
+      nativeBody: {
+        ...defaultGisProjectNativeBody(),
       },
     });
   }

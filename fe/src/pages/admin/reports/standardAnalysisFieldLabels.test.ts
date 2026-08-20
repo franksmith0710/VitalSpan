@@ -9,6 +9,7 @@ describe("standardAnalysisFieldLabels", () => {
   it("maps common column names to Chinese labels", () => {
     expect(humanizeColumnName("province")).toBe("省份");
     expect(humanizeColumnName("cnt")).toBe("数量");
+    expect(humanizeColumnName("value")).toBe("数量");
     expect(humanizeColumnName("dim")).toBe("维度");
   });
 

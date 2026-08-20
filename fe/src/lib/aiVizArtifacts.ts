@@ -1,5 +1,10 @@
 import { apiFetch } from "@/lib/api";
 
+export type AiVizComplianceWarning = {
+  code: string;
+  message: string;
+};
+
 export type AiVizArtifactMeta = {
   artifactId: string;
   manifest: {
@@ -14,6 +19,7 @@ export type AiVizArtifactMeta = {
   };
   status: string;
   contentHash: string;
+  warnings?: AiVizComplianceWarning[];
 };
 
 export type AiVizArtifactListResponse = {

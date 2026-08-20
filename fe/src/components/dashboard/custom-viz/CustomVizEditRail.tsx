@@ -37,7 +37,7 @@ export function CustomVizEditRail({
 
   useEffect(() => {
     setDraftConfig(widget.customVizConfig);
-  }, [scopeKey]);
+  }, [scopeKey, widget.customVizConfig]);
 
   const readConfig = useCallback(() => draftConfig, [draftConfig]);
   const emitChange = useCallback(

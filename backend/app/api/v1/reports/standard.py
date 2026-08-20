@@ -12,13 +12,14 @@ from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext, require_permission
 from app.datasources.models import get_meta_session
-from app.reports.standard.compare import compare_pack
+from app.reports.standard.compare import compare_pack, compare_periods_matrix
 from app.reports.standard.errors import StandardAnalysisError
 from app.reports.standard.schemas import (
     AnalysisPackIn,
     AnalysisPackListResponse,
     AnalysisPackOut,
     CapabilitiesOut,
+    CompareMatrixOut,
     CompareOut,
     RunIn,
     RunOut,
@@ -119,8 +120,15 @@ def capture(
     theme: str,
     actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
+    period_key: str | None = None,
 ) -> SnapshotOut | JSONResponse:
     try:
+        pack = standard_service.get_pack(pack_key, actor)
+        if period_key:
+            period_kind, _ = standard_service.period_key_for(pack.snapshot_cron_preset)
+            return capture_snapshot(
+                db, pack_key, theme, actor, period_kind=period_kind, period_key=period_key,
+            )
         return capture_snapshot(db, pack_key, theme, actor)
     except StandardAnalysisError as exc:
         return _std_error(exc)
@@ -144,8 +152,32 @@ def compare(
     theme: str,
     actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
+    baseline_period_key: str | None = None,
+    current_period_key: str | None = None,
 ) -> CompareOut | JSONResponse:
     try:
-        return compare_pack(db, pack_key, theme, actor)
+        return compare_pack(
+            db,
+            pack_key,
+            theme,
+            actor,
+            baseline_period_key=baseline_period_key,
+            current_period_key=current_period_key,
+        )
+    except StandardAnalysisError as exc:
+        return _std_error(exc)
+
+
+@router.get("/packs/{pack_key}/compare/matrix", response_model=CompareMatrixOut)
+def compare_matrix(
+    pack_key: str,
+    theme: str,
+    period_keys: str,
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    db: Annotated[Session, Depends(_db)],
+) -> CompareMatrixOut | JSONResponse:
+    try:
+        keys = [part.strip() for part in period_keys.split(",") if part.strip()]
+        return compare_periods_matrix(db, pack_key, theme, keys, actor)
     except StandardAnalysisError as exc:
         return _std_error(exc)

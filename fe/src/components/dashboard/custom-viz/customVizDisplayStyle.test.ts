@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  mergeCustomVizTitleStyle,
+  readCustomVizRemark,
+  resolveCustomVizContentShellStyle,
   resolveCustomVizRuntimeStyle,
+  resolveCustomVizWidgetShellStyle,
   stripCustomVizDisplayStyleOverrides,
+  syncCustomVizWidgetsForDashboardScopes,
 } from "./customVizDisplayStyle";
 
 describe("resolveCustomVizRuntimeStyle", () => {
@@ -46,6 +51,124 @@ describe("stripCustomVizDisplayStyleOverrides", () => {
       label: { position: "outside" },
       tooltip: { fontSize: 12 },
       border: { width: 2 },
+    });
+  });
+});
+
+describe("resolveCustomVizWidgetShellStyle", () => {
+  it("merges dashboard, advanced widgetStyle, and style-tab background", () => {
+    const merged = resolveCustomVizWidgetShellStyle(
+      {
+        customVizConfig: {
+          artifactId: "a1",
+          widgetStyle: { background: "#613e3e", backgroundShow: true },
+          displayStyle: {
+            background: { backgroundShow: false, padding: 12 },
+            border: { show: true, color: "#999", width: 2 },
+          },
+        },
+      },
+      { widgetStyle: { background: "#ffffff", borderRadius: 8 } },
+    );
+
+    expect(merged?.background).toBe("#613e3e");
+    expect(merged?.backgroundShow).toBe(false);
+    expect(merged?.padding).toBe(12);
+    expect(merged?.borderRadius).toBe(8);
+    expect(merged?.borderEnabled).toBe(true);
+    expect(merged?.borderColor).toBe("#999");
+    expect(merged?.borderWidth).toBe(2);
+  });
+
+  it("respects backgroundShow false in rendered shell", () => {
+    const shell = resolveCustomVizContentShellStyle(
+      {
+        customVizConfig: {
+          artifactId: "a1",
+          displayStyle: { background: { backgroundShow: false } },
+        },
+      },
+      { widgetStyle: { background: "#613e3e", backgroundShow: true } },
+      "light",
+    );
+
+    expect(shell.outer.style.backgroundColor).toBe("transparent");
+  });
+});
+
+describe("customViz title and remark chrome", () => {
+  it("reads remark visibility and merges title overrides", () => {
+    expect(
+      readCustomVizRemark({
+        artifactId: "a1",
+        displayStyle: { remark: { show: true, text: "  备注  " } },
+      }),
+    ).toEqual({ show: true, text: "备注" });
+
+    expect(
+      mergeCustomVizTitleStyle(
+        { fontSize: 14, color: "#111" },
+        { artifactId: "a1", displayStyle: { title: { color: "#abc", fontSize: 20 } } },
+        "light",
+      ),
+    ).toMatchObject({ color: "#abc", fontSize: "20px" });
+  });
+});
+
+describe("syncCustomVizWidgetsForDashboardScopes", () => {
+  it("clears customViz overrides when dashboard palette/widget/title changes", () => {
+    const widgets = syncCustomVizWidgetsForDashboardScopes(
+      [
+        {
+          id: "cv1",
+          type: "customViz",
+          title: "排名条",
+          colSpan: 6,
+          rowSpan: 4,
+          customVizConfig: {
+            artifactId: "a1",
+            widgetStyle: { background: "#613e3e", backgroundShow: true },
+            displayStyle: {
+              title: { show: true, fontSize: 20 },
+              background: { backgroundShow: false },
+              paletteId: "warm",
+              label: { show: false, color: "#fff" },
+            },
+          },
+        },
+      ],
+      new Set(["title", "widgetAppearance", "palette"]),
+    );
+
+    expect(widgets[0].type === "customViz" && widgets[0].customVizConfig).toEqual({
+      artifactId: "a1",
+      displayStyle: undefined,
+    });
+  });
+
+  it("keeps schema style and data binding untouched", () => {
+    const widgets = syncCustomVizWidgetsForDashboardScopes(
+      [
+        {
+          id: "cv1",
+          type: "customViz",
+          title: "排名条",
+          colSpan: 6,
+          rowSpan: 4,
+          customVizConfig: {
+            artifactId: "a1",
+            style: { accentColor: "#222", showRankBadge: true },
+            displayStyle: { paletteId: "warm" },
+          },
+        },
+      ],
+      new Set(["palette"]),
+    );
+
+    expect(widgets[0].type === "customViz" && widgets[0].customVizConfig).toEqual({
+      artifactId: "a1",
+      style: { accentColor: "#222", showRankBadge: true },
+      displayStyle: undefined,
     });
   });
 });

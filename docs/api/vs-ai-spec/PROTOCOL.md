@@ -73,9 +73,11 @@ Base 在跑 bundle 脚本前给宿主挂 `host.vsCv`：`getPayload()`、`onPaylo
 
 ## 注册与更新 API
 
-`POST /api/v1/ai-viz/artifacts` — 新建，响应 `{ "artifactId": "<uuid>", "manifest": { ... } }`
+`POST /api/v1/ai-viz/artifacts` — 新建，响应含 `artifactId`、`manifest`、`warnings[]`（样式合规 warn，不阻断入库）
 
 `PUT /api/v1/ai-viz/artifacts/{id}` — 覆盖同一组件源码；引用该 ID 的看板/大屏下次打开即新代码
+
+样式合规 warn 细则见 [guides/CUSTOM-VIZ-STYLE-COMPLIANCE.md](./guides/CUSTOM-VIZ-STYLE-COMPLIANCE.md)。
 
 ## 挂到看板/大屏
 

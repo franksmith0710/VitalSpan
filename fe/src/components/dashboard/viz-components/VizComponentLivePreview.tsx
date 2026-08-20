@@ -70,8 +70,8 @@ export function VizComponentLivePreview({
     return () => setChartAnimationSuppressed(false);
   }, [active]);
 
-  const chartWidth = Math.max(width, 120);
-  const chartHeight = Math.max(height, 96);
+  const chartWidth = Math.max(size.width, 120);
+  const chartHeight = Math.max(size.height, 96);
   const chartConfig = widget.type === "chart" ? widget.chartConfig : undefined;
   const drillEnabled = Boolean(chartConfig && isGeoMapChartType(chartConfig.chartType));
 
@@ -138,7 +138,7 @@ export function VizComponentLivePreview({
           shell={compact ? "shape" : "grid"}
         />
       ) : null}
-      {widget.type === "customViz" && widget.customVizConfig ? (
+      {widget.type === "customViz" && widget.customVizConfig && active ? (
         <CustomVizWidget
           widget={widget as LayoutWidget & { customVizConfig: NonNullable<typeof widget.customVizConfig> }}
           mode="view"

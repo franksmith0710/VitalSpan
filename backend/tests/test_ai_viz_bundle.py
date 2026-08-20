@@ -5,6 +5,7 @@ from app.ai_viz.models import (
     validate_bundle_files,
     validate_manifest,
 )
+from app.ai_viz.style_compliance import collect_bundle_style_compliance_warnings
 
 _MIN_MANIFEST = {
     "fieldSlots": {"dimensions": {"min": 1}, "metrics": {"min": 1}},
@@ -75,6 +76,21 @@ def test_official_d3_example_passes_mount_lint() -> None:
     validate_bundle_files({"index.html": html}, "index.html", manifest)
 
 
+def test_official_ranking_bar_medal_passes_lint() -> None:
+    import json
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[2]
+    doc = json.loads(
+        (root / "docs/api/vs-ai-spec/examples/custom-viz-ranking-bar-medal.json").read_text(encoding="utf-8")
+    )
+    html = doc["files"]["index.html"]
+    manifest = doc["manifest"]
+    validate_manifest(manifest)
+    validate_bundle_files({"index.html": html}, "index.html", manifest)
+    assert "vsCv.mount" in html
+
+
 def test_bundle_size_limit_is_2mb() -> None:
     assert MAX_BUNDLE_BYTES == 2 * 1024 * 1024
     modest = "a" * 1024
@@ -87,3 +103,39 @@ def test_bundle_size_limit_is_2mb() -> None:
         assert exc.status == 413
         return
     raise AssertionError("expected AIVIZ_BUNDLE_TOO_LARGE")
+
+
+def test_style_compliance_warns_html_without_mount_or_style() -> None:
+    html = "<!DOCTYPE html><html><body><div>static</div></body></html>"
+    manifest = {**_MIN_MANIFEST, "runtime": "html"}
+    warnings = collect_bundle_style_compliance_warnings({"index.html": html}, "index.html", manifest)
+    codes = {item.code for item in warnings}
+    assert "AIVIZ_WARN_MOUNT_RECOMMENDED" in codes
+    assert "AIVIZ_WARN_STYLE_COMPLIANCE" in codes
+
+
+def test_style_compliance_accepts_payload_style_only() -> None:
+    html = (
+        "<!DOCTYPE html><html><body><script>"
+        "host.vsCv.mount(function(p){var st=(p&&p.style)||{};});"
+        "</script></body></html>"
+    )
+    manifest = {**_MIN_MANIFEST, "runtime": "html"}
+    warnings = collect_bundle_style_compliance_warnings({"index.html": html}, "index.html", manifest)
+    assert warnings == []
+
+
+def test_official_custom_viz_examples_have_no_style_warnings() -> None:
+    import json
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[2]
+    examples_dir = root / "docs/api/vs-ai-spec/examples"
+    paths = sorted(examples_dir.glob("custom-viz-*.json"))
+    assert paths, "expected at least one custom-viz example"
+    for path in paths:
+        doc = json.loads(path.read_text(encoding="utf-8"))
+        manifest = doc["manifest"]
+        entry = manifest.get("entry") or "index.html"
+        warnings = collect_bundle_style_compliance_warnings(doc["files"], entry, manifest)
+        assert warnings == [], f"{path.name}: {[item.code for item in warnings]}"

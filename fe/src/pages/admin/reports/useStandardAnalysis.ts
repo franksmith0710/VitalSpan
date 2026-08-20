@@ -60,6 +60,7 @@ export type CompareResult = {
   theme: AnalysisTheme;
   currentPeriodKey: string;
   previousPeriodKey: string | null;
+  currentSource?: "live" | "snapshot";
   current: { columns: unknown[]; rows: unknown[] };
   previous: { columns: unknown[]; rows: unknown[] } | null;
   deltas: Array<{
@@ -69,6 +70,19 @@ export type CompareResult = {
     delta: number | null;
     deltaPct: number | null;
   }>;
+};
+
+export type CompareMatrixResult = {
+  packKey: string;
+  theme: AnalysisTheme;
+  periodKind: SnapshotCronPreset;
+  periodKeys: string[];
+  rows: Array<{ key: string; values: Record<string, number> }>;
+};
+
+export type CompareQueryOptions = {
+  baselinePeriodKey?: string;
+  currentPeriodKey?: string;
 };
 
 export type SnapshotRecord = {
@@ -150,14 +164,50 @@ export function useStandardRun(packKey: string | null, theme: AnalysisTheme | nu
   });
 }
 
-export function useStandardCompare(packKey: string | null, theme: AnalysisTheme | null) {
+export function useStandardCompare(
+  packKey: string | null,
+  theme: AnalysisTheme | null,
+  options?: CompareQueryOptions,
+) {
+  const baselinePeriodKey = options?.baselinePeriodKey;
+  const currentPeriodKey = options?.currentPeriodKey;
   return useQuery({
-    queryKey: queryKeys.reports.standardCompare(packKey ?? "", theme ?? ""),
-    queryFn: () =>
-      apiFetch<CompareResult>(
-        `/api/v1/reports/standard/packs/${packKey}/compare?theme=${encodeURIComponent(theme ?? "")}`,
-      ),
+    queryKey: queryKeys.reports.standardCompare(
+      packKey ?? "",
+      theme ?? "",
+      baselinePeriodKey,
+      currentPeriodKey,
+    ),
+    queryFn: () => {
+      const params = new URLSearchParams({ theme: theme ?? "" });
+      if (baselinePeriodKey) params.set("baseline_period_key", baselinePeriodKey);
+      if (currentPeriodKey) params.set("current_period_key", currentPeriodKey);
+      return apiFetch<CompareResult>(
+        `/api/v1/reports/standard/packs/${packKey}/compare?${params.toString()}`,
+      );
+    },
     enabled: Boolean(packKey && theme),
+  });
+}
+
+export function useStandardCompareMatrix(
+  packKey: string | null,
+  theme: AnalysisTheme | null,
+  periodKeys: string[],
+) {
+  const sortedKeys = [...periodKeys].sort().join(",");
+  return useQuery({
+    queryKey: queryKeys.reports.standardCompareMatrix(packKey ?? "", theme ?? "", sortedKeys),
+    queryFn: () => {
+      const params = new URLSearchParams({
+        theme: theme ?? "",
+        period_keys: periodKeys.join(","),
+      });
+      return apiFetch<CompareMatrixResult>(
+        `/api/v1/reports/standard/packs/${packKey}/compare/matrix?${params.toString()}`,
+      );
+    },
+    enabled: Boolean(packKey && theme && periodKeys.length >= 2),
   });
 }
 
@@ -180,15 +230,28 @@ export function useCaptureStandardSnapshot() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ packKey, theme }: { packKey: string; theme: AnalysisTheme }) =>
-      apiFetch<SnapshotRecord>(
-        `/api/v1/reports/standard/packs/${packKey}/snapshots/capture?theme=${encodeURIComponent(theme)}`,
+    mutationFn: ({
+      packKey,
+      theme,
+      periodKey,
+    }: {
+      packKey: string;
+      theme: AnalysisTheme;
+      periodKey?: string;
+    }) => {
+      const params = new URLSearchParams({ theme });
+      if (periodKey) params.set("period_key", periodKey);
+      return apiFetch<SnapshotRecord>(
+        `/api/v1/reports/standard/packs/${packKey}/snapshots/capture?${params.toString()}`,
         { method: "POST" },
-      ),
-    onSuccess: (_data, { packKey, theme }) => {
+      );
+    },
+    onSuccess: (data, { packKey, theme }) => {
       qc.invalidateQueries({ queryKey: queryKeys.reports.standardSnapshots(packKey) });
       qc.invalidateQueries({ queryKey: queryKeys.reports.standardSnapshots(packKey, theme) });
-      qc.invalidateQueries({ queryKey: queryKeys.reports.standardCompare(packKey, theme) });
+      qc.invalidateQueries({ queryKey: ["reports", "standardCompare", packKey, theme] });
+      qc.invalidateQueries({ queryKey: ["reports", "standardCompareMatrix", packKey, theme] });
+      return data;
     },
   });
 }

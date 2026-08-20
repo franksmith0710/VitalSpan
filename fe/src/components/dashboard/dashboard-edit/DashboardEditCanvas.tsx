@@ -231,6 +231,15 @@ export function DashboardEditCanvas({
         componentsLoading,
       );
       if (linkedRev) return `${base}${linkedRev}`;
+      if (widget.type === "customViz" && widget.customVizConfig) {
+        const cfg = widget.customVizConfig;
+        return `${base}:cv:${JSON.stringify({
+          style: cfg.style ?? null,
+          displayStyle: cfg.displayStyle ?? null,
+          widgetStyle: cfg.widgetStyle ?? null,
+          binding: cfg.dataBinding ?? null,
+        })}`;
+      }
       const screenVisualRev = screenVisualContentRevisionSuffix(
         pixelWidgetToLayoutWidget(widget),
       );

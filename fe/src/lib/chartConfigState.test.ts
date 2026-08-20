@@ -65,4 +65,11 @@ describe("chartConfigState", () => {
     };
     expect(resolveChartConfigPhase(config).renderReady).toBe(true);
   });
+
+  it("gis-map is widget-ready without dataset binding", () => {
+    const config = defaultChartConfig("gis-map");
+    expect(isWidgetConfigReady(config)).toBe(true);
+    expect(resolveChartConfigPhase(config).renderReady).toBe(true);
+    expect(resolveChartConfigPhase(config).queryReady).toBe(false);
+  });
 });

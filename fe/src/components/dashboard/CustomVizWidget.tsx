@@ -113,7 +113,7 @@ export function CustomVizWidget({
   );
 
   const { ref: hostSizeRef, size: hostSize } = useElementSize<HTMLDivElement>({
-    debounceMs: 100,
+    debounceMs: mode === "edit" ? 0 : 100,
   });
 
   const hostLayout = useMemo(
@@ -175,13 +175,19 @@ export function CustomVizWidget({
     return mountCustomVizHtml(host, html);
   }, [html]);
 
+  const runtimeStyle = useMemo(
+    () =>
+      resolveCustomVizRuntimeStyle({
+        manifestDefault: manifestDefaultStyle,
+        config: cfg,
+        dashboardStyle,
+      }),
+    [manifestDefaultStyle, cfg.style, cfg.displayStyle, dashboardStyle],
+  );
+
   useEffect(() => {
     const host = hostRef.current;
     if (!host || !html) return;
-    const style = resolveCustomVizRuntimeStyle({
-      manifestDefault: manifestDefaultStyle,
-      config: cfg,
-    });
     injectCustomVizPayload(
       host,
       buildCustomVizRuntimePayload({
@@ -190,7 +196,7 @@ export function CustomVizWidget({
         error: executeError,
         columns,
         rows: cappedRows,
-        style,
+        style: runtimeStyle,
         layout: hostLayout,
         truncated: rowsTruncated,
         rowCap: rowsTruncated ? ADVANCED_CHART_ROW_CAP : undefined,
@@ -205,9 +211,7 @@ export function CustomVizWidget({
     loading,
     executeError,
     executeReady,
-    cfg.style,
-    cfg.displayStyle,
-    manifestDefaultStyle,
+    runtimeStyle,
   ]);
 
   const body = loadError ? (

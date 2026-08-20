@@ -11,6 +11,9 @@ importers:
       '@maplibre/maplibre-gl-style-spec':
         specifier: ^26.2.1
         version: 26.2.1
+      '@protomaps/basemaps':
+        specifier: ^5.7.2
+        version: 5.7.2
       '@radix-ui/react-alert-dialog':
         specifier: ^1.1.18
         version: 1.1.18(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -107,6 +110,9 @@ importers:
       maplibre-gl:
         specifier: ^6.3.0
         version: 6.4.0
+      pmtiles:
+        specifier: ^4.5.0
+        version: 4.5.0
       react:
         specifier: ^19.0.0
         version: 19.2.7
@@ -661,6 +667,10 @@ packages:
   '@playwright/test@1.49.1':
     resolution: {integrity: sha512-Ky+BVzPz8pL6PQxHqNRW1k3mIyv933LML7HktS8uik0bUXNCdPhoS/kLihiO1tMf/egaJb4IutXd7UywvXEW+g==}
     engines: {node: '>=18'}
+    hasBin: true
+
+  '@protomaps/basemaps@5.7.2':
+    resolution: {integrity: sha512-K1Yk6bWdULulYg+R2QRVXx4NzJZan5YQhpejEG0c1/sXruJrfPIPZuakpf3jwAgVmjIRVQwAv+yRafDeN0aaUQ==}
     hasBin: true
 
   '@radix-ui/number@1.1.2':
@@ -2964,6 +2974,9 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
+  pmtiles@4.5.0:
+    resolution: {integrity: sha512-CBeD4SoUluFziGdy/8k7FOjQxQy486n+929W/tWophauvMICpkZ26vGBWhDt/6b1FZQWNaf4jFdT/5+q0Wii5w==}
+
   postcss@8.5.16:
     resolution: {integrity: sha512-vuwillviilfKZsg0VGj5R/YwwcHx4SLsIOI/7K6mQkWx+l5cUHTjj5g0AasTBcyXsbfTgrwsUNmVUb5xVwyPwg==}
     engines: {node: ^10 || ^12 || >=14}
@@ -3858,6 +3871,8 @@ snapshots:
   '@playwright/test@1.49.1':
     dependencies:
       playwright: 1.49.1
+
+  '@protomaps/basemaps@5.7.2': {}
 
   '@radix-ui/number@1.1.2': {}
 
@@ -6109,6 +6124,10 @@ snapshots:
       playwright-core: 1.49.1
     optionalDependencies:
       fsevents: 2.3.2
+
+  pmtiles@4.5.0:
+    dependencies:
+      fflate: 0.8.3
 
   postcss@8.5.16:
     dependencies:

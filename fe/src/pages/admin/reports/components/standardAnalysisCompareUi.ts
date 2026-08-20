@@ -37,3 +37,21 @@ export function formatCompareDeltaPct(deltaPct: number | null): string | null {
 export function snapshotPresetLabel(preset: AnalysisPack["snapshotCronPreset"]): string {
   return SNAPSHOT_LABELS[preset] ?? preset;
 }
+
+export function livePeriodKeyFromPreset(
+  preset: AnalysisPack["snapshotCronPreset"],
+  at = new Date(),
+): string {
+  if (preset === "monthly") {
+    return `${at.getFullYear()}-${String(at.getMonth() + 1).padStart(2, "0")}`;
+  }
+  if (preset === "weekly") {
+    const target = new Date(Date.UTC(at.getFullYear(), at.getMonth(), at.getDate()));
+    const day = target.getUTCDay() || 7;
+    target.setUTCDate(target.getUTCDate() + 4 - day);
+    const yearStart = new Date(Date.UTC(target.getUTCFullYear(), 0, 1));
+    const week = Math.ceil(((target.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+    return `${target.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
+  }
+  return at.toISOString().slice(0, 10);
+}

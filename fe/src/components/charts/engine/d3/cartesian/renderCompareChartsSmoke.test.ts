@@ -45,6 +45,25 @@ describe("compare chart render smoke", () => {
       showTooltip: false,
     });
     expect(host.querySelector("svg")).toBeTruthy();
+    expect(host.querySelector("g.vs-legend")).toBeTruthy();
+    cleanup();
+  });
+
+  it("bidirectional bar omits inline legend when showLegend is false", () => {
+    const host = document.createElement("div");
+    const cleanup = renderD3BidirectionalBarChart(host, {
+      ...size,
+      data: [
+        { type: "甲", left: 12, right: 8 },
+        { type: "乙", left: 6, right: 14 },
+      ],
+      colors: ["#465fff", "#12b76a"],
+      theme,
+      showLegend: false,
+      showLabel: false,
+      showTooltip: false,
+    });
+    expect(host.querySelector("g.vs-legend")).toBeNull();
     cleanup();
   });
 

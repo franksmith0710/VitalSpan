@@ -61,7 +61,9 @@ export function buildWidgetBackgroundPresentation(
     mode !== "frame" &&
     Boolean(bg.backgroundImage?.trim());
 
-  if (useThemeDefault) {
+  if (!showBackground) {
+    style.backgroundColor = "transparent";
+  } else if (useThemeDefault) {
     style.backgroundColor = "var(--dashboard-widget-surface)";
   } else if (coerced) {
     style.background = coerced;

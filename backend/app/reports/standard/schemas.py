@@ -122,6 +122,21 @@ class CompareOut(BaseModel):
     theme: ThemeType
     current_period_key: str = Field(alias="currentPeriodKey")
     previous_period_key: str | None = Field(default=None, alias="previousPeriodKey")
+    current_source: Literal["live", "snapshot"] = Field(default="live", alias="currentSource")
     current: dict[str, Any]
     previous: dict[str, Any] | None = None
     deltas: list[CompareDeltaRow] = Field(default_factory=list)
+
+
+class CompareMatrixRow(BaseModel):
+    key: str
+    values: dict[str, float]
+
+
+class CompareMatrixOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    pack_key: str = Field(alias="packKey")
+    theme: ThemeType
+    period_kind: PeriodKind = Field(alias="periodKind")
+    period_keys: list[str] = Field(alias="periodKeys")
+    rows: list[CompareMatrixRow]

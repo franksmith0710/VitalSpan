@@ -12,7 +12,7 @@ alwaysApply: true
 | 路径 | chartType | 引擎 | 底图 |
 |------|-----------|------|------|
 | **Choropleth** | `map` / `map-3d` | `GeoEnginePort` / Three.js Extrude | 仅离线中国 GeoJSON |
-| **GIS 图** | `gis-map` | 同页 MapLibre GL JS（懒加载） | 默认 `blank` 或离线省界；**禁止**默认 OpenFreeMap / 地图 Key |
+| **GIS 图** | `gis-map` | 同页 MapLibre GL JS（懒加载） | 默认 `blank` / 离线省界；**全球 PMTiles 仅经管理员登记 `tileServiceId`** |
 
 ## Choropleth 必须遵守
 
@@ -27,6 +27,7 @@ alwaysApply: true
 
 - **不做** iframe / sandbox / GeoLibre 运行时 / `web.geolibre.app`
 - **配置** 仅校验后的 `nativeBody.gisProject`（AI L1/L2；禁止 L3 customViz 内嵌 MapLibre）
+- **PMTiles** 仅允许管理员登记的内网 `tileServiceId`；chart layout **不得**写 128GB 绝对路径；未登记时禁止任何在线瓦片底图
 - **查询** JWT 在父页；MapLibre `transformRequest` 不得带 `Authorization` / Cookie
 - **默认** 不得预填公网瓦片 URL；二期才允许管理员登记 `serviceId`
 

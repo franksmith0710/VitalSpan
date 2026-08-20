@@ -121,6 +121,38 @@ describe("mountCustomVizHtml", () => {
     host.remove();
   });
 
+  it("fires vsCv.mount with empty and error bindingStatus", () => {
+    const host = document.createElement("div");
+    host.className = "vs-custom-viz-host";
+    document.body.appendChild(host);
+    const html = `<!DOCTYPE html><html><body><div id="mark"></div><script>(function(){
+      var host=document.currentScript.parentElement;
+      var mark=host.querySelector('#mark');
+      host.vsCv.mount(function(p){mark.textContent=p.bindingStatus+':'+(p.error||'none')});
+    })();</script></body></html>`;
+    mountCustomVizHtml(host, html);
+    injectCustomVizPayload(host, {
+      protocolVersion: CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
+      bindingStatus: "empty",
+      columns: [],
+      rows: [],
+      style: {},
+      layout: { width: 320, height: 200 },
+    });
+    expect(host.querySelector("#mark")?.textContent).toBe("empty:none");
+    injectCustomVizPayload(host, {
+      protocolVersion: CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
+      bindingStatus: "error",
+      columns: [],
+      rows: [],
+      style: {},
+      error: "查询失败",
+      layout: { width: 320, height: 200 },
+    });
+    expect(host.querySelector("#mark")?.textContent).toBe("error:查询失败");
+    host.remove();
+  });
+
   it("fires vsCv.onLayout when payload layout changes", () => {
     const host = document.createElement("div");
     host.className = "vs-custom-viz-host";

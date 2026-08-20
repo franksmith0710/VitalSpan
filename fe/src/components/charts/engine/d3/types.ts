@@ -101,6 +101,8 @@ export type D3CartesianRenderConfig = {
   areaOpacity?: number;
   axisStyle?: import("@/lib/chartDeStyleBlocks").ChartAxisStyle;
   categoryLevelCount?: number;
+  /** 单系列笛卡尔图 tooltip/图例默认系列名（指标 label） */
+  defaultSeriesName?: string;
 };
 export type D3LineDatum = D3CartesianDatum;
 

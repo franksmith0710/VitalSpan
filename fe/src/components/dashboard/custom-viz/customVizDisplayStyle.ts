@@ -1,7 +1,15 @@
-import { type ChartBorderStyle } from "@/lib/chartDeStyle";
+import { type CSSProperties } from "react";
+import { type ChartBorderStyle, resolveWidgetShellStyle } from "@/lib/chartDeStyle";
 import { resolveChartColors, resolvePaletteId } from "@/lib/chartPalette";
-import type { DashboardStyleConfig, WidgetStyleConfig } from "../dashboardStyleConfig";
-import type { CustomVizWidgetConfig, CustomVizDisplayStyle } from "../layoutUtils";
+import type { ColorScheme } from "@/lib/chartSurfaceTheme";
+import { getDashboardThemeTokens, isOppositeThemeTitleColor } from "../dashboardThemeTokens";
+import {
+  mergeTitleStyle,
+  type DashboardStyleConfig,
+  type TitleStyleConfig,
+  type WidgetStyleConfig,
+} from "../dashboardStyleConfig";
+import type { CustomVizWidgetConfig, CustomVizDisplayStyle, LayoutWidget } from "../layoutUtils";
 import { mergeWidgetOverrideStyle } from "../widgetRailStyleSections";
 
 export type { CustomVizDisplayStyle };
@@ -137,6 +145,72 @@ export function resolveCustomVizDisplayBackgroundShell(
   return { ...(perWidget ?? {}), ...inner };
 }
 
+/** 看板 + 高级 Tab widgetStyle + 样式 Tab 背景/边框 → 外壳渲染真源 */
+export function resolveCustomVizWidgetShellStyle(
+  widget: { customVizConfig?: CustomVizWidgetConfig },
+  dashboardStyle?: DashboardStyleConfig,
+): WidgetStyleConfig | undefined {
+  const base = resolveCustomVizDisplayBackgroundShell(widget, dashboardStyle);
+  const border = readCustomVizDisplayStyle(widget.customVizConfig).border;
+  if (!border) return base;
+  return {
+    ...base,
+    ...(border.show != null ? { borderEnabled: border.show } : {}),
+    ...(border.color != null ? { borderColor: border.color } : {}),
+    ...(border.width != null ? { borderWidth: border.width } : {}),
+    ...(border.style != null ? { borderStyle: border.style } : {}),
+    ...(border.radius != null ? { borderRadius: border.radius } : {}),
+  };
+}
+
+/** pixel / grid 外壳：对齐 chart resolveChartContentShellStyle */
+export function resolveCustomVizContentShellStyle(
+  widget: { customVizConfig?: CustomVizWidgetConfig },
+  dashboardStyle?: DashboardStyleConfig,
+  colorScheme: ColorScheme = "light",
+) {
+  const mergedWidgetStyle = resolveCustomVizWidgetShellStyle(widget, dashboardStyle);
+  const outer = resolveWidgetShellStyle(mergedWidgetStyle, colorScheme);
+  const outerStyle = { ...outer.style };
+  if (
+    outer.backgroundLayer?.backgroundImage &&
+    !outerStyle.background &&
+    (outerStyle.backgroundColor === "var(--dashboard-widget-surface)" ||
+      outerStyle.backgroundColor === "transparent")
+  ) {
+    outerStyle.backgroundColor = "transparent";
+  }
+  return {
+    outer: { ...outer, style: outerStyle },
+    inner: {} as CSSProperties,
+    innerBackgroundLayer: null,
+    innerFrameLayer: null,
+  };
+}
+
+export function mergeCustomVizTitleStyle(
+  global: TitleStyleConfig | undefined,
+  config: CustomVizWidgetConfig | undefined,
+  colorScheme: ColorScheme = "light",
+): CSSProperties {
+  const override = config ? readCustomVizDisplayStyle(config).title : undefined;
+  const tokens = getDashboardThemeTokens(colorScheme);
+  const mergedOverride =
+    override?.color && isOppositeThemeTitleColor(override.color, colorScheme)
+      ? { ...override, color: tokens.title }
+      : override;
+  return mergeTitleStyle(global, mergedOverride);
+}
+
+export function readCustomVizRemark(
+  config: CustomVizWidgetConfig | undefined,
+): { show: boolean; text: string } {
+  if (!config) return { show: false, text: "" };
+  const remark = readCustomVizDisplayStyle(config).remark;
+  const text = remark?.text?.trim() ?? "";
+  return { show: Boolean(remark?.show && text), text };
+}
+
 export function readCustomVizDisplayBorder(
   config: CustomVizWidgetConfig | undefined,
   dashboardStyle?: DashboardStyleConfig,
@@ -159,11 +233,17 @@ export function readCustomVizDisplayBorder(
 export function resolveCustomVizRuntimeStyle(args: {
   manifestDefault?: Record<string, unknown>;
   config?: CustomVizWidgetConfig;
+  dashboardStyle?: DashboardStyleConfig;
 }): Record<string, unknown> {
   const manifestDefault = args.manifestDefault ?? {};
   const schemaStyle = args.config?.style ?? {};
   const flatDisplay = flattenCustomVizDisplayStyle(args.config?.displayStyle);
-  return { ...manifestDefault, ...flatDisplay, ...schemaStyle };
+  const merged = { ...manifestDefault, ...flatDisplay, ...schemaStyle };
+  const palette = resolveCustomVizEffectivePaletteColors(args.config, args.dashboardStyle);
+  if (palette[0] && merged.accentColor == null && merged.barColor == null) {
+    merged.accentColor = palette[0];
+  }
+  return merged;
 }
 
 function flattenCustomVizDisplayStyle(
@@ -277,4 +357,118 @@ export function stripCustomVizDisplayStyleOverrides(
 
   const compact = omitEmptyStyleField(next);
   return compact ?? undefined;
+}
+
+export type CustomVizDashboardSyncScope =
+  | "title"
+  | "widgetAppearance"
+  | "palette";
+
+/** 看板「图表标题」修改后清除组件级 title override（含 show） */
+export function stripCustomVizTitleOverrides(
+  config: CustomVizWidgetConfig,
+): CustomVizWidgetConfig {
+  const ds = config.displayStyle;
+  if (!ds?.title) return config;
+  const nextDs = { ...ds };
+  delete nextDs.title;
+  return {
+    ...config,
+    displayStyle: omitEmptyStyleField(nextDs),
+  };
+}
+
+/** 清除组件级外壳 override，回退看板 widgetStyle */
+export function stripCustomVizWidgetAppearanceOverrides(
+  config: CustomVizWidgetConfig,
+): CustomVizWidgetConfig {
+  let next = config;
+  if (config.widgetStyle) {
+    next = { ...next, widgetStyle: undefined };
+  }
+  const ds = next.displayStyle;
+  if (!ds?.background && !ds?.border) return next;
+  const nextDs = { ...ds };
+  delete nextDs.background;
+  delete nextDs.border;
+  return {
+    ...next,
+    displayStyle: omitEmptyStyleField(nextDs),
+  };
+}
+
+/** 清除组件级配色/标签/提示 override，回退看板图表配色 */
+export function stripCustomVizPaletteOverrides(
+  config: CustomVizWidgetConfig,
+): CustomVizWidgetConfig {
+  const ds = config.displayStyle;
+  if (!ds) return config;
+
+  const hasPaletteFields =
+    ds.paletteId != null ||
+    (ds.paletteColors != null && ds.paletteColors.length > 0) ||
+    ds.paletteOpacity != null ||
+    ds.seriesGradient != null;
+  const label = ds.label;
+  const hasLabelPaletteFields =
+    label &&
+    (label.show !== undefined || label.fontSize !== undefined || label.color !== undefined);
+  const tooltip = ds.tooltip;
+  const hasTooltipFields =
+    tooltip &&
+    (tooltip.show !== undefined ||
+      tooltip.fontSize !== undefined ||
+      tooltip.color !== undefined ||
+      tooltip.background !== undefined);
+
+  if (!hasPaletteFields && !hasLabelPaletteFields && !hasTooltipFields) return config;
+
+  const nextDs: CustomVizDisplayStyle = { ...ds };
+  delete nextDs.paletteId;
+  delete nextDs.paletteColors;
+  delete nextDs.paletteOpacity;
+  delete nextDs.seriesGradient;
+
+  if (label) {
+    const nextLabel = { ...label };
+    delete nextLabel.show;
+    delete nextLabel.fontSize;
+    delete nextLabel.color;
+    if (Object.keys(nextLabel).length > 0) nextDs.label = nextLabel;
+    else delete nextDs.label;
+  }
+
+  if (tooltip) {
+    delete nextDs.tooltip;
+  }
+
+  return {
+    ...config,
+    displayStyle: omitEmptyStyleField(nextDs),
+  };
+}
+
+export function syncCustomVizConfigForDashboardScopes(
+  config: CustomVizWidgetConfig,
+  scopes: ReadonlySet<CustomVizDashboardSyncScope>,
+): CustomVizWidgetConfig {
+  let next = config;
+  if (scopes.has("title")) next = stripCustomVizTitleOverrides(next);
+  if (scopes.has("widgetAppearance")) next = stripCustomVizWidgetAppearanceOverrides(next);
+  if (scopes.has("palette")) next = stripCustomVizPaletteOverrides(next);
+  return next;
+}
+
+export function syncCustomVizWidgetsForDashboardScopes(
+  widgets: LayoutWidget[],
+  scopes: ReadonlySet<CustomVizDashboardSyncScope>,
+): LayoutWidget[] {
+  if (scopes.size === 0) return widgets;
+  return widgets.map((widget) => {
+    if (widget.type !== "customViz" || !widget.customVizConfig) return widget;
+    const nextConfig = syncCustomVizConfigForDashboardScopes(widget.customVizConfig, scopes);
+    return nextConfig === widget.customVizConfig
+      ? widget
+      : { ...widget, customVizConfig: nextConfig };
+  });
 }

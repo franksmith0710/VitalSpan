@@ -98,6 +98,7 @@ function widgetContentEqual(
   if (a.tabsConfig !== b.tabsConfig) return false;
   if (a.filterConfig !== b.filterConfig) return false;
   if (a.mediaConfig !== b.mediaConfig) return false;
+  if (a.customVizConfig !== b.customVizConfig) return false;
   if ("width" in prev && "width" in next) {
     if (prev.width !== next.width || prev.height !== next.height) return false;
   }
@@ -119,6 +120,7 @@ function rendererPropsEqual(
   if (prev.widgetActions !== next.widgetActions) return false;
   if (prev.componentsLoading !== next.componentsLoading) return false;
   if (prev.allWidgets !== next.allWidgets) return false;
+  if (prev.chartRefreshKeys !== next.chartRefreshKeys) return false;
   if (!widgetContentEqual(prev.widget, next.widget)) return false;
   if (prev.gridSize?.w !== next.gridSize?.w || prev.gridSize?.h !== next.gridSize?.h) {
     return false;

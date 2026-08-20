@@ -24,8 +24,12 @@ export function resolveSeriesKeys(seriesNames: string[]): string[] {
   return seriesNames.map(seriesDataKey);
 }
 
-export function groupSeries(data: D3CartesianDatum[], seriesField?: string): SeriesGroup[] {
-  if (!seriesField) return [{ name: "value", points: data }];
+export function groupSeries(
+  data: D3CartesianDatum[],
+  seriesField?: string,
+  defaultSeriesName = "value",
+): SeriesGroup[] {
+  if (!seriesField) return [{ name: defaultSeriesName, points: data }];
   const map = d3.group(data, (d) => String(d[seriesField] ?? ""));
   return [...map.entries()].map(([name, points]) => ({ name, points }));
 }

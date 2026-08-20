@@ -98,6 +98,8 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
 
   useEffect(() => {
     if (!enabled) {
+      setLoading(false);
+      setError(null);
       return () => {
         requestGenRef.current += 1;
       };

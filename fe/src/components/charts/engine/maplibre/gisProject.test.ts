@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_GIS_PROJECT, readGisProject } from "@/components/charts/engine/maplibre/gisProject";
+import { DEFAULT_GIS_PROJECT, readGisProject, resolveGisRenderableBasemap } from "@/components/charts/engine/maplibre/gisProject";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 
 describe("gisProject", () => {
@@ -13,7 +13,10 @@ describe("gisProject", () => {
       chartType: "gis-map",
       nativeBody: { gisProject: source },
     };
-    expect(readGisProject(config)).toEqual(source);
+    expect(readGisProject(config)).toEqual({
+      ...DEFAULT_GIS_PROJECT,
+      ...source,
+    });
   });
 
   it("migrates geolibreProject china layer to china-provinces basemap", () => {
@@ -28,6 +31,7 @@ describe("gisProject", () => {
       },
     };
     expect(readGisProject(config)).toEqual({
+      ...DEFAULT_GIS_PROJECT,
       basemap: "china-provinces",
       view: { center: [104, 35], zoom: 4 },
     });
@@ -45,8 +49,24 @@ describe("gisProject", () => {
       },
     };
     expect(readGisProject(config)).toEqual({
+      ...DEFAULT_GIS_PROJECT,
       basemap: "blank",
       view: { center: [120, 30], zoom: 6 },
     });
+  });
+
+  it("falls back to china-provinces when pmtiles is not ready", () => {
+    expect(
+      resolveGisRenderableBasemap(
+        { ...DEFAULT_GIS_PROJECT, basemap: "pmtiles", tileServiceId: "planet-z15" },
+        false,
+      ),
+    ).toBe("china-provinces");
+    expect(
+      resolveGisRenderableBasemap(
+        { ...DEFAULT_GIS_PROJECT, basemap: "pmtiles", tileServiceId: "planet-z15" },
+        true,
+      ),
+    ).toBe("pmtiles");
   });
 });

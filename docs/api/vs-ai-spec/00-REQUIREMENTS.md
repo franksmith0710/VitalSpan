@@ -19,6 +19,8 @@ Content-Type: application/json
 下列**全部不算完成**：
 
 - 只把 HTML/JSON 写到操作者桌面或 `examples/`
+- `files.index.html` 写成 `{ "content": "..." }` 对象（必须是 **字符串**）
+- bundle 内用 `postMessage` / `payload.data`（DeepTalk 协议），未接 `vsCv.mount` + `payload.rows`
 - 用浏览器打开 `demo-*.html`
 - 产出 `runtime: vanilla` / React / WebGL / `.iife.js` / 外链打包
 
@@ -103,7 +105,7 @@ python tools\upload-ai-viz-artifact.py --file examples\custom-viz-bundle.json
 - 顶层 `dataSchema`、`eventSchema`、`authors` 当主契约
 - `<script src="https://cdn...">`
 
-黄金样例只用：`examples/custom-viz-bundle.json`、`custom-viz-d3-bundle.json`，以及 pulse / ring / alert。
+黄金样例：`examples/custom-viz-bundle.json`、`custom-viz-d3-bundle.json`、`custom-viz-ranking-bar-medal.json`，以及 pulse / ring / alert。
 
 ## 7. 怎么发 HTTP（不要用 DeepTalk 网页跨域 fetch）
 

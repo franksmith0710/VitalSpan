@@ -57,7 +57,7 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
   const showZoomControl = geoStyle.showZoomControl === true;
   const mapOpacity = resolveGeoMapOpacity(geoStyle.mapOpacity);
   const showRegionLabel = geoStyle.showRegionLabel === true;
-  const showVisualMap = geoStyle.visualMap !== false;
+  const showVisualMap = geoStyle.visualMap !== false && config.renderTier !== "thumbnail";
   const regionBorder = resolveGeoRegionBorder(geoStyle, isDark);
   const strokeWidth = resolveGeoRegionStrokeWidth(geoStyle, width);
   const regionLabelColor = resolveGeoRegionLabelColorHex(geoStyle, theme);

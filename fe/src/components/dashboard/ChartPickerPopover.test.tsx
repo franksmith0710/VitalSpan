@@ -26,6 +26,12 @@ vi.mock("@/lib/aiVizArtifacts", () => ({
         status: "active",
         contentHash: "abc",
       },
+      {
+        artifactId: "0833b30b-39d4-4a58-80f6-030de7cbe377",
+        manifest: { displayName: "排名条(带序号)-降序", id: "ranking-bar-medal-v1" },
+        status: "active",
+        contentHash: "medal",
+      },
     ],
   })),
 }));
@@ -97,6 +103,9 @@ describe("ChartPickerPopover custom viz", () => {
 
     expect(await within(popover).findByRole("button", { name: "自定义" })).toBeInTheDocument();
     expect(await within(popover).findByTestId("custom-viz-tile-art-custom-1")).toBeInTheDocument();
+    expect(
+      await within(popover).findByTestId("custom-viz-tile-0833b30b-39d4-4a58-80f6-030de7cbe377"),
+    ).toBeInTheDocument();
   });
 
   it("calls onInsertCustomViz when custom tile is clicked", async () => {
@@ -110,6 +119,22 @@ describe("ChartPickerPopover custom viz", () => {
       type: "customViz",
       artifactId: "art-custom-1",
       displayName: "演示排名条",
+    });
+  });
+
+  it("calls onInsertCustomViz when ranking bar medal tile is clicked", async () => {
+    const onInsertCustomViz = vi.fn();
+    const user = userEvent.setup();
+    renderPicker({ onInsertCustomViz });
+    const popover = await screen.findByTestId("chart-picker-popover");
+
+    await user.click(
+      await within(popover).findByTestId("custom-viz-tile-0833b30b-39d4-4a58-80f6-030de7cbe377"),
+    );
+    expect(onInsertCustomViz).toHaveBeenCalledWith({
+      type: "customViz",
+      artifactId: "0833b30b-39d4-4a58-80f6-030de7cbe377",
+      displayName: "排名条(带序号)-降序",
     });
   });
 

@@ -5,10 +5,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   ChartPreviewMock,
   ComponentPreviewShell,
+  CustomVizPreviewMock,
   FilterPreviewMock,
   MediaPreviewMock,
   TextPreviewMock,
 } from "./ComponentCardPreview";
+import { isCustomVizConfigReady } from "@/components/dashboard/CustomVizWidget";
 import { VizComponentLivePreview } from "./VizComponentLivePreview";
 
 type ComponentPayloadPreviewProps = {
@@ -22,18 +24,36 @@ type ComponentPayloadPreviewProps = {
 };
 
 function normalizeWidgetType(type: string | undefined): VizWidgetType {
-  if (type === "chart" || type === "filter" || type === "text" || type === "media") {
+  if (
+    type === "chart" ||
+    type === "filter" ||
+    type === "text" ||
+    type === "media" ||
+    type === "customViz"
+  ) {
     return type;
   }
   return "chart";
 }
 
+function resolvePreviewWidgetType(
+  widgetType: VizWidgetType,
+  payload?: VizComponentPayload,
+): VizWidgetType {
+  if (payload?.customVizConfig && isCustomVizConfigReady(payload.customVizConfig)) {
+    return "customViz";
+  }
+  return normalizeWidgetType(widgetType);
+}
+
 function hasRenderablePayload(widgetType: VizWidgetType, payload?: VizComponentPayload): boolean {
   if (!payload) return false;
-  if (widgetType === "chart") return Boolean(payload.chartConfig);
-  if (widgetType === "filter") return Boolean(payload.filterConfig);
-  if (widgetType === "text") return Boolean(payload.textConfig);
-  if (widgetType === "media") return Boolean(payload.mediaConfig);
+  const previewType = resolvePreviewWidgetType(widgetType, payload);
+  if (previewType === "chart") return Boolean(payload.chartConfig);
+  if (previewType === "filter") return Boolean(payload.filterConfig);
+  if (previewType === "text") return Boolean(payload.textConfig);
+  if (previewType === "media") return Boolean(payload.mediaConfig);
+  if (previewType === "customViz") return isCustomVizConfigReady(payload.customVizConfig);
   return false;
 }
 
@@ -41,6 +61,7 @@ function MockPreview({ widgetType }: { widgetType: VizWidgetType }) {
   if (widgetType === "filter") return <FilterPreviewMock />;
   if (widgetType === "text") return <TextPreviewMock />;
   if (widgetType === "media") return <MediaPreviewMock />;
+  if (widgetType === "customViz") return <CustomVizPreviewMock />;
   return <ChartPreviewMock />;
 }
 
@@ -54,19 +75,19 @@ export function ComponentPayloadPreview({
   previewPaused = false,
   className,
 }: ComponentPayloadPreviewProps) {
-  const safeType = normalizeWidgetType(widgetType);
-  const canLive = hasRenderablePayload(safeType, payload);
+  const previewType = resolvePreviewWidgetType(normalizeWidgetType(widgetType), payload);
+  const canLive = hasRenderablePayload(previewType, payload);
 
   const widget = useMemo(() => {
     if (!canLive || !payload) return null;
     return vizPayloadToLayoutWidget({
       id: componentId,
       name: componentName,
-      widgetType: safeType,
+      widgetType: previewType,
       payload,
       widgetIdPrefix: "vc-card",
     });
-  }, [canLive, componentId, componentName, payload, safeType]);
+  }, [canLive, componentId, componentName, payload, previewType]);
 
   return (
     <ComponentPreviewShell className={className}>
@@ -81,7 +102,7 @@ export function ComponentPayloadPreview({
           compact
         />
       ) : (
-        <MockPreview widgetType={safeType} />
+        <MockPreview widgetType={previewType} />
       )}
     </ComponentPreviewShell>
   );

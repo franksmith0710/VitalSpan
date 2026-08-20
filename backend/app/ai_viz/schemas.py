@@ -27,6 +27,11 @@ class AiVizArtifactCreateIn(BaseModel):
     files: dict[str, str] = Field(min_length=1)
 
 
+class AiVizComplianceWarningOut(BaseModel):
+    code: str
+    message: str
+
+
 class AiVizArtifactOut(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -34,6 +39,7 @@ class AiVizArtifactOut(BaseModel):
     manifest: dict[str, Any]
     status: str
     content_hash: str = Field(alias="contentHash")
+    warnings: list[AiVizComplianceWarningOut] = Field(default_factory=list)
 
 
 class AiVizArtifactListOut(BaseModel):

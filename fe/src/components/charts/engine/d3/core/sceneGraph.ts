@@ -12,6 +12,7 @@ import {
   formatHorizontalBandAxisLabel,
   planCategoryAxisLayout,
   planNumericAxisTicks,
+  distinctFormattedNumericTickValues,
   resolveBandAxisFontSize,
   resolveHorizontalCategoryAxisLayout,
   resolveRotatedAxisExtraSpan,
@@ -62,7 +63,7 @@ function numericTickValues(
   innerSpan: number,
   format: (value: d3.NumberValue) => string,
 ): number[] {
-  return planNumericAxisTicks(scale, innerSpan, format);
+  return distinctFormattedNumericTickValues(scale, innerSpan, format);
 }
 
 export type CartesianScene = {

@@ -3,6 +3,7 @@ import type { DashboardStyleConfig } from "./dashboardStyleConfig";
 import { getDashboardThemeTokens, themeTokensToScopeVars } from "./dashboardThemeTokens";
 import { resolveCustomVizEffectivePaletteColors } from "./custom-viz/customVizDisplayStyle";
 import type { CustomVizWidgetConfig } from "./layoutUtils";
+import { appendCustomVizStyleBridge } from "./custom-viz/customVizStyleBridge";
 import { attachCustomVizRuntime } from "./custom-viz/customVizRuntime";
 
 export const CUSTOM_VIZ_HOST_CLASS = "vs-custom-viz-host";
@@ -94,6 +95,8 @@ export function mountCustomVizHtml(host: HTMLElement, html: string): () => void 
     host.appendChild(script);
     runInsertedScriptIfNeeded(script, source);
   }
+
+  appendCustomVizStyleBridge(host);
 
   return () => {
     detachRuntime();

@@ -79,6 +79,7 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
     area,
     lineWidth,
     categoryLevelCount,
+    defaultSeriesName,
   } = config;
 
   const dotRadius = resolveCartesianPointSize(pointSize);
@@ -96,7 +97,7 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
   const allCategories = domain.categories;
   const categories = visibleDataZoomCategories(container, dataZoom, allCategories);
   const structuralLevelCount = domain.structuralLevelCount;
-  const seriesGroups = groupSeries(normalized, seriesField);
+  const seriesGroups = groupSeries(normalized, seriesField, defaultSeriesName);
   const colorScale = d3.scaleOrdinal<string>().domain(seriesGroups.map((s) => s.name)).range(colors);
   const singleSeries = seriesGroups.length === 1;
 

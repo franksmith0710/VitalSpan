@@ -4,6 +4,7 @@ export const CHART_NATIVE_BODY_UI_KEYS = [
   "deDisplay",
   "deTableStyle",
   "deFeatures",
+  "gisProject",
 ] as const;
 
 export function isChartNativeBodyUiKey(key: string): boolean {

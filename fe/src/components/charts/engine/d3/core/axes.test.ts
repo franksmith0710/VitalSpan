@@ -17,6 +17,7 @@ import {
   resolveHorizontalCategoryAxisLayout,
   resolveNumericTickCount,
   planNumericAxisTicks,
+  distinctFormattedNumericTickValues,
 } from "@/components/charts/engine/d3/core/axes";
 import { nearestCategory } from "@/components/charts/engine/d3/core/interaction";
 import { setAxisFontSize } from "@/components/charts/engine/d3/core/chartVisualTokens";
@@ -303,6 +304,16 @@ describe("d3 core", () => {
     expect(ticks.length).toBeLessThanOrEqual(6);
     expect(ticks[0]).toBe(0);
     expect(ticks[ticks.length - 1]).toBeGreaterThanOrEqual(20_000);
+  });
+
+  it("distinctFormattedNumericTickValues drops duplicate integer labels on small domains", () => {
+    const scale = d3.scaleLinear().domain([0, 1]).nice();
+    const format = (v: d3.NumberValue) => String(Math.round(Number(v)));
+    const ticks = distinctFormattedNumericTickValues(scale, 420, format);
+    const labels = ticks.map((tick) => format(tick));
+    expect(new Set(labels).size).toBe(labels.length);
+    expect(labels).toContain("0");
+    expect(labels).toContain("1");
   });
 
   it("nearestCategory finds closest x", () => {

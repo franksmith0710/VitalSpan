@@ -1,5 +1,5 @@
 import type { ReactElement, ReactNode } from "react";
-import { BarChart3, Filter, Image, Type } from "lucide-react";
+import { BarChart3, Filter, Image, Sparkles, Type } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { VizWidgetType } from "@/lib/vizComponents";
 import { widgetTypeLabel } from "./componentLabels";
@@ -9,6 +9,7 @@ const WIDGET_ICONS: Record<VizWidgetType, typeof BarChart3> = {
   filter: Filter,
   text: Type,
   media: Image,
+  customViz: Sparkles,
 };
 
 type ComponentPreviewShellProps = {
@@ -113,11 +114,26 @@ export function MediaPreviewMock() {
   );
 }
 
+export function CustomVizPreviewMock() {
+  return (
+    <div
+      className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center"
+      data-testid="custom-viz-preview-mock"
+    >
+      <div className="flex size-14 items-center justify-center rounded-2xl border border-dashed border-brand-300/70 bg-brand-50/60 dark:border-brand-500/30 dark:bg-brand-500/10">
+        <Sparkles className="size-7 text-brand-500/80 dark:text-brand-300/80" aria-hidden />
+      </div>
+      <span className="text-theme-xs text-gray-500 dark:text-gray-400">自定义组件</span>
+    </div>
+  );
+}
+
 const PREVIEW_BY_TYPE: Record<VizWidgetType, () => ReactElement> = {
   chart: ChartPreviewMock,
   filter: FilterPreviewMock,
   text: TextPreviewMock,
   media: MediaPreviewMock,
+  customViz: CustomVizPreviewMock,
 };
 
 type PreviewFooterProps = {
@@ -131,7 +147,8 @@ export function PreviewFooterMeta({ widgetType, detail, trailing }: PreviewFoote
     widgetType === "chart" ||
     widgetType === "filter" ||
     widgetType === "text" ||
-    widgetType === "media"
+    widgetType === "media" ||
+    widgetType === "customViz"
       ? widgetType
       : "chart";
   const Icon = WIDGET_ICONS[safeType];
@@ -169,7 +186,8 @@ export function ComponentCardPreview({ widgetType, className }: ComponentCardPre
     widgetType === "chart" ||
     widgetType === "filter" ||
     widgetType === "text" ||
-    widgetType === "media"
+    widgetType === "media" ||
+    widgetType === "customViz"
       ? widgetType
       : "chart";
   const Preview = PREVIEW_BY_TYPE[safeType];

@@ -1,7 +1,8 @@
 # Custom Viz 样式声明（styleSchema）
 
 > AI 可为每个组件**自由声明**平台尚未出现过的样式项；平台按 schema 自动生成配置栏，无需新增 tsx。  
-> **平台固定六块**（背景/配色/标题/备注/标签/提示）由 FE 写入 `customVizConfig.displayStyle`，见 [PROTOCOL.md](../PROTOCOL.md) §layout `customVizConfig`；**不要**在 schema 重复声明同名键，除非有意覆盖平台值。
+> **平台固定六块**（背景/配色/标题/备注/标签/提示）由 FE 写入 `customVizConfig.displayStyle`，见 [PROTOCOL.md](../PROTOCOL.md) §layout `customVizConfig`；**不要**在 schema 重复声明同名键，除非有意覆盖平台值。  
+> 入库样式 warn 与 bundle 消费清单见 [CUSTOM-VIZ-STYLE-COMPLIANCE.md](./CUSTOM-VIZ-STYLE-COMPLIANCE.md)。
 
 ## 原则
 
