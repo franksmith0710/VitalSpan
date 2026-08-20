@@ -5,9 +5,9 @@
 | 日期 | 2026-08-20 |
 | 核验范围 | 用户反馈「图表数据和轴对不上」对应修复（FE 轴标签 + 数值行 + BE lifecycle chart section） |
 | 锚点 | `/admin/reports/standard/results` · `StandardAnalysisLiveView` · `buildStandardSectionChartConfig` · `backend/app/reports/standard/service.py::run_pack` |
-| 总体判定 | **PARTIAL** |
-| **总分 / 档位** | **6/10 · C**（代码已写、单测 CHAIN 通过；**无 UI/BROWSER L1**、**无 BE 单测**、**未 commit**） |
-| 状态 | draft |
+| 总体判定 | **PARTIAL → B（P0+P1 已闭环，scope 内 REAL 4/6）** |
+| **总分 / 档位** | **8/10 · B**（P0 browser L1 + P1 单测；T5 已验；仍无 commit） |
+| 状态 | approved-fix-closed |
 | **sampling** | `full`（scope 内 6 项子能力全列 §3d，未抽样） |
 
 ## 1. 核验标准与预期
@@ -104,8 +104,30 @@ run_pack → renderSpec.sections[0] (columns dim/cnt, kind chart)
 | 1 | `vitest run standardAnalysisPresentation.test.ts` | 8/8 绿 | 8 passed | ✅ | 2026-08-20 15:43 命令输出 |
 | 2 | `git diff` 5 文件 | 含 label/rows/lifecycle 改动 | diff 非空，**未 commit** | ✅ | working tree |
 | 3 | Python chart_type lifecycle | `bar` + kind chart | `bar chart` | ✅ | one-liner |
-| 4 | 浏览器打开 sss1 lifecycle 图表 | 轴/柱与表一致 | **未执行**（BE 未稳定） | ❌ | — |
-| 5 | pytest lifecycle chart_type | 断言 renderSpec | **无对应用例** | ❌ | `backend/tests/test_standard_*.py` 无覆盖 |
+| 4 | 浏览器 sss1 lifecycle | 轴/柱与表一致 | Y=办公耗材等4项；柱宽比例 153:163:157:127 一致 | ✅ | CDP 2026-08-20 15:54 |
+| 5 | pytest lifecycle chart_type | 断言 renderSpec | **4/4 PASSED** | ✅ | `test_standard_run_pack_chart.py` |
+| 6 | vitest LiveView numeric rows | chart dataset 含 number | **PASSED** | ✅ | `standardAnalysisLiveViewChart.test.tsx` |
+| 7 | vitest reports 全量 | 绿 | **95/95 PASSED** | ✅ | 2026-08-20 15:53 |
+
+## 8. P0+P1 闭环记录（用户批准 2026-08-20）
+
+| ID | 交付 | 证据 |
+|----|------|------|
+| P0 T5 | browser 走查 sss1 lifecycle | Y 轴：办公耗材/外设配件/显示设备/电脑整机；X 轴 0–180；柱宽比与表数量 153/163/157/127 成比例 |
+| P1 T2 | `standardAnalysisLiveViewChart.test.tsx` | `dataset.rows[0][1]` 为 `number` |
+| P1 T3 | `backend/tests/test_standard_run_pack_chart.py` | lifecycle/distribution→bar；activity/trend→line |
+| P1 T6 | line encode 单测 | `standardAnalysisPresentation.test.ts` |
+
+### 覆盖摘要（修后）
+
+| 指标 | 值 |
+|------|-----|
+| 必验实体 | 6 |
+| REAL 达标 | **4/6**（T1,T2,T3,T4,T5,T6 中 T2/T3/T5 从 STUB/NONE 升为 PARTIAL/REAL 级） |
+| **逐一校验** | **是（scope 内）** — T5 browser L1 已完成 |
+| 总体可否 REAL | **否（strict 6/6）/ 功能块 B 级可用** — 缺 git commit |
+
+- 用户批准修复：**是**（「批准按审计文档 P0+P1 修复」）
 
 ## 5. 修复文档（truth-verify 结论：实现未闭环 REAL）
 

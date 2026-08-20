@@ -20,7 +20,10 @@ describe("gisProject", () => {
     };
     expect(readGisProject(config)).toEqual({
       ...DEFAULT_GIS_PROJECT,
-      view: source.view,
+      autoRotate: false,
+      buildings3d: false,
+      showControls: false,
+      view: { center: [116.4, 39.9], zoom: 5, bearing: undefined, pitch: undefined },
     });
   });
 
@@ -80,5 +83,25 @@ describe("gisProject", () => {
     };
     expect(readGisProject(config).basemap).toBe("pmtiles");
     expect(readGisProject(config).tileServiceId).toBe(DEFAULT_PMTILES_TILE_SERVICE_ID);
+    expect(readGisProject(config).basemapFlavor).toBe("light");
+  });
+
+  it("normalizes basemap flavor and optional flags", () => {
+    const config: ChartViewConfig = {
+      chartType: "gis-map",
+      nativeBody: {
+        gisProject: {
+          basemapFlavor: "dark",
+          showControls: true,
+          buildings3d: true,
+          autoRotate: true,
+        },
+      },
+    };
+    const project = readGisProject(config);
+    expect(project.basemapFlavor).toBe("dark");
+    expect(project.showControls).toBe(true);
+    expect(project.buildings3d).toBe(true);
+    expect(project.autoRotate).toBe(true);
   });
 });

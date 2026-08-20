@@ -1,11 +1,17 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import type { ChartEngineViewProps } from "@/components/charts/engine/types";
 import { buildGisOverlayGeoJson } from "@/components/charts/engine/maplibre/gisMapOverlay";
-import { readGisProject, resolveGisRenderableBasemap, DEFAULT_GLOBE_FOG } from "@/components/charts/engine/maplibre/gisProject";
+import { readGisProject, resolveGisRenderableBasemap, DEFAULT_GIS_GLOBE_VIEW } from "@/components/charts/engine/maplibre/gisProject";
 import {
   appendGisOverlayLayers,
   buildPmtilesStyle,
 } from "@/components/charts/engine/maplibre/gisMapStyle";
+import {
+  applyGlobeAtmosphere,
+  mountGisMapControls,
+  startGisGlobeAutoRotate,
+  syncGisMapView,
+} from "@/components/charts/engine/maplibre/gisMapRuntime";
 import {
   ensurePmtilesArchiveRegistered,
   loadMapLibreRuntime,
@@ -15,27 +21,10 @@ import { resolveTileService } from "@/lib/tileServices";
 import { cn } from "@/lib/utils";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-type MapLibreModule = typeof import("maplibre-gl");
-type MapLibreMap = InstanceType<MapLibreModule["Map"]>;
+type MapLibreMap = InstanceType<Awaited<ReturnType<typeof loadMapLibreRuntime>>["Map"]>;
 type StyleSpecification = import("maplibre-gl").StyleSpecification;
 
-async function loadMapLibre(): Promise<Pick<MapLibreModule, "Map">> {
-  return loadMapLibreRuntime();
-}
-
-function applyGlobeAtmosphere(
-  map: MapLibreMap,
-  projection: "mercator" | "globe" | undefined,
-  fog: Record<string, unknown> | undefined,
-) {
-  if (projection === "globe") {
-    map.setProjection({ type: "globe" });
-    const setFog = (map as unknown as { setFog?: (spec: Record<string, unknown>) => void }).setFog;
-    setFog?.(fog ?? {});
-  } else {
-    map.setProjection({ type: "mercator" });
-  }
-}
+const DEFAULT_AUTO_ROTATE_SPEED = 4;
 
 function GisMapViewInner(props: ChartEngineViewProps) {
   const { chartConfig, viewModel, fill = false, height = 180, width, ariaLabel, onPaintReady } = props;
@@ -55,6 +44,8 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   const [mapErrorHint, setMapErrorHint] = useState<string | null>(null);
 
   const tileServiceId = project.tileServiceId;
+  const flavor = project.basemapFlavor ?? "light";
+  const view = project.view ?? DEFAULT_GIS_GLOBE_VIEW;
 
   useEffect(() => {
     if (!tileServiceId) {
@@ -71,7 +62,12 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         if (cancelled) return;
         await ensurePmtilesArchiveRegistered(resolved.pmtilesUrl);
         if (cancelled) return;
-        setPmtilesStyle(buildPmtilesStyle(resolved, project.labelLang ?? "zh-Hans"));
+        setPmtilesStyle(
+          buildPmtilesStyle(resolved, project.labelLang ?? "zh-Hans", {
+            flavor,
+            buildings3d: project.buildings3d,
+          }),
+        );
         setPmtilesErrorHint(null);
       })
       .catch(() => {
@@ -85,7 +81,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     return () => {
       cancelled = true;
     };
-  }, [project.labelLang, tileServiceId]);
+  }, [flavor, project.buildings3d, project.labelLang, tileServiceId]);
 
   const renderBasemap = useMemo(
     () => resolveGisRenderableBasemap(project, Boolean(pmtilesStyle)),
@@ -94,10 +90,10 @@ function GisMapViewInner(props: ChartEngineViewProps) {
 
   const style = useMemo(() => {
     if (!pmtilesStyle) return null;
-    return overlayGeoJson ? appendGisOverlayLayers(pmtilesStyle, overlayGeoJson) : pmtilesStyle;
-  }, [overlayGeoJson, pmtilesStyle]);
+    return overlayGeoJson ? appendGisOverlayLayers(pmtilesStyle, overlayGeoJson, flavor) : pmtilesStyle;
+  }, [flavor, overlayGeoJson, pmtilesStyle]);
 
-  const useGlobe = project.projection === "globe";
+  const styleKey = useMemo(() => JSON.stringify({ style, projection: project.projection }), [project.projection, style]);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -105,16 +101,15 @@ function GisMapViewInner(props: ChartEngineViewProps) {
 
     let cancelled = false;
     let map: MapLibreMap | null = null;
-    const currentStyle = style;
-    const view = project.view ?? { center: [104, 35] as [number, number], zoom: 3.2 };
+    let disposeControls: (() => void) | undefined;
 
     void (async () => {
-      const maplibregl = await loadMapLibre();
+      const maplibregl = await loadMapLibreRuntime();
       if (cancelled || !hostRef.current) return;
 
       map = new maplibregl.Map({
         container: host,
-        style: currentStyle,
+        style,
         center: view.center,
         zoom: view.zoom,
         bearing: view.bearing ?? 0,
@@ -145,32 +140,41 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       map.once("load", () => {
         if (cancelled || !map) return;
         setMapErrorHint(null);
-        if (useGlobe) {
-          applyGlobeAtmosphere(map, "globe", project.fog ?? DEFAULT_GLOBE_FOG);
-        }
+        applyGlobeAtmosphere(map, project.projection, project.fog);
         map.resize();
         onPaintReady?.();
       });
+
+      disposeControls = await mountGisMapControls(map, project.showControls === true);
     })();
 
     return () => {
       cancelled = true;
       setMapErrorHint(null);
+      disposeControls?.();
       mapRef.current?.remove();
       mapRef.current = null;
     };
-  }, [
-    onPaintReady,
-    project.fog,
-    project.view?.bearing,
-    project.view?.center?.[0],
-    project.view?.center?.[1],
-    project.view?.pitch,
-    project.view?.zoom,
-    renderBasemap,
-    style,
-    useGlobe,
-  ]);
+  }, [onPaintReady, project.showControls, renderBasemap, styleKey]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || project.autoRotate) return;
+    syncGisMapView(map, view);
+  }, [project.autoRotate, view]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    applyGlobeAtmosphere(map, project.projection, project.fog);
+  }, [project.fog, project.projection]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !project.autoRotate || project.projection !== "globe") return;
+    const speed = project.autoRotateSpeed ?? DEFAULT_AUTO_ROTATE_SPEED;
+    return startGisGlobeAutoRotate(map, speed);
+  }, [project.autoRotate, project.autoRotateSpeed, project.projection, styleKey]);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -180,7 +184,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
     observer?.observe(host);
     return () => observer?.disconnect();
-  }, [style]);
+  }, [styleKey]);
 
   const statusHint = pmtilesErrorHint ?? mapErrorHint;
 

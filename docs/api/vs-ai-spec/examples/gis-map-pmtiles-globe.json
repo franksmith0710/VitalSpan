@@ -6,20 +6,25 @@
       "basemap": "pmtiles",
       "tileServiceId": "planet-z15",
       "labelLang": "zh-Hans",
+      "basemapFlavor": "light",
       "projection": "globe",
+      "atmospherePreset": "day",
       "fog": {
         "color": "rgb(186, 210, 235)",
         "high-color": "rgb(36, 92, 223)",
         "horizon-blend": 0.02,
-        "space-color": "rgb(11, 11, 25)",
-        "star-intensity": 0.6
+        "space-color": "rgb(186, 210, 235)",
+        "star-intensity": 0
       },
       "view": {
-        "center": [20.0, 20.0],
-        "zoom": 1.8,
+        "center": [100.0, 28.0],
+        "zoom": 1.5,
         "pitch": 0,
         "bearing": 0
-      }
+      },
+      "autoRotate": false,
+      "showControls": false,
+      "buildings3d": false
     }
   }
 }

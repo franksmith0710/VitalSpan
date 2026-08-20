@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -17,19 +18,35 @@ import {
 } from "@/components/dashboard/inspectorCompact";
 import {
   DEFAULT_GIS_GLOBE_VIEW,
-  DEFAULT_GLOBE_FOG,
   DEFAULT_PMTILES_TILE_SERVICE_ID,
+  GIS_ATMOSPHERE_PRESETS,
+  GIS_BASEMAP_FLAVORS,
   readGisProject,
   writeGisProject,
+  type GisAtmospherePreset,
+  type GisBasemapFlavor,
   type GisLabelLang,
-  type GisProjection,
 } from "@/components/charts/engine/maplibre/gisProject";
 import { listTileServices } from "@/lib/tileServices";
+
+const FLAVOR_LABELS: Record<GisBasemapFlavor, string> = {
+  light: "浅色",
+  dark: "深色",
+  grayscale: "灰度",
+  white: "留白",
+  black: "纯黑",
+};
+
+const ATMOSPHERE_LABELS: Record<GisAtmospherePreset, string> = {
+  day: "白昼",
+  dusk: "黄昏",
+  "deep-space": "深空星空",
+};
 
 export function ChartGisMapProjectPanel() {
   const { cfg, onChange } = useChartInspector();
   const project = readGisProject(cfg);
-  const view = project.view ?? { center: [104, 35] as [number, number], zoom: 3.2 };
+  const view = project.view ?? DEFAULT_GIS_GLOBE_VIEW;
   const {
     data: tileServices = [],
     isError: tileServicesError,
@@ -49,12 +66,16 @@ export function ChartGisMapProjectPanel() {
   const [centerLng, setCenterLng] = useState(String(view.center[0]));
   const [centerLat, setCenterLat] = useState(String(view.center[1]));
   const [zoom, setZoom] = useState(String(view.zoom));
+  const [bearing, setBearing] = useState(String(view.bearing ?? 0));
+  const [pitch, setPitch] = useState(String(view.pitch ?? 0));
 
   useEffect(() => {
     setCenterLng(String(view.center[0]));
     setCenterLat(String(view.center[1]));
     setZoom(String(view.zoom));
-  }, [view.center, view.zoom]);
+    setBearing(String(view.bearing ?? 0));
+    setPitch(String(view.pitch ?? 0));
+  }, [view.bearing, view.center, view.pitch, view.zoom]);
 
   useEffect(() => {
     if (tileServicesLoading || enabledTileServices.length === 0) return;
@@ -68,14 +89,26 @@ export function ChartGisMapProjectPanel() {
     }
   }, [cfg, enabledTileServices, onChange, project.tileServiceId, tileServicesLoading]);
 
-  const commitView = (next: { center?: [number, number]; zoom?: number; pitch?: number }) => {
+  const commitView = (next: {
+    center?: [number, number];
+    zoom?: number;
+    bearing?: number;
+    pitch?: number;
+  }) => {
     patchProject({
       view: {
         center: next.center ?? view.center,
         zoom: next.zoom ?? view.zoom,
-        bearing: view.bearing,
-        pitch: next.pitch ?? view.pitch,
+        bearing: next.bearing ?? view.bearing ?? 0,
+        pitch: next.pitch ?? view.pitch ?? 0,
       },
+    });
+  };
+
+  const applyAtmospherePreset = (preset: GisAtmospherePreset) => {
+    patchProject({
+      atmospherePreset: preset,
+      fog: GIS_ATMOSPHERE_PRESETS[preset],
     });
   };
 
@@ -120,6 +153,27 @@ export function ChartGisMapProjectPanel() {
           ) : null}
 
           <div className="grid gap-1.5">
+            <Label className="text-theme-xs text-gray-500">底图风格</Label>
+            <Select
+              value={project.basemapFlavor ?? "light"}
+              onValueChange={(basemapFlavor) =>
+                patchProject({ basemapFlavor: basemapFlavor as GisBasemapFlavor })
+              }
+            >
+              <SelectTrigger className={INSPECTOR_CTRL} aria-label="底图风格">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {GIS_BASEMAP_FLAVORS.map((flavor) => (
+                  <SelectItem key={flavor} value={flavor}>
+                    {FLAVOR_LABELS[flavor]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-1.5">
             <Label className="text-theme-xs text-gray-500">标注语言</Label>
             <Select
               value={project.labelLang ?? "zh-Hans"}
@@ -141,14 +195,16 @@ export function ChartGisMapProjectPanel() {
               value={project.projection ?? "mercator"}
               onValueChange={(projection) => {
                 if (projection === "globe") {
+                  const preset = project.atmospherePreset ?? "day";
                   patchProject({
                     projection: "globe",
-                    fog: project.fog ?? DEFAULT_GLOBE_FOG,
+                    atmospherePreset: preset,
+                    fog: project.fog ?? GIS_ATMOSPHERE_PRESETS[preset],
                     view: project.view ?? DEFAULT_GIS_GLOBE_VIEW,
                   });
                   return;
                 }
-                patchProject({ projection: "mercator", fog: undefined });
+                patchProject({ projection: "mercator", fog: undefined, atmospherePreset: undefined });
               }}
             >
               <SelectTrigger className={INSPECTOR_CTRL} aria-label="投影">
@@ -159,12 +215,28 @@ export function ChartGisMapProjectPanel() {
                 <SelectItem value="globe">球面地球</SelectItem>
               </SelectContent>
             </Select>
-            {project.projection === "globe" ? (
-              <p className="text-theme-xs text-gray-500">
-                球面模式使用 MapLibre 原生地球投影与星空大气，底图仍为 Planet Z15 PMTiles（无需 GeoLibre 外链）。
-              </p>
-            ) : null}
           </div>
+
+          {project.projection === "globe" ? (
+            <div className="grid gap-1.5">
+              <Label className="text-theme-xs text-gray-500">大气预设</Label>
+              <Select
+                value={project.atmospherePreset ?? "day"}
+                onValueChange={(preset) => applyAtmospherePreset(preset as GisAtmospherePreset)}
+              >
+                <SelectTrigger className={INSPECTOR_CTRL} aria-label="大气预设">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(ATMOSPHERE_LABELS) as GisAtmospherePreset[]).map((preset) => (
+                    <SelectItem key={preset} value={preset}>
+                      {ATMOSPHERE_LABELS[preset]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
         </div>
 
         <div className="grid grid-cols-2 gap-2">
@@ -198,18 +270,72 @@ export function ChartGisMapProjectPanel() {
           </div>
         </div>
 
-        <div className="grid gap-1.5">
-          <Label className="text-theme-xs text-gray-500">缩放级别</Label>
-          <Input
-            className={INSPECTOR_CTRL}
-            value={zoom}
-            onChange={(e) => setZoom(e.target.value)}
-            onBlur={() => {
-              const nextZoom = Number(zoom);
-              if (!Number.isFinite(nextZoom)) return;
-              commitView({ zoom: nextZoom });
-            }}
-          />
+        <div className="grid grid-cols-3 gap-2">
+          <div className="grid gap-1.5">
+            <Label className="text-theme-xs text-gray-500">缩放</Label>
+            <Input
+              className={INSPECTOR_CTRL}
+              value={zoom}
+              onChange={(e) => setZoom(e.target.value)}
+              onBlur={() => {
+                const nextZoom = Number(zoom);
+                if (!Number.isFinite(nextZoom)) return;
+                commitView({ zoom: nextZoom });
+              }}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label className="text-theme-xs text-gray-500">旋转°</Label>
+            <Input
+              className={INSPECTOR_CTRL}
+              value={bearing}
+              onChange={(e) => setBearing(e.target.value)}
+              onBlur={() => {
+                const next = Number(bearing);
+                if (!Number.isFinite(next)) return;
+                commitView({ bearing: next });
+              }}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label className="text-theme-xs text-gray-500">倾斜°</Label>
+            <Input
+              className={INSPECTOR_CTRL}
+              value={pitch}
+              onChange={(e) => setPitch(e.target.value)}
+              onBlur={() => {
+                const next = Number(pitch);
+                if (!Number.isFinite(next)) return;
+                commitView({ pitch: Math.max(0, Math.min(85, next)) });
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-2 rounded-lg border border-gray-200 p-2 dark:border-gray-800">
+          <label className="flex items-center gap-2 text-theme-xs text-gray-600 dark:text-gray-300">
+            <Checkbox
+              checked={project.showControls === true}
+              onCheckedChange={(checked) => patchProject({ showControls: checked === true })}
+            />
+            显示缩放与比例尺控件
+          </label>
+          <label className="flex items-center gap-2 text-theme-xs text-gray-600 dark:text-gray-300">
+            <Checkbox
+              checked={project.buildings3d === true}
+              onCheckedChange={(checked) => patchProject({ buildings3d: checked === true })}
+            />
+            建筑 3D 挤出（zoom ≥ 13）
+          </label>
+          {project.projection === "globe" ? (
+            <label className="flex items-center gap-2 text-theme-xs text-gray-600 dark:text-gray-300">
+              <Checkbox
+                checked={project.autoRotate === true}
+                onCheckedChange={(checked) => patchProject({ autoRotate: checked === true })}
+              />
+              球面慢速自转（大屏待机）
+            </label>
+          ) : null}
         </div>
       </div>
     </ChartInspectorSection>
