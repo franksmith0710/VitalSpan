@@ -67,6 +67,8 @@ if (-not $healthy) {
 if ($healthy) {
   & $verifyScript -Port $Port -PmtilesFile $PmtilesFile
 }
+
+if (-not $SkipRegister) {
   $registerScript = Join-Path $repoRoot (Join-Path 'scripts' 'register-pmtiles-external.ps1')
   & $registerScript -ServiceId $ServiceId -ServiceName $ServiceName -BaseUrl "http://127.0.0.1:${Port}" -PmtilesPath "/${PmtilesFile}"
 }
