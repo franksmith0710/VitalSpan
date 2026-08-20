@@ -73,14 +73,23 @@ $runLog = [ordered]@{
     trigger   = $trigger
 }
 
+function ConvertTo-StateHashtable($obj) {
+    $ht = [ordered]@{}
+    if ($null -ne $obj) {
+        foreach ($prop in $obj.PSObject.Properties) {
+            $ht[$prop.Name] = $prop.Value
+        }
+    }
+    return $ht
+}
+
 function Finish-Run([string]$outcome, [hashtable]$extra) {
     $runLog.finishedAt = Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'
     $runLog.outcome = $outcome
     foreach ($k in $extra.Keys) { $runLog[$k] = $extra[$k] }
     Write-JsonFile (Join-Path $runsDir "$runId.json") $runLog
 
-    $state = Read-JsonFile $statePath
-    if (-not $state) { $state = [ordered]@{} }
+    $state = ConvertTo-StateHashtable (Read-JsonFile $statePath)
     $state.status = 'idle'
     $state.loopMode = 'task_scheduler'
     $state.loopMonitored = $false

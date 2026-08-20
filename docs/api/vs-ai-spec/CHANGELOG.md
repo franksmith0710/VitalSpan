@@ -1,6 +1,12 @@
 # vs-ai-spec 变更
 
-## 2026-08-20
+## 2026-08-20 (Phase 3)
+
+- **styleHooks**：自愿 manifest 映射 → FE Hook Bridge；入库 warn + `styleComplianceTier`
+- 组件库 Hub 预览与编辑页共用 `CustomVizWidget` + 默认看板 preview 主题
+- 脚手架 `scripts/scaffold-custom-viz-html.mjs`
+
+## 2026-08-20 (Phase 1)
 
 - **样式合规 Phase 1**：`AiVizArtifactOut.warnings[]`（POST/PUT/GET 返回，不阻断入库）
 - 新增 [guides/CUSTOM-VIZ-STYLE-COMPLIANCE.md](./guides/CUSTOM-VIZ-STYLE-COMPLIANCE.md)

@@ -21,7 +21,7 @@ redoc: /redoc
 | 查询类 | 只读；禁止经 API 写入外部数据源 |
 | 分页 | `?page=&page_size=`（三期起统一；前期可省略） |
 | 错误体 | `{ "code": "...", "message": "...", "detail": ... }` |
-| 成功体例外 | `POST/PUT/GET /ai-viz/artifacts` 成功为裸 `AiVizArtifactOut`（DeepTalk 契约，含 `warnings[]` 样式合规提示；不含 `{code,message}`）；`GET .../entry` 为 HTML |
+| 成功体例外 | `POST/PUT/GET /ai-viz/artifacts` 成功为裸 `AiVizArtifactOut`（含 `warnings[]` · `styleComplianceTier`；不含 `{code,message}`）；`GET .../entry` 为 HTML |
 
 **运行时 OpenAPI**：`http://localhost:8000/docs` · `http://localhost:8000/redoc`
 

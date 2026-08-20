@@ -133,13 +133,13 @@ services:
       PMTILES_CORS_ORIGIN: "${PMTILES_CORS_ORIGIN:-http://localhost:5173}"
       PMTILES_HEALTH_FILE: "${PMTILES_HEALTH_FILE:-planet-z15-20260817.pmtiles}"
     volumes:
-      - "${PMTILES_DATA_DIR:?Set PMTILES_DATA_DIR to the host directory containing .pmtiles files}:/data:ro"
+      - "${PMTILES_DATA_DIR:?Set PMTILES_DATA_DIR to the host directory containing .pmtiles files}:/srv:ro"
       - ./docker/pmtiles-tile-server/Caddyfile:/etc/caddy/Caddyfile:ro
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "wget -q -O /dev/null --header='Range: bytes=0-0' \"http://127.0.0.1:8080/$${PMTILES_HEALTH_FILE}\" || exit 1",
+          "wget -S -O /dev/null -q --header='Range: bytes=0-0' \"http://127.0.0.1:8080/$${PMTILES_HEALTH_FILE}\" 2>&1 | grep -q '206 Partial Content'",
         ]
       interval: 15s
       timeout: 10s

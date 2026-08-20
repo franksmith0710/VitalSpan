@@ -43,23 +43,30 @@ Write-Host ""
 
 docker compose --profile pmtiles-external up -d pmtiles-tile-server
 
+$verifyScript = Join-Path $repoRoot (Join-Path 'scripts' 'verify-pmtiles-external.ps1')
+
 Write-Host "Waiting for healthcheck..."
 $healthy = $false
-for ($i = 0; $i -lt 30; $i++) {
+for ($i = 0; $i -lt 45; $i++) {
   Start-Sleep -Seconds 2
   $status = docker inspect --format "{{if .State.Health}}{{.State.Health.Status}}{{else}}unknown{{end}}" vitalspan-pmtiles-tile-server 2>$null
   if ($status -eq "healthy") { $healthy = $true; break }
-  if ($status -eq "unhealthy") { break }
+  if ($status -eq "unhealthy" -and $i -gt 5) { break }
 }
 if (-not $healthy) {
-  docker logs vitalspan-pmtiles-tile-server --tail 30
-  throw "PMTiles external service failed healthcheck"
+  try {
+    & $verifyScript -Port $Port -PmtilesFile $PmtilesFile
+    Write-Host "Docker healthcheck pending, but Range probe passed."
+    $healthy = $true
+  } catch {
+    docker logs vitalspan-pmtiles-tile-server --tail 30
+    throw "PMTiles external service failed healthcheck"
+  }
 }
 
-$verifyScript = Join-Path $repoRoot (Join-Path 'scripts' 'verify-pmtiles-external.ps1')
-& $verifyScript -Port $Port -PmtilesFile $PmtilesFile
-
-if (-not $SkipRegister) {
+if ($healthy) {
+  & $verifyScript -Port $Port -PmtilesFile $PmtilesFile
+}
   $registerScript = Join-Path $repoRoot (Join-Path 'scripts' 'register-pmtiles-external.ps1')
   & $registerScript -ServiceId $ServiceId -ServiceName $ServiceName -BaseUrl "http://127.0.0.1:${Port}" -PmtilesPath "/${PmtilesFile}"
 }

@@ -1,11 +1,11 @@
 # 全球 PMTiles 外部瓦片服务（独立于 VitalSpan 进程）
-# 挂载含 .pmtiles 的目录到 /data；VitalSpan 仅经 tileServiceId 解析 URL，不打包 128GB 制品。
+# 归档只读挂载到 /srv；Caddy 运行时数据走 /config（容器可写层）
 {
 	auto_https off
 }
 
 :8080 {
-	root * /data
+	root * /srv
 	file_server
 
 	@options method OPTIONS
