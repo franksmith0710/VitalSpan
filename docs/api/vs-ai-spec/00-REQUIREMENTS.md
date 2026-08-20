@@ -1,6 +1,6 @@
 # 规范要求（L3 customViz · 必读）
 
-解压后**先读本文件**。不满足下列任一条 = 未对接成功。
+解压后**先读 [START-HERE.md](./START-HERE.md)**，再读本文件（L3 细则）。不满足下列任一条 = 未对接成功。
 
 > **外部 AI（DeepTalk 等）**：交付完成**只认 `artifactId`**。只 `write_file` 到本目录、桌面、`examples/`、`output/` 等任意路径 = **未完成**。必读 [§0](#0-对外暴露什么--上传到哪里) 与 [EXTERNAL-AUTHOR.md](./EXTERNAL-AUTHOR.md)。
 

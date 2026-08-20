@@ -7,6 +7,7 @@ import {
 import {
   CHINA_PROVINCES_SOURCE_ID,
   buildGisMapStyle,
+  normalizeProtomapsSpriteUrl,
   resolveGisMapStyleFromProject,
 } from "@/components/charts/engine/maplibre/gisMapStyle";
 import { gisMapTransformRequest } from "@/components/charts/engine/maplibre/gisMapTransformRequest";
@@ -46,6 +47,12 @@ describe("gisMapStyle", () => {
     expect(() =>
       resolveGisMapStyleFromProject({ basemap: "pmtiles", tileServiceId: "planet-z15" }),
     ).toThrow(/async tile service resolve/);
+  });
+
+  it("normalizes legacy protomaps sprite urls", () => {
+    expect(
+      normalizeProtomapsSpriteUrl("https://protomaps.github.io/basemaps-assets/v4/light-sprite"),
+    ).toBe("https://protomaps.github.io/basemaps-assets/sprites/v4/light");
   });
 });
 

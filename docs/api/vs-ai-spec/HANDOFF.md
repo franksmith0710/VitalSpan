@@ -1,7 +1,9 @@
 # VitalSpan × DeepTalk 联调测试包
 
-**先读 [00-REQUIREMENTS.md §0](./00-REQUIREMENTS.md#0-对外暴露什么--上传到哪里)**（规范包 ≠ 上传目的地；**只认 `artifactId`**）。  
-**外部 AI 必做**：validate → upload → 汇报 `artifactId` → [EXTERNAL-AUTHOR.md](./EXTERNAL-AUTHOR.md)。
+**👉 身份定义：[PACK-IDENTITY.md](./PACK-IDENTITY.md)** — 这是**集成规范包**，不是组件工程项目。  
+**👉 总入口：[START-HERE.md](./START-HERE.md)** · **DeepTalk 提示词：[DEEPTALK-AGENT-PROMPT.md](./DEEPTALK-AGENT-PROMPT.md)**
+
+**先读 [00-REQUIREMENTS.md §0](./00-REQUIREMENTS.md#0-对外暴露什么--上传到哪里)**（规范包 ≠ 上传目的地；**只认各路径 HTTP 完成标志**）。
 
 | 对外暴露（给你用的） | 不是上传目的地 |
 |---------------------|----------------|
@@ -135,6 +137,7 @@ DeepTalk 若产出 `runtime: vanilla`、`.iife.js`、`dataSchema` / `eventSchema
 
 | 误读 | 本包事实 |
 |------|----------|
+| 「这是 VitalSpan 自定义可视化**组件项目目录**」 | **集成规范包**；真系统在 `:8000` API + `:5173` 前端；见 [PACK-IDENTITY.md](./PACK-IDENTITY.md) |
 | L3 有 vanilla / react / webgl / three | **只有 `html` 与 `d3`**。`html` = 内联 DOM/CSS/SVG/Canvas，不是 React 运行时 |
 | capability-manifest 里 `library: react` | 那是**内置 chartType** 的实现标注，不是 customViz runtime |
 | 缺 WebGL 示例 | **不提供**该 runtime，无需补示例 |

@@ -1,5 +1,22 @@
 # vs-ai-spec 变更
 
+## 2026-08-20 (三条线工程分离)
+
+- 新增 [guides/THREE-WORKFLOWS.md](./guides/THREE-WORKFLOWS.md)：② 组件库入库 vs ③ 大屏复用已有+新建
+- 重写 `START-HERE` / `EXTERNAL-AUTHOR` / `DASHBOARD-LAYOUT` / `DEEPTALK-AGENT-PROMPT` 按工作流编号
+
+## 2026-08-20 (工程身份写清)
+
+- 新增 [PACK-IDENTITY.md](./PACK-IDENTITY.md)：集成规范包 ≠ 组件项目目录；平台真系统在 :8000
+- 新增 [DEEPTALK-AGENT-PROMPT.md](./DEEPTALK-AGENT-PROMPT.md)：禁止「项目目录 / output 完成」话术
+
+## 2026-08-20 (三条路径 Runbook)
+
+- 新增 [START-HERE.md](./START-HERE.md)：总入口、三条路径完成判据、一键命令
+- 新增 [guides/L1-L2-CHART-CONFIG.md](./guides/L1-L2-CHART-CONFIG.md) · `examples/line|pie-manual-deStyle.json`
+- 新增 [guides/DASHBOARD-LAYOUT.md](./guides/DASHBOARD-LAYOUT.md)
+- 新增 `tools/validate-chart-config.py` · `upload-dashboard-layout.py` · `vitalspan_http.py`
+
 ## 2026-08-20 (对外暴露与入库判据写清)
 
 - **00-REQUIREMENTS §0**：规范包 ≠ 上传目的地；入库端点、禁止 `output/`、禁止「VS Code 扩展可用」等误读

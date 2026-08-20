@@ -38,6 +38,7 @@ try:
                 pmtilesPath=PMTILES_PATH,
                 enabled=True,
                 description="PMTiles external tile server",
+                spriteUrl="https://protomaps.github.io/basemaps-assets/sprites/v4/light",
             ),
             updated_by=None,
         )
@@ -54,6 +55,7 @@ try:
                 baseUrl=BASE_URL.rstrip("/"),
                 pmtilesPath=PMTILES_PATH,
                 enabled=True,
+                spriteUrl="https://protomaps.github.io/basemaps-assets/sprites/v4/light",
             ),
             updated_by=None,
         )

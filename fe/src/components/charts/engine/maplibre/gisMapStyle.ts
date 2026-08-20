@@ -10,6 +10,24 @@ export const GIS_OVERLAY_CIRCLE_LAYER_ID = "vs-gis-overlay-circles";
 export const GIS_OVERLAY_LABEL_LAYER_ID = "vs-gis-overlay-labels";
 export const PMTILES_SOURCE_ID = "protomaps";
 
+const PROTOMAPS_LIGHT_SPRITE = "https://protomaps.github.io/basemaps-assets/sprites/v4/light";
+
+/** 离线省界初始视野（WGS84）。 */
+export const CHINA_PROVINCES_BOUNDS: [[number, number], [number, number]] = [
+  [73.0, 18.0],
+  [135.0, 53.5],
+];
+
+/** 兼容旧登记/默认值中的错误 sprite 路径（v4/light-sprite → sprites/v4/light）。 */
+export function normalizeProtomapsSpriteUrl(spriteUrl: string | undefined): string {
+  if (!spriteUrl?.trim()) return PROTOMAPS_LIGHT_SPRITE;
+  const trimmed = spriteUrl.trim();
+  if (trimmed.includes("/v4/light-sprite") || trimmed.endsWith("light-sprite")) {
+    return PROTOMAPS_LIGHT_SPRITE;
+  }
+  return trimmed;
+}
+
 type FeatureCollection = GeoJSON.FeatureCollection;
 
 type BuildGisMapStyleInput = {
@@ -49,13 +67,13 @@ export function buildGisMapStyle(input: BuildGisMapStyleInput): StyleSpecificati
         id: "vs-provinces-fill",
         type: "fill",
         source: CHINA_PROVINCES_SOURCE_ID,
-        paint: { "fill-color": "#e2e8f0", "fill-opacity": 0.85 },
+        paint: { "fill-color": "#cbd5e1", "fill-opacity": 0.92 },
       },
       {
         id: "vs-provinces-line",
         type: "line",
         source: CHINA_PROVINCES_SOURCE_ID,
-        paint: { "line-color": "#64748b", "line-width": 0.8 },
+        paint: { "line-color": "#475569", "line-width": 1.1 },
       },
     ],
   };
@@ -66,10 +84,11 @@ export function buildPmtilesStyle(
   labelLang: GisLabelLang = "zh-Hans",
 ): StyleSpecification {
   const flavor = namedFlavor("light");
+  const sprite = normalizeProtomapsSpriteUrl(resolved.spriteUrl);
   return {
     version: 8,
     glyphs: resolved.glyphsUrl,
-    sprite: resolved.spriteUrl,
+    sprite,
     sources: {
       [PMTILES_SOURCE_ID]: {
         type: "vector",

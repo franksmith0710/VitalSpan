@@ -35,6 +35,7 @@ def test_resolve_tile_service(db: Session) -> None:
     resolved = tile_service.resolve_tile_service(db, "planet-z15")
     assert resolved.pmtiles_url == "http://tiles.local:8080/data/planet-z15.pmtiles"
     assert resolved.glyphs_url.endswith(".pbf")
+    assert resolved.sprite_url.endswith("/sprites/v4/light")
     dumped = resolved.model_dump(by_alias=True)
     assert dumped["pmtilesUrl"] == "http://tiles.local:8080/data/planet-z15.pmtiles"
     assert "pmtiles_url" not in dumped

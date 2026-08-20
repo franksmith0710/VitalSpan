@@ -14,9 +14,9 @@ from app.reports.standard.schemas import FieldMapping, ThemeType
 
 _KNOWN_DIMENSION_CODES = frozenset({"status", "region", "dim_sales"})
 
-_STANDARD_THEME_BINDINGS: dict[ThemeType, tuple[str, str]] = {
-    "lifecycle": ("dim", "status"),
-    "distribution": ("dim", "region"),
+_THEME_DIMENSION_FIELD: dict[ThemeType, str] = {
+    "lifecycle": "status",
+    "distribution": "region",
 }
 
 
@@ -62,12 +62,14 @@ def lookup_value_labels(
     return translated, missing
 
 
-def standard_analysis_bindings(theme: ThemeType, _mapping: FieldMapping) -> list[ColumnDimensionBinding]:
-    pair = _STANDARD_THEME_BINDINGS.get(theme)
-    if pair is None:
+def standard_analysis_bindings(theme: ThemeType, mapping: FieldMapping) -> list[ColumnDimensionBinding]:
+    dimension_field = _THEME_DIMENSION_FIELD.get(theme)
+    if dimension_field is None:
         return []
-    column, dimension_code = pair
-    return [ColumnDimensionBinding(column=column, dimension_code=dimension_code)]
+    if not getattr(mapping, dimension_field, None):
+        return []
+    # lifecycle/distribution 聚合后列名固定为 dim（见 theme_aggregate.py）
+    return [ColumnDimensionBinding(column="dim", dimension_code=dimension_field)]
 
 
 def extension_section_bindings(

@@ -6,6 +6,7 @@ import { readGisProject, resolveGisRenderableBasemap } from "@/components/charts
 import {
   appendGisOverlayLayers,
   buildPmtilesStyle,
+  CHINA_PROVINCES_BOUNDS,
   resolveGisMapStyleFromProject,
 } from "@/components/charts/engine/maplibre/gisMapStyle";
 import { gisMapTransformRequest } from "@/components/charts/engine/maplibre/gisMapTransformRequest";
@@ -19,17 +20,13 @@ type StyleSpecification = import("maplibre-gl").StyleSpecification;
 type FeatureCollection = GeoJSON.FeatureCollection;
 
 let maplibreModulePromise: Promise<MapLibreModule> | null = null;
-let pmtilesProtocolReady = false;
 
 async function loadMapLibre(): Promise<MapLibreModule> {
   if (!maplibreModulePromise) {
     maplibreModulePromise = import("maplibre-gl");
   }
   const maplibregl = await maplibreModulePromise;
-  if (!pmtilesProtocolReady) {
-    await registerPmtilesProtocol(maplibregl);
-    pmtilesProtocolReady = true;
-  }
+  await registerPmtilesProtocol(maplibregl);
   return maplibregl;
 }
 
@@ -118,6 +115,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   useEffect(() => {
     const host = hostRef.current;
     if (!host || !style) return;
+    if (wantsPmtiles && !pmtilesStyle) return;
 
     let cancelled = false;
     let map: InstanceType<MapLibreModule["Map"]> | null = null;
@@ -141,6 +139,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       mapRef.current = map;
 
       map.on("error", (event) => {
+        if (cancelled) return;
         const message =
           event.error instanceof Error
             ? event.error.message
@@ -153,6 +152,9 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       map.once("load", () => {
         if (cancelled || !map) return;
         setMapErrorHint(null);
+        if (renderBasemap === "china-provinces") {
+          map.fitBounds(CHINA_PROVINCES_BOUNDS, { padding: 24, duration: 0 });
+        }
         if (useGlobe) {
           applyGlobeAtmosphere(map, "globe", project.fog);
         }
@@ -163,11 +165,13 @@ function GisMapViewInner(props: ChartEngineViewProps) {
 
     return () => {
       cancelled = true;
+      setMapErrorHint(null);
       mapRef.current?.remove();
       mapRef.current = null;
     };
   }, [
     onPaintReady,
+    pmtilesStyle,
     project.fog,
     project.view?.bearing,
     project.view?.center?.[0],
@@ -177,6 +181,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     renderBasemap,
     style,
     useGlobe,
+    wantsPmtiles,
   ]);
 
   useEffect(() => {

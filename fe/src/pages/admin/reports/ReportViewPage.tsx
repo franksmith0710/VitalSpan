@@ -17,6 +17,7 @@ import { matchesCapability, resolveEffectiveCapabilities } from "@/lib/capabilit
 import { queryKeys } from "@/lib/queryKeys";
 import { useAuth } from "@/context/auth-context";
 import type { ReportCatalogNode } from "@/lib/reportCatalogUtils";
+import { localizeTemplateReadiness, type TemplateReadiness } from "@/lib/reportTemplateReadiness";
 import { reportTemplatePath } from "./components/reportTemplateUi";
 import { ReportExportCard } from "./components/ReportExportCard";
 import { ReportResultTable } from "./components/ReportResultTable";

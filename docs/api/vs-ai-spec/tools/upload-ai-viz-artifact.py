@@ -103,7 +103,10 @@ def main() -> None:
     else:
         print("warnings: none")
     print(f"entry GET {api}/ai-viz/artifacts/{artifact_id}/entry")
-    print("set customVizConfig.artifactId to this uuid on a dashboard")
+    print("--- next (workflow ③, optional) ---")
+    print("component is in platform library; reuse artifactId on any dashboard:")
+    print(f"  customVizConfig.artifactId = {artifact_id}")
+    print("  then: upload-dashboard-layout.py --dashboard-id <uuid> --file <layout.json>")
 
 
 if __name__ == "__main__":

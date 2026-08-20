@@ -33,7 +33,7 @@ describe("SchedulePrecheckPanel", () => {
     renderPanel();
     expect(await screen.findByText("创建前检查")).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText(/PDF 导出服务就绪/)).toBeInTheDocument());
-    expect(screen.getByText(/邮件服务可用/)).toBeInTheDocument();
+    expect(screen.getByText(/发信通道可用/)).toBeInTheDocument();
   });
 
   it("shows refresh control", async () => {

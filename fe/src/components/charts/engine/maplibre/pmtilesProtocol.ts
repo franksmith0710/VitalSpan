@@ -1,13 +1,13 @@
-let registered = false;
+const registeredTargets = new WeakSet<object>();
 
 export async function registerPmtilesProtocol(maplibregl: typeof import("maplibre-gl")): Promise<void> {
-  if (registered) return;
+  if (registeredTargets.has(maplibregl as object)) return;
   const { Protocol } = await import("pmtiles");
   const protocol = new Protocol();
   maplibregl.addProtocol("pmtiles", protocol.tile);
-  registered = true;
+  registeredTargets.add(maplibregl as object);
 }
 
 export function resetPmtilesProtocolForTests(): void {
-  registered = false;
+  // WeakSet cannot be cleared; tests import a fresh maplibre module per run.
 }

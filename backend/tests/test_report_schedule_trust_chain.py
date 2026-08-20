@@ -188,3 +188,50 @@ def test_viewer_cannot_create_standard_schedule(viewer: UserContext) -> None:
         with pytest.raises(ScheduleError) as exc:
             scheduler_service.create_schedule(payload, viewer)
     assert exc.value.status == 403
+
+
+def test_standard_schedule_smtp_unconfigured_real_delivery_adapter(admin: UserContext) -> None:
+    """无 SMTP 时走真实 delivery_adapter，须 semi_real_failed（非 mock dispatch）。"""
+    from app.reports.scheduler import executor as scheduler_executor
+
+    created = _create_standard_schedule(admin)
+    scheduler_service.transition_schedule(created.id, "schedule", admin)
+
+    pdf_bytes = b"%PDF-1.4 test"
+    smtp = MagicMock()
+    smtp.is_configured = False
+    smtp.from_addr = "noreply@example.com"
+    mock_session = MagicMock()
+    mock_session_cm = MagicMock()
+    mock_session_cm.__enter__.return_value = mock_session
+    mock_session_cm.__exit__.return_value = None
+    with (
+        patch("app.reports.scheduler.standard_export.get_pack", return_value=_standard_pack()),
+        patch(
+            "app.reports.scheduler.standard_export.run_pack",
+            return_value=MagicMock(render_spec={"sections": [{"columns": ["dim", "cnt"], "rows": [["A", 1]]}]}),
+        ),
+        patch("app.reports.scheduler.standard_export.render_document", return_value=pdf_bytes),
+        patch(
+            "app.reports.scheduler.executor.resolve_recipient_emails",
+            return_value=["ops@example.com"],
+        ),
+        patch("app.reports.scheduler.executor.get_meta_session", return_value=mock_session_cm),
+        patch("app.reports.scheduler.delivery_adapter.resolve_email_smtp", return_value=smtp),
+        patch("app.reports.scheduler.executor.register_artifact_owner"),
+        patch("app.reports.scheduler.executor._record_delivery_attempts"),
+        patch(
+            "app.reports.scheduler.executor._persist_execution_artifact",
+            return_value=("artifact://test", "storage-key", []),
+        ),
+    ):
+        out = scheduler_executor.semi_real_execute_schedule(
+            created.id,
+            f"idem-{uuid.uuid4()}",
+            admin,
+        )
+
+    assert out.status == "semi_real_failed"
+    assert out.error_message
+    assert out.delivery_steps
+    assert out.delivery_steps[0]["channel"] == "email"

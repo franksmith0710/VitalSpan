@@ -201,3 +201,69 @@ def test_dashboard_export_job(client: TestClient, monkeypatch):
     excel_dl = client.get(excel_job.json()["downloadUrl"], headers=AUTH)
     assert excel_dl.status_code == 200
     assert b"Sales KPI" in excel_dl.content
+
+
+def test_seed_run_export_chain_under_budget(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    """M-RPT F-C：seed-demo → run → export API 链 <60s。"""
+    import time
+    import uuid as _uuid
+    from unittest.mock import patch
+
+    from app.query.schemas import ExecuteResponse
+    from app.reports import dev_seed
+    from app.reports.extension.schemas import MetricAdjustment
+
+    fake_ds = _uuid.UUID("00000000-0000-4000-8000-000000000099")
+    bound_config_id = _uuid.uuid4()
+    demo_metric = MetricAdjustment(
+        key="province_sales",
+        label="省份销售",
+        datasetId="demo-sales-wide",
+        boundConfigId=bound_config_id,
+        visible=True,
+        queryMode="dataset",
+        dimensionDictCode="region",
+        dimensionValueColumn="province",
+    )
+    monkeypatch.setattr(dev_seed, "_resolve_or_create_datasource", lambda _s: fake_ds)
+    monkeypatch.setattr(dev_seed, "_seed_equipment_entity", lambda *_a, **_k: 0)
+    monkeypatch.setattr(dev_seed, "seed_builtin_analysis_pack", lambda _actor=None: 1)
+    monkeypatch.setattr(dev_seed, "_demo_sales_metric", lambda _s, _d: demo_metric)
+    monkeypatch.setattr(
+        "app.reports.engine.execute._resolve_dataset_metric_binding",
+        lambda _db, metric: (fake_ds, metric.bound_config_id or bound_config_id),
+    )
+
+    started = time.perf_counter()
+    seed_resp = client.post("/api/v1/reports/center/seed-demo", headers=AUTH)
+    assert seed_resp.status_code == 200, seed_resp.text
+    node_id = seed_resp.json().get("detail", {}).get("catalogNodeId")
+    assert node_id
+
+    query_result = ExecuteResponse(
+        columns=["province", "sales"],
+        rows=[["east", 100], ["north", 50]],
+        rowCount=2,
+        truncated=False,
+        traceId="chain-test",
+    )
+    with patch(
+        "app.reports.engine.execute.execute_dataset_from_config",
+        return_value=query_result,
+    ):
+        run_resp = client.post(
+            f"/api/v1/reports/templates/{node_id}/run",
+            headers=AUTH,
+            json={"format": "web", "parameters": {}},
+        )
+        assert run_resp.status_code == 200, run_resp.text
+        assert run_resp.json()["status"] == "ready"
+
+        export_resp = client.get(
+            f"/api/v1/reports/export?templateId={node_id}&format=pdf",
+            headers=AUTH,
+        )
+    assert export_resp.status_code == 200, export_resp.text
+    assert export_resp.json().get("downloadUrl")
+
+    assert time.perf_counter() - started < 60.0

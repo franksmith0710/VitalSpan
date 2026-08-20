@@ -71,3 +71,25 @@ def test_lookup_missing_dimension_honest(meta_session: Session) -> None:
     translated, meta = label_translation.translate_table_payload(meta_session, payload, bindings)
     assert translated["rows"][0][0] == "running"
     assert "未翻译" in meta.get("translationNote", "")
+
+
+def test_standard_analysis_bindings_use_field_mapping() -> None:
+    from app.reports.standard.schemas import FieldMapping
+
+    lifecycle = label_translation.standard_analysis_bindings(
+        "lifecycle",
+        FieldMapping(status="equipment_status", region="reg"),
+    )
+    assert lifecycle == [
+        label_translation.ColumnDimensionBinding(column="dim", dimension_code="status"),
+    ]
+    missing_status = label_translation.standard_analysis_bindings(
+        "lifecycle",
+        FieldMapping(status=None, region="reg"),
+    )
+    assert missing_status == []
+    trend = label_translation.standard_analysis_bindings(
+        "trend",
+        FieldMapping(status="status", region="region", createdAt="created_at"),
+    )
+    assert trend == []

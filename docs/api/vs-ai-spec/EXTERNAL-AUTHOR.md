@@ -1,73 +1,58 @@
-# 外部作者 Runbook（DeepTalk / 第三方 AI）
+# 外部作者 Runbook — 工作流 ② · 组件库（L3 customViz）
 
-> **先读 [00-REQUIREMENTS.md §0](./00-REQUIREMENTS.md#0-对外暴露什么--上传到哪里)**  
-> **完成 = 拿到 `artifactId`。写本地 JSON ≠ 上传。**
+> **本文件只覆盖「开发新组件并入库」。**  
+> 拼大屏 → [guides/DASHBOARD-LAYOUT.md](./guides/DASHBOARD-LAYOUT.md)（工作流 ③）  
+> 三条线总览 → [guides/THREE-WORKFLOWS.md](./guides/THREE-WORKFLOWS.md)
+
+## 定位
+
+| 项 | 说明 |
+|----|------|
+| 任务 | 开发 **html** 或 **d3** 新组件 |
+| 交付目标 | VitalSpan **平台组件库**（表 `ai_viz_artifacts`） |
+| 完成标志 | `POST /ai-viz/artifacts` 返回 **`artifactId=<uuid>`** |
+| 复用 | 入库后任意大屏可通过 `customVizConfig.artifactId` 引用 |
+
+**本工作流结束于 `artifactId`。** 是否上大屏是另一条工作流（③），可另开任务。
 
 ## 0. 一句话（禁止误解）
 
 | 错 | 对 |
 |----|-----|
-| 「已保存到 `vs-ai-spec-deeptalk-test/output/xxx.json`」 | 「`ok artifactId=550e8400-...`」 |
-| 「组件在工作区，可直接使用」 | 「已 POST 到 `http://127.0.0.1:8000/api/v1/ai-viz/artifacts`」 |
-| DeepTalk 只跑了 `write_file` | 必须再跑 **`upload-ai-viz-artifact.py`** 或等价 HTTP POST |
+| 「组件项目目录里已完成」 | 「**组件库**已登记 `artifactId=...`」 |
+| 「保存在 output/」 | 「已 POST 到 `:8000/api/v1/ai-viz/artifacts`」 |
 
-**规范包目录**（如 `C:\Users\...\vs-ai-spec-deeptalk-test`）是**读文档、写草稿、跑脚本**用的，**不是** VitalSpan 入库服务器。  
-**禁止**自建 `output/` 当交付目录；草稿可放 `examples/你的组件.json` 或任意路径，但**必须**用 upload 脚本 POST 出去。
+## 步骤
 
-## 三步（必须按顺序）
+| 步 | 动作 | 成功标志 |
+|----|------|----------|
+| 0 | `GET /health` | ok |
+| 1 | 读 `00-REQUIREMENTS` + `PLATFORM-SLA`；d3 照抄 `custom-viz-d3-bundle.json` 的 `mount` | — |
+| 2 | 草稿 `examples/<name>.json`（禁止 `output/` 当交付目录） | JSON 合法 |
+| 3 | `py -3 tools/validate-ai-viz-bundle.py --file examples/<name>.json` | `preflight ok` |
+| 4 | `py -3 tools/upload-ai-viz-artifact.py --file examples/<name>.json` | **`ok artifactId=<uuid>`** |
 
-| 步 | 做什么 | 成功标志 |
-|----|--------|----------|
-| 0 | 确认 VitalSpan 后端已启动：`GET http://127.0.0.1:8000/health` → `ok` | 健康检查通过 |
-| 1 | 读 [00-REQUIREMENTS.md](./00-REQUIREMENTS.md) + [guides/PLATFORM-SLA.md](./guides/PLATFORM-SLA.md) | 知道 `runtime: d3` 必须 `host.vsCv.mount(` |
-| 2 | `python tools/validate-ai-viz-bundle.py --file examples/<你的>.json` | 输出 `preflight ok`（warn 可入库，error 会 422） |
-| 3 | `python tools/upload-ai-viz-artifact.py --file examples/<你的>.json` | 打印 **`ok artifactId=<uuid>`** |
+## 汇报模板（必须）
 
-把 **`artifactId`** 交给 VitalSpan 方，或自行在大屏 widget `customVizConfig.artifactId` 填入。  
-**向用户汇报时必须附带该 uuid**；不得只说「文件路径」。
+```
+工作流 ② 完成
+artifactId=<uuid>
+entry GET http://127.0.0.1:8000/api/v1/ai-viz/artifacts/<uuid>/entry
+已入平台组件库；大屏引用见工作流 ③ customVizConfig.artifactId
+```
 
-## 禁止的完成说法（说了 = 未完成）
+## 禁止的完成说法
 
-- 「已上传到 `vs-ai-spec-deeptalk-test/...`」
-- 「已保存到 `output/trend-chart-dynamic.json`」
-- 「共 1 步，写入工作区完成」
-- 「可在 VS Code AI 扩展中使用」
-- 「已传过去」但**没有** `artifactId`
-
-## 常见失败（不是平台坏了）
-
-| 现象 | 原因 | 处理 |
-|------|------|------|
-| DeepTalk 说「已传过去」但图表盘没有 | 只 `write_file` 到本机，**未 POST** | 跑第 3 步 upload |
-| `422 AIVIZ_MOUNT_REQUIRED` | d3 用了 `onPayload` 没 `vsCv.mount` | 改入口脚本后重跑 2→3 |
-| `preflight FAILED: AIVIZ_PREFLIGHT_NO_BACKEND` | 规范包在桌面，找不到 VitalSpan 仓 | 设 `VITALSPAN_ROOT=C:\...\VitalSpan` 或在仓内跑 |
-| 浏览器从 DeepTalk 域名 fetch 失败 | CORS | 用本机 `upload-ai-viz-artifact.py`，不要网页跨域 POST |
-| 组件在盘里但大屏空白 | 未绑 Dataset / 未填 artifactId | 编辑器绑字段 + 检查 uuid |
+- 「已保存到 output/…」
+- 「可在扩展中直接使用」
+- 未报 `artifactId` 却说「已上传 VitalSpan」
 
 ## 环境变量
 
-| 变量 | 默认 |
-|------|------|
-| `VITALSPAN_API` | `http://127.0.0.1:8000/api/v1` |
-| `VITALSPAN_USERNAME` | `admin` |
-| `VITALSPAN_DEV_ADMIN_PASSWORD` | `changeme` |
-| `VITALSPAN_ROOT` | 桌面规范包**必填**（指向 VitalSpan 克隆根目录）；在 VitalSpan 仓内跑可自动发现 |
+见 [START-HERE.md](./START-HERE.md)。桌面包必填 `VITALSPAN_ROOT`。
 
-## VitalSpan 方：刷新外部测试包
-
-在 VitalSpan 仓库根目录：
+## 刷新规范包
 
 ```powershell
 .\scripts\sync-vs-ai-spec-pack.ps1
 ```
-
-会把 `docs/api/vs-ai-spec/` 同步到桌面 `vs-ai-spec-deeptalk-test`（可 `-Destination` 覆盖）。  
-**不会删除**你本地 `examples/` 里额外写的组件 JSON（非镜像删除）。
-
-VitalSpan 方重打 zip 分发：
-
-```powershell
-.\scripts\pack-vs-ai-spec-deeptalk-test.ps1
-```
-
-产出 `docs/api/vs-ai-spec-deeptalk-test.zip`。
