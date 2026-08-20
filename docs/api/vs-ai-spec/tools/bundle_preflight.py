@@ -86,14 +86,19 @@ def preflight_bundle(bundle: dict[str, Any], *, backend_root: Path | None = None
         return PreflightResult(ok=False, errors=structure_errors)
 
     backend = backend_root or find_vitalspan_backend()
+    if backend is not None and not (backend / "app" / "ai_viz" / "models.py").is_file():
+        backend = None
     if backend is None:
         return PreflightResult(
             ok=False,
             errors=[
                 PreflightIssue(
                     "AIVIZ_PREFLIGHT_NO_BACKEND",
-                    "set VITALSPAN_ROOT to VitalSpan repo or run from inside the repo "
-                    "for full lint (mount, style warnings, 2MB)",
+                    "cannot import VitalSpan backend for full lint. "
+                    "Set VITALSPAN_ROOT to your VitalSpan clone, e.g. "
+                    "VITALSPAN_ROOT=C:\\Users\\you\\Desktop\\VitalSpan "
+                    "(PowerShell: $env:VITALSPAN_ROOT='C:\\...\\VitalSpan'), "
+                    "or run validate/upload from inside the VitalSpan repo.",
                     500,
                 )
             ],

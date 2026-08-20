@@ -5,7 +5,8 @@
 - 新增 [EXTERNAL-AUTHOR.md](./EXTERNAL-AUTHOR.md)：validate → upload → `artifactId` 三步；明确 `write_file` ≠ 入库
 - `tools/validate-ai-viz-bundle.py` + `bundle_preflight.py`：本地与 API 相同 lint（含 `AIVIZ_MOUNT_REQUIRED`、style warnings）
 - `upload-ai-viz-artifact.py`：默认先 preflight；`--validate-only`；成功打印 `warnings` / `styleComplianceTier`
-- VitalSpan 仓 `scripts/sync-vs-ai-spec-pack.ps1` 同步本包到桌面联调目录
+- VitalSpan 仓 `scripts/sync-vs-ai-spec-pack.ps1` 同步本包到桌面联调目录（非镜像，保留外部 examples）
+- `scripts/pack-vs-ai-spec-deeptalk-test.ps1` 重打 `docs/api/vs-ai-spec-deeptalk-test.zip`
 
 ## 2026-08-20 (Phase 3)
 

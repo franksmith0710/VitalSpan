@@ -30,7 +30,7 @@
 | `VITALSPAN_API` | `http://127.0.0.1:8000/api/v1` |
 | `VITALSPAN_USERNAME` | `admin` |
 | `VITALSPAN_DEV_ADMIN_PASSWORD` | `changeme` |
-| `VITALSPAN_ROOT` | 自动向上查找含 `backend/app/ai_viz` 的目录 |
+| `VITALSPAN_ROOT` | 桌面规范包**必填**（指向 VitalSpan 克隆根目录）；在 VitalSpan 仓内跑可自动发现 |
 
 ## VitalSpan 方：刷新外部测试包
 
@@ -40,4 +40,13 @@
 .\scripts\sync-vs-ai-spec-pack.ps1
 ```
 
-会把 `docs/api/vs-ai-spec/` 同步到桌面 `vs-ai-spec-deeptalk-test`（可 `-Destination` 覆盖）。
+会把 `docs/api/vs-ai-spec/` 同步到桌面 `vs-ai-spec-deeptalk-test`（可 `-Destination` 覆盖）。  
+**不会删除**你本地 `examples/` 里额外写的组件 JSON（非镜像删除）。
+
+VitalSpan 方重打 zip 分发：
+
+```powershell
+.\scripts\pack-vs-ai-spec-deeptalk-test.ps1
+```
+
+产出 `docs/api/vs-ai-spec-deeptalk-test.zip`。
