@@ -195,7 +195,7 @@ export function ChartGisMapProjectPanel() {
               value={project.projection ?? "mercator"}
               onValueChange={(projection) => {
                 if (projection === "globe") {
-                  const preset = project.atmospherePreset ?? "day";
+                  const preset = project.atmospherePreset ?? "deep-space";
                   patchProject({
                     projection: "globe",
                     atmospherePreset: preset,
@@ -221,7 +221,7 @@ export function ChartGisMapProjectPanel() {
             <div className="grid gap-1.5">
               <Label className="text-theme-xs text-gray-500">大气预设</Label>
               <Select
-                value={project.atmospherePreset ?? "day"}
+                value={project.atmospherePreset ?? "deep-space"}
                 onValueChange={(preset) => applyAtmospherePreset(preset as GisAtmospherePreset)}
               >
                 <SelectTrigger className={INSPECTOR_CTRL} aria-label="大气预设">
@@ -236,7 +236,7 @@ export function ChartGisMapProjectPanel() {
                 </SelectContent>
               </Select>
               <p className="text-theme-xs text-gray-500">
-                深空/黄昏会在球外叠加程序化星场；白昼无星点。
+                深空/黄昏显示星空与流星（参考 GeoLibre 大气效果）；白昼无星点。
               </p>
             </div>
           ) : null}

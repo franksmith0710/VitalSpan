@@ -193,7 +193,10 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   }, [atmosphereKey, project.atmospherePreset, project.fog, project.projection, styleKey]);
 
   useEffect(() => {
+    const shell = shellRef.current;
+    if (!shell) return;
     return mountGisStarfieldOverlay(
+      shell,
       () => mapRef.current,
       project.atmospherePreset,
       project.projection,
@@ -234,7 +237,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
           data-testid="gis-map-view"
           data-basemap={renderBasemap ?? "pending"}
           data-requested-basemap="pmtiles"
-          data-atmosphere={project.atmospherePreset ?? "day"}
+          data-atmosphere={project.atmospherePreset ?? "deep-space"}
           data-projection={project.projection ?? "globe"}
           className="relative z-[1] h-full w-full"
           role="img"

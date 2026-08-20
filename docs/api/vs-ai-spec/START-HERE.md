@@ -1,10 +1,22 @@
 # START HERE — DeepTalk 集成项目总入口
 
 > **铁律（必读）** → [IRON-RULES.md](./IRON-RULES.md)  
+> **无 DeepTalk 源码 · 给接口即上传** → [MVP-UPLOAD.md](./MVP-UPLOAD.md)  
 > **工程定位** → [PACK-IDENTITY.md](./PACK-IDENTITY.md)  
 > **三条工作流必须分开** → [guides/THREE-WORKFLOWS.md](./guides/THREE-WORKFLOWS.md)
 
-## 0. 三条线（不要混）
+## 0. 无 DeepTalk 源码（MVP · 推荐先看）
+
+| 目标 | 命令 |
+|------|------|
+| **② 上传新组件** | `python tools\mvp-upload.py --file examples\你的组件.json` |
+| **查库 / 复用** | `python tools\mvp-dashboard.py --list-artifacts` |
+| **③ 拼大屏** | `python tools\mvp-dashboard.py --dashboard-id <uuid> --artifact-ids uuid1,uuid2` |
+
+DeepTalk 写到 `output/` 时：`python tools\mvp-upload.py --from output\xxx.json`  
+详见 [MVP-UPLOAD.md](./MVP-UPLOAD.md)。
+
+## 0b. 三条线（不要混）
 
 | 线 | 任务 | 落到平台哪里 | 完成判据 |
 |----|------|-------------|----------|

@@ -1,6 +1,7 @@
 # DeepTalk 产品级对接 VitalSpan
 
 > VitalSpan 仓内交付物：DeepTalk 产品仓 **embed / sync** 用。  
+> **无 DeepTalk 源码 · 给接口即上传** → [../MVP-UPLOAD.md](../MVP-UPLOAD.md)  
 > 铁律：[../IRON-RULES.md](../IRON-RULES.md) · 桌面包 MVP：[../START-HERE.md](../START-HERE.md)
 
 ## 目录结构（DeepTalk 仓目标）

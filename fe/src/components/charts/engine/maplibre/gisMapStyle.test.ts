@@ -63,13 +63,13 @@ describe("gisProject", () => {
     expect(project.fog).toEqual(GIS_ATMOSPHERE_PRESETS["deep-space"]);
   });
 
-  it("defaults globe atmosphere to day", () => {
+  it("defaults globe atmosphere to deep-space", () => {
     const project = readGisProject({
       chartType: "gis-map",
       nativeBody: { gisProject: { projection: "globe" } },
     });
-    expect(project.fog).toEqual(GIS_ATMOSPHERE_PRESETS.day);
-    expect(project.atmospherePreset).toBe("day");
+    expect(project.fog).toEqual(GIS_ATMOSPHERE_PRESETS["deep-space"]);
+    expect(project.atmospherePreset).toBe("deep-space");
   });
 });
 

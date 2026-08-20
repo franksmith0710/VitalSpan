@@ -87,8 +87,8 @@ export const DEFAULT_GIS_PROJECT: GisProject = {
   labelLang: "zh-Hans",
   basemapFlavor: "light",
   projection: "globe",
-  atmospherePreset: "day",
-  fog: GIS_ATMOSPHERE_PRESETS.day,
+  atmospherePreset: "deep-space",
+  fog: GIS_ATMOSPHERE_PRESETS["deep-space"],
   view: DEFAULT_GIS_GLOBE_VIEW,
 };
 
@@ -179,7 +179,7 @@ function normalizeBasemapFlavor(input: unknown): GisBasemapFlavor {
 
 function normalizeAtmospherePreset(input: unknown): GisAtmospherePreset {
   if (input === "day" || input === "dusk" || input === "deep-space") return input;
-  return "day";
+  return DEFAULT_GIS_PROJECT.atmospherePreset ?? "deep-space";
 }
 
 function normalizeGisView(input: unknown): GisProjectView | undefined {

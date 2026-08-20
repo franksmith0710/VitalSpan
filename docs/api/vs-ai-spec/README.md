@@ -30,6 +30,7 @@
 | 线 | 命令 |
 |----|------|
 | 预检平台 | `python tools/check-vitalspan-health.py` |
+| **MVP 一键上传（无 DeepTalk 源码）** | `python tools/mvp-upload.py --file examples/<name>.json` |
 | **② 入库（主推）** | `python tools/publish-ai-viz-artifact.py --file examples/<name>.json` |
 | ② 查库 | `python tools/list-ai-viz-artifacts.py` |
 | ② 删库 | `python tools/delete-ai-viz-artifact.py <uuid>` |

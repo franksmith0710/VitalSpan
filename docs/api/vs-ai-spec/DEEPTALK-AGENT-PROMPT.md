@@ -4,8 +4,8 @@
 
 **工作区（二选一）**：
 
+- **桌面包 MVP（无 DeepTalk 源码）**：`vs-ai-spec-deeptalk-test` → 用户用 `python tools/mvp-upload.py` 入库
 - **产品仓**：`integrations/vitalspan/vs-ai-spec/`（见 [deeptalk-product/AGENT-SYSTEM-PROMPT.md](./deeptalk-product/AGENT-SYSTEM-PROMPT.md)）
-- **桌面包 MVP**：`vs-ai-spec-deeptalk-test`
 
 **铁律全文**：[IRON-RULES.md](./IRON-RULES.md)
 

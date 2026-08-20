@@ -27,3 +27,8 @@ if (Test-Path -LiteralPath $workDir) {
 }
 
 Write-Host "done. DeepTalk integration project synced; set VITALSPAN_ROOT if validating from Desktop."
+$localExample = Join-Path $Destination "local.config.json.example"
+if (Test-Path -LiteralPath $localExample) {
+  Write-Host "MVP upload: cd $Destination && python tools\mvp-upload.py --file examples\your.json"
+  Write-Host "See MVP-UPLOAD.md"
+}

@@ -1,5 +1,11 @@
 # vs-ai-spec 变更
 
+## 2026-08-20 (MVP 无源码上传)
+
+- 新增 [MVP-UPLOAD.md](./MVP-UPLOAD.md) · `tools/mvp-upload.py` · 根目录 `upload-component.ps1`
+- `local.config.json.example`：API / VITALSPAN_ROOT 本地配置；支持 `--from output/` 复制入库
+- 无 DeepTalk 发版即可 POST 入库（给接口即用）
+
 ## 2026-08-20 (DeepTalk 产品级对接)
 
 - 新增 [deeptalk-product/](./deeptalk-product/)：AGENT-SYSTEM-PROMPT · config 模板 · agent-tools.schema.json

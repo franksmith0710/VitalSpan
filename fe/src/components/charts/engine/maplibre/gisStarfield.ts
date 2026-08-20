@@ -1,7 +1,7 @@
 import type { GisAtmospherePreset, GisProjection } from "@/components/charts/engine/maplibre/gisProject";
+import { createMeteorSpawner, drawMeteors, type Meteor } from "@/components/charts/engine/maplibre/gisMeteors";
 import {
   bindMapRenderSync,
-  ensureStarfieldHost,
   resolveGlobeScreenBounds,
   resolveGlobeScreenBoundsFallback,
   type GlobeScreenBounds,
@@ -10,8 +10,8 @@ import {
 type MapLibreMap = import("maplibre-gl").Map;
 
 type Star = {
-  ax: number;
-  ay: number;
+  u: number;
+  v: number;
   radius: number;
   alpha: number;
   twinkle: number;
@@ -19,7 +19,13 @@ type Star = {
 };
 
 export function resolveGisStarIntensity(preset: GisAtmospherePreset | undefined): number {
-  if (preset === "deep-space") return 0.9;
+  if (preset === "deep-space") return 1;
+  if (preset === "dusk") return 0.45;
+  return 0;
+}
+
+export function resolveGisMeteorIntensity(preset: GisAtmospherePreset | undefined): number {
+  if (preset === "deep-space") return 1;
   if (preset === "dusk") return 0.35;
   return 0;
 }
@@ -34,54 +40,42 @@ function mulberry32(seed: number) {
   };
 }
 
-/** 星点存于以地球中心为原点的极坐标，绘制时随 bearing 旋转。 */
 function buildStars(count: number, seed = 42): Star[] {
   const rand = mulberry32(seed);
   const stars: Star[] = [];
   for (let i = 0; i < count; i += 1) {
     const roll = rand();
-    const angle = rand() * Math.PI * 2;
-    const dist = Math.sqrt(rand());
     stars.push({
-      ax: Math.cos(angle) * dist,
-      ay: Math.sin(angle) * dist,
-      radius: roll > 0.985 ? 1.6 : roll > 0.92 ? 1.1 : 0.65,
-      alpha: 0.35 + rand() * 0.65,
-      twinkle: rand() * 0.35,
+      u: rand(),
+      v: rand(),
+      radius: roll > 0.992 ? 1.8 : roll > 0.94 ? 1.15 : 0.7,
+      alpha: 0.4 + rand() * 0.6,
+      twinkle: rand() * 0.4,
       phase: rand() * Math.PI * 2,
     });
   }
   return stars;
 }
 
-function starScreenPosition(
-  star: Star,
-  globe: GlobeScreenBounds,
-  width: number,
-  height: number,
+function rotateAround(
+  x: number,
+  y: number,
+  cx: number,
+  cy: number,
+  bearingDeg: number,
 ): { x: number; y: number } {
-  const span = Math.max(width, height) * 0.72;
-  const bearingRad = (globe.bearing * Math.PI) / 180;
-  const cosB = Math.cos(bearingRad);
-  const sinB = Math.sin(bearingRad);
-  const ox = star.ax * span;
-  const oy = star.ay * span;
-  const rx = ox * cosB - oy * sinB;
-  const ry = ox * sinB + oy * cosB;
-  return { x: globe.x + rx, y: globe.y + ry };
+  const rad = (bearingDeg * Math.PI) / 180;
+  const cosB = Math.cos(rad);
+  const sinB = Math.sin(rad);
+  const ox = x - cx;
+  const oy = y - cy;
+  return { x: cx + ox * cosB - oy * sinB, y: cy + ox * sinB + oy * cosB };
 }
 
-function punchGlobeMask(ctx: CanvasRenderingContext2D, globe: GlobeScreenBounds) {
+function globeMaskRadius(globe: GlobeScreenBounds, width: number, height: number): number {
   const pitchScale = Math.max(0.35, Math.cos((globe.pitch * Math.PI) / 180));
-  ctx.save();
-  ctx.translate(globe.x, globe.y);
-  ctx.scale(1, pitchScale);
-  ctx.globalCompositeOperation = "destination-out";
-  ctx.beginPath();
-  ctx.arc(0, 0, globe.radius * 0.9, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-  ctx.globalCompositeOperation = "source-over";
+  const fallback = Math.min(width, height) * 0.42 * pitchScale;
+  return Math.min(globe.radius * 0.88 * pitchScale, fallback * 1.08);
 }
 
 function drawStarfieldFrame(
@@ -89,7 +83,9 @@ function drawStarfieldFrame(
   width: number,
   height: number,
   stars: Star[],
-  intensity: number,
+  meteors: Meteor[],
+  starIntensity: number,
+  meteorIntensity: number,
   timeSec: number,
   globe: GlobeScreenBounds,
 ) {
@@ -98,116 +94,125 @@ function drawStarfieldFrame(
   const gradient = ctx.createRadialGradient(
     globe.x,
     globe.y,
-    globe.radius * 0.1,
+    globe.radius * 0.15,
     globe.x,
     globe.y,
-    Math.max(width, height) * 0.85,
+    Math.max(width, height) * 0.95,
   );
-  gradient.addColorStop(0, "rgba(5, 8, 22, 0)");
-  gradient.addColorStop(0.45, `rgba(5, 8, 22, ${0.1 * intensity})`);
-  gradient.addColorStop(1, `rgba(2, 4, 14, ${0.55 * intensity})`);
+  gradient.addColorStop(0, "rgba(3, 4, 12, 0)");
+  gradient.addColorStop(0.35, `rgba(3, 4, 12, ${0.08 * starIntensity})`);
+  gradient.addColorStop(1, `rgba(2, 3, 10, ${0.65 * starIntensity})`);
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
-  const maskRadius = globe.radius * 0.9;
   for (const star of stars) {
-    const { x, y } = starScreenPosition(star, globe, width, height);
-    if (Math.hypot(x - globe.x, y - globe.y) < maskRadius) continue;
+    const baseX = star.u * width;
+    const baseY = star.v * height;
+    const { x, y } = rotateAround(baseX, baseY, globe.x, globe.y, globe.bearing);
 
-    const twinkle = star.twinkle * Math.sin(timeSec * 1.4 + star.phase);
-    const alpha = Math.min(1, star.alpha * intensity * (0.75 + twinkle));
-    ctx.fillStyle = `rgba(230, 240, 255, ${alpha})`;
+    const twinkle = star.twinkle * Math.sin(timeSec * 1.6 + star.phase);
+    const alpha = Math.min(1, star.alpha * starIntensity * (0.7 + twinkle));
+    ctx.fillStyle = `rgba(235, 245, 255, ${alpha})`;
     ctx.beginPath();
     ctx.arc(x, y, star.radius, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  punchGlobeMask(ctx, globe);
+  drawMeteors(ctx, meteors, meteorIntensity);
+
+  const maskRadius = globeMaskRadius(globe, width, height);
+  ctx.save();
+  ctx.translate(globe.x, globe.y);
+  ctx.globalCompositeOperation = "destination-out";
+  ctx.beginPath();
+  ctx.arc(0, 0, maskRadius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  ctx.globalCompositeOperation = "source-over";
 }
 
 export function mountGisStarfieldOverlay(
+  wrapper: HTMLElement,
   getMap: () => MapLibreMap | null,
   preset: GisAtmospherePreset | undefined,
   projection: GisProjection | undefined,
 ): () => void {
-  const intensity = resolveGisStarIntensity(preset);
-  const enabled = projection === "globe" && intensity > 0;
+  const starIntensity = resolveGisStarIntensity(preset);
+  const meteorIntensity = resolveGisMeteorIntensity(preset);
+  const enabled = projection === "globe" && starIntensity > 0;
 
-  let canvas: HTMLCanvasElement | null = null;
-  let host: HTMLElement | null = null;
-  let ctx: CanvasRenderingContext2D | null = null;
+  const canvas = document.createElement("canvas");
+  canvas.dataset.testid = "gis-starfield";
+  canvas.className = "pointer-events-none absolute inset-0 z-[3]";
+  wrapper.appendChild(canvas);
+
+  const ctx = canvas.getContext("2d");
+  const stars = buildStars(starIntensity > 0.7 ? 520 : 360);
+  const tickMeteors = createMeteorSpawner(meteorIntensity);
+  let meteors: Meteor[] = [];
   let running = true;
   let start = performance.now();
+  let lastFrame = start;
   let unbindRender: (() => void) | undefined;
   let boundMap: MapLibreMap | null = null;
-  const stars = buildStars(420);
-
-  const detachCanvas = () => {
-    unbindRender?.();
-    unbindRender = undefined;
-    boundMap = null;
-    canvas?.remove();
-    canvas = null;
-    ctx = null;
-    host = null;
-  };
 
   const resize = () => {
-    const map = getMap();
-    if (!map || !canvas || !host) return;
-    const width = host.clientWidth;
-    const height = host.clientHeight;
-    if (width <= 0 || height <= 0) return;
+    const rect = wrapper.getBoundingClientRect();
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = Math.max(1, Math.floor(width * dpr));
-    canvas.height = Math.max(1, Math.floor(height * dpr));
+    const width = Math.max(1, rect.width);
+    const height = Math.max(1, rect.height);
+    canvas.width = Math.floor(width * dpr);
+    canvas.height = Math.floor(height * dpr);
     canvas.style.width = `${width}px`;
     canvas.style.height = `${height}px`;
     ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
   };
 
-  const ensureMounted = () => {
+  const bindMapIfNeeded = () => {
     const map = getMap();
-    if (!map || !enabled) {
-      detachCanvas();
-      return;
-    }
-    if (boundMap === map && canvas) return;
-
-    detachCanvas();
+    if (map === boundMap) return;
+    unbindRender?.();
     boundMap = map;
-    host = ensureStarfieldHost(map);
-    canvas = document.createElement("canvas");
-    canvas.dataset.testid = "gis-starfield";
-    canvas.className = "pointer-events-none absolute inset-0";
-    canvas.style.zIndex = "2";
-    host.appendChild(canvas);
-    ctx = canvas.getContext("2d");
-    resize();
     unbindRender = bindMapRenderSync(map, paint);
   };
 
   const paint = () => {
-    if (!running || !enabled) {
-      detachCanvas();
+    if (!running || !ctx || !enabled) {
+      canvas.style.display = "none";
       return;
     }
-    ensureMounted();
-    if (!ctx || !canvas || !host) return;
+    canvas.style.display = "block";
+    bindMapIfNeeded();
+
+    const rect = wrapper.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    if (width <= 0 || height <= 0) return;
+
+    const now = performance.now();
+    const dt = Math.min((now - lastFrame) / 1000, 0.05);
+    lastFrame = now;
 
     const map = getMap();
-    const width = host.clientWidth;
-    const height = host.clientHeight;
-    if (!map || width <= 0 || height <= 0) return;
+    const globe = map
+      ? resolveGlobeScreenBounds(map) ?? resolveGlobeScreenBoundsFallback(width, height)
+      : resolveGlobeScreenBoundsFallback(width, height);
 
-    const globe = resolveGlobeScreenBounds(map) ?? resolveGlobeScreenBoundsFallback(width, height);
+    if (meteorIntensity > 0) {
+      meteors = tickMeteors({ width, height, globe, intensity: meteorIntensity }, dt, meteors);
+    } else {
+      meteors = [];
+    }
+
     drawStarfieldFrame(
       ctx,
       width,
       height,
       stars,
-      intensity,
-      (performance.now() - start) / 1000,
+      meteors,
+      starIntensity,
+      meteorIntensity,
+      (now - start) / 1000,
       globe,
     );
   };
@@ -218,22 +223,17 @@ export function mountGisStarfieldOverlay(
     frameId = requestAnimationFrame(loop);
   };
 
+  resize();
   if (enabled) loop();
 
-  const ro =
-    typeof ResizeObserver !== "undefined"
-      ? new ResizeObserver(() => {
-          resize();
-          paint();
-        })
-      : null;
-  const map = getMap();
-  if (map) ro?.observe(ensureStarfieldHost(map));
+  const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
+  ro?.observe(wrapper);
 
   return () => {
     running = false;
     cancelAnimationFrame(frameId);
+    unbindRender?.();
     ro?.disconnect();
-    detachCanvas();
+    canvas.remove();
   };
 }

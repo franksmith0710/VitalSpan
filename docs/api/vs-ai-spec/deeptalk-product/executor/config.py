@@ -99,10 +99,14 @@ def spec_pack_path(int_root: Path | None = None) -> Path:
     pack = root / cfg.spec_pack_dir
     if pack.is_dir() and (pack / "tools" / "publish-ai-viz-artifact.py").is_file():
         return pack
-    # VitalSpan repo dev: parent is vs-ai-spec
+    # Desktop MVP: integration at deeptalk-product/, spec pack is parent
     dev_pack = root.parent
     if (dev_pack / "tools" / "publish-ai-viz-artifact.py").is_file():
         return dev_pack
+    # cwd may be spec pack root (vs-ai-spec-deeptalk-test)
+    cwd = Path.cwd()
+    if (cwd / "tools" / "publish-ai-viz-artifact.py").is_file():
+        return cwd
     raise SystemExit(f"vs-ai-spec pack not found under {root / cfg.spec_pack_dir}")
 
 
@@ -112,9 +116,11 @@ def apply_env(cfg: VitalSpanConfig, int_root: Path | None = None) -> dict[str, s
     if cfg.vitalspan_root:
         env["VITALSPAN_ROOT"] = cfg.vitalspan_root
     elif "VITALSPAN_ROOT" not in env:
-        repo_guess = find_integration_root(int_root).parents[3]
-        if (repo_guess / "backend" / "app").is_dir():
-            env["VITALSPAN_ROOT"] = str(repo_guess)
+        int_root = find_integration_root(int_root)
+        for guess in (int_root.parent, *int_root.parents):
+            if (guess / "backend" / "app").is_dir():
+                env["VITALSPAN_ROOT"] = str(guess.resolve())
+                break
     user = env.get(cfg.username_env) or env.get("VITALSPAN_USERNAME", "admin")
     pwd = env.get(cfg.password_env) or env.get("VITALSPAN_DEV_ADMIN_PASSWORD", "changeme")
     env["VITALSPAN_USERNAME"] = user

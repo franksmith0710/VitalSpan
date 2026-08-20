@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { applyGisGlobeToStyle, gisFogToMapLibreSky, mapLibreSkyForPreset, spaceBackdropForPreset } from "@/components/charts/engine/maplibre/gisAtmosphereSky";
 import { getGlobeRadiusPixels, resolveGlobeScreenBoundsFallback } from "@/components/charts/engine/maplibre/gisGlobeLayout";
-import { resolveGisStarIntensity } from "@/components/charts/engine/maplibre/gisStarfield";
+import { resolveGisMeteorIntensity, resolveGisStarIntensity } from "@/components/charts/engine/maplibre/gisStarfield";
 
 describe("gisAtmosphereSky", () => {
   it("maps deep-space preset to dark sky with full atmosphere", () => {
@@ -47,8 +47,13 @@ describe("gisGlobeLayout", () => {
 
 describe("gisStarfield", () => {
   it("enables stars for deep-space and dusk only", () => {
-    expect(resolveGisStarIntensity("deep-space")).toBeGreaterThan(0.8);
+    expect(resolveGisStarIntensity("deep-space")).toBe(1);
     expect(resolveGisStarIntensity("dusk")).toBeGreaterThan(0);
     expect(resolveGisStarIntensity("day")).toBe(0);
+  });
+
+  it("enables meteors for deep-space", () => {
+    expect(resolveGisMeteorIntensity("deep-space")).toBe(1);
+    expect(resolveGisMeteorIntensity("day")).toBe(0);
   });
 });

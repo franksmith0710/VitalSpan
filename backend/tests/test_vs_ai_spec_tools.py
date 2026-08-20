@@ -25,6 +25,18 @@ def _run_tool(script: str, *args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
+def test_mvp_upload_validate_only_trend_sample() -> None:
+    proc = _run_tool(
+        "mvp-upload.py",
+        "--file",
+        "examples/custom-viz-trend-line.json",
+        "--validate-only",
+        "--skip-health",
+    )
+    assert proc.returncode == 0, proc.stderr or proc.stdout
+    assert "preflight ok" in proc.stdout or "mvp ok validate-only" in proc.stdout
+
+
 def test_publish_validate_only_on_trend_gold_sample() -> None:
     assert TREND_SAMPLE.is_file()
     proc = _run_tool(

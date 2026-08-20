@@ -77,9 +77,3 @@ export function bindMapRenderSync(map: MapLibreMap | null, paint: () => void): (
     map.off("resize", onRender);
   };
 }
-
-export function ensureStarfieldHost(map: MapLibreMap): HTMLElement {
-  const container = map.getCanvasContainer();
-  container.style.position = container.style.position || "relative";
-  return container;
-}
