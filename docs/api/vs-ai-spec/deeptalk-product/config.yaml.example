@@ -1,0 +1,19 @@
+# DeepTalk integrations/vitalspan/config.yaml
+# 复制为 config.yaml；生产凭据走密钥管理，勿提交明文密码。
+
+vitalspan:
+  api_base: http://127.0.0.1:8000/api/v1
+  fe_base: http://127.0.0.1:5173/admin
+  # preflight 需要 VitalSpan 仓根（含 backend/app）
+  vitalspan_root: C:/Users/you/Desktop/VitalSpan
+  credential_env:
+    username: VITALSPAN_USERNAME
+    password: VITALSPAN_DEV_ADMIN_PASSWORD
+
+agent:
+  # DeepTalk 工作区内的 vs-ai-spec 相对路径
+  spec_pack_dir: vs-ai-spec
+  # 禁止作为交付终点的目录名
+  forbidden_delivery_dirs:
+    - output
+    - dist

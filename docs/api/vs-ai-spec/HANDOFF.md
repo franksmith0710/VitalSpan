@@ -1,7 +1,8 @@
 # VitalSpan × DeepTalk 联调备忘
 
 **👉 铁律：[IRON-RULES.md](./IRON-RULES.md)** · **身份：[PACK-IDENTITY.md](./PACK-IDENTITY.md)**  
-**👉 总入口：[START-HERE.md](./START-HERE.md)** · **DeepTalk 提示词：[DEEPTALK-AGENT-PROMPT.md](./DEEPTALK-AGENT-PROMPT.md)**
+**👉 总入口：[START-HERE.md](./START-HERE.md)** · **DeepTalk 提示词：[DEEPTALK-AGENT-PROMPT.md](./DEEPTALK-AGENT-PROMPT.md)**  
+**👉 DeepTalk 产品仓：[deeptalk-product/README.md](./deeptalk-product/README.md)**
 
 **先读 [00-REQUIREMENTS.md §0](./00-REQUIREMENTS.md#0-集成项目与平台落点)**（集成项目目录 ≠ 平台落点；**只认各路径 HTTP 完成标志**）。
 

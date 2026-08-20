@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DeepTalk VitalSpan Agent Tools",
+  "description": "Register these tools in DeepTalk Agent; invoke via integrations/vitalspan/executor/cli.py",
+  "tools": [
+    {
+      "name": "vitalspan_health_check",
+      "description": "GET /health before workflow 2 or 3",
+      "cli": "python executor/cli.py vitalspan_health_check",
+      "parameters": {}
+    },
+    {
+      "name": "vitalspan_publish_artifact",
+      "description": "Validate + POST/PUT customViz bundle to platform library. Completion requires artifactId in stdout.",
+      "cli": "python executor/cli.py vitalspan_publish_artifact --file {file}",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string",
+            "description": "Path under vs-ai-spec, e.g. examples/my-widget.json"
+          },
+          "artifact_id": {
+            "type": "string",
+            "description": "Optional existing uuid for PUT update"
+          }
+        },
+        "required": ["file"]
+      }
+    },
+    {
+      "name": "vitalspan_list_artifacts",
+      "description": "List current user's ai_viz artifacts",
+      "cli": "python executor/cli.py vitalspan_list_artifacts",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "limit": { "type": "integer", "default": 100 },
+          "offset": { "type": "integer", "default": 0 }
+        }
+      }
+    },
+    {
+      "name": "vitalspan_delete_artifact",
+      "description": "DELETE artifact by id (owner only)",
+      "cli": "python executor/cli.py vitalspan_delete_artifact --artifact-id {artifact_id}",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "artifact_id": { "type": "string" }
+        },
+        "required": ["artifact_id"]
+      }
+    },
+    {
+      "name": "vitalspan_upload_dashboard",
+      "description": "Workflow 3: PUT dashboard editor-save layout",
+      "cli": "python executor/cli.py vitalspan_upload_dashboard --dashboard-id {dashboard_id} --file {file}",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "dashboard_id": { "type": "string" },
+          "file": { "type": "string" }
+        },
+        "required": ["dashboard_id", "file"]
+      }
+    },
+    {
+      "name": "vitalspan_completion_gate",
+      "description": "Reject task completion without artifactId or dashboardId; reject output/ delivery phrases",
+      "cli": "python executor/cli.py vitalspan_completion_gate --workflow {workflow} --agent-summary {agent_summary}",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "workflow": {
+            "type": "string",
+            "enum": ["1", "2", "3"],
+            "description": "1=builtin chart, 2=artifact, 3=dashboard"
+          },
+          "agent_summary": {
+            "type": "string",
+            "description": "Agent final message to validate"
+          }
+        },
+        "required": ["workflow", "agent_summary"]
+      }
+    }
+  ]
+}

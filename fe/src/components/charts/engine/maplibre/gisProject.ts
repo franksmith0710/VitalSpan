@@ -146,7 +146,7 @@ function normalizeGisProject(raw: unknown): GisProject {
   const view =
     normalizeGisView(candidate.view) ??
     (projection === "globe" ? DEFAULT_GIS_GLOBE_VIEW : DEFAULT_GIS_PROJECT.view);
-  const fog = resolveGisFog(projection, atmospherePreset, candidate.fog);
+  const fog = resolveGisFog(projection, atmospherePreset);
   const autoRotateSpeed = Number(candidate.autoRotateSpeed);
   return {
     basemap: "pmtiles",
@@ -203,23 +203,9 @@ function normalizeGisView(input: unknown): GisProjectView | undefined {
 function resolveGisFog(
   projection: GisProjection,
   preset: GisAtmospherePreset,
-  input: unknown,
 ): GisProjectFog | undefined {
   if (projection !== "globe") return undefined;
-  const parsed = normalizeGisFog(input);
-  return resolveGisAtmosphereFog(preset, parsed);
-}
-
-function normalizeGisFog(input: unknown): GisProjectFog | undefined {
-  if (!input || typeof input !== "object") return undefined;
-  const fog = input as GisProjectFog;
-  const next: GisProjectFog = {};
-  if (typeof fog.color === "string") next.color = fog.color;
-  if (typeof fog["high-color"] === "string") next["high-color"] = fog["high-color"];
-  if (Number.isFinite(Number(fog["horizon-blend"]))) next["horizon-blend"] = Number(fog["horizon-blend"]);
-  if (typeof fog["space-color"] === "string") next["space-color"] = fog["space-color"];
-  if (Number.isFinite(Number(fog["star-intensity"]))) next["star-intensity"] = Number(fog["star-intensity"]);
-  return Object.keys(next).length > 0 ? next : undefined;
+  return { ...GIS_ATMOSPHERE_PRESETS[preset] };
 }
 
 export function defaultGisProjectNativeBody(): Record<string, unknown> {

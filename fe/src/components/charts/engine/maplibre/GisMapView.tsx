@@ -6,12 +6,14 @@ import {
   appendGisOverlayLayers,
   buildPmtilesStyle,
 } from "@/components/charts/engine/maplibre/gisMapStyle";
+import { applyGisGlobeToStyle, spaceBackdropForPreset } from "@/components/charts/engine/maplibre/gisAtmosphereSky";
 import {
   applyGlobeAtmosphere,
   mountGisMapControls,
   startGisGlobeAutoRotate,
   syncGisMapView,
 } from "@/components/charts/engine/maplibre/gisMapRuntime";
+import { mountGisStarfieldOverlay } from "@/components/charts/engine/maplibre/gisStarfield";
 import {
   ensurePmtilesArchiveRegistered,
   loadMapLibreRuntime,
@@ -29,7 +31,10 @@ const DEFAULT_AUTO_ROTATE_SPEED = 4;
 function GisMapViewInner(props: ChartEngineViewProps) {
   const { chartConfig, viewModel, fill = false, height = 180, width, ariaLabel, onPaintReady } = props;
   const hostRef = useRef<HTMLDivElement | null>(null);
+  const shellRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
+  const projectRef = useRef(project);
+  projectRef.current = project;
   const project = useMemo(() => readGisProject(chartConfig), [chartConfig]);
   const overlayGeoJson = useMemo(
     () =>
@@ -90,10 +95,19 @@ function GisMapViewInner(props: ChartEngineViewProps) {
 
   const style = useMemo(() => {
     if (!pmtilesStyle) return null;
-    return overlayGeoJson ? appendGisOverlayLayers(pmtilesStyle, overlayGeoJson, flavor) : pmtilesStyle;
-  }, [flavor, overlayGeoJson, pmtilesStyle]);
+    const withOverlay = overlayGeoJson
+      ? appendGisOverlayLayers(pmtilesStyle, overlayGeoJson, flavor)
+      : pmtilesStyle;
+    return applyGisGlobeToStyle(withOverlay, project.projection, project.atmospherePreset);
+  }, [flavor, overlayGeoJson, pmtilesStyle, project.atmospherePreset, project.projection]);
 
-  const styleKey = useMemo(() => JSON.stringify({ style, projection: project.projection }), [project.projection, style]);
+  const styleKey = useMemo(() => JSON.stringify(style), [style]);
+  const atmosphereKey = useMemo(
+    () => `${project.projection ?? "mercator"}:${project.atmospherePreset ?? "day"}`,
+    [project.atmospherePreset, project.projection],
+  );
+  const hostBackground =
+    project.projection === "globe" ? spaceBackdropForPreset(project.atmospherePreset) : undefined;
 
   useEffect(() => {
     const host = hostRef.current;
@@ -140,7 +154,12 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       map.once("load", () => {
         if (cancelled || !map) return;
         setMapErrorHint(null);
-        applyGlobeAtmosphere(map, project.projection, project.fog);
+        const current = projectRef.current;
+        applyGlobeAtmosphere(map, {
+          projection: current.projection,
+          fog: current.fog,
+          atmospherePreset: current.atmospherePreset,
+        });
         map.resize();
         onPaintReady?.();
       });
@@ -155,7 +174,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       mapRef.current?.remove();
       mapRef.current = null;
     };
-  }, [onPaintReady, project.showControls, renderBasemap, styleKey]);
+  }, [onPaintReady, project.showControls, renderBasemap, styleKey, atmosphereKey]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -166,8 +185,23 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    applyGlobeAtmosphere(map, project.projection, project.fog);
-  }, [project.fog, project.projection]);
+    applyGlobeAtmosphere(map, {
+      projection: project.projection,
+      fog: project.fog,
+      atmospherePreset: project.atmospherePreset,
+    });
+  }, [atmosphereKey, project.atmospherePreset, project.fog, project.projection, styleKey]);
+
+  useEffect(() => {
+    const shell = shellRef.current;
+    if (!shell) return;
+    return mountGisStarfieldOverlay(
+      shell,
+      () => mapRef.current,
+      project.atmospherePreset,
+      project.projection,
+    );
+  }, [atmosphereKey, project.atmospherePreset, project.projection, styleKey]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -194,14 +228,22 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       style={fill ? undefined : { width: width ?? "100%", height }}
     >
       <div
-        ref={hostRef}
-        data-testid="gis-map-view"
-        data-basemap={renderBasemap ?? "pending"}
-        data-requested-basemap="pmtiles"
-        className="h-full w-full"
-        role="img"
-        aria-label={ariaLabel ?? "GIS 地图"}
-      />
+        ref={shellRef}
+        className="relative h-full w-full"
+        style={hostBackground ? { backgroundColor: hostBackground } : undefined}
+      >
+        <div
+          ref={hostRef}
+          data-testid="gis-map-view"
+          data-basemap={renderBasemap ?? "pending"}
+          data-requested-basemap="pmtiles"
+          data-atmosphere={project.atmospherePreset ?? "day"}
+          data-projection={project.projection ?? "globe"}
+          className="relative z-[1] h-full w-full"
+          role="img"
+          aria-label={ariaLabel ?? "GIS 地图"}
+        />
+      </div>
       {pmtilesLoading ? (
         <div className="pointer-events-none absolute inset-x-0 top-0 bg-black/40 px-2 py-1 text-center text-[10px] text-white">
           正在加载全球底图…

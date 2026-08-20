@@ -69,6 +69,8 @@ DeepTalk 集成项目  ──HTTP──►  VitalSpan 平台能力
 
 | 项 | 值 |
 |----|-----|
-| 桌面包 | `C:\Users\<你>\Desktop\vs-ai-spec-deeptalk-test`（`scripts/sync-vs-ai-spec-pack.ps1` 同步） |
-| DeepTalk 提示词 | [DEEPTALK-AGENT-PROMPT.md](./DEEPTALK-AGENT-PROMPT.md) |
+| 桌面包 MVP | `C:\Users\<你>\Desktop\vs-ai-spec-deeptalk-test`（`scripts/sync-vs-ai-spec-pack.ps1`） |
+| **DeepTalk 产品仓** | `integrations/vitalspan/`（`scripts/sync-vs-ai-spec-to-deeptalk-repo.ps1`） |
+| 产品 Agent 提示词 | [deeptalk-product/AGENT-SYSTEM-PROMPT.md](./deeptalk-product/AGENT-SYSTEM-PROMPT.md) |
+| DeepTalk 提示词（简） | [DEEPTALK-AGENT-PROMPT.md](./DEEPTALK-AGENT-PROMPT.md) |
 | 仓内真源 | `docs/api/vs-ai-spec/` |

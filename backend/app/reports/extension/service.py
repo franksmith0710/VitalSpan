@@ -41,6 +41,43 @@ def _assert_template_node(node_id: uuid.UUID) -> None:
         )
 
 
+def _validate_metric_datasets(metrics: list) -> None:
+    from app.metadata.dataset.errors import DatasetError
+    from app.metadata.dataset import service as dataset_service
+
+    for metric in metrics:
+        if not metric.dataset_id:
+            continue
+        try:
+            ds_row = dataset_service.get_dataset(metric.dataset_id)
+        except DatasetError:
+            raise ReportExtensionError(
+                "RPT_EXT_DATASET_NOT_FOUND",
+                f"数据集不存在或已删除：{metric.dataset_id}",
+                422,
+                fields={"fields": ["datasetId"]},
+            )
+        if not ds_row.bound_config_id:
+            raise ReportExtensionError(
+                "RPT_EXT_DATASET_UNBOUND",
+                f"数据集尚未绑定出图字段：{metric.dataset_id}",
+                422,
+            )
+
+
+def _sync_metric_bindings(metrics: list) -> list:
+    from app.metadata.dataset import service as dataset_service
+
+    synced = []
+    for metric in metrics:
+        if metric.dataset_id:
+            ds_row = dataset_service.get_dataset(metric.dataset_id)
+            if ds_row.bound_config_id and ds_row.bound_config_id != metric.bound_config_id:
+                metric = metric.model_copy(update={"bound_config_id": ds_row.bound_config_id})
+        synced.append(metric)
+    return synced
+
+
 def _validate_compare_metrics(metrics: list) -> None:
     for m in metrics:
         mode = m.compare_mode
@@ -74,6 +111,7 @@ def _validate_payload(payload: ExtensionConfigUpsert) -> None:
         if filt.operator not in _VALID_OPERATORS:
             raise ReportExtensionError("RPT_EXT_INVALID_OPERATOR", "Invalid filter operator", 422)
     _validate_compare_metrics(payload.metrics)
+    _validate_metric_datasets(payload.metrics)
 
 
 def upsert(node_id: uuid.UUID, payload: ExtensionConfigUpsert, actor: UserContext) -> ExtensionConfigOut:
@@ -82,11 +120,12 @@ def upsert(node_id: uuid.UUID, payload: ExtensionConfigUpsert, actor: UserContex
     if payload.catalog_node_id != node_id:
         raise ReportExtensionError("RPT_EXT_NODE_NOT_FOUND", "catalogNodeId mismatch", 404)
     _validate_payload(payload)
+    synced_metrics = _sync_metric_bindings(payload.metrics)
     prev = extension_repo.get_config(node_id)
     revision = (prev["revision"] + 1) if prev else 1
     record = {
         "catalog_node_id": node_id,
-        "metrics": [m.model_dump(by_alias=True, mode="json") for m in payload.metrics],
+        "metrics": [m.model_dump(by_alias=True, mode="json") for m in synced_metrics],
         "filters": [f.model_dump(by_alias=True, mode="json") for f in payload.filters],
         "change_note": payload.change_note,
         "default_data_source_id": payload.default_data_source_id,
@@ -95,7 +134,10 @@ def upsert(node_id: uuid.UUID, payload: ExtensionConfigUpsert, actor: UserContex
     extension_repo.save_config(node_id, record)
     if payload.change_note:
         extension_repo.append_audit(node_id, payload.change_note, revision)
-    return ExtensionConfigOut(revision=revision, **payload.model_dump())
+    return ExtensionConfigOut(
+        revision=revision,
+        **payload.model_copy(update={"metrics": synced_metrics}).model_dump(),
+    )
 
 
 def get_extension(node_id: uuid.UUID) -> ExtensionConfigOut:

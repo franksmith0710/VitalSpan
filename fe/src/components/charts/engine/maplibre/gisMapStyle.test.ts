@@ -3,7 +3,6 @@ import {
   DEFAULT_GIS_PROJECT,
   GIS_ATMOSPHERE_PRESETS,
   readGisProject,
-  resolveGisAtmosphereFog,
 } from "@/components/charts/engine/maplibre/gisProject";
 import {
   appendBuildings3dLayer,
@@ -50,10 +49,18 @@ describe("gisProject", () => {
     expect(project.fog).toEqual(GIS_ATMOSPHERE_PRESETS.day);
   });
 
-  it("merges custom fog overrides on preset", () => {
-    expect(
-      resolveGisAtmosphereFog("dusk", { "star-intensity": 0.5 }),
-    ).toEqual({ ...GIS_ATMOSPHERE_PRESETS.dusk, "star-intensity": 0.5 });
+  it("derives fog from atmosphere preset only", () => {
+    const project = readGisProject({
+      chartType: "gis-map",
+      nativeBody: {
+        gisProject: {
+          projection: "globe",
+          atmospherePreset: "deep-space",
+          fog: GIS_ATMOSPHERE_PRESETS.day,
+        },
+      },
+    });
+    expect(project.fog).toEqual(GIS_ATMOSPHERE_PRESETS["deep-space"]);
   });
 
   it("defaults globe atmosphere to day", () => {

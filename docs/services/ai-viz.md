@@ -4,7 +4,7 @@
 |------|-----|
 | 模块路径 | `backend/app/ai_viz/` |
 | PRD | [F17-AIVIZ](../automate/prd/F17-AIVIZ.md) |
-| 集成项目 | `docs/api/vs-ai-spec/` · 桌面包 `vs-ai-spec-deeptalk-test` |
+| 集成项目 | `docs/api/vs-ai-spec/` · 桌面包 · [deeptalk-product/](../api/vs-ai-spec/deeptalk-product/) |
 | 里程碑 | 试点 |
 | 状态 | **部分**（库源码 + 唯一 Base 宿主 + Payload v1 + vsCv/d3） |
 

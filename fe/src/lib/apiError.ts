@@ -210,6 +210,8 @@ const CODE_MESSAGES: Record<string, string> = {
   RPT_EXT_FORBIDDEN: "无权修改报表扩展配置",
   RPT_EXT_NODE_NOT_FOUND: "扩展配置不存在，请先保存扩展配置",
   RPT_EXT_DUPLICATE_KEY: "指标键或筛选键重复",
+  RPT_EXT_DATASET_NOT_FOUND: "扩展配置引用了不存在的数据集，请删除或更换该指标",
+  RPT_EXT_DATASET_UNBOUND: "扩展配置引用了未绑定出图字段的数据集，请先在数据集页完成绑定",
   RPT_EXT_INVALID_OPERATOR: "筛选运算符无效",
   RPT_CATALOG_HAS_CHILDREN: "请先删除文件夹内的子项",
   RPT_CATALOG_FORBIDDEN: "无权操作报表目录",

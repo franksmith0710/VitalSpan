@@ -5,7 +5,7 @@ alwaysApply: true
 
 # DeepTalk × VitalSpan 一体集成铁律
 
-> 真源详述：`docs/api/vs-ai-spec/IRON-RULES.md` · 桌面包：`vs-ai-spec-deeptalk-test/`
+> 真源详述：`docs/api/vs-ai-spec/IRON-RULES.md` · 桌面包：`vs-ai-spec-deeptalk-test/` · **产品仓**：`docs/api/vs-ai-spec/deeptalk-product/`
 
 ## 一体模型（禁止再讲「两个无关工程」）
 

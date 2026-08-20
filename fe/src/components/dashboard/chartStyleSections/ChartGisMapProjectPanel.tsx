@@ -39,7 +39,7 @@ const FLAVOR_LABELS: Record<GisBasemapFlavor, string> = {
 
 const ATMOSPHERE_LABELS: Record<GisAtmospherePreset, string> = {
   day: "白昼",
-  dusk: "黄昏",
+  dusk: "黄昏（稀疏星点）",
   "deep-space": "深空星空",
 };
 
@@ -235,6 +235,9 @@ export function ChartGisMapProjectPanel() {
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-theme-xs text-gray-500">
+                深空/黄昏会在球外叠加程序化星场；白昼无星点。
+              </p>
             </div>
           ) : null}
         </div>

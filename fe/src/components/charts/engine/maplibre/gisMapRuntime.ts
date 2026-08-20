@@ -1,27 +1,39 @@
-import type { GisProjectFog, GisProjection } from "@/components/charts/engine/maplibre/gisProject";
+import { gisFogToMapLibreSky } from "@/components/charts/engine/maplibre/gisAtmosphereSky";
+import type { GisAtmospherePreset, GisProjectFog, GisProjection } from "@/components/charts/engine/maplibre/gisProject";
 
 type MapLibreMap = import("maplibre-gl").Map;
 
-export function applyGlobeAtmosphere(
-  map: MapLibreMap,
-  projection: GisProjection | undefined,
-  fog: GisProjectFog | undefined,
-) {
-  if (projection === "globe") {
-    map.setProjection({ type: "globe" });
-    const setFog = (map as unknown as { setFog?: (spec: Record<string, unknown>) => void }).setFog;
-    setFog?.((fog ?? {}) as Record<string, unknown>);
-  } else {
-    map.setProjection({ type: "mercator" });
-    const setFog = (map as unknown as { setFog?: (spec: Record<string, unknown>) => void }).setFog;
-    setFog?.({});
+export type GlobeAtmosphereState = {
+  projection?: GisProjection;
+  fog?: GisProjectFog;
+  atmospherePreset?: GisAtmospherePreset;
+};
+
+function whenMapStyleReady(map: MapLibreMap, run: () => void) {
+  if (map.isStyleLoaded()) {
+    run();
+    return;
   }
+  map.once("load", run);
+}
+
+export function applyGlobeAtmosphere(map: MapLibreMap, state: GlobeAtmosphereState) {
+  whenMapStyleReady(map, () => {
+    if (state.projection === "globe") {
+      map.setProjection({ type: "globe" });
+      map.setSky(gisFogToMapLibreSky(state.fog, state.atmospherePreset));
+      return;
+    }
+    map.setProjection({ type: "mercator" });
+    map.setSky(undefined);
+  });
 }
 
 export function syncGisMapView(
   map: MapLibreMap,
   view: { center: [number, number]; zoom: number; bearing?: number; pitch?: number },
 ) {
+  if (!map.isStyleLoaded()) return;
   map.jumpTo({
     center: view.center,
     zoom: view.zoom,

@@ -1,0 +1,124 @@
+"""Agent task completion gate — require artifactId or dashboardId."""
+
+from __future__ import annotations
+
+import json
+import re
+import sys
+from dataclasses import dataclass
+
+from config import load_config
+
+ARTIFACT_ID_RE = re.compile(
+    r"artifactId=([0-9a-fA-F-]{36})",
+    re.IGNORECASE,
+)
+DASHBOARD_ID_RE = re.compile(
+    r"dashboardId=([0-9a-fA-F-]{36})",
+    re.IGNORECASE,
+)
+VALIDATE_OK_RE = re.compile(r"validate\s+ok|dry-run ok|preflight ok", re.IGNORECASE)
+
+FORBIDDEN_PHRASES = (
+    "保存到 output",
+    "saved to output",
+    "output/ 目录",
+    "output directory",
+    "write_file 完成",
+    "写到磁盘即交付",
+    "可在工作区直接使用",
+    "可在扩展中直接使用",
+)
+
+
+@dataclass
+class GateResult:
+    ok: bool
+    workflow: str
+    reasons: list[str]
+    artifact_id: str | None = None
+    dashboard_id: str | None = None
+
+    def to_dict(self) -> dict:
+        return {
+            "ok": self.ok,
+            "workflow": self.workflow,
+            "artifactId": self.artifact_id,
+            "dashboardId": self.dashboard_id,
+            "reasons": self.reasons,
+        }
+
+
+def check_completion(workflow: str, agent_summary: str, tool_stdout: str = "") -> GateResult:
+    text = f"{agent_summary}\n{tool_stdout}"
+    reasons: list[str] = []
+    cfg = load_config()
+
+    lower = text.lower()
+    for phrase in FORBIDDEN_PHRASES:
+        if phrase.lower() in lower:
+            reasons.append(f"forbidden phrase: {phrase}")
+
+    for forbidden in cfg.forbidden_delivery_dirs:
+        if f"{forbidden}/" in text or f"保存到 {forbidden}" in text:
+            reasons.append(f"delivery treated as {forbidden}/ — must publish to VitalSpan API")
+
+    artifact_id = None
+    dashboard_id = None
+    m = ARTIFACT_ID_RE.search(text)
+    if m:
+        artifact_id = m.group(1)
+    d = DASHBOARD_ID_RE.search(text)
+    if d:
+        dashboard_id = d.group(1)
+
+    wf = str(workflow)
+    if wf == "2":
+        if not artifact_id:
+            reasons.append("workflow 2 requires artifactId=<uuid> in summary or tool output")
+    elif wf == "3":
+        if not dashboard_id:
+            reasons.append("workflow 3 requires dashboardId=<uuid> in summary or tool output")
+    elif wf == "1":
+        if not VALIDATE_OK_RE.search(text):
+            reasons.append("workflow 1 requires validate ok / preflight ok in output")
+    else:
+        reasons.append(f"unknown workflow: {workflow}")
+
+    ok = len(reasons) == 0
+    return GateResult(
+        ok=ok,
+        workflow=wf,
+        reasons=reasons,
+        artifact_id=artifact_id,
+        dashboard_id=dashboard_id,
+    )
+
+
+def main(argv: list[str] | None = None) -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="DeepTalk completion gate")
+    parser.add_argument("--workflow", required=True, choices=["1", "2", "3"])
+    parser.add_argument("--agent-summary", required=True)
+    parser.add_argument("--tool-stdout", default="")
+    parser.add_argument("--json", action="store_true")
+    args = parser.parse_args(argv)
+
+    result = check_completion(args.workflow, args.agent_summary, args.tool_stdout)
+    if args.json:
+        print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
+    elif result.ok:
+        print("ok completion_gate passed")
+        if result.artifact_id:
+            print(f"artifactId={result.artifact_id}")
+        if result.dashboard_id:
+            print(f"dashboardId={result.dashboard_id}")
+    else:
+        for reason in result.reasons:
+            print(f"gate blocked: {reason}", file=sys.stderr)
+    return 0 if result.ok else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

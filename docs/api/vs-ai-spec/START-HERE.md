@@ -69,7 +69,17 @@ python tools\upload-dashboard-layout.py --dashboard-id <大屏uuid> --file examp
 
 写本地 JSON（含 `output/`）≠ ② 入库 ≠ ③ 保存大屏。必须见上表 HTTP 判据。
 
-## 5. 刷新本包
+## 5. DeepTalk 产品仓对接
+
+有 DeepTalk 源码时，见 [deeptalk-product/README.md](./deeptalk-product/README.md)：
+
+```powershell
+.\scripts\sync-vs-ai-spec-to-deeptalk-repo.ps1 -DeepTalkRoot C:\path\to\deeptalk
+```
+
+内置 Agent 提示词：[deeptalk-product/AGENT-SYSTEM-PROMPT.md](./deeptalk-product/AGENT-SYSTEM-PROMPT.md) · 工具注册：[agent-tools.schema.json](./deeptalk-product/agent-tools.schema.json)
+
+## 6. 刷新本包（桌面包 MVP）
 
 ```powershell
 .\scripts\sync-vs-ai-spec-pack.ps1

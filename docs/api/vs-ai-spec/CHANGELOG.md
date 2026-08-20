@@ -1,5 +1,12 @@
 # vs-ai-spec 变更
 
+## 2026-08-20 (DeepTalk 产品级对接)
+
+- 新增 [deeptalk-product/](./deeptalk-product/)：AGENT-SYSTEM-PROMPT · config 模板 · agent-tools.schema.json
+- 新增 `deeptalk-product/executor/`：publish 执行器 · completion_gate · `cli.py` 六工具
+- 新增 `scripts/sync-vs-ai-spec-to-deeptalk-repo.ps1` → `integrations/vitalspan/`
+- 测试：`backend/tests/test_deeptalk_product_integration.py`
+
 ## 2026-08-20 (一体集成完善)
 
 - 新增 [IRON-RULES.md](./IRON-RULES.md) · Cursor 规则 `deeptalk-vitalspan-integration.mdc`

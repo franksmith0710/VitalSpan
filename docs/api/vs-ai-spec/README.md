@@ -36,6 +36,10 @@
 | ① 内置图 | `python tools/validate-chart-config.py --file examples/bar-manual-deStyle.json` |
 | ③ 大屏 | `python tools/upload-dashboard-layout.py --dashboard-id <uuid> --file examples/...` |
 
+## DeepTalk 产品级对接
+
+有 DeepTalk 产品源码 → [deeptalk-product/README.md](./deeptalk-product/README.md)（executor · config · Agent 工具 · 完成 Gate）
+
 ## 目录
 
 | 文件 | 说明 |

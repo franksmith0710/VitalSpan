@@ -61,10 +61,14 @@ def _resolve_dataset_metric_binding(
 
         try:
             ds_row = dataset_service.get_dataset(metric.dataset_id)
-            if ds_row.bound_config_id:
-                bound_id = ds_row.bound_config_id
-        except DatasetError:
-            pass
+        except DatasetError as exc:
+            raise ReportEngineError(
+                "RPT_ENGINE_QUERY_FAILED",
+                f"指标「{metric.key}」关联的数据集不存在或已删除（{metric.dataset_id}）",
+                exc.status,
+            ) from exc
+        if ds_row.bound_config_id:
+            bound_id = ds_row.bound_config_id
     if bound_id is None:
         raise ReportEngineError(
             RPT_ENGINE_DATASOURCE_REQUIRED,
@@ -75,7 +79,11 @@ def _resolve_dataset_metric_binding(
         record = get_config_by_id(db, bound_id)
         payload = DatasetQueryConfigPayload.model_validate(record.payload)
     except ConfigError as exc:
-        raise ReportEngineError("RPT_ENGINE_QUERY_FAILED", exc.message, exc.status) from exc
+        raise ReportEngineError(
+            "RPT_ENGINE_QUERY_FAILED",
+            f"指标「{metric.key}」的查询绑定已失效，请在扩展配置中重新选择数据集并保存",
+            exc.status,
+        ) from exc
     return payload.data_source_id, bound_id
 
 
