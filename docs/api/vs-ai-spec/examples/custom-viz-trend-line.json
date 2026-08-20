@@ -1,8 +1,8 @@
 {
   "manifest": {
-    "id": "animated-trend-chart-v2",
+    "id": "custom-viz-trend-line-v1",
     "displayName": "动态趋势图",
-    "version": "1.0.1",
+    "version": "1.0.0",
     "entry": "index.html",
     "fieldSlots": {
       "dimensions": {

@@ -1,3 +1,4 @@
+# DEPRECATED: use docs/api/vs-ai-spec/tools/publish-ai-viz-artifact.py (preflight + POST/PUT).
 param(
   [Parameter(Mandatory = $true)]
   [string]$BundlePath,

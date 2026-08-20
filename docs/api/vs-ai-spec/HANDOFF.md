@@ -1,15 +1,15 @@
-# VitalSpan × DeepTalk 联调测试包
+# VitalSpan × DeepTalk 联调备忘
 
-**👉 身份定义：[PACK-IDENTITY.md](./PACK-IDENTITY.md)** — 这是**集成规范包**，不是组件工程项目。  
+**👉 铁律：[IRON-RULES.md](./IRON-RULES.md)** · **身份：[PACK-IDENTITY.md](./PACK-IDENTITY.md)**  
 **👉 总入口：[START-HERE.md](./START-HERE.md)** · **DeepTalk 提示词：[DEEPTALK-AGENT-PROMPT.md](./DEEPTALK-AGENT-PROMPT.md)**
 
-**先读 [00-REQUIREMENTS.md §0](./00-REQUIREMENTS.md#0-对外暴露什么--上传到哪里)**（规范包 ≠ 上传目的地；**只认各路径 HTTP 完成标志**）。
+**先读 [00-REQUIREMENTS.md §0](./00-REQUIREMENTS.md#0-集成项目与平台落点)**（集成项目目录 ≠ 平台落点；**只认各路径 HTTP 完成标志**）。
 
-| 对外暴露（给你用的） | 不是上传目的地 |
-|---------------------|----------------|
+| 集成项目（DeepTalk 工作区） | 平台落点 |
+|---------------------------|----------|
 | 本目录：文档、`examples/`、`tools/` | 写进本目录任意路径 ≠ 已入库 |
-| `tools/upload-ai-viz-artifact.py` | 必须执行该脚本（或等价 POST） |
-| 入库真目标 | `POST http://127.0.0.1:8000/api/v1/ai-viz/artifacts` → 库表 `ai_viz_artifacts` |
+| `tools/publish-ai-viz-artifact.py` | 必须执行（或等价 POST/PUT） |
+| 入库/更新/删除 | `POST/PUT/DELETE .../ai-viz/artifacts` → 库表 `ai_viz_artifacts` |
 
 下文是环境占位与误读对照。
 
@@ -37,9 +37,10 @@
 
 成功 **201**：`{ "artifactId": "<uuid>", "manifest": {}, "status": "...", "contentHash": "..." }`
 
-同一组件更新：`PUT {API}/ai-viz/artifacts/{artifactId}`，body 同上。
+同一组件更新：`PUT {API}/ai-viz/artifacts/{artifactId}`，body 同上。  
+属主删除：`DELETE {API}/ai-viz/artifacts/{artifactId}` → 204。
 
-挂到大屏：layout widget `type: "customViz"`，`customVizConfig.artifactId` 填该 uuid（可由 VitalSpan 代贴，或走 `editor-save`）。
+工作流 ② **结束于 `artifactId`**。上大屏走工作流 ③ `upload-dashboard-layout.py`（填 `customVizConfig.artifactId`）。
 
 ## 组件脚本怎么读数（平台注入，不是 DeepTalk 推数）
 
@@ -91,14 +92,15 @@ Linux/macOS 把 `^` 换成 `\`。
 
 1. `examples/custom-viz-bundle.json`（html）
 2. `examples/custom-viz-d3-bundle.json`（平台 d3）
-3. 可选：`custom-viz-pulse-kpi.json` / `ring-progress` / `alert-feed`
+3. `examples/custom-viz-trend-line.json`（d3 动态趋势 · 读 `p.style`）
+4. 可选：`custom-viz-pulse-kpi.json` / `ring-progress` / `alert-feed`
 
-把返回的 `artifactId` 交给 VitalSpan 挂到测试大屏。
+工作流 ② 完成 = 拿到 `artifactId`。上大屏见 [guides/DASHBOARD-LAYOUT.md](./guides/DASHBOARD-LAYOUT.md)。
 
 **打开本地 `demo-*.html` 或把文件写到桌面 ≠ 已上传。** 必须对正在运行的 VitalSpan 发 HTTP。本机示例：
 
 ```bash
-python tools/upload-ai-viz-artifact.py
+python tools/publish-ai-viz-artifact.py --file examples/custom-viz-d3-bundle.json
 ```
 
 默认 `http://127.0.0.1:8000/api/v1`，账号 `admin`，密码环境变量 `VITALSPAN_DEV_ADMIN_PASSWORD`。
@@ -126,18 +128,18 @@ DeepTalk 若产出 `runtime: vanilla`、`.iife.js`、`dataSchema` / `eventSchema
 
 ## 建议阅读顺序
 
-1. 本文件  
-2. `README.md`（三条路径）  
-3. `guides/PLATFORM-SLA.md`（平台底座保证什么）  
-4. `PROTOCOL.md`  
-5. `guides/RENDERERS.md` · `guides/D3-OPTIONAL.md` · `guides/HTML-RUNTIME.md` · `guides/STYLE-SCHEMA.md`  
+1. [IRON-RULES.md](./IRON-RULES.md)  
+2. [START-HERE.md](./START-HERE.md)  
+3. [guides/THREE-WORKFLOWS.md](./guides/THREE-WORKFLOWS.md)  
+4. [DEEPTALK-AGENT-PROMPT.md](./DEEPTALK-AGENT-PROMPT.md)  
+5. `guides/PLATFORM-SLA.md` · `PROTOCOL.md`  
 6. `examples/` · `theme-tokens.json`
 
 ## 不要按别的规范误读
 
 | 误读 | 本包事实 |
 |------|----------|
-| 「这是 VitalSpan 自定义可视化**组件项目目录**」 | **集成规范包**；真系统在 `:8000` API + `:5173` 前端；见 [PACK-IDENTITY.md](./PACK-IDENTITY.md) |
+| 「这是 VitalSpan 自定义可视化**组件项目目录**」 | **DeepTalk 集成项目**；真系统在 `:8000` API + `:5173` 前端；见 [PACK-IDENTITY.md](./PACK-IDENTITY.md) |
 | L3 有 vanilla / react / webgl / three | **只有 `html` 与 `d3`**。`html` = 内联 DOM/CSS/SVG/Canvas，不是 React 运行时 |
 | capability-manifest 里 `library: react` | 那是**内置 chartType** 的实现标注，不是 customViz runtime |
 | 缺 WebGL 示例 | **不提供**该 runtime，无需补示例 |

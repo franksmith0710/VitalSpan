@@ -53,16 +53,16 @@ function LiveSummaryStrip({
   if (metrics.length === 0) return null;
 
   return (
-    <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div
+      className="flex shrink-0 flex-wrap items-baseline gap-x-6 gap-y-1 px-5 pt-3 pb-1"
+      data-testid="standard-analysis-live-summary"
+    >
       {metrics.map((metric) => (
-        <div
-          key={metric.label}
-          className="rounded-xl border border-gray-200 bg-gray-50/60 px-4 py-3 dark:border-gray-800 dark:bg-white/[0.02]"
-        >
-          <p className="text-theme-xs text-gray-500 dark:text-gray-400">{metric.label}</p>
-          <p className="mt-0.5 text-title-sm font-semibold tabular-nums text-gray-900 dark:text-white">
+        <div key={metric.label} className="flex items-baseline gap-1.5">
+          <span className="text-theme-xs text-gray-500 dark:text-gray-400">{metric.label}</span>
+          <span className="text-theme-sm font-semibold tabular-nums text-gray-900 dark:text-white">
             {metric.value}
-          </p>
+          </span>
         </div>
       ))}
     </div>
@@ -168,32 +168,36 @@ export function StandardAnalysisLiveView({
       ) : null}
 
       {!isLoading && liveRows.length > 0 ? (
-        <div className="px-5 pt-4">
-          <LiveSummaryStrip headers={rawHeaders} rows={liveRows} theme={activeTheme} />
-        </div>
+        <LiveSummaryStrip headers={rawHeaders} rows={liveRows} theme={activeTheme} />
       ) : null}
 
-      {!isLoading && presentationMode === "chart" && chartSection ? (
-        <StandardAnalysisSectionChart
-          theme={activeTheme}
-          headers={rawHeaders}
-          rows={liveRows}
-          chartType={chartSection.chartType}
-          fieldMapping={pack.fieldMapping}
-        />
-      ) : (
-        <DataTable
-          loading={isLoading}
-          empty={!isLoading && liveRows.length === 0}
-          headers={displayHeaders}
-          rows={liveRows}
-          emptyState={{
-            icon: null,
-            title: "暂无数据",
-            description: "当前主题未返回结果，请切换主题或稍后重试。",
-          }}
-        />
-      )}
+      <div className="flex min-h-0 flex-1 flex-col">
+        {!isLoading && presentationMode === "chart" && chartSection ? (
+          <div className="flex min-h-0 flex-1 flex-col px-5 pb-2">
+            <StandardAnalysisSectionChart
+              theme={activeTheme}
+              headers={rawHeaders}
+              rows={liveRows}
+              chartType={chartSection.chartType}
+              fieldMapping={pack.fieldMapping}
+            />
+          </div>
+        ) : (
+          <div className="flex min-h-0 flex-1 flex-col">
+            <DataTable
+              loading={isLoading}
+              empty={!isLoading && liveRows.length === 0}
+              headers={displayHeaders}
+              rows={liveRows}
+              emptyState={{
+                icon: null,
+                title: "暂无数据",
+                description: "当前主题未返回结果，请切换主题或稍后重试。",
+              }}
+            />
+          </div>
+        )}
+      </div>
     </ListPageTableFrame>
   );
 }

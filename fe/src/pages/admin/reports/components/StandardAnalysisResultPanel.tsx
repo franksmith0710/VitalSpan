@@ -1,4 +1,4 @@
-import { RefreshCw } from "lucide-react";
+import { Camera, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   HUB_SEGMENTED_BUTTON_CLASS,
@@ -119,7 +119,7 @@ export function StandardAnalysisResultPanel({
             {viewMode === "live" ? " · 实时查询" : " · 周期快照对比"}
           </p>
         </div>
-        <div className={cn("min-w-0", "mt-3")}>
+        <div className={cn("mt-3 min-w-0 xl:hidden")} data-testid="standard-analysis-meta-row-mobile">
           <StandardAnalysisMetaRow pack={pack} />
         </div>
       </div>
@@ -186,6 +186,20 @@ export function StandardAnalysisResultPanel({
               >
                 <RefreshCw className={cn("size-4", activeQuery.isFetching && "animate-spin")} aria-hidden />
               </Button>
+              {canManage && viewMode === "live" ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 px-3"
+                  disabled={capturePending}
+                  data-testid="standard-analysis-capture-toolbar"
+                  onClick={onCaptureCurrent}
+                >
+                  <Camera className="size-3.5" aria-hidden />
+                  {capturePending ? "保存中…" : "保存本期快照"}
+                </Button>
+              ) : null}
             </div>
           }
         />
@@ -202,8 +216,14 @@ export function StandardAnalysisResultPanel({
           snapshots={snapshots}
           viewMode={viewMode}
           canManage={canManage}
-          capturePending={capturePending}
-          onCapture={viewMode === "live" ? onCaptureCurrent : undefined}
+          compareSummary={
+            viewMode === "compare" && compareLayout === "pair" && compareQuery.data
+              ? {
+                  currentPeriodKey: compareQuery.data.currentPeriodKey,
+                  previousPeriodKey: compareQuery.data.previousPeriodKey,
+                }
+              : undefined
+          }
         />
 
         {viewMode === "live" ? (

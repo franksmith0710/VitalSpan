@@ -55,7 +55,8 @@ DeepTalk 集成项目  ──HTTP──►  VitalSpan 平台能力
 |----|------|
 | 图表盘「自定义」 | **仅** `GET /api/v1/ai-viz/artifacts`（DB `ai_viz_artifacts`），按 `owner_user_id` 隔离 |
 | 官方 `examples/` | 金样 + preflight/CI + 抄作业；**不自动进库**，须 upload 后才出现在图表盘 |
-| 平台无 DELETE API（M1） | 开发清库走元库 SQL 或后续管理面；清库后旧 `artifactId` 引用会失效 |
+| 平台无自动 seed | 图表盘「自定义」仅来自 DB；官方 `examples/` 须 publish 后才进库 |
+| 属主 DELETE | `DELETE /api/v1/ai-viz/artifacts/{id}` · CLI `delete-ai-viz-artifact.py` · 5173 图表盘移除按钮 |
 
 ## 6. 禁止说法（验收判错）
 

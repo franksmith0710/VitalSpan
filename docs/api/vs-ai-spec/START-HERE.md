@@ -1,7 +1,7 @@
 # START HERE — DeepTalk 集成项目总入口
 
 > **铁律（必读）** → [IRON-RULES.md](./IRON-RULES.md)  
-> **工程定位** → [PACK-IDENTITY.md](./PACK-IDENTITY.md)（DeepTalk 集成项目 × VitalSpan 平台能力 = 一体）  
+> **工程定位** → [PACK-IDENTITY.md](./PACK-IDENTITY.md)  
 > **三条工作流必须分开** → [guides/THREE-WORKFLOWS.md](./guides/THREE-WORKFLOWS.md)
 
 ## 0. 三条线（不要混）
@@ -10,23 +10,28 @@
 |----|------|-------------|----------|
 | **① 内置图** | 柱/线/饼/表/地图 `chartConfig` | 写进大屏 layout，**不进组件库** | `POST /charts/validate` 200 |
 | **② 组件库** | **新组件** html/d3 开发与入库 | **`ai_viz_artifacts` 组件库** | **`artifactId=<uuid>`** |
-| **③ 大屏** | 编排 layout，**复用库中已有 + ② 新上传** | `dashboards.layout_json` | `editor-save` 200 + `dashboardId` |
-
-```
-开发新组件 (②)  ──artifactId──►  大屏编排 (③)  可引用多个已有/新建 artifactId
-内置图 (①)      ──chartConfig──►  大屏编排 (③)  与组件库无关
-```
-
-- **② 只做组件**：validate → upload → 汇报 `artifactId`，**不要求**同任务内拼大屏。  
-- **③ 只做编排**：layout 里填 `customVizConfig.artifactId`（库中已有或 ② 刚传的），**不写**组件 HTML。
+| **③ 大屏** | 编排 layout，**复用库中已有 + ② 新上传** | `dashboards.layout_json` | `editor-save` 200 + **`dashboardId`** |
 
 ## 1. 一键命令
 
-### ② 组件库（d3/html 新组件）
+### 预检（工作流 ②/③ 前）
 
 ```bat
-python tools\validate-ai-viz-bundle.py --file examples\你的组件.json
-python tools\upload-ai-viz-artifact.py --file examples\你的组件.json
+python tools\check-vitalspan-health.py
+```
+
+### ② 组件库（d3/html 新组件 · **主推 publish 一步**）
+
+```bat
+python tools\publish-ai-viz-artifact.py --file examples\你的组件.json
+python tools\list-ai-viz-artifacts.py
+python tools\delete-ai-viz-artifact.py <artifactId>
+```
+
+更新已有组件：
+
+```bat
+python tools\publish-ai-viz-artifact.py --file examples\你的组件.json --artifact-id <uuid>
 ```
 
 ### ① 内置图

@@ -1,8 +1,7 @@
 # Custom Viz 组件库协议（v1）
 
-> 一个 Base（`CustomVizWidget`）从接口异步加载库中源码，挂进看板主页面。  
-> 仓库不为每个组件增加 tsx/py。  
-> **对接完成标准、合法请求体、本机上传**：见 [00-REQUIREMENTS.md](./00-REQUIREMENTS.md)。
+> **铁律** → [IRON-RULES.md](./IRON-RULES.md) · **工作流 ②** → [EXTERNAL-AUTHOR.md](./EXTERNAL-AUTHOR.md)  
+> 一个 Base（`CustomVizWidget`）从接口异步加载库中源码，挂进看板主页面。
 
 ## Bundle 结构
 

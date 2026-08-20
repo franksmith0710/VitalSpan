@@ -1,11 +1,13 @@
+import { Link } from "react-router";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import type { ReactNode } from "react";
 import type { ReportScheduleRow } from "../useReportSchedules";
 import type { AnalysisPack } from "../useStandardAnalysis";
-import { SNAPSHOT_LABELS, THEME_META } from "./standardAnalysisUi";
-import { retentionPeriodsLabel, summarizePackDelivery } from "../standardAnalysisDeliverySummary";
+import { standardScheduleHubPath } from "../standardRoutes";
+import { SNAPSHOT_LABELS } from "./standardAnalysisUi";
+import { summarizePackDelivery } from "../standardAnalysisDeliverySummary";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -50,7 +52,7 @@ export function StandardAnalysisPackList({
           {isLoading
             ? Array.from({ length: 3 }).map((_, i) => (
                 <li key={i}>
-                  <Skeleton className="h-[4.5rem] w-full rounded-xl" />
+                  <Skeleton className="h-16 w-full rounded-xl" />
                 </li>
               ))
             : packs.length === 0
@@ -62,71 +64,76 @@ export function StandardAnalysisPackList({
               : packs.map((pack) => {
                 const active = pack.packKey === activePackKey;
                 const snapshotLabel = SNAPSHOT_LABELS[pack.snapshotCronPreset] ?? pack.snapshotCronPreset;
-                const retentionLabel = retentionPeriodsLabel(pack.snapshotRetentionPeriods);
                 const delivery = summarizePackDelivery(deliveryByPackKey?.get(pack.packKey));
+                const dataLabel = pack.businessObjectCode
+                  ? pack.businessObjectCode
+                  : pack.datasetId
+                    ? "数据集"
+                    : "未绑定";
+
                 return (
                   <li key={pack.packKey}>
-                    <button
-                      type="button"
-                      onClick={() => onSelect(pack.packKey)}
-                      aria-current={active ? "true" : undefined}
+                    <div
                       className={cn(
-                        "w-full rounded-xl border px-3 py-3 text-left transition-colors",
+                        "rounded-xl border transition-colors",
                         active
                           ? "border-brand-200 bg-white shadow-theme-xs dark:border-brand-500/30 dark:bg-white/[0.04]"
                           : "border-transparent bg-white/70 hover:border-gray-200 hover:bg-white dark:bg-transparent dark:hover:border-gray-800 dark:hover:bg-white/[0.03]",
                       )}
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <span
-                          className={cn(
-                            "min-w-0 truncate text-theme-sm font-medium",
-                            active ? "text-gray-900 dark:text-white" : "text-gray-800 dark:text-white/90",
-                          )}
-                        >
-                          {pack.displayName}
-                        </span>
-                        {active ? (
-                          <Badge variant="light" color="primary" size="sm" className="shrink-0">
-                            当前
-                          </Badge>
-                        ) : null}
-                      </div>
-                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                        {pack.businessObjectCode ? (
-                          <Badge variant="light" color="light" size="sm">
-                            {pack.businessObjectCode}
-                          </Badge>
-                        ) : pack.datasetId ? (
-                          <Badge variant="light" color="light" size="sm">
-                            数据集
-                          </Badge>
-                        ) : null}
-                        <Badge variant="light" color="info" size="sm">
-                          {snapshotLabel}
-                        </Badge>
-                        <Badge variant="light" color="light" size="sm">
-                          {retentionLabel}
-                        </Badge>
-                        <Badge
-                          variant="light"
-                          color={delivery.tone === "active" ? "success" : delivery.tone === "draft" ? "warning" : "light"}
-                          size="sm"
-                        >
-                          {delivery.label.replace(/^定时投递：/, "投递：")}
-                        </Badge>
-                      </div>
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {pack.enabledThemes.map((theme) => (
+                      <button
+                        type="button"
+                        onClick={() => onSelect(pack.packKey)}
+                        aria-current={active ? "true" : undefined}
+                        className="w-full px-3 py-2.5 text-left"
+                      >
+                        <div className="flex items-start justify-between gap-2">
                           <span
-                            key={theme}
-                            className="rounded-md bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600 dark:bg-white/10 dark:text-gray-400"
+                            className={cn(
+                              "min-w-0 truncate text-theme-sm font-medium",
+                              active ? "text-gray-900 dark:text-white" : "text-gray-800 dark:text-white/90",
+                            )}
                           >
-                            {THEME_META[theme]?.label ?? theme}
+                            {pack.displayName}
                           </span>
-                        ))}
+                          {active ? (
+                            <Badge variant="light" color="primary" size="sm" className="shrink-0">
+                              当前
+                            </Badge>
+                          ) : null}
+                        </div>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                          <Badge variant="light" color="light" size="sm">
+                            {dataLabel}
+                          </Badge>
+                          <Badge variant="light" color="info" size="sm">
+                            {snapshotLabel}
+                          </Badge>
+                        </div>
+                      </button>
+                      <div className="px-3 pb-2.5 pt-0">
+                        <Link
+                          to={standardScheduleHubPath(pack.packKey)}
+                          data-testid="standard-analysis-pack-delivery"
+                          className="inline-flex max-w-full"
+                        >
+                          <Badge
+                            variant="light"
+                            color={
+                              delivery.tone === "active"
+                                ? "success"
+                                : delivery.tone === "draft"
+                                  ? "warning"
+                                  : "light"
+                            }
+                            size="sm"
+                            className="truncate hover:opacity-90"
+                          >
+                            {delivery.label.replace(/^定时投递：/, "投递：")}
+                          </Badge>
+                        </Link>
                       </div>
-                    </button>
+                    </div>
                   </li>
                 );
               })}

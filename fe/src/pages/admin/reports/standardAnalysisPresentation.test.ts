@@ -34,6 +34,14 @@ describe("standardAnalysisPresentation", () => {
     ).toBe("chart");
     expect(
       defaultLivePresentationMode({
+        kind: "chart",
+        chartType: "bar",
+        columns: ["dim", "cnt"],
+        rows: [],
+      }),
+    ).toBe("chart");
+    expect(
+      defaultLivePresentationMode({
         kind: "table",
         columns: ["status", "cnt"],
         rows: [],

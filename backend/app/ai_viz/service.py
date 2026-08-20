@@ -132,3 +132,9 @@ def list_artifacts(
     )
     rows = db.scalars(stmt).all()
     return [_to_out(row) for row in rows]
+
+
+def delete_artifact(db: Session, artifact_id: uuid.UUID, actor: UserContext) -> None:
+    row = get_artifact(db, artifact_id, actor, write=True)
+    db.delete(row)
+    db.commit()

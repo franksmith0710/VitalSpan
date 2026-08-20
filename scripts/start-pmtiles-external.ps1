@@ -2,7 +2,7 @@
 param(
   [string]$DataDir = "$env:USERPROFILE\Desktop",
   [string]$PmtilesFile = "planet-z15-20260817.pmtiles",
-  [string]$CorsOrigin = "http://localhost:5173",
+  [string]$CorsOrigin = "http://127.0.0.1:5173",
   [int]$Port = 8080,
   [string]$ServiceId = "planet-z15",
   [string]$ServiceName = "Planet Z15 Global",

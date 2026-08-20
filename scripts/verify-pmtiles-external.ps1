@@ -2,7 +2,7 @@
 param(
   [int]$Port = 8080,
   [string]$PmtilesFile = "planet-z15-20260817.pmtiles",
-  [string]$CorsOrigin = "http://localhost:5173"
+  [string]$CorsOrigin = "http://127.0.0.1:5173"
 )
 
 $ErrorActionPreference = "Stop"
@@ -16,7 +16,15 @@ if ($rangeText -notmatch "206") {
   throw "Range request did not return 206 Partial Content"
 }
 
-Write-Host "Checking CORS preflight"
+Write-Host "Checking CORS preflight (127.0.0.1 origin)"
+$options127 = curl.exe -s -D - -o NUL -X OPTIONS $url -H "Origin: http://127.0.0.1:5173" -H "Access-Control-Request-Method: GET" 2>&1
+$options127Text = ($options127 | Out-String)
+if ($options127Text -notmatch "Access-Control-Allow-Origin: http://127\.0\.0\.1:5173") {
+  Write-Host $options127Text
+  throw "CORS must echo http://127.0.0.1:5173 for local dev"
+}
+
+Write-Host "Checking CORS preflight ($CorsOrigin origin)"
 $options = curl.exe -s -D - -o NUL -X OPTIONS $url -H "Origin: $CorsOrigin" -H "Access-Control-Request-Method: GET" 2>&1
 $optionsText = ($options | Out-String)
 if ($optionsText -notmatch "Access-Control-Allow-Origin") {

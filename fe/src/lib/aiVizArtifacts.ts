@@ -47,3 +47,9 @@ export function fetchAiVizArtifacts(limit = 100, offset = 0) {
 export function fetchAiVizArtifactMeta(artifactId: string) {
   return apiFetch<AiVizArtifactMeta>(`/api/v1/ai-viz/artifacts/${encodeURIComponent(artifactId)}`);
 }
+
+export function deleteAiVizArtifact(artifactId: string) {
+  return apiFetch<void>(`/api/v1/ai-viz/artifacts/${encodeURIComponent(artifactId)}`, {
+    method: "DELETE",
+  });
+}

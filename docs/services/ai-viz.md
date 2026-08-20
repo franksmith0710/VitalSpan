@@ -1,9 +1,10 @@
-# ai-viz — 外部 AI 可视化创作域
+# ai-viz — DeepTalk 集成 + 平台 customViz 域
 
 | 字段 | 值 |
 |------|-----|
 | 模块路径 | `backend/app/ai_viz/` |
 | PRD | [F17-AIVIZ](../automate/prd/F17-AIVIZ.md) |
+| 集成项目 | `docs/api/vs-ai-spec/` · 桌面包 `vs-ai-spec-deeptalk-test` |
 | 里程碑 | 试点 |
 | 状态 | **部分**（库源码 + 唯一 Base 宿主 + Payload v1 + vsCv/d3） |
 
@@ -19,7 +20,7 @@
 
 | In | Out |
 |----|-----|
-| `POST/PUT/GET /api/v1/ai-viz/artifacts` | 内置 chart plugin 注册 |
+| `POST/PUT/GET/DELETE /api/v1/ai-viz/artifacts` | 内置 chart plugin 注册 |
 | bundle 扫描（禁外链脚本、体积上限） | AI 生成 SQL |
 | `customViz` layout 契约 | 一组件一 tsx/py 发版 |
 | Payload v1 与 `vs-cv-payload-update` 契约 | iframe/沙箱隔离（本产品线不做） |

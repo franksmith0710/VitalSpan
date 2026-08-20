@@ -1,5 +1,6 @@
 # 大屏编排 — 工作流 ③（layoutJson + editor-save）
 
+> **铁律** → [IRON-RULES.md](../IRON-RULES.md) · **工程定位** → [PACK-IDENTITY.md](../PACK-IDENTITY.md)  
 > **本文件只覆盖「把已有能力摆到看板上」。**  
 > **不在此工作流开发组件 HTML** → 新组件先走 [工作流 ②](../EXTERNAL-AUTHOR.md) 入库。  
 > 三条线总览 → [THREE-WORKFLOWS.md](./THREE-WORKFLOWS.md)

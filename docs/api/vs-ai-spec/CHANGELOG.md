@@ -1,5 +1,13 @@
 # vs-ai-spec 变更
 
+## 2026-08-20 (一体集成完善)
+
+- 新增 [IRON-RULES.md](./IRON-RULES.md) · Cursor 规则 `deeptalk-vitalspan-integration.mdc`
+- 新增 `tools/publish-ai-viz-artifact.py` · `check-vitalspan-health.py` · `list-ai-viz-artifacts.py` · `delete-ai-viz-artifact.py`
+- 新增金样 `examples/custom-viz-trend-line.json`（d3 动态趋势 · `p.style` 合规）
+- 平台 `DELETE /api/v1/ai-viz/artifacts/{id}`；5173 图表盘属主移除
+- 文档口径：「外部规范包」→ **DeepTalk 集成项目 × VitalSpan 平台能力**
+
 ## 2026-08-20 (三条线工程分离)
 
 - 新增 [guides/THREE-WORKFLOWS.md](./guides/THREE-WORKFLOWS.md)：② 组件库入库 vs ③ 大屏复用已有+新建

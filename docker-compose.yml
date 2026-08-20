@@ -130,7 +130,7 @@ services:
     ports:
       - "${PMTILES_TILE_PORT:-8080}:8080"
     environment:
-      PMTILES_CORS_ORIGIN: "${PMTILES_CORS_ORIGIN:-http://localhost:5173}"
+      PMTILES_CORS_ORIGIN: "${PMTILES_CORS_ORIGIN:-http://127.0.0.1:5173}"
       PMTILES_HEALTH_FILE: "${PMTILES_HEALTH_FILE:-planet-z15-20260817.pmtiles}"
     volumes:
       - "${PMTILES_DATA_DIR:?Set PMTILES_DATA_DIR to the host directory containing .pmtiles files}:/srv:ro"

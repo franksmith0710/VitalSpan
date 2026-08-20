@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import Annotated, Generator
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Response, status
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
 
@@ -70,6 +70,19 @@ def list_artifacts(
     try:
         items = ai_viz_service.list_artifacts(db, user, limit=limit, offset=offset)
         return AiVizArtifactListOut(items=items)
+    except AiVizError as exc:
+        return _error_response(exc)
+
+
+@router.delete("/artifacts/{artifact_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
+def delete_artifact(
+    artifact_id: uuid.UUID,
+    user: Annotated[UserContext, Depends(require_permission(PERM_EDIT))],
+    db: Annotated[Session, Depends(_db)],
+) -> Response | JSONResponse:
+    try:
+        ai_viz_service.delete_artifact(db, artifact_id, user)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
     except AiVizError as exc:
         return _error_response(exc)
 

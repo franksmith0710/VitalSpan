@@ -1,5 +1,6 @@
-# L1/L2 内置图表（chartConfig）
+# L1/L2 内置图表（chartConfig · 工作流 ①）
 
+> **铁律** → [IRON-RULES.md](../IRON-RULES.md) · **工程定位** → [PACK-IDENTITY.md](../PACK-IDENTITY.md)  
 > **何时用**：柱/线/饼/表/地图等 **已有 chartType** 能表达的需求。  
 > **何时不用**：KPI 卡片、滚动列表、自绘 SVG/D3 → 走 [L3 customViz](../EXTERNAL-AUTHOR.md)。
 
@@ -8,8 +9,8 @@
 | 步骤 | 动作 | 成功标志 |
 |------|------|----------|
 | 1 | 生成 `chartConfig`（见 §2） | JSON 合法 |
-| 2 | `POST /api/v1/charts/validate` | **200**，响应含 `chartType` |
-| 3 | 嵌入大屏 `layoutJson` widget `type: "chart"` | 见 [DASHBOARD-LAYOUT.md](./DASHBOARD-LAYOUT.md) |
+| 2 | `POST /api/v1/charts/validate` | **200**（**工作流 ① 完成**） |
+| 3 | 嵌入大屏 `layoutJson` widget `type: "chart"` | 属 **工作流 ③**，见 [DASHBOARD-LAYOUT.md](./DASHBOARD-LAYOUT.md) |
 | 4 | 用户在编辑器绑定 Dataset | 平台侧手动完成 |
 
 **不算完成**：只写 `examples/chart-xxx.json` 到磁盘；未调 validate。

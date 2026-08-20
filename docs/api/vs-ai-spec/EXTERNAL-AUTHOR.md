@@ -1,5 +1,6 @@
 # 外部作者 Runbook — 工作流 ② · 组件库（L3 customViz）
 
+> **铁律** → [IRON-RULES.md](./IRON-RULES.md) · **工程定位** → [PACK-IDENTITY.md](./PACK-IDENTITY.md)  
 > **本文件只覆盖「开发新组件并入库」。**  
 > 拼大屏 → [guides/DASHBOARD-LAYOUT.md](./guides/DASHBOARD-LAYOUT.md)（工作流 ③）  
 > 三条线总览 → [guides/THREE-WORKFLOWS.md](./guides/THREE-WORKFLOWS.md)
@@ -26,11 +27,12 @@
 
 | 步 | 动作 | 成功标志 |
 |----|------|----------|
-| 0 | `GET /health` | ok |
+| 0 | `python tools/check-vitalspan-health.py` | ok |
 | 1 | 读 `00-REQUIREMENTS` + `PLATFORM-SLA`；d3 照抄 `custom-viz-d3-bundle.json` 的 `mount` | — |
 | 2 | 草稿 `examples/<name>.json`（禁止 `output/` 当交付目录） | JSON 合法 |
-| 3 | `py -3 tools/validate-ai-viz-bundle.py --file examples/<name>.json` | `preflight ok` |
-| 4 | `py -3 tools/upload-ai-viz-artifact.py --file examples/<name>.json` | **`ok artifactId=<uuid>`** |
+| 3 | **`python tools/publish-ai-viz-artifact.py --file examples/<name>.json`** | **`ok artifactId=<uuid>`** |
+
+仅 preflight、不 POST：`publish-ai-viz-artifact.py --validate-only` 或 `validate-ai-viz-bundle.py`。
 
 ## 汇报模板（必须）
 
@@ -51,7 +53,7 @@ entry GET http://127.0.0.1:8000/api/v1/ai-viz/artifacts/<uuid>/entry
 
 见 [START-HERE.md](./START-HERE.md)。桌面包必填 `VITALSPAN_ROOT`。
 
-## 刷新规范包
+## 刷新集成项目
 
 ```powershell
 .\scripts\sync-vs-ai-spec-pack.ps1

@@ -127,12 +127,19 @@ function GisMapViewInner(props: ChartEngineViewProps) {
 
       map.on("error", (event) => {
         if (cancelled) return;
-        const message =
+        const raw =
           event.error instanceof Error
             ? event.error.message
             : typeof event.error === "string"
               ? event.error
-              : "地图渲染失败";
+              : "";
+        const message = raw.trim() || "地图渲染失败";
+        if (/failed to fetch|cors|networkerror|access-control/i.test(message)) {
+          setMapErrorHint(
+            "全球 PMTiles 瓦片跨域请求被阻断，请确认外部服务 CORS 与前端访问地址（localhost / 127.0.0.1）一致",
+          );
+          return;
+        }
         setMapErrorHint(message);
       });
 

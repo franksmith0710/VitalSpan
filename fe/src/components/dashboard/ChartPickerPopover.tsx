@@ -16,10 +16,10 @@ import { cn } from "@/lib/utils";
 import { chartTypeIcon } from "@/lib/chartTypeIcons";
 import type { CustomVizInsertPayload } from "@/components/dashboard/createLayoutWidget";
 import { setCustomVizDragData, type CustomVizDragPayload } from "@/lib/dashboardDnd";
-import { fetchAiVizArtifacts, AI_VIZ_STYLE_COMPLIANCE_LABELS, type AiVizArtifactMeta } from "@/lib/aiVizArtifacts";
+import { fetchAiVizArtifacts, deleteAiVizArtifact, AI_VIZ_STYLE_COMPLIANCE_LABELS, type AiVizArtifactMeta } from "@/lib/aiVizArtifacts";
 import { queryKeys } from "@/lib/queryKeys";
-import { useQuery } from "@tanstack/react-query";
-import { Sparkles, TriangleAlert } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Sparkles, Trash2, TriangleAlert } from "lucide-react";
 import {
   ChartExploreCatalogTrigger,
   ChartExploreDrawer,
@@ -45,6 +45,7 @@ const CUSTOM_VIZ_SECTION_ID = "custom-viz";
 function CustomVizTile({
   item,
   onInsert,
+  onRemove,
   onInserted,
   onPaletteDragStart,
   onPaletteDragEnd,
@@ -52,6 +53,7 @@ function CustomVizTile({
 }: {
   item: AiVizArtifactMeta;
   onInsert: (payload: CustomVizInsertPayload) => void;
+  onRemove?: (artifactId: string) => void;
   onInserted?: () => void;
   onPaletteDragStart?: () => void;
   onPaletteDragEnd?: () => void;
@@ -100,7 +102,7 @@ function CustomVizTile({
         }
       }}
       className={cn(
-        "flex flex-col items-center gap-1.5 rounded-lg border border-transparent p-1.5 text-center transition-colors",
+        "relative flex flex-col items-center gap-1.5 rounded-lg border border-transparent p-1.5 text-center transition-colors",
         enableDrag ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
         "hover:border-brand-200 hover:bg-brand-50/60 dark:hover:border-brand-500/30 dark:hover:bg-brand-500/10",
         "focus-visible:outline-hidden focus-visible:ring-3 focus-visible:ring-brand-500/20",
@@ -108,6 +110,21 @@ function CustomVizTile({
       data-testid={`custom-viz-tile-${item.artifactId}`}
       title={warningHint}
     >
+      {onRemove ? (
+        <button
+          type="button"
+          className="absolute right-0 top-0 z-10 flex size-5 items-center justify-center rounded-md text-gray-400 hover:bg-error-50 hover:text-error-600 dark:hover:bg-error-500/10 dark:hover:text-error-400"
+          aria-label={`从组件库移除 ${label}`}
+          title="从组件库移除"
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            onRemove(item.artifactId);
+          }}
+        >
+          <Trash2 className="size-3" strokeWidth={2} aria-hidden />
+        </button>
+      ) : null}
       <span className="relative flex size-12 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-brand-500 dark:bg-white/[0.06] dark:text-brand-400">
         <Sparkles className="size-6" strokeWidth={1.75} aria-hidden />
         {complianceWarnings.length > 0 ? (
@@ -254,6 +271,7 @@ export function ChartPickerPopover({
   enableDrag = true,
   className,
 }: ChartPickerPopoverProps) {
+  const queryClient = useQueryClient();
   const [catalog, setCatalog] = useState<ChartTypeCatalogItem[] | null>(null);
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [activeSectionId, setActiveSectionId] = useState<string>("quota");
@@ -278,6 +296,14 @@ export function ChartPickerPopover({
     enabled: Boolean(onInsertCustomViz),
   });
   const customArtifacts = customArtifactsData?.items ?? [];
+  const handleRemoveCustomArtifact = useCallback(
+    (artifactId: string) => {
+      void deleteAiVizArtifact(artifactId).then(() => {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.aiViz.all });
+      });
+    },
+    [queryClient],
+  );
   const navSections = useMemo(
     () =>
       onInsertCustomViz
@@ -402,6 +428,7 @@ export function ChartPickerPopover({
                         key={item.artifactId}
                         item={item}
                         onInsert={onInsertCustomViz}
+                        onRemove={handleRemoveCustomArtifact}
                         onInserted={onInserted}
                         onPaletteDragStart={onPaletteDragStart}
                         onPaletteDragEnd={onPaletteDragEnd}

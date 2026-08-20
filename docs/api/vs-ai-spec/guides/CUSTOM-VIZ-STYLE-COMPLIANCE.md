@@ -5,7 +5,7 @@
 
 ## 责任分界
 
-| 层 | 谁负责 | 外来 AI 要做什么 |
+| 层 | 谁负责 | 集成项目 Agent 要做什么 |
 |----|--------|------------------|
 | **六块 chrome** | 平台 `CustomVizWidget` + `displayStyle` | **不要**在 bundle 里重复画标题/卡片背景 |
 | **看板继承** | 平台注入 `--dashboard-*` · `--vs-palette-*` | 条内主题色读变量，勿写死 `#hex` |
@@ -65,6 +65,7 @@ CSS 侧优先：
 `docs/api/vs-ai-spec/examples/custom-viz-*.json` 须 **零 warnings**（CI 门禁）。推荐复制：
 
 - 排名条：`custom-viz-ranking-bar-medal.json`
+- 动态趋势：`custom-viz-trend-line.json`
 - KPI 卡片：`custom-viz-pulse-kpi.json`
 - 环形进度：`custom-viz-ring-progress.json`
 

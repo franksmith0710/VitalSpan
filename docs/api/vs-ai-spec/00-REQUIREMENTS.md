@@ -1,16 +1,17 @@
-# 规范要求（L3 customViz · 必读）
+# 规范要求（L3 customViz · 工作流 ② 必读）
 
-解压后**先读 [START-HERE.md](./START-HERE.md)**，再读本文件（L3 细则）。不满足下列任一条 = 未对接成功。
+> **铁律** → [IRON-RULES.md](./IRON-RULES.md) · **工程定位** → [PACK-IDENTITY.md](./PACK-IDENTITY.md)  
+> 打开集成项目后**先读 [START-HERE.md](./START-HERE.md)**，再读本文件（L3 细则）。不满足下列任一条 = 未对接成功。
 
-> **外部 AI（DeepTalk 等）**：交付完成**只认 `artifactId`**。只 `write_file` 到本目录、桌面、`examples/`、`output/` 等任意路径 = **未完成**。必读 [§0](#0-对外暴露什么--上传到哪里) 与 [EXTERNAL-AUTHOR.md](./EXTERNAL-AUTHOR.md)。
+> **DeepTalk 集成 Agent**：交付完成**只认 `artifactId`**。只 `write_file` 到本目录、桌面、`examples/`、`output/` 等任意路径 = **未完成**。必读 [§0](#0-集成项目与平台落点) 与 [EXTERNAL-AUTHOR.md](./EXTERNAL-AUTHOR.md)。
 
-## 0. 对外暴露什么 / 上传到哪里
+## 0. 集成项目与平台落点
 
-VitalSpan 给外部的是 **本规范包**（例如 `vs-ai-spec-deeptalk-test/`），不是 VitalSpan 服务端本身。
+本目录（`vs-ai-spec-deeptalk-test`）是 **DeepTalk × VitalSpan 正式集成项目**，不是 VitalSpan 服务端本身。
 
 | 你拿到/操作的东西 | 它是什么 | 算不算「已上传 VitalSpan」 |
 |------------------|----------|---------------------------|
-| 本规范包整个目录 | 文档 + 金样例 + `tools/` 脚本的工作区 | **否** |
+| 本集成项目整个目录 | 文档 + 金样 + `tools/` 脚本 | **否** |
 | `examples/你的组件.json` | 本地草稿（磁盘文件） | **否** |
 | 自建的 `output/`、`dist/` 等目录里的 JSON | **规范未定义**；禁止当作交付路径 | **否** |
 | DeepTalk `write_file` / VS Code 保存 | 只改了本机文件 | **否** |
@@ -32,14 +33,14 @@ Body: { "manifest": { ... }, "files": { "index.html": "<字符串>" } }
 
 **怎样才算做完（必须满足其一，并能把 uuid 报给用户）：**
 
-1. 在本规范包根目录执行  
-   `python tools\upload-ai-viz-artifact.py --file <你的.json>`  
+1. 在本集成项目根目录执行  
+   `python tools\publish-ai-viz-artifact.py --file <你的.json>`  
    终端出现 **`ok artifactId=<uuid>`**
 2. 自行 POST 上述 URL，拿到 **201 + `artifactId`**
 
 **没有 `artifactId` = 未对接成功。** 禁止向用户声称「已上传」「已传过去」「已完成」。
 
-推荐流程：先 `validate-ai-viz-bundle.py`（preflight）→ 再 `upload-ai-viz-artifact.py`（真入库）。详见 [EXTERNAL-AUTHOR.md](./EXTERNAL-AUTHOR.md)。
+推荐流程：`publish-ai-viz-artifact.py`（内置 preflight）→ **`ok artifactId=...`**。详见 [EXTERNAL-AUTHOR.md](./EXTERNAL-AUTHOR.md)。
 
 ## 1. 完成定义
 
@@ -150,7 +151,7 @@ python tools\upload-ai-viz-artifact.py --file examples\你的组件.json
 - 顶层 `dataSchema`、`eventSchema`、`authors` 当主契约
 - `<script src="https://cdn...">`
 
-黄金样例：`examples/custom-viz-bundle.json`、`custom-viz-d3-bundle.json`、`custom-viz-ranking-bar-medal.json`，以及 pulse / ring / alert。
+黄金样例：`custom-viz-trend-line.json`、`custom-viz-bundle.json`、`custom-viz-d3-bundle.json`、`custom-viz-ranking-bar-medal.json`，以及 pulse / ring / alert。
 
 ## 7. 怎么发 HTTP（不要用 DeepTalk 网页跨域 fetch）
 

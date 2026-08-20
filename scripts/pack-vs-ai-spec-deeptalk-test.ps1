@@ -16,7 +16,7 @@ if (-not (Test-Path -LiteralPath $Source)) {
 $staging = Join-Path $env:TEMP ("vs-ai-spec-deeptalk-" + [guid]::NewGuid().ToString())
 New-Item -ItemType Directory -Path $staging | Out-Null
 try {
-  robocopy $Source $staging /E /XD __pycache__ .pytest_cache /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
+  robocopy $Source $staging /E /XD __pycache__ .pytest_cache examples\_work _work /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
   if ($LASTEXITCODE -ge 8) {
     throw "robocopy staging failed with exit code $LASTEXITCODE"
   }
