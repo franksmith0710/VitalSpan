@@ -1,7 +1,6 @@
-# START HERE — DeepTalk 集成项目总入口
+# START HERE — 外部 AI 必读总入口
 
-> **铁律（必读）** → [IRON-RULES.md](./IRON-RULES.md)  
-> **工程定位** → [PACK-IDENTITY.md](./PACK-IDENTITY.md)（DeepTalk 集成项目 × VitalSpan 平台能力 = 一体）  
+> **先读 [PACK-IDENTITY.md](./PACK-IDENTITY.md)**：本目录是 **集成规范包**，不是组件工程项目。  
 > **三条工作流必须分开** → [guides/THREE-WORKFLOWS.md](./guides/THREE-WORKFLOWS.md)
 
 ## 0. 三条线（不要混）

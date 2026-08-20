@@ -55,6 +55,12 @@
 | 演化 SOP（只读） | `.cursor/automate/skills/` |
 | 架构巡检 | `arch-inspect/` · `arch-inspect.config.yaml` |
 
+## DeepTalk × VitalSpan 一体集成（铁律）
+
+- 真源：`docs/api/vs-ai-spec/IRON-RULES.md` · Cursor：`.cursor/rules/deeptalk-vitalspan-integration.mdc`
+- `vs-ai-spec-deeptalk-test` = DeepTalk **正式集成项目**；VitalSpan = **平台能力**（API/组件库/大屏/渲染）
+- ② 完成 = **`artifactId`**；③ 完成 = **`dashboardId`**；`write_file`  alone ≠ 打通
+
 ## 其他长期约定
 
 - `goal.md` 仅经 **create-evolution-goal** 人工修订

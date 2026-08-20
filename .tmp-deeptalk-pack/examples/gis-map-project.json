@@ -1,10 +1,9 @@
 {
   "chartType": "gis-map",
-  "title": "全球 PMTiles GIS 底图示例",
+  "title": "离线 GIS 底图示例",
   "nativeBody": {
     "gisProject": {
-      "basemap": "pmtiles",
-      "tileServiceId": "planet-z15",
+      "basemap": "china-provinces",
       "labelLang": "zh-Hans",
       "projection": "mercator",
       "view": {

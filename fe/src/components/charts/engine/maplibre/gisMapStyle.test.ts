@@ -1,14 +1,12 @@
 import { describe, expect, it } from "vitest";
-import chinaProvincesGeo from "@/assets/geo/china-provinces.json";
 import {
   DEFAULT_GIS_PROJECT,
   readGisProject,
 } from "@/components/charts/engine/maplibre/gisProject";
 import {
-  CHINA_PROVINCES_SOURCE_ID,
-  buildGisMapStyle,
+  buildPmtilesStyle,
   normalizeProtomapsSpriteUrl,
-  resolveGisMapStyleFromProject,
+  PMTILES_SOURCE_ID,
 } from "@/components/charts/engine/maplibre/gisMapStyle";
 import { gisMapTransformRequest } from "@/components/charts/engine/maplibre/gisMapTransformRequest";
 
@@ -17,36 +15,30 @@ describe("gisProject", () => {
     expect(readGisProject(undefined)).toEqual(DEFAULT_GIS_PROJECT);
   });
 
-  it("rejects unknown basemap ids", () => {
+  it("normalizes unknown basemap ids to pmtiles", () => {
     expect(
       readGisProject({
         chartType: "gis-map",
         nativeBody: { gisProject: { basemap: "openfreemap", view: { center: [1, 2], zoom: 4 } } },
       }).basemap,
-    ).toBe("china-provinces");
+    ).toBe("pmtiles");
   });
 });
 
 describe("gisMapStyle", () => {
-  it("builds blank style without geo sources", () => {
-    const style = buildGisMapStyle({ basemap: "blank" });
-    expect(Object.keys(style.sources ?? {})).toHaveLength(0);
-    expect(style.layers?.[0]?.type).toBe("background");
-  });
-
-  it("builds china-provinces style with fill and line layers", () => {
-    const style = resolveGisMapStyleFromProject(
-      { basemap: "china-provinces" },
-      chinaProvincesGeo as GeoJSON.FeatureCollection,
+  it("builds pmtiles style with protomaps source", () => {
+    const style = buildPmtilesStyle(
+      {
+        id: "planet-z15",
+        name: "Planet Z15 Global",
+        pmtilesUrl: "http://localhost:8080/planet-z15-20260817.pmtiles",
+        glyphsUrl: "https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf",
+        spriteUrl: "https://protomaps.github.io/basemaps-assets/sprites/v4/light",
+      },
+      "zh-Hans",
     );
-    expect(style.sources?.[CHINA_PROVINCES_SOURCE_ID]).toBeDefined();
-    expect(style.layers?.some((layer) => layer.id === "vs-provinces-fill")).toBe(true);
-  });
-
-  it("requires async resolve for pmtiles basemap", () => {
-    expect(() =>
-      resolveGisMapStyleFromProject({ basemap: "pmtiles", tileServiceId: "planet-z15" }),
-    ).toThrow(/async tile service resolve/);
+    expect(style.sources?.[PMTILES_SOURCE_ID]).toBeDefined();
+    expect(style.layers?.length).toBeGreaterThan(0);
   });
 
   it("normalizes legacy protomaps sprite urls", () => {

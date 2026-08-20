@@ -3,7 +3,7 @@
 > VitalSpan 混合方案 C：内置图表配置 + 库源码自定义组件（Base 加载）+ 大屏 layout 拼接。  
 > 数据绑定由用户在平台手动完成（非 AI 自动生成 SQL）。
 
-**👉 DeepTalk 集成项目入口：[START-HERE.md](./START-HERE.md)** · **铁律：[IRON-RULES.md](./IRON-RULES.md)**
+**👉 外部 AI 从这里开始：[START-HERE.md](./START-HERE.md)**（三条路径 + 完成判据 + 一键命令）
 
 **完成标准摘要**：
 
@@ -17,13 +17,11 @@
 
 ## 三条创作路径
 
-| 路径 | AI 产出 | 落到平台 |
+| 路径 | AI 产出 | 平台能力 |
 |------|---------|----------|
-| **① L1/L2 内置图** | `chartConfig` | 大屏 layout 内联，**不进组件库** |
-| **② L3 组件库** | html/d3 bundle | **`POST /ai-viz/artifacts` → 组件库 `artifactId`** |
-| **③ 大屏编排** | `layoutJson` v2 | **`editor-save`**；customViz **引用** ② 或库中已有 |
-
-详见 [guides/THREE-WORKFLOWS.md](./guides/THREE-WORKFLOWS.md)。
+| **L1/L2 配置已有图** | `chartConfig` + `nativeBody.deStyle` / `gisProject` | 50 种 `chartType`（含 `gis-map`）；见 `capability-manifest.json` |
+| **L3 全新组件** | HTML 源码 bundle + `manifest.json`（`runtime`: `html` 或 `d3`） | `POST/PUT /api/v1/ai-viz/artifacts` → Base 挂载并注入 `host.vsCv`（含平台 d3）；见 [PROTOCOL.md](./PROTOCOL.md) · [guides/RENDERERS.md](./guides/RENDERERS.md) |
+| **拼大屏** | `layoutJson` v2（混排 widget） | `PUT /api/v1/dashboards/{id}/editor-save` |
 
 ## 推荐工作流
 
@@ -39,7 +37,6 @@
 |------|------|
 | [START-HERE.md](./START-HERE.md) | **总入口**：三条路径、完成判据、一键命令 |
 | [PACK-IDENTITY.md](./PACK-IDENTITY.md) | **工程定位**：规范包 ≠ 组件项目仓 |
-| [guides/THREE-WORKFLOWS.md](./guides/THREE-WORKFLOWS.md) | **三条线分开**：② 组件库 · ③ 大屏复用 |
 | [DEEPTALK-AGENT-PROMPT.md](./DEEPTALK-AGENT-PROMPT.md) | 贴进 DeepTalk 的系统提示词 |
 | [00-REQUIREMENTS.md](./00-REQUIREMENTS.md) | **L3 硬要求**：必须 HTTP POST、合法 bundle |
 | [EXTERNAL-AUTHOR.md](./EXTERNAL-AUTHOR.md) | **L3 Runbook**：validate → upload → artifactId |

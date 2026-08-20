@@ -1,22 +1,14 @@
 import { layers, namedFlavor } from "@protomaps/basemaps";
 import type { StyleSpecification } from "maplibre-gl";
-import { normalizeOfflineGeoGeometry } from "@/components/charts/engine/geo/geoProjection";
-import type { GisLabelLang, GisProject } from "@/components/charts/engine/maplibre/gisProject";
+import type { GisLabelLang } from "@/components/charts/engine/maplibre/gisProject";
 import type { TileServiceResolve } from "@/lib/tileServices";
 
-export const CHINA_PROVINCES_SOURCE_ID = "vs-china-provinces";
 export const GIS_OVERLAY_SOURCE_ID = "vs-gis-overlay";
 export const GIS_OVERLAY_CIRCLE_LAYER_ID = "vs-gis-overlay-circles";
 export const GIS_OVERLAY_LABEL_LAYER_ID = "vs-gis-overlay-labels";
 export const PMTILES_SOURCE_ID = "protomaps";
 
 const PROTOMAPS_LIGHT_SPRITE = "https://protomaps.github.io/basemaps-assets/sprites/v4/light";
-
-/** 离线省界初始视野（WGS84）。 */
-export const CHINA_PROVINCES_BOUNDS: [[number, number], [number, number]] = [
-  [73.0, 18.0],
-  [135.0, 53.5],
-];
 
 /** 兼容旧登记/默认值中的错误 sprite 路径（v4/light-sprite → sprites/v4/light）。 */
 export function normalizeProtomapsSpriteUrl(spriteUrl: string | undefined): string {
@@ -26,57 +18,6 @@ export function normalizeProtomapsSpriteUrl(spriteUrl: string | undefined): stri
     return PROTOMAPS_LIGHT_SPRITE;
   }
   return trimmed;
-}
-
-type FeatureCollection = GeoJSON.FeatureCollection;
-
-type BuildGisMapStyleInput = {
-  basemap: GisProject["basemap"];
-  provincesGeoJson?: FeatureCollection;
-  backgroundColor?: string;
-};
-
-export function buildGisMapStyle(input: BuildGisMapStyleInput): StyleSpecification {
-  const background = input.backgroundColor ?? "#f8fafc";
-  if (input.basemap === "blank") {
-    return {
-      version: 8,
-      sources: {},
-      layers: [{ id: "vs-background", type: "background", paint: { "background-color": background } }],
-    };
-  }
-  const data = input.provincesGeoJson;
-  if (!data) {
-    throw new Error("china-provinces basemap requires GeoJSON data");
-  }
-  const normalized: FeatureCollection = {
-    type: "FeatureCollection",
-    features: data.features.map((feature) => ({
-      ...feature,
-      geometry: normalizeOfflineGeoGeometry(feature.geometry),
-    })),
-  };
-  return {
-    version: 8,
-    sources: {
-      [CHINA_PROVINCES_SOURCE_ID]: { type: "geojson", data: normalized },
-    },
-    layers: [
-      { id: "vs-background", type: "background", paint: { "background-color": background } },
-      {
-        id: "vs-provinces-fill",
-        type: "fill",
-        source: CHINA_PROVINCES_SOURCE_ID,
-        paint: { "fill-color": "#cbd5e1", "fill-opacity": 0.92 },
-      },
-      {
-        id: "vs-provinces-line",
-        type: "line",
-        source: CHINA_PROVINCES_SOURCE_ID,
-        paint: { "line-color": "#475569", "line-width": 1.1 },
-      },
-    ],
-  };
 }
 
 export function buildPmtilesStyle(
@@ -100,22 +41,9 @@ export function buildPmtilesStyle(
   };
 }
 
-export function resolveGisMapStyleFromProject(
-  project: GisProject,
-  provincesGeoJson?: FeatureCollection,
-): StyleSpecification {
-  if (project.basemap === "pmtiles") {
-    throw new Error("pmtiles basemap requires async tile service resolve");
-  }
-  return buildGisMapStyle({
-    basemap: project.basemap,
-    provincesGeoJson: project.basemap === "china-provinces" ? provincesGeoJson : undefined,
-  });
-}
-
 export function appendGisOverlayLayers(
   style: StyleSpecification,
-  overlay: FeatureCollection,
+  overlay: GeoJSON.FeatureCollection,
 ): StyleSpecification {
   return {
     ...style,

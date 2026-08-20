@@ -1,6 +1,7 @@
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 
-export type GisBasemapId = "blank" | "china-provinces" | "pmtiles";
+/** gis-map 仅支持管理员登记的全球 PMTiles 外部底图。 */
+export type GisBasemapId = "pmtiles";
 export type GisLabelLang = "zh-Hans" | "en";
 export type GisProjection = "mercator" | "globe";
 
@@ -28,15 +29,16 @@ export type GisProject = {
   view?: GisProjectView;
 };
 
+/** 本地/演示默认登记的全球 PMTiles 服务（运维 register 脚本同名 id）。 */
+export const DEFAULT_PMTILES_TILE_SERVICE_ID = "planet-z15";
+
 export const DEFAULT_GIS_PROJECT: GisProject = {
-  basemap: "china-provinces",
+  basemap: "pmtiles",
+  tileServiceId: DEFAULT_PMTILES_TILE_SERVICE_ID,
   labelLang: "zh-Hans",
   projection: "mercator",
   view: { center: [104.0, 35.0], zoom: 3.2 },
 };
-
-const ALLOWED_BASEMAPS = new Set<GisBasemapId>(["blank", "china-provinces", "pmtiles"]);
-const CHINA_LAYER_ID = "vitalspan-china-provinces";
 
 export function readGisProject(config: ChartViewConfig | undefined): GisProject {
   const raw = config?.nativeBody?.gisProject;
@@ -67,14 +69,10 @@ export function writeGisProject(
 
 function normalizeGisProject(raw: unknown): GisProject {
   const candidate = raw as Partial<GisProject>;
-  const basemap =
-    typeof candidate.basemap === "string" && ALLOWED_BASEMAPS.has(candidate.basemap as GisBasemapId)
-      ? (candidate.basemap as GisBasemapId)
-      : DEFAULT_GIS_PROJECT.basemap;
   const tileServiceId =
     typeof candidate.tileServiceId === "string" && candidate.tileServiceId.trim()
       ? candidate.tileServiceId.trim()
-      : undefined;
+      : DEFAULT_PMTILES_TILE_SERVICE_ID;
   const labelLang =
     candidate.labelLang === "en" || candidate.labelLang === "zh-Hans"
       ? candidate.labelLang
@@ -86,8 +84,8 @@ function normalizeGisProject(raw: unknown): GisProject {
   const view = normalizeGisView(candidate.view) ?? DEFAULT_GIS_PROJECT.view;
   const fog = normalizeGisFog(candidate.fog);
   return {
-    basemap,
-    tileServiceId: basemap === "pmtiles" ? tileServiceId : undefined,
+    basemap: "pmtiles",
+    tileServiceId,
     labelLang,
     projection,
     fog,
@@ -96,19 +94,9 @@ function normalizeGisProject(raw: unknown): GisProject {
 }
 
 function migrateGeolibreProject(raw: unknown): GisProject {
-  const project = raw as {
-    layers?: Array<{ id?: string; metadata?: { vitalspanTemplate?: string } }>;
-    mapView?: { center?: [number, number]; zoom?: number };
-  };
-  const hasChinaLayer =
-    Array.isArray(project.layers) &&
-    project.layers.some(
-      (layer) =>
-        layer.id === CHINA_LAYER_ID || layer.metadata?.vitalspanTemplate === "china-provinces",
-    );
-  const basemap: GisBasemapId = hasChinaLayer ? "china-provinces" : "blank";
+  const project = raw as { mapView?: { center?: [number, number]; zoom?: number } };
   const view = normalizeGisView(project.mapView) ?? DEFAULT_GIS_PROJECT.view;
-  return { ...DEFAULT_GIS_PROJECT, basemap, view };
+  return { ...DEFAULT_GIS_PROJECT, view };
 }
 
 function normalizeGisView(input: unknown): GisProjectView | undefined {
@@ -154,14 +142,11 @@ export function gisOverlayFieldsReady(config: ChartViewConfig): boolean {
   return dims.length >= 2;
 }
 
-/** 运行时实际渲染的底图：PMTiles 未就绪时回退离线省界，保证默认可用 */
+/** PMTiles 样式就绪后才渲染；未就绪时不回退离线底图。 */
 export function resolveGisRenderableBasemap(
   project: GisProject,
   pmtilesReady: boolean,
-): Exclude<GisBasemapId, "pmtiles"> | "pmtiles" {
-  if (project.basemap === "pmtiles" && project.tileServiceId && pmtilesReady) {
-    return "pmtiles";
-  }
-  if (project.basemap === "blank") return "blank";
-  return "china-provinces";
+): "pmtiles" | null {
+  if (!project.tileServiceId || !pmtilesReady) return null;
+  return "pmtiles";
 }

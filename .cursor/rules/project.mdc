@@ -41,6 +41,7 @@ alwaysApply: true
 | 打包/部署/环境选源 | @.cursor/rules/delivery.mdc |
 | 后端 FastAPI | @.cursor/rules/backend-fastapi.mdc |
 | 前端 fe/ | @.cursor/rules/fe-ui.mdc · `docs/ui/` |
+| DeepTalk × VitalSpan 一体集成 | @.cursor/rules/deeptalk-vitalspan-integration.mdc · `docs/api/vs-ai-spec/IRON-RULES.md` |
 | 文档同步 | @.cursor/rules/prd-sync.mdc · @.cursor/rules/docs-layer.mdc |
 | 项目身份摘要 | @.cursor/rules/vitalspan-project.mdc |
 

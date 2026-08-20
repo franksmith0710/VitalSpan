@@ -14,27 +14,20 @@ import {
   ChartInspectorSection,
   INSPECTOR_CTRL,
   INSPECTOR_SECTION_GAP,
-  InspectorSwitchRow,
 } from "@/components/dashboard/inspectorCompact";
 import {
+  DEFAULT_PMTILES_TILE_SERVICE_ID,
   readGisProject,
   writeGisProject,
-  type GisBasemapId,
   type GisLabelLang,
   type GisProjection,
 } from "@/components/charts/engine/maplibre/gisProject";
 import { listTileServices } from "@/lib/tileServices";
 
-const OFFLINE_BASEMAP_OPTIONS: { value: Exclude<GisBasemapId, "pmtiles">; label: string }[] = [
-  { value: "china-provinces", label: "离线中国省界（默认）" },
-  { value: "blank", label: "空白底图" },
-];
-
 export function ChartGisMapProjectPanel() {
   const { cfg, onChange } = useChartInspector();
   const project = readGisProject(cfg);
   const view = project.view ?? { center: [104, 35] as [number, number], zoom: 3.2 };
-  const useGlobalPmtiles = project.basemap === "pmtiles";
   const {
     data: tileServices = [],
     isError: tileServicesError,
@@ -61,6 +54,18 @@ export function ChartGisMapProjectPanel() {
     setZoom(String(view.zoom));
   }, [view.center, view.zoom]);
 
+  useEffect(() => {
+    if (tileServicesLoading || enabledTileServices.length === 0) return;
+    const currentId = project.tileServiceId;
+    if (currentId && enabledTileServices.some((service) => service.id === currentId)) return;
+    const preferred =
+      enabledTileServices.find((service) => service.id === DEFAULT_PMTILES_TILE_SERVICE_ID) ??
+      enabledTileServices[0];
+    if (preferred && preferred.id !== currentId) {
+      onChange(writeGisProject(cfg, { tileServiceId: preferred.id }));
+    }
+  }, [cfg, enabledTileServices, onChange, project.tileServiceId, tileServicesLoading]);
+
   const commitView = (next: { center?: [number, number]; zoom?: number; pitch?: number }) => {
     patchProject({
       view: {
@@ -72,121 +77,78 @@ export function ChartGisMapProjectPanel() {
     });
   };
 
-  const offlineBasemap: Exclude<GisBasemapId, "pmtiles"> =
-    project.basemap === "blank" ? "blank" : "china-provinces";
-
   return (
     <ChartInspectorSection title="GIS 底图" data-testid="chart-gis-map-project-panel">
       <div className={INSPECTOR_SECTION_GAP}>
         <p className="text-theme-xs text-gray-500">
-          默认使用离线省界，无需任何外部服务。若客户需要全球高清底图，由运维单独部署 PMTiles 外部服务并在平台登记后，再在此处选用。
+          GIS 地图使用管理员登记的全球 PMTiles 外部底图。瓦片由运维独立部署（如 Planet Z15）；未登记服务时无法出图。
         </p>
 
-        <div className="grid gap-1.5">
-          <Label className="text-theme-xs text-gray-500">默认底图</Label>
+        <div className="grid gap-1.5 rounded-lg border border-gray-200 p-2 dark:border-gray-800">
+          <Label className="text-theme-xs text-gray-500">全球 PMTiles 服务</Label>
           <Select
-            value={offlineBasemap}
-            disabled={useGlobalPmtiles}
-            onValueChange={(basemap) =>
-              patchProject({ basemap: basemap as Exclude<GisBasemapId, "pmtiles"> })
-            }
+            value={project.tileServiceId ?? ""}
+            onValueChange={(tileServiceId) => patchProject({ tileServiceId })}
           >
-            <SelectTrigger className={INSPECTOR_CTRL} aria-label="默认底图">
-              <SelectValue />
+            <SelectTrigger className={INSPECTOR_CTRL} aria-label="全球 PMTiles 服务">
+              <SelectValue placeholder="选择已登记的全球底图服务" />
             </SelectTrigger>
             <SelectContent>
-              {OFFLINE_BASEMAP_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
+              {enabledTileServices.map((service) => (
+                <SelectItem key={service.id} value={service.id}>
+                  {service.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-        </div>
+          {tileServicesLoading ? (
+            <p className="text-theme-xs text-gray-500">正在加载已登记的 PMTiles 服务…</p>
+          ) : tileServicesError ? (
+            <p className="text-theme-xs text-amber-600 dark:text-amber-400">
+              无法加载 PMTiles 服务列表，请确认已登录且后端可用。
+            </p>
+          ) : enabledTileServices.length === 0 ? (
+            <p className="text-theme-xs text-amber-600 dark:text-amber-400">
+              尚未登记 PMTiles 外部服务。请联系管理员部署并登记 tileServiceId。
+            </p>
+          ) : !project.tileServiceId ? (
+            <p className="text-theme-xs text-amber-600 dark:text-amber-400">
+              请选择已登记的全球底图服务。
+            </p>
+          ) : null}
 
-        <InspectorSwitchRow
-          label="选用全球 PMTiles 外部底图（可选）"
-          checked={useGlobalPmtiles}
-          onCheckedChange={(enabled) => {
-            if (enabled) {
-              const defaultServiceId =
-                project.tileServiceId ??
-                enabledTileServices[0]?.id ??
-                tileServices[0]?.id;
-              patchProject({ basemap: "pmtiles", tileServiceId: defaultServiceId });
-            } else {
-              patchProject({ basemap: offlineBasemap, tileServiceId: undefined, projection: "mercator" });
-            }
-          }}
-        />
-
-        {useGlobalPmtiles ? (
-          <div className="grid gap-1.5 rounded-lg border border-gray-200 p-2 dark:border-gray-800">
-            <Label className="text-theme-xs text-gray-500">全球 PMTiles 服务</Label>
+          <div className="grid gap-1.5">
+            <Label className="text-theme-xs text-gray-500">标注语言</Label>
             <Select
-              value={project.tileServiceId ?? ""}
-              onValueChange={(tileServiceId) => patchProject({ basemap: "pmtiles", tileServiceId })}
+              value={project.labelLang ?? "zh-Hans"}
+              onValueChange={(labelLang) => patchProject({ labelLang: labelLang as GisLabelLang })}
             >
-              <SelectTrigger className={INSPECTOR_CTRL} aria-label="全球 PMTiles 服务">
-                <SelectValue placeholder="选择已登记的全球底图服务" />
+              <SelectTrigger className={INSPECTOR_CTRL} aria-label="标注语言">
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {enabledTileServices.map((service) => (
-                  <SelectItem key={service.id} value={service.id}>
-                    {service.name}
-                  </SelectItem>
-                ))}
+                <SelectItem value="zh-Hans">简体中文</SelectItem>
+                <SelectItem value="en">English</SelectItem>
               </SelectContent>
             </Select>
-            {tileServicesLoading ? (
-              <p className="text-theme-xs text-gray-500">正在加载已登记的 PMTiles 服务…</p>
-            ) : tileServicesError ? (
-              <p className="text-theme-xs text-amber-600 dark:text-amber-400">
-                无法加载 PMTiles 服务列表，请确认已登录且后端可用。
-              </p>
-            ) : enabledTileServices.length === 0 ? (
-              <p className="text-theme-xs text-amber-600 dark:text-amber-400">
-                尚未登记 PMTiles 外部服务。请联系管理员部署并登记 tileServiceId；未部署时保持关闭即可继续使用离线底图。
-              </p>
-            ) : !project.tileServiceId ? (
-              <p className="text-theme-xs text-amber-600 dark:text-amber-400">
-                请选择已登记的全球底图服务。
-              </p>
-            ) : null}
-
-            <div className="grid gap-1.5">
-              <Label className="text-theme-xs text-gray-500">标注语言</Label>
-              <Select
-                value={project.labelLang ?? "zh-Hans"}
-                onValueChange={(labelLang) => patchProject({ labelLang: labelLang as GisLabelLang })}
-              >
-                <SelectTrigger className={INSPECTOR_CTRL} aria-label="标注语言">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="zh-Hans">简体中文</SelectItem>
-                  <SelectItem value="en">English</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid gap-1.5">
-              <Label className="text-theme-xs text-gray-500">投影</Label>
-              <Select
-                value={project.projection ?? "mercator"}
-                onValueChange={(projection) => patchProject({ projection: projection as GisProjection })}
-              >
-                <SelectTrigger className={INSPECTOR_CTRL} aria-label="投影">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="mercator">平面墨卡托</SelectItem>
-                  <SelectItem value="globe">球面地球</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
-        ) : null}
+
+          <div className="grid gap-1.5">
+            <Label className="text-theme-xs text-gray-500">投影</Label>
+            <Select
+              value={project.projection ?? "mercator"}
+              onValueChange={(projection) => patchProject({ projection: projection as GisProjection })}
+            >
+              <SelectTrigger className={INSPECTOR_CTRL} aria-label="投影">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="mercator">平面墨卡托</SelectItem>
+                <SelectItem value="globe">球面地球</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
         <div className="grid grid-cols-2 gap-2">
           <div className="grid gap-1.5">

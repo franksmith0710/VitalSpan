@@ -166,8 +166,8 @@ flowchart TB
 #### B. GIS 图（`gis-map` · chartType）
 
 - **引擎**：平台内 **薄 MapLibre**（`GisMapView` 懒加载 `maplibre-gl`）；**不做** iframe / sandbox / GeoLibre 整应用
-- **默认底图**：`blank`（空白）或 `china-provinces`（离线中国省界 GeoJSON 矢量层）；**禁止**默认 OpenFreeMap / 高德 / 天地图 / Cesium Ion
-- **全球 PMTiles（可选外部服务）**：**客户选用**；管理员在元库登记 `tileServiceId`（`viz_tile_services`）；前端经 `GET /api/v1/tile-services/{id}/resolve` 获取 URL；**制品不进主 release**，由运维独立部署 HTTP Range 服务（见 `docker/pmtiles-tile-server/` · [pmtiles-tile-server.md](services/pmtiles-tile-server.md)）
+- **底图**：**仅**管理员登记的全球 PMTiles（`basemap: "pmtiles"` + `tileServiceId`）；默认 `planet-z15`（本地演示登记 id）；**禁止**离线省界/空白底图、OpenFreeMap / 高德 / 天地图 / Cesium Ion
+- **部署**：PMTiles 制品不进主 release，由运维独立部署 HTTP Range 服务（见 `docker/pmtiles-tile-server/` · [pmtiles-tile-server.md](services/pmtiles-tile-server.md)）；前端经 `GET /api/v1/tile-services/{id}/resolve` 获取 URL
 - **配置**：layout 存 `nativeBody.gisProject`（`basemap` · `view` · 可选 `tileServiceId` · `labelLang` · `projection` · `fog`）；加载时兼容读取旧 `geolibreProject`
 - **纯底图模式**：不绑 Dataset 也可出图；Dataset 绑定为**可选叠加层**（经/纬字段 → 点位 GeoJSON）
 - **AI**：vs-ai-spec **L1/L2** 产出 `gisProject` 补丁；禁止 L3 customViz 内嵌 MapLibre。L3 仅 `html`/`d3` runtime，使用平台注入的 `host.vsCv.d3`（d3@7.9.0），禁止内联 d3 整库

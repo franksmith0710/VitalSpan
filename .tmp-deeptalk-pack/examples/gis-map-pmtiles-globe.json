@@ -1,15 +1,18 @@
 {
   "chartType": "gis-map",
-  "title": "全球 PMTiles GIS 底图示例",
+  "title": "全球 PMTiles + 球面地球",
   "nativeBody": {
     "gisProject": {
       "basemap": "pmtiles",
       "tileServiceId": "planet-z15",
       "labelLang": "zh-Hans",
-      "projection": "mercator",
+      "projection": "globe",
+      "fog": {},
       "view": {
         "center": [104.0, 35.0],
-        "zoom": 3.2
+        "zoom": 2.5,
+        "pitch": 0,
+        "bearing": 0
       }
     }
   }

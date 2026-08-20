@@ -1,13 +1,10 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
-import chinaProvincesGeo from "@/assets/geo/china-provinces.json";
 import type { ChartEngineViewProps } from "@/components/charts/engine/types";
 import { buildGisOverlayGeoJson } from "@/components/charts/engine/maplibre/gisMapOverlay";
 import { readGisProject, resolveGisRenderableBasemap } from "@/components/charts/engine/maplibre/gisProject";
 import {
   appendGisOverlayLayers,
   buildPmtilesStyle,
-  CHINA_PROVINCES_BOUNDS,
-  resolveGisMapStyleFromProject,
 } from "@/components/charts/engine/maplibre/gisMapStyle";
 import { gisMapTransformRequest } from "@/components/charts/engine/maplibre/gisMapTransformRequest";
 import { registerPmtilesProtocol } from "@/components/charts/engine/maplibre/pmtilesProtocol";
@@ -17,7 +14,6 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 type MapLibreModule = typeof import("maplibre-gl");
 type StyleSpecification = import("maplibre-gl").StyleSpecification;
-type FeatureCollection = GeoJSON.FeatureCollection;
 
 let maplibreModulePromise: Promise<MapLibreModule> | null = null;
 
@@ -58,31 +54,31 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   );
   const [pmtilesStyle, setPmtilesStyle] = useState<StyleSpecification | null>(null);
   const [pmtilesLoading, setPmtilesLoading] = useState(false);
-  const [pmtilesFallbackHint, setPmtilesFallbackHint] = useState<string | null>(null);
+  const [pmtilesErrorHint, setPmtilesErrorHint] = useState<string | null>(null);
   const [mapErrorHint, setMapErrorHint] = useState<string | null>(null);
 
-  const wantsPmtiles = project.basemap === "pmtiles" && Boolean(project.tileServiceId);
+  const tileServiceId = project.tileServiceId;
 
   useEffect(() => {
-    if (!wantsPmtiles || !project.tileServiceId) {
+    if (!tileServiceId) {
       setPmtilesStyle(null);
       setPmtilesLoading(false);
-      setPmtilesFallbackHint(null);
+      setPmtilesErrorHint("尚未选择 PMTiles 外部底图服务");
       return;
     }
     let cancelled = false;
     setPmtilesLoading(true);
-    setPmtilesFallbackHint(null);
-    void resolveTileService(project.tileServiceId)
+    setPmtilesErrorHint(null);
+    void resolveTileService(tileServiceId)
       .then((resolved) => {
         if (cancelled) return;
         setPmtilesStyle(buildPmtilesStyle(resolved, project.labelLang ?? "zh-Hans"));
-        setPmtilesFallbackHint(null);
+        setPmtilesErrorHint(null);
       })
       .catch(() => {
         if (cancelled) return;
         setPmtilesStyle(null);
-        setPmtilesFallbackHint("外部 PMTiles 底图暂不可用，已显示离线省界");
+        setPmtilesErrorHint("全球 PMTiles 底图暂不可用，请确认外部服务与平台登记");
       })
       .finally(() => {
         if (!cancelled) setPmtilesLoading(false);
@@ -90,7 +86,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     return () => {
       cancelled = true;
     };
-  }, [project.labelLang, project.tileServiceId, wantsPmtiles]);
+  }, [project.labelLang, tileServiceId]);
 
   const renderBasemap = useMemo(
     () => resolveGisRenderableBasemap(project, Boolean(pmtilesStyle)),
@@ -98,24 +94,15 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   );
 
   const style = useMemo(() => {
-    let base: StyleSpecification;
-    if (renderBasemap === "pmtiles" && pmtilesStyle) {
-      base = pmtilesStyle;
-    } else {
-      base = resolveGisMapStyleFromProject(
-        { ...project, basemap: renderBasemap === "pmtiles" ? "china-provinces" : renderBasemap },
-        renderBasemap === "china-provinces" ? (chinaProvincesGeo as FeatureCollection) : undefined,
-      );
-    }
-    return overlayGeoJson ? appendGisOverlayLayers(base, overlayGeoJson) : base;
-  }, [overlayGeoJson, pmtilesStyle, project, renderBasemap]);
+    if (!pmtilesStyle) return null;
+    return overlayGeoJson ? appendGisOverlayLayers(pmtilesStyle, overlayGeoJson) : pmtilesStyle;
+  }, [overlayGeoJson, pmtilesStyle]);
 
-  const useGlobe = renderBasemap === "pmtiles" && project.projection === "globe";
+  const useGlobe = project.projection === "globe";
 
   useEffect(() => {
     const host = hostRef.current;
-    if (!host || !style) return;
-    if (wantsPmtiles && !pmtilesStyle) return;
+    if (!host || !style || renderBasemap !== "pmtiles") return;
 
     let cancelled = false;
     let map: InstanceType<MapLibreModule["Map"]> | null = null;
@@ -152,9 +139,6 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       map.once("load", () => {
         if (cancelled || !map) return;
         setMapErrorHint(null);
-        if (renderBasemap === "china-provinces") {
-          map.fitBounds(CHINA_PROVINCES_BOUNDS, { padding: 24, duration: 0 });
-        }
         if (useGlobe) {
           applyGlobeAtmosphere(map, "globe", project.fog);
         }
@@ -171,7 +155,6 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     };
   }, [
     onPaintReady,
-    pmtilesStyle,
     project.fog,
     project.view?.bearing,
     project.view?.center?.[0],
@@ -181,7 +164,6 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     renderBasemap,
     style,
     useGlobe,
-    wantsPmtiles,
   ]);
 
   useEffect(() => {
@@ -194,6 +176,8 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     return () => observer?.disconnect();
   }, [style]);
 
+  const statusHint = pmtilesErrorHint ?? mapErrorHint;
+
   return (
     <div
       className={cn("relative overflow-hidden rounded-md", fill ? "h-full w-full" : undefined)}
@@ -202,8 +186,8 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       <div
         ref={hostRef}
         data-testid="gis-map-view"
-        data-basemap={renderBasemap}
-        data-requested-basemap={project.basemap}
+        data-basemap={renderBasemap ?? "pending"}
+        data-requested-basemap="pmtiles"
         className="h-full w-full"
         role="img"
         aria-label={ariaLabel ?? "GIS 地图"}
@@ -213,14 +197,9 @@ function GisMapViewInner(props: ChartEngineViewProps) {
           正在加载全球底图…
         </div>
       ) : null}
-      {pmtilesFallbackHint ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-amber-500/90 px-2 py-1 text-center text-[10px] text-white">
-          {pmtilesFallbackHint}
-        </div>
-      ) : null}
-      {mapErrorHint ? (
+      {statusHint ? (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[3] bg-red-600/90 px-2 py-1 text-center text-[10px] text-white">
-          {mapErrorHint}
+          {statusHint}
         </div>
       ) : null}
     </div>
