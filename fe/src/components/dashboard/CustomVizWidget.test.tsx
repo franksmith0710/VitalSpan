@@ -6,6 +6,15 @@ import { CustomVizWidget } from "./CustomVizWidget";
 import { rewriteBundleCss } from "./customVizHost";
 import { coerceLayoutWidget } from "./layoutUtils";
 
+const useElementSizeMock = vi.fn(() => ({
+  ref: vi.fn(),
+  size: { width: 320, height: 200 },
+}));
+
+vi.mock("@/hooks/useElementSize", () => ({
+  useElementSize: () => useElementSizeMock(),
+}));
+
 vi.mock("@/lib/api", () => ({
   fetchWithTimeout: vi.fn(async () => ({
     ok: true,
@@ -35,6 +44,10 @@ vi.mock("@/lib/appBasePath", () => ({
 }));
 
 afterEach(() => {
+  useElementSizeMock.mockReturnValue({
+    ref: vi.fn(),
+    size: { width: 320, height: 200 },
+  });
   vi.mocked(useChartExecute).mockReturnValue({
     columns: [],
     rows: [],
@@ -236,6 +249,42 @@ describe("CustomVizWidget", () => {
     );
     await waitFor(() => {
       expect(host.style.getPropertyValue("--vs-style-accent-color")).toBe("#abcdef");
+    });
+  });
+
+  it("updates payload layout when host size changes", async () => {
+    useElementSizeMock.mockReturnValue({
+      ref: vi.fn(),
+      size: { width: 320, height: 200 },
+    });
+    const widget = {
+      id: "w1",
+      type: "customViz" as const,
+      title: "AI",
+      colSpan: 6,
+      rowSpan: 3,
+      order: 0,
+      customVizConfig: {
+        artifactId: "550e8400-e29b-41d4-a716-446655440000",
+      },
+    };
+
+    const view = render(<CustomVizWidget widget={widget} mode="view" />);
+    await waitFor(() => {
+      expect(view.getByTestId("custom-viz-host")).toBeInTheDocument();
+    });
+    const host = view.getByTestId("custom-viz-host");
+    await waitFor(() => {
+      expect(host.dataset.vsCvLayoutSig).toBe("320x200");
+    });
+
+    useElementSizeMock.mockReturnValue({
+      ref: vi.fn(),
+      size: { width: 640, height: 400 },
+    });
+    view.rerender(<CustomVizWidget widget={widget} mode="view" />);
+    await waitFor(() => {
+      expect(host.dataset.vsCvLayoutSig).toBe("640x400");
     });
   });
 });

@@ -229,6 +229,17 @@ describe("dashboardThemeVariants", () => {
             },
           },
         },
+        {
+          id: "w2",
+          type: "customViz",
+          title: "排名条",
+          colSpan: 6,
+          rowSpan: 4,
+          customVizConfig: {
+            artifactId: "a1",
+            displayStyle: { paletteId: "warm", background: { background: "#ffffff" } },
+          },
+        },
       ],
       "dark",
     );
@@ -237,6 +248,9 @@ describe("dashboardThemeVariants", () => {
       bundle.widgets[0].type === "chart" &&
         bundle.widgets[0].chartConfig?.nativeBody?.deStyle?.background?.background,
     ).toBe("#1e293b");
+    expect(
+      bundle.widgets[1].type === "customViz" && bundle.widgets[1].customVizConfig?.displayStyle,
+    ).toBeUndefined();
   });
 
   it("applyDashboardTitleStylePatch updates global title and clears chart overrides", () => {

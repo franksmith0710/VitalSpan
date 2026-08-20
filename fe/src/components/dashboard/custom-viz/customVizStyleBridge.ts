@@ -17,8 +17,10 @@ export const CUSTOM_VIZ_STYLE_BRIDGE_CSS = `
 .${HOST_CLASS} .bar-fill,
 .${HOST_CLASS} .progress,
 .${HOST_CLASS} .progress-bar,
+.${HOST_CLASS} .item .fill,
 .${HOST_CLASS} [class*="bar-fill"],
-.${HOST_CLASS} [class*="rank-bar"] {
+.${HOST_CLASS} [class*="rank-bar"],
+.${HOST_CLASS} [class*="progress-fill"] {
   background: var(--vs-palette-0, var(--vs-style-accent-color, var(--vs-d3-accent, #3b82f6))) !important;
   opacity: calc(var(--vs-style-fill-opacity, 100) / 100);
   border-radius: calc(var(--vs-style-corner-radius, 4) * 1px);

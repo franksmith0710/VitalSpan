@@ -8,6 +8,7 @@ import {
   type DashboardStyleConfig,
   type TitleStyleConfig,
   type WidgetStyleConfig,
+  isDarkWidgetShellColor,
 } from "../dashboardStyleConfig";
 import type { CustomVizWidgetConfig, CustomVizDisplayStyle, LayoutWidget } from "../layoutUtils";
 import { mergeWidgetOverrideStyle } from "../widgetRailStyleSections";
@@ -470,5 +471,37 @@ export function syncCustomVizWidgetsForDashboardScopes(
     return nextConfig === widget.customVizConfig
       ? widget
       : { ...widget, customVizConfig: nextConfig };
+  });
+}
+
+/** 切换浅色/深色时清除 customViz 组件级配色/外壳 override，跟随看板主题 */
+export function syncCustomVizWidgetsForColorScheme(
+  widgets: LayoutWidget[],
+  scheme: ColorScheme,
+): LayoutWidget[] {
+  return widgets.map((widget) => {
+    if (widget.type !== "customViz" || !widget.customVizConfig) return widget;
+    let config = stripCustomVizPaletteOverrides(widget.customVizConfig);
+
+    const shell = resolveCustomVizDisplayBackgroundShell({ customVizConfig: config });
+    const bg = shell.background?.trim();
+    if (bg) {
+      const shellOk =
+        scheme === "dark" ? isDarkWidgetShellColor(bg) : !isDarkWidgetShellColor(bg);
+      if (!shellOk) {
+        config = stripCustomVizWidgetAppearanceOverrides(config);
+      }
+    }
+
+    const titleColor = readCustomVizDisplayStyle(config).title?.color?.trim();
+    if (
+      titleColor &&
+      (isOppositeThemeTitleColor(titleColor, scheme) ||
+        titleColor.toLowerCase() === (scheme === "dark" ? "#1d2939" : "#f2f4f7"))
+    ) {
+      config = stripCustomVizTitleOverrides(config);
+    }
+
+    return config === widget.customVizConfig ? widget : { ...widget, customVizConfig: config };
   });
 }

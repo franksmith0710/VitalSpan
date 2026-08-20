@@ -24,6 +24,7 @@ import {
 } from "@/lib/chartDeStyle";
 import {
   stripCustomVizDisplayStyleOverrides,
+  syncCustomVizWidgetsForColorScheme,
   syncCustomVizWidgetsForDashboardScopes,
   type CustomVizDashboardSyncScope,
 } from "./custom-viz/customVizDisplayStyle";
@@ -609,9 +610,11 @@ export function switchDashboardThemeBundle(
   nextScheme: ColorScheme,
 ): { styleConfig: DashboardStyleConfig; widgets: LayoutWidget[] } {
   const nextStyle = switchDashboardColorScheme(styleConfig, nextScheme);
+  let syncedWidgets = syncChartWidgetsForColorScheme(widgets, nextScheme);
+  syncedWidgets = syncCustomVizWidgetsForColorScheme(syncedWidgets, nextScheme);
   return {
     styleConfig: nextStyle,
-    widgets: syncChartWidgetsForColorScheme(widgets, nextScheme),
+    widgets: syncedWidgets,
   };
 }
 

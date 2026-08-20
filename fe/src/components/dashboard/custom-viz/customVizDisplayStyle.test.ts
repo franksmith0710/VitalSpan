@@ -6,6 +6,7 @@ import {
   resolveCustomVizRuntimeStyle,
   resolveCustomVizWidgetShellStyle,
   stripCustomVizDisplayStyleOverrides,
+  syncCustomVizWidgetsForColorScheme,
   syncCustomVizWidgetsForDashboardScopes,
 } from "./customVizDisplayStyle";
 
@@ -169,6 +170,38 @@ describe("syncCustomVizWidgetsForDashboardScopes", () => {
       artifactId: "a1",
       style: { accentColor: "#222", showRankBadge: true },
       displayStyle: undefined,
+    });
+  });
+});
+
+describe("syncCustomVizWidgetsForColorScheme", () => {
+  it("clears palette and mismatched shell overrides on theme switch", () => {
+    const widgets = syncCustomVizWidgetsForColorScheme(
+      [
+        {
+          id: "cv1",
+          type: "customViz",
+          title: "排名条",
+          colSpan: 6,
+          rowSpan: 4,
+          customVizConfig: {
+            artifactId: "a1",
+            widgetStyle: { background: "#ffffff", backgroundShow: true },
+            displayStyle: {
+              paletteId: "warm",
+              background: { background: "#ffffff", backgroundShow: true },
+              title: { color: "#1d2939" },
+            },
+          },
+        },
+      ],
+      "dark",
+    );
+
+    expect(widgets[0].type === "customViz" && widgets[0].customVizConfig).toEqual({
+      artifactId: "a1",
+      displayStyle: undefined,
+      widgetStyle: undefined,
     });
   });
 });
