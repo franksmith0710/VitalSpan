@@ -59,6 +59,27 @@ export function resolveGlobeScreenBoundsFallback(
   return { x: width / 2, y: height / 2, radius, bearing: 0, pitch: 0 };
 }
 
+/** 星场/流星挖空与裁剪用的地球圆盘半径（上限避免低 zoom 半径过大）。 */
+export function resolveGlobeStarMaskRadius(
+  globe: GlobeScreenBounds,
+  width: number,
+  height: number,
+): number {
+  const pitchScale = Math.max(0.35, Math.cos((globe.pitch * Math.PI) / 180));
+  const fallback = Math.min(width, height) * 0.42 * pitchScale;
+  return Math.min(globe.radius * 0.88 * pitchScale, fallback * 1.08);
+}
+
+/** 全球远视图才显示星场；区域放大后隐藏，避免 overlay 伪影。 */
+export function shouldRenderGisStarfield(
+  globe: GlobeScreenBounds,
+  width: number,
+  height: number,
+): boolean {
+  const viewportMin = Math.min(width, height);
+  return globe.radius * 0.88 <= viewportMin * 0.46;
+}
+
 export function bindMapRenderSync(map: MapLibreMap | null, paint: () => void): () => void {
   if (!map) return () => undefined;
   const onRender = () => paint();

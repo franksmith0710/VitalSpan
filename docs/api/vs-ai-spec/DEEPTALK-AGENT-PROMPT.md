@@ -41,6 +41,22 @@
 d3 必须 `host.vsCv.mount(`；render 读 `(p && p.style) || {}`。  
 更新：`publish-ai-viz-artifact.py --artifact-id <uuid>`。
 
+### customViz 样式自检清单（publish 前必过 · 插件 Skill 同文）
+
+**目标**：`styleComplianceTier=full`，`warnings=0`；5173 面板 **中文标签**且 **改动能生效**。
+
+| 必过项 | 要求 |
+|--------|------|
+| mount | `host.vsCv.mount(function(p){…})` |
+| 读样式 | `var st = (p && p.style) \|\| {}` 驱动 DOM/CSS |
+| 禁止 | `vs-cv-style-update`、`getStyle()`、`.vs-cv-style` |
+| schema | 每个 property 有 **`"title": "中文"`** |
+| hooks | boolean 开关配 `styleHooks.hideWhenFalse`（推荐） |
+| 验收 | publish 输出 **full** → `completion_gate workflow=2` + **tool_stdout** |
+
+`partial` / 有 warnings → **不得结束**；修 bundle 后 PUT 同一 artifactId。  
+样例：`examples/custom-viz-ranking-bar-chart-fixed.json`
+
 ## 仪表板 vs 数据大屏（必须先分清）
 
 | | **仪表板** `dashboard` | **数据大屏** `data-screen` |

@@ -4,6 +4,8 @@ import {
   bindMapRenderSync,
   resolveGlobeScreenBounds,
   resolveGlobeScreenBoundsFallback,
+  resolveGlobeStarMaskRadius,
+  shouldRenderGisStarfield,
   type GlobeScreenBounds,
 } from "@/components/charts/engine/maplibre/gisGlobeLayout";
 
@@ -72,10 +74,18 @@ function rotateAround(
   return { x: cx + ox * cosB - oy * sinB, y: cy + ox * sinB + oy * cosB };
 }
 
-function globeMaskRadius(globe: GlobeScreenBounds, width: number, height: number): number {
-  const pitchScale = Math.max(0.35, Math.cos((globe.pitch * Math.PI) / 180));
-  const fallback = Math.min(width, height) * 0.42 * pitchScale;
-  return Math.min(globe.radius * 0.88 * pitchScale, fallback * 1.08);
+function clipOutsideGlobe(
+  ctx: CanvasRenderingContext2D,
+  globe: GlobeScreenBounds,
+  width: number,
+  height: number,
+) {
+  const maskRadius = resolveGlobeStarMaskRadius(globe, width, height);
+  ctx.beginPath();
+  ctx.rect(0, 0, width, height);
+  ctx.moveTo(globe.x + maskRadius, globe.y);
+  ctx.arc(globe.x, globe.y, maskRadius, 0, Math.PI * 2, true);
+  ctx.clip("evenodd");
 }
 
 function drawStarfieldFrame(
@@ -90,20 +100,8 @@ function drawStarfieldFrame(
   globe: GlobeScreenBounds,
 ) {
   ctx.clearRect(0, 0, width, height);
-
-  const gradient = ctx.createRadialGradient(
-    globe.x,
-    globe.y,
-    globe.radius * 0.15,
-    globe.x,
-    globe.y,
-    Math.max(width, height) * 0.95,
-  );
-  gradient.addColorStop(0, "rgba(3, 4, 12, 0)");
-  gradient.addColorStop(0.35, `rgba(3, 4, 12, ${0.08 * starIntensity})`);
-  gradient.addColorStop(1, `rgba(2, 3, 10, ${0.65 * starIntensity})`);
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, width, height);
+  ctx.save();
+  clipOutsideGlobe(ctx, globe, width, height);
 
   for (const star of stars) {
     const baseX = star.u * width;
@@ -119,16 +117,7 @@ function drawStarfieldFrame(
   }
 
   drawMeteors(ctx, meteors, meteorIntensity);
-
-  const maskRadius = globeMaskRadius(globe, width, height);
-  ctx.save();
-  ctx.translate(globe.x, globe.y);
-  ctx.globalCompositeOperation = "destination-out";
-  ctx.beginPath();
-  ctx.arc(0, 0, maskRadius, 0, Math.PI * 2);
-  ctx.fill();
   ctx.restore();
-  ctx.globalCompositeOperation = "source-over";
 }
 
 export function mountGisStarfieldOverlay(
@@ -197,6 +186,13 @@ export function mountGisStarfieldOverlay(
     const globe = map
       ? resolveGlobeScreenBounds(map) ?? resolveGlobeScreenBoundsFallback(width, height)
       : resolveGlobeScreenBoundsFallback(width, height);
+
+    if (!shouldRenderGisStarfield(globe, width, height)) {
+      canvas.style.display = "none";
+      ctx.clearRect(0, 0, width, height);
+      meteors = [];
+      return;
+    }
 
     if (meteorIntensity > 0) {
       meteors = tickMeteors({ width, height, globe, intensity: meteorIntensity }, dt, meteors);

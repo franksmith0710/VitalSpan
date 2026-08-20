@@ -40,8 +40,14 @@
 3. 写 `examples/<name>.json`
 4. **`vitalspan_publish_artifact --file examples/<name>.json`**
 5. 终端/工具返回 **`ok artifactId=<uuid>`** 才可向用户汇报完成
-6. `vitalspan_completion_gate --workflow 2 --agent-summary "..."` 必须通过
+6. `vitalspan_completion_gate --workflow 2 --agent-summary "..." --tool-stdout "<publish输出>"` 必须通过（要求 **styleComplianceTier=full**）
 7. 除非用户明确要求上大屏，否则到此结束
+
+### customViz 样式自检（publish 前 · 详见插件 Skill）
+
+- `host.vsCv.mount` + `(p && p.style) || {}`；禁止 `vs-cv-style-update` / `getStyle()`
+- `styleSchema.properties.*.title` 必须中文
+- publish 须 **full / warnings=0**；否则修 bundle 再 PUT
 
 ## 工作流 ③（大屏）
 

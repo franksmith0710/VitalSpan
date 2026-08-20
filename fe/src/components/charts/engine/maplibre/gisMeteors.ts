@@ -1,4 +1,5 @@
 import type { GlobeScreenBounds } from "@/components/charts/engine/maplibre/gisGlobeLayout";
+import { resolveGlobeStarMaskRadius } from "@/components/charts/engine/maplibre/gisGlobeLayout";
 
 export type Meteor = {
   x: number;
@@ -27,12 +28,6 @@ function mulberry32(seed: number) {
   };
 }
 
-function globeMaskRadius(globe: GlobeScreenBounds, width: number, height: number): number {
-  const pitchScale = Math.max(0.35, Math.cos((globe.pitch * Math.PI) / 180));
-  const fallback = Math.min(width, height) * 0.42 * pitchScale;
-  return Math.min(globe.radius * 0.88 * pitchScale, fallback * 1.08);
-}
-
 function isOutsideGlobeMask(
   x: number,
   y: number,
@@ -40,7 +35,7 @@ function isOutsideGlobeMask(
   width: number,
   height: number,
 ): boolean {
-  const maskRadius = globeMaskRadius(globe, width, height);
+  const maskRadius = resolveGlobeStarMaskRadius(globe, width, height);
   const dx = (x - globe.x) / Math.max(maskRadius, 1);
   const dy = (y - globe.y) / Math.max(maskRadius, 1);
   return dx * dx + dy * dy >= 1;

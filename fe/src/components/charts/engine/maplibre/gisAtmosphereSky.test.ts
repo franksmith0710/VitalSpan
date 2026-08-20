@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyGisGlobeToStyle, gisFogToMapLibreSky, mapLibreSkyForPreset, spaceBackdropForPreset } from "@/components/charts/engine/maplibre/gisAtmosphereSky";
-import { getGlobeRadiusPixels, resolveGlobeScreenBoundsFallback } from "@/components/charts/engine/maplibre/gisGlobeLayout";
+import { getGlobeRadiusPixels, resolveGlobeScreenBoundsFallback, shouldRenderGisStarfield } from "@/components/charts/engine/maplibre/gisGlobeLayout";
 import { resolveGisMeteorIntensity, resolveGisStarIntensity } from "@/components/charts/engine/maplibre/gisStarfield";
 
 describe("gisAtmosphereSky", () => {
@@ -42,6 +42,13 @@ describe("gisGlobeLayout", () => {
     const bounds = resolveGlobeScreenBoundsFallback(400, 300);
     expect(bounds.x).toBe(200);
     expect(bounds.y).toBe(150);
+  });
+
+  it("hides starfield when globe disc fills the viewport", () => {
+    const global = resolveGlobeScreenBoundsFallback(400, 300);
+    expect(shouldRenderGisStarfield(global, 400, 300)).toBe(true);
+    const zoomed = { ...global, radius: 220 };
+    expect(shouldRenderGisStarfield(zoomed, 400, 300)).toBe(false);
   });
 });
 
