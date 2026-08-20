@@ -119,6 +119,16 @@ def test_ai_viz_artifact_list(auth_headers: dict[str, str]) -> None:
     assert artifact_id in ids
 
 
+def test_ai_viz_artifact_delete(auth_headers: dict[str, str]) -> None:
+    created = client.post("/api/v1/ai-viz/artifacts", json=DEMO_BUNDLE, headers=auth_headers)
+    assert created.status_code == 201, created.text
+    artifact_id = created.json()["artifactId"]
+    deleted = client.delete(f"/api/v1/ai-viz/artifacts/{artifact_id}", headers=auth_headers)
+    assert deleted.status_code == 204, deleted.text
+    meta = client.get(f"/api/v1/ai-viz/artifacts/{artifact_id}", headers=auth_headers)
+    assert meta.status_code == 404
+
+
 def test_ai_viz_rejects_oversize_bundle(auth_headers: dict[str, str]) -> None:
     from app.ai_viz.models import MAX_BUNDLE_BYTES
 

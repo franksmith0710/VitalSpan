@@ -87,9 +87,8 @@ export function StandardAnalysisLiveView({
   const liveSection = runData?.renderSpec.sections[0];
   const rawHeaders = liveSection ? normalizeColumns(liveSection.columns) : [];
   const displayHeaders = humanizeSectionHeaders(rawHeaders);
-  const liveRows = liveSection
-    ? normalizeRows(liveSection.rows, rawHeaders).map((row) => row.map((cell) => String(cell ?? "")))
-    : [];
+  const normalizedRows = liveSection ? normalizeRows(liveSection.rows, rawHeaders) : [];
+  const liveRows = normalizedRows.map((row) => row.map((cell) => String(cell ?? "")));
   const chartSection = isChartSection(liveSection) ? liveSection : undefined;
 
   const [presentationMode, setPresentationMode] = useState<PresentationMode>(() =>
@@ -177,9 +176,8 @@ export function StandardAnalysisLiveView({
             <StandardAnalysisSectionChart
               theme={activeTheme}
               headers={rawHeaders}
-              rows={liveRows}
+              rows={normalizedRows}
               chartType={chartSection.chartType}
-              fieldMapping={pack.fieldMapping}
             />
           </div>
         ) : (

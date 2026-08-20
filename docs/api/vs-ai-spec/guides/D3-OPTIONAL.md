@@ -31,7 +31,8 @@ customViz **不会**调用 `applyChartStyleChain` 或 `renderD3Chart`。要对�
 | 类目过多 | 读 **`payload.axisPlan.categoryTickIndices`**；或 `helpers.thinCategoryTickIndices` |
 | 行数过大 | 壳层已提示；可选读 `payload.truncated` |
 
-官方 d3 示例 [`custom-viz-d3-bundle.json`](../examples/custom-viz-d3-bundle.json) 已示范上述模式。
+官方 d3 示例 [`custom-viz-d3-bundle.json`](../examples/custom-viz-d3-bundle.json) 已示范上述模式。  
+动态趋势（读 `p.style` + 动画）见 [`custom-viz-trend-line.json`](../examples/custom-viz-trend-line.json)。
 
 ## 包约束
 

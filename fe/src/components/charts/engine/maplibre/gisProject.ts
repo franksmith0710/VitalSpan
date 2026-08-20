@@ -32,6 +32,22 @@ export type GisProject = {
 /** 本地/演示默认登记的全球 PMTiles 服务（运维 register 脚本同名 id）。 */
 export const DEFAULT_PMTILES_TILE_SERVICE_ID = "planet-z15";
 
+/** MapLibre 球面地球默认大气（星空背景，接近 GeoLibre 球面观感）。 */
+export const DEFAULT_GLOBE_FOG: GisProjectFog = {
+  color: "rgb(186, 210, 235)",
+  "high-color": "rgb(36, 92, 223)",
+  "horizon-blend": 0.02,
+  "space-color": "rgb(11, 11, 25)",
+  "star-intensity": 0.6,
+};
+
+export const DEFAULT_GIS_GLOBE_VIEW: GisProjectView = {
+  center: [20.0, 20.0],
+  zoom: 1.8,
+  pitch: 0,
+  bearing: 0,
+};
+
 export const DEFAULT_GIS_PROJECT: GisProject = {
   basemap: "pmtiles",
   tileServiceId: DEFAULT_PMTILES_TILE_SERVICE_ID,
@@ -81,8 +97,8 @@ function normalizeGisProject(raw: unknown): GisProject {
     candidate.projection === "globe" || candidate.projection === "mercator"
       ? candidate.projection
       : DEFAULT_GIS_PROJECT.projection;
-  const view = normalizeGisView(candidate.view) ?? DEFAULT_GIS_PROJECT.view;
-  const fog = normalizeGisFog(candidate.fog);
+  const view = normalizeGisView(candidate.view) ?? (projection === "globe" ? DEFAULT_GIS_GLOBE_VIEW : DEFAULT_GIS_PROJECT.view);
+  const fog = resolveGisFog(projection, candidate.fog);
   return {
     basemap: "pmtiles",
     tileServiceId,
@@ -117,20 +133,23 @@ function normalizeGisView(input: unknown): GisProjectView | undefined {
   };
 }
 
+function resolveGisFog(projection: GisProjection, input: unknown): GisProjectFog | undefined {
+  if (projection !== "globe") return undefined;
+  const parsed = normalizeGisFog(input);
+  if (parsed && Object.keys(parsed).length > 0) return { ...DEFAULT_GLOBE_FOG, ...parsed };
+  return DEFAULT_GLOBE_FOG;
+}
+
 function normalizeGisFog(input: unknown): GisProjectFog | undefined {
   if (!input || typeof input !== "object") return undefined;
   const fog = input as GisProjectFog;
-  return {
-    color: typeof fog.color === "string" ? fog.color : undefined,
-    "high-color": typeof fog["high-color"] === "string" ? fog["high-color"] : undefined,
-    "horizon-blend": Number.isFinite(Number(fog["horizon-blend"]))
-      ? Number(fog["horizon-blend"])
-      : undefined,
-    "space-color": typeof fog["space-color"] === "string" ? fog["space-color"] : undefined,
-    "star-intensity": Number.isFinite(Number(fog["star-intensity"]))
-      ? Number(fog["star-intensity"])
-      : undefined,
-  };
+  const next: GisProjectFog = {};
+  if (typeof fog.color === "string") next.color = fog.color;
+  if (typeof fog["high-color"] === "string") next["high-color"] = fog["high-color"];
+  if (Number.isFinite(Number(fog["horizon-blend"]))) next["horizon-blend"] = Number(fog["horizon-blend"]);
+  if (typeof fog["space-color"] === "string") next["space-color"] = fog["space-color"];
+  if (Number.isFinite(Number(fog["star-intensity"]))) next["star-intensity"] = Number(fog["star-intensity"]);
+  return Object.keys(next).length > 0 ? next : undefined;
 }
 
 export function defaultGisProjectNativeBody(): Record<string, unknown> {

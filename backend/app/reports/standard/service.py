@@ -213,7 +213,7 @@ def run_pack(db: Session, key: str, payload: RunIn, user: UserContext) -> RunOut
     )
     chart_type = (
         "bar"
-        if payload.theme == "distribution"
+        if payload.theme in {"distribution", "lifecycle"}
         else "line"
         if payload.theme in {"activity", "trend"}
         else None

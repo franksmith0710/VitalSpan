@@ -16,6 +16,8 @@ import {
   INSPECTOR_SECTION_GAP,
 } from "@/components/dashboard/inspectorCompact";
 import {
+  DEFAULT_GIS_GLOBE_VIEW,
+  DEFAULT_GLOBE_FOG,
   DEFAULT_PMTILES_TILE_SERVICE_ID,
   readGisProject,
   writeGisProject,
@@ -137,7 +139,17 @@ export function ChartGisMapProjectPanel() {
             <Label className="text-theme-xs text-gray-500">投影</Label>
             <Select
               value={project.projection ?? "mercator"}
-              onValueChange={(projection) => patchProject({ projection: projection as GisProjection })}
+              onValueChange={(projection) => {
+                if (projection === "globe") {
+                  patchProject({
+                    projection: "globe",
+                    fog: project.fog ?? DEFAULT_GLOBE_FOG,
+                    view: project.view ?? DEFAULT_GIS_GLOBE_VIEW,
+                  });
+                  return;
+                }
+                patchProject({ projection: "mercator", fog: undefined });
+              }}
             >
               <SelectTrigger className={INSPECTOR_CTRL} aria-label="投影">
                 <SelectValue />
@@ -147,6 +159,11 @@ export function ChartGisMapProjectPanel() {
                 <SelectItem value="globe">球面地球</SelectItem>
               </SelectContent>
             </Select>
+            {project.projection === "globe" ? (
+              <p className="text-theme-xs text-gray-500">
+                球面模式使用 MapLibre 原生地球投影与星空大气，底图仍为 Planet Z15 PMTiles（无需 GeoLibre 外链）。
+              </p>
+            ) : null}
           </div>
         </div>
 

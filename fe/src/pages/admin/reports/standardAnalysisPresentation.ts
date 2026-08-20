@@ -1,6 +1,6 @@
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
-import type { AnalysisTheme, FieldMapping } from "./useStandardAnalysis";
-import { humanizeColumnName, humanizeMappedField } from "./standardAnalysisFieldLabels";
+import type { AnalysisTheme } from "./useStandardAnalysis";
+import { humanizeColumnName } from "./standardAnalysisFieldLabels";
 
 const INLINE_CHART_DS = "00000000-0000-4000-8000-000000000001";
 
@@ -49,20 +49,11 @@ export function resolveSectionChartType(chartType: string): ChartViewConfig["cha
 export function buildStandardSectionChartConfig(
   headers: string[],
   chartType: "bar" | "line",
-  fieldMapping?: FieldMapping,
-  theme?: AnalysisTheme,
 ): ChartViewConfig {
   const [dimensionField, metricField] = headers;
-  const mappedDim =
-    theme === "distribution" && fieldMapping?.region
-      ? fieldMapping.region
-      : theme === "lifecycle" && fieldMapping?.status
-        ? fieldMapping.status
-        : undefined;
-  const dimensionLabel = dimensionField
-    ? humanizeMappedField(mappedDim ?? dimensionField, theme)
-    : undefined;
-  const metricLabel = metricField ? humanizeColumnName(metricField) : "数量";
+  // 聚合列 dim/d 与表格 humanizeSectionHeaders 一致；勿用 fieldMapping 物理列名作轴标题
+  const dimensionLabel = dimensionField ? humanizeSectionHeader(dimensionField) : undefined;
+  const metricLabel = metricField ? humanizeSectionHeader(metricField) : "数量";
 
   return {
     chartType: resolveSectionChartType(chartType),

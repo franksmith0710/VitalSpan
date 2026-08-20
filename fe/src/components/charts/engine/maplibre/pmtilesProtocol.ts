@@ -1,13 +1,19 @@
-const registeredTargets = new WeakSet<object>();
+import {
+  ensurePmtilesArchiveRegistered,
+  loadMapLibreRuntime,
+  resetMapLibreBootstrapForTests,
+} from "@/components/charts/engine/maplibre/maplibreBootstrap";
 
-export async function registerPmtilesProtocol(maplibregl: typeof import("maplibre-gl")): Promise<void> {
-  if (registeredTargets.has(maplibregl as object)) return;
-  const { Protocol } = await import("pmtiles");
-  const protocol = new Protocol();
-  maplibregl.addProtocol("pmtiles", protocol.tile);
-  registeredTargets.add(maplibregl as object);
+/** @deprecated 使用 loadMapLibreRuntime / ensurePmtilesArchiveRegistered */
+export async function registerPmtilesProtocol(
+  maplibregl: typeof import("maplibre-gl"),
+): Promise<void> {
+  void maplibregl;
+  await loadMapLibreRuntime();
 }
 
+export { ensurePmtilesArchiveRegistered, loadMapLibreRuntime, resetMapLibreBootstrapForTests };
+
 export function resetPmtilesProtocolForTests(): void {
-  // WeakSet cannot be cleared; tests import a fresh maplibre module per run.
+  resetMapLibreBootstrapForTests();
 }

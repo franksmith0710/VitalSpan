@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { buildChartViewModel } from "@/components/charts/engine/buildChartViewModel";
+import { buildPlanForType } from "@/components/charts/engine/plugins/plans/buildPlan";
 import {
   buildStandardSectionChartConfig,
   defaultLivePresentationMode,
@@ -54,12 +56,65 @@ describe("standardAnalysisPresentation", () => {
     expect(resolveSectionChartType("line")).toBe("line");
   });
 
-  it("builds inline chart config from section headers with labels", () => {
-    expect(buildStandardSectionChartConfig(["dim", "cnt"], "bar", { region: "province" }, "distribution")).toMatchObject({
+  it("builds inline chart config aligned with table column labels", () => {
+    expect(buildStandardSectionChartConfig(["dim", "cnt"], "bar")).toMatchObject({
       chartType: "bar-horizontal",
-      dimensions: [{ field: "dim", label: "省份" }],
+      dimensions: [{ field: "dim", label: "维度" }],
       metrics: [{ field: "cnt", label: "数量" }],
     });
+    expect(buildStandardSectionChartConfig(["d", "cnt"], "line")).toMatchObject({
+      chartType: "line",
+      dimensions: [{ field: "d", label: "日期" }],
+      metrics: [{ field: "cnt", label: "数量" }],
+    });
+  });
+
+  it("defaults lifecycle chart sections to chart mode", () => {
+    expect(
+      defaultLivePresentationMode({
+        kind: "chart",
+        chartType: "bar",
+        columns: ["dim", "cnt"],
+        rows: [],
+      }),
+    ).toBe("chart");
+  });
+
+  it("encodes bar chart points matching table rows", () => {
+    const headers = ["dim", "cnt"];
+    const rows: (string | number)[][] = [
+      ["办公耗材", 120],
+      ["电子产品", 80],
+    ];
+    const config = buildStandardSectionChartConfig(headers, "bar");
+    const vm = buildChartViewModel(config, { columns: headers, rows });
+    const plan = buildPlanForType("bar-horizontal", vm);
+    const data = plan.options.data as Array<{ __category__: string; __value__: number }>;
+    expect(data).toHaveLength(2);
+    expect(data).toEqual(
+      expect.arrayContaining([
+        { __category__: "办公耗材", __value__: 120 },
+        { __category__: "电子产品", __value__: 80 },
+      ]),
+    );
+  });
+
+  it("encodes line chart points matching table rows", () => {
+    const headers = ["d", "cnt"];
+    const rows: (string | number)[][] = [
+      ["2026-08-01", 12],
+      ["2026-08-02", 18],
+    ];
+    const config = buildStandardSectionChartConfig(headers, "line");
+    const vm = buildChartViewModel(config, { columns: headers, rows });
+    const plan = buildPlanForType("line", vm);
+    const data = plan.options.data as Array<{ __category__: string; __value__: number }>;
+    expect(data).toEqual(
+      expect.arrayContaining([
+        { __category__: "2026-08-01", __value__: 12 },
+        { __category__: "2026-08-02", __value__: 18 },
+      ]),
+    );
   });
 
   it("flags epoch date as suspicious time series", () => {

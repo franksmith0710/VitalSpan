@@ -6,7 +6,18 @@
 
 :8080 {
 	root * /srv
-	file_server
+
+	handle /health {
+		respond "ok" 200
+	}
+
+	handle / {
+		respond "VitalSpan PMTiles 外部瓦片服务运行中。请直接访问 .pmtiles 归档，例如：/planet-z15-20260817.pmtiles（MapLibre 经 HTTP Range 读取，不是网页首页）。" 200
+	}
+
+	handle {
+		file_server
+	}
 
 	@options method OPTIONS
 	respond @options 204

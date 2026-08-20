@@ -1,33 +1,30 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import type { ChartEngineViewProps } from "@/components/charts/engine/types";
 import { buildGisOverlayGeoJson } from "@/components/charts/engine/maplibre/gisMapOverlay";
-import { readGisProject, resolveGisRenderableBasemap } from "@/components/charts/engine/maplibre/gisProject";
+import { readGisProject, resolveGisRenderableBasemap, DEFAULT_GLOBE_FOG } from "@/components/charts/engine/maplibre/gisProject";
 import {
   appendGisOverlayLayers,
   buildPmtilesStyle,
 } from "@/components/charts/engine/maplibre/gisMapStyle";
+import {
+  ensurePmtilesArchiveRegistered,
+  loadMapLibreRuntime,
+} from "@/components/charts/engine/maplibre/maplibreBootstrap";
 import { gisMapTransformRequest } from "@/components/charts/engine/maplibre/gisMapTransformRequest";
-import { registerPmtilesProtocol } from "@/components/charts/engine/maplibre/pmtilesProtocol";
 import { resolveTileService } from "@/lib/tileServices";
 import { cn } from "@/lib/utils";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 type MapLibreModule = typeof import("maplibre-gl");
+type MapLibreMap = InstanceType<MapLibreModule["Map"]>;
 type StyleSpecification = import("maplibre-gl").StyleSpecification;
 
-let maplibreModulePromise: Promise<MapLibreModule> | null = null;
-
-async function loadMapLibre(): Promise<MapLibreModule> {
-  if (!maplibreModulePromise) {
-    maplibreModulePromise = import("maplibre-gl");
-  }
-  const maplibregl = await maplibreModulePromise;
-  await registerPmtilesProtocol(maplibregl);
-  return maplibregl;
+async function loadMapLibre(): Promise<Pick<MapLibreModule, "Map">> {
+  return loadMapLibreRuntime();
 }
 
 function applyGlobeAtmosphere(
-  map: InstanceType<MapLibreModule["Map"]>,
+  map: MapLibreMap,
   projection: "mercator" | "globe" | undefined,
   fog: Record<string, unknown> | undefined,
 ) {
@@ -43,7 +40,7 @@ function applyGlobeAtmosphere(
 function GisMapViewInner(props: ChartEngineViewProps) {
   const { chartConfig, viewModel, fill = false, height = 180, width, ariaLabel, onPaintReady } = props;
   const hostRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<InstanceType<MapLibreModule["Map"]> | null>(null);
+  const mapRef = useRef<MapLibreMap | null>(null);
   const project = useMemo(() => readGisProject(chartConfig), [chartConfig]);
   const overlayGeoJson = useMemo(
     () =>
@@ -70,7 +67,9 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     setPmtilesLoading(true);
     setPmtilesErrorHint(null);
     void resolveTileService(tileServiceId)
-      .then((resolved) => {
+      .then(async (resolved) => {
+        if (cancelled) return;
+        await ensurePmtilesArchiveRegistered(resolved.pmtilesUrl);
         if (cancelled) return;
         setPmtilesStyle(buildPmtilesStyle(resolved, project.labelLang ?? "zh-Hans"));
         setPmtilesErrorHint(null);
@@ -105,7 +104,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     if (!host || !style || renderBasemap !== "pmtiles") return;
 
     let cancelled = false;
-    let map: InstanceType<MapLibreModule["Map"]> | null = null;
+    let map: MapLibreMap | null = null;
     const currentStyle = style;
     const view = project.view ?? { center: [104, 35] as [number, number], zoom: 3.2 };
 
@@ -147,7 +146,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         if (cancelled || !map) return;
         setMapErrorHint(null);
         if (useGlobe) {
-          applyGlobeAtmosphere(map, "globe", project.fog);
+          applyGlobeAtmosphere(map, "globe", project.fog ?? DEFAULT_GLOBE_FOG);
         }
         map.resize();
         onPaintReady?.();

@@ -44,6 +44,15 @@ def test_preflight_rejects_files_content_object() -> None:
     assert any(item.code == "AIVIZ_INVALID_FILES" for item in result.errors)
 
 
+def test_preflight_trend_line_gold_sample_ok() -> None:
+    path = ROOT / "docs/api/vs-ai-spec/examples/custom-viz-trend-line.json"
+    bundle = json.loads(path.read_text(encoding="utf-8"))
+    result = preflight_bundle(bundle, backend_root=_BACKEND)
+    assert result.ok is True
+    assert result.style_compliance_tier == "full"
+    assert result.warnings == []
+
+
 def test_preflight_no_backend_returns_actionable_error() -> None:
     bundle = _load_golden()
     result = preflight_bundle(bundle, backend_root=Path("/nonexistent/vitalspan/backend"))
