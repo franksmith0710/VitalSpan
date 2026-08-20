@@ -45,6 +45,9 @@ vi.mock("@/lib/api", () => ({
     if (path.includes("/snapshots")) {
       return { items: [], total: 0 };
     }
+    if (path.includes("/api/v1/reports/schedules")) {
+      return { items: [], total: 0 };
+    }
     throw new Error(`unmocked ${path}`);
   }),
 }));
@@ -83,6 +86,6 @@ describe("StandardAnalysisPage smoke", () => {
       expect(screen.getAllByText("active").length).toBeGreaterThan(0);
       expect(screen.getByText("状态")).toBeInTheDocument();
     });
-    expect(screen.getByText("对比上期")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "周期对比" })).toBeInTheDocument();
   });
 });

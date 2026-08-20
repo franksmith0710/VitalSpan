@@ -1,5 +1,6 @@
 import { layers, namedFlavor } from "@protomaps/basemaps";
 import type { StyleSpecification } from "maplibre-gl";
+import { normalizeOfflineGeoGeometry } from "@/components/charts/engine/geo/geoProjection";
 import type { GisLabelLang, GisProject } from "@/components/charts/engine/maplibre/gisProject";
 import type { TileServiceResolve } from "@/lib/tileServices";
 
@@ -30,10 +31,17 @@ export function buildGisMapStyle(input: BuildGisMapStyleInput): StyleSpecificati
   if (!data) {
     throw new Error("china-provinces basemap requires GeoJSON data");
   }
+  const normalized: FeatureCollection = {
+    type: "FeatureCollection",
+    features: data.features.map((feature) => ({
+      ...feature,
+      geometry: normalizeOfflineGeoGeometry(feature.geometry),
+    })),
+  };
   return {
     version: 8,
     sources: {
-      [CHINA_PROVINCES_SOURCE_ID]: { type: "geojson", data },
+      [CHINA_PROVINCES_SOURCE_ID]: { type: "geojson", data: normalized },
     },
     layers: [
       { id: "vs-background", type: "background", paint: { "background-color": background } },

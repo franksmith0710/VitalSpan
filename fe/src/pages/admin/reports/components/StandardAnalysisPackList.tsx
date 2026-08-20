@@ -2,8 +2,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import type { ReactNode } from "react";
+import type { ReportScheduleRow } from "../useReportSchedules";
 import type { AnalysisPack } from "../useStandardAnalysis";
 import { SNAPSHOT_LABELS, THEME_META } from "./standardAnalysisUi";
+import { retentionPeriodsLabel, summarizePackDelivery } from "../standardAnalysisDeliverySummary";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -13,6 +15,7 @@ type Props = {
   onSelect: (packKey: string) => void;
   headerAction?: ReactNode;
   emptyHint?: string;
+  deliveryByPackKey?: Map<string, ReportScheduleRow[]>;
 };
 
 export function StandardAnalysisPackList({
@@ -22,6 +25,7 @@ export function StandardAnalysisPackList({
   onSelect,
   headerAction,
   emptyHint = "暂无分析包",
+  deliveryByPackKey,
 }: Props) {
   return (
     <aside className="flex min-h-0 min-w-0 w-full flex-col overflow-hidden border-b border-gray-200 bg-gray-50/40 xl:border-b-0 xl:border-r dark:border-gray-800 dark:bg-white/[0.02]">
@@ -58,6 +62,8 @@ export function StandardAnalysisPackList({
               : packs.map((pack) => {
                 const active = pack.packKey === activePackKey;
                 const snapshotLabel = SNAPSHOT_LABELS[pack.snapshotCronPreset] ?? pack.snapshotCronPreset;
+                const retentionLabel = retentionPeriodsLabel(pack.snapshotRetentionPeriods);
+                const delivery = summarizePackDelivery(deliveryByPackKey?.get(pack.packKey));
                 return (
                   <li key={pack.packKey}>
                     <button
@@ -98,6 +104,16 @@ export function StandardAnalysisPackList({
                         ) : null}
                         <Badge variant="light" color="info" size="sm">
                           {snapshotLabel}
+                        </Badge>
+                        <Badge variant="light" color="light" size="sm">
+                          {retentionLabel}
+                        </Badge>
+                        <Badge
+                          variant="light"
+                          color={delivery.tone === "active" ? "success" : delivery.tone === "draft" ? "warning" : "light"}
+                          size="sm"
+                        >
+                          {delivery.label.replace(/^定时投递：/, "投递：")}
                         </Badge>
                       </div>
                       <div className="mt-2 flex flex-wrap gap-1">

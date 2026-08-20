@@ -25,6 +25,7 @@ import type { CompareLayout } from "../standardAnalysisComparePrefs";
 import { themeAggregationHint } from "./standardAnalysisCompareUi";
 import { StandardAnalysisMetaRow, THEME_META } from "./standardAnalysisUi";
 import { StandardAnalysisLiveView } from "./StandardAnalysisLiveView";
+import { StandardAnalysisSnapshotStrip } from "./StandardAnalysisSnapshotStrip";
 
 type Props = {
   pack: AnalysisPack;
@@ -195,16 +196,22 @@ export function StandardAnalysisResultPanel({
           </div>
         ) : null}
 
+        <StandardAnalysisSnapshotStrip
+          pack={pack}
+          activeTheme={activeTheme}
+          snapshots={snapshots}
+          viewMode={viewMode}
+          canManage={canManage}
+          capturePending={capturePending}
+          onCapture={viewMode === "live" ? onCaptureCurrent : undefined}
+        />
+
         {viewMode === "live" ? (
           <StandardAnalysisLiveView
             pack={pack}
             activeTheme={activeTheme}
             runData={runQuery.data}
             isLoading={runQuery.isLoading}
-            snapshots={snapshots}
-            canManage={canManage}
-            capturePending={capturePending}
-            onCaptureSnapshot={onCaptureCurrent}
           />
         ) : (
           <>

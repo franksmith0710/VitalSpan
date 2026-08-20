@@ -214,8 +214,13 @@ export function StandardAnalysisConfigForm({
             {legacyBinding ? (
               <Alert severity="warning" appearance="soft">
                 <AlertTitle>建议迁移到数据集</AlertTitle>
-                <AlertDescription>
-                  当前仍使用物理表「{draft.physicalTableFqn}」。请选择下方数据集并保存，以使用语义层取数。
+                <AlertDescription className="space-y-2">
+                  <p>
+                    当前仍使用物理表「{draft.physicalTableFqn}」。请选择下方数据集并保存，以使用语义层取数。
+                  </p>
+                  <Button type="button" variant="outline" size="sm" className="w-fit" asChild>
+                    <Link to="/admin/datasets">前往数据集管理</Link>
+                  </Button>
                 </AlertDescription>
               </Alert>
             ) : null}

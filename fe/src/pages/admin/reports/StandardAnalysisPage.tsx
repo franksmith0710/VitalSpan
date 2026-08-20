@@ -50,6 +50,8 @@ import {
   STANDARD_THEME_QUERY,
   standardAnalysisConfigPath,
 } from "./standardRoutes";
+import { groupStandardSchedulesByPackKey } from "./standardAnalysisDeliverySummary";
+import { useReportSchedulesList } from "./useReportSchedules";
 
 export function StandardAnalysisPage() {
   const { user } = useAuth();
@@ -58,6 +60,11 @@ export function StandardAnalysisPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const packsQuery = useStandardPacks();
   const packs = packsQuery.data?.items ?? [];
+  const standardSchedulesQuery = useReportSchedulesList({ sourceType: "standard" });
+  const deliveryByPackKey = useMemo(
+    () => groupStandardSchedulesByPackKey(standardSchedulesQuery.data?.items),
+    [standardSchedulesQuery.data?.items],
+  );
   const packFromUrl = searchParams.get(STANDARD_PACK_QUERY);
   const [selectedPackKey, setSelectedPackKey] = useState<string | null>(packFromUrl);
   const [selectedTheme, setSelectedTheme] = useState<AnalysisTheme | null>(null);
@@ -300,6 +307,7 @@ export function StandardAnalysisPage() {
                 activePackKey={activePack?.packKey ?? null}
                 isLoading={packsQuery.isLoading}
                 onSelect={selectPack}
+                deliveryByPackKey={deliveryByPackKey}
               />
             </div>
             {activePack && activeTheme ? (

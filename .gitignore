@@ -16,7 +16,7 @@ fe/.vite/
 .dev/walkthrough/
 .dev/baselines/
 .codegraph/
-.ast-grep/cache/
+.evidence/
 
 # 本地临时文件与运行产物（禁止入库）
 .tmp/

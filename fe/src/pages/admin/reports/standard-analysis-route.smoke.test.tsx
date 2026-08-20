@@ -66,6 +66,9 @@ vi.mock("@/lib/api", () => ({
     if (path.startsWith("/api/v1/datasets/query-configs/")) {
       return { columns: [{ name: "province" }, { name: "city" }, { name: "amount" }] };
     }
+    if (path.includes("/api/v1/reports/schedules")) {
+      return { items: [], total: 0 };
+    }
     throw new Error(`unmocked ${path}`);
   }),
 }));

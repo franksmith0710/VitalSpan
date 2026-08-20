@@ -48,7 +48,9 @@ export function createEmptyAnalysisPack(): AnalysisPack {
 
 export function StandardAnalysisMetaRow({ pack, className }: { pack: AnalysisPack; className?: string }) {
   const snapshotLabel = SNAPSHOT_LABELS[pack.snapshotCronPreset] ?? pack.snapshotCronPreset;
-  const bindingLabel = pack.datasetId || pack.physicalTableFqn || "未绑定";
+  const retentionLabel = `保留 ${pack.snapshotRetentionPeriods ?? 12} 期`;
+  const usesDataset = Boolean(pack.datasetId);
+  const usesLegacyTable = !usesDataset && Boolean(pack.physicalTableFqn);
 
   return (
     <div className={cn("flex flex-wrap items-center gap-2", className)}>
@@ -57,13 +59,28 @@ export function StandardAnalysisMetaRow({ pack, className }: { pack: AnalysisPac
           {pack.businessObjectCode}
         </Badge>
       ) : null}
-      <Badge variant="light" color="light" size="sm" className="max-w-[min(100%,14rem)] truncate font-mono">
-        <Database className="size-3 shrink-0" aria-hidden />
-        {bindingLabel}
-      </Badge>
+      {usesDataset ? (
+        <Badge variant="light" color="success" size="sm" className="max-w-[min(100%,14rem)] truncate">
+          <Database className="size-3 shrink-0" aria-hidden />
+          数据集绑定
+        </Badge>
+      ) : usesLegacyTable ? (
+        <Badge variant="light" color="warning" size="sm" className="max-w-[min(100%,14rem)] truncate font-mono">
+          <Database className="size-3 shrink-0" aria-hidden />
+          物理表（兼容）· {pack.physicalTableFqn}
+        </Badge>
+      ) : (
+        <Badge variant="light" color="light" size="sm">
+          <Database className="size-3 shrink-0" aria-hidden />
+          未绑定数据源
+        </Badge>
+      )}
       <Badge variant="light" color="info" size="sm">
         <Timer className="size-3 shrink-0" aria-hidden />
         {snapshotLabel}
+      </Badge>
+      <Badge variant="light" color="light" size="sm">
+        {retentionLabel}
       </Badge>
     </div>
   );

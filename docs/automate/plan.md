@@ -1,7 +1,7 @@
 # 演化里程碑计划（活跃）
 
 > 人工维护（`create-evolution-plan`）；演化 agent **只读**。
-> **当前节** = **§M-RPT · F-A 信任链**；**M-DEPTH / M-FINAL / M-PRODUCT 已收官**；**129 项 PRD 合同已实现**。  
+> **当前节** = **§M-RPT · F-C 字典与模板体验**；F-B 标准分析深化已收官（2026-08-20）。  
 > **全量路线图**：M1–M12 + M-FE + M-FINAL + M-PRODUCT + M-DASH-UX + M-DEPTH 已完成；**活跃 companion** = 报表中心深度收官（依据 [holistic audit](../material/blueprints/2026-08-20-report-center-holistic-audit.md)）。  
 > **完成定义**：`[x]` = 真实依赖下浏览器/集成 smoke 可感知；`[ ]` = 未达；标「可选」不阻塞 M-RPT 必做 gate。  
 > **实施细则**：架构见 [`../arch.md`](../arch.md)；报表域见 [`../services/reports.md`](../services/reports.md)；验收锚点 [`prd/F08-RPT.md`](./prd/F08-RPT.md) · [`prd/F11-META.md`](./prd/F11-META.md)。
@@ -13,7 +13,7 @@ archive_ref: docs/automate/plan.archive.md
 execute_scope: m-rpt-depth
 frozen_milestone: M-FINAL
 current_milestone: M-RPT
-queued_milestone: M-RPT-F-B
+queued_milestone: M-RPT-F-C
 roadmap: M1-M12+M-FE-1~3+M-FINAL+M-PRODUCT+M-DASH-UX+M-DEPTH+M-RPT
 prd_total: 129
 prd_in_scope: 129
@@ -62,7 +62,7 @@ intervention: report-center-holistic-audit-2026-08-20
   → 发版 QA / 数据大屏抽测  ← 按需，不阻塞 M-RPT
 ```
 
-**G2 选题约束**：当前节 **§M-RPT F-A** 全勾前不跳 F-C/F-D；每轮 3–5 项必做。**禁止**：嵌入积木/Jimu/AJ-Report 运行时；stub 调度假绿；AI/SQLBot；fork DE/SS。
+**G2 选题约束**：当前节 **§M-RPT F-C**；F-A/F-B 已收官。每轮 3–5 项必做。**禁止**：嵌入积木/Jimu/AJ-Report 运行时；stub 调度假绿；AI/SQLBot；fork DE/SS。
 
 ---
 
@@ -74,9 +74,9 @@ intervention: report-center-holistic-audit-2026-08-20
 
 | 子批 | 主题 | 必做 | 可选 | 状态 |
 |------|------|------|------|------|
-| **F-A** | 信任链 | 4 | 0 | **当前** |
-| **F-B** | 标准分析深化 | 3 | 1 | queued |
-| **F-C** | 字典与模板体验 | 3 | 0 | queued |
+| **F-A** | 信任链 | 4 | 0 | **已收官** |
+| **F-B** | 标准分析深化 | 3 | 1 | **已收官 · 2026-08-20** |
+| **F-C** | 字典与模板体验 | 3 | 0 | **当前** |
 | **F-D** | 固定版式进阶 | 0 | 3 | 可选 backlog |
 
 **推荐执行顺序**：
@@ -92,29 +92,29 @@ F-A  标准分析投递 e2e + 调度探针 + 模板 smoke 修漂移
 
 > **最贵失败**：调度 list 500、standard 投递 422、模板 smoke 假绿 — 用户认为「报表中心坏了」。
 
-- [ ] RPT-005: 标准分析 `sourceType=standard` **端到端**（配置页深链 `packKey` → 创建调度 → 执行 → 附件/日志可读；真实 SMTP 或显式失败）
-- [ ] RPT-005: 调度 `GET /schedules` · `GET .../executions` **部署探针**纳入 CI 或 deploy-dev 走查清单（防 list 500 回归）
-- [ ] RPT-003: `report-templates.smoke` 与扩展 Tab UI **漂移修复**（选择器/label 与实现一致；vitest 全绿）
-- [ ] RPT-002: 配置页保存后 **「创建定时投递」CTA**（跳转 `/admin/reports/schedules` 并预填 standard 源）
+- [x] RPT-005: 标准分析 `sourceType=standard` **端到端**（配置页深链 `packKey` → 创建调度 → 执行 → 附件/日志可读；真实 SMTP 或显式失败）（完成于 2026-08-20）
+- [x] RPT-005: 调度 `GET /schedules` · `GET .../executions` **部署探针**纳入 CI 或 deploy-dev 走查清单（防 list 500 回归）（完成于 2026-08-20）
+- [x] RPT-003: `report-templates.smoke` 与扩展 Tab UI **漂移修复**（选择器/label 与实现一致；vitest 全绿）（完成于 2026-08-20）
+- [x] RPT-002: 配置页保存后 **「创建定时投递」CTA**（跳转 `/admin/reports/schedules` 并预填 standard 源）（完成于 2026-08-20）
 
 **验收信号**：MailHog/SMTP 或 IM 台账下，标准分析包可完成一次定时投递；schedules API 在 deploy-dev smoke 恒 200；模板页 smoke 无假绿。
 
 **代码锚点**：`scheduler/schemas.py` · `scheduler/executor.py` · `StandardAnalysisConfigForm.tsx` · `ReportSchedulesPage.tsx` · `report-templates.smoke.test.tsx`
 
-### F-B — 标准分析深化【必做】
+### F-B — 标准分析深化【必做 · 已收官 · 2026-08-20】
 
 > **对标**：对象工作台 + 周期对比（差异化）；M1 内存聚合与快照治理待补。
 
-- [ ] RPT-002: 周期快照 **retention**（保留 N 期配置 + 超期清理 job；compare 不受脏数据影响）
-- [ ] RPT-002: 分析包绑定 **Dataset 为主叙事**（配置 UI 默认 Dataset；物理表路径 deprecated 提示）
-- [ ] RPT-002: 结果区 **口径/快照/投递** 可观测条在实时与对比模式均可见（Hub 摘要 + 结果页一致）
+- [x] RPT-002: 周期快照 **retention**（保留 N 期配置 + 超期清理 job；compare 不受脏数据影响）（完成于 2026-08-20 · `backend/tests/test_standard_snapshot_retention.py`）
+- [x] RPT-002: 分析包绑定 **Dataset 为主叙事**（配置 UI 默认 Dataset；物理表路径 deprecated 提示）（完成于 2026-08-20 · `StandardAnalysisConfigForm` · `StandardAnalysisMetaRow`）
+- [x] RPT-002: 结果区 **口径/快照/投递** 可观测条在实时与对比模式均可见（Hub 摘要 + 结果页一致）（完成于 2026-08-20 · `StandardAnalysisSnapshotStrip` · `StandardAnalysisPackList`）
 - [ ] RPT-002: 主题聚合 **库内 GROUP BY** 路径〔可选 · 大数据场景；未做则 meta 诚实标注 M1 样本聚合〕
 
 **验收信号**：连续快照超过 N 期后旧期自动清理；新包默认走 Dataset 绑定；用户可见「最近快照 / 下次节奏」与投递状态。
 
-**代码锚点**：`standard/snapshot.py` · `standard/jobs.py` · `theme_aggregate.py` · `StandardAnalysisSnapshotStrip.tsx`
+**代码锚点**：`standard/snapshot.py` · `standard/jobs.py` · `theme_aggregate.py` · `StandardAnalysisSnapshotStrip.tsx` · `standardAnalysisDeliverySummary.ts`
 
-### F-C — 字典与模板体验【必做】
+### F-C — 字典与模板体验【必做 · 当前】
 
 > **对标积木「数据字典」**：复用 META-003，不做第二套字典 CRUD。
 

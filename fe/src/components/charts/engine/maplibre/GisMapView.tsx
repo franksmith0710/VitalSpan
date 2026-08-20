@@ -132,6 +132,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         if (useGlobe) {
           applyGlobeAtmosphere(map, "globe", project.fog);
         }
+        map.resize();
         onPaintReady?.();
       });
     })();
@@ -172,6 +173,16 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       applyGlobeAtmosphere(map, "mercator", undefined);
     }
   }, [project.fog, project.view, style, useGlobe]);
+
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    const resize = () => mapRef.current?.resize();
+    resize();
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
+    observer?.observe(host);
+    return () => observer?.disconnect();
+  }, [style]);
 
   return (
     <div

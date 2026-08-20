@@ -899,7 +899,10 @@ export const ChartRenderer = memo(function ChartRenderer({
   if (embedded) {
     const gateLabel =
       mountGateStatus === "offscreen" ? "图表屏外已暂停" : "图表排队加载中";
-    if (!effectiveRenderEnabled || (!effectiveQueryEnabled && !gisBasemapOnly)) {
+    if (
+      !effectiveRenderEnabled ||
+      (!effectiveQueryEnabled && !gisBasemapOnly && !isGisMapChart)
+    ) {
       return (
         <div ref={bodyRef} className="relative h-full min-h-0 w-full min-w-0 overflow-hidden">
           <Skeleton
@@ -912,10 +915,43 @@ export const ChartRenderer = memo(function ChartRenderer({
     }
 
     const showBlockingLoading =
-      loading && columns.length === 0 && rows.length === 0 && !gisBasemapOnly;
+      !isGisMapChart &&
+      loading &&
+      columns.length === 0 &&
+      rows.length === 0 &&
+      !gisBasemapOnly;
+    const showDataError = error && !gisBasemapOnly && !isGisMapChart;
     return (
       <div ref={bodyRef} className="relative h-full min-h-0 w-full min-w-0 overflow-hidden">
-        {showBlockingLoading ? (
+        {isGisMapChart ? (
+          <>
+            {body}
+            {loading && !gisBasemapOnly ? (
+              <div
+                className="pointer-events-none absolute inset-x-0 top-0 z-[2] bg-black/30 px-2 py-1 text-center text-[10px] text-white"
+                aria-busy="true"
+              >
+                数据加载中…
+              </div>
+            ) : null}
+            {error && !gisBasemapOnly ? (
+              <div
+                role="alert"
+                className={cn(
+                  "absolute inset-x-2 bottom-2 z-[2] flex items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-theme-sm",
+                  isDark
+                    ? "border-error-500/30 bg-error-950/90"
+                    : "border-error-500/40 bg-error-50/95",
+                )}
+              >
+                <p className={cn("min-w-0 flex-1 truncate", dwStateError)}>{error}</p>
+                <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={rerun}>
+                  重试
+                </Button>
+              </div>
+            ) : null}
+          </>
+        ) : showBlockingLoading ? (
           <Skeleton
             className={cn(
               "absolute inset-0 rounded-lg",
@@ -924,7 +960,7 @@ export const ChartRenderer = memo(function ChartRenderer({
             aria-busy="true"
             aria-label="图表加载中"
           />
-        ) : error && !gisBasemapOnly ? (
+        ) : showDataError ? (
           <div
             role="alert"
             className={cn(

@@ -18,7 +18,7 @@ import {
   writeStoredViewMode,
   type PresentationMode,
 } from "../standardAnalysisPrefs";
-import type { AnalysisPack, AnalysisTheme, RunResult, SnapshotRecord } from "../useStandardAnalysis";
+import type { AnalysisPack, AnalysisTheme, RunResult } from "../useStandardAnalysis";
 import {
   defaultLivePresentationMode,
   detectSuspiciousTimeSeries,
@@ -32,17 +32,12 @@ import {
   normalizeRows,
 } from "./standardAnalysisUi";
 import { StandardAnalysisSectionChart } from "./StandardAnalysisSectionChart";
-import { StandardAnalysisSnapshotStrip } from "./StandardAnalysisSnapshotStrip";
 
 type Props = {
   pack: AnalysisPack;
   activeTheme: AnalysisTheme;
   runData?: RunResult;
   isLoading: boolean;
-  snapshots?: SnapshotRecord[];
-  canManage: boolean;
-  capturePending: boolean;
-  onCaptureSnapshot: () => void;
 };
 
 function LiveSummaryStrip({
@@ -88,10 +83,6 @@ export function StandardAnalysisLiveView({
   activeTheme,
   runData,
   isLoading,
-  snapshots,
-  canManage,
-  capturePending,
-  onCaptureSnapshot,
 }: Props) {
   const liveSection = runData?.renderSpec.sections[0];
   const rawHeaders = liveSection ? normalizeColumns(liveSection.columns) : [];
@@ -131,15 +122,6 @@ export function StandardAnalysisLiveView({
           {dataMetaNote}
         </div>
       ) : null}
-
-      <StandardAnalysisSnapshotStrip
-        pack={pack}
-        activeTheme={activeTheme}
-        snapshots={snapshots}
-        canManage={canManage}
-        capturePending={capturePending}
-        onCapture={onCaptureSnapshot}
-      />
 
       {timeSeriesWarning ? (
         <div className="px-5 pt-4">

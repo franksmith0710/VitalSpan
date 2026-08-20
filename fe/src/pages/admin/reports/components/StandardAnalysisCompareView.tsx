@@ -12,10 +12,6 @@ import {
 import {
   formatCompareDeltaPct,
   hasPreviousSnapshot,
-  latestSnapshotForTheme,
-  SNAPSHOT_SCHEDULE_HINT,
-  snapshotPresetLabel,
-  themeAggregationHint,
 } from "./standardAnalysisCompareUi";
 
 type Props = {
@@ -29,21 +25,18 @@ type Props = {
   onCapturePreviousBaseline: () => void;
 };
 
-function CompareSemanticsBanner({ pack, activeTheme, compareData, latestSnapshot }: {
-  pack: AnalysisPack;
+function CompareSemanticsBanner({
+  activeTheme,
+  compareData,
+}: {
   activeTheme: AnalysisTheme;
   compareData: CompareResult;
-  latestSnapshot?: { periodKey: string; capturedAt: string };
 }) {
   const themeLabel = THEME_META[activeTheme]?.label ?? activeTheme;
-  const scheduleHint = SNAPSHOT_SCHEDULE_HINT[pack.snapshotCronPreset];
-  const snapshotLabel = snapshotPresetLabel(pack.snapshotCronPreset);
 
   return (
     <div className="mb-4 space-y-2 rounded-xl border border-gray-200 bg-gray-50/70 px-4 py-3 dark:border-gray-800 dark:bg-white/[0.02]">
-      <p className="text-theme-xs font-medium text-gray-800 dark:text-white/90">
-        {themeLabel} · {themeAggregationHint(pack, activeTheme)}
-      </p>
+      <p className="text-theme-xs font-medium text-gray-800 dark:text-white/90">{themeLabel} · 周期对比</p>
       <ul className="space-y-1 text-theme-xs text-gray-600 dark:text-gray-400">
         <li>
           <span className="font-medium text-gray-700 dark:text-gray-300">本期</span>
@@ -54,21 +47,6 @@ function CompareSemanticsBanner({ pack, activeTheme, compareData, latestSnapshot
           ：历史快照
           {compareData.previousPeriodKey ? `（${compareData.previousPeriodKey}）` : "（尚未生成）"}
         </li>
-        <li>
-          <span className="font-medium text-gray-700 dark:text-gray-300">快照节奏</span>
-          ：{snapshotLabel}，{scheduleHint}；仅供平台内对比，与邮件投递无关
-        </li>
-        {latestSnapshot ? (
-          <li>
-            <span className="font-medium text-gray-700 dark:text-gray-300">最近快照</span>
-            ：{latestSnapshot.periodKey}（{new Date(latestSnapshot.capturedAt).toLocaleString()}）
-          </li>
-        ) : (
-          <li>
-            <span className="font-medium text-gray-700 dark:text-gray-300">最近快照</span>
-            ：暂无
-          </li>
-        )}
       </ul>
     </div>
   );
@@ -121,18 +99,12 @@ export function StandardAnalysisCompareView({
   onCapturePreviousBaseline,
 }: Props) {
   const ready = compareData && hasPreviousSnapshot(compareData);
-  const latestSnapshot = latestSnapshotForTheme(snapshots, activeTheme);
 
   return (
     <ListPageTableFrame className="flex min-h-0 flex-1 flex-col">
       {compareData && !isLoading ? (
         <div className="px-5 pt-4">
-          <CompareSemanticsBanner
-            pack={pack}
-            activeTheme={activeTheme}
-            compareData={compareData}
-            latestSnapshot={latestSnapshot}
-          />
+          <CompareSemanticsBanner activeTheme={activeTheme} compareData={compareData} />
         </div>
       ) : null}
 

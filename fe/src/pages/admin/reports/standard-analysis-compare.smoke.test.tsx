@@ -68,6 +68,9 @@ vi.mock("@/lib/api", () => ({
         status: "ready",
       };
     }
+    if (path.includes("/api/v1/reports/schedules")) {
+      return { items: [], total: 0 };
+    }
     throw new Error(`unmocked ${path}`);
   }),
 }));

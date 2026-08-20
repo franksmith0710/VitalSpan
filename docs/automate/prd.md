@@ -1,8 +1,8 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.123
-last_updated: 2026-08-18
+version: 1.2.124
+last_updated: 2026-08-20
 truth_source: true
 evolution_hub: true
 goal_ref: docs/automate/goal.md
@@ -212,12 +212,12 @@ domain_count: 16
 | 字段 | 值 |
 |------|-----|
 | 已冻结 | **M-FINAL**（129/129 PRD 合同项） |
-| 当前执行 | **§M-RPT** — 报表中心深度收官（F-A 信任链 → F-B 标准分析 → F-C 字典与模板） |
-| 排队 | F-D 可选（交叉表/套打/另存为）；data-screen-qa 按需 |
+| 当前执行 | **§M-RPT F-C** — 字典与模板体验（META-003 lookup · 导出翻译 · 模板首进） |
+| 排队 | F-D 可选 |
 | PRD 合同 | **129** 已实现 · **0** 合同未实现 |
-| companion（plan） | **10** 必做待办 + **3** 可选（M-RPT F-A~C 必做；F-D 可选） |
-| 当前节 | **M-RPT F-A** |
-| G2 选题 | 每轮 3–5 项；F-A 全勾前不跳 F-C/F-D；禁止积木/Jimu/AJ-Report 运行时 |
+| companion（plan） | **4** 必做待办 + **4** 可选（F-C 必做；F-B GROUP BY + F-D 可选） |
+| 当前节 | **M-RPT F-C** |
+| G2 选题 | 每轮 3–5 项；F-C 必做全勾前不跳 F-D；禁止积木/Jimu/AJ-Report 运行时 |
 
 **说明**：M-DEPTH 已于 2026-07-29 收官。2026-08-20 依据 [报表中心 holistic audit](../material/blueprints/2026-08-20-report-center-holistic-audit.md) 插入 **§M-RPT** companion 深化（不扩合同 ID 面）。细则见 [`plan.md`](./plan.md) §M-RPT。
 
@@ -228,7 +228,9 @@ domain_count: 16
 | M-DASH-UX F-A~D | **已收官** |
 | M-PRODUCT F-A~F | **已收官** |
 | M-DEPTH F-A~E | **已收官** |
-| **M-RPT F-A~C** | **当前节**（10 必做 companion 待办） |
+| **M-RPT F-A** | **已收官**（2026-08-20） |
+| **M-RPT F-B** | **已收官**（2026-08-20） |
+| **M-RPT F-C** | **当前节**（3 必做 companion 待办） |
 
 ---
 
