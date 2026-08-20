@@ -24,6 +24,7 @@
 | 文件 | 说明 |
 |------|------|
 | [00-REQUIREMENTS.md](./00-REQUIREMENTS.md) | **规范硬要求**：必须 HTTP POST、合法 bundle、本机上传 |
+| [EXTERNAL-AUTHOR.md](./EXTERNAL-AUTHOR.md) | **外部 AI 三步**：validate → upload → artifactId |
 | [HANDOFF.md](./HANDOFF.md) | 联调环境占位、curl、误读对照 |
 | [CHANGELOG.md](./CHANGELOG.md) | 规范包修订 |
 | [PROTOCOL.md](./PROTOCOL.md) | 自定义组件库协议：Base、`vsCv`、html/d3 runtime、PUT 覆盖 |

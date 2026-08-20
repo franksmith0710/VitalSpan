@@ -1,6 +1,9 @@
 # VitalSpan × DeepTalk 联调测试包
 
-**先读 [00-REQUIREMENTS.md](./00-REQUIREMENTS.md)**（完成定义、合法 JSON、本机上传命令）。下文是环境占位与误读对照。
+**先读 [00-REQUIREMENTS.md](./00-REQUIREMENTS.md)**（完成定义、合法 JSON、本机上传命令）。  
+**外部 AI 必做三步** → [EXTERNAL-AUTHOR.md](./EXTERNAL-AUTHOR.md)（`write_file` 不算上传）。
+
+下文是环境占位与误读对照。
 
 ## 环境（由 VitalSpan 方口头提供，勿把密钥写进仓库）
 

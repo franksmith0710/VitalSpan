@@ -82,21 +82,25 @@ Content-Type: application/json
 
 ## 5. 本机怎么传（Windows）
 
+外部 AI 三步见 [EXTERNAL-AUTHOR.md](./EXTERNAL-AUTHOR.md)。摘要：
+
 1. 后端：`uvicorn` 监听 8000（`GET http://127.0.0.1:8000/health` 要通）
-2. 在本包根目录：
+2. **先校验**（与 API 相同 lint，422 前拦截）：
 
 ```bat
-python tools\upload-ai-viz-artifact.py
+python tools\validate-ai-viz-bundle.py --file examples\你的组件.json
 ```
 
-默认上传 `examples/custom-viz-d3-bundle.json`。换文件：
+3. **再入库**（`write_file` 到桌面不算完成）：
 
 ```bat
-python tools\upload-ai-viz-artifact.py --file examples\custom-viz-bundle.json
+python tools\upload-ai-viz-artifact.py --file examples\你的组件.json
 ```
 
-账号默认 `admin`，密码 `VITALSPAN_DEV_ADMIN_PASSWORD`（未设则 `changeme`）。  
-打印出的 `artifactId` 填进大屏 `customVizConfig.artifactId`。
+仅校验、不 POST：`upload-ai-viz-artifact.py --validate-only`（或单独跑 validate 脚本）。
+
+默认金样例 `examples/custom-viz-d3-bundle.json`。账号默认 `admin`，密码 `VITALSPAN_DEV_ADMIN_PASSWORD`（未设则 `changeme`）。  
+成功须打印 `artifactId=<uuid>` 与 `styleComplianceTier`；将该 uuid 填进大屏 `customVizConfig.artifactId`。
 
 ## 6. 拒收示例（不要生成）
 
