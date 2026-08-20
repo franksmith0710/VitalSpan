@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ChevronRight,
   Clock,
   Eye,
   FileText,
@@ -8,6 +9,11 @@ import {
   Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { catalogNodePath } from "@/lib/reportCatalogUtils";
@@ -30,10 +36,10 @@ import {
 import { type CatalogNode, useCatalogExtension, useExtensionRenderSpec, useExtensionRevisions } from "../useReportTemplates";
 import type { ReportCatalogNode } from "@/lib/reportCatalogUtils";
 
-const KIND_LABELS: Record<NonNullable<CatalogNode["templateKind"]>, string> = {
-  word: "Word",
+const KIND_LABELS: Record<string, string> = {
   excel: "Excel",
   pdf: "PDF",
+  word: "Word（已停用）",
 };
 
 const TEMPLATE_TABS = [
@@ -85,8 +91,16 @@ export function TemplateDetailPanel({
     setTab(value);
   };
 
+  const templateKind = node.templateKind as string | null;
+  const isLegacyWordTemplate = templateKind === "word";
   const exportDisabled =
-    extensionLoading || !extensionData || (extensionData.metrics?.length ?? 0) === 0;
+    isLegacyWordTemplate ||
+    extensionLoading ||
+    !extensionData ||
+    (extensionData.metrics?.length ?? 0) === 0;
+  const exportDisabledHint = isLegacyWordTemplate
+    ? "Word 模板已停用，请删除后新建 PDF 或 Excel 模板"
+    : "请先配置扩展指标";
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -105,9 +119,9 @@ export function TemplateDetailPanel({
             <ReportExportCard
               variant="toolbar"
               defaultTemplateId={node.id}
-              defaultFormat={node.templateKind ?? "pdf"}
+              defaultFormat={templateKind === "word" ? "pdf" : (node.templateKind ?? "pdf")}
               disabled={exportDisabled}
-              disabledHint="请先配置扩展指标"
+              disabledHint={exportDisabledHint}
             />
             {!readOnly ? <CatalogNodeDeleteButton node={node} onDeleted={onDeleted} /> : null}
           </>
@@ -202,17 +216,33 @@ export function TemplateDetailPanel({
                     isLoading={extensionLoading}
                   />
                   {(revisionsQuery.data?.items?.length ?? 0) > 0 ? (
-                    <div className="mt-6 space-y-2 rounded-xl border border-gray-200 p-4 dark:border-gray-800">
-                      <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">修订历史</p>
-                      <ul className="space-y-1 text-theme-xs text-gray-600 dark:text-gray-400">
-                        {revisionsQuery.data?.items?.map((rev) => (
-                          <li key={rev.revision}>
-                            v{rev.revision}
-                            {rev.changeNote ? ` · ${rev.changeNote}` : ""}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                    <Collapsible
+                      defaultOpen={false}
+                      className="group mt-6 rounded-xl border border-gray-200 dark:border-gray-800"
+                    >
+                      <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-xl p-4 text-left transition-colors hover:bg-gray-50/80 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30 dark:hover:bg-white/[0.03]">
+                        <ChevronRight
+                          className="size-4 shrink-0 text-gray-400 transition-transform group-data-[state=open]:rotate-90"
+                          aria-hidden
+                        />
+                        <span className="text-theme-sm font-medium text-gray-800 dark:text-white/90">
+                          修订历史
+                        </span>
+                        <span className="ml-auto text-theme-xs tabular-nums text-gray-500 dark:text-gray-400">
+                          {revisionsQuery.data?.items?.length ?? 0} 条
+                        </span>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <ul className="space-y-1 border-t border-gray-200 px-4 py-3 text-theme-xs text-gray-600 dark:border-gray-800 dark:text-gray-400">
+                          {revisionsQuery.data?.items?.map((rev) => (
+                            <li key={rev.revision}>
+                              v{rev.revision}
+                              {rev.changeNote ? ` · ${rev.changeNote}` : ""}
+                            </li>
+                          ))}
+                        </ul>
+                      </CollapsibleContent>
+                    </Collapsible>
                   ) : null}
                 </TemplatePanelSection>
               </TemplateTabShell>
@@ -226,7 +256,7 @@ export function TemplateDetailPanel({
                 {renderQuery.isError && !previewData ? (
                   <TemplateEmptyState
                     title="暂无渲染规格"
-                    description="请先在「扩展配置」中添加指标并保存。当前为指标配置预览，非 Word 文档渲染。"
+                    description="请先在「扩展配置」中添加指标并保存。当前为指标配置预览，非最终文档渲染。"
                   />
                 ) : null}
                 {previewData ? <ReportExtensionPreview data={previewData} /> : null}

@@ -29,7 +29,7 @@ describe("report templates smoke", () => {
               name: "销售模板",
               parentId: null,
               nodeType: "template",
-              templateKind: "word",
+              templateKind: "pdf",
               templateKey: "sales_summary",
               sortOrder: 0,
             },
@@ -196,7 +196,7 @@ describe("report templates smoke", () => {
           name: "新建模板",
           parentId: FOLDER_ID,
           nodeType: "template",
-          templateKind: body.templateKind ?? "word",
+          templateKind: body.templateKind ?? "pdf",
           templateKey: body.templateKey ?? "tpl_test1234",
           sortOrder: 0,
         };

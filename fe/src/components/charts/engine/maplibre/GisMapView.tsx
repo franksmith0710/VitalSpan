@@ -33,9 +33,9 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const shellRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
+  const project = useMemo(() => readGisProject(chartConfig), [chartConfig]);
   const projectRef = useRef(project);
   projectRef.current = project;
-  const project = useMemo(() => readGisProject(chartConfig), [chartConfig]);
   const overlayGeoJson = useMemo(
     () =>
       chartConfig
@@ -193,10 +193,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   }, [atmosphereKey, project.atmospherePreset, project.fog, project.projection, styleKey]);
 
   useEffect(() => {
-    const shell = shellRef.current;
-    if (!shell) return;
     return mountGisStarfieldOverlay(
-      shell,
       () => mapRef.current,
       project.atmospherePreset,
       project.projection,

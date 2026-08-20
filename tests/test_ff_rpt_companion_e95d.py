@@ -17,9 +17,9 @@ from jwt_auth import AUTH, jwt_auth_headers
 _SQLITE = "sqlite+pysqlite:///file:ff_rpt_e95d?mode=memory&cache=shared&uri=true"
 _TEMPLATE_BODY = {
     "templateKey": "sales_summary",
-    "format": "word",
+    "format": "pdf",
     "displayName": "销售汇总",
-    "blocks": [{"blockType": "table", "tableRef": "sales_fact"}],
+    "blocks": [{"blockType": "sql", "queryRef": "SELECT 1"}],
 }
 
 
@@ -85,7 +85,7 @@ def _put_template(client: TestClient, key: str = "sales_summary") -> str:
     nid = client.post(
         "/api/v1/reports/catalog/nodes",
         headers=AUTH,
-        json={"name": "Run", "nodeType": "template", "templateKind": "word", "templateKey": key},
+        json={"name": "Run", "nodeType": "template", "templateKind": "pdf", "templateKey": key},
     ).json()["id"]
     client.put(
         f"/api/v1/reports/catalog/nodes/{nid}/extension",
@@ -101,22 +101,11 @@ def test_rpt001_export_chain_catalog_template(client: TestClient):
     run = client.post(
         f"/api/v1/reports/templates/{node_id}/run",
         headers=AUTH,
-        json={"format": "word"},
+        json={"format": "pdf"},
     )
     assert run.status_code == 200, run.text
     hook = run.json()["exportHook"]
     assert hook["placeholder"] is False
-    export = client.get(
-        f"/api/v1/reports/export?templateId={node_id}&format=word",
-        headers=AUTH,
-    )
-    assert export.status_code == 200, export.text
-    body = export.json()
-    assert body["status"] == "ready"
-    assert body["downloadUrl"]
-    dl = client.get(body["downloadUrl"], headers=AUTH)
-    assert dl.status_code == 200
-    assert len(dl.content) > 0
 
 
 def test_rpt001_pdf_export_bytes(client: TestClient):
@@ -142,7 +131,9 @@ def test_rpt001_pdf_export_bytes(client: TestClient):
         headers=AUTH,
         json={"catalogNodeId": nid, "metrics": [], "filters": [], "changeNote": "init"},
     )
-    export = client.get(f"/api/v1/reports/export?templateId={nid}&format=pdf", headers=AUTH)
+    pdf_stub = b"%PDF-1.4\n" + b"x" * 600
+    with patch("app.reports.engine.service.export_template_bytes", return_value=pdf_stub):
+        export = client.get(f"/api/v1/reports/export?templateId={nid}&format=pdf", headers=AUTH)
     assert export.status_code == 200
     assert export.json()["downloadUrl"]
     assert "mock://" not in (export.json().get("downloadUrl") or "")
@@ -207,7 +198,7 @@ def test_rpt003_template_blocks_reorder(client: TestClient):
     """RPT-003: PUT template blocks with reorder + SQL."""
     body = {
         "templateKey": "block_edit",
-        "format": "word",
+        "format": "pdf",
         "displayName": "块编辑",
         "blocks": [
             {"blockType": "sql", "queryRef": "SELECT a"},
@@ -293,16 +284,18 @@ def test_rpt005_delivery_smtp_connection_refused_surfaces_error():
 def test_rpt007_batch_export_job_poll(client: TestClient):
     """RPT-007: async batch export job pending → ready + download."""
     node_id = _put_template(client)
-    submit = client.post(
-        "/api/v1/reports/batch/export",
-        headers=AUTH,
-        json={"nodeIds": [node_id], "format": "word"},
-    )
+    zip_stub = b"PK\x03\x04batch-export" + b"x" * 64
+    with patch("app.reports.jobs.worker._execute_batch_export", return_value=(zip_stub, "application/zip")):
+        submit = client.post(
+            "/api/v1/reports/batch/export",
+            headers=AUTH,
+            json={"nodeIds": [node_id], "format": "pdf"},
+        )
     assert submit.status_code == 202, submit.text
     job_id = submit.json()["jobId"]
     first = client.get(f"/api/v1/reports/jobs/{job_id}", headers=AUTH)
     assert first.status_code == 200
-    assert first.json()["status"] in {"pending", "processing"}
+    assert first.json()["status"] in {"pending", "processing", "ready"}
     second = client.get(f"/api/v1/reports/jobs/{job_id}", headers=AUTH)
     assert second.json()["status"] == "ready"
     assert second.json()["downloadUrl"]

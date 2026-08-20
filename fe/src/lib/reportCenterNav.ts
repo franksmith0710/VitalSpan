@@ -39,13 +39,13 @@ export const DOC_TEMPLATE_SCHEDULE_HINT =
   "打开文档模板 → 右侧「调度」Tab 配置定时生成与投递。";
 
 export const DOC_TEMPLATE_PRODUCT_LINE =
-  "固定版式文档（Word/Excel/PDF 套版填数），支持扩展配置、版本发布与定时投递。";
+  "固定版式文档（Excel/PDF 套版填数），支持扩展配置、版本发布与定时投递。";
 
 export const VISUAL_SCHEDULE_PRODUCT_LINE =
   "看板/大屏编辑页「定时推送」，生成可视化 PDF 定时报告（推荐主路径）。";
 
 export const VIZ_VS_DOC_TEMPLATE_HINT =
-  "看板/大屏组件模板在侧栏「可视化模板」；本页为文档套版（Word/Excel/PDF 填数导出）。";
+  "看板/大屏组件模板在侧栏「可视化模板」；本页为文档套版（Excel/PDF 填数导出）。";
 
 export function canRetryReportSchedules(caps: Iterable<string> | Set<string>): boolean {
   const set = caps instanceof Set ? caps : new Set(caps);

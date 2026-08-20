@@ -277,7 +277,7 @@ def _template_payload(template_key: str | None = None) -> dict:
     key = template_key or f"tmpl-{uuid.uuid4().hex[:8]}"
     return {
         "templateKey": key,
-        "format": "word",
+        "format": "pdf",
         "displayName": "Sales Report",
         "blocks": [{"blockType": "sql", "queryRef": "q_sales_summary"}],
     }

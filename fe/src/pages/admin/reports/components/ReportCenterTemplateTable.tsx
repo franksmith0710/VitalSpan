@@ -14,12 +14,10 @@ import { cn } from "@/lib/utils";
 
 const KIND_LABEL: Record<string, string> = {
   pdf: "PDF",
-  word: "Word",
   excel: "Excel",
 };
 
 const KIND_ICON: Record<string, typeof FileText> = {
-  word: FileText,
   excel: FileSpreadsheet,
   pdf: FileBarChart,
 };

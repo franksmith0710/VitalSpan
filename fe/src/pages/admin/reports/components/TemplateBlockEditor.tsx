@@ -26,7 +26,7 @@ import { type TemplateBlock, useReportTemplates } from "../useReportTemplates";
 
 type Props = {
   templateKey: string;
-  format: "word" | "excel" | "pdf";
+  format: "excel" | "pdf";
   displayName: string;
   readOnly?: boolean;
 };

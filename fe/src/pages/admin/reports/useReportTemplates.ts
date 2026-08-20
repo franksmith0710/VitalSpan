@@ -16,7 +16,7 @@ export type CatalogNode = {
   name: string;
   parentId: string | null;
   nodeType: "folder" | "template";
-  templateKind: "word" | "excel" | "pdf" | null;
+  templateKind: "excel" | "pdf" | null;
   templateKey: string | null;
   sortOrder: number;
 };
@@ -30,7 +30,7 @@ export type TemplateBlock = {
 
 export type TemplateDefinition = {
   templateKey: string;
-  format: "word" | "excel" | "pdf";
+  format: "excel" | "pdf";
   displayName: string;
   blocks: TemplateBlock[];
   storageRef?: string;

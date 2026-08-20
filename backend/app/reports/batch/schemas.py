@@ -22,7 +22,7 @@ class BatchReportItem(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     name: str = Field(min_length=1, max_length=120)
     parent_id: uuid.UUID | None = Field(default=None, alias="parentId")
-    template_kind: Literal["word", "excel", "pdf"] | None = Field(default=None, alias="templateKind")
+    template_kind: Literal["excel", "pdf"] | None = Field(default=None, alias="templateKind")
     extension: BatchExtensionInline | None = None
 
 
@@ -67,7 +67,7 @@ class BatchDryRunOut(BaseModel):
 class BatchExportJobIn(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     node_ids: list[uuid.UUID] = Field(min_length=1, alias="nodeIds")
-    format: Literal["pdf", "word", "excel"] = "pdf"
+    format: Literal["pdf", "excel"] = "pdf"
 
 
 class BatchExportJobOut(BaseModel):

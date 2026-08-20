@@ -22,11 +22,10 @@ import {
 import { cn } from "@/lib/utils";
 import { type CatalogNode, useReportTemplates } from "../useReportTemplates";
 
-const TEMPLATE_ICONS = {
-  word: FileText,
+const TEMPLATE_ICONS: Record<string, typeof FileText> = {
   excel: FileSpreadsheet,
   pdf: FileType2,
-} as const;
+};
 
 function TemplateIcon({ kind }: { kind: CatalogNode["templateKind"] }) {
   const Icon = kind ? TEMPLATE_ICONS[kind] : FileText;

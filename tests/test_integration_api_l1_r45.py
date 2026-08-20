@@ -138,12 +138,12 @@ def test_export_status_not_found_r45(client):
 @pytest.mark.parametrize(
     "fmt,expected_mime",
     [
-        ("word", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+        ("pdf", "application/pdf"),
         ("excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
     ],
 )
 def test_export_download_mime_r45(client, fmt, expected_mime):
-    """T-API-R45-005-05: word/excel download MIME 正确。"""
+    """T-API-R45-005-05: pdf/excel download MIME 正确。"""
     create = client.get(
         "/api/v1/reports/export",
         headers=AUTH,

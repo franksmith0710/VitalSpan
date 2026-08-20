@@ -11,7 +11,7 @@ class CatalogNodeCreate(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     parent_id: uuid.UUID | None = Field(default=None, alias="parentId")
     node_type: Literal["folder", "template"] = Field(default="folder", alias="nodeType")
-    template_kind: Literal["word", "excel", "pdf"] | None = Field(default=None, alias="templateKind")
+    template_kind: Literal["excel", "pdf"] | None = Field(default=None, alias="templateKind")
     template_key: str | None = Field(default=None, alias="templateKey", pattern=r"^[a-z][a-z0-9_-]{1,63}$")
     sort_order: int = Field(default=0, alias="sortOrder")
 

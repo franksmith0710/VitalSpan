@@ -37,7 +37,7 @@ function localizeExportStatus(status: string): string {
 }
 
 function exportFileName(exportId: string, format: string): string {
-  const ext = format === "word" ? "docx" : format === "excel" ? "xlsx" : format;
+  const ext = format === "excel" ? "xlsx" : format;
   return `report-${exportId}.${ext}`;
 }
 
@@ -189,7 +189,6 @@ export function ReportExportCard({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="pdf">PDF</SelectItem>
-          <SelectItem value="word">Word</SelectItem>
           <SelectItem value="excel">Excel</SelectItem>
         </SelectContent>
       </Select>
@@ -246,7 +245,6 @@ export function ReportExportCard({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="pdf">PDF</SelectItem>
-              <SelectItem value="word">Word</SelectItem>
               <SelectItem value="excel">Excel</SelectItem>
             </SelectContent>
           </Select>

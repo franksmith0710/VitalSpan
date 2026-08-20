@@ -226,7 +226,7 @@ const CODE_MESSAGES: Record<string, string> = {
   RPT_ENGINE_TEMPLATE_NOT_FOUND: "报表模板不存在",
   REPORT_EXPORT_FORBIDDEN: "无权发起报表导出",
   REPORT_EXPORT_GENERATION_FAILED: "报表生成失败，请检查扩展配置与数据源",
-  REPORT_EXPORT_INVALID_FORMAT: "导出格式无效，请选择 PDF / Word / Excel",
+  REPORT_EXPORT_INVALID_FORMAT: "导出格式无效，请选择 PDF 或 Excel",
   REPORT_TEMPLATE_NOT_FOUND: "报表模板不存在",
   AUDIT_FORBIDDEN: "无权查询审计日志",
 };

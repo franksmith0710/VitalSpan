@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyGisGlobeToStyle, gisFogToMapLibreSky, mapLibreSkyForPreset, spaceBackdropForPreset } from "@/components/charts/engine/maplibre/gisAtmosphereSky";
-import { getGlobeRadiusPixels } from "@/components/charts/engine/maplibre/gisGlobeLayout";
+import { getGlobeRadiusPixels, resolveGlobeScreenBoundsFallback } from "@/components/charts/engine/maplibre/gisGlobeLayout";
 import { resolveGisStarIntensity } from "@/components/charts/engine/maplibre/gisStarfield";
 
 describe("gisAtmosphereSky", () => {
@@ -36,6 +36,12 @@ describe("gisAtmosphereSky", () => {
 describe("gisGlobeLayout", () => {
   it("computes globe radius from world size and latitude", () => {
     expect(getGlobeRadiusPixels(512, 0)).toBeCloseTo(512 / (2 * Math.PI), 4);
+  });
+
+  it("fallback bounds center the globe", () => {
+    const bounds = resolveGlobeScreenBoundsFallback(400, 300);
+    expect(bounds.x).toBe(200);
+    expect(bounds.y).toBe(150);
   });
 });
 

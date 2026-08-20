@@ -54,13 +54,13 @@ class CenterResourceType(StrEnum):
 
 
 class RenderSpecContract(BaseModel):
-    """ADR-09 RenderSpec envelope shared by Web/PDF/Excel/Word."""
+    """ADR-09 RenderSpec envelope shared by Web/PDF/Excel."""
 
     model_config = ConfigDict(populate_by_name=True)
 
     template_node_id: str | None = Field(default=None, alias="templateNodeId")
     engine_version: str = Field(default=RENDER_SPEC_VERSION, alias="engineVersion")
-    format: Literal["web", "html", "pdf", "word", "excel"]
+    format: Literal["web", "html", "pdf", "excel"]
     sections: list[dict[str, Any]] = Field(default_factory=list)
     parameters: dict[str, Any] = Field(default_factory=dict)
     rendered_at: str | None = Field(default=None, alias="renderedAt")

@@ -86,7 +86,7 @@ export function ReportCenterHubEntryCards({
           <HubEntryCard
             icon={<LayoutTemplate className="size-5" aria-hidden />}
             title="文档模板"
-            description="Word/Excel/PDF 套版填数，支持扩展配置与定时投递。"
+            description="Excel/PDF 套版填数，支持扩展配置与定时投递。"
             stat={templateCount > 0 ? `${templateCount} 个模板` : undefined}
             href="/admin/reports/templates"
           />

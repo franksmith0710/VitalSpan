@@ -120,7 +120,7 @@ def _filter_linkage_payload(dashboard_id: str, widget_id: str = _R67_WIDGET_ID) 
 def _template_payload(key: str = "tmpl-r67-demo") -> dict:
     return {
         "templateKey": key,
-        "format": "word",
+        "format": "pdf",
         "displayName": "R67 Template",
         "blocks": [{"blockType": "sql", "queryRef": "q1"}],
     }

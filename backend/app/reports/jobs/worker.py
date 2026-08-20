@@ -43,7 +43,7 @@ def _execute_batch_export(job: dict, actor: UserContext) -> tuple[bytes, str]:
                     fmt,
                     title=node.name,
                 )
-            ext = "docx" if fmt == "word" else fmt
+            ext = "xlsx" if fmt == "excel" else fmt
             archive.writestr(f"report-{node_id}.{ext}", data)
     return buffer.getvalue(), "application/zip"
 

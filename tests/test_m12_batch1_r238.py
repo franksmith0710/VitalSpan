@@ -248,7 +248,7 @@ def test_rpt_r238_007_duplicate_name_422(client):
     resp = client.post(
         "/api/v1/reports/batch",
         headers=AUTH,
-        json={"items": [{"name": "Dup", "templateKind": "excel"}, {"name": "Dup", "templateKind": "word"}]},
+        json={"items": [{"name": "Dup", "templateKind": "excel"}, {"name": "Dup", "templateKind": "pdf"}]},
     )
     assert resp.status_code == 422
     assert resp.json()["code"] == "RPT_BATCH_DUPLICATE_NAME"
@@ -301,7 +301,7 @@ def test_rpt_batch_dry_run_conflict(client):
     dry = client.post(
         "/api/v1/reports/batch/dry-run",
         headers=AUTH,
-        json={"items": [{"name": "Taken", "templateKind": "word", "parentId": parent_id}]},
+        json={"items": [{"name": "Taken", "templateKind": "pdf", "parentId": parent_id}]},
     )
     assert dry.status_code == 200
     dry_body = dry.json()

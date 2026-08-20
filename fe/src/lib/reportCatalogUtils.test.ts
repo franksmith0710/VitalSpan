@@ -89,7 +89,7 @@ describe("reportCatalogUtils", () => {
         name: "Template B",
         parentId: null,
         nodeType: "template" as const,
-        templateKind: "word" as const,
+        templateKind: "pdf" as const,
         templateKey: "b",
         sortOrder: 2,
       },

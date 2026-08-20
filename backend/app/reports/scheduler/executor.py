@@ -267,7 +267,7 @@ def _export_template_attachments(
         try:
             data = export_template_bytes(source_id, fmt, actor)
             mime = content_type_for(fmt)
-            ext = "docx" if fmt == "word" else fmt
+            ext = "xlsx" if fmt == "excel" else fmt
             attachments.append((data, mime, f"report-{source_id}.{ext}"))
         except Exception as exc:
             export_error = user_visible_export_error(exc)

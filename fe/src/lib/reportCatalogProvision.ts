@@ -2,7 +2,7 @@ import { apiFetch } from "@/lib/api";
 import { randomId } from "@/lib/randomId";
 import type { CatalogNode, TemplateBlock } from "@/pages/admin/reports/useReportTemplates";
 
-export type TemplateKind = "word" | "excel" | "pdf";
+export type TemplateKind = "excel" | "pdf";
 
 export function generateCatalogTemplateKey(): string {
   return `tpl_${randomId().replace(/-/g, "").slice(0, 10)}`;

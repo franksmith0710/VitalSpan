@@ -19,9 +19,9 @@ from jwt_auth import AUTH, jwt_auth_headers
 _SQLITE = "sqlite+pysqlite:///file:m10_r234?mode=memory&cache=shared&uri=true"
 _TEMPLATE_BODY = {
     "templateKey": "sales_summary",
-    "format": "word",
+    "format": "pdf",
     "displayName": "销售汇总",
-    "blocks": [{"blockType": "table", "tableRef": "sales_fact"}],
+    "blocks": [{"blockType": "sql", "queryRef": "SELECT 1"}],
 }
 
 
@@ -79,7 +79,7 @@ def test_rpt003_01_put_get_list_storage_ref(client: TestClient):
     got = client.get("/api/v1/reports/templates/sales_summary", headers=AUTH)
     assert got.status_code == 200
     body = got.json()
-    assert body["storageRef"] == "storage://templates/sales_summary.word"
+    assert body["storageRef"] == "storage://templates/sales_summary.pdf"
     assert body["exportHook"]["integrationPath"].startswith("/api/v1/reports/export")
     listed = client.get("/api/v1/reports/templates?prefix=sales", headers=AUTH)
     assert listed.status_code == 200
@@ -91,7 +91,7 @@ def test_rpt003_02_delete_in_use_409(client: TestClient):
     node = client.post(
         "/api/v1/reports/catalog/nodes",
         headers=AUTH,
-        json={"name": "Linked", "nodeType": "template", "templateKind": "word", "templateKey": "sales_summary"},
+        json={"name": "Linked", "nodeType": "template", "templateKind": "pdf", "templateKey": "sales_summary"},
     )
     assert node.status_code == 201
     resp = client.delete("/api/v1/reports/templates/sales_summary", headers=AUTH)
@@ -104,18 +104,18 @@ def test_rpt003_03_delete_ok_after_unlink(client: TestClient):
     node_id = client.post(
         "/api/v1/reports/catalog/nodes",
         headers=AUTH,
-        json={"name": "T", "nodeType": "template", "templateKind": "word", "templateKey": "tmp_del"},
+        json={"name": "T", "nodeType": "template", "templateKind": "pdf", "templateKey": "tmp_del"},
     ).json()["id"]
     client.delete(f"/api/v1/reports/catalog/nodes/{node_id}", headers=AUTH)
     assert client.delete("/api/v1/reports/templates/tmp_del", headers=AUTH).status_code == 204
 
 
-def test_rpt003_04_run_word_export_hook(client: TestClient):
+def test_rpt003_04_run_pdf_export_hook(client: TestClient):
     _put_template(client)
     nid = client.post(
         "/api/v1/reports/catalog/nodes",
         headers=AUTH,
-        json={"name": "Run", "nodeType": "template", "templateKind": "word", "templateKey": "sales_summary"},
+        json={"name": "Run", "nodeType": "template", "templateKind": "pdf", "templateKey": "sales_summary"},
     ).json()["id"]
     client.put(
         f"/api/v1/reports/catalog/nodes/{nid}/extension",
@@ -125,10 +125,10 @@ def test_rpt003_04_run_word_export_hook(client: TestClient):
     run = client.post(
         f"/api/v1/reports/templates/{nid}/run",
         headers=AUTH,
-        json={"format": "word"},
+        json={"format": "pdf"},
     )
     assert run.status_code == 200, run.text
-    assert run.json()["exportHook"]["format"] == "word"
+    assert run.json()["exportHook"]["format"] == "pdf"
     assert run.json()["exportHook"]["placeholder"] is False
 
 
@@ -138,10 +138,9 @@ def test_rpt003_04b_extension_get_returns_camel_case(client: TestClient):
     nid = client.post(
         "/api/v1/reports/catalog/nodes",
         headers=AUTH,
-        json={"name": "Ext", "nodeType": "template", "templateKind": "word", "templateKey": "sales_summary"},
+        json={"name": "Ext", "nodeType": "template", "templateKind": "pdf", "templateKey": "sales_summary"},
     ).json()["id"]
     ds_id = str(uuid.uuid4())
-    cfg_id = str(uuid.uuid4())
     put = client.put(
         f"/api/v1/reports/catalog/nodes/{nid}/extension",
         headers=AUTH,
@@ -152,9 +151,7 @@ def test_rpt003_04b_extension_get_returns_camel_case(client: TestClient):
                 {
                     "key": "revenue",
                     "label": "营收",
-                    "queryMode": "dataset",
-                    "datasetId": "demo-sales-wide",
-                    "boundConfigId": cfg_id,
+                    "expression": "SELECT 1 AS revenue",
                     "visible": True,
                 }
             ],
@@ -167,7 +164,7 @@ def test_rpt003_04b_extension_get_returns_camel_case(client: TestClient):
     assert "catalogNodeId" in body
     assert "catalog_node_id" not in body
     assert body["defaultDataSourceId"] == ds_id
-    assert body["metrics"][0]["queryMode"] == "dataset"
+    assert body["metrics"][0]["key"] == "revenue"
 
     got = client.get(f"/api/v1/reports/catalog/nodes/{nid}/extension", headers=AUTH)
     assert got.status_code == 200, got.text
@@ -211,11 +208,11 @@ def test_rpt003_07_custom_storage_ref(client: TestClient):
     body = {
         **_TEMPLATE_BODY,
         "templateKey": "custom_ref",
-        "storageRef": "storage://templates/custom_ref.word",
+        "storageRef": "storage://templates/custom_ref.pdf",
     }
     resp = client.put("/api/v1/reports/templates/custom_ref", headers=AUTH, json=body)
     assert resp.status_code == 200
-    assert resp.json()["storageRef"] == "storage://templates/custom_ref.word"
+    assert resp.json()["storageRef"] == "storage://templates/custom_ref.pdf"
 
 
 def test_rpt004_01_duplicate_template_key_422(client: TestClient):
@@ -227,7 +224,7 @@ def test_rpt004_01_duplicate_template_key_422(client: TestClient):
             json={
                 "name": f"N-{uuid.uuid4().hex[:4]}",
                 "nodeType": "template",
-                "templateKind": "word",
+                "templateKind": "pdf",
                 "templateKey": "sales_summary",
             },
         )
@@ -240,7 +237,7 @@ def test_rpt004_02_kind_mismatch_422(client: TestClient):
     resp = client.post(
         "/api/v1/reports/catalog/nodes",
         headers=AUTH,
-        json={"name": "Bad", "nodeType": "template", "templateKind": "pdf", "templateKey": "sales_summary"},
+        json={"name": "Bad", "nodeType": "template", "templateKind": "excel", "templateKey": "sales_summary"},
     )
     assert resp.status_code == 422
     assert resp.json()["code"] == "RPT_CATALOG_TEMPLATE_KIND_MISMATCH"
@@ -260,7 +257,7 @@ def test_rpt004_04_template_key_not_found_422(client: TestClient):
     resp = client.post(
         "/api/v1/reports/catalog/nodes",
         headers=AUTH,
-        json={"name": "X", "nodeType": "template", "templateKind": "word", "templateKey": "missing_key"},
+        json={"name": "X", "nodeType": "template", "templateKind": "pdf", "templateKey": "missing_key"},
     )
     assert resp.status_code == 422
     assert resp.json()["code"] == "RPT_CATALOG_TEMPLATE_NOT_FOUND"
@@ -306,7 +303,7 @@ def test_rpt006_02_extension_invalid_operator_422(client: TestClient):
     nid = client.post(
         "/api/v1/reports/catalog/nodes",
         headers=AUTH,
-        json={"name": "Ext", "nodeType": "template", "templateKind": "word", "templateKey": "sales_summary"},
+        json={"name": "Ext", "nodeType": "template", "templateKind": "pdf", "templateKey": "sales_summary"},
     ).json()["id"]
     resp = client.put(
         f"/api/v1/reports/catalog/nodes/{nid}/extension",
@@ -337,7 +334,7 @@ def test_view002_01_role_report_template_bind(client: TestClient):
     nid = client.post(
         "/api/v1/reports/catalog/nodes",
         headers=AUTH,
-        json={"name": "RoleTpl", "nodeType": "template", "templateKind": "word", "templateKey": "sales_summary"},
+        json={"name": "RoleTpl", "nodeType": "template", "templateKind": "pdf", "templateKey": "sales_summary"},
     ).json()["id"]
     dash = _create_dashboard(client)
     put = client.put(

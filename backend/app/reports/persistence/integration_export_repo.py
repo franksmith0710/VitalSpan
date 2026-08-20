@@ -39,7 +39,9 @@ def _use_db(settings: Settings | None = None) -> bool:
 
 
 def _ext(fmt: str) -> str:
-    return "docx" if fmt == "word" else fmt
+    if fmt == "excel":
+        return "xlsx"
+    return fmt
 
 
 def save_export(record: IntegrationExportRecord) -> None:

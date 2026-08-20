@@ -198,7 +198,7 @@ def test_nfr002_report_concurrent_template_run_probe(client: TestClient):
 
     template_body = {
         "templateKey": "sales_summary",
-        "format": "word",
+        "format": "pdf",
         "displayName": "销售汇总",
         "blocks": [{"blockType": "table", "tableRef": "sales_fact"}],
     }
@@ -207,7 +207,7 @@ def test_nfr002_report_concurrent_template_run_probe(client: TestClient):
     node_id = client.post(
         "/api/v1/reports/catalog/nodes",
         headers=AUTH,
-        json={"name": "PerfTpl", "nodeType": "template", "templateKind": "word", "templateKey": "sales_summary"},
+        json={"name": "PerfTpl", "nodeType": "template", "templateKind": "pdf", "templateKey": "sales_summary"},
     ).json()["id"]
     client.put(
         f"/api/v1/reports/catalog/nodes/{node_id}/extension",

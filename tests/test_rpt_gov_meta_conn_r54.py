@@ -233,7 +233,7 @@ def test_rpt007_batch_create_three_items(client):
         headers=AUTH,
         json={
             "items": [
-                {"name": "R1", "templateKind": "word"},
+                {"name": "R1", "templateKind": "pdf"},
                 {"name": "R2", "templateKind": "excel"},
                 {"name": "R3", "templateKind": "pdf"},
             ]

@@ -28,7 +28,7 @@ def _seed_probe_tree(count: int = 50) -> None:
                 name=f"tpl-{i}",
                 parentId=root.id,
                 nodeType="template",
-                templateKind="word",
+                templateKind="pdf",
             ),
             UserContext(id="probe", username="probe", roles=["admin"]),
         )

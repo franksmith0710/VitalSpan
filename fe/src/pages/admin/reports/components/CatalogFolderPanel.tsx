@@ -5,7 +5,7 @@ import { type CatalogNode } from "../useReportTemplates";
 import { CatalogNodeMetaPanel } from "./CatalogNodeMetaPanel";
 import { CatalogNodeDeleteButton } from "./CatalogNodeDeleteButton";
 
-const KIND_ICONS = { word: FileText, excel: FileSpreadsheet, pdf: FileType2 } as const;
+const KIND_ICONS: Record<string, typeof FileSpreadsheet> = { excel: FileSpreadsheet, pdf: FileType2 };
 
 export function CatalogFolderPanel({
   node,
@@ -62,7 +62,7 @@ export function CatalogFolderPanel({
               const Icon =
                 child.nodeType === "folder"
                   ? Folder
-                  : KIND_ICONS[child.templateKind ?? "word"] ?? FileText;
+                  : KIND_ICONS[child.templateKind ?? "pdf"] ?? FileType2;
               return (
                 <li key={child.id}>
                   <button

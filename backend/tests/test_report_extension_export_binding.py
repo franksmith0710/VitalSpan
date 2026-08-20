@@ -68,7 +68,7 @@ class _FakeDataset:
 
 def _template_node_id() -> uuid.UUID:
     node = catalog_service.create_node(
-        CatalogNodeCreate(name="Export Tpl", nodeType="template", templateKind="word"),
+        CatalogNodeCreate(name="Export Tpl", nodeType="template", templateKind="pdf"),
         _ADMIN,
     )
     return node.id

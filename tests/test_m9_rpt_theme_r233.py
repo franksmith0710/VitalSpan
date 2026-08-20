@@ -92,7 +92,7 @@ def viewer_user() -> Generator[None, None, None]:
     fastapi_app.dependency_overrides.pop(get_current_user, None)
 
 
-def _seed_report_template(*, template_kind: str | None = "word") -> str:
+def _seed_report_template(*, template_kind: str | None = "pdf") -> str:
     from app.auth.deps import UserContext
     from app.reports.catalog import service as catalog_service
     from app.reports.catalog.schemas import CatalogNodeCreate
@@ -266,7 +266,7 @@ def test_r233_engine_probe_under_50ms(mock_execute, client):
 
 def test_r233_engine_datasource_required_422(client):
     """R233-RPT-001-06: 有 extension 无 dataSourceId → 422。"""
-    tid = _seed_report_template(template_kind="word")
+    tid = _seed_report_template(template_kind="pdf")
     _put_extension(client, tid, [{"key": "cnt", "label": "数量"}])
     resp = client.post(f"/api/v1/reports/templates/{tid}/run", headers=AUTH, json={"format": "web"})
     assert resp.status_code == 422

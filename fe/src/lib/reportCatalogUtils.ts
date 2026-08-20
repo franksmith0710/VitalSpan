@@ -5,7 +5,7 @@ export type ReportCatalogNode = {
   name: string;
   parentId: string | null;
   nodeType: "folder" | "template";
-  templateKind: "word" | "excel" | "pdf" | null;
+  templateKind: "excel" | "pdf" | null;
   templateKey: string | null;
   sortOrder: number;
 };
@@ -163,7 +163,7 @@ export function pickDefaultCatalogNodeId(
 export function filterCatalogTemplates(
   templates: ReportCatalogNode[],
   query: string,
-  kind: "all" | "word" | "excel" | "pdf",
+  kind: "all" | "excel" | "pdf",
 ): ReportCatalogNode[] {
   const q = query.trim().toLowerCase();
   return templates.filter((node) => {

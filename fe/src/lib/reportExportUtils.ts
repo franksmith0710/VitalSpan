@@ -4,7 +4,7 @@ export function exportMagicMatches(data: Uint8Array, format: string): boolean {
   if (format === "pdf") {
     return data[0] === 0x25 && data[1] === 0x50 && data[2] === 0x44 && data[3] === 0x46;
   }
-  if (format === "excel" || format === "word") {
+  if (format === "excel") {
     return data[0] === 0x50 && data[1] === 0x4b;
   }
   return false;

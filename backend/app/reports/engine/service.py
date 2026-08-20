@@ -22,7 +22,7 @@ from app.reports.errors import ReportExtensionError
 from app.reports.extension import service as extension_service
 
 _SUPPORTED_FORMATS = frozenset({"web", "html"})
-_EXPORT_KINDS = frozenset({"word", "excel", "pdf"})
+_EXPORT_KINDS = frozenset({"excel", "pdf"})
 
 
 def _extension_has_executable_metrics(ext: Any) -> bool:
@@ -202,11 +202,17 @@ def export_template_bytes(
 
     if fmt not in _EXPORT_KINDS:
         raise ReportEngineError("RPT_ENGINE_FORMAT_NOT_SUPPORTED", "Unsupported export format", 422)
+    node = catalog_service.get_node(template_id)
+    if node.template_kind == "word":
+        raise ReportEngineError(
+            "RPT_ENGINE_FORMAT_NOT_SUPPORTED",
+            "Word 模板已停用，请新建 PDF 或 Excel 模板",
+            422,
+        )
     run_out = run_template(
         template_id,
         RenderRunIn(format=fmt, parameters=parameters or {}),  # type: ignore[arg-type]
         actor,
     )
     _assert_exportable_sections(run_out.render_spec.sections)
-    node = catalog_service.get_node(template_id)
     return render_document(run_out.render_spec.model_dump(by_alias=True), fmt, title=node.name)

@@ -198,7 +198,7 @@ export function ReportTemplatesPage() {
     );
   };
 
-  const handleCreateTemplate = (parentId: string | null = createParentId, templateKind: TemplateKind = "word") => {
+  const handleCreateTemplate = (parentId: string | null = createParentId, templateKind: TemplateKind = "pdf") => {
     createTemplateNode.mutate(
       { name: "新建模板", parentId, templateKind },
       {
@@ -279,7 +279,7 @@ export function ReportTemplatesPage() {
       headingId="templates-catalog-empty"
       icon={<FolderOpen className="size-8" aria-hidden />}
       title="暂无模板目录"
-      description="可先加载示例报表体验运行与导出，或新建 Word / Excel / PDF 模板。"
+      description="可先加载示例报表体验运行与导出，或新建 Excel / PDF 模板。"
       action={
         <div className="flex flex-wrap items-center justify-center gap-2">
           {!readOnly && import.meta.env.DEV ? (
@@ -361,7 +361,7 @@ export function ReportTemplatesPage() {
       description={
         selectedId
           ? "请从左侧目录重新选择，或刷新页面。"
-          : "在左侧目录中选择 Word、Excel 或 PDF 模板，或选中文件夹后在此创建子项。"
+          : "在左侧目录中选择 Excel 或 PDF 模板，或选中文件夹后在此创建子项。"
       }
     />
   );

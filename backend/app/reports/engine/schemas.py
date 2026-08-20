@@ -17,7 +17,7 @@ class ExportHookOut(BaseModel):
 class RenderRunIn(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     parameters: dict[str, Any] = Field(default_factory=dict)
-    format: Literal["web", "html", "pdf", "word", "excel"] = "web"
+    format: Literal["web", "html", "pdf", "excel"] = "web"
     data_source_id: uuid.UUID | None = Field(default=None, alias="dataSourceId")
 
 

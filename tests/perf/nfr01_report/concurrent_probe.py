@@ -37,7 +37,7 @@ def run_concurrent_template_run_probe(
 
     for _ in range(requests):
         started = time.perf_counter()
-        resp = client.post(path, headers=auth_headers, json={"format": "word"})
+        resp = client.post(path, headers=auth_headers, json={"format": "pdf"})
         elapsed = (time.perf_counter() - started) * 1000
         if resp.status_code == 200:
             success += 1

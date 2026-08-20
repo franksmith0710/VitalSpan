@@ -110,7 +110,6 @@ def test_case_19_template_export_pdf_excel_word_bytes(client: TestClient):
         for fmt, magic, min_len in (
             ("pdf", b"%PDF", 100),
             ("excel", b"PK", 100),
-            ("word", b"PK", 100),
         ):
             node_id = _seed_template(client, fmt=fmt)
             run = client.post(

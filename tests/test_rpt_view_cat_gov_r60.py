@@ -75,7 +75,7 @@ def integration_user() -> Generator[None, None, None]:
     fastapi_app.dependency_overrides.pop(get_current_user, None)
 
 
-def _create_report_template(client: TestClient, *, template_kind: str | None = "word") -> str:
+def _create_report_template(client: TestClient, *, template_kind: str | None = "pdf") -> str:
     resp = client.post(
         "/api/v1/reports/catalog/nodes",
         headers=AUTH,

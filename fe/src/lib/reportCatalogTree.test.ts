@@ -8,7 +8,7 @@ import {
 const nodes = [
   { id: "root-folder", name: "演示报表", parentId: null, nodeType: "folder" as const, templateKind: null, templateKey: null, sortOrder: 0 },
   { id: "child-tpl", name: "演示销售报表", parentId: "root-folder", nodeType: "template" as const, templateKind: "pdf" as const, templateKey: "dev", sortOrder: 0 },
-  { id: "root-tpl", name: "新建模板", parentId: null, nodeType: "template" as const, templateKind: "word" as const, templateKey: null, sortOrder: 1 },
+  { id: "root-tpl", name: "新建模板", parentId: null, nodeType: "template" as const, templateKind: "pdf" as const, templateKey: null, sortOrder: 1 },
 ];
 
 describe("reportCatalogTree helpers", () => {

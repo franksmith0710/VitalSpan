@@ -11,8 +11,7 @@ import {
 import type { TemplateKind } from "@/lib/reportCatalogProvision";
 import { cn } from "@/lib/utils";
 
-const FORMAT_OPTIONS: { id: TemplateKind; label: string; icon: typeof FileText }[] = [
-  { id: "word", label: "Word", icon: FileText },
+const FORMAT_OPTIONS: { id: TemplateKind; label: string; icon: typeof FileSpreadsheet }[] = [
   { id: "excel", label: "Excel", icon: FileSpreadsheet },
   { id: "pdf", label: "PDF", icon: FileType2 },
 ];

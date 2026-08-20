@@ -37,7 +37,7 @@ def submit_batch_export(payload: BatchExportJobIn, actor: UserContext) -> BatchE
             f"Batch export cannot exceed {_JOB_LIMIT} nodes",
             422,
         )
-    if payload.format not in {"pdf", "word", "excel"}:
+    if payload.format not in {"pdf", "excel"}:
         raise ReportBatchError("RPT_BATCH_EXPORT_INVALID_FORMAT", "Invalid export format", 422)
     _validate_nodes(payload.node_ids)
     result = job_service.submit_batch_export_job(
