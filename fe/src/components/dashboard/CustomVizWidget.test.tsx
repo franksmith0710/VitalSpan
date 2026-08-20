@@ -287,4 +287,38 @@ describe("CustomVizWidget", () => {
       expect(host.dataset.vsCvLayoutSig).toBe("640x400");
     });
   });
+
+  it("mounts manifest styleHooks bridge sheet from artifact meta", async () => {
+    const { apiFetch } = await import("@/lib/api");
+    vi.mocked(apiFetch).mockResolvedValueOnce({
+      artifactId: "550e8400-e29b-41d4-a716-446655440000",
+      manifest: {
+        defaultStyle: {},
+        styleSchema: { properties: { accentColor: { type: "string" } } },
+        styleHooks: { accentColor: { selectors: [".custom-bar"] } },
+      },
+      status: "active",
+      contentHash: "hooks-hash",
+    });
+
+    render(
+      <CustomVizWidget
+        widget={{
+          id: "w1",
+          type: "customViz",
+          title: "AI",
+          colSpan: 6,
+          rowSpan: 3,
+          order: 0,
+          customVizConfig: { artifactId: "550e8400-e29b-41d4-a716-446655440000" },
+        }}
+        mode="view"
+      />,
+    );
+
+    await waitFor(() => {
+      const host = screen.getByTestId("custom-viz-host");
+      expect(host.querySelector(".vs-cv-style-hooks")?.textContent).toContain(".custom-bar");
+    });
+  });
 });

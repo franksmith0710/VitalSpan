@@ -1,13 +1,21 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { vizComponentPreviewDashboardStyle } from "@/lib/vizComponentPreviewStyle";
 import { ComponentPayloadPreview } from "./ComponentPayloadPreview";
 
+const livePreviewCalls: Array<{ dashboardStyle?: ReturnType<typeof vizComponentPreviewDashboardStyle> }> =
+  [];
+
 vi.mock("./VizComponentLivePreview", () => ({
-  VizComponentLivePreview: () => <div data-testid="viz-component-live-preview" />,
+  VizComponentLivePreview: (props: { dashboardStyle?: ReturnType<typeof vizComponentPreviewDashboardStyle> }) => {
+    livePreviewCalls.push(props);
+    return <div data-testid="viz-component-live-preview" />;
+  },
 }));
 
 afterEach(() => {
   cleanup();
+  livePreviewCalls.length = 0;
 });
 
 describe("ComponentPayloadPreview", () => {
@@ -59,5 +67,26 @@ describe("ComponentPayloadPreview", () => {
     );
     expect(screen.getByTestId("viz-component-live-preview")).toBeInTheDocument();
     expect(screen.queryByTestId("custom-viz-preview-mock")).not.toBeInTheDocument();
+  });
+
+  it("passes shared dashboard preview style to live preview", () => {
+    const expected = vizComponentPreviewDashboardStyle();
+    render(
+      <ComponentPayloadPreview
+        componentId="c4"
+        componentName="AI 排名条"
+        widgetType="customViz"
+        payload={{
+          customVizConfig: {
+            artifactId: "artifact-ranking-bar",
+            dataBinding: { status: "manual" },
+          },
+        }}
+      />,
+    );
+
+    expect(livePreviewCalls).toHaveLength(1);
+    expect(livePreviewCalls[0]?.dashboardStyle).toEqual(expected);
+    expect(livePreviewCalls[0]?.dashboardStyle?.colorScheme).toBe("light");
   });
 });

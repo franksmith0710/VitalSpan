@@ -17,24 +17,28 @@ vi.mock("@/lib/chartRegistry", async (importOriginal) => {
   };
 });
 
-vi.mock("@/lib/aiVizArtifacts", () => ({
-  fetchAiVizArtifacts: vi.fn(async () => ({
-    items: [
-      {
-        artifactId: "art-custom-1",
-        manifest: { displayName: "演示排名条", id: "ranking-strip" },
-        status: "active",
-        contentHash: "abc",
-      },
-      {
-        artifactId: "0833b30b-39d4-4a58-80f6-030de7cbe377",
-        manifest: { displayName: "排名条(带序号)-降序", id: "ranking-bar-medal-v1" },
-        status: "active",
-        contentHash: "medal",
-      },
-    ],
-  })),
-}));
+vi.mock("@/lib/aiVizArtifacts", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/aiVizArtifacts")>();
+  return {
+    ...actual,
+    fetchAiVizArtifacts: vi.fn(async () => ({
+      items: [
+        {
+          artifactId: "art-custom-1",
+          manifest: { displayName: "演示排名条", id: "ranking-strip" },
+          status: "active",
+          contentHash: "abc",
+        },
+        {
+          artifactId: "0833b30b-39d4-4a58-80f6-030de7cbe377",
+          manifest: { displayName: "排名条(带序号)-降序", id: "ranking-bar-medal-v1" },
+          status: "active",
+          contentHash: "medal",
+        },
+      ],
+    })),
+  };
+});
 
 vi.stubGlobal(
   "IntersectionObserver",
@@ -175,5 +179,34 @@ describe("ChartPickerPopover custom viz", () => {
     expect(await within(popover).findByRole("button", { name: /基础折线图/i })).toBeInTheDocument();
     expect(fetchAiVizArtifacts).not.toHaveBeenCalled();
     expect(within(popover).queryByRole("button", { name: "自定义" })).not.toBeInTheDocument();
+  });
+
+  it("shows compliance warning badge and tier hint on custom viz tile", async () => {
+    const { fetchAiVizArtifacts } = await import("@/lib/aiVizArtifacts");
+    vi.mocked(fetchAiVizArtifacts).mockResolvedValueOnce({
+      items: [
+        {
+          artifactId: "wild-1",
+          manifest: { displayName: "野路子组件", id: "wild-v1" },
+          status: "draft",
+          contentHash: "wild",
+          warnings: [
+            {
+              code: "AIVIZ_WARN_STYLE_COMPLIANCE",
+              message: "bundle 未引用 payload.style 或 --vs-style-* / --vs-palette-*，样式面板与看板配色可能不会生效",
+            },
+          ],
+          styleComplianceTier: "visual-only",
+        },
+      ],
+    });
+
+    renderPicker({ onInsertCustomViz: vi.fn() });
+    const popover = await screen.findByTestId("chart-picker-popover");
+    const tile = await within(popover).findByTestId("custom-viz-tile-wild-1");
+
+    expect(within(tile).getByLabelText("样式合规警告")).toBeInTheDocument();
+    expect(tile.getAttribute("title")).toContain("仅视觉");
+    expect(tile.getAttribute("title")).toContain("样式面板与看板配色可能不会生效");
   });
 });
