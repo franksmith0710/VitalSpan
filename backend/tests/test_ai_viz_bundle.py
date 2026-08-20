@@ -5,7 +5,10 @@ from app.ai_viz.models import (
     validate_bundle_files,
     validate_manifest,
 )
-from app.ai_viz.style_compliance import collect_bundle_style_compliance_warnings
+from app.ai_viz.style_compliance import (
+    collect_bundle_style_compliance_warnings,
+    resolve_style_compliance_tier,
+)
 
 _MIN_MANIFEST = {
     "fieldSlots": {"dimensions": {"min": 1}, "metrics": {"min": 1}},
@@ -139,3 +142,36 @@ def test_official_custom_viz_examples_have_no_style_warnings() -> None:
         entry = manifest.get("entry") or "index.html"
         warnings = collect_bundle_style_compliance_warnings(doc["files"], entry, manifest)
         assert warnings == [], f"{path.name}: {[item.code for item in warnings]}"
+
+
+def test_valid_style_hooks_suppresses_style_compliance_warning() -> None:
+    html = "<!DOCTYPE html><html><body><div class='fill'></div></body></html>"
+    manifest = {
+        **_MIN_MANIFEST,
+        "runtime": "html",
+        "styleHooks": {
+            "accentColor": {"selectors": [".fill"], "property": "background"},
+        },
+    }
+    warnings = collect_bundle_style_compliance_warnings({"index.html": html}, "index.html", manifest)
+    codes = {item.code for item in warnings}
+    assert "AIVIZ_WARN_STYLE_COMPLIANCE" not in codes
+    assert resolve_style_compliance_tier(warnings, manifest) == "partial"
+
+
+def test_unknown_style_hook_key_warns() -> None:
+    manifest = {
+        **_MIN_MANIFEST,
+        "runtime": "html",
+        "styleHooks": {
+            "unknownKey": {"selectors": [".x"]},
+        },
+    }
+    warnings = collect_bundle_style_compliance_warnings(
+        {"index.html": "<html></html>"},
+        "index.html",
+        manifest,
+    )
+    codes = {item.code for item in warnings}
+    assert "AIVIZ_WARN_STYLE_HOOK_UNKNOWN_KEY" in codes
+    assert resolve_style_compliance_tier(warnings, manifest) == "visual-only"

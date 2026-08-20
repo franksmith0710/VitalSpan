@@ -41,6 +41,7 @@
 | 文档 | 说明 |
 |------|------|
 | [reports-dashboard-schedule-walkthrough.md](./reports-dashboard-schedule-walkthrough.md) | 看板定时 PDF / 调度投递端到端走查 |
+| [pmtiles-tile-server.md](./pmtiles-tile-server.md) | **外部** 全球 PMTiles 瓦片服务（独立进程，平台仅登记 `tileServiceId`） |
 | [../service/backend.md](../service/backend.md) | 后端健康探针、配置、迁移、本地启动 |
 | [../data/README.md](../data/README.md) | Alembic head 与域 ↔ 表导航 |
 

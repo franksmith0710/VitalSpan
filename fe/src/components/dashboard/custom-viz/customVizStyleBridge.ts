@@ -1,9 +1,18 @@
+import {
+  buildCustomVizStyleHooksCss,
+  styleSchemaKeyToDataAttr,
+  type CustomVizStyleHooks,
+} from "@/lib/customVizStyleHooks";
+
+export type { CustomVizStyleHooks };
+
 export const CUSTOM_VIZ_STYLE_BRIDGE_CLASS = "vs-cv-style-bridge";
+export const CUSTOM_VIZ_STYLE_HOOKS_CLASS = "vs-cv-style-hooks";
 
 const HOST_CLASS = "vs-custom-viz-host";
 
 function styleKeyToDataAttr(key: string): string {
-  return `data-vs-${key.replace(/([A-Z])/g, "-$1").toLowerCase()}`;
+  return styleSchemaKeyToDataAttr(key);
 }
 
 /**
@@ -78,12 +87,29 @@ export const CUSTOM_VIZ_STYLE_BRIDGE_CSS = `
 }
 `.trim();
 
-export function appendCustomVizStyleBridge(host: HTMLElement): void {
-  if (host.querySelector(`.${CUSTOM_VIZ_STYLE_BRIDGE_CLASS}`)) return;
-  const style = document.createElement("style");
-  style.className = CUSTOM_VIZ_STYLE_BRIDGE_CLASS;
-  style.textContent = CUSTOM_VIZ_STYLE_BRIDGE_CSS;
-  host.appendChild(style);
+export function appendCustomVizStyleBridge(
+  host: HTMLElement,
+  styleHooks?: CustomVizStyleHooks | null,
+): void {
+  if (!host.querySelector(`.${CUSTOM_VIZ_STYLE_BRIDGE_CLASS}`)) {
+    const style = document.createElement("style");
+    style.className = CUSTOM_VIZ_STYLE_BRIDGE_CLASS;
+    style.textContent = CUSTOM_VIZ_STYLE_BRIDGE_CSS;
+    host.appendChild(style);
+  }
+
+  const hooksCss = buildCustomVizStyleHooksCss(styleHooks ?? undefined);
+  let hooksEl = host.querySelector(`.${CUSTOM_VIZ_STYLE_HOOKS_CLASS}`) as HTMLStyleElement | null;
+  if (!hooksCss) {
+    hooksEl?.remove();
+    return;
+  }
+  if (!hooksEl) {
+    hooksEl = document.createElement("style");
+    hooksEl.className = CUSTOM_VIZ_STYLE_HOOKS_CLASS;
+    host.appendChild(hooksEl);
+  }
+  hooksEl.textContent = hooksCss;
 }
 
 /** Mirror payload.style onto host data-* hooks for generic CSS bridge rules. */
@@ -106,6 +132,7 @@ export function applyCustomVizStyleBridgeAttributes(
 export function applyCustomVizStyleBridgeDom(
   host: HTMLElement,
   style: Record<string, unknown> | undefined,
+  styleHooks?: CustomVizStyleHooks | null,
 ): void {
   applyCustomVizStyleBridgeAttributes(host, style);
   if (!style) return;
@@ -117,13 +144,18 @@ export function applyCustomVizStyleBridgeDom(
   ] as const;
 
   for (const { key, selector } of hideWhenFalse) {
+    const hook = styleHooks?.[key];
+    const hookSelectors =
+      hook?.hideWhenFalse && hook.hideSelectors?.length
+        ? hook.hideSelectors.join(",")
+        : selector;
     const flag = style[key];
     if (flag === false) {
-      host.querySelectorAll(selector).forEach((node) => {
+      host.querySelectorAll(hookSelectors).forEach((node) => {
         (node as HTMLElement).style.display = "none";
       });
     } else if (flag === true) {
-      host.querySelectorAll(selector).forEach((node) => {
+      host.querySelectorAll(hookSelectors).forEach((node) => {
         (node as HTMLElement).style.removeProperty("display");
       });
     }

@@ -69,7 +69,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       .catch(() => {
         if (cancelled) return;
         setPmtilesStyle(null);
-        setPmtilesFallbackHint("全球底图服务暂不可用，已显示离线省界");
+        setPmtilesFallbackHint("外部 PMTiles 底图暂不可用，已显示离线省界");
       })
       .finally(() => {
         if (!cancelled) setPmtilesLoading(false);

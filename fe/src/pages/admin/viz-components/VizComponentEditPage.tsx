@@ -26,7 +26,7 @@ import { widgetTypeLabel } from "@/components/dashboard/viz-components/component
 import { useVizComponentEditor } from "@/hooks/useVizComponentEditor";
 import { useUnsavedLeaveGuard } from "@/hooks/use-unsaved-leave-guard";
 import { mapApiError } from "@/lib/apiError";
-import { bootstrapDashboardStyleConfig } from "@/components/dashboard/dashboardThemeVariants";
+import { vizComponentPreviewDashboardStyle } from "@/lib/vizComponentPreviewStyle";
 import type {
   DashboardStyleConfig,
   FilterWidgetConfig,
@@ -132,10 +132,7 @@ export function VizComponentEditPage() {
     ? `${widgetTypeLabel(component.widgetType)} · v${component.contentRevision}`
     : null;
 
-  const previewDashboardStyle = useMemo(
-    () => bootstrapDashboardStyleConfig({ colorScheme: "light" }),
-    [],
-  );
+  const previewDashboardStyle = useMemo(() => vizComponentPreviewDashboardStyle(), []);
 
   const { leaveDialogOpen, confirmLeave, cancelLeave } = useUnsavedLeaveGuard({
     enabled: Boolean(component && widget && isDirty),

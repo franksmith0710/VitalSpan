@@ -54,7 +54,11 @@ function emptyUnboundPayload(): CustomVizRuntimePayload {
   };
 }
 
-export function attachCustomVizRuntime(host: HTMLElement): () => void {
+export function attachCustomVizRuntime(
+  host: HTMLElement,
+  options?: { styleHooks?: import("@/lib/customVizStyleHooks").CustomVizStyleHooks | null },
+): () => void {
+  const styleHooks = options?.styleHooks ?? null;
   const bound: Array<{ type: "payload" | "layout"; listener: (event: Event) => void }> = [];
   let mountRender: VsCvMountRender | null = null;
 
@@ -62,7 +66,7 @@ export function attachCustomVizRuntime(host: HTMLElement): () => void {
     if (!mountRender) return;
     const payload = getPayloadFromHost(host) ?? emptyUnboundPayload();
     mountRender(payload);
-    applyCustomVizStyleBridgeDom(host, payload.style);
+    applyCustomVizStyleBridgeDom(host, payload.style, styleHooks);
   };
 
   const helpers: VsCvHelpers = {

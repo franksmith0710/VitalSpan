@@ -121,6 +121,31 @@ services:
       - "1025:1025"
       - "8025:8025"
 
+  # 全球 PMTiles 外部瓦片服务（可选；非 VitalSpan 内置；见 docker/pmtiles-tile-server/README.md）
+  pmtiles-tile-server:
+    profiles: ["pmtiles-external"]
+    container_name: vitalspan-pmtiles-tile-server
+    image: docker.m.daocloud.io/library/caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "${PMTILES_TILE_PORT:-8080}:8080"
+    environment:
+      PMTILES_CORS_ORIGIN: "${PMTILES_CORS_ORIGIN:-http://localhost:5173}"
+      PMTILES_HEALTH_FILE: "${PMTILES_HEALTH_FILE:-planet-z15-20260817.pmtiles}"
+    volumes:
+      - "${PMTILES_DATA_DIR:?Set PMTILES_DATA_DIR to the host directory containing .pmtiles files}:/data:ro"
+      - ./docker/pmtiles-tile-server/Caddyfile:/etc/caddy/Caddyfile:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O /dev/null --header='Range: bytes=0-0' \"http://127.0.0.1:8080/$${PMTILES_HEALTH_FILE}\" || exit 1",
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+
 volumes:
   vitalspan_pg_data:
   vitalspan_analytics_pg_data:

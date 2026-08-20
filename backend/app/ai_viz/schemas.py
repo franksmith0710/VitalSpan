@@ -40,6 +40,10 @@ class AiVizArtifactOut(BaseModel):
     status: str
     content_hash: str = Field(alias="contentHash")
     warnings: list[AiVizComplianceWarningOut] = Field(default_factory=list)
+    style_compliance_tier: Literal["full", "partial", "visual-only"] = Field(
+        default="visual-only",
+        alias="styleComplianceTier",
+    )
 
 
 class AiVizArtifactListOut(BaseModel):

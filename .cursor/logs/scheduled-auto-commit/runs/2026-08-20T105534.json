@@ -1,0 +1,9 @@
+﻿{
+    "startedAt":  "2026-08-20T10:55:34+08:00",
+    "branch":  "dev",
+    "push":  false,
+    "trigger":  "task_scheduler",
+    "finishedAt":  "2026-08-20T10:55:35+08:00",
+    "outcome":  "skipped",
+    "reason":  "mutex: previous run still marked running"
+}

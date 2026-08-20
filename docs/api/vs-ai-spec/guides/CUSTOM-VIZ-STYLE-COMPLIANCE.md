@@ -90,3 +90,53 @@ CSS 侧优先：
 ## 与 Style Bridge 的关系
 
 `customVizStyleBridge` 仅对**已入库但不合规**的野 bundle 做有限 DOM 兜底，**不是**主路径。新制品应满足本清单，而非依赖 Bridge。
+
+## Phase 3：`manifest.styleHooks`（自愿声明）
+
+在 `manifest` 中可选声明 **styleSchema 键 → DOM/CSS 映射**，平台据此生成 Hook Bridge（`vs-cv-style-hooks`），比纯猜 `.fill` 更准。
+
+```json
+{
+  "styleSchema": {
+    "properties": {
+      "accentColor": { "type": "string", "format": "color" },
+      "showRankBadge": { "type": "boolean" }
+    }
+  },
+  "styleHooks": {
+    "accentColor": {
+      "selectors": [".fill", ".bar"],
+      "property": "background"
+    },
+    "showRankBadge": {
+      "hideWhenFalse": true,
+      "hideSelectors": [".badge"]
+    }
+  }
+}
+```
+
+| 字段 | 说明 |
+|------|------|
+| `selectors` | 宿主内 CSS 选择器列表 |
+| `property` | `background` · `color` · `height` · `gap` · `font-size` · `opacity`（可省略，按键名推断） |
+| `cssVar` | 可选，默认 `--vs-style-{kebab-key}` |
+| `hideWhenFalse` + `hideSelectors` | 布尔 schema 项关断时隐藏 DOM |
+
+**入库行为**
+
+- hooks 键须在 `styleSchema.properties` 内，否则 `AIVIZ_WARN_STYLE_HOOK_UNKNOWN_KEY`
+- 缺 `selectors` / `hideSelectors` → `AIVIZ_WARN_STYLE_HOOK_INVALID`
+- **有效 hooks 可免除** `AIVIZ_WARN_STYLE_COMPLIANCE`（仍建议 bundle 读 `payload.style`）
+
+**合规分级 `styleComplianceTier`**
+
+| tier | 含义 |
+|------|------|
+| `full` | 无 warn；bundle 原生读变量/样式 |
+| `partial` | 仅有 mount/layout warn，或靠有效 `styleHooks` 兜底 |
+| `visual-only` | 仍有 `AIVIZ_WARN_STYLE_COMPLIANCE` 或 hook 无效 |
+
+**脚手架**：`node scripts/scaffold-custom-viz-html.mjs --out my-widget.json`（含 mount + hooks 示例）
+
+**组件库预览**：Hub 卡片与编辑页共用 `vizComponentPreviewDashboardStyle()` + `CustomVizWidget` 路径，与看板 palette/chrome 一致。

@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { chartTypeIcon } from "@/lib/chartTypeIcons";
 import type { CustomVizInsertPayload } from "@/components/dashboard/createLayoutWidget";
 import { setCustomVizDragData, type CustomVizDragPayload } from "@/lib/dashboardDnd";
-import { fetchAiVizArtifacts, type AiVizArtifactMeta } from "@/lib/aiVizArtifacts";
+import { fetchAiVizArtifacts, AI_VIZ_STYLE_COMPLIANCE_LABELS, type AiVizArtifactMeta } from "@/lib/aiVizArtifacts";
 import { queryKeys } from "@/lib/queryKeys";
 import { useQuery } from "@tanstack/react-query";
 import { Sparkles, TriangleAlert } from "lucide-react";
@@ -59,10 +59,14 @@ function CustomVizTile({
 }) {
   const label = item.manifest.displayName ?? item.manifest.id ?? "自定义组件";
   const complianceWarnings = item.warnings ?? [];
+  const complianceTier = item.styleComplianceTier ?? (complianceWarnings.length > 0 ? "visual-only" : "full");
+  const tierLabel = AI_VIZ_STYLE_COMPLIANCE_LABELS[complianceTier];
   const warningHint =
     complianceWarnings.length > 0
-      ? complianceWarnings.map((warning) => warning.message).join("\n")
-      : undefined;
+      ? `${tierLabel}\n${complianceWarnings.map((warning) => warning.message).join("\n")}`
+      : tierLabel !== AI_VIZ_STYLE_COMPLIANCE_LABELS.full
+        ? tierLabel
+        : undefined;
   const payload: CustomVizDragPayload = {
     type: "customViz",
     artifactId: item.artifactId,
@@ -114,11 +118,21 @@ function CustomVizTile({
           >
             <TriangleAlert className="size-2.5" strokeWidth={2.5} aria-hidden />
           </span>
+        ) : complianceTier === "partial" ? (
+          <span
+            className="absolute -right-0.5 -top-0.5 rounded-full bg-brand-500 px-1 text-[9px] font-semibold leading-4 text-white"
+            title={warningHint}
+          >
+            部分
+          </span>
         ) : null}
       </span>
       <span className="line-clamp-2 w-full text-[11px] leading-tight text-gray-700 dark:text-gray-300">
         {label}
       </span>
+      {complianceTier !== "full" ? (
+        <span className="text-[10px] text-gray-500 dark:text-gray-400">{tierLabel}</span>
+      ) : null}
     </div>
   );
 }

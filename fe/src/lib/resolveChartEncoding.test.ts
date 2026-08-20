@@ -25,6 +25,18 @@ describe("resolveChartEncoding", () => {
     expect(encoding.metrics.map((m) => m.field)).toContain("value");
   });
 
+  it("preserves metric and dimension labels when migrating to axes", () => {
+    const config: ChartViewConfig = {
+      chartType: "line",
+      dimensions: [{ field: "d", label: "日期" }],
+      metrics: [{ field: "cnt", label: "数量" }],
+    };
+    const encoding = resolveChartEncoding(config);
+    expect(encoding.axes.yAxis?.[0]).toEqual({ field: "cnt", label: "数量" });
+    expect(encoding.metrics[0]).toEqual({ field: "cnt", label: "数量" });
+    expect(encoding.axes.xAxis?.[0]).toEqual({ field: "d", label: "日期" });
+  });
+
   it("stock-line maps four metrics to yAxis indices", () => {
     const config: ChartViewConfig = {
       chartType: "stock-line",

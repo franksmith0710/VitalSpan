@@ -219,12 +219,14 @@ export function buildCartesianCategorySeries(
   };
 
   const patch = stylePatch?.(spec.styleVariant) ?? {};
+  const metricLabel = (field: string) =>
+    spec.encoding.metrics.find((m) => m.field === field)?.label?.trim() || field;
 
   if (!subDim || d1i === null) {
     const series = metrics.map((metric) => {
       const base: Record<string, unknown> = {
         type: seriesType,
-        name: metric,
+        name: metricLabel(metric),
         data: xData.map((x) => sumAt(x, null, metric)),
         ...patch,
       };

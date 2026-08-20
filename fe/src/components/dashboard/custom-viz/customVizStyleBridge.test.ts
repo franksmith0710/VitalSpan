@@ -55,4 +55,15 @@ describe("customVizStyleBridge", () => {
     expect(host.style.getPropertyValue("--vs-style-accent-color")).toBe("#222222");
     host.remove();
   });
+
+  it("appends manifest hook stylesheet when provided", () => {
+    const host = document.createElement("div");
+    host.className = "vs-custom-viz-host";
+    document.body.appendChild(host);
+    appendCustomVizStyleBridge(host, {
+      accentColor: { selectors: [".custom-bar"] },
+    });
+    expect(host.querySelector(".vs-cv-style-hooks")?.textContent).toContain(".custom-bar");
+    host.remove();
+  });
 });

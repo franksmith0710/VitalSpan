@@ -9,6 +9,7 @@ import {
   capRows,
 } from "@/components/charts/engine/buildDatasetEncoding";
 import { fetchAiVizArtifactMeta } from "@/lib/aiVizArtifacts";
+import { readCustomVizStyleHooks, type CustomVizStyleHooks } from "@/lib/customVizStyleHooks";
 import { useElementSize } from "@/hooks/useElementSize";
 import type { DashboardWidgetShell } from "./dashboardCanvasMode";
 import type { LayoutWidget, CustomVizWidgetConfig, DashboardStyleConfig } from "./layoutUtils";
@@ -31,12 +32,15 @@ import { gridWidgetShellClassName, GridWidgetShellFrame, resolveGridWidgetShell 
 async function loadCustomVizArtifact(artifactId: string): Promise<{
   html: string;
   defaultStyle: Record<string, unknown>;
+  styleHooks?: CustomVizStyleHooks;
 }> {
   let defaultStyle: Record<string, unknown> = {};
+  let styleHooks: CustomVizStyleHooks | undefined;
   let hash = "";
   try {
     const meta = await fetchAiVizArtifactMeta(artifactId);
     defaultStyle = meta.manifest.defaultStyle ?? {};
+    styleHooks = readCustomVizStyleHooks(meta.manifest as Record<string, unknown>);
     hash = meta.contentHash ?? "";
   } catch {
     defaultStyle = {};
@@ -50,7 +54,7 @@ async function loadCustomVizArtifact(artifactId: string): Promise<{
     const body = (await resp.json().catch(() => null)) as { message?: string } | null;
     throw new Error(body?.message ?? "加载自定义组件失败");
   }
-  return { html: await resp.text(), defaultStyle };
+  return { html: await resp.text(), defaultStyle, styleHooks };
 }
 
 type CustomVizWidgetProps = {
@@ -87,6 +91,7 @@ export function CustomVizWidget({
   const [html, setHtml] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [manifestDefaultStyle, setManifestDefaultStyle] = useState<Record<string, unknown>>({});
+  const [manifestStyleHooks, setManifestStyleHooks] = useState<CustomVizStyleHooks | undefined>();
   const loadedHtmlRef = useRef(false);
   const showGridChrome = shell === "grid";
   const gridShell = resolveGridWidgetShell(widget, dashboardStyle);
@@ -148,6 +153,7 @@ export function CustomVizWidget({
         if (cancelled || my !== seq) return;
         loadedHtmlRef.current = true;
         setManifestDefaultStyle(next.defaultStyle);
+        setManifestStyleHooks(next.styleHooks);
         setHtml(next.html);
         setLoadError(null);
       } catch (err) {
@@ -172,8 +178,8 @@ export function CustomVizWidget({
   useEffect(() => {
     const host = hostRef.current;
     if (!host || !html) return undefined;
-    return mountCustomVizHtml(host, html);
-  }, [html]);
+    return mountCustomVizHtml(host, html, { styleHooks: manifestStyleHooks });
+  }, [html, manifestStyleHooks]);
 
   const runtimeStyle = useMemo(
     () =>

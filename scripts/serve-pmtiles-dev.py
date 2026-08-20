@@ -1,4 +1,7 @@
-"""Dev-only static server for .pmtiles with HTTP Range + CORS."""
+"""DEPRECATED — use scripts/start-pmtiles-external.ps1 (Docker Caddy 外部服务).
+
+保留 --legacy-dev 仅供无 Docker 时的应急验真，不是交付路径。
+"""
 from __future__ import annotations
 
 import argparse
@@ -94,10 +97,19 @@ class PmtilesHandler(SimpleHTTPRequestHandler):
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Serve PMTiles directory with Range + CORS")
+    parser.add_argument(
+        "--legacy-dev",
+        action="store_true",
+        help="Allow running deprecated dev server (default: exit with instructions)",
+    )
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8080)
     parser.add_argument("--directory", default=str(Path.home() / "Desktop"))
     args = parser.parse_args()
+    if not args.legacy_dev:
+        print("请使用: .\\scripts\\start-pmtiles-external.ps1")
+        print("文档: docker/pmtiles-tile-server/README.md")
+        raise SystemExit(1)
     root = Path(args.directory).resolve()
     handler = lambda *h_args, **h_kwargs: PmtilesHandler(  # noqa: E731
         *h_args, directory=str(root), **h_kwargs

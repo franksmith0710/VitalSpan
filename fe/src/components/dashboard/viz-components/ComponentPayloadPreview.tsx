@@ -11,7 +11,10 @@ import {
   TextPreviewMock,
 } from "./ComponentCardPreview";
 import { isCustomVizConfigReady } from "@/components/dashboard/CustomVizWidget";
+import { vizComponentPreviewDashboardStyle } from "@/lib/vizComponentPreviewStyle";
 import { VizComponentLivePreview } from "./VizComponentLivePreview";
+
+const previewDashboardStyle = vizComponentPreviewDashboardStyle();
 
 type ComponentPayloadPreviewProps = {
   componentId: string;
@@ -96,6 +99,7 @@ export function ComponentPayloadPreview({
       ) : widget ? (
         <VizComponentLivePreview
           widget={widget}
+          dashboardStyle={previewDashboardStyle}
           lazy
           paused={previewPaused}
           geo3dRenderTier="thumbnail"

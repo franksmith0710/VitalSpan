@@ -65,9 +65,14 @@ function runInsertedScriptIfNeeded(scriptEl: HTMLScriptElement, source: string):
 }
 
 /** 把库里的 HTML 源码挂进主页面 Base（innerHTML 不会跑 script，需重建）。 */
-export function mountCustomVizHtml(host: HTMLElement, html: string): () => void {
+export function mountCustomVizHtml(
+  host: HTMLElement,
+  html: string,
+  options?: { styleHooks?: import("@/lib/customVizStyleHooks").CustomVizStyleHooks | null },
+): () => void {
   host.replaceChildren();
-  const detachRuntime = attachCustomVizRuntime(host);
+  const styleHooks = options?.styleHooks ?? null;
+  const detachRuntime = attachCustomVizRuntime(host, { styleHooks });
   const parsed = new DOMParser().parseFromString(html, "text/html");
   const fragment = document.createDocumentFragment();
 
@@ -96,7 +101,7 @@ export function mountCustomVizHtml(host: HTMLElement, html: string): () => void 
     runInsertedScriptIfNeeded(script, source);
   }
 
-  appendCustomVizStyleBridge(host);
+  appendCustomVizStyleBridge(host, styleHooks);
 
   return () => {
     detachRuntime();

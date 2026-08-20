@@ -21,6 +21,7 @@
 | 类型注册与 catalog、`style_variant`/`field_rule` 校验规则源 | 具体图表库渲染（`fe/charts/engine/`）；**不含**在线地图 |
 | 引擎无关 render-spec 归一（`engine` 字段由 FE registry 填充） | 默认公网在线瓦片底图、境外地图、运行时外链 GeoJSON CDN |
 | `gis-map` 管理员登记 PMTiles（`tileServiceId` → `backend/app/viz/tile_services/`） | 128GB 级 PMTiles 打进主 release 包 |
+| PMTiles 外部瓦片进程 | 见 [pmtiles-tile-server.md](./pmtiles-tile-server.md)（独立部署，非 `app/viz` 域内） |
 | embed origin 白名单/目标唯一性校验 | 图表出数（复用 `query` 链）、嵌入 token 签发与 CSP 响应头 |
 | `viz/components/` 组织组件库 CRUD、`componentRef` payload 解析 | 看板 layout 存储、大屏壳层装饰 |
 

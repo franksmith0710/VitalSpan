@@ -51,6 +51,23 @@ function axisField(axes: ChartAxesConfig, axisId: DeAxisId, index: number): stri
   return trimField(axes[axisId]?.[index]);
 }
 
+function axisFieldRef(axes: ChartAxesConfig, axisId: DeAxisId, index: number): ChartFieldRef | null {
+  const ref = axes[axisId]?.[index];
+  const field = ref?.field?.trim();
+  if (!field) return null;
+  return ref?.label?.trim() ? { field, label: ref.label.trim() } : { field };
+}
+
+function axisFieldRefs(axes: ChartAxesConfig, axisId: DeAxisId): ChartFieldRef[] {
+  return (axes[axisId] ?? [])
+    .map((ref) => {
+      const field = ref.field?.trim();
+      if (!field) return null;
+      return ref.label?.trim() ? { field, label: ref.label.trim() } : { field };
+    })
+    .filter((ref): ref is ChartFieldRef => ref !== null);
+}
+
 function setAxisField(
   axes: ChartAxesConfig,
   axisId: DeAxisId,
@@ -99,14 +116,18 @@ export function migrateChartConfigToDeAxes(config: ChartViewConfig): ChartViewCo
 
   for (const map of legacyMap) {
     if (!map.legacy) continue;
-    const src =
+    const srcRef =
       map.legacy.kind === "dimension"
-        ? remapped.dimensions?.[map.legacy.index]?.field
-        : remapped.metrics?.[map.legacy.index]?.field;
-    if (!src?.trim()) continue;
+        ? remapped.dimensions?.[map.legacy.index]
+        : remapped.metrics?.[map.legacy.index];
+    const field = srcRef?.field?.trim();
+    if (!field) continue;
     axes[map.axisId] = [...(axes[map.axisId] ?? [])];
     while (axes[map.axisId]!.length <= map.index) axes[map.axisId]!.push({ field: "" });
-    axes[map.axisId]![map.index] = { field: src.trim() };
+    axes[map.axisId]![map.index] = {
+      field,
+      ...(srcRef?.label?.trim() ? { label: srcRef.label.trim() } : {}),
+    };
   }
 
   return syncLegacyFieldsFromAxes(remapMixAxisSlots({ ...remapped, axes }));
@@ -142,46 +163,44 @@ function syncAxesSpecsToLegacy(
 
   for (const spec of specs) {
     const axisId = spec.id;
-    const fields = (axes[axisId] ?? [])
-      .map((ref) => ref.field?.trim())
-      .filter((field): field is string => Boolean(field));
+    const refs = axisFieldRefs(axes, axisId);
 
     if (spec.fieldType === "dimension") {
       if (spec.uiMode === "multi") {
-        for (const field of fields) dimensions.push({ field });
+        for (const ref of refs) dimensions.push(ref);
       } else if (spec.limit > 1 && !spec.uiMode) {
         for (let i = 0; i < spec.limit; i += 1) {
-          const field = axisField(axes, axisId, i);
-          if (field) dimensions.push({ field });
+          const ref = axisFieldRef(axes, axisId, i);
+          if (ref) dimensions.push(ref);
         }
       } else {
-        const field = axisField(axes, axisId, 0);
-        if (field) dimensions.push({ field });
+        const ref = axisFieldRef(axes, axisId, 0);
+        if (ref) dimensions.push(ref);
       }
       continue;
     }
 
     if (spec.fieldType === "metric") {
       if (spec.uiMode === "multi") {
-        for (const field of fields) metrics.push({ field });
+        for (const ref of refs) metrics.push(ref);
       } else if (spec.limit > 1 && !spec.uiMode) {
         for (let i = 0; i < spec.limit; i += 1) {
-          const field = axisField(axes, axisId, i);
-          if (field) metrics.push({ field });
+          const ref = axisFieldRef(axes, axisId, i);
+          if (ref) metrics.push(ref);
         }
       } else {
-        const field = axisField(axes, axisId, 0);
-        if (field) metrics.push({ field });
+        const ref = axisFieldRef(axes, axisId, 0);
+        if (ref) metrics.push(ref);
       }
       continue;
     }
 
     if (spec.fieldType === "both") {
       if (spec.uiMode === "multi") continue;
-      const field = axisField(axes, axisId, 0);
-      if (!field) continue;
-      if (classifyDatasetField(field) === "metric") metrics.push({ field });
-      else dimensions.push({ field });
+      const ref = axisFieldRef(axes, axisId, 0);
+      if (!ref) continue;
+      if (classifyDatasetField(ref.field) === "metric") metrics.push(ref);
+      else dimensions.push(ref);
     }
   }
 

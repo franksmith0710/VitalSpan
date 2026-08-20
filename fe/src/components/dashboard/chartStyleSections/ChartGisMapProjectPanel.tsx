@@ -74,7 +74,7 @@ export function ChartGisMapProjectPanel() {
     <ChartInspectorSection title="GIS 底图" data-testid="chart-gis-map-project-panel">
       <div className={INSPECTOR_SECTION_GAP}>
         <p className="text-theme-xs text-gray-500">
-          默认可直接显示离线省界，无需外部服务。全球高清底图需登记 PMTiles 外部服务（下载完成后配置）。
+          默认使用离线省界，无需任何外部服务。若客户需要全球高清底图，由运维单独部署 PMTiles 外部服务并在平台登记后，再在此处选用。
         </p>
 
         <div className="grid gap-1.5">
@@ -100,7 +100,7 @@ export function ChartGisMapProjectPanel() {
         </div>
 
         <InspectorSwitchRow
-          label="启用全球 PMTiles 底图（外部服务）"
+          label="选用全球 PMTiles 外部底图（可选）"
           checked={useGlobalPmtiles}
           onCheckedChange={(enabled) => {
             if (enabled) {
@@ -131,7 +131,7 @@ export function ChartGisMapProjectPanel() {
             </Select>
             {tileServices.length === 0 ? (
               <p className="text-theme-xs text-amber-600 dark:text-amber-400">
-                尚未登记全球 PMTiles 服务；请先部署下载的 planet-z15 文件并登记 tileServiceId。
+                尚未登记 PMTiles 外部服务。请联系管理员部署并登记 tileServiceId；未部署时保持关闭即可继续使用离线底图。
               </p>
             ) : null}
 

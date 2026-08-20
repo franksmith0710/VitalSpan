@@ -215,6 +215,13 @@ roles:
 # 与 $HOME/.dev 分工：跨项目 LDAP/S3/日志验真读家目录台账
 integrations:
   home_dev_config: ~/.dev/config.yaml
+  # 可选：全球 PMTiles 外部瓦片服务（非 VitalSpan 进程；客户不要则不部署）
+  pmtiles_external:
+    optional: true
+    compose_profile: pmtiles-external
+    start_script: scripts/start-pmtiles-external.ps1
+    register_api: POST /api/v1/tile-services
+    docs: docs/services/pmtiles-tile-server.md
   note: |
     Windows 家目录台账：C:\Users\<用户名>\.dev\config.yaml
     外部 smoke 先读家目录 credential_env，再与本文件 connections 变量名对齐。

@@ -9,7 +9,10 @@ from sqlalchemy.orm import Session
 from app.ai_viz.errors import AiVizError
 from app.ai_viz.models import AiVizArtifact, validate_bundle_files, validate_manifest
 from app.ai_viz.schemas import AiVizArtifactCreateIn, AiVizArtifactOut, AiVizComplianceWarningOut
-from app.ai_viz.style_compliance import collect_bundle_style_compliance_warnings
+from app.ai_viz.style_compliance import (
+    collect_bundle_style_compliance_warnings,
+    resolve_style_compliance_tier,
+)
 from app.auth.deps import UserContext
 
 
@@ -47,6 +50,12 @@ def _compliance_warnings(row: AiVizArtifact) -> list[AiVizComplianceWarningOut]:
     return [AiVizComplianceWarningOut(code=item.code, message=item.message) for item in raw]
 
 
+def _compliance_tier(row: AiVizArtifact) -> str:
+    entry = row.manifest_json.get("entry") or "index.html"
+    raw = collect_bundle_style_compliance_warnings(row.files_json, entry, row.manifest_json)
+    return resolve_style_compliance_tier(raw, row.manifest_json)
+
+
 def _to_out(row: AiVizArtifact) -> AiVizArtifactOut:
     return AiVizArtifactOut(
         artifactId=row.id,
@@ -54,6 +63,7 @@ def _to_out(row: AiVizArtifact) -> AiVizArtifactOut:
         status=row.status,
         contentHash=row.content_hash,
         warnings=_compliance_warnings(row),
+        styleComplianceTier=_compliance_tier(row),
     )
 
 

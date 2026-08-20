@@ -55,7 +55,7 @@ export function StandardAnalysisSectionChart({ theme, headers, rows, chartType, 
   }, [theme]);
 
   return (
-    <div ref={containerRef} className="min-h-[320px] w-full px-5 pt-4 pb-2">
+    <div ref={containerRef} className="min-h-[320px] w-full pt-2 pb-2">
       <div className="relative h-[min(420px,50vh)] min-h-[280px] w-full">
         <ChartEngineView
           viewModel={viewModel}
