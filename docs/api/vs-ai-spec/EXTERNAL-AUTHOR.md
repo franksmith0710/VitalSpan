@@ -1,17 +1,38 @@
 # 外部作者 Runbook（DeepTalk / 第三方 AI）
 
-> **你只负责写组件；入库与看板挂载由本脚本链路完成。**  
-> 写文件到桌面或 `examples/` **不等于**对接成功。
+> **先读 [00-REQUIREMENTS.md §0](./00-REQUIREMENTS.md#0-对外暴露什么--上传到哪里)**  
+> **完成 = 拿到 `artifactId`。写本地 JSON ≠ 上传。**
+
+## 0. 一句话（禁止误解）
+
+| 错 | 对 |
+|----|-----|
+| 「已保存到 `vs-ai-spec-deeptalk-test/output/xxx.json`」 | 「`ok artifactId=550e8400-...`」 |
+| 「组件在工作区，可直接使用」 | 「已 POST 到 `http://127.0.0.1:8000/api/v1/ai-viz/artifacts`」 |
+| DeepTalk 只跑了 `write_file` | 必须再跑 **`upload-ai-viz-artifact.py`** 或等价 HTTP POST |
+
+**规范包目录**（如 `C:\Users\...\vs-ai-spec-deeptalk-test`）是**读文档、写草稿、跑脚本**用的，**不是** VitalSpan 入库服务器。  
+**禁止**自建 `output/` 当交付目录；草稿可放 `examples/你的组件.json` 或任意路径，但**必须**用 upload 脚本 POST 出去。
 
 ## 三步（必须按顺序）
 
 | 步 | 做什么 | 成功标志 |
 |----|--------|----------|
+| 0 | 确认 VitalSpan 后端已启动：`GET http://127.0.0.1:8000/health` → `ok` | 健康检查通过 |
 | 1 | 读 [00-REQUIREMENTS.md](./00-REQUIREMENTS.md) + [guides/PLATFORM-SLA.md](./guides/PLATFORM-SLA.md) | 知道 `runtime: d3` 必须 `host.vsCv.mount(` |
 | 2 | `python tools/validate-ai-viz-bundle.py --file examples/<你的>.json` | 输出 `preflight ok`（warn 可入库，error 会 422） |
-| 3 | `python tools/upload-ai-viz-artifact.py --file examples/<你的>.json` | 打印 `artifactId=<uuid>` |
+| 3 | `python tools/upload-ai-viz-artifact.py --file examples/<你的>.json` | 打印 **`ok artifactId=<uuid>`** |
 
-把 `artifactId` 交给 VitalSpan 方，或自行在大屏 widget `customVizConfig.artifactId` 填入。
+把 **`artifactId`** 交给 VitalSpan 方，或自行在大屏 widget `customVizConfig.artifactId` 填入。  
+**向用户汇报时必须附带该 uuid**；不得只说「文件路径」。
+
+## 禁止的完成说法（说了 = 未完成）
+
+- 「已上传到 `vs-ai-spec-deeptalk-test/...`」
+- 「已保存到 `output/trend-chart-dynamic.json`」
+- 「共 1 步，写入工作区完成」
+- 「可在 VS Code AI 扩展中使用」
+- 「已传过去」但**没有** `artifactId`
 
 ## 常见失败（不是平台坏了）
 

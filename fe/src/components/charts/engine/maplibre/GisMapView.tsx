@@ -18,6 +18,21 @@ type MapLibreModule = typeof import("maplibre-gl");
 type StyleSpecification = import("maplibre-gl").StyleSpecification;
 type FeatureCollection = GeoJSON.FeatureCollection;
 
+let maplibreModulePromise: Promise<MapLibreModule> | null = null;
+let pmtilesProtocolReady = false;
+
+async function loadMapLibre(): Promise<MapLibreModule> {
+  if (!maplibreModulePromise) {
+    maplibreModulePromise = import("maplibre-gl");
+  }
+  const maplibregl = await maplibreModulePromise;
+  if (!pmtilesProtocolReady) {
+    await registerPmtilesProtocol(maplibregl);
+    pmtilesProtocolReady = true;
+  }
+  return maplibregl;
+}
+
 function applyGlobeAtmosphere(
   map: InstanceType<MapLibreModule["Map"]>,
   projection: "mercator" | "globe" | undefined,
@@ -47,6 +62,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   const [pmtilesStyle, setPmtilesStyle] = useState<StyleSpecification | null>(null);
   const [pmtilesLoading, setPmtilesLoading] = useState(false);
   const [pmtilesFallbackHint, setPmtilesFallbackHint] = useState<string | null>(null);
+  const [mapErrorHint, setMapErrorHint] = useState<string | null>(null);
 
   const wantsPmtiles = project.basemap === "pmtiles" && Boolean(project.tileServiceId);
 
@@ -109,10 +125,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     const view = project.view ?? { center: [104, 35] as [number, number], zoom: 3.2 };
 
     void (async () => {
-      const maplibregl = await import("maplibre-gl");
-      if (renderBasemap === "pmtiles") {
-        await registerPmtilesProtocol(maplibregl);
-      }
+      const maplibregl = await loadMapLibre();
       if (cancelled || !hostRef.current) return;
 
       map = new maplibregl.Map({
@@ -127,8 +140,19 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       });
       mapRef.current = map;
 
+      map.on("error", (event) => {
+        const message =
+          event.error instanceof Error
+            ? event.error.message
+            : typeof event.error === "string"
+              ? event.error
+              : "地图渲染失败";
+        setMapErrorHint(message);
+      });
+
       map.once("load", () => {
         if (cancelled || !map) return;
+        setMapErrorHint(null);
         if (useGlobe) {
           applyGlobeAtmosphere(map, "globe", project.fog);
         }
@@ -154,25 +178,6 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     style,
     useGlobe,
   ]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !style) return;
-    if (!map.isStyleLoaded()) return;
-    map.setStyle(style);
-    const currentView = project.view ?? { center: [104, 35] as [number, number], zoom: 3.2 };
-    map.jumpTo({
-      center: currentView.center,
-      zoom: currentView.zoom,
-      bearing: currentView.bearing ?? 0,
-      pitch: currentView.pitch ?? 0,
-    });
-    if (useGlobe) {
-      applyGlobeAtmosphere(map, "globe", project.fog);
-    } else {
-      applyGlobeAtmosphere(map, "mercator", undefined);
-    }
-  }, [project.fog, project.view, style, useGlobe]);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -206,6 +211,11 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       {pmtilesFallbackHint ? (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-amber-500/90 px-2 py-1 text-center text-[10px] text-white">
           {pmtilesFallbackHint}
+        </div>
+      ) : null}
+      {mapErrorHint ? (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[3] bg-red-600/90 px-2 py-1 text-center text-[10px] text-white">
+          {mapErrorHint}
         </div>
       ) : null}
     </div>

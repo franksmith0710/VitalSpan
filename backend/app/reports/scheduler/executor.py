@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import time
 import uuid
 from datetime import UTC, datetime
@@ -21,6 +22,9 @@ from app.reports.scheduler.schemas import ScheduleExecuteOut, ScheduleRecipientI
 from app.reports.scheduler import service as scheduler_service
 from app.core.config import get_settings
 from app.reports.scheduler.store import MemoryScheduleStore, get_schedule_store
+from app.reports.scheduler.user_errors import user_visible_export_error
+
+logger = logging.getLogger(__name__)
 
 _EXECUTE_BUDGET_MS = 20
 _SEMI_BUDGET_MS = 35
@@ -245,7 +249,7 @@ def _record_delivery_attempts(execution_id: uuid.UUID, steps: list[dict]) -> Non
                 ))
             db.commit()
     except Exception:
-        pass
+        logger.warning("report_delivery_attempt_persist_failed", exc_info=True)
 
 
 def _export_template_attachments(
@@ -266,7 +270,7 @@ def _export_template_attachments(
             ext = "docx" if fmt == "word" else fmt
             attachments.append((data, mime, f"report-{source_id}.{ext}"))
         except Exception as exc:
-            export_error = str(exc)
+            export_error = user_visible_export_error(exc)
             break
     kind = "template_render" if attachments else None
     return artifact_ref, kind, attachments, export_error

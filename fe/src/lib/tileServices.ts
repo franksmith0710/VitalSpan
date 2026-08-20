@@ -8,6 +8,28 @@ export type TileServiceResolve = {
   spriteUrl: string;
 };
 
+type TileServiceResolveRaw = TileServiceResolve & {
+  pmtiles_url?: string;
+  glyphs_url?: string;
+  sprite_url?: string;
+};
+
+function normalizeTileServiceResolve(raw: TileServiceResolveRaw): TileServiceResolve {
+  const pmtilesUrl = raw.pmtilesUrl ?? raw.pmtiles_url;
+  const glyphsUrl = raw.glyphsUrl ?? raw.glyphs_url;
+  const spriteUrl = raw.spriteUrl ?? raw.sprite_url;
+  if (!raw.id || !raw.name || !pmtilesUrl || !glyphsUrl || !spriteUrl) {
+    throw new Error("tile service resolve response is incomplete");
+  }
+  return {
+    id: raw.id,
+    name: raw.name,
+    pmtilesUrl,
+    glyphsUrl,
+    spriteUrl,
+  };
+}
+
 export type TileServiceListItem = {
   id: string;
   name: string;
@@ -24,5 +46,8 @@ export async function listTileServices(): Promise<TileServiceListItem[]> {
 }
 
 export async function resolveTileService(serviceId: string): Promise<TileServiceResolve> {
-  return apiFetch<TileServiceResolve>(`/api/v1/tile-services/${encodeURIComponent(serviceId)}/resolve`);
+  const raw = await apiFetch<TileServiceResolveRaw>(
+    `/api/v1/tile-services/${encodeURIComponent(serviceId)}/resolve`,
+  );
+  return normalizeTileServiceResolve(raw);
 }

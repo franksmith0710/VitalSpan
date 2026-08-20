@@ -60,7 +60,7 @@ def get_center_preferences(
 @router.put("/preferences", response_model=None)
 def update_center_preferences(
     payload: ReportCenterPreferencesOut,
-    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    user: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ):
     from app.reports import center_prefs
 

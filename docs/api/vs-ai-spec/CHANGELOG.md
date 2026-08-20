@@ -1,5 +1,10 @@
 # vs-ai-spec 变更
 
+## 2026-08-20 (对外暴露与入库判据写清)
+
+- **00-REQUIREMENTS §0**：规范包 ≠ 上传目的地；入库端点、禁止 `output/`、禁止「VS Code 扩展可用」等误读
+- **EXTERNAL-AUTHOR**：禁止的完成说法表；汇报必须带 `artifactId`
+
 ## 2026-08-20 (外部作者打通)
 
 - 新增 [EXTERNAL-AUTHOR.md](./EXTERNAL-AUTHOR.md)：validate → upload → `artifactId` 三步；明确 `write_file` ≠ 入库

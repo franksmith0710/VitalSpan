@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class TileServiceOut(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
 
     id: str
     name: str
@@ -17,7 +17,7 @@ class TileServiceOut(BaseModel):
 
 
 class TileServiceListItem(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
 
     id: str
     name: str
@@ -29,7 +29,7 @@ class TileServiceListResponse(BaseModel):
 
 
 class TileServiceResolveOut(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
 
     id: str
     name: str
@@ -39,7 +39,7 @@ class TileServiceResolveOut(BaseModel):
 
 
 class TileServiceCreate(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
 
     id: str = Field(min_length=2, max_length=64, pattern=r"^[a-z0-9][a-z0-9_-]*$")
     name: str = Field(min_length=1, max_length=120)
@@ -52,7 +52,7 @@ class TileServiceCreate(BaseModel):
 
 
 class TileServicePatch(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
 
     name: str | None = Field(default=None, min_length=1, max_length=120)
     base_url: str | None = Field(default=None, alias="baseUrl")

@@ -108,13 +108,20 @@ export function ReportTemplatesPage() {
 
   const seedDemoMutation = useMutation({
     mutationFn: () =>
-      apiFetch<{ detail?: { catalogNodeId?: string } }>("/api/v1/reports/center/seed-demo", {
-        method: "POST",
-      }),
+      apiFetch<{ code?: string; message?: string; detail?: { catalogNodeId?: string } }>(
+        "/api/v1/reports/center/seed-demo",
+        {
+          method: "POST",
+        },
+      ),
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ["reports", "catalog"] });
       const nodeId = data.detail?.catalogNodeId;
       if (nodeId) applyNodeSelection(nodeId);
+      if (data.code === "partial") {
+        toast.warning(data.message ?? "示例报表部分加载，请检查数据源配置");
+        return;
+      }
       toast.success("示例报表已加载，可在右侧预览并导出");
     },
     onError: (err) => toast.error(mapApiError(err)),
@@ -275,7 +282,7 @@ export function ReportTemplatesPage() {
       description="可先加载示例报表体验运行与导出，或新建 Word / Excel / PDF 模板。"
       action={
         <div className="flex flex-wrap items-center justify-center gap-2">
-          {!readOnly ? (
+          {!readOnly && import.meta.env.DEV ? (
             <Button
               type="button"
               variant="primary"

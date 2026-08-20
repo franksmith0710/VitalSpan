@@ -27,7 +27,9 @@ def export_standard_attachments(
                 for section in run_out.render_spec.get("sections") or []:
                     sections.append({**section, "title": THEME_LABELS.get(theme, theme)})
     except Exception as exc:
-        return f"semi://reports/standard/{pack_key}", None, [], str(exc)
+        from app.reports.scheduler.user_errors import user_visible_export_error
+
+        return f"semi://reports/standard/{pack_key}", None, [], user_visible_export_error(exc)
 
     if not sections:
         return f"semi://reports/standard/{pack_key}", None, [], "标准分析未返回任何主题数据"
@@ -35,13 +37,17 @@ def export_standard_attachments(
     attachments: list[tuple[bytes, str, str]] = []
     for fmt in formats:
         if fmt != "pdf":
+            if export_error is None:
+                export_error = "标准分析定时投递当前仅支持 PDF 附件"
             continue
         try:
             data = render_document({"sections": sections}, fmt, title=pack.display_name)
             mime = content_type_for(fmt)
             attachments.append((data, mime, f"standard-{pack_key}.pdf"))
         except Exception as exc:
-            export_error = str(exc)
+            from app.reports.scheduler.user_errors import user_visible_export_error
+
+            export_error = user_visible_export_error(exc)
             break
 
     kind = "standard_render" if attachments else None

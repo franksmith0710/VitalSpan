@@ -3,6 +3,9 @@
 > VitalSpan 混合方案 C：内置图表配置 + 库源码自定义组件（Base 加载）+ 大屏 layout 拼接。  
 > 数据绑定由用户在平台手动完成（非 AI 自动生成 SQL）。
 
+**外部 AI 必读**：[00-REQUIREMENTS.md §0](./00-REQUIREMENTS.md#0-对外暴露什么--上传到哪里) · [EXTERNAL-AUTHOR.md](./EXTERNAL-AUTHOR.md)  
+**完成标准**：`POST /api/v1/ai-viz/artifacts` 返回 **`artifactId`**。写本地 JSON（含 `output/`）**不算完成**。
+
 ## 三条创作路径
 
 | 路径 | AI 产出 | 平台能力 |

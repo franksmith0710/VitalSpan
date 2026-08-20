@@ -82,6 +82,7 @@ def main() -> None:
         return
 
     api = args.api.rstrip("/")
+    print(f"upload target: POST {api}/ai-viz/artifacts (platform DB, not this folder)")
     login = request_json("POST", f"{api}/auth/login", {"username": args.username, "password": args.password})
     token = login.get("accessToken") or login.get("access_token")
     if not token:

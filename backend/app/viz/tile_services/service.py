@@ -16,7 +16,7 @@ from app.viz.tile_services.schemas import (
 )
 
 DEFAULT_GLYPHS = "https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf"
-DEFAULT_SPRITE = "https://protomaps.github.io/basemaps-assets/v4/light-sprite"
+DEFAULT_SPRITE = "https://protomaps.github.io/basemaps-assets/sprites/v4/light"
 
 
 class TileServiceError(Exception):

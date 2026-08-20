@@ -1,7 +1,13 @@
 # VitalSpan × DeepTalk 联调测试包
 
-**先读 [00-REQUIREMENTS.md](./00-REQUIREMENTS.md)**（完成定义、合法 JSON、本机上传命令）。  
-**外部 AI 必做三步** → [EXTERNAL-AUTHOR.md](./EXTERNAL-AUTHOR.md)（`write_file` 不算上传）。
+**先读 [00-REQUIREMENTS.md §0](./00-REQUIREMENTS.md#0-对外暴露什么--上传到哪里)**（规范包 ≠ 上传目的地；**只认 `artifactId`**）。  
+**外部 AI 必做**：validate → upload → 汇报 `artifactId` → [EXTERNAL-AUTHOR.md](./EXTERNAL-AUTHOR.md)。
+
+| 对外暴露（给你用的） | 不是上传目的地 |
+|---------------------|----------------|
+| 本目录：文档、`examples/`、`tools/` | 写进本目录任意路径 ≠ 已入库 |
+| `tools/upload-ai-viz-artifact.py` | 必须执行该脚本（或等价 POST） |
+| 入库真目标 | `POST http://127.0.0.1:8000/api/v1/ai-viz/artifacts` → 库表 `ai_viz_artifacts` |
 
 下文是环境占位与误读对照。
 

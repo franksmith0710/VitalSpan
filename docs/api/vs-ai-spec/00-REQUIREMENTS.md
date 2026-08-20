@@ -2,6 +2,45 @@
 
 解压后**先读本文件**。不满足下列任一条 = 未对接成功。
 
+> **外部 AI（DeepTalk 等）**：交付完成**只认 `artifactId`**。只 `write_file` 到本目录、桌面、`examples/`、`output/` 等任意路径 = **未完成**。必读 [§0](#0-对外暴露什么--上传到哪里) 与 [EXTERNAL-AUTHOR.md](./EXTERNAL-AUTHOR.md)。
+
+## 0. 对外暴露什么 / 上传到哪里
+
+VitalSpan 给外部的是 **本规范包**（例如 `vs-ai-spec-deeptalk-test/`），不是 VitalSpan 服务端本身。
+
+| 你拿到/操作的东西 | 它是什么 | 算不算「已上传 VitalSpan」 |
+|------------------|----------|---------------------------|
+| 本规范包整个目录 | 文档 + 金样例 + `tools/` 脚本的工作区 | **否** |
+| `examples/你的组件.json` | 本地草稿（磁盘文件） | **否** |
+| 自建的 `output/`、`dist/` 等目录里的 JSON | **规范未定义**；禁止当作交付路径 | **否** |
+| DeepTalk `write_file` / VS Code 保存 | 只改了本机文件 | **否** |
+| 「可在 VS Code AI 扩展中使用」 | **不存在此完成标准** | **否** |
+| `POST /api/v1/ai-viz/artifacts` 返回的 **`artifactId`** | 平台元库里的组件 uuid | **是（唯一完成标志）** |
+
+**上传目的地（入库端点）只有一个**——正在运行的 VitalSpan 后端：
+
+```
+POST http://127.0.0.1:8000/api/v1/ai-viz/artifacts
+Authorization: Bearer <JWT>
+Content-Type: application/json
+Body: { "manifest": { ... }, "files": { "index.html": "<字符串>" } }
+```
+
+- 数据落在平台数据库 **`ai_viz_artifacts`**（外部作者不直接访问该表）
+- 成功：**HTTP 201**，响应 JSON 含 **`artifactId`**
+- 更新：`PUT /api/v1/ai-viz/artifacts/{artifactId}`
+
+**怎样才算做完（必须满足其一，并能把 uuid 报给用户）：**
+
+1. 在本规范包根目录执行  
+   `python tools\upload-ai-viz-artifact.py --file <你的.json>`  
+   终端出现 **`ok artifactId=<uuid>`**
+2. 自行 POST 上述 URL，拿到 **201 + `artifactId`**
+
+**没有 `artifactId` = 未对接成功。** 禁止向用户声称「已上传」「已传过去」「已完成」。
+
+推荐流程：先 `validate-ai-viz-bundle.py`（preflight）→ 再 `upload-ai-viz-artifact.py`（真入库）。详见 [EXTERNAL-AUTHOR.md](./EXTERNAL-AUTHOR.md)。
+
 ## 1. 完成定义
 
 必须对 **正在运行的 VitalSpan** 发出 HTTP，并拿到 `artifactId`。
@@ -18,7 +57,9 @@ Content-Type: application/json
 
 下列**全部不算完成**：
 
-- 只把 HTML/JSON 写到操作者桌面或 `examples/`
+- 只把 HTML/JSON 写到操作者桌面、`examples/`、**`output/`** 或规范包内任意路径
+- 使用 DeepTalk **`write_file`**、VS Code 保存、或声称「文件已保存在工作区」
+- 声称「可在 VS Code AI 扩展中使用」——**规范无此路径**
 - `files.index.html` 写成 `{ "content": "..." }` 对象（必须是 **字符串**）
 - bundle 内用 `postMessage` / `payload.data`（DeepTalk 协议），未接 `vsCv.mount` + `payload.rows`
 - 用浏览器打开 `demo-*.html`
