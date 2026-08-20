@@ -40,12 +40,27 @@
 d3 必须 `host.vsCv.mount(`；render 读 `(p && p.style) || {}`。  
 更新：`publish-ai-viz-artifact.py --artifact-id <uuid>`。
 
-## 工作流 ③（大屏 · 复用库）
+## 仪表板 vs 数据大屏（必须先分清）
 
-1. `artifactId` 来自库中已有或 ② 刚上传  
-2. 写 `layoutJson`，`customVizConfig.artifactId` 填 uuid  
-3. `upload-dashboard-layout.py --dashboard-id ...`  
-4. 汇报 **`dashboardId`**
+| | **仪表板** `dashboard` | **数据大屏** `data-screen` |
+|---|------------------------|----------------------------|
+| 画布 | 1440 宽 | 1920×1080 |
+| 编辑 | `/admin/dashboards/:id/edit` | `/admin/data-screens/:id/edit` |
+| 场景 | 分析看板 | 展厅/指挥大厅全屏 |
+
+同一 API `PUT /dashboards/{id}/editor-save`，但 **dashboard_id 必须对应正确 surfaceKind**。混用 = 任务失败。
+
+## 工作流 ③（拼仪表板或数据大屏）
+
+**素材**：① 内置 chartType + ② DeepTalk 已 publish 的 customViz（不是金样）。
+
+1. 确认用户要 **仪表板** 还是 **数据大屏**
+2. `vitalspan_list_dashboards`（带 `surface_kind` 过滤）选 uuid
+3. `vitalspan_list_chart_types` + `vitalspan_list_artifacts`
+4. `vitalspan_upload_dashboard` — 自动对齐目标 surfaceKind
+5. 汇报 **`dashboardId`** + **surfaceKind** + 正确 edit URL
+
+**禁止**：只 list_artifacts；禁止把两种 surface 叫成「大屏」而不区分。
 
 ## 读规范
 

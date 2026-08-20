@@ -1,9 +1,20 @@
-# 大屏编排 — 工作流 ③（layoutJson + editor-save）
+# 版面编排 — 工作流 ③（layoutJson + editor-save）
 
 > **铁律** → [IRON-RULES.md](../IRON-RULES.md) · **工程定位** → [PACK-IDENTITY.md](../PACK-IDENTITY.md)  
-> **本文件只覆盖「把已有能力摆到看板上」。**  
+> **本文件只覆盖「把已有能力摆到看板/大屏上」。**  
 > **不在此工作流开发组件 HTML** → 新组件先走 [工作流 ②](../EXTERNAL-AUTHOR.md) 入库。  
 > 三条线总览 → [THREE-WORKFLOWS.md](./THREE-WORKFLOWS.md)
+
+## 仪表板 vs 数据大屏
+
+| | **仪表板** | **数据大屏** |
+|---|-----------|-------------|
+| `layoutJson.styleConfig.surfaceKind` | `dashboard`（默认） | `data-screen` |
+| 画布 | 1440 宽 | 1920×1080 |
+| 5173 | `/admin/dashboards/:id/edit` | `/admin/data-screens/:id/edit` |
+| 列表 API | `GET /dashboards?surfaceKind=dashboard` | `?surfaceKind=data-screen` |
+
+同表 `dashboards`、同 `editor-save`，**禁止**把一种 surface 的 layout 保存到另一种 uuid。
 
 ## 定位
 
