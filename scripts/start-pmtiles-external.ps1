@@ -41,6 +41,11 @@ Write-Host "  port     : $Port"
 Write-Host "  cors     : $CorsOrigin"
 Write-Host ""
 
+docker info 2>$null | Out-Null
+if ($LASTEXITCODE -ne 0) {
+  throw "Docker daemon is not running. Start Docker Desktop, then rerun this script."
+}
+
 docker compose --profile pmtiles-external up -d pmtiles-tile-server
 
 $verifyScript = Join-Path $repoRoot (Join-Path 'scripts' 'verify-pmtiles-external.ps1')

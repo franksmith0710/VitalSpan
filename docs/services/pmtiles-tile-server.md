@@ -28,11 +28,20 @@
 
 ## 部署
 
-见仓库 [`docker/pmtiles-tile-server/README.md`](../../docker/pmtiles-tile-server/README.md)。
+见 [`docker/pmtiles-tile-server/README.md`](../../docker/pmtiles-tile-server/README.md)。
 
 ```powershell
-docker compose --profile pmtiles-external up -d pmtiles-tile-server
+# 一键（需 Docker Desktop 已运行）
+.\scripts\start-pmtiles-external.ps1 -DataDir C:\path\to\pmtiles-dir
+
+# 停止（不影响 VitalSpan 主栈）
+.\scripts\stop-pmtiles-external.ps1
+
+# 验真 Range + CORS
+.\scripts\verify-pmtiles-external.ps1
 ```
+
+**VitalSpan 默认 `docker compose up` 不会启动本服务**（`pmtiles-external` profile 隔离）。
 
 环境变量：
 

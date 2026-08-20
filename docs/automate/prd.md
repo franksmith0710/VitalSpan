@@ -207,19 +207,19 @@ domain_count: 16
 
 ## 执行范围（与 plan 对齐）
 
-> 更新：2026-07-10 · 来源 [`plan.md`](./plan.md) v3.0.0 · hub **v1.2.117**
+> 更新：2026-08-20 · 来源 [`plan.md`](./plan.md) v3.1.0 · hub **v1.2.120**
 
 | 字段 | 值 |
 |------|-----|
 | 已冻结 | **M-FINAL**（129/129 PRD 合同项） |
-| 当前执行 | **§M-DEPTH** — DE/SS 深度打穿（F-A Dataset → F-B 筛选器 → F-C 消费落差） |
-| 排队 | F-D 可选（公开分享 / IA 精简 / 设计器 ADR） |
-| PRD 合同 | **129** 已实现 · **0** 未实现 |
-| companion（plan） | **12** 必做待办（F-A/B/C）；F-0 已勾 3 项；F-D 可选 3 项不计 gate |
-| 当前节 | **M-DEPTH** |
-| G2 选题 | 每轮 3–5 项；首轮必须 F-A；禁止 F-D / AI/SQLBot / SQL Lab |
+| 当前执行 | **§M-RPT** — 报表中心深度收官（F-A 信任链 → F-B 标准分析 → F-C 字典与模板） |
+| 排队 | F-D 可选（交叉表/套打/另存为）；data-screen-qa 按需 |
+| PRD 合同 | **129** 已实现 · **0** 合同未实现 |
+| companion（plan） | **10** 必做待办 + **3** 可选（M-RPT F-A~C 必做；F-D 可选） |
+| 当前节 | **M-RPT F-A** |
+| G2 选题 | 每轮 3–5 项；F-A 全勾前不跳 F-C/F-D；禁止积木/Jimu/AJ-Report 运行时 |
 
-**说明**：M-DASH-UX + M-PRODUCT 已于 2026-07-09 收官。2026-07-10 人工干预插入 §M-DEPTH（毕业后 SATURATED → 深度 companion），不扩合同 PRD 面。细则见 [`plans/2026-07-10-fe-de-ss-ia-optimization.md`](./plans/2026-07-10-fe-de-ss-ia-optimization.md)。
+**说明**：M-DEPTH 已于 2026-07-29 收官。2026-08-20 依据 [报表中心 holistic audit](../material/blueprints/2026-08-20-report-center-holistic-audit.md) 插入 **§M-RPT** companion 深化（不扩合同 ID 面）。细则见 [`plan.md`](./plan.md) §M-RPT。
 
 **里程碑状态**：
 
@@ -227,7 +227,8 @@ domain_count: 16
 |--------|------|
 | M-DASH-UX F-A~D | **已收官** |
 | M-PRODUCT F-A~F | **已收官** |
-| **M-DEPTH F-A~C** | **当前节**（12 必做待办） |
+| M-DEPTH F-A~E | **已收官** |
+| **M-RPT F-A~C** | **当前节**（10 必做 companion 待办） |
 
 ---
 
@@ -235,8 +236,8 @@ domain_count: 16
 
 - **归档**：[`plan.archive.md`](./plan.archive.md)（M1–M12 全量映射）
 - **已冻结**：[`plan.md`](./plan.md) §M-FINAL（129/129 合同）
-- **已收官**：[`plan.md`](./plan.md) §**M-DASH-UX** + §**M-PRODUCT**
-- **当前节**：[`plan.md`](./plan.md) §**M-DEPTH**（v3.0.0 · 2026-07-10）
+- **已收官**：[`plan.md`](./plan.md) §**M-DASH-UX** + §**M-PRODUCT** + §**M-DEPTH**
+- **当前节**：[`plan.md`](./plan.md) §**M-RPT**（v3.1.0 · 2026-08-20）
 
 ---
 
@@ -244,6 +245,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.120 | 2026-08-20 | 人工 PRD 修订（M-RPT）：`F08-RPT` RPT-001~005 + `F11-META` META-003 补 **M-RPT F-A~D** companion `[ ]`（13 条必做 + 4 可选）；hub 执行范围/里程碑对齐 plan v3.1.0；依据 [report-center holistic audit](../material/blueprints/2026-08-20-report-center-holistic-audit.md) |
 | 1.2.119 | 2026-07-20 | 文档卫生：`feature_count` 与正文 129 项对齐；数据大屏 companion 执行见 `plans/` 与 `evolution-state.md`（不扩合同 ID） |
 | 1.2.118 | 2026-07-13 | 非计数文档纠错：明确 AUTH-003 不含账户自服务 profile/change-password；追溯 BUG-001 + Account Self-Service plan；`feature_count`/评分/F02 ID 范围不变 |
 | 1.2.117 | 2026-07-10 | PRD 分片同步 §M-DEPTH：META-004/QUERY-009/DASH-002·004/AUTH-006·008/RPT-005/API-003 补深度 companion `[ ]`；BOOT-002/DASH-001 勾 F-0；API-006/DESIGN-001/BOOT-002 标 F-D 可选；`prd/README` 对齐 |

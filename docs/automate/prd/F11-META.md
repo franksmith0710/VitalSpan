@@ -40,9 +40,13 @@
   - [x] values 注册校验链（空 code/非法 pattern/重复 batch/空 label + list 分页 limit 500，r39）
   - [x] 主题 FK + 写 ACL + Admin 维度面板（r244：migration 0019 `theme_node_id` FK；`dimensions-panel.tsx`；viewer POST 403；`probe_list_dimensions_budget_ms` ≤50ms；T-META-R244-003-01~07）
   - [x] M4/M5/M6 统一引用（companion F-F：`GET /dimensions/resolve?code=` + prefab/global-filters/theme 校验链；T-META-FF-003）
-- **代码锚点**：`backend/app/metadata/dimensions/` · `backend/migrations/versions/0019_dimension_theme_node.py` · `backend/app/api/v1/metadata_dimensions.py` · `fe/src/pages/admin/metadata/dimensions-panel.tsx` · `tests/test_mfinal_fd_meta_r244.py` T-META-R244-003-01~07
-- **演化建议**：r244 收官 F-D plan 维度注册（theme FK + Admin UI + 写 ACL）；M4/M5/M6 统一引用留 companion
-- **里程碑对齐**：M-FINAL · F-D · 已完成 · 2026-07-07
+  - [ ] **M-RPT F-C**：标准分析表/图 tooltip 绑定维度字典字段时自动 resolve 显示 label（A 主路径 + G UI）
+  - [ ] **M-RPT F-C**：模板 run Web 展现码值翻译与标准分析一致；与 RPT-001 导出翻译共用 resolve 链（A）
+  - [ ] **M-RPT F-C**：resolve 失败时展示裸码 + 「未翻译」旁注，不得静默当成功（C 失败诚实）
+  - [ ] **M-RPT F-C**：viewer 可读 resolve；未授权或未知维度 code 返回空集或 403，不得泄露他人字典值（B 权限）
+- **代码锚点**：`backend/app/metadata/dimensions/` · `backend/migrations/versions/0019_dimension_theme_node.py` · `backend/app/api/v1/metadata_dimensions.py` · `backend/app/api/v1/metadata.py`（`resolve_dimension`）· `fe/src/pages/admin/metadata/dimensions-panel.tsx` · `fe/src/pages/admin/reports/` · `tests/test_mfinal_fd_meta_r244.py` T-META-R244-003-01~07
+- **演化建议**：M-RPT F-C 报表展示/导出层 lookup；不复建第二套字典 CRUD
+- **里程碑对齐**：M-FINAL · F-D · 已完成 · 2026-07-07；**M-RPT F-C · 待办**
 ### [META-004] Dataset CRUD M1-DATASET
 
 - **状态**：已实现（M-FINAL F-D r244 + **M-DEPTH F-A** ORM/可视化编辑 · 2026-07-10）

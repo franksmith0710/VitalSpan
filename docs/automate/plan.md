@@ -1,26 +1,27 @@
 # 演化里程碑计划（活跃）
 
 > 人工维护（`create-evolution-plan`）；演化 agent **只读**。
-> **当前节** = **companion backlog**（发版 QA + F-D 可选）；**M-DEPTH 必做 F-A~C/E 已收官（2026-07-29）**。**M-FINAL 已冻结**；**M-PRODUCT + M-DASH-UX 已收官**。  
-> **全量路线图**：M1–M12 + M-FE-1~3 + M-FINAL + M-PRODUCT + M-DASH-UX + **M-DEPTH 必做 + F-D** 已完成（2026-07-30）；**PRD 总数 129**（合同已实现）；活跃 companion 见 [project master](../feature-design/2026-07-29-vitalspan-project-master-gap-fill.md) 发版 QA 抽测。  
-> **完成定义**：`[x]` = companion 浏览器可感知 / 合同项分片「已实现」；`[ ]` = companion 未达；标「可选」不阻塞收官。  
-> **实施细则**：架构见 [`../arch.md`](../arch.md)；验收见 [`prd/F07-DASH.md`](./prd/F07-DASH.md) · [`prd/F11-META.md`](./prd/F11-META.md)；壳层见 [`../ui/layout.md`](../ui/layout.md)；全栈审视见 [`plans/2026-07-10-fe-de-ss-ia-optimization.md`](./plans/2026-07-10-fe-de-ss-ia-optimization.md)。
+> **当前节** = **§M-RPT · F-A 信任链**；**M-DEPTH / M-FINAL / M-PRODUCT 已收官**；**129 项 PRD 合同已实现**。  
+> **全量路线图**：M1–M12 + M-FE + M-FINAL + M-PRODUCT + M-DASH-UX + M-DEPTH 已完成；**活跃 companion** = 报表中心深度收官（依据 [holistic audit](../material/blueprints/2026-08-20-report-center-holistic-audit.md)）。  
+> **完成定义**：`[x]` = 真实依赖下浏览器/集成 smoke 可感知；`[ ]` = 未达；标「可选」不阻塞 M-RPT 必做 gate。  
+> **实施细则**：架构见 [`../arch.md`](../arch.md)；报表域见 [`../services/reports.md`](../services/reports.md)；验收锚点 [`prd/F08-RPT.md`](./prd/F08-RPT.md) · [`prd/F11-META.md`](./prd/F11-META.md)。
 
 ```yaml
-version: 3.0.3
-last_updated: 2026-07-30
+version: 3.1.0
+last_updated: 2026-08-20
 archive_ref: docs/automate/plan.archive.md
-execute_scope: companion-backlog
+execute_scope: m-rpt-depth
 frozen_milestone: M-FINAL
-queued_milestone: data-screen-qa
-roadmap: M1-M12+M-FE-1~3+M-FINAL+M-PRODUCT+M-DASH-UX+M-DEPTH+data-screen-companion
+current_milestone: M-RPT
+queued_milestone: M-RPT-F-B
+roadmap: M1-M12+M-FE-1~3+M-FINAL+M-PRODUCT+M-DASH-UX+M-DEPTH+M-RPT
 prd_total: 129
 prd_in_scope: 129
 prd_completed_in_scope: 129
 prd_remaining_in_scope: 0
-companion_scope: data-screen-qa + M-DEPTH-F-D-optional
-companion_active_plan: docs/feature-design/2026-07-29-data-screen-master-gap-fill.md
-intervention: mdepth-mandatory-closed-2026-07-29
+companion_scope: M-RPT-F-A~C必做 + F-D可选 + data-screen-qa按需
+companion_active_plan: docs/material/blueprints/2026-08-20-report-center-holistic-audit.md
+intervention: report-center-holistic-audit-2026-08-20
 ```
 
 > **决策（2026-07-20）**：大屏**编辑视口** companion 已交付（`plans/2026-07-20-data-screen-edit-viewport-de.md`）；看板画布 UX 排队 `plans/2026-07-14-dashboard-canvas-ux-de-complete.md`。  
@@ -32,8 +33,8 @@ intervention: mdepth-mandatory-closed-2026-07-29
 > **决策（2026-07-08）**：追加 **§M-PRODUCT** 处理成品感、DataEase 数据源分类、IA 收敛与 companion 验收清扫。  
 > **决策（2026-07-09）**：方案 A → **§M-DASH-UX** 为当前节；**§M-PRODUCT** queued → 同日全勾收官。  
 > **决策（2026-07-10）**：毕业后全栈 DE/SS 审视（SATURATED）→ 插入 **§M-DEPTH**；不扩 PRD 合同面，对已实现 ID 做持久化/可视化/控件/消费落差 companion。  
-> **决策（2026-07-29）**：M-DEPTH 必做 gate 通过（F-A Dataset · F-B filter · F-C RLS/审计/调度/服务试跑 · F-E 报表诚实化）；活跃 companion 转为发版 QA + F-D 可选 backlog。  
-> **依据（2026-07-29 已闭合）**：Dataset ORM + 真实 execute；`FilterWidget` / `GlobalFilterBar` 控件链；`RlsAdminPage` / `AuditLogPage`；`SchedulePanel` 历史重试；`QueryServiceTrialSheet` 服务试跑。
+> **决策（2026-07-29）**：M-DEPTH 必做 gate 通过；F-D 可选已勾（2026-07-30）。  
+> **决策（2026-08-20）**：插入 **§M-RPT 报表中心深度收官** 为活跃节；对标积木差距集中在**固定版式呈现层**，分三期 companion 深化（不嵌第三方 BI 运行时）。
 
 | 范围 | 子批 | PRD 项 | 已实现 | 待完成 | 状态 |
 |------|------|--------|--------|--------|------|
@@ -43,6 +44,7 @@ intervention: mdepth-mandatory-closed-2026-07-29
 | **成品收官** | **M-PRODUCT · F-A ~ F-F** | **companion** | **38‡** | **0** | **已完成** |
 | **编辑体验** | **M-DASH-UX · F-A ~ F-D** | **companion** | **12** | **0** | **已完成** |
 | **深度打穿** | **M-DEPTH · F-A ~ F-C + F-E** | **companion** | **12** | **0** | **已完成** |
+| **报表中心** | **M-RPT · F-A ~ F-D** | **companion** | **0** | **10必做+3可选** | **当前** |
 | 一期–三期 | M2 – M12 | 88 | 88 | 0 | 已完成 |
 
 \* M-FE 与 M2–M5 有 ID 重叠，为浏览器交付轨。  
@@ -53,12 +55,97 @@ intervention: mdepth-mandatory-closed-2026-07-29
 **推荐执行顺序（全局 · 当前）**：
 
 ```
-发版 QA（BUG-2 Pointer · 数据大屏 MT 抽测）  ← 按需
-  → §M-DEPTH F-D 可选（公开分享 / IA 精简 / 设计器 ADR）仅人工点名
-  → 演化 companion（看板 canvas UX · map-3d · Embed CSP 等）按需
+§M-RPT F-A 信任链（调度/投递 e2e · smoke 修漂移）
+  → F-B 标准分析深化（retention · Dataset 叙事 · 可观测）
+  → F-C 字典与模板体验（META-003 接线 · 模板首进）
+  → F-D 固定版式进阶〔可选〕（交叉表/套打 · RPT-004 另存为）
+  → 发版 QA / 数据大屏抽测  ← 按需，不阻塞 M-RPT
 ```
 
-**G2 选题约束**：M-DEPTH 必做已收官；新轮仅从 **F-D 可选** 或 **演化/QA backlog** 选题；**禁止**重复开发已闭合 F-A/B/C。**禁止**：AI/SQLBot、完整 SQL Lab、NFR probe 扩面、fork DE/SS。
+**G2 选题约束**：当前节 **§M-RPT F-A** 全勾前不跳 F-C/F-D；每轮 3–5 项必做。**禁止**：嵌入积木/Jimu/AJ-Report 运行时；stub 调度假绿；AI/SQLBot；fork DE/SS。
+
+---
+
+## M-RPT — 报表中心深度收官【当前节】
+
+> **人工干预（2026-08-20）**：依据 [2026-08-20-report-center-holistic-audit.md](../material/blueprints/2026-08-20-report-center-holistic-audit.md) 重排活跃里程碑。  
+> **策略**：129 项合同不变；在 **RPT-001~007 + META-003** 上做 **真实路径 companion 深化**；对标积木差距 = 自研固定版式呈现层，分期补齐。  
+> **禁止**：第三方 BI 运行时嵌入；调度未配 SMTP/IM 时假成功；块模板冒充 WYSIWYG 勾选完成。
+
+| 子批 | 主题 | 必做 | 可选 | 状态 |
+|------|------|------|------|------|
+| **F-A** | 信任链 | 4 | 0 | **当前** |
+| **F-B** | 标准分析深化 | 3 | 1 | queued |
+| **F-C** | 字典与模板体验 | 3 | 0 | queued |
+| **F-D** | 固定版式进阶 | 0 | 3 | 可选 backlog |
+
+**推荐执行顺序**：
+
+```
+F-A  标准分析投递 e2e + 调度探针 + 模板 smoke 修漂移
+  → F-B  快照 retention + Dataset 主叙事 + 库内聚合〔可选〕
+  → F-C  META-003 报表展示/导出 lookup + 模板首进向导
+  → F-D  交叉表 MVP / 套打分页 / 目录另存为〔可选 · 人工点名〕
+```
+
+### F-A — 信任链【必做 · 当前】
+
+> **最贵失败**：调度 list 500、standard 投递 422、模板 smoke 假绿 — 用户认为「报表中心坏了」。
+
+- [ ] RPT-005: 标准分析 `sourceType=standard` **端到端**（配置页深链 `packKey` → 创建调度 → 执行 → 附件/日志可读；真实 SMTP 或显式失败）
+- [ ] RPT-005: 调度 `GET /schedules` · `GET .../executions` **部署探针**纳入 CI 或 deploy-dev 走查清单（防 list 500 回归）
+- [ ] RPT-003: `report-templates.smoke` 与扩展 Tab UI **漂移修复**（选择器/label 与实现一致；vitest 全绿）
+- [ ] RPT-002: 配置页保存后 **「创建定时投递」CTA**（跳转 `/admin/reports/schedules` 并预填 standard 源）
+
+**验收信号**：MailHog/SMTP 或 IM 台账下，标准分析包可完成一次定时投递；schedules API 在 deploy-dev smoke 恒 200；模板页 smoke 无假绿。
+
+**代码锚点**：`scheduler/schemas.py` · `scheduler/executor.py` · `StandardAnalysisConfigForm.tsx` · `ReportSchedulesPage.tsx` · `report-templates.smoke.test.tsx`
+
+### F-B — 标准分析深化【必做】
+
+> **对标**：对象工作台 + 周期对比（差异化）；M1 内存聚合与快照治理待补。
+
+- [ ] RPT-002: 周期快照 **retention**（保留 N 期配置 + 超期清理 job；compare 不受脏数据影响）
+- [ ] RPT-002: 分析包绑定 **Dataset 为主叙事**（配置 UI 默认 Dataset；物理表路径 deprecated 提示）
+- [ ] RPT-002: 结果区 **口径/快照/投递** 可观测条在实时与对比模式均可见（Hub 摘要 + 结果页一致）
+- [ ] RPT-002: 主题聚合 **库内 GROUP BY** 路径〔可选 · 大数据场景；未做则 meta 诚实标注 M1 样本聚合〕
+
+**验收信号**：连续快照超过 N 期后旧期自动清理；新包默认走 Dataset 绑定；用户可见「最近快照 / 下次节奏」与投递状态。
+
+**代码锚点**：`standard/snapshot.py` · `standard/jobs.py` · `theme_aggregate.py` · `StandardAnalysisSnapshotStrip.tsx`
+
+### F-C — 字典与模板体验【必做】
+
+> **对标积木「数据字典」**：复用 META-003，不做第二套字典 CRUD。
+
+- [ ] META-003: 报表 **展示层码值翻译**（标准分析表/图 tooltip + 模板 run 结果；绑定维度字典字段自动 lookup）
+- [ ] RPT-001: **导出产物**含翻译后标签（PDF/Excel 列值非裸码；失败显式降级说明）
+- [ ] RPT-003: 文档模板 **首进体验**（示例模板种子 + 空态引导 + 一键运行/导出 CTA）
+
+**验收信号**：`status=1` 在标准分析表模式显示「已完成」；模板页新用户 60 秒内完成首次导出。
+
+**代码锚点**：`metadata/dimension/` · `ReportViewPage.tsx` · `reports/render/` · `ReportTemplatesPage.tsx`
+
+### F-D — 固定版式进阶【可选 · 不阻塞 M-RPT gate】
+
+> **对标积木最大 gap**；分期自研，禁止一夜 WYSIWYG 勾选。
+
+- [ ] RPT-003: **交叉表 MVP**（单维行×列 + 指标聚合；RenderSpec 扩展 + 导出）
+- [ ] RPT-001: **套打分页 PDF**（固定版式占位符 + 分页策略；非全量 Excel 设计器）
+- [ ] RPT-004: 目录 **另存为 / 手工执行**（PRD companion 未勾项）
+
+**验收信号**：至少一类固定版式报表可政企验收演示；另存为后可独立运行副本。
+
+### M-RPT 收官信号
+
+| 验收 | 映射 | 阻塞？ |
+|------|------|--------|
+| 投递/调度信任链 | F-A 全勾 | **是** |
+| 标准分析治理 | F-B 必做 3 项 | **是** |
+| 字典 + 模板首进 | F-C 全勾 | **是** |
+| 交叉表/套打/另存为 | F-D 可选 | 否 |
+
+> **明确不含**：嵌入积木/JimuReport/AJ-Report；独立「数据字典」菜单重复 META；组合调度粒度枚举（RPT-005 远期 companion）。
 **前三期完成信号**（不新增 PRD ID）：
 
 | 验收 | 映射 |

@@ -13,9 +13,13 @@
   - [x] companion engine run ACL + parameter guard + perf probe（r66：`set_user_engine_scope` + `RPT_ENGINE_FORBIDDEN` 403；`__proto__` parameter 422；`probe_run_template_budget_ms` ≤50ms）
   - [x] M3-LITE 绑定执行链（r233：`engine/execute.py` + `build_sections_from_extension` → `execute_query`；`dataSourceId` 必填 `RPT_ENGINE_DATASOURCE_REQUIRED`；无 dataSourceId placeholder 回归 r60）
   - [x] PDF/Word 真实渲染（companion r-e95d：`reports_export` catalog 模板链 + mock bytes 下载；`exportHook.placeholder=false`；`ReportExportCard` FE 下载）
-- **代码锚点**：`backend/app/reports/engine/execute.py` · `backend/app/reports/engine/service.py` · `backend/app/integration/reports_export.py` · `backend/app/api/v1/reports/engine.py` · `fe/src/pages/admin/reports/components/ReportExportCard.tsx` · `tests/test_ff_rpt_companion_e95d.py` · `tests/test_m9_rpt_theme_r233.py` T-R233-RPT-001-01~06
-- **演化建议**：r233 闭合 M3-LITE extension→query 执行链与 datasource 守卫；PDF/Word 渲染引擎与 fe 模板展现 UI 留 companion
-- **里程碑对齐**：M9 · 已完成 · 2026-07-06
+  - [ ] **M-RPT F-C**：给定列/块绑定维度字典字段，当模板 run 或 export PDF/Excel，则展示/导出值为翻译后 label；`GET /dimensions/resolve` 失败时保留裸码并旁注「未翻译」，不得静默冒充成功（A + C）
+  - [ ] **M-RPT F-C**：模板 Web 展现（`format=web`）码值翻译与导出一致，共用 resolve 链（A）
+  - [ ] **M-RPT F-C**：未绑定字典字段的列保持原值；绑定字段变更后 rerun 即时刷新翻译（F 配置）
+  - [ ] **M-RPT F-D**〔可选〕：套打固定版式 PDF 分页（占位符分页 + 页眉页脚；`reports/render/` 真实排版链，非 placeholder bytes）
+- **代码锚点**：`backend/app/reports/engine/execute.py` · `backend/app/reports/engine/service.py` · `backend/app/integration/reports_export.py` · `backend/app/reports/render/` · `backend/app/api/v1/metadata.py`（`resolve_dimension`）· `backend/app/api/v1/reports/engine.py` · `fe/src/pages/admin/reports/components/ReportExportCard.tsx` · `tests/test_ff_rpt_companion_e95d.py` · `tests/test_m9_rpt_theme_r233.py` T-R233-RPT-001-01~06
+- **演化建议**：M-RPT F-C 导出层码值翻译；套打分页留 F-D 可选
+- **里程碑对齐**：M9 · 已完成 · 2026-07-06；**M-RPT F-C · 待办**
 ### [RPT-002] 标准分析报表体系 FR-3.1
 
 - **状态**：已实现（2026-08-11 重建）
@@ -29,9 +33,14 @@
   - [x] 周期快照（`POST .../snapshots/capture` · `GET .../snapshots`）
   - [x] APScheduler 快照 job（`standard/jobs.py`）
   - [x] FE 工作台 + 配置页 + Hub（`StandardAnalysisPage` · `StandardAnalysisConfigPage`）
-- **代码锚点**：`backend/app/reports/standard/` · `backend/app/api/v1/reports/standard.py` · `fe/src/pages/admin/reports/StandardAnalysisPage.tsx` · `tests/test_standard_analysis.py`
-- **演化建议**：关键节点快照、另存为自由报表留 companion
-- **里程碑对齐**：M9 · 已完成 · 2026-08-11
+  - [ ] **M-RPT F-A**：配置页保存成功后展示「创建定时投递」CTA，跳转 `/admin/reports/schedules` 并预填 `sourceType=standard` + `packKey`；未保存时 CTA 禁用（G UI 闭环）
+  - [ ] **M-RPT F-B**：给定 pack 配置 `snapshotRetentionPeriods=N`，当连续 `capture` 超过 N 期，则 cleanup job 删除最旧快照且 `GET .../snapshots` 与 compare 不再含已删期（A 主路径 + D 状态机）
+  - [ ] **M-RPT F-B**：新建/编辑分析包 UI **默认 Dataset 绑定**；物理表路径显示 deprecated 提示并链至 Dataset 文档（F 配置 + G UI）
+  - [ ] **M-RPT F-B**：Hub 与结果页均展示口径/最近快照/下次节奏/投递状态可观测条；实时与对比模式信息一致（G UI）
+  - [ ] **M-RPT F-B**〔可选〕：主题聚合可走库内 GROUP BY；未启用时 API meta 诚实标注 M1 样本聚合上限，不得假称全量聚合（C 失败诚实）
+- **代码锚点**：`backend/app/reports/standard/` · `backend/app/api/v1/reports/standard.py` · `backend/app/reports/standard/snapshot.py` · `backend/app/reports/persistence/standard_repo.py` · `fe/src/pages/admin/reports/StandardAnalysisPage.tsx` · `fe/src/pages/admin/reports/StandardAnalysisConfigPage.tsx` · `fe/src/pages/admin/reports/components/StandardAnalysisSnapshotStrip.tsx` · `tests/test_standard_analysis.py`
+- **演化建议**：M-RPT F-A/B 信任链与治理深化；库内 GROUP BY 留 F-B 可选
+- **里程碑对齐**：M9 · 已完成 · 2026-08-11；**M-RPT F-A/B · 待办**
 ### [RPT-003] Word/Excel/PDF 模板定义
 
 - **状态**：已实现（M10 r234）
@@ -45,9 +54,12 @@
   - [x] M10 storageRef/DELETE/list/exportHook（r234：`GET/DELETE /reports/templates` + `storageRef` mock URI；`RPT_TEMPLATE_IN_USE` 409；`engine/service.run_template` word/excel/pdf 占位 `exportHook`；`probe_list_templates_budget_ms` ≤50ms）
   - [x] M10 FE 模板元数据页（r234：`ReportTemplatesPage` + `useReportTemplates.ts`；vitest smoke 含树加载/空态）
   - [x] PDF/Word 真实排版引擎与 WYSIWYG 设计器（companion r-e95d：`TemplateBlockEditor` 块列表/SQL/重排；非全量 WYSIWYG）
-- **代码锚点**：`backend/app/reports/templates/service.py` · `backend/app/reports/engine/service.py` · `fe/src/pages/admin/reports/ReportTemplatesPage.tsx` · `fe/src/pages/admin/reports/components/TemplateBlockEditor.tsx` · `fe/src/pages/admin/reports/useReportTemplates.ts` · `tests/test_ff_rpt_companion_e95d.py` · `tests/test_m10_report_templates_r234.py` T-RPT-R234-003-01~09
-- **演化建议**：r234 闭合 storageRef/delete-in-use/exportHook 与 Admin 模板元数据页；真实 PDF/Word 排版引擎与 WYSIWYG 设计器留 companion
-- **里程碑对齐**：M10 · 已完成 · 2026-07-07
+  - [ ] **M-RPT F-A**：`report-templates.smoke.test.tsx` 选择器/label 与 `ReportTemplatesPage` 实现一致，vitest 全绿无假绿（E 可运维）
+  - [ ] **M-RPT F-C**：首进模板页展示示例模板种子 + 空态引导 + 「运行/导出」CTA；新用户 60 秒内可完成首次导出（A 主路径 + G UI）
+  - [ ] **M-RPT F-D**〔可选〕：交叉表 MVP（单维行×列 + 指标聚合；RenderSpec 扩展 + PDF/Excel 导出）
+- **代码锚点**：`backend/app/reports/templates/service.py` · `backend/app/reports/engine/service.py` · `fe/src/pages/admin/reports/ReportTemplatesPage.tsx` · `fe/src/pages/admin/reports/components/TemplateBlockEditor.tsx` · `fe/src/pages/admin/reports/useReportTemplates.ts` · `fe/src/pages/admin/reports/report-templates.smoke.test.tsx` · `tests/test_ff_rpt_companion_e95d.py` · `tests/test_m10_report_templates_r234.py` T-RPT-R234-003-01~09
+- **演化建议**：M-RPT F-A smoke 修漂移；F-C 首进体验；交叉表留 F-D 可选；块模板 ≠ WYSIWYG 设计器（对标积木分期自研）
+- **里程碑对齐**：M10 · 已完成 · 2026-07-07；**M-RPT F-A/C · 待办**
 ### [RPT-004] 模板树形目录管理
 
 - **状态**：已实现（M10 r234）
@@ -60,7 +72,7 @@
   - [x] 目录权限受 M7 控制（r57 companion：`reports/catalog/acl.py` viewer 禁写/owner 删叶/admin 绕过 move；ACL 判定 ≤10ms）
   - [x] extension 同比环比（r58 companion：`compareMode` yoy/mom + `POST .../compare-preview` + render-spec `compareMetrics`；`extension/acl.py` viewer 禁写）
   - [x] M10 templateKey 唯一关联 + list probe（r234：`RPT_CATALOG_DUPLICATE_TEMPLATE_KEY`/`RPT_CATALOG_TEMPLATE_KIND_MISMATCH`/`RPT_CATALOG_TEMPLATE_NOT_FOUND`；`catalog/probe.py` list ≤50ms；`ReportTemplatesPage` 树浏览）
-  - [ ] 另存为/手工执行（companion · **演化建议 / 非阻塞**）
+  - [ ] 另存为/手工执行（companion · **M-RPT F-D 可选 · 非阻塞**）
 - **代码锚点**：`backend/app/reports/catalog/service.py` · `backend/app/reports/catalog/probe.py` · `fe/src/pages/admin/reports/components/CatalogTreeNode.tsx` · `tests/test_dash_rpt_query_nfr_r53.py` T-RPT-R53-004-01~06 · `tests/test_dash_rpt_r58.py` T-RPT-R58-004-01~08 · `tests/test_m10_report_templates_r234.py` T-RPT-R234-004-01~06
 - **演化建议**：r234 闭合 catalog `templateKey` 外键唯一、list perf probe 与 FE 树形管理；另存为/手工执行留 companion
 - **里程碑对齐**：M10 · 已完成 · 2026-07-07
@@ -83,10 +95,15 @@
   - [x] **M-DEPTH F-C**：调度执行历史 / 重试 UI 增强（接 `GET .../executions` + `POST .../retry`；失败可读、可重试）（完成于 2026-07-29 · `SchedulePanel.tsx` · `SchedulePanel.smoke.test.tsx`）
   - [x] **G5 看板/大屏可视化 PDF**（2026-08-03：`export_render.py` Playwright + FE `/export/*?token=`；`artifactKind=visual_snapshot`；`tests/test_dashboard_visual_export.py`）
   - [x] **定时报告可删除**（2026-08-14：`DELETE /api/v1/reports/schedules/{id}`；列表页「删除」；停 job 并清理执行历史）
+  - [ ] **M-RPT F-A**：给定已存标准分析 `packKey` + 已配 SMTP/IM 台账，当管理员创建 `sourceType=standard` 调度并触发 execute，则 execution 成功含 `standard_render` 附件或 `failed` 含人话错误（**非** `mock_succeeded`）（A 主路径 + C 失败诚实）
+  - [ ] **M-RPT F-A**：viewer 为他人 pack 创建 standard 调度 → 403；`packKey` 不存在 → 创建 422 `RPT_SCHEDULE_*`（B 权限 + D 边界）
+  - [ ] **M-RPT F-A**：SMTP/IM 通道未配置或投递失败时 execution 状态 `failed` + 可读 `errorMessage`，不得返回 succeeded（C 失败诚实）
+  - [ ] **M-RPT F-A**：`GET /api/v1/reports/schedules` 与 `GET .../executions` 纳入 CI pytest 或 deploy-dev 走查；list 500 即失败（E 可运维）
+  - [ ] **M-RPT F-A**：pytest 覆盖 standard create→execute→attachment/log 链（真实 executor + MailHog/SMTP 台账；测试仅 mock 邮件 header）（A + E）
   - [ ] 组合调度粒度枚举（companion · **演化建议 / 非阻塞**）
-- **代码锚点**：`backend/app/reports/scheduler/service.py` · `backend/app/reports/scheduler/jobs.py` · `backend/app/reports/scheduler/executor.py` · `backend/app/reports/scheduler/delivery_adapter.py` · `backend/app/reports/scheduler/channels/work_notice.py` · `backend/app/auth/users/im_bindings.py` · `backend/app/dashboard/export_render.py` · `fe/src/pages/export/DashboardExportSnapshotPage.tsx` · `fe/src/pages/admin/reports/ReportCenterPage.tsx` · `fe/src/pages/admin/reports/components/DashboardSchedulePanel.tsx` · `fe/src/pages/admin/reports/components/SchedulePrecheckPanel.tsx` · `fe/src/pages/admin/system/users/UserImAccountsPanel.tsx` · `backend/app/api/v1/reports/__init__.py` · `tests/test_im_person_delivery.py` · `tests/test_ff_rpt_companion_e95d.py` · `tests/test_dashboard_visual_export.py` · `tests/test_report_dashboard_schedule.py` · `tests/test_m12_batch1_r238.py` T-RPT-R238-005-* · `tests/test_dash_rpt_query_nfr_r53.py` T-RPT-R53-005-01~08 · `tests/test_dash_rpt_query_nfr_r57.py` T-RPT-R57-005-01~07 · `tests/test_dash_rpt_r58.py` T-RPT-R58-005-01~07
-- **演化建议**：主线为看板/大屏可视化 PDF 定时报告；文档模板 Office 套版为并列已可用能力；组合调度粒度留远期
-- **里程碑对齐**：M12 · 已完成 · 2026-07-07；**M-DEPTH F-C · 已闭合 · 2026-07-29**
+- **代码锚点**：`backend/app/reports/scheduler/service.py` · `backend/app/reports/scheduler/jobs.py` · `backend/app/reports/scheduler/executor.py` · `backend/app/reports/scheduler/standard_export.py` · `backend/app/reports/scheduler/delivery_adapter.py` · `backend/app/reports/scheduler/channels/work_notice.py` · `backend/app/auth/users/im_bindings.py` · `backend/app/dashboard/export_render.py` · `fe/src/pages/export/DashboardExportSnapshotPage.tsx` · `fe/src/pages/admin/reports/ReportCenterPage.tsx` · `fe/src/pages/admin/reports/components/DashboardSchedulePanel.tsx` · `fe/src/pages/admin/reports/components/SchedulePrecheckPanel.tsx` · `fe/src/pages/admin/system/users/UserImAccountsPanel.tsx` · `backend/app/api/v1/reports/__init__.py` · `tests/test_im_person_delivery.py` · `tests/test_ff_rpt_companion_e95d.py` · `tests/test_dashboard_visual_export.py` · `tests/test_report_dashboard_schedule.py` · `tests/test_m12_batch1_r238.py` T-RPT-R238-005-* · `tests/test_dash_rpt_query_nfr_r53.py` T-RPT-R53-005-01~08 · `tests/test_dash_rpt_query_nfr_r57.py` T-RPT-R57-005-01~07 · `tests/test_dash_rpt_r58.py` T-RPT-R58-005-01~07
+- **演化建议**：M-RPT F-A 标准分析投递信任链 + 调度探针；组合调度粒度留远期
+- **里程碑对齐**：M12 · 已完成 · 2026-07-07；**M-DEPTH F-C · 已闭合 · 2026-07-29**；**M-RPT F-A · 待办**
 ### [RPT-006] 报表扩展配置 FR-6.3
 
 - **状态**：已实现（M10 r234）

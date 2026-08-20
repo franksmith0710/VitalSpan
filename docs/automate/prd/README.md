@@ -1,8 +1,8 @@
 # PRD 分片索引
 
-> **16 域 · 129 项**（合同 **129** 已实现 · M-DEPTH 必做 companion **已收官 2026-07-29**）· hub **v1.2.120**  
+> **16 域 · 129 项**（合同 **129** 已实现 · **M-RPT** companion 深化进行中）· hub **v1.2.120**  
 > 来源 SRS V3.7 + 附录 E/F + FR-DATA/FR-ETL（F16）+ M-FINAL 连接器扩展（CONN-023~027）  
-> Hub 索引：[`../prd.md`](../prd.md) · 执行范围：[`../plan.md`](../plan.md)（**companion backlog · 发版 QA + F-D 可选**）
+> Hub 索引：[`../prd.md`](../prd.md) · 执行范围：[`../plan.md`](../plan.md)（**§M-RPT 报表中心深度收官**）
 
 > **非计数实现追溯（2026-07-13）**：F02 仍 **8 项**（AUTH-001～008）。账户资料与修改密码无独立 PRD ID；见 hub/F02 边界说明、[BUG-001](../../bugs/BUG-001_account-password-security_2026-07-13.md) 与 [`plans/archive/2026-07-08-account-self-service.md`](../plans/archive/2026-07-08-account-self-service.md)。
 
@@ -26,5 +26,5 @@
 | [F16-DATA.md](./F16-DATA.md) | DATA-001 ~ DATA-005 · ETL-001 | M1B 接入 | P0+ | 6 |
 
 **状态语义**：分片「**状态：已实现**」= PRD 合同交付；验收标准内 `[ ]` = **companion 远期/深度**（不计入 129 合同计数）。  
-**当前 companion**：plan §**M-DEPTH**（F-A Dataset / F-B 筛选器 / F-C 消费落差；F-D 可选）。细则见 [`../plans/2026-07-10-fe-de-ss-ia-optimization.md`](../plans/2026-07-10-fe-de-ss-ia-optimization.md)。  
-**收官说明**：CONN-023~027 为 M-FINAL · F-G，**已实现**（r249~r250）；M-PRODUCT / M-DASH-UX 已收官。
+**当前 companion**：plan §**M-RPT**（F-A 信任链 / F-B 标准分析 / F-C 字典与模板；F-D 可选）。依据 [report-center holistic audit](../../material/blueprints/2026-08-20-report-center-holistic-audit.md)。  
+**收官说明**：M-DEPTH 已收官（2026-07-29）；M-PRODUCT / M-DASH-UX 已收官。
