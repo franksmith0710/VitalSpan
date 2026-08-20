@@ -19,6 +19,7 @@
 4. bundle 必须 `host.vsCv.mount(`；样式读 `(p && p.style) || {}`。
 5. 禁止 `output/` 当交付目录；草稿用 `examples/<name>.json`。
 6. 禁止「规范包与 VitalSpan 无关」「写到磁盘即交付」。
+7. **禁止** 用浏览器登录 5173 创建看板/大屏 — 用 `vitalspan_create_dashboard`（API + env 密码）。
 
 ## 三条工作流
 
@@ -55,10 +56,11 @@ d3 必须 `host.vsCv.mount(`；render 读 `(p && p.style) || {}`。
 **素材**：① 内置 chartType + ② DeepTalk 已 publish 的 customViz（不是金样）。
 
 1. 确认用户要 **仪表板** 还是 **数据大屏**
-2. `vitalspan_list_dashboards`（带 `surface_kind` 过滤）选 uuid
-3. `vitalspan_list_chart_types` + `vitalspan_list_artifacts`
-4. `vitalspan_upload_dashboard` — 自动对齐目标 surfaceKind
-5. 汇报 **`dashboardId`** + **surfaceKind** + 正确 edit URL
+2. **无 uuid 时**：`vitalspan_create_dashboard surface_kind=...`（**不要** browser 登录 5173）
+3. **改已有**：`vitalspan_list_dashboards`
+4. `vitalspan_list_chart_types` + `vitalspan_list_artifacts`
+5. `vitalspan_upload_dashboard`
+6. 汇报 **`dashboardId`** + **surfaceKind** + edit URL
 
 **禁止**：只 list_artifacts；禁止把两种 surface 叫成「大屏」而不区分。
 
