@@ -1,10 +1,5 @@
 import type { GisAtmospherePreset, GisProjection } from "@/components/charts/engine/maplibre/gisProject";
-import {
-  bindMapRenderSync,
-  resolveGlobeScreenBounds,
-  resolveGlobeScreenBoundsFallback,
-  shouldRenderGisStarfield,
-} from "@/components/charts/engine/maplibre/gisGlobeLayout";
+import { bindMapRenderSync, resolveGlobeScreenBoundsFallback } from "@/components/charts/engine/maplibre/gisGlobeLayout";
 
 type MapLibreMap = import("maplibre-gl").Map;
 
@@ -101,6 +96,12 @@ export function drawGlobeAtmosphereHalo(
   ctx.globalCompositeOperation = "screen";
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
+  // 光晕叠在地图之上时，挖掉球内区域，只保留外缘大气层。
+  ctx.globalCompositeOperation = "destination-out";
+  ctx.fillStyle = "rgba(0, 0, 0, 1)";
+  ctx.beginPath();
+  ctx.arc(cx, cy, globeRadius * 0.985, 0, Math.PI * 2);
+  ctx.fill();
   ctx.restore();
 }
 
@@ -114,7 +115,7 @@ export function mountGisGlobeHaloOverlay(
 
   const canvas = document.createElement("canvas");
   canvas.dataset.testid = "gis-globe-halo";
-  canvas.className = "pointer-events-none absolute inset-0 z-[3]";
+  canvas.className = "pointer-events-none absolute inset-0 z-[5]";
   wrapper.appendChild(canvas);
 
   const ctx = canvas.getContext("2d");
@@ -155,20 +156,16 @@ export function mountGisGlobeHaloOverlay(
     if (width <= 0 || height <= 0) return;
 
     const map = getMap();
-    const globe = map
-      ? resolveGlobeScreenBounds(map) ?? resolveGlobeScreenBoundsFallback(width, height)
-      : resolveGlobeScreenBoundsFallback(width, height);
-
-    if (!shouldRenderGisStarfield(globe, width, height)) {
-      canvas.style.display = "none";
-      ctx.clearRect(0, 0, width, height);
-      return;
-    }
+    const fallback = resolveGlobeScreenBoundsFallback(width, height);
+    const limb = map
+      ? resolveGlobeLimbBounds(map, width, height) ?? {
+          x: fallback.x,
+          y: fallback.y,
+          radius: fallback.radius,
+        }
+      : { x: fallback.x, y: fallback.y, radius: fallback.radius };
 
     canvas.style.display = "block";
-    const limb = map ? resolveGlobeLimbBounds(map, width, height) : null;
-    if (!limb) return;
-
     drawGlobeAtmosphereHalo(ctx, width, height, limb, preset);
   };
 

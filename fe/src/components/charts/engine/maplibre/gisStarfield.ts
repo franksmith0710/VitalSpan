@@ -2,11 +2,9 @@ import type { GisAtmospherePreset, GisProjection } from "@/components/charts/eng
 import { createMeteorSpawner, drawMeteors, type Meteor } from "@/components/charts/engine/maplibre/gisMeteors";
 import {
   bindMapRenderSync,
-  isInsideGlobeDisc,
   resolveGlobeScreenBounds,
   resolveGlobeScreenBoundsFallback,
   shouldRenderGisStarfield,
-  type GlobeScreenBounds,
 } from "@/components/charts/engine/maplibre/gisGlobeLayout";
 
 type MapLibreMap = import("maplibre-gl").Map;
@@ -90,7 +88,6 @@ function drawStarfieldFrame(
   starIntensity: number,
   meteorIntensity: number,
   timeSec: number,
-  globe: GlobeScreenBounds,
   parallax: { dx: number; dy: number },
 ) {
   ctx.clearRect(0, 0, width, height);
@@ -100,8 +97,6 @@ function drawStarfieldFrame(
     let y = star.y - parallax.dy;
     x = ((x % width) + width) % width;
     y = ((y % height) + height) % height;
-
-    if (isInsideGlobeDisc(x, y, globe)) continue;
 
     const twinkle = star.twinkle * Math.sin(timeSec * 1.6 + star.phase);
     const alpha = Math.min(1, star.alpha * starIntensity * (0.7 + twinkle));
@@ -118,7 +113,7 @@ function drawStarfieldFrame(
     }
   }
 
-  drawMeteors(ctx, meteors, meteorIntensity, globe);
+  drawMeteors(ctx, meteors, meteorIntensity);
 }
 
 export function mountGisStarfieldOverlay(
@@ -230,7 +225,6 @@ export function mountGisStarfieldOverlay(
       starIntensity,
       meteorIntensity,
       (now - start) / 1000,
-      globe,
       parallax,
     );
   };

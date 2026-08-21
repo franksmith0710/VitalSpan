@@ -84,10 +84,8 @@ export function drawMeteors(
   ctx: CanvasRenderingContext2D,
   meteors: Meteor[],
   intensity: number,
-  globe: GlobeScreenBounds,
 ) {
   for (const meteor of meteors) {
-    if (isInsideGlobeDisc(meteor.x, meteor.y, globe, 1.02)) continue;
     const t = meteor.life / meteor.maxLife;
     const fade = (1 - t) * intensity;
     if (fade <= 0) continue;
