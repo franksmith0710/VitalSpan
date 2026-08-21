@@ -62,6 +62,7 @@ host.vsCv.mount(function (payload) {
 
 ```json
 {
+  "encoding": { "dimensions": ["sale_date"], "metrics": ["amount", "quantity"] },
   "layout": { "width": 640, "height": 240 },
   "axisPlan": {
     "categoryCount": 40,
@@ -71,6 +72,20 @@ host.vsCv.mount(function (payload) {
   "rowCap": 500
 }
 ```
+
+bound 时平台注入 `payload.encoding`（与编辑器 binding 对齐），cartesian 类组件**应优先**用 `host.vsCv.helpers.parseCategorySeries(payload)` 解析，勿写死 `columns[0]` 为维度。
+
+## vsCv.helpers（cartesian 共用）
+
+| helper | 用途 |
+|--------|------|
+| `parseCategorySeries(payload, maxMetrics?)` | 按 `encoding` + `columns` 解析类别轴与多指标序列 |
+| `pickNearestPoint(mx, my, points, radius?)` | Canvas hover 最近点 |
+| `placeTooltipNearPointer(container, tooltip, clientX, clientY)` | Tooltip 跟随指针并 clamp |
+| `formatMetricCompact(value)` | K/M 数值缩写 |
+| `thinCategoryTickIndices` / `measureHost` | 轴抽稀与宿主尺寸（原有） |
+
+manifest `fieldSlots.*.expect` 可选 `date` \| `geo`，编辑器会拒绝类型/语义不匹配的拖入。
 
 ## 入库 lint（POST/PUT）
 

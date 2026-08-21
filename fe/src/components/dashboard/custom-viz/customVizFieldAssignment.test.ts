@@ -22,7 +22,8 @@ describe("validateCustomVizFieldAssignment", () => {
 
   it("accepts sale_date in time dimension slot", () => {
     expect(
-      validateCustomVizFieldAssignment("sale_date", { kind: "dimension", index: 0 }, "时间维度").ok,
+      validateCustomVizFieldAssignment("sale_date", { kind: "dimension", index: 0 }, "时间维度", "date")
+        .ok,
     ).toBe(true);
   });
 

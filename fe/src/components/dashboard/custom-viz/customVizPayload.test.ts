@@ -69,6 +69,19 @@ describe("buildCustomVizRuntimePayload", () => {
     expect(payload.error).toBe("查询失败");
   });
 
+  it("includes encoding when bound fields provided", () => {
+    const payload = buildCustomVizRuntimePayload({
+      executeReady: true,
+      loading: false,
+      error: null,
+      columns: ["sale_date", "amount"],
+      rows: [["2024-01-01", 10]],
+      style: {},
+      encoding: { dimensions: ["sale_date"], metrics: ["amount"] },
+    });
+    expect(payload.encoding).toEqual({ dimensions: ["sale_date"], metrics: ["amount"] });
+  });
+
   it("includes layout, axisPlan and truncated metadata", () => {
     const payload = buildCustomVizRuntimePayload({
       executeReady: true,

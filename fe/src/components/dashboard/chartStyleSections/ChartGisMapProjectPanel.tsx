@@ -439,7 +439,7 @@ export function ChartGisMapProjectPanel() {
               checked={project.buildings3d !== false}
               onCheckedChange={(checked) => patchProject({ buildings3d: checked === true })}
             />
-            建筑 3D 挤出（zoom ≥ 12，建议倾斜 45°–60°）
+            建筑 3D 挤出（zoom ≥ 15：瓦片内 OSM 高度/层数，缺失默认 10m；低 zoom 仍显示平面轮廓，建议 pitch 45°–60°）
           </label>
           {project.projection === "globe" ? (
             <label className="flex items-center gap-2 text-theme-xs text-gray-600 dark:text-gray-300">

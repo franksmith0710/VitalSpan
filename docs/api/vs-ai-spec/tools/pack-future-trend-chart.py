@@ -14,12 +14,12 @@ OUT_DT = Path(r"c:\Users\30381\Documents\deeptalk工作区\examples\future-trend
 MANIFEST = {
     "id": "future-trend-chart",
     "displayName": "未来趋势图",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "entry": "index.html",
     "runtime": "html",
     "rendererHint": "canvas",
     "fieldSlots": {
-        "dimensions": {"min": 1, "max": 1, "label": "时间维度"},
+        "dimensions": {"min": 1, "max": 1, "label": "时间维度", "expect": "date"},
         "metrics": {"min": 1, "max": 3, "label": "数值指标"},
     },
     "styleSchema": {

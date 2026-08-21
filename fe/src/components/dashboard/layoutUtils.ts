@@ -764,8 +764,8 @@ export function normalizeWidgetIds(widgets: LayoutWidget[]): LayoutWidget[] {
   return widgets.map((w) => {
     if (w.type !== "chart" || !w.chartConfig) return w;
     return {
-      ...w,
-      chartConfig: { ...w.chartConfig, chartId: w.id },
+    ...w,
+    chartConfig: { ...w.chartConfig, chartId: w.id },
     };
   });
 }
@@ -904,8 +904,8 @@ export function defaultChartConfig(type: ChartType): ChartViewConfig {
       withRadarDefaultDeStyle(
         withTreemapDefaultDeStyle(
           withPieDefaultDeStyle({
-            chartType: type,
-            ...base,
+    chartType: type,
+    ...base,
             dimensions: [],
             metrics: [],
           }),
