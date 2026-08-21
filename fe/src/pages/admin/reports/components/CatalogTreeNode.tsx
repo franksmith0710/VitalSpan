@@ -27,8 +27,8 @@ const TEMPLATE_ICONS: Record<string, typeof FileText> = {
   pdf: FileType2,
 };
 
-function TemplateIcon({ kind }: { kind: CatalogNode["templateKind"] }) {
-  const Icon = kind ? TEMPLATE_ICONS[kind] : FileText;
+function TemplateIcon({ kind }: { kind: CatalogNode["templateKind"] | string | null }) {
+  const Icon = (kind && TEMPLATE_ICONS[kind]) ?? FileText;
   return <Icon className="size-4 shrink-0" aria-hidden />;
 }
 
