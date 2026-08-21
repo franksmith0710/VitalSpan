@@ -4,6 +4,12 @@ import {
   thinCategoryTickIndices,
 } from "./customVizLayoutHelpers";
 import {
+  formatMetricCompact,
+  parseCategorySeriesFromPayload,
+  pickNearestPointIndex,
+  placeTooltipNearPointer,
+} from "./customVizDataHelpers";
+import {
   applyCustomVizStyleBridgeDom,
 } from "./customVizStyleBridge";
 import {
@@ -18,6 +24,10 @@ import {
 export type VsCvHelpers = {
   thinCategoryTickIndices: typeof thinCategoryTickIndices;
   measureHost: (target?: Element | null) => CustomVizRuntimeLayout;
+  parseCategorySeries: typeof parseCategorySeriesFromPayload;
+  pickNearestPoint: typeof pickNearestPointIndex;
+  placeTooltipNearPointer: typeof placeTooltipNearPointer;
+  formatMetricCompact: typeof formatMetricCompact;
 };
 
 export type VsCvMountRender = (payload: CustomVizRuntimePayload) => void;
@@ -75,6 +85,10 @@ export function attachCustomVizRuntime(
       const el = (target ?? host) as HTMLElement;
       return measureCustomVizHost(el);
     },
+    parseCategorySeries: parseCategorySeriesFromPayload,
+    pickNearestPoint: pickNearestPointIndex,
+    placeTooltipNearPointer,
+    formatMetricCompact,
   };
 
   const api: VsCvApi = {

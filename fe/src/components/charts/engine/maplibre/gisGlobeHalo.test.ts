@@ -1,12 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { drawGlobeAtmosphereHalo } from "@/components/charts/engine/maplibre/gisGlobeHaloDraw";
-import {
-  GEOLIBRE_HALO_OUTER_SCALE,
-  GEOLIBRE_HALO_PUNCH_INSET,
-} from "@/components/charts/engine/maplibre/gisGlobeHaloStops";
+import { GEOLIBRE_HALO_OUTER_SCALE } from "@/components/charts/engine/maplibre/gisGlobeHaloStops";
 
 describe("gisGlobeHalo GeoLibre draw", () => {
-  it("clips inner disc and keeps only outer corona ring", () => {
+  it("draws screen-blended halo below map without punching the globe", () => {
     const gradient = { addColorStop: vi.fn() };
     const ctx = {
       clearRect: vi.fn(),
@@ -14,7 +11,7 @@ describe("gisGlobeHalo GeoLibre draw", () => {
       restore: vi.fn(),
       beginPath: vi.fn(),
       arc: vi.fn(),
-      clip: vi.fn(),
+      fill: vi.fn(),
       createRadialGradient: vi.fn(() => gradient),
       fillRect: vi.fn(),
       globalCompositeOperation: "",
@@ -30,14 +27,8 @@ describe("gisGlobeHalo GeoLibre draw", () => {
       150,
       120 * GEOLIBRE_HALO_OUTER_SCALE,
     );
-    expect(ctx.clip).toHaveBeenCalledWith("evenodd");
-    expect(ctx.arc).toHaveBeenCalledWith(
-      200,
-      150,
-      120 * GEOLIBRE_HALO_PUNCH_INSET,
-      0,
-      Math.PI * 2,
-      true,
-    );
+    expect(ctx.fill).not.toHaveBeenCalled();
+    expect(ctx.fillRect).toHaveBeenCalledWith(0, 0, 400, 300);
+    expect(ctx.restore).toHaveBeenCalled();
   });
 });

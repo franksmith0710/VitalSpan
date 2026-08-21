@@ -1,6 +1,5 @@
 import { ChartFieldSlot } from "../ChartFieldSlot";
-import type { CustomVizDataBinding, CustomVizMetricRef } from "../layoutUtils";
-import { classifyDatasetField } from "../datasetFieldClassification";
+import type { CustomVizDataBinding } from "../layoutUtils";
 import {
   customVizFieldTargetsEqual,
   expandCustomVizFieldSlotsForUi,
@@ -13,6 +12,8 @@ type CustomVizDataSlotsProps = {
   columnsDisabled?: boolean;
   activeFieldTarget: CustomVizFieldTarget;
   onActiveFieldTargetChange: (target: CustomVizFieldTarget) => void;
+  assignField: (fieldName: string, target: CustomVizFieldTarget) => void;
+  fieldAssignError?: string | null;
   onPatch: (patch: Partial<CustomVizDataBinding>) => void;
 };
 
@@ -25,10 +26,12 @@ function readFieldAt(
   return arr?.[index]?.field?.trim() || undefined;
 }
 
-function ensureSlotArray<T>(arr: T[] | undefined, index: number, empty: T): T[] {
-  const next = [...(arr ?? [])];
-  while (next.length <= index) next.push(empty);
-  return next;
+function metricAggSuffix(fieldName: string): string {
+  return /(?:^|_)(amount|amt|count|cnt|qty|quantity|price|total|sum|avg|rate|score|value|values)(?:$|_)/i.test(
+    fieldName,
+  )
+    ? "求和"
+    : "计数";
 }
 
 export function CustomVizDataSlots({
@@ -37,23 +40,11 @@ export function CustomVizDataSlots({
   columnsDisabled = false,
   activeFieldTarget,
   onActiveFieldTargetChange,
+  assignField,
+  fieldAssignError,
   onPatch,
 }: CustomVizDataSlotsProps) {
   const slots = expandCustomVizFieldSlotsForUi(fieldSlots);
-
-  const assignField = (fieldName: string, target: CustomVizFieldTarget) => {
-    if (target.kind === "dimension") {
-      const next = ensureSlotArray(binding.dimensions, target.index, { field: "" });
-      if (next.some((d, i) => i !== target.index && d.field === fieldName)) return;
-      next[target.index] = { field: fieldName };
-      onPatch({ dimensions: next, status: "connected" });
-      return;
-    }
-    const next = ensureSlotArray(binding.metrics, target.index, { field: "", agg: "sum" as const });
-    if (next.some((m, i) => i !== target.index && m.field === fieldName)) return;
-    next[target.index] = { field: fieldName, agg: "sum" } satisfies CustomVizMetricRef;
-    onPatch({ metrics: next, status: "connected" });
-  };
 
   const clearSlot = (target: CustomVizFieldTarget) => {
     if (target.kind === "dimension") {
@@ -71,15 +62,14 @@ export function CustomVizDataSlots({
 
   return (
     <div className="space-y-3" data-testid="custom-viz-data-slots">
+      {fieldAssignError ? (
+        <p className="text-theme-xs text-error-600 dark:text-error-400">{fieldAssignError}</p>
+      ) : null}
       {slots.map((slot) => {
         const target: CustomVizFieldTarget = { kind: slot.kind, index: slot.index };
         const fieldName = readFieldAt(binding, slot.kind, slot.index);
         const aggregationSuffix =
-          fieldName && slot.kind === "metric"
-            ? classifyDatasetField(fieldName) === "metric"
-              ? "求和"
-              : "计数"
-            : undefined;
+          fieldName && slot.kind === "metric" ? metricAggSuffix(fieldName) : undefined;
         return (
           <ChartFieldSlot
             key={slot.uiKey}

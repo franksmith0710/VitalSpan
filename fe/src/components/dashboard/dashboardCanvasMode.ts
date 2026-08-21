@@ -20,6 +20,7 @@ import {
   resolvePersistedCanvasMinHeight,
 } from "@/lib/canvasPersistPolicy";
 import { sanitizeChartFieldsForValidate } from "@/lib/chartFieldRules";
+import { sanitizeCustomVizDataBinding } from "./custom-viz/customVizExecute";
 
 const CANVAS_WIDTH = 1440 as const;
 const MIN_CANVAS_HEIGHT = 900;
@@ -214,6 +215,24 @@ function prepareChartWidgetForPersist<W extends LayoutWidget>(
   };
 }
 
+function prepareCustomVizWidgetForPersist<W extends LayoutWidget>(widget: W): W {
+  if (widget.type !== "customViz" || !widget.customVizConfig?.dataBinding) return widget;
+  return {
+    ...widget,
+    customVizConfig: {
+      ...widget.customVizConfig,
+      dataBinding: sanitizeCustomVizDataBinding(widget.customVizConfig.dataBinding),
+    },
+  };
+}
+
+function prepareWidgetForPersist<W extends LayoutWidget>(
+  widget: W,
+  options?: { attachChartId?: boolean },
+): W {
+  return prepareCustomVizWidgetForPersist(prepareChartWidgetForPersist(widget, options));
+}
+
 /** v1 可规范化栅格；v2 只补公共 ID，严格保留数组顺序、order 与像素几何。 */
 export function buildDashboardLayoutForSave(
   layout: DashboardLayout,
@@ -224,7 +243,7 @@ export function buildDashboardLayoutForSave(
       ...layout,
       widgets: normalizeWidgetIds(
         normalizeWidgetLayout(sortWidgets(layout.widgets)).map((widget) =>
-          prepareChartWidgetForPersist(widget),
+          prepareWidgetForPersist(widget),
         ),
       ),
       styleConfig: persistedStyle(styleConfig),
@@ -236,7 +255,7 @@ export function buildDashboardLayoutForSave(
       ...layout,
       widgets: layout.widgets.map((widget) =>
         stripV1LayoutGeometry(
-          prepareChartWidgetForPersist(widget, { attachChartId: true }) as Record<string, unknown>,
+          prepareWidgetForPersist(widget, { attachChartId: true }) as Record<string, unknown>,
         ) as typeof widget,
       ),
       styleConfig: persistedStyle(styleConfig),

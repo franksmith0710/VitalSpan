@@ -41,6 +41,27 @@ export function resolveCustomVizStyle(
   return { ...(manifestDefault ?? {}), ...(overrides ?? {}) };
 }
 
+export function buildCustomVizRuntimeEncoding(
+  binding: CustomVizDataBinding | undefined,
+): { dimensions: string[]; metrics: string[] } | undefined {
+  const dimensions = (binding?.dimensions ?? [])
+    .map((d) => d.field?.trim())
+    .filter((f): f is string => Boolean(f));
+  const metrics = (binding?.metrics ?? [])
+    .map((m) => m.field?.trim())
+    .filter((f): f is string => Boolean(f));
+  if (dimensions.length === 0 && metrics.length === 0) return undefined;
+  return { dimensions, metrics };
+}
+
+export function sanitizeCustomVizDataBinding(binding: CustomVizDataBinding): CustomVizDataBinding {
+  return {
+    ...binding,
+    dimensions: (binding.dimensions ?? []).filter((d) => d.field?.trim()),
+    metrics: (binding.metrics ?? []).filter((m) => m.field?.trim()),
+  };
+}
+
 /** @deprecated 使用 resolveCustomVizRuntimeStyle */
 export { resolveCustomVizRuntimeStyle } from "./customVizDisplayStyle";
 

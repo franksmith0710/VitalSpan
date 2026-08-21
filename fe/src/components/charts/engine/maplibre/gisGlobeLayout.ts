@@ -226,23 +226,14 @@ export function resolveGlobeLimbBoundsFromMap(map: MapLibreMap): GlobeLimbBounds
 
   if (edges.length < 8) return null;
 
-  let limbX = 0;
-  let limbY = 0;
-  for (const edge of edges) {
-    limbX += edge.x;
-    limbY += edge.y;
-  }
-  limbX /= edges.length;
-  limbY /= edges.length;
-
   let radius = 0;
   for (const edge of edges) {
-    radius += Math.hypot(edge.x - limbX, edge.y - limbY);
+    radius += Math.hypot(edge.x - cx, edge.y - cy);
   }
   radius /= edges.length;
 
   if (!Number.isFinite(radius) || radius <= 0) return null;
-  return { x: limbX, y: limbY, radius };
+  return { x: cx, y: cy, radius };
 }
 
 export function offsetMapPixelToOverlay(
@@ -259,7 +250,7 @@ export function offsetMapPixelToOverlay(
   };
 }
 
-/** 多策略解析球缘，并映射到 overlay 容器坐标；始终有 fallback，避免光晕层消失。 */
+/** 多策略解析球缘，并映射到 overlay 容器坐标（实时跟 zoom；仅探测全失败才 fallback）。 */
 export function resolveGlobeLimbBoundsForOverlay(
   map: MapLibreMap | null,
   overlay: HTMLElement,

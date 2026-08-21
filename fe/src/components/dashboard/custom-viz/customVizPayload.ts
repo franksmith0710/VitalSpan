@@ -15,12 +15,20 @@ export type CustomVizAxisPlan = {
   categoryTickIndices?: number[];
 };
 
+/** 平台注入：与编辑器绑定的维/指标字段名，供 bundle 按名映射 columns。 */
+export type CustomVizRuntimeEncoding = {
+  dimensions: string[];
+  metrics: string[];
+};
+
 export type CustomVizRuntimePayload = {
   protocolVersion: typeof CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION;
   bindingStatus: CustomVizBindingStatus;
   columns: string[];
   rows: (string | number | boolean | null)[][];
   style: Record<string, unknown>;
+  /** 与 binding.dimensions / binding.metrics 对齐的字段名（bound 时注入） */
+  encoding?: CustomVizRuntimeEncoding;
   layout?: CustomVizRuntimeLayout;
   axisPlan?: CustomVizAxisPlan;
   truncated?: boolean;
@@ -51,6 +59,7 @@ export function buildCustomVizRuntimePayload(args: {
   columns: string[];
   rows: (string | number | boolean | null)[][];
   style: Record<string, unknown>;
+  encoding?: CustomVizRuntimeEncoding;
   layout?: CustomVizRuntimeLayout;
   truncated?: boolean;
   rowCap?: number;
@@ -63,6 +72,9 @@ export function buildCustomVizRuntimePayload(args: {
     rows: args.rows,
     style: args.style,
   };
+  if (args.encoding && (args.encoding.dimensions.length > 0 || args.encoding.metrics.length > 0)) {
+    payload.encoding = args.encoding;
+  }
   if (args.layout) {
     payload.layout = args.layout;
     if (bindingStatus === "bound" && args.rows.length > 0) {

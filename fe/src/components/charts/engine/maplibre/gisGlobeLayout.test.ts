@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   isInsideGlobeDisc,
+  resolveGlobeLimbBoundsForOverlay,
   resolveGlobeLimbBoundsFromMap,
   resolveGlobeLimbBoundsFromProject,
   resolveGlobeStarViewRotation,
@@ -62,5 +63,26 @@ describe("resolveGlobeLimbBoundsFromProject", () => {
     const limb = resolveGlobeLimbBoundsFromProject(map as never);
     expect(limb).not.toBeNull();
     expect(limb?.radius).toBeGreaterThan(0);
+  });
+});
+
+describe("resolveGlobeLimbBoundsForOverlay", () => {
+  it("prefers live raycast radius over viewport fallback when zoomed out", () => {
+    const overlay = document.createElement("div");
+    const map = {
+      getContainer: () => ({ getBoundingClientRect: () => ({ left: 0, top: 0, width: 400, height: 300 }) }),
+      transform: {
+        centerPoint: { x: 200, y: 150 },
+        width: 400,
+        height: 300,
+        isPointOnMapSurface: (point: { x: number; y: number }) =>
+          Math.hypot(point.x - 200, point.y - 150) <= 30,
+      },
+    };
+
+    const limb = resolveGlobeLimbBoundsForOverlay(map as never, overlay, 400, 300);
+    expect(limb.radius).toBeLessThan(80);
+    expect(limb.x).toBeCloseTo(200, 0);
+    expect(limb.y).toBeCloseTo(150, 0);
   });
 });

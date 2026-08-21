@@ -8,7 +8,7 @@ describe("gisAtmosphereSky", () => {
   it("maps night preset to dark sky with canvas halo complement", () => {
     const sky = mapLibreSkyForPreset("night");
     expect(sky["sky-color"]).toBe("#03040c");
-    expect(sky["atmosphere-blend"]).toBe(0.38);
+    expect(sky["atmosphere-blend"]).toBe(0.55);
   });
 
   it("maps day preset to bright sky", () => {

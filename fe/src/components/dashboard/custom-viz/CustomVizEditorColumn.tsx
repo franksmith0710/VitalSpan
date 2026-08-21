@@ -33,6 +33,8 @@ type CustomVizEditorColumnProps = {
   onDataRefresh?: () => void;
   onTitleChange?: (title: string) => void;
   dashboardStyle?: DashboardStyleConfig;
+  assignField: (fieldName: string, target: CustomVizFieldTarget) => void;
+  fieldAssignError?: string | null;
   className?: string;
 };
 
@@ -52,6 +54,8 @@ export function CustomVizEditorColumn({
   onDataRefresh,
   onTitleChange,
   dashboardStyle,
+  assignField,
+  fieldAssignError,
   className,
 }: CustomVizEditorColumnProps) {
   const [error, setError] = useState<string | null>(null);
@@ -131,6 +135,8 @@ export function CustomVizEditorColumn({
               columnsDisabled={columns.length === 0}
               activeFieldTarget={activeFieldTarget}
               onActiveFieldTargetChange={onActiveFieldTargetChange}
+              assignField={assignField}
+              fieldAssignError={fieldAssignError}
               onPatch={patchBinding}
             />
             <ChartConfigPanel

@@ -11,6 +11,7 @@ export type CustomVizFieldSlotDef = {
   required: boolean;
   min: number;
   max: number;
+  expect?: "date" | "geo";
 };
 
 export type CustomVizFieldTarget = {
@@ -31,6 +32,8 @@ type SlotRule = {
   min?: number;
   max?: number;
   label?: string;
+  /** manifest 可选：约束维度槽期望字段语义 */
+  expect?: "date" | "geo";
 };
 
 function parseSlot(key: string, rule: SlotRule | undefined): CustomVizFieldSlotDef | null {
@@ -46,6 +49,7 @@ function parseSlot(key: string, rule: SlotRule | undefined): CustomVizFieldSlotD
     required: min > 0,
     min,
     max,
+    ...(rule.expect ? { expect: rule.expect } : {}),
   };
 }
 

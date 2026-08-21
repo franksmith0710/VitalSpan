@@ -22,7 +22,7 @@ const SKY_BY_PRESET: Record<GisAtmospherePreset, SkySpecification> = {
     "fog-color": "#4a7fd4",
     "horizon-fog-blend": 0.14,
     "fog-ground-blend": 0,
-    "atmosphere-blend": 0.38,
+    "atmosphere-blend": 0.55,
   },
 };
 

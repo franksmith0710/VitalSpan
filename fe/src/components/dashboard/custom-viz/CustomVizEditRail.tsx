@@ -59,7 +59,7 @@ export function CustomVizEditRail({
     enabled: Boolean(artifactId),
   });
 
-  const inspector = useCustomVizInspectorState(readConfig, emitChange);
+  const inspector = useCustomVizInspectorState(readConfig, emitChange, meta?.fieldSlots);
 
   const typeLabel = sanitizeManifestLabel(meta?.manifest.displayName, "自定义组件");
   const leftSubtitle = useMemo(() => {
@@ -89,6 +89,8 @@ export function CustomVizEditRail({
           onDataRefresh={onDataRefresh}
           onTitleChange={onTitleChange}
           dashboardStyle={dashboardStyle}
+          assignField={inspector.assignField}
+          fieldAssignError={inspector.fieldAssignError}
           className="border-r border-gray-200 dark:border-gray-800"
         />
       }

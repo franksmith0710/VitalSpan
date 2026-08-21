@@ -20,6 +20,7 @@ import {
   mountCustomVizHtml,
 } from "./customVizHost";
 import {
+  buildCustomVizRuntimeEncoding,
   customVizBindingToChartConfig,
   isCustomVizExecuteReady,
 } from "./custom-viz/customVizExecute";
@@ -191,6 +192,11 @@ export function CustomVizWidget({
     [manifestDefaultStyle, cfg.style, cfg.displayStyle, dashboardStyle],
   );
 
+  const runtimeEncoding = useMemo(
+    () => buildCustomVizRuntimeEncoding(cfg.dataBinding),
+    [cfg.dataBinding],
+  );
+
   useEffect(() => {
     const host = hostRef.current;
     if (!host || !html) return;
@@ -203,6 +209,7 @@ export function CustomVizWidget({
         columns,
         rows: cappedRows,
         style: runtimeStyle,
+        encoding: runtimeEncoding,
         layout: hostLayout,
         truncated: rowsTruncated,
         rowCap: rowsTruncated ? ADVANCED_CHART_ROW_CAP : undefined,
@@ -218,6 +225,7 @@ export function CustomVizWidget({
     executeError,
     executeReady,
     runtimeStyle,
+    runtimeEncoding,
   ]);
 
   const body = loadError ? (

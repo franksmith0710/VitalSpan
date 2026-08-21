@@ -9,7 +9,7 @@ import type { CustomVizDataBinding, CustomVizMetricRef, CustomVizWidgetConfig } 
 import { customVizBindingToChartConfig } from "./customVizExecute";
 import type { CustomVizFieldTarget } from "./customVizFieldSlots";
 import {
-  resolveCustomVizSlotLabel,
+  resolveCustomVizUiSlot,
   validateCustomVizFieldAssignment,
 } from "./customVizFieldAssignment";
 
@@ -91,8 +91,13 @@ export function useCustomVizInspectorState(
 
   const assignField = useCallback(
     (fieldName: string, target: CustomVizFieldTarget) => {
-      const slotLabel = resolveCustomVizSlotLabel(fieldSlots, target);
-      const check = validateCustomVizFieldAssignment(fieldName, target, slotLabel);
+      const slot = resolveCustomVizUiSlot(fieldSlots, target);
+      const check = validateCustomVizFieldAssignment(
+        fieldName,
+        target,
+        slot?.label,
+        slot?.expect,
+      );
       if (!check.ok) {
         setFieldAssignError(check.message);
         return;
