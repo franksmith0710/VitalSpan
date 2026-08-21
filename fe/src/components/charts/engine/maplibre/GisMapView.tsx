@@ -301,7 +301,10 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   }, [earthOpacity]);
 
   useEffect(() => {
+    const shell = shellRef.current;
+    if (!shell) return;
     return mountGisGlobeHaloOverlay(
+      shell,
       () => mapRef.current,
       project.atmospherePreset,
       project.projection,

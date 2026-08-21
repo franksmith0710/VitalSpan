@@ -18,11 +18,11 @@ const SKY_BY_PRESET: Record<GisAtmospherePreset, SkySpecification> = {
   night: {
     "sky-color": "#03040c",
     "horizon-color": "#1e4a9a",
-    "sky-horizon-blend": 0.16,
+    "sky-horizon-blend": 0.1,
     "fog-color": "#4a7fd4",
-    "horizon-fog-blend": 0.28,
+    "horizon-fog-blend": 0.14,
     "fog-ground-blend": 0,
-    "atmosphere-blend": 0.82,
+    "atmosphere-blend": 0.38,
   },
 };
 

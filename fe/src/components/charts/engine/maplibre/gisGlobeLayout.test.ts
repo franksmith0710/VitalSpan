@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   isInsideGlobeDisc,
   resolveGlobeLimbBoundsFromMap,
+  resolveGlobeLimbBoundsFromProject,
   resolveGlobeStarViewRotation,
 } from "@/components/charts/engine/maplibre/gisGlobeLayout";
 
@@ -46,5 +47,20 @@ describe("resolveGlobeLimbBoundsFromMap", () => {
     expect(limb?.y).toBeCloseTo(150, 0);
     expect(limb?.radius).toBeGreaterThan(75);
     expect(limb?.radius).toBeLessThan(85);
+  });
+});
+
+describe("resolveGlobeLimbBoundsFromProject", () => {
+  it("builds a bbox from projected horizon samples", () => {
+    const map = {
+      getCenter: () => ({ lng: 0, lat: 0 }),
+      project: ([lng, lat]: [number, number]) => ({
+        x: 200 + lng,
+        y: 150 + lat,
+      }),
+    };
+    const limb = resolveGlobeLimbBoundsFromProject(map as never);
+    expect(limb).not.toBeNull();
+    expect(limb?.radius).toBeGreaterThan(0);
   });
 });

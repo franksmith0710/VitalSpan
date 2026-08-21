@@ -136,11 +136,11 @@ function raycastGlobeEdgeAlongBearing(
 ): { x: number; y: number; radius: number } | null {
   const dirX = Math.cos(angle);
   const dirY = Math.sin(angle);
-  const maxScan = Math.min(transform.width, transform.height) * 0.55;
+  const maxScan = Math.max(transform.width, transform.height) * 0.75;
   let lo = 0;
   let hi = maxScan;
 
-  for (let step = 0; step < 12; step += 1) {
+  for (let step = 0; step < 14; step += 1) {
     const mid = (lo + hi) / 2;
     if (isOnGlobeSurface(transform, cx + dirX * mid, cy + dirY * mid)) {
       lo = mid;
@@ -149,8 +149,60 @@ function raycastGlobeEdgeAlongBearing(
     }
   }
 
-  if (lo <= 0) return null;
+  if (lo <= 0.5) return null;
   return { x: cx + dirX * lo, y: cy + dirY * lo, radius: lo };
+}
+
+/** 沿球面 90° 采样 + map.project（GeoLibre / Leonel Dias）。 */
+export function resolveGlobeLimbBoundsFromProject(map: MapLibreMap): GlobeLimbBounds | null {
+  const center = map.getCenter();
+  const clng = (center.lng * Math.PI) / 180;
+  const clat = (center.lat * Math.PI) / 180;
+  const points: { x: number; y: number }[] = [];
+  const numSamples = 16;
+
+  for (let i = 0; i < numSamples; i += 1) {
+    const bearing = (i / numSamples) * 2 * Math.PI;
+    const edgeLat = Math.asin(
+      Math.sin(clat) * Math.cos(Math.PI / 2) +
+        Math.cos(clat) * Math.sin(Math.PI / 2) * Math.cos(bearing),
+    );
+    const edgeLng =
+      clng +
+      Math.atan2(
+        Math.sin(bearing) * Math.sin(Math.PI / 2) * Math.cos(clat),
+        Math.cos(Math.PI / 2) - Math.sin(clat) * Math.sin(edgeLat),
+      );
+    const px = map.project([(edgeLng * 180) / Math.PI, (edgeLat * 180) / Math.PI]);
+    if (Number.isFinite(px.x) && Number.isFinite(px.y)) {
+      points.push(px);
+    }
+  }
+
+  if (points.length < 3) return null;
+
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (const point of points) {
+    minX = Math.min(minX, point.x);
+    maxX = Math.max(maxX, point.x);
+    minY = Math.min(minY, point.y);
+    maxY = Math.max(maxY, point.y);
+  }
+
+  return {
+    x: (minX + maxX) / 2,
+    y: (minY + maxY) / 2,
+    radius: Math.max(maxX - minX, maxY - minY) / 2,
+  };
+}
+
+function limbFromScreenBounds(map: MapLibreMap): GlobeLimbBounds | null {
+  const bounds = resolveGlobeScreenBounds(map);
+  if (!bounds) return null;
+  return { x: bounds.x, y: bounds.y, radius: bounds.radius };
 }
 
 /** 用 MapLibre transform 的球面探测对齐真实渲染球缘（zoom / pitch 均跟随）。 */
@@ -161,13 +213,11 @@ export function resolveGlobeLimbBoundsFromMap(map: MapLibreMap): GlobeLimbBounds
   }
   if (transform.width <= 0 || transform.height <= 0) return null;
 
-  const center = map.getCenter();
-  const projected = map.project([center.lng, center.lat]);
-  const cx = Number.isFinite(projected.x) ? projected.x : transform.centerPoint.x;
-  const cy = Number.isFinite(projected.y) ? projected.y : transform.centerPoint.y;
+  const cx = transform.centerPoint.x;
+  const cy = transform.centerPoint.y;
 
   const edges: { x: number; y: number }[] = [];
-  const bearings = 32;
+  const bearings = 64;
   for (let i = 0; i < bearings; i += 1) {
     const angle = (i / bearings) * Math.PI * 2;
     const hit = raycastGlobeEdgeAlongBearing(transform, cx, cy, angle);
@@ -193,4 +243,31 @@ export function resolveGlobeLimbBoundsFromMap(map: MapLibreMap): GlobeLimbBounds
 
   if (!Number.isFinite(radius) || radius <= 0) return null;
   return { x: limbX, y: limbY, radius };
+}
+
+export function offsetMapPixelToOverlay(
+  map: MapLibreMap,
+  overlay: HTMLElement,
+  point: GlobeLimbBounds,
+): GlobeLimbBounds {
+  const mapRect = map.getContainer().getBoundingClientRect();
+  const overlayRect = overlay.getBoundingClientRect();
+  return {
+    x: point.x + (mapRect.left - overlayRect.left),
+    y: point.y + (mapRect.top - overlayRect.top),
+    radius: point.radius,
+  };
+}
+
+/** 多策略解析球缘，并映射到 overlay 容器坐标。 */
+export function resolveGlobeLimbBoundsForOverlay(
+  map: MapLibreMap,
+  overlay: HTMLElement,
+): GlobeLimbBounds | null {
+  const inMapPixels =
+    resolveGlobeLimbBoundsFromMap(map) ??
+    resolveGlobeLimbBoundsFromProject(map) ??
+    limbFromScreenBounds(map);
+  if (!inMapPixels) return null;
+  return offsetMapPixelToOverlay(map, overlay, inMapPixels);
 }
