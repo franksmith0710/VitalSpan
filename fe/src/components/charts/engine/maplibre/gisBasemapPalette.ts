@@ -1,5 +1,6 @@
 import { namedFlavor } from "@protomaps/basemaps";
 import type { LayerSpecification } from "maplibre-gl";
+import { applyBuildings3dRuntime } from "@/components/charts/engine/maplibre/gisBuildings3d";
 import type { GisBasemapFlavor, GisBasemapLayerVisibility } from "@/components/charts/engine/maplibre/gisProject";
 
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
@@ -97,6 +98,7 @@ export function applyBasemapRuntimePatch(
     landColor?: string;
     waterColor?: string;
     basemapLayers?: GisBasemapLayerVisibility;
+    buildings3d?: boolean;
   },
 ) {
   if (!map.isStyleLoaded()) return;
@@ -109,6 +111,10 @@ export function applyBasemapRuntimePatch(
   }
   for (const [layerId, paintKey] of Object.entries(WATER_LAYER_PAINT)) {
     if (map.getLayer(layerId)) map.setPaintProperty(layerId, paintKey, waterColor);
+  }
+
+  if (patch.buildings3d !== undefined) {
+    applyBuildings3dRuntime(map, patch.buildings3d);
   }
 
   for (const layer of map.getStyle().layers ?? []) {

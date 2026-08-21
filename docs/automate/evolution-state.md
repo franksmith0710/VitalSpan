@@ -8,35 +8,33 @@
 |------|----|
 | phase | **A8_DONE** |
 | status | **DONE** |
-| request | gis-map chartType Phase 0+1（同页 MapLibre 离线省界） |
+| request | DeepTalk compose 内置图默认绑官方演示 SQL |
 | type | feature |
-| plan | `docs/automate/plans/2026-08-17-gis-map-chart-type-p0-p1.md` |
-| goal | 注册 gis-map；空白/离线省界 MapLibre 可出图 |
-| last_verified | 2026-08-17：vitest gisMapStyle+catalogParity 9 passed；pytest catalog_parity 4 passed |
+| goal | AI 拼大屏时内置 chartType 自动出演示数据 |
+| last_verified | 2026-08-21：plugin smoke ok；official-demo-chart-queries.json ×44 |
 | repair_rounds | 0 |
 
 ## 当前需求契约
 
-- **request**: dev-autopilot 执行 gis-map Phase 0+1
+- **request**: compose/upload 内置图默认绑演示数据
 - **type**: feature
-- **goal**: 看板可拖入 GIS 地图；同页 MapLibre 离线省界/空白
-- **scope_include**: ADR-12/mdc/viz/vs-ai；BE+FE 注册；maplibre 引擎；manifest
-- **scope_exclude**: goal.md；WMS 登记；Dataset join；楼块 3D；iframe；PDF 改造
-- **acceptance**: plan-verify / 测试命令 exit 0
-- **risk_level**: medium
-- **autonomy_policy**: strict_plan_match
+- **goal**: vitalspan_compose_dashboard 生成的 chart 写入 `__demo:sample_db__` + 官方 SQL
+- **scope_include**: vs-ai-spec export script；deeptalk plugin layoutBuilder v0.2.4
+- **scope_exclude**: customViz Dataset 自动绑；后端 editor-save 改造
+- **acceptance**: plugin smoke 断言 radar 含 sql + demo ref
+- **risk_level**: low
+- **autonomy_policy**: auto_accept_low_risk
 
 ## 上一轮（归档）
 
 | 字段 | 值 |
 |------|----|
-| request | 数据大屏 Phase 2.6 编辑视口 T2–T3 |
+| request | gis-map chartType Phase 0+1 |
 | phase | A8_DONE |
-| plan | `docs/automate/plans/2026-07-20-data-screen-edit-viewport-de.md` |
 
 ## 修订记录
 
 | 日期 | 说明 |
 |------|------|
+| 2026-08-21 | compose 内置图官方演示 SQL 绑定（plugin v0.2.4） |
 | 2026-08-17 | gis-map Phase 0+1 启动 |
-| 2026-07-29 | 3D 贴地热力 code-review P1 |

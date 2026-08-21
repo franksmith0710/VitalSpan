@@ -12,6 +12,8 @@ import {
   applyGlobeAtmosphere,
   applyGisMapStylePreservingCamera,
   mountGisMapControls,
+  REAL_EARTH_ROTATION_DEG_PER_SEC,
+  GLOBE_IDLE_ROTATION_DEG_PER_SEC,
   startGisGlobeAutoRotate,
   syncGisMapView,
 } from "@/components/charts/engine/maplibre/gisMapRuntime";
@@ -28,7 +30,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 type MapLibreMap = InstanceType<Awaited<ReturnType<typeof loadMapLibreRuntime>>["Map"]>;
 type StyleSpecification = import("maplibre-gl").StyleSpecification;
 
-const DEFAULT_AUTO_ROTATE_SPEED = 4;
+const DEFAULT_AUTO_ROTATE_SPEED = GLOBE_IDLE_ROTATION_DEG_PER_SEC;
 
 function GisMapViewInner(props: ChartEngineViewProps) {
   const { chartConfig, viewModel, fill = false, height = 180, width, ariaLabel, onPaintReady } = props;
@@ -91,7 +93,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     return () => {
       cancelled = true;
     };
-  }, [flavor, project.buildings3d, project.labelLang, tileServiceId]);
+  }, [flavor, project.labelLang, tileServiceId]);
 
   const basemapPatchKey = useMemo(
     () =>
@@ -100,8 +102,9 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         landColor: project.landColor,
         waterColor: project.waterColor,
         basemapLayers: project.basemapLayers,
+        buildings3d: project.buildings3d,
       }),
-    [flavor, project.basemapLayers, project.landColor, project.waterColor],
+    [flavor, project.basemapLayers, project.buildings3d, project.landColor, project.waterColor],
   );
 
   const renderBasemap = useMemo(
@@ -188,6 +191,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
           landColor: current.landColor,
           waterColor: current.waterColor,
           basemapLayers: current.basemapLayers,
+          buildings3d: current.buildings3d !== false,
         });
         applyGlobeAtmosphere(map, {
           projection: current.projection,
@@ -223,6 +227,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         landColor: project.landColor,
         waterColor: project.waterColor,
         basemapLayers: project.basemapLayers,
+        buildings3d: project.buildings3d !== false,
       });
       map.resize();
       onPaintReady?.();
@@ -239,11 +244,12 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         landColor: project.landColor,
         waterColor: project.waterColor,
         basemapLayers: project.basemapLayers,
+        buildings3d: project.buildings3d !== false,
       });
     };
     if (map.isStyleLoaded()) applyPatch();
     else map.once("load", applyPatch);
-  }, [basemapPatchKey, flavor, project.basemapLayers, project.landColor, project.waterColor, styleKey]);
+  }, [basemapPatchKey, flavor, project.basemapLayers, project.buildings3d, project.landColor, project.waterColor, styleKey]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -261,11 +267,22 @@ function GisMapViewInner(props: ChartEngineViewProps) {
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || project.autoRotate) return;
+    if (!map) return;
     if (syncedViewKeyRef.current === configuredViewKey) return;
-    syncedViewKeyRef.current = configuredViewKey;
-    syncGisMapView(map, view);
-  }, [configuredViewKey, project.autoRotate, view]);
+
+    const apply = () => {
+      if (syncedViewKeyRef.current === configuredViewKey) return;
+      syncGisMapView(map, view);
+      syncedViewKeyRef.current = configuredViewKey;
+    };
+
+    if (map.isStyleLoaded()) {
+      apply();
+      return;
+    }
+
+    map.once("load", apply);
+  }, [configuredViewKey, view]);
 
   useEffect(() => {
     const shell = shellRef.current;

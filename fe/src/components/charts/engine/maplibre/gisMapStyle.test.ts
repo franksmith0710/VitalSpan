@@ -87,6 +87,7 @@ describe("gisMapStyle", () => {
     const style = buildPmtilesStyle(RESOLVED, "zh-Hans");
     expect(style.sources?.[PMTILES_SOURCE_ID]).toBeDefined();
     expect(style.layers?.length).toBeGreaterThan(0);
+    expect(style.layers?.some((layer) => layer.id === GIS_BUILDINGS_3D_LAYER_ID)).toBe(true);
   });
 
   it("builds dark flavor with matching sprite", () => {

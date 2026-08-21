@@ -51,7 +51,7 @@ export type GisProject = {
   view?: GisProjectView;
   /** 球面模式下慢速自转（大屏待机） */
   autoRotate?: boolean;
-  /** 自转速度（度/秒），默认 4 */
+  /** 自转速度（度/秒）；默认大屏慢速 ≈8 分钟/圈 */
   autoRotateSpeed?: number;
   /** 显示缩放/罗盘/比例尺控件 */
   showControls?: boolean;
@@ -103,6 +103,7 @@ export const DEFAULT_GIS_PROJECT: GisProject = {
   atmospherePreset: "night",
   fog: GIS_ATMOSPHERE_PRESETS.night,
   view: DEFAULT_GIS_GLOBE_VIEW,
+  buildings3d: true,
 };
 
 export function readGisProject(config: ChartViewConfig | undefined): GisProject {
@@ -179,7 +180,7 @@ function normalizeGisProject(raw: unknown): GisProject {
     autoRotate: candidate.autoRotate === true,
     autoRotateSpeed: Number.isFinite(autoRotateSpeed) && autoRotateSpeed > 0 ? autoRotateSpeed : undefined,
     showControls: candidate.showControls === true,
-    buildings3d: candidate.buildings3d === true,
+    buildings3d: candidate.buildings3d !== false,
   };
 }
 

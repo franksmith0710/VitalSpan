@@ -94,6 +94,22 @@ export function syncGisMapView(
   });
 }
 
+/** 地球真实自转角速度（°/秒）：360° / 86400s。 */
+export const REAL_EARTH_ROTATION_DEG_PER_SEC = 360 / 86400;
+
+/** 大屏待机可见慢速（约 8 分钟一圈），仍沿地轴自西向东。 */
+export const GLOBE_IDLE_ROTATION_DEG_PER_SEC = 360 / (8 * 60);
+
+export function normalizeGlobeLongitude(lng: number): number {
+  const wrapped = ((((lng + 180) % 360) + 360) % 360) - 180;
+  return wrapped;
+}
+
+export function advanceGlobeLongitude(lng: number, speedDegPerSec: number, deltaSec: number): number {
+  // 地球自西向东转：观测经度向西退，表面相对向东。
+  return normalizeGlobeLongitude(lng - speedDegPerSec * deltaSec);
+}
+
 export async function mountGisMapControls(
   map: MapLibreMap,
   showControls: boolean,
@@ -115,14 +131,20 @@ export async function mountGisMapControls(
 
 export function startGisGlobeAutoRotate(
   map: MapLibreMap,
-  speedDegPerSec: number,
+  speedDegPerSec: number = GLOBE_IDLE_ROTATION_DEG_PER_SEC,
 ): () => void {
   let frameId = 0;
   let last = performance.now();
   const tick = (now: number) => {
     const deltaSec = Math.min((now - last) / 1000, 0.1);
     last = now;
-    map.setBearing(map.getBearing() + speedDegPerSec * deltaSec);
+    if (map.isStyleLoaded()) {
+      const center = map.getCenter();
+      const lng = advanceGlobeLongitude(center.lng, speedDegPerSec, deltaSec);
+      if (lng !== center.lng) {
+        map.setCenter([lng, center.lat]);
+      }
+    }
     frameId = requestAnimationFrame(tick);
   };
   frameId = requestAnimationFrame(tick);

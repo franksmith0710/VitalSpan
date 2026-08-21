@@ -3,6 +3,7 @@ import type { StyleSpecification } from "maplibre-gl";
 import {
   buildBasemapFlavor,
 } from "@/components/charts/engine/maplibre/gisBasemapPalette";
+import { appendBuildings3dLayerToStyle } from "@/components/charts/engine/maplibre/gisBuildings3d";
 import type {
   GisBasemapFlavor,
   GisBasemapLayerVisibility,
@@ -13,7 +14,7 @@ import type { TileServiceResolve } from "@/lib/tileServices";
 export const GIS_OVERLAY_SOURCE_ID = "vs-gis-overlay";
 export const GIS_OVERLAY_CIRCLE_LAYER_ID = "vs-gis-overlay-circles";
 export const GIS_OVERLAY_LABEL_LAYER_ID = "vs-gis-overlay-labels";
-export const GIS_BUILDINGS_3D_LAYER_ID = "vs-gis-buildings-3d";
+export { GIS_BUILDINGS_3D_LAYER_ID } from "@/components/charts/engine/maplibre/gisBuildings3d";
 export const PMTILES_SOURCE_ID = "protomaps";
 
 const PROTOMAPS_SPRITE_BASE = "https://protomaps.github.io/basemaps-assets/sprites/v4";
@@ -80,33 +81,15 @@ export function buildPmtilesStyle(
     },
     layers: baseLayers,
   };
-  return options.buildings3d ? appendBuildings3dLayer(style, flavorName) : style;
+  return appendBuildings3dLayerToStyle(style, flavorName, options.buildings3d !== false);
 }
 
+/** @deprecated 使用 appendBuildings3dLayerToStyle */
 export function appendBuildings3dLayer(
   style: StyleSpecification,
   flavor: GisBasemapFlavor = "light",
 ): StyleSpecification {
-  const extrusionColor = flavor === "dark" || flavor === "black" ? "#64748b" : "#cbd5e1";
-  return {
-    ...style,
-    layers: [
-      ...(style.layers ?? []),
-      {
-        id: GIS_BUILDINGS_3D_LAYER_ID,
-        type: "fill-extrusion",
-        source: PMTILES_SOURCE_ID,
-        "source-layer": "buildings",
-        minzoom: 13,
-        paint: {
-          "fill-extrusion-color": extrusionColor,
-          "fill-extrusion-height": ["coalesce", ["get", "render_height"], ["get", "height"], 5],
-          "fill-extrusion-base": ["coalesce", ["get", "render_min_height"], ["get", "min_height"], 0],
-          "fill-extrusion-opacity": 0.75,
-        },
-      },
-    ],
-  };
+  return appendBuildings3dLayerToStyle(style, flavor, true);
 }
 
 function overlayLabelPaint(flavor: GisBasemapFlavor) {

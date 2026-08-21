@@ -21,7 +21,7 @@ describe("gisProject", () => {
     expect(readGisProject(config)).toEqual({
       ...DEFAULT_GIS_PROJECT,
       autoRotate: false,
-      buildings3d: false,
+      buildings3d: true,
       showControls: false,
       view: { center: [116.4, 39.9], zoom: 5, bearing: undefined, pitch: undefined },
     });

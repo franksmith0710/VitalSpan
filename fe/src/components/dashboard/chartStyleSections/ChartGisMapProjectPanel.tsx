@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -102,6 +102,7 @@ export function ChartGisMapProjectPanel() {
     pitch?: number;
   }) => {
     patchProject({
+      ...(project.autoRotate ? { autoRotate: false } : {}),
       view: {
         center: next.center ?? view.center,
         zoom: next.zoom ?? view.zoom,
@@ -109,6 +110,39 @@ export function ChartGisMapProjectPanel() {
         pitch: next.pitch ?? view.pitch ?? 0,
       },
     });
+  };
+
+  const commitCenter = () => {
+    const lng = Number(centerLng);
+    const lat = Number(centerLat);
+    if (!Number.isFinite(lng) || !Number.isFinite(lat)) return;
+    if (lat < -85 || lat > 85) return;
+    commitView({ center: [lng, lat] });
+  };
+
+  const commitZoom = () => {
+    const nextZoom = Number(zoom);
+    if (!Number.isFinite(nextZoom)) return;
+    commitView({ zoom: Math.max(0, Math.min(22, nextZoom)) });
+  };
+
+  const commitBearing = () => {
+    const next = Number(bearing);
+    if (!Number.isFinite(next)) return;
+    commitView({ bearing: next });
+  };
+
+  const commitPitch = () => {
+    const next = Number(pitch);
+    if (!Number.isFinite(next)) return;
+    commitView({ pitch: Math.max(0, Math.min(85, next)) });
+  };
+
+  const onEnterCommit = (commit: () => void) => (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    commit();
+    event.currentTarget.blur();
   };
 
   const applyAtmospherePreset = (preset: GisAtmospherePreset) => {
@@ -306,6 +340,13 @@ export function ChartGisMapProjectPanel() {
           ) : null}
         </div>
 
+        <div className="grid gap-1.5">
+          <Label className="text-theme-xs text-gray-500">初始视角</Label>
+          <p className="text-theme-xs text-gray-500">
+            保存大屏打开时的相机位置；修改后按 Enter 或点击其他区域生效。若已开启球面自转，改视角会自动关闭自转。
+          </p>
+        </div>
+
         <div className="grid grid-cols-2 gap-2">
           <div className="grid gap-1.5">
             <Label className="text-theme-xs text-gray-500">中心经度</Label>
@@ -313,12 +354,8 @@ export function ChartGisMapProjectPanel() {
               className={INSPECTOR_CTRL}
               value={centerLng}
               onChange={(e) => setCenterLng(e.target.value)}
-              onBlur={() => {
-                const lng = Number(centerLng);
-                const lat = Number(centerLat);
-                if (!Number.isFinite(lng) || !Number.isFinite(lat)) return;
-                commitView({ center: [lng, lat] });
-              }}
+              onBlur={commitCenter}
+              onKeyDown={onEnterCommit(commitCenter)}
             />
           </div>
           <div className="grid gap-1.5">
@@ -327,12 +364,8 @@ export function ChartGisMapProjectPanel() {
               className={INSPECTOR_CTRL}
               value={centerLat}
               onChange={(e) => setCenterLat(e.target.value)}
-              onBlur={() => {
-                const lng = Number(centerLng);
-                const lat = Number(centerLat);
-                if (!Number.isFinite(lng) || !Number.isFinite(lat)) return;
-                commitView({ center: [lng, lat] });
-              }}
+              onBlur={commitCenter}
+              onKeyDown={onEnterCommit(commitCenter)}
             />
           </div>
         </div>
@@ -344,11 +377,8 @@ export function ChartGisMapProjectPanel() {
               className={INSPECTOR_CTRL}
               value={zoom}
               onChange={(e) => setZoom(e.target.value)}
-              onBlur={() => {
-                const nextZoom = Number(zoom);
-                if (!Number.isFinite(nextZoom)) return;
-                commitView({ zoom: nextZoom });
-              }}
+              onBlur={commitZoom}
+              onKeyDown={onEnterCommit(commitZoom)}
             />
           </div>
           <div className="grid gap-1.5">
@@ -357,11 +387,8 @@ export function ChartGisMapProjectPanel() {
               className={INSPECTOR_CTRL}
               value={bearing}
               onChange={(e) => setBearing(e.target.value)}
-              onBlur={() => {
-                const next = Number(bearing);
-                if (!Number.isFinite(next)) return;
-                commitView({ bearing: next });
-              }}
+              onBlur={commitBearing}
+              onKeyDown={onEnterCommit(commitBearing)}
             />
           </div>
           <div className="grid gap-1.5">
@@ -370,11 +397,8 @@ export function ChartGisMapProjectPanel() {
               className={INSPECTOR_CTRL}
               value={pitch}
               onChange={(e) => setPitch(e.target.value)}
-              onBlur={() => {
-                const next = Number(pitch);
-                if (!Number.isFinite(next)) return;
-                commitView({ pitch: Math.max(0, Math.min(85, next)) });
-              }}
+              onBlur={commitPitch}
+              onKeyDown={onEnterCommit(commitPitch)}
             />
           </div>
         </div>
@@ -389,10 +413,10 @@ export function ChartGisMapProjectPanel() {
           </label>
           <label className="flex items-center gap-2 text-theme-xs text-gray-600 dark:text-gray-300">
             <Checkbox
-              checked={project.buildings3d === true}
+              checked={project.buildings3d !== false}
               onCheckedChange={(checked) => patchProject({ buildings3d: checked === true })}
             />
-            建筑 3D 挤出（zoom ≥ 13）
+            建筑 3D 挤出（zoom ≥ 12，建议倾斜 45°–60°）
           </label>
           {project.projection === "globe" ? (
             <label className="flex items-center gap-2 text-theme-xs text-gray-600 dark:text-gray-300">
@@ -400,7 +424,7 @@ export function ChartGisMapProjectPanel() {
                 checked={project.autoRotate === true}
                 onCheckedChange={(checked) => patchProject({ autoRotate: checked === true })}
               />
-              球面慢速自转（大屏待机）
+              球面自转（沿地轴，自西向东）
             </label>
           ) : null}
         </div>
