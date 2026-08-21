@@ -182,6 +182,48 @@ describe("resolveVizComponent", () => {
     expect(resolved.customVizConfig?.dataBinding?.dimensions?.[0]?.field).toBe("message");
   });
 
+  it("linked gis-map instance keeps local gisProject over library payload", () => {
+    const widget = chartWidget("w1", {
+      componentRef: { componentId: "c-gis" },
+      chartConfig: {
+        chartId: "w1",
+        chartType: "gis-map",
+        mode: "dataset",
+        dimensions: [],
+        metrics: [],
+        filters: [],
+        nativeBody: {
+          gisProject: {
+            basemap: "pmtiles",
+            view: { center: [20, 10], zoom: 3, bearing: 0, pitch: 45 },
+          },
+        },
+      },
+    });
+    const map = buildComponentMap([
+      componentDetail("c-gis", {
+        chartConfig: {
+          chartId: "stale",
+          chartType: "gis-map",
+          mode: "dataset",
+          dimensions: [],
+          metrics: [],
+          filters: [],
+          nativeBody: {
+            gisProject: {
+              basemap: "pmtiles",
+              view: { center: [100, 28], zoom: 1.5, bearing: 0, pitch: 0 },
+            },
+          },
+        },
+      }),
+    ]);
+    const resolved = resolveLayoutWidget(widget, map);
+    expect(resolved.chartConfig?.nativeBody?.gisProject).toMatchObject({
+      view: { center: [20, 10], zoom: 3, pitch: 45 },
+    });
+  });
+
   it("linkedComponentContentRevisionSuffix reflects loading and resolved revision", () => {
     const widget = chartWidget("w1", { componentRef: { componentId: "c1" } });
     const map = buildComponentMap([

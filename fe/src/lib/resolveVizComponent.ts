@@ -32,6 +32,8 @@ function instanceOwnsPayload(widget: DashboardWidgetBase): boolean {
   if (widget.type === "chart") {
     const cfg = widget.chartConfig;
     if (!cfg) return false;
+    // GIS 无底图数据集绑定，样式/视角/不透明度写在 nativeBody.gisProject
+    if (cfg.chartType === "gis-map") return true;
     const hasQuery = Boolean(cfg.dataSourceId || cfg.sql || cfg.datasetId);
     const hasFields = (cfg.dimensions?.length ?? 0) + (cfg.metrics?.length ?? 0) > 0;
     return hasQuery || hasFields;

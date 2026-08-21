@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { useChartInspector } from "@/components/dashboard/chartInspectorContext";
 import { ChartPaletteColorSwatch } from "@/components/dashboard/chartPaletteShared";
+import { ChartDeSliderField } from "@/components/dashboard/deAttrSlider";
 import { defaultBasemapPaletteForFlavor } from "@/components/charts/engine/maplibre/gisBasemapPalette";
 import {
   ChartInspectorSection,
@@ -346,6 +347,25 @@ export function ChartGisMapProjectPanel() {
             保存大屏打开时的相机位置；修改后按 Enter 或点击其他区域生效。若已开启球面自转，改视角会自动关闭自转。
           </p>
         </div>
+
+        <ChartDeSliderField
+          label="地图不透明度"
+          layout="stacked"
+          value={project.mapOpacity != null ? Math.round(project.mapOpacity * 100) : undefined}
+          fallback={100}
+          min={0}
+          max={100}
+          step={1}
+          unit="%"
+          ariaLabel="地图不透明度"
+          onChange={(opacityPercent) =>
+            patchProject({ mapOpacity: Math.max(0, Math.min(100, opacityPercent)) / 100 })
+          }
+          onPreviewChange={(opacityPercent) => {
+            if (opacityPercent == null) return;
+            patchProject({ mapOpacity: Math.max(0, Math.min(100, opacityPercent)) / 100 });
+          }}
+        />
 
         <div className="grid grid-cols-2 gap-2">
           <div className="grid gap-1.5">

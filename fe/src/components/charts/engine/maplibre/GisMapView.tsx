@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChartEngineViewProps } from "@/components/charts/engine/types";
 import { buildGisOverlayGeoJson } from "@/components/charts/engine/maplibre/gisMapOverlay";
 import { readGisProject, resolveGisRenderableBasemap, DEFAULT_GIS_GLOBE_VIEW } from "@/components/charts/engine/maplibre/gisProject";
@@ -11,6 +11,7 @@ import { applyGisGlobeToStyle, spaceBackdropForPreset } from "@/components/chart
 import {
   applyGlobeAtmosphere,
   applyGisMapStylePreservingCamera,
+  buildGisConfiguredViewKey,
   mountGisMapControls,
   REAL_EARTH_ROTATION_DEG_PER_SEC,
   GLOBE_IDLE_ROTATION_DEG_PER_SEC,
@@ -126,17 +127,20 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     [project.atmospherePreset, project.projection],
   );
   const configuredViewKey = useMemo(
-    () =>
-      JSON.stringify({
-        center: view.center,
-        zoom: view.zoom,
-        bearing: view.bearing ?? 0,
-        pitch: view.pitch ?? 0,
-      }),
+    () => buildGisConfiguredViewKey(view),
     [view.bearing, view.center, view.pitch, view.zoom],
   );
+  const mapOpacity = project.mapOpacity ?? 1;
   const hostBackground =
     project.projection === "globe" ? spaceBackdropForPreset(project.atmospherePreset) : undefined;
+
+  const applyConfiguredView = useCallback((map: MapLibreMap) => {
+    const currentView = projectRef.current.view ?? DEFAULT_GIS_GLOBE_VIEW;
+    const key = buildGisConfiguredViewKey(currentView);
+    if (syncedViewKeyRef.current === key) return;
+    if (!syncGisMapView(map, currentView)) return;
+    syncedViewKeyRef.current = key;
+  }, []);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -150,19 +154,21 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       const maplibregl = await loadMapLibreRuntime();
       if (cancelled || !hostRef.current) return;
 
+      const initialView = projectRef.current.view ?? DEFAULT_GIS_GLOBE_VIEW;
+
       map = new maplibregl.Map({
         container: host,
         style,
-        center: view.center,
-        zoom: view.zoom,
-        bearing: view.bearing ?? 0,
-        pitch: view.pitch ?? 0,
+        center: initialView.center,
+        zoom: initialView.zoom,
+        bearing: initialView.bearing ?? 0,
+        pitch: initialView.pitch ?? 0,
         attributionControl: false,
         transformRequest: gisMapTransformRequest,
       });
       mapRef.current = map;
       appliedStyleKeyRef.current = styleKey;
-      syncedViewKeyRef.current = configuredViewKey;
+      syncedViewKeyRef.current = null;
 
       map.on("error", (event) => {
         if (cancelled) return;
@@ -198,6 +204,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
           fog: current.fog,
           atmospherePreset: current.atmospherePreset,
         });
+        applyConfiguredView(map);
         map.resize();
         onPaintReady?.();
       });
@@ -214,7 +221,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       appliedStyleKeyRef.current = null;
       syncedViewKeyRef.current = null;
     };
-  }, [mapBootstrapKey, onPaintReady, project.showControls, renderBasemap]);
+  }, [applyConfiguredView, mapBootstrapKey, onPaintReady, project.showControls, renderBasemap]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -270,19 +277,13 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     if (!map) return;
     if (syncedViewKeyRef.current === configuredViewKey) return;
 
-    const apply = () => {
-      if (syncedViewKeyRef.current === configuredViewKey) return;
-      syncGisMapView(map, view);
-      syncedViewKeyRef.current = configuredViewKey;
-    };
-
+    const apply = () => applyConfiguredView(map);
     if (map.isStyleLoaded()) {
       apply();
       return;
     }
-
     map.once("load", apply);
-  }, [configuredViewKey, view]);
+  }, [applyConfiguredView, configuredViewKey]);
 
   useEffect(() => {
     const shell = shellRef.current;
@@ -322,7 +323,10 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       <div
         ref={shellRef}
         className="relative h-full w-full"
-        style={hostBackground ? { backgroundColor: hostBackground } : undefined}
+        style={{
+          ...(hostBackground ? { backgroundColor: hostBackground } : undefined),
+          opacity: mapOpacity,
+        }}
       >
         <div
           ref={hostRef}

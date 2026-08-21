@@ -85,8 +85,23 @@ export function syncGisMapView(
   map: MapLibreMap,
   view: { center: [number, number]; zoom: number; bearing?: number; pitch?: number },
 ) {
-  if (!map.isStyleLoaded()) return;
+  if (!map.isStyleLoaded()) return false;
   map.jumpTo({
+    center: view.center,
+    zoom: view.zoom,
+    bearing: view.bearing ?? 0,
+    pitch: view.pitch ?? 0,
+  });
+  return true;
+}
+
+export function buildGisConfiguredViewKey(view: {
+  center: [number, number];
+  zoom: number;
+  bearing?: number;
+  pitch?: number;
+}): string {
+  return JSON.stringify({
     center: view.center,
     zoom: view.zoom,
     bearing: view.bearing ?? 0,
