@@ -407,6 +407,19 @@ def test_embed_token_ok_r44(client):
     assert body["sdkParams"]["apiBase"]
 
 
+def test_embed_token_default_expires_7_days_r44(client):
+    """公开/嵌入 token 默认有效期 7 天。"""
+    resp = client.post(
+        "/api/v1/embed/token",
+        headers=AUTH,
+        json={"chartId": str(uuid.uuid4()), "allowedOrigins": []},
+    )
+    assert resp.status_code == 201
+    expires_at = datetime.fromisoformat(resp.json()["expiresAt"].replace("Z", "+00:00"))
+    delta_sec = (expires_at - datetime.now(UTC)).total_seconds()
+    assert 6.9 * 86400 <= delta_sec <= 7.1 * 86400
+
+
 def test_embed_token_dashboard_screen_path_r44(client):
     """Phase 2.5 A4: dashboardId token → /embed/screen/{id}。"""
     dash_id = uuid.uuid4()

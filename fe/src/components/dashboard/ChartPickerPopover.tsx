@@ -35,6 +35,8 @@ type ChartPickerPopoverProps = {
   onPaletteDragEnd?: () => void;
   /** 选择态高亮（新建组件等场景） */
   selectedType?: ChartType;
+  /** 自定义组件 artifact 选择态（与 selectedType 互斥） */
+  selectedCustomVizArtifactId?: string | null;
   /** 默认 true；对话框内选类型时可关闭拖拽 */
   enableDrag?: boolean;
   className?: string;
@@ -49,6 +51,7 @@ function CustomVizTile({
   onInserted,
   onPaletteDragStart,
   onPaletteDragEnd,
+  selected = false,
   enableDrag = true,
 }: {
   item: AiVizArtifactMeta;
@@ -57,6 +60,7 @@ function CustomVizTile({
   onInserted?: () => void;
   onPaletteDragStart?: () => void;
   onPaletteDragEnd?: () => void;
+  selected?: boolean;
   enableDrag?: boolean;
 }) {
   const label = item.manifest.displayName ?? item.manifest.id ?? "自定义组件";
@@ -80,6 +84,7 @@ function CustomVizTile({
       role="button"
       tabIndex={0}
       draggable={enableDrag}
+      aria-pressed={selected}
       onDragStart={(e) => {
         if (!enableDrag) return;
         setCustomVizDragData(e.dataTransfer, payload);
@@ -102,9 +107,11 @@ function CustomVizTile({
         }
       }}
       className={cn(
-        "relative flex flex-col items-center gap-1.5 rounded-lg border border-transparent p-1.5 text-center transition-colors",
+        "relative flex flex-col items-center gap-1.5 rounded-lg border p-1.5 text-center transition-colors",
         enableDrag ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
-        "hover:border-brand-200 hover:bg-brand-50/60 dark:hover:border-brand-500/30 dark:hover:bg-brand-500/10",
+        selected
+          ? "border-brand-500 bg-brand-50 ring-2 ring-brand-500/20 dark:border-brand-500/60 dark:bg-brand-500/10 dark:ring-brand-500/25"
+          : "border-transparent hover:border-brand-200 hover:bg-brand-50/60 dark:hover:border-brand-500/30 dark:hover:bg-brand-500/10",
         "focus-visible:outline-hidden focus-visible:ring-3 focus-visible:ring-brand-500/20",
       )}
       data-testid={`custom-viz-tile-${item.artifactId}`}
@@ -268,6 +275,7 @@ export function ChartPickerPopover({
   onPaletteDragStart,
   onPaletteDragEnd,
   selectedType,
+  selectedCustomVizArtifactId,
   enableDrag = true,
   className,
 }: ChartPickerPopoverProps) {
@@ -404,7 +412,7 @@ export function ChartPickerPopover({
                 onInserted={onInserted}
                 onPaletteDragStart={onPaletteDragStart}
                 onPaletteDragEnd={onPaletteDragEnd}
-                selectedType={selectedType}
+                selectedType={selectedCustomVizArtifactId ? undefined : selectedType}
                 enableDrag={enableDrag}
               />
             </div>
@@ -432,6 +440,7 @@ export function ChartPickerPopover({
                         onInserted={onInserted}
                         onPaletteDragStart={onPaletteDragStart}
                         onPaletteDragEnd={onPaletteDragEnd}
+                        selected={selectedCustomVizArtifactId === item.artifactId}
                         enableDrag={enableDrag}
                       />
                     ))}

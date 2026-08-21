@@ -216,7 +216,8 @@ export function CreateVizComponentDialog({ open, onOpenChange }: CreateVizCompon
                 aria-hidden={!isChartPicker}
               >
                 <ChartPickerPopover
-                  selectedType={chartType}
+                  selectedType={isCustomViz ? undefined : chartType}
+                  selectedCustomVizArtifactId={customVizPick?.artifactId ?? null}
                   enableDrag={false}
                   className="h-full min-h-0"
                   onInsert={(type) => {

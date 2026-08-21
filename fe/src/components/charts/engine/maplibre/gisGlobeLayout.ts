@@ -259,11 +259,16 @@ export function offsetMapPixelToOverlay(
   };
 }
 
-/** 多策略解析球缘，并映射到 overlay 容器坐标。 */
+/** 多策略解析球缘，并映射到 overlay 容器坐标（优先椭圆拟合）。 */
 export function resolveGlobeLimbBoundsForOverlay(
   map: MapLibreMap,
   overlay: HTMLElement,
 ): GlobeLimbBounds | null {
+  const silhouette = resolveGlobeSilhouetteFromMap(map);
+  if (silhouette) {
+    return silhouetteToLimbBounds(offsetSilhouetteToOverlay(map, overlay, silhouette));
+  }
+
   const inMapPixels =
     resolveGlobeLimbBoundsFromMap(map) ??
     resolveGlobeLimbBoundsFromProject(map) ??

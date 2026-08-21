@@ -126,6 +126,21 @@ describe("ChartPickerPopover custom viz", () => {
     });
   });
 
+  it("highlights selected custom viz tile", async () => {
+    renderPicker({
+      onInsertCustomViz: vi.fn(),
+      selectedCustomVizArtifactId: "art-custom-1",
+    });
+    const popover = await screen.findByTestId("chart-picker-popover");
+    const selected = await within(popover).findByTestId("custom-viz-tile-art-custom-1");
+    const other = await within(popover).findByTestId(
+      "custom-viz-tile-0833b30b-39d4-4a58-80f6-030de7cbe377",
+    );
+
+    expect(selected).toHaveAttribute("aria-pressed", "true");
+    expect(other).toHaveAttribute("aria-pressed", "false");
+  });
+
   it("calls onInsertCustomViz when ranking bar medal tile is clicked", async () => {
     const onInsertCustomViz = vi.fn();
     const user = userEvent.setup();

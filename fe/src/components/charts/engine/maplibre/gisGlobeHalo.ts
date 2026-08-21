@@ -1,29 +1,15 @@
 import type { GisAtmospherePreset, GisProjection } from "@/components/charts/engine/maplibre/gisProject";
-import {
-  bindMapRenderSync,
-  resolveGlobeLimbBoundsForOverlay,
-} from "@/components/charts/engine/maplibre/gisGlobeLayout";
+import { bindMapRenderSync } from "@/components/charts/engine/maplibre/gisGlobeLayout";
 import { drawGlobeAtmosphereHalo } from "@/components/charts/engine/maplibre/gisGlobeHaloDraw";
+import { resolveGlobeSilhouetteForOverlay } from "@/components/charts/engine/maplibre/gisGlobeSilhouette";
 
 type MapLibreMap = import("maplibre-gl").Map;
 
+export type { GlobeSilhouette } from "@/components/charts/engine/maplibre/gisGlobeSilhouette";
 export type { GlobeLimbBounds } from "@/components/charts/engine/maplibre/gisGlobeLayout";
 export { drawGlobeAtmosphereHalo } from "@/components/charts/engine/maplibre/gisGlobeHaloDraw";
 
-function applyHaloStackMode(canvas: HTMLCanvasElement, aboveMap: boolean) {
-  canvas.className = aboveMap
-    ? "pointer-events-none absolute inset-0 z-[5]"
-    : "pointer-events-none absolute inset-0 z-[3]";
-}
-
-function haloNeedsTopLayer(map: MapLibreMap): boolean {
-  const mapCanvas = map.getContainer().querySelector("canvas.maplibregl-canvas") as HTMLCanvasElement | null;
-  if (!mapCanvas) return false;
-  const bg = getComputedStyle(mapCanvas).backgroundColor;
-  return bg !== "transparent" && bg !== "rgba(0, 0, 0, 0)";
-}
-
-/** GeoLibre 图层：z-3 光晕 → z-4 地图；不透明底图时自动改 z-5 仅外环。 */
+/** 光晕固定叠在地图之上（z-5），仅绘制 0.965× 椭球缘外环。 */
 export function mountGisGlobeHaloOverlay(
   wrapper: HTMLElement,
   getMap: () => MapLibreMap | null,
@@ -34,7 +20,7 @@ export function mountGisGlobeHaloOverlay(
 
   const canvas = document.createElement("canvas");
   canvas.dataset.testid = "gis-globe-halo";
-  canvas.className = "pointer-events-none absolute inset-0 z-[3]";
+  canvas.className = "pointer-events-none absolute inset-0 z-[5]";
   wrapper.appendChild(canvas);
 
   const ctx = canvas.getContext("2d");
@@ -42,7 +28,6 @@ export function mountGisGlobeHaloOverlay(
   let unbindRender: (() => void) | undefined;
   let boundMap: MapLibreMap | null = null;
   let frameId = 0;
-  let clipInnerRing = false;
 
   const resize = () => {
     const rect = wrapper.getBoundingClientRect();
@@ -61,9 +46,6 @@ export function mountGisGlobeHaloOverlay(
     if (map === boundMap) return;
     unbindRender?.();
     boundMap = map;
-    if (map) {
-      map.getContainer().style.background = "transparent";
-    }
     unbindRender = bindMapRenderSync(map, paint);
   };
 
@@ -74,35 +56,30 @@ export function mountGisGlobeHaloOverlay(
     }
     bindMapIfNeeded();
 
+    if (canvas.parentElement !== wrapper) {
+      wrapper.appendChild(canvas);
+    }
+
     const rect = wrapper.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
-    if (width <= 0 || height <= 0) return;
+    if (rect.width <= 0 || rect.height <= 0) return;
 
     const map = getMap();
     if (!map || !map.isStyleLoaded()) {
       canvas.style.display = "none";
-      ctx.clearRect(0, 0, width, height);
+      ctx.clearRect(0, 0, rect.width, rect.height);
       return;
     }
 
-    const aboveMap = haloNeedsTopLayer(map);
-    clipInnerRing = aboveMap;
-    applyHaloStackMode(canvas, aboveMap);
-    if (aboveMap && canvas.parentElement !== wrapper) {
-      wrapper.appendChild(canvas);
-    }
-
     resize();
-    const limb = resolveGlobeLimbBoundsForOverlay(map, wrapper);
-    if (!limb) {
+    const silhouette = resolveGlobeSilhouetteForOverlay(map, wrapper);
+    if (!silhouette) {
       canvas.style.display = "none";
-      ctx.clearRect(0, 0, width, height);
+      ctx.clearRect(0, 0, rect.width, rect.height);
       return;
     }
 
     canvas.style.display = "block";
-    drawGlobeAtmosphereHalo(ctx, width, height, limb, preset, { clipInnerRing });
+    drawGlobeAtmosphereHalo(ctx, rect.width, rect.height, silhouette, preset);
   };
 
   const loop = () => {

@@ -21,18 +21,23 @@ vi.mock("@/lib/chartRegistry", async (importOriginal) => {
   };
 });
 
-vi.mock("@/lib/aiVizArtifacts", () => ({
-  fetchAiVizArtifacts: vi.fn(async () => ({
-    items: [
-      {
-        artifactId: "art-hub-1",
-        manifest: { displayName: "Hub 排名条", id: "ranking-strip" },
-        status: "active",
-        contentHash: "abc",
-      },
-    ],
-  })),
-}));
+vi.mock("@/lib/aiVizArtifacts", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/aiVizArtifacts")>();
+  return {
+    ...actual,
+    fetchAiVizArtifacts: vi.fn(async () => ({
+      items: [
+        {
+          artifactId: "art-hub-1",
+          manifest: { displayName: "Hub 排名条", id: "ranking-strip" },
+          status: "active",
+          contentHash: "abc",
+        },
+      ],
+    })),
+    deleteAiVizArtifact: vi.fn(async () => undefined),
+  };
+});
 
 vi.stubGlobal(
   "IntersectionObserver",
@@ -73,6 +78,10 @@ describe("CreateVizComponentDialog", () => {
 
     await user.click(await within(popover).findByTestId("custom-viz-tile-art-hub-1"));
     expect(await screen.findByText(/已选：Hub 排名条/)).toBeInTheDocument();
+    expect(await within(popover).findByTestId("custom-viz-tile-art-hub-1")).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
 
     const createButton = screen.getByRole("button", { name: /创建并编辑/i });
     expect(createButton).not.toBeDisabled();

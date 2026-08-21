@@ -15,13 +15,22 @@ from app.viz.embed import _ORIGIN_RE
 
 ShareMode = Literal["embed", "public"]
 
+# 公开/嵌入分享 token 有效期：默认 7 天；API 可调 1 分钟 ~ 30 天
+EMBED_TOKEN_DEFAULT_EXPIRES_SEC = 7 * 24 * 3600
+EMBED_TOKEN_MAX_EXPIRES_SEC = 30 * 24 * 3600
+
 
 class EmbedTokenIn(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     chart_id: uuid.UUID | None = Field(default=None, alias="chartId")
     dashboard_id: uuid.UUID | None = Field(default=None, alias="dashboardId")
     allowed_origins: list[str] = Field(default_factory=list, alias="allowedOrigins")
-    expires_in_sec: int = Field(default=3600, alias="expiresInSec", ge=60, le=86400)
+    expires_in_sec: int = Field(
+        default=EMBED_TOKEN_DEFAULT_EXPIRES_SEC,
+        alias="expiresInSec",
+        ge=60,
+        le=EMBED_TOKEN_MAX_EXPIRES_SEC,
+    )
     theme: Literal["light", "dark"] = "light"
     share_mode: ShareMode = Field(default="embed", alias="shareMode")
 

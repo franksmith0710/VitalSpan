@@ -72,10 +72,10 @@ export function PublicShareLinkCard({
 
   const description =
     variant === "dialog" || density === "compact" ? (
-      <>只读外链，持有链接者无需登录即可查看「{name}」。</>
+      <>只读外链，默认 7 天有效；持有链接者无需登录即可查看「{name}」。</>
     ) : (
       <>
-        生成带过期时间的只读链接，持有链接者无需登录即可在浏览器中查看「{name}」。链接路径为
+        生成默认 7 天有效的只读链接，持有链接者无需登录即可在浏览器中查看「{name}」。链接路径为
         /embed/screen/…（整板只读预览；v1 看板以网格布局展示）。
       </>
     );
@@ -89,7 +89,7 @@ export function PublicShareLinkCard({
         icon={Link2}
         title="公开链接"
         description={description}
-        notice={<ShareDialogNotice>请仅在受控范围分享；链接到期后自动失效。</ShareDialogNotice>}
+        notice={<ShareDialogNotice>请仅在受控范围分享；链接 7 天后自动失效，可重新生成。</ShareDialogNotice>}
         trailing={actionButton}
       >
         {issuedPanel}
@@ -105,7 +105,7 @@ export function PublicShareLinkCard({
       <CardContent className={cn("space-y-3", density === "compact" ? "pt-4" : "pt-6")}>
         <p className="text-theme-sm text-gray-500 dark:text-gray-400">{description}</p>
         <p className="text-theme-xs text-amber-600 dark:text-amber-400">
-          请仅在受控范围内分享；链接到期后自动失效。
+          请仅在受控范围内分享；链接 7 天后自动失效，可重新生成。
         </p>
         {issuedPanel ?? actionButton}
       </CardContent>
