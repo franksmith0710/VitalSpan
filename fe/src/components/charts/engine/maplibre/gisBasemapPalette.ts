@@ -14,6 +14,26 @@ const WATER_LAYER_PAINT: Record<string, "fill-color" | "line-color"> = {
   water_river: "line-color",
 };
 
+/** Protomaps flavor 中仅 landcover / landuse 使用的陆地细分色键。 */
+const LAND_DETAIL_FLAVOR_KEYS = [
+  "park_a",
+  "park_b",
+  "hospital",
+  "industrial",
+  "school",
+  "wood_a",
+  "wood_b",
+  "pedestrian",
+  "scrub_a",
+  "scrub_b",
+  "glacier",
+  "sand",
+  "beach",
+  "aerodrome",
+  "zoo",
+  "military",
+] as const;
+
 type MapLibreMap = import("maplibre-gl").Map;
 
 export function normalizeBasemapHexColor(input: unknown): string | undefined {
@@ -32,12 +52,33 @@ export function defaultBasemapPaletteForFlavor(flavorName: GisBasemapFlavor) {
   return { landColor: flavor.earth, waterColor: DEFAULT_GIS_WATER_COLOR };
 }
 
+function harmonizeFlavorLandDetail(
+  flavor: ReturnType<typeof namedFlavor>,
+  landColor: string,
+) {
+  for (const key of LAND_DETAIL_FLAVOR_KEYS) {
+    flavor[key] = landColor;
+  }
+  if (flavor.landcover) {
+    for (const key of Object.keys(flavor.landcover) as Array<keyof typeof flavor.landcover>) {
+      flavor.landcover[key] = landColor;
+    }
+  }
+}
+
 export function buildBasemapFlavor(
   flavorName: GisBasemapFlavor,
   colors?: { landColor?: string; waterColor?: string },
+  options?: { harmonizeLandDetail?: boolean },
 ) {
   const flavor = { ...namedFlavor(flavorName) };
-  if (colors?.landColor) flavor.earth = colors.landColor;
+  const landColor = normalizeBasemapHexColor(colors?.landColor);
+  if (landColor) {
+    flavor.earth = landColor;
+    if (options?.harmonizeLandDetail !== false) {
+      harmonizeFlavorLandDetail(flavor, landColor);
+    }
+  }
   flavor.water = resolveBasemapWaterColor(colors?.waterColor);
   return flavor;
 }
@@ -63,6 +104,25 @@ function isBoundaryLayer(id: string): boolean {
 
 function isLandDetailLayer(id: string): boolean {
   return id === "landcover" || id.startsWith("landuse_");
+}
+
+export function isManagedBasemapLayer(id: string): boolean {
+  return (
+    isRoadLayer(id) ||
+    isLabelLayer(id) ||
+    isBoundaryLayer(id) ||
+    isLandDetailLayer(id)
+  );
+}
+
+export function isEarthSurfaceLayer(id: string): boolean {
+  return (
+    id === "earth" ||
+    id === "landcover" ||
+    id.startsWith("landuse_") ||
+    id === "buildings" ||
+    id.startsWith("water")
+  );
 }
 
 function shouldHideBasemapLayer(id: string, visibility: GisBasemapLayerVisibility): boolean {
@@ -103,68 +163,53 @@ function applyLayerEarthOpacity(
     case "line":
       map.setPaintProperty(layerId, "line-opacity", opacity);
       return;
-    case "symbol":
-      map.setPaintProperty(layerId, "text-opacity", opacity);
-      map.setPaintProperty(layerId, "icon-opacity", opacity);
-      return;
     case "fill-extrusion":
       map.setPaintProperty(layerId, "fill-extrusion-opacity", opacity);
-      return;
-    case "circle":
-      map.setPaintProperty(layerId, "circle-opacity", opacity);
       return;
     default:
       return;
   }
 }
 
-export function applyEarthBasemapOpacity(
-  map: MapLibreMap,
-  opacity: number,
-  projection: "globe" | "mercator" = "globe",
-) {
+/** 仅作用于地球表面矢量层；道路/标注/边界保持不透明，避免整图发灰或图层错乱。 */
+export function applyEarthBasemapOpacity(map: MapLibreMap, opacity: number) {
   if (!map.isStyleLoaded()) return;
   const clamped = Math.max(0, Math.min(1, opacity));
   for (const layer of map.getStyle().layers ?? []) {
     if (layer.id.startsWith("vs-gis-")) continue;
+    if (!isEarthSurfaceLayer(layer.id)) continue;
     applyLayerEarthOpacity(map, layer.id, layer.type, clamped);
   }
 }
 
-/** 运行时改色/图层，避免 setStyle 导致球面视角漂移。 */
+function applyBasemapLayerVisibilityRuntime(
+  map: MapLibreMap,
+  visibility: GisBasemapLayerVisibility | undefined,
+) {
+  if (!visibility) return;
+  for (const layer of map.getStyle().layers ?? []) {
+    if (layer.id.startsWith("vs-gis-")) continue;
+    if (!isManagedBasemapLayer(layer.id)) continue;
+    const hidden = shouldHideBasemapLayer(layer.id, visibility);
+    map.setLayoutProperty(layer.id, "visibility", hidden ? "none" : "visible");
+  }
+}
+
+/** 运行时改图层/透明度，避免 setStyle 导致球面视角漂移。颜色以 style 构建为准。 */
 export function applyBasemapRuntimePatch(
   map: MapLibreMap,
   patch: {
-    flavor?: GisBasemapFlavor;
-    landColor?: string;
-    waterColor?: string;
     basemapLayers?: GisBasemapLayerVisibility;
     buildings3d?: boolean;
     earthOpacity?: number;
-    projection?: "globe" | "mercator";
   },
 ) {
   if (!map.isStyleLoaded()) return;
-
-  const landColor = patch.landColor ?? (patch.flavor ? namedFlavor(patch.flavor).earth : undefined);
-  const waterColor = resolveBasemapWaterColor(patch.waterColor);
-
-  if (landColor && map.getLayer("earth")) {
-    map.setPaintProperty("earth", "fill-color", landColor);
-  }
-  for (const [layerId, paintKey] of Object.entries(WATER_LAYER_PAINT)) {
-    if (map.getLayer(layerId)) map.setPaintProperty(layerId, paintKey, waterColor);
-  }
 
   if (patch.buildings3d !== undefined) {
     applyBuildings3dRuntime(map, patch.buildings3d);
   }
 
-  applyEarthBasemapOpacity(map, patch.earthOpacity ?? 1, patch.projection ?? "globe");
-
-  for (const layer of map.getStyle().layers ?? []) {
-    if (layer.id.startsWith("vs-gis-")) continue;
-    const hidden = patch.basemapLayers ? shouldHideBasemapLayer(layer.id, patch.basemapLayers) : false;
-    map.setLayoutProperty(layer.id, "visibility", hidden ? "none" : "visible");
-  }
+  applyEarthBasemapOpacity(map, patch.earthOpacity ?? 1);
+  applyBasemapLayerVisibilityRuntime(map, patch.basemapLayers);
 }

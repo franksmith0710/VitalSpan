@@ -1,6 +1,7 @@
 import { layers } from "@protomaps/basemaps";
 import type { StyleSpecification } from "maplibre-gl";
 import {
+  applyBasemapLayerVisibility,
   buildBasemapFlavor,
 } from "@/components/charts/engine/maplibre/gisBasemapPalette";
 import { appendBuildings3dLayerToStyle } from "@/components/charts/engine/maplibre/gisBuildings3d";
@@ -62,12 +63,16 @@ export function buildPmtilesStyle(
   options: BuildPmtilesStyleOptions = {},
 ): StyleSpecification {
   const flavorName = options.flavor ?? "light";
+  const harmonizeLandDetail = options.basemapLayers?.landDetail !== false;
   const flavor = buildBasemapFlavor(flavorName, {
     landColor: options.landColor,
     waterColor: options.waterColor,
-  });
+  }, { harmonizeLandDetail });
   const sprite = resolveProtomapsSpriteUrl(flavorName, resolved.spriteUrl);
-  const baseLayers = layers(PMTILES_SOURCE_ID, flavor, { lang: labelLang });
+  const baseLayers = applyBasemapLayerVisibility(
+    layers(PMTILES_SOURCE_ID, flavor, { lang: labelLang }),
+    options.basemapLayers,
+  );
   const style: StyleSpecification = {
     version: 8,
     glyphs: resolved.glyphsUrl,

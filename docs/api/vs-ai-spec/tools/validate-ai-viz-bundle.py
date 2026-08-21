@@ -20,6 +20,7 @@ _TOOLS = Path(__file__).resolve().parent
 if str(_TOOLS) not in sys.path:
     sys.path.insert(0, str(_TOOLS))
 
+from aiviz_publish_hints import format_error_block
 from bundle_preflight import format_preflight_lines, load_bundle, pack_dir, preflight_bundle
 
 

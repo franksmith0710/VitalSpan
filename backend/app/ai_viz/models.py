@@ -14,7 +14,8 @@ INLINE_D3_MIN_BYTES = 200 * 1024
 ALLOWED_RUNTIMES = ("html", "d3")
 FORBIDDEN_HTML_PATTERNS = (
     re.compile(r"<script[^>]+src\s*=", re.IGNORECASE),
-    re.compile(r"\bon\w+\s*=", re.IGNORECASE),
+    # HTML 内联事件（onclick=）；勿匹配 JS 属性赋值 .onmouseenter=
+    re.compile(r"(?<![.\w])on\w+\s*=", re.IGNORECASE),
     re.compile(r"javascript:", re.IGNORECASE),
 )
 

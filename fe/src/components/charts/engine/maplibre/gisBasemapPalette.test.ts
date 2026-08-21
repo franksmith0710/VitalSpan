@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   applyBasemapLayerVisibility,
   buildBasemapFlavor,
+  isEarthSurfaceLayer,
+  isManagedBasemapLayer,
   normalizeBasemapHexColor,
 } from "@/components/charts/engine/maplibre/gisBasemapPalette";
 import { layers, namedFlavor } from "@protomaps/basemaps";
@@ -15,7 +17,14 @@ describe("gisBasemapPalette", () => {
     expect(flavor.earth).toBe("#223344");
     expect(flavor.water).toBe("#112233");
     const base = namedFlavor("light");
-    expect(base.park_a).toBe(flavor.park_a);
+    expect(base.park_a).not.toBe(flavor.park_a);
+  });
+
+  it("harmonizes land detail palette when custom land color is set", () => {
+    const flavor = buildBasemapFlavor("light", { landColor: "#111111" });
+    expect(flavor.park_a).toBe("#111111");
+    expect(flavor.landcover?.forest).toBe("#111111");
+    expect(flavor.highway).toBe(namedFlavor("light").highway);
   });
 
   it("defaults water to platform blue", () => {
@@ -36,5 +45,14 @@ describe("gisBasemapPalette", () => {
     expect(roads?.layout?.visibility).toBe("none");
     expect(labels?.layout?.visibility).toBe("none");
     expect(next.find((layer) => layer.id === "earth")?.layout?.visibility).toBeUndefined();
+  });
+
+  it("classifies earth surface vs managed overlay layers", () => {
+    expect(isEarthSurfaceLayer("earth")).toBe(true);
+    expect(isEarthSurfaceLayer("landuse_park")).toBe(true);
+    expect(isEarthSurfaceLayer("roads_major")).toBe(false);
+    expect(isManagedBasemapLayer("roads_major")).toBe(true);
+    expect(isManagedBasemapLayer("places_city")).toBe(true);
+    expect(isManagedBasemapLayer("earth")).toBe(false);
   });
 });

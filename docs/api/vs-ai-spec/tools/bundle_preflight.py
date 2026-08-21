@@ -152,7 +152,8 @@ def format_preflight_lines(result: PreflightResult) -> list[str]:
     if result.errors:
         lines.append("preflight FAILED:")
         for item in result.errors:
-            lines.append(f"  [{item.http_status}] {item.code}: {item.message}")
+            lines.extend(format_error_block(item.code, item.message, item.http_status))
+        lines.append("  → 文档: guides/CUSTOM-VIZ-AUTHOR.md")
         return lines
     lines.append("preflight ok")
     if result.style_compliance_tier:

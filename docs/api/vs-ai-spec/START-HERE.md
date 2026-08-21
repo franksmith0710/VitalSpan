@@ -32,10 +32,12 @@ DeepTalk 写到 `output/` 时：`python tools\mvp-upload.py --from output\xxx.js
 python tools\check-vitalspan-health.py
 ```
 
-### ② 组件库（d3/html 新组件 · **主推 publish 一步**）
+### ② 组件库（d3/html 新组件 · **先 scaffold + validate，再 publish**）
 
 ```bat
-python tools\publish-ai-viz-artifact.py --file examples\你的组件.json
+python tools\scaffold-custom-viz.py --id my-widget --name 我的组件 --template scrolling-table
+python tools\validate-ai-viz-bundle.py --file examples\my-widget.json
+python tools\publish-ai-viz-artifact.py --file examples\my-widget.json
 python tools\list-ai-viz-artifacts.py
 python tools\delete-ai-viz-artifact.py <artifactId>
 ```
@@ -63,7 +65,7 @@ python tools\upload-dashboard-layout.py --dashboard-id <大屏uuid> --file examp
 | 线 | 文档 |
 |----|------|
 | 总览 | [guides/THREE-WORKFLOWS.md](./guides/THREE-WORKFLOWS.md) |
-| ② 组件库 | [EXTERNAL-AUTHOR.md](./EXTERNAL-AUTHOR.md) · [00-REQUIREMENTS.md](./00-REQUIREMENTS.md) |
+| ② 组件库 | [guides/CUSTOM-VIZ-AUTHOR.md](./guides/CUSTOM-VIZ-AUTHOR.md) · [EXTERNAL-AUTHOR.md](./EXTERNAL-AUTHOR.md) · [00-REQUIREMENTS.md](./00-REQUIREMENTS.md) |
 | ① 内置图 | [guides/L1-L2-CHART-CONFIG.md](./guides/L1-L2-CHART-CONFIG.md) |
 | ③ 大屏 | [guides/DASHBOARD-LAYOUT.md](./guides/DASHBOARD-LAYOUT.md) |
 | DeepTalk 提示词 | [DEEPTALK-AGENT-PROMPT.md](./DEEPTALK-AGENT-PROMPT.md) |

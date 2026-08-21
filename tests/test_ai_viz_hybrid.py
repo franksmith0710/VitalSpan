@@ -148,6 +148,31 @@ def test_ai_viz_rejects_oversize_bundle(auth_headers: dict[str, str]) -> None:
     assert resp.json()["code"] == "AIVIZ_UNSAFE_CONTENT"
 
 
+def test_ai_viz_allows_js_property_handlers_but_rejects_html_onclick(
+    auth_headers: dict[str, str],
+) -> None:
+    js_handler = {
+        **DEMO_BUNDLE,
+        "files": {
+            "index.html": (
+                DEMO_BUNDLE["files"]["index.html"]
+                + "<script>el.addEventListener('click',function(){});"
+                "w.onmouseenter=function(){};</script>"
+            ),
+        },
+    }
+    resp = client.post("/api/v1/ai-viz/artifacts", json=js_handler, headers=auth_headers)
+    assert resp.status_code in (200, 201), resp.text
+
+    html_onclick = {
+        **DEMO_BUNDLE,
+        "files": {"index.html": '<div onclick="alert(1)"></div>'},
+    }
+    resp = client.post("/api/v1/ai-viz/artifacts", json=html_onclick, headers=auth_headers)
+    assert resp.status_code == 422
+    assert resp.json()["code"] == "AIVIZ_UNSAFE_CONTENT"
+
+
 def test_ai_viz_rejects_manifest_without_field_slots(auth_headers: dict[str, str]) -> None:
     bad = {
         **DEMO_BUNDLE,

@@ -198,7 +198,11 @@ export function ChartGisMapProjectPanel() {
             <Select
               value={project.basemapFlavor ?? "light"}
               onValueChange={(basemapFlavor) =>
-                patchProject({ basemapFlavor: basemapFlavor as GisBasemapFlavor })
+                patchProject({
+                  basemapFlavor: basemapFlavor as GisBasemapFlavor,
+                  landColor: undefined,
+                  waterColor: undefined,
+                })
               }
             >
               <SelectTrigger className={INSPECTOR_CTRL} aria-label="底图风格">
@@ -224,8 +228,11 @@ export function ChartGisMapProjectPanel() {
                 aria-label="陆地颜色"
                 onChange={(landColor) => patchProject({ landColor })}
               />
-              <Label className="text-theme-xs text-gray-500">陆地颜色</Label>
+              <Label className="text-theme-xs text-gray-500">陆地底色</Label>
             </div>
+            <p className="text-theme-xs text-gray-500">
+              覆写 earth 与陆地细节图层；关闭「陆地细节」时仅保留纯色底。
+            </p>
             <div className="flex min-w-0 items-center gap-2">
               <ChartPaletteColorSwatch
                 value={project.waterColor ?? flavorPalette.waterColor}

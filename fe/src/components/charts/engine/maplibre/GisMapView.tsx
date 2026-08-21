@@ -80,6 +80,9 @@ function GisMapViewInner(props: ChartEngineViewProps) {
           buildPmtilesStyle(resolved, project.labelLang ?? "zh-Hans", {
             flavor,
             buildings3d: project.buildings3d,
+            landColor: project.landColor,
+            waterColor: project.waterColor,
+            basemapLayers: project.basemapLayers,
           }),
         );
         setPmtilesErrorHint(null);
@@ -95,19 +98,24 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     return () => {
       cancelled = true;
     };
-  }, [flavor, project.labelLang, tileServiceId]);
+  }, [
+    flavor,
+    project.basemapLayers,
+    project.buildings3d,
+    project.labelLang,
+    project.landColor,
+    project.waterColor,
+    tileServiceId,
+  ]);
 
   const basemapPatchKey = useMemo(
     () =>
       JSON.stringify({
-        flavor,
-        landColor: project.landColor,
-        waterColor: project.waterColor,
         basemapLayers: project.basemapLayers,
         buildings3d: project.buildings3d,
         earthOpacity: project.earthOpacity ?? 1,
       }),
-    [flavor, project.basemapLayers, project.buildings3d, project.earthOpacity, project.landColor, project.waterColor],
+    [project.basemapLayers, project.buildings3d, project.earthOpacity],
   );
 
   const renderBasemap = useMemo(
@@ -196,13 +204,9 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         setMapErrorHint(null);
         const current = projectRef.current;
         applyBasemapRuntimePatch(map, {
-          flavor: current.basemapFlavor ?? "light",
-          landColor: current.landColor,
-          waterColor: current.waterColor,
           basemapLayers: current.basemapLayers,
           buildings3d: current.buildings3d !== false,
           earthOpacity: current.earthOpacity ?? 1,
-          projection: current.projection ?? "globe",
         });
         applyGlobeAtmosphere(map, {
           projection: current.projection,
@@ -235,13 +239,9 @@ function GisMapViewInner(props: ChartEngineViewProps) {
 
     applyGisMapStylePreservingCamera(map, style, () => {
       applyBasemapRuntimePatch(map, {
-        flavor,
-        landColor: project.landColor,
-        waterColor: project.waterColor,
         basemapLayers: project.basemapLayers,
         buildings3d: project.buildings3d !== false,
         earthOpacity,
-        projection,
       });
       map.resize();
       onPaintReady?.();
@@ -254,18 +254,14 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     if (!map) return;
     const applyPatch = () => {
       applyBasemapRuntimePatch(map, {
-        flavor,
-        landColor: project.landColor,
-        waterColor: project.waterColor,
         basemapLayers: project.basemapLayers,
         buildings3d: project.buildings3d !== false,
         earthOpacity,
-        projection,
       });
     };
     if (map.isStyleLoaded()) applyPatch();
     else map.once("load", applyPatch);
-  }, [basemapPatchKey, flavor, project.basemapLayers, project.buildings3d, project.landColor, project.waterColor, styleKey]);
+  }, [basemapPatchKey, earthOpacity, project.basemapLayers, project.buildings3d, styleKey]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -293,12 +289,6 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     }
     map.once("load", apply);
   }, [applyConfiguredView, configuredViewKey]);
-
-  useEffect(() => {
-    const host = hostRef.current;
-    if (!host || projection === "globe") return;
-    host.style.opacity = String(earthOpacity);
-  }, [earthOpacity, projection]);
 
   useEffect(() => {
     const shell = shellRef.current;
@@ -360,7 +350,6 @@ function GisMapViewInner(props: ChartEngineViewProps) {
           data-projection={projection}
           data-earth-opacity={earthOpacity}
           className="relative z-[4] h-full w-full"
-          style={projection === "mercator" ? { opacity: earthOpacity } : undefined}
           role="img"
           aria-label={ariaLabel ?? "GIS 地图"}
         />

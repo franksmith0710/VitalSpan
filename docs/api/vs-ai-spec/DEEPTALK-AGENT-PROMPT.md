@@ -32,11 +32,17 @@
 ## 工作流 ②（组件库 · 主路径）
 
 1. `python tools/check-vitalspan-health.py` → ok  
-2. 草稿 `examples/<name>.json`（**禁止** `output/`）  
-3. **`python tools/publish-ai-viz-artifact.py --file examples/<name>.json`** → **`ok artifactId=...`**  
-4. 可选：`python tools/list-ai-viz-artifacts.py` 核对  
-5. 汇报：`artifactId` +「已入**平台组件库**」  
-6. **除非用户明确要求上大屏，否则到此结束**
+2. **`python tools/scaffold-custom-viz.py --id <id> --name <中文名> --template scrolling-table`**  
+3. 编辑 `examples/<id>.json` 或 `.bundle.html`（**禁止**从零写 manifest）  
+4. **`python tools/validate-ai-viz-bundle.py --file examples/<id>.json`** → preflight ok  
+5. **`python tools/publish-ai-viz-artifact.py --file examples/<id>.json`** → **`ok artifactId=...`**  
+6. 可选：`python tools/list-ai-viz-artifacts.py` 核对  
+7. 汇报：`artifactId` +「已入**平台组件库**」  
+8. **除非用户明确要求上大屏，否则到此结束**
+
+插件等价：`vitalspan_scaffold_artifact` → `vitalspan_validate_artifact` → `vitalspan_publish_artifact`（v0.2.7+ 内置预检与修复提示）。
+
+完整规则：[guides/CUSTOM-VIZ-AUTHOR.md](./guides/CUSTOM-VIZ-AUTHOR.md)
 
 d3 必须 `host.vsCv.mount(`；render 读 `(p && p.style) || {}`。  
 更新：`publish-ai-viz-artifact.py --artifact-id <uuid>`。

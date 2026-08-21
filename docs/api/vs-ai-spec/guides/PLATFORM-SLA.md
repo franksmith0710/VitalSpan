@@ -97,6 +97,18 @@ manifest `fieldSlots.*.expect` 可选 `date` \| `geo`，编辑器会拒绝类型
 | 禁 `id="root"` / `id="app"` | **422** | `AIVIZ_FORBIDDEN_HOST_ID` |
 | 禁外链 script / 内联事件 / 内联 d3 整库 | **422** | 既有 AIVIZ_* |
 
+**入库 422 速查（Agent 勿盲试 70 步）**
+
+| 错误码 | 常见原因 | 修复 |
+|--------|----------|------|
+| `AIVIZ_INVALID_MANIFEST` | 缺 `fieldSlots` / `styleSchema` | 复制 `examples/scrolling-table.json` manifest 结构 |
+| `…dimensions.min must be >= 1` | 维或指标 `min: 0` | 两者均 `min: 1` 起 |
+| `AIVIZ_FORBIDDEN_HOST_ID` | `id="app"` / `id="root"` | 改用 `id="vs-cv-*"` |
+| `AIVIZ_UNSAFE_CONTENT` | `<script src=`、`onclick=`、`javascript:` | 用 `addEventListener` 或 **CSS `:hover { animation-play-state: paused }`** 做悬停暂停 |
+| `AIVIZ_MOUNT_REQUIRED` | d3 未 `host.vsCv.mount` | 见金样 `scrolling-table.bundle.html` |
+
+悬停暂停推荐 **纯 CSS**（无 JS 事件）：`.wrap.pause-hover:hover .track { animation-play-state: paused }`。
+
 样式合规细则见 [CUSTOM-VIZ-STYLE-COMPLIANCE.md](./CUSTOM-VIZ-STYLE-COMPLIANCE.md)。
 
 ## 老 artifact

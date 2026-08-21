@@ -129,6 +129,18 @@ describe("gisMapStyle", () => {
     expect(water?.paint?.["fill-color"]).toBe(DEFAULT_GIS_WATER_COLOR);
   });
 
+  it("applies basemap layer visibility in style build", () => {
+    const style = buildPmtilesStyle(RESOLVED, "zh-Hans", { basemapLayers: { roads: false } });
+    const roads = style.layers?.find((layer) => layer.id === "roads_major");
+    expect(roads?.layout?.visibility).toBe("none");
+  });
+
+  it("harmonizes land detail colors when custom land is set", () => {
+    const style = buildPmtilesStyle(RESOLVED, "zh-Hans", { landColor: "#101010" });
+    const landcover = style.layers?.find((layer) => layer.id === "landcover");
+    expect(landcover?.paint?.["fill-color"]).toContain("#101010");
+  });
+
   it("resolveProtomapsSpriteUrl swaps flavor suffix", () => {
     expect(
       resolveProtomapsSpriteUrl(
