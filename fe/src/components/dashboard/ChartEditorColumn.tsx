@@ -27,6 +27,7 @@ import { getChartTypeDisplayName } from "@/lib/chartRegistry";
 import { INSPECTOR_CTRL } from "./inspectorCompact";
 import { ChartInspectorTabs } from "./ChartInspectorTabs";
 import { ChartMapDataPanel } from "./ChartMapDataPanel";
+import { ChartGisMapDataPanel } from "./ChartGisMapDataPanel";
 import { ChartDataSlots } from "./ChartDataSlots";
 import { ensureChartSlotCapacity } from "./chartFieldSlots";
 import { useChartInspector } from "./ChartInspectorContext";
@@ -182,12 +183,7 @@ export function ChartEditorColumn({
             {isGeoMapChartType(cfg.chartType) ? (
               <ChartMapDataPanel />
             ) : isGisMapChartType(cfg.chartType) ? (
-              <div className="space-y-2">
-                <p className="text-theme-xs text-gray-500">
-                  底图无需绑定数据集即可出图。以下为可选叠加层：绑定经度、纬度字段后可在底图上显示点位。
-                </p>
-                <ChartDataSlots />
-              </div>
+              <ChartGisMapDataPanel />
             ) : (
               <ChartDataSlots />
             )}

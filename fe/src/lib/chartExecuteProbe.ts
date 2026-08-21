@@ -1,6 +1,7 @@
 import { apiFetch, isEmbedShareContext, resolveDatasetExecutePath } from "@/lib/api";
 import { createConcurrencyLimiter } from "@/lib/asyncConcurrencyLimiter";
 import type { ChartFilterRef, ChartTimeRangeRef, ChartViewConfig, ChartType } from "@/lib/chartViewConfig";
+import { isGisMapChartType } from "@/lib/chartViewConfig";
 import type { SampleDatasourceItem } from "@/lib/mapChartSalesGeo";
 import {
   bindChartConfigDemoDatasource,
@@ -299,6 +300,17 @@ export async function fetchChartExecuteResult(
 export function suggestChartFields(columns: string[], chartType: ChartType) {
   if (columns.length === 0) return { dimensions: [], metrics: [] };
   const { dimensions, metrics } = groupDatasetFields(columns);
+  if (isGisMapChartType(chartType)) {
+    const lng = columns.find((c) => /(?:^|_)(lng|lon|longitude|经度)(?:$|_)/i.test(c));
+    const lat = columns.find((c) => /(?:^|_)(lat|latitude|纬度)(?:$|_)/i.test(c));
+    if (lng && lat) {
+      return {
+        dimensions: [{ field: lng }, { field: lat }],
+        metrics: metrics[0] ? [{ field: metrics[0] }] : [],
+      };
+    }
+    return { dimensions: [], metrics: [] };
+  }
   if (chartType === "table") {
     const dimFields = dimensions.length > 0 ? dimensions : columns;
     return {

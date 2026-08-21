@@ -21,12 +21,14 @@ import {
 import { mountGisGlobeHaloOverlay } from "@/components/charts/engine/maplibre/gisGlobeHalo";
 import { mountGisStarfieldOverlay } from "@/components/charts/engine/maplibre/gisStarfield";
 import { registerGisMapViewLiveControl } from "@/components/charts/engine/maplibre/gisMapViewBridge";
+import { VIZ_WHEEL_ZOOM_SURFACE_ATTR } from "@/components/dashboard/pixelCanvas/pixelCanvasWheelScroll";
 import {
   ensurePmtilesArchiveRegistered,
   loadMapLibreRuntime,
 } from "@/components/charts/engine/maplibre/maplibreBootstrap";
 import { gisMapTransformRequest } from "@/components/charts/engine/maplibre/gisMapTransformRequest";
-import { resolveTileService } from "@/lib/tileServices";
+import { GeoMapOverlayHint } from "@/components/charts/engine/geo/GeoMapOverlayHint";
+import { resolveGisMapDataHint, shouldShowGisMapOverlayHint } from "@/lib/gisMapDataHint";
 import { cn } from "@/lib/utils";
 import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -395,6 +397,14 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   }, [instanceKey]);
 
   const statusHint = pmtilesErrorHint ?? mapErrorHint;
+  const dataHint = useMemo(
+    () => (chartConfig ? resolveGisMapDataHint(chartConfig, viewModel.dataset.columns) : null),
+    [chartConfig, viewModel.dataset.columns],
+  );
+  const showDataOverlayHint =
+    !statusHint &&
+    dataHint != null &&
+    shouldShowGisMapOverlayHint(dataHint, Boolean(overlayGeoJson));
 
   return (
     <div
@@ -405,6 +415,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         ref={shellRef}
         className="relative h-full w-full"
         style={hostBackground ? { background: hostBackground } : undefined}
+        {...(fill ? { [VIZ_WHEEL_ZOOM_SURFACE_ATTR]: "true" } : {})}
       >
         <div
           ref={hostRef}
@@ -423,6 +434,14 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         <div className="pointer-events-none absolute inset-x-0 top-0 bg-black/40 px-2 py-1 text-center text-[10px] text-white">
           正在加载全球底图…
         </div>
+      ) : null}
+      {showDataOverlayHint && dataHint?.overlayMessage ? (
+        <GeoMapOverlayHint
+          data-testid="gis-map-data-overlay-hint"
+          message={dataHint.overlayMessage}
+          tone="warning"
+          className="z-[5]"
+        />
       ) : null}
       {statusHint ? (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[3] bg-red-600/90 px-2 py-1 text-center text-[10px] text-white">

@@ -19,9 +19,15 @@ def pack_dir() -> Path:
 
 
 def resolve_spec_path(pack: Path, file_arg: Path) -> Path:
+    if file_arg.is_absolute() and file_arg.is_file():
+        return file_arg
     path = file_arg if file_arg.is_absolute() else pack / file_arg
     if not path.is_file():
         path = Path.cwd() / file_arg
+    if not path.is_file():
+        ws = os.environ.get("VITALSPAN_WORKSPACE")
+        if ws and not file_arg.is_absolute():
+            path = Path(ws) / file_arg
     if not path.is_file():
         raise SystemExit(f"file not found: {file_arg}")
     return path

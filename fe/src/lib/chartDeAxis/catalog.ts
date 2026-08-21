@@ -242,6 +242,21 @@ const DE_AXIS_CATALOG: Record<string, ChartAxisEntry> = {
       { axisId: "drill", index: 1, legacy: { kind: "dimension", index: 2 } },
     ],
   ),
+  /** 全球 PMTiles 底图 + 可选经纬度散点叠加（见 gisMapOverlay.ts） */
+  "gis-map": entry(
+    [
+      deAxis.xDim("经度 / 维度", { required: false }),
+      deAxis.xExt("纬度 / 维度", { required: false }),
+      deAxis.yMet("数值 / 指标", { required: false, showAggregation: true }),
+      deAxis.drill("标签 / 维度", { required: false }),
+    ],
+    [
+      { axisId: "xAxis", index: 0, legacy: { kind: "dimension", index: 0 } },
+      { axisId: "xAxisExt", index: 0, legacy: { kind: "dimension", index: 1 } },
+      { axisId: "yAxis", index: 0, legacy: { kind: "metric", index: 0 } },
+      { axisId: "drill", index: 0, legacy: { kind: "dimension", index: 2 } },
+    ],
+  ),
   heatmap: entry(
     [deAxis.xDim("横轴 / 维度"), deAxis.xExt("纵轴 / 维度", { required: true }), deAxis.yMet("数值 / 指标")],
     [
