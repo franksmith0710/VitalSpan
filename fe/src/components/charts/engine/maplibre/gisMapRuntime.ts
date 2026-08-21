@@ -1,7 +1,53 @@
+import type { StyleSpecification } from "maplibre-gl";
 import { gisFogToMapLibreSky } from "@/components/charts/engine/maplibre/gisAtmosphereSky";
 import type { GisAtmospherePreset, GisProjectFog, GisProjection } from "@/components/charts/engine/maplibre/gisProject";
 
 type MapLibreMap = import("maplibre-gl").Map;
+
+export type GisMapCamera = {
+  center: [number, number];
+  zoom: number;
+  bearing: number;
+  pitch: number;
+};
+
+export function captureGisMapCamera(map: MapLibreMap): GisMapCamera {
+  const center = map.getCenter();
+  return {
+    center: [center.lng, center.lat],
+    zoom: map.getZoom(),
+    bearing: map.getBearing(),
+    pitch: map.getPitch(),
+  };
+}
+
+export function restoreGisMapCamera(map: MapLibreMap, camera: GisMapCamera) {
+  map.jumpTo({
+    center: camera.center,
+    zoom: camera.zoom,
+    bearing: camera.bearing,
+    pitch: camera.pitch,
+  });
+}
+
+export function applyGisMapStylePreservingCamera(
+  map: MapLibreMap,
+  style: StyleSpecification,
+  onReady?: () => void,
+) {
+  const camera = captureGisMapCamera(map);
+  map.setStyle(style);
+  map.once("style.load", () => {
+    const restore = () => restoreGisMapCamera(map, camera);
+    restore();
+    map.resize();
+    restore();
+    map.once("idle", () => {
+      restore();
+      onReady?.();
+    });
+  });
+}
 
 export type GlobeAtmosphereState = {
   projection?: GisProjection;
@@ -17,15 +63,21 @@ function whenMapStyleReady(map: MapLibreMap, run: () => void) {
   map.once("load", run);
 }
 
-export function applyGlobeAtmosphere(map: MapLibreMap, state: GlobeAtmosphereState) {
+export function applyGlobeAtmosphere(
+  map: MapLibreMap,
+  state: GlobeAtmosphereState,
+  options?: { preserveCamera?: boolean },
+) {
+  const camera = options?.preserveCamera ? captureGisMapCamera(map) : null;
   whenMapStyleReady(map, () => {
     if (state.projection === "globe") {
       map.setProjection({ type: "globe" });
       map.setSky(gisFogToMapLibreSky(state.fog, state.atmospherePreset));
-      return;
+    } else {
+      map.setProjection({ type: "mercator" });
+      map.setSky(undefined);
     }
-    map.setProjection({ type: "mercator" });
-    map.setSky(undefined);
+    if (camera) restoreGisMapCamera(map, camera);
   });
 }
 

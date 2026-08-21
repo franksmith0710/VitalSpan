@@ -2,6 +2,7 @@ import { memo, useEffect, useMemo, useRef, useState } from "react";
 import type { ChartEngineViewProps } from "@/components/charts/engine/types";
 import { buildGisOverlayGeoJson } from "@/components/charts/engine/maplibre/gisMapOverlay";
 import { readGisProject, resolveGisRenderableBasemap, DEFAULT_GIS_GLOBE_VIEW } from "@/components/charts/engine/maplibre/gisProject";
+import { applyBasemapRuntimePatch } from "@/components/charts/engine/maplibre/gisBasemapPalette";
 import {
   appendGisOverlayLayers,
   buildPmtilesStyle,
@@ -9,6 +10,7 @@ import {
 import { applyGisGlobeToStyle, spaceBackdropForPreset } from "@/components/charts/engine/maplibre/gisAtmosphereSky";
 import {
   applyGlobeAtmosphere,
+  applyGisMapStylePreservingCamera,
   mountGisMapControls,
   startGisGlobeAutoRotate,
   syncGisMapView,
@@ -33,6 +35,8 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const shellRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
+  const appliedStyleKeyRef = useRef<string | null>(null);
+  const syncedViewKeyRef = useRef<string | null>(null);
   const project = useMemo(() => readGisProject(chartConfig), [chartConfig]);
   const projectRef = useRef(project);
   projectRef.current = project;
@@ -51,6 +55,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   const tileServiceId = project.tileServiceId;
   const flavor = project.basemapFlavor ?? "light";
   const view = project.view ?? DEFAULT_GIS_GLOBE_VIEW;
+  const mapBootstrapKey = `${tileServiceId}:${project.projection ?? "globe"}`;
 
   useEffect(() => {
     if (!tileServiceId) {
@@ -88,6 +93,17 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     };
   }, [flavor, project.buildings3d, project.labelLang, tileServiceId]);
 
+  const basemapPatchKey = useMemo(
+    () =>
+      JSON.stringify({
+        flavor,
+        landColor: project.landColor,
+        waterColor: project.waterColor,
+        basemapLayers: project.basemapLayers,
+      }),
+    [flavor, project.basemapLayers, project.landColor, project.waterColor],
+  );
+
   const renderBasemap = useMemo(
     () => resolveGisRenderableBasemap(project, Boolean(pmtilesStyle)),
     [pmtilesStyle, project],
@@ -105,6 +121,16 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   const atmosphereKey = useMemo(
     () => `${project.projection ?? "mercator"}:${project.atmospherePreset ?? "day"}`,
     [project.atmospherePreset, project.projection],
+  );
+  const configuredViewKey = useMemo(
+    () =>
+      JSON.stringify({
+        center: view.center,
+        zoom: view.zoom,
+        bearing: view.bearing ?? 0,
+        pitch: view.pitch ?? 0,
+      }),
+    [view.bearing, view.center, view.pitch, view.zoom],
   );
   const hostBackground =
     project.projection === "globe" ? spaceBackdropForPreset(project.atmospherePreset) : undefined;
@@ -132,6 +158,8 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         transformRequest: gisMapTransformRequest,
       });
       mapRef.current = map;
+      appliedStyleKeyRef.current = styleKey;
+      syncedViewKeyRef.current = configuredViewKey;
 
       map.on("error", (event) => {
         if (cancelled) return;
@@ -155,6 +183,12 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         if (cancelled || !map) return;
         setMapErrorHint(null);
         const current = projectRef.current;
+        applyBasemapRuntimePatch(map, {
+          flavor: current.basemapFlavor ?? "light",
+          landColor: current.landColor,
+          waterColor: current.waterColor,
+          basemapLayers: current.basemapLayers,
+        });
         applyGlobeAtmosphere(map, {
           projection: current.projection,
           fog: current.fog,
@@ -173,24 +207,65 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       disposeControls?.();
       mapRef.current?.remove();
       mapRef.current = null;
+      appliedStyleKeyRef.current = null;
+      syncedViewKeyRef.current = null;
     };
-  }, [onPaintReady, project.showControls, renderBasemap, styleKey, atmosphereKey]);
+  }, [mapBootstrapKey, onPaintReady, project.showControls, renderBasemap]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || project.autoRotate) return;
-    syncGisMapView(map, view);
-  }, [project.autoRotate, view]);
+    if (!map || !style) return;
+    if (appliedStyleKeyRef.current === styleKey) return;
+
+    applyGisMapStylePreservingCamera(map, style, () => {
+      applyBasemapRuntimePatch(map, {
+        flavor,
+        landColor: project.landColor,
+        waterColor: project.waterColor,
+        basemapLayers: project.basemapLayers,
+      });
+      map.resize();
+      onPaintReady?.();
+    });
+    appliedStyleKeyRef.current = styleKey;
+  }, [onPaintReady, style, styleKey]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    applyGlobeAtmosphere(map, {
-      projection: project.projection,
-      fog: project.fog,
-      atmospherePreset: project.atmospherePreset,
-    });
-  }, [atmosphereKey, project.atmospherePreset, project.fog, project.projection, styleKey]);
+    const applyPatch = () => {
+      applyBasemapRuntimePatch(map, {
+        flavor,
+        landColor: project.landColor,
+        waterColor: project.waterColor,
+        basemapLayers: project.basemapLayers,
+      });
+    };
+    if (map.isStyleLoaded()) applyPatch();
+    else map.once("load", applyPatch);
+  }, [basemapPatchKey, flavor, project.basemapLayers, project.landColor, project.waterColor, styleKey]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    applyGlobeAtmosphere(
+      map,
+      {
+        projection: project.projection,
+        fog: project.fog,
+        atmospherePreset: project.atmospherePreset,
+      },
+      { preserveCamera: true },
+    );
+  }, [atmosphereKey, project.atmospherePreset, project.fog, project.projection]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || project.autoRotate) return;
+    if (syncedViewKeyRef.current === configuredViewKey) return;
+    syncedViewKeyRef.current = configuredViewKey;
+    syncGisMapView(map, view);
+  }, [configuredViewKey, project.autoRotate, view]);
 
   useEffect(() => {
     const shell = shellRef.current;
@@ -201,14 +276,14 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       project.atmospherePreset,
       project.projection,
     );
-  }, [atmosphereKey, project.atmospherePreset, project.projection, styleKey]);
+  }, [atmosphereKey, project.atmospherePreset, project.projection]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !project.autoRotate || project.projection !== "globe") return;
     const speed = project.autoRotateSpeed ?? DEFAULT_AUTO_ROTATE_SPEED;
     return startGisGlobeAutoRotate(map, speed);
-  }, [project.autoRotate, project.autoRotateSpeed, project.projection, styleKey]);
+  }, [project.autoRotate, project.autoRotateSpeed, project.projection]);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -218,7 +293,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
     observer?.observe(host);
     return () => observer?.disconnect();
-  }, [styleKey]);
+  }, []);
 
   const statusHint = pmtilesErrorHint ?? mapErrorHint;
 
@@ -237,7 +312,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
           data-testid="gis-map-view"
           data-basemap={renderBasemap ?? "pending"}
           data-requested-basemap="pmtiles"
-          data-atmosphere={project.atmospherePreset ?? "deep-space"}
+          data-atmosphere={project.atmospherePreset ?? "night"}
           data-projection={project.projection ?? "globe"}
           className="relative z-[1] h-full w-full"
           role="img"

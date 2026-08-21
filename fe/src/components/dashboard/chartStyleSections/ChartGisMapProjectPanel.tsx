@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useChartInspector } from "@/components/dashboard/chartInspectorContext";
+import { ChartPaletteColorSwatch } from "@/components/dashboard/chartPaletteShared";
+import { defaultBasemapPaletteForFlavor } from "@/components/charts/engine/maplibre/gisBasemapPalette";
 import {
   ChartInspectorSection,
   INSPECTOR_CTRL,
@@ -19,6 +21,7 @@ import {
 import {
   DEFAULT_GIS_GLOBE_VIEW,
   DEFAULT_PMTILES_TILE_SERVICE_ID,
+  GIS_ATMOSPHERE_PRESET_ORDER,
   GIS_ATMOSPHERE_PRESETS,
   GIS_BASEMAP_FLAVORS,
   readGisProject,
@@ -39,14 +42,17 @@ const FLAVOR_LABELS: Record<GisBasemapFlavor, string> = {
 
 const ATMOSPHERE_LABELS: Record<GisAtmospherePreset, string> = {
   day: "白昼",
-  dusk: "黄昏（稀疏星点）",
-  "deep-space": "深空星空",
+  night: "黑夜",
 };
 
 export function ChartGisMapProjectPanel() {
   const { cfg, onChange } = useChartInspector();
   const project = readGisProject(cfg);
   const view = project.view ?? DEFAULT_GIS_GLOBE_VIEW;
+  const flavorPalette = useMemo(
+    () => defaultBasemapPaletteForFlavor(project.basemapFlavor ?? "light"),
+    [project.basemapFlavor],
+  );
   const {
     data: tileServices = [],
     isError: tileServicesError,
@@ -171,6 +177,64 @@ export function ChartGisMapProjectPanel() {
                 ))}
               </SelectContent>
             </Select>
+            <p className="text-theme-xs text-gray-500">
+              预设含道路、边界、标注等完整图层；下方可单独改海洋/陆地色或隐藏部分图层。
+            </p>
+          </div>
+
+          <div className="grid gap-2">
+            <div className="flex min-w-0 items-center gap-2">
+              <ChartPaletteColorSwatch
+                value={project.landColor ?? flavorPalette.landColor}
+                aria-label="陆地颜色"
+                onChange={(landColor) => patchProject({ landColor })}
+              />
+              <Label className="text-theme-xs text-gray-500">陆地颜色</Label>
+            </div>
+            <div className="flex min-w-0 items-center gap-2">
+              <ChartPaletteColorSwatch
+                value={project.waterColor ?? flavorPalette.waterColor}
+                aria-label="海洋颜色"
+                onChange={(waterColor) => patchProject({ waterColor })}
+              />
+              <Label className="text-theme-xs text-gray-500">海洋颜色</Label>
+            </div>
+          </div>
+          {project.landColor || project.waterColor ? (
+            <button
+              type="button"
+              className="text-theme-xs text-brand-500 hover:underline"
+              onClick={() => patchProject({ landColor: undefined, waterColor: undefined })}
+            >
+              恢复预设配色
+            </button>
+          ) : null}
+
+          <div className="grid gap-2 rounded-md border border-gray-200 p-2 dark:border-gray-800">
+            <Label className="text-theme-xs text-gray-500">底图图层</Label>
+            {(
+              [
+                ["roads", "道路"],
+                ["labels", "标注"],
+                ["boundaries", "边界"],
+                ["landDetail", "陆地细节"],
+              ] as const
+            ).map(([key, label]) => (
+              <label key={key} className="flex items-center gap-2 text-theme-xs text-gray-700 dark:text-gray-300">
+                <Checkbox
+                  checked={project.basemapLayers?.[key] !== false}
+                  onCheckedChange={(checked) => {
+                    const next = { ...project.basemapLayers };
+                    if (checked === true) delete next[key];
+                    else next[key] = false;
+                    patchProject({
+                      basemapLayers: Object.keys(next).length > 0 ? next : undefined,
+                    });
+                  }}
+                />
+                {label}
+              </label>
+            ))}
           </div>
 
           <div className="grid gap-1.5">
@@ -195,7 +259,7 @@ export function ChartGisMapProjectPanel() {
               value={project.projection ?? "mercator"}
               onValueChange={(projection) => {
                 if (projection === "globe") {
-                  const preset = project.atmospherePreset ?? "deep-space";
+                  const preset = project.atmospherePreset ?? "night";
                   patchProject({
                     projection: "globe",
                     atmospherePreset: preset,
@@ -221,14 +285,14 @@ export function ChartGisMapProjectPanel() {
             <div className="grid gap-1.5">
               <Label className="text-theme-xs text-gray-500">大气预设</Label>
               <Select
-                value={project.atmospherePreset ?? "deep-space"}
+                value={project.atmospherePreset ?? "night"}
                 onValueChange={(preset) => applyAtmospherePreset(preset as GisAtmospherePreset)}
               >
                 <SelectTrigger className={INSPECTOR_CTRL} aria-label="大气预设">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {(Object.keys(ATMOSPHERE_LABELS) as GisAtmospherePreset[]).map((preset) => (
+                  {GIS_ATMOSPHERE_PRESET_ORDER.map((preset) => (
                     <SelectItem key={preset} value={preset}>
                       {ATMOSPHERE_LABELS[preset]}
                     </SelectItem>
@@ -236,7 +300,7 @@ export function ChartGisMapProjectPanel() {
                 </SelectContent>
               </Select>
               <p className="text-theme-xs text-gray-500">
-                深空/黄昏显示星空与流星（参考 GeoLibre 大气效果）；白昼无星点。
+                黑夜显示星空与流星；白昼无星点。
               </p>
             </div>
           ) : null}

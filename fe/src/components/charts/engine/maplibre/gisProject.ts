@@ -1,11 +1,12 @@
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import { normalizeBasemapHexColor } from "@/components/charts/engine/maplibre/gisBasemapPalette";
 
 /** gis-map 仅支持管理员登记的全球 PMTiles 外部底图。 */
 export type GisBasemapId = "pmtiles";
 export type GisLabelLang = "zh-Hans" | "en";
 export type GisProjection = "mercator" | "globe";
 export type GisBasemapFlavor = "light" | "dark" | "grayscale" | "white" | "black";
-export type GisAtmospherePreset = "day" | "dusk" | "deep-space";
+export type GisAtmospherePreset = "day" | "night";
 
 export type GisProjectView = {
   center: [number, number];
@@ -22,11 +23,28 @@ export type GisProjectFog = {
   "star-intensity"?: number;
 };
 
+export type GisBasemapLayerVisibility = {
+  /** 道路网络（含铁路、桥梁、隧道） */
+  roads?: boolean;
+  /** 地名、道路名、POI 等文字标注 */
+  labels?: boolean;
+  /** 国界/省界等边界线 */
+  boundaries?: boolean;
+  /** 绿地、工业用地等 landcover/landuse 细分 */
+  landDetail?: boolean;
+};
+
 export type GisProject = {
   basemap: GisBasemapId;
   tileServiceId?: string;
   labelLang?: GisLabelLang;
   basemapFlavor?: GisBasemapFlavor;
+  /** 覆写 Protomaps 陆地底色（earth 层），如 #e2dfda */
+  landColor?: string;
+  /** 覆写 Protomaps 海洋/水体色（water 层），如 #80deea */
+  waterColor?: string;
+  /** 控制底图矢量图层显隐；缺省均为显示 */
+  basemapLayers?: GisBasemapLayerVisibility;
   projection?: GisProjection;
   atmospherePreset?: GisAtmospherePreset;
   fog?: GisProjectFog;
@@ -46,7 +64,7 @@ export const DEFAULT_PMTILES_TILE_SERVICE_ID = "planet-z15";
 
 export const GIS_BASEMAP_FLAVORS: GisBasemapFlavor[] = ["light", "dark", "grayscale", "white", "black"];
 
-/** MapLibre 球面地球默认大气（深空星空，接近 GeoLibre 球面观感）。 */
+/** MapLibre 球面地球默认大气（黑夜星空，接近 GeoLibre 球面观感）。 */
 export const DEFAULT_GLOBE_FOG: GisProjectFog = {
   color: "rgb(186, 210, 235)",
   "high-color": "rgb(36, 92, 223)",
@@ -63,15 +81,10 @@ export const GIS_ATMOSPHERE_PRESETS: Record<GisAtmospherePreset, GisProjectFog> 
     "space-color": "rgb(186, 210, 235)",
     "star-intensity": 0,
   },
-  dusk: {
-    color: "rgb(242, 192, 130)",
-    "high-color": "rgb(220, 120, 60)",
-    "horizon-blend": 0.08,
-    "space-color": "rgb(30, 20, 40)",
-    "star-intensity": 0.15,
-  },
-  "deep-space": DEFAULT_GLOBE_FOG,
+  night: DEFAULT_GLOBE_FOG,
 };
+
+export const GIS_ATMOSPHERE_PRESET_ORDER: GisAtmospherePreset[] = ["day", "night"];
 
 /** 球面地球默认远视图（亚洲—印度洋半球，接近 GeoLibre 初始观感）。 */
 export const DEFAULT_GIS_GLOBE_VIEW: GisProjectView = {
@@ -87,8 +100,8 @@ export const DEFAULT_GIS_PROJECT: GisProject = {
   labelLang: "zh-Hans",
   basemapFlavor: "light",
   projection: "globe",
-  atmospherePreset: "deep-space",
-  fog: GIS_ATMOSPHERE_PRESETS["deep-space"],
+  atmospherePreset: "night",
+  fog: GIS_ATMOSPHERE_PRESETS.night,
   view: DEFAULT_GIS_GLOBE_VIEW,
 };
 
@@ -148,11 +161,17 @@ function normalizeGisProject(raw: unknown): GisProject {
     (projection === "globe" ? DEFAULT_GIS_GLOBE_VIEW : DEFAULT_GIS_PROJECT.view);
   const fog = resolveGisFog(projection, atmospherePreset);
   const autoRotateSpeed = Number(candidate.autoRotateSpeed);
+  const landColor = normalizeBasemapHexColor(candidate.landColor);
+  const waterColor = normalizeBasemapHexColor(candidate.waterColor);
+  const basemapLayers = normalizeBasemapLayerVisibility(candidate.basemapLayers);
   return {
     basemap: "pmtiles",
     tileServiceId,
     labelLang,
     basemapFlavor,
+    landColor,
+    waterColor,
+    basemapLayers,
     projection,
     atmospherePreset: projection === "globe" ? atmospherePreset : undefined,
     fog,
@@ -177,9 +196,21 @@ function normalizeBasemapFlavor(input: unknown): GisBasemapFlavor {
   return DEFAULT_GIS_PROJECT.basemapFlavor ?? "light";
 }
 
+function normalizeBasemapLayerVisibility(input: unknown): GisBasemapLayerVisibility | undefined {
+  if (!input || typeof input !== "object") return undefined;
+  const raw = input as GisBasemapLayerVisibility;
+  const next: GisBasemapLayerVisibility = {};
+  if (raw.roads === false) next.roads = false;
+  if (raw.labels === false) next.labels = false;
+  if (raw.boundaries === false) next.boundaries = false;
+  if (raw.landDetail === false) next.landDetail = false;
+  return Object.keys(next).length > 0 ? next : undefined;
+}
+
 function normalizeAtmospherePreset(input: unknown): GisAtmospherePreset {
-  if (input === "day" || input === "dusk" || input === "deep-space") return input;
-  return DEFAULT_GIS_PROJECT.atmospherePreset ?? "deep-space";
+  if (input === "day" || input === "night") return input;
+  if (input === "dusk" || input === "deep-space") return "night";
+  return DEFAULT_GIS_PROJECT.atmospherePreset ?? "night";
 }
 
 function normalizeGisView(input: unknown): GisProjectView | undefined {

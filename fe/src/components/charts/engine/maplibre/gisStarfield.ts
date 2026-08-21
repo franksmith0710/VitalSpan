@@ -21,14 +21,12 @@ type Star = {
 };
 
 export function resolveGisStarIntensity(preset: GisAtmospherePreset | undefined): number {
-  if (preset === "deep-space") return 1;
-  if (preset === "dusk") return 0.45;
+  if (preset === "night") return 1;
   return 0;
 }
 
 export function resolveGisMeteorIntensity(preset: GisAtmospherePreset | undefined): number {
-  if (preset === "deep-space") return 1;
-  if (preset === "dusk") return 0.35;
+  if (preset === "night") return 1;
   return 0;
 }
 

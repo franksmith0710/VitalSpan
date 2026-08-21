@@ -15,16 +15,7 @@ const SKY_BY_PRESET: Record<GisAtmospherePreset, SkySpecification> = {
     "fog-ground-blend": 0,
     "atmosphere-blend": 0.72,
   },
-  dusk: {
-    "sky-color": "#120818",
-    "horizon-color": "#e87830",
-    "sky-horizon-blend": 0.22,
-    "fog-color": "#f0a060",
-    "horizon-fog-blend": 0.35,
-    "fog-ground-blend": 0,
-    "atmosphere-blend": 0.95,
-  },
-  "deep-space": {
+  night: {
     "sky-color": "#03040c",
     "horizon-color": "#1e4a9a",
     "sky-horizon-blend": 0.18,
@@ -42,8 +33,7 @@ export function gisFogToMapLibreSky(
 ): SkySpecification {
   if (preset) return { ...SKY_BY_PRESET[preset] };
   const starIntensity = fog?.["star-intensity"] ?? 0;
-  if (starIntensity > 0.4) return { ...SKY_BY_PRESET["deep-space"] };
-  if (starIntensity > 0) return { ...SKY_BY_PRESET.dusk };
+  if (starIntensity > 0) return { ...SKY_BY_PRESET.night };
   return { ...SKY_BY_PRESET.day };
 }
 
@@ -65,8 +55,7 @@ export function applyGisGlobeToStyle(
 }
 
 export function spaceBackdropForPreset(preset: GisAtmospherePreset | undefined): string | undefined {
-  if (preset === "deep-space") return "#03040c";
-  if (preset === "dusk") return "#0a0612";
+  if (preset === "night") return "#03040c";
   if (preset === "day") return "#b8dcf8";
   return undefined;
 }

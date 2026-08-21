@@ -8,7 +8,7 @@
       "labelLang": "zh-Hans",
       "basemapFlavor": "light",
       "projection": "globe",
-      "atmospherePreset": "deep-space",
+      "atmospherePreset": "night",
       "view": {
         "center": [100.0, 28.0],
         "zoom": 1.5,

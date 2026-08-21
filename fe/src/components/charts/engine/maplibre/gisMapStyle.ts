@@ -1,6 +1,13 @@
-import { layers, namedFlavor } from "@protomaps/basemaps";
+import { layers } from "@protomaps/basemaps";
 import type { StyleSpecification } from "maplibre-gl";
-import type { GisBasemapFlavor, GisLabelLang } from "@/components/charts/engine/maplibre/gisProject";
+import {
+  buildBasemapFlavor,
+} from "@/components/charts/engine/maplibre/gisBasemapPalette";
+import type {
+  GisBasemapFlavor,
+  GisBasemapLayerVisibility,
+  GisLabelLang,
+} from "@/components/charts/engine/maplibre/gisProject";
 import type { TileServiceResolve } from "@/lib/tileServices";
 
 export const GIS_OVERLAY_SOURCE_ID = "vs-gis-overlay";
@@ -43,6 +50,9 @@ export function resolveProtomapsSpriteUrl(
 export type BuildPmtilesStyleOptions = {
   flavor?: GisBasemapFlavor;
   buildings3d?: boolean;
+  landColor?: string;
+  waterColor?: string;
+  basemapLayers?: GisBasemapLayerVisibility;
 };
 
 export function buildPmtilesStyle(
@@ -51,8 +61,12 @@ export function buildPmtilesStyle(
   options: BuildPmtilesStyleOptions = {},
 ): StyleSpecification {
   const flavorName = options.flavor ?? "light";
-  const flavor = namedFlavor(flavorName);
+  const flavor = buildBasemapFlavor(flavorName, {
+    landColor: options.landColor,
+    waterColor: options.waterColor,
+  });
   const sprite = resolveProtomapsSpriteUrl(flavorName, resolved.spriteUrl);
+  const baseLayers = layers(PMTILES_SOURCE_ID, flavor, { lang: labelLang });
   const style: StyleSpecification = {
     version: 8,
     glyphs: resolved.glyphsUrl,
@@ -64,7 +78,7 @@ export function buildPmtilesStyle(
         attribution: resolved.name,
       },
     },
-    layers: layers(PMTILES_SOURCE_ID, flavor, { lang: labelLang }),
+    layers: baseLayers,
   };
   return options.buildings3d ? appendBuildings3dLayer(style, flavorName) : style;
 }

@@ -12,6 +12,7 @@ import {
   PMTILES_SOURCE_ID,
   resolveProtomapsSpriteUrl,
 } from "@/components/charts/engine/maplibre/gisMapStyle";
+import { DEFAULT_GIS_WATER_COLOR } from "@/components/charts/engine/maplibre/gisBasemapPalette";
 import { gisMapTransformRequest } from "@/components/charts/engine/maplibre/gisMapTransformRequest";
 
 const RESOLVED = {
@@ -55,21 +56,29 @@ describe("gisProject", () => {
       nativeBody: {
         gisProject: {
           projection: "globe",
-          atmospherePreset: "deep-space",
+          atmospherePreset: "night",
           fog: GIS_ATMOSPHERE_PRESETS.day,
         },
       },
     });
-    expect(project.fog).toEqual(GIS_ATMOSPHERE_PRESETS["deep-space"]);
+    expect(project.fog).toEqual(GIS_ATMOSPHERE_PRESETS.night);
   });
 
-  it("defaults globe atmosphere to deep-space", () => {
+  it("defaults globe atmosphere to night", () => {
     const project = readGisProject({
       chartType: "gis-map",
       nativeBody: { gisProject: { projection: "globe" } },
     });
-    expect(project.fog).toEqual(GIS_ATMOSPHERE_PRESETS["deep-space"]);
-    expect(project.atmospherePreset).toBe("deep-space");
+    expect(project.fog).toEqual(GIS_ATMOSPHERE_PRESETS.night);
+    expect(project.atmospherePreset).toBe("night");
+  });
+
+  it("migrates legacy deep-space preset to night", () => {
+    const project = readGisProject({
+      chartType: "gis-map",
+      nativeBody: { gisProject: { projection: "globe", atmospherePreset: "deep-space" } },
+    });
+    expect(project.atmospherePreset).toBe("night");
   });
 });
 
@@ -100,6 +109,23 @@ describe("gisMapStyle", () => {
     expect(
       normalizeProtomapsSpriteUrl("https://protomaps.github.io/basemaps-assets/v4/light-sprite"),
     ).toContain("/light");
+  });
+
+  it("applies custom land and water colors", () => {
+    const style = buildPmtilesStyle(RESOLVED, "zh-Hans", {
+      landColor: "#1a2b3c",
+      waterColor: "#004466",
+    });
+    const earth = style.layers?.find((layer) => layer.id === "earth");
+    const water = style.layers?.find((layer) => layer.id === "water");
+    expect(earth?.paint?.["fill-color"]).toBe("#1a2b3c");
+    expect(water?.paint?.["fill-color"]).toBe("#004466");
+  });
+
+  it("defaults ocean color to platform blue", () => {
+    const style = buildPmtilesStyle(RESOLVED, "zh-Hans");
+    const water = style.layers?.find((layer) => layer.id === "water");
+    expect(water?.paint?.["fill-color"]).toBe(DEFAULT_GIS_WATER_COLOR);
   });
 
   it("resolveProtomapsSpriteUrl swaps flavor suffix", () => {
