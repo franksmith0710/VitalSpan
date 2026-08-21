@@ -161,7 +161,6 @@ export function ChartGisMapProjectPanel() {
     <ChartInspectorSection
       title="GIS 底图"
       hint={GIS_SECTION_HINT}
-      defaultOpen
       data-testid="chart-gis-map-project-panel"
     >
       <div className={INSPECTOR_SECTION_GAP}>

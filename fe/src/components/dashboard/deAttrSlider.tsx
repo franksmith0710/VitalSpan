@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { IconButton } from "@/components/ui/button";
-import { InspectorFieldLabel, InspectorHintTip } from "./inspectorCompact";
+import { InspectorFieldLabel } from "./inspectorCompact";
 
 function sliderPercent(value: number, min: number, max: number): number {
   if (max <= min) return 0;

@@ -9,7 +9,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 /** 看板 chart-edit 左列（~252px）/ 右列（~180px）紧凑密度，对标 DataEase editor-light */
@@ -40,25 +40,28 @@ export function InspectorHintTip({
   "aria-label"?: string;
 }) {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            "inline-flex size-4 shrink-0 items-center justify-center rounded-full text-gray-400",
-            "hover:text-gray-600 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30",
-            "dark:text-gray-500 dark:hover:text-gray-300",
-            className,
-          )}
-          aria-label={ariaLabel}
-        >
-          <CircleAlert className="size-3.5" aria-hidden />
-        </button>
-      </TooltipTrigger>
-      <TooltipContent side={side} className="max-w-[240px] text-left leading-relaxed">
-        {text}
-      </TooltipContent>
-    </Tooltip>
+    <TooltipProvider delayDuration={250}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            className={cn(
+              "inline-flex size-4 shrink-0 items-center justify-center rounded-full text-gray-400",
+              "hover:text-gray-600 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30",
+              "dark:text-gray-500 dark:hover:text-gray-300",
+              className,
+            )}
+            aria-label={ariaLabel}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <CircleAlert className="size-3.5" aria-hidden />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side={side} className="max-w-[240px] text-left leading-relaxed">
+          {text}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 
@@ -220,15 +223,15 @@ export function ChartInspectorSection({
             aria-hidden
           />
           <span className="min-w-0 truncate">{title}</span>
-          {hint ? (
-            <InspectorHintTip
-              text={hint}
-              className="shrink-0"
-              side="left"
-              aria-label={`${title}说明`}
-            />
-          ) : null}
         </CollapsibleTrigger>
+        {hint ? (
+          <InspectorHintTip
+            text={hint}
+            className="shrink-0"
+            side="left"
+            aria-label={`${title}说明`}
+          />
+        ) : null}
         {action ? (
           <div
             className="flex shrink-0 items-center pr-0.5"

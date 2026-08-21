@@ -1,15 +1,17 @@
 import type { ReactNode } from "react";
 import { DeSegmentGroup, type DeSegmentOption } from "./dashboardInspectorUi";
-import { INSPECTOR_CTRL } from "./inspectorCompact";
+import { INSPECTOR_CTRL, InspectorFieldLabel } from "./inspectorCompact";
 import { cn } from "@/lib/utils";
 
 /** chart-edit 窄栏（216px）字段行：对标 DE attr-style 分隔线密度 */
 export function ChartDeAttrField({
   label,
+  hint,
   children,
   className,
 }: {
   label: string;
+  hint?: string;
   children: ReactNode;
   className?: string;
 }) {
@@ -20,7 +22,13 @@ export function ChartDeAttrField({
         className,
       )}
     >
-      <p className="mb-1.5 text-[11px] font-medium text-gray-600 dark:text-gray-300">{label}</p>
+      {hint ? (
+        <div className="mb-1.5">
+          <InspectorFieldLabel label={label} hint={hint} />
+        </div>
+      ) : (
+        <p className="mb-1.5 text-[11px] font-medium text-gray-600 dark:text-gray-300">{label}</p>
+      )}
       {children}
     </div>
   );

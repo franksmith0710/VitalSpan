@@ -102,7 +102,6 @@ import {
 import { DeAttrSliderField } from "./deAttrSlider";
 import {
   ChartInspectorSection,
-  INSPECTOR_HINT,
   INSPECTOR_SECTION_GAP,
   INSPECTOR_SELECT_TRIGGER,
   InspectorFieldRow,
@@ -194,8 +193,18 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
   const pointPillarOn = pointEffectsOn && geo3d.pointPillar !== false;
   const floatingLabelsOn = pointEffectsOn && geo3d.floatingLabels !== false;
 
+  const sectionHint = isMap
+    ? is3d
+      ? "离线中国 3D：可选卫星/科技/经典/简洁样式；双击下钻。"
+      : "离线中国地图：滚轮缩放与拖拽平移；配置「地区/维度」「数据/指标」与「钻取/维度」，预览态双击下钻。"
+    : "对标 DataEase 分类热力图：横轴、纵轴各一维度，指标决定色深；重复单元格自动求和。";
+
   return (
-    <ChartInspectorSection title={isMap ? "地图样式" : "热力图样式"} data-testid="chart-geo-style">
+    <ChartInspectorSection
+      title={isMap ? "地图样式" : "热力图样式"}
+      hint={sectionHint}
+      data-testid="chart-geo-style"
+    >
       <div className={INSPECTOR_SECTION_GAP}>
         {isMap ? (
           <InspectorSwitchRow
@@ -249,6 +258,7 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
           <>
             <InspectorSwitchRow
               label="行政区边界"
+              hint="边界随下钻层级切换：全国显示省界，省级显示市界，市级显示区县界。"
               checked={showRegionBorder}
               onCheckedChange={(next) => patchGeo({ showRegionBorder: next })}
             />
@@ -292,9 +302,6 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                 />
               </>
             ) : null}
-            <p className={INSPECTOR_HINT}>
-              边界随下钻层级切换：全国显示省界，省级显示市界，市级显示区县界。
-            </p>
           </>
         ) : null}
         {is3d ? (
@@ -304,7 +311,10 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
               checked={geo.visualMap === true}
               onCheckedChange={(visualMap) => patchGeo({ visualMap })}
             />
-            <InspectorFieldRow label="3D 样式">
+            <InspectorFieldRow
+              label="3D 样式"
+              hint={GEO3D_STYLE_PRESETS.find((p) => p.value === resolveGeo3dStylePreset(geo3d))?.hint}
+            >
               <Select
                 value={resolveGeo3dStylePreset(geo3d)}
                 onValueChange={(preset) =>
@@ -323,9 +333,6 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                 </SelectContent>
               </Select>
             </InspectorFieldRow>
-            <p className={INSPECTOR_HINT}>
-              {GEO3D_STYLE_PRESETS.find((p) => p.value === resolveGeo3dStylePreset(geo3d))?.hint}
-            </p>
             <DeAttrSliderField
               label="底板厚度"
               compact
@@ -792,15 +799,13 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                     />
                     <InspectorInlineColorRow
                       label="热力乘色"
+                      hint="贴地热力按数据行地区/经纬度落点（同位置自动求和）；光柱与浮动标签仍按当前地图层级行政区显示。"
                       value={geo3d.heatBlobColor ?? DEFAULT_HEAT_BLOB_COLOR}
                       fallbackValue={DEFAULT_HEAT_BLOB_COLOR}
                       allowClear={hasCustomHeatBlobColor(geo3d)}
                       swatches={WIDGET_BORDER_RECOMMENDED}
                       onChange={(next) => patchGeo3dColor("heatBlobColor", { heatBlobColor: next })}
                     />
-                    <p className={INSPECTOR_HINT}>
-                      贴地热力按数据行地区/经纬度落点（同位置自动求和）；光柱与浮动标签仍按当前地图层级行政区显示。
-                    </p>
                   </>
                 ) : null}
                 <InspectorSwitchRow
@@ -941,13 +946,6 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
             ) : null}
           </>
         ) : null}
-        <p className={INSPECTOR_HINT}>
-          {isMap
-            ? is3d
-              ? "离线中国 3D：可选卫星/科技/经典/简洁样式；双击下钻。"
-              : "离线中国地图：滚轮缩放与拖拽平移；配置「地区/维度」「数据/指标」与「钻取/维度」，预览态双击地图下钻。"
-            : "对标 DataEase 分类热力图：横轴、纵轴各一维度，指标决定色深；重复单元格自动求和。"}
-        </p>
       </div>
     </ChartInspectorSection>
   );

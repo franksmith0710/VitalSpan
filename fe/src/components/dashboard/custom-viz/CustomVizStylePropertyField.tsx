@@ -9,7 +9,7 @@ import {
 import { TEXT_COLOR_RECOMMENDED } from "@/components/dashboard/dashboardStyleConfig";
 import { ChartDeAttrField, CHART_DE_INPUT } from "../chartInspectorDeFields";
 import { ChartDeSliderField } from "../deAttrSlider";
-import { INSPECTOR_HINT, INSPECTOR_SELECT_TRIGGER, InspectorInlineColorRow, InspectorSwitchRow } from "../inspectorCompact";
+import { INSPECTOR_SELECT_TRIGGER, InspectorInlineColorRow, InspectorSwitchRow } from "../inspectorCompact";
 import type { StyleProperty } from "./customVizStyleSchema";
 import { resolveCustomVizStylePropertyLabel } from "./customVizManifestLabels";
 
@@ -38,42 +38,36 @@ export function CustomVizStylePropertyField({
   const current = value[propKey];
   const hint = prop.description?.trim();
 
-  const hintNode = hint ? <p className={INSPECTOR_HINT}>{hint}</p> : null;
-
   if (prop.type === "boolean") {
     return (
-      <div className="border-b border-gray-100 py-2 last:border-b-0 dark:border-white/[0.06]">
-        <InspectorSwitchRow
-          label={label}
-          checked={readBoolean(current, false)}
-          onCheckedChange={(checked) => onChange({ ...value, [propKey]: checked })}
-        />
-        {hintNode}
-      </div>
+      <InspectorSwitchRow
+        label={label}
+        hint={hint}
+        checked={readBoolean(current, false)}
+        onCheckedChange={(checked) => onChange({ ...value, [propKey]: checked })}
+      />
     );
   }
 
   if (prop.format === "color" || (prop.type === "string" && prop.format === "color")) {
     const color = typeof current === "string" && current ? current : "#2563eb";
     return (
-      <div>
-        <InspectorInlineColorRow
-          label={label}
-          value={color}
-          swatches={TEXT_COLOR_RECOMMENDED}
-          allowClear={false}
-          fallbackValue="#2563eb"
-          onChange={(next) => onChange({ ...value, [propKey]: next ?? "#2563eb" })}
-        />
-        {hintNode}
-      </div>
+      <InspectorInlineColorRow
+        label={label}
+        hint={hint}
+        value={color}
+        swatches={TEXT_COLOR_RECOMMENDED}
+        allowClear={false}
+        fallbackValue="#2563eb"
+        onChange={(next) => onChange({ ...value, [propKey]: next ?? "#2563eb" })}
+      />
     );
   }
 
   if (Array.isArray(prop.enum) && prop.enum.length > 0) {
     const selected = typeof current === "string" ? current : prop.enum[0];
     return (
-      <ChartDeAttrField label={label}>
+      <ChartDeAttrField label={label} hint={hint}>
         <Select
           value={selected}
           onValueChange={(next) => onChange({ ...value, [propKey]: next })}
@@ -89,7 +83,6 @@ export function CustomVizStylePropertyField({
             ))}
           </SelectContent>
         </Select>
-        {hintNode}
       </ChartDeAttrField>
     );
   }
@@ -101,31 +94,28 @@ export function CustomVizStylePropertyField({
     const step = typeof prop.step === "number" ? prop.step : isOpacity ? 1 : 1;
     const fallback = readNumber(current, min);
     return (
-      <div>
-        <ChartDeSliderField
-          label={label}
-          value={readNumber(current, fallback)}
-          fallback={fallback}
-          min={min}
-          max={max}
-          step={step}
-          unit={isOpacity ? "%" : undefined}
-          layout="stacked"
-          onChange={(next) => onChange({ ...value, [propKey]: next })}
-        />
-        {hintNode}
-      </div>
+      <ChartDeSliderField
+        label={label}
+        hint={hint}
+        value={readNumber(current, fallback)}
+        fallback={fallback}
+        min={min}
+        max={max}
+        step={step}
+        unit={isOpacity ? "%" : undefined}
+        layout="stacked"
+        onChange={(next) => onChange({ ...value, [propKey]: next })}
+      />
     );
   }
 
   return (
-    <ChartDeAttrField label={label}>
+    <ChartDeAttrField label={label} hint={hint}>
       <Input
         className={CHART_DE_INPUT}
         value={current != null ? String(current) : ""}
         onChange={(e) => onChange({ ...value, [propKey]: e.target.value })}
       />
-      {hintNode}
     </ChartDeAttrField>
   );
 }

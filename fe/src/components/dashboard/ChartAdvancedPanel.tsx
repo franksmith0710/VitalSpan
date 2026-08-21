@@ -59,6 +59,7 @@ export function ChartAdvancedPanel(_props: ChartAdvancedPanelProps) {
       list.push({
         id: "guide",
         title: "辅助线",
+        hint: "添加固定值参考线，用于标注目标或阈值。",
         defaultOpen: markLines.length > 0,
         badge: markLines.filter((line) => line.enabled).length,
         content: <ChartAdvancedMarkLinesSection />,
@@ -69,6 +70,7 @@ export function ChartAdvancedPanel(_props: ChartAdvancedPanelProps) {
       list.push({
         id: "conditional",
         title: "条件样式",
+        hint: "按度量值阈值高亮柱/线段颜色（自上而下匹配首条规则）。柱线组合图可能仅作用于部分系列，请预览确认。",
         defaultOpen: rules.length > 0,
         badge: rules.filter((rule) => rule.enabled).length,
         content: <ChartAdvancedConditionalSection />,

@@ -44,11 +44,11 @@ import { DeAttrSliderField } from "./deAttrSlider";
 import { WIDGET_BORDER_RECOMMENDED } from "./dashboardStyleConfig";
 import {
   INSPECTOR_CTRL,
-  INSPECTOR_HINT,
   INSPECTOR_NESTED_CARD,
   INSPECTOR_SECTION_GAP,
   INSPECTOR_SELECT,
   InspectorFieldRow,
+  InspectorHintTip,
   InspectorInlineColorRow,
   InspectorSwitchRow,
 } from "./inspectorCompact";
@@ -168,9 +168,6 @@ export function ChartAdvancedMarkLinesSection() {
 
   return (
     <div className={INSPECTOR_SECTION_GAP}>
-      {lines.length === 0 ? (
-        <p className={INSPECTOR_HINT}>添加固定值参考线，用于标注目标或阈值</p>
-      ) : null}
       {lines.map((line) => (
         <MarkLineRow
           key={line.id}
@@ -282,7 +279,6 @@ function ConditionalRuleRow({
 
 export function ChartAdvancedConditionalSection() {
   const { cfg, onChange } = useChartInspector();
-  const caps = chartInspectorCapabilities(cfg.chartType);
   const rules = readChartConditionalRules(cfg);
 
   const setRules = (next: ChartConditionalRule[]) =>
@@ -290,12 +286,6 @@ export function ChartAdvancedConditionalSection() {
 
   return (
     <div className={INSPECTOR_SECTION_GAP}>
-      <p className={INSPECTOR_HINT}>按度量值阈值高亮柱/线段颜色（自上而下匹配首条规则）</p>
-      {caps.conditionalPartial ? (
-        <p className={INSPECTOR_HINT}>
-          柱线组合图条件色可能仅作用于部分系列，请预览确认效果。
-        </p>
-      ) : null}
       {rules.map((rule) => (
         <ConditionalRuleRow
           key={rule.id}
@@ -378,12 +368,10 @@ export function ChartAdvancedMapLinkageSection() {
             />
           </InspectorFieldRow>
           <fieldset className="space-y-2">
-            <legend className="text-theme-xs font-medium text-gray-600 dark:text-gray-400">
+            <legend className="flex items-center gap-1 text-theme-xs font-medium text-gray-600 dark:text-gray-400">
               目标图表
+              <InspectorHintTip text="未勾选时默认联动看板上其余全部图表；目标 SQL 须含对应占位符。" />
             </legend>
-            <p className={INSPECTOR_HINT}>
-              未勾选时默认联动看板上其余全部图表；目标 SQL 须含对应占位符。
-            </p>
             <div className="flex flex-wrap gap-3">
               {chartTargets.length > 0 ? (
                 chartTargets.map((item) => (
@@ -429,6 +417,7 @@ export function ChartAdvancedMapBubbleSection() {
     <div className={INSPECTOR_SECTION_GAP}>
       <InspectorSwitchRow
         label="气泡动效"
+        hint="在有数据的区域中心显示扩散水波；速率越高动画越快。"
         checked={enabled}
         onCheckedChange={(bubbleEffect) =>
           patchGeo({
@@ -473,7 +462,6 @@ export function ChartAdvancedMapBubbleSection() {
             ariaLabel="水波环数"
             onChange={(bubbleEffectRingCount) => patchGeo({ bubbleEffectRingCount })}
           />
-          <p className={INSPECTOR_HINT}>在有数据的区域中心显示扩散水波；速率越高动画越快。</p>
         </>
       ) : null}
     </div>

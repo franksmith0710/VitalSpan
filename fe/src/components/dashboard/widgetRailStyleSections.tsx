@@ -13,7 +13,6 @@ import {
 import { DashboardConfigSlider } from "./deAttrSlider";
 import {
   ChartInspectorSection,
-  INSPECTOR_HINT,
   INSPECTOR_SWITCH_SIZE,
   InspectorInlineColorRow,
 } from "./inspectorCompact";
@@ -319,8 +318,11 @@ export function TextWidgetStylePanel({
         title={widget.title}
         onTitleChange={onTitleChange}
       />
-      <ChartInspectorSection title="正文" defaultOpen>
-        <p className={INSPECTOR_HINT}>双击画布进入编辑，使用浮动工具栏调整字体、字号、颜色与对齐。</p>
+      <ChartInspectorSection
+        title="正文"
+        hint="双击画布进入编辑，使用浮动工具栏调整字体、字号、颜色与对齐。"
+        defaultOpen
+      >
         <p className="mt-2 text-[10px] text-gray-500 dark:text-gray-400">当前内容：{characters} 个字符</p>
         <p className="mt-1 text-[10px] text-gray-400 dark:text-gray-500">
           保存：点击外部或 Ctrl+Enter · 取消：Esc

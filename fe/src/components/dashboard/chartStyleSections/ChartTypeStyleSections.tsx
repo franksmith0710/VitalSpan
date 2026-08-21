@@ -12,7 +12,6 @@ import { ChartPaletteDeParityFields } from "../chartPaletteDeParityFields";
 import { useChartInspector } from "../ChartInspectorContext";
 import {
   ChartInspectorSection,
-  INSPECTOR_HINT,
   INSPECTOR_SECTION_GAP,
   INSPECTOR_SELECT,
   INSPECTOR_SWITCH_SIZE,
@@ -200,9 +199,12 @@ export function ChartLiquidStyleSection() {
     mutateChartConfig((c) => patchChartDeStyleNested(c, "liquid", p));
 
   return (
-    <ChartInspectorSection title="水波样式" data-testid="chart-liquid-shape">
+    <ChartInspectorSection
+      title="水波样式"
+      hint="目标值请在「标签 → 完成度」配置；此处仅调整图形外观。"
+      data-testid="chart-liquid-shape"
+    >
       <div className={INSPECTOR_SECTION_GAP}>
-        <p className={INSPECTOR_HINT}>目标值请在「标签 → 完成度」配置；此处仅调整图形外观。</p>
         <ChartDeSliderField
           label="图形大小"
           value={liquid.size}

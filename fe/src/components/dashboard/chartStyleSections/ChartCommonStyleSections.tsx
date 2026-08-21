@@ -51,7 +51,7 @@ import { resolveWidgetEffectiveScheme } from "@/lib/chartSurfaceTheme";
 import { isTableLikeChartType, tableStyleSectionsForType } from "@/lib/chartTableInspector";
 import { chartStyleSectionsForType } from "@/lib/chartStyleSectionRegistry";
 import { chartTypeHasTooltipSection } from "@/lib/chartStyleCartesianFields";
-import { ChartInspectorSection, INSPECTOR_HINT, INSPECTOR_SELECT, INSPECTOR_SWITCH_SIZE, InspectorInlineColorRow } from "../inspectorCompact";
+import { ChartInspectorSection, INSPECTOR_SELECT, INSPECTOR_SWITCH_SIZE, InspectorInlineColorRow } from "../inspectorCompact";
 import { DeTitleStyleToolbar } from "../deTitleStyleToolbar";
 import { ChartLiquidLabelFields } from "./ChartLiquidLabelFields";
 import { ChartPieLabelFields } from "./ChartPieLabelFields";
@@ -248,6 +248,11 @@ export function ChartLegendStyleSection() {
   return (
     <ChartInspectorSection
       title="图例"
+      hint={
+        caps.legendPartial
+          ? "部分组合图图例仅覆盖主系列或壳层图例，请预览确认全部系列是否展示。"
+          : undefined
+      }
       enabled={legendVisible}
       action={
         <Switch
@@ -260,11 +265,6 @@ export function ChartLegendStyleSection() {
     >
       {legendVisible ? (
         <>
-          {caps.legendPartial ? (
-            <p className={INSPECTOR_HINT}>
-              部分组合图图例仅覆盖主系列或壳层图例，请预览确认全部系列是否展示。
-            </p>
-          ) : null}
           <ChartLegendDeParityFields
             chartType={cfg.chartType}
             deStyle={deStyle}
