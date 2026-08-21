@@ -5,7 +5,8 @@ from __future__ import annotations
 HINTS: dict[str, str] = {
     "AIVIZ_INVALID_MANIFEST": (
         "manifest 缺字段。复制 examples/html-minimal.json 结构："
-        "fieldSlots.dimensions + fieldSlots.metrics（min 均 >= 1）、styleSchema.properties（至少 1 项中文 title）"
+        "fieldSlots.dimensions + metrics（一般 min>=1；明细表 dimensions.max>1 时 metrics.min 可为 0）、"
+        "styleSchema.properties（至少 1 项中文 title）"
     ),
     "AIVIZ_UNSAFE_CONTENT": (
         "HTML 安全规则：禁止 <script src=、HTML 属性 onclick=/onmouseenter=、javascript:。"
@@ -19,7 +20,12 @@ HINTS: dict[str, str] = {
         "d3 runtime 必须在 entry 脚本中调用 host.vsCv.mount(function (p) { ... })"
     ),
     "AIVIZ_MISSING_ENTRY": "files 必须包含 manifest.entry 指向的 HTML（通常 index.html）",
-    "AIVIZ_INLINE_D3_FORBIDDEN": "禁止内联 d3 整库；使用 host.vsCv.d3",
+    "AIVIZ_INLINE_D3_FORBIDDEN": (
+        "禁止内联 d3 整库（≥200KB 且含 d3.version）；runtime:d3 时用 host.vsCv.d3，勿 CDN/勿 paste 整库"
+    ),
+    "AIVIZ_FICTION_API": (
+        "禁止 getStyle()、vs-cv-style-update、.vs-cv-style；样式只读 (p&&p.style)||{}，变化由 mount 回调重绘"
+    ),
     "AIVIZ_WARN_MOUNT_RECOMMENDED": "html 也应 host.vsCv.mount(render)，否则 resize/样式可能不同步",
     "AIVIZ_WARN_STYLE_COMPLIANCE": (
         "render 内读 var st = (p && p.style) || {}；styleSchema 每项加中文 title"

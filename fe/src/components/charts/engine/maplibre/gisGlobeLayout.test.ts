@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   isInsideGlobeDisc,
+  offsetMapPixelToOverlay,
   resolveGlobeLimbBoundsForOverlay,
   resolveGlobeLimbBoundsFromMap,
   resolveGlobeLimbBoundsFromProject,
@@ -66,11 +67,33 @@ describe("resolveGlobeLimbBoundsFromProject", () => {
   });
 });
 
+describe("offsetMapPixelToOverlay", () => {
+  it("uses layout offset chain when map host is nested in overlay", () => {
+    const overlay = document.createElement("div");
+    const mapHost = document.createElement("div");
+    Object.defineProperty(mapHost, "offsetLeft", { value: 12, configurable: true });
+    Object.defineProperty(mapHost, "offsetTop", { value: 8, configurable: true });
+    Object.defineProperty(mapHost, "offsetParent", { value: overlay, configurable: true });
+    overlay.appendChild(mapHost);
+
+    const map = { getContainer: () => mapHost };
+    const mapped = offsetMapPixelToOverlay(map as never, overlay, { x: 200, y: 150, radius: 80 });
+    expect(mapped).toEqual({ x: 212, y: 158, radius: 80 });
+  });
+
+  it("returns map-local coords when overlay is the map container", () => {
+    const mapHost = document.createElement("div");
+    const map = { getContainer: () => mapHost };
+    const mapped = offsetMapPixelToOverlay(map as never, mapHost, { x: 200, y: 150, radius: 80 });
+    expect(mapped).toEqual({ x: 200, y: 150, radius: 80 });
+  });
+});
+
 describe("resolveGlobeLimbBoundsForOverlay", () => {
   it("prefers live raycast radius over viewport fallback when zoomed out", () => {
-    const overlay = document.createElement("div");
+    const mapHost = document.createElement("div");
     const map = {
-      getContainer: () => ({ getBoundingClientRect: () => ({ left: 0, top: 0, width: 400, height: 300 }) }),
+      getContainer: () => mapHost,
       getCenter: () => ({ lng: 100, lat: 28 }),
       getPitch: () => 0,
       getBearing: () => 0,
@@ -85,16 +108,16 @@ describe("resolveGlobeLimbBoundsForOverlay", () => {
       },
     };
 
-    const limb = resolveGlobeLimbBoundsForOverlay(map as never, overlay, 400, 300);
+    const limb = resolveGlobeLimbBoundsForOverlay(map as never, mapHost, 400, 300);
     expect(limb.radius).toBeLessThan(80);
     expect(limb.x).toBeCloseTo(200, 0);
     expect(limb.y).toBeCloseTo(150, 0);
   });
 
   it("clamps overshoot raycast to analytical globe radius", () => {
-    const overlay = document.createElement("div");
+    const mapHost = document.createElement("div");
     const map = {
-      getContainer: () => ({ getBoundingClientRect: () => ({ left: 0, top: 0, width: 400, height: 300 }) }),
+      getContainer: () => mapHost,
       getCenter: () => ({ lng: 100, lat: 28 }),
       getPitch: () => 0,
       getBearing: () => 0,
@@ -108,7 +131,7 @@ describe("resolveGlobeLimbBoundsForOverlay", () => {
       },
     };
 
-    const limb = resolveGlobeLimbBoundsForOverlay(map as never, overlay, 400, 300);
+    const limb = resolveGlobeLimbBoundsForOverlay(map as never, mapHost, 400, 300);
     expect(limb.radius).toBeLessThan(120);
     expect(limb.x).toBeCloseTo(200, 0);
     expect(limb.y).toBeCloseTo(150, 0);

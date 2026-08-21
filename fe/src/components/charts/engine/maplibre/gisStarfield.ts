@@ -5,6 +5,7 @@ import {
   resolveGlobeScreenBoundsFallback,
   shouldRenderGisStarfield,
 } from "@/components/charts/engine/maplibre/gisGlobeLayout";
+import { readOverlayLayoutSize, syncOverlayCanvasSize } from "@/components/charts/engine/maplibre/gisOverlayCanvas";
 
 type MapLibreMap = import("maplibre-gl").Map;
 
@@ -127,7 +128,7 @@ export function mountGisStarfieldOverlay(
 
   const canvas = document.createElement("canvas");
   canvas.dataset.testid = "gis-starfield";
-  canvas.className = "pointer-events-none absolute inset-0 z-[1]";
+  canvas.className = "pointer-events-none absolute inset-0 z-[1] h-full w-full";
   wrapper.appendChild(canvas);
 
   const ctx = canvas.getContext("2d");
@@ -135,6 +136,7 @@ export function mountGisStarfieldOverlay(
   let refLng = 100;
   let refLat = 28;
   let refSet = false;
+  const canvasSize = { width: 0, height: 0 };
   const tickMeteors = createMeteorSpawner(meteorIntensity);
   let meteors: Meteor[] = [];
   let running = true;
@@ -142,17 +144,16 @@ export function mountGisStarfieldOverlay(
   let lastFrame = start;
   let frameId = 0;
 
+  const syncCanvasSize = (width: number, height: number) => {
+    const changed = syncOverlayCanvasSize(canvas, ctx, width, height, canvasSize);
+    if (changed) {
+      stars = buildProceduralStars(width, height);
+    }
+  };
+
   const resize = () => {
-    const rect = wrapper.getBoundingClientRect();
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const width = Math.max(1, rect.width);
-    const height = Math.max(1, rect.height);
-    canvas.width = Math.floor(width * dpr);
-    canvas.height = Math.floor(height * dpr);
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
-    stars = buildProceduralStars(width, height);
+    const { width, height } = readOverlayLayoutSize(wrapper);
+    syncCanvasSize(width, height);
   };
 
   const paint = () => {
@@ -162,10 +163,10 @@ export function mountGisStarfieldOverlay(
     }
     canvas.style.display = "block";
 
-    const rect = wrapper.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
+    const { width, height } = readOverlayLayoutSize(wrapper);
     if (width <= 0 || height <= 0) return;
+
+    syncCanvasSize(width, height);
 
     const now = performance.now();
     const dt = Math.min((now - lastFrame) / 1000, 0.05);

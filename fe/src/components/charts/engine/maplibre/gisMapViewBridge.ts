@@ -1,19 +1,30 @@
 import type { GisProjectView } from "@/components/charts/engine/maplibre/gisProject";
 
-type CaptureFn = () => GisProjectView | null;
+export type GisMapViewLiveControl = {
+  capture: () => GisProjectView | null;
+  applyView: (view: GisProjectView) => boolean;
+};
 
-const captureByWidgetId = new Map<string, CaptureFn>();
+const liveControlByWidgetId = new Map<string, GisMapViewLiveControl>();
 
-/** 编辑态：GIS 地图实例注册当前相机读取（供样式栏「读取当前视角」） */
-export function registerGisMapViewCapture(widgetId: string, capture: CaptureFn): () => void {
-  captureByWidgetId.set(widgetId, capture);
+/** 编辑态：GIS 地图实例注册相机读写（样式栏即时预览 / 读取当前视角） */
+export function registerGisMapViewLiveControl(
+  widgetId: string,
+  control: GisMapViewLiveControl,
+): () => void {
+  liveControlByWidgetId.set(widgetId, control);
   return () => {
-    if (captureByWidgetId.get(widgetId) === capture) {
-      captureByWidgetId.delete(widgetId);
+    if (liveControlByWidgetId.get(widgetId) === control) {
+      liveControlByWidgetId.delete(widgetId);
     }
   };
 }
 
 export function captureGisMapViewCamera(widgetId: string): GisProjectView | null {
-  return captureByWidgetId.get(widgetId)?.() ?? null;
+  return liveControlByWidgetId.get(widgetId)?.capture() ?? null;
+}
+
+/** 绕过 React 重渲染链，直接把相机应用到画布上的 MapLibre 实例 */
+export function applyGisMapViewCamera(widgetId: string, view: GisProjectView): boolean {
+  return liveControlByWidgetId.get(widgetId)?.applyView(view) ?? false;
 }

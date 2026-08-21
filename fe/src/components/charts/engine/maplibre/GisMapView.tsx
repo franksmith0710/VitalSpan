@@ -20,7 +20,7 @@ import {
 } from "@/components/charts/engine/maplibre/gisMapRuntime";
 import { mountGisGlobeHaloOverlay } from "@/components/charts/engine/maplibre/gisGlobeHalo";
 import { mountGisStarfieldOverlay } from "@/components/charts/engine/maplibre/gisStarfield";
-import { registerGisMapViewCapture } from "@/components/charts/engine/maplibre/gisMapViewBridge";
+import { registerGisMapViewLiveControl } from "@/components/charts/engine/maplibre/gisMapViewBridge";
 import {
   ensurePmtilesArchiveRegistered,
   loadMapLibreRuntime,
@@ -36,8 +36,17 @@ type StyleSpecification = import("maplibre-gl").StyleSpecification;
 const DEFAULT_AUTO_ROTATE_SPEED = GLOBE_IDLE_ROTATION_DEG_PER_SEC;
 
 function GisMapViewInner(props: ChartEngineViewProps) {
-  const { chartConfig, viewModel, fill = false, height = 180, width, ariaLabel, onPaintReady, instanceKey } =
-    props;
+  const {
+    chartConfig,
+    viewModel,
+    fill = false,
+    height = 180,
+    width,
+    ariaLabel,
+    onPaintReady,
+    instanceKey,
+    layoutFootprint,
+  } = props;
   const hostRef = useRef<HTMLDivElement | null>(null);
   const shellRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -140,7 +149,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   );
   const configuredViewKey = useMemo(
     () => buildGisConfiguredViewKey(view),
-    [view.bearing, view.center, view.pitch, view.zoom],
+    [view.bearing, view.center[0], view.center[1], view.pitch, view.zoom],
   );
   const earthOpacity = project.earthOpacity ?? 1;
   const projection = project.projection ?? "globe";
@@ -344,28 +353,44 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     return startGisGlobeAutoRotate(map, speed);
   }, [project.autoRotate, project.autoRotateSpeed, project.projection]);
 
-  useEffect(() => {
-    const host = hostRef.current;
-    if (!host) return;
-    const resize = () => mapRef.current?.resize();
-    resize();
-    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
-    observer?.observe(host);
-    return () => observer?.disconnect();
+  const remeasureShell = useCallback(() => {
+    mapRef.current?.resize();
   }, []);
 
   useEffect(() => {
+    const shell = shellRef.current;
+    if (!shell) return;
+    remeasureShell();
+    const observer =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(remeasureShell) : null;
+    observer?.observe(shell);
+    return () => observer?.disconnect();
+  }, [remeasureShell]);
+
+  useEffect(() => {
+    remeasureShell();
+  }, [layoutFootprint?.width, layoutFootprint?.height, remeasureShell]);
+
+  useEffect(() => {
     if (!instanceKey) return;
-    return registerGisMapViewCapture(instanceKey, () => {
-      const map = mapRef.current;
-      if (!map || !map.isStyleLoaded()) return null;
-      const center = map.getCenter();
-      return {
-        center: [center.lng, center.lat],
-        zoom: map.getZoom(),
-        bearing: map.getBearing(),
-        pitch: map.getPitch(),
-      };
+    return registerGisMapViewLiveControl(instanceKey, {
+      capture: () => {
+        const map = mapRef.current;
+        if (!map || !map.isStyleLoaded()) return null;
+        const center = map.getCenter();
+        return {
+          center: [center.lng, center.lat],
+          zoom: map.getZoom(),
+          bearing: map.getBearing(),
+          pitch: map.getPitch(),
+        };
+      },
+      applyView: (nextView) => {
+        const map = mapRef.current;
+        if (!map || !syncGisMapView(map, nextView)) return false;
+        syncedViewKeyRef.current = buildGisConfiguredViewKey(nextView);
+        return true;
+      },
     });
   }, [instanceKey]);
 

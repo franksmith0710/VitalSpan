@@ -235,11 +235,36 @@ export function offsetMapPixelToOverlay(
   overlay: HTMLElement,
   point: GlobeLimbBounds,
 ): GlobeLimbBounds {
-  const mapRect = map.getContainer().getBoundingClientRect();
+  const mapContainer = map.getContainer();
+  if (mapContainer === overlay) {
+    return point;
+  }
+
+  let offsetX = 0;
+  let offsetY = 0;
+  let node: HTMLElement | null = mapContainer;
+  while (node && node !== overlay) {
+    offsetX += node.offsetLeft;
+    offsetY += node.offsetTop;
+    node = node.offsetParent as HTMLElement | null;
+  }
+  if (node === overlay) {
+    return {
+      x: point.x + offsetX,
+      y: point.y + offsetY,
+      radius: point.radius,
+    };
+  }
+
+  const mapRect = mapContainer.getBoundingClientRect();
   const overlayRect = overlay.getBoundingClientRect();
+  const overlayLayoutW = overlay.clientWidth || overlayRect.width || 1;
+  const overlayLayoutH = overlay.clientHeight || overlayRect.height || 1;
+  const scaleX = overlayLayoutW > 0 ? overlayRect.width / overlayLayoutW : 1;
+  const scaleY = overlayLayoutH > 0 ? overlayRect.height / overlayLayoutH : 1;
   return {
-    x: point.x + (mapRect.left - overlayRect.left),
-    y: point.y + (mapRect.top - overlayRect.top),
+    x: point.x + (mapRect.left - overlayRect.left) / scaleX,
+    y: point.y + (mapRect.top - overlayRect.top) / scaleY,
     radius: point.radius,
   };
 }

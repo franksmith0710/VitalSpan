@@ -32,10 +32,40 @@ import {
   type GisBasemapFlavor,
   type GisLabelLang,
 } from "@/components/charts/engine/maplibre/gisProject";
-import { captureGisMapViewCamera } from "@/components/charts/engine/maplibre/gisMapViewBridge";
+import { captureGisMapViewCamera, applyGisMapViewCamera } from "@/components/charts/engine/maplibre/gisMapViewBridge";
+import { buildGisConfiguredViewKey } from "@/components/charts/engine/maplibre/gisMapRuntime";
 import { listTileServices } from "@/lib/tileServices";
 
-const VIEW_COMMIT_DEBOUNCE_MS = 350;
+function parseViewDraft(draft: {
+  centerLng: string;
+  centerLat: string;
+  zoom: string;
+  bearing: string;
+  pitch: string;
+}) {
+  if (
+    draft.centerLng.trim() === "" ||
+    draft.centerLat.trim() === "" ||
+    draft.zoom.trim() === "" ||
+    draft.bearing.trim() === "" ||
+    draft.pitch.trim() === ""
+  ) {
+    return null;
+  }
+  const lng = Number(draft.centerLng);
+  const lat = Number(draft.centerLat);
+  const zoom = Number(draft.zoom);
+  const bearing = Number(draft.bearing);
+  const pitch = Number(draft.pitch);
+  if (!Number.isFinite(lng) || !Number.isFinite(lat) || lat < -85 || lat > 85) return null;
+  if (!Number.isFinite(zoom) || !Number.isFinite(bearing) || !Number.isFinite(pitch)) return null;
+  return {
+    center: [lng, lat] as [number, number],
+    zoom: Math.max(0, Math.min(22, zoom)),
+    bearing,
+    pitch: Math.max(0, Math.min(85, pitch)),
+  };
+}
 
 const FLAVOR_LABELS: Record<GisBasemapFlavor, string> = {
   light: "浅色",
@@ -87,7 +117,7 @@ export function ChartGisMapProjectPanel() {
   const [pitch, setPitch] = useState(String(view.pitch ?? 0));
   const viewDraftRef = useRef({ centerLng, centerLat, zoom, bearing, pitch });
   viewDraftRef.current = { centerLng, centerLat, zoom, bearing, pitch };
-  const commitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const committedViewKeyRef = useRef("");
 
   const commitView = useCallback(
     (next: {
@@ -113,47 +143,29 @@ export function ChartGisMapProjectPanel() {
     [mutateChartConfig],
   );
 
-  const flushViewDraft = useCallback(() => {
-    const draft = viewDraftRef.current;
-    const lng = Number(draft.centerLng);
-    const lat = Number(draft.centerLat);
-    const nextZoom = Number(draft.zoom);
-    const nextBearing = Number(draft.bearing);
-    const nextPitch = Number(draft.pitch);
-    if (!Number.isFinite(lng) || !Number.isFinite(lat) || lat < -85 || lat > 85) return;
-    if (!Number.isFinite(nextZoom) || !Number.isFinite(nextBearing) || !Number.isFinite(nextPitch)) {
-      return;
-    }
-    commitView({
-      center: [lng, lat],
-      zoom: Math.max(0, Math.min(22, nextZoom)),
-      bearing: nextBearing,
-      pitch: Math.max(0, Math.min(85, nextPitch)),
-    });
-  }, [commitView]);
+  const applyViewDraft = useCallback(() => {
+    const nextView = parseViewDraft(viewDraftRef.current);
+    if (!nextView) return;
+    const nextKey = buildGisConfiguredViewKey(nextView);
+    if (nextKey === committedViewKeyRef.current) return;
+    applyGisMapViewCamera(widget.id, nextView);
+    committedViewKeyRef.current = nextKey;
+    commitView(nextView);
+  }, [commitView, widget.id]);
 
-  const scheduleViewCommit = useCallback(() => {
-    if (commitTimerRef.current) clearTimeout(commitTimerRef.current);
-    commitTimerRef.current = setTimeout(() => {
-      commitTimerRef.current = null;
-      flushViewDraft();
-    }, VIEW_COMMIT_DEBOUNCE_MS);
-  }, [flushViewDraft]);
-
-  const flushViewCommitNow = useCallback(() => {
-    if (commitTimerRef.current) {
-      clearTimeout(commitTimerRef.current);
-      commitTimerRef.current = null;
-    }
-    flushViewDraft();
-  }, [flushViewDraft]);
-
-  useEffect(
-    () => () => {
-      if (commitTimerRef.current) clearTimeout(commitTimerRef.current);
+  const patchViewDraft = useCallback(
+    (patch: Partial<typeof viewDraftRef.current>) => {
+      viewDraftRef.current = { ...viewDraftRef.current, ...patch };
+      applyViewDraft();
     },
-    [],
+    [applyViewDraft],
   );
+
+  const committedViewKey = useMemo(
+    () => buildGisConfiguredViewKey(view),
+    [view.bearing, view.center[0], view.center[1], view.pitch, view.zoom],
+  );
+  committedViewKeyRef.current = committedViewKey;
 
   useEffect(() => {
     setCenterLng(String(view.center[0]));
@@ -161,7 +173,7 @@ export function ChartGisMapProjectPanel() {
     setZoom(String(view.zoom));
     setBearing(String(view.bearing ?? 0));
     setPitch(String(view.pitch ?? 0));
-  }, [view.bearing, view.center, view.pitch, view.zoom]);
+  }, [committedViewKey]);
 
   useEffect(() => {
     if (tileServicesLoading || enabledTileServices.length === 0) return;
@@ -175,13 +187,13 @@ export function ChartGisMapProjectPanel() {
     }
   }, [cfg, enabledTileServices, mutateChartConfig, project.tileServiceId, tileServicesLoading]);
 
-  const commitCenter = () => flushViewCommitNow();
+  const commitCenter = () => applyViewDraft();
 
-  const commitZoom = () => flushViewCommitNow();
+  const commitZoom = () => applyViewDraft();
 
-  const commitBearing = () => flushViewCommitNow();
+  const commitBearing = () => applyViewDraft();
 
-  const commitPitch = () => flushViewCommitNow();
+  const commitPitch = () => applyViewDraft();
 
   const captureCurrentView = () => {
     const captured = captureGisMapViewCamera(widget.id);
@@ -425,7 +437,7 @@ export function ChartGisMapProjectPanel() {
           <div className="flex items-center justify-between gap-2">
             <InspectorFieldLabel
               label="初始视角"
-              hint="修改数值会自动同步地图；拖拽地图后点「读取当前视角」写回配置。改视角会关闭球面自转。"
+              hint="修改数值即时同步地图（缩放 0–22）；拖拽地图后点「读取当前视角」写回配置。改视角会关闭球面自转。"
             />
             <button
               type="button"
@@ -446,7 +458,7 @@ export function ChartGisMapProjectPanel() {
               value={centerLng}
               onChange={(e) => {
                 setCenterLng(e.target.value);
-                scheduleViewCommit();
+                patchViewDraft({ centerLng: e.target.value });
               }}
               onBlur={commitCenter}
               onKeyDown={onEnterCommit(commitCenter)}
@@ -461,7 +473,7 @@ export function ChartGisMapProjectPanel() {
               value={centerLat}
               onChange={(e) => {
                 setCenterLat(e.target.value);
-                scheduleViewCommit();
+                patchViewDraft({ centerLat: e.target.value });
               }}
               onBlur={commitCenter}
               onKeyDown={onEnterCommit(commitCenter)}
@@ -479,7 +491,7 @@ export function ChartGisMapProjectPanel() {
               value={zoom}
               onChange={(e) => {
                 setZoom(e.target.value);
-                scheduleViewCommit();
+                patchViewDraft({ zoom: e.target.value });
               }}
               onBlur={commitZoom}
               onKeyDown={onEnterCommit(commitZoom)}
@@ -494,7 +506,7 @@ export function ChartGisMapProjectPanel() {
               value={bearing}
               onChange={(e) => {
                 setBearing(e.target.value);
-                scheduleViewCommit();
+                patchViewDraft({ bearing: e.target.value });
               }}
               onBlur={commitBearing}
               onKeyDown={onEnterCommit(commitBearing)}
@@ -509,15 +521,19 @@ export function ChartGisMapProjectPanel() {
               value={pitch}
               onChange={(e) => {
                 setPitch(e.target.value);
-                scheduleViewCommit();
+                patchViewDraft({ pitch: e.target.value });
               }}
               onBlur={commitPitch}
               onKeyDown={onEnterCommit(commitPitch)}
             />
           </div>
         </div>
+        </div>
 
         <div className="grid gap-2 rounded-lg border border-gray-200 p-2 dark:border-gray-800">
+          <label className="flex items-center gap-2 text-theme-xs text-gray-600 dark:text-gray-300">
+            <Checkbox
+              checked={project.showControls === true}
               onCheckedChange={(checked) => patchProject({ showControls: checked === true })}
             />
             显示缩放与比例尺控件

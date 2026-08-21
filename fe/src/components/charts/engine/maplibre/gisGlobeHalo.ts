@@ -7,14 +7,18 @@ import {
   shouldRenderGisStarfield,
 } from "@/components/charts/engine/maplibre/gisGlobeLayout";
 import { drawGlobeAtmosphereHalo } from "@/components/charts/engine/maplibre/gisGlobeHaloDraw";
+import { readOverlayLayoutSize, syncOverlayCanvasSize } from "@/components/charts/engine/maplibre/gisOverlayCanvas";
 
 type MapLibreMap = import("maplibre-gl").Map;
 
 export type { GlobeLimbBounds } from "@/components/charts/engine/maplibre/gisGlobeLayout";
 export { drawGlobeAtmosphereHalo } from "@/components/charts/engine/maplibre/gisGlobeHaloDraw";
 
+const HALO_CANVAS_CLASS =
+  "pointer-events-none absolute inset-0 z-0 h-full w-full";
+
 /**
- * GeoLibre 层栈：z-3 光晕 → z-4 地图（球内自然遮挡，不外叠洗白）。
+ * GeoLibre 层栈：光晕 canvas 置于 MapLibre 容器内（z-0），球面 canvas 自然遮挡洗白。
  * @see https://web.geolibre.app/
  */
 export function mountGisGlobeHaloOverlay(
@@ -27,7 +31,7 @@ export function mountGisGlobeHaloOverlay(
 
   const canvas = document.createElement("canvas");
   canvas.dataset.testid = "gis-globe-halo";
-  canvas.className = "pointer-events-none absolute inset-0 z-[3]";
+  canvas.className = HALO_CANVAS_CLASS;
   wrapper.appendChild(canvas);
 
   const ctx = canvas.getContext("2d");
@@ -36,17 +40,40 @@ export function mountGisGlobeHaloOverlay(
   let boundMap: MapLibreMap | null = null;
   let bootFrameId = 0;
   let mapReady = false;
+  const canvasSize = { width: 0, height: 0 };
 
-  const resize = () => {
-    const rect = wrapper.getBoundingClientRect();
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const width = Math.max(1, rect.width);
-    const height = Math.max(1, rect.height);
-    canvas.width = Math.floor(width * dpr);
-    canvas.height = Math.floor(height * dpr);
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const syncCanvasSize = (width: number, height: number) => {
+    syncOverlayCanvasSize(canvas, ctx, width, height, canvasSize);
+  };
+
+  /** 光晕与 MapLibre transform 共用同一容器坐标系，避免 shell/map 尺寸源不一致导致偏移。 */
+  const resolvePaintOverlay = (): HTMLElement => {
+    const map = getMap();
+    const mapContainer = map?.getContainer();
+    const target = mapContainer ?? wrapper;
+    if (canvas.parentElement !== target) {
+      if (mapContainer) {
+        mapContainer.insertBefore(canvas, mapContainer.firstChild);
+      } else {
+        wrapper.appendChild(canvas);
+      }
+    }
+    if (mapContainer) {
+      mapContainer.style.position = mapContainer.style.position || "relative";
+    }
+    return target;
+  };
+
+  let mapResizeObserver: ResizeObserver | null = null;
+
+  const observeMapContainer = (map: MapLibreMap | null) => {
+    mapResizeObserver?.disconnect();
+    mapResizeObserver = null;
+    if (!map || typeof ResizeObserver === "undefined") return;
+    mapResizeObserver = new ResizeObserver(() => {
+      paint();
+    });
+    mapResizeObserver.observe(map.getContainer());
   };
 
   const bindMapIfNeeded = () => {
@@ -55,9 +82,10 @@ export function mountGisGlobeHaloOverlay(
     unbindRender?.();
     boundMap = map;
     if (map) {
+      observeMapContainer(map);
       const container = map.getContainer();
       container.style.background = "transparent";
-      const mapCanvas = container.querySelector("canvas");
+      const mapCanvas = container.querySelector(".maplibregl-canvas");
       if (mapCanvas instanceof HTMLCanvasElement) {
         mapCanvas.style.background = "transparent";
       }
@@ -72,10 +100,11 @@ export function mountGisGlobeHaloOverlay(
     }
     bindMapIfNeeded();
 
-    const rect = wrapper.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
+    const overlay = resolvePaintOverlay();
+    const { width, height } = readOverlayLayoutSize(overlay);
     if (width <= 0 || height <= 0) return;
+
+    syncCanvasSize(width, height);
 
     const map = getMap();
     if (!map || !map.isStyleLoaded()) {
@@ -93,8 +122,7 @@ export function mountGisGlobeHaloOverlay(
     }
 
     mapReady = true;
-    resize();
-    const limb = resolveGlobeLimbBoundsForOverlay(map, wrapper, width, height);
+    const limb = resolveGlobeLimbBoundsForOverlay(map, overlay, width, height);
     canvas.style.display = "block";
     drawGlobeAtmosphereHalo(ctx, width, height, limb, preset);
   };
@@ -106,23 +134,24 @@ export function mountGisGlobeHaloOverlay(
     }
   };
 
-  resize();
+  const initial = readOverlayLayoutSize(wrapper);
+  syncCanvasSize(initial.width, initial.height);
   bootLoop();
 
-  const ro =
+  const wrapperObserver =
     typeof ResizeObserver !== "undefined"
       ? new ResizeObserver(() => {
-          resize();
           paint();
         })
       : null;
-  ro?.observe(wrapper);
+  wrapperObserver?.observe(wrapper);
 
   return () => {
     running = false;
     cancelAnimationFrame(bootFrameId);
     unbindRender?.();
-    ro?.disconnect();
+    wrapperObserver?.disconnect();
+    mapResizeObserver?.disconnect();
     canvas.remove();
   };
 }

@@ -1,4 +1,4 @@
-import { type ReactElement } from "react";
+import { type ReactElement, useMemo, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { LayoutWidget } from "../layoutUtils";
 import { ChartInspectorProvider } from "../ChartInspectorProvider";
 import { ChartGisMapProjectPanel } from "./ChartGisMapProjectPanel";
-import { registerGisMapViewCapture } from "@/components/charts/engine/maplibre/gisMapViewBridge";
+import { registerGisMapViewLiveControl } from "@/components/charts/engine/maplibre/gisMapViewBridge";
 
 vi.mock("@/lib/tileServices", () => ({
   listTileServices: vi.fn(async () => [
@@ -83,7 +83,7 @@ describe("ChartGisMapProjectPanel atmosphere wiring", () => {
 });
 
 describe("ChartGisMapProjectPanel initial view", () => {
-  it("debounces zoom edits into gisProject.view", async () => {
+  it("applies zoom edits to gisProject.view immediately", async () => {
     const onChange = vi.fn();
     renderPanel(<ChartGisMapProjectPanel />, onChange);
     const user = userEvent.setup();
@@ -97,29 +97,64 @@ describe("ChartGisMapProjectPanel initial view", () => {
     await user.clear(zoomField);
     await user.type(zoomField, "4");
 
-    await waitFor(
-      () => {
-        expect(onChange).toHaveBeenCalledWith(
-          expect.objectContaining({
-            nativeBody: expect.objectContaining({
-              gisProject: expect.objectContaining({
-                view: expect.objectContaining({ zoom: 4 }),
-              }),
+    await waitFor(() => {
+      expect(onChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          nativeBody: expect.objectContaining({
+            gisProject: expect.objectContaining({
+              view: expect.objectContaining({ zoom: 4 }),
             }),
           }),
-        );
-      },
-      { timeout: 1500 },
-    );
+        }),
+      );
+    });
+  });
+
+  it("keeps zoom draft while parent re-renders with same saved view", async () => {
+    function Harness({ onChange }: { onChange: ReturnType<typeof vi.fn> }) {
+      const [bump, setBump] = useState(0);
+      const widget = useMemo(() => gisWidget(), [bump]);
+      const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      return (
+        <QueryClientProvider client={qc}>
+          <ChartInspectorProvider widget={widget} onChange={onChange}>
+            <button type="button" onClick={() => setBump((value) => value + 1)}>
+              bump
+            </button>
+            <ChartGisMapProjectPanel />
+          </ChartInspectorProvider>
+        </QueryClientProvider>
+      );
+    }
+
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    render(<Harness onChange={onChange} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("chart-gis-map-project-panel")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "GIS 底图" }));
+    const zoomField = screen.getByRole("textbox", { name: "缩放" });
+    await user.clear(zoomField);
+    await user.type(zoomField, "4");
+    expect(zoomField).toHaveValue("4");
+
+    await user.click(screen.getByRole("button", { name: "bump" }));
+    expect(zoomField).toHaveValue("4");
   });
 
   it("captures live map camera into gisProject.view", async () => {
-    const dispose = registerGisMapViewCapture("w-gis", () => ({
-      center: [116.4, 39.9],
-      zoom: 8,
-      bearing: 10,
-      pitch: 30,
-    }));
+    const dispose = registerGisMapViewLiveControl("w-gis", {
+      capture: () => ({
+        center: [116.4, 39.9],
+        zoom: 8,
+        bearing: 10,
+        pitch: 30,
+      }),
+      applyView: () => true,
+    });
     const onChange = vi.fn();
     renderPanel(<ChartGisMapProjectPanel />, onChange);
     const user = userEvent.setup();
