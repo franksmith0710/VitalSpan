@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -32,7 +32,10 @@ import {
   type GisBasemapFlavor,
   type GisLabelLang,
 } from "@/components/charts/engine/maplibre/gisProject";
+import { captureGisMapViewCamera } from "@/components/charts/engine/maplibre/gisMapViewBridge";
 import { listTileServices } from "@/lib/tileServices";
+
+const VIEW_COMMIT_DEBOUNCE_MS = 350;
 
 const FLAVOR_LABELS: Record<GisBasemapFlavor, string> = {
   light: "浅色",
@@ -51,7 +54,7 @@ const GIS_SECTION_HINT =
   "全球矢量 PMTiles 底图（如 Planet Z15），由运维独立部署并登记；未登记时无法出图。";
 
 export function ChartGisMapProjectPanel() {
-  const { cfg, onChange } = useChartInspector();
+  const { cfg, widget, mutateChartConfig } = useChartInspector();
   const project = readGisProject(cfg);
   const view = project.view ?? DEFAULT_GIS_GLOBE_VIEW;
   const flavorPalette = useMemo(
@@ -70,15 +73,87 @@ export function ChartGisMapProjectPanel() {
 
   const enabledTileServices = tileServices.filter((service) => service.enabled);
 
-  const patchProject = (patch: Parameters<typeof writeGisProject>[1]) => {
-    onChange(writeGisProject(cfg, patch));
-  };
+  const patchProject = useCallback(
+    (patch: Parameters<typeof writeGisProject>[1]) => {
+      mutateChartConfig((current) => writeGisProject(current, patch));
+    },
+    [mutateChartConfig],
+  );
 
   const [centerLng, setCenterLng] = useState(String(view.center[0]));
   const [centerLat, setCenterLat] = useState(String(view.center[1]));
   const [zoom, setZoom] = useState(String(view.zoom));
   const [bearing, setBearing] = useState(String(view.bearing ?? 0));
   const [pitch, setPitch] = useState(String(view.pitch ?? 0));
+  const viewDraftRef = useRef({ centerLng, centerLat, zoom, bearing, pitch });
+  viewDraftRef.current = { centerLng, centerLat, zoom, bearing, pitch };
+  const commitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const commitView = useCallback(
+    (next: {
+      center?: [number, number];
+      zoom?: number;
+      bearing?: number;
+      pitch?: number;
+    }) => {
+      mutateChartConfig((current) => {
+        const currentProject = readGisProject(current);
+        const currentView = currentProject.view ?? DEFAULT_GIS_GLOBE_VIEW;
+        return writeGisProject(current, {
+          ...(currentProject.autoRotate ? { autoRotate: false } : {}),
+          view: {
+            center: next.center ?? currentView.center,
+            zoom: next.zoom ?? currentView.zoom,
+            bearing: next.bearing ?? currentView.bearing ?? 0,
+            pitch: next.pitch ?? currentView.pitch ?? 0,
+          },
+        });
+      });
+    },
+    [mutateChartConfig],
+  );
+
+  const flushViewDraft = useCallback(() => {
+    const draft = viewDraftRef.current;
+    const lng = Number(draft.centerLng);
+    const lat = Number(draft.centerLat);
+    const nextZoom = Number(draft.zoom);
+    const nextBearing = Number(draft.bearing);
+    const nextPitch = Number(draft.pitch);
+    if (!Number.isFinite(lng) || !Number.isFinite(lat) || lat < -85 || lat > 85) return;
+    if (!Number.isFinite(nextZoom) || !Number.isFinite(nextBearing) || !Number.isFinite(nextPitch)) {
+      return;
+    }
+    commitView({
+      center: [lng, lat],
+      zoom: Math.max(0, Math.min(22, nextZoom)),
+      bearing: nextBearing,
+      pitch: Math.max(0, Math.min(85, nextPitch)),
+    });
+  }, [commitView]);
+
+  const scheduleViewCommit = useCallback(() => {
+    if (commitTimerRef.current) clearTimeout(commitTimerRef.current);
+    commitTimerRef.current = setTimeout(() => {
+      commitTimerRef.current = null;
+      flushViewDraft();
+    }, VIEW_COMMIT_DEBOUNCE_MS);
+  }, [flushViewDraft]);
+
+  const flushViewCommitNow = useCallback(() => {
+    if (commitTimerRef.current) {
+      clearTimeout(commitTimerRef.current);
+      commitTimerRef.current = null;
+    }
+    flushViewDraft();
+  }, [flushViewDraft]);
+
+  useEffect(
+    () => () => {
+      if (commitTimerRef.current) clearTimeout(commitTimerRef.current);
+    },
+    [],
+  );
 
   useEffect(() => {
     setCenterLng(String(view.center[0]));
@@ -96,51 +171,28 @@ export function ChartGisMapProjectPanel() {
       enabledTileServices.find((service) => service.id === DEFAULT_PMTILES_TILE_SERVICE_ID) ??
       enabledTileServices[0];
     if (preferred && preferred.id !== currentId) {
-      onChange(writeGisProject(cfg, { tileServiceId: preferred.id }));
+      mutateChartConfig((current) => writeGisProject(current, { tileServiceId: preferred.id }));
     }
-  }, [cfg, enabledTileServices, onChange, project.tileServiceId, tileServicesLoading]);
+  }, [cfg, enabledTileServices, mutateChartConfig, project.tileServiceId, tileServicesLoading]);
 
-  const commitView = (next: {
-    center?: [number, number];
-    zoom?: number;
-    bearing?: number;
-    pitch?: number;
-  }) => {
-    patchProject({
-      ...(project.autoRotate ? { autoRotate: false } : {}),
-      view: {
-        center: next.center ?? view.center,
-        zoom: next.zoom ?? view.zoom,
-        bearing: next.bearing ?? view.bearing ?? 0,
-        pitch: next.pitch ?? view.pitch ?? 0,
-      },
+  const commitCenter = () => flushViewCommitNow();
+
+  const commitZoom = () => flushViewCommitNow();
+
+  const commitBearing = () => flushViewCommitNow();
+
+  const commitPitch = () => flushViewCommitNow();
+
+  const captureCurrentView = () => {
+    const captured = captureGisMapViewCamera(widget.id);
+    if (!captured) return;
+    mutateChartConfig((current) => {
+      const currentProject = readGisProject(current);
+      return writeGisProject(current, {
+        view: captured,
+        ...(currentProject.autoRotate ? { autoRotate: false } : {}),
+      });
     });
-  };
-
-  const commitCenter = () => {
-    const lng = Number(centerLng);
-    const lat = Number(centerLat);
-    if (!Number.isFinite(lng) || !Number.isFinite(lat)) return;
-    if (lat < -85 || lat > 85) return;
-    commitView({ center: [lng, lat] });
-  };
-
-  const commitZoom = () => {
-    const nextZoom = Number(zoom);
-    if (!Number.isFinite(nextZoom)) return;
-    commitView({ zoom: Math.max(0, Math.min(22, nextZoom)) });
-  };
-
-  const commitBearing = () => {
-    const next = Number(bearing);
-    if (!Number.isFinite(next)) return;
-    commitView({ bearing: next });
-  };
-
-  const commitPitch = () => {
-    const next = Number(pitch);
-    if (!Number.isFinite(next)) return;
-    commitView({ pitch: Math.max(0, Math.min(85, next)) });
   };
 
   const onEnterCommit = (commit: () => void) => (event: KeyboardEvent<HTMLInputElement>) => {
@@ -345,40 +397,57 @@ export function ChartGisMapProjectPanel() {
               </Select>
             </div>
           ) : null}
+
+          {project.projection === "globe" ? (
+            <InspectorSliderField
+              label="地球不透明度"
+              layout="stacked"
+              hint="仅作用于地球表面层，可透出后方星空；默认 100%。"
+              value={project.earthOpacity != null ? Math.round(project.earthOpacity * 100) : undefined}
+              fallback={100}
+              min={0}
+              max={100}
+              step={1}
+              unit="%"
+              ariaLabel="地球不透明度"
+              onChange={(opacityPercent) =>
+                patchProject({ earthOpacity: Math.max(0, Math.min(100, opacityPercent)) / 100 })
+              }
+              onPreviewChange={(opacityPercent) => {
+                if (opacityPercent == null) return;
+                patchProject({ earthOpacity: Math.max(0, Math.min(100, opacityPercent)) / 100 });
+              }}
+            />
+          ) : null}
         </div>
 
-        <InspectorFieldLabel
-          label="初始视角"
-          hint="保存大屏打开时的相机；Enter 或失焦生效。改视角会关闭球面自转。"
-        />
-
-        <InspectorSliderField
-          label="地球不透明度"
-          layout="stacked"
-          hint="仅作用于地球表面层，可透出后方星空；默认 100%。"
-          value={project.earthOpacity != null ? Math.round(project.earthOpacity * 100) : undefined}
-          fallback={100}
-          min={0}
-          max={100}
-          step={1}
-          unit="%"
-          ariaLabel="地球不透明度"
-          onChange={(opacityPercent) =>
-            patchProject({ earthOpacity: Math.max(0, Math.min(100, opacityPercent)) / 100 })
-          }
-          onPreviewChange={(opacityPercent) => {
-            if (opacityPercent == null) return;
-            patchProject({ earthOpacity: Math.max(0, Math.min(100, opacityPercent)) / 100 });
-          }}
-        />
+        <div className="grid gap-2 rounded-lg border border-gray-200 p-2 dark:border-gray-800">
+          <div className="flex items-center justify-between gap-2">
+            <InspectorFieldLabel
+              label="初始视角"
+              hint="修改数值会自动同步地图；拖拽地图后点「读取当前视角」写回配置。改视角会关闭球面自转。"
+            />
+            <button
+              type="button"
+              className="shrink-0 text-[10px] text-brand-500 hover:underline"
+              onClick={captureCurrentView}
+            >
+              读取当前视角
+            </button>
+          </div>
 
         <div className="grid grid-cols-2 gap-2">
           <div className="grid gap-1.5">
             <InspectorFieldLabel label="中心经度" />
             <Input
               className={INSPECTOR_CTRL}
+              inputMode="decimal"
+              aria-label="中心经度"
               value={centerLng}
-              onChange={(e) => setCenterLng(e.target.value)}
+              onChange={(e) => {
+                setCenterLng(e.target.value);
+                scheduleViewCommit();
+              }}
               onBlur={commitCenter}
               onKeyDown={onEnterCommit(commitCenter)}
             />
@@ -387,8 +456,13 @@ export function ChartGisMapProjectPanel() {
             <InspectorFieldLabel label="中心纬度" />
             <Input
               className={INSPECTOR_CTRL}
+              inputMode="decimal"
+              aria-label="中心纬度"
               value={centerLat}
-              onChange={(e) => setCenterLat(e.target.value)}
+              onChange={(e) => {
+                setCenterLat(e.target.value);
+                scheduleViewCommit();
+              }}
               onBlur={commitCenter}
               onKeyDown={onEnterCommit(commitCenter)}
             />
@@ -400,8 +474,13 @@ export function ChartGisMapProjectPanel() {
             <InspectorFieldLabel label="缩放" />
             <Input
               className={INSPECTOR_CTRL}
+              inputMode="decimal"
+              aria-label="缩放"
               value={zoom}
-              onChange={(e) => setZoom(e.target.value)}
+              onChange={(e) => {
+                setZoom(e.target.value);
+                scheduleViewCommit();
+              }}
               onBlur={commitZoom}
               onKeyDown={onEnterCommit(commitZoom)}
             />
@@ -410,8 +489,13 @@ export function ChartGisMapProjectPanel() {
             <InspectorFieldLabel label="旋转°" />
             <Input
               className={INSPECTOR_CTRL}
+              inputMode="decimal"
+              aria-label="旋转"
               value={bearing}
-              onChange={(e) => setBearing(e.target.value)}
+              onChange={(e) => {
+                setBearing(e.target.value);
+                scheduleViewCommit();
+              }}
               onBlur={commitBearing}
               onKeyDown={onEnterCommit(commitBearing)}
             />
@@ -420,8 +504,13 @@ export function ChartGisMapProjectPanel() {
             <InspectorFieldLabel label="倾斜°" />
             <Input
               className={INSPECTOR_CTRL}
+              inputMode="decimal"
+              aria-label="倾斜"
               value={pitch}
-              onChange={(e) => setPitch(e.target.value)}
+              onChange={(e) => {
+                setPitch(e.target.value);
+                scheduleViewCommit();
+              }}
               onBlur={commitPitch}
               onKeyDown={onEnterCommit(commitPitch)}
             />
@@ -429,9 +518,6 @@ export function ChartGisMapProjectPanel() {
         </div>
 
         <div className="grid gap-2 rounded-lg border border-gray-200 p-2 dark:border-gray-800">
-          <label className="flex items-center gap-2 text-theme-xs text-gray-600 dark:text-gray-300">
-            <Checkbox
-              checked={project.showControls === true}
               onCheckedChange={(checked) => patchProject({ showControls: checked === true })}
             />
             显示缩放与比例尺控件

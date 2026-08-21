@@ -199,12 +199,6 @@ export function resolveGlobeLimbBoundsFromProject(map: MapLibreMap): GlobeLimbBo
   };
 }
 
-function limbFromScreenBounds(map: MapLibreMap): GlobeLimbBounds | null {
-  const bounds = resolveGlobeScreenBounds(map);
-  if (!bounds) return null;
-  return { x: bounds.x, y: bounds.y, radius: bounds.radius };
-}
-
 /** 用 MapLibre transform 的球面探测对齐真实渲染球缘（zoom / pitch 均跟随）。 */
 export function resolveGlobeLimbBoundsFromMap(map: MapLibreMap): GlobeLimbBounds | null {
   const transform = (map as unknown as { transform?: SurfaceProbeTransform }).transform;
@@ -250,6 +244,21 @@ export function offsetMapPixelToOverlay(
   };
 }
 
+function clampGlobeLimbToScreenBounds(
+  limb: GlobeLimbBounds,
+  screen: GlobeScreenBounds,
+  overlay: HTMLElement,
+  map: MapLibreMap,
+): GlobeLimbBounds {
+  const screenLimb =
+    map.getContainer() === overlay
+      ? { x: screen.x, y: screen.y, radius: screen.radius }
+      : offsetMapPixelToOverlay(map, overlay, { x: screen.x, y: screen.y, radius: screen.radius });
+  const maxRadius = screenLimb.radius * 1.12;
+  if (limb.radius <= maxRadius) return limb;
+  return screenLimb;
+}
+
 /** 多策略解析球缘，并映射到 overlay 容器坐标（实时跟 zoom；仅探测全失败才 fallback）。 */
 export function resolveGlobeLimbBoundsForOverlay(
   map: MapLibreMap | null,
@@ -262,14 +271,20 @@ export function resolveGlobeLimbBoundsForOverlay(
     return fallback;
   }
 
+  const screen = resolveGlobeScreenBounds(map);
   const inMapPixels =
     resolveGlobeLimbBoundsFromMap(map) ??
     resolveGlobeLimbBoundsFromProject(map) ??
-    limbFromScreenBounds(map) ??
+    (screen ? { x: screen.x, y: screen.y, radius: screen.radius } : null) ??
     fallback;
 
-  if (map.getContainer() === overlay) {
-    return inMapPixels;
+  const limbInOverlay =
+    map.getContainer() === overlay
+      ? inMapPixels
+      : offsetMapPixelToOverlay(map, overlay, inMapPixels);
+
+  if (screen) {
+    return clampGlobeLimbToScreenBounds(limbInOverlay, screen, overlay, map);
   }
-  return offsetMapPixelToOverlay(map, overlay, inMapPixels);
+  return limbInOverlay;
 }

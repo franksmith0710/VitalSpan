@@ -20,6 +20,7 @@ import {
 } from "@/components/charts/engine/maplibre/gisMapRuntime";
 import { mountGisGlobeHaloOverlay } from "@/components/charts/engine/maplibre/gisGlobeHalo";
 import { mountGisStarfieldOverlay } from "@/components/charts/engine/maplibre/gisStarfield";
+import { registerGisMapViewCapture } from "@/components/charts/engine/maplibre/gisMapViewBridge";
 import {
   ensurePmtilesArchiveRegistered,
   loadMapLibreRuntime,
@@ -35,7 +36,8 @@ type StyleSpecification = import("maplibre-gl").StyleSpecification;
 const DEFAULT_AUTO_ROTATE_SPEED = GLOBE_IDLE_ROTATION_DEG_PER_SEC;
 
 function GisMapViewInner(props: ChartEngineViewProps) {
-  const { chartConfig, viewModel, fill = false, height = 180, width, ariaLabel, onPaintReady } = props;
+  const { chartConfig, viewModel, fill = false, height = 180, width, ariaLabel, onPaintReady, instanceKey } =
+    props;
   const hostRef = useRef<HTMLDivElement | null>(null);
   const shellRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -159,7 +161,6 @@ function GisMapViewInner(props: ChartEngineViewProps) {
 
     let cancelled = false;
     let map: MapLibreMap | null = null;
-    let disposeControls: (() => void) | undefined;
 
     void (async () => {
       const maplibregl = await loadMapLibreRuntime();
@@ -218,19 +219,43 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         onPaintReady?.();
       });
 
-      disposeControls = await mountGisMapControls(map, project.showControls === true);
     })();
 
     return () => {
       cancelled = true;
       setMapErrorHint(null);
-      disposeControls?.();
       mapRef.current?.remove();
       mapRef.current = null;
       appliedStyleKeyRef.current = null;
       syncedViewKeyRef.current = null;
     };
-  }, [applyConfiguredView, mapBootstrapKey, onPaintReady, project.showControls, renderBasemap]);
+  }, [applyConfiguredView, mapBootstrapKey, onPaintReady, renderBasemap]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || renderBasemap !== "pmtiles") return;
+
+    let cancelled = false;
+    let disposeControls: (() => void) | undefined;
+
+    const syncControls = () => {
+      void mountGisMapControls(map, project.showControls === true).then((dispose) => {
+        if (cancelled) {
+          dispose();
+          return;
+        }
+        disposeControls = dispose;
+      });
+    };
+
+    if (map.isStyleLoaded()) syncControls();
+    else map.once("load", syncControls);
+
+    return () => {
+      cancelled = true;
+      disposeControls?.();
+    };
+  }, [mapBootstrapKey, project.showControls, renderBasemap]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -328,6 +353,21 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     observer?.observe(host);
     return () => observer?.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (!instanceKey) return;
+    return registerGisMapViewCapture(instanceKey, () => {
+      const map = mapRef.current;
+      if (!map || !map.isStyleLoaded()) return null;
+      const center = map.getCenter();
+      return {
+        center: [center.lng, center.lat],
+        zoom: map.getZoom(),
+        bearing: map.getBearing(),
+        pitch: map.getPitch(),
+      };
+    });
+  }, [instanceKey]);
 
   const statusHint = pmtilesErrorHint ?? mapErrorHint;
 

@@ -136,11 +136,13 @@ export async function mountGisMapControls(
     map.addControl(nav, "top-right");
     map.addControl(scale, "bottom-left");
   }
+  map.resize();
   return () => {
     if (showControls) {
       map.removeControl(nav);
       map.removeControl(scale);
     }
+    map.resize();
   };
 }
 

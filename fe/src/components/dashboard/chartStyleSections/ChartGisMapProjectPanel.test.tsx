@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { LayoutWidget } from "../layoutUtils";
 import { ChartInspectorProvider } from "../ChartInspectorProvider";
 import { ChartGisMapProjectPanel } from "./ChartGisMapProjectPanel";
+import { registerGisMapViewCapture } from "@/components/charts/engine/maplibre/gisMapViewBridge";
 
 vi.mock("@/lib/tileServices", () => ({
   listTileServices: vi.fn(async () => [
@@ -78,5 +79,77 @@ describe("ChartGisMapProjectPanel atmosphere wiring", () => {
         }),
       );
     });
+  });
+});
+
+describe("ChartGisMapProjectPanel initial view", () => {
+  it("debounces zoom edits into gisProject.view", async () => {
+    const onChange = vi.fn();
+    renderPanel(<ChartGisMapProjectPanel />, onChange);
+    const user = userEvent.setup();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("chart-gis-map-project-panel")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "GIS 底图" }));
+    const zoomField = screen.getByRole("textbox", { name: "缩放" });
+    await user.clear(zoomField);
+    await user.type(zoomField, "4");
+
+    await waitFor(
+      () => {
+        expect(onChange).toHaveBeenCalledWith(
+          expect.objectContaining({
+            nativeBody: expect.objectContaining({
+              gisProject: expect.objectContaining({
+                view: expect.objectContaining({ zoom: 4 }),
+              }),
+            }),
+          }),
+        );
+      },
+      { timeout: 1500 },
+    );
+  });
+
+  it("captures live map camera into gisProject.view", async () => {
+    const dispose = registerGisMapViewCapture("w-gis", () => ({
+      center: [116.4, 39.9],
+      zoom: 8,
+      bearing: 10,
+      pitch: 30,
+    }));
+    const onChange = vi.fn();
+    renderPanel(<ChartGisMapProjectPanel />, onChange);
+    const user = userEvent.setup();
+
+    try {
+      await waitFor(() => {
+        expect(screen.getByTestId("chart-gis-map-project-panel")).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByRole("button", { name: "GIS 底图" }));
+      await user.click(screen.getByRole("button", { name: "读取当前视角" }));
+
+      await waitFor(() => {
+        expect(onChange).toHaveBeenCalledWith(
+          expect.objectContaining({
+            nativeBody: expect.objectContaining({
+              gisProject: expect.objectContaining({
+                view: {
+                  center: [116.4, 39.9],
+                  zoom: 8,
+                  bearing: 10,
+                  pitch: 30,
+                },
+              }),
+            }),
+          }),
+        );
+      });
+    } finally {
+      dispose();
+    }
   });
 });
