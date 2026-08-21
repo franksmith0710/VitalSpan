@@ -1,5 +1,4 @@
-import type { GlobeScreenBounds } from "@/components/charts/engine/maplibre/gisGlobeLayout";
-import { resolveGlobeStarMaskRadius } from "@/components/charts/engine/maplibre/gisGlobeLayout";
+import { isInsideGlobeDisc, type GlobeScreenBounds } from "@/components/charts/engine/maplibre/gisGlobeLayout";
 
 export type Meteor = {
   x: number;
@@ -28,17 +27,12 @@ function mulberry32(seed: number) {
   };
 }
 
-function isOutsideGlobeMask(
+function isOutsideGlobeDisc(
   x: number,
   y: number,
   globe: GlobeScreenBounds,
-  width: number,
-  height: number,
 ): boolean {
-  const maskRadius = resolveGlobeStarMaskRadius(globe, width, height);
-  const dx = (x - globe.x) / Math.max(maskRadius, 1);
-  const dy = (y - globe.y) / Math.max(maskRadius, 1);
-  return dx * dx + dy * dy >= 1;
+  return !isInsideGlobeDisc(x, y, globe, 1.02);
 }
 
 export function spawnMeteor(opts: MeteorOptions, rand = Math.random): Meteor | null {
@@ -50,9 +44,9 @@ export function spawnMeteor(opts: MeteorOptions, rand = Math.random): Meteor | n
   for (let i = 0; i < 24; i += 1) {
     x = rand() * width;
     y = rand() * height;
-    if (isOutsideGlobeMask(x, y, globe, width, height)) break;
+    if (isOutsideGlobeDisc(x, y, globe)) break;
   }
-  if (!isOutsideGlobeMask(x, y, globe, width, height)) return null;
+  if (!isOutsideGlobeDisc(x, y, globe)) return null;
 
   const angle = (-Math.PI / 4) + (rand() - 0.5) * 0.5;
   const speed = 280 + rand() * 220;
@@ -90,8 +84,10 @@ export function drawMeteors(
   ctx: CanvasRenderingContext2D,
   meteors: Meteor[],
   intensity: number,
+  globe: GlobeScreenBounds,
 ) {
   for (const meteor of meteors) {
+    if (isInsideGlobeDisc(meteor.x, meteor.y, globe, 1.02)) continue;
     const t = meteor.life / meteor.maxLife;
     const fade = (1 - t) * intensity;
     if (fade <= 0) continue;

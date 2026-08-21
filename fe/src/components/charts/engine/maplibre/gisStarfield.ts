@@ -2,9 +2,9 @@ import type { GisAtmospherePreset, GisProjection } from "@/components/charts/eng
 import { createMeteorSpawner, drawMeteors, type Meteor } from "@/components/charts/engine/maplibre/gisMeteors";
 import {
   bindMapRenderSync,
+  isInsideGlobeDisc,
   resolveGlobeScreenBounds,
   resolveGlobeScreenBoundsFallback,
-  resolveGlobeStarMaskRadius,
   shouldRenderGisStarfield,
   type GlobeScreenBounds,
 } from "@/components/charts/engine/maplibre/gisGlobeLayout";
@@ -12,12 +12,13 @@ import {
 type MapLibreMap = import("maplibre-gl").Map;
 
 type Star = {
-  u: number;
-  v: number;
+  x: number;
+  y: number;
   radius: number;
   alpha: number;
   twinkle: number;
   phase: number;
+  hue: number;
 };
 
 export function resolveGisStarIntensity(preset: GisAtmospherePreset | undefined): number {
@@ -40,50 +41,44 @@ function mulberry32(seed: number) {
   };
 }
 
-function buildStars(count: number, seed = 42): Star[] {
+export function buildProceduralStars(width: number, height: number, seed = 42): Star[] {
   const rand = mulberry32(seed);
+  const count = Math.max(120, Math.floor((width * height) / 900));
   const stars: Star[] = [];
   for (let i = 0; i < count; i += 1) {
-    const roll = rand();
+    const size = rand() * 1.3 + 0.2;
+    const hue = rand() > 0.8 ? (rand() > 0.5 ? 220 : 40) : 0;
     stars.push({
-      u: rand(),
-      v: rand(),
-      radius: roll > 0.992 ? 1.8 : roll > 0.94 ? 1.15 : 0.7,
-      alpha: 0.4 + rand() * 0.6,
+      x: rand() * width,
+      y: rand() * height,
+      radius: size,
+      alpha: rand() * 0.6 + 0.15,
       twinkle: rand() * 0.4,
       phase: rand() * Math.PI * 2,
+      hue,
     });
   }
   return stars;
 }
 
-function rotateAround(
-  x: number,
-  y: number,
-  cx: number,
-  cy: number,
-  bearingDeg: number,
-): { x: number; y: number } {
-  const rad = (bearingDeg * Math.PI) / 180;
-  const cosB = Math.cos(rad);
-  const sinB = Math.sin(rad);
-  const ox = x - cx;
-  const oy = y - cy;
-  return { x: cx + ox * cosB - oy * sinB, y: cy + ox * sinB + oy * cosB };
-}
-
-function clipOutsideGlobe(
-  ctx: CanvasRenderingContext2D,
-  globe: GlobeScreenBounds,
+export function resolveStarfieldParallaxOffset(
+  centerLng: number,
+  centerLat: number,
+  refLng: number,
+  refLat: number,
   width: number,
   height: number,
-) {
-  const maskRadius = resolveGlobeStarMaskRadius(globe, width, height);
-  ctx.beginPath();
-  ctx.rect(0, 0, width, height);
-  ctx.moveTo(globe.x + maskRadius, globe.y);
-  ctx.arc(globe.x, globe.y, maskRadius, 0, Math.PI * 2, true);
-  ctx.clip("evenodd");
+): { dx: number; dy: number } {
+  return {
+    dx: ((centerLng - refLng) / 360) * width,
+    dy: ((centerLat - refLat) / 180) * height,
+  };
+}
+
+function starColor(hue: number, alpha: number): string {
+  if (hue === 220) return `rgba(200, 220, 255, ${alpha})`;
+  if (hue === 40) return `rgba(255, 240, 210, ${alpha})`;
+  return `rgba(235, 245, 255, ${alpha})`;
 }
 
 function drawStarfieldFrame(
@@ -96,26 +91,34 @@ function drawStarfieldFrame(
   meteorIntensity: number,
   timeSec: number,
   globe: GlobeScreenBounds,
+  parallax: { dx: number; dy: number },
 ) {
   ctx.clearRect(0, 0, width, height);
-  ctx.save();
-  clipOutsideGlobe(ctx, globe, width, height);
 
   for (const star of stars) {
-    const baseX = star.u * width;
-    const baseY = star.v * height;
-    const { x, y } = rotateAround(baseX, baseY, globe.x, globe.y, globe.bearing);
+    let x = star.x - parallax.dx;
+    let y = star.y - parallax.dy;
+    x = ((x % width) + width) % width;
+    y = ((y % height) + height) % height;
+
+    if (isInsideGlobeDisc(x, y, globe)) continue;
 
     const twinkle = star.twinkle * Math.sin(timeSec * 1.6 + star.phase);
     const alpha = Math.min(1, star.alpha * starIntensity * (0.7 + twinkle));
-    ctx.fillStyle = `rgba(235, 245, 255, ${alpha})`;
+    ctx.fillStyle = starColor(star.hue, alpha);
     ctx.beginPath();
     ctx.arc(x, y, star.radius, 0, Math.PI * 2);
     ctx.fill();
+
+    if (star.radius > 1.1) {
+      ctx.fillStyle = starColor(star.hue, alpha * 0.25);
+      ctx.beginPath();
+      ctx.arc(x, y, star.radius * 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
-  drawMeteors(ctx, meteors, meteorIntensity);
-  ctx.restore();
+  drawMeteors(ctx, meteors, meteorIntensity, globe);
 }
 
 export function mountGisStarfieldOverlay(
@@ -130,11 +133,14 @@ export function mountGisStarfieldOverlay(
 
   const canvas = document.createElement("canvas");
   canvas.dataset.testid = "gis-starfield";
-  canvas.className = "pointer-events-none absolute inset-0 z-[3]";
+  canvas.className = "pointer-events-none absolute inset-0 z-[1]";
   wrapper.appendChild(canvas);
 
   const ctx = canvas.getContext("2d");
-  const stars = buildStars(starIntensity > 0.7 ? 520 : 360);
+  let stars: Star[] = [];
+  let refLng = 100;
+  let refLat = 28;
+  let refSet = false;
   const tickMeteors = createMeteorSpawner(meteorIntensity);
   let meteors: Meteor[] = [];
   let running = true;
@@ -153,6 +159,7 @@ export function mountGisStarfieldOverlay(
     canvas.style.width = `${width}px`;
     canvas.style.height = `${height}px`;
     ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
+    stars = buildProceduralStars(width, height);
   };
 
   const bindMapIfNeeded = () => {
@@ -160,6 +167,12 @@ export function mountGisStarfieldOverlay(
     if (map === boundMap) return;
     unbindRender?.();
     boundMap = map;
+    if (map && !refSet) {
+      const center = map.getCenter();
+      refLng = center.lng;
+      refLat = center.lat;
+      refSet = true;
+    }
     unbindRender = bindMapRenderSync(map, paint);
   };
 
@@ -192,6 +205,16 @@ export function mountGisStarfieldOverlay(
       return;
     }
 
+    const center = map?.getCenter() ?? { lng: refLng, lat: refLat };
+    const parallax = resolveStarfieldParallaxOffset(
+      center.lng,
+      center.lat,
+      refLng,
+      refLat,
+      width,
+      height,
+    );
+
     if (meteorIntensity > 0) {
       meteors = tickMeteors({ width, height, globe, intensity: meteorIntensity }, dt, meteors);
     } else {
@@ -208,6 +231,7 @@ export function mountGisStarfieldOverlay(
       meteorIntensity,
       (now - start) / 1000,
       globe,
+      parallax,
     );
   };
 

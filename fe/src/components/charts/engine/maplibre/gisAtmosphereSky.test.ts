@@ -5,10 +5,10 @@ import { resolveGisMeteorIntensity, resolveGisStarIntensity } from "@/components
 import type { GisAtmospherePreset } from "@/components/charts/engine/maplibre/gisProject";
 
 describe("gisAtmosphereSky", () => {
-  it("maps night preset to dark sky with full atmosphere", () => {
+  it("maps night preset to dark sky with canvas halo complement", () => {
     const sky = mapLibreSkyForPreset("night");
     expect(sky["sky-color"]).toBe("#03040c");
-    expect(sky["atmosphere-blend"]).toBe(1);
+    expect(sky["atmosphere-blend"]).toBe(0.55);
   });
 
   it("maps day preset to bright sky", () => {
@@ -22,9 +22,9 @@ describe("gisAtmosphereSky", () => {
     expect(gisFogToMapLibreSky({ "star-intensity": 0.1 })["sky-color"]).toBe("#03040c");
   });
 
-  it("provides backdrop colors per preset", () => {
-    expect(spaceBackdropForPreset("night")).toBe("#03040c");
-    expect(spaceBackdropForPreset("day")).toBe("#b8dcf8");
+  it("provides backdrop gradients per preset", () => {
+    expect(spaceBackdropForPreset("night")).toContain("radial-gradient");
+    expect(spaceBackdropForPreset("day")).toContain("radial-gradient");
   });
 
   it("embeds globe projection and sky in style spec", () => {

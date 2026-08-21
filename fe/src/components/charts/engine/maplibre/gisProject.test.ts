@@ -105,16 +105,24 @@ describe("gisProject", () => {
     expect(project.autoRotate).toBe(true);
   });
 
-  it("normalizes map opacity", () => {
-    const config: ChartViewConfig = {
-      chartType: "gis-map",
-      nativeBody: {
-        gisProject: {
-          mapOpacity: 0.65,
-        },
-      },
-    };
-    expect(readGisProject(config).mapOpacity).toBe(0.65);
-    expect(readGisProject({ chartType: "gis-map", nativeBody: { gisProject: { mapOpacity: 2 } } }).mapOpacity).toBeUndefined();
+  it("normalizes earth opacity and migrates legacy mapOpacity", () => {
+    expect(
+      readGisProject({
+        chartType: "gis-map",
+        nativeBody: { gisProject: { earthOpacity: 0.65 } },
+      }).earthOpacity,
+    ).toBe(0.65);
+    expect(
+      readGisProject({
+        chartType: "gis-map",
+        nativeBody: { gisProject: { mapOpacity: 0.4 } },
+      }).earthOpacity,
+    ).toBe(0.4);
+    expect(
+      readGisProject({
+        chartType: "gis-map",
+        nativeBody: { gisProject: { earthOpacity: 2 } },
+      }).earthOpacity,
+    ).toBeUndefined();
   });
 });

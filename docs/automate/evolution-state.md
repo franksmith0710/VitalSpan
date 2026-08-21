@@ -8,10 +8,10 @@
 |------|----|
 | phase | **A8_DONE** |
 | status | **DONE** |
-| request | DeepTalk compose 内置图默认绑官方演示 SQL |
+| request | 10 套大屏疏朗排布模板 + compose template 参数 |
 | type | feature |
-| goal | AI 拼大屏时内置 chartType 自动出演示数据 |
-| last_verified | 2026-08-21：plugin smoke ok；official-demo-chart-queries.json ×44 |
+| goal | DeepTalk compose 用模板出图，禁止密集手写 layout |
+| last_verified | 2026-08-21：plugin v0.2.5 smoke 10 templates ok |
 | repair_rounds | 0 |
 
 ## 当前需求契约

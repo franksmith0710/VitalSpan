@@ -18,6 +18,7 @@ import {
   startGisGlobeAutoRotate,
   syncGisMapView,
 } from "@/components/charts/engine/maplibre/gisMapRuntime";
+import { mountGisGlobeHaloOverlay } from "@/components/charts/engine/maplibre/gisGlobeHalo";
 import { mountGisStarfieldOverlay } from "@/components/charts/engine/maplibre/gisStarfield";
 import {
   ensurePmtilesArchiveRegistered,
@@ -104,8 +105,9 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         waterColor: project.waterColor,
         basemapLayers: project.basemapLayers,
         buildings3d: project.buildings3d,
+        earthOpacity: project.earthOpacity ?? 1,
       }),
-    [flavor, project.basemapLayers, project.buildings3d, project.landColor, project.waterColor],
+    [flavor, project.basemapLayers, project.buildings3d, project.earthOpacity, project.landColor, project.waterColor],
   );
 
   const renderBasemap = useMemo(
@@ -130,7 +132,8 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     () => buildGisConfiguredViewKey(view),
     [view.bearing, view.center, view.pitch, view.zoom],
   );
-  const mapOpacity = project.mapOpacity ?? 1;
+  const earthOpacity = project.earthOpacity ?? 1;
+  const projection = project.projection ?? "globe";
   const hostBackground =
     project.projection === "globe" ? spaceBackdropForPreset(project.atmospherePreset) : undefined;
 
@@ -198,6 +201,8 @@ function GisMapViewInner(props: ChartEngineViewProps) {
           waterColor: current.waterColor,
           basemapLayers: current.basemapLayers,
           buildings3d: current.buildings3d !== false,
+          earthOpacity: current.earthOpacity ?? 1,
+          projection: current.projection ?? "globe",
         });
         applyGlobeAtmosphere(map, {
           projection: current.projection,
@@ -235,6 +240,8 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         waterColor: project.waterColor,
         basemapLayers: project.basemapLayers,
         buildings3d: project.buildings3d !== false,
+        earthOpacity,
+        projection,
       });
       map.resize();
       onPaintReady?.();
@@ -252,6 +259,8 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         waterColor: project.waterColor,
         basemapLayers: project.basemapLayers,
         buildings3d: project.buildings3d !== false,
+        earthOpacity,
+        projection,
       });
     };
     if (map.isStyleLoaded()) applyPatch();
@@ -284,6 +293,23 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     }
     map.once("load", apply);
   }, [applyConfiguredView, configuredViewKey]);
+
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    host.style.opacity = String(earthOpacity);
+  }, [earthOpacity]);
+
+  useEffect(() => {
+    const shell = shellRef.current;
+    if (!shell) return;
+    return mountGisGlobeHaloOverlay(
+      shell,
+      () => mapRef.current,
+      project.atmospherePreset,
+      project.projection,
+    );
+  }, [atmosphereKey, project.atmospherePreset, project.projection]);
 
   useEffect(() => {
     const shell = shellRef.current;
@@ -323,10 +349,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       <div
         ref={shellRef}
         className="relative h-full w-full"
-        style={{
-          ...(hostBackground ? { backgroundColor: hostBackground } : undefined),
-          opacity: mapOpacity,
-        }}
+        style={hostBackground ? { background: hostBackground } : undefined}
       >
         <div
           ref={hostRef}
@@ -334,8 +357,10 @@ function GisMapViewInner(props: ChartEngineViewProps) {
           data-basemap={renderBasemap ?? "pending"}
           data-requested-basemap="pmtiles"
           data-atmosphere={project.atmospherePreset ?? "night"}
-          data-projection={project.projection ?? "globe"}
-          className="relative z-[1] h-full w-full"
+          data-projection={projection}
+          data-earth-opacity={earthOpacity}
+          className="relative z-[4] h-full w-full"
+          style={{ opacity: earthOpacity }}
           role="img"
           aria-label={ariaLabel ?? "GIS 地图"}
         />

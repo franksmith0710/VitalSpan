@@ -8,6 +8,8 @@ export type GlobeScreenBounds = {
   radius: number;
   bearing: number;
   pitch: number;
+  centerLng: number;
+  centerLat: number;
 };
 
 type MapTransform = {
@@ -42,12 +44,16 @@ export function resolveGlobeScreenBounds(map: MapLibreMap | null): GlobeScreenBo
   const pitch = map.getPitch();
   const pitchScale = Math.max(0.35, Math.cos((pitch * Math.PI) / 180));
 
+  const center = map.getCenter();
+
   return {
     x: transform.centerPoint.x,
     y: transform.centerPoint.y,
     radius: radius * pitchScale,
     bearing: map.getBearing(),
     pitch,
+    centerLng: center.lng,
+    centerLat: center.lat,
   };
 }
 
@@ -56,18 +62,24 @@ export function resolveGlobeScreenBoundsFallback(
   height: number,
 ): GlobeScreenBounds {
   const radius = Math.min(width, height) * 0.42;
-  return { x: width / 2, y: height / 2, radius, bearing: 0, pitch: 0 };
+  return { x: width / 2, y: height / 2, radius, bearing: 0, pitch: 0, centerLng: 100, centerLat: 28 };
 }
 
-/** 星场/流星挖空与裁剪用的地球圆盘半径（上限避免低 zoom 半径过大）。 */
-export function resolveGlobeStarMaskRadius(
+/** 星空与球面同向旋转：bearing + 中心经度。 */
+export function resolveGlobeStarViewRotation(globe: GlobeScreenBounds): number {
+  return globe.bearing + globe.centerLng;
+}
+
+export function isInsideGlobeDisc(
+  x: number,
+  y: number,
   globe: GlobeScreenBounds,
-  width: number,
-  height: number,
-): number {
-  const pitchScale = Math.max(0.35, Math.cos((globe.pitch * Math.PI) / 180));
-  const fallback = Math.min(width, height) * 0.42 * pitchScale;
-  return Math.min(globe.radius * 0.88 * pitchScale, fallback * 1.08);
+  inset = 0.98,
+): boolean {
+  const dx = x - globe.x;
+  const dy = y - globe.y;
+  const r = globe.radius * inset;
+  return dx * dx + dy * dy < r * r;
 }
 
 /** 全球远视图才显示星场；区域放大后隐藏，避免 overlay 伪影。 */

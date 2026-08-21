@@ -57,8 +57,8 @@ export type GisProject = {
   showControls?: boolean;
   /** 矢量底图建筑 3D 挤出（高 zoom） */
   buildings3d?: boolean;
-  /** 地图整体不透明度（0–1），默认 1 */
-  mapOpacity?: number;
+  /** 地球表面（矢量底图）不透明度 0–1，默认 1；不影响星空/大气 */
+  earthOpacity?: number;
 };
 
 /** 本地/演示默认登记的全球 PMTiles 服务（运维 register 脚本同名 id）。 */
@@ -164,7 +164,9 @@ function normalizeGisProject(raw: unknown): GisProject {
     (projection === "globe" ? DEFAULT_GIS_GLOBE_VIEW : DEFAULT_GIS_PROJECT.view);
   const fog = resolveGisFog(projection, atmospherePreset);
   const autoRotateSpeed = Number(candidate.autoRotateSpeed);
-  const mapOpacityRaw = Number(candidate.mapOpacity);
+  const earthOpacityRaw = Number(
+    candidate.earthOpacity ?? (candidate as { mapOpacity?: number }).mapOpacity,
+  );
   const landColor = normalizeBasemapHexColor(candidate.landColor);
   const waterColor = normalizeBasemapHexColor(candidate.waterColor);
   const basemapLayers = normalizeBasemapLayerVisibility(candidate.basemapLayers);
@@ -184,9 +186,9 @@ function normalizeGisProject(raw: unknown): GisProject {
     autoRotateSpeed: Number.isFinite(autoRotateSpeed) && autoRotateSpeed > 0 ? autoRotateSpeed : undefined,
     showControls: candidate.showControls === true,
     buildings3d: candidate.buildings3d !== false,
-    mapOpacity:
-      Number.isFinite(mapOpacityRaw) && mapOpacityRaw >= 0 && mapOpacityRaw <= 1
-        ? mapOpacityRaw
+    earthOpacity:
+      Number.isFinite(earthOpacityRaw) && earthOpacityRaw >= 0 && earthOpacityRaw <= 1
+        ? earthOpacityRaw
         : undefined,
   };
 }

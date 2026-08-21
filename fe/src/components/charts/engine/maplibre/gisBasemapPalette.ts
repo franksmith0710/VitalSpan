@@ -90,6 +90,48 @@ export function applyBasemapLayerVisibility(
   });
 }
 
+function applyLayerEarthOpacity(
+  map: MapLibreMap,
+  layerId: string,
+  layerType: string,
+  opacity: number,
+) {
+  switch (layerType) {
+    case "fill":
+      map.setPaintProperty(layerId, "fill-opacity", opacity);
+      return;
+    case "line":
+      map.setPaintProperty(layerId, "line-opacity", opacity);
+      return;
+    case "symbol":
+      map.setPaintProperty(layerId, "text-opacity", opacity);
+      map.setPaintProperty(layerId, "icon-opacity", opacity);
+      return;
+    case "fill-extrusion":
+      map.setPaintProperty(layerId, "fill-extrusion-opacity", opacity);
+      return;
+    case "circle":
+      map.setPaintProperty(layerId, "circle-opacity", opacity);
+      return;
+    default:
+      return;
+  }
+}
+
+export function applyEarthBasemapOpacity(
+  map: MapLibreMap,
+  opacity: number,
+  projection: "globe" | "mercator" = "globe",
+) {
+  if (projection === "globe") return;
+  if (!map.isStyleLoaded()) return;
+  const clamped = Math.max(0, Math.min(1, opacity));
+  for (const layer of map.getStyle().layers ?? []) {
+    if (layer.id.startsWith("vs-gis-")) continue;
+    applyLayerEarthOpacity(map, layer.id, layer.type, clamped);
+  }
+}
+
 /** 运行时改色/图层，避免 setStyle 导致球面视角漂移。 */
 export function applyBasemapRuntimePatch(
   map: MapLibreMap,
@@ -99,6 +141,8 @@ export function applyBasemapRuntimePatch(
     waterColor?: string;
     basemapLayers?: GisBasemapLayerVisibility;
     buildings3d?: boolean;
+    earthOpacity?: number;
+    projection?: "globe" | "mercator";
   },
 ) {
   if (!map.isStyleLoaded()) return;
@@ -116,6 +160,8 @@ export function applyBasemapRuntimePatch(
   if (patch.buildings3d !== undefined) {
     applyBuildings3dRuntime(map, patch.buildings3d);
   }
+
+  applyEarthBasemapOpacity(map, patch.earthOpacity ?? 1, patch.projection ?? "globe");
 
   for (const layer of map.getStyle().layers ?? []) {
     if (layer.id.startsWith("vs-gis-")) continue;

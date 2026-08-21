@@ -18,11 +18,11 @@ const SKY_BY_PRESET: Record<GisAtmospherePreset, SkySpecification> = {
   night: {
     "sky-color": "#03040c",
     "horizon-color": "#1e4a9a",
-    "sky-horizon-blend": 0.18,
+    "sky-horizon-blend": 0.12,
     "fog-color": "#4a7fd4",
-    "horizon-fog-blend": 0.32,
+    "horizon-fog-blend": 0.22,
     "fog-ground-blend": 0,
-    "atmosphere-blend": 1,
+    "atmosphere-blend": 0.55,
   },
 };
 
@@ -55,7 +55,11 @@ export function applyGisGlobeToStyle(
 }
 
 export function spaceBackdropForPreset(preset: GisAtmospherePreset | undefined): string | undefined {
-  if (preset === "night") return "#03040c";
-  if (preset === "day") return "#b8dcf8";
+  if (preset === "night") {
+    return "radial-gradient(ellipse at center, #0c1b33 0%, #081222 100%)";
+  }
+  if (preset === "day") {
+    return "radial-gradient(ellipse at center, #b8dcf8 0%, #8ec5f0 100%)";
+  }
   return undefined;
 }

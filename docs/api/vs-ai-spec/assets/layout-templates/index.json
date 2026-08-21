@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "description": "DeepTalk compose 大屏/看板排布样例（疏朗留白，gapPreset=md）",
+  "templates": [
+    {
+      "id": "gov-cockpit",
+      "name": "政务 KPI 驾驶舱",
+      "surfaceKind": "data-screen",
+      "tags": ["政务", "深色", "KPI顶栏"],
+      "chartSlots": 8,
+      "customVizSlots": 1
+    },
+    {
+      "id": "sparse-three-tier",
+      "name": "三阶疏朗",
+      "surfaceKind": "data-screen",
+      "tags": ["疏朗", "分层"],
+      "chartSlots": 8,
+      "customVizSlots": 2
+    },
+    {
+      "id": "map-hero",
+      "name": "地图主角",
+      "surfaceKind": "data-screen",
+      "tags": ["地图", "居中"],
+      "chartSlots": 4,
+      "customVizSlots": 1
+    },
+    {
+      "id": "quad-spacious",
+      "name": "四宫格留白",
+      "surfaceKind": "data-screen",
+      "tags": ["对称", "大图"],
+      "chartSlots": 4,
+      "customVizSlots": 0
+    },
+    {
+      "id": "asymmetric-editorial",
+      "name": "不对称编辑排版",
+      "surfaceKind": "data-screen",
+      "tags": ["左大右小", "杂志风"],
+      "chartSlots": 4,
+      "customVizSlots": 1
+    },
+    {
+      "id": "kpi-flow-banner",
+      "name": "KPI 顶带 + 流向带",
+      "surfaceKind": "data-screen",
+      "tags": ["KPI", "桑基", "电商"],
+      "chartSlots": 9,
+      "customVizSlots": 0
+    },
+    {
+      "id": "customviz-stage",
+      "name": "CustomViz 舞台",
+      "surfaceKind": "data-screen",
+      "tags": ["AI组件", "大图"],
+      "chartSlots": 4,
+      "customVizSlots": 3
+    },
+    {
+      "id": "industrial-monitor",
+      "name": "工业监控六宫格",
+      "surfaceKind": "data-screen",
+      "tags": ["工业", "等分"],
+      "chartSlots": 6,
+      "customVizSlots": 0
+    },
+    {
+      "id": "finance-light",
+      "name": "金融浅色看板风",
+      "surfaceKind": "data-screen",
+      "tags": ["浅色", "金融"],
+      "chartSlots": 5,
+      "customVizSlots": 1
+    },
+    {
+      "id": "minimal-demo",
+      "name": "极简演示",
+      "surfaceKind": "data-screen",
+      "tags": ["极简", "少组件"],
+      "chartSlots": 3,
+      "customVizSlots": 2
+    }
+  ]
+}

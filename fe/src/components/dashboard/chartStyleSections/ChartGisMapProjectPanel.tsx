@@ -349,23 +349,26 @@ export function ChartGisMapProjectPanel() {
         </div>
 
         <ChartDeSliderField
-          label="地图不透明度"
+          label="地球不透明度"
           layout="stacked"
-          value={project.mapOpacity != null ? Math.round(project.mapOpacity * 100) : undefined}
+          value={project.earthOpacity != null ? Math.round(project.earthOpacity * 100) : undefined}
           fallback={100}
           min={0}
           max={100}
           step={1}
           unit="%"
-          ariaLabel="地图不透明度"
+          ariaLabel="地球不透明度"
           onChange={(opacityPercent) =>
-            patchProject({ mapOpacity: Math.max(0, Math.min(100, opacityPercent)) / 100 })
+            patchProject({ earthOpacity: Math.max(0, Math.min(100, opacityPercent)) / 100 })
           }
           onPreviewChange={(opacityPercent) => {
             if (opacityPercent == null) return;
-            patchProject({ mapOpacity: Math.max(0, Math.min(100, opacityPercent)) / 100 });
+            patchProject({ earthOpacity: Math.max(0, Math.min(100, opacityPercent)) / 100 });
           }}
         />
+        <p className="text-theme-xs text-gray-500">
+          球面模式下作用于地球渲染层（可透出后方星空）；星空层保持不透明。默认 100%。
+        </p>
 
         <div className="grid grid-cols-2 gap-2">
           <div className="grid gap-1.5">
