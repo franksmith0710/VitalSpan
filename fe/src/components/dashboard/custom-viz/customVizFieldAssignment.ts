@@ -1,5 +1,10 @@
-import { classifyDatasetField } from "../datasetFieldClassification";
-import { expandCustomVizFieldSlotsForUi, type CustomVizFieldTarget } from "./customVizFieldSlots";
+import { classifyDatasetField, groupDatasetFields } from "../datasetFieldClassification";
+import type { CustomVizDataBinding, CustomVizMetricRef } from "../layoutUtils";
+import {
+  expandCustomVizFieldSlotsForUi,
+  parseCustomVizFieldSlotGroupsForUi,
+  type CustomVizFieldTarget,
+} from "./customVizFieldSlots";
 
 const DATE_FIELD =
   /(?:^|_)(date|time|day|month|year|week|timestamp|datetime)(?:$|_)|_at$/i;
@@ -16,6 +21,65 @@ export function resolveCustomVizUiSlot(
   return slots.find((s) => s.kind === target.kind && s.index === target.index);
 }
 
+export function resolveCustomVizFieldGroup(
+  fieldSlots: Record<string, unknown> | undefined,
+  kind: CustomVizFieldTarget["kind"],
+) {
+  return parseCustomVizFieldSlotGroupsForUi(fieldSlots).find((g) => g.kind === kind);
+}
+
+export function reconcileCustomVizFields(
+  binding: CustomVizDataBinding,
+  columns: string[],
+): CustomVizDataBinding {
+  const allowed = new Set(columns);
+  return {
+    ...binding,
+    dimensions: (binding.dimensions ?? []).filter((d) => allowed.has(d.field?.trim() ?? "")),
+    metrics: (binding.metrics ?? []).filter((m) => allowed.has(m.field?.trim() ?? "")),
+  };
+}
+
+/** 选中 Dataset 且列就绪后，对标内置 chart 的 suggestChartFields。 */
+export function suggestCustomVizFields(
+  columns: string[],
+  fieldSlots: Record<string, unknown> | undefined,
+): Pick<CustomVizDataBinding, "dimensions" | "metrics"> {
+  if (columns.length === 0) return { dimensions: [], metrics: [] };
+
+  const groups = parseCustomVizFieldSlotGroupsForUi(fieldSlots);
+  const dimGroup = groups.find((g) => g.kind === "dimension");
+  const metricGroup = groups.find((g) => g.kind === "metric");
+  const { dimensions: dimCols, metrics: metricCols } = groupDatasetFields(columns);
+
+  const dimensions: NonNullable<CustomVizDataBinding["dimensions"]> = [];
+  const metrics: CustomVizMetricRef[] = [];
+
+  if (dimGroup) {
+    const detailTable = dimGroup.uiMode === "multi" && (!metricGroup || metricGroup.min === 0);
+    if (detailTable) {
+      const fields = dimCols.length > 0 ? [...dimCols, ...metricCols] : columns;
+      const seen = new Set<string>();
+      for (const field of fields) {
+        if (seen.has(field) || dimensions.length >= dimGroup.max) continue;
+        seen.add(field);
+        dimensions.push({ field });
+      }
+    } else {
+      const field = dimCols[0] ?? columns[0];
+      if (field) dimensions.push({ field });
+    }
+  }
+
+  if (metricGroup && metricGroup.min > 0) {
+    const field =
+      metricCols[0] ?? columns.find((col) => !dimensions.some((d) => d.field === col));
+    if (field) metrics.push({ field, agg: "sum" });
+  }
+
+  return { dimensions, metrics };
+}
+
 export function resolveCustomVizSlotLabel(
   fieldSlots: Record<string, unknown> | undefined,
   target: CustomVizFieldTarget,
@@ -27,6 +91,7 @@ export function resolveCustomVizSlotLabel(
 export function validateCustomVizFieldAssignment(
   field: string,
   target: CustomVizFieldTarget,
+  fieldSlots?: Record<string, unknown>,
   slotLabel?: string,
   slotExpect?: "date" | "geo",
 ): CustomVizFieldAssignResult {
@@ -36,8 +101,11 @@ export function validateCustomVizFieldAssignment(
   }
 
   const fieldKind = classifyDatasetField(trimmed);
+  const dimGroup = resolveCustomVizFieldGroup(fieldSlots, "dimension");
+  const metricGroup = resolveCustomVizFieldGroup(fieldSlots, "metric");
+  const detailTable = dimGroup?.uiMode === "multi" && (!metricGroup || metricGroup.min === 0);
 
-  if (target.kind === "dimension" && fieldKind === "metric") {
+  if (target.kind === "dimension" && fieldKind === "metric" && !detailTable) {
     return {
       ok: false,
       message: `「${trimmed}」是指标字段，不能放入「${slotLabel ?? "维度"}」。请从右侧「指标」分组拖入，或改放指标槽`,

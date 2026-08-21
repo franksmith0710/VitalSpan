@@ -1,8 +1,9 @@
+import { ChartFieldMultiSlot } from "../ChartFieldMultiSlot";
 import { ChartFieldSlot } from "../ChartFieldSlot";
 import type { CustomVizDataBinding } from "../layoutUtils";
 import {
   customVizFieldTargetsEqual,
-  expandCustomVizFieldSlotsForUi,
+  parseCustomVizFieldSlotGroupsForUi,
   type CustomVizFieldTarget,
 } from "./customVizFieldSlots";
 
@@ -16,6 +17,14 @@ type CustomVizDataSlotsProps = {
   fieldAssignError?: string | null;
   onPatch: (patch: Partial<CustomVizDataBinding>) => void;
 };
+
+function readDimensionFields(binding: CustomVizDataBinding): string[] {
+  return (binding.dimensions ?? []).map((d) => d.field?.trim()).filter((f): f is string => Boolean(f));
+}
+
+function readMetricFields(binding: CustomVizDataBinding): string[] {
+  return (binding.metrics ?? []).map((m) => m.field?.trim()).filter((f): f is string => Boolean(f));
+}
 
 function readFieldAt(
   binding: CustomVizDataBinding,
@@ -44,9 +53,9 @@ export function CustomVizDataSlots({
   fieldAssignError,
   onPatch,
 }: CustomVizDataSlotsProps) {
-  const slots = expandCustomVizFieldSlotsForUi(fieldSlots);
+  const groups = parseCustomVizFieldSlotGroupsForUi(fieldSlots);
 
-  const clearSlot = (target: CustomVizFieldTarget) => {
+  const clearSingleSlot = (target: CustomVizFieldTarget) => {
     if (target.kind === "dimension") {
       const next = [...(binding.dimensions ?? [])];
       if (target.index >= next.length) return;
@@ -65,24 +74,66 @@ export function CustomVizDataSlots({
       {fieldAssignError ? (
         <p className="text-theme-xs text-error-600 dark:text-error-400">{fieldAssignError}</p>
       ) : null}
-      {slots.map((slot) => {
-        const target: CustomVizFieldTarget = { kind: slot.kind, index: slot.index };
-        const fieldName = readFieldAt(binding, slot.kind, slot.index);
+      {groups.map((group) => {
+        const targetKind = group.kind;
+        const target: CustomVizFieldTarget = { kind: targetKind, index: 0 };
+
+        if (group.uiMode === "multi") {
+          const fields =
+            targetKind === "dimension" ? readDimensionFields(binding) : readMetricFields(binding);
+          return (
+            <ChartFieldMultiSlot
+              key={group.key}
+              label={group.label}
+              required={group.required}
+              axisId={targetKind === "dimension" ? "xAxis" : "yAxis"}
+              fields={fields}
+              showAggregation={targetKind === "metric"}
+              active={activeFieldTarget.kind === targetKind}
+              disabled={columnsDisabled}
+              onClick={() =>
+                onActiveFieldTargetChange({
+                  kind: targetKind,
+                  index: fields.length,
+                })
+              }
+              onClearAll={
+                fields.length
+                  ? () =>
+                      onPatch(
+                        targetKind === "dimension" ? { dimensions: [] } : { metrics: [] },
+                      )
+                  : undefined
+              }
+              onRemoveAt={(index) => {
+                const key = targetKind === "dimension" ? "dimensions" : "metrics";
+                const next = [...(binding[key] ?? [])];
+                next.splice(index, 1);
+                onPatch({ [key]: next });
+              }}
+              onDropField={(field) =>
+                assignField(field, { kind: targetKind, index: fields.length })
+              }
+            />
+          );
+        }
+
+        const fieldName = readFieldAt(binding, targetKind, 0);
         const aggregationSuffix =
-          fieldName && slot.kind === "metric" ? metricAggSuffix(fieldName) : undefined;
+          fieldName && targetKind === "metric" ? metricAggSuffix(fieldName) : undefined;
         return (
           <ChartFieldSlot
-            key={slot.uiKey}
-            label={slot.label}
-            required={slot.required}
+            key={group.key}
+            label={group.label}
+            required={group.required}
             fieldName={fieldName}
             fieldSuffix={aggregationSuffix}
-            slotKind={slot.kind}
-            active={customVizFieldTargetsEqual(activeFieldTarget, target)}
+            slotKind={targetKind}
+            active={customVizFieldTargetsEqual(activeFieldTarget, { kind: targetKind, index: 0 })}
             disabled={columnsDisabled}
-            onClick={() => onActiveFieldTargetChange(target)}
-            onClear={fieldName ? () => clearSlot(target) : undefined}
-            onDropField={(field) => assignField(field, target)}
+            onClick={() => onActiveFieldTargetChange({ kind: targetKind, index: 0 })}
+            onClear={fieldName ? () => clearSingleSlot({ kind: targetKind, index: 0 }) : undefined}
+            onDropField={(field) => assignField(field, { kind: targetKind, index: 0 })}
           />
         );
       })}

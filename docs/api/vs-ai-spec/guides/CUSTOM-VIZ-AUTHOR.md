@@ -11,7 +11,9 @@ REM 0) 健康检查
 python tools\check-vitalspan-health.py
 
 REM 1) 从金样复制（禁止从零写 manifest）
-python tools\scaffold-custom-viz.py --id my-scroll-table --name 流动明细表 --template scrolling-table
+python tools\scaffold-custom-viz.py --id my-widget --name 我的组件
+REM 专用范式才指定 template，例如流动表：
+REM python tools\scaffold-custom-viz.py --id my-scroll --name 流动表 --template scrolling-table
 
 REM 2) 改 examples\my-scroll-table.bundle.html 或 JSON 内 index.html
 REM    保留：host.vsCv.mount · (p&&p.style) · id=vs-cv-* · fieldSlots
@@ -26,14 +28,17 @@ REM 必须看到: ok artifactId=... styleComplianceTier=full warnings: none
 
 插件：`vitalspan_publish_artifact` **会先跑本地预检**（v0.2.7+），失败直接返回「修复提示」，禁止盲试 POST。
 
-## 2. 金样模板（复制，勿手写 JSON）
+## 2. 金样模板（按范式选，默认一个就够）
 
-| template | 用途 | 文件 |
-|----------|------|------|
-| `scrolling-table` | 多列流动明细表 + 悬停暂停 | `examples/scrolling-table.json` |
-| `alert-feed` | 单列滚动告警 | `examples/custom-viz-alert-feed.json` |
-| `ranking-bar` | 排名条形图 | `examples/custom-viz-ranking-bar-chart-fixed.json` |
-| `trend-line` | 折线趋势 | `examples/custom-viz-trend-line.json` |
+| template | 何时用 |
+|----------|--------|
+| **`html-minimal`（默认）** | 大多数新组件：简单 DOM/表格/KPI；改 render 即可 · 平台金样 `artifactId=48f41700-a6c5-4495-add9-e0dd57f1f0a6` |
+| `scrolling-table` | 明确要**纵向循环滚动 + 悬停暂停** |
+| `alert-feed` | 单列滚动条/告警条 |
+| `ranking-bar` | 排名条形图 |
+| `trend-line` | 折线/趋势（d3 或 canvas 范式） |
+
+**不要**为每个业务组件新建金样文件；在 scaffold 出的 `examples/<id>.json` 上改 HTML 即可。
 
 ## 3. manifest 必填（缺一 422）
 

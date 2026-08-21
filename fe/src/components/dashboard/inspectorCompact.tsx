@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, CircleAlert } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { ColorField, type ColorSwatch } from "@/components/ui/color-field";
@@ -9,6 +9,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 /** 看板 chart-edit 左列（~252px）/ 右列（~180px）紧凑密度，对标 DataEase editor-light */
@@ -22,8 +23,63 @@ export const INSPECTOR_SELECT_TRIGGER = cn(
   "[&>svg]:size-3.5 [&>svg]:opacity-50",
 );
 export const INSPECTOR_LABEL = "text-[11px] font-medium text-gray-500 dark:text-gray-400";
+/** @deprecated 说明改用 InspectorHintTip 悬浮展示，勿再通栏堆字 */
 export const INSPECTOR_HINT = "text-[10px] leading-relaxed text-gray-400 dark:text-gray-500";
 export const INSPECTOR_SECTION_GAP = "space-y-2.5";
+
+/** 紧凑栏说明：感叹号图标，悬浮展示完整文案 */
+export function InspectorHintTip({
+  text,
+  className,
+  side = "top",
+  "aria-label": ariaLabel = "字段说明",
+}: {
+  text: string;
+  className?: string;
+  side?: "top" | "right" | "bottom" | "left";
+  "aria-label"?: string;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            "inline-flex size-4 shrink-0 items-center justify-center rounded-full text-gray-400",
+            "hover:text-gray-600 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30",
+            "dark:text-gray-500 dark:hover:text-gray-300",
+            className,
+          )}
+          aria-label={ariaLabel}
+        >
+          <CircleAlert className="size-3.5" aria-hidden />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side={side} className="max-w-[240px] text-left leading-relaxed">
+        {text}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+export function InspectorFieldLabel({
+  label,
+  hint,
+  className,
+  labelClassName,
+}: {
+  label: string;
+  hint?: string;
+  className?: string;
+  labelClassName?: string;
+}) {
+  return (
+    <div className={cn("flex min-w-0 items-center gap-1", className)}>
+      <Label className={cn(INSPECTOR_LABEL, "min-w-0 truncate", labelClassName)}>{label}</Label>
+      {hint ? <InspectorHintTip text={hint} aria-label={`${label}说明`} /> : null}
+    </div>
+  );
+}
 export const INSPECTOR_SWITCH_ROW = "flex items-center justify-between gap-2";
 /** 看板配置轨 / 图表样式栏统一小号开关 */
 export const INSPECTOR_SWITCH_SIZE = "sm" as const;
@@ -66,9 +122,8 @@ export function InspectorFieldRow({
 }) {
   return (
     <div className="grid gap-1">
-      <Label className={INSPECTOR_LABEL}>{label}</Label>
+      <InspectorFieldLabel label={label} hint={hint} />
       {children}
-      {hint ? <p className={INSPECTOR_HINT}>{hint}</p> : null}
     </div>
   );
 }
@@ -96,15 +151,18 @@ export function InspectorSwitchRow({
           "border-b border-gray-100 py-2 last:border-b-0 dark:border-white/[0.06]",
         )}
       >
-        <Label
-          className={cn(
-            INSPECTOR_LABEL,
-            "font-normal",
-            disabled ? "text-gray-400 dark:text-gray-500" : "text-gray-600 dark:text-gray-300",
-          )}
-        >
-          {label}
-        </Label>
+        <div className="flex min-w-0 flex-1 items-center gap-1">
+          <Label
+            className={cn(
+              INSPECTOR_LABEL,
+              "min-w-0 font-normal",
+              disabled ? "text-gray-400 dark:text-gray-500" : "text-gray-600 dark:text-gray-300",
+            )}
+          >
+            {label}
+          </Label>
+          {hint ? <InspectorHintTip text={hint} aria-label={`${label}说明`} /> : null}
+        </div>
         <Switch
           checked={checked}
           disabled={disabled}
@@ -113,7 +171,6 @@ export function InspectorSwitchRow({
           size={INSPECTOR_SWITCH_SIZE}
         />
       </div>
-      {hint ? <p className={INSPECTOR_HINT}>{hint}</p> : null}
     </div>
   );
 }
@@ -121,6 +178,7 @@ export function InspectorSwitchRow({
 /** 216px 图表样式栏：功能种类折叠（无灰底条），标题行右侧可放 Switch */
 export function ChartInspectorSection({
   title,
+  hint,
   children,
   action,
   defaultOpen = false,
@@ -129,6 +187,8 @@ export function ChartInspectorSection({
   "data-testid": testId,
 }: {
   title: string;
+  /** 折叠标题旁悬浮说明，替代通栏 hint 段落 */
+  hint?: string;
   children?: ReactNode;
   action?: ReactNode;
   defaultOpen?: boolean;
@@ -160,6 +220,14 @@ export function ChartInspectorSection({
             aria-hidden
           />
           <span className="min-w-0 truncate">{title}</span>
+          {hint ? (
+            <InspectorHintTip
+              text={hint}
+              className="shrink-0"
+              side="left"
+              aria-label={`${title}说明`}
+            />
+          ) : null}
         </CollapsibleTrigger>
         {action ? (
           <div
@@ -184,6 +252,7 @@ export const ChartInspectorFlatSection = ChartInspectorSection;
 /** 432px 配置栏：标签左 + 控件右，避免色块输入通栏拉长 */
 export function InspectorInlineColorRow({
   label,
+  hint,
   value,
   onChange,
   swatches,
@@ -192,6 +261,7 @@ export function InspectorInlineColorRow({
   className,
 }: {
   label: string;
+  hint?: string;
   value: string;
   onChange: (value: string | undefined) => void;
   swatches?: readonly ColorSwatch[] | readonly string[];
@@ -206,7 +276,7 @@ export function InspectorInlineColorRow({
         className,
       )}
     >
-      <Label className={cn(INSPECTOR_LABEL, "shrink-0")}>{label}</Label>
+      <InspectorFieldLabel label={label} hint={hint} className="shrink-0" />
       <ColorField
         variant="swatch"
         showLabel={false}

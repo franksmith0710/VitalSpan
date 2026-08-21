@@ -121,4 +121,56 @@ describe("useCustomVizInspectorState", () => {
       expect(result.current.datasetBindingError).toBeNull();
     });
   });
+
+  it("auto-suggests fields when dataset columns load", async () => {
+    mockApiFetch.mockImplementation(async (path: string) => {
+      if (path.includes("/datasets")) {
+        return {
+          items: [
+            {
+              datasetId: "ds-sales",
+              displayName: "销售宽表",
+              boundConfigId: "cfg-1",
+            },
+          ],
+        };
+      }
+      return {};
+    });
+    mockFetchDatasetQueryConfig.mockResolvedValue({
+      configId: "cfg-1",
+      dataSourceId: "dsrc-1",
+      columns: ["province", "city", "amount"],
+    });
+
+    let config: CustomVizWidgetConfig = {
+      artifactId: "art-1",
+      dataBinding: { status: "manual" },
+    };
+    const readConfig = () => config;
+    const emitChange = (next: CustomVizWidgetConfig) => {
+      config = next;
+    };
+    const fieldSlots = {
+      dimensions: { min: 1, max: 6, label: "明细列" },
+      metrics: { min: 0, max: 0, label: "数值列" },
+    };
+
+    const { result, rerender } = renderHook(
+      () => useCustomVizInspectorState(readConfig, emitChange, fieldSlots),
+      { wrapper },
+    );
+
+    await waitFor(() => expect(result.current.datasetItems).toHaveLength(1));
+    await result.current.handleDatasetSelect("ds-sales");
+    rerender();
+
+    await waitFor(() => {
+      expect(result.current.binding.dimensions?.map((d) => d.field)).toEqual([
+        "province",
+        "city",
+        "amount",
+      ]);
+    });
+  });
 });

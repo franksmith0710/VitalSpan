@@ -2,6 +2,7 @@ import { patchChartDeDisplay } from "@/lib/chartDeDisplay";
 import { isChartExecuteReady } from "@/lib/chartExecuteProbe";
 import type { ChartFieldRef, ChartViewConfig } from "@/lib/chartViewConfig";
 import type { CustomVizDataBinding, CustomVizMetricRef, CustomVizWidgetConfig } from "../layoutUtils";
+import { parseCustomVizFieldSlotGroupsForUi, parseCustomVizFieldSlots } from "./customVizFieldSlots";
 
 function metricsAsChartFields(metrics: CustomVizMetricRef[] | undefined): ChartFieldRef[] {
   return (metrics ?? []).filter((m) => m.field?.trim());
@@ -26,12 +27,18 @@ export function customVizBindingToChartConfig(binding: CustomVizDataBinding | un
   return patchChartDeDisplay(base, displayPatch);
 }
 
-export function isCustomVizExecuteReady(binding: CustomVizDataBinding | undefined): boolean {
+export function isCustomVizExecuteReady(
+  binding: CustomVizDataBinding | undefined,
+  fieldSlots?: Record<string, unknown>,
+): boolean {
   const cfg = customVizBindingToChartConfig(binding);
   if (!isChartExecuteReady(cfg)) return false;
   const dims = binding?.dimensions?.filter((d) => d.field?.trim()).length ?? 0;
   const metrics = binding?.metrics?.filter((m) => m.field?.trim()).length ?? 0;
-  return dims + metrics > 0;
+  const slotDefs = parseCustomVizFieldSlots(fieldSlots);
+  const dimMin = slotDefs.find((g) => g.kind === "dimension")?.min ?? 1;
+  const metricMin = slotDefs.find((g) => g.kind === "metric")?.min ?? 1;
+  return dims >= dimMin && metrics >= metricMin;
 }
 
 export function resolveCustomVizStyle(

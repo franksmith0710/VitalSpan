@@ -54,6 +54,16 @@ def validate_manifest(manifest: dict) -> None:
                 422,
             )
         min_count = rule.get("min")
+        if key == "metrics":
+            dim_rule = field_slots.get("dimensions")
+            dim_max = (
+                dim_rule.get("max")
+                if isinstance(dim_rule, dict) and isinstance(dim_rule.get("max"), int)
+                else 1
+            )
+            # 明细表范式：多列 dimensions + metrics.min=0（纯展示列，不做聚合）
+            if dim_max > 1 and min_count == 0:
+                continue
         if not isinstance(min_count, int) or min_count < 1:
             raise AiVizError(
                 "AIVIZ_INVALID_MANIFEST",

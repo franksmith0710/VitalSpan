@@ -4,7 +4,7 @@ from __future__ import annotations
 
 HINTS: dict[str, str] = {
     "AIVIZ_INVALID_MANIFEST": (
-        "manifest 缺字段。复制 examples/scrolling-table.json 结构："
+        "manifest 缺字段。复制 examples/html-minimal.json 结构："
         "fieldSlots.dimensions + fieldSlots.metrics（min 均 >= 1）、styleSchema.properties（至少 1 项中文 title）"
     ),
     "AIVIZ_UNSAFE_CONTENT": (
@@ -44,5 +44,5 @@ def format_error_block(code: str, message: str, http_status: int = 422) -> list[
     hint = hint_for(code, message)
     if hint:
         lines.append(f"  → 修复: {hint}")
-    lines.append("  → 金样: examples/scrolling-table.json · guides/CUSTOM-VIZ-AUTHOR.md")
+    lines.append("  → 金样: examples/html-minimal.json（默认）· guides/CUSTOM-VIZ-AUTHOR.md")
     return lines

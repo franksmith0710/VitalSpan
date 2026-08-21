@@ -9,7 +9,10 @@ import type { CustomVizDataBinding, CustomVizMetricRef, CustomVizWidgetConfig } 
 import { customVizBindingToChartConfig } from "./customVizExecute";
 import type { CustomVizFieldTarget } from "./customVizFieldSlots";
 import {
+  reconcileCustomVizFields,
+  resolveCustomVizFieldGroup,
   resolveCustomVizUiSlot,
+  suggestCustomVizFields,
   validateCustomVizFieldAssignment,
 } from "./customVizFieldAssignment";
 
@@ -32,6 +35,7 @@ export function useCustomVizInspectorState(
   const [datasetBindingError, setDatasetBindingError] = useState<string | null>(null);
   const [fieldAssignError, setFieldAssignError] = useState<string | null>(null);
   const bindingSyncRef = useRef<string | null>(null);
+  const autoFieldsRef = useRef<string | null>(null);
 
   const { data: datasetData, isLoading: datasetsLoading, isError: datasetsError } = useQuery({
     queryKey: queryKeys.datasets.list({ limit: 200, offset: 0 }),
@@ -91,12 +95,17 @@ export function useCustomVizInspectorState(
 
   const assignField = useCallback(
     (fieldName: string, target: CustomVizFieldTarget) => {
-      const slot = resolveCustomVizUiSlot(fieldSlots, target);
+      const group = resolveCustomVizFieldGroup(fieldSlots, target.kind);
+      const slot =
+        group?.uiMode === "multi"
+          ? group
+          : resolveCustomVizUiSlot(fieldSlots, target);
       const check = validateCustomVizFieldAssignment(
         fieldName,
         target,
+        fieldSlots,
         slot?.label,
-        slot?.expect,
+        slot && "expect" in slot ? slot.expect : undefined,
       );
       if (!check.ok) {
         setFieldAssignError(check.message);
@@ -104,15 +113,43 @@ export function useCustomVizInspectorState(
       }
       setFieldAssignError(null);
       const currentBinding = readConfig().dataBinding ?? { status: "manual" as const };
+
       if (target.kind === "dimension") {
-        const next = [...(currentBinding.dimensions ?? [])];
+        const current = [...(currentBinding.dimensions ?? [])];
+        if (group?.uiMode === "multi") {
+          if (current.some((d) => d.field === fieldName)) return;
+          if (current.length >= (group.max ?? 1)) {
+            setFieldAssignError(`「${group.label}」最多 ${group.max} 个字段`);
+            return;
+          }
+          patchBinding({
+            dimensions: [...current, { field: fieldName }],
+            status: "connected",
+          });
+          return;
+        }
+        const next = [...current];
         while (next.length <= target.index) next.push({ field: "" });
         if (next.some((d, i) => i !== target.index && d.field === fieldName)) return;
         next[target.index] = { field: fieldName };
         patchBinding({ dimensions: next, status: "connected" });
         return;
       }
-      const next = [...(currentBinding.metrics ?? [])];
+
+      const current = [...(currentBinding.metrics ?? [])];
+      if (group?.uiMode === "multi") {
+        if (current.some((m) => m.field === fieldName)) return;
+        if (current.length >= (group.max ?? 1)) {
+          setFieldAssignError(`「${group.label}」最多 ${group.max} 个字段`);
+          return;
+        }
+        patchBinding({
+          metrics: [...current, { field: fieldName, agg: "sum" }],
+          status: "connected",
+        });
+        return;
+      }
+      const next = [...current];
       while (next.length <= target.index) next.push({ field: "", agg: "sum" });
       if (next.some((m, i) => i !== target.index && m.field === fieldName)) return;
       next[target.index] = { field: fieldName, agg: "sum" } satisfies CustomVizMetricRef;
@@ -120,6 +157,32 @@ export function useCustomVizInspectorState(
     },
     [fieldSlots, patchBinding, readConfig],
   );
+
+  const columnsKey = columns.join("|");
+  useEffect(() => {
+    if (!columns.length) return;
+    const currentBinding = readConfig().dataBinding ?? { status: "manual" as const };
+    const reconciled = reconcileCustomVizFields(currentBinding, columns);
+    const same =
+      JSON.stringify(currentBinding.dimensions) === JSON.stringify(reconciled.dimensions) &&
+      JSON.stringify(currentBinding.metrics) === JSON.stringify(reconciled.metrics);
+    if (!same) patchBinding(reconciled);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [columnsKey]);
+
+  useEffect(() => {
+    if (!columns.length || !binding.datasetId) return;
+    const currentBinding = readConfig().dataBinding ?? { status: "manual" as const };
+    const hasFields =
+      (currentBinding.dimensions ?? []).some((d) => d.field?.trim()) ||
+      (currentBinding.metrics ?? []).some((m) => m.field?.trim());
+    if (hasFields) return;
+    const autoKey = `${binding.datasetId}:${columnsKey}:${JSON.stringify(fieldSlots ?? {})}`;
+    if (autoFieldsRef.current === autoKey) return;
+    autoFieldsRef.current = autoKey;
+    const suggested = suggestCustomVizFields(columns, fieldSlots);
+    patchBinding({ ...suggested, status: "connected" });
+  }, [binding.datasetId, columns, columnsKey, fieldSlots, patchBinding, readConfig]);
 
   useEffect(() => {
     if (!binding.datasetId || datasetsLoading) return;

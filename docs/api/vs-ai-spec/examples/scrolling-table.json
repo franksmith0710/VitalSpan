@@ -2,7 +2,7 @@
   "manifest": {
     "id": "scrolling-table",
     "displayName": "流动明细表",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "entry": "index.html",
     "runtime": "html",
     "rendererHint": "html",
@@ -13,8 +13,8 @@
         "label": "明细列"
       },
       "metrics": {
-        "min": 1,
-        "max": 6,
+        "min": 0,
+        "max": 0,
         "label": "数值列"
       }
     },

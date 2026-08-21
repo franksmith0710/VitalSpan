@@ -33,14 +33,17 @@ import { gridWidgetShellClassName, GridWidgetShellFrame, resolveGridWidgetShell 
 async function loadCustomVizArtifact(artifactId: string): Promise<{
   html: string;
   defaultStyle: Record<string, unknown>;
+  fieldSlots?: Record<string, unknown>;
   styleHooks?: CustomVizStyleHooks;
 }> {
   let defaultStyle: Record<string, unknown> = {};
+  let fieldSlots: Record<string, unknown> | undefined;
   let styleHooks: CustomVizStyleHooks | undefined;
   let hash = "";
   try {
     const meta = await fetchAiVizArtifactMeta(artifactId);
     defaultStyle = meta.manifest.defaultStyle ?? {};
+    fieldSlots = meta.fieldSlots;
     styleHooks = readCustomVizStyleHooks(meta.manifest as Record<string, unknown>);
     hash = meta.contentHash ?? "";
   } catch {
@@ -55,7 +58,7 @@ async function loadCustomVizArtifact(artifactId: string): Promise<{
     const body = (await resp.json().catch(() => null)) as { message?: string } | null;
     throw new Error(body?.message ?? "加载自定义组件失败");
   }
-  return { html: await resp.text(), defaultStyle, styleHooks };
+  return { html: await resp.text(), defaultStyle, fieldSlots, styleHooks };
 }
 
 type CustomVizWidgetProps = {
@@ -92,6 +95,7 @@ export function CustomVizWidget({
   const [html, setHtml] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [manifestDefaultStyle, setManifestDefaultStyle] = useState<Record<string, unknown>>({});
+  const [manifestFieldSlots, setManifestFieldSlots] = useState<Record<string, unknown> | undefined>();
   const [manifestStyleHooks, setManifestStyleHooks] = useState<CustomVizStyleHooks | undefined>();
   const loadedHtmlRef = useRef(false);
   const showGridChrome = shell === "grid";
@@ -102,7 +106,7 @@ export function CustomVizWidget({
   const showEditToolbar = showGridChrome && mode === "edit" && chrome.showChartActionButtons;
 
   const chartCfg = customVizBindingToChartConfig(cfg.dataBinding);
-  const executeReady = isCustomVizExecuteReady(cfg.dataBinding);
+  const executeReady = isCustomVizExecuteReady(cfg.dataBinding, manifestFieldSlots);
   const queryLimit = resolveChartQueryLimit(chartCfg, dashboardStyle ?? {});
   const { columns, rows, loading, error: executeError } = useChartExecute(chartCfg, {
     enabled: executeReady,
@@ -154,6 +158,7 @@ export function CustomVizWidget({
         if (cancelled || my !== seq) return;
         loadedHtmlRef.current = true;
         setManifestDefaultStyle(next.defaultStyle);
+        setManifestFieldSlots(next.fieldSlots);
         setManifestStyleHooks(next.styleHooks);
         setHtml(next.html);
         setLoadError(null);

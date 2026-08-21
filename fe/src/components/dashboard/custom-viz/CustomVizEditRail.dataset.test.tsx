@@ -127,8 +127,8 @@ describe("CustomVizEditRail dataset binding", () => {
 
     expect(screen.getByRole("button", { name: "选择数据集" })).toHaveTextContent("告警明细");
     await waitFor(() => {
-      expect(screen.getByText("message")).toBeInTheDocument();
-      expect(screen.getByText("severity")).toBeInTheDocument();
+      expect(screen.getAllByText("message").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("severity").length).toBeGreaterThan(0);
     });
   });
 });

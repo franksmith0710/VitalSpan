@@ -32,7 +32,7 @@
 ## 工作流 ②（组件库 · 主路径）
 
 1. `python tools/check-vitalspan-health.py` → ok  
-2. **`python tools/scaffold-custom-viz.py --id <id> --name <中文名> --template scrolling-table`**  
+2. **`python tools/scaffold-custom-viz.py --id <id> --name <中文名>`**（默认 `html-minimal`）  
 3. 编辑 `examples/<id>.json` 或 `.bundle.html`（**禁止**从零写 manifest）  
 4. **`python tools/validate-ai-viz-bundle.py --file examples/<id>.json`** → preflight ok  
 5. **`python tools/publish-ai-viz-artifact.py --file examples/<id>.json`** → **`ok artifactId=...`**  

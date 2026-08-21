@@ -24,6 +24,11 @@ export type CustomVizUiFieldSlot = CustomVizFieldSlotDef & {
   uiKey: string;
 };
 
+/** 对标内置 chart：max>1 用 ChartFieldMultiSlot，否则单槽。 */
+export type CustomVizUiFieldSlotGroup = CustomVizFieldSlotDef & {
+  uiMode: "multi" | "single";
+};
+
 export function customVizFieldTargetsEqual(a: CustomVizFieldTarget, b: CustomVizFieldTarget): boolean {
   return a.kind === b.kind && a.index === b.index;
 }
@@ -86,7 +91,18 @@ export function parseCustomVizFieldSlots(
   return slots;
 }
 
-/** 将 manifest max>1 展开为独立 UI 槽，index 对应 dimensions/metrics 数组下标。 */
+export function parseCustomVizFieldSlotGroupsForUi(
+  fieldSlots: Record<string, unknown> | undefined,
+): CustomVizUiFieldSlotGroup[] {
+  return parseCustomVizFieldSlots(fieldSlots)
+    .filter((def) => def.max > 0)
+    .map((def) => ({
+      ...def,
+      uiMode: def.max > 1 ? ("multi" as const) : ("single" as const),
+    }));
+}
+
+/** @deprecated 仅 resolveCustomVizUiSlot 等旧路径；UI 请用 parseCustomVizFieldSlotGroupsForUi */
 export function expandCustomVizFieldSlotsForUi(
   fieldSlots: Record<string, unknown> | undefined,
 ): CustomVizUiFieldSlot[] {

@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -12,12 +11,14 @@ import {
 } from "@/components/ui/select";
 import { useChartInspector } from "@/components/dashboard/chartInspectorContext";
 import { ChartPaletteColorSwatch } from "@/components/dashboard/chartPaletteShared";
-import { ChartDeSliderField } from "@/components/dashboard/deAttrSlider";
+import { InspectorSliderField } from "@/components/dashboard/deAttrSlider";
 import { defaultBasemapPaletteForFlavor } from "@/components/charts/engine/maplibre/gisBasemapPalette";
 import {
   ChartInspectorSection,
   INSPECTOR_CTRL,
   INSPECTOR_SECTION_GAP,
+  InspectorFieldLabel,
+  InspectorHintTip,
 } from "@/components/dashboard/inspectorCompact";
 import {
   DEFAULT_GIS_GLOBE_VIEW,
@@ -45,6 +46,9 @@ const ATMOSPHERE_LABELS: Record<GisAtmospherePreset, string> = {
   day: "白昼",
   night: "黑夜",
 };
+
+const GIS_SECTION_HINT =
+  "全球矢量 PMTiles 底图（如 Planet Z15），由运维独立部署并登记；未登记时无法出图。";
 
 export function ChartGisMapProjectPanel() {
   const { cfg, onChange } = useChartInspector();
@@ -154,14 +158,15 @@ export function ChartGisMapProjectPanel() {
   };
 
   return (
-    <ChartInspectorSection title="GIS 底图" data-testid="chart-gis-map-project-panel">
+    <ChartInspectorSection
+      title="GIS 底图"
+      hint={GIS_SECTION_HINT}
+      defaultOpen
+      data-testid="chart-gis-map-project-panel"
+    >
       <div className={INSPECTOR_SECTION_GAP}>
-        <p className="text-theme-xs text-gray-500">
-          GIS 地图使用管理员登记的全球 PMTiles 外部底图。瓦片由运维独立部署（如 Planet Z15）；未登记服务时无法出图。
-        </p>
-
         <div className="grid gap-1.5 rounded-lg border border-gray-200 p-2 dark:border-gray-800">
-          <Label className="text-theme-xs text-gray-500">全球 PMTiles 服务</Label>
+          <InspectorFieldLabel label="全球 PMTiles 服务" />
           <Select
             value={project.tileServiceId ?? ""}
             onValueChange={(tileServiceId) => patchProject({ tileServiceId })}
@@ -178,23 +183,24 @@ export function ChartGisMapProjectPanel() {
             </SelectContent>
           </Select>
           {tileServicesLoading ? (
-            <p className="text-theme-xs text-gray-500">正在加载已登记的 PMTiles 服务…</p>
+            <p className="text-[10px] text-gray-400">正在加载…</p>
           ) : tileServicesError ? (
-            <p className="text-theme-xs text-amber-600 dark:text-amber-400">
-              无法加载 PMTiles 服务列表，请确认已登录且后端可用。
+            <p className="text-[10px] text-amber-600 dark:text-amber-400">
+              无法加载服务列表，请确认已登录且后端可用。
             </p>
           ) : enabledTileServices.length === 0 ? (
-            <p className="text-theme-xs text-amber-600 dark:text-amber-400">
-              尚未登记 PMTiles 外部服务。请联系管理员部署并登记 tileServiceId。
+            <p className="text-[10px] text-amber-600 dark:text-amber-400">
+              尚未登记 PMTiles 服务，请联系管理员。
             </p>
           ) : !project.tileServiceId ? (
-            <p className="text-theme-xs text-amber-600 dark:text-amber-400">
-              请选择已登记的全球底图服务。
-            </p>
+            <p className="text-[10px] text-amber-600 dark:text-amber-400">请选择已登记服务。</p>
           ) : null}
 
           <div className="grid gap-1.5">
-            <Label className="text-theme-xs text-gray-500">底图风格</Label>
+            <InspectorFieldLabel
+              label="底图风格"
+              hint="预设含道路、边界与标注；可单独改海洋/陆地色或隐藏图层。"
+            />
             <Select
               value={project.basemapFlavor ?? "light"}
               onValueChange={(basemapFlavor) =>
@@ -216,9 +222,6 @@ export function ChartGisMapProjectPanel() {
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-theme-xs text-gray-500">
-              预设含道路、边界、标注等完整图层；下方可单独改海洋/陆地色或隐藏部分图层。
-            </p>
           </div>
 
           <div className="grid gap-2">
@@ -228,18 +231,18 @@ export function ChartGisMapProjectPanel() {
                 aria-label="陆地颜色"
                 onChange={(landColor) => patchProject({ landColor })}
               />
-              <Label className="text-theme-xs text-gray-500">陆地底色</Label>
+              <InspectorFieldLabel
+                label="陆地底色"
+                hint="覆写 earth 与陆地细节；关闭「陆地细节」时仅保留纯色底。"
+              />
             </div>
-            <p className="text-theme-xs text-gray-500">
-              覆写 earth 与陆地细节图层；关闭「陆地细节」时仅保留纯色底。
-            </p>
             <div className="flex min-w-0 items-center gap-2">
               <ChartPaletteColorSwatch
                 value={project.waterColor ?? flavorPalette.waterColor}
                 aria-label="海洋颜色"
                 onChange={(waterColor) => patchProject({ waterColor })}
               />
-              <Label className="text-theme-xs text-gray-500">海洋颜色</Label>
+              <InspectorFieldLabel label="海洋颜色" />
             </div>
           </div>
           {project.landColor || project.waterColor ? (
@@ -253,7 +256,7 @@ export function ChartGisMapProjectPanel() {
           ) : null}
 
           <div className="grid gap-2 rounded-md border border-gray-200 p-2 dark:border-gray-800">
-            <Label className="text-theme-xs text-gray-500">底图图层</Label>
+            <InspectorFieldLabel label="底图图层" />
             {(
               [
                 ["roads", "道路"],
@@ -280,7 +283,7 @@ export function ChartGisMapProjectPanel() {
           </div>
 
           <div className="grid gap-1.5">
-            <Label className="text-theme-xs text-gray-500">标注语言</Label>
+            <InspectorFieldLabel label="标注语言" />
             <Select
               value={project.labelLang ?? "zh-Hans"}
               onValueChange={(labelLang) => patchProject({ labelLang: labelLang as GisLabelLang })}
@@ -296,7 +299,7 @@ export function ChartGisMapProjectPanel() {
           </div>
 
           <div className="grid gap-1.5">
-            <Label className="text-theme-xs text-gray-500">投影</Label>
+            <InspectorFieldLabel label="投影" />
             <Select
               value={project.projection ?? "mercator"}
               onValueChange={(projection) => {
@@ -325,7 +328,7 @@ export function ChartGisMapProjectPanel() {
 
           {project.projection === "globe" ? (
             <div className="grid gap-1.5">
-              <Label className="text-theme-xs text-gray-500">大气预设</Label>
+              <InspectorFieldLabel label="大气预设" hint="黑夜含星空与流星；白昼无星点。" />
               <Select
                 value={project.atmospherePreset ?? "night"}
                 onValueChange={(preset) => applyAtmospherePreset(preset as GisAtmospherePreset)}
@@ -341,23 +344,19 @@ export function ChartGisMapProjectPanel() {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-theme-xs text-gray-500">
-                黑夜显示星空与流星；白昼无星点。
-              </p>
             </div>
           ) : null}
         </div>
 
-        <div className="grid gap-1.5">
-          <Label className="text-theme-xs text-gray-500">初始视角</Label>
-          <p className="text-theme-xs text-gray-500">
-            保存大屏打开时的相机位置；修改后按 Enter 或点击其他区域生效。若已开启球面自转，改视角会自动关闭自转。
-          </p>
-        </div>
+        <InspectorFieldLabel
+          label="初始视角"
+          hint="保存大屏打开时的相机；Enter 或失焦生效。改视角会关闭球面自转。"
+        />
 
-        <ChartDeSliderField
+        <InspectorSliderField
           label="地球不透明度"
           layout="stacked"
+          hint="仅作用于地球表面层，可透出后方星空；默认 100%。"
           value={project.earthOpacity != null ? Math.round(project.earthOpacity * 100) : undefined}
           fallback={100}
           min={0}
@@ -373,13 +372,10 @@ export function ChartGisMapProjectPanel() {
             patchProject({ earthOpacity: Math.max(0, Math.min(100, opacityPercent)) / 100 });
           }}
         />
-        <p className="text-theme-xs text-gray-500">
-          球面模式下作用于地球渲染层（可透出后方星空）；星空层保持不透明。默认 100%。
-        </p>
 
         <div className="grid grid-cols-2 gap-2">
           <div className="grid gap-1.5">
-            <Label className="text-theme-xs text-gray-500">中心经度</Label>
+            <InspectorFieldLabel label="中心经度" />
             <Input
               className={INSPECTOR_CTRL}
               value={centerLng}
@@ -389,7 +385,7 @@ export function ChartGisMapProjectPanel() {
             />
           </div>
           <div className="grid gap-1.5">
-            <Label className="text-theme-xs text-gray-500">中心纬度</Label>
+            <InspectorFieldLabel label="中心纬度" />
             <Input
               className={INSPECTOR_CTRL}
               value={centerLat}
@@ -402,7 +398,7 @@ export function ChartGisMapProjectPanel() {
 
         <div className="grid grid-cols-3 gap-2">
           <div className="grid gap-1.5">
-            <Label className="text-theme-xs text-gray-500">缩放</Label>
+            <InspectorFieldLabel label="缩放" />
             <Input
               className={INSPECTOR_CTRL}
               value={zoom}
@@ -412,7 +408,7 @@ export function ChartGisMapProjectPanel() {
             />
           </div>
           <div className="grid gap-1.5">
-            <Label className="text-theme-xs text-gray-500">旋转°</Label>
+            <InspectorFieldLabel label="旋转°" />
             <Input
               className={INSPECTOR_CTRL}
               value={bearing}
@@ -422,7 +418,7 @@ export function ChartGisMapProjectPanel() {
             />
           </div>
           <div className="grid gap-1.5">
-            <Label className="text-theme-xs text-gray-500">倾斜°</Label>
+            <InspectorFieldLabel label="倾斜°" />
             <Input
               className={INSPECTOR_CTRL}
               value={pitch}
@@ -446,7 +442,10 @@ export function ChartGisMapProjectPanel() {
               checked={project.buildings3d !== false}
               onCheckedChange={(checked) => patchProject({ buildings3d: checked === true })}
             />
-            建筑 3D 挤出（zoom ≥ 15：瓦片内 OSM 高度/层数，缺失默认 10m；低 zoom 仍显示平面轮廓，建议 pitch 45°–60°）
+            <span className="flex min-w-0 flex-1 items-center gap-1">
+              <span>建筑 3D 挤出</span>
+              <InspectorHintTip text="zoom ≥ 15；OSM 高度缺失时默认 10m；建议 pitch 45°–60°。" />
+            </span>
           </label>
           {project.projection === "globe" ? (
             <label className="flex items-center gap-2 text-theme-xs text-gray-600 dark:text-gray-300">
@@ -454,7 +453,10 @@ export function ChartGisMapProjectPanel() {
                 checked={project.autoRotate === true}
                 onCheckedChange={(checked) => patchProject({ autoRotate: checked === true })}
               />
-              球面自转（沿地轴，自西向东）
+              <span className="flex min-w-0 flex-1 items-center gap-1">
+                <span>球面自转</span>
+                <InspectorHintTip text="沿地轴自西向东慢速旋转。" />
+              </span>
             </label>
           ) : null}
         </div>

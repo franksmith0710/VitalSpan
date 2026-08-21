@@ -1,5 +1,28 @@
 import { describe, expect, it } from "vitest";
-import { expandCustomVizFieldSlotsForUi } from "./customVizFieldSlots";
+import {
+  expandCustomVizFieldSlotsForUi,
+  parseCustomVizFieldSlotGroupsForUi,
+} from "./customVizFieldSlots";
+
+describe("parseCustomVizFieldSlotGroupsForUi", () => {
+  it("uses multi mode when dimensions.max > 1", () => {
+    const groups = parseCustomVizFieldSlotGroupsForUi({
+      dimensions: { min: 1, max: 6, label: "明细列" },
+      metrics: { min: 0, max: 0, label: "数值列" },
+    });
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.uiMode).toBe("multi");
+    expect(groups[0]?.label).toBe("明细列");
+  });
+
+  it("omits metric group when max is 0", () => {
+    const groups = parseCustomVizFieldSlotGroupsForUi({
+      dimensions: { min: 1, max: 1, label: "类别" },
+      metrics: { min: 0, max: 0, label: "数值" },
+    });
+    expect(groups.map((g) => g.kind)).toEqual(["dimension"]);
+  });
+});
 
 describe("expandCustomVizFieldSlotsForUi", () => {
   it("uses default dimension and metric slots when manifest fieldSlots is omitted", () => {

@@ -23,6 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 EXAMPLES = ROOT / "examples"
 TEMPLATES: dict[str, str] = {
+    "html-minimal": "html-minimal.json",
     "scrolling-table": "scrolling-table.json",
     "alert-feed": "custom-viz-alert-feed.json",
     "ranking-bar": "custom-viz-ranking-bar-chart-fixed.json",
@@ -40,9 +41,9 @@ def main() -> None:
     parser.add_argument("--name", required=True, help="manifest.displayName (Chinese OK)")
     parser.add_argument(
         "--template",
-        default="scrolling-table",
+        default="html-minimal",
         choices=sorted(TEMPLATES.keys()),
-        help="gold template to copy",
+        help="gold template (default html-minimal; use scrolling-table/trend-line only for that paradigm)",
     )
     parser.add_argument("--out", type=Path, default=None, help="output json path")
     args = parser.parse_args()

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { IconButton } from "@/components/ui/button";
+import { InspectorFieldLabel, InspectorHintTip } from "./inspectorCompact";
 
 function sliderPercent(value: number, min: number, max: number): number {
   if (max <= min) return 0;
@@ -169,6 +170,7 @@ export function DeProgressSlider({
 
 type DeSliderInlineRowProps = {
   label: string;
+  hint?: string;
   value: number;
   min: number;
   max: number;
@@ -187,6 +189,7 @@ type DeSliderInlineRowProps = {
 /** 单行：标签 · 滑块 · 数值（TailAdmin / DE 紧凑密度） */
 function DeSliderInlineRow({
   label,
+  hint,
   value,
   min,
   max,
@@ -221,18 +224,28 @@ function DeSliderInlineRow({
 
   return (
     <div className={cn("grid min-w-0 items-center gap-x-2.5", gridCols, className)}>
-      <span
-        className={cn(
-          "text-theme-xs",
-          labelTone === "field"
-            ? "shrink-0 whitespace-nowrap font-medium text-gray-700 dark:text-gray-300"
-            : labelTone === "compact"
-              ? "min-w-0 truncate text-center text-gray-500 dark:text-gray-400"
-              : "min-w-0 truncate text-gray-500 dark:text-gray-400",
-        )}
-      >
-        {label}
-      </span>
+      {hint ? (
+        <InspectorFieldLabel
+          label={label}
+          hint={hint}
+          labelClassName={
+            labelTone === "compact" ? "text-center truncate" : labelTone === "field" ? "whitespace-nowrap" : undefined
+          }
+        />
+      ) : (
+        <span
+          className={cn(
+            "text-theme-xs",
+            labelTone === "field"
+              ? "shrink-0 whitespace-nowrap font-medium text-gray-700 dark:text-gray-300"
+              : labelTone === "compact"
+                ? "min-w-0 truncate text-center text-gray-500 dark:text-gray-400"
+                : "min-w-0 truncate text-gray-500 dark:text-gray-400",
+          )}
+        >
+          {label}
+        </span>
+      )}
       <DeProgressSlider
         className={cn(sliderWidth, "min-w-0 max-w-full justify-self-start")}
         value={clamped}
@@ -262,6 +275,7 @@ type DeSliderStackedRowProps = Omit<DeSliderInlineRowProps, "labelTone" | "densi
 /** 窄列双行：顶行标签+数值，底行滑块（2 列 grid 单元格防重叠） */
 function DeSliderStackedRow({
   label,
+  hint,
   value,
   min,
   max,
@@ -280,7 +294,11 @@ function DeSliderStackedRow({
   return (
     <div className={cn("min-w-0 space-y-1", className)}>
       <div className="flex min-w-0 items-center justify-between gap-2">
-        <span className="min-w-0 truncate text-theme-xs text-gray-500 dark:text-gray-400">{label}</span>
+        {hint ? (
+          <InspectorFieldLabel label={label} hint={hint} />
+        ) : (
+          <span className="min-w-0 truncate text-theme-xs text-gray-500 dark:text-gray-400">{label}</span>
+        )}
         <span className="shrink-0 text-[11px] tabular-nums text-gray-500 dark:text-gray-400">{display}</span>
       </div>
       <DeProgressSlider
@@ -350,6 +368,7 @@ export function DeAttrSlider({
 
 export type ChartDeSliderFieldProps = {
   label: string;
+  hint?: string;
   value: number | undefined;
   /** 未配置时的展示/滑块默认位置 */
   fallback?: number;
@@ -369,6 +388,7 @@ export type ChartDeSliderFieldProps = {
 /** chart-edit 216px 栏：标签/数值一行 + 全宽或行内定宽滑块 */
 export function ChartDeSliderField({
   label,
+  hint,
   value,
   fallback = 0,
   min,
@@ -399,6 +419,7 @@ export function ChartDeSliderField({
       >
         <DeSliderInlineRow
           label={label}
+          hint={hint}
           value={clamped}
           min={min}
           max={max}
@@ -424,7 +445,11 @@ export function ChartDeSliderField({
       )}
     >
       <div className="mb-1 flex items-center justify-between gap-2">
-        <p className="text-[11px] font-medium text-gray-600 dark:text-gray-300">{label}</p>
+        {hint ? (
+          <InspectorFieldLabel label={label} hint={hint} />
+        ) : (
+          <p className="text-[11px] font-medium text-gray-600 dark:text-gray-300">{label}</p>
+        )}
         <span className="shrink-0 text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
           {display}
         </span>
@@ -529,20 +554,8 @@ export type InspectorSliderFieldProps = Omit<ChartDeSliderFieldProps, "className
 };
 
 /** 216px 图表右栏：标签+数值顶行，滑块独占下一行全宽 */
-export function InspectorSliderField({
-  label,
-  hint,
-  className,
-  ...slider
-}: InspectorSliderFieldProps) {
-  return (
-    <div className="grid gap-1">
-      <ChartDeSliderField label={label} className={className} {...slider} />
-      {hint ? (
-        <p className="text-[10px] leading-snug text-gray-400 dark:text-gray-500">{hint}</p>
-      ) : null}
-    </div>
-  );
+export function InspectorSliderField({ className, ...slider }: InspectorSliderFieldProps) {
+  return <ChartDeSliderField className={className} {...slider} />;
 }
 
 export type DeAttrSliderFieldProps = {
@@ -596,6 +609,7 @@ export function DeAttrSliderField({
       {resolvedDensity === "narrow" ? (
         <DeSliderStackedRow
           label={label}
+          hint={hint}
           value={resolved}
           min={min}
           max={max}
@@ -608,6 +622,7 @@ export function DeAttrSliderField({
       ) : (
         <DeSliderInlineRow
           label={label}
+          hint={hint}
           value={resolved}
           min={min}
           max={max}
@@ -620,9 +635,6 @@ export function DeAttrSliderField({
           onPreview={onPreviewChange}
         />
       )}
-      {hint ? (
-        <p className="mt-1.5 text-[10px] leading-snug text-gray-400 dark:text-gray-500">{hint}</p>
-      ) : null}
     </div>
   );
 }

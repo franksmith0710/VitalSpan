@@ -148,6 +148,8 @@ def preflight_bundle(bundle: dict[str, Any], *, backend_root: Path | None = None
 
 
 def format_preflight_lines(result: PreflightResult) -> list[str]:
+    from aiviz_publish_hints import format_error_block
+
     lines: list[str] = []
     if result.errors:
         lines.append("preflight FAILED:")

@@ -35,7 +35,7 @@ python tools\check-vitalspan-health.py
 ### ② 组件库（d3/html 新组件 · **先 scaffold + validate，再 publish**）
 
 ```bat
-python tools\scaffold-custom-viz.py --id my-widget --name 我的组件 --template scrolling-table
+python tools\scaffold-custom-viz.py --id my-widget --name 我的组件
 python tools\validate-ai-viz-bundle.py --file examples\my-widget.json
 python tools\publish-ai-viz-artifact.py --file examples\my-widget.json
 python tools\list-ai-viz-artifacts.py

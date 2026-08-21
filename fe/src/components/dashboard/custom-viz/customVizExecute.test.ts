@@ -27,6 +27,25 @@ describe("customVizExecute", () => {
     expect(isCustomVizExecuteReady(binding)).toBe(true);
   });
 
+  it("is execute-ready for detail table with dimensions only", () => {
+    expect(
+      isCustomVizExecuteReady(
+        {
+          status: "connected",
+          dataSourceId: "ds-1",
+          datasetId: "set-1",
+          configId: "cfg-1",
+          dimensions: [{ field: "city" }, { field: "amount" }],
+          metrics: [],
+        },
+        {
+          dimensions: { min: 1, max: 6, label: "明细列" },
+          metrics: { min: 0, max: 0, label: "数值列" },
+        },
+      ),
+    ).toBe(true);
+  });
+
   it("is not execute-ready when fields are empty", () => {
     expect(
       isCustomVizExecuteReady({

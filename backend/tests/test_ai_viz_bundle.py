@@ -31,6 +31,19 @@ def test_validate_manifest_rejects_unknown_runtime() -> None:
     raise AssertionError("expected AIVIZ_INVALID_MANIFEST")
 
 
+def test_validate_manifest_allows_detail_table_metrics_min_zero() -> None:
+    validate_manifest(
+        {
+            **_MIN_MANIFEST,
+            "runtime": "html",
+            "fieldSlots": {
+                "dimensions": {"min": 1, "max": 6},
+                "metrics": {"min": 0, "max": 0},
+            },
+        }
+    )
+
+
 def test_bundle_rejects_inline_d3_library() -> None:
     blob = ("x" * INLINE_D3_MIN_BYTES) + "d3.version"
     try:

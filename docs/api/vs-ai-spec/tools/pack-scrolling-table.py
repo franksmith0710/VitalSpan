@@ -14,13 +14,13 @@ OUT_DT = Path(r"c:\Users\30381\Documents\deeptalk工作区\examples\scrolling-ta
 MANIFEST = {
     "id": "scrolling-table",
     "displayName": "流动明细表",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "entry": "index.html",
     "runtime": "html",
     "rendererHint": "html",
     "fieldSlots": {
         "dimensions": {"min": 1, "max": 6, "label": "明细列"},
-        "metrics": {"min": 1, "max": 6, "label": "数值列"},
+        "metrics": {"min": 0, "max": 0, "label": "数值列"},
     },
     "styleSchema": {
         "type": "object",
