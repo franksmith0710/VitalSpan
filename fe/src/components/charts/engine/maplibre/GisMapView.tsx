@@ -29,6 +29,7 @@ import {
 import { gisMapTransformRequest } from "@/components/charts/engine/maplibre/gisMapTransformRequest";
 import { GeoMapOverlayHint } from "@/components/charts/engine/geo/GeoMapOverlayHint";
 import { resolveGisMapDataHint, shouldShowGisMapOverlayHint } from "@/lib/gisMapDataHint";
+import { resolveTileService } from "@/lib/tileServices";
 import { cn } from "@/lib/utils";
 import "maplibre-gl/dist/maplibre-gl.css";
 
