@@ -22,6 +22,6 @@ describe("gisGlobeHalo", () => {
     expect(ctx.createRadialGradient).toHaveBeenCalledWith(200, 150, 120, 200, 150, 120 * 2.8);
     expect(gradient.addColorStop).toHaveBeenCalledTimes(7);
     expect(ctx.fillRect).toHaveBeenCalledWith(0, 0, 400, 300);
-    expect(ctx.arc).toHaveBeenCalledWith(200, 150, 120 * 0.985, 0, Math.PI * 2);
+    expect(ctx.arc).toHaveBeenCalledWith(200, 150, 120 * 0.992, 0, Math.PI * 2);
   });
 });

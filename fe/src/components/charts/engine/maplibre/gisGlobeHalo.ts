@@ -1,66 +1,13 @@
 import type { GisAtmospherePreset, GisProjection } from "@/components/charts/engine/maplibre/gisProject";
-import { bindMapRenderSync, resolveGlobeScreenBoundsFallback } from "@/components/charts/engine/maplibre/gisGlobeLayout";
+import {
+  bindMapRenderSync,
+  resolveGlobeLimbBoundsFromMap,
+  type GlobeLimbBounds,
+} from "@/components/charts/engine/maplibre/gisGlobeLayout";
 
 type MapLibreMap = import("maplibre-gl").Map;
 
-export type GlobeLimbBounds = {
-  x: number;
-  y: number;
-  radius: number;
-};
-
-/** 沿地轴采样 16 个边缘点，pitch 下仍对齐（GeoLibre / Leonel Dias 方案）。 */
-export function resolveGlobeLimbBounds(
-  map: MapLibreMap,
-  width: number,
-  height: number,
-): GlobeLimbBounds | null {
-  const center = map.getCenter();
-  const clng = (center.lng * Math.PI) / 180;
-  const clat = (center.lat * Math.PI) / 180;
-  const points: { x: number; y: number }[] = [];
-  const numSamples = 16;
-
-  for (let i = 0; i < numSamples; i += 1) {
-    const bearing = (i / numSamples) * 2 * Math.PI;
-    const edgeLat = Math.asin(
-      Math.sin(clat) * Math.cos(Math.PI / 2) +
-        Math.cos(clat) * Math.sin(Math.PI / 2) * Math.cos(bearing),
-    );
-    const edgeLng =
-      clng +
-      Math.atan2(
-        Math.sin(bearing) * Math.sin(Math.PI / 2) * Math.cos(clat),
-        Math.cos(Math.PI / 2) - Math.sin(clat) * Math.sin(edgeLat),
-      );
-    const px = map.project([(edgeLng * 180) / Math.PI, (edgeLat * 180) / Math.PI]);
-    if (Number.isFinite(px.x) && Number.isFinite(px.y)) {
-      points.push(px);
-    }
-  }
-
-  if (points.length < 3) {
-    const fallback = resolveGlobeScreenBoundsFallback(width, height);
-    return { x: fallback.x, y: fallback.y, radius: fallback.radius };
-  }
-
-  let minX = Infinity;
-  let maxX = -Infinity;
-  let minY = Infinity;
-  let maxY = -Infinity;
-  for (const point of points) {
-    minX = Math.min(minX, point.x);
-    maxX = Math.max(maxX, point.x);
-    minY = Math.min(minY, point.y);
-    maxY = Math.max(maxY, point.y);
-  }
-
-  return {
-    x: (minX + maxX) / 2,
-    y: (minY + maxY) / 2,
-    radius: Math.max(maxX - minX, maxY - minY) / 2,
-  };
-}
+export type { GlobeLimbBounds };
 
 export function drawGlobeAtmosphereHalo(
   ctx: CanvasRenderingContext2D,
@@ -96,35 +43,53 @@ export function drawGlobeAtmosphereHalo(
   ctx.globalCompositeOperation = "screen";
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
-  // 光晕叠在地图之上时，挖掉球内区域，只保留外缘大气层。
   ctx.globalCompositeOperation = "destination-out";
   ctx.fillStyle = "rgba(0, 0, 0, 1)";
   ctx.beginPath();
-  ctx.arc(cx, cy, globeRadius * 0.985, 0, Math.PI * 2);
+  ctx.arc(cx, cy, globeRadius * 0.992, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 }
 
+function ensureOverlayHost(map: MapLibreMap): HTMLElement {
+  const host = map.getContainer();
+  if (getComputedStyle(host).position === "static") {
+    host.style.position = "relative";
+  }
+  return host;
+}
+
 export function mountGisGlobeHaloOverlay(
-  wrapper: HTMLElement,
   getMap: () => MapLibreMap | null,
   preset: GisAtmospherePreset | undefined,
   projection: GisProjection | undefined,
 ): () => void {
   const enabled = projection === "globe";
 
-  const canvas = document.createElement("canvas");
-  canvas.dataset.testid = "gis-globe-halo";
-  canvas.className = "pointer-events-none absolute inset-0 z-[5]";
-  wrapper.appendChild(canvas);
-
-  const ctx = canvas.getContext("2d");
+  let canvas: HTMLCanvasElement | null = null;
+  let host: HTMLElement | null = null;
+  let ctx: CanvasRenderingContext2D | null = null;
   let running = true;
   let unbindRender: (() => void) | undefined;
   let boundMap: MapLibreMap | null = null;
+  let frameId = 0;
+
+  const attachCanvas = (map: MapLibreMap) => {
+    const nextHost = ensureOverlayHost(map);
+    if (host === nextHost && canvas?.parentElement === nextHost) return;
+
+    canvas?.remove();
+    host = nextHost;
+    canvas = document.createElement("canvas");
+    canvas.dataset.testid = "gis-globe-halo";
+    canvas.className = "pointer-events-none absolute inset-0 z-[5]";
+    host.appendChild(canvas);
+    ctx = canvas.getContext("2d");
+  };
 
   const resize = () => {
-    const rect = wrapper.getBoundingClientRect();
+    if (!canvas || !host || !ctx) return;
+    const rect = host.getBoundingClientRect();
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const width = Math.max(1, rect.width);
     const height = Math.max(1, rect.height);
@@ -132,7 +97,7 @@ export function mountGisGlobeHaloOverlay(
     canvas.height = Math.floor(height * dpr);
     canvas.style.width = `${width}px`;
     canvas.style.height = `${height}px`;
-    ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   };
 
   const bindMapIfNeeded = () => {
@@ -140,48 +105,63 @@ export function mountGisGlobeHaloOverlay(
     if (map === boundMap) return;
     unbindRender?.();
     boundMap = map;
+    if (map) attachCanvas(map);
     unbindRender = bindMapRenderSync(map, paint);
   };
 
   const paint = () => {
-    if (!running || !ctx || !enabled) {
-      canvas.style.display = "none";
+    if (!running || !enabled) {
+      if (canvas) canvas.style.display = "none";
       return;
     }
     bindMapIfNeeded();
 
-    const rect = wrapper.getBoundingClientRect();
+    const map = getMap();
+    if (!map || !ctx || !canvas || !host) {
+      if (canvas) canvas.style.display = "none";
+      return;
+    }
+
+    resize();
+    const rect = host.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
     if (width <= 0 || height <= 0) return;
 
-    const map = getMap();
-    const fallback = resolveGlobeScreenBoundsFallback(width, height);
-    const limb = map
-      ? resolveGlobeLimbBounds(map, width, height) ?? {
-          x: fallback.x,
-          y: fallback.y,
-          radius: fallback.radius,
-        }
-      : { x: fallback.x, y: fallback.y, radius: fallback.radius };
+    const limb = resolveGlobeLimbBoundsFromMap(map);
+    if (!limb) {
+      canvas.style.display = "none";
+      ctx.clearRect(0, 0, width, height);
+      return;
+    }
 
     canvas.style.display = "block";
     drawGlobeAtmosphereHalo(ctx, width, height, limb, preset);
   };
 
-  resize();
-  paint();
-
-  const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => {
-    resize();
+  const loop = () => {
     paint();
-  }) : null;
-  ro?.observe(wrapper);
+    frameId = requestAnimationFrame(loop);
+  };
+
+  if (enabled) loop();
+
+  const ro =
+    typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(() => {
+          resize();
+          paint();
+        })
+      : null;
 
   return () => {
     running = false;
+    cancelAnimationFrame(frameId);
     unbindRender?.();
     ro?.disconnect();
-    canvas.remove();
+    canvas?.remove();
+    canvas = null;
+    host = null;
+    ctx = null;
   };
 }
