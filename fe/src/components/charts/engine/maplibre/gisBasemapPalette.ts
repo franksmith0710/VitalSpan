@@ -123,7 +123,6 @@ export function applyEarthBasemapOpacity(
   opacity: number,
   projection: "globe" | "mercator" = "globe",
 ) {
-  if (projection === "globe") return;
   if (!map.isStyleLoaded()) return;
   const clamped = Math.max(0, Math.min(1, opacity));
   for (const layer of map.getStyle().layers ?? []) {

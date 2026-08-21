@@ -296,9 +296,9 @@ function GisMapViewInner(props: ChartEngineViewProps) {
 
   useEffect(() => {
     const host = hostRef.current;
-    if (!host) return;
+    if (!host || projection === "globe") return;
     host.style.opacity = String(earthOpacity);
-  }, [earthOpacity]);
+  }, [earthOpacity, projection]);
 
   useEffect(() => {
     const shell = shellRef.current;
@@ -360,7 +360,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
           data-projection={projection}
           data-earth-opacity={earthOpacity}
           className="relative z-[4] h-full w-full"
-          style={{ opacity: earthOpacity }}
+          style={projection === "mercator" ? { opacity: earthOpacity } : undefined}
           role="img"
           aria-label={ariaLabel ?? "GIS 地图"}
         />

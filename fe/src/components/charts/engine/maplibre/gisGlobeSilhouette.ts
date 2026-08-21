@@ -43,11 +43,11 @@ export function rayToLimbPoint(
   const dirY = Math.sin(angle);
   const maxScan = Math.max(transform.width, transform.height) * 0.75;
   const seed = limbRadiusSeed[sampleIndex];
-  let lo = 4;
+  let lo = 0;
   let hi = seed && seed > 8 ? Math.min(maxScan, seed * 1.1) : maxScan;
 
   if (seed && seed > 8) {
-    lo = Math.max(4, seed * 0.9);
+    lo = Math.max(0, seed * 0.9);
   }
 
   if (isOnGlobeSurface(transform, cx + dirX * hi, cy + dirY * hi)) {
@@ -65,7 +65,7 @@ export function rayToLimbPoint(
     }
   }
 
-  if (lo <= 4) return null;
+  if (lo <= 0.5) return null;
   limbRadiusSeed[sampleIndex] = lo;
   return { x: cx + dirX * lo, y: cy + dirY * lo };
 }
@@ -74,7 +74,7 @@ export function rayToLimbPoint(
 export function fitEllipseFromLimbPoints(
   points: { x: number; y: number }[],
 ): GlobeSilhouette | null {
-  if (points.length < 16) return null;
+  if (points.length < 8) return null;
 
   const n = points.length;
   let cx = 0;
@@ -132,7 +132,8 @@ export function sampleGlobeLimbPoints(map: MapLibreMap): { x: number; y: number 
     if (hit) points.push(hit);
   }
 
-  return points.length >= 16 ? points : null;
+  if (points.length < 8) return null;
+  return points;
 }
 
 export function resolveGlobeSilhouetteFromMap(map: MapLibreMap): GlobeSilhouette | null {

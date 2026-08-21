@@ -6,15 +6,12 @@ import {
 } from "@/components/charts/engine/maplibre/gisGlobeHaloStops";
 
 describe("gisGlobeHalo GeoLibre draw", () => {
-  it("draws elliptical outer corona with screen blend", () => {
+  it("clips inner disc and keeps only outer corona ring", () => {
     const gradient = { addColorStop: vi.fn() };
     const ctx = {
       clearRect: vi.fn(),
       save: vi.fn(),
       restore: vi.fn(),
-      translate: vi.fn(),
-      rotate: vi.fn(),
-      scale: vi.fn(),
       beginPath: vi.fn(),
       arc: vi.fn(),
       clip: vi.fn(),
@@ -23,20 +20,24 @@ describe("gisGlobeHalo GeoLibre draw", () => {
       globalCompositeOperation: "",
     } as unknown as CanvasRenderingContext2D;
 
-    drawGlobeAtmosphereHalo(
-      ctx,
-      400,
-      300,
-      { cx: 200, cy: 150, rx: 120, ry: 90, rotation: 0.2 },
-      "night",
-    );
+    drawGlobeAtmosphereHalo(ctx, 400, 300, { x: 200, y: 150, radius: 120 }, "night");
 
-    expect(ctx.translate).toHaveBeenCalledWith(200, 150);
-    expect(ctx.rotate).toHaveBeenCalledWith(0.2);
-    expect(ctx.scale).toHaveBeenCalledWith(120, 90);
-    expect(ctx.createRadialGradient).toHaveBeenCalledWith(0, 0, 1, 0, 0, GEOLIBRE_HALO_OUTER_SCALE);
-    expect(gradient.addColorStop).toHaveBeenCalledWith(0, "rgba(200, 235, 255, 1.0)");
+    expect(ctx.createRadialGradient).toHaveBeenCalledWith(
+      200,
+      150,
+      120,
+      200,
+      150,
+      120 * GEOLIBRE_HALO_OUTER_SCALE,
+    );
     expect(ctx.clip).toHaveBeenCalledWith("evenodd");
-    expect(ctx.arc).toHaveBeenCalledWith(0, 0, GEOLIBRE_HALO_PUNCH_INSET, 0, Math.PI * 2, true);
+    expect(ctx.arc).toHaveBeenCalledWith(
+      200,
+      150,
+      120 * GEOLIBRE_HALO_PUNCH_INSET,
+      0,
+      Math.PI * 2,
+      true,
+    );
   });
 });

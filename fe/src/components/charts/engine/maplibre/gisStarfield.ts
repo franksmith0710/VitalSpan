@@ -1,7 +1,6 @@
 import type { GisAtmospherePreset, GisProjection } from "@/components/charts/engine/maplibre/gisProject";
 import { createMeteorSpawner, drawMeteors, type Meteor } from "@/components/charts/engine/maplibre/gisMeteors";
 import {
-  bindMapRenderSync,
   resolveGlobeScreenBounds,
   resolveGlobeScreenBoundsFallback,
   shouldRenderGisStarfield,
@@ -141,8 +140,7 @@ export function mountGisStarfieldOverlay(
   let running = true;
   let start = performance.now();
   let lastFrame = start;
-  let unbindRender: (() => void) | undefined;
-  let boundMap: MapLibreMap | null = null;
+  let frameId = 0;
 
   const resize = () => {
     const rect = wrapper.getBoundingClientRect();
@@ -157,27 +155,12 @@ export function mountGisStarfieldOverlay(
     stars = buildProceduralStars(width, height);
   };
 
-  const bindMapIfNeeded = () => {
-    const map = getMap();
-    if (map === boundMap) return;
-    unbindRender?.();
-    boundMap = map;
-    if (map && !refSet) {
-      const center = map.getCenter();
-      refLng = center.lng;
-      refLat = center.lat;
-      refSet = true;
-    }
-    unbindRender = bindMapRenderSync(map, paint);
-  };
-
   const paint = () => {
     if (!running || !ctx || !enabled) {
       canvas.style.display = "none";
       return;
     }
     canvas.style.display = "block";
-    bindMapIfNeeded();
 
     const rect = wrapper.getBoundingClientRect();
     const width = rect.width;
@@ -189,6 +172,12 @@ export function mountGisStarfieldOverlay(
     lastFrame = now;
 
     const map = getMap();
+    if (map && !refSet) {
+      const center = map.getCenter();
+      refLng = center.lng;
+      refLat = center.lat;
+      refSet = true;
+    }
     const globe = map
       ? resolveGlobeScreenBounds(map) ?? resolveGlobeScreenBoundsFallback(width, height)
       : resolveGlobeScreenBoundsFallback(width, height);
@@ -229,7 +218,6 @@ export function mountGisStarfieldOverlay(
     );
   };
 
-  let frameId = 0;
   const loop = () => {
     paint();
     frameId = requestAnimationFrame(loop);
@@ -244,7 +232,6 @@ export function mountGisStarfieldOverlay(
   return () => {
     running = false;
     cancelAnimationFrame(frameId);
-    unbindRender?.();
     ro?.disconnect();
     canvas.remove();
   };

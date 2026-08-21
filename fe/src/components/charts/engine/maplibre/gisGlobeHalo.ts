@@ -1,15 +1,16 @@
 import type { GisAtmospherePreset, GisProjection } from "@/components/charts/engine/maplibre/gisProject";
-import { bindMapRenderSync } from "@/components/charts/engine/maplibre/gisGlobeLayout";
+import {
+  bindMapRenderSync,
+  resolveGlobeLimbBoundsForOverlay,
+} from "@/components/charts/engine/maplibre/gisGlobeLayout";
 import { drawGlobeAtmosphereHalo } from "@/components/charts/engine/maplibre/gisGlobeHaloDraw";
-import { resolveGlobeSilhouetteForOverlay } from "@/components/charts/engine/maplibre/gisGlobeSilhouette";
 
 type MapLibreMap = import("maplibre-gl").Map;
 
-export type { GlobeSilhouette } from "@/components/charts/engine/maplibre/gisGlobeSilhouette";
 export type { GlobeLimbBounds } from "@/components/charts/engine/maplibre/gisGlobeLayout";
 export { drawGlobeAtmosphereHalo } from "@/components/charts/engine/maplibre/gisGlobeHaloDraw";
 
-/** 光晕固定叠在地图之上（z-5），仅绘制 0.965× 椭球缘外环。 */
+/** PMTiles 底图为不透明 canvas：光晕固定 z-5 + 外环 clip，仅随 map render 重绘。 */
 export function mountGisGlobeHaloOverlay(
   wrapper: HTMLElement,
   getMap: () => MapLibreMap | null,
@@ -27,7 +28,6 @@ export function mountGisGlobeHaloOverlay(
   let running = true;
   let unbindRender: (() => void) | undefined;
   let boundMap: MapLibreMap | null = null;
-  let frameId = 0;
 
   const resize = () => {
     const rect = wrapper.getBoundingClientRect();
@@ -46,6 +46,9 @@ export function mountGisGlobeHaloOverlay(
     if (map === boundMap) return;
     unbindRender?.();
     boundMap = map;
+    if (map) {
+      map.getContainer().style.background = "transparent";
+    }
     unbindRender = bindMapRenderSync(map, paint);
   };
 
@@ -61,34 +64,25 @@ export function mountGisGlobeHaloOverlay(
     }
 
     const rect = wrapper.getBoundingClientRect();
-    if (rect.width <= 0 || rect.height <= 0) return;
+    const width = rect.width;
+    const height = rect.height;
+    if (width <= 0 || height <= 0) return;
 
     const map = getMap();
     if (!map || !map.isStyleLoaded()) {
       canvas.style.display = "none";
-      ctx.clearRect(0, 0, rect.width, rect.height);
+      ctx.clearRect(0, 0, width, height);
       return;
     }
 
     resize();
-    const silhouette = resolveGlobeSilhouetteForOverlay(map, wrapper);
-    if (!silhouette) {
-      canvas.style.display = "none";
-      ctx.clearRect(0, 0, rect.width, rect.height);
-      return;
-    }
-
+    const limb = resolveGlobeLimbBoundsForOverlay(map, wrapper, width, height);
     canvas.style.display = "block";
-    drawGlobeAtmosphereHalo(ctx, rect.width, rect.height, silhouette, preset);
-  };
-
-  const loop = () => {
-    paint();
-    frameId = requestAnimationFrame(loop);
+    drawGlobeAtmosphereHalo(ctx, width, height, limb, preset, { clipInnerRing: true });
   };
 
   resize();
-  if (enabled) loop();
+  paint();
 
   const ro =
     typeof ResizeObserver !== "undefined"
@@ -101,7 +95,6 @@ export function mountGisGlobeHaloOverlay(
 
   return () => {
     running = false;
-    cancelAnimationFrame(frameId);
     unbindRender?.();
     ro?.disconnect();
     canvas.remove();

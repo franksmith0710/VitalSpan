@@ -259,20 +259,26 @@ export function offsetMapPixelToOverlay(
   };
 }
 
-/** 多策略解析球缘，并映射到 overlay 容器坐标（优先椭圆拟合）。 */
+/** 多策略解析球缘，并映射到 overlay 容器坐标；始终有 fallback，避免光晕层消失。 */
 export function resolveGlobeLimbBoundsForOverlay(
-  map: MapLibreMap,
+  map: MapLibreMap | null,
   overlay: HTMLElement,
-): GlobeLimbBounds | null {
-  const silhouette = resolveGlobeSilhouetteFromMap(map);
-  if (silhouette) {
-    return silhouetteToLimbBounds(offsetSilhouetteToOverlay(map, overlay, silhouette));
+  width: number,
+  height: number,
+): GlobeLimbBounds {
+  const fallback = resolveGlobeScreenBoundsFallback(width, height);
+  if (!map) {
+    return fallback;
   }
 
   const inMapPixels =
     resolveGlobeLimbBoundsFromMap(map) ??
     resolveGlobeLimbBoundsFromProject(map) ??
-    limbFromScreenBounds(map);
-  if (!inMapPixels) return null;
+    limbFromScreenBounds(map) ??
+    fallback;
+
+  if (map.getContainer() === overlay) {
+    return inMapPixels;
+  }
   return offsetMapPixelToOverlay(map, overlay, inMapPixels);
 }

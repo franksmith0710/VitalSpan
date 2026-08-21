@@ -5,9 +5,13 @@ import { resolveDatasetChartBinding } from "@/lib/datasetChartBinding";
 import { isDemoPackageDataset } from "@/lib/demoPackage";
 import { queryKeys } from "@/lib/queryKeys";
 import { useInspectorColumns } from "@/hooks/useInspectorColumns";
-import type { CustomVizDataBinding, CustomVizWidgetConfig } from "../layoutUtils";
+import type { CustomVizDataBinding, CustomVizMetricRef, CustomVizWidgetConfig } from "../layoutUtils";
 import { customVizBindingToChartConfig } from "./customVizExecute";
 import type { CustomVizFieldTarget } from "./customVizFieldSlots";
+import {
+  resolveCustomVizSlotLabel,
+  validateCustomVizFieldAssignment,
+} from "./customVizFieldAssignment";
 
 type DatasetListItem = {
   datasetId: string;
@@ -18,6 +22,7 @@ type DatasetListItem = {
 export function useCustomVizInspectorState(
   readConfig: () => CustomVizWidgetConfig,
   emitChange: (next: CustomVizWidgetConfig) => void,
+  fieldSlots?: Record<string, unknown>,
 ) {
   const config = readConfig();
   const binding = config.dataBinding ?? { status: "manual" as const };
@@ -25,6 +30,7 @@ export function useCustomVizInspectorState(
   const { columns, loading: columnsLoading, ready: columnsReady, refreshColumns } =
     useInspectorColumns(chartCfg);
   const [datasetBindingError, setDatasetBindingError] = useState<string | null>(null);
+  const [fieldAssignError, setFieldAssignError] = useState<string | null>(null);
   const bindingSyncRef = useRef<string | null>(null);
 
   const { data: datasetData, isLoading: datasetsLoading, isError: datasetsError } = useQuery({
@@ -85,6 +91,13 @@ export function useCustomVizInspectorState(
 
   const assignField = useCallback(
     (fieldName: string, target: CustomVizFieldTarget) => {
+      const slotLabel = resolveCustomVizSlotLabel(fieldSlots, target);
+      const check = validateCustomVizFieldAssignment(fieldName, target, slotLabel);
+      if (!check.ok) {
+        setFieldAssignError(check.message);
+        return;
+      }
+      setFieldAssignError(null);
       const currentBinding = readConfig().dataBinding ?? { status: "manual" as const };
       if (target.kind === "dimension") {
         const next = [...(currentBinding.dimensions ?? [])];
@@ -97,10 +110,10 @@ export function useCustomVizInspectorState(
       const next = [...(currentBinding.metrics ?? [])];
       while (next.length <= target.index) next.push({ field: "", agg: "sum" });
       if (next.some((m, i) => i !== target.index && m.field === fieldName)) return;
-      next[target.index] = { field: fieldName, agg: "sum" };
+      next[target.index] = { field: fieldName, agg: "sum" } satisfies CustomVizMetricRef;
       patchBinding({ metrics: next, status: "connected" });
     },
-    [patchBinding, readConfig],
+    [fieldSlots, patchBinding, readConfig],
   );
 
   useEffect(() => {
@@ -196,5 +209,7 @@ export function useCustomVizInspectorState(
     datasetsError,
     datasetsEmpty,
     datasetBindingError,
+    fieldAssignError,
+    clearFieldAssignError: () => setFieldAssignError(null),
   };
 }
