@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import {
   DASHBOARD_EDIT_RAIL_PASS_THROUGH_CLASS,
   DASHBOARD_EDIT_RAIL_SCROLL_CLIP_CLASS,
-  DASHBOARD_EDIT_RAIL_SHELL_CLASS,
+  DASHBOARD_EDIT_RAIL_SHELL_FIXED_WIDTH_CLASS,
 } from "@/components/dashboard/dashboardEditRailLayout";
 import { cn } from "@/lib/utils";
 
@@ -32,7 +32,7 @@ export function VizComponentEditLayout({ preview, rail }: VizComponentEditLayout
       <aside
         className={cn(
           "flex min-h-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]",
-          DASHBOARD_EDIT_RAIL_SHELL_CLASS,
+          DASHBOARD_EDIT_RAIL_SHELL_FIXED_WIDTH_CLASS,
         )}
         data-testid="viz-component-edit-rail"
       >

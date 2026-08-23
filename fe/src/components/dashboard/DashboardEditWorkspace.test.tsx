@@ -35,6 +35,18 @@ describe("DashboardEditWorkspace", () => {
     expect(shells).toHaveLength(1);
     expect(shells[0]).toHaveClass("overflow-hidden");
     expect(shells[0]).toContainElement(screen.getByTestId("rail-child"));
-    expect(shells[0].closest(".w-\\[432px\\]")).toBeTruthy();
+    expect(screen.getByTestId("dashboard-edit-rail-shell")).toBeInTheDocument();
+  });
+
+  it("exposes a resize handle between canvas and chart rail", () => {
+    render(
+      <DashboardEditWorkspace
+        onPaletteInsert={vi.fn()}
+        canvas={<div>canvas</div>}
+        chartRail={<div>rail</div>}
+      />,
+    );
+
+    expect(screen.getByTestId("dashboard-edit-rail-shell-resize-handle")).toBeInTheDocument();
   });
 });

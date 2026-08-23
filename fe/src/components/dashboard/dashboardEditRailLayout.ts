@@ -1,5 +1,9 @@
-/** DataEase chart-edit 双列总宽（与 {@link DASHBOARD_EDIT_RAIL_SHELL_CLASS} 一致） */
+/** DataEase chart-edit 双列默认总宽 */
 export const DASHBOARD_EDIT_RAIL_WIDTH_PX = 432;
+
+export const DASHBOARD_EDIT_RAIL_MIN_WIDTH_PX = 300;
+export const DASHBOARD_EDIT_RAIL_MAX_WIDTH_PX = 720;
+export const DASHBOARD_EDIT_RAIL_WIDTH_STORAGE_KEY = "vitalspan:dashboard-edit-rail-width-px";
 
 /** 收起后的竖条宽（与 {@link CollapsedRailTab} `w-8` 一致） */
 export const DASHBOARD_EDIT_RAIL_COLLAPSED_TAB_WIDTH_PX = 32;
@@ -28,9 +32,63 @@ export function resolveWidgetEditRailGridColumns(leftOpen: boolean, rightOpen: b
 /** @deprecated 使用 {@link DASHBOARD_EDIT_RAIL_LEFT_COLUMN_CLASS} / {@link DASHBOARD_EDIT_RAIL_RIGHT_COLUMN_CLASS} */
 export const DASHBOARD_EDIT_RAIL_COLUMN_CLASS = DASHBOARD_EDIT_RAIL_LEFT_COLUMN_CLASS;
 
-/** 右栏外壳固定总宽（仪表板配置 / 图表双列均同宽，避免切换时画布横向跳动） */
-export const DASHBOARD_EDIT_RAIL_SHELL_CLASS =
+/** 右栏外壳：宽度由调用方 style 或 {@link DASHBOARD_EDIT_RAIL_SHELL_FIXED_WIDTH_CLASS} 控制 */
+export const DASHBOARD_EDIT_RAIL_SHELL_CLASS = "shrink-0";
+
+/** 组件库编辑等无画布拖拽场景：固定默认总宽 */
+export const DASHBOARD_EDIT_RAIL_SHELL_FIXED_WIDTH_CLASS =
   "w-[432px] max-w-[min(100%,432px)] shrink-0";
+
+export function clampDashboardEditRailWidth(
+  widthPx: number,
+  viewportWidth?: number,
+): number {
+  const viewport =
+    viewportWidth ?? (typeof window !== "undefined" ? window.innerWidth : 1280);
+  const max = Math.min(
+    DASHBOARD_EDIT_RAIL_MAX_WIDTH_PX,
+    Math.max(DASHBOARD_EDIT_RAIL_MIN_WIDTH_PX, Math.round(viewport * 0.62)),
+  );
+  return Math.min(max, Math.max(DASHBOARD_EDIT_RAIL_MIN_WIDTH_PX, Math.round(widthPx)));
+}
+
+export function readStoredDashboardEditRailWidth(): number {
+  if (typeof window === "undefined") return DASHBOARD_EDIT_RAIL_WIDTH_PX;
+  try {
+    const raw = window.localStorage.getItem(DASHBOARD_EDIT_RAIL_WIDTH_STORAGE_KEY);
+    if (!raw) return DASHBOARD_EDIT_RAIL_WIDTH_PX;
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed)) return DASHBOARD_EDIT_RAIL_WIDTH_PX;
+    return clampDashboardEditRailWidth(parsed);
+  } catch {
+    return DASHBOARD_EDIT_RAIL_WIDTH_PX;
+  }
+}
+
+export function writeStoredDashboardEditRailWidth(widthPx: number): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(
+      DASHBOARD_EDIT_RAIL_WIDTH_STORAGE_KEY,
+      String(clampDashboardEditRailWidth(widthPx)),
+    );
+  } catch {
+    // ignore
+  }
+}
+
+export function resolveDashboardEditRailWidthOnDrag(
+  startWidthPx: number,
+  pointerDeltaX: number,
+  viewportWidth?: number,
+): number {
+  return clampDashboardEditRailWidth(startWidthPx - pointerDeltaX, viewportWidth);
+}
+
+export function dashboardEditRailShellWidthStyle(widthPx: number): { width: number; maxWidth: string } {
+  const safe = clampDashboardEditRailWidth(widthPx);
+  return { width: safe, maxWidth: `min(100%, ${safe}px)` };
+}
 
 /** 看板编辑右栏外壳视觉（展开壳 / 收起竖条共用圆角边框） */
 export const DASHBOARD_EDIT_RAIL_SHELL_CHROME_CLASS =

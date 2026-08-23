@@ -2,7 +2,9 @@ import type { ReactNode } from "react";
 import { CanvasEditToolbar } from "@/components/dashboard/CanvasEditToolbar";
 import type { PaletteInsertType } from "@/components/dashboard/createLayoutWidget";
 import { CollapsedRailTab, RailFoldHeader } from "@/components/dashboard/RailFoldTab";
-import { DASHBOARD_EDIT_RAIL_PASS_THROUGH_CLASS, DASHBOARD_EDIT_RAIL_SCROLL_CLIP_CLASS, DASHBOARD_EDIT_RAIL_SHELL_CHROME_CLASS, DASHBOARD_EDIT_RAIL_SHELL_CLASS } from "@/components/dashboard/dashboardEditRailLayout";
+import { DASHBOARD_EDIT_RAIL_PASS_THROUGH_CLASS, DASHBOARD_EDIT_RAIL_SCROLL_CLIP_CLASS, DASHBOARD_EDIT_RAIL_SHELL_CHROME_CLASS, DASHBOARD_EDIT_RAIL_SHELL_CLASS, dashboardEditRailShellWidthStyle } from "@/components/dashboard/dashboardEditRailLayout";
+import { useDashboardEditRailShellWidth } from "@/components/dashboard/useDashboardEditRailShellWidth";
+import { WidgetEditRailResizeHandle } from "@/components/dashboard/WidgetEditRailResizeHandle";
 import type { ColorScheme } from "@/components/dashboard/dashboardStyleConfig";
 import { cn } from "@/lib/utils";
 
@@ -121,15 +123,17 @@ export function DashboardEditWorkspace({
   showScreenVisualAssets = false,
   className,
 }: DashboardEditWorkspaceProps) {
+  const { railWidthPx, onShellResizePointerDown } = useDashboardEditRailShellWidth();
+
   return (
     <div
       className={cn(
-        "grid min-h-0 flex-1 gap-1.5 overflow-hidden lg:grid-cols-[minmax(0,1fr)_auto] lg:items-stretch [&>*]:min-h-0",
+        "flex min-h-0 flex-1 gap-1.5 overflow-hidden [&>*]:min-h-0",
         className,
       )}
     >
       <CanvasShell
-        className="min-h-0 min-w-0"
+        className="min-h-0 min-w-0 flex-1"
         leading={
           <CanvasEditToolbar
             onInsert={onPaletteInsert}
@@ -158,13 +162,22 @@ export function DashboardEditWorkspace({
       </CanvasShell>
 
       {chartRailOpen ? (
-        <div
-          className={cn(
-            "flex min-h-0 flex-col overflow-hidden",
-            DASHBOARD_EDIT_RAIL_SHELL_CHROME_CLASS,
-            DASHBOARD_EDIT_RAIL_SHELL_CLASS,
-          )}
-        >
+        <>
+          <WidgetEditRailResizeHandle
+            onPointerDown={onShellResizePointerDown}
+            className="w-[5px] shrink-0"
+            ariaLabel="调整画布与配置栏宽度"
+            testId="dashboard-edit-rail-shell-resize-handle"
+          />
+          <div
+            className={cn(
+              "flex min-h-0 min-w-0 flex-col overflow-hidden",
+              DASHBOARD_EDIT_RAIL_SHELL_CHROME_CLASS,
+              DASHBOARD_EDIT_RAIL_SHELL_CLASS,
+            )}
+            style={dashboardEditRailShellWidthStyle(railWidthPx)}
+            data-testid="dashboard-edit-rail-shell"
+          >
           {showRailFoldHeader && onChartRailOpenChange ? (
             <RailFoldHeader
               label={chartRailLabel}
@@ -179,7 +192,8 @@ export function DashboardEditWorkspace({
               {chartRail}
             </div>
           </div>
-        </div>
+          </div>
+        </>
       ) : (
         <CollapsedRailTab
           label={chartRailLabel}
